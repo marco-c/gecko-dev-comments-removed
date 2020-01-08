@@ -20,33 +20,33 @@ EGLImage CreateEGLImage(GLContext* gl, GLuint tex);
 
 
 
-class EGLImageWrapper
-{
-public:
-    static EGLImageWrapper* Create(GLContext* gl, GLuint tex);
+class EGLImageWrapper {
+ public:
+  static EGLImageWrapper* Create(GLContext* gl, GLuint tex);
 
-private:
-    const RefPtr<GLLibraryEGL> mLibrary;
-    const EGLDisplay mDisplay;
-public:
-    const EGLImage mImage;
-private:
-    EGLSync mSync;
+ private:
+  const RefPtr<GLLibraryEGL> mLibrary;
+  const EGLDisplay mDisplay;
 
-    EGLImageWrapper(GLLibraryEGL* library,
-                    EGLDisplay display,
-                    EGLImage image);
-public:
-    ~EGLImageWrapper();
+ public:
+  const EGLImage mImage;
 
-    
-    
-    bool FenceSync(GLContext* gl);
+ private:
+  EGLSync mSync;
 
-    bool ClientWaitSync();
+  EGLImageWrapper(GLLibraryEGL* library, EGLDisplay display, EGLImage image);
+
+ public:
+  ~EGLImageWrapper();
+
+  
+  
+  bool FenceSync(GLContext* gl);
+
+  bool ClientWaitSync();
 };
 
-} 
-} 
+}  
+}  
 
 #endif

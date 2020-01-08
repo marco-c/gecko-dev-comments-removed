@@ -19,20 +19,21 @@
 
 #include "mozilla/perfprobe.h"
 #include "nsAutoPtr.h"
-#endif 
+#endif  
 
 
-
-#define NS_TOOLKIT_APPSTARTUP_CID \
-{ 0x7dd4d320, 0xc84b, 0x4624, { 0x8d, 0x45, 0x7b, 0xb9, 0xb2, 0x35, 0x69, 0x77 } }
-
+#define NS_TOOLKIT_APPSTARTUP_CID                    \
+  {                                                  \
+    0x7dd4d320, 0xc84b, 0x4624, {                    \
+      0x8d, 0x45, 0x7b, 0xb9, 0xb2, 0x35, 0x69, 0x77 \
+    }                                                \
+  }
 
 class nsAppStartup final : public nsIAppStartup,
                            public nsIWindowCreator2,
                            public nsIObserver,
-                           public nsSupportsWeakReference
-{
-public:
+                           public nsSupportsWeakReference {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIAPPSTARTUP
   NS_DECL_NSIWINDOWCREATOR
@@ -42,8 +43,8 @@ public:
   nsAppStartup();
   nsresult Init();
 
-private:
-  ~nsAppStartup() { }
+ private:
+  ~nsAppStartup() {}
 
   void CloseAllWindows();
 
@@ -51,21 +52,22 @@ private:
 
   nsCOMPtr<nsIAppShell> mAppShell;
 
-  int32_t      mConsiderQuitStopper; 
-  bool mRunning;        
-  bool mShuttingDown;   
-  bool mStartingUp;     
-  bool mAttemptingQuit; 
-  bool mRestart;        
-  bool mInterrupted;    
-  bool mIsSafeModeNecessary;       
-  bool mStartupCrashTrackingEnded; 
-  bool mRestartNotSameProfile;     
+  int32_t mConsiderQuitStopper;  
+  bool mRunning;                 
+  bool mShuttingDown;            
+  bool mStartingUp;              
+  bool mAttemptingQuit;          
+  bool mRestart;                 
+  bool mInterrupted;  
+  bool mIsSafeModeNecessary;        
+  bool mStartupCrashTrackingEnded;  
+                                    
+  bool mRestartNotSameProfile;      
 
 #if defined(XP_WIN)
   
   typedef mozilla::probes::ProbeManager ProbeManager;
-  typedef mozilla::probes::Probe        Probe;
+  typedef mozilla::probes::Probe Probe;
   RefPtr<ProbeManager> mProbesManager;
   RefPtr<Probe> mPlacesInitCompleteProbe;
   RefPtr<Probe> mSessionWindowRestoredProbe;
@@ -73,4 +75,4 @@ private:
 #endif
 };
 
-#endif 
+#endif  

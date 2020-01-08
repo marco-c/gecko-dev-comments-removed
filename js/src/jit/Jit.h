@@ -15,25 +15,23 @@ class RunState;
 
 namespace jit {
 
-enum class EnterJitStatus
-{
-    
-    
-    
-    Error,
+enum class EnterJitStatus {
+  
+  
+  
+  Error,
 
-    
-    Ok,
+  
+  Ok,
 
-    
-    
-    NotEntered,
+  
+  
+  NotEntered,
 };
 
-extern EnterJitStatus
-MaybeEnterJit(JSContext* cx, RunState& state);
+extern EnterJitStatus MaybeEnterJit(JSContext* cx, RunState& state);
 
-} 
-} 
+}  
+}  
 
 #endif 

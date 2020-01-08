@@ -15,8 +15,7 @@ namespace a11y {
 typedef class XULTreeGridAccessible XULTreeGridAccessibleWrap;
 typedef class XULTreeGridCellAccessible XULTreeGridCellAccessibleWrap;
 
-} 
-} 
+}  
+}  
 
 #endif
-

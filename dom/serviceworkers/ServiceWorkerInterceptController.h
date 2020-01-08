@@ -12,17 +12,16 @@
 namespace mozilla {
 namespace dom {
 
-class ServiceWorkerInterceptController final : public nsINetworkInterceptController
-{
+class ServiceWorkerInterceptController final
+    : public nsINetworkInterceptController {
   ~ServiceWorkerInterceptController() = default;
 
-public:
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSINETWORKINTERCEPTCONTROLLER
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

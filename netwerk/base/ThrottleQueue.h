@@ -26,13 +26,10 @@ class ThrottleInputStream;
 
 
 
-class ThrottleQueue final
-  : public nsIInputChannelThrottleQueue
-  , public nsITimerCallback
-  , public nsINamed
-{
-public:
-
+class ThrottleQueue final : public nsIInputChannelThrottleQueue,
+                            public nsITimerCallback,
+                            public nsINamed {
+ public:
   ThrottleQueue();
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -43,8 +40,7 @@ public:
   void QueueStream(ThrottleInputStream* aStream);
   void DequeueStream(ThrottleInputStream* aStream);
 
-private:
-
+ private:
   ~ThrottleQueue();
 
   struct ThrottleEntry {
@@ -62,7 +58,7 @@ private:
   bool mTimerArmed;
 };
 
-}
-}
+}  
+}  
 
-#endif 
+#endif  

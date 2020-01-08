@@ -15,23 +15,22 @@
 
 #include "nsCOMPtr.h"
 
-#define NS_BMPENCODER_CID \
-{ /* 13a5320c-4c91-4FA4-bd16-b081a3ba8c0b */         \
-     0x13a5320c,                                     \
-     0x4c91,                                         \
-     0x4fa4,                                         \
-    {0xbd, 0x16, 0xb0, 0x81, 0xa3, 0Xba, 0x8c, 0x0b} \
-}
+#define NS_BMPENCODER_CID                            \
+  { /* 13a5320c-4c91-4FA4-bd16-b081a3ba8c0b */       \
+    0x13a5320c, 0x4c91, 0x4fa4, {                    \
+      0xbd, 0x16, 0xb0, 0x81, 0xa3, 0Xba, 0x8c, 0x0b \
+    }                                                \
+  }
 
 namespace mozilla {
 namespace image {
 namespace bmp {
 
 struct FileHeader {
-  char signature[2];   
-  uint32_t filesize;   
-  int32_t reserved;    
-  uint32_t dataoffset; 
+  char signature[2];    
+  uint32_t filesize;    
+  int32_t reserved;     
+  uint32_t dataoffset;  
 };
 
 struct XYZ {
@@ -43,49 +42,49 @@ struct XYZTriple {
 };
 
 struct V5InfoHeader {
-  uint32_t bihsize;          
-  int32_t width;             
-  int32_t height;            
-  uint16_t planes;           
-  uint16_t bpp;              
-  uint32_t compression;      
-  uint32_t image_size;       
-                             
-  uint32_t xppm;             
-  uint32_t yppm;             
-  uint32_t colors;           
-  uint32_t important_colors; 
+  uint32_t bihsize;           
+  int32_t width;              
+  int32_t height;             
+  uint16_t planes;            
+  uint16_t bpp;               
+  uint32_t compression;       
+  uint32_t image_size;        
+                              
+  uint32_t xppm;              
+  uint32_t yppm;              
+  uint32_t colors;            
+  uint32_t important_colors;  
   
-  uint32_t red_mask;         
-  uint32_t green_mask;       
-  uint32_t blue_mask;        
-  uint32_t alpha_mask;       
-  uint32_t color_space;      
+  uint32_t red_mask;     
+  uint32_t green_mask;   
+  uint32_t blue_mask;    
+  uint32_t alpha_mask;   
+  uint32_t color_space;  
   
-  XYZTriple white_point;     
-  uint32_t gamma_red;        
-  uint32_t gamma_green;      
-  uint32_t gamma_blue;       
-  uint32_t intent;           
+  XYZTriple white_point;  
+  uint32_t gamma_red;     
+  uint32_t gamma_green;   
+  uint32_t gamma_blue;    
+  uint32_t intent;        
   
-  uint32_t profile_offset;   
-  uint32_t profile_size;     
-  uint32_t reserved;         
+  uint32_t profile_offset;  
+  uint32_t profile_size;    
+  uint32_t reserved;        
 
   static const uint32_t COLOR_SPACE_LCS_SRGB = 0x73524742;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
 
 
 
-class nsBMPEncoder final : public imgIEncoder
-{
+class nsBMPEncoder final : public imgIEncoder {
   typedef mozilla::ReentrantMonitor ReentrantMonitor;
-public:
+
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_IMGIENCODER
   NS_DECL_NSIINPUTSTREAM
@@ -93,14 +92,10 @@ public:
 
   nsBMPEncoder();
 
-protected:
+ protected:
   ~nsBMPEncoder();
 
-  enum Version
-  {
-      VERSION_3 = 3,
-      VERSION_5 = 5
-  };
+  enum Version { VERSION_3 = 3, VERSION_5 = 5 };
 
   
   nsresult ParseOptions(const nsAString& aOptions, Version& aVersionOut,
@@ -128,8 +123,7 @@ protected:
   
   void EncodeImageDataRow32(const uint8_t* aData);
   
-  inline int32_t GetCurrentImageBufferOffset()
-  {
+  inline int32_t GetCurrentImageBufferOffset() {
     return static_cast<int32_t>(mImageBufferCurr - mImageBufferStart);
   }
 
@@ -154,4 +148,4 @@ protected:
   uint32_t mNotifyThreshold;
 };
 
-#endif 
+#endif  

@@ -10,7 +10,7 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/EditorDOMPoint.h"
 #include "mozilla/EditorUtils.h"
-#include "mozilla/HTMLEditor.h" 
+#include "mozilla/HTMLEditor.h"  
 #include "mozilla/TextEditor.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
@@ -29,7 +29,7 @@ class HTMLEditor;
 class HTMLEditRules;
 namespace dom {
 class Selection;
-} 
+}  
 
 
 
@@ -55,21 +55,20 @@ class Selection;
 
 
 
-class TextEditRules : public nsITimerCallback
-                    , public nsINamed
-{
-protected:
-  typedef EditorBase::AutoSelectionRestorer
-            AutoSelectionRestorer;
+class TextEditRules : public nsITimerCallback, public nsINamed {
+ protected:
+  typedef EditorBase::AutoSelectionRestorer AutoSelectionRestorer;
   typedef EditorBase::AutoTopLevelEditSubActionNotifier
-            AutoTopLevelEditSubActionNotifier;
+      AutoTopLevelEditSubActionNotifier;
   typedef EditorBase::AutoTransactionsConserveSelection
-            AutoTransactionsConserveSelection;
-public:
+      AutoTransactionsConserveSelection;
+
+ public:
   typedef dom::Element Element;
   typedef dom::Selection Selection;
   typedef dom::Text Text;
-  template<typename T> using OwningNonNull = OwningNonNull<T>;
+  template <typename T>
+  using OwningNonNull = OwningNonNull<T>;
 
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
@@ -89,11 +88,9 @@ public:
   virtual nsresult AfterEdit(EditSubAction aEditSubAction,
                              nsIEditor::EDirection aDirection);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual nsresult WillDoAction(EditSubActionInfo& aInfo,
-                                bool* aCancel,
+  virtual nsresult WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
                                 bool* aHandled);
-  virtual nsresult DidDoAction(EditSubActionInfo& aInfo,
-                               nsresult aResult);
+  virtual nsresult DidDoAction(EditSubActionInfo& aInfo, nsresult aResult);
 
   
 
@@ -102,10 +99,10 @@ public:
 
   virtual bool DocumentIsEmpty();
 
-protected:
+ protected:
   virtual ~TextEditRules();
 
-public:
+ public:
   void ResetIMETextPWBuf();
 
   
@@ -142,10 +139,7 @@ public:
 
   static void FillBufWithPWChars(nsAString* aOutString, int32_t aLength);
 
-  bool HasBogusNode()
-  {
-    return !!mBogusNode;
-  }
+  bool HasBogusNode() { return !!mBogusNode; }
 
   
 
@@ -154,8 +148,7 @@ public:
 
   MOZ_CAN_RUN_SCRIPT nsresult HideLastPasswordInput();
 
-protected:
-
+ protected:
   void InitFields();
 
   
@@ -175,10 +168,11 @@ protected:
 
 
   MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult
-  WillInsertText(EditSubAction aEditSubAction, bool* aCancel, bool* aHandled,
-                 const nsAString* inString, nsAString* outString,
-                 int32_t aMaxLength);
+  MOZ_MUST_USE nsresult WillInsertText(EditSubAction aEditSubAction,
+                                       bool* aCancel, bool* aHandled,
+                                       const nsAString* inString,
+                                       nsAString* outString,
+                                       int32_t aMaxLength);
 
   
 
@@ -202,9 +196,9 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  WillSetText(bool* aCancel, bool* aHandled,
-              const nsAString* inString, int32_t aMaxLength);
+  MOZ_MUST_USE nsresult WillSetText(bool* aCancel, bool* aHandled,
+                                    const nsAString* inString,
+                                    int32_t aMaxLength);
 
   
 
@@ -227,9 +221,8 @@ protected:
 
 
   MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult
-  WillDeleteSelection(nsIEditor::EDirection aCollapsedAction,
-                      bool* aCancel, bool* aHandled);
+  MOZ_MUST_USE nsresult WillDeleteSelection(
+      nsIEditor::EDirection aCollapsedAction, bool* aCancel, bool* aHandled);
 
   
 
@@ -243,9 +236,8 @@ protected:
 
 
   MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE nsresult
-  DeleteSelectionWithTransaction(nsIEditor::EDirection aCollapsedAction,
-                                 bool* aCancel, bool* aHandled);
+  MOZ_MUST_USE nsresult DeleteSelectionWithTransaction(
+      nsIEditor::EDirection aCollapsedAction, bool* aCancel, bool* aHandled);
 
   
 
@@ -272,11 +264,8 @@ protected:
 
 
 
-  nsresult WillOutputText(const nsAString* aInFormat,
-                          nsAString* aOutText,
-                          uint32_t aFlags,
-                          bool* aOutCancel,
-                          bool* aHandled);
+  nsresult WillOutputText(const nsAString* aInFormat, nsAString* aOutText,
+                          uint32_t aFlags, bool* aOutCancel, bool* aHandled);
 
   
 
@@ -298,8 +287,7 @@ protected:
 
 
   nsresult TruncateInsertionIfNeeded(const nsAString* aInString,
-                                     nsAString* aOutString,
-                                     int32_t aMaxLength,
+                                     nsAString* aOutString, int32_t aMaxLength,
                                      bool* aTruncated);
 
   
@@ -315,17 +303,16 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  CreateElementResult
-  CreateBR(const EditorDOMPointBase<PT, CT>& aPointToInsert)
-  {
+  template <typename PT, typename CT>
+  CreateElementResult CreateBR(
+      const EditorDOMPointBase<PT, CT>& aPointToInsert) {
     CreateElementResult ret = CreateBRInternal(aPointToInsert, false);
 #ifdef DEBUG
     
     if (!CanHandleEditAction()) {
       MOZ_ASSERT(ret.Rv() == NS_ERROR_EDITOR_DESTROYED);
     }
-#endif 
+#endif  
     return ret;
   }
 
@@ -337,17 +324,16 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  CreateElementResult
-  CreateMozBR(const EditorDOMPointBase<PT, CT>& aPointToInsert)
-  {
+  template <typename PT, typename CT>
+  CreateElementResult CreateMozBR(
+      const EditorDOMPointBase<PT, CT>& aPointToInsert) {
     CreateElementResult ret = CreateBRInternal(aPointToInsert, true);
 #ifdef DEBUG
     
     if (!CanHandleEditAction()) {
       MOZ_ASSERT(ret.Rv() == NS_ERROR_EDITOR_DESTROYED);
     }
-#endif 
+#endif  
     return ret;
   }
 
@@ -382,7 +368,7 @@ protected:
   bool IsMailEditor() const;
   bool DontEchoPassword() const;
 
-private:
+ private:
   TextEditor* MOZ_NON_OWNING_REF mTextEditor;
 
   
@@ -396,26 +382,21 @@ private:
 
 
 
-  template<typename PT, typename CT>
-  CreateElementResult
-  CreateBRInternal(const EditorDOMPointBase<PT, CT>& aPointToInsert,
-                   bool aCreateMozBR);
+  template <typename PT, typename CT>
+  CreateElementResult CreateBRInternal(
+      const EditorDOMPointBase<PT, CT>& aPointToInsert, bool aCreateMozBR);
 
-protected:
+ protected:
   
 
 
 
 
 
-  class MOZ_STACK_CLASS AutoSafeEditorData
-  {
-  public:
-    AutoSafeEditorData(TextEditRules& aTextEditRules,
-                       TextEditor& aTextEditor)
-      : mTextEditRules(aTextEditRules)
-      , mHTMLEditor(nullptr)
-    {
+  class MOZ_STACK_CLASS AutoSafeEditorData {
+   public:
+    AutoSafeEditorData(TextEditRules& aTextEditRules, TextEditor& aTextEditor)
+        : mTextEditRules(aTextEditRules), mHTMLEditor(nullptr) {
       
       
       
@@ -428,8 +409,7 @@ protected:
       mTextEditRules.mData = this;
     }
 
-    ~AutoSafeEditorData()
-    {
+    ~AutoSafeEditorData() {
       if (mTextEditRules.mData != this) {
         return;
       }
@@ -437,13 +417,12 @@ protected:
     }
 
     TextEditor& TextEditorRef() const { return *mTextEditor; }
-    HTMLEditor& HTMLEditorRef() const
-    {
+    HTMLEditor& HTMLEditorRef() const {
       MOZ_ASSERT(mHTMLEditor);
       return *mHTMLEditor;
     }
 
-  private:
+   private:
     
     
     
@@ -454,21 +433,18 @@ protected:
   };
   AutoSafeEditorData* mData;
 
-  TextEditor& TextEditorRef() const
-  {
+  TextEditor& TextEditorRef() const {
     MOZ_ASSERT(mData);
     return mData->TextEditorRef();
   }
   
   
   
-  const RefPtr<Selection>& SelectionRefPtr() const
-  {
+  const RefPtr<Selection>& SelectionRefPtr() const {
     MOZ_ASSERT(mData);
     return TextEditorRef().SelectionRefPtr();
   }
-  bool CanHandleEditAction() const
-  {
+  bool CanHandleEditAction() const {
     if (!mTextEditor) {
       return false;
     }
@@ -481,7 +457,7 @@ protected:
 
 #ifdef DEBUG
   bool IsEditorDataAvailable() const { return !!mData; }
-#endif 
+#endif  
 
   
 
@@ -525,23 +501,21 @@ protected:
 
 
 
-class MOZ_STACK_CLASS EditSubActionInfo final
-{
-public:
+class MOZ_STACK_CLASS EditSubActionInfo final {
+ public:
   explicit EditSubActionInfo(EditSubAction aEditSubAction)
-    : mEditSubAction(aEditSubAction)
-    , inString(nullptr)
-    , outString(nullptr)
-    , outputFormat(nullptr)
-    , maxLength(-1)
-    , flags(0)
-    , collapsedAction(nsIEditor::eNext)
-    , stripWrappers(nsIEditor::eStrip)
-    , entireList(false)
-    , bulletType(nullptr)
-    , alignType(nullptr)
-    , blockType(nullptr)
-  {}
+      : mEditSubAction(aEditSubAction),
+        inString(nullptr),
+        outString(nullptr),
+        outputFormat(nullptr),
+        maxLength(-1),
+        flags(0),
+        collapsedAction(nsIEditor::eNext),
+        stripWrappers(nsIEditor::eStrip),
+        entireList(false),
+        bulletType(nullptr),
+        alignType(nullptr),
+        blockType(nullptr) {}
 
   EditSubAction mEditSubAction;
 
@@ -574,56 +548,48 @@ public:
 
 
 
-class MOZ_STACK_CLASS AutoLockRulesSniffing final
-{
-public:
-  explicit AutoLockRulesSniffing(TextEditRules* aRules)
-    : mRules(aRules)
-  {
+class MOZ_STACK_CLASS AutoLockRulesSniffing final {
+ public:
+  explicit AutoLockRulesSniffing(TextEditRules* aRules) : mRules(aRules) {
     if (mRules) {
       mRules->mLockRulesSniffing = true;
     }
   }
 
-  ~AutoLockRulesSniffing()
-  {
+  ~AutoLockRulesSniffing() {
     if (mRules) {
       mRules->mLockRulesSniffing = false;
     }
   }
 
-protected:
+ protected:
   TextEditRules* mRules;
 };
 
 
 
 
-class MOZ_STACK_CLASS AutoLockListener final
-{
-public:
+class MOZ_STACK_CLASS AutoLockListener final {
+ public:
   explicit AutoLockListener(bool* aEnabled)
-    : mEnabled(aEnabled)
-    , mOldState(false)
-  {
+      : mEnabled(aEnabled), mOldState(false) {
     if (mEnabled) {
       mOldState = *mEnabled;
       *mEnabled = false;
     }
   }
 
-  ~AutoLockListener()
-  {
+  ~AutoLockListener() {
     if (mEnabled) {
       *mEnabled = mOldState;
     }
   }
 
-protected:
+ protected:
   bool* mEnabled;
   bool mOldState;
 };
 
-} 
+}  
 
-#endif 
+#endif  

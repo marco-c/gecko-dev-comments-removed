@@ -7,13 +7,13 @@
 #ifndef mozilla_layers_Axis_h
 #define mozilla_layers_Axis_h
 
-#include <sys/types.h>                  
+#include <sys/types.h>  
 
 #include "APZUtils.h"
 #include "AxisPhysicsMSDModel.h"
-#include "mozilla/gfx/Types.h"          
-#include "mozilla/TimeStamp.h"          
-#include "nsTArray.h"                   
+#include "mozilla/gfx/Types.h"  
+#include "mozilla/TimeStamp.h"  
+#include "nsTArray.h"           
 #include "Units.h"
 
 namespace mozilla {
@@ -39,7 +39,7 @@ class AsyncPanZoomController;
 
 
 class VelocityTracker {
-public:
+ public:
   virtual ~VelocityTracker() = default;
 
   
@@ -55,8 +55,7 @@ public:
 
 
 
-  virtual Maybe<float> AddPosition(ParentLayerCoord aPos,
-                                   uint32_t aTimestampMs,
+  virtual Maybe<float> AddPosition(ParentLayerCoord aPos, uint32_t aTimestampMs,
                                    bool aIsAxisLocked) = 0;
   
 
@@ -88,7 +87,7 @@ public:
 
 
 class Axis {
-public:
+ public:
   explicit Axis(AsyncPanZoomController* aAsyncPanZoomController);
 
   
@@ -98,9 +97,10 @@ public:
 
 
 
-  void UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos, uint32_t aTimestampMs);
+  void UpdateWithTouchAtDevicePoint(ParentLayerCoord aPos,
+                                    uint32_t aTimestampMs);
 
-public:
+ public:
   void HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
                                     uint32_t aEndTimestampMs,
                                     ParentLayerCoord aDelta);
@@ -244,7 +244,8 @@ public:
 
 
 
-  ParentLayerCoord DisplacementWillOverscrollAmount(ParentLayerCoord aDisplacement) const;
+  ParentLayerCoord DisplacementWillOverscrollAmount(
+      ParentLayerCoord aDisplacement) const;
 
   
 
@@ -288,10 +289,14 @@ public:
   bool OverscrollBehaviorAllowsHandoff() const;
   bool OverscrollBehaviorAllowsOverscrollEffect() const;
 
-  virtual ParentLayerCoord GetPointOffset(const ParentLayerPoint& aPoint) const = 0;
-  virtual ParentLayerCoord GetRectLength(const ParentLayerRect& aRect) const = 0;
-  virtual ParentLayerCoord GetRectOffset(const ParentLayerRect& aRect) const = 0;
-  virtual CSSToParentLayerScale GetScaleForAxis(const CSSToParentLayerScale2D& aScale) const = 0;
+  virtual ParentLayerCoord GetPointOffset(
+      const ParentLayerPoint& aPoint) const = 0;
+  virtual ParentLayerCoord GetRectLength(
+      const ParentLayerRect& aRect) const = 0;
+  virtual ParentLayerCoord GetRectOffset(
+      const ParentLayerRect& aRect) const = 0;
+  virtual CSSToParentLayerScale GetScaleForAxis(
+      const CSSToParentLayerScale2D& aScale) const = 0;
 
   virtual ScreenPoint MakePoint(ScreenCoord aCoord) const = 0;
 
@@ -300,7 +305,7 @@ public:
   
   float ToLocalVelocity(float aVelocityInchesPerMs) const;
 
-protected:
+ protected:
   
   
   
@@ -311,8 +316,8 @@ protected:
   ParentLayerCoord mPos;
 
   ParentLayerCoord mStartPos;
-  float mVelocity;      
-  bool mAxisLocked;     
+  float mVelocity;   
+  bool mAxisLocked;  
   AsyncPanZoomController* mAsyncPanZoomController;
 
   
@@ -340,34 +345,44 @@ protected:
 };
 
 class AxisX : public Axis {
-public:
+ public:
   explicit AxisX(AsyncPanZoomController* mAsyncPanZoomController);
-  virtual ParentLayerCoord GetPointOffset(const ParentLayerPoint& aPoint) const override;
-  virtual ParentLayerCoord GetRectLength(const ParentLayerRect& aRect) const override;
-  virtual ParentLayerCoord GetRectOffset(const ParentLayerRect& aRect) const override;
-  virtual CSSToParentLayerScale GetScaleForAxis(const CSSToParentLayerScale2D& aScale) const override;
+  virtual ParentLayerCoord GetPointOffset(
+      const ParentLayerPoint& aPoint) const override;
+  virtual ParentLayerCoord GetRectLength(
+      const ParentLayerRect& aRect) const override;
+  virtual ParentLayerCoord GetRectOffset(
+      const ParentLayerRect& aRect) const override;
+  virtual CSSToParentLayerScale GetScaleForAxis(
+      const CSSToParentLayerScale2D& aScale) const override;
   virtual ScreenPoint MakePoint(ScreenCoord aCoord) const override;
   virtual const char* Name() const override;
   bool CanScrollTo(Side aSide) const;
-private:
+
+ private:
   virtual OverscrollBehavior GetOverscrollBehavior() const override;
 };
 
 class AxisY : public Axis {
-public:
+ public:
   explicit AxisY(AsyncPanZoomController* mAsyncPanZoomController);
-  virtual ParentLayerCoord GetPointOffset(const ParentLayerPoint& aPoint) const override;
-  virtual ParentLayerCoord GetRectLength(const ParentLayerRect& aRect) const override;
-  virtual ParentLayerCoord GetRectOffset(const ParentLayerRect& aRect) const override;
-  virtual CSSToParentLayerScale GetScaleForAxis(const CSSToParentLayerScale2D& aScale) const override;
+  virtual ParentLayerCoord GetPointOffset(
+      const ParentLayerPoint& aPoint) const override;
+  virtual ParentLayerCoord GetRectLength(
+      const ParentLayerRect& aRect) const override;
+  virtual ParentLayerCoord GetRectOffset(
+      const ParentLayerRect& aRect) const override;
+  virtual CSSToParentLayerScale GetScaleForAxis(
+      const CSSToParentLayerScale2D& aScale) const override;
   virtual ScreenPoint MakePoint(ScreenCoord aCoord) const override;
   virtual const char* Name() const override;
   bool CanScrollTo(Side aSide) const;
-private:
+
+ private:
   virtual OverscrollBehavior GetOverscrollBehavior() const override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

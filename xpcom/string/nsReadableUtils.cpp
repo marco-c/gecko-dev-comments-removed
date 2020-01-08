@@ -25,20 +25,16 @@ using mozilla::MakeSpan;
 
 
 
+
+
 template <class FromStringT, class ToCharT>
-inline
-ToCharT*
-AllocateStringCopy(const FromStringT& aSource, ToCharT*)
-{
+inline ToCharT* AllocateStringCopy(const FromStringT& aSource, ToCharT*) {
   
   return static_cast<ToCharT*>(
-    moz_xmalloc((size_t(aSource.Length()) + 1) * sizeof(ToCharT)));
+      moz_xmalloc((size_t(aSource.Length()) + 1) * sizeof(ToCharT)));
 }
 
-
-char*
-ToNewCString(const nsAString& aSource)
-{
+char* ToNewCString(const nsAString& aSource) {
   char* dest = AllocateStringCopy(aSource, (char*)nullptr);
   if (!dest) {
     return nullptr;
@@ -50,9 +46,7 @@ ToNewCString(const nsAString& aSource)
   return dest;
 }
 
-char*
-ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count)
-{
+char* ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count) {
   auto len = aSource.Length();
   
   
@@ -80,9 +74,8 @@ ToNewUTF8String(const nsAString& aSource, uint32_t* aUTF8Count)
   return dest;
 }
 
-char*
-ToNewCString(const nsACString& aSource)
-{
+char* ToNewCString(const nsACString& aSource) {
+  
   
 
   char* dest = AllocateStringCopy(aSource, (char*)nullptr);
@@ -96,9 +89,8 @@ ToNewCString(const nsACString& aSource)
   return dest;
 }
 
-char16_t*
-ToNewUnicode(const nsAString& aSource)
-{
+char16_t* ToNewUnicode(const nsAString& aSource) {
+  
   
 
   char16_t* dest = AllocateStringCopy(aSource, (char16_t*)nullptr);
@@ -112,9 +104,7 @@ ToNewUnicode(const nsAString& aSource)
   return dest;
 }
 
-char16_t*
-ToNewUnicode(const nsACString& aSource)
-{
+char16_t* ToNewUnicode(const nsACString& aSource) {
   char16_t* dest = AllocateStringCopy(aSource, (char16_t*)nullptr);
   if (!dest) {
     return nullptr;
@@ -126,11 +116,9 @@ ToNewUnicode(const nsACString& aSource)
   return dest;
 }
 
-char16_t*
-UTF8ToNewUnicode(const nsACString& aSource, uint32_t* aUTF16Count)
-{
+char16_t* UTF8ToNewUnicode(const nsACString& aSource, uint32_t* aUTF16Count) {
   
-  uint32_t lengthPlusOne = aSource.Length() + 1; 
+  uint32_t lengthPlusOne = aSource.Length() + 1;  
 
   mozilla::CheckedInt<size_t> allocLength(lengthPlusOne);
   
@@ -154,20 +142,15 @@ UTF8ToNewUnicode(const nsACString& aSource, uint32_t* aUTF16Count)
   return dest;
 }
 
-char16_t*
-CopyUnicodeTo(const nsAString& aSource, uint32_t aSrcOffset, char16_t* aDest,
-              uint32_t aLength)
-{
+char16_t* CopyUnicodeTo(const nsAString& aSource, uint32_t aSrcOffset,
+                        char16_t* aDest, uint32_t aLength) {
   MOZ_ASSERT(aSrcOffset + aLength <= aSource.Length());
-  memcpy(aDest,
-         aSource.BeginReading() + aSrcOffset,
+  memcpy(aDest, aSource.BeginReading() + aSrcOffset,
          size_t(aLength) * sizeof(char16_t));
   return aDest;
 }
 
-void
-ToUpperCase(nsACString& aCString)
-{
+void ToUpperCase(nsACString& aCString) {
   char* cp = aCString.BeginWriting();
   char* end = cp + aCString.Length();
   while (cp != end) {
@@ -179,9 +162,7 @@ ToUpperCase(nsACString& aCString)
   }
 }
 
-void
-ToUpperCase(const nsACString& aSource, nsACString& aDest)
-{
+void ToUpperCase(const nsACString& aSource, nsACString& aDest) {
   aDest.SetLength(aSource.Length());
   const char* src = aSource.BeginReading();
   const char* end = src + aSource.Length();
@@ -198,9 +179,7 @@ ToUpperCase(const nsACString& aSource, nsACString& aDest)
   }
 }
 
-void
-ToLowerCase(nsACString& aCString)
-{
+void ToLowerCase(nsACString& aCString) {
   char* cp = aCString.BeginWriting();
   char* end = cp + aCString.Length();
   while (cp != end) {
@@ -212,9 +191,7 @@ ToLowerCase(nsACString& aCString)
   }
 }
 
-void
-ToLowerCase(const nsACString& aSource, nsACString& aDest)
-{
+void ToLowerCase(const nsACString& aSource, nsACString& aDest) {
   aDest.SetLength(aSource.Length());
   const char* src = aSource.BeginReading();
   const char* end = src + aSource.Length();
@@ -231,10 +208,8 @@ ToLowerCase(const nsACString& aSource, nsACString& aDest)
   }
 }
 
-bool
-ParseString(const nsACString& aSource, char aDelimiter,
-            nsTArray<nsCString>& aArray)
-{
+bool ParseString(const nsACString& aSource, char aDelimiter,
+                 nsTArray<nsCString>& aArray) {
   nsACString::const_iterator start, end;
   aSource.BeginReading(start);
   aSource.EndReading(end);
@@ -265,10 +240,8 @@ ParseString(const nsACString& aSource, char aDelimiter,
 }
 
 template <class StringT, class IteratorT, class Comparator>
-bool
-FindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
-                    IteratorT& aSearchEnd, const Comparator& aCompare)
-{
+bool FindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
+                         IteratorT& aSearchEnd, const Comparator& aCompare) {
   bool found_it = false;
 
   
@@ -280,11 +253,13 @@ FindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
     
     while (!found_it) {
       
+      
       while (aSearchStart != aSearchEnd &&
              aCompare(aPatternStart.get(), aSearchStart.get(), 1, 1)) {
         ++aSearchStart;
       }
 
+      
       
       if (aSearchStart == aSearchEnd) {
         break;
@@ -295,6 +270,7 @@ FindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
       IteratorT testSearch(aSearchStart);
 
       
+      
       for (;;) {
         
         
@@ -302,12 +278,15 @@ FindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
         ++testSearch;
 
         
+        
         if (testPattern == aPatternEnd) {
           found_it = true;
-          aSearchEnd = testSearch; 
+          aSearchEnd = testSearch;  
+                                    
           break;
         }
 
+        
         
         
         if (testSearch == aSearchEnd) {
@@ -315,6 +294,7 @@ FindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
           break;
         }
 
+        
         
         
         if (aCompare(testPattern.get(), testSearch.get(), 1, 1)) {
@@ -331,11 +311,10 @@ FindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
 
 
 
+
 template <class StringT, class IteratorT, class Comparator>
-bool
-RFindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
-                     IteratorT& aSearchEnd, const Comparator& aCompare)
-{
+bool RFindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
+                          IteratorT& aSearchEnd, const Comparator& aCompare) {
   IteratorT patternStart, patternEnd, searchEnd = aSearchEnd;
   aPattern.BeginReading(patternStart);
   aPattern.EndReading(patternEnd);
@@ -356,12 +335,14 @@ RFindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
       
       do {
         
+        
         if (testPattern == patternStart) {
           aSearchStart = testSearch;  
           aSearchEnd = ++searchEnd;   
           return true;
         }
 
+        
         
         
         if (testSearch == aSearchStart) {
@@ -380,59 +361,47 @@ RFindInReadable_Impl(const StringT& aPattern, IteratorT& aSearchStart,
   return false;
 }
 
-bool
-FindInReadable(const nsAString& aPattern,
-               nsAString::const_iterator& aSearchStart,
-               nsAString::const_iterator& aSearchEnd,
-               const nsStringComparator& aComparator)
-{
+bool FindInReadable(const nsAString& aPattern,
+                    nsAString::const_iterator& aSearchStart,
+                    nsAString::const_iterator& aSearchEnd,
+                    const nsStringComparator& aComparator) {
   return FindInReadable_Impl(aPattern, aSearchStart, aSearchEnd, aComparator);
 }
 
-bool
-FindInReadable(const nsACString& aPattern,
-               nsACString::const_iterator& aSearchStart,
-               nsACString::const_iterator& aSearchEnd,
-               const nsCStringComparator& aComparator)
-{
+bool FindInReadable(const nsACString& aPattern,
+                    nsACString::const_iterator& aSearchStart,
+                    nsACString::const_iterator& aSearchEnd,
+                    const nsCStringComparator& aComparator) {
   return FindInReadable_Impl(aPattern, aSearchStart, aSearchEnd, aComparator);
 }
 
-bool
-CaseInsensitiveFindInReadable(const nsACString& aPattern,
-                              nsACString::const_iterator& aSearchStart,
-                              nsACString::const_iterator& aSearchEnd)
-{
+bool CaseInsensitiveFindInReadable(const nsACString& aPattern,
+                                   nsACString::const_iterator& aSearchStart,
+                                   nsACString::const_iterator& aSearchEnd) {
   return FindInReadable_Impl(aPattern, aSearchStart, aSearchEnd,
                              nsCaseInsensitiveCStringComparator());
 }
 
-bool
-RFindInReadable(const nsAString& aPattern,
-                nsAString::const_iterator& aSearchStart,
-                nsAString::const_iterator& aSearchEnd,
-                const nsStringComparator& aComparator)
-{
+bool RFindInReadable(const nsAString& aPattern,
+                     nsAString::const_iterator& aSearchStart,
+                     nsAString::const_iterator& aSearchEnd,
+                     const nsStringComparator& aComparator) {
   return RFindInReadable_Impl(aPattern, aSearchStart, aSearchEnd, aComparator);
 }
 
-bool
-RFindInReadable(const nsACString& aPattern,
-                nsACString::const_iterator& aSearchStart,
-                nsACString::const_iterator& aSearchEnd,
-                const nsCStringComparator& aComparator)
-{
+bool RFindInReadable(const nsACString& aPattern,
+                     nsACString::const_iterator& aSearchStart,
+                     nsACString::const_iterator& aSearchEnd,
+                     const nsCStringComparator& aComparator) {
   return RFindInReadable_Impl(aPattern, aSearchStart, aSearchEnd, aComparator);
 }
 
-bool
-FindCharInReadable(char16_t aChar, nsAString::const_iterator& aSearchStart,
-                   const nsAString::const_iterator& aSearchEnd)
-{
+bool FindCharInReadable(char16_t aChar, nsAString::const_iterator& aSearchStart,
+                        const nsAString::const_iterator& aSearchEnd) {
   int32_t fragmentLength = aSearchEnd.get() - aSearchStart.get();
 
   const char16_t* charFoundAt =
-    nsCharTraits<char16_t>::find(aSearchStart.get(), fragmentLength, aChar);
+      nsCharTraits<char16_t>::find(aSearchStart.get(), fragmentLength, aChar);
   if (charFoundAt) {
     aSearchStart.advance(charFoundAt - aSearchStart.get());
     return true;
@@ -442,14 +411,12 @@ FindCharInReadable(char16_t aChar, nsAString::const_iterator& aSearchStart,
   return false;
 }
 
-bool
-FindCharInReadable(char aChar, nsACString::const_iterator& aSearchStart,
-                   const nsACString::const_iterator& aSearchEnd)
-{
+bool FindCharInReadable(char aChar, nsACString::const_iterator& aSearchStart,
+                        const nsACString::const_iterator& aSearchEnd) {
   int32_t fragmentLength = aSearchEnd.get() - aSearchStart.get();
 
   const char* charFoundAt =
-    nsCharTraits<char>::find(aSearchStart.get(), fragmentLength, aChar);
+      nsCharTraits<char>::find(aSearchStart.get(), fragmentLength, aChar);
   if (charFoundAt) {
     aSearchStart.advance(charFoundAt - aSearchStart.get());
     return true;
@@ -459,9 +426,7 @@ FindCharInReadable(char aChar, nsACString::const_iterator& aSearchStart,
   return false;
 }
 
-bool
-StringBeginsWith(const nsAString& aSource, const nsAString& aSubstring)
-{
+bool StringBeginsWith(const nsAString& aSource, const nsAString& aSubstring) {
   nsAString::size_type src_len = aSource.Length(),
                        sub_len = aSubstring.Length();
   if (sub_len > src_len) {
@@ -470,10 +435,8 @@ StringBeginsWith(const nsAString& aSource, const nsAString& aSubstring)
   return Substring(aSource, 0, sub_len).Equals(aSubstring);
 }
 
-bool
-StringBeginsWith(const nsAString& aSource, const nsAString& aSubstring,
-                 const nsStringComparator& aComparator)
-{
+bool StringBeginsWith(const nsAString& aSource, const nsAString& aSubstring,
+                      const nsStringComparator& aComparator) {
   nsAString::size_type src_len = aSource.Length(),
                        sub_len = aSubstring.Length();
   if (sub_len > src_len) {
@@ -482,9 +445,7 @@ StringBeginsWith(const nsAString& aSource, const nsAString& aSubstring,
   return Substring(aSource, 0, sub_len).Equals(aSubstring, aComparator);
 }
 
-bool
-StringBeginsWith(const nsACString& aSource, const nsACString& aSubstring)
-{
+bool StringBeginsWith(const nsACString& aSource, const nsACString& aSubstring) {
   nsACString::size_type src_len = aSource.Length(),
                         sub_len = aSubstring.Length();
   if (sub_len > src_len) {
@@ -493,10 +454,8 @@ StringBeginsWith(const nsACString& aSource, const nsACString& aSubstring)
   return Substring(aSource, 0, sub_len).Equals(aSubstring);
 }
 
-bool
-StringBeginsWith(const nsACString& aSource, const nsACString& aSubstring,
-                 const nsCStringComparator& aComparator)
-{
+bool StringBeginsWith(const nsACString& aSource, const nsACString& aSubstring,
+                      const nsCStringComparator& aComparator) {
   nsACString::size_type src_len = aSource.Length(),
                         sub_len = aSubstring.Length();
   if (sub_len > src_len) {
@@ -505,9 +464,7 @@ StringBeginsWith(const nsACString& aSource, const nsACString& aSubstring,
   return Substring(aSource, 0, sub_len).Equals(aSubstring, aComparator);
 }
 
-bool
-StringEndsWith(const nsAString& aSource, const nsAString& aSubstring)
-{
+bool StringEndsWith(const nsAString& aSource, const nsAString& aSubstring) {
   nsAString::size_type src_len = aSource.Length(),
                        sub_len = aSubstring.Length();
   if (sub_len > src_len) {
@@ -516,22 +473,18 @@ StringEndsWith(const nsAString& aSource, const nsAString& aSubstring)
   return Substring(aSource, src_len - sub_len, sub_len).Equals(aSubstring);
 }
 
-bool
-StringEndsWith(const nsAString& aSource, const nsAString& aSubstring,
-               const nsStringComparator& aComparator)
-{
+bool StringEndsWith(const nsAString& aSource, const nsAString& aSubstring,
+                    const nsStringComparator& aComparator) {
   nsAString::size_type src_len = aSource.Length(),
                        sub_len = aSubstring.Length();
   if (sub_len > src_len) {
     return false;
   }
-  return Substring(aSource, src_len - sub_len, sub_len).Equals(aSubstring,
-                                                               aComparator);
+  return Substring(aSource, src_len - sub_len, sub_len)
+      .Equals(aSubstring, aComparator);
 }
 
-bool
-StringEndsWith(const nsACString& aSource, const nsACString& aSubstring)
-{
+bool StringEndsWith(const nsACString& aSource, const nsACString& aSubstring) {
   nsACString::size_type src_len = aSource.Length(),
                         sub_len = aSubstring.Length();
   if (sub_len > src_len) {
@@ -540,60 +493,45 @@ StringEndsWith(const nsACString& aSource, const nsACString& aSubstring)
   return Substring(aSource, src_len - sub_len, sub_len).Equals(aSubstring);
 }
 
-bool
-StringEndsWith(const nsACString& aSource, const nsACString& aSubstring,
-               const nsCStringComparator& aComparator)
-{
+bool StringEndsWith(const nsACString& aSource, const nsACString& aSubstring,
+                    const nsCStringComparator& aComparator) {
   nsACString::size_type src_len = aSource.Length(),
                         sub_len = aSubstring.Length();
   if (sub_len > src_len) {
     return false;
   }
-  return Substring(aSource, src_len - sub_len, sub_len).Equals(aSubstring,
-                                                               aComparator);
+  return Substring(aSource, src_len - sub_len, sub_len)
+      .Equals(aSubstring, aComparator);
 }
 
+static const char16_t empty_buffer[1] = {'\0'};
 
-
-static const char16_t empty_buffer[1] = { '\0' };
-
-const nsString&
-EmptyString()
-{
+const nsString& EmptyString() {
   static const nsDependentString sEmpty(empty_buffer);
 
   return sEmpty;
 }
 
-const nsCString&
-EmptyCString()
-{
+const nsCString& EmptyCString() {
   static const nsDependentCString sEmpty((const char*)empty_buffer);
 
   return sEmpty;
 }
 
-const nsString&
-VoidString()
-{
+const nsString& VoidString() {
   static const nsString sNull(mozilla::detail::StringDataFlags::VOIDED);
 
   return sNull;
 }
 
-const nsCString&
-VoidCString()
-{
+const nsCString& VoidCString() {
   static const nsCString sNull(mozilla::detail::StringDataFlags::VOIDED);
 
   return sNull;
 }
 
-int32_t
-CompareUTF8toUTF16(const nsACString& aUTF8String,
-                   const nsAString& aUTF16String,
-                   bool* aErr)
-{
+int32_t CompareUTF8toUTF16(const nsACString& aUTF8String,
+                           const nsAString& aUTF16String, bool* aErr) {
   const char* u8;
   const char* u8end;
   aUTF8String.BeginReading(u8);
@@ -628,9 +566,7 @@ CompareUTF8toUTF16(const nsACString& aUTF8String,
   }
 }
 
-void
-AppendUCS4ToUTF16(const uint32_t aSource, nsAString& aDest)
-{
+void AppendUCS4ToUTF16(const uint32_t aSource, nsAString& aDest) {
   NS_ASSERTION(IS_VALID_CHAR(aSource), "Invalid UCS4 char");
   if (IS_IN_BMP(aSource)) {
     aDest.Append(char16_t(aSource));

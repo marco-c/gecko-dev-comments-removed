@@ -25,13 +25,12 @@ class nsLineLayout {
   using ReflowInput = mozilla::ReflowInput;
   using ReflowOutput = mozilla::ReflowOutput;
 
-public:
+ public:
   
 
 
 
-  nsLineLayout(nsPresContext* aPresContext,
-               nsFloatManager* aFloatManager,
+  nsLineLayout(nsPresContext* aPresContext, nsFloatManager* aFloatManager,
                const ReflowInput* aOuterReflowInput,
                const nsLineList::iterator* aLine,
                nsLineLayout* aBaseLineLayout);
@@ -44,15 +43,11 @@ public:
     mLineNumber = aLineNumber;
   }
 
-  int32_t GetLineNumber() const {
-    return mLineNumber;
-  }
+  int32_t GetLineNumber() const { return mLineNumber; }
 
-  void BeginLineReflow(nscoord aICoord, nscoord aBCoord,
-                       nscoord aISize, nscoord aBSize,
-                       bool aImpactedByFloats,
-                       bool aIsTopOfPage,
-                       mozilla::WritingMode aWritingMode,
+  void BeginLineReflow(nscoord aICoord, nscoord aBCoord, nscoord aISize,
+                       nscoord aBSize, bool aImpactedByFloats,
+                       bool aIsTopOfPage, mozilla::WritingMode aWritingMode,
                        const nsSize& aContainerSize);
 
   void EndLineReflow();
@@ -77,15 +72,13 @@ public:
 
   
   
-  void AttachLastFrameToBaseLineLayout()
-  {
+  void AttachLastFrameToBaseLineLayout() {
     AttachFrameToBaseLineLayout(LastFrame());
   }
 
   
   
-  void AttachRootFrameToBaseLineLayout()
-  {
+  void AttachRootFrameToBaseLineLayout() {
     AttachFrameToBaseLineLayout(mRootSpan->mFrame);
   }
 
@@ -97,10 +90,8 @@ public:
 
   
   
-  void ReflowFrame(nsIFrame* aFrame,
-                   nsReflowStatus& aReflowStatus,
-                   ReflowOutput* aMetrics,
-                   bool& aPushedFrame);
+  void ReflowFrame(nsIFrame* aFrame, nsReflowStatus& aReflowStatus,
+                   ReflowOutput* aMetrics, bool& aPushedFrame);
 
   void AddBulletFrame(nsBulletFrame* aFrame, const ReflowOutput& aMetrics);
 
@@ -123,15 +114,13 @@ public:
 
 
 
-  void RelativePositionFrames(nsOverflowAreas& aOverflowAreas)
-  {
+  void RelativePositionFrames(nsOverflowAreas& aOverflowAreas) {
     RelativePositionFrames(mRootSpan, aOverflowAreas);
   }
 
   
 
-  void SetJustificationInfo(const mozilla::JustificationInfo& aInfo)
-  {
+  void SetJustificationInfo(const mozilla::JustificationInfo& aInfo) {
     mJustificationInfo = aInfo;
   }
 
@@ -139,38 +128,25 @@ public:
 
 
 
-  bool LineIsEmpty() const
-  {
-    return mLineIsEmpty;
-  }
+  bool LineIsEmpty() const { return mLineIsEmpty; }
 
   
 
 
 
 
-  bool LineAtStart() const
-  {
-    return mLineAtStart;
-  }
+  bool LineAtStart() const { return mLineAtStart; }
 
   bool LineIsBreakable() const;
 
-  bool GetLineEndsInBR() const
-  {
-    return mLineEndsInBR;
-  }
+  bool GetLineEndsInBR() const { return mLineEndsInBR; }
 
-  void SetLineEndsInBR(bool aOn)
-  {
-    mLineEndsInBR = aOn;
-  }
+  void SetLineEndsInBR(bool aOn) { mLineEndsInBR = aOn; }
 
   
   
   
-  bool AddFloat(nsIFrame* aFloat, nscoord aAvailableISize)
-  {
+  bool AddFloat(nsIFrame* aFloat, nscoord aAvailableISize) {
     
     
     
@@ -187,38 +163,22 @@ public:
 
   
 
-  bool GetFirstLetterStyleOK() const {
-    return mFirstLetterStyleOK;
-  }
+  bool GetFirstLetterStyleOK() const { return mFirstLetterStyleOK; }
 
-  void SetFirstLetterStyleOK(bool aSetting) {
-    mFirstLetterStyleOK = aSetting;
-  }
+  void SetFirstLetterStyleOK(bool aSetting) { mFirstLetterStyleOK = aSetting; }
 
-  bool GetInFirstLetter() const {
-    return mInFirstLetter;
-  }
+  bool GetInFirstLetter() const { return mInFirstLetter; }
 
-  void SetInFirstLetter(bool aSetting) {
-    mInFirstLetter = aSetting;
-  }
+  void SetInFirstLetter(bool aSetting) { mInFirstLetter = aSetting; }
 
-  bool GetInFirstLine() const {
-    return mInFirstLine;
-  }
+  bool GetInFirstLine() const { return mInFirstLine; }
 
-  void SetInFirstLine(bool aSetting) {
-    mInFirstLine = aSetting;
-  }
+  void SetInFirstLine(bool aSetting) { mInFirstLine = aSetting; }
 
   
   
-  void SetDirtyNextLine() {
-    mDirtyNextLine = true;
-  }
-  bool GetDirtyNextLine() {
-    return mDirtyNextLine;
-  }
+  void SetDirtyNextLine() { mDirtyNextLine = true; }
+  bool GetDirtyNextLine() { return mDirtyNextLine; }
 
   
 
@@ -250,10 +210,9 @@ public:
 
 
 
-  bool NotifyOptionalBreakPosition(nsIFrame* aFrame,
-                                   int32_t aOffset,
-                                   bool aFits,
-                                   gfxBreakPriority aPriority);
+
+  bool NotifyOptionalBreakPosition(nsIFrame* aFrame, int32_t aOffset,
+                                   bool aFits, gfxBreakPriority aPriority);
 
   
   bool TryToPlaceFloat(nsIFrame* aFloat);
@@ -287,6 +246,7 @@ public:
   }
   
   
+  
   nsIFrame* GetLastOptionalBreakPosition(int32_t* aOffset,
                                          gfxBreakPriority* aPriority) {
     *aOffset = mLastOptionalBreakFrameOffset;
@@ -294,13 +254,11 @@ public:
     return mLastOptionalBreakFrame;
   }
   
-  bool HasOptionalBreakPosition() const
-  {
+  bool HasOptionalBreakPosition() const {
     return mLastOptionalBreakFrame != nullptr;
   }
   
-  gfxBreakPriority LastOptionalBreakPriority() const
-  {
+  gfxBreakPriority LastOptionalBreakPriority() const {
     return mLastOptionalBreakPriority;
   }
 
@@ -338,11 +296,10 @@ public:
   const nsLineList::iterator* GetLine() const {
     return mGotLineBox ? &mLineBox : nullptr;
   }
-  nsLineList::iterator* GetLine() {
-    return mGotLineBox ? &mLineBox : nullptr;
-  }
+  nsLineList::iterator* GetLine() { return mGotLineBox ? &mLineBox : nullptr; }
 
   
+
 
 
 
@@ -370,14 +327,14 @@ public:
 
   void SetSuppressLineWrap(bool aEnabled) { mSuppressLineWrap = aEnabled; }
 
-protected:
+ protected:
   
 
   
   
   nsFloatManager* mFloatManager;
 
-  const nsStyleText* mStyleText; 
+  const nsStyleText* mStyleText;  
   const ReflowInput* mBlockReflowInput;
 
   
@@ -401,13 +358,14 @@ protected:
   nsIFrame* mForceBreakFrame;
 
   
+  
   friend class nsInlineFrame;
 
   
   
   
   
-  BlockReflowInput* mBlockRI;
+  BlockReflowInput* mBlockRI; 
 
   nsLineList::iterator mLineBox;
 
@@ -420,8 +378,7 @@ protected:
   struct PerFrameData;
   friend struct PerSpanData;
   friend struct PerFrameData;
-  struct PerFrameData
-  {
+  struct PerFrameData {
     
     PerFrameData* mNext;
     PerFrameData* mPrev;
@@ -449,9 +406,9 @@ protected:
     nsOverflowAreas mOverflowAreas;
 
     
-    mozilla::LogicalMargin mMargin;        
-    mozilla::LogicalMargin mBorderPadding; 
-    mozilla::LogicalMargin mOffsets;       
+    mozilla::LogicalMargin mMargin;         
+    mozilla::LogicalMargin mBorderPadding;  
+    mozilla::LogicalMargin mOffsets;        
 
     
     
@@ -485,13 +442,11 @@ protected:
       return pfd;
     }
 
-    bool IsStartJustifiable() const
-    {
+    bool IsStartJustifiable() const {
       return mJustificationInfo.mIsStartJustifiable;
     }
 
-    bool IsEndJustifiable() const
-    {
+    bool IsEndJustifiable() const {
       return mJustificationInfo.mIsEndJustifiable;
     }
 
@@ -565,14 +520,14 @@ protected:
   
   nsSize ContainerSizeForSpan(PerSpanData* aPSD) {
     return (aPSD == mRootSpan)
-      ? mContainerSize
-      : aPSD->mFrame->mBounds.Size(mRootSpan->mWritingMode).
-        GetPhysicalSize(mRootSpan->mWritingMode);
+               ? mContainerSize
+               : aPSD->mFrame->mBounds.Size(mRootSpan->mWritingMode)
+                     .GetPhysicalSize(mRootSpan->mWritingMode);
   }
 
   gfxBreakPriority mLastOptionalBreakPriority;
-  int32_t     mLastOptionalBreakFrameOffset;
-  int32_t     mForceBreakFrameOffset;
+  int32_t mLastOptionalBreakFrameOffset;
+  int32_t mForceBreakFrameOffset;
 
   nscoord mMinLineBSize;
 
@@ -605,21 +560,21 @@ protected:
   nsSize mContainerSize;
   const nsSize& ContainerSize() const { return mContainerSize; }
 
-  bool mFirstLetterStyleOK      : 1;
-  bool mIsTopOfPage             : 1;
-  bool mImpactedByFloats        : 1;
+  bool mFirstLetterStyleOK : 1;
+  bool mIsTopOfPage : 1;
+  bool mImpactedByFloats : 1;
   bool mLastFloatWasLetterFrame : 1;
-  bool mLineIsEmpty             : 1;
-  bool mLineEndsInBR            : 1;
-  bool mNeedBackup              : 1;
-  bool mInFirstLine             : 1;
-  bool mGotLineBox              : 1;
-  bool mInFirstLetter           : 1;
-  bool mHasBullet               : 1;
-  bool mDirtyNextLine           : 1;
-  bool mLineAtStart             : 1;
-  bool mHasRuby                 : 1;
-  bool mSuppressLineWrap        : 1;
+  bool mLineIsEmpty : 1;
+  bool mLineEndsInBR : 1;
+  bool mNeedBackup : 1;
+  bool mInFirstLine : 1;
+  bool mGotLineBox : 1;
+  bool mInFirstLetter : 1;
+  bool mHasBullet : 1;
+  bool mDirtyNextLine : 1;
+  bool mLineAtStart : 1;
+  bool mHasRuby : 1;
+  bool mSuppressLineWrap : 1;
 
   int32_t mSpanDepth;
 #ifdef DEBUG
@@ -659,27 +614,20 @@ protected:
 
   void FreeSpan(PerSpanData* psd);
 
-  bool InBlockContext() const {
-    return mSpanDepth == 0;
-  }
+  bool InBlockContext() const { return mSpanDepth == 0; }
 
   void PushFrame(nsIFrame* aFrame);
 
-  void AllowForStartMargin(PerFrameData* pfd,
-                           ReflowInput& aReflowInput);
+  void AllowForStartMargin(PerFrameData* pfd, ReflowInput& aReflowInput);
 
   void SyncAnnotationBounds(PerFrameData* aRubyFrame);
 
-  bool CanPlaceFrame(PerFrameData* pfd,
-                       bool aNotSafeToBreak,
-                       bool aFrameCanContinueTextRun,
-                       bool aCanRollBackBeforeFrame,
-                       ReflowOutput& aMetrics,
-                       nsReflowStatus& aStatus,
-                       bool* aOptionalBreakAfterFits);
+  bool CanPlaceFrame(PerFrameData* pfd, bool aNotSafeToBreak,
+                     bool aFrameCanContinueTextRun,
+                     bool aCanRollBackBeforeFrame, ReflowOutput& aMetrics,
+                     nsReflowStatus& aStatus, bool* aOptionalBreakAfterFits);
 
-  void PlaceFrame(PerFrameData* pfd,
-                  ReflowOutput& aMetrics);
+  void PlaceFrame(PerFrameData* pfd, ReflowOutput& aMetrics);
 
   void AdjustLeadings(nsIFrame* spanFrame, PerSpanData* psd,
                       const nsStyleText* aStyleText, float aInflation,
@@ -687,8 +635,7 @@ protected:
 
   void VerticalAlignFrames(PerSpanData* psd);
 
-  void PlaceTopBottomFrames(PerSpanData* psd,
-                            nscoord aDistanceFromStart,
+  void PlaceTopBottomFrames(PerSpanData* psd, nscoord aDistanceFromStart,
                             nscoord aLineBSize);
 
   void ApplyRelativePositioning(PerFrameData* aPFD);
@@ -696,22 +643,22 @@ protected:
   void RelativePositionAnnotations(PerSpanData* aRubyPSD,
                                    nsOverflowAreas& aOverflowAreas);
 
-  void RelativePositionFrames(PerSpanData* psd, nsOverflowAreas& aOverflowAreas);
+  void RelativePositionFrames(PerSpanData* psd,
+                              nsOverflowAreas& aOverflowAreas);
 
   bool TrimTrailingWhiteSpaceIn(PerSpanData* psd, nscoord* aDeltaISize);
 
   struct JustificationComputationState;
 
   static int AssignInterframeJustificationGaps(
-    PerFrameData* aFrame, JustificationComputationState& aState);
+      PerFrameData* aFrame, JustificationComputationState& aState);
 
   int32_t ComputeFrameJustification(PerSpanData* psd,
                                     JustificationComputationState& aState);
 
   void AdvanceAnnotationInlineBounds(PerFrameData* aPFD,
                                      const nsSize& aContainerSize,
-                                     nscoord aDeltaICoord,
-                                     nscoord aDeltaISize);
+                                     nscoord aDeltaICoord, nscoord aDeltaISize);
 
   void ApplyLineJustificationToAnnotations(PerFrameData* aPFD,
                                            nscoord aDeltaICoord,

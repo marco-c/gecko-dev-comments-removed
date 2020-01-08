@@ -27,8 +27,7 @@ namespace mozilla {
 
 
 
-class MOZ_RAII AutoGlobalTimelineMarker
-{
+class MOZ_RAII AutoGlobalTimelineMarker {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
 
   
@@ -36,16 +35,17 @@ class MOZ_RAII AutoGlobalTimelineMarker
   
   MarkerStackRequest mStackRequest;
 
-public:
-  explicit AutoGlobalTimelineMarker(const char* aName,
-                                    MarkerStackRequest aStackRequest = MarkerStackRequest::STACK
-                                    MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+ public:
+  explicit AutoGlobalTimelineMarker(
+      const char* aName,
+      MarkerStackRequest aStackRequest =
+          MarkerStackRequest::STACK MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
   ~AutoGlobalTimelineMarker();
 
   AutoGlobalTimelineMarker(const AutoGlobalTimelineMarker& aOther) = delete;
   void operator=(const AutoGlobalTimelineMarker& aOther) = delete;
 };
 
-} 
+}  
 
 #endif 

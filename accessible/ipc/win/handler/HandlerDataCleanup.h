@@ -13,9 +13,7 @@
 namespace mozilla {
 namespace a11y {
 
-inline void
-ReleaseStaticIA2DataInterfaces(StaticIA2Data& aData)
-{
+inline void ReleaseStaticIA2DataInterfaces(StaticIA2Data& aData) {
   
   
   
@@ -40,9 +38,7 @@ ReleaseStaticIA2DataInterfaces(StaticIA2Data& aData)
   }
 }
 
-inline void
-CleanupDynamicIA2Data(DynamicIA2Data& aData, bool aZero=true)
-{
+inline void CleanupDynamicIA2Data(DynamicIA2Data& aData, bool aZero = true) {
   ::VariantClear(&aData.mRole);
   if (aData.mKeyboardShortcut) {
     ::SysFreeString(aData.mKeyboardShortcut);
@@ -62,13 +58,13 @@ CleanupDynamicIA2Data(DynamicIA2Data& aData, bool aZero=true)
   if (aData.mAttributes) {
     ::SysFreeString(aData.mAttributes);
   }
-  if (aData.mIA2Locale.language)  {
+  if (aData.mIA2Locale.language) {
     ::SysFreeString(aData.mIA2Locale.language);
   }
-  if (aData.mIA2Locale.country)  {
+  if (aData.mIA2Locale.country) {
     ::SysFreeString(aData.mIA2Locale.country);
   }
-  if (aData.mIA2Locale.variant)  {
+  if (aData.mIA2Locale.variant) {
     ::SysFreeString(aData.mIA2Locale.variant);
   }
   if (aZero) {
@@ -76,7 +72,7 @@ CleanupDynamicIA2Data(DynamicIA2Data& aData, bool aZero=true)
   }
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -21,9 +21,8 @@ class Image;
 class MultipartImage;
 class ProgressTracker;
 
-class ImageFactory
-{
-public:
+class ImageFactory {
+ public:
   
 
 
@@ -43,8 +42,7 @@ public:
   static already_AddRefed<Image> CreateImage(nsIRequest* aRequest,
                                              ProgressTracker* aProgressTracker,
                                              const nsCString& aMimeType,
-                                             nsIURI* aURI,
-                                             bool aIsMultiPart,
+                                             nsIURI* aURI, bool aIsMultiPart,
                                              uint32_t aInnerWindowId);
   
 
@@ -53,8 +51,8 @@ public:
 
 
 
-  static already_AddRefed<Image>
-  CreateAnonymousImage(const nsCString& aMimeType, uint32_t aSizeHint = 0);
+  static already_AddRefed<Image> CreateAnonymousImage(
+      const nsCString& aMimeType, uint32_t aSizeHint = 0);
 
   
 
@@ -65,32 +63,26 @@ public:
 
 
 
-  static already_AddRefed<MultipartImage>
-  CreateMultipartImage(Image* aFirstPart, ProgressTracker* aProgressTracker);
+  static already_AddRefed<MultipartImage> CreateMultipartImage(
+      Image* aFirstPart, ProgressTracker* aProgressTracker);
 
-private:
+ private:
   
-  static already_AddRefed<Image>
-  CreateRasterImage(nsIRequest* aRequest,
-                    ProgressTracker* aProgressTracker,
-                    const nsCString& aMimeType,
-                    nsIURI* aURI,
-                    uint32_t aImageFlags,
-                    uint32_t aInnerWindowId);
+  static already_AddRefed<Image> CreateRasterImage(
+      nsIRequest* aRequest, ProgressTracker* aProgressTracker,
+      const nsCString& aMimeType, nsIURI* aURI, uint32_t aImageFlags,
+      uint32_t aInnerWindowId);
 
-  static already_AddRefed<Image>
-  CreateVectorImage(nsIRequest* aRequest,
-                    ProgressTracker* aProgressTracker,
-                    const nsCString& aMimeType,
-                    nsIURI* aURI,
-                    uint32_t aImageFlags,
-                    uint32_t aInnerWindowId);
+  static already_AddRefed<Image> CreateVectorImage(
+      nsIRequest* aRequest, ProgressTracker* aProgressTracker,
+      const nsCString& aMimeType, nsIURI* aURI, uint32_t aImageFlags,
+      uint32_t aInnerWindowId);
 
   
   virtual ~ImageFactory() = 0;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

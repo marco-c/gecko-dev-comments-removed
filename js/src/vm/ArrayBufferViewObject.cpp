@@ -22,280 +22,266 @@ using namespace js;
 
 
 
- void
-ArrayBufferViewObject::trace(JSTracer* trc, JSObject* objArg)
-{
-    NativeObject* obj = &objArg->as<NativeObject>();
-    HeapSlot& bufSlot = obj->getFixedSlotRef(BUFFER_SLOT);
-    TraceEdge(trc, &bufSlot, "ArrayBufferViewObject.buffer");
+ void ArrayBufferViewObject::trace(JSTracer* trc,
+                                               JSObject* objArg) {
+  NativeObject* obj = &objArg->as<NativeObject>();
+  HeapSlot& bufSlot = obj->getFixedSlotRef(BUFFER_SLOT);
+  TraceEdge(trc, &bufSlot, "ArrayBufferViewObject.buffer");
 
-    
-    if (bufSlot.isObject()) {
-        if (IsArrayBuffer(&bufSlot.toObject())) {
-            ArrayBufferObject& buf = AsArrayBuffer(MaybeForwarded(&bufSlot.toObject()));
-            uint32_t offset = uint32_t(obj->getFixedSlot(BYTEOFFSET_SLOT).toInt32());
-            MOZ_ASSERT(offset <= INT32_MAX);
+  
+  if (bufSlot.isObject()) {
+    if (IsArrayBuffer(&bufSlot.toObject())) {
+      ArrayBufferObject& buf =
+          AsArrayBuffer(MaybeForwarded(&bufSlot.toObject()));
+      uint32_t offset = uint32_t(obj->getFixedSlot(BYTEOFFSET_SLOT).toInt32());
+      MOZ_ASSERT(offset <= INT32_MAX);
 
-            
-            
-            
-            
-            MOZ_RELEASE_ASSERT(!buf.forInlineTypedObject());
+      
+      
+      
+      
+      MOZ_RELEASE_ASSERT(!buf.forInlineTypedObject());
 
-            MOZ_ASSERT_IF(buf.dataPointer() == nullptr, offset == 0);
+      MOZ_ASSERT_IF(buf.dataPointer() == nullptr, offset == 0);
 
-            
-            
-            
-            size_t nfixed = obj->numFixedSlotsMaybeForwarded();
-            obj->setPrivateUnbarriered(nfixed, buf.dataPointer() + offset);
-        }
+      
+      
+      
+      size_t nfixed = obj->numFixedSlotsMaybeForwarded();
+      obj->setPrivateUnbarriered(nfixed, buf.dataPointer() + offset);
     }
+  }
 }
 
 template <>
-bool
-JSObject::is<js::ArrayBufferViewObject>() const
-{
-    return is<DataViewObject>() || is<TypedArrayObject>();
+bool JSObject::is<js::ArrayBufferViewObject>() const {
+  return is<DataViewObject>() || is<TypedArrayObject>();
 }
 
-void
-ArrayBufferViewObject::notifyBufferDetached(JSContext* cx, void* newData)
-{
-    if (isSharedMemory()) {
-        return;
+void ArrayBufferViewObject::notifyBufferDetached(JSContext* cx, void* newData) {
+  if (isSharedMemory()) {
+    return;
+  }
+
+  MOZ_ASSERT(!isSharedMemory());
+  setFixedSlot(LENGTH_SLOT, Int32Value(0));
+  setFixedSlot(BYTEOFFSET_SLOT, Int32Value(0));
+
+  
+  
+  if (is<TypedArrayObject>()) {
+    TypedArrayObject& tarr = as<TypedArrayObject>();
+    Nursery& nursery = cx->nursery();
+    if (isTenured() && !hasBuffer() && !tarr.hasInlineElements() &&
+        !nursery.isInside(tarr.elements())) {
+      js_free(tarr.elements());
     }
+  }
 
-    MOZ_ASSERT(!isSharedMemory());
-    setFixedSlot(LENGTH_SLOT, Int32Value(0));
-    setFixedSlot(BYTEOFFSET_SLOT, Int32Value(0));
+  setPrivate(newData);
+}
 
-    
-    
-    if (is<TypedArrayObject>()) {
-        TypedArrayObject& tarr = as<TypedArrayObject>();
-        Nursery& nursery = cx->nursery();
-        if (isTenured() && !hasBuffer() && !tarr.hasInlineElements() &&
-            !nursery.isInside(tarr.elements()))
-        {
-            js_free(tarr.elements());
-        }
+uint8_t* ArrayBufferViewObject::dataPointerUnshared(
+    const JS::AutoRequireNoGC& nogc) {
+  return static_cast<uint8_t*>(dataPointerUnshared());
+}
+
+void ArrayBufferViewObject::setDataPointerUnshared(uint8_t* data) {
+  MOZ_ASSERT(!isSharedMemory());
+  setPrivate(data);
+}
+
+ ArrayBufferObjectMaybeShared* ArrayBufferViewObject::bufferObject(
+    JSContext* cx, Handle<ArrayBufferViewObject*> thisObject) {
+  if (thisObject->is<TypedArrayObject>()) {
+    Rooted<TypedArrayObject*> typedArray(cx,
+                                         &thisObject->as<TypedArrayObject>());
+    if (!TypedArrayObject::ensureHasBuffer(cx, typedArray)) {
+      return nullptr;
     }
-
-    setPrivate(newData);
+  }
+  return thisObject->bufferEither();
 }
 
-uint8_t*
-ArrayBufferViewObject::dataPointerUnshared(const JS::AutoRequireNoGC& nogc)
-{
-    return static_cast<uint8_t*>(dataPointerUnshared());
-}
+bool ArrayBufferViewObject::init(JSContext* cx,
+                                 ArrayBufferObjectMaybeShared* buffer,
+                                 uint32_t byteOffset, uint32_t length,
+                                 uint32_t bytesPerElement) {
+  MOZ_ASSERT_IF(!buffer, byteOffset == 0);
+  MOZ_ASSERT_IF(buffer, !buffer->isDetached());
 
-void
-ArrayBufferViewObject::setDataPointerUnshared(uint8_t* data)
-{
-    MOZ_ASSERT(!isSharedMemory());
-    setPrivate(data);
-}
+  MOZ_ASSERT(byteOffset <= INT32_MAX);
+  MOZ_ASSERT(length <= INT32_MAX);
+  MOZ_ASSERT(byteOffset + length < UINT32_MAX);
 
- ArrayBufferObjectMaybeShared*
-ArrayBufferViewObject::bufferObject(JSContext* cx, Handle<ArrayBufferViewObject*> thisObject)
-{
-    if (thisObject->is<TypedArrayObject>()) {
-        Rooted<TypedArrayObject*> typedArray(cx, &thisObject->as<TypedArrayObject>());
-        if (!TypedArrayObject::ensureHasBuffer(cx, typedArray)) {
-            return nullptr;
-        }
-    }
-    return thisObject->bufferEither();
-}
+  MOZ_ASSERT_IF(is<TypedArrayObject>(), length < INT32_MAX / bytesPerElement);
 
-bool
-ArrayBufferViewObject::init(JSContext* cx, ArrayBufferObjectMaybeShared* buffer,
-                            uint32_t byteOffset, uint32_t length, uint32_t bytesPerElement)
-{
-    MOZ_ASSERT_IF(!buffer, byteOffset == 0);
-    MOZ_ASSERT_IF(buffer, !buffer->isDetached());
+  
+  
+  
+  if (buffer && buffer->is<SharedArrayBufferObject>()) {
+    setIsSharedMemory();
+  }
 
-    MOZ_ASSERT(byteOffset <= INT32_MAX);
-    MOZ_ASSERT(length <= INT32_MAX);
-    MOZ_ASSERT(byteOffset + length < UINT32_MAX);
+  initFixedSlot(BYTEOFFSET_SLOT, Int32Value(byteOffset));
+  initFixedSlot(LENGTH_SLOT, Int32Value(length));
+  initFixedSlot(BUFFER_SLOT, ObjectOrNullValue(buffer));
 
-    MOZ_ASSERT_IF(is<TypedArrayObject>(),
-                  length < INT32_MAX / bytesPerElement);
+  if (buffer) {
+    SharedMem<uint8_t*> ptr = buffer->dataPointerEither();
+    initDataPointer(ptr + byteOffset);
 
     
     
-    
-    if (buffer && buffer->is<SharedArrayBufferObject>()) {
-        setIsSharedMemory();
-    }
-
-    initFixedSlot(BYTEOFFSET_SLOT, Int32Value(byteOffset));
-    initFixedSlot(LENGTH_SLOT, Int32Value(length));
-    initFixedSlot(BUFFER_SLOT, ObjectOrNullValue(buffer));
-
-    if (buffer) {
-        SharedMem<uint8_t*> ptr = buffer->dataPointerEither();
-        initDataPointer(ptr + byteOffset);
-
-        
-        
-        MOZ_ASSERT_IF(buffer->byteLength() > 0, !cx->nursery().isInside(ptr));
-    } else {
-        MOZ_ASSERT(is<TypedArrayObject>());
-        MOZ_ASSERT(length * bytesPerElement <= TypedArrayObject::INLINE_BUFFER_LIMIT);
-        void* data = fixedData(TypedArrayObject::FIXED_DATA_START);
-        initPrivate(data);
-        memset(data, 0, length * bytesPerElement);
+    MOZ_ASSERT_IF(buffer->byteLength() > 0, !cx->nursery().isInside(ptr));
+  } else {
+    MOZ_ASSERT(is<TypedArrayObject>());
+    MOZ_ASSERT(length * bytesPerElement <=
+               TypedArrayObject::INLINE_BUFFER_LIMIT);
+    void* data = fixedData(TypedArrayObject::FIXED_DATA_START);
+    initPrivate(data);
+    memset(data, 0, length * bytesPerElement);
 #ifdef DEBUG
-        if (length == 0) {
-            uint8_t* elements = static_cast<uint8_t*>(data);
-            elements[0] = ZeroLengthArrayData;
-        }
-#endif
+    if (length == 0) {
+      uint8_t* elements = static_cast<uint8_t*>(data);
+      elements[0] = ZeroLengthArrayData;
     }
+#endif
+  }
 
 #ifdef DEBUG
-    if (buffer) {
-        uint32_t viewByteLength = length * bytesPerElement;
-        uint32_t viewByteOffset = byteOffset;
-        uint32_t bufferByteLength = buffer->byteLength();
-        
-        MOZ_ASSERT_IF(IsArrayBuffer(buffer),
-                      buffer->dataPointerEither().unwrap() <= dataPointerEither().unwrap());
-        MOZ_ASSERT(bufferByteLength - viewByteOffset >= viewByteLength);
-        MOZ_ASSERT(viewByteOffset <= bufferByteLength);
-    }
-
+  if (buffer) {
+    uint32_t viewByteLength = length * bytesPerElement;
+    uint32_t viewByteOffset = byteOffset;
+    uint32_t bufferByteLength = buffer->byteLength();
     
-    MOZ_ASSERT(numFixedSlots() == DATA_SLOT);
+    MOZ_ASSERT_IF(IsArrayBuffer(buffer),
+                  buffer->dataPointerEither().unwrap() <=
+                      dataPointerEither().unwrap());
+    MOZ_ASSERT(bufferByteLength - viewByteOffset >= viewByteLength);
+    MOZ_ASSERT(viewByteOffset <= bufferByteLength);
+  }
+
+  
+  MOZ_ASSERT(numFixedSlots() == DATA_SLOT);
 #endif
 
-    
-    if (buffer && buffer->is<ArrayBufferObject>()) {
-        if (!buffer->as<ArrayBufferObject>().addView(cx, this)) {
-            return false;
-        }
+  
+  if (buffer && buffer->is<ArrayBufferObject>()) {
+    if (!buffer->as<ArrayBufferObject>().addView(cx, this)) {
+      return false;
     }
+  }
 
-    return true;
+  return true;
 }
 
 
 
-JS_FRIEND_API bool
-JS_IsArrayBufferViewObject(JSObject* obj)
-{
-    obj = CheckedUnwrap(obj);
-    return obj && obj->is<ArrayBufferViewObject>();
+JS_FRIEND_API bool JS_IsArrayBufferViewObject(JSObject* obj) {
+  obj = CheckedUnwrap(obj);
+  return obj && obj->is<ArrayBufferViewObject>();
 }
 
-JS_FRIEND_API JSObject*
-js::UnwrapArrayBufferView(JSObject* obj)
-{
-    if (JSObject* unwrapped = CheckedUnwrap(obj)) {
-        return unwrapped->is<ArrayBufferViewObject>() ? unwrapped : nullptr;
-    }
+JS_FRIEND_API JSObject* js::UnwrapArrayBufferView(JSObject* obj) {
+  if (JSObject* unwrapped = CheckedUnwrap(obj)) {
+    return unwrapped->is<ArrayBufferViewObject>() ? unwrapped : nullptr;
+  }
+  return nullptr;
+}
+
+JS_FRIEND_API void* JS_GetArrayBufferViewData(JSObject* obj,
+                                              bool* isSharedMemory,
+                                              const JS::AutoRequireNoGC&) {
+  obj = CheckedUnwrap(obj);
+  if (!obj) {
     return nullptr;
+  }
+
+  ArrayBufferViewObject& view = obj->as<ArrayBufferViewObject>();
+  *isSharedMemory = view.isSharedMemory();
+  return view.dataPointerEither().unwrap(
+      );
 }
 
-JS_FRIEND_API void*
-JS_GetArrayBufferViewData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&)
-{
-    obj = CheckedUnwrap(obj);
-    if (!obj) {
-        return nullptr;
-    }
+JS_FRIEND_API JSObject* JS_GetArrayBufferViewBuffer(JSContext* cx,
+                                                    HandleObject obj,
+                                                    bool* isSharedMemory) {
+  AssertHeapIsIdle();
+  CHECK_THREAD(cx);
+  cx->check(obj);
 
-    ArrayBufferViewObject& view = obj->as<ArrayBufferViewObject>();
-    *isSharedMemory = view.isSharedMemory();
-    return view.dataPointerEither().unwrap();
+  JSObject* unwrappedObj = CheckedUnwrap(obj);
+  if (!unwrappedObj) {
+    ReportAccessDenied(cx);
+    return nullptr;
+  }
+
+  Rooted<ArrayBufferViewObject*> unwrappedView(
+      cx, &unwrappedObj->as<ArrayBufferViewObject>());
+  ArrayBufferObjectMaybeShared* unwrappedBuffer;
+  {
+    AutoRealm ar(cx, unwrappedObj);
+    unwrappedBuffer = ArrayBufferViewObject::bufferObject(cx, unwrappedView);
+    if (!unwrappedBuffer) {
+      return nullptr;
+    }
+  }
+  *isSharedMemory = unwrappedBuffer->is<SharedArrayBufferObject>();
+
+  RootedObject buffer(cx, unwrappedBuffer);
+  if (!cx->compartment()->wrap(cx, &buffer)) {
+    return nullptr;
+  }
+
+  return buffer;
 }
 
-JS_FRIEND_API JSObject*
-JS_GetArrayBufferViewBuffer(JSContext* cx, HandleObject obj, bool* isSharedMemory)
-{
-    AssertHeapIsIdle();
-    CHECK_THREAD(cx);
-    cx->check(obj);
-
-    JSObject* unwrappedObj = CheckedUnwrap(obj);
-    if (!unwrappedObj) {
-        ReportAccessDenied(cx);
-        return nullptr;
-    }
-
-    Rooted<ArrayBufferViewObject*> unwrappedView(cx, &unwrappedObj->as<ArrayBufferViewObject>());
-    ArrayBufferObjectMaybeShared* unwrappedBuffer;
-    {
-        AutoRealm ar(cx, unwrappedObj);
-        unwrappedBuffer = ArrayBufferViewObject::bufferObject(cx, unwrappedView);
-        if (!unwrappedBuffer) {
-            return nullptr;
-        }
-    }
-    *isSharedMemory = unwrappedBuffer->is<SharedArrayBufferObject>();
-
-    RootedObject buffer(cx, unwrappedBuffer);
-    if (!cx->compartment()->wrap(cx, &buffer)) {
-        return nullptr;
-    }
-
-    return buffer;
+JS_FRIEND_API uint32_t JS_GetArrayBufferViewByteLength(JSObject* obj) {
+  obj = CheckedUnwrap(obj);
+  if (!obj) {
+    return 0;
+  }
+  return obj->is<DataViewObject>() ? obj->as<DataViewObject>().byteLength()
+                                   : obj->as<TypedArrayObject>().byteLength();
 }
 
-JS_FRIEND_API uint32_t
-JS_GetArrayBufferViewByteLength(JSObject* obj)
-{
-    obj = CheckedUnwrap(obj);
-    if (!obj) {
-        return 0;
-    }
-    return obj->is<DataViewObject>()
-           ? obj->as<DataViewObject>().byteLength()
-           : obj->as<TypedArrayObject>().byteLength();
+JS_FRIEND_API uint32_t JS_GetArrayBufferViewByteOffset(JSObject* obj) {
+  obj = CheckedUnwrap(obj);
+  if (!obj) {
+    return 0;
+  }
+  return obj->is<DataViewObject>() ? obj->as<DataViewObject>().byteOffset()
+                                   : obj->as<TypedArrayObject>().byteOffset();
 }
 
-JS_FRIEND_API uint32_t
-JS_GetArrayBufferViewByteOffset(JSObject* obj)
-{
-    obj = CheckedUnwrap(obj);
-    if (!obj) {
-        return 0;
-    }
-    return obj->is<DataViewObject>()
-           ? obj->as<DataViewObject>().byteOffset()
-           : obj->as<TypedArrayObject>().byteOffset();
+JS_FRIEND_API JSObject* JS_GetObjectAsArrayBufferView(JSObject* obj,
+                                                      uint32_t* length,
+                                                      bool* isSharedMemory,
+                                                      uint8_t** data) {
+  if (!(obj = CheckedUnwrap(obj))) {
+    return nullptr;
+  }
+  if (!(obj->is<ArrayBufferViewObject>())) {
+    return nullptr;
+  }
+
+  js::GetArrayBufferViewLengthAndData(obj, length, isSharedMemory, data);
+  return obj;
 }
 
-JS_FRIEND_API JSObject*
-JS_GetObjectAsArrayBufferView(JSObject* obj, uint32_t* length, bool* isSharedMemory, uint8_t** data)
-{
-    if (!(obj = CheckedUnwrap(obj))) {
-        return nullptr;
-    }
-    if (!(obj->is<ArrayBufferViewObject>())) {
-        return nullptr;
-    }
+JS_FRIEND_API void js::GetArrayBufferViewLengthAndData(JSObject* obj,
+                                                       uint32_t* length,
+                                                       bool* isSharedMemory,
+                                                       uint8_t** data) {
+  MOZ_ASSERT(obj->is<ArrayBufferViewObject>());
 
-    js::GetArrayBufferViewLengthAndData(obj, length, isSharedMemory, data);
-    return obj;
-}
+  *length = obj->is<DataViewObject>()
+                ? obj->as<DataViewObject>().byteLength()
+                : obj->as<TypedArrayObject>().byteLength();
 
-JS_FRIEND_API void
-js::GetArrayBufferViewLengthAndData(JSObject* obj, uint32_t* length, bool* isSharedMemory,
-                                    uint8_t** data)
-{
-    MOZ_ASSERT(obj->is<ArrayBufferViewObject>());
-
-    *length = obj->is<DataViewObject>()
-              ? obj->as<DataViewObject>().byteLength()
-              : obj->as<TypedArrayObject>().byteLength();
-
-    ArrayBufferViewObject& view = obj->as<ArrayBufferViewObject>();
-    *isSharedMemory = view.isSharedMemory();
-    *data = static_cast<uint8_t*>(
-            view.dataPointerEither().unwrap());
+  ArrayBufferViewObject& view = obj->as<ArrayBufferViewObject>();
+  *isSharedMemory = view.isSharedMemory();
+  *data = static_cast<uint8_t*>(
+      view.dataPointerEither().unwrap());
 }

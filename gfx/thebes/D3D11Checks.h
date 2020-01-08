@@ -16,10 +16,8 @@ struct DXGI_ADAPTER_DESC;
 namespace mozilla {
 namespace gfx {
 
-struct D3D11Checks
-{
-  enum class VideoFormatOption
-  {
+struct D3D11Checks {
+  enum class VideoFormatOption {
     NV12,
     P010,
     P016,
@@ -36,17 +34,16 @@ struct D3D11Checks
   static VideoFormatOptionSet FormatOptions(ID3D11Device* device);
 };
 
-} 
+}  
 
 
 
 template <>
-struct MaxEnumValue<::mozilla::gfx::D3D11Checks::VideoFormatOption>
-{
+struct MaxEnumValue<::mozilla::gfx::D3D11Checks::VideoFormatOption> {
   static constexpr unsigned int value =
-    static_cast<unsigned int>(gfx::D3D11Checks::VideoFormatOption::P016);
+      static_cast<unsigned int>(gfx::D3D11Checks::VideoFormatOption::P016);
 };
 
-} 
+}  
 
-#endif 
+#endif  

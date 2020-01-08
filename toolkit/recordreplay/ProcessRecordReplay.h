@@ -26,50 +26,49 @@ namespace recordreplay {
 
 
 #define ForEachThreadEvent(_Macro)
-                                \
-  _Macro(CreateThread)                                        \
-                                                               \
-  /* Created a recorded lock. */                               \
-  _Macro(CreateLock)                                           \
-                                                               \
-  /* Acquired a recorded lock. */                              \
-  _Macro(Lock)                                                 \
-                                                               \
-  /* Called RecordReplayValue. */                              \
-  _Macro(Value)                                                \
-                                                               \
-  /* Called RecordReplayBytes. */                              \
-  _Macro(Bytes)                                                \
-                                                               \
-  /* Called RecordReplayAssert or RecordReplayAssertBytes. */  \
-  _Macro(Assert)                                               \
-  _Macro(AssertBytes)                                          \
-                                                               \
-  /* Performed an atomic access. */                            \
-  _Macro(AtomicAccess)                                         \
-                                                               \
-  /* Executed a nested callback (see Callback.h). */           \
-  _Macro(ExecuteCallback)                                      \
-                                                               \
-  /* Finished executing nested callbacks in a library API (see Callback.h). */ \
-  _Macro(CallbacksFinished)                                    \
-                                                               \
-  /* Restoring a data pointer used in a callback (see Callback.h). */ \
-  _Macro(RestoreCallbackData)                                  \
-                                                               \
-  /* Called RegisterTrigger. */                                \
-  _Macro(RegisterTrigger)                                      \
-                                                               \
-  /* Executed a trigger within a call to ExecuteTriggers. */   \
-  _Macro(ExecuteTrigger)                                       \
-                                                               \
-  /* Finished executing triggers within a call to ExecuteTriggers. */ \
-  _Macro(ExecuteTriggersFinished)
+                                           \
+  _Macro(CreateThread)                                                    \
+                                                                          \
+      /* Created a recorded lock. */                                      \
+      _Macro(CreateLock)                                                  \
+                                                                          \
+      /* Acquired a recorded lock. */                                     \
+      _Macro(Lock)                                                        \
+                                                                          \
+      /* Called RecordReplayValue. */                                     \
+      _Macro(Value)                                                       \
+                                                                          \
+      /* Called RecordReplayBytes. */                                     \
+      _Macro(Bytes)                                                       \
+                                                                          \
+      /* Called RecordReplayAssert or RecordReplayAssertBytes. */         \
+      _Macro(Assert) _Macro(AssertBytes)                                  \
+                                                                          \
+      /* Performed an atomic access. */                                   \
+      _Macro(AtomicAccess)                                                \
+                                                                          \
+      /* Executed a nested callback (see Callback.h). */                  \
+      _Macro(ExecuteCallback)                                             \
+                                                                          \
+      /* Finished executing nested callbacks in a library API (see        \
+         Callback.h). */                                                  \
+      _Macro(CallbacksFinished)                                           \
+                                                                          \
+      /* Restoring a data pointer used in a callback (see Callback.h). */ \
+      _Macro(RestoreCallbackData)                                         \
+                                                                          \
+      /* Called RegisterTrigger. */                                       \
+      _Macro(RegisterTrigger)                                             \
+                                                                          \
+      /* Executed a trigger within a call to ExecuteTriggers. */          \
+      _Macro(ExecuteTrigger)                                              \
+                                                                          \
+      /* Finished executing triggers within a call to ExecuteTriggers. */ \
+      _Macro(ExecuteTriggersFinished)
 
 
 
-enum class ThreadEvent : uint32_t
-{
+enum class ThreadEvent : uint32_t {
 #define DefineEnum(Kind) Kind,
   ForEachThreadEvent(DefineEnum)
 #undef DefineEnum
@@ -97,10 +96,9 @@ extern char* gInitializationFailureMessage;
 
 
 
-static inline void
-AssertEventsAreNotPassedThrough()
-{
-  MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough() || gInitializationFailureMessage);
+static inline void AssertEventsAreNotPassedThrough() {
+  MOZ_RELEASE_ASSERT(!AreThreadEventsPassedThrough() ||
+                     gInitializationFailureMessage);
 }
 
 
@@ -114,8 +112,7 @@ void HitEndOfRecording();
 bool HitRecordingEndpoint();
 
 
-enum class Directive
-{
+enum class Directive {
   
   CrashSoon = 1,
 
@@ -146,60 +143,49 @@ static inline void Unreachable() { MOZ_CRASH("Unreachable"); }
 
 const char* SymbolNameRaw(void* aAddress);
 
-static inline bool
-MemoryContains(void* aBase, size_t aSize, void* aPtr, size_t aPtrSize = 1)
-{
+static inline bool MemoryContains(void* aBase, size_t aSize, void* aPtr,
+                                  size_t aPtrSize = 1) {
   MOZ_ASSERT(aPtrSize);
-  return (uint8_t*) aPtr >= (uint8_t*) aBase
-      && (uint8_t*) aPtr + aPtrSize <= (uint8_t*) aBase + aSize;
+  return (uint8_t*)aPtr >= (uint8_t*)aBase &&
+         (uint8_t*)aPtr + aPtrSize <= (uint8_t*)aBase + aSize;
 }
 
-static inline bool
-MemoryIntersects(void* aBase0, size_t aSize0, void* aBase1, size_t aSize1)
-{
+static inline bool MemoryIntersects(void* aBase0, size_t aSize0, void* aBase1,
+                                    size_t aSize1) {
   MOZ_ASSERT(aSize0 && aSize1);
-  return MemoryContains(aBase0, aSize0, aBase1)
-      || MemoryContains(aBase0, aSize0, (uint8_t*) aBase1 + aSize1 - 1)
-      || MemoryContains(aBase1, aSize1, aBase0);
+  return MemoryContains(aBase0, aSize0, aBase1) ||
+         MemoryContains(aBase0, aSize0, (uint8_t*)aBase1 + aSize1 - 1) ||
+         MemoryContains(aBase1, aSize1, aBase0);
 }
 
 static const size_t PageSize = 4096;
 
-static inline uint8_t*
-PageBase(void* aAddress)
-{
+static inline uint8_t* PageBase(void* aAddress) {
   return (uint8_t*)aAddress - ((size_t)aAddress % PageSize);
 }
 
-static inline size_t
-RoundupSizeToPageBoundary(size_t aSize)
-{
+static inline size_t RoundupSizeToPageBoundary(size_t aSize) {
   if (aSize % PageSize) {
     return aSize + PageSize - (aSize % PageSize);
   }
   return aSize;
 }
 
-static inline bool
-TestEnv(const char* env)
-{
+static inline bool TestEnv(const char* env) {
   const char* value = getenv(env);
   return value && value[0];
 }
 
 
 template <typename Vector, typename Entry>
-inline bool
-VectorContains(const Vector& aVector, const Entry& aEntry)
-{
+inline bool VectorContains(const Vector& aVector, const Entry& aEntry) {
   return std::find(aVector.begin(), aVector.end(), aEntry) != aVector.end();
 }
 
 
 template <typename Vector, typename Entry>
-inline void
-VectorAddOrRemoveEntry(Vector& aVector, const Entry& aEntry, bool aAdding)
-{
+inline void VectorAddOrRemoveEntry(Vector& aVector, const Entry& aEntry,
+                                   bool aAdding) {
   for (Entry& existing : aVector) {
     if (existing == aEntry) {
       MOZ_RELEASE_ASSERT(!aAdding);
@@ -214,16 +200,15 @@ VectorAddOrRemoveEntry(Vector& aVector, const Entry& aEntry, bool aAdding)
 bool SpewEnabled();
 void InternalPrint(const char* aFormat, va_list aArgs);
 
-#define MOZ_MakeRecordReplayPrinter(aName, aSpewing)            \
-  static inline void                                            \
-  aName(const char* aFormat, ...)                               \
-  {                                                             \
-    if ((IsRecordingOrReplaying() || IsMiddleman()) && (!aSpewing || SpewEnabled())) { \
-      va_list ap;                                               \
-      va_start(ap, aFormat);                                    \
-      InternalPrint(aFormat, ap);                               \
-      va_end(ap);                                               \
-    }                                                           \
+#define MOZ_MakeRecordReplayPrinter(aName, aSpewing)   \
+  static inline void aName(const char* aFormat, ...) { \
+    if ((IsRecordingOrReplaying() || IsMiddleman()) && \
+        (!aSpewing || SpewEnabled())) {                \
+      va_list ap;                                      \
+      va_start(ap, aFormat);                           \
+      InternalPrint(aFormat, ap);                      \
+      va_end(ap);                                      \
+    }                                                  \
   }
 
 
@@ -231,12 +216,12 @@ void InternalPrint(const char* aFormat, va_list aArgs);
 
 
 MOZ_MakeRecordReplayPrinter(Print, false)
-MOZ_MakeRecordReplayPrinter(PrintSpew, true)
+    MOZ_MakeRecordReplayPrinter(PrintSpew, true)
 
 #undef MOZ_MakeRecordReplayPrinter
 
-
-int GetRecordingPid();
+    
+    int GetRecordingPid();
 
 
 
@@ -247,22 +232,20 @@ void InitializeCurrentTime();
 
 double CurrentTime();
 
-#define ForEachTimerKind(Macro)                 \
-  Macro(Default)
+#define ForEachTimerKind(Macro) Macro(Default)
 
 enum class TimerKind {
 #define DefineTimerKind(aKind) aKind,
   ForEachTimerKind(DefineTimerKind)
 #undef DefineTimerKind
-  Count
+      Count
 };
 
-struct AutoTimer
-{
+struct AutoTimer {
   explicit AutoTimer(TimerKind aKind);
   ~AutoTimer();
 
-private:
+ private:
   TimerKind mKind;
   double mStart;
 };
@@ -313,9 +296,8 @@ void DeallocateMemory(void* aAddress, size_t aSize, MemoryKind aKind);
 
 
 template <MemoryKind Kind>
-class AllocPolicy
-{
-public:
+class AllocPolicy {
+ public:
   template <typename T>
   T* maybe_pod_calloc(size_t aNumElems) {
     if (aNumElems & tl::MulOverflowMask<sizeof(T)>::value) {
@@ -339,13 +321,19 @@ public:
   }
 
   template <typename T>
-  T* maybe_pod_malloc(size_t aNumElems) { return maybe_pod_calloc<T>(aNumElems); }
+  T* maybe_pod_malloc(size_t aNumElems) {
+    return maybe_pod_calloc<T>(aNumElems);
+  }
 
   template <typename T>
-  T* pod_malloc(size_t aNumElems) { return maybe_pod_malloc<T>(aNumElems); }
+  T* pod_malloc(size_t aNumElems) {
+    return maybe_pod_malloc<T>(aNumElems);
+  }
 
   template <typename T>
-  T* pod_calloc(size_t aNumElems) { return maybe_pod_calloc<T>(aNumElems); }
+  T* pod_calloc(size_t aNumElems) {
+    return maybe_pod_calloc<T>(aNumElems);
+  }
 
   template <typename T>
   T* pod_realloc(T* aPtr, size_t aOldSize, size_t aNewSize) {
@@ -354,9 +342,7 @@ public:
 
   void reportAllocOverflow() const {}
 
-  MOZ_MUST_USE bool checkSimulatedOOM() const {
-    return true;
-  }
+  MOZ_MUST_USE bool checkSimulatedOOM() const { return true; }
 };
 
 
@@ -409,7 +395,7 @@ void DirectCreatePipe(FileHandle* aWriteFd, FileHandle* aReadFd);
 
 void DirectSpawnThread(void (*aFunction)(void*), void* aArgument);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

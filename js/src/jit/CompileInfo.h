@@ -20,32 +20,29 @@ namespace jit {
 
 class TrackedOptimizations;
 
-inline unsigned
-StartArgSlot(JSScript* script)
-{
-    
-    
-    
+inline unsigned StartArgSlot(JSScript* script) {
+  
+  
+  
 
-    
-    
+  
+  
 
-    
-    return 2 + (script->argumentsHasVarBinding() ? 1 : 0);
+  
+  
+  return 2 + (script->argumentsHasVarBinding() ? 1 : 0);
 }
 
-inline unsigned
-CountArgSlots(JSScript* script, JSFunction* fun)
-{
-    
-    
-    
-    
+inline unsigned CountArgSlots(JSScript* script, JSFunction* fun) {
+  
+  
+  
+  
 
-    
-    return StartArgSlot(script) + (fun ? fun->nargs() + 1 : 0);
+  
+  
+  return StartArgSlot(script) + (fun ? fun->nargs() + 1 : 0);
 }
-
 
 
 
@@ -54,554 +51,488 @@ CountArgSlots(JSScript* script, JSFunction* fun)
 
 
 class InlineScriptTree {
-    
-    InlineScriptTree* caller_;
+  
+  InlineScriptTree* caller_;
 
-    
-    jsbytecode* callerPc_;
+  
+  jsbytecode* callerPc_;
 
-    
-    JSScript* script_;
+  
+  JSScript* script_;
 
-    
-    InlineScriptTree* children_;
-    InlineScriptTree* nextCallee_;
+  
+  InlineScriptTree* children_;
+  InlineScriptTree* nextCallee_;
 
-  public:
-    InlineScriptTree(InlineScriptTree* caller, jsbytecode* callerPc, JSScript* script)
-      : caller_(caller), callerPc_(callerPc), script_(script),
-        children_(nullptr), nextCallee_(nullptr)
-    {}
+ public:
+  InlineScriptTree(InlineScriptTree* caller, jsbytecode* callerPc,
+                   JSScript* script)
+      : caller_(caller),
+        callerPc_(callerPc),
+        script_(script),
+        children_(nullptr),
+        nextCallee_(nullptr) {}
 
-    static InlineScriptTree* New(TempAllocator* allocator, InlineScriptTree* caller,
-                                 jsbytecode* callerPc, JSScript* script);
+  static InlineScriptTree* New(TempAllocator* allocator,
+                               InlineScriptTree* caller, jsbytecode* callerPc,
+                               JSScript* script);
 
-    InlineScriptTree* addCallee(TempAllocator* allocator, jsbytecode* callerPc,
-                                JSScript* calleeScript);
+  InlineScriptTree* addCallee(TempAllocator* allocator, jsbytecode* callerPc,
+                              JSScript* calleeScript);
 
-    InlineScriptTree* caller() const {
-        return caller_;
+  InlineScriptTree* caller() const { return caller_; }
+
+  bool isOutermostCaller() const { return caller_ == nullptr; }
+  bool hasCaller() const { return caller_ != nullptr; }
+  InlineScriptTree* outermostCaller() {
+    if (isOutermostCaller()) {
+      return this;
     }
+    return caller_->outermostCaller();
+  }
 
-    bool isOutermostCaller() const {
-        return caller_ == nullptr;
-    }
-    bool hasCaller() const {
-        return caller_ != nullptr;
-    }
-    InlineScriptTree* outermostCaller() {
-        if (isOutermostCaller()) {
-            return this;
-        }
-        return caller_->outermostCaller();
-    }
+  jsbytecode* callerPc() const { return callerPc_; }
 
-    jsbytecode* callerPc() const {
-        return callerPc_;
-    }
+  JSScript* script() const { return script_; }
 
-    JSScript* script() const {
-        return script_;
-    }
+  bool hasChildren() const { return children_ != nullptr; }
+  InlineScriptTree* firstChild() const {
+    MOZ_ASSERT(hasChildren());
+    return children_;
+  }
 
-    bool hasChildren() const {
-        return children_ != nullptr;
-    }
-    InlineScriptTree* firstChild() const {
-        MOZ_ASSERT(hasChildren());
-        return children_;
-    }
+  bool hasNextCallee() const { return nextCallee_ != nullptr; }
+  InlineScriptTree* nextCallee() const {
+    MOZ_ASSERT(hasNextCallee());
+    return nextCallee_;
+  }
 
-    bool hasNextCallee() const {
-        return nextCallee_ != nullptr;
+  unsigned depth() const {
+    if (isOutermostCaller()) {
+      return 1;
     }
-    InlineScriptTree* nextCallee() const {
-        MOZ_ASSERT(hasNextCallee());
-        return nextCallee_;
-    }
-
-    unsigned depth() const {
-        if (isOutermostCaller()) {
-            return 1;
-        }
-        return 1 + caller_->depth();
-    }
+    return 1 + caller_->depth();
+  }
 };
 
-class BytecodeSite : public TempObject
-{
-    
-    InlineScriptTree* tree_;
+class BytecodeSite : public TempObject {
+  
+  InlineScriptTree* tree_;
 
-    
-    jsbytecode* pc_;
+  
+  jsbytecode* pc_;
 
-    
-    TrackedOptimizations* optimizations_;
+  
+  TrackedOptimizations* optimizations_;
 
-  public:
-    BytecodeSite()
-      : tree_(nullptr), pc_(nullptr), optimizations_(nullptr)
-    {}
+ public:
+  BytecodeSite() : tree_(nullptr), pc_(nullptr), optimizations_(nullptr) {}
 
-    BytecodeSite(InlineScriptTree* tree, jsbytecode* pc)
-      : tree_(tree), pc_(pc), optimizations_(nullptr)
-    {
-        MOZ_ASSERT(tree_ != nullptr);
-        MOZ_ASSERT(pc_ != nullptr);
-    }
+  BytecodeSite(InlineScriptTree* tree, jsbytecode* pc)
+      : tree_(tree), pc_(pc), optimizations_(nullptr) {
+    MOZ_ASSERT(tree_ != nullptr);
+    MOZ_ASSERT(pc_ != nullptr);
+  }
 
-    InlineScriptTree* tree() const {
-        return tree_;
-    }
+  InlineScriptTree* tree() const { return tree_; }
 
-    jsbytecode* pc() const {
-        return pc_;
-    }
+  jsbytecode* pc() const { return pc_; }
 
-    JSScript* script() const {
-        return tree_ ? tree_->script() : nullptr;
-    }
+  JSScript* script() const { return tree_ ? tree_->script() : nullptr; }
 
-    bool hasOptimizations() const {
-        return !!optimizations_;
-    }
+  bool hasOptimizations() const { return !!optimizations_; }
 
-    TrackedOptimizations* optimizations() const {
-        MOZ_ASSERT(hasOptimizations());
-        return optimizations_;
-    }
+  TrackedOptimizations* optimizations() const {
+    MOZ_ASSERT(hasOptimizations());
+    return optimizations_;
+  }
 
-    void setOptimizations(TrackedOptimizations* optimizations) {
-        optimizations_ = optimizations;
-    }
+  void setOptimizations(TrackedOptimizations* optimizations) {
+    optimizations_ = optimizations;
+  }
 };
 
 enum AnalysisMode {
-    
-    Analysis_None,
+  
+  Analysis_None,
 
-    
-
-
-
-    Analysis_DefiniteProperties,
-
-    
+  
 
 
 
-    Analysis_ArgumentsUsage
+  Analysis_DefiniteProperties,
+
+  
+
+
+
+  Analysis_ArgumentsUsage
 };
 
 
-class CompileInfo
-{
-  public:
-    CompileInfo(CompileRuntime* runtime, JSScript* script, JSFunction* fun, jsbytecode* osrPc,
-                AnalysisMode analysisMode, bool scriptNeedsArgsObj,
-                InlineScriptTree* inlineScriptTree)
-      : script_(script), fun_(fun), osrPc_(osrPc),
-        analysisMode_(analysisMode), scriptNeedsArgsObj_(scriptNeedsArgsObj),
+class CompileInfo {
+ public:
+  CompileInfo(CompileRuntime* runtime, JSScript* script, JSFunction* fun,
+              jsbytecode* osrPc, AnalysisMode analysisMode,
+              bool scriptNeedsArgsObj, InlineScriptTree* inlineScriptTree)
+      : script_(script),
+        fun_(fun),
+        osrPc_(osrPc),
+        analysisMode_(analysisMode),
+        scriptNeedsArgsObj_(scriptNeedsArgsObj),
         hadOverflowBailout_(script->hadOverflowBailout()),
         hadFrequentBailouts_(script->hadFrequentBailouts()),
         mayReadFrameArgsDirectly_(script->mayReadFrameArgsDirectly()),
-        inlineScriptTree_(inlineScriptTree)
-    {
-        MOZ_ASSERT_IF(osrPc, JSOp(*osrPc) == JSOP_LOOPENTRY);
+        inlineScriptTree_(inlineScriptTree) {
+    MOZ_ASSERT_IF(osrPc, JSOp(*osrPc) == JSOP_LOOPENTRY);
 
-        
-        
-        
-        
-        if (fun_) {
-            fun_ = fun_->nonLazyScript()->functionNonDelazifying();
-            MOZ_ASSERT(fun_->isTenured());
+    
+    
+    
+    
+    if (fun_) {
+      fun_ = fun_->nonLazyScript()->functionNonDelazifying();
+      MOZ_ASSERT(fun_->isTenured());
+    }
+
+    nimplicit_ = StartArgSlot(script) 
+                 + (fun ? 1 : 0);     
+    nargs_ = fun ? fun->nargs() : 0;
+    nlocals_ = script->nfixed();
+
+    
+    
+    
+    uint32_t extra = script->isGlobalCode() ? 1 : 0;
+    nstack_ =
+        Max<unsigned>(script->nslots() - script->nfixed(), MinJITStackSize) +
+        extra;
+    nslots_ = nimplicit_ + nargs_ + nlocals_ + nstack_;
+
+    
+    
+    
+    if (script->isDerivedClassConstructor()) {
+      MOZ_ASSERT(script->functionHasThisBinding());
+      for (BindingIter bi(script); bi; bi++) {
+        if (bi.name() != runtime->names().dotThis) {
+          continue;
         }
-
-        nimplicit_ = StartArgSlot(script)                   
-                   + (fun ? 1 : 0);                         
-        nargs_ = fun ? fun->nargs() : 0;
-        nlocals_ = script->nfixed();
-
-        
-        
-        
-        uint32_t extra = script->isGlobalCode() ? 1 : 0;
-        nstack_ = Max<unsigned>(script->nslots() - script->nfixed(), MinJITStackSize) + extra;
-        nslots_ = nimplicit_ + nargs_ + nlocals_ + nstack_;
-
-        
-        
-        
-        if (script->isDerivedClassConstructor()) {
-            MOZ_ASSERT(script->functionHasThisBinding());
-            for (BindingIter bi(script); bi; bi++) {
-                if (bi.name() != runtime->names().dotThis) {
-                    continue;
-                }
-                BindingLocation loc = bi.location();
-                if (loc.kind() == BindingLocation::Kind::Frame) {
-                    thisSlotForDerivedClassConstructor_ = mozilla::Some(localSlot(loc.slot()));
-                    break;
-                }
-            }
+        BindingLocation loc = bi.location();
+        if (loc.kind() == BindingLocation::Kind::Frame) {
+          thisSlotForDerivedClassConstructor_ =
+              mozilla::Some(localSlot(loc.slot()));
+          break;
         }
-
-        
-        
-        needsBodyEnvironmentObject_ = script->needsBodyEnvironment();
-        funNeedsSomeEnvironmentObject_ = fun ? fun->needsSomeEnvironmentObject() : false;
-    }
-
-    explicit CompileInfo(unsigned nlocals)
-      : script_(nullptr), fun_(nullptr), osrPc_(nullptr),
-        analysisMode_(Analysis_None), scriptNeedsArgsObj_(false), hadOverflowBailout_(false),
-        hadFrequentBailouts_(false), mayReadFrameArgsDirectly_(false), inlineScriptTree_(nullptr),
-        needsBodyEnvironmentObject_(false), funNeedsSomeEnvironmentObject_(false)
-    {
-        nimplicit_ = 0;
-        nargs_ = 0;
-        nlocals_ = nlocals;
-        nstack_ = 1;  
-        nslots_ = nlocals_ + nstack_;
-    }
-
-    JSScript* script() const {
-        return script_;
-    }
-    bool compilingWasm() const {
-        return script() == nullptr;
-    }
-    JSFunction* funMaybeLazy() const {
-        return fun_;
-    }
-    ModuleObject* module() const {
-        return script_->module();
-    }
-    jsbytecode* osrPc() const {
-        return osrPc_;
-    }
-    InlineScriptTree* inlineScriptTree() const {
-        return inlineScriptTree_;
-    }
-
-    bool hasOsrAt(jsbytecode* pc) const {
-        MOZ_ASSERT(JSOp(*pc) == JSOP_LOOPENTRY);
-        return pc == osrPc();
-    }
-
-    jsbytecode* startPC() const {
-        return script_->code();
-    }
-    jsbytecode* limitPC() const {
-        return script_->codeEnd();
-    }
-
-    const char* filename() const {
-        return script_->filename();
-    }
-
-    unsigned lineno() const {
-        return script_->lineno();
-    }
-    unsigned lineno(jsbytecode* pc) const {
-        return PCToLineNumber(script_, pc);
-    }
-
-    
-
-    JSAtom* getAtom(jsbytecode* pc) const {
-        return script_->getAtom(GET_UINT32_INDEX(pc));
-    }
-
-    PropertyName* getName(jsbytecode* pc) const {
-        return script_->getName(GET_UINT32_INDEX(pc));
-    }
-
-    inline RegExpObject* getRegExp(jsbytecode* pc) const;
-
-    JSObject* getObject(jsbytecode* pc) const {
-        return script_->getObject(GET_UINT32_INDEX(pc));
-    }
-
-    inline JSFunction* getFunction(jsbytecode* pc) const;
-
-    const Value& getConst(jsbytecode* pc) const {
-        return script_->getConst(GET_UINT32_INDEX(pc));
-    }
-
-    jssrcnote* getNote(GSNCache& gsn, jsbytecode* pc) const {
-        return GetSrcNote(gsn, script(), pc);
-    }
-
-    
-    unsigned nslots() const {
-        return nslots_;
+      }
     }
 
     
     
-    unsigned nimplicit() const {
-        return nimplicit_;
-    }
+    needsBodyEnvironmentObject_ = script->needsBodyEnvironment();
+    funNeedsSomeEnvironmentObject_ =
+        fun ? fun->needsSomeEnvironmentObject() : false;
+  }
+
+  explicit CompileInfo(unsigned nlocals)
+      : script_(nullptr),
+        fun_(nullptr),
+        osrPc_(nullptr),
+        analysisMode_(Analysis_None),
+        scriptNeedsArgsObj_(false),
+        hadOverflowBailout_(false),
+        hadFrequentBailouts_(false),
+        mayReadFrameArgsDirectly_(false),
+        inlineScriptTree_(nullptr),
+        needsBodyEnvironmentObject_(false),
+        funNeedsSomeEnvironmentObject_(false) {
+    nimplicit_ = 0;
+    nargs_ = 0;
+    nlocals_ = nlocals;
+    nstack_ = 1; 
+    nslots_ = nlocals_ + nstack_;
+  }
+
+  JSScript* script() const { return script_; }
+  bool compilingWasm() const { return script() == nullptr; }
+  JSFunction* funMaybeLazy() const { return fun_; }
+  ModuleObject* module() const { return script_->module(); }
+  jsbytecode* osrPc() const { return osrPc_; }
+  InlineScriptTree* inlineScriptTree() const { return inlineScriptTree_; }
+
+  bool hasOsrAt(jsbytecode* pc) const {
+    MOZ_ASSERT(JSOp(*pc) == JSOP_LOOPENTRY);
+    return pc == osrPc();
+  }
+
+  jsbytecode* startPC() const { return script_->code(); }
+  jsbytecode* limitPC() const { return script_->codeEnd(); }
+
+  const char* filename() const { return script_->filename(); }
+
+  unsigned lineno() const { return script_->lineno(); }
+  unsigned lineno(jsbytecode* pc) const { return PCToLineNumber(script_, pc); }
+
+  
+
+  JSAtom* getAtom(jsbytecode* pc) const {
+    return script_->getAtom(GET_UINT32_INDEX(pc));
+  }
+
+  PropertyName* getName(jsbytecode* pc) const {
+    return script_->getName(GET_UINT32_INDEX(pc));
+  }
+
+  inline RegExpObject* getRegExp(jsbytecode* pc) const;
+
+  JSObject* getObject(jsbytecode* pc) const {
+    return script_->getObject(GET_UINT32_INDEX(pc));
+  }
+
+  inline JSFunction* getFunction(jsbytecode* pc) const;
+
+  const Value& getConst(jsbytecode* pc) const {
+    return script_->getConst(GET_UINT32_INDEX(pc));
+  }
+
+  jssrcnote* getNote(GSNCache& gsn, jsbytecode* pc) const {
+    return GetSrcNote(gsn, script(), pc);
+  }
+
+  
+  unsigned nslots() const { return nslots_; }
+
+  
+  
+  unsigned nimplicit() const { return nimplicit_; }
+  
+  unsigned nargs() const { return nargs_; }
+  
+  
+  unsigned nlocals() const { return nlocals_; }
+  unsigned ninvoke() const { return nslots_ - nstack_; }
+
+  uint32_t environmentChainSlot() const {
+    MOZ_ASSERT(script());
+    return 0;
+  }
+  uint32_t returnValueSlot() const {
+    MOZ_ASSERT(script());
+    return 1;
+  }
+  uint32_t argsObjSlot() const {
+    MOZ_ASSERT(hasArguments());
+    return 2;
+  }
+  uint32_t thisSlot() const {
+    MOZ_ASSERT(funMaybeLazy());
+    MOZ_ASSERT(nimplicit_ > 0);
+    return nimplicit_ - 1;
+  }
+  uint32_t firstArgSlot() const { return nimplicit_; }
+  uint32_t argSlotUnchecked(uint32_t i) const {
     
-    unsigned nargs() const {
-        return nargs_;
-    }
+    
+    MOZ_ASSERT(i < nargs_);
+    return nimplicit_ + i;
+  }
+  uint32_t argSlot(uint32_t i) const {
     
     
-    unsigned nlocals() const {
-        return nlocals_;
+    
+    MOZ_ASSERT(!argsObjAliasesFormals());
+    return argSlotUnchecked(i);
+  }
+  uint32_t firstLocalSlot() const { return nimplicit_ + nargs_; }
+  uint32_t localSlot(uint32_t i) const { return firstLocalSlot() + i; }
+  uint32_t firstStackSlot() const { return firstLocalSlot() + nlocals(); }
+  uint32_t stackSlot(uint32_t i) const { return firstStackSlot() + i; }
+
+  uint32_t startArgSlot() const {
+    MOZ_ASSERT(script());
+    return StartArgSlot(script());
+  }
+  uint32_t endArgSlot() const {
+    MOZ_ASSERT(script());
+    return CountArgSlots(script(), funMaybeLazy());
+  }
+
+  uint32_t totalSlots() const {
+    MOZ_ASSERT(script() && funMaybeLazy());
+    return nimplicit() + nargs() + nlocals();
+  }
+
+  bool isSlotAliased(uint32_t index) const {
+    MOZ_ASSERT(index >= startArgSlot());
+    uint32_t arg = index - firstArgSlot();
+    if (arg < nargs()) {
+      return script()->formalIsAliased(arg);
     }
-    unsigned ninvoke() const {
-        return nslots_ - nstack_;
+    return false;
+  }
+
+  bool hasArguments() const { return script()->argumentsHasVarBinding(); }
+  bool argumentsAliasesFormals() const {
+    return script()->argumentsAliasesFormals();
+  }
+  bool needsArgsObj() const { return scriptNeedsArgsObj_; }
+  bool argsObjAliasesFormals() const {
+    return scriptNeedsArgsObj_ && script()->hasMappedArgsObj();
+  }
+
+  AnalysisMode analysisMode() const { return analysisMode_; }
+
+  bool isAnalysis() const { return analysisMode_ != Analysis_None; }
+
+  bool needsBodyEnvironmentObject() const {
+    return needsBodyEnvironmentObject_;
+  }
+
+  
+  
+  
+  
+  inline bool isObservableSlot(uint32_t slot) const {
+    if (slot >= firstLocalSlot()) {
+      
+      if (thisSlotForDerivedClassConstructor_) {
+        return *thisSlotForDerivedClassConstructor_ == slot;
+      }
+      return false;
     }
 
-    uint32_t environmentChainSlot() const {
-        MOZ_ASSERT(script());
-        return 0;
-    }
-    uint32_t returnValueSlot() const {
-        MOZ_ASSERT(script());
-        return 1;
-    }
-    uint32_t argsObjSlot() const {
-        MOZ_ASSERT(hasArguments());
-        return 2;
-    }
-    uint32_t thisSlot() const {
-        MOZ_ASSERT(funMaybeLazy());
-        MOZ_ASSERT(nimplicit_ > 0);
-        return nimplicit_ - 1;
-    }
-    uint32_t firstArgSlot() const {
-        return nimplicit_;
-    }
-    uint32_t argSlotUnchecked(uint32_t i) const {
-        
-        
-        MOZ_ASSERT(i < nargs_);
-        return nimplicit_ + i;
-    }
-    uint32_t argSlot(uint32_t i) const {
-        
-        
-        
-        MOZ_ASSERT(!argsObjAliasesFormals());
-        return argSlotUnchecked(i);
-    }
-    uint32_t firstLocalSlot() const {
-        return nimplicit_ + nargs_;
-    }
-    uint32_t localSlot(uint32_t i) const {
-        return firstLocalSlot() + i;
-    }
-    uint32_t firstStackSlot() const {
-        return firstLocalSlot() + nlocals();
-    }
-    uint32_t stackSlot(uint32_t i) const {
-        return firstStackSlot() + i;
+    if (slot < firstArgSlot()) {
+      return isObservableFrameSlot(slot);
     }
 
-    uint32_t startArgSlot() const {
-        MOZ_ASSERT(script());
-        return StartArgSlot(script());
-    }
-    uint32_t endArgSlot() const {
-        MOZ_ASSERT(script());
-        return CountArgSlots(script(), funMaybeLazy());
+    return isObservableArgumentSlot(slot);
+  }
+
+  bool isObservableFrameSlot(uint32_t slot) const {
+    
+    
+    if (needsBodyEnvironmentObject() && slot == environmentChainSlot()) {
+      return true;
     }
 
-    uint32_t totalSlots() const {
-        MOZ_ASSERT(script() && funMaybeLazy());
-        return nimplicit() + nargs() + nlocals();
+    if (!funMaybeLazy()) {
+      return false;
     }
 
-    bool isSlotAliased(uint32_t index) const {
-        MOZ_ASSERT(index >= startArgSlot());
-        uint32_t arg = index - firstArgSlot();
-        if (arg < nargs()) {
-            return script()->formalIsAliased(arg);
-        }
-        return false;
-    }
-
-    bool hasArguments() const {
-        return script()->argumentsHasVarBinding();
-    }
-    bool argumentsAliasesFormals() const {
-        return script()->argumentsAliasesFormals();
-    }
-    bool needsArgsObj() const {
-        return scriptNeedsArgsObj_;
-    }
-    bool argsObjAliasesFormals() const {
-        return scriptNeedsArgsObj_ && script()->hasMappedArgsObj();
-    }
-
-    AnalysisMode analysisMode() const {
-        return analysisMode_;
-    }
-
-    bool isAnalysis() const {
-        return analysisMode_ != Analysis_None;
-    }
-
-    bool needsBodyEnvironmentObject() const {
-        return needsBodyEnvironmentObject_;
+    
+    if (slot == thisSlot()) {
+      return true;
     }
 
     
     
     
     
-    inline bool isObservableSlot(uint32_t slot) const {
-        if (slot >= firstLocalSlot()) {
-            
-            if (thisSlotForDerivedClassConstructor_) {
-                return *thisSlotForDerivedClassConstructor_ == slot;
-            }
-            return false;
-        }
-
-        if (slot < firstArgSlot()) {
-            return isObservableFrameSlot(slot);
-        }
-
-        return isObservableArgumentSlot(slot);
+    if (thisSlotForDerivedClassConstructor_ &&
+        *thisSlotForDerivedClassConstructor_ == slot) {
+      return true;
     }
 
-    bool isObservableFrameSlot(uint32_t slot) const {
-        
-        
-        if (needsBodyEnvironmentObject() && slot == environmentChainSlot()) {
-            return true;
-        }
-
-        if (!funMaybeLazy()) {
-            return false;
-        }
-
-        
-        if (slot == thisSlot()) {
-            return true;
-        }
-
-        
-        
-        
-        
-        if (thisSlotForDerivedClassConstructor_ && *thisSlotForDerivedClassConstructor_ == slot) {
-            return true;
-        }
-
-        if (funNeedsSomeEnvironmentObject_ && slot == environmentChainSlot()) {
-            return true;
-        }
-
-        
-        
-        
-        
-        if (hasArguments() && (slot == environmentChainSlot() || slot == argsObjSlot())) {
-            return true;
-        }
-
-        return false;
-    }
-
-    bool isObservableArgumentSlot(uint32_t slot) const {
-        if (!funMaybeLazy()) {
-            return false;
-        }
-
-        
-        
-        if ((hasArguments() || !script()->strict()) &&
-            firstArgSlot() <= slot && slot - firstArgSlot() < nargs())
-        {
-            return true;
-        }
-
-        return false;
+    if (funNeedsSomeEnvironmentObject_ && slot == environmentChainSlot()) {
+      return true;
     }
 
     
     
     
-    bool isRecoverableOperand(uint32_t slot) const {
-        
-        
-        if (needsBodyEnvironmentObject() && slot == environmentChainSlot()) {
-            return false;
-        }
+    
+    if (hasArguments() &&
+        (slot == environmentChainSlot() || slot == argsObjSlot())) {
+      return true;
+    }
 
-        if (!funMaybeLazy()) {
-            return true;
-        }
+    return false;
+  }
 
-        
-        if (slot == thisSlot() || slot == environmentChainSlot()) {
-            return true;
-        }
-
-        if (isObservableFrameSlot(slot)) {
-            return false;
-        }
-
-        if (needsArgsObj() && isObservableArgumentSlot(slot)) {
-            return false;
-        }
-
-        return true;
+  bool isObservableArgumentSlot(uint32_t slot) const {
+    if (!funMaybeLazy()) {
+      return false;
     }
 
     
     
-    bool hadOverflowBailout() const {
-        return hadOverflowBailout_;
-    }
-    bool hadFrequentBailouts() const {
-        return hadFrequentBailouts_;
-    }
-    bool mayReadFrameArgsDirectly() const {
-        return mayReadFrameArgsDirectly_;
+    if ((hasArguments() || !script()->strict()) && firstArgSlot() <= slot &&
+        slot - firstArgSlot() < nargs()) {
+      return true;
     }
 
-  private:
-    unsigned nimplicit_;
-    unsigned nargs_;
-    unsigned nlocals_;
-    unsigned nstack_;
-    unsigned nslots_;
-    mozilla::Maybe<unsigned> thisSlotForDerivedClassConstructor_;
-    JSScript* script_;
-    JSFunction* fun_;
-    jsbytecode* osrPc_;
-    AnalysisMode analysisMode_;
+    return false;
+  }
+
+  
+  
+  
+  bool isRecoverableOperand(uint32_t slot) const {
+    
+    
+    if (needsBodyEnvironmentObject() && slot == environmentChainSlot()) {
+      return false;
+    }
+
+    if (!funMaybeLazy()) {
+      return true;
+    }
 
     
-    
-    
-    bool scriptNeedsArgsObj_;
+    if (slot == thisSlot() || slot == environmentChainSlot()) {
+      return true;
+    }
 
-    
-    
-    bool hadOverflowBailout_;
-    bool hadFrequentBailouts_;
+    if (isObservableFrameSlot(slot)) {
+      return false;
+    }
 
-    bool mayReadFrameArgsDirectly_;
+    if (needsArgsObj() && isObservableArgumentSlot(slot)) {
+      return false;
+    }
 
-    InlineScriptTree* inlineScriptTree_;
+    return true;
+  }
 
-    
-    
-    bool needsBodyEnvironmentObject_;
-    bool funNeedsSomeEnvironmentObject_;
+  
+  
+  bool hadOverflowBailout() const { return hadOverflowBailout_; }
+  bool hadFrequentBailouts() const { return hadFrequentBailouts_; }
+  bool mayReadFrameArgsDirectly() const { return mayReadFrameArgsDirectly_; }
+
+ private:
+  unsigned nimplicit_;
+  unsigned nargs_;
+  unsigned nlocals_;
+  unsigned nstack_;
+  unsigned nslots_;
+  mozilla::Maybe<unsigned> thisSlotForDerivedClassConstructor_;
+  JSScript* script_;
+  JSFunction* fun_;
+  jsbytecode* osrPc_;
+  AnalysisMode analysisMode_;
+
+  
+  
+  
+  bool scriptNeedsArgsObj_;
+
+  
+  
+  bool hadOverflowBailout_;
+  bool hadFrequentBailouts_;
+
+  bool mayReadFrameArgsDirectly_;
+
+  InlineScriptTree* inlineScriptTree_;
+
+  
+  
+  bool needsBodyEnvironmentObject_;
+  bool funNeedsSomeEnvironmentObject_;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

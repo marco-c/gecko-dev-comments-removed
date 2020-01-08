@@ -6,11 +6,11 @@
 #ifndef JoinNodeTransaction_h
 #define JoinNodeTransaction_h
 
-#include "mozilla/EditTransactionBase.h" 
-#include "nsCOMPtr.h"                   
+#include "mozilla/EditTransactionBase.h"  
+#include "nsCOMPtr.h"                     
 #include "nsCycleCollectionParticipant.h"
-#include "nsID.h"                       
-#include "nscore.h"                     
+#include "nsID.h"    
+#include "nscore.h"  
 
 class nsINode;
 
@@ -24,13 +24,12 @@ class EditorBase;
 
 
 
-class JoinNodeTransaction final : public EditTransactionBase
-{
-protected:
-  JoinNodeTransaction(EditorBase& aEditorBase,
-                      nsINode& aLeftNode, nsINode& aRightNode);
+class JoinNodeTransaction final : public EditTransactionBase {
+ protected:
+  JoinNodeTransaction(EditorBase& aEditorBase, nsINode& aLeftNode,
+                      nsINode& aRightNode);
 
-public:
+ public:
   
 
 
@@ -39,8 +38,8 @@ public:
 
 
 
-  static already_AddRefed<JoinNodeTransaction>
-  MaybeCreate(EditorBase& aEditorBase, nsINode& aLeftNode, nsINode& aRightNode);
+  static already_AddRefed<JoinNodeTransaction> MaybeCreate(
+      EditorBase& aEditorBase, nsINode& aLeftNode, nsINode& aRightNode);
 
   
 
@@ -54,7 +53,7 @@ public:
 
   NS_DECL_EDITTRANSACTIONBASE
 
-protected:
+ protected:
   RefPtr<EditorBase> mEditorBase;
 
   
@@ -65,12 +64,12 @@ protected:
   
   
   
-  uint32_t  mOffset;
+  uint32_t mOffset;
 
   
   nsCOMPtr<nsINode> mParent;
 };
 
-} 
+}  
 
-#endif 
+#endif  

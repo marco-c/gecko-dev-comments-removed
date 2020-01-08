@@ -36,69 +36,58 @@ static mozilla::LazyLogModule gStreamPumpLog("nsStreamPump");
 
 
 nsInputStreamPump::nsInputStreamPump()
-    : mState(STATE_IDLE)
-    , mStreamOffset(0)
-    , mStreamLength(0)
-    , mSegSize(0)
-    , mSegCount(0)
-    , mStatus(NS_OK)
-    , mSuspendCount(0)
-    , mLoadFlags(LOAD_NORMAL)
-    , mIsPending(false)
-    , mProcessingCallbacks(false)
-    , mWaitingForInputStreamReady(false)
-    , mCloseWhenDone(false)
-    , mRetargeting(false)
-    , mAsyncStreamIsBuffered(false)
-    , mMutex("nsInputStreamPump")
-{
-}
+    : mState(STATE_IDLE),
+      mStreamOffset(0),
+      mStreamLength(0),
+      mSegSize(0),
+      mSegCount(0),
+      mStatus(NS_OK),
+      mSuspendCount(0),
+      mLoadFlags(LOAD_NORMAL),
+      mIsPending(false),
+      mProcessingCallbacks(false),
+      mWaitingForInputStreamReady(false),
+      mCloseWhenDone(false),
+      mRetargeting(false),
+      mAsyncStreamIsBuffered(false),
+      mMutex("nsInputStreamPump") {}
 
-nsresult
-nsInputStreamPump::Create(nsInputStreamPump  **result,
-                          nsIInputStream      *stream,
-                          uint32_t             segsize,
-                          uint32_t             segcount,
-                          bool                 closeWhenDone,
-                          nsIEventTarget      *mainThreadTarget)
-{
-    nsresult rv = NS_ERROR_OUT_OF_MEMORY;
-    RefPtr<nsInputStreamPump> pump = new nsInputStreamPump();
-    if (pump) {
-        rv = pump->Init(stream, segsize, segcount, closeWhenDone,
-                        mainThreadTarget);
-        if (NS_SUCCEEDED(rv)) {
-            pump.forget(result);
-        }
+nsresult nsInputStreamPump::Create(nsInputStreamPump **result,
+                                   nsIInputStream *stream, uint32_t segsize,
+                                   uint32_t segcount, bool closeWhenDone,
+                                   nsIEventTarget *mainThreadTarget) {
+  nsresult rv = NS_ERROR_OUT_OF_MEMORY;
+  RefPtr<nsInputStreamPump> pump = new nsInputStreamPump();
+  if (pump) {
+    rv = pump->Init(stream, segsize, segcount, closeWhenDone, mainThreadTarget);
+    if (NS_SUCCEEDED(rv)) {
+      pump.forget(result);
     }
-    return rv;
+  }
+  return rv;
 }
 
 struct PeekData {
-  PeekData(nsInputStreamPump::PeekSegmentFun fun, void* closure)
-    : mFunc(fun), mClosure(closure) {}
+  PeekData(nsInputStreamPump::PeekSegmentFun fun, void *closure)
+      : mFunc(fun), mClosure(closure) {}
 
   nsInputStreamPump::PeekSegmentFun mFunc;
-  void* mClosure;
+  void *mClosure;
 };
 
-static nsresult
-CallPeekFunc(nsIInputStream *aInStream, void *aClosure,
-             const char *aFromSegment, uint32_t aToOffset, uint32_t aCount,
-             uint32_t *aWriteCount)
-{
+static nsresult CallPeekFunc(nsIInputStream *aInStream, void *aClosure,
+                             const char *aFromSegment, uint32_t aToOffset,
+                             uint32_t aCount, uint32_t *aWriteCount) {
   NS_ASSERTION(aToOffset == 0, "Called more than once?");
   NS_ASSERTION(aCount > 0, "Called without data?");
 
-  PeekData* data = static_cast<PeekData*>(aClosure);
-  data->mFunc(data->mClosure,
-              reinterpret_cast<const uint8_t*>(aFromSegment), aCount);
+  PeekData *data = static_cast<PeekData *>(aClosure);
+  data->mFunc(data->mClosure, reinterpret_cast<const uint8_t *>(aFromSegment),
+              aCount);
   return NS_BINDING_ABORTED;
 }
 
-nsresult
-nsInputStreamPump::PeekStream(PeekSegmentFun callback, void* closure)
-{
+nsresult nsInputStreamPump::PeekStream(PeekSegmentFun callback, void *closure) {
   RecursiveMutexAutoLock lock(mMutex);
 
   MOZ_ASSERT(mAsyncStream, "PeekStream called without stream");
@@ -109,283 +98,263 @@ nsInputStreamPump::PeekStream(PeekSegmentFun callback, void* closure)
   
   uint64_t dummy64;
   rv = mAsyncStream->Available(&dummy64);
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
   uint32_t dummy = (uint32_t)std::min(dummy64, (uint64_t)UINT32_MAX);
 
   PeekData data(callback, closure);
-  return mAsyncStream->ReadSegments(CallPeekFunc,
-                                    &data,
-                                    net::nsIOService::gDefaultSegmentSize,
-                                    &dummy);
+  return mAsyncStream->ReadSegments(
+      CallPeekFunc, &data, net::nsIOService::gDefaultSegmentSize, &dummy);
 }
 
-nsresult
-nsInputStreamPump::EnsureWaiting()
-{
-    mMutex.AssertCurrentThreadIn();
+nsresult nsInputStreamPump::EnsureWaiting() {
+  mMutex.AssertCurrentThreadIn();
 
+  
+  
+  MOZ_ASSERT(mAsyncStream);
+  if (!mWaitingForInputStreamReady && !mProcessingCallbacks) {
     
-    
-    MOZ_ASSERT(mAsyncStream);
-    if (!mWaitingForInputStreamReady && !mProcessingCallbacks) {
-        
-        if (mState == STATE_STOP) {
-            nsCOMPtr<nsIEventTarget> mainThread = mLabeledMainThreadTarget
-                ? mLabeledMainThreadTarget
-                : do_AddRef(GetMainThreadEventTarget());
-            if (mTargetThread != mainThread) {
-                mTargetThread = mainThread;
-            }
-        }
-        MOZ_ASSERT(mTargetThread);
-        nsresult rv = mAsyncStream->AsyncWait(this, 0, 0, mTargetThread);
-        if (NS_FAILED(rv)) {
-            NS_ERROR("AsyncWait failed");
-            return rv;
-        }
-        
-        
-        mRetargeting = false;
-        mWaitingForInputStreamReady = true;
+    if (mState == STATE_STOP) {
+      nsCOMPtr<nsIEventTarget> mainThread =
+          mLabeledMainThreadTarget ? mLabeledMainThreadTarget
+                                   : do_AddRef(GetMainThreadEventTarget());
+      if (mTargetThread != mainThread) {
+        mTargetThread = mainThread;
+      }
     }
-    return NS_OK;
-}
-
-
-
-
-
-
-
-
-NS_IMPL_ISUPPORTS(nsInputStreamPump,
-                  nsIRequest,
-                  nsIThreadRetargetableRequest,
-                  nsIInputStreamCallback,
-                  nsIInputStreamPump)
-
-
-
-
-
-NS_IMETHODIMP
-nsInputStreamPump::GetName(nsACString &result)
-{
-    RecursiveMutexAutoLock lock(mMutex);
-
-    result.Truncate();
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsInputStreamPump::IsPending(bool *result)
-{
-    RecursiveMutexAutoLock lock(mMutex);
-
-    *result = (mState != STATE_IDLE);
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsInputStreamPump::GetStatus(nsresult *status)
-{
-    RecursiveMutexAutoLock lock(mMutex);
-
-    *status = mStatus;
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsInputStreamPump::Cancel(nsresult status)
-{
-    MOZ_ASSERT(NS_IsMainThread());
-
-    RecursiveMutexAutoLock lock(mMutex);
-
-    LOG(("nsInputStreamPump::Cancel [this=%p status=%" PRIx32 "]\n",
-        this, static_cast<uint32_t>(status)));
-
-    if (NS_FAILED(mStatus)) {
-        LOG(("  already canceled\n"));
-        return NS_OK;
+    MOZ_ASSERT(mTargetThread);
+    nsresult rv = mAsyncStream->AsyncWait(this, 0, 0, mTargetThread);
+    if (NS_FAILED(rv)) {
+      NS_ERROR("AsyncWait failed");
+      return rv;
     }
-
-    NS_ASSERTION(NS_FAILED(status), "cancel with non-failure status code");
-    mStatus = status;
-
-    
-    if (mAsyncStream) {
-        mAsyncStream->CloseWithStatus(status);
-        if (mSuspendCount == 0)
-            EnsureWaiting();
-        
-        
-        
-        
-    }
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsInputStreamPump::Suspend()
-{
-    RecursiveMutexAutoLock lock(mMutex);
-
-    LOG(("nsInputStreamPump::Suspend [this=%p]\n", this));
-    NS_ENSURE_TRUE(mState != STATE_IDLE, NS_ERROR_UNEXPECTED);
-    ++mSuspendCount;
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsInputStreamPump::Resume()
-{
-    RecursiveMutexAutoLock lock(mMutex);
-
-    LOG(("nsInputStreamPump::Resume [this=%p]\n", this));
-    NS_ENSURE_TRUE(mSuspendCount > 0, NS_ERROR_UNEXPECTED);
-    NS_ENSURE_TRUE(mState != STATE_IDLE, NS_ERROR_UNEXPECTED);
-
     
     
-    
-    if (--mSuspendCount == 0 && mAsyncStream)
-        EnsureWaiting();
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsInputStreamPump::GetLoadFlags(nsLoadFlags *aLoadFlags)
-{
-    RecursiveMutexAutoLock lock(mMutex);
-
-    *aLoadFlags = mLoadFlags;
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsInputStreamPump::SetLoadFlags(nsLoadFlags aLoadFlags)
-{
-    RecursiveMutexAutoLock lock(mMutex);
-
-    mLoadFlags = aLoadFlags;
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsInputStreamPump::GetLoadGroup(nsILoadGroup **aLoadGroup)
-{
-    RecursiveMutexAutoLock lock(mMutex);
-
-    NS_IF_ADDREF(*aLoadGroup = mLoadGroup);
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsInputStreamPump::SetLoadGroup(nsILoadGroup *aLoadGroup)
-{
-    RecursiveMutexAutoLock lock(mMutex);
-
-    mLoadGroup = aLoadGroup;
-    return NS_OK;
+    mRetargeting = false;
+    mWaitingForInputStreamReady = true;
+  }
+  return NS_OK;
 }
 
 
 
 
 
+
+
+
+NS_IMPL_ISUPPORTS(nsInputStreamPump, nsIRequest, nsIThreadRetargetableRequest,
+                  nsIInputStreamCallback, nsIInputStreamPump)
+
+
+
+
+
 NS_IMETHODIMP
-nsInputStreamPump::Init(nsIInputStream *stream,
-                        uint32_t segsize, uint32_t segcount,
-                        bool closeWhenDone, nsIEventTarget *mainThreadTarget)
-{
-    NS_ENSURE_TRUE(mState == STATE_IDLE, NS_ERROR_IN_PROGRESS);
+nsInputStreamPump::GetName(nsACString &result) {
+  RecursiveMutexAutoLock lock(mMutex);
 
-    mStream = stream;
-    mSegSize = segsize;
-    mSegCount = segcount;
-    mCloseWhenDone = closeWhenDone;
-    mLabeledMainThreadTarget = mainThreadTarget;
-
-    return NS_OK;
+  result.Truncate();
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt)
-{
-    RecursiveMutexAutoLock lock(mMutex);
+nsInputStreamPump::IsPending(bool *result) {
+  RecursiveMutexAutoLock lock(mMutex);
 
-    NS_ENSURE_TRUE(mState == STATE_IDLE, NS_ERROR_IN_PROGRESS);
-    NS_ENSURE_ARG_POINTER(listener);
-    MOZ_ASSERT(NS_IsMainThread(), "nsInputStreamPump should be read from the "
-                                  "main thread only.");
+  *result = (mState != STATE_IDLE);
+  return NS_OK;
+}
 
-    
-    
-    
-    
-    
-    
+NS_IMETHODIMP
+nsInputStreamPump::GetStatus(nsresult *status) {
+  RecursiveMutexAutoLock lock(mMutex);
 
-    bool nonBlocking;
-    nsresult rv = mStream->IsNonBlocking(&nonBlocking);
-    if (NS_FAILED(rv)) return rv;
+  *status = mStatus;
+  return NS_OK;
+}
 
-    if (nonBlocking) {
-        mAsyncStream = do_QueryInterface(mStream);
-        if (!mAsyncStream) {
-            rv = NonBlockingAsyncInputStream::Create(mStream.forget(),
-                                                     getter_AddRefs(mAsyncStream));
-            if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-        }
-        MOZ_ASSERT(mAsyncStream);
-    }
+NS_IMETHODIMP
+nsInputStreamPump::Cancel(nsresult status) {
+  MOZ_ASSERT(NS_IsMainThread());
 
+  RecursiveMutexAutoLock lock(mMutex);
+
+  LOG(("nsInputStreamPump::Cancel [this=%p status=%" PRIx32 "]\n", this,
+       static_cast<uint32_t>(status)));
+
+  if (NS_FAILED(mStatus)) {
+    LOG(("  already canceled\n"));
+    return NS_OK;
+  }
+
+  NS_ASSERTION(NS_FAILED(status), "cancel with non-failure status code");
+  mStatus = status;
+
+  
+  if (mAsyncStream) {
+    mAsyncStream->CloseWithStatus(status);
+    if (mSuspendCount == 0) EnsureWaiting();
+    
+    
+    
+    
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsInputStreamPump::Suspend() {
+  RecursiveMutexAutoLock lock(mMutex);
+
+  LOG(("nsInputStreamPump::Suspend [this=%p]\n", this));
+  NS_ENSURE_TRUE(mState != STATE_IDLE, NS_ERROR_UNEXPECTED);
+  ++mSuspendCount;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsInputStreamPump::Resume() {
+  RecursiveMutexAutoLock lock(mMutex);
+
+  LOG(("nsInputStreamPump::Resume [this=%p]\n", this));
+  NS_ENSURE_TRUE(mSuspendCount > 0, NS_ERROR_UNEXPECTED);
+  NS_ENSURE_TRUE(mState != STATE_IDLE, NS_ERROR_UNEXPECTED);
+
+  
+  
+  
+  if (--mSuspendCount == 0 && mAsyncStream) EnsureWaiting();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsInputStreamPump::GetLoadFlags(nsLoadFlags *aLoadFlags) {
+  RecursiveMutexAutoLock lock(mMutex);
+
+  *aLoadFlags = mLoadFlags;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsInputStreamPump::SetLoadFlags(nsLoadFlags aLoadFlags) {
+  RecursiveMutexAutoLock lock(mMutex);
+
+  mLoadFlags = aLoadFlags;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsInputStreamPump::GetLoadGroup(nsILoadGroup **aLoadGroup) {
+  RecursiveMutexAutoLock lock(mMutex);
+
+  NS_IF_ADDREF(*aLoadGroup = mLoadGroup);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsInputStreamPump::SetLoadGroup(nsILoadGroup *aLoadGroup) {
+  RecursiveMutexAutoLock lock(mMutex);
+
+  mLoadGroup = aLoadGroup;
+  return NS_OK;
+}
+
+
+
+
+
+NS_IMETHODIMP
+nsInputStreamPump::Init(nsIInputStream *stream, uint32_t segsize,
+                        uint32_t segcount, bool closeWhenDone,
+                        nsIEventTarget *mainThreadTarget) {
+  NS_ENSURE_TRUE(mState == STATE_IDLE, NS_ERROR_IN_PROGRESS);
+
+  mStream = stream;
+  mSegSize = segsize;
+  mSegCount = segcount;
+  mCloseWhenDone = closeWhenDone;
+  mLabeledMainThreadTarget = mainThreadTarget;
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt) {
+  RecursiveMutexAutoLock lock(mMutex);
+
+  NS_ENSURE_TRUE(mState == STATE_IDLE, NS_ERROR_IN_PROGRESS);
+  NS_ENSURE_ARG_POINTER(listener);
+  MOZ_ASSERT(NS_IsMainThread(),
+             "nsInputStreamPump should be read from the "
+             "main thread only.");
+
+  
+  
+  
+  
+  
+  
+
+  bool nonBlocking;
+  nsresult rv = mStream->IsNonBlocking(&nonBlocking);
+  if (NS_FAILED(rv)) return rv;
+
+  if (nonBlocking) {
+    mAsyncStream = do_QueryInterface(mStream);
     if (!mAsyncStream) {
-        
-        nsCOMPtr<nsIStreamTransportService> sts =
-            do_GetService(kStreamTransportServiceCID, &rv);
-        if (NS_FAILED(rv)) return rv;
-
-        nsCOMPtr<nsITransport> transport;
-        rv = sts->CreateInputTransport(mStream, mCloseWhenDone, getter_AddRefs(transport));
-        if (NS_FAILED(rv)) return rv;
-
-        nsCOMPtr<nsIInputStream> wrapper;
-        rv = transport->OpenInputStream(0, mSegSize, mSegCount, getter_AddRefs(wrapper));
-        if (NS_FAILED(rv)) return rv;
-
-        mAsyncStream = do_QueryInterface(wrapper, &rv);
-        if (NS_FAILED(rv)) return rv;
+      rv = NonBlockingAsyncInputStream::Create(mStream.forget(),
+                                               getter_AddRefs(mAsyncStream));
+      if (NS_WARN_IF(NS_FAILED(rv))) return rv;
     }
+    MOZ_ASSERT(mAsyncStream);
+  }
 
+  if (!mAsyncStream) {
     
-    
-    mStream = nullptr;
-
-    
-    mStreamOffset = 0;
-
-    
-    
-    if (NS_IsMainThread() && mLabeledMainThreadTarget) {
-        mTargetThread = mLabeledMainThreadTarget;
-    } else {
-        mTargetThread = GetCurrentThreadEventTarget();
-    }
-    NS_ENSURE_STATE(mTargetThread);
-
-    rv = EnsureWaiting();
+    nsCOMPtr<nsIStreamTransportService> sts =
+        do_GetService(kStreamTransportServiceCID, &rv);
     if (NS_FAILED(rv)) return rv;
 
-    if (mLoadGroup)
-        mLoadGroup->AddRequest(this, nullptr);
+    nsCOMPtr<nsITransport> transport;
+    rv = sts->CreateInputTransport(mStream, mCloseWhenDone,
+                                   getter_AddRefs(transport));
+    if (NS_FAILED(rv)) return rv;
 
-    mState = STATE_START;
-    mListener = listener;
-    mListenerContext = ctxt;
-    return NS_OK;
+    nsCOMPtr<nsIInputStream> wrapper;
+    rv = transport->OpenInputStream(0, mSegSize, mSegCount,
+                                    getter_AddRefs(wrapper));
+    if (NS_FAILED(rv)) return rv;
+
+    mAsyncStream = do_QueryInterface(wrapper, &rv);
+    if (NS_FAILED(rv)) return rv;
+  }
+
+  
+  
+  mStream = nullptr;
+
+  
+  mStreamOffset = 0;
+
+  
+  
+  if (NS_IsMainThread() && mLabeledMainThreadTarget) {
+    mTargetThread = mLabeledMainThreadTarget;
+  } else {
+    mTargetThread = GetCurrentThreadEventTarget();
+  }
+  NS_ENSURE_STATE(mTargetThread);
+
+  rv = EnsureWaiting();
+  if (NS_FAILED(rv)) return rv;
+
+  if (mLoadGroup) mLoadGroup->AddRequest(this, nullptr);
+
+  mState = STATE_START;
+  mListener = listener;
+  mListenerContext = ctxt;
+  return NS_OK;
 }
 
 
@@ -393,330 +362,308 @@ nsInputStreamPump::AsyncRead(nsIStreamListener *listener, nsISupports *ctxt)
 
 
 NS_IMETHODIMP
-nsInputStreamPump::OnInputStreamReady(nsIAsyncInputStream *stream)
-{
-    LOG(("nsInputStreamPump::OnInputStreamReady [this=%p]\n", this));
+nsInputStreamPump::OnInputStreamReady(nsIAsyncInputStream *stream) {
+  LOG(("nsInputStreamPump::OnInputStreamReady [this=%p]\n", this));
 
-    AUTO_PROFILER_LABEL("nsInputStreamPump::OnInputStreamReady", NETWORK);
+  AUTO_PROFILER_LABEL("nsInputStreamPump::OnInputStreamReady", NETWORK);
 
+  
+  
+
+  for (;;) {
     
     
+    
+    
+    
+    
+    RecursiveMutexAutoLock lock(mMutex);
 
-    for (;;) {
-        
-        
-        
-        
-        
-        
-        RecursiveMutexAutoLock lock(mMutex);
-
-        
-        if (mProcessingCallbacks) {
-            MOZ_ASSERT(!mProcessingCallbacks);
-            break;
-        }
-        mProcessingCallbacks = true;
-        if (mSuspendCount || mState == STATE_IDLE) {
-            mWaitingForInputStreamReady = false;
-            mProcessingCallbacks = false;
-            break;
-        }
-
-        uint32_t nextState;
-        switch (mState) {
-        case STATE_START:
-            nextState = OnStateStart();
-            break;
-        case STATE_TRANSFER:
-            nextState = OnStateTransfer();
-            break;
-        case STATE_STOP:
-            mRetargeting = false;
-            nextState = OnStateStop();
-            break;
-        default:
-            nextState = 0;
-            MOZ_ASSERT_UNREACHABLE("Unknown enum value.");
-            return NS_ERROR_UNEXPECTED;
-        }
-
-        bool stillTransferring = (mState == STATE_TRANSFER &&
-                                  nextState == STATE_TRANSFER);
-        if (stillTransferring) {
-            NS_ASSERTION(NS_SUCCEEDED(mStatus),
-                         "Should not have failed status for ongoing transfer");
-        } else {
-            NS_ASSERTION(mState != nextState,
-                         "Only OnStateTransfer can be called more than once.");
-        }
-        if (mRetargeting) {
-            NS_ASSERTION(mState != STATE_STOP,
-                         "Retargeting should not happen during OnStateStop.");
-        }
-
-        
-        
-        if (nextState == STATE_STOP && !NS_IsMainThread()) {
-            mRetargeting = true;
-        }
-
-        
-        
-        mProcessingCallbacks = false;
-
-        
-        
-        if (mSuspendCount) {
-            mState = nextState;
-            mWaitingForInputStreamReady = false;
-            break;
-        }
-
-        
-        
-        if (stillTransferring || mRetargeting) {
-            mState = nextState;
-            mWaitingForInputStreamReady = false;
-            nsresult rv = EnsureWaiting();
-            if (NS_SUCCEEDED(rv))
-                break;
-
-            
-            
-            if (NS_SUCCEEDED(mStatus)) {
-                mStatus = rv;
-            }
-            nextState = STATE_STOP;
-        }
-
-        mState = nextState;
+    
+    if (mProcessingCallbacks) {
+      MOZ_ASSERT(!mProcessingCallbacks);
+      break;
     }
-    return NS_OK;
-}
-
-uint32_t
-nsInputStreamPump::OnStateStart()
-{
-    mMutex.AssertCurrentThreadIn();
-
-    AUTO_PROFILER_LABEL("nsInputStreamPump::OnStateStart", NETWORK);
-
-    LOG(("  OnStateStart [this=%p]\n", this));
-
-    nsresult rv;
-
-    
-    
-    
-    if (NS_SUCCEEDED(mStatus)) {
-        uint64_t avail;
-        rv = mAsyncStream->Available(&avail);
-        if (NS_FAILED(rv) && rv != NS_BASE_STREAM_CLOSED)
-            mStatus = rv;
+    mProcessingCallbacks = true;
+    if (mSuspendCount || mState == STATE_IDLE) {
+      mWaitingForInputStreamReady = false;
+      mProcessingCallbacks = false;
+      break;
     }
 
-    {
-        
-        
-        
-        RecursiveMutexAutoUnlock unlock(mMutex);
-        rv = mListener->OnStartRequest(this, mListenerContext);
+    uint32_t nextState;
+    switch (mState) {
+      case STATE_START:
+        nextState = OnStateStart();
+        break;
+      case STATE_TRANSFER:
+        nextState = OnStateTransfer();
+        break;
+      case STATE_STOP:
+        mRetargeting = false;
+        nextState = OnStateStop();
+        break;
+      default:
+        nextState = 0;
+        MOZ_ASSERT_UNREACHABLE("Unknown enum value.");
+        return NS_ERROR_UNEXPECTED;
+    }
+
+    bool stillTransferring =
+        (mState == STATE_TRANSFER && nextState == STATE_TRANSFER);
+    if (stillTransferring) {
+      NS_ASSERTION(NS_SUCCEEDED(mStatus),
+                   "Should not have failed status for ongoing transfer");
+    } else {
+      NS_ASSERTION(mState != nextState,
+                   "Only OnStateTransfer can be called more than once.");
+    }
+    if (mRetargeting) {
+      NS_ASSERTION(mState != STATE_STOP,
+                   "Retargeting should not happen during OnStateStop.");
     }
 
     
     
-    if (NS_FAILED(rv) && NS_SUCCEEDED(mStatus))
+    if (nextState == STATE_STOP && !NS_IsMainThread()) {
+      mRetargeting = true;
+    }
+
+    
+    
+    mProcessingCallbacks = false;
+
+    
+    
+    if (mSuspendCount) {
+      mState = nextState;
+      mWaitingForInputStreamReady = false;
+      break;
+    }
+
+    
+    
+    if (stillTransferring || mRetargeting) {
+      mState = nextState;
+      mWaitingForInputStreamReady = false;
+      nsresult rv = EnsureWaiting();
+      if (NS_SUCCEEDED(rv)) break;
+
+      
+      
+      if (NS_SUCCEEDED(mStatus)) {
         mStatus = rv;
-
-    return NS_SUCCEEDED(mStatus) ? STATE_TRANSFER : STATE_STOP;
-}
-
-uint32_t
-nsInputStreamPump::OnStateTransfer()
-{
-    mMutex.AssertCurrentThreadIn();
-
-    AUTO_PROFILER_LABEL("nsInputStreamPump::OnStateTransfer", NETWORK);
-
-    LOG(("  OnStateTransfer [this=%p]\n", this));
-
-    
-    if (NS_FAILED(mStatus))
-        return STATE_STOP;
-
-    nsresult rv = CreateBufferedStreamIfNeeded();
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return STATE_STOP;
+      }
+      nextState = STATE_STOP;
     }
 
+    mState = nextState;
+  }
+  return NS_OK;
+}
+
+uint32_t nsInputStreamPump::OnStateStart() {
+  mMutex.AssertCurrentThreadIn();
+
+  AUTO_PROFILER_LABEL("nsInputStreamPump::OnStateStart", NETWORK);
+
+  LOG(("  OnStateStart [this=%p]\n", this));
+
+  nsresult rv;
+
+  
+  
+  
+  if (NS_SUCCEEDED(mStatus)) {
     uint64_t avail;
     rv = mAsyncStream->Available(&avail);
-    LOG(("  Available returned [stream=%p rv=%" PRIx32 " avail=%" PRIu64 "]\n", mAsyncStream.get(),
-         static_cast<uint32_t>(rv), avail));
+    if (NS_FAILED(rv) && rv != NS_BASE_STREAM_CLOSED) mStatus = rv;
+  }
 
-    if (rv == NS_BASE_STREAM_CLOSED) {
-        rv = NS_OK;
-        avail = 0;
-    }
-    else if (NS_SUCCEEDED(rv) && avail) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        int64_t offsetBefore;
-        nsCOMPtr<nsITellableStream> tellable = do_QueryInterface(mAsyncStream);
-        if (tellable && NS_FAILED(tellable->Tell(&offsetBefore))) {
-            MOZ_ASSERT_UNREACHABLE("Tell failed on readable stream");
-            offsetBefore = 0;
-        }
-
-        uint32_t odaAvail =
-            avail > UINT32_MAX ?
-            UINT32_MAX : uint32_t(avail);
-
-        LOG(("  calling OnDataAvailable [offset=%" PRIu64 " count=%" PRIu64 "(%u)]\n",
-            mStreamOffset, avail, odaAvail));
-
-        {
-            
-            
-            
-            RecursiveMutexAutoUnlock unlock(mMutex);
-            rv = mListener->OnDataAvailable(this, mListenerContext,
-                                            mAsyncStream, mStreamOffset,
-                                            odaAvail);
-        }
-
-        
-        if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(mStatus)) {
-            
-            if (tellable) {
-                
-                
-                int64_t offsetAfter;
-                if (NS_FAILED(tellable->Tell(&offsetAfter)))
-                    offsetAfter = offsetBefore + odaAvail;
-                if (offsetAfter > offsetBefore)
-                    mStreamOffset += (offsetAfter - offsetBefore);
-                else if (mSuspendCount == 0) {
-                    
-                    
-                    
-                    
-                    
-                    
-                    
-                    NS_ERROR("OnDataAvailable implementation consumed no data");
-                    mStatus = NS_ERROR_UNEXPECTED;
-                }
-            }
-            else
-                mStreamOffset += odaAvail; 
-        }
-    }
-
+  {
     
     
+    
+    RecursiveMutexAutoUnlock unlock(mMutex);
+    rv = mListener->OnStartRequest(this, mListenerContext);
+  }
 
-    if (NS_SUCCEEDED(mStatus)) {
-        if (NS_FAILED(rv))
-            mStatus = rv;
-        else if (avail) {
-            
-            
-            
-            
-            rv = mAsyncStream->Available(&avail);
-            if (NS_SUCCEEDED(rv))
-                return STATE_TRANSFER;
-            if (rv != NS_BASE_STREAM_CLOSED)
-                mStatus = rv;
-        }
-    }
+  
+  
+  if (NS_FAILED(rv) && NS_SUCCEEDED(mStatus)) mStatus = rv;
+
+  return NS_SUCCEEDED(mStatus) ? STATE_TRANSFER : STATE_STOP;
+}
+
+uint32_t nsInputStreamPump::OnStateTransfer() {
+  mMutex.AssertCurrentThreadIn();
+
+  AUTO_PROFILER_LABEL("nsInputStreamPump::OnStateTransfer", NETWORK);
+
+  LOG(("  OnStateTransfer [this=%p]\n", this));
+
+  
+  if (NS_FAILED(mStatus)) return STATE_STOP;
+
+  nsresult rv = CreateBufferedStreamIfNeeded();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return STATE_STOP;
-}
+  }
 
-nsresult
-nsInputStreamPump::CallOnStateStop()
-{
-    RecursiveMutexAutoLock lock(mMutex);
+  uint64_t avail;
+  rv = mAsyncStream->Available(&avail);
+  LOG(("  Available returned [stream=%p rv=%" PRIx32 " avail=%" PRIu64 "]\n",
+       mAsyncStream.get(), static_cast<uint32_t>(rv), avail));
 
-    MOZ_ASSERT(NS_IsMainThread(),
-               "CallOnStateStop should only be called on the main thread.");
+  if (rv == NS_BASE_STREAM_CLOSED) {
+    rv = NS_OK;
+    avail = 0;
+  } else if (NS_SUCCEEDED(rv) && avail) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
-    mState = OnStateStop();
-    return NS_OK;
-}
-
-uint32_t
-nsInputStreamPump::OnStateStop()
-{
-    mMutex.AssertCurrentThreadIn();
-
-    if (!NS_IsMainThread()) {
-        
-        
-        nsresult rv = mLabeledMainThreadTarget->Dispatch(
-          NewRunnableMethod("nsInputStreamPump::CallOnStateStop",
-                            this,
-                            &nsInputStreamPump::CallOnStateStop));
-        NS_ENSURE_SUCCESS(rv, STATE_IDLE);
-        return STATE_IDLE;
+    
+    
+    int64_t offsetBefore;
+    nsCOMPtr<nsITellableStream> tellable = do_QueryInterface(mAsyncStream);
+    if (tellable && NS_FAILED(tellable->Tell(&offsetBefore))) {
+      MOZ_ASSERT_UNREACHABLE("Tell failed on readable stream");
+      offsetBefore = 0;
     }
 
-    AUTO_PROFILER_LABEL("nsInputStreamPump::OnStateStop", NETWORK);
+    uint32_t odaAvail = avail > UINT32_MAX ? UINT32_MAX : uint32_t(avail);
 
-    LOG(("  OnStateStop [this=%p status=%" PRIx32 "]\n", this, static_cast<uint32_t>(mStatus)));
+    LOG(("  calling OnDataAvailable [offset=%" PRIu64 " count=%" PRIu64
+         "(%u)]\n",
+         mStreamOffset, avail, odaAvail));
 
-    
-    
-    
-
-    if (!mAsyncStream || !mListener) {
-        MOZ_ASSERT(mAsyncStream, "null mAsyncStream: OnStateStop called twice?");
-        MOZ_ASSERT(mListener, "null mListener: OnStateStop called twice?");
-        return STATE_IDLE;
-    }
-
-    if (NS_FAILED(mStatus))
-        mAsyncStream->CloseWithStatus(mStatus);
-    else if (mCloseWhenDone)
-        mAsyncStream->Close();
-
-    mAsyncStream = nullptr;
-    mTargetThread = nullptr;
-    mIsPending = false;
     {
-        
-        
-        
-        RecursiveMutexAutoUnlock unlock(mMutex);
-        mListener->OnStopRequest(this, mListenerContext, mStatus);
+      
+      
+      
+      RecursiveMutexAutoUnlock unlock(mMutex);
+      rv = mListener->OnDataAvailable(this, mListenerContext, mAsyncStream,
+                                      mStreamOffset, odaAvail);
     }
-    mListener = nullptr;
-    mListenerContext = nullptr;
 
-    if (mLoadGroup)
-        mLoadGroup->RemoveRequest(this, nullptr, mStatus);
+    
+    if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(mStatus)) {
+      
+      if (tellable) {
+        
+        
+        int64_t offsetAfter;
+        if (NS_FAILED(tellable->Tell(&offsetAfter)))
+          offsetAfter = offsetBefore + odaAvail;
+        if (offsetAfter > offsetBefore)
+          mStreamOffset += (offsetAfter - offsetBefore);
+        else if (mSuspendCount == 0) {
+          
+          
+          
+          
+          
+          
+          
+          NS_ERROR("OnDataAvailable implementation consumed no data");
+          mStatus = NS_ERROR_UNEXPECTED;
+        }
+      } else
+        mStreamOffset += odaAvail;  
+    }
+  }
 
-    return STATE_IDLE;
+  
+  
+
+  if (NS_SUCCEEDED(mStatus)) {
+    if (NS_FAILED(rv))
+      mStatus = rv;
+    else if (avail) {
+      
+      
+      
+      
+      rv = mAsyncStream->Available(&avail);
+      if (NS_SUCCEEDED(rv)) return STATE_TRANSFER;
+      if (rv != NS_BASE_STREAM_CLOSED) mStatus = rv;
+    }
+  }
+  return STATE_STOP;
 }
 
-nsresult
-nsInputStreamPump::CreateBufferedStreamIfNeeded()
-{
+nsresult nsInputStreamPump::CallOnStateStop() {
+  RecursiveMutexAutoLock lock(mMutex);
+
+  MOZ_ASSERT(NS_IsMainThread(),
+             "CallOnStateStop should only be called on the main thread.");
+
+  mState = OnStateStop();
+  return NS_OK;
+}
+
+uint32_t nsInputStreamPump::OnStateStop() {
+  mMutex.AssertCurrentThreadIn();
+
+  if (!NS_IsMainThread()) {
+    
+    
+    nsresult rv = mLabeledMainThreadTarget->Dispatch(
+        NewRunnableMethod("nsInputStreamPump::CallOnStateStop", this,
+                          &nsInputStreamPump::CallOnStateStop));
+    NS_ENSURE_SUCCESS(rv, STATE_IDLE);
+    return STATE_IDLE;
+  }
+
+  AUTO_PROFILER_LABEL("nsInputStreamPump::OnStateStop", NETWORK);
+
+  LOG(("  OnStateStop [this=%p status=%" PRIx32 "]\n", this,
+       static_cast<uint32_t>(mStatus)));
+
+  
+  
+  
+
+  if (!mAsyncStream || !mListener) {
+    MOZ_ASSERT(mAsyncStream, "null mAsyncStream: OnStateStop called twice?");
+    MOZ_ASSERT(mListener, "null mListener: OnStateStop called twice?");
+    return STATE_IDLE;
+  }
+
+  if (NS_FAILED(mStatus))
+    mAsyncStream->CloseWithStatus(mStatus);
+  else if (mCloseWhenDone)
+    mAsyncStream->Close();
+
+  mAsyncStream = nullptr;
+  mTargetThread = nullptr;
+  mIsPending = false;
+  {
+    
+    
+    
+    RecursiveMutexAutoUnlock unlock(mMutex);
+    mListener->OnStopRequest(this, mListenerContext, mStatus);
+  }
+  mListener = nullptr;
+  mListenerContext = nullptr;
+
+  if (mLoadGroup) mLoadGroup->RemoveRequest(this, nullptr, mStatus);
+
+  return STATE_IDLE;
+}
+
+nsresult nsInputStreamPump::CreateBufferedStreamIfNeeded() {
   if (mAsyncStreamIsBuffered) {
     return NS_OK;
   }
@@ -747,49 +694,48 @@ nsInputStreamPump::CreateBufferedStreamIfNeeded()
 
 
 NS_IMETHODIMP
-nsInputStreamPump::RetargetDeliveryTo(nsIEventTarget* aNewTarget)
-{
-    RecursiveMutexAutoLock lock(mMutex);
+nsInputStreamPump::RetargetDeliveryTo(nsIEventTarget *aNewTarget) {
+  RecursiveMutexAutoLock lock(mMutex);
 
-    NS_ENSURE_ARG(aNewTarget);
-    NS_ENSURE_TRUE(mState == STATE_START || mState == STATE_TRANSFER,
-                   NS_ERROR_UNEXPECTED);
+  NS_ENSURE_ARG(aNewTarget);
+  NS_ENSURE_TRUE(mState == STATE_START || mState == STATE_TRANSFER,
+                 NS_ERROR_UNEXPECTED);
 
-    
-    if (NS_FAILED(mStatus)) {
-        return mStatus;
+  
+  if (NS_FAILED(mStatus)) {
+    return mStatus;
+  }
+
+  if (aNewTarget == mTargetThread) {
+    NS_WARNING("Retargeting delivery to same thread");
+    return NS_OK;
+  }
+
+  
+  
+  nsresult rv = NS_OK;
+  nsCOMPtr<nsIThreadRetargetableStreamListener> retargetableListener =
+      do_QueryInterface(mListener, &rv);
+  if (NS_SUCCEEDED(rv) && retargetableListener) {
+    rv = retargetableListener->CheckListenerChain();
+    if (NS_SUCCEEDED(rv)) {
+      mTargetThread = aNewTarget;
+      mRetargeting = true;
     }
-
-    if (aNewTarget == mTargetThread) {
-        NS_WARNING("Retargeting delivery to same thread");
-        return NS_OK;
-    }
-
-    
-    
-    nsresult rv = NS_OK;
-    nsCOMPtr<nsIThreadRetargetableStreamListener> retargetableListener =
-        do_QueryInterface(mListener, &rv);
-    if (NS_SUCCEEDED(rv) && retargetableListener) {
-        rv = retargetableListener->CheckListenerChain();
-        if (NS_SUCCEEDED(rv)) {
-            mTargetThread = aNewTarget;
-            mRetargeting = true;
-        }
-    }
-    LOG(("nsInputStreamPump::RetargetDeliveryTo [this=%p aNewTarget=%p] "
-         "%s listener [%p] rv[%" PRIx32 "]",
-         this, aNewTarget, (mTargetThread == aNewTarget ? "success" : "failure"),
-         (nsIStreamListener*)mListener, static_cast<uint32_t>(rv)));
-    return rv;
+  }
+  LOG(
+      ("nsInputStreamPump::RetargetDeliveryTo [this=%p aNewTarget=%p] "
+       "%s listener [%p] rv[%" PRIx32 "]",
+       this, aNewTarget, (mTargetThread == aNewTarget ? "success" : "failure"),
+       (nsIStreamListener *)mListener, static_cast<uint32_t>(rv)));
+  return rv;
 }
 
 NS_IMETHODIMP
-nsInputStreamPump::GetDeliveryTarget(nsIEventTarget** aNewTarget)
-{
-    RecursiveMutexAutoLock lock(mMutex);
+nsInputStreamPump::GetDeliveryTarget(nsIEventTarget **aNewTarget) {
+  RecursiveMutexAutoLock lock(mMutex);
 
-    nsCOMPtr<nsIEventTarget> target = mTargetThread;
-    target.forget(aNewTarget);
-    return NS_OK;
+  nsCOMPtr<nsIEventTarget> target = mTargetThread;
+  target.forget(aNewTarget);
+  return NS_OK;
 }

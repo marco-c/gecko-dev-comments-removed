@@ -19,34 +19,25 @@ namespace mozilla {
 
 
 
-class EventStates
-{
-public:
+class EventStates {
+ public:
   typedef uint64_t InternalType;
   typedef uint64_t ServoType;
 
-  constexpr EventStates()
-    : mStates(0)
-  {
-  }
+  constexpr EventStates() : mStates(0) {}
 
   
   
   
   
   
-  explicit constexpr EventStates(InternalType aStates)
-    : mStates(aStates)
-  {
-  }
+  explicit constexpr EventStates(InternalType aStates) : mStates(aStates) {}
 
-  EventStates constexpr operator|(const EventStates& aEventStates) const
-  {
+  EventStates constexpr operator|(const EventStates& aEventStates) const {
     return EventStates(mStates | aEventStates.mStates);
   }
 
-  EventStates& operator|=(const EventStates& aEventStates)
-  {
+  EventStates& operator|=(const EventStates& aEventStates) {
     mStates |= aEventStates.mStates;
     return *this;
   }
@@ -54,39 +45,30 @@ public:
   
   
   
-  EventStates constexpr operator&(const EventStates& aEventStates) const
-  {
+  EventStates constexpr operator&(const EventStates& aEventStates) const {
     return EventStates(mStates & aEventStates.mStates);
   }
 
-  EventStates& operator&=(const EventStates& aEventStates)
-  {
+  EventStates& operator&=(const EventStates& aEventStates) {
     mStates &= aEventStates.mStates;
     return *this;
   }
 
-  bool operator==(const EventStates& aEventStates) const
-  {
+  bool operator==(const EventStates& aEventStates) const {
     return mStates == aEventStates.mStates;
   }
 
-  bool operator!=(const EventStates& aEventStates) const
-  {
+  bool operator!=(const EventStates& aEventStates) const {
     return mStates != aEventStates.mStates;
   }
 
-  EventStates operator~() const
-  {
-    return EventStates(~mStates);
-  }
+  EventStates operator~() const { return EventStates(~mStates); }
 
-  EventStates operator^(const EventStates& aEventStates) const
-  {
+  EventStates operator^(const EventStates& aEventStates) const {
     return EventStates(mStates ^ aEventStates.mStates);
   }
 
-  EventStates& operator^=(const EventStates& aEventStates)
-  {
+  EventStates& operator^=(const EventStates& aEventStates) {
     mStates ^= aEventStates.mStates;
     return *this;
   }
@@ -97,10 +79,7 @@ public:
 
 
 
-  bool IsEmpty() const
-  {
-    return mStates == 0;
-  }
+  bool IsEmpty() const { return mStates == 0; }
 
   
 
@@ -111,16 +90,16 @@ public:
 
 
 
-  bool HasState(EventStates aEventStates) const
-  {
+  bool HasState(EventStates aEventStates) const {
 #ifdef DEBUG
     
     
     if ((aEventStates.mStates & (aEventStates.mStates - 1))) {
-      NS_ERROR("When calling HasState, "
-               "EventStates object has to contain only one state!");
+      NS_ERROR(
+          "When calling HasState, "
+          "EventStates object has to contain only one state!");
     }
-#endif 
+#endif  
     return mStates & aEventStates.mStates;
   }
 
@@ -132,8 +111,7 @@ public:
 
 
 
-  bool HasAtLeastOneOfStates(EventStates aEventStates) const
-  {
+  bool HasAtLeastOneOfStates(EventStates aEventStates) const {
     return mStates & aEventStates.mStates;
   }
 
@@ -145,31 +123,25 @@ public:
 
 
 
-  bool HasAllStates(EventStates aEventStates) const
-  {
+  bool HasAllStates(EventStates aEventStates) const {
     return (mStates & aEventStates.mStates) == aEventStates.mStates;
   }
 
   
   
   
-  InternalType GetInternalValue() const {
-    return mStates;
-  }
+  InternalType GetInternalValue() const { return mStates; }
 
   
 
 
-  ServoType ServoValue() const
-  {
-    return mStates;
-  }
+  ServoType ServoValue() const { return mStates; }
 
-private:
+ private:
   InternalType mStates;
 };
 
-} 
+}  
 
 
 
@@ -179,7 +151,7 @@ private:
 
 
 
-#define NS_DEFINE_EVENT_STATE_MACRO(_val)               \
+#define NS_DEFINE_EVENT_STATE_MACRO(_val) \
   (mozilla::EventStates(mozilla::EventStates::InternalType(1) << _val))
 
 
@@ -196,43 +168,44 @@ private:
 
 
 
-#define NS_EVENT_STATE_ACTIVE        NS_DEFINE_EVENT_STATE_MACRO(0)
 
-#define NS_EVENT_STATE_FOCUS         NS_DEFINE_EVENT_STATE_MACRO(1)
+#define NS_EVENT_STATE_ACTIVE NS_DEFINE_EVENT_STATE_MACRO(0)
 
-#define NS_EVENT_STATE_HOVER         NS_DEFINE_EVENT_STATE_MACRO(2)
+#define NS_EVENT_STATE_FOCUS NS_DEFINE_EVENT_STATE_MACRO(1)
 
-#define NS_EVENT_STATE_ENABLED       NS_DEFINE_EVENT_STATE_MACRO(3)
+#define NS_EVENT_STATE_HOVER NS_DEFINE_EVENT_STATE_MACRO(2)
 
-#define NS_EVENT_STATE_DISABLED      NS_DEFINE_EVENT_STATE_MACRO(4)
+#define NS_EVENT_STATE_ENABLED NS_DEFINE_EVENT_STATE_MACRO(3)
 
-#define NS_EVENT_STATE_CHECKED       NS_DEFINE_EVENT_STATE_MACRO(5)
+#define NS_EVENT_STATE_DISABLED NS_DEFINE_EVENT_STATE_MACRO(4)
+
+#define NS_EVENT_STATE_CHECKED NS_DEFINE_EVENT_STATE_MACRO(5)
 
 #define NS_EVENT_STATE_INDETERMINATE NS_DEFINE_EVENT_STATE_MACRO(6)
 
 #define NS_EVENT_STATE_PLACEHOLDERSHOWN NS_DEFINE_EVENT_STATE_MACRO(7)
 
-#define NS_EVENT_STATE_URLTARGET     NS_DEFINE_EVENT_STATE_MACRO(8)
+#define NS_EVENT_STATE_URLTARGET NS_DEFINE_EVENT_STATE_MACRO(8)
 
 
-#define NS_EVENT_STATE_FULLSCREEN    NS_DEFINE_EVENT_STATE_MACRO(9)
+#define NS_EVENT_STATE_FULLSCREEN NS_DEFINE_EVENT_STATE_MACRO(9)
 
-#define NS_EVENT_STATE_VALID         NS_DEFINE_EVENT_STATE_MACRO(10)
+#define NS_EVENT_STATE_VALID NS_DEFINE_EVENT_STATE_MACRO(10)
 
-#define NS_EVENT_STATE_INVALID       NS_DEFINE_EVENT_STATE_MACRO(11)
+#define NS_EVENT_STATE_INVALID NS_DEFINE_EVENT_STATE_MACRO(11)
 
 #define NS_EVENT_STATE_MOZ_UI_VALID NS_DEFINE_EVENT_STATE_MACRO(12)
 
 #define NS_EVENT_STATE_MOZ_UI_INVALID NS_DEFINE_EVENT_STATE_MACRO(13)
 
-#define NS_EVENT_STATE_BROKEN        NS_DEFINE_EVENT_STATE_MACRO(14)
+#define NS_EVENT_STATE_BROKEN NS_DEFINE_EVENT_STATE_MACRO(14)
 
-#define NS_EVENT_STATE_USERDISABLED  NS_DEFINE_EVENT_STATE_MACRO(15)
+#define NS_EVENT_STATE_USERDISABLED NS_DEFINE_EVENT_STATE_MACRO(15)
 
-#define NS_EVENT_STATE_SUPPRESSED    NS_DEFINE_EVENT_STATE_MACRO(16)
+#define NS_EVENT_STATE_SUPPRESSED NS_DEFINE_EVENT_STATE_MACRO(16)
 
 
-#define NS_EVENT_STATE_LOADING       NS_DEFINE_EVENT_STATE_MACRO(17)
+#define NS_EVENT_STATE_LOADING NS_DEFINE_EVENT_STATE_MACRO(17)
 
 #define NS_EVENT_STATE_HANDLER_BLOCKED NS_DEFINE_EVENT_STATE_MACRO(18)
 
@@ -240,28 +213,28 @@ private:
 
 #define NS_EVENT_STATE_HANDLER_CRASHED NS_DEFINE_EVENT_STATE_MACRO(20)
 
-#define NS_EVENT_STATE_REQUIRED      NS_DEFINE_EVENT_STATE_MACRO(21)
+#define NS_EVENT_STATE_REQUIRED NS_DEFINE_EVENT_STATE_MACRO(21)
 
-#define NS_EVENT_STATE_OPTIONAL      NS_DEFINE_EVENT_STATE_MACRO(22)
+#define NS_EVENT_STATE_OPTIONAL NS_DEFINE_EVENT_STATE_MACRO(22)
 
-#define NS_EVENT_STATE_DEFINED       NS_DEFINE_EVENT_STATE_MACRO(23)
+#define NS_EVENT_STATE_DEFINED NS_DEFINE_EVENT_STATE_MACRO(23)
 
-#define NS_EVENT_STATE_VISITED       NS_DEFINE_EVENT_STATE_MACRO(24)
+#define NS_EVENT_STATE_VISITED NS_DEFINE_EVENT_STATE_MACRO(24)
 
-#define NS_EVENT_STATE_UNVISITED     NS_DEFINE_EVENT_STATE_MACRO(25)
+#define NS_EVENT_STATE_UNVISITED NS_DEFINE_EVENT_STATE_MACRO(25)
 
-#define NS_EVENT_STATE_DRAGOVER      NS_DEFINE_EVENT_STATE_MACRO(26)
+#define NS_EVENT_STATE_DRAGOVER NS_DEFINE_EVENT_STATE_MACRO(26)
 
-#define NS_EVENT_STATE_INRANGE       NS_DEFINE_EVENT_STATE_MACRO(27)
+#define NS_EVENT_STATE_INRANGE NS_DEFINE_EVENT_STATE_MACRO(27)
 
-#define NS_EVENT_STATE_OUTOFRANGE    NS_DEFINE_EVENT_STATE_MACRO(28)
+#define NS_EVENT_STATE_OUTOFRANGE NS_DEFINE_EVENT_STATE_MACRO(28)
 
 
-#define NS_EVENT_STATE_MOZ_READONLY  NS_DEFINE_EVENT_STATE_MACRO(29)
+#define NS_EVENT_STATE_MOZ_READONLY NS_DEFINE_EVENT_STATE_MACRO(29)
 
 #define NS_EVENT_STATE_MOZ_READWRITE NS_DEFINE_EVENT_STATE_MACRO(30)
 
-#define NS_EVENT_STATE_DEFAULT       NS_DEFINE_EVENT_STATE_MACRO(31)
+#define NS_EVENT_STATE_DEFAULT NS_DEFINE_EVENT_STATE_MACRO(31)
 
 #define NS_EVENT_STATE_MOZ_SUBMITINVALID NS_DEFINE_EVENT_STATE_MACRO(32)
 
@@ -276,7 +249,7 @@ private:
 #define NS_EVENT_STATE_STYLEEDITOR_TRANSITIONING NS_DEFINE_EVENT_STATE_MACRO(37)
 #define NS_EVENT_STATE_INCREMENT_SCRIPT_LEVEL NS_DEFINE_EVENT_STATE_MACRO(38)
 
-#define NS_EVENT_STATE_FOCUSRING     NS_DEFINE_EVENT_STATE_MACRO(39)
+#define NS_EVENT_STATE_FOCUSRING NS_DEFINE_EVENT_STATE_MACRO(39)
 
 #define NS_EVENT_STATE_TYPE_CLICK_TO_PLAY NS_DEFINE_EVENT_STATE_MACRO(40)
 
@@ -324,10 +297,9 @@ private:
 
 #define DIRECTION_STATES (NS_EVENT_STATE_LTR | NS_EVENT_STATE_RTL)
 
-#define DIR_ATTR_STATES (NS_EVENT_STATE_HAS_DIR_ATTR |          \
-                         NS_EVENT_STATE_DIR_ATTR_LTR |          \
-                         NS_EVENT_STATE_DIR_ATTR_RTL |          \
-                         NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO)
+#define DIR_ATTR_STATES                                        \
+  (NS_EVENT_STATE_HAS_DIR_ATTR | NS_EVENT_STATE_DIR_ATTR_LTR | \
+   NS_EVENT_STATE_DIR_ATTR_RTL | NS_EVENT_STATE_DIR_ATTR_LIKE_AUTO)
 
 #define DISABLED_STATES (NS_EVENT_STATE_DISABLED | NS_EVENT_STATE_ENABLED)
 
@@ -340,31 +312,20 @@ private:
 
 
 
-#define MANUALLY_MANAGED_STATES (             \
-  NS_EVENT_STATE_AUTOFILL |                   \
-  NS_EVENT_STATE_AUTOFILL_PREVIEW             \
-)
+#define MANUALLY_MANAGED_STATES \
+  (NS_EVENT_STATE_AUTOFILL | NS_EVENT_STATE_AUTOFILL_PREVIEW)
 
 
 
 
 
-#define EXTERNALLY_MANAGED_STATES (           \
-  MANUALLY_MANAGED_STATES |                   \
-  DIR_ATTR_STATES |                           \
-  DISABLED_STATES |                           \
-  REQUIRED_STATES |                           \
-  NS_EVENT_STATE_ACTIVE |                     \
-  NS_EVENT_STATE_DEFINED |                    \
-  NS_EVENT_STATE_DRAGOVER |                   \
-  NS_EVENT_STATE_FOCUS |                      \
-  NS_EVENT_STATE_FOCUSRING |                  \
-  NS_EVENT_STATE_FOCUS_WITHIN |               \
-  NS_EVENT_STATE_FULLSCREEN |                 \
-  NS_EVENT_STATE_HOVER |                      \
-  NS_EVENT_STATE_URLTARGET                    \
-)
+#define EXTERNALLY_MANAGED_STATES                                              \
+  (MANUALLY_MANAGED_STATES | DIR_ATTR_STATES | DISABLED_STATES |               \
+   REQUIRED_STATES | NS_EVENT_STATE_ACTIVE | NS_EVENT_STATE_DEFINED |          \
+   NS_EVENT_STATE_DRAGOVER | NS_EVENT_STATE_FOCUS | NS_EVENT_STATE_FOCUSRING | \
+   NS_EVENT_STATE_FOCUS_WITHIN | NS_EVENT_STATE_FULLSCREEN |                   \
+   NS_EVENT_STATE_HOVER | NS_EVENT_STATE_URLTARGET)
 
 #define INTRINSIC_STATES (~EXTERNALLY_MANAGED_STATES)
 
-#endif 
+#endif  

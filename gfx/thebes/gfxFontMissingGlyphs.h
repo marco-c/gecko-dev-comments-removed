@@ -14,26 +14,24 @@ namespace mozilla {
 namespace gfx {
 class DrawTarget;
 class Pattern;
-} 
-} 
+}  
+}  
 
 
 
 
 
-class gfxFontMissingGlyphs final
-{
-    typedef mozilla::gfx::DrawTarget DrawTarget;
-    typedef mozilla::gfx::Float Float;
-    typedef mozilla::gfx::Matrix Matrix;
-    typedef mozilla::gfx::Pattern Pattern;
-    typedef mozilla::gfx::Rect Rect;
+class gfxFontMissingGlyphs final {
+  typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::gfx::Float Float;
+  typedef mozilla::gfx::Matrix Matrix;
+  typedef mozilla::gfx::Pattern Pattern;
+  typedef mozilla::gfx::Rect Rect;
 
-    gfxFontMissingGlyphs() = delete; 
+  gfxFontMissingGlyphs() = delete;  
 
-public:
-    
-
+ public:
+  
 
 
 
@@ -42,22 +40,20 @@ public:
 
 
 
-    static void DrawMissingGlyph(uint32_t aChar,
-                                 const Rect& aRect,
-                                 DrawTarget& aDrawTarget,
-                                 const Pattern& aPattern,
-                                 uint32_t aAppUnitsPerDevPixel,
-                                 const Matrix* aMat = nullptr);
-    
+
+  static void DrawMissingGlyph(uint32_t aChar, const Rect& aRect,
+                               DrawTarget& aDrawTarget, const Pattern& aPattern,
+                               uint32_t aAppUnitsPerDevPixel,
+                               const Matrix* aMat = nullptr);
+  
 
 
 
-    static Float GetDesiredMinWidth(uint32_t aChar,
-                                    uint32_t aAppUnitsPerDevUnit);
+  static Float GetDesiredMinWidth(uint32_t aChar, uint32_t aAppUnitsPerDevUnit);
 
-    static void Purge();
+  static void Purge();
 
-    static void Shutdown();
+  static void Shutdown();
 };
 
 #endif

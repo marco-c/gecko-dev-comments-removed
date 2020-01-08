@@ -12,28 +12,26 @@
 
 using namespace mozilla;
 
-nsPageContentFrame*
-NS_NewPageContentFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsPageContentFrame* NS_NewPageContentFrame(nsIPresShell* aPresShell,
+                                           ComputedStyle* aStyle) {
   return new (aPresShell) nsPageContentFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsPageContentFrame)
 
-void
-nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
-                           ReflowOutput&     aDesiredSize,
-                           const ReflowInput& aReflowInput,
-                           nsReflowStatus&          aStatus)
-{
+void nsPageContentFrame::Reflow(nsPresContext* aPresContext,
+                                ReflowOutput& aDesiredSize,
+                                const ReflowInput& aReflowInput,
+                                nsReflowStatus& aStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsPageContentFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
   if (GetPrevInFlow() && (GetStateBits() & NS_FRAME_FIRST_REFLOW)) {
-    nsresult rv = aPresContext->PresShell()->FrameConstructor()
-                    ->ReplicateFixedFrames(this);
+    nsresult rv =
+        aPresContext->PresShell()->FrameConstructor()->ReplicateFixedFrames(
+            this);
     if (NS_FAILED(rv)) {
       return;
     }
@@ -42,8 +40,7 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
   
   
   
-  nsSize  maxSize(aReflowInput.ComputedWidth(),
-                  aReflowInput.ComputedHeight());
+  nsSize maxSize(aReflowInput.ComputedWidth(), aReflowInput.ComputedHeight());
   SetSize(maxSize);
 
   
@@ -53,17 +50,17 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
     nsIFrame* frame = mFrames.FirstChild();
     WritingMode wm = frame->GetWritingMode();
     LogicalSize logicalSize(wm, maxSize);
-    ReflowInput kidReflowInput(aPresContext, aReflowInput,
-                                     frame, logicalSize);
+    ReflowInput kidReflowInput(aPresContext, aReflowInput, frame, logicalSize);
     kidReflowInput.SetComputedBSize(logicalSize.BSize(wm));
 
     
-    ReflowChild(frame, aPresContext, aDesiredSize, kidReflowInput, 0, 0, 0, aStatus);
+    ReflowChild(frame, aPresContext, aDesiredSize, kidReflowInput, 0, 0, 0,
+                aStatus);
 
     
     
     
-    nsMargin padding(0,0,0,0);
+    nsMargin padding(0, 0, 0, 0);
 
     
     
@@ -78,25 +75,30 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
       
       nscoord xmost = aDesiredSize.ScrollableOverflow().XMost();
       if (xmost > aDesiredSize.Width()) {
-        nscoord widthToFit = xmost + padding.right +
-          kidReflowInput.mStyleBorder->GetComputedBorderWidth(eSideRight);
+        nscoord widthToFit =
+            xmost + padding.right +
+            kidReflowInput.mStyleBorder->GetComputedBorderWidth(eSideRight);
         float ratio = float(maxSize.width) / widthToFit;
-        NS_ASSERTION(ratio >= 0.0 && ratio < 1.0, "invalid shrink-to-fit ratio");
+        NS_ASSERTION(ratio >= 0.0 && ratio < 1.0,
+                     "invalid shrink-to-fit ratio");
         mPD->mShrinkToFitRatio = std::min(mPD->mShrinkToFitRatio, ratio);
       }
     }
 
     
-    FinishReflowChild(frame, aPresContext, aDesiredSize, &kidReflowInput, 0, 0, 0);
+    FinishReflowChild(frame, aPresContext, aDesiredSize, &kidReflowInput, 0, 0,
+                      0);
 
     NS_ASSERTION(aPresContext->IsDynamic() || !aStatus.IsFullyComplete() ||
-                  !frame->GetNextInFlow(), "bad child flow list");
+                     !frame->GetNextInFlow(),
+                 "bad child flow list");
   }
 
   
   nsReflowStatus fixedStatus;
   ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, fixedStatus);
-  NS_ASSERTION(fixedStatus.IsComplete(), "fixed frames can be truncated, but not incomplete");
+  NS_ASSERTION(fixedStatus.IsComplete(),
+               "fixed frames can be truncated, but not incomplete");
 
   
   WritingMode wm = aReflowInput.GetWritingMode();
@@ -109,19 +111,15 @@ nsPageContentFrame::Reflow(nsPresContext*           aPresContext,
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
-void
-nsPageContentFrame::AppendDirectlyOwnedAnonBoxes(
-  nsTArray<OwnedAnonBox>& aResult)
-{
+void nsPageContentFrame::AppendDirectlyOwnedAnonBoxes(
+    nsTArray<OwnedAnonBox>& aResult) {
   MOZ_ASSERT(mFrames.FirstChild(),
              "pageContentFrame must have a canvasFrame child");
   aResult.AppendElement(mFrames.FirstChild());
 }
 
 #ifdef DEBUG_FRAME_DUMP
-nsresult
-nsPageContentFrame::GetFrameName(nsAString& aResult) const
-{
+nsresult nsPageContentFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(NS_LITERAL_STRING("PageContent"), aResult);
 }
 #endif

@@ -11,16 +11,14 @@
 #include "mozilla/TemplateLib.h"
 
 
-template<size_t N>
-struct Log2 : mozilla::tl::CeilingLog2<N>
-{
+template <size_t N>
+struct Log2 : mozilla::tl::CeilingLog2<N> {
   using mozilla::tl::CeilingLog2<N>::value;
   static_assert(1ULL << value == N, "Number is not a power of 2");
 };
 #define LOG2(N) Log2<N>::value
 
-enum class Order
-{
+enum class Order {
   eLess = -1,
   eEqual = 0,
   eGreater = 1,
@@ -28,10 +26,8 @@ enum class Order
 
 
 
-template<typename T>
-Order
-CompareInt(T aValue1, T aValue2)
-{
+template <typename T>
+Order CompareInt(T aValue1, T aValue2) {
   static_assert(mozilla::IsIntegral<T>::value, "Type must be integral");
   if (aValue1 < aValue2) {
     return Order::eLess;
@@ -44,60 +40,45 @@ CompareInt(T aValue1, T aValue2)
 
 
 
-template<typename T>
-Order
-CompareAddr(T* aAddr1, T* aAddr2)
-{
+template <typename T>
+Order CompareAddr(T* aAddr1, T* aAddr2) {
   return CompareInt(uintptr_t(aAddr1), uintptr_t(aAddr2));
 }
 
 
-constexpr size_t operator"" _KiB(unsigned long long int aNum)
-{
+constexpr size_t operator"" _KiB(unsigned long long int aNum) {
   return size_t(aNum) * 1024;
 }
 
-constexpr size_t operator"" _KiB(long double aNum)
-{
+constexpr size_t operator"" _KiB(long double aNum) {
   return size_t(aNum * 1024);
 }
 
-constexpr size_t operator"" _MiB(unsigned long long int aNum)
-{
+constexpr size_t operator"" _MiB(unsigned long long int aNum) {
   return size_t(aNum) * 1024_KiB;
 }
 
-constexpr size_t operator"" _MiB(long double aNum)
-{
+constexpr size_t operator"" _MiB(long double aNum) {
   return size_t(aNum * 1024_KiB);
 }
 
-constexpr double operator""_percent(long double aPercent)
-{
+constexpr double operator""_percent(long double aPercent) {
   return double(aPercent) / 100;
 }
 
 
 
-class Fraction
-{
-public:
+class Fraction {
+ public:
   explicit constexpr Fraction(size_t aNumerator, size_t aDenominator)
-    : mNumerator(aNumerator)
-    , mDenominator(aDenominator)
-  {
-  }
+      : mNumerator(aNumerator), mDenominator(aDenominator) {}
 
   MOZ_IMPLICIT constexpr Fraction(long double aValue)
-    
-    
-    : mNumerator(aValue * 4096)
-    , mDenominator(4096)
-  {
-  }
+      
+      
+      : mNumerator(aValue * 4096), mDenominator(4096) {}
 
-  inline bool operator<(const Fraction& aOther) const
-  {
+  inline bool operator<(const Fraction& aOther) const {
 #ifndef MOZ_DEBUG
     
     
@@ -120,18 +101,15 @@ public:
 
   inline bool operator>(const Fraction& aOther) const { return aOther < *this; }
 
-  inline bool operator>=(const Fraction& aOther) const
-  {
+  inline bool operator>=(const Fraction& aOther) const {
     return !(*this < aOther);
   }
 
-  inline bool operator<=(const Fraction& aOther) const
-  {
+  inline bool operator<=(const Fraction& aOther) const {
     return !(*this > aOther);
   }
 
-  inline bool operator==(const Fraction& aOther) const
-  {
+  inline bool operator==(const Fraction& aOther) const {
 #ifndef MOZ_DEBUG
     
     return mNumerator * aOther.mDenominator == aOther.mNumerator * mDenominator;
@@ -144,12 +122,11 @@ public:
 #endif
   }
 
-  inline bool operator!=(const Fraction& aOther) const
-  {
+  inline bool operator!=(const Fraction& aOther) const {
     return !(*this == aOther);
   }
 
-private:
+ private:
   size_t mNumerator;
   size_t mDenominator;
 };

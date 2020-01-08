@@ -16,32 +16,32 @@
 class nsAtom;
 
 class nsStreamConverterService : public nsIStreamConverterService {
-public:
-    
-    
-    NS_DECL_ISUPPORTS
+ public:
+  
+  
+  NS_DECL_ISUPPORTS
 
+  
+  
+  NS_DECL_NSISTREAMCONVERTERSERVICE
 
-    
-    
-    NS_DECL_NSISTREAMCONVERTERSERVICE
+  
+  
+  nsStreamConverterService() = default;
 
-    
-    
-    nsStreamConverterService() = default;
+ private:
+  virtual ~nsStreamConverterService() = default;
 
-private:
-    virtual ~nsStreamConverterService() = default;
+  
+  nsresult FindConverter(const char *aContractID,
+                         nsTArray<nsCString> **aEdgeList);
+  nsresult BuildGraph(void);
+  nsresult AddAdjacency(const char *aContractID);
+  nsresult ParseFromTo(const char *aContractID, nsCString &aFromRes,
+                       nsCString &aToRes);
 
-    
-    nsresult FindConverter(const char *aContractID, nsTArray<nsCString> **aEdgeList);
-    nsresult BuildGraph(void);
-    nsresult AddAdjacency(const char *aContractID);
-    nsresult ParseFromTo(const char *aContractID, nsCString &aFromRes, nsCString &aToRes);
-
-    
-    nsClassHashtable<nsCStringHashKey, nsTArray<RefPtr<nsAtom>>>
-        mAdjacencyList;
+  
+  nsClassHashtable<nsCStringHashKey, nsTArray<RefPtr<nsAtom>>> mAdjacencyList;
 };
 
-#endif 
+#endif  

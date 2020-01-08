@@ -6,10 +6,10 @@
 #ifndef mozilla_ChangeStyleTransaction_h
 #define mozilla_ChangeStyleTransaction_h
 
-#include "mozilla/EditTransactionBase.h"  
-#include "nsCOMPtr.h"                     
-#include "nsCycleCollectionParticipant.h" 
-#include "nsString.h"                     
+#include "mozilla/EditTransactionBase.h"   
+#include "nsCOMPtr.h"                      
+#include "nsCycleCollectionParticipant.h"  
+#include "nsString.h"                      
 
 class nsAtom;
 
@@ -17,21 +17,18 @@ namespace mozilla {
 
 namespace dom {
 class Element;
-} 
+}  
 
 
 
 
 
-class ChangeStyleTransaction final : public EditTransactionBase
-{
-protected:
-  ChangeStyleTransaction(dom::Element& aElement,
-                         nsAtom& aProperty,
-                         const nsAString& aValue,
-                         bool aRemove);
+class ChangeStyleTransaction final : public EditTransactionBase {
+ protected:
+  ChangeStyleTransaction(dom::Element& aElement, nsAtom& aProperty,
+                         const nsAString& aValue, bool aRemove);
 
-public:
+ public:
   
 
 
@@ -39,10 +36,8 @@ public:
 
 
 
-  static already_AddRefed<ChangeStyleTransaction>
-  Create(dom::Element& aElement,
-         nsAtom& aProperty,
-         const nsAString& aValue);
+  static already_AddRefed<ChangeStyleTransaction> Create(
+      dom::Element& aElement, nsAtom& aProperty, const nsAString& aValue);
 
   
 
@@ -51,10 +46,8 @@ public:
 
 
 
-  static already_AddRefed<ChangeStyleTransaction>
-  CreateToRemove(dom::Element& aElement,
-                 nsAtom& aProperty,
-                 const nsAString& aValue);
+  static already_AddRefed<ChangeStyleTransaction> CreateToRemove(
+      dom::Element& aElement, nsAtom& aProperty, const nsAString& aValue);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeStyleTransaction,
                                            EditTransactionBase)
@@ -75,7 +68,7 @@ public:
   static bool ValueIncludes(const nsAString& aValueList,
                             const nsAString& aValue);
 
-private:
+ private:
   virtual ~ChangeStyleTransaction();
 
   
@@ -134,6 +127,6 @@ private:
   bool mRedoAttributeWasSet;
 };
 
-} 
+}  
 
-#endif 
+#endif  

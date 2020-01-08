@@ -13,8 +13,6 @@
 
 
 
-class nsOSPermissionRequest : public nsOSPermissionRequestBase
-{
-};
+class nsOSPermissionRequest : public nsOSPermissionRequestBase {};
 
 #endif 

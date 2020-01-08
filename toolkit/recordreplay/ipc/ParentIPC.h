@@ -61,15 +61,16 @@ void OpenChannel(base::ProcessId aMiddlemanPid, uint32_t aChannelId,
 
 
 
-void GetArgumentsForChildProcess(base::ProcessId aMiddlemanPid, uint32_t aChannelId,
+void GetArgumentsForChildProcess(base::ProcessId aMiddlemanPid,
+                                 uint32_t aChannelId,
                                  const char* aRecordingFile, bool aRecording,
                                  std::vector<std::string>& aExtraArgs);
 
 
 bool DebuggerRunsInMiddleman();
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

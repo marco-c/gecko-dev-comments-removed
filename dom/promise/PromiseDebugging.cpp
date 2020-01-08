@@ -23,9 +23,8 @@
 namespace mozilla {
 namespace dom {
 
-class FlushRejections: public CancelableRunnable
-{
-public:
+class FlushRejections : public CancelableRunnable {
+ public:
   FlushRejections() : CancelableRunnable("dom::FlushRejections") {}
 
   static void Init() {
@@ -62,53 +61,48 @@ public:
     return NS_OK;
   }
 
-private:
+ private:
   
   
   static MOZ_THREAD_LOCAL(bool) sDispatched;
 };
 
- MOZ_THREAD_LOCAL(bool)
-FlushRejections::sDispatched;
+ MOZ_THREAD_LOCAL(bool) FlushRejections::sDispatched;
 
- void
-PromiseDebugging::GetState(GlobalObject& aGlobal, JS::Handle<JSObject*> aPromise,
-                           PromiseDebuggingStateHolder& aState,
-                           ErrorResult& aRv)
-{
+ void PromiseDebugging::GetState(
+    GlobalObject& aGlobal, JS::Handle<JSObject*> aPromise,
+    PromiseDebuggingStateHolder& aState, ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrap(aPromise));
   if (!obj || !JS::IsPromiseObject(obj)) {
-    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(NS_LITERAL_STRING(
-        "Argument of PromiseDebugging.getState"));
+    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(
+        NS_LITERAL_STRING("Argument of PromiseDebugging.getState"));
     return;
   }
   switch (JS::GetPromiseState(obj)) {
-  case JS::PromiseState::Pending:
-    aState.mState = PromiseDebuggingState::Pending;
-    break;
-  case JS::PromiseState::Fulfilled:
-    aState.mState = PromiseDebuggingState::Fulfilled;
-    aState.mValue = JS::GetPromiseResult(obj);
-    break;
-  case JS::PromiseState::Rejected:
-    aState.mState = PromiseDebuggingState::Rejected;
-    aState.mReason = JS::GetPromiseResult(obj);
-    break;
+    case JS::PromiseState::Pending:
+      aState.mState = PromiseDebuggingState::Pending;
+      break;
+    case JS::PromiseState::Fulfilled:
+      aState.mState = PromiseDebuggingState::Fulfilled;
+      aState.mValue = JS::GetPromiseResult(obj);
+      break;
+    case JS::PromiseState::Rejected:
+      aState.mState = PromiseDebuggingState::Rejected;
+      aState.mReason = JS::GetPromiseResult(obj);
+      break;
   }
 }
 
- void
-PromiseDebugging::GetPromiseID(GlobalObject& aGlobal,
-                               JS::Handle<JSObject*> aPromise,
-                               nsString& aID,
-                               ErrorResult& aRv)
-{
+ void PromiseDebugging::GetPromiseID(GlobalObject& aGlobal,
+                                                 JS::Handle<JSObject*> aPromise,
+                                                 nsString& aID,
+                                                 ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrap(aPromise));
   if (!obj || !JS::IsPromiseObject(obj)) {
-    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(NS_LITERAL_STRING(
-        "Argument of PromiseDebugging.getState"));
+    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(
+        NS_LITERAL_STRING("Argument of PromiseDebugging.getState"));
     return;
   }
   uint64_t promiseID = JS::GetPromiseID(obj);
@@ -116,60 +110,48 @@ PromiseDebugging::GetPromiseID(GlobalObject& aGlobal,
   aID.AppendInt(promiseID);
 }
 
- void
-PromiseDebugging::GetAllocationStack(GlobalObject& aGlobal,
-                                     JS::Handle<JSObject*> aPromise,
-                                     JS::MutableHandle<JSObject*> aStack,
-                                     ErrorResult& aRv)
-{
+ void PromiseDebugging::GetAllocationStack(
+    GlobalObject& aGlobal, JS::Handle<JSObject*> aPromise,
+    JS::MutableHandle<JSObject*> aStack, ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrap(aPromise));
   if (!obj || !JS::IsPromiseObject(obj)) {
-    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(NS_LITERAL_STRING(
-        "Argument of PromiseDebugging.getAllocationStack"));
+    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(
+        NS_LITERAL_STRING("Argument of PromiseDebugging.getAllocationStack"));
     return;
   }
   aStack.set(JS::GetPromiseAllocationSite(obj));
 }
 
- void
-PromiseDebugging::GetRejectionStack(GlobalObject& aGlobal,
-                                    JS::Handle<JSObject*> aPromise,
-                                    JS::MutableHandle<JSObject*> aStack,
-                                    ErrorResult& aRv)
-{
+ void PromiseDebugging::GetRejectionStack(
+    GlobalObject& aGlobal, JS::Handle<JSObject*> aPromise,
+    JS::MutableHandle<JSObject*> aStack, ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrap(aPromise));
   if (!obj || !JS::IsPromiseObject(obj)) {
-    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(NS_LITERAL_STRING(
-        "Argument of PromiseDebugging.getRejectionStack"));
+    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(
+        NS_LITERAL_STRING("Argument of PromiseDebugging.getRejectionStack"));
     return;
   }
   aStack.set(JS::GetPromiseResolutionSite(obj));
 }
 
- void
-PromiseDebugging::GetFullfillmentStack(GlobalObject& aGlobal,
-                                       JS::Handle<JSObject*> aPromise,
-                                       JS::MutableHandle<JSObject*> aStack,
-                                       ErrorResult& aRv)
-{
+ void PromiseDebugging::GetFullfillmentStack(
+    GlobalObject& aGlobal, JS::Handle<JSObject*> aPromise,
+    JS::MutableHandle<JSObject*> aStack, ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
   JS::Rooted<JSObject*> obj(cx, js::CheckedUnwrap(aPromise));
   if (!obj || !JS::IsPromiseObject(obj)) {
-    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(NS_LITERAL_STRING(
-        "Argument of PromiseDebugging.getFulfillmentStack"));
+    aRv.ThrowTypeError<MSG_IS_NOT_PROMISE>(
+        NS_LITERAL_STRING("Argument of PromiseDebugging.getFulfillmentStack"));
     return;
   }
   aStack.set(JS::GetPromiseResolutionSite(obj));
 }
 
- nsString
-PromiseDebugging::sIDPrefix;
+ nsString PromiseDebugging::sIDPrefix;
 
- void
-PromiseDebugging::Init()
-{
+ void PromiseDebugging::Init() {
   FlushRejections::Init();
 
   
@@ -182,36 +164,29 @@ PromiseDebugging::Init()
   }
 }
 
- void
-PromiseDebugging::Shutdown()
-{
-  sIDPrefix.SetIsVoid(true);
-}
+ void PromiseDebugging::Shutdown() { sIDPrefix.SetIsVoid(true); }
 
- void
-PromiseDebugging::FlushUncaughtRejections()
-{
+ void PromiseDebugging::FlushUncaughtRejections() {
   MOZ_ASSERT(!NS_IsMainThread());
   FlushRejections::FlushSync();
 }
 
- void
-PromiseDebugging::AddUncaughtRejectionObserver(GlobalObject&,
-                                               UncaughtRejectionObserver& aObserver)
-{
+ void PromiseDebugging::AddUncaughtRejectionObserver(
+    GlobalObject&, UncaughtRejectionObserver& aObserver) {
   CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
-  nsTArray<nsCOMPtr<nsISupports>>& observers = storage->mUncaughtRejectionObservers;
+  nsTArray<nsCOMPtr<nsISupports>>& observers =
+      storage->mUncaughtRejectionObservers;
   observers.AppendElement(&aObserver);
 }
 
- bool
-PromiseDebugging::RemoveUncaughtRejectionObserver(GlobalObject&,
-                                                  UncaughtRejectionObserver& aObserver)
-{
+ bool PromiseDebugging::RemoveUncaughtRejectionObserver(
+    GlobalObject&, UncaughtRejectionObserver& aObserver) {
   CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
-  nsTArray<nsCOMPtr<nsISupports>>& observers = storage->mUncaughtRejectionObservers;
+  nsTArray<nsCOMPtr<nsISupports>>& observers =
+      storage->mUncaughtRejectionObservers;
   for (size_t i = 0; i < observers.Length(); ++i) {
-    UncaughtRejectionObserver* observer = static_cast<UncaughtRejectionObserver*>(observers[i].get());
+    UncaughtRejectionObserver* observer =
+        static_cast<UncaughtRejectionObserver*>(observers[i].get());
     if (*observer == aObserver) {
       observers.RemoveElementAt(i);
       return true;
@@ -220,22 +195,21 @@ PromiseDebugging::RemoveUncaughtRejectionObserver(GlobalObject&,
   return false;
 }
 
- void
-PromiseDebugging::AddUncaughtRejection(JS::HandleObject aPromise)
-{
+ void PromiseDebugging::AddUncaughtRejection(
+    JS::HandleObject aPromise) {
   
   if (CycleCollectedJSContext::Get()->mUncaughtRejections.append(aPromise)) {
     FlushRejections::DispatchNeeded();
   }
 }
 
- void
-PromiseDebugging::AddConsumedRejection(JS::HandleObject aPromise)
-{
+ void PromiseDebugging::AddConsumedRejection(
+    JS::HandleObject aPromise) {
   
   
   
-  auto& uncaughtRejections = CycleCollectedJSContext::Get()->mUncaughtRejections;
+  auto& uncaughtRejections =
+      CycleCollectedJSContext::Get()->mUncaughtRejections;
   for (size_t i = 0; i < uncaughtRejections.length(); i++) {
     if (uncaughtRejections[i] == aPromise) {
       
@@ -250,9 +224,7 @@ PromiseDebugging::AddConsumedRejection(JS::HandleObject aPromise)
   }
 }
 
- void
-PromiseDebugging::FlushUncaughtRejectionsInternal()
-{
+ void PromiseDebugging::FlushUncaughtRejectionsInternal() {
   CycleCollectedJSContext* storage = CycleCollectedJSContext::Get();
 
   auto& uncaught = storage->mUncaughtRejections;
@@ -275,7 +247,7 @@ PromiseDebugging::FlushUncaughtRejectionsInternal()
 
     for (size_t j = 0; j < observers.Length(); ++j) {
       RefPtr<UncaughtRejectionObserver> obs =
-        static_cast<UncaughtRejectionObserver*>(observers[j].get());
+          static_cast<UncaughtRejectionObserver*>(observers[j].get());
 
       obs->OnLeftUncaught(promise, IgnoreErrors());
     }
@@ -291,7 +263,7 @@ PromiseDebugging::FlushUncaughtRejectionsInternal()
 
     for (size_t j = 0; j < observers.Length(); ++j) {
       RefPtr<UncaughtRejectionObserver> obs =
-        static_cast<UncaughtRejectionObserver*>(observers[j].get());
+          static_cast<UncaughtRejectionObserver*>(observers[j].get());
 
       obs->OnConsumed(promise, IgnoreErrors());
     }
@@ -299,5 +271,5 @@ PromiseDebugging::FlushUncaughtRejectionsInternal()
   storage->mConsumedRejections.clear();
 }
 
-} 
-} 
+}  
+}  

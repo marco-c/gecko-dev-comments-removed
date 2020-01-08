@@ -11,9 +11,7 @@
 namespace mozilla {
 namespace dom {
 
-already_AddRefed<Text>
-Text::SplitText(uint32_t aOffset, ErrorResult& aRv)
-{
+already_AddRefed<Text> Text::SplitText(uint32_t aOffset, ErrorResult& aRv) {
   nsAutoString cutText;
   uint32_t length = TextLength();
 
@@ -41,13 +39,12 @@ Text::SplitText(uint32_t aOffset, ErrorResult& aRv)
   
   
   
-  newContent->SetText(cutText, true); 
+  newContent->SetText(cutText, true);  
 
   CharacterDataChangeInfo::Details details = {
-    CharacterDataChangeInfo::Details::eSplit, newContent
-  };
-  nsresult rv = SetTextInternal(cutStartOffset, cutLength, nullptr, 0, true,
-                                &details);
+      CharacterDataChangeInfo::Details::eSplit, newContent};
+  nsresult rv =
+      SetTextInternal(cutStartOffset, cutLength, nullptr, 0, true, &details);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
     return nullptr;
@@ -62,9 +59,7 @@ Text::SplitText(uint32_t aOffset, ErrorResult& aRv)
   return newContent.forget();
 }
 
-static Text*
-FirstLogicallyAdjacentTextNode(Text* aNode)
-{
+static Text* FirstLogicallyAdjacentTextNode(Text* aNode) {
   do {
     nsIContent* sibling = aNode->GetPreviousSibling();
     if (!sibling || !sibling->IsText()) {
@@ -74,9 +69,7 @@ FirstLogicallyAdjacentTextNode(Text* aNode)
   } while (1);  
 }
 
-static Text*
-LastLogicallyAdjacentTextNode(Text* aNode)
-{
+static Text* LastLogicallyAdjacentTextNode(Text* aNode) {
   do {
     nsIContent* sibling = aNode->GetNextSibling();
     if (!sibling || !sibling->IsText()) {
@@ -84,13 +77,10 @@ LastLogicallyAdjacentTextNode(Text* aNode)
     }
 
     aNode = static_cast<Text*>(sibling);
-  } while (1); 
+  } while (1);  
 }
 
-void
-Text::GetWholeText(nsAString& aWholeText,
-                   ErrorResult& aRv)
-{
+void Text::GetWholeText(nsAString& aWholeText, ErrorResult& aRv) {
   nsIContent* parent = GetParent();
 
   
@@ -130,11 +120,10 @@ Text::GetWholeText(nsAString& aWholeText,
   }
 }
 
- already_AddRefed<Text>
-Text::Constructor(const GlobalObject& aGlobal,
-                  const nsAString& aData, ErrorResult& aRv)
-{
-  nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aGlobal.GetAsSupports());
+ already_AddRefed<Text> Text::Constructor(
+    const GlobalObject& aGlobal, const nsAString& aData, ErrorResult& aRv) {
+  nsCOMPtr<nsPIDOMWindowInner> window =
+      do_QueryInterface(aGlobal.GetAsSupports());
   if (!window || !window->GetDoc()) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
@@ -143,9 +132,7 @@ Text::Constructor(const GlobalObject& aGlobal,
   return window->GetDoc()->CreateTextNode(aData);
 }
 
-bool
-Text::HasTextForTranslation()
-{
+bool Text::HasTextForTranslation() {
   if (mText.Is2b()) {
     
     
@@ -166,11 +153,8 @@ Text::HasTextForTranslation()
 
     
     
-    if ((ch >= 'a' && ch <= 'z') ||
-       (ch >= 'A' && ch <= 'Z') ||
-       (ch >= 192 && ch <= 214) ||
-       (ch >= 216 && ch <= 246) ||
-       (ch >= 248)) {
+    if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+        (ch >= 192 && ch <= 214) || (ch >= 216 && ch <= 246) || (ch >= 248)) {
       return true;
     }
   }
@@ -178,5 +162,5 @@ Text::HasTextForTranslation()
   return false;
 }
 
-} 
-} 
+}  
+}  

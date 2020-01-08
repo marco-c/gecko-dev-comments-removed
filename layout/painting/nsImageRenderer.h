@@ -18,36 +18,31 @@ namespace layers {
 class StackingContextHelper;
 class WebRenderParentCommand;
 class WebRenderLayerManager;
-} 
+}  
 
 namespace wr {
 class DisplayListBuilder;
 class IpcResourceUpdateQueue;
-} 
+}  
 
 
 
 
 
-struct CSSSizeOrRatio
-{
+struct CSSSizeOrRatio {
   CSSSizeOrRatio()
-    : mRatio(0, 0)
-    , mWidth(0)
-    , mHeight(0)
-    , mHasWidth(false)
-    , mHasHeight(false)
-  {
-  }
+      : mRatio(0, 0),
+        mWidth(0),
+        mHeight(0),
+        mHasWidth(false),
+        mHasHeight(false) {}
 
-  bool CanComputeConcreteSize() const
-  {
+  bool CanComputeConcreteSize() const {
     return mHasWidth + mHasHeight + HasRatio() >= 2;
   }
   bool IsConcrete() const { return mHasWidth && mHasHeight; }
   bool HasRatio() const { return mRatio.width > 0 && mRatio.height > 0; }
-  bool IsEmpty() const
-  {
+  bool IsEmpty() const {
     return (mHasWidth && mWidth <= 0) || (mHasHeight && mHeight <= 0) ||
            mRatio.width <= 0 || mRatio.height <= 0;
   }
@@ -56,35 +51,31 @@ struct CSSSizeOrRatio
   
   nsSize ComputeConcreteSize() const;
 
-  void SetWidth(nscoord aWidth)
-  {
+  void SetWidth(nscoord aWidth) {
     mWidth = aWidth;
     mHasWidth = true;
     if (mHasHeight) {
       mRatio = nsSize(mWidth, mHeight);
     }
   }
-  void SetHeight(nscoord aHeight)
-  {
+  void SetHeight(nscoord aHeight) {
     mHeight = aHeight;
     mHasHeight = true;
     if (mHasWidth) {
       mRatio = nsSize(mWidth, mHeight);
     }
   }
-  void SetSize(const nsSize& aSize)
-  {
+  void SetSize(const nsSize& aSize) {
     mWidth = aSize.width;
     mHeight = aSize.height;
     mHasWidth = true;
     mHasHeight = true;
     mRatio = aSize;
   }
-  void SetRatio(const nsSize& aRatio)
-  {
+  void SetRatio(const nsSize& aRatio) {
     MOZ_ASSERT(
-      !mHasWidth || !mHasHeight,
-      "Probably shouldn't be setting a ratio if we have a concrete size");
+        !mHasWidth || !mHasHeight,
+        "Probably shouldn't be setting a ratio if we have a concrete size");
     mRatio = aRatio;
   }
 
@@ -103,26 +94,16 @@ struct CSSSizeOrRatio
 
 
 
-class nsImageRenderer
-{
-public:
+class nsImageRenderer {
+ public:
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
   typedef mozilla::layers::LayerManager LayerManager;
   typedef mozilla::layers::ImageContainer ImageContainer;
 
-  enum
-  {
-    FLAG_SYNC_DECODE_IMAGES = 0x01,
-    FLAG_PAINTING_TO_WINDOW = 0x02
-  };
-  enum FitType
-  {
-    CONTAIN,
-    COVER
-  };
+  enum { FLAG_SYNC_DECODE_IMAGES = 0x01, FLAG_PAINTING_TO_WINDOW = 0x02 };
+  enum FitType { CONTAIN, COVER };
 
-  nsImageRenderer(nsIFrame* aForFrame,
-                  const nsStyleImage* aImage,
+  nsImageRenderer(nsIFrame* aForFrame, const nsStyleImage* aImage,
                   uint32_t aFlags);
   ~nsImageRenderer() = default;
   
@@ -187,9 +168,9 @@ public:
 
 
   static nsSize ComputeConcreteSize(
-    const mozilla::CSSSizeOrRatio& aSpecifiedSize,
-    const mozilla::CSSSizeOrRatio& aIntrinsicSize,
-    const nsSize& aDefaultSize);
+      const mozilla::CSSSizeOrRatio& aSpecifiedSize,
+      const mozilla::CSSSizeOrRatio& aIntrinsicSize,
+      const nsSize& aDefaultSize);
 
   
 
@@ -205,12 +186,9 @@ public:
 
 
   ImgDrawResult DrawLayer(nsPresContext* aPresContext,
-                          gfxContext& aRenderingContext,
-                          const nsRect& aDest,
-                          const nsRect& aFill,
-                          const nsPoint& aAnchor,
-                          const nsRect& aDirty,
-                          const nsSize& aRepeatSize,
+                          gfxContext& aRenderingContext, const nsRect& aDest,
+                          const nsRect& aFill, const nsPoint& aAnchor,
+                          const nsRect& aDirty, const nsSize& aRepeatSize,
                           float aOpacity);
 
   
@@ -219,18 +197,12 @@ public:
 
 
   ImgDrawResult BuildWebRenderDisplayItemsForLayer(
-    nsPresContext* aPresContext,
-    mozilla::wr::DisplayListBuilder& aBuilder,
-    mozilla::wr::IpcResourceUpdateQueue& aResource,
-    const mozilla::layers::StackingContextHelper& aSc,
-    mozilla::layers::WebRenderLayerManager* aManager,
-    nsDisplayItem* aItem,
-    const nsRect& aDest,
-    const nsRect& aFill,
-    const nsPoint& aAnchor,
-    const nsRect& aDirty,
-    const nsSize& aRepeatSize,
-    float aOpacity);
+      nsPresContext* aPresContext, mozilla::wr::DisplayListBuilder& aBuilder,
+      mozilla::wr::IpcResourceUpdateQueue& aResource,
+      const mozilla::layers::StackingContextHelper& aSc,
+      mozilla::layers::WebRenderLayerManager* aManager, nsDisplayItem* aItem,
+      const nsRect& aDest, const nsRect& aFill, const nsPoint& aAnchor,
+      const nsRect& aDirty, const nsSize& aRepeatSize, float aOpacity);
 
   
 
@@ -252,17 +224,12 @@ public:
 
 
   ImgDrawResult DrawBorderImageComponent(
-    nsPresContext* aPresContext,
-    gfxContext& aRenderingContext,
-    const nsRect& aDirtyRect,
-    const nsRect& aFill,
-    const mozilla::CSSIntRect& aSrc,
-    mozilla::StyleBorderImageRepeat aHFill,
-    mozilla::StyleBorderImageRepeat aVFill,
-    const nsSize& aUnitSize,
-    uint8_t aIndex,
-    const mozilla::Maybe<nsSize>& aSVGViewportSize,
-    const bool aHasIntrinsicRatio);
+      nsPresContext* aPresContext, gfxContext& aRenderingContext,
+      const nsRect& aDirtyRect, const nsRect& aFill,
+      const mozilla::CSSIntRect& aSrc, mozilla::StyleBorderImageRepeat aHFill,
+      mozilla::StyleBorderImageRepeat aVFill, const nsSize& aUnitSize,
+      uint8_t aIndex, const mozilla::Maybe<nsSize>& aSVGViewportSize,
+      const bool aHasIntrinsicRatio);
 
   
 
@@ -284,12 +251,11 @@ public:
   void SetExtendMode(mozilla::gfx::ExtendMode aMode) { mExtendMode = aMode; }
   void SetMaskOp(uint8_t aMaskOp) { mMaskOp = aMaskOp; }
   void PurgeCacheForViewportChange(
-    const mozilla::Maybe<nsSize>& aSVGViewportSize,
-    const bool aHasRatio);
+      const mozilla::Maybe<nsSize>& aSVGViewportSize, const bool aHasRatio);
   nsStyleImageType GetType() const { return mType; }
   already_AddRefed<nsStyleGradient> GetGradientData();
 
-private:
+ private:
   
 
 
@@ -297,14 +263,10 @@ private:
 
 
 
-  ImgDrawResult Draw(nsPresContext* aPresContext,
-                     gfxContext& aRenderingContext,
-                     const nsRect& aDirtyRect,
-                     const nsRect& aDest,
-                     const nsRect& aFill,
-                     const nsPoint& aAnchor,
-                     const nsSize& aRepeatSize,
-                     const mozilla::CSSIntRect& aSrc,
+  ImgDrawResult Draw(nsPresContext* aPresContext, gfxContext& aRenderingContext,
+                     const nsRect& aDirtyRect, const nsRect& aDest,
+                     const nsRect& aFill, const nsPoint& aAnchor,
+                     const nsSize& aRepeatSize, const mozilla::CSSIntRect& aSrc,
                      float aOpacity = 1.0);
 
   
@@ -315,19 +277,13 @@ private:
 
 
   ImgDrawResult BuildWebRenderDisplayItems(
-    nsPresContext* aPresContext,
-    mozilla::wr::DisplayListBuilder& aBuilder,
-    mozilla::wr::IpcResourceUpdateQueue& aResources,
-    const mozilla::layers::StackingContextHelper& aSc,
-    mozilla::layers::WebRenderLayerManager* aManager,
-    nsDisplayItem* aItem,
-    const nsRect& aDirtyRect,
-    const nsRect& aDest,
-    const nsRect& aFill,
-    const nsPoint& aAnchor,
-    const nsSize& aRepeatSize,
-    const mozilla::CSSIntRect& aSrc,
-    float aOpacity = 1.0);
+      nsPresContext* aPresContext, mozilla::wr::DisplayListBuilder& aBuilder,
+      mozilla::wr::IpcResourceUpdateQueue& aResources,
+      const mozilla::layers::StackingContextHelper& aSc,
+      mozilla::layers::WebRenderLayerManager* aManager, nsDisplayItem* aItem,
+      const nsRect& aDirtyRect, const nsRect& aDest, const nsRect& aFill,
+      const nsPoint& aAnchor, const nsSize& aRepeatSize,
+      const mozilla::CSSIntRect& aSrc, float aOpacity = 1.0);
 
   
 
@@ -346,12 +302,12 @@ private:
   nsIFrame* mPaintServerFrame;
   nsLayoutUtils::SurfaceFromElementResult mImageElementSurface;
   ImgDrawResult mPrepareResult;
-  nsSize mSize; 
+  nsSize mSize;  
   uint32_t mFlags;
   mozilla::gfx::ExtendMode mExtendMode;
   uint8_t mMaskOp;
 };
 
-} 
+}  
 
 #endif 

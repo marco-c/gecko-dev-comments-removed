@@ -22,14 +22,13 @@ struct nsStyleFilter;
 
 
 
-class nsCSSFilterInstance
-{
+class nsCSSFilterInstance {
   typedef mozilla::gfx::Color Color;
   typedef mozilla::gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
   typedef mozilla::gfx::IntPoint IntPoint;
   typedef mozilla::gfx::Size Size;
 
-public:
+ public:
   
 
 
@@ -41,10 +40,10 @@ public:
 
 
 
-  nsCSSFilterInstance(const nsStyleFilter& aFilter,
-                      nscolor aShadowFallbackColor,
-                      const nsIntRect& aTargetBoundsInFilterSpace,
-                      const gfxMatrix& aFrameSpaceInCSSPxToFilterSpaceTransform);
+  nsCSSFilterInstance(
+      const nsStyleFilter& aFilter, nscolor aShadowFallbackColor,
+      const nsIntRect& aTargetBoundsInFilterSpace,
+      const gfxMatrix& aFrameSpaceInCSSPxToFilterSpaceTransform);
 
   
 
@@ -58,16 +57,18 @@ public:
 
 
 
-  nsresult BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                           bool aInputIsTainted);
+  nsresult BuildPrimitives(
+      nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
+      bool aInputIsTainted);
 
-private:
+ private:
   
 
 
 
-  FilterPrimitiveDescription CreatePrimitiveDescription(const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                                                        bool aInputIsTainted);
+  FilterPrimitiveDescription CreatePrimitiveDescription(
+      const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
+      bool aInputIsTainted);
 
   
 
@@ -87,7 +88,8 @@ private:
 
 
 
-  int32_t GetLastResultIndex(const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs);
+  int32_t GetLastResultIndex(
+      const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs);
 
   
 

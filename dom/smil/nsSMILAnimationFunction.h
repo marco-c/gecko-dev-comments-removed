@@ -21,8 +21,8 @@
 namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
-} 
-} 
+}  
+}  
 
 
 
@@ -36,16 +36,16 @@ class SVGAnimationElement;
 
 
 
-class nsSMILAnimationFunction
-{
-public:
+class nsSMILAnimationFunction {
+ public:
   nsSMILAnimationFunction();
 
   
 
 
 
-  void SetAnimationElement(mozilla::dom::SVGAnimationElement* aAnimationElement);
+  void SetAnimationElement(
+      mozilla::dom::SVGAnimationElement* aAnimationElement);
 
   
 
@@ -61,7 +61,7 @@ public:
 
 
   virtual bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
-                         nsAttrValue& aResult, nsresult* aParseResult = nullptr);
+                       nsAttrValue& aResult, nsresult* aParseResult = nullptr);
 
   
 
@@ -80,8 +80,7 @@ public:
 
 
 
-  void SampleAt(nsSMILTime aSampleTime,
-                const nsSMILTimeValue& aSimpleDuration,
+  void SampleAt(nsSMILTime aSampleTime, const nsSMILTimeValue& aSimpleDuration,
                 uint32_t aRepeatIteration);
 
   
@@ -153,8 +152,7 @@ public:
 
 
 
-  bool IsActiveOrFrozen() const
-  {
+  bool IsActiveOrFrozen() const {
     
 
 
@@ -169,9 +167,7 @@ public:
 
 
 
-  bool IsActive() const {
-    return mIsActive;
-  }
+  bool IsActive() const { return mIsActive; }
 
   
 
@@ -204,8 +200,7 @@ public:
 
 
 
-  void ClearHasChanged()
-  {
+  void ClearHasChanged() {
     MOZ_ASSERT(HasChanged(),
                "clearing mHasChanged flag, when it's already false");
     MOZ_ASSERT(!IsActiveOrFrozen(),
@@ -232,18 +227,14 @@ public:
 
 
 
-  bool WasSkippedInPrevSample() const {
-    return mWasSkippedInPrevSample;
-  }
+  bool WasSkippedInPrevSample() const { return mWasSkippedInPrevSample; }
 
   
 
 
 
 
-  void SetWasSkipped() {
-    mWasSkippedInPrevSample = true;
-  }
+  void SetWasSkipped() { mWasSkippedInPrevSample = true; }
 
   
 
@@ -255,24 +246,23 @@ public:
 
   
   class Comparator {
-    public:
-      bool Equals(const nsSMILAnimationFunction* aElem1,
-                    const nsSMILAnimationFunction* aElem2) const {
-        return (aElem1->CompareTo(aElem2) == 0);
-      }
-      bool LessThan(const nsSMILAnimationFunction* aElem1,
-                      const nsSMILAnimationFunction* aElem2) const {
-        return (aElem1->CompareTo(aElem2) < 0);
-      }
+   public:
+    bool Equals(const nsSMILAnimationFunction* aElem1,
+                const nsSMILAnimationFunction* aElem2) const {
+      return (aElem1->CompareTo(aElem2) == 0);
+    }
+    bool LessThan(const nsSMILAnimationFunction* aElem1,
+                  const nsSMILAnimationFunction* aElem2) const {
+      return (aElem1->CompareTo(aElem2) < 0);
+    }
   };
 
-protected:
+ protected:
   
   typedef FallibleTArray<nsSMILValue> nsSMILValueArray;
 
   
-  enum nsSMILCalcMode : uint8_t
-  {
+  enum nsSMILCalcMode : uint8_t {
     CALC_LINEAR,
     CALC_DISCRETE,
     CALC_PACED,
@@ -283,8 +273,8 @@ protected:
   nsSMILTime GetBeginTime() const { return mBeginTime; }
 
   
-  bool                   GetAccumulate() const;
-  bool                   GetAdditive() const;
+  bool GetAccumulate() const;
+  bool GetAdditive() const;
   virtual nsSMILCalcMode GetCalcMode() const;
 
   
@@ -295,11 +285,11 @@ protected:
   nsresult SetKeySplines(const nsAString& aKeySplines, nsAttrValue& aResult);
 
   
-  void     UnsetAccumulate();
-  void     UnsetAdditive();
-  void     UnsetCalcMode();
-  void     UnsetKeyTimes();
-  void     UnsetKeySplines();
+  void UnsetAccumulate();
+  void UnsetAdditive();
+  void UnsetCalcMode();
+  void UnsetKeyTimes();
+  void UnsetKeySplines();
 
   
   virtual nsresult InterpolateResult(const nsSMILValueArray& aValues,
@@ -313,40 +303,37 @@ protected:
                                 double& aIntervalProgress,
                                 const nsSMILValue*& aFrom,
                                 const nsSMILValue*& aTo);
-  double   ComputePacedTotalDistance(const nsSMILValueArray& aValues) const;
+  double ComputePacedTotalDistance(const nsSMILValueArray& aValues) const;
 
   
 
 
 
-  double   ScaleSimpleProgress(double aProgress, nsSMILCalcMode aCalcMode);
+  double ScaleSimpleProgress(double aProgress, nsSMILCalcMode aCalcMode);
   
 
 
 
-  double   ScaleIntervalProgress(double aProgress, uint32_t aIntervalIndex);
+  double ScaleIntervalProgress(double aProgress, uint32_t aIntervalIndex);
 
   
   
-  virtual bool               HasAttr(nsAtom* aAttName) const;
+  virtual bool HasAttr(nsAtom* aAttName) const;
   virtual const nsAttrValue* GetAttr(nsAtom* aAttName) const;
-  virtual bool               GetAttr(nsAtom* aAttName,
-                                     nsAString& aResult) const;
+  virtual bool GetAttr(nsAtom* aAttName, nsAString& aResult) const;
 
-  bool     ParseAttr(nsAtom* aAttName, const nsISMILAttr& aSMILAttr,
-                     nsSMILValue& aResult,
-                     bool& aPreventCachingOfSandwich) const;
+  bool ParseAttr(nsAtom* aAttName, const nsISMILAttr& aSMILAttr,
+                 nsSMILValue& aResult, bool& aPreventCachingOfSandwich) const;
 
   virtual nsresult GetValues(const nsISMILAttr& aSMILAttr,
                              nsSMILValueArray& aResult);
 
   virtual void CheckValueListDependentAttrs(uint32_t aNumValues);
-  void         CheckKeyTimes(uint32_t aNumValues);
-  void         CheckKeySplines(uint32_t aNumValues);
+  void CheckKeyTimes(uint32_t aNumValues);
+  void CheckKeySplines(uint32_t aNumValues);
 
   virtual bool IsToAnimation() const {
-    return !HasAttr(nsGkAtoms::values) &&
-            HasAttr(nsGkAtoms::to) &&
+    return !HasAttr(nsGkAtoms::values) && HasAttr(nsGkAtoms::to) &&
            !HasAttr(nsGkAtoms::from);
   }
 
@@ -364,8 +351,7 @@ protected:
 
 
     bool isByAnimation = (!HasAttr(nsGkAtoms::values) &&
-                             HasAttr(nsGkAtoms::by) &&
-                            !HasAttr(nsGkAtoms::from));
+                          HasAttr(nsGkAtoms::by) && !HasAttr(nsGkAtoms::from));
     return !IsToAnimation() && (GetAdditive() || isByAnimation);
   }
 
@@ -374,12 +360,12 @@ protected:
   
   
   enum AnimationAttributeIdx {
-    BF_ACCUMULATE  = 0,
-    BF_ADDITIVE    = 1,
-    BF_CALC_MODE   = 2,
-    BF_KEY_TIMES   = 3,
+    BF_ACCUMULATE = 0,
+    BF_ADDITIVE = 1,
+    BF_CALC_MODE = 2,
+    BF_KEY_TIMES = 3,
     BF_KEY_SPLINES = 4,
-    BF_KEY_POINTS  = 5 
+    BF_KEY_POINTS = 5  
   };
 
   inline void SetAccumulateErrorFlag(bool aNewValue) {
@@ -402,7 +388,7 @@ protected:
   }
   inline void SetErrorFlag(AnimationAttributeIdx aField, bool aValue) {
     if (aValue) {
-      mErrorFlags |=  (0x01 << aField);
+      mErrorFlags |= (0x01 << aField);
     } else {
       mErrorFlags &= ~(0x01 << aField);
     }
@@ -415,7 +401,7 @@ protected:
   static nsAttrValue::EnumTable sCalcModeTable[];
   static nsAttrValue::EnumTable sAccumulateTable[];
 
-  FallibleTArray<double>          mKeyTimes;
+  FallibleTArray<double> mKeyTimes;
   FallibleTArray<nsSMILKeySpline> mKeySplines;
 
   
@@ -423,11 +409,11 @@ protected:
   
   
   
-  nsSMILTime                    mSampleTime; 
-  nsSMILTimeValue               mSimpleDuration;
-  uint32_t                      mRepeatIteration;
+  nsSMILTime mSampleTime;  
+  nsSMILTimeValue mSimpleDuration;
+  uint32_t mRepeatIteration;
 
-  nsSMILTime                    mBeginTime; 
+  nsSMILTime mBeginTime;  
 
   
   
@@ -438,21 +424,21 @@ protected:
   
   
   
-  uint16_t                      mErrorFlags;
+  uint16_t mErrorFlags;
 
   
   
   
-  nsSMILWeakTargetIdentifier    mLastTarget;
+  nsSMILWeakTargetIdentifier mLastTarget;
 
   
-  bool mIsActive:1;
-  bool mIsFrozen:1;
-  bool mLastValue:1;
-  bool mHasChanged:1;
-  bool mValueNeedsReparsingEverySample:1;
-  bool mPrevSampleWasSingleValueAnimation:1;
-  bool mWasSkippedInPrevSample:1;
+  bool mIsActive : 1;
+  bool mIsFrozen : 1;
+  bool mLastValue : 1;
+  bool mHasChanged : 1;
+  bool mValueNeedsReparsingEverySample : 1;
+  bool mPrevSampleWasSingleValueAnimation : 1;
+  bool mWasSkippedInPrevSample : 1;
 };
 
-#endif 
+#endif  

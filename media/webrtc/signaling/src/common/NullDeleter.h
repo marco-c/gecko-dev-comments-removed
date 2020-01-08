@@ -8,9 +8,7 @@
 
 
 
-struct null_deleter
-{
-    void operator()(void const *) const
-    {
-    }
+
+struct null_deleter {
+  void operator()(void const *) const {}
 };

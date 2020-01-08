@@ -12,32 +12,33 @@
 #include "gfxWindowsSurface.h"
 
 class gfxWindowsNativeDrawing {
-public:
+ public:
+  
+
+
+
+  enum {
+    
+
+    CAN_DRAW_TO_COLOR_ALPHA = 1 << 0,
+    CANNOT_DRAW_TO_COLOR_ALPHA = 0 << 0,
+
+    
+    CAN_AXIS_ALIGNED_SCALE = 1 << 1,
+    CANNOT_AXIS_ALIGNED_SCALE = 0 << 1,
 
     
 
-
-
-    enum {
-        
-        CAN_DRAW_TO_COLOR_ALPHA    = 1 << 0,
-        CANNOT_DRAW_TO_COLOR_ALPHA = 0 << 0,
-
-        
-        CAN_AXIS_ALIGNED_SCALE     = 1 << 1,
-        CANNOT_AXIS_ALIGNED_SCALE  = 0 << 1,
-
-        
-        CAN_COMPLEX_TRANSFORM      = 1 << 2,
-        CANNOT_COMPLEX_TRANSFORM   = 0 << 2,
-
-        
-        DO_NEAREST_NEIGHBOR_FILTERING = 1 << 3,
-        DO_BILINEAR_FILTERING         = 0 << 3
-    };
+    CAN_COMPLEX_TRANSFORM = 1 << 2,
+    CANNOT_COMPLEX_TRANSFORM = 0 << 2,
 
     
 
+    DO_NEAREST_NEIGHBOR_FILTERING = 1 << 3,
+    DO_BILINEAR_FILTERING = 0 << 3
+  };
+
+  
 
 
 
@@ -56,61 +57,56 @@ public:
 
 
 
-    gfxWindowsNativeDrawing(gfxContext *ctx,
-                            const gfxRect& nativeRect,
-                            uint32_t nativeDrawFlags = CANNOT_DRAW_TO_COLOR_ALPHA |
-                                                       CANNOT_AXIS_ALIGNED_SCALE |
-                                                       CANNOT_COMPLEX_TRANSFORM |
-                                                       DO_BILINEAR_FILTERING);
 
-    
+  gfxWindowsNativeDrawing(gfxContext* ctx, const gfxRect& nativeRect,
+                          uint32_t nativeDrawFlags =
+                              CANNOT_DRAW_TO_COLOR_ALPHA |
+                              CANNOT_AXIS_ALIGNED_SCALE |
+                              CANNOT_COMPLEX_TRANSFORM | DO_BILINEAR_FILTERING);
 
-
-    HDC BeginNativeDrawing();
-
-    
+  
 
 
-    void TransformToNativeRect(const gfxRect& r, RECT& rout);
+  HDC BeginNativeDrawing();
 
-    
-    void EndNativeDrawing();
+  
 
-    
-    bool ShouldRenderAgain();
 
-    
-    void PaintToContext();
+  void TransformToNativeRect(const gfxRect& r, RECT& rout);
 
-private:
+  
+  void EndNativeDrawing();
 
-    RefPtr<gfxContext> mContext;
-    gfxRect mNativeRect;
-    uint32_t mNativeDrawFlags;
+  
+  bool ShouldRenderAgain();
 
-    
-    uint8_t mRenderState;
+  
+  void PaintToContext();
 
-    mozilla::gfx::Point mDeviceOffset;
-    RefPtr<gfxPattern> mBlackPattern, mWhitePattern;
+ private:
+  RefPtr<gfxContext> mContext;
+  gfxRect mNativeRect;
+  uint32_t mNativeDrawFlags;
 
-    enum TransformType {
-        TRANSLATION_ONLY,
-        AXIS_ALIGNED_SCALE,
-        COMPLEX
-    };
+  
+  uint8_t mRenderState;
 
-    TransformType mTransformType;
-    gfxPoint mTranslation;
-    gfxSize mScale;
-    XFORM mWorldTransform;
+  mozilla::gfx::Point mDeviceOffset;
+  RefPtr<gfxPattern> mBlackPattern, mWhitePattern;
 
-    
-    RefPtr<gfxWindowsSurface> mWinSurface, mBlackSurface, mWhiteSurface;
-    HDC mDC;
-    XFORM mOldWorldTransform;
-    POINT mOrigViewportOrigin;
-    mozilla::gfx::IntSize mTempSurfaceSize;
+  enum TransformType { TRANSLATION_ONLY, AXIS_ALIGNED_SCALE, COMPLEX };
+
+  TransformType mTransformType;
+  gfxPoint mTranslation;
+  gfxSize mScale;
+  XFORM mWorldTransform;
+
+  
+  RefPtr<gfxWindowsSurface> mWinSurface, mBlackSurface, mWhiteSurface;
+  HDC mDC;
+  XFORM mOldWorldTransform;
+  POINT mOrigViewportOrigin;
+  mozilla::gfx::IntSize mTempSurfaceSize;
 };
 
 #endif

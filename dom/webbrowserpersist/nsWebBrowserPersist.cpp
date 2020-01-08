@@ -8,7 +8,7 @@
 
 #include "nspr.h"
 
-#include "nsIFileStreams.h"       
+#include "nsIFileStreams.h"  
 #include <algorithm>
 
 #include "nsAutoPtr.h"
@@ -70,195 +70,166 @@ using namespace mozilla::dom;
 
 #define BUFFERED_OUTPUT_SIZE (1024 * 32)
 
-struct nsWebBrowserPersist::WalkData
-{
-    nsCOMPtr<nsIWebBrowserPersistDocument> mDocument;
-    nsCOMPtr<nsIURI> mFile;
-    nsCOMPtr<nsIURI> mDataPath;
+struct nsWebBrowserPersist::WalkData {
+  nsCOMPtr<nsIWebBrowserPersistDocument> mDocument;
+  nsCOMPtr<nsIURI> mFile;
+  nsCOMPtr<nsIURI> mDataPath;
 };
 
 
-struct nsWebBrowserPersist::DocData
-{
-    nsCOMPtr<nsIURI> mBaseURI;
-    nsCOMPtr<nsIWebBrowserPersistDocument> mDocument;
-    nsCOMPtr<nsIURI> mFile;
-    nsCString mCharset;
+struct nsWebBrowserPersist::DocData {
+  nsCOMPtr<nsIURI> mBaseURI;
+  nsCOMPtr<nsIWebBrowserPersistDocument> mDocument;
+  nsCOMPtr<nsIURI> mFile;
+  nsCString mCharset;
 };
 
 
-struct nsWebBrowserPersist::URIData
-{
-    bool mNeedsPersisting;
-    bool mSaved;
-    bool mIsSubFrame;
-    bool mDataPathIsRelative;
-    bool mNeedsFixup;
-    nsString mFilename;
-    nsString mSubFrameExt;
-    nsCOMPtr<nsIURI> mFile;
-    nsCOMPtr<nsIURI> mDataPath;
-    nsCOMPtr<nsIURI> mRelativeDocumentURI;
-    nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-    nsContentPolicyType mContentPolicyType;
-    nsCString mRelativePathToData;
-    nsCString mCharset;
+struct nsWebBrowserPersist::URIData {
+  bool mNeedsPersisting;
+  bool mSaved;
+  bool mIsSubFrame;
+  bool mDataPathIsRelative;
+  bool mNeedsFixup;
+  nsString mFilename;
+  nsString mSubFrameExt;
+  nsCOMPtr<nsIURI> mFile;
+  nsCOMPtr<nsIURI> mDataPath;
+  nsCOMPtr<nsIURI> mRelativeDocumentURI;
+  nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
+  nsContentPolicyType mContentPolicyType;
+  nsCString mRelativePathToData;
+  nsCString mCharset;
 
-    nsresult GetLocalURI(nsIURI *targetBaseURI, nsCString& aSpecOut);
+  nsresult GetLocalURI(nsIURI *targetBaseURI, nsCString &aSpecOut);
 };
 
 
-struct nsWebBrowserPersist::OutputData
-{
-    nsCOMPtr<nsIURI> mFile;
-    nsCOMPtr<nsIURI> mOriginalLocation;
-    nsCOMPtr<nsIOutputStream> mStream;
-    int64_t mSelfProgress;
-    int64_t mSelfProgressMax;
-    bool mCalcFileExt;
+struct nsWebBrowserPersist::OutputData {
+  nsCOMPtr<nsIURI> mFile;
+  nsCOMPtr<nsIURI> mOriginalLocation;
+  nsCOMPtr<nsIOutputStream> mStream;
+  int64_t mSelfProgress;
+  int64_t mSelfProgressMax;
+  bool mCalcFileExt;
 
-    OutputData(nsIURI *aFile, nsIURI *aOriginalLocation, bool aCalcFileExt) :
-        mFile(aFile),
+  OutputData(nsIURI *aFile, nsIURI *aOriginalLocation, bool aCalcFileExt)
+      : mFile(aFile),
         mOriginalLocation(aOriginalLocation),
         mSelfProgress(0),
         mSelfProgressMax(10000),
-        mCalcFileExt(aCalcFileExt)
-    {
+        mCalcFileExt(aCalcFileExt) {}
+  ~OutputData() {
+    if (mStream) {
+      mStream->Close();
     }
-    ~OutputData()
-    {
-        if (mStream)
-        {
-            mStream->Close();
-        }
-    }
+  }
 };
 
-struct nsWebBrowserPersist::UploadData
-{
-    nsCOMPtr<nsIURI> mFile;
-    int64_t mSelfProgress;
-    int64_t mSelfProgressMax;
+struct nsWebBrowserPersist::UploadData {
+  nsCOMPtr<nsIURI> mFile;
+  int64_t mSelfProgress;
+  int64_t mSelfProgressMax;
 
-    explicit UploadData(nsIURI *aFile) :
-        mFile(aFile),
-        mSelfProgress(0),
-        mSelfProgressMax(10000)
-    {
-    }
+  explicit UploadData(nsIURI *aFile)
+      : mFile(aFile), mSelfProgress(0), mSelfProgressMax(10000) {}
 };
 
-struct nsWebBrowserPersist::CleanupData
-{
-    nsCOMPtr<nsIFile> mFile;
-    
-    
-    
-    bool mIsDirectory;
+struct nsWebBrowserPersist::CleanupData {
+  nsCOMPtr<nsIFile> mFile;
+  
+  
+  
+  bool mIsDirectory;
 };
 
 class nsWebBrowserPersist::OnWalk final
-    : public nsIWebBrowserPersistResourceVisitor
-{
-public:
-    OnWalk(nsWebBrowserPersist* aParent, nsIURI* aFile, nsIFile* aDataPath)
-    : mParent(aParent)
-    , mFile(aFile)
-    , mDataPath(aDataPath)
-    { }
+    : public nsIWebBrowserPersistResourceVisitor {
+ public:
+  OnWalk(nsWebBrowserPersist *aParent, nsIURI *aFile, nsIFile *aDataPath)
+      : mParent(aParent), mFile(aFile), mDataPath(aDataPath) {}
 
-    NS_DECL_NSIWEBBROWSERPERSISTRESOURCEVISITOR
-    NS_DECL_ISUPPORTS
-private:
-    RefPtr<nsWebBrowserPersist> mParent;
-    nsCOMPtr<nsIURI> mFile;
-    nsCOMPtr<nsIFile> mDataPath;
+  NS_DECL_NSIWEBBROWSERPERSISTRESOURCEVISITOR
+  NS_DECL_ISUPPORTS
+ private:
+  RefPtr<nsWebBrowserPersist> mParent;
+  nsCOMPtr<nsIURI> mFile;
+  nsCOMPtr<nsIFile> mDataPath;
 
-    virtual ~OnWalk() = default;
+  virtual ~OnWalk() = default;
 };
 
 NS_IMPL_ISUPPORTS(nsWebBrowserPersist::OnWalk,
                   nsIWebBrowserPersistResourceVisitor)
 
 class nsWebBrowserPersist::OnWrite final
-    : public nsIWebBrowserPersistWriteCompletion
-{
-public:
-    OnWrite(nsWebBrowserPersist* aParent,
-            nsIURI* aFile,
-            nsIFile* aLocalFile)
-    : mParent(aParent)
-    , mFile(aFile)
-    , mLocalFile(aLocalFile)
-    { }
+    : public nsIWebBrowserPersistWriteCompletion {
+ public:
+  OnWrite(nsWebBrowserPersist *aParent, nsIURI *aFile, nsIFile *aLocalFile)
+      : mParent(aParent), mFile(aFile), mLocalFile(aLocalFile) {}
 
-    NS_DECL_NSIWEBBROWSERPERSISTWRITECOMPLETION
-    NS_DECL_ISUPPORTS
-private:
-    RefPtr<nsWebBrowserPersist> mParent;
-    nsCOMPtr<nsIURI> mFile;
-    nsCOMPtr<nsIFile> mLocalFile;
+  NS_DECL_NSIWEBBROWSERPERSISTWRITECOMPLETION
+  NS_DECL_ISUPPORTS
+ private:
+  RefPtr<nsWebBrowserPersist> mParent;
+  nsCOMPtr<nsIURI> mFile;
+  nsCOMPtr<nsIFile> mLocalFile;
 
-    virtual ~OnWrite() = default;
+  virtual ~OnWrite() = default;
 };
 
 NS_IMPL_ISUPPORTS(nsWebBrowserPersist::OnWrite,
                   nsIWebBrowserPersistWriteCompletion)
 
 class nsWebBrowserPersist::FlatURIMap final
-    : public nsIWebBrowserPersistURIMap
-{
-public:
-    explicit FlatURIMap(const nsACString& aTargetBase)
-    : mTargetBase(aTargetBase) { }
+    : public nsIWebBrowserPersistURIMap {
+ public:
+  explicit FlatURIMap(const nsACString &aTargetBase)
+      : mTargetBase(aTargetBase) {}
 
-    void Add(const nsACString& aMapFrom, const nsACString& aMapTo) {
-        mMapFrom.AppendElement(aMapFrom);
-        mMapTo.AppendElement(aMapTo);
-    }
+  void Add(const nsACString &aMapFrom, const nsACString &aMapTo) {
+    mMapFrom.AppendElement(aMapFrom);
+    mMapTo.AppendElement(aMapTo);
+  }
 
-    NS_DECL_NSIWEBBROWSERPERSISTURIMAP
-    NS_DECL_ISUPPORTS
+  NS_DECL_NSIWEBBROWSERPERSISTURIMAP
+  NS_DECL_ISUPPORTS
 
-private:
-    nsTArray<nsCString> mMapFrom;
-    nsTArray<nsCString> mMapTo;
-    nsCString mTargetBase;
+ private:
+  nsTArray<nsCString> mMapFrom;
+  nsTArray<nsCString> mMapTo;
+  nsCString mTargetBase;
 
-    virtual ~FlatURIMap() = default;
+  virtual ~FlatURIMap() = default;
 };
 
 NS_IMPL_ISUPPORTS(nsWebBrowserPersist::FlatURIMap, nsIWebBrowserPersistURIMap)
 
 NS_IMETHODIMP
-nsWebBrowserPersist::FlatURIMap::GetNumMappedURIs(uint32_t* aNum)
-{
-    MOZ_ASSERT(mMapFrom.Length() == mMapTo.Length());
-    *aNum = mMapTo.Length();
-    return NS_OK;
+nsWebBrowserPersist::FlatURIMap::GetNumMappedURIs(uint32_t *aNum) {
+  MOZ_ASSERT(mMapFrom.Length() == mMapTo.Length());
+  *aNum = mMapTo.Length();
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsWebBrowserPersist::FlatURIMap::GetTargetBaseURI(nsACString& aTargetBase)
-{
-    aTargetBase = mTargetBase;
-    return NS_OK;
+nsWebBrowserPersist::FlatURIMap::GetTargetBaseURI(nsACString &aTargetBase) {
+  aTargetBase = mTargetBase;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 nsWebBrowserPersist::FlatURIMap::GetURIMapping(uint32_t aIndex,
-                                      nsACString& aMapFrom,
-                                      nsACString& aMapTo)
-{
-    MOZ_ASSERT(mMapFrom.Length() == mMapTo.Length());
-    if (aIndex >= mMapTo.Length()) {
-        return NS_ERROR_INVALID_ARG;
-    }
-    aMapFrom = mMapFrom[aIndex];
-    aMapTo = mMapTo[aIndex];
-    return NS_OK;
+                                               nsACString &aMapFrom,
+                                               nsACString &aMapTo) {
+  MOZ_ASSERT(mMapFrom.Length() == mMapTo.Length());
+  if (aIndex >= mMapTo.Length()) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  aMapFrom = mMapFrom[aIndex];
+  aMapTo = mMapTo[aIndex];
+  return NS_OK;
 }
-
 
 
 
@@ -275,30 +246,25 @@ const uint32_t kDefaultPersistFlags =
 const char *kWebBrowserPersistStringBundle =
     "chrome://global/locale/nsWebBrowserPersist.properties";
 
-nsWebBrowserPersist::nsWebBrowserPersist() :
-    mCurrentDataPathIsRelative(false),
-    mCurrentThingsToPersist(0),
-    mFirstAndOnlyUse(true),
-    mSavingDocument(false),
-    mCancel(false),
-    mCompleted(false),
-    mStartSaving(false),
-    mReplaceExisting(true),
-    mSerializingOutput(false),
-    mIsPrivate(false),
-    mPersistFlags(kDefaultPersistFlags),
-    mPersistResult(NS_OK),
-    mTotalCurrentProgress(0),
-    mTotalMaxProgress(0),
-    mWrapColumn(72),
-    mEncodingFlags(0)
-{
-}
+nsWebBrowserPersist::nsWebBrowserPersist()
+    : mCurrentDataPathIsRelative(false),
+      mCurrentThingsToPersist(0),
+      mFirstAndOnlyUse(true),
+      mSavingDocument(false),
+      mCancel(false),
+      mCompleted(false),
+      mStartSaving(false),
+      mReplaceExisting(true),
+      mSerializingOutput(false),
+      mIsPrivate(false),
+      mPersistFlags(kDefaultPersistFlags),
+      mPersistResult(NS_OK),
+      mTotalCurrentProgress(0),
+      mTotalMaxProgress(0),
+      mWrapColumn(72),
+      mEncodingFlags(0) {}
 
-nsWebBrowserPersist::~nsWebBrowserPersist()
-{
-    Cleanup();
-}
+nsWebBrowserPersist::~nsWebBrowserPersist() { Cleanup(); }
 
 
 
@@ -308,872 +274,801 @@ NS_IMPL_ADDREF(nsWebBrowserPersist)
 NS_IMPL_RELEASE(nsWebBrowserPersist)
 
 NS_INTERFACE_MAP_BEGIN(nsWebBrowserPersist)
-    NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIWebBrowserPersist)
-    NS_INTERFACE_MAP_ENTRY(nsIWebBrowserPersist)
-    NS_INTERFACE_MAP_ENTRY(nsICancelable)
-    NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
-    NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
-    NS_INTERFACE_MAP_ENTRY(nsIStreamListener)
-    NS_INTERFACE_MAP_ENTRY(nsIRequestObserver)
-    NS_INTERFACE_MAP_ENTRY(nsIProgressEventSink)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIWebBrowserPersist)
+  NS_INTERFACE_MAP_ENTRY(nsIWebBrowserPersist)
+  NS_INTERFACE_MAP_ENTRY(nsICancelable)
+  NS_INTERFACE_MAP_ENTRY(nsIInterfaceRequestor)
+  NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
+  NS_INTERFACE_MAP_ENTRY(nsIStreamListener)
+  NS_INTERFACE_MAP_ENTRY(nsIRequestObserver)
+  NS_INTERFACE_MAP_ENTRY(nsIProgressEventSink)
 NS_INTERFACE_MAP_END
 
 
 
 
 
+NS_IMETHODIMP nsWebBrowserPersist::GetInterface(const nsIID &aIID,
+                                                void **aIFace) {
+  NS_ENSURE_ARG_POINTER(aIFace);
 
-NS_IMETHODIMP nsWebBrowserPersist::GetInterface(const nsIID & aIID, void **aIFace)
-{
-    NS_ENSURE_ARG_POINTER(aIFace);
+  *aIFace = nullptr;
 
-    *aIFace = nullptr;
+  nsresult rv = QueryInterface(aIID, aIFace);
+  if (NS_SUCCEEDED(rv)) {
+    return rv;
+  }
 
-    nsresult rv = QueryInterface(aIID, aIFace);
-    if (NS_SUCCEEDED(rv))
-    {
-        return rv;
-    }
+  if (mProgressListener && (aIID.Equals(NS_GET_IID(nsIAuthPrompt)) ||
+                            aIID.Equals(NS_GET_IID(nsIPrompt)))) {
+    mProgressListener->QueryInterface(aIID, aIFace);
+    if (*aIFace) return NS_OK;
+  }
 
-    if (mProgressListener && (aIID.Equals(NS_GET_IID(nsIAuthPrompt))
-                             || aIID.Equals(NS_GET_IID(nsIPrompt))))
-    {
-        mProgressListener->QueryInterface(aIID, aIFace);
-        if (*aIFace)
-            return NS_OK;
-    }
+  nsCOMPtr<nsIInterfaceRequestor> req = do_QueryInterface(mProgressListener);
+  if (req) {
+    return req->GetInterface(aIID, aIFace);
+  }
 
-    nsCOMPtr<nsIInterfaceRequestor> req = do_QueryInterface(mProgressListener);
-    if (req)
-    {
-        return req->GetInterface(aIID, aIFace);
-    }
-
-    return NS_ERROR_NO_INTERFACE;
+  return NS_ERROR_NO_INTERFACE;
 }
 
 
 
 
 
-
-NS_IMETHODIMP nsWebBrowserPersist::GetPersistFlags(uint32_t *aPersistFlags)
-{
-    NS_ENSURE_ARG_POINTER(aPersistFlags);
-    *aPersistFlags = mPersistFlags;
-    return NS_OK;
+NS_IMETHODIMP nsWebBrowserPersist::GetPersistFlags(uint32_t *aPersistFlags) {
+  NS_ENSURE_ARG_POINTER(aPersistFlags);
+  *aPersistFlags = mPersistFlags;
+  return NS_OK;
 }
-NS_IMETHODIMP nsWebBrowserPersist::SetPersistFlags(uint32_t aPersistFlags)
-{
-    mPersistFlags = aPersistFlags;
-    mReplaceExisting = (mPersistFlags & PERSIST_FLAGS_REPLACE_EXISTING_FILES) ? true : false;
-    mSerializingOutput = (mPersistFlags & PERSIST_FLAGS_SERIALIZE_OUTPUT) ? true : false;
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsWebBrowserPersist::GetCurrentState(uint32_t *aCurrentState)
-{
-    NS_ENSURE_ARG_POINTER(aCurrentState);
-    if (mCompleted)
-    {
-        *aCurrentState = PERSIST_STATE_FINISHED;
-    }
-    else if (mFirstAndOnlyUse)
-    {
-        *aCurrentState = PERSIST_STATE_SAVING;
-    }
-    else
-    {
-        *aCurrentState = PERSIST_STATE_READY;
-    }
-    return NS_OK;
+NS_IMETHODIMP nsWebBrowserPersist::SetPersistFlags(uint32_t aPersistFlags) {
+  mPersistFlags = aPersistFlags;
+  mReplaceExisting =
+      (mPersistFlags & PERSIST_FLAGS_REPLACE_EXISTING_FILES) ? true : false;
+  mSerializingOutput =
+      (mPersistFlags & PERSIST_FLAGS_SERIALIZE_OUTPUT) ? true : false;
+  return NS_OK;
 }
 
-NS_IMETHODIMP nsWebBrowserPersist::GetResult(nsresult *aResult)
-{
-    NS_ENSURE_ARG_POINTER(aResult);
-    *aResult = mPersistResult;
-    return NS_OK;
+NS_IMETHODIMP nsWebBrowserPersist::GetCurrentState(uint32_t *aCurrentState) {
+  NS_ENSURE_ARG_POINTER(aCurrentState);
+  if (mCompleted) {
+    *aCurrentState = PERSIST_STATE_FINISHED;
+  } else if (mFirstAndOnlyUse) {
+    *aCurrentState = PERSIST_STATE_SAVING;
+  } else {
+    *aCurrentState = PERSIST_STATE_READY;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsWebBrowserPersist::GetResult(nsresult *aResult) {
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = mPersistResult;
+  return NS_OK;
 }
 
 NS_IMETHODIMP nsWebBrowserPersist::GetProgressListener(
-    nsIWebProgressListener * *aProgressListener)
-{
-    NS_ENSURE_ARG_POINTER(aProgressListener);
-    *aProgressListener = mProgressListener;
-    NS_IF_ADDREF(*aProgressListener);
-    return NS_OK;
+    nsIWebProgressListener **aProgressListener) {
+  NS_ENSURE_ARG_POINTER(aProgressListener);
+  *aProgressListener = mProgressListener;
+  NS_IF_ADDREF(*aProgressListener);
+  return NS_OK;
 }
 
 NS_IMETHODIMP nsWebBrowserPersist::SetProgressListener(
-    nsIWebProgressListener * aProgressListener)
-{
-    mProgressListener = aProgressListener;
-    mProgressListener2 = do_QueryInterface(aProgressListener);
-    mEventSink = do_GetInterface(aProgressListener);
-    return NS_OK;
+    nsIWebProgressListener *aProgressListener) {
+  mProgressListener = aProgressListener;
+  mProgressListener2 = do_QueryInterface(aProgressListener);
+  mEventSink = do_GetInterface(aProgressListener);
+  return NS_OK;
 }
 
 NS_IMETHODIMP nsWebBrowserPersist::SaveURI(
     nsIURI *aURI, nsIPrincipal *aPrincipal, uint32_t aCacheKey,
-    nsIURI *aReferrer, uint32_t aReferrerPolicy,
-    nsIInputStream *aPostData, const char *aExtraHeaders,
-    nsISupports *aFile, nsILoadContext* aPrivacyContext)
-{
-    bool isPrivate =
-      aPrivacyContext && aPrivacyContext->UsePrivateBrowsing();
-    return SavePrivacyAwareURI(aURI, aPrincipal, aCacheKey,
-                               aReferrer, aReferrerPolicy,
-                               aPostData, aExtraHeaders, aFile, isPrivate);
+    nsIURI *aReferrer, uint32_t aReferrerPolicy, nsIInputStream *aPostData,
+    const char *aExtraHeaders, nsISupports *aFile,
+    nsILoadContext *aPrivacyContext) {
+  bool isPrivate = aPrivacyContext && aPrivacyContext->UsePrivateBrowsing();
+  return SavePrivacyAwareURI(aURI, aPrincipal, aCacheKey, aReferrer,
+                             aReferrerPolicy, aPostData, aExtraHeaders, aFile,
+                             isPrivate);
 }
 
 NS_IMETHODIMP nsWebBrowserPersist::SavePrivacyAwareURI(
     nsIURI *aURI, nsIPrincipal *aPrincipal, uint32_t aCacheKey,
-    nsIURI *aReferrer, uint32_t aReferrerPolicy,
-    nsIInputStream *aPostData, const char *aExtraHeaders,
-    nsISupports *aFile, bool aIsPrivate)
-{
-    NS_ENSURE_TRUE(mFirstAndOnlyUse, NS_ERROR_FAILURE);
-    mFirstAndOnlyUse = false; 
+    nsIURI *aReferrer, uint32_t aReferrerPolicy, nsIInputStream *aPostData,
+    const char *aExtraHeaders, nsISupports *aFile, bool aIsPrivate) {
+  NS_ENSURE_TRUE(mFirstAndOnlyUse, NS_ERROR_FAILURE);
+  mFirstAndOnlyUse = false;  
 
-    nsCOMPtr<nsIURI> fileAsURI;
-    nsresult rv;
-    rv = GetValidURIFromObject(aFile, getter_AddRefs(fileAsURI));
+  nsCOMPtr<nsIURI> fileAsURI;
+  nsresult rv;
+  rv = GetValidURIFromObject(aFile, getter_AddRefs(fileAsURI));
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
+
+  
+  mPersistFlags |= PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS;
+  rv = SaveURIInternal(aURI, aPrincipal, nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD,
+                       aCacheKey, aReferrer, aReferrerPolicy, aPostData,
+                       aExtraHeaders, fileAsURI, false, aIsPrivate);
+  return NS_FAILED(rv) ? rv : NS_OK;
+}
+
+NS_IMETHODIMP nsWebBrowserPersist::SaveChannel(nsIChannel *aChannel,
+                                               nsISupports *aFile) {
+  NS_ENSURE_TRUE(mFirstAndOnlyUse, NS_ERROR_FAILURE);
+  mFirstAndOnlyUse = false;  
+
+  nsCOMPtr<nsIURI> fileAsURI;
+  nsresult rv;
+  rv = GetValidURIFromObject(aFile, getter_AddRefs(fileAsURI));
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
+
+  rv = aChannel->GetURI(getter_AddRefs(mURI));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  mPersistFlags |= PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS;
+  rv = SaveChannelInternal(aChannel, fileAsURI, false);
+  return NS_FAILED(rv) ? rv : NS_OK;
+}
+
+NS_IMETHODIMP nsWebBrowserPersist::SaveDocument(nsISupports *aDocument,
+                                                nsISupports *aFile,
+                                                nsISupports *aDataPath,
+                                                const char *aOutputContentType,
+                                                uint32_t aEncodingFlags,
+                                                uint32_t aWrapColumn) {
+  NS_ENSURE_TRUE(mFirstAndOnlyUse, NS_ERROR_FAILURE);
+  mFirstAndOnlyUse = false;  
+
+  
+  
+  
+  
+  mSavingDocument = true;
+
+  NS_ENSURE_ARG_POINTER(aDocument);
+  NS_ENSURE_ARG_POINTER(aFile);
+
+  nsCOMPtr<nsIURI> fileAsURI;
+  nsCOMPtr<nsIURI> datapathAsURI;
+  nsresult rv;
+
+  rv = GetValidURIFromObject(aFile, getter_AddRefs(fileAsURI));
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
+  if (aDataPath) {
+    rv = GetValidURIFromObject(aDataPath, getter_AddRefs(datapathAsURI));
     NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
+  }
 
-    
-    mPersistFlags |= PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS;
-    rv = SaveURIInternal(aURI, aPrincipal,
-                         nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD, aCacheKey,
-                         aReferrer, aReferrerPolicy,
-                         aPostData, aExtraHeaders, fileAsURI,
-                         false, aIsPrivate);
-    return NS_FAILED(rv) ? rv : NS_OK;
+  mWrapColumn = aWrapColumn;
+  mEncodingFlags = aEncodingFlags;
+
+  if (aOutputContentType) {
+    mContentType.AssignASCII(aOutputContentType);
+  }
+
+  
+  if (mProgressListener) {
+    mProgressListener->OnStateChange(
+        nullptr, nullptr,
+        nsIWebProgressListener::STATE_START |
+            nsIWebProgressListener::STATE_IS_NETWORK,
+        NS_OK);
+  }
+
+  nsCOMPtr<nsIWebBrowserPersistDocument> doc = do_QueryInterface(aDocument);
+  if (!doc) {
+    nsCOMPtr<nsIDocument> localDoc = do_QueryInterface(aDocument);
+    if (localDoc) {
+      doc = new mozilla::WebBrowserPersistLocalDocument(localDoc);
+    } else {
+      rv = NS_ERROR_NO_INTERFACE;
+    }
+  }
+  if (doc) {
+    rv = SaveDocumentInternal(doc, fileAsURI, datapathAsURI);
+  }
+  if (NS_FAILED(rv)) {
+    SendErrorStatusChange(true, rv, nullptr, mURI);
+    EndDownload(rv);
+  }
+  return rv;
 }
 
-NS_IMETHODIMP nsWebBrowserPersist::SaveChannel(
-    nsIChannel *aChannel, nsISupports *aFile)
-{
-    NS_ENSURE_TRUE(mFirstAndOnlyUse, NS_ERROR_FAILURE);
-    mFirstAndOnlyUse = false; 
-
-    nsCOMPtr<nsIURI> fileAsURI;
-    nsresult rv;
-    rv = GetValidURIFromObject(aFile, getter_AddRefs(fileAsURI));
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
-
-    rv = aChannel->GetURI(getter_AddRefs(mURI));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    mPersistFlags |= PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS;
-    rv = SaveChannelInternal(aChannel, fileAsURI, false);
-    return NS_FAILED(rv) ? rv : NS_OK;
+NS_IMETHODIMP nsWebBrowserPersist::Cancel(nsresult aReason) {
+  mCancel = true;
+  EndDownload(aReason);
+  return NS_OK;
 }
 
-
-NS_IMETHODIMP nsWebBrowserPersist::SaveDocument(
-    nsISupports *aDocument, nsISupports *aFile, nsISupports *aDataPath,
-    const char *aOutputContentType, uint32_t aEncodingFlags, uint32_t aWrapColumn)
-{
-    NS_ENSURE_TRUE(mFirstAndOnlyUse, NS_ERROR_FAILURE);
-    mFirstAndOnlyUse = false; 
-
-    
-    
-    
-    
-    mSavingDocument = true;
-
-    NS_ENSURE_ARG_POINTER(aDocument);
-    NS_ENSURE_ARG_POINTER(aFile);
-
-    nsCOMPtr<nsIURI> fileAsURI;
-    nsCOMPtr<nsIURI> datapathAsURI;
-    nsresult rv;
-
-    rv = GetValidURIFromObject(aFile, getter_AddRefs(fileAsURI));
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
-    if (aDataPath)
-    {
-        rv = GetValidURIFromObject(aDataPath, getter_AddRefs(datapathAsURI));
-        NS_ENSURE_SUCCESS(rv, NS_ERROR_INVALID_ARG);
-    }
-
-    mWrapColumn = aWrapColumn;
-    mEncodingFlags = aEncodingFlags;
-
-    if (aOutputContentType)
-    {
-        mContentType.AssignASCII(aOutputContentType);
-    }
-
-    
-    if (mProgressListener) {
-        mProgressListener->OnStateChange(nullptr, nullptr,
-            nsIWebProgressListener::STATE_START
-            | nsIWebProgressListener::STATE_IS_NETWORK, NS_OK);
-    }
-
-    nsCOMPtr<nsIWebBrowserPersistDocument> doc = do_QueryInterface(aDocument);
-    if (!doc) {
-        nsCOMPtr<nsIDocument> localDoc = do_QueryInterface(aDocument);
-        if (localDoc) {
-            doc = new mozilla::WebBrowserPersistLocalDocument(localDoc);
-        } else {
-            rv = NS_ERROR_NO_INTERFACE;
-        }
-    }
-    if (doc) {
-        rv = SaveDocumentInternal(doc, fileAsURI, datapathAsURI);
-    }
-    if (NS_FAILED(rv)) {
-        SendErrorStatusChange(true, rv, nullptr, mURI);
-        EndDownload(rv);
-    }
-    return rv;
+NS_IMETHODIMP nsWebBrowserPersist::CancelSave() {
+  return Cancel(NS_BINDING_ABORTED);
 }
 
-NS_IMETHODIMP nsWebBrowserPersist::Cancel(nsresult aReason)
-{
-    mCancel = true;
-    EndDownload(aReason);
-    return NS_OK;
+nsresult nsWebBrowserPersist::StartUpload(nsIStorageStream *storStream,
+                                          nsIURI *aDestinationURI,
+                                          const nsACString &aContentType) {
+  
+  nsCOMPtr<nsIInputStream> inputstream;
+  nsresult rv = storStream->NewInputStream(0, getter_AddRefs(inputstream));
+  NS_ENSURE_TRUE(inputstream, NS_ERROR_FAILURE);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  return StartUpload(inputstream, aDestinationURI, aContentType);
 }
 
+nsresult nsWebBrowserPersist::StartUpload(nsIInputStream *aInputStream,
+                                          nsIURI *aDestinationURI,
+                                          const nsACString &aContentType) {
+  nsCOMPtr<nsIChannel> destChannel;
+  CreateChannelFromURI(aDestinationURI, getter_AddRefs(destChannel));
+  nsCOMPtr<nsIUploadChannel> uploadChannel(do_QueryInterface(destChannel));
+  NS_ENSURE_TRUE(uploadChannel, NS_ERROR_FAILURE);
 
-NS_IMETHODIMP nsWebBrowserPersist::CancelSave()
-{
-    return Cancel(NS_BINDING_ABORTED);
+  
+  
+  nsresult rv = uploadChannel->SetUploadStream(aInputStream, aContentType, -1);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  rv = destChannel->AsyncOpen2(this);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+  
+  nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(destChannel);
+  mUploadList.Put(keyPtr, new UploadData(aDestinationURI));
+
+  return NS_OK;
 }
 
+void nsWebBrowserPersist::SerializeNextFile() {
+  nsresult rv = NS_OK;
+  MOZ_ASSERT(mWalkStack.Length() == 0);
 
-nsresult
-nsWebBrowserPersist::StartUpload(nsIStorageStream *storStream,
-    nsIURI *aDestinationURI, const nsACString &aContentType)
-{
-     
-    nsCOMPtr<nsIInputStream> inputstream;
-    nsresult rv = storStream->NewInputStream(0, getter_AddRefs(inputstream));
-    NS_ENSURE_TRUE(inputstream, NS_ERROR_FAILURE);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-    return StartUpload(inputstream, aDestinationURI, aContentType);
-}
-
-nsresult
-nsWebBrowserPersist::StartUpload(nsIInputStream *aInputStream,
-    nsIURI *aDestinationURI, const nsACString &aContentType)
-{
-    nsCOMPtr<nsIChannel> destChannel;
-    CreateChannelFromURI(aDestinationURI, getter_AddRefs(destChannel));
-    nsCOMPtr<nsIUploadChannel> uploadChannel(do_QueryInterface(destChannel));
-    NS_ENSURE_TRUE(uploadChannel, NS_ERROR_FAILURE);
-
-    
-    
-    nsresult rv = uploadChannel->SetUploadStream(aInputStream, aContentType, -1);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-    rv = destChannel->AsyncOpen2(this);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-    
-    nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(destChannel);
-    mUploadList.Put(keyPtr, new UploadData(aDestinationURI));
-
-    return NS_OK;
-}
-
-void
-nsWebBrowserPersist::SerializeNextFile()
-{
-    nsresult rv = NS_OK;
-    MOZ_ASSERT(mWalkStack.Length() == 0);
-
-    
-    
-    uint32_t urisToPersist = 0;
-    if (mURIMap.Count() > 0) {
-        
-        
-        
-        
-        for (auto iter = mURIMap.Iter(); !iter.Done(); iter.Next()) {
-            URIData *data = iter.UserData();
-            if (data->mNeedsPersisting && !data->mSaved) {
-                urisToPersist++;
-            }
-        }
-    }
-
-    if (urisToPersist > 0) {
-        NS_ENSURE_SUCCESS_VOID(rv);
-        
-        
-        for (auto iter = mURIMap.Iter(); !iter.Done(); iter.Next()) {
-            URIData *data = iter.UserData();
-
-            if (!data->mNeedsPersisting || data->mSaved) {
-                continue;
-            }
-
-            
-            nsCOMPtr<nsIURI> uri;
-            rv = NS_NewURI(getter_AddRefs(uri), iter.Key(),
-                           data->mCharset.get());
-            if (NS_WARN_IF(NS_FAILED(rv))) {
-                break;
-            }
-
-            
-            nsCOMPtr<nsIURI> fileAsURI = data->mDataPath;
-            rv = AppendPathToURI(fileAsURI, data->mFilename, fileAsURI);
-            if (NS_WARN_IF(NS_FAILED(rv))) {
-                break;
-            }
-
-            
-            
-            rv = SaveURIInternal(uri, data->mTriggeringPrincipal,
-                                 data->mContentPolicyType, 0, nullptr,
-                                 mozilla::net::RP_Unset, nullptr, nullptr,
-                                 fileAsURI, true, mIsPrivate);
-            
-            
-            if (NS_WARN_IF(NS_FAILED(rv))) {
-                break;
-            }
-
-            if (rv == NS_OK) {
-                
-                
-                
-                data->mFile = fileAsURI;
-                data->mSaved = true;
-            } else {
-                data->mNeedsFixup = false;
-            }
-
-            if (mSerializingOutput) {
-                break;
-            }
-        }
-    }
-
-    
-    
-    if (mOutputMap.Count() > 0) {
-        return;
-    }
-
-    
-    if (mSerializingOutput && mUploadList.Count() > 0) {
-        return;
-    }
-
-    
-    if (mDocList.Length() == 0) {
-        
-        if (mUploadList.Count() > 0) {
-            return;
-        }
-        
-        
-        
-        NS_DispatchToCurrentThread(
-          NewRunnableMethod("nsWebBrowserPersist::FinishDownload",
-                            this,
-                            &nsWebBrowserPersist::FinishDownload));
-        return;
-    }
-
-    
-    mStartSaving = true;
-    mozilla::UniquePtr<DocData> docData(mDocList.ElementAt(0));
-    mDocList.RemoveElementAt(0); 
-    MOZ_ASSERT(docData);
-    if (!docData) {
-        EndDownload(NS_ERROR_FAILURE);
-        return;
-    }
-
-    mCurrentBaseURI = docData->mBaseURI;
-    mCurrentCharset = docData->mCharset;
-    mTargetBaseURI = docData->mFile;
-
-    
-
-    nsAutoCString targetBaseSpec;
-    if (mTargetBaseURI) {
-        rv = mTargetBaseURI->GetSpec(targetBaseSpec);
-        if (NS_FAILED(rv)) {
-            SendErrorStatusChange(true, rv, nullptr, nullptr);
-            EndDownload(rv);
-            return;
-        }
-    }
-
+  
+  
+  uint32_t urisToPersist = 0;
+  if (mURIMap.Count() > 0) {
     
     
     
-    RefPtr<FlatURIMap> flatMap = new FlatURIMap(targetBaseSpec);
+    
     for (auto iter = mURIMap.Iter(); !iter.Done(); iter.Next()) {
-        nsAutoCString mapTo;
-        nsresult rv = iter.UserData()->GetLocalURI(mTargetBaseURI, mapTo);
-        if (NS_SUCCEEDED(rv) || !mapTo.IsVoid()) {
-            flatMap->Add(iter.Key(), mapTo);
-        }
+      URIData *data = iter.UserData();
+      if (data->mNeedsPersisting && !data->mSaved) {
+        urisToPersist++;
+      }
     }
-    mFlatURIMap = flatMap.forget();
+  }
 
-    nsCOMPtr<nsIFile> localFile;
-    GetLocalFileFromURI(docData->mFile, getter_AddRefs(localFile));
-    if (localFile) {
+  if (urisToPersist > 0) {
+    NS_ENSURE_SUCCESS_VOID(rv);
+    
+    
+    for (auto iter = mURIMap.Iter(); !iter.Done(); iter.Next()) {
+      URIData *data = iter.UserData();
+
+      if (!data->mNeedsPersisting || data->mSaved) {
+        continue;
+      }
+
+      
+      nsCOMPtr<nsIURI> uri;
+      rv = NS_NewURI(getter_AddRefs(uri), iter.Key(), data->mCharset.get());
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        break;
+      }
+
+      
+      nsCOMPtr<nsIURI> fileAsURI = data->mDataPath;
+      rv = AppendPathToURI(fileAsURI, data->mFilename, fileAsURI);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        break;
+      }
+
+      
+      
+      rv = SaveURIInternal(uri, data->mTriggeringPrincipal,
+                           data->mContentPolicyType, 0, nullptr,
+                           mozilla::net::RP_Unset, nullptr, nullptr, fileAsURI,
+                           true, mIsPrivate);
+      
+      
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        break;
+      }
+
+      if (rv == NS_OK) {
         
         
-        bool fileExists = false;
-        rv = localFile->Exists(&fileExists);
-        if (NS_SUCCEEDED(rv) && !mReplaceExisting && fileExists) {
-            rv = NS_ERROR_FILE_ALREADY_EXISTS;
-        }
-        if (NS_FAILED(rv)) {
-            SendErrorStatusChange(false, rv, nullptr, docData->mFile);
-            EndDownload(rv);
-            return;
-        }
-    }
-    nsCOMPtr<nsIOutputStream> outputStream;
-    rv = MakeOutputStream(docData->mFile, getter_AddRefs(outputStream));
-    if (NS_SUCCEEDED(rv) && !outputStream) {
-        rv = NS_ERROR_FAILURE;
-    }
-    if (NS_FAILED(rv)) {
-        SendErrorStatusChange(false, rv, nullptr, docData->mFile);
-        EndDownload(rv);
-        return;
-    }
+        
+        data->mFile = fileAsURI;
+        data->mSaved = true;
+      } else {
+        data->mNeedsFixup = false;
+      }
 
-    RefPtr<OnWrite> finish = new OnWrite(this, docData->mFile, localFile);
-    rv = docData->mDocument->WriteContent(outputStream,
-                                          mFlatURIMap,
-                                          NS_ConvertUTF16toUTF8(mContentType),
-                                          mEncodingFlags,
-                                          mWrapColumn,
-                                          finish);
-    if (NS_FAILED(rv)) {
-        SendErrorStatusChange(false, rv, nullptr, docData->mFile);
-        EndDownload(rv);
+      if (mSerializingOutput) {
+        break;
+      }
     }
+  }
+
+  
+  
+  if (mOutputMap.Count() > 0) {
+    return;
+  }
+
+  
+  if (mSerializingOutput && mUploadList.Count() > 0) {
+    return;
+  }
+
+  
+  if (mDocList.Length() == 0) {
+    
+    if (mUploadList.Count() > 0) {
+      return;
+    }
+    
+    
+    
+    NS_DispatchToCurrentThread(
+        NewRunnableMethod("nsWebBrowserPersist::FinishDownload", this,
+                          &nsWebBrowserPersist::FinishDownload));
+    return;
+  }
+
+  
+  mStartSaving = true;
+  mozilla::UniquePtr<DocData> docData(mDocList.ElementAt(0));
+  mDocList.RemoveElementAt(0);  
+  MOZ_ASSERT(docData);
+  if (!docData) {
+    EndDownload(NS_ERROR_FAILURE);
+    return;
+  }
+
+  mCurrentBaseURI = docData->mBaseURI;
+  mCurrentCharset = docData->mCharset;
+  mTargetBaseURI = docData->mFile;
+
+  
+
+  nsAutoCString targetBaseSpec;
+  if (mTargetBaseURI) {
+    rv = mTargetBaseURI->GetSpec(targetBaseSpec);
+    if (NS_FAILED(rv)) {
+      SendErrorStatusChange(true, rv, nullptr, nullptr);
+      EndDownload(rv);
+      return;
+    }
+  }
+
+  
+  
+  
+  RefPtr<FlatURIMap> flatMap = new FlatURIMap(targetBaseSpec);
+  for (auto iter = mURIMap.Iter(); !iter.Done(); iter.Next()) {
+    nsAutoCString mapTo;
+    nsresult rv = iter.UserData()->GetLocalURI(mTargetBaseURI, mapTo);
+    if (NS_SUCCEEDED(rv) || !mapTo.IsVoid()) {
+      flatMap->Add(iter.Key(), mapTo);
+    }
+  }
+  mFlatURIMap = flatMap.forget();
+
+  nsCOMPtr<nsIFile> localFile;
+  GetLocalFileFromURI(docData->mFile, getter_AddRefs(localFile));
+  if (localFile) {
+    
+    
+    bool fileExists = false;
+    rv = localFile->Exists(&fileExists);
+    if (NS_SUCCEEDED(rv) && !mReplaceExisting && fileExists) {
+      rv = NS_ERROR_FILE_ALREADY_EXISTS;
+    }
+    if (NS_FAILED(rv)) {
+      SendErrorStatusChange(false, rv, nullptr, docData->mFile);
+      EndDownload(rv);
+      return;
+    }
+  }
+  nsCOMPtr<nsIOutputStream> outputStream;
+  rv = MakeOutputStream(docData->mFile, getter_AddRefs(outputStream));
+  if (NS_SUCCEEDED(rv) && !outputStream) {
+    rv = NS_ERROR_FAILURE;
+  }
+  if (NS_FAILED(rv)) {
+    SendErrorStatusChange(false, rv, nullptr, docData->mFile);
+    EndDownload(rv);
+    return;
+  }
+
+  RefPtr<OnWrite> finish = new OnWrite(this, docData->mFile, localFile);
+  rv = docData->mDocument->WriteContent(outputStream, mFlatURIMap,
+                                        NS_ConvertUTF16toUTF8(mContentType),
+                                        mEncodingFlags, mWrapColumn, finish);
+  if (NS_FAILED(rv)) {
+    SendErrorStatusChange(false, rv, nullptr, docData->mFile);
+    EndDownload(rv);
+  }
 }
 
 NS_IMETHODIMP
-nsWebBrowserPersist::OnWrite::OnFinish(nsIWebBrowserPersistDocument* aDoc,
+nsWebBrowserPersist::OnWrite::OnFinish(nsIWebBrowserPersistDocument *aDoc,
                                        nsIOutputStream *aStream,
-                                       const nsACString& aContentType,
-                                       nsresult aStatus)
-{
-    nsresult rv = aStatus;
+                                       const nsACString &aContentType,
+                                       nsresult aStatus) {
+  nsresult rv = aStatus;
 
-    if (NS_FAILED(rv)) {
+  if (NS_FAILED(rv)) {
+    mParent->SendErrorStatusChange(false, rv, nullptr, mFile);
+    mParent->EndDownload(rv);
+    return NS_OK;
+  }
+  if (!mLocalFile) {
+    nsCOMPtr<nsIStorageStream> storStream(do_QueryInterface(aStream));
+    if (storStream) {
+      aStream->Close();
+      rv = mParent->StartUpload(storStream, mFile, aContentType);
+      if (NS_FAILED(rv)) {
         mParent->SendErrorStatusChange(false, rv, nullptr, mFile);
         mParent->EndDownload(rv);
-        return NS_OK;
+      }
+      
+      
+      
+      return NS_OK;
     }
-    if (!mLocalFile) {
-        nsCOMPtr<nsIStorageStream> storStream(do_QueryInterface(aStream));
-        if (storStream) {
-            aStream->Close();
-            rv = mParent->StartUpload(storStream, mFile, aContentType);
-            if (NS_FAILED(rv)) {
-                mParent->SendErrorStatusChange(false, rv, nullptr, mFile);
-                mParent->EndDownload(rv);
-            }
-            
-            
-            
-            return NS_OK;
-        }
-    }
-    NS_DispatchToCurrentThread(
-      NewRunnableMethod("nsWebBrowserPersist::SerializeNextFile",
-                        mParent,
+  }
+  NS_DispatchToCurrentThread(
+      NewRunnableMethod("nsWebBrowserPersist::SerializeNextFile", mParent,
                         &nsWebBrowserPersist::SerializeNextFile));
-    return NS_OK;
+  return NS_OK;
 }
 
 
 
 
 
-NS_IMETHODIMP nsWebBrowserPersist::OnStartRequest(
-    nsIRequest* request, nsISupports *ctxt)
-{
-    if (mProgressListener)
-    {
-        uint32_t stateFlags = nsIWebProgressListener::STATE_START |
-                              nsIWebProgressListener::STATE_IS_REQUEST;
-        if (!mSavingDocument) {
-            stateFlags |= nsIWebProgressListener::STATE_IS_NETWORK;
-        }
-        mProgressListener->OnStateChange(nullptr, request, stateFlags, NS_OK);
+NS_IMETHODIMP nsWebBrowserPersist::OnStartRequest(nsIRequest *request,
+                                                  nsISupports *ctxt) {
+  if (mProgressListener) {
+    uint32_t stateFlags = nsIWebProgressListener::STATE_START |
+                          nsIWebProgressListener::STATE_IS_REQUEST;
+    if (!mSavingDocument) {
+      stateFlags |= nsIWebProgressListener::STATE_IS_NETWORK;
     }
+    mProgressListener->OnStateChange(nullptr, request, stateFlags, NS_OK);
+  }
+
+  nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
+  NS_ENSURE_TRUE(channel, NS_ERROR_FAILURE);
+
+  nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(request);
+  OutputData *data = mOutputMap.Get(keyPtr);
+
+  
+  
+  
+  
+  if (!data) {
+    UploadData *upData = mUploadList.Get(keyPtr);
+    if (!upData) {
+      
+      nsresult rv = FixRedirectedChannelEntry(channel);
+      NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+      
+      
+      data = mOutputMap.Get(keyPtr);
+      if (!data) {
+        return NS_ERROR_FAILURE;
+      }
+    }
+  }
+
+  if (data && data->mFile) {
+    
+    
+    
+    NS_ASSERTION(
+        !((mPersistFlags & PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION) &&
+          (mPersistFlags & PERSIST_FLAGS_NO_CONVERSION)),
+        "Conflict in persist flags: both AUTODETECT and NO_CONVERSION set");
+    if (mPersistFlags & PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION)
+      SetApplyConversionIfNeeded(channel);
+
+    if (data->mCalcFileExt &&
+        !(mPersistFlags & PERSIST_FLAGS_DONT_CHANGE_FILENAMES)) {
+      nsCOMPtr<nsIURI> uriWithExt;
+      
+      nsresult rv = CalculateAndAppendFileExt(
+          data->mFile, channel, data->mOriginalLocation, uriWithExt);
+      if (NS_SUCCEEDED(rv)) {
+        data->mFile = uriWithExt;
+      }
+
+      
+      nsCOMPtr<nsIURI> uniqueFilenameURI;
+      rv = CalculateUniqueFilename(data->mFile, uniqueFilenameURI);
+      if (NS_SUCCEEDED(rv)) {
+        data->mFile = uniqueFilenameURI;
+      }
+
+      
+      
+      nsCOMPtr<nsIURI> chanURI;
+      rv = channel->GetOriginalURI(getter_AddRefs(chanURI));
+      if (NS_SUCCEEDED(rv)) {
+        nsAutoCString spec;
+        chanURI->GetSpec(spec);
+        URIData *uridata;
+        if (mURIMap.Get(spec, &uridata)) {
+          uridata->mFile = data->mFile;
+        }
+      }
+    }
+
+    
+    bool isEqual = false;
+    if (NS_SUCCEEDED(data->mFile->Equals(data->mOriginalLocation, &isEqual)) &&
+        isEqual) {
+      
+      mOutputMap.Remove(keyPtr);
+
+      
+      
+      request->Cancel(NS_BINDING_ABORTED);
+    }
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsWebBrowserPersist::OnStopRequest(nsIRequest *request,
+                                                 nsISupports *ctxt,
+                                                 nsresult status) {
+  nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(request);
+  OutputData *data = mOutputMap.Get(keyPtr);
+  if (data) {
+    if (NS_SUCCEEDED(mPersistResult) && NS_FAILED(status)) {
+      SendErrorStatusChange(true, status, request, data->mFile);
+    }
+
+    
+    mOutputMap.Remove(keyPtr);
+  } else {
+    
+    UploadData *upData = mUploadList.Get(keyPtr);
+    if (upData) {
+      mUploadList.Remove(keyPtr);
+    }
+  }
+
+  
+  SerializeNextFile();
+
+  if (mProgressListener) {
+    uint32_t stateFlags = nsIWebProgressListener::STATE_STOP |
+                          nsIWebProgressListener::STATE_IS_REQUEST;
+    if (!mSavingDocument) {
+      stateFlags |= nsIWebProgressListener::STATE_IS_NETWORK;
+    }
+    mProgressListener->OnStateChange(nullptr, request, stateFlags, status);
+  }
+
+  return NS_OK;
+}
+
+
+
+
+
+NS_IMETHODIMP
+nsWebBrowserPersist::OnDataAvailable(nsIRequest *request, nsISupports *aContext,
+                                     nsIInputStream *aIStream, uint64_t aOffset,
+                                     uint32_t aLength) {
+  bool cancel = mCancel;
+  if (!cancel) {
+    nsresult rv = NS_OK;
+    uint32_t bytesRemaining = aLength;
 
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
     NS_ENSURE_TRUE(channel, NS_ERROR_FAILURE);
 
     nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(request);
     OutputData *data = mOutputMap.Get(keyPtr);
-
-    
-    
-    
-    
-    if (!data)
-    {
-        UploadData *upData = mUploadList.Get(keyPtr);
-        if (!upData)
-        {
-            
-            nsresult rv = FixRedirectedChannelEntry(channel);
-            NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-            
-            
-            data = mOutputMap.Get(keyPtr);
-            if (!data)
-            {
-                return NS_ERROR_FAILURE;
-            }
-        }
-    }
-
-    if (data && data->mFile)
-    {
-        
-        
-        
-        NS_ASSERTION(!((mPersistFlags & PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION) &&
-                      (mPersistFlags & PERSIST_FLAGS_NO_CONVERSION)),
-                     "Conflict in persist flags: both AUTODETECT and NO_CONVERSION set");
-        if (mPersistFlags & PERSIST_FLAGS_AUTODETECT_APPLY_CONVERSION)
-            SetApplyConversionIfNeeded(channel);
-
-        if (data->mCalcFileExt && !(mPersistFlags & PERSIST_FLAGS_DONT_CHANGE_FILENAMES))
-        {
-            nsCOMPtr<nsIURI> uriWithExt;
-            
-            nsresult rv = CalculateAndAppendFileExt(data->mFile, channel, data->mOriginalLocation, uriWithExt);
-            if (NS_SUCCEEDED(rv)) {
-                data->mFile = uriWithExt;
-            }
-
-            
-            nsCOMPtr<nsIURI> uniqueFilenameURI;
-            rv = CalculateUniqueFilename(data->mFile, uniqueFilenameURI);
-            if (NS_SUCCEEDED(rv)) {
-                data->mFile = uniqueFilenameURI;
-            }
-
-            
-            
-            nsCOMPtr<nsIURI> chanURI;
-            rv = channel->GetOriginalURI(getter_AddRefs(chanURI));
-            if (NS_SUCCEEDED(rv)) {
-                nsAutoCString spec;
-                chanURI->GetSpec(spec);
-                URIData *uridata;
-                if (mURIMap.Get(spec, &uridata)) {
-                    uridata->mFile = data->mFile;
-                }
-            }
-        }
-
-        
-        bool isEqual = false;
-        if (NS_SUCCEEDED(data->mFile->Equals(data->mOriginalLocation, &isEqual))
-            && isEqual)
-        {
-            
-            mOutputMap.Remove(keyPtr);
-
-            
-            
-            request->Cancel(NS_BINDING_ABORTED);
-        }
-    }
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsWebBrowserPersist::OnStopRequest(
-    nsIRequest* request, nsISupports *ctxt, nsresult status)
-{
-    nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(request);
-    OutputData *data = mOutputMap.Get(keyPtr);
-    if (data) {
-        if (NS_SUCCEEDED(mPersistResult) && NS_FAILED(status)) {
-            SendErrorStatusChange(true, status, request, data->mFile);
-        }
-
-        
-        mOutputMap.Remove(keyPtr);
-    } else {
-        
-        UploadData *upData = mUploadList.Get(keyPtr);
-        if (upData) {
-            mUploadList.Remove(keyPtr);
-        }
-    }
-
-    
-    SerializeNextFile();
-
-    if (mProgressListener) {
-        uint32_t stateFlags = nsIWebProgressListener::STATE_STOP |
-                              nsIWebProgressListener::STATE_IS_REQUEST;
-        if (!mSavingDocument) {
-            stateFlags |= nsIWebProgressListener::STATE_IS_NETWORK;
-        }
-        mProgressListener->OnStateChange(nullptr, request, stateFlags, status);
-    }
-
-    return NS_OK;
-}
-
-
-
-
-
-NS_IMETHODIMP
-nsWebBrowserPersist::OnDataAvailable(
-    nsIRequest* request, nsISupports *aContext, nsIInputStream *aIStream,
-    uint64_t aOffset, uint32_t aLength)
-{
-    bool cancel = mCancel;
-    if (!cancel)
-    {
-        nsresult rv = NS_OK;
-        uint32_t bytesRemaining = aLength;
-
-        nsCOMPtr<nsIChannel> channel = do_QueryInterface(request);
-        NS_ENSURE_TRUE(channel, NS_ERROR_FAILURE);
-
-        nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(request);
-        OutputData *data = mOutputMap.Get(keyPtr);
-        if (!data) {
-            
-            uint32_t n;
-            return aIStream->ReadSegments(NS_DiscardSegment, nullptr, aLength, &n);
-        }
-
-        bool readError = true;
-
-        
-        if (!data->mStream)
-        {
-            rv = MakeOutputStream(data->mFile, getter_AddRefs(data->mStream));
-            if (NS_FAILED(rv))
-            {
-                readError = false;
-                cancel = true;
-            }
-        }
-
-        
-        char buffer[8192];
-        uint32_t bytesRead;
-        while (!cancel && bytesRemaining)
-        {
-            readError = true;
-            rv = aIStream->Read(buffer,
-                                std::min(uint32_t(sizeof(buffer)), bytesRemaining),
-                                &bytesRead);
-            if (NS_SUCCEEDED(rv))
-            {
-                readError = false;
-                
-                
-                
-                
-                
-                const char *bufPtr = buffer; 
-                while (NS_SUCCEEDED(rv) && bytesRead)
-                {
-                    uint32_t bytesWritten = 0;
-                    rv = data->mStream->Write(bufPtr, bytesRead, &bytesWritten);
-                    if (NS_SUCCEEDED(rv))
-                    {
-                        bytesRead -= bytesWritten;
-                        bufPtr += bytesWritten;
-                        bytesRemaining -= bytesWritten;
-                        
-                        
-                        if (!bytesWritten)
-                        {
-                            rv = NS_ERROR_FAILURE;
-                            cancel = true;
-                        }
-                    }
-                    else
-                    {
-                        
-                        cancel = true;
-                    }
-                }
-            }
-            else
-            {
-                
-                cancel = true;
-            }
-        }
-
-        int64_t channelContentLength = -1;
-        if (!cancel &&
-            NS_SUCCEEDED(channel->GetContentLength(&channelContentLength)))
-        {
-            
-            
-            
-            if ((-1 == channelContentLength) ||
-                ((channelContentLength - (aOffset + aLength)) == 0))
-            {
-                NS_WARNING_ASSERTION(
-                    channelContentLength != -1,
-                    "nsWebBrowserPersist::OnDataAvailable() no content length "
-                    "header, pushing what we have");
-                
-                nsAutoCString contentType;
-                channel->GetContentType(contentType);
-                
-                nsCOMPtr<nsIStorageStream> storStream(do_QueryInterface(data->mStream));
-                if (storStream)
-                {
-                    data->mStream->Close();
-                    data->mStream = nullptr; 
-                    rv = StartUpload(storStream, data->mFile, contentType);
-                    if (NS_FAILED(rv))
-                    {
-                        readError = false;
-                        cancel = true;
-                    }
-                }
-            }
-        }
-
-        
-        if (cancel)
-        {
-            SendErrorStatusChange(readError, rv,
-                readError ? request : nullptr, data->mFile);
-        }
-    }
-
-    
-    if (cancel)
-    {
-        EndDownload(NS_BINDING_ABORTED);
-    }
-
-    return NS_OK;
-}
-
-
-
-
-
-
-NS_IMETHODIMP nsWebBrowserPersist::OnProgress(
-    nsIRequest *request, nsISupports *ctxt, int64_t aProgress,
-    int64_t aProgressMax)
-{
-    if (!mProgressListener)
-    {
-        return NS_OK;
-    }
-
-    
-    nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(request);
-    OutputData *data = mOutputMap.Get(keyPtr);
-    if (data)
-    {
-        data->mSelfProgress = aProgress;
-        data->mSelfProgressMax = aProgressMax;
-    }
-    else
-    {
-        UploadData *upData = mUploadList.Get(keyPtr);
-        if (upData)
-        {
-            upData->mSelfProgress = aProgress;
-            upData->mSelfProgressMax = aProgressMax;
-        }
-    }
-
-    
-    CalcTotalProgress();
-    if (mProgressListener2)
-    {
-      mProgressListener2->OnProgressChange64(nullptr, request, aProgress,
-            aProgressMax, mTotalCurrentProgress, mTotalMaxProgress);
-    }
-    else
-    {
+    if (!data) {
       
-      mProgressListener->OnProgressChange(nullptr, request, uint64_t(aProgress),
-              uint64_t(aProgressMax), mTotalCurrentProgress, mTotalMaxProgress);
+      uint32_t n;
+      return aIStream->ReadSegments(NS_DiscardSegment, nullptr, aLength, &n);
+    }
+
+    bool readError = true;
+
+    
+    if (!data->mStream) {
+      rv = MakeOutputStream(data->mFile, getter_AddRefs(data->mStream));
+      if (NS_FAILED(rv)) {
+        readError = false;
+        cancel = true;
+      }
     }
 
     
-    
-    if (mEventSink)
-    {
-        mEventSink->OnProgress(request, ctxt, aProgress, aProgressMax);
-    }
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsWebBrowserPersist::OnStatus(
-    nsIRequest *request, nsISupports *ctxt, nsresult status,
-    const char16_t *statusArg)
-{
-    if (mProgressListener)
-    {
+    char buffer[8192];
+    uint32_t bytesRead;
+    while (!cancel && bytesRemaining) {
+      readError = true;
+      rv = aIStream->Read(buffer,
+                          std::min(uint32_t(sizeof(buffer)), bytesRemaining),
+                          &bytesRead);
+      if (NS_SUCCEEDED(rv)) {
+        readError = false;
         
         
-        switch ( status )
-        {
-        case NS_NET_STATUS_RESOLVING_HOST:
-        case NS_NET_STATUS_RESOLVED_HOST:
-        case NS_NET_STATUS_BEGIN_FTP_TRANSACTION:
-        case NS_NET_STATUS_END_FTP_TRANSACTION:
-        case NS_NET_STATUS_CONNECTING_TO:
-        case NS_NET_STATUS_CONNECTED_TO:
-        case NS_NET_STATUS_TLS_HANDSHAKE_STARTING:
-        case NS_NET_STATUS_TLS_HANDSHAKE_ENDED:
-        case NS_NET_STATUS_SENDING_TO:
-        case NS_NET_STATUS_RECEIVING_FROM:
-        case NS_NET_STATUS_WAITING_FOR:
-        case NS_NET_STATUS_READING:
-        case NS_NET_STATUS_WRITING:
-            break;
-
-        default:
+        
+        
+        
+        const char *bufPtr = buffer;  
+        while (NS_SUCCEEDED(rv) && bytesRead) {
+          uint32_t bytesWritten = 0;
+          rv = data->mStream->Write(bufPtr, bytesRead, &bytesWritten);
+          if (NS_SUCCEEDED(rv)) {
+            bytesRead -= bytesWritten;
+            bufPtr += bytesWritten;
+            bytesRemaining -= bytesWritten;
             
-            mProgressListener->OnStatusChange(nullptr, request, status, statusArg);
-            break;
+            
+            if (!bytesWritten) {
+              rv = NS_ERROR_FAILURE;
+              cancel = true;
+            }
+          } else {
+            
+            cancel = true;
+          }
         }
+      } else {
+        
+        cancel = true;
+      }
+    }
 
+    int64_t channelContentLength = -1;
+    if (!cancel &&
+        NS_SUCCEEDED(channel->GetContentLength(&channelContentLength))) {
+      
+      
+      
+      if ((-1 == channelContentLength) ||
+          ((channelContentLength - (aOffset + aLength)) == 0)) {
+        NS_WARNING_ASSERTION(
+            channelContentLength != -1,
+            "nsWebBrowserPersist::OnDataAvailable() no content length "
+            "header, pushing what we have");
+        
+        nsAutoCString contentType;
+        channel->GetContentType(contentType);
+        
+        
+        nsCOMPtr<nsIStorageStream> storStream(do_QueryInterface(data->mStream));
+        if (storStream) {
+          data->mStream->Close();
+          data->mStream =
+              nullptr;  
+          rv = StartUpload(storStream, data->mFile, contentType);
+          if (NS_FAILED(rv)) {
+            readError = false;
+            cancel = true;
+          }
+        }
+      }
     }
 
     
-    
-    if (mEventSink)
-    {
-        mEventSink->OnStatus(request, ctxt, status, statusArg);
+    if (cancel) {
+      SendErrorStatusChange(readError, rv, readError ? request : nullptr,
+                            data->mFile);
     }
+  }
 
+  
+  if (cancel) {
+    EndDownload(NS_BINDING_ABORTED);
+  }
+
+  return NS_OK;
+}
+
+
+
+
+
+NS_IMETHODIMP nsWebBrowserPersist::OnProgress(nsIRequest *request,
+                                              nsISupports *ctxt,
+                                              int64_t aProgress,
+                                              int64_t aProgressMax) {
+  if (!mProgressListener) {
     return NS_OK;
+  }
+
+  
+  nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(request);
+  OutputData *data = mOutputMap.Get(keyPtr);
+  if (data) {
+    data->mSelfProgress = aProgress;
+    data->mSelfProgressMax = aProgressMax;
+  } else {
+    UploadData *upData = mUploadList.Get(keyPtr);
+    if (upData) {
+      upData->mSelfProgress = aProgress;
+      upData->mSelfProgressMax = aProgressMax;
+    }
+  }
+
+  
+  CalcTotalProgress();
+  if (mProgressListener2) {
+    mProgressListener2->OnProgressChange64(nullptr, request, aProgress,
+                                           aProgressMax, mTotalCurrentProgress,
+                                           mTotalMaxProgress);
+  } else {
+    
+    mProgressListener->OnProgressChange(
+        nullptr, request, uint64_t(aProgress), uint64_t(aProgressMax),
+        mTotalCurrentProgress, mTotalMaxProgress);
+  }
+
+  
+  
+  if (mEventSink) {
+    mEventSink->OnProgress(request, ctxt, aProgress, aProgressMax);
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsWebBrowserPersist::OnStatus(nsIRequest *request,
+                                            nsISupports *ctxt, nsresult status,
+                                            const char16_t *statusArg) {
+  if (mProgressListener) {
+    
+    
+    switch (status) {
+      case NS_NET_STATUS_RESOLVING_HOST:
+      case NS_NET_STATUS_RESOLVED_HOST:
+      case NS_NET_STATUS_BEGIN_FTP_TRANSACTION:
+      case NS_NET_STATUS_END_FTP_TRANSACTION:
+      case NS_NET_STATUS_CONNECTING_TO:
+      case NS_NET_STATUS_CONNECTED_TO:
+      case NS_NET_STATUS_TLS_HANDSHAKE_STARTING:
+      case NS_NET_STATUS_TLS_HANDSHAKE_ENDED:
+      case NS_NET_STATUS_SENDING_TO:
+      case NS_NET_STATUS_RECEIVING_FROM:
+      case NS_NET_STATUS_WAITING_FOR:
+      case NS_NET_STATUS_READING:
+      case NS_NET_STATUS_WRITING:
+        break;
+
+      default:
+        
+        mProgressListener->OnStatusChange(nullptr, request, status, statusArg);
+        break;
+    }
+  }
+
+  
+  
+  if (mEventSink) {
+    mEventSink->OnStatus(request, ctxt, status, statusArg);
+  }
+
+  return NS_OK;
 }
 
 
@@ -1182,1637 +1077,1469 @@ NS_IMETHODIMP nsWebBrowserPersist::OnStatus(
 
 
 
+nsresult nsWebBrowserPersist::SendErrorStatusChange(bool aIsReadError,
+                                                    nsresult aResult,
+                                                    nsIRequest *aRequest,
+                                                    nsIURI *aURI) {
+  NS_ENSURE_ARG_POINTER(aURI);
 
-nsresult nsWebBrowserPersist::SendErrorStatusChange(
-    bool aIsReadError, nsresult aResult, nsIRequest *aRequest, nsIURI *aURI)
-{
-    NS_ENSURE_ARG_POINTER(aURI);
-
-    if (!mProgressListener)
-    {
-        
-        return NS_OK;
-    }
-
+  if (!mProgressListener) {
     
-    nsCOMPtr<nsIFile> file;
-    GetLocalFileFromURI(aURI, getter_AddRefs(file));
-    nsAutoString path;
-    nsresult rv;
-    if (file)
-    {
-        file->GetPath(path);
-    }
-    else
-    {
-        nsAutoCString fileurl;
-        rv = aURI->GetSpec(fileurl);
-        NS_ENSURE_SUCCESS(rv, rv);
-        AppendUTF8toUTF16(fileurl, path);
-    }
+    return NS_OK;
+  }
 
-    const char* msgId;
-    switch(aResult)
-    {
+  
+  nsCOMPtr<nsIFile> file;
+  GetLocalFileFromURI(aURI, getter_AddRefs(file));
+  nsAutoString path;
+  nsresult rv;
+  if (file) {
+    file->GetPath(path);
+  } else {
+    nsAutoCString fileurl;
+    rv = aURI->GetSpec(fileurl);
+    NS_ENSURE_SUCCESS(rv, rv);
+    AppendUTF8toUTF16(fileurl, path);
+  }
+
+  const char *msgId;
+  switch (aResult) {
     case NS_ERROR_FILE_NAME_TOO_LONG:
-        
-        msgId = "fileNameTooLongError";
-        break;
+      
+      msgId = "fileNameTooLongError";
+      break;
     case NS_ERROR_FILE_ALREADY_EXISTS:
-        
-        msgId = "fileAlreadyExistsError";
-        break;
+      
+      msgId = "fileAlreadyExistsError";
+      break;
     case NS_ERROR_FILE_DISK_FULL:
     case NS_ERROR_FILE_NO_DEVICE_SPACE:
-        
-        msgId = "diskFull";
-        break;
+      
+      msgId = "diskFull";
+      break;
 
     case NS_ERROR_FILE_READ_ONLY:
-        
-        msgId = "readOnly";
-        break;
+      
+      msgId = "readOnly";
+      break;
 
     case NS_ERROR_FILE_ACCESS_DENIED:
-        
-        msgId = "accessError";
-        break;
+      
+      msgId = "accessError";
+      break;
 
     default:
-        
-        if (aIsReadError)
-            msgId = "readError";
-        else
-            msgId = "writeError";
-        break;
-    }
-    
-    nsCOMPtr<nsIStringBundleService> s = do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv);
-    NS_ENSURE_TRUE(NS_SUCCEEDED(rv) && s, NS_ERROR_FAILURE);
+      
+      if (aIsReadError)
+        msgId = "readError";
+      else
+        msgId = "writeError";
+      break;
+  }
+  
+  nsCOMPtr<nsIStringBundleService> s =
+      do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv);
+  NS_ENSURE_TRUE(NS_SUCCEEDED(rv) && s, NS_ERROR_FAILURE);
 
-    nsCOMPtr<nsIStringBundle> bundle;
-    rv = s->CreateBundle(kWebBrowserPersistStringBundle, getter_AddRefs(bundle));
-    NS_ENSURE_TRUE(NS_SUCCEEDED(rv) && bundle, NS_ERROR_FAILURE);
+  nsCOMPtr<nsIStringBundle> bundle;
+  rv = s->CreateBundle(kWebBrowserPersistStringBundle, getter_AddRefs(bundle));
+  NS_ENSURE_TRUE(NS_SUCCEEDED(rv) && bundle, NS_ERROR_FAILURE);
 
-    nsAutoString msgText;
-    const char16_t *strings[1];
-    strings[0] = path.get();
-    rv = bundle->FormatStringFromName(msgId, strings, 1, msgText);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  nsAutoString msgText;
+  const char16_t *strings[1];
+  strings[0] = path.get();
+  rv = bundle->FormatStringFromName(msgId, strings, 1, msgText);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
-    mProgressListener->OnStatusChange(nullptr, aRequest, aResult,
-                                      msgText.get());
+  mProgressListener->OnStatusChange(nullptr, aRequest, aResult, msgText.get());
 
+  return NS_OK;
+}
+
+nsresult nsWebBrowserPersist::GetValidURIFromObject(nsISupports *aObject,
+                                                    nsIURI **aURI) const {
+  NS_ENSURE_ARG_POINTER(aObject);
+  NS_ENSURE_ARG_POINTER(aURI);
+
+  nsCOMPtr<nsIFile> objAsFile = do_QueryInterface(aObject);
+  if (objAsFile) {
+    return NS_NewFileURI(aURI, objAsFile);
+  }
+  nsCOMPtr<nsIURI> objAsURI = do_QueryInterface(aObject);
+  if (objAsURI) {
+    *aURI = objAsURI;
+    NS_ADDREF(*aURI);
     return NS_OK;
+  }
+
+  return NS_ERROR_FAILURE;
 }
 
-nsresult nsWebBrowserPersist::GetValidURIFromObject(nsISupports *aObject, nsIURI **aURI) const
-{
-    NS_ENSURE_ARG_POINTER(aObject);
-    NS_ENSURE_ARG_POINTER(aURI);
+ nsresult nsWebBrowserPersist::GetLocalFileFromURI(
+    nsIURI *aURI, nsIFile **aLocalFile) {
+  nsresult rv;
 
-    nsCOMPtr<nsIFile> objAsFile = do_QueryInterface(aObject);
-    if (objAsFile)
-    {
-        return NS_NewFileURI(aURI, objAsFile);
-    }
-    nsCOMPtr<nsIURI> objAsURI = do_QueryInterface(aObject);
-    if (objAsURI)
-    {
-        *aURI = objAsURI;
-        NS_ADDREF(*aURI);
-        return NS_OK;
-    }
+  nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI, &rv);
+  if (NS_FAILED(rv)) return rv;
 
-    return NS_ERROR_FAILURE;
+  nsCOMPtr<nsIFile> file;
+  rv = fileURL->GetFile(getter_AddRefs(file));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  file.forget(aLocalFile);
+  return NS_OK;
 }
 
- nsresult
-nsWebBrowserPersist::GetLocalFileFromURI(nsIURI *aURI, nsIFile **aLocalFile)
-{
-    nsresult rv;
+ nsresult nsWebBrowserPersist::AppendPathToURI(
+    nsIURI *aURI, const nsAString &aPath, nsCOMPtr<nsIURI> &aOutURI) {
+  NS_ENSURE_ARG_POINTER(aURI);
 
-    nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(aURI, &rv);
-    if (NS_FAILED(rv))
-        return rv;
+  nsAutoCString newPath;
+  nsresult rv = aURI->GetPathQueryRef(newPath);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
-    nsCOMPtr<nsIFile> file;
-    rv = fileURL->GetFile(getter_AddRefs(file));
-    if (NS_FAILED(rv)) {
-        return rv;
-    }
+  
+  int32_t len = newPath.Length();
+  if (len > 0 && newPath.CharAt(len - 1) != '/') {
+    newPath.Append('/');
+  }
 
-    file.forget(aLocalFile);
-    return NS_OK;
-}
+  
+  AppendUTF16toUTF8(aPath, newPath);
 
- nsresult
-nsWebBrowserPersist::AppendPathToURI(nsIURI *aURI, const nsAString & aPath, nsCOMPtr<nsIURI>& aOutURI)
-{
-    NS_ENSURE_ARG_POINTER(aURI);
-
-    nsAutoCString newPath;
-    nsresult rv = aURI->GetPathQueryRef(newPath);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-    
-    int32_t len = newPath.Length();
-    if (len > 0 && newPath.CharAt(len - 1) != '/')
-    {
-        newPath.Append('/');
-    }
-
-    
-    AppendUTF16toUTF8(aPath, newPath);
-
-    return NS_MutateURI(aURI)
-             .SetPathQueryRef(newPath)
-             .Finalize(aOutURI);
+  return NS_MutateURI(aURI).SetPathQueryRef(newPath).Finalize(aOutURI);
 }
 
 nsresult nsWebBrowserPersist::SaveURIInternal(
-    nsIURI *aURI, nsIPrincipal* aTriggeringPrincipal,
-    nsContentPolicyType aContentPolicyType,
-    uint32_t aCacheKey, nsIURI *aReferrer,
-    uint32_t aReferrerPolicy, nsIInputStream *aPostData,
-    const char *aExtraHeaders, nsIURI *aFile,
-    bool aCalcFileExt, bool aIsPrivate)
-{
-    NS_ENSURE_ARG_POINTER(aURI);
-    NS_ENSURE_ARG_POINTER(aFile);
-    NS_ENSURE_ARG_POINTER(aTriggeringPrincipal);
+    nsIURI *aURI, nsIPrincipal *aTriggeringPrincipal,
+    nsContentPolicyType aContentPolicyType, uint32_t aCacheKey,
+    nsIURI *aReferrer, uint32_t aReferrerPolicy, nsIInputStream *aPostData,
+    const char *aExtraHeaders, nsIURI *aFile, bool aCalcFileExt,
+    bool aIsPrivate) {
+  NS_ENSURE_ARG_POINTER(aURI);
+  NS_ENSURE_ARG_POINTER(aFile);
+  NS_ENSURE_ARG_POINTER(aTriggeringPrincipal);
 
-    nsresult rv = NS_OK;
+  nsresult rv = NS_OK;
 
-    mURI = aURI;
+  mURI = aURI;
 
-    nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
-    if (mPersistFlags & PERSIST_FLAGS_BYPASS_CACHE)
-    {
-        loadFlags |= nsIRequest::LOAD_BYPASS_CACHE;
-    }
-    else if (mPersistFlags & PERSIST_FLAGS_FROM_CACHE)
-    {
-        loadFlags |= nsIRequest::LOAD_FROM_CACHE;
-    }
+  nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
+  if (mPersistFlags & PERSIST_FLAGS_BYPASS_CACHE) {
+    loadFlags |= nsIRequest::LOAD_BYPASS_CACHE;
+  } else if (mPersistFlags & PERSIST_FLAGS_FROM_CACHE) {
+    loadFlags |= nsIRequest::LOAD_FROM_CACHE;
+  }
 
-    
-    nsCOMPtr<nsIChannel> inputChannel;
-    rv = NS_NewChannel(getter_AddRefs(inputChannel),
-                       aURI,
-                       aTriggeringPrincipal,
-                       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                       nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD,
-                       nullptr,  
-                       nullptr,  
-                       static_cast<nsIInterfaceRequestor*>(this),
-                       loadFlags);
+  
+  nsCOMPtr<nsIChannel> inputChannel;
+  rv = NS_NewChannel(getter_AddRefs(inputChannel), aURI, aTriggeringPrincipal,
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                     nsIContentPolicy::TYPE_SAVEAS_DOWNLOAD,
+                     nullptr,  
+                     nullptr,  
+                     static_cast<nsIInterfaceRequestor *>(this), loadFlags);
 
-    nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel = do_QueryInterface(inputChannel);
-    if (pbChannel)
-    {
-        pbChannel->SetPrivate(aIsPrivate);
-    }
+  nsCOMPtr<nsIPrivateBrowsingChannel> pbChannel =
+      do_QueryInterface(inputChannel);
+  if (pbChannel) {
+    pbChannel->SetPrivate(aIsPrivate);
+  }
 
-    if (NS_FAILED(rv) || inputChannel == nullptr)
-    {
-        EndDownload(NS_ERROR_FAILURE);
-        return NS_ERROR_FAILURE;
-    }
-
-    
-    if (mPersistFlags & PERSIST_FLAGS_NO_CONVERSION)
-    {
-        nsCOMPtr<nsIEncodedChannel> encodedChannel(do_QueryInterface(inputChannel));
-        if (encodedChannel)
-        {
-            encodedChannel->SetApplyConversion(false);
-        }
-    }
-
-    
-    nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(inputChannel));
-    if (httpChannel)
-    {
-        
-        if (aReferrer)
-        {
-            rv = httpChannel->SetReferrerWithPolicy(aReferrer, aReferrerPolicy);
-            MOZ_ASSERT(NS_SUCCEEDED(rv));
-        }
-
-        
-        if (aPostData)
-        {
-            nsCOMPtr<nsISeekableStream> stream(do_QueryInterface(aPostData));
-            if (stream)
-            {
-                
-                stream->Seek(nsISeekableStream::NS_SEEK_SET, 0);
-                nsCOMPtr<nsIUploadChannel> uploadChannel(do_QueryInterface(httpChannel));
-                NS_ASSERTION(uploadChannel, "http must support nsIUploadChannel");
-                
-                uploadChannel->SetUploadStream(aPostData, EmptyCString(), -1);
-            }
-        }
-
-        
-        nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(httpChannel));
-        if (cacheChannel && aCacheKey != 0) {
-            cacheChannel->SetCacheKey(aCacheKey);
-        }
-
-        
-        if (aExtraHeaders)
-        {
-            nsAutoCString oneHeader;
-            nsAutoCString headerName;
-            nsAutoCString headerValue;
-            int32_t crlf = 0;
-            int32_t colon = 0;
-            const char *kWhitespace = "\b\t\r\n ";
-            nsAutoCString extraHeaders(aExtraHeaders);
-            while (true)
-            {
-                crlf = extraHeaders.Find("\r\n", true);
-                if (crlf == -1)
-                    break;
-                extraHeaders.Mid(oneHeader, 0, crlf);
-                extraHeaders.Cut(0, crlf + 2);
-                colon = oneHeader.Find(":");
-                if (colon == -1)
-                    break; 
-                oneHeader.Left(headerName, colon);
-                colon++;
-                oneHeader.Mid(headerValue, colon, oneHeader.Length() - colon);
-                headerName.Trim(kWhitespace);
-                headerValue.Trim(kWhitespace);
-                
-                rv = httpChannel->SetRequestHeader(headerName, headerValue, true);
-                if (NS_FAILED(rv))
-                {
-                    EndDownload(NS_ERROR_FAILURE);
-                    return NS_ERROR_FAILURE;
-                }
-            }
-        }
-    }
-    return SaveChannelInternal(inputChannel, aFile, aCalcFileExt);
-}
-
-nsresult nsWebBrowserPersist::SaveChannelInternal(
-    nsIChannel *aChannel, nsIURI *aFile, bool aCalcFileExt)
-{
-    NS_ENSURE_ARG_POINTER(aChannel);
-    NS_ENSURE_ARG_POINTER(aFile);
-
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIFileChannel> fc(do_QueryInterface(aChannel));
-    nsCOMPtr<nsIFileURL> fu(do_QueryInterface(aFile));
-
-    if (fc && !fu) {
-        nsCOMPtr<nsIInputStream> fileInputStream, bufferedInputStream;
-        nsresult rv = NS_MaybeOpenChannelUsingOpen2(aChannel,
-                        getter_AddRefs(fileInputStream));
-        NS_ENSURE_SUCCESS(rv, rv);
-        rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedInputStream),
-                                       fileInputStream.forget(),
-                                       BUFFERED_OUTPUT_SIZE);
-        NS_ENSURE_SUCCESS(rv, rv);
-        nsAutoCString contentType;
-        aChannel->GetContentType(contentType);
-        return StartUpload(bufferedInputStream, aFile, contentType);
-    }
-
-    
-    nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(aChannel));
-    if (cos) {
-      cos->AddClassFlags(nsIClassOfService::Throttleable);
-    }
-
-    
-    nsresult rv = NS_MaybeOpenChannelUsingAsyncOpen2(aChannel, this);
-    if (rv == NS_ERROR_NO_CONTENT)
-    {
-        
-        
-        return NS_SUCCESS_DONT_FIXUP;
-    }
-
-    if (NS_FAILED(rv))
-    {
-        
-        if (mPersistFlags & PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS)
-        {
-            SendErrorStatusChange(true, rv, aChannel, aFile);
-            EndDownload(NS_ERROR_FAILURE);
-            return NS_ERROR_FAILURE;
-        }
-        return NS_SUCCESS_DONT_FIXUP;
-    }
-
-    
-    nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(aChannel);
-    mOutputMap.Put(keyPtr, new OutputData(aFile, mURI, aCalcFileExt));
-
-    return NS_OK;
-}
-
-nsresult
-nsWebBrowserPersist::GetExtensionForContentType(const char16_t *aContentType, char16_t **aExt)
-{
-    NS_ENSURE_ARG_POINTER(aContentType);
-    NS_ENSURE_ARG_POINTER(aExt);
-
-    *aExt = nullptr;
-
-    nsresult rv;
-    if (!mMIMEService)
-    {
-        mMIMEService = do_GetService(NS_MIMESERVICE_CONTRACTID, &rv);
-        NS_ENSURE_TRUE(mMIMEService, NS_ERROR_FAILURE);
-    }
-
-    nsAutoCString contentType;
-    LossyCopyUTF16toASCII(MakeStringSpan(aContentType), contentType);
-    nsAutoCString ext;
-    rv = mMIMEService->GetPrimaryExtension(contentType, EmptyCString(), ext);
-    if (NS_SUCCEEDED(rv))
-    {
-        *aExt = UTF8ToNewUnicode(ext);
-        NS_ENSURE_TRUE(*aExt, NS_ERROR_OUT_OF_MEMORY);
-        return NS_OK;
-    }
-
+  if (NS_FAILED(rv) || inputChannel == nullptr) {
+    EndDownload(NS_ERROR_FAILURE);
     return NS_ERROR_FAILURE;
+  }
+
+  
+  if (mPersistFlags & PERSIST_FLAGS_NO_CONVERSION) {
+    nsCOMPtr<nsIEncodedChannel> encodedChannel(do_QueryInterface(inputChannel));
+    if (encodedChannel) {
+      encodedChannel->SetApplyConversion(false);
+    }
+  }
+
+  
+  nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(inputChannel));
+  if (httpChannel) {
+    
+    if (aReferrer) {
+      rv = httpChannel->SetReferrerWithPolicy(aReferrer, aReferrerPolicy);
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
+    }
+
+    
+    if (aPostData) {
+      nsCOMPtr<nsISeekableStream> stream(do_QueryInterface(aPostData));
+      if (stream) {
+        
+        stream->Seek(nsISeekableStream::NS_SEEK_SET, 0);
+        nsCOMPtr<nsIUploadChannel> uploadChannel(
+            do_QueryInterface(httpChannel));
+        NS_ASSERTION(uploadChannel, "http must support nsIUploadChannel");
+        
+        uploadChannel->SetUploadStream(aPostData, EmptyCString(), -1);
+      }
+    }
+
+    
+    nsCOMPtr<nsICacheInfoChannel> cacheChannel(do_QueryInterface(httpChannel));
+    if (cacheChannel && aCacheKey != 0) {
+      cacheChannel->SetCacheKey(aCacheKey);
+    }
+
+    
+    if (aExtraHeaders) {
+      nsAutoCString oneHeader;
+      nsAutoCString headerName;
+      nsAutoCString headerValue;
+      int32_t crlf = 0;
+      int32_t colon = 0;
+      const char *kWhitespace = "\b\t\r\n ";
+      nsAutoCString extraHeaders(aExtraHeaders);
+      while (true) {
+        crlf = extraHeaders.Find("\r\n", true);
+        if (crlf == -1) break;
+        extraHeaders.Mid(oneHeader, 0, crlf);
+        extraHeaders.Cut(0, crlf + 2);
+        colon = oneHeader.Find(":");
+        if (colon == -1) break;  
+        oneHeader.Left(headerName, colon);
+        colon++;
+        oneHeader.Mid(headerValue, colon, oneHeader.Length() - colon);
+        headerName.Trim(kWhitespace);
+        headerValue.Trim(kWhitespace);
+        
+        rv = httpChannel->SetRequestHeader(headerName, headerValue, true);
+        if (NS_FAILED(rv)) {
+          EndDownload(NS_ERROR_FAILURE);
+          return NS_ERROR_FAILURE;
+        }
+      }
+    }
+  }
+  return SaveChannelInternal(inputChannel, aFile, aCalcFileExt);
 }
 
-nsresult
-nsWebBrowserPersist::SaveDocumentDeferred(mozilla::UniquePtr<WalkData>&& aData)
-{
-    nsresult rv =
-        SaveDocumentInternal(aData->mDocument, aData->mFile, aData->mDataPath);
-    if (NS_FAILED(rv)) {
-        SendErrorStatusChange(true, rv, nullptr, mURI);
-        EndDownload(rv);
+nsresult nsWebBrowserPersist::SaveChannelInternal(nsIChannel *aChannel,
+                                                  nsIURI *aFile,
+                                                  bool aCalcFileExt) {
+  NS_ENSURE_ARG_POINTER(aChannel);
+  NS_ENSURE_ARG_POINTER(aFile);
+
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIFileChannel> fc(do_QueryInterface(aChannel));
+  nsCOMPtr<nsIFileURL> fu(do_QueryInterface(aFile));
+
+  if (fc && !fu) {
+    nsCOMPtr<nsIInputStream> fileInputStream, bufferedInputStream;
+    nsresult rv = NS_MaybeOpenChannelUsingOpen2(
+        aChannel, getter_AddRefs(fileInputStream));
+    NS_ENSURE_SUCCESS(rv, rv);
+    rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedInputStream),
+                                   fileInputStream.forget(),
+                                   BUFFERED_OUTPUT_SIZE);
+    NS_ENSURE_SUCCESS(rv, rv);
+    nsAutoCString contentType;
+    aChannel->GetContentType(contentType);
+    return StartUpload(bufferedInputStream, aFile, contentType);
+  }
+
+  
+  nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(aChannel));
+  if (cos) {
+    cos->AddClassFlags(nsIClassOfService::Throttleable);
+  }
+
+  
+  nsresult rv = NS_MaybeOpenChannelUsingAsyncOpen2(aChannel, this);
+  if (rv == NS_ERROR_NO_CONTENT) {
+    
+    
+    return NS_SUCCESS_DONT_FIXUP;
+  }
+
+  if (NS_FAILED(rv)) {
+    
+    if (mPersistFlags & PERSIST_FLAGS_FAIL_ON_BROKEN_LINKS) {
+      SendErrorStatusChange(true, rv, aChannel, aFile);
+      EndDownload(NS_ERROR_FAILURE);
+      return NS_ERROR_FAILURE;
     }
-    return rv;
+    return NS_SUCCESS_DONT_FIXUP;
+  }
+
+  
+  nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(aChannel);
+  mOutputMap.Put(keyPtr, new OutputData(aFile, mURI, aCalcFileExt));
+
+  return NS_OK;
+}
+
+nsresult nsWebBrowserPersist::GetExtensionForContentType(
+    const char16_t *aContentType, char16_t **aExt) {
+  NS_ENSURE_ARG_POINTER(aContentType);
+  NS_ENSURE_ARG_POINTER(aExt);
+
+  *aExt = nullptr;
+
+  nsresult rv;
+  if (!mMIMEService) {
+    mMIMEService = do_GetService(NS_MIMESERVICE_CONTRACTID, &rv);
+    NS_ENSURE_TRUE(mMIMEService, NS_ERROR_FAILURE);
+  }
+
+  nsAutoCString contentType;
+  LossyCopyUTF16toASCII(MakeStringSpan(aContentType), contentType);
+  nsAutoCString ext;
+  rv = mMIMEService->GetPrimaryExtension(contentType, EmptyCString(), ext);
+  if (NS_SUCCEEDED(rv)) {
+    *aExt = UTF8ToNewUnicode(ext);
+    NS_ENSURE_TRUE(*aExt, NS_ERROR_OUT_OF_MEMORY);
+    return NS_OK;
+  }
+
+  return NS_ERROR_FAILURE;
+}
+
+nsresult nsWebBrowserPersist::SaveDocumentDeferred(
+    mozilla::UniquePtr<WalkData> &&aData) {
+  nsresult rv =
+      SaveDocumentInternal(aData->mDocument, aData->mFile, aData->mDataPath);
+  if (NS_FAILED(rv)) {
+    SendErrorStatusChange(true, rv, nullptr, mURI);
+    EndDownload(rv);
+  }
+  return rv;
 }
 
 nsresult nsWebBrowserPersist::SaveDocumentInternal(
-    nsIWebBrowserPersistDocument *aDocument, nsIURI *aFile, nsIURI *aDataPath)
-{
-    mURI = nullptr;
-    NS_ENSURE_ARG_POINTER(aDocument);
-    NS_ENSURE_ARG_POINTER(aFile);
+    nsIWebBrowserPersistDocument *aDocument, nsIURI *aFile, nsIURI *aDataPath) {
+  mURI = nullptr;
+  NS_ENSURE_ARG_POINTER(aDocument);
+  NS_ENSURE_ARG_POINTER(aFile);
 
-    nsresult rv = aDocument->SetPersistFlags(mPersistFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = aDocument->SetPersistFlags(mPersistFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    rv = aDocument->GetIsPrivate(&mIsPrivate);
-    NS_ENSURE_SUCCESS(rv, rv);
+  rv = aDocument->GetIsPrivate(&mIsPrivate);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsCOMPtr<nsIFile> localFile;
+  rv = GetLocalFileFromURI(aFile, getter_AddRefs(localFile));
+
+  nsCOMPtr<nsIFile> localDataPath;
+  if (NS_SUCCEEDED(rv) && aDataPath) {
+    
+    rv = GetLocalFileFromURI(aDataPath, getter_AddRefs(localDataPath));
+    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  }
+
+  
+  rv = aDocument->GetCharacterSet(mCurrentCharset);
+  NS_ENSURE_SUCCESS(rv, rv);
+  nsAutoCString uriSpec;
+  rv = aDocument->GetDocumentURI(uriSpec);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = NS_NewURI(getter_AddRefs(mURI), uriSpec, mCurrentCharset.get());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = aDocument->GetBaseURI(uriSpec);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = NS_NewURI(getter_AddRefs(mCurrentBaseURI), uriSpec,
+                 mCurrentCharset.get());
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  if (aDataPath) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    mCurrentDataPathIsRelative = false;
+    mCurrentDataPath = aDataPath;
+    mCurrentRelativePathToData = "";
+    mCurrentThingsToPersist = 0;
+    mTargetBaseURI = aFile;
 
     
-    nsCOMPtr<nsIFile> localFile;
-    rv = GetLocalFileFromURI(aFile, getter_AddRefs(localFile));
-
-    nsCOMPtr<nsIFile> localDataPath;
-    if (NS_SUCCEEDED(rv) && aDataPath)
-    {
-        
-        rv = GetLocalFileFromURI(aDataPath, getter_AddRefs(localDataPath));
-        NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-    }
+    
+    
 
     
-    rv = aDocument->GetCharacterSet(mCurrentCharset);
-    NS_ENSURE_SUCCESS(rv, rv);
-    nsAutoCString uriSpec;
-    rv = aDocument->GetDocumentURI(uriSpec);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = NS_NewURI(getter_AddRefs(mURI), uriSpec, mCurrentCharset.get());
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = aDocument->GetBaseURI(uriSpec);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = NS_NewURI(getter_AddRefs(mCurrentBaseURI), uriSpec,
-                   mCurrentCharset.get());
-    NS_ENSURE_SUCCESS(rv, rv);
-
     
-    if (aDataPath)
-    {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
-        mCurrentDataPathIsRelative = false;
-        mCurrentDataPath = aDataPath;
-        mCurrentRelativePathToData = "";
-        mCurrentThingsToPersist = 0;
-        mTargetBaseURI = aFile;
+    if (localDataPath && localFile) {
+      nsCOMPtr<nsIFile> baseDir;
+      localFile->GetParent(getter_AddRefs(baseDir));
 
-        
-        
-        
-
-        
-        
-
-        if (localDataPath && localFile)
-        {
-            nsCOMPtr<nsIFile> baseDir;
-            localFile->GetParent(getter_AddRefs(baseDir));
-
-            nsAutoCString relativePathToData;
-            nsCOMPtr<nsIFile> dataDirParent;
-            dataDirParent = localDataPath;
-            while (dataDirParent)
-            {
-                bool sameDir = false;
-                dataDirParent->Equals(baseDir, &sameDir);
-                if (sameDir)
-                {
-                    mCurrentRelativePathToData = relativePathToData;
-                    mCurrentDataPathIsRelative = true;
-                    break;
-                }
-
-                nsAutoString dirName;
-                dataDirParent->GetLeafName(dirName);
-
-                nsAutoCString newRelativePathToData;
-                newRelativePathToData = NS_ConvertUTF16toUTF8(dirName)
-                                      + NS_LITERAL_CSTRING("/")
-                                      + relativePathToData;
-                relativePathToData = newRelativePathToData;
-
-                nsCOMPtr<nsIFile> newDataDirParent;
-                rv = dataDirParent->GetParent(getter_AddRefs(newDataDirParent));
-                dataDirParent = newDataDirParent;
-            }
-        }
-        else
-        {
-            
-            nsCOMPtr<nsIURL> pathToBaseURL(do_QueryInterface(aFile));
-            if (pathToBaseURL)
-            {
-                nsAutoCString relativePath;  
-                if (NS_SUCCEEDED(pathToBaseURL->GetRelativeSpec(aDataPath, relativePath)))
-                {
-                    mCurrentDataPathIsRelative = true;
-                    mCurrentRelativePathToData = relativePath;
-                }
-            }
+      nsAutoCString relativePathToData;
+      nsCOMPtr<nsIFile> dataDirParent;
+      dataDirParent = localDataPath;
+      while (dataDirParent) {
+        bool sameDir = false;
+        dataDirParent->Equals(baseDir, &sameDir);
+        if (sameDir) {
+          mCurrentRelativePathToData = relativePathToData;
+          mCurrentDataPathIsRelative = true;
+          break;
         }
 
-        
-        
-        
+        nsAutoString dirName;
+        dataDirParent->GetLeafName(dirName);
 
-        auto *docData = new DocData;
-        docData->mBaseURI = mCurrentBaseURI;
-        docData->mCharset = mCurrentCharset;
-        docData->mDocument = aDocument;
-        docData->mFile = aFile;
-        mDocList.AppendElement(docData);
+        nsAutoCString newRelativePathToData;
+        newRelativePathToData = NS_ConvertUTF16toUTF8(dirName) +
+                                NS_LITERAL_CSTRING("/") + relativePathToData;
+        relativePathToData = newRelativePathToData;
 
-        
-        nsCOMPtr<nsIWebBrowserPersistResourceVisitor> visit =
-            new OnWalk(this, aFile, localDataPath);
-        return aDocument->ReadResources(visit);
-    }
-    else
-    {
-        auto *docData = new DocData;
-        docData->mBaseURI = mCurrentBaseURI;
-        docData->mCharset = mCurrentCharset;
-        docData->mDocument = aDocument;
-        docData->mFile = aFile;
-        mDocList.AppendElement(docData);
-
-        
-        SerializeNextFile();
-        return NS_OK;
-    }
-}
-
-NS_IMETHODIMP
-nsWebBrowserPersist::OnWalk::VisitResource(nsIWebBrowserPersistDocument* aDoc,
-                                           const nsACString& aURI,
-                                           nsContentPolicyType aContentPolicyType)
-{
-    return mParent->StoreURI(nsAutoCString(aURI).get(), aDoc, aContentPolicyType);
-}
-
-NS_IMETHODIMP
-nsWebBrowserPersist::OnWalk::VisitDocument(nsIWebBrowserPersistDocument* aDoc,
-                                             nsIWebBrowserPersistDocument* aSubDoc)
-{
-    URIData* data = nullptr;
-    nsAutoCString uriSpec;
-    nsresult rv = aSubDoc->GetDocumentURI(uriSpec);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = mParent->StoreURI(uriSpec.get(), aDoc, nsIContentPolicy::TYPE_SUBDOCUMENT, false, &data);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!data) {
-        
-        return NS_OK;
-    }
-    data->mIsSubFrame = true;
-    return mParent->SaveSubframeContent(aSubDoc, aDoc, uriSpec, data);
-}
-
-
-NS_IMETHODIMP
-nsWebBrowserPersist::OnWalk::EndVisit(nsIWebBrowserPersistDocument* aDoc,
-                                      nsresult aStatus)
-{
-    if (NS_FAILED(aStatus)) {
-        mParent->SendErrorStatusChange(true, aStatus, nullptr, mFile);
-        mParent->EndDownload(aStatus);
-        return aStatus;
-    }
-    mParent->FinishSaveDocumentInternal(mFile, mDataPath);
-    return NS_OK;
-}
-
-void
-nsWebBrowserPersist::FinishSaveDocumentInternal(nsIURI* aFile,
-                                                nsIFile* aDataPath)
-{
-    
-    if (mCurrentThingsToPersist > 0) {
-        if (aDataPath) {
-            bool exists = false;
-            bool haveDir = false;
-
-            aDataPath->Exists(&exists);
-            if (exists) {
-                aDataPath->IsDirectory(&haveDir);
-            }
-            if (!haveDir) {
-                nsresult rv =
-                    aDataPath->Create(nsIFile::DIRECTORY_TYPE, 0755);
-                if (NS_SUCCEEDED(rv)) {
-                    haveDir = true;
-                } else {
-                    SendErrorStatusChange(false, rv, nullptr, aFile);
-                }
-            }
-            if (!haveDir) {
-                EndDownload(NS_ERROR_FAILURE);
-                return;
-            }
-            if (mPersistFlags & PERSIST_FLAGS_CLEANUP_ON_FAILURE) {
-                
-                auto *cleanupData = new CleanupData;
-                cleanupData->mFile = aDataPath;
-                cleanupData->mIsDirectory = true;
-                mCleanupList.AppendElement(cleanupData);
-            }
-        }
-    }
-
-    if (mWalkStack.Length() > 0) {
-        mozilla::UniquePtr<WalkData> toWalk;
-        mWalkStack.LastElement().swap(toWalk);
-        mWalkStack.TruncateLength(mWalkStack.Length() - 1);
-        
-        typedef StoreCopyPassByRRef<decltype(toWalk)> WalkStorage;
-        auto saveMethod = &nsWebBrowserPersist::SaveDocumentDeferred;
-        nsCOMPtr<nsIRunnable> saveLater = NewRunnableMethod<WalkStorage>(
-          "nsWebBrowserPersist::FinishSaveDocumentInternal",
-          this,
-          saveMethod,
-          std::move(toWalk));
-        NS_DispatchToCurrentThread(saveLater);
+        nsCOMPtr<nsIFile> newDataDirParent;
+        rv = dataDirParent->GetParent(getter_AddRefs(newDataDirParent));
+        dataDirParent = newDataDirParent;
+      }
     } else {
-        
-        SerializeNextFile();
+      
+      nsCOMPtr<nsIURL> pathToBaseURL(do_QueryInterface(aFile));
+      if (pathToBaseURL) {
+        nsAutoCString relativePath;  
+        if (NS_SUCCEEDED(
+                pathToBaseURL->GetRelativeSpec(aDataPath, relativePath))) {
+          mCurrentDataPathIsRelative = true;
+          mCurrentRelativePathToData = relativePath;
+        }
+      }
     }
+
+    
+    
+    
+
+    auto *docData = new DocData;
+    docData->mBaseURI = mCurrentBaseURI;
+    docData->mCharset = mCurrentCharset;
+    docData->mDocument = aDocument;
+    docData->mFile = aFile;
+    mDocList.AppendElement(docData);
+
+    
+    
+    nsCOMPtr<nsIWebBrowserPersistResourceVisitor> visit =
+        new OnWalk(this, aFile, localDataPath);
+    return aDocument->ReadResources(visit);
+  } else {
+    auto *docData = new DocData;
+    docData->mBaseURI = mCurrentBaseURI;
+    docData->mCharset = mCurrentCharset;
+    docData->mDocument = aDocument;
+    docData->mFile = aFile;
+    mDocList.AppendElement(docData);
+
+    
+    SerializeNextFile();
+    return NS_OK;
+  }
 }
 
-void nsWebBrowserPersist::Cleanup()
-{
-    mURIMap.Clear();
-    for (auto iter = mOutputMap.Iter(); !iter.Done(); iter.Next()) {
-        nsCOMPtr<nsIChannel> channel = do_QueryInterface(iter.Key());
-        if (channel) {
-            channel->Cancel(NS_BINDING_ABORTED);
-        }
-    }
-    mOutputMap.Clear();
+NS_IMETHODIMP
+nsWebBrowserPersist::OnWalk::VisitResource(
+    nsIWebBrowserPersistDocument *aDoc, const nsACString &aURI,
+    nsContentPolicyType aContentPolicyType) {
+  return mParent->StoreURI(nsAutoCString(aURI).get(), aDoc, aContentPolicyType);
+}
 
-    for (auto iter = mUploadList.Iter(); !iter.Done(); iter.Next()) {
-        nsCOMPtr<nsIChannel> channel = do_QueryInterface(iter.Key());
-        if (channel) {
-            channel->Cancel(NS_BINDING_ABORTED);
-        }
-    }
-    mUploadList.Clear();
+NS_IMETHODIMP
+nsWebBrowserPersist::OnWalk::VisitDocument(
+    nsIWebBrowserPersistDocument *aDoc, nsIWebBrowserPersistDocument *aSubDoc) {
+  URIData *data = nullptr;
+  nsAutoCString uriSpec;
+  nsresult rv = aSubDoc->GetDocumentURI(uriSpec);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = mParent->StoreURI(uriSpec.get(), aDoc,
+                         nsIContentPolicy::TYPE_SUBDOCUMENT, false, &data);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!data) {
+    
+    return NS_OK;
+  }
+  data->mIsSubFrame = true;
+  return mParent->SaveSubframeContent(aSubDoc, aDoc, uriSpec, data);
+}
 
+NS_IMETHODIMP
+nsWebBrowserPersist::OnWalk::EndVisit(nsIWebBrowserPersistDocument *aDoc,
+                                      nsresult aStatus) {
+  if (NS_FAILED(aStatus)) {
+    mParent->SendErrorStatusChange(true, aStatus, nullptr, mFile);
+    mParent->EndDownload(aStatus);
+    return aStatus;
+  }
+  mParent->FinishSaveDocumentInternal(mFile, mDataPath);
+  return NS_OK;
+}
+
+void nsWebBrowserPersist::FinishSaveDocumentInternal(nsIURI *aFile,
+                                                     nsIFile *aDataPath) {
+  
+  if (mCurrentThingsToPersist > 0) {
+    if (aDataPath) {
+      bool exists = false;
+      bool haveDir = false;
+
+      aDataPath->Exists(&exists);
+      if (exists) {
+        aDataPath->IsDirectory(&haveDir);
+      }
+      if (!haveDir) {
+        nsresult rv = aDataPath->Create(nsIFile::DIRECTORY_TYPE, 0755);
+        if (NS_SUCCEEDED(rv)) {
+          haveDir = true;
+        } else {
+          SendErrorStatusChange(false, rv, nullptr, aFile);
+        }
+      }
+      if (!haveDir) {
+        EndDownload(NS_ERROR_FAILURE);
+        return;
+      }
+      if (mPersistFlags & PERSIST_FLAGS_CLEANUP_ON_FAILURE) {
+        
+        auto *cleanupData = new CleanupData;
+        cleanupData->mFile = aDataPath;
+        cleanupData->mIsDirectory = true;
+        mCleanupList.AppendElement(cleanupData);
+      }
+    }
+  }
+
+  if (mWalkStack.Length() > 0) {
+    mozilla::UniquePtr<WalkData> toWalk;
+    mWalkStack.LastElement().swap(toWalk);
+    mWalkStack.TruncateLength(mWalkStack.Length() - 1);
+    
+    typedef StoreCopyPassByRRef<decltype(toWalk)> WalkStorage;
+    auto saveMethod = &nsWebBrowserPersist::SaveDocumentDeferred;
+    nsCOMPtr<nsIRunnable> saveLater = NewRunnableMethod<WalkStorage>(
+        "nsWebBrowserPersist::FinishSaveDocumentInternal", this, saveMethod,
+        std::move(toWalk));
+    NS_DispatchToCurrentThread(saveLater);
+  } else {
+    
+    SerializeNextFile();
+  }
+}
+
+void nsWebBrowserPersist::Cleanup() {
+  mURIMap.Clear();
+  for (auto iter = mOutputMap.Iter(); !iter.Done(); iter.Next()) {
+    nsCOMPtr<nsIChannel> channel = do_QueryInterface(iter.Key());
+    if (channel) {
+      channel->Cancel(NS_BINDING_ABORTED);
+    }
+  }
+  mOutputMap.Clear();
+
+  for (auto iter = mUploadList.Iter(); !iter.Done(); iter.Next()) {
+    nsCOMPtr<nsIChannel> channel = do_QueryInterface(iter.Key());
+    if (channel) {
+      channel->Cancel(NS_BINDING_ABORTED);
+    }
+  }
+  mUploadList.Clear();
+
+  uint32_t i;
+  for (i = 0; i < mDocList.Length(); i++) {
+    DocData *docData = mDocList.ElementAt(i);
+    delete docData;
+  }
+  mDocList.Clear();
+
+  for (i = 0; i < mCleanupList.Length(); i++) {
+    CleanupData *cleanupData = mCleanupList.ElementAt(i);
+    delete cleanupData;
+  }
+  mCleanupList.Clear();
+
+  mFilenameList.Clear();
+}
+
+void nsWebBrowserPersist::CleanupLocalFiles() {
+  
+  
+  
+  
+  int pass;
+  for (pass = 0; pass < 2; pass++) {
     uint32_t i;
-    for (i = 0; i < mDocList.Length(); i++) {
-        DocData *docData = mDocList.ElementAt(i);
-        delete docData;
-    }
-    mDocList.Clear();
-
     for (i = 0; i < mCleanupList.Length(); i++) {
-        CleanupData *cleanupData = mCleanupList.ElementAt(i);
-        delete cleanupData;
-    }
-    mCleanupList.Clear();
+      CleanupData *cleanupData = mCleanupList.ElementAt(i);
+      nsCOMPtr<nsIFile> file = cleanupData->mFile;
 
-    mFilenameList.Clear();
-}
+      
+      
+      bool exists = false;
+      file->Exists(&exists);
+      if (!exists) continue;
 
-void nsWebBrowserPersist::CleanupLocalFiles()
-{
-    
-    
-    
-    
-    int pass;
-    for (pass = 0; pass < 2; pass++)
-    {
-        uint32_t i;
-        for (i = 0; i < mCleanupList.Length(); i++)
-        {
-            CleanupData *cleanupData = mCleanupList.ElementAt(i);
-            nsCOMPtr<nsIFile> file = cleanupData->mFile;
+      
+      
+      bool isDirectory = false;
+      file->IsDirectory(&isDirectory);
+      if (isDirectory != cleanupData->mIsDirectory)
+        continue;  
 
-            
-            
-            bool exists = false;
-            file->Exists(&exists);
-            if (!exists)
-                continue;
-
-            
-            
-            bool isDirectory = false;
-            file->IsDirectory(&isDirectory);
-            if (isDirectory != cleanupData->mIsDirectory)
-                continue; 
-
-            if (pass == 0 && !isDirectory)
-            {
-                file->Remove(false);
-            }
-            else if (pass == 1 && isDirectory) 
-            {
-                
-                
-                
-                
-                
-                
-                
-
-                bool isEmptyDirectory = true;
-                nsCOMArray<nsIDirectoryEnumerator> dirStack;
-                int32_t stackSize = 0;
-
-                
-                nsCOMPtr<nsIDirectoryEnumerator> pos;
-                if (NS_SUCCEEDED(file->GetDirectoryEntries(getter_AddRefs(pos))))
-                    dirStack.AppendObject(pos);
-
-                while (isEmptyDirectory && (stackSize = dirStack.Count()))
-                {
-                    
-                    nsCOMPtr<nsIDirectoryEnumerator> curPos;
-                    curPos = dirStack[stackSize-1];
-                    dirStack.RemoveObjectAt(stackSize - 1);
-
-                    nsCOMPtr<nsIFile> child;
-                    if (NS_FAILED(curPos->GetNextFile(getter_AddRefs(child))) || !child)
-                    {
-                        continue;
-                    }
-
-                    bool childIsSymlink = false;
-                    child->IsSymlink(&childIsSymlink);
-                    bool childIsDir = false;
-                    child->IsDirectory(&childIsDir);
-                    if (!childIsDir || childIsSymlink)
-                    {
-                        
-                        
-                        isEmptyDirectory = false;
-                        break;
-                    }
-                    
-                    nsCOMPtr<nsIDirectoryEnumerator> childPos;
-                    child->GetDirectoryEntries(getter_AddRefs(childPos));
-                    dirStack.AppendObject(curPos);
-                    if (childPos)
-                        dirStack.AppendObject(childPos);
-
-                }
-                dirStack.Clear();
-
-                
-                if (isEmptyDirectory)
-                {
-                    file->Remove(true);
-                }
-            }
-        }
-    }
-}
-
-nsresult
-nsWebBrowserPersist::CalculateUniqueFilename(nsIURI *aURI, nsCOMPtr<nsIURI>& aOutURI)
-{
-    nsCOMPtr<nsIURL> url(do_QueryInterface(aURI));
-    NS_ENSURE_TRUE(url, NS_ERROR_FAILURE);
-
-    bool nameHasChanged = false;
-    nsresult rv;
-
-    
-    nsAutoCString filename;
-    rv = url->GetFileName(filename);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-    nsAutoCString directory;
-    rv = url->GetDirectory(directory);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-    
-    
-    
-    
-    
-    
-    int32_t lastDot = filename.RFind(".");
-    nsAutoCString base;
-    nsAutoCString ext;
-    if (lastDot >= 0)
-    {
-        filename.Mid(base, 0, lastDot);
-        filename.Mid(ext, lastDot, filename.Length() - lastDot); 
-    }
-    else
-    {
+      if (pass == 0 && !isDirectory) {
+        file->Remove(false);
+      } else if (pass == 1 && isDirectory)  
+      {
         
-        base = filename;
-    }
-
-    
-    int32_t needToChop = filename.Length() - kDefaultMaxFilenameLength;
-    if (needToChop > 0)
-    {
         
-        if (base.Length() > (uint32_t) needToChop)
-        {
-            base.Truncate(base.Length() - needToChop);
-        }
-        else
-        {
-            needToChop -= base.Length() - 1;
-            base.Truncate(1);
-            if (ext.Length() > (uint32_t) needToChop)
-            {
-                ext.Truncate(ext.Length() - needToChop);
-            }
-            else
-            {
-                ext.Truncate(0);
-            }
-            
-            
-            
-        }
-
-        filename.Assign(base);
-        filename.Append(ext);
-        nameHasChanged = true;
-    }
-
-    
-    
-    
-
-    if (base.IsEmpty() || !mFilenameList.IsEmpty())
-    {
-        nsAutoCString tmpPath;
-        nsAutoCString tmpBase;
-        uint32_t duplicateCounter = 1;
-        while (true)
-        {
-            
-            
-            
-
-            if (base.IsEmpty() || duplicateCounter > 1)
-            {
-                SmprintfPointer tmp = mozilla::Smprintf("_%03d", duplicateCounter);
-                NS_ENSURE_TRUE(tmp, NS_ERROR_OUT_OF_MEMORY);
-                if (filename.Length() < kDefaultMaxFilenameLength - 4)
-                {
-                    tmpBase = base;
-                }
-                else
-                {
-                    base.Mid(tmpBase, 0, base.Length() - 4);
-                }
-                tmpBase.Append(tmp.get());
-            }
-            else
-            {
-                tmpBase = base;
-            }
-
-            tmpPath.Assign(directory);
-            tmpPath.Append(tmpBase);
-            tmpPath.Append(ext);
-
-            
-            if (!mFilenameList.Contains(tmpPath))
-            {
-                if (!base.Equals(tmpBase))
-                {
-                    filename.Assign(tmpBase);
-                    filename.Append(ext);
-                    nameHasChanged = true;
-                }
-                break;
-            }
-            duplicateCounter++;
-        }
-    }
-
-    
-    nsAutoCString newFilepath(directory);
-    newFilepath.Append(filename);
-    mFilenameList.AppendElement(newFilepath);
-
-    
-    if (nameHasChanged)
-    {
         
-        if (filename.Length() > kDefaultMaxFilenameLength)
-        {
-            NS_WARNING("Filename wasn't truncated less than the max file length - how can that be?");
-            return NS_ERROR_FAILURE;
-        }
+        
+        
+        
+        
 
-        nsCOMPtr<nsIFile> localFile;
-        GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
+        bool isEmptyDirectory = true;
+        nsCOMArray<nsIDirectoryEnumerator> dirStack;
+        int32_t stackSize = 0;
 
-        if (localFile)
-        {
-            nsAutoString filenameAsUnichar;
-            CopyASCIItoUTF16(filename, filenameAsUnichar);
-            localFile->SetLeafName(filenameAsUnichar);
+        
+        nsCOMPtr<nsIDirectoryEnumerator> pos;
+        if (NS_SUCCEEDED(file->GetDirectoryEntries(getter_AddRefs(pos))))
+          dirStack.AppendObject(pos);
 
+        while (isEmptyDirectory && (stackSize = dirStack.Count())) {
+          
+          nsCOMPtr<nsIDirectoryEnumerator> curPos;
+          curPos = dirStack[stackSize - 1];
+          dirStack.RemoveObjectAt(stackSize - 1);
+
+          nsCOMPtr<nsIFile> child;
+          if (NS_FAILED(curPos->GetNextFile(getter_AddRefs(child))) || !child) {
+            continue;
+          }
+
+          bool childIsSymlink = false;
+          child->IsSymlink(&childIsSymlink);
+          bool childIsDir = false;
+          child->IsDirectory(&childIsDir);
+          if (!childIsDir || childIsSymlink) {
             
-            return NS_MutateURI(aURI)
-                     .Apply(NS_MutatorMethod(&nsIFileURLMutator::SetFile,
-                                             localFile))
-                     .Finalize(aOutURI);
+            
+            isEmptyDirectory = false;
+            break;
+          }
+          
+          nsCOMPtr<nsIDirectoryEnumerator> childPos;
+          child->GetDirectoryEntries(getter_AddRefs(childPos));
+          dirStack.AppendObject(curPos);
+          if (childPos) dirStack.AppendObject(childPos);
         }
-        return NS_MutateURI(url)
-                 .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileName,
-                                         filename, nullptr))
-                 .Finalize(aOutURI);
-    }
+        dirStack.Clear();
 
-    
-    aOutURI = aURI;
-    return NS_OK;
+        
+        if (isEmptyDirectory) {
+          file->Remove(true);
+        }
+      }
+    }
+  }
 }
 
+nsresult nsWebBrowserPersist::CalculateUniqueFilename(
+    nsIURI *aURI, nsCOMPtr<nsIURI> &aOutURI) {
+  nsCOMPtr<nsIURL> url(do_QueryInterface(aURI));
+  NS_ENSURE_TRUE(url, NS_ERROR_FAILURE);
 
-nsresult
-nsWebBrowserPersist::MakeFilenameFromURI(nsIURI *aURI, nsString &aFilename)
-{
-    
-    nsAutoString fileName;
+  bool nameHasChanged = false;
+  nsresult rv;
 
-    
-    
+  
+  nsAutoCString filename;
+  rv = url->GetFileName(filename);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  nsAutoCString directory;
+  rv = url->GetDirectory(directory);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
-    nsCOMPtr<nsIURL> url(do_QueryInterface(aURI));
-    if (url)
-    {
-        nsAutoCString nameFromURL;
-        url->GetFileName(nameFromURL);
-        if (mPersistFlags & PERSIST_FLAGS_DONT_CHANGE_FILENAMES)
-        {
-            CopyASCIItoUTF16(NS_UnescapeURL(nameFromURL), fileName);
-            aFilename = fileName;
-            return NS_OK;
+  
+  
+  
+  
+  
+  
+  int32_t lastDot = filename.RFind(".");
+  nsAutoCString base;
+  nsAutoCString ext;
+  if (lastDot >= 0) {
+    filename.Mid(base, 0, lastDot);
+    filename.Mid(ext, lastDot, filename.Length() - lastDot);  
+  } else {
+    
+    base = filename;
+  }
+
+  
+  int32_t needToChop = filename.Length() - kDefaultMaxFilenameLength;
+  if (needToChop > 0) {
+    
+    if (base.Length() > (uint32_t)needToChop) {
+      base.Truncate(base.Length() - needToChop);
+    } else {
+      needToChop -= base.Length() - 1;
+      base.Truncate(1);
+      if (ext.Length() > (uint32_t)needToChop) {
+        ext.Truncate(ext.Length() - needToChop);
+      } else {
+        ext.Truncate(0);
+      }
+      
+      
+      
+    }
+
+    filename.Assign(base);
+    filename.Append(ext);
+    nameHasChanged = true;
+  }
+
+  
+  
+  
+
+  if (base.IsEmpty() || !mFilenameList.IsEmpty()) {
+    nsAutoCString tmpPath;
+    nsAutoCString tmpBase;
+    uint32_t duplicateCounter = 1;
+    while (true) {
+      
+      
+      
+
+      if (base.IsEmpty() || duplicateCounter > 1) {
+        SmprintfPointer tmp = mozilla::Smprintf("_%03d", duplicateCounter);
+        NS_ENSURE_TRUE(tmp, NS_ERROR_OUT_OF_MEMORY);
+        if (filename.Length() < kDefaultMaxFilenameLength - 4) {
+          tmpBase = base;
+        } else {
+          base.Mid(tmpBase, 0, base.Length() - 4);
         }
-        if (!nameFromURL.IsEmpty())
-        {
-            
-            NS_UnescapeURL(nameFromURL);
-            uint32_t nameLength = 0;
-            const char *p = nameFromURL.get();
-            for (;*p && *p != ';' && *p != '?' && *p != '#' && *p != '.'
-                 ;p++)
-            {
-                if (IsAsciiAlpha(*p) || IsAsciiDigit(*p)
-                    || *p == '.' || *p == '-' ||  *p == '_' || (*p == ' '))
-                {
-                    fileName.Append(char16_t(*p));
-                    if (++nameLength == kDefaultMaxFilenameLength)
-                    {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        break;
-                    }
-                }
-            }
+        tmpBase.Append(tmp.get());
+      } else {
+        tmpBase = base;
+      }
+
+      tmpPath.Assign(directory);
+      tmpPath.Append(tmpBase);
+      tmpPath.Append(ext);
+
+      
+      if (!mFilenameList.Contains(tmpPath)) {
+        if (!base.Equals(tmpBase)) {
+          filename.Assign(tmpBase);
+          filename.Append(ext);
+          nameHasChanged = true;
         }
+        break;
+      }
+      duplicateCounter++;
     }
+  }
 
+  
+  nsAutoCString newFilepath(directory);
+  newFilepath.Append(filename);
+  mFilenameList.AppendElement(newFilepath);
+
+  
+  if (nameHasChanged) {
     
-    
-    
-    
-    if (fileName.IsEmpty())
-    {
-        fileName.Append(char16_t('a')); 
+    if (filename.Length() > kDefaultMaxFilenameLength) {
+      NS_WARNING(
+          "Filename wasn't truncated less than the max file length - how can "
+          "that be?");
+      return NS_ERROR_FAILURE;
     }
-
-    aFilename = fileName;
-    return NS_OK;
-}
-
-
-nsresult
-nsWebBrowserPersist::CalculateAndAppendFileExt(nsIURI *aURI,
-                                               nsIChannel *aChannel,
-                                               nsIURI *aOriginalURIWithExtension,
-                                               nsCOMPtr<nsIURI>& aOutURI)
-{
-    nsresult rv = NS_OK;
-
-    if (!mMIMEService)
-    {
-        mMIMEService = do_GetService(NS_MIMESERVICE_CONTRACTID, &rv);
-        NS_ENSURE_TRUE(mMIMEService, NS_ERROR_FAILURE);
-    }
-
-    nsAutoCString contentType;
-
-    
-    aChannel->GetContentType(contentType);
-
-    
-    if (contentType.IsEmpty())
-    {
-        nsCOMPtr<nsIURI> uri;
-        aChannel->GetOriginalURI(getter_AddRefs(uri));
-        mMIMEService->GetTypeFromURI(uri, contentType);
-    }
-
-    
-    if (!contentType.IsEmpty())
-    {
-        nsCOMPtr<nsIMIMEInfo> mimeInfo;
-        mMIMEService->GetFromTypeAndExtension(
-            contentType, EmptyCString(), getter_AddRefs(mimeInfo));
-
-        nsCOMPtr<nsIFile> localFile;
-        GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
-
-        if (mimeInfo)
-        {
-            nsCOMPtr<nsIURL> url(do_QueryInterface(aURI));
-            NS_ENSURE_TRUE(url, NS_ERROR_FAILURE);
-
-            nsAutoCString newFileName;
-            url->GetFileName(newFileName);
-
-            
-            bool hasExtension = false;
-            int32_t ext = newFileName.RFind(".");
-            if (ext != -1)
-            {
-                mimeInfo->ExtensionExists(Substring(newFileName, ext + 1), &hasExtension);
-            }
-
-            
-            nsAutoCString fileExt;
-            if (!hasExtension)
-            {
-                
-                nsCOMPtr<nsIURL> oldurl(do_QueryInterface(aOriginalURIWithExtension));
-                NS_ENSURE_TRUE(oldurl, NS_ERROR_FAILURE);
-                oldurl->GetFileExtension(fileExt);
-                bool useOldExt = false;
-                if (!fileExt.IsEmpty())
-                {
-                    mimeInfo->ExtensionExists(fileExt, &useOldExt);
-                }
-
-                
-                if (!useOldExt)
-                {
-                    mimeInfo->GetPrimaryExtension(fileExt);
-                }
-
-                if (!fileExt.IsEmpty())
-                {
-                    uint32_t newLength = newFileName.Length() + fileExt.Length() + 1;
-                    if (newLength > kDefaultMaxFilenameLength)
-                    {
-                        if (fileExt.Length() > kDefaultMaxFilenameLength/2)
-                            fileExt.Truncate(kDefaultMaxFilenameLength/2);
-
-                        uint32_t diff = kDefaultMaxFilenameLength - 1 -
-                                        fileExt.Length();
-                        if (newFileName.Length() > diff)
-                            newFileName.Truncate(diff);
-                    }
-                    newFileName.Append('.');
-                    newFileName.Append(fileExt);
-                }
-
-                if (localFile)
-                {
-                    localFile->SetLeafName(NS_ConvertUTF8toUTF16(newFileName));
-
-                    
-                    return NS_MutateURI(url)
-                             .Apply(NS_MutatorMethod(&nsIFileURLMutator::SetFile,
-                                                     localFile))
-                             .Finalize(aOutURI);
-                }
-                return NS_MutateURI(url)
-                         .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileName,
-                                                 newFileName, nullptr))
-                         .Finalize(aOutURI);
-            }
-
-        }
-    }
-
-    
-    aOutURI = aURI;
-    return NS_OK;
-}
-
-nsresult
-nsWebBrowserPersist::MakeOutputStream(
-    nsIURI *aURI, nsIOutputStream **aOutputStream)
-{
-    nsresult rv;
 
     nsCOMPtr<nsIFile> localFile;
     GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
-    if (localFile)
-        rv = MakeOutputStreamFromFile(localFile, aOutputStream);
-    else
-        rv = MakeOutputStreamFromURI(aURI, aOutputStream);
 
-    return rv;
+    if (localFile) {
+      nsAutoString filenameAsUnichar;
+      CopyASCIItoUTF16(filename, filenameAsUnichar);
+      localFile->SetLeafName(filenameAsUnichar);
+
+      
+      return NS_MutateURI(aURI)
+          .Apply(NS_MutatorMethod(&nsIFileURLMutator::SetFile, localFile))
+          .Finalize(aOutURI);
+    }
+    return NS_MutateURI(url)
+        .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileName, filename, nullptr))
+        .Finalize(aOutURI);
+  }
+
+  
+  aOutURI = aURI;
+  return NS_OK;
 }
 
-nsresult
-nsWebBrowserPersist::MakeOutputStreamFromFile(
-    nsIFile *aFile, nsIOutputStream **aOutputStream)
-{
-    nsresult rv = NS_OK;
+nsresult nsWebBrowserPersist::MakeFilenameFromURI(nsIURI *aURI,
+                                                  nsString &aFilename) {
+  
+  nsAutoString fileName;
 
-    nsCOMPtr<nsIFileOutputStream> fileOutputStream =
-        do_CreateInstance(NS_LOCALFILEOUTPUTSTREAM_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+  
+  
 
-    
-    int32_t ioFlags = -1;
-    if (mPersistFlags & nsIWebBrowserPersist::PERSIST_FLAGS_APPEND_TO_FILE)
-      ioFlags = PR_APPEND | PR_CREATE_FILE | PR_WRONLY;
-    rv = fileOutputStream->Init(aFile, ioFlags, -1, 0);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    rv = NS_NewBufferedOutputStream(aOutputStream, fileOutputStream.forget(),
-                                    BUFFERED_OUTPUT_SIZE);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (mPersistFlags & PERSIST_FLAGS_CLEANUP_ON_FAILURE)
-    {
-        
-        auto *cleanupData = new CleanupData;
-        if (!cleanupData) {
-          NS_RELEASE(*aOutputStream);
-          return NS_ERROR_OUT_OF_MEMORY;
-        }
-        cleanupData->mFile = aFile;
-        cleanupData->mIsDirectory = false;
-        mCleanupList.AppendElement(cleanupData);
+  nsCOMPtr<nsIURL> url(do_QueryInterface(aURI));
+  if (url) {
+    nsAutoCString nameFromURL;
+    url->GetFileName(nameFromURL);
+    if (mPersistFlags & PERSIST_FLAGS_DONT_CHANGE_FILENAMES) {
+      CopyASCIItoUTF16(NS_UnescapeURL(nameFromURL), fileName);
+      aFilename = fileName;
+      return NS_OK;
     }
-
-    return NS_OK;
-}
-
-nsresult
-nsWebBrowserPersist::MakeOutputStreamFromURI(
-    nsIURI *aURI, nsIOutputStream  **aOutputStream)
-{
-    uint32_t segsize = 8192;
-    uint32_t maxsize = uint32_t(-1);
-    nsCOMPtr<nsIStorageStream> storStream;
-    nsresult rv = NS_NewStorageStream(segsize, maxsize, getter_AddRefs(storStream));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    NS_ENSURE_SUCCESS(CallQueryInterface(storStream, aOutputStream), NS_ERROR_FAILURE);
-    return NS_OK;
-}
-
-void
-nsWebBrowserPersist::FinishDownload()
-{
-    EndDownload(NS_OK);
-}
-
-void
-nsWebBrowserPersist::EndDownload(nsresult aResult)
-{
-    
-    if (NS_SUCCEEDED(mPersistResult) && NS_FAILED(aResult))
-    {
-        mPersistResult = aResult;
-    }
-
-    
-    
-    mCompleted = true;
-    
-    if (mProgressListener) {
-        mProgressListener->OnStateChange(nullptr, nullptr,
-            nsIWebProgressListener::STATE_STOP
-            | nsIWebProgressListener::STATE_IS_NETWORK, mPersistResult);
-    }
-
-    
-    if (NS_FAILED(aResult) && (mPersistFlags & PERSIST_FLAGS_CLEANUP_ON_FAILURE))
-    {
-        CleanupLocalFiles();
-    }
-
-    
-    Cleanup();
-
-    mProgressListener = nullptr;
-    mProgressListener2 = nullptr;
-    mEventSink = nullptr;
-}
-
-nsresult
-nsWebBrowserPersist::FixRedirectedChannelEntry(nsIChannel *aNewChannel)
-{
-    NS_ENSURE_ARG_POINTER(aNewChannel);
-
-    
-    
-    nsCOMPtr<nsIURI> originalURI;
-    aNewChannel->GetOriginalURI(getter_AddRefs(originalURI));
-    nsISupports* matchingKey = nullptr;
-    for (auto iter = mOutputMap.Iter(); !iter.Done(); iter.Next()) {
-        nsISupports* key = iter.Key();
-        nsCOMPtr<nsIChannel> thisChannel = do_QueryInterface(key);
-        nsCOMPtr<nsIURI> thisURI;
-
-        thisChannel->GetOriginalURI(getter_AddRefs(thisURI));
-
-        
-        bool matchingURI = false;
-        thisURI->Equals(originalURI, &matchingURI);
-        if (matchingURI) {
-            matchingKey = key;
-            break;
-        }
-    }
-
-    if (matchingKey) {
-        
-        
-        nsAutoPtr<OutputData> outputData;
-        mOutputMap.Remove(matchingKey, &outputData);
-        NS_ENSURE_TRUE(outputData, NS_ERROR_FAILURE);
-
-        
-        if (!(mPersistFlags & PERSIST_FLAGS_IGNORE_REDIRECTED_DATA)) {
-            nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(aNewChannel);
-            mOutputMap.Put(keyPtr, outputData.forget());
-        }
-    }
-
-    return NS_OK;
-}
-
-void
-nsWebBrowserPersist::CalcTotalProgress()
-{
-    mTotalCurrentProgress = 0;
-    mTotalMaxProgress = 0;
-
-    if (mOutputMap.Count() > 0) {
-        
-        for (auto iter = mOutputMap.Iter(); !iter.Done(); iter.Next()) {
+    if (!nameFromURL.IsEmpty()) {
+      
+      NS_UnescapeURL(nameFromURL);
+      uint32_t nameLength = 0;
+      const char *p = nameFromURL.get();
+      for (; *p && *p != ';' && *p != '?' && *p != '#' && *p != '.'; p++) {
+        if (IsAsciiAlpha(*p) || IsAsciiDigit(*p) || *p == '.' || *p == '-' ||
+            *p == '_' || (*p == ' ')) {
+          fileName.Append(char16_t(*p));
+          if (++nameLength == kDefaultMaxFilenameLength) {
             
-            OutputData* data = iter.UserData();
-            nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(data->mFile);
-            if (fileURL) {
-                mTotalCurrentProgress += data->mSelfProgress;
-                mTotalMaxProgress += data->mSelfProgressMax;
-            }
+            
+            
+            
+            
+            
+            
+            break;
+          }
         }
+      }
     }
+  }
 
-    if (mUploadList.Count() > 0) {
-        
-        for (auto iter = mUploadList.Iter(); !iter.Done(); iter.Next()) {
-            UploadData* data = iter.UserData();
-            if (data) {
-                mTotalCurrentProgress += data->mSelfProgress;
-                mTotalMaxProgress += data->mSelfProgressMax;
-            }
-        }
-    }
+  
+  
+  
+  
+  if (fileName.IsEmpty()) {
+    fileName.Append(char16_t('a'));  
+  }
 
-    
-    if (mTotalCurrentProgress == 0 && mTotalMaxProgress == 0)
-    {
-        
-        mTotalCurrentProgress = 10000;
-        mTotalMaxProgress = 10000;
-    }
+  aFilename = fileName;
+  return NS_OK;
 }
 
-nsresult
-nsWebBrowserPersist::StoreURI(
-    const char *aURI, nsIWebBrowserPersistDocument *aDoc,
-    nsContentPolicyType aContentPolicyType,
-    bool aNeedsPersisting, URIData **aData)
-{
-    NS_ENSURE_ARG_POINTER(aURI);
+nsresult nsWebBrowserPersist::CalculateAndAppendFileExt(
+    nsIURI *aURI, nsIChannel *aChannel, nsIURI *aOriginalURIWithExtension,
+    nsCOMPtr<nsIURI> &aOutURI) {
+  nsresult rv = NS_OK;
 
+  if (!mMIMEService) {
+    mMIMEService = do_GetService(NS_MIMESERVICE_CONTRACTID, &rv);
+    NS_ENSURE_TRUE(mMIMEService, NS_ERROR_FAILURE);
+  }
+
+  nsAutoCString contentType;
+
+  
+  aChannel->GetContentType(contentType);
+
+  
+  if (contentType.IsEmpty()) {
     nsCOMPtr<nsIURI> uri;
-    nsresult rv = NS_NewURI(getter_AddRefs(uri),
-                            nsDependentCString(aURI),
-                            mCurrentCharset.get(),
-                            mCurrentBaseURI);
-    NS_ENSURE_SUCCESS(rv, rv);
+    aChannel->GetOriginalURI(getter_AddRefs(uri));
+    mMIMEService->GetTypeFromURI(uri, contentType);
+  }
 
-    return StoreURI(uri, aDoc, aContentPolicyType, aNeedsPersisting, aData);
+  
+  if (!contentType.IsEmpty()) {
+    nsCOMPtr<nsIMIMEInfo> mimeInfo;
+    mMIMEService->GetFromTypeAndExtension(contentType, EmptyCString(),
+                                          getter_AddRefs(mimeInfo));
+
+    nsCOMPtr<nsIFile> localFile;
+    GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
+
+    if (mimeInfo) {
+      nsCOMPtr<nsIURL> url(do_QueryInterface(aURI));
+      NS_ENSURE_TRUE(url, NS_ERROR_FAILURE);
+
+      nsAutoCString newFileName;
+      url->GetFileName(newFileName);
+
+      
+      bool hasExtension = false;
+      int32_t ext = newFileName.RFind(".");
+      if (ext != -1) {
+        mimeInfo->ExtensionExists(Substring(newFileName, ext + 1),
+                                  &hasExtension);
+      }
+
+      
+      nsAutoCString fileExt;
+      if (!hasExtension) {
+        
+        nsCOMPtr<nsIURL> oldurl(do_QueryInterface(aOriginalURIWithExtension));
+        NS_ENSURE_TRUE(oldurl, NS_ERROR_FAILURE);
+        oldurl->GetFileExtension(fileExt);
+        bool useOldExt = false;
+        if (!fileExt.IsEmpty()) {
+          mimeInfo->ExtensionExists(fileExt, &useOldExt);
+        }
+
+        
+        if (!useOldExt) {
+          mimeInfo->GetPrimaryExtension(fileExt);
+        }
+
+        if (!fileExt.IsEmpty()) {
+          uint32_t newLength = newFileName.Length() + fileExt.Length() + 1;
+          if (newLength > kDefaultMaxFilenameLength) {
+            if (fileExt.Length() > kDefaultMaxFilenameLength / 2)
+              fileExt.Truncate(kDefaultMaxFilenameLength / 2);
+
+            uint32_t diff = kDefaultMaxFilenameLength - 1 - fileExt.Length();
+            if (newFileName.Length() > diff) newFileName.Truncate(diff);
+          }
+          newFileName.Append('.');
+          newFileName.Append(fileExt);
+        }
+
+        if (localFile) {
+          localFile->SetLeafName(NS_ConvertUTF8toUTF16(newFileName));
+
+          
+          return NS_MutateURI(url)
+              .Apply(NS_MutatorMethod(&nsIFileURLMutator::SetFile, localFile))
+              .Finalize(aOutURI);
+        }
+        return NS_MutateURI(url)
+            .Apply(NS_MutatorMethod(&nsIURLMutator::SetFileName, newFileName,
+                                    nullptr))
+            .Finalize(aOutURI);
+      }
+    }
+  }
+
+  
+  aOutURI = aURI;
+  return NS_OK;
 }
 
-nsresult
-nsWebBrowserPersist::StoreURI(
-    nsIURI *aURI, nsIWebBrowserPersistDocument *aDoc,
-    nsContentPolicyType aContentPolicyType,
-    bool aNeedsPersisting, URIData **aData)
-{
-    NS_ENSURE_ARG_POINTER(aURI);
-    if (aData)
-    {
-        *aData = nullptr;
+nsresult nsWebBrowserPersist::MakeOutputStream(
+    nsIURI *aURI, nsIOutputStream **aOutputStream) {
+  nsresult rv;
+
+  nsCOMPtr<nsIFile> localFile;
+  GetLocalFileFromURI(aURI, getter_AddRefs(localFile));
+  if (localFile)
+    rv = MakeOutputStreamFromFile(localFile, aOutputStream);
+  else
+    rv = MakeOutputStreamFromURI(aURI, aOutputStream);
+
+  return rv;
+}
+
+nsresult nsWebBrowserPersist::MakeOutputStreamFromFile(
+    nsIFile *aFile, nsIOutputStream **aOutputStream) {
+  nsresult rv = NS_OK;
+
+  nsCOMPtr<nsIFileOutputStream> fileOutputStream =
+      do_CreateInstance(NS_LOCALFILEOUTPUTSTREAM_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+  
+  int32_t ioFlags = -1;
+  if (mPersistFlags & nsIWebBrowserPersist::PERSIST_FLAGS_APPEND_TO_FILE)
+    ioFlags = PR_APPEND | PR_CREATE_FILE | PR_WRONLY;
+  rv = fileOutputStream->Init(aFile, ioFlags, -1, 0);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = NS_NewBufferedOutputStream(aOutputStream, fileOutputStream.forget(),
+                                  BUFFERED_OUTPUT_SIZE);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (mPersistFlags & PERSIST_FLAGS_CLEANUP_ON_FAILURE) {
+    
+    auto *cleanupData = new CleanupData;
+    if (!cleanupData) {
+      NS_RELEASE(*aOutputStream);
+      return NS_ERROR_OUT_OF_MEMORY;
     }
+    cleanupData->mFile = aFile;
+    cleanupData->mIsDirectory = false;
+    mCleanupList.AppendElement(cleanupData);
+  }
+
+  return NS_OK;
+}
+
+nsresult nsWebBrowserPersist::MakeOutputStreamFromURI(
+    nsIURI *aURI, nsIOutputStream **aOutputStream) {
+  uint32_t segsize = 8192;
+  uint32_t maxsize = uint32_t(-1);
+  nsCOMPtr<nsIStorageStream> storStream;
+  nsresult rv =
+      NS_NewStorageStream(segsize, maxsize, getter_AddRefs(storStream));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  NS_ENSURE_SUCCESS(CallQueryInterface(storStream, aOutputStream),
+                    NS_ERROR_FAILURE);
+  return NS_OK;
+}
+
+void nsWebBrowserPersist::FinishDownload() { EndDownload(NS_OK); }
+
+void nsWebBrowserPersist::EndDownload(nsresult aResult) {
+  
+  if (NS_SUCCEEDED(mPersistResult) && NS_FAILED(aResult)) {
+    mPersistResult = aResult;
+  }
+
+  
+  
+  mCompleted = true;
+  
+  if (mProgressListener) {
+    mProgressListener->OnStateChange(
+        nullptr, nullptr,
+        nsIWebProgressListener::STATE_STOP |
+            nsIWebProgressListener::STATE_IS_NETWORK,
+        mPersistResult);
+  }
+
+  
+  if (NS_FAILED(aResult) &&
+      (mPersistFlags & PERSIST_FLAGS_CLEANUP_ON_FAILURE)) {
+    CleanupLocalFiles();
+  }
+
+  
+  Cleanup();
+
+  mProgressListener = nullptr;
+  mProgressListener2 = nullptr;
+  mEventSink = nullptr;
+}
+
+nsresult nsWebBrowserPersist::FixRedirectedChannelEntry(
+    nsIChannel *aNewChannel) {
+  NS_ENSURE_ARG_POINTER(aNewChannel);
+
+  
+  
+  nsCOMPtr<nsIURI> originalURI;
+  aNewChannel->GetOriginalURI(getter_AddRefs(originalURI));
+  nsISupports *matchingKey = nullptr;
+  for (auto iter = mOutputMap.Iter(); !iter.Done(); iter.Next()) {
+    nsISupports *key = iter.Key();
+    nsCOMPtr<nsIChannel> thisChannel = do_QueryInterface(key);
+    nsCOMPtr<nsIURI> thisURI;
+
+    thisChannel->GetOriginalURI(getter_AddRefs(thisURI));
 
     
+    bool matchingURI = false;
+    thisURI->Equals(originalURI, &matchingURI);
+    if (matchingURI) {
+      matchingKey = key;
+      break;
+    }
+  }
+
+  if (matchingKey) {
     
-    bool doNotPersistURI;
-    nsresult rv = NS_URIChainHasFlags(aURI,
-                                      nsIProtocolHandler::URI_NON_PERSISTABLE,
-                                      &doNotPersistURI);
-    if (NS_FAILED(rv))
-    {
-        doNotPersistURI = false;
-    }
+    
+    nsAutoPtr<OutputData> outputData;
+    mOutputMap.Remove(matchingKey, &outputData);
+    NS_ENSURE_TRUE(outputData, NS_ERROR_FAILURE);
 
-    if (doNotPersistURI)
-    {
-        return NS_OK;
+    
+    if (!(mPersistFlags & PERSIST_FLAGS_IGNORE_REDIRECTED_DATA)) {
+      nsCOMPtr<nsISupports> keyPtr = do_QueryInterface(aNewChannel);
+      mOutputMap.Put(keyPtr, outputData.forget());
     }
+  }
 
-    URIData *data = nullptr;
-    MakeAndStoreLocalFilenameInURIMap(aURI, aDoc, aContentPolicyType, aNeedsPersisting, &data);
-    if (aData)
-    {
-        *aData = data;
+  return NS_OK;
+}
+
+void nsWebBrowserPersist::CalcTotalProgress() {
+  mTotalCurrentProgress = 0;
+  mTotalMaxProgress = 0;
+
+  if (mOutputMap.Count() > 0) {
+    
+    for (auto iter = mOutputMap.Iter(); !iter.Done(); iter.Next()) {
+      
+      OutputData *data = iter.UserData();
+      nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(data->mFile);
+      if (fileURL) {
+        mTotalCurrentProgress += data->mSelfProgress;
+        mTotalMaxProgress += data->mSelfProgressMax;
+      }
     }
+  }
 
+  if (mUploadList.Count() > 0) {
+    
+    for (auto iter = mUploadList.Iter(); !iter.Done(); iter.Next()) {
+      UploadData *data = iter.UserData();
+      if (data) {
+        mTotalCurrentProgress += data->mSelfProgress;
+        mTotalMaxProgress += data->mSelfProgressMax;
+      }
+    }
+  }
+
+  
+  if (mTotalCurrentProgress == 0 && mTotalMaxProgress == 0) {
+    
+    mTotalCurrentProgress = 10000;
+    mTotalMaxProgress = 10000;
+  }
+}
+
+nsresult nsWebBrowserPersist::StoreURI(const char *aURI,
+                                       nsIWebBrowserPersistDocument *aDoc,
+                                       nsContentPolicyType aContentPolicyType,
+                                       bool aNeedsPersisting, URIData **aData) {
+  NS_ENSURE_ARG_POINTER(aURI);
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), nsDependentCString(aURI),
+                          mCurrentCharset.get(), mCurrentBaseURI);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return StoreURI(uri, aDoc, aContentPolicyType, aNeedsPersisting, aData);
+}
+
+nsresult nsWebBrowserPersist::StoreURI(nsIURI *aURI,
+                                       nsIWebBrowserPersistDocument *aDoc,
+                                       nsContentPolicyType aContentPolicyType,
+                                       bool aNeedsPersisting, URIData **aData) {
+  NS_ENSURE_ARG_POINTER(aURI);
+  if (aData) {
+    *aData = nullptr;
+  }
+
+  
+  
+  bool doNotPersistURI;
+  nsresult rv = NS_URIChainHasFlags(
+      aURI, nsIProtocolHandler::URI_NON_PERSISTABLE, &doNotPersistURI);
+  if (NS_FAILED(rv)) {
+    doNotPersistURI = false;
+  }
+
+  if (doNotPersistURI) {
     return NS_OK;
+  }
+
+  URIData *data = nullptr;
+  MakeAndStoreLocalFilenameInURIMap(aURI, aDoc, aContentPolicyType,
+                                    aNeedsPersisting, &data);
+  if (aData) {
+    *aData = data;
+  }
+
+  return NS_OK;
 }
 
-nsresult
-nsWebBrowserPersist::URIData::GetLocalURI(nsIURI *targetBaseURI, nsCString& aSpecOut)
-{
-    aSpecOut.SetIsVoid(true);
-    if (!mNeedsFixup) {
-        return NS_OK;
-    }
-    nsresult rv;
-    nsCOMPtr<nsIURI> fileAsURI;
-    if (mFile) {
-        fileAsURI = mFile;
-    } else {
-        fileAsURI = mDataPath;
-        rv = AppendPathToURI(fileAsURI, mFilename, fileAsURI);
-        NS_ENSURE_SUCCESS(rv, rv);
-    }
+nsresult nsWebBrowserPersist::URIData::GetLocalURI(nsIURI *targetBaseURI,
+                                                   nsCString &aSpecOut) {
+  aSpecOut.SetIsVoid(true);
+  if (!mNeedsFixup) {
+    return NS_OK;
+  }
+  nsresult rv;
+  nsCOMPtr<nsIURI> fileAsURI;
+  if (mFile) {
+    fileAsURI = mFile;
+  } else {
+    fileAsURI = mDataPath;
+    rv = AppendPathToURI(fileAsURI, mFilename, fileAsURI);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
-    
-    Unused << NS_MutateURI(fileAsURI)
+  
+  Unused << NS_MutateURI(fileAsURI)
                 .SetUserPass(EmptyCString())
                 .Finalize(fileAsURI);
 
-    
-    
-    if (mDataPathIsRelative) {
-        bool isEqual = false;
-        if (NS_SUCCEEDED(mRelativeDocumentURI->Equals(targetBaseURI, &isEqual)) && isEqual) {
-            nsCOMPtr<nsIURL> url(do_QueryInterface(fileAsURI));
-            if (!url) {
-                return NS_ERROR_FAILURE;
-            }
+  
+  
+  if (mDataPathIsRelative) {
+    bool isEqual = false;
+    if (NS_SUCCEEDED(mRelativeDocumentURI->Equals(targetBaseURI, &isEqual)) &&
+        isEqual) {
+      nsCOMPtr<nsIURL> url(do_QueryInterface(fileAsURI));
+      if (!url) {
+        return NS_ERROR_FAILURE;
+      }
 
-            nsAutoCString filename;
-            url->GetFileName(filename);
+      nsAutoCString filename;
+      url->GetFileName(filename);
 
-            nsAutoCString rawPathURL(mRelativePathToData);
-            rawPathURL.Append(filename);
+      nsAutoCString rawPathURL(mRelativePathToData);
+      rawPathURL.Append(filename);
 
-            rv = NS_EscapeURL(rawPathURL, esc_FilePath, aSpecOut, fallible);
-            NS_ENSURE_SUCCESS(rv, rv);
-        } else {
-            nsAutoCString rawPathURL;
-
-            nsCOMPtr<nsIFile> dataFile;
-            rv = GetLocalFileFromURI(mFile, getter_AddRefs(dataFile));
-            NS_ENSURE_SUCCESS(rv, rv);
-
-            nsCOMPtr<nsIFile> docFile;
-            rv = GetLocalFileFromURI(targetBaseURI, getter_AddRefs(docFile));
-            NS_ENSURE_SUCCESS(rv, rv);
-
-            nsCOMPtr<nsIFile> parentDir;
-            rv = docFile->GetParent(getter_AddRefs(parentDir));
-            NS_ENSURE_SUCCESS(rv, rv);
-
-            rv = dataFile->GetRelativePath(parentDir, rawPathURL);
-            NS_ENSURE_SUCCESS(rv, rv);
-
-            rv = NS_EscapeURL(rawPathURL, esc_FilePath, aSpecOut, fallible);
-            NS_ENSURE_SUCCESS(rv, rv);
-        }
+      rv = NS_EscapeURL(rawPathURL, esc_FilePath, aSpecOut, fallible);
+      NS_ENSURE_SUCCESS(rv, rv);
     } else {
-        fileAsURI->GetSpec(aSpecOut);
-    }
-    if (mIsSubFrame) {
-        AppendUTF16toUTF8(mSubFrameExt, aSpecOut);
-    }
+      nsAutoCString rawPathURL;
 
-    return NS_OK;
+      nsCOMPtr<nsIFile> dataFile;
+      rv = GetLocalFileFromURI(mFile, getter_AddRefs(dataFile));
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      nsCOMPtr<nsIFile> docFile;
+      rv = GetLocalFileFromURI(targetBaseURI, getter_AddRefs(docFile));
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      nsCOMPtr<nsIFile> parentDir;
+      rv = docFile->GetParent(getter_AddRefs(parentDir));
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      rv = dataFile->GetRelativePath(parentDir, rawPathURL);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      rv = NS_EscapeURL(rawPathURL, esc_FilePath, aSpecOut, fallible);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+  } else {
+    fileAsURI->GetSpec(aSpecOut);
+  }
+  if (mIsSubFrame) {
+    AppendUTF16toUTF8(mSubFrameExt, aSpecOut);
+  }
+
+  return NS_OK;
 }
 
-bool
-nsWebBrowserPersist::DocumentEncoderExists(const char *aContentType)
-{
-    return do_getDocumentTypeSupportedForEncoding(aContentType);
+bool nsWebBrowserPersist::DocumentEncoderExists(const char *aContentType) {
+  return do_getDocumentTypeSupportedForEncoding(aContentType);
 }
 
-nsresult
-nsWebBrowserPersist::SaveSubframeContent(
+nsresult nsWebBrowserPersist::SaveSubframeContent(
     nsIWebBrowserPersistDocument *aFrameContent,
-    nsIWebBrowserPersistDocument *aParentDocument,
-    const nsCString& aURISpec,
-    URIData *aData)
-{
-    NS_ENSURE_ARG_POINTER(aData);
+    nsIWebBrowserPersistDocument *aParentDocument, const nsCString &aURISpec,
+    URIData *aData) {
+  NS_ENSURE_ARG_POINTER(aData);
 
-    
-    nsAutoCString contentType;
-    nsresult rv = aFrameContent->GetContentType(contentType);
+  
+  nsAutoCString contentType;
+  nsresult rv = aFrameContent->GetContentType(contentType);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsString ext;
+  GetExtensionForContentType(NS_ConvertASCIItoUTF16(contentType).get(),
+                             getter_Copies(ext));
+
+  
+  
+  if (ext.IsEmpty()) {
+    nsCOMPtr<nsIURI> docURI;
+    rv = NS_NewURI(getter_AddRefs(docURI), aURISpec, mCurrentCharset.get());
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsString ext;
-    GetExtensionForContentType(NS_ConvertASCIItoUTF16(contentType).get(),
-                               getter_Copies(ext));
-
-    
-    
-    if (ext.IsEmpty()) {
-        nsCOMPtr<nsIURI> docURI;
-        rv = NS_NewURI(getter_AddRefs(docURI), aURISpec, mCurrentCharset.get());
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        nsCOMPtr<nsIURL> url(do_QueryInterface(docURI, &rv));
-        nsAutoCString extension;
-        if (NS_SUCCEEDED(rv)) {
-            url->GetFileExtension(extension);
-        } else {
-            extension.AssignLiteral("htm");
-        }
-        aData->mSubFrameExt.Assign(char16_t('.'));
-        AppendUTF8toUTF16(extension, aData->mSubFrameExt);
-    } else {
-        aData->mSubFrameExt.Assign(char16_t('.'));
-        aData->mSubFrameExt.Append(ext);
-    }
-
-    nsString filenameWithExt = aData->mFilename;
-    filenameWithExt.Append(aData->mSubFrameExt);
-
-    
-    nsCOMPtr<nsIURI> frameURI = mCurrentDataPath;
-    rv = AppendPathToURI(frameURI, filenameWithExt, frameURI);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    nsCOMPtr<nsIURI> frameDataURI = mCurrentDataPath;
-    nsAutoString newFrameDataPath(aData->mFilename);
-
-    
-    newFrameDataPath.AppendLiteral("_data");
-    rv = AppendPathToURI(frameDataURI, newFrameDataPath, frameDataURI);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    nsCOMPtr<nsIURI> out;
-    rv = CalculateUniqueFilename(frameURI, out);
-    NS_ENSURE_SUCCESS(rv, rv);
-    frameURI = out;
-
-    rv = CalculateUniqueFilename(frameDataURI, out);
-    NS_ENSURE_SUCCESS(rv, rv);
-    frameDataURI = out;
-
-    mCurrentThingsToPersist++;
-
-    
-    
-    if (DocumentEncoderExists(contentType.get())) {
-        auto toWalk = mozilla::MakeUnique<WalkData>();
-        toWalk->mDocument = aFrameContent;
-        toWalk->mFile = frameURI;
-        toWalk->mDataPath = frameDataURI;
-        mWalkStack.AppendElement(std::move(toWalk));
-    } else {
-        nsContentPolicyType policyType = nsIContentPolicy::TYPE_OTHER;
-        if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("image/"))) {
-          policyType = nsIContentPolicy::TYPE_IMAGE;
-        } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("audio/")) ||
-                   StringBeginsWith(contentType, NS_LITERAL_CSTRING("video/"))) {
-          policyType = nsIContentPolicy::TYPE_MEDIA;
-        }
-        rv = StoreURI(aURISpec.get(), aParentDocument, policyType);
-    }
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    aData->mFile = frameURI;
-    aData->mSubFrameExt.Truncate(); 
-
-    return NS_OK;
-}
-
-nsresult
-nsWebBrowserPersist::CreateChannelFromURI(nsIURI *aURI, nsIChannel **aChannel)
-{
-    nsresult rv = NS_OK;
-    *aChannel = nullptr;
-
-    rv = NS_NewChannel(aChannel,
-                       aURI,
-                       nsContentUtils::GetSystemPrincipal(),
-                       nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                       nsIContentPolicy::TYPE_OTHER);
-    NS_ENSURE_SUCCESS(rv, rv);
-    NS_ENSURE_ARG_POINTER(*aChannel);
-
-    rv = (*aChannel)->SetNotificationCallbacks(static_cast<nsIInterfaceRequestor*>(this));
-    NS_ENSURE_SUCCESS(rv, rv);
-    return NS_OK;
-}
-
-
-
-nsresult
-nsWebBrowserPersist::MakeAndStoreLocalFilenameInURIMap(
-    nsIURI *aURI, nsIWebBrowserPersistDocument *aDoc, nsContentPolicyType aContentPolicyType,
-    bool aNeedsPersisting, URIData **aData)
-{
-    NS_ENSURE_ARG_POINTER(aURI);
-
-    nsAutoCString spec;
-    nsresult rv = aURI->GetSpec(spec);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-    
-    URIData *data;
-    if (mURIMap.Get(spec, &data))
-    {
-        if (aNeedsPersisting)
-        {
-          data->mNeedsPersisting = true;
-        }
-        if (aData)
-        {
-            *aData = data;
-        }
-        return NS_OK;
-    }
-
-    
-    nsString filename;
-    rv = MakeFilenameFromURI(aURI, filename);
-    NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
-
-    
-    data = new URIData;
-    NS_ENSURE_TRUE(data, NS_ERROR_OUT_OF_MEMORY);
-
-    data->mContentPolicyType = aContentPolicyType;
-    data->mNeedsPersisting = aNeedsPersisting;
-    data->mNeedsFixup = true;
-    data->mFilename = filename;
-    data->mSaved = false;
-    data->mIsSubFrame = false;
-    data->mDataPath = mCurrentDataPath;
-    data->mDataPathIsRelative = mCurrentDataPathIsRelative;
-    data->mRelativePathToData = mCurrentRelativePathToData;
-    data->mRelativeDocumentURI = mTargetBaseURI;
-    data->mCharset = mCurrentCharset;
-
-    aDoc->GetPrincipal(getter_AddRefs(data->mTriggeringPrincipal));
-
-    if (aNeedsPersisting)
-        mCurrentThingsToPersist++;
-
-    mURIMap.Put(spec, data);
-    if (aData)
-    {
-        *aData = data;
-    }
-
-    return NS_OK;
-}
-
-
-void nsWebBrowserPersist::SetApplyConversionIfNeeded(nsIChannel *aChannel)
-{
-    nsresult rv = NS_OK;
-    nsCOMPtr<nsIEncodedChannel> encChannel = do_QueryInterface(aChannel, &rv);
-    if (NS_FAILED(rv))
-        return;
-
-    
-    encChannel->SetApplyConversion(false);
-
-    nsCOMPtr<nsIURI> thisURI;
-    aChannel->GetURI(getter_AddRefs(thisURI));
-    nsCOMPtr<nsIURL> sourceURL(do_QueryInterface(thisURI));
-    if (!sourceURL)
-        return;
+    nsCOMPtr<nsIURL> url(do_QueryInterface(docURI, &rv));
     nsAutoCString extension;
-    sourceURL->GetFileExtension(extension);
-
-    nsCOMPtr<nsIUTF8StringEnumerator> encEnum;
-    encChannel->GetContentEncodings(getter_AddRefs(encEnum));
-    if (!encEnum)
-        return;
-    nsCOMPtr<nsIExternalHelperAppService> helperAppService =
-        do_GetService(NS_EXTERNALHELPERAPPSERVICE_CONTRACTID, &rv);
-    if (NS_FAILED(rv))
-        return;
-    bool hasMore;
-    rv = encEnum->HasMore(&hasMore);
-    if (NS_SUCCEEDED(rv) && hasMore)
-    {
-        nsAutoCString encType;
-        rv = encEnum->GetNext(encType);
-        if (NS_SUCCEEDED(rv))
-        {
-            bool applyConversion = false;
-            rv = helperAppService->ApplyDecodingForExtension(extension, encType,
-                                                             &applyConversion);
-            if (NS_SUCCEEDED(rv))
-                encChannel->SetApplyConversion(applyConversion);
-        }
+    if (NS_SUCCEEDED(rv)) {
+      url->GetFileExtension(extension);
+    } else {
+      extension.AssignLiteral("htm");
     }
+    aData->mSubFrameExt.Assign(char16_t('.'));
+    AppendUTF8toUTF16(extension, aData->mSubFrameExt);
+  } else {
+    aData->mSubFrameExt.Assign(char16_t('.'));
+    aData->mSubFrameExt.Append(ext);
+  }
+
+  nsString filenameWithExt = aData->mFilename;
+  filenameWithExt.Append(aData->mSubFrameExt);
+
+  
+  nsCOMPtr<nsIURI> frameURI = mCurrentDataPath;
+  rv = AppendPathToURI(frameURI, filenameWithExt, frameURI);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsCOMPtr<nsIURI> frameDataURI = mCurrentDataPath;
+  nsAutoString newFrameDataPath(aData->mFilename);
+
+  
+  newFrameDataPath.AppendLiteral("_data");
+  rv = AppendPathToURI(frameDataURI, newFrameDataPath, frameDataURI);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsCOMPtr<nsIURI> out;
+  rv = CalculateUniqueFilename(frameURI, out);
+  NS_ENSURE_SUCCESS(rv, rv);
+  frameURI = out;
+
+  rv = CalculateUniqueFilename(frameDataURI, out);
+  NS_ENSURE_SUCCESS(rv, rv);
+  frameDataURI = out;
+
+  mCurrentThingsToPersist++;
+
+  
+  
+  if (DocumentEncoderExists(contentType.get())) {
+    auto toWalk = mozilla::MakeUnique<WalkData>();
+    toWalk->mDocument = aFrameContent;
+    toWalk->mFile = frameURI;
+    toWalk->mDataPath = frameDataURI;
+    mWalkStack.AppendElement(std::move(toWalk));
+  } else {
+    nsContentPolicyType policyType = nsIContentPolicy::TYPE_OTHER;
+    if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("image/"))) {
+      policyType = nsIContentPolicy::TYPE_IMAGE;
+    } else if (StringBeginsWith(contentType, NS_LITERAL_CSTRING("audio/")) ||
+               StringBeginsWith(contentType, NS_LITERAL_CSTRING("video/"))) {
+      policyType = nsIContentPolicy::TYPE_MEDIA;
+    }
+    rv = StoreURI(aURISpec.get(), aParentDocument, policyType);
+  }
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  aData->mFile = frameURI;
+  aData->mSubFrameExt.Truncate();  
+
+  return NS_OK;
+}
+
+nsresult nsWebBrowserPersist::CreateChannelFromURI(nsIURI *aURI,
+                                                   nsIChannel **aChannel) {
+  nsresult rv = NS_OK;
+  *aChannel = nullptr;
+
+  rv = NS_NewChannel(aChannel, aURI, nsContentUtils::GetSystemPrincipal(),
+                     nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
+                     nsIContentPolicy::TYPE_OTHER);
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_ARG_POINTER(*aChannel);
+
+  rv = (*aChannel)->SetNotificationCallbacks(
+      static_cast<nsIInterfaceRequestor *>(this));
+  NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}
+
+
+
+nsresult nsWebBrowserPersist::MakeAndStoreLocalFilenameInURIMap(
+    nsIURI *aURI, nsIWebBrowserPersistDocument *aDoc,
+    nsContentPolicyType aContentPolicyType, bool aNeedsPersisting,
+    URIData **aData) {
+  NS_ENSURE_ARG_POINTER(aURI);
+
+  nsAutoCString spec;
+  nsresult rv = aURI->GetSpec(spec);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+  
+  URIData *data;
+  if (mURIMap.Get(spec, &data)) {
+    if (aNeedsPersisting) {
+      data->mNeedsPersisting = true;
+    }
+    if (aData) {
+      *aData = data;
+    }
+    return NS_OK;
+  }
+
+  
+  nsString filename;
+  rv = MakeFilenameFromURI(aURI, filename);
+  NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
+
+  
+  data = new URIData;
+  NS_ENSURE_TRUE(data, NS_ERROR_OUT_OF_MEMORY);
+
+  data->mContentPolicyType = aContentPolicyType;
+  data->mNeedsPersisting = aNeedsPersisting;
+  data->mNeedsFixup = true;
+  data->mFilename = filename;
+  data->mSaved = false;
+  data->mIsSubFrame = false;
+  data->mDataPath = mCurrentDataPath;
+  data->mDataPathIsRelative = mCurrentDataPathIsRelative;
+  data->mRelativePathToData = mCurrentRelativePathToData;
+  data->mRelativeDocumentURI = mTargetBaseURI;
+  data->mCharset = mCurrentCharset;
+
+  aDoc->GetPrincipal(getter_AddRefs(data->mTriggeringPrincipal));
+
+  if (aNeedsPersisting) mCurrentThingsToPersist++;
+
+  mURIMap.Put(spec, data);
+  if (aData) {
+    *aData = data;
+  }
+
+  return NS_OK;
+}
+
+
+void nsWebBrowserPersist::SetApplyConversionIfNeeded(nsIChannel *aChannel) {
+  nsresult rv = NS_OK;
+  nsCOMPtr<nsIEncodedChannel> encChannel = do_QueryInterface(aChannel, &rv);
+  if (NS_FAILED(rv)) return;
+
+  
+  encChannel->SetApplyConversion(false);
+
+  nsCOMPtr<nsIURI> thisURI;
+  aChannel->GetURI(getter_AddRefs(thisURI));
+  nsCOMPtr<nsIURL> sourceURL(do_QueryInterface(thisURI));
+  if (!sourceURL) return;
+  nsAutoCString extension;
+  sourceURL->GetFileExtension(extension);
+
+  nsCOMPtr<nsIUTF8StringEnumerator> encEnum;
+  encChannel->GetContentEncodings(getter_AddRefs(encEnum));
+  if (!encEnum) return;
+  nsCOMPtr<nsIExternalHelperAppService> helperAppService =
+      do_GetService(NS_EXTERNALHELPERAPPSERVICE_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) return;
+  bool hasMore;
+  rv = encEnum->HasMore(&hasMore);
+  if (NS_SUCCEEDED(rv) && hasMore) {
+    nsAutoCString encType;
+    rv = encEnum->GetNext(encType);
+    if (NS_SUCCEEDED(rv)) {
+      bool applyConversion = false;
+      rv = helperAppService->ApplyDecodingForExtension(extension, encType,
+                                                       &applyConversion);
+      if (NS_SUCCEEDED(rv)) encChannel->SetApplyConversion(applyConversion);
+    }
+  }
 }

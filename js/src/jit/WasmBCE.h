@@ -27,7 +27,7 @@ class MIRGraph;
 
 bool EliminateBoundsChecks(MIRGenerator* mir, MIRGraph& graph);
 
-} 
-} 
+}  
+}  
 
 #endif 

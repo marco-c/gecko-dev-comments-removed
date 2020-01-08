@@ -17,21 +17,15 @@ namespace mozilla {
 namespace css {
 
 StreamLoader::StreamLoader(mozilla::css::SheetLoadData* aSheetLoadData)
-  : mSheetLoadData(aSheetLoadData)
-  , mStatus(NS_OK)
-{
-}
+    : mSheetLoadData(aSheetLoadData), mStatus(NS_OK) {}
 
-StreamLoader::~StreamLoader()
-{
-}
+StreamLoader::~StreamLoader() {}
 
 NS_IMPL_ISUPPORTS(StreamLoader, nsIStreamListener)
 
 
 NS_IMETHODIMP
-StreamLoader::OnStartRequest(nsIRequest* aRequest, nsISupports*)
-{
+StreamLoader::OnStartRequest(nsIRequest* aRequest, nsISupports*) {
   
   
   
@@ -53,10 +47,8 @@ StreamLoader::OnStartRequest(nsIRequest* aRequest, nsISupports*)
 }
 
 NS_IMETHODIMP
-StreamLoader::OnStopRequest(nsIRequest* aRequest,
-                            nsISupports* aContext,
-                            nsresult aStatus)
-{
+StreamLoader::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
+                            nsresult aStatus) {
   
   nsCString utf8String;
   {
@@ -68,12 +60,13 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest,
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
 
     if (NS_FAILED(mStatus)) {
-      mSheetLoadData->VerifySheetReadyToParse(mStatus, EmptyCString(), EmptyCString(), channel);
+      mSheetLoadData->VerifySheetReadyToParse(mStatus, EmptyCString(),
+                                              EmptyCString(), channel);
       return mStatus;
     }
 
-    nsresult rv =
-      mSheetLoadData->VerifySheetReadyToParse(aStatus, mBOMBytes, bytes, channel);
+    nsresult rv = mSheetLoadData->VerifySheetReadyToParse(aStatus, mBOMBytes,
+                                                          bytes, channel);
     if (rv != NS_OK_PARSE_SHEET) {
       return rv;
     }
@@ -101,34 +94,29 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest,
     }
 
     if (validated == bytes.Length()) {
-     
-     
-     
+      
+      
+      
       utf8String.Assign(bytes);
     } else {
       rv = encoding->DecodeWithoutBOMHandling(bytes, utf8String, validated);
       NS_ENSURE_SUCCESS(rv, rv);
     }
-  } 
+  }  
 
   
   
   
-  mSheetLoadData->mLoader->ParseSheet(
-    utf8String,
-    mSheetLoadData,
-    Loader::AllowAsyncParse::Yes);
+  mSheetLoadData->mLoader->ParseSheet(utf8String, mSheetLoadData,
+                                      Loader::AllowAsyncParse::Yes);
   return NS_OK;
 }
 
 
 NS_IMETHODIMP
-StreamLoader::OnDataAvailable(nsIRequest*,
-                              nsISupports*,
-                              nsIInputStream* aInputStream,
-                              uint64_t,
-                              uint32_t aCount)
-{
+StreamLoader::OnDataAvailable(nsIRequest*, nsISupports*,
+                              nsIInputStream* aInputStream, uint64_t,
+                              uint32_t aCount) {
   if (NS_FAILED(mStatus)) {
     return mStatus;
   }
@@ -136,16 +124,14 @@ StreamLoader::OnDataAvailable(nsIRequest*,
   return aInputStream->ReadSegments(WriteSegmentFun, this, aCount, &dummy);
 }
 
-void
-StreamLoader::HandleBOM()
-{
+void StreamLoader::HandleBOM() {
   MOZ_ASSERT(mEncodingFromBOM.isNothing());
   MOZ_ASSERT(mBytes.IsEmpty());
 
   const Encoding* encoding;
   size_t bomLength;
   Tie(encoding, bomLength) = Encoding::ForBOM(mBOMBytes);
-  mEncodingFromBOM.emplace(encoding); 
+  mEncodingFromBOM.emplace(encoding);  
 
   
   
@@ -154,14 +140,9 @@ StreamLoader::HandleBOM()
   mBOMBytes.Truncate(bomLength);
 }
 
-nsresult
-StreamLoader::WriteSegmentFun(nsIInputStream*,
-                              void* aClosure,
-                              const char* aSegment,
-                              uint32_t,
-                              uint32_t aCount,
-                              uint32_t* aWriteCount)
-{
+nsresult StreamLoader::WriteSegmentFun(nsIInputStream*, void* aClosure,
+                                       const char* aSegment, uint32_t,
+                                       uint32_t aCount, uint32_t* aWriteCount) {
   *aWriteCount = 0;
   StreamLoader* self = static_cast<StreamLoader*>(aClosure);
   if (NS_FAILED(self->mStatus)) {
@@ -192,5 +173,5 @@ StreamLoader::WriteSegmentFun(nsIInputStream*,
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

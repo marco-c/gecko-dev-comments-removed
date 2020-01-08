@@ -25,25 +25,21 @@ class RangeUpdater;
 
 
 
-class DeleteRangeTransaction final : public EditAggregateTransaction
-{
-protected:
-  DeleteRangeTransaction(EditorBase& aEditorBase,
-                         nsRange& aRangeToDelete);
+class DeleteRangeTransaction final : public EditAggregateTransaction {
+ protected:
+  DeleteRangeTransaction(EditorBase& aEditorBase, nsRange& aRangeToDelete);
 
-public:
+ public:
   
 
 
 
 
 
-  static already_AddRefed<DeleteRangeTransaction>
-  Create(EditorBase& aEditorBase,
-         nsRange& aRangeToDelete)
-  {
+  static already_AddRefed<DeleteRangeTransaction> Create(
+      EditorBase& aEditorBase, nsRange& aRangeToDelete) {
     RefPtr<DeleteRangeTransaction> transaction =
-      new DeleteRangeTransaction(aEditorBase, aRangeToDelete);
+        new DeleteRangeTransaction(aEditorBase, aRangeToDelete);
     return transaction.forget();
   }
 
@@ -55,7 +51,7 @@ public:
 
   NS_IMETHOD RedoTransaction() override;
 
-protected:
+ protected:
   
 
 
@@ -113,6 +109,6 @@ protected:
   RefPtr<nsRange> mRangeToDelete;
 };
 
-} 
+}  
 
-#endif 
+#endif  

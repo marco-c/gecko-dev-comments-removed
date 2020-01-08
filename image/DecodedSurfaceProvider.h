@@ -21,37 +21,33 @@ namespace image {
 
 
 
-class DecodedSurfaceProvider final
-  : public ISurfaceProvider
-  , public IDecodingTask
-{
-public:
+class DecodedSurfaceProvider final : public ISurfaceProvider,
+                                     public IDecodingTask {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecodedSurfaceProvider, override)
 
   DecodedSurfaceProvider(NotNull<RasterImage*> aImage,
                          const SurfaceKey& aSurfaceKey,
                          NotNull<Decoder*> aDecoder);
 
-
   
   
   
 
-public:
+ public:
   bool IsFinished() const override;
   size_t LogicalSizeInBytes() const override;
 
-protected:
+ protected:
   DrawableFrameRef DrawableRef(size_t aFrame) override;
   bool IsLocked() const override { return bool(mLockRef); }
   void SetLocked(bool aLocked) override;
 
-
   
   
   
 
-public:
+ public:
   void Run() override;
   bool ShouldPreferSyncRun() const override;
 
@@ -59,8 +55,7 @@ public:
   
   TaskPriority Priority() const override { return TaskPriority::eLow; }
 
-
-private:
+ private:
   virtual ~DecodedSurfaceProvider();
 
   void DropImageReference();
@@ -83,7 +78,7 @@ private:
   DrawableFrameRef mLockRef;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

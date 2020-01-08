@@ -21,7 +21,7 @@
 namespace mozilla {
 
 namespace details {
-template<typename T, bool IsPod = std::is_trivial<T>::value>
+template <typename T, bool IsPod = std::is_trivial<T>::value>
 struct MemoryOperations {
   
 
@@ -37,34 +37,28 @@ struct MemoryOperations {
   static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount);
 };
 
-template<typename T>
-struct MemoryOperations<T, true>
-{
-  static void ConstructDefault(T* aDestination, size_t aCount)
-  {
+template <typename T>
+struct MemoryOperations<T, true> {
+  static void ConstructDefault(T* aDestination, size_t aCount) {
     PodZero(aDestination, aCount);
   }
-  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount)
-  {
+  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount) {
     PodCopy(aDestination, aSource, aCount);
   }
 };
 
-template<typename T>
-struct MemoryOperations<T, false>
-{
-  static void ConstructDefault(T* aDestination, size_t aCount)
-  {
+template <typename T>
+struct MemoryOperations<T, false> {
+  static void ConstructDefault(T* aDestination, size_t aCount) {
     for (size_t i = 0; i < aCount; i++) {
       aDestination[i] = T();
     }
   }
-  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount)
-  {
+  static void MoveOrCopy(T* aDestination, T* aSource, size_t aCount) {
     std::move(aSource, aSource + aCount, aDestination);
   }
 };
-}
+}  
 
 
 
@@ -94,11 +88,9 @@ struct MemoryOperations<T, false>
 
 
 
-
-template<typename T>
-class SPSCRingBufferBase
-{
-public:
+template <typename T>
+class SPSCRingBufferBase {
+ public:
   
 
 
@@ -107,15 +99,14 @@ public:
 
 
 
-  explicit
-  SPSCRingBufferBase(int aCapacity)
-    : mReadIndex(0)
-    , mWriteIndex(0)
-    
-    , mCapacity(aCapacity + 1)
-  {
+  explicit SPSCRingBufferBase(int aCapacity)
+      : mReadIndex(0),
+        mWriteIndex(0)
+        
+        ,
+        mCapacity(aCapacity + 1) {
     MOZ_ASSERT(StorageCapacity() < std::numeric_limits<int>::max() / 2,
-              "buffer too large for the type of index used.");
+               "buffer too large for the type of index used.");
     MOZ_ASSERT(mCapacity > 0 && aCapacity != std::numeric_limits<int>::max());
 
     mData = std::make_unique<T[]>(StorageCapacity());
@@ -131,9 +122,7 @@ public:
 
 
   MOZ_MUST_USE
-  int EnqueueDefault(int aCount) {
-    return Enqueue(nullptr, aCount);
-  }
+  int EnqueueDefault(int aCount) { return Enqueue(nullptr, aCount); }
   
 
 
@@ -144,9 +133,7 @@ public:
 
 
   MOZ_MUST_USE
-  int Enqueue(T& aElement) {
-    return Enqueue(&aElement, 1);
-  }
+  int Enqueue(T& aElement) { return Enqueue(&aElement, 1); }
   
 
 
@@ -159,8 +146,7 @@ public:
 
 
   MOZ_MUST_USE
-  int Enqueue(T* aElements, int aCount)
-  {
+  int Enqueue(T* aElements, int aCount) {
 #ifdef DEBUG
     AssertCorrectThread(mProducerId);
 #endif
@@ -180,10 +166,13 @@ public:
     int secondPart = toWrite - firstPart;
 
     if (aElements) {
-      details::MemoryOperations<T>::MoveOrCopy(mData.get() + wrIdx, aElements, firstPart);
-      details::MemoryOperations<T>::MoveOrCopy(mData.get(), aElements + firstPart, secondPart);
+      details::MemoryOperations<T>::MoveOrCopy(mData.get() + wrIdx, aElements,
+                                               firstPart);
+      details::MemoryOperations<T>::MoveOrCopy(
+          mData.get(), aElements + firstPart, secondPart);
     } else {
-      details::MemoryOperations<T>::ConstructDefault(mData.get() + wrIdx, firstPart);
+      details::MemoryOperations<T>::ConstructDefault(mData.get() + wrIdx,
+                                                     firstPart);
       details::MemoryOperations<T>::ConstructDefault(mData.get(), secondPart);
     }
 
@@ -204,8 +193,7 @@ public:
 
 
   MOZ_MUST_USE
-  int Dequeue(T* elements, int count)
-  {
+  int Dequeue(T* elements, int count) {
 #ifdef DEBUG
     AssertCorrectThread(mConsumerId);
 #endif
@@ -223,8 +211,10 @@ public:
     int secondPart = toRead - firstPart;
 
     if (elements) {
-      details::MemoryOperations<T>::MoveOrCopy(elements, mData.get() + rdIdx, firstPart);
-      details::MemoryOperations<T>::MoveOrCopy(elements + firstPart, mData.get(), secondPart);
+      details::MemoryOperations<T>::MoveOrCopy(elements, mData.get() + rdIdx,
+                                               firstPart);
+      details::MemoryOperations<T>::MoveOrCopy(elements + firstPart,
+                                               mData.get(), secondPart);
     }
 
     mReadIndex.store(IncrementIndex(rdIdx, toRead),
@@ -243,14 +233,13 @@ public:
 
 
 
-  int AvailableRead() const
-  {
+  int AvailableRead() const {
 #ifdef DEBUG
     AssertCorrectThread(mConsumerId);
 #endif
     return AvailableReadInternal(
-      mReadIndex.load(std::memory_order::memory_order_relaxed),
-      mWriteIndex.load(std::memory_order::memory_order_relaxed));
+        mReadIndex.load(std::memory_order::memory_order_relaxed),
+        mWriteIndex.load(std::memory_order::memory_order_relaxed));
   }
   
 
@@ -263,14 +252,13 @@ public:
 
 
 
-  int AvailableWrite() const
-  {
+  int AvailableWrite() const {
 #ifdef DEBUG
     AssertCorrectThread(mProducerId);
 #endif
     return AvailableWriteInternal(
-      mReadIndex.load(std::memory_order::memory_order_relaxed),
-      mWriteIndex.load(std::memory_order::memory_order_relaxed));
+        mReadIndex.load(std::memory_order::memory_order_relaxed),
+        mWriteIndex.load(std::memory_order::memory_order_relaxed));
   }
   
 
@@ -285,13 +273,13 @@ public:
 
 
 
-  void ResetThreadIds()
-  {
+  void ResetThreadIds() {
 #ifdef DEBUG
     mConsumerId = mProducerId = std::thread::id();
 #endif
   }
-private:
+
+ private:
   
 
 
@@ -300,8 +288,7 @@ private:
 
 
 
-  bool IsEmpty(int aReadIndex, int aWriteIndex) const
-  {
+  bool IsEmpty(int aReadIndex, int aWriteIndex) const {
     return aWriteIndex == aReadIndex;
   }
   
@@ -315,8 +302,7 @@ private:
 
 
 
-  bool IsFull(int aReadIndex, int aWriteIndex) const
-  {
+  bool IsFull(int aReadIndex, int aWriteIndex) const {
     return (aWriteIndex + 1) % StorageCapacity() == aReadIndex;
   }
   
@@ -336,8 +322,7 @@ private:
 
 
 
-  int AvailableReadInternal(int aReadIndex, int aWriteIndex) const
-  {
+  int AvailableReadInternal(int aReadIndex, int aWriteIndex) const {
     if (aWriteIndex >= aReadIndex) {
       return aWriteIndex - aReadIndex;
     } else {
@@ -352,8 +337,7 @@ private:
 
 
 
-  int AvailableWriteInternal(int aReadIndex, int aWriteIndex) const
-  {
+  int AvailableWriteInternal(int aReadIndex, int aWriteIndex) const {
     
 
     int rv = aReadIndex - aWriteIndex - 1;
@@ -372,10 +356,8 @@ private:
 
 
 
-  int IncrementIndex(int aIndex, int aIncrement) const
-  {
-    MOZ_ASSERT(aIncrement >= 0 &&
-               aIncrement < StorageCapacity() &&
+  int IncrementIndex(int aIndex, int aIncrement) const {
+    MOZ_ASSERT(aIncrement >= 0 && aIncrement < StorageCapacity() &&
                aIndex < StorageCapacity());
     return (aIndex + aIncrement) % StorageCapacity();
   }
@@ -389,8 +371,7 @@ private:
 
 
 #ifdef DEBUG
-  static void AssertCorrectThread(std::thread::id& aId)
-  {
+  static void AssertCorrectThread(std::thread::id& aId) {
     if (aId == std::thread::id()) {
       aId = std::this_thread::get_id();
       return;
@@ -420,9 +401,9 @@ private:
 
 
 
-template<typename T>
+template <typename T>
 using SPSCQueue = SPSCRingBufferBase<T>;
 
-} 
+}  
 
-#endif 
+#endif  

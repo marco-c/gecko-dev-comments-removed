@@ -20,19 +20,19 @@
 #include "nsThreadUtils.h"
 
 using mozilla::Preferences;
+using mozilla::StaticAutoPtr;
 using mozilla::StaticMutex;
 using mozilla::StaticMutexAutoLock;
-using mozilla::StaticAutoPtr;
 using mozilla::SystemGroup;
 using mozilla::TaskCategory;
-using mozilla::Telemetry::HistogramAccumulation;
-using mozilla::Telemetry::DiscardedData;
-using mozilla::Telemetry::KeyedHistogramAccumulation;
-using mozilla::Telemetry::ScalarActionType;
-using mozilla::Telemetry::ScalarAction;
-using mozilla::Telemetry::KeyedScalarAction;
-using mozilla::Telemetry::ScalarVariant;
 using mozilla::Telemetry::ChildEventData;
+using mozilla::Telemetry::DiscardedData;
+using mozilla::Telemetry::HistogramAccumulation;
+using mozilla::Telemetry::KeyedHistogramAccumulation;
+using mozilla::Telemetry::KeyedScalarAction;
+using mozilla::Telemetry::ScalarAction;
+using mozilla::Telemetry::ScalarActionType;
+using mozilla::Telemetry::ScalarVariant;
 
 namespace TelemetryIPCAccumulator = mozilla::TelemetryIPCAccumulator;
 
@@ -59,13 +59,15 @@ const size_t kWaterMarkDiscardFactor = 5;
 DiscardedData gDiscardedData = {0};
 
 
+
 nsITimer* gIPCTimer = nullptr;
 mozilla::Atomic<bool, mozilla::Relaxed> gIPCTimerArmed(false);
 mozilla::Atomic<bool, mozilla::Relaxed> gIPCTimerArming(false);
 
 
 StaticAutoPtr<nsTArray<HistogramAccumulation>> gHistogramAccumulations;
-StaticAutoPtr<nsTArray<KeyedHistogramAccumulation>> gKeyedHistogramAccumulations;
+StaticAutoPtr<nsTArray<KeyedHistogramAccumulation>>
+    gKeyedHistogramAccumulations;
 StaticAutoPtr<nsTArray<ScalarAction>> gChildScalarsActions;
 StaticAutoPtr<nsTArray<KeyedScalarAction>> gChildKeyedScalarsActions;
 StaticAutoPtr<nsTArray<ChildEventData>> gChildEvents;
@@ -80,19 +82,17 @@ static StaticMutex gTelemetryIPCAccumulatorMutex;
 
 namespace {
 
-void
-DoArmIPCTimerMainThread(const StaticMutexAutoLock& lock)
-{
+void DoArmIPCTimerMainThread(const StaticMutexAutoLock& lock) {
   MOZ_ASSERT(NS_IsMainThread());
   gIPCTimerArming = false;
   if (gIPCTimerArmed) {
     return;
   }
   if (!gIPCTimer) {
-    gIPCTimer = NS_NewTimer(SystemGroup::EventTargetFor(TaskCategory::Other)).take();
+    gIPCTimer =
+        NS_NewTimer(SystemGroup::EventTargetFor(TaskCategory::Other)).take();
   }
   if (gIPCTimer) {
-
     static bool sTimeoutInitialized = false;
     if (!sTimeoutInitialized && Preferences::IsServiceAvailable()) {
       Preferences::AddUintVarCache(&sBatchTimeoutMs,
@@ -101,17 +101,15 @@ DoArmIPCTimerMainThread(const StaticMutexAutoLock& lock)
       sTimeoutInitialized = true;
     }
 
-    gIPCTimer->InitWithNamedFuncCallback(TelemetryIPCAccumulator::IPCTimerFired,
-                                         nullptr, sBatchTimeoutMs,
-                                         nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-                                         "TelemetryIPCAccumulator::IPCTimerFired");
+    gIPCTimer->InitWithNamedFuncCallback(
+        TelemetryIPCAccumulator::IPCTimerFired, nullptr, sBatchTimeoutMs,
+        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+        "TelemetryIPCAccumulator::IPCTimerFired");
     gIPCTimerArmed = true;
   }
 }
 
-void
-ArmIPCTimer(const StaticMutexAutoLock& lock)
-{
+void ArmIPCTimer(const StaticMutexAutoLock& lock) {
   if (gIPCTimerArmed || gIPCTimerArming) {
     return;
   }
@@ -120,35 +118,29 @@ ArmIPCTimer(const StaticMutexAutoLock& lock)
     DoArmIPCTimerMainThread(lock);
   } else {
     TelemetryIPCAccumulator::DispatchToMainThread(NS_NewRunnableFunction(
-                                                    "TelemetryIPCAccumulator::ArmIPCTimer",
-                                                    []() -> void {
-      StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
-      DoArmIPCTimerMainThread(locker);
-    }));
+        "TelemetryIPCAccumulator::ArmIPCTimer", []() -> void {
+          StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
+          DoArmIPCTimerMainThread(locker);
+        }));
   }
 }
 
-void
-DispatchIPCTimerFired()
-{
-  TelemetryIPCAccumulator::DispatchToMainThread(
-    NS_NewRunnableFunction("TelemetryIPCAccumulator::IPCTimerFired",
-                           []() -> void {
-      TelemetryIPCAccumulator::IPCTimerFired(nullptr, nullptr);
-    }));
+void DispatchIPCTimerFired() {
+  TelemetryIPCAccumulator::DispatchToMainThread(NS_NewRunnableFunction(
+      "TelemetryIPCAccumulator::IPCTimerFired", []() -> void {
+        TelemetryIPCAccumulator::IPCTimerFired(nullptr, nullptr);
+      }));
 }
 
-} 
+}  
 
 
 
 
 
 
-void
-TelemetryIPCAccumulator::AccumulateChildHistogram(mozilla::Telemetry::HistogramID aId,
-                                                  uint32_t aSample)
-{
+void TelemetryIPCAccumulator::AccumulateChildHistogram(
+    mozilla::Telemetry::HistogramID aId, uint32_t aSample) {
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
   if (!gHistogramAccumulations) {
     gHistogramAccumulations = new nsTArray<HistogramAccumulation>();
@@ -158,17 +150,17 @@ TelemetryIPCAccumulator::AccumulateChildHistogram(mozilla::Telemetry::HistogramI
     gDiscardedData.mDiscardedHistogramAccumulations++;
     return;
   }
-  if (gHistogramAccumulations->Length() == kHistogramAccumulationsArrayHighWaterMark) {
+  if (gHistogramAccumulations->Length() ==
+      kHistogramAccumulationsArrayHighWaterMark) {
     DispatchIPCTimerFired();
   }
   gHistogramAccumulations->AppendElement(HistogramAccumulation{aId, aSample});
   ArmIPCTimer(locker);
 }
 
-void
-TelemetryIPCAccumulator::AccumulateChildKeyedHistogram(mozilla::Telemetry::HistogramID aId,
-                                                       const nsCString& aKey, uint32_t aSample)
-{
+void TelemetryIPCAccumulator::AccumulateChildKeyedHistogram(
+    mozilla::Telemetry::HistogramID aId, const nsCString& aKey,
+    uint32_t aSample) {
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
   if (!gKeyedHistogramAccumulations) {
     gKeyedHistogramAccumulations = new nsTArray<KeyedHistogramAccumulation>();
@@ -178,17 +170,18 @@ TelemetryIPCAccumulator::AccumulateChildKeyedHistogram(mozilla::Telemetry::Histo
     gDiscardedData.mDiscardedKeyedHistogramAccumulations++;
     return;
   }
-  if (gKeyedHistogramAccumulations->Length() == kHistogramAccumulationsArrayHighWaterMark) {
+  if (gKeyedHistogramAccumulations->Length() ==
+      kHistogramAccumulationsArrayHighWaterMark) {
     DispatchIPCTimerFired();
   }
-  gKeyedHistogramAccumulations->AppendElement(KeyedHistogramAccumulation{aId, aSample, aKey});
+  gKeyedHistogramAccumulations->AppendElement(
+      KeyedHistogramAccumulation{aId, aSample, aKey});
   ArmIPCTimer(locker);
 }
 
-void
-TelemetryIPCAccumulator::RecordChildScalarAction(uint32_t aId, bool aDynamic,
-                                                 ScalarActionType aAction, const ScalarVariant& aValue)
-{
+void TelemetryIPCAccumulator::RecordChildScalarAction(
+    uint32_t aId, bool aDynamic, ScalarActionType aAction,
+    const ScalarVariant& aValue) {
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
   
   if (!gChildScalarsActions) {
@@ -203,16 +196,14 @@ TelemetryIPCAccumulator::RecordChildScalarAction(uint32_t aId, bool aDynamic,
     DispatchIPCTimerFired();
   }
   
-  gChildScalarsActions->AppendElement(ScalarAction{aId, aDynamic, aAction, Some(aValue), Telemetry::ProcessID::Count});
+  gChildScalarsActions->AppendElement(ScalarAction{
+      aId, aDynamic, aAction, Some(aValue), Telemetry::ProcessID::Count});
   ArmIPCTimer(locker);
 }
 
-void
-TelemetryIPCAccumulator::RecordChildKeyedScalarAction(uint32_t aId, bool aDynamic,
-                                                      const nsAString& aKey,
-                                                      ScalarActionType aAction,
-                                                      const ScalarVariant& aValue)
-{
+void TelemetryIPCAccumulator::RecordChildKeyedScalarAction(
+    uint32_t aId, bool aDynamic, const nsAString& aKey,
+    ScalarActionType aAction, const ScalarVariant& aValue) {
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
   
   if (!gChildKeyedScalarsActions) {
@@ -228,18 +219,16 @@ TelemetryIPCAccumulator::RecordChildKeyedScalarAction(uint32_t aId, bool aDynami
   }
   
   gChildKeyedScalarsActions->AppendElement(
-    KeyedScalarAction{aId, aDynamic, aAction, NS_ConvertUTF16toUTF8(aKey), Some(aValue), Telemetry::ProcessID::Count});
+      KeyedScalarAction{aId, aDynamic, aAction, NS_ConvertUTF16toUTF8(aKey),
+                        Some(aValue), Telemetry::ProcessID::Count});
   ArmIPCTimer(locker);
 }
 
-void
-TelemetryIPCAccumulator::RecordChildEvent(const mozilla::TimeStamp& timestamp,
-                                          const nsACString& category,
-                                          const nsACString& method,
-                                          const nsACString& object,
-                                          const mozilla::Maybe<nsCString>& value,
-                                          const nsTArray<mozilla::Telemetry::EventExtraEntry>& extra)
-{
+void TelemetryIPCAccumulator::RecordChildEvent(
+    const mozilla::TimeStamp& timestamp, const nsACString& category,
+    const nsACString& method, const nsACString& object,
+    const mozilla::Maybe<nsCString>& value,
+    const nsTArray<mozilla::Telemetry::EventExtraEntry>& extra) {
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
 
   if (!gChildEvents) {
@@ -257,20 +246,17 @@ TelemetryIPCAccumulator::RecordChildEvent(const mozilla::TimeStamp& timestamp,
   }
 
   
-  gChildEvents->AppendElement(ChildEventData{timestamp, nsCString(category),
-                                             nsCString(method), nsCString(object),
-                                             value,
-                                             nsTArray<mozilla::Telemetry::EventExtraEntry>(extra)});
+  gChildEvents->AppendElement(ChildEventData{
+      timestamp, nsCString(category), nsCString(method), nsCString(object),
+      value, nsTArray<mozilla::Telemetry::EventExtraEntry>(extra)});
   ArmIPCTimer(locker);
 }
 
 
 
 
-template<class TActor>
-static void
-SendAccumulatedData(TActor* ipcActor)
-{
+template <class TActor>
+static void SendAccumulatedData(TActor* ipcActor) {
   
   nsTArray<HistogramAccumulation> histogramsToSend;
   nsTArray<KeyedHistogramAccumulation> keyedHistogramsToSend;
@@ -303,37 +289,34 @@ SendAccumulatedData(TActor* ipcActor)
   
   MOZ_ASSERT(ipcActor);
   if (histogramsToSend.Length()) {
-    mozilla::Unused <<
-      NS_WARN_IF(!ipcActor->SendAccumulateChildHistograms(histogramsToSend));
+    mozilla::Unused << NS_WARN_IF(
+        !ipcActor->SendAccumulateChildHistograms(histogramsToSend));
   }
   if (keyedHistogramsToSend.Length()) {
-    mozilla::Unused <<
-      NS_WARN_IF(!ipcActor->SendAccumulateChildKeyedHistograms(keyedHistogramsToSend));
+    mozilla::Unused << NS_WARN_IF(
+        !ipcActor->SendAccumulateChildKeyedHistograms(keyedHistogramsToSend));
   }
   if (scalarsToSend.Length()) {
-    mozilla::Unused <<
-      NS_WARN_IF(!ipcActor->SendUpdateChildScalars(scalarsToSend));
+    mozilla::Unused << NS_WARN_IF(
+        !ipcActor->SendUpdateChildScalars(scalarsToSend));
   }
   if (keyedScalarsToSend.Length()) {
-    mozilla::Unused <<
-      NS_WARN_IF(!ipcActor->SendUpdateChildKeyedScalars(keyedScalarsToSend));
+    mozilla::Unused << NS_WARN_IF(
+        !ipcActor->SendUpdateChildKeyedScalars(keyedScalarsToSend));
   }
   if (eventsToSend.Length()) {
-    mozilla::Unused <<
-      NS_WARN_IF(!ipcActor->SendRecordChildEvents(eventsToSend));
+    mozilla::Unused << NS_WARN_IF(
+        !ipcActor->SendRecordChildEvents(eventsToSend));
   }
-  mozilla::Unused <<
-    NS_WARN_IF(!ipcActor->SendRecordDiscardedData(discardedData));
+  mozilla::Unused << NS_WARN_IF(
+      !ipcActor->SendRecordDiscardedData(discardedData));
 }
 
 
 
 
 
-
-void
-TelemetryIPCAccumulator::IPCTimerFired(nsITimer* aTimer, void* aClosure)
-{
+void TelemetryIPCAccumulator::IPCTimerFired(nsITimer* aTimer, void* aClosure) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -352,9 +335,7 @@ TelemetryIPCAccumulator::IPCTimerFired(nsITimer* aTimer, void* aClosure)
   gIPCTimerArmed = false;
 }
 
-void
-TelemetryIPCAccumulator::DeInitializeGlobalState()
-{
+void TelemetryIPCAccumulator::DeInitializeGlobalState() {
   MOZ_ASSERT(NS_IsMainThread());
 
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
@@ -369,9 +350,8 @@ TelemetryIPCAccumulator::DeInitializeGlobalState()
   gChildEvents = nullptr;
 }
 
-void
-TelemetryIPCAccumulator::DispatchToMainThread(already_AddRefed<nsIRunnable>&& aEvent)
-{
-  SystemGroup::EventTargetFor(TaskCategory::Other)->Dispatch(std::move(aEvent),
-                                                             nsIEventTarget::DISPATCH_NORMAL);
+void TelemetryIPCAccumulator::DispatchToMainThread(
+    already_AddRefed<nsIRunnable>&& aEvent) {
+  SystemGroup::EventTargetFor(TaskCategory::Other)
+      ->Dispatch(std::move(aEvent), nsIEventTarget::DISPATCH_NORMAL);
 }

@@ -8,8 +8,8 @@
 
 #include "GLDefs.h"
 #include "mozilla/Attributes.h"
-#include "nsCycleCollectionParticipant.h" 
-#include "nsISupportsImpl.h" 
+#include "nsCycleCollectionParticipant.h"  
+#include "nsISupportsImpl.h"  
 #include "nsString.h"
 #include "nsWrapperCache.h"
 
@@ -17,83 +17,76 @@ namespace mozilla {
 
 class WebGLContext;
 
-class WebGLActiveInfo final
-    : public nsWrapperCache
-{
-public:
-    NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(WebGLActiveInfo)
-    NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WebGLActiveInfo)
+class WebGLActiveInfo final : public nsWrapperCache {
+ public:
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(WebGLActiveInfo)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(WebGLActiveInfo)
 
-    virtual JSObject* WrapObject(JSContext* js, JS::Handle<JSObject*> givenProto) override;
+  virtual JSObject* WrapObject(JSContext* js,
+                               JS::Handle<JSObject*> givenProto) override;
 
-    WebGLContext* GetParentObject() const {
-        return mWebGL;
-    }
+  WebGLContext* GetParentObject() const { return mWebGL; }
 
-    WebGLContext* const mWebGL;
+  WebGLContext* const mWebGL;
 
-    
-    const uint32_t mElemCount; 
-    const GLenum mElemType; 
-    const nsCString mBaseUserName; 
+  
+  const uint32_t mElemCount;  
+  const GLenum mElemType;     
+  const nsCString
+      mBaseUserName;  
 
-    
-    const bool mIsArray;
-    const uint8_t mElemSize;
-    const nsCString mBaseMappedName; 
-    const webgl::AttribBaseType mBaseType = webgl::AttribBaseType::Float;
+  
+  const bool mIsArray;
+  const uint8_t mElemSize;
+  const nsCString mBaseMappedName;  
+  const webgl::AttribBaseType mBaseType = webgl::AttribBaseType::Float;
 
-    bool IsSampler() const;
+  bool IsSampler() const;
 
-    WebGLActiveInfo(WebGLContext* webgl, GLint elemCount, GLenum elemType, bool isArray,
-                    const nsACString& baseUserName, const nsACString& baseMappedName);
+  WebGLActiveInfo(WebGLContext* webgl, GLint elemCount, GLenum elemType,
+                  bool isArray, const nsACString& baseUserName,
+                  const nsACString& baseMappedName);
 
-    
-
+  
 
 
 
 
 
 
-    static WebGLActiveInfo* CreateInvalid(WebGLContext* webgl) {
-        return new WebGLActiveInfo(webgl);
-    }
 
-    
-    GLint Size() const {
-        return mElemCount;
-    }
+  static WebGLActiveInfo* CreateInvalid(WebGLContext* webgl) {
+    return new WebGLActiveInfo(webgl);
+  }
 
-    GLenum Type() const {
-        return mElemType;
-    }
+  
+  GLint Size() const { return mElemCount; }
 
-    void GetName(nsString& retval) const {
-        CopyASCIItoUTF16(mBaseUserName, retval);
-        if (mIsArray)
-            retval.AppendLiteral("[0]");
-    }
+  GLenum Type() const { return mElemType; }
 
-private:
-    explicit WebGLActiveInfo(WebGLContext* webgl)
-        : mWebGL(webgl)
-        , mElemCount(0)
-        , mElemType(0)
-        , mBaseUserName("")
-        , mIsArray(false)
-        , mElemSize(0)
-        , mBaseMappedName("")
-    { }
+  void GetName(nsString& retval) const {
+    CopyASCIItoUTF16(mBaseUserName, retval);
+    if (mIsArray) retval.AppendLiteral("[0]");
+  }
 
-    
-    ~WebGLActiveInfo() { }
+ private:
+  explicit WebGLActiveInfo(WebGLContext* webgl)
+      : mWebGL(webgl),
+        mElemCount(0),
+        mElemType(0),
+        mBaseUserName(""),
+        mIsArray(false),
+        mElemSize(0),
+        mBaseMappedName("") {}
+
+  
+  ~WebGLActiveInfo() {}
 };
 
 
 
 bool IsElemTypeSampler(GLenum elemType);
 
-} 
+}  
 
-#endif 
+#endif  

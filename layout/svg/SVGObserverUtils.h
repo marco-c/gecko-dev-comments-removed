@@ -36,8 +36,8 @@ namespace mozilla {
 namespace dom {
 class CanvasRenderingContext2D;
 class SVGGeometryElement;
-}
-}
+}  
+}  
 
 namespace mozilla {
 
@@ -47,23 +47,18 @@ namespace mozilla {
 
 
 
-class URLAndReferrerInfo
-{
-public:
+class URLAndReferrerInfo {
+ public:
   URLAndReferrerInfo(nsIURI* aURI, nsIURI* aReferrer,
                      mozilla::net::ReferrerPolicy aReferrerPolicy)
-    : mURI(aURI)
-    , mReferrer(aReferrer)
-    , mReferrerPolicy(aReferrerPolicy)
-  {
+      : mURI(aURI), mReferrer(aReferrer), mReferrerPolicy(aReferrerPolicy) {
     MOZ_ASSERT(aURI);
   }
 
   URLAndReferrerInfo(nsIURI* aURI, URLExtraData* aExtraData)
-    : mURI(aURI)
-    , mReferrer(aExtraData->GetReferrer())
-    , mReferrerPolicy(aExtraData->GetReferrerPolicy())
-  {
+      : mURI(aURI),
+        mReferrer(aExtraData->GetReferrer()),
+        mReferrerPolicy(aExtraData->GetReferrerPolicy()) {
     MOZ_ASSERT(aURI);
   }
 
@@ -73,7 +68,7 @@ public:
   nsIURI* GetReferrer() { return mReferrer; }
   mozilla::net::ReferrerPolicy GetReferrerPolicy() { return mReferrerPolicy; }
 
-private:
+ private:
   ~URLAndReferrerInfo() = default;
 
   nsCOMPtr<nsIURI> mURI;
@@ -101,18 +96,14 @@ private:
 
 
 
-class SVGRenderingObserver : public nsStubMutationObserver
-{
-
-protected:
+class SVGRenderingObserver : public nsStubMutationObserver {
+ protected:
   virtual ~SVGRenderingObserver() = default;
 
-public:
+ public:
   typedef mozilla::dom::Element Element;
 
-  SVGRenderingObserver()
-    : mInObserverList(false)
-  {}
+  SVGRenderingObserver() : mInObserverList(false) {}
 
   
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
@@ -147,7 +138,7 @@ public:
 
   virtual bool ObservesReflow() { return false; }
 
-protected:
+ protected:
   void StartObserving();
   void StopObserving();
 
@@ -175,10 +166,8 @@ protected:
   bool mInObserverList;
 };
 
-
-class SVGObserverUtils
-{
-public:
+class SVGObserverUtils {
+ public:
   typedef mozilla::dom::CanvasRenderingContext2D CanvasRenderingContext2D;
   typedef mozilla::dom::Element Element;
   typedef dom::SVGGeometryElement SVGGeometryElement;
@@ -211,12 +200,12 @@ public:
 
 
   static void AddRenderingObserver(Element* aElement,
-                                   SVGRenderingObserver *aObserver);
+                                   SVGRenderingObserver* aObserver);
   
 
 
   static void RemoveRenderingObserver(Element* aElement,
-                                      SVGRenderingObserver *aObserver);
+                                      SVGRenderingObserver* aObserver);
 
   
 
@@ -240,9 +229,7 @@ public:
 
   static void InvalidateRenderingObservers(nsIFrame* aFrame);
 
-  enum {
-    INVALIDATE_REFLOW = 1
-  };
+  enum { INVALIDATE_REFLOW = 1 };
 
   enum ReferenceState {
     
@@ -255,83 +242,24 @@ public:
 
 
 
-  static void InvalidateDirectRenderingObservers(Element* aElement, uint32_t aFlags = 0);
-  static void InvalidateDirectRenderingObservers(nsIFrame* aFrame, uint32_t aFlags = 0);
+  static void InvalidateDirectRenderingObservers(Element* aElement,
+                                                 uint32_t aFlags = 0);
+  static void InvalidateDirectRenderingObservers(nsIFrame* aFrame,
+                                                 uint32_t aFlags = 0);
 
   
 
 
-  static nsSVGPaintServerFrame*
-  GetAndObservePaintServer(nsIFrame* aPaintedFrame,
-                           nsStyleSVGPaint nsStyleSVG::* aPaint);
-
-  
-
-
-
-
-  static bool
-  GetAndObserveMarkers(nsIFrame* aMarkedFrame, nsSVGMarkerFrame*(*aFrames)[3]);
+  static nsSVGPaintServerFrame* GetAndObservePaintServer(
+      nsIFrame* aPaintedFrame, nsStyleSVGPaint nsStyleSVG::*aPaint);
 
   
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-  static ReferenceState
-  GetAndObserveFilters(nsIFrame* aFilteredFrame,
-                       nsTArray<nsSVGFilterFrame*>* aFilterFrames);
-
-  
-
-
-
-
-  static ReferenceState
-  GetFiltersIfObserving(nsIFrame* aFilteredFrame,
-                        nsTArray<nsSVGFilterFrame*>* aFilterFrames);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  static already_AddRefed<nsISupports>
-  ObserveFiltersForCanvasContext(CanvasRenderingContext2D* aContext,
-                                 Element* aCanvasElement,
-                                 nsTArray<nsStyleFilter>& aFilters);
-
-  
-
-
-
-
-
-
-
-
-
-
-  static void
-  DetachFromCanvasContext(nsISupports* aAutoObserver);
+  static bool GetAndObserveMarkers(nsIFrame* aMarkedFrame,
+                                   nsSVGMarkerFrame* (*aFrames)[3]);
 
   
 
@@ -348,41 +276,16 @@ public:
 
 
 
-
-
-  static ReferenceState
-  GetAndObserveClipPath(nsIFrame* aClippedFrame,
-                        nsSVGClipPathFrame** aClipPathFrame);
+  static ReferenceState GetAndObserveFilters(
+      nsIFrame* aFilteredFrame, nsTArray<nsSVGFilterFrame*>* aFilterFrames);
 
   
 
 
 
 
-
-
-
-
-
-
-
-  static ReferenceState
-  GetAndObserveMasks(nsIFrame* aMaskedFrame,
-                     nsTArray<nsSVGMaskFrame*>* aMaskFrames);
-
-  
-
-
-
-  static SVGGeometryElement*
-  GetAndObserveTextPathsPath(nsIFrame* aTextPathFrame);
-
-  
-
-
-
-  static void
-  RemoveTextPathObserver(nsIFrame* aTextPathFrame);
+  static ReferenceState GetFiltersIfObserving(
+      nsIFrame* aFilteredFrame, nsTArray<nsSVGFilterFrame*>* aFilterFrames);
 
   
 
@@ -397,28 +300,9 @@ public:
 
 
 
-  static nsIFrame*
-  GetAndObserveTemplate(nsIFrame* aFrame, HrefToTemplateCallback aGetHref);
-
-  static void
-  RemoveTemplateObserver(nsIFrame* aFrame);
-
-  
-
-
-
-
-
-
-  static Element*
-  GetAndObserveBackgroundImage(nsIFrame* aFrame,
-                               const nsAtom* aHref);
-
-  
-
-
-  static already_AddRefed<URLAndReferrerInfo>
-  GetFilterURI(nsIFrame* aFrame, const nsStyleFilter& aFilter);
+  static already_AddRefed<nsISupports> ObserveFiltersForCanvasContext(
+      CanvasRenderingContext2D* aContext, Element* aCanvasElement,
+      nsTArray<nsStyleFilter>& aFilters);
 
   
 
@@ -429,10 +313,105 @@ public:
 
 
 
-  static already_AddRefed<nsIURI>
-  GetBaseURLForLocalRef(nsIContent* aContent, nsIURI* aDocURI);
+
+
+  static void DetachFromCanvasContext(nsISupports* aAutoObserver);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static ReferenceState GetAndObserveClipPath(
+      nsIFrame* aClippedFrame, nsSVGClipPathFrame** aClipPathFrame);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  static ReferenceState GetAndObserveMasks(
+      nsIFrame* aMaskedFrame, nsTArray<nsSVGMaskFrame*>* aMaskFrames);
+
+  
+
+
+
+  static SVGGeometryElement* GetAndObserveTextPathsPath(
+      nsIFrame* aTextPathFrame);
+
+  
+
+
+
+  static void RemoveTextPathObserver(nsIFrame* aTextPathFrame);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static nsIFrame* GetAndObserveTemplate(nsIFrame* aFrame,
+                                         HrefToTemplateCallback aGetHref);
+
+  static void RemoveTemplateObserver(nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+  static Element* GetAndObserveBackgroundImage(nsIFrame* aFrame,
+                                               const nsAtom* aHref);
+
+  
+
+
+  static already_AddRefed<URLAndReferrerInfo> GetFilterURI(
+      nsIFrame* aFrame, const nsStyleFilter& aFilter);
+
+  
+
+
+
+
+
+
+
+
+  static already_AddRefed<nsIURI> GetBaseURLForLocalRef(nsIContent* aContent,
+                                                        nsIURI* aDocURI);
 };
 
-} 
+}  
 
 #endif 

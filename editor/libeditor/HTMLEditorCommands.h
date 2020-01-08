@@ -7,9 +7,9 @@
 #define mozilla_HTMLEditorCommands_h_
 
 #include "nsIControllerCommand.h"
-#include "nsISupportsImpl.h"            
+#include "nsISupportsImpl.h"  
 #include "nsStringFwd.h"
-#include "nscore.h"                     
+#include "nscore.h"  
 
 class nsAtom;
 class nsICommandParams;
@@ -26,31 +26,27 @@ class HTMLEditor;
 
 
 
-
-class HTMLEditorCommandBase : public nsIControllerCommand
-{
-protected:
+class HTMLEditorCommandBase : public nsIControllerCommand {
+ protected:
   virtual ~HTMLEditorCommandBase() {}
 
-public:
+ public:
   HTMLEditorCommandBase();
 
   
   NS_DECL_ISUPPORTS
 };
 
-
-#define NS_DECL_COMPOSER_COMMAND(_cmd)                  \
-class _cmd final : public HTMLEditorCommandBase         \
-{                                                       \
-public:                                                 \
-  NS_DECL_NSICONTROLLERCOMMAND                          \
-};
+#define NS_DECL_COMPOSER_COMMAND(_cmd)              \
+  class _cmd final : public HTMLEditorCommandBase { \
+   public:                                          \
+    NS_DECL_NSICONTROLLERCOMMAND                    \
+  };
 
 
-class StateUpdatingCommandBase : public HTMLEditorCommandBase
-{
-public:
+
+class StateUpdatingCommandBase : public HTMLEditorCommandBase {
+ public:
   explicit StateUpdatingCommandBase(nsAtom* aTagName);
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(StateUpdatingCommandBase,
@@ -58,7 +54,7 @@ public:
 
   NS_DECL_NSICONTROLLERCOMMAND
 
-protected:
+ protected:
   virtual ~StateUpdatingCommandBase();
 
   
@@ -68,19 +64,17 @@ protected:
   
   virtual nsresult ToggleState(HTMLEditor* aHTMLEditor) = 0;
 
-protected:
+ protected:
   nsAtom* mTagName;
 };
 
 
 
-
-class StyleUpdatingCommand final : public StateUpdatingCommandBase
-{
-public:
+class StyleUpdatingCommand final : public StateUpdatingCommandBase {
+ public:
   explicit StyleUpdatingCommand(nsAtom* aTagName);
 
-protected:
+ protected:
   
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
@@ -89,29 +83,25 @@ protected:
   nsresult ToggleState(HTMLEditor* aHTMLEditor) final;
 };
 
-
-class InsertTagCommand final : public HTMLEditorCommandBase
-{
-public:
+class InsertTagCommand final : public HTMLEditorCommandBase {
+ public:
   explicit InsertTagCommand(nsAtom* aTagName);
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(InsertTagCommand, HTMLEditorCommandBase)
 
   NS_DECL_NSICONTROLLERCOMMAND
 
-protected:
+ protected:
   virtual ~InsertTagCommand();
 
   nsAtom* mTagName;
 };
 
-
-class ListCommand final : public StateUpdatingCommandBase
-{
-public:
+class ListCommand final : public StateUpdatingCommandBase {
+ public:
   explicit ListCommand(nsAtom* aTagName);
 
-protected:
+ protected:
   
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
@@ -120,12 +110,11 @@ protected:
   nsresult ToggleState(HTMLEditor* aHTMLEditor) final;
 };
 
-class ListItemCommand final : public StateUpdatingCommandBase
-{
-public:
+class ListItemCommand final : public StateUpdatingCommandBase {
+ public:
   explicit ListItemCommand(nsAtom* aTagName);
 
-protected:
+ protected:
   
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
@@ -135,122 +124,102 @@ protected:
 };
 
 
-class MultiStateCommandBase : public HTMLEditorCommandBase
-{
-public:
+class MultiStateCommandBase : public HTMLEditorCommandBase {
+ public:
   MultiStateCommandBase();
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(MultiStateCommandBase,
                                        HTMLEditorCommandBase)
   NS_DECL_NSICONTROLLERCOMMAND
 
-protected:
+ protected:
   virtual ~MultiStateCommandBase();
 
   virtual nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                                    nsICommandParams* aParams) = 0;
   virtual nsresult SetState(HTMLEditor* aHTMLEditor,
                             const nsString& newState) = 0;
-
 };
 
-
-class ParagraphStateCommand final : public MultiStateCommandBase
-{
-public:
+class ParagraphStateCommand final : public MultiStateCommandBase {
+ public:
   ParagraphStateCommand();
 
-protected:
+ protected:
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
-  nsresult SetState(HTMLEditor* aHTMLEditor,
-                    const nsString& newState) final;
+  nsresult SetState(HTMLEditor* aHTMLEditor, const nsString& newState) final;
 };
 
-class FontFaceStateCommand final : public MultiStateCommandBase
-{
-public:
+class FontFaceStateCommand final : public MultiStateCommandBase {
+ public:
   FontFaceStateCommand();
 
-protected:
+ protected:
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
-  nsresult SetState(HTMLEditor* aHTMLEditor,
-                    const nsString& newState) final;
+  nsresult SetState(HTMLEditor* aHTMLEditor, const nsString& newState) final;
 };
 
-class FontSizeStateCommand final : public MultiStateCommandBase
-{
-public:
+class FontSizeStateCommand final : public MultiStateCommandBase {
+ public:
   FontSizeStateCommand();
 
-protected:
+ protected:
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
-  nsresult SetState(HTMLEditor* aHTMLEditor,
-                    const nsString& newState) final;
+  nsresult SetState(HTMLEditor* aHTMLEditor, const nsString& newState) final;
 };
 
-class HighlightColorStateCommand final : public MultiStateCommandBase
-{
-public:
+class HighlightColorStateCommand final : public MultiStateCommandBase {
+ public:
   HighlightColorStateCommand();
 
-protected:
+ protected:
   NS_IMETHOD IsCommandEnabled(const char* aCommandName,
-                              nsISupports* aCommandRefCon,
-                              bool* _retval) final;
+                              nsISupports* aCommandRefCon, bool* _retval) final;
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
-  nsresult SetState(HTMLEditor* aHTMLEditor,
-                    const nsString& newState) final;
+  nsresult SetState(HTMLEditor* aHTMLEditor, const nsString& newState) final;
 };
 
-class FontColorStateCommand final : public MultiStateCommandBase
-{
-public:
+class FontColorStateCommand final : public MultiStateCommandBase {
+ public:
   FontColorStateCommand();
 
-protected:
+ protected:
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
-  nsresult SetState(HTMLEditor* aHTMLEditor,
-                    const nsString& newState) final;
+  nsresult SetState(HTMLEditor* aHTMLEditor, const nsString& newState) final;
 };
 
-class AlignCommand final : public MultiStateCommandBase
-{
-public:
+class AlignCommand final : public MultiStateCommandBase {
+ public:
   AlignCommand();
 
-protected:
+ protected:
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
-  nsresult SetState(HTMLEditor* aHTMLEditor,
-                    const nsString& newState) final;
+  nsresult SetState(HTMLEditor* aHTMLEditor, const nsString& newState) final;
 };
 
-class BackgroundColorStateCommand final : public MultiStateCommandBase
-{
-public:
+class BackgroundColorStateCommand final : public MultiStateCommandBase {
+ public:
   BackgroundColorStateCommand();
 
-protected:
+ protected:
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
-  nsresult SetState(HTMLEditor* aHTMLEditor,
-                    const nsString& newState) final;
+  nsresult SetState(HTMLEditor* aHTMLEditor, const nsString& newState) final;
 };
 
-class AbsolutePositioningCommand final : public StateUpdatingCommandBase
-{
-public:
+class AbsolutePositioningCommand final : public StateUpdatingCommandBase {
+ public:
   AbsolutePositioningCommand();
 
-protected:
+ protected:
   NS_IMETHOD IsCommandEnabled(const char* aCommandName,
-                              nsISupports* aCommandRefCon,
-                              bool* _retval) final;
+                              nsISupports* aCommandRefCon, bool* _retval) final;
   nsresult GetCurrentState(HTMLEditor* aHTMLEditor,
                            nsICommandParams* aParams) final;
   nsresult ToggleState(HTMLEditor* aHTMLEditor) final;
@@ -282,6 +251,6 @@ NS_DECL_COMPOSER_COMMAND(DecreaseFontSizeCommand)
 
 NS_DECL_COMPOSER_COMMAND(InsertHTMLCommand)
 
-} 
+}  
 
-#endif 
+#endif  

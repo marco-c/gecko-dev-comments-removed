@@ -16,173 +16,180 @@
 namespace js {
 
 class SavedFrame : public NativeObject {
-    friend class SavedStacks;
-    friend struct ::JSStructuredCloneReader;
+  friend class SavedStacks;
+  friend struct ::JSStructuredCloneReader;
 
-    static const ClassSpec      classSpec_;
+  static const ClassSpec classSpec_;
 
-  public:
-    static const Class          class_;
-    static const Class          protoClass_;
-    static const JSPropertySpec protoAccessors[];
-    static const JSFunctionSpec protoFunctions[];
-    static const JSFunctionSpec staticFunctions[];
+ public:
+  static const Class class_;
+  static const Class protoClass_;
+  static const JSPropertySpec protoAccessors[];
+  static const JSFunctionSpec protoFunctions[];
+  static const JSFunctionSpec staticFunctions[];
+
+  
+  static bool construct(JSContext* cx, unsigned argc, Value* vp);
+  static bool sourceProperty(JSContext* cx, unsigned argc, Value* vp);
+  static bool lineProperty(JSContext* cx, unsigned argc, Value* vp);
+  static bool columnProperty(JSContext* cx, unsigned argc, Value* vp);
+  static bool functionDisplayNameProperty(JSContext* cx, unsigned argc,
+                                          Value* vp);
+  static bool asyncCauseProperty(JSContext* cx, unsigned argc, Value* vp);
+  static bool asyncParentProperty(JSContext* cx, unsigned argc, Value* vp);
+  static bool parentProperty(JSContext* cx, unsigned argc, Value* vp);
+  static bool toStringMethod(JSContext* cx, unsigned argc, Value* vp);
+
+  static void finalize(FreeOp* fop, JSObject* obj);
+
+  
+  JSAtom* getSource();
+  uint32_t getLine();
+  uint32_t getColumn();
+  JSAtom* getFunctionDisplayName();
+  JSAtom* getAsyncCause();
+  SavedFrame* getParent() const;
+  JSPrincipals* getPrincipals();
+  bool isSelfHosted(JSContext* cx);
+  bool isWasm();
+
+  
+  uint32_t wasmFuncIndex();
+  uint32_t wasmBytecodeOffset();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  class RootedRange;
+
+  class MOZ_STACK_CLASS RootedIterator {
+    friend class RootedRange;
+    RootedRange* range_;
+    
+    explicit RootedIterator() : range_(nullptr) {}
+
+   public:
+    explicit RootedIterator(RootedRange& range) : range_(&range) {}
+    HandleSavedFrame operator*() {
+      MOZ_ASSERT(range_);
+      return range_->frame_;
+    }
+    bool operator!=(const RootedIterator& rhs) const {
+      
+      
+      MOZ_ASSERT(rhs.range_ == nullptr);
+      return range_->frame_ != nullptr;
+    }
+    inline void operator++();
+  };
+
+  class MOZ_STACK_CLASS RootedRange {
+    friend class RootedIterator;
+    RootedSavedFrame frame_;
+
+   public:
+    RootedRange(JSContext* cx, HandleSavedFrame frame) : frame_(cx, frame) {}
+    RootedIterator begin() { return RootedIterator(*this); }
+    RootedIterator end() { return RootedIterator(); }
+  };
+
+  struct Lookup;
+  struct HashPolicy;
+
+  typedef JS::GCHashSet<ReadBarriered<SavedFrame*>, HashPolicy,
+                        SystemAllocPolicy>
+      Set;
+
+  class AutoLookupVector;
+
+  class MOZ_STACK_CLASS HandleLookup {
+    friend class AutoLookupVector;
+
+    Lookup& lookup;
+
+    explicit HandleLookup(Lookup& lookup) : lookup(lookup) {}
+
+   public:
+    inline Lookup& get() { return lookup; }
+    inline Lookup* operator->() { return &lookup; }
+  };
+
+ private:
+  static SavedFrame* create(JSContext* cx);
+  static MOZ_MUST_USE bool finishSavedFrameInit(JSContext* cx,
+                                                HandleObject ctor,
+                                                HandleObject proto);
+  void initFromLookup(JSContext* cx, HandleLookup lookup);
+  void initSource(JSAtom* source);
+  void initLine(uint32_t line);
+  void initColumn(uint32_t column);
+  void initFunctionDisplayName(JSAtom* maybeName);
+  void initAsyncCause(JSAtom* maybeCause);
+  void initParent(SavedFrame* maybeParent);
+  void initPrincipalsAlreadyHeld(JSPrincipals* principals);
+  void initPrincipals(JSPrincipals* principals);
+
+  enum {
+    
+    JSSLOT_SOURCE,
+    JSSLOT_LINE,
+    JSSLOT_COLUMN,
+    JSSLOT_FUNCTIONDISPLAYNAME,
+    JSSLOT_ASYNCCAUSE,
+    JSSLOT_PARENT,
+    JSSLOT_PRINCIPALS,
 
     
-    static bool construct(JSContext* cx, unsigned argc, Value* vp);
-    static bool sourceProperty(JSContext* cx, unsigned argc, Value* vp);
-    static bool lineProperty(JSContext* cx, unsigned argc, Value* vp);
-    static bool columnProperty(JSContext* cx, unsigned argc, Value* vp);
-    static bool functionDisplayNameProperty(JSContext* cx, unsigned argc, Value* vp);
-    static bool asyncCauseProperty(JSContext* cx, unsigned argc, Value* vp);
-    static bool asyncParentProperty(JSContext* cx, unsigned argc, Value* vp);
-    static bool parentProperty(JSContext* cx, unsigned argc, Value* vp);
-    static bool toStringMethod(JSContext* cx, unsigned argc, Value* vp);
-
-    static void finalize(FreeOp* fop, JSObject* obj);
-
-    
-    JSAtom*       getSource();
-    uint32_t      getLine();
-    uint32_t      getColumn();
-    JSAtom*       getFunctionDisplayName();
-    JSAtom*       getAsyncCause();
-    SavedFrame*   getParent() const;
-    JSPrincipals* getPrincipals();
-    bool          isSelfHosted(JSContext* cx);
-    bool          isWasm();
-
-    
-    uint32_t      wasmFuncIndex();
-    uint32_t      wasmBytecodeOffset();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    class RootedRange;
-
-    class MOZ_STACK_CLASS RootedIterator {
-        friend class RootedRange;
-        RootedRange* range_;
-        
-        explicit RootedIterator() : range_(nullptr) { }
-
-      public:
-        explicit RootedIterator(RootedRange& range) : range_(&range) { }
-        HandleSavedFrame operator*() { MOZ_ASSERT(range_); return range_->frame_; }
-        bool operator!=(const RootedIterator& rhs) const {
-            
-            
-            MOZ_ASSERT(rhs.range_ == nullptr);
-            return range_->frame_ != nullptr;
-        }
-        inline void operator++();
-    };
-
-    class MOZ_STACK_CLASS RootedRange {
-        friend class RootedIterator;
-        RootedSavedFrame frame_;
-
-      public:
-        RootedRange(JSContext* cx, HandleSavedFrame frame) : frame_(cx, frame) { }
-        RootedIterator begin() { return RootedIterator(*this); }
-        RootedIterator end() { return RootedIterator(); }
-    };
-
-    struct Lookup;
-    struct HashPolicy;
-
-    typedef JS::GCHashSet<ReadBarriered<SavedFrame*>,
-                          HashPolicy,
-                          SystemAllocPolicy> Set;
-
-    class AutoLookupVector;
-
-    class MOZ_STACK_CLASS HandleLookup {
-        friend class AutoLookupVector;
-
-        Lookup& lookup;
-
-        explicit HandleLookup(Lookup& lookup) : lookup(lookup) { }
-
-      public:
-        inline Lookup& get() { return lookup; }
-        inline Lookup* operator->() { return &lookup; }
-    };
-
-  private:
-    static SavedFrame* create(JSContext* cx);
-    static MOZ_MUST_USE bool finishSavedFrameInit(JSContext* cx, HandleObject ctor, HandleObject proto);
-    void initFromLookup(JSContext* cx, HandleLookup lookup);
-    void initSource(JSAtom* source);
-    void initLine(uint32_t line);
-    void initColumn(uint32_t column);
-    void initFunctionDisplayName(JSAtom* maybeName);
-    void initAsyncCause(JSAtom* maybeCause);
-    void initParent(SavedFrame* maybeParent);
-    void initPrincipalsAlreadyHeld(JSPrincipals* principals);
-    void initPrincipals(JSPrincipals* principals);
-
-    enum {
-        
-        JSSLOT_SOURCE,
-        JSSLOT_LINE,
-        JSSLOT_COLUMN,
-        JSSLOT_FUNCTIONDISPLAYNAME,
-        JSSLOT_ASYNCCAUSE,
-        JSSLOT_PARENT,
-        JSSLOT_PRINCIPALS,
-
-        
-        JSSLOT_COUNT
-    };
+    JSSLOT_COUNT
+  };
 };
 
-struct SavedFrame::HashPolicy
-{
-    typedef SavedFrame::Lookup              Lookup;
-    typedef MovableCellHasher<SavedFrame*>  SavedFramePtrHasher;
-    typedef PointerHasher<JSPrincipals*> JSPrincipalsPtrHasher;
+struct SavedFrame::HashPolicy {
+  typedef SavedFrame::Lookup Lookup;
+  typedef MovableCellHasher<SavedFrame*> SavedFramePtrHasher;
+  typedef PointerHasher<JSPrincipals*> JSPrincipalsPtrHasher;
 
-    static bool       hasHash(const Lookup& l);
-    static bool       ensureHash(const Lookup& l);
-    static HashNumber hash(const Lookup& lookup);
-    static bool       match(SavedFrame* existing, const Lookup& lookup);
+  static bool hasHash(const Lookup& l);
+  static bool ensureHash(const Lookup& l);
+  static HashNumber hash(const Lookup& lookup);
+  static bool match(SavedFrame* existing, const Lookup& lookup);
 
-    typedef ReadBarriered<SavedFrame*> Key;
-    static void rekey(Key& key, const Key& newKey);
+  typedef ReadBarriered<SavedFrame*> Key;
+  static void rekey(Key& key, const Key& newKey);
 };
 
-} 
+}  
 
 namespace mozilla {
 
 template <>
-struct FallibleHashMethods<js::SavedFrame::HashPolicy>
-{
-    template <typename Lookup> static bool hasHash(Lookup&& l) {
-        return js::SavedFrame::HashPolicy::hasHash(std::forward<Lookup>(l));
-    }
-    template <typename Lookup> static bool ensureHash(Lookup&& l) {
-        return js::SavedFrame::HashPolicy::ensureHash(std::forward<Lookup>(l));
-    }
+struct FallibleHashMethods<js::SavedFrame::HashPolicy> {
+  template <typename Lookup>
+  static bool hasHash(Lookup&& l) {
+    return js::SavedFrame::HashPolicy::hasHash(std::forward<Lookup>(l));
+  }
+  template <typename Lookup>
+  static bool ensureHash(Lookup&& l) {
+    return js::SavedFrame::HashPolicy::ensureHash(std::forward<Lookup>(l));
+  }
 };
 
-} 
+}  
 
 namespace js {
 
 
 
-inline void AssertObjectIsSavedFrameOrWrapper(JSContext* cx, HandleObject stack);
+inline void AssertObjectIsSavedFrameOrWrapper(JSContext* cx,
+                                              HandleObject stack);
 
 
 
@@ -190,43 +197,43 @@ inline void AssertObjectIsSavedFrameOrWrapper(JSContext* cx, HandleObject stack)
 
 
 
-struct ReconstructedSavedFramePrincipals : public JSPrincipals
-{
-    explicit ReconstructedSavedFramePrincipals()
-        : JSPrincipals()
-    {
-        MOZ_ASSERT(is(this));
-        this->refcount = 1;
-    }
+struct ReconstructedSavedFramePrincipals : public JSPrincipals {
+  explicit ReconstructedSavedFramePrincipals() : JSPrincipals() {
+    MOZ_ASSERT(is(this));
+    this->refcount = 1;
+  }
 
-    MOZ_MUST_USE bool write(JSContext* cx, JSStructuredCloneWriter* writer) override {
-        MOZ_ASSERT(false, "ReconstructedSavedFramePrincipals should never be exposed to embedders");
-        return false;
-    }
+  MOZ_MUST_USE bool write(JSContext* cx,
+                          JSStructuredCloneWriter* writer) override {
+    MOZ_ASSERT(false,
+               "ReconstructedSavedFramePrincipals should never be exposed to "
+               "embedders");
+    return false;
+  }
 
-    static ReconstructedSavedFramePrincipals IsSystem;
-    static ReconstructedSavedFramePrincipals IsNotSystem;
+  static ReconstructedSavedFramePrincipals IsSystem;
+  static ReconstructedSavedFramePrincipals IsNotSystem;
 
-    
-    
-    static bool is(JSPrincipals* p) { return p == &IsSystem || p == &IsNotSystem; }
+  
+  
+  static bool is(JSPrincipals* p) {
+    return p == &IsSystem || p == &IsNotSystem;
+  }
 
-    
-    
-    
-    static JSPrincipals* getSingleton(JS::ubi::StackFrame& f) {
-        return f.isSystem() ? &IsSystem : &IsNotSystem;
-    }
+  
+  
+  
+  static JSPrincipals* getSingleton(JS::ubi::StackFrame& f) {
+    return f.isSystem() ? &IsSystem : &IsNotSystem;
+  }
 };
 
-inline void
-SavedFrame::RootedIterator::operator++()
-{
-    MOZ_ASSERT(range_);
-    range_->frame_ = range_->frame_->getParent();
+inline void SavedFrame::RootedIterator::operator++() {
+  MOZ_ASSERT(range_);
+  range_->frame_ = range_->frame_->getParent();
 }
 
-} 
+}  
 
 namespace JS {
 namespace ubi {
@@ -234,49 +241,50 @@ namespace ubi {
 using js::SavedFrame;
 
 
-template<>
+template <>
 class ConcreteStackFrame<SavedFrame> : public BaseStackFrame {
-    explicit ConcreteStackFrame(SavedFrame* ptr) : BaseStackFrame(ptr) { }
-    SavedFrame& get() const { return *static_cast<SavedFrame*>(ptr); }
+  explicit ConcreteStackFrame(SavedFrame* ptr) : BaseStackFrame(ptr) {}
+  SavedFrame& get() const { return *static_cast<SavedFrame*>(ptr); }
 
-  public:
-    static void construct(void* storage, SavedFrame* ptr) { new (storage) ConcreteStackFrame(ptr); }
+ public:
+  static void construct(void* storage, SavedFrame* ptr) {
+    new (storage) ConcreteStackFrame(ptr);
+  }
 
-    StackFrame parent() const override { return get().getParent(); }
-    uint32_t line() const override { return get().getLine(); }
-    uint32_t column() const override { return get().getColumn(); }
+  StackFrame parent() const override { return get().getParent(); }
+  uint32_t line() const override { return get().getLine(); }
+  uint32_t column() const override { return get().getColumn(); }
 
-    AtomOrTwoByteChars source() const override {
-        auto source = get().getSource();
-        return AtomOrTwoByteChars(source);
+  AtomOrTwoByteChars source() const override {
+    auto source = get().getSource();
+    return AtomOrTwoByteChars(source);
+  }
+
+  AtomOrTwoByteChars functionDisplayName() const override {
+    auto name = get().getFunctionDisplayName();
+    return AtomOrTwoByteChars(name);
+  }
+
+  void trace(JSTracer* trc) override {
+    JSObject* prev = &get();
+    JSObject* next = prev;
+    js::TraceRoot(trc, &next, "ConcreteStackFrame<SavedFrame>::ptr");
+    if (next != prev) {
+      ptr = next;
     }
+  }
 
-    AtomOrTwoByteChars functionDisplayName() const override {
-        auto name = get().getFunctionDisplayName();
-        return AtomOrTwoByteChars(name);
-    }
+  bool isSelfHosted(JSContext* cx) const override {
+    return get().isSelfHosted(cx);
+  }
 
-    void trace(JSTracer* trc) override {
-        JSObject* prev = &get();
-        JSObject* next = prev;
-        js::TraceRoot(trc, &next, "ConcreteStackFrame<SavedFrame>::ptr");
-        if (next != prev) {
-            ptr = next;
-        }
-    }
+  bool isSystem() const override;
 
-    bool isSelfHosted(JSContext* cx) const override {
-        return get().isSelfHosted(cx);
-    }
-
-    bool isSystem() const override;
-
-    MOZ_MUST_USE bool constructSavedFrameStack(JSContext* cx,
-                                               MutableHandleObject outSavedFrameStack)
-        const override;
+  MOZ_MUST_USE bool constructSavedFrameStack(
+      JSContext* cx, MutableHandleObject outSavedFrameStack) const override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

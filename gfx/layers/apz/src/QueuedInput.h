@@ -33,9 +33,8 @@ class KeyboardBlockState;
 
 
 
-class QueuedInput
-{
-public:
+class QueuedInput {
+ public:
   QueuedInput(const MultiTouchInput& aInput, TouchBlockState& aBlock);
   QueuedInput(const ScrollWheelInput& aInput, WheelBlockState& aBlock);
   QueuedInput(const MouseInput& aInput, DragBlockState& aBlock);
@@ -45,7 +44,7 @@ public:
   InputData* Input();
   InputBlockState* Block();
 
-private:
+ private:
   
   
   
@@ -55,7 +54,7 @@ private:
   RefPtr<InputBlockState> mBlock;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -72,10 +72,9 @@ class DoWorkRunnable;
 
 
 class MessageLoop : public base::MessagePump::Delegate {
-
   friend class mozilla::ipc::DoWorkRunnable;
 
-public:
+ public:
   
   
   
@@ -200,7 +199,8 @@ public:
 
   
   
-  explicit MessageLoop(Type type = TYPE_DEFAULT, nsIEventTarget* aEventTarget = nullptr);
+  explicit MessageLoop(Type type = TYPE_DEFAULT,
+                       nsIEventTarget* aEventTarget = nullptr);
   ~MessageLoop();
 
   
@@ -249,13 +249,9 @@ public:
   }
 
 #if defined(OS_WIN)
-  void set_os_modal_loop(bool os_modal_loop) {
-    os_modal_loop_ = os_modal_loop;
-  }
+  void set_os_modal_loop(bool os_modal_loop) { os_modal_loop_ = os_modal_loop; }
 
-  bool & os_modal_loop() {
-    return os_modal_loop_;
-  }
+  bool& os_modal_loop() { return os_modal_loop_; }
 #endif  
 
   
@@ -265,12 +261,8 @@ public:
     transient_hang_timeout_ = transient_timeout_ms;
     permanent_hang_timeout_ = permanent_timeout_ms;
   }
-  uint32_t transient_hang_timeout() const {
-    return transient_hang_timeout_;
-  }
-  uint32_t permanent_hang_timeout() const {
-    return permanent_hang_timeout_;
-  }
+  uint32_t transient_hang_timeout() const { return transient_hang_timeout_; }
+  uint32_t permanent_hang_timeout() const { return permanent_hang_timeout_; }
 
   
  protected:
@@ -291,6 +283,7 @@ public:
    public:
     explicit AutoRunState(MessageLoop* loop);
     ~AutoRunState();
+
    private:
     MessageLoop* loop_;
     RunState* previous_state_;
@@ -304,25 +297,21 @@ public:
     bool nestable;                     
 
     PendingTask(already_AddRefed<nsIRunnable> aTask, bool aNestable)
-        : task(aTask), sequence_num(0), nestable(aNestable) {
-    }
+        : task(aTask), sequence_num(0), nestable(aNestable) {}
 
     PendingTask(PendingTask&& aOther)
         : task(aOther.task.forget()),
           delayed_run_time(aOther.delayed_run_time),
           sequence_num(aOther.sequence_num),
-          nestable(aOther.nestable) {
-    }
+          nestable(aOther.nestable) {}
 
     
     PendingTask(const PendingTask& aOther)
         : task(aOther.task),
           delayed_run_time(aOther.delayed_run_time),
           sequence_num(aOther.sequence_num),
-          nestable(aOther.nestable) {
-    }
-    PendingTask& operator=(const PendingTask& aOther)
-    {
+          nestable(aOther.nestable) {}
+    PendingTask& operator=(const PendingTask& aOther) {
       task = aOther.task;
       delayed_run_time = aOther.delayed_run_time;
       sequence_num = aOther.sequence_num;
@@ -468,14 +457,12 @@ public:
 
 class MessageLoopForUI : public MessageLoop {
  public:
-  explicit MessageLoopForUI(Type aType=TYPE_UI) : MessageLoop(aType) {
-  }
+  explicit MessageLoopForUI(Type aType = TYPE_UI) : MessageLoop(aType) {}
 
   
   static MessageLoopForUI* current() {
     MessageLoop* loop = MessageLoop::current();
-    if (!loop)
-      return NULL;
+    if (!loop) return NULL;
     Type type = loop->type();
     DCHECK(type == MessageLoop::TYPE_UI ||
            type == MessageLoop::TYPE_MOZILLA_PARENT ||
@@ -518,8 +505,7 @@ COMPILE_ASSERT(sizeof(MessageLoop) == sizeof(MessageLoopForUI),
 
 class MessageLoopForIO : public MessageLoop {
  public:
-  MessageLoopForIO() : MessageLoop(TYPE_IO) {
-  }
+  MessageLoopForIO() : MessageLoop(TYPE_IO) {}
 
   
   static MessageLoopForIO* current() {
@@ -555,17 +541,13 @@ class MessageLoopForIO : public MessageLoop {
   };
 
   
-  bool WatchFileDescriptor(int fd,
-                           bool persistent,
-                           Mode mode,
-                           FileDescriptorWatcher *controller,
-                           Watcher *delegate);
+  bool WatchFileDescriptor(int fd, bool persistent, Mode mode,
+                           FileDescriptorWatcher* controller,
+                           Watcher* delegate);
 
   typedef base::MessagePumpLibevent::SignalEvent SignalEvent;
   typedef base::MessagePumpLibevent::SignalWatcher SignalWatcher;
-  bool CatchSignal(int sig,
-                   SignalEvent* sigevent,
-                   SignalWatcher* delegate);
+  bool CatchSignal(int sig, SignalEvent* sigevent, SignalWatcher* delegate);
 
 #endif  
 };

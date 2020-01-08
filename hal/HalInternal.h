@@ -18,7 +18,7 @@
 
 
 #ifndef MOZ_HAL_NAMESPACE
-# error "You shouldn't directly include HalInternal.h!"
+#error "You shouldn't directly include HalInternal.h!"
 #endif
 
 namespace mozilla {
@@ -59,7 +59,7 @@ void DisableScreenConfigurationNotifications();
 
 
 bool HalChildDestroyed();
-} 
-} 
+}  
+}  
 
 #endif  

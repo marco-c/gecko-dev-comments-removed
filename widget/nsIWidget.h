@@ -35,27 +35,27 @@
 #include "Units.h"
 
 
-class   nsIBidiKeyboard;
-class   nsIRollupListener;
-class   imgIContainer;
-class   nsIContent;
-class   ViewWrapper;
-class   nsIScreen;
-class   nsIRunnable;
-class   nsIKeyEventInPluginCallback;
+class nsIBidiKeyboard;
+class nsIRollupListener;
+class imgIContainer;
+class nsIContent;
+class ViewWrapper;
+class nsIScreen;
+class nsIRunnable;
+class nsIKeyEventInPluginCallback;
 
 namespace mozilla {
 #if defined(MOZ_WIDGET_ANDROID)
 namespace ipc {
 class Shmem;
 }
-#endif 
+#endif  
 namespace dom {
 class TabChild;
-} 
+}  
 namespace plugins {
 class PluginWidgetChild;
-} 
+}  
 namespace layers {
 class AsyncDragMetrics;
 class Compositor;
@@ -65,22 +65,22 @@ class LayerManager;
 class LayerManagerComposite;
 class PLayerTransactionChild;
 class WebRenderBridgeChild;
-} 
+}  
 namespace gfx {
 class DrawTarget;
 class SourceSurface;
-} 
+}  
 namespace widget {
 class TextEventDispatcher;
 class TextEventDispatcherListener;
 class CompositorWidget;
 class CompositorWidgetInitData;
-} 
+}  
 namespace wr {
 class DisplayListBuilder;
 class IpcResourceUpdateQueue;
-} 
-} 
+}  
+}  
 
 
 
@@ -92,7 +92,7 @@ class IpcResourceUpdateQueue;
 
 
 
-typedef nsEventStatus (* EVENT_CALLBACK)(mozilla::WidgetGUIEvent* aEvent);
+typedef nsEventStatus (*EVENT_CALLBACK)(mozilla::WidgetGUIEvent* aEvent);
 
 
 
@@ -102,72 +102,78 @@ typedef void* nsNativeWidget;
 
 
 
-#define NS_NATIVE_WINDOW      0
-#define NS_NATIVE_GRAPHIC     1
-#define NS_NATIVE_TMP_WINDOW  2
-#define NS_NATIVE_WIDGET      3
-#define NS_NATIVE_DISPLAY     4
-#define NS_NATIVE_REGION      5
-#define NS_NATIVE_OFFSETX     6
-#define NS_NATIVE_OFFSETY     7
+#define NS_NATIVE_WINDOW 0
+#define NS_NATIVE_GRAPHIC 1
+#define NS_NATIVE_TMP_WINDOW 2
+#define NS_NATIVE_WIDGET 3
+#define NS_NATIVE_DISPLAY 4
+#define NS_NATIVE_REGION 5
+#define NS_NATIVE_OFFSETX 6
+#define NS_NATIVE_OFFSETY 7
 #define NS_NATIVE_PLUGIN_PORT 8
-#define NS_NATIVE_SCREEN      9
+#define NS_NATIVE_SCREEN 9
 
 #define NS_NATIVE_SHELLWIDGET 10
 
 
 #define NS_NATIVE_SHAREABLE_WINDOW 11
-#define NS_NATIVE_OPENGL_CONTEXT   12
+#define NS_NATIVE_OPENGL_CONTEXT 12
 
-#define NS_NATIVE_PLUGIN_ID        13
-
-
+#define NS_NATIVE_PLUGIN_ID 13
 
 
 
 
-#define NS_RAW_NATIVE_IME_CONTEXT  14
+
+
+#define NS_RAW_NATIVE_IME_CONTEXT 14
 #ifdef XP_MACOSX
-#define NS_NATIVE_PLUGIN_PORT_QD    100
-#define NS_NATIVE_PLUGIN_PORT_CG    101
+#define NS_NATIVE_PLUGIN_PORT_QD 100
+#define NS_NATIVE_PLUGIN_PORT_CG 101
 #endif
 #ifdef XP_WIN
-#define NS_NATIVE_TSF_THREAD_MGR       100
-#define NS_NATIVE_TSF_CATEGORY_MGR     101
+#define NS_NATIVE_TSF_THREAD_MGR 100
+#define NS_NATIVE_TSF_CATEGORY_MGR 101
 #define NS_NATIVE_TSF_DISPLAY_ATTR_MGR 102
-#define NS_NATIVE_ICOREWINDOW          103 // winrt specific
-#define NS_NATIVE_CHILD_WINDOW         104
+#define NS_NATIVE_ICOREWINDOW 103  // winrt specific
+#define NS_NATIVE_CHILD_WINDOW 104
 #define NS_NATIVE_CHILD_OF_SHAREABLE_WINDOW 105
 #endif
 #if defined(MOZ_WIDGET_GTK)
 
-#define NS_NATIVE_PLUGIN_OBJECT_PTR    104
+#define NS_NATIVE_PLUGIN_OBJECT_PTR 104
 #ifdef MOZ_X11
-#define NS_NATIVE_COMPOSITOR_DISPLAY   105
-#endif 
-#define NS_NATIVE_EGL_WINDOW           106
+#define NS_NATIVE_COMPOSITOR_DISPLAY 105
+#endif  
+#define NS_NATIVE_EGL_WINDOW 106
 #endif
 #ifdef MOZ_WIDGET_ANDROID
-#define NS_JAVA_SURFACE                100
-#define NS_PRESENTATION_WINDOW         101
-#define NS_PRESENTATION_SURFACE        102
+#define NS_JAVA_SURFACE 100
+#define NS_PRESENTATION_WINDOW 101
+#define NS_PRESENTATION_SURFACE 102
 #endif
 
 
-#define NS_IWIDGET_IID \
-{ 0x06396bf6, 0x2dd8, 0x45e5, \
-  { 0xac, 0x45, 0x75, 0x26, 0x53, 0xb1, 0xc9, 0x80 } }
-
+#define NS_IWIDGET_IID                               \
+  {                                                  \
+    0x06396bf6, 0x2dd8, 0x45e5, {                    \
+      0xac, 0x45, 0x75, 0x26, 0x53, 0xb1, 0xc9, 0x80 \
+    }                                                \
+  }
 
 
 
 
 
 enum nsTransparencyMode {
-  eTransparencyOpaque = 0,  
-  eTransparencyTransparent, 
-  eTransparencyGlass,       
-  eTransparencyBorderlessGlass 
+  eTransparencyOpaque = 0,   
+  eTransparencyTransparent,  
+  eTransparencyGlass,  
+                       
+  eTransparencyBorderlessGlass  
+                                
+                                
+  
   
 };
 
@@ -175,59 +181,59 @@ enum nsTransparencyMode {
 
 
 
-enum nsCursor {   
-                eCursor_standard,
-                  
-                eCursor_wait,
-                  
-                eCursor_select,
-                  
-                eCursor_hyperlink,
-                  
-                eCursor_n_resize,
-                eCursor_s_resize,
-                eCursor_w_resize,
-                eCursor_e_resize,
-                  
-                eCursor_nw_resize,
-                eCursor_se_resize,
-                eCursor_ne_resize,
-                eCursor_sw_resize,
-                eCursor_crosshair,
-                eCursor_move,
-                eCursor_help,
-                eCursor_copy, 
-                eCursor_alias,
-                eCursor_context_menu,
-                eCursor_cell,
-                eCursor_grab,
-                eCursor_grabbing,
-                eCursor_spinning,
-                eCursor_zoom_in,
-                eCursor_zoom_out,
-                eCursor_not_allowed,
-                eCursor_col_resize,
-                eCursor_row_resize,
-                eCursor_no_drop,
-                eCursor_vertical_text,
-                eCursor_all_scroll,
-                eCursor_nesw_resize,
-                eCursor_nwse_resize,
-                eCursor_ns_resize,
-                eCursor_ew_resize,
-                eCursor_none,
-                
-                
-                eCursorCount,
+enum nsCursor {  
+  eCursor_standard,
+  
+  eCursor_wait,
+  
+  eCursor_select,
+  
+  eCursor_hyperlink,
+  
+  eCursor_n_resize,
+  eCursor_s_resize,
+  eCursor_w_resize,
+  eCursor_e_resize,
+  
+  eCursor_nw_resize,
+  eCursor_se_resize,
+  eCursor_ne_resize,
+  eCursor_sw_resize,
+  eCursor_crosshair,
+  eCursor_move,
+  eCursor_help,
+  eCursor_copy,  
+  eCursor_alias,
+  eCursor_context_menu,
+  eCursor_cell,
+  eCursor_grab,
+  eCursor_grabbing,
+  eCursor_spinning,
+  eCursor_zoom_in,
+  eCursor_zoom_out,
+  eCursor_not_allowed,
+  eCursor_col_resize,
+  eCursor_row_resize,
+  eCursor_no_drop,
+  eCursor_vertical_text,
+  eCursor_all_scroll,
+  eCursor_nesw_resize,
+  eCursor_nwse_resize,
+  eCursor_ns_resize,
+  eCursor_ew_resize,
+  eCursor_none,
+  
+  
+  eCursorCount,
 
-                
-                eCursorInvalid = eCursorCount + 1
-                };
+  
+  eCursorInvalid = eCursorCount + 1
+};
 
-enum nsTopLevelWidgetZPlacement { 
-  eZPlacementBottom = 0,  
-  eZPlacementBelow,       
-  eZPlacementTop          
+enum nsTopLevelWidgetZPlacement {  
+  eZPlacementBottom = 0,           
+  eZPlacementBelow,                
+  eZPlacementTop                   
 };
 
 
@@ -261,37 +267,23 @@ namespace widget {
 
 
 struct SizeConstraints {
-  SizeConstraints()
-    : mMaxSize(NS_MAXSIZE, NS_MAXSIZE)
-  {
-  }
+  SizeConstraints() : mMaxSize(NS_MAXSIZE, NS_MAXSIZE) {}
 
   SizeConstraints(mozilla::LayoutDeviceIntSize aMinSize,
                   mozilla::LayoutDeviceIntSize aMaxSize)
-  : mMinSize(aMinSize),
-    mMaxSize(aMaxSize)
-  {
-  }
+      : mMinSize(aMinSize), mMaxSize(aMaxSize) {}
 
   mozilla::LayoutDeviceIntSize mMinSize;
   mozilla::LayoutDeviceIntSize mMaxSize;
 };
 
 struct AutoObserverNotifier {
-  AutoObserverNotifier(nsIObserver* aObserver,
-                       const char* aTopic)
-    : mObserver(aObserver)
-    , mTopic(aTopic)
-  {
-  }
+  AutoObserverNotifier(nsIObserver* aObserver, const char* aTopic)
+      : mObserver(aObserver), mTopic(aTopic) {}
 
-  void SkipNotification()
-  {
-    mObserver = nullptr;
-  }
+  void SkipNotification() { mObserver = nullptr; }
 
-  uint64_t SaveObserver()
-  {
+  uint64_t SaveObserver() {
     if (!mObserver) {
       return 0;
     }
@@ -301,19 +293,18 @@ struct AutoObserverNotifier {
     return observerId;
   }
 
-  ~AutoObserverNotifier()
-  {
+  ~AutoObserverNotifier() {
     if (mObserver) {
       mObserver->Observe(nullptr, mTopic, nullptr);
     }
   }
 
   static void NotifySavedObserver(const uint64_t& aObserverId,
-                                  const char* aTopic)
-  {
+                                  const char* aTopic) {
     nsCOMPtr<nsIObserver> observer = sSavedObservers.Get(aObserverId);
     if (!observer) {
-      MOZ_ASSERT(aObserverId == 0, "We should always find a saved observer for nonzero IDs");
+      MOZ_ASSERT(aObserverId == 0,
+                 "We should always find a saved observer for nonzero IDs");
       return;
     }
 
@@ -321,94 +312,88 @@ struct AutoObserverNotifier {
     observer->Observe(nullptr, aTopic, nullptr);
   }
 
-private:
+ private:
   nsCOMPtr<nsIObserver> mObserver;
   const char* mTopic;
 
-private:
+ private:
   static uint64_t sObserverId;
-  static nsDataHashtable<nsUint64HashKey, nsCOMPtr<nsIObserver>> sSavedObservers;
+  static nsDataHashtable<nsUint64HashKey, nsCOMPtr<nsIObserver>>
+      sSavedObservers;
 };
 
-} 
-} 
+}  
+}  
 
 
 
 
 
-class nsIWidget : public nsISupports
-{
-  protected:
-    typedef mozilla::dom::TabChild TabChild;
+class nsIWidget : public nsISupports {
+ protected:
+  typedef mozilla::dom::TabChild TabChild;
 
-  public:
-    typedef mozilla::layers::CompositorBridgeChild CompositorBridgeChild;
-    typedef mozilla::layers::AsyncDragMetrics AsyncDragMetrics;
-    typedef mozilla::layers::FrameMetrics FrameMetrics;
-    typedef mozilla::layers::LayerManager LayerManager;
-    typedef mozilla::layers::LayerManagerComposite LayerManagerComposite;
-    typedef mozilla::layers::LayersBackend LayersBackend;
-    typedef mozilla::layers::PLayerTransactionChild PLayerTransactionChild;
-    typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
-    typedef mozilla::layers::ZoomConstraints ZoomConstraints;
-    typedef mozilla::widget::IMEMessage IMEMessage;
-    typedef mozilla::widget::IMENotification IMENotification;
-    typedef mozilla::widget::IMENotificationRequests IMENotificationRequests;
-    typedef mozilla::widget::IMEState IMEState;
-    typedef mozilla::widget::InputContext InputContext;
-    typedef mozilla::widget::InputContextAction InputContextAction;
-    typedef mozilla::widget::NativeIMEContext NativeIMEContext;
-    typedef mozilla::widget::SizeConstraints SizeConstraints;
-    typedef mozilla::widget::TextEventDispatcher TextEventDispatcher;
-    typedef mozilla::widget::TextEventDispatcherListener
+ public:
+  typedef mozilla::layers::CompositorBridgeChild CompositorBridgeChild;
+  typedef mozilla::layers::AsyncDragMetrics AsyncDragMetrics;
+  typedef mozilla::layers::FrameMetrics FrameMetrics;
+  typedef mozilla::layers::LayerManager LayerManager;
+  typedef mozilla::layers::LayerManagerComposite LayerManagerComposite;
+  typedef mozilla::layers::LayersBackend LayersBackend;
+  typedef mozilla::layers::PLayerTransactionChild PLayerTransactionChild;
+  typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
+  typedef mozilla::layers::ZoomConstraints ZoomConstraints;
+  typedef mozilla::widget::IMEMessage IMEMessage;
+  typedef mozilla::widget::IMENotification IMENotification;
+  typedef mozilla::widget::IMENotificationRequests IMENotificationRequests;
+  typedef mozilla::widget::IMEState IMEState;
+  typedef mozilla::widget::InputContext InputContext;
+  typedef mozilla::widget::InputContextAction InputContextAction;
+  typedef mozilla::widget::NativeIMEContext NativeIMEContext;
+  typedef mozilla::widget::SizeConstraints SizeConstraints;
+  typedef mozilla::widget::TextEventDispatcher TextEventDispatcher;
+  typedef mozilla::widget::TextEventDispatcherListener
       TextEventDispatcherListener;
-    typedef mozilla::LayoutDeviceIntMargin LayoutDeviceIntMargin;
-    typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
-    typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
-    typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
-    typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
-    typedef mozilla::ScreenIntPoint ScreenIntPoint;
-    typedef mozilla::ScreenIntSize ScreenIntSize;
-    typedef mozilla::ScreenPoint ScreenPoint;
-    typedef mozilla::CSSToScreenScale CSSToScreenScale;
-    typedef mozilla::DesktopIntRect DesktopIntRect;
-    typedef mozilla::CSSPoint CSSPoint;
-    typedef mozilla::CSSRect CSSRect;
+  typedef mozilla::LayoutDeviceIntMargin LayoutDeviceIntMargin;
+  typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
+  typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
+  typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
+  typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
+  typedef mozilla::ScreenIntPoint ScreenIntPoint;
+  typedef mozilla::ScreenIntSize ScreenIntSize;
+  typedef mozilla::ScreenPoint ScreenPoint;
+  typedef mozilla::CSSToScreenScale CSSToScreenScale;
+  typedef mozilla::DesktopIntRect DesktopIntRect;
+  typedef mozilla::CSSPoint CSSPoint;
+  typedef mozilla::CSSRect CSSRect;
 
+  
+  struct ThemeGeometry {
     
-    struct ThemeGeometry {
-      
-      
-      nsITheme::ThemeGeometryType mType;
-      
-      LayoutDeviceIntRect mRect;
-
-      ThemeGeometry(nsITheme::ThemeGeometryType aType,
-                    const LayoutDeviceIntRect& aRect)
-        : mType(aType)
-        , mRect(aRect)
-      { }
-    };
-
-    NS_DECLARE_STATIC_IID_ACCESSOR(NS_IWIDGET_IID)
-
-    nsIWidget()
-      : mLastChild(nullptr)
-      , mPrevSibling(nullptr)
-      , mOnDestroyCalled(false)
-      , mWindowType(eWindowType_child)
-      , mZIndex(0)
-
-    {
-      ClearNativeTouchSequence(nullptr);
-    }
+    
+    nsITheme::ThemeGeometryType mType;
+    
+    LayoutDeviceIntRect mRect;
 
+    ThemeGeometry(nsITheme::ThemeGeometryType aType,
+                  const LayoutDeviceIntRect& aRect)
+        : mType(aType), mRect(aRect) {}
+  };
 
-    
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IWIDGET_IID)
 
+  nsIWidget()
+      : mLastChild(nullptr),
+        mPrevSibling(nullptr),
+        mOnDestroyCalled(false),
+        mWindowType(eWindowType_child),
+        mZIndex(0)
 
+  {
+    ClearNativeTouchSequence(nullptr);
+  }
 
+  
 
 
 
@@ -436,35 +421,32 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual MOZ_MUST_USE nsresult
-    Create(nsIWidget* aParent,
-           nsNativeWidget aNativeParent,
-           const LayoutDeviceIntRect& aRect,
-           nsWidgetInitData* aInitData = nullptr) = 0;
 
-    
 
 
+  virtual MOZ_MUST_USE nsresult
+  Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
+         const LayoutDeviceIntRect& aRect,
+         nsWidgetInitData* aInitData = nullptr) = 0;
 
+  
 
 
 
 
-    virtual MOZ_MUST_USE nsresult
-    Create(nsIWidget* aParent,
-           nsNativeWidget aNativeParent,
-           const DesktopIntRect& aRect,
-           nsWidgetInitData* aInitData = nullptr)
-    {
-        LayoutDeviceIntRect devPixRect =
-          RoundedToInt(aRect * GetDesktopToDeviceScale());
-        return Create(aParent, aNativeParent, devPixRect, aInitData);
-    }
 
-    
 
 
+  virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent,
+                                       nsNativeWidget aNativeParent,
+                                       const DesktopIntRect& aRect,
+                                       nsWidgetInitData* aInitData = nullptr) {
+    LayoutDeviceIntRect devPixRect =
+        RoundedToInt(aRect * GetDesktopToDeviceScale());
+    return Create(aParent, aNativeParent, devPixRect, aInitData);
+  }
 
+  
 
 
 
@@ -477,15 +459,14 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual already_AddRefed<nsIWidget>
-    CreateChild(const LayoutDeviceIntRect& aRect,
-                nsWidgetInitData* aInitData = nullptr,
-                bool aForceUseIWidgetParent = false) = 0;
 
-    
 
 
+  virtual already_AddRefed<nsIWidget> CreateChild(
+      const LayoutDeviceIntRect& aRect, nsWidgetInitData* aInitData = nullptr,
+      bool aForceUseIWidgetParent = false) = 0;
 
+  
 
 
 
@@ -496,107 +477,109 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void AttachViewToTopLevel(bool aUseAttachedEvents) = 0;
 
-    
 
 
+  virtual void AttachViewToTopLevel(bool aUseAttachedEvents) = 0;
 
-    virtual void SetAttachedWidgetListener(nsIWidgetListener* aListener) = 0;
-    virtual nsIWidgetListener* GetAttachedWidgetListener() = 0;
-    virtual void SetPreviouslyAttachedWidgetListener(nsIWidgetListener* aListener) = 0;
-    virtual nsIWidgetListener* GetPreviouslyAttachedWidgetListener() = 0;
+  
 
-    
 
 
+  virtual void SetAttachedWidgetListener(nsIWidgetListener* aListener) = 0;
+  virtual nsIWidgetListener* GetAttachedWidgetListener() = 0;
+  virtual void SetPreviouslyAttachedWidgetListener(
+      nsIWidgetListener* aListener) = 0;
+  virtual nsIWidgetListener* GetPreviouslyAttachedWidgetListener() = 0;
 
-    
-    virtual nsIWidgetListener* GetWidgetListener() = 0;
-    virtual void SetWidgetListener(nsIWidgetListener* alistener) = 0;
-    
+  
 
-    
 
 
+  
+  virtual nsIWidgetListener* GetWidgetListener() = 0;
+  virtual void SetWidgetListener(nsIWidgetListener* alistener) = 0;
+  
 
+  
 
-    virtual void Destroy() = 0;
 
-    
 
 
+  virtual void Destroy() = 0;
 
-    bool Destroyed() const { return mOnDestroyCalled; }
+  
 
 
-    
 
+  bool Destroyed() const { return mOnDestroyCalled; }
 
+  
 
 
 
 
-    virtual void SetParent(nsIWidget* aNewParent) = 0;
 
-    
 
+  virtual void SetParent(nsIWidget* aNewParent) = 0;
 
+  
 
 
 
 
-    virtual nsIWidget* GetParent(void) = 0;
 
-    
 
+  virtual nsIWidget* GetParent(void) = 0;
 
+  
 
 
-    virtual nsIWidget* GetTopLevelWidget() = 0;
 
-    
 
+  virtual nsIWidget* GetTopLevelWidget() = 0;
 
+  
 
 
 
 
 
-    virtual nsIWidget* GetSheetWindowParent(void) = 0;
 
-    
 
+  virtual nsIWidget* GetSheetWindowParent(void) = 0;
 
+  
 
-    virtual float GetDPI() = 0;
 
-    
 
+  virtual float GetDPI() = 0;
 
+  
 
 
-    virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() = 0;
 
-    
 
+  virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() = 0;
 
+  
 
 
-    virtual mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScaleByScreen() = 0;
 
-    
 
+  virtual mozilla::DesktopToLayoutDeviceScale
+  GetDesktopToDeviceScaleByScreen() = 0;
 
+  
 
 
 
 
-    mozilla::CSSToLayoutDeviceScale GetDefaultScale();
 
-    
 
+  mozilla::CSSToLayoutDeviceScale GetDefaultScale();
 
+  
 
 
 
@@ -605,99 +588,81 @@ class nsIWidget : public nsISupports
 
 
 
-    static double DefaultScaleOverride();
 
-    
 
+  static double DefaultScaleOverride();
 
+  
 
-    nsIWidget* GetFirstChild() const {
-        return mFirstChild;
-    }
 
-    
 
+  nsIWidget* GetFirstChild() const { return mFirstChild; }
 
+  
 
-    nsIWidget* GetLastChild() const {
-        return mLastChild;
-    }
 
-    
 
+  nsIWidget* GetLastChild() const { return mLastChild; }
 
-    nsIWidget* GetNextSibling() const {
-        return mNextSibling;
-    }
+  
 
-    
 
+  nsIWidget* GetNextSibling() const { return mNextSibling; }
 
-    void SetNextSibling(nsIWidget* aSibling) {
-        mNextSibling = aSibling;
-    }
+  
 
-    
 
+  void SetNextSibling(nsIWidget* aSibling) { mNextSibling = aSibling; }
 
-    nsIWidget* GetPrevSibling() const {
-        return mPrevSibling;
-    }
+  
 
-    
 
+  nsIWidget* GetPrevSibling() const { return mPrevSibling; }
 
-    void SetPrevSibling(nsIWidget* aSibling) {
-        mPrevSibling = aSibling;
-    }
+  
 
-    
 
+  void SetPrevSibling(nsIWidget* aSibling) { mPrevSibling = aSibling; }
 
+  
 
 
 
-    virtual void Show(bool aState) = 0;
 
-    
 
+  virtual void Show(bool aState) = 0;
 
-    virtual void SetModal(bool aModal) = 0;
+  
 
-    
 
+  virtual void SetModal(bool aModal) = 0;
 
+  
 
-    virtual void SetFakeModal(bool aModal)
-    {
-        SetModal(aModal);
-    }
 
-    
 
+  virtual void SetFakeModal(bool aModal) { SetModal(aModal); }
 
-    virtual bool IsRunningAppModal()
-    {
-      return false;
-    }
+  
 
-    
 
+  virtual bool IsRunningAppModal() { return false; }
 
+  
 
 
 
-    virtual uint32_t GetMaxTouchPoints() const = 0;
 
-    
 
+  virtual uint32_t GetMaxTouchPoints() const = 0;
 
+  
 
-    virtual bool IsVisible() const = 0;
 
-    
 
+  virtual bool IsVisible() const = 0;
 
+  
 
 
 
@@ -709,13 +674,11 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void ConstrainPosition(bool aAllowSlop,
-                                   int32_t *aX,
-                                   int32_t *aY) = 0;
 
-    
 
+  virtual void ConstrainPosition(bool aAllowSlop, int32_t* aX, int32_t* aY) = 0;
 
+  
 
 
 
@@ -732,9 +695,9 @@ class nsIWidget : public nsISupports
 
 
 
-    
 
 
+  
 
 
 
@@ -742,11 +705,11 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void Move(double aX, double aY) = 0;
 
-    
 
+  virtual void Move(double aX, double aY) = 0;
 
+  
 
 
 
@@ -756,24 +719,22 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void MoveClient(double aX, double aY) = 0;
 
-    
 
+  virtual void MoveClient(double aX, double aY) = 0;
 
+  
 
 
 
 
 
 
-    virtual void Resize(double aWidth,
-                        double aHeight,
-                        bool   aRepaint) = 0;
 
-    
 
+  virtual void Resize(double aWidth, double aHeight, bool aRepaint) = 0;
 
+  
 
 
 
@@ -786,31 +747,25 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void Resize(double aX,
-                        double aY,
-                        double aWidth,
-                        double aHeight,
-                        bool   aRepaint) = 0;
 
-    virtual mozilla::Maybe<bool> IsResizingNativeWidget()
-    {
-        return mozilla::Nothing();
-    }
 
-    
+  virtual void Resize(double aX, double aY, double aWidth, double aHeight,
+                      bool aRepaint) = 0;
 
+  virtual mozilla::Maybe<bool> IsResizingNativeWidget() {
+    return mozilla::Nothing();
+  }
 
+  
 
 
 
 
-    virtual void ResizeClient(double aWidth,
-                              double aHeight,
-                              bool   aRepaint) = 0;
 
-    
 
+  virtual void ResizeClient(double aWidth, double aHeight, bool aRepaint) = 0;
 
+  
 
 
 
@@ -824,28 +779,22 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void ResizeClient(double aX,
-                              double aY,
-                              double aWidth,
-                              double aHeight,
-                              bool   aRepaint) = 0;
 
-    
 
+  virtual void ResizeClient(double aX, double aY, double aWidth, double aHeight,
+                            bool aRepaint) = 0;
 
-    virtual void SetZIndex(int32_t aZIndex) = 0;
+  
 
-    
 
+  virtual void SetZIndex(int32_t aZIndex) = 0;
 
-    int32_t GetZIndex()
-    {
-      return mZIndex;
-    }
+  
 
-    
 
+  int32_t GetZIndex() { return mZIndex; }
 
+  
 
 
 
@@ -854,74 +803,74 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
-                             nsIWidget *aWidget, bool aActivate) = 0;
 
-    
 
+  virtual void PlaceBehind(nsTopLevelWidgetZPlacement aPlacement,
+                           nsIWidget* aWidget, bool aActivate) = 0;
 
+  
 
-    virtual void SetSizeMode(nsSizeMode aMode) = 0;
 
-    
 
+  virtual void SetSizeMode(nsSizeMode aMode) = 0;
 
-    virtual void SuppressAnimation(bool aSuppress) {}
+  
 
-    
 
+  virtual void SuppressAnimation(bool aSuppress) {}
 
+  
 
-    virtual nsSizeMode SizeMode() = 0;
 
-    
 
+  virtual nsSizeMode SizeMode() = 0;
 
-    virtual bool IsFullyOccluded() const = 0;
+  
 
-    
 
+  virtual bool IsFullyOccluded() const = 0;
 
+  
 
 
-    virtual void Enable(bool aState) = 0;
 
-    
 
+  virtual void Enable(bool aState) = 0;
 
-    virtual bool IsEnabled() const = 0;
+  
 
-    
 
+  virtual bool IsEnabled() const = 0;
 
+  
 
 
 
 
 
 
-    virtual nsresult SetFocus(bool aRaise = false) = 0;
 
-    
 
+  virtual nsresult SetFocus(bool aRaise = false) = 0;
 
+  
 
 
 
 
-    virtual LayoutDeviceIntRect GetBounds() = 0;
 
-    
 
+  virtual LayoutDeviceIntRect GetBounds() = 0;
 
+  
 
 
 
-    virtual LayoutDeviceIntRect GetScreenBounds() = 0;
 
-    
 
+  virtual LayoutDeviceIntRect GetScreenBounds() = 0;
 
+  
 
 
 
@@ -931,22 +880,22 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual MOZ_MUST_USE nsresult
-    GetRestoredBounds(LayoutDeviceIntRect& aRect) = 0;
 
-    
 
+  virtual MOZ_MUST_USE nsresult
+  GetRestoredBounds(LayoutDeviceIntRect& aRect) = 0;
 
+  
 
 
 
 
 
-    virtual LayoutDeviceIntRect GetClientBounds() = 0;
 
-    
 
+  virtual LayoutDeviceIntRect GetClientBounds() = 0;
 
+  
 
 
 
@@ -955,49 +904,50 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin& aMargins) = 0;
 
-    
 
+  virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin& aMargins) = 0;
 
+  
 
 
-    virtual LayoutDeviceIntPoint GetClientOffset() = 0;
 
-    
 
+  virtual LayoutDeviceIntPoint GetClientOffset() = 0;
 
-    virtual LayoutDeviceIntSize GetClientSize() {
-      
-      
-      return GetClientBounds().Size();
-    }
+  
 
+
+  virtual LayoutDeviceIntSize GetClientSize() {
+    
     
+    return GetClientBounds().Size();
+  }
 
+  
 
 
 
 
 
-    virtual void SetBackgroundColor(const nscolor &aColor) { }
 
-    
+  virtual void SetBackgroundColor(const nscolor& aColor) {}
 
+  
 
 
 
-    virtual void SetCursor(nsCursor aCursor) = 0;
 
-    
+  virtual void SetCursor(nsCursor aCursor) = 0;
 
+  
 
 
 
-    virtual void ClearCachedCursor() = 0;
 
-    
+  virtual void ClearCachedCursor() = 0;
 
+  
 
 
 
@@ -1005,25 +955,25 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual nsresult SetCursor(imgIContainer* aCursor,
-                               uint32_t aHotspotX, uint32_t aHotspotY) = 0;
 
-    
+  virtual nsresult SetCursor(imgIContainer* aCursor, uint32_t aHotspotX,
+                             uint32_t aHotspotY) = 0;
 
+  
 
-    nsWindowType WindowType() { return mWindowType; }
 
-    
+  nsWindowType WindowType() { return mWindowType; }
 
+  
 
-    bool IsPlugin() {
-      return mWindowType == eWindowType_plugin ||
-             mWindowType == eWindowType_plugin_ipc_chrome ||
-             mWindowType == eWindowType_plugin_ipc_content;
-    }
 
-    
+  bool IsPlugin() {
+    return mWindowType == eWindowType_plugin ||
+           mWindowType == eWindowType_plugin_ipc_chrome ||
+           mWindowType == eWindowType_plugin_ipc_content;
+  }
 
+  
 
 
 
@@ -1039,28 +989,28 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void SetTransparencyMode(nsTransparencyMode aMode) = 0;
 
-    
+  virtual void SetTransparencyMode(nsTransparencyMode aMode) = 0;
 
+  
 
 
-    virtual nsTransparencyMode GetTransparencyMode() = 0;
 
-    
+  virtual nsTransparencyMode GetTransparencyMode() = 0;
 
+  
 
 
-    struct Configuration {
-        nsCOMPtr<nsIWidget> mChild;
-        uintptr_t mWindowID; 
-        bool mVisible; 
-        LayoutDeviceIntRect mBounds;
-        nsTArray<LayoutDeviceIntRect> mClipRegion;
-    };
 
-    
+  struct Configuration {
+    nsCOMPtr<nsIWidget> mChild;
+    uintptr_t mWindowID;  
+    bool mVisible;        
+    LayoutDeviceIntRect mBounds;
+    nsTArray<LayoutDeviceIntRect> mClipRegion;
+  };
 
+  
 
 
 
@@ -1075,19 +1025,21 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual nsresult ConfigureChildren(const nsTArray<Configuration>& aConfigurations) = 0;
-    virtual nsresult SetWindowClipRegion(const nsTArray<LayoutDeviceIntRect>& aRects,
-                                         bool aIntersectWithExisting) = 0;
 
-    
+  virtual nsresult ConfigureChildren(
+      const nsTArray<Configuration>& aConfigurations) = 0;
+  virtual nsresult SetWindowClipRegion(
+      const nsTArray<LayoutDeviceIntRect>& aRects,
+      bool aIntersectWithExisting) = 0;
 
+  
 
 
 
-    virtual void GetWindowClipRegion(nsTArray<LayoutDeviceIntRect>* aRects) = 0;
 
-    
+  virtual void GetWindowClipRegion(nsTArray<LayoutDeviceIntRect>* aRects) = 0;
 
+  
 
 
 
@@ -1096,11 +1048,12 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void RegisterPluginWindowForRemoteUpdates() = 0;
-    virtual void UnregisterPluginWindowForRemoteUpdates() = 0;
-    static nsIWidget* LookupRegisteredPluginWindow(uintptr_t aWindowID);
 
-    
+  virtual void RegisterPluginWindowForRemoteUpdates() = 0;
+  virtual void UnregisterPluginWindowForRemoteUpdates() = 0;
+  static nsIWidget* LookupRegisteredPluginWindow(uintptr_t aWindowID);
+
+  
 
 
 
@@ -1108,110 +1061,109 @@ class nsIWidget : public nsISupports
 
 
 
-    static void UpdateRegisteredPluginWindowVisibility(uintptr_t aOwnerWidget,
-                                                       nsTArray<uintptr_t>& aPluginIds);
+  static void UpdateRegisteredPluginWindowVisibility(
+      uintptr_t aOwnerWidget, nsTArray<uintptr_t>& aPluginIds);
 
 #if defined(XP_WIN)
-    
+  
 
 
 
 
 
-    static void CaptureRegisteredPlugins(uintptr_t aOwnerWidget);
+  static void CaptureRegisteredPlugins(uintptr_t aOwnerWidget);
 
-    
-
-
-    virtual void UpdateScrollCapture() = 0;
-
-    
+  
 
 
+  virtual void UpdateScrollCapture() = 0;
+
+  
 
 
-    virtual uint64_t CreateScrollCaptureContainer() = 0;
+
+
+  virtual uint64_t CreateScrollCaptureContainer() = 0;
 #endif
 
-    
+  
 
 
 
 
-    virtual void SetWindowShadowStyle(int32_t aStyle) = 0;
+  virtual void SetWindowShadowStyle(int32_t aStyle) = 0;
 
-    
+  
 
 
 
 
 
-    virtual void SetWindowOpacity(float aOpacity) {}
+  virtual void SetWindowOpacity(float aOpacity) {}
 
-    
+  
 
 
 
 
 
-    virtual void SetWindowTransform(const mozilla::gfx::Matrix& aTransform) {}
+  virtual void SetWindowTransform(const mozilla::gfx::Matrix& aTransform) {}
 
-    
+  
 
 
 
 
 
-    virtual void SetShowsToolbarButton(bool aShow) = 0;
+  virtual void SetShowsToolbarButton(bool aShow) = 0;
 
-    
+  
 
 
 
 
 
-    virtual void SetShowsFullScreenButton(bool aShow) = 0;
+  virtual void SetShowsFullScreenButton(bool aShow) = 0;
 
-    enum WindowAnimationType {
-      eGenericWindowAnimation,
-      eDocumentWindowAnimation
-    };
+  enum WindowAnimationType {
+    eGenericWindowAnimation,
+    eDocumentWindowAnimation
+  };
 
-    
+  
 
 
 
 
 
 
-    virtual void SetWindowAnimationType(WindowAnimationType aType) = 0;
+  virtual void SetWindowAnimationType(WindowAnimationType aType) = 0;
 
-    
+  
 
 
 
 
-    virtual void SetDrawsTitle(bool aDrawTitle) {}
+  virtual void SetDrawsTitle(bool aDrawTitle) {}
 
-    
+  
 
 
 
-    virtual void SetUseBrightTitlebarForeground(bool aBrightForeground) {}
+  virtual void SetUseBrightTitlebarForeground(bool aBrightForeground) {}
 
-    
+  
 
 
 
-    virtual void HideWindowChrome(bool aShouldHide) = 0;
+  virtual void HideWindowChrome(bool aShouldHide) = 0;
 
-    enum FullscreenTransitionStage
-    {
-      eBeforeFullscreenToggle,
-      eAfterFullscreenToggle
-    };
+  enum FullscreenTransitionStage {
+    eBeforeFullscreenToggle,
+    eAfterFullscreenToggle
+  };
 
-    
+  
 
 
 
@@ -1221,29 +1173,29 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual bool PrepareForFullscreenTransition(nsISupports** aData) = 0;
+  virtual bool PrepareForFullscreenTransition(nsISupports** aData) = 0;
 
-    
+  
 
 
 
 
-    virtual void PerformFullscreenTransition(FullscreenTransitionStage aStage,
-                                             uint16_t aDuration,
-                                             nsISupports* aData,
-                                             nsIRunnable* aCallback) = 0;
+  virtual void PerformFullscreenTransition(FullscreenTransitionStage aStage,
+                                           uint16_t aDuration,
+                                           nsISupports* aData,
+                                           nsIRunnable* aCallback) = 0;
 
-    
+  
 
 
-    virtual void CleanupFullscreenTransition() = 0;
+  virtual void CleanupFullscreenTransition() = 0;
 
-    
+  
 
 
-    virtual already_AddRefed<nsIScreen> GetWidgetScreen() = 0;
+  virtual already_AddRefed<nsIScreen> GetWidgetScreen() = 0;
 
-    
+  
 
 
 
@@ -1254,74 +1206,71 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual nsresult MakeFullScreen(bool aFullScreen,
-                                    nsIScreen* aTargetScreen = nullptr) = 0;
+  virtual nsresult MakeFullScreen(bool aFullScreen,
+                                  nsIScreen* aTargetScreen = nullptr) = 0;
 
-    
+  
 
 
 
 
 
-    virtual nsresult MakeFullScreenWithNativeTransition(
-      bool aFullScreen, nsIScreen* aTargetScreen = nullptr)
-    {
-      return MakeFullScreen(aFullScreen, aTargetScreen);
-    }
+  virtual nsresult MakeFullScreenWithNativeTransition(
+      bool aFullScreen, nsIScreen* aTargetScreen = nullptr) {
+    return MakeFullScreen(aFullScreen, aTargetScreen);
+  }
 
-    
+  
 
 
 
-    virtual void Invalidate(const LayoutDeviceIntRect& aRect) = 0;
+  virtual void Invalidate(const LayoutDeviceIntRect& aRect) = 0;
 
-    enum LayerManagerPersistence
-    {
-      LAYER_MANAGER_CURRENT = 0,
-      LAYER_MANAGER_PERSISTENT
-    };
+  enum LayerManagerPersistence {
+    LAYER_MANAGER_CURRENT = 0,
+    LAYER_MANAGER_PERSISTENT
+  };
 
-    
+  
 
 
 
-    inline LayerManager* GetLayerManager()
-    {
-        return GetLayerManager(nullptr, mozilla::layers::LayersBackend::LAYERS_NONE,
-                               LAYER_MANAGER_CURRENT);
-    }
+  inline LayerManager* GetLayerManager() {
+    return GetLayerManager(nullptr, mozilla::layers::LayersBackend::LAYERS_NONE,
+                           LAYER_MANAGER_CURRENT);
+  }
 
-    inline LayerManager* GetLayerManager(LayerManagerPersistence aPersistence)
-    {
-        return GetLayerManager(nullptr, mozilla::layers::LayersBackend::LAYERS_NONE,
-                               aPersistence);
-    }
+  inline LayerManager* GetLayerManager(LayerManagerPersistence aPersistence) {
+    return GetLayerManager(nullptr, mozilla::layers::LayersBackend::LAYERS_NONE,
+                           aPersistence);
+  }
 
-    
+  
 
 
 
 
-    virtual LayerManager* GetLayerManager(PLayerTransactionChild* aShadowManager,
-                                          LayersBackend aBackendHint,
-                                          LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) = 0;
+  virtual LayerManager* GetLayerManager(
+      PLayerTransactionChild* aShadowManager, LayersBackend aBackendHint,
+      LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) = 0;
 
-    
+  
 
 
 
 
 
-    virtual void PrepareWindowEffects() = 0;
+  virtual void PrepareWindowEffects() = 0;
 
-    
+  
 
 
-    virtual void AddWindowOverlayWebRenderCommands(mozilla::layers::WebRenderBridgeChild* aWrBridge,
-                                                   mozilla::wr::DisplayListBuilder& aBuilder,
-                                                   mozilla::wr::IpcResourceUpdateQueue& aResources) {}
+  virtual void AddWindowOverlayWebRenderCommands(
+      mozilla::layers::WebRenderBridgeChild* aWrBridge,
+      mozilla::wr::DisplayListBuilder& aBuilder,
+      mozilla::wr::IpcResourceUpdateQueue& aResources) {}
 
-    
+  
 
 
 
@@ -1332,49 +1281,51 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void UpdateThemeGeometries(const nsTArray<ThemeGeometry>& aThemeGeometries) = 0;
+  virtual void UpdateThemeGeometries(
+      const nsTArray<ThemeGeometry>& aThemeGeometries) = 0;
 
-    
+  
 
 
 
 
-    virtual void UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion) {}
+  virtual void UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion) {}
 
-    
+  
 
 
-    virtual void UpdateWindowDraggingRegion(const LayoutDeviceIntRegion& aRegion) {}
+  virtual void UpdateWindowDraggingRegion(
+      const LayoutDeviceIntRegion& aRegion) {}
 
-    
+  
 
 
 
 
-    virtual void ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe) {}
+  virtual void ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe) {}
 
-    
+  
 
 
 
-    
-    virtual void AddChild(nsIWidget* aChild) = 0;
-    virtual void RemoveChild(nsIWidget* aChild) = 0;
-    virtual void* GetNativeData(uint32_t aDataType) = 0;
-    virtual void SetNativeData(uint32_t aDataType, uintptr_t aVal) = 0;
-    virtual void FreeNativeData(void * data, uint32_t aDataType) = 0;
+  
+  virtual void AddChild(nsIWidget* aChild) = 0;
+  virtual void RemoveChild(nsIWidget* aChild) = 0;
+  virtual void* GetNativeData(uint32_t aDataType) = 0;
+  virtual void SetNativeData(uint32_t aDataType, uintptr_t aVal) = 0;
+  virtual void FreeNativeData(void* data, uint32_t aDataType) = 0;  
 
-    
+  
 
-    
+  
 
 
 
 
 
-    virtual nsresult SetTitle(const nsAString& aTitle) = 0;
+  virtual nsresult SetTitle(const nsAString& aTitle) = 0;
 
-    
+  
 
 
 
@@ -1382,83 +1333,85 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void SetIcon(const nsAString& aIconSpec) = 0;
+  virtual void SetIcon(const nsAString& aIconSpec) = 0;
 
-    
+  
 
 
 
 
-    virtual LayoutDeviceIntPoint WidgetToScreenOffset() = 0;
+  virtual LayoutDeviceIntPoint WidgetToScreenOffset() = 0;
 
-    
+  
 
 
 
 
-    virtual LayoutDeviceIntSize ClientToWindowSize(
-                const LayoutDeviceIntSize& aClientSize) = 0;
+  virtual LayoutDeviceIntSize ClientToWindowSize(
+      const LayoutDeviceIntSize& aClientSize) = 0;
 
-    
+  
 
 
-    virtual nsresult DispatchEvent(mozilla::WidgetGUIEvent* event,
-                                   nsEventStatus & aStatus) = 0;
+  virtual nsresult DispatchEvent(mozilla::WidgetGUIEvent* event,
+                                 nsEventStatus& aStatus) = 0;
 
-    
+  
 
 
 
-    virtual void DispatchEventToAPZOnly(mozilla::WidgetInputEvent* aEvent) = 0;
+  virtual void DispatchEventToAPZOnly(mozilla::WidgetInputEvent* aEvent) = 0;
 
-    
+  
 
 
 
 
-    virtual nsEventStatus DispatchInputEvent(mozilla::WidgetInputEvent* aEvent) = 0;
+  virtual nsEventStatus DispatchInputEvent(
+      mozilla::WidgetInputEvent* aEvent) = 0;
 
-    
+  
 
 
 
-    virtual void SetConfirmedTargetAPZC(uint64_t aInputBlockId,
-                                        const nsTArray<ScrollableLayerGuid>& aTargets) const = 0;
+  virtual void SetConfirmedTargetAPZC(
+      uint64_t aInputBlockId,
+      const nsTArray<ScrollableLayerGuid>& aTargets) const = 0;
 
-    
+  
 
 
-    virtual bool AsyncPanZoomEnabled() const = 0;
+  virtual bool AsyncPanZoomEnabled() const = 0;
 
-    
+  
 
 
-    virtual void EnableDragDrop(bool aEnable) = 0;
-    virtual nsresult AsyncEnableDragDrop(bool aEnable) = 0;
+  virtual void EnableDragDrop(bool aEnable) = 0;
+  virtual nsresult AsyncEnableDragDrop(bool aEnable) = 0;
 
-    
+  
 
 
 
 
-    virtual void CaptureMouse(bool aCapture) = 0;
+  virtual void CaptureMouse(bool aCapture) = 0;
 
-    
+  
 
 
-    virtual void SetWindowClass(const nsAString& xulWinType) = 0;
+  virtual void SetWindowClass(const nsAString& xulWinType) = 0;
 
-    
+  
 
 
 
 
 
 
-    virtual void CaptureRollupEvents(nsIRollupListener* aListener,
-                                     bool aDoCapture) = 0;
+  virtual void CaptureRollupEvents(nsIRollupListener* aListener,
+                                   bool aDoCapture) = 0;
 
-    
+  
 
 
 
@@ -1469,15 +1422,15 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual MOZ_MUST_USE nsresult GetAttention(int32_t aCycleCount) = 0;
+  virtual MOZ_MUST_USE nsresult GetAttention(int32_t aCycleCount) = 0;
 
-    
+  
 
 
 
-    virtual bool HasPendingInputEvent() = 0;
+  virtual bool HasPendingInputEvent() = 0;
 
-    
+  
 
 
 
@@ -1488,9 +1441,9 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual void SetDrawsInTitlebar(bool aState) = 0;
+  virtual void SetDrawsInTitlebar(bool aState) = 0;
 
-    
+  
 
 
 
@@ -1499,43 +1452,41 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual bool ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) = 0;
+  virtual bool ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) = 0;
 
-    
+  
 
 
-    virtual MOZ_MUST_USE nsresult
-    BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
-                    int32_t aHorizontal,
-                    int32_t aVertical) = 0;
+  virtual MOZ_MUST_USE nsresult BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
+                                                int32_t aHorizontal,
+                                                int32_t aVertical) = 0;
 
-    
+  
 
 
-    virtual MOZ_MUST_USE nsresult
-    BeginMoveDrag(mozilla::WidgetMouseEvent* aEvent) = 0;
+  virtual MOZ_MUST_USE nsresult
+  BeginMoveDrag(mozilla::WidgetMouseEvent* aEvent) = 0;
 
-    enum Modifiers
-    {
-      CAPS_LOCK =       0x00000001, 
-      NUM_LOCK =        0x00000002, 
-      SHIFT_L =         0x00000100,
-      SHIFT_R =         0x00000200,
-      CTRL_L =          0x00000400,
-      CTRL_R =          0x00000800,
-      ALT_L =           0x00001000, 
-      ALT_R =           0x00002000,
-      COMMAND_L =       0x00004000,
-      COMMAND_R =       0x00008000,
-      HELP =            0x00010000,
-      ALTGRAPH =        0x00020000, 
-                                    
-                                    
-                                    
-      FUNCTION =        0x00100000,
-      NUMERIC_KEY_PAD = 0x01000000 
-    };
-    
+  enum Modifiers {
+    CAPS_LOCK = 0x00000001,  
+    NUM_LOCK = 0x00000002,   
+    SHIFT_L = 0x00000100,
+    SHIFT_R = 0x00000200,
+    CTRL_L = 0x00000400,
+    CTRL_R = 0x00000800,
+    ALT_L = 0x00001000,  
+    ALT_R = 0x00002000,
+    COMMAND_L = 0x00004000,
+    COMMAND_R = 0x00008000,
+    HELP = 0x00010000,
+    ALTGRAPH = 0x00020000,  
+                            
+                            
+                            
+    FUNCTION = 0x00100000,
+    NUMERIC_KEY_PAD = 0x01000000  
+  };
+  
 
 
 
@@ -1560,196 +1511,184 @@ class nsIWidget : public nsISupports
 
 
 
-    virtual nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
-                                              int32_t aNativeKeyCode,
+  virtual nsresult SynthesizeNativeKeyEvent(
+      int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
+      uint32_t aModifierFlags, const nsAString& aCharacters,
+      const nsAString& aUnmodifiedCharacters, nsIObserver* aObserver) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
+                                              uint32_t aNativeMessage,
                                               uint32_t aModifierFlags,
-                                              const nsAString& aCharacters,
-                                              const nsAString& aUnmodifiedCharacters,
                                               nsIObserver* aObserver) = 0;
 
+  
+
+
+
+
+
+
+  virtual nsresult SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
+                                             nsIObserver* aObserver) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult SynthesizeNativeMouseScrollEvent(
+      LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
+      double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
+      uint32_t aAdditionalFlags, nsIObserver* aObserver) = 0;
+
+  
+
+
+
+  enum TouchPointerState {
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
-                                                uint32_t aNativeMessage,
-                                                uint32_t aModifierFlags,
-                                                nsIObserver* aObserver) = 0;
-
+    TOUCH_HOVER = (1 << 0),
     
-
-
-
-
-
-    virtual nsresult SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
-                                               nsIObserver* aObserver) = 0;
-
+    TOUCH_CONTACT = (1 << 1),
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual nsresult SynthesizeNativeMouseScrollEvent(LayoutDeviceIntPoint aPoint,
-                                                      uint32_t aNativeMessage,
-                                                      double aDeltaX,
-                                                      double aDeltaY,
-                                                      double aDeltaZ,
-                                                      uint32_t aModifierFlags,
-                                                      uint32_t aAdditionalFlags,
-                                                      nsIObserver* aObserver) = 0;
-
-    
-
-
-
-    enum TouchPointerState {
-      
-      TOUCH_HOVER    = (1 << 0),
-      
-      TOUCH_CONTACT  = (1 << 1),
-      
-      TOUCH_REMOVE   = (1 << 2),
-      
-      
-      
-      
-      TOUCH_CANCEL   = (1 << 3),
-
-      
-      ALL_BITS       = (1 << 4) - 1
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
-                                                TouchPointerState aPointerState,
-                                                LayoutDeviceIntPoint aPoint,
-                                                double aPointerPressure,
-                                                uint32_t aPointerOrientation,
-                                                nsIObserver* aObserver) = 0;
-
-    
-
-
-
-
-
-
-
-    virtual nsresult SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint,
-                                              bool aLongTap,
-                                              nsIObserver* aObserver);
-
-    
-
-
-
-
-
-
-    virtual nsresult ClearNativeTouchSequence(nsIObserver* aObserver);
-
-    virtual void StartAsyncScrollbarDrag(const AsyncDragMetrics& aDragMetrics) = 0;
-
-    
-
-
-
-
-
-    virtual bool StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
-                                      const ScrollableLayerGuid& aGuid) = 0;
-
-    
-
-
-
-    virtual void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
-
+    TOUCH_REMOVE = (1 << 2),
     
     
-    virtual void GetCompositorWidgetInitData(mozilla::widget::CompositorWidgetInitData* aInitData)
-    {}
+    
+    
+    TOUCH_CANCEL = (1 << 3),
 
     
+    ALL_BITS = (1 << 4) - 1
+  };
+
+  
 
 
-    virtual nsresult SetSystemFont(const nsCString& aFontName)
-    {
-      return NS_ERROR_NOT_IMPLEMENTED;
-    }
-    virtual nsresult GetSystemFont(nsCString& aFontName)
-    {
-      return NS_ERROR_NOT_IMPLEMENTED;
-    }
 
-    virtual nsresult SetPrefersReducedMotionOverrideForTest(bool aValue)
-    {
-      return NS_ERROR_NOT_IMPLEMENTED;
-    }
-    virtual nsresult ResetPrefersReducedMotionOverrideForTest()
-    {
-      return NS_ERROR_NOT_IMPLEMENTED;
-    }
 
-private:
-  class LongTapInfo
-  {
-  public:
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
+                                              TouchPointerState aPointerState,
+                                              LayoutDeviceIntPoint aPoint,
+                                              double aPointerPressure,
+                                              uint32_t aPointerOrientation,
+                                              nsIObserver* aObserver) = 0;
+
+  
+
+
+
+
+
+
+
+  virtual nsresult SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint,
+                                            bool aLongTap,
+                                            nsIObserver* aObserver);
+
+  
+
+
+
+
+
+
+  virtual nsresult ClearNativeTouchSequence(nsIObserver* aObserver);
+
+  virtual void StartAsyncScrollbarDrag(
+      const AsyncDragMetrics& aDragMetrics) = 0;
+
+  
+
+
+
+
+
+  virtual bool StartAsyncAutoscroll(const ScreenPoint& aAnchorLocation,
+                                    const ScrollableLayerGuid& aGuid) = 0;
+
+  
+
+
+
+  virtual void StopAsyncAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
+
+  
+  
+  virtual void GetCompositorWidgetInitData(
+      mozilla::widget::CompositorWidgetInitData* aInitData) {}
+
+  
+
+
+  virtual nsresult SetSystemFont(const nsCString& aFontName) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  virtual nsresult GetSystemFont(nsCString& aFontName) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  virtual nsresult SetPrefersReducedMotionOverrideForTest(bool aValue) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+  virtual nsresult ResetPrefersReducedMotionOverrideForTest() {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+ private:
+  class LongTapInfo {
+   public:
     LongTapInfo(int32_t aPointerId, LayoutDeviceIntPoint& aPoint,
-                mozilla::TimeDuration aDuration,
-                nsIObserver* aObserver) :
-      mPointerId(aPointerId),
-      mPosition(aPoint),
-      mDuration(aDuration),
-      mObserver(aObserver),
-      mStamp(mozilla::TimeStamp::Now())
-    {
-    }
+                mozilla::TimeDuration aDuration, nsIObserver* aObserver)
+        : mPointerId(aPointerId),
+          mPosition(aPoint),
+          mDuration(aDuration),
+          mObserver(aObserver),
+          mStamp(mozilla::TimeStamp::Now()) {}
 
     int32_t mPointerId;
     LayoutDeviceIntPoint mPosition;
@@ -1767,16 +1706,15 @@ private:
   nsCOMPtr<nsITimer> mLongTapTimer;
   static int32_t sPointerIdCounter;
 
-public:
-    
+ public:
+  
 
 
 
 
-    virtual void
-    PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent);
+  virtual void PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent);
 
-    
+  
 
 
 
@@ -1788,9 +1726,9 @@ public:
 
 
 
-    virtual nsresult ActivateNativeMenuItemAt(const nsAString& indexString) = 0;
+  virtual nsresult ActivateNativeMenuItemAt(const nsAString& indexString) = 0;
 
-    
+  
 
 
 
@@ -1806,29 +1744,27 @@ public:
 
 
 
-    virtual nsresult ForceUpdateNativeMenuAt(const nsAString& indexString) = 0;
+  virtual nsresult ForceUpdateNativeMenuAt(const nsAString& indexString) = 0;
 
-    
+  
 
 
 
 
 
-    virtual MOZ_MUST_USE nsresult
-    GetSelectionAsPlaintext(nsAString& aResult)
-    {
-      return NS_ERROR_NOT_IMPLEMENTED;
-    }
+  virtual MOZ_MUST_USE nsresult GetSelectionAsPlaintext(nsAString& aResult) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
 
-    
+  
 
 
 
 
 
-    virtual nsresult NotifyIME(const IMENotification& aIMENotification) = 0;
+  virtual nsresult NotifyIME(const IMENotification& aIMENotification) = 0;
 
-    
+  
 
 
 
@@ -1837,122 +1773,111 @@ public:
 
 
 
-    virtual MOZ_MUST_USE nsresult
-    StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
-                   int32_t aPanelX, int32_t aPanelY,
-                   nsString& aCommitted) = 0;
+  virtual MOZ_MUST_USE nsresult
+  StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
+                 int32_t aPanelX, int32_t aPanelY, nsString& aCommitted) = 0;
 
-    
+  
 
 
 
 
 
 
-    virtual void SetPluginFocused(bool& aFocused) = 0;
+  virtual void SetPluginFocused(bool& aFocused) = 0;
 
-    
+  
 
 
-    bool PluginHasFocus()
-    {
-      return GetInputContext().mIMEState.mEnabled == IMEState::PLUGIN;
-    }
+  bool PluginHasFocus() {
+    return GetInputContext().mIMEState.mEnabled == IMEState::PLUGIN;
+  }
 
-    
+  
 
 
-    virtual void SetCandidateWindowForPlugin(
+  virtual void SetCandidateWindowForPlugin(
       const mozilla::widget::CandidateWindowPosition& aPosition) = 0;
 
-    
+  
 
 
-    virtual void DefaultProcOfPluginEvent(
-                   const mozilla::WidgetPluginEvent& aEvent) = 0;
+  virtual void DefaultProcOfPluginEvent(
+      const mozilla::WidgetPluginEvent& aEvent) = 0;
 
-    
+  
 
 
-    virtual void EnableIMEForPlugin(bool aEnable)
-    {
-    }
+  virtual void EnableIMEForPlugin(bool aEnable) {}
 
-    
+  
 
 
-    virtual void SetInputContext(const InputContext& aContext,
-                                 const InputContextAction& aAction) = 0;
+  virtual void SetInputContext(const InputContext& aContext,
+                               const InputContextAction& aAction) = 0;
 
-    
+  
 
 
-    virtual InputContext GetInputContext() = 0;
+  virtual InputContext GetInputContext() = 0;
 
-    
+  
 
 
 
 
-    virtual NativeIMEContext GetNativeIMEContext() = 0;
+  virtual NativeIMEContext GetNativeIMEContext() = 0;
 
-    
+  
 
 
 
 
 
-    virtual MOZ_MUST_USE nsresult
-    AttachNativeKeyEvent(mozilla::WidgetKeyboardEvent& aEvent) = 0;
+  virtual MOZ_MUST_USE nsresult
+  AttachNativeKeyEvent(mozilla::WidgetKeyboardEvent& aEvent) = 0;
 
-    
+  
 
 
 
-    enum NativeKeyBindingsType : uint8_t
-    {
-      NativeKeyBindingsForSingleLineEditor,
-      NativeKeyBindingsForMultiLineEditor,
-      NativeKeyBindingsForRichTextEditor
-    };
-    virtual void GetEditCommands(NativeKeyBindingsType aType,
-                                 const mozilla::WidgetKeyboardEvent& aEvent,
-                                 nsTArray<mozilla::CommandInt>& aCommands);
+  enum NativeKeyBindingsType : uint8_t {
+    NativeKeyBindingsForSingleLineEditor,
+    NativeKeyBindingsForMultiLineEditor,
+    NativeKeyBindingsForRichTextEditor
+  };
+  virtual void GetEditCommands(NativeKeyBindingsType aType,
+                               const mozilla::WidgetKeyboardEvent& aEvent,
+                               nsTArray<mozilla::CommandInt>& aCommands);
 
-    
+  
 
 
 
 
 
-    const IMENotificationRequests& IMENotificationRequestsRef();
+  const IMENotificationRequests& IMENotificationRequestsRef();
 
-    
+  
 
 
 
-    virtual MOZ_MUST_USE nsresult
-    OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect) = 0;
+  virtual MOZ_MUST_USE nsresult
+  OnDefaultButtonLoaded(const LayoutDeviceIntRect& aButtonRect) = 0;
 
-    
+  
 
 
 
 
 
-    static bool
-    UsePuppetWidgets()
-    {
-      return XRE_IsContentProcess();
-    }
+  static bool UsePuppetWidgets() { return XRE_IsContentProcess(); }
 
-    static already_AddRefed<nsIWidget>
-    CreateTopLevelWindow();
+  static already_AddRefed<nsIWidget> CreateTopLevelWindow();
 
-    static already_AddRefed<nsIWidget>
-    CreateChildWindow();
+  static already_AddRefed<nsIWidget> CreateChildWindow();
 
-    
+  
 
 
 
@@ -1962,46 +1887,41 @@ public:
 
 
 
-    static already_AddRefed<nsIWidget>
-    CreatePuppetWidget(TabChild* aTabChild);
+  static already_AddRefed<nsIWidget> CreatePuppetWidget(TabChild* aTabChild);
 
-    static already_AddRefed<nsIWidget>
-    CreateHeadlessWidget();
+  static already_AddRefed<nsIWidget> CreateHeadlessWidget();
 
-    
+  
 
 
 
 
 
-    static already_AddRefed<nsIWidget>
-    CreatePluginProxyWidget(TabChild* aTabChild,
-                            mozilla::plugins::PluginWidgetChild* aActor);
+  static already_AddRefed<nsIWidget> CreatePluginProxyWidget(
+      TabChild* aTabChild, mozilla::plugins::PluginWidgetChild* aActor);
 
-    
+  
 
 
 
 
-    virtual void ReparentNativeWidget(nsIWidget* aNewParent) = 0;
+  virtual void ReparentNativeWidget(nsIWidget* aNewParent) = 0;
 
-    
+  
 
 
-    virtual bool HasGLContext() { return false; }
+  virtual bool HasGLContext() { return false; }
 
-    
+  
 
 
 
 
-    virtual bool WidgetPaintsBackground() { return false; }
+  virtual bool WidgetPaintsBackground() { return false; }
 
-    virtual bool NeedsPaint() {
-       return IsVisible() && !GetBounds().IsEmpty();
-    }
+  virtual bool NeedsPaint() { return IsVisible() && !GetBounds().IsEmpty(); }
 
-    
+  
 
 
 
@@ -2013,11 +1933,9 @@ public:
 
 
 
-    virtual LayoutDeviceIntRect GetNaturalBounds() {
-        return GetBounds();
-    }
+  virtual LayoutDeviceIntRect GetNaturalBounds() { return GetBounds(); }
 
-    
+  
 
 
 
@@ -2028,66 +1946,63 @@ public:
 
 
 
-    virtual void SetSizeConstraints(const SizeConstraints& aConstraints) = 0;
+  virtual void SetSizeConstraints(const SizeConstraints& aConstraints) = 0;
 
-    
+  
 
 
 
 
-    virtual const SizeConstraints GetSizeConstraints() = 0;
+  virtual const SizeConstraints GetSizeConstraints() = 0;
 
-    
+  
 
 
 
-    virtual TabChild* GetOwningTabChild() { return nullptr; }
+  virtual TabChild* GetOwningTabChild() { return nullptr; }
 
-    
+  
 
 
 
-    virtual CompositorBridgeChild* GetRemoteRenderer()
-    { return nullptr; }
+  virtual CompositorBridgeChild* GetRemoteRenderer() { return nullptr; }
 
-    
+  
 
 
 
-    virtual bool SynchronouslyRepaintOnResize()
-    { return true; }
+  virtual bool SynchronouslyRepaintOnResize() { return true; }
 
-    
+  
 
 
 
 
-    virtual int32_t RoundsWidgetCoordinatesTo() { return 1; }
+  virtual int32_t RoundsWidgetCoordinatesTo() { return 1; }
 
-    virtual void UpdateZoomConstraints(const uint32_t& aPresShellId,
-                                       const ScrollableLayerGuid::ViewID& aViewId,
-                                       const mozilla::Maybe<ZoomConstraints>& aConstraints) {};
+  virtual void UpdateZoomConstraints(
+      const uint32_t& aPresShellId, const ScrollableLayerGuid::ViewID& aViewId,
+      const mozilla::Maybe<ZoomConstraints>& aConstraints){};
 
-    
+  
 
 
 
-    virtual TextEventDispatcher* GetTextEventDispatcher() = 0;
+  virtual TextEventDispatcher* GetTextEventDispatcher() = 0;
 
-    
+  
 
 
 
 
-    virtual TextEventDispatcherListener*
-      GetNativeTextEventDispatcherListener() = 0;
+  virtual TextEventDispatcherListener*
+  GetNativeTextEventDispatcherListener() = 0;
 
-    virtual void ZoomToRect(const uint32_t& aPresShellId,
-                            const ScrollableLayerGuid::ViewID& aViewId,
-                            const CSSRect& aRect,
-                            const uint32_t& aFlags) = 0;
+  virtual void ZoomToRect(const uint32_t& aPresShellId,
+                          const ScrollableLayerGuid::ViewID& aViewId,
+                          const CSSRect& aRect, const uint32_t& aFlags) = 0;
 
-    
+  
 
 
 
@@ -2105,76 +2020,78 @@ public:
 
 
 
-    virtual nsresult OnWindowedPluginKeyEvent(
-                       const mozilla::NativeEventData& aKeyEventData,
-                       nsIKeyEventInPluginCallback* aCallback);
+  virtual nsresult OnWindowedPluginKeyEvent(
+      const mozilla::NativeEventData& aKeyEventData,
+      nsIKeyEventInPluginCallback* aCallback);
 
+  
 
-    
 
 
 
 
 
 
-
-    virtual void LookUpDictionary(
-                   const nsAString& aText,
-                   const nsTArray<mozilla::FontRange>& aFontRangeArray,
-                   const bool aIsVertical,
-                   const LayoutDeviceIntPoint& aPoint)
-    { }
+  virtual void LookUpDictionary(
+      const nsAString& aText,
+      const nsTArray<mozilla::FontRange>& aFontRangeArray,
+      const bool aIsVertical, const LayoutDeviceIntPoint& aPoint) {}
 
 #if defined(MOZ_WIDGET_ANDROID)
-    
-
-
-
-
-    virtual void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) = 0;
-
-    
+  
 
 
 
 
 
-    virtual void UpdateRootFrameMetrics(const ScreenPoint& aScrollOffset, const CSSToScreenScale& aZoom) = 0;
+  virtual void RecvToolbarAnimatorMessageFromCompositor(int32_t aMessage) = 0;
 
-    
-
-
+  
 
 
 
-    virtual void RecvScreenPixels(mozilla::ipc::Shmem&& aMem, const ScreenIntSize& aSize) = 0;
+
+
+
+  virtual void UpdateRootFrameMetrics(const ScreenPoint& aScrollOffset,
+                                      const CSSToScreenScale& aZoom) = 0;
+
+  
+
+
+
+
+
+
+  virtual void RecvScreenPixels(mozilla::ipc::Shmem&& aMem,
+                                const ScreenIntSize& aSize) = 0;
 #endif
 
-    static already_AddRefed<nsIBidiKeyboard> CreateBidiKeyboard();
+  static already_AddRefed<nsIBidiKeyboard> CreateBidiKeyboard();
 
-protected:
-    
+ protected:
+  
 
 
 
-    virtual double GetDefaultScaleInternal() { return 1.0; }
+  virtual double GetDefaultScaleInternal() { return 1.0; }
 
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIWidget> mFirstChild;
-    nsIWidget* MOZ_NON_OWNING_REF mLastChild;
-    nsCOMPtr<nsIWidget> mNextSibling;
-    nsIWidget* MOZ_NON_OWNING_REF mPrevSibling;
-    
-    bool mOnDestroyCalled;
-    nsWindowType mWindowType;
-    int32_t mZIndex;
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIWidget> mFirstChild;
+  nsIWidget* MOZ_NON_OWNING_REF mLastChild;
+  nsCOMPtr<nsIWidget> mNextSibling;
+  nsIWidget* MOZ_NON_OWNING_REF mPrevSibling;
+  
+  bool mOnDestroyCalled;
+  nsWindowType mWindowType;
+  int32_t mZIndex;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIWidget, NS_IWIDGET_IID)
 
-#endif 
+#endif  

@@ -28,16 +28,14 @@ namespace mozilla {
 
 
 
-class SVGLengthList
-{
+class SVGLengthList {
   friend class SVGAnimatedLengthList;
   friend class DOMSVGLengthList;
   friend class DOMSVGLength;
 
-public:
-
-  SVGLengthList(){}
-  ~SVGLengthList(){}
+ public:
+  SVGLengthList() {}
+  ~SVGLengthList() {}
 
   
   
@@ -45,13 +43,9 @@ public:
   
   void GetValueAsString(nsAString& aValue) const;
 
-  bool IsEmpty() const {
-    return mLengths.IsEmpty();
-  }
+  bool IsEmpty() const { return mLengths.IsEmpty(); }
 
-  uint32_t Length() const {
-    return mLengths.Length();
-  }
+  uint32_t Length() const { return mLengths.Length(); }
 
   const SVGLength& operator[](uint32_t aIndex) const {
     return mLengths[aIndex];
@@ -63,9 +57,7 @@ public:
     return mLengths.SetCapacity(size, fallible);
   }
 
-  void Compact() {
-    mLengths.Compact();
-  }
+  void Compact() { mLengths.Compact(); }
 
   
   
@@ -74,17 +66,14 @@ public:
   
   
 
-protected:
-
+ protected:
   
 
 
 
   nsresult CopyFrom(const SVGLengthList& rhs);
 
-  SVGLength& operator[](uint32_t aIndex) {
-    return mLengths[aIndex];
-  }
+  SVGLength& operator[](uint32_t aIndex) { return mLengths[aIndex]; }
 
   
 
@@ -94,24 +83,21 @@ protected:
     return mLengths.SetLength(aNumberOfItems, fallible);
   }
 
-private:
-
+ private:
   
   
   
 
   nsresult SetValueFromString(const nsAString& aValue);
 
-  void Clear() {
-    mLengths.Clear();
-  }
+  void Clear() { mLengths.Clear(); }
 
-  bool InsertItem(uint32_t aIndex, const SVGLength &aLength) {
+  bool InsertItem(uint32_t aIndex, const SVGLength& aLength) {
     if (aIndex >= mLengths.Length()) aIndex = mLengths.Length();
     return !!mLengths.InsertElementAt(aIndex, aLength, fallible);
   }
 
-  void ReplaceItem(uint32_t aIndex, const SVGLength &aLength) {
+  void ReplaceItem(uint32_t aIndex, const SVGLength& aLength) {
     MOZ_ASSERT(aIndex < mLengths.Length(),
                "DOM wrapper caller should have raised INDEX_SIZE_ERR");
     mLengths[aIndex] = aLength;
@@ -127,8 +113,7 @@ private:
     return !!mLengths.AppendElement(aLength, fallible);
   }
 
-protected:
-
+ protected:
   
 
 
@@ -170,24 +155,18 @@ protected:
 
 
 
-
-class SVGLengthListAndInfo : public SVGLengthList
-{
-public:
-
+class SVGLengthListAndInfo : public SVGLengthList {
+ public:
   SVGLengthListAndInfo()
-    : mElement(nullptr)
-    , mAxis(0)
-    , mCanZeroPadList(false)
-  {}
+      : mElement(nullptr), mAxis(0), mCanZeroPadList(false) {}
 
-  SVGLengthListAndInfo(nsSVGElement *aElement, uint8_t aAxis, bool aCanZeroPadList)
-    : mElement(do_GetWeakReference(static_cast<nsINode*>(aElement)))
-    , mAxis(aAxis)
-    , mCanZeroPadList(aCanZeroPadList)
-  {}
+  SVGLengthListAndInfo(nsSVGElement* aElement, uint8_t aAxis,
+                       bool aCanZeroPadList)
+      : mElement(do_GetWeakReference(static_cast<nsINode*>(aElement))),
+        mAxis(aAxis),
+        mCanZeroPadList(aCanZeroPadList) {}
 
-  void SetInfo(nsSVGElement *aElement, uint8_t aAxis, bool aCanZeroPadList) {
+  void SetInfo(nsSVGElement* aElement, uint8_t aAxis, bool aCanZeroPadList) {
     mElement = do_GetWeakReference(static_cast<nsINode*>(aElement));
     mAxis = aAxis;
     mCanZeroPadList = aCanZeroPadList;
@@ -280,7 +259,7 @@ public:
     return SVGLengthList::SetLength(aNumberOfItems);
   }
 
-private:
+ private:
   
   
   
@@ -304,34 +283,21 @@ private:
 
 
 
+class MOZ_STACK_CLASS SVGUserUnitList {
+ public:
+  SVGUserUnitList() : mList(nullptr), mElement(nullptr), mAxis(0) {}
 
-class MOZ_STACK_CLASS SVGUserUnitList
-{
-public:
-
-  SVGUserUnitList()
-    : mList(nullptr)
-    , mElement(nullptr)
-    , mAxis(0)
-  {}
-
-  void Init(const SVGLengthList *aList, nsSVGElement *aElement, uint8_t aAxis) {
+  void Init(const SVGLengthList* aList, nsSVGElement* aElement, uint8_t aAxis) {
     mList = aList;
     mElement = aElement;
     mAxis = aAxis;
   }
 
-  void Clear() {
-    mList = nullptr;
-  }
+  void Clear() { mList = nullptr; }
 
-  bool IsEmpty() const {
-    return !mList || mList->IsEmpty();
-  }
+  bool IsEmpty() const { return !mList || mList->IsEmpty(); }
 
-  uint32_t Length() const {
-    return mList ? mList->Length() : 0;
-  }
+  uint32_t Length() const { return mList ? mList->Length() : 0; }
 
   
   float operator[](uint32_t aIndex) const {
@@ -340,15 +306,16 @@ public:
 
   bool HasPercentageValueAt(uint32_t aIndex) const {
     const SVGLength& length = (*mList)[aIndex];
-    return length.GetUnit() == dom::SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE;
+    return length.GetUnit() ==
+           dom::SVGLength_Binding::SVG_LENGTHTYPE_PERCENTAGE;
   }
 
-private:
-  const SVGLengthList *mList;
-  nsSVGElement *mElement;
+ private:
+  const SVGLengthList* mList;
+  nsSVGElement* mElement;
   uint8_t mAxis;
 };
 
-} 
+}  
 
-#endif 
+#endif  

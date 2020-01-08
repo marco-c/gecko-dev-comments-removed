@@ -23,10 +23,10 @@ namespace dom {
 
 class ResponsiveImageCandidate;
 
-class ResponsiveImageSelector
-{
+class ResponsiveImageSelector {
   friend class ResponsiveImageCandidate;
-public:
+
+ public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ResponsiveImageSelector)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ResponsiveImageSelector)
 
@@ -44,15 +44,14 @@ public:
   
   
 
-
   
   
-  bool SetCandidatesFromSourceSet(const nsAString & aSrcSet,
+  bool SetCandidatesFromSourceSet(const nsAString& aSrcSet,
                                   nsIPrincipal* aTriggeringPrincipal = nullptr);
 
   
   
-  bool SetSizesFromDescriptor(const nsAString & aSizesDescriptor);
+  bool SetSizesFromDescriptor(const nsAString& aSizesDescriptor);
 
   
   void SetDefaultSource(const nsAString& aURLString,
@@ -62,11 +61,11 @@ public:
 
   
   
-  nsIContent *Content();
+  nsIContent* Content();
 
   
   
-  nsIDocument *Document();
+  nsIDocument* Document();
 
   
   
@@ -84,13 +83,13 @@ public:
   
   bool SelectImage(bool aReselect = false);
 
-protected:
+ protected:
   virtual ~ResponsiveImageSelector();
 
-private:
+ private:
   
   
-  void AppendCandidateIfUnique(const ResponsiveImageCandidate &aCandidate);
+  void AppendCandidateIfUnique(const ResponsiveImageCandidate& aCandidate);
 
   
   
@@ -124,11 +123,10 @@ private:
 
   
   UniquePtr<RawServoSourceSizeList> mServoSourceSizeList;
-
 };
 
 class ResponsiveImageCandidate {
-public:
+ public:
   ResponsiveImageCandidate();
   ResponsiveImageCandidate(const nsAString& aURLString, double aDensity,
                            nsIPrincipal* aTriggeringPrincipal = nullptr);
@@ -154,13 +152,13 @@ public:
                           const nsAString::const_iterator& aIterEnd);
 
   
-  bool HasSameParameter(const ResponsiveImageCandidate & aOther) const;
+  bool HasSameParameter(const ResponsiveImageCandidate& aOther) const;
 
   const nsAString& URLString() const;
   nsIPrincipal* TriggeringPrincipal() const;
 
   
-  double Density(ResponsiveImageSelector *aSelector) const;
+  double Density(ResponsiveImageSelector* aSelector) const;
   
   
   double Density(double aMatchingWidth) const;
@@ -179,8 +177,7 @@ public:
 
   eCandidateType Type() const { return mType; }
 
-private:
-
+ private:
   nsString mURLString;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   eCandidateType mType;
@@ -190,7 +187,7 @@ private:
   } mValue;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

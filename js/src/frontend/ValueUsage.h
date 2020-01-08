@@ -12,14 +12,14 @@ namespace frontend {
 
 
 enum class ValueUsage {
-    
-    
-    WantValue,
+  
+  
+  WantValue,
 
-    
-    
-    
-    IgnoreValue
+  
+  
+  
+  IgnoreValue
 };
 
 } 

@@ -37,37 +37,40 @@ namespace WebCore {
 
 
 
+
+
 class ReverbAccumulationBuffer {
-public:
-    explicit ReverbAccumulationBuffer(size_t length);
+ public:
+  explicit ReverbAccumulationBuffer(size_t length);
 
-    
-    void readAndClear(float* destination, size_t numberOfFrames);
+  
+  void readAndClear(float* destination, size_t numberOfFrames);
 
-    
-    
-    
-    
-    int accumulate(const float* source, size_t numberOfFrames, int* readIndex, size_t delayFrames);
+  
+  
+  
+  
+  
+  int accumulate(const float* source, size_t numberOfFrames, int* readIndex,
+                 size_t delayFrames);
 
-    size_t readIndex() const { return m_readIndex; }
-    void updateReadIndex(int* readIndex, size_t numberOfFrames) const;
+  size_t readIndex() const { return m_readIndex; }
+  void updateReadIndex(int* readIndex, size_t numberOfFrames) const;
 
-    size_t readTimeFrame() const { return m_readTimeFrame; }
+  size_t readTimeFrame() const { return m_readTimeFrame; }
 
-    void reset();
+  void reset();
 
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-    {
-        return m_buffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    }
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return m_buffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  }
 
-private:
-    AlignedTArray<float, 16> m_buffer;
-    size_t m_readIndex;
-    size_t m_readTimeFrame; 
+ private:
+  AlignedTArray<float, 16> m_buffer;
+  size_t m_readIndex;
+  size_t m_readTimeFrame;  
 };
 
-} 
+}  
 
-#endif 
+#endif  

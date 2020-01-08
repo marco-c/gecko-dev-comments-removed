@@ -16,7 +16,7 @@
 
 class nsSVGElement;
 
-#define MOZ_SVG_LIST_INDEX_BIT_COUNT 27 // supports > 134 million list items
+#define MOZ_SVG_LIST_INDEX_BIT_COUNT 27  // supports > 134 million list items
 
 namespace mozilla {
 
@@ -33,9 +33,7 @@ namespace mozilla {
 
 
 
-class DOMSVGNumber final : public nsISupports
-                         , public nsWrapperCache
-{
+class DOMSVGNumber final : public nsISupports, public nsWrapperCache {
   friend class AutoChangeNumberNotifier;
 
   ~DOMSVGNumber() {
@@ -47,16 +45,14 @@ class DOMSVGNumber final : public nsISupports
     }
   }
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGNumber)
 
   
 
 
-  DOMSVGNumber(DOMSVGNumberList *aList,
-               uint8_t aAttrEnum,
-               uint32_t aListIndex,
+  DOMSVGNumber(DOMSVGNumberList* aList, uint8_t aAttrEnum, uint32_t aListIndex,
                bool aIsAnimValItem);
 
   
@@ -69,22 +65,18 @@ public:
 
 
   DOMSVGNumber* Clone() {
-    DOMSVGNumber *clone = new DOMSVGNumber(mParent);
+    DOMSVGNumber* clone = new DOMSVGNumber(mParent);
     clone->mValue = ToSVGNumber();
     return clone;
   }
 
-  bool IsInList() const {
-    return !!mList;
-  }
+  bool IsInList() const { return !!mList; }
 
   
 
 
 
-  bool HasOwner() const {
-    return !!mList;
-  }
+  bool HasOwner() const { return !!mList; }
 
   
 
@@ -95,19 +87,15 @@ public:
 
 
 
-  void InsertingIntoList(DOMSVGNumberList *aList,
-                         uint8_t aAttrEnum,
-                         uint32_t aListIndex,
-                         bool aIsAnimValItem);
+  void InsertingIntoList(DOMSVGNumberList* aList, uint8_t aAttrEnum,
+                         uint32_t aListIndex, bool aIsAnimValItem);
 
   static uint32_t MaxListIndex() {
     return (1U << MOZ_SVG_LIST_INDEX_BIT_COUNT) - 1;
   }
 
   
-  void UpdateListIndex(uint32_t aListIndex) {
-    mListIndex = aListIndex;
-  }
+  void UpdateListIndex(uint32_t aListIndex) { mListIndex = aListIndex; }
 
   
 
@@ -119,26 +107,19 @@ public:
 
   float ToSVGNumber();
 
-  nsISupports* GetParentObject()
-  {
-    return mParent;
-  }
+  nsISupports* GetParentObject() { return mParent; }
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   float Value();
 
   void SetValue(float aValue, ErrorResult& aRv);
 
-private:
+ private:
+  nsSVGElement* Element() { return mList->Element(); }
 
-  nsSVGElement* Element() {
-    return mList->Element();
-  }
-
-  uint8_t AttrEnum() const {
-    return mAttrEnum;
-  }
+  uint8_t AttrEnum() const { return mAttrEnum; }
 
   
 
@@ -161,16 +142,16 @@ private:
   
   
 
-  uint32_t mListIndex:MOZ_SVG_LIST_INDEX_BIT_COUNT;
-  uint32_t mAttrEnum:4; 
-  uint32_t mIsAnimValItem:1;
+  uint32_t mListIndex : MOZ_SVG_LIST_INDEX_BIT_COUNT;
+  uint32_t mAttrEnum : 4;  
+  uint32_t mIsAnimValItem : 1;
 
   
   float mValue;
 };
 
-} 
+}  
 
 #undef MOZ_SVG_LIST_INDEX_BIT_COUNT
 
-#endif 
+#endif  

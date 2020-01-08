@@ -32,9 +32,8 @@ class PluginModuleChromeParent;
 
 
 
-class PluginHangUIParent : public MiniShmObserver
-{
-public:
+class PluginHangUIParent : public MiniShmObserver {
+ public:
   PluginHangUIParent(PluginModuleChromeParent* aModule,
                      const int32_t aHangUITimeoutPref,
                      const int32_t aChildTimeoutPref);
@@ -48,8 +47,7 @@ public:
 
 
 
-  bool
-  Init(const nsString& aPluginName);
+  bool Init(const nsString& aPluginName);
 
   
 
@@ -58,33 +56,14 @@ public:
 
 
 
-  bool
-  Cancel();
+  bool Cancel();
 
   
 
 
 
 
-  bool
-  IsShowing() const { return mIsShowing; }
-
-  
-
-
-
-
-
-  bool
-  WasShown() const { return mIsShowing || mLastUserResponse != 0; }
-
-  
-
-
-
-
-  bool
-  DontShowAgain() const;
+  bool IsShowing() const { return mIsShowing; }
 
   
 
@@ -92,48 +71,53 @@ public:
 
 
 
-
-  bool
-  WasLastHangStopped() const;
-
-  
-
-
-
-  unsigned int
-  LastUserResponse() const { return mLastUserResponse; }
+  bool WasShown() const { return mIsShowing || mLastUserResponse != 0; }
 
   
 
 
 
 
-  unsigned int
-  LastShowDurationMs() const;
+  bool DontShowAgain() const;
 
-  virtual void
-  OnMiniShmEvent(MiniShmBase* aMiniShmObj) override;
+  
 
-  virtual void
-  OnMiniShmConnect(MiniShmBase* aMiniShmObj) override;
 
-private:
-  nsresult
-  GetHangUIOwnerWindowHandle(NativeWindowHandle& windowHandle);
 
-  bool
-  SendCancel();
 
-  bool
-  RecvUserResponse(const unsigned int& aResponse);
 
-  bool
-  UnwatchHangUIChildProcess(bool aWait);
 
-  static
-  VOID CALLBACK SOnHangUIProcessExit(PVOID aContext, BOOLEAN aIsTimer);
+  bool WasLastHangStopped() const;
 
-private:
+  
+
+
+
+  unsigned int LastUserResponse() const { return mLastUserResponse; }
+
+  
+
+
+
+
+  unsigned int LastShowDurationMs() const;
+
+  virtual void OnMiniShmEvent(MiniShmBase* aMiniShmObj) override;
+
+  virtual void OnMiniShmConnect(MiniShmBase* aMiniShmObj) override;
+
+ private:
+  nsresult GetHangUIOwnerWindowHandle(NativeWindowHandle& windowHandle);
+
+  bool SendCancel();
+
+  bool RecvUserResponse(const unsigned int& aResponse);
+
+  bool UnwatchHangUIChildProcess(bool aWait);
+
+  static VOID CALLBACK SOnHangUIProcessExit(PVOID aContext, BOOLEAN aIsTimer);
+
+ private:
   Mutex mMutex;
   PluginModuleChromeParent* mModule;
   const uint32_t mTimeoutPrefMs;
@@ -152,8 +136,7 @@ private:
   DISALLOW_COPY_AND_ASSIGN(PluginHangUIParent);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

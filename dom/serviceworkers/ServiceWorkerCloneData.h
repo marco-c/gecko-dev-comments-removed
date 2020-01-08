@@ -32,19 +32,18 @@ namespace dom {
 
 
 
-class ServiceWorkerCloneData final : public ipc::StructuredCloneData
-{
+class ServiceWorkerCloneData final : public ipc::StructuredCloneData {
   nsCOMPtr<nsISerialEventTarget> mEventTarget;
 
   ~ServiceWorkerCloneData();
 
-public:
+ public:
   ServiceWorkerCloneData();
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ServiceWorkerCloneData)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

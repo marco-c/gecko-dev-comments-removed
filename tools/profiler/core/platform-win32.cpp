@@ -36,24 +36,18 @@
 #include "mozilla/StackWalk_windows.h"
 #include "mozilla/WindowsVersion.h"
 
- int
-Thread::GetCurrentId()
-{
+ int Thread::GetCurrentId() {
   DWORD threadId = GetCurrentThreadId();
   MOZ_ASSERT(threadId <= INT32_MAX, "native thread ID is > INT32_MAX");
   return int(threadId);
 }
 
-void*
-GetStackTop(void* aGuess)
-{
+void* GetStackTop(void* aGuess) {
   PNT_TIB pTib = reinterpret_cast<PNT_TIB>(NtCurrentTeb());
   return reinterpret_cast<void*>(pTib->StackBase);
 }
 
-static void
-PopulateRegsFromContext(Registers& aRegs, CONTEXT* aContext)
-{
+static void PopulateRegsFromContext(Registers& aRegs, CONTEXT* aContext) {
 #if defined(GP_ARCH_amd64)
   aRegs.mPC = reinterpret_cast<Address>(aContext->Rip);
   aRegs.mSP = reinterpret_cast<Address>(aContext->Rsp);
@@ -67,30 +61,26 @@ PopulateRegsFromContext(Registers& aRegs, CONTEXT* aContext)
   aRegs.mSP = reinterpret_cast<Address>(aContext->Sp);
   aRegs.mFP = reinterpret_cast<Address>(aContext->Fp);
 #else
- #error "bad arch"
+#error "bad arch"
 #endif
   aRegs.mLR = 0;
 }
 
-class PlatformData
-{
-public:
+class PlatformData {
+ public:
   
   
   
   
   
   explicit PlatformData(int aThreadId)
-    : mProfiledThread(OpenThread(THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME |
-                                  THREAD_QUERY_INFORMATION,
-                                  false,
-                                  aThreadId))
-  {
+      : mProfiledThread(OpenThread(THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME |
+                                       THREAD_QUERY_INFORMATION,
+                                   false, aThreadId)) {
     MOZ_COUNT_CTOR(PlatformData);
   }
 
-  ~PlatformData()
-  {
+  ~PlatformData() {
     if (mProfiledThread != nullptr) {
       CloseHandle(mProfiledThread);
       mProfiledThread = nullptr;
@@ -100,37 +90,28 @@ public:
 
   HANDLE ProfiledThread() { return mProfiledThread; }
 
-private:
+ private:
   HANDLE mProfiledThread;
 };
 
 HANDLE
-GetThreadHandle(PlatformData* aData)
-{
-  return aData->ProfiledThread();
-}
+GetThreadHandle(PlatformData* aData) { return aData->ProfiledThread(); }
 
 static const HANDLE kNoThread = INVALID_HANDLE_VALUE;
 
 
 
 
-Sampler::Sampler(PSLockRef aLock)
-{
-}
+Sampler::Sampler(PSLockRef aLock) {}
 
-void
-Sampler::Disable(PSLockRef aLock)
-{
-}
+void Sampler::Disable(PSLockRef aLock) {}
 
-template<typename Func>
-void
-Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                         const RegisteredThread& aRegisteredThread,
-                                         const Func& aProcessRegs)
-{
-  HANDLE profiled_thread = aRegisteredThread.GetPlatformData()->ProfiledThread();
+template <typename Func>
+void Sampler::SuspendAndSampleAndResumeThread(
+    PSLockRef aLock, const RegisteredThread& aRegisteredThread,
+    const Func& aProcessRegs) {
+  HANDLE profiled_thread =
+      aRegisteredThread.GetPlatformData()->ProfiledThread();
   if (profiled_thread == nullptr) {
     return;
   }
@@ -192,9 +173,7 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
 
 
 
-static unsigned int __stdcall
-ThreadEntry(void* aArg)
-{
+static unsigned int __stdcall ThreadEntry(void* aArg) {
   auto thread = static_cast<SamplerThread*>(aArg);
   thread->Run();
   return 0;
@@ -202,35 +181,30 @@ ThreadEntry(void* aArg)
 
 SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
                              double aIntervalMilliseconds)
-    : Sampler(aLock)
-    , mActivityGeneration(aActivityGeneration)
-    , mIntervalMicroseconds(
-        std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
-{
+    : Sampler(aLock),
+      mActivityGeneration(aActivityGeneration),
+      mIntervalMicroseconds(
+          std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))) {
   
   
   
-  if (mIntervalMicroseconds < 10*1000) {
+  if (mIntervalMicroseconds < 10 * 1000) {
     ::timeBeginPeriod(mIntervalMicroseconds / 1000);
   }
 
   
   
   
-  mThread = reinterpret_cast<HANDLE>(
-      _beginthreadex(nullptr,
-                      0,
-                     ThreadEntry,
-                     this,
-                      0,
-                     nullptr));
+  mThread = reinterpret_cast<HANDLE>(_beginthreadex(nullptr,
+                                                     0,
+                                                    ThreadEntry, this,
+                                                     0, nullptr));
   if (mThread == 0) {
     MOZ_CRASH("_beginthreadex failed");
   }
 }
 
-SamplerThread::~SamplerThread()
-{
+SamplerThread::~SamplerThread() {
   WaitForSingleObject(mThread, INFINITE);
 
   
@@ -239,9 +213,7 @@ SamplerThread::~SamplerThread()
   }
 }
 
-void
-SamplerThread::SleepMicro(uint32_t aMicroseconds)
-{
+void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
   
   
   
@@ -263,9 +235,7 @@ SamplerThread::SleepMicro(uint32_t aMicroseconds)
   }
 }
 
-void
-SamplerThread::Stop(PSLockRef aLock)
-{
+void SamplerThread::Stop(PSLockRef aLock) {
   
   
   
@@ -284,15 +254,10 @@ SamplerThread::Stop(PSLockRef aLock)
 
 
 
-static void
-PlatformInit(PSLockRef aLock)
-{
-}
+static void PlatformInit(PSLockRef aLock) {}
 
 #if defined(HAVE_NATIVE_UNWIND)
-void
-Registers::SyncPopulate()
-{
+void Registers::SyncPopulate() {
   CONTEXT context;
   RtlCaptureContext(&context);
   PopulateRegsFromContext(*this, &context);
@@ -302,13 +267,10 @@ Registers::SyncPopulate()
 #if defined(GP_PLAT_amd64_windows)
 static WindowsDllInterceptor NtDllIntercept;
 
-typedef NTSTATUS (NTAPI *LdrUnloadDll_func)(HMODULE module);
-static WindowsDllInterceptor::FuncHookType<LdrUnloadDll_func>
-  stub_LdrUnloadDll;
+typedef NTSTATUS(NTAPI* LdrUnloadDll_func)(HMODULE module);
+static WindowsDllInterceptor::FuncHookType<LdrUnloadDll_func> stub_LdrUnloadDll;
 
-static NTSTATUS NTAPI
-patched_LdrUnloadDll(HMODULE module)
-{
+static NTSTATUS NTAPI patched_LdrUnloadDll(HMODULE module) {
   
   
   AutoSuppressStackWalking suppress;
@@ -316,17 +278,15 @@ patched_LdrUnloadDll(HMODULE module)
 }
 
 
-typedef PVOID (WINAPI *LdrResolveDelayLoadedAPI_func)(PVOID ParentModuleBase,
-  PVOID DelayloadDescriptor, PVOID FailureDllHook, PVOID FailureSystemHook,
-  PVOID ThunkAddress, ULONG Flags);
+typedef PVOID(WINAPI* LdrResolveDelayLoadedAPI_func)(
+    PVOID ParentModuleBase, PVOID DelayloadDescriptor, PVOID FailureDllHook,
+    PVOID FailureSystemHook, PVOID ThunkAddress, ULONG Flags);
 static WindowsDllInterceptor::FuncHookType<LdrResolveDelayLoadedAPI_func>
-  stub_LdrResolveDelayLoadedAPI;
+    stub_LdrResolveDelayLoadedAPI;
 
-static PVOID WINAPI
-patched_LdrResolveDelayLoadedAPI(PVOID ParentModuleBase,
-  PVOID DelayloadDescriptor, PVOID FailureDllHook, PVOID FailureSystemHook,
-  PVOID ThunkAddress, ULONG Flags)
-{
+static PVOID WINAPI patched_LdrResolveDelayLoadedAPI(
+    PVOID ParentModuleBase, PVOID DelayloadDescriptor, PVOID FailureDllHook,
+    PVOID FailureSystemHook, PVOID ThunkAddress, ULONG Flags) {
   
   
   AutoSuppressStackWalking suppress;
@@ -335,16 +295,13 @@ patched_LdrResolveDelayLoadedAPI(PVOID ParentModuleBase,
                                        ThunkAddress, Flags);
 }
 
-void
-InitializeWin64ProfilerHooks()
-{
+void InitializeWin64ProfilerHooks() {
   NtDllIntercept.Init("ntdll.dll");
   stub_LdrUnloadDll.Set(NtDllIntercept, "LdrUnloadDll", &patched_LdrUnloadDll);
-  if (IsWin8OrLater()) { 
+  if (IsWin8OrLater()) {  
     stub_LdrResolveDelayLoadedAPI.Set(NtDllIntercept,
                                       "LdrResolveDelayLoadedAPI",
                                       &patched_LdrResolveDelayLoadedAPI);
   }
 }
-#endif 
-
+#endif  

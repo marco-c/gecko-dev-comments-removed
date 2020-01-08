@@ -15,60 +15,51 @@ using namespace gfx;
 
 namespace layers {
 
-MultiTiledContentClient::MultiTiledContentClient(ClientTiledPaintedLayer& aPaintedLayer,
-                                                 ClientLayerManager* aManager)
-  : TiledContentClient(aManager, "Multi")
-  , mTiledBuffer(aPaintedLayer, *this, aManager, &mSharedFrameMetricsHelper)
-  , mLowPrecisionTiledBuffer(aPaintedLayer, *this, aManager, &mSharedFrameMetricsHelper)
-{
+MultiTiledContentClient::MultiTiledContentClient(
+    ClientTiledPaintedLayer& aPaintedLayer, ClientLayerManager* aManager)
+    : TiledContentClient(aManager, "Multi"),
+      mTiledBuffer(aPaintedLayer, *this, aManager, &mSharedFrameMetricsHelper),
+      mLowPrecisionTiledBuffer(aPaintedLayer, *this, aManager,
+                               &mSharedFrameMetricsHelper) {
   MOZ_COUNT_CTOR(MultiTiledContentClient);
   mLowPrecisionTiledBuffer.SetResolution(gfxPrefs::LowPrecisionResolution());
   mHasLowPrecision = gfxPrefs::UseLowPrecisionBuffer();
 }
 
-void
-MultiTiledContentClient::ClearCachedResources()
-{
+void MultiTiledContentClient::ClearCachedResources() {
   CompositableClient::ClearCachedResources();
   mTiledBuffer.DiscardBuffers();
   mLowPrecisionTiledBuffer.DiscardBuffers();
 }
 
-void
-MultiTiledContentClient::UpdatedBuffer(TiledBufferType aType)
-{
+void MultiTiledContentClient::UpdatedBuffer(TiledBufferType aType) {
   ClientMultiTiledLayerBuffer* buffer = aType == LOW_PRECISION_TILED_BUFFER
-    ? &mLowPrecisionTiledBuffer
-    : &mTiledBuffer;
+                                            ? &mLowPrecisionTiledBuffer
+                                            : &mTiledBuffer;
 
   MOZ_ASSERT(aType != LOW_PRECISION_TILED_BUFFER || mHasLowPrecision);
 
   mForwarder->UseTiledLayerBuffer(this, buffer->GetSurfaceDescriptorTiles());
 }
 
-ClientMultiTiledLayerBuffer::ClientMultiTiledLayerBuffer(ClientTiledPaintedLayer& aPaintedLayer,
-                                                         CompositableClient& aCompositableClient,
-                                                         ClientLayerManager* aManager,
-                                                         SharedFrameMetricsHelper* aHelper)
-  : ClientTiledLayerBuffer(aPaintedLayer, aCompositableClient)
-  , mManager(aManager)
-  , mCallback(nullptr)
-  , mCallbackData(nullptr)
-  , mSharedFrameMetricsHelper(aHelper)
-{
-}
+ClientMultiTiledLayerBuffer::ClientMultiTiledLayerBuffer(
+    ClientTiledPaintedLayer& aPaintedLayer,
+    CompositableClient& aCompositableClient, ClientLayerManager* aManager,
+    SharedFrameMetricsHelper* aHelper)
+    : ClientTiledLayerBuffer(aPaintedLayer, aCompositableClient),
+      mManager(aManager),
+      mCallback(nullptr),
+      mCallbackData(nullptr),
+      mSharedFrameMetricsHelper(aHelper) {}
 
-void
-ClientMultiTiledLayerBuffer::DiscardBuffers()
-{
+void ClientMultiTiledLayerBuffer::DiscardBuffers() {
   for (TileClient& tile : mRetainedTiles) {
     tile.DiscardBuffers();
   }
 }
 
 SurfaceDescriptorTiles
-ClientMultiTiledLayerBuffer::GetSurfaceDescriptorTiles()
-{
+ClientMultiTiledLayerBuffer::GetSurfaceDescriptorTiles() {
   InfallibleTArray<TileDescriptor> tiles;
 
   for (TileClient& tile : mRetainedTiles) {
@@ -77,26 +68,22 @@ ClientMultiTiledLayerBuffer::GetSurfaceDescriptorTiles()
     
     tile.mUpdateRect = IntRect();
   }
-  return SurfaceDescriptorTiles(mValidRegion,
-                                tiles,
-                                mTileOrigin, mTileSize,
-                                mTiles.mFirst.x, mTiles.mFirst.y,
-                                mTiles.mSize.width, mTiles.mSize.height,
-                                mResolution, mFrameResolution.xScale,
-                                mFrameResolution.yScale,
-                                mWasLastPaintProgressive);
+  return SurfaceDescriptorTiles(
+      mValidRegion, tiles, mTileOrigin, mTileSize, mTiles.mFirst.x,
+      mTiles.mFirst.y, mTiles.mSize.width, mTiles.mSize.height, mResolution,
+      mFrameResolution.xScale, mFrameResolution.yScale,
+      mWasLastPaintProgressive);
 }
 
-void
-ClientMultiTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
-                                         const nsIntRegion& aPaintRegion,
-                                         const nsIntRegion& aDirtyRegion,
-                                         LayerManager::DrawPaintedLayerCallback aCallback,
-                                         void* aCallbackData,
-                                         TilePaintFlags aFlags)
-{
-  TILING_LOG("TILING %p: PaintThebes painting region %s\n", &mPaintedLayer, Stringify(aPaintRegion).c_str());
-  TILING_LOG("TILING %p: PaintThebes new valid region %s\n", &mPaintedLayer, Stringify(aNewValidRegion).c_str());
+void ClientMultiTiledLayerBuffer::PaintThebes(
+    const nsIntRegion& aNewValidRegion, const nsIntRegion& aPaintRegion,
+    const nsIntRegion& aDirtyRegion,
+    LayerManager::DrawPaintedLayerCallback aCallback, void* aCallbackData,
+    TilePaintFlags aFlags) {
+  TILING_LOG("TILING %p: PaintThebes painting region %s\n", &mPaintedLayer,
+             Stringify(aPaintRegion).c_str());
+  TILING_LOG("TILING %p: PaintThebes new valid region %s\n", &mPaintedLayer,
+             Stringify(aNewValidRegion).c_str());
 
   mCallback = aCallback;
   mCallbackData = aCallbackData;
@@ -109,13 +96,14 @@ ClientMultiTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
 #ifdef GFX_TILEDLAYER_PREF_WARNINGS
   if (PR_IntervalNow() - start > 30) {
     const IntRect bounds = aPaintRegion.GetBounds();
-    printf_stderr("Time to draw %i: %i, %i, %i, %i\n", PR_IntervalNow() - start, bounds.x, bounds.y, bounds.width, bounds.height);
+    printf_stderr("Time to draw %i: %i, %i, %i, %i\n", PR_IntervalNow() - start,
+                  bounds.x, bounds.y, bounds.width, bounds.height);
     if (aPaintRegion.IsComplex()) {
       printf_stderr("Complex region\n");
       for (auto iter = aPaintRegion.RectIter(); !iter.Done(); iter.Next()) {
         const IntRect& rect = iter.Get();
-        printf_stderr(" rect %i, %i, %i, %i\n",
-                      rect.x, rect.y, rect.width, rect.height);
+        printf_stderr(" rect %i, %i, %i, %i\n", rect.x, rect.y, rect.width,
+                      rect.height);
       }
     }
   }
@@ -130,7 +118,8 @@ ClientMultiTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
 #ifdef GFX_TILEDLAYER_PREF_WARNINGS
   if (PR_IntervalNow() - start > 10) {
     const IntRect bounds = aPaintRegion.GetBounds();
-    printf_stderr("Time to tile %i: %i, %i, %i, %i\n", PR_IntervalNow() - start, bounds.x, bounds.y, bounds.width, bounds.height);
+    printf_stderr("Time to tile %i: %i, %i, %i, %i\n", PR_IntervalNow() - start,
+                  bounds.x, bounds.y, bounds.width, bounds.height);
   }
 #endif
 
@@ -139,10 +128,9 @@ ClientMultiTiledLayerBuffer::PaintThebes(const nsIntRegion& aNewValidRegion,
   mCallbackData = nullptr;
 }
 
-void ClientMultiTiledLayerBuffer::MaybeSyncTextures(const nsIntRegion& aPaintRegion,
-                                                    const TilesPlacement& aNewTiles,
-                                                    const IntSize& aScaledTileSize)
-{
+void ClientMultiTiledLayerBuffer::MaybeSyncTextures(
+    const nsIntRegion& aPaintRegion, const TilesPlacement& aNewTiles,
+    const IntSize& aScaledTileSize) {
   if (mManager->AsShadowForwarder()->SupportsTextureDirectMapping()) {
     AutoTArray<uint64_t, 10> syncTextureSerials;
     SurfaceMode mode;
@@ -178,18 +166,22 @@ void ClientMultiTiledLayerBuffer::MaybeSyncTextures(const nsIntRegion& aPaintReg
 void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
                                          const nsIntRegion& aPaintRegion,
                                          const nsIntRegion& aDirtyRegion,
-                                         TilePaintFlags aFlags)
-{
+                                         TilePaintFlags aFlags) {
   const IntSize scaledTileSize = GetScaledTileSize();
   const gfx::IntRect newBounds = newValidRegion.GetBounds();
 
   const TilesPlacement oldTiles = mTiles;
-  const TilesPlacement newTiles(floor_div(newBounds.X(), scaledTileSize.width),
-                          floor_div(newBounds.Y(), scaledTileSize.height),
-                                floor_div(GetTileStart(newBounds.X(), scaledTileSize.width)
-                                    + newBounds.Width(), scaledTileSize.width) + 1,
-                                floor_div(GetTileStart(newBounds.Y(), scaledTileSize.height)
-                                    + newBounds.Height(), scaledTileSize.height) + 1);
+  const TilesPlacement newTiles(
+      floor_div(newBounds.X(), scaledTileSize.width),
+      floor_div(newBounds.Y(), scaledTileSize.height),
+      floor_div(
+          GetTileStart(newBounds.X(), scaledTileSize.width) + newBounds.Width(),
+          scaledTileSize.width) +
+          1,
+      floor_div(GetTileStart(newBounds.Y(), scaledTileSize.height) +
+                    newBounds.Height(),
+                scaledTileSize.height) +
+          1);
 
   const size_t oldTileCount = mRetainedTiles.Length();
   const size_t newTileCount = newTiles.mSize.width * newTiles.mSize.height;
@@ -234,7 +226,8 @@ void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
       }
 
       TileClient& tile = mRetainedTiles[i];
-      if (!ValidateTile(tile, GetTileOffset(tileCoord), tileDrawRegion, aFlags)) {
+      if (!ValidateTile(tile, GetTileOffset(tileCoord), tileDrawRegion,
+                        aFlags)) {
         gfxCriticalError() << "ValidateTile failed";
       }
 
@@ -251,7 +244,8 @@ void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
       }
       tileset.mTiles = mPaintTiles.Elements();
       tileset.mTileCount = mPaintTiles.Length();
-      RefPtr<DrawTarget> drawTarget = gfx::Factory::CreateTiledDrawTarget(tileset);
+      RefPtr<DrawTarget> drawTarget =
+          gfx::Factory::CreateTiledDrawTarget(tileset);
       if (!drawTarget || !drawTarget->IsValid()) {
         gfxDevCrash(LogReason::InvalidContext) << "Invalid tiled draw target";
         return;
@@ -260,9 +254,10 @@ void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
 
       
       RefPtr<gfxContext> ctx = gfxContext::CreateOrNull(drawTarget);
-      MOZ_ASSERT(ctx); 
-      ctx->SetMatrix(
-        ctx->CurrentMatrix().PreScale(mResolution, mResolution).PreTranslate(-mTilingOrigin));
+      MOZ_ASSERT(ctx);  
+      ctx->SetMatrix(ctx->CurrentMatrix()
+                         .PreScale(mResolution, mResolution)
+                         .PreTranslate(-mTilingOrigin));
 
       mCallback(&mPaintedLayer, ctx, paintRegion, dirtyRegion,
                 DrawRegionClip::DRAW, nsIntRegion(), mCallbackData);
@@ -308,12 +303,10 @@ void ClientMultiTiledLayerBuffer::Update(const nsIntRegion& newValidRegion,
   mValidRegion = newValidRegion;
 }
 
-bool
-ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
-                                          const nsIntPoint& aTileOrigin,
-                                          nsIntRegion& aDirtyRegion,
-                                          TilePaintFlags aFlags)
-{
+bool ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
+                                               const nsIntPoint& aTileOrigin,
+                                               nsIntRegion& aDirtyRegion,
+                                               TilePaintFlags aFlags) {
   AUTO_PROFILER_LABEL("ClientMultiTiledLayerBuffer::ValidateTile", GRAPHICS);
 
 #ifdef GFX_TILEDLAYER_PREF_WARNINGS
@@ -326,10 +319,12 @@ ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
   gfxContentType content = GetContentType(&mode);
 
   if (!aTile.mAllocator) {
-    aTile.SetTextureAllocator(mManager->GetCompositorBridgeChild()->GetTexturePool(
-      mManager->AsShadowForwarder(),
-      gfxPlatform::GetPlatform()->Optimal2DFormatForContent(content),
-      TextureFlags::DISALLOW_BIGIMAGE | TextureFlags::IMMEDIATE_UPLOAD | TextureFlags::NON_BLOCKING_READ_LOCK));
+    aTile.SetTextureAllocator(
+        mManager->GetCompositorBridgeChild()->GetTexturePool(
+            mManager->AsShadowForwarder(),
+            gfxPlatform::GetPlatform()->Optimal2DFormatForContent(content),
+            TextureFlags::DISALLOW_BIGIMAGE | TextureFlags::IMMEDIATE_UPLOAD |
+                TextureFlags::NON_BLOCKING_READ_LOCK));
     MOZ_ASSERT(aTile.mAllocator);
   }
 
@@ -342,12 +337,8 @@ ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
   std::vector<RefPtr<TextureClient>> asyncPaintClients;
 
   Maybe<AcquiredBackBuffer> backBuffer =
-    aTile.AcquireBackBuffer(mCompositableClient,
-                            tileDirtyRegion,
-                            tileVisibleRegion,
-                            content,
-                            mode,
-                            aFlags);
+      aTile.AcquireBackBuffer(mCompositableClient, tileDirtyRegion,
+                              tileVisibleRegion, content, mode, aFlags);
 
   if (!backBuffer) {
     return false;
@@ -372,7 +363,8 @@ ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
 
   
   
-  aTile.mUpdateRect = tileDirtyRegion.GetBounds().Union(backBuffer->mUpdatedRect);
+  aTile.mUpdateRect =
+      tileDirtyRegion.GetBounds().Union(backBuffer->mUpdatedRect);
 
   
   
@@ -421,26 +413,21 @@ ClientMultiTiledLayerBuffer::ValidateTile(TileClient& aTile,
 
 
 
-static Maybe<LayerRect>
-GetCompositorSideCompositionBounds(const LayerMetricsWrapper& aScrollAncestor,
-                                   const LayerToParentLayerMatrix4x4& aTransformToCompBounds,
-                                   const AsyncTransform& aAPZTransform,
-                                   const LayerRect& aClip)
-{
-  LayerToParentLayerMatrix4x4 transform = aTransformToCompBounds *
-      AsyncTransformComponentMatrix(aAPZTransform);
+static Maybe<LayerRect> GetCompositorSideCompositionBounds(
+    const LayerMetricsWrapper& aScrollAncestor,
+    const LayerToParentLayerMatrix4x4& aTransformToCompBounds,
+    const AsyncTransform& aAPZTransform, const LayerRect& aClip) {
+  LayerToParentLayerMatrix4x4 transform =
+      aTransformToCompBounds * AsyncTransformComponentMatrix(aAPZTransform);
 
   return UntransformBy(transform.Inverse(),
-    aScrollAncestor.Metrics().GetCompositionBounds(), aClip);
+                       aScrollAncestor.Metrics().GetCompositionBounds(), aClip);
 }
 
-bool
-ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& aInvalidRegion,
-                                                            const nsIntRegion& aOldValidRegion,
-                                                            nsIntRegion& aRegionToPaint,
-                                                            BasicTiledLayerPaintData* aPaintData,
-                                                            bool aIsRepeated)
-{
+bool ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(
+    const nsIntRegion& aInvalidRegion, const nsIntRegion& aOldValidRegion,
+    nsIntRegion& aRegionToPaint, BasicTiledLayerPaintData* aPaintData,
+    bool aIsRepeated) {
   aRegionToPaint = aInvalidRegion;
 
   
@@ -460,7 +447,8 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   nsIntRegion staleRegion;
   staleRegion.And(aInvalidRegion, aOldValidRegion);
 
-  TILING_LOG("TILING %p: Progressive update stale region %s\n", &mPaintedLayer, Stringify(staleRegion).c_str());
+  TILING_LOG("TILING %p: Progressive update stale region %s\n", &mPaintedLayer,
+             Stringify(staleRegion).c_str());
 
   LayerMetricsWrapper scrollAncestor;
   mPaintedLayer.GetAncestorLayers(&scrollAncestor, nullptr, nullptr);
@@ -471,15 +459,14 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   AsyncTransform viewTransform;
   MOZ_ASSERT(mSharedFrameMetricsHelper);
 
-  bool abortPaint =
-    mSharedFrameMetricsHelper->UpdateFromCompositorFrameMetrics(
-      scrollAncestor,
-      !staleRegion.Contains(aInvalidRegion),
-      drawingLowPrecision,
-      viewTransform);
+  bool abortPaint = mSharedFrameMetricsHelper->UpdateFromCompositorFrameMetrics(
+      scrollAncestor, !staleRegion.Contains(aInvalidRegion),
+      drawingLowPrecision, viewTransform);
 
-  TILING_LOG("TILING %p: Progressive update view transform %s zoom %f abort %d\n",
-      &mPaintedLayer, ToString(viewTransform.mTranslation).c_str(), viewTransform.mScale.scale, abortPaint);
+  TILING_LOG(
+      "TILING %p: Progressive update view transform %s zoom %f abort %d\n",
+      &mPaintedLayer, ToString(viewTransform.mTranslation).c_str(),
+      viewTransform.mScale.scale, abortPaint);
 
   if (abortPaint) {
     
@@ -487,8 +474,8 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
     
     if (!aPaintData->mFirstPaint || drawingLowPrecision) {
       AUTO_PROFILER_LABEL(
-        "ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion",
-        GRAPHICS);
+          "ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion",
+          GRAPHICS);
 
       aRegionToPaint.SetEmpty();
       return aIsRepeated;
@@ -496,18 +483,19 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   }
 
   Maybe<LayerRect> transformedCompositionBounds =
-    GetCompositorSideCompositionBounds(scrollAncestor,
-                                       aPaintData->mTransformToCompBounds,
-                                       viewTransform,
-                                       LayerRect(mPaintedLayer.GetVisibleRegion().GetBounds()));
+      GetCompositorSideCompositionBounds(
+          scrollAncestor, aPaintData->mTransformToCompBounds, viewTransform,
+          LayerRect(mPaintedLayer.GetVisibleRegion().GetBounds()));
 
   if (!transformedCompositionBounds) {
     aPaintData->mPaintFinished = true;
     return false;
   }
 
-  TILING_LOG("TILING %p: Progressive update transformed compositor bounds %s\n", &mPaintedLayer, Stringify(*transformedCompositionBounds).c_str());
+  TILING_LOG("TILING %p: Progressive update transformed compositor bounds %s\n",
+             &mPaintedLayer, Stringify(*transformedCompositionBounds).c_str());
 
+  
   
   
   
@@ -517,13 +505,16 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   
   IntRect coherentUpdateRect(RoundedOut(
 #ifdef MOZ_WIDGET_ANDROID
-    transformedCompositionBounds->Intersect(aPaintData->mCompositionBounds)
+                                 transformedCompositionBounds->Intersect(
+                                     aPaintData->mCompositionBounds)
 #else
-    *transformedCompositionBounds
+                                 *transformedCompositionBounds
 #endif
-  ).ToUnknownRect());
+                                     )
+                                 .ToUnknownRect());
 
-  TILING_LOG("TILING %p: Progressive update final coherency rect %s\n", &mPaintedLayer, Stringify(coherentUpdateRect).c_str());
+  TILING_LOG("TILING %p: Progressive update final coherency rect %s\n",
+             &mPaintedLayer, Stringify(coherentUpdateRect).c_str());
 
   aRegionToPaint.And(aInvalidRegion, coherentUpdateRect);
   aRegionToPaint.Or(aRegionToPaint, staleRegion);
@@ -539,14 +530,19 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
     paintingVisible = true;
   }
 
-  TILING_LOG("TILING %p: Progressive update final paint region %s\n", &mPaintedLayer, Stringify(aRegionToPaint).c_str());
+  TILING_LOG("TILING %p: Progressive update final paint region %s\n",
+             &mPaintedLayer, Stringify(aRegionToPaint).c_str());
 
   
   
-  bool paintInSingleTransaction = paintingVisible && (drawingStale || aPaintData->mFirstPaint);
+  bool paintInSingleTransaction =
+      paintingVisible && (drawingStale || aPaintData->mFirstPaint);
 
-  TILING_LOG("TILING %p: paintingVisible %d drawingStale %d firstPaint %d singleTransaction %d\n",
-    &mPaintedLayer, paintingVisible, drawingStale, aPaintData->mFirstPaint, paintInSingleTransaction);
+  TILING_LOG(
+      "TILING %p: paintingVisible %d drawingStale %d firstPaint %d "
+      "singleTransaction %d\n",
+      &mPaintedLayer, paintingVisible, drawingStale, aPaintData->mFirstPaint,
+      paintInSingleTransaction);
 
   
   
@@ -567,14 +563,18 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
     startY = RoundDownToTileEdge(paintBounds.Y(), scaledTileSize.height);
     incY = scaledTileSize.height;
   } else {
-    startY = RoundDownToTileEdge(paintBounds.YMost() - 1, scaledTileSize.height);
+    startY =
+        RoundDownToTileEdge(paintBounds.YMost() - 1, scaledTileSize.height);
     incY = -scaledTileSize.height;
   }
 
   
-  IntRect tileBounds(startX, startY, scaledTileSize.width, scaledTileSize.height);
-  int32_t scrollDiffX = aPaintData->mScrollOffset.x - aPaintData->mLastScrollOffset.x;
-  int32_t scrollDiffY = aPaintData->mScrollOffset.y - aPaintData->mLastScrollOffset.y;
+  IntRect tileBounds(startX, startY, scaledTileSize.width,
+                     scaledTileSize.height);
+  int32_t scrollDiffX =
+      aPaintData->mScrollOffset.x - aPaintData->mLastScrollOffset.x;
+  int32_t scrollDiffY =
+      aPaintData->mScrollOffset.y - aPaintData->mLastScrollOffset.y;
   
   
   
@@ -582,6 +582,7 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
     aRegionToPaint.And(aInvalidRegion, tileBounds);
     if (!aRegionToPaint.IsEmpty()) {
       if (mResolution != 1) {
+        
         
         
         aRegionToPaint = tileBounds;
@@ -596,6 +597,7 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   }
 
   if (!aRegionToPaint.Contains(aInvalidRegion)) {
+    
     
     
 
@@ -616,18 +618,17 @@ ClientMultiTiledLayerBuffer::ComputeProgressiveUpdateRegion(const nsIntRegion& a
   return false;
 }
 
-bool
-ClientMultiTiledLayerBuffer::ProgressiveUpdate(const nsIntRegion& aValidRegion,
-                                               const nsIntRegion& aInvalidRegion,
-                                               const nsIntRegion& aOldValidRegion,
-                                               nsIntRegion& aOutDrawnRegion,
-                                               BasicTiledLayerPaintData* aPaintData,
-                                               LayerManager::DrawPaintedLayerCallback aCallback,
-                                               void* aCallbackData)
-{
-  TILING_LOG("TILING %p: Progressive update valid region %s\n", &mPaintedLayer, Stringify(aValidRegion).c_str());
-  TILING_LOG("TILING %p: Progressive update invalid region %s\n", &mPaintedLayer, Stringify(aInvalidRegion).c_str());
-  TILING_LOG("TILING %p: Progressive update old valid region %s\n", &mPaintedLayer, Stringify(aOldValidRegion).c_str());
+bool ClientMultiTiledLayerBuffer::ProgressiveUpdate(
+    const nsIntRegion& aValidRegion, const nsIntRegion& aInvalidRegion,
+    const nsIntRegion& aOldValidRegion, nsIntRegion& aOutDrawnRegion,
+    BasicTiledLayerPaintData* aPaintData,
+    LayerManager::DrawPaintedLayerCallback aCallback, void* aCallbackData) {
+  TILING_LOG("TILING %p: Progressive update valid region %s\n", &mPaintedLayer,
+             Stringify(aValidRegion).c_str());
+  TILING_LOG("TILING %p: Progressive update invalid region %s\n",
+             &mPaintedLayer, Stringify(aInvalidRegion).c_str());
+  TILING_LOG("TILING %p: Progressive update old valid region %s\n",
+             &mPaintedLayer, Stringify(aOldValidRegion).c_str());
 
   bool repeat = false;
   bool isBufferChanged = false;
@@ -637,13 +638,13 @@ ClientMultiTiledLayerBuffer::ProgressiveUpdate(const nsIntRegion& aValidRegion,
     
     
     nsIntRegion regionToPaint;
-    repeat = ComputeProgressiveUpdateRegion(remainingInvalidRegion,
-                                            aOldValidRegion,
-                                            regionToPaint,
-                                            aPaintData,
-                                            repeat);
+    repeat =
+        ComputeProgressiveUpdateRegion(remainingInvalidRegion, aOldValidRegion,
+                                       regionToPaint, aPaintData, repeat);
 
-    TILING_LOG("TILING %p: Progressive update computed paint region %s repeat %d\n", &mPaintedLayer, Stringify(regionToPaint).c_str(), repeat);
+    TILING_LOG(
+        "TILING %p: Progressive update computed paint region %s repeat %d\n",
+        &mPaintedLayer, Stringify(regionToPaint).c_str(), repeat);
 
     
     if (regionToPaint.IsEmpty()) {
@@ -663,18 +664,21 @@ ClientMultiTiledLayerBuffer::ProgressiveUpdate(const nsIntRegion& aValidRegion,
     validOrStale.Or(updatedValidRegion, aOldValidRegion);
 
     
-    PaintThebes(validOrStale, regionToPaint, remainingInvalidRegion,
-                aCallback, aCallbackData, TilePaintFlags::Progressive);
+    PaintThebes(validOrStale, regionToPaint, remainingInvalidRegion, aCallback,
+                aCallbackData, TilePaintFlags::Progressive);
     remainingInvalidRegion.SubOut(regionToPaint);
   } while (repeat);
 
-  TILING_LOG("TILING %p: Progressive update final valid region %s buffer changed %d\n", &mPaintedLayer, Stringify(updatedValidRegion).c_str(), isBufferChanged);
-  TILING_LOG("TILING %p: Progressive update final invalid region %s\n", &mPaintedLayer, Stringify(remainingInvalidRegion).c_str());
+  TILING_LOG(
+      "TILING %p: Progressive update final valid region %s buffer changed %d\n",
+      &mPaintedLayer, Stringify(updatedValidRegion).c_str(), isBufferChanged);
+  TILING_LOG("TILING %p: Progressive update final invalid region %s\n",
+             &mPaintedLayer, Stringify(remainingInvalidRegion).c_str());
 
   
   
   return isBufferChanged;
 }
 
-} 
-} 
+}  
+}  

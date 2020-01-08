@@ -11,33 +11,31 @@
 
 #include "ProfilerMarkerPayload.h"
 
-template<typename T>
+template <typename T>
 class ProfilerLinkedList;
 class SpliceableJSONWriter;
 class UniqueStacks;
 
-class ProfilerMarker
-{
+class ProfilerMarker {
   friend class ProfilerLinkedList<ProfilerMarker>;
 
-public:
-  explicit ProfilerMarker(const char* aMarkerName,
-                          int aThreadId,
-                          mozilla::UniquePtr<ProfilerMarkerPayload>
-                            aPayload = nullptr,
-                          double aTime = 0)
-    : mMarkerName(strdup(aMarkerName))
-    , mPayload(std::move(aPayload))
-    , mNext{nullptr}
-    , mTime(aTime)
-    , mPositionInBuffer{0}
-    , mThreadId{aThreadId}
-    {}
+ public:
+  explicit ProfilerMarker(
+      const char* aMarkerName, int aThreadId,
+      mozilla::UniquePtr<ProfilerMarkerPayload> aPayload = nullptr,
+      double aTime = 0)
+      : mMarkerName(strdup(aMarkerName)),
+        mPayload(std::move(aPayload)),
+        mNext{nullptr},
+        mTime(aTime),
+        mPositionInBuffer{0},
+        mThreadId{aThreadId} {}
 
-  void SetPositionInBuffer(uint64_t aPosition) { mPositionInBuffer = aPosition; }
+  void SetPositionInBuffer(uint64_t aPosition) {
+    mPositionInBuffer = aPosition;
+  }
 
-  bool HasExpired(uint64_t aBufferRangeStart) const
-  {
+  bool HasExpired(uint64_t aBufferRangeStart) const {
     return mPositionInBuffer < aBufferRangeStart;
   }
 
@@ -47,8 +45,7 @@ public:
 
   void StreamJSON(SpliceableJSONWriter& aWriter,
                   const mozilla::TimeStamp& aProcessStartTime,
-                  UniqueStacks& aUniqueStacks) const
-  {
+                  UniqueStacks& aUniqueStacks) const {
     
     
 
@@ -61,16 +58,14 @@ public:
       
       if (mPayload) {
         aWriter.StartObjectElement(SpliceableJSONWriter::SingleLineStyle);
-        {
-          mPayload->StreamPayload(aWriter, aProcessStartTime, aUniqueStacks);
-        }
+        { mPayload->StreamPayload(aWriter, aProcessStartTime, aUniqueStacks); }
         aWriter.EndObject();
       }
     }
     aWriter.EndArray();
   }
 
-private:
+ private:
   mozilla::UniqueFreePtr<char> mMarkerName;
   mozilla::UniquePtr<ProfilerMarkerPayload> mPayload;
   ProfilerMarker* mNext;
@@ -79,17 +74,12 @@ private:
   int mThreadId;
 };
 
-template<typename T>
-class ProfilerLinkedList
-{
-public:
-  ProfilerLinkedList()
-    : mHead(nullptr)
-    , mTail(nullptr)
-  {}
+template <typename T>
+class ProfilerLinkedList {
+ public:
+  ProfilerLinkedList() : mHead(nullptr), mTail(nullptr) {}
 
-  void insert(T* aElem)
-  {
+  void insert(T* aElem) {
     if (!mTail) {
       mHead = aElem;
       mTail = aElem;
@@ -100,8 +90,7 @@ public:
     aElem->mNext = nullptr;
   }
 
-  T* popHead()
-  {
+  T* popHead() {
     if (!mHead) {
       MOZ_ASSERT(false);
       return nullptr;
@@ -117,27 +106,21 @@ public:
     return head;
   }
 
-  const T* peek() {
-    return mHead;
-  }
+  const T* peek() { return mHead; }
 
-private:
+ private:
   T* mHead;
   T* mTail;
 };
 
 typedef ProfilerLinkedList<ProfilerMarker> ProfilerMarkerLinkedList;
 
-template<typename T>
-class ProfilerSignalSafeLinkedList
-{
-public:
-  ProfilerSignalSafeLinkedList()
-    : mSignalLock(false)
-  {}
+template <typename T>
+class ProfilerSignalSafeLinkedList {
+ public:
+  ProfilerSignalSafeLinkedList() : mSignalLock(false) {}
 
-  ~ProfilerSignalSafeLinkedList()
-  {
+  ~ProfilerSignalSafeLinkedList() {
     if (mSignalLock) {
       
       
@@ -154,8 +137,7 @@ public:
   
   
   
-  void insert(T* aElement)
-  {
+  void insert(T* aElement) {
     MOZ_ASSERT(aElement);
 
     mSignalLock = true;
@@ -169,12 +151,9 @@ public:
   
   
   
-  ProfilerLinkedList<T>* accessList()
-  {
-    return mSignalLock ? nullptr : &mList;
-  }
+  ProfilerLinkedList<T>* accessList() { return mSignalLock ? nullptr : &mList; }
 
-private:
+ private:
   ProfilerLinkedList<T> mList;
 
   

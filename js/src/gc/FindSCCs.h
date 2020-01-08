@@ -15,32 +15,30 @@
 namespace js {
 namespace gc {
 
-template<class Node>
-struct GraphNodeBase
-{
-    Node*          gcNextGraphNode;
-    Node*          gcNextGraphComponent;
-    unsigned       gcDiscoveryTime;
-    unsigned       gcLowLink;
+template <class Node>
+struct GraphNodeBase {
+  Node* gcNextGraphNode;
+  Node* gcNextGraphComponent;
+  unsigned gcDiscoveryTime;
+  unsigned gcLowLink;
 
-    GraphNodeBase()
+  GraphNodeBase()
       : gcNextGraphNode(nullptr),
         gcNextGraphComponent(nullptr),
         gcDiscoveryTime(0),
         gcLowLink(0) {}
 
-    ~GraphNodeBase() {}
+  ~GraphNodeBase() {}
 
-    Node* nextNodeInGroup() const {
-        if (gcNextGraphNode && gcNextGraphNode->gcNextGraphComponent == gcNextGraphComponent) {
-            return gcNextGraphNode;
-        }
-        return nullptr;
+  Node* nextNodeInGroup() const {
+    if (gcNextGraphNode &&
+        gcNextGraphNode->gcNextGraphComponent == gcNextGraphComponent) {
+      return gcNextGraphNode;
     }
+    return nullptr;
+  }
 
-    Node* nextGroup() const {
-        return gcNextGraphComponent;
-    }
+  Node* nextGroup() const { return gcNextGraphComponent; }
 };
 
 
@@ -73,144 +71,142 @@ struct GraphNodeBase
 
 
 template <typename Node, typename Derived>
-class ComponentFinder
-{
-  public:
-    explicit ComponentFinder(uintptr_t sl)
+class ComponentFinder {
+ public:
+  explicit ComponentFinder(uintptr_t sl)
       : clock(1),
         stack(nullptr),
         firstComponent(nullptr),
         cur(nullptr),
         stackLimit(sl),
-        stackFull(false)
-    {}
+        stackFull(false) {}
 
-    ~ComponentFinder() {
-        MOZ_ASSERT(!stack);
-        MOZ_ASSERT(!firstComponent);
+  ~ComponentFinder() {
+    MOZ_ASSERT(!stack);
+    MOZ_ASSERT(!firstComponent);
+  }
+
+  
+  void useOneComponent() { stackFull = true; }
+
+  void addNode(Node* v) {
+    if (v->gcDiscoveryTime == Undefined) {
+      MOZ_ASSERT(v->gcLowLink == Undefined);
+      processNode(v);
+    }
+  }
+
+  Node* getResultsList() {
+    if (stackFull) {
+      
+
+
+
+      Node* firstGoodComponent = firstComponent;
+      for (Node* v = stack; v; v = stack) {
+        stack = v->gcNextGraphNode;
+        v->gcNextGraphComponent = firstGoodComponent;
+        v->gcNextGraphNode = firstComponent;
+        firstComponent = v;
+      }
+      stackFull = false;
     }
 
-    
-    void useOneComponent() { stackFull = true; }
+    MOZ_ASSERT(!stack);
 
-    void addNode(Node* v) {
-        if (v->gcDiscoveryTime == Undefined) {
-            MOZ_ASSERT(v->gcLowLink == Undefined);
-            processNode(v);
-        }
+    Node* result = firstComponent;
+    firstComponent = nullptr;
+
+    for (Node* v = result; v; v = v->gcNextGraphNode) {
+      v->gcDiscoveryTime = Undefined;
+      v->gcLowLink = Undefined;
     }
 
-    Node* getResultsList() {
-        if (stackFull) {
-            
+    return result;
+  }
 
+  static void mergeGroups(Node* first) {
+    for (Node* v = first; v; v = v->gcNextGraphNode) {
+      v->gcNextGraphComponent = nullptr;
+    }
+  }
 
+ public:
+  
+  void addEdgeTo(Node* w) {
+    if (w->gcDiscoveryTime == Undefined) {
+      processNode(w);
+      cur->gcLowLink = Min(cur->gcLowLink, w->gcLowLink);
+    } else if (w->gcDiscoveryTime != Finished) {
+      cur->gcLowLink = Min(cur->gcLowLink, w->gcDiscoveryTime);
+    }
+  }
 
-            Node* firstGoodComponent = firstComponent;
-            for (Node* v = stack; v; v = stack) {
-                stack = v->gcNextGraphNode;
-                v->gcNextGraphComponent = firstGoodComponent;
-                v->gcNextGraphNode = firstComponent;
-                firstComponent = v;
-            }
-            stackFull = false;
-        }
+ private:
+  
+  static const unsigned Undefined = 0;
 
-        MOZ_ASSERT(!stack);
+  
+  
+  static const unsigned Finished = (unsigned)-1;
 
-        Node* result = firstComponent;
-        firstComponent = nullptr;
+  void processNode(Node* v) {
+    v->gcDiscoveryTime = clock;
+    v->gcLowLink = clock;
+    ++clock;
 
-        for (Node* v = result; v; v = v->gcNextGraphNode) {
-            v->gcDiscoveryTime = Undefined;
-            v->gcLowLink = Undefined;
-        }
+    v->gcNextGraphNode = stack;
+    stack = v;
 
-        return result;
+    int stackDummy;
+    if (stackFull || !JS_CHECK_STACK_SIZE(stackLimit, &stackDummy)) {
+      stackFull = true;
+      return;
     }
 
-    static void mergeGroups(Node* first) {
-        for (Node* v = first; v; v = v->gcNextGraphNode) {
-            v->gcNextGraphComponent = nullptr;
-        }
+    Node* old = cur;
+    cur = v;
+    cur->findOutgoingEdges(*static_cast<Derived*>(this));
+    cur = old;
+
+    if (stackFull) {
+      return;
     }
 
-  public:
-    
-    void addEdgeTo(Node* w) {
-        if (w->gcDiscoveryTime == Undefined) {
-            processNode(w);
-            cur->gcLowLink = Min(cur->gcLowLink, w->gcLowLink);
-        } else if (w->gcDiscoveryTime != Finished) {
-            cur->gcLowLink = Min(cur->gcLowLink, w->gcDiscoveryTime);
-        }
+    if (v->gcLowLink == v->gcDiscoveryTime) {
+      Node* nextComponent = firstComponent;
+      Node* w;
+      do {
+        MOZ_ASSERT(stack);
+        w = stack;
+        stack = w->gcNextGraphNode;
+
+        
+
+
+
+        w->gcDiscoveryTime = Finished;
+
+        
+        w->gcNextGraphComponent = nextComponent;
+
+        
+
+
+
+        w->gcNextGraphNode = firstComponent;
+        firstComponent = w;
+      } while (w != v);
     }
+  }
 
-  private:
-    
-    static const unsigned Undefined = 0;
-
-    
-    
-    static const unsigned Finished = (unsigned)-1;
-
-    void processNode(Node* v) {
-        v->gcDiscoveryTime = clock;
-        v->gcLowLink = clock;
-        ++clock;
-
-        v->gcNextGraphNode = stack;
-        stack = v;
-
-        int stackDummy;
-        if (stackFull || !JS_CHECK_STACK_SIZE(stackLimit, &stackDummy)) {
-            stackFull = true;
-            return;
-        }
-
-        Node* old = cur;
-        cur = v;
-        cur->findOutgoingEdges(*static_cast<Derived*>(this));
-        cur = old;
-
-        if (stackFull) {
-            return;
-        }
-
-        if (v->gcLowLink == v->gcDiscoveryTime) {
-            Node* nextComponent = firstComponent;
-            Node* w;
-            do {
-                MOZ_ASSERT(stack);
-                w = stack;
-                stack = w->gcNextGraphNode;
-
-                
-
-
-
-                w->gcDiscoveryTime = Finished;
-
-                
-                w->gcNextGraphComponent = nextComponent;
-
-                
-
-
-
-                w->gcNextGraphNode = firstComponent;
-                firstComponent = w;
-            } while (w != v);
-        }
-    }
-
-  private:
-    unsigned       clock;
-    Node*          stack;
-    Node*          firstComponent;
-    Node*          cur;
-    uintptr_t      stackLimit;
-    bool           stackFull;
+ private:
+  unsigned clock;
+  Node* stack;
+  Node* firstComponent;
+  Node* cur;
+  uintptr_t stackLimit;
+  bool stackFull;
 };
 
 } 

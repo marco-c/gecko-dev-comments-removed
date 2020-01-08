@@ -25,10 +25,9 @@ class AsyncStatementJSHelper;
 class AsyncStatementParamsHolder;
 class Connection;
 
-class AsyncStatement final : public mozIStorageAsyncStatement
-                           , public StorageBaseStatementInternal
-{
-public:
+class AsyncStatement final : public mozIStorageAsyncStatement,
+                             public StorageBaseStatementInternal {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_MOZISTORAGEASYNCSTATEMENT
   NS_DECL_MOZISTORAGEBASESTATEMENT
@@ -48,21 +47,18 @@ public:
 
 
 
-  nsresult initialize(Connection *aDBConnection,
-                      sqlite3 *aNativeConnection,
+  nsresult initialize(Connection *aDBConnection, sqlite3 *aNativeConnection,
                       const nsACString &aSQLStatement);
 
   
 
 
 
-  inline already_AddRefed<BindingParamsArray> bindingParamsArray()
-  {
+  inline already_AddRefed<BindingParamsArray> bindingParamsArray() {
     return mParamsArray.forget();
   }
 
-
-private:
+ private:
   ~AsyncStatement();
 
   
@@ -100,7 +96,7 @@ private:
   friend class AsyncStatementJSHelper;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

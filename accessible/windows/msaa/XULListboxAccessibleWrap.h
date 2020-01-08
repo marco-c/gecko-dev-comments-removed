@@ -19,13 +19,12 @@ namespace a11y {
 
 
 class XULListboxAccessibleWrap : public XULListboxAccessible,
-                                 public ia2AccessibleTable
-{
+                                 public ia2AccessibleTable {
   ~XULListboxAccessibleWrap() {}
 
-public:
-  XULListboxAccessibleWrap(nsIContent* aContent, DocAccessible* aDoc) :
-    XULListboxAccessible(aContent, aDoc), ia2AccessibleTable(this) {}
+ public:
+  XULListboxAccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
+      : XULListboxAccessible(aContent, aDoc), ia2AccessibleTable(this) {}
 
   
   DECL_IUNKNOWN_INHERITED
@@ -36,7 +35,7 @@ public:
   virtual void Shutdown() override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

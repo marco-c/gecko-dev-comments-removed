@@ -19,41 +19,36 @@ namespace mozilla {
 namespace dom {
 
 
-class PerformanceNavigationTiming final
-  : public PerformanceResourceTiming
-{
-public:
+class PerformanceNavigationTiming final : public PerformanceResourceTiming {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   
   
   
   
-  PerformanceNavigationTiming(UniquePtr<PerformanceTimingData>&& aPerformanceTiming,
-                              Performance* aPerformance,
-                              const nsAString& aName)
-    : PerformanceResourceTiming(std::move(aPerformanceTiming), aPerformance, aName)
-  {
+  PerformanceNavigationTiming(
+      UniquePtr<PerformanceTimingData>&& aPerformanceTiming,
+      Performance* aPerformance, const nsAString& aName)
+      : PerformanceResourceTiming(std::move(aPerformanceTiming), aPerformance,
+                                  aName) {
     SetEntryType(NS_LITERAL_STRING("navigation"));
     SetInitiatorType(NS_LITERAL_STRING("navigation"));
   }
 
-  DOMHighResTimeStamp Duration() const override
-  {
+  DOMHighResTimeStamp Duration() const override {
     DOMHighResTimeStamp rawDuration = LoadEventEnd() - StartTime();
     if (mPerformance->IsSystemPrincipal()) {
       return rawDuration;
     }
-    return nsRFPService::ReduceTimePrecisionAsMSecs(rawDuration,
-      mPerformance->GetRandomTimelineSeed());
+    return nsRFPService::ReduceTimePrecisionAsMSecs(
+        rawDuration, mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMHighResTimeStamp StartTime() const override
-  {
-    return 0;
-  }
+  DOMHighResTimeStamp StartTime() const override { return 0; }
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   DOMHighResTimeStamp UnloadEventStart() const;
   DOMHighResTimeStamp UnloadEventEnd() const;
@@ -67,15 +62,14 @@ public:
   NavigationType Type() const;
   uint16_t RedirectCount() const;
 
-  void
-  UpdatePropertiesFromHttpChannel(nsIHttpChannel* aHttpChannel,
-                                  nsITimedChannel* aChannel);
+  void UpdatePropertiesFromHttpChannel(nsIHttpChannel* aHttpChannel,
+                                       nsITimedChannel* aChannel);
 
-private:
+ private:
   ~PerformanceNavigationTiming() {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

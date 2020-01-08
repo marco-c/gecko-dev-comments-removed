@@ -32,33 +32,28 @@ class nsTreeImageListener;
 namespace mozilla {
 namespace layout {
 class ScrollbarActivity;
-} 
-} 
+}  
+}  
 
 
-struct nsTreeImageCacheEntry
-{
+struct nsTreeImageCacheEntry {
   nsTreeImageCacheEntry() = default;
   nsTreeImageCacheEntry(imgIRequest* aRequest,
                         imgINotificationObserver* aListener)
-    : request(aRequest)
-    , listener(aListener)
-  { }
+      : request(aRequest), listener(aListener) {}
 
   nsCOMPtr<imgIRequest> request;
   nsCOMPtr<imgINotificationObserver> listener;
 };
 
 
-class nsTreeBodyFrame final
-  : public nsLeafBoxFrame
-  , public nsIScrollbarMediator
-  , public nsIReflowCallback
-{
+class nsTreeBodyFrame final : public nsLeafBoxFrame,
+                              public nsIScrollbarMediator,
+                              public nsIReflowCallback {
   typedef mozilla::layout::ScrollbarActivity ScrollbarActivity;
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
 
-public:
+ public:
   explicit nsTreeBodyFrame(ComputedStyle* aStyle);
   ~nsTreeBodyFrame();
 
@@ -71,21 +66,19 @@ public:
   nsresult OnImageIsAnimated(imgIRequest* aRequest);
 
   
-  already_AddRefed<nsTreeColumns> Columns() const
-  {
+  already_AddRefed<nsTreeColumns> Columns() const {
     RefPtr<nsTreeColumns> cols = mColumns;
     return cols.forget();
   }
-  already_AddRefed<nsITreeView> GetExistingView() const
-  {
+  already_AddRefed<nsITreeView> GetExistingView() const {
     nsCOMPtr<nsITreeView> view = mView;
     return view.forget();
   }
-  nsresult GetView(nsITreeView **aView);
-  nsresult SetView(nsITreeView *aView);
+  nsresult GetView(nsITreeView** aView);
+  nsresult SetView(nsITreeView* aView);
   bool GetFocused() const { return mFocused; }
   nsresult SetFocused(bool aFocused);
-  nsresult GetTreeBody(mozilla::dom::Element **aElement);
+  nsresult GetTreeBody(mozilla::dom::Element** aElement);
   int32_t RowHeight() const;
   int32_t RowWidth();
   int32_t GetHorizontalPosition() const;
@@ -94,23 +87,22 @@ public:
   int32_t LastVisibleRow() const { return mTopRowIndex + mPageLength; }
   int32_t PageLength() const { return mPageLength; }
   nsresult EnsureRowIsVisible(int32_t aRow);
-  nsresult EnsureCellIsVisible(int32_t aRow, nsTreeColumn *aCol);
+  nsresult EnsureCellIsVisible(int32_t aRow, nsTreeColumn* aCol);
   void ScrollToRow(int32_t aRow);
   void ScrollByLines(int32_t aNumLines);
   void ScrollByPages(int32_t aNumPages);
   nsresult Invalidate();
-  nsresult InvalidateColumn(nsTreeColumn *aCol);
+  nsresult InvalidateColumn(nsTreeColumn* aCol);
   nsresult InvalidateRow(int32_t aRow);
-  nsresult InvalidateCell(int32_t aRow, nsTreeColumn *aCol);
+  nsresult InvalidateCell(int32_t aRow, nsTreeColumn* aCol);
   nsresult InvalidateRange(int32_t aStart, int32_t aEnd);
   int32_t GetRowAt(int32_t aX, int32_t aY);
-  nsresult GetCellAt(int32_t aX, int32_t aY, int32_t *aRow,
-                     nsTreeColumn **aCol, nsACString &aChildElt);
-  nsresult GetCoordsForCellItem(int32_t aRow, nsTreeColumn *aCol,
-                                const nsACString &aElt,
-                                int32_t *aX, int32_t *aY,
-                                int32_t *aWidth, int32_t *aHeight);
-  nsresult IsCellCropped(int32_t aRow, nsTreeColumn *aCol, bool *aResult);
+  nsresult GetCellAt(int32_t aX, int32_t aY, int32_t* aRow, nsTreeColumn** aCol,
+                     nsACString& aChildElt);
+  nsresult GetCoordsForCellItem(int32_t aRow, nsTreeColumn* aCol,
+                                const nsACString& aElt, int32_t* aX,
+                                int32_t* aY, int32_t* aWidth, int32_t* aHeight);
+  nsresult IsCellCropped(int32_t aRow, nsTreeColumn* aCol, bool* aResult);
   nsresult RowCountChanged(int32_t aIndex, int32_t aCount);
   nsresult BeginUpdateBatch();
   nsresult EndUpdateBatch();
@@ -122,7 +114,8 @@ public:
   void ManageReflowCallback(const nsRect& aRect, nscoord aHorzWidth);
 
   virtual nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) override;
-  virtual void SetXULBounds(nsBoxLayoutState& aBoxLayoutState, const nsRect& aRect,
+  virtual void SetXULBounds(nsBoxLayoutState& aBoxLayoutState,
+                            const nsRect& aRect,
                             bool aRemoveOverflowArea = false) override;
 
   
@@ -131,17 +124,16 @@ public:
 
   
   virtual void ScrollByPage(nsScrollbarFrame* aScrollbar, int32_t aDirection,
-                            nsIScrollbarMediator::ScrollSnapMode aSnap
-                              = nsIScrollbarMediator::DISABLE_SNAP) override;
+                            nsIScrollbarMediator::ScrollSnapMode aSnap =
+                                nsIScrollbarMediator::DISABLE_SNAP) override;
   virtual void ScrollByWhole(nsScrollbarFrame* aScrollbar, int32_t aDirection,
-                             nsIScrollbarMediator::ScrollSnapMode aSnap
-                               = nsIScrollbarMediator::DISABLE_SNAP) override;
+                             nsIScrollbarMediator::ScrollSnapMode aSnap =
+                                 nsIScrollbarMediator::DISABLE_SNAP) override;
   virtual void ScrollByLine(nsScrollbarFrame* aScrollbar, int32_t aDirection,
-                            nsIScrollbarMediator::ScrollSnapMode aSnap
-                              = nsIScrollbarMediator::DISABLE_SNAP) override;
+                            nsIScrollbarMediator::ScrollSnapMode aSnap =
+                                nsIScrollbarMediator::DISABLE_SNAP) override;
   virtual void RepeatButtonScroll(nsScrollbarFrame* aScrollbar) override;
-  virtual void ThumbMoved(nsScrollbarFrame* aScrollbar,
-                          nscoord aOldPos,
+  virtual void ThumbMoved(nsScrollbarFrame* aScrollbar, nscoord aOldPos,
                           nscoord aNewPos) override;
   virtual void ScrollbarReleased(nsScrollbarFrame* aScrollbar) override {}
   virtual void VisibilityChanged(bool aVisible) override { Invalidate(); }
@@ -159,10 +151,10 @@ public:
   }
 
   
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
 
   virtual nsresult GetCursor(const nsPoint& aPoint,
                              nsIFrame::Cursor& aCursor) override;
@@ -171,7 +163,7 @@ public:
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus) override;
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
   virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
@@ -180,17 +172,17 @@ public:
   friend class nsTreeColumn;
 
   struct ScrollParts {
-    nsScrollbarFrame*    mVScrollbar;
-    RefPtr<Element>      mVScrollbarContent;
-    nsScrollbarFrame*    mHScrollbar;
-    RefPtr<Element>      mHScrollbarContent;
-    nsIFrame*            mColumnsFrame;
-    nsIScrollableFrame*  mColumnsScrollFrame;
+    nsScrollbarFrame* mVScrollbar;
+    RefPtr<Element> mVScrollbarContent;
+    nsScrollbarFrame* mHScrollbar;
+    RefPtr<Element> mHScrollbarContent;
+    nsIFrame* mColumnsFrame;
+    nsIScrollableFrame* mColumnsScrollFrame;
   };
 
   ImgDrawResult PaintTreeBody(gfxContext& aRenderingContext,
-                           const nsRect& aDirtyRect, nsPoint aPt,
-                           nsDisplayListBuilder* aBuilder);
+                              const nsRect& aDirtyRect, nsPoint aPt,
+                              nsDisplayListBuilder* aBuilder);
 
   nsITreeBoxObject* GetTreeBoxObject() const { return mTreeBoxObject; }
 
@@ -198,105 +190,86 @@ public:
   mozilla::dom::Element* GetBaseElement();
 
   bool GetVerticalOverflow() const { return mVerticalOverflow; }
-  bool GetHorizontalOverflow() const {return mHorizontalOverflow; }
+  bool GetHorizontalOverflow() const { return mHorizontalOverflow; }
 
   
   
-  const mozilla::AtomArray& GetPropertyArrayForCurrentDrawingItem()
-  {
+  const mozilla::AtomArray& GetPropertyArrayForCurrentDrawingItem() {
     return mScratchArray;
   }
 
-protected:
+ protected:
   friend class nsOverflowChecker;
 
   
-  ImgDrawResult PaintColumn(nsTreeColumn*        aColumn,
-                         const nsRect&        aColumnRect,
-                         nsPresContext*       aPresContext,
-                         gfxContext&          aRenderingContext,
-                         const nsRect&        aDirtyRect);
+  ImgDrawResult PaintColumn(nsTreeColumn* aColumn, const nsRect& aColumnRect,
+                            nsPresContext* aPresContext,
+                            gfxContext& aRenderingContext,
+                            const nsRect& aDirtyRect);
 
   
-  ImgDrawResult PaintRow(int32_t               aRowIndex,
-                      const nsRect&         aRowRect,
-                      nsPresContext*        aPresContext,
-                      gfxContext&           aRenderingContext,
-                      const nsRect&         aDirtyRect,
-                      nsPoint               aPt,
-                      nsDisplayListBuilder* aBuilder);
+  ImgDrawResult PaintRow(int32_t aRowIndex, const nsRect& aRowRect,
+                         nsPresContext* aPresContext,
+                         gfxContext& aRenderingContext,
+                         const nsRect& aDirtyRect, nsPoint aPt,
+                         nsDisplayListBuilder* aBuilder);
 
   
-  ImgDrawResult PaintSeparator(int32_t              aRowIndex,
-                            const nsRect&        aSeparatorRect,
-                            nsPresContext*       aPresContext,
-                            gfxContext&          aRenderingContext,
-                            const nsRect&        aDirtyRect);
+  ImgDrawResult PaintSeparator(int32_t aRowIndex, const nsRect& aSeparatorRect,
+                               nsPresContext* aPresContext,
+                               gfxContext& aRenderingContext,
+                               const nsRect& aDirtyRect);
 
   
-  ImgDrawResult PaintCell(int32_t               aRowIndex,
-                       nsTreeColumn*         aColumn,
-                       const nsRect&         aCellRect,
-                       nsPresContext*        aPresContext,
-                       gfxContext&           aRenderingContext,
-                       const nsRect&         aDirtyRect,
-                       nscoord&              aCurrX,
-                       nsPoint               aPt,
-                       nsDisplayListBuilder* aBuilder);
-
-  
-  ImgDrawResult PaintTwisty(int32_t              aRowIndex,
-                         nsTreeColumn*        aColumn,
-                         const nsRect&        aTwistyRect,
-                         nsPresContext*       aPresContext,
-                         gfxContext&          aRenderingContext,
-                         const nsRect&        aDirtyRect,
-                         nscoord&             aRemainingWidth,
-                         nscoord&             aCurrX);
-
-  
-  ImgDrawResult PaintImage(int32_t               aRowIndex,
-                        nsTreeColumn*         aColumn,
-                        const nsRect&         aImageRect,
-                        nsPresContext*        aPresContext,
-                        gfxContext&           aRenderingContext,
-                        const nsRect&         aDirtyRect,
-                        nscoord&              aRemainingWidth,
-                        nscoord&              aCurrX,
-                        nsDisplayListBuilder* aBuilder);
-
-  
-  ImgDrawResult PaintText(int32_t             aRowIndex,
-                       nsTreeColumn*       aColumn,
-                       const nsRect&       aTextRect,
-                       nsPresContext*      aPresContext,
-                       gfxContext&         aRenderingContext,
-                       const nsRect&       aDirtyRect,
-                       nscoord&            aCurrX);
-
-  
-  ImgDrawResult PaintCheckbox(int32_t              aRowIndex,
-                           nsTreeColumn*        aColumn,
-                           const nsRect&        aCheckboxRect,
-                           nsPresContext*       aPresContext,
-                           gfxContext&          aRenderingContext,
-                           const nsRect&        aDirtyRect);
-
-  
-  ImgDrawResult PaintDropFeedback(const nsRect&        aDropFeedbackRect,
-                               nsPresContext*       aPresContext,
-                               gfxContext&          aRenderingContext,
-                               const nsRect&        aDirtyRect,
-                               nsPoint              aPt);
+  ImgDrawResult PaintCell(int32_t aRowIndex, nsTreeColumn* aColumn,
+                          const nsRect& aCellRect, nsPresContext* aPresContext,
+                          gfxContext& aRenderingContext,
+                          const nsRect& aDirtyRect, nscoord& aCurrX,
+                          nsPoint aPt, nsDisplayListBuilder* aBuilder);
 
   
   
-  ImgDrawResult PaintBackgroundLayer(ComputedStyle*      aComputedStyle,
-                                     nsPresContext*       aPresContext,
-                                     gfxContext&          aRenderingContext,
-                                     const nsRect&        aRect,
-                                     const nsRect&        aDirtyRect);
+  ImgDrawResult PaintTwisty(int32_t aRowIndex, nsTreeColumn* aColumn,
+                            const nsRect& aTwistyRect,
+                            nsPresContext* aPresContext,
+                            gfxContext& aRenderingContext,
+                            const nsRect& aDirtyRect, nscoord& aRemainingWidth,
+                            nscoord& aCurrX);
 
+  
+  ImgDrawResult PaintImage(int32_t aRowIndex, nsTreeColumn* aColumn,
+                           const nsRect& aImageRect,
+                           nsPresContext* aPresContext,
+                           gfxContext& aRenderingContext,
+                           const nsRect& aDirtyRect, nscoord& aRemainingWidth,
+                           nscoord& aCurrX, nsDisplayListBuilder* aBuilder);
+
+  
+  ImgDrawResult PaintText(int32_t aRowIndex, nsTreeColumn* aColumn,
+                          const nsRect& aTextRect, nsPresContext* aPresContext,
+                          gfxContext& aRenderingContext,
+                          const nsRect& aDirtyRect, nscoord& aCurrX);
+
+  
+  ImgDrawResult PaintCheckbox(int32_t aRowIndex, nsTreeColumn* aColumn,
+                              const nsRect& aCheckboxRect,
+                              nsPresContext* aPresContext,
+                              gfxContext& aRenderingContext,
+                              const nsRect& aDirtyRect);
+
+  
+  ImgDrawResult PaintDropFeedback(const nsRect& aDropFeedbackRect,
+                                  nsPresContext* aPresContext,
+                                  gfxContext& aRenderingContext,
+                                  const nsRect& aDirtyRect, nsPoint aPt);
+
+  
+  
+  ImgDrawResult PaintBackgroundLayer(ComputedStyle* aComputedStyle,
+                                     nsPresContext* aPresContext,
+                                     gfxContext& aRenderingContext,
+                                     const nsRect& aRect,
+                                     const nsRect& aDirtyRect);
 
   
   
@@ -306,12 +279,9 @@ protected:
   
   void CheckTextForBidi(nsAutoString& aText);
 
-  void AdjustForCellText(nsAutoString& aText,
-                         int32_t aRowIndex,
-                         nsTreeColumn* aColumn,
-                         gfxContext& aRenderingContext,
-                         nsFontMetrics& aFontMetrics,
-                         nsRect& aTextRect);
+  void AdjustForCellText(nsAutoString& aText, int32_t aRowIndex,
+                         nsTreeColumn* aColumn, gfxContext& aRenderingContext,
+                         nsFontMetrics& aFontMetrics, nsRect& aTextRect);
 
   
   nsCSSAnonBoxPseudoStaticAtom* GetItemWithinCellAt(nscoord aX,
@@ -325,26 +295,29 @@ protected:
                  nsCSSAnonBoxPseudoStaticAtom** aChildElt);
 
   
-  nsITheme* GetTwistyRect(int32_t aRowIndex,
-                          nsTreeColumn* aColumn,
-                          nsRect& aImageRect,
-                          nsRect& aTwistyRect,
+  nsITheme* GetTwistyRect(int32_t aRowIndex, nsTreeColumn* aColumn,
+                          nsRect& aImageRect, nsRect& aTwistyRect,
                           nsPresContext* aPresContext,
                           ComputedStyle* aTwistyContext);
 
   
   nsresult GetImage(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext,
-                    ComputedStyle* aComputedStyle, bool& aAllowImageRegions, imgIContainer** aResult);
+                    ComputedStyle* aComputedStyle, bool& aAllowImageRegions,
+                    imgIContainer** aResult);
 
   
   
-  nsRect GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext, ComputedStyle* aComputedStyle);
+  nsRect GetImageSize(int32_t aRowIndex, nsTreeColumn* aCol, bool aUseContext,
+                      ComputedStyle* aComputedStyle);
 
   
-  nsSize GetImageDestSize(ComputedStyle* aComputedStyle, bool useImageRegion, imgIContainer* image);
+  
+  nsSize GetImageDestSize(ComputedStyle* aComputedStyle, bool useImageRegion,
+                          imgIContainer* image);
 
   
-  nsRect GetImageSourceRect(ComputedStyle* aComputedStyle, bool useImageRegion, imgIContainer* image);
+  nsRect GetImageSourceRect(ComputedStyle* aComputedStyle, bool useImageRegion,
+                            imgIContainer* image);
 
   
   int32_t GetRowHeight();
@@ -361,7 +334,7 @@ protected:
   
   
   ComputedStyle* GetPseudoComputedStyle(
-    nsCSSAnonBoxPseudoStaticAtom* aPseudoElement);
+      nsCSSAnonBoxPseudoStaticAtom* aPseudoElement);
 
   
   
@@ -374,7 +347,8 @@ protected:
   void UpdateScrollbars(const ScrollParts& aParts);
 
   
-  void InvalidateScrollbars(const ScrollParts& aParts, AutoWeakFrame& aWeakColumnsFrame);
+  void InvalidateScrollbars(const ScrollParts& aParts,
+                            AutoWeakFrame& aWeakColumnsFrame);
 
   
   void CheckOverflow(const ScrollParts& aParts);
@@ -403,8 +377,8 @@ protected:
   void EnsureView();
 
   nsresult GetCellWidth(int32_t aRow, nsTreeColumn* aCol,
-                        gfxContext* aRenderingContext,
-                        nscoord& aDesiredSize, nscoord& aCurrentSize);
+                        gfxContext* aRenderingContext, nscoord& aDesiredSize,
+                        nscoord& aCurrentSize);
   nscoord CalcMaxRowWidth();
 
   
@@ -420,10 +394,9 @@ protected:
   
   
   
-  void ComputeDropPosition(mozilla::WidgetGUIEvent* aEvent,
-                           int32_t* aRow,
-                           int16_t* aOrient,
-                           int16_t* aScrollLines);
+  
+  void ComputeDropPosition(mozilla::WidgetGUIEvent* aEvent, int32_t* aRow,
+                           int16_t* aOrient, int16_t* aScrollLines);
 
   void InvalidateDropFeedback(int32_t aRow, int16_t aOrientation) {
     InvalidateRow(aRow);
@@ -431,7 +404,7 @@ protected:
       InvalidateRow(aRow + aOrientation);
   }
 
-public:
+ public:
   
 
 
@@ -441,8 +414,7 @@ public:
 
   void RemoveTreeImageListener(nsTreeImageListener* aListener);
 
-protected:
-
+ protected:
   
   
   
@@ -451,24 +423,22 @@ protected:
                        nsTimerCallbackFunc aFunc, int32_t aType,
                        nsITimer** aTimer, const char* aName);
 
-  static void OpenCallback(nsITimer *aTimer, void *aClosure);
+  static void OpenCallback(nsITimer* aTimer, void* aClosure);
 
-  static void CloseCallback(nsITimer *aTimer, void *aClosure);
+  static void CloseCallback(nsITimer* aTimer, void* aClosure);
 
-  static void LazyScrollCallback(nsITimer *aTimer, void *aClosure);
+  static void LazyScrollCallback(nsITimer* aTimer, void* aClosure);
 
-  static void ScrollCallback(nsITimer *aTimer, void *aClosure);
+  static void ScrollCallback(nsITimer* aTimer, void* aClosure);
 
   class ScrollEvent : public mozilla::Runnable {
-  public:
+   public:
     NS_DECL_NSIRUNNABLE
     explicit ScrollEvent(nsTreeBodyFrame* aInner)
-      : mozilla::Runnable("nsTreeBodyFrame::ScrollEvent")
-      , mInner(aInner)
-    {
-    }
+        : mozilla::Runnable("nsTreeBodyFrame::ScrollEvent"), mInner(aInner) {}
     void Revoke() { mInner = nullptr; }
-  private:
+
+   private:
     nsTreeBodyFrame* mInner;
   };
 
@@ -508,53 +478,50 @@ protected:
 
 
   void FireInvalidateEvent(int32_t aStartRow, int32_t aEndRow,
-                           nsTreeColumn *aStartCol, nsTreeColumn *aEndCol);
+                           nsTreeColumn* aStartCol, nsTreeColumn* aEndCol);
 #endif
 
-protected: 
-
+ protected:  
   class Slots {
-    public:
-      Slots()
-        : mDropAllowed(false)
-        , mIsDragging(false)
-        , mDropRow(-1)
-        , mDropOrient(-1)
-        , mScrollLines(0)
-        , mDragAction(0) {
-      }
+   public:
+    Slots()
+        : mDropAllowed(false),
+          mIsDragging(false),
+          mDropRow(-1),
+          mDropOrient(-1),
+          mScrollLines(0),
+          mDragAction(0) {}
 
-      ~Slots() {
-        if (mTimer)
-          mTimer->Cancel();
-      }
+    ~Slots() {
+      if (mTimer) mTimer->Cancel();
+    }
 
-      friend class nsTreeBodyFrame;
+    friend class nsTreeBodyFrame;
 
-    protected:
-      
-      bool                     mDropAllowed;
+   protected:
+    
+    bool mDropAllowed;
 
-      
-      bool mIsDragging;
+    
+    bool mIsDragging;
 
-      
-      int32_t                  mDropRow;
+    
+    int32_t mDropRow;
 
-      
-      int16_t                  mDropOrient;
+    
+    int16_t mDropOrient;
 
-      
-      int16_t                  mScrollLines;
+    
+    int16_t mScrollLines;
 
-      
-      uint32_t                 mDragAction;
+    
+    uint32_t mDragAction;
 
-      
-      nsCOMPtr<nsITimer>       mTimer;
+    
+    nsCOMPtr<nsITimer> mTimer;
 
-      
-      nsTArray<int32_t>        mArray;
+    
+    nsTArray<int32_t> mArray;
   };
 
   Slots* mSlots;
@@ -573,6 +540,7 @@ protected:
   
   nsCOMPtr<nsITreeView> mView;
 
+  
   
   
   
@@ -611,7 +579,7 @@ protected:
   nscoord mAdjustWidth;
 
   
-  nsRect mInnerBox; 
+  nsRect mInnerBox;  
   int32_t mRowHeight;
   int32_t mIndentation;
   nscoord mStringWidth;
@@ -643,6 +611,6 @@ protected:
   
   nsTHashtable<nsPtrHashKey<nsTreeImageListener> > mCreatedListeners;
 
-}; 
+};  
 
 #endif

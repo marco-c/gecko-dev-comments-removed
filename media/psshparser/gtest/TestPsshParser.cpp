@@ -17,7 +17,7 @@ using namespace std;
 
 
 const uint8_t gGoogleWPTCencInitData[] = {
-  
+    
   0x00, 0x00, 0x00, 0x00,                          
   0x70, 0x73, 0x73, 0x68,                          
   0x01,                                            
@@ -28,13 +28,13 @@ const uint8_t gGoogleWPTCencInitData[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,  
   0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
   0x00, 0x00, 0x00, 0x00                           
-  
+    
 };
 
 
 
 const uint8_t gW3SpecExampleCencInitData[] = {
-  
+    
   0x00, 0x00, 0x00, 0x44, 0x70, 0x73, 0x73, 0x68, 
   0x01, 0x00, 0x00, 0x00,                         
   0x10, 0x77, 0xef, 0xec, 0xc0, 0xb2, 0x4d, 0x02, 
@@ -45,17 +45,17 @@ const uint8_t gW3SpecExampleCencInitData[] = {
   0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 
   0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50,
   0x00, 0x00, 0x00, 0x00                         
-  
+    
 };
 
 
 const uint8_t gOverflowBoxSize[] = {
-  0xff, 0xff, 0xff, 0xff,                          
+    0xff, 0xff, 0xff, 0xff,  
 };
 
 
 const uint8_t gTooLargeKeyCountInitData[] = {
-  
+    
   0x00, 0x00, 0x00, 0x34,                          
   0x70, 0x73, 0x73, 0x68,                          
   0x01,                                            
@@ -66,13 +66,13 @@ const uint8_t gTooLargeKeyCountInitData[] = {
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,  
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff                           
-  
+    
 };
 
 
 
 const uint8_t gNonCencInitData[] = {
-  
+    
   0x00, 0x00, 0x00, 0x5c,                          
   0x70, 0x73, 0x73, 0x68,                          
   0x01,                                            
@@ -87,20 +87,20 @@ const uint8_t gNonCencInitData[] = {
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
   0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  
+    
 };
 
 const uint8_t gNonPSSHBoxZeroSize[] = {
-  
+    
   0x00, 0x00, 0x00, 0x00,                          
   0xff, 0xff, 0xff, 0xff,                          
-  
+    
 };
 
 
 
 const uint8_t g2xGoogleWPTCencInitData[] = {
-  
+    
   0x00, 0x00, 0x00, 0x00,                          
   0x70, 0x73, 0x73, 0x68,                          
   0x01,                                            
@@ -122,43 +122,50 @@ const uint8_t g2xGoogleWPTCencInitData[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,  
   0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
   0x00, 0x00, 0x00, 0x00                           
-  
+    
 };
 
 TEST(PsshParser, ParseCencInitData) {
   std::vector<std::vector<uint8_t>> keyIds;
   bool rv;
 
-  rv = ParseCENCInitData(gGoogleWPTCencInitData, MOZ_ARRAY_LENGTH(gGoogleWPTCencInitData), keyIds);
+  rv = ParseCENCInitData(gGoogleWPTCencInitData,
+                         MOZ_ARRAY_LENGTH(gGoogleWPTCencInitData), keyIds);
   EXPECT_TRUE(rv);
   EXPECT_EQ(1u, keyIds.size());
   EXPECT_EQ(16u, keyIds[0].size());
   EXPECT_EQ(0, memcmp(&keyIds[0].front(), &gGoogleWPTCencInitData[32], 16));
 
-  rv = ParseCENCInitData(gW3SpecExampleCencInitData, MOZ_ARRAY_LENGTH(gW3SpecExampleCencInitData), keyIds);
+  rv = ParseCENCInitData(gW3SpecExampleCencInitData,
+                         MOZ_ARRAY_LENGTH(gW3SpecExampleCencInitData), keyIds);
   EXPECT_TRUE(rv);
   EXPECT_EQ(2u, keyIds.size());
   EXPECT_EQ(16u, keyIds[0].size());
   EXPECT_EQ(0, memcmp(&keyIds[0].front(), &gW3SpecExampleCencInitData[32], 16));
   EXPECT_EQ(0, memcmp(&keyIds[1].front(), &gW3SpecExampleCencInitData[48], 16));
 
-  rv = ParseCENCInitData(gOverflowBoxSize, MOZ_ARRAY_LENGTH(gOverflowBoxSize), keyIds);
+  rv = ParseCENCInitData(gOverflowBoxSize, MOZ_ARRAY_LENGTH(gOverflowBoxSize),
+                         keyIds);
   EXPECT_FALSE(rv);
   EXPECT_EQ(0u, keyIds.size());
 
-  rv = ParseCENCInitData(gTooLargeKeyCountInitData, MOZ_ARRAY_LENGTH(gTooLargeKeyCountInitData), keyIds);
+  rv = ParseCENCInitData(gTooLargeKeyCountInitData,
+                         MOZ_ARRAY_LENGTH(gTooLargeKeyCountInitData), keyIds);
   EXPECT_FALSE(rv);
   EXPECT_EQ(0u, keyIds.size());
 
-  rv = ParseCENCInitData(gNonCencInitData, MOZ_ARRAY_LENGTH(gNonCencInitData), keyIds);
+  rv = ParseCENCInitData(gNonCencInitData, MOZ_ARRAY_LENGTH(gNonCencInitData),
+                         keyIds);
   EXPECT_TRUE(rv);
   EXPECT_EQ(0u, keyIds.size());
 
-  rv = ParseCENCInitData(gNonPSSHBoxZeroSize, MOZ_ARRAY_LENGTH(gNonPSSHBoxZeroSize), keyIds);
+  rv = ParseCENCInitData(gNonPSSHBoxZeroSize,
+                         MOZ_ARRAY_LENGTH(gNonPSSHBoxZeroSize), keyIds);
   EXPECT_FALSE(rv);
   EXPECT_EQ(0u, keyIds.size());
 
-  rv = ParseCENCInitData(g2xGoogleWPTCencInitData, MOZ_ARRAY_LENGTH(g2xGoogleWPTCencInitData), keyIds);
+  rv = ParseCENCInitData(g2xGoogleWPTCencInitData,
+                         MOZ_ARRAY_LENGTH(g2xGoogleWPTCencInitData), keyIds);
   EXPECT_TRUE(rv);
   EXPECT_EQ(2u, keyIds.size());
   EXPECT_EQ(16u, keyIds[0].size());

@@ -14,8 +14,7 @@ class nsIContent;
 class nsIWidget;
 
 class nsIRollupListener {
- public: 
-
+ public:
   
 
 
@@ -32,8 +31,8 @@ class nsIRollupListener {
 
 
 
-  virtual bool Rollup(uint32_t aCount, bool aFlush,
-                      const nsIntPoint* aPoint, nsIContent** aLastRolledUp) = 0;
+  virtual bool Rollup(uint32_t aCount, bool aFlush, const nsIntPoint* aPoint,
+                      nsIContent** aLastRolledUp) = 0;
 
   
 
@@ -58,7 +57,8 @@ class nsIRollupListener {
 
 
 
-  virtual uint32_t GetSubmenuWidgetChain(nsTArray<nsIWidget*> *aWidgetChain) = 0;
+  virtual uint32_t GetSubmenuWidgetChain(
+      nsTArray<nsIWidget*>* aWidgetChain) = 0;
 
   
 

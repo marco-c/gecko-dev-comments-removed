@@ -16,9 +16,8 @@ namespace mozilla {
 
 class DisplayListBlueprint;
 
-class DisplayListChecker
-{
-public:
+class DisplayListChecker {
+ public:
   DisplayListChecker();
   DisplayListChecker(nsDisplayList* aList, const char* aName);
 
@@ -40,10 +39,10 @@ public:
   
   void Dump(std::stringstream& aSs) const;
 
-private:
+ private:
   UniquePtr<DisplayListBlueprint> mBlueprint;
 };
 
-} 
+}  
 
-#endif 
+#endif  

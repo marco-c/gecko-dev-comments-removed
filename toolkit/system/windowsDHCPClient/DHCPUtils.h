@@ -16,19 +16,16 @@ namespace system {
 namespace windowsDHCPClient {
 
 nsresult GetActiveDHCPNetworkAdapterName(
-  nsACString& aNetworkAdapterName,
-  WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper);
+    nsACString& aNetworkAdapterName,
+    WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper);
 
 nsresult RetrieveOption(
-  const nsACString&  aAdapterName,
-  uint8_t           aOption,
-  std::vector<char>& aOptionValueBuf,
-  uint32_t*         aOptionSize,
-  WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper
-);
+    const nsACString& aAdapterName, uint8_t aOption,
+    std::vector<char>& aOptionValueBuf, uint32_t* aOptionSize,
+    WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper);
 
-} 
-} 
-} 
-} 
-#endif 
+}  
+}  
+}  
+}  
+#endif  

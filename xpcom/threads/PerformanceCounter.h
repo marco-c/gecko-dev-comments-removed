@@ -16,13 +16,9 @@ namespace mozilla {
 
 
 
-
-class DispatchCategory final
-{
-public:
-  explicit DispatchCategory(uint32_t aValue)
-    : mValue(aValue)
-  {
+class DispatchCategory final {
+ public:
+  explicit DispatchCategory(uint32_t aValue) : mValue(aValue) {
     
     
     
@@ -30,21 +26,18 @@ public:
   }
 
   constexpr explicit DispatchCategory(TaskCategory aValue)
-    : mValue((uint32_t)aValue)
-  {}
+      : mValue((uint32_t)aValue) {}
 
-  uint32_t
-  GetValue() const
-  {
-    return mValue;
-  }
+  uint32_t GetValue() const { return mValue; }
 
   static const DispatchCategory Worker;
-private:
+
+ private:
   uint32_t mValue;
 };
 
-typedef Array<Atomic<uint32_t>, (uint32_t)TaskCategory::Count + 1> DispatchCounter;
+typedef Array<Atomic<uint32_t>, (uint32_t)TaskCategory::Count + 1>
+    DispatchCounter;
 
 
 
@@ -69,9 +62,8 @@ typedef Array<Atomic<uint32_t>, (uint32_t)TaskCategory::Count + 1> DispatchCount
 
 
 
-class PerformanceCounter final
-{
-public:
+class PerformanceCounter final {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PerformanceCounter)
 
   explicit PerformanceCounter(const nsACString& aName);
@@ -126,7 +118,7 @@ public:
 
   uint64_t GetID() const;
 
-private:
+ private:
   ~PerformanceCounter() {}
 
   Atomic<uint64_t> mExecutionDuration;
@@ -136,6 +128,6 @@ private:
   const uint64_t mID;
 };
 
-} 
+}  
 
-#endif 
+#endif  

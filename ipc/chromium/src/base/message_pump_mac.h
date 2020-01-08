@@ -41,7 +41,7 @@
 
 #if defined(__OBJC__)
 @class NSAutoreleasePool;
-#else  
+#else   
 class NSAutoreleasePool;
 #endif  
 
@@ -52,6 +52,7 @@ class TimeTicks;
 class MessagePumpCFRunLoopBase : public MessagePump {
   
   friend class MessagePumpScopedAutoreleasePool;
+
  public:
   MessagePumpCFRunLoopBase();
   virtual ~MessagePumpCFRunLoopBase();

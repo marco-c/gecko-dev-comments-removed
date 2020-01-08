@@ -12,9 +12,8 @@
 #define TESTING_TABLE_PROVIDER_NAME "test"
 
 class nsUrlClassifierUtils final : public nsIUrlClassifierUtils,
-                                   public nsIObserver
-{
-public:
+                                   public nsIObserver {
+ public:
   typedef nsClassHashtable<nsCStringHashKey, nsCString> ProviderDictType;
 
   nsUrlClassifierUtils();
@@ -25,9 +24,9 @@ public:
 
   nsresult Init();
 
-  nsresult CanonicalizeHostname(const nsACString & hostname,
-                                nsACString & _retval);
-  nsresult CanonicalizePath(const nsACString & url, nsACString & _retval);
+  nsresult CanonicalizeHostname(const nsACString& hostname,
+                                nsACString& _retval);
+  nsresult CanonicalizePath(const nsACString& url, nsACString& _retval);
 
   
   
@@ -35,17 +34,14 @@ public:
   
   
   
-  bool SpecialEncode(const nsACString & url,
-                       bool foldSlashes,
-                       nsACString & _retval);
+  bool SpecialEncode(const nsACString& url, bool foldSlashes,
+                     nsACString& _retval);
 
-  void ParseIPAddress(const nsACString & host, nsACString & _retval);
-  void CanonicalNum(const nsACString & num,
-                    uint32_t bytes,
-                    bool allowOctal,
-                    nsACString & _retval);
+  void ParseIPAddress(const nsACString& host, nsACString& _retval);
+  void CanonicalNum(const nsACString& num, uint32_t bytes, bool allowOctal,
+                    nsACString& _retval);
 
-private:
+ private:
   ~nsUrlClassifierUtils() {}
 
   
@@ -54,7 +50,7 @@ private:
   
   bool ShouldURLEscape(const unsigned char c) const;
 
-  void CleanupHostname(const nsACString & host, nsACString & _retval);
+  void CleanupHostname(const nsACString& host, nsACString& _retval);
 
   nsresult ReadProvidersFromPrefs(ProviderDictType& aDict);
 
@@ -63,4 +59,4 @@ private:
   mozilla::Mutex mProviderDictLock;
 };
 
-#endif 
+#endif  

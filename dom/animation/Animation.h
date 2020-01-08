@@ -13,10 +13,10 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/EffectCompositor.h" 
+#include "mozilla/EffectCompositor.h"  
 #include "mozilla/LinkedList.h"
-#include "mozilla/TimeStamp.h" 
-#include "mozilla/dom/AnimationBinding.h" 
+#include "mozilla/TimeStamp.h"             
+#include "mozilla/dom/AnimationBinding.h"  
 #include "mozilla/dom/AnimationEffect.h"
 #include "mozilla/dom/AnimationTimeline.h"
 #include "mozilla/dom/Promise.h"
@@ -49,30 +49,25 @@ class AsyncFinishNotification;
 class CSSAnimation;
 class CSSTransition;
 
-class Animation
-  : public DOMEventTargetHelper
-  , public LinkedListElement<Animation>
-{
-protected:
+class Animation : public DOMEventTargetHelper,
+                  public LinkedListElement<Animation> {
+ protected:
   virtual ~Animation() {}
 
-public:
+ public:
   explicit Animation(nsIGlobalObject* aGlobal)
-    : DOMEventTargetHelper(aGlobal)
-    , mPlaybackRate(1.0)
-    , mAnimationIndex(sNextAnimationIndex++)
-    , mCachedChildIndex(-1)
-    , mPendingState(PendingState::NotPending)
-    , mFinishedAtLastComposeStyle(false)
-    , mIsRelevant(false)
-    , mFinishedIsResolved(false)
-    , mSyncWithGeometricAnimations(false)
-  {
-  }
+      : DOMEventTargetHelper(aGlobal),
+        mPlaybackRate(1.0),
+        mAnimationIndex(sNextAnimationIndex++),
+        mCachedChildIndex(-1),
+        mPendingState(PendingState::NotPending),
+        mFinishedAtLastComposeStyle(false),
+        mIsRelevant(false),
+        mFinishedIsResolved(false),
+        mSyncWithGeometricAnimations(false) {}
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(Animation,
-                                           DOMEventTargetHelper)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(Animation, DOMEventTargetHelper)
 
   nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -89,17 +84,12 @@ public:
 
 
 
-  enum class LimitBehavior {
-    AutoRewind,
-    Continue
-  };
+  enum class LimitBehavior { AutoRewind, Continue };
 
   
-  static already_AddRefed<Animation>
-  Constructor(const GlobalObject& aGlobal,
-              AnimationEffect* aEffect,
-              const Optional<AnimationTimeline*>& aTimeline,
-              ErrorResult& aRv);
+  static already_AddRefed<Animation> Constructor(
+      const GlobalObject& aGlobal, AnimationEffect* aEffect,
+      const Optional<AnimationTimeline*>& aTimeline, ErrorResult& aRv);
   void GetId(nsAString& aResult) const { aResult = mId; }
   void SetId(const nsAString& aId);
   AnimationEffect* GetEffect() const { return mEffect; }
@@ -141,8 +131,7 @@ public:
                               ErrorResult& aRv);
   virtual AnimationPlayState PlayStateFromJS() const { return PlayState(); }
   virtual bool PendingFromJS() const { return Pending(); }
-  virtual void PlayFromJS(ErrorResult& aRv)
-  {
+  virtual void PlayFromJS(ErrorResult& aRv) {
     Play(aRv, LimitBehavior::AutoRewind);
   }
   
@@ -159,8 +148,7 @@ public:
   void SetEffectNoUpdate(AnimationEffect* aEffect);
 
   virtual void Tick();
-  bool NeedsTicks() const
-  {
+  bool NeedsTicks() const {
     return Pending() || PlayState() == AnimationPlayState::Running;
   }
 
@@ -252,8 +240,7 @@ public:
 
 
 
-  double CurrentOrPendingPlaybackRate() const
-  {
+  double CurrentOrPendingPlaybackRate() const {
     return mPendingPlaybackRate.valueOr(mPlaybackRate);
   }
   bool HasPendingPlaybackRate() const { return mPendingPlaybackRate.isSome(); }
@@ -268,10 +255,8 @@ public:
 
 
   static TimeDuration CurrentTimeFromTimelineTime(
-    const TimeDuration& aTimelineTime,
-    const TimeDuration& aStartTime,
-    float aPlaybackRate)
-  {
+      const TimeDuration& aTimelineTime, const TimeDuration& aStartTime,
+      float aPlaybackRate) {
     return (aTimelineTime - aStartTime).MultDouble(aPlaybackRate);
   }
 
@@ -285,10 +270,8 @@ public:
 
 
   static TimeDuration StartTimeFromTimelineTime(
-    const TimeDuration& aTimelineTime,
-    const TimeDuration& aCurrentTime,
-    float aPlaybackRate)
-  {
+      const TimeDuration& aTimelineTime, const TimeDuration& aCurrentTime,
+      float aPlaybackRate) {
     TimeDuration result = aTimelineTime;
     if (aPlaybackRate == 0) {
       return result;
@@ -309,34 +292,27 @@ public:
 
   
   
-  TimeStamp ElapsedTimeToTimeStamp(const StickyTimeDuration& aElapsedTime) const;
+  TimeStamp ElapsedTimeToTimeStamp(
+      const StickyTimeDuration& aElapsedTime) const;
 
-  bool IsPausedOrPausing() const
-  {
+  bool IsPausedOrPausing() const {
     return PlayState() == AnimationPlayState::Paused;
   }
 
-  bool HasCurrentEffect() const
-  {
+  bool HasCurrentEffect() const {
     return GetEffect() && GetEffect()->IsCurrent();
   }
-  bool IsInEffect() const
-  {
-    return GetEffect() && GetEffect()->IsInEffect();
-  }
+  bool IsInEffect() const { return GetEffect() && GetEffect()->IsInEffect(); }
 
-  bool IsPlaying() const
-  {
-    return mPlaybackRate != 0.0 &&
-           mTimeline &&
+  bool IsPlaying() const {
+    return mPlaybackRate != 0.0 && mTimeline &&
            !mTimeline->GetCurrentTime().IsNull() &&
            PlayState() == AnimationPlayState::Running;
   }
 
   bool ShouldBeSynchronizedWithMainThread(
-    nsCSSPropertyID aProperty,
-    const nsIFrame* aFrame,
-    AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
+      nsCSSPropertyID aProperty, const nsIFrame* aFrame,
+      AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
 
   bool IsRelevant() const { return mIsRelevant; }
   void UpdateRelevance();
@@ -346,12 +322,11 @@ public:
 
   bool HasLowerCompositeOrderThan(const Animation& aOther) const;
 
-   
+  
 
 
 
-  virtual EffectCompositor::CascadeLevel CascadeLevel() const
-  {
+  virtual EffectCompositor::CascadeLevel CascadeLevel() const {
     return EffectCompositor::CascadeLevel::Animations;
   }
 
@@ -404,28 +379,27 @@ public:
 
 
 
-  virtual void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime) {};
+  virtual void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime){};
 
   int32_t& CachedChildIndexRef() { return mCachedChildIndex; }
 
-protected:
+ protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
   void CancelNoUpdate();
   void PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior);
   void ResumeAt(const TimeDuration& aReadyTime);
   void PauseAt(const TimeDuration& aReadyTime);
-  void FinishPendingAt(const TimeDuration& aReadyTime)
-  {
+  void FinishPendingAt(const TimeDuration& aReadyTime) {
     if (mPendingState == PendingState::PlayPending) {
       ResumeAt(aReadyTime);
     } else if (mPendingState == PendingState::PausePending) {
       PauseAt(aReadyTime);
     } else {
-      MOZ_ASSERT_UNREACHABLE("Can't finish pending if we're not in a pending state");
+      MOZ_ASSERT_UNREACHABLE(
+          "Can't finish pending if we're not in a pending state");
     }
   }
-  void ApplyPendingPlaybackRate()
-  {
+  void ApplyPendingPlaybackRate() {
     if (mPendingPlaybackRate) {
       mPlaybackRate = *mPendingPlaybackRate;
       mPendingPlaybackRate.reset();
@@ -436,20 +410,12 @@ protected:
 
 
 
-  enum class SeekFlag {
-    NoSeek,
-    DidSeek
-  };
+  enum class SeekFlag { NoSeek, DidSeek };
 
-  enum class SyncNotifyFlag {
-    Sync,
-    Async
-  };
+  enum class SyncNotifyFlag { Sync, Async };
 
-  virtual void UpdateTiming(SeekFlag aSeekFlag,
-                            SyncNotifyFlag aSyncNotifyFlag);
-  void UpdateFinishedState(SeekFlag aSeekFlag,
-                           SyncNotifyFlag aSyncNotifyFlag);
+  virtual void UpdateTiming(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag);
+  void UpdateFinishedState(SeekFlag aSeekFlag, SyncNotifyFlag aSyncNotifyFlag);
   void UpdateEffect();
   
 
@@ -492,16 +458,14 @@ protected:
 
   bool IsNewlyStarted() const {
     return mPendingState == PendingState::PlayPending &&
-           mPendingReadyTime.IsNull() &&
-           mStartTime.IsNull();
+           mPendingReadyTime.IsNull() && mStartTime.IsNull();
   }
   bool IsPossiblyOrphanedPendingAnimation() const;
   StickyTimeDuration EffectEnd() const;
 
   Nullable<TimeDuration> GetCurrentTimeForHoldTime(
-    const Nullable<TimeDuration>& aHoldTime) const;
-  Nullable<TimeDuration> GetUnconstrainedCurrentTime() const
-  {
+      const Nullable<TimeDuration>& aHoldTime) const;
+  Nullable<TimeDuration> GetUnconstrainedCurrentTime() const {
     return GetCurrentTimeForHoldTime(Nullable<TimeDuration>());
   }
 
@@ -510,16 +474,15 @@ protected:
   
   
   
-  StickyTimeDuration
-  IntervalStartTime(const StickyTimeDuration& aActiveDuration) const
-  {
+  StickyTimeDuration IntervalStartTime(
+      const StickyTimeDuration& aActiveDuration) const {
     MOZ_ASSERT(AsCSSTransition() || AsCSSAnimation(),
                "Should be called for CSS animations or transitions");
     static constexpr StickyTimeDuration zeroDuration = StickyTimeDuration();
     return std::max(
-      std::min(StickyTimeDuration(-mEffect->SpecifiedTiming().Delay()),
-               aActiveDuration),
-      zeroDuration);
+        std::min(StickyTimeDuration(-mEffect->SpecifiedTiming().Delay()),
+                 aActiveDuration),
+        zeroDuration);
   }
 
   
@@ -527,21 +490,18 @@ protected:
   
   
   
-  StickyTimeDuration
-  IntervalEndTime(const StickyTimeDuration& aActiveDuration) const
-  {
+  StickyTimeDuration IntervalEndTime(
+      const StickyTimeDuration& aActiveDuration) const {
     MOZ_ASSERT(AsCSSTransition() || AsCSSAnimation(),
                "Should be called for CSS animations or transitions");
 
     static constexpr StickyTimeDuration zeroDuration = StickyTimeDuration();
-    return std::max(
-      std::min((EffectEnd() - mEffect->SpecifiedTiming().Delay()),
-               aActiveDuration),
-      zeroDuration);
+    return std::max(std::min((EffectEnd() - mEffect->SpecifiedTiming().Delay()),
+                             aActiveDuration),
+                    zeroDuration);
   }
 
-  TimeStamp GetTimelineCurrentTimeAsTimeStamp() const
-  {
+  TimeStamp GetTimelineCurrentTimeAsTimeStamp() const {
     return mTimeline ? mTimeline->GetCurrentTimeAsTimeStamp() : TimeStamp();
   }
 
@@ -551,10 +511,10 @@ protected:
   RefPtr<AnimationTimeline> mTimeline;
   RefPtr<AnimationEffect> mEffect;
   
-  Nullable<TimeDuration> mStartTime; 
-  Nullable<TimeDuration> mHoldTime;  
-  Nullable<TimeDuration> mPendingReadyTime; 
-  Nullable<TimeDuration> mPreviousCurrentTime; 
+  Nullable<TimeDuration> mStartTime;            
+  Nullable<TimeDuration> mHoldTime;             
+  Nullable<TimeDuration> mPendingReadyTime;     
+  Nullable<TimeDuration> mPreviousCurrentTime;  
   double mPlaybackRate;
   Maybe<double> mPendingPlaybackRate;
 
@@ -592,12 +552,7 @@ protected:
   
   
   
-  enum class PendingState : uint8_t
-  {
-    NotPending,
-    PlayPending,
-    PausePending
-  };
+  enum class PendingState : uint8_t { NotPending, PlayPending, PausePending };
   PendingState mPendingState;
 
   bool mFinishedAtLastComposeStyle;
@@ -621,7 +576,7 @@ protected:
   nsString mId;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

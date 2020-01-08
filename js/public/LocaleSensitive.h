@@ -11,16 +11,18 @@
 #ifndef js_LocaleSensitive_h
 #define js_LocaleSensitive_h
 
-#include "jstypes.h" 
+#include "jstypes.h"  
 
-#include "js/RootingAPI.h" 
-#include "js/Utility.h" 
+#include "js/RootingAPI.h"  
+#include "js/Utility.h"     
 
 struct JSContext;
 struct JSRuntime;
 class JSString;
 
-namespace JS { union Value; }
+namespace JS {
+union Value;
+}
 
 
 
@@ -32,8 +34,8 @@ namespace JS { union Value; }
 
 
 
-extern JS_PUBLIC_API bool
-JS_SetDefaultLocale(JSRuntime* rt, const char* locale);
+extern JS_PUBLIC_API bool JS_SetDefaultLocale(JSRuntime* rt,
+                                              const char* locale);
 
 
 
@@ -43,27 +45,23 @@ JS_SetDefaultLocale(JSRuntime* rt, const char* locale);
 
 
 
-extern JS_PUBLIC_API JS::UniqueChars
-JS_GetDefaultLocale(JSContext* cx);
+extern JS_PUBLIC_API JS::UniqueChars JS_GetDefaultLocale(JSContext* cx);
 
 
-extern JS_PUBLIC_API void
-JS_ResetDefaultLocale(JSRuntime* rt);
+extern JS_PUBLIC_API void JS_ResetDefaultLocale(JSRuntime* rt);
 
-using JSLocaleToUpperCase =
-    bool (*)(JSContext* cx, JS::Handle<JSString*> src, JS::MutableHandle<JS::Value> rval);
+using JSLocaleToUpperCase = bool (*)(JSContext* cx, JS::Handle<JSString*> src,
+                                     JS::MutableHandle<JS::Value> rval);
 
-using JSLocaleToLowerCase =
-    bool (*)(JSContext* cx, JS::Handle<JSString*> src, JS::MutableHandle<JS::Value> rval);
+using JSLocaleToLowerCase = bool (*)(JSContext* cx, JS::Handle<JSString*> src,
+                                     JS::MutableHandle<JS::Value> rval);
 
-using JSLocaleCompare =
-    bool (*)(JSContext* cx, JS::Handle<JSString*> src1, JS::Handle<JSString*> src2,
-             JS::MutableHandle<JS::Value> rval);
+using JSLocaleCompare = bool (*)(JSContext* cx, JS::Handle<JSString*> src1,
+                                 JS::Handle<JSString*> src2,
+                                 JS::MutableHandle<JS::Value> rval);
 
-using JSLocaleToUnicode =
-    bool (*)(JSContext* cx, const char* src, JS::MutableHandle<JS::Value> rval);
-
-
+using JSLocaleToUnicode = bool (*)(JSContext* cx, const char* src,
+                                   JS::MutableHandle<JS::Value> rval);
 
 
 
@@ -74,12 +72,13 @@ using JSLocaleToUnicode =
 
 
 
-struct JSLocaleCallbacks
-{
-    JSLocaleToUpperCase localeToUpperCase;
-    JSLocaleToLowerCase localeToLowerCase;
-    JSLocaleCompare localeCompare;
-    JSLocaleToUnicode localeToUnicode;
+
+
+struct JSLocaleCallbacks {
+  JSLocaleToUpperCase localeToUpperCase;
+  JSLocaleToLowerCase localeToLowerCase;
+  JSLocaleCompare localeCompare;
+  JSLocaleToUnicode localeToUnicode;
 };
 
 
@@ -87,13 +86,13 @@ struct JSLocaleCallbacks
 
 
 
-extern JS_PUBLIC_API void
-JS_SetLocaleCallbacks(JSRuntime* rt, const JSLocaleCallbacks* callbacks);
+extern JS_PUBLIC_API void JS_SetLocaleCallbacks(
+    JSRuntime* rt, const JSLocaleCallbacks* callbacks);
 
 
 
 
-extern JS_PUBLIC_API const JSLocaleCallbacks*
-JS_GetLocaleCallbacks(JSRuntime* rt);
+extern JS_PUBLIC_API const JSLocaleCallbacks* JS_GetLocaleCallbacks(
+    JSRuntime* rt);
 
 #endif 

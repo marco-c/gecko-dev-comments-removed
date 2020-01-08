@@ -17,27 +17,26 @@ namespace js {
 
 
 
-struct MemoryProtectionExceptionHandler
-{
-    
-    static bool install();
+struct MemoryProtectionExceptionHandler {
+  
+  static bool install();
 
-    
-    static bool isDisabled();
+  
+  static bool isDisabled();
 
-    
-
+  
 
 
 
 
-    static void addRegion(void* addr, size_t size);
 
-    
-    static void removeRegion(void* addr);
+  static void addRegion(void* addr, size_t size);
 
-    
-    static void uninstall();
+  
+  static void removeRegion(void* addr);
+
+  
+  static void uninstall();
 };
 
 } 

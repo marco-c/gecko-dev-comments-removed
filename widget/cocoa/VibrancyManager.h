@@ -45,7 +45,7 @@ enum class VibrancyType {
 
 
 class VibrancyManager {
-public:
+ public:
   
 
 
@@ -56,13 +56,9 @@ public:
 
 
 
-  VibrancyManager(const nsChildView& aCoordinateConverter,
-                  NSView* aContainerView)
-    : mCoordinateConverter(aCoordinateConverter)
-    , mContainerView(aContainerView)
-  {
-    MOZ_ASSERT(SystemSupportsVibrancy(),
-               "Don't instantiate this if !SystemSupportsVibrancy()");
+  VibrancyManager(const nsChildView& aCoordinateConverter, NSView* aContainerView)
+      : mCoordinateConverter(aCoordinateConverter), mContainerView(aContainerView) {
+    MOZ_ASSERT(SystemSupportsVibrancy(), "Don't instantiate this if !SystemSupportsVibrancy()");
   }
 
   
@@ -72,8 +68,7 @@ public:
 
 
 
-  void UpdateVibrantRegion(VibrancyType aType,
-                           const LayoutDeviceIntRegion& aRegion);
+  void UpdateVibrantRegion(VibrancyType aType, const LayoutDeviceIntRegion& aRegion);
 
   bool HasVibrantRegions() { return !mVibrantRegions.IsEmpty(); }
 
@@ -112,7 +107,7 @@ public:
 
   static NSView* CreateEffectView(VibrancyType aType, BOOL aIsContainer = NO);
 
-protected:
+ protected:
   void ClearVibrantRegion(const LayoutDeviceIntRegion& aVibrantRegion) const;
 
   const nsChildView& mCoordinateConverter;
@@ -120,6 +115,6 @@ protected:
   nsClassHashtable<nsUint32HashKey, ViewRegion> mVibrantRegions;
 };
 
-} 
+}  
 
-#endif 
+#endif  

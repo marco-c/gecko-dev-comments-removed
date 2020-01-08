@@ -18,35 +18,28 @@ namespace layers {
 
 
 class MOZ_STACK_CLASS AutoMoz2DMaskData {
-public:
-  AutoMoz2DMaskData() { }
-  ~AutoMoz2DMaskData() { }
+ public:
+  AutoMoz2DMaskData() {}
+  ~AutoMoz2DMaskData() {}
 
-  void Construct(const gfx::Matrix& aTransform,
-                 gfx::SourceSurface* aSurface)
-  {
+  void Construct(const gfx::Matrix& aTransform, gfx::SourceSurface* aSurface) {
     MOZ_ASSERT(!IsConstructed());
     mTransform = aTransform;
     mSurface = aSurface;
   }
 
-  gfx::SourceSurface* GetSurface()
-  {
+  gfx::SourceSurface* GetSurface() {
     MOZ_ASSERT(IsConstructed());
     return mSurface.get();
   }
 
-  const gfx::Matrix& GetTransform()
-  {
+  const gfx::Matrix& GetTransform() {
     MOZ_ASSERT(IsConstructed());
     return mTransform;
   }
 
-private:
-  bool IsConstructed()
-  {
-    return !!mSurface;
-  }
+ private:
+  bool IsConstructed() { return !!mSurface; }
 
   gfx::Matrix mTransform;
   RefPtr<gfx::SourceSurface> mSurface;
@@ -55,7 +48,7 @@ private:
   AutoMoz2DMaskData& operator=(const AutoMoz2DMaskData&) = delete;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

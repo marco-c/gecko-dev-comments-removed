@@ -18,7 +18,7 @@ void MaybeStopGamepadMonitoring();
 void StartGamepadMonitoring();
 void StopGamepadMonitoring();
 
-} 
-} 
+}  
+}  
 
 #endif

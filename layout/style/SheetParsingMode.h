@@ -49,7 +49,7 @@ enum SheetParsingMode : uint8_t {
   eSafeAgentSheetFeatures,
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

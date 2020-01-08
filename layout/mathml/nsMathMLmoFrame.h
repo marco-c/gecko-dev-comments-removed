@@ -15,22 +15,21 @@
 
 
 
-class nsMathMLmoFrame final : public nsMathMLTokenFrame
-{
-public:
+class nsMathMLmoFrame final : public nsMathMLTokenFrame {
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmoFrame)
 
-  friend nsIFrame* NS_NewMathMLmoFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle);
+  friend nsIFrame* NS_NewMathMLmoFrame(nsIPresShell* aPresShell,
+                                       ComputedStyle* aStyle);
 
   virtual eMathMLFrameType GetMathMLFrameType() override;
 
-  virtual void
-  SetAdditionalComputedStyle(int32_t          aIndex,
-                            ComputedStyle*  aComputedStyle) override;
-  virtual ComputedStyle*
-  GetAdditionalComputedStyle(int32_t aIndex) const override;
+  virtual void SetAdditionalComputedStyle(
+      int32_t aIndex, ComputedStyle* aComputedStyle) override;
+  virtual ComputedStyle* GetAdditionalComputedStyle(
+      int32_t aIndex) const override;
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
   NS_IMETHOD
@@ -39,56 +38,49 @@ public:
   NS_IMETHOD
   TransmitAutomaticData() override;
 
-  virtual void
-  SetInitialChildList(ChildListID     aListID,
-                      nsFrameList&    aChildList) override;
+  virtual void SetInitialChildList(ChildListID aListID,
+                                   nsFrameList& aChildList) override;
 
-  virtual void
-  Reflow(nsPresContext*          aPresContext,
-         ReflowOutput&     aDesiredSize,
-         const ReflowInput& aReflowInput,
-         nsReflowStatus&          aStatus) override;
+  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
+                      const ReflowInput& aReflowInput,
+                      nsReflowStatus& aStatus) override;
 
-  virtual nsresult
-  Place(DrawTarget*          aDrawTarget,
-        bool                 aPlaceOrigin,
-        ReflowOutput& aDesiredSize) override;
+  virtual nsresult Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+                         ReflowOutput& aDesiredSize) override;
 
   virtual void MarkIntrinsicISizesDirty() override;
 
-  virtual void
-  GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
-                           ReflowOutput& aDesiredSize) override;
+  virtual void GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
+                                        ReflowOutput& aDesiredSize) override;
 
-  virtual nsresult
-  AttributeChanged(int32_t         aNameSpaceID,
-                   nsAtom*        aAttribute,
-                   int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
   
   
   NS_IMETHOD
-  Stretch(DrawTarget*          aDrawTarget,
-          nsStretchDirection   aStretchDirection,
-          nsBoundingMetrics&   aContainerSize,
+  Stretch(DrawTarget* aDrawTarget, nsStretchDirection aStretchDirection,
+          nsBoundingMetrics& aContainerSize,
           ReflowOutput& aDesiredStretchSize) override;
 
-  virtual nsresult
-  ChildListChanged(int32_t aModType) override
-  {
+  virtual nsresult ChildListChanged(int32_t aModType) override {
     ProcessTextData();
     return nsMathMLContainerFrame::ChildListChanged(aModType);
   }
 
-protected:
-  explicit nsMathMLmoFrame(ComputedStyle* aStyle) :
-    nsMathMLTokenFrame(aStyle, kClassID), mFlags(0), mMinSize(0), mMaxSize(0) {}
+ protected:
+  explicit nsMathMLmoFrame(ComputedStyle* aStyle)
+      : nsMathMLTokenFrame(aStyle, kClassID),
+        mFlags(0),
+        mMinSize(0),
+        mMaxSize(0) {}
   virtual ~nsMathMLmoFrame();
 
-  nsMathMLChar     mMathMLChar; 
-  nsOperatorFlags  mFlags;
-  float            mMinSize;
-  float            mMaxSize;
+  nsMathMLChar
+      mMathMLChar;  
+  nsOperatorFlags mFlags;
+  float mMinSize;
+  float mMaxSize;
 
   bool UseMathMLChar();
 
@@ -98,12 +90,10 @@ protected:
   
   
   
-  void
-  ProcessOperatorData();
+  void ProcessOperatorData();
 
   
-  bool
-  IsFrameInSelection(nsIFrame* aFrame);
+  bool IsFrameInSelection(nsIFrame* aFrame);
 };
 
 #endif 

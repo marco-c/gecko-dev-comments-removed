@@ -14,13 +14,10 @@ namespace gfx {
 
 PrintTargetRecording::PrintTargetRecording(cairo_surface_t* aCairoSurface,
                                            const IntSize& aSize)
-  : PrintTarget(aCairoSurface, aSize)
-{
-}
+    : PrintTarget(aCairoSurface, aSize) {}
 
  already_AddRefed<PrintTargetRecording>
-PrintTargetRecording::CreateOrNull(const IntSize& aSize)
-{
+PrintTargetRecording::CreateOrNull(const IntSize& aSize) {
   if (!Factory::CheckSurfaceSize(aSize)) {
     return nullptr;
   }
@@ -55,7 +52,7 @@ PrintTargetRecording::CreateOrNull(const IntSize& aSize)
   
   
   cairo_surface_t* surface =
-    cairo_recording_surface_create(CAIRO_CONTENT_COLOR_ALPHA, nullptr);
+      cairo_recording_surface_create(CAIRO_CONTENT_COLOR_ALPHA, nullptr);
 
   if (cairo_surface_status(surface)) {
     return nullptr;
@@ -63,15 +60,13 @@ PrintTargetRecording::CreateOrNull(const IntSize& aSize)
 
   
   RefPtr<PrintTargetRecording> target =
-    new PrintTargetRecording(surface, aSize);
+      new PrintTargetRecording(surface, aSize);
 
   return target.forget();
 }
 
-already_AddRefed<DrawTarget>
-PrintTargetRecording::MakeDrawTarget(const IntSize& aSize,
-                                     DrawEventRecorder* aRecorder)
-{
+already_AddRefed<DrawTarget> PrintTargetRecording::MakeDrawTarget(
+    const IntSize& aSize, DrawEventRecorder* aRecorder) {
   MOZ_ASSERT(aRecorder, "A DrawEventRecorder is required");
 
   if (!aRecorder) {
@@ -90,9 +85,8 @@ PrintTargetRecording::MakeDrawTarget(const IntSize& aSize,
 }
 
 already_AddRefed<DrawTarget>
-PrintTargetRecording::CreateWrapAndRecordDrawTarget(DrawEventRecorder* aRecorder,
-                                                    DrawTarget* aDrawTarget)
-{
+PrintTargetRecording::CreateWrapAndRecordDrawTarget(
+    DrawEventRecorder* aRecorder, DrawTarget* aDrawTarget) {
   MOZ_ASSERT(aRecorder);
   MOZ_ASSERT(aDrawTarget);
 
@@ -105,12 +99,12 @@ PrintTargetRecording::CreateWrapAndRecordDrawTarget(DrawEventRecorder* aRecorder
 
   if (!dt || !dt->IsValid()) {
     gfxCriticalNote
-      << "Failed to create a recording DrawTarget for PrintTarget";
+        << "Failed to create a recording DrawTarget for PrintTarget";
     return nullptr;
   }
 
   return dt.forget();
 }
 
-} 
-} 
+}  
+}  

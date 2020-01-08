@@ -18,9 +18,8 @@ namespace cache {
 using mozilla::dom::quota::QuotaManager;
 
 
-nsresult
-ManagerId::Create(nsIPrincipal* aPrincipal, ManagerId** aManagerIdOut)
-{
+nsresult ManagerId::Create(nsIPrincipal* aPrincipal,
+                           ManagerId** aManagerIdOut) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -28,10 +27,12 @@ ManagerId::Create(nsIPrincipal* aPrincipal, ManagerId** aManagerIdOut)
   
   nsCString quotaOrigin;
   nsresult rv = QuotaManager::GetInfoFromPrincipal(aPrincipal,
-                                                   nullptr,   
-                                                   nullptr,   
+                                                   nullptr,  
+                                                   nullptr,  
                                                    &quotaOrigin);
-  if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
   RefPtr<ManagerId> ref = new ManagerId(aPrincipal, quotaOrigin);
   ref.forget(aManagerIdOut);
@@ -39,23 +40,18 @@ ManagerId::Create(nsIPrincipal* aPrincipal, ManagerId** aManagerIdOut)
   return NS_OK;
 }
 
-already_AddRefed<nsIPrincipal>
-ManagerId::Principal() const
-{
+already_AddRefed<nsIPrincipal> ManagerId::Principal() const {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIPrincipal> ref = mPrincipal;
   return ref.forget();
 }
 
 ManagerId::ManagerId(nsIPrincipal* aPrincipal, const nsACString& aQuotaOrigin)
-    : mPrincipal(aPrincipal)
-    , mQuotaOrigin(aQuotaOrigin)
-{
+    : mPrincipal(aPrincipal), mQuotaOrigin(aQuotaOrigin) {
   MOZ_DIAGNOSTIC_ASSERT(mPrincipal);
 }
 
-ManagerId::~ManagerId()
-{
+ManagerId::~ManagerId() {
   
   if (NS_IsMainThread()) {
     return;
@@ -65,10 +61,10 @@ ManagerId::~ManagerId()
 
   
   
-  NS_ReleaseOnMainThreadSystemGroup(
-    "ManagerId::mPrincipal", mPrincipal.forget());
+  NS_ReleaseOnMainThreadSystemGroup("ManagerId::mPrincipal",
+                                    mPrincipal.forget());
 }
 
-} 
-} 
-} 
+}  
+}  
+}  

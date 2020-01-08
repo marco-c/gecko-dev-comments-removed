@@ -30,9 +30,8 @@
 namespace mozilla {
 namespace ipc {
 
-class FileDescriptorShuffle
-{
-public:
+class FileDescriptorShuffle {
+ public:
   FileDescriptorShuffle() = default;
   ~FileDescriptorShuffle();
 
@@ -50,7 +49,7 @@ public:
   
   bool MapsTo(int aFd) const;
 
-private:
+ private:
   nsTArray<std::pair<int, int>> mMapping;
   nsTArray<int> mTempFds;
   int mMaxDst;
@@ -59,7 +58,7 @@ private:
   void operator=(const FileDescriptorShuffle&) = delete;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

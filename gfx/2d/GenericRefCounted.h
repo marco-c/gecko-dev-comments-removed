@@ -23,92 +23,89 @@ namespace mozilla {
 
 
 
-class GenericRefCountedBase
-{
-  protected:
-    virtual ~GenericRefCountedBase() {};
+class GenericRefCountedBase {
+ protected:
+  virtual ~GenericRefCountedBase(){};
 
-  public:
-    
-    virtual void AddRef() = 0;
+ public:
+  
+  virtual void AddRef() = 0;
 
-    virtual void Release() = 0;
+  virtual void Release() = 0;
 
-    
-    
-    
-    void ref() { AddRef(); }
-    void deref() { Release(); }
+  
+  
+  
+  void ref() { AddRef(); }
+  void deref() { Release(); }
 
 #ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-    virtual const char* typeName() const = 0;
-    virtual size_t typeSize() const = 0;
+  virtual const char* typeName() const = 0;
+  virtual size_t typeSize() const = 0;
 #endif
 };
 
 namespace detail {
 
-template<RefCountAtomicity Atomicity>
-class GenericRefCounted : public GenericRefCountedBase
-{
-  protected:
-    GenericRefCounted() : refCnt(0) { }
+template <RefCountAtomicity Atomicity>
+class GenericRefCounted : public GenericRefCountedBase {
+ protected:
+  GenericRefCounted() : refCnt(0) {}
 
-    virtual ~GenericRefCounted() {
-      MOZ_ASSERT(refCnt == detail::DEAD);
-    }
+  virtual ~GenericRefCounted() { MOZ_ASSERT(refCnt == detail::DEAD); }
 
-  public:
-    virtual void AddRef() override {
-      
-      MOZ_ASSERT(int32_t(refCnt) >= 0);
+ public:
+  virtual void AddRef() override {
+    
+    MOZ_ASSERT(int32_t(refCnt) >= 0);
 #ifndef MOZ_REFCOUNTED_LEAK_CHECKING
-      ++refCnt;
+    ++refCnt;
 #else
-      const char* type = typeName();
-      uint32_t size = typeSize();
-      const void* ptr = this;
-      MozRefCountType cnt = ++refCnt;
-      detail::RefCountLogger::logAddRef(ptr, cnt, type, size);
+    const char* type = typeName();
+    uint32_t size = typeSize();
+    const void* ptr = this;
+    MozRefCountType cnt = ++refCnt;
+    detail::RefCountLogger::logAddRef(ptr, cnt, type, size);
 #endif
-    }
+  }
 
-    virtual void Release() override {
-      
-      MOZ_ASSERT(int32_t(refCnt) > 0);
+  virtual void Release() override {
+    
+    MOZ_ASSERT(int32_t(refCnt) > 0);
 #ifndef MOZ_REFCOUNTED_LEAK_CHECKING
-      MozRefCountType cnt = --refCnt;
+    MozRefCountType cnt = --refCnt;
 #else
-      const char* type = typeName();
-      const void* ptr = this;
-      MozRefCountType cnt = --refCnt;
-      
-      
-      detail::RefCountLogger::logRelease(ptr, cnt, type);
+    const char* type = typeName();
+    const void* ptr = this;
+    MozRefCountType cnt = --refCnt;
+    
+    
+    detail::RefCountLogger::logRelease(ptr, cnt, type);
 #endif
-      if (0 == cnt) {
-        
-        
-        
-        
+    if (0 == cnt) {
+      
+      
+      
+      
 #ifdef DEBUG
-        refCnt = detail::DEAD;
+      refCnt = detail::DEAD;
 #endif
-        delete this;
-      }
+      delete this;
     }
+  }
 
-    MozRefCountType refCount() const { return refCnt; }
-    bool hasOneRef() const {
-      MOZ_ASSERT(refCnt > 0);
-      return refCnt == 1;
-    }
+  MozRefCountType refCount() const { return refCnt; }
+  bool hasOneRef() const {
+    MOZ_ASSERT(refCnt > 0);
+    return refCnt == 1;
+  }
 
-  private:
-    typename Conditional<Atomicity == AtomicRefCount, Atomic<MozRefCountType>, MozRefCountType>::Type refCnt;
+ private:
+  typename Conditional<Atomicity == AtomicRefCount, Atomic<MozRefCountType>,
+                       MozRefCountType>::Type refCnt;
 };
 
-} 
+}  
 
 
 
@@ -116,18 +113,16 @@ class GenericRefCounted : public GenericRefCountedBase
 
 
 
-class GenericRefCounted : public detail::GenericRefCounted<detail::NonAtomicRefCount>
-{
-};
+class GenericRefCounted
+    : public detail::GenericRefCounted<detail::NonAtomicRefCount> {};
 
 
 
 
 
-class GenericAtomicRefCounted : public detail::GenericRefCounted<detail::AtomicRefCount>
-{
-};
+class GenericAtomicRefCounted
+    : public detail::GenericRefCounted<detail::AtomicRefCount> {};
 
-} 
+}  
 
 #endif

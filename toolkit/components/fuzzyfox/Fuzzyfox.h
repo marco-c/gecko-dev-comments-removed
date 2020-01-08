@@ -20,9 +20,7 @@
 
 
 
-
-#define FUZZYFOX_UPDATECLOCK_OBSERVER_TOPIC   "fuzzyfox-update-clocks"
-
+#define FUZZYFOX_UPDATECLOCK_OBSERVER_TOPIC "fuzzyfox-update-clocks"
 
 
 
@@ -31,7 +29,9 @@
 
 
 
-#define FUZZYFOX_FIREOUTBOUND_OBSERVER_TOPIC  "fuzzyfox-fire-outbound"
+
+
+#define FUZZYFOX_FIREOUTBOUND_OBSERVER_TOPIC "fuzzyfox-fire-outbound"
 
 namespace mozilla {
 
@@ -73,46 +73,35 @@ namespace mozilla {
 
 
 
-
-class Fuzzyfox final : public Runnable, public nsIObserver
-{
-public:
+class Fuzzyfox final : public Runnable, public nsIObserver {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIOBSERVER
 
-  static void
-  Start();
+  static void Start();
 
   NS_IMETHOD
   Run() override;
 
-private:
+ private:
   Fuzzyfox();
   ~Fuzzyfox();
 
-  uint64_t
-  ActualTime();
+  uint64_t ActualTime();
 
-  uint64_t
-  PickDuration();
+  uint64_t PickDuration();
 
-  void
-  UpdateClocks(uint64_t aNewTime, TimeStamp aNewTimeStamp);
+  void UpdateClocks(uint64_t aNewTime, TimeStamp aNewTimeStamp);
 
-  uint64_t
-  GetClockGrain();
+  uint64_t GetClockGrain();
 
-  uint64_t
-  FloorToGrain(uint64_t aValue);
+  uint64_t FloorToGrain(uint64_t aValue);
 
-  TimeStamp
-  FloorToGrain(TimeStamp aValue);
+  TimeStamp FloorToGrain(TimeStamp aValue);
 
-  uint64_t
-  CeilToGrain(uint64_t aValue);
+  uint64_t CeilToGrain(uint64_t aValue);
 
-  TimeStamp
-  CeilToGrain(TimeStamp aValue);
+  TimeStamp CeilToGrain(TimeStamp aValue);
 
   bool mSanityCheck;
   uint64_t mStartTime;
@@ -132,6 +121,6 @@ private:
   static Atomic<uint32_t, Relaxed> sFuzzyfoxClockGrain;
 };
 
-} 
+}  
 
 #endif 

@@ -12,30 +12,25 @@
 
 
 class ErrorObserver {
-
-public:
-
-    
+ public:
+  
 
 
-    virtual ~ErrorObserver() {};
+  virtual ~ErrorObserver(){};
 
-    
+  
 
 
-    virtual void receiveError(const nsAString& errorMessage, nsresult aRes) = 0;
+  virtual void receiveError(const nsAString& errorMessage, nsresult aRes) = 0;
 
-    
+  
 
 
 
-    void receiveError(const nsAString& errorMessage)
-    {
-        receiveError(errorMessage, NS_ERROR_FAILURE);
-    }
+  void receiveError(const nsAString& errorMessage) {
+    receiveError(errorMessage, NS_ERROR_FAILURE);
+  }
 
-
-
-}; 
+};  
 
 #endif

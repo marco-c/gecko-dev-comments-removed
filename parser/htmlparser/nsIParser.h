@@ -17,7 +17,6 @@
 
 
 
-
 #include "nsISupports.h"
 #include "nsIStreamListener.h"
 #include "nsIDTD.h"
@@ -27,9 +26,12 @@
 #include "nsParserBase.h"
 #include "mozilla/NotNull.h"
 
-#define NS_IPARSER_IID \
-{ 0x2c4ad90a, 0x740e, 0x4212, \
-  { 0xba, 0x3f, 0xfe, 0xac, 0xda, 0x4b, 0x92, 0x9e } }
+#define NS_IPARSER_IID                               \
+  {                                                  \
+    0x2c4ad90a, 0x740e, 0x4212, {                    \
+      0xba, 0x3f, 0xfe, 0xac, 0xda, 0x4b, 0x92, 0x9e \
+    }                                                \
+  }
 
 class nsIContentSink;
 class nsIRequestObserver;
@@ -39,21 +41,11 @@ namespace mozilla {
 class Encoding;
 }
 
-enum eParserCommands {
-  eViewNormal,
-  eViewSource,
-  eViewFragment,
-  eViewErrors
-};
+enum eParserCommands { eViewNormal, eViewSource, eViewFragment, eViewErrors };
 
-enum eParserDocType {
-  ePlainText = 0,
-  eXML,
-  eHTML_Quirks,
-  eHTML_Strict
-};
+enum eParserDocType { ePlainText = 0, eXML, eHTML_Quirks, eHTML_Strict };
 
-enum eStreamState {eNone,eOnStart,eOnDataAvail,eOnStop};
+enum eStreamState { eNone, eOnStart, eOnDataAvail, eOnStop };
 
 
 
@@ -66,30 +58,31 @@ enum eStreamState {eNone,eOnStart,eOnDataAvail,eOnStop};
 
 
 class nsIParser : public nsParserBase {
-  protected:
-    using Encoding = mozilla::Encoding;
-    template <typename T> using NotNull = mozilla::NotNull<T>;
-  public:
+ protected:
+  using Encoding = mozilla::Encoding;
+  template <typename T>
+  using NotNull = mozilla::NotNull<T>;
 
-    NS_DECLARE_STATIC_IID_ACCESSOR(NS_IPARSER_IID)
+ public:
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IPARSER_IID)
 
-    
+  
 
 
 
 
 
-    NS_IMETHOD_(void) SetContentSink(nsIContentSink* aSink)=0;
+  NS_IMETHOD_(void) SetContentSink(nsIContentSink* aSink) = 0;
 
+  
 
-    
 
 
 
+  NS_IMETHOD_(nsIContentSink*) GetContentSink(void) = 0;
 
-    NS_IMETHOD_(nsIContentSink*) GetContentSink(void)=0;
+  
 
-    
 
 
 
@@ -97,12 +90,12 @@ class nsIParser : public nsParserBase {
 
 
 
+  NS_IMETHOD_(void) GetCommand(nsCString& aCommand) = 0;
+  NS_IMETHOD_(void) SetCommand(const char* aCommand) = 0;
+  NS_IMETHOD_(void) SetCommand(eParserCommands aParserCommand) = 0;
 
-    NS_IMETHOD_(void) GetCommand(nsCString& aCommand)=0;
-    NS_IMETHOD_(void) SetCommand(const char* aCommand)=0;
-    NS_IMETHOD_(void) SetCommand(eParserCommands aParserCommand)=0;
+  
 
-    
 
 
 
@@ -110,130 +103,127 @@ class nsIParser : public nsParserBase {
 
 
 
+  virtual void SetDocumentCharset(NotNull<const Encoding*> aCharset,
+                                  int32_t aSource) = 0;
 
-    virtual void SetDocumentCharset(NotNull<const Encoding*> aCharset,
-                                    int32_t aSource) = 0;
+  
 
-    
 
 
 
 
+  NS_IMETHOD GetChannel(nsIChannel** aChannel) override = 0;
 
-    NS_IMETHOD GetChannel(nsIChannel** aChannel) override = 0;
+  
 
-    
 
 
 
 
+  NS_IMETHOD GetDTD(nsIDTD** aDTD) = 0;
 
-    NS_IMETHOD GetDTD(nsIDTD** aDTD) = 0;
-    
-    
+  
 
 
-    virtual nsIStreamListener* GetStreamListener() = 0;
+  virtual nsIStreamListener* GetStreamListener() = 0;
 
-    
+  
 
 
 
 
-    
-    
-    
-    
-    
-    
-    
-    NS_IMETHOD ContinueInterruptedParsing() = 0;
-    
-    
-    NS_IMETHOD_(void) BlockParser() = 0;
-    
-    
-    
-    
-    
-    NS_IMETHOD_(void) UnblockParser() = 0;
 
-    
+  
+  
+  
+  
+  
+  
+  NS_IMETHOD ContinueInterruptedParsing() = 0;
 
+  
+  NS_IMETHOD_(void) BlockParser() = 0;
 
-    NS_IMETHOD_(void) ContinueInterruptedParsingAsync() = 0;
+  
+  
+  
+  
+  NS_IMETHOD_(void) UnblockParser() = 0;
 
-    NS_IMETHOD_(bool) IsParserEnabled() override = 0;
-    NS_IMETHOD_(bool) IsComplete() = 0;
-    
-    NS_IMETHOD Parse(nsIURI* aURL,
-                     nsIRequestObserver* aListener = nullptr,
-                     void* aKey = 0,
-                     nsDTDMode aMode = eDTDMode_autodetect) = 0;
+  
 
-    NS_IMETHOD Terminate(void) = 0;
 
-    
+  NS_IMETHOD_(void) ContinueInterruptedParsingAsync() = 0;
 
+  NS_IMETHOD_(bool) IsParserEnabled() override = 0;
+  NS_IMETHOD_(bool) IsComplete() = 0;
 
+  NS_IMETHOD Parse(nsIURI* aURL, nsIRequestObserver* aListener = nullptr,
+                   void* aKey = 0, nsDTDMode aMode = eDTDMode_autodetect) = 0;
 
+  NS_IMETHOD Terminate(void) = 0;
 
+  
 
 
 
 
-    NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
-                             nsTArray<nsString>& aTagStack) = 0;
 
-    
 
 
 
+  NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
+                           nsTArray<nsString>& aTagStack) = 0;
 
+  
 
-    NS_IMETHOD BuildModel(void) = 0;
 
-    
 
 
 
+  NS_IMETHOD BuildModel(void) = 0;
 
+  
 
 
 
 
 
-    NS_IMETHOD CancelParsingEvents() = 0;
 
-    virtual void Reset() = 0;
 
-    
 
 
-    virtual bool IsInsertionPointDefined() = 0;
+  NS_IMETHOD CancelParsingEvents() = 0;
 
-    
+  virtual void Reset() = 0;
 
+  
 
 
-    virtual void PushDefinedInsertionPoint() = 0;
+  virtual bool IsInsertionPointDefined() = 0;
 
-    
+  
 
 
 
+  virtual void PushDefinedInsertionPoint() = 0;
 
-    virtual void PopDefinedInsertionPoint() = 0;
+  
 
-    
 
 
-    virtual void MarkAsNotScriptCreated(const char* aCommand) = 0;
 
-    
+  virtual void PopDefinedInsertionPoint() = 0;
 
+  
 
-    virtual bool IsScriptCreated() = 0;
+
+  virtual void MarkAsNotScriptCreated(const char* aCommand) = 0;
+
+  
+
+
+  virtual bool IsScriptCreated() = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIParser, NS_IPARSER_IID)
@@ -242,7 +232,7 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsIParser, NS_IPARSER_IID)
 
 
 
-#define NS_IPARSER_FLAG_XML                  0x00000200
-#define NS_IPARSER_FLAG_HTML                 0x00000400
+#define NS_IPARSER_FLAG_XML 0x00000200
+#define NS_IPARSER_FLAG_HTML 0x00000400
 
 #endif

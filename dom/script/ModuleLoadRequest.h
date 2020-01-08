@@ -19,11 +19,10 @@ class ScriptLoader;
 
 
 
-class VisitedURLSet : public nsTHashtable<nsURIHashKey>
-{
+class VisitedURLSet : public nsTHashtable<nsURIHashKey> {
   NS_INLINE_DECL_REFCOUNTING(VisitedURLSet)
 
-private:
+ private:
   ~VisitedURLSet() = default;
 };
 
@@ -31,32 +30,25 @@ private:
 
 
 
-class ModuleLoadRequest final : public ScriptLoadRequest
-{
+class ModuleLoadRequest final : public ScriptLoadRequest {
   ~ModuleLoadRequest() = default;
 
   ModuleLoadRequest(const ModuleLoadRequest& aOther) = delete;
   ModuleLoadRequest(ModuleLoadRequest&& aOther) = delete;
 
-public:
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ModuleLoadRequest, ScriptLoadRequest)
 
   
-  ModuleLoadRequest(nsIURI* aURI,
-                    ScriptFetchOptions* aFetchOptions,
-                    const SRIMetadata& aIntegrity,
-                    nsIURI* aReferrer,
+  ModuleLoadRequest(nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
+                    const SRIMetadata& aIntegrity, nsIURI* aReferrer,
                     ScriptLoader* aLoader);
 
   
-  ModuleLoadRequest(nsIURI* aURI,
-                    ModuleLoadRequest* aParent);
+  ModuleLoadRequest(nsIURI* aURI, ModuleLoadRequest* aParent);
 
-  bool IsTopLevel() const override
-  {
-    return mIsTopLevel;
-  }
+  bool IsTopLevel() const override { return mIsTopLevel; }
 
   void SetReady() override;
   void Cancel() override;
@@ -98,7 +90,7 @@ public:
   RefPtr<VisitedURLSet> mVisitedSet;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -23,9 +23,9 @@ namespace testing {
 
 void SetBlockUNCPaths(bool aBlock);
 void AddDirectoryToWhitelist(nsAString const& aPath);
-bool NormalizePath(nsAString const & aPath, nsAString & aNormalized);
+bool NormalizePath(nsAString const& aPath, nsAString& aNormalized);
 
-}
+}  
 
-} 
-} 
+}  
+}  

@@ -25,15 +25,14 @@ enum class BlendMethod : int8_t {
 };
 
 enum class DisposalMethod : int8_t {
-  CLEAR_ALL = -1,  
-  NOT_SPECIFIED,   
-  KEEP,            
-  CLEAR,           
-  RESTORE_PREVIOUS 
+  CLEAR_ALL = -1,   
+  NOT_SPECIFIED,    
+  KEEP,             
+  CLEAR,            
+  RESTORE_PREVIOUS  
 };
 
-struct AnimationParams
-{
+struct AnimationParams {
   gfx::IntRect mBlendRect;
   FrameTimeout mTimeout;
   uint32_t mFrameNum;
@@ -41,7 +40,7 @@ struct AnimationParams
   DisposalMethod mDisposalMethod;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

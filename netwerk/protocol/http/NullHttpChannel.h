@@ -19,11 +19,9 @@ namespace net {
 
 class nsProxyInfo;
 
-class NullHttpChannel final
-  : public nsINullChannel
-  , public nsIHttpChannel
-  , public nsITimedChannel
-{
+class NullHttpChannel final : public nsINullChannel,
+                              public nsIHttpChannel,
+                              public nsITimedChannel {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSINULLCHANNEL
   NS_DECL_NSIHTTPCHANNEL
@@ -35,32 +33,31 @@ class NullHttpChannel final
 
   
   
-  explicit NullHttpChannel(nsIHttpChannel * chan);
+  explicit NullHttpChannel(nsIHttpChannel *chan);
 
   
   MOZ_MUST_USE nsresult Init(nsIURI *aURI, uint32_t aCaps,
                              nsProxyInfo *aProxyInfo,
                              uint32_t aProxyResolveFlags, nsIURI *aProxyURI);
-private:
+
+ private:
   ~NullHttpChannel() = default;
 
-protected:
+ protected:
   nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIURI> mOriginalURI;
 
-  nsString  mInitiatorType;
-  PRTime    mChannelCreationTime;
+  nsString mInitiatorType;
+  PRTime mChannelCreationTime;
   TimeStamp mAsyncOpenTime;
   TimeStamp mChannelCreationTimestamp;
   nsCOMPtr<nsIPrincipal> mResourcePrincipal;
   nsCString mTimingAllowOriginHeader;
-  bool      mAllRedirectsSameOrigin;
-  bool      mAllRedirectsPassTimingAllowCheck;
+  bool mAllRedirectsSameOrigin;
+  bool mAllRedirectsPassTimingAllowCheck;
 };
 
-} 
-} 
+}  
+}  
 
-
-
-#endif 
+#endif  

@@ -21,314 +21,302 @@ namespace jit {
 
 DefaultJitOptions JitOptions;
 
-static void Warn(const char* env, const char* value)
-{
-    fprintf(stderr, "Warning: I didn't understand %s=\"%s\"\n", env, value);
+static void Warn(const char* env, const char* value) {
+  fprintf(stderr, "Warning: I didn't understand %s=\"%s\"\n", env, value);
 }
 
-template<typename T> struct IsBool : mozilla::FalseType {};
-template<> struct IsBool<bool> : mozilla::TrueType {};
+template <typename T>
+struct IsBool : mozilla::FalseType {};
+template <>
+struct IsBool<bool> : mozilla::TrueType {};
 
-static Maybe<int>
-ParseInt(const char* str)
-{
-    char* endp;
-    int retval = strtol(str, &endp, 0);
-    if (*endp == '\0') {
-        return mozilla::Some(retval);
-    }
-    return mozilla::Nothing();
+static Maybe<int> ParseInt(const char* str) {
+  char* endp;
+  int retval = strtol(str, &endp, 0);
+  if (*endp == '\0') {
+    return mozilla::Some(retval);
+  }
+  return mozilla::Nothing();
 }
 
-template<typename T>
+template <typename T>
 T overrideDefault(const char* param, T dflt) {
-    char* str = getenv(param);
-    if (!str) {
-        return dflt;
-    }
-    if (IsBool<T>::value) {
-        if (strcmp(str, "true") == 0 || strcmp(str, "yes") == 0) {
-            return true;
-        }
-        if (strcmp(str, "false") == 0 || strcmp(str, "no") == 0) {
-            return false;
-        }
-        Warn(param, str);
-    } else {
-        Maybe<int> value = ParseInt(str);
-        if (value.isSome()) {
-            return value.ref();
-        }
-        Warn(param, str);
-    }
+  char* str = getenv(param);
+  if (!str) {
     return dflt;
+  }
+  if (IsBool<T>::value) {
+    if (strcmp(str, "true") == 0 || strcmp(str, "yes") == 0) {
+      return true;
+    }
+    if (strcmp(str, "false") == 0 || strcmp(str, "no") == 0) {
+      return false;
+    }
+    Warn(param, str);
+  } else {
+    Maybe<int> value = ParseInt(str);
+    if (value.isSome()) {
+      return value.ref();
+    }
+    Warn(param, str);
+  }
+  return dflt;
 }
 
 #define SET_DEFAULT(var, dflt) var = overrideDefault("JIT_OPTION_" #var, dflt)
-DefaultJitOptions::DefaultJitOptions()
-{
-    
-    
-    
-    SET_DEFAULT(checkGraphConsistency, true);
+DefaultJitOptions::DefaultJitOptions() {
+  
+  
+  
+  SET_DEFAULT(checkGraphConsistency, true);
 
 #ifdef CHECK_OSIPOINT_REGISTERS
-    
-    
-    SET_DEFAULT(checkOsiPointRegisters, false);
+  
+  
+  SET_DEFAULT(checkOsiPointRegisters, false);
 #endif
 
-    
-    
-    SET_DEFAULT(checkRangeAnalysis, false);
+  
+  
+  SET_DEFAULT(checkRangeAnalysis, false);
 
-    
-    SET_DEFAULT(disableInlineBacktracking, false);
+  
+  SET_DEFAULT(disableInlineBacktracking, false);
 
-    
-    SET_DEFAULT(disableAma, false);
+  
+  SET_DEFAULT(disableAma, false);
 
-    
-    SET_DEFAULT(disableEaa, false);
+  
+  SET_DEFAULT(disableEaa, false);
 
-    
-    SET_DEFAULT(disableEdgeCaseAnalysis, false);
+  
+  SET_DEFAULT(disableEdgeCaseAnalysis, false);
 
-    
-    SET_DEFAULT(disableGvn, false);
+  
+  SET_DEFAULT(disableGvn, false);
 
-    
-    SET_DEFAULT(disableInlining, false);
+  
+  SET_DEFAULT(disableInlining, false);
 
-    
-    SET_DEFAULT(disableLicm, false);
+  
+  SET_DEFAULT(disableLicm, false);
 
-    
-    SET_DEFAULT(disableLoopUnrolling, true);
+  
+  SET_DEFAULT(disableLoopUnrolling, true);
 
-    
-    SET_DEFAULT(disableOptimizationTracking, true);
+  
+  SET_DEFAULT(disableOptimizationTracking, true);
 
-    
-    SET_DEFAULT(disablePgo, false);
+  
+  SET_DEFAULT(disablePgo, false);
 
-    
-    SET_DEFAULT(disableInstructionReordering, false);
+  
+  SET_DEFAULT(disableInstructionReordering, false);
 
-    
-    SET_DEFAULT(disableRangeAnalysis, false);
+  
+  SET_DEFAULT(disableRangeAnalysis, false);
 
-    
-    SET_DEFAULT(disableRecoverIns, false);
+  
+  SET_DEFAULT(disableRecoverIns, false);
 
-    
-    SET_DEFAULT(disableScalarReplacement, false);
+  
+  SET_DEFAULT(disableScalarReplacement, false);
 
-    
-    SET_DEFAULT(disableCacheIR, false);
+  
+  SET_DEFAULT(disableCacheIR, false);
 
-    
-    SET_DEFAULT(disableCacheIRBinaryArith, false);
+  
+  SET_DEFAULT(disableCacheIRBinaryArith, false);
 
-    
-    
-    #if defined(XP_MACOSX)
-        SET_DEFAULT(disableSincos, false);
-    #else
-        SET_DEFAULT(disableSincos, true);
-    #endif
 
-    
-    SET_DEFAULT(disableSink, true);
 
-    
-    SET_DEFAULT(eagerCompilation, false);
+#if defined(XP_MACOSX)
+  SET_DEFAULT(disableSincos, false);
+#else
+  SET_DEFAULT(disableSincos, true);
+#endif
 
-    
-    SET_DEFAULT(forceInlineCaches, false);
+  
+  SET_DEFAULT(disableSink, true);
 
-    
-    SET_DEFAULT(limitScriptSize, true);
+  
+  SET_DEFAULT(eagerCompilation, false);
 
-    
-    SET_DEFAULT(osr, true);
+  
+  SET_DEFAULT(forceInlineCaches, false);
 
-    
-    SET_DEFAULT(runExtraChecks, false);
+  
+  SET_DEFAULT(limitScriptSize, true);
 
-    
-    
-    
-    SET_DEFAULT(baselineWarmUpThreshold, 10);
+  
+  SET_DEFAULT(osr, true);
 
-    
-    
-    SET_DEFAULT(exceptionBailoutThreshold, 10);
+  
+  SET_DEFAULT(runExtraChecks, false);
 
-    
-    
-    
-    SET_DEFAULT(frequentBailoutThreshold, 10);
+  
+  
+  
+  SET_DEFAULT(baselineWarmUpThreshold, 10);
 
-    
-    
-    SET_DEFAULT(fullDebugChecks, true);
+  
+  
+  SET_DEFAULT(exceptionBailoutThreshold, 10);
 
-    
-    SET_DEFAULT(maxStackArgs, 4096);
+  
+  
+  
+  SET_DEFAULT(frequentBailoutThreshold, 10);
 
-    
-    
-    SET_DEFAULT(osrPcMismatchesBeforeRecompile, 6000);
+  
+  
+  SET_DEFAULT(fullDebugChecks, true);
 
-    
-    SET_DEFAULT(smallFunctionMaxBytecodeLength_, 130);
+  
+  SET_DEFAULT(maxStackArgs, 4096);
 
-    
-    
-    SET_DEFAULT(jumpThreshold, UINT32_MAX);
+  
+  
+  SET_DEFAULT(osrPcMismatchesBeforeRecompile, 6000);
 
-    
-    
-    
-    
-    
-    SET_DEFAULT(branchPruningHitCountFactor, 1);
-    SET_DEFAULT(branchPruningInstFactor, 10);
-    SET_DEFAULT(branchPruningBlockSpanFactor, 100);
-    SET_DEFAULT(branchPruningEffectfulInstFactor, 3500);
-    SET_DEFAULT(branchPruningThreshold, 4000);
+  
+  SET_DEFAULT(smallFunctionMaxBytecodeLength_, 130);
 
-    
-    
-    
-    const char* forcedDefaultIonWarmUpThresholdEnv = "JIT_OPTION_forcedDefaultIonWarmUpThreshold";
-    if (const char* env = getenv(forcedDefaultIonWarmUpThresholdEnv)) {
-        Maybe<int> value = ParseInt(env);
-        if (value.isSome()) {
-            forcedDefaultIonWarmUpThreshold.emplace(value.ref());
-        } else {
-            Warn(forcedDefaultIonWarmUpThresholdEnv, env);
-        }
+  
+  
+  SET_DEFAULT(jumpThreshold, UINT32_MAX);
+
+  
+  
+  
+  
+  
+  SET_DEFAULT(branchPruningHitCountFactor, 1);
+  SET_DEFAULT(branchPruningInstFactor, 10);
+  SET_DEFAULT(branchPruningBlockSpanFactor, 100);
+  SET_DEFAULT(branchPruningEffectfulInstFactor, 3500);
+  SET_DEFAULT(branchPruningThreshold, 4000);
+
+  
+  
+  
+  const char* forcedDefaultIonWarmUpThresholdEnv =
+      "JIT_OPTION_forcedDefaultIonWarmUpThreshold";
+  if (const char* env = getenv(forcedDefaultIonWarmUpThresholdEnv)) {
+    Maybe<int> value = ParseInt(env);
+    if (value.isSome()) {
+      forcedDefaultIonWarmUpThreshold.emplace(value.ref());
+    } else {
+      Warn(forcedDefaultIonWarmUpThresholdEnv, env);
     }
+  }
 
-    
-    const char* forcedDefaultIonSmallFunctionWarmUpThresholdEnv =
-        "JIT_OPTION_forcedDefaultIonSmallFunctionWarmUpThreshold";
-    if (const char* env = getenv(forcedDefaultIonSmallFunctionWarmUpThresholdEnv)) {
-        Maybe<int> value = ParseInt(env);
-        if (value.isSome()) {
-            forcedDefaultIonSmallFunctionWarmUpThreshold.emplace(value.ref());
-        } else {
-            Warn(forcedDefaultIonSmallFunctionWarmUpThresholdEnv, env);
-        }
+  
+  const char* forcedDefaultIonSmallFunctionWarmUpThresholdEnv =
+      "JIT_OPTION_forcedDefaultIonSmallFunctionWarmUpThreshold";
+  if (const char* env =
+          getenv(forcedDefaultIonSmallFunctionWarmUpThresholdEnv)) {
+    Maybe<int> value = ParseInt(env);
+    if (value.isSome()) {
+      forcedDefaultIonSmallFunctionWarmUpThreshold.emplace(value.ref());
+    } else {
+      Warn(forcedDefaultIonSmallFunctionWarmUpThresholdEnv, env);
     }
+  }
 
-    
-    
-    const char* forcedRegisterAllocatorEnv = "JIT_OPTION_forcedRegisterAllocator";
-    if (const char* env = getenv(forcedRegisterAllocatorEnv)) {
-        forcedRegisterAllocator = LookupRegisterAllocator(env);
-        if (!forcedRegisterAllocator.isSome()) {
-            Warn(forcedRegisterAllocatorEnv, env);
-        }
+  
+  
+  const char* forcedRegisterAllocatorEnv = "JIT_OPTION_forcedRegisterAllocator";
+  if (const char* env = getenv(forcedRegisterAllocatorEnv)) {
+    forcedRegisterAllocator = LookupRegisterAllocator(env);
+    if (!forcedRegisterAllocator.isSome()) {
+      Warn(forcedRegisterAllocatorEnv, env);
     }
+  }
 
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    SET_DEFAULT(spectreIndexMasking, false);
-    SET_DEFAULT(spectreObjectMitigationsBarriers, false);
-    SET_DEFAULT(spectreObjectMitigationsMisc, false);
-    SET_DEFAULT(spectreStringMitigations, false);
-    SET_DEFAULT(spectreValueMasking, false);
-    SET_DEFAULT(spectreJitToCxxCalls, false);
+  SET_DEFAULT(spectreIndexMasking, false);
+  SET_DEFAULT(spectreObjectMitigationsBarriers, false);
+  SET_DEFAULT(spectreObjectMitigationsMisc, false);
+  SET_DEFAULT(spectreStringMitigations, false);
+  SET_DEFAULT(spectreValueMasking, false);
+  SET_DEFAULT(spectreJitToCxxCalls, false);
 #else
-    SET_DEFAULT(spectreIndexMasking, true);
-    SET_DEFAULT(spectreObjectMitigationsBarriers, true);
-    SET_DEFAULT(spectreObjectMitigationsMisc, true);
-    SET_DEFAULT(spectreStringMitigations, true);
-    SET_DEFAULT(spectreValueMasking, true);
-    SET_DEFAULT(spectreJitToCxxCalls, true);
+  SET_DEFAULT(spectreIndexMasking, true);
+  SET_DEFAULT(spectreObjectMitigationsBarriers, true);
+  SET_DEFAULT(spectreObjectMitigationsMisc, true);
+  SET_DEFAULT(spectreStringMitigations, true);
+  SET_DEFAULT(spectreValueMasking, true);
+  SET_DEFAULT(spectreJitToCxxCalls, true);
 #endif
 
-    
-    SET_DEFAULT(disableUnboxedObjects, false);
+  
+  SET_DEFAULT(disableUnboxedObjects, false);
 
-    
-    
-    SET_DEFAULT(wasmFoldOffsets, true);
+  
+  
+  SET_DEFAULT(wasmFoldOffsets, true);
 
-    
-    
-    
-    
-    SET_DEFAULT(wasmDelayTier2, false);
+  
+  
+  
+  
+  SET_DEFAULT(wasmDelayTier2, false);
 
-    
-    
-    
-    SET_DEFAULT(wasmBatchBaselineThreshold, 10000);
-    SET_DEFAULT(wasmBatchIonThreshold, 1100);
+  
+  
+  
+  SET_DEFAULT(wasmBatchBaselineThreshold, 10000);
+  SET_DEFAULT(wasmBatchIonThreshold, 1100);
 
 #ifdef JS_TRACE_LOGGING
-    
-    
-    
-    
-    SET_DEFAULT(enableTraceLogger, false);
+  
+  
+  
+  
+  SET_DEFAULT(enableTraceLogger, false);
 #endif
 }
 
-bool
-DefaultJitOptions::isSmallFunction(JSScript* script) const
-{
-    return script->length() <= smallFunctionMaxBytecodeLength_;
+bool DefaultJitOptions::isSmallFunction(JSScript* script) const {
+  return script->length() <= smallFunctionMaxBytecodeLength_;
 }
 
-void
-DefaultJitOptions::enableGvn(bool enable)
-{
-    disableGvn = !enable;
+void DefaultJitOptions::enableGvn(bool enable) { disableGvn = !enable; }
+
+void DefaultJitOptions::setEagerCompilation() {
+  eagerCompilation = true;
+  baselineWarmUpThreshold = 0;
+  forcedDefaultIonWarmUpThreshold.reset();
+  forcedDefaultIonWarmUpThreshold.emplace(0);
+  forcedDefaultIonSmallFunctionWarmUpThreshold.reset();
+  forcedDefaultIonSmallFunctionWarmUpThreshold.emplace(0);
 }
 
-void
-DefaultJitOptions::setEagerCompilation()
-{
-    eagerCompilation = true;
-    baselineWarmUpThreshold = 0;
-    forcedDefaultIonWarmUpThreshold.reset();
-    forcedDefaultIonWarmUpThreshold.emplace(0);
-    forcedDefaultIonSmallFunctionWarmUpThreshold.reset();
-    forcedDefaultIonSmallFunctionWarmUpThreshold.emplace(0);
+void DefaultJitOptions::setCompilerWarmUpThreshold(uint32_t warmUpThreshold) {
+  forcedDefaultIonWarmUpThreshold.reset();
+  forcedDefaultIonWarmUpThreshold.emplace(warmUpThreshold);
+  forcedDefaultIonSmallFunctionWarmUpThreshold.reset();
+  forcedDefaultIonSmallFunctionWarmUpThreshold.emplace(warmUpThreshold);
+
+  
+  if (eagerCompilation && warmUpThreshold != 0) {
+    jit::DefaultJitOptions defaultValues;
+    eagerCompilation = false;
+    baselineWarmUpThreshold = defaultValues.baselineWarmUpThreshold;
+  }
 }
 
-void
-DefaultJitOptions::setCompilerWarmUpThreshold(uint32_t warmUpThreshold)
-{
-    forcedDefaultIonWarmUpThreshold.reset();
-    forcedDefaultIonWarmUpThreshold.emplace(warmUpThreshold);
-    forcedDefaultIonSmallFunctionWarmUpThreshold.reset();
-    forcedDefaultIonSmallFunctionWarmUpThreshold.emplace(warmUpThreshold);
+void DefaultJitOptions::resetCompilerWarmUpThreshold() {
+  forcedDefaultIonWarmUpThreshold.reset();
 
-    
-    if (eagerCompilation && warmUpThreshold != 0) {
-        jit::DefaultJitOptions defaultValues;
-        eagerCompilation = false;
-        baselineWarmUpThreshold = defaultValues.baselineWarmUpThreshold;
-    }
+  
+  if (eagerCompilation) {
+    jit::DefaultJitOptions defaultValues;
+    eagerCompilation = false;
+    baselineWarmUpThreshold = defaultValues.baselineWarmUpThreshold;
+  }
 }
 
-void
-DefaultJitOptions::resetCompilerWarmUpThreshold()
-{
-    forcedDefaultIonWarmUpThreshold.reset();
-
-    
-    if (eagerCompilation) {
-        jit::DefaultJitOptions defaultValues;
-        eagerCompilation = false;
-        baselineWarmUpThreshold = defaultValues.baselineWarmUpThreshold;
-    }
-}
-
-} 
-} 
+}  
+}  

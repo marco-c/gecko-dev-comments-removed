@@ -31,15 +31,12 @@ class PuppetWidget;
 
 
 
-class TextEventDispatcher final
-{
-  ~TextEventDispatcher()
-  {
-  }
+class TextEventDispatcher final {
+  ~TextEventDispatcher() {}
 
   NS_INLINE_DECL_REFCOUNTING(TextEventDispatcher)
 
-public:
+ public:
   explicit TextEventDispatcher(nsIWidget* aWidget);
 
   
@@ -83,8 +80,7 @@ public:
 
   nsIWidget* GetWidget() const { return mWidget; }
 
-  const IMENotificationRequests& IMENotificationRequestsRef() const
-  {
+  const IMENotificationRequests& IMENotificationRequestsRef() const {
     return mIMENotificationRequests;
   }
 
@@ -118,8 +114,7 @@ public:
 
 
 
-  bool IsInNativeInputTransaction() const
-  {
+  bool IsInNativeInputTransaction() const {
     return mInputTransactionType == eNativeInputTransaction;
   }
 
@@ -133,8 +128,7 @@ public:
 
 
 
-  void* GetPseudoIMEContext() const
-  {
+  void* GetPseudoIMEContext() const {
     if (mInputTransactionType == eNoInputTransaction ||
         mInputTransactionType == eNativeInputTransaction) {
       return nullptr;
@@ -162,9 +156,9 @@ public:
 
 
 
-   nsresult CommitComposition(nsEventStatus& aStatus,
-                              const nsAString* aCommitString = nullptr,
-                              const WidgetEventTime* aEventTime = nullptr);
+  nsresult CommitComposition(nsEventStatus& aStatus,
+                             const nsAString* aCommitString = nullptr,
+                             const WidgetEventTime* aEventTime = nullptr);
 
   
 
@@ -172,8 +166,7 @@ public:
 
 
 
-  nsresult SetPendingCompositionString(const nsAString& aString)
-  {
+  nsresult SetPendingCompositionString(const nsAString& aString) {
     return mPendingComposition.SetString(aString);
   }
 
@@ -188,8 +181,7 @@ public:
 
 
   nsresult AppendClauseToPendingComposition(uint32_t aLength,
-                                            TextRangeType aTextRangeType)
-  {
+                                            TextRangeType aTextRangeType) {
     return mPendingComposition.AppendClause(aLength, aTextRangeType);
   }
 
@@ -205,9 +197,7 @@ public:
 
 
 
-  nsresult SetCaretInPendingComposition(uint32_t aOffset,
-                                        uint32_t aLength)
-  {
+  nsresult SetCaretInPendingComposition(uint32_t aOffset, uint32_t aLength) {
     return mPendingComposition.SetCaret(aOffset, aLength);
   }
 
@@ -224,8 +214,7 @@ public:
 
 
   nsresult SetPendingComposition(const nsAString& aString,
-                                 const TextRangeArray* aRanges)
-  {
+                                 const TextRangeArray* aRanges) {
     return mPendingComposition.Set(aString, aRanges);
   }
 
@@ -240,26 +229,21 @@ public:
 
 
 
-  nsresult FlushPendingComposition(nsEventStatus& aStatus,
-                                   const WidgetEventTime* aEventTime = nullptr)
-  {
+  nsresult FlushPendingComposition(
+      nsEventStatus& aStatus, const WidgetEventTime* aEventTime = nullptr) {
     return mPendingComposition.Flush(this, aStatus, aEventTime);
   }
 
   
 
 
-  void ClearPendingComposition()
-  {
-    mPendingComposition.Clear();
-  }
+  void ClearPendingComposition() { mPendingComposition.Clear(); }
 
   
 
 
 
-  const TextRangeArray* GetPendingCompositionClauses() const
-  {
+  const TextRangeArray* GetPendingCompositionClauses() const {
     return mPendingComposition.GetClauses();
   }
 
@@ -287,8 +271,7 @@ public:
 
   bool DispatchKeyboardEvent(EventMessage aMessage,
                              const WidgetKeyboardEvent& aKeyboardEvent,
-                             nsEventStatus& aStatus,
-                             void* aData = nullptr);
+                             nsEventStatus& aStatus, void* aData = nullptr);
 
   
 
@@ -316,7 +299,7 @@ public:
                                    void* aData = nullptr,
                                    bool aNeedsCallback = false);
 
-private:
+ private:
   
   
   
@@ -336,21 +319,19 @@ private:
   
   
   
-  class PendingComposition
-  {
-  public:
+  class PendingComposition {
+   public:
     PendingComposition();
     nsresult SetString(const nsAString& aString);
     nsresult AppendClause(uint32_t aLength, TextRangeType aTextRangeType);
     nsresult SetCaret(uint32_t aOffset, uint32_t aLength);
     nsresult Set(const nsAString& aString, const TextRangeArray* aRanges);
-    nsresult Flush(TextEventDispatcher* aDispatcher,
-                   nsEventStatus& aStatus,
+    nsresult Flush(TextEventDispatcher* aDispatcher, nsEventStatus& aStatus,
                    const WidgetEventTime* aEventTime);
     const TextRangeArray* GetClauses() const { return mClauses; }
     void Clear();
 
-  private:
+   private:
     nsString mString;
     RefPtr<TextRangeArray> mClauses;
     TextRange mCaret;
@@ -379,8 +360,7 @@ private:
   
   uint16_t mDispatchingEvent;
 
-  enum InputTransactionType : uint8_t
-  {
+  enum InputTransactionType : uint8_t {
     
     eNoInputTransaction,
     
@@ -410,8 +390,7 @@ private:
 
   InputTransactionType mInputTransactionType;
 
-  bool IsForTests() const
-  {
+  bool IsForTests() const {
     return mInputTransactionType == eAsyncTestInputTransaction ||
            mInputTransactionType == eSameProcessSyncTestInputTransaction;
   }
@@ -421,8 +400,7 @@ private:
   
   
   
-  bool ShouldSendInputEventToAPZ() const
-  {
+  bool ShouldSendInputEventToAPZ() const {
     switch (mInputTransactionType) {
       case eNativeInputTransaction:
       case eAsyncTestInputTransaction:
@@ -431,8 +409,9 @@ private:
       case eSameProcessSyncInputTransaction:
         return false;
       case eNoInputTransaction:
-        NS_WARNING("Why does the caller need to dispatch an event when "
-                   "there is no input transaction?");
+        NS_WARNING(
+            "Why does the caller need to dispatch an event when "
+            "there is no input transaction?");
         return true;
       default:
         MOZ_CRASH("Define the behavior of new InputTransactionType");
@@ -456,9 +435,8 @@ private:
   
   static bool sDispatchKeyPressEventsOnlySystemGroupInContent;
 
-  nsresult BeginInputTransactionInternal(
-             TextEventDispatcherListener* aListener,
-             InputTransactionType aType);
+  nsresult BeginInputTransactionInternal(TextEventDispatcherListener* aListener,
+                                         InputTransactionType aType);
 
   
 
@@ -466,19 +444,16 @@ private:
 
   void InitEvent(WidgetGUIEvent& aEvent) const;
 
-
   
 
 
-  nsresult DispatchEvent(nsIWidget* aWidget,
-                         WidgetGUIEvent& aEvent,
+  nsresult DispatchEvent(nsIWidget* aWidget, WidgetGUIEvent& aEvent,
                          nsEventStatus& aStatus);
 
   
 
 
-  nsresult DispatchInputEvent(nsIWidget* aWidget,
-                              WidgetInputEvent& aEvent,
+  nsresult DispatchInputEvent(nsIWidget* aWidget, WidgetInputEvent& aEvent,
                               nsEventStatus& aStatus);
 
   
@@ -499,8 +474,7 @@ private:
 
 
   nsresult StartCompositionAutomaticallyIfNecessary(
-             nsEventStatus& aStatus,
-             const WidgetEventTime* aEventTime);
+      nsEventStatus& aStatus, const WidgetEventTime* aEventTime);
 
   
 
@@ -531,8 +505,7 @@ private:
 
   bool DispatchKeyboardEventInternal(EventMessage aMessage,
                                      const WidgetKeyboardEvent& aKeyboardEvent,
-                                     nsEventStatus& aStatus,
-                                     void* aData,
+                                     nsEventStatus& aStatus, void* aData,
                                      uint32_t aIndexOfKeypress = 0,
                                      bool aNeedsCallback = false);
 
@@ -550,7 +523,7 @@ private:
   void UpdateNotificationRequests();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

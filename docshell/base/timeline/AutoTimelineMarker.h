@@ -27,8 +27,7 @@ namespace mozilla {
 
 
 
-class MOZ_RAII AutoTimelineMarker
-{
+class MOZ_RAII AutoTimelineMarker {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
 
   
@@ -37,7 +36,7 @@ class MOZ_RAII AutoTimelineMarker
   
   RefPtr<nsIDocShell> mDocShell;
 
-public:
+ public:
   AutoTimelineMarker(nsIDocShell* aDocShell,
                      const char* aName MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
   ~AutoTimelineMarker();
@@ -46,6 +45,6 @@ public:
   void operator=(const AutoTimelineMarker& aOther) = delete;
 };
 
-} 
+}  
 
 #endif 

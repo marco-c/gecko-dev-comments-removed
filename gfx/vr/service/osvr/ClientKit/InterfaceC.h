@@ -53,9 +53,8 @@ OSVR_EXTERN_C_BEGIN
 
 
 
-OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode
-osvrClientGetInterface(OSVR_ClientContext ctx, const char path[],
-                       OSVR_ClientInterface *iface);
+OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrClientGetInterface(
+    OSVR_ClientContext ctx, const char path[], OSVR_ClientInterface *iface);
 
 
 

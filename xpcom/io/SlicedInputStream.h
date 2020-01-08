@@ -20,16 +20,15 @@ namespace mozilla {
 
 
 
-class SlicedInputStream final : public nsIAsyncInputStream
-                              , public nsICloneableInputStream
-                              , public nsIIPCSerializableInputStream
-                              , public nsISeekableStream
-                              , public nsIInputStreamCallback
-                              , public nsIInputStreamLength
-                              , public nsIAsyncInputStreamLength
-                              , public nsIInputStreamLengthCallback
-{
-public:
+class SlicedInputStream final : public nsIAsyncInputStream,
+                                public nsICloneableInputStream,
+                                public nsIIPCSerializableInputStream,
+                                public nsISeekableStream,
+                                public nsIInputStreamCallback,
+                                public nsIInputStreamLength,
+                                public nsIAsyncInputStreamLength,
+                                public nsIInputStreamLengthCallback {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
   NS_DECL_NSIASYNCINPUTSTREAM
@@ -59,14 +58,12 @@ public:
   
   SlicedInputStream();
 
-private:
+ private:
   ~SlicedInputStream();
 
-  void
-  SetSourceStream(already_AddRefed<nsIInputStream> aInputStream);
+  void SetSourceStream(already_AddRefed<nsIInputStream> aInputStream);
 
-  uint64_t
-  AdjustRange(uint64_t aRange);
+  uint64_t AdjustRange(uint64_t aRange);
 
   nsCOMPtr<nsIInputStream> mInputStream;
 
@@ -99,6 +96,6 @@ private:
   Mutex mMutex;
 };
 
-} 
+}  
 
-#endif 
+#endif  

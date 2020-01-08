@@ -67,68 +67,48 @@ namespace dom {
 
 
 
-template<typename PromiseType>
-class DOMMozPromiseRequestHolder final : public DOMEventTargetHelper
-{
+template <typename PromiseType>
+class DOMMozPromiseRequestHolder final : public DOMEventTargetHelper {
   MozPromiseRequestHolder<PromiseType> mHolder;
 
   ~DOMMozPromiseRequestHolder() = default;
 
-  void
-  DisconnectFromOwner() override
-  {
+  void DisconnectFromOwner() override {
     mHolder.DisconnectIfExists();
     DOMEventTargetHelper::DisconnectFromOwner();
   }
 
-  JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override
-  {
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override {
     
     
     
     MOZ_CRASH("illegal method");
   }
 
-public:
+ public:
   explicit DOMMozPromiseRequestHolder(nsIGlobalObject* aGlobal)
-    : DOMEventTargetHelper(aGlobal)
-  {
+      : DOMEventTargetHelper(aGlobal) {
     MOZ_DIAGNOSTIC_ASSERT(aGlobal);
   }
 
-  operator MozPromiseRequestHolder<PromiseType>& ()
-  {
+  operator MozPromiseRequestHolder<PromiseType>&() { return mHolder; }
+
+  operator const MozPromiseRequestHolder<PromiseType>&() const {
     return mHolder;
   }
 
-  operator const MozPromiseRequestHolder<PromiseType>& () const
-  {
-    return mHolder;
-  }
+  void Complete() { mHolder.Complete(); }
 
-  void
-  Complete()
-  {
-    mHolder.Complete();
-  }
+  void DisconnectIfExists() { mHolder.DisconnectIfExists(); }
 
-  void
-  DisconnectIfExists()
-  {
-    mHolder.DisconnectIfExists();
-  }
+  bool Exists() const { return mHolder.Exists(); }
 
-  bool
-  Exists() const
-  {
-    return mHolder.Exists();
-  }
-
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(DOMMozPromiseRequestHolder, DOMEventTargetHelper)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(DOMMozPromiseRequestHolder,
+                                       DOMEventTargetHelper)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -8,7 +8,7 @@
 
 #include "mozilla/dom/Text.h"
 #include "mozilla/EditorBase.h"
-#include "mozilla/EditorDOMPoint.h" 
+#include "mozilla/EditorDOMPoint.h"  
 
 namespace mozilla {
 
@@ -40,21 +40,20 @@ class HTMLEditRules;
 
 
 
-class WSType
-{
-public:
-  enum Enum
-  {
-    none       = 0,
-    leadingWS  = 1,      
-    trailingWS = 1 << 1, 
-    normalWS   = 1 << 2, 
-    text       = 1 << 3, 
-    special    = 1 << 4, 
-    br         = 1 << 5, 
-    otherBlock = 1 << 6, 
-    thisBlock  = 1 << 7, 
-    block      = otherBlock | thisBlock 
+
+class WSType {
+ public:
+  enum Enum {
+    none = 0,
+    leadingWS = 1,        
+    trailingWS = 1 << 1,  
+    normalWS = 1 << 2,    
+    text = 1 << 3,        
+    special = 1 << 4,     
+    br = 1 << 5,          
+    otherBlock = 1 << 6,  
+    thisBlock = 1 << 7,   
+    block = otherBlock | thisBlock  
   };
 
   
@@ -62,40 +61,34 @@ public:
 
 
 
-  MOZ_IMPLICIT WSType(const Enum& aEnum = none)
-    : mEnum(aEnum)
-  {}
+  MOZ_IMPLICIT WSType(const Enum& aEnum = none) : mEnum(aEnum) {}
 
   
   friend bool operator==(const WSType& aLeft, const WSType& aRight);
   friend const WSType operator&(const WSType& aLeft, const WSType& aRight);
   friend const WSType operator|(const WSType& aLeft, const WSType& aRight);
-  WSType& operator=(const WSType& aOther)
-  {
+  WSType& operator=(const WSType& aOther) {
     
     mEnum = aOther.mEnum;
     return *this;
   }
-  WSType& operator&=(const WSType& aOther)
-  {
+  WSType& operator&=(const WSType& aOther) {
     mEnum &= aOther.mEnum;
     return *this;
   }
-  WSType& operator|=(const WSType& aOther)
-  {
+  WSType& operator|=(const WSType& aOther) {
     mEnum |= aOther.mEnum;
     return *this;
   }
 
-private:
+ private:
   uint16_t mEnum;
   void bool_conversion_helper() {}
 
-public:
+ public:
   
   typedef void (WSType::*bool_type)();
-  operator bool_type() const
-  {
+  operator bool_type() const {
     return mEnum ? &WSType::bool_conversion_helper : nullptr;
   }
 };
@@ -104,25 +97,21 @@ public:
 
 
 
-inline bool operator==(const WSType& aLeft, const WSType& aRight)
-{
+inline bool operator==(const WSType& aLeft, const WSType& aRight) {
   return aLeft.mEnum == aRight.mEnum;
 }
 
-inline bool operator!=(const WSType& aLeft, const WSType& aRight)
-{
+inline bool operator!=(const WSType& aLeft, const WSType& aRight) {
   return !(aLeft == aRight);
 }
 
-inline const WSType operator&(const WSType& aLeft, const WSType& aRight)
-{
+inline const WSType operator&(const WSType& aLeft, const WSType& aRight) {
   WSType ret;
   ret.mEnum = aLeft.mEnum & aRight.mEnum;
   return ret;
 }
 
-inline const WSType operator|(const WSType& aLeft, const WSType& aRight)
-{
+inline const WSType operator|(const WSType& aLeft, const WSType& aRight) {
   WSType ret;
   ret.mEnum = aLeft.mEnum | aRight.mEnum;
   return ret;
@@ -133,37 +122,28 @@ inline const WSType operator|(const WSType& aLeft, const WSType& aRight)
 
 
 inline const WSType operator&(const WSType::Enum& aLeft,
-                              const WSType::Enum& aRight)
-{
+                              const WSType::Enum& aRight) {
   return WSType(aLeft) & WSType(aRight);
 }
 
 inline const WSType operator|(const WSType::Enum& aLeft,
-                              const WSType::Enum& aRight)
-{
+                              const WSType::Enum& aRight) {
   return WSType(aLeft) | WSType(aRight);
 }
 
-class MOZ_STACK_CLASS WSRunObject final
-{
-protected:
+class MOZ_STACK_CLASS WSRunObject final {
+ protected:
   typedef EditorBase::AutoTransactionsConserveSelection
-            AutoTransactionsConserveSelection;
+      AutoTransactionsConserveSelection;
 
-public:
-  enum BlockBoundary
-  {
-    kBeforeBlock,
-    kBlockStart,
-    kBlockEnd,
-    kAfterBlock
-  };
+ public:
+  enum BlockBoundary { kBeforeBlock, kBlockStart, kBlockEnd, kAfterBlock };
 
-  enum {eBefore = 1};
-  enum {eAfter  = 1 << 1};
-  enum {eBoth   = eBefore | eAfter};
+  enum { eBefore = 1 };
+  enum { eAfter = 1 << 1 };
+  enum { eBoth = eBefore | eAfter };
 
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   WSRunObject(HTMLEditor* aHTMLEditor,
               const EditorDOMPointBase<PT, CT>& aPoint);
   WSRunObject(HTMLEditor* aHTMLEditor, nsINode* aNode, int32_t aOffset);
@@ -172,8 +152,7 @@ public:
   
   
   static nsresult ScrubBlockBoundary(HTMLEditor* aHTMLEditor,
-                                     BlockBoundary aBoundary,
-                                     nsINode* aBlock,
+                                     BlockBoundary aBoundary, nsINode* aBlock,
                                      int32_t aOffset = -1);
 
   
@@ -230,11 +209,10 @@ public:
 
 
 
-  template<typename PT, typename CT>
-  already_AddRefed<dom::Element>
-  InsertBreak(Selection& aSelection,
-              const EditorDOMPointBase<PT, CT>& aPointToInsert,
-              nsIEditor::EDirection aSelect);
+  template <typename PT, typename CT>
+  already_AddRefed<dom::Element> InsertBreak(
+      Selection& aSelection, const EditorDOMPointBase<PT, CT>& aPointToInsert,
+      nsIEditor::EDirection aSelect);
 
   
 
@@ -257,9 +235,8 @@ public:
 
 
 
-  template<typename PT, typename CT>
-  nsresult InsertText(nsIDocument& aDocument,
-                      const nsAString& aStringToInsert,
+  template <typename PT, typename CT>
+  nsresult InsertText(nsIDocument& aDocument, const nsAString& aStringToInsert,
                       const EditorDOMPointBase<PT, CT>& aPointToInsert,
                       EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
 
@@ -280,36 +257,31 @@ public:
   
   
   
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                        nsCOMPtr<nsINode>* outVisNode,
-                        int32_t* outVisOffset,
+                        nsCOMPtr<nsINode>* outVisNode, int32_t* outVisOffset,
                         WSType* outType) const;
 
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   void PriorVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                        WSType* outType) const
-  {
+                        WSType* outType) const {
     PriorVisibleNode(aPoint, nullptr, nullptr, outType);
   }
 
-
   
   
   
   
   
   
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                       nsCOMPtr<nsINode>* outVisNode,
-                       int32_t* outVisOffset,
+                       nsCOMPtr<nsINode>* outVisNode, int32_t* outVisOffset,
                        WSType* outType) const;
 
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   void NextVisibleNode(const EditorDOMPointBase<PT, CT>& aPoint,
-                       WSType* outType) const
-  {
+                       WSType* outType) const {
     NextVisibleNode(aPoint, nullptr, nullptr, outType);
   }
 
@@ -317,12 +289,11 @@ public:
   
   nsresult AdjustWhitespace();
 
-protected:
+ protected:
   
   
   
-  struct WSFragment final
-  {
+  struct WSFragment final {
     nsCOMPtr<nsINode> mStartNode;  
     nsCOMPtr<nsINode> mEndNode;    
     int32_t mStartOffset;          
@@ -333,18 +304,12 @@ protected:
     WSFragment *mLeft, *mRight;
 
     WSFragment()
-      : mStartOffset(0)
-      , mEndOffset(0)
-      , mLeft(nullptr)
-      , mRight(nullptr)
-    {}
+        : mStartOffset(0), mEndOffset(0), mLeft(nullptr), mRight(nullptr) {}
 
-    EditorRawDOMPoint StartPoint() const
-    {
+    EditorRawDOMPoint StartPoint() const {
       return EditorRawDOMPoint(mStartNode, mStartOffset);
     }
-    EditorRawDOMPoint EndPoint() const
-    {
+    EditorRawDOMPoint EndPoint() const {
       return EditorRawDOMPoint(mEndNode, mEndOffset);
     }
   };
@@ -353,23 +318,15 @@ protected:
   
   
   
-  struct MOZ_STACK_CLASS WSPoint final
-  {
+  struct MOZ_STACK_CLASS WSPoint final {
     RefPtr<dom::Text> mTextNode;
     uint32_t mOffset;
     char16_t mChar;
 
-    WSPoint()
-      : mTextNode(nullptr)
-      , mOffset(0)
-      , mChar(0)
-    {}
+    WSPoint() : mTextNode(nullptr), mOffset(0), mChar(0) {}
 
     WSPoint(dom::Text* aTextNode, int32_t aOffset, char16_t aChar)
-      : mTextNode(aTextNode)
-      , mOffset(aOffset)
-      , mChar(aChar)
-    {}
+        : mTextNode(aTextNode), mOffset(aOffset), mChar(aChar) {}
   };
 
   
@@ -402,7 +359,7 @@ protected:
 
 
 
-  template<typename PT1, typename CT1, typename PT2, typename CT2>
+  template <typename PT1, typename CT1, typename PT2, typename CT2>
   nsresult DeleteRange(const EditorDOMPointBase<PT1, CT1>& aStartPoint,
                        const EditorDOMPointBase<PT2, CT2>& aEndPoint);
 
@@ -410,7 +367,7 @@ protected:
 
 
 
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   WSPoint GetNextCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
   WSPoint GetNextCharPoint(const WSPoint& aPoint) const;
 
@@ -418,7 +375,7 @@ protected:
 
 
 
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   WSPoint GetPreviousCharPoint(const EditorDOMPointBase<PT, CT>& aPoint) const;
   WSPoint GetPreviousCharPoint(const WSPoint& aPoint) const;
 
@@ -431,12 +388,12 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  WSPoint
-  GetNextCharPointInternal(const EditorDOMPointBase<PT, CT>& aPoint) const;
-  template<typename PT, typename CT>
-  WSPoint
-  GetPreviousCharPointInternal(const EditorDOMPointBase<PT, CT>& aPoint) const;
+  template <typename PT, typename CT>
+  WSPoint GetNextCharPointInternal(
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
+  template <typename PT, typename CT>
+  WSPoint GetPreviousCharPointInternal(
+      const EditorDOMPointBase<PT, CT>& aPoint) const;
 
   
 
@@ -465,13 +422,10 @@ protected:
 
 
 
-  void GetASCIIWhitespacesBounds(int16_t aDir,
-                                 nsINode* aNode,
-                                 int32_t aOffset,
+  void GetASCIIWhitespacesBounds(int16_t aDir, nsINode* aNode, int32_t aOffset,
                                  dom::Text** outStartNode,
                                  int32_t* outStartOffset,
-                                 dom::Text** outEndNode,
-                                 int32_t* outEndOffset);
+                                 dom::Text** outEndNode, int32_t* outEndOffset);
 
   
 
@@ -494,12 +448,12 @@ protected:
 
 
 
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   WSFragment* FindNearestRun(const EditorDOMPointBase<PT, CT>& aPoint,
                              bool aForward) const;
 
   char16_t GetCharAt(dom::Text* aTextNode, int32_t aOffset) const;
-  nsresult CheckTrailingNBSPOfRun(WSFragment *aRun);
+  nsresult CheckTrailingNBSPOfRun(WSFragment* aRun);
 
   
 
@@ -509,27 +463,20 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  nsresult
-  ReplacePreviousNBSPIfUnncessary(WSFragment* aRun,
-                                  const EditorDOMPointBase<PT, CT>& aPoint);
+  template <typename PT, typename CT>
+  nsresult ReplacePreviousNBSPIfUnncessary(
+      WSFragment* aRun, const EditorDOMPointBase<PT, CT>& aPoint);
 
-  nsresult CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode,
-                            int32_t aOffset);
+  nsresult CheckLeadingNBSP(WSFragment* aRun, nsINode* aNode, int32_t aOffset);
 
   nsresult Scrub();
   bool IsBlockNode(nsINode* aNode);
 
-  EditorRawDOMPoint Point() const
-  {
-    return EditorRawDOMPoint(mNode, mOffset);
-  }
-  EditorRawDOMPoint StartPoint() const
-  {
+  EditorRawDOMPoint Point() const { return EditorRawDOMPoint(mNode, mOffset); }
+  EditorRawDOMPoint StartPoint() const {
     return EditorRawDOMPoint(mStartNode, mStartOffset);
   }
-  EditorRawDOMPoint EndPoint() const
-  {
+  EditorRawDOMPoint EndPoint() const {
     return EditorRawDOMPoint(mEndNode, mEndOffset);
   }
 
@@ -537,6 +484,7 @@ protected:
   nsCOMPtr<nsINode> mNode;
   
   int32_t mOffset;
+  
   
 
   
@@ -582,6 +530,6 @@ protected:
   friend class HTMLEditor;
 };
 
-} 
+}  
 
-#endif 
+#endif  

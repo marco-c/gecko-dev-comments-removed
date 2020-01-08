@@ -40,24 +40,22 @@ using mozilla::RangedPtr;
 
 using JS::AutoStableStringChars;
 
-const Class js::JSONClass = {
-    js_JSON_str,
-    JSCLASS_HAS_CACHED_PROTO(JSProto_JSON)
-};
+const Class js::JSONClass = {js_JSON_str,
+                             JSCLASS_HAS_CACHED_PROTO(JSProto_JSON)};
 
 
 
 
 
 template <typename SrcCharT, typename DstCharT>
-static MOZ_ALWAYS_INLINE RangedPtr<DstCharT>
-InfallibleQuote(RangedPtr<const SrcCharT> srcBegin, RangedPtr<const SrcCharT> srcEnd, RangedPtr<DstCharT> dstPtr)
-{
-    
-    
-    
-    static const Latin1Char escapeLookup[256] = {
-        
+static MOZ_ALWAYS_INLINE RangedPtr<DstCharT> InfallibleQuote(
+    RangedPtr<const SrcCharT> srcBegin, RangedPtr<const SrcCharT> srcEnd,
+    RangedPtr<DstCharT> dstPtr) {
+  
+  
+  
+  static const Latin1Char escapeLookup[256] = {
+      
         'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u', 'b', 't',
         'n', 'u', 'f', 'r', 'u', 'u', 'u', 'u', 'u', 'u',
         'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u', 'u',
@@ -68,208 +66,200 @@ InfallibleQuote(RangedPtr<const SrcCharT> srcBegin, RangedPtr<const SrcCharT> sr
         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
         0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
         0,   0,  '\\', 
-        
-    };
+      
+  };
+
+  
+  *dstPtr++ = '"';
+
+  auto ToLowerHex = [](uint8_t u) {
+    MOZ_ASSERT(u <= 0xF);
+    return "0123456789abcdef"[u];
+  };
+
+  
+  while (srcBegin != srcEnd) {
+    const SrcCharT c = *srcBegin++;
 
     
-    *dstPtr++ = '"';
+    if (MOZ_LIKELY(c < sizeof(escapeLookup))) {
+      Latin1Char escaped = escapeLookup[c];
 
-    auto ToLowerHex = [](uint8_t u) {
-        MOZ_ASSERT(u <= 0xF);
-        return "0123456789abcdef"[u];
-    };
+      
+      if (escaped == 0) {
+        *dstPtr++ = c;
+        continue;
+      }
 
-    
-    while (srcBegin != srcEnd) {
-        const SrcCharT c = *srcBegin++;
+      
+      *dstPtr++ = '\\';
+      *dstPtr++ = escaped;
+      if (escaped == 'u') {
+        *dstPtr++ = '0';
+        *dstPtr++ = '0';
 
-        
-        if (MOZ_LIKELY(c < sizeof(escapeLookup))) {
-            Latin1Char escaped = escapeLookup[c];
+        uint8_t x = c >> 4;
+        MOZ_ASSERT(x < 10);
+        *dstPtr++ = '0' + x;
 
-            
-            if (escaped == 0) {
-                *dstPtr++ = c;
-                continue;
-            }
+        *dstPtr++ = ToLowerHex(c & 0xF);
+      }
 
-            
-            *dstPtr++ = '\\';
-            *dstPtr++ = escaped;
-            if (escaped == 'u') {
-                *dstPtr++ = '0';
-                *dstPtr++ = '0';
-
-                uint8_t x = c >> 4;
-                MOZ_ASSERT(x < 10);
-                *dstPtr++ = '0' + x;
-
-                *dstPtr++ = ToLowerHex(c & 0xF);
-            }
-
-            continue;
-        }
-
-        
-        if (!unicode::IsSurrogate(c)) {
-            *dstPtr++ = c;
-            continue;
-        }
-
-        
-        if (MOZ_LIKELY(unicode::IsLeadSurrogate(c) &&
-                       srcBegin < srcEnd &&
-                       unicode::IsTrailSurrogate(*srcBegin)))
-        {
-            *dstPtr++ = c;
-            *dstPtr++ = *srcBegin++;
-            continue;
-        }
-
-        
-        char32_t as32 = char32_t(c);
-        *dstPtr++ = '\\';
-        *dstPtr++ = 'u';
-        *dstPtr++ = ToLowerHex(as32 >> 12);
-        *dstPtr++ = ToLowerHex((as32 >> 8) & 0xF);
-        *dstPtr++ = ToLowerHex((as32 >> 4) & 0xF);
-        *dstPtr++ = ToLowerHex(as32 & 0xF);
+      continue;
     }
 
     
-    *dstPtr++ = '"';
-    return dstPtr;
+    if (!unicode::IsSurrogate(c)) {
+      *dstPtr++ = c;
+      continue;
+    }
+
+    
+    if (MOZ_LIKELY(unicode::IsLeadSurrogate(c) && srcBegin < srcEnd &&
+                   unicode::IsTrailSurrogate(*srcBegin))) {
+      *dstPtr++ = c;
+      *dstPtr++ = *srcBegin++;
+      continue;
+    }
+
+    
+    char32_t as32 = char32_t(c);
+    *dstPtr++ = '\\';
+    *dstPtr++ = 'u';
+    *dstPtr++ = ToLowerHex(as32 >> 12);
+    *dstPtr++ = ToLowerHex((as32 >> 8) & 0xF);
+    *dstPtr++ = ToLowerHex((as32 >> 4) & 0xF);
+    *dstPtr++ = ToLowerHex(as32 & 0xF);
+  }
+
+  
+  *dstPtr++ = '"';
+  return dstPtr;
 }
 
 template <typename SrcCharT, typename CharVectorT>
-static bool
-Quote(CharVectorT& sb, JSLinearString* str)
-{
-    
-    
-    
-    size_t len = str->length();
-    size_t sbInitialLen = sb.length();
-    if (!sb.growByUninitialized(len * 6 + 2)) {
-        return false;
-    }
+static bool Quote(CharVectorT& sb, JSLinearString* str) {
+  
+  
+  
+  size_t len = str->length();
+  size_t sbInitialLen = sb.length();
+  if (!sb.growByUninitialized(len * 6 + 2)) {
+    return false;
+  }
 
-    typedef typename CharVectorT::ElementType DstCharT;
+  typedef typename CharVectorT::ElementType DstCharT;
 
-    JS::AutoCheckCannotGC nogc;
-    RangedPtr<const SrcCharT> srcBegin{str->chars<SrcCharT>(nogc), len};
-    RangedPtr<DstCharT> dstBegin{sb.begin(), sb.begin(), sb.end()};
-    RangedPtr<DstCharT> dstEnd = InfallibleQuote(srcBegin, srcBegin + len, dstBegin + sbInitialLen);
-    size_t newSize = dstEnd - dstBegin;
-    sb.shrinkTo(newSize);
-    return true;
+  JS::AutoCheckCannotGC nogc;
+  RangedPtr<const SrcCharT> srcBegin{str->chars<SrcCharT>(nogc), len};
+  RangedPtr<DstCharT> dstBegin{sb.begin(), sb.begin(), sb.end()};
+  RangedPtr<DstCharT> dstEnd =
+      InfallibleQuote(srcBegin, srcBegin + len, dstBegin + sbInitialLen);
+  size_t newSize = dstEnd - dstBegin;
+  sb.shrinkTo(newSize);
+  return true;
 }
 
-static bool
-Quote(JSContext* cx, StringBuffer& sb, JSString* str)
-{
-    JSLinearString* linear = str->ensureLinear(cx);
-    if (!linear) {
-        return false;
-    }
+static bool Quote(JSContext* cx, StringBuffer& sb, JSString* str) {
+  JSLinearString* linear = str->ensureLinear(cx);
+  if (!linear) {
+    return false;
+  }
 
-    
-    
-    if (!sb.isUnderlyingBufferLatin1() || linear->hasTwoByteChars()) {
-        if (!sb.ensureTwoByteChars()) {
-            return false;
-        }
+  
+  
+  if (!sb.isUnderlyingBufferLatin1() || linear->hasTwoByteChars()) {
+    if (!sb.ensureTwoByteChars()) {
+      return false;
     }
-    if (linear->hasTwoByteChars()) {
-        return Quote<char16_t>(sb.rawTwoByteBuffer(), linear);
-    }
+  }
+  if (linear->hasTwoByteChars()) {
+    return Quote<char16_t>(sb.rawTwoByteBuffer(), linear);
+  }
 
-    return sb.isUnderlyingBufferLatin1()
-           ? Quote<Latin1Char>(sb.latin1Chars(), linear)
-           : Quote<Latin1Char>(sb.rawTwoByteBuffer(), linear);
+  return sb.isUnderlyingBufferLatin1()
+             ? Quote<Latin1Char>(sb.latin1Chars(), linear)
+             : Quote<Latin1Char>(sb.rawTwoByteBuffer(), linear);
 }
 
 namespace {
 
 using ObjectVector = GCVector<JSObject*, 8>;
 
-class StringifyContext
-{
-  public:
-    StringifyContext(JSContext* cx, StringBuffer& sb, const StringBuffer& gap,
-                     HandleObject replacer, const AutoIdVector& propertyList,
-                     bool maybeSafely)
+class StringifyContext {
+ public:
+  StringifyContext(JSContext* cx, StringBuffer& sb, const StringBuffer& gap,
+                   HandleObject replacer, const AutoIdVector& propertyList,
+                   bool maybeSafely)
       : sb(sb),
         gap(gap),
         replacer(cx, replacer),
         stack(cx, ObjectVector(cx)),
         propertyList(propertyList),
         depth(0),
-        maybeSafely(maybeSafely)
-    {
-        MOZ_ASSERT_IF(maybeSafely, !replacer);
-        MOZ_ASSERT_IF(maybeSafely, gap.empty());
-    }
+        maybeSafely(maybeSafely) {
+    MOZ_ASSERT_IF(maybeSafely, !replacer);
+    MOZ_ASSERT_IF(maybeSafely, gap.empty());
+  }
 
-    StringBuffer& sb;
-    const StringBuffer& gap;
-    RootedObject replacer;
-    Rooted<ObjectVector> stack;
-    const AutoIdVector& propertyList;
-    uint32_t depth;
-    bool maybeSafely;
+  StringBuffer& sb;
+  const StringBuffer& gap;
+  RootedObject replacer;
+  Rooted<ObjectVector> stack;
+  const AutoIdVector& propertyList;
+  uint32_t depth;
+  bool maybeSafely;
 };
 
 } 
 
 static bool Str(JSContext* cx, const Value& v, StringifyContext* scx);
 
-static bool
-WriteIndent(StringifyContext* scx, uint32_t limit)
-{
-    if (!scx->gap.empty()) {
-        if (!scx->sb.append('\n')) {
-            return false;
-        }
-
-        if (scx->gap.isUnderlyingBufferLatin1()) {
-            for (uint32_t i = 0; i < limit; i++) {
-                if (!scx->sb.append(scx->gap.rawLatin1Begin(), scx->gap.rawLatin1End())) {
-                    return false;
-                }
-            }
-        } else {
-            for (uint32_t i = 0; i < limit; i++) {
-                if (!scx->sb.append(scx->gap.rawTwoByteBegin(), scx->gap.rawTwoByteEnd())) {
-                    return false;
-                }
-            }
-        }
+static bool WriteIndent(StringifyContext* scx, uint32_t limit) {
+  if (!scx->gap.empty()) {
+    if (!scx->sb.append('\n')) {
+      return false;
     }
 
-    return true;
+    if (scx->gap.isUnderlyingBufferLatin1()) {
+      for (uint32_t i = 0; i < limit; i++) {
+        if (!scx->sb.append(scx->gap.rawLatin1Begin(),
+                            scx->gap.rawLatin1End())) {
+          return false;
+        }
+      }
+    } else {
+      for (uint32_t i = 0; i < limit; i++) {
+        if (!scx->sb.append(scx->gap.rawTwoByteBegin(),
+                            scx->gap.rawTwoByteEnd())) {
+          return false;
+        }
+      }
+    }
+  }
+
+  return true;
 }
 
 namespace {
 
-template<typename KeyType>
-class KeyStringifier {
-};
+template <typename KeyType>
+class KeyStringifier {};
 
-template<>
+template <>
 class KeyStringifier<uint32_t> {
-  public:
-    static JSString* toString(JSContext* cx, uint32_t index) {
-        return IndexToString(cx, index);
-    }
+ public:
+  static JSString* toString(JSContext* cx, uint32_t index) {
+    return IndexToString(cx, index);
+  }
 };
 
-template<>
+template <>
 class KeyStringifier<HandleId> {
-  public:
-    static JSString* toString(JSContext* cx, HandleId id) {
-        return IdToString(cx, id);
-    }
+ public:
+  static JSString* toString(JSContext* cx, HandleId id) {
+    return IdToString(cx, id);
+  }
 };
 
 } 
@@ -278,93 +268,93 @@ class KeyStringifier<HandleId> {
 
 
 
-template<typename KeyType>
-static bool
-PreprocessValue(JSContext* cx, HandleObject holder, KeyType key, MutableHandleValue vp, StringifyContext* scx)
-{
-    
-    
-    if (scx->maybeSafely) {
-        return true;
-    }
-
-    RootedString keyStr(cx);
-
-    
-    if (vp.isObject()) {
-        RootedValue toJSON(cx);
-        RootedObject obj(cx, &vp.toObject());
-        if (!GetProperty(cx, obj, obj, cx->names().toJSON, &toJSON)) {
-            return false;
-        }
-
-        if (IsCallable(toJSON)) {
-            keyStr = KeyStringifier<KeyType>::toString(cx, key);
-            if (!keyStr) {
-                return false;
-            }
-
-            RootedValue arg0(cx, StringValue(keyStr));
-            if (!js::Call(cx, toJSON, vp, arg0, vp)) {
-                return false;
-            }
-        }
-    }
-
-    
-    if (scx->replacer && scx->replacer->isCallable()) {
-        MOZ_ASSERT(holder != nullptr, "holder object must be present when replacer is callable");
-
-        if (!keyStr) {
-            keyStr = KeyStringifier<KeyType>::toString(cx, key);
-            if (!keyStr) {
-                return false;
-            }
-        }
-
-        RootedValue arg0(cx, StringValue(keyStr));
-        RootedValue replacerVal(cx, ObjectValue(*scx->replacer));
-        if (!js::Call(cx, replacerVal, holder, arg0, vp, vp)) {
-            return false;
-        }
-    }
-
-    
-    if (vp.get().isObject()) {
-        RootedObject obj(cx, &vp.get().toObject());
-
-        ESClass cls;
-        if (!GetBuiltinClass(cx, obj, &cls)) {
-            return false;
-        }
-
-        if (cls == ESClass::Number) {
-            double d;
-            if (!ToNumber(cx, vp, &d)) {
-                return false;
-            }
-            vp.setNumber(d);
-        } else if (cls == ESClass::String) {
-            JSString* str = ToStringSlow<CanGC>(cx, vp);
-            if (!str) {
-                return false;
-            }
-            vp.setString(str);
-        } else if (cls == ESClass::Boolean) {
-            if (!Unbox(cx, obj, vp)) {
-                return false;
-            }
-        }
-#ifdef ENABLE_BIGINT
-        else if (cls == ESClass::BigInt) {
-            if (!Unbox(cx, obj, vp)) {
-                return false;
-            }
-        }
-#endif
-    }
-
+template <typename KeyType>
+static bool PreprocessValue(JSContext* cx, HandleObject holder, KeyType key,
+                            MutableHandleValue vp, StringifyContext* scx) {
+  
+  
+  if (scx->maybeSafely) {
     return true;
+  }
+
+  RootedString keyStr(cx);
+
+  
+  if (vp.isObject()) {
+    RootedValue toJSON(cx);
+    RootedObject obj(cx, &vp.toObject());
+    if (!GetProperty(cx, obj, obj, cx->names().toJSON, &toJSON)) {
+      return false;
+    }
+
+    if (IsCallable(toJSON)) {
+      keyStr = KeyStringifier<KeyType>::toString(cx, key);
+      if (!keyStr) {
+        return false;
+      }
+
+      RootedValue arg0(cx, StringValue(keyStr));
+      if (!js::Call(cx, toJSON, vp, arg0, vp)) {
+        return false;
+      }
+    }
+  }
+
+  
+  if (scx->replacer && scx->replacer->isCallable()) {
+    MOZ_ASSERT(holder != nullptr,
+               "holder object must be present when replacer is callable");
+
+    if (!keyStr) {
+      keyStr = KeyStringifier<KeyType>::toString(cx, key);
+      if (!keyStr) {
+        return false;
+      }
+    }
+
+    RootedValue arg0(cx, StringValue(keyStr));
+    RootedValue replacerVal(cx, ObjectValue(*scx->replacer));
+    if (!js::Call(cx, replacerVal, holder, arg0, vp, vp)) {
+      return false;
+    }
+  }
+
+  
+  if (vp.get().isObject()) {
+    RootedObject obj(cx, &vp.get().toObject());
+
+    ESClass cls;
+    if (!GetBuiltinClass(cx, obj, &cls)) {
+      return false;
+    }
+
+    if (cls == ESClass::Number) {
+      double d;
+      if (!ToNumber(cx, vp, &d)) {
+        return false;
+      }
+      vp.setNumber(d);
+    } else if (cls == ESClass::String) {
+      JSString* str = ToStringSlow<CanGC>(cx, vp);
+      if (!str) {
+        return false;
+      }
+      vp.setString(str);
+    } else if (cls == ESClass::Boolean) {
+      if (!Unbox(cx, obj, vp)) {
+        return false;
+      }
+    }
+#ifdef ENABLE_BIGINT
+    else if (cls == ESClass::BigInt) {
+      if (!Unbox(cx, obj, vp)) {
+        return false;
+      }
+    }
+#endif
+  }
+
+  return true;
 }
 
 
@@ -374,276 +364,267 @@ PreprocessValue(JSContext* cx, HandleObject holder, KeyType key, MutableHandleVa
 
 
 
-static inline bool
-IsFilteredValue(const Value& v)
-{
-    return v.isUndefined() || v.isSymbol() || IsCallable(v);
+static inline bool IsFilteredValue(const Value& v) {
+  return v.isUndefined() || v.isSymbol() || IsCallable(v);
 }
 
-class CycleDetector
-{
-  public:
-    CycleDetector(StringifyContext* scx, HandleObject obj)
-      : stack_(&scx->stack), obj_(obj), appended_(false) {
-    }
+class CycleDetector {
+ public:
+  CycleDetector(StringifyContext* scx, HandleObject obj)
+      : stack_(&scx->stack), obj_(obj), appended_(false) {}
 
-    MOZ_ALWAYS_INLINE bool foundCycle(JSContext* cx) {
-        JSObject* obj = obj_;
-        for (JSObject* obj2 : stack_) {
-            if (MOZ_UNLIKELY(obj == obj2)) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_JSON_CYCLIC_VALUE);
-                return false;
-            }
-        }
-        appended_ = stack_.append(obj);
-        return appended_;
+  MOZ_ALWAYS_INLINE bool foundCycle(JSContext* cx) {
+    JSObject* obj = obj_;
+    for (JSObject* obj2 : stack_) {
+      if (MOZ_UNLIKELY(obj == obj2)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_JSON_CYCLIC_VALUE);
+        return false;
+      }
     }
+    appended_ = stack_.append(obj);
+    return appended_;
+  }
 
-    ~CycleDetector() {
-        if (MOZ_LIKELY(appended_)) {
-            MOZ_ASSERT(stack_.back() == obj_);
-            stack_.popBack();
-        }
+  ~CycleDetector() {
+    if (MOZ_LIKELY(appended_)) {
+      MOZ_ASSERT(stack_.back() == obj_);
+      stack_.popBack();
     }
+  }
 
-  private:
-    MutableHandle<ObjectVector> stack_;
-    HandleObject obj_;
-    bool appended_;
+ private:
+  MutableHandle<ObjectVector> stack_;
+  HandleObject obj_;
+  bool appended_;
 };
 
 
-static bool
-JO(JSContext* cx, HandleObject obj, StringifyContext* scx)
-{
+static bool JO(JSContext* cx, HandleObject obj, StringifyContext* scx) {
+  
+
+
+
+
+
+
+
+
+
+  MOZ_ASSERT_IF(scx->maybeSafely, obj->is<PlainObject>());
+
+  
+  CycleDetector detect(scx, obj);
+  if (!detect.foundCycle(cx)) {
+    return false;
+  }
+
+  if (!scx->sb.append('{')) {
+    return false;
+  }
+
+  
+  Maybe<AutoIdVector> ids;
+  const AutoIdVector* props;
+  if (scx->replacer && !scx->replacer->isCallable()) {
     
-
-
-
-
-
-
-
-
-
-    MOZ_ASSERT_IF(scx->maybeSafely, obj->is<PlainObject>());
-
     
-    CycleDetector detect(scx, obj);
-    if (!detect.foundCycle(cx)) {
-        return false;
+    
+    
+    
+    props = &scx->propertyList;
+  } else {
+    MOZ_ASSERT_IF(scx->replacer, scx->propertyList.length() == 0);
+    ids.emplace(cx);
+    if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY, ids.ptr())) {
+      return false;
+    }
+    props = ids.ptr();
+  }
+
+  
+  const AutoIdVector& propertyList = *props;
+
+  
+  bool wroteMember = false;
+  RootedId id(cx);
+  for (size_t i = 0, len = propertyList.length(); i < len; i++) {
+    if (!CheckForInterrupt(cx)) {
+      return false;
     }
 
-    if (!scx->sb.append('{')) {
-        return false;
-    }
-
     
-    Maybe<AutoIdVector> ids;
-    const AutoIdVector* props;
-    if (scx->replacer && !scx->replacer->isCallable()) {
-        
-        
-        
-        
-        
-        props = &scx->propertyList;
-    } else {
-        MOZ_ASSERT_IF(scx->replacer, scx->propertyList.length() == 0);
-        ids.emplace(cx);
-        if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY, ids.ptr())) {
-            return false;
-        }
-        props = ids.ptr();
-    }
-
-    
-    const AutoIdVector& propertyList = *props;
-
-    
-    bool wroteMember = false;
-    RootedId id(cx);
-    for (size_t i = 0, len = propertyList.length(); i < len; i++) {
-        if (!CheckForInterrupt(cx)) {
-            return false;
-        }
-
-        
 
 
 
 
 
 
-        id = propertyList[i];
-        RootedValue outputValue(cx);
+    id = propertyList[i];
+    RootedValue outputValue(cx);
 #ifdef DEBUG
-        if (scx->maybeSafely) {
-            RootedNativeObject nativeObj(cx, &obj->as<NativeObject>());
-            Rooted<PropertyResult> prop(cx);
-            NativeLookupOwnPropertyNoResolve(cx, nativeObj, id, &prop);
-            MOZ_ASSERT(prop && prop.isNativeProperty() && prop.shape()->isDataDescriptor());
-        }
-#endif 
-        if (!GetProperty(cx, obj, obj, id, &outputValue)) {
-            return false;
-        }
-        if (!PreprocessValue(cx, obj, HandleId(id), &outputValue, scx)) {
-            return false;
-        }
-        if (IsFilteredValue(outputValue)) {
-            continue;
-        }
-
-        
-        if (wroteMember && !scx->sb.append(',')) {
-            return false;
-        }
-        wroteMember = true;
-
-        if (!WriteIndent(scx, scx->depth)) {
-            return false;
-        }
-
-        JSString* s = IdToString(cx, id);
-        if (!s) {
-            return false;
-        }
-
-        if (!Quote(cx, scx->sb, s) ||
-            !scx->sb.append(':') ||
-            !(scx->gap.empty() || scx->sb.append(' ')) ||
-            !Str(cx, outputValue, scx))
-        {
-            return false;
-        }
+    if (scx->maybeSafely) {
+      RootedNativeObject nativeObj(cx, &obj->as<NativeObject>());
+      Rooted<PropertyResult> prop(cx);
+      NativeLookupOwnPropertyNoResolve(cx, nativeObj, id, &prop);
+      MOZ_ASSERT(prop && prop.isNativeProperty() &&
+                 prop.shape()->isDataDescriptor());
+    }
+#endif  
+    if (!GetProperty(cx, obj, obj, id, &outputValue)) {
+      return false;
+    }
+    if (!PreprocessValue(cx, obj, HandleId(id), &outputValue, scx)) {
+      return false;
+    }
+    if (IsFilteredValue(outputValue)) {
+      continue;
     }
 
-    if (wroteMember && !WriteIndent(scx, scx->depth - 1)) {
-        return false;
+    
+    if (wroteMember && !scx->sb.append(',')) {
+      return false;
+    }
+    wroteMember = true;
+
+    if (!WriteIndent(scx, scx->depth)) {
+      return false;
     }
 
-    return scx->sb.append('}');
+    JSString* s = IdToString(cx, id);
+    if (!s) {
+      return false;
+    }
+
+    if (!Quote(cx, scx->sb, s) || !scx->sb.append(':') ||
+        !(scx->gap.empty() || scx->sb.append(' ')) ||
+        !Str(cx, outputValue, scx)) {
+      return false;
+    }
+  }
+
+  if (wroteMember && !WriteIndent(scx, scx->depth - 1)) {
+    return false;
+  }
+
+  return scx->sb.append('}');
 }
 
 
-static bool
-JA(JSContext* cx, HandleObject obj, StringifyContext* scx)
-{
+static bool JA(JSContext* cx, HandleObject obj, StringifyContext* scx) {
+  
+
+
+
+
+
+
+
+
+
+  
+  CycleDetector detect(scx, obj);
+  if (!detect.foundCycle(cx)) {
+    return false;
+  }
+
+  if (!scx->sb.append('[')) {
+    return false;
+  }
+
+  
+  uint32_t length;
+  if (!GetLengthProperty(cx, obj, &length)) {
+    return false;
+  }
+
+  
+  if (length != 0) {
     
-
-
-
-
-
-
-
-
-
-    
-    CycleDetector detect(scx, obj);
-    if (!detect.foundCycle(cx)) {
-        return false;
+    if (!WriteIndent(scx, scx->depth)) {
+      return false;
     }
 
-    if (!scx->sb.append('[')) {
-        return false;
-    }
-
     
-    uint32_t length;
-    if (!GetLengthProperty(cx, obj, &length)) {
+    RootedValue outputValue(cx);
+    for (uint32_t i = 0; i < length; i++) {
+      if (!CheckForInterrupt(cx)) {
         return false;
-    }
+      }
 
-    
-    if (length != 0) {
-        
-        if (!WriteIndent(scx, scx->depth)) {
-            return false;
-        }
-
-        
-        RootedValue outputValue(cx);
-        for (uint32_t i = 0; i < length; i++) {
-            if (!CheckForInterrupt(cx)) {
-                return false;
-            }
-
-            
+      
 
 
 
 
 
 #ifdef DEBUG
-            if (scx->maybeSafely) {
-                
+      if (scx->maybeSafely) {
+        
 
 
 
 
-                MOZ_ASSERT(obj->is<ArrayObject>());
-                MOZ_ASSERT(obj->is<NativeObject>());
-                RootedNativeObject nativeObj(cx, &obj->as<NativeObject>());
-                if (i <= JSID_INT_MAX) {
-                    MOZ_ASSERT(nativeObj->containsDenseElement(i) != nativeObj->isIndexed(),
-                               "the array must either be small enough to remain "
-                               "fully dense (and otherwise un-indexed), *or* "
-                               "all its initially-dense elements were sparsified "
-                               "and the object is indexed");
-                } else {
-                    MOZ_ASSERT(nativeObj->isIndexed());
-                }
-            }
+        MOZ_ASSERT(obj->is<ArrayObject>());
+        MOZ_ASSERT(obj->is<NativeObject>());
+        RootedNativeObject nativeObj(cx, &obj->as<NativeObject>());
+        if (i <= JSID_INT_MAX) {
+          MOZ_ASSERT(
+              nativeObj->containsDenseElement(i) != nativeObj->isIndexed(),
+              "the array must either be small enough to remain "
+              "fully dense (and otherwise un-indexed), *or* "
+              "all its initially-dense elements were sparsified "
+              "and the object is indexed");
+        } else {
+          MOZ_ASSERT(nativeObj->isIndexed());
+        }
+      }
 #endif
-            if (!GetElement(cx, obj, i, &outputValue)) {
-                return false;
-            }
-            if (!PreprocessValue(cx, obj, i, &outputValue, scx)) {
-                return false;
-            }
-            if (IsFilteredValue(outputValue)) {
-                if (!scx->sb.append("null")) {
-                    return false;
-                }
-            } else {
-                if (!Str(cx, outputValue, scx)) {
-                    return false;
-                }
-            }
-
-            
-            if (i < length - 1) {
-                if (!scx->sb.append(',')) {
-                    return false;
-                }
-                if (!WriteIndent(scx, scx->depth)) {
-                    return false;
-                }
-            }
+      if (!GetElement(cx, obj, i, &outputValue)) {
+        return false;
+      }
+      if (!PreprocessValue(cx, obj, i, &outputValue, scx)) {
+        return false;
+      }
+      if (IsFilteredValue(outputValue)) {
+        if (!scx->sb.append("null")) {
+          return false;
         }
-
-        
-        if (!WriteIndent(scx, scx->depth - 1)) {
-            return false;
+      } else {
+        if (!Str(cx, outputValue, scx)) {
+          return false;
         }
+      }
+
+      
+      if (i < length - 1) {
+        if (!scx->sb.append(',')) {
+          return false;
+        }
+        if (!WriteIndent(scx, scx->depth)) {
+          return false;
+        }
+      }
     }
 
-    return scx->sb.append(']');
+    
+    if (!WriteIndent(scx, scx->depth - 1)) {
+      return false;
+    }
+  }
+
+  return scx->sb.append(']');
 }
 
-static bool
-Str(JSContext* cx, const Value& v, StringifyContext* scx)
-{
-    
-    MOZ_ASSERT(!IsFilteredValue(v));
+static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
+  
+  MOZ_ASSERT(!IsFilteredValue(v));
 
-    if (!CheckRecursionLimit(cx)) {
-        return false;
-    }
+  if (!CheckRecursionLimit(cx)) {
+    return false;
+  }
 
-    
+  
 
 
 
@@ -656,486 +637,480 @@ Str(JSContext* cx, const Value& v, StringifyContext* scx)
 
 
 
-    
-    if (v.isString()) {
-        return Quote(cx, scx->sb, v.toString());
-    }
+  
+  if (v.isString()) {
+    return Quote(cx, scx->sb, v.toString());
+  }
 
-    
-    if (v.isNull()) {
+  
+  if (v.isNull()) {
+    return scx->sb.append("null");
+  }
+
+  
+  if (v.isBoolean()) {
+    return v.toBoolean() ? scx->sb.append("true") : scx->sb.append("false");
+  }
+
+  
+  if (v.isNumber()) {
+    if (v.isDouble()) {
+      if (!IsFinite(v.toDouble())) {
+        MOZ_ASSERT(!scx->maybeSafely,
+                   "input JS::ToJSONMaybeSafely must not include "
+                   "reachable non-finite numbers");
         return scx->sb.append("null");
+      }
     }
 
-    
-    if (v.isBoolean()) {
-        return v.toBoolean() ? scx->sb.append("true") : scx->sb.append("false");
-    }
-
-    
-    if (v.isNumber()) {
-        if (v.isDouble()) {
-            if (!IsFinite(v.toDouble())) {
-                MOZ_ASSERT(!scx->maybeSafely,
-                           "input JS::ToJSONMaybeSafely must not include "
-                           "reachable non-finite numbers");
-                return scx->sb.append("null");
-            }
-        }
-
-        return NumberValueToStringBuffer(cx, v, scx->sb);
-    }
+    return NumberValueToStringBuffer(cx, v, scx->sb);
+  }
 
 #ifdef ENABLE_BIGINT
-    
-    if (v.isBigInt()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BIGINT_NOT_SERIALIZABLE);
-        return false;
-    }
+  
+  if (v.isBigInt()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_BIGINT_NOT_SERIALIZABLE);
+    return false;
+  }
 #endif
 
+  
+  MOZ_ASSERT(v.isObject());
+  RootedObject obj(cx, &v.toObject());
+
+  MOZ_ASSERT(
+      !scx->maybeSafely || obj->is<PlainObject>() || obj->is<ArrayObject>(),
+      "input to JS::ToJSONMaybeSafely must not include reachable "
+      "objects that are neither arrays nor plain objects");
+
+  scx->depth++;
+  auto dec = mozilla::MakeScopeExit([&] { scx->depth--; });
+
+  bool isArray;
+  if (!IsArray(cx, obj, &isArray)) {
+    return false;
+  }
+
+  return isArray ? JA(cx, obj, scx) : JO(cx, obj, scx);
+}
+
+
+bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
+                   const Value& space_, StringBuffer& sb,
+                   StringifyBehavior stringifyBehavior) {
+  RootedObject replacer(cx, replacer_);
+  RootedValue space(cx, space_);
+
+  MOZ_ASSERT_IF(stringifyBehavior == StringifyBehavior::RestrictedSafe,
+                space.isNull());
+  MOZ_ASSERT_IF(stringifyBehavior == StringifyBehavior::RestrictedSafe,
+                vp.isObject());
+  
+
+
+
+  MOZ_ASSERT(stringifyBehavior == StringifyBehavior::Normal ||
+                 vp.toObject().is<PlainObject>() ||
+                 vp.toObject().is<ArrayObject>(),
+             "input to JS::ToJSONMaybeSafely must be a plain object or array");
+
+  
+  AutoIdVector propertyList(cx);
+  if (replacer) {
+    bool isArray;
+    if (replacer->isCallable()) {
+      
+    } else if (!IsArray(cx, replacer, &isArray)) {
+      return false;
+    } else if (isArray) {
+      
+
+      
+      uint32_t len;
+      if (!GetLengthProperty(cx, replacer, &len)) {
+        return false;
+      }
+
+      
+      
+      
+      
+      const uint32_t MaxInitialSize = 32;
+      Rooted<GCHashSet<jsid>> idSet(
+          cx, GCHashSet<jsid>(cx, Min(len, MaxInitialSize)));
+
+      
+      uint32_t k = 0;
+
+      
+      RootedValue item(cx);
+      for (; k < len; k++) {
+        if (!CheckForInterrupt(cx)) {
+          return false;
+        }
+
+        
+        if (!GetElement(cx, replacer, k, &item)) {
+          return false;
+        }
+
+        
+        if (!item.isNumber() && !item.isString()) {
+          ESClass cls;
+          if (!GetClassOfValue(cx, item, &cls)) {
+            return false;
+          }
+
+          if (cls != ESClass::String && cls != ESClass::Number) {
+            continue;
+          }
+        }
+
+        RootedId id(cx);
+        if (!ValueToId<CanGC>(cx, item, &id)) {
+          return false;
+        }
+
+        
+        auto p = idSet.lookupForAdd(id);
+        if (!p) {
+          
+          if (!idSet.add(p, id) || !propertyList.append(id)) {
+            return false;
+          }
+        }
+      }
+    } else {
+      replacer = nullptr;
+    }
+  }
+
+  
+  if (space.isObject()) {
+    RootedObject spaceObj(cx, &space.toObject());
+
+    ESClass cls;
+    if (!GetBuiltinClass(cx, spaceObj, &cls)) {
+      return false;
+    }
+
+    if (cls == ESClass::Number) {
+      double d;
+      if (!ToNumber(cx, space, &d)) {
+        return false;
+      }
+      space = NumberValue(d);
+    } else if (cls == ESClass::String) {
+      JSString* str = ToStringSlow<CanGC>(cx, space);
+      if (!str) {
+        return false;
+      }
+      space = StringValue(str);
+    }
+  }
+
+  StringBuffer gap(cx);
+
+  if (space.isNumber()) {
     
-    MOZ_ASSERT(v.isObject());
-    RootedObject obj(cx, &v.toObject());
+    double d;
+    MOZ_ALWAYS_TRUE(ToInteger(cx, space, &d));
+    d = Min(10.0, d);
+    if (d >= 1 && !gap.appendN(' ', uint32_t(d))) {
+      return false;
+    }
+  } else if (space.isString()) {
+    
+    JSLinearString* str = space.toString()->ensureLinear(cx);
+    if (!str) {
+      return false;
+    }
+    size_t len = Min(size_t(10), str->length());
+    if (!gap.appendSubstring(str, 0, len)) {
+      return false;
+    }
+  } else {
+    
+    MOZ_ASSERT(gap.empty());
+  }
 
-    MOZ_ASSERT(!scx->maybeSafely || obj->is<PlainObject>() || obj->is<ArrayObject>(),
-               "input to JS::ToJSONMaybeSafely must not include reachable "
-               "objects that are neither arrays nor plain objects");
+  RootedPlainObject wrapper(cx);
+  RootedId emptyId(cx, NameToId(cx->names().empty));
+  if (replacer && replacer->isCallable()) {
+    
+    
 
-    scx->depth++;
-    auto dec = mozilla::MakeScopeExit([&] { scx->depth--; });
+    
+    wrapper = NewBuiltinClassInstance<PlainObject>(cx);
+    if (!wrapper) {
+      return false;
+    }
+
+    
+    if (!NativeDefineDataProperty(cx, wrapper, emptyId, vp, JSPROP_ENUMERATE)) {
+      return false;
+    }
+  }
+
+  
+  StringifyContext scx(cx, sb, gap, replacer, propertyList,
+                       stringifyBehavior == StringifyBehavior::RestrictedSafe);
+  if (!PreprocessValue(cx, wrapper, HandleId(emptyId), vp, &scx)) {
+    return false;
+  }
+  if (IsFilteredValue(vp)) {
+    return true;
+  }
+
+  return Str(cx, vp, &scx);
+}
+
+
+static bool Walk(JSContext* cx, HandleObject holder, HandleId name,
+                 HandleValue reviver, MutableHandleValue vp) {
+  if (!CheckRecursionLimit(cx)) {
+    return false;
+  }
+
+  
+  RootedValue val(cx);
+  if (!GetProperty(cx, holder, holder, name, &val)) {
+    return false;
+  }
+
+  
+  if (val.isObject()) {
+    RootedObject obj(cx, &val.toObject());
 
     bool isArray;
     if (!IsArray(cx, obj, &isArray)) {
+      return false;
+    }
+
+    if (isArray) {
+      
+      uint32_t length;
+      if (!GetLengthProperty(cx, obj, &length)) {
         return false;
-    }
+      }
 
-    return isArray ? JA(cx, obj, scx) : JO(cx, obj, scx);
-}
+      
+      RootedId id(cx);
+      RootedValue newElement(cx);
+      for (uint32_t i = 0; i < length; i++) {
+        if (!CheckForInterrupt(cx)) {
+          return false;
+        }
 
+        if (!IndexToId(cx, i, &id)) {
+          return false;
+        }
 
-bool
-js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_, const Value& space_,
-              StringBuffer& sb, StringifyBehavior stringifyBehavior)
-{
-    RootedObject replacer(cx, replacer_);
-    RootedValue space(cx, space_);
+        
+        if (!Walk(cx, obj, id, reviver, &newElement)) {
+          return false;
+        }
 
-    MOZ_ASSERT_IF(stringifyBehavior == StringifyBehavior::RestrictedSafe, space.isNull());
-    MOZ_ASSERT_IF(stringifyBehavior == StringifyBehavior::RestrictedSafe, vp.isObject());
-    
-
-
-
-    MOZ_ASSERT(stringifyBehavior == StringifyBehavior::Normal ||
-               vp.toObject().is<PlainObject>() || vp.toObject().is<ArrayObject>(),
-               "input to JS::ToJSONMaybeSafely must be a plain object or array");
-
-    
-    AutoIdVector propertyList(cx);
-    if (replacer) {
-        bool isArray;
-        if (replacer->isCallable()) {
-            
-        } else if (!IsArray(cx, replacer, &isArray)) {
+        ObjectOpResult ignored;
+        if (newElement.isUndefined()) {
+          
+          if (!DeleteProperty(cx, obj, id, ignored)) {
             return false;
-        } else if (isArray) {
-            
-
-            
-            uint32_t len;
-            if (!GetLengthProperty(cx, replacer, &len)) {
-                return false;
-            }
-
-            
-            
-            
-            
-            const uint32_t MaxInitialSize = 32;
-            Rooted<GCHashSet<jsid>> idSet(cx, GCHashSet<jsid>(cx, Min(len, MaxInitialSize)));
-
-            
-            uint32_t k = 0;
-
-            
-            RootedValue item(cx);
-            for (; k < len; k++) {
-                if (!CheckForInterrupt(cx)) {
-                    return false;
-                }
-
-                
-                if (!GetElement(cx, replacer, k, &item)) {
-                    return false;
-                }
-
-                
-                if (!item.isNumber() && !item.isString()) {
-                    ESClass cls;
-                    if (!GetClassOfValue(cx, item, &cls)) {
-                        return false;
-                    }
-
-                    if (cls != ESClass::String && cls != ESClass::Number) {
-                        continue;
-                    }
-                }
-
-                RootedId id(cx);
-                if (!ValueToId<CanGC>(cx, item, &id)) {
-                    return false;
-                }
-
-                
-                auto p = idSet.lookupForAdd(id);
-                if (!p) {
-                    
-                    if (!idSet.add(p, id) || !propertyList.append(id)) {
-                        return false;
-                    }
-                }
-            }
+          }
         } else {
-            replacer = nullptr;
-        }
-    }
-
-    
-    if (space.isObject()) {
-        RootedObject spaceObj(cx, &space.toObject());
-
-        ESClass cls;
-        if (!GetBuiltinClass(cx, spaceObj, &cls)) {
+          
+          Rooted<PropertyDescriptor> desc(cx);
+          desc.setDataDescriptor(newElement, JSPROP_ENUMERATE);
+          if (!DefineProperty(cx, obj, id, desc, ignored)) {
             return false;
+          }
         }
-
-        if (cls == ESClass::Number) {
-            double d;
-            if (!ToNumber(cx, space, &d)) {
-                return false;
-            }
-            space = NumberValue(d);
-        } else if (cls == ESClass::String) {
-            JSString* str = ToStringSlow<CanGC>(cx, space);
-            if (!str) {
-                return false;
-            }
-            space = StringValue(str);
-        }
-    }
-
-    StringBuffer gap(cx);
-
-    if (space.isNumber()) {
-        
-        double d;
-        MOZ_ALWAYS_TRUE(ToInteger(cx, space, &d));
-        d = Min(10.0, d);
-        if (d >= 1 && !gap.appendN(' ', uint32_t(d))) {
-            return false;
-        }
-    } else if (space.isString()) {
-        
-        JSLinearString* str = space.toString()->ensureLinear(cx);
-        if (!str) {
-            return false;
-        }
-        size_t len = Min(size_t(10), str->length());
-        if (!gap.appendSubstring(str, 0, len)) {
-            return false;
-        }
+      }
     } else {
-        
-        MOZ_ASSERT(gap.empty());
-    }
+      
+      AutoIdVector keys(cx);
+      if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY, &keys)) {
+        return false;
+      }
 
-    RootedPlainObject wrapper(cx);
-    RootedId emptyId(cx, NameToId(cx->names().empty));
-    if (replacer && replacer->isCallable()) {
-        
-        
-
-        
-        wrapper = NewBuiltinClassInstance<PlainObject>(cx);
-        if (!wrapper) {
-            return false;
+      
+      RootedId id(cx);
+      RootedValue newElement(cx);
+      for (size_t i = 0, len = keys.length(); i < len; i++) {
+        if (!CheckForInterrupt(cx)) {
+          return false;
         }
 
         
-        if (!NativeDefineDataProperty(cx, wrapper, emptyId, vp, JSPROP_ENUMERATE)) {
-            return false;
-        }
-    }
-
-    
-    StringifyContext scx(cx, sb, gap, replacer, propertyList,
-                         stringifyBehavior == StringifyBehavior::RestrictedSafe);
-    if (!PreprocessValue(cx, wrapper, HandleId(emptyId), vp, &scx)) {
-        return false;
-    }
-    if (IsFilteredValue(vp)) {
-        return true;
-    }
-
-    return Str(cx, vp, &scx);
-}
-
-
-static bool
-Walk(JSContext* cx, HandleObject holder, HandleId name, HandleValue reviver, MutableHandleValue vp)
-{
-    if (!CheckRecursionLimit(cx)) {
-        return false;
-    }
-
-    
-    RootedValue val(cx);
-    if (!GetProperty(cx, holder, holder, name, &val)) {
-        return false;
-    }
-
-    
-    if (val.isObject()) {
-        RootedObject obj(cx, &val.toObject());
-
-        bool isArray;
-        if (!IsArray(cx, obj, &isArray)) {
-            return false;
+        id = keys[i];
+        if (!Walk(cx, obj, id, reviver, &newElement)) {
+          return false;
         }
 
-        if (isArray) {
-            
-            uint32_t length;
-            if (!GetLengthProperty(cx, obj, &length)) {
-                return false;
-            }
-
-            
-            RootedId id(cx);
-            RootedValue newElement(cx);
-            for (uint32_t i = 0; i < length; i++) {
-                if (!CheckForInterrupt(cx)) {
-                    return false;
-                }
-
-                if (!IndexToId(cx, i, &id)) {
-                    return false;
-                }
-
-                
-                if (!Walk(cx, obj, id, reviver, &newElement)) {
-                    return false;
-                }
-
-                ObjectOpResult ignored;
-                if (newElement.isUndefined()) {
-                    
-                    if (!DeleteProperty(cx, obj, id, ignored)) {
-                        return false;
-                    }
-                } else {
-                    
-                    Rooted<PropertyDescriptor> desc(cx);
-                    desc.setDataDescriptor(newElement, JSPROP_ENUMERATE);
-                    if (!DefineProperty(cx, obj, id, desc, ignored)) {
-                        return false;
-                    }
-                }
-            }
+        ObjectOpResult ignored;
+        if (newElement.isUndefined()) {
+          
+          if (!DeleteProperty(cx, obj, id, ignored)) {
+            return false;
+          }
         } else {
-            
-            AutoIdVector keys(cx);
-            if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY, &keys)) {
-                return false;
-            }
-
-            
-            RootedId id(cx);
-            RootedValue newElement(cx);
-            for (size_t i = 0, len = keys.length(); i < len; i++) {
-                if (!CheckForInterrupt(cx)) {
-                    return false;
-                }
-
-                
-                id = keys[i];
-                if (!Walk(cx, obj, id, reviver, &newElement)) {
-                    return false;
-                }
-
-                ObjectOpResult ignored;
-                if (newElement.isUndefined()) {
-                    
-                    if (!DeleteProperty(cx, obj, id, ignored)) {
-                        return false;
-                    }
-                } else {
-                    
-                    Rooted<PropertyDescriptor> desc(cx);
-                    desc.setDataDescriptor(newElement, JSPROP_ENUMERATE);
-                    if (!DefineProperty(cx, obj, id, desc, ignored)) {
-                        return false;
-                    }
-                }
-            }
+          
+          Rooted<PropertyDescriptor> desc(cx);
+          desc.setDataDescriptor(newElement, JSPROP_ENUMERATE);
+          if (!DefineProperty(cx, obj, id, desc, ignored)) {
+            return false;
+          }
         }
+      }
     }
+  }
 
-    
-    RootedString key(cx, IdToString(cx, name));
-    if (!key) {
-        return false;
-    }
+  
+  RootedString key(cx, IdToString(cx, name));
+  if (!key) {
+    return false;
+  }
 
-    RootedValue keyVal(cx, StringValue(key));
-    return js::Call(cx, reviver, holder, keyVal, val, vp);
+  RootedValue keyVal(cx, StringValue(key));
+  return js::Call(cx, reviver, holder, keyVal, val, vp);
 }
 
-static bool
-Revive(JSContext* cx, HandleValue reviver, MutableHandleValue vp)
-{
-    RootedPlainObject obj(cx, NewBuiltinClassInstance<PlainObject>(cx));
-    if (!obj) {
-        return false;
-    }
+static bool Revive(JSContext* cx, HandleValue reviver, MutableHandleValue vp) {
+  RootedPlainObject obj(cx, NewBuiltinClassInstance<PlainObject>(cx));
+  if (!obj) {
+    return false;
+  }
 
-    if (!DefineDataProperty(cx, obj, cx->names().empty, vp)) {
-        return false;
-    }
+  if (!DefineDataProperty(cx, obj, cx->names().empty, vp)) {
+    return false;
+  }
 
-    Rooted<jsid> id(cx, NameToId(cx->names().empty));
-    return Walk(cx, obj, id, reviver, vp);
+  Rooted<jsid> id(cx, NameToId(cx->names().empty));
+  return Walk(cx, obj, id, reviver, vp);
 }
 
 template <typename CharT>
-bool
-js::ParseJSONWithReviver(JSContext* cx, const mozilla::Range<const CharT> chars, HandleValue reviver,
-                         MutableHandleValue vp)
-{
-    
-    Rooted<JSONParser<CharT>> parser(cx, JSONParser<CharT>(cx, chars));
-    if (!parser.parse(vp)) {
-        return false;
-    }
+bool js::ParseJSONWithReviver(JSContext* cx,
+                              const mozilla::Range<const CharT> chars,
+                              HandleValue reviver, MutableHandleValue vp) {
+  
+  Rooted<JSONParser<CharT>> parser(cx, JSONParser<CharT>(cx, chars));
+  if (!parser.parse(vp)) {
+    return false;
+  }
 
-    
-    if (IsCallable(reviver)) {
-        return Revive(cx, reviver, vp);
-    }
-    return true;
+  
+  if (IsCallable(reviver)) {
+    return Revive(cx, reviver, vp);
+  }
+  return true;
 }
 
-template bool
-js::ParseJSONWithReviver(JSContext* cx, const mozilla::Range<const Latin1Char> chars,
-                         HandleValue reviver, MutableHandleValue vp);
+template bool js::ParseJSONWithReviver(
+    JSContext* cx, const mozilla::Range<const Latin1Char> chars,
+    HandleValue reviver, MutableHandleValue vp);
 
-template bool
-js::ParseJSONWithReviver(JSContext* cx, const mozilla::Range<const char16_t> chars, HandleValue reviver,
-                         MutableHandleValue vp);
+template bool js::ParseJSONWithReviver(
+    JSContext* cx, const mozilla::Range<const char16_t> chars,
+    HandleValue reviver, MutableHandleValue vp);
 
-static bool
-json_toSource(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    args.rval().setString(cx->names().JSON);
-    return true;
+static bool json_toSource(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().setString(cx->names().JSON);
+  return true;
 }
 
 
-static bool
-json_parse(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+static bool json_parse(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    
-    JSString* str = (args.length() >= 1)
-                    ? ToString<CanGC>(cx, args[0])
-                    : cx->names().undefined;
+  
+  JSString* str = (args.length() >= 1) ? ToString<CanGC>(cx, args[0])
+                                       : cx->names().undefined;
+  if (!str) {
+    return false;
+  }
+
+  JSLinearString* linear = str->ensureLinear(cx);
+  if (!linear) {
+    return false;
+  }
+
+  AutoStableStringChars linearChars(cx);
+  if (!linearChars.init(cx, linear)) {
+    return false;
+  }
+
+  HandleValue reviver = args.get(1);
+
+  
+  return linearChars.isLatin1()
+             ? ParseJSONWithReviver(cx, linearChars.latin1Range(), reviver,
+                                    args.rval())
+             : ParseJSONWithReviver(cx, linearChars.twoByteRange(), reviver,
+                                    args.rval());
+}
+
+
+bool json_stringify(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  RootedObject replacer(cx,
+                        args.get(1).isObject() ? &args[1].toObject() : nullptr);
+  RootedValue value(cx, args.get(0));
+  RootedValue space(cx, args.get(2));
+
+  StringBuffer sb(cx);
+  if (!Stringify(cx, &value, replacer, space, sb, StringifyBehavior::Normal)) {
+    return false;
+  }
+
+  
+  
+  
+  if (!sb.empty()) {
+    JSString* str = sb.finishString();
     if (!str) {
-        return false;
+      return false;
     }
+    args.rval().setString(str);
+  } else {
+    args.rval().setUndefined();
+  }
 
-    JSLinearString* linear = str->ensureLinear(cx);
-    if (!linear) {
-        return false;
-    }
-
-    AutoStableStringChars linearChars(cx);
-    if (!linearChars.init(cx, linear)) {
-        return false;
-    }
-
-    HandleValue reviver = args.get(1);
-
-    
-    return linearChars.isLatin1()
-           ? ParseJSONWithReviver(cx, linearChars.latin1Range(), reviver, args.rval())
-           : ParseJSONWithReviver(cx, linearChars.twoByteRange(), reviver, args.rval());
-}
-
-
-bool
-json_stringify(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    RootedObject replacer(cx, args.get(1).isObject() ? &args[1].toObject() : nullptr);
-    RootedValue value(cx, args.get(0));
-    RootedValue space(cx, args.get(2));
-
-    StringBuffer sb(cx);
-    if (!Stringify(cx, &value, replacer, space, sb, StringifyBehavior::Normal)) {
-        return false;
-    }
-
-    
-    
-    
-    if (!sb.empty()) {
-        JSString* str = sb.finishString();
-        if (!str) {
-            return false;
-        }
-        args.rval().setString(str);
-    } else {
-        args.rval().setUndefined();
-    }
-
-    return true;
+  return true;
 }
 
 static const JSFunctionSpec json_static_methods[] = {
-    JS_FN(js_toSource_str,  json_toSource,      0, 0),
-    JS_FN("parse",          json_parse,         2, 0),
-    JS_FN("stringify",      json_stringify,     3, 0),
-    JS_FS_END
-};
+    JS_FN(js_toSource_str, json_toSource, 0, 0),
+    JS_FN("parse", json_parse, 2, 0), JS_FN("stringify", json_stringify, 3, 0),
+    JS_FS_END};
 
-JSObject*
-js::InitJSONClass(JSContext* cx, Handle<GlobalObject*> global)
-{
-    RootedObject proto(cx, GlobalObject::getOrCreateObjectPrototype(cx, global));
-    if (!proto) {
-        return nullptr;
-    }
-    RootedObject JSON(cx, NewObjectWithGivenProto(cx, &JSONClass, proto, SingletonObject));
-    if (!JSON) {
-        return nullptr;
-    }
+JSObject* js::InitJSONClass(JSContext* cx, Handle<GlobalObject*> global) {
+  RootedObject proto(cx, GlobalObject::getOrCreateObjectPrototype(cx, global));
+  if (!proto) {
+    return nullptr;
+  }
+  RootedObject JSON(
+      cx, NewObjectWithGivenProto(cx, &JSONClass, proto, SingletonObject));
+  if (!JSON) {
+    return nullptr;
+  }
 
-    if (!JS_DefineProperty(cx, global, js_JSON_str, JSON, JSPROP_RESOLVING)) {
-        return nullptr;
-    }
+  if (!JS_DefineProperty(cx, global, js_JSON_str, JSON, JSPROP_RESOLVING)) {
+    return nullptr;
+  }
 
-    if (!JS_DefineFunctions(cx, JSON, json_static_methods)) {
-        return nullptr;
-    }
+  if (!JS_DefineFunctions(cx, JSON, json_static_methods)) {
+    return nullptr;
+  }
 
-    if (!DefineToStringTag(cx, JSON, cx->names().JSON)) {
-        return nullptr;
-    }
+  if (!DefineToStringTag(cx, JSON, cx->names().JSON)) {
+    return nullptr;
+  }
 
-    global->setConstructor(JSProto_JSON, ObjectValue(*JSON));
+  global->setConstructor(JSProto_JSON, ObjectValue(*JSON));
 
-    return JSON;
+  return JSON;
 }

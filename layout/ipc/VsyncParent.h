@@ -18,19 +18,17 @@ namespace mozilla {
 
 namespace ipc {
 class BackgroundParentImpl;
-} 
+}  
 
 namespace layout {
 
 
 
 
-class VsyncParent final : public PVsyncParent,
-                          public VsyncObserver
-{
+class VsyncParent final : public PVsyncParent, public VsyncObserver {
   friend class mozilla::ipc::BackgroundParentImpl;
 
-private:
+ private:
   static already_AddRefed<VsyncParent> Create();
 
   VsyncParent();
@@ -51,7 +49,7 @@ private:
   RefPtr<RefreshTimerVsyncDispatcher> mVsyncDispatcher;
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

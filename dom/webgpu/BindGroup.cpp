@@ -15,5 +15,5 @@ BindGroup::~BindGroup() = default;
 
 WEBGPU_IMPL_GOOP_0(BindGroup)
 
-} 
-} 
+}  
+}  

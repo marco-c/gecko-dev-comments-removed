@@ -21,350 +21,321 @@
 #include "vm/JSObject-inl.h"
 #include "vm/NativeObject-inl.h"
 
+using mozilla::CheckedInt;
 using mozilla::Maybe;
 using mozilla::Nothing;
-using mozilla::CheckedInt;
 
 using namespace js;
 
-static size_t
-SharedArrayMappedSizeForWasm(size_t declaredMaxSize)
-{
+static size_t SharedArrayMappedSizeForWasm(size_t declaredMaxSize) {
 #ifdef WASM_HUGE_MEMORY
-    return wasm::HugeMappedSize;
+  return wasm::HugeMappedSize;
 #else
-    return wasm::ComputeMappedSize(declaredMaxSize);
+  return wasm::ComputeMappedSize(declaredMaxSize);
 #endif
 }
 
-static uint32_t
-SharedArrayAccessibleSize(uint32_t length)
-{
-    return AlignBytes(length, gc::SystemPageSize());
+static uint32_t SharedArrayAccessibleSize(uint32_t length) {
+  return AlignBytes(length, gc::SystemPageSize());
 }
 
 
-SharedArrayRawBuffer*
-SharedArrayRawBuffer::Allocate(uint32_t length, const Maybe<uint32_t>& max)
-{
-    MOZ_RELEASE_ASSERT(length <= ArrayBufferObject::MaxBufferByteLength);
+SharedArrayRawBuffer* SharedArrayRawBuffer::Allocate(
+    uint32_t length, const Maybe<uint32_t>& max) {
+  MOZ_RELEASE_ASSERT(length <= ArrayBufferObject::MaxBufferByteLength);
 
-    bool preparedForWasm = max.isSome();
+  bool preparedForWasm = max.isSome();
 
-    uint32_t accessibleSize = SharedArrayAccessibleSize(length);
-    if (accessibleSize < length) {
-        return nullptr;
-    }
+  uint32_t accessibleSize = SharedArrayAccessibleSize(length);
+  if (accessibleSize < length) {
+    return nullptr;
+  }
 
-    uint32_t maxSize = max.isSome() ? *max : accessibleSize;
+  uint32_t maxSize = max.isSome() ? *max : accessibleSize;
 
-    size_t mappedSize;
-    if (preparedForWasm) {
-        mappedSize = SharedArrayMappedSizeForWasm(maxSize);
-    } else {
-        mappedSize = accessibleSize;
-    }
+  size_t mappedSize;
+  if (preparedForWasm) {
+    mappedSize = SharedArrayMappedSizeForWasm(maxSize);
+  } else {
+    mappedSize = accessibleSize;
+  }
 
-    uint64_t mappedSizeWithHeader = mappedSize + gc::SystemPageSize();
-    uint64_t accessibleSizeWithHeader = accessibleSize + gc::SystemPageSize();
+  uint64_t mappedSizeWithHeader = mappedSize + gc::SystemPageSize();
+  uint64_t accessibleSizeWithHeader = accessibleSize + gc::SystemPageSize();
 
-    void* p = MapBufferMemory(mappedSizeWithHeader, accessibleSizeWithHeader);
-    if (!p) {
-        return nullptr;
-    }
+  void* p = MapBufferMemory(mappedSizeWithHeader, accessibleSizeWithHeader);
+  if (!p) {
+    return nullptr;
+  }
 
-    uint8_t* buffer = reinterpret_cast<uint8_t*>(p) + gc::SystemPageSize();
-    uint8_t* base = buffer - sizeof(SharedArrayRawBuffer);
-    SharedArrayRawBuffer* rawbuf = new (base) SharedArrayRawBuffer(buffer,
-                                                                   length,
-                                                                   maxSize,
-                                                                   mappedSize,
-                                                                   preparedForWasm);
-    MOZ_ASSERT(rawbuf->length_ == length); 
-    return rawbuf;
+  uint8_t* buffer = reinterpret_cast<uint8_t*>(p) + gc::SystemPageSize();
+  uint8_t* base = buffer - sizeof(SharedArrayRawBuffer);
+  SharedArrayRawBuffer* rawbuf = new (base) SharedArrayRawBuffer(
+      buffer, length, maxSize, mappedSize, preparedForWasm);
+  MOZ_ASSERT(rawbuf->length_ == length);  
+  return rawbuf;
 }
 
 #ifndef WASM_HUGE_MEMORY
-void
-SharedArrayRawBuffer::tryGrowMaxSizeInPlace(uint32_t deltaMaxSize)
-{
-    CheckedInt<uint32_t> newMaxSize = maxSize_;
-    newMaxSize += deltaMaxSize;
-    MOZ_ASSERT(newMaxSize.isValid());
-    MOZ_ASSERT(newMaxSize.value() % wasm::PageSize == 0);
+void SharedArrayRawBuffer::tryGrowMaxSizeInPlace(uint32_t deltaMaxSize) {
+  CheckedInt<uint32_t> newMaxSize = maxSize_;
+  newMaxSize += deltaMaxSize;
+  MOZ_ASSERT(newMaxSize.isValid());
+  MOZ_ASSERT(newMaxSize.value() % wasm::PageSize == 0);
 
-    size_t newMappedSize = SharedArrayMappedSizeForWasm(newMaxSize.value());
-    MOZ_ASSERT(mappedSize_ <= newMappedSize);
-    if (mappedSize_ == newMappedSize) {
-        return;
-    }
+  size_t newMappedSize = SharedArrayMappedSizeForWasm(newMaxSize.value());
+  MOZ_ASSERT(mappedSize_ <= newMappedSize);
+  if (mappedSize_ == newMappedSize) {
+    return;
+  }
 
-    if (!ExtendBufferMapping(basePointer(), mappedSize_, newMappedSize)) {
-        return;
-    }
+  if (!ExtendBufferMapping(basePointer(), mappedSize_, newMappedSize)) {
+    return;
+  }
 
-    mappedSize_ = newMappedSize;
-    maxSize_ = newMaxSize.value();
+  mappedSize_ = newMappedSize;
+  maxSize_ = newMaxSize.value();
 }
 #endif
 
-bool
-SharedArrayRawBuffer::wasmGrowToSizeInPlace(const Lock&, uint32_t newLength)
-{
-    if (newLength > ArrayBufferObject::MaxBufferByteLength) {
-        return false;
-    }
+bool SharedArrayRawBuffer::wasmGrowToSizeInPlace(const Lock&,
+                                                 uint32_t newLength) {
+  if (newLength > ArrayBufferObject::MaxBufferByteLength) {
+    return false;
+  }
 
-    MOZ_ASSERT(newLength >= length_);
+  MOZ_ASSERT(newLength >= length_);
 
-    if (newLength == length_) {
-        return true;
-    }
-
-    uint32_t delta = newLength - length_;
-    MOZ_ASSERT(delta % wasm::PageSize == 0);
-
-    uint8_t* dataEnd = dataPointerShared().unwrap() + length_;
-    MOZ_ASSERT(uintptr_t(dataEnd) % gc::SystemPageSize() == 0);
-
-    
-    
-
-    if (!CommitBufferMemory(dataEnd, delta)) {
-        return false;
-    }
-
-    length_ = newLength;
-
+  if (newLength == length_) {
     return true;
+  }
+
+  uint32_t delta = newLength - length_;
+  MOZ_ASSERT(delta % wasm::PageSize == 0);
+
+  uint8_t* dataEnd = dataPointerShared().unwrap() + length_;
+  MOZ_ASSERT(uintptr_t(dataEnd) % gc::SystemPageSize() == 0);
+
+  
+  
+
+  if (!CommitBufferMemory(dataEnd, delta)) {
+    return false;
+  }
+
+  length_ = newLength;
+
+  return true;
 }
 
-bool
-SharedArrayRawBuffer::addReference()
-{
-    MOZ_RELEASE_ASSERT(refcount_ > 0);
+bool SharedArrayRawBuffer::addReference() {
+  MOZ_RELEASE_ASSERT(refcount_ > 0);
 
-    
-    for (;;) {
-        uint32_t old_refcount = refcount_;
-        uint32_t new_refcount = old_refcount + 1;
-        if (new_refcount == 0) {
-            return false;
-        }
-        if (refcount_.compareExchange(old_refcount, new_refcount)) {
-            return true;
-        }
+  
+  for (;;) {
+    uint32_t old_refcount = refcount_;
+    uint32_t new_refcount = old_refcount + 1;
+    if (new_refcount == 0) {
+      return false;
     }
-}
-
-void
-SharedArrayRawBuffer::dropReference()
-{
-    
-    
-    
-    MOZ_RELEASE_ASSERT(refcount_ > 0);
-
-    
-    uint32_t new_refcount = --refcount_; 
-    if (new_refcount) {
-        return;
+    if (refcount_.compareExchange(old_refcount, new_refcount)) {
+      return true;
     }
-
-    size_t mappedSizeWithHeader = mappedSize_ + gc::SystemPageSize();
-
-    
-    UnmapBufferMemory(basePointer(), mappedSizeWithHeader);
+  }
 }
 
+void SharedArrayRawBuffer::dropReference() {
+  
+  
+  
+  MOZ_RELEASE_ASSERT(refcount_ > 0);
 
-MOZ_ALWAYS_INLINE bool
-SharedArrayBufferObject::byteLengthGetterImpl(JSContext* cx, const CallArgs& args)
-{
-    MOZ_ASSERT(IsSharedArrayBuffer(args.thisv()));
-    args.rval().setInt32(args.thisv().toObject().as<SharedArrayBufferObject>().byteLength());
-    return true;
+  
+  uint32_t new_refcount = --refcount_;  
+  if (new_refcount) {
+    return;
+  }
+
+  size_t mappedSizeWithHeader = mappedSize_ + gc::SystemPageSize();
+
+  
+  UnmapBufferMemory(basePointer(), mappedSizeWithHeader);
 }
 
-bool
-SharedArrayBufferObject::byteLengthGetter(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsSharedArrayBuffer, byteLengthGetterImpl>(cx, args);
+MOZ_ALWAYS_INLINE bool SharedArrayBufferObject::byteLengthGetterImpl(
+    JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(IsSharedArrayBuffer(args.thisv()));
+  args.rval().setInt32(
+      args.thisv().toObject().as<SharedArrayBufferObject>().byteLength());
+  return true;
+}
+
+bool SharedArrayBufferObject::byteLengthGetter(JSContext* cx, unsigned argc,
+                                               Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsSharedArrayBuffer, byteLengthGetterImpl>(cx,
+                                                                         args);
 }
 
 
 
-bool
-SharedArrayBufferObject::class_constructor(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+bool SharedArrayBufferObject::class_constructor(JSContext* cx, unsigned argc,
+                                                Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    
-    if (!ThrowIfNotConstructing(cx, args, "SharedArrayBuffer")) {
-        return false;
-    }
+  
+  if (!ThrowIfNotConstructing(cx, args, "SharedArrayBuffer")) {
+    return false;
+  }
 
-    
-    uint64_t byteLength;
-    if (!ToIndex(cx, args.get(0), &byteLength)) {
-        return false;
-    }
+  
+  uint64_t byteLength;
+  if (!ToIndex(cx, args.get(0), &byteLength)) {
+    return false;
+  }
 
-    
-    
-    RootedObject proto(cx);
-    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
-        return false;
-    }
+  
+  
+  RootedObject proto(cx);
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+    return false;
+  }
 
-    
-    
-    if (byteLength > INT32_MAX) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_SHARED_ARRAY_BAD_LENGTH);
-        return false;
-    }
+  
+  
+  if (byteLength > INT32_MAX) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_SHARED_ARRAY_BAD_LENGTH);
+    return false;
+  }
 
-    
-    JSObject* bufobj = New(cx, uint32_t(byteLength), proto);
-    if (!bufobj) {
-        return false;
-    }
-    args.rval().setObject(*bufobj);
-    return true;
+  
+  JSObject* bufobj = New(cx, uint32_t(byteLength), proto);
+  if (!bufobj) {
+    return false;
+  }
+  args.rval().setObject(*bufobj);
+  return true;
 }
 
-SharedArrayBufferObject*
-SharedArrayBufferObject::New(JSContext* cx, uint32_t length, HandleObject proto)
-{
-    SharedArrayRawBuffer* buffer = SharedArrayRawBuffer::Allocate(length, Nothing());
-    if (!buffer) {
-        return nullptr;
-    }
+SharedArrayBufferObject* SharedArrayBufferObject::New(JSContext* cx,
+                                                      uint32_t length,
+                                                      HandleObject proto) {
+  SharedArrayRawBuffer* buffer =
+      SharedArrayRawBuffer::Allocate(length, Nothing());
+  if (!buffer) {
+    return nullptr;
+  }
 
-    SharedArrayBufferObject* obj = New(cx, buffer, length, proto);
-    if (!obj) {
-        buffer->dropReference();
-        return nullptr;
-    }
+  SharedArrayBufferObject* obj = New(cx, buffer, length, proto);
+  if (!obj) {
+    buffer->dropReference();
+    return nullptr;
+  }
 
-    return obj;
+  return obj;
 }
 
-SharedArrayBufferObject*
-SharedArrayBufferObject::New(JSContext* cx, SharedArrayRawBuffer* buffer, uint32_t length,
-                             HandleObject proto)
-{
-    MOZ_ASSERT(cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
+SharedArrayBufferObject* SharedArrayBufferObject::New(
+    JSContext* cx, SharedArrayRawBuffer* buffer, uint32_t length,
+    HandleObject proto) {
+  MOZ_ASSERT(cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
 
-    AutoSetNewObjectMetadata metadata(cx);
-    Rooted<SharedArrayBufferObject*> obj(cx,
-        NewObjectWithClassProto<SharedArrayBufferObject>(cx, proto));
-    if (!obj) {
-        return nullptr;
-    }
+  AutoSetNewObjectMetadata metadata(cx);
+  Rooted<SharedArrayBufferObject*> obj(
+      cx, NewObjectWithClassProto<SharedArrayBufferObject>(cx, proto));
+  if (!obj) {
+    return nullptr;
+  }
 
-    MOZ_ASSERT(obj->getClass() == &class_);
+  MOZ_ASSERT(obj->getClass() == &class_);
 
-    obj->acceptRawBuffer(buffer, length);
+  obj->acceptRawBuffer(buffer, length);
 
-    return obj;
+  return obj;
 }
 
-void
-SharedArrayBufferObject::acceptRawBuffer(SharedArrayRawBuffer* buffer, uint32_t length)
-{
-    setReservedSlot(RAWBUF_SLOT, PrivateValue(buffer));
-    setReservedSlot(LENGTH_SLOT, PrivateUint32Value(length));
+void SharedArrayBufferObject::acceptRawBuffer(SharedArrayRawBuffer* buffer,
+                                              uint32_t length) {
+  setReservedSlot(RAWBUF_SLOT, PrivateValue(buffer));
+  setReservedSlot(LENGTH_SLOT, PrivateUint32Value(length));
 }
 
-void
-SharedArrayBufferObject::dropRawBuffer()
-{
-    setReservedSlot(RAWBUF_SLOT, UndefinedValue());
+void SharedArrayBufferObject::dropRawBuffer() {
+  setReservedSlot(RAWBUF_SLOT, UndefinedValue());
 }
 
-SharedArrayRawBuffer*
-SharedArrayBufferObject::rawBufferObject() const
-{
-    Value v = getReservedSlot(RAWBUF_SLOT);
-    MOZ_ASSERT(!v.isUndefined());
-    return reinterpret_cast<SharedArrayRawBuffer*>(v.toPrivate());
+SharedArrayRawBuffer* SharedArrayBufferObject::rawBufferObject() const {
+  Value v = getReservedSlot(RAWBUF_SLOT);
+  MOZ_ASSERT(!v.isUndefined());
+  return reinterpret_cast<SharedArrayRawBuffer*>(v.toPrivate());
 }
 
-void
-SharedArrayBufferObject::Finalize(FreeOp* fop, JSObject* obj)
-{
-    MOZ_ASSERT(fop->maybeOnHelperThread());
+void SharedArrayBufferObject::Finalize(FreeOp* fop, JSObject* obj) {
+  MOZ_ASSERT(fop->maybeOnHelperThread());
 
-    SharedArrayBufferObject& buf = obj->as<SharedArrayBufferObject>();
+  SharedArrayBufferObject& buf = obj->as<SharedArrayBufferObject>();
 
-    
-    
-    Value v = buf.getReservedSlot(RAWBUF_SLOT);
-    if (!v.isUndefined()) {
-        buf.rawBufferObject()->dropReference();
-        buf.dropRawBuffer();
-    }
+  
+  
+  Value v = buf.getReservedSlot(RAWBUF_SLOT);
+  if (!v.isUndefined()) {
+    buf.rawBufferObject()->dropReference();
+    buf.dropRawBuffer();
+  }
 }
 
 #ifndef WASM_HUGE_MEMORY
-uint32_t
-SharedArrayBufferObject::wasmBoundsCheckLimit() const
-{
-    if (isWasm()) {
-        return rawBufferObject()->boundsCheckLimit();
-    }
-    return byteLength();
+uint32_t SharedArrayBufferObject::wasmBoundsCheckLimit() const {
+  if (isWasm()) {
+    return rawBufferObject()->boundsCheckLimit();
+  }
+  return byteLength();
 }
 #endif
 
- void
-SharedArrayBufferObject::addSizeOfExcludingThis(JSObject* obj, mozilla::MallocSizeOf mallocSizeOf,
-                                                JS::ClassInfo* info)
-{
-    
-    
-    
-    
-    
-    
-    const SharedArrayBufferObject& buf = obj->as<SharedArrayBufferObject>();
-    info->objectsNonHeapElementsShared +=
-        buf.byteLength() / buf.rawBufferObject()->refcount();
+ void SharedArrayBufferObject::addSizeOfExcludingThis(
+    JSObject* obj, mozilla::MallocSizeOf mallocSizeOf, JS::ClassInfo* info) {
+  
+  
+  
+  
+  
+  
+  const SharedArrayBufferObject& buf = obj->as<SharedArrayBufferObject>();
+  info->objectsNonHeapElementsShared +=
+      buf.byteLength() / buf.rawBufferObject()->refcount();
 }
 
- void
-SharedArrayBufferObject::copyData(Handle<SharedArrayBufferObject*> toBuffer, uint32_t toIndex,
-                                  Handle<SharedArrayBufferObject*> fromBuffer, uint32_t fromIndex,
-                                  uint32_t count)
-{
-    MOZ_ASSERT(toBuffer->byteLength() >= count);
-    MOZ_ASSERT(toBuffer->byteLength() >= toIndex + count);
-    MOZ_ASSERT(fromBuffer->byteLength() >= fromIndex);
-    MOZ_ASSERT(fromBuffer->byteLength() >= fromIndex + count);
+ void SharedArrayBufferObject::copyData(
+    Handle<SharedArrayBufferObject*> toBuffer, uint32_t toIndex,
+    Handle<SharedArrayBufferObject*> fromBuffer, uint32_t fromIndex,
+    uint32_t count) {
+  MOZ_ASSERT(toBuffer->byteLength() >= count);
+  MOZ_ASSERT(toBuffer->byteLength() >= toIndex + count);
+  MOZ_ASSERT(fromBuffer->byteLength() >= fromIndex);
+  MOZ_ASSERT(fromBuffer->byteLength() >= fromIndex + count);
 
-    jit::AtomicOperations::memcpySafeWhenRacy(toBuffer->dataPointerShared() + toIndex,
-                                              fromBuffer->dataPointerShared() + fromIndex,
-                                              count);
+  jit::AtomicOperations::memcpySafeWhenRacy(
+      toBuffer->dataPointerShared() + toIndex,
+      fromBuffer->dataPointerShared() + fromIndex, count);
 }
 
-SharedArrayBufferObject*
-SharedArrayBufferObject::createFromNewRawBuffer(JSContext* cx, SharedArrayRawBuffer* buffer,
-                                                uint32_t initialSize)
-{
-    MOZ_ASSERT(cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
+SharedArrayBufferObject* SharedArrayBufferObject::createFromNewRawBuffer(
+    JSContext* cx, SharedArrayRawBuffer* buffer, uint32_t initialSize) {
+  MOZ_ASSERT(cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
 
-    AutoSetNewObjectMetadata metadata(cx);
-    SharedArrayBufferObject* obj = NewBuiltinClassInstance<SharedArrayBufferObject>(cx);
-    if (!obj) {
-        buffer->dropReference();
-        return nullptr;
-    }
+  AutoSetNewObjectMetadata metadata(cx);
+  SharedArrayBufferObject* obj =
+      NewBuiltinClassInstance<SharedArrayBufferObject>(cx);
+  if (!obj) {
+    buffer->dropReference();
+    return nullptr;
+  }
 
-    obj->acceptRawBuffer(buffer, initialSize);
+  obj->acceptRawBuffer(buffer, initialSize);
 
-    return obj;
+  return obj;
 }
 
 static const ClassOps SharedArrayBufferObjectClassOps = {
@@ -381,117 +352,96 @@ static const ClassOps SharedArrayBufferObjectClassOps = {
     nullptr, 
 };
 
-static const JSFunctionSpec sharedarrray_functions[] = {
-    JS_FS_END
-};
+static const JSFunctionSpec sharedarrray_functions[] = {JS_FS_END};
 
 static const JSPropertySpec sharedarrray_properties[] = {
-    JS_SELF_HOSTED_SYM_GET(species, "SharedArrayBufferSpecies", 0),
-    JS_PS_END
-};
+    JS_SELF_HOSTED_SYM_GET(species, "SharedArrayBufferSpecies", 0), JS_PS_END};
 
 static const JSFunctionSpec sharedarray_proto_functions[] = {
-    JS_SELF_HOSTED_FN("slice", "SharedArrayBufferSlice", 2, 0),
-    JS_FS_END
-};
+    JS_SELF_HOSTED_FN("slice", "SharedArrayBufferSlice", 2, 0), JS_FS_END};
 
 static const JSPropertySpec sharedarray_proto_properties[] = {
     JS_PSG("byteLength", SharedArrayBufferObject::byteLengthGetter, 0),
     JS_STRING_SYM_PS(toStringTag, "SharedArrayBuffer", JSPROP_READONLY),
-    JS_PS_END
-};
+    JS_PS_END};
 
 static const ClassSpec SharedArrayBufferObjectClassSpec = {
-    GenericCreateConstructor<SharedArrayBufferObject::class_constructor, 1, gc::AllocKind::FUNCTION>,
+    GenericCreateConstructor<SharedArrayBufferObject::class_constructor, 1,
+                             gc::AllocKind::FUNCTION>,
     GenericCreatePrototype<SharedArrayBufferObject>,
     sharedarrray_functions,
     sharedarrray_properties,
     sharedarray_proto_functions,
-    sharedarray_proto_properties
-};
+    sharedarray_proto_properties};
 
 const Class SharedArrayBufferObject::class_ = {
     "SharedArrayBuffer",
     JSCLASS_DELAY_METADATA_BUILDER |
-    JSCLASS_HAS_RESERVED_SLOTS(SharedArrayBufferObject::RESERVED_SLOTS) |
-    JSCLASS_HAS_CACHED_PROTO(JSProto_SharedArrayBuffer) |
-    JSCLASS_BACKGROUND_FINALIZE,
-    &SharedArrayBufferObjectClassOps,
-    &SharedArrayBufferObjectClassSpec,
-    JS_NULL_CLASS_EXT
-};
+        JSCLASS_HAS_RESERVED_SLOTS(SharedArrayBufferObject::RESERVED_SLOTS) |
+        JSCLASS_HAS_CACHED_PROTO(JSProto_SharedArrayBuffer) |
+        JSCLASS_BACKGROUND_FINALIZE,
+    &SharedArrayBufferObjectClassOps, &SharedArrayBufferObjectClassSpec,
+    JS_NULL_CLASS_EXT};
 
 const Class SharedArrayBufferObject::protoClass_ = {
     "SharedArrayBufferPrototype",
-    JSCLASS_HAS_CACHED_PROTO(JSProto_SharedArrayBuffer),
-    JS_NULL_CLASS_OPS,
-    &SharedArrayBufferObjectClassSpec
-};
+    JSCLASS_HAS_CACHED_PROTO(JSProto_SharedArrayBuffer), JS_NULL_CLASS_OPS,
+    &SharedArrayBufferObjectClassSpec};
 
-bool
-js::IsSharedArrayBuffer(HandleValue v)
-{
-    return v.isObject() && v.toObject().is<SharedArrayBufferObject>();
+bool js::IsSharedArrayBuffer(HandleValue v) {
+  return v.isObject() && v.toObject().is<SharedArrayBufferObject>();
 }
 
-bool
-js::IsSharedArrayBuffer(HandleObject o)
-{
-    return o->is<SharedArrayBufferObject>();
+bool js::IsSharedArrayBuffer(HandleObject o) {
+  return o->is<SharedArrayBufferObject>();
 }
 
-bool
-js::IsSharedArrayBuffer(JSObject* o)
-{
-    return o->is<SharedArrayBufferObject>();
+bool js::IsSharedArrayBuffer(JSObject* o) {
+  return o->is<SharedArrayBufferObject>();
 }
 
-SharedArrayBufferObject&
-js::AsSharedArrayBuffer(HandleObject obj)
-{
-    MOZ_ASSERT(IsSharedArrayBuffer(obj));
-    return obj->as<SharedArrayBufferObject>();
+SharedArrayBufferObject& js::AsSharedArrayBuffer(HandleObject obj) {
+  MOZ_ASSERT(IsSharedArrayBuffer(obj));
+  return obj->as<SharedArrayBufferObject>();
 }
 
-JS_FRIEND_API uint32_t
-JS_GetSharedArrayBufferByteLength(JSObject* obj)
-{
-    obj = CheckedUnwrap(obj);
-    return obj ? obj->as<SharedArrayBufferObject>().byteLength() : 0;
+JS_FRIEND_API uint32_t JS_GetSharedArrayBufferByteLength(JSObject* obj) {
+  obj = CheckedUnwrap(obj);
+  return obj ? obj->as<SharedArrayBufferObject>().byteLength() : 0;
 }
 
-JS_FRIEND_API void
-js::GetSharedArrayBufferLengthAndData(JSObject* obj, uint32_t* length, bool* isSharedMemory, uint8_t** data)
-{
-    MOZ_ASSERT(obj->is<SharedArrayBufferObject>());
-    *length = obj->as<SharedArrayBufferObject>().byteLength();
-    *data = obj->as<SharedArrayBufferObject>().dataPointerShared().unwrap();
-    *isSharedMemory = true;
+JS_FRIEND_API void js::GetSharedArrayBufferLengthAndData(JSObject* obj,
+                                                         uint32_t* length,
+                                                         bool* isSharedMemory,
+                                                         uint8_t** data) {
+  MOZ_ASSERT(obj->is<SharedArrayBufferObject>());
+  *length = obj->as<SharedArrayBufferObject>().byteLength();
+  *data = obj->as<SharedArrayBufferObject>().dataPointerShared().unwrap(
+      );
+  *isSharedMemory = true;
 }
 
-JS_FRIEND_API JSObject*
-JS_NewSharedArrayBuffer(JSContext* cx, uint32_t nbytes)
-{
-    MOZ_ASSERT(cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
+JS_FRIEND_API JSObject* JS_NewSharedArrayBuffer(JSContext* cx,
+                                                uint32_t nbytes) {
+  MOZ_ASSERT(cx->realm()->creationOptions().getSharedMemoryAndAtomicsEnabled());
 
-    MOZ_ASSERT(nbytes <= INT32_MAX);
-    return SharedArrayBufferObject::New(cx, nbytes,  nullptr);
+  MOZ_ASSERT(nbytes <= INT32_MAX);
+  return SharedArrayBufferObject::New(cx, nbytes,  nullptr);
 }
 
-JS_FRIEND_API bool
-JS_IsSharedArrayBufferObject(JSObject* obj)
-{
-    obj = CheckedUnwrap(obj);
-    return obj ? obj->is<SharedArrayBufferObject>() : false;
+JS_FRIEND_API bool JS_IsSharedArrayBufferObject(JSObject* obj) {
+  obj = CheckedUnwrap(obj);
+  return obj ? obj->is<SharedArrayBufferObject>() : false;
 }
 
-JS_FRIEND_API uint8_t*
-JS_GetSharedArrayBufferData(JSObject* obj, bool* isSharedMemory, const JS::AutoRequireNoGC&)
-{
-    obj = CheckedUnwrap(obj);
-    if (!obj) {
-        return nullptr;
-    }
-    *isSharedMemory = true;
-    return obj->as<SharedArrayBufferObject>().dataPointerShared().unwrap();
+JS_FRIEND_API uint8_t* JS_GetSharedArrayBufferData(JSObject* obj,
+                                                   bool* isSharedMemory,
+                                                   const JS::AutoRequireNoGC&) {
+  obj = CheckedUnwrap(obj);
+  if (!obj) {
+    return nullptr;
+  }
+  *isSharedMemory = true;
+  return obj->as<SharedArrayBufferObject>().dataPointerShared().unwrap(
+      );
 }

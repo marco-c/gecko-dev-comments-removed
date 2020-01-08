@@ -36,84 +36,84 @@ class EmitterScope;
 
 
 
-class MOZ_STACK_CLASS ForInEmitter
-{
-    BytecodeEmitter* bce_;
+class MOZ_STACK_CLASS ForInEmitter {
+  BytecodeEmitter* bce_;
 
-    
-    unsigned noteIndex_ = 0;
-
-#ifdef DEBUG
-    
-    int32_t loopDepth_;
-#endif
-
-    mozilla::Maybe<LoopControl> loopInfo_;
-
-    
-    
-    
-    const EmitterScope* headLexicalEmitterScope_;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mozilla::Maybe<TDZCheckCache> tdzCacheForIteratedValue_;
+  
+  unsigned noteIndex_ = 0;
 
 #ifdef DEBUG
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    enum class State {
-        
-        Start,
-
-        
-        Iterated,
-
-        
-        Initialize,
-
-        
-        Body,
-
-        
-        End
-    };
-    State state_ = State::Start;
+  
+  int32_t loopDepth_;
 #endif
 
-  public:
-    ForInEmitter(BytecodeEmitter* bce, const EmitterScope* headLexicalEmitterScope);
+  mozilla::Maybe<LoopControl> loopInfo_;
+
+  
+  
+  
+  const EmitterScope* headLexicalEmitterScope_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Maybe<TDZCheckCache> tdzCacheForIteratedValue_;
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
+    
+    Start,
 
     
+    Iterated,
+
     
+    Initialize,
+
     
+    Body,
+
     
-    
-    
-    
-    
-    MOZ_MUST_USE bool emitIterated();
-    MOZ_MUST_USE bool emitInitialize();
-    MOZ_MUST_USE bool emitBody();
-    MOZ_MUST_USE bool emitEnd(const mozilla::Maybe<uint32_t>& forPos);
+    End
+  };
+  State state_ = State::Start;
+#endif
+
+ public:
+  ForInEmitter(BytecodeEmitter* bce,
+               const EmitterScope* headLexicalEmitterScope);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool emitIterated();
+  MOZ_MUST_USE bool emitInitialize();
+  MOZ_MUST_USE bool emitBody();
+  MOZ_MUST_USE bool emitEnd(const mozilla::Maybe<uint32_t>& forPos);
 };
 
 } 

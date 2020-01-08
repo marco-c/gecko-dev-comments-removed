@@ -18,8 +18,9 @@
 #include "nsTHashtable.h"
 
 namespace IPC {
-template<typename T> struct ParamTraits;
-} 
+template <typename T>
+struct ParamTraits;
+}  
 
 namespace mozilla {
 namespace gfx {
@@ -29,9 +30,8 @@ class CrossProcessPaint;
 
 
 
-class PaintFragment
-{
-public:
+class PaintFragment {
+ public:
   
   PaintFragment() = default;
 
@@ -49,10 +49,8 @@ public:
 
 
 
-  static PaintFragment Record(nsIDocShell* aDocShell,
-                              const IntRect& aRect,
-                              float aScale,
-                              nscolor aBackgroundColor);
+  static PaintFragment Record(nsIDocShell* aDocShell, const IntRect& aRect,
+                              float aScale, nscolor aBackgroundColor);
 
   
   bool IsEmpty() const;
@@ -60,7 +58,7 @@ public:
   PaintFragment(PaintFragment&&) = default;
   PaintFragment& operator=(PaintFragment&&) = default;
 
-protected:
+ protected:
   friend struct IPC::ParamTraits<PaintFragment>;
   friend CrossProcessPaint;
 
@@ -76,11 +74,10 @@ protected:
 
 
 
-class CrossProcessPaint
-{
+class CrossProcessPaint {
   NS_INLINE_DECL_REFCOUNTING(CrossProcessPaint);
 
-public:
+ public:
   
 
 
@@ -97,11 +94,8 @@ public:
 
 
 
-  static void StartLocal(nsIDocShell* aRoot,
-                         const IntRect& aRect,
-                         float aScale,
-                         nscolor aBackgroundColor,
-                         dom::Promise* aPromise);
+  static void StartLocal(nsIDocShell* aRoot, const IntRect& aRect, float aScale,
+                         nscolor aBackgroundColor, dom::Promise* aPromise);
 
   
 
@@ -119,27 +113,21 @@ public:
 
 
 
-  static void StartRemote(dom::TabId aRoot,
-                          const IntRect& aRect,
-                          float aScale,
-                          nscolor aBackgroundColor,
-                          dom::Promise* aPromise);
+  static void StartRemote(dom::TabId aRoot, const IntRect& aRect, float aScale,
+                          nscolor aBackgroundColor, dom::Promise* aPromise);
 
   void ReceiveFragment(dom::TabId aId, PaintFragment&& aFragment);
   void LostFragment(dom::TabId aId);
-private:
+
+ private:
   typedef nsRefPtrHashtable<nsUint64HashKey, SourceSurface> ResolvedSurfaceMap;
   typedef nsDataHashtable<nsUint64HashKey, PaintFragment> ReceivedFragmentMap;
 
-  CrossProcessPaint(dom::Promise* aPromise,
-                    float aScale,
-                    nscolor aBackgroundColor,
-                    dom::TabId aRootId);
+  CrossProcessPaint(dom::Promise* aPromise, float aScale,
+                    nscolor aBackgroundColor, dom::TabId aRootId);
   ~CrossProcessPaint();
 
-  void QueueRootPaint(dom::TabId aId,
-                      const IntRect& aRect,
-                      float aScale,
+  void QueueRootPaint(dom::TabId aId, const IntRect& aRect, float aScale,
                       nscolor aBackgroundColor);
   void QueueSubPaint(dom::TabId aId);
 
@@ -153,8 +141,7 @@ private:
   
   
   void MaybeResolve();
-  bool ResolveInternal(dom::TabId aId,
-                       ResolvedSurfaceMap* aResolved);
+  bool ResolveInternal(dom::TabId aId, ResolvedSurfaceMap* aResolved);
 
   RefPtr<dom::Promise> mPromise;
   dom::TabId mRootId;
@@ -164,7 +151,7 @@ private:
   ReceivedFragmentMap mReceivedFragments;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

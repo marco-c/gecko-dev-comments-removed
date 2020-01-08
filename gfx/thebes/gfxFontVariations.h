@@ -16,17 +16,17 @@ typedef mozilla::gfx::FontVariation gfxFontVariation;
 
 
 struct gfxFontVariationAxis {
-    uint32_t mTag;
-    nsCString mName; 
-    float    mMinValue;
-    float    mMaxValue;
-    float    mDefaultValue;
+  uint32_t mTag;
+  nsCString mName;  
+  float mMinValue;
+  float mMaxValue;
+  float mDefaultValue;
 };
 
 
 struct gfxFontVariationValue {
-    uint32_t mAxis;
-    float    mValue;
+  uint32_t mAxis;
+  float mValue;
 };
 
 
@@ -34,8 +34,8 @@ struct gfxFontVariationValue {
 
 
 struct gfxFontVariationInstance {
-    nsCString mName;
-    nsTArray<gfxFontVariationValue> mValues;
+  nsCString mName;
+  nsTArray<gfxFontVariationValue> mValues;
 };
 
 #endif

@@ -18,27 +18,26 @@ namespace mozilla {
 class TransportLayerDtls;
 
 class TransportLayerSrtp final : public TransportLayer {
-  public:
-    explicit TransportLayerSrtp(TransportLayerDtls& dtls);
-    virtual ~TransportLayerSrtp() {};
+ public:
+  explicit TransportLayerSrtp(TransportLayerDtls& dtls);
+  virtual ~TransportLayerSrtp(){};
 
-    
-    void WasInserted() override;
-    TransportResult SendPacket(MediaPacket& packet) override;
+  
+  void WasInserted() override;
+  TransportResult SendPacket(MediaPacket& packet) override;
 
-    
-    void StateChange(TransportLayer *layer, State state);
-    void PacketReceived(TransportLayer* layer, MediaPacket& packet);
+  
+  void StateChange(TransportLayer* layer, State state);
+  void PacketReceived(TransportLayer* layer, MediaPacket& packet);
 
-    TRANSPORT_LAYER_ID("srtp")
+  TRANSPORT_LAYER_ID("srtp")
 
-  private:
-    bool Setup();
-    DISALLOW_COPY_ASSIGN(TransportLayerSrtp);
-    RefPtr<SrtpFlow> mSendSrtp;
-    RefPtr<SrtpFlow> mRecvSrtp;
+ private:
+  bool Setup();
+  DISALLOW_COPY_ASSIGN(TransportLayerSrtp);
+  RefPtr<SrtpFlow> mSendSrtp;
+  RefPtr<SrtpFlow> mRecvSrtp;
 };
-
 
 }  
 #endif

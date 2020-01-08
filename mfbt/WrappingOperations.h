@@ -33,29 +33,28 @@ namespace mozilla {
 
 namespace detail {
 
-template<typename UnsignedType>
-struct WrapToSignedHelper
-{
+template <typename UnsignedType>
+struct WrapToSignedHelper {
   static_assert(mozilla::IsUnsigned<UnsignedType>::value,
                 "WrapToSigned must be passed an unsigned type");
 
   using SignedType = typename mozilla::MakeSigned<UnsignedType>::Type;
 
   static constexpr SignedType MaxValue =
-    (UnsignedType(1) << (CHAR_BIT * sizeof(SignedType) - 1)) - 1;
+      (UnsignedType(1) << (CHAR_BIT * sizeof(SignedType) - 1)) - 1;
   static constexpr SignedType MinValue = -MaxValue - 1;
 
   static constexpr UnsignedType MinValueUnsigned =
-    static_cast<UnsignedType>(MinValue);
+      static_cast<UnsignedType>(MinValue);
   static constexpr UnsignedType MaxValueUnsigned =
-    static_cast<UnsignedType>(MaxValue);
+      static_cast<UnsignedType>(MaxValue);
 
   
   
   
-  MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW MOZ_NO_SANITIZE_SIGNED_OVERFLOW
-  static constexpr SignedType compute(UnsignedType aValue)
-  {
+  MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
+  MOZ_NO_SANITIZE_SIGNED_OVERFLOW static constexpr SignedType compute(
+      UnsignedType aValue) {
     
     
     
@@ -79,12 +78,12 @@ struct WrapToSignedHelper
     
     
     return (aValue <= MaxValueUnsigned)
-           ? static_cast<SignedType>(aValue)
-           : static_cast<SignedType>(aValue - MinValueUnsigned) + MinValue;
+               ? static_cast<SignedType>(aValue)
+               : static_cast<SignedType>(aValue - MinValueUnsigned) + MinValue;
   }
 };
 
-} 
+}  
 
 
 
@@ -93,39 +92,34 @@ struct WrapToSignedHelper
 
 
 
-template<typename UnsignedType>
+template <typename UnsignedType>
 constexpr typename detail::WrapToSignedHelper<UnsignedType>::SignedType
-WrapToSigned(UnsignedType aValue)
-{
+WrapToSigned(UnsignedType aValue) {
   return detail::WrapToSignedHelper<UnsignedType>::compute(aValue);
 }
 
 namespace detail {
 
-template<typename T>
-constexpr T
-ToResult(typename MakeUnsigned<T>::Type aUnsigned)
-{
+template <typename T>
+constexpr T ToResult(typename MakeUnsigned<T>::Type aUnsigned) {
   
   
   return IsSigned<T>::value ? WrapToSigned(aUnsigned) : aUnsigned;
 }
 
-template<typename T>
-struct WrappingAddHelper
-{
-private:
+template <typename T>
+struct WrappingAddHelper {
+ private:
   using UnsignedT = typename MakeUnsigned<T>::Type;
 
-public:
+ public:
   MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
-  static constexpr T compute(T aX, T aY)
-  {
+  static constexpr T compute(T aX, T aY) {
     return ToResult<T>(static_cast<UnsignedT>(aX) + static_cast<UnsignedT>(aY));
   }
 };
 
-} 
+}  
 
 
 
@@ -154,30 +148,26 @@ public:
 
 
 
-template<typename T>
-constexpr T
-WrappingAdd(T aX, T aY)
-{
+template <typename T>
+constexpr T WrappingAdd(T aX, T aY) {
   return detail::WrappingAddHelper<T>::compute(aX, aY);
 }
 
 namespace detail {
 
-template<typename T>
-struct WrappingSubtractHelper
-{
-private:
+template <typename T>
+struct WrappingSubtractHelper {
+ private:
   using UnsignedT = typename MakeUnsigned<T>::Type;
 
-public:
+ public:
   MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
-  static constexpr T compute(T aX, T aY)
-  {
+  static constexpr T compute(T aX, T aY) {
     return ToResult<T>(static_cast<UnsignedT>(aX) - static_cast<UnsignedT>(aY));
   }
 };
 
-} 
+}  
 
 
 
@@ -204,34 +194,29 @@ public:
 
 
 
-template<typename T>
-constexpr T
-WrappingSubtract(T aX, T aY)
-{
+template <typename T>
+constexpr T WrappingSubtract(T aX, T aY) {
   return detail::WrappingSubtractHelper<T>::compute(aX, aY);
 }
 
 namespace detail {
 
-template<typename T>
-struct WrappingMultiplyHelper
-{
-private:
+template <typename T>
+struct WrappingMultiplyHelper {
+ private:
   using UnsignedT = typename MakeUnsigned<T>::Type;
 
-public:
+ public:
   MOZ_NO_SANITIZE_UNSIGNED_OVERFLOW
-  static constexpr T compute(T aX, T aY)
-  {
+  static constexpr T compute(T aX, T aY) {
     
     
-    return ToResult<T>(static_cast<UnsignedT>(1U *
-                                              static_cast<UnsignedT>(aX) *
+    return ToResult<T>(static_cast<UnsignedT>(1U * static_cast<UnsignedT>(aX) *
                                               static_cast<UnsignedT>(aY)));
   }
 };
 
-} 
+}  
 
 
 
@@ -267,10 +252,8 @@ public:
 
 
 
-template<typename T>
-constexpr T
-WrappingMultiply(T aX, T aY)
-{
+template <typename T>
+constexpr T WrappingMultiply(T aX, T aY) {
   return detail::WrappingMultiplyHelper<T>::compute(aX, aY);
 }
 
@@ -287,10 +270,10 @@ WrappingMultiply(T aX, T aY)
 
 
 
+
 #ifdef _MSC_VER
 #define MOZ_PUSH_DISABLE_INTEGRAL_CONSTANT_OVERFLOW_WARNING \
-  __pragma(warning(push)) \
-  __pragma(warning(disable:4307))
+  __pragma(warning(push)) __pragma(warning(disable : 4307))
 #define MOZ_POP_DISABLE_INTEGRAL_CONSTANT_OVERFLOW_WARNING \
   __pragma(warning(pop))
 #else

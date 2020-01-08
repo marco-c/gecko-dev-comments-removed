@@ -32,28 +32,26 @@ class WebRenderBridgeChild;
 class GlyphArray;
 struct PlanarYCbCrData;
 class WebRenderCommand;
-} 
+}  
 namespace image {
 class ImageRegion;
-} 
+}  
 namespace wr {
 class DisplayListBuilder;
-} 
-} 
+}  
+}  
 
 class gfxUtils {
-public:
-    typedef mozilla::gfx::DataSourceSurface DataSourceSurface;
-    typedef mozilla::gfx::DrawTarget DrawTarget;
-    typedef mozilla::gfx::IntPoint IntPoint;
-    typedef mozilla::gfx::Matrix Matrix;
-    typedef mozilla::gfx::SourceSurface SourceSurface;
-    typedef mozilla::gfx::SurfaceFormat SurfaceFormat;
-    typedef mozilla::image::ImageRegion ImageRegion;
+ public:
+  typedef mozilla::gfx::DataSourceSurface DataSourceSurface;
+  typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::gfx::IntPoint IntPoint;
+  typedef mozilla::gfx::Matrix Matrix;
+  typedef mozilla::gfx::SourceSurface SourceSurface;
+  typedef mozilla::gfx::SurfaceFormat SurfaceFormat;
+  typedef mozilla::image::ImageRegion ImageRegion;
 
-    
-
-
+  
 
 
 
@@ -61,19 +59,21 @@ public:
 
 
 
-    static bool PremultiplyDataSurface(DataSourceSurface* srcSurf,
+
+
+  static bool PremultiplyDataSurface(DataSourceSurface* srcSurf,
+                                     DataSourceSurface* destSurf);
+  static bool UnpremultiplyDataSurface(DataSourceSurface* srcSurf,
                                        DataSourceSurface* destSurf);
-    static bool UnpremultiplyDataSurface(DataSourceSurface* srcSurf,
-                                         DataSourceSurface* destSurf);
 
-    static already_AddRefed<DataSourceSurface>
-      CreatePremultipliedDataSurface(DataSourceSurface* srcSurf);
-    static already_AddRefed<DataSourceSurface>
-      CreateUnpremultipliedDataSurface(DataSourceSurface* srcSurf);
+  static already_AddRefed<DataSourceSurface> CreatePremultipliedDataSurface(
+      DataSourceSurface* srcSurf);
+  static already_AddRefed<DataSourceSurface> CreateUnpremultipliedDataSurface(
+      DataSourceSurface* srcSurf);
 
-    static void ConvertBGRAtoRGBA(uint8_t* aData, uint32_t aLength);
+  static void ConvertBGRAtoRGBA(uint8_t* aData, uint32_t aLength);
 
-    
+  
 
 
 
@@ -86,82 +86,85 @@ public:
 
 
 
-    static void DrawPixelSnapped(gfxContext*        aContext,
-                                 gfxDrawable*       aDrawable,
-                                 const gfxSize&     aImageSize,
-                                 const ImageRegion& aRegion,
-                                 const mozilla::gfx::SurfaceFormat aFormat,
-                                 mozilla::gfx::SamplingFilter aSamplingFilter,
-                                 uint32_t           aImageFlags = imgIContainer::FLAG_NONE,
-                                 gfxFloat           aOpacity = 1.0,
-                                 bool               aUseOptimalFillOp = true);
+  static void DrawPixelSnapped(gfxContext* aContext, gfxDrawable* aDrawable,
+                               const gfxSize& aImageSize,
+                               const ImageRegion& aRegion,
+                               const mozilla::gfx::SurfaceFormat aFormat,
+                               mozilla::gfx::SamplingFilter aSamplingFilter,
+                               uint32_t aImageFlags = imgIContainer::FLAG_NONE,
+                               gfxFloat aOpacity = 1.0,
+                               bool aUseOptimalFillOp = true);
 
-    
+  
 
 
-    static void ClipToRegion(gfxContext* aContext, const nsIntRegion& aRegion);
+  static void ClipToRegion(gfxContext* aContext, const nsIntRegion& aRegion);
 
-    
+  
 
 
-    static void ClipToRegion(mozilla::gfx::DrawTarget* aTarget, const nsIntRegion& aRegion);
+  static void ClipToRegion(mozilla::gfx::DrawTarget* aTarget,
+                           const nsIntRegion& aRegion);
 
-    
+  
 
 
-    static int ImageFormatToDepth(gfxImageFormat aFormat);
+  static int ImageFormatToDepth(gfxImageFormat aFormat);
 
-    
+  
 
 
 
 
-    static gfxMatrix TransformRectToRect(const gfxRect& aFrom,
-                                         const gfxPoint& aToTopLeft,
-                                         const gfxPoint& aToTopRight,
-                                         const gfxPoint& aToBottomRight);
+  static gfxMatrix TransformRectToRect(const gfxRect& aFrom,
+                                       const gfxPoint& aToTopLeft,
+                                       const gfxPoint& aToTopRight,
+                                       const gfxPoint& aToBottomRight);
 
-    static Matrix TransformRectToRect(const gfxRect& aFrom,
-                                      const IntPoint& aToTopLeft,
-                                      const IntPoint& aToTopRight,
-                                      const IntPoint& aToBottomRight);
+  static Matrix TransformRectToRect(const gfxRect& aFrom,
+                                    const IntPoint& aToTopLeft,
+                                    const IntPoint& aToTopRight,
+                                    const IntPoint& aToBottomRight);
 
-    
+  
 
 
 
 
-    static bool GfxRectToIntRect(const gfxRect& aIn, mozilla::gfx::IntRect* aOut);
+  static bool GfxRectToIntRect(const gfxRect& aIn, mozilla::gfx::IntRect* aOut);
 
-    
+  
 
 
 
-    static void ConditionRect(gfxRect& aRect);
+  static void ConditionRect(gfxRect& aRect);
 
-    
+  
 
 
-    static gfxQuad TransformToQuad(const gfxRect& aRect,
-                                   const mozilla::gfx::Matrix4x4& aMatrix);
+  static gfxQuad TransformToQuad(const gfxRect& aRect,
+                                 const mozilla::gfx::Matrix4x4& aMatrix);
 
-    
+  
 
 
 
 
-    static float ClampToScaleFactor(float aVal, bool aRoundDown = false);
+  static float ClampToScaleFactor(float aVal, bool aRoundDown = false);
 
-    
+  
 
 
-    static void ClearThebesSurface(gfxASurface* aSurface);
+  static void ClearThebesSurface(gfxASurface* aSurface);
 
-    static const float* YuvToRgbMatrix4x3RowMajor(mozilla::YUVColorSpace aYUVColorSpace);
-    static const float* YuvToRgbMatrix3x3ColumnMajor(mozilla::YUVColorSpace aYUVColorSpace);
-    static const float* YuvToRgbMatrix4x4ColumnMajor(mozilla::YUVColorSpace aYUVColorSpace);
+  static const float* YuvToRgbMatrix4x3RowMajor(
+      mozilla::YUVColorSpace aYUVColorSpace);
+  static const float* YuvToRgbMatrix3x3ColumnMajor(
+      mozilla::YUVColorSpace aYUVColorSpace);
+  static const float* YuvToRgbMatrix4x4ColumnMajor(
+      mozilla::YUVColorSpace aYUVColorSpace);
 
-    
+  
 
 
 
@@ -202,25 +205,23 @@ public:
 
 
 
-    static already_AddRefed<DataSourceSurface>
-    CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
-                                             SurfaceFormat aFormat);
+  static already_AddRefed<DataSourceSurface>
+  CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
+                                           SurfaceFormat aFormat);
 
-    
+  
 
 
 
 
-    static const mozilla::gfx::Color& GetColorForFrameNumber(uint64_t aFrameNumber);
-    static const uint32_t sNumFrameColors;
+  static const mozilla::gfx::Color& GetColorForFrameNumber(
+      uint64_t aFrameNumber);
+  static const uint32_t sNumFrameColors;
 
+  enum BinaryOrData { eBinaryEncode, eDataURIEncode };
 
-    enum BinaryOrData {
-        eBinaryEncode,
-        eDataURIEncode
-    };
+  
 
-    
 
 
 
@@ -244,69 +245,65 @@ public:
 
 
 
+  static nsresult EncodeSourceSurface(SourceSurface* aSurface,
+                                      const nsACString& aMimeType,
+                                      const nsAString& aOutputOptions,
+                                      BinaryOrData aBinaryOrData, FILE* aFile,
+                                      nsACString* aString = nullptr);
 
-    static nsresult
-    EncodeSourceSurface(SourceSurface* aSurface,
-                        const nsACString& aMimeType,
-                        const nsAString& aOutputOptions,
-                        BinaryOrData aBinaryOrData,
-                        FILE* aFile,
-                        nsACString* aString = nullptr);
+  
 
-    
 
+  static void WriteAsPNG(SourceSurface* aSurface, const nsAString& aFile);
+  static void WriteAsPNG(SourceSurface* aSurface, const char* aFile);
+  static void WriteAsPNG(DrawTarget* aDT, const nsAString& aFile);
+  static void WriteAsPNG(DrawTarget* aDT, const char* aFile);
+  static void WriteAsPNG(nsIPresShell* aShell, const char* aFile);
 
-    static void WriteAsPNG(SourceSurface* aSurface, const nsAString& aFile);
-    static void WriteAsPNG(SourceSurface* aSurface, const char* aFile);
-    static void WriteAsPNG(DrawTarget* aDT, const nsAString& aFile);
-    static void WriteAsPNG(DrawTarget* aDT, const char* aFile);
-    static void WriteAsPNG(nsIPresShell* aShell, const char* aFile);
+  
 
-    
 
 
 
 
 
+  static void DumpAsDataURI(SourceSurface* aSourceSurface, FILE* aFile);
+  static inline void DumpAsDataURI(SourceSurface* aSourceSurface) {
+    DumpAsDataURI(aSourceSurface, stdout);
+  }
+  static void DumpAsDataURI(DrawTarget* aDT, FILE* aFile);
+  static inline void DumpAsDataURI(DrawTarget* aDT) {
+    DumpAsDataURI(aDT, stdout);
+  }
+  static nsCString GetAsDataURI(SourceSurface* aSourceSurface);
+  static nsCString GetAsDataURI(DrawTarget* aDT);
+  static nsCString GetAsLZ4Base64Str(DataSourceSurface* aSourceSurface);
 
-    static void DumpAsDataURI(SourceSurface* aSourceSurface, FILE* aFile);
-    static inline void DumpAsDataURI(SourceSurface* aSourceSurface) {
-        DumpAsDataURI(aSourceSurface, stdout);
-    }
-    static void DumpAsDataURI(DrawTarget* aDT, FILE* aFile);
-    static inline void DumpAsDataURI(DrawTarget* aDT) {
-        DumpAsDataURI(aDT, stdout);
-    }
-    static nsCString GetAsDataURI(SourceSurface* aSourceSurface);
-    static nsCString GetAsDataURI(DrawTarget* aDT);
-    static nsCString GetAsLZ4Base64Str(DataSourceSurface* aSourceSurface);
+  static mozilla::UniquePtr<uint8_t[]> GetImageBuffer(
+      DataSourceSurface* aSurface, bool aIsAlphaPremultiplied,
+      int32_t* outFormat);
 
-    static mozilla::UniquePtr<uint8_t[]> GetImageBuffer(DataSourceSurface* aSurface,
-                                                        bool aIsAlphaPremultiplied,
-                                                        int32_t* outFormat);
+  static nsresult GetInputStream(DataSourceSurface* aSurface,
+                                 bool aIsAlphaPremultiplied,
+                                 const char* aMimeType,
+                                 const char16_t* aEncoderOptions,
+                                 nsIInputStream** outStream);
 
-    static nsresult GetInputStream(DataSourceSurface* aSurface,
-                                   bool aIsAlphaPremultiplied,
-                                   const char* aMimeType,
-                                   const char16_t* aEncoderOptions,
-                                   nsIInputStream** outStream);
+  static nsresult ThreadSafeGetFeatureStatus(
+      const nsCOMPtr<nsIGfxInfo>& gfxInfo, int32_t feature,
+      nsACString& failureId, int32_t* status);
 
-    static nsresult ThreadSafeGetFeatureStatus(const nsCOMPtr<nsIGfxInfo>& gfxInfo,
-                                               int32_t feature,
-                                               nsACString& failureId,
-                                               int32_t* status);
+  static void RemoveShaderCacheFromDiskIfNecessary();
 
-    static void RemoveShaderCacheFromDiskIfNecessary();
+  
 
-    
 
+  static void CopyAsDataURI(SourceSurface* aSourceSurface);
+  static void CopyAsDataURI(DrawTarget* aDT);
 
-    static void CopyAsDataURI(SourceSurface* aSourceSurface);
-    static void CopyAsDataURI(DrawTarget* aDT);
+  static bool DumpDisplayList();
 
-    static bool DumpDisplayList();
-
-    static FILE* sDumpPaintFile;
+  static FILE* sDumpPaintFile;
 };
 
 namespace mozilla {
@@ -326,16 +323,16 @@ Color ToDeviceColor(nscolor aColor);
 
 
 
-static inline CheckedInt<uint32_t>
-SafeBytesForBitmap(uint32_t aWidth, uint32_t aHeight, unsigned aBytesPerPixel)
-{
+static inline CheckedInt<uint32_t> SafeBytesForBitmap(uint32_t aWidth,
+                                                      uint32_t aHeight,
+                                                      unsigned aBytesPerPixel) {
   MOZ_ASSERT(aBytesPerPixel > 0);
   CheckedInt<uint32_t> width = uint32_t(aWidth);
   CheckedInt<uint32_t> height = uint32_t(aHeight);
   return width * height * aBytesPerPixel;
 }
 
-} 
-} 
+}  
+}  
 
 #endif

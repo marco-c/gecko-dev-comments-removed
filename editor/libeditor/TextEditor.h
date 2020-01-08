@@ -26,16 +26,14 @@ enum class EditSubAction : int32_t;
 namespace dom {
 class DragEvent;
 class Selection;
-} 
+}  
 
 
 
 
 
-class TextEditor : public EditorBase
-                 , public nsIPlaintextEditor
-{
-public:
+class TextEditor : public EditorBase, public nsIPlaintextEditor {
+ public:
   
 
 
@@ -77,8 +75,7 @@ public:
   NS_IMETHOD CanPaste(int32_t aSelectionType, bool* aCanPaste) override;
   NS_IMETHOD PasteTransferable(nsITransferable* aTransferable) override;
 
-  NS_IMETHOD OutputToString(const nsAString& aFormatType,
-                            uint32_t aFlags,
+  NS_IMETHOD OutputToString(const nsAString& aFormatType, uint32_t aFlags,
                             nsAString& aOutputString) override;
 
   
@@ -99,17 +96,16 @@ public:
 
 
   nsresult IsEmpty(bool* aIsEmpty) const;
-  bool IsEmpty() const
-  {
+  bool IsEmpty() const {
     bool isEmpty = false;
     nsresult rv = IsEmpty(&isEmpty);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-      "Checking whether the editor is empty failed");
+                         "Checking whether the editor is empty failed");
     return NS_SUCCEEDED(rv) && isEmpty;
   }
 
   virtual nsresult HandleKeyPressEvent(
-                     WidgetKeyboardEvent* aKeyboardEvent) override;
+      WidgetKeyboardEvent* aKeyboardEvent) override;
 
   virtual dom::EventTarget* GetDOMEventTarget() override;
 
@@ -123,8 +119,7 @@ public:
 
 
 
-  nsresult PasteAsAction(int32_t aClipboardType,
-                         bool aDispatchPasteEvent);
+  nsresult PasteAsAction(int32_t aClipboardType, bool aDispatchPasteEvent);
 
   
 
@@ -208,8 +203,7 @@ public:
 
 
   MOZ_CAN_RUN_SCRIPT
-  nsresult
-  OnCompositionChange(WidgetCompositionEvent& aCompositionChangeEvent);
+  nsresult OnCompositionChange(WidgetCompositionEvent& aCompositionChangeEvent);
 
   
 
@@ -234,8 +228,7 @@ public:
 
 
   nsresult ComputeTextValue(uint32_t aDocumentEncoderFlags,
-                            nsAString& aOutputString) const
-  {
+                            nsAString& aOutputString) const {
     AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
     if (NS_WARN_IF(!editActionData.CanHandle())) {
       return NS_ERROR_NOT_INITIALIZED;
@@ -244,7 +237,7 @@ public:
                                 aDocumentEncoderFlags, aOutputString);
   }
 
-protected: 
+ protected:  
   
 
 
@@ -256,9 +249,8 @@ protected:
 
   
   virtual nsresult RemoveAttributeOrEquivalent(
-                     Element* aElement,
-                     nsAtom* aAttribute,
-                     bool aSuppressTransaction) override;
+      Element* aElement, nsAtom* aAttribute,
+      bool aSuppressTransaction) override;
   virtual nsresult SetAttributeOrEquivalent(Element* aElement,
                                             nsAtom* aAttribute,
                                             const nsAString& aValue,
@@ -294,9 +286,8 @@ protected:
 
 
 
-  virtual nsresult
-  DeleteSelectionWithTransaction(EDirection aAction,
-                                 EStripWrappers aStripWrappers);
+  virtual nsresult DeleteSelectionWithTransaction(
+      EDirection aAction, EStripWrappers aStripWrappers);
 
   
 
@@ -328,11 +319,10 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  already_AddRefed<Element>
-  InsertBrElementWithTransaction(
-    const EditorDOMPointBase<PT, CT>& aPointToInsert,
-    EDirection aSelect = eNone);
+  template <typename PT, typename CT>
+  already_AddRefed<Element> InsertBrElementWithTransaction(
+      const EditorDOMPointBase<PT, CT>& aPointToInsert,
+      EDirection aSelect = eNone);
 
   
 
@@ -352,17 +342,15 @@ protected:
   static void GetDefaultEditorPrefs(int32_t& aNewLineHandling,
                                     int32_t& aCaretStyle);
 
-protected: 
-
-  virtual void
-  OnStartToHandleTopLevelEditSubAction(
-    EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
+ protected:  
+  virtual void OnStartToHandleTopLevelEditSubAction(
+      EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) override;
   virtual void OnEndHandlingTopLevelEditSubAction() override;
 
   void BeginEditorInit();
   nsresult EndEditorInit();
 
-protected: 
+ protected:  
   virtual ~TextEditor();
 
   int32_t WrapWidth() const { return mWrapColumn; }
@@ -459,10 +447,9 @@ protected:
 
 
 
-  already_AddRefed<nsIDocumentEncoder>
-  GetAndInitDocEncoder(const nsAString& aFormatType,
-                       uint32_t aDocumentEncoderFlags,
-                       const nsACString& aCharset) const;
+  already_AddRefed<nsIDocumentEncoder> GetAndInitDocEncoder(
+      const nsAString& aFormatType, uint32_t aDocumentEncoderFlags,
+      const nsACString& aCharset) const;
 
   
 
@@ -509,14 +496,9 @@ protected:
   nsresult SharedOutputString(uint32_t aFlags, bool* aIsCollapsed,
                               nsAString& aResult);
 
-  enum PasswordFieldAllowed
-  {
-    ePasswordFieldAllowed,
-    ePasswordFieldNotAllowed
-  };
+  enum PasswordFieldAllowed { ePasswordFieldAllowed, ePasswordFieldNotAllowed };
   bool CanCutOrCopy(PasswordFieldAllowed aPasswordFieldAllowed);
-  bool FireClipboardEvent(EventMessage aEventMessage,
-                          int32_t aSelectionType,
+  bool FireClipboardEvent(EventMessage aEventMessage, int32_t aSelectionType,
                           bool* aActionTaken = nullptr);
 
   bool UpdateMetaCharset(nsIDocument& aDocument,
@@ -536,7 +518,7 @@ protected:
 
   virtual already_AddRefed<Element> GetInputEventTargetElement() override;
 
-protected:
+ protected:
   mutable nsCOMPtr<nsIDocumentEncoder> mCachedDocumentEncoder;
   mutable nsString mCachedDocumentEncoderType;
   int32_t mWrapColumn;
@@ -549,18 +531,14 @@ protected:
   friend class TextEditRules;
 };
 
-} 
+}  
 
-mozilla::TextEditor*
-nsIEditor::AsTextEditor()
-{
+mozilla::TextEditor* nsIEditor::AsTextEditor() {
   return static_cast<mozilla::TextEditor*>(this);
 }
 
-const mozilla::TextEditor*
-nsIEditor::AsTextEditor() const
-{
+const mozilla::TextEditor* nsIEditor::AsTextEditor() const {
   return static_cast<const mozilla::TextEditor*>(this);
 }
 
-#endif 
+#endif  

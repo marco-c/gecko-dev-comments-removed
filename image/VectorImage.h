@@ -17,15 +17,13 @@ namespace mozilla {
 namespace image {
 
 struct SVGDrawingParameters;
-class  SVGDocumentWrapper;
-class  SVGRootRenderingObserver;
-class  SVGLoadEventListener;
-class  SVGParseCompleteListener;
+class SVGDocumentWrapper;
+class SVGRootRenderingObserver;
+class SVGLoadEventListener;
+class SVGParseCompleteListener;
 
-class VectorImage final : public ImageResource,
-                          public nsIStreamListener
-{
-public:
+class VectorImage final : public ImageResource, public nsIStreamListener {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
@@ -36,8 +34,8 @@ public:
   
   nsresult GetNativeSizes(nsTArray<gfx::IntSize>& aNativeSizes) const override;
   size_t GetNativeSizesLength() const override;
-  virtual size_t SizeOfSourceWithComputedFallback(SizeOfState& aState)
-    const override;
+  virtual size_t SizeOfSourceWithComputedFallback(
+      SizeOfState& aState) const override;
   virtual void CollectSizeOfSurfaces(nsTArray<SurfaceMemoryCounter>& aCounters,
                                      MallocSizeOf aMallocSizeOf) const override;
 
@@ -47,8 +45,7 @@ public:
                                         uint64_t aSourceOffset,
                                         uint32_t aCount) override;
   virtual nsresult OnImageDataComplete(nsIRequest* aRequest,
-                                       nsISupports* aContext,
-                                       nsresult aResult,
+                                       nsISupports* aContext, nsresult aResult,
                                        bool aLastPart) override;
 
   virtual void OnSurfaceDiscarded(const SurfaceKey& aSurfaceKey) override;
@@ -72,53 +69,48 @@ public:
 
   virtual void ReportUseCounters() override;
 
-protected:
+ protected:
   explicit VectorImage(nsIURI* aURI = nullptr);
   virtual ~VectorImage();
 
   virtual nsresult StartAnimation() override;
   virtual nsresult StopAnimation() override;
-  virtual bool     ShouldAnimate() override;
+  virtual bool ShouldAnimate() override;
 
-private:
-  Tuple<ImgDrawResult, IntSize, RefPtr<SourceSurface>>
-    GetFrameInternal(const IntSize& aSize,
-                     const Maybe<SVGImageContext>& aSVGContext,
-                     uint32_t aWhichFrame,
-                     uint32_t aFlags) override;
+ private:
+  Tuple<ImgDrawResult, IntSize, RefPtr<SourceSurface>> GetFrameInternal(
+      const IntSize& aSize, const Maybe<SVGImageContext>& aSVGContext,
+      uint32_t aWhichFrame, uint32_t aFlags) override;
 
-  Tuple<ImgDrawResult, IntSize>
-    GetImageContainerSize(layers::LayerManager* aManager,
-                          const IntSize& aSize,
-                          uint32_t aFlags) override;
+  Tuple<ImgDrawResult, IntSize> GetImageContainerSize(
+      layers::LayerManager* aManager, const IntSize& aSize,
+      uint32_t aFlags) override;
 
   
 
 
 
 
-  Tuple<RefPtr<SourceSurface>, IntSize>
-    LookupCachedSurface(const IntSize& aSize,
-                        const Maybe<SVGImageContext>& aSVGContext,
-                        uint32_t aFlags);
+  Tuple<RefPtr<SourceSurface>, IntSize> LookupCachedSurface(
+      const IntSize& aSize, const Maybe<SVGImageContext>& aSVGContext,
+      uint32_t aFlags);
 
   bool MaybeRestrictSVGContext(Maybe<SVGImageContext>& aNewSVGContext,
                                const Maybe<SVGImageContext>& aSVGContext,
                                uint32_t aFlags);
 
   
-  already_AddRefed<gfxDrawable>
-    CreateSVGDrawable(const SVGDrawingParameters& aParams);
+  already_AddRefed<gfxDrawable> CreateSVGDrawable(
+      const SVGDrawingParameters& aParams);
 
   
   bool UseSurfaceCacheForSize(const IntSize& aSize) const;
 
   
   
-  already_AddRefed<SourceSurface>
-    CreateSurface(const SVGDrawingParameters& aParams,
-                  gfxDrawable* aSVGDrawable,
-                  bool& aWillCache);
+  already_AddRefed<SourceSurface> CreateSurface(
+      const SVGDrawingParameters& aParams, gfxDrawable* aSVGDrawable,
+      bool& aWillCache);
 
   
   
@@ -138,9 +130,9 @@ private:
   void CancelAllListeners();
   void SendInvalidationNotifications();
 
-  RefPtr<SVGDocumentWrapper>       mSVGDocumentWrapper;
+  RefPtr<SVGDocumentWrapper> mSVGDocumentWrapper;
   RefPtr<SVGRootRenderingObserver> mRenderingObserver;
-  RefPtr<SVGLoadEventListener>     mLoadEventListener;
+  RefPtr<SVGLoadEventListener> mLoadEventListener;
   RefPtr<SVGParseCompleteListener> mParseCompleteListener;
 
   
@@ -152,15 +144,15 @@ private:
   
   Maybe<Progress> mLoadProgress;
 
-  bool           mIsInitialized;          
-  bool           mDiscardable;            
-  bool           mIsFullyLoaded;          
-                                          
-  bool           mIsDrawing;              
-  bool           mHaveAnimations;         
-                                          
-  bool           mHasPendingInvalidation; 
-                                          
+  bool mIsInitialized;           
+  bool mDiscardable;             
+  bool mIsFullyLoaded;           
+                                 
+  bool mIsDrawing;               
+  bool mHaveAnimations;          
+                                 
+  bool mHasPendingInvalidation;  
+                                 
 
   friend class ImageFactory;
 };
@@ -173,7 +165,7 @@ inline NS_IMETHODIMP VectorImage::SetAnimationMode(uint16_t aAnimationMode) {
   return SetAnimationModeInternal(aAnimationMode);
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

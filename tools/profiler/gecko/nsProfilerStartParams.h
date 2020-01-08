@@ -10,9 +10,8 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
-class nsProfilerStartParams : public nsIProfilerStartParams
-{
-public:
+class nsProfilerStartParams : public nsIProfilerStartParams {
+ public:
   
   
   
@@ -21,11 +20,10 @@ public:
 
   nsProfilerStartParams(uint32_t aEntries,
                         const mozilla::Maybe<double>& aDuration,
-                        double aInterval,
-                        uint32_t aFeatures,
+                        double aInterval, uint32_t aFeatures,
                         const nsTArray<nsCString>& aFilters);
 
-private:
+ private:
   virtual ~nsProfilerStartParams();
   uint32_t mEntries;
   mozilla::Maybe<double> mDuration;

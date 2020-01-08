@@ -144,92 +144,96 @@ namespace recordreplay {
   /* Notify that the 'AlwaysMarkMajorCheckpoints' directive was invoked. */ \
   _Macro(AlwaysMarkMajorCheckpoints)
 
-enum class MessageType
-{
+enum class MessageType {
 #define DefineEnum(Kind) Kind,
   ForEachMessageType(DefineEnum)
 #undef DefineEnum
 };
 
-struct Message
-{
+struct Message {
   MessageType mType;
 
   
   uint32_t mSize;
 
-protected:
-  Message(MessageType aType, uint32_t aSize)
-    : mType(aType), mSize(aSize)
-  {
+ protected:
+  Message(MessageType aType, uint32_t aSize) : mType(aType), mSize(aSize) {
     MOZ_RELEASE_ASSERT(mSize >= sizeof(*this));
   }
 
-public:
+ public:
   Message* Clone() const {
-    char* res = (char*) malloc(mSize);
+    char* res = (char*)malloc(mSize);
     memcpy(res, this, mSize);
-    return (Message*) res;
+    return (Message*)res;
   }
 
   const char* TypeString() const {
     switch (mType) {
-#define EnumToString(Kind) case MessageType::Kind: return #Kind;
-  ForEachMessageType(EnumToString)
+#define EnumToString(Kind) \
+  case MessageType::Kind:  \
+    return #Kind;
+      ForEachMessageType(EnumToString)
 #undef EnumToString
-    default: return "Unknown";
+          default : return "Unknown";
     }
   }
 
   
   
   bool CanBeSentWhileUnpaused() const {
-    return mType == MessageType::CreateCheckpoint
-        || mType == MessageType::SetDebuggerRunsInMiddleman
-        || mType == MessageType::MiddlemanCallResponse
-        || mType == MessageType::Terminate;
+    return mType == MessageType::CreateCheckpoint ||
+           mType == MessageType::SetDebuggerRunsInMiddleman ||
+           mType == MessageType::MiddlemanCallResponse ||
+           mType == MessageType::Terminate;
   }
 
-protected:
+ protected:
   template <typename T, typename Elem>
-  Elem* Data() { return (Elem*) (sizeof(T) + (char*) this); }
+  Elem* Data() {
+    return (Elem*)(sizeof(T) + (char*)this);
+  }
 
   template <typename T, typename Elem>
-  const Elem* Data() const { return (const Elem*) (sizeof(T) + (const char*) this); }
+  const Elem* Data() const {
+    return (const Elem*)(sizeof(T) + (const char*)this);
+  }
 
   template <typename T, typename Elem>
-  size_t DataSize() const { return (mSize - sizeof(T)) / sizeof(Elem); }
+  size_t DataSize() const {
+    return (mSize - sizeof(T)) / sizeof(Elem);
+  }
 
   template <typename T, typename Elem, typename... Args>
   static T* NewWithData(size_t aBufferSize, Args&&... aArgs) {
     size_t size = sizeof(T) + aBufferSize * sizeof(Elem);
     void* ptr = malloc(size);
-    return new(ptr) T(size, std::forward<Args>(aArgs)...);
+    return new (ptr) T(size, std::forward<Args>(aArgs)...);
   }
 };
 
-struct IntroductionMessage : public Message
-{
+struct IntroductionMessage : public Message {
   base::ProcessId mParentPid;
   uint32_t mArgc;
 
-  IntroductionMessage(uint32_t aSize, base::ProcessId aParentPid, uint32_t aArgc)
-    : Message(MessageType::Introduction, aSize)
-    , mParentPid(aParentPid)
-    , mArgc(aArgc)
-  {}
+  IntroductionMessage(uint32_t aSize, base::ProcessId aParentPid,
+                      uint32_t aArgc)
+      : Message(MessageType::Introduction, aSize),
+        mParentPid(aParentPid),
+        mArgc(aArgc) {}
 
   char* ArgvString() { return Data<IntroductionMessage, char>(); }
   const char* ArgvString() const { return Data<IntroductionMessage, char>(); }
 
-  static IntroductionMessage* New(base::ProcessId aParentPid, int aArgc, char* aArgv[]) {
+  static IntroductionMessage* New(base::ProcessId aParentPid, int aArgc,
+                                  char* aArgv[]) {
     size_t argsLen = 0;
     for (int i = 0; i < aArgc; i++) {
       argsLen += strlen(aArgv[i]) + 1;
     }
 
     IntroductionMessage* res =
-      NewWithData<IntroductionMessage, char>(argsLen, aParentPid, aArgc);
+        NewWithData<IntroductionMessage, char>(argsLen, aParentPid, aArgc);
 
     size_t offset = 0;
     for (int i = 0; i < aArgc; i++) {
@@ -243,7 +247,7 @@ struct IntroductionMessage : public Message
 
   static IntroductionMessage* RecordReplay(const IntroductionMessage& aMsg) {
     size_t introductionSize = RecordReplayValue(aMsg.mSize);
-    IntroductionMessage* msg = (IntroductionMessage*) malloc(introductionSize);
+    IntroductionMessage* msg = (IntroductionMessage*)malloc(introductionSize);
     if (IsRecording()) {
       memcpy(msg, &aMsg, introductionSize);
     }
@@ -253,30 +257,26 @@ struct IntroductionMessage : public Message
 };
 
 template <MessageType Type>
-struct EmptyMessage : public Message
-{
-  EmptyMessage()
-    : Message(Type, sizeof(*this))
-  {}
+struct EmptyMessage : public Message {
+  EmptyMessage() : Message(Type, sizeof(*this)) {}
 };
 
-typedef EmptyMessage<MessageType::SetDebuggerRunsInMiddleman> SetDebuggerRunsInMiddlemanMessage;
+typedef EmptyMessage<MessageType::SetDebuggerRunsInMiddleman>
+    SetDebuggerRunsInMiddlemanMessage;
 typedef EmptyMessage<MessageType::Terminate> TerminateMessage;
 typedef EmptyMessage<MessageType::CreateCheckpoint> CreateCheckpointMessage;
 typedef EmptyMessage<MessageType::FlushRecording> FlushRecordingMessage;
 
 template <MessageType Type>
-struct JSONMessage : public Message
-{
-  explicit JSONMessage(uint32_t aSize)
-    : Message(Type, aSize)
-  {}
+struct JSONMessage : public Message {
+  explicit JSONMessage(uint32_t aSize) : Message(Type, aSize) {}
 
   const char16_t* Buffer() const { return Data<JSONMessage<Type>, char16_t>(); }
   size_t BufferSize() const { return DataSize<JSONMessage<Type>, char16_t>(); }
 
   static JSONMessage<Type>* New(const char16_t* aBuffer, size_t aBufferSize) {
-    JSONMessage<Type>* res = NewWithData<JSONMessage<Type>, char16_t>(aBufferSize);
+    JSONMessage<Type>* res =
+        NewWithData<JSONMessage<Type>, char16_t>(aBufferSize);
     MOZ_RELEASE_ASSERT(res->BufferSize() == aBufferSize);
     PodCopy(res->Data<JSONMessage<Type>, char16_t>(), aBuffer, aBufferSize);
     return res;
@@ -286,75 +286,59 @@ struct JSONMessage : public Message
 typedef JSONMessage<MessageType::DebuggerRequest> DebuggerRequestMessage;
 typedef JSONMessage<MessageType::DebuggerResponse> DebuggerResponseMessage;
 
-struct AddBreakpointMessage : public Message
-{
+struct AddBreakpointMessage : public Message {
   js::BreakpointPosition mPosition;
 
   explicit AddBreakpointMessage(const js::BreakpointPosition& aPosition)
-    : Message(MessageType::AddBreakpoint, sizeof(*this))
-    , mPosition(aPosition)
-  {}
+      : Message(MessageType::AddBreakpoint, sizeof(*this)),
+        mPosition(aPosition) {}
 };
 
 typedef EmptyMessage<MessageType::ClearBreakpoints> ClearBreakpointsMessage;
 
-struct ResumeMessage : public Message
-{
+struct ResumeMessage : public Message {
   
   bool mForward;
 
   explicit ResumeMessage(bool aForward)
-    : Message(MessageType::Resume, sizeof(*this))
-    , mForward(aForward)
-  {}
+      : Message(MessageType::Resume, sizeof(*this)), mForward(aForward) {}
 };
 
-struct RestoreCheckpointMessage : public Message
-{
+struct RestoreCheckpointMessage : public Message {
   
   size_t mCheckpoint;
 
   explicit RestoreCheckpointMessage(size_t aCheckpoint)
-    : Message(MessageType::RestoreCheckpoint, sizeof(*this))
-    , mCheckpoint(aCheckpoint)
-  {}
+      : Message(MessageType::RestoreCheckpoint, sizeof(*this)),
+        mCheckpoint(aCheckpoint) {}
 };
 
-struct RunToPointMessage : public Message
-{
+struct RunToPointMessage : public Message {
   
   js::ExecutionPoint mTarget;
 
   explicit RunToPointMessage(const js::ExecutionPoint& aTarget)
-    : Message(MessageType::RunToPoint, sizeof(*this))
-    , mTarget(aTarget)
-  {}
+      : Message(MessageType::RunToPoint, sizeof(*this)), mTarget(aTarget) {}
 };
 
-struct SetIsActiveMessage : public Message
-{
+struct SetIsActiveMessage : public Message {
   
   bool mActive;
 
   explicit SetIsActiveMessage(bool aActive)
-    : Message(MessageType::SetIsActive, sizeof(*this))
-    , mActive(aActive)
-  {}
+      : Message(MessageType::SetIsActive, sizeof(*this)), mActive(aActive) {}
 };
 
-struct SetAllowIntentionalCrashesMessage : public Message
-{
+struct SetAllowIntentionalCrashesMessage : public Message {
   
   bool mAllowed;
 
   explicit SetAllowIntentionalCrashesMessage(bool aAllowed)
-    : Message(MessageType::SetAllowIntentionalCrashes, sizeof(*this))
-    , mAllowed(aAllowed)
-  {}
+      : Message(MessageType::SetAllowIntentionalCrashes, sizeof(*this)),
+        mAllowed(aAllowed) {}
 };
 
-struct SetSaveCheckpointMessage : public Message
-{
+struct SetSaveCheckpointMessage : public Message {
   
   size_t mCheckpoint;
 
@@ -362,19 +346,16 @@ struct SetSaveCheckpointMessage : public Message
   bool mSave;
 
   SetSaveCheckpointMessage(size_t aCheckpoint, bool aSave)
-    : Message(MessageType::SetSaveCheckpoint, sizeof(*this))
-    , mCheckpoint(aCheckpoint)
-    , mSave(aSave)
-  {}
+      : Message(MessageType::SetSaveCheckpoint, sizeof(*this)),
+        mCheckpoint(aCheckpoint),
+        mSave(aSave) {}
 };
 
 typedef EmptyMessage<MessageType::RecordingFlushed> RecordingFlushedMessage;
 
-struct FatalErrorMessage : public Message
-{
+struct FatalErrorMessage : public Message {
   explicit FatalErrorMessage(uint32_t aSize)
-    : Message(MessageType::FatalError, aSize)
-  {}
+      : Message(MessageType::FatalError, aSize) {}
 
   const char* Error() const { return Data<FatalErrorMessage, const char>(); }
 };
@@ -386,8 +367,7 @@ typedef EmptyMessage<MessageType::BeginFatalError> BeginFatalErrorMessage;
 
 static const gfx::SurfaceFormat gSurfaceFormat = gfx::SurfaceFormat::R8G8B8X8;
 
-struct PaintMessage : public Message
-{
+struct PaintMessage : public Message {
   
   uint32_t mCheckpointId;
 
@@ -395,15 +375,13 @@ struct PaintMessage : public Message
   uint32_t mHeight;
 
   PaintMessage(uint32_t aCheckpointId, uint32_t aWidth, uint32_t aHeight)
-    : Message(MessageType::Paint, sizeof(*this))
-    , mCheckpointId(aCheckpointId)
-    , mWidth(aWidth)
-    , mHeight(aHeight)
-  {}
+      : Message(MessageType::Paint, sizeof(*this)),
+        mCheckpointId(aCheckpointId),
+        mWidth(aWidth),
+        mHeight(aHeight) {}
 };
 
-struct HitCheckpointMessage : public Message
-{
+struct HitCheckpointMessage : public Message {
   uint32_t mCheckpointId;
   bool mRecordingEndpoint;
 
@@ -411,65 +389,65 @@ struct HitCheckpointMessage : public Message
   
   double mDurationMicroseconds;
 
-  HitCheckpointMessage(uint32_t aCheckpointId, bool aRecordingEndpoint, double aDurationMicroseconds)
-    : Message(MessageType::HitCheckpoint, sizeof(*this))
-    , mCheckpointId(aCheckpointId)
-    , mRecordingEndpoint(aRecordingEndpoint)
-    , mDurationMicroseconds(aDurationMicroseconds)
-  {}
+  HitCheckpointMessage(uint32_t aCheckpointId, bool aRecordingEndpoint,
+                       double aDurationMicroseconds)
+      : Message(MessageType::HitCheckpoint, sizeof(*this)),
+        mCheckpointId(aCheckpointId),
+        mRecordingEndpoint(aRecordingEndpoint),
+        mDurationMicroseconds(aDurationMicroseconds) {}
 };
 
-struct HitBreakpointMessage : public Message
-{
+struct HitBreakpointMessage : public Message {
   bool mRecordingEndpoint;
 
   explicit HitBreakpointMessage(bool aRecordingEndpoint)
-    : Message(MessageType::HitBreakpoint, sizeof(*this))
-    , mRecordingEndpoint(aRecordingEndpoint)
-  {}
+      : Message(MessageType::HitBreakpoint, sizeof(*this)),
+        mRecordingEndpoint(aRecordingEndpoint) {}
 };
 
-typedef EmptyMessage<MessageType::AlwaysMarkMajorCheckpoints> AlwaysMarkMajorCheckpointsMessage;
+typedef EmptyMessage<MessageType::AlwaysMarkMajorCheckpoints>
+    AlwaysMarkMajorCheckpointsMessage;
 
 template <MessageType Type>
-struct BinaryMessage : public Message
-{
-  explicit BinaryMessage(uint32_t aSize)
-    : Message(Type, aSize)
-  {}
+struct BinaryMessage : public Message {
+  explicit BinaryMessage(uint32_t aSize) : Message(Type, aSize) {}
 
   const char* BinaryData() const { return Data<BinaryMessage<Type>, char>(); }
-  size_t BinaryDataSize() const { return DataSize<BinaryMessage<Type>, char>(); }
+  size_t BinaryDataSize() const {
+    return DataSize<BinaryMessage<Type>, char>();
+  }
 
-  static BinaryMessage<Type>*
-  New(const char* aData, size_t aDataSize) {
-    BinaryMessage<Type>* res = NewWithData<BinaryMessage<Type>, char>(aDataSize);
+  static BinaryMessage<Type>* New(const char* aData, size_t aDataSize) {
+    BinaryMessage<Type>* res =
+        NewWithData<BinaryMessage<Type>, char>(aDataSize);
     MOZ_RELEASE_ASSERT(res->BinaryDataSize() == aDataSize);
     PodCopy(res->Data<BinaryMessage<Type>, char>(), aData, aDataSize);
     return res;
   }
 };
 
-typedef BinaryMessage<MessageType::MiddlemanCallRequest> MiddlemanCallRequestMessage;
-typedef BinaryMessage<MessageType::MiddlemanCallResponse> MiddlemanCallResponseMessage;
-typedef EmptyMessage<MessageType::ResetMiddlemanCalls> ResetMiddlemanCallsMessage;
+typedef BinaryMessage<MessageType::MiddlemanCallRequest>
+    MiddlemanCallRequestMessage;
+typedef BinaryMessage<MessageType::MiddlemanCallResponse>
+    MiddlemanCallResponseMessage;
+typedef EmptyMessage<MessageType::ResetMiddlemanCalls>
+    ResetMiddlemanCallsMessage;
 
-static inline MiddlemanCallResponseMessage*
-ProcessMiddlemanCallMessage(const MiddlemanCallRequestMessage& aMsg)
-{
+static inline MiddlemanCallResponseMessage* ProcessMiddlemanCallMessage(
+    const MiddlemanCallRequestMessage& aMsg) {
   InfallibleVector<char> outputData;
   ProcessMiddlemanCall(aMsg.BinaryData(), aMsg.BinaryDataSize(), &outputData);
-  return MiddlemanCallResponseMessage::New(outputData.begin(), outputData.length());
+  return MiddlemanCallResponseMessage::New(outputData.begin(),
+                                           outputData.length());
 }
 
-class Channel
-{
-public:
+class Channel {
+ public:
   
   
   typedef std::function<void(Message*)> MessageHandler;
 
-private:
+ private:
   
   size_t mId;
 
@@ -489,7 +467,8 @@ private:
   Monitor mMonitor;
 
   
-  typedef InfallibleVector<char, 0, AllocPolicy<MemoryKind::Generic>> MessageBuffer;
+  typedef InfallibleVector<char, 0, AllocPolicy<MemoryKind::Generic>>
+      MessageBuffer;
   MessageBuffer* mMessageBuffer;
 
   
@@ -505,7 +484,7 @@ private:
   
   static void ThreadMain(void* aChannel);
 
-public:
+ public:
   
   
   Channel(size_t aId, bool aMiddlemanRecording, const MessageHandler& aHandler);
@@ -523,7 +502,7 @@ static const char* gMiddlemanPidOption = "-middlemanPid";
 
 static const char* gChannelIDOption = "-recordReplayChannelID";
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

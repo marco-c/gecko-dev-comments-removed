@@ -13,12 +13,10 @@
 namespace mozilla {
 namespace a11y {
 
-class ia2AccessibleComponent : public IAccessibleComponent
-{
-public:
-
+class ia2AccessibleComponent : public IAccessibleComponent {
+ public:
   
-  STDMETHODIMP QueryInterface(REFIID, void**);
+  STDMETHODIMP QueryInterface(REFIID, void **);
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_locationInParent(
@@ -32,7 +30,7 @@ public:
        IA2Color *background);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

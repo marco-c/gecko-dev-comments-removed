@@ -15,10 +15,10 @@ namespace mozilla {
 namespace layers {
 
 class TransactionIdAllocator {
-protected:
+ protected:
   virtual ~TransactionIdAllocator() {}
 
-public:
+ public:
   NS_INLINE_DECL_REFCOUNTING(TransactionIdAllocator)
 
   
@@ -82,8 +82,7 @@ public:
   virtual mozilla::TimeStamp GetTransactionStart() = 0;
 };
 
-} 
-} 
-
+}  
+}  
 
 #endif 

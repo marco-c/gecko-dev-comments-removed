@@ -27,9 +27,8 @@ class nsIChannel;
 
 
 
-class CachedFileHolder
-{
-public:
+class CachedFileHolder {
+ public:
   explicit CachedFileHolder(nsIFile* cacheFile);
   ~CachedFileHolder();
 
@@ -38,21 +37,20 @@ public:
 
   nsIFile* file() const { return mFile; }
 
-private:
+ private:
   nsAutoRefCnt mRefCnt;
   nsCOMPtr<nsIFile> mFile;
 };
 
 class nsPluginStreamListenerPeer : public nsIStreamListener,
-public nsIProgressEventSink,
-public nsIHttpHeaderVisitor,
-public nsSupportsWeakReference,
-public nsIInterfaceRequestor,
-public nsIChannelEventSink
-{
+                                   public nsIProgressEventSink,
+                                   public nsIHttpHeaderVisitor,
+                                   public nsSupportsWeakReference,
+                                   public nsIInterfaceRequestor,
+                                   public nsIChannelEventSink {
   virtual ~nsPluginStreamListenerPeer();
 
-public:
+ public:
   nsPluginStreamListenerPeer();
 
   NS_DECL_ISUPPORTS
@@ -65,11 +63,10 @@ public:
 
   
   
-  nsresult Initialize(nsIURI *aURL,
-                      nsNPAPIPluginInstance *aInstance,
-                      nsNPAPIPluginStreamListener *aListener);
+  nsresult Initialize(nsIURI* aURL, nsNPAPIPluginInstance* aInstance,
+                      nsNPAPIPluginStreamListener* aListener);
 
-  nsNPAPIPluginInstance *GetPluginInstance() { return mPluginInstance; }
+  nsNPAPIPluginInstance* GetPluginInstance() { return mPluginInstance; }
 
   nsresult GetLength(uint32_t* result);
   nsresult GetURL(const char** result);
@@ -78,26 +75,20 @@ public:
   nsresult GetStreamOffset(int32_t* result);
   nsresult SetStreamOffset(int32_t value);
 
-  void TrackRequest(nsIRequest* request)
-  {
-    mRequests.AppendObject(request);
-  }
+  void TrackRequest(nsIRequest* request) { mRequests.AppendObject(request); }
 
-  void ReplaceRequest(nsIRequest* oldRequest, nsIRequest* newRequest)
-  {
+  void ReplaceRequest(nsIRequest* oldRequest, nsIRequest* newRequest) {
     int32_t i = mRequests.IndexOfObject(oldRequest);
     if (i == -1) {
       NS_ASSERTION(mRequests.Count() == 0,
                    "Only our initial stream should be unknown!");
       mRequests.AppendObject(oldRequest);
-    }
-    else {
+    } else {
       mRequests.ReplaceObjectAt(newRequest, i);
     }
   }
 
-  void CancelRequests(nsresult status)
-  {
+  void CancelRequests(nsresult status) {
     
     nsCOMArray<nsIRequest> requestsCopy(mRequests);
     for (int32_t i = 0; i < requestsCopy.Count(); ++i)
@@ -116,16 +107,17 @@ public:
       requestsCopy[i]->Resume();
   }
 
-private:
+ private:
   nsresult SetUpStreamListener(nsIRequest* request, nsIURI* aURL);
   nsresult GetInterfaceGlobal(const nsIID& aIID, void** result);
 
   nsCOMPtr<nsIURI> mURL;
-  nsCString mURLSpec; 
+  nsCString
+      mURLSpec;  
   RefPtr<nsNPAPIPluginStreamListener> mPStreamListener;
 
   
-  bool                    mRequestFailed;
+  bool mRequestFailed;
 
   
 
@@ -133,11 +125,11 @@ private:
 
 
 
-  bool              mStartBinding;
-  bool              mHaveFiredOnStartRequest;
+  bool mStartBinding;
+  bool mHaveFiredOnStartRequest;
   
-  uint32_t                mLength;
-  int32_t                 mStreamType;
+  uint32_t mLength;
+  int32_t mStreamType;
 
   nsCString mContentType;
   bool mUseLocalCache;
@@ -147,11 +139,11 @@ private:
   int32_t mStreamOffset;
   bool mStreamComplete;
 
-public:
-  int32_t                 mPendingRequests;
-  nsWeakPtr               mWeakPtrChannelCallbacks;
-  nsWeakPtr               mWeakPtrChannelLoadGroup;
+ public:
+  int32_t mPendingRequests;
+  nsWeakPtr mWeakPtrChannelCallbacks;
+  nsWeakPtr mWeakPtrChannelLoadGroup;
   nsCOMArray<nsIRequest> mRequests;
 };
 
-#endif 
+#endif  

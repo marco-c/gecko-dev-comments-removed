@@ -9,9 +9,8 @@
 
 
 
-#include <windows.h>   
-#include <wlanapi.h>   
-
+#include <windows.h>  
+#include <wlanapi.h>  
 
 class WinWLANLibrary {
  public:
@@ -43,19 +42,13 @@ class WinWLANLibrary {
 };
 
 class ScopedWLANObject {
-public:
- ScopedWLANObject(WinWLANLibrary* library, void* object)
-   : mLibrary(library)
-   , mObject(object)
-  {
-  }
+ public:
+  ScopedWLANObject(WinWLANLibrary* library, void* object)
+      : mLibrary(library), mObject(object) {}
 
-  ~ScopedWLANObject()
-  {
-    (*(mLibrary->GetWlanFreeMemoryPtr()))(mObject);
-  }
+  ~ScopedWLANObject() { (*(mLibrary->GetWlanFreeMemoryPtr()))(mObject); }
 
  private:
-  WinWLANLibrary *mLibrary;
-  void *mObject;
+  WinWLANLibrary* mLibrary;
+  void* mObject;
 };

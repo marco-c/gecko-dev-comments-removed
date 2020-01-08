@@ -11,64 +11,51 @@
 
 namespace js {
 
-class BytecodeIterator
-{
-    BytecodeLocation current_;
+class BytecodeIterator {
+  BytecodeLocation current_;
 
-  public:
+ public:
+  explicit BytecodeIterator(const JSScript* script);
 
-    explicit BytecodeIterator(const JSScript* script);
+  explicit BytecodeIterator(BytecodeLocation loc) : current_(loc) {}
 
-    explicit BytecodeIterator(BytecodeLocation loc)
-      : current_(loc)
-    {}
+  bool operator==(const BytecodeIterator& other) const {
+    return other.current_ == current_;
+  }
 
-    bool operator==(const BytecodeIterator& other) const {
-        return other.current_ == current_;
-    }
+  bool operator!=(const BytecodeIterator& other) const {
+    return !(other.current_ == current_);
+  }
 
-    bool operator!=(const BytecodeIterator& other) const {
-        return !(other.current_ == current_);
-    }
+  const BytecodeLocation& operator*() const { return current_; }
 
-    const BytecodeLocation& operator*() const {
-        return current_;
-    }
+  const BytecodeLocation* operator->() const { return &current_; }
 
-    const BytecodeLocation* operator->() const {
-        return &current_;
-    }
+  
+  BytecodeIterator& operator++() {
+    current_ = current_.next();
+    return *this;
+  }
 
-    
-    BytecodeIterator& operator++() {
-        current_ = current_.next();
-        return *this;
-    }
-
-    
-    BytecodeIterator operator++(int) {
-        current_ = current_.next();
-        return *this;
-    }
-
+  
+  BytecodeIterator operator++(int) {
+    current_ = current_.next();
+    return *this;
+  }
 };
 
 
 
-class AllBytecodesIterable
-{
+class AllBytecodesIterable {
+  const JSScript* script_;
 
-    const JSScript* script_;
-  public:
+ public:
+  explicit AllBytecodesIterable(const JSScript* script) : script_(script) {}
 
-    explicit AllBytecodesIterable(const JSScript* script)
-      : script_(script)
-    {}
-
-    BytecodeIterator begin();
-    BytecodeIterator end();
+  BytecodeIterator begin();
+  BytecodeIterator end();
 };
 
-}
+}  
 
 #endif

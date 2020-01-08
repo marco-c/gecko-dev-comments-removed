@@ -9,12 +9,12 @@
 
 namespace mozilla {
 class SsrcGenerator {
-  public:
-    bool GenerateSsrc(uint32_t* ssrc);
-  private:
-    std::set<uint32_t> mSsrcs;
+ public:
+  bool GenerateSsrc(uint32_t* ssrc);
+
+ private:
+  std::set<uint32_t> mSsrcs;
 };
-} 
+}  
 
-#endif 
-
+#endif  

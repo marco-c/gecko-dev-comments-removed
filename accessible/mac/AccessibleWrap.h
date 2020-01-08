@@ -28,9 +28,8 @@
 namespace mozilla {
 namespace a11y {
 
-class AccessibleWrap : public Accessible
-{
-public: 
+class AccessibleWrap : public Accessible {
+ public:  
   AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc);
   virtual ~AccessibleWrap();
 
@@ -44,17 +43,16 @@ public:
 
 
 
-  virtual Class GetNativeType ();
+  virtual Class GetNativeType();
 
-  virtual void Shutdown () override;
+  virtual void Shutdown() override;
 
   virtual bool InsertChildAt(uint32_t aIdx, Accessible* aChild) override;
   virtual bool RemoveChild(Accessible* aAccessible) override;
 
   virtual nsresult HandleAccEvent(AccEvent* aEvent) override;
 
-protected:
-
+ protected:
   
 
 
@@ -69,8 +67,7 @@ protected:
   id GetNativeObject();
 #endif
 
-private:
-
+ private:
   
 
 
@@ -92,14 +89,14 @@ private:
 };
 
 #if defined(__OBJC__)
-  void FireNativeEvent(mozAccessible* aNativeAcc, uint32_t aEventType);
+void FireNativeEvent(mozAccessible* aNativeAcc, uint32_t aEventType);
 #else
-  void FireNativeEvent(id aNativeAcc, uint32_t aEventType);
+void FireNativeEvent(id aNativeAcc, uint32_t aEventType);
 #endif
 
 Class GetTypeFromRole(roles::Role aRole);
 
-} 
-} 
+}  
+}  
 
 #endif

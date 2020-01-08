@@ -35,233 +35,212 @@ class nsPluginInstanceOwner;
 
 namespace mozilla {
 namespace dom {
-template<typename T> class Sequence;
+template <typename T>
+class Sequence;
 struct MozPluginParameter;
 class HTMLIFrameElement;
 class XULFrameElement;
-} 
-} 
+}  
+}  
 
-class nsObjectLoadingContent : public nsImageLoadingContent
-                             , public nsIStreamListener
-                             , public nsIFrameLoaderOwner
-                             , public nsIObjectLoadingContent
-                             , public nsIChannelEventSink
-{
+class nsObjectLoadingContent : public nsImageLoadingContent,
+                               public nsIStreamListener,
+                               public nsIFrameLoaderOwner,
+                               public nsIObjectLoadingContent,
+                               public nsIChannelEventSink {
   friend class AutoSetInstantiatingToFalse;
   friend class AutoSetLoadingToFalse;
   friend class CheckPluginStopEvent;
   friend class nsStopPluginRunnable;
   friend class nsAsyncInstantiateEvent;
 
-  public:
+ public:
+  
+  
+  enum ObjectType {
+    
+    eType_Loading = TYPE_LOADING,
+    
+    eType_Image = TYPE_IMAGE,
+    
+    eType_Plugin = TYPE_PLUGIN,
     
     
-    enum ObjectType {
-      
-      eType_Loading        = TYPE_LOADING,
-      
-      eType_Image          = TYPE_IMAGE,
-      
-      eType_Plugin         = TYPE_PLUGIN,
-      
-      
-      eType_FakePlugin     = TYPE_FAKE_PLUGIN,
-      
-      eType_Document       = TYPE_DOCUMENT,
-      
-      
-      eType_Null           = TYPE_NULL
-    };
-
-    enum FallbackType {
-      
-      eFallbackUnsupported = nsIObjectLoadingContent::PLUGIN_UNSUPPORTED,
-      
-      eFallbackAlternate = nsIObjectLoadingContent::PLUGIN_ALTERNATE,
-      
-      eFallbackDisabled = nsIObjectLoadingContent::PLUGIN_DISABLED,
-      
-      eFallbackBlocklisted = nsIObjectLoadingContent::PLUGIN_BLOCKLISTED,
-      
-      eFallbackOutdated = nsIObjectLoadingContent::PLUGIN_OUTDATED,
-      
-      eFallbackCrashed = nsIObjectLoadingContent::PLUGIN_CRASHED,
-      
-      eFallbackSuppressed = nsIObjectLoadingContent::PLUGIN_SUPPRESSED,
-      
-      eFallbackUserDisabled = nsIObjectLoadingContent::PLUGIN_USER_DISABLED,
-      
-      
-      
-      
-      
-      eFallbackClickToPlay = nsIObjectLoadingContent::PLUGIN_CLICK_TO_PLAY,
-      
-      eFallbackVulnerableUpdatable = nsIObjectLoadingContent::PLUGIN_VULNERABLE_UPDATABLE,
-      
-      eFallbackVulnerableNoUpdate = nsIObjectLoadingContent::PLUGIN_VULNERABLE_NO_UPDATE,
-      
-      eFallbackClickToPlayQuiet = nsIObjectLoadingContent::PLUGIN_CLICK_TO_PLAY_QUIET,
-    };
-
-    nsObjectLoadingContent();
-    virtual ~nsObjectLoadingContent();
-
-    NS_DECL_NSIREQUESTOBSERVER
-    NS_DECL_NSISTREAMLISTENER
-    NS_DECL_NSIFRAMELOADEROWNER
-    NS_DECL_NSIOBJECTLOADINGCONTENT
-    NS_DECL_NSICHANNELEVENTSINK
-
+    eType_FakePlugin = TYPE_FAKE_PLUGIN,
     
-
-
-
-    mozilla::EventStates ObjectState() const;
-
-    ObjectType Type() const { return mType; }
-
-    void SetIsNetworkCreated(bool aNetworkCreated)
-    {
-      mNetworkCreated = aNetworkCreated;
-    }
-
-    
-
-
-
-
-
-
-    
-    void GetPluginAttributes(nsTArray<mozilla::dom::MozPluginParameter>& aAttributes);
-
-    
-    void GetPluginParameters(nsTArray<mozilla::dom::MozPluginParameter>& aParameters);
-
-    
-
-
-
-
-
-
-    nsresult InstantiatePluginInstance(bool aIsLoading = false);
-
-    
-
-
-
-    void NotifyOwnerDocumentActivityChanged();
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    void SetupProtoChain(JSContext* aCx, JS::Handle<JSObject*> aObject);
-
-    
-    void TeardownProtoChain();
-
-    
-    bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
-                   JS::Handle<jsid> aId,
-                   JS::MutableHandle<JS::PropertyDescriptor> aDesc);
+    eType_Document = TYPE_DOCUMENT,
     
     
-    static bool MayResolve(jsid aId);
+    eType_Null = TYPE_NULL
+  };
 
+  enum FallbackType {
     
-    void GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& ,
-                             bool , mozilla::ErrorResult& aRv);
-
+    eFallbackUnsupported = nsIObjectLoadingContent::PLUGIN_UNSUPPORTED,
     
-    nsIDocument* GetContentDocument(nsIPrincipal& aSubjectPrincipal);
-    void GetActualType(nsAString& aType) const
-    {
-      CopyUTF8toUTF16(mContentType, aType);
-    }
-    uint32_t DisplayedType() const
-    {
-      return mType;
-    }
-    uint32_t GetContentTypeForMIMEType(const nsAString& aMIMEType)
-    {
-      return GetTypeOfContent(NS_ConvertUTF16toUTF8(aMIMEType), false);
-    }
-    void PlayPlugin(mozilla::dom::SystemCallerGuarantee,
-                    mozilla::ErrorResult& aRv);
-    void Reload(bool aClearActivation, mozilla::ErrorResult& aRv)
-    {
-      aRv = Reload(aClearActivation);
-    }
-    bool Activated() const
-    {
-      return mActivated;
-    }
-    nsIURI* GetSrcURI() const
-    {
-      return mURI;
-    }
-
+    eFallbackAlternate = nsIObjectLoadingContent::PLUGIN_ALTERNATE,
     
-
-
-
-    uint32_t DefaultFallbackType();
-
-    uint32_t PluginFallbackType() const
-    {
-      return mFallbackType;
-    }
-    bool HasRunningPlugin() const
-    {
-      return !!mInstanceOwner;
-    }
+    eFallbackDisabled = nsIObjectLoadingContent::PLUGIN_DISABLED,
     
-    void SkipFakePlugins(mozilla::ErrorResult& aRv)
-    {
-      aRv = SkipFakePlugins();
-    }
-    void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
-                          mozilla::ErrorResult& aRv)
-    {
-      aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-    }
-    void SwapFrameLoaders(mozilla::dom::XULFrameElement& aOtherLoaderOwner,
-                          mozilla::ErrorResult& aRv)
-    {
-      aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-    }
-    void LegacyCall(JSContext* aCx, JS::Handle<JS::Value> aThisVal,
-                    const mozilla::dom::Sequence<JS::Value>& aArguments,
-                    JS::MutableHandle<JS::Value> aRetval,
+    eFallbackBlocklisted = nsIObjectLoadingContent::PLUGIN_BLOCKLISTED,
+    
+    eFallbackOutdated = nsIObjectLoadingContent::PLUGIN_OUTDATED,
+    
+    eFallbackCrashed = nsIObjectLoadingContent::PLUGIN_CRASHED,
+    
+    eFallbackSuppressed = nsIObjectLoadingContent::PLUGIN_SUPPRESSED,
+    
+    eFallbackUserDisabled = nsIObjectLoadingContent::PLUGIN_USER_DISABLED,
+    
+    
+    
+    
+    
+    eFallbackClickToPlay = nsIObjectLoadingContent::PLUGIN_CLICK_TO_PLAY,
+    
+    eFallbackVulnerableUpdatable =
+        nsIObjectLoadingContent::PLUGIN_VULNERABLE_UPDATABLE,
+    
+    eFallbackVulnerableNoUpdate =
+        nsIObjectLoadingContent::PLUGIN_VULNERABLE_NO_UPDATE,
+    
+    eFallbackClickToPlayQuiet =
+        nsIObjectLoadingContent::PLUGIN_CLICK_TO_PLAY_QUIET,
+  };
+
+  nsObjectLoadingContent();
+  virtual ~nsObjectLoadingContent();
+
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSIFRAMELOADEROWNER
+  NS_DECL_NSIOBJECTLOADINGCONTENT
+  NS_DECL_NSICHANNELEVENTSINK
+
+  
+
+
+
+  mozilla::EventStates ObjectState() const;
+
+  ObjectType Type() const { return mType; }
+
+  void SetIsNetworkCreated(bool aNetworkCreated) {
+    mNetworkCreated = aNetworkCreated;
+  }
+
+  
+
+
+
+
+
+
+  
+  void GetPluginAttributes(
+      nsTArray<mozilla::dom::MozPluginParameter>& aAttributes);
+
+  
+  void GetPluginParameters(
+      nsTArray<mozilla::dom::MozPluginParameter>& aParameters);
+
+  
+
+
+
+
+
+
+  nsresult InstantiatePluginInstance(bool aIsLoading = false);
+
+  
+
+
+
+  void NotifyOwnerDocumentActivityChanged();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  void SetupProtoChain(JSContext* aCx, JS::Handle<JSObject*> aObject);
+
+  
+  void TeardownProtoChain();
+
+  
+  bool DoResolve(JSContext* aCx, JS::Handle<JSObject*> aObject,
+                 JS::Handle<jsid> aId,
+                 JS::MutableHandle<JS::PropertyDescriptor> aDesc);
+  
+  
+  static bool MayResolve(jsid aId);
+
+  
+  void GetOwnPropertyNames(JSContext* aCx, JS::AutoIdVector& ,
+                           bool , mozilla::ErrorResult& aRv);
+
+  
+  nsIDocument* GetContentDocument(nsIPrincipal& aSubjectPrincipal);
+  void GetActualType(nsAString& aType) const {
+    CopyUTF8toUTF16(mContentType, aType);
+  }
+  uint32_t DisplayedType() const { return mType; }
+  uint32_t GetContentTypeForMIMEType(const nsAString& aMIMEType) {
+    return GetTypeOfContent(NS_ConvertUTF16toUTF8(aMIMEType), false);
+  }
+  void PlayPlugin(mozilla::dom::SystemCallerGuarantee,
+                  mozilla::ErrorResult& aRv);
+  void Reload(bool aClearActivation, mozilla::ErrorResult& aRv) {
+    aRv = Reload(aClearActivation);
+  }
+  bool Activated() const { return mActivated; }
+  nsIURI* GetSrcURI() const { return mURI; }
+
+  
+
+
+
+  uint32_t DefaultFallbackType();
+
+  uint32_t PluginFallbackType() const { return mFallbackType; }
+  bool HasRunningPlugin() const { return !!mInstanceOwner; }
+  
+  void SkipFakePlugins(mozilla::ErrorResult& aRv) { aRv = SkipFakePlugins(); }
+  void SwapFrameLoaders(mozilla::dom::HTMLIFrameElement& aOtherLoaderOwner,
+                        mozilla::ErrorResult& aRv) {
+    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  }
+  void SwapFrameLoaders(mozilla::dom::XULFrameElement& aOtherLoaderOwner,
+                        mozilla::ErrorResult& aRv) {
+    aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+  }
+  void LegacyCall(JSContext* aCx, JS::Handle<JS::Value> aThisVal,
+                  const mozilla::dom::Sequence<JS::Value>& aArguments,
+                  JS::MutableHandle<JS::Value> aRetval,
+                  mozilla::ErrorResult& aRv);
+
+  uint32_t GetRunID(mozilla::dom::SystemCallerGuarantee,
                     mozilla::ErrorResult& aRv);
 
-    uint32_t GetRunID(mozilla::dom::SystemCallerGuarantee,
-                      mozilla::ErrorResult& aRv);
+  bool IsRewrittenYoutubeEmbed() const { return mRewrittenYoutubeEmbed; }
 
-    bool IsRewrittenYoutubeEmbed() const
-    {
-      return mRewrittenYoutubeEmbed;
-    }
+  void PresetOpenerWindow(mozIDOMWindowProxy* aOpenerWindow,
+                          mozilla::ErrorResult& aRv);
 
-    void PresetOpenerWindow(mozIDOMWindowProxy* aOpenerWindow, mozilla::ErrorResult& aRv);
+ protected:
+  
 
-  protected:
-    
-
 
 
 
@@ -294,62 +273,59 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    nsresult LoadObject(bool aNotify,
-                        bool aForceLoad = false);
 
-    enum Capabilities {
-      eSupportImages       = 1u << 0, 
-      eSupportPlugins      = 1u << 1, 
-      eSupportDocuments    = 1u << 2, 
-                                      
-                                      
+  nsresult LoadObject(bool aNotify, bool aForceLoad = false);
 
-      
-      
-      eFallbackIfClassIDPresent = 1u << 3,
+  enum Capabilities {
+    eSupportImages = 1u << 0,     
+    eSupportPlugins = 1u << 1,    
+    eSupportDocuments = 1u << 2,  
+                                  
+                                  
 
-      
-      
-      
-      
-      
-      eAllowPluginSkipChannel  = 1u << 4
-    };
+    
+    
+    eFallbackIfClassIDPresent = 1u << 3,
 
+    
     
+    
+    
+    
+    eAllowPluginSkipChannel = 1u << 4
+  };
 
+  
 
 
 
 
 
-    virtual uint32_t GetCapabilities() const;
 
-    
+  virtual uint32_t GetCapabilities() const;
 
+  
 
-    void DestroyContent();
 
-    static void Traverse(nsObjectLoadingContent *tmp,
-                         nsCycleCollectionTraversalCallback &cb);
+  void DestroyContent();
 
-    void CreateStaticClone(nsObjectLoadingContent* aDest) const;
+  static void Traverse(nsObjectLoadingContent* tmp,
+                       nsCycleCollectionTraversalCallback& cb);
 
-    void DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner);
+  void CreateStaticClone(nsObjectLoadingContent* aDest) const;
 
-    nsresult BindToTree(nsIDocument* aDocument,
-                        nsIContent* aParent,
-                        nsIContent* aBindingParent);
-    void UnbindFromTree(bool aDeep = true,
-                        bool aNullParent = true);
+  void DoStopPlugin(nsPluginInstanceOwner* aInstanceOwner);
 
-    
+  nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
+                      nsIContent* aBindingParent);
+  void UnbindFromTree(bool aDeep = true, bool aNullParent = true);
 
+  
 
-    virtual nsContentPolicyType GetContentPolicyType() const = 0;
 
-    
+  virtual nsContentPolicyType GetContentPolicyType() const = 0;
 
+  
 
 
 
@@ -361,30 +337,29 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    bool BlockEmbedOrObjectContentLoading();
 
-  private:
+  bool BlockEmbedOrObjectContentLoading();
 
+ private:
+  
+  enum ParameterUpdateFlags {
+    eParamNoChange = 0,
     
-    enum ParameterUpdateFlags {
-      eParamNoChange           = 0,
-      
-      
-      eParamChannelChanged     = 1u << 0,
-      
-      
-      eParamStateChanged       = 1u << 1,
-      
-      
-      
-      
-      
-      
-      eParamContentTypeChanged = 1u << 2
-    };
-
+    
+    eParamChannelChanged = 1u << 0,
+    
+    
+    eParamStateChanged = 1u << 1,
     
+    
+    
+    
+    
+    
+    eParamContentTypeChanged = 1u << 2
+  };
 
+  
 
 
 
@@ -395,30 +370,29 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    void GetNestedParams(nsTArray<mozilla::dom::MozPluginParameter>& aParameters);
 
-    MOZ_MUST_USE nsresult BuildParametersArray();
+  void GetNestedParams(nsTArray<mozilla::dom::MozPluginParameter>& aParameters);
 
-    
+  MOZ_MUST_USE nsresult BuildParametersArray();
 
+  
 
 
 
 
 
-    void LoadFallback(FallbackType aType, bool aNotify);
 
-    
+  void LoadFallback(FallbackType aType, bool aNotify);
 
+  
 
 
 
-    nsresult LoadObject(bool aNotify,
-                        bool aForceLoad,
-                        nsIRequest *aLoadingChannel);
 
-    
+  nsresult LoadObject(bool aNotify, bool aForceLoad,
+                      nsIRequest* aLoadingChannel);
 
+  
 
 
 
@@ -439,41 +413,41 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    ParameterUpdateFlags UpdateObjectParameters();
 
-    
+  ParameterUpdateFlags UpdateObjectParameters();
 
+  
 
-    void QueueCheckPluginStopEvent();
 
-    void NotifyContentObjectWrapper();
+  void QueueCheckPluginStopEvent();
 
-    
+  void NotifyContentObjectWrapper();
 
+  
 
-    nsresult OpenChannel();
 
-    
+  nsresult OpenChannel();
 
+  
 
-    nsresult CloseChannel();
 
-    
+  nsresult CloseChannel();
 
+  
 
-    bool ShouldBlockContent();
 
-    
+  bool ShouldBlockContent();
 
+  
 
 
 
 
 
-    bool ShouldPlay(FallbackType &aReason);
 
-    
+  bool ShouldPlay(FallbackType& aReason);
 
+  
 
 
 
@@ -483,68 +457,68 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    bool FavorFallbackMode(bool aIsPluginClickToPlay);
 
-    
+  bool FavorFallbackMode(bool aIsPluginClickToPlay);
 
+  
 
-    bool HasGoodFallback();
 
-    
+  bool HasGoodFallback();
 
+  
 
 
 
 
-    bool PreferFallback(bool aIsPluginClickToPlay);
 
-    
+  bool PreferFallback(bool aIsPluginClickToPlay);
 
+  
 
 
 
 
 
-    bool CheckLoadPolicy(int16_t *aContentPolicy);
 
-    
+  bool CheckLoadPolicy(int16_t* aContentPolicy);
 
+  
 
 
 
 
 
 
-    bool CheckProcessPolicy(int16_t *aContentPolicy);
 
-    
+  bool CheckProcessPolicy(int16_t* aContentPolicy);
 
+  
 
 
-    bool MakePluginListener();
 
-    void SetupFrameLoader(int32_t aJSPluginId);
+  bool MakePluginListener();
 
-    
+  void SetupFrameLoader(int32_t aJSPluginId);
 
+  
 
 
 
 
-    already_AddRefed<nsIDocShell> SetupDocShell(nsIURI* aRecursionCheckURI);
 
-    
+  already_AddRefed<nsIDocShell> SetupDocShell(nsIURI* aRecursionCheckURI);
 
+  
 
 
 
 
 
 
-    void UnloadObject(bool aResetState = true);
 
-    
+  void UnloadObject(bool aResetState = true);
 
+  
 
 
 
@@ -553,12 +527,11 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    void NotifyStateChanged(ObjectType aOldType,
-                            mozilla::EventStates aOldState,
-                            bool aSync, bool aNotify);
 
-    
+  void NotifyStateChanged(ObjectType aOldType, mozilla::EventStates aOldState,
+                          bool aSync, bool aNotify);
 
+  
 
 
 
@@ -569,16 +542,16 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    ObjectType GetTypeOfContent(const nsCString& aMIMEType, bool aNoFakePlugin);
 
-    
+  ObjectType GetTypeOfContent(const nsCString& aMIMEType, bool aNoFakePlugin);
 
+  
 
 
-    nsPluginFrame* GetExistingFrame();
 
-    
+  nsPluginFrame* GetExistingFrame();
 
+  
 
 
 
@@ -597,138 +570,136 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-    void MaybeRewriteYoutubeEmbed(nsIURI* aURI,
-                                  nsIURI* aBaseURI,
-                                  nsIURI** aRewrittenURI);
 
-    
-    class SetupProtoChainRunner final : public nsIRunnable
-    {
-      ~SetupProtoChainRunner() = default;
-    public:
-      NS_DECL_ISUPPORTS
+  void MaybeRewriteYoutubeEmbed(nsIURI* aURI, nsIURI* aBaseURI,
+                                nsIURI** aRewrittenURI);
 
-      explicit SetupProtoChainRunner(nsObjectLoadingContent* aContent);
+  
+  class SetupProtoChainRunner final : public nsIRunnable {
+    ~SetupProtoChainRunner() = default;
 
-      NS_IMETHOD Run() override;
+   public:
+    NS_DECL_ISUPPORTS
 
-    private:
-      
-      
-      RefPtr<nsIObjectLoadingContent> mContent;
-    };
+    explicit SetupProtoChainRunner(nsObjectLoadingContent* aContent);
 
-    
-    nsNPAPIPluginInstance* ScriptRequestPluginInstance(JSContext* aCx);
+    NS_IMETHOD Run() override;
 
+   private:
     
-    static nsresult GetPluginJSObject(JSContext *cx,
-                                      nsNPAPIPluginInstance *plugin_inst,
-                                      JS::MutableHandle<JSObject*> plugin_obj,
-                                      JS::MutableHandle<JSObject*> plugin_proto);
-
     
-    void MaybeFireErrorEvent();
+    RefPtr<nsIObjectLoadingContent> mContent;
+  };
 
-    
-    nsCOMPtr<nsIStreamListener> mFinalListener;
+  
+  nsNPAPIPluginInstance* ScriptRequestPluginInstance(JSContext* aCx);
 
-    
-    RefPtr<nsFrameLoader>     mFrameLoader;
+  
+  static nsresult GetPluginJSObject(JSContext* cx,
+                                    nsNPAPIPluginInstance* plugin_inst,
+                                    JS::MutableHandle<JSObject*> plugin_obj,
+                                    JS::MutableHandle<JSObject*> plugin_proto);
 
-    
-    nsCOMPtr<nsIRunnable>       mPendingInstantiateEvent;
+  
+  void MaybeFireErrorEvent();
 
-    
-    nsCOMPtr<nsIRunnable>       mPendingCheckPluginStopEvent;
+  
+  nsCOMPtr<nsIStreamListener> mFinalListener;
 
-    
-    
-    
-    
-    
-    nsCString                   mContentType;
+  
+  RefPtr<nsFrameLoader> mFrameLoader;
 
-    
-    
-    nsCString                   mOriginalContentType;
+  
+  nsCOMPtr<nsIRunnable> mPendingInstantiateEvent;
 
-    
-    
-    nsCOMPtr<nsIChannel>        mChannel;
+  
+  nsCOMPtr<nsIRunnable> mPendingCheckPluginStopEvent;
 
-    
-    
-    
-    nsCOMPtr<nsIURI>            mURI;
+  
+  
+  
+  
+  
+  nsCString mContentType;
 
-    
-    
-    nsCOMPtr<nsIURI>            mOriginalURI;
+  
+  
+  nsCString mOriginalContentType;
 
-    
-    nsCOMPtr<nsIURI>            mBaseURI;
+  
+  
+  nsCOMPtr<nsIChannel> mChannel;
 
+  
+  
+  
+  nsCOMPtr<nsIURI> mURI;
 
+  
+  
+  nsCOMPtr<nsIURI> mOriginalURI;
 
-    
-    ObjectType                  mType           : 8;
-    
-    FallbackType                mFallbackType : 8;
+  
+  nsCOMPtr<nsIURI> mBaseURI;
 
-    uint32_t                    mRunID;
-    bool                        mHasRunID : 1;
+  
+  ObjectType mType : 8;
+  
+  FallbackType mFallbackType : 8;
 
-    
-    
-    
-    bool                        mChannelLoaded    : 1;
+  uint32_t mRunID;
+  bool mHasRunID : 1;
 
-    
-    
-    bool                        mInstantiating : 1;
+  
+  
+  
+  bool mChannelLoaded : 1;
 
-    
-    
-    
-    bool                        mNetworkCreated : 1;
+  
+  
+  bool mInstantiating : 1;
 
-    
-    
-    bool                        mActivated : 1;
+  
+  
+  
+  bool mNetworkCreated : 1;
 
-    
-    bool                        mContentBlockingEnabled : 1;
+  
+  
+  bool mActivated : 1;
 
-    
-    bool                        mSkipFakePlugins : 1;
+  
+  bool mContentBlockingEnabled : 1;
 
-    
-    bool                        mIsStopping : 1;
+  
+  bool mSkipFakePlugins : 1;
 
-    
-    bool                        mIsLoading : 1;
+  
+  bool mIsStopping : 1;
 
-    
-    
-    bool                        mScriptRequested : 1;
+  
+  bool mIsLoading : 1;
 
-    
-    
-    
-    
-    bool                        mRewrittenYoutubeEmbed : 1;
+  
+  
+  bool mScriptRequested : 1;
 
-    
-    
-    bool                        mPreferFallback : 1;
-    bool                        mPreferFallbackKnown : 1;
+  
+  
+  
+  
+  bool mRewrittenYoutubeEmbed : 1;
+
+  
+  
+  bool mPreferFallback : 1;
+  bool mPreferFallbackKnown : 1;
 
-    WeakFrame                   mPrintFrame;
+  WeakFrame mPrintFrame;
 
-    RefPtr<nsPluginInstanceOwner> mInstanceOwner;
-    nsTArray<mozilla::dom::MozPluginParameter> mCachedAttributes;
-    nsTArray<mozilla::dom::MozPluginParameter> mCachedParameters;
+  RefPtr<nsPluginInstanceOwner> mInstanceOwner;
+  nsTArray<mozilla::dom::MozPluginParameter> mCachedAttributes;
+  nsTArray<mozilla::dom::MozPluginParameter> mCachedParameters;
 };
 
 #endif

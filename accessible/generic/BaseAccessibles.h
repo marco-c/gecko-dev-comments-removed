@@ -23,10 +23,8 @@ namespace a11y {
 
 
 
-class LeafAccessible : public AccessibleWrap
-{
-public:
-
+class LeafAccessible : public AccessibleWrap {
+ public:
   LeafAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -40,7 +38,7 @@ public:
 
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 
-protected:
+ protected:
   virtual ~LeafAccessible() {}
 };
 
@@ -50,15 +48,12 @@ protected:
 
 
 
-class LinkableAccessible : public AccessibleWrap
-{
-public:
+class LinkableAccessible : public AccessibleWrap {
+ public:
   enum { eAction_Jump = 0 };
 
-  LinkableAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    AccessibleWrap(aContent, aDoc)
-  {
-  }
+  LinkableAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : AccessibleWrap(aContent, aDoc) {}
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(LinkableAccessible, AccessibleWrap)
 
@@ -78,43 +73,41 @@ public:
                                bool* aIsOnclick = nullptr,
                                bool* aIsLabelWithControl = nullptr) const;
   
-  virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex) const override;
+  virtual already_AddRefed<nsIURI> AnchorURIAt(
+      uint32_t aAnchorIndex) const override;
 
-protected:
+ protected:
   virtual ~LinkableAccessible() {}
-
 };
 
 
 
 
-template<a11y::role R>
-class EnumRoleAccessible : public AccessibleWrap
-{
-public:
-  EnumRoleAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    AccessibleWrap(aContent, aDoc) { }
+template <a11y::role R>
+class EnumRoleAccessible : public AccessibleWrap {
+ public:
+  EnumRoleAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : AccessibleWrap(aContent, aDoc) {}
 
-  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aPtr) override
-    { return Accessible::QueryInterface(aIID, aPtr); }
+  NS_IMETHOD QueryInterface(REFNSIID aIID, void** aPtr) override {
+    return Accessible::QueryInterface(aIID, aPtr);
+  }
 
   
   virtual a11y::role NativeRole() const override { return R; }
 
-protected:
-  virtual ~EnumRoleAccessible() { }
+ protected:
+  virtual ~EnumRoleAccessible() {}
 };
 
 
 
 
 
-
-class DummyAccessible : public AccessibleWrap
-{
-public:
-  explicit DummyAccessible(DocAccessible* aDocument = nullptr) :
-    AccessibleWrap(nullptr, aDocument) { }
+class DummyAccessible : public AccessibleWrap {
+ public:
+  explicit DummyAccessible(DocAccessible* aDocument = nullptr)
+      : AccessibleWrap(nullptr, aDocument) {}
 
   uint64_t NativeState() const final;
   uint64_t NativeInteractiveState() const final;
@@ -122,11 +115,11 @@ public:
   bool NativelyUnavailable() const final;
   void ApplyARIAState(uint64_t* aState) const final;
 
-protected:
-  virtual ~DummyAccessible() { }
+ protected:
+  virtual ~DummyAccessible() {}
 };
 
-} 
-} 
+}  
+}  
 
 #endif

@@ -12,13 +12,9 @@
 
 namespace mozilla {
 
-struct LauncherError
-{
+struct LauncherError {
   LauncherError(const char* aFile, int aLine, WindowsError aWin32Error)
-    : mFile(aFile)
-    , mLine(aLine)
-    , mError(aWin32Error)
-  {}
+      : mFile(aFile), mLine(aLine), mError(aWin32Error) {}
 
   const char* mFile;
   int mLine;
@@ -30,35 +26,35 @@ using LauncherResult = Result<T, LauncherError>;
 
 using LauncherVoidResult = Result<Ok, LauncherError>;
 
-} 
+}  
 
-#define LAUNCHER_ERROR_GENERIC() \
-  ::mozilla::Err(::mozilla::LauncherError(__FILE__, __LINE__, \
-                 ::mozilla::WindowsError::CreateGeneric()))
+#define LAUNCHER_ERROR_GENERIC()           \
+  ::mozilla::Err(::mozilla::LauncherError( \
+      __FILE__, __LINE__, ::mozilla::WindowsError::CreateGeneric()))
 
-#define LAUNCHER_ERROR_FROM_WIN32(err) \
-  ::mozilla::Err(::mozilla::LauncherError(__FILE__, __LINE__, \
-                 ::mozilla::WindowsError::FromWin32Error(err)))
+#define LAUNCHER_ERROR_FROM_WIN32(err)     \
+  ::mozilla::Err(::mozilla::LauncherError( \
+      __FILE__, __LINE__, ::mozilla::WindowsError::FromWin32Error(err)))
 
-#define LAUNCHER_ERROR_FROM_LAST() \
-  ::mozilla::Err(::mozilla::LauncherError(__FILE__, __LINE__, \
-                 ::mozilla::WindowsError::FromWin32Error(::GetLastError())))
+#define LAUNCHER_ERROR_FROM_LAST()         \
+  ::mozilla::Err(::mozilla::LauncherError( \
+      __FILE__, __LINE__,                  \
+      ::mozilla::WindowsError::FromWin32Error(::GetLastError())))
 
 #define LAUNCHER_ERROR_FROM_NTSTATUS(ntstatus) \
-  ::mozilla::Err(::mozilla::LauncherError(__FILE__, __LINE__, \
-                 ::mozilla::WindowsError::FromNtStatus(ntstatus)))
+  ::mozilla::Err(::mozilla::LauncherError(     \
+      __FILE__, __LINE__, ::mozilla::WindowsError::FromNtStatus(ntstatus)))
 
 #define LAUNCHER_ERROR_FROM_HRESULT(hresult) \
-  ::mozilla::Err(::mozilla::LauncherError(__FILE__, __LINE__, \
-                 ::mozilla::WindowsError::FromHResult(hresult)))
+  ::mozilla::Err(::mozilla::LauncherError(   \
+      __FILE__, __LINE__, ::mozilla::WindowsError::FromHResult(hresult)))
 
 
 
-#define LAUNCHER_ERROR_FROM_RESULT(result) \
-  ::mozilla::Err(result.unwrapErr())
+#define LAUNCHER_ERROR_FROM_RESULT(result) ::mozilla::Err(result.unwrapErr())
 
 
 #define LAUNCHER_ERROR_FROM_MOZ_WINDOWS_ERROR(err) \
   ::mozilla::Err(::mozilla::LauncherError(__FILE__, __LINE__, err))
 
-#endif 
+#endif  

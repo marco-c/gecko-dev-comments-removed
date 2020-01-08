@@ -21,9 +21,8 @@
 
 class nsIFile;
 
-class nsINIParser
-{
-public:
+class nsINIParser {
+ public:
   nsINIParser() {}
   ~nsINIParser() {}
 
@@ -57,8 +56,8 @@ public:
 
 
 
-  nsresult GetStrings(const char* aSection,
-                      INIStringCallback aCB, void* aClosure);
+  nsresult GetStrings(const char* aSection, INIStringCallback aCB,
+                      void* aClosure);
 
   
 
@@ -84,8 +83,8 @@ public:
 
 
 
-  nsresult GetString(const char* aSection, const char* aKey,
-                     char* aResult, uint32_t aResultLen);
+  nsresult GetString(const char* aSection, const char* aKey, char* aResult,
+                     uint32_t aResultLen);
 
   
 
@@ -95,7 +94,8 @@ public:
 
 
 
-  nsresult SetString(const char* aSection, const char* aKey, const char* aValue);
+  nsresult SetString(const char* aSection, const char* aKey,
+                     const char* aValue);
 
   
 
@@ -121,19 +121,14 @@ public:
 
 
 
-  nsresult WriteToFile(nsIFile *aFile);
+  nsresult WriteToFile(nsIFile* aFile);
 
-private:
-  struct INIValue
-  {
+ private:
+  struct INIValue {
     INIValue(const char* aKey, const char* aValue)
-      : key(strdup(aKey))
-      , value(strdup(aValue))
-    {
-    }
+        : key(strdup(aKey)), value(strdup(aValue)) {}
 
-    ~INIValue()
-    {
+    ~INIValue() {
       delete key;
       delete value;
     }

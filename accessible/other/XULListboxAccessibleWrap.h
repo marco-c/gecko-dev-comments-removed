@@ -13,7 +13,7 @@ namespace a11y {
 
 typedef class XULListboxAccessible XULListboxAccessibleWrap;
 
-} 
-} 
+}  
+}  
 
 #endif

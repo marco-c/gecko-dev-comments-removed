@@ -13,16 +13,12 @@ namespace widget {
 CompositorWidgetVsyncObserver::CompositorWidgetVsyncObserver(
     RefPtr<VsyncBridgeChild> aVsyncBridge,
     const layers::LayersId& aRootLayerTreeId)
- : mVsyncBridge(aVsyncBridge),
-   mRootLayerTreeId(aRootLayerTreeId)
-{
+    : mVsyncBridge(aVsyncBridge), mRootLayerTreeId(aRootLayerTreeId) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
 }
 
-bool
-CompositorWidgetVsyncObserver::NotifyVsync(TimeStamp aTimeStamp)
-{
+bool CompositorWidgetVsyncObserver::NotifyVsync(TimeStamp aTimeStamp) {
   
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(!NS_IsMainThread());
@@ -31,5 +27,5 @@ CompositorWidgetVsyncObserver::NotifyVsync(TimeStamp aTimeStamp)
   return true;
 }
 
-} 
-} 
+}  
+}  

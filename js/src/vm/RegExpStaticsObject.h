@@ -11,18 +11,17 @@
 
 namespace js {
 
-class RegExpStaticsObject : public NativeObject
-{
-  public:
-    static const Class class_;
+class RegExpStaticsObject : public NativeObject {
+ public:
+  static const Class class_;
 
-    size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf) {
-        
-        
-        return mallocSizeOf(getPrivate());
-    }
+  size_t sizeOfData(mozilla::MallocSizeOf mallocSizeOf) {
+    
+    
+    return mallocSizeOf(getPrivate());
+  }
 };
 
-} 
+}  
 
 #endif 

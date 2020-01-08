@@ -49,8 +49,9 @@ class CompositorOGL;
 
 
 
+
 class AndroidDynamicToolbarAnimator {
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AndroidDynamicToolbarAnimator);
   explicit AndroidDynamicToolbarAnimator(APZCTreeManager* aApz);
   void Initialize(LayersId aRootLayerTreeId);
@@ -60,7 +61,9 @@ public:
   
   
   
-  nsEventStatus ReceiveInputEvent(const RefPtr<APZCTreeManager>& aApz, InputData& aEvent, const ScreenPoint& aScrollOffset);
+  nsEventStatus ReceiveInputEvent(const RefPtr<APZCTreeManager>& aApz,
+                                  InputData& aEvent,
+                                  const ScreenPoint& aScrollOffset);
   void SetMaxToolbarHeight(ScreenIntCoord aHeight);
   
   
@@ -70,11 +73,15 @@ public:
   
   void SetPinned(bool aPinned, int32_t aReason);
   
+  
   ScreenIntCoord GetMaxToolbarHeight() const;
+  
   
   ScreenIntCoord GetCurrentToolbarHeight() const;
   
+  
   ScreenIntCoord GetCurrentContentOffset() const;
+  
   
   
   
@@ -94,21 +101,25 @@ public:
   
   void FirstPaint();
   
+  
   void UpdateRootFrameMetrics(const FrameMetrics& aMetrics);
   
-  void MaybeUpdateCompositionSizeAndRootFrameMetrics(const FrameMetrics& aMetrics);
+  void MaybeUpdateCompositionSizeAndRootFrameMetrics(
+      const FrameMetrics& aMetrics);
   
   
   
-  void AdoptToolbarPixels(mozilla::ipc::Shmem&& aMem, const ScreenIntSize& aSize);
+  void AdoptToolbarPixels(mozilla::ipc::Shmem&& aMem,
+                          const ScreenIntSize& aSize);
   
   
   void UpdateToolbarSnapshotTexture(CompositorOGL* gl);
   
+  
   Effect* GetToolbarEffect();
   void Shutdown();
 
-protected:
+ protected:
   enum StaticToolbarState {
     eToolbarVisible,
     eToolbarUpdated,
@@ -122,31 +133,34 @@ protected:
     eAnimationStartPending,
     eAnimationStopPending
   };
-  enum AnimationStyle {
-    eImmediate,
-    eAnimate
-  };
+  enum AnimationStyle { eImmediate, eAnimate };
 
-  ~AndroidDynamicToolbarAnimator(){}
-  nsEventStatus ProcessTouchDelta(const RefPtr<APZCTreeManager>& aApz, StaticToolbarState aCurrentToolbarState, ScreenIntCoord aDelta, uint32_t aTimeStamp);
+  ~AndroidDynamicToolbarAnimator() {}
+  nsEventStatus ProcessTouchDelta(const RefPtr<APZCTreeManager>& aApz,
+                                  StaticToolbarState aCurrentToolbarState,
+                                  ScreenIntCoord aDelta, uint32_t aTimeStamp);
   
-  void HandleTouchEnd(StaticToolbarState aCurrentToolbarState, ScreenIntCoord aCurrentTouch);
+  void HandleTouchEnd(StaticToolbarState aCurrentToolbarState,
+                      ScreenIntCoord aCurrentTouch);
   
   void PostMessage(int32_t aMessage);
   void UpdateCompositorToolbarHeight(ScreenIntCoord aHeight);
-  void UpdateControllerToolbarHeight(ScreenIntCoord aHeight, ScreenIntCoord aMaxHeight = -1);
+  void UpdateControllerToolbarHeight(ScreenIntCoord aHeight,
+                                     ScreenIntCoord aMaxHeight = -1);
   void UpdateControllerSurfaceHeight(ScreenIntCoord aHeight);
   void UpdateControllerCompositionHeight(ScreenIntCoord aHeight);
   void UpdateFixedLayerMargins();
-  void NotifyControllerPendingAnimation(int32_t aDirection, AnimationStyle aStyle);
-  void StartCompositorAnimation(int32_t aDirection, AnimationStyle aStyle, ScreenIntCoord aHeight, bool aWaitForPageResize);
+  void NotifyControllerPendingAnimation(int32_t aDirection,
+                                        AnimationStyle aStyle);
+  void StartCompositorAnimation(int32_t aDirection, AnimationStyle aStyle,
+                                ScreenIntCoord aHeight,
+                                bool aWaitForPageResize);
   void NotifyControllerAnimationStarted();
   void StopCompositorAnimation();
   void NotifyControllerAnimationStopped(ScreenIntCoord aHeight);
   void RequestComposite();
   void PostToolbarReady();
-  void UpdateFrameMetrics(ScreenPoint aScrollOffset,
-                          CSSToScreenScale aScale,
+  void UpdateFrameMetrics(ScreenPoint aScrollOffset, CSSToScreenScale aScale,
                           CSSRect aCssPageRect);
   
   
@@ -167,29 +181,48 @@ protected:
   MOZ_NON_OWNING_REF APZCTreeManager* mApz;
 
   
-  Atomic<StaticToolbarState> mToolbarState; 
-  Atomic<uint32_t> mPinnedFlags;            
+  Atomic<StaticToolbarState> mToolbarState;  
+  Atomic<uint32_t> mPinnedFlags;  
+                                  
 
   
-  bool mControllerScrollingRootContent; 
-  bool mControllerDragThresholdReached; 
-  bool mControllerCancelTouchTracking;  
-  bool mControllerDragChangedDirection; 
-  bool mControllerResetOnNextMove;      
-                                        
-                                        
-  ScreenIntCoord mControllerStartTouch;        
-  ScreenIntCoord mControllerPreviousTouch;     
-  ScreenIntCoord mControllerTotalDistance;     
+  bool mControllerScrollingRootContent;  
+                                         
+  bool mControllerDragThresholdReached;  
+                                         
+  bool mControllerCancelTouchTracking;   
+                                         
+  bool mControllerDragChangedDirection;  
+                                         
+  bool mControllerResetOnNextMove;       
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+  ScreenIntCoord
+      mControllerStartTouch;  
+  ScreenIntCoord
+      mControllerPreviousTouch;  
+  ScreenIntCoord mControllerTotalDistance;  
+                                            
   ScreenIntCoord mControllerMaxToolbarHeight;  
   ScreenIntCoord mControllerToolbarHeight;     
-  ScreenIntCoord mControllerSurfaceHeight;     
-  ScreenIntCoord mControllerCompositionHeight; 
-  ScreenCoord mControllerRootScrollY;          
-  int32_t mControllerLastDragDirection;        
-  int32_t mControllerTouchCount;               
-  uint32_t mControllerLastEventTimeStamp;      
-  ControllerThreadState mControllerState;      
+  ScreenIntCoord
+      mControllerSurfaceHeight;  
+  ScreenIntCoord
+      mControllerCompositionHeight;      
+  ScreenCoord mControllerRootScrollY;    
+                                         
+  int32_t mControllerLastDragDirection;  
+                                         
+  int32_t mControllerTouchCount;  
+  uint32_t mControllerLastEventTimeStamp;  
+                                           
+  ControllerThreadState mControllerState;  
+                                           
 
   
   struct FrameMetricsState {
@@ -200,47 +233,79 @@ protected:
 
     
     bool Update(const ScreenPoint& aScrollOffset,
-                const CSSToScreenScale& aScale,
-                const CSSRect& aCssPageRect);
+                const CSSToScreenScale& aScale, const CSSRect& aCssPageRect);
   };
 
   
-  FrameMetricsState mControllerFrameMetrics; 
+  FrameMetricsState mControllerFrameMetrics;  
+                                              
 
   class QueuedMessage : public LinkedListElement<QueuedMessage> {
-  public:
-    explicit QueuedMessage(int32_t aMessage) :
-      mMessage(aMessage) {}
+   public:
+    explicit QueuedMessage(int32_t aMessage) : mMessage(aMessage) {}
     int32_t mMessage;
-  private:
+
+   private:
     QueuedMessage() = delete;
     QueuedMessage(const QueuedMessage&) = delete;
     QueuedMessage& operator=(const QueuedMessage&) = delete;
   };
 
   
-  bool mCompositorShutdown;             
-  bool mCompositorAnimationDeferred;    
-  bool mCompositorAnimationStarted;     
-  bool mCompositorReceivedFirstPaint;   
-  bool mCompositorWaitForPageResize;    
-  bool mCompositorToolbarShowRequested; 
+  bool
+      mCompositorShutdown;  
+  bool mCompositorAnimationDeferred;   
+                                       
+  bool mCompositorAnimationStarted;    
+                                       
+                                       
+  bool mCompositorReceivedFirstPaint;  
+                                       
+                                       
+  bool mCompositorWaitForPageResize;   
+                                       
+                                       
+                                       
+  bool mCompositorToolbarShowRequested;  
+                                         
+                                         
   bool mCompositorSendResponseForSnapshotUpdate;  
-  AnimationStyle mCompositorAnimationStyle;       
-  ScreenIntCoord mCompositorMaxToolbarHeight;     
-  ScreenIntCoord mCompositorToolbarHeight;        
-  ScreenIntCoord mCompositorSurfaceHeight;        
-  ScreenIntSize  mCompositorCompositionSize;      
-  int32_t mCompositorAnimationDirection;          
-  ScreenIntCoord mCompositorAnimationStartHeight; 
-  ScreenIntSize mCompositorToolbarPixelsSize;     
-  Maybe<mozilla::ipc::Shmem> mCompositorToolbarPixels; 
-  RefPtr<DataTextureSource> mCompositorToolbarTexture; 
-  RefPtr<EffectRGB> mCompositorToolbarEffect;          
-  TimeStamp mCompositorAnimationStartTimeStamp;        
-  AutoCleanLinkedList<QueuedMessage> mCompositorQueuedMessages; 
+                                                  
+                                                  
+                                                  
+  AnimationStyle mCompositorAnimationStyle;  
+                                             
+                                             
+  ScreenIntCoord mCompositorMaxToolbarHeight;  
+                                               
+  ScreenIntCoord mCompositorToolbarHeight;  
+                                            
+                                            
+  ScreenIntCoord
+      mCompositorSurfaceHeight;  
+  ScreenIntSize mCompositorCompositionSize;  
+  int32_t mCompositorAnimationDirection;     
+                                             
+  ScreenIntCoord
+      mCompositorAnimationStartHeight;  
+                                        
+  ScreenIntSize
+      mCompositorToolbarPixelsSize;  
+  Maybe<mozilla::ipc::Shmem>
+      mCompositorToolbarPixels;  
+                                 
+  RefPtr<DataTextureSource>
+      mCompositorToolbarTexture;  
+                                  
+  RefPtr<EffectRGB> mCompositorToolbarEffect;    
+                                                 
+  TimeStamp mCompositorAnimationStartTimeStamp;  
+                                                 
+  AutoCleanLinkedList<QueuedMessage>
+      mCompositorQueuedMessages;  
+                                  
 };
 
-} 
-} 
-#endif 
+}  
+}  
+#endif  

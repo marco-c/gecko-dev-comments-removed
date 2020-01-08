@@ -9,12 +9,12 @@
 
 #include <string>
 
-#include "js/TypeDecls.h" 
-#include "mozilla/ErrorResult.h" 
-#include "mozilla/StaticPtr.h" 
-#include "nsCOMPtr.h" 
-#include "nsISupports.h" 
-#include "nsWrapperCache.h" 
+#include "js/TypeDecls.h"         
+#include "mozilla/ErrorResult.h"  
+#include "mozilla/StaticPtr.h"    
+#include "nsCOMPtr.h"             
+#include "nsISupports.h"          
+#include "nsWrapperCache.h"       
 
 namespace mozilla {
 
@@ -28,11 +28,10 @@ namespace layers {
 
 
 
-class CheckerboardEventStorage
-{
+class CheckerboardEventStorage {
   NS_INLINE_DECL_REFCOUNTING(CheckerboardEventStorage)
 
-public:
+ public:
   
 
 
@@ -49,7 +48,7 @@ public:
 
   static void Report(uint32_t aSeverity, const std::string& aLog);
 
-private:
+ private:
   
   CheckerboardEventStorage() {}
   virtual ~CheckerboardEventStorage() {}
@@ -58,26 +57,20 @@ private:
 
   void ReportCheckerboard(uint32_t aSeverity, const std::string& aLog);
 
-private:
+ private:
   
 
 
   struct CheckerboardReport {
-      uint32_t mSeverity; 
-      int64_t mTimestamp; 
-      std::string mLog;
+    uint32_t mSeverity;  
+    int64_t mTimestamp;  
+    std::string mLog;
 
-      CheckerboardReport()
-        : mSeverity(0)
-        , mTimestamp(0)
-      {}
+    CheckerboardReport() : mSeverity(0), mTimestamp(0) {}
 
-      CheckerboardReport(uint32_t aSeverity, int64_t aTimestamp,
-                         const std::string& aLog)
-        : mSeverity(aSeverity)
-        , mTimestamp(aTimestamp)
-        , mLog(aLog)
-      {}
+    CheckerboardReport(uint32_t aSeverity, int64_t aTimestamp,
+                       const std::string& aLog)
+        : mSeverity(aSeverity), mTimestamp(aTimestamp), mLog(aLog) {}
   };
 
   
@@ -88,7 +81,7 @@ private:
   CheckerboardReport mCheckerboardReports[RECENT_MAX_INDEX];
 };
 
-} 
+}  
 
 namespace dom {
 
@@ -99,9 +92,8 @@ class GlobalObject;
 
 
 
-class CheckerboardReportService : public nsWrapperCache
-{
-public:
+class CheckerboardReportService : public nsWrapperCache {
+ public:
   
 
 
@@ -112,19 +104,20 @@ public:
 
 
 
-  static already_AddRefed<CheckerboardReportService>
-    Constructor(const dom::GlobalObject& aGlobal, ErrorResult& aRv);
+  static already_AddRefed<CheckerboardReportService> Constructor(
+      const dom::GlobalObject& aGlobal, ErrorResult& aRv);
 
   explicit CheckerboardReportService(nsISupports* aSupports);
 
-  JSObject* WrapObject(JSContext* aCtx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCtx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   nsISupports* GetParentObject();
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(CheckerboardReportService)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(CheckerboardReportService)
 
-public:
+ public:
   
 
 
@@ -133,13 +126,13 @@ public:
   void SetRecordingEnabled(bool aEnabled);
   void FlushActiveReports();
 
-private:
+ private:
   virtual ~CheckerboardReportService() {}
 
   nsCOMPtr<nsISupports> mParent;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

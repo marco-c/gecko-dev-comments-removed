@@ -14,17 +14,16 @@ namespace mozilla {
 
 
 
-class ProfilerIOInterposeObserver final : public IOInterposeObserver
-{
+class ProfilerIOInterposeObserver final : public IOInterposeObserver {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ProfilerIOInterposeObserver)
 
-public:
+ public:
   virtual void Observe(Observation& aObservation) override;
 
-protected:
+ protected:
   virtual ~ProfilerIOInterposeObserver() {}
 };
 
-} 
+}  
 
-#endif 
+#endif  

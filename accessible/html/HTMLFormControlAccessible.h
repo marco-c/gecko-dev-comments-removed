@@ -16,13 +16,10 @@ namespace a11y {
 
 
 
-class HTMLRadioButtonAccessible : public RadioButtonAccessible
-{
-
-public:
-  HTMLRadioButtonAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    RadioButtonAccessible(aContent, aDoc)
-  {
+class HTMLRadioButtonAccessible : public RadioButtonAccessible {
+ public:
+  HTMLRadioButtonAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : RadioButtonAccessible(aContent, aDoc) {
     
     
     mStateFlags |= eIgnoreDOMUIEvent;
@@ -30,19 +27,16 @@ public:
 
   
   virtual uint64_t NativeState() const override;
-  virtual void GetPositionAndSizeInternal(int32_t *aPosInSet,
-                                          int32_t *aSetSize) override;
+  virtual void GetPositionAndSizeInternal(int32_t* aPosInSet,
+                                          int32_t* aSetSize) override;
 };
 
 
 
 
 
-
-class HTMLButtonAccessible : public HyperTextAccessibleWrap
-{
-
-public:
+class HTMLButtonAccessible : public HyperTextAccessibleWrap {
+ public:
   enum { eAction_Click = 0 };
 
   HTMLButtonAccessible(nsIContent* aContent, DocAccessible* aDoc);
@@ -60,7 +54,7 @@ public:
   
   virtual bool IsWidget() const override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
@@ -69,11 +63,8 @@ protected:
 
 
 
-
-class HTMLTextFieldAccessible final : public HyperTextAccessibleWrap
-{
-
-public:
+class HTMLTextFieldAccessible final : public HyperTextAccessibleWrap {
+ public:
   enum { eAction_Click = 0 };
 
   HTMLTextFieldAccessible(nsIContent* aContent, DocAccessible* aDoc);
@@ -100,7 +91,7 @@ public:
   virtual bool IsWidget() const override;
   virtual Accessible* ContainerWidget() const override;
 
-protected:
+ protected:
   virtual ~HTMLTextFieldAccessible() {}
 
   
@@ -115,10 +106,8 @@ protected:
 
 
 
-
-class HTMLFileInputAccessible : public HyperTextAccessibleWrap
-{
-public:
+class HTMLFileInputAccessible : public HyperTextAccessibleWrap {
+ public:
   HTMLFileInputAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -129,15 +118,12 @@ public:
 
 
 
-
-class HTMLSpinnerAccessible : public AccessibleWrap
-{
-public:
-  HTMLSpinnerAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    AccessibleWrap(aContent, aDoc)
-  {
+class HTMLSpinnerAccessible : public AccessibleWrap {
+ public:
+  HTMLSpinnerAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : AccessibleWrap(aContent, aDoc) {
     mStateFlags |= eHasNumericValue;
-}
+  }
 
   
   virtual mozilla::a11y::role NativeRole() const override;
@@ -153,13 +139,10 @@ public:
 
 
 
-
-class HTMLRangeAccessible : public LeafAccessible
-{
-public:
-  HTMLRangeAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    LeafAccessible(aContent, aDoc)
-  {
+class HTMLRangeAccessible : public LeafAccessible {
+ public:
+  HTMLRangeAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : LeafAccessible(aContent, aDoc) {
     mStateFlags |= eHasNumericValue;
   }
 
@@ -181,17 +164,15 @@ public:
 
 
 
-
-class HTMLGroupboxAccessible : public HyperTextAccessibleWrap
-{
-public:
+class HTMLGroupboxAccessible : public HyperTextAccessibleWrap {
+ public:
   HTMLGroupboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   virtual mozilla::a11y::role NativeRole() const override;
   virtual Relation RelationByType(RelationType aType) const override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 
@@ -202,10 +183,8 @@ protected:
 
 
 
-
-class HTMLLegendAccessible : public HyperTextAccessibleWrap
-{
-public:
+class HTMLLegendAccessible : public HyperTextAccessibleWrap {
+ public:
   HTMLLegendAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -215,15 +194,14 @@ public:
 
 
 
-class HTMLFigureAccessible : public HyperTextAccessibleWrap
-{
-public:
+class HTMLFigureAccessible : public HyperTextAccessibleWrap {
+ public:
   HTMLFigureAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   virtual Relation RelationByType(RelationType aType) const override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 
@@ -234,10 +212,8 @@ protected:
 
 
 
-
-class HTMLFigcaptionAccessible : public HyperTextAccessibleWrap
-{
-public:
+class HTMLFigcaptionAccessible : public HyperTextAccessibleWrap {
+ public:
   HTMLFigcaptionAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -247,12 +223,10 @@ public:
 
 
 
-class HTMLFormAccessible : public HyperTextAccessibleWrap
-{
-public:
-
-  HTMLFormAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    HyperTextAccessibleWrap(aContent, aDoc) {}
+class HTMLFormAccessible : public HyperTextAccessibleWrap {
+ public:
+  HTMLFormAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : HyperTextAccessibleWrap(aContent, aDoc) {}
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLFormAccessible,
                                        HyperTextAccessibleWrap)
@@ -261,7 +235,7 @@ public:
   virtual nsAtom* LandmarkRole() const override;
   virtual a11y::role NativeRole() const override;
 
-protected:
+ protected:
   virtual ~HTMLFormAccessible() = default;
 };
 
@@ -269,12 +243,10 @@ protected:
 
 
 
-class HTMLProgressAccessible : public LeafAccessible
-{
-public:
-  HTMLProgressAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    LeafAccessible(aContent, aDoc)
-  {
+class HTMLProgressAccessible : public LeafAccessible {
+ public:
+  HTMLProgressAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : LeafAccessible(aContent, aDoc) {
     
     
     mStateFlags |= eHasNumericValue | eIgnoreDOMUIEvent;
@@ -296,11 +268,11 @@ public:
   
   virtual bool IsWidget() const override;
 
-protected:
+ protected:
   virtual ~HTMLProgressAccessible() {}
 };
 
-} 
-} 
+}  
+}  
 
 #endif

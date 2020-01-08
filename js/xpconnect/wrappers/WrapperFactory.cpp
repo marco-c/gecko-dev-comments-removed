@@ -43,576 +43,572 @@ const Wrapper XrayWaiver(WrapperFactory::WAIVE_XRAY_WRAPPER_FLAG);
 
 const WaiveXrayWrapper WaiveXrayWrapper::singleton(0);
 
-bool
-WrapperFactory::IsCOW(JSObject* obj)
-{
-    return IsWrapper(obj) &&
-           Wrapper::wrapperHandler(obj) == &ChromeObjectWrapper::singleton;
+bool WrapperFactory::IsCOW(JSObject* obj) {
+  return IsWrapper(obj) &&
+         Wrapper::wrapperHandler(obj) == &ChromeObjectWrapper::singleton;
 }
 
-JSObject*
-WrapperFactory::GetXrayWaiver(HandleObject obj)
-{
-    
-    MOZ_ASSERT(obj == UncheckedUnwrap(obj));
-    MOZ_ASSERT(!js::IsWindow(obj));
-    XPCWrappedNativeScope* scope = ObjectScope(obj);
-    MOZ_ASSERT(scope);
+JSObject* WrapperFactory::GetXrayWaiver(HandleObject obj) {
+  
+  MOZ_ASSERT(obj == UncheckedUnwrap(obj));
+  MOZ_ASSERT(!js::IsWindow(obj));
+  XPCWrappedNativeScope* scope = ObjectScope(obj);
+  MOZ_ASSERT(scope);
 
-    if (!scope->mWaiverWrapperMap) {
-        return nullptr;
-    }
+  if (!scope->mWaiverWrapperMap) {
+    return nullptr;
+  }
 
-    return scope->mWaiverWrapperMap->Find(obj);
+  return scope->mWaiverWrapperMap->Find(obj);
 }
 
-JSObject*
-WrapperFactory::CreateXrayWaiver(JSContext* cx, HandleObject obj)
-{
-    
-    
-    MOZ_ASSERT(!GetXrayWaiver(obj));
-    XPCWrappedNativeScope* scope = ObjectScope(obj);
+JSObject* WrapperFactory::CreateXrayWaiver(JSContext* cx, HandleObject obj) {
+  
+  
+  MOZ_ASSERT(!GetXrayWaiver(obj));
+  XPCWrappedNativeScope* scope = ObjectScope(obj);
 
-    JSAutoRealm ar(cx, obj);
-    JSObject* waiver = Wrapper::New(cx, obj, &XrayWaiver);
-    if (!waiver) {
-        return nullptr;
-    }
+  JSAutoRealm ar(cx, obj);
+  JSObject* waiver = Wrapper::New(cx, obj, &XrayWaiver);
+  if (!waiver) {
+    return nullptr;
+  }
 
-    
-    
-    if (!scope->mWaiverWrapperMap) {
-        scope->mWaiverWrapperMap =
-          JSObject2JSObjectMap::newMap(XPC_WRAPPER_MAP_LENGTH);
-    }
-    if (!scope->mWaiverWrapperMap->Add(cx, obj, waiver)) {
-        return nullptr;
-    }
-    return waiver;
+  
+  
+  if (!scope->mWaiverWrapperMap) {
+    scope->mWaiverWrapperMap =
+        JSObject2JSObjectMap::newMap(XPC_WRAPPER_MAP_LENGTH);
+  }
+  if (!scope->mWaiverWrapperMap->Add(cx, obj, waiver)) {
+    return nullptr;
+  }
+  return waiver;
 }
 
-JSObject*
-WrapperFactory::WaiveXray(JSContext* cx, JSObject* objArg)
-{
-    RootedObject obj(cx, objArg);
-    obj = UncheckedUnwrap(obj);
-    MOZ_ASSERT(!js::IsWindow(obj));
+JSObject* WrapperFactory::WaiveXray(JSContext* cx, JSObject* objArg) {
+  RootedObject obj(cx, objArg);
+  obj = UncheckedUnwrap(obj);
+  MOZ_ASSERT(!js::IsWindow(obj));
 
-    JSObject* waiver = GetXrayWaiver(obj);
-    if (!waiver) {
-        waiver = CreateXrayWaiver(cx, obj);
-    }
-    MOZ_ASSERT(JS::ObjectIsNotGray(waiver));
-    return waiver;
+  JSObject* waiver = GetXrayWaiver(obj);
+  if (!waiver) {
+    waiver = CreateXrayWaiver(cx, obj);
+  }
+  MOZ_ASSERT(JS::ObjectIsNotGray(waiver));
+  return waiver;
 }
 
- bool
-WrapperFactory::AllowWaiver(JS::Compartment* target, JS::Compartment* origin)
-{
-    return CompartmentPrivate::Get(target)->allowWaivers &&
-           CompartmentOriginInfo::Subsumes(target, origin);
+ bool WrapperFactory::AllowWaiver(JS::Compartment* target,
+                                              JS::Compartment* origin) {
+  return CompartmentPrivate::Get(target)->allowWaivers &&
+         CompartmentOriginInfo::Subsumes(target, origin);
 }
 
- bool
-WrapperFactory::AllowWaiver(JSObject* wrapper) {
-    MOZ_ASSERT(js::IsCrossCompartmentWrapper(wrapper));
-    return AllowWaiver(js::GetObjectCompartment(wrapper),
-                       js::GetObjectCompartment(js::UncheckedUnwrap(wrapper)));
+ bool WrapperFactory::AllowWaiver(JSObject* wrapper) {
+  MOZ_ASSERT(js::IsCrossCompartmentWrapper(wrapper));
+  return AllowWaiver(js::GetObjectCompartment(wrapper),
+                     js::GetObjectCompartment(js::UncheckedUnwrap(wrapper)));
 }
 
-inline bool
-ShouldWaiveXray(JSContext* cx, JSObject* originalObj)
-{
-    unsigned flags;
-    (void) js::UncheckedUnwrap(originalObj,  true, &flags);
+inline bool ShouldWaiveXray(JSContext* cx, JSObject* originalObj) {
+  unsigned flags;
+  (void)js::UncheckedUnwrap(originalObj,  true,
+                            &flags);
 
-    
-    if (!(flags & WrapperFactory::WAIVE_XRAY_WRAPPER_FLAG)) {
-        return false;
-    }
+  
+  if (!(flags & WrapperFactory::WAIVE_XRAY_WRAPPER_FLAG)) {
+    return false;
+  }
 
-    
-    
-    
-    if (!(flags & Wrapper::CROSS_COMPARTMENT)) {
-        return true;
-    }
+  
+  
+  
+  if (!(flags & Wrapper::CROSS_COMPARTMENT)) {
+    return true;
+  }
 
-    
-    
-    
-    JS::Compartment* oldCompartment = js::GetObjectCompartment(originalObj);
-    JS::Compartment* newCompartment = js::GetContextCompartment(cx);
-    bool sameOrigin = false;
-    if (OriginAttributes::IsRestrictOpenerAccessForFPI()) {
-        sameOrigin =
-            CompartmentOriginInfo::Subsumes(oldCompartment, newCompartment) &&
-            CompartmentOriginInfo::Subsumes(newCompartment, oldCompartment);
-    } else {
-        sameOrigin =
-            CompartmentOriginInfo::SubsumesIgnoringFPD(oldCompartment, newCompartment) &&
-            CompartmentOriginInfo::SubsumesIgnoringFPD(newCompartment, oldCompartment);
-    }
-    return sameOrigin;
+  
+  
+  
+  JS::Compartment* oldCompartment = js::GetObjectCompartment(originalObj);
+  JS::Compartment* newCompartment = js::GetContextCompartment(cx);
+  bool sameOrigin = false;
+  if (OriginAttributes::IsRestrictOpenerAccessForFPI()) {
+    sameOrigin =
+        CompartmentOriginInfo::Subsumes(oldCompartment, newCompartment) &&
+        CompartmentOriginInfo::Subsumes(newCompartment, oldCompartment);
+  } else {
+    sameOrigin = CompartmentOriginInfo::SubsumesIgnoringFPD(oldCompartment,
+                                                            newCompartment) &&
+                 CompartmentOriginInfo::SubsumesIgnoringFPD(newCompartment,
+                                                            oldCompartment);
+  }
+  return sameOrigin;
 }
 
-void
-WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
-                                   HandleObject objArg, HandleObject objectPassedToWrap,
-                                   MutableHandleObject retObj)
-{
-    bool waive = ShouldWaiveXray(cx, objectPassedToWrap);
-    RootedObject obj(cx, objArg);
-    retObj.set(nullptr);
+void WrapperFactory::PrepareForWrapping(JSContext* cx, HandleObject scope,
+                                        HandleObject objArg,
+                                        HandleObject objectPassedToWrap,
+                                        MutableHandleObject retObj) {
+  bool waive = ShouldWaiveXray(cx, objectPassedToWrap);
+  RootedObject obj(cx, objArg);
+  retObj.set(nullptr);
+  
+  
+  if (js::IsWindow(obj)) {
+    obj = js::ToWindowProxyIfWindow(obj);
+    MOZ_ASSERT(obj);
     
     
-    if (js::IsWindow(obj)) {
-        obj = js::ToWindowProxyIfWindow(obj);
-        MOZ_ASSERT(obj);
-        
-        
-        obj = js::UncheckedUnwrap(obj);
-        if (JS_IsDeadWrapper(obj)) {
-            retObj.set(JS_NewDeadWrapper(cx, obj));
-            return;
-        }
-        MOZ_ASSERT(js::IsWindowProxy(obj));
-        
-        
-        
-        ExposeObjectToActiveJS(obj);
-    }
-
-    
-    
+    obj = js::UncheckedUnwrap(obj);
     if (JS_IsDeadWrapper(obj)) {
-        retObj.set(JS_NewDeadWrapper(cx, obj));
-        return;
+      retObj.set(JS_NewDeadWrapper(cx, obj));
+      return;
     }
+    MOZ_ASSERT(js::IsWindowProxy(obj));
+    
+    
+    
+    ExposeObjectToActiveJS(obj);
+  }
 
-    
-    
-    
-    
-    
-    
-    JS::Compartment* origin = js::GetObjectCompartment(obj);
-    JS::Compartment* target = js::GetObjectCompartment(scope);
-    if (!JS_IsScriptSourceObject(obj) &&
-        (CompartmentPrivate::Get(origin)->wasNuked ||
-         CompartmentPrivate::Get(target)->wasNuked)) {
-        NS_WARNING("Trying to create a wrapper into or out of a nuked compartment");
+  
+  
+  if (JS_IsDeadWrapper(obj)) {
+    retObj.set(JS_NewDeadWrapper(cx, obj));
+    return;
+  }
 
-        retObj.set(JS_NewDeadWrapper(cx));
-        return;
-    }
+  
+  
+  
+  
+  
+  
+  JS::Compartment* origin = js::GetObjectCompartment(obj);
+  JS::Compartment* target = js::GetObjectCompartment(scope);
+  if (!JS_IsScriptSourceObject(obj) &&
+      (CompartmentPrivate::Get(origin)->wasNuked ||
+       CompartmentPrivate::Get(target)->wasNuked)) {
+    NS_WARNING("Trying to create a wrapper into or out of a nuked compartment");
 
+    retObj.set(JS_NewDeadWrapper(cx));
+    return;
+  }
 
-    
-    
-    
-    if (js::IsWindowProxy(obj)) {
-        retObj.set(waive ? WaiveXray(cx, obj) : obj);
-        return;
-    }
-
-    
-    
-    MOZ_ASSERT(!IsWrapper(obj));
-
-    
-    
-    
-    
-    
-    if (!IS_WN_REFLECTOR(obj) || JS_IsGlobalObject(obj)) {
-        retObj.set(waive ? WaiveXray(cx, obj) : obj);
-        return;
-    }
-
-    XPCWrappedNative* wn = XPCWrappedNative::Get(obj);
-
-    JSAutoRealm ar(cx, obj);
-    XPCCallContext ccx(cx, obj);
-    RootedObject wrapScope(cx, scope);
-
-    {
-        if (ccx.GetScriptable() && ccx.GetScriptable()->WantPreCreate()) {
-            
-            
-
-            
-            
-            
-            
-            nsresult rv = wn->GetScriptable()->
-                PreCreate(wn->Native(), cx, scope, wrapScope.address());
-            if (NS_FAILED(rv)) {
-                retObj.set(waive ? WaiveXray(cx, obj) : obj);
-                return;
-            }
-
-            
-            
-            
-            
-            if (js::GetObjectCompartment(scope) != js::GetObjectCompartment(wrapScope)) {
-                retObj.set(waive ? WaiveXray(cx, obj) : obj);
-                return;
-            }
-
-            RootedObject currentScope(cx, JS::GetNonCCWObjectGlobal(obj));
-            if (MOZ_UNLIKELY(wrapScope != currentScope)) {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                RootedObject probe(cx);
-                rv = wn->GetScriptable()->
-                    PreCreate(wn->Native(), cx, currentScope, probe.address());
-
-                
-                if (probe != currentScope) {
-                    MOZ_ASSERT(probe == wrapScope);
-                    retObj.set(waive ? WaiveXray(cx, obj) : obj);
-                    return;
-                }
-
-                
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if (!AccessCheck::isChrome(js::GetObjectCompartment(wrapScope)) &&
-                 CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(wrapScope),
-                                                 js::GetObjectCompartment(obj)))
-            {
-                retObj.set(waive ? WaiveXray(cx, obj) : obj);
-                return;
-            }
-        }
-    }
-
-    
-    
-    RootedValue v(cx);
-    nsresult rv =
-        nsXPConnect::XPConnect()->WrapNativeToJSVal(cx, wrapScope, wn->Native(), nullptr,
-                                                    &NS_GET_IID(nsISupports), false, &v);
-    if (NS_FAILED(rv)) {
-        return;
-    }
-
-    obj.set(&v.toObject());
-    MOZ_ASSERT(IS_WN_REFLECTOR(obj), "bad object");
-    MOZ_ASSERT(JS::ObjectIsNotGray(obj), "Should never return gray reflectors");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    XPCWrappedNative* newwn = XPCWrappedNative::Get(obj);
-    RefPtr<XPCNativeSet> unionSet = XPCNativeSet::GetNewOrUsed(newwn->GetSet(),
-                                                               wn->GetSet(), false);
-    if (!unionSet) {
-        return;
-    }
-    newwn->SetSet(unionSet.forget());
-
+  
+  
+  
+  if (js::IsWindowProxy(obj)) {
     retObj.set(waive ? WaiveXray(cx, obj) : obj);
+    return;
+  }
+
+  
+  
+  MOZ_ASSERT(!IsWrapper(obj));
+
+  
+  
+  
+  
+  
+  if (!IS_WN_REFLECTOR(obj) || JS_IsGlobalObject(obj)) {
+    retObj.set(waive ? WaiveXray(cx, obj) : obj);
+    return;
+  }
+
+  XPCWrappedNative* wn = XPCWrappedNative::Get(obj);
+
+  JSAutoRealm ar(cx, obj);
+  XPCCallContext ccx(cx, obj);
+  RootedObject wrapScope(cx, scope);
+
+  {
+    if (ccx.GetScriptable() && ccx.GetScriptable()->WantPreCreate()) {
+      
+      
+
+      
+      
+      
+      
+      nsresult rv = wn->GetScriptable()->PreCreate(wn->Native(), cx, scope,
+                                                   wrapScope.address());
+      if (NS_FAILED(rv)) {
+        retObj.set(waive ? WaiveXray(cx, obj) : obj);
+        return;
+      }
+
+      
+      
+      
+      
+      if (js::GetObjectCompartment(scope) !=
+          js::GetObjectCompartment(wrapScope)) {
+        retObj.set(waive ? WaiveXray(cx, obj) : obj);
+        return;
+      }
+
+      RootedObject currentScope(cx, JS::GetNonCCWObjectGlobal(obj));
+      if (MOZ_UNLIKELY(wrapScope != currentScope)) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        RootedObject probe(cx);
+        rv = wn->GetScriptable()->PreCreate(wn->Native(), cx, currentScope,
+                                            probe.address());
+
+        
+        if (probe != currentScope) {
+          MOZ_ASSERT(probe == wrapScope);
+          retObj.set(waive ? WaiveXray(cx, obj) : obj);
+          return;
+        }
+
+        
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!AccessCheck::isChrome(js::GetObjectCompartment(wrapScope)) &&
+          CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(wrapScope),
+                                          js::GetObjectCompartment(obj))) {
+        retObj.set(waive ? WaiveXray(cx, obj) : obj);
+        return;
+      }
+    }
+  }
+
+  
+  
+  RootedValue v(cx);
+  nsresult rv = nsXPConnect::XPConnect()->WrapNativeToJSVal(
+      cx, wrapScope, wn->Native(), nullptr, &NS_GET_IID(nsISupports), false,
+      &v);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  obj.set(&v.toObject());
+  MOZ_ASSERT(IS_WN_REFLECTOR(obj), "bad object");
+  MOZ_ASSERT(JS::ObjectIsNotGray(obj), "Should never return gray reflectors");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  XPCWrappedNative* newwn = XPCWrappedNative::Get(obj);
+  RefPtr<XPCNativeSet> unionSet =
+      XPCNativeSet::GetNewOrUsed(newwn->GetSet(), wn->GetSet(), false);
+  if (!unionSet) {
+    return;
+  }
+  newwn->SetSet(unionSet.forget());
+
+  retObj.set(waive ? WaiveXray(cx, obj) : obj);
 }
 
 #ifdef DEBUG
-static void
-DEBUG_CheckUnwrapSafety(HandleObject obj, const js::Wrapper* handler,
-                        JS::Compartment* origin, JS::Compartment* target)
-{
-    if (!JS_IsScriptSourceObject(obj) &&
-        (CompartmentPrivate::Get(origin)->wasNuked || CompartmentPrivate::Get(target)->wasNuked)) {
-        
-        
-        
-        MOZ_ASSERT_UNREACHABLE("CheckUnwrapSafety called for a dead wrapper");
-    } else if (AccessCheck::isChrome(target) || xpc::IsUniversalXPConnectEnabled(target)) {
-        
-        MOZ_ASSERT(!handler->hasSecurityPolicy());
-    } else if (CompartmentPrivate::Get(origin)->forcePermissiveCOWs) {
-        
-        
-        
-        MOZ_ASSERT(!handler->hasSecurityPolicy());
-    } else {
-        
-        MOZ_ASSERT(handler->hasSecurityPolicy() == !(OriginAttributes::IsRestrictOpenerAccessForFPI() ?
-                                                       AccessCheck::subsumesConsideringDomain(target, origin) :
-                                                       AccessCheck::subsumesConsideringDomainIgnoringFPD(target, origin)));
-    }
+static void DEBUG_CheckUnwrapSafety(HandleObject obj,
+                                    const js::Wrapper* handler,
+                                    JS::Compartment* origin,
+                                    JS::Compartment* target) {
+  if (!JS_IsScriptSourceObject(obj) &&
+      (CompartmentPrivate::Get(origin)->wasNuked ||
+       CompartmentPrivate::Get(target)->wasNuked)) {
+    
+    
+    
+    MOZ_ASSERT_UNREACHABLE("CheckUnwrapSafety called for a dead wrapper");
+  } else if (AccessCheck::isChrome(target) ||
+             xpc::IsUniversalXPConnectEnabled(target)) {
+    
+    
+    MOZ_ASSERT(!handler->hasSecurityPolicy());
+  } else if (CompartmentPrivate::Get(origin)->forcePermissiveCOWs) {
+    
+    
+    
+    MOZ_ASSERT(!handler->hasSecurityPolicy());
+  } else {
+    
+    MOZ_ASSERT(handler->hasSecurityPolicy() ==
+               !(OriginAttributes::IsRestrictOpenerAccessForFPI()
+                     ? AccessCheck::subsumesConsideringDomain(target, origin)
+                     : AccessCheck::subsumesConsideringDomainIgnoringFPD(
+                           target, origin)));
+  }
 }
 #else
-#define DEBUG_CheckUnwrapSafety(obj, handler, origin, target) {}
+#define DEBUG_CheckUnwrapSafety(obj, handler, origin, target) \
+  {}
 #endif
 
-static const Wrapper*
-SelectWrapper(bool securityWrapper, XrayType xrayType, bool waiveXrays, JSObject* obj)
-{
-    
-    
-    if (waiveXrays) {
-        MOZ_ASSERT(!securityWrapper);
-        return &WaiveXrayWrapper::singleton;
-    }
+static const Wrapper* SelectWrapper(bool securityWrapper, XrayType xrayType,
+                                    bool waiveXrays, JSObject* obj) {
+  
+  
+  if (waiveXrays) {
+    MOZ_ASSERT(!securityWrapper);
+    return &WaiveXrayWrapper::singleton;
+  }
 
-    
-    
-    if (xrayType == NotXray) {
-        if (!securityWrapper) {
-            return &CrossCompartmentWrapper::singleton;
-        }
-        return &FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>::singleton;
-    }
-
-    
-    
+  
+  
+  if (xrayType == NotXray) {
     if (!securityWrapper) {
-        if (xrayType == XrayForDOMObject) {
-            return &PermissiveXrayDOM::singleton;
-        } else if (xrayType == XrayForJSObject) {
-            return &PermissiveXrayJS::singleton;
-        }
-        MOZ_ASSERT(xrayType == XrayForOpaqueObject);
-        return &PermissiveXrayOpaque::singleton;
+      return &CrossCompartmentWrapper::singleton;
     }
+    return &FilteringWrapper<CrossCompartmentSecurityWrapper,
+                             Opaque>::singleton;
+  }
 
-    
-    if (xrayType == XrayForDOMObject && IdentifyCrossOriginObject(obj) != CrossOriginOpaque) {
-        return &FilteringWrapper<CrossOriginXrayWrapper,
-                                 CrossOriginAccessiblePropertiesOnly>::singleton;
+  
+  
+  if (!securityWrapper) {
+    if (xrayType == XrayForDOMObject) {
+      return &PermissiveXrayDOM::singleton;
+    } else if (xrayType == XrayForJSObject) {
+      return &PermissiveXrayJS::singleton;
     }
+    MOZ_ASSERT(xrayType == XrayForOpaqueObject);
+    return &PermissiveXrayOpaque::singleton;
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    if (xrayType == XrayForJSObject && IsInContentXBLScope(obj)) {
-        return &FilteringWrapper<CrossCompartmentSecurityWrapper, OpaqueWithCall>::singleton;
-    }
-    return &FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>::singleton;
+  
+  if (xrayType == XrayForDOMObject &&
+      IdentifyCrossOriginObject(obj) != CrossOriginOpaque) {
+    return &FilteringWrapper<CrossOriginXrayWrapper,
+                             CrossOriginAccessiblePropertiesOnly>::singleton;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (xrayType == XrayForJSObject && IsInContentXBLScope(obj)) {
+    return &FilteringWrapper<CrossCompartmentSecurityWrapper,
+                             OpaqueWithCall>::singleton;
+  }
+  return &FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>::singleton;
 }
 
-JSObject*
-WrapperFactory::Rewrap(JSContext* cx, HandleObject existing, HandleObject obj)
-{
-    MOZ_ASSERT(!IsWrapper(obj) ||
-               GetProxyHandler(obj) == &XrayWaiver ||
-               js::IsWindowProxy(obj),
-               "wrapped object passed to rewrap");
-    MOZ_ASSERT(!js::IsWindow(obj));
-    MOZ_ASSERT(dom::IsJSAPIActive());
+JSObject* WrapperFactory::Rewrap(JSContext* cx, HandleObject existing,
+                                 HandleObject obj) {
+  MOZ_ASSERT(!IsWrapper(obj) || GetProxyHandler(obj) == &XrayWaiver ||
+                 js::IsWindowProxy(obj),
+             "wrapped object passed to rewrap");
+  MOZ_ASSERT(!js::IsWindow(obj));
+  MOZ_ASSERT(dom::IsJSAPIActive());
 
-    
-    JS::Compartment* origin = js::GetObjectCompartment(obj);
-    JS::Compartment* target = js::GetContextCompartment(cx);
-    bool originIsChrome = AccessCheck::isChrome(origin);
-    bool targetIsChrome = AccessCheck::isChrome(target);
-    bool originSubsumesTarget = OriginAttributes::IsRestrictOpenerAccessForFPI() ?
-                                  AccessCheck::subsumesConsideringDomain(origin, target) :
-                                  AccessCheck::subsumesConsideringDomainIgnoringFPD(origin, target);
-    bool targetSubsumesOrigin = OriginAttributes::IsRestrictOpenerAccessForFPI() ?
-                                  AccessCheck::subsumesConsideringDomain(target, origin) :
-                                  AccessCheck::subsumesConsideringDomainIgnoringFPD(target, origin);
-    bool sameOrigin = targetSubsumesOrigin && originSubsumesTarget;
+  
+  JS::Compartment* origin = js::GetObjectCompartment(obj);
+  JS::Compartment* target = js::GetContextCompartment(cx);
+  bool originIsChrome = AccessCheck::isChrome(origin);
+  bool targetIsChrome = AccessCheck::isChrome(target);
+  bool originSubsumesTarget =
+      OriginAttributes::IsRestrictOpenerAccessForFPI()
+          ? AccessCheck::subsumesConsideringDomain(origin, target)
+          : AccessCheck::subsumesConsideringDomainIgnoringFPD(origin, target);
+  bool targetSubsumesOrigin =
+      OriginAttributes::IsRestrictOpenerAccessForFPI()
+          ? AccessCheck::subsumesConsideringDomain(target, origin)
+          : AccessCheck::subsumesConsideringDomainIgnoringFPD(target, origin);
+  bool sameOrigin = targetSubsumesOrigin && originSubsumesTarget;
 
-    const Wrapper* wrapper;
+  const Wrapper* wrapper;
 
-    CompartmentPrivate* originCompartmentPrivate =
+  CompartmentPrivate* originCompartmentPrivate =
       CompartmentPrivate::Get(origin);
-    CompartmentPrivate* targetCompartmentPrivate =
+  CompartmentPrivate* targetCompartmentPrivate =
       CompartmentPrivate::Get(target);
 
-    
-    
-    
+  
+  
+  
 
+  
+  
+  if (targetCompartmentPrivate->universalXPConnectEnabled) {
+    CrashIfNotInAutomation();
+    wrapper = &CrossCompartmentWrapper::singleton;
+  }
+
+  
+  else if (originCompartmentPrivate->forcePermissiveCOWs) {
+    CrashIfNotInAutomation();
+    wrapper = &CrossCompartmentWrapper::singleton;
+  }
+
+  
+  else if (originIsChrome && !targetIsChrome) {
     
     
-    if (targetCompartmentPrivate->universalXPConnectEnabled) {
-        CrashIfNotInAutomation();
-        wrapper = &CrossCompartmentWrapper::singleton;
-    }
-
     
-    else if (originCompartmentPrivate->forcePermissiveCOWs) {
-        CrashIfNotInAutomation();
-        wrapper = &CrossCompartmentWrapper::singleton;
-    }
-
-    
-    else if (originIsChrome && !targetIsChrome) {
-        
-        
-        
-        if ((IdentifyStandardInstance(obj) == JSProto_Function ||
-            (jsipc::IsCPOW(obj) && JS::IsCallable(obj) &&
-             XRE_IsContentProcess())))
-        {
-            wrapper = &FilteringWrapper<CrossCompartmentSecurityWrapper, OpaqueWithCall>::singleton;
-        }
-
-        
-        
-        
-        else if (IdentifyStandardInstance(obj) == JSProto_Object) {
-            wrapper = &ChromeObjectWrapper::singleton;
-        }
-
-        
-        else {
-            wrapper = &FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>::singleton;
-        }
+    if ((IdentifyStandardInstance(obj) == JSProto_Function ||
+         (jsipc::IsCPOW(obj) && JS::IsCallable(obj) &&
+          XRE_IsContentProcess()))) {
+      wrapper = &FilteringWrapper<CrossCompartmentSecurityWrapper,
+                                  OpaqueWithCall>::singleton;
     }
 
     
     
     
-    
-    
+    else if (IdentifyStandardInstance(obj) == JSProto_Object) {
+      wrapper = &ChromeObjectWrapper::singleton;
+    }
+
     
     else {
-
-        
-        
-        bool securityWrapper = !targetSubsumesOrigin;
-
-        
-        
-        
-        
-        
-        
-        bool sameOriginXrays = originCompartmentPrivate->wantXrays ||
-                               targetCompartmentPrivate->wantXrays;
-        bool wantXrays = !sameOrigin || sameOriginXrays;
-
-        XrayType xrayType = wantXrays ? GetXrayType(obj) : NotXray;
-
-        
-        
-        bool waiveXrays = wantXrays && !securityWrapper &&
-                          targetCompartmentPrivate->allowWaivers &&
-                          HasWaiveXrayFlag(obj);
-
-        wrapper = SelectWrapper(securityWrapper, xrayType, waiveXrays, obj);
+      wrapper =
+          &FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>::singleton;
     }
+  }
 
-    if (!targetSubsumesOrigin &&
-        !originCompartmentPrivate->forcePermissiveCOWs) {
-        
-        
-        
-        if (JSFunction* fun = JS_GetObjectFunction(obj)) {
-            if (JS_IsBuiltinEvalFunction(fun) || JS_IsBuiltinFunctionConstructor(fun)) {
-                NS_WARNING("Trying to expose eval or Function to non-subsuming content!");
-                wrapper = &FilteringWrapper<CrossCompartmentSecurityWrapper, Opaque>::singleton;
-            }
-        }
+  
+  
+  
+  
+  
+  
+  else {
+    
+    
+    bool securityWrapper = !targetSubsumesOrigin;
+
+    
+    
+    
+    
+    
+    
+    bool sameOriginXrays = originCompartmentPrivate->wantXrays ||
+                           targetCompartmentPrivate->wantXrays;
+    bool wantXrays = !sameOrigin || sameOriginXrays;
+
+    XrayType xrayType = wantXrays ? GetXrayType(obj) : NotXray;
+
+    
+    
+    bool waiveXrays = wantXrays && !securityWrapper &&
+                      targetCompartmentPrivate->allowWaivers &&
+                      HasWaiveXrayFlag(obj);
+
+    wrapper = SelectWrapper(securityWrapper, xrayType, waiveXrays, obj);
+  }
+
+  if (!targetSubsumesOrigin && !originCompartmentPrivate->forcePermissiveCOWs) {
+    
+    
+    
+    if (JSFunction* fun = JS_GetObjectFunction(obj)) {
+      if (JS_IsBuiltinEvalFunction(fun) ||
+          JS_IsBuiltinFunctionConstructor(fun)) {
+        NS_WARNING(
+            "Trying to expose eval or Function to non-subsuming content!");
+        wrapper = &FilteringWrapper<CrossCompartmentSecurityWrapper,
+                                    Opaque>::singleton;
+      }
     }
+  }
 
-    DEBUG_CheckUnwrapSafety(obj, wrapper, origin, target);
+  DEBUG_CheckUnwrapSafety(obj, wrapper, origin, target);
 
-    if (existing) {
-        return Wrapper::Renew(existing, obj, wrapper);
-    }
+  if (existing) {
+    return Wrapper::Renew(existing, obj, wrapper);
+  }
 
-    return Wrapper::New(cx, obj, wrapper);
+  return Wrapper::New(cx, obj, wrapper);
 }
 
 
 
 
 
-bool
-WrapperFactory::WaiveXrayAndWrap(JSContext* cx, MutableHandleValue vp)
-{
-    if (vp.isPrimitive()) {
-        return JS_WrapValue(cx, vp);
-    }
+bool WrapperFactory::WaiveXrayAndWrap(JSContext* cx, MutableHandleValue vp) {
+  if (vp.isPrimitive()) {
+    return JS_WrapValue(cx, vp);
+  }
 
-    RootedObject obj(cx, &vp.toObject());
-    if (!WaiveXrayAndWrap(cx, &obj)) {
-        return false;
-    }
+  RootedObject obj(cx, &vp.toObject());
+  if (!WaiveXrayAndWrap(cx, &obj)) {
+    return false;
+  }
 
-    vp.setObject(*obj);
-    return true;
+  vp.setObject(*obj);
+  return true;
 }
 
-bool
-WrapperFactory::WaiveXrayAndWrap(JSContext* cx, MutableHandleObject argObj)
-{
-    MOZ_ASSERT(argObj);
-    RootedObject obj(cx, js::UncheckedUnwrap(argObj));
-    MOZ_ASSERT(!js::IsWindow(obj));
-    if (js::IsObjectInContextCompartment(obj, cx)) {
-        argObj.set(obj);
-        return true;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    JS::Compartment* target = js::GetContextCompartment(cx);
-    JS::Compartment* origin = js::GetObjectCompartment(obj);
-    obj = AllowWaiver(target, origin) ? WaiveXray(cx, obj) : obj;
-    if (!obj) {
-        return false;
-    }
-
-    if (!JS_WrapObject(cx, &obj)) {
-        return false;
-    }
+bool WrapperFactory::WaiveXrayAndWrap(JSContext* cx,
+                                      MutableHandleObject argObj) {
+  MOZ_ASSERT(argObj);
+  RootedObject obj(cx, js::UncheckedUnwrap(argObj));
+  MOZ_ASSERT(!js::IsWindow(obj));
+  if (js::IsObjectInContextCompartment(obj, cx)) {
     argObj.set(obj);
     return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  JS::Compartment* target = js::GetContextCompartment(cx);
+  JS::Compartment* origin = js::GetObjectCompartment(obj);
+  obj = AllowWaiver(target, origin) ? WaiveXray(cx, obj) : obj;
+  if (!obj) {
+    return false;
+  }
+
+  if (!JS_WrapObject(cx, &obj)) {
+    return false;
+  }
+  argObj.set(obj);
+  return true;
 }
 
 
@@ -620,109 +616,105 @@ WrapperFactory::WaiveXrayAndWrap(JSContext* cx, MutableHandleObject argObj)
 
 
 
-static bool
-FixWaiverAfterTransplant(JSContext* cx, HandleObject oldWaiver, HandleObject newobj)
-{
-    MOZ_ASSERT(Wrapper::wrapperHandler(oldWaiver) == &XrayWaiver);
-    MOZ_ASSERT(!js::IsCrossCompartmentWrapper(newobj));
+static bool FixWaiverAfterTransplant(JSContext* cx, HandleObject oldWaiver,
+                                     HandleObject newobj) {
+  MOZ_ASSERT(Wrapper::wrapperHandler(oldWaiver) == &XrayWaiver);
+  MOZ_ASSERT(!js::IsCrossCompartmentWrapper(newobj));
 
-    
-    
-    
-    
-    JSObject* newWaiver = WrapperFactory::CreateXrayWaiver(cx, newobj);
-    if (!newWaiver) {
-        return false;
-    }
+  
+  
+  
+  
+  JSObject* newWaiver = WrapperFactory::CreateXrayWaiver(cx, newobj);
+  if (!newWaiver) {
+    return false;
+  }
 
-    
-    
-    if (!js::RemapAllWrappersForObject(cx, oldWaiver, newWaiver)) {
-        return false;
-    }
+  
+  
+  if (!js::RemapAllWrappersForObject(cx, oldWaiver, newWaiver)) {
+    return false;
+  }
 
-    
-    
-    
-    XPCWrappedNativeScope* scope = ObjectScope(oldWaiver);
-    JSObject* key = Wrapper::wrappedObject(oldWaiver);
-    MOZ_ASSERT(scope->mWaiverWrapperMap->Find(key));
-    scope->mWaiverWrapperMap->Remove(key);
-    return true;
+  
+  
+  
+  XPCWrappedNativeScope* scope = ObjectScope(oldWaiver);
+  JSObject* key = Wrapper::wrappedObject(oldWaiver);
+  MOZ_ASSERT(scope->mWaiverWrapperMap->Find(key));
+  scope->mWaiverWrapperMap->Remove(key);
+  return true;
 }
 
-JSObject*
-TransplantObject(JSContext* cx, JS::HandleObject origobj, JS::HandleObject target)
-{
-    RootedObject oldWaiver(cx, WrapperFactory::GetXrayWaiver(origobj));
-    RootedObject newIdentity(cx, JS_TransplantObject(cx, origobj, target));
-    if (!newIdentity || !oldWaiver) {
-       return newIdentity;
-    }
-
-    if (!FixWaiverAfterTransplant(cx, oldWaiver, newIdentity)) {
-        return nullptr;
-    }
+JSObject* TransplantObject(JSContext* cx, JS::HandleObject origobj,
+                           JS::HandleObject target) {
+  RootedObject oldWaiver(cx, WrapperFactory::GetXrayWaiver(origobj));
+  RootedObject newIdentity(cx, JS_TransplantObject(cx, origobj, target));
+  if (!newIdentity || !oldWaiver) {
     return newIdentity;
+  }
+
+  if (!FixWaiverAfterTransplant(cx, oldWaiver, newIdentity)) {
+    return nullptr;
+  }
+  return newIdentity;
 }
 
-JSObject*
-TransplantObjectRetainingXrayExpandos(JSContext* cx, JS::HandleObject origobj,
-                                      JS::HandleObject target)
-{
-    
-    
-    
-    RootedObject expandoChain(cx, GetXrayTraits(origobj)->detachExpandoChain(origobj));
+JSObject* TransplantObjectRetainingXrayExpandos(JSContext* cx,
+                                                JS::HandleObject origobj,
+                                                JS::HandleObject target) {
+  
+  
+  
+  RootedObject expandoChain(
+      cx, GetXrayTraits(origobj)->detachExpandoChain(origobj));
 
-    RootedObject newIdentity(cx, TransplantObject(cx, origobj, target));
+  RootedObject newIdentity(cx, TransplantObject(cx, origobj, target));
+
+  
+  if (!GetXrayTraits(newIdentity)
+           ->cloneExpandoChain(cx, newIdentity, expandoChain)) {
+    
+    
+    
+    MOZ_CRASH();
+  }
+
+  return newIdentity;
+}
+
+nsIGlobalObject* NativeGlobal(JSObject* obj) {
+  obj = JS::GetNonCCWObjectGlobal(obj);
+
+  
+  
+  MOZ_ASSERT((GetObjectClass(obj)->flags &
+              (JSCLASS_PRIVATE_IS_NSISUPPORTS | JSCLASS_HAS_PRIVATE)) ||
+             dom::UnwrapDOMObjectToISupports(obj));
+
+  nsISupports* native = dom::UnwrapDOMObjectToISupports(obj);
+  if (!native) {
+    native = static_cast<nsISupports*>(js::GetObjectPrivate(obj));
+    MOZ_ASSERT(native);
 
     
-    if (!GetXrayTraits(newIdentity)->cloneExpandoChain(cx, newIdentity, expandoChain)) {
-        
-        
-        
-        MOZ_CRASH();
+    
+    
+    
+    if (nsCOMPtr<nsIXPConnectWrappedNative> wn = do_QueryInterface(native)) {
+      native = wn->Native();
     }
+  }
 
-    return newIdentity;
+  nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(native);
+  MOZ_ASSERT(global,
+             "Native held by global needs to implement nsIGlobalObject!");
+
+  return global;
 }
 
-nsIGlobalObject*
-NativeGlobal(JSObject* obj)
-{
-    obj = JS::GetNonCCWObjectGlobal(obj);
-
-    
-    
-    MOZ_ASSERT((GetObjectClass(obj)->flags & (JSCLASS_PRIVATE_IS_NSISUPPORTS |
-                                             JSCLASS_HAS_PRIVATE)) ||
-               dom::UnwrapDOMObjectToISupports(obj));
-
-    nsISupports* native = dom::UnwrapDOMObjectToISupports(obj);
-    if (!native) {
-        native = static_cast<nsISupports*>(js::GetObjectPrivate(obj));
-        MOZ_ASSERT(native);
-
-        
-        
-        
-        
-        if (nsCOMPtr<nsIXPConnectWrappedNative> wn = do_QueryInterface(native)) {
-            native = wn->Native();
-        }
-    }
-
-    nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(native);
-    MOZ_ASSERT(global, "Native held by global needs to implement nsIGlobalObject!");
-
-    return global;
+nsIGlobalObject* CurrentNativeGlobal(JSContext* cx) {
+  return xpc::NativeGlobal(JS::CurrentGlobalOrNull(cx));
 }
 
-nsIGlobalObject*
-CurrentNativeGlobal(JSContext* cx)
-{
-    return xpc::NativeGlobal(JS::CurrentGlobalOrNull(cx));
-}
-
-} 
+}  

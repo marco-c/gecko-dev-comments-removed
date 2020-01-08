@@ -19,20 +19,17 @@
 
 using namespace mozilla;
 
- bool
-FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
-                                           const nsAString& aPolicy,
-                                           nsIDocShell* aDocShell)
-{
+ bool FramingChecker::CheckOneFrameOptionsPolicy(
+    nsIHttpChannel* aHttpChannel, const nsAString& aPolicy,
+    nsIDocShell* aDocShell) {
   static const char allowFrom[] = "allow-from";
   const uint32_t allowFromLen = ArrayLength(allowFrom) - 1;
   bool isAllowFrom =
-    StringHead(aPolicy, allowFromLen).LowerCaseEqualsLiteral(allowFrom);
+      StringHead(aPolicy, allowFromLen).LowerCaseEqualsLiteral(allowFrom);
 
   
   if (!aPolicy.LowerCaseEqualsLiteral("deny") &&
-      !aPolicy.LowerCaseEqualsLiteral("sameorigin") &&
-      !isAllowFrom) {
+      !aPolicy.LowerCaseEqualsLiteral("sameorigin") && !isAllowFrom) {
     return true;
   }
 
@@ -73,7 +70,7 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   nsCOMPtr<nsIDocument> topDoc;
   nsresult rv;
   nsCOMPtr<nsIScriptSecurityManager> ssm =
-    do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
+      do_GetService(NS_SCRIPTSECURITYMANAGER_CONTRACTID, &rv);
   if (!ssm) {
     MOZ_CRASH();
   }
@@ -87,7 +84,7 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   
   
   while (NS_SUCCEEDED(
-           curDocShellItem->GetParent(getter_AddRefs(parentDocShellItem))) &&
+             curDocShellItem->GetParent(getter_AddRefs(parentDocShellItem))) &&
          parentDocShellItem) {
     nsCOMPtr<nsIDocShell> curDocShell = do_QueryInterface(curDocShellItem);
     if (curDocShell && curDocShell->GetIsMozBrowser()) {
@@ -98,7 +95,7 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
     topDoc = parentDocShellItem->GetDocument();
     if (topDoc) {
       if (NS_SUCCEEDED(
-            ssm->IsSystemPrincipal(topDoc->NodePrincipal(), &system)) &&
+              ssm->IsSystemPrincipal(topDoc->NodePrincipal(), &system)) &&
           system) {
         
         break;
@@ -107,7 +104,8 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
       if (checkSameOrigin) {
         topDoc->NodePrincipal()->GetURI(getter_AddRefs(topUri));
         bool isPrivateWin =
-          topDoc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId > 0;
+            topDoc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId >
+            0;
         rv = ssm->CheckSameOriginURI(uri, topUri, true, isPrivateWin);
 
         
@@ -143,8 +141,7 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
   
   if (isAllowFrom) {
     if (aPolicy.Length() == allowFromLen ||
-        (aPolicy[allowFromLen] != ' ' &&
-         aPolicy[allowFromLen] != '\t')) {
+        (aPolicy[allowFromLen] != ' ' && aPolicy[allowFromLen] != '\t')) {
       ReportXFOViolation(curDocShellItem, uri, eALLOWFROM);
       return false;
     }
@@ -153,7 +150,7 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
       return false;
     }
     bool isPrivateWin =
-      topDoc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId > 0;
+        topDoc->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId > 0;
     rv = ssm->CheckSameOriginURI(uri, topUri, true, isPrivateWin);
     if (NS_FAILED(rv)) {
       ReportXFOViolation(curDocShellItem, uri, eALLOWFROM);
@@ -165,9 +162,8 @@ FramingChecker::CheckOneFrameOptionsPolicy(nsIHttpChannel* aHttpChannel,
 }
 
 
-static bool
-ShouldIgnoreFrameOptions(nsIChannel* aChannel, nsIPrincipal* aPrincipal)
-{
+static bool ShouldIgnoreFrameOptions(nsIChannel* aChannel,
+                                     nsIPrincipal* aPrincipal) {
   NS_ENSURE_TRUE(aChannel, false);
   NS_ENSURE_TRUE(aPrincipal, false);
 
@@ -189,19 +185,18 @@ ShouldIgnoreFrameOptions(nsIChannel* aChannel, nsIPrincipal* aPrincipal)
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   uint64_t innerWindowID = loadInfo ? loadInfo->GetInnerWindowID() : 0;
-  bool privateWindow = loadInfo ?  !!loadInfo->GetOriginAttributes().mPrivateBrowsingId : false;
-  const char16_t* params[] = { u"x-frame-options",
-                               u"frame-ancestors" };
-  CSP_LogLocalizedStr("IgnoringSrcBecauseOfDirective",
-                      params, ArrayLength(params),
-                      EmptyString(), 
-                      EmptyString(), 
-                      0,             
-                      0,             
+  bool privateWindow =
+      loadInfo ? !!loadInfo->GetOriginAttributes().mPrivateBrowsingId : false;
+  const char16_t* params[] = {u"x-frame-options", u"frame-ancestors"};
+  CSP_LogLocalizedStr("IgnoringSrcBecauseOfDirective", params,
+                      ArrayLength(params),
+                      EmptyString(),  
+                      EmptyString(),  
+                      0,              
+                      0,              
                       nsIScriptError::warningFlag,
                       NS_LITERAL_CSTRING("IgnoringSrcBecauseOfDirective"),
-                      innerWindowID,
-                      privateWindow);
+                      innerWindowID, privateWindow);
 
   return true;
 }
@@ -209,11 +204,9 @@ ShouldIgnoreFrameOptions(nsIChannel* aChannel, nsIPrincipal* aPrincipal)
 
 
 
- bool
-FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
-                                  nsIDocShell* aDocShell,
-                                  nsIPrincipal* aPrincipal)
-{
+ bool FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
+                                                    nsIDocShell* aDocShell,
+                                                    nsIPrincipal* aPrincipal) {
   if (!aChannel || !aDocShell) {
     return true;
   }
@@ -226,7 +219,8 @@ FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (!httpChannel) {
     
-    rv = nsDocShell::Cast(aDocShell)->GetHttpChannel(aChannel, getter_AddRefs(httpChannel));
+    rv = nsDocShell::Cast(aDocShell)->GetHttpChannel(
+        aChannel, getter_AddRefs(httpChannel));
     if (NS_FAILED(rv)) {
       return false;
     }
@@ -237,8 +231,8 @@ FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   }
 
   nsAutoCString xfoHeaderCValue;
-  Unused << httpChannel->GetResponseHeader(NS_LITERAL_CSTRING("X-Frame-Options"),
-                                           xfoHeaderCValue);
+  Unused << httpChannel->GetResponseHeader(
+      NS_LITERAL_CSTRING("X-Frame-Options"), xfoHeaderCValue);
   NS_ConvertUTF8toUTF16 xfoHeaderValue(xfoHeaderCValue);
 
   
@@ -261,11 +255,10 @@ FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
           MOZ_ASSERT(loadInfo);
 
           RefPtr<NullPrincipal> principal =
-            NullPrincipal::CreateWithInheritedAttributes(
-              loadInfo->TriggeringPrincipal());
-          webNav->LoadURI(NS_LITERAL_STRING("about:blank"),
-                          0, nullptr, nullptr, nullptr,
-                          principal);
+              NullPrincipal::CreateWithInheritedAttributes(
+                  loadInfo->TriggeringPrincipal());
+          webNav->LoadURI(NS_LITERAL_STRING("about:blank"), 0, nullptr, nullptr,
+                          nullptr, principal);
         }
       }
       return false;
@@ -275,11 +268,9 @@ FramingChecker::CheckFrameOptions(nsIChannel* aChannel,
   return true;
 }
 
- void
-FramingChecker::ReportXFOViolation(nsIDocShellTreeItem* aTopDocShellItem,
-                                   nsIURI* aThisURI,
-                                   XFOHeader aHeader)
-{
+ void FramingChecker::ReportXFOViolation(
+    nsIDocShellTreeItem* aTopDocShellItem, nsIURI* aThisURI,
+    XFOHeader aHeader) {
   MOZ_ASSERT(aTopDocShellItem, "Need a top docshell");
 
   nsCOMPtr<nsPIDOMWindowOuter> topOuterWindow = aTopDocShellItem->GetWindow();
@@ -318,9 +309,9 @@ FramingChecker::ReportXFOViolation(nsIDocShellTreeItem* aTopDocShellItem,
   }
 
   nsCOMPtr<nsIConsoleService> consoleService =
-    do_GetService(NS_CONSOLESERVICE_CONTRACTID);
+      do_GetService(NS_CONSOLESERVICE_CONTRACTID);
   nsCOMPtr<nsIScriptError> errorObject =
-    do_CreateInstance(NS_SCRIPTERROR_CONTRACTID);
+      do_CreateInstance(NS_SCRIPTERROR_CONTRACTID);
 
   if (!consoleService || !errorObject) {
     return;
@@ -345,10 +336,9 @@ FramingChecker::ReportXFOViolation(nsIDocShellTreeItem* aTopDocShellItem,
 
   
   
-  rv = errorObject->InitWithSanitizedSource(msg, EmptyString(), EmptyString(),
-                                            0, 0, nsIScriptError::errorFlag,
-                                            "X-Frame-Options",
-                                            topInnerWindow->WindowID());
+  rv = errorObject->InitWithSanitizedSource(
+      msg, EmptyString(), EmptyString(), 0, 0, nsIScriptError::errorFlag,
+      "X-Frame-Options", topInnerWindow->WindowID());
   if (NS_FAILED(rv)) {
     return;
   }

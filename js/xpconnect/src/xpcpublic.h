@@ -38,49 +38,50 @@ namespace mozilla {
 namespace dom {
 class Exception;
 }
-}
+}  
 
-typedef void (* xpcGCCallback)(JSGCStatus status);
+typedef void (*xpcGCCallback)(JSGCStatus status);
 
 namespace xpc {
 
 class Scriptability {
-public:
-    explicit Scriptability(JS::Realm* realm);
-    bool Allowed();
-    bool IsImmuneToScriptPolicy();
+ public:
+  explicit Scriptability(JS::Realm* realm);
+  bool Allowed();
+  bool IsImmuneToScriptPolicy();
 
-    void Block();
-    void Unblock();
-    void SetDocShellAllowsScript(bool aAllowed);
+  void Block();
+  void Unblock();
+  void SetDocShellAllowsScript(bool aAllowed);
 
-    static Scriptability& Get(JSObject* aScope);
+  static Scriptability& Get(JSObject* aScope);
 
-private:
-    
-    
-    
-    
-    uint32_t mScriptBlocks;
+ private:
+  
+  
+  
+  
+  uint32_t mScriptBlocks;
 
-    
-    
-    bool mDocShellAllowsScript;
+  
+  
+  bool mDocShellAllowsScript;
 
-    
-    
-    bool mImmuneToScriptPolicy;
+  
+  
+  bool mImmuneToScriptPolicy;
 
-    
-    
-    bool mScriptBlockedByPolicy;
+  
+  
+  bool mScriptBlockedByPolicy;
 };
 
-JSObject*
-TransplantObject(JSContext* cx, JS::HandleObject origobj, JS::HandleObject target);
+JSObject* TransplantObject(JSContext* cx, JS::HandleObject origobj,
+                           JS::HandleObject target);
 
-JSObject*
-TransplantObjectRetainingXrayExpandos(JSContext* cx, JS::HandleObject origobj, JS::HandleObject target);
+JSObject* TransplantObjectRetainingXrayExpandos(JSContext* cx,
+                                                JS::HandleObject origobj,
+                                                JS::HandleObject target);
 
 bool IsContentXBLCompartment(JS::Compartment* compartment);
 bool IsContentXBLScope(JS::Realm* realm);
@@ -109,61 +110,48 @@ void SetCompartmentChangedDocumentDomain(JS::Compartment* compartment);
 
 
 
-JSObject*
-GetXBLScope(JSContext* cx, JSObject* contentScope);
+JSObject* GetXBLScope(JSContext* cx, JSObject* contentScope);
 
-JSObject*
-GetUAWidgetScope(JSContext* cx, nsIPrincipal* principal);
+JSObject* GetUAWidgetScope(JSContext* cx, nsIPrincipal* principal);
 
-JSObject*
-GetUAWidgetScope(JSContext* cx, JSObject* contentScope);
+JSObject* GetUAWidgetScope(JSContext* cx, JSObject* contentScope);
 
-inline JSObject*
-GetXBLScopeOrGlobal(JSContext* cx, JSObject* obj)
-{
-    MOZ_ASSERT(!js::IsCrossCompartmentWrapper(obj));
-    if (IsInContentXBLScope(obj)) {
-        return JS::GetNonCCWObjectGlobal(obj);
-    }
-    return GetXBLScope(cx, obj);
+inline JSObject* GetXBLScopeOrGlobal(JSContext* cx, JSObject* obj) {
+  MOZ_ASSERT(!js::IsCrossCompartmentWrapper(obj));
+  if (IsInContentXBLScope(obj)) {
+    return JS::GetNonCCWObjectGlobal(obj);
+  }
+  return GetXBLScope(cx, obj);
 }
 
 
 
-bool
-AllowContentXBLScope(JS::Realm* realm);
+bool AllowContentXBLScope(JS::Realm* realm);
 
 
 
 
 
-bool
-UseContentXBLScope(JS::Realm* realm);
+bool UseContentXBLScope(JS::Realm* realm);
 
 
 
-void
-ClearContentXBLScope(JSObject* global);
+void ClearContentXBLScope(JSObject* global);
 
-bool
-IsSandboxPrototypeProxy(JSObject* obj);
+bool IsSandboxPrototypeProxy(JSObject* obj);
 
-bool
-IsReflector(JSObject* obj);
+bool IsReflector(JSObject* obj);
 
-bool
-IsXrayWrapper(JSObject* obj);
+bool IsXrayWrapper(JSObject* obj);
 
 
 
 
 
 
-JSObject*
-XrayAwareCalleeGlobal(JSObject* fun);
+JSObject* XrayAwareCalleeGlobal(JSObject* fun);
 
-void
-TraceXPCGlobal(JSTracer* trc, JSObject* obj);
+void TraceXPCGlobal(JSTracer* trc, JSObject* obj);
 
 
 
@@ -180,18 +168,17 @@ TraceXPCGlobal(JSTracer* trc, JSObject* obj);
 
 
 
-nsresult
-InitClassesWithNewWrappedGlobal(JSContext* aJSContext,
-                                nsISupports* aCOMObj,
-                                nsIPrincipal* aPrincipal,
-                                uint32_t aFlags,
-                                JS::RealmOptions& aOptions,
-                                JS::MutableHandleObject aNewGlobal);
+nsresult InitClassesWithNewWrappedGlobal(JSContext* aJSContext,
+                                         nsISupports* aCOMObj,
+                                         nsIPrincipal* aPrincipal,
+                                         uint32_t aFlags,
+                                         JS::RealmOptions& aOptions,
+                                         JS::MutableHandleObject aNewGlobal);
 
 enum InitClassesFlag {
-    INIT_JS_STANDARD_CLASSES  = 1 << 0,
-    DONT_FIRE_ONNEWGLOBALHOOK = 1 << 1,
-    OMIT_COMPONENTS_OBJECT    = 1 << 2,
+  INIT_JS_STANDARD_CLASSES = 1 << 0,
+  DONT_FIRE_ONNEWGLOBALHOOK = 1 << 1,
+  OMIT_COMPONENTS_OBJECT = 1 << 2,
 };
 
 } 
@@ -200,141 +187,128 @@ namespace JS {
 
 struct RuntimeStats;
 
-} 
+}  
 
 #define XPC_WRAPPER_FLAGS (JSCLASS_HAS_PRIVATE | JSCLASS_FOREGROUND_FINALIZE)
 
 #define XPCONNECT_GLOBAL_FLAGS_WITH_EXTRA_SLOTS(n)                            \
-    JSCLASS_DOM_GLOBAL | JSCLASS_HAS_PRIVATE |                                \
-    JSCLASS_PRIVATE_IS_NSISUPPORTS |                                          \
-    JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(DOM_GLOBAL_SLOTS + n)
+  JSCLASS_DOM_GLOBAL | JSCLASS_HAS_PRIVATE | JSCLASS_PRIVATE_IS_NSISUPPORTS | \
+      JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(DOM_GLOBAL_SLOTS + n)
 
-#define XPCONNECT_GLOBAL_EXTRA_SLOT_OFFSET (JSCLASS_GLOBAL_SLOT_COUNT + DOM_GLOBAL_SLOTS)
+#define XPCONNECT_GLOBAL_EXTRA_SLOT_OFFSET \
+  (JSCLASS_GLOBAL_SLOT_COUNT + DOM_GLOBAL_SLOTS)
 
 #define XPCONNECT_GLOBAL_FLAGS XPCONNECT_GLOBAL_FLAGS_WITH_EXTRA_SLOTS(0)
 
-inline JSObject*
-xpc_FastGetCachedWrapper(JSContext* cx, nsWrapperCache* cache, JS::MutableHandleValue vp)
-{
-    if (cache) {
-        JSObject* wrapper = cache->GetWrapper();
-        if (wrapper &&
-            js::GetObjectCompartment(wrapper) == js::GetContextCompartment(cx))
-        {
-            vp.setObject(*wrapper);
-            return wrapper;
-        }
+inline JSObject* xpc_FastGetCachedWrapper(JSContext* cx, nsWrapperCache* cache,
+                                          JS::MutableHandleValue vp) {
+  if (cache) {
+    JSObject* wrapper = cache->GetWrapper();
+    if (wrapper &&
+        js::GetObjectCompartment(wrapper) == js::GetContextCompartment(cx)) {
+      vp.setObject(*wrapper);
+      return wrapper;
     }
+  }
 
-    return nullptr;
+  return nullptr;
 }
 
 
-extern void
-xpc_TryUnmarkWrappedGrayObject(nsISupports* aWrappedJS);
+extern void xpc_TryUnmarkWrappedGrayObject(nsISupports* aWrappedJS);
 
-extern void
-xpc_UnmarkSkippableJSHolders();
+extern void xpc_UnmarkSkippableJSHolders();
 
 
-extern bool
-xpc_DumpJSStack(bool showArgs, bool showLocals, bool showThisProps);
+extern bool xpc_DumpJSStack(bool showArgs, bool showLocals, bool showThisProps);
 
 
 
-extern JS::UniqueChars
-xpc_PrintJSStack(JSContext* cx, bool showArgs, bool showLocals,
-                 bool showThisProps);
+extern JS::UniqueChars xpc_PrintJSStack(JSContext* cx, bool showArgs,
+                                        bool showLocals, bool showThisProps);
 
 
+class XPCStringConvert {
+ public:
+  
+  
+  
+  static bool ReadableToJSVal(JSContext* cx, const nsAString& readable,
+                              nsStringBuffer** sharedBuffer,
+                              JS::MutableHandleValue vp);
 
-class XPCStringConvert
-{
-public:
-
-    
-    
-    
-    static bool ReadableToJSVal(JSContext* cx, const nsAString& readable,
-                                nsStringBuffer** sharedBuffer,
-                                JS::MutableHandleValue vp);
-
-    
-    static MOZ_ALWAYS_INLINE bool
-    StringBufferToJSVal(JSContext* cx, nsStringBuffer* buf, uint32_t length,
-                        JS::MutableHandleValue rval, bool* sharedBuffer)
-    {
-        JSString* str = JS_NewMaybeExternalString(cx,
-                                                  static_cast<char16_t*>(buf->Data()),
-                                                  length, &sDOMStringFinalizer, sharedBuffer);
-        if (!str) {
-            return false;
-        }
-        rval.setString(str);
-        return true;
+  
+  static MOZ_ALWAYS_INLINE bool StringBufferToJSVal(JSContext* cx,
+                                                    nsStringBuffer* buf,
+                                                    uint32_t length,
+                                                    JS::MutableHandleValue rval,
+                                                    bool* sharedBuffer) {
+    JSString* str =
+        JS_NewMaybeExternalString(cx, static_cast<char16_t*>(buf->Data()),
+                                  length, &sDOMStringFinalizer, sharedBuffer);
+    if (!str) {
+      return false;
     }
+    rval.setString(str);
+    return true;
+  }
 
-    static inline bool
-    StringLiteralToJSVal(JSContext* cx, const char16_t* literal, uint32_t length,
-                         JS::MutableHandleValue rval)
-    {
-        bool ignored;
-        JSString* str = JS_NewMaybeExternalString(cx, literal, length,
-                                                  &sLiteralFinalizer, &ignored);
-        if (!str) {
-            return false;
-        }
-        rval.setString(str);
-        return true;
+  static inline bool StringLiteralToJSVal(JSContext* cx,
+                                          const char16_t* literal,
+                                          uint32_t length,
+                                          JS::MutableHandleValue rval) {
+    bool ignored;
+    JSString* str = JS_NewMaybeExternalString(cx, literal, length,
+                                              &sLiteralFinalizer, &ignored);
+    if (!str) {
+      return false;
     }
+    rval.setString(str);
+    return true;
+  }
 
-    static inline bool
-    DynamicAtomToJSVal(JSContext* cx, nsDynamicAtom* atom,
-                       JS::MutableHandleValue rval)
-    {
-        bool sharedAtom;
-        JSString* str = JS_NewMaybeExternalString(cx, atom->GetUTF16String(),
-                                                  atom->GetLength(),
-                                                  &sDynamicAtomFinalizer,
-                                                  &sharedAtom);
-        if (!str) {
-            return false;
-        }
-        if (sharedAtom) {
-            
-            
-            
-            
-            static_cast<nsAtom*>(atom)->AddRef();
-        }
-        rval.setString(str);
-        return true;
+  static inline bool DynamicAtomToJSVal(JSContext* cx, nsDynamicAtom* atom,
+                                        JS::MutableHandleValue rval) {
+    bool sharedAtom;
+    JSString* str =
+        JS_NewMaybeExternalString(cx, atom->GetUTF16String(), atom->GetLength(),
+                                  &sDynamicAtomFinalizer, &sharedAtom);
+    if (!str) {
+      return false;
     }
-
-    static MOZ_ALWAYS_INLINE bool IsLiteral(JSString* str)
-    {
-        return JS_IsExternalString(str) &&
-               JS_GetExternalStringFinalizer(str) == &sLiteralFinalizer;
+    if (sharedAtom) {
+      
+      
+      
+      
+      static_cast<nsAtom*>(atom)->AddRef();
     }
+    rval.setString(str);
+    return true;
+  }
 
-    static MOZ_ALWAYS_INLINE bool IsDOMString(JSString* str)
-    {
-        return JS_IsExternalString(str) &&
-               JS_GetExternalStringFinalizer(str) == &sDOMStringFinalizer;
-    }
+  static MOZ_ALWAYS_INLINE bool IsLiteral(JSString* str) {
+    return JS_IsExternalString(str) &&
+           JS_GetExternalStringFinalizer(str) == &sLiteralFinalizer;
+  }
 
-private:
-    static const JSStringFinalizer
-      sLiteralFinalizer, sDOMStringFinalizer, sDynamicAtomFinalizer;
+  static MOZ_ALWAYS_INLINE bool IsDOMString(JSString* str) {
+    return JS_IsExternalString(str) &&
+           JS_GetExternalStringFinalizer(str) == &sDOMStringFinalizer;
+  }
 
-    static void FinalizeLiteral(const JSStringFinalizer* fin, char16_t* chars);
+ private:
+  static const JSStringFinalizer sLiteralFinalizer, sDOMStringFinalizer,
+      sDynamicAtomFinalizer;
 
-    static void FinalizeDOMString(const JSStringFinalizer* fin, char16_t* chars);
+  static void FinalizeLiteral(const JSStringFinalizer* fin, char16_t* chars);
 
-    static void FinalizeDynamicAtom(const JSStringFinalizer* fin,
-                                    char16_t* chars);
+  static void FinalizeDOMString(const JSStringFinalizer* fin, char16_t* chars);
 
-    XPCStringConvert() = delete;
+  static void FinalizeDynamicAtom(const JSStringFinalizer* fin,
+                                  char16_t* chars);
+
+  XPCStringConvert() = delete;
 };
 
 class nsIAddonInterposition;
@@ -342,103 +316,103 @@ class nsIAddonInterposition;
 namespace xpc {
 
 
-bool Base64Encode(JSContext* cx, JS::HandleValue val, JS::MutableHandleValue out);
-bool Base64Decode(JSContext* cx, JS::HandleValue val, JS::MutableHandleValue out);
+bool Base64Encode(JSContext* cx, JS::HandleValue val,
+                  JS::MutableHandleValue out);
+bool Base64Decode(JSContext* cx, JS::HandleValue val,
+                  JS::MutableHandleValue out);
 
 
 
 
 
 
-bool NonVoidStringToJsval(JSContext* cx, nsAString& str, JS::MutableHandleValue rval);
-inline bool StringToJsval(JSContext* cx, nsAString& str, JS::MutableHandleValue rval)
-{
-    
-    if (str.IsVoid()) {
-        rval.setNull();
-        return true;
-    }
-    return NonVoidStringToJsval(cx, str, rval);
+bool NonVoidStringToJsval(JSContext* cx, nsAString& str,
+                          JS::MutableHandleValue rval);
+inline bool StringToJsval(JSContext* cx, nsAString& str,
+                          JS::MutableHandleValue rval) {
+  
+  if (str.IsVoid()) {
+    rval.setNull();
+    return true;
+  }
+  return NonVoidStringToJsval(cx, str, rval);
 }
 
-inline bool
-NonVoidStringToJsval(JSContext* cx, const nsAString& str, JS::MutableHandleValue rval)
-{
-    nsString mutableCopy;
-    if (!mutableCopy.Assign(str, mozilla::fallible)) {
-        JS_ReportOutOfMemory(cx);
-        return false;
-    }
-    return NonVoidStringToJsval(cx, mutableCopy, rval);
+inline bool NonVoidStringToJsval(JSContext* cx, const nsAString& str,
+                                 JS::MutableHandleValue rval) {
+  nsString mutableCopy;
+  if (!mutableCopy.Assign(str, mozilla::fallible)) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+  return NonVoidStringToJsval(cx, mutableCopy, rval);
 }
 
-inline bool
-StringToJsval(JSContext* cx, const nsAString& str, JS::MutableHandleValue rval)
-{
-    nsString mutableCopy;
-    if (!mutableCopy.Assign(str, mozilla::fallible)) {
-        JS_ReportOutOfMemory(cx);
-        return false;
-    }
-    return StringToJsval(cx, mutableCopy, rval);
+inline bool StringToJsval(JSContext* cx, const nsAString& str,
+                          JS::MutableHandleValue rval) {
+  nsString mutableCopy;
+  if (!mutableCopy.Assign(str, mozilla::fallible)) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+  return StringToJsval(cx, mutableCopy, rval);
 }
 
 
 
 
-inline
-bool NonVoidStringToJsval(JSContext* cx, mozilla::dom::DOMString& str,
-                          JS::MutableHandleValue rval)
-{
-    if (str.IsEmpty()) {
-        rval.set(JS_GetEmptyStringValue(cx));
-        return true;
-    }
+inline bool NonVoidStringToJsval(JSContext* cx, mozilla::dom::DOMString& str,
+                                 JS::MutableHandleValue rval) {
+  if (str.IsEmpty()) {
+    rval.set(JS_GetEmptyStringValue(cx));
+    return true;
+  }
 
-    if (str.HasStringBuffer()) {
-        uint32_t length = str.StringBufferLength();
-        nsStringBuffer* buf = str.StringBuffer();
-        bool shared;
-        if (!XPCStringConvert::StringBufferToJSVal(cx, buf, length, rval,
-                                                   &shared)) {
-            return false;
-        }
-        if (shared) {
-            
-            str.RelinquishBufferOwnership();
-        }
-        return true;
+  if (str.HasStringBuffer()) {
+    uint32_t length = str.StringBufferLength();
+    nsStringBuffer* buf = str.StringBuffer();
+    bool shared;
+    if (!XPCStringConvert::StringBufferToJSVal(cx, buf, length, rval,
+                                               &shared)) {
+      return false;
     }
-
-    if (str.HasLiteral()) {
-        return XPCStringConvert::StringLiteralToJSVal(cx, str.Literal(),
-                                                      str.LiteralLength(), rval);
+    if (shared) {
+      
+      str.RelinquishBufferOwnership();
     }
+    return true;
+  }
 
-    if (str.HasAtom()) {
-        return XPCStringConvert::DynamicAtomToJSVal(cx, str.Atom(), rval);
-    }
+  if (str.HasLiteral()) {
+    return XPCStringConvert::StringLiteralToJSVal(cx, str.Literal(),
+                                                  str.LiteralLength(), rval);
+  }
 
-    
-    return NonVoidStringToJsval(cx, str.AsAString(), rval);
+  if (str.HasAtom()) {
+    return XPCStringConvert::DynamicAtomToJSVal(cx, str.Atom(), rval);
+  }
+
+  
+  return NonVoidStringToJsval(cx, str.AsAString(), rval);
 }
 
 MOZ_ALWAYS_INLINE
 bool StringToJsval(JSContext* cx, mozilla::dom::DOMString& str,
-                   JS::MutableHandleValue rval)
-{
-    if (str.IsNull()) {
-        rval.setNull();
-        return true;
-    }
-    return NonVoidStringToJsval(cx, str, rval);
+                   JS::MutableHandleValue rval) {
+  if (str.IsNull()) {
+    rval.setNull();
+    return true;
+  }
+  return NonVoidStringToJsval(cx, str, rval);
 }
 
 nsIPrincipal* GetCompartmentPrincipal(JS::Compartment* compartment);
 nsIPrincipal* GetRealmPrincipal(JS::Realm* realm);
 
-void NukeAllWrappersForCompartment(JSContext* cx, JS::Compartment* compartment,
-                                   js::NukeReferencesToWindow nukeReferencesToWindow = js::NukeWindowReferences);
+void NukeAllWrappersForCompartment(
+    JSContext* cx, JS::Compartment* compartment,
+    js::NukeReferencesToWindow nukeReferencesToWindow =
+        js::NukeWindowReferences);
 
 void SetLocationForGlobal(JSObject* global, const nsACString& location);
 void SetLocationForGlobal(JSObject* global, nsIURI* locationURI);
@@ -446,55 +420,51 @@ void SetLocationForGlobal(JSObject* global, nsIURI* locationURI);
 
 
 class ZoneStatsExtras {
-public:
-    ZoneStatsExtras() {}
+ public:
+  ZoneStatsExtras() {}
 
-    nsCString pathPrefix;
+  nsCString pathPrefix;
 
-private:
-    ZoneStatsExtras(const ZoneStatsExtras& other) = delete;
-    ZoneStatsExtras& operator=(const ZoneStatsExtras& other) = delete;
+ private:
+  ZoneStatsExtras(const ZoneStatsExtras& other) = delete;
+  ZoneStatsExtras& operator=(const ZoneStatsExtras& other) = delete;
 };
 
 
 
 class RealmStatsExtras {
-public:
-    RealmStatsExtras() {}
+ public:
+  RealmStatsExtras() {}
 
-    nsCString jsPathPrefix;
-    nsCString domPathPrefix;
-    nsCOMPtr<nsIURI> location;
+  nsCString jsPathPrefix;
+  nsCString domPathPrefix;
+  nsCOMPtr<nsIURI> location;
 
-private:
-    RealmStatsExtras(const RealmStatsExtras& other) = delete;
-    RealmStatsExtras& operator=(const RealmStatsExtras& other) = delete;
+ private:
+  RealmStatsExtras(const RealmStatsExtras& other) = delete;
+  RealmStatsExtras& operator=(const RealmStatsExtras& other) = delete;
 };
 
 
 
 
 
-void
-ReportJSRuntimeExplicitTreeStats(const JS::RuntimeStats& rtStats,
-                                 const nsACString& rtPath,
-                                 nsIHandleReportCallback* handleReport,
-                                 nsISupports* data,
-                                 bool anonymize,
-                                 size_t* rtTotal = nullptr);
+void ReportJSRuntimeExplicitTreeStats(const JS::RuntimeStats& rtStats,
+                                      const nsACString& rtPath,
+                                      nsIHandleReportCallback* handleReport,
+                                      nsISupports* data, bool anonymize,
+                                      size_t* rtTotal = nullptr);
 
 
 
 
-bool
-Throw(JSContext* cx, nsresult rv);
+bool Throw(JSContext* cx, nsresult rv);
 
 
 
 
 
-already_AddRefed<nsISupports>
-UnwrapReflectorToISupports(JSObject* reflector);
+already_AddRefed<nsISupports> UnwrapReflectorToISupports(JSObject* reflector);
 
 
 
@@ -503,161 +473,147 @@ UnwrapReflectorToISupports(JSObject* reflector);
 
 
 
-JSObject*
-UnprivilegedJunkScope();
+JSObject* UnprivilegedJunkScope();
 
 
 
 
 
-JSObject*
-PrivilegedJunkScope();
+JSObject* PrivilegedJunkScope();
 
 
 
 
 
-JSObject*
-CompilationScope();
-
-
-
-
-
-
-nsIGlobalObject*
-NativeGlobal(JSObject* obj);
-
-
-
-
-
-nsIGlobalObject*
-CurrentNativeGlobal(JSContext* cx);
-
-
-
-
-
-nsGlobalWindowInner*
-WindowOrNull(JSObject* aObj);
+JSObject* CompilationScope();
 
 
 
 
 
 
-nsGlobalWindowInner*
-WindowGlobalOrNull(JSObject* aObj);
+nsIGlobalObject* NativeGlobal(JSObject* obj);
 
 
 
 
 
-nsGlobalWindowInner*
-CurrentWindowOrNull(JSContext* cx);
+nsIGlobalObject* CurrentNativeGlobal(JSContext* cx);
 
-class MOZ_RAII AutoScriptActivity
-{
-    bool mActive;
-    bool mOldValue;
-  public:
-    explicit AutoScriptActivity(bool aActive);
-    ~AutoScriptActivity();
+
+
+
+
+nsGlobalWindowInner* WindowOrNull(JSObject* aObj);
+
+
+
+
+
+
+nsGlobalWindowInner* WindowGlobalOrNull(JSObject* aObj);
+
+
+
+
+
+nsGlobalWindowInner* CurrentWindowOrNull(JSContext* cx);
+
+class MOZ_RAII AutoScriptActivity {
+  bool mActive;
+  bool mOldValue;
+
+ public:
+  explicit AutoScriptActivity(bool aActive);
+  ~AutoScriptActivity();
 };
 
 
 
-bool
-ShouldDiscardSystemSource();
+bool ShouldDiscardSystemSource();
 
-void
-SetPrefableRealmOptions(JS::RealmOptions &options);
+void SetPrefableRealmOptions(JS::RealmOptions& options);
 
-bool
-ExtraWarningsForSystemJS();
+bool ExtraWarningsForSystemJS();
 
 class ErrorBase {
-  public:
-    nsString mErrorMsg;
-    nsString mFileName;
-    uint32_t mLineNumber;
-    uint32_t mColumn;
+ public:
+  nsString mErrorMsg;
+  nsString mFileName;
+  uint32_t mLineNumber;
+  uint32_t mColumn;
 
-    ErrorBase() : mLineNumber(0)
-                , mColumn(0)
-    {}
+  ErrorBase() : mLineNumber(0), mColumn(0) {}
 
-    void Init(JSErrorBase* aReport);
+  void Init(JSErrorBase* aReport);
 
-    void AppendErrorDetailsTo(nsCString& error);
+  void AppendErrorDetailsTo(nsCString& error);
 };
 
 class ErrorNote : public ErrorBase {
-  public:
-    void Init(JSErrorNotes::Note* aNote);
+ public:
+  void Init(JSErrorNotes::Note* aNote);
 
-    
-    
-    
-    static void ErrorNoteToMessageString(JSErrorNotes::Note* aNote,
-                                         nsAString& aString);
+  
+  
+  
+  static void ErrorNoteToMessageString(JSErrorNotes::Note* aNote,
+                                       nsAString& aString);
 
-    
-    void LogToStderr();
+  
+  void LogToStderr();
 };
 
 class ErrorReport : public ErrorBase {
-  public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ErrorReport);
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ErrorReport);
 
-    nsTArray<ErrorNote> mNotes;
+  nsTArray<ErrorNote> mNotes;
 
-    nsCString mCategory;
-    nsString mSourceLine;
-    nsString mErrorMsgName;
-    uint64_t mWindowID;
-    uint32_t mFlags;
-    bool mIsMuted;
+  nsCString mCategory;
+  nsString mSourceLine;
+  nsString mErrorMsgName;
+  uint64_t mWindowID;
+  uint32_t mFlags;
+  bool mIsMuted;
 
-    ErrorReport() : mWindowID(0)
-                  , mFlags(0)
-                  , mIsMuted(false)
-    {}
+  ErrorReport() : mWindowID(0), mFlags(0), mIsMuted(false) {}
 
-    void Init(JSErrorReport* aReport, const char* aToStringResult,
-              bool aIsChrome, uint64_t aWindowID);
-    void Init(JSContext* aCx, mozilla::dom::Exception* aException,
-              bool aIsChrome, uint64_t aWindowID);
+  void Init(JSErrorReport* aReport, const char* aToStringResult, bool aIsChrome,
+            uint64_t aWindowID);
+  void Init(JSContext* aCx, mozilla::dom::Exception* aException, bool aIsChrome,
+            uint64_t aWindowID);
 
-    
-    
-    void LogToConsole();
-    
-    
-    
-    
-    
-    
-    void LogToConsoleWithStack(JS::HandleObject aStack, JS::HandleObject aStackGlobal,
-                               uint64_t aTimeWarpTarget = 0);
+  
+  
+  void LogToConsole();
+  
+  
+  
+  
+  
+  
+  void LogToConsoleWithStack(JS::HandleObject aStack,
+                             JS::HandleObject aStackGlobal,
+                             uint64_t aTimeWarpTarget = 0);
 
-    
-    
-    
-    static void ErrorReportToMessageString(JSErrorReport* aReport,
-                                           nsAString& aString);
+  
+  
+  
+  static void ErrorReportToMessageString(JSErrorReport* aReport,
+                                         nsAString& aString);
 
-    
-    void LogToStderr();
+  
+  void LogToStderr();
 
-  private:
-    ~ErrorReport() {}
+ private:
+  ~ErrorReport() {}
 };
 
-void
-DispatchScriptErrorEvent(nsPIDOMWindowInner* win, JS::RootingContext* rootingCx,
-                         xpc::ErrorReport* xpcReport, JS::Handle<JS::Value> exception);
+void DispatchScriptErrorEvent(nsPIDOMWindowInner* win,
+                              JS::RootingContext* rootingCx,
+                              xpc::ErrorReport* xpcReport,
+                              JS::Handle<JS::Value> exception);
 
 
 
@@ -675,64 +631,56 @@ DispatchScriptErrorEvent(nsPIDOMWindowInner* win, JS::RootingContext* rootingCx,
 
 
 
-void
-FindExceptionStackForConsoleReport(nsPIDOMWindowInner* win,
-                                   JS::HandleValue exceptionValue,
-                                   JS::MutableHandleObject stackObj,
-                                   JS::MutableHandleObject stackGlobal);
+void FindExceptionStackForConsoleReport(nsPIDOMWindowInner* win,
+                                        JS::HandleValue exceptionValue,
+                                        JS::MutableHandleObject stackObj,
+                                        JS::MutableHandleObject stackGlobal);
 
 
 
 
-extern void
-GetCurrentRealmName(JSContext*, nsCString& name);
+
+extern void GetCurrentRealmName(JSContext*, nsCString& name);
 
 void AddGCCallback(xpcGCCallback cb);
 void RemoveGCCallback(xpcGCCallback cb);
 
-inline bool
-AreNonLocalConnectionsDisabled()
-{
-    static int disabledForTest = -1;
-    if (disabledForTest == -1) {
-        char *s = getenv("MOZ_DISABLE_NONLOCAL_CONNECTIONS");
-        if (s) {
-            disabledForTest = *s != '0';
-        } else {
-            disabledForTest = 0;
-        }
+inline bool AreNonLocalConnectionsDisabled() {
+  static int disabledForTest = -1;
+  if (disabledForTest == -1) {
+    char* s = getenv("MOZ_DISABLE_NONLOCAL_CONNECTIONS");
+    if (s) {
+      disabledForTest = *s != '0';
+    } else {
+      disabledForTest = 0;
     }
-    return disabledForTest;
+  }
+  return disabledForTest;
 }
 
-inline bool
-IsInAutomation()
-{
-    static bool sAutomationPrefIsSet;
-    static bool sPrefCacheAdded = false;
-    if (!sPrefCacheAdded) {
-        mozilla::Preferences::AddBoolVarCache(
-          &sAutomationPrefIsSet,
-          "security.turn_off_all_security_so_that_viruses_can_take_over_this_computer",
-          false);
-        sPrefCacheAdded = true;
-    }
-    return sAutomationPrefIsSet && AreNonLocalConnectionsDisabled();
+inline bool IsInAutomation() {
+  static bool sAutomationPrefIsSet;
+  static bool sPrefCacheAdded = false;
+  if (!sPrefCacheAdded) {
+    mozilla::Preferences::AddBoolVarCache(
+        &sAutomationPrefIsSet,
+        "security.turn_off_all_security_so_that_viruses_can_take_over_this_"
+        "computer",
+        false);
+    sPrefCacheAdded = true;
+  }
+  return sAutomationPrefIsSet && AreNonLocalConnectionsDisabled();
 }
 
-void
-CreateCooperativeContext();
+void CreateCooperativeContext();
 
-void
-DestroyCooperativeContext();
+void DestroyCooperativeContext();
 
 
-void
-YieldCooperativeContext();
+void YieldCooperativeContext();
 
 
-void
-ResumeCooperativeContext();
+void ResumeCooperativeContext();
 
 
 
@@ -769,7 +717,7 @@ bool IfaceID2JSValue(JSContext* aCx, const nsXPTInterfaceInfo& aInfo,
 bool ContractID2JSValue(JSContext* aCx, JSString* aContract,
                         JS::MutableHandleValue aVal);
 
-} 
+}  
 
 namespace mozilla {
 namespace dom {
@@ -798,14 +746,13 @@ bool IsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* );
 
 bool ThreadSafeIsChromeOrXBLOrUAWidget(JSContext* cx, JSObject* obj);
 
-} 
+}  
 
 
 
 
-bool
-GetBuildId(JS::BuildIdCharVector* aBuildID);
+bool GetBuildId(JS::BuildIdCharVector* aBuildID);
 
-} 
+}  
 
 #endif

@@ -7,10 +7,10 @@
 #ifndef MOZILLA_LAYERS_COMPOSITORTYPES_H
 #define MOZILLA_LAYERS_COMPOSITORTYPES_H
 
-#include <stdint.h>                     
-#include <sys/types.h>                  
-#include "LayersTypes.h"                
-#include "nsXULAppAPI.h"                
+#include <stdint.h>       
+#include <sys/types.h>    
+#include "LayersTypes.h"  
+#include "nsXULAppAPI.h"  
 #include "mozilla/gfx/Types.h"
 #include "mozilla/EnumSet.h"
 
@@ -26,14 +26,14 @@ namespace layers {
 
 
 enum class TextureFlags : uint32_t {
-  NO_FLAGS           = 0,
+  NO_FLAGS = 0,
   
   USE_NEAREST_FILTER = 1 << 0,
   
   ORIGIN_BOTTOM_LEFT = 1 << 1,
   
   
-  DISALLOW_BIGIMAGE  = 1 << 2,
+  DISALLOW_BIGIMAGE = 1 << 2,
   
   
   
@@ -41,70 +41,67 @@ enum class TextureFlags : uint32_t {
   
   
   
-  RB_SWAPPED         = 1 << 3,
+  RB_SWAPPED = 1 << 3,
   
   
-  NON_PREMULTIPLIED  = 1 << 4,
-  
-  
-  
-  RECYCLE            = 1 << 5,
+  NON_PREMULTIPLIED = 1 << 4,
   
   
   
+  RECYCLE = 1 << 5,
   
-  DEALLOCATE_CLIENT  = 1 << 6,
-  DEALLOCATE_SYNC    = 1 << 6, 
+  
+  
+  
+  DEALLOCATE_CLIENT = 1 << 6,
+  DEALLOCATE_SYNC = 1 << 6,  
   DEALLOCATE_MAIN_THREAD = 1 << 8,
   
   
   
-  IMMUTABLE          = 1 << 9,
+  IMMUTABLE = 1 << 9,
   
   
   
-  IMMEDIATE_UPLOAD   = 1 << 10,
+  IMMEDIATE_UPLOAD = 1 << 10,
   
-  COMPONENT_ALPHA    = 1 << 11,
+  COMPONENT_ALPHA = 1 << 11,
   
   
   INVALID_COMPOSITOR = 1 << 12,
   
-  RGB_FROM_YCBCR     = 1 << 13,
+  RGB_FROM_YCBCR = 1 << 13,
   
-  SNAPSHOT           = 1 << 14,
+  SNAPSHOT = 1 << 14,
   
   NON_BLOCKING_READ_LOCK = 1 << 15,
   
   BLOCKING_READ_LOCK = 1 << 16,
 
   
-  ALL_BITS           = (1 << 17) - 1,
+  ALL_BITS = (1 << 17) - 1,
   
   DEFAULT = NO_FLAGS
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(TextureFlags)
 
-static inline bool
-TextureRequiresLocking(TextureFlags aFlags)
-{
+static inline bool TextureRequiresLocking(TextureFlags aFlags) {
   
   
   
-  return !(aFlags & (TextureFlags::IMMEDIATE_UPLOAD |
-                     TextureFlags::IMMUTABLE));
+  return !(aFlags & (TextureFlags::IMMEDIATE_UPLOAD | TextureFlags::IMMUTABLE));
 }
 
 
 
 
 enum class DiagnosticTypes : uint8_t {
-  NO_DIAGNOSTIC    = 0,
-  TILE_BORDERS     = 1 << 0,
-  LAYER_BORDERS    = 1 << 1,
+  NO_DIAGNOSTIC = 0,
+  TILE_BORDERS = 1 << 0,
+  LAYER_BORDERS = 1 << 1,
   BIGIMAGE_BORDERS = 1 << 2,
-  FLASH_BORDERS    = 1 << 3,
-  ALL_BITS         = (1 << 4) - 1
+  FLASH_BORDERS = 1 << 3,
+  ALL_BITS = (1 << 4) - 1
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DiagnosticTypes)
 
@@ -114,18 +111,18 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DiagnosticTypes)
 
 
 enum class DiagnosticFlags : uint16_t {
-  NO_DIAGNOSTIC   = 0,
-  IMAGE           = 1 << 0,
-  CONTENT         = 1 << 1,
-  CANVAS          = 1 << 2,
-  COLOR           = 1 << 3,
-  CONTAINER       = 1 << 4,
-  TILE            = 1 << 5,
-  BIGIMAGE        = 1 << 6,
+  NO_DIAGNOSTIC = 0,
+  IMAGE = 1 << 0,
+  CONTENT = 1 << 1,
+  CANVAS = 1 << 2,
+  COLOR = 1 << 3,
+  CONTAINER = 1 << 4,
+  TILE = 1 << 5,
+  BIGIMAGE = 1 << 6,
   COMPONENT_ALPHA = 1 << 7,
-  REGION_RECT     = 1 << 8,
-  NV12            = 1 << 9,
-  YCBCR           = 1 << 10
+  REGION_RECT = 1 << 8,
+  NV12 = 1 << 9,
+  YCBCR = 1 << 10
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DiagnosticFlags)
 
@@ -136,7 +133,7 @@ enum class EffectTypes : uint8_t {
   MASK,
   BLEND_MODE,
   COLOR_MATRIX,
-  MAX_SECONDARY, 
+  MAX_SECONDARY,  
   RGB,
   YCBCR,
   NV12,
@@ -163,15 +160,14 @@ enum class CompositableType : uint8_t {
 typedef void* SyncHandle;
 #else
 typedef uintptr_t SyncHandle;
-#endif 
+#endif  
 
 
 
 
 
 
-struct TextureFactoryIdentifier
-{
+struct TextureFactoryIdentifier {
   LayersBackend mParentBackend;
   GeckoProcessType mParentProcessType;
   int32_t mMaxTextureSize;
@@ -184,42 +180,40 @@ struct TextureFactoryIdentifier
   bool mUsingAdvancedLayers;
   SyncHandle mSyncHandle;
 
-  explicit TextureFactoryIdentifier(LayersBackend aLayersBackend = LayersBackend::LAYERS_NONE,
-                                    GeckoProcessType aParentProcessType = GeckoProcessType_Default,
-                                    int32_t aMaxTextureSize = 4096,
-                                    bool aSupportsTextureDirectMapping = false,
-                                    bool aCompositorUseANGLE = false,
-                                    bool aCompositorUseDComp = false,
-                                    bool aSupportsTextureBlitting = false,
-                                    bool aSupportsPartialUploads = false,
-                                    bool aSupportsComponentAlpha = true,
-                                    SyncHandle aSyncHandle = 0)
-    : mParentBackend(aLayersBackend)
-    , mParentProcessType(aParentProcessType)
-    , mMaxTextureSize(aMaxTextureSize)
-    , mSupportsTextureDirectMapping(aSupportsTextureDirectMapping)
-    , mCompositorUseANGLE(aCompositorUseANGLE)
-    , mCompositorUseDComp(aCompositorUseDComp)
-    , mSupportsTextureBlitting(aSupportsTextureBlitting)
-    , mSupportsPartialUploads(aSupportsPartialUploads)
-    , mSupportsComponentAlpha(aSupportsComponentAlpha)
-    , mUsingAdvancedLayers(false)
-    , mSyncHandle(aSyncHandle)
-  {}
+  explicit TextureFactoryIdentifier(
+      LayersBackend aLayersBackend = LayersBackend::LAYERS_NONE,
+      GeckoProcessType aParentProcessType = GeckoProcessType_Default,
+      int32_t aMaxTextureSize = 4096,
+      bool aSupportsTextureDirectMapping = false,
+      bool aCompositorUseANGLE = false, bool aCompositorUseDComp = false,
+      bool aSupportsTextureBlitting = false,
+      bool aSupportsPartialUploads = false, bool aSupportsComponentAlpha = true,
+      SyncHandle aSyncHandle = 0)
+      : mParentBackend(aLayersBackend),
+        mParentProcessType(aParentProcessType),
+        mMaxTextureSize(aMaxTextureSize),
+        mSupportsTextureDirectMapping(aSupportsTextureDirectMapping),
+        mCompositorUseANGLE(aCompositorUseANGLE),
+        mCompositorUseDComp(aCompositorUseDComp),
+        mSupportsTextureBlitting(aSupportsTextureBlitting),
+        mSupportsPartialUploads(aSupportsPartialUploads),
+        mSupportsComponentAlpha(aSupportsComponentAlpha),
+        mUsingAdvancedLayers(false),
+        mSyncHandle(aSyncHandle) {}
 
   bool operator==(const TextureFactoryIdentifier& aOther) const {
-    return
-      mParentBackend == aOther.mParentBackend &&
-      mParentProcessType == aOther.mParentProcessType &&
-      mMaxTextureSize == aOther.mMaxTextureSize &&
-      mSupportsTextureDirectMapping == aOther.mSupportsTextureDirectMapping &&
-      mCompositorUseANGLE == aOther.mCompositorUseANGLE &&
-      mCompositorUseDComp == aOther.mCompositorUseDComp &&
-      mSupportsTextureBlitting == aOther.mSupportsTextureBlitting &&
-      mSupportsPartialUploads == aOther.mSupportsPartialUploads &&
-      mSupportsComponentAlpha == aOther.mSupportsComponentAlpha &&
-      mUsingAdvancedLayers == aOther.mUsingAdvancedLayers &&
-      mSyncHandle == aOther.mSyncHandle;
+    return mParentBackend == aOther.mParentBackend &&
+           mParentProcessType == aOther.mParentProcessType &&
+           mMaxTextureSize == aOther.mMaxTextureSize &&
+           mSupportsTextureDirectMapping ==
+               aOther.mSupportsTextureDirectMapping &&
+           mCompositorUseANGLE == aOther.mCompositorUseANGLE &&
+           mCompositorUseDComp == aOther.mCompositorUseDComp &&
+           mSupportsTextureBlitting == aOther.mSupportsTextureBlitting &&
+           mSupportsPartialUploads == aOther.mSupportsPartialUploads &&
+           mSupportsComponentAlpha == aOther.mSupportsComponentAlpha &&
+           mUsingAdvancedLayers == aOther.mUsingAdvancedLayers &&
+           mSyncHandle == aOther.mSyncHandle;
   }
 };
 
@@ -230,24 +224,19 @@ struct TextureFactoryIdentifier
 
 
 
-struct TextureInfo
-{
+struct TextureInfo {
   CompositableType mCompositableType;
   TextureFlags mTextureFlags;
 
   TextureInfo()
-    : mCompositableType(CompositableType::UNKNOWN)
-    , mTextureFlags(TextureFlags::NO_FLAGS)
-  {}
+      : mCompositableType(CompositableType::UNKNOWN),
+        mTextureFlags(TextureFlags::NO_FLAGS) {}
 
   explicit TextureInfo(CompositableType aType,
                        TextureFlags aTextureFlags = TextureFlags::DEFAULT)
-    : mCompositableType(aType)
-    , mTextureFlags(aTextureFlags)
-  {}
+      : mCompositableType(aType), mTextureFlags(aTextureFlags) {}
 
-  bool operator==(const TextureInfo& aOther) const
-  {
+  bool operator==(const TextureInfo& aOther) const {
     return mCompositableType == aOther.mCompositableType &&
            mTextureFlags == aOther.mTextureFlags;
   }
@@ -259,31 +248,31 @@ struct TextureInfo
 
 
 enum class OpenMode : uint8_t {
-  OPEN_NONE        = 0,
-  OPEN_READ        = 0x1,
-  OPEN_WRITE       = 0x2,
+  OPEN_NONE = 0,
+  OPEN_READ = 0x1,
+  OPEN_WRITE = 0x2,
   
   
   
   OPEN_ASYNC = 0x04,
 
-  OPEN_READ_WRITE  = OPEN_READ|OPEN_WRITE,
-  OPEN_READ_WRITE_ASYNC  = OPEN_READ|OPEN_WRITE|OPEN_ASYNC,
-  OPEN_READ_ASYNC   = OPEN_READ|OPEN_ASYNC,
-  OPEN_READ_ONLY   = OPEN_READ,
-  OPEN_WRITE_ONLY  = OPEN_WRITE,
+  OPEN_READ_WRITE = OPEN_READ | OPEN_WRITE,
+  OPEN_READ_WRITE_ASYNC = OPEN_READ | OPEN_WRITE | OPEN_ASYNC,
+  OPEN_READ_ASYNC = OPEN_READ | OPEN_ASYNC,
+  OPEN_READ_ONLY = OPEN_READ,
+  OPEN_WRITE_ONLY = OPEN_WRITE,
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(OpenMode)
 
 
 
 enum class MaskType : uint8_t {
-  MaskNone = 0,   
-  Mask,           
+  MaskNone = 0,  
+  Mask,          
   NumMaskTypes
 };
 
-} 
-} 
+}  
+}  
 
 #endif

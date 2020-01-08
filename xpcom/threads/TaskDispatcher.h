@@ -35,9 +35,9 @@ namespace mozilla {
 
 
 
-class TaskDispatcher
-{
-public:
+
+class TaskDispatcher {
+ public:
   TaskDispatcher() {}
   virtual ~TaskDispatcher() {}
 
@@ -66,15 +66,12 @@ public:
 
 
 
-class AutoTaskDispatcher : public TaskDispatcher
-{
-public:
+class AutoTaskDispatcher : public TaskDispatcher {
+ public:
   explicit AutoTaskDispatcher(bool aIsTailDispatcher = false)
-    : mIsTailDispatcher(aIsTailDispatcher)
-  {}
+      : mIsTailDispatcher(aIsTailDispatcher) {}
 
-  ~AutoTaskDispatcher()
-  {
+  ~AutoTaskDispatcher() {
     
     
     
@@ -91,13 +88,11 @@ public:
     }
   }
 
-  bool HaveDirectTasks() const
-  {
+  bool HaveDirectTasks() const {
     return mDirectTasks.isSome() && !mDirectTasks->empty();
   }
 
-  void DrainDirectTasks() override
-  {
+  void DrainDirectTasks() override {
     while (HaveDirectTasks()) {
       nsCOMPtr<nsIRunnable> r = mDirectTasks->front();
       mDirectTasks->pop();
@@ -105,8 +100,7 @@ public:
     }
   }
 
-  void AddDirectTask(already_AddRefed<nsIRunnable> aRunnable) override
-  {
+  void AddDirectTask(already_AddRefed<nsIRunnable> aRunnable) override {
     if (mDirectTasks.isNothing()) {
       mDirectTasks.emplace();
     }
@@ -114,23 +108,22 @@ public:
   }
 
   void AddStateChangeTask(AbstractThread* aThread,
-                          already_AddRefed<nsIRunnable> aRunnable) override
-  {
+                          already_AddRefed<nsIRunnable> aRunnable) override {
     nsCOMPtr<nsIRunnable> r = aRunnable;
     MOZ_RELEASE_ASSERT(r);
     EnsureTaskGroup(aThread).mStateChangeTasks.AppendElement(r.forget());
   }
 
   nsresult AddTask(AbstractThread* aThread,
-                   already_AddRefed<nsIRunnable> aRunnable) override
-  {
+                   already_AddRefed<nsIRunnable> aRunnable) override {
     nsCOMPtr<nsIRunnable> r = aRunnable;
     MOZ_RELEASE_ASSERT(r);
     
     
     
     
-    if (mTaskGroups.Length() == 0 || mTaskGroups.LastElement()->mThread != aThread) {
+    if (mTaskGroups.Length() == 0 ||
+        mTaskGroups.LastElement()->mThread != aThread) {
       mTaskGroups.AppendElement(new PerThreadTaskGroup(aThread));
     }
 
@@ -140,14 +133,12 @@ public:
     return NS_OK;
   }
 
-  bool HasTasksFor(AbstractThread* aThread) override
-  {
+  bool HasTasksFor(AbstractThread* aThread) override {
     return !!GetTaskGroup(aThread) ||
            (aThread == AbstractThread::GetCurrent() && HaveDirectTasks());
   }
 
-  nsresult DispatchTasksFor(AbstractThread* aThread) override
-  {
+  nsresult DispatchTasksFor(AbstractThread* aThread) override {
     nsresult rv = NS_OK;
 
     
@@ -169,14 +160,10 @@ public:
     return rv;
   }
 
-private:
-
-  struct PerThreadTaskGroup
-  {
-  public:
-    explicit PerThreadTaskGroup(AbstractThread* aThread)
-      : mThread(aThread)
-    {
+ private:
+  struct PerThreadTaskGroup {
+   public:
+    explicit PerThreadTaskGroup(AbstractThread* aThread) : mThread(aThread) {
       MOZ_COUNT_CTOR(PerThreadTaskGroup);
     }
 
@@ -187,53 +174,47 @@ private:
     nsTArray<nsCOMPtr<nsIRunnable>> mRegularTasks;
   };
 
-  class TaskGroupRunnable : public Runnable
-  {
-    public:
-      explicit TaskGroupRunnable(UniquePtr<PerThreadTaskGroup>&& aTasks)
-        : Runnable("AutoTaskDispatcher::TaskGroupRunnable")
-        , mTasks(std::move(aTasks))
-      {
+  class TaskGroupRunnable : public Runnable {
+   public:
+    explicit TaskGroupRunnable(UniquePtr<PerThreadTaskGroup>&& aTasks)
+        : Runnable("AutoTaskDispatcher::TaskGroupRunnable"),
+          mTasks(std::move(aTasks)) {}
+
+    NS_IMETHOD Run() override {
+      
+      
+      for (size_t i = 0; i < mTasks->mStateChangeTasks.Length(); ++i) {
+        mTasks->mStateChangeTasks[i]->Run();
       }
 
-      NS_IMETHOD Run() override
-      {
-        
-        
-        for (size_t i = 0; i < mTasks->mStateChangeTasks.Length(); ++i) {
-          mTasks->mStateChangeTasks[i]->Run();
-        }
+      
+      
+      
+      
+      MaybeDrainDirectTasks();
 
-        
-        
-        
+      for (size_t i = 0; i < mTasks->mRegularTasks.Length(); ++i) {
+        mTasks->mRegularTasks[i]->Run();
+
         
         MaybeDrainDirectTasks();
-
-        for (size_t i = 0; i < mTasks->mRegularTasks.Length(); ++i) {
-          mTasks->mRegularTasks[i]->Run();
-
-          
-          MaybeDrainDirectTasks();
-        }
-
-        return NS_OK;
       }
 
-    private:
-      void MaybeDrainDirectTasks()
-      {
-        AbstractThread* currentThread = AbstractThread::GetCurrent();
-        if (currentThread) {
-          currentThread->TailDispatcher().DrainDirectTasks();
-        }
-      }
+      return NS_OK;
+    }
 
-      UniquePtr<PerThreadTaskGroup> mTasks;
+   private:
+    void MaybeDrainDirectTasks() {
+      AbstractThread* currentThread = AbstractThread::GetCurrent();
+      if (currentThread) {
+        currentThread->TailDispatcher().DrainDirectTasks();
+      }
+    }
+
+    UniquePtr<PerThreadTaskGroup> mTasks;
   };
 
-  PerThreadTaskGroup& EnsureTaskGroup(AbstractThread* aThread)
-  {
+  PerThreadTaskGroup& EnsureTaskGroup(AbstractThread* aThread) {
     PerThreadTaskGroup* existing = GetTaskGroup(aThread);
     if (existing) {
       return *existing;
@@ -243,8 +224,7 @@ private:
     return *mTaskGroups.LastElement();
   }
 
-  PerThreadTaskGroup* GetTaskGroup(AbstractThread* aThread)
-  {
+  PerThreadTaskGroup* GetTaskGroup(AbstractThread* aThread) {
     for (size_t i = 0; i < mTaskGroups.Length(); ++i) {
       if (mTaskGroups[i]->mThread == aThread) {
         return mTaskGroups[i].get();
@@ -255,12 +235,12 @@ private:
     return nullptr;
   }
 
-  nsresult DispatchTaskGroup(UniquePtr<PerThreadTaskGroup> aGroup)
-  {
+  nsresult DispatchTaskGroup(UniquePtr<PerThreadTaskGroup> aGroup) {
     RefPtr<AbstractThread> thread = aGroup->mThread;
 
-    AbstractThread::DispatchReason reason = mIsTailDispatcher ? AbstractThread::TailDispatch
-                                                              : AbstractThread::NormalDispatch;
+    AbstractThread::DispatchReason reason =
+        mIsTailDispatcher ? AbstractThread::TailDispatch
+                          : AbstractThread::NormalDispatch;
     nsCOMPtr<nsIRunnable> r = new TaskGroupRunnable(std::move(aGroup));
     return thread->Dispatch(r.forget(), reason);
   }
@@ -281,16 +261,16 @@ private:
 
 
 
-template<typename T>
-class PassByRef
-{
-public:
+template <typename T>
+class PassByRef {
+ public:
   PassByRef() {}
   operator T&() { return mVal; }
-private:
+
+ private:
   T mVal;
 };
 
-} 
+}  
 
 #endif

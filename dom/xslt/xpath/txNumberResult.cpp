@@ -21,29 +21,21 @@
 
 
 NumberResult::NumberResult(double aValue, txResultRecycler* aRecycler)
-    : txAExprResult(aRecycler), value(aValue)
-{
-} 
+    : txAExprResult(aRecycler), value(aValue) {}  
 
 
 
 
 
 short NumberResult::getResultType() {
-    return txAExprResult::NUMBER;
-} 
+  return txAExprResult::NUMBER;
+}  
 
-void
-NumberResult::stringValue(nsString& aResult)
-{
-    txDouble::toString(value, aResult);
+void NumberResult::stringValue(nsString& aResult) {
+  txDouble::toString(value, aResult);
 }
 
-const nsString*
-NumberResult::stringValuePointer()
-{
-    return nullptr;
-}
+const nsString* NumberResult::stringValuePointer() { return nullptr; }
 
 bool NumberResult::booleanValue() {
   
@@ -51,9 +43,6 @@ bool NumberResult::booleanValue() {
   
   return (bool)(value != 0.0 && !mozilla::IsNaN(value));
   
-} 
+}  
 
-double NumberResult::numberValue() {
-    return this->value;
-} 
-
+double NumberResult::numberValue() { return this->value; }  

@@ -18,29 +18,29 @@ namespace dom {
 
 
 
-class TemporaryFileBlobImpl final : public FileBlobImpl
-{
+class TemporaryFileBlobImpl final : public FileBlobImpl {
 #ifdef DEBUG
   bool mInputStreamCreated;
 #endif
 
-public:
+ public:
   explicit TemporaryFileBlobImpl(nsIFile* aFile, const nsAString& aContentType);
 
   
   virtual void CreateInputStream(nsIInputStream** aInputStream,
                                  ErrorResult& aRv) override;
 
-protected:
+ protected:
   virtual ~TemporaryFileBlobImpl();
 
-private:
-  virtual already_AddRefed<BlobImpl>
-  CreateSlice(uint64_t aStart, uint64_t aLength,
-              const nsAString& aContentType, ErrorResult& aRv) override;
+ private:
+  virtual already_AddRefed<BlobImpl> CreateSlice(uint64_t aStart,
+                                                 uint64_t aLength,
+                                                 const nsAString& aContentType,
+                                                 ErrorResult& aRv) override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

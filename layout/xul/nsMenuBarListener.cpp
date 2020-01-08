@@ -42,12 +42,12 @@ bool nsMenuBarListener::mAccessKeyFocuses = false;
 
 nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
                                      nsIContent* aMenuBarContent)
-  : mMenuBarFrame(aMenuBarFrame)
-  , mEventTarget(aMenuBarContent ? aMenuBarContent->GetComposedDoc() : nullptr)
-  , mTopWindowEventTarget(nullptr)
-  , mAccessKeyDown(false)
-  , mAccessKeyDownCanceled(false)
-{
+    : mMenuBarFrame(aMenuBarFrame),
+      mEventTarget(aMenuBarContent ? aMenuBarContent->GetComposedDoc()
+                                   : nullptr),
+      mTopWindowEventTarget(nullptr),
+      mAccessKeyDown(false),
+      mAccessKeyDownCanceled(false) {
   MOZ_ASSERT(mEventTarget);
 
   
@@ -56,13 +56,14 @@ nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
   
   
 
-  mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("keypress"),
-                                       this, false);
-  mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("keydown"),
-                                       this, false);
+  mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("keypress"), this,
+                                       false);
+  mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("keydown"), this,
+                                       false);
   mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("keyup"), this, false);
-  mEventTarget->AddSystemEventListener(NS_LITERAL_STRING("mozaccesskeynotfound"),
-                                       this, false);
+  mEventTarget->AddSystemEventListener(
+      NS_LITERAL_STRING("mozaccesskeynotfound"), this, false);
+  
   
   
   mEventTarget->AddEventListener(NS_LITERAL_STRING("keydown"), this, true);
@@ -72,12 +73,12 @@ nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
   mEventTarget->AddEventListener(NS_LITERAL_STRING("mousedown"), this, false);
   mEventTarget->AddEventListener(NS_LITERAL_STRING("blur"), this, true);
 
-  mEventTarget->AddEventListener(
-                  NS_LITERAL_STRING("MozDOMFullscreen:Entered"), this, false);
+  mEventTarget->AddEventListener(NS_LITERAL_STRING("MozDOMFullscreen:Entered"),
+                                 this, false);
 
   
   RefPtr<dom::EventTarget> topWindowEventTarget =
-    nsContentUtils::GetWindowRoot(aMenuBarContent->GetComposedDoc());
+      nsContentUtils::GetWindowRoot(aMenuBarContent->GetComposedDoc());
   mTopWindowEventTarget = topWindowEventTarget.get();
 
   mTopWindowEventTarget->AddSystemEventListener(NS_LITERAL_STRING("deactivate"),
@@ -85,66 +86,55 @@ nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
 }
 
 
-nsMenuBarListener::~nsMenuBarListener()
-{
+nsMenuBarListener::~nsMenuBarListener() {
   MOZ_ASSERT(!mEventTarget,
              "OnDestroyMenuBarFrame() should've alreay been called");
 }
 
-void
-nsMenuBarListener::OnDestroyMenuBarFrame()
-{
-  mEventTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keypress"),
-                                          this, false);
-  mEventTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keydown"),
-                                          this, false);
-  mEventTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keyup"),
-                                          this, false);
+void nsMenuBarListener::OnDestroyMenuBarFrame() {
+  mEventTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keypress"), this,
+                                          false);
+  mEventTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keydown"), this,
+                                          false);
+  mEventTarget->RemoveSystemEventListener(NS_LITERAL_STRING("keyup"), this,
+                                          false);
   mEventTarget->RemoveSystemEventListener(
-                  NS_LITERAL_STRING("mozaccesskeynotfound"), this, false);
-  mEventTarget->RemoveEventListener(NS_LITERAL_STRING("keydown"),
-                                    this, true);
+      NS_LITERAL_STRING("mozaccesskeynotfound"), this, false);
+  mEventTarget->RemoveEventListener(NS_LITERAL_STRING("keydown"), this, true);
 
   mEventTarget->RemoveEventListener(NS_LITERAL_STRING("mousedown"), this, true);
-  mEventTarget->RemoveEventListener(NS_LITERAL_STRING("mousedown"),
-                                    this, false);
+  mEventTarget->RemoveEventListener(NS_LITERAL_STRING("mousedown"), this,
+                                    false);
   mEventTarget->RemoveEventListener(NS_LITERAL_STRING("blur"), this, true);
 
   mEventTarget->RemoveEventListener(
-                  NS_LITERAL_STRING("MozDOMFullscreen:Entered"), this, false);
+      NS_LITERAL_STRING("MozDOMFullscreen:Entered"), this, false);
 
   mTopWindowEventTarget->RemoveSystemEventListener(
-                           NS_LITERAL_STRING("deactivate"), this, true);
+      NS_LITERAL_STRING("deactivate"), this, true);
 
   mMenuBarFrame = nullptr;
   mEventTarget = nullptr;
   mTopWindowEventTarget = nullptr;
 }
 
-void
-nsMenuBarListener::InitializeStatics()
-{
+void nsMenuBarListener::InitializeStatics() {
   Preferences::AddBoolVarCache(&mAccessKeyFocuses,
                                "ui.key.menuAccessKeyFocuses");
 }
 
-nsresult
-nsMenuBarListener::GetMenuAccessKey(int32_t* aAccessKey)
-{
-  if (!aAccessKey)
-    return NS_ERROR_INVALID_POINTER;
+nsresult nsMenuBarListener::GetMenuAccessKey(int32_t* aAccessKey) {
+  if (!aAccessKey) return NS_ERROR_INVALID_POINTER;
   InitAccessKey();
   *aAccessKey = mAccessKey;
   return NS_OK;
 }
 
-void nsMenuBarListener::InitAccessKey()
-{
-  if (mAccessKey >= 0)
-    return;
+void nsMenuBarListener::InitAccessKey() {
+  if (mAccessKey >= 0) return;
 
-  
-  
+    
+    
 #ifdef XP_MACOSX
   mAccessKey = 0;
   mAccessKeyMask = 0;
@@ -156,30 +146,28 @@ void nsMenuBarListener::InitAccessKey()
   
   mAccessKey = Preferences::GetInt("ui.key.menuAccessKey", mAccessKey);
   switch (mAccessKey) {
-  case dom::KeyboardEvent_Binding::DOM_VK_SHIFT:
-    mAccessKeyMask = MODIFIER_SHIFT;
-    break;
-  case dom::KeyboardEvent_Binding::DOM_VK_CONTROL:
-    mAccessKeyMask = MODIFIER_CONTROL;
-    break;
-  case dom::KeyboardEvent_Binding::DOM_VK_ALT:
-    mAccessKeyMask = MODIFIER_ALT;
-    break;
-  case dom::KeyboardEvent_Binding::DOM_VK_META:
-    mAccessKeyMask = MODIFIER_META;
-    break;
-  case dom::KeyboardEvent_Binding::DOM_VK_WIN:
-    mAccessKeyMask = MODIFIER_OS;
-    break;
-  default:
-    
-    break;
+    case dom::KeyboardEvent_Binding::DOM_VK_SHIFT:
+      mAccessKeyMask = MODIFIER_SHIFT;
+      break;
+    case dom::KeyboardEvent_Binding::DOM_VK_CONTROL:
+      mAccessKeyMask = MODIFIER_CONTROL;
+      break;
+    case dom::KeyboardEvent_Binding::DOM_VK_ALT:
+      mAccessKeyMask = MODIFIER_ALT;
+      break;
+    case dom::KeyboardEvent_Binding::DOM_VK_META:
+      mAccessKeyMask = MODIFIER_META;
+      break;
+    case dom::KeyboardEvent_Binding::DOM_VK_WIN:
+      mAccessKeyMask = MODIFIER_OS;
+      break;
+    default:
+      
+      break;
   }
 }
 
-void
-nsMenuBarListener::ToggleMenuActiveState()
-{
+void nsMenuBarListener::ToggleMenuActiveState() {
   nsMenuFrame* closemenu = mMenuBarFrame->ToggleMenuActiveState();
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm && closemenu) {
@@ -190,9 +178,7 @@ nsMenuBarListener::ToggleMenuActiveState()
 }
 
 
-nsresult
-nsMenuBarListener::KeyUp(Event* aKeyEvent)
-{
+nsresult nsMenuBarListener::KeyUp(Event* aKeyEvent) {
   RefPtr<KeyboardEvent> keyEvent = aKeyEvent->AsKeyboardEvent();
   if (!keyEvent) {
     return NS_OK;
@@ -205,8 +191,7 @@ nsMenuBarListener::KeyUp(Event* aKeyEvent)
     return NS_OK;
   }
 
-  if (mAccessKey && mAccessKeyFocuses)
-  {
+  if (mAccessKey && mAccessKeyFocuses) {
     bool defaultPrevented = keyEvent->DefaultPrevented();
 
     
@@ -215,8 +200,7 @@ nsMenuBarListener::KeyUp(Event* aKeyEvent)
     uint32_t theChar = keyEvent->KeyCode();
 
     if (!defaultPrevented && mAccessKeyDown && !mAccessKeyDownCanceled &&
-        (int32_t)theChar == mAccessKey)
-    {
+        (int32_t)theChar == mAccessKey) {
       
       
       bool toggleMenuActiveState = true;
@@ -246,20 +230,18 @@ nsMenuBarListener::KeyUp(Event* aKeyEvent)
     if (active) {
       keyEvent->StopPropagation();
       keyEvent->PreventDefault();
-      return NS_OK; 
+      return NS_OK;  
     }
   }
 
-  return NS_OK; 
+  return NS_OK;  
 }
 
 
-nsresult
-nsMenuBarListener::KeyPress(Event* aKeyEvent)
-{
+nsresult nsMenuBarListener::KeyPress(Event* aKeyEvent) {
   
   if (!aKeyEvent || aKeyEvent->DefaultPrevented()) {
-    return NS_OK;       
+    return NS_OK;  
   }
 
   
@@ -269,12 +251,11 @@ nsMenuBarListener::KeyPress(Event* aKeyEvent)
 
   InitAccessKey();
 
-  if (mAccessKey)
-  {
+  if (mAccessKey) {
     
     
     WidgetKeyboardEvent* nativeKeyEvent =
-      aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
+        aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
     if (!nativeKeyEvent) {
       return NS_OK;
     }
@@ -319,7 +300,7 @@ nsMenuBarListener::KeyPress(Event* aKeyEvent)
 
       return NS_OK;
     }
-#endif 
+#endif  
 
     nsMenuFrame* menuFrameForKey = GetMenuForKeyEvent(keyEvent, false);
     if (!menuFrameForKey) {
@@ -353,34 +334,28 @@ nsMenuBarListener::KeyPress(Event* aKeyEvent)
   return NS_OK;
 }
 
-bool
-nsMenuBarListener::IsAccessKeyPressed(KeyboardEvent* aKeyEvent)
-{
+bool nsMenuBarListener::IsAccessKeyPressed(KeyboardEvent* aKeyEvent) {
   InitAccessKey();
   
   uint32_t modifiers = GetModifiersForAccessKey(aKeyEvent);
 
-  return (mAccessKeyMask != MODIFIER_SHIFT &&
-          (modifiers & mAccessKeyMask) &&
+  return (mAccessKeyMask != MODIFIER_SHIFT && (modifiers & mAccessKeyMask) &&
           (modifiers & ~(mAccessKeyMask | MODIFIER_SHIFT)) == 0);
 }
 
-Modifiers
-nsMenuBarListener::GetModifiersForAccessKey(KeyboardEvent* aKeyEvent)
-{
-  WidgetInputEvent* inputEvent =
-    aKeyEvent->WidgetEventPtr()->AsInputEvent();
+Modifiers nsMenuBarListener::GetModifiersForAccessKey(
+    KeyboardEvent* aKeyEvent) {
+  WidgetInputEvent* inputEvent = aKeyEvent->WidgetEventPtr()->AsInputEvent();
   MOZ_ASSERT(inputEvent);
 
   static const Modifiers kPossibleModifiersForAccessKey =
-    (MODIFIER_SHIFT | MODIFIER_CONTROL | MODIFIER_ALT | MODIFIER_META |
-     MODIFIER_OS);
+      (MODIFIER_SHIFT | MODIFIER_CONTROL | MODIFIER_ALT | MODIFIER_META |
+       MODIFIER_OS);
   return (inputEvent->mModifiers & kPossibleModifiersForAccessKey);
 }
 
-nsMenuFrame*
-nsMenuBarListener::GetMenuForKeyEvent(KeyboardEvent* aKeyEvent, bool aPeek)
-{
+nsMenuFrame* nsMenuBarListener::GetMenuForKeyEvent(KeyboardEvent* aKeyEvent,
+                                                   bool aPeek) {
   if (!IsAccessKeyPressed(aKeyEvent)) {
     return nullptr;
   }
@@ -389,7 +364,7 @@ nsMenuBarListener::GetMenuForKeyEvent(KeyboardEvent* aKeyEvent, bool aPeek)
   bool hasAccessKeyCandidates = charCode != 0;
   if (!hasAccessKeyCandidates) {
     WidgetKeyboardEvent* nativeKeyEvent =
-      aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
+        aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
 
     AutoTArray<uint32_t, 10> keys;
     nativeKeyEvent->GetAccessKeyCandidates(keys);
@@ -406,20 +381,16 @@ nsMenuBarListener::GetMenuForKeyEvent(KeyboardEvent* aKeyEvent, bool aPeek)
   return nullptr;
 }
 
-void
-nsMenuBarListener::ReserveKeyIfNeeded(Event* aKeyEvent)
-{
+void nsMenuBarListener::ReserveKeyIfNeeded(Event* aKeyEvent) {
   WidgetKeyboardEvent* nativeKeyEvent =
-    aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
+      aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
   if (nsContentUtils::ShouldBlockReservedKeys(nativeKeyEvent)) {
     nativeKeyEvent->MarkAsReservedByChrome();
   }
 }
 
 
-nsresult
-nsMenuBarListener::KeyDown(Event* aKeyEvent)
-{
+nsresult nsMenuBarListener::KeyDown(Event* aKeyEvent) {
   InitAccessKey();
 
   
@@ -444,16 +415,15 @@ nsMenuBarListener::KeyDown(Event* aKeyEvent)
   }
 #endif
 
-  if (mAccessKey && mAccessKeyFocuses)
-  {
+  if (mAccessKey && mAccessKeyFocuses) {
     bool defaultPrevented = aKeyEvent->DefaultPrevented();
 
     
     
     
     bool isAccessKeyDownEvent =
-      ((theChar == (uint32_t)mAccessKey) &&
-       (GetModifiersForAccessKey(keyEvent) & ~mAccessKeyMask) == 0);
+        ((theChar == (uint32_t)mAccessKey) &&
+         (GetModifiersForAccessKey(keyEvent) & ~mAccessKeyMask) == 0);
 
     if (!capturing && !mAccessKeyDown) {
       
@@ -487,38 +457,32 @@ nsMenuBarListener::KeyDown(Event* aKeyEvent)
     }
   }
 
-  return NS_OK; 
+  return NS_OK;  
 }
 
 
 
-nsresult
-nsMenuBarListener::Blur(Event* aEvent)
-{
+nsresult nsMenuBarListener::Blur(Event* aEvent) {
   if (!mMenuBarFrame->IsMenuOpen() && mMenuBarFrame->IsActive()) {
     ToggleMenuActiveState();
     mAccessKeyDown = false;
     mAccessKeyDownCanceled = false;
   }
-  return NS_OK; 
+  return NS_OK;  
 }
 
 
 
-nsresult
-nsMenuBarListener::OnWindowDeactivated(Event* aEvent)
-{
+nsresult nsMenuBarListener::OnWindowDeactivated(Event* aEvent) {
   
   
   mAccessKeyDown = false;
   mAccessKeyDownCanceled = false;
-  return NS_OK; 
+  return NS_OK;  
 }
 
 
-nsresult
-nsMenuBarListener::MouseDown(Event* aMouseEvent)
-{
+nsresult nsMenuBarListener::MouseDown(Event* aMouseEvent) {
   
 
   
@@ -536,14 +500,12 @@ nsMenuBarListener::MouseDown(Event* aMouseEvent)
   if (!mMenuBarFrame->IsMenuOpen() && mMenuBarFrame->IsActive())
     ToggleMenuActiveState();
 
-  return NS_OK; 
+  return NS_OK;  
 }
 
 
 
-nsresult
-nsMenuBarListener::Fullscreen(Event* aEvent)
-{
+nsresult nsMenuBarListener::Fullscreen(Event* aEvent) {
   if (mMenuBarFrame->IsActive()) {
     ToggleMenuActiveState();
   }
@@ -551,9 +513,7 @@ nsMenuBarListener::Fullscreen(Event* aEvent)
 }
 
 
-nsresult
-nsMenuBarListener::HandleEvent(Event* aEvent)
-{
+nsresult nsMenuBarListener::HandleEvent(Event* aEvent) {
   
   if (!mMenuBarFrame->StyleVisibility()->IsVisible()) {
     return NS_OK;

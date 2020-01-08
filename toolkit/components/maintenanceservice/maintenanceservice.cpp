@@ -20,7 +20,7 @@
 
 #pragma comment(linker, "/SUBSYSTEM:windows")
 
-SERVICE_STATUS gSvcStatus = { 0 };
+SERVICE_STATUS gSvcStatus = {0};
 SERVICE_STATUS_HANDLE gSvcStatusHandle = nullptr;
 HANDLE gWorkDoneEvent = nullptr;
 HANDLE gThread = nullptr;
@@ -31,9 +31,7 @@ bool gServiceControlStopping = false;
 
 BOOL GetLogDirectoryPath(WCHAR *path);
 
-int
-wmain(int argc, WCHAR **argv)
-{
+int wmain(int argc, WCHAR **argv) {
   
   
   
@@ -108,9 +106,9 @@ wmain(int argc, WCHAR **argv)
   }
 
   SERVICE_TABLE_ENTRYW DispatchTable[] = {
-    { const_cast<LPWSTR>(SVC_NAME), (LPSERVICE_MAIN_FUNCTIONW) SvcMain }, 
-    { nullptr, nullptr }
-  };
+      {const_cast<LPWSTR>(SVC_NAME),
+       (LPSERVICE_MAIN_FUNCTIONW)SvcMain},  
+      {nullptr, nullptr}};
 
   
   
@@ -127,9 +125,7 @@ wmain(int argc, WCHAR **argv)
 
 
 
-BOOL
-GetLogDirectoryPath(WCHAR *path)
-{
+BOOL GetLogDirectoryPath(WCHAR *path) {
   if (!GetModuleFileNameW(nullptr, path, MAX_PATH)) {
     return FALSE;
   }
@@ -153,10 +149,8 @@ GetLogDirectoryPath(WCHAR *path)
 
 
 
-BOOL
-GetBackupLogPath(LPWSTR path, LPCWSTR basePath, int logNumber)
-{
-  WCHAR logName[64] = { L'\0' };
+BOOL GetBackupLogPath(LPWSTR path, LPCWSTR basePath, int logNumber) {
+  WCHAR logName[64] = {L'\0'};
   wcsncpy(path, basePath, sizeof(logName) / sizeof(logName[0]) - 1);
   if (logNumber <= 0) {
     swprintf(logName, sizeof(logName) / sizeof(logName[0]),
@@ -179,13 +173,11 @@ GetBackupLogPath(LPWSTR path, LPCWSTR basePath, int logNumber)
 
 
 
-void
-BackupOldLogs(LPCWSTR basePath, int numLogsToKeep)
-{
+void BackupOldLogs(LPCWSTR basePath, int numLogsToKeep) {
   WCHAR oldPath[MAX_PATH + 1];
   WCHAR newPath[MAX_PATH + 1];
   for (int i = numLogsToKeep; i >= 1; i--) {
-    if (!GetBackupLogPath(oldPath, basePath, i -1)) {
+    if (!GetBackupLogPath(oldPath, basePath, i - 1)) {
       continue;
     }
 
@@ -213,17 +205,13 @@ BackupOldLogs(LPCWSTR basePath, int numLogsToKeep)
 
 
 
-DWORD WINAPI
-EnsureProcessTerminatedThread(LPVOID)
-{
+DWORD WINAPI EnsureProcessTerminatedThread(LPVOID) {
   Sleep(5000);
   exit(0);
   return 0;
 }
 
-void
-StartTerminationThread()
-{
+void StartTerminationThread() {
   
   
   HANDLE thread = CreateThread(nullptr, 0, EnsureProcessTerminatedThread,
@@ -236,9 +224,7 @@ StartTerminationThread()
 
 
 
-void WINAPI
-SvcMain(DWORD argc, LPWSTR *argv)
-{
+void WINAPI SvcMain(DWORD argc, LPWSTR *argv) {
   
   WCHAR updatePath[MAX_PATH + 1];
   if (GetLogDirectoryPath(updatePath)) {
@@ -303,11 +289,7 @@ SvcMain(DWORD argc, LPWSTR *argv)
 
 
 
-void
-ReportSvcStatus(DWORD currentState,
-                DWORD exitCode,
-                DWORD waitHint)
-{
+void ReportSvcStatus(DWORD currentState, DWORD exitCode, DWORD waitHint) {
   static DWORD dwCheckPoint = 1;
 
   gSvcStatus.dwCurrentState = currentState;
@@ -318,12 +300,11 @@ ReportSvcStatus(DWORD currentState,
       SERVICE_STOP_PENDING == currentState) {
     gSvcStatus.dwControlsAccepted = 0;
   } else {
-    gSvcStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP |
-                                    SERVICE_ACCEPT_SHUTDOWN;
+    gSvcStatus.dwControlsAccepted =
+        SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
   }
 
-  if ((SERVICE_RUNNING == currentState) ||
-      (SERVICE_STOPPED == currentState)) {
+  if ((SERVICE_RUNNING == currentState) || (SERVICE_STOPPED == currentState)) {
     gSvcStatus.dwCheckPoint = 0;
   } else {
     gSvcStatus.dwCheckPoint = dwCheckPoint++;
@@ -337,12 +318,10 @@ ReportSvcStatus(DWORD currentState,
 
 
 
-DWORD WINAPI
-StopServiceAndWaitForCommandThread(LPVOID)
-{
+DWORD WINAPI StopServiceAndWaitForCommandThread(LPVOID) {
   do {
     ReportSvcStatus(SERVICE_STOP_PENDING, NO_ERROR, 1000);
-  } while(WaitForSingleObject(gWorkDoneEvent, 100) == WAIT_TIMEOUT);
+  } while (WaitForSingleObject(gWorkDoneEvent, 100) == WAIT_TIMEOUT);
   CloseHandle(gWorkDoneEvent);
   gWorkDoneEvent = nullptr;
   ReportSvcStatus(SERVICE_STOPPED, NO_ERROR, 0);
@@ -354,9 +333,7 @@ StopServiceAndWaitForCommandThread(LPVOID)
 
 
 
-void WINAPI
-SvcCtrlHandler(DWORD dwCtrl)
-{
+void WINAPI SvcCtrlHandler(DWORD dwCtrl) {
   
   
   if (gServiceControlStopping) {
@@ -364,17 +341,16 @@ SvcCtrlHandler(DWORD dwCtrl)
   }
 
   
-  switch(dwCtrl) {
-  case SERVICE_CONTROL_SHUTDOWN:
-  case SERVICE_CONTROL_STOP: {
+  switch (dwCtrl) {
+    case SERVICE_CONTROL_SHUTDOWN:
+    case SERVICE_CONTROL_STOP: {
       gServiceControlStopping = true;
       ReportSvcStatus(SERVICE_STOP_PENDING, NO_ERROR, 1000);
 
       
       
-      HANDLE thread = CreateThread(nullptr, 0,
-                                   StopServiceAndWaitForCommandThread,
-                                   nullptr, 0, nullptr);
+      HANDLE thread = CreateThread(
+          nullptr, 0, StopServiceAndWaitForCommandThread, nullptr, 0, nullptr);
       if (thread) {
         CloseHandle(thread);
       } else {
@@ -383,9 +359,8 @@ SvcCtrlHandler(DWORD dwCtrl)
         
         StopServiceAndWaitForCommandThread(nullptr);
       }
-    }
-    break;
-  default:
-    break;
+    } break;
+    default:
+      break;
   }
 }

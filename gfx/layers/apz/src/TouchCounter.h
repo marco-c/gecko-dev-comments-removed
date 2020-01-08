@@ -17,18 +17,17 @@ namespace layers {
 
 
 
-class TouchCounter
-{
-public:
+class TouchCounter {
+ public:
   TouchCounter();
   void Update(const MultiTouchInput& aInput);
   uint32_t GetActiveTouchCount() const;
 
-private:
+ private:
   uint32_t mActiveTouchCount;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

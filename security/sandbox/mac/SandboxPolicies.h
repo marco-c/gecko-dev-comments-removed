@@ -838,6 +838,6 @@ static const char flashPluginSandboxRules[] = R"SANDBOX_LITERAL(
   (deny file-write-create (vnode-type SYMLINK))
 )SANDBOX_LITERAL";
 
-}
+}  
 
-#endif 
+#endif  

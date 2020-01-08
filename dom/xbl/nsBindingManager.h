@@ -35,11 +35,10 @@ typedef nsTArray<RefPtr<nsXBLBinding> > nsBindingList;
 class nsIPrincipal;
 class nsITimer;
 
-class nsBindingManager final : public nsStubMutationObserver
-{
+class nsBindingManager final : public nsStubMutationObserver {
   ~nsBindingManager();
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
@@ -66,13 +65,9 @@ public:
 
 
 
- enum DestructorHandling {
-   eRunDtor,
-   eDoNotRunDtor
- };
+  enum DestructorHandling { eRunDtor, eDoNotRunDtor };
   void RemovedFromDocument(nsIContent* aContent, nsIDocument* aOldDocument,
-                           DestructorHandling aDestructorHandling)
-  {
+                           DestructorHandling aDestructorHandling) {
     if (aContent->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
       RemovedFromDocumentInternal(aContent, aOldDocument, aDestructorHandling);
     }
@@ -97,19 +92,18 @@ public:
 
   nsresult AddToAttachedQueue(nsXBLBinding* aBinding);
   void RemoveFromAttachedQueue(nsXBLBinding* aBinding);
-  void ProcessAttachedQueue(uint32_t aSkipSize = 0)
-  {
+  void ProcessAttachedQueue(uint32_t aSkipSize = 0) {
     if (mProcessingAttachedStack || mAttachedStack.Length() <= aSkipSize) {
       return;
     }
 
     ProcessAttachedQueueInternal(aSkipSize);
   }
-private:
+
+ private:
   void ProcessAttachedQueueInternal(uint32_t aSkipSize);
 
-public:
-
+ public:
   void ExecuteDetachedHandlers();
 
   nsresult PutXBLDocumentInfo(nsXBLDocumentInfo* aDocumentInfo);
@@ -122,24 +116,22 @@ public:
 
   void FlushSkinBindings();
 
-  nsresult GetBindingImplementation(nsIContent* aContent, REFNSIID aIID, void** aResult);
-
+  nsresult GetBindingImplementation(nsIContent* aContent, REFNSIID aIID,
+                                    void** aResult);
 
   void AppendAllSheets(nsTArray<mozilla::StyleSheet*>& aArray);
 
-  void Traverse(nsIContent *aContent, nsCycleCollectionTraversalCallback &cb);
+  void Traverse(nsIContent* aContent, nsCycleCollectionTraversalCallback& cb);
 
   NS_DECL_CYCLE_COLLECTION_CLASS(nsBindingManager)
 
   
   
-  void BeginOutermostUpdate()
-  {
+  void BeginOutermostUpdate() {
     mAttachedStackSizeOnOutermost = mAttachedStack.Length();
   }
 
-  void EndOutermostUpdate()
-  {
+  void EndOutermostUpdate() {
     if (!mProcessingAttachedStack) {
       ProcessAttachedQueue(mAttachedStackSizeOnOutermost);
       mAttachedStackSizeOnOutermost = 0;
@@ -153,19 +145,20 @@ public:
   
   void DropDocumentReference();
 
-  nsIContent* FindNestedSingleInsertionPoint(nsIContent* aContainer, bool* aMulti);
+  nsIContent* FindNestedSingleInsertionPoint(nsIContent* aContainer,
+                                             bool* aMulti);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   
   
   using BoundContentProtoBindingCallback =
-    std::function<bool (nsXBLPrototypeBinding*)>;
+      std::function<bool(nsXBLPrototypeBinding*)>;
 
   bool EnumerateBoundContentProtoBindings(
       const BoundContentProtoBindingCallback&) const;
 
-protected:
+ protected:
   nsIXPConnectWrappedJS* GetWrappedJS(nsIContent* aContent);
   nsresult SetWrappedJS(nsIContent* aContent, nsIXPConnectWrappedJS* aResult);
 
@@ -185,7 +178,7 @@ protected:
   
   static void PostPAQEventCallback(nsITimer* aTimer, void* aClosure);
 
-
+  
   
   nsAutoPtr<nsTHashtable<nsRefPtrHashKey<nsIContent> > > mBoundContentSet;
 
@@ -196,18 +189,20 @@ protected:
   
   
   
-  typedef nsInterfaceHashtable<nsISupportsHashKey, nsIXPConnectWrappedJS> WrapperHashtable;
+  typedef nsInterfaceHashtable<nsISupportsHashKey, nsIXPConnectWrappedJS>
+      WrapperHashtable;
   nsAutoPtr<WrapperHashtable> mWrapperTable;
 
   
   
   
-  nsAutoPtr<nsRefPtrHashtable<nsURIHashKey,nsXBLDocumentInfo> > mDocumentTable;
+  nsAutoPtr<nsRefPtrHashtable<nsURIHashKey, nsXBLDocumentInfo> > mDocumentTable;
 
   
   
   
-  nsAutoPtr<nsInterfaceHashtable<nsURIHashKey,nsIStreamListener> > mLoadingDocTable;
+  nsAutoPtr<nsInterfaceHashtable<nsURIHashKey, nsIStreamListener> >
+      mLoadingDocTable;
 
   
   nsBindingList mAttachedStack;
@@ -217,7 +212,7 @@ protected:
 
   
   friend class nsRunnableMethod<nsBindingManager>;
-  RefPtr< nsRunnableMethod<nsBindingManager> > mProcessAttachedQueueEvent;
+  RefPtr<nsRunnableMethod<nsBindingManager> > mProcessAttachedQueueEvent;
 
   
   nsIDocument* mDocument;

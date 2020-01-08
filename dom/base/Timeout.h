@@ -26,17 +26,14 @@ namespace dom {
 
 
 
-class Timeout final
-  : public LinkedListElement<RefPtr<Timeout>>
-{
-public:
+class Timeout final : public LinkedListElement<RefPtr<Timeout>> {
+ public:
   Timeout();
 
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(Timeout)
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(Timeout)
 
-  enum class Reason : uint8_t
-  {
+  enum class Reason : uint8_t {
     eTimeoutOrInterval,
     eIdleCallbackTimeout,
   };
@@ -50,7 +47,7 @@ public:
   
   const TimeDuration& TimeRemaining() const;
 
-private:
+ private:
   
   
   
@@ -62,7 +59,7 @@ private:
 
   ~Timeout() = default;
 
-public:
+ public:
   
   
   
@@ -106,7 +103,7 @@ public:
   bool mIsInterval;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

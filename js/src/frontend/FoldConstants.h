@@ -13,7 +13,8 @@ namespace js {
 namespace frontend {
 
 class FullParseHandler;
-template <class ParseHandler> class PerHandlerParser;
+template <class ParseHandler>
+class PerHandlerParser;
 
 
 
@@ -30,14 +31,13 @@ template <class ParseHandler> class PerHandlerParser;
 
 
 
-extern MOZ_MUST_USE bool
-FoldConstants(JSContext* cx, ParseNode** pnp, PerHandlerParser<FullParseHandler>* parser);
+extern MOZ_MUST_USE bool FoldConstants(
+    JSContext* cx, ParseNode** pnp, PerHandlerParser<FullParseHandler>* parser);
 
-inline MOZ_MUST_USE bool
-FoldConstants(JSContext* cx, typename SyntaxParseHandler::Node* pnp,
-              PerHandlerParser<SyntaxParseHandler>* parser)
-{
-    return true;
+inline MOZ_MUST_USE bool FoldConstants(
+    JSContext* cx, typename SyntaxParseHandler::Node* pnp,
+    PerHandlerParser<SyntaxParseHandler>* parser) {
+  return true;
 }
 
 } 

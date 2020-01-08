@@ -11,7 +11,7 @@ namespace hal {
 
 void WakeLockInit();
 
-} 
-} 
+}  
+}  
 
 #endif 

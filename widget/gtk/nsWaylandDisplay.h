@@ -16,29 +16,32 @@ namespace widget {
 
 
 
-#define EVENT_LOOP_DELAY (1000/240)
+#define EVENT_LOOP_DELAY (1000 / 240)
 
 
 
 class nsWaylandDisplay : public nsISupports {
   NS_DECL_THREADSAFE_ISUPPORTS
 
-public:
-  explicit nsWaylandDisplay(wl_display *aDisplay);
+ public:
+  explicit nsWaylandDisplay(wl_display* aDisplay);
 
-  bool                     DisplayLoop();
-  bool                     Matches(wl_display *aDisplay);
+  bool DisplayLoop();
+  bool Matches(wl_display* aDisplay);
 
-  wl_display*              GetDisplay()             { return mDisplay; };
-  wl_event_queue*          GetEventQueue()          { return mEventQueue; };
-  wl_subcompositor*        GetSubcompositor(void)   { return mSubcompositor; };
-  wl_data_device_manager*  GetDataDeviceManager(void) { return mDataDeviceManager; };
-  wl_seat*                 GetSeat(void)            { return mSeat; };
-  wl_shm*                  GetShm(void)             { return mShm; };
-  gtk_primary_selection_device_manager*
-  GetPrimarySelectionDeviceManager(void)            { return mPrimarySelectionDeviceManager; };
+  wl_display* GetDisplay() { return mDisplay; };
+  wl_event_queue* GetEventQueue() { return mEventQueue; };
+  wl_subcompositor* GetSubcompositor(void) { return mSubcompositor; };
+  wl_data_device_manager* GetDataDeviceManager(void) {
+    return mDataDeviceManager;
+  };
+  wl_seat* GetSeat(void) { return mSeat; };
+  wl_shm* GetShm(void) { return mShm; };
+  gtk_primary_selection_device_manager* GetPrimarySelectionDeviceManager(void) {
+    return mPrimarySelectionDeviceManager;
+  };
 
-public:
+ public:
   void SetShm(wl_shm* aShm);
   void SetSubcompositor(wl_subcompositor* aSubcompositor);
   void SetDataDeviceManager(wl_data_device_manager* aDataDeviceManager);
@@ -46,16 +49,16 @@ public:
   void SetPrimarySelectionDeviceManager(
       gtk_primary_selection_device_manager* aPrimarySelectionDeviceManager);
 
-private:
+ private:
   virtual ~nsWaylandDisplay();
 
-  PRThread*           mThreadId;
-  wl_display*         mDisplay;
-  wl_event_queue*     mEventQueue;
+  PRThread* mThreadId;
+  wl_display* mDisplay;
+  wl_event_queue* mEventQueue;
   wl_data_device_manager* mDataDeviceManager;
-  wl_subcompositor*   mSubcompositor;
-  wl_seat*            mSeat;
-  wl_shm*             mShm;
+  wl_subcompositor* mSubcompositor;
+  wl_seat* mSeat;
+  wl_shm* mShm;
   gtk_primary_selection_device_manager* mPrimarySelectionDeviceManager;
 };
 
@@ -65,4 +68,4 @@ void WaylandDisplayRelease(nsWaylandDisplay* aDisplay);
 }  
 }  
 
-#endif 
+#endif  

@@ -29,21 +29,17 @@ namespace {
 
 
 
-const uint32_t sTemporaryFileStreamFlags =
-  nsIFileInputStream::REOPEN_ON_REWIND;
+const uint32_t sTemporaryFileStreamFlags = nsIFileInputStream::REOPEN_ON_REWIND;
 
-class TemporaryFileInputStream final : public nsFileInputStream
-{
-public:
-  static nsresult
-  Create(nsIFile* aFile, nsIInputStream** aInputStream)
-  {
+class TemporaryFileInputStream final : public nsFileInputStream {
+ public:
+  static nsresult Create(nsIFile* aFile, nsIInputStream** aInputStream) {
     MOZ_ASSERT(aFile);
     MOZ_ASSERT(aInputStream);
     MOZ_ASSERT(XRE_IsParentProcess());
 
     RefPtr<TemporaryFileInputStream> stream =
-      new TemporaryFileInputStream(aFile);
+        new TemporaryFileInputStream(aFile);
 
     nsresult rv = stream->Init(aFile, -1, -1, sTemporaryFileStreamFlags);
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -54,78 +50,65 @@ public:
     return NS_OK;
   }
 
-  void
-  Serialize(InputStreamParams& aParams,
-            FileDescriptorArray& aFileDescriptors) override
-  {
+  void Serialize(InputStreamParams& aParams,
+                 FileDescriptorArray& aFileDescriptors) override {
     MOZ_CRASH("This inputStream cannot be serialized.");
   }
 
-  bool
-  Deserialize(const InputStreamParams& aParams,
-              const FileDescriptorArray& aFileDescriptors) override
-  {
+  bool Deserialize(const InputStreamParams& aParams,
+                   const FileDescriptorArray& aFileDescriptors) override {
     MOZ_CRASH("This inputStream cannot be deserialized.");
     return false;
   }
 
-private:
-  explicit TemporaryFileInputStream(nsIFile* aFile)
-    : mFile(aFile)
-  {
+ private:
+  explicit TemporaryFileInputStream(nsIFile* aFile) : mFile(aFile) {
     MOZ_ASSERT(XRE_IsParentProcess());
   }
 
-  ~TemporaryFileInputStream()
-  {
+  ~TemporaryFileInputStream() {
     
     RefPtr<IPCBlobInputStreamThread> thread =
-      IPCBlobInputStreamThread::GetOrCreate();
+        IPCBlobInputStreamThread::GetOrCreate();
     if (NS_WARN_IF(!thread)) {
       return;
     }
 
     nsCOMPtr<nsIFile> file = std::move(mFile);
-    thread->Dispatch(NS_NewRunnableFunction(
-      "TemporaryFileInputStream::Runnable",
-      [file]() {
-        file->Remove(false);
-      }
-    ));
+    thread->Dispatch(
+        NS_NewRunnableFunction("TemporaryFileInputStream::Runnable",
+                               [file]() { file->Remove(false); }));
   }
 
   nsCOMPtr<nsIFile> mFile;
 };
 
-} 
+}  
 
 TemporaryFileBlobImpl::TemporaryFileBlobImpl(nsIFile* aFile,
                                              const nsAString& aContentType)
-  : FileBlobImpl(aFile, EmptyString(), aContentType)
+    : FileBlobImpl(aFile, EmptyString(), aContentType)
 #ifdef DEBUG
-  , mInputStreamCreated(false)
+      ,
+      mInputStreamCreated(false)
 #endif
 {
   MOZ_ASSERT(XRE_IsParentProcess());
 }
 
-TemporaryFileBlobImpl::~TemporaryFileBlobImpl()
-{
+TemporaryFileBlobImpl::~TemporaryFileBlobImpl() {
   MOZ_ASSERT(mInputStreamCreated);
 }
 
-already_AddRefed<BlobImpl>
-TemporaryFileBlobImpl::CreateSlice(uint64_t aStart, uint64_t aLength,
-                                   const nsAString& aContentType,
-                                   ErrorResult& aRv)
-{
+already_AddRefed<BlobImpl> TemporaryFileBlobImpl::CreateSlice(
+    uint64_t aStart, uint64_t aLength, const nsAString& aContentType,
+    ErrorResult& aRv) {
   MOZ_CRASH("This BlobImpl is not meant to be sliced!");
   return nullptr;
 }
 
-void
-TemporaryFileBlobImpl::CreateInputStream(nsIInputStream** aStream, ErrorResult& aRv)
-{
+void TemporaryFileBlobImpl::CreateInputStream(nsIInputStream** aStream,
+                                              ErrorResult& aRv) {
 #ifdef DEBUG
   MOZ_ASSERT(!mInputStreamCreated);
   
@@ -138,5 +121,5 @@ TemporaryFileBlobImpl::CreateInputStream(nsIInputStream** aStream, ErrorResult& 
   }
 }
 
-} 
-} 
+}  
+}  

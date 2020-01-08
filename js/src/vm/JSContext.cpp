@@ -20,13 +20,13 @@
 #include <stdarg.h>
 #include <string.h>
 #ifdef ANDROID
-# include <android/log.h>
-# include <fstream>
-# include <string>
-#endif 
+#include <android/log.h>
+#include <fstream>
+#include <string>
+#endif  
 #ifdef XP_WIN
-# include <processthreadsapi.h>
-#endif 
+#include <processthreadsapi.h>
+#endif  
 
 #include "jsexn.h"
 #include "jspubtd.h"
@@ -40,10 +40,10 @@
 #include "js/CharacterEncoding.h"
 #include "js/Printf.h"
 #ifdef JS_SIMULATOR_ARM64
-# include "jit/arm64/vixl/Simulator-vixl.h"
+#include "jit/arm64/vixl/Simulator-vixl.h"
 #endif
 #ifdef JS_SIMULATOR_ARM
-# include "jit/arm/Simulator-arm.h"
+#include "jit/arm/Simulator-arm.h"
 #endif
 #include "util/DoubleToString.h"
 #include "util/NativeStack.h"
@@ -69,227 +69,210 @@ using namespace js;
 using mozilla::DebugOnly;
 using mozilla::PodArrayZero;
 
-bool
-js::AutoCycleDetector::init()
-{
-    MOZ_ASSERT(cyclic);
+bool js::AutoCycleDetector::init() {
+  MOZ_ASSERT(cyclic);
 
-    AutoCycleDetector::Vector& vector = cx->cycleDetectorVector();
+  AutoCycleDetector::Vector& vector = cx->cycleDetectorVector();
 
-    for (JSObject* obj2 : vector) {
-        if (MOZ_UNLIKELY(obj == obj2)) {
-            return true;
-        }
+  for (JSObject* obj2 : vector) {
+    if (MOZ_UNLIKELY(obj == obj2)) {
+      return true;
     }
+  }
 
-    if (!vector.append(obj)) {
-        return false;
-    }
+  if (!vector.append(obj)) {
+    return false;
+  }
 
-    cyclic = false;
-    return true;
+  cyclic = false;
+  return true;
 }
 
-js::AutoCycleDetector::~AutoCycleDetector()
-{
-    if (MOZ_LIKELY(!cyclic)) {
-        AutoCycleDetector::Vector& vec = cx->cycleDetectorVector();
-        MOZ_ASSERT(vec.back() == obj);
-        if (vec.length() > 1) {
-            vec.popBack();
-        } else {
-            
-            vec.clearAndFree();
-        }
+js::AutoCycleDetector::~AutoCycleDetector() {
+  if (MOZ_LIKELY(!cyclic)) {
+    AutoCycleDetector::Vector& vec = cx->cycleDetectorVector();
+    MOZ_ASSERT(vec.back() == obj);
+    if (vec.length() > 1) {
+      vec.popBack();
+    } else {
+      
+      vec.clearAndFree();
     }
+  }
 }
 
-bool
-JSContext::init(ContextKind kind)
-{
-    
-    if (kind == ContextKind::MainThread) {
-        if (!regexpStack.ref().init()) {
-            return false;
-        }
+bool JSContext::init(ContextKind kind) {
+  
+  if (kind == ContextKind::MainThread) {
+    if (!regexpStack.ref().init()) {
+      return false;
+    }
 
-        if (!fx.initInstance()) {
-            return false;
-        }
+    if (!fx.initInstance()) {
+      return false;
+    }
 
 #ifdef JS_SIMULATOR
-        simulator_ = jit::Simulator::Create();
-        if (!simulator_) {
-            return false;
-        }
+    simulator_ = jit::Simulator::Create();
+    if (!simulator_) {
+      return false;
+    }
 #endif
 
-    } else {
-        atomsZoneFreeLists_ = js_new<gc::FreeLists>();
-        if (!atomsZoneFreeLists_) {
-            return false;
-        }
+  } else {
+    atomsZoneFreeLists_ = js_new<gc::FreeLists>();
+    if (!atomsZoneFreeLists_) {
+      return false;
     }
+  }
 
-    
-    
-    kind_ = kind;
+  
+  
+  kind_ = kind;
 
-    return true;
+  return true;
 }
 
-JSContext*
-js::NewContext(uint32_t maxBytes, uint32_t maxNurseryBytes, JSRuntime* parentRuntime)
-{
-    AutoNoteSingleThreadedRegion anstr;
+JSContext* js::NewContext(uint32_t maxBytes, uint32_t maxNurseryBytes,
+                          JSRuntime* parentRuntime) {
+  AutoNoteSingleThreadedRegion anstr;
 
-    MOZ_RELEASE_ASSERT(!TlsContext.get());
+  MOZ_RELEASE_ASSERT(!TlsContext.get());
 
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
-    js::oom::SetThreadType(!parentRuntime ? js::THREAD_TYPE_MAIN
-                                          : js::THREAD_TYPE_WORKER);
+  js::oom::SetThreadType(!parentRuntime ? js::THREAD_TYPE_MAIN
+                                        : js::THREAD_TYPE_WORKER);
 #endif
 
-    JSRuntime* runtime = js_new<JSRuntime>(parentRuntime);
-    if (!runtime) {
-        return nullptr;
-    }
+  JSRuntime* runtime = js_new<JSRuntime>(parentRuntime);
+  if (!runtime) {
+    return nullptr;
+  }
 
-    JSContext* cx = js_new<JSContext>(runtime, JS::ContextOptions());
-    if (!cx) {
-        js_delete(runtime);
-        return nullptr;
-    }
+  JSContext* cx = js_new<JSContext>(runtime, JS::ContextOptions());
+  if (!cx) {
+    js_delete(runtime);
+    return nullptr;
+  }
 
-    if (!runtime->init(cx, maxBytes, maxNurseryBytes)) {
-        runtime->destroyRuntime();
-        js_delete(cx);
-        js_delete(runtime);
-        return nullptr;
-    }
+  if (!runtime->init(cx, maxBytes, maxNurseryBytes)) {
+    runtime->destroyRuntime();
+    js_delete(cx);
+    js_delete(runtime);
+    return nullptr;
+  }
 
-    if (!cx->init(ContextKind::MainThread)) {
-        runtime->destroyRuntime();
-        js_delete(cx);
-        js_delete(runtime);
-        return nullptr;
-    }
+  if (!cx->init(ContextKind::MainThread)) {
+    runtime->destroyRuntime();
+    js_delete(cx);
+    js_delete(runtime);
+    return nullptr;
+  }
 
-    return cx;
+  return cx;
 }
 
-static void
-FreeJobQueueHandling(JSContext* cx)
-{
-    if (!cx->jobQueue) {
-        return;
-    }
+static void FreeJobQueueHandling(JSContext* cx) {
+  if (!cx->jobQueue) {
+    return;
+  }
 
-    cx->jobQueue->reset();
-    FreeOp* fop = cx->defaultFreeOp();
-    fop->delete_(cx->jobQueue.ref());
-    cx->getIncumbentGlobalCallback = nullptr;
-    cx->enqueuePromiseJobCallback = nullptr;
-    cx->enqueuePromiseJobCallbackData = nullptr;
+  cx->jobQueue->reset();
+  FreeOp* fop = cx->defaultFreeOp();
+  fop->delete_(cx->jobQueue.ref());
+  cx->getIncumbentGlobalCallback = nullptr;
+  cx->enqueuePromiseJobCallback = nullptr;
+  cx->enqueuePromiseJobCallbackData = nullptr;
 }
 
-void
-js::DestroyContext(JSContext* cx)
-{
-    JS_AbortIfWrongThread(cx);
+void js::DestroyContext(JSContext* cx) {
+  JS_AbortIfWrongThread(cx);
 
-    cx->checkNoGCRooters();
+  cx->checkNoGCRooters();
 
-    
-    
-    CancelOffThreadIonCompile(cx->runtime());
+  
+  
+  CancelOffThreadIonCompile(cx->runtime());
 
-    FreeJobQueueHandling(cx);
+  FreeJobQueueHandling(cx);
 
-    
-    
-    cx->runtime()->offThreadPromiseState.ref().shutdown(cx);
+  
+  
+  cx->runtime()->offThreadPromiseState.ref().shutdown(cx);
 
-    
-    cx->runtime()->destroyRuntime();
-    js_delete(cx->runtime());
-    js_delete_poison(cx);
+  
+  cx->runtime()->destroyRuntime();
+  js_delete(cx->runtime());
+  js_delete_poison(cx);
 }
 
-void
-JS::RootingContext::checkNoGCRooters() {
+void JS::RootingContext::checkNoGCRooters() {
 #ifdef DEBUG
-    for (auto const& stackRootPtr : stackRoots_) {
-        MOZ_ASSERT(stackRootPtr == nullptr);
-    }
+  for (auto const& stackRootPtr : stackRoots_) {
+    MOZ_ASSERT(stackRootPtr == nullptr);
+  }
 #endif
 }
 
-bool
-AutoResolving::alreadyStartedSlow() const
-{
-    MOZ_ASSERT(link);
-    AutoResolving* cursor = link;
-    do {
-        MOZ_ASSERT(this != cursor);
-        if (object.get() == cursor->object && id.get() == cursor->id && kind == cursor->kind) {
-            return true;
-        }
-    } while (!!(cursor = cursor->link));
-    return false;
+bool AutoResolving::alreadyStartedSlow() const {
+  MOZ_ASSERT(link);
+  AutoResolving* cursor = link;
+  do {
+    MOZ_ASSERT(this != cursor);
+    if (object.get() == cursor->object && id.get() == cursor->id &&
+        kind == cursor->kind) {
+      return true;
+    }
+  } while (!!(cursor = cursor->link));
+  return false;
 }
 
-static void
-ReportError(JSContext* cx, JSErrorReport* reportp, JSErrorCallback callback,
-            void* userRef)
-{
-    
+static void ReportError(JSContext* cx, JSErrorReport* reportp,
+                        JSErrorCallback callback, void* userRef) {
+  
 
 
 
 
 
-    MOZ_ASSERT(reportp);
-    if ((!callback || callback == GetErrorMessage) &&
-        reportp->errorNumber == JSMSG_UNCAUGHT_EXCEPTION)
-    {
-        reportp->flags |= JSREPORT_EXCEPTION;
-    }
+  MOZ_ASSERT(reportp);
+  if ((!callback || callback == GetErrorMessage) &&
+      reportp->errorNumber == JSMSG_UNCAUGHT_EXCEPTION) {
+    reportp->flags |= JSREPORT_EXCEPTION;
+  }
 
-    if (JSREPORT_IS_WARNING(reportp->flags)) {
-        CallWarningReporter(cx, reportp);
-        return;
-    }
+  if (JSREPORT_IS_WARNING(reportp->flags)) {
+    CallWarningReporter(cx, reportp);
+    return;
+  }
 
-    ErrorToException(cx, reportp, callback, userRef);
+  ErrorToException(cx, reportp, callback, userRef);
 }
 
 
 
 
 
-static void
-PopulateReportBlame(JSContext* cx, JSErrorReport* report)
-{
-    JS::Realm* realm = cx->realm();
-    if (!realm) {
-        return;
-    }
+static void PopulateReportBlame(JSContext* cx, JSErrorReport* report) {
+  JS::Realm* realm = cx->realm();
+  if (!realm) {
+    return;
+  }
 
-    
+  
 
 
 
-    NonBuiltinFrameIter iter(cx, realm->principals());
-    if (iter.done()) {
-        return;
-    }
+  NonBuiltinFrameIter iter(cx, realm->principals());
+  if (iter.done()) {
+    return;
+  }
 
-    report->filename = iter.filename();
-    uint32_t column;
-    report->lineno = iter.computeLine(&column);
-    report->column = FixupColumnForDisplay(column);
-    report->isMuted = iter.mutedErrors();
+  report->filename = iter.filename();
+  uint32_t column;
+  report->lineno = iter.computeLine(&column);
+  report->column = FixupColumnForDisplay(column);
+  report->isMuted = iter.mutedErrors();
 }
 
 
@@ -301,424 +284,391 @@ PopulateReportBlame(JSContext* cx, JSErrorReport* report)
 
 
 
-JS_FRIEND_API void
-js::ReportOutOfMemory(JSContext* cx)
-{
+JS_FRIEND_API void js::ReportOutOfMemory(JSContext* cx) {
 #ifdef JS_MORE_DETERMINISTIC
-    
+  
 
 
 
 
-    fprintf(stderr, "ReportOutOfMemory called\n");
+  fprintf(stderr, "ReportOutOfMemory called\n");
 #endif
-    mozilla::recordreplay::InvalidateRecording("OutOfMemory exception thrown");
+  mozilla::recordreplay::InvalidateRecording("OutOfMemory exception thrown");
 
-    if (cx->helperThread()) {
-        return cx->addPendingOutOfMemory();
-    }
+  if (cx->helperThread()) {
+    return cx->addPendingOutOfMemory();
+  }
 
-    cx->runtime()->hadOutOfMemory = true;
-    gc::AutoSuppressGC suppressGC(cx);
+  cx->runtime()->hadOutOfMemory = true;
+  gc::AutoSuppressGC suppressGC(cx);
 
-    
-    if (JS::OutOfMemoryCallback oomCallback = cx->runtime()->oomCallback) {
-        oomCallback(cx, cx->runtime()->oomCallbackData);
-    }
+  
+  if (JS::OutOfMemoryCallback oomCallback = cx->runtime()->oomCallback) {
+    oomCallback(cx, cx->runtime()->oomCallbackData);
+  }
 
-    RootedValue oomMessage(cx, StringValue(cx->names().outOfMemory));
-    cx->setPendingException(oomMessage);
+  RootedValue oomMessage(cx, StringValue(cx->names().outOfMemory));
+  cx->setPendingException(oomMessage);
 }
 
-mozilla::GenericErrorResult<OOM&>
-js::ReportOutOfMemoryResult(JSContext* cx)
-{
+mozilla::GenericErrorResult<OOM&> js::ReportOutOfMemoryResult(JSContext* cx) {
+  ReportOutOfMemory(cx);
+  return cx->alreadyReportedOOM();
+}
+
+void js::ReportOverRecursed(JSContext* maybecx, unsigned errorNumber) {
+#ifdef JS_MORE_DETERMINISTIC
+  
+
+
+
+
+
+
+
+  fprintf(stderr, "ReportOverRecursed called\n");
+#endif
+  mozilla::recordreplay::InvalidateRecording("OverRecursed exception thrown");
+  if (maybecx) {
+    if (!maybecx->helperThread()) {
+      JS_ReportErrorNumberASCII(maybecx, GetErrorMessage, nullptr, errorNumber);
+      maybecx->overRecursed_ = true;
+    } else {
+      maybecx->addPendingOverRecursed();
+    }
+  }
+}
+
+JS_FRIEND_API void js::ReportOverRecursed(JSContext* maybecx) {
+  ReportOverRecursed(maybecx, JSMSG_OVER_RECURSED);
+}
+
+void js::ReportAllocationOverflow(JSContext* cx) {
+  if (!cx) {
+    return;
+  }
+
+  if (cx->helperThread()) {
+    return;
+  }
+
+  gc::AutoSuppressGC suppressGC(cx);
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ALLOC_OVERFLOW);
+}
+
+
+
+
+
+
+
+static bool checkReportFlags(JSContext* cx, unsigned* flags) {
+  if (JSREPORT_IS_STRICT(*flags)) {
+    
+    if (!cx->realm()->behaviors().extraWarnings(cx)) {
+      return true;
+    }
+  }
+
+  
+  if (JSREPORT_IS_WARNING(*flags) && cx->options().werror()) {
+    *flags &= ~JSREPORT_WARNING;
+  }
+
+  return false;
+}
+
+bool js::ReportErrorVA(JSContext* cx, unsigned flags, const char* format,
+                       ErrorArgumentsType argumentsType, va_list ap) {
+  JSErrorReport report;
+
+  if (checkReportFlags(cx, &flags)) {
+    return true;
+  }
+
+  UniqueChars message(JS_vsmprintf(format, ap));
+  if (!message) {
     ReportOutOfMemory(cx);
-    return cx->alreadyReportedOOM();
-}
-
-void
-js::ReportOverRecursed(JSContext* maybecx, unsigned errorNumber)
-{
-#ifdef JS_MORE_DETERMINISTIC
-    
-
-
-
-
-
-
-
-    fprintf(stderr, "ReportOverRecursed called\n");
-#endif
-    mozilla::recordreplay::InvalidateRecording("OverRecursed exception thrown");
-    if (maybecx) {
-        if (!maybecx->helperThread()) {
-            JS_ReportErrorNumberASCII(maybecx, GetErrorMessage, nullptr, errorNumber);
-            maybecx->overRecursed_ = true;
-        } else {
-            maybecx->addPendingOverRecursed();
-        }
-    }
-}
-
-JS_FRIEND_API void
-js::ReportOverRecursed(JSContext* maybecx)
-{
-    ReportOverRecursed(maybecx, JSMSG_OVER_RECURSED);
-}
-
-void
-js::ReportAllocationOverflow(JSContext* cx)
-{
-    if (!cx) {
-        return;
-    }
-
-    if (cx->helperThread()) {
-        return;
-    }
-
-    gc::AutoSuppressGC suppressGC(cx);
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ALLOC_OVERFLOW);
-}
-
-
-
-
-
-
-
-static bool
-checkReportFlags(JSContext* cx, unsigned* flags)
-{
-    if (JSREPORT_IS_STRICT(*flags)) {
-        
-        if (!cx->realm()->behaviors().extraWarnings(cx)) {
-            return true;
-        }
-    }
-
-    
-    if (JSREPORT_IS_WARNING(*flags) && cx->options().werror()) {
-        *flags &= ~JSREPORT_WARNING;
-    }
-
     return false;
-}
+  }
 
-bool
-js::ReportErrorVA(JSContext* cx, unsigned flags, const char* format,
-                  ErrorArgumentsType argumentsType, va_list ap)
-{
-    JSErrorReport report;
+  MOZ_ASSERT_IF(argumentsType == ArgumentsAreASCII,
+                JS::StringIsASCII(message.get()));
 
-    if (checkReportFlags(cx, &flags)) {
-        return true;
+  report.flags = flags;
+  report.errorNumber = JSMSG_USER_DEFINED_ERROR;
+  if (argumentsType == ArgumentsAreASCII || argumentsType == ArgumentsAreUTF8) {
+    report.initOwnedMessage(message.release());
+  } else {
+    MOZ_ASSERT(argumentsType == ArgumentsAreLatin1);
+    Latin1Chars latin1(message.get(), strlen(message.get()));
+    UTF8CharsZ utf8(JS::CharsToNewUTF8CharsZ(cx, latin1));
+    if (!utf8) {
+      return false;
     }
+    report.initOwnedMessage(reinterpret_cast<const char*>(utf8.get()));
+  }
+  PopulateReportBlame(cx, &report);
 
-    UniqueChars message(JS_vsmprintf(format, ap));
-    if (!message) {
-        ReportOutOfMemory(cx);
-        return false;
-    }
+  bool warning = JSREPORT_IS_WARNING(report.flags);
 
-    MOZ_ASSERT_IF(argumentsType == ArgumentsAreASCII, JS::StringIsASCII(message.get()));
-
-    report.flags = flags;
-    report.errorNumber = JSMSG_USER_DEFINED_ERROR;
-    if (argumentsType == ArgumentsAreASCII || argumentsType == ArgumentsAreUTF8) {
-        report.initOwnedMessage(message.release());
-    } else {
-        MOZ_ASSERT(argumentsType == ArgumentsAreLatin1);
-        Latin1Chars latin1(message.get(), strlen(message.get()));
-        UTF8CharsZ utf8(JS::CharsToNewUTF8CharsZ(cx, latin1));
-        if (!utf8) {
-            return false;
-        }
-        report.initOwnedMessage(reinterpret_cast<const char*>(utf8.get()));
-    }
-    PopulateReportBlame(cx, &report);
-
-    bool warning = JSREPORT_IS_WARNING(report.flags);
-
-    ReportError(cx, &report, nullptr, nullptr);
-    return warning;
+  ReportError(cx, &report, nullptr, nullptr);
+  return warning;
 }
 
 
-void
-js::ReportUsageErrorASCII(JSContext* cx, HandleObject callee, const char* msg)
-{
-    RootedValue usage(cx);
-    if (!JS_GetProperty(cx, callee, "usage", &usage)) {
-        return;
-    }
+void js::ReportUsageErrorASCII(JSContext* cx, HandleObject callee,
+                               const char* msg) {
+  RootedValue usage(cx);
+  if (!JS_GetProperty(cx, callee, "usage", &usage)) {
+    return;
+  }
 
-    if (!usage.isString()) {
-        JS_ReportErrorASCII(cx, "%s", msg);
-    } else {
-        RootedString usageStr(cx, usage.toString());
-        UniqueChars str = JS_EncodeStringToUTF8(cx, usageStr);
-        if (!str) {
-            return;
-        }
-        JS_ReportErrorUTF8(cx, "%s. Usage: %s", msg, str.get());
+  if (!usage.isString()) {
+    JS_ReportErrorASCII(cx, "%s", msg);
+  } else {
+    RootedString usageStr(cx, usage.toString());
+    UniqueChars str = JS_EncodeStringToUTF8(cx, usageStr);
+    if (!str) {
+      return;
     }
+    JS_ReportErrorUTF8(cx, "%s. Usage: %s", msg, str.get());
+  }
 }
 
-enum class PrintErrorKind {
-    Error,
-    Warning,
-    StrictWarning,
-    Note
-};
+enum class PrintErrorKind { Error, Warning, StrictWarning, Note };
 
-static void
-PrintErrorLine(FILE* file, const char* prefix, JSErrorReport* report)
-{
-    if (const char16_t* linebuf = report->linebuf()) {
-        size_t n = report->linebufLength();
+static void PrintErrorLine(FILE* file, const char* prefix,
+                           JSErrorReport* report) {
+  if (const char16_t* linebuf = report->linebuf()) {
+    size_t n = report->linebufLength();
 
-        fputs(":\n", file);
-        if (prefix) {
-            fputs(prefix, file);
-        }
-
-        for (size_t i = 0; i < n; i++) {
-            fputc(static_cast<char>(linebuf[i]), file);
-        }
-
-        
-        if (n == 0 || linebuf[n-1] != '\n') {
-            fputc('\n', file);
-        }
-
-        if (prefix) {
-            fputs(prefix, file);
-        }
-
-        n = report->tokenOffset();
-        for (size_t i = 0, j = 0; i < n; i++) {
-            if (linebuf[i] == '\t') {
-                for (size_t k = (j + 8) & ~7; j < k; j++) {
-                    fputc('.', file);
-                }
-                continue;
-            }
-            fputc('.', file);
-            j++;
-        }
-        fputc('^', file);
-    }
-}
-
-static void
-PrintErrorLine(FILE* file, const char* prefix, JSErrorNotes::Note* note)
-{
-}
-
-template <typename T>
-static bool
-PrintSingleError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
-                 T* report, PrintErrorKind kind)
-{
-    UniqueChars prefix;
-    if (report->filename) {
-        prefix = JS_smprintf("%s:", report->filename);
-    }
-
-    if (report->lineno) {
-        prefix = JS_smprintf("%s%u:%u ", prefix ? prefix.get() : "", report->lineno,
-                                        report->column);
-    }
-
-    if (kind != PrintErrorKind::Error) {
-        const char* kindPrefix = nullptr;
-        switch (kind) {
-          case PrintErrorKind::Error:
-            MOZ_CRASH("unreachable");
-          case PrintErrorKind::Warning:
-            kindPrefix = "warning";
-            break;
-          case PrintErrorKind::StrictWarning:
-            kindPrefix = "strict warning";
-            break;
-          case PrintErrorKind::Note:
-            kindPrefix = "note";
-            break;
-        }
-
-        prefix = JS_smprintf("%s%s: ", prefix ? prefix.get() : "", kindPrefix);
-    }
-
-    const char* message = toStringResult ? toStringResult.c_str() : report->message().c_str();
-
-    
-    const char* ctmp;
-    while ((ctmp = strchr(message, '\n')) != 0) {
-        ctmp++;
-        if (prefix) {
-            fputs(prefix.get(), file);
-        }
-        mozilla::Unused << fwrite(message, 1, ctmp - message, file);
-        message = ctmp;
-    }
-
-    
+    fputs(":\n", file);
     if (prefix) {
-        fputs(prefix.get(), file);
+      fputs(prefix, file);
     }
-    fputs(message, file);
 
-    PrintErrorLine(file, prefix.get(), report);
-    fputc('\n', file);
+    for (size_t i = 0; i < n; i++) {
+      fputc(static_cast<char>(linebuf[i]), file);
+    }
 
-    fflush(file);
-    return true;
+    
+    if (n == 0 || linebuf[n - 1] != '\n') {
+      fputc('\n', file);
+    }
+
+    if (prefix) {
+      fputs(prefix, file);
+    }
+
+    n = report->tokenOffset();
+    for (size_t i = 0, j = 0; i < n; i++) {
+      if (linebuf[i] == '\t') {
+        for (size_t k = (j + 8) & ~7; j < k; j++) {
+          fputc('.', file);
+        }
+        continue;
+      }
+      fputc('.', file);
+      j++;
+    }
+    fputc('^', file);
+  }
 }
 
-bool
-js::PrintError(JSContext* cx, FILE* file, JS::ConstUTF8CharsZ toStringResult,
-               JSErrorReport* report, bool reportWarnings)
-{
-    MOZ_ASSERT(report);
+static void PrintErrorLine(FILE* file, const char* prefix,
+                           JSErrorNotes::Note* note) {}
 
-    
-    if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings) {
-        return false;
+template <typename T>
+static bool PrintSingleError(JSContext* cx, FILE* file,
+                             JS::ConstUTF8CharsZ toStringResult, T* report,
+                             PrintErrorKind kind) {
+  UniqueChars prefix;
+  if (report->filename) {
+    prefix = JS_smprintf("%s:", report->filename);
+  }
+
+  if (report->lineno) {
+    prefix = JS_smprintf("%s%u:%u ", prefix ? prefix.get() : "", report->lineno,
+                         report->column);
+  }
+
+  if (kind != PrintErrorKind::Error) {
+    const char* kindPrefix = nullptr;
+    switch (kind) {
+      case PrintErrorKind::Error:
+        MOZ_CRASH("unreachable");
+      case PrintErrorKind::Warning:
+        kindPrefix = "warning";
+        break;
+      case PrintErrorKind::StrictWarning:
+        kindPrefix = "strict warning";
+        break;
+      case PrintErrorKind::Note:
+        kindPrefix = "note";
+        break;
     }
 
-    PrintErrorKind kind = PrintErrorKind::Error;
-    if (JSREPORT_IS_WARNING(report->flags)) {
-        if (JSREPORT_IS_STRICT(report->flags)) {
-            kind = PrintErrorKind::StrictWarning;
-        } else {
-            kind = PrintErrorKind::Warning;
-        }
-    }
-    PrintSingleError(cx, file, toStringResult, report, kind);
+    prefix = JS_smprintf("%s%s: ", prefix ? prefix.get() : "", kindPrefix);
+  }
 
-    if (report->notes) {
-        for (auto&& note : *report->notes) {
-            PrintSingleError(cx, file, JS::ConstUTF8CharsZ(), note.get(), PrintErrorKind::Note);
-        }
-    }
+  const char* message =
+      toStringResult ? toStringResult.c_str() : report->message().c_str();
 
-    return true;
+  
+  const char* ctmp;
+  while ((ctmp = strchr(message, '\n')) != 0) {
+    ctmp++;
+    if (prefix) {
+      fputs(prefix.get(), file);
+    }
+    mozilla::Unused << fwrite(message, 1, ctmp - message, file);
+    message = ctmp;
+  }
+
+  
+  if (prefix) {
+    fputs(prefix.get(), file);
+  }
+  fputs(message, file);
+
+  PrintErrorLine(file, prefix.get(), report);
+  fputc('\n', file);
+
+  fflush(file);
+  return true;
 }
 
-class MOZ_RAII AutoMessageArgs
-{
-    size_t totalLength_;
+bool js::PrintError(JSContext* cx, FILE* file,
+                    JS::ConstUTF8CharsZ toStringResult, JSErrorReport* report,
+                    bool reportWarnings) {
+  MOZ_ASSERT(report);
+
+  
+  if (JSREPORT_IS_WARNING(report->flags) && !reportWarnings) {
+    return false;
+  }
+
+  PrintErrorKind kind = PrintErrorKind::Error;
+  if (JSREPORT_IS_WARNING(report->flags)) {
+    if (JSREPORT_IS_STRICT(report->flags)) {
+      kind = PrintErrorKind::StrictWarning;
+    } else {
+      kind = PrintErrorKind::Warning;
+    }
+  }
+  PrintSingleError(cx, file, toStringResult, report, kind);
+
+  if (report->notes) {
+    for (auto&& note : *report->notes) {
+      PrintSingleError(cx, file, JS::ConstUTF8CharsZ(), note.get(),
+                       PrintErrorKind::Note);
+    }
+  }
+
+  return true;
+}
+
+class MOZ_RAII AutoMessageArgs {
+  size_t totalLength_;
+  
+  mozilla::Array<const char*, JS::MaxNumErrorArguments> args_;
+  mozilla::Array<size_t, JS::MaxNumErrorArguments> lengths_;
+  uint16_t count_;
+  bool allocatedElements_ : 1;
+
+ public:
+  AutoMessageArgs() : totalLength_(0), count_(0), allocatedElements_(false) {
+    PodArrayZero(args_);
+  }
+
+  ~AutoMessageArgs() {
     
-    mozilla::Array<const char*, JS::MaxNumErrorArguments> args_;
-    mozilla::Array<size_t, JS::MaxNumErrorArguments> lengths_;
-    uint16_t count_;
-    bool allocatedElements_ : 1;
-
-  public:
-    AutoMessageArgs()
-      : totalLength_(0), count_(0), allocatedElements_(false)
-    {
-        PodArrayZero(args_);
-    }
-
-    ~AutoMessageArgs()
-    {
-        
-        if (allocatedElements_) {
-            uint16_t i = 0;
-            while (i < count_) {
-                if (args_[i]) {
-                    js_free((void*)args_[i]);
-                }
-                i++;
-            }
+    if (allocatedElements_) {
+      uint16_t i = 0;
+      while (i < count_) {
+        if (args_[i]) {
+          js_free((void*)args_[i]);
         }
+        i++;
+      }
     }
+  }
 
-    const char* args(size_t i) const {
-        MOZ_ASSERT(i < count_);
-        return args_[i];
-    }
+  const char* args(size_t i) const {
+    MOZ_ASSERT(i < count_);
+    return args_[i];
+  }
 
-    size_t totalLength() const {
-        return totalLength_;
-    }
+  size_t totalLength() const { return totalLength_; }
 
-    size_t lengths(size_t i) const {
-        MOZ_ASSERT(i < count_);
-        return lengths_[i];
-    }
+  size_t lengths(size_t i) const {
+    MOZ_ASSERT(i < count_);
+    return lengths_[i];
+  }
 
-    uint16_t count() const {
-        return count_;
-    }
+  uint16_t count() const { return count_; }
 
-    
-    bool init(JSContext* cx, const char16_t** argsArg, uint16_t countArg,
-              ErrorArgumentsType typeArg, va_list ap) {
-        MOZ_ASSERT(countArg > 0);
+  
+  bool init(JSContext* cx, const char16_t** argsArg, uint16_t countArg,
+            ErrorArgumentsType typeArg, va_list ap) {
+    MOZ_ASSERT(countArg > 0);
 
-        count_ = countArg;
+    count_ = countArg;
 
-        for (uint16_t i = 0; i < count_; i++) {
-            switch (typeArg) {
-              case ArgumentsAreASCII:
-              case ArgumentsAreUTF8: {
-                MOZ_ASSERT(!argsArg);
-                args_[i] = va_arg(ap, char*);
-                MOZ_ASSERT_IF(typeArg == ArgumentsAreASCII, JS::StringIsASCII(args_[i]));
-                lengths_[i] = strlen(args_[i]);
-                break;
-              }
-              case ArgumentsAreLatin1: {
-                MOZ_ASSERT(!argsArg);
-                const Latin1Char* latin1 = va_arg(ap, Latin1Char*);
-                size_t len = strlen(reinterpret_cast<const char*>(latin1));
-                mozilla::Range<const Latin1Char> range(latin1, len);
-                char* utf8 = JS::CharsToNewUTF8CharsZ(cx, range).c_str();
-                if (!utf8) {
-                    return false;
-                }
-
-                args_[i] = utf8;
-                lengths_[i] = strlen(utf8);
-                allocatedElements_ = true;
-                break;
-              }
-              case ArgumentsAreUnicode: {
-                const char16_t* uc = argsArg ? argsArg[i] : va_arg(ap, char16_t*);
-                size_t len = js_strlen(uc);
-                mozilla::Range<const char16_t> range(uc, len);
-                char* utf8 = JS::CharsToNewUTF8CharsZ(cx, range).c_str();
-                if (!utf8) {
-                    return false;
-                }
-
-                args_[i] = utf8;
-                lengths_[i] = strlen(utf8);
-                allocatedElements_ = true;
-                break;
-              }
-            }
-            totalLength_ += lengths_[i];
+    for (uint16_t i = 0; i < count_; i++) {
+      switch (typeArg) {
+        case ArgumentsAreASCII:
+        case ArgumentsAreUTF8: {
+          MOZ_ASSERT(!argsArg);
+          args_[i] = va_arg(ap, char*);
+          MOZ_ASSERT_IF(typeArg == ArgumentsAreASCII,
+                        JS::StringIsASCII(args_[i]));
+          lengths_[i] = strlen(args_[i]);
+          break;
         }
-        return true;
+        case ArgumentsAreLatin1: {
+          MOZ_ASSERT(!argsArg);
+          const Latin1Char* latin1 = va_arg(ap, Latin1Char*);
+          size_t len = strlen(reinterpret_cast<const char*>(latin1));
+          mozilla::Range<const Latin1Char> range(latin1, len);
+          char* utf8 = JS::CharsToNewUTF8CharsZ(cx, range).c_str();
+          if (!utf8) {
+            return false;
+          }
+
+          args_[i] = utf8;
+          lengths_[i] = strlen(utf8);
+          allocatedElements_ = true;
+          break;
+        }
+        case ArgumentsAreUnicode: {
+          const char16_t* uc = argsArg ? argsArg[i] : va_arg(ap, char16_t*);
+          size_t len = js_strlen(uc);
+          mozilla::Range<const char16_t> range(uc, len);
+          char* utf8 = JS::CharsToNewUTF8CharsZ(cx, range).c_str();
+          if (!utf8) {
+            return false;
+          }
+
+          args_[i] = utf8;
+          lengths_[i] = strlen(utf8);
+          allocatedElements_ = true;
+          break;
+        }
+      }
+      totalLength_ += lengths_[i];
     }
+    return true;
+  }
 };
 
-static void
-SetExnType(JSErrorReport* reportp, int16_t exnType)
-{
-    reportp->exnType = exnType;
+static void SetExnType(JSErrorReport* reportp, int16_t exnType) {
+  reportp->exnType = exnType;
 }
 
-static void
-SetExnType(JSErrorNotes::Note* notep, int16_t exnType)
-{
-    
+static void SetExnType(JSErrorNotes::Note* notep, int16_t exnType) {
+  
 }
 
 
@@ -733,969 +683,899 @@ SetExnType(JSErrorNotes::Note* notep, int16_t exnType)
 
 
 template <typename T>
-bool
-ExpandErrorArgumentsHelper(JSContext* cx, JSErrorCallback callback,
-                           void* userRef, const unsigned errorNumber,
-                           const char16_t** messageArgs,
-                           ErrorArgumentsType argumentsType,
-                           T* reportp, va_list ap)
-{
-    const JSErrorFormatString* efs;
+bool ExpandErrorArgumentsHelper(JSContext* cx, JSErrorCallback callback,
+                                void* userRef, const unsigned errorNumber,
+                                const char16_t** messageArgs,
+                                ErrorArgumentsType argumentsType, T* reportp,
+                                va_list ap) {
+  const JSErrorFormatString* efs;
 
-    if (!callback) {
-        callback = GetErrorMessage;
-    }
+  if (!callback) {
+    callback = GetErrorMessage;
+  }
 
-    {
-        gc::AutoSuppressGC suppressGC(cx);
-        efs = callback(userRef, errorNumber);
-    }
+  {
+    gc::AutoSuppressGC suppressGC(cx);
+    efs = callback(userRef, errorNumber);
+  }
 
-    if (efs) {
-        SetExnType(reportp, efs->exnType);
+  if (efs) {
+    SetExnType(reportp, efs->exnType);
 
-        MOZ_ASSERT_IF(argumentsType == ArgumentsAreASCII, JS::StringIsASCII(efs->format));
+    MOZ_ASSERT_IF(argumentsType == ArgumentsAreASCII,
+                  JS::StringIsASCII(efs->format));
 
-        uint16_t argCount = efs->argCount;
-        MOZ_RELEASE_ASSERT(argCount <= JS::MaxNumErrorArguments);
-        if (argCount > 0) {
-            
-
+    uint16_t argCount = efs->argCount;
+    MOZ_RELEASE_ASSERT(argCount <= JS::MaxNumErrorArguments);
+    if (argCount > 0) {
+      
 
 
-            if (efs->format) {
-                const char* fmt;
-                char* out;
+
+      if (efs->format) {
+        const char* fmt;
+        char* out;
 #ifdef DEBUG
-                int expandedArgs = 0;
+        int expandedArgs = 0;
 #endif
-                size_t expandedLength;
-                size_t len = strlen(efs->format);
+        size_t expandedLength;
+        size_t len = strlen(efs->format);
 
-                AutoMessageArgs args;
-                if (!args.init(cx, messageArgs, argCount, argumentsType, ap)) {
-                    return false;
-                }
-
-                expandedLength = len
-                                 - (3 * args.count()) 
-                                 + args.totalLength();
-
-                
-
-
-
-                char* utf8 = out = cx->pod_malloc<char>(expandedLength + 1);
-                if (!out) {
-                    return false;
-                }
-
-                fmt = efs->format;
-                while (*fmt) {
-                    if (*fmt == '{') {
-                        if (isdigit(fmt[1])) {
-                            int d = JS7_UNDEC(fmt[1]);
-                            MOZ_RELEASE_ASSERT(d < args.count());
-                            strncpy(out, args.args(d), args.lengths(d));
-                            out += args.lengths(d);
-                            fmt += 3;
-#ifdef DEBUG
-                            expandedArgs++;
-#endif
-                            continue;
-                        }
-                    }
-                    *out++ = *fmt++;
-                }
-                MOZ_ASSERT(expandedArgs == args.count());
-                *out = 0;
-
-                reportp->initOwnedMessage(utf8);
-            }
-        } else {
-            
-            MOZ_ASSERT(!messageArgs);
-            
-
-
-
-            if (efs->format) {
-                reportp->initBorrowedMessage(efs->format);
-            }
+        AutoMessageArgs args;
+        if (!args.init(cx, messageArgs, argCount, argumentsType, ap)) {
+          return false;
         }
-    }
-    if (!reportp->message()) {
+
+        expandedLength = len - (3 * args.count()) 
+                         + args.totalLength();
+
         
-        const char* defaultErrorMessage
-            = "No error message available for error number %d";
-        size_t nbytes = strlen(defaultErrorMessage) + 16;
-        char* message = cx->pod_malloc<char>(nbytes);
-        if (!message) {
-            return false;
-        }
-        snprintf(message, nbytes, defaultErrorMessage, errorNumber);
-        reportp->initOwnedMessage(message);
-    }
-    return true;
-}
 
-bool
-js::ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
-                           void* userRef, const unsigned errorNumber,
-                           const char16_t** messageArgs,
-                           ErrorArgumentsType argumentsType,
-                           JSErrorReport* reportp, va_list ap)
-{
-    return ExpandErrorArgumentsHelper(cx, callback, userRef, errorNumber,
-                                      messageArgs, argumentsType, reportp, ap);
-}
 
-bool
-js::ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
-                           void* userRef, const unsigned errorNumber,
-                           const char16_t** messageArgs,
-                           ErrorArgumentsType argumentsType,
-                           JSErrorNotes::Note* notep, va_list ap)
-{
-    return ExpandErrorArgumentsHelper(cx, callback, userRef, errorNumber,
-                                      messageArgs, argumentsType, notep, ap);
-}
 
-bool
-js::ReportErrorNumberVA(JSContext* cx, unsigned flags, JSErrorCallback callback,
-                        void* userRef, const unsigned errorNumber,
-                        ErrorArgumentsType argumentsType, va_list ap)
-{
-    JSErrorReport report;
-    bool warning;
-
-    if (checkReportFlags(cx, &flags)) {
-        return true;
-    }
-    warning = JSREPORT_IS_WARNING(flags);
-
-    report.flags = flags;
-    report.errorNumber = errorNumber;
-    PopulateReportBlame(cx, &report);
-
-    if (!ExpandErrorArgumentsVA(cx, callback, userRef, errorNumber,
-                                nullptr, argumentsType, &report, ap)) {
-        return false;
-    }
-
-    ReportError(cx, &report, callback, userRef);
-
-    return warning;
-}
-
-static bool
-ExpandErrorArguments(JSContext* cx, JSErrorCallback callback,
-                     void* userRef, const unsigned errorNumber,
-                     const char16_t** messageArgs,
-                     ErrorArgumentsType argumentsType,
-                     JSErrorReport* reportp, ...)
-{
-    va_list ap;
-    va_start(ap, reportp);
-    bool expanded = js::ExpandErrorArgumentsVA(cx, callback, userRef, errorNumber,
-                                               messageArgs, argumentsType, reportp, ap);
-    va_end(ap);
-    return expanded;
-}
-
-bool
-js::ReportErrorNumberUCArray(JSContext* cx, unsigned flags, JSErrorCallback callback,
-                             void* userRef, const unsigned errorNumber,
-                             const char16_t** args)
-{
-    if (checkReportFlags(cx, &flags)) {
-        return true;
-    }
-    bool warning = JSREPORT_IS_WARNING(flags);
-
-    JSErrorReport report;
-    report.flags = flags;
-    report.errorNumber = errorNumber;
-    PopulateReportBlame(cx, &report);
-
-    if (!ExpandErrorArguments(cx, callback, userRef, errorNumber,
-                              args, ArgumentsAreUnicode, &report))
-    {
-        return false;
-    }
-
-    ReportError(cx, &report, callback, userRef);
-
-    return warning;
-}
-
-void
-js::ReportIsNotDefined(JSContext* cx, HandleId id)
-{
-    if (UniqueChars printable = IdToPrintableUTF8(cx, id, IdToPrintableBehavior::IdIsIdentifier)) {
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_NOT_DEFINED, printable.get());
-    }
-}
-
-void
-js::ReportIsNotDefined(JSContext* cx, HandlePropertyName name)
-{
-    RootedId id(cx, NameToId(name));
-    ReportIsNotDefined(cx, id);
-}
-
-void
-js::ReportIsNullOrUndefinedForPropertyAccess(JSContext* cx, HandleValue v, bool reportScanStack)
-{
-    MOZ_ASSERT(v.isNullOrUndefined());
-
-    if (!reportScanStack) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
-                                  v.isNull() ? "null" : "undefined", "object");
-        return;
-    }
-
-    UniqueChars bytes = DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, v, nullptr);
-    if (!bytes) {
-        return;
-    }
-
-    if (strcmp(bytes.get(), js_undefined_str) == 0 || strcmp(bytes.get(), js_null_str) == 0) {
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_NO_PROPERTIES, bytes.get());
-    } else if (v.isUndefined()) {
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE, bytes.get(),
-                                 js_undefined_str);
-    } else {
-        MOZ_ASSERT(v.isNull());
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE, bytes.get(),
-                                 js_null_str);
-    }
-}
-
-void
-js::ReportIsNullOrUndefinedForPropertyAccess(JSContext* cx, HandleValue v, HandleId key,
-                                             bool reportScanStack)
-{
-    MOZ_ASSERT(v.isNullOrUndefined());
-
-    UniqueChars keyBytes = IdToPrintableUTF8(cx, key, IdToPrintableBehavior::IdIsPropertyKey);
-    if (!keyBytes) {
-        return;
-    }
-
-    if (!reportScanStack) {
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_PROPERTY_FAIL,
-                                 keyBytes.get(),
-                                 v.isUndefined() ? js_undefined_str : js_null_str);
-        return;
-    }
-
-    UniqueChars bytes = DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, v, nullptr);
-    if (!bytes) {
-        return;
-    }
-
-    if (strcmp(bytes.get(), js_undefined_str) == 0 || strcmp(bytes.get(), js_null_str) == 0) {
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_PROPERTY_FAIL,
-                                 keyBytes.get(), bytes.get());
-    } else {
-        const char* actual = v.isUndefined() ? js_undefined_str : js_null_str;
-        if (JSID_IS_INT(key)) {
-            JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_ELEMENT_FAIL_EXPR,
-                                     bytes.get(), actual, keyBytes.get());
-        } else {
-            JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_PROPERTY_FAIL_EXPR,
-                                     bytes.get(), actual, keyBytes.get());
-        }
-    }
-}
-
-void
-js::ReportMissingArg(JSContext* cx, HandleValue v, unsigned arg)
-{
-    char argbuf[11];
-    UniqueChars bytes;
-
-    SprintfLiteral(argbuf, "%u", arg);
-    if (IsFunctionObject(v)) {
-        RootedAtom name(cx, v.toObject().as<JSFunction>().explicitName());
-        bytes = DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, v, name);
-        if (!bytes) {
-            return;
-        }
-    }
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_MISSING_FUN_ARG,
-                             argbuf, bytes ? bytes.get() : "");
-}
-
-bool
-js::ReportValueErrorFlags(JSContext* cx, unsigned flags, const unsigned errorNumber,
-                          int spindex, HandleValue v, HandleString fallback,
-                          const char* arg1, const char* arg2)
-{
-    MOZ_ASSERT(js_ErrorFormatString[errorNumber].argCount >= 1);
-    MOZ_ASSERT(js_ErrorFormatString[errorNumber].argCount <= 3);
-    UniqueChars bytes = DecompileValueGenerator(cx, spindex, v, fallback);
-    if (!bytes) {
-        return false;
-    }
-
-    return JS_ReportErrorFlagsAndNumberUTF8(cx, flags, GetErrorMessage, nullptr, errorNumber,
-                                            bytes.get(), arg1, arg2);
-}
-
-JSObject*
-js::CreateErrorNotesArray(JSContext* cx, JSErrorReport* report)
-{
-    RootedArrayObject notesArray(cx, NewDenseEmptyArray(cx));
-    if (!notesArray) {
-        return nullptr;
-    }
-
-    if (!report->notes) {
-        return notesArray;
-    }
-
-    for (auto&& note : *report->notes) {
-        RootedPlainObject noteObj(cx, NewBuiltinClassInstance<PlainObject>(cx));
-        if (!noteObj) {
-            return nullptr;
+        char* utf8 = out = cx->pod_malloc<char>(expandedLength + 1);
+        if (!out) {
+          return false;
         }
 
-        RootedString messageStr(cx, note->newMessageString(cx));
-        if (!messageStr) {
-            return nullptr;
-        }
-        RootedValue messageVal(cx, StringValue(messageStr));
-        if (!DefineDataProperty(cx, noteObj, cx->names().message, messageVal)) {
-            return nullptr;
-        }
-
-        RootedValue filenameVal(cx);
-        if (note->filename) {
-            RootedString filenameStr(cx, NewStringCopyZ<CanGC>(cx, note->filename));
-            if (!filenameStr) {
-                return nullptr;
+        fmt = efs->format;
+        while (*fmt) {
+          if (*fmt == '{') {
+            if (isdigit(fmt[1])) {
+              int d = JS7_UNDEC(fmt[1]);
+              MOZ_RELEASE_ASSERT(d < args.count());
+              strncpy(out, args.args(d), args.lengths(d));
+              out += args.lengths(d);
+              fmt += 3;
+#ifdef DEBUG
+              expandedArgs++;
+#endif
+              continue;
             }
-            filenameVal = StringValue(filenameStr);
+          }
+          *out++ = *fmt++;
         }
-        if (!DefineDataProperty(cx, noteObj, cx->names().fileName, filenameVal)) {
-            return nullptr;
-        }
+        MOZ_ASSERT(expandedArgs == args.count());
+        *out = 0;
 
-        RootedValue linenoVal(cx, Int32Value(note->lineno));
-        if (!DefineDataProperty(cx, noteObj, cx->names().lineNumber, linenoVal)) {
-            return nullptr;
-        }
-        RootedValue columnVal(cx, Int32Value(note->column));
-        if (!DefineDataProperty(cx, noteObj, cx->names().columnNumber, columnVal)) {
-            return nullptr;
-        }
+        reportp->initOwnedMessage(utf8);
+      }
+    } else {
+      
+      MOZ_ASSERT(!messageArgs);
+      
 
-        if (!NewbornArrayPush(cx, notesArray, ObjectValue(*noteObj))) {
-            return nullptr;
-        }
+
+
+      if (efs->format) {
+        reportp->initBorrowedMessage(efs->format);
+      }
+    }
+  }
+  if (!reportp->message()) {
+    
+    const char* defaultErrorMessage =
+        "No error message available for error number %d";
+    size_t nbytes = strlen(defaultErrorMessage) + 16;
+    char* message = cx->pod_malloc<char>(nbytes);
+    if (!message) {
+      return false;
+    }
+    snprintf(message, nbytes, defaultErrorMessage, errorNumber);
+    reportp->initOwnedMessage(message);
+  }
+  return true;
+}
+
+bool js::ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
+                                void* userRef, const unsigned errorNumber,
+                                const char16_t** messageArgs,
+                                ErrorArgumentsType argumentsType,
+                                JSErrorReport* reportp, va_list ap) {
+  return ExpandErrorArgumentsHelper(cx, callback, userRef, errorNumber,
+                                    messageArgs, argumentsType, reportp, ap);
+}
+
+bool js::ExpandErrorArgumentsVA(JSContext* cx, JSErrorCallback callback,
+                                void* userRef, const unsigned errorNumber,
+                                const char16_t** messageArgs,
+                                ErrorArgumentsType argumentsType,
+                                JSErrorNotes::Note* notep, va_list ap) {
+  return ExpandErrorArgumentsHelper(cx, callback, userRef, errorNumber,
+                                    messageArgs, argumentsType, notep, ap);
+}
+
+bool js::ReportErrorNumberVA(JSContext* cx, unsigned flags,
+                             JSErrorCallback callback, void* userRef,
+                             const unsigned errorNumber,
+                             ErrorArgumentsType argumentsType, va_list ap) {
+  JSErrorReport report;
+  bool warning;
+
+  if (checkReportFlags(cx, &flags)) {
+    return true;
+  }
+  warning = JSREPORT_IS_WARNING(flags);
+
+  report.flags = flags;
+  report.errorNumber = errorNumber;
+  PopulateReportBlame(cx, &report);
+
+  if (!ExpandErrorArgumentsVA(cx, callback, userRef, errorNumber, nullptr,
+                              argumentsType, &report, ap)) {
+    return false;
+  }
+
+  ReportError(cx, &report, callback, userRef);
+
+  return warning;
+}
+
+static bool ExpandErrorArguments(JSContext* cx, JSErrorCallback callback,
+                                 void* userRef, const unsigned errorNumber,
+                                 const char16_t** messageArgs,
+                                 ErrorArgumentsType argumentsType,
+                                 JSErrorReport* reportp, ...) {
+  va_list ap;
+  va_start(ap, reportp);
+  bool expanded =
+      js::ExpandErrorArgumentsVA(cx, callback, userRef, errorNumber,
+                                 messageArgs, argumentsType, reportp, ap);
+  va_end(ap);
+  return expanded;
+}
+
+bool js::ReportErrorNumberUCArray(JSContext* cx, unsigned flags,
+                                  JSErrorCallback callback, void* userRef,
+                                  const unsigned errorNumber,
+                                  const char16_t** args) {
+  if (checkReportFlags(cx, &flags)) {
+    return true;
+  }
+  bool warning = JSREPORT_IS_WARNING(flags);
+
+  JSErrorReport report;
+  report.flags = flags;
+  report.errorNumber = errorNumber;
+  PopulateReportBlame(cx, &report);
+
+  if (!ExpandErrorArguments(cx, callback, userRef, errorNumber, args,
+                            ArgumentsAreUnicode, &report)) {
+    return false;
+  }
+
+  ReportError(cx, &report, callback, userRef);
+
+  return warning;
+}
+
+void js::ReportIsNotDefined(JSContext* cx, HandleId id) {
+  if (UniqueChars printable =
+          IdToPrintableUTF8(cx, id, IdToPrintableBehavior::IdIsIdentifier)) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_NOT_DEFINED,
+                             printable.get());
+  }
+}
+
+void js::ReportIsNotDefined(JSContext* cx, HandlePropertyName name) {
+  RootedId id(cx, NameToId(name));
+  ReportIsNotDefined(cx, id);
+}
+
+void js::ReportIsNullOrUndefinedForPropertyAccess(JSContext* cx, HandleValue v,
+                                                  bool reportScanStack) {
+  MOZ_ASSERT(v.isNullOrUndefined());
+
+  if (!reportScanStack) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_CANT_CONVERT_TO,
+                              v.isNull() ? "null" : "undefined", "object");
+    return;
+  }
+
+  UniqueChars bytes =
+      DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, v, nullptr);
+  if (!bytes) {
+    return;
+  }
+
+  if (strcmp(bytes.get(), js_undefined_str) == 0 ||
+      strcmp(bytes.get(), js_null_str) == 0) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_NO_PROPERTIES,
+                             bytes.get());
+  } else if (v.isUndefined()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_UNEXPECTED_TYPE, bytes.get(),
+                             js_undefined_str);
+  } else {
+    MOZ_ASSERT(v.isNull());
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_UNEXPECTED_TYPE, bytes.get(), js_null_str);
+  }
+}
+
+void js::ReportIsNullOrUndefinedForPropertyAccess(JSContext* cx, HandleValue v,
+                                                  HandleId key,
+                                                  bool reportScanStack) {
+  MOZ_ASSERT(v.isNullOrUndefined());
+
+  UniqueChars keyBytes =
+      IdToPrintableUTF8(cx, key, IdToPrintableBehavior::IdIsPropertyKey);
+  if (!keyBytes) {
+    return;
+  }
+
+  if (!reportScanStack) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_PROPERTY_FAIL,
+                             keyBytes.get(),
+                             v.isUndefined() ? js_undefined_str : js_null_str);
+    return;
+  }
+
+  UniqueChars bytes =
+      DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, v, nullptr);
+  if (!bytes) {
+    return;
+  }
+
+  if (strcmp(bytes.get(), js_undefined_str) == 0 ||
+      strcmp(bytes.get(), js_null_str) == 0) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_PROPERTY_FAIL,
+                             keyBytes.get(), bytes.get());
+  } else {
+    const char* actual = v.isUndefined() ? js_undefined_str : js_null_str;
+    if (JSID_IS_INT(key)) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_ELEMENT_FAIL_EXPR, bytes.get(), actual,
+                               keyBytes.get());
+    } else {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_PROPERTY_FAIL_EXPR, bytes.get(), actual,
+                               keyBytes.get());
+    }
+  }
+}
+
+void js::ReportMissingArg(JSContext* cx, HandleValue v, unsigned arg) {
+  char argbuf[11];
+  UniqueChars bytes;
+
+  SprintfLiteral(argbuf, "%u", arg);
+  if (IsFunctionObject(v)) {
+    RootedAtom name(cx, v.toObject().as<JSFunction>().explicitName());
+    bytes = DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, v, name);
+    if (!bytes) {
+      return;
+    }
+  }
+  JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_MISSING_FUN_ARG,
+                           argbuf, bytes ? bytes.get() : "");
+}
+
+bool js::ReportValueErrorFlags(JSContext* cx, unsigned flags,
+                               const unsigned errorNumber, int spindex,
+                               HandleValue v, HandleString fallback,
+                               const char* arg1, const char* arg2) {
+  MOZ_ASSERT(js_ErrorFormatString[errorNumber].argCount >= 1);
+  MOZ_ASSERT(js_ErrorFormatString[errorNumber].argCount <= 3);
+  UniqueChars bytes = DecompileValueGenerator(cx, spindex, v, fallback);
+  if (!bytes) {
+    return false;
+  }
+
+  return JS_ReportErrorFlagsAndNumberUTF8(cx, flags, GetErrorMessage, nullptr,
+                                          errorNumber, bytes.get(), arg1, arg2);
+}
+
+JSObject* js::CreateErrorNotesArray(JSContext* cx, JSErrorReport* report) {
+  RootedArrayObject notesArray(cx, NewDenseEmptyArray(cx));
+  if (!notesArray) {
+    return nullptr;
+  }
+
+  if (!report->notes) {
+    return notesArray;
+  }
+
+  for (auto&& note : *report->notes) {
+    RootedPlainObject noteObj(cx, NewBuiltinClassInstance<PlainObject>(cx));
+    if (!noteObj) {
+      return nullptr;
     }
 
-    return notesArray;
+    RootedString messageStr(cx, note->newMessageString(cx));
+    if (!messageStr) {
+      return nullptr;
+    }
+    RootedValue messageVal(cx, StringValue(messageStr));
+    if (!DefineDataProperty(cx, noteObj, cx->names().message, messageVal)) {
+      return nullptr;
+    }
+
+    RootedValue filenameVal(cx);
+    if (note->filename) {
+      RootedString filenameStr(cx, NewStringCopyZ<CanGC>(cx, note->filename));
+      if (!filenameStr) {
+        return nullptr;
+      }
+      filenameVal = StringValue(filenameStr);
+    }
+    if (!DefineDataProperty(cx, noteObj, cx->names().fileName, filenameVal)) {
+      return nullptr;
+    }
+
+    RootedValue linenoVal(cx, Int32Value(note->lineno));
+    if (!DefineDataProperty(cx, noteObj, cx->names().lineNumber, linenoVal)) {
+      return nullptr;
+    }
+    RootedValue columnVal(cx, Int32Value(note->column));
+    if (!DefineDataProperty(cx, noteObj, cx->names().columnNumber, columnVal)) {
+      return nullptr;
+    }
+
+    if (!NewbornArrayPush(cx, notesArray, ObjectValue(*noteObj))) {
+      return nullptr;
+    }
+  }
+
+  return notesArray;
 }
 
 const JSErrorFormatString js_ErrorFormatString[JSErr_Limit] = {
 #define MSG_DEF(name, count, exception, format) \
-    { #name, format, count, exception } ,
+  {#name, format, count, exception},
 #include "js.msg"
 #undef MSG_DEF
 };
 
-JS_FRIEND_API const JSErrorFormatString*
-js::GetErrorMessage(void* userRef, const unsigned errorNumber)
-{
-    if (errorNumber > 0 && errorNumber < JSErr_Limit) {
-        return &js_ErrorFormatString[errorNumber];
-    }
-    return nullptr;
+JS_FRIEND_API const JSErrorFormatString* js::GetErrorMessage(
+    void* userRef, const unsigned errorNumber) {
+  if (errorNumber > 0 && errorNumber < JSErr_Limit) {
+    return &js_ErrorFormatString[errorNumber];
+  }
+  return nullptr;
 }
 
-void
-JSContext::recoverFromOutOfMemory()
-{
-    if (helperThread()) {
-        
-        if (ParseTask* task = helperThread()->parseTask()) {
-            task->outOfMemory = false;
-        }
-    } else {
-        if (isExceptionPending()) {
-            MOZ_ASSERT(isThrowingOutOfMemory());
-            clearPendingException();
-        }
+void JSContext::recoverFromOutOfMemory() {
+  if (helperThread()) {
+    
+    if (ParseTask* task = helperThread()->parseTask()) {
+      task->outOfMemory = false;
     }
+  } else {
+    if (isExceptionPending()) {
+      MOZ_ASSERT(isThrowingOutOfMemory());
+      clearPendingException();
+    }
+  }
 }
 
-static bool
-InternalEnqueuePromiseJobCallback(JSContext* cx, JS::HandleObject promise,
-                                  JS::HandleObject job,
-                                  JS::HandleObject allocationSite,
-                                  JS::HandleObject incumbentGlobal, void* data)
-{
-    MOZ_ASSERT(job);
-    JS::JobQueueMayNotBeEmpty(cx);
-    if (!cx->jobQueue->pushBack(job)) {
-        ReportOutOfMemory(cx);
-        return false;
-    }
-    return true;
+static bool InternalEnqueuePromiseJobCallback(JSContext* cx,
+                                              JS::HandleObject promise,
+                                              JS::HandleObject job,
+                                              JS::HandleObject allocationSite,
+                                              JS::HandleObject incumbentGlobal,
+                                              void* data) {
+  MOZ_ASSERT(job);
+  JS::JobQueueMayNotBeEmpty(cx);
+  if (!cx->jobQueue->pushBack(job)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+  return true;
 }
 
-JS_FRIEND_API bool
-js::UseInternalJobQueues(JSContext* cx)
-{
+JS_FRIEND_API bool js::UseInternalJobQueues(JSContext* cx) {
+  
+  
+  MOZ_RELEASE_ASSERT(
+      !cx->runtime()->hasInitializedSelfHosting(),
+      "js::UseInternalJobQueues must be called early during runtime startup.");
+  MOZ_ASSERT(!cx->jobQueue);
+  auto* queue =
+      js_new<PersistentRooted<JobQueue>>(cx, JobQueue(SystemAllocPolicy()));
+  if (!queue) {
+    return false;
+  }
+
+  cx->jobQueue = queue;
+
+  cx->runtime()->offThreadPromiseState.ref().initInternalDispatchQueue();
+  MOZ_ASSERT(cx->runtime()->offThreadPromiseState.ref().initialized());
+
+  JS::SetEnqueuePromiseJobCallback(cx, InternalEnqueuePromiseJobCallback);
+
+  return true;
+}
+
+JS_FRIEND_API bool js::EnqueueJob(JSContext* cx, JS::HandleObject job) {
+  MOZ_ASSERT(cx->jobQueue);
+  JS::JobQueueMayNotBeEmpty(cx);
+  if (!cx->jobQueue->pushBack(job)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  return true;
+}
+
+JS_FRIEND_API void js::StopDrainingJobQueue(JSContext* cx) {
+  MOZ_ASSERT(cx->jobQueue);
+  cx->stopDrainingJobQueue = true;
+}
+
+JS_FRIEND_API void js::RunJobs(JSContext* cx) {
+  MOZ_ASSERT(cx->jobQueue);
+
+  if (cx->drainingJobQueue || cx->stopDrainingJobQueue) {
+    return;
+  }
+
+  while (true) {
+    cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
+
     
     
-    MOZ_RELEASE_ASSERT(!cx->runtime()->hasInitializedSelfHosting(),
-                       "js::UseInternalJobQueues must be called early during runtime startup.");
-    MOZ_ASSERT(!cx->jobQueue);
-    auto* queue = js_new<PersistentRooted<JobQueue>>(cx, JobQueue(SystemAllocPolicy()));
-    if (!queue) {
-        return false;
-    }
+    
+    
+    cx->drainingJobQueue = true;
 
-    cx->jobQueue = queue;
+    RootedObject job(cx);
+    JS::HandleValueArray args(JS::HandleValueArray::empty());
+    RootedValue rval(cx);
 
-    cx->runtime()->offThreadPromiseState.ref().initInternalDispatchQueue();
-    MOZ_ASSERT(cx->runtime()->offThreadPromiseState.ref().initialized());
+    
+    while (!cx->jobQueue->empty()) {
+      
+      
+      if (cx->stopDrainingJobQueue) {
+        break;
+      }
 
-    JS::SetEnqueuePromiseJobCallback(cx, InternalEnqueuePromiseJobCallback);
+      job = cx->jobQueue->front();
+      cx->jobQueue->popFront();
 
-    return true;
-}
+      
+      
+      if (cx->jobQueue->empty()) {
+        JS::JobQueueIsEmpty(cx);
+      }
 
-JS_FRIEND_API bool
-js::EnqueueJob(JSContext* cx, JS::HandleObject job)
-{
-    MOZ_ASSERT(cx->jobQueue);
-    JS::JobQueueMayNotBeEmpty(cx);
-    if (!cx->jobQueue->pushBack(job)) {
-        ReportOutOfMemory(cx);
-        return false;
-    }
-
-    return true;
-}
-
-JS_FRIEND_API void
-js::StopDrainingJobQueue(JSContext* cx)
-{
-    MOZ_ASSERT(cx->jobQueue);
-    cx->stopDrainingJobQueue = true;
-}
-
-JS_FRIEND_API void
-js::RunJobs(JSContext* cx)
-{
-    MOZ_ASSERT(cx->jobQueue);
-
-    if (cx->drainingJobQueue || cx->stopDrainingJobQueue) {
-        return;
-    }
-
-    while (true) {
-        cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
-
-        
-        
-        
-        
-        cx->drainingJobQueue = true;
-
-        RootedObject job(cx);
-        JS::HandleValueArray args(JS::HandleValueArray::empty());
-        RootedValue rval(cx);
-
-        
-        while (!cx->jobQueue->empty()) {
+      AutoRealm ar(cx, &job->as<JSFunction>());
+      {
+        if (!JS::Call(cx, UndefinedHandleValue, job, args, &rval)) {
+          
+          if (!cx->isExceptionPending()) {
+            continue;
+          }
+          RootedValue exn(cx);
+          if (cx->getPendingException(&exn)) {
             
-            
-            if (cx->stopDrainingJobQueue) {
-                break;
-            }
-
-            job = cx->jobQueue->front();
-            cx->jobQueue->popFront();
-
-            
-            
-            if (cx->jobQueue->empty()) {
-                JS::JobQueueIsEmpty(cx);
-            }
-
-            AutoRealm ar(cx, &job->as<JSFunction>());
-            {
-                if (!JS::Call(cx, UndefinedHandleValue, job, args, &rval)) {
-                    
-                    if (!cx->isExceptionPending()) {
-                        continue;
-                    }
-                    RootedValue exn(cx);
-                    if (cx->getPendingException(&exn)) {
-                        
 
 
 
 
-                        cx->clearPendingException();
-                        js::ReportExceptionClosure reportExn(exn);
-                        PrepareScriptEnvironmentAndInvoke(cx, cx->global(), reportExn);
-                    }
-                }
-            }
+            cx->clearPendingException();
+            js::ReportExceptionClosure reportExn(exn);
+            PrepareScriptEnvironmentAndInvoke(cx, cx->global(), reportExn);
+          }
         }
-
-        cx->drainingJobQueue = false;
-
-        if (cx->stopDrainingJobQueue) {
-            cx->stopDrainingJobQueue = false;
-            break;
-        }
-
-        cx->jobQueue->clear();
-
-        
-        if (!cx->runtime()->offThreadPromiseState.ref().internalHasPending()) {
-            break;
-        }
+      }
     }
+
+    cx->drainingJobQueue = false;
+
+    if (cx->stopDrainingJobQueue) {
+      cx->stopDrainingJobQueue = false;
+      break;
+    }
+
+    cx->jobQueue->clear();
+
+    
+    if (!cx->runtime()->offThreadPromiseState.ref().internalHasPending()) {
+      break;
+    }
+  }
 }
 
 JS::Error JSContext::reportedError;
 JS::OOM JSContext::reportedOOM;
 
-mozilla::GenericErrorResult<OOM&>
-JSContext::alreadyReportedOOM()
-{
+mozilla::GenericErrorResult<OOM&> JSContext::alreadyReportedOOM() {
 #ifdef DEBUG
-    if (helperThread()) {
-        
-        if (ParseTask* task = helperThread()->parseTask()) {
-            MOZ_ASSERT(task->outOfMemory);
-        }
-    } else {
-        MOZ_ASSERT(isThrowingOutOfMemory());
+  if (helperThread()) {
+    
+    if (ParseTask* task = helperThread()->parseTask()) {
+      MOZ_ASSERT(task->outOfMemory);
     }
+  } else {
+    MOZ_ASSERT(isThrowingOutOfMemory());
+  }
 #endif
-    return mozilla::Err(reportedOOM);
+  return mozilla::Err(reportedOOM);
 }
 
-mozilla::GenericErrorResult<JS::Error&>
-JSContext::alreadyReportedError()
-{
+mozilla::GenericErrorResult<JS::Error&> JSContext::alreadyReportedError() {
 #ifdef DEBUG
-    if (!helperThread()) {
-        MOZ_ASSERT(isExceptionPending());
-    }
+  if (!helperThread()) {
+    MOZ_ASSERT(isExceptionPending());
+  }
 #endif
-    return mozilla::Err(reportedError);
+  return mozilla::Err(reportedError);
 }
 
 JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
-  : runtime_(runtime),
-    kind_(ContextKind::HelperThread),
-    helperThread_(nullptr),
-    options_(options),
-    freeLists_(nullptr),
-    jitActivation(nullptr),
-    activation_(nullptr),
-    profilingActivation_(nullptr),
-    nativeStackBase(GetNativeStackBase()),
-    entryMonitor(nullptr),
-    noExecuteDebuggerTop(nullptr),
+    : runtime_(runtime),
+      kind_(ContextKind::HelperThread),
+      helperThread_(nullptr),
+      options_(options),
+      freeLists_(nullptr),
+      jitActivation(nullptr),
+      activation_(nullptr),
+      profilingActivation_(nullptr),
+      nativeStackBase(GetNativeStackBase()),
+      entryMonitor(nullptr),
+      noExecuteDebuggerTop(nullptr),
 #ifdef DEBUG
-    inUnsafeCallWithABI(false),
-    hasAutoUnsafeCallWithABI(false),
+      inUnsafeCallWithABI(false),
+      hasAutoUnsafeCallWithABI(false),
 #endif
 #ifdef JS_SIMULATOR
-    simulator_(nullptr),
+      simulator_(nullptr),
 #endif
 #ifdef JS_TRACE_LOGGING
-    traceLogger(nullptr),
+      traceLogger(nullptr),
 #endif
-    autoFlushICache_(nullptr),
-    dtoaState(nullptr),
-    suppressGC(0),
+      autoFlushICache_(nullptr),
+      dtoaState(nullptr),
+      suppressGC(0),
 #ifdef DEBUG
-    ionCompiling(false),
-    ionCompilingSafeForMinorGC(false),
-    performingGC(false),
-    gcSweeping(false),
-    gcHelperStateThread(false),
-    isTouchingGrayThings(false),
-    noNurseryAllocationCheck(0),
-    disableStrictProxyCheckingCount(0),
+      ionCompiling(false),
+      ionCompilingSafeForMinorGC(false),
+      performingGC(false),
+      gcSweeping(false),
+      gcHelperStateThread(false),
+      isTouchingGrayThings(false),
+      noNurseryAllocationCheck(0),
+      disableStrictProxyCheckingCount(0),
 #endif
 #if defined(DEBUG) || defined(JS_OOM_BREAKPOINT)
-    runningOOMTest(false),
+      runningOOMTest(false),
 #endif
-    enableAccessValidation(false),
-    inUnsafeRegion(0),
-    generationalDisabled(0),
-    compactingDisabledCount(0),
-    suppressProfilerSampling(false),
-    wasmTriedToInstallSignalHandlers(false),
-    wasmHaveSignalHandlers(false),
-    tempLifoAlloc_((size_t)TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
-    debuggerMutations(0),
-    ionPcScriptCache(nullptr),
-    throwing(false),
-    overRecursed_(false),
-    propagatingForcedReturn_(false),
-    liveVolatileJitFrameIter_(nullptr),
-    reportGranularity(JS_DEFAULT_JITREPORT_GRANULARITY),
-    resolvingList(nullptr),
+      enableAccessValidation(false),
+      inUnsafeRegion(0),
+      generationalDisabled(0),
+      compactingDisabledCount(0),
+      suppressProfilerSampling(false),
+      wasmTriedToInstallSignalHandlers(false),
+      wasmHaveSignalHandlers(false),
+      tempLifoAlloc_((size_t)TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE),
+      debuggerMutations(0),
+      ionPcScriptCache(nullptr),
+      throwing(false),
+      overRecursed_(false),
+      propagatingForcedReturn_(false),
+      liveVolatileJitFrameIter_(nullptr),
+      reportGranularity(JS_DEFAULT_JITREPORT_GRANULARITY),
+      resolvingList(nullptr),
 #ifdef DEBUG
-    enteredPolicy(nullptr),
+      enteredPolicy(nullptr),
 #endif
-    generatingError(false),
-    cycleDetectorVector_(this),
-    data(nullptr),
-    jitIsBroken(false),
-    asyncCauseForNewActivations(nullptr),
-    asyncCallIsExplicit(false),
-    interruptCallbackDisabled(false),
-    interruptBits_(0),
-    osrTempData_(nullptr),
-    ionReturnOverride_(MagicValue(JS_ARG_POISON)),
-    jitStackLimit(UINTPTR_MAX),
-    jitStackLimitNoInterrupt(UINTPTR_MAX),
-    getIncumbentGlobalCallback(nullptr),
-    enqueuePromiseJobCallback(nullptr),
-    enqueuePromiseJobCallbackData(nullptr),
-    jobQueue(nullptr),
-    drainingJobQueue(false),
-    stopDrainingJobQueue(false),
-    canSkipEnqueuingJobs(false),
-    promiseRejectionTrackerCallback(nullptr),
-    promiseRejectionTrackerCallbackData(nullptr)
+      generatingError(false),
+      cycleDetectorVector_(this),
+      data(nullptr),
+      jitIsBroken(false),
+      asyncCauseForNewActivations(nullptr),
+      asyncCallIsExplicit(false),
+      interruptCallbackDisabled(false),
+      interruptBits_(0),
+      osrTempData_(nullptr),
+      ionReturnOverride_(MagicValue(JS_ARG_POISON)),
+      jitStackLimit(UINTPTR_MAX),
+      jitStackLimitNoInterrupt(UINTPTR_MAX),
+      getIncumbentGlobalCallback(nullptr),
+      enqueuePromiseJobCallback(nullptr),
+      enqueuePromiseJobCallbackData(nullptr),
+      jobQueue(nullptr),
+      drainingJobQueue(false),
+      stopDrainingJobQueue(false),
+      canSkipEnqueuingJobs(false),
+      promiseRejectionTrackerCallback(nullptr),
+      promiseRejectionTrackerCallbackData(nullptr)
 #ifdef JS_STRUCTURED_SPEW
-    , structuredSpewer_()
+      ,
+      structuredSpewer_()
 #endif
 {
-    MOZ_ASSERT(static_cast<JS::RootingContext*>(this) ==
-               JS::RootingContext::get(this));
+  MOZ_ASSERT(static_cast<JS::RootingContext*>(this) ==
+             JS::RootingContext::get(this));
 
-    MOZ_ASSERT(!TlsContext.get());
-    TlsContext.set(this);
+  MOZ_ASSERT(!TlsContext.get());
+  TlsContext.set(this);
 
-    for (size_t i = 0; i < mozilla::ArrayLength(nativeStackQuota); i++) {
-        nativeStackQuota[i] = 0;
-    }
+  for (size_t i = 0; i < mozilla::ArrayLength(nativeStackQuota); i++) {
+    nativeStackQuota[i] = 0;
+  }
 }
 
-JSContext::~JSContext()
-{
-    
-    
-    kind_ = ContextKind::HelperThread;
+JSContext::~JSContext() {
+  
+  
+  kind_ = ContextKind::HelperThread;
 
-    
-    MOZ_ASSERT(!resolvingList);
+  
+  MOZ_ASSERT(!resolvingList);
 
-    if (dtoaState) {
-        DestroyDtoaState(dtoaState);
-    }
+  if (dtoaState) {
+    DestroyDtoaState(dtoaState);
+  }
 
-    fx.destroyInstance();
-    freeOsrTempData();
+  fx.destroyInstance();
+  freeOsrTempData();
 
 #ifdef JS_SIMULATOR
-    js::jit::Simulator::Destroy(simulator_);
+  js::jit::Simulator::Destroy(simulator_);
 #endif
 
 #ifdef JS_TRACE_LOGGING
-    if (traceLogger) {
-        DestroyTraceLogger(traceLogger);
-    }
+  if (traceLogger) {
+    DestroyTraceLogger(traceLogger);
+  }
 #endif
 
-    js_delete(atomsZoneFreeLists_.ref());
+  js_delete(atomsZoneFreeLists_.ref());
 
-    MOZ_ASSERT(TlsContext.get() == this);
-    TlsContext.set(nullptr);
+  MOZ_ASSERT(TlsContext.get() == this);
+  TlsContext.set(nullptr);
 }
 
-void
-JSContext::setRuntime(JSRuntime* rt)
-{
-    MOZ_ASSERT(!resolvingList);
-    MOZ_ASSERT(!compartment());
-    MOZ_ASSERT(!activation());
-    MOZ_ASSERT(!unwrappedException_.ref().initialized());
-    MOZ_ASSERT(!asyncStackForNewActivations_.ref().initialized());
+void JSContext::setRuntime(JSRuntime* rt) {
+  MOZ_ASSERT(!resolvingList);
+  MOZ_ASSERT(!compartment());
+  MOZ_ASSERT(!activation());
+  MOZ_ASSERT(!unwrappedException_.ref().initialized());
+  MOZ_ASSERT(!asyncStackForNewActivations_.ref().initialized());
 
-    runtime_ = rt;
+  runtime_ = rt;
 }
 
-bool
-JSContext::getPendingException(MutableHandleValue rval)
-{
-    MOZ_ASSERT(throwing);
-    rval.set(unwrappedException());
-    if (zone()->isAtomsZone()) {
-        return true;
-    }
-    bool wasOverRecursed = overRecursed_;
-    clearPendingException();
-    if (!compartment()->wrap(this, rval)) {
-        return false;
-    }
-    this->check(rval);
-    setPendingException(rval);
-    overRecursed_ = wasOverRecursed;
+bool JSContext::getPendingException(MutableHandleValue rval) {
+  MOZ_ASSERT(throwing);
+  rval.set(unwrappedException());
+  if (zone()->isAtomsZone()) {
     return true;
-}
-
-bool
-JSContext::isThrowingOutOfMemory()
-{
-    return throwing && unwrappedException() == StringValue(names().outOfMemory);
-}
-
-bool
-JSContext::isClosingGenerator()
-{
-    return throwing && unwrappedException().isMagic(JS_GENERATOR_CLOSING);
-}
-
-bool
-JSContext::isThrowingDebuggeeWouldRun()
-{
-    return throwing &&
-           unwrappedException().isObject() &&
-           unwrappedException().toObject().is<ErrorObject>() &&
-           unwrappedException().toObject().as<ErrorObject>().type() == JSEXN_DEBUGGEEWOULDRUN;
-}
-
-static bool
-ComputeIsJITBroken()
-{
-#if !defined(ANDROID)
+  }
+  bool wasOverRecursed = overRecursed_;
+  clearPendingException();
+  if (!compartment()->wrap(this, rval)) {
     return false;
-#else  
-    if (getenv("JS_IGNORE_JIT_BROKENNESS")) {
-        return false;
-    }
+  }
+  this->check(rval);
+  setPendingException(rval);
+  overRecursed_ = wasOverRecursed;
+  return true;
+}
 
-    std::string line;
+bool JSContext::isThrowingOutOfMemory() {
+  return throwing && unwrappedException() == StringValue(names().outOfMemory);
+}
 
+bool JSContext::isClosingGenerator() {
+  return throwing && unwrappedException().isMagic(JS_GENERATOR_CLOSING);
+}
+
+bool JSContext::isThrowingDebuggeeWouldRun() {
+  return throwing && unwrappedException().isObject() &&
+         unwrappedException().toObject().is<ErrorObject>() &&
+         unwrappedException().toObject().as<ErrorObject>().type() ==
+             JSEXN_DEBUGGEEWOULDRUN;
+}
+
+static bool ComputeIsJITBroken() {
+#if !defined(ANDROID)
+  return false;
+#else   
+  if (getenv("JS_IGNORE_JIT_BROKENNESS")) {
+    return false;
+  }
+
+  std::string line;
+
+  
+  std::ifstream osrelease("/proc/sys/kernel/osrelease");
+  std::getline(osrelease, line);
+  __android_log_print(ANDROID_LOG_INFO, "Gecko", "Detected osrelease `%s'",
+                      line.c_str());
+
+  if (line.npos == line.find("2.6.29")) {
     
-    std::ifstream osrelease("/proc/sys/kernel/osrelease");
-    std::getline(osrelease, line);
-    __android_log_print(ANDROID_LOG_INFO, "Gecko", "Detected osrelease `%s'",
-                        line.c_str());
+    __android_log_print(ANDROID_LOG_INFO, "Gecko", "JITs are not broken");
+    return false;
+  }
 
-    if (line.npos == line.find("2.6.29")) {
-        
-        __android_log_print(ANDROID_LOG_INFO, "Gecko", "JITs are not broken");
-        return false;
-    }
-
-    
-    line = "";
-    bool broken = false;
-    std::ifstream cpuinfo("/proc/cpuinfo");
-    do {
-        if (0 == line.find("Hardware")) {
-            static const char* const blacklist[] = {
-                "SCH-I400",     
-                "SGH-T959",     
-                "SGH-I897",     
-                "SCH-I500",     
-                "SPH-D700",     
-                "GT-I9000",     
-                nullptr
-            };
-            for (const char* const* hw = &blacklist[0]; *hw; ++hw) {
-                if (line.npos != line.find(*hw)) {
-                    __android_log_print(ANDROID_LOG_INFO, "Gecko",
-                                        "Blacklisted device `%s'", *hw);
-                    broken = true;
-                    break;
-                }
-            }
-            break;
+  
+  line = "";
+  bool broken = false;
+  std::ifstream cpuinfo("/proc/cpuinfo");
+  do {
+    if (0 == line.find("Hardware")) {
+      static const char* const blacklist[] = {
+          "SCH-I400",  
+          "SGH-T959",  
+          "SGH-I897",  
+          "SCH-I500",  
+          "SPH-D700",  
+          "GT-I9000",  
+          nullptr};
+      for (const char* const* hw = &blacklist[0]; *hw; ++hw) {
+        if (line.npos != line.find(*hw)) {
+          __android_log_print(ANDROID_LOG_INFO, "Gecko",
+                              "Blacklisted device `%s'", *hw);
+          broken = true;
+          break;
         }
-        std::getline(cpuinfo, line);
-    } while(!cpuinfo.fail() && !cpuinfo.eof());
+      }
+      break;
+    }
+    std::getline(cpuinfo, line);
+  } while (!cpuinfo.fail() && !cpuinfo.eof());
 
-    __android_log_print(ANDROID_LOG_INFO, "Gecko", "JITs are %sbroken",
-                        broken ? "" : "not ");
+  __android_log_print(ANDROID_LOG_INFO, "Gecko", "JITs are %sbroken",
+                      broken ? "" : "not ");
 
-    return broken;
+  return broken;
 #endif  
 }
 
-static bool
-IsJITBrokenHere()
-{
-    static bool computedIsBroken = false;
-    static bool isBroken = false;
-    if (!computedIsBroken) {
-        isBroken = ComputeIsJITBroken();
-        computedIsBroken = true;
-    }
-    return isBroken;
+static bool IsJITBrokenHere() {
+  static bool computedIsBroken = false;
+  static bool isBroken = false;
+  if (!computedIsBroken) {
+    isBroken = ComputeIsJITBroken();
+    computedIsBroken = true;
+  }
+  return isBroken;
 }
 
-void
-JSContext::updateJITEnabled()
-{
-    jitIsBroken = IsJITBrokenHere();
-}
+void JSContext::updateJITEnabled() { jitIsBroken = IsJITBrokenHere(); }
 
-size_t
-JSContext::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const
-{
-    
+size_t JSContext::sizeOfExcludingThis(
+    mozilla::MallocSizeOf mallocSizeOf) const {
+  
 
 
 
 
-    return cycleDetectorVector().sizeOfExcludingThis(mallocSizeOf);
+  return cycleDetectorVector().sizeOfExcludingThis(mallocSizeOf);
 }
 
 #ifdef DEBUG
-bool
-JSContext::inAtomsZone() const
-{
-    return zone_->isAtomsZone();
-}
+bool JSContext::inAtomsZone() const { return zone_->isAtomsZone(); }
 #endif
 
-void
-JSContext::trace(JSTracer* trc)
-{
-    cycleDetectorVector().trace(trc);
-    geckoProfiler().trace(trc);
+void JSContext::trace(JSTracer* trc) {
+  cycleDetectorVector().trace(trc);
+  geckoProfiler().trace(trc);
 
-    if (trc->isMarkingTracer() && realm_) {
-        realm_->mark();
-    }
+  if (trc->isMarkingTracer() && realm_) {
+    realm_->mark();
+  }
 }
 
-void*
-JSContext::stackLimitAddressForJitCode(JS::StackKind kind)
-{
+void* JSContext::stackLimitAddressForJitCode(JS::StackKind kind) {
 #ifdef JS_SIMULATOR
-    return addressOfSimulatorStackLimit();
+  return addressOfSimulatorStackLimit();
 #else
-    return stackLimitAddress(kind);
+  return stackLimitAddress(kind);
 #endif
 }
 
-uintptr_t
-JSContext::stackLimitForJitCode(JS::StackKind kind)
-{
+uintptr_t JSContext::stackLimitForJitCode(JS::StackKind kind) {
 #ifdef JS_SIMULATOR
-    return simulator()->stackLimit();
+  return simulator()->stackLimit();
 #else
-    return stackLimit(kind);
+  return stackLimit(kind);
 #endif
 }
 
-void
-JSContext::resetJitStackLimit()
-{
-    
-    
-    
+void JSContext::resetJitStackLimit() {
+  
+  
+  
 #ifdef JS_SIMULATOR
-    jitStackLimit = jit::Simulator::StackLimit();
+  jitStackLimit = jit::Simulator::StackLimit();
 #else
-    jitStackLimit = nativeStackLimit[JS::StackForUntrustedScript];
+  jitStackLimit = nativeStackLimit[JS::StackForUntrustedScript];
 #endif
-    jitStackLimitNoInterrupt = jitStackLimit;
+  jitStackLimitNoInterrupt = jitStackLimit;
 }
 
-void
-JSContext::initJitStackLimit()
-{
-    resetJitStackLimit();
-}
+void JSContext::initJitStackLimit() { resetJitStackLimit(); }
 
-void
-JSContext::updateMallocCounter(size_t nbytes)
-{
-    if (!zone()) {
-        runtime()->updateMallocCounter(nbytes);
-        return;
-    }
+void JSContext::updateMallocCounter(size_t nbytes) {
+  if (!zone()) {
+    runtime()->updateMallocCounter(nbytes);
+    return;
+  }
 
-    zone()->updateMallocCounter(nbytes);
+  zone()->updateMallocCounter(nbytes);
 }
 
 #ifdef JS_CRASH_DIAGNOSTICS
-void
-ContextChecks::check(AbstractFramePtr frame, int argIndex)
-{
-    if (frame) {
-        check(frame.realm(), argIndex);
-    }
+void ContextChecks::check(AbstractFramePtr frame, int argIndex) {
+  if (frame) {
+    check(frame.realm(), argIndex);
+  }
 }
 #endif
 
-void
-AutoEnterOOMUnsafeRegion::crash(const char* reason)
-{
-    char msgbuf[1024];
-    js::NoteIntentionalCrash();
-    SprintfLiteral(msgbuf, "[unhandlable oom] %s", reason);
-    MOZ_ReportAssertionFailure(msgbuf, __FILE__, __LINE__);
-    MOZ_CRASH();
+void AutoEnterOOMUnsafeRegion::crash(const char* reason) {
+  char msgbuf[1024];
+  js::NoteIntentionalCrash();
+  SprintfLiteral(msgbuf, "[unhandlable oom] %s", reason);
+  MOZ_ReportAssertionFailure(msgbuf, __FILE__, __LINE__);
+  MOZ_CRASH();
 }
 
 AutoEnterOOMUnsafeRegion::AnnotateOOMAllocationSizeCallback
-AutoEnterOOMUnsafeRegion::annotateOOMSizeCallback = nullptr;
+    AutoEnterOOMUnsafeRegion::annotateOOMSizeCallback = nullptr;
 
-void
-AutoEnterOOMUnsafeRegion::crash(size_t size, const char* reason)
-{
-    {
-        JS::AutoSuppressGCAnalysis suppress;
-        if (annotateOOMSizeCallback) {
-            annotateOOMSizeCallback(size);
-        }
+void AutoEnterOOMUnsafeRegion::crash(size_t size, const char* reason) {
+  {
+    JS::AutoSuppressGCAnalysis suppress;
+    if (annotateOOMSizeCallback) {
+      annotateOOMSizeCallback(size);
     }
-    crash(reason);
+  }
+  crash(reason);
 }
 
 #ifdef DEBUG
 AutoUnsafeCallWithABI::AutoUnsafeCallWithABI(UnsafeABIStrictness strictness)
-  : cx_(TlsContext.get()),
-    nested_(cx_->hasAutoUnsafeCallWithABI),
-    nogc(cx_)
-{
-    switch(strictness) {
-      case UnsafeABIStrictness::NoExceptions:
-        MOZ_ASSERT(!JS_IsExceptionPending(cx_));
-        checkForPendingException_ = true;
-        break;
-      case UnsafeABIStrictness::AllowPendingExceptions:
-        checkForPendingException_ = !JS_IsExceptionPending(cx_);
-        break;
-      case UnsafeABIStrictness::AllowThrownExceptions:
-        checkForPendingException_ = false;
-        break;
-    }
+    : cx_(TlsContext.get()), nested_(cx_->hasAutoUnsafeCallWithABI), nogc(cx_) {
+  switch (strictness) {
+    case UnsafeABIStrictness::NoExceptions:
+      MOZ_ASSERT(!JS_IsExceptionPending(cx_));
+      checkForPendingException_ = true;
+      break;
+    case UnsafeABIStrictness::AllowPendingExceptions:
+      checkForPendingException_ = !JS_IsExceptionPending(cx_);
+      break;
+    case UnsafeABIStrictness::AllowThrownExceptions:
+      checkForPendingException_ = false;
+      break;
+  }
 
-    cx_->hasAutoUnsafeCallWithABI = true;
+  cx_->hasAutoUnsafeCallWithABI = true;
 }
 
-AutoUnsafeCallWithABI::~AutoUnsafeCallWithABI()
-{
-    MOZ_ASSERT(cx_->hasAutoUnsafeCallWithABI);
-    if (!nested_) {
-        cx_->hasAutoUnsafeCallWithABI = false;
-        cx_->inUnsafeCallWithABI = false;
-    }
-    MOZ_ASSERT_IF(checkForPendingException_, !JS_IsExceptionPending(cx_));
+AutoUnsafeCallWithABI::~AutoUnsafeCallWithABI() {
+  MOZ_ASSERT(cx_->hasAutoUnsafeCallWithABI);
+  if (!nested_) {
+    cx_->hasAutoUnsafeCallWithABI = false;
+    cx_->inUnsafeCallWithABI = false;
+  }
+  MOZ_ASSERT_IF(checkForPendingException_, !JS_IsExceptionPending(cx_));
 }
 #endif

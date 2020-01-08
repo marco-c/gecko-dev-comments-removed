@@ -70,8 +70,8 @@ class Timeout;
 class TimeoutManager;
 class CustomElementRegistry;
 enum class CallerType : uint32_t;
-} 
-} 
+}  
+}  
 
 
 
@@ -86,16 +86,14 @@ enum PopupControlState {
   openOverridden    
 };
 
-enum UIStateChangeType
-{
+enum UIStateChangeType {
   UIStateChangeType_NoChange,
   UIStateChangeType_Set,
   UIStateChangeType_Clear,
-  UIStateChangeType_Invalid 
+  UIStateChangeType_Invalid  
 };
 
-enum class FullscreenReason
-{
+enum class FullscreenReason {
   
   ForFullscreenMode,
   
@@ -115,8 +113,7 @@ class Location;
 
 
 
-enum class LargeAllocStatus : uint8_t
-{
+enum class LargeAllocStatus : uint8_t {
   
   
   
@@ -131,22 +128,27 @@ enum class LargeAllocStatus : uint8_t
   NOT_ONLY_TOPLEVEL_IN_TABGROUP,
   NON_WIN32
 };
-} 
-} 
+}  
+}  
 
 
-#define NS_PIDOMWINDOWINNER_IID \
-{ 0x775dabc9, 0x8f43, 0x4277, \
-  { 0x9a, 0xdb, 0xf1, 0x99, 0x0d, 0x77, 0xcf, 0xfb } }
+#define NS_PIDOMWINDOWINNER_IID                      \
+  {                                                  \
+    0x775dabc9, 0x8f43, 0x4277, {                    \
+      0x9a, 0xdb, 0xf1, 0x99, 0x0d, 0x77, 0xcf, 0xfb \
+    }                                                \
+  }
 
 
-#define NS_PIDOMWINDOWOUTER_IID \
-  { 0x769693d4, 0xb009, 0x4fe2, \
-  { 0xaf, 0x18, 0x7d, 0xc8, 0xdf, 0x74, 0x96, 0xdf } }
+#define NS_PIDOMWINDOWOUTER_IID                      \
+  {                                                  \
+    0x769693d4, 0xb009, 0x4fe2, {                    \
+      0xaf, 0x18, 0x7d, 0xc8, 0xdf, 0x74, 0x96, 0xdf \
+    }                                                \
+  }
 
-class nsPIDOMWindowInner : public mozIDOMWindow
-{
-protected:
+class nsPIDOMWindowInner : public mozIDOMWindow {
+ protected:
   friend nsGlobalWindowInner;
   friend nsGlobalWindowOuter;
 
@@ -154,22 +156,16 @@ protected:
 
   ~nsPIDOMWindowInner();
 
-public:
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PIDOMWINDOWINNER_IID)
 
-  nsPIDOMWindowInner* AsInner() {
-    return this;
-  }
-  const nsPIDOMWindowInner* AsInner() const {
-    return this;
-  }
+  nsPIDOMWindowInner* AsInner() { return this; }
+  const nsPIDOMWindowInner* AsInner() const { return this; }
 
   nsIGlobalObject* AsGlobal();
   const nsIGlobalObject* AsGlobal() const;
 
-  nsPIDOMWindowOuter* GetOuterWindow() const {
-    return mOuterWindow;
-  }
+  nsPIDOMWindowOuter* GetOuterWindow() const { return mOuterWindow; }
 
   static nsPIDOMWindowInner* From(mozIDOMWindow* aFrom) {
     return static_cast<nsPIDOMWindowInner*>(aFrom);
@@ -202,8 +198,7 @@ public:
 
   void QueuePerformanceNavigationTiming();
 
-  bool HasMutationListeners(uint32_t aMutationEventType) const
-  {
+  bool HasMutationListeners(uint32_t aMutationEventType) const {
     if (!mOuterWindow) {
       NS_ERROR("HasMutationListeners() called on orphan inner window!");
 
@@ -213,8 +208,7 @@ public:
     return (mMutationBits & aMutationEventType) != 0;
   }
 
-  void SetMutationListeners(uint32_t aType)
-  {
+  void SetMutationListeners(uint32_t aType) {
     if (!mOuterWindow) {
       NS_ERROR("HasMutationListeners() called on orphan inner window!");
 
@@ -228,8 +222,7 @@ public:
 
 
 
-  bool HasMouseEnterLeaveEventListeners()
-  {
+  bool HasMouseEnterLeaveEventListeners() {
     return mMayHaveMouseEnterLeaveEventListener;
   }
 
@@ -237,8 +230,7 @@ public:
 
 
 
-  void SetHasMouseEnterLeaveEventListeners()
-  {
+  void SetHasMouseEnterLeaveEventListeners() {
     mMayHaveMouseEnterLeaveEventListener = true;
   }
 
@@ -246,8 +238,7 @@ public:
 
 
 
-  bool HasPointerEnterLeaveEventListeners()
-  {
+  bool HasPointerEnterLeaveEventListeners() {
     return mMayHavePointerEnterLeaveEventListener;
   }
 
@@ -255,8 +246,7 @@ public:
 
 
 
-  void SetHasPointerEnterLeaveEventListeners()
-  {
+  void SetHasPointerEnterLeaveEventListeners() {
     mMayHavePointerEnterLeaveEventListener = true;
   }
 
@@ -265,8 +255,7 @@ public:
 
 
 
-  void SetHasTextEventListenerInDefaultGroup()
-  {
+  void SetHasTextEventListenerInDefaultGroup() {
     mMayHaveTextEventListenerInDefaultGroup = true;
   }
 
@@ -274,8 +263,7 @@ public:
   
   
   
-  mozilla::dom::Event* SetEvent(mozilla::dom::Event* aEvent)
-  {
+  mozilla::dom::Event* SetEvent(mozilla::dom::Event* aEvent) {
     mozilla::dom::Event* old = mEvent;
     mEvent = aEvent;
     return old;
@@ -361,18 +349,16 @@ public:
   virtual nsPIDOMWindowOuter* GetScriptableParent() = 0;
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() = 0;
 
-  mozilla::dom::EventTarget* GetChromeEventHandler() const
-  {
+  mozilla::dom::EventTarget* GetChromeEventHandler() const {
     return mChromeEventHandler;
   }
 
   virtual nsresult RegisterIdleObserver(
-    mozilla::dom::MozIdleObserver& aIdleObserver) = 0;
+      mozilla::dom::MozIdleObserver& aIdleObserver) = 0;
   virtual nsresult UnregisterIdleObserver(
-    mozilla::dom::MozIdleObserver& aIdleObserver) = 0;
+      mozilla::dom::MozIdleObserver& aIdleObserver) = 0;
 
-  mozilla::dom::EventTarget* GetParentTarget()
-  {
+  mozilla::dom::EventTarget* GetParentTarget() {
     if (!mParentTarget) {
       UpdateParentTarget();
     }
@@ -381,15 +367,11 @@ public:
 
   virtual void MaybeUpdateTouchState() {}
 
-  nsIDocument* GetExtantDoc() const
-  {
-    return mDoc;
-  }
+  nsIDocument* GetExtantDoc() const { return mDoc; }
   nsIURI* GetDocumentURI() const;
   nsIURI* GetDocBaseURI() const;
 
-  nsIDocument* GetDoc()
-  {
+  nsIDocument* GetDoc() {
     if (!mDoc) {
       MaybeCreateDoc();
     }
@@ -412,7 +394,7 @@ public:
   
 
 
-  inline nsIDocShell *GetDocShell() const;
+  inline nsIDocShell* GetDocShell() const;
 
   
 
@@ -424,34 +406,26 @@ public:
 
 
 
-  virtual nsresult SetNewDocument(nsIDocument *aDocument,
-                                  nsISupports *aState,
+  virtual nsresult SetNewDocument(nsIDocument* aDocument, nsISupports* aState,
                                   bool aForceReuseInnerWindow) = 0;
 
   
 
 
 
-  void SetHasPaintEventListeners()
-  {
-    mMayHavePaintEventListener = true;
-  }
+  void SetHasPaintEventListeners() { mMayHavePaintEventListener = true; }
 
   
 
 
 
-  bool HasPaintEventListeners()
-  {
-    return mMayHavePaintEventListener;
-  }
+  bool HasPaintEventListeners() { return mMayHavePaintEventListener; }
 
   
 
 
 
-  void SetHasTouchEventListeners()
-  {
+  void SetHasTouchEventListeners() {
     if (!mMayHaveTouchEventListener) {
       mMayHaveTouchEventListener = true;
       MaybeUpdateTouchState();
@@ -462,8 +436,7 @@ public:
 
 
 
-  void SetHasSelectionChangeEventListeners()
-  {
+  void SetHasSelectionChangeEventListeners() {
     mMayHaveSelectionChangeEventListener = true;
   }
 
@@ -471,12 +444,12 @@ public:
 
 
 
-  bool HasSelectionChangeEventListeners()
-  {
+  bool HasSelectionChangeEventListeners() {
     return mMayHaveSelectionChangeEventListener;
   }
 
-  virtual JSObject* GetCachedXBLPrototypeHandler(nsXBLPrototypeHandler* aKey) = 0;
+  virtual JSObject* GetCachedXBLPrototypeHandler(
+      nsXBLPrototypeHandler* aKey) = 0;
   virtual void CacheXBLPrototypeHandler(nsXBLPrototypeHandler* aKey,
                                         JS::Handle<JSObject*> aHandler) = 0;
 
@@ -531,8 +504,8 @@ public:
 
 
 
-  virtual nsresult DispatchAsyncHashchange(nsIURI *aOldURI,
-                                           nsIURI *aNewURI) = 0;
+  virtual nsresult DispatchAsyncHashchange(nsIURI* aOldURI,
+                                           nsIURI* aNewURI) = 0;
 
   
 
@@ -569,15 +542,11 @@ public:
   uint64_t WindowID() const { return mWindowID; }
 
   
-  void MarkUncollectableForCCGeneration(uint32_t aGeneration)
-  {
+  void MarkUncollectableForCCGeneration(uint32_t aGeneration) {
     mMarkedCCGeneration = aGeneration;
   }
 
-  uint32_t GetMarkedCCGeneration()
-  {
-    return mMarkedCCGeneration;
-  }
+  uint32_t GetMarkedCCGeneration() { return mMarkedCCGeneration; }
 
   mozilla::dom::Navigator* Navigator();
   virtual mozilla::dom::Location* GetLocation() = 0;
@@ -589,9 +558,9 @@ public:
   virtual nsresult GetInnerWidth(int32_t* aWidth) = 0;
   virtual nsresult GetInnerHeight(int32_t* aHeight) = 0;
 
-  virtual already_AddRefed<nsICSSDeclaration>
-  GetComputedStyle(mozilla::dom::Element& aElt, const nsAString& aPseudoElt,
-                   mozilla::ErrorResult& aError) = 0;
+  virtual already_AddRefed<nsICSSDeclaration> GetComputedStyle(
+      mozilla::dom::Element& aElt, const nsAString& aPseudoElt,
+      mozilla::ErrorResult& aError) = 0;
 
   virtual mozilla::dom::Element* GetFrameElement() = 0;
 
@@ -603,41 +572,36 @@ public:
   virtual nsresult Close() = 0;
 
   mozilla::dom::DocGroup* GetDocGroup() const;
-  virtual nsISerialEventTarget*
-  EventTargetFor(mozilla::TaskCategory aCategory) const = 0;
+  virtual nsISerialEventTarget* EventTargetFor(
+      mozilla::TaskCategory aCategory) const = 0;
 
   
   
   already_AddRefed<mozilla::AutoplayPermissionManager>
   GetAutoplayPermissionManager();
 
-  void
-  RegisterReportingObserver(mozilla::dom::ReportingObserver* aObserver,
-                            bool aBuffered);
+  void RegisterReportingObserver(mozilla::dom::ReportingObserver* aObserver,
+                                 bool aBuffered);
 
-  void
-  UnregisterReportingObserver(mozilla::dom::ReportingObserver* aObserver);
+  void UnregisterReportingObserver(mozilla::dom::ReportingObserver* aObserver);
 
-  void
-  BroadcastReport(mozilla::dom::Report* aReport);
+  void BroadcastReport(mozilla::dom::Report* aReport);
 
-  void
-  NotifyReportingObservers();
+  void NotifyReportingObservers();
 
-  void
-  SaveStorageAccessGranted(const nsACString& aPermissionKey);
+  void SaveStorageAccessGranted(const nsACString& aPermissionKey);
 
-  bool
-  HasStorageAccessGranted(const nsACString& aPermissionKey);
+  bool HasStorageAccessGranted(const nsACString& aPermissionKey);
 
-protected:
+ protected:
   void CreatePerformanceObjectIfNeeded();
 
   
   
   void MaybeCreateDoc();
 
-  void SetChromeEventHandlerInternal(mozilla::dom::EventTarget* aChromeEventHandler) {
+  void SetChromeEventHandlerInternal(
+      mozilla::dom::EventTarget* aChromeEventHandler) {
     mChromeEventHandler = aChromeEventHandler;
     
     mParentTarget = nullptr;
@@ -648,13 +612,13 @@ protected:
   
   
   
-  nsCOMPtr<mozilla::dom::EventTarget> mChromeEventHandler; 
-  nsCOMPtr<nsIDocument> mDoc; 
+  nsCOMPtr<mozilla::dom::EventTarget> mChromeEventHandler;  
+  nsCOMPtr<nsIDocument> mDoc;                               
   
-  nsCOMPtr<nsIURI> mDocumentURI; 
-  nsCOMPtr<nsIURI> mDocBaseURI; 
+  nsCOMPtr<nsIURI> mDocumentURI;  
+  nsCOMPtr<nsIURI> mDocBaseURI;   
 
-  nsCOMPtr<mozilla::dom::EventTarget> mParentTarget; 
+  nsCOMPtr<mozilla::dom::EventTarget> mParentTarget;  
 
   RefPtr<mozilla::dom::Performance> mPerformance;
   mozilla::UniquePtr<mozilla::dom::TimeoutManager> mTimeoutManager;
@@ -685,7 +649,7 @@ protected:
   RefPtr<mozilla::dom::Element> mFocusedElement;
 
   
-  nsTArray<mozilla::dom::AudioContext*> mAudioContexts; 
+  nsTArray<mozilla::dom::AudioContext*> mAudioContexts;  
 
   RefPtr<mozilla::dom::TabGroup> mTabGroup;
 
@@ -735,9 +699,8 @@ protected:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowInner, NS_PIDOMWINDOWINNER_IID)
 
-class nsPIDOMWindowOuter : public mozIDOMWindowProxy
-{
-protected:
+class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
+ protected:
   explicit nsPIDOMWindowOuter(uint64_t aWindowID);
 
   ~nsPIDOMWindowOuter();
@@ -747,15 +710,11 @@ protected:
   bool IsDisposableSuspend(SuspendTypes aSuspend) const;
   void MaybeNotifyMediaResumedFromBlock(SuspendTypes aSuspend);
 
-public:
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PIDOMWINDOWOUTER_IID)
 
-  nsPIDOMWindowOuter* AsOuter() {
-    return this;
-  }
-  const nsPIDOMWindowOuter* AsOuter() const {
-    return this;
-  }
+  nsPIDOMWindowOuter* AsOuter() { return this; }
+  const nsPIDOMWindowOuter* AsOuter() const { return this; }
 
   nsPIDOMWindowOuter* GetOuterWindow() const {
     return const_cast<nsPIDOMWindowOuter*>(this);
@@ -773,22 +732,15 @@ public:
   inline bool IsLoading() const;
   inline bool IsHandlingResizeEvent() const;
 
-  nsPIDOMWindowInner* GetCurrentInnerWindow() const
-  {
-    return mInnerWindow;
-  }
+  nsPIDOMWindowInner* GetCurrentInnerWindow() const { return mInnerWindow; }
 
-  nsPIDOMWindowInner* EnsureInnerWindow()
-  {
+  nsPIDOMWindowInner* EnsureInnerWindow() {
     
     GetDoc();
     return GetCurrentInnerWindow();
   }
 
-  bool IsRootOuterWindow()
-  {
-    return mIsRootOuterWindow;
-  }
+  bool IsRootOuterWindow() { return mIsRootOuterWindow; }
 
   
 
@@ -802,23 +754,13 @@ public:
   mozilla::dom::Element* GetFrameElementInternal() const;
   void SetFrameElementInternal(mozilla::dom::Element* aFrameElement);
 
-  bool IsActive()
-  {
-    return mIsActive;
-  }
+  bool IsActive() { return mIsActive; }
 
-  void SetDesktopModeViewport(bool aDesktopModeViewport)
-  {
+  void SetDesktopModeViewport(bool aDesktopModeViewport) {
     mDesktopModeViewport = aDesktopModeViewport;
   }
-  bool IsDesktopModeViewport() const
-  {
-    return mDesktopModeViewport;
-  }
-  bool IsBackground()
-  {
-    return mIsBackground;
-  }
+  bool IsDesktopModeViewport() const { return mDesktopModeViewport; }
+  bool IsBackground() { return mIsBackground; }
 
   
   SuspendTypes GetMediaSuspend() const;
@@ -868,7 +810,7 @@ public:
 
 
 
-  virtual already_AddRefed<nsPIDOMWindowOuter> GetTop() = 0; 
+  virtual already_AddRefed<nsPIDOMWindowOuter> GetTop() = 0;  
   virtual already_AddRefed<nsPIDOMWindowOuter> GetParent() = 0;
   virtual nsPIDOMWindowOuter* GetScriptableTop() = 0;
   virtual nsPIDOMWindowOuter* GetScriptableParent() = 0;
@@ -882,30 +824,25 @@ public:
 
   virtual bool IsTopLevelWindowActive() = 0;
 
-  virtual void SetActive(bool aActive)
-  {
-    mIsActive = aActive;
-  }
+  virtual void SetActive(bool aActive) { mIsActive = aActive; }
 
   virtual void SetIsBackground(bool aIsBackground) = 0;
 
-  mozilla::dom::EventTarget* GetChromeEventHandler() const
-  {
+  mozilla::dom::EventTarget* GetChromeEventHandler() const {
     return mChromeEventHandler;
   }
 
-  virtual void SetChromeEventHandler(mozilla::dom::EventTarget* aChromeEventHandler) = 0;
+  virtual void SetChromeEventHandler(
+      mozilla::dom::EventTarget* aChromeEventHandler) = 0;
 
-  mozilla::dom::EventTarget* GetParentTarget()
-  {
+  mozilla::dom::EventTarget* GetParentTarget() {
     if (!mParentTarget) {
       UpdateParentTarget();
     }
     return mParentTarget;
   }
 
-  mozilla::dom::ContentFrameMessageManager* GetMessageManager()
-  {
+  mozilla::dom::ContentFrameMessageManager* GetMessageManager() {
     
     if (!mParentTarget) {
       UpdateParentTarget();
@@ -913,14 +850,10 @@ public:
     return mMessageManager;
   }
 
-  nsIDocument* GetExtantDoc() const
-  {
-    return mDoc;
-  }
+  nsIDocument* GetExtantDoc() const { return mDoc; }
   nsIURI* GetDocumentURI() const;
 
-  nsIDocument* GetDoc()
-  {
+  nsIDocument* GetDoc() {
     if (!mDoc) {
       MaybeCreateDoc();
     }
@@ -941,7 +874,7 @@ public:
   virtual already_AddRefed<nsISupports> SaveWindowState() = 0;
 
   
-  virtual nsresult RestoreWindowState(nsISupports *aState) = 0;
+  virtual nsresult RestoreWindowState(nsISupports* aState) = 0;
 
   
   
@@ -957,7 +890,7 @@ public:
   
 
 
-  inline nsIDocShell *GetDocShell() const;
+  inline nsIDocShell* GetDocShell() const;
 
   mozilla::dom::BrowsingContext* GetBrowsingContext() const;
 
@@ -969,8 +902,7 @@ public:
 
 
 
-  virtual nsresult SetNewDocument(nsIDocument *aDocument,
-                                  nsISupports *aState,
+  virtual nsresult SetNewDocument(nsIDocument* aDocument, nsISupports* aState,
                                   bool aForceReuseInnerWindow) = 0;
 
   
@@ -1004,8 +936,8 @@ public:
 
 
 
-  virtual nsresult SetFullscreenInternal(
-    FullscreenReason aReason, bool aIsFullscreen) = 0;
+  virtual nsresult SetFullscreenInternal(FullscreenReason aReason,
+                                         bool aIsFullscreen) = 0;
   virtual void FullscreenWillChange(bool aIsFullscreen) = 0;
   
 
@@ -1083,7 +1015,7 @@ public:
 
 
 
-  virtual nsresult SetArguments(nsIArray *aArguments) = 0;
+  virtual nsresult SetArguments(nsIArray* aArguments) = 0;
 
   
 
@@ -1103,35 +1035,26 @@ public:
 
 
 
-  virtual nsresult
-  OpenNoNavigate(const nsAString& aUrl, const nsAString& aName,
-                 const nsAString& aOptions, nsPIDOMWindowOuter **_retval) = 0;
+  virtual nsresult OpenNoNavigate(const nsAString& aUrl, const nsAString& aName,
+                                  const nsAString& aOptions,
+                                  nsPIDOMWindowOuter** _retval) = 0;
 
   
 
 
-  virtual void
-  FirePopupBlockedEvent(nsIDocument* aDoc,
-                        nsIURI* aPopupURI,
-                        const nsAString& aPopupWindowName,
-                        const nsAString& aPopupWindowFeatures) = 0;
+  virtual void FirePopupBlockedEvent(nsIDocument* aDoc, nsIURI* aPopupURI,
+                                     const nsAString& aPopupWindowName,
+                                     const nsAString& aPopupWindowFeatures) = 0;
 
-  virtual void
-  NotifyContentBlockingState(unsigned aState,
-                             nsIChannel* aChannel,
-                             bool aBlocked,
-                             nsIURI* aURIHint) = 0;
+  virtual void NotifyContentBlockingState(unsigned aState, nsIChannel* aChannel,
+                                          bool aBlocked, nsIURI* aURIHint) = 0;
 
   
-  void MarkUncollectableForCCGeneration(uint32_t aGeneration)
-  {
+  void MarkUncollectableForCCGeneration(uint32_t aGeneration) {
     mMarkedCCGeneration = aGeneration;
   }
 
-  uint32_t GetMarkedCCGeneration()
-  {
-    return mMarkedCCGeneration;
-  }
+  uint32_t GetMarkedCCGeneration() { return mMarkedCCGeneration; }
 
   
   
@@ -1150,9 +1073,8 @@ public:
   
   virtual nsresult Open(const nsAString& aUrl, const nsAString& aName,
                         const nsAString& aOptions,
-                        nsDocShellLoadState* aLoadState,
-                        bool aForceNoOpener,
-                        nsPIDOMWindowOuter **_retval) = 0;
+                        nsDocShellLoadState* aLoadState, bool aForceNoOpener,
+                        nsPIDOMWindowOuter** _retval) = 0;
   virtual nsresult OpenDialog(const nsAString& aUrl, const nsAString& aName,
                               const nsAString& aOptions,
                               nsISupports* aExtraArgument,
@@ -1177,8 +1099,8 @@ public:
                               int16_t aReason) = 0;
 
   mozilla::dom::DocGroup* GetDocGroup() const;
-  virtual nsISerialEventTarget*
-  EventTargetFor(mozilla::TaskCategory aCategory) const = 0;
+  virtual nsISerialEventTarget* EventTargetFor(
+      mozilla::TaskCategory aCategory) const = 0;
 
   
 
@@ -1193,25 +1115,26 @@ public:
   void SetOpenerForInitialContentBrowser(nsPIDOMWindowOuter* aOpener);
   already_AddRefed<nsPIDOMWindowOuter> TakeOpenerForInitialContentBrowser();
 
-protected:
+ protected:
   
   
   void MaybeCreateDoc();
 
-  void SetChromeEventHandlerInternal(mozilla::dom::EventTarget* aChromeEventHandler);
+  void SetChromeEventHandlerInternal(
+      mozilla::dom::EventTarget* aChromeEventHandler);
 
   virtual void UpdateParentTarget() = 0;
 
   
   
   
-  nsCOMPtr<mozilla::dom::EventTarget> mChromeEventHandler; 
-  nsCOMPtr<nsIDocument> mDoc; 
+  nsCOMPtr<mozilla::dom::EventTarget> mChromeEventHandler;  
+  nsCOMPtr<nsIDocument> mDoc;                               
   
-  nsCOMPtr<nsIURI> mDocumentURI; 
+  nsCOMPtr<nsIURI> mDocumentURI;  
 
-  nsCOMPtr<mozilla::dom::EventTarget> mParentTarget; 
-  RefPtr<mozilla::dom::ContentFrameMessageManager> mMessageManager; 
+  nsCOMPtr<mozilla::dom::EventTarget> mParentTarget;                 
+  RefPtr<mozilla::dom::ContentFrameMessageManager> mMessageManager;  
 
   nsCOMPtr<mozilla::dom::Element> mFrameElement;
 
@@ -1288,36 +1211,35 @@ NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowOuter, NS_PIDOMWINDOWOUTER_IID)
 
 
 
-class NS_AUTO_POPUP_STATE_PUSHER
-{
-public:
+class NS_AUTO_POPUP_STATE_PUSHER {
+ public:
 #ifdef MOZILLA_INTERNAL_API
-  explicit NS_AUTO_POPUP_STATE_PUSHER(PopupControlState aState, bool aForce = false);
+  explicit NS_AUTO_POPUP_STATE_PUSHER(PopupControlState aState,
+                                      bool aForce = false);
   ~NS_AUTO_POPUP_STATE_PUSHER();
 #else
-  NS_AUTO_POPUP_STATE_PUSHER(nsPIDOMWindowOuter *aWindow, PopupControlState aState)
-    : mWindow(aWindow), mOldState(openAbused)
-  {
+  NS_AUTO_POPUP_STATE_PUSHER(nsPIDOMWindowOuter* aWindow,
+                             PopupControlState aState)
+      : mWindow(aWindow), mOldState(openAbused) {
     if (aWindow) {
       mOldState = aWindow->PushPopupControlState(aState, false);
     }
   }
 
-  ~NS_AUTO_POPUP_STATE_PUSHER()
-  {
+  ~NS_AUTO_POPUP_STATE_PUSHER() {
     if (mWindow) {
       mWindow->PopPopupControlState(mOldState);
     }
   }
 #endif
 
-protected:
+ protected:
 #ifndef MOZILLA_INTERNAL_API
   nsCOMPtr<nsPIDOMWindowOuter> mWindow;
 #endif
   PopupControlState mOldState;
 
-private:
+ private:
   
   static void* operator new(size_t ) CPP_THROW_NEW { return nullptr; }
   static void operator delete(void* ) {}
@@ -1325,4 +1247,4 @@ private:
 
 #define nsAutoPopupStatePusher NS_AUTO_POPUP_STATE_PUSHER
 
-#endif 
+#endif  

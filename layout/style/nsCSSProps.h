@@ -34,35 +34,28 @@ class ComputedStyle;
 }
 
 extern "C" {
-  nsCSSPropertyID Servo_ResolveLogicalProperty(nsCSSPropertyID,
-                                               const mozilla::ComputedStyle*);
-  nsCSSPropertyID Servo_Property_LookupEnabledForAllContent(const nsACString*);
-  const uint8_t* Servo_Property_GetName(nsCSSPropertyID, uint32_t* aLength);
+nsCSSPropertyID Servo_ResolveLogicalProperty(nsCSSPropertyID,
+                                             const mozilla::ComputedStyle*);
+nsCSSPropertyID Servo_Property_LookupEnabledForAllContent(const nsACString*);
+const uint8_t* Servo_Property_GetName(nsCSSPropertyID, uint32_t* aLength);
 }
 
-struct nsCSSKTableEntry
-{
+struct nsCSSKTableEntry {
   
   
 
   constexpr nsCSSKTableEntry(nsCSSKeyword aKeyword, int16_t aValue)
-    : mKeyword(aKeyword)
-    , mValue(aValue)
-  {
-  }
+      : mKeyword(aKeyword), mValue(aValue) {}
 
-  template<typename T,
-           typename = typename std::enable_if<std::is_enum<T>::value>::type>
+  template <typename T,
+            typename = typename std::enable_if<std::is_enum<T>::value>::type>
   constexpr nsCSSKTableEntry(nsCSSKeyword aKeyword, T aValue)
-    : mKeyword(aKeyword)
-    , mValue(static_cast<int16_t>(aValue))
-  {
+      : mKeyword(aKeyword), mValue(static_cast<int16_t>(aValue)) {
     static_assert(mozilla::EnumTypeFitsWithin<T, int16_t>::value,
                   "aValue must be an enum that fits within mValue");
   }
 
-  bool IsSentinel() const
-  {
+  bool IsSentinel() const {
     return mKeyword == eCSSKeyword_UNKNOWN && mValue == -1;
   }
 
@@ -71,7 +64,7 @@ struct nsCSSKTableEntry
 };
 
 class nsCSSProps {
-public:
+ public:
   typedef mozilla::CSSEnabledState EnabledState;
   typedef mozilla::CSSPropFlags Flags;
   typedef nsCSSKTableEntry KTableEntry;
@@ -85,13 +78,11 @@ public:
   
   
   
-  static nsCSSPropertyID LookupProperty(const nsACString& aProperty)
-  {
+  static nsCSSPropertyID LookupProperty(const nsACString& aProperty) {
     return Servo_Property_LookupEnabledForAllContent(&aProperty);
   }
 
-  static nsCSSPropertyID LookupProperty(const nsAString& aProperty)
-  {
+  static nsCSSPropertyID LookupProperty(const nsAString& aProperty) {
     NS_ConvertUTF16toUTF8 utf8(aProperty);
     return LookupProperty(utf8);
   }
@@ -99,18 +90,15 @@ public:
   
   
   static nsCSSPropertyID LookupPropertyByIDLName(
-      const nsAString& aPropertyIDLName,
-      EnabledState aEnabled);
+      const nsAString& aPropertyIDLName, EnabledState aEnabled);
   static nsCSSPropertyID LookupPropertyByIDLName(
-      const nsACString& aPropertyIDLName,
-      EnabledState aEnabled);
+      const nsACString& aPropertyIDLName, EnabledState aEnabled);
 
   
   
   static bool IsCustomPropertyName(const nsAString& aProperty);
 
-  static bool IsShorthand(nsCSSPropertyID aProperty)
-  {
+  static bool IsShorthand(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
     return (aProperty >= eCSSProperty_COUNT_no_shorthands);
@@ -122,8 +110,7 @@ public:
   
   
   
-  static const nsDependentCSubstring GetStringValue(nsCSSPropertyID aProperty)
-  {
+  static const nsDependentCSubstring GetStringValue(nsCSSPropertyID aProperty) {
     uint32_t len;
     const uint8_t* chars = Servo_Property_GetName(aProperty, &len);
     return nsDependentCSubstring(reinterpret_cast<const char*>(chars), len);
@@ -146,71 +133,67 @@ public:
   
   static nsCSSKeyword ValueToKeywordEnum(int32_t aValue,
                                          const KTableEntry aTable[]);
-  template<typename T,
-           typename = typename std::enable_if<std::is_enum<T>::value>::type>
-  static nsCSSKeyword ValueToKeywordEnum(T aValue,
-                                         const KTableEntry aTable[])
-  {
-    static_assert(mozilla::EnumTypeFitsWithin<T, int16_t>::value,
-                  "aValue must be an enum that fits within KTableEntry::mValue");
+  template <typename T,
+            typename = typename std::enable_if<std::is_enum<T>::value>::type>
+  static nsCSSKeyword ValueToKeywordEnum(T aValue, const KTableEntry aTable[]) {
+    static_assert(
+        mozilla::EnumTypeFitsWithin<T, int16_t>::value,
+        "aValue must be an enum that fits within KTableEntry::mValue");
     return ValueToKeywordEnum(static_cast<int16_t>(aValue), aTable);
   }
   
   static const nsCString& ValueToKeyword(int32_t aValue,
                                          const KTableEntry aTable[]);
-  template<typename T,
-           typename = typename std::enable_if<std::is_enum<T>::value>::type>
-  static const nsCString& ValueToKeyword(T aValue, const KTableEntry aTable[])
-  {
-    static_assert(mozilla::EnumTypeFitsWithin<T, int16_t>::value,
-                  "aValue must be an enum that fits within KTableEntry::mValue");
+  template <typename T,
+            typename = typename std::enable_if<std::is_enum<T>::value>::type>
+  static const nsCString& ValueToKeyword(T aValue, const KTableEntry aTable[]) {
+    static_assert(
+        mozilla::EnumTypeFitsWithin<T, int16_t>::value,
+        "aValue must be an enum that fits within KTableEntry::mValue");
     return ValueToKeyword(static_cast<int16_t>(aValue), aTable);
   }
 
-private:
+ private:
   static const Flags kFlagsTable[eCSSProperty_COUNT];
 
-public:
-  static bool PropHasFlags(nsCSSPropertyID aProperty, Flags aFlags)
-  {
+ public:
+  static bool PropHasFlags(nsCSSPropertyID aProperty, Flags aFlags) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
     return (nsCSSProps::kFlagsTable[aProperty] & aFlags) == aFlags;
   }
 
   static nsCSSPropertyID Physicalize(nsCSSPropertyID aProperty,
-                                     const mozilla::ComputedStyle& aStyle)
-  {
+                                     const mozilla::ComputedStyle& aStyle) {
     if (PropHasFlags(aProperty, Flags::IsLogical)) {
       return Servo_ResolveLogicalProperty(aProperty, &aStyle);
     }
     return aProperty;
   }
 
-private:
+ private:
   
   
   static const nsCSSPropertyID* const
-    kSubpropertyTable[eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands];
+      kSubpropertyTable[eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands];
 
-public:
-  static const nsCSSPropertyID* SubpropertyEntryFor(nsCSSPropertyID aProperty)
-  {
+ public:
+  static const nsCSSPropertyID* SubpropertyEntryFor(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(eCSSProperty_COUNT_no_shorthands <= aProperty &&
-               aProperty < eCSSProperty_COUNT,
+                   aProperty < eCSSProperty_COUNT,
                "out of range");
     return nsCSSProps::kSubpropertyTable[aProperty -
                                          eCSSProperty_COUNT_no_shorthands];
   }
 
-private:
+ private:
   static bool gPropertyEnabled[eCSSProperty_COUNT_with_aliases];
 
-private:
+ private:
   
   static const char* const kIDLNameTable[eCSSProperty_COUNT];
 
-public:
+ public:
   
 
 
@@ -221,23 +204,21 @@ public:
 
 
 
-  static const char* PropertyIDLName(nsCSSPropertyID aProperty)
-  {
+  static const char* PropertyIDLName(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
     return kIDLNameTable[aProperty];
   }
 
-private:
+ private:
   static const int32_t kIDLNameSortPositionTable[eCSSProperty_COUNT];
 
-public:
+ public:
   
 
 
 
-  static int32_t PropertyIDLNameSortPosition(nsCSSPropertyID aProperty)
-  {
+  static int32_t PropertyIDLNameSortPosition(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
                "out of range");
     return kIDLNameSortPositionTable[aProperty];
@@ -256,18 +237,17 @@ public:
   
   
   
-  static const mozilla::UseCounter gPropertyUseCounter[eCSSProperty_COUNT_no_shorthands];
+  static const mozilla::UseCounter
+      gPropertyUseCounter[eCSSProperty_COUNT_no_shorthands];
 
-public:
-
+ public:
   static mozilla::UseCounter UseCounterFor(nsCSSPropertyID aProperty) {
     MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_no_shorthands,
                "out of range");
     return gPropertyUseCounter[aProperty];
   }
 
-  static bool IsEnabled(nsCSSPropertyID aProperty, EnabledState aEnabled)
-  {
+  static bool IsEnabled(nsCSSPropertyID aProperty, EnabledState aEnabled) {
     if (IsEnabled(aProperty)) {
       return true;
     }
@@ -275,21 +255,18 @@ public:
       return true;
     }
     if ((aEnabled & EnabledState::eInUASheets) &&
-        PropHasFlags(aProperty, Flags::EnabledInUASheets))
-    {
+        PropHasFlags(aProperty, Flags::EnabledInUASheets)) {
       return true;
     }
     if ((aEnabled & EnabledState::eInChrome) &&
-        PropHasFlags(aProperty, Flags::EnabledInChrome))
-    {
+        PropHasFlags(aProperty, Flags::EnabledInChrome)) {
       return true;
     }
     return false;
   }
 
-public:
-  struct PropertyPref
-  {
+ public:
+  struct PropertyPref {
     nsCSSPropertyID mPropID;
     const char* mPref;
   };
@@ -299,12 +276,12 @@ public:
 
 
 
-#define CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(it_, prop_, enabledstate_)   \
-  for (const nsCSSPropertyID *it_ = nsCSSProps::SubpropertyEntryFor(prop_), \
-                            es_ = (nsCSSPropertyID)((enabledstate_) |       \
-                                                  CSSEnabledState(0));    \
-       *it_ != eCSSProperty_UNKNOWN; ++it_)                               \
-    if (nsCSSProps::IsEnabled(*it_, (mozilla::CSSEnabledState) es_))
+#define CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(it_, prop_, enabledstate_)  \
+  for (const nsCSSPropertyID *                                           \
+           it_ = nsCSSProps::SubpropertyEntryFor(prop_),                 \
+          es_ = (nsCSSPropertyID)((enabledstate_) | CSSEnabledState(0)); \
+       *it_ != eCSSProperty_UNKNOWN; ++it_)                              \
+    if (nsCSSProps::IsEnabled(*it_, (mozilla::CSSEnabledState)es_))
 
   
   
@@ -317,16 +294,21 @@ public:
   
   static KTableEntry kDisplayKTable[];
   
+  
   static const KTableEntry kAlignAllKeywords[];
-  static const KTableEntry kAlignOverflowPosition[]; 
-  static const KTableEntry kAlignSelfPosition[];     
-  static const KTableEntry kAlignLegacy[];           
-  static const KTableEntry kAlignLegacyPosition[];   
-  static const KTableEntry kAlignAutoNormalStretchBaseline[]; 
-  static const KTableEntry kAlignNormalStretchBaseline[]; 
-  static const KTableEntry kAlignNormalBaseline[]; 
-  static const KTableEntry kAlignContentDistribution[]; 
-  static const KTableEntry kAlignContentPosition[]; 
+  static const KTableEntry kAlignOverflowPosition[];  
+  static const KTableEntry kAlignSelfPosition[];      
+  static const KTableEntry kAlignLegacy[];            
+  static const KTableEntry kAlignLegacyPosition[];    
+  static const KTableEntry
+      kAlignAutoNormalStretchBaseline[];  
+  static const KTableEntry
+      kAlignNormalStretchBaseline[];                
+  static const KTableEntry kAlignNormalBaseline[];  
+  static const KTableEntry
+      kAlignContentDistribution[];                   
+  static const KTableEntry kAlignContentPosition[];  
+  
   
   static const KTableEntry kAutoCompletionAlignJustifySelf[];
   static const KTableEntry kAutoCompletionAlignItems[];
@@ -348,7 +330,7 @@ public:
   static const KTableEntry kTextOverflowKTable[];
   static const KTableEntry kTouchActionKTable[];
   static const KTableEntry kVerticalAlignKTable[];
-  static const KTableEntry kWidthKTable[]; 
+  static const KTableEntry kWidthKTable[];  
   static const KTableEntry kFlexBasisKTable[];
 };
 

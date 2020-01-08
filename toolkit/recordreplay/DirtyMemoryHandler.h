@@ -14,7 +14,7 @@ namespace recordreplay {
 
 void SetupDirtyMemoryHandler();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

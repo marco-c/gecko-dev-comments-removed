@@ -21,55 +21,55 @@ class AccessibleWrap;
 
 
 class uiaRawElmProvider final : public IAccessibleEx,
-                                public IRawElementProviderSimple
-{
-public:
-  explicit uiaRawElmProvider(AccessibleWrap* aAcc) : mAcc(aAcc) { }
+                                public IRawElementProviderSimple {
+ public:
+  explicit uiaRawElmProvider(AccessibleWrap* aAcc) : mAcc(aAcc) {}
 
   
   DECL_IUNKNOWN
 
   
   virtual HRESULT STDMETHODCALLTYPE GetObjectForChild(
-     long aIdChild,
-     __RPC__deref_out_opt IAccessibleEx** aAccEx);
+       long aIdChild,
+       __RPC__deref_out_opt IAccessibleEx** aAccEx);
 
   virtual HRESULT STDMETHODCALLTYPE GetIAccessiblePair(
-     __RPC__deref_out_opt IAccessible** aAcc,
-     __RPC__out long* aIdChild);
+       __RPC__deref_out_opt IAccessible** aAcc,
+       __RPC__out long* aIdChild);
 
   virtual HRESULT STDMETHODCALLTYPE GetRuntimeId(
-     __RPC__deref_out_opt SAFEARRAY** aRuntimeIds);
+       __RPC__deref_out_opt SAFEARRAY** aRuntimeIds);
 
   virtual HRESULT STDMETHODCALLTYPE ConvertReturnedElement(
-     __RPC__in_opt IRawElementProviderSimple* aRawElmProvider,
-     __RPC__deref_out_opt IAccessibleEx** aAccEx);
+       __RPC__in_opt IRawElementProviderSimple* aRawElmProvider,
+       __RPC__deref_out_opt IAccessibleEx** aAccEx);
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_ProviderOptions(
-     __RPC__out enum ProviderOptions* aProviderOptions);
+       __RPC__out enum ProviderOptions* aProviderOptions);
 
   virtual HRESULT STDMETHODCALLTYPE GetPatternProvider(
-     PATTERNID aPatternId,
-     __RPC__deref_out_opt IUnknown** aPatternProvider);
+       PATTERNID aPatternId,
+       __RPC__deref_out_opt IUnknown** aPatternProvider);
 
   virtual HRESULT STDMETHODCALLTYPE GetPropertyValue(
-     PROPERTYID aPropertyId,
-     __RPC__out VARIANT* aPropertyValue);
+       PROPERTYID aPropertyId,
+       __RPC__out VARIANT* aPropertyValue);
 
   virtual  HRESULT STDMETHODCALLTYPE get_HostRawElementProvider(
-     __RPC__deref_out_opt IRawElementProviderSimple** aRawElmProvider);
+       __RPC__deref_out_opt IRawElementProviderSimple**
+          aRawElmProvider);
 
-private:
+ private:
   uiaRawElmProvider() = delete;
-  uiaRawElmProvider& operator =(const uiaRawElmProvider&) = delete;
+  uiaRawElmProvider& operator=(const uiaRawElmProvider&) = delete;
   uiaRawElmProvider(const uiaRawElmProvider&) = delete;
 
-protected:
+ protected:
   RefPtr<AccessibleWrap> mAcc;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

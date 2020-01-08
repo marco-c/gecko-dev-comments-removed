@@ -7,22 +7,23 @@
 
 #include "jsapi-tests/tests.h"
 
-BEGIN_TEST(testSetProperty_InheritedGlobalSetter)
-{
-    
-    
-    
-    MOZ_RELEASE_ASSERT(!JS_GetClass(global)->getResolve());
+BEGIN_TEST(testSetProperty_InheritedGlobalSetter) {
+  
+  
+  
+  MOZ_RELEASE_ASSERT(!JS_GetClass(global)->getResolve());
 
-    CHECK(JS_DefineProperty(cx, global, "HOTLOOP", 8, 0));
-    EXEC("var n = 0;\n"
-         "var global = this;\n"
-         "function f() { n++; }\n"
-         "Object.defineProperty(Object.prototype, 'x', {set: f});\n"
-         "for (var i = 0; i < HOTLOOP; i++)\n"
-         "    global.x = i;\n");
-    EXEC("if (n != HOTLOOP)\n"
-         "    throw 'FAIL';\n");
-    return true;
+  CHECK(JS_DefineProperty(cx, global, "HOTLOOP", 8, 0));
+  EXEC(
+      "var n = 0;\n"
+      "var global = this;\n"
+      "function f() { n++; }\n"
+      "Object.defineProperty(Object.prototype, 'x', {set: f});\n"
+      "for (var i = 0; i < HOTLOOP; i++)\n"
+      "    global.x = i;\n");
+  EXEC(
+      "if (n != HOTLOOP)\n"
+      "    throw 'FAIL';\n");
+  return true;
 }
 END_TEST(testSetProperty_InheritedGlobalSetter)

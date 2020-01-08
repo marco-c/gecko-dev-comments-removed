@@ -47,677 +47,663 @@ namespace mozilla {
 class SVGContextPaint;
 };
 
-#define NO_FONT_LANGUAGE_OVERRIDE      0
+#define NO_FONT_LANGUAGE_OVERRIDE 0
 
 class gfxCharacterMap : public gfxSparseBitSet {
-public:
-    nsrefcnt AddRef() {
-        MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
-        ++mRefCnt;
-        NS_LOG_ADDREF(this, mRefCnt, "gfxCharacterMap", sizeof(*this));
-        return mRefCnt;
+ public:
+  nsrefcnt AddRef() {
+    MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
+    ++mRefCnt;
+    NS_LOG_ADDREF(this, mRefCnt, "gfxCharacterMap", sizeof(*this));
+    return mRefCnt;
+  }
+
+  nsrefcnt Release() {
+    MOZ_ASSERT(0 != mRefCnt, "dup release");
+    --mRefCnt;
+    NS_LOG_RELEASE(this, mRefCnt, "gfxCharacterMap");
+    if (mRefCnt == 0) {
+      NotifyReleased();
+      
+      return 0;
     }
+    return mRefCnt;
+  }
 
-    nsrefcnt Release() {
-        MOZ_ASSERT(0 != mRefCnt, "dup release");
-        --mRefCnt;
-        NS_LOG_RELEASE(this, mRefCnt, "gfxCharacterMap");
-        if (mRefCnt == 0) {
-            NotifyReleased();
-            
-            return 0;
-        }
-        return mRefCnt;
-    }
+  gfxCharacterMap() : mHash(0), mBuildOnTheFly(false), mShared(false) {}
 
-    gfxCharacterMap() :
-        mHash(0), mBuildOnTheFly(false), mShared(false)
-    { }
+  explicit gfxCharacterMap(const gfxSparseBitSet& aOther)
+      : gfxSparseBitSet(aOther),
+        mHash(0),
+        mBuildOnTheFly(false),
+        mShared(false) {}
 
-    explicit gfxCharacterMap(const gfxSparseBitSet& aOther) :
-        gfxSparseBitSet(aOther),
-        mHash(0), mBuildOnTheFly(false), mShared(false)
-    { }
+  void CalcHash() { mHash = GetChecksum(); }
 
-    void CalcHash() { mHash = GetChecksum(); }
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return gfxSparseBitSet::SizeOfExcludingThis(aMallocSizeOf);
+  }
 
-    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
-        return gfxSparseBitSet::SizeOfExcludingThis(aMallocSizeOf);
-    }
+  
+  uint32_t mHash;
 
-    
-    uint32_t mHash;
+  
+  bool mBuildOnTheFly;
 
-    
-    bool mBuildOnTheFly;
+  
+  bool mShared;
 
-    
-    bool mShared;
+ protected:
+  void NotifyReleased();
 
-protected:
-    void NotifyReleased();
+  nsAutoRefCnt mRefCnt;
 
-    nsAutoRefCnt mRefCnt;
-
-private:
-    gfxCharacterMap(const gfxCharacterMap&);
-    gfxCharacterMap& operator=(const gfxCharacterMap&);
+ private:
+  gfxCharacterMap(const gfxCharacterMap&);
+  gfxCharacterMap& operator=(const gfxCharacterMap&);
 };
 
 
 
 struct gfxFontFeatureInfo {
-    uint32_t mTag;
-    uint32_t mScript;
-    uint32_t mLangSys;
+  uint32_t mTag;
+  uint32_t mScript;
+  uint32_t mLangSys;
 };
 
 class gfxFontEntry {
-public:
-    typedef mozilla::gfx::DrawTarget DrawTarget;
-    typedef mozilla::unicode::Script Script;
-    typedef mozilla::FontWeight FontWeight;
-    typedef mozilla::FontSlantStyle FontSlantStyle;
-    typedef mozilla::FontStretch FontStretch;
-    typedef mozilla::WeightRange WeightRange;
-    typedef mozilla::SlantStyleRange SlantStyleRange;
-    typedef mozilla::StretchRange StretchRange;
+ public:
+  typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::unicode::Script Script;
+  typedef mozilla::FontWeight FontWeight;
+  typedef mozilla::FontSlantStyle FontSlantStyle;
+  typedef mozilla::FontStretch FontStretch;
+  typedef mozilla::WeightRange WeightRange;
+  typedef mozilla::SlantStyleRange SlantStyleRange;
+  typedef mozilla::StretchRange StretchRange;
+
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontEntry)
+
+  explicit gfxFontEntry(const nsACString& aName, bool aIsStandardFace = false);
+
+  
+  
+  
+  
+  virtual gfxFontEntry* Clone() const = 0;
+
+  
+  
+  const nsCString& Name() const { return mName; }
+
+  
+  const nsCString& FamilyName() const { return mFamilyName; }
+
+  
+  
+  
+  
+
+  
+  
+  virtual nsCString RealFaceName();
+
+  WeightRange Weight() const { return mWeightRange; }
+  StretchRange Stretch() const { return mStretchRange; }
+  SlantStyleRange SlantStyle() const { return mStyleRange; }
+
+  bool IsUserFont() const { return mIsDataUserFont || mIsLocalUserFont; }
+  bool IsLocalUserFont() const { return mIsLocalUserFont; }
+  bool IsFixedPitch() const { return mFixedPitch; }
+  bool IsItalic() const { return SlantStyle().Min().IsItalic(); }
+  bool IsOblique() const { return SlantStyle().Min().IsOblique(); }
+  bool IsUpright() const { return SlantStyle().Min().IsNormal(); }
+  inline bool SupportsItalic();
+  inline bool SupportsBold();  
+  bool IgnoreGDEF() const { return mIgnoreGDEF; }
+  bool IgnoreGSUB() const { return mIgnoreGSUB; }
+
+  
+  
+  
+  
+  
+  
+  bool IsNormalStyle() const {
+    return IsUpright() && Weight().Min() <= FontWeight::Normal() &&
+           Weight().Max() >= FontWeight::Normal() &&
+           Stretch().Min() <= FontStretch::Normal() &&
+           Stretch().Max() >= FontStretch::Normal();
+  }
+
+  
+  
+  virtual bool SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTag);
+  bool SupportsGraphiteFeature(uint32_t aFeatureTag);
+
+  
+  const hb_set_t* InputsForOpenTypeFeature(Script aScript,
+                                           uint32_t aFeatureTag);
+
+  virtual bool HasFontTable(uint32_t aTableTag);
+
+  inline bool HasGraphiteTables() {
+    if (!mCheckedForGraphiteTables) {
+      CheckForGraphiteTables();
+      mCheckedForGraphiteTables = true;
+    }
+    return mHasGraphiteTables;
+  }
+
+  inline bool HasCmapTable() {
+    if (!mCharacterMap) {
+      ReadCMAP();
+      NS_ASSERTION(mCharacterMap, "failed to initialize character map");
+    }
+    return mHasCmapTable;
+  }
+
+  inline bool HasCharacter(uint32_t ch) {
+    if (mCharacterMap && mCharacterMap->test(ch)) {
+      return true;
+    }
+    return TestCharacterMap(ch);
+  }
+
+  virtual bool SkipDuringSystemFallback() { return false; }
+  nsresult InitializeUVSMap();
+  uint16_t GetUVSGlyph(uint32_t aCh, uint32_t aVS);
+
+  
+  
+  
+  
+  
+  
+  virtual nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr);
+
+  bool TryGetSVGData(gfxFont* aFont);
+  bool HasSVGGlyph(uint32_t aGlyphId);
+  bool GetSVGGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphId,
+                          gfxFloat aSize, gfxRect* aResult);
+  void RenderSVGGlyph(gfxContext* aContext, uint32_t aGlyphId,
+                      mozilla::SVGContextPaint* aContextPaint);
+  
+  
+  void NotifyGlyphsChanged();
+
+  bool TryGetColorGlyphs();
+  bool GetColorLayersInfo(uint32_t aGlyphId,
+                          const mozilla::gfx::Color& aDefaultColor,
+                          nsTArray<uint16_t>& layerGlyphs,
+                          nsTArray<mozilla::gfx::Color>& layerColors);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual hb_blob_t* GetFontTable(uint32_t aTag);
+
+  
+  
+  class AutoTable {
+   public:
+    AutoTable(gfxFontEntry* aFontEntry, uint32_t aTag) {
+      mBlob = aFontEntry->GetFontTable(aTag);
+    }
+    ~AutoTable() {
+      if (mBlob) {
+        hb_blob_destroy(mBlob);
+      }
+    }
+    operator hb_blob_t*() const { return mBlob; }
+
+   private:
+    hb_blob_t* mBlob;
+    
+    AutoTable(const AutoTable&) = delete;
+    AutoTable& operator=(const AutoTable&) = delete;
+  };
+
+  
+  
+  
+  
+  
+  
+  gfxFont* FindOrMakeFont(const gfxFontStyle* aStyle,
+                          gfxCharacterMap* aUnicodeRangeMap = nullptr);
+
+  
+  
+  
+  
+  
+  
+  bool GetExistingFontTable(uint32_t aTag, hb_blob_t** aBlob);
+
+  
+  
+  
+  
+  
+  
+  
+  hb_blob_t* ShareFontTableAndGetBlob(uint32_t aTag, nsTArray<uint8_t>* aTable);
+
+  
+  
+  
+  uint16_t UnitsPerEm();
+  enum {
+    kMinUPEM = 16,     
+    kMaxUPEM = 16384,  
+    kInvalidUPEM = uint16_t(-1)
+  };
+
+  
+  
+  
+
+  
+  
+  
+  hb_face_t* GetHBFace();
+  virtual void ForgetHBFace();
+
+  
+  
+  gr_face* GetGrFace();
+  virtual void ReleaseGrFace(gr_face* aFace);
+
+  
+  
+  bool HasGraphiteSpaceContextuals();
+
+  
+  void DisconnectSVG();
+
+  
+  
+  void NotifyFontDestroyed(gfxFont* aFont);
+
+  
+  virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                      FontListSizes* aSizes) const;
+  virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                      FontListSizes* aSizes) const;
+
+  
+  
+  size_t ComputedSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+  
+  struct ScriptRange {
+    uint32_t rangeStart;
+    uint32_t rangeEnd;
+    hb_tag_t tags[3];  
+                       
+  };
+
+  bool SupportsScriptInGSUB(const hb_tag_t* aScriptTags);
+
+  
+
+
+
+
+
+  virtual bool HasVariations() = 0;
+
+  virtual void GetVariationAxes(
+      nsTArray<gfxFontVariationAxis>& aVariationAxes) = 0;
+
+  virtual void GetVariationInstances(
+      nsTArray<gfxFontVariationInstance>& aInstances) = 0;
+
+  bool HasBoldVariableWeight();
+  bool HasItalicVariation();
+  void CheckForVariationAxes();
+
+  
+  
+  
+  void SetupVariationRanges();
+
+  
+  
+  void GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
+                             const gfxFontStyle& aStyle);
+
+  
+  void GetFeatureInfo(nsTArray<gfxFontFeatureInfo>& aFeatureInfo);
+
+  
+  virtual FT_MM_Var* GetMMVar() { return nullptr; }
+
+  nsCString mName;
+  nsCString mFamilyName;
+
+  RefPtr<gfxCharacterMap> mCharacterMap;
+
+  mozilla::UniquePtr<uint8_t[]> mUVSData;
+  mozilla::UniquePtr<gfxUserFontData> mUserFontData;
+  mozilla::UniquePtr<gfxSVGGlyphs> mSVGGlyphs;
+  
+  nsTArray<gfxFont*> mFontsUsingSVGGlyphs;
+  nsTArray<gfxFontFeature> mFeatureSettings;
+  nsTArray<gfxFontVariation> mVariationSettings;
+  mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey, bool>> mSupportedFeatures;
+  mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey, hb_set_t*>>
+      mFeatureInputs;
+
+  
+  hb_blob_t* mCOLR = nullptr;
+  hb_blob_t* mCPAL = nullptr;
+
+  
+  
+  uint32_t mDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
+  uint32_t
+      mNonDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
+
+  uint32_t mUVSOffset = 0;
+
+  uint32_t mLanguageOverride = NO_FONT_LANGUAGE_OVERRIDE;
+
+  WeightRange mWeightRange = WeightRange(FontWeight(500));
+  StretchRange mStretchRange = StretchRange(FontStretch::Normal());
+  SlantStyleRange mStyleRange = SlantStyleRange(FontSlantStyle::Normal());
+
+  
+  
+  
+  
+  
+  
+  enum class RangeFlags : uint8_t {
+    eNoFlags = 0,
+    eAutoWeight = (1 << 0),
+    eAutoStretch = (1 << 1),
+    eAutoSlantStyle = (1 << 2),
 
     
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontEntry)
-
-    explicit gfxFontEntry(const nsACString& aName, bool aIsStandardFace = false);
-
     
     
+    eBoldVariableWeight = (1 << 3),
     
-    
-    virtual gfxFontEntry* Clone() const = 0;
-
-    
-    
-    const nsCString& Name() const { return mName; }
-
-    
-    const nsCString& FamilyName() const { return mFamilyName; }
+    eItalicVariation = (1 << 4),
 
     
     
     
     
+    eNonCSSWeight = (1 << 5),
+    eNonCSSStretch = (1 << 6)
+  };
+  RangeFlags mRangeFlags = RangeFlags::eNoFlags;
+
+  
+  
+  
+  bool mFixedPitch : 1;
+  bool mIsBadUnderlineFont : 1;
+  bool mIsUserFontContainer : 1;  
+  bool mIsDataUserFont : 1;       
+  bool mIsLocalUserFont : 1;      
+  bool mStandardFace : 1;
+  bool mIgnoreGDEF : 1;
+  bool mIgnoreGSUB : 1;
+  bool mSVGInitialized : 1;
+  bool mHasSpaceFeaturesInitialized : 1;
+  bool mHasSpaceFeatures : 1;
+  bool mHasSpaceFeaturesKerning : 1;
+  bool mHasSpaceFeaturesNonKerning : 1;
+  bool mSkipDefaultFeatureSpaceCheck : 1;
+  bool mGraphiteSpaceContextualsInitialized : 1;
+  bool mHasGraphiteSpaceContextuals : 1;
+  bool mSpaceGlyphIsInvisible : 1;
+  bool mSpaceGlyphIsInvisibleInitialized : 1;
+  bool mHasGraphiteTables : 1;
+  bool mCheckedForGraphiteTables : 1;
+  bool mHasCmapTable : 1;
+  bool mGrFaceInitialized : 1;
+  bool mCheckedForColorGlyph : 1;
+  bool mCheckedForVariationAxes : 1;
+
+ protected:
+  friend class gfxPlatformFontList;
+  friend class gfxMacPlatformFontList;
+  friend class gfxUserFcFontEntry;
+  friend class gfxFontFamily;
+  friend class gfxSingleFaceMacFontFamily;
+  friend class gfxUserFontEntry;
+
+  gfxFontEntry();
+
+  
+  virtual ~gfxFontEntry();
+
+  virtual gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) = 0;
+
+  virtual void CheckForGraphiteTables();
+
+  
+  
+  virtual nsresult CopyFontTable(uint32_t aTableTag,
+                                 nsTArray<uint8_t>& aBuffer) {
+    MOZ_ASSERT_UNREACHABLE(
+        "forgot to override either GetFontTable or "
+        "CopyFontTable?");
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  virtual already_AddRefed<gfxCharacterMap> GetCMAPFromFontInfo(
+      FontInfoData* aFontInfoData, uint32_t& aUVSOffset);
+
+  
+  virtual bool TestCharacterMap(uint32_t aCh);
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  hb_face_t* mHBFace = nullptr;
+
+  static hb_blob_t* HBGetTable(hb_face_t* face, uint32_t aTag, void* aUserData);
+
+  
+  static void HBFaceDeletedCallback(void* aUserData);
+
+  
+  
+  
+  
+  gr_face* mGrFace = nullptr;
+
+  
+  
+  nsDataHashtable<nsPtrHashKey<const void>, void*>* mGrTableMap = nullptr;
+
+  
+  nsrefcnt mGrFaceRefCnt = 0;
+
+  static const void* GrGetTable(const void* aAppFaceHandle, unsigned int aName,
+                                size_t* aLen);
+  static void GrReleaseTable(const void* aAppFaceHandle,
+                             const void* aTableBuffer);
+
+  
+  
+  
+  
+  uint32_t mComputedSizeOfUserFont = 0;
+
+  
+  
+  uint16_t mUnitsPerEm = 0;
+
+ private:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  class FontTableBlobData;
+
+  
+
+
+
+
+
+
+
+
+
+
+  class FontTableHashEntry : public nsUint32HashKey {
+   public:
+    
+
+    typedef nsUint32HashKey KeyClass;
+    typedef KeyClass::KeyType KeyType;
+    typedef KeyClass::KeyTypePointer KeyTypePointer;
+
+    explicit FontTableHashEntry(KeyTypePointer aTag)
+        : KeyClass(aTag), mSharedBlobData(nullptr), mBlob(nullptr) {}
 
     
     
-    virtual nsCString RealFaceName();
-
-    WeightRange Weight() const { return mWeightRange; }
-    StretchRange Stretch() const { return mStretchRange; }
-    SlantStyleRange SlantStyle() const { return mStyleRange; }
-
-    bool IsUserFont() const { return mIsDataUserFont || mIsLocalUserFont; }
-    bool IsLocalUserFont() const { return mIsLocalUserFont; }
-    bool IsFixedPitch() const { return mFixedPitch; }
-    bool IsItalic() const { return SlantStyle().Min().IsItalic(); }
-    bool IsOblique() const { return SlantStyle().Min().IsOblique(); }
-    bool IsUpright() const { return SlantStyle().Min().IsNormal(); }
-    inline bool SupportsItalic();
-    inline bool SupportsBold(); 
-    bool IgnoreGDEF() const { return mIgnoreGDEF; }
-    bool IgnoreGSUB() const { return mIgnoreGSUB; }
-
     
-    
-    
-    
-    
-    
-    bool IsNormalStyle() const
-    {
-        return IsUpright() &&
-               Weight().Min() <= FontWeight::Normal() &&
-               Weight().Max() >= FontWeight::Normal() &&
-               Stretch().Min() <= FontStretch::Normal() &&
-               Stretch().Max() >= FontStretch::Normal();
+    FontTableHashEntry(FontTableHashEntry&& toMove)
+        : KeyClass(std::move(toMove)),
+          mSharedBlobData(std::move(toMove.mSharedBlobData)),
+          mBlob(std::move(toMove.mBlob)) {
+      toMove.mSharedBlobData = nullptr;
+      toMove.mBlob = nullptr;
     }
 
-    
-    
-    virtual bool SupportsOpenTypeFeature(Script aScript, uint32_t aFeatureTag);
-    bool SupportsGraphiteFeature(uint32_t aFeatureTag);
-
-    
-    const hb_set_t*
-    InputsForOpenTypeFeature(Script aScript, uint32_t aFeatureTag);
-
-    virtual bool HasFontTable(uint32_t aTableTag);
-
-    inline bool HasGraphiteTables() {
-        if (!mCheckedForGraphiteTables) {
-            CheckForGraphiteTables();
-            mCheckedForGraphiteTables = true;
-        }
-        return mHasGraphiteTables;
-    }
-
-    inline bool HasCmapTable() {
-        if (!mCharacterMap) {
-            ReadCMAP();
-            NS_ASSERTION(mCharacterMap, "failed to initialize character map");
-        }
-        return mHasCmapTable;
-    }
-
-    inline bool HasCharacter(uint32_t ch) {
-        if (mCharacterMap && mCharacterMap->test(ch)) {
-            return true;
-        }
-        return TestCharacterMap(ch);
-    }
-
-    virtual bool SkipDuringSystemFallback() { return false; }
-    nsresult InitializeUVSMap();
-    uint16_t GetUVSGlyph(uint32_t aCh, uint32_t aVS);
-
-    
-    
-    
-    
-    
-    
-    virtual nsresult ReadCMAP(FontInfoData *aFontInfoData = nullptr);
-
-    bool TryGetSVGData(gfxFont* aFont);
-    bool HasSVGGlyph(uint32_t aGlyphId);
-    bool GetSVGGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphId,
-                            gfxFloat aSize, gfxRect* aResult);
-    void RenderSVGGlyph(gfxContext *aContext, uint32_t aGlyphId,
-                        mozilla::SVGContextPaint* aContextPaint);
-    
-    
-    void NotifyGlyphsChanged();
-
-    bool     TryGetColorGlyphs();
-    bool     GetColorLayersInfo(uint32_t aGlyphId,
-                                const mozilla::gfx::Color& aDefaultColor,
-                                nsTArray<uint16_t>& layerGlyphs,
-                                nsTArray<mozilla::gfx::Color>& layerColors);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    virtual hb_blob_t *GetFontTable(uint32_t aTag);
-
-    
-    
-    class AutoTable {
-    public:
-        AutoTable(gfxFontEntry* aFontEntry, uint32_t aTag)
-        {
-            mBlob = aFontEntry->GetFontTable(aTag);
-        }
-        ~AutoTable() {
-            if (mBlob) {
-                hb_blob_destroy(mBlob);
-            }
-        }
-        operator hb_blob_t*() const { return mBlob; }
-    private:
-        hb_blob_t* mBlob;
-        
-        AutoTable(const AutoTable&) = delete;
-        AutoTable& operator=(const AutoTable&) = delete;
-    };
-
-    
-    
-    
-    
-    
-    
-    gfxFont* FindOrMakeFont(const gfxFontStyle *aStyle,
-                            gfxCharacterMap* aUnicodeRangeMap = nullptr);
-
-    
-    
-    
-    
-    
-    
-    bool GetExistingFontTable(uint32_t aTag, hb_blob_t** aBlob);
-
-    
-    
-    
-    
-    
-    
-    
-    hb_blob_t *ShareFontTableAndGetBlob(uint32_t aTag,
-                                        nsTArray<uint8_t>* aTable);
-
-    
-    
-    
-    uint16_t UnitsPerEm();
-    enum {
-        kMinUPEM = 16,    
-        kMaxUPEM = 16384, 
-        kInvalidUPEM = uint16_t(-1)
-    };
-
-    
-    
-    
-
-    
-    
-    
-    hb_face_t* GetHBFace();
-    virtual void ForgetHBFace();
-
-    
-    
-    gr_face* GetGrFace();
-    virtual void ReleaseGrFace(gr_face* aFace);
-
-    
-    
-    bool HasGraphiteSpaceContextuals();
-
-    
-    void DisconnectSVG();
-
-    
-    
-    void NotifyFontDestroyed(gfxFont* aFont);
-
-    
-    virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                        FontListSizes* aSizes) const;
-    virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                        FontListSizes* aSizes) const;
-
-    
-    
-    size_t
-    ComputedSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-    
-    struct ScriptRange {
-        uint32_t         rangeStart;
-        uint32_t         rangeEnd;
-        hb_tag_t         tags[3]; 
-                                  
-    };
-
-    bool SupportsScriptInGSUB(const hb_tag_t* aScriptTags);
-
-    
-
-
-
-
-
-    virtual bool HasVariations() = 0;
-
-    virtual void
-    GetVariationAxes(nsTArray<gfxFontVariationAxis>& aVariationAxes) = 0;
-
-    virtual void
-    GetVariationInstances(nsTArray<gfxFontVariationInstance>& aInstances) = 0;
-
-    bool HasBoldVariableWeight();
-    bool HasItalicVariation();
-    void CheckForVariationAxes();
-
-    
-    
-    
-    void SetupVariationRanges();
-
-    
-    
-    void GetVariationsForStyle(nsTArray<gfxFontVariation>& aResult,
-                               const gfxFontStyle& aStyle);
-
-    
-    void GetFeatureInfo(nsTArray<gfxFontFeatureInfo>& aFeatureInfo);
-
-    
-    virtual FT_MM_Var* GetMMVar() { return nullptr; }
-
-    nsCString         mName;
-    nsCString         mFamilyName;
-
-    RefPtr<gfxCharacterMap> mCharacterMap;
-
-    mozilla::UniquePtr<uint8_t[]> mUVSData;
-    mozilla::UniquePtr<gfxUserFontData> mUserFontData;
-    mozilla::UniquePtr<gfxSVGGlyphs> mSVGGlyphs;
-    
-    nsTArray<gfxFont*> mFontsUsingSVGGlyphs;
-    nsTArray<gfxFontFeature> mFeatureSettings;
-    nsTArray<gfxFontVariation> mVariationSettings;
-    mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,bool>> mSupportedFeatures;
-    mozilla::UniquePtr<nsDataHashtable<nsUint32HashKey,hb_set_t*>> mFeatureInputs;
-
-    
-    hb_blob_t*       mCOLR = nullptr;
-    hb_blob_t*       mCPAL = nullptr;
-
-    
-    
-    uint32_t         mDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
-    uint32_t         mNonDefaultSubSpaceFeatures[(int(Script::NUM_SCRIPT_CODES) + 31) / 32];
-
-    uint32_t         mUVSOffset = 0;
-
-    uint32_t         mLanguageOverride = NO_FONT_LANGUAGE_OVERRIDE;
-
-    WeightRange      mWeightRange = WeightRange(FontWeight(500));
-    StretchRange     mStretchRange = StretchRange(FontStretch::Normal());
-    SlantStyleRange  mStyleRange = SlantStyleRange(FontSlantStyle::Normal());
-
-    
-    
-    
-    
-    
-    
-    enum class RangeFlags : uint8_t {
-        eNoFlags        = 0,
-        eAutoWeight     = (1 << 0),
-        eAutoStretch    = (1 << 1),
-        eAutoSlantStyle = (1 << 2),
-
-        
-        
-        
-        eBoldVariableWeight = (1 << 3),
-        
-        eItalicVariation    = (1 << 4),
-
-        
-        
-        
-        
-        eNonCSSWeight   = (1 << 5),
-        eNonCSSStretch  = (1 << 6)
-    };
-    RangeFlags       mRangeFlags = RangeFlags::eNoFlags;
-
-    
-    
-    
-    bool             mFixedPitch  : 1;
-    bool             mIsBadUnderlineFont : 1;
-    bool             mIsUserFontContainer : 1; 
-    bool             mIsDataUserFont : 1;      
-    bool             mIsLocalUserFont : 1;     
-    bool             mStandardFace : 1;
-    bool             mIgnoreGDEF  : 1;
-    bool             mIgnoreGSUB  : 1;
-    bool             mSVGInitialized : 1;
-    bool             mHasSpaceFeaturesInitialized : 1;
-    bool             mHasSpaceFeatures : 1;
-    bool             mHasSpaceFeaturesKerning : 1;
-    bool             mHasSpaceFeaturesNonKerning : 1;
-    bool             mSkipDefaultFeatureSpaceCheck : 1;
-    bool             mGraphiteSpaceContextualsInitialized : 1;
-    bool             mHasGraphiteSpaceContextuals : 1;
-    bool             mSpaceGlyphIsInvisible : 1;
-    bool             mSpaceGlyphIsInvisibleInitialized : 1;
-    bool             mHasGraphiteTables : 1;
-    bool             mCheckedForGraphiteTables : 1;
-    bool             mHasCmapTable : 1;
-    bool             mGrFaceInitialized : 1;
-    bool             mCheckedForColorGlyph : 1;
-    bool             mCheckedForVariationAxes : 1;
-
-protected:
-    friend class gfxPlatformFontList;
-    friend class gfxMacPlatformFontList;
-    friend class gfxUserFcFontEntry;
-    friend class gfxFontFamily;
-    friend class gfxSingleFaceMacFontFamily;
-    friend class gfxUserFontEntry;
-
-    gfxFontEntry();
-
-    
-    virtual ~gfxFontEntry();
-
-    virtual gfxFont *CreateFontInstance(const gfxFontStyle *aFontStyle) = 0;
-
-    virtual void CheckForGraphiteTables();
-
-    
-    
-    virtual nsresult CopyFontTable(uint32_t aTableTag,
-                                   nsTArray<uint8_t>& aBuffer) {
-        MOZ_ASSERT_UNREACHABLE("forgot to override either GetFontTable or "
-                               "CopyFontTable?");
-        return NS_ERROR_FAILURE;
-    }
-
-    
-    virtual already_AddRefed<gfxCharacterMap>
-    GetCMAPFromFontInfo(FontInfoData *aFontInfoData,
-                        uint32_t& aUVSOffset);
-
-    
-    virtual bool TestCharacterMap(uint32_t aCh);
-
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    hb_face_t* mHBFace = nullptr;
+    ~FontTableHashEntry() { Clear(); }
 
-    static hb_blob_t* HBGetTable(hb_face_t *face, uint32_t aTag, void *aUserData);
-
-    
-    static void HBFaceDeletedCallback(void *aUserData);
-
-    
-    
-    
     
-    gr_face*   mGrFace = nullptr;
 
     
     
-    nsDataHashtable<nsPtrHashKey<const void>,void*>* mGrTableMap = nullptr;
-
-    
-    nsrefcnt mGrFaceRefCnt = 0;
-
-    static const void* GrGetTable(const void *aAppFaceHandle,
-                                  unsigned int aName,
-                                  size_t *aLen);
-    static void GrReleaseTable(const void *aAppFaceHandle,
-                               const void *aTableBuffer);
-
-    
     
     
-    
-    uint32_t mComputedSizeOfUserFont = 0;
+    hb_blob_t* ShareTableAndGetBlob(
+        nsTArray<uint8_t>&& aTable,
+        nsTHashtable<FontTableHashEntry>* aHashtable);
 
-    
     
-    uint16_t mUnitsPerEm = 0;
-
-private:
     
-
-
-
-
-
-
-
-
-
-
-
-
-
+    hb_blob_t* GetBlob() const;
 
+    void Clear();
 
+    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-
-
-
-
-
-
-
-    class FontTableBlobData;
-
+   private:
+    static void DeleteFontTableBlobData(void* aBlobData);
     
-
-
-
-
-
-
-
-
-
-
-    class FontTableHashEntry : public nsUint32HashKey
-    {
-    public:
-        
-
-        typedef nsUint32HashKey KeyClass;
-        typedef KeyClass::KeyType KeyType;
-        typedef KeyClass::KeyTypePointer KeyTypePointer;
-
-        explicit FontTableHashEntry(KeyTypePointer aTag)
-            : KeyClass(aTag)
-            , mSharedBlobData(nullptr)
-            , mBlob(nullptr)
-        { }
-
-        
-        
-        
-        FontTableHashEntry(FontTableHashEntry&& toMove)
-            : KeyClass(std::move(toMove))
-            , mSharedBlobData(std::move(toMove.mSharedBlobData))
-            , mBlob(std::move(toMove.mBlob))
-        {
-            toMove.mSharedBlobData = nullptr;
-            toMove.mBlob = nullptr;
-        }
-
-        ~FontTableHashEntry() { Clear(); }
-
-        
-
-        
-        
-        
-        
-        hb_blob_t *
-        ShareTableAndGetBlob(nsTArray<uint8_t>&& aTable,
-                             nsTHashtable<FontTableHashEntry> *aHashtable);
-
-        
-        
-        hb_blob_t *GetBlob() const;
-
-        void Clear();
-
-        size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-    private:
-        static void DeleteFontTableBlobData(void *aBlobData);
-        
-        FontTableHashEntry& operator=(FontTableHashEntry& toCopy);
+    FontTableHashEntry& operator=(FontTableHashEntry& toCopy);
 
-        FontTableBlobData *mSharedBlobData;
-        hb_blob_t *mBlob;
-    };
+    FontTableBlobData* mSharedBlobData;
+    hb_blob_t* mBlob;
+  };
 
-    mozilla::UniquePtr<nsTHashtable<FontTableHashEntry> > mFontTableCache;
+  mozilla::UniquePtr<nsTHashtable<FontTableHashEntry>> mFontTableCache;
 
-    gfxFontEntry(const gfxFontEntry&);
-    gfxFontEntry& operator=(const gfxFontEntry&);
+  gfxFontEntry(const gfxFontEntry&);
+  gfxFontEntry& operator=(const gfxFontEntry&);
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontEntry::RangeFlags)
 
-inline bool
-gfxFontEntry::SupportsItalic()
-{
-    return SlantStyle().Max().IsItalic() ||
-           ((mRangeFlags & RangeFlags::eAutoSlantStyle) ==
-               RangeFlags::eAutoSlantStyle &&
-            HasItalicVariation());
+inline bool gfxFontEntry::SupportsItalic() {
+  return SlantStyle().Max().IsItalic() ||
+         ((mRangeFlags & RangeFlags::eAutoSlantStyle) ==
+              RangeFlags::eAutoSlantStyle &&
+          HasItalicVariation());
 }
 
-inline bool
-gfxFontEntry::SupportsBold()
-{
-    
-    
-    
-    
-    return Weight().Max().IsBold() ||
-           ((mRangeFlags & RangeFlags::eAutoWeight) ==
-               RangeFlags::eAutoWeight &&
-            HasBoldVariableWeight());
+inline bool gfxFontEntry::SupportsBold() {
+  
+  
+  
+  
+  return Weight().Max().IsBold() ||
+         ((mRangeFlags & RangeFlags::eAutoWeight) == RangeFlags::eAutoWeight &&
+          HasBoldVariableWeight());
 }
 
 
 struct GlobalFontMatch {
-    GlobalFontMatch(const uint32_t aCharacter,
-                    const gfxFontStyle& aStyle) :
-        mStyle(aStyle), mCh(aCharacter),
-        mCount(0), mCmapsTested(0), mMatchDistance(INFINITY)
-        {
-        }
+  GlobalFontMatch(const uint32_t aCharacter, const gfxFontStyle& aStyle)
+      : mStyle(aStyle),
+        mCh(aCharacter),
+        mCount(0),
+        mCmapsTested(0),
+        mMatchDistance(INFINITY) {}
 
-    RefPtr<gfxFontEntry>   mBestMatch;   
-    RefPtr<gfxFontFamily>  mMatchedFamily; 
-    const gfxFontStyle&    mStyle;       
-    const uint32_t         mCh;          
-    uint32_t               mCount;       
-    uint32_t               mCmapsTested; 
-    float                  mMatchDistance; 
+  RefPtr<gfxFontEntry> mBestMatch;       
+  RefPtr<gfxFontFamily> mMatchedFamily;  
+  const gfxFontStyle& mStyle;            
+  const uint32_t mCh;                    
+  uint32_t mCount;                       
+  uint32_t mCmapsTested;                 
+  float mMatchDistance;                  
 };
 
 class gfxFontFamily {
-public:
-    
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontFamily)
+ public:
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontFamily)
 
-    explicit gfxFontFamily(const nsACString& aName) :
-        mName(aName),
+  explicit gfxFontFamily(const nsACString& aName)
+      : mName(aName),
         mOtherFamilyNamesInitialized(false),
         mHasOtherFamilyNames(false),
         mFaceNamesInitialized(false),
@@ -727,232 +713,217 @@ public:
         mFamilyCharacterMapInitialized(false),
         mSkipDefaultFeatureSpaceCheck(false),
         mCheckForFallbackFaces(false),
-        mCheckedForLegacyFamilyNames(false)
-        { }
+        mCheckedForLegacyFamilyNames(false) {}
 
-    const nsCString& Name() { return mName; }
+  const nsCString& Name() { return mName; }
 
-    virtual void LocalizedName(nsACString& aLocalizedName);
-    virtual bool HasOtherFamilyNames();
+  virtual void LocalizedName(nsACString& aLocalizedName);
+  virtual bool HasOtherFamilyNames();
 
-    
-    
-    
-    
-    
-    
-    bool CheckForLegacyFamilyNames(gfxPlatformFontList* aFontList);
+  
+  
+  
+  
+  
+  
+  bool CheckForLegacyFamilyNames(gfxPlatformFontList* aFontList);
 
-    nsTArray<RefPtr<gfxFontEntry> >& GetFontList() { return mAvailableFonts; }
-    
-    void AddFontEntry(RefPtr<gfxFontEntry> aFontEntry) {
-        
-        
-        if (aFontEntry->IsItalic() && !aFontEntry->IsUserFont() &&
-            Name().EqualsLiteral("Times New Roman"))
-        {
-            aFontEntry->mIgnoreGDEF = true;
-        }
-        if (aFontEntry->mFamilyName.IsEmpty()) {
-            aFontEntry->mFamilyName = Name();
-        } else {
-            MOZ_ASSERT(aFontEntry->mFamilyName.Equals(Name()));
-        }
-        aFontEntry->mSkipDefaultFeatureSpaceCheck = mSkipDefaultFeatureSpaceCheck;
-        mAvailableFonts.AppendElement(aFontEntry);
+  nsTArray<RefPtr<gfxFontEntry>>& GetFontList() { return mAvailableFonts; }
 
-        
-        
-        
-        if (mIsSimpleFamily) {
-            for (size_t i = mAvailableFonts.Length() - 1; i-- > 0; ) {
-                if (!mAvailableFonts[i]) {
-                    mAvailableFonts.RemoveElementAt(i);
-                }
-            }
-            mIsSimpleFamily = false;
-        }
+  void AddFontEntry(RefPtr<gfxFontEntry> aFontEntry) {
+    
+    
+    if (aFontEntry->IsItalic() && !aFontEntry->IsUserFont() &&
+        Name().EqualsLiteral("Times New Roman")) {
+      aFontEntry->mIgnoreGDEF = true;
     }
-
-    
-    bool HasStyles() { return mHasStyles; }
-    void SetHasStyles(bool aHasStyles) { mHasStyles = aHasStyles; }
-
-    
-    
-    
-    gfxFontEntry *FindFontForStyle(const gfxFontStyle& aFontStyle, 
-                                   bool aIgnoreSizeTolerance = false);
-
-    virtual void
-    FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
-                         nsTArray<gfxFontEntry*>& aFontEntryList,
-                         bool aIgnoreSizeTolerance = false);
-
-    
-    
-    void FindFontForChar(GlobalFontMatch* aMatchData);
-
-    
-    void SearchAllFontsForChar(GlobalFontMatch* aMatchData);
-
-    
-    virtual void ReadOtherFamilyNames(gfxPlatformFontList *aPlatformFontList);
-
-    
-    
-    static void ReadOtherFamilyNamesForFace(const nsACString& aFamilyName,
-                                            const char *aNameData,
-                                            uint32_t aDataLength,
-                                            nsTArray<nsCString>& aOtherFamilyNames,
-                                            bool useFullName);
-
-    
-    void SetOtherFamilyNamesInitialized() {
-        mOtherFamilyNamesInitialized = true;
+    if (aFontEntry->mFamilyName.IsEmpty()) {
+      aFontEntry->mFamilyName = Name();
+    } else {
+      MOZ_ASSERT(aFontEntry->mFamilyName.Equals(Name()));
     }
+    aFontEntry->mSkipDefaultFeatureSpaceCheck = mSkipDefaultFeatureSpaceCheck;
+    mAvailableFonts.AppendElement(aFontEntry);
 
     
     
-    virtual void ReadFaceNames(gfxPlatformFontList *aPlatformFontList,
-                               bool aNeedFullnamePostscriptNames,
-                               FontInfoData *aFontInfoData = nullptr);
-
     
-    
-    virtual void FindStyleVariations(FontInfoData *aFontInfoData = nullptr) { }
-
-    
-    gfxFontEntry* FindFont(const nsACString& aPostscriptName);
-
-    
-    void ReadAllCMAPs(FontInfoData *aFontInfoData = nullptr);
-
-    bool TestCharacterMap(uint32_t aCh) {
-        if (!mFamilyCharacterMapInitialized) {
-            ReadAllCMAPs();
+    if (mIsSimpleFamily) {
+      for (size_t i = mAvailableFonts.Length() - 1; i-- > 0;) {
+        if (!mAvailableFonts[i]) {
+          mAvailableFonts.RemoveElementAt(i);
         }
-        return mFamilyCharacterMap.test(aCh);
+      }
+      mIsSimpleFamily = false;
     }
+  }
 
-    void ResetCharacterMap() {
-        mFamilyCharacterMap.reset();
-        mFamilyCharacterMapInitialized = false;
+  
+  bool HasStyles() { return mHasStyles; }
+  void SetHasStyles(bool aHasStyles) { mHasStyles = aHasStyles; }
+
+  
+  
+  
+  gfxFontEntry* FindFontForStyle(const gfxFontStyle& aFontStyle,
+                                 bool aIgnoreSizeTolerance = false);
+
+  virtual void FindAllFontsForStyle(const gfxFontStyle& aFontStyle,
+                                    nsTArray<gfxFontEntry*>& aFontEntryList,
+                                    bool aIgnoreSizeTolerance = false);
+
+  
+  
+  void FindFontForChar(GlobalFontMatch* aMatchData);
+
+  
+  void SearchAllFontsForChar(GlobalFontMatch* aMatchData);
+
+  
+  virtual void ReadOtherFamilyNames(gfxPlatformFontList* aPlatformFontList);
+
+  
+  
+  static void ReadOtherFamilyNamesForFace(
+      const nsACString& aFamilyName, const char* aNameData,
+      uint32_t aDataLength, nsTArray<nsCString>& aOtherFamilyNames,
+      bool useFullName);
+
+  
+  void SetOtherFamilyNamesInitialized() { mOtherFamilyNamesInitialized = true; }
+
+  
+  
+  virtual void ReadFaceNames(gfxPlatformFontList* aPlatformFontList,
+                             bool aNeedFullnamePostscriptNames,
+                             FontInfoData* aFontInfoData = nullptr);
+
+  
+  
+  virtual void FindStyleVariations(FontInfoData* aFontInfoData = nullptr) {}
+
+  
+  gfxFontEntry* FindFont(const nsACString& aPostscriptName);
+
+  
+  void ReadAllCMAPs(FontInfoData* aFontInfoData = nullptr);
+
+  bool TestCharacterMap(uint32_t aCh) {
+    if (!mFamilyCharacterMapInitialized) {
+      ReadAllCMAPs();
     }
+    return mFamilyCharacterMap.test(aCh);
+  }
 
-    
-    void SetBadUnderlineFamily() {
-        mIsBadUnderlineFamily = true;
-        if (mHasStyles) {
-            SetBadUnderlineFonts();
-        }
+  void ResetCharacterMap() {
+    mFamilyCharacterMap.reset();
+    mFamilyCharacterMapInitialized = false;
+  }
+
+  
+  void SetBadUnderlineFamily() {
+    mIsBadUnderlineFamily = true;
+    if (mHasStyles) {
+      SetBadUnderlineFonts();
     }
+  }
 
-    bool IsBadUnderlineFamily() const { return mIsBadUnderlineFamily; }
-    bool CheckForFallbackFaces() const { return mCheckForFallbackFaces; }
+  bool IsBadUnderlineFamily() const { return mIsBadUnderlineFamily; }
+  bool CheckForFallbackFaces() const { return mCheckForFallbackFaces; }
 
-    
-    void SortAvailableFonts();
+  
+  void SortAvailableFonts();
 
-    
-    
-    
-    void CheckForSimpleFamily();
+  
+  
+  
+  void CheckForSimpleFamily();
 
-    
-    virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                        FontListSizes* aSizes) const;
-    virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                        FontListSizes* aSizes) const;
+  
+  virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                      FontListSizes* aSizes) const;
+  virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                      FontListSizes* aSizes) const;
 
 #ifdef DEBUG
-    
-    bool ContainsFace(gfxFontEntry* aFontEntry);
+  
+  bool ContainsFace(gfxFontEntry* aFontEntry);
 #endif
 
-    void SetSkipSpaceFeatureCheck(bool aSkipCheck) {
-        mSkipDefaultFeatureSpaceCheck = aSkipCheck;
+  void SetSkipSpaceFeatureCheck(bool aSkipCheck) {
+    mSkipDefaultFeatureSpaceCheck = aSkipCheck;
+  }
+
+  
+  
+  
+  
+  
+  
+  virtual bool FilterForFontList(nsAtom* aLangGroup,
+                                 const nsACString& aGeneric) const {
+    return true;
+  }
+
+ protected:
+  
+  virtual ~gfxFontFamily();
+
+  bool ReadOtherFamilyNamesForFace(gfxPlatformFontList* aPlatformFontList,
+                                   hb_blob_t* aNameTable,
+                                   bool useFullName = false);
+
+  
+  void SetBadUnderlineFonts() {
+    uint32_t i, numFonts = mAvailableFonts.Length();
+    for (i = 0; i < numFonts; i++) {
+      if (mAvailableFonts[i]) {
+        mAvailableFonts[i]->mIsBadUnderlineFont = true;
+      }
     }
+  }
 
-    
-    
-    
-    
-    
-    
-    virtual bool FilterForFontList(nsAtom* aLangGroup,
-                                   const nsACString& aGeneric) const {
-        return true;
-    }
+  nsCString mName;
+  nsTArray<RefPtr<gfxFontEntry>> mAvailableFonts;
+  gfxSparseBitSet mFamilyCharacterMap;
+  bool mOtherFamilyNamesInitialized : 1;
+  bool mHasOtherFamilyNames : 1;
+  bool mFaceNamesInitialized : 1;
+  bool mHasStyles : 1;
+  bool mIsSimpleFamily : 1;
+  bool mIsBadUnderlineFamily : 1;
+  bool mFamilyCharacterMapInitialized : 1;
+  bool mSkipDefaultFeatureSpaceCheck : 1;
+  bool mCheckForFallbackFaces : 1;  
+  bool mCheckedForLegacyFamilyNames : 1;
 
-protected:
+  enum {
     
-    virtual ~gfxFontFamily();
-
-    bool ReadOtherFamilyNamesForFace(gfxPlatformFontList *aPlatformFontList,
-                                     hb_blob_t           *aNameTable,
-                                     bool                 useFullName = false);
-
     
-    void SetBadUnderlineFonts() {
-        uint32_t i, numFonts = mAvailableFonts.Length();
-        for (i = 0; i < numFonts; i++) {
-            if (mAvailableFonts[i]) {
-                mAvailableFonts[i]->mIsBadUnderlineFont = true;
-            }
-        }
-    }
-
-    nsCString mName;
-    nsTArray<RefPtr<gfxFontEntry> >  mAvailableFonts;
-    gfxSparseBitSet mFamilyCharacterMap;
-    bool mOtherFamilyNamesInitialized : 1;
-    bool mHasOtherFamilyNames : 1;
-    bool mFaceNamesInitialized : 1;
-    bool mHasStyles : 1;
-    bool mIsSimpleFamily : 1;
-    bool mIsBadUnderlineFamily : 1;
-    bool mFamilyCharacterMapInitialized : 1;
-    bool mSkipDefaultFeatureSpaceCheck : 1;
-    bool mCheckForFallbackFaces : 1;  
-    bool mCheckedForLegacyFamilyNames : 1;
-
-    enum {
-        
-        
-        kRegularFaceIndex    = 0,
-        kBoldFaceIndex       = 1,
-        kItalicFaceIndex     = 2,
-        kBoldItalicFaceIndex = 3,
-        
-        kBoldMask   = 0x01,
-        kItalicMask = 0x02
-    };
+    kRegularFaceIndex = 0,
+    kBoldFaceIndex = 1,
+    kItalicFaceIndex = 2,
+    kBoldItalicFaceIndex = 3,
+    
+    kBoldMask = 0x01,
+    kItalicMask = 0x02
+  };
 };
 
 
 
 
 struct FamilyAndGeneric final {
-    FamilyAndGeneric()
-        : mFamily(nullptr)
-        , mGeneric(mozilla::FontFamilyType::eFamily_none)
-    {
-    }
-    FamilyAndGeneric(const FamilyAndGeneric& aOther)
-        : mFamily(aOther.mFamily)
-        , mGeneric(aOther.mGeneric)
-    {
-    }
-    explicit FamilyAndGeneric(gfxFontFamily* aFamily,
-                              mozilla::FontFamilyType aGeneric =
-                                  mozilla::FontFamilyType::eFamily_none)
-        : mFamily(aFamily)
-        , mGeneric(aGeneric)
-    {
-    }
-    gfxFontFamily* mFamily;
-    mozilla::FontFamilyType mGeneric;
+  FamilyAndGeneric()
+      : mFamily(nullptr), mGeneric(mozilla::FontFamilyType::eFamily_none) {}
+  FamilyAndGeneric(const FamilyAndGeneric& aOther)
+      : mFamily(aOther.mFamily), mGeneric(aOther.mGeneric) {}
+  explicit FamilyAndGeneric(
+      gfxFontFamily* aFamily,
+      mozilla::FontFamilyType aGeneric = mozilla::FontFamilyType::eFamily_none)
+      : mFamily(aFamily), mGeneric(aGeneric) {}
+  gfxFontFamily* mFamily;
+  mozilla::FontFamilyType mGeneric;
 };
 
 #endif

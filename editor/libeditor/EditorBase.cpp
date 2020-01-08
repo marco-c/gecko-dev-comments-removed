@@ -5,107 +5,107 @@
 
 #include "mozilla/EditorBase.h"
 
-#include "mozilla/DebugOnly.h"          
-#include "mozilla/Encoding.h"           
+#include "mozilla/DebugOnly.h"  
+#include "mozilla/Encoding.h"   
 
-#include <stdio.h>                      
-#include <string.h>                     
+#include <stdio.h>   
+#include <string.h>  
 
-#include "ChangeAttributeTransaction.h" 
-#include "CompositionTransaction.h"     
-#include "CreateElementTransaction.h"   
-#include "DeleteNodeTransaction.h"      
-#include "DeleteRangeTransaction.h"     
-#include "DeleteTextTransaction.h"      
-#include "EditAggregateTransaction.h"   
-#include "EditorEventListener.h"        
-#include "HTMLEditRules.h"              
-#include "InsertNodeTransaction.h"      
-#include "InsertTextTransaction.h"      
-#include "JoinNodeTransaction.h"        
-#include "PlaceholderTransaction.h"     
-#include "SplitNodeTransaction.h"       
-#include "TextEditUtils.h"              
-#include "mozilla/CheckedInt.h"         
-#include "mozilla/ComputedStyle.h"      
-#include "mozilla/CSSEditUtils.h"       
-#include "mozilla/EditAction.h"         
-#include "mozilla/EditorDOMPoint.h"     
-#include "mozilla/EditorSpellCheck.h"   
-#include "mozilla/EditorUtils.h"        
-#include "mozilla/EditTransactionBase.h" 
-#include "mozilla/FlushType.h"          
-#include "mozilla/IMEContentObserver.h" 
-#include "mozilla/IMEStateManager.h"    
-#include "mozilla/mozalloc.h"           
-#include "mozilla/mozInlineSpellChecker.h" 
-#include "mozilla/mozSpellChecker.h"    
-#include "mozilla/Preferences.h"        
+#include "ChangeAttributeTransaction.h"     
+#include "CompositionTransaction.h"         
+#include "CreateElementTransaction.h"       
+#include "DeleteNodeTransaction.h"          
+#include "DeleteRangeTransaction.h"         
+#include "DeleteTextTransaction.h"          
+#include "EditAggregateTransaction.h"       
+#include "EditorEventListener.h"            
+#include "HTMLEditRules.h"                  
+#include "InsertNodeTransaction.h"          
+#include "InsertTextTransaction.h"          
+#include "JoinNodeTransaction.h"            
+#include "PlaceholderTransaction.h"         
+#include "SplitNodeTransaction.h"           
+#include "TextEditUtils.h"                  
+#include "mozilla/CheckedInt.h"             
+#include "mozilla/ComputedStyle.h"          
+#include "mozilla/CSSEditUtils.h"           
+#include "mozilla/EditAction.h"             
+#include "mozilla/EditorDOMPoint.h"         
+#include "mozilla/EditorSpellCheck.h"       
+#include "mozilla/EditorUtils.h"            
+#include "mozilla/EditTransactionBase.h"    
+#include "mozilla/FlushType.h"              
+#include "mozilla/IMEContentObserver.h"     
+#include "mozilla/IMEStateManager.h"        
+#include "mozilla/mozalloc.h"               
+#include "mozilla/mozInlineSpellChecker.h"  
+#include "mozilla/mozSpellChecker.h"        
+#include "mozilla/Preferences.h"            
 #include "mozilla/RangeBoundary.h"      
 #include "mozilla/dom/Selection.h"      
 #include "mozilla/Services.h"           
 #include "mozilla/TextComposition.h"    
 #include "mozilla/TextInputListener.h"  
-#include "mozilla/TextServicesDocument.h" 
+#include "mozilla/TextServicesDocument.h"  
 #include "mozilla/TextEvents.h"
-#include "mozilla/TransactionManager.h" 
-#include "mozilla/dom/CharacterData.h"  
-#include "mozilla/dom/Element.h"        
-#include "mozilla/dom/EventTarget.h"    
+#include "mozilla/TransactionManager.h"  
+#include "mozilla/dom/CharacterData.h"   
+#include "mozilla/dom/Element.h"         
+#include "mozilla/dom/EventTarget.h"     
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "mozilla/dom/Text.h"
 #include "mozilla/dom/Event.h"
-#include "nsAString.h"                  
-#include "nsCCUncollectableMarker.h"    
-#include "nsCaret.h"                    
+#include "nsAString.h"                
+#include "nsCCUncollectableMarker.h"  
+#include "nsCaret.h"                  
 #include "nsCaseTreatment.h"
-#include "nsCharTraits.h"               
-#include "nsComponentManagerUtils.h"    
-#include "nsComputedDOMStyle.h"         
-#include "nsContentUtils.h"             
-#include "nsDOMString.h"                
-#include "nsDebug.h"                    
-#include "nsError.h"                    
-#include "nsFocusManager.h"             
-#include "nsFrameSelection.h"           
-#include "nsGenericHTMLElement.h"       
-#include "nsGkAtoms.h"                  
-#include "nsIAbsorbingTransaction.h"    
-#include "nsAtom.h"                     
-#include "nsIContent.h"                 
-#include "nsIDocument.h"                
-#include "nsIDOMEventListener.h"        
-#include "nsIDocumentStateListener.h"   
-#include "nsIEditActionListener.h"      
-#include "nsIEditorObserver.h"          
-#include "nsIEditorSpellCheck.h"        
-#include "nsIFrame.h"                   
-#include "nsIHTMLDocument.h"            
-#include "nsIInlineSpellChecker.h"      
+#include "nsCharTraits.h"              
+#include "nsComponentManagerUtils.h"   
+#include "nsComputedDOMStyle.h"        
+#include "nsContentUtils.h"            
+#include "nsDOMString.h"               
+#include "nsDebug.h"                   
+#include "nsError.h"                   
+#include "nsFocusManager.h"            
+#include "nsFrameSelection.h"          
+#include "nsGenericHTMLElement.h"      
+#include "nsGkAtoms.h"                 
+#include "nsIAbsorbingTransaction.h"   
+#include "nsAtom.h"                    
+#include "nsIContent.h"                
+#include "nsIDocument.h"               
+#include "nsIDOMEventListener.h"       
+#include "nsIDocumentStateListener.h"  
+#include "nsIEditActionListener.h"     
+#include "nsIEditorObserver.h"         
+#include "nsIEditorSpellCheck.h"       
+#include "nsIFrame.h"                  
+#include "nsIHTMLDocument.h"           
+#include "nsIInlineSpellChecker.h"     
 #include "nsNameSpaceManager.h"        
-#include "nsINode.h"                    
-#include "nsIPlaintextEditor.h"         
-#include "nsIPresShell.h"               
-#include "nsISelectionController.h"     
-#include "nsISelectionDisplay.h"        
-#include "nsISupportsBase.h"            
-#include "nsISupportsUtils.h"           
-#include "nsITransaction.h"             
+#include "nsINode.h"                   
+#include "nsIPlaintextEditor.h"        
+#include "nsIPresShell.h"              
+#include "nsISelectionController.h"    
+#include "nsISelectionDisplay.h"       
+#include "nsISupportsBase.h"           
+#include "nsISupportsUtils.h"          
+#include "nsITransaction.h"            
 #include "nsITransactionManager.h"
-#include "nsIWeakReference.h"           
-#include "nsIWidget.h"                  
-#include "nsPIDOMWindow.h"              
-#include "nsPresContext.h"              
-#include "nsRange.h"                    
-#include "nsReadableUtils.h"            
-#include "nsString.h"                   
-#include "nsStringFwd.h"                
-#include "nsStyleConsts.h"              
-#include "nsStyleStruct.h"              
-#include "nsStyleStructFwd.h"           
-#include "nsTextNode.h"                 
-#include "nsThreadUtils.h"              
-#include "prtime.h"                     
+#include "nsIWeakReference.h"  
+#include "nsIWidget.h"         
+#include "nsPIDOMWindow.h"     
+#include "nsPresContext.h"     
+#include "nsRange.h"           
+#include "nsReadableUtils.h"   
+#include "nsString.h"          
+#include "nsStringFwd.h"       
+#include "nsStyleConsts.h"     
+#include "nsStyleStruct.h"     
+#include "nsStyleStructFwd.h"  
+#include "nsTextNode.h"        
+#include "nsThreadUtils.h"     
+#include "prtime.h"            
 
 class nsIOutputStream;
 class nsITransferable;
@@ -119,63 +119,49 @@ using namespace widget;
 
 
 
-template already_AddRefed<Element>
-EditorBase::CreateNodeWithTransaction(nsAtom& aTag,
-                                      const EditorDOMPoint& aPointToInsert);
-template already_AddRefed<Element>
-EditorBase::CreateNodeWithTransaction(nsAtom& aTag,
-                                      const EditorRawDOMPoint& aPointToInsert);
-template nsresult
-EditorBase::InsertNodeWithTransaction(nsIContent& aContentToInsert,
-                                      const EditorDOMPoint& aPointToInsert);
-template nsresult
-EditorBase::InsertNodeWithTransaction(nsIContent& aContentToInsert,
-                                      const EditorRawDOMPoint& aPointToInsert);
-template already_AddRefed<nsIContent>
-EditorBase::SplitNodeWithTransaction(const EditorDOMPoint& aStartOfRightNode,
-                                     ErrorResult& aError);
-template already_AddRefed<nsIContent>
-EditorBase::SplitNodeWithTransaction(const EditorRawDOMPoint& aStartOfRightNode,
-                                     ErrorResult& aError);
-template SplitNodeResult
-EditorBase::SplitNodeDeepWithTransaction(
-              nsIContent& aMostAncestorToSplit,
-              const EditorDOMPoint& aStartOfDeepestRightNode,
-              SplitAtEdges aSplitAtEdges);
-template SplitNodeResult
-EditorBase::SplitNodeDeepWithTransaction(
-              nsIContent& aMostAncestorToSplit,
-              const EditorRawDOMPoint& aStartOfDeepestRightNode,
-              SplitAtEdges aSplitAtEdges);
-template nsresult
-EditorBase::MoveNodeWithTransaction(nsIContent& aContent,
-                                    const EditorDOMPoint& aPointToInsert);
-template nsresult
-EditorBase::MoveNodeWithTransaction(nsIContent& aContent,
-                                    const EditorRawDOMPoint& aPointToInsert);
+template already_AddRefed<Element> EditorBase::CreateNodeWithTransaction(
+    nsAtom& aTag, const EditorDOMPoint& aPointToInsert);
+template already_AddRefed<Element> EditorBase::CreateNodeWithTransaction(
+    nsAtom& aTag, const EditorRawDOMPoint& aPointToInsert);
+template nsresult EditorBase::InsertNodeWithTransaction(
+    nsIContent& aContentToInsert, const EditorDOMPoint& aPointToInsert);
+template nsresult EditorBase::InsertNodeWithTransaction(
+    nsIContent& aContentToInsert, const EditorRawDOMPoint& aPointToInsert);
+template already_AddRefed<nsIContent> EditorBase::SplitNodeWithTransaction(
+    const EditorDOMPoint& aStartOfRightNode, ErrorResult& aError);
+template already_AddRefed<nsIContent> EditorBase::SplitNodeWithTransaction(
+    const EditorRawDOMPoint& aStartOfRightNode, ErrorResult& aError);
+template SplitNodeResult EditorBase::SplitNodeDeepWithTransaction(
+    nsIContent& aMostAncestorToSplit,
+    const EditorDOMPoint& aStartOfDeepestRightNode, SplitAtEdges aSplitAtEdges);
+template SplitNodeResult EditorBase::SplitNodeDeepWithTransaction(
+    nsIContent& aMostAncestorToSplit,
+    const EditorRawDOMPoint& aStartOfDeepestRightNode,
+    SplitAtEdges aSplitAtEdges);
+template nsresult EditorBase::MoveNodeWithTransaction(
+    nsIContent& aContent, const EditorDOMPoint& aPointToInsert);
+template nsresult EditorBase::MoveNodeWithTransaction(
+    nsIContent& aContent, const EditorRawDOMPoint& aPointToInsert);
 
 EditorBase::EditorBase()
-  : mEditActionData(nullptr)
-  , mPlaceholderName(nullptr)
-  , mModCount(0)
-  , mFlags(0)
-  , mUpdateCount(0)
-  , mPlaceholderBatch(0)
-  , mDocDirtyState(-1)
-  , mSpellcheckCheckboxState(eTriUnset)
-  , mAllowsTransactionsToChangeSelection(true)
-  , mDidPreDestroy(false)
-  , mDidPostCreate(false)
-  , mDispatchInputEvent(true)
-  , mIsInEditSubAction(false)
-  , mHidingCaret(false)
-  , mSpellCheckerDictionaryUpdated(true)
-  , mIsHTMLEditorClass(false)
-{
-}
+    : mEditActionData(nullptr),
+      mPlaceholderName(nullptr),
+      mModCount(0),
+      mFlags(0),
+      mUpdateCount(0),
+      mPlaceholderBatch(0),
+      mDocDirtyState(-1),
+      mSpellcheckCheckboxState(eTriUnset),
+      mAllowsTransactionsToChangeSelection(true),
+      mDidPreDestroy(false),
+      mDidPostCreate(false),
+      mDispatchInputEvent(true),
+      mIsInEditSubAction(false),
+      mHidingCaret(false),
+      mSpellCheckerDictionaryUpdated(true),
+      mIsHTMLEditorClass(false) {}
 
-EditorBase::~EditorBase()
-{
+EditorBase::~EditorBase() {
   MOZ_ASSERT(!IsInitialized() || mDidPreDestroy,
              "Why PreDestroy hasn't been called?");
 
@@ -191,69 +177,64 @@ EditorBase::~EditorBase()
 NS_IMPL_CYCLE_COLLECTION_CLASS(EditorBase)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(EditorBase)
- 
- 
- if (tmp->mEventListener) {
-   tmp->mEventListener->Disconnect();
-   tmp->mEventListener = nullptr;
- }
+  
+  
+  if (tmp->mEventListener) {
+    tmp->mEventListener->Disconnect();
+    tmp->mEventListener = nullptr;
+  }
 
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mRootElement)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectionController)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mIMEContentObserver)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mInlineSpellChecker)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mTextServicesDocument)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mTextInputListener)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mTransactionManager)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mActionListeners)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditorObservers)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocStateListeners)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mEventTarget)
- NS_IMPL_CYCLE_COLLECTION_UNLINK(mPlaceholderTransaction)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mRootElement)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mSelectionController)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocument)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mIMEContentObserver)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mInlineSpellChecker)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTextServicesDocument)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTextInputListener)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mTransactionManager)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mActionListeners)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEditorObservers)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocStateListeners)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mEventTarget)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mPlaceholderTransaction)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(EditorBase)
- nsIDocument* currentDoc =
-   tmp->mRootElement ? tmp->mRootElement->GetUncomposedDoc() : nullptr;
- if (currentDoc &&
-     nsCCUncollectableMarker::InGeneration(cb, currentDoc->GetMarkedCCGeneration())) {
-   return NS_SUCCESS_INTERRUPTED_TRAVERSE;
- }
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRootElement)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectionController)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocument)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIMEContentObserver)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInlineSpellChecker)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextServicesDocument)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextInputListener)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTransactionManager)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActionListeners)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditorObservers)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocStateListeners)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventTarget)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventListener)
- NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlaceholderTransaction)
+  nsIDocument* currentDoc =
+      tmp->mRootElement ? tmp->mRootElement->GetUncomposedDoc() : nullptr;
+  if (currentDoc && nsCCUncollectableMarker::InGeneration(
+                        cb, currentDoc->GetMarkedCCGeneration())) {
+    return NS_SUCCESS_INTERRUPTED_TRAVERSE;
+  }
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mRootElement)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mSelectionController)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocument)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mIMEContentObserver)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mInlineSpellChecker)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextServicesDocument)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTextInputListener)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mTransactionManager)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mActionListeners)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEditorObservers)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocStateListeners)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventTarget)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mEventListener)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPlaceholderTransaction)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(EditorBase)
- NS_INTERFACE_MAP_ENTRY(nsISelectionListener)
- NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
- NS_INTERFACE_MAP_ENTRY(nsIEditor)
- NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIEditor)
+  NS_INTERFACE_MAP_ENTRY(nsISelectionListener)
+  NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
+  NS_INTERFACE_MAP_ENTRY(nsIEditor)
+  NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIEditor)
 NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTING_ADDREF(EditorBase)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(EditorBase)
 
-
-nsresult
-EditorBase::Init(nsIDocument& aDocument,
-                 Element* aRoot,
-                 nsISelectionController* aSelectionController,
-                 uint32_t aFlags,
-                 const nsAString& aValue)
-{
+nsresult EditorBase::Init(nsIDocument& aDocument, Element* aRoot,
+                          nsISelectionController* aSelectionController,
+                          uint32_t aFlags, const nsAString& aValue) {
   MOZ_ASSERT(GetTopLevelEditSubAction() == EditSubAction::eNone,
              "Initializing during an edit action is an error");
 
@@ -264,7 +245,7 @@ EditorBase::Init(nsIDocument& aDocument,
 #ifdef DEBUG
   nsresult rv =
 #endif
-  SetFlags(aFlags);
+      SetFlags(aFlags);
   NS_ASSERTION(NS_SUCCEEDED(rv), "SetFlags() failed");
 
   mDocument = &aDocument;
@@ -287,14 +268,13 @@ EditorBase::Init(nsIDocument& aDocument,
     mRootElement = aRoot;
   }
 
-  mUpdateCount=0;
+  mUpdateCount = 0;
 
   
   
   
   
-  if (mComposition &&
-      mComposition->GetContainerTextNode() &&
+  if (mComposition && mComposition->GetContainerTextNode() &&
       !mComposition->GetContainerTextNode()->IsInComposedDoc()) {
     mComposition->OnTextNodeRemoved();
   }
@@ -302,7 +282,7 @@ EditorBase::Init(nsIDocument& aDocument,
   
   selectionController->SetCaretReadOnly(false);
   selectionController->SetDisplaySelection(
-                         nsISelectionController::SELECTION_ON);
+      nsISelectionController::SELECTION_ON);
   
   selectionController->SetSelectionFlags(nsISelectionDisplay::DISPLAY_ALL);
 
@@ -323,9 +303,7 @@ EditorBase::Init(nsIDocument& aDocument,
   return NS_OK;
 }
 
-nsresult
-EditorBase::PostCreate()
-{
+nsresult EditorBase::PostCreate() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -381,34 +359,27 @@ EditorBase::PostCreate()
   return NS_OK;
 }
 
-void
-EditorBase::SetTextInputListener(TextInputListener* aTextInputListener)
-{
+void EditorBase::SetTextInputListener(TextInputListener* aTextInputListener) {
   MOZ_ASSERT(!mTextInputListener || !aTextInputListener ||
              mTextInputListener == aTextInputListener);
   mTextInputListener = aTextInputListener;
 }
 
-void
-EditorBase::SetIMEContentObserver(IMEContentObserver* aIMEContentObserver)
-{
+void EditorBase::SetIMEContentObserver(
+    IMEContentObserver* aIMEContentObserver) {
   MOZ_ASSERT(!mIMEContentObserver || !aIMEContentObserver ||
              mIMEContentObserver == aIMEContentObserver);
   mIMEContentObserver = aIMEContentObserver;
 }
 
-void
-EditorBase::CreateEventListeners()
-{
+void EditorBase::CreateEventListeners() {
   
   if (!mEventListener) {
     mEventListener = new EditorEventListener();
   }
 }
 
-nsresult
-EditorBase::InstallEventListeners()
-{
+nsresult EditorBase::InstallEventListeners() {
   if (NS_WARN_IF(!IsInitialized()) || NS_WARN_IF(!mEventListener)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -427,9 +398,7 @@ EditorBase::InstallEventListeners()
   return rv;
 }
 
-void
-EditorBase::RemoveEventListeners()
-{
+void EditorBase::RemoveEventListeners() {
   if (!IsInitialized() || !mEventListener) {
     return;
   }
@@ -442,9 +411,7 @@ EditorBase::RemoveEventListeners()
   mEventTarget = nullptr;
 }
 
-bool
-EditorBase::GetDesiredSpellCheckState()
-{
+bool EditorBase::GetDesiredSpellCheckState() {
   
   if (mSpellcheckCheckboxState != eTriUnset) {
     return (mSpellcheckCheckboxState == eTriTrue);
@@ -454,7 +421,7 @@ EditorBase::GetDesiredSpellCheckState()
   int32_t spellcheckLevel = Preferences::GetInt("layout.spellcheckDefault", 1);
 
   if (!spellcheckLevel) {
-    return false;                    
+    return false;  
   }
 
   if (!CanEnableSpellCheck()) {
@@ -484,16 +451,15 @@ EditorBase::GetDesiredSpellCheckState()
     
     
     
-    nsCOMPtr<nsIHTMLDocument> doc = do_QueryInterface(content->GetComposedDoc());
+    nsCOMPtr<nsIHTMLDocument> doc =
+        do_QueryInterface(content->GetComposedDoc());
     return doc && doc->IsEditingOn();
   }
 
   return element->Spellcheck();
 }
 
-void
-EditorBase::PreDestroy(bool aDestroyingFrames)
-{
+void EditorBase::PreDestroy(bool aDestroyingFrames) {
   if (mDidPreDestroy) {
     return;
   }
@@ -511,8 +477,7 @@ EditorBase::PreDestroy(bool aDestroyingFrames)
   
   
   
-  if (mInlineSpellChecker)
-    mInlineSpellChecker->Cleanup(aDestroyingFrames);
+  if (mInlineSpellChecker) mInlineSpellChecker->Cleanup(aDestroyingFrames);
 
   
   NotifyDocumentListeners(eDocumentToBeDestroyed);
@@ -535,7 +500,7 @@ EditorBase::PreDestroy(bool aDestroyingFrames)
   if (mTransactionManager) {
     DebugOnly<bool> disabledUndoRedo = DisableUndoRedo();
     NS_WARNING_ASSERTION(disabledUndoRedo,
-      "Failed to disable undo/redo transactions");
+                         "Failed to disable undo/redo transactions");
     mTransactionManager = nullptr;
   }
 
@@ -543,8 +508,7 @@ EditorBase::PreDestroy(bool aDestroyingFrames)
 }
 
 NS_IMETHODIMP
-EditorBase::GetFlags(uint32_t* aFlags)
-{
+EditorBase::GetFlags(uint32_t* aFlags) {
   
   
   *aFlags = Flags();
@@ -552,8 +516,7 @@ EditorBase::GetFlags(uint32_t* aFlags)
 }
 
 NS_IMETHODIMP
-EditorBase::SetFlags(uint32_t aFlags)
-{
+EditorBase::SetFlags(uint32_t aFlags) {
   if (mFlags == aFlags) {
     return NS_OK;
   }
@@ -597,16 +560,13 @@ EditorBase::SetFlags(uint32_t aFlags)
 }
 
 NS_IMETHODIMP
-EditorBase::GetIsSelectionEditable(bool* aIsSelectionEditable)
-{
+EditorBase::GetIsSelectionEditable(bool* aIsSelectionEditable) {
   NS_ENSURE_ARG_POINTER(aIsSelectionEditable);
   *aIsSelectionEditable = IsSelectionEditable();
   return NS_OK;
 }
 
-bool
-EditorBase::IsSelectionEditable()
-{
+bool EditorBase::IsSelectionEditable() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return false;
@@ -636,7 +596,7 @@ EditorBase::IsSelectionEditable()
   }
 
   nsINode* commonAncestor =
-    SelectionRefPtr()->GetAnchorFocusRange()->GetCommonAncestor();
+      SelectionRefPtr()->GetAnchorFocusRange()->GetCommonAncestor();
   while (commonAncestor && !commonAncestor->IsEditable()) {
     commonAncestor = commonAncestor->GetParentNode();
   }
@@ -645,8 +605,7 @@ EditorBase::IsSelectionEditable()
 }
 
 NS_IMETHODIMP
-EditorBase::GetIsDocumentEditable(bool* aIsDocumentEditable)
-{
+EditorBase::GetIsDocumentEditable(bool* aIsDocumentEditable) {
   NS_ENSURE_ARG_POINTER(aIsDocumentEditable);
   nsCOMPtr<nsIDocument> doc = GetDocument();
   *aIsDocumentEditable = doc && IsModifiable();
@@ -655,15 +614,12 @@ EditorBase::GetIsDocumentEditable(bool* aIsDocumentEditable)
 }
 
 NS_IMETHODIMP
-EditorBase::GetDocument(nsIDocument** aDoc)
-{
+EditorBase::GetDocument(nsIDocument** aDoc) {
   NS_IF_ADDREF(*aDoc = mDocument);
   return *aDoc ? NS_OK : NS_ERROR_NOT_INITIALIZED;
 }
 
-already_AddRefed<nsIWidget>
-EditorBase::GetWidget()
-{
+already_AddRefed<nsIWidget> EditorBase::GetWidget() {
   nsCOMPtr<nsIPresShell> ps = GetPresShell();
   NS_ENSURE_TRUE(ps, nullptr);
   nsPresContext* pc = ps->GetPresContext();
@@ -674,25 +630,22 @@ EditorBase::GetWidget()
 }
 
 NS_IMETHODIMP
-EditorBase::GetContentsMIMEType(char** aContentsMIMEType)
-{
+EditorBase::GetContentsMIMEType(char** aContentsMIMEType) {
   NS_ENSURE_ARG_POINTER(aContentsMIMEType);
   *aContentsMIMEType = ToNewCString(mContentMIMEType);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-EditorBase::SetContentsMIMEType(const char* aContentsMIMEType)
-{
+EditorBase::SetContentsMIMEType(const char* aContentsMIMEType) {
   mContentMIMEType.Assign(aContentsMIMEType ? aContentsMIMEType : "");
   return NS_OK;
 }
 
 NS_IMETHODIMP
-EditorBase::GetSelectionController(nsISelectionController** aSel)
-{
+EditorBase::GetSelectionController(nsISelectionController** aSel) {
   NS_ENSURE_TRUE(aSel, NS_ERROR_NULL_POINTER);
-  *aSel = nullptr; 
+  *aSel = nullptr;  
   nsCOMPtr<nsISelectionController> selCon = GetSelectionController();
   if (NS_WARN_IF(!selCon)) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -702,22 +655,17 @@ EditorBase::GetSelectionController(nsISelectionController** aSel)
 }
 
 NS_IMETHODIMP
-EditorBase::DeleteSelection(EDirection aAction,
-                            EStripWrappers aStripWrappers)
-{
+EditorBase::DeleteSelection(EDirection aAction, EStripWrappers aStripWrappers) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-EditorBase::GetSelection(Selection** aSelection)
-{
+EditorBase::GetSelection(Selection** aSelection) {
   return GetSelection(SelectionType::eNormal, aSelection);
 }
 
-nsresult
-EditorBase::GetSelection(SelectionType aSelectionType,
-                         Selection** aSelection) const
-{
+nsresult EditorBase::GetSelection(SelectionType aSelectionType,
+                                  Selection** aSelection) const {
   if (NS_WARN_IF(!aSelection)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -731,7 +679,7 @@ EditorBase::GetSelection(SelectionType aSelectionType,
     return NS_ERROR_NOT_INITIALIZED;
   }
   RefPtr<Selection> selection =
-    selcon->GetSelection(ToRawSelectionType(aSelectionType));
+      selcon->GetSelection(ToRawSelectionType(aSelectionType));
   if (!selection) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -740,8 +688,7 @@ EditorBase::GetSelection(SelectionType aSelectionType,
 }
 
 NS_IMETHODIMP
-EditorBase::DoTransaction(nsITransaction* aTxn)
-{
+EditorBase::DoTransaction(nsITransaction* aTxn) {
   AutoEditActionDataSetter editActionData(*this, EditAction::eUnknown);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_FAILURE;
@@ -750,12 +697,10 @@ EditorBase::DoTransaction(nsITransaction* aTxn)
   return DoTransactionInternal(aTxn);
 }
 
-nsresult
-EditorBase::DoTransactionInternal(nsITransaction* aTxn)
-{
+nsresult EditorBase::DoTransactionInternal(nsITransaction* aTxn) {
   if (mPlaceholderBatch && !mPlaceholderTransaction) {
-    mPlaceholderTransaction =
-      PlaceholderTransaction::Create(*this, mPlaceholderName, std::move(mSelState));
+    mPlaceholderTransaction = PlaceholderTransaction::Create(
+        *this, mPlaceholderName, std::move(mSelState));
     MOZ_ASSERT(mSelState.isNothing());
 
     
@@ -763,12 +708,12 @@ EditorBase::DoTransactionInternal(nsITransaction* aTxn)
 
     if (mTransactionManager) {
       nsCOMPtr<nsITransaction> topTransaction =
-        mTransactionManager->PeekUndoStack();
+          mTransactionManager->PeekUndoStack();
       nsCOMPtr<nsIAbsorbingTransaction> topAbsorbingTransaction =
-        do_QueryInterface(topTransaction);
+          do_QueryInterface(topTransaction);
       if (topAbsorbingTransaction) {
         RefPtr<PlaceholderTransaction> topPlaceholderTransaction =
-          topAbsorbingTransaction->AsPlaceholderTransaction();
+            topAbsorbingTransaction->AsPlaceholderTransaction();
         if (topPlaceholderTransaction) {
           
           
@@ -821,25 +766,23 @@ EditorBase::DoTransactionInternal(nsITransaction* aTxn)
 }
 
 NS_IMETHODIMP
-EditorBase::EnableUndo(bool aEnable)
-{
+EditorBase::EnableUndo(bool aEnable) {
   
   
   if (aEnable) {
     DebugOnly<bool> enabledUndoRedo = EnableUndoRedo();
     NS_WARNING_ASSERTION(enabledUndoRedo,
-      "Failed to enable undo/redo transactions");
+                         "Failed to enable undo/redo transactions");
     return NS_OK;
   }
   DebugOnly<bool> disabledUndoRedo = DisableUndoRedo();
   NS_WARNING_ASSERTION(disabledUndoRedo,
-    "Failed to disable undo/redo transactions");
+                       "Failed to disable undo/redo transactions");
   return NS_OK;
 }
 
 NS_IMETHODIMP
-EditorBase::GetTransactionManager(nsITransactionManager** aTransactionManager)
-{
+EditorBase::GetTransactionManager(nsITransactionManager** aTransactionManager) {
   if (NS_WARN_IF(!aTransactionManager)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -851,15 +794,10 @@ EditorBase::GetTransactionManager(nsITransactionManager** aTransactionManager)
 }
 
 NS_IMETHODIMP
-EditorBase::Undo(uint32_t aCount)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
+EditorBase::Undo(uint32_t aCount) { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
-EditorBase::CanUndo(bool* aIsEnabled,
-                    bool* aCanUndo)
-{
+EditorBase::CanUndo(bool* aIsEnabled, bool* aCanUndo) {
   if (NS_WARN_IF(!aIsEnabled) || NS_WARN_IF(!aCanUndo)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -869,14 +807,10 @@ EditorBase::CanUndo(bool* aIsEnabled,
 }
 
 NS_IMETHODIMP
-EditorBase::Redo(uint32_t aCount)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
+EditorBase::Redo(uint32_t aCount) { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
-EditorBase::CanRedo(bool* aIsEnabled, bool* aCanRedo)
-{
+EditorBase::CanRedo(bool* aIsEnabled, bool* aCanRedo) {
   if (NS_WARN_IF(!aIsEnabled) || NS_WARN_IF(!aCanRedo)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -886,8 +820,7 @@ EditorBase::CanRedo(bool* aIsEnabled, bool* aCanRedo)
 }
 
 NS_IMETHODIMP
-EditorBase::BeginTransaction()
-{
+EditorBase::BeginTransaction() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eUnknown);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_FAILURE;
@@ -897,9 +830,7 @@ EditorBase::BeginTransaction()
   return NS_OK;
 }
 
-void
-EditorBase::BeginTransactionInternal()
-{
+void EditorBase::BeginTransactionInternal() {
   BeginUpdateViewBatch();
 
   if (mTransactionManager) {
@@ -909,8 +840,7 @@ EditorBase::BeginTransactionInternal()
 }
 
 NS_IMETHODIMP
-EditorBase::EndTransaction()
-{
+EditorBase::EndTransaction() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eUnknown);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_FAILURE;
@@ -920,9 +850,7 @@ EditorBase::EndTransaction()
   return NS_OK;
 }
 
-void
-EditorBase::EndTransactionInternal()
-{
+void EditorBase::EndTransactionInternal() {
   if (mTransactionManager) {
     RefPtr<TransactionManager> transactionManager(mTransactionManager);
     transactionManager->EndBatch(false);
@@ -931,9 +859,7 @@ EditorBase::EndTransactionInternal()
   EndUpdateViewBatch();
 }
 
-void
-EditorBase::BeginPlaceholderTransaction(nsAtom* aTransactionName)
-{
+void EditorBase::BeginPlaceholderTransaction(nsAtom* aTransactionName) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mPlaceholderBatch >= 0, "negative placeholder batch count!");
 
@@ -957,9 +883,7 @@ EditorBase::BeginPlaceholderTransaction(nsAtom* aTransactionName)
   mPlaceholderBatch++;
 }
 
-void
-EditorBase::EndPlaceholderTransaction()
-{
+void EditorBase::EndPlaceholderTransaction() {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mPlaceholderBatch > 0,
              "zero or negative placeholder batch count when ending batch!");
@@ -987,6 +911,7 @@ EditorBase::EndPlaceholderTransaction()
     if (mSelState) {
       
       
+      
       if (mPlaceholderName == nsGkAtoms::IMETxnName) {
         RangeUpdaterRef().DropSelectionState(*mSelState);
       }
@@ -1009,23 +934,20 @@ EditorBase::EndPlaceholderTransaction()
 }
 
 NS_IMETHODIMP
-EditorBase::SetShouldTxnSetSelection(bool aShould)
-{
+EditorBase::SetShouldTxnSetSelection(bool aShould) {
   MakeThisAllowTransactionsToChangeSelection(aShould);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-EditorBase::GetDocumentIsEmpty(bool* aDocumentIsEmpty)
-{
+EditorBase::GetDocumentIsEmpty(bool* aDocumentIsEmpty) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 
 
 NS_IMETHODIMP
-EditorBase::SelectAll()
-{
+EditorBase::SelectAll() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -1038,9 +960,7 @@ EditorBase::SelectAll()
   return NS_OK;
 }
 
-nsresult
-EditorBase::SelectAllInternal()
-{
+nsresult EditorBase::SelectAllInternal() {
   MOZ_ASSERT(IsInitialized());
 
   CommitComposition();
@@ -1060,8 +980,7 @@ EditorBase::SelectAllInternal()
 }
 
 NS_IMETHODIMP
-EditorBase::BeginningOfDocument()
-{
+EditorBase::BeginningOfDocument() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -1089,14 +1008,14 @@ EditorBase::BeginningOfDocument()
     return NS_ERROR_NULL_POINTER;
   }
 
-  MOZ_ASSERT(parent->ComputeIndexOf(firstNode) == 0,
-             "How come the first node isn't the left most child in its parent?");
+  MOZ_ASSERT(
+      parent->ComputeIndexOf(firstNode) == 0,
+      "How come the first node isn't the left most child in its parent?");
   return SelectionRefPtr()->Collapse(parent, 0);
 }
 
 NS_IMETHODIMP
-EditorBase::EndOfDocument()
-{
+EditorBase::EndOfDocument() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -1104,9 +1023,7 @@ EditorBase::EndOfDocument()
   return CollapseSelectionToEnd();
 }
 
-nsresult
-EditorBase::CollapseSelectionToEnd()
-{
+nsresult EditorBase::CollapseSelectionToEnd() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   
@@ -1131,11 +1048,10 @@ EditorBase::CollapseSelectionToEnd()
 }
 
 NS_IMETHODIMP
-EditorBase::GetDocumentModified(bool* outDocModified)
-{
+EditorBase::GetDocumentModified(bool* outDocModified) {
   NS_ENSURE_TRUE(outDocModified, NS_ERROR_NULL_POINTER);
 
-  int32_t  modCount = 0;
+  int32_t modCount = 0;
   GetModificationCount(&modCount);
 
   *outDocModified = (modCount != 0);
@@ -1143,14 +1059,11 @@ EditorBase::GetDocumentModified(bool* outDocModified)
 }
 
 NS_IMETHODIMP
-EditorBase::GetDocumentCharacterSet(nsACString& aCharset)
-{
+EditorBase::GetDocumentCharacterSet(nsACString& aCharset) {
   return GetDocumentCharsetInternal(aCharset);
 }
 
-nsresult
-EditorBase::GetDocumentCharsetInternal(nsACString& aCharset) const
-{
+nsresult EditorBase::GetDocumentCharsetInternal(nsACString& aCharset) const {
   nsCOMPtr<nsIDocument> document = GetDocument();
   if (NS_WARN_IF(!document)) {
     return NS_ERROR_UNEXPECTED;
@@ -1160,8 +1073,7 @@ EditorBase::GetDocumentCharsetInternal(nsACString& aCharset) const
 }
 
 NS_IMETHODIMP
-EditorBase::SetDocumentCharacterSet(const nsACString& characterSet)
-{
+EditorBase::SetDocumentCharacterSet(const nsACString& characterSet) {
   nsCOMPtr<nsIDocument> document = GetDocument();
   if (NS_WARN_IF(!document)) {
     return NS_ERROR_UNEXPECTED;
@@ -1177,38 +1089,22 @@ EditorBase::SetDocumentCharacterSet(const nsACString& characterSet)
 }
 
 NS_IMETHODIMP
-EditorBase::Cut()
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
+EditorBase::Cut() { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
-EditorBase::CanCut(bool* aCanCut)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
+EditorBase::CanCut(bool* aCanCut) { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
-EditorBase::Copy()
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
+EditorBase::Copy() { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
-EditorBase::CanCopy(bool* aCanCut)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
+EditorBase::CanCopy(bool* aCanCut) { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
-EditorBase::CanDelete(bool* aCanDelete)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
+EditorBase::CanDelete(bool* aCanDelete) { return NS_ERROR_NOT_IMPLEMENTED; }
 
 NS_IMETHODIMP
-EditorBase::Paste(int32_t aClipboardType)
-{
+EditorBase::Paste(int32_t aClipboardType) {
   nsresult rv = AsTextEditor()->PasteAsAction(aClipboardType, true);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -1217,22 +1113,18 @@ EditorBase::Paste(int32_t aClipboardType)
 }
 
 NS_IMETHODIMP
-EditorBase::PasteTransferable(nsITransferable* aTransferable)
-{
+EditorBase::PasteTransferable(nsITransferable* aTransferable) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-EditorBase::CanPaste(int32_t aSelectionType, bool* aCanPaste)
-{
+EditorBase::CanPaste(int32_t aSelectionType, bool* aCanPaste) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-EditorBase::SetAttribute(Element* aElement,
-                         const nsAString& aAttribute,
-                         const nsAString& aValue)
-{
+EditorBase::SetAttribute(Element* aElement, const nsAString& aAttribute,
+                         const nsAString& aValue) {
   if (NS_WARN_IF(aAttribute.IsEmpty())) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -1249,22 +1141,17 @@ EditorBase::SetAttribute(Element* aElement,
   return SetAttributeWithTransaction(*aElement, *attribute, aValue);
 }
 
-nsresult
-EditorBase::SetAttributeWithTransaction(Element& aElement,
-                                        nsAtom& aAttribute,
-                                        const nsAString& aValue)
-{
+nsresult EditorBase::SetAttributeWithTransaction(Element& aElement,
+                                                 nsAtom& aAttribute,
+                                                 const nsAString& aValue) {
   RefPtr<ChangeAttributeTransaction> transaction =
-    ChangeAttributeTransaction::Create(aElement, aAttribute, aValue);
+      ChangeAttributeTransaction::Create(aElement, aAttribute, aValue);
   return DoTransactionInternal(transaction);
 }
 
 NS_IMETHODIMP
-EditorBase::GetAttributeValue(Element* aElement,
-                              const nsAString& aAttribute,
-                              nsAString& aResultValue,
-                              bool* aResultIsSet)
-{
+EditorBase::GetAttributeValue(Element* aElement, const nsAString& aAttribute,
+                              nsAString& aResultValue, bool* aResultIsSet) {
   NS_ENSURE_TRUE(aResultIsSet, NS_ERROR_NULL_POINTER);
   *aResultIsSet = false;
   if (!aElement) {
@@ -1280,9 +1167,7 @@ EditorBase::GetAttributeValue(Element* aElement,
 }
 
 NS_IMETHODIMP
-EditorBase::RemoveAttribute(Element* aElement,
-                            const nsAString& aAttribute)
-{
+EditorBase::RemoveAttribute(Element* aElement, const nsAString& aAttribute) {
   if (NS_WARN_IF(aAttribute.IsEmpty())) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -1299,21 +1184,18 @@ EditorBase::RemoveAttribute(Element* aElement,
   return RemoveAttributeWithTransaction(*aElement, *attribute);
 }
 
-nsresult
-EditorBase::RemoveAttributeWithTransaction(Element& aElement,
-                                           nsAtom& aAttribute)
-{
+nsresult EditorBase::RemoveAttributeWithTransaction(Element& aElement,
+                                                    nsAtom& aAttribute) {
   
   
   
   RefPtr<ChangeAttributeTransaction> transaction =
-    ChangeAttributeTransaction::CreateToRemove(aElement, aAttribute);
+      ChangeAttributeTransaction::CreateToRemove(aElement, aAttribute);
   return DoTransactionInternal(transaction);
 }
 
 NS_IMETHODIMP
-EditorBase::MarkNodeDirty(nsINode* aNode)
-{
+EditorBase::MarkNodeDirty(nsINode* aNode) {
   
   if (!OutputsMozDirty()) {
     return NS_OK;
@@ -1327,8 +1209,7 @@ EditorBase::MarkNodeDirty(nsINode* aNode)
 
 NS_IMETHODIMP
 EditorBase::GetInlineSpellChecker(bool autoCreate,
-                                  nsIInlineSpellChecker** aInlineSpellChecker)
-{
+                                  nsIInlineSpellChecker** aInlineSpellChecker) {
   NS_ENSURE_ARG_POINTER(aInlineSpellChecker);
 
   if (mDidPreDestroy) {
@@ -1338,6 +1219,7 @@ EditorBase::GetInlineSpellChecker(bool autoCreate,
     return autoCreate ? NS_ERROR_NOT_AVAILABLE : NS_OK;
   }
 
+  
   
   bool canSpell = mozInlineSpellChecker::CanEnableInlineSpellChecking();
   if (!canSpell) {
@@ -1363,9 +1245,7 @@ EditorBase::GetInlineSpellChecker(bool autoCreate,
   return NS_OK;
 }
 
-void
-EditorBase::SyncRealTimeSpell()
-{
+void EditorBase::SyncRealTimeSpell() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return;
@@ -1391,20 +1271,16 @@ EditorBase::SyncRealTimeSpell()
 }
 
 NS_IMETHODIMP
-EditorBase::SetSpellcheckUserOverride(bool enable)
-{
+EditorBase::SetSpellcheckUserOverride(bool enable) {
   mSpellcheckCheckboxState = enable ? eTriTrue : eTriFalse;
 
   SyncRealTimeSpell();
   return NS_OK;
 }
 
-template<typename PT, typename CT>
-already_AddRefed<Element>
-EditorBase::CreateNodeWithTransaction(
-              nsAtom& aTagName,
-              const EditorDOMPointBase<PT, CT>& aPointToInsert)
-{
+template <typename PT, typename CT>
+already_AddRefed<Element> EditorBase::CreateNodeWithTransaction(
+    nsAtom& aTagName, const EditorDOMPointBase<PT, CT>& aPointToInsert) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
@@ -1415,13 +1291,12 @@ EditorBase::CreateNodeWithTransaction(
   Unused << aPointToInsert.Offset();
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::eCreateNode,
-                                      nsIEditor::eNext);
+      *this, EditSubAction::eCreateNode, nsIEditor::eNext);
 
   RefPtr<Element> newElement;
 
   RefPtr<CreateElementTransaction> transaction =
-    CreateElementTransaction::Create(*this, aTagName, aPointToInsert);
+      CreateElementTransaction::Create(*this, aTagName, aPointToInsert);
   nsresult rv = DoTransactionInternal(transaction);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     
@@ -1436,9 +1311,8 @@ EditorBase::CreateNodeWithTransaction(
     
     
     
-    RangeUpdaterRef().SelAdjCreateNode(
-                        EditorRawDOMPoint(aPointToInsert.GetContainer(),
-                                          aPointToInsert.Offset()));
+    RangeUpdaterRef().SelAdjCreateNode(EditorRawDOMPoint(
+        aPointToInsert.GetContainer(), aPointToInsert.Offset()));
   }
 
   if (mRules && mRules->AsHTMLEditRules() && newElement) {
@@ -1449,8 +1323,7 @@ EditorBase::CreateNodeWithTransaction(
   if (!mActionListeners.IsEmpty()) {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
-      listener->DidCreateNode(nsDependentAtomString(&aTagName),
-                              newElement, rv);
+      listener->DidCreateNode(nsDependentAtomString(&aTagName), newElement, rv);
     }
   }
 
@@ -1458,10 +1331,8 @@ EditorBase::CreateNodeWithTransaction(
 }
 
 NS_IMETHODIMP
-EditorBase::InsertNode(nsINode* aNodeToInsert,
-                       nsINode* aContainer,
-                       int32_t aOffset)
-{
+EditorBase::InsertNode(nsINode* aNodeToInsert, nsINode* aContainer,
+                       int32_t aOffset) {
   nsCOMPtr<nsIContent> contentToInsert = do_QueryInterface(aNodeToInsert);
   if (NS_WARN_IF(!contentToInsert)) {
     return NS_ERROR_NULL_POINTER;
@@ -1476,18 +1347,17 @@ EditorBase::InsertNode(nsINode* aNodeToInsert,
   }
 
   int32_t offset =
-    aOffset < 0 ? static_cast<int32_t>(aContainer->Length()) :
-                  std::min(aOffset, static_cast<int32_t>(aContainer->Length()));
+      aOffset < 0
+          ? static_cast<int32_t>(aContainer->Length())
+          : std::min(aOffset, static_cast<int32_t>(aContainer->Length()));
   return InsertNodeWithTransaction(*contentToInsert,
                                    EditorRawDOMPoint(aContainer, offset));
 }
 
-template<typename PT, typename CT>
-nsresult
-EditorBase::InsertNodeWithTransaction(
-              nsIContent& aContentToInsert,
-              const EditorDOMPointBase<PT, CT>& aPointToInsert)
-{
+template <typename PT, typename CT>
+nsresult EditorBase::InsertNodeWithTransaction(
+    nsIContent& aContentToInsert,
+    const EditorDOMPointBase<PT, CT>& aPointToInsert) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!aPointToInsert.IsSet())) {
@@ -1496,11 +1366,10 @@ EditorBase::InsertNodeWithTransaction(
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::eInsertNode,
-                                      nsIEditor::eNext);
+      *this, EditSubAction::eInsertNode, nsIEditor::eNext);
 
   RefPtr<InsertNodeTransaction> transaction =
-    InsertNodeTransaction::Create(*this, aContentToInsert, aPointToInsert);
+      InsertNodeTransaction::Create(*this, aContentToInsert, aPointToInsert);
   nsresult rv = DoTransactionInternal(transaction);
 
   RangeUpdaterRef().SelAdjInsertNode(aPointToInsert);
@@ -1521,10 +1390,7 @@ EditorBase::InsertNodeWithTransaction(
 }
 
 NS_IMETHODIMP
-EditorBase::SplitNode(nsINode* aNode,
-                      int32_t aOffset,
-                      nsINode** aNewLeftNode)
-{
+EditorBase::SplitNode(nsINode* aNode, int32_t aOffset, nsINode** aNewLeftNode) {
   if (NS_WARN_IF(!aNode)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -1534,11 +1400,11 @@ EditorBase::SplitNode(nsINode* aNode,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  int32_t offset = std::min(std::max(aOffset, 0),
-                            static_cast<int32_t>(aNode->Length()));
+  int32_t offset =
+      std::min(std::max(aOffset, 0), static_cast<int32_t>(aNode->Length()));
   ErrorResult error;
   nsCOMPtr<nsIContent> newNode =
-    SplitNodeWithTransaction(EditorRawDOMPoint(aNode, offset), error);
+      SplitNodeWithTransaction(EditorRawDOMPoint(aNode, offset), error);
   newNode.forget(aNewLeftNode);
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();
@@ -1546,12 +1412,9 @@ EditorBase::SplitNode(nsINode* aNode,
   return NS_OK;
 }
 
-template<typename PT, typename CT>
-already_AddRefed<nsIContent>
-EditorBase::SplitNodeWithTransaction(
-              const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
-              ErrorResult& aError)
-{
+template <typename PT, typename CT>
+already_AddRefed<nsIContent> EditorBase::SplitNodeWithTransaction(
+    const EditorDOMPointBase<PT, CT>& aStartOfRightNode, ErrorResult& aError) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!aStartOfRightNode.IsSet()) ||
@@ -1562,8 +1425,7 @@ EditorBase::SplitNodeWithTransaction(
   MOZ_ASSERT(aStartOfRightNode.IsSetAndValid());
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::eSplitNode,
-                                      nsIEditor::eNext);
+      *this, EditSubAction::eSplitNode, nsIEditor::eNext);
 
   
   
@@ -1571,7 +1433,7 @@ EditorBase::SplitNodeWithTransaction(
   Unused << aStartOfRightNode.Offset();
 
   RefPtr<SplitNodeTransaction> transaction =
-    SplitNodeTransaction::Create(*this, aStartOfRightNode);
+      SplitNodeTransaction::Create(*this, aStartOfRightNode);
   aError = DoTransactionInternal(transaction);
 
   nsCOMPtr<nsIContent> newNode = transaction->GetNewNode();
@@ -1607,12 +1469,8 @@ EditorBase::SplitNodeWithTransaction(
 }
 
 NS_IMETHODIMP
-EditorBase::JoinNodes(nsINode* aLeftNode,
-                      nsINode* aRightNode,
-                      nsINode*)
-{
-  if (NS_WARN_IF(!aLeftNode) ||
-      NS_WARN_IF(!aRightNode) ||
+EditorBase::JoinNodes(nsINode* aLeftNode, nsINode* aRightNode, nsINode*) {
+  if (NS_WARN_IF(!aLeftNode) || NS_WARN_IF(!aRightNode) ||
       NS_WARN_IF(!aLeftNode->GetParentNode())) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -1625,18 +1483,15 @@ EditorBase::JoinNodes(nsINode* aLeftNode,
   return JoinNodesWithTransaction(*aLeftNode, *aRightNode);
 }
 
-nsresult
-EditorBase::JoinNodesWithTransaction(nsINode& aLeftNode,
-                                     nsINode& aRightNode)
-{
+nsresult EditorBase::JoinNodesWithTransaction(nsINode& aLeftNode,
+                                              nsINode& aRightNode) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   nsCOMPtr<nsINode> parent = aLeftNode.GetParentNode();
   MOZ_ASSERT(parent);
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::eJoinNodes,
-                                      nsIEditor::ePrevious);
+      *this, EditSubAction::eJoinNodes, nsIEditor::ePrevious);
 
   
   
@@ -1651,8 +1506,8 @@ EditorBase::JoinNodesWithTransaction(nsINode& aLeftNode,
 
   nsresult rv = NS_OK;
   RefPtr<JoinNodeTransaction> transaction =
-    JoinNodeTransaction::MaybeCreate(*this, aLeftNode, aRightNode);
-  if (transaction)  {
+      JoinNodeTransaction::MaybeCreate(*this, aLeftNode, aRightNode);
+  if (transaction) {
     rv = DoTransactionInternal(transaction);
   }
 
@@ -1687,8 +1542,7 @@ EditorBase::JoinNodesWithTransaction(nsINode& aLeftNode,
 }
 
 NS_IMETHODIMP
-EditorBase::DeleteNode(nsINode* aNode)
-{
+EditorBase::DeleteNode(nsINode* aNode) {
   if (NS_WARN_IF(!aNode)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -1701,14 +1555,11 @@ EditorBase::DeleteNode(nsINode* aNode)
   return DeleteNodeWithTransaction(*aNode);
 }
 
-nsresult
-EditorBase::DeleteNodeWithTransaction(nsINode& aNode)
-{
+nsresult EditorBase::DeleteNodeWithTransaction(nsINode& aNode) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::eDeleteNode,
-                                      nsIEditor::ePrevious);
+      *this, EditSubAction::eDeleteNode, nsIEditor::ePrevious);
 
   if (mRules && mRules->AsHTMLEditRules()) {
     RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
@@ -1718,10 +1569,10 @@ EditorBase::DeleteNodeWithTransaction(nsINode& aNode)
   
   
   RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-    DeleteNodeTransaction::MaybeCreate(*this, aNode);
-  nsresult rv =
-    deleteNodeTransaction ? DoTransactionInternal(deleteNodeTransaction) :
-                            NS_ERROR_FAILURE;
+      DeleteNodeTransaction::MaybeCreate(*this, aNode);
+  nsresult rv = deleteNodeTransaction
+                    ? DoTransactionInternal(deleteNodeTransaction)
+                    : NS_ERROR_FAILURE;
 
   if (mTextServicesDocument && NS_SUCCEEDED(rv)) {
     RefPtr<TextServicesDocument> textServicesDocument = mTextServicesDocument;
@@ -1739,14 +1590,9 @@ EditorBase::DeleteNodeWithTransaction(nsINode& aNode)
   return NS_OK;
 }
 
-already_AddRefed<Element>
-EditorBase::ReplaceContainerWithTransactionInternal(
-              Element& aOldContainer,
-              nsAtom& aTagName,
-              nsAtom& aAttribute,
-              const nsAString& aAttributeValue,
-              bool aCloneAllAttributes)
-{
+already_AddRefed<Element> EditorBase::ReplaceContainerWithTransactionInternal(
+    Element& aOldContainer, nsAtom& aTagName, nsAtom& aAttribute,
+    const nsAString& aAttributeValue, bool aCloneAllAttributes) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   EditorDOMPoint atOldContainer(&aOldContainer);
@@ -1764,9 +1610,8 @@ EditorBase::ReplaceContainerWithTransactionInternal(
     MOZ_ASSERT(&aAttribute == nsGkAtoms::_empty);
     CloneAttributesWithTransaction(*newContainer, aOldContainer);
   } else if (&aAttribute != nsGkAtoms::_empty) {
-    nsresult rv =
-      newContainer->SetAttr(kNameSpaceID_None, &aAttribute, aAttributeValue,
-                            true);
+    nsresult rv = newContainer->SetAttr(kNameSpaceID_None, &aAttribute,
+                                        aAttributeValue, true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return nullptr;
     }
@@ -1790,9 +1635,8 @@ EditorBase::ReplaceContainerWithTransactionInternal(
         return nullptr;
       }
 
-      rv = InsertNodeWithTransaction(*child,
-                                     EditorRawDOMPoint(newContainer,
-                                                       newContainer->Length()));
+      rv = InsertNodeWithTransaction(
+          *child, EditorRawDOMPoint(newContainer, newContainer->Length()));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return nullptr;
       }
@@ -1801,7 +1645,7 @@ EditorBase::ReplaceContainerWithTransactionInternal(
 
   
   NS_WARNING_ASSERTION(atOldContainer.IsSetAndValid(),
-    "The old container might be moved by mutation observer");
+                       "The old container might be moved by mutation observer");
   nsresult rv = InsertNodeWithTransaction(*newContainer, atOldContainer);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return nullptr;
@@ -1816,9 +1660,7 @@ EditorBase::ReplaceContainerWithTransactionInternal(
   return newContainer.forget();
 }
 
-nsresult
-EditorBase::RemoveContainerWithTransaction(Element& aElement)
-{
+nsresult EditorBase::RemoveContainerWithTransaction(Element& aElement) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   EditorDOMPoint pointToInsertChildren(&aElement);
@@ -1827,10 +1669,9 @@ EditorBase::RemoveContainerWithTransaction(Element& aElement)
   }
 
   
-  AutoRemoveContainerSelNotify selNotify(RangeUpdaterRef(), &aElement,
-                                         pointToInsertChildren.GetContainer(),
-                                         pointToInsertChildren.Offset(),
-                                         aElement.GetChildCount());
+  AutoRemoveContainerSelNotify selNotify(
+      RangeUpdaterRef(), &aElement, pointToInsertChildren.GetContainer(),
+      pointToInsertChildren.Offset(), aElement.GetChildCount());
 
   
   while (aElement.HasChildren()) {
@@ -1846,10 +1687,9 @@ EditorBase::RemoveContainerWithTransaction(Element& aElement)
     
     
     
-    rv = InsertNodeWithTransaction(*child,
-                                   EditorRawDOMPoint(
-                                     pointToInsertChildren.GetContainer(),
-                                     pointToInsertChildren.Offset()));
+    rv = InsertNodeWithTransaction(
+        *child, EditorRawDOMPoint(pointToInsertChildren.GetContainer(),
+                                  pointToInsertChildren.Offset()));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1862,13 +1702,9 @@ EditorBase::RemoveContainerWithTransaction(Element& aElement)
   return NS_OK;
 }
 
-already_AddRefed<Element>
-EditorBase::InsertContainerWithTransactionInternal(
-              nsIContent& aContent,
-              nsAtom& aTagName,
-              nsAtom& aAttribute,
-              const nsAString& aAttributeValue)
-{
+already_AddRefed<Element> EditorBase::InsertContainerWithTransactionInternal(
+    nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
+    const nsAString& aAttributeValue) {
   EditorDOMPoint pointToInsertNewContainer(&aContent);
   if (NS_WARN_IF(!pointToInsertNewContainer.IsSet())) {
     return nullptr;
@@ -1880,8 +1716,7 @@ EditorBase::InsertContainerWithTransactionInternal(
   
   
   DebugOnly<bool> advanced = pointToInsertNewContainer.AdvanceOffset();
-  NS_WARNING_ASSERTION(advanced,
-    "Failed to advance offset to after aContent");
+  NS_WARNING_ASSERTION(advanced, "Failed to advance offset to after aContent");
 
   
   RefPtr<Element> newContainer = CreateHTMLContent(&aTagName);
@@ -1891,9 +1726,8 @@ EditorBase::InsertContainerWithTransactionInternal(
 
   
   if (&aAttribute != nsGkAtoms::_empty) {
-    nsresult rv =
-      newContainer->SetAttr(kNameSpaceID_None, &aAttribute, aAttributeValue,
-                            true);
+    nsresult rv = newContainer->SetAttr(kNameSpaceID_None, &aAttribute,
+                                        aAttributeValue, true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return nullptr;
     }
@@ -1910,8 +1744,8 @@ EditorBase::InsertContainerWithTransactionInternal(
 
   {
     AutoTransactionsConserveSelection conserveSelection(*this);
-    rv = InsertNodeWithTransaction(aContent,
-                                   EditorRawDOMPoint(newContainer, 0));
+    rv =
+        InsertNodeWithTransaction(aContent, EditorRawDOMPoint(newContainer, 0));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return nullptr;
     }
@@ -1926,12 +1760,9 @@ EditorBase::InsertContainerWithTransactionInternal(
   return newContainer.forget();
 }
 
-template<typename PT, typename CT>
-nsresult
-EditorBase::MoveNodeWithTransaction(
-              nsIContent& aContent,
-              const EditorDOMPointBase<PT, CT>& aPointToInsert)
-{
+template <typename PT, typename CT>
+nsresult EditorBase::MoveNodeWithTransaction(
+    nsIContent& aContent, const EditorDOMPointBase<PT, CT>& aPointToInsert) {
   MOZ_ASSERT(aPointToInsert.IsSetAndValid());
 
   EditorDOMPoint oldPoint(&aContent);
@@ -1975,11 +1806,9 @@ EditorBase::MoveNodeWithTransaction(
   return NS_OK;
 }
 
-void
-EditorBase::MoveAllChildren(nsINode& aContainer,
-                            const EditorRawDOMPoint& aPointToInsert,
-                            ErrorResult& aError)
-{
+void EditorBase::MoveAllChildren(nsINode& aContainer,
+                                 const EditorRawDOMPoint& aPointToInsert,
+                                 ErrorResult& aError) {
   if (!aContainer.HasChildren()) {
     return;
   }
@@ -1996,11 +1825,9 @@ EditorBase::MoveAllChildren(nsINode& aContainer,
   return MoveChildren(*firstChild, *lastChild, aPointToInsert, aError);
 }
 
-void
-EditorBase::MovePreviousSiblings(nsIContent& aChild,
-                                 const EditorRawDOMPoint& aPointToInsert,
-                                 ErrorResult& aError)
-{
+void EditorBase::MovePreviousSiblings(nsIContent& aChild,
+                                      const EditorRawDOMPoint& aPointToInsert,
+                                      ErrorResult& aError) {
   if (NS_WARN_IF(!aChild.GetParentNode())) {
     aError.Throw(NS_ERROR_INVALID_ARG);
     return;
@@ -2011,7 +1838,7 @@ EditorBase::MovePreviousSiblings(nsIContent& aChild,
     return;
   }
   nsIContent* lastChild =
-    &aChild == firstChild ? firstChild : aChild.GetPreviousSibling();
+      &aChild == firstChild ? firstChild : aChild.GetPreviousSibling();
   if (NS_WARN_IF(!lastChild)) {
     aError.Throw(NS_ERROR_FAILURE);
     return;
@@ -2019,12 +1846,9 @@ EditorBase::MovePreviousSiblings(nsIContent& aChild,
   return MoveChildren(*firstChild, *lastChild, aPointToInsert, aError);
 }
 
-void
-EditorBase::MoveChildren(nsIContent& aFirstChild,
-                         nsIContent& aLastChild,
-                         const EditorRawDOMPoint& aPointToInsert,
-                         ErrorResult& aError)
-{
+void EditorBase::MoveChildren(nsIContent& aFirstChild, nsIContent& aLastChild,
+                              const EditorRawDOMPoint& aPointToInsert,
+                              ErrorResult& aError) {
   nsCOMPtr<nsINode> oldContainer = aFirstChild.GetParentNode();
   if (NS_WARN_IF(oldContainer != aLastChild.GetParentNode()) ||
       NS_WARN_IF(!aPointToInsert.IsSet()) ||
@@ -2035,8 +1859,7 @@ EditorBase::MoveChildren(nsIContent& aFirstChild,
 
   
   AutoTArray<nsCOMPtr<nsIContent>, 10> children;
-  for (nsIContent* child = &aFirstChild;
-       child;
+  for (nsIContent* child = &aFirstChild; child;
        child = child->GetNextSibling()) {
     children.AppendElement(child);
     if (child == &aLastChild) {
@@ -2089,8 +1912,7 @@ EditorBase::MoveChildren(nsIContent& aFirstChild,
 }
 
 NS_IMETHODIMP
-EditorBase::AddEditorObserver(nsIEditorObserver* aObserver)
-{
+EditorBase::AddEditorObserver(nsIEditorObserver* aObserver) {
   
   
 
@@ -2099,20 +1921,21 @@ EditorBase::AddEditorObserver(nsIEditorObserver* aObserver)
   
   if (!mEditorObservers.Contains(aObserver)) {
     mEditorObservers.AppendElement(*aObserver);
-    NS_WARNING_ASSERTION(mEditorObservers.Length() != 1,
-      "nsIEditorObserver installed, this editor becomes slower");
+    NS_WARNING_ASSERTION(
+        mEditorObservers.Length() != 1,
+        "nsIEditorObserver installed, this editor becomes slower");
   }
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-EditorBase::RemoveEditorObserver(nsIEditorObserver* aObserver)
-{
+EditorBase::RemoveEditorObserver(nsIEditorObserver* aObserver) {
   NS_ENSURE_TRUE(aObserver, NS_ERROR_FAILURE);
 
-  NS_WARNING_ASSERTION(mEditorObservers.Length() != 1,
-    "All nsIEditorObservers have been removed, this editor becomes faster");
+  NS_WARNING_ASSERTION(
+      mEditorObservers.Length() != 1,
+      "All nsIEditorObservers have been removed, this editor becomes faster");
   mEditorObservers.RemoveElement(aObserver);
 
   return NS_OK;
@@ -2120,9 +1943,7 @@ EditorBase::RemoveEditorObserver(nsIEditorObserver* aObserver)
 
 NS_IMETHODIMP
 EditorBase::NotifySelectionChanged(nsIDocument* aDocument,
-                                   Selection* aSelection,
-                                   int16_t aReason)
-{
+                                   Selection* aSelection, int16_t aReason) {
   if (NS_WARN_IF(!aDocument) || NS_WARN_IF(!aSelection)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -2140,9 +1961,8 @@ EditorBase::NotifySelectionChanged(nsIDocument* aDocument,
   return NS_OK;
 }
 
-void
-EditorBase::NotifyEditorObservers(NotificationForEditorObservers aNotification)
-{
+void EditorBase::NotifyEditorObservers(
+    NotificationForEditorObservers aNotification) {
   switch (aNotification) {
     case eNotifyEditorObserversOfEnd:
       mIsInEditSubAction = false;
@@ -2197,23 +2017,20 @@ EditorBase::NotifyEditorObservers(NotificationForEditorObservers aNotification)
   }
 }
 
-void
-EditorBase::FireInputEvent()
-{
+void EditorBase::FireInputEvent() {
   RefPtr<Element> targetElement = GetInputEventTargetElement();
   if (NS_WARN_IF(!targetElement)) {
     return;
   }
   RefPtr<TextEditor> textEditor = AsTextEditor();
   DebugOnly<nsresult> rvIgnored =
-    nsContentUtils::DispatchInputEvent(targetElement, textEditor);
+      nsContentUtils::DispatchInputEvent(targetElement, textEditor);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
-    "Failed to dispatch input event");
+                       "Failed to dispatch input event");
 }
 
 NS_IMETHODIMP
-EditorBase::AddEditActionListener(nsIEditActionListener* aListener)
-{
+EditorBase::AddEditActionListener(nsIEditActionListener* aListener) {
   NS_ENSURE_TRUE(aListener, NS_ERROR_NULL_POINTER);
 
   
@@ -2221,14 +2038,14 @@ EditorBase::AddEditActionListener(nsIEditActionListener* aListener)
   
   if (mInlineSpellChecker) {
     EditorSpellCheck* editorSpellCheck =
-      mInlineSpellChecker->GetEditorSpellCheck();
+        mInlineSpellChecker->GetEditorSpellCheck();
     if (editorSpellCheck) {
       mozSpellChecker* spellChecker = editorSpellCheck->GetSpellChecker();
       if (spellChecker) {
         TextServicesDocument* textServicesDocument =
-          spellChecker->GetTextServicesDocument();
+            spellChecker->GetTextServicesDocument();
         if (static_cast<nsIEditActionListener*>(textServicesDocument) ==
-              aListener) {
+            aListener) {
           mTextServicesDocument = textServicesDocument;
           return NS_OK;
         }
@@ -2239,16 +2056,16 @@ EditorBase::AddEditActionListener(nsIEditActionListener* aListener)
   
   if (!mActionListeners.Contains(aListener)) {
     mActionListeners.AppendElement(*aListener);
-    NS_WARNING_ASSERTION(mActionListeners.Length() != 1,
-      "nsIEditActionListener installed, this editor becomes slower");
+    NS_WARNING_ASSERTION(
+        mActionListeners.Length() != 1,
+        "nsIEditActionListener installed, this editor becomes slower");
   }
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-EditorBase::RemoveEditActionListener(nsIEditActionListener* aListener)
-{
+EditorBase::RemoveEditActionListener(nsIEditActionListener* aListener) {
   NS_ENSURE_TRUE(aListener, NS_ERROR_FAILURE);
 
   if (static_cast<nsIEditActionListener*>(mTextServicesDocument) == aListener) {
@@ -2257,15 +2074,15 @@ EditorBase::RemoveEditActionListener(nsIEditActionListener* aListener)
   }
 
   NS_WARNING_ASSERTION(mActionListeners.Length() != 1,
-    "All nsIEditActionListeners have been removed, this editor becomes faster");
+                       "All nsIEditActionListeners have been removed, this "
+                       "editor becomes faster");
   mActionListeners.RemoveElement(aListener);
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-EditorBase::AddDocumentStateListener(nsIDocumentStateListener* aListener)
-{
+EditorBase::AddDocumentStateListener(nsIDocumentStateListener* aListener) {
   NS_ENSURE_TRUE(aListener, NS_ERROR_NULL_POINTER);
 
   if (!mDocStateListeners.Contains(aListener)) {
@@ -2276,8 +2093,7 @@ EditorBase::AddDocumentStateListener(nsIDocumentStateListener* aListener)
 }
 
 NS_IMETHODIMP
-EditorBase::RemoveDocumentStateListener(nsIDocumentStateListener* aListener)
-{
+EditorBase::RemoveDocumentStateListener(nsIDocumentStateListener* aListener) {
   NS_ENSURE_TRUE(aListener, NS_ERROR_NULL_POINTER);
 
   mDocStateListeners.RemoveElement(aListener);
@@ -2286,32 +2102,24 @@ EditorBase::RemoveDocumentStateListener(nsIDocumentStateListener* aListener)
 }
 
 NS_IMETHODIMP
-EditorBase::OutputToString(const nsAString& aFormatType,
-                           uint32_t aFlags,
-                           nsAString& aOutputString)
-{
+EditorBase::OutputToString(const nsAString& aFormatType, uint32_t aFlags,
+                           nsAString& aOutputString) {
   
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-bool
-EditorBase::ArePreservingSelection()
-{
+bool EditorBase::ArePreservingSelection() {
   return IsEditActionDataAvailable() && !SavedSelectionRef().IsEmpty();
 }
 
-void
-EditorBase::PreserveSelectionAcrossActions()
-{
+void EditorBase::PreserveSelectionAcrossActions() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   SavedSelectionRef().SaveSelection(SelectionRefPtr());
   RangeUpdaterRef().RegisterSelectionState(SavedSelectionRef());
 }
 
-nsresult
-EditorBase::RestorePreservedSelection()
-{
+nsresult EditorBase::RestorePreservedSelection() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (SavedSelectionRef().IsEmpty()) {
@@ -2322,9 +2130,7 @@ EditorBase::RestorePreservedSelection()
   return NS_OK;
 }
 
-void
-EditorBase::StopPreservingSelection()
-{
+void EditorBase::StopPreservingSelection() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   RangeUpdaterRef().DropSelectionState(SavedSelectionRef());
@@ -2332,26 +2138,20 @@ EditorBase::StopPreservingSelection()
 }
 
 NS_IMETHODIMP
-EditorBase::ForceCompositionEnd()
-{
-  return CommitComposition();
-}
+EditorBase::ForceCompositionEnd() { return CommitComposition(); }
 
-nsresult
-EditorBase::CommitComposition()
-{
+nsresult EditorBase::CommitComposition() {
   nsPresContext* pc = GetPresContext();
   if (!pc) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  return mComposition ?
-    IMEStateManager::NotifyIME(REQUEST_TO_COMMIT_COMPOSITION, pc) : NS_OK;
+  return mComposition
+             ? IMEStateManager::NotifyIME(REQUEST_TO_COMMIT_COMPOSITION, pc)
+             : NS_OK;
 }
 
-nsresult
-EditorBase::GetPreferredIMEState(IMEState* aState)
-{
+nsresult EditorBase::GetPreferredIMEState(IMEState* aState) {
   NS_ENSURE_ARG_POINTER(aState);
   aState->mEnabled = IMEState::ENABLED;
   aState->mOpen = IMEState::DONT_CHANGE_OPEN_STATE;
@@ -2369,8 +2169,7 @@ EditorBase::GetPreferredIMEState(IMEState* aState)
 
   switch (frame->StyleUIReset()->mIMEMode) {
     case NS_STYLE_IME_MODE_AUTO:
-      if (IsPasswordEditor())
-        aState->mEnabled = IMEState::PASSWORD;
+      if (IsPasswordEditor()) aState->mEnabled = IMEState::PASSWORD;
       break;
     case NS_STYLE_IME_MODE_DISABLED:
       
@@ -2388,16 +2187,14 @@ EditorBase::GetPreferredIMEState(IMEState* aState)
 }
 
 NS_IMETHODIMP
-EditorBase::GetComposing(bool* aResult)
-{
+EditorBase::GetComposing(bool* aResult) {
   NS_ENSURE_ARG_POINTER(aResult);
   *aResult = IsIMEComposing();
   return NS_OK;
 }
 
 NS_IMETHODIMP
-EditorBase::GetRootElement(Element** aRootElement)
-{
+EditorBase::GetRootElement(Element** aRootElement) {
   NS_ENSURE_ARG_POINTER(aRootElement);
   NS_ENSURE_TRUE(mRootElement, NS_ERROR_NOT_AVAILABLE);
   RefPtr<Element> rootElement = mRootElement;
@@ -2405,27 +2202,20 @@ EditorBase::GetRootElement(Element** aRootElement)
   return NS_OK;
 }
 
-void
-EditorBase::OnStartToHandleTopLevelEditSubAction(
-              EditSubAction aEditSubAction,
-              nsIEditor::EDirection aDirection)
-{
+void EditorBase::OnStartToHandleTopLevelEditSubAction(
+    EditSubAction aEditSubAction, nsIEditor::EDirection aDirection) {
   MOZ_ASSERT(IsEditActionDataAvailable());
   mEditActionData->SetTopLevelEditSubAction(aEditSubAction, aDirection);
 }
 
-void
-EditorBase::OnEndHandlingTopLevelEditSubAction()
-{
+void EditorBase::OnEndHandlingTopLevelEditSubAction() {
   MOZ_ASSERT(IsEditActionDataAvailable());
   mEditActionData->SetTopLevelEditSubAction(EditSubAction::eNone, eNone);
 }
 
 NS_IMETHODIMP
-EditorBase::CloneAttribute(const nsAString& aAttribute,
-                           Element* aDestElement,
-                           Element* aSourceElement)
-{
+EditorBase::CloneAttribute(const nsAString& aAttribute, Element* aDestElement,
+                           Element* aSourceElement) {
   NS_ENSURE_TRUE(aDestElement && aSourceElement, NS_ERROR_NULL_POINTER);
   if (NS_WARN_IF(aAttribute.IsEmpty())) {
     return NS_ERROR_FAILURE;
@@ -2437,14 +2227,13 @@ EditorBase::CloneAttribute(const nsAString& aAttribute,
   }
 
   RefPtr<nsAtom> attribute = NS_Atomize(aAttribute);
-  return CloneAttributeWithTransaction(*attribute, *aDestElement, *aSourceElement);
+  return CloneAttributeWithTransaction(*attribute, *aDestElement,
+                                       *aSourceElement);
 }
 
-nsresult
-EditorBase::CloneAttributeWithTransaction(nsAtom& aAttribute,
-                                          Element& aDestElement,
-                                          Element& aSourceElement)
-{
+nsresult EditorBase::CloneAttributeWithTransaction(nsAtom& aAttribute,
+                                                   Element& aDestElement,
+                                                   Element& aSourceElement) {
   nsAutoString attrValue;
   if (aSourceElement.GetAttr(kNameSpaceID_None, &aAttribute, attrValue)) {
     return SetAttributeWithTransaction(aDestElement, aAttribute, attrValue);
@@ -2457,9 +2246,7 @@ EditorBase::CloneAttributeWithTransaction(nsAtom& aAttribute,
 
 
 NS_IMETHODIMP
-EditorBase::CloneAttributes(Element* aDestElement,
-                            Element* aSourceElement)
-{
+EditorBase::CloneAttributes(Element* aDestElement, Element* aSourceElement) {
   if (NS_WARN_IF(!aDestElement) || NS_WARN_IF(!aSourceElement)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -2474,10 +2261,8 @@ EditorBase::CloneAttributes(Element* aDestElement,
   return NS_OK;
 }
 
-void
-EditorBase::CloneAttributesWithTransaction(Element& aDestElement,
-                                           Element& aSourceElement)
-{
+void EditorBase::CloneAttributesWithTransaction(Element& aDestElement,
+                                                Element& aSourceElement) {
   AutoPlaceholderBatch treatAsOneTransaction(*this);
 
   
@@ -2522,9 +2307,7 @@ EditorBase::CloneAttributesWithTransaction(Element& aDestElement,
   }
 }
 
-nsresult
-EditorBase::ScrollSelectionIntoView(bool aScrollToAnchor)
-{
+nsresult EditorBase::ScrollSelectionIntoView(bool aScrollToAnchor) {
   nsISelectionController* selectionController = GetSelectionController();
   if (!selectionController) {
     return NS_OK;
@@ -2535,15 +2318,13 @@ EditorBase::ScrollSelectionIntoView(bool aScrollToAnchor)
     region = nsISelectionController::SELECTION_ANCHOR_REGION;
   }
   selectionController->ScrollSelectionIntoView(
-                         nsISelectionController::SELECTION_NORMAL,
-                         region,
-                         nsISelectionController::SCROLL_OVERFLOW_HIDDEN);
+      nsISelectionController::SELECTION_NORMAL, region,
+      nsISelectionController::SCROLL_OVERFLOW_HIDDEN);
   return NS_OK;
 }
 
-EditorRawDOMPoint
-EditorBase::FindBetterInsertionPoint(const EditorRawDOMPoint& aPoint)
-{
+EditorRawDOMPoint EditorBase::FindBetterInsertionPoint(
+    const EditorRawDOMPoint& aPoint) {
   if (NS_WARN_IF(!aPoint.IsSet())) {
     return aPoint;
   }
@@ -2568,8 +2349,7 @@ EditorBase::FindBetterInsertionPoint(const EditorRawDOMPoint& aPoint)
     
     
     
-    if (aPoint.IsStartOfContainer() &&
-        aPoint.GetContainer()->HasChildren() &&
+    if (aPoint.IsStartOfContainer() && aPoint.GetContainer()->HasChildren() &&
         aPoint.GetContainer()->GetFirstChild()->IsText()) {
       return EditorRawDOMPoint(aPoint.GetContainer()->GetFirstChild(), 0);
     }
@@ -2628,17 +2408,14 @@ EditorBase::FindBetterInsertionPoint(const EditorRawDOMPoint& aPoint)
   return aPoint;
 }
 
-nsresult
-EditorBase::InsertTextWithTransaction(
-              nsIDocument& aDocument,
-              const nsAString& aStringToInsert,
-              const EditorRawDOMPoint& aPointToInsert,
-              EditorRawDOMPoint* aPointAfterInsertedString)
-{
-  MOZ_ASSERT(ShouldHandleIMEComposition() ||
-             !AllowsTransactionsToChangeSelection(),
-             "caller must have already used AutoTransactionsConserveSelection "
-             "if this is not for updating composition string");
+nsresult EditorBase::InsertTextWithTransaction(
+    nsIDocument& aDocument, const nsAString& aStringToInsert,
+    const EditorRawDOMPoint& aPointToInsert,
+    EditorRawDOMPoint* aPointAfterInsertedString) {
+  MOZ_ASSERT(
+      ShouldHandleIMEComposition() || !AllowsTransactionsToChangeSelection(),
+      "caller must have already used AutoTransactionsConserveSelection "
+      "if this is not for updating composition string");
 
   if (NS_WARN_IF(!aPointToInsert.IsSet())) {
     return NS_ERROR_INVALID_ARG;
@@ -2673,8 +2450,7 @@ EditorBase::InsertTextWithTransaction(
         child->IsText()) {
       pointToInsert.Set(child, child->Length());
     } else if (!pointToInsert.IsEndOfContainer() &&
-               (child = pointToInsert.GetChild()) &&
-               child->IsText()) {
+               (child = pointToInsert.GetChild()) && child->IsText()) {
       pointToInsert.Set(child, 0);
     }
   }
@@ -2684,7 +2460,7 @@ EditorBase::InsertTextWithTransaction(
     if (!pointToInsert.IsInTextNode()) {
       
       RefPtr<nsTextNode> newNode =
-        EditorBase::CreateTextNode(aDocument, EmptyString());
+          EditorBase::CreateTextNode(aDocument, EmptyString());
       
       nsresult rv = InsertNodeWithTransaction(*newNode, pointToInsert);
       if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2696,10 +2472,9 @@ EditorBase::InsertTextWithTransaction(
       newOffset = lengthToInsert + pointToInsert.Offset();
       NS_ENSURE_TRUE(newOffset.isValid(), NS_ERROR_FAILURE);
     }
-    nsresult rv =
-      InsertTextIntoTextNodeWithTransaction(aStringToInsert,
-                                            *pointToInsert.GetContainerAsText(),
-                                            pointToInsert.Offset());
+    nsresult rv = InsertTextIntoTextNodeWithTransaction(
+        aStringToInsert, *pointToInsert.GetContainerAsText(),
+        pointToInsert.Offset());
     NS_ENSURE_SUCCESS(rv, rv);
     if (aPointAfterInsertedString) {
       aPointAfterInsertedString->Set(pointToInsert.GetContainer(),
@@ -2712,10 +2487,9 @@ EditorBase::InsertTextWithTransaction(
     CheckedInt<int32_t> newOffset = lengthToInsert + pointToInsert.Offset();
     NS_ENSURE_TRUE(newOffset.isValid(), NS_ERROR_FAILURE);
     
-    nsresult rv =
-      InsertTextIntoTextNodeWithTransaction(aStringToInsert,
-                                            *pointToInsert.GetContainerAsText(),
-                                            pointToInsert.Offset());
+    nsresult rv = InsertTextIntoTextNodeWithTransaction(
+        aStringToInsert, *pointToInsert.GetContainerAsText(),
+        pointToInsert.Offset());
     NS_ENSURE_SUCCESS(rv, rv);
     if (aPointAfterInsertedString) {
       aPointAfterInsertedString->Set(pointToInsert.GetContainer(),
@@ -2727,7 +2501,7 @@ EditorBase::InsertTextWithTransaction(
   
   
   RefPtr<nsTextNode> newNode =
-    EditorBase::CreateTextNode(aDocument, aStringToInsert);
+      EditorBase::CreateTextNode(aDocument, aStringToInsert);
   
   nsresult rv = InsertNodeWithTransaction(*newNode, pointToInsert);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -2739,13 +2513,9 @@ EditorBase::InsertTextWithTransaction(
   return NS_OK;
 }
 
-nsresult
-EditorBase::InsertTextIntoTextNodeWithTransaction(
-              const nsAString& aStringToInsert,
-              Text& aTextNode,
-              int32_t aOffset,
-              bool aSuppressIME)
-{
+nsresult EditorBase::InsertTextIntoTextNodeWithTransaction(
+    const nsAString& aStringToInsert, Text& aTextNode, int32_t aOffset,
+    bool aSuppressIME) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   RefPtr<EditTransactionBase> transaction;
@@ -2756,9 +2526,8 @@ EditorBase::InsertTextIntoTextNodeWithTransaction(
   
   
   if (ShouldHandleIMEComposition() && !aSuppressIME) {
-    transaction =
-      CompositionTransaction::Create(*this, aStringToInsert,
-                                     aTextNode, aOffset);
+    transaction = CompositionTransaction::Create(*this, aStringToInsert,
+                                                 aTextNode, aOffset);
     isIMETransaction = true;
     
     
@@ -2768,8 +2537,8 @@ EditorBase::InsertTextIntoTextNodeWithTransaction(
     insertedTextNode = mComposition->GetContainerTextNode();
     insertedOffset = mComposition->XPOffsetInTextNode();
   } else {
-    transaction =
-      InsertTextTransaction::Create(*this, aStringToInsert, aTextNode, aOffset);
+    transaction = InsertTextTransaction::Create(*this, aStringToInsert,
+                                                aTextNode, aOffset);
   }
 
   
@@ -2780,16 +2549,16 @@ EditorBase::InsertTextIntoTextNodeWithTransaction(
 
   if (mRules && mRules->AsHTMLEditRules() && insertedTextNode) {
     RefPtr<HTMLEditRules> htmlEditRules = mRules->AsHTMLEditRules();
-    htmlEditRules->DidInsertText(*insertedTextNode,
-                                 insertedOffset, aStringToInsert);
+    htmlEditRules->DidInsertText(*insertedTextNode, insertedOffset,
+                                 aStringToInsert);
   }
 
   
   if (!mActionListeners.IsEmpty()) {
     AutoActionListenerArray listeners(mActionListeners);
     for (auto& listener : listeners) {
-      listener->DidInsertText(insertedTextNode, insertedOffset,
-                              aStringToInsert, rv);
+      listener->DidInsertText(insertedTextNode, insertedOffset, aStringToInsert,
+                              rv);
     }
   }
 
@@ -2815,9 +2584,7 @@ EditorBase::InsertTextIntoTextNodeWithTransaction(
   return rv;
 }
 
-nsresult
-EditorBase::SelectEntireDocument()
-{
+nsresult EditorBase::SelectEntireDocument() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   Element* rootElement = GetRoot();
@@ -2830,9 +2597,7 @@ EditorBase::SelectEntireDocument()
   return errorResult.StealNSResult();
 }
 
-nsINode*
-EditorBase::GetFirstEditableNode(nsINode* aRoot)
-{
+nsINode* EditorBase::GetFirstEditableNode(nsINode* aRoot) {
   MOZ_ASSERT(aRoot);
 
   nsIContent* node = GetLeftmostChild(aRoot);
@@ -2843,10 +2608,8 @@ EditorBase::GetFirstEditableNode(nsINode* aRoot)
   return (node != aRoot) ? node : nullptr;
 }
 
-nsresult
-EditorBase::NotifyDocumentListeners(
-              TDocumentListenerNotification aNotificationType)
-{
+nsresult EditorBase::NotifyDocumentListeners(
+    TDocumentListenerNotification aNotificationType) {
   if (!mDocStateListeners.Length()) {
     
     return NS_OK;
@@ -2900,17 +2663,13 @@ EditorBase::NotifyDocumentListeners(
   return rv;
 }
 
-nsresult
-EditorBase::SetTextImpl(const nsAString& aString,
-                        Text& aCharData)
-{
+nsresult EditorBase::SetTextImpl(const nsAString& aString, Text& aCharData) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   const uint32_t length = aCharData.Length();
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::eSetText,
-                                      nsIEditor::eNext);
+      *this, EditSubAction::eSetText, nsIEditor::eNext);
 
   
   if (!mActionListeners.IsEmpty() && length) {
@@ -2933,7 +2692,7 @@ EditorBase::SetTextImpl(const nsAString& aString,
   {
     
     DebugOnly<nsresult> rv =
-      SelectionRefPtr()->Collapse(&aCharData, aString.Length());
+        SelectionRefPtr()->Collapse(&aCharData, aString.Length());
     NS_ASSERTION(NS_SUCCEEDED(rv),
                  "Selection could not be collapsed after insert");
   }
@@ -2967,22 +2726,19 @@ EditorBase::SetTextImpl(const nsAString& aString,
   return rv;
 }
 
-nsresult
-EditorBase::DeleteTextWithTransaction(CharacterData& aCharData,
-                                      uint32_t aOffset,
-                                      uint32_t aLength)
-{
+nsresult EditorBase::DeleteTextWithTransaction(CharacterData& aCharData,
+                                               uint32_t aOffset,
+                                               uint32_t aLength) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   RefPtr<DeleteTextTransaction> transaction =
-    DeleteTextTransaction::MaybeCreate(*this, aCharData, aOffset, aLength);
+      DeleteTextTransaction::MaybeCreate(*this, aCharData, aOffset, aLength);
   if (NS_WARN_IF(!transaction)) {
     return NS_ERROR_FAILURE;
   }
 
   AutoTopLevelEditSubActionNotifier maybeTopLevelEditSubAction(
-                                      *this, EditSubAction::eDeleteText,
-                                      nsIEditor::ePrevious);
+      *this, EditSubAction::eDeleteText, nsIEditor::ePrevious);
 
   
   if (!mActionListeners.IsEmpty()) {
@@ -3010,8 +2766,7 @@ EditorBase::DeleteTextWithTransaction(CharacterData& aCharData,
   return rv;
 }
 
-struct SavedRange final
-{
+struct SavedRange final {
   RefPtr<Selection> mSelection;
   nsCOMPtr<nsINode> mStartContainer;
   nsCOMPtr<nsINode> mEndContainer;
@@ -3019,11 +2774,8 @@ struct SavedRange final
   int32_t mEndOffset;
 };
 
-void
-EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
-                        nsIContent& aNewLeftNode,
-                        ErrorResult& aError)
-{
+void EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
+                             nsIContent& aNewLeftNode, ErrorResult& aError) {
   if (NS_WARN_IF(aError.Failed())) {
     return;
   }
@@ -3072,8 +2824,7 @@ EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
 
   
   nsIContent* firstChildOfRightNode = aStartOfRightNode.GetChild();
-  parent->InsertBefore(aNewLeftNode, aStartOfRightNode.GetContainer(),
-                       aError);
+  parent->InsertBefore(aNewLeftNode, aStartOfRightNode.GetContainer(), aError);
   if (NS_WARN_IF(aError.Failed())) {
     return;
   }
@@ -3087,8 +2838,8 @@ EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
     if (rightAsText && leftAsText) {
       
       nsAutoString leftText;
-      rightAsText->SubstringData(0, aStartOfRightNode.Offset(),
-                                 leftText, IgnoreErrors());
+      rightAsText->SubstringData(0, aStartOfRightNode.Offset(), leftText,
+                                 IgnoreErrors());
       rightAsText->DeleteData(0, aStartOfRightNode.Offset(), IgnoreErrors());
       
       leftAsText->GetAsText()->SetData(leftText, IgnoreErrors());
@@ -3099,18 +2850,20 @@ EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
       if (!firstChildOfRightNode) {
         MoveAllChildren(*aStartOfRightNode.GetContainer(),
                         EditorRawDOMPoint(&aNewLeftNode, 0), aError);
-        NS_WARNING_ASSERTION(!aError.Failed(),
-          "Failed to move all children from the right node to the left node");
+        NS_WARNING_ASSERTION(
+            !aError.Failed(),
+            "Failed to move all children from the right node to the left node");
       } else if (NS_WARN_IF(aStartOfRightNode.GetContainer() !=
-                              firstChildOfRightNode->GetParentNode())) {
-          
-          
-          
+                            firstChildOfRightNode->GetParentNode())) {
+        
+        
+        
       } else {
         MovePreviousSiblings(*firstChildOfRightNode,
                              EditorRawDOMPoint(&aNewLeftNode, 0), aError);
         NS_WARNING_ASSERTION(!aError.Failed(),
-          "Failed to move some children from the right node to the left node");
+                             "Failed to move some children from the right node "
+                             "to the left node");
       }
     }
   }
@@ -3125,10 +2878,10 @@ EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
     ps->FlushPendingNotifications(FlushType::Frames);
   }
   NS_WARNING_ASSERTION(!Destroyed(),
-    "The editor is destroyed during splitting a node");
+                       "The editor is destroyed during splitting a node");
 
   bool allowedTransactionsToChangeSelection =
-    AllowsTransactionsToChangeSelection();
+      AllowsTransactionsToChangeSelection();
 
   RefPtr<Selection> previousSelection;
   for (size_t i = 0; i < savedRanges.Length(); ++i) {
@@ -3157,7 +2910,7 @@ EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
     
     if (range.mStartContainer == aStartOfRightNode.GetContainer()) {
       if (static_cast<uint32_t>(range.mStartOffset) <
-            aStartOfRightNode.Offset()) {
+          aStartOfRightNode.Offset()) {
         range.mStartContainer = &aNewLeftNode;
       } else {
         range.mStartOffset -= aStartOfRightNode.Offset();
@@ -3166,7 +2919,7 @@ EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
 
     if (range.mEndContainer == aStartOfRightNode.GetContainer()) {
       if (static_cast<uint32_t>(range.mEndOffset) <
-            aStartOfRightNode.Offset()) {
+          aStartOfRightNode.Offset()) {
         range.mEndContainer = &aNewLeftNode;
       } else {
         range.mEndOffset -= aStartOfRightNode.Offset();
@@ -3174,11 +2927,9 @@ EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
     }
 
     RefPtr<nsRange> newRange;
-    nsresult rv = nsRange::CreateRange(range.mStartContainer,
-                                       range.mStartOffset,
-                                       range.mEndContainer,
-                                       range.mEndOffset,
-                                       getter_AddRefs(newRange));
+    nsresult rv = nsRange::CreateRange(
+        range.mStartContainer, range.mStartOffset, range.mEndContainer,
+        range.mEndOffset, getter_AddRefs(newRange));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       aError.Throw(rv);
       return;
@@ -3193,11 +2944,8 @@ EditorBase::DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
   
 }
 
-nsresult
-EditorBase::DoJoinNodes(nsINode* aNodeToKeep,
-                        nsINode* aNodeToJoin,
-                        nsINode* aParent)
-{
+nsresult EditorBase::DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
+                                 nsINode* aParent) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   MOZ_ASSERT(aNodeToKeep);
@@ -3241,8 +2989,7 @@ EditorBase::DoJoinNodes(nsINode* aNodeToKeep,
           range.mStartContainer = aNodeToJoin;
           range.mStartOffset = firstNodeLength;
         }
-        if (range.mEndContainer == parent &&
-            joinOffset < range.mEndOffset &&
+        if (range.mEndContainer == parent && joinOffset < range.mEndOffset &&
             range.mEndOffset <= keepOffset) {
           range.mEndContainer = aNodeToJoin;
           range.mEndOffset = firstNodeLength;
@@ -3269,8 +3016,10 @@ EditorBase::DoJoinNodes(nsINode* aNodeToKeep,
 
     
     
+    
     nsCOMPtr<nsIContent> firstNode = aNodeToKeep->GetFirstChild();
 
+    
     
     for (uint32_t i = childNodes->Length(); i; --i) {
       nsCOMPtr<nsIContent> childNode = childNodes->Item(i - 1);
@@ -3289,7 +3038,7 @@ EditorBase::DoJoinNodes(nsINode* aNodeToKeep,
   aParent->RemoveChild(*aNodeToJoin, err);
 
   bool allowedTransactionsToChangeSelection =
-    AllowsTransactionsToChangeSelection();
+      AllowsTransactionsToChangeSelection();
 
   RefPtr<Selection> previousSelection;
   for (size_t i = 0; i < savedRanges.Length(); ++i) {
@@ -3328,11 +3077,9 @@ EditorBase::DoJoinNodes(nsINode* aNodeToKeep,
     }
 
     RefPtr<nsRange> newRange;
-    nsresult rv = nsRange::CreateRange(range.mStartContainer,
-                                       range.mStartOffset,
-                                       range.mEndContainer,
-                                       range.mEndOffset,
-                                       getter_AddRefs(newRange));
+    nsresult rv = nsRange::CreateRange(
+        range.mStartContainer, range.mStartOffset, range.mEndContainer,
+        range.mEndOffset, getter_AddRefs(newRange));
     NS_ENSURE_SUCCESS(rv, rv);
     ErrorResult err;
     range.mSelection->AddRange(*newRange, err);
@@ -3343,21 +3090,17 @@ EditorBase::DoJoinNodes(nsINode* aNodeToKeep,
 
   if (allowedTransactionsToChangeSelection) {
     
-    DebugOnly<nsresult> rv =
-      SelectionRefPtr()->Collapse(aNodeToKeep,
-                                  AssertedCast<int32_t>(firstNodeLength));
+    DebugOnly<nsresult> rv = SelectionRefPtr()->Collapse(
+        aNodeToKeep, AssertedCast<int32_t>(firstNodeLength));
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-      "Failed to collapse Selection at end of the node");
+                         "Failed to collapse Selection at end of the node");
   }
 
   return err.StealNSResult();
 }
 
 
-int32_t
-EditorBase::GetChildOffset(nsINode* aChild,
-                           nsINode* aParent)
-{
+int32_t EditorBase::GetChildOffset(nsINode* aChild, nsINode* aParent) {
   MOZ_ASSERT(aChild);
   MOZ_ASSERT(aParent);
 
@@ -3383,10 +3126,7 @@ EditorBase::GetChildOffset(nsINode* aChild,
 }
 
 
-nsINode*
-EditorBase::GetNodeLocation(nsINode* aChild,
-                            int32_t* aOffset)
-{
+nsINode* EditorBase::GetNodeLocation(nsINode* aChild, int32_t* aOffset) {
   MOZ_ASSERT(aChild);
   MOZ_ASSERT(aOffset);
 
@@ -3400,29 +3140,26 @@ EditorBase::GetNodeLocation(nsINode* aChild,
   return parent;
 }
 
-nsIContent*
-EditorBase::GetPreviousNodeInternal(nsINode& aNode,
-                                    bool aFindEditableNode,
-                                    bool aFindAnyDataNode,
-                                    bool aNoBlockCrossing)
-{
+nsIContent* EditorBase::GetPreviousNodeInternal(nsINode& aNode,
+                                                bool aFindEditableNode,
+                                                bool aFindAnyDataNode,
+                                                bool aNoBlockCrossing) {
   if (!IsDescendantOfEditorRoot(&aNode)) {
     return nullptr;
   }
-  return FindNode(&aNode, false,
-                  aFindEditableNode, aFindAnyDataNode, aNoBlockCrossing);
+  return FindNode(&aNode, false, aFindEditableNode, aFindAnyDataNode,
+                  aNoBlockCrossing);
 }
 
-nsIContent*
-EditorBase::GetPreviousNodeInternal(const EditorRawDOMPoint& aPoint,
-                                    bool aFindEditableNode,
-                                    bool aFindAnyDataNode,
-                                    bool aNoBlockCrossing)
-{
+nsIContent* EditorBase::GetPreviousNodeInternal(const EditorRawDOMPoint& aPoint,
+                                                bool aFindEditableNode,
+                                                bool aFindAnyDataNode,
+                                                bool aNoBlockCrossing) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
-  NS_WARNING_ASSERTION(!aPoint.IsInDataNode() || aPoint.IsInTextNode(),
-    "GetPreviousNodeInternal() doesn't assume that the start point is a "
-    "data node except text node");
+  NS_WARNING_ASSERTION(
+      !aPoint.IsInDataNode() || aPoint.IsInTextNode(),
+      "GetPreviousNodeInternal() doesn't assume that the start point is a "
+      "data node except text node");
 
   
   
@@ -3431,22 +3168,20 @@ EditorBase::GetPreviousNodeInternal(const EditorRawDOMPoint& aPoint,
       
       return nullptr;
     }
-    return GetPreviousNodeInternal(*aPoint.GetContainer(),
-                                   aFindEditableNode, aFindAnyDataNode,
-                                   aNoBlockCrossing);
+    return GetPreviousNodeInternal(*aPoint.GetContainer(), aFindEditableNode,
+                                   aFindAnyDataNode, aNoBlockCrossing);
   }
 
   
   if (aPoint.GetChild()) {
-    return GetPreviousNodeInternal(*aPoint.GetChild(),
-                                   aFindEditableNode, aFindAnyDataNode,
-                                   aNoBlockCrossing);
+    return GetPreviousNodeInternal(*aPoint.GetChild(), aFindEditableNode,
+                                   aFindAnyDataNode, aNoBlockCrossing);
   }
 
   
   
   nsIContent* rightMostNode =
-    GetRightmostChild(aPoint.GetContainer(), aNoBlockCrossing);
+      GetRightmostChild(aPoint.GetContainer(), aNoBlockCrossing);
   if (!rightMostNode) {
     return nullptr;
   }
@@ -3457,34 +3192,30 @@ EditorBase::GetPreviousNodeInternal(const EditorRawDOMPoint& aPoint,
   }
 
   
-  return GetPreviousNodeInternal(*rightMostNode,
-                                 aFindEditableNode, aFindAnyDataNode,
-                                 aNoBlockCrossing);
+  return GetPreviousNodeInternal(*rightMostNode, aFindEditableNode,
+                                 aFindAnyDataNode, aNoBlockCrossing);
 }
 
-nsIContent*
-EditorBase::GetNextNodeInternal(nsINode& aNode,
-                                bool aFindEditableNode,
-                                bool aFindAnyDataNode,
-                                bool aNoBlockCrossing)
-{
+nsIContent* EditorBase::GetNextNodeInternal(nsINode& aNode,
+                                            bool aFindEditableNode,
+                                            bool aFindAnyDataNode,
+                                            bool aNoBlockCrossing) {
   if (!IsDescendantOfEditorRoot(&aNode)) {
     return nullptr;
   }
-  return FindNode(&aNode, true,
-                  aFindEditableNode, aFindAnyDataNode, aNoBlockCrossing);
+  return FindNode(&aNode, true, aFindEditableNode, aFindAnyDataNode,
+                  aNoBlockCrossing);
 }
 
-nsIContent*
-EditorBase::GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
-                                bool aFindEditableNode,
-                                bool aFindAnyDataNode,
-                                bool aNoBlockCrossing)
-{
+nsIContent* EditorBase::GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
+                                            bool aFindEditableNode,
+                                            bool aFindAnyDataNode,
+                                            bool aNoBlockCrossing) {
   MOZ_ASSERT(aPoint.IsSetAndValid());
-  NS_WARNING_ASSERTION(!aPoint.IsInDataNode() || aPoint.IsInTextNode(),
-    "GetNextNodeInternal() doesn't assume that the start point is a "
-    "data node except text node");
+  NS_WARNING_ASSERTION(
+      !aPoint.IsInDataNode() || aPoint.IsInTextNode(),
+      "GetNextNodeInternal() doesn't assume that the start point is a "
+      "data node except text node");
 
   EditorRawDOMPoint point(aPoint);
 
@@ -3503,7 +3234,7 @@ EditorBase::GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
     }
 
     nsIContent* leftMostNode =
-      GetLeftmostChild(point.GetChild(), aNoBlockCrossing);
+        GetLeftmostChild(point.GetChild(), aNoBlockCrossing);
     if (!leftMostNode) {
       return point.GetChild();
     }
@@ -3518,9 +3249,8 @@ EditorBase::GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
     }
 
     
-    return GetNextNodeInternal(*leftMostNode,
-                               aFindEditableNode, aFindAnyDataNode,
-                               aNoBlockCrossing);
+    return GetNextNodeInternal(*leftMostNode, aFindEditableNode,
+                               aFindAnyDataNode, aNoBlockCrossing);
   }
 
   
@@ -3530,35 +3260,31 @@ EditorBase::GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
     return nullptr;
   }
 
-  return GetNextNodeInternal(*point.GetContainer(),
-                             aFindEditableNode, aFindAnyDataNode,
-                             aNoBlockCrossing);
+  return GetNextNodeInternal(*point.GetContainer(), aFindEditableNode,
+                             aFindAnyDataNode, aNoBlockCrossing);
 }
 
-nsIContent*
-EditorBase::FindNextLeafNode(nsINode* aCurrentNode,
-                             bool aGoForward,
-                             bool bNoBlockCrossing)
-{
+nsIContent* EditorBase::FindNextLeafNode(nsINode* aCurrentNode, bool aGoForward,
+                                         bool bNoBlockCrossing) {
   
-  MOZ_ASSERT(IsDescendantOfEditorRoot(aCurrentNode) &&
-             !IsEditorRoot(aCurrentNode),
-             "Bogus arguments");
+  MOZ_ASSERT(
+      IsDescendantOfEditorRoot(aCurrentNode) && !IsEditorRoot(aCurrentNode),
+      "Bogus arguments");
 
   nsINode* cur = aCurrentNode;
   for (;;) {
     
     
     nsIContent* sibling =
-      aGoForward ? cur->GetNextSibling() : cur->GetPreviousSibling();
+        aGoForward ? cur->GetNextSibling() : cur->GetPreviousSibling();
     if (sibling) {
       if (bNoBlockCrossing && IsBlockNode(sibling)) {
         
         return sibling;
       }
-      nsIContent *leaf =
-        aGoForward ? GetLeftmostChild(sibling, bNoBlockCrossing) :
-                     GetRightmostChild(sibling, bNoBlockCrossing);
+      nsIContent* leaf = aGoForward
+                             ? GetLeftmostChild(sibling, bNoBlockCrossing)
+                             : GetRightmostChild(sibling, bNoBlockCrossing);
       if (!leaf) {
         return sibling;
       }
@@ -3566,7 +3292,7 @@ EditorBase::FindNextLeafNode(nsINode* aCurrentNode,
       return leaf;
     }
 
-    nsINode *parent = cur->GetParentNode();
+    nsINode* parent = cur->GetParentNode();
     if (!parent) {
       return nullptr;
     }
@@ -3575,8 +3301,7 @@ EditorBase::FindNextLeafNode(nsINode* aCurrentNode,
                  "We started with a proper descendant of root, and should stop "
                  "if we ever hit the root, so we better have a descendant of "
                  "root now!");
-    if (IsEditorRoot(parent) ||
-        (bNoBlockCrossing && IsBlockNode(parent))) {
+    if (IsEditorRoot(parent) || (bNoBlockCrossing && IsBlockNode(parent))) {
       return nullptr;
     }
 
@@ -3587,13 +3312,9 @@ EditorBase::FindNextLeafNode(nsINode* aCurrentNode,
   return nullptr;
 }
 
-nsIContent*
-EditorBase::FindNode(nsINode* aCurrentNode,
-                     bool aGoForward,
-                     bool aEditableNode,
-                     bool aFindAnyDataNode,
-                     bool bNoBlockCrossing)
-{
+nsIContent* EditorBase::FindNode(nsINode* aCurrentNode, bool aGoForward,
+                                 bool aEditableNode, bool aFindAnyDataNode,
+                                 bool bNoBlockCrossing) {
   if (IsEditorRoot(aCurrentNode)) {
     
     
@@ -3603,7 +3324,7 @@ EditorBase::FindNode(nsINode* aCurrentNode,
   }
 
   nsCOMPtr<nsIContent> candidate =
-    FindNextLeafNode(aCurrentNode, aGoForward, bNoBlockCrossing);
+      FindNextLeafNode(aCurrentNode, aGoForward, bNoBlockCrossing);
 
   if (!candidate) {
     return nullptr;
@@ -3614,16 +3335,14 @@ EditorBase::FindNode(nsINode* aCurrentNode,
     return candidate;
   }
 
-  return FindNode(candidate, aGoForward,
-                  aEditableNode, aFindAnyDataNode, bNoBlockCrossing);
+  return FindNode(candidate, aGoForward, aEditableNode, aFindAnyDataNode,
+                  bNoBlockCrossing);
 }
 
-nsIContent*
-EditorBase::GetRightmostChild(nsINode* aCurrentNode,
-                              bool bNoBlockCrossing)
-{
+nsIContent* EditorBase::GetRightmostChild(nsINode* aCurrentNode,
+                                          bool bNoBlockCrossing) {
   NS_ENSURE_TRUE(aCurrentNode, nullptr);
-  nsIContent *cur = aCurrentNode->GetLastChild();
+  nsIContent* cur = aCurrentNode->GetLastChild();
   if (!cur) {
     return nullptr;
   }
@@ -3642,12 +3361,10 @@ EditorBase::GetRightmostChild(nsINode* aCurrentNode,
   return nullptr;
 }
 
-nsIContent*
-EditorBase::GetLeftmostChild(nsINode* aCurrentNode,
-                             bool bNoBlockCrossing)
-{
+nsIContent* EditorBase::GetLeftmostChild(nsINode* aCurrentNode,
+                                         bool bNoBlockCrossing) {
   NS_ENSURE_TRUE(aCurrentNode, nullptr);
-  nsIContent *cur = aCurrentNode->GetFirstChild();
+  nsIContent* cur = aCurrentNode->GetFirstChild();
   if (!cur) {
     return nullptr;
   }
@@ -3655,7 +3372,7 @@ EditorBase::GetLeftmostChild(nsINode* aCurrentNode,
     if (bNoBlockCrossing && IsBlockNode(cur)) {
       return cur;
     }
-    nsIContent *next = cur->GetFirstChild();
+    nsIContent* next = cur->GetFirstChild();
     if (!next) {
       return cur;
     }
@@ -3666,9 +3383,7 @@ EditorBase::GetLeftmostChild(nsINode* aCurrentNode,
   return nullptr;
 }
 
-bool
-EditorBase::IsBlockNode(nsINode* aNode)
-{
+bool EditorBase::IsBlockNode(nsINode* aNode) {
   
   
   
@@ -3676,10 +3391,7 @@ EditorBase::IsBlockNode(nsINode* aNode)
   return false;
 }
 
-bool
-EditorBase::CanContain(nsINode& aParent,
-                       nsIContent& aChild) const
-{
+bool EditorBase::CanContain(nsINode& aParent, nsIContent& aChild) const {
   switch (aParent.NodeType()) {
     case nsINode::ELEMENT_NODE:
     case nsINode::DOCUMENT_FRAGMENT_NODE:
@@ -3688,10 +3400,7 @@ EditorBase::CanContain(nsINode& aParent,
   return false;
 }
 
-bool
-EditorBase::CanContainTag(nsINode& aParent,
-                          nsAtom& aChildTag) const
-{
+bool EditorBase::CanContainTag(nsINode& aParent, nsAtom& aChildTag) const {
   switch (aParent.NodeType()) {
     case nsINode::ELEMENT_NODE:
     case nsINode::DOCUMENT_FRAGMENT_NODE:
@@ -3700,10 +3409,7 @@ EditorBase::CanContainTag(nsINode& aParent,
   return false;
 }
 
-bool
-EditorBase::TagCanContain(nsAtom& aParentTag,
-                          nsIContent& aChild) const
-{
+bool EditorBase::TagCanContain(nsAtom& aParentTag, nsIContent& aChild) const {
   switch (aChild.NodeType()) {
     case nsINode::TEXT_NODE:
     case nsINode::ELEMENT_NODE:
@@ -3713,16 +3419,11 @@ EditorBase::TagCanContain(nsAtom& aParentTag,
   return false;
 }
 
-bool
-EditorBase::TagCanContainTag(nsAtom& aParentTag,
-                             nsAtom& aChildTag) const
-{
+bool EditorBase::TagCanContainTag(nsAtom& aParentTag, nsAtom& aChildTag) const {
   return true;
 }
 
-bool
-EditorBase::IsRoot(nsINode* inNode) const
-{
+bool EditorBase::IsRoot(nsINode* inNode) const {
   if (NS_WARN_IF(!inNode)) {
     return false;
   }
@@ -3730,9 +3431,7 @@ EditorBase::IsRoot(nsINode* inNode) const
   return inNode == rootNode;
 }
 
-bool
-EditorBase::IsEditorRoot(nsINode* aNode) const
-{
+bool EditorBase::IsEditorRoot(nsINode* aNode) const {
   if (NS_WARN_IF(!aNode)) {
     return false;
   }
@@ -3740,9 +3439,7 @@ EditorBase::IsEditorRoot(nsINode* aNode) const
   return aNode == rootNode;
 }
 
-bool
-EditorBase::IsDescendantOfRoot(nsINode* inNode) const
-{
+bool EditorBase::IsDescendantOfRoot(nsINode* inNode) const {
   if (NS_WARN_IF(!inNode)) {
     return false;
   }
@@ -3754,9 +3451,7 @@ EditorBase::IsDescendantOfRoot(nsINode* inNode) const
   return nsContentUtils::ContentIsDescendantOf(inNode, root);
 }
 
-bool
-EditorBase::IsDescendantOfEditorRoot(nsINode* aNode) const
-{
+bool EditorBase::IsDescendantOfEditorRoot(nsINode* aNode) const {
   if (NS_WARN_IF(!aNode)) {
     return false;
   }
@@ -3768,19 +3463,12 @@ EditorBase::IsDescendantOfEditorRoot(nsINode* aNode) const
   return nsContentUtils::ContentIsDescendantOf(aNode, root);
 }
 
-bool
-EditorBase::IsContainer(nsINode* aNode)
-{
-  return aNode ? true : false;
-}
+bool EditorBase::IsContainer(nsINode* aNode) { return aNode ? true : false; }
 
-uint32_t
-EditorBase::CountEditableChildren(nsINode* aNode)
-{
+uint32_t EditorBase::CountEditableChildren(nsINode* aNode) {
   MOZ_ASSERT(aNode);
   uint32_t count = 0;
-  for (nsIContent* child = aNode->GetFirstChild();
-       child;
+  for (nsIContent* child = aNode->GetFirstChild(); child;
        child = child->GetNextSibling()) {
     if (IsEditable(child)) {
       ++count;
@@ -3790,32 +3478,26 @@ EditorBase::CountEditableChildren(nsINode* aNode)
 }
 
 NS_IMETHODIMP
-EditorBase::IncrementModificationCount(int32_t inNumMods)
-{
+EditorBase::IncrementModificationCount(int32_t inNumMods) {
   uint32_t oldModCount = mModCount;
 
   mModCount += inNumMods;
 
-  if ((!oldModCount && mModCount) ||
-      (oldModCount && !mModCount)) {
+  if ((!oldModCount && mModCount) || (oldModCount && !mModCount)) {
     NotifyDocumentListeners(eDocumentStateChanged);
   }
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
-EditorBase::GetModificationCount(int32_t* outModCount)
-{
+EditorBase::GetModificationCount(int32_t* outModCount) {
   NS_ENSURE_ARG_POINTER(outModCount);
   *outModCount = mModCount;
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
-EditorBase::ResetModificationCount()
-{
+EditorBase::ResetModificationCount() {
   bool doNotify = (mModCount != 0);
 
   mModCount = 0;
@@ -3827,10 +3509,8 @@ EditorBase::ResetModificationCount()
 }
 
 
-bool
-EditorBase::AreNodesSameType(nsIContent& aNode1,
-                             nsIContent& aNode2) const
-{
+bool EditorBase::AreNodesSameType(nsIContent& aNode1,
+                                  nsIContent& aNode2) const {
   if (aNode1.NodeInfo()->NameAtom() != aNode2.NodeInfo()->NameAtom()) {
     return false;
   }
@@ -3850,9 +3530,8 @@ EditorBase::AreNodesSameType(nsIContent& aNode1,
 }
 
 
-nsIContent*
-EditorBase::GetNodeAtRangeOffsetPoint(const RawRangeBoundary& aPoint)
-{
+nsIContent* EditorBase::GetNodeAtRangeOffsetPoint(
+    const RawRangeBoundary& aPoint) {
   if (NS_WARN_IF(!aPoint.IsSet())) {
     return nullptr;
   }
@@ -3863,16 +3542,13 @@ EditorBase::GetNodeAtRangeOffsetPoint(const RawRangeBoundary& aPoint)
 }
 
 
-EditorRawDOMPoint
-EditorBase::GetStartPoint(const Selection& aSelection)
-{
+EditorRawDOMPoint EditorBase::GetStartPoint(const Selection& aSelection) {
   if (NS_WARN_IF(!aSelection.RangeCount())) {
     return EditorRawDOMPoint();
   }
 
   const nsRange* range = aSelection.GetRangeAt(0);
-  if (NS_WARN_IF(!range) ||
-      NS_WARN_IF(!range->IsPositioned())) {
+  if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
     return EditorRawDOMPoint();
   }
 
@@ -3880,16 +3556,13 @@ EditorBase::GetStartPoint(const Selection& aSelection)
 }
 
 
-EditorRawDOMPoint
-EditorBase::GetEndPoint(const Selection& aSelection)
-{
+EditorRawDOMPoint EditorBase::GetEndPoint(const Selection& aSelection) {
   if (NS_WARN_IF(!aSelection.RangeCount())) {
     return EditorRawDOMPoint();
   }
 
   const nsRange* range = aSelection.GetRangeAt(0);
-  if (NS_WARN_IF(!range) ||
-      NS_WARN_IF(!range->IsPositioned())) {
+  if (NS_WARN_IF(!range) || NS_WARN_IF(!range->IsPositioned())) {
     return EditorRawDOMPoint();
   }
 
@@ -3897,10 +3570,8 @@ EditorBase::GetEndPoint(const Selection& aSelection)
 }
 
 
-nsresult
-EditorBase::GetEndChildNode(const Selection& aSelection,
-                            nsIContent** aEndNode)
-{
+nsresult EditorBase::GetEndChildNode(const Selection& aSelection,
+                                     nsIContent** aEndNode) {
   MOZ_ASSERT(aEndNode);
 
   *aEndNode = nullptr;
@@ -3927,9 +3598,7 @@ EditorBase::GetEndChildNode(const Selection& aSelection,
 
 
 
-bool
-EditorBase::IsPreformatted(nsINode* aNode)
-{
+bool EditorBase::IsPreformatted(nsINode* aNode) {
   if (NS_WARN_IF(!aNode)) {
     return false;
   }
@@ -3944,7 +3613,7 @@ EditorBase::IsPreformatted(nsINode* aNode)
   }
 
   RefPtr<ComputedStyle> elementStyle =
-    nsComputedDOMStyle::GetComputedStyleNoFlush(element, nullptr);
+      nsComputedDOMStyle::GetComputedStyleNoFlush(element, nullptr);
   if (!elementStyle) {
     
     
@@ -3957,18 +3626,16 @@ EditorBase::IsPreformatted(nsINode* aNode)
   return styleText->WhiteSpaceIsSignificant();
 }
 
-template<typename PT, typename CT>
-SplitNodeResult
-EditorBase::SplitNodeDeepWithTransaction(
-              nsIContent& aMostAncestorToSplit,
-              const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode,
-              SplitAtEdges aSplitAtEdges)
-{
+template <typename PT, typename CT>
+SplitNodeResult EditorBase::SplitNodeDeepWithTransaction(
+    nsIContent& aMostAncestorToSplit,
+    const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode,
+    SplitAtEdges aSplitAtEdges) {
   MOZ_ASSERT(aStartOfDeepestRightNode.IsSetAndValid());
-  MOZ_ASSERT(aStartOfDeepestRightNode.GetContainer() == &aMostAncestorToSplit ||
-             EditorUtils::IsDescendantOf(
-                            *aStartOfDeepestRightNode.GetContainer(),
-                            aMostAncestorToSplit));
+  MOZ_ASSERT(
+      aStartOfDeepestRightNode.GetContainer() == &aMostAncestorToSplit ||
+      EditorUtils::IsDescendantOf(*aStartOfDeepestRightNode.GetContainer(),
+                                  aMostAncestorToSplit));
 
   if (NS_WARN_IF(!aStartOfDeepestRightNode.IsSet())) {
     return SplitNodeResult(NS_ERROR_INVALID_ARG);
@@ -4001,7 +3668,7 @@ EditorBase::SplitNodeDeepWithTransaction(
          !atStartOfRightNode.IsEndOfContainer())) {
       ErrorResult error;
       nsCOMPtr<nsIContent> newLeftNode =
-        SplitNodeWithTransaction(atStartOfRightNode, error);
+          SplitNodeWithTransaction(atStartOfRightNode, error);
       if (NS_WARN_IF(error.Failed())) {
         return SplitNodeResult(error.StealNSResult());
       }
@@ -4025,7 +3692,7 @@ EditorBase::SplitNodeDeepWithTransaction(
       atStartOfRightNode.Set(currentRightNode);
       DebugOnly<bool> advanced = atStartOfRightNode.AdvanceOffset();
       NS_WARNING_ASSERTION(advanced,
-        "Failed to advance offset after current node");
+                           "Failed to advance offset after current node");
     }
     
     
@@ -4042,10 +3709,8 @@ EditorBase::SplitNodeDeepWithTransaction(
   return SplitNodeResult(NS_ERROR_FAILURE);
 }
 
-EditorDOMPoint
-EditorBase::JoinNodesDeepWithTransaction(nsIContent& aLeftNode,
-                                         nsIContent& aRightNode)
-{
+EditorDOMPoint EditorBase::JoinNodesDeepWithTransaction(
+    nsIContent& aLeftNode, nsIContent& aRightNode) {
   
   
   
@@ -4104,9 +3769,7 @@ EditorBase::JoinNodesDeepWithTransaction(nsIContent& aLeftNode,
   return ret;
 }
 
-void
-EditorBase::BeginUpdateViewBatch()
-{
+void EditorBase::BeginUpdateViewBatch() {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mUpdateCount >= 0, "bad state");
 
@@ -4118,9 +3781,7 @@ EditorBase::BeginUpdateViewBatch()
   mUpdateCount++;
 }
 
-void
-EditorBase::EndUpdateViewBatch()
-{
+void EditorBase::EndUpdateViewBatch() {
   MOZ_ASSERT(IsEditActionDataAvailable());
   MOZ_ASSERT(mUpdateCount > 0, "bad state");
 
@@ -4151,30 +3812,20 @@ EditorBase::EndUpdateViewBatch()
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "RefereshEditingUI() failed");
 }
 
-TextComposition*
-EditorBase::GetComposition() const
-{
-  return mComposition;
-}
+TextComposition* EditorBase::GetComposition() const { return mComposition; }
 
-bool
-EditorBase::IsIMEComposing() const
-{
+bool EditorBase::IsIMEComposing() const {
   return mComposition && mComposition->IsComposing();
 }
 
-bool
-EditorBase::ShouldHandleIMEComposition() const
-{
+bool EditorBase::ShouldHandleIMEComposition() const {
   
   
   
   return mComposition && mDidPostCreate;
 }
 
-void
-EditorBase::DoAfterDoTransaction(nsITransaction* aTxn)
-{
+void EditorBase::DoAfterDoTransaction(nsITransaction* aTxn) {
   bool isTransientTransaction;
   MOZ_ALWAYS_SUCCEEDS(aTxn->GetIsTransient(&isTransientTransaction));
 
@@ -4194,16 +3845,12 @@ EditorBase::DoAfterDoTransaction(nsITransaction* aTxn)
   }
 }
 
-void
-EditorBase::DoAfterUndoTransaction()
-{
+void EditorBase::DoAfterUndoTransaction() {
   
   MOZ_ALWAYS_SUCCEEDS(IncrementModificationCount(-1));
 }
 
-void
-EditorBase::DoAfterRedoTransaction()
-{
+void EditorBase::DoAfterRedoTransaction() {
   
   MOZ_ALWAYS_SUCCEEDS(IncrementModificationCount(1));
 }
@@ -4211,9 +3858,7 @@ EditorBase::DoAfterRedoTransaction()
 already_AddRefed<EditAggregateTransaction>
 EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
                                         nsINode** aRemovingNode,
-                                        int32_t* aOffset,
-                                        int32_t* aLength)
-{
+                                        int32_t* aOffset, int32_t* aLength) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   
@@ -4223,10 +3868,9 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
 
   
   RefPtr<EditAggregateTransaction> aggregateTransaction =
-    EditAggregateTransaction::Create();
+      EditAggregateTransaction::Create();
 
-  for (uint32_t rangeIdx = 0;
-       rangeIdx < SelectionRefPtr()->RangeCount();
+  for (uint32_t rangeIdx = 0; rangeIdx < SelectionRefPtr()->RangeCount();
        ++rangeIdx) {
     RefPtr<nsRange> range = SelectionRefPtr()->GetRangeAt(rangeIdx);
     if (NS_WARN_IF(!range)) {
@@ -4237,7 +3881,7 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
     
     if (!range->Collapsed()) {
       RefPtr<DeleteRangeTransaction> deleteRangeTransaction =
-        DeleteRangeTransaction::Create(*this, *range);
+          DeleteRangeTransaction::Create(*this, *range);
       
       aggregateTransaction->AppendChild(deleteRangeTransaction);
     } else if (aAction != eNone) {
@@ -4246,8 +3890,8 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
       
       
       RefPtr<EditTransactionBase> deleteRangeTransaction =
-        CreateTxnForDeleteRange(range, aAction,
-                                aRemovingNode, aOffset, aLength);
+          CreateTxnForDeleteRange(range, aAction, aRemovingNode, aOffset,
+                                  aLength);
       
       
       
@@ -4263,13 +3907,9 @@ EditorBase::CreateTxnForDeleteSelection(EDirection aAction,
 
 
 
-already_AddRefed<EditTransactionBase>
-EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
-                                    EDirection aAction,
-                                    nsINode** aRemovingNode,
-                                    int32_t* aOffset,
-                                    int32_t* aLength)
-{
+already_AddRefed<EditTransactionBase> EditorBase::CreateTxnForDeleteRange(
+    nsRange* aRangeToDelete, EDirection aAction, nsINode** aRemovingNode,
+    int32_t* aOffset, int32_t* aLength) {
   MOZ_ASSERT(aAction != eNone);
 
   
@@ -4287,7 +3927,7 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
   uint32_t count = node->Length();
 
   bool isFirst = !offset;
-  bool isLast  = (count == (uint32_t)offset);
+  bool isLast = (count == (uint32_t)offset);
 
   
   
@@ -4305,15 +3945,15 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
     
     
     if (RefPtr<CharacterData> priorNodeAsCharData =
-          CharacterData::FromNode(priorNode)) {
+            CharacterData::FromNode(priorNode)) {
       uint32_t length = priorNode->Length();
       
       if (NS_WARN_IF(!length)) {
         return nullptr;
       }
       RefPtr<DeleteTextTransaction> deleteTextTransaction =
-        DeleteTextTransaction::MaybeCreateForPreviousCharacter(
-                                 *this, *priorNodeAsCharData, length);
+          DeleteTextTransaction::MaybeCreateForPreviousCharacter(
+              *this, *priorNodeAsCharData, length);
       if (NS_WARN_IF(!deleteTextTransaction)) {
         return nullptr;
       }
@@ -4325,7 +3965,7 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
 
     
     RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-      DeleteNodeTransaction::MaybeCreate(*this, *priorNode);
+        DeleteNodeTransaction::MaybeCreate(*this, *priorNode);
     if (NS_WARN_IF(!deleteNodeTransaction)) {
       return nullptr;
     }
@@ -4344,15 +3984,15 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
     
     
     if (RefPtr<CharacterData> nextNodeAsCharData =
-          CharacterData::FromNode(nextNode)) {
+            CharacterData::FromNode(nextNode)) {
       uint32_t length = nextNode->Length();
       
       if (NS_WARN_IF(!length)) {
         return nullptr;
       }
       RefPtr<DeleteTextTransaction> deleteTextTransaction =
-        DeleteTextTransaction::MaybeCreateForNextCharacter(
-                                 *this, *nextNodeAsCharData, 0);
+          DeleteTextTransaction::MaybeCreateForNextCharacter(
+              *this, *nextNodeAsCharData, 0);
       if (NS_WARN_IF(!deleteTextTransaction)) {
         return nullptr;
       }
@@ -4364,7 +4004,7 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
 
     
     RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-      DeleteNodeTransaction::MaybeCreate(*this, *nextNode);
+        DeleteNodeTransaction::MaybeCreate(*this, *nextNode);
     if (NS_WARN_IF(!deleteNodeTransaction)) {
       return nullptr;
     }
@@ -4378,11 +4018,11 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
     }
     
     RefPtr<DeleteTextTransaction> deleteTextTransaction =
-      aAction == ePrevious ?
-        DeleteTextTransaction::MaybeCreateForPreviousCharacter(
-                                 *this, *nodeAsCharData, offset) :
-        DeleteTextTransaction::MaybeCreateForNextCharacter(
-                                 *this, *nodeAsCharData, offset);
+        aAction == ePrevious
+            ? DeleteTextTransaction::MaybeCreateForPreviousCharacter(
+                  *this, *nodeAsCharData, offset)
+            : DeleteTextTransaction::MaybeCreateForNextCharacter(
+                  *this, *nodeAsCharData, offset);
     if (NS_WARN_IF(!deleteTextTransaction)) {
       return nullptr;
     }
@@ -4397,13 +4037,12 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
   nsCOMPtr<nsINode> selectedNode;
   if (aAction == ePrevious) {
     selectedNode =
-      GetPreviousEditableNode(EditorRawDOMPoint(node, child, offset));
+        GetPreviousEditableNode(EditorRawDOMPoint(node, child, offset));
   } else if (aAction == eNext) {
     selectedNode = GetNextEditableNode(EditorRawDOMPoint(node, child, offset));
   }
 
-  while (selectedNode &&
-         selectedNode->IsCharacterData() &&
+  while (selectedNode && selectedNode->IsCharacterData() &&
          !selectedNode->Length()) {
     
     if (aAction == ePrevious) {
@@ -4418,7 +4057,7 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
   }
 
   if (RefPtr<CharacterData> selectedNodeAsCharData =
-        CharacterData::FromNode(selectedNode)) {
+          CharacterData::FromNode(selectedNode)) {
     if (NS_WARN_IF(aAction != ePrevious && aAction != eNext)) {
       return nullptr;
     }
@@ -4428,11 +4067,11 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
       position = selectedNode->Length();
     }
     RefPtr<DeleteTextTransaction> deleteTextTransaction =
-      aAction == ePrevious ?
-        DeleteTextTransaction::MaybeCreateForPreviousCharacter(
-                                 *this, *selectedNodeAsCharData, position) :
-        DeleteTextTransaction::MaybeCreateForNextCharacter(
-                                 *this, *selectedNodeAsCharData, position);
+        aAction == ePrevious
+            ? DeleteTextTransaction::MaybeCreateForPreviousCharacter(
+                  *this, *selectedNodeAsCharData, position)
+            : DeleteTextTransaction::MaybeCreateForNextCharacter(
+                  *this, *selectedNodeAsCharData, position);
     if (NS_WARN_IF(!deleteTextTransaction)) {
       return nullptr;
     }
@@ -4443,7 +4082,7 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
   }
 
   RefPtr<DeleteNodeTransaction> deleteNodeTransaction =
-    DeleteNodeTransaction::MaybeCreate(*this, *selectedNode);
+      DeleteNodeTransaction::MaybeCreate(*this, *selectedNode);
   if (NS_WARN_IF(!deleteNodeTransaction)) {
     return nullptr;
   }
@@ -4451,20 +4090,14 @@ EditorBase::CreateTxnForDeleteRange(nsRange* aRangeToDelete,
   return deleteNodeTransaction.forget();
 }
 
-nsresult
-EditorBase::CreateRange(nsINode* aStartContainer,
-                        int32_t aStartOffset,
-                        nsINode* aEndContainer,
-                        int32_t aEndOffset,
-                        nsRange** aRange)
-{
-  return nsRange::CreateRange(aStartContainer, aStartOffset,
-                              aEndContainer, aEndOffset, aRange);
+nsresult EditorBase::CreateRange(nsINode* aStartContainer, int32_t aStartOffset,
+                                 nsINode* aEndContainer, int32_t aEndOffset,
+                                 nsRange** aRange) {
+  return nsRange::CreateRange(aStartContainer, aStartOffset, aEndContainer,
+                              aEndOffset, aRange);
 }
 
-nsresult
-EditorBase::AppendNodeToSelectionAsRange(nsINode* aNode)
-{
+nsresult EditorBase::AppendNodeToSelectionAsRange(nsINode* aNode) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (NS_WARN_IF(!aNode)) {
@@ -4494,9 +4127,7 @@ EditorBase::AppendNodeToSelectionAsRange(nsINode* aNode)
   return err.StealNSResult();
 }
 
-nsresult
-EditorBase::ClearSelection()
-{
+nsresult EditorBase::ClearSelection() {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   ErrorResult rv;
@@ -4506,9 +4137,7 @@ EditorBase::ClearSelection()
   return rv.StealNSResult();
 }
 
-already_AddRefed<Element>
-EditorBase::CreateHTMLContent(const nsAtom* aTag)
-{
+already_AddRefed<Element> EditorBase::CreateHTMLContent(const nsAtom* aTag) {
   MOZ_ASSERT(aTag);
 
   nsCOMPtr<nsIDocument> doc = GetDocument();
@@ -4519,8 +4148,9 @@ EditorBase::CreateHTMLContent(const nsAtom* aTag)
   
   
   if (aTag == nsGkAtoms::_empty) {
-    NS_ERROR("Don't pass an empty tag to EditorBase::CreateHTMLContent, "
-             "check caller.");
+    NS_ERROR(
+        "Don't pass an empty tag to EditorBase::CreateHTMLContent, "
+        "check caller.");
     return nullptr;
   }
 
@@ -4529,10 +4159,8 @@ EditorBase::CreateHTMLContent(const nsAtom* aTag)
 }
 
 
-already_AddRefed<nsTextNode>
-EditorBase::CreateTextNode(nsIDocument& aDocument,
-                           const nsAString& aData)
-{
+already_AddRefed<nsTextNode> EditorBase::CreateTextNode(
+    nsIDocument& aDocument, const nsAString& aData) {
   RefPtr<nsTextNode> text = aDocument.CreateEmptyTextNode();
   text->MarkAsMaybeModifiedFrequently();
   
@@ -4544,8 +4172,7 @@ NS_IMETHODIMP
 EditorBase::SetAttributeOrEquivalent(Element* aElement,
                                      const nsAString& aAttribute,
                                      const nsAString& aValue,
-                                     bool aSuppressTransaction)
-{
+                                     bool aSuppressTransaction) {
   if (NS_WARN_IF(!aElement)) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -4563,8 +4190,7 @@ EditorBase::SetAttributeOrEquivalent(Element* aElement,
 NS_IMETHODIMP
 EditorBase::RemoveAttributeOrEquivalent(Element* aElement,
                                         const nsAString& aAttribute,
-                                        bool aSuppressTransaction)
-{
+                                        bool aSuppressTransaction) {
   if (NS_WARN_IF(!aElement)) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -4578,9 +4204,7 @@ EditorBase::RemoveAttributeOrEquivalent(Element* aElement,
   return RemoveAttributeOrEquivalent(aElement, attribute, aSuppressTransaction);
 }
 
-nsresult
-EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
-{
+nsresult EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   
   
   
@@ -4610,50 +4234,38 @@ EditorBase::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent)
     case NS_VK_SHIFT:
     case NS_VK_CONTROL:
     case NS_VK_ALT:
-      aKeyboardEvent->PreventDefault(); 
+      aKeyboardEvent->PreventDefault();  
       return NS_OK;
   }
   return NS_OK;
 }
 
-nsresult
-EditorBase::HandleInlineSpellCheck(EditSubAction aEditSubAction,
-                                   nsINode* previousSelectedNode,
-                                   uint32_t previousSelectedOffset,
-                                   nsINode* aStartContainer,
-                                   uint32_t aStartOffset,
-                                   nsINode* aEndContainer,
-                                   uint32_t aEndOffset)
-{
+nsresult EditorBase::HandleInlineSpellCheck(
+    EditSubAction aEditSubAction, nsINode* previousSelectedNode,
+    uint32_t previousSelectedOffset, nsINode* aStartContainer,
+    uint32_t aStartOffset, nsINode* aEndContainer, uint32_t aEndOffset) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   if (!mInlineSpellChecker) {
     return NS_OK;
   }
   return mInlineSpellChecker->SpellCheckAfterEditorChange(
-                                aEditSubAction, *SelectionRefPtr(),
-                                previousSelectedNode, previousSelectedOffset,
-                                aStartContainer, aStartOffset, aEndContainer,
-                                aEndOffset);
+      aEditSubAction, *SelectionRefPtr(), previousSelectedNode,
+      previousSelectedOffset, aStartContainer, aStartOffset, aEndContainer,
+      aEndOffset);
 }
 
-Element*
-EditorBase::FindSelectionRoot(nsINode* aNode) const
-{
+Element* EditorBase::FindSelectionRoot(nsINode* aNode) const {
   return GetRoot();
 }
 
-void
-EditorBase::InitializeSelectionAncestorLimit(nsIContent& aAncestorLimit)
-{
+void EditorBase::InitializeSelectionAncestorLimit(nsIContent& aAncestorLimit) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   SelectionRefPtr()->SetAncestorLimiter(&aAncestorLimit);
 }
 
-nsresult
-EditorBase::InitializeSelection(EventTarget* aFocusEventTarget)
-{
+nsresult EditorBase::InitializeSelection(EventTarget* aFocusEventTarget) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   nsCOMPtr<nsINode> targetNode = do_QueryInterface(aFocusEventTarget);
@@ -4671,7 +4283,7 @@ EditorBase::InitializeSelection(EventTarget* aFocusEventTarget)
   }
 
   nsCOMPtr<nsISelectionController> selectionController =
-    GetSelectionController();
+      GetSelectionController();
   if (NS_WARN_IF(!selectionController)) {
     return NS_ERROR_FAILURE;
   }
@@ -4694,11 +4306,10 @@ EditorBase::InitializeSelection(EventTarget* aFocusEventTarget)
 
   
   selectionController->SetDisplaySelection(
-                         nsISelectionController::SELECTION_ON);
-  selectionController->SetSelectionFlags(
-                         nsISelectionDisplay::DISPLAY_ALL);
+      nsISelectionController::SELECTION_ON);
+  selectionController->SetSelectionFlags(nsISelectionDisplay::DISPLAY_ALL);
   selectionController->RepaintSelection(
-                         nsISelectionController::SELECTION_NORMAL);
+      nsISelectionController::SELECTION_NORMAL);
 
   
   
@@ -4723,7 +4334,7 @@ EditorBase::InitializeSelection(EventTarget* aFocusEventTarget)
     }
     EditorRawDOMPoint atStartOfFirstRange(firstRange->StartRef());
     EditorRawDOMPoint betterInsertionPoint =
-      FindBetterInsertionPoint(atStartOfFirstRange);
+        FindBetterInsertionPoint(atStartOfFirstRange);
     Text* textNode = betterInsertionPoint.GetContainerAsText();
     MOZ_ASSERT(textNode,
                "There must be text node if composition string is not empty");
@@ -4731,10 +4342,8 @@ EditorBase::InitializeSelection(EventTarget* aFocusEventTarget)
       MOZ_ASSERT(textNode->Length() >= mComposition->XPEndOffsetInTextNode(),
                  "The text node must be different from the old text node");
       CompositionTransaction::SetIMESelection(
-                                *this, textNode,
-                                mComposition->XPOffsetInTextNode(),
-                                mComposition->XPLengthInTextNode(),
-                                mComposition->GetRanges());
+          *this, textNode, mComposition->XPOffsetInTextNode(),
+          mComposition->XPLengthInTextNode(), mComposition->GetRanges());
     }
   }
 
@@ -4742,29 +4351,24 @@ EditorBase::InitializeSelection(EventTarget* aFocusEventTarget)
 }
 
 class RepaintSelectionRunner final : public Runnable {
-public:
+ public:
   explicit RepaintSelectionRunner(nsISelectionController* aSelectionController)
-    : Runnable("RepaintSelectionRunner")
-    , mSelectionController(aSelectionController)
-  {
-  }
+      : Runnable("RepaintSelectionRunner"),
+        mSelectionController(aSelectionController) {}
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     mSelectionController->RepaintSelection(
-                            nsISelectionController::SELECTION_NORMAL);
+        nsISelectionController::SELECTION_NORMAL);
     return NS_OK;
   }
 
-private:
+ private:
   nsCOMPtr<nsISelectionController> mSelectionController;
 };
 
-nsresult
-EditorBase::FinalizeSelection()
-{
+nsresult EditorBase::FinalizeSelection() {
   nsCOMPtr<nsISelectionController> selectionController =
-    GetSelectionController();
+      GetSelectionController();
   if (NS_WARN_IF(!selectionController)) {
     return NS_ERROR_FAILURE;
   }
@@ -4799,37 +4403,35 @@ EditorBase::FinalizeSelection()
     if (!doc || !doc->HasFocus(ret)) {
       
       selectionController->SetDisplaySelection(
-                             nsISelectionController::SELECTION_DISABLED);
+          nsISelectionController::SELECTION_DISABLED);
     } else {
       
       
       
       selectionController->SetDisplaySelection(
-                             nsISelectionController::SELECTION_ON);
+          nsISelectionController::SELECTION_ON);
     }
-  } else if (IsFormWidget() || IsPasswordEditor() ||
-             IsReadonly() || IsDisabled() || IsInputFiltered()) {
+  } else if (IsFormWidget() || IsPasswordEditor() || IsReadonly() ||
+             IsDisabled() || IsInputFiltered()) {
     
     
     selectionController->SetDisplaySelection(
-                           nsISelectionController::SELECTION_HIDDEN);
+        nsISelectionController::SELECTION_HIDDEN);
   } else {
     
     
     selectionController->SetDisplaySelection(
-                           nsISelectionController::SELECTION_DISABLED);
+        nsISelectionController::SELECTION_DISABLED);
   }
 
   
   
   nsContentUtils::AddScriptRunner(
-                    new RepaintSelectionRunner(selectionController));
+      new RepaintSelectionRunner(selectionController));
   return NS_OK;
 }
 
-void
-EditorBase::ReinitializeSelection(Element& aElement)
-{
+void EditorBase::ReinitializeSelection(Element& aElement) {
   if (NS_WARN_IF(Destroyed())) {
     return;
   }
@@ -4853,15 +4455,9 @@ EditorBase::ReinitializeSelection(Element& aElement)
   IMEStateManager::OnFocusInEditor(context, focusedContent, *this);
 }
 
-Element*
-EditorBase::GetEditorRoot() const
-{
-  return GetRoot();
-}
+Element* EditorBase::GetEditorRoot() const { return GetRoot(); }
 
-Element*
-EditorBase::GetExposedRoot() const
-{
+Element* EditorBase::GetExposedRoot() const {
   Element* rootElement = GetRoot();
 
   
@@ -4872,9 +4468,7 @@ EditorBase::GetExposedRoot() const
   return rootElement;
 }
 
-nsresult
-EditorBase::DetermineCurrentDirection()
-{
+nsresult EditorBase::DetermineCurrentDirection() {
   
   nsIContent* rootElement = GetExposedRoot();
   NS_ENSURE_TRUE(rootElement, NS_ERROR_FAILURE);
@@ -4897,9 +4491,7 @@ EditorBase::DetermineCurrentDirection()
   return NS_OK;
 }
 
-nsresult
-EditorBase::ToggleTextDirection()
-{
+nsresult EditorBase::ToggleTextDirection() {
   AutoEditActionDataSetter editActionData(*this, EditAction::eSetTextDirection);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -4932,9 +4524,7 @@ EditorBase::ToggleTextDirection()
   return NS_OK;
 }
 
-void
-EditorBase::SwitchTextDirectionTo(TextDirection aTextDirection)
-{
+void EditorBase::SwitchTextDirectionTo(TextDirection aTextDirection) {
   AutoEditActionDataSetter editActionData(*this, EditAction::eSetTextDirection);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return;
@@ -4963,9 +4553,7 @@ EditorBase::SwitchTextDirectionTo(TextDirection aTextDirection)
   FireInputEvent();
 }
 
-nsresult
-EditorBase::SetTextDirectionTo(TextDirection aTextDirection)
-{
+nsresult EditorBase::SetTextDirectionTo(TextDirection aTextDirection) {
   Element* rootElement = GetExposedRoot();
 
   if (aTextDirection == TextDirection::eLTR) {
@@ -4995,15 +4583,11 @@ EditorBase::SetTextDirectionTo(TextDirection aTextDirection)
   return NS_OK;
 }
 
-bool
-EditorBase::IsModifiableNode(const nsINode& aNode) const
-{
+bool EditorBase::IsModifiableNode(const nsINode& aNode) const {
   return !AsHTMLEditor() || aNode.IsEditable();
 }
 
-nsIContent*
-EditorBase::GetFocusedContent()
-{
+nsIContent* EditorBase::GetFocusedContent() {
   EventTarget* piTarget = GetDOMEventTarget();
   if (!piTarget) {
     return nullptr;
@@ -5018,16 +4602,12 @@ EditorBase::GetFocusedContent()
   return (content == piTarget) ? content : nullptr;
 }
 
-already_AddRefed<nsIContent>
-EditorBase::GetFocusedContentForIME()
-{
+already_AddRefed<nsIContent> EditorBase::GetFocusedContentForIME() {
   nsCOMPtr<nsIContent> content = GetFocusedContent();
   return content.forget();
 }
 
-bool
-EditorBase::IsActiveInDOMWindow()
-{
+bool EditorBase::IsActiveInDOMWindow() {
   EventTarget* piTarget = GetDOMEventTarget();
   if (!piTarget) {
     return false;
@@ -5042,16 +4622,12 @@ EditorBase::IsActiveInDOMWindow()
   }
   nsPIDOMWindowOuter* ourWindow = document->GetWindow();
   nsCOMPtr<nsPIDOMWindowOuter> win;
-  nsIContent* content =
-    nsFocusManager::GetFocusedDescendant(ourWindow,
-                                         nsFocusManager::eOnlyCurrentWindow,
-                                         getter_AddRefs(win));
+  nsIContent* content = nsFocusManager::GetFocusedDescendant(
+      ourWindow, nsFocusManager::eOnlyCurrentWindow, getter_AddRefs(win));
   return SameCOMIdentity(content, piTarget);
 }
 
-bool
-EditorBase::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent)
-{
+bool EditorBase::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) {
   
   if (NS_WARN_IF(!aGUIEvent)) {
     return false;
@@ -5112,9 +4688,7 @@ EditorBase::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent)
   return IsActiveInDOMWindow();
 }
 
-void
-EditorBase::OnFocus(EventTarget* aFocusEventTarget)
-{
+void EditorBase::OnFocus(EventTarget* aFocusEventTarget) {
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (NS_WARN_IF(!editActionData.CanHandle())) {
     return;
@@ -5128,9 +4702,7 @@ EditorBase::OnFocus(EventTarget* aFocusEventTarget)
   }
 }
 
-int32_t
-EditorBase::GetIMESelectionStartOffsetIn(nsINode* aTextNode)
-{
+int32_t EditorBase::GetIMESelectionStartOffsetIn(nsINode* aTextNode) {
   MOZ_ASSERT(aTextNode, "aTextNode must not be nullptr");
 
   nsISelectionController* selectionController = GetSelectionController();
@@ -5140,11 +4712,8 @@ EditorBase::GetIMESelectionStartOffsetIn(nsINode* aTextNode)
 
   uint32_t minOffset = UINT32_MAX;
   static const SelectionType kIMESelectionTypes[] = {
-    SelectionType::eIMERawClause,
-    SelectionType::eIMESelectedRawClause,
-    SelectionType::eIMEConvertedClause,
-    SelectionType::eIMESelectedClause
-  };
+      SelectionType::eIMERawClause, SelectionType::eIMESelectedRawClause,
+      SelectionType::eIMEConvertedClause, SelectionType::eIMESelectedClause};
   for (auto selectionType : kIMESelectionTypes) {
     RefPtr<Selection> selection = GetSelection(selectionType);
     if (!selection) {
@@ -5170,9 +4739,7 @@ EditorBase::GetIMESelectionStartOffsetIn(nsINode* aTextNode)
   return minOffset < INT32_MAX ? minOffset : -1;
 }
 
-void
-EditorBase::HideCaret(bool aHide)
-{
+void EditorBase::HideCaret(bool aHide) {
   if (mHidingCaret == aHide) {
     return;
   }
@@ -5195,10 +4762,8 @@ EditorBase::HideCaret(bool aHide)
 
 
 EditorBase::AutoSelectionRestorer::AutoSelectionRestorer(
-                                     EditorBase& aEditorBase
-                                     MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
-  : mEditorBase(nullptr)
-{
+    EditorBase& aEditorBase MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
+    : mEditorBase(nullptr) {
   MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   if (aEditorBase.ArePreservingSelection()) {
     
@@ -5210,16 +4775,13 @@ EditorBase::AutoSelectionRestorer::AutoSelectionRestorer(
   mEditorBase->PreserveSelectionAcrossActions();
 }
 
-EditorBase::AutoSelectionRestorer::~AutoSelectionRestorer()
-{
+EditorBase::AutoSelectionRestorer::~AutoSelectionRestorer() {
   if (mEditorBase && mEditorBase->ArePreservingSelection()) {
     mEditorBase->RestorePreservedSelection();
   }
 }
 
-void
-EditorBase::AutoSelectionRestorer::Abort()
-{
+void EditorBase::AutoSelectionRestorer::Abort() {
   if (mEditorBase) {
     mEditorBase->StopPreservingSelection();
   }
@@ -5230,12 +4792,10 @@ EditorBase::AutoSelectionRestorer::Abort()
 
 
 EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
-                                        const EditorBase& aEditorBase,
-                                        EditAction aEditAction)
-  : mEditorBase(const_cast<EditorBase&>(aEditorBase))
-  , mParentData(aEditorBase.mEditActionData)
-  , mTopLevelEditSubAction(EditSubAction::eNone)
-{
+    const EditorBase& aEditorBase, EditAction aEditAction)
+    : mEditorBase(const_cast<EditorBase&>(aEditorBase)),
+      mParentData(aEditorBase.mEditActionData),
+      mTopLevelEditSubAction(EditSubAction::eNone) {
   
   if (mParentData) {
     mSelection = mParentData->mSelection;
@@ -5247,7 +4807,7 @@ EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
     }
     mTopLevelEditSubAction = mParentData->mTopLevelEditSubAction;
     mDirectionOfTopLevelEditSubAction =
-      mParentData->mDirectionOfTopLevelEditSubAction;
+        mParentData->mDirectionOfTopLevelEditSubAction;
   } else {
     mSelection = mEditorBase.GetSelection();
     if (NS_WARN_IF(!mSelection)) {
@@ -5259,12 +4819,11 @@ EditorBase::AutoEditActionDataSetter::AutoEditActionDataSetter(
   mEditorBase.mEditActionData = this;
 }
 
-EditorBase::AutoEditActionDataSetter::~AutoEditActionDataSetter()
-{
+EditorBase::AutoEditActionDataSetter::~AutoEditActionDataSetter() {
   if (!mSelection || NS_WARN_IF(mEditorBase.mEditActionData != this)) {
     return;
   }
   mEditorBase.mEditActionData = mParentData;
 }
 
-} 
+}  

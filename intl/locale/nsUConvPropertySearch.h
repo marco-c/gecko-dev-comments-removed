@@ -7,17 +7,15 @@
 
 #include "nsStringFwd.h"
 
-struct nsUConvProp
-{
-    const char* const mKey;
-    const char* const mValue;
-    const uint32_t mValueLength;
+struct nsUConvProp {
+  const char* const mKey;
+  const char* const mValue;
+  const uint32_t mValueLength;
 };
 
-class nsUConvPropertySearch
-{
-  public:
-    
+class nsUConvPropertySearch {
+ public:
+  
 
 
 
@@ -28,10 +26,10 @@ class nsUConvPropertySearch
 
 
 
-    static nsresult SearchPropertyValue(const nsUConvProp aProperties[],
-                                        int32_t aNumberOfProperties,
-                                        const nsACString& aKey,
-                                        nsACString& aValue);
+  static nsresult SearchPropertyValue(const nsUConvProp aProperties[],
+                                      int32_t aNumberOfProperties,
+                                      const nsACString& aKey,
+                                      nsACString& aValue);
 };
 
 #endif 

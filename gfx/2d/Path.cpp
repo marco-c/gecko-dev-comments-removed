@@ -14,8 +14,7 @@ namespace gfx {
 static double CubicRoot(double aValue) {
   if (aValue < 0.0) {
     return -CubicRoot(-aValue);
-  }
-  else {
+  } else {
     return pow(aValue, 1.0 / 3.0);
   }
 }
@@ -25,55 +24,40 @@ struct PointD : public BasePoint<double, PointD> {
 
   PointD() : Super() {}
   PointD(double aX, double aY) : Super(aX, aY) {}
-  MOZ_IMPLICIT PointD(const Point& aPoint) : Super(aPoint.x, aPoint.y) {}
+  MOZ_IMPLICIT PointD(const Point &aPoint) : Super(aPoint.x, aPoint.y) {}
 
   Point ToPoint() const {
     return Point(static_cast<Float>(x), static_cast<Float>(y));
   }
 };
 
-struct BezierControlPoints
-{
+struct BezierControlPoints {
   BezierControlPoints() {}
   BezierControlPoints(const PointD &aCP1, const PointD &aCP2,
                       const PointD &aCP3, const PointD &aCP4)
-    : mCP1(aCP1), mCP2(aCP2), mCP3(aCP3), mCP4(aCP4)
-  {
-  }
+      : mCP1(aCP1), mCP2(aCP2), mCP3(aCP3), mCP4(aCP4) {}
 
   PointD mCP1, mCP2, mCP3, mCP4;
 };
 
-void
-FlattenBezier(const BezierControlPoints &aPoints,
-              PathSink *aSink, double aTolerance);
+void FlattenBezier(const BezierControlPoints &aPoints, PathSink *aSink,
+                   double aTolerance);
 
+Path::Path() {}
 
-Path::Path()
-{
-}
+Path::~Path() {}
 
-Path::~Path()
-{
-}
-
-Float
-Path::ComputeLength()
-{
+Float Path::ComputeLength() {
   EnsureFlattenedPath();
   return mFlattenedPath->ComputeLength();
 }
 
-Point
-Path::ComputePointAtLength(Float aLength, Point* aTangent)
-{
+Point Path::ComputePointAtLength(Float aLength, Point *aTangent) {
   EnsureFlattenedPath();
   return mFlattenedPath->ComputePointAtLength(aLength, aTangent);
 }
 
-void
-Path::EnsureFlattenedPath()
-{
+void Path::EnsureFlattenedPath() {
   if (!mFlattenedPath) {
     mFlattenedPath = new FlattenedPath();
     StreamToSink(mFlattenedPath);
@@ -84,9 +68,7 @@ Path::EnsureFlattenedPath()
 
 const Float kFlatteningTolerance = 0.0001f;
 
-void
-FlattenedPath::MoveTo(const Point &aPoint)
-{
+void FlattenedPath::MoveTo(const Point &aPoint) {
   MOZ_ASSERT(!mCalculatedLength);
   FlatPathOp op;
   op.mType = FlatPathOp::OP_MOVETO;
@@ -96,9 +78,7 @@ FlattenedPath::MoveTo(const Point &aPoint)
   mLastMove = aPoint;
 }
 
-void
-FlattenedPath::LineTo(const Point &aPoint)
-{
+void FlattenedPath::LineTo(const Point &aPoint) {
   MOZ_ASSERT(!mCalculatedLength);
   FlatPathOp op;
   op.mType = FlatPathOp::OP_LINETO;
@@ -106,19 +86,14 @@ FlattenedPath::LineTo(const Point &aPoint)
   mPathOps.push_back(op);
 }
 
-void
-FlattenedPath::BezierTo(const Point &aCP1,
-                        const Point &aCP2,
-                        const Point &aCP3)
-{
+void FlattenedPath::BezierTo(const Point &aCP1, const Point &aCP2,
+                             const Point &aCP3) {
   MOZ_ASSERT(!mCalculatedLength);
-  FlattenBezier(BezierControlPoints(CurrentPoint(), aCP1, aCP2, aCP3), this, kFlatteningTolerance);
+  FlattenBezier(BezierControlPoints(CurrentPoint(), aCP1, aCP2, aCP3), this,
+                kFlatteningTolerance);
 }
 
-void
-FlattenedPath::QuadraticBezierTo(const Point &aCP1,
-                                 const Point &aCP2)
-{
+void FlattenedPath::QuadraticBezierTo(const Point &aCP1, const Point &aCP2) {
   MOZ_ASSERT(!mCalculatedLength);
   
   
@@ -132,23 +107,18 @@ FlattenedPath::QuadraticBezierTo(const Point &aCP1,
   BezierTo(CP1, CP2, CP3);
 }
 
-void
-FlattenedPath::Close()
-{
+void FlattenedPath::Close() {
   MOZ_ASSERT(!mCalculatedLength);
   LineTo(mLastMove);
 }
 
-void
-FlattenedPath::Arc(const Point &aOrigin, float aRadius, float aStartAngle,
-                   float aEndAngle, bool aAntiClockwise)
-{
-  ArcToBezier(this, aOrigin, Size(aRadius, aRadius), aStartAngle, aEndAngle, aAntiClockwise);
+void FlattenedPath::Arc(const Point &aOrigin, float aRadius, float aStartAngle,
+                        float aEndAngle, bool aAntiClockwise) {
+  ArcToBezier(this, aOrigin, Size(aRadius, aRadius), aStartAngle, aEndAngle,
+              aAntiClockwise);
 }
 
-Float
-FlattenedPath::ComputeLength()
-{
+Float FlattenedPath::ComputeLength() {
   if (!mCalculatedLength) {
     Point currentPoint;
 
@@ -161,15 +131,13 @@ FlattenedPath::ComputeLength()
       }
     }
 
-    mCalculatedLength =  true;
+    mCalculatedLength = true;
   }
 
   return mCachedLength;
 }
 
-Point
-FlattenedPath::ComputePointAtLength(Float aLength, Point *aTangent)
-{
+Point FlattenedPath::ComputePointAtLength(Float aLength, Point *aTangent) {
   
   
   
@@ -214,25 +182,26 @@ FlattenedPath::ComputePointAtLength(Float aLength, Point *aTangent)
 
 
 
-static void 
-SplitBezier(const BezierControlPoints &aControlPoints,
-            BezierControlPoints *aFirstSegmentControlPoints,
-            BezierControlPoints *aSecondSegmentControlPoints,
-            double t)
-{
+static void SplitBezier(const BezierControlPoints &aControlPoints,
+                        BezierControlPoints *aFirstSegmentControlPoints,
+                        BezierControlPoints *aSecondSegmentControlPoints,
+                        double t) {
   MOZ_ASSERT(aSecondSegmentControlPoints);
-  
+
   *aSecondSegmentControlPoints = aControlPoints;
 
-  PointD cp1a = aControlPoints.mCP1 + (aControlPoints.mCP2 - aControlPoints.mCP1) * t;
-  PointD cp2a = aControlPoints.mCP2 + (aControlPoints.mCP3 - aControlPoints.mCP2) * t;
+  PointD cp1a =
+      aControlPoints.mCP1 + (aControlPoints.mCP2 - aControlPoints.mCP1) * t;
+  PointD cp2a =
+      aControlPoints.mCP2 + (aControlPoints.mCP3 - aControlPoints.mCP2) * t;
   PointD cp1aa = cp1a + (cp2a - cp1a) * t;
-  PointD cp3a = aControlPoints.mCP3 + (aControlPoints.mCP4 - aControlPoints.mCP3) * t;
+  PointD cp3a =
+      aControlPoints.mCP3 + (aControlPoints.mCP4 - aControlPoints.mCP3) * t;
   PointD cp2aa = cp2a + (cp3a - cp2a) * t;
   PointD cp1aaa = cp1aa + (cp2aa - cp1aa) * t;
   aSecondSegmentControlPoints->mCP4 = aControlPoints.mCP4;
 
-  if(aFirstSegmentControlPoints) {
+  if (aFirstSegmentControlPoints) {
     aFirstSegmentControlPoints->mCP1 = aControlPoints.mCP1;
     aFirstSegmentControlPoints->mCP2 = cp1a;
     aFirstSegmentControlPoints->mCP3 = cp1aa;
@@ -243,11 +212,8 @@ SplitBezier(const BezierControlPoints &aControlPoints,
   aSecondSegmentControlPoints->mCP3 = cp3a;
 }
 
-static void
-FlattenBezierCurveSegment(const BezierControlPoints &aControlPoints,
-                          PathSink *aSink,
-                          double aTolerance)
-{
+static void FlattenBezierCurveSegment(const BezierControlPoints &aControlPoints,
+                                      PathSink *aSink, double aTolerance) {
   
 
 
@@ -295,45 +261,44 @@ FlattenBezierCurveSegment(const BezierControlPoints &aControlPoints,
   aSink->LineTo(currentCP.mCP4.ToPoint());
 }
 
-static inline void
-FindInflectionApproximationRange(BezierControlPoints aControlPoints,
-                                 double *aMin, double *aMax, double aT,
-                                 double aTolerance)
-{
-    SplitBezier(aControlPoints, nullptr, &aControlPoints, aT);
+static inline void FindInflectionApproximationRange(
+    BezierControlPoints aControlPoints, double *aMin, double *aMax, double aT,
+    double aTolerance) {
+  SplitBezier(aControlPoints, nullptr, &aControlPoints, aT);
 
-    PointD cp21 = aControlPoints.mCP2 - aControlPoints.mCP1;
-    PointD cp41 = aControlPoints.mCP4 - aControlPoints.mCP1;
+  PointD cp21 = aControlPoints.mCP2 - aControlPoints.mCP1;
+  PointD cp41 = aControlPoints.mCP4 - aControlPoints.mCP1;
 
-    if (cp21.x == 0. && cp21.y == 0.) {
-      cp21 = aControlPoints.mCP3 - aControlPoints.mCP1;
-    }
+  if (cp21.x == 0. && cp21.y == 0.) {
+    cp21 = aControlPoints.mCP3 - aControlPoints.mCP1;
+  }
 
-    if (cp21.x == 0. && cp21.y == 0.) {
-      
+  if (cp21.x == 0. && cp21.y == 0.) {
+    
+    
 
-      
-      
-      *aMin = aT - CubicRoot(std::abs(aTolerance / (cp41.x - cp41.y)));
-      *aMax = aT + CubicRoot(std::abs(aTolerance / (cp41.x - cp41.y)));
-      return;
-    }
+    
+    
+    *aMin = aT - CubicRoot(std::abs(aTolerance / (cp41.x - cp41.y)));
+    *aMax = aT + CubicRoot(std::abs(aTolerance / (cp41.x - cp41.y)));
+    return;
+  }
 
-    double s3 = (cp41.x * cp21.y - cp41.y * cp21.x) / hypot(cp21.x, cp21.y);
+  double s3 = (cp41.x * cp21.y - cp41.y * cp21.x) / hypot(cp21.x, cp21.y);
 
-    if (s3 == 0) {
-      
-      
-      
-      *aMin = -1.0;
-      *aMax = 2.0;
-      return;
-    }
+  if (s3 == 0) {
+    
+    
+    
+    *aMin = -1.0;
+    *aMax = 2.0;
+    return;
+  }
 
-    double tf = CubicRoot(std::abs(aTolerance / s3));
+  double tf = CubicRoot(std::abs(aTolerance / s3));
 
-    *aMin = aT - tf * (1 - aT);
-    *aMax = aT + tf * (1 - aT);
+  *aMin = aT - tf * (1 - aT);
+  *aMax = aT + tf * (1 - aT);
 }
 
 
@@ -392,16 +357,17 @@ FindInflectionApproximationRange(BezierControlPoints aControlPoints,
 
 
 
-static inline void
-FindInflectionPoints(const BezierControlPoints &aControlPoints,
-                     double *aT1, double *aT2, uint32_t *aCount)
-{
+static inline void FindInflectionPoints(
+    const BezierControlPoints &aControlPoints, double *aT1, double *aT2,
+    uint32_t *aCount) {
   
   
   
   PointD A = aControlPoints.mCP2 - aControlPoints.mCP1;
-  PointD B = aControlPoints.mCP3 - (aControlPoints.mCP2 * 2) + aControlPoints.mCP1;
-  PointD C = aControlPoints.mCP4 - (aControlPoints.mCP3 * 3) + (aControlPoints.mCP2 * 3) - aControlPoints.mCP1;
+  PointD B =
+      aControlPoints.mCP3 - (aControlPoints.mCP2 * 2) + aControlPoints.mCP1;
+  PointD C = aControlPoints.mCP4 - (aControlPoints.mCP3 * 3) +
+             (aControlPoints.mCP2 * 3) - aControlPoints.mCP1;
 
   double a = B.x * C.y - B.y * C.x;
   double b = A.x * C.y - A.y * C.x;
@@ -450,7 +416,7 @@ FindInflectionPoints(const BezierControlPoints &aControlPoints,
       } else {
         q = b + q;
       }
-      q *= -1./2;
+      q *= -1. / 2;
 
       *aT1 = q / a;
       *aT2 = c / q;
@@ -462,10 +428,8 @@ FindInflectionPoints(const BezierControlPoints &aControlPoints,
   }
 }
 
-void
-FlattenBezier(const BezierControlPoints &aControlPoints,
-              PathSink *aSink, double aTolerance)
-{
+void FlattenBezier(const BezierControlPoints &aControlPoints, PathSink *aSink,
+                   double aTolerance) {
   double t1;
   double t2;
   uint32_t count;
@@ -473,7 +437,8 @@ FlattenBezier(const BezierControlPoints &aControlPoints,
   FindInflectionPoints(aControlPoints, &t1, &t2, &count);
 
   
-  if (count == 0 || ((t1 < 0.0 || t1 >= 1.0) && (count == 1 || (t2 < 0.0 || t2 >= 1.0))) ) {
+  if (count == 0 ||
+      ((t1 < 0.0 || t1 >= 1.0) && (count == 1 || (t2 < 0.0 || t2 >= 1.0)))) {
     FlattenBezierCurveSegment(aControlPoints, aSink, aTolerance);
     return;
   }
@@ -485,10 +450,12 @@ FlattenBezier(const BezierControlPoints &aControlPoints,
   
   
   if (count > 0 && t1 >= 0 && t1 < 1.0) {
-    FindInflectionApproximationRange(aControlPoints, &t1min, &t1max, t1, aTolerance);
+    FindInflectionApproximationRange(aControlPoints, &t1min, &t1max, t1,
+                                     aTolerance);
   }
   if (count > 1 && t2 >= 0 && t2 < 1.0) {
-    FindInflectionApproximationRange(aControlPoints, &t2min, &t2max, t2, aTolerance);
+    FindInflectionApproximationRange(aControlPoints, &t2min, &t2max, t2,
+                                     aTolerance);
   }
   BezierControlPoints nextCPs = aControlPoints;
   BezierControlPoints prevCPs;
@@ -504,8 +471,7 @@ FlattenBezier(const BezierControlPoints &aControlPoints,
   if (t1min > 0) {
     
     
-    SplitBezier(aControlPoints, &prevCPs,
-                &remainingCP, t1min);
+    SplitBezier(aControlPoints, &prevCPs, &remainingCP, t1min);
     FlattenBezierCurveSegment(prevCPs, aSink, aTolerance);
   }
   if (t1max >= 0 && t1max < 1.0 && (count == 1 || t2min > t1max)) {
@@ -538,6 +504,7 @@ FlattenBezier(const BezierControlPoints &aControlPoints,
       SplitBezier(aControlPoints, nullptr, &nextCPs, t1max);
 
       
+      
       double t2mina = (t2min - t1max) / (1 - t1max);
       SplitBezier(nextCPs, &prevCPs, &nextCPs, t2mina);
       FlattenBezierCurveSegment(prevCPs, aSink, aTolerance);
@@ -562,5 +529,5 @@ FlattenBezier(const BezierControlPoints &aControlPoints,
   }
 }
 
-} 
-} 
+}  
+}  

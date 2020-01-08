@@ -18,19 +18,18 @@ namespace ipc {
 
 
 
-class CloseFileRunnable final : public nsIRunnable
-{
+class CloseFileRunnable final : public nsIRunnable {
   typedef mozilla::ipc::FileDescriptor FileDescriptor;
 
   FileDescriptor mFileDescriptor;
 
-public:
+ public:
   explicit CloseFileRunnable(const FileDescriptor& aFileDescriptor)
 #ifdef DEBUG
-  ;
+      ;
 #else
-  : mFileDescriptor(aFileDescriptor)
-  { }
+      : mFileDescriptor(aFileDescriptor) {
+  }
 #endif
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -38,7 +37,7 @@ public:
 
   void Dispatch();
 
-private:
+ private:
   ~CloseFileRunnable();
 
   void CloseFile();
@@ -47,15 +46,14 @@ private:
 
 
 
-FILE* FileDescriptorToFILE(const FileDescriptor& aDesc,
-                           const char* aOpenMode);
+FILE* FileDescriptorToFILE(const FileDescriptor& aDesc, const char* aOpenMode);
 
 
 
 
 FileDescriptor FILEToFileDescriptor(FILE* aStream);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

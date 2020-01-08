@@ -19,8 +19,7 @@
 #define GETCLASS(c) GETFROMPCK(((unsigned char)(c)), mModel->classTable)
 
 
-typedef struct
-{
+typedef struct {
   nsPkgInt classTable;
   uint32_t classFactor;
   nsPkgInt stateTable;
@@ -32,13 +31,15 @@ typedef struct
 } SMModel;
 
 class nsCodingStateMachine {
-public:
-  explicit nsCodingStateMachine(const SMModel* sm) : mModel(sm) { mCurrentState = eStart; }
-  uint32_t NextState(char c){
+ public:
+  explicit nsCodingStateMachine(const SMModel* sm) : mModel(sm) {
+    mCurrentState = eStart;
+  }
+  uint32_t NextState(char c) {
+    
     
     uint32_t byteCls = GETCLASS(c);
-    if (mCurrentState == eStart)
-    {
+    if (mCurrentState == eStart) {
       mCurrentBytePos = 0;
       MOZ_ASSERT(byteCls < mModel->charLenTableLength);
       mCurrentCharLen = mModel->charLenTable[byteCls];
@@ -49,16 +50,16 @@ public:
     mCurrentBytePos++;
     return mCurrentState;
   }
-  uint32_t  GetCurrentCharLen(void) {return mCurrentCharLen;}
-  void      Reset(void) {mCurrentState = eStart;}
-  const char * GetCodingStateMachine() {return mModel->name;}
+  uint32_t GetCurrentCharLen(void) { return mCurrentCharLen; }
+  void Reset(void) { mCurrentState = eStart; }
+  const char* GetCodingStateMachine() { return mModel->name; }
 
-protected:
+ protected:
   uint32_t mCurrentState;
   uint32_t mCurrentCharLen;
   uint32_t mCurrentBytePos;
 
-  const SMModel *mModel;
+  const SMModel* mModel;
 };
 
 extern const SMModel UTF8SMModel;
@@ -68,7 +69,6 @@ extern const SMModel EUCKRSMModel;
 extern const SMModel EUCTWSMModel;
 extern const SMModel GB18030SMModel;
 extern const SMModel SJISSMModel;
-
 
 extern const SMModel HZSMModel;
 extern const SMModel ISO2022CNSMModel;
@@ -83,4 +83,3 @@ extern const SMModel ISO2022KRSMModel;
 #endif
 
 #endif 
-

@@ -20,10 +20,9 @@
 
 
 
-@interface WindowDataMap : NSObject
-{
-@private
-  NSMutableDictionary*    mWindowMap;   
+@interface WindowDataMap : NSObject {
+ @private
+  NSMutableDictionary* mWindowMap;  
 }
 
 + (WindowDataMap*)sharedWindowDataMap;
@@ -46,9 +45,8 @@
 
 
 
-@interface TopLevelWindowData : NSObject
-{
-@private
+@interface TopLevelWindowData : NSObject {
+ @private
 }
 
 - (id)initWithWindow:(NSWindow*)inWindow;
@@ -59,4 +57,4 @@
 
 @end
 
-#endif 
+#endif  

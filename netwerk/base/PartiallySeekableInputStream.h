@@ -21,16 +21,15 @@ namespace net {
 
 
 
-class PartiallySeekableInputStream final : public nsISeekableStream
-                                         , public nsIAsyncInputStream
-                                         , public nsICloneableInputStream
-                                         , public nsIIPCSerializableInputStream
-                                         , public nsIInputStreamCallback
-                                         , public nsIInputStreamLength
-                                         , public nsIAsyncInputStreamLength
-                                         , public nsIInputStreamLengthCallback
-{
-public:
+class PartiallySeekableInputStream final : public nsISeekableStream,
+                                           public nsIAsyncInputStream,
+                                           public nsICloneableInputStream,
+                                           public nsIIPCSerializableInputStream,
+                                           public nsIInputStreamCallback,
+                                           public nsIInputStreamLength,
+                                           public nsIAsyncInputStreamLength,
+                                           public nsIInputStreamLengthCallback {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
   NS_DECL_NSISEEKABLESTREAM
@@ -43,17 +42,18 @@ public:
   NS_DECL_NSIASYNCINPUTSTREAMLENGTH
   NS_DECL_NSIINPUTSTREAMLENGTHCALLBACK
 
-  explicit PartiallySeekableInputStream(already_AddRefed<nsIInputStream> aInputStream,
-                                        uint64_t aBufferSize = 4096);
+  explicit PartiallySeekableInputStream(
+      already_AddRefed<nsIInputStream> aInputStream,
+      uint64_t aBufferSize = 4096);
 
-private:
-  PartiallySeekableInputStream(already_AddRefed<nsIInputStream> aClonedBaseStream,
-                               PartiallySeekableInputStream* aClonedFrom);
+ private:
+  PartiallySeekableInputStream(
+      already_AddRefed<nsIInputStream> aClonedBaseStream,
+      PartiallySeekableInputStream* aClonedFrom);
 
   ~PartiallySeekableInputStream() = default;
 
-  void
-  Init();
+  void Init();
 
   nsCOMPtr<nsIInputStream> mInputStream;
 
@@ -79,7 +79,7 @@ private:
   Mutex mMutex;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

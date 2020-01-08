@@ -34,76 +34,76 @@ namespace gcstats {
 
 
 enum Count {
-    COUNT_NEW_CHUNK,
-    COUNT_DESTROY_CHUNK,
-    COUNT_MINOR_GC,
+  COUNT_NEW_CHUNK,
+  COUNT_DESTROY_CHUNK,
+  COUNT_MINOR_GC,
 
-    
-    
-    COUNT_STOREBUFFER_OVERFLOW,
+  
+  
+  COUNT_STOREBUFFER_OVERFLOW,
 
-    
-    COUNT_ARENA_RELOCATED,
+  
+  COUNT_ARENA_RELOCATED,
 
-    COUNT_LIMIT
+  COUNT_LIMIT
 };
 
 
 enum Stat {
-    
-    STAT_STRINGS_TENURED,
+  
+  STAT_STRINGS_TENURED,
 
-    
-    STAT_OBJECT_GROUPS_PRETENURED,
+  
+  STAT_OBJECT_GROUPS_PRETENURED,
 
-    
-    STAT_NURSERY_STRING_REALMS_DISABLED,
+  
+  
+  STAT_NURSERY_STRING_REALMS_DISABLED,
 
-    STAT_LIMIT
+  STAT_LIMIT
 };
 
-struct ZoneGCStats
-{
-    
-    int collectedZoneCount = 0;
+struct ZoneGCStats {
+  
+  int collectedZoneCount = 0;
 
-    
-    int collectableZoneCount = 0;
+  
+  int collectableZoneCount = 0;
 
-    
-    int zoneCount = 0;
+  
+  int zoneCount = 0;
 
-    
-    int sweptZoneCount = 0;
+  
+  int sweptZoneCount = 0;
 
-    
-    int collectedCompartmentCount = 0;
+  
+  int collectedCompartmentCount = 0;
 
-    
-    int compartmentCount = 0;
+  
+  int compartmentCount = 0;
 
-    
-    int sweptCompartmentCount = 0;
+  
+  int sweptCompartmentCount = 0;
 
-    bool isFullCollection() const {
-        return collectedZoneCount == collectableZoneCount;
-    }
+  bool isFullCollection() const {
+    return collectedZoneCount == collectableZoneCount;
+  }
 
-    ZoneGCStats() = default;
+  ZoneGCStats() = default;
 };
 
-#define FOR_EACH_GC_PROFILE_TIME(_)                                           \
-    _(BeginCallback, "bgnCB",  PhaseKind::GC_BEGIN)                           \
-    _(MinorForMajor, "evct4m", PhaseKind::EVICT_NURSERY_FOR_MAJOR_GC)         \
-    _(WaitBgThread,  "waitBG", PhaseKind::WAIT_BACKGROUND_THREAD)             \
-    _(Prepare,       "prep",   PhaseKind::PREPARE)                            \
-    _(Mark,          "mark",   PhaseKind::MARK)                               \
-    _(Sweep,         "sweep",  PhaseKind::SWEEP)                              \
-    _(Compact,       "cmpct",  PhaseKind::COMPACT)                            \
-    _(EndCallback,   "endCB",  PhaseKind::GC_END)                             \
-    _(MinorGC,       "minor",  PhaseKind::MINOR_GC)                           \
-    _(EvictNursery,  "evict",  PhaseKind::EVICT_NURSERY)                      \
-    _(Barriers,      "brrier", PhaseKind::BARRIER)
+#define FOR_EACH_GC_PROFILE_TIME(_)                                 \
+  _(BeginCallback, "bgnCB", PhaseKind::GC_BEGIN)                    \
+  _(MinorForMajor, "evct4m", PhaseKind::EVICT_NURSERY_FOR_MAJOR_GC) \
+  _(WaitBgThread, "waitBG", PhaseKind::WAIT_BACKGROUND_THREAD)      \
+  _(Prepare, "prep", PhaseKind::PREPARE)                            \
+  _(Mark, "mark", PhaseKind::MARK)                                  \
+  _(Sweep, "sweep", PhaseKind::SWEEP)                               \
+  _(Compact, "cmpct", PhaseKind::COMPACT)                           \
+  _(EndCallback, "endCB", PhaseKind::GC_END)                        \
+  _(MinorGC, "minor", PhaseKind::MINOR_GC)                          \
+  _(EvictNursery, "evict", PhaseKind::EVICT_NURSERY)                \
+  _(Barriers, "brrier", PhaseKind::BARRIER)
 
 const char* ExplainAbortReason(gc::AbortReason reason);
 const char* ExplainInvocationKind(JSGCInvocationKind gckind);
@@ -121,407 +121,382 @@ const char* ExplainInvocationKind(JSGCInvocationKind gckind);
 
 
 
-struct Statistics
-{
-    template <typename T, size_t Length>
-    using Array = mozilla::Array<T, Length>;
+struct Statistics {
+  template <typename T, size_t Length>
+  using Array = mozilla::Array<T, Length>;
 
-    template <typename IndexType, IndexType SizeAsEnumValue, typename ValueType>
-    using EnumeratedArray = mozilla::EnumeratedArray<IndexType, SizeAsEnumValue, ValueType>;
+  template <typename IndexType, IndexType SizeAsEnumValue, typename ValueType>
+  using EnumeratedArray =
+      mozilla::EnumeratedArray<IndexType, SizeAsEnumValue, ValueType>;
 
-    using TimeDuration = mozilla::TimeDuration;
-    using TimeStamp = mozilla::TimeStamp;
+  using TimeDuration = mozilla::TimeDuration;
+  using TimeStamp = mozilla::TimeStamp;
 
-    
-    using PhaseTimeTable = EnumeratedArray<Phase, Phase::LIMIT, TimeDuration>;
+  
+  using PhaseTimeTable = EnumeratedArray<Phase, Phase::LIMIT, TimeDuration>;
 
-    static MOZ_MUST_USE bool initialize();
+  static MOZ_MUST_USE bool initialize();
 
-    explicit Statistics(JSRuntime* rt);
-    ~Statistics();
+  explicit Statistics(JSRuntime* rt);
+  ~Statistics();
 
-    Statistics(const Statistics&) = delete;
-    Statistics& operator=(const Statistics&) = delete;
+  Statistics(const Statistics&) = delete;
+  Statistics& operator=(const Statistics&) = delete;
 
-    void beginPhase(PhaseKind phaseKind);
-    void endPhase(PhaseKind phaseKind);
-    void recordParallelPhase(PhaseKind phaseKind, TimeDuration duration);
+  void beginPhase(PhaseKind phaseKind);
+  void endPhase(PhaseKind phaseKind);
+  void recordParallelPhase(PhaseKind phaseKind, TimeDuration duration);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    void suspendPhases(PhaseKind suspension = PhaseKind::EXPLICIT_SUSPENSION);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void suspendPhases(PhaseKind suspension = PhaseKind::EXPLICIT_SUSPENSION);
 
-    
-    void resumePhases();
+  
+  void resumePhases();
 
-    void beginSlice(const ZoneGCStats& zoneStats, JSGCInvocationKind gckind,
-                    SliceBudget budget, JS::gcreason::Reason reason);
-    void endSlice();
+  void beginSlice(const ZoneGCStats& zoneStats, JSGCInvocationKind gckind,
+                  SliceBudget budget, JS::gcreason::Reason reason);
+  void endSlice();
 
-    MOZ_MUST_USE bool startTimingMutator();
-    MOZ_MUST_USE bool stopTimingMutator(double& mutator_ms, double& gc_ms);
+  MOZ_MUST_USE bool startTimingMutator();
+  MOZ_MUST_USE bool stopTimingMutator(double& mutator_ms, double& gc_ms);
 
-    
-    void sweptZone() { ++zoneStats.sweptZoneCount; }
-    void sweptCompartment() { ++zoneStats.sweptCompartmentCount; }
+  
+  void sweptZone() { ++zoneStats.sweptZoneCount; }
+  void sweptCompartment() { ++zoneStats.sweptCompartmentCount; }
 
-    void reset(gc::AbortReason reason) {
-        MOZ_ASSERT(reason != gc::AbortReason::None);
-        if (!aborted) {
-            slices_.back().resetReason = reason;
-        }
+  void reset(gc::AbortReason reason) {
+    MOZ_ASSERT(reason != gc::AbortReason::None);
+    if (!aborted) {
+      slices_.back().resetReason = reason;
     }
+  }
 
-    void nonincremental(gc::AbortReason reason) {
-        MOZ_ASSERT(reason != gc::AbortReason::None);
-        nonincrementalReason_ = reason;
-        writeLogMessage("Non-incremental reason: %s",
-            nonincrementalReason());
-    }
+  void nonincremental(gc::AbortReason reason) {
+    MOZ_ASSERT(reason != gc::AbortReason::None);
+    nonincrementalReason_ = reason;
+    writeLogMessage("Non-incremental reason: %s", nonincrementalReason());
+  }
 
-    bool nonincremental() const {
-        return nonincrementalReason_ != gc::AbortReason::None;
-    }
+  bool nonincremental() const {
+    return nonincrementalReason_ != gc::AbortReason::None;
+  }
 
-    const char* nonincrementalReason() const {
-        return ExplainAbortReason(nonincrementalReason_);
-    }
+  const char* nonincrementalReason() const {
+    return ExplainAbortReason(nonincrementalReason_);
+  }
 
-    void count(Count s) {
-        counts[s]++;
-    }
+  void count(Count s) { counts[s]++; }
 
-    uint32_t getCount(Count s) const {
-        return uint32_t(counts[s]);
-    }
+  uint32_t getCount(Count s) const { return uint32_t(counts[s]); }
 
-    void setStat(Stat s, uint32_t value) {
-        stats[s] = value;
-    }
+  void setStat(Stat s, uint32_t value) { stats[s] = value; }
 
-    uint32_t getStat(Stat s) const {
-        return stats[s];
-    }
+  uint32_t getStat(Stat s) const { return stats[s]; }
 
-    void recordTrigger(double amount, double threshold) {
-        triggerAmount = amount;
-        triggerThreshold = threshold;
-        thresholdTriggered = true;
-    }
+  void recordTrigger(double amount, double threshold) {
+    triggerAmount = amount;
+    triggerThreshold = threshold;
+    thresholdTriggered = true;
+  }
 
-    void noteNurseryAlloc() {
-        allocsSinceMinorGC.nursery++;
-    }
+  void noteNurseryAlloc() { allocsSinceMinorGC.nursery++; }
 
-    
-    void setAllocsSinceMinorGCTenured(uint32_t allocs) {
-        allocsSinceMinorGC.tenured = allocs;
-    }
+  
+  void setAllocsSinceMinorGCTenured(uint32_t allocs) {
+    allocsSinceMinorGC.tenured = allocs;
+  }
 
-    uint32_t allocsSinceMinorGCNursery() {
-        return allocsSinceMinorGC.nursery;
-    }
+  uint32_t allocsSinceMinorGCNursery() { return allocsSinceMinorGC.nursery; }
 
-    uint32_t allocsSinceMinorGCTenured() {
-        return allocsSinceMinorGC.tenured;
-    }
+  uint32_t allocsSinceMinorGCTenured() { return allocsSinceMinorGC.tenured; }
 
-    uint32_t* addressOfAllocsSinceMinorGCNursery() {
-        return &allocsSinceMinorGC.nursery;
-    }
+  uint32_t* addressOfAllocsSinceMinorGCNursery() {
+    return &allocsSinceMinorGC.nursery;
+  }
 
-    void beginNurseryCollection(JS::gcreason::Reason reason);
-    void endNurseryCollection(JS::gcreason::Reason reason);
+  void beginNurseryCollection(JS::gcreason::Reason reason);
+  void endNurseryCollection(JS::gcreason::Reason reason);
 
-    TimeStamp beginSCC();
-    void endSCC(unsigned scc, TimeStamp start);
+  TimeStamp beginSCC();
+  void endSCC(unsigned scc, TimeStamp start);
 
-    UniqueChars formatCompactSliceMessage() const;
-    UniqueChars formatCompactSummaryMessage() const;
-    UniqueChars formatDetailedMessage() const;
+  UniqueChars formatCompactSliceMessage() const;
+  UniqueChars formatCompactSummaryMessage() const;
+  UniqueChars formatDetailedMessage() const;
 
-    JS::GCSliceCallback setSliceCallback(JS::GCSliceCallback callback);
-    JS::GCNurseryCollectionCallback setNurseryCollectionCallback(
-        JS::GCNurseryCollectionCallback callback);
+  JS::GCSliceCallback setSliceCallback(JS::GCSliceCallback callback);
+  JS::GCNurseryCollectionCallback setNurseryCollectionCallback(
+      JS::GCNurseryCollectionCallback callback);
 
-    TimeDuration clearMaxGCPauseAccumulator();
-    TimeDuration getMaxGCPauseSinceClear();
+  TimeDuration clearMaxGCPauseAccumulator();
+  TimeDuration getMaxGCPauseSinceClear();
 
-    PhaseKind currentPhaseKind() const;
+  PhaseKind currentPhaseKind() const;
 
-    static const size_t MAX_SUSPENDED_PHASES = MAX_PHASE_NESTING * 3;
+  static const size_t MAX_SUSPENDED_PHASES = MAX_PHASE_NESTING * 3;
 
-    struct SliceData {
-        SliceData(SliceBudget budget, JS::gcreason::Reason reason,
-                  TimeStamp start, size_t startFaults, gc::State initialState)
-          : budget(budget), reason(reason),
-            initialState(initialState),
-            finalState(gc::State::NotActive),
-            resetReason(gc::AbortReason::None),
-            start(start),
-            startFaults(startFaults),
-            endFaults(0)
-        {}
+  struct SliceData {
+    SliceData(SliceBudget budget, JS::gcreason::Reason reason, TimeStamp start,
+              size_t startFaults, gc::State initialState)
+        : budget(budget),
+          reason(reason),
+          initialState(initialState),
+          finalState(gc::State::NotActive),
+          resetReason(gc::AbortReason::None),
+          start(start),
+          startFaults(startFaults),
+          endFaults(0) {}
 
-        SliceBudget budget;
-        JS::gcreason::Reason reason;
-        gc::State initialState, finalState;
-        gc::AbortReason resetReason;
-        TimeStamp start, end;
-        size_t startFaults, endFaults;
-        PhaseTimeTable phaseTimes;
-        PhaseTimeTable parallelTimes;
-
-        TimeDuration duration() const { return end - start; }
-        bool wasReset() const { return resetReason != gc::AbortReason::None; }
-    };
-
-    typedef Vector<SliceData, 8, SystemAllocPolicy> SliceDataVector;
-
-    const SliceDataVector& slices() const { return slices_; }
-
-    TimeStamp start() const {
-        return slices_[0].start;
-    }
-
-    TimeStamp end() const {
-        return slices_.back().end;
-    }
-
-    
-    void maybePrintProfileHeaders();
-
-    
-    void printProfileHeader();
-
-    
-    void printTotalProfileTimes();
-
-    
-    
-    UniqueChars renderJsonMessage(uint64_t timestamp, bool includeSlices = true) const;
-
-    
-    UniqueChars renderJsonSlice(size_t sliceNum) const;
-
-    
-    UniqueChars renderNurseryJson(JSRuntime* rt) const;
-
-#ifdef DEBUG
-    
-    void writeLogMessage(const char* fmt, ...);
-#else
-    void writeLogMessage(const char* fmt, ...) { };
-#endif
-
-  private:
-    JSRuntime* runtime;
-
-    
-    FILE* gcTimerFile;
-
-    
-    FILE* gcDebugFile;
-
-    ZoneGCStats zoneStats;
-
-    JSGCInvocationKind gckind;
-
-    gc::AbortReason nonincrementalReason_;
-
-    SliceDataVector slices_;
-
-    
-    EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseStartTimes;
-
-#ifdef DEBUG
-    
-    EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseEndTimes;
-#endif
-
-    
-    TimeStamp timedGCStart;
-    TimeDuration timedGCTime;
-
-    
+    SliceBudget budget;
+    JS::gcreason::Reason reason;
+    gc::State initialState, finalState;
+    gc::AbortReason resetReason;
+    TimeStamp start, end;
+    size_t startFaults, endFaults;
     PhaseTimeTable phaseTimes;
     PhaseTimeTable parallelTimes;
 
-    
-    EnumeratedArray<Count,
-                    COUNT_LIMIT,
-                    mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
-                                    mozilla::recordreplay::Behavior::DontPreserve>> counts;
+    TimeDuration duration() const { return end - start; }
+    bool wasReset() const { return resetReason != gc::AbortReason::None; }
+  };
 
-    
-    EnumeratedArray<Stat,
-                    STAT_LIMIT,
-                    uint32_t> stats;
+  typedef Vector<SliceData, 8, SystemAllocPolicy> SliceDataVector;
 
-    
+  const SliceDataVector& slices() const { return slices_; }
+
+  TimeStamp start() const { return slices_[0].start; }
+
+  TimeStamp end() const { return slices_.back().end; }
+
+  
+  void maybePrintProfileHeaders();
+
+  
+  void printProfileHeader();
+
+  
+  void printTotalProfileTimes();
+
+  
+  
+  UniqueChars renderJsonMessage(uint64_t timestamp,
+                                bool includeSlices = true) const;
+
+  
+  UniqueChars renderJsonSlice(size_t sliceNum) const;
+
+  
+  UniqueChars renderNurseryJson(JSRuntime* rt) const;
+
+#ifdef DEBUG
+  
+  void writeLogMessage(const char* fmt, ...);
+#else
+  void writeLogMessage(const char* fmt, ...){};
+#endif
+
+ private:
+  JSRuntime* runtime;
+
+  
+  FILE* gcTimerFile;
+
+  
+  FILE* gcDebugFile;
+
+  ZoneGCStats zoneStats;
+
+  JSGCInvocationKind gckind;
+
+  gc::AbortReason nonincrementalReason_;
+
+  SliceDataVector slices_;
+
+  
+  EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseStartTimes;
+
+#ifdef DEBUG
+  
+  EnumeratedArray<Phase, Phase::LIMIT, TimeStamp> phaseEndTimes;
+#endif
+
+  
+  TimeStamp timedGCStart;
+  TimeDuration timedGCTime;
+
+  
+  PhaseTimeTable phaseTimes;
+  PhaseTimeTable parallelTimes;
+
+  
+  EnumeratedArray<
+      Count, COUNT_LIMIT,
+      mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire,
+                      mozilla::recordreplay::Behavior::DontPreserve>>
+      counts;
+
+  
+  EnumeratedArray<Stat, STAT_LIMIT, uint32_t> stats;
+
+  
 
 
 
-    struct {
-        uint32_t nursery;
-        uint32_t tenured;
-    } allocsSinceMinorGC;
+  struct {
+    uint32_t nursery;
+    uint32_t tenured;
+  } allocsSinceMinorGC;
 
-    
-    size_t preBytes;
+  
+  size_t preBytes;
 
-    
+  
 
-    bool thresholdTriggered;
-    double triggerAmount;
-    double triggerThreshold;
+  bool thresholdTriggered;
+  double triggerAmount;
+  double triggerThreshold;
 
-    
-    uint64_t startingMinorGCNumber;
-    uint64_t startingMajorGCNumber;
-    uint64_t startingSliceNumber;
+  
+  uint64_t startingMinorGCNumber;
+  uint64_t startingMajorGCNumber;
+  uint64_t startingSliceNumber;
 
-    
-    mutable TimeDuration maxPauseInInterval;
+  
+  mutable TimeDuration maxPauseInInterval;
 
-    
-    Vector<Phase, MAX_PHASE_NESTING, SystemAllocPolicy> phaseStack;
+  
+  Vector<Phase, MAX_PHASE_NESTING, SystemAllocPolicy> phaseStack;
 
-    
-
-
+  
 
 
 
 
-    Vector<Phase, MAX_SUSPENDED_PHASES, SystemAllocPolicy> suspendedPhases;
-
-    
-    Vector<TimeDuration, 0, SystemAllocPolicy> sccTimes;
-
-    JS::GCSliceCallback sliceCallback;
-    JS::GCNurseryCollectionCallback nurseryCollectionCallback;
-
-    
 
 
+  Vector<Phase, MAX_SUSPENDED_PHASES, SystemAllocPolicy> suspendedPhases;
 
-    bool aborted;
+  
+  Vector<TimeDuration, 0, SystemAllocPolicy> sccTimes;
 
-    
+  JS::GCSliceCallback sliceCallback;
+  JS::GCNurseryCollectionCallback nurseryCollectionCallback;
 
-    enum class ProfileKey
-    {
-        Total,
-#define DEFINE_TIME_KEY(name, text, phase)                                    \
-        name,
-FOR_EACH_GC_PROFILE_TIME(DEFINE_TIME_KEY)
+  
+
+
+
+  bool aborted;
+
+  
+
+  enum class ProfileKey {
+    Total,
+#define DEFINE_TIME_KEY(name, text, phase) name,
+    FOR_EACH_GC_PROFILE_TIME(DEFINE_TIME_KEY)
 #undef DEFINE_TIME_KEY
         KeyCount
-    };
+  };
 
-    using ProfileDurations = EnumeratedArray<ProfileKey, ProfileKey::KeyCount, TimeDuration>;
+  using ProfileDurations =
+      EnumeratedArray<ProfileKey, ProfileKey::KeyCount, TimeDuration>;
 
-    TimeDuration profileThreshold_;
-    bool enableProfiling_;
-    ProfileDurations totalTimes_;
-    uint64_t sliceCount_;
+  TimeDuration profileThreshold_;
+  bool enableProfiling_;
+  ProfileDurations totalTimes_;
+  uint64_t sliceCount_;
 
-    Phase currentPhase() const;
-    Phase lookupChildPhase(PhaseKind phaseKind) const;
+  Phase currentPhase() const;
+  Phase lookupChildPhase(PhaseKind phaseKind) const;
 
-    void beginGC(JSGCInvocationKind kind);
-    void endGC();
+  void beginGC(JSGCInvocationKind kind);
+  void endGC();
 
-    void recordPhaseBegin(Phase phase);
-    void recordPhaseEnd(Phase phase);
+  void recordPhaseBegin(Phase phase);
+  void recordPhaseEnd(Phase phase);
 
-    void gcDuration(TimeDuration* total, TimeDuration* maxPause) const;
-    void sccDurations(TimeDuration* total, TimeDuration* maxPause) const;
-    void printStats();
+  void gcDuration(TimeDuration* total, TimeDuration* maxPause) const;
+  void sccDurations(TimeDuration* total, TimeDuration* maxPause) const;
+  void printStats();
 
-    void reportLongestPhaseInMajorGC(PhaseKind longest, int telemetryId);
+  void reportLongestPhaseInMajorGC(PhaseKind longest, int telemetryId);
 
-    UniqueChars formatCompactSlicePhaseTimes(const PhaseTimeTable& phaseTimes) const;
+  UniqueChars formatCompactSlicePhaseTimes(
+      const PhaseTimeTable& phaseTimes) const;
 
-    UniqueChars formatDetailedDescription() const;
-    UniqueChars formatDetailedSliceDescription(unsigned i, const SliceData& slice) const;
-    UniqueChars formatDetailedPhaseTimes(const PhaseTimeTable& phaseTimes) const;
-    UniqueChars formatDetailedTotals() const;
+  UniqueChars formatDetailedDescription() const;
+  UniqueChars formatDetailedSliceDescription(unsigned i,
+                                             const SliceData& slice) const;
+  UniqueChars formatDetailedPhaseTimes(const PhaseTimeTable& phaseTimes) const;
+  UniqueChars formatDetailedTotals() const;
 
-    void formatJsonDescription(uint64_t timestamp, JSONPrinter&) const;
-    void formatJsonSliceDescription(unsigned i, const SliceData& slice, JSONPrinter&) const;
-    void formatJsonPhaseTimes(const PhaseTimeTable& phaseTimes, JSONPrinter&) const;
-    void formatJsonSlice(size_t sliceNum, JSONPrinter&) const;
+  void formatJsonDescription(uint64_t timestamp, JSONPrinter&) const;
+  void formatJsonSliceDescription(unsigned i, const SliceData& slice,
+                                  JSONPrinter&) const;
+  void formatJsonPhaseTimes(const PhaseTimeTable& phaseTimes,
+                            JSONPrinter&) const;
+  void formatJsonSlice(size_t sliceNum, JSONPrinter&) const;
 
-    double computeMMU(TimeDuration resolution) const;
+  double computeMMU(TimeDuration resolution) const;
 
-    void printSliceProfile();
-    static void printProfileTimes(const ProfileDurations& times);
+  void printSliceProfile();
+  static void printProfileTimes(const ProfileDurations& times);
 };
 
-struct MOZ_RAII AutoGCSlice
-{
-    AutoGCSlice(Statistics& stats, const ZoneGCStats& zoneStats, JSGCInvocationKind gckind,
-                SliceBudget budget, JS::gcreason::Reason reason)
-      : stats(stats)
-    {
-        stats.beginSlice(zoneStats, gckind, budget, reason);
-    }
-    ~AutoGCSlice() { stats.endSlice(); }
+struct MOZ_RAII AutoGCSlice {
+  AutoGCSlice(Statistics& stats, const ZoneGCStats& zoneStats,
+              JSGCInvocationKind gckind, SliceBudget budget,
+              JS::gcreason::Reason reason)
+      : stats(stats) {
+    stats.beginSlice(zoneStats, gckind, budget, reason);
+  }
+  ~AutoGCSlice() { stats.endSlice(); }
 
-    Statistics& stats;
+  Statistics& stats;
 };
 
-struct MOZ_RAII AutoPhase
-{
-    AutoPhase(Statistics& stats, PhaseKind phaseKind)
-      : stats(stats), phaseKind(phaseKind), enabled(true)
-    {
-        stats.beginPhase(phaseKind);
-    }
+struct MOZ_RAII AutoPhase {
+  AutoPhase(Statistics& stats, PhaseKind phaseKind)
+      : stats(stats), phaseKind(phaseKind), enabled(true) {
+    stats.beginPhase(phaseKind);
+  }
 
-    AutoPhase(Statistics& stats, bool condition, PhaseKind phaseKind)
-      : stats(stats), phaseKind(phaseKind), enabled(condition)
-    {
-        if (enabled) {
-            stats.beginPhase(phaseKind);
-        }
+  AutoPhase(Statistics& stats, bool condition, PhaseKind phaseKind)
+      : stats(stats), phaseKind(phaseKind), enabled(condition) {
+    if (enabled) {
+      stats.beginPhase(phaseKind);
     }
+  }
 
-    ~AutoPhase() {
-        if (enabled) {
-            stats.endPhase(phaseKind);
-        }
+  ~AutoPhase() {
+    if (enabled) {
+      stats.endPhase(phaseKind);
     }
+  }
 
-    Statistics& stats;
-    PhaseKind phaseKind;
-    bool enabled;
+  Statistics& stats;
+  PhaseKind phaseKind;
+  bool enabled;
 };
 
-struct MOZ_RAII AutoSCC
-{
-    AutoSCC(Statistics& stats, unsigned scc)
-      : stats(stats), scc(scc)
-    {
-        start = stats.beginSCC();
-    }
-    ~AutoSCC() {
-        stats.endSCC(scc, start);
-    }
+struct MOZ_RAII AutoSCC {
+  AutoSCC(Statistics& stats, unsigned scc) : stats(stats), scc(scc) {
+    start = stats.beginSCC();
+  }
+  ~AutoSCC() { stats.endSCC(scc, start); }
 
-    Statistics& stats;
-    unsigned scc;
-    mozilla::TimeStamp start;
+  Statistics& stats;
+  unsigned scc;
+  mozilla::TimeStamp start;
 };
 
 } 

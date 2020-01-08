@@ -15,7 +15,6 @@ namespace base {
 
 
 class MessagePumpForUI : public MessagePump {
-
  public:
   MessagePumpForUI();
   ~MessagePumpForUI();

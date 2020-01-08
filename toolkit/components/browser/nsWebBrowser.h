@@ -37,9 +37,8 @@
 #include "nsTArray.h"
 #include "nsIWeakReferenceUtils.h"
 
-class nsWebBrowserInitInfo
-{
-public:
+class nsWebBrowserInitInfo {
+ public:
   
   int32_t x;
   int32_t y;
@@ -50,8 +49,12 @@ public:
 };
 
 
-#define NS_WEBBROWSER_CID \
-  { 0xcda5863a, 0xaa9c, 0x411e, { 0xbe, 0x49, 0xea, 0x0d, 0x52, 0x5a, 0xb4, 0xb5 } }
+#define NS_WEBBROWSER_CID                            \
+  {                                                  \
+    0xcda5863a, 0xaa9c, 0x411e, {                    \
+      0xbe, 0x49, 0xea, 0x0d, 0x52, 0x5a, 0xb4, 0xb5 \
+    }                                                \
+  }
 
 class mozIDOMWindowProxy;
 
@@ -63,26 +66,23 @@ class nsWebBrowser final : public nsIWebBrowser,
                            public nsIInterfaceRequestor,
                            public nsIWebBrowserPersist,
                            public nsIWebProgressListener,
-                           public nsSupportsWeakReference
-{
+                           public nsSupportsWeakReference {
   friend class nsDocShellTreeOwner;
 
-public:
-
+ public:
   
   
   
-  class WidgetListenerDelegate : public nsIWidgetListener
-  {
-  public:
+  class WidgetListenerDelegate : public nsIWidgetListener {
+   public:
     explicit WidgetListenerDelegate(nsWebBrowser* aWebBrowser)
-      : mWebBrowser(aWebBrowser) {}
+        : mWebBrowser(aWebBrowser) {}
     MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void WindowActivated() override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void WindowDeactivated() override;
     MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual bool PaintWindow(
-      nsIWidget* aWidget, mozilla::LayoutDeviceIntRegion aRegion) override;
+        nsIWidget* aWidget, mozilla::LayoutDeviceIntRegion aRegion) override;
 
-  private:
+   private:
     
     
     nsWebBrowser* mWebBrowser;
@@ -106,13 +106,11 @@ public:
   void FocusDeactivate();
 
   static already_AddRefed<nsWebBrowser> Create(
-    nsIWebBrowserChrome* aContainerWindow,
-    nsIWidget* aParentWidget,
-    const mozilla::OriginAttributes& aOriginAttributes,
-    mozIDOMWindowProxy* aOpener,
-    int aItemType);
+      nsIWebBrowserChrome* aContainerWindow, nsIWidget* aParentWidget,
+      const mozilla::OriginAttributes& aOriginAttributes,
+      mozIDOMWindowProxy* aOpener, int aItemType);
 
-protected:
+ protected:
   virtual ~nsWebBrowser();
   NS_IMETHOD InternalDestroy();
 
@@ -127,12 +125,12 @@ protected:
   
   MOZ_CAN_RUN_SCRIPT void WindowActivated();
   MOZ_CAN_RUN_SCRIPT void WindowDeactivated();
-  MOZ_CAN_RUN_SCRIPT bool PaintWindow(
-    nsIWidget* aWidget, mozilla::LayoutDeviceIntRegion aRegion);
+  MOZ_CAN_RUN_SCRIPT bool PaintWindow(nsIWidget* aWidget,
+                                      mozilla::LayoutDeviceIntRegion aRegion);
 
   explicit nsWebBrowser(int aItemType);
 
-protected:
+ protected:
   RefPtr<nsDocShellTreeOwner> mDocShellTreeOwner;
   nsCOMPtr<nsIDocShell> mDocShell;
   nsCOMPtr<nsIInterfaceRequestor> mDocShellAsReq;

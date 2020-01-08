@@ -16,9 +16,8 @@ namespace filesystem {
 
 
 
-class Path
-{
-public:
+class Path {
+ public:
 #ifdef XP_WIN
   using value_type = char16_t;
 #else
@@ -26,7 +25,7 @@ public:
 #endif
 };
 
-}  
-}  
+} 
+} 
 
 #endif 

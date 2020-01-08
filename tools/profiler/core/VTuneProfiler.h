@@ -35,27 +35,23 @@
 
 #include "vtune/ittnotify.h"
 
-class VTuneProfiler
-{
-public:
+class VTuneProfiler {
+ public:
   static void Initialize();
   static void Shutdown();
 
-  static void Trace(const char* aName, TracingKind aKind)
-  {
+  static void Trace(const char* aName, TracingKind aKind) {
     if (mInstance) {
       mInstance->TraceInternal(aName, aKind);
     }
   }
-  static void RegisterThread(const char* aName)
-  {
-    if (mInstance)
-    {
+  static void RegisterThread(const char* aName) {
+    if (mInstance) {
       mInstance->RegisterThreadInternal(aName);
     }
   }
 
-private:
+ private:
   void TraceInternal(const char* aName, TracingKind aKind);
   void RegisterThreadInternal(const char* aName);
 

@@ -29,7 +29,8 @@ class WebrtcGlobalInformation;
 
 class PeerConnectionCtx {
  public:
-  static nsresult InitializeGlobal(nsIThread *mainThread, nsIEventTarget *stsThread);
+  static nsresult InitializeGlobal(nsIThread* mainThread,
+                                   nsIEventTarget* stsThread);
   static PeerConnectionCtx* GetInstance();
   static bool isActive();
   static void Destroy();
@@ -57,14 +58,15 @@ class PeerConnectionCtx {
   
   
   mozilla::dom::Sequence<mozilla::dom::RTCStatsReportInternal>
-    mStatsForClosedPeerConnections;
+      mStatsForClosedPeerConnections;
 
-  const std::map<const std::string, PeerConnectionImpl *>& mGetPeerConnections();
+  const std::map<const std::string, PeerConnectionImpl*>& mGetPeerConnections();
+
  private:
   
-  std::map<const std::string, PeerConnectionImpl *> mPeerConnections;
+  std::map<const std::string, PeerConnectionImpl*> mPeerConnections;
 
-  PeerConnectionCtx() :  mGMPReady(false) {}
+  PeerConnectionCtx() : mGMPReady(false) {}
   
   PeerConnectionCtx(const PeerConnectionCtx& other) = delete;
   void operator=(const PeerConnectionCtx& other) = delete;
@@ -75,16 +77,15 @@ class PeerConnectionCtx {
 
   void initGMP();
 
-  static void
-  EverySecondTelemetryCallback_m(nsITimer* timer, void *);
+  static void EverySecondTelemetryCallback_m(nsITimer* timer, void*);
 
   nsCOMPtr<nsITimer> mTelemetryTimer;
 
-private:
-
+ private:
   void DeliverStats(RTCStatsQuery& aQuery);
 
-  std::map<nsString,std::unique_ptr<mozilla::dom::RTCStatsReportInternal>> mLastReports;
+  std::map<nsString, std::unique_ptr<mozilla::dom::RTCStatsReportInternal>>
+      mLastReports;
   
   
   
@@ -94,12 +95,14 @@ private:
   bool mGMPReady;
   nsTArray<nsCOMPtr<nsIRunnable>> mQueuedJSEPOperations;
 
-  static PeerConnectionCtx *gInstance;
-public:
-  static nsIThread *gMainThread;
-  static mozilla::StaticRefPtr<mozilla::PeerConnectionCtxObserver> gPeerConnectionCtxObserver;
+  static PeerConnectionCtx* gInstance;
+
+ public:
+  static nsIThread* gMainThread;
+  static mozilla::StaticRefPtr<mozilla::PeerConnectionCtxObserver>
+      gPeerConnectionCtxObserver;
 };
 
-} 
+}  
 
 #endif

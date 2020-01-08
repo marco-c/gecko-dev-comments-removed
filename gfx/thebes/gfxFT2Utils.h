@@ -15,8 +15,7 @@
 
 #define FLOAT_FROM_26_6(x) ((x) / 64.0)
 #define FLOAT_FROM_16_16(x) ((x) / 65536.0)
-#define ROUND_26_6_TO_INT(x) ((x) >= 0 ?  ((32 + (x)) >> 6) \
-                                       : -((32 - (x)) >> 6))
+#define ROUND_26_6_TO_INT(x) ((x) >= 0 ? ((32 + (x)) >> 6) : -((32 - (x)) >> 6))
 
 typedef struct FT_FaceRec_* FT_Face;
 
@@ -28,41 +27,37 @@ typedef struct FT_FaceRec_* FT_Face;
 
 
 class MOZ_STACK_CLASS gfxFT2LockedFace {
-public:
-    explicit gfxFT2LockedFace(gfxFT2FontBase *aFont) :
-        mGfxFont(aFont),
-        mFace(cairo_ft_scaled_font_lock_face(aFont->GetCairoScaledFont()))
-    { }
-    ~gfxFT2LockedFace()
-    {
-        if (mFace) {
-            cairo_ft_scaled_font_unlock_face(mGfxFont->GetCairoScaledFont());
-        }
+ public:
+  explicit gfxFT2LockedFace(gfxFT2FontBase* aFont)
+      : mGfxFont(aFont),
+        mFace(cairo_ft_scaled_font_lock_face(aFont->GetCairoScaledFont())) {}
+  ~gfxFT2LockedFace() {
+    if (mFace) {
+      cairo_ft_scaled_font_unlock_face(mGfxFont->GetCairoScaledFont());
     }
+  }
 
-    FT_Face get() { return mFace; };
+  FT_Face get() { return mFace; };
 
-    
-
-
-
-
-    uint32_t GetGlyph(uint32_t aCharCode);
-    
+  
 
 
-    uint32_t GetUVSGlyph(uint32_t aCharCode, uint32_t aVariantSelector);
 
-protected:
-    typedef FT_UInt (*CharVariantFunction)(FT_Face  face,
-                                           FT_ULong charcode,
-                                           FT_ULong variantSelector);
-    CharVariantFunction FindCharVariantFunction();
 
-    gfxFT2FontBase* MOZ_NON_OWNING_REF mGfxFont; 
-    FT_Face mFace;
+  uint32_t GetGlyph(uint32_t aCharCode);
+  
+
+
+  uint32_t GetUVSGlyph(uint32_t aCharCode, uint32_t aVariantSelector);
+
+ protected:
+  typedef FT_UInt (*CharVariantFunction)(FT_Face face, FT_ULong charcode,
+                                         FT_ULong variantSelector);
+  CharVariantFunction FindCharVariantFunction();
+
+  gfxFT2FontBase* MOZ_NON_OWNING_REF mGfxFont;  
+  FT_Face mFace;
 };
-
 
 
 
@@ -70,15 +65,13 @@ protected:
 typedef struct FT_MM_Var_ FT_MM_Var;
 
 class gfxFT2Utils {
-public:
-    static void
-    GetVariationAxes(const FT_MM_Var* aMMVar,
-                     nsTArray<gfxFontVariationAxis>& aAxes);
+ public:
+  static void GetVariationAxes(const FT_MM_Var* aMMVar,
+                               nsTArray<gfxFontVariationAxis>& aAxes);
 
-    static void
-    GetVariationInstances(gfxFontEntry* aFontEntry,
-                          const FT_MM_Var* aMMVar,
-                          nsTArray<gfxFontVariationInstance>& aInstances);
+  static void GetVariationInstances(
+      gfxFontEntry* aFontEntry, const FT_MM_Var* aMMVar,
+      nsTArray<gfxFontVariationInstance>& aInstances);
 };
 
 #endif 

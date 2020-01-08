@@ -16,97 +16,75 @@
 
 #include "vm/JSContext-inl.h"
 
-inline void
-JS::Realm::initGlobal(js::GlobalObject& global)
-{
-    MOZ_ASSERT(global.realm() == this);
-    MOZ_ASSERT(!global_);
-    global_.set(&global);
+inline void JS::Realm::initGlobal(js::GlobalObject& global) {
+  MOZ_ASSERT(global.realm() == this);
+  MOZ_ASSERT(!global_);
+  global_.set(&global);
 }
 
-js::GlobalObject*
-JS::Realm::maybeGlobal() const
-{
-    MOZ_ASSERT_IF(global_, global_->realm() == this);
-    return global_;
+js::GlobalObject* JS::Realm::maybeGlobal() const {
+  MOZ_ASSERT_IF(global_, global_->realm() == this);
+  return global_;
 }
 
-js::GlobalObject*
-JS::Realm::unsafeUnbarrieredMaybeGlobal() const
-{
-    return *global_.unsafeGet();
+js::GlobalObject* JS::Realm::unsafeUnbarrieredMaybeGlobal() const {
+  return *global_.unsafeGet();
 }
 
-inline bool
-JS::Realm::globalIsAboutToBeFinalized()
-{
-    MOZ_ASSERT(zone_->isGCSweeping());
-    return global_ && js::gc::IsAboutToBeFinalizedUnbarriered(global_.unsafeGet());
+inline bool JS::Realm::globalIsAboutToBeFinalized() {
+  MOZ_ASSERT(zone_->isGCSweeping());
+  return global_ &&
+         js::gc::IsAboutToBeFinalizedUnbarriered(global_.unsafeGet());
 }
 
- inline js::ObjectRealm&
-js::ObjectRealm::get(const JSObject* obj)
-{
-    
-    
-    
-    return obj->maybeCCWRealm()->objects_;
+ inline js::ObjectRealm& js::ObjectRealm::get(const JSObject* obj) {
+  
+  
+  
+  return obj->maybeCCWRealm()->objects_;
 }
 
 template <typename T>
 js::AutoRealm::AutoRealm(JSContext* cx, const T& target)
-  : cx_(cx),
-    origin_(cx->realm())
-{
-    cx_->enterRealmOf(target);
+    : cx_(cx), origin_(cx->realm()) {
+  cx_->enterRealmOf(target);
 }
 
 
 js::AutoRealm::AutoRealm(JSContext* cx, JS::Realm* target)
-  : cx_(cx),
-    origin_(cx->realm())
-{
-    cx_->enterRealm(target);
+    : cx_(cx), origin_(cx->realm()) {
+  cx_->enterRealm(target);
 }
 
-js::AutoRealm::~AutoRealm()
-{
-    cx_->leaveRealm(origin_);
-}
+js::AutoRealm::~AutoRealm() { cx_->leaveRealm(origin_); }
 
 js::AutoAllocInAtomsZone::AutoAllocInAtomsZone(JSContext* cx)
-  : cx_(cx),
-    origin_(cx->realm())
-{
-    cx_->enterAtomsZone();
+    : cx_(cx), origin_(cx->realm()) {
+  cx_->enterAtomsZone();
 }
 
-js::AutoAllocInAtomsZone::~AutoAllocInAtomsZone()
-{
-    cx_->leaveAtomsZone(origin_);
+js::AutoAllocInAtomsZone::~AutoAllocInAtomsZone() {
+  cx_->leaveAtomsZone(origin_);
 }
 
 js::AutoRealmUnchecked::AutoRealmUnchecked(JSContext* cx, JS::Realm* target)
-  : AutoRealm(cx, target)
-{}
+    : AutoRealm(cx, target) {}
 
-MOZ_ALWAYS_INLINE bool
-js::ObjectRealm::objectMaybeInIteration(JSObject* obj)
-{
-    MOZ_ASSERT(&ObjectRealm::get(obj) == this);
+MOZ_ALWAYS_INLINE bool js::ObjectRealm::objectMaybeInIteration(JSObject* obj) {
+  MOZ_ASSERT(&ObjectRealm::get(obj) == this);
 
-    
-    js::NativeIterator* next = enumerators->next();
-    if (enumerators == next) {
-        return false;
-    }
+  
+  js::NativeIterator* next = enumerators->next();
+  if (enumerators == next) {
+    return false;
+  }
 
-    
-    if (next->next() == enumerators) {
-        return next->objectBeingIterated() == obj;
-    }
+  
+  if (next->next() == enumerators) {
+    return next->objectBeingIterated() == obj;
+  }
 
-    return true;
+  return true;
 }
 
 #endif 

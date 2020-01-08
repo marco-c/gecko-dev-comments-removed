@@ -11,30 +11,19 @@
 namespace mozilla {
 namespace image {
 
-enum class Angle : uint8_t {
-  D0,
-  D90,
-  D180,
-  D270
-};
+enum class Angle : uint8_t { D0, D90, D180, D270 };
 
-enum class Flip : uint8_t {
-  Unflipped,
-  Horizontal
-};
+enum class Flip : uint8_t { Unflipped, Horizontal };
 
 
 
 
 
 
-struct Orientation
-{
+struct Orientation {
   explicit Orientation(Angle aRotation = Angle::D0,
                        Flip mFlip = Flip::Unflipped)
-    : rotation(aRotation)
-    , flip(mFlip)
-  { }
+      : rotation(aRotation), flip(mFlip) {}
 
   bool IsIdentity() const {
     return (rotation == Angle::D0) && (flip == Flip::Unflipped);
@@ -53,10 +42,10 @@ struct Orientation
   }
 
   Angle rotation;
-  Flip  flip;
+  Flip flip;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

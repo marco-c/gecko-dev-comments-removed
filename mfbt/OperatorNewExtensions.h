@@ -17,7 +17,7 @@ namespace mozilla {
 enum NotNullTag {
   KnownNotNull,
 };
-} 
+}  
 
 
 
@@ -42,11 +42,9 @@ enum NotNullTag {
 
 
 
-inline void*
-operator new(size_t, mozilla::NotNullTag, void* p)
-{
+inline void* operator new(size_t, mozilla::NotNullTag, void* p) {
   MOZ_ASSERT(p);
   return p;
 }
 
-#endif 
+#endif  

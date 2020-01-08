@@ -17,8 +17,7 @@
 namespace mozilla {
 
 
-enum class Visibility : uint8_t
-{
+enum class Visibility : uint8_t {
   
   UNTRACKED,
 
@@ -37,11 +36,10 @@ enum class Visibility : uint8_t
 };
 
 
-enum class OnNonvisible : uint8_t
-{
+enum class OnNonvisible : uint8_t {
   DISCARD_IMAGES  
 };
 
-} 
+}  
 
-#endif 
+#endif  

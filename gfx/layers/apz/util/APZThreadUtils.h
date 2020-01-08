@@ -17,9 +17,8 @@ class Runnable;
 
 namespace layers {
 
-class APZThreadUtils
-{
-public:
+class APZThreadUtils {
+ public:
   
 
 
@@ -56,42 +55,34 @@ public:
 
 
 
-class GenericNamedTimerCallbackBase : public nsITimerCallback,
-                                      public nsINamed
-{
-public:
+class GenericNamedTimerCallbackBase : public nsITimerCallback, public nsINamed {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
-protected:
+ protected:
   virtual ~GenericNamedTimerCallbackBase() {}
 };
 
 
 
 template <typename Function>
-class GenericNamedTimerCallback final : public GenericNamedTimerCallbackBase
-{
-public:
+class GenericNamedTimerCallback final : public GenericNamedTimerCallbackBase {
+ public:
   explicit GenericNamedTimerCallback(const Function& aFunction,
                                      const char* aName)
-    : mFunction(aFunction)
-    , mName(aName)
-  {
-  }
+      : mFunction(aFunction), mName(aName) {}
 
-  NS_IMETHOD Notify(nsITimer*) override
-  {
+  NS_IMETHOD Notify(nsITimer*) override {
     mFunction();
     return NS_OK;
   }
 
-  NS_IMETHOD GetName(nsACString& aName) override
-  {
+  NS_IMETHOD GetName(nsACString& aName) override {
     aName = mName;
     return NS_OK;
   }
 
-private:
+ private:
   Function mFunction;
   nsCString mName;
 };
@@ -102,14 +93,12 @@ private:
 
 
 template <typename Function>
-GenericNamedTimerCallback<Function>*
-  NewNamedTimerCallback(const Function& aFunction,
-                        const char* aName)
-{
+GenericNamedTimerCallback<Function>* NewNamedTimerCallback(
+    const Function& aFunction, const char* aName) {
   return new GenericNamedTimerCallback<Function>(aFunction, aName);
 }
 
-} 
-} 
+}  
+}  
 
 #endif 

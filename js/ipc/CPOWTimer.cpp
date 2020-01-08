@@ -12,33 +12,30 @@
 #include "jsapi.h"
 
 CPOWTimer::CPOWTimer(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
-    : cx_(nullptr)
-    , startInterval_(0)
-{
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    if (!js::GetStopwatchIsMonitoringCPOW(cx)) {
-        return;
-    }
-    cx_ = cx;
-    startInterval_ = JS_Now();
+    : cx_(nullptr), startInterval_(0) {
+  MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+  if (!js::GetStopwatchIsMonitoringCPOW(cx)) {
+    return;
+  }
+  cx_ = cx;
+  startInterval_ = JS_Now();
 }
-CPOWTimer::~CPOWTimer()
-{
-    if (!cx_) {
-        
-        return;
-    }
+CPOWTimer::~CPOWTimer() {
+  if (!cx_) {
+    
+    return;
+  }
 
-    if (!js::GetStopwatchIsMonitoringCPOW(cx_)) {
-        
-        return;
-    }
+  if (!js::GetStopwatchIsMonitoringCPOW(cx_)) {
+    
+    return;
+  }
 
-    const int64_t endInterval = JS_Now();
-    if (endInterval <= startInterval_) {
-        
-        return;
-    }
+  const int64_t endInterval = JS_Now();
+  if (endInterval <= startInterval_) {
+    
+    return;
+  }
 
-    js::AddCPOWPerformanceDelta(cx_, endInterval - startInterval_);
+  js::AddCPOWPerformanceDelta(cx_, endInterval - startInterval_);
 }

@@ -10,9 +10,7 @@
 
 namespace mozilla {
 
-void
-MediaPacket::Copy(const uint8_t* data, size_t len, size_t capacity)
-{
+void MediaPacket::Copy(const uint8_t* data, size_t len, size_t capacity) {
   if (capacity < len) {
     capacity = len;
   }
@@ -22,43 +20,37 @@ MediaPacket::Copy(const uint8_t* data, size_t len, size_t capacity)
   memcpy(data_.get(), data, len);
 }
 
-static bool IsRtp(const uint8_t* data, size_t len)
-{
-  if (len < 2)
-    return false;
+static bool IsRtp(const uint8_t* data, size_t len) {
+  if (len < 2) return false;
 
   
   
 
   
-  if ((data[1] < 192) || (data[1] > 207))
-    return true;
+  if ((data[1] < 192) || (data[1] > 207)) return true;
 
-  if (data[1] == 192) 
+  if (data[1] == 192)  
     return false;
 
-  if (data[1] == 193) 
-    return true;      
+  if (data[1] == 193)  
+    return true;       
 
-  if (data[1] == 194)
-    return true;
+  if (data[1] == 194) return true;
 
-  if (data[1] == 195) 
+  if (data[1] == 195)  
     return false;
 
-  if ((data[1] > 195) && (data[1] < 200)) 
+  if ((data[1] > 195) && (data[1] < 200))  
     return true;
 
-  if ((data[1] >= 200) && (data[1] <= 207)) 
-    return false;                           
+  if ((data[1] >= 200) && (data[1] <= 207))  
+    return false;                            
 
-  MOZ_ASSERT(false); 
+  MOZ_ASSERT(false);  
   return true;
 }
 
-void
-MediaPacket::Categorize()
-{
+void MediaPacket::Categorize() {
   SetType(MediaPacket::UNCLASSIFIED);
 
   if (!data_ || len_ < 4) {
@@ -77,5 +69,4 @@ MediaPacket::Categorize()
     }
   }
 }
-} 
-
+}  

@@ -24,19 +24,17 @@
 
 
 
-enum BFScolors {white, gray, black};
+enum BFScolors { white, gray, black };
 
 
 struct BFSTableData {
-    nsCString key;
-    BFScolors color;
-    int32_t distance;
-    nsAutoPtr<nsCString> predecessor;
+  nsCString key;
+  BFScolors color;
+  int32_t distance;
+  nsAutoPtr<nsCString> predecessor;
 
-    explicit BFSTableData(const nsACString& aKey)
-      : key(aKey), color(white), distance(-1)
-    {
-    }
+  explicit BFSTableData(const nsACString &aKey)
+      : key(aKey), color(white), distance(-1) {}
 };
 
 
@@ -63,43 +61,43 @@ NS_IMPL_ISUPPORTS(nsStreamConverterService, nsIStreamConverterService)
 
 
 
+nsresult nsStreamConverterService::BuildGraph() {
+  nsresult rv;
 
-nsresult
-nsStreamConverterService::BuildGraph() {
+  nsCOMPtr<nsICategoryManager> catmgr(
+      do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv));
+  if (NS_FAILED(rv)) return rv;
 
-    nsresult rv;
+  nsCOMPtr<nsISimpleEnumerator> entries;
+  rv = catmgr->EnumerateCategory(NS_ISTREAMCONVERTER_KEY,
+                                 getter_AddRefs(entries));
+  if (NS_FAILED(rv)) return rv;
 
-    nsCOMPtr<nsICategoryManager> catmgr(do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv));
-    if (NS_FAILED(rv)) return rv;
+  
+  nsCOMPtr<nsISupports> supports;
+  nsCOMPtr<nsISupportsCString> entry;
+  rv = entries->GetNext(getter_AddRefs(supports));
+  while (NS_SUCCEEDED(rv)) {
+    entry = do_QueryInterface(supports);
 
-    nsCOMPtr<nsISimpleEnumerator> entries;
-    rv = catmgr->EnumerateCategory(NS_ISTREAMCONVERTER_KEY, getter_AddRefs(entries));
+    
+    nsAutoCString entryString;
+    rv = entry->GetData(entryString);
     if (NS_FAILED(rv)) return rv;
 
     
-    nsCOMPtr<nsISupports> supports;
-    nsCOMPtr<nsISupportsCString> entry;
+    
+    nsAutoCString contractID(NS_ISTREAMCONVERTER_KEY);
+    contractID.Append(entryString);
+
+    
+    rv = AddAdjacency(contractID.get());
+    if (NS_FAILED(rv)) return rv;
+
     rv = entries->GetNext(getter_AddRefs(supports));
-    while (NS_SUCCEEDED(rv)) {
-        entry = do_QueryInterface(supports);
+  }
 
-        
-        nsAutoCString entryString;
-        rv = entry->GetData(entryString);
-        if (NS_FAILED(rv)) return rv;
-
-        
-        nsAutoCString contractID(NS_ISTREAMCONVERTER_KEY);
-        contractID.Append(entryString);
-
-        
-        rv = AddAdjacency(contractID.get());
-        if (NS_FAILED(rv)) return rv;
-
-        rv = entries->GetNext(getter_AddRefs(supports));
-    }
-
-    return NS_OK;
+  return NS_OK;
 }
 
 
@@ -107,77 +105,75 @@ nsStreamConverterService::BuildGraph() {
 
 
 
-nsresult
-nsStreamConverterService::AddAdjacency(const char *aContractID) {
-    nsresult rv;
+
+nsresult nsStreamConverterService::AddAdjacency(const char *aContractID) {
+  nsresult rv;
+  
+
+  nsAutoCString fromStr, toStr;
+  rv = ParseFromTo(aContractID, fromStr, toStr);
+  if (NS_FAILED(rv)) return rv;
+
+  
+  
+
+  nsTArray<RefPtr<nsAtom>> *fromEdges = mAdjacencyList.Get(fromStr);
+  if (!fromEdges) {
     
+    fromEdges = new nsTArray<RefPtr<nsAtom>>();
+    mAdjacencyList.Put(fromStr, fromEdges);
+  }
 
-    nsAutoCString fromStr, toStr;
-    rv = ParseFromTo(aContractID, fromStr, toStr);
-    if (NS_FAILED(rv)) return rv;
-
+  if (!mAdjacencyList.Get(toStr)) {
     
-    
+    mAdjacencyList.Put(toStr, new nsTArray<RefPtr<nsAtom>>());
+  }
 
-    nsTArray<RefPtr<nsAtom>>* fromEdges = mAdjacencyList.Get(fromStr);
-    if (!fromEdges) {
-        
-        fromEdges = new nsTArray<RefPtr<nsAtom>>();
-        mAdjacencyList.Put(fromStr, fromEdges);
-    }
+  
+  
 
-    if (!mAdjacencyList.Get(toStr)) {
-        
-        mAdjacencyList.Put(toStr, new nsTArray<RefPtr<nsAtom>>());
-    }
+  RefPtr<nsAtom> vertex = NS_Atomize(toStr);
+  if (!vertex) return NS_ERROR_OUT_OF_MEMORY;
 
-    
-    
+  NS_ASSERTION(fromEdges, "something wrong in adjacency list construction");
+  if (!fromEdges) return NS_ERROR_FAILURE;
 
-    RefPtr<nsAtom> vertex = NS_Atomize(toStr);
-    if (!vertex) return NS_ERROR_OUT_OF_MEMORY;
-
-    NS_ASSERTION(fromEdges, "something wrong in adjacency list construction");
-    if (!fromEdges)
-        return NS_ERROR_FAILURE;
-
-    return fromEdges->AppendElement(vertex) ? NS_OK : NS_ERROR_FAILURE;
+  return fromEdges->AppendElement(vertex) ? NS_OK : NS_ERROR_FAILURE;
 }
 
-nsresult
-nsStreamConverterService::ParseFromTo(const char *aContractID, nsCString &aFromRes, nsCString &aToRes) {
+nsresult nsStreamConverterService::ParseFromTo(const char *aContractID,
+                                               nsCString &aFromRes,
+                                               nsCString &aToRes) {
+  nsAutoCString ContractIDStr(aContractID);
 
-    nsAutoCString ContractIDStr(aContractID);
+  int32_t fromLoc = ContractIDStr.Find("from=");
+  int32_t toLoc = ContractIDStr.Find("to=");
+  if (-1 == fromLoc || -1 == toLoc) return NS_ERROR_FAILURE;
 
-    int32_t fromLoc = ContractIDStr.Find("from=");
-    int32_t toLoc   = ContractIDStr.Find("to=");
-    if (-1 == fromLoc || -1 == toLoc ) return NS_ERROR_FAILURE;
+  fromLoc = fromLoc + 5;
+  toLoc = toLoc + 3;
 
-    fromLoc = fromLoc + 5;
-    toLoc = toLoc + 3;
+  nsAutoCString fromStr, toStr;
 
-    nsAutoCString fromStr, toStr;
+  ContractIDStr.Mid(fromStr, fromLoc, toLoc - 4 - fromLoc);
+  ContractIDStr.Mid(toStr, toLoc, ContractIDStr.Length() - toLoc);
 
-    ContractIDStr.Mid(fromStr, fromLoc, toLoc - 4 - fromLoc);
-    ContractIDStr.Mid(toStr, toLoc, ContractIDStr.Length() - toLoc);
+  aFromRes.Assign(fromStr);
+  aToRes.Assign(toStr);
 
-    aFromRes.Assign(fromStr);
-    aToRes.Assign(toStr);
-
-    return NS_OK;
+  return NS_OK;
 }
 
 typedef nsClassHashtable<nsCStringHashKey, BFSTableData> BFSHashTable;
 
 
 
-
 class CStreamConvDeallocator : public nsDequeFunctor {
-public:
-    void operator()(void* anObject) override {
-        nsCString *string = (nsCString*)anObject;
-        delete string;
-    }
+ public:
+  void operator()(void *anObject) override {
+    nsCString *string = (nsCString *)anObject;
+    delete string;
+  }
 };
 
 
@@ -185,254 +181,252 @@ public:
 
 
 
-nsresult
-nsStreamConverterService::FindConverter(const char *aContractID, nsTArray<nsCString> **aEdgeList) {
-    nsresult rv;
-    if (!aEdgeList) return NS_ERROR_NULL_POINTER;
-    *aEdgeList = nullptr;
+
+nsresult nsStreamConverterService::FindConverter(
+    const char *aContractID, nsTArray<nsCString> **aEdgeList) {
+  nsresult rv;
+  if (!aEdgeList) return NS_ERROR_NULL_POINTER;
+  *aEdgeList = nullptr;
+
+  
+
+  uint32_t vertexCount = mAdjacencyList.Count();
+  if (0 >= vertexCount) return NS_ERROR_FAILURE;
+
+  
+  BFSHashTable lBFSTable;
+  for (auto iter = mAdjacencyList.Iter(); !iter.Done(); iter.Next()) {
+    const nsACString &key = iter.Key();
+    MOZ_ASSERT(iter.UserData(), "no data in the table iteration");
+    lBFSTable.Put(key, new BFSTableData(key));
+  }
+
+  NS_ASSERTION(lBFSTable.Count() == vertexCount,
+               "strmconv BFS table init problem");
+
+  
+  nsAutoCString fromC, toC;
+  rv = ParseFromTo(aContractID, fromC, toC);
+  if (NS_FAILED(rv)) return rv;
+
+  BFSTableData *data = lBFSTable.Get(fromC);
+  if (!data) {
+    return NS_ERROR_FAILURE;
+  }
+
+  data->color = gray;
+  data->distance = 0;
+  auto *dtorFunc = new CStreamConvDeallocator();
+
+  nsDeque grayQ(dtorFunc);
+
+  
+  grayQ.Push(new nsCString(fromC));
+  while (0 < grayQ.GetSize()) {
+    nsCString *currentHead = (nsCString *)grayQ.PeekFront();
+    nsTArray<RefPtr<nsAtom>> *data2 = mAdjacencyList.Get(*currentHead);
+    if (!data2) return NS_ERROR_FAILURE;
 
     
-
-    uint32_t vertexCount = mAdjacencyList.Count();
-    if (0 >= vertexCount) return NS_ERROR_FAILURE;
-
     
-    BFSHashTable lBFSTable;
-    for (auto iter = mAdjacencyList.Iter(); !iter.Done(); iter.Next()) {
-        const nsACString &key = iter.Key();
-        MOZ_ASSERT(iter.UserData(), "no data in the table iteration");
-        lBFSTable.Put(key, new BFSTableData(key));
-    }
+    BFSTableData *headVertexState = lBFSTable.Get(*currentHead);
+    if (!headVertexState) return NS_ERROR_FAILURE;
 
-    NS_ASSERTION(lBFSTable.Count() == vertexCount, "strmconv BFS table init problem");
+    int32_t edgeCount = data2->Length();
 
-    
-    nsAutoCString fromC, toC;
-    rv = ParseFromTo(aContractID, fromC, toC);
-    if (NS_FAILED(rv)) return rv;
+    for (int32_t i = 0; i < edgeCount; i++) {
+      nsAtom *curVertexAtom = data2->ElementAt(i);
+      auto *curVertex = new nsCString();
+      curVertexAtom->ToUTF8String(*curVertex);
 
-    BFSTableData *data = lBFSTable.Get(fromC);
-    if (!data) {
+      BFSTableData *curVertexState = lBFSTable.Get(*curVertex);
+      if (!curVertexState) {
+        delete curVertex;
         return NS_ERROR_FAILURE;
+      }
+
+      if (white == curVertexState->color) {
+        curVertexState->color = gray;
+        curVertexState->distance = headVertexState->distance + 1;
+        curVertexState->predecessor = new nsCString(*currentHead);
+        grayQ.Push(curVertex);
+      } else {
+        delete curVertex;  
+                           
+                           
+      }
     }
+    headVertexState->color = black;
+    nsCString *cur = (nsCString *)grayQ.PopFront();
+    delete cur;
+    cur = nullptr;
+  }
+  
+  
+  
 
-    data->color = gray;
-    data->distance = 0;
-    auto *dtorFunc = new CStreamConvDeallocator();
+  
 
-    nsDeque grayQ(dtorFunc);
+  nsAutoCString fromStr, toMIMEType;
+  rv = ParseFromTo(aContractID, fromStr, toMIMEType);
+  if (NS_FAILED(rv)) return rv;
 
-    
-    grayQ.Push(new nsCString(fromC));
-    while (0 < grayQ.GetSize()) {
-        nsCString *currentHead = (nsCString*)grayQ.PeekFront();
-        nsTArray<RefPtr<nsAtom>>* data2 = mAdjacencyList.Get(*currentHead);
-        if (!data2) return NS_ERROR_FAILURE;
+  
+  nsAutoCString ContractIDPrefix(NS_ISTREAMCONVERTER_KEY);
+  auto *shortestPath = new nsTArray<nsCString>();
 
-        
-        
-        BFSTableData *headVertexState = lBFSTable.Get(*currentHead);
-        if (!headVertexState) return NS_ERROR_FAILURE;
-
-        int32_t edgeCount = data2->Length();
-
-        for (int32_t i = 0; i < edgeCount; i++) {
-            nsAtom* curVertexAtom = data2->ElementAt(i);
-            auto *curVertex = new nsCString();
-            curVertexAtom->ToUTF8String(*curVertex);
-
-            BFSTableData *curVertexState = lBFSTable.Get(*curVertex);
-            if (!curVertexState) {
-                delete curVertex;
-                return NS_ERROR_FAILURE;
-            }
-
-            if (white == curVertexState->color) {
-                curVertexState->color = gray;
-                curVertexState->distance = headVertexState->distance + 1;
-                curVertexState->predecessor = new nsCString(*currentHead);
-                grayQ.Push(curVertex);
-            } else {
-                delete curVertex; 
-                                  
-                                  
-            }
-        }
-        headVertexState->color = black;
-        nsCString *cur = (nsCString*)grayQ.PopFront();
-        delete cur;
-        cur = nullptr;
-    }
+  data = lBFSTable.Get(toMIMEType);
+  if (!data) {
     
     
-
-    
-
-    nsAutoCString fromStr, toMIMEType;
-    rv = ParseFromTo(aContractID, fromStr, toMIMEType);
-    if (NS_FAILED(rv)) return rv;
-
-    
-    nsAutoCString ContractIDPrefix(NS_ISTREAMCONVERTER_KEY);
-    auto *shortestPath = new nsTArray<nsCString>();
-
-    data = lBFSTable.Get(toMIMEType);
-    if (!data) {
-        
-        
-        delete shortestPath;
-        return NS_ERROR_FAILURE;
-    }
-
-    while (data) {
-        if (fromStr.Equals(data->key)) {
-            
-            *aEdgeList = shortestPath;
-            return NS_OK;
-        }
-
-        
-        
-        if (!data->predecessor) break; 
-        BFSTableData *predecessorData = lBFSTable.Get(*data->predecessor);
-
-        if (!predecessorData) break; 
-
-        
-        nsAutoCString newContractID(ContractIDPrefix);
-        newContractID.AppendLiteral("?from=");
-
-        newContractID.Append(predecessorData->key);
-
-        newContractID.AppendLiteral("&to=");
-        newContractID.Append(data->key);
-
-        
-        rv = shortestPath->AppendElement(newContractID) ? NS_OK : NS_ERROR_FAILURE;  
-        NS_ASSERTION(NS_SUCCEEDED(rv), "AppendElement failed");
-
-        
-        data = predecessorData;
-    }
     delete shortestPath;
-    return NS_ERROR_FAILURE; 
+    return NS_ERROR_FAILURE;
+  }
+
+  while (data) {
+    if (fromStr.Equals(data->key)) {
+      
+      *aEdgeList = shortestPath;
+      return NS_OK;
+    }
+
+    
+    
+    if (!data->predecessor) break;  
+    BFSTableData *predecessorData = lBFSTable.Get(*data->predecessor);
+
+    if (!predecessorData) break;  
+
+    
+    nsAutoCString newContractID(ContractIDPrefix);
+    newContractID.AppendLiteral("?from=");
+
+    newContractID.Append(predecessorData->key);
+
+    newContractID.AppendLiteral("&to=");
+    newContractID.Append(data->key);
+
+    
+    rv = shortestPath->AppendElement(newContractID)
+             ? NS_OK
+             : NS_ERROR_FAILURE;  
+    NS_ASSERTION(NS_SUCCEEDED(rv), "AppendElement failed");
+
+    
+    data = predecessorData;
+  }
+  delete shortestPath;
+  return NS_ERROR_FAILURE;  
 }
 
 
 
-
 NS_IMETHODIMP
-nsStreamConverterService::CanConvert(const char* aFromType,
-                                     const char* aToType,
-                                     bool* _retval) {
-    nsCOMPtr<nsIComponentRegistrar> reg;
-    nsresult rv = NS_GetComponentRegistrar(getter_AddRefs(reg));
-    if (NS_FAILED(rv))
-        return rv;
+nsStreamConverterService::CanConvert(const char *aFromType, const char *aToType,
+                                     bool *_retval) {
+  nsCOMPtr<nsIComponentRegistrar> reg;
+  nsresult rv = NS_GetComponentRegistrar(getter_AddRefs(reg));
+  if (NS_FAILED(rv)) return rv;
 
-    nsAutoCString contractID;
-    contractID.AssignLiteral(NS_ISTREAMCONVERTER_KEY "?from=");
-    contractID.Append(aFromType);
-    contractID.AppendLiteral("&to=");
-    contractID.Append(aToType);
+  nsAutoCString contractID;
+  contractID.AssignLiteral(NS_ISTREAMCONVERTER_KEY "?from=");
+  contractID.Append(aFromType);
+  contractID.AppendLiteral("&to=");
+  contractID.Append(aToType);
 
-    
-    rv = reg->IsContractIDRegistered(contractID.get(), _retval);
-    if (NS_FAILED(rv))
-        return rv;
-    if (*_retval)
-        return NS_OK;
+  
+  rv = reg->IsContractIDRegistered(contractID.get(), _retval);
+  if (NS_FAILED(rv)) return rv;
+  if (*_retval) return NS_OK;
 
-    
-    rv = BuildGraph();
-    if (NS_FAILED(rv))
-        return rv;
+  
+  rv = BuildGraph();
+  if (NS_FAILED(rv)) return rv;
 
-    nsTArray<nsCString> *converterChain = nullptr;
-    rv = FindConverter(contractID.get(), &converterChain);
-    *_retval = NS_SUCCEEDED(rv);
+  nsTArray<nsCString> *converterChain = nullptr;
+  rv = FindConverter(contractID.get(), &converterChain);
+  *_retval = NS_SUCCEEDED(rv);
 
-    delete converterChain;
-    return NS_OK;
+  delete converterChain;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 nsStreamConverterService::Convert(nsIInputStream *aFromStream,
-                                  const char *aFromType,
-                                  const char *aToType,
+                                  const char *aFromType, const char *aToType,
                                   nsISupports *aContext,
                                   nsIInputStream **_retval) {
-    if (!aFromStream || !aFromType || !aToType || !_retval) return NS_ERROR_NULL_POINTER;
-    nsresult rv;
+  if (!aFromStream || !aFromType || !aToType || !_retval)
+    return NS_ERROR_NULL_POINTER;
+  nsresult rv;
 
-    
-    
-    nsAutoCString contractID;
-    contractID.AssignLiteral(NS_ISTREAMCONVERTER_KEY "?from=");
-    contractID.Append(aFromType);
-    contractID.AppendLiteral("&to=");
-    contractID.Append(aToType);
-    const char *cContractID = contractID.get();
+  
+  
+  nsAutoCString contractID;
+  contractID.AssignLiteral(NS_ISTREAMCONVERTER_KEY "?from=");
+  contractID.Append(aFromType);
+  contractID.AppendLiteral("&to=");
+  contractID.Append(aToType);
+  const char *cContractID = contractID.get();
 
-    nsCOMPtr<nsIStreamConverter> converter(do_CreateInstance(cContractID, &rv));
+  nsCOMPtr<nsIStreamConverter> converter(do_CreateInstance(cContractID, &rv));
+  if (NS_FAILED(rv)) {
+    
+    rv = BuildGraph();
+    if (NS_FAILED(rv)) return rv;
+
+    nsTArray<nsCString> *converterChain = nullptr;
+
+    rv = FindConverter(cContractID, &converterChain);
     if (NS_FAILED(rv)) {
-        
-        rv = BuildGraph();
-        if (NS_FAILED(rv)) return rv;
-
-        nsTArray<nsCString> *converterChain = nullptr;
-
-        rv = FindConverter(cContractID, &converterChain);
-        if (NS_FAILED(rv)) {
-            
-            
-            return NS_ERROR_FAILURE;
-        }
-
-        int32_t edgeCount = int32_t(converterChain->Length());
-        NS_ASSERTION(edgeCount > 0, "findConverter should have failed");
-
-
-        
-        
-        nsCOMPtr<nsIInputStream> dataToConvert = aFromStream;
-        nsCOMPtr<nsIInputStream> convertedData;
-
-        for (int32_t i = edgeCount-1; i >= 0; i--) {
-            const char *lContractID = converterChain->ElementAt(i).get();
-
-            converter = do_CreateInstance(lContractID, &rv);
-
-            if (NS_FAILED(rv)) {
-                delete converterChain;
-                return rv;
-            }
-
-            nsAutoCString fromStr, toStr;
-            rv = ParseFromTo(lContractID, fromStr, toStr);
-            if (NS_FAILED(rv)) {
-                delete converterChain;
-                return rv;
-            }
-
-            rv = converter->Convert(dataToConvert, fromStr.get(), toStr.get(), aContext, getter_AddRefs(convertedData));
-            dataToConvert = convertedData;
-            if (NS_FAILED(rv)) {
-                delete converterChain;
-                return rv;
-            }
-        }
-
-        delete converterChain;
-        convertedData.forget(_retval);
-    } else {
-        
-        rv = converter->Convert(aFromStream, aFromType, aToType, aContext, _retval);
+      
+      
+      return NS_ERROR_FAILURE;
     }
 
-    return rv;
-}
+    int32_t edgeCount = int32_t(converterChain->Length());
+    NS_ASSERTION(edgeCount > 0, "findConverter should have failed");
 
+    
+    
+    nsCOMPtr<nsIInputStream> dataToConvert = aFromStream;
+    nsCOMPtr<nsIInputStream> convertedData;
+
+    for (int32_t i = edgeCount - 1; i >= 0; i--) {
+      const char *lContractID = converterChain->ElementAt(i).get();
+
+      converter = do_CreateInstance(lContractID, &rv);
+
+      if (NS_FAILED(rv)) {
+        delete converterChain;
+        return rv;
+      }
+
+      nsAutoCString fromStr, toStr;
+      rv = ParseFromTo(lContractID, fromStr, toStr);
+      if (NS_FAILED(rv)) {
+        delete converterChain;
+        return rv;
+      }
+
+      rv = converter->Convert(dataToConvert, fromStr.get(), toStr.get(),
+                              aContext, getter_AddRefs(convertedData));
+      dataToConvert = convertedData;
+      if (NS_FAILED(rv)) {
+        delete converterChain;
+        return rv;
+      }
+    }
+
+    delete converterChain;
+    convertedData.forget(_retval);
+  } else {
+    
+    rv = converter->Convert(aFromStream, aFromType, aToType, aContext, _retval);
+  }
+
+  return rv;
+}
 
 NS_IMETHODIMP
 nsStreamConverterService::AsyncConvertData(const char *aFromType,
@@ -440,93 +434,95 @@ nsStreamConverterService::AsyncConvertData(const char *aFromType,
                                            nsIStreamListener *aListener,
                                            nsISupports *aContext,
                                            nsIStreamListener **_retval) {
-    if (!aFromType || !aToType || !aListener || !_retval) return NS_ERROR_NULL_POINTER;
+  if (!aFromType || !aToType || !aListener || !_retval)
+    return NS_ERROR_NULL_POINTER;
 
-    nsresult rv;
+  nsresult rv;
 
+  
+  
+  nsAutoCString contractID;
+  contractID.AssignLiteral(NS_ISTREAMCONVERTER_KEY "?from=");
+  contractID.Append(aFromType);
+  contractID.AppendLiteral("&to=");
+  contractID.Append(aToType);
+  const char *cContractID = contractID.get();
+
+  nsCOMPtr<nsIStreamConverter> listener(do_CreateInstance(cContractID, &rv));
+  if (NS_FAILED(rv)) {
     
-    
-    nsAutoCString contractID;
-    contractID.AssignLiteral(NS_ISTREAMCONVERTER_KEY "?from=");
-    contractID.Append(aFromType);
-    contractID.AppendLiteral("&to=");
-    contractID.Append(aToType);
-    const char *cContractID = contractID.get();
+    rv = BuildGraph();
+    if (NS_FAILED(rv)) return rv;
 
-    nsCOMPtr<nsIStreamConverter> listener(do_CreateInstance(cContractID, &rv));
+    nsTArray<nsCString> *converterChain = nullptr;
+
+    rv = FindConverter(cContractID, &converterChain);
     if (NS_FAILED(rv)) {
-        
-        rv = BuildGraph();
-        if (NS_FAILED(rv)) return rv;
-
-        nsTArray<nsCString> *converterChain = nullptr;
-
-        rv = FindConverter(cContractID, &converterChain);
-        if (NS_FAILED(rv)) {
-            
-            
-            return NS_ERROR_FAILURE;
-        }
-
-        
-        
-        
-        
-        nsCOMPtr<nsIStreamListener> finalListener = aListener;
-
-        
-        
-        int32_t edgeCount = int32_t(converterChain->Length());
-        NS_ASSERTION(edgeCount > 0, "findConverter should have failed");
-        for (int i = 0; i < edgeCount; i++) {
-            const char *lContractID = converterChain->ElementAt(i).get();
-
-            
-            nsCOMPtr<nsIStreamConverter> converter(do_CreateInstance(lContractID));
-            NS_ASSERTION(converter, "graph construction problem, built a contractid that wasn't registered");
-
-            nsAutoCString fromStr, toStr;
-            rv = ParseFromTo(lContractID, fromStr, toStr);
-            if (NS_FAILED(rv)) {
-                delete converterChain;
-                return rv;
-            }
-
-            
-            rv = converter->AsyncConvertData(fromStr.get(), toStr.get(), finalListener, aContext);
-            if (NS_FAILED(rv)) {
-                delete converterChain;
-                return rv;
-            }
-
-            
-            
-            
-            
-            
-            finalListener = converter;
-        }
-        delete converterChain;
-        
-        finalListener.forget(_retval);
-    } else {
-        
-        rv = listener->AsyncConvertData(aFromType, aToType, aListener, aContext);
-        listener.forget(_retval);
+      
+      
+      return NS_ERROR_FAILURE;
     }
 
-    return rv;
+    
+    
+    
+    
+    nsCOMPtr<nsIStreamListener> finalListener = aListener;
 
+    
+    
+    int32_t edgeCount = int32_t(converterChain->Length());
+    NS_ASSERTION(edgeCount > 0, "findConverter should have failed");
+    for (int i = 0; i < edgeCount; i++) {
+      const char *lContractID = converterChain->ElementAt(i).get();
+
+      
+      nsCOMPtr<nsIStreamConverter> converter(do_CreateInstance(lContractID));
+      NS_ASSERTION(converter,
+                   "graph construction problem, built a contractid that wasn't "
+                   "registered");
+
+      nsAutoCString fromStr, toStr;
+      rv = ParseFromTo(lContractID, fromStr, toStr);
+      if (NS_FAILED(rv)) {
+        delete converterChain;
+        return rv;
+      }
+
+      
+      
+      rv = converter->AsyncConvertData(fromStr.get(), toStr.get(),
+                                       finalListener, aContext);
+      if (NS_FAILED(rv)) {
+        delete converterChain;
+        return rv;
+      }
+
+      
+      
+      
+      
+      
+      finalListener = converter;
+    }
+    delete converterChain;
+    
+    finalListener.forget(_retval);
+  } else {
+    
+    rv = listener->AsyncConvertData(aFromType, aToType, aListener, aContext);
+    listener.forget(_retval);
+  }
+
+  return rv;
 }
 
-nsresult
-NS_NewStreamConv(nsStreamConverterService** aStreamConv)
-{
-    MOZ_ASSERT(aStreamConv != nullptr, "null ptr");
-    if (!aStreamConv) return NS_ERROR_NULL_POINTER;
+nsresult NS_NewStreamConv(nsStreamConverterService **aStreamConv) {
+  MOZ_ASSERT(aStreamConv != nullptr, "null ptr");
+  if (!aStreamConv) return NS_ERROR_NULL_POINTER;
 
-    *aStreamConv = new nsStreamConverterService();
-    NS_ADDREF(*aStreamConv);
+  *aStreamConv = new nsStreamConverterService();
+  NS_ADDREF(*aStreamConv);
 
-    return NS_OK;
+  return NS_OK;
 }

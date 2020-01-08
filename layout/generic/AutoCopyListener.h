@@ -14,9 +14,8 @@
 
 namespace mozilla {
 
-class AutoCopyListener final
-{
-public:
+class AutoCopyListener final {
+ public:
   
 
 
@@ -27,15 +26,13 @@ public:
 
 
   static void OnSelectionChange(nsIDocument* aDocument,
-                                dom::Selection& aSelection,
-                                int16_t aReason);
+                                dom::Selection& aSelection, int16_t aReason);
 
   
 
 
 
-  static void Init(int16_t aClipboardID)
-  {
+  static void Init(int16_t aClipboardID) {
     MOZ_ASSERT(IsValidClipboardID(aClipboardID));
     static bool sInitialized = false;
     if (!sInitialized && IsValidClipboardID(aClipboardID)) {
@@ -47,14 +44,10 @@ public:
   
 
 
-  static bool IsPrefEnabled()
-  {
-    return StaticPrefs::clipboard_autocopy();
-  }
+  static bool IsPrefEnabled() { return StaticPrefs::clipboard_autocopy(); }
 
-private:
-  static bool IsValidClipboardID(int16_t aClipboardID)
-  {
+ private:
+  static bool IsValidClipboardID(int16_t aClipboardID) {
     return aClipboardID >= nsIClipboard::kSelectionClipboard &&
            aClipboardID <= nsIClipboard::kSelectionCache;
   }
@@ -62,6 +55,6 @@ private:
   static int16_t sClipboardID;
 };
 
-} 
+}  
 
-#endif 
+#endif  

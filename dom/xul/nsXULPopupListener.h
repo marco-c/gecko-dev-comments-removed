@@ -19,47 +19,46 @@
 namespace mozilla {
 namespace dom {
 class MouseEvent;
-} 
-} 
+}  
+}  
 
-class nsXULPopupListener : public nsIDOMEventListener
-{
-public:
-    
-    
-    
-    
-    nsXULPopupListener(mozilla::dom::Element* aElement, bool aIsContext);
+class nsXULPopupListener : public nsIDOMEventListener {
+ public:
+  
+  
+  
+  
+  nsXULPopupListener(mozilla::dom::Element* aElement, bool aIsContext);
 
-    
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-    NS_DECL_CYCLE_COLLECTION_SKIPPABLE_CLASS(nsXULPopupListener)
-    NS_DECL_NSIDOMEVENTLISTENER
+  
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_CLASS(nsXULPopupListener)
+  NS_DECL_NSIDOMEVENTLISTENER
 
-protected:
-    virtual ~nsXULPopupListener(void);
+ protected:
+  virtual ~nsXULPopupListener(void);
 
-    
-    
-    virtual nsresult LaunchPopup(mozilla::dom::MouseEvent* aEvent);
+  
+  
+  virtual nsresult LaunchPopup(mozilla::dom::MouseEvent* aEvent);
 
-    
-    virtual void ClosePopup();
+  
+  virtual void ClosePopup();
 
-private:
+ private:
 #ifndef NS_CONTEXT_MENU_IS_MOUSEUP
-    
-    nsresult FireFocusOnTargetContent(nsIContent* aTargetContent, bool aIsTouch);
+  
+  nsresult FireFocusOnTargetContent(nsIContent* aTargetContent, bool aIsTouch);
 #endif
 
-    
-    RefPtr<mozilla::dom::Element> mElement;
+  
+  RefPtr<mozilla::dom::Element> mElement;
 
-    
-    RefPtr<mozilla::dom::Element> mPopupContent;
+  
+  RefPtr<mozilla::dom::Element> mPopupContent;
 
-    
-    bool mIsContext;
+  
+  bool mIsContext;
 };
 
-#endif 
+#endif  

@@ -77,16 +77,18 @@
 
 #define MOZ_HUNSPELL_CONTRACTID "@mozilla.org/spellchecker/engine;1"
 #define MOZ_HUNSPELL_CID
-   \
-{ 0x56c778e4, 0x1bee, 0x45f3, \
-  { 0xa6, 0x89, 0x88, 0x66, 0x92, 0xa9, 0x7f, 0xe7 } }
+         \
+  {                                                  \
+    0x56c778e4, 0x1bee, 0x45f3, {                    \
+      0xa6, 0x89, 0x88, 0x66, 0x92, 0xa9, 0x7f, 0xe7 \
+    }                                                \
+  }
 
 class mozHunspell final : public mozISpellCheckingEngine,
                           public nsIObserver,
                           public nsSupportsWeakReference,
-                          public nsIMemoryReporter
-{
-public:
+                          public nsIMemoryReporter {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_MOZISPELLCHECKINGENGINE
   NS_DECL_NSIOBSERVER
@@ -103,7 +105,7 @@ public:
 
   NS_DECL_NSIMEMORYREPORTER
 
-protected:
+ protected:
   virtual ~mozHunspell();
 
   void DictionariesChanged(bool aNotifyChildProcesses);
@@ -114,14 +116,14 @@ protected:
 
   
   nsInterfaceHashtable<nsStringHashKey, nsIURI> mDictionaries;
-  nsString  mDictionary;
+  nsString mDictionary;
   nsCString mAffixFileName;
 
   
   nsCOMArray<nsIFile> mDynamicDirectories;
   nsInterfaceHashtable<nsStringHashKey, nsIURI> mDynamicDictionaries;
 
-  Hunspell  *mHunspell;
+  Hunspell* mHunspell;
 };
 
 #endif

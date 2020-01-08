@@ -15,11 +15,10 @@
 namespace mozilla {
 
 
-enum ShutdownChecksMode
-{
-  SCM_CRASH,      
-  SCM_RECORD,     
-  SCM_NOTHING     
+enum ShutdownChecksMode {
+  SCM_CRASH,  
+  SCM_RECORD, 
+  SCM_NOTHING 
 };
 
 
@@ -55,6 +54,6 @@ void BeginLateWriteChecks();
 
 void StopLateWriteChecks();
 
-} 
+}  
 
-#endif 
+#endif  

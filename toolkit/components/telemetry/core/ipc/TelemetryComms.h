@@ -18,14 +18,12 @@ namespace Telemetry {
 
 enum HistogramID : uint32_t;
 
-struct HistogramAccumulation
-{
+struct HistogramAccumulation {
   mozilla::Telemetry::HistogramID mId;
   uint32_t mSample;
 };
 
-struct KeyedHistogramAccumulation
-{
+struct KeyedHistogramAccumulation {
   mozilla::Telemetry::HistogramID mId;
   uint32_t mSample;
   nsCString mKey;
@@ -34,16 +32,11 @@ struct KeyedHistogramAccumulation
 
 enum class ScalarID : uint32_t;
 
-enum class ScalarActionType : uint32_t {
-  eSet = 0,
-  eAdd = 1,
-  eSetMaximum = 2
-};
+enum class ScalarActionType : uint32_t { eSet = 0, eAdd = 1, eSetMaximum = 2 };
 
 typedef mozilla::Variant<uint32_t, bool, nsString> ScalarVariant;
 
-struct ScalarAction
-{
+struct ScalarAction {
   uint32_t mId;
   bool mDynamic;
   ScalarActionType mActionType;
@@ -52,11 +45,11 @@ struct ScalarAction
   Maybe<ScalarVariant> mData;
   
   
+  
   mozilla::Telemetry::ProcessID mProcessType;
 };
 
-struct KeyedScalarAction
-{
+struct KeyedScalarAction {
   uint32_t mId;
   bool mDynamic;
   ScalarActionType mActionType;
@@ -66,24 +59,21 @@ struct KeyedScalarAction
   Maybe<ScalarVariant> mData;
   
   
+  
   mozilla::Telemetry::ProcessID mProcessType;
 };
 
 
-struct DynamicScalarDefinition
-{
+struct DynamicScalarDefinition {
   uint32_t type;
   uint32_t dataset;
   bool expired;
   bool keyed;
   nsCString name;
 
-  bool operator ==(const DynamicScalarDefinition& rhs) const
-  {
-    return type == rhs.type &&
-           dataset == rhs.dataset &&
-           expired == rhs.expired &&
-           keyed == rhs.keyed &&
+  bool operator==(const DynamicScalarDefinition& rhs) const {
+    return type == rhs.type && dataset == rhs.dataset &&
+           expired == rhs.expired && keyed == rhs.keyed &&
            name.Equals(rhs.name);
   }
 };
@@ -110,26 +100,24 @@ struct DiscardedData {
   uint32_t mDiscardedChildEvents;
 };
 
-} 
-} 
+}  
+}  
 
 namespace IPC {
 
-template<>
-struct
-ParamTraits<mozilla::Telemetry::HistogramAccumulation>
-{
+template <>
+struct ParamTraits<mozilla::Telemetry::HistogramAccumulation> {
   typedef mozilla::Telemetry::HistogramAccumulation paramType;
 
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
+  static void Write(Message* aMsg, const paramType& aParam) {
     aMsg->WriteUInt32(aParam.mId);
     WriteParam(aMsg, aParam.mSample);
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
-    if (!aMsg->ReadUInt32(aIter, reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
+    if (!aMsg->ReadUInt32(aIter,
+                          reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
         !ReadParam(aMsg, aIter, &(aResult->mSample))) {
       return false;
     }
@@ -138,22 +126,20 @@ ParamTraits<mozilla::Telemetry::HistogramAccumulation>
   }
 };
 
-template<>
-struct
-ParamTraits<mozilla::Telemetry::KeyedHistogramAccumulation>
-{
+template <>
+struct ParamTraits<mozilla::Telemetry::KeyedHistogramAccumulation> {
   typedef mozilla::Telemetry::KeyedHistogramAccumulation paramType;
 
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
+  static void Write(Message* aMsg, const paramType& aParam) {
     aMsg->WriteUInt32(aParam.mId);
     WriteParam(aMsg, aParam.mSample);
     WriteParam(aMsg, aParam.mKey);
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
-    if (!aMsg->ReadUInt32(aIter, reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
+    if (!aMsg->ReadUInt32(aIter,
+                          reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
         !ReadParam(aMsg, aIter, &(aResult->mSample)) ||
         !ReadParam(aMsg, aIter, &(aResult->mKey))) {
       return false;
@@ -166,14 +152,11 @@ ParamTraits<mozilla::Telemetry::KeyedHistogramAccumulation>
 
 
 
-template<>
-struct
-ParamTraits<mozilla::Telemetry::ScalarAction>
-{
+template <>
+struct ParamTraits<mozilla::Telemetry::ScalarAction> {
   typedef mozilla::Telemetry::ScalarAction paramType;
 
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
+  static void Write(Message* aMsg, const paramType& aParam) {
     
     aMsg->WriteUInt32(aParam.mId);
     WriteParam(aMsg, aParam.mDynamic);
@@ -194,57 +177,57 @@ ParamTraits<mozilla::Telemetry::ScalarAction>
       WriteParam(aMsg, aParam.mData->as<nsString>());
     } else if (aParam.mData->is<bool>()) {
       
-      WriteParam(aMsg, static_cast<uint32_t>(nsITelemetry::SCALAR_TYPE_BOOLEAN));
+      WriteParam(aMsg,
+                 static_cast<uint32_t>(nsITelemetry::SCALAR_TYPE_BOOLEAN));
       WriteParam(aMsg, aParam.mData->as<bool>());
     } else {
       MOZ_CRASH("Unknown scalar type.");
     }
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
     
     uint32_t scalarType = 0;
-    if (!aMsg->ReadUInt32(aIter, reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
-        !ReadParam(aMsg, aIter, reinterpret_cast<bool*>(&(aResult->mDynamic))) ||
-        !ReadParam(aMsg, aIter, reinterpret_cast<uint32_t*>(&(aResult->mActionType))) ||
+    if (!aMsg->ReadUInt32(aIter,
+                          reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
+        !ReadParam(aMsg, aIter,
+                   reinterpret_cast<bool*>(&(aResult->mDynamic))) ||
+        !ReadParam(aMsg, aIter,
+                   reinterpret_cast<uint32_t*>(&(aResult->mActionType))) ||
         !ReadParam(aMsg, aIter, &scalarType)) {
       return false;
     }
 
     
-    switch (scalarType)
-    {
-      case nsITelemetry::SCALAR_TYPE_COUNT:
-        {
-          uint32_t data = 0;
-          
-          if (!ReadParam(aMsg, aIter, &data)) {
-            return false;
-          }
-          aResult->mData = mozilla::Some(mozilla::AsVariant(data));
-          break;
+    switch (scalarType) {
+      case nsITelemetry::SCALAR_TYPE_COUNT: {
+        uint32_t data = 0;
+        
+        if (!ReadParam(aMsg, aIter, &data)) {
+          return false;
         }
-      case nsITelemetry::SCALAR_TYPE_STRING:
-        {
-          nsString data;
-          
-          if (!ReadParam(aMsg, aIter, &data)) {
-            return false;
-          }
-          aResult->mData = mozilla::Some(mozilla::AsVariant(data));
-          break;
+        aResult->mData = mozilla::Some(mozilla::AsVariant(data));
+        break;
+      }
+      case nsITelemetry::SCALAR_TYPE_STRING: {
+        nsString data;
+        
+        if (!ReadParam(aMsg, aIter, &data)) {
+          return false;
         }
-      case nsITelemetry::SCALAR_TYPE_BOOLEAN:
-        {
-          bool data = false;
-          
-          if (!ReadParam(aMsg, aIter, &data)) {
-            return false;
-          }
-          aResult->mData = mozilla::Some(mozilla::AsVariant(data));
-          break;
+        aResult->mData = mozilla::Some(mozilla::AsVariant(data));
+        break;
+      }
+      case nsITelemetry::SCALAR_TYPE_BOOLEAN: {
+        bool data = false;
+        
+        if (!ReadParam(aMsg, aIter, &data)) {
+          return false;
         }
+        aResult->mData = mozilla::Some(mozilla::AsVariant(data));
+        break;
+      }
       default:
         MOZ_ASSERT(false, "Unknown scalar type.");
         return false;
@@ -257,14 +240,11 @@ ParamTraits<mozilla::Telemetry::ScalarAction>
 
 
 
-template<>
-struct
-ParamTraits<mozilla::Telemetry::KeyedScalarAction>
-{
+template <>
+struct ParamTraits<mozilla::Telemetry::KeyedScalarAction> {
   typedef mozilla::Telemetry::KeyedScalarAction paramType;
 
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
+  static void Write(Message* aMsg, const paramType& aParam) {
     
     aMsg->WriteUInt32(static_cast<uint32_t>(aParam.mId));
     WriteParam(aMsg, aParam.mDynamic);
@@ -283,57 +263,61 @@ ParamTraits<mozilla::Telemetry::KeyedScalarAction>
     } else if (aParam.mData->is<nsString>()) {
       
       
-      MOZ_ASSERT(false, "Keyed String Scalar unable to be write from child process. Not supported.");
+      MOZ_ASSERT(false,
+                 "Keyed String Scalar unable to be write from child process. "
+                 "Not supported.");
     } else if (aParam.mData->is<bool>()) {
       
-      WriteParam(aMsg, static_cast<uint32_t>(nsITelemetry::SCALAR_TYPE_BOOLEAN));
+      WriteParam(aMsg,
+                 static_cast<uint32_t>(nsITelemetry::SCALAR_TYPE_BOOLEAN));
       WriteParam(aMsg, aParam.mData->as<bool>());
     } else {
       MOZ_CRASH("Unknown keyed scalar type.");
     }
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
     
     uint32_t scalarType = 0;
-    if (!aMsg->ReadUInt32(aIter, reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
-        !ReadParam(aMsg, aIter, reinterpret_cast<bool*>(&(aResult->mDynamic))) ||
-        !ReadParam(aMsg, aIter, reinterpret_cast<uint32_t*>(&(aResult->mActionType))) ||
+    if (!aMsg->ReadUInt32(aIter,
+                          reinterpret_cast<uint32_t*>(&(aResult->mId))) ||
+        !ReadParam(aMsg, aIter,
+                   reinterpret_cast<bool*>(&(aResult->mDynamic))) ||
+        !ReadParam(aMsg, aIter,
+                   reinterpret_cast<uint32_t*>(&(aResult->mActionType))) ||
         !ReadParam(aMsg, aIter, &(aResult->mKey)) ||
         !ReadParam(aMsg, aIter, &scalarType)) {
       return false;
     }
 
     
-    switch (scalarType)
-    {
-      case nsITelemetry::SCALAR_TYPE_COUNT:
-        {
-          uint32_t data = 0;
-          
-          if (!ReadParam(aMsg, aIter, &data)) {
-            return false;
-          }
-          aResult->mData = mozilla::Some(mozilla::AsVariant(data));
-          break;
-        }
-      case nsITelemetry::SCALAR_TYPE_STRING:
-        {
-          
-          MOZ_ASSERT(false, "Keyed String Scalar unable to be read from child process. Not supported.");
+    switch (scalarType) {
+      case nsITelemetry::SCALAR_TYPE_COUNT: {
+        uint32_t data = 0;
+        
+        if (!ReadParam(aMsg, aIter, &data)) {
           return false;
         }
-      case nsITelemetry::SCALAR_TYPE_BOOLEAN:
-        {
-          bool data = false;
-          
-          if (!ReadParam(aMsg, aIter, &data)) {
-            return false;
-          }
-          aResult->mData = mozilla::Some(mozilla::AsVariant(data));
-          break;
+        aResult->mData = mozilla::Some(mozilla::AsVariant(data));
+        break;
+      }
+      case nsITelemetry::SCALAR_TYPE_STRING: {
+        
+        MOZ_ASSERT(false,
+                   "Keyed String Scalar unable to be read from child process. "
+                   "Not supported.");
+        return false;
+      }
+      case nsITelemetry::SCALAR_TYPE_BOOLEAN: {
+        bool data = false;
+        
+        if (!ReadParam(aMsg, aIter, &data)) {
+          return false;
         }
+        aResult->mData = mozilla::Some(mozilla::AsVariant(data));
+        break;
+      }
       default:
         MOZ_ASSERT(false, "Unknown keyed scalar type.");
         return false;
@@ -343,14 +327,11 @@ ParamTraits<mozilla::Telemetry::KeyedScalarAction>
   }
 };
 
-template<>
-struct
-ParamTraits<mozilla::Telemetry::DynamicScalarDefinition>
-{
+template <>
+struct ParamTraits<mozilla::Telemetry::DynamicScalarDefinition> {
   typedef mozilla::Telemetry::DynamicScalarDefinition paramType;
 
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
+  static void Write(Message* aMsg, const paramType& aParam) {
     nsCString name;
     WriteParam(aMsg, aParam.type);
     WriteParam(aMsg, aParam.dataset);
@@ -359,10 +340,12 @@ ParamTraits<mozilla::Telemetry::DynamicScalarDefinition>
     WriteParam(aMsg, aParam.name);
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
-    if (!ReadParam(aMsg, aIter, reinterpret_cast<uint32_t*>(&(aResult->type))) ||
-        !ReadParam(aMsg, aIter, reinterpret_cast<uint32_t*>(&(aResult->dataset))) ||
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
+    if (!ReadParam(aMsg, aIter,
+                   reinterpret_cast<uint32_t*>(&(aResult->type))) ||
+        !ReadParam(aMsg, aIter,
+                   reinterpret_cast<uint32_t*>(&(aResult->dataset))) ||
         !ReadParam(aMsg, aIter, reinterpret_cast<bool*>(&(aResult->expired))) ||
         !ReadParam(aMsg, aIter, reinterpret_cast<bool*>(&(aResult->keyed))) ||
         !ReadParam(aMsg, aIter, &(aResult->name))) {
@@ -372,14 +355,11 @@ ParamTraits<mozilla::Telemetry::DynamicScalarDefinition>
   }
 };
 
-template<>
-struct
-ParamTraits<mozilla::Telemetry::ChildEventData>
-{
+template <>
+struct ParamTraits<mozilla::Telemetry::ChildEventData> {
   typedef mozilla::Telemetry::ChildEventData paramType;
 
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
+  static void Write(Message* aMsg, const paramType& aParam) {
     WriteParam(aMsg, aParam.timestamp);
     WriteParam(aMsg, aParam.category);
     WriteParam(aMsg, aParam.method);
@@ -388,8 +368,8 @@ ParamTraits<mozilla::Telemetry::ChildEventData>
     WriteParam(aMsg, aParam.extra);
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
     if (!ReadParam(aMsg, aIter, &(aResult->timestamp)) ||
         !ReadParam(aMsg, aIter, &(aResult->category)) ||
         !ReadParam(aMsg, aIter, &(aResult->method)) ||
@@ -403,20 +383,17 @@ ParamTraits<mozilla::Telemetry::ChildEventData>
   }
 };
 
-template<>
-struct
-ParamTraits<mozilla::Telemetry::EventExtraEntry>
-{
+template <>
+struct ParamTraits<mozilla::Telemetry::EventExtraEntry> {
   typedef mozilla::Telemetry::EventExtraEntry paramType;
 
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
+  static void Write(Message* aMsg, const paramType& aParam) {
     WriteParam(aMsg, aParam.key);
     WriteParam(aMsg, aParam.value);
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
     if (!ReadParam(aMsg, aIter, &(aResult->key)) ||
         !ReadParam(aMsg, aIter, &(aResult->value))) {
       return false;
@@ -426,12 +403,10 @@ ParamTraits<mozilla::Telemetry::EventExtraEntry>
   }
 };
 
-template<>
-struct
-ParamTraits<mozilla::Telemetry::DiscardedData>
-  : public PlainOldDataSerializer<mozilla::Telemetry::DiscardedData>
-{ };
+template <>
+struct ParamTraits<mozilla::Telemetry::DiscardedData>
+    : public PlainOldDataSerializer<mozilla::Telemetry::DiscardedData> {};
 
-} 
+}  
 
-#endif 
+#endif  

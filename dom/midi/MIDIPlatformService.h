@@ -26,9 +26,8 @@ class MIDIMessageQueue;
 
 
 
-class MIDIPlatformService
-{
-public:
+class MIDIPlatformService {
+ public:
   NS_INLINE_DECL_REFCOUNTING(MIDIPlatformService);
   
   void AddPortInfo(MIDIPortInfo& aPortInfo);
@@ -93,7 +92,8 @@ public:
   
   
   void Close(MIDIPortParent* aPort);
-protected:
+
+ protected:
   MIDIPlatformService();
   virtual ~MIDIPlatformService();
   
@@ -120,11 +120,10 @@ protected:
 
   
   
-  void GetMessagesBefore(const nsAString& aPortId,
-                         const TimeStamp& aTimeStamp,
+  void GetMessagesBefore(const nsAString& aPortId, const TimeStamp& aTimeStamp,
                          nsTArray<MIDIMessage>& aMsgs);
 
-private:
+ private:
   
   
   
@@ -152,7 +151,7 @@ private:
   Mutex mMessageQueueMutex;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -34,21 +34,18 @@ class MIDIMessage;
 
 
 class MIDIPort : public DOMEventTargetHelper,
-                 public MIDIAccessDestructionObserver
-{
-public:
+                 public MIDIAccessDestructionObserver {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(MIDIPort, DOMEventTargetHelper)
-protected:
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(MIDIPort,
+                                                         DOMEventTargetHelper)
+ protected:
   MIDIPort(nsPIDOMWindowInner* aWindow, MIDIAccess* aMIDIAccessParent);
   bool Initialize(const MIDIPortInfo& aPortInfo, bool aSysexEnabled);
   virtual ~MIDIPort();
-public:
-  nsPIDOMWindowInner*
-  GetParentObject() const
-  {
-    return GetOwner();
-  }
+
+ public:
+  nsPIDOMWindowInner* GetParentObject() const { return GetOwner(); }
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
@@ -79,10 +76,11 @@ public:
   void UnsetIPCPort();
 
   IMPL_EVENT_HANDLER(statechange)
-protected:
+ protected:
   
   RefPtr<MIDIPortChild> mPort;
-private:
+
+ private:
   
   
   
@@ -98,7 +96,7 @@ private:
   RefPtr<Promise> mClosingPromise;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

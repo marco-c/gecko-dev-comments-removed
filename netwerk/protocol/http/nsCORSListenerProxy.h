@@ -30,27 +30,18 @@ namespace mozilla {
 namespace net {
 class HttpChannelParent;
 class nsHttpChannel;
-}
-}
+}  
+}  
 
-enum class DataURIHandling
-{
-  Allow,
-  Disallow
-};
+enum class DataURIHandling { Allow, Disallow };
 
-enum class UpdateType
-{
-  Default,
-  InternalOrHSTSRedirect
-};
+enum class UpdateType { Default, InternalOrHSTSRedirect };
 
 class nsCORSListenerProxy final : public nsIStreamListener,
                                   public nsIInterfaceRequestor,
                                   public nsIChannelEventSink,
-                                  public nsIThreadRetargetableStreamListener
-{
-public:
+                                  public nsIThreadRetargetableStreamListener {
+ public:
   nsCORSListenerProxy(nsIStreamListener* aOuter,
                       nsIPrincipal* aRequestingPrincipal,
                       bool aWithCredentials);
@@ -70,7 +61,8 @@ public:
   MOZ_MUST_USE nsresult Init(nsIChannel* aChannel,
                              DataURIHandling aAllowDataURI);
 
-  void SetInterceptController(nsINetworkInterceptController* aInterceptController);
+  void SetInterceptController(
+      nsINetworkInterceptController* aInterceptController);
 
   
   
@@ -78,7 +70,8 @@ public:
                                     bool aPrivateBrowsing,
                                     const nsAString& aMessage,
                                     const nsACString& aCategory);
-private:
+
+ private:
   
   friend class mozilla::net::HttpChannelParent;
   
@@ -86,11 +79,9 @@ private:
 
   static void RemoveFromCorsPreflightCache(nsIURI* aURI,
                                            nsIPrincipal* aRequestingPrincipal);
-  static MOZ_MUST_USE nsresult
-  StartCORSPreflight(nsIChannel* aRequestChannel,
-                     nsICorsPreflightCallback* aCallback,
-                     nsTArray<nsCString>& aACUnsafeHeaders,
-                     nsIChannel** aPreflightChannel);
+  static MOZ_MUST_USE nsresult StartCORSPreflight(
+      nsIChannel* aRequestChannel, nsICorsPreflightCallback* aCallback,
+      nsTArray<nsCString>& aACUnsafeHeaders, nsIChannel** aPreflightChannel);
 
   ~nsCORSListenerProxy() = default;
 

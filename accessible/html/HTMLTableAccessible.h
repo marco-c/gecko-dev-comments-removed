@@ -23,9 +23,8 @@ namespace a11y {
 
 
 class HTMLTableCellAccessible : public HyperTextAccessibleWrap,
-                                public TableCellAccessible
-{
-public:
+                                public TableCellAccessible {
+ public:
   HTMLTableCellAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -50,7 +49,7 @@ public:
   virtual void RowHeaderCells(nsTArray<Accessible*>* aCells) override;
   virtual bool Selected() override;
 
-protected:
+ protected:
   virtual ~HTMLTableCellAccessible() {}
 
   
@@ -72,10 +71,8 @@ protected:
 
 
 
-
-class HTMLTableHeaderCellAccessible : public HTMLTableCellAccessible
-{
-public:
+class HTMLTableHeaderCellAccessible : public HTMLTableCellAccessible {
+ public:
   HTMLTableHeaderCellAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -85,27 +82,24 @@ public:
 
 
 
-
-class HTMLTableRowAccessible : public HyperTextAccessibleWrap
-{
-public:
-  HTMLTableRowAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    HyperTextAccessibleWrap(aContent, aDoc)
-  {
+class HTMLTableRowAccessible : public HyperTextAccessibleWrap {
+ public:
+  HTMLTableRowAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : HyperTextAccessibleWrap(aContent, aDoc) {
     mType = eHTMLTableRowType;
     mGenericTypes |= eTableRow;
   }
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableRowAccessible, HyperTextAccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableRowAccessible,
+                                       HyperTextAccessibleWrap)
 
   
   virtual a11y::role NativeRole() const override;
   virtual mozilla::a11y::GroupPos GroupPosition() override;
 
-protected:
-  virtual ~HTMLTableRowAccessible() { }
+ protected:
+  virtual ~HTMLTableRowAccessible() {}
 };
-
 
 
 
@@ -117,24 +111,24 @@ protected:
 
 
 class HTMLTableAccessible : public HyperTextAccessibleWrap,
-                            public TableAccessible
-{
-public:
-  HTMLTableAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    HyperTextAccessibleWrap(aContent, aDoc)
-  {
+                            public TableAccessible {
+ public:
+  HTMLTableAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : HyperTextAccessibleWrap(aContent, aDoc) {
     mType = eHTMLTableType;
     mGenericTypes |= eTable;
   }
 
-  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableAccessible, HyperTextAccessibleWrap)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLTableAccessible,
+                                       HyperTextAccessibleWrap)
 
   
   virtual Accessible* Caption() const override;
   virtual void Summary(nsString& aSummary) override;
   virtual uint32_t ColCount() const override;
   virtual uint32_t RowCount() override;
-  virtual Accessible* CellAt(uint32_t aRowIndex, uint32_t aColumnIndex) override;
+  virtual Accessible* CellAt(uint32_t aRowIndex,
+                             uint32_t aColumnIndex) override;
   virtual int32_t CellIndexAt(uint32_t aRowIdx, uint32_t aColIdx) override;
   virtual int32_t ColIndexAt(uint32_t aCellIdx) override;
   virtual int32_t RowIndexAt(uint32_t aCellIdx) override;
@@ -168,7 +162,7 @@ public:
 
   virtual bool InsertChildAt(uint32_t aIndex, Accessible* aChild) override;
 
-protected:
+ protected:
   virtual ~HTMLTableAccessible() {}
 
   
@@ -206,21 +200,22 @@ protected:
 
 
 
-class HTMLCaptionAccessible : public HyperTextAccessibleWrap
-{
-public:
-  HTMLCaptionAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    HyperTextAccessibleWrap(aContent, aDoc) { mType = eHTMLCaptionType; }
+class HTMLCaptionAccessible : public HyperTextAccessibleWrap {
+ public:
+  HTMLCaptionAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : HyperTextAccessibleWrap(aContent, aDoc) {
+    mType = eHTMLCaptionType;
+  }
 
   
   virtual a11y::role NativeRole() const override;
   virtual Relation RelationByType(RelationType aRelationType) const override;
 
-protected:
-  virtual ~HTMLCaptionAccessible() { }
+ protected:
+  virtual ~HTMLCaptionAccessible() {}
 };
 
-} 
-} 
+}  
+}  
 
 #endif

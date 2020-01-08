@@ -7,19 +7,19 @@
 #ifndef GFX_BASICLAYERS_H
 #define GFX_BASICLAYERS_H
 
-#include <stdint.h>                     
-#include "Layers.h"                     
+#include <stdint.h>  
+#include "Layers.h"  
 #include "gfxTypes.h"
-#include "gfxContext.h"                 
-#include "mozilla/Attributes.h"         
-#include "mozilla/WidgetUtils.h"        
+#include "gfxContext.h"                  
+#include "mozilla/Attributes.h"          
+#include "mozilla/WidgetUtils.h"         
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/TimeStamp.h"
 #include "nsAString.h"
-#include "nsCOMPtr.h"                   
-#include "nsISupportsImpl.h"            
-#include "nsRegion.h"                   
-#include "nscore.h"                     
+#include "nsCOMPtr.h"         
+#include "nsISupportsImpl.h"  
+#include "nsRegion.h"         
+#include "nscore.h"           
 
 class nsIWidget;
 
@@ -39,15 +39,9 @@ class ReadbackLayer;
 
 
 
-class BasicLayerManager final :
-    public LayerManager
-{
-public:
-  enum BasicLayerManagerType {
-    BLM_WIDGET,
-    BLM_OFFSCREEN,
-    BLM_INACTIVE
-  };
+class BasicLayerManager final : public LayerManager {
+ public:
+  enum BasicLayerManagerType { BLM_WIDGET, BLM_OFFSCREEN, BLM_INACTIVE };
   
 
 
@@ -72,10 +66,10 @@ public:
 
   explicit BasicLayerManager(nsIWidget* aWidget);
 
-protected:
+ protected:
   virtual ~BasicLayerManager();
 
-public:
+ public:
   BasicLayerManager* AsBasicLayerManager() override { return this; }
 
   
@@ -90,21 +84,26 @@ public:
 
 
   void SetDefaultTarget(gfxContext* aContext);
-  virtual void SetDefaultTargetConfiguration(BufferMode aDoubleBuffering, ScreenRotation aRotation);
+  virtual void SetDefaultTargetConfiguration(BufferMode aDoubleBuffering,
+                                             ScreenRotation aRotation);
   gfxContext* GetDefaultTarget() { return mDefaultTarget; }
 
   nsIWidget* GetRetainerWidget() { return mWidget; }
   void ClearRetainerWidget() { mWidget = nullptr; }
 
   virtual bool IsWidgetLayerManager() override { return mWidget != nullptr; }
-  virtual bool IsInactiveLayerManager() override { return mType == BLM_INACTIVE; }
+  virtual bool IsInactiveLayerManager() override {
+    return mType == BLM_INACTIVE;
+  }
 
-  virtual bool BeginTransaction(const nsCString &aURL = nsCString()) override;
-  virtual bool BeginTransactionWithTarget(gfxContext* aTarget, const nsCString &aURL = nsCString()) override;
-  virtual bool EndEmptyTransaction(EndTransactionFlags aFlags = END_DEFAULT) override;
-  virtual void EndTransaction(DrawPaintedLayerCallback aCallback,
-                              void* aCallbackData,
-                              EndTransactionFlags aFlags = END_DEFAULT) override;
+  virtual bool BeginTransaction(const nsCString& aURL = nsCString()) override;
+  virtual bool BeginTransactionWithTarget(
+      gfxContext* aTarget, const nsCString& aURL = nsCString()) override;
+  virtual bool EndEmptyTransaction(
+      EndTransactionFlags aFlags = END_DEFAULT) override;
+  virtual void EndTransaction(
+      DrawPaintedLayerCallback aCallback, void* aCallbackData,
+      EndTransactionFlags aFlags = END_DEFAULT) override;
   void AbortTransaction();
 
   virtual void SetRoot(Layer* aLayer) override;
@@ -115,10 +114,14 @@ public:
   virtual already_AddRefed<CanvasLayer> CreateCanvasLayer() override;
   virtual already_AddRefed<ColorLayer> CreateColorLayer() override;
   virtual already_AddRefed<ReadbackLayer> CreateReadbackLayer() override;
-  virtual ImageFactory *GetImageFactory();
+  virtual ImageFactory* GetImageFactory();
 
-  virtual LayersBackend GetBackendType() override { return LayersBackend::LAYERS_BASIC; }
-  virtual void GetBackendName(nsAString& name) override { name.AssignLiteral("Basic"); }
+  virtual LayersBackend GetBackendType() override {
+    return LayersBackend::LAYERS_BASIC;
+  }
+  virtual void GetBackendName(nsAString& name) override {
+    name.AssignLiteral("Basic");
+  }
 
   bool InConstruction() { return mPhase == PHASE_CONSTRUCTION; }
 #ifdef DEBUG
@@ -128,7 +131,10 @@ public:
   bool InTransaction() { return mPhase != PHASE_NONE; }
 
   gfxContext* GetTarget() { return mTarget; }
-  void SetTarget(gfxContext* aTarget) { mUsingDefaultTarget = false; mTarget = aTarget; }
+  void SetTarget(gfxContext* aTarget) {
+    mUsingDefaultTarget = false;
+    mTarget = aTarget;
+  }
   bool IsRetained() { return mWidget != nullptr; }
 
   virtual const char* Name() const override { return "Basic"; }
@@ -139,9 +145,12 @@ public:
   void SetTransactionIncomplete() { mTransactionIncomplete = true; }
   bool IsTransactionIncomplete() { return mTransactionIncomplete; }
 
-  struct PushedGroup
-  {
-    PushedGroup() : mFinalTarget(nullptr), mNeedsClipToVisibleRegion(false), mOperator(gfx::CompositionOp::OP_COUNT), mOpacity(0.0f){}
+  struct PushedGroup {
+    PushedGroup()
+        : mFinalTarget(nullptr),
+          mNeedsClipToVisibleRegion(false),
+          mOperator(gfx::CompositionOp::OP_COUNT),
+          mOpacity(0.0f) {}
     gfxContext* mFinalTarget;
     RefPtr<gfxContext> mGroupTarget;
     nsIntRegion mVisibleRegion;
@@ -156,7 +165,8 @@ public:
   
   
   
-  bool PushGroupForLayer(gfxContext* aContext, Layer* aLayerContext, const nsIntRegion& aRegion, PushedGroup& aGroupResult);
+  bool PushGroupForLayer(gfxContext* aContext, Layer* aLayerContext,
+                         const nsIntRegion& aRegion, PushedGroup& aGroupResult);
 
   void PopGroupForLayer(PushedGroup& aGroup);
 
@@ -164,31 +174,31 @@ public:
   virtual int32_t GetMaxTextureSize() const override { return INT32_MAX; }
   bool CompositorMightResample() { return mCompositorMightResample; }
 
-  TimeStamp GetCompositionTime() const
-  {
-    return mCompositionTime;
-  }
+  TimeStamp GetCompositionTime() const { return mCompositionTime; }
 
-protected:
+ protected:
   enum TransactionPhase {
-    PHASE_NONE, PHASE_CONSTRUCTION, PHASE_DRAWING, PHASE_FORWARD
+    PHASE_NONE,
+    PHASE_CONSTRUCTION,
+    PHASE_DRAWING,
+    PHASE_FORWARD
   };
   TransactionPhase mPhase;
 
   
   
   
-  void PaintSelfOrChildren(PaintLayerContext& aPaintContext, gfxContext* aGroupTarget);
+  void PaintSelfOrChildren(PaintLayerContext& aPaintContext,
+                           gfxContext* aGroupTarget);
 
   
   
-  void FlushGroup(PaintLayerContext& aPaintContext, bool aNeedsClipToVisibleRegion);
+  void FlushGroup(PaintLayerContext& aPaintContext,
+                  bool aNeedsClipToVisibleRegion);
 
   
-  void PaintLayer(gfxContext* aTarget,
-                  Layer* aLayer,
-                  DrawPaintedLayerCallback aCallback,
-                  void* aCallbackData);
+  void PaintLayer(gfxContext* aTarget, Layer* aLayer,
+                  DrawPaintedLayerCallback aCallback, void* aCallbackData);
 
   
   void ClearLayer(Layer* aLayer);
@@ -199,8 +209,7 @@ protected:
 
   void FlashWidgetUpdateArea(gfxContext* aContext);
 
-  void SetCompositionTime(TimeStamp aTimeStamp)
-  {
+  void SetCompositionTime(TimeStamp aTimeStamp) {
     mCompositionTime = aTimeStamp;
   }
 
@@ -223,7 +232,7 @@ protected:
   TimeStamp mCompositionTime;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

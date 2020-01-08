@@ -20,7 +20,7 @@ typedef MozPromise<ClientState, nsresult, false> ClientStatePromise;
 
 typedef std::function<void(const ClientOpResult&)> ClientOpCallback;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

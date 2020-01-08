@@ -35,8 +35,7 @@ class StructuredCloneData;
 
 
 
-class ClientHandle final : public ClientThing<ClientHandleChild>
-{
+class ClientHandle final : public ClientThing<ClientHandleChild> {
   friend class ClientManager;
   friend class ClientHandleChild;
 
@@ -47,45 +46,37 @@ class ClientHandle final : public ClientThing<ClientHandleChild>
 
   ~ClientHandle();
 
-  void
-  Shutdown();
+  void Shutdown();
 
-  void
-  StartOp(const ClientOpConstructorArgs& aArgs,
-          const ClientOpCallback&& aResolveCallback,
-          const ClientOpCallback&& aRejectCallback);
+  void StartOp(const ClientOpConstructorArgs& aArgs,
+               const ClientOpCallback&& aResolveCallback,
+               const ClientOpCallback&& aRejectCallback);
 
   
-  void
-  OnShutdownThing() override;
+  void OnShutdownThing() override;
 
   
-  void
-  ExecutionReady(const ClientInfo& aClientInfo);
+  void ExecutionReady(const ClientInfo& aClientInfo);
 
   
   ClientHandle(ClientManager* aManager,
                nsISerialEventTarget* aSerialEventTarget,
                const ClientInfo& aClientInfo);
 
-  void
-  Activate(PClientManagerChild* aActor);
+  void Activate(PClientManagerChild* aActor);
 
-public:
-  const ClientInfo&
-  Info() const;
+ public:
+  const ClientInfo& Info() const;
 
   
   
   
-  RefPtr<GenericPromise>
-  Control(const ServiceWorkerDescriptor& aServiceWorker);
+  RefPtr<GenericPromise> Control(const ServiceWorkerDescriptor& aServiceWorker);
 
   
   
   
-  RefPtr<ClientStatePromise>
-  Focus();
+  RefPtr<ClientStatePromise> Focus();
 
   
   
@@ -93,9 +84,8 @@ public:
   
   
   
-  RefPtr<GenericPromise>
-  PostMessage(ipc::StructuredCloneData& aData,
-              const ServiceWorkerDescriptor& aSource);
+  RefPtr<GenericPromise> PostMessage(ipc::StructuredCloneData& aData,
+                                     const ServiceWorkerDescriptor& aSource);
 
   
   
@@ -105,13 +95,12 @@ public:
   
   
   
-  RefPtr<GenericPromise>
-  OnDetach();
+  RefPtr<GenericPromise> OnDetach();
 
   NS_INLINE_DECL_REFCOUNTING(ClientHandle);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

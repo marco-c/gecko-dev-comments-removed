@@ -16,14 +16,13 @@
 namespace mozilla {
 namespace a11y {
 
-class AccessibleWrap : public Accessible
-{
-public: 
+class AccessibleWrap : public Accessible {
+ public:  
   AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc);
   virtual ~AccessibleWrap();
 };
 
-} 
-} 
+}  
+}  
 
 #endif

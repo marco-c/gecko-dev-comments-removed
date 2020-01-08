@@ -17,7 +17,7 @@
 
 
 #if !defined(NS_NO_XPCOM) && !defined(MOZ_NO_MOZALLOC)
-#  include "mozilla/mozalloc.h"
+#include "mozilla/mozalloc.h"
 #endif
 
 
@@ -34,24 +34,24 @@
 
 
 #ifdef HAVE_VISIBILITY_HIDDEN_ATTRIBUTE
-#define NS_VISIBILITY_HIDDEN   __attribute__ ((visibility ("hidden")))
+#define NS_VISIBILITY_HIDDEN __attribute__((visibility("hidden")))
 #else
 #define NS_VISIBILITY_HIDDEN
 #endif
 
 #if defined(HAVE_VISIBILITY_ATTRIBUTE)
-#define NS_VISIBILITY_DEFAULT __attribute__ ((visibility ("default")))
+#define NS_VISIBILITY_DEFAULT __attribute__((visibility("default")))
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
 #define NS_VISIBILITY_DEFAULT __global
 #else
 #define NS_VISIBILITY_DEFAULT
 #endif
 
-#define NS_HIDDEN_(type)   NS_VISIBILITY_HIDDEN type
+#define NS_HIDDEN_(type) NS_VISIBILITY_HIDDEN type
 #define NS_EXTERNAL_VIS_(type) NS_VISIBILITY_DEFAULT type
 
-#define NS_HIDDEN           NS_VISIBILITY_HIDDEN
-#define NS_EXTERNAL_VIS     NS_VISIBILITY_DEFAULT
+#define NS_HIDDEN NS_VISIBILITY_HIDDEN
+#define NS_EXTERNAL_VIS NS_VISIBILITY_DEFAULT
 
 
 
@@ -77,8 +77,8 @@
 
 
 #if defined(__i386__) && defined(__GNUC__)
-#define NS_FASTCALL __attribute__ ((regparm (3), stdcall))
-#define NS_CONSTRUCTOR_FASTCALL __attribute__ ((regparm (3), stdcall))
+#define NS_FASTCALL __attribute__((regparm(3), stdcall))
+#define NS_CONSTRUCTOR_FASTCALL __attribute__((regparm(3), stdcall))
 #elif defined(XP_WIN) && !defined(_WIN64)
 #define NS_FASTCALL __fastcall
 #define NS_CONSTRUCTOR_FASTCALL
@@ -105,8 +105,9 @@
 #define NS_IMETHOD_(type) virtual type __stdcall
 #define NS_IMETHODIMP_(type) type __stdcall
 #define NS_METHOD_(type) type __stdcall
-#define NS_CALLBACK_(_type, _name) _type (__stdcall * _name)
+#define NS_CALLBACK_(_type, _name) _type(__stdcall* _name)
 #ifndef _WIN64
+
 
 #define NS_STDCALL __stdcall
 #define NS_HAVE_STDCALL
@@ -124,14 +125,14 @@
 #define NS_IMETHOD_(type) virtual type
 #define NS_IMETHODIMP_(type) type
 #define NS_METHOD_(type) type
-#define NS_CALLBACK_(_type, _name) _type (* _name)
+#define NS_CALLBACK_(_type, _name) _type(*_name)
 #define NS_STDCALL
 #define NS_FROZENCALL
 
 #endif
 
-#define NS_IMETHOD          NS_IMETHOD_(nsresult)
-#define NS_IMETHODIMP       NS_IMETHODIMP_(nsresult)
+#define NS_IMETHOD NS_IMETHOD_(nsresult)
+#define NS_IMETHODIMP NS_IMETHODIMP_(nsresult)
 
 
 
@@ -166,7 +167,8 @@
 
 
 
-#if defined(NS_BUILD_REFCNT_LOGGING) || defined(MOZ_VALGRIND) || defined(MOZ_ASAN) || defined(MOZ_CODE_COVERAGE)
+#if defined(NS_BUILD_REFCNT_LOGGING) || defined(MOZ_VALGRIND) || \
+    defined(MOZ_ASAN) || defined(MOZ_CODE_COVERAGE)
 #define NS_FREE_PERMANENT_DATA
 #endif
 
@@ -189,7 +191,6 @@
 
 
 
-
 #include "nsError.h"
 
 typedef MozRefCountType nsrefcnt;
@@ -205,23 +206,26 @@ namespace detail {
 
 
 
-template<typename T> struct UnusedZero;
-template<>
-struct UnusedZero<nsresult>
-{
+template <typename T>
+struct UnusedZero;
+template <>
+struct UnusedZero<nsresult> {
   static const bool value = true;
 };
-} 
+}  
 
-template <typename T> class MOZ_MUST_USE_TYPE GenericErrorResult;
-template <> class MOZ_MUST_USE_TYPE GenericErrorResult<nsresult>;
+template <typename T>
+class MOZ_MUST_USE_TYPE GenericErrorResult;
+template <>
+class MOZ_MUST_USE_TYPE GenericErrorResult<nsresult>;
 
 struct Ok;
-template <typename V, typename E> class Result;
+template <typename V, typename E>
+class Result;
 
 
 inline Result<Ok, nsresult> ToResult(nsresult aValue);
-} 
+}  
 
 
 
@@ -250,11 +254,11 @@ inline Result<Ok, nsresult> ToResult(nsresult aValue);
 
 
 #ifdef HAVE_SEH_EXCEPTIONS
-#define MOZ_SEH_TRY           __try
-#define MOZ_SEH_EXCEPT(expr)  __except(expr)
+#define MOZ_SEH_TRY __try
+#define MOZ_SEH_EXCEPT(expr) __except (expr)
 #else
-#define MOZ_SEH_TRY           if(true)
-#define MOZ_SEH_EXCEPT(expr)  else
+#define MOZ_SEH_TRY if (true)
+#define MOZ_SEH_EXCEPT(expr) else
 #endif
 
 #endif 

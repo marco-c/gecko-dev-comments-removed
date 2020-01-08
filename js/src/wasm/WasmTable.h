@@ -36,75 +36,75 @@ namespace wasm {
 
 typedef GCVector<JS::Heap<JSObject*>, 0, SystemAllocPolicy> TableAnyRefVector;
 
-class Table : public ShareableBase<Table>
-{
-    using InstanceSet = JS::WeakCache<GCHashSet<ReadBarrieredWasmInstanceObject,
-                                                MovableCellHasher<ReadBarrieredWasmInstanceObject>,
-                                                SystemAllocPolicy>>;
-    using UniqueAnyFuncArray = UniquePtr<FunctionTableElem[], JS::FreePolicy>;
+class Table : public ShareableBase<Table> {
+  using InstanceSet = JS::WeakCache<GCHashSet<
+      ReadBarrieredWasmInstanceObject,
+      MovableCellHasher<ReadBarrieredWasmInstanceObject>, SystemAllocPolicy>>;
+  using UniqueAnyFuncArray = UniquePtr<FunctionTableElem[], JS::FreePolicy>;
 
-    ReadBarrieredWasmTableObject maybeObject_;
-    InstanceSet                  observers_;
-    UniqueAnyFuncArray           functions_; 
-    TableAnyRefVector            objects_;   
-    const TableKind              kind_;
-    uint32_t                     length_;
-    const Maybe<uint32_t>        maximum_;
+  ReadBarrieredWasmTableObject maybeObject_;
+  InstanceSet observers_;
+  UniqueAnyFuncArray functions_;  
+  TableAnyRefVector objects_;     
+  const TableKind kind_;
+  uint32_t length_;
+  const Maybe<uint32_t> maximum_;
 
-    template <class> friend struct js::MallocProvider;
-    Table(JSContext* cx, const TableDesc& td, HandleWasmTableObject maybeObject,
-          UniqueAnyFuncArray functions);
-    Table(JSContext* cx, const TableDesc& td, HandleWasmTableObject maybeObject,
-          TableAnyRefVector&& objects);
+  template <class>
+  friend struct js::MallocProvider;
+  Table(JSContext* cx, const TableDesc& td, HandleWasmTableObject maybeObject,
+        UniqueAnyFuncArray functions);
+  Table(JSContext* cx, const TableDesc& td, HandleWasmTableObject maybeObject,
+        TableAnyRefVector&& objects);
 
-    void tracePrivate(JSTracer* trc);
-    friend class js::WasmTableObject;
+  void tracePrivate(JSTracer* trc);
+  friend class js::WasmTableObject;
 
-  public:
-    static RefPtr<Table> create(JSContext* cx, const TableDesc& desc,
-                                HandleWasmTableObject maybeObject);
-    void trace(JSTracer* trc);
+ public:
+  static RefPtr<Table> create(JSContext* cx, const TableDesc& desc,
+                              HandleWasmTableObject maybeObject);
+  void trace(JSTracer* trc);
 
-    TableKind kind() const { return kind_; }
-    bool isTypedFunction() const { return kind_ == TableKind::TypedFunction; }
-    bool isFunction() const {
-        return kind_ == TableKind::AnyFunction || kind_ == TableKind::TypedFunction;
-    }
-    uint32_t length() const { return length_; }
-    Maybe<uint32_t> maximum() const { return maximum_; }
+  TableKind kind() const { return kind_; }
+  bool isTypedFunction() const { return kind_ == TableKind::TypedFunction; }
+  bool isFunction() const {
+    return kind_ == TableKind::AnyFunction || kind_ == TableKind::TypedFunction;
+  }
+  uint32_t length() const { return length_; }
+  Maybe<uint32_t> maximum() const { return maximum_; }
 
-    
-    uint8_t* functionBase() const;
+  
+  uint8_t* functionBase() const;
 
-    
-    
-    
-    const FunctionTableElem& getAnyFunc(uint32_t index) const;
-    void setAnyFunc(uint32_t index, void* code, const Instance* instance);
+  
+  
+  
+  const FunctionTableElem& getAnyFunc(uint32_t index) const;
+  void setAnyFunc(uint32_t index, void* code, const Instance* instance);
 
-    JSObject* getAnyRef(uint32_t index) const;
-    void setAnyRef(uint32_t index, JSObject* obj);
+  JSObject* getAnyRef(uint32_t index) const;
+  void setAnyRef(uint32_t index, JSObject* obj);
 
-    void setNull(uint32_t index);
+  void setNull(uint32_t index);
 
-    
-    
-    void copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex);
+  
+  
+  void copy(const Table& srcTable, uint32_t dstIndex, uint32_t srcIndex);
 
-    
-    uint32_t grow(uint32_t delta, JSContext* cx);
-    bool movingGrowable() const;
-    bool addMovingGrowObserver(JSContext* cx, WasmInstanceObject* instance);
+  
+  uint32_t grow(uint32_t delta, JSContext* cx);
+  bool movingGrowable() const;
+  bool addMovingGrowObserver(JSContext* cx, WasmInstanceObject* instance);
 
-    
+  
 
-    size_t sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const;
 };
 
 typedef RefPtr<Table> SharedTable;
 typedef Vector<SharedTable, 0, SystemAllocPolicy> SharedTableVector;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -21,41 +21,35 @@ namespace dom {
 struct ClientQueryOptions;
 class Promise;
 
-class Clients final : public nsISupports
-                    , public nsWrapperCache
-{
+class Clients final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mGlobal;
 
   ~Clients() = default;
 
-public:
+ public:
   explicit Clients(nsIGlobalObject* aGlobal);
 
   
-  JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   
-  nsIGlobalObject*
-  GetParentObject() const;
+  nsIGlobalObject* GetParentObject() const;
 
-  already_AddRefed<Promise>
-  Get(const nsAString& aClientID, ErrorResult& aRv);
+  already_AddRefed<Promise> Get(const nsAString& aClientID, ErrorResult& aRv);
 
-  already_AddRefed<Promise>
-  MatchAll(const ClientQueryOptions& aOptions, ErrorResult& aRv);
+  already_AddRefed<Promise> MatchAll(const ClientQueryOptions& aOptions,
+                                     ErrorResult& aRv);
 
-  already_AddRefed<Promise>
-  OpenWindow(const nsAString& aURL, ErrorResult& aRv);
+  already_AddRefed<Promise> OpenWindow(const nsAString& aURL, ErrorResult& aRv);
 
-  already_AddRefed<Promise>
-  Claim(ErrorResult& aRv);
+  already_AddRefed<Promise> Claim(ErrorResult& aRv);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Clients)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -31,18 +31,18 @@ class WebRenderParentCommand;
 class WebRenderUserData;
 
 class WebRenderCommandBuilder {
-  typedef nsTHashtable<nsRefPtrHashKey<WebRenderUserData>> WebRenderUserDataRefTable;
+  typedef nsTHashtable<nsRefPtrHashKey<WebRenderUserData>>
+      WebRenderUserDataRefTable;
   typedef nsTHashtable<nsRefPtrHashKey<WebRenderCanvasData>> CanvasDataSet;
 
-public:
+ public:
   explicit WebRenderCommandBuilder(WebRenderLayerManager* aManager)
-  : mManager(aManager)
-  , mLastAsr(nullptr)
-  , mBuilderDumpIndex(0)
-  , mDumpIndent(0)
-  , mDoGrouping(false)
-  , mContainsSVGGroup(false)
-  {}
+      : mManager(aManager),
+        mLastAsr(nullptr),
+        mBuilderDumpIndex(0),
+        mDumpIndent(0),
+        mDoGrouping(false),
+        mContainsSVGGroup(false) {}
 
   void Destroy();
 
@@ -62,43 +62,39 @@ public:
                           const wr::WrClipId& aClipId);
   void PopOverrideForASR(const ActiveScrolledRoot* aASR);
 
-  Maybe<wr::ImageKey> CreateImageKey(nsDisplayItem* aItem,
-                                     ImageContainer* aContainer,
-                                     mozilla::wr::DisplayListBuilder& aBuilder,
-                                     mozilla::wr::IpcResourceUpdateQueue& aResources,
-                                     mozilla::wr::ImageRendering aRendering,
-                                     const StackingContextHelper& aSc,
-                                     gfx::IntSize& aSize,
-                                     const Maybe<LayoutDeviceRect>& aAsyncImageBounds);
+  Maybe<wr::ImageKey> CreateImageKey(
+      nsDisplayItem* aItem, ImageContainer* aContainer,
+      mozilla::wr::DisplayListBuilder& aBuilder,
+      mozilla::wr::IpcResourceUpdateQueue& aResources,
+      mozilla::wr::ImageRendering aRendering, const StackingContextHelper& aSc,
+      gfx::IntSize& aSize, const Maybe<LayoutDeviceRect>& aAsyncImageBounds);
 
-  WebRenderUserDataRefTable* GetWebRenderUserDataTable() { return &mWebRenderUserDatas; }
+  WebRenderUserDataRefTable* GetWebRenderUserDataTable() {
+    return &mWebRenderUserDatas;
+  }
 
-  bool PushImage(nsDisplayItem* aItem,
-                 ImageContainer* aContainer,
+  bool PushImage(nsDisplayItem* aItem, ImageContainer* aContainer,
                  mozilla::wr::DisplayListBuilder& aBuilder,
                  mozilla::wr::IpcResourceUpdateQueue& aResources,
                  const StackingContextHelper& aSc,
                  const LayoutDeviceRect& aRect);
 
-  Maybe<wr::WrImageMask> BuildWrMaskImage(nsDisplayItem* aItem,
-                                          wr::DisplayListBuilder& aBuilder,
-                                          wr::IpcResourceUpdateQueue& aResources,
-                                          const StackingContextHelper& aSc,
-                                          nsDisplayListBuilder* aDisplayListBuilder,
-                                          const LayoutDeviceRect& aBounds);
+  Maybe<wr::WrImageMask> BuildWrMaskImage(
+      nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
+      wr::IpcResourceUpdateQueue& aResources, const StackingContextHelper& aSc,
+      nsDisplayListBuilder* aDisplayListBuilder,
+      const LayoutDeviceRect& aBounds);
 
-  bool PushItemAsImage(nsDisplayItem* aItem,
-                       wr::DisplayListBuilder& aBuilder,
+  bool PushItemAsImage(nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
                        wr::IpcResourceUpdateQueue& aResources,
                        const StackingContextHelper& aSc,
                        nsDisplayListBuilder* aDisplayListBuilder);
 
-  void CreateWebRenderCommandsFromDisplayList(nsDisplayList* aDisplayList,
-                                              nsDisplayItem* aOuterItem,
-                                              nsDisplayListBuilder* aDisplayListBuilder,
-                                              const StackingContextHelper& aSc,
-                                              wr::DisplayListBuilder& aBuilder,
-                                              wr::IpcResourceUpdateQueue& aResources);
+  void CreateWebRenderCommandsFromDisplayList(
+      nsDisplayList* aDisplayList, nsDisplayItem* aOuterItem,
+      nsDisplayListBuilder* aDisplayListBuilder,
+      const StackingContextHelper& aSc, wr::DisplayListBuilder& aBuilder,
+      wr::IpcResourceUpdateQueue& aResources);
 
   
   void DoGroupingForDisplayList(nsDisplayList* aDisplayList,
@@ -108,12 +104,10 @@ public:
                                 wr::DisplayListBuilder& aBuilder,
                                 wr::IpcResourceUpdateQueue& aResources);
 
-  already_AddRefed<WebRenderFallbackData> GenerateFallbackData(nsDisplayItem* aItem,
-                                                               wr::DisplayListBuilder& aBuilder,
-                                                               wr::IpcResourceUpdateQueue& aResources,
-                                                               const StackingContextHelper& aSc,
-                                                               nsDisplayListBuilder* aDisplayListBuilder,
-                                                               LayoutDeviceRect& aImageRect);
+  already_AddRefed<WebRenderFallbackData> GenerateFallbackData(
+      nsDisplayItem* aItem, wr::DisplayListBuilder& aBuilder,
+      wr::IpcResourceUpdateQueue& aResources, const StackingContextHelper& aSc,
+      nsDisplayListBuilder* aDisplayListBuilder, LayoutDeviceRect& aImageRect);
 
   void RemoveUnusedAndResetWebRenderUserData();
   void ClearCachedResources();
@@ -127,10 +121,9 @@ public:
   
   
   
-  template<class T> already_AddRefed<T>
-  CreateOrRecycleWebRenderUserData(nsDisplayItem* aItem,
-                                   bool* aOutIsRecycled = nullptr)
-  {
+  template <class T>
+  already_AddRefed<T> CreateOrRecycleWebRenderUserData(
+      nsDisplayItem* aItem, bool* aOutIsRecycled = nullptr) {
     MOZ_ASSERT(aItem);
     nsIFrame* frame = aItem->Frame();
     if (aOutIsRecycled) {
@@ -138,15 +131,17 @@ public:
     }
 
     WebRenderUserDataTable* userDataTable =
-      frame->GetProperty(WebRenderUserDataProperty::Key());
+        frame->GetProperty(WebRenderUserDataProperty::Key());
 
     if (!userDataTable) {
       userDataTable = new WebRenderUserDataTable();
       frame->AddProperty(WebRenderUserDataProperty::Key(), userDataTable);
     }
 
-    RefPtr<WebRenderUserData>& data = userDataTable->GetOrInsert(WebRenderUserDataKey(aItem->GetPerFrameKey(), T::Type()));
+    RefPtr<WebRenderUserData>& data = userDataTable->GetOrInsert(
+        WebRenderUserDataKey(aItem->GetPerFrameKey(), T::Type()));
     if (!data) {
+      
       
       if (data) {
         data->RemoveFromTable();
@@ -162,6 +157,7 @@ public:
     MOZ_ASSERT(data->GetType() == T::Type());
 
     
+    
     data->SetUsed(true);
 
     if (T::Type() == WebRenderUserData::UserDataType::eCanvas) {
@@ -173,7 +169,7 @@ public:
 
   WebRenderLayerManager* mManager;
 
-private:
+ private:
   ClipManager mClipManager;
 
   
@@ -198,7 +194,7 @@ private:
   
   Maybe<wr::WrAnimationProperty> mZoomProp;
 
-public:
+ public:
   
   
   bool mDoGrouping;
@@ -208,7 +204,7 @@ public:
   bool mContainsSVGGroup;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

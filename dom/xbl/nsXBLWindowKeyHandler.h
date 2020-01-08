@@ -23,44 +23,41 @@ namespace dom {
 class Element;
 class EventTarget;
 class KeyboardEvent;
-} 
-} 
+}  
+}  
 
-class nsXBLWindowKeyHandler : public nsIDOMEventListener
-{
+class nsXBLWindowKeyHandler : public nsIDOMEventListener {
   typedef mozilla::EventListenerManager EventListenerManager;
   typedef mozilla::IgnoreModifierState IgnoreModifierState;
   typedef mozilla::layers::KeyboardMap KeyboardMap;
   typedef mozilla::dom::KeyboardEvent KeyboardEvent;
 
-public:
+ public:
   nsXBLWindowKeyHandler(mozilla::dom::Element* aElement,
                         mozilla::dom::EventTarget* aTarget);
 
   void InstallKeyboardEventListenersTo(
-         EventListenerManager* aEventListenerManager);
+      EventListenerManager* aEventListenerManager);
   void RemoveKeyboardEventListenersFrom(
-         EventListenerManager* aEventListenerManager);
+      EventListenerManager* aEventListenerManager);
 
   static KeyboardMap CollectKeyboardShortcuts();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMEVENTLISTENER
 
-protected:
+ protected:
   virtual ~nsXBLWindowKeyHandler();
 
   nsresult WalkHandlers(KeyboardEvent* aKeyEvent);
 
   
-  bool WalkHandlersInternal(KeyboardEvent* aKeyEvent,
-                            bool aExecute,
+  bool WalkHandlersInternal(KeyboardEvent* aKeyEvent, bool aExecute,
                             bool* aOutReservedForChrome = nullptr);
 
   
   
-  bool WalkHandlersAndExecute(KeyboardEvent* aKeyEvent,
-                              uint32_t aCharCode,
+  bool WalkHandlersAndExecute(KeyboardEvent* aKeyEvent, uint32_t aCharCode,
                               const IgnoreModifierState& aIgnoreModifierState,
                               bool aExecute,
                               bool* aOutReservedForChrome = nullptr);
@@ -92,7 +89,8 @@ protected:
   
   
   
-  already_AddRefed<mozilla::dom::Element> GetElement(bool* aIsDisabled = nullptr);
+  already_AddRefed<mozilla::dom::Element> GetElement(
+      bool* aIsDisabled = nullptr);
 
   
 
@@ -113,14 +111,13 @@ protected:
   bool IsExecutableElement(mozilla::dom::Element* aElement) const;
 
   
-  nsWeakPtr              mWeakPtrForElement;
-  mozilla::dom::EventTarget* mTarget; 
+  nsWeakPtr mWeakPtrForElement;
+  mozilla::dom::EventTarget* mTarget;  
 
-  nsXBLPrototypeHandler* mHandler;     
+  nsXBLPrototypeHandler* mHandler;  
 };
 
-already_AddRefed<nsXBLWindowKeyHandler>
-NS_NewXBLWindowKeyHandler(mozilla::dom::Element* aElement,
-                          mozilla::dom::EventTarget* aTarget);
+already_AddRefed<nsXBLWindowKeyHandler> NS_NewXBLWindowKeyHandler(
+    mozilla::dom::Element* aElement, mozilla::dom::EventTarget* aTarget);
 
 #endif

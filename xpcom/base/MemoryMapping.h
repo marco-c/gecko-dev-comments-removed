@@ -21,45 +21,42 @@
 
 namespace mozilla {
 
-enum class VMFlag : uint8_t
-{
-  Readable,      
-  Writable,      
-  Executable,    
-  Shared,        
-  MayRead,       
-  MayWrite,      
-  MayExecute,    
-  MayShare,      
-  GrowsDown,     
-  PurePFN,       
-  DisabledWrite, 
-  Locked,        
-  IO,            
-  Sequential,    
-  Random,        
-  NoFork,        
-  NoExpand,      
-  Accountable,   
-  NotReserved,   
-  HugeTLB,       
-  NonLinear,     
-  ArchSpecific,  
-  NoCore,        
-  SoftDirty,     
-  MixedMap,      
-  HugePage,      
-  NoHugePage,    
-  Mergeable,     
+enum class VMFlag : uint8_t {
+  Readable,       
+  Writable,       
+  Executable,     
+  Shared,         
+  MayRead,        
+  MayWrite,       
+  MayExecute,     
+  MayShare,       
+  GrowsDown,      
+  PurePFN,        
+  DisabledWrite,  
+  Locked,         
+  IO,             
+  Sequential,     
+  Random,         
+  NoFork,         
+  NoExpand,       
+  Accountable,    
+  NotReserved,    
+  HugeTLB,        
+  NonLinear,      
+  ArchSpecific,   
+  NoCore,         
+  SoftDirty,      
+  MixedMap,       
+  HugePage,       
+  NoHugePage,     
+  Mergeable,      
 };
 
 using VMFlagSet = EnumSet<VMFlag, uint32_t>;
 
-class MemoryMapping final
-{
-public:
-  enum class Perm : uint8_t
-  {
+class MemoryMapping final {
+ public:
+  enum class Perm : uint8_t {
     Read,
     Write,
     Execute,
@@ -69,23 +66,20 @@ public:
 
   using PermSet = EnumSet<Perm>;
 
-  MemoryMapping(uintptr_t aStart, uintptr_t aEnd,
-                PermSet aPerms, size_t aOffset,
-                const char* aName)
-    : mStart(aStart)
-    , mEnd(aEnd)
-    , mOffset(aOffset)
-    , mName(aName)
-    , mPerms(aPerms)
-  {}
+  MemoryMapping(uintptr_t aStart, uintptr_t aEnd, PermSet aPerms,
+                size_t aOffset, const char* aName)
+      : mStart(aStart),
+        mEnd(aEnd),
+        mOffset(aOffset),
+        mName(aName),
+        mPerms(aPerms) {}
 
   const nsCString& Name() const { return mName; }
 
   uintptr_t Start() const { return mStart; }
   uintptr_t End() const { return mEnd; }
 
-  bool Includes(const void* aPtr) const
-  {
+  bool Includes(const void* aPtr) const {
     auto ptr = uintptr_t(aPtr);
     return ptr >= mStart && ptr < mEnd;
   }
@@ -126,7 +120,7 @@ public:
   bool operator==(const void* aPtr) const { return Includes(aPtr); }
   bool operator<(const void* aPtr) const { return mStart < uintptr_t(aPtr); }
 
-private:
+ private:
   friend nsresult GetMemoryMappings(nsTArray<MemoryMapping>& aMappings);
 
   uintptr_t mStart = 0;
@@ -164,27 +158,24 @@ private:
   
   
   
-  struct Field
-  {
+  struct Field {
     const char* mName;
     size_t mOffset;
   };
 
   static const Field sFields[20];
 
-  size_t& ValueForField(const Field& aField)
-  {
+  size_t& ValueForField(const Field& aField) {
     char* fieldPtr = reinterpret_cast<char*>(this) + aField.mOffset;
     return reinterpret_cast<size_t*>(fieldPtr)[0];
   }
-  size_t ValueForField(const Field& aField) const
-  {
+  size_t ValueForField(const Field& aField) const {
     return const_cast<MemoryMapping*>(this)->ValueForField(aField);
   }
 };
 
 nsresult GetMemoryMappings(nsTArray<MemoryMapping>& aMappings);
 
-} 
+}  
 
-#endif 
+#endif  

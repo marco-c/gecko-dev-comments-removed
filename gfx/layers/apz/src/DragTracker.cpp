@@ -14,33 +14,24 @@
 namespace mozilla {
 namespace layers {
 
-DragTracker::DragTracker()
-  : mInDrag(false)
-{
-}
+DragTracker::DragTracker() : mInDrag(false) {}
 
- bool
-DragTracker::StartsDrag(const MouseInput& aInput)
-{
+ bool DragTracker::StartsDrag(const MouseInput& aInput) {
   return aInput.IsLeftButton() && aInput.mType == MouseInput::MOUSE_DOWN;
 }
 
- bool
-DragTracker::EndsDrag(const MouseInput& aInput)
-{
+ bool DragTracker::EndsDrag(const MouseInput& aInput) {
   
   
   
   
   
   
-  return (aInput.IsLeftButton() && aInput.mType == MouseInput::MOUSE_UP)
-      || aInput.mType == MouseInput::MOUSE_DRAG_END;
+  return (aInput.IsLeftButton() && aInput.mType == MouseInput::MOUSE_UP) ||
+         aInput.mType == MouseInput::MOUSE_DRAG_END;
 }
 
-void
-DragTracker::Update(const MouseInput& aInput)
-{
+void DragTracker::Update(const MouseInput& aInput) {
   if (StartsDrag(aInput)) {
     DRAG_LOG("Starting drag\n");
     mInDrag = true;
@@ -51,15 +42,9 @@ DragTracker::Update(const MouseInput& aInput)
   }
 }
 
-bool
-DragTracker::InDrag() const
-{
-  return mInDrag;
-}
+bool DragTracker::InDrag() const { return mInDrag; }
 
-bool
-DragTracker::IsOnScrollbar(bool aOnScrollbar)
-{
+bool DragTracker::IsOnScrollbar(bool aOnScrollbar) {
   if (!mOnScrollbar) {
     DRAG_LOG("Setting hitscrollbar %d\n", aOnScrollbar);
     mOnScrollbar = Some(aOnScrollbar);
@@ -67,5 +52,5 @@ DragTracker::IsOnScrollbar(bool aOnScrollbar)
   return mOnScrollbar.value();
 }
 
-} 
-} 
+}  
+}  

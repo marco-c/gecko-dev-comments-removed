@@ -36,9 +36,8 @@ class WaitForThreadShutdown;
 
 
 
-class NS_NO_VTABLE nsPACManCallback : public nsISupports
-{
-public:
+class NS_NO_VTABLE nsPACManCallback : public nsISupports {
+ public:
   
 
 
@@ -52,36 +51,33 @@ public:
 
 
 
-  virtual void OnQueryComplete(nsresult status,
-                               const nsACString &pacString,
+  virtual void OnQueryComplete(nsresult status, const nsACString &pacString,
                                const nsACString &newPACURL) = 0;
 };
 
 class PendingPACQuery final : public Runnable,
-                              public LinkedListElement<PendingPACQuery>
-{
-public:
-  PendingPACQuery(nsPACMan *pacMan, nsIURI *uri,
-                  nsPACManCallback *callback,
+                              public LinkedListElement<PendingPACQuery> {
+ public:
+  PendingPACQuery(nsPACMan *pacMan, nsIURI *uri, nsPACManCallback *callback,
                   bool mainThreadResponse);
 
   
   void Complete(nsresult status, const nsACString &pacString);
   void UseAlternatePACFile(const nsACString &pacURL);
 
-  nsCString                  mSpec;
-  nsCString                  mScheme;
-  nsCString                  mHost;
-  int32_t                    mPort;
+  nsCString mSpec;
+  nsCString mScheme;
+  nsCString mHost;
+  int32_t mPort;
 
-  NS_IMETHOD Run(void) override;     
+  NS_IMETHOD Run(void) override; 
 
-private:
-  nsPACMan                  *mPACMan;  
+ private:
+  nsPACMan *mPACMan;  
 
-private:
+ private:
   RefPtr<nsPACManCallback> mCallback;
-  bool                       mOnMainThreadOnly;
+  bool mOnMainThreadOnly;
 };
 
 
@@ -89,12 +85,11 @@ private:
 
 
 
-class nsPACMan final : public nsIStreamLoaderObserver
-                     , public nsIInterfaceRequestor
-                     , public nsIChannelEventSink
-                     , public NeckoTargetHolder
-{
-public:
+class nsPACMan final : public nsIStreamLoaderObserver,
+                       public nsIInterfaceRequestor,
+                       public nsIChannelEventSink,
+                       public NeckoTargetHolder {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
   explicit nsPACMan(nsIEventTarget *mainThreadEventTarget);
@@ -119,8 +114,7 @@ public:
 
 
 
-  nsresult AsyncGetProxyForURI(nsIURI *uri,
-                               nsPACManCallback *callback,
+  nsresult AsyncGetProxyForURI(nsIURI *uri, nsPACManCallback *callback,
                                bool mustCallbackOnMainThread);
 
   
@@ -147,10 +141,9 @@ public:
 
 
 
-  bool IsPACURI(const nsACString &spec)
-  {
+  bool IsPACURI(const nsACString &spec) {
     return mPACURISpec.Equals(spec) || mPACURIRedirectSpec.Equals(spec) ||
-      mNormalPACURISpec.Equals(spec);
+           mNormalPACURISpec.Equals(spec);
   }
 
   bool IsPACURI(nsIURI *uri) {
@@ -167,9 +160,7 @@ public:
     return IsPACURI(tmp);
   }
 
-  bool IsUsingWPAD() {
-    return mAutoDetect;
-  }
+  bool IsUsingWPAD() { return mAutoDetect; }
 
   nsresult Init(nsISystemProxySettings *);
   static nsPACMan *sInstance;
@@ -180,7 +171,7 @@ public:
 
   void SetWPADOverDHCPEnabled(bool aValue) { mWPADOverDHCPEnabled = aValue; }
 
-private:
+ private:
   NS_DECL_NSISTREAMLOADEROBSERVER
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSICHANNELEVENTSINK
@@ -209,7 +200,7 @@ private:
 
   void ContinueLoadingAfterPACUriKnown();
 
-
+  
 
 
 
@@ -251,7 +242,7 @@ private:
   nsresult GetPACFromDHCP(nsACString &aSpec);
   nsresult ConfigureWPAD(nsACString &aSpec);
 
-private:
+ private:
   
 
 
@@ -259,10 +250,11 @@ private:
 
 
 
-  nsresult DispatchToPAC(already_AddRefed<nsIRunnable> aEvent, bool aSync = false);
+  nsresult DispatchToPAC(already_AddRefed<nsIRunnable> aEvent,
+                         bool aSync = false);
 
   ProxyAutoConfig mPAC;
-  nsCOMPtr<nsIThread>           mPACThread;
+  nsCOMPtr<nsIThread> mPACThread;
   nsCOMPtr<nsISystemProxySettings> mSystemProxySettings;
   nsCOMPtr<nsIDHCPClient> mDHCPClient;
 
@@ -271,26 +263,26 @@ private:
   
   
   
-  nsCString                    mPACURISpec;
-  nsCString                    mPACURIRedirectSpec;
-  nsCString                    mNormalPACURISpec;
+  nsCString mPACURISpec;
+  nsCString mPACURIRedirectSpec;
+  nsCString mNormalPACURISpec;
 
-  nsCOMPtr<nsIStreamLoader>    mLoader;
-  bool                         mLoadPending;
-  Atomic<bool, Relaxed>        mShutdown;
-  TimeStamp                    mScheduledReload;
-  uint32_t                     mLoadFailureCount;
+  nsCOMPtr<nsIStreamLoader> mLoader;
+  bool mLoadPending;
+  Atomic<bool, Relaxed> mShutdown;
+  TimeStamp mScheduledReload;
+  uint32_t mLoadFailureCount;
 
-  bool                         mInProgress;
-  bool                         mIncludePath;
-  bool                         mAutoDetect;
-  bool                         mWPADOverDHCPEnabled;
-  int32_t                      mProxyConfigType;
+  bool mInProgress;
+  bool mIncludePath;
+  bool mAutoDetect;
+  bool mWPADOverDHCPEnabled;
+  int32_t mProxyConfigType;
 };
 
 extern LazyLogModule gProxyLog;
 
-} 
-} 
+}  
+}  
 
 #endif  

@@ -17,9 +17,8 @@
 class nsIDocShell;
 class nsIEditingSession;
 
-class nsDocShellEditorData
-{
-public:
+class nsDocShellEditorData {
+ public:
   explicit nsDocShellEditorData(nsIDocShell* aOwningDocShell);
   ~nsDocShellEditorData();
 
@@ -27,17 +26,14 @@ public:
   bool GetEditable();
   nsresult CreateEditor();
   nsresult GetEditingSession(nsIEditingSession** aResult);
-  mozilla::HTMLEditor* GetHTMLEditor() const
-  {
-    return mHTMLEditor;
-  }
+  mozilla::HTMLEditor* GetHTMLEditor() const { return mHTMLEditor; }
   nsresult SetHTMLEditor(mozilla::HTMLEditor* aHTMLEditor);
   void TearDownEditor();
   nsresult DetachFromWindow();
   nsresult ReattachToWindow(nsIDocShell* aDocShell);
   bool WaitingForLoad() const { return mMakeEditable; }
 
-protected:
+ protected:
   void EnsureEditingSession();
 
   
@@ -64,4 +60,4 @@ protected:
   bool mDetachedMakeEditable;
 };
 
-#endif 
+#endif  

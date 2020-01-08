@@ -16,7 +16,7 @@ namespace mozilla {
 namespace dom {
 class nsIContentChild;
 class nsIContentParent;
-}
+}  
 
 namespace ipc {
 
@@ -25,11 +25,10 @@ class PBackgroundParent;
 
 
 
-already_AddRefed<nsIInputStream>
-DeserializeIPCStream(const IPCStream& aValue);
+already_AddRefed<nsIInputStream> DeserializeIPCStream(const IPCStream& aValue);
 
-already_AddRefed<nsIInputStream>
-DeserializeIPCStream(const OptionalIPCStream& aValue);
+already_AddRefed<nsIInputStream> DeserializeIPCStream(
+    const OptionalIPCStream& aValue);
 
 
 
@@ -121,18 +120,16 @@ DeserializeIPCStream(const OptionalIPCStream& aValue);
 
 
 
-class AutoIPCStream final
-{
+class AutoIPCStream final {
   OptionalIPCStream mInlineValue;
   IPCStream* mValue;
   OptionalIPCStream* mOptionalValue;
   bool mTaken;
   bool mDelayedStart;
 
-  bool
-  IsSet() const;
+  bool IsSet() const;
 
-public:
+ public:
   
   
   explicit AutoIPCStream(bool aDelayedStart = false);
@@ -152,52 +149,47 @@ public:
   
   
   
-  bool
-  Serialize(nsIInputStream* aStream, dom::nsIContentChild* aManager);
+  bool Serialize(nsIInputStream* aStream, dom::nsIContentChild* aManager);
 
   
   
   
-  bool
-  Serialize(nsIInputStream* aStream, PBackgroundChild* aManager);
+  bool Serialize(nsIInputStream* aStream, PBackgroundChild* aManager);
 
   
-  MOZ_MUST_USE bool
-  Serialize(nsIInputStream* aStream, dom::nsIContentParent* aManager);
+  MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,
+                              dom::nsIContentParent* aManager);
 
   
-  MOZ_MUST_USE bool
-  Serialize(nsIInputStream* aStream, PBackgroundParent* aManager);
-
-  
-  
-  
-  
-  IPCStream&
-  TakeValue();
+  MOZ_MUST_USE bool Serialize(nsIInputStream* aStream,
+                              PBackgroundParent* aManager);
 
   
   
   
-  OptionalIPCStream&
-  TakeOptionalValue();
+  
+  IPCStream& TakeValue();
 
-private:
+  
+  
+  
+  OptionalIPCStream& TakeOptionalValue();
+
+ private:
   AutoIPCStream(const AutoIPCStream& aOther) = delete;
   AutoIPCStream& operator=(const AutoIPCStream& aOther) = delete;
   AutoIPCStream& operator=(const AutoIPCStream&& aOther) = delete;
 };
 
-template<>
-struct IPDLParamTraits<nsIInputStream>
-{
+template <>
+struct IPDLParamTraits<nsIInputStream> {
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     nsIInputStream* aParam);
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, RefPtr<nsIInputStream>* aResult);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

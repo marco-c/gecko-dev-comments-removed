@@ -56,49 +56,43 @@ typedef MALLOC_USABLE_SIZE_CONST_PTR void* usable_ptr_t;
 
 typedef size_t arena_id_t;
 
-typedef struct arena_params_s
-{
+typedef struct arena_params_s {
   size_t mMaxDirty;
 
 #ifdef __cplusplus
-  arena_params_s()
-    : mMaxDirty(0)
-  {
-  }
+  arena_params_s() : mMaxDirty(0) {}
 #endif
 } arena_params_t;
 
 
 
 
-typedef struct
-{
+typedef struct {
   
-  bool opt_junk;    
-  bool opt_zero;    
-  size_t narenas;   
-  size_t quantum;   
-  size_t small_max; 
-  size_t large_max; 
-  size_t chunksize; 
-  size_t page_size; 
-  size_t dirty_max; 
+  bool opt_junk;     
+  bool opt_zero;     
+  size_t narenas;    
+  size_t quantum;    
+  size_t small_max;  
+  size_t large_max;  
+  size_t chunksize;  
+  size_t page_size;  
+  size_t dirty_max;  
 
   
-  size_t mapped;      
-  size_t allocated;   
-  size_t waste;       
-                      
-                      
-  size_t page_cache;  
-                      
-  size_t bookkeeping; 
-                      
-  size_t bin_unused;  
+  size_t mapped;       
+  size_t allocated;    
+  size_t waste;        
+                       
+                       
+  size_t page_cache;   
+                       
+  size_t bookkeeping;  
+                       
+  size_t bin_unused;   
 } jemalloc_stats_t;
 
-enum PtrInfoTag
-{
+enum PtrInfoTag {
   
   
   TagUnknown,
@@ -127,38 +121,31 @@ enum PtrInfoTag
 
 
 
-typedef struct
-{
+typedef struct {
   enum PtrInfoTag tag;
-  void* addr;  
-  size_t size; 
+  void* addr;   
+  size_t size;  
 } jemalloc_ptr_info_t;
 
-static inline bool
-jemalloc_ptr_is_live(jemalloc_ptr_info_t* info)
-{
+static inline bool jemalloc_ptr_is_live(jemalloc_ptr_info_t* info) {
   return info->tag == TagLiveSmall || info->tag == TagLiveLarge ||
          info->tag == TagLiveHuge;
 }
 
-static inline bool
-jemalloc_ptr_is_freed(jemalloc_ptr_info_t* info)
-{
+static inline bool jemalloc_ptr_is_freed(jemalloc_ptr_info_t* info) {
   return info->tag == TagFreedSmall || info->tag == TagFreedPageDirty ||
          info->tag == TagFreedPageDecommitted ||
          info->tag == TagFreedPageMadvised || info->tag == TagFreedPageZeroed;
 }
 
-static inline bool
-jemalloc_ptr_is_freed_page(jemalloc_ptr_info_t* info)
-{
+static inline bool jemalloc_ptr_is_freed_page(jemalloc_ptr_info_t* info) {
   return info->tag == TagFreedPageDirty ||
          info->tag == TagFreedPageDecommitted ||
          info->tag == TagFreedPageMadvised || info->tag == TagFreedPageZeroed;
 }
 
 #ifdef __cplusplus
-} 
+}  
 #endif
 
-#endif 
+#endif  

@@ -15,33 +15,31 @@ class nsILoadInfo;
 namespace mozilla {
 namespace net {
 
-class nsViewSourceHandler final : public nsIProtocolHandlerWithDynamicFlags
-                                , public nsIProtocolHandler
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIPROTOCOLHANDLER
-    NS_DECL_NSIPROTOCOLHANDLERWITHDYNAMICFLAGS
+class nsViewSourceHandler final : public nsIProtocolHandlerWithDynamicFlags,
+                                  public nsIProtocolHandler {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPROTOCOLHANDLER
+  NS_DECL_NSIPROTOCOLHANDLERWITHDYNAMICFLAGS
 
-    nsViewSourceHandler();
+  nsViewSourceHandler();
 
-    
-    
-    MOZ_MUST_USE nsresult NewSrcdocChannel(nsIURI *aURI,
-                                           nsIURI *aBaseURI,
-                                           const nsAString &aSrcdoc,
-                                           nsILoadInfo *aLoadInfo,
-                                           nsIChannel** outChannel);
+  
+  
+  MOZ_MUST_USE nsresult NewSrcdocChannel(nsIURI *aURI, nsIURI *aBaseURI,
+                                         const nsAString &aSrcdoc,
+                                         nsILoadInfo *aLoadInfo,
+                                         nsIChannel **outChannel);
 
-    static nsViewSourceHandler* GetInstance();
+  static nsViewSourceHandler *GetInstance();
 
-private:
-    ~nsViewSourceHandler();
+ private:
+  ~nsViewSourceHandler();
 
-    static nsViewSourceHandler* gInstance;
+  static nsViewSourceHandler *gInstance;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

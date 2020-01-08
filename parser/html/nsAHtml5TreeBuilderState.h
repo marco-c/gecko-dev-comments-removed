@@ -12,9 +12,8 @@
 
 
 
-class nsAHtml5TreeBuilderState
-{
-public:
+class nsAHtml5TreeBuilderState {
+ public:
   virtual jArray<nsHtml5StackNode*, int32_t> getStack() = 0;
 
   virtual jArray<nsHtml5StackNode*, int32_t>

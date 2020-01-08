@@ -12,37 +12,30 @@
 namespace mozilla {
 namespace plugins {
 
-class StreamNotifyParent : public PStreamNotifyParent
-{
+class StreamNotifyParent : public PStreamNotifyParent {
   friend class PluginInstanceParent;
 
-  StreamNotifyParent()
-    : mDestructionFlag(nullptr)
-  { }
+  StreamNotifyParent() : mDestructionFlag(nullptr) {}
   ~StreamNotifyParent() {
-    if (mDestructionFlag)
-      *mDestructionFlag = true;
+    if (mDestructionFlag) *mDestructionFlag = true;
   }
 
-public:
+ public:
   
   
-  void SetDestructionFlag(bool* flag) {
-    mDestructionFlag = flag;
-  }
-  void ClearDestructionFlag() {
-    mDestructionFlag = nullptr;
-  }
+  void SetDestructionFlag(bool* flag) { mDestructionFlag = flag; }
+  void ClearDestructionFlag() { mDestructionFlag = nullptr; }
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-private:
-  mozilla::ipc::IPCResult RecvRedirectNotifyResponse(const bool& allow) override;
+ private:
+  mozilla::ipc::IPCResult RecvRedirectNotifyResponse(
+      const bool& allow) override;
 
   bool* mDestructionFlag;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

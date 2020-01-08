@@ -26,7 +26,7 @@ class SmoothScrollAnimation;
 class AsyncPanZoomAnimation {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AsyncPanZoomAnimation)
 
-public:
+ public:
   explicit AsyncPanZoomAnimation() = default;
 
   virtual bool DoSample(FrameMetrics& aFrameMetrics,
@@ -46,13 +46,11 @@ public:
 
 
 
-  virtual bool HandleScrollOffsetUpdate(const Maybe<CSSPoint>& aRelativeDelta)
-  {
+  virtual bool HandleScrollOffsetUpdate(const Maybe<CSSPoint>& aRelativeDelta) {
     return false;
   }
 
-  bool Sample(FrameMetrics& aFrameMetrics,
-              const TimeDuration& aDelta) {
+  bool Sample(FrameMetrics& aFrameMetrics, const TimeDuration& aDelta) {
     
     
     
@@ -74,20 +72,14 @@ public:
   virtual KeyboardScrollAnimation* AsKeyboardScrollAnimation() {
     return nullptr;
   }
-  virtual WheelScrollAnimation* AsWheelScrollAnimation() {
-    return nullptr;
-  }
-  virtual SmoothScrollAnimation* AsSmoothScrollAnimation() {
-    return nullptr;
-  }
+  virtual WheelScrollAnimation* AsWheelScrollAnimation() { return nullptr; }
+  virtual SmoothScrollAnimation* AsSmoothScrollAnimation() { return nullptr; }
 
-  virtual bool WantsRepaints() {
-    return true;
-  }
+  virtual bool WantsRepaints() { return true; }
 
   virtual void Cancel(CancelAnimationFlags aFlags) {}
 
-protected:
+ protected:
   
   virtual ~AsyncPanZoomAnimation() = default;
 
@@ -99,7 +91,7 @@ protected:
   nsTArray<RefPtr<Runnable>> mDeferredTasks;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

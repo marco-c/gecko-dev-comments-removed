@@ -26,9 +26,9 @@ class FeatureChange;
 
 
 
-class gfxConfig
-{
-public:
+
+class gfxConfig {
+ public:
   
   static FeatureState& GetFeature(Feature aFeature);
 
@@ -66,12 +66,10 @@ public:
   static void Reset(Feature aFeature);
 
   
-  static bool SetDefault(Feature aFeature,
-                         bool aEnable,
+  static bool SetDefault(Feature aFeature, bool aEnable,
                          FeatureStatus aDisableStatus,
                          const char* aDisableMessage);
-  static void DisableByDefault(Feature aFeature,
-                               FeatureStatus aDisableStatus,
+  static void DisableByDefault(Feature aFeature, FeatureStatus aDisableStatus,
                                const char* aDisableMessage,
                                const nsACString& aFailureId = EmptyCString());
   static void EnableByDefault(Feature aFeature);
@@ -84,44 +82,36 @@ public:
   
   
   
-  static void Disable(Feature aFeature,
-                      FeatureStatus aStatus,
+  static void Disable(Feature aFeature, FeatureStatus aStatus,
                       const char* aMessage,
                       const nsACString& aFailureId = EmptyCString());
 
   
   
   
-  static void SetDefaultFromPref(Feature aFeature,
-                                 const char* aPrefName,
-                                 bool aIsEnablePref,
-                                 bool aDefaultValue);
+  static void SetDefaultFromPref(Feature aFeature, const char* aPrefName,
+                                 bool aIsEnablePref, bool aDefaultValue);
 
   
   
   
-  static void SetFailed(Feature aFeature,
-                        FeatureStatus aStatus,
+  static void SetFailed(Feature aFeature, FeatureStatus aStatus,
                         const char* aMessage,
                         const nsACString& aFailureId = EmptyCString());
 
   
   
-  static void ForceDisable(Feature aFeature,
-                           FeatureStatus aStatus,
+  static void ForceDisable(Feature aFeature, FeatureStatus aStatus,
                            const char* aMessage,
-                           const nsACString& aFailureId = EmptyCString())
-  {
+                           const nsACString& aFailureId = EmptyCString()) {
     SetFailed(aFeature, aStatus, aMessage, aFailureId);
   }
 
   
-  static bool MaybeSetFailed(Feature aFeature,
-                             bool aEnable,
+  static bool MaybeSetFailed(Feature aFeature, bool aEnable,
                              FeatureStatus aDisableStatus,
                              const char* aDisableMessage,
-                             const nsACString& aFailureId = EmptyCString())
-  {
+                             const nsACString& aFailureId = EmptyCString()) {
     if (!aEnable) {
       SetFailed(aFeature, aDisableStatus, aDisableMessage, aFailureId);
       return false;
@@ -130,17 +120,13 @@ public:
   }
 
   
-  static bool MaybeSetFailed(Feature aFeature,
-                             FeatureStatus aStatus,
+  static bool MaybeSetFailed(Feature aFeature, FeatureStatus aStatus,
                              const char* aDisableMessage,
-                             const nsACString& aFailureId = EmptyCString())
-  {
-    return MaybeSetFailed(
-      aFeature,
-      (aStatus != FeatureStatus::Available &&
-       aStatus != FeatureStatus::ForceEnabled),
-      aStatus,
-      aDisableMessage, aFailureId);
+                             const nsACString& aFailureId = EmptyCString()) {
+    return MaybeSetFailed(aFeature,
+                          (aStatus != FeatureStatus::Available &&
+                           aStatus != FeatureStatus::ForceEnabled),
+                          aStatus, aDisableMessage, aFailureId);
   }
 
   
@@ -153,8 +139,7 @@ public:
   
   
   
-  static bool InitOrUpdate(Feature aFeature,
-                           bool aEnable,
+  static bool InitOrUpdate(Feature aFeature, bool aEnable,
                            FeatureStatus aDisableStatus,
                            const char* aDisableMessage);
 
@@ -162,7 +147,8 @@ public:
   
   static void UserEnable(Feature aFeature, const char* aMessage);
   static void UserForceEnable(Feature aFeature, const char* aMessage);
-  static void UserDisable(Feature aFeature, const char* aMessage, const nsACString& aFailureId = EmptyCString());
+  static void UserDisable(Feature aFeature, const char* aMessage,
+                          const nsACString& aFailureId = EmptyCString());
 
   
   static bool UseFallback(Fallback aFallback);
@@ -172,14 +158,14 @@ public:
   static void EnableFallback(Fallback aFallback, const char* aMessage);
 
   
-  typedef std::function<void(const char* aName,
-                             const char* aDescription,
-                             FeatureState& aFeature)> FeatureIterCallback;
+  typedef std::function<void(const char* aName, const char* aDescription,
+                             FeatureState& aFeature)>
+      FeatureIterCallback;
   static void ForEachFeature(const FeatureIterCallback& aCallback);
 
   
-  typedef std::function<void(const char* aName, const char* aMsg)> 
-    FallbackIterCallback;
+  typedef std::function<void(const char* aName, const char* aMsg)>
+      FallbackIterCallback;
   static void ForEachFallback(const FallbackIterCallback& aCallback);
 
   
@@ -190,10 +176,10 @@ public:
   static void Init();
   static void Shutdown();
 
-private:
+ private:
   void ForEachFallbackImpl(const FallbackIterCallback& aCallback);
 
-private:
+ private:
   FeatureState& GetState(Feature aFeature) {
     MOZ_ASSERT(size_t(aFeature) < kNumFeatures);
     return mFeatures[size_t(aFeature)];
@@ -206,15 +192,15 @@ private:
   bool UseFallbackImpl(Fallback aFallback) const;
   void EnableFallbackImpl(Fallback aFallback, const char* aMessage);
 
-private:
+ private:
   static const size_t kNumFeatures = size_t(Feature::NumValues);
   static const size_t kNumFallbacks = size_t(Fallback::NumValues);
 
-private:
+ private:
   FeatureState mFeatures[kNumFeatures];
   uint64_t mFallbackBits;
 
-private:
+ private:
   struct FallbackLogEntry {
     Fallback mFallback;
     char mMessage[80];
@@ -224,7 +210,7 @@ private:
   size_t mNumFallbackLogEntries;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

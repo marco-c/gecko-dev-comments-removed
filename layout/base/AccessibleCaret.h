@@ -28,7 +28,7 @@ namespace mozilla {
 
 namespace dom {
 class Event;
-} 
+}  
 
 
 
@@ -45,9 +45,8 @@ class Event;
 
 
 
-class AccessibleCaret
-{
-public:
+class AccessibleCaret {
+ public:
   explicit AccessibleCaret(nsIPresShell* aPresShell);
   virtual ~AccessibleCaret();
 
@@ -80,23 +79,16 @@ public:
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const Appearance& aAppearance);
 
-  Appearance GetAppearance() const
-  {
-    return mAppearance;
-  }
+  Appearance GetAppearance() const { return mAppearance; }
 
   virtual void SetAppearance(Appearance aAppearance);
 
   
   
-  bool IsLogicallyVisible() const
-  {
-      return mAppearance != Appearance::None;
-  }
+  bool IsLogicallyVisible() const { return mAppearance != Appearance::None; }
 
   
-  bool IsVisuallyVisible() const
-  {
+  bool IsVisuallyVisible() const {
     return (mAppearance != Appearance::None) &&
            (mAppearance != Appearance::NormalNotShown);
   }
@@ -124,23 +116,19 @@ public:
   
   
   enum class TouchArea {
-    Full, 
+    Full,  
     CaretImage
   };
   bool Contains(const nsPoint& aPoint, TouchArea aTouchArea) const;
 
   
   
-  nsPoint LogicalPosition() const
-  {
-    return mImaginaryCaretRect.Center();
-  }
+  nsPoint LogicalPosition() const { return mImaginaryCaretRect.Center(); }
 
   
   
   
-  dom::Element& CaretElement() const
-  {
+  dom::Element& CaretElement() const {
     return mCaretElementHolder->ContentNode();
   }
 
@@ -148,7 +136,7 @@ public:
   
   void EnsureApzAware();
 
-protected:
+ protected:
   
   void SetCaretElementStyle(const nsRect& aRect, float aZoomLevel);
   void SetTextOverlayElementStyle(const nsRect& aRect, float aZoomLevel);
@@ -158,28 +146,24 @@ protected:
   float GetZoomLevel();
 
   
-  dom::Element* TextOverlayElement() const
-  {
+  dom::Element* TextOverlayElement() const {
     return mCaretElementHolder->GetElementById(sTextOverlayElementId);
   }
 
   
-  dom::Element* CaretImageElement() const
-  {
+  dom::Element* CaretImageElement() const {
     return mCaretElementHolder->GetElementById(sCaretImageElementId);
   }
 
-  nsIFrame* RootFrame() const
-  {
-    return mPresShell->GetRootFrame();
-  }
+  nsIFrame* RootFrame() const { return mPresShell->GetRootFrame(); }
 
   nsIFrame* CustomContentContainerFrame() const;
 
   
   static nsAutoString AppearanceString(Appearance aAppearance);
 
-  already_AddRefed<dom::Element> CreateCaretElement(nsIDocument* aDocument) const;
+  already_AddRefed<dom::Element> CreateCaretElement(
+      nsIDocument* aDocument) const;
 
   
   void InjectCaretElement(nsIDocument* aDocument);
@@ -189,22 +173,19 @@ protected:
 
   
   
-  static nsPoint CaretElementPosition(const nsRect& aRect)
-  {
+  static nsPoint CaretElementPosition(const nsRect& aRect) {
     return aRect.TopLeft() + nsPoint(aRect.width / 2, 0);
   }
 
-  class DummyTouchListener final : public nsIDOMEventListener
-  {
-  public:
+  class DummyTouchListener final : public nsIDOMEventListener {
+   public:
     NS_DECL_ISUPPORTS
-    NS_IMETHOD HandleEvent(mozilla::dom::Event* aEvent) override
-    {
+    NS_IMETHOD HandleEvent(mozilla::dom::Event* aEvent) override {
       return NS_OK;
     }
 
-  private:
-    virtual ~DummyTouchListener() {};
+   private:
+    virtual ~DummyTouchListener(){};
   };
 
   
@@ -232,7 +213,7 @@ protected:
   static const nsLiteralString sTextOverlayElementId;
   static const nsLiteralString sCaretImageElementId;
 
-}; 
+};  
 
 std::ostream& operator<<(std::ostream& aStream,
                          const AccessibleCaret::Appearance& aAppearance);
@@ -240,6 +221,6 @@ std::ostream& operator<<(std::ostream& aStream,
 std::ostream& operator<<(std::ostream& aStream,
                          const AccessibleCaret::PositionChangedResult& aResult);
 
-} 
+}  
 
-#endif 
+#endif  

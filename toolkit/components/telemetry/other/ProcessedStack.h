@@ -11,7 +11,7 @@
 #include "nsString.h"
 #if defined(MOZ_GECKO_PROFILER)
 #include "shared-libraries.h"
-#endif 
+#endif  
 
 namespace mozilla {
 namespace Telemetry {
@@ -19,39 +19,36 @@ namespace Telemetry {
 
 
 
-class ProcessedStack
-{
-public:
+class ProcessedStack {
+ public:
   ProcessedStack();
   size_t GetStackSize() const;
   size_t GetNumModules() const;
 
-  struct Frame
-  {
+  struct Frame {
     
     uintptr_t mOffset;
     
     
     uint16_t mModIndex;
   };
-  struct Module
-  {
+  struct Module {
     
     
     nsString mName;
     nsCString mBreakpadId;
 
-    bool operator==(const Module& other) const;
+    bool operator==(const Module &other) const;
   };
 
   const Frame &GetFrame(unsigned aIndex) const;
-  void AddFrame(const Frame& aFrame);
+  void AddFrame(const Frame &aFrame);
   const Module &GetModule(unsigned aIndex) const;
-  void AddModule(const Module& aFrame);
+  void AddModule(const Module &aFrame);
 
   void Clear();
 
-private:
+ private:
   std::vector<Module> mModules;
   std::vector<Frame> mStack;
 };
@@ -59,22 +56,21 @@ private:
 
 
 
-ProcessedStack
-GetStackAndModules(const std::vector<uintptr_t> &aPCs);
+ProcessedStack GetStackAndModules(const std::vector<uintptr_t> &aPCs);
 
 
-class BatchProcessedStackGenerator
-{
-public:
+class BatchProcessedStackGenerator {
+ public:
   BatchProcessedStackGenerator();
   ProcessedStack GetStackAndModules(const std::vector<uintptr_t> &aPCs);
-private:
+
+ private:
 #if defined(MOZ_GECKO_PROFILER)
   SharedLibraryInfo mSortedRawModules;
 #endif
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

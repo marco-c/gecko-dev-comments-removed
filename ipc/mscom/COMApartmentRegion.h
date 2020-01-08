@@ -15,40 +15,27 @@
 namespace mozilla {
 namespace mscom {
 
-template<COINIT T>
-class MOZ_NON_TEMPORARY_CLASS COMApartmentRegion
-{
-public:
-  COMApartmentRegion()
-    : mInitResult(::CoInitializeEx(nullptr, T))
-  {
+template <COINIT T>
+class MOZ_NON_TEMPORARY_CLASS COMApartmentRegion {
+ public:
+  COMApartmentRegion() : mInitResult(::CoInitializeEx(nullptr, T)) {
     
     MOZ_ASSERT(IsValid());
   }
 
-  ~COMApartmentRegion()
-  {
+  ~COMApartmentRegion() {
     if (IsValid()) {
       ::CoUninitialize();
     }
   }
 
-  bool IsValidOutermost() const
-  {
-    return mInitResult == S_OK;
-  }
+  bool IsValidOutermost() const { return mInitResult == S_OK; }
 
-  bool IsValid() const
-  {
-    return SUCCEEDED(mInitResult);
-  }
+  bool IsValid() const { return SUCCEEDED(mInitResult); }
 
-  HRESULT GetHResult() const
-  {
-    return mInitResult;
-  }
+  HRESULT GetHResult() const { return mInitResult; }
 
-private:
+ private:
   COMApartmentRegion(const COMApartmentRegion&) = delete;
   COMApartmentRegion& operator=(const COMApartmentRegion&) = delete;
   COMApartmentRegion(COMApartmentRegion&&) = delete;
@@ -60,8 +47,7 @@ private:
 typedef COMApartmentRegion<COINIT_APARTMENTTHREADED> STARegion;
 typedef COMApartmentRegion<COINIT_MULTITHREADED> MTARegion;
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

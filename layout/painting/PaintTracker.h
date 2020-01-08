@@ -12,22 +12,20 @@
 
 namespace mozilla {
 
-class MOZ_STACK_CLASS PaintTracker
-{
-public:
+class MOZ_STACK_CLASS PaintTracker {
+ public:
   PaintTracker() { ++gPaintTracker; }
-  ~PaintTracker()
-  {
+  ~PaintTracker() {
     NS_ASSERTION(gPaintTracker > 0, "Mismatched constructor/destructor");
     --gPaintTracker;
   }
 
   static bool IsPainting() { return !!gPaintTracker; }
 
-private:
+ private:
   static int gPaintTracker;
 };
 
-} 
+}  
 
-#endif 
+#endif  

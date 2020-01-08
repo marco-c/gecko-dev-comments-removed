@@ -12,30 +12,24 @@
 
 using namespace mozilla;
 
-nsIFrame*
-NS_NewMathMLTokenFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewMathMLTokenFrame(nsIPresShell* aPresShell,
+                                 ComputedStyle* aStyle) {
   return new (aPresShell) nsMathMLTokenFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsMathMLTokenFrame)
 
-nsMathMLTokenFrame::~nsMathMLTokenFrame()
-{
-}
+nsMathMLTokenFrame::~nsMathMLTokenFrame() {}
 
 NS_IMETHODIMP
-nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent)
-{
+nsMathMLTokenFrame::InheritAutomaticData(nsIFrame* aParent) {
   
   nsMathMLContainerFrame::InheritAutomaticData(aParent);
 
   return NS_OK;
 }
 
-eMathMLFrameType
-nsMathMLTokenFrame::GetMathMLFrameType()
-{
+eMathMLFrameType nsMathMLTokenFrame::GetMathMLFrameType() {
   
   if (!mContent->IsMathMLElement(nsGkAtoms::mi_)) {
     return eMathMLFrameType_Ordinary;
@@ -54,9 +48,7 @@ nsMathMLTokenFrame::GetMathMLFrameType()
   return eMathMLFrameType_UprightIdentifier;
 }
 
-void
-nsMathMLTokenFrame::MarkTextFramesAsTokenMathML()
-{
+void nsMathMLTokenFrame::MarkTextFramesAsTokenMathML() {
   nsIFrame* child = nullptr;
   uint32_t childCount = 0;
 
@@ -82,8 +74,8 @@ nsMathMLTokenFrame::MarkTextFramesAsTokenMathML()
     data.CompressWhitespace();
     int32_t length = data.Length();
 
-    bool isSingleCharacter = length == 1 ||
-      (length == 2 && NS_IS_HIGH_SURROGATE(data[0]));
+    bool isSingleCharacter =
+        length == 1 || (length == 2 && NS_IS_HIGH_SURROGATE(data[0]));
 
     if (isSingleCharacter) {
       child->AddStateBits(NS_FRAME_IS_IN_SINGLE_CHAR_MI);
@@ -92,38 +84,29 @@ nsMathMLTokenFrame::MarkTextFramesAsTokenMathML()
   }
 }
 
-void
-nsMathMLTokenFrame::SetInitialChildList(ChildListID     aListID,
-                                        nsFrameList&    aChildList)
-{
+void nsMathMLTokenFrame::SetInitialChildList(ChildListID aListID,
+                                             nsFrameList& aChildList) {
   
   nsMathMLContainerFrame::SetInitialChildList(aListID, aChildList);
   MarkTextFramesAsTokenMathML();
 }
 
-void
-nsMathMLTokenFrame::AppendFrames(ChildListID aListID,
-                                 nsFrameList& aChildList)
-{
+void nsMathMLTokenFrame::AppendFrames(ChildListID aListID,
+                                      nsFrameList& aChildList) {
   nsMathMLContainerFrame::AppendFrames(aListID, aChildList);
   MarkTextFramesAsTokenMathML();
 }
 
-void
-nsMathMLTokenFrame::InsertFrames(ChildListID aListID,
-                                 nsIFrame* aPrevFrame,
-                                 nsFrameList& aChildList)
-{
+void nsMathMLTokenFrame::InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                                      nsFrameList& aChildList) {
   nsMathMLContainerFrame::InsertFrames(aListID, aPrevFrame, aChildList);
   MarkTextFramesAsTokenMathML();
 }
 
-void
-nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
-                           ReflowOutput&     aDesiredSize,
-                           const ReflowInput& aReflowInput,
-                           nsReflowStatus&          aStatus)
-{
+void nsMathMLTokenFrame::Reflow(nsPresContext* aPresContext,
+                                ReflowOutput& aDesiredSize,
+                                const ReflowInput& aReflowInput,
+                                nsReflowStatus& aStatus) {
   MarkInReflow();
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
@@ -140,10 +123,10 @@ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
     WritingMode wm = childFrame->GetWritingMode();
     LogicalSize availSize = aReflowInput.ComputedSize(wm);
     availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
-    ReflowInput childReflowInput(aPresContext, aReflowInput,
-                                       childFrame, availSize);
-    ReflowChild(childFrame, aPresContext, childDesiredSize,
-                childReflowInput, aStatus);
+    ReflowInput childReflowInput(aPresContext, aReflowInput, childFrame,
+                                 availSize);
+    ReflowChild(childFrame, aPresContext, childDesiredSize, childReflowInput,
+                aStatus);
     
     SaveReflowAndBoundingMetricsFor(childFrame, childDesiredSize,
                                     childDesiredSize.mBoundingMetrics);
@@ -152,20 +135,18 @@ nsMathMLTokenFrame::Reflow(nsPresContext*          aPresContext,
   
   FinalizeReflow(aReflowInput.mRenderingContext->GetDrawTarget(), aDesiredSize);
 
-  aStatus.Reset(); 
+  aStatus.Reset();  
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aDesiredSize);
 }
 
 
 
 
- nsresult
-nsMathMLTokenFrame::Place(DrawTarget*          aDrawTarget,
-                          bool                 aPlaceOrigin,
-                          ReflowOutput& aDesiredSize)
-{
+ nsresult nsMathMLTokenFrame::Place(DrawTarget* aDrawTarget,
+                                                 bool aPlaceOrigin,
+                                                 ReflowOutput& aDesiredSize) {
   mBoundingMetrics = nsBoundingMetrics();
-  for (nsIFrame* childFrame :PrincipalChildList()) {
+  for (nsIFrame* childFrame : PrincipalChildList()) {
     ReflowOutput childSize(aDesiredSize.GetWritingMode());
     GetReflowAndBoundingMetricsFor(childFrame, childSize,
                                    childSize.mBoundingMetrics, nullptr);
@@ -174,7 +155,7 @@ nsMathMLTokenFrame::Place(DrawTarget*          aDrawTarget,
   }
 
   RefPtr<nsFontMetrics> fm =
-    nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
+      nsLayoutUtils::GetInflatedFontMetricsForFrame(this);
   nscoord ascent = fm->MaxAscent();
   nscoord descent = fm->MaxDescent();
 
@@ -182,7 +163,7 @@ nsMathMLTokenFrame::Place(DrawTarget*          aDrawTarget,
   aDesiredSize.Width() = mBoundingMetrics.width;
   aDesiredSize.SetBlockStartAscent(std::max(mBoundingMetrics.ascent, ascent));
   aDesiredSize.Height() = aDesiredSize.BlockStartAscent() +
-                        std::max(mBoundingMetrics.descent, descent);
+                          std::max(mBoundingMetrics.descent, descent);
 
   if (aPlaceOrigin) {
     nscoord dy, dx = 0;
@@ -192,8 +173,11 @@ nsMathMLTokenFrame::Place(DrawTarget*          aDrawTarget,
                                      childSize.mBoundingMetrics);
 
       
-      dy = childSize.Height() == 0 ? 0 : aDesiredSize.BlockStartAscent() - childSize.BlockStartAscent();
-      FinishReflowChild(childFrame, PresContext(), childSize, nullptr, dx, dy, 0);
+      dy = childSize.Height() == 0
+               ? 0
+               : aDesiredSize.BlockStartAscent() - childSize.BlockStartAscent();
+      FinishReflowChild(childFrame, PresContext(), childSize, nullptr, dx, dy,
+                        0);
       dx += childSize.Width();
     }
   }
@@ -202,4 +186,3 @@ nsMathMLTokenFrame::Place(DrawTarget*          aDrawTarget,
 
   return NS_OK;
 }
-

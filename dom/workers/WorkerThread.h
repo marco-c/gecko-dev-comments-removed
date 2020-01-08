@@ -21,7 +21,8 @@ namespace dom {
 
 class WorkerRunnable;
 class WorkerPrivate;
-template <class> class WorkerPrivateParent;
+template <class>
+class WorkerPrivateParent;
 
 namespace workerinternals {
 class RuntimeService;
@@ -30,8 +31,7 @@ class RuntimeService;
 
 
 
-class WorkerThreadFriendKey
-{
+class WorkerThreadFriendKey {
   friend class workerinternals::RuntimeService;
   friend class WorkerPrivate;
   friend class WorkerPrivateParent<WorkerPrivate>;
@@ -40,9 +40,7 @@ class WorkerThreadFriendKey
   ~WorkerThreadFriendKey();
 };
 
-class WorkerThread final
-  : public nsThread
-{
+class WorkerThread final : public nsThread {
   class Observer;
 
   Mutex mLock;
@@ -62,31 +60,26 @@ class WorkerThread final
   bool mAcceptingNonWorkerRunnables;
 #endif
 
-public:
-  static already_AddRefed<WorkerThread>
-  Create(const WorkerThreadFriendKey& aKey);
+ public:
+  static already_AddRefed<WorkerThread> Create(
+      const WorkerThreadFriendKey& aKey);
 
-  void
-  SetWorker(const WorkerThreadFriendKey& aKey,
-            WorkerPrivate* aWorkerPrivate);
+  void SetWorker(const WorkerThreadFriendKey& aKey,
+                 WorkerPrivate* aWorkerPrivate);
 
-  nsresult
-  DispatchPrimaryRunnable(const WorkerThreadFriendKey& aKey,
-                          already_AddRefed<nsIRunnable> aRunnable);
+  nsresult DispatchPrimaryRunnable(const WorkerThreadFriendKey& aKey,
+                                   already_AddRefed<nsIRunnable> aRunnable);
 
-  nsresult
-  DispatchAnyThread(const WorkerThreadFriendKey& aKey,
-           already_AddRefed<WorkerRunnable> aWorkerRunnable);
+  nsresult DispatchAnyThread(const WorkerThreadFriendKey& aKey,
+                             already_AddRefed<WorkerRunnable> aWorkerRunnable);
 
-  uint32_t
-  RecursionDepth(const WorkerThreadFriendKey& aKey) const;
+  uint32_t RecursionDepth(const WorkerThreadFriendKey& aKey) const;
 
-  PerformanceCounter*
-  GetPerformanceCounter(nsIRunnable* aEvent) override;
+  PerformanceCounter* GetPerformanceCounter(nsIRunnable* aEvent) override;
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(WorkerThread, nsThread)
 
-private:
+ private:
   WorkerThread();
   ~WorkerThread();
 
@@ -101,11 +94,10 @@ private:
   NS_IMETHOD
   DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) override;
 
-  void
-  IncrementDispatchCounter();
+  void IncrementDispatchCounter();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -17,9 +17,8 @@ class nsTableColFrame;
 
 
 
-class nsTableColGroupFrame final : public nsContainerFrame
-{
-public:
+class nsTableColGroupFrame final : public nsContainerFrame {
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsTableColGroupFrame)
 
   
@@ -27,22 +26,19 @@ public:
 
 
 
-  friend nsTableColGroupFrame* NS_NewTableColGroupFrame(nsIPresShell* aPresShell,
-                                                        ComputedStyle* aStyle);
+  friend nsTableColGroupFrame* NS_NewTableColGroupFrame(
+      nsIPresShell* aPresShell, ComputedStyle* aStyle);
 
   
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override
-  {
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override {
     nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
     if (!aPrevInFlow) {
       mWritingMode = GetTableFrame()->GetWritingMode();
     }
   }
 
-  nsTableFrame* GetTableFrame() const
-  {
+  nsTableFrame* GetTableFrame() const {
     nsIFrame* parent = GetParent();
     MOZ_ASSERT(parent && parent->IsTableFrame());
     MOZ_ASSERT(!parent->GetPrevInFlow(),
@@ -50,7 +46,7 @@ public:
     return static_cast<nsTableFrame*>(parent);
   }
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
   
@@ -82,15 +78,13 @@ public:
   
   virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
-  virtual void SetInitialChildList(ChildListID     aListID,
-                                   nsFrameList&    aChildList) override;
-  virtual void AppendFrames(ChildListID     aListID,
-                            nsFrameList&    aFrameList) override;
-  virtual void InsertFrames(ChildListID     aListID,
-                            nsIFrame*       aPrevFrame,
-                            nsFrameList&    aFrameList) override;
-  virtual void RemoveFrame(ChildListID     aListID,
-                           nsIFrame*       aOldFrame) override;
+  virtual void SetInitialChildList(ChildListID aListID,
+                                   nsFrameList& aChildList) override;
+  virtual void AppendFrames(ChildListID aListID,
+                            nsFrameList& aFrameList) override;
+  virtual void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                            nsFrameList& aFrameList) override;
+  virtual void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override;
 
   
 
@@ -99,8 +93,7 @@ public:
 
 
 
-  void RemoveChild(nsTableColFrame& aChild,
-                   bool             aResetSubsequentColIndices);
+  void RemoveChild(nsTableColFrame& aChild, bool aResetSubsequentColIndices);
 
   
 
@@ -108,8 +101,7 @@ public:
 
 
 
-  virtual void Reflow(nsPresContext* aPresContext,
-                      ReflowOutput& aDesiredSize,
+  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
                       nsReflowStatus& aStatus) override;
 
@@ -127,8 +119,8 @@ public:
 
 
 
-  nsresult AddColsToTable(int32_t                   aFirstColIndex,
-                          bool                      aResetSubsequentColIndices,
+  nsresult AddColsToTable(int32_t aFirstColIndex,
+                          bool aResetSubsequentColIndices,
                           const nsFrameList::Slice& aCols);
 
 #ifdef DEBUG_FRAME_DUMP
@@ -143,11 +135,11 @@ public:
   virtual int32_t GetColCount() const;
 
   
-  nsTableColFrame * GetFirstColumn();
+  nsTableColFrame* GetFirstColumn();
   
 
 
-  nsTableColFrame * GetNextColumn(nsIFrame *aChildFrame);
+  nsTableColFrame* GetNextColumn(nsIFrame* aChildFrame);
 
   
 
@@ -174,9 +166,8 @@ public:
 
 
 
-  static void ResetColIndices(nsIFrame*       aFirstColGroup,
-                              int32_t         aFirstColIndex,
-                              nsIFrame*       aStartColFrame = nullptr);
+  static void ResetColIndices(nsIFrame* aFirstColGroup, int32_t aFirstColIndex,
+                              nsIFrame* aStartColFrame = nullptr);
 
   
 
@@ -193,8 +184,7 @@ public:
   void SetContinuousBCBorderWidth(mozilla::LogicalSide aForSide,
                                   BCPixelSize aPixelValue);
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
     if (aFlags & eSupportsContainLayoutAndPaint) {
       return false;
     }
@@ -202,17 +192,22 @@ public:
     return nsContainerFrame::IsFrameOfType(aFlags & ~(nsIFrame::eTablePart));
   }
 
-  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true) override;
-  virtual void InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true) override;
-  virtual void InvalidateFrameForRemoval() override { InvalidateFrameSubtree(); }
+  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0,
+                               bool aRebuildDisplayItems = true) override;
+  virtual void InvalidateFrameWithRect(
+      const nsRect& aRect, uint32_t aDisplayItemKey = 0,
+      bool aRebuildDisplayItems = true) override;
+  virtual void InvalidateFrameForRemoval() override {
+    InvalidateFrameSubtree();
+  }
 
-protected:
+ protected:
   explicit nsTableColGroupFrame(ComputedStyle* aStyle);
 
-  void InsertColsReflow(int32_t                   aColIndex,
-                        const nsFrameList::Slice& aCols);
+  void InsertColsReflow(int32_t aColIndex, const nsFrameList::Slice& aCols);
 
-  virtual LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const override;
+  virtual LogicalSides GetLogicalSkipSides(
+      const ReflowInput* aReflowInput = nullptr) const override;
 
   
   int32_t mColCount;
@@ -225,31 +220,20 @@ protected:
 };
 
 inline nsTableColGroupFrame::nsTableColGroupFrame(ComputedStyle* aStyle)
-  : nsContainerFrame(aStyle, kClassID)
-  , mColCount(0)
-  , mStartColIndex(0)
-{
-}
+    : nsContainerFrame(aStyle, kClassID), mColCount(0), mStartColIndex(0) {}
 
-inline int32_t nsTableColGroupFrame::GetStartColumnIndex()
-{
+inline int32_t nsTableColGroupFrame::GetStartColumnIndex() {
   return mStartColIndex;
 }
 
-inline void nsTableColGroupFrame::SetStartColumnIndex (int32_t aIndex)
-{
+inline void nsTableColGroupFrame::SetStartColumnIndex(int32_t aIndex) {
   mStartColIndex = aIndex;
 }
 
-inline int32_t nsTableColGroupFrame::GetColCount() const
-{
-  return mColCount;
-}
+inline int32_t nsTableColGroupFrame::GetColCount() const { return mColCount; }
 
-inline nsFrameList& nsTableColGroupFrame::GetWritableChildList()
-{
+inline nsFrameList& nsTableColGroupFrame::GetWritableChildList() {
   return mFrames;
 }
 
 #endif
-

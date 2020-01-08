@@ -42,17 +42,14 @@
 
 
 
-static const wchar_t *const pTypeName [] = {
-    L"Kerberos",
-    L"Negotiate",
-    L"NTLM"
-};
+static const wchar_t *const pTypeName[] = {L"Kerberos", L"Negotiate", L"NTLM"};
 
 #ifdef DEBUG
-#define CASE_(_x) case _x: return # _x;
-static const char *MapErrorCode(int rc)
-{
-    switch (rc) {
+#define CASE_(_x) \
+  case _x:        \
+    return #_x;
+static const char *MapErrorCode(int rc) {
+  switch (rc) {
     CASE_(SEC_E_OK)
     CASE_(SEC_I_CONTINUE_NEEDED)
     CASE_(SEC_I_COMPLETE_NEEDED)
@@ -67,8 +64,8 @@ static const char *MapErrorCode(int rc)
     CASE_(SEC_E_NO_AUTHENTICATING_AUTHORITY)
     CASE_(SEC_E_INSUFFICIENT_MEMORY)
     CASE_(SEC_E_INVALID_TOKEN)
-    }
-    return "<unknown>";
+  }
+  return "<unknown>";
 }
 #else
 #define MapErrorCode(_rc) ""
@@ -76,571 +73,502 @@ static const char *MapErrorCode(int rc)
 
 
 
-static PSecurityFunctionTableW   sspi;
+static PSecurityFunctionTableW sspi;
 
-static nsresult
-InitSSPI()
-{
-    LOG(("  InitSSPI\n"));
+static nsresult InitSSPI() {
+  LOG(("  InitSSPI\n"));
 
-    sspi = InitSecurityInterfaceW();
-    if (!sspi) {
-        LOG(("InitSecurityInterfaceW failed"));
-        return NS_ERROR_UNEXPECTED;
-    }
+  sspi = InitSecurityInterfaceW();
+  if (!sspi) {
+    LOG(("InitSecurityInterfaceW failed"));
+    return NS_ERROR_UNEXPECTED;
+  }
 
-    return NS_OK;
+  return NS_OK;
 }
 
 
 
-nsresult
-nsAuthSSPI::MakeSN(const char *principal, nsCString &result)
-{
-    nsresult rv;
+nsresult nsAuthSSPI::MakeSN(const char *principal, nsCString &result) {
+  nsresult rv;
 
-    nsAutoCString buf(principal);
+  nsAutoCString buf(principal);
 
-    
-    
-    
-    int32_t index = buf.FindChar('@');
-    if (index == kNotFound)
-        return NS_ERROR_UNEXPECTED;
+  
+  
+  
+  int32_t index = buf.FindChar('@');
+  if (index == kNotFound) return NS_ERROR_UNEXPECTED;
 
-    nsCOMPtr<nsIDNSService> dnsService = do_GetService(NS_DNSSERVICE_CONTRACTID, &rv);
-    if (NS_FAILED(rv))
-        return rv;
+  nsCOMPtr<nsIDNSService> dnsService =
+      do_GetService(NS_DNSSERVICE_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) return rv;
 
-    auto dns = static_cast<nsDNSService*>(dnsService.get());
+  auto dns = static_cast<nsDNSService *>(dnsService.get());
 
-    
-    
-    
-    
-    
-    
-    
-    
-    nsCOMPtr<nsIDNSRecord> record;
-    mozilla::OriginAttributes attrs;
-    rv = dns->DeprecatedSyncResolve(Substring(buf, index + 1),
-                                    nsIDNSService::RESOLVE_CANONICAL_NAME,
-                                    attrs,
-                                    getter_AddRefs(record));
-    if (NS_FAILED(rv))
-        return rv;
+  
+  
+  
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIDNSRecord> record;
+  mozilla::OriginAttributes attrs;
+  rv = dns->DeprecatedSyncResolve(Substring(buf, index + 1),
+                                  nsIDNSService::RESOLVE_CANONICAL_NAME, attrs,
+                                  getter_AddRefs(record));
+  if (NS_FAILED(rv)) return rv;
 
-    nsAutoCString cname;
-    rv = record->GetCanonicalName(cname);
-    if (NS_SUCCEEDED(rv)) {
-        result = StringHead(buf, index) + NS_LITERAL_CSTRING("/") + cname;
-        LOG(("Using SPN of [%s]\n", result.get()));
-    }
-    return rv;
+  nsAutoCString cname;
+  rv = record->GetCanonicalName(cname);
+  if (NS_SUCCEEDED(rv)) {
+    result = StringHead(buf, index) + NS_LITERAL_CSTRING("/") + cname;
+    LOG(("Using SPN of [%s]\n", result.get()));
+  }
+  return rv;
 }
 
 
 
 nsAuthSSPI::nsAuthSSPI(pType package)
-    : mServiceFlags(REQ_DEFAULT)
-    , mMaxTokenLen(0)
-    , mPackage(package)
-    , mCertDERData(nullptr)
-    , mCertDERLength(0)
-{
-    memset(&mCred, 0, sizeof(mCred));
-    memset(&mCtxt, 0, sizeof(mCtxt));
+    : mServiceFlags(REQ_DEFAULT),
+      mMaxTokenLen(0),
+      mPackage(package),
+      mCertDERData(nullptr),
+      mCertDERLength(0) {
+  memset(&mCred, 0, sizeof(mCred));
+  memset(&mCtxt, 0, sizeof(mCtxt));
 }
 
-nsAuthSSPI::~nsAuthSSPI()
-{
-    Reset();
+nsAuthSSPI::~nsAuthSSPI() {
+  Reset();
 
-    if (mCred.dwLower || mCred.dwUpper) {
+  if (mCred.dwLower || mCred.dwUpper) {
 #ifdef __MINGW32__
-        (sspi->FreeCredentialsHandle)(&mCred);
+    (sspi->FreeCredentialsHandle)(&mCred);
 #else
-        (sspi->FreeCredentialHandle)(&mCred);
+    (sspi->FreeCredentialHandle)(&mCred);
 #endif
-        memset(&mCred, 0, sizeof(mCred));
-    }
+    memset(&mCred, 0, sizeof(mCred));
+  }
 }
 
-void
-nsAuthSSPI::Reset()
-{
-    mIsFirst = true;
+void nsAuthSSPI::Reset() {
+  mIsFirst = true;
 
-    if (mCertDERData){
-        free(mCertDERData);
-        mCertDERData = nullptr;
-        mCertDERLength = 0;
-    }
+  if (mCertDERData) {
+    free(mCertDERData);
+    mCertDERData = nullptr;
+    mCertDERLength = 0;
+  }
 
-    if (mCtxt.dwLower || mCtxt.dwUpper) {
-        (sspi->DeleteSecurityContext)(&mCtxt);
-        memset(&mCtxt, 0, sizeof(mCtxt));
-    }
+  if (mCtxt.dwLower || mCtxt.dwUpper) {
+    (sspi->DeleteSecurityContext)(&mCtxt);
+    memset(&mCtxt, 0, sizeof(mCtxt));
+  }
 }
 
 NS_IMPL_ISUPPORTS(nsAuthSSPI, nsIAuthModule)
 
 NS_IMETHODIMP
-nsAuthSSPI::Init(const char *serviceName,
-                 uint32_t    serviceFlags,
-                 const char16_t *domain,
-                 const char16_t *username,
-                 const char16_t *password)
-{
-    LOG(("  nsAuthSSPI::Init\n"));
+nsAuthSSPI::Init(const char *serviceName, uint32_t serviceFlags,
+                 const char16_t *domain, const char16_t *username,
+                 const char16_t *password) {
+  LOG(("  nsAuthSSPI::Init\n"));
 
-    mIsFirst = true;
-    mCertDERLength = 0;
-    mCertDERData = nullptr;
+  mIsFirst = true;
+  mCertDERLength = 0;
+  mCertDERData = nullptr;
 
-    
-    
-    NS_ENSURE_TRUE(serviceName && *serviceName, NS_ERROR_INVALID_ARG);
+  
+  
+  NS_ENSURE_TRUE(serviceName && *serviceName, NS_ERROR_INVALID_ARG);
 
-    nsresult rv;
+  nsresult rv;
 
-    
-    if (!sspi) {
-        rv = InitSSPI();
-        if (NS_FAILED(rv))
-            return rv;
-    }
-    SEC_WCHAR *package;
+  
+  if (!sspi) {
+    rv = InitSSPI();
+    if (NS_FAILED(rv)) return rv;
+  }
+  SEC_WCHAR *package;
 
-    package = (SEC_WCHAR *) pTypeName[(int)mPackage];
+  package = (SEC_WCHAR *)pTypeName[(int)mPackage];
 
-    if (mPackage == PACKAGE_TYPE_NTLM) {
-        
-        
-        
-        mServiceName.Assign(serviceName);
-        int32_t index = mServiceName.FindChar('@');
-        if (index == kNotFound)
-            return NS_ERROR_UNEXPECTED;
-        mServiceName.Replace(index, 1, '/');
-    }
-    else {
-        
-        
-        rv = MakeSN(serviceName, mServiceName);
-        if (NS_FAILED(rv))
-            return rv;
-    }
-
-    mServiceFlags = serviceFlags;
-
-    SECURITY_STATUS rc;
-
-    PSecPkgInfoW pinfo;
-    rc = (sspi->QuerySecurityPackageInfoW)(package, &pinfo);
-    if (rc != SEC_E_OK) {
-        LOG(("%s package not found\n", package));
-        return NS_ERROR_UNEXPECTED;
-    }
-    mMaxTokenLen = pinfo->cbMaxToken;
-    (sspi->FreeContextBuffer)(pinfo);
-
-    MS_TimeStamp useBefore;
-
-    SEC_WINNT_AUTH_IDENTITY_W ai;
-    SEC_WINNT_AUTH_IDENTITY_W *pai = nullptr;
-
+  if (mPackage == PACKAGE_TYPE_NTLM) {
     
     
     
-    if (username && password) {
-        
-        mUsername.Assign(username);
-        mPassword.Assign(password);
-        mDomain.Assign(domain);
-        ai.Domain = reinterpret_cast<unsigned short*>(mDomain.BeginWriting());
-        ai.DomainLength = mDomain.Length();
-        ai.User = reinterpret_cast<unsigned short*>(mUsername.BeginWriting());
-        ai.UserLength = mUsername.Length();
-        ai.Password = reinterpret_cast<unsigned short*>(mPassword.BeginWriting());
-        ai.PasswordLength = mPassword.Length();
-        ai.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
-        pai = &ai;
-    }
+    
+    mServiceName.Assign(serviceName);
+    int32_t index = mServiceName.FindChar('@');
+    if (index == kNotFound) return NS_ERROR_UNEXPECTED;
+    mServiceName.Replace(index, 1, '/');
+  } else {
+    
+    
+    rv = MakeSN(serviceName, mServiceName);
+    if (NS_FAILED(rv)) return rv;
+  }
 
-    rc = (sspi->AcquireCredentialsHandleW)(nullptr,
-                                           package,
-                                           SECPKG_CRED_OUTBOUND,
-                                           nullptr,
-                                           pai,
-                                           nullptr,
-                                           nullptr,
-                                           &mCred,
-                                           &useBefore);
-    if (rc != SEC_E_OK)
-        return NS_ERROR_UNEXPECTED;
+  mServiceFlags = serviceFlags;
 
-    static bool sTelemetrySent = false;
-    if (!sTelemetrySent) {
-        mozilla::Telemetry::Accumulate(
-            mozilla::Telemetry::NTLM_MODULE_USED_2,
-            serviceFlags & nsIAuthModule::REQ_PROXY_AUTH
-                ? NTLM_MODULE_WIN_API_PROXY
-                : NTLM_MODULE_WIN_API_DIRECT);
-        sTelemetrySent = true;
-    }
+  SECURITY_STATUS rc;
 
-    LOG(("AcquireCredentialsHandle() succeeded.\n"));
-    return NS_OK;
+  PSecPkgInfoW pinfo;
+  rc = (sspi->QuerySecurityPackageInfoW)(package, &pinfo);
+  if (rc != SEC_E_OK) {
+    LOG(("%s package not found\n", package));
+    return NS_ERROR_UNEXPECTED;
+  }
+  mMaxTokenLen = pinfo->cbMaxToken;
+  (sspi->FreeContextBuffer)(pinfo);
+
+  MS_TimeStamp useBefore;
+
+  SEC_WINNT_AUTH_IDENTITY_W ai;
+  SEC_WINNT_AUTH_IDENTITY_W *pai = nullptr;
+
+  
+  
+  
+  if (username && password) {
+    
+    mUsername.Assign(username);
+    mPassword.Assign(password);
+    mDomain.Assign(domain);
+    ai.Domain = reinterpret_cast<unsigned short *>(mDomain.BeginWriting());
+    ai.DomainLength = mDomain.Length();
+    ai.User = reinterpret_cast<unsigned short *>(mUsername.BeginWriting());
+    ai.UserLength = mUsername.Length();
+    ai.Password = reinterpret_cast<unsigned short *>(mPassword.BeginWriting());
+    ai.PasswordLength = mPassword.Length();
+    ai.Flags = SEC_WINNT_AUTH_IDENTITY_UNICODE;
+    pai = &ai;
+  }
+
+  rc = (sspi->AcquireCredentialsHandleW)(nullptr, package, SECPKG_CRED_OUTBOUND,
+                                         nullptr, pai, nullptr, nullptr, &mCred,
+                                         &useBefore);
+  if (rc != SEC_E_OK) return NS_ERROR_UNEXPECTED;
+
+  static bool sTelemetrySent = false;
+  if (!sTelemetrySent) {
+    mozilla::Telemetry::Accumulate(mozilla::Telemetry::NTLM_MODULE_USED_2,
+                                   serviceFlags & nsIAuthModule::REQ_PROXY_AUTH
+                                       ? NTLM_MODULE_WIN_API_PROXY
+                                       : NTLM_MODULE_WIN_API_DIRECT);
+    sTelemetrySent = true;
+  }
+
+  LOG(("AcquireCredentialsHandle() succeeded.\n"));
+  return NS_OK;
 }
 
 
 
 
 NS_IMETHODIMP
-nsAuthSSPI::GetNextToken(const void *inToken,
-                         uint32_t    inTokenLen,
-                         void      **outToken,
-                         uint32_t   *outTokenLen)
-{
-    
-    const char end_point[] = "tls-server-end-point:";
-    const int end_point_length = sizeof(end_point) - 1;
-    const int hash_size = 32;  
-    const int cbt_size = hash_size + end_point_length;
+nsAuthSSPI::GetNextToken(const void *inToken, uint32_t inTokenLen,
+                         void **outToken, uint32_t *outTokenLen) {
+  
+  const char end_point[] = "tls-server-end-point:";
+  const int end_point_length = sizeof(end_point) - 1;
+  const int hash_size = 32;  
+  const int cbt_size = hash_size + end_point_length;
 
-    SECURITY_STATUS rc;
-    MS_TimeStamp ignored;
+  SECURITY_STATUS rc;
+  MS_TimeStamp ignored;
 
-    DWORD ctxAttr, ctxReq = 0;
-    CtxtHandle *ctxIn;
-    SecBufferDesc ibd, obd;
-    
-    SecBuffer ib[2], ob;
-    
-    char* sspi_cbt = nullptr;
-    SEC_CHANNEL_BINDINGS pendpoint_binding;
+  DWORD ctxAttr, ctxReq = 0;
+  CtxtHandle *ctxIn;
+  SecBufferDesc ibd, obd;
+  
+  SecBuffer ib[2], ob;
+  
+  char *sspi_cbt = nullptr;
+  SEC_CHANNEL_BINDINGS pendpoint_binding;
 
-    LOG(("entering nsAuthSSPI::GetNextToken()\n"));
+  LOG(("entering nsAuthSSPI::GetNextToken()\n"));
 
-    if (!mCred.dwLower && !mCred.dwUpper) {
-        LOG(("nsAuthSSPI::GetNextToken(), not initialized. exiting."));
-        return NS_ERROR_NOT_INITIALIZED;
+  if (!mCred.dwLower && !mCred.dwUpper) {
+    LOG(("nsAuthSSPI::GetNextToken(), not initialized. exiting."));
+    return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  if (mServiceFlags & REQ_DELEGATE) ctxReq |= ISC_REQ_DELEGATE;
+  if (mServiceFlags & REQ_MUTUAL_AUTH) ctxReq |= ISC_REQ_MUTUAL_AUTH;
+
+  if (inToken) {
+    if (mIsFirst) {
+      
+      
+      mIsFirst = false;
+      mCertDERLength = inTokenLen;
+      mCertDERData = moz_xmalloc(inTokenLen);
+      memcpy(mCertDERData, inToken, inTokenLen);
+
+      
+      
+      
+      
+      
+      if (mCtxt.dwLower || mCtxt.dwUpper) {
+        LOG(("Cannot restart authentication sequence!"));
+        return NS_ERROR_UNEXPECTED;
+      }
+      ctxIn = nullptr;
+      
+      
+      inToken = nullptr;
+      inTokenLen = 0;
+    } else {
+      ibd.ulVersion = SECBUFFER_VERSION;
+      ibd.cBuffers = 0;
+      ibd.pBuffers = ib;
+
+      
+      
+      if (mCertDERLength > 0) {
+        
+        pendpoint_binding.dwInitiatorAddrType = 0;
+        pendpoint_binding.cbInitiatorLength = 0;
+        pendpoint_binding.dwInitiatorOffset = 0;
+        pendpoint_binding.dwAcceptorAddrType = 0;
+        pendpoint_binding.cbAcceptorLength = 0;
+        pendpoint_binding.dwAcceptorOffset = 0;
+        pendpoint_binding.cbApplicationDataLength = cbt_size;
+        pendpoint_binding.dwApplicationDataOffset =
+            sizeof(SEC_CHANNEL_BINDINGS);
+
+        
+        ib[ibd.cBuffers].BufferType = SECBUFFER_CHANNEL_BINDINGS;
+        ib[ibd.cBuffers].cbBuffer = pendpoint_binding.cbApplicationDataLength +
+                                    pendpoint_binding.dwApplicationDataOffset;
+
+        sspi_cbt = (char *)moz_xmalloc(ib[ibd.cBuffers].cbBuffer);
+
+        
+        char *sspi_cbt_ptr = sspi_cbt;
+
+        ib[ibd.cBuffers].pvBuffer = sspi_cbt;
+        ibd.cBuffers++;
+
+        memcpy(sspi_cbt_ptr, &pendpoint_binding,
+               pendpoint_binding.dwApplicationDataOffset);
+        sspi_cbt_ptr += pendpoint_binding.dwApplicationDataOffset;
+
+        memcpy(sspi_cbt_ptr, end_point, end_point_length);
+        sspi_cbt_ptr += end_point_length;
+
+        
+        
+        nsAutoCString hashString;
+
+        nsresult rv;
+        nsCOMPtr<nsICryptoHash> crypto;
+        crypto = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
+        if (NS_SUCCEEDED(rv)) rv = crypto->Init(nsICryptoHash::SHA256);
+        if (NS_SUCCEEDED(rv))
+          rv = crypto->Update((unsigned char *)mCertDERData, mCertDERLength);
+        if (NS_SUCCEEDED(rv)) rv = crypto->Finish(false, hashString);
+        if (NS_FAILED(rv)) {
+          free(mCertDERData);
+          mCertDERData = nullptr;
+          mCertDERLength = 0;
+          free(sspi_cbt);
+          return rv;
+        }
+
+        
+        
+        
+        memcpy(sspi_cbt_ptr, hashString.get(), hash_size);
+
+        
+        free(mCertDERData);
+        mCertDERData = nullptr;
+        mCertDERLength = 0;
+      }  
+
+      
+      ib[ibd.cBuffers].BufferType = SECBUFFER_TOKEN;
+      ib[ibd.cBuffers].cbBuffer = inTokenLen;
+      ib[ibd.cBuffers].pvBuffer = (void *)inToken;
+      ibd.cBuffers++;
+      ctxIn = &mCtxt;
     }
-
-    if (mServiceFlags & REQ_DELEGATE)
-        ctxReq |= ISC_REQ_DELEGATE;
-    if (mServiceFlags & REQ_MUTUAL_AUTH)
-        ctxReq |= ISC_REQ_MUTUAL_AUTH;
-
-    if (inToken) {
-        if (mIsFirst) {
-            
-            
-            mIsFirst = false;
-            mCertDERLength = inTokenLen;
-            mCertDERData = moz_xmalloc(inTokenLen);
-            memcpy(mCertDERData, inToken, inTokenLen);
-
-            
-            
-            
-            
-            
-            if (mCtxt.dwLower || mCtxt.dwUpper) {
-                LOG(("Cannot restart authentication sequence!"));
-                return NS_ERROR_UNEXPECTED;
-            }
-            ctxIn = nullptr;
-            
-            
-            inToken = nullptr;
-            inTokenLen = 0;
-        } else {
-            ibd.ulVersion = SECBUFFER_VERSION;
-            ibd.cBuffers = 0;
-            ibd.pBuffers = ib;
-
-            
-            
-            if (mCertDERLength > 0) {
-                
-                pendpoint_binding.dwInitiatorAddrType = 0;
-                pendpoint_binding.cbInitiatorLength = 0;
-                pendpoint_binding.dwInitiatorOffset = 0;
-                pendpoint_binding.dwAcceptorAddrType = 0;
-                pendpoint_binding.cbAcceptorLength = 0;
-                pendpoint_binding.dwAcceptorOffset = 0;
-                pendpoint_binding.cbApplicationDataLength = cbt_size;
-                pendpoint_binding.dwApplicationDataOffset =
-                                            sizeof(SEC_CHANNEL_BINDINGS);
-
-                
-                ib[ibd.cBuffers].BufferType = SECBUFFER_CHANNEL_BINDINGS;
-                ib[ibd.cBuffers].cbBuffer =
-                        pendpoint_binding.cbApplicationDataLength
-                        + pendpoint_binding.dwApplicationDataOffset;
-
-                sspi_cbt = (char *) moz_xmalloc(ib[ibd.cBuffers].cbBuffer);
-
-                
-                char* sspi_cbt_ptr = sspi_cbt;
-
-                ib[ibd.cBuffers].pvBuffer = sspi_cbt;
-                ibd.cBuffers++;
-
-                memcpy(sspi_cbt_ptr, &pendpoint_binding,
-                       pendpoint_binding.dwApplicationDataOffset);
-                sspi_cbt_ptr += pendpoint_binding.dwApplicationDataOffset;
-
-                memcpy(sspi_cbt_ptr, end_point, end_point_length);
-                sspi_cbt_ptr += end_point_length;
-
-                
-                
-                nsAutoCString hashString;
-
-                nsresult rv;
-                nsCOMPtr<nsICryptoHash> crypto;
-                crypto = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
-                if (NS_SUCCEEDED(rv))
-                    rv = crypto->Init(nsICryptoHash::SHA256);
-                if (NS_SUCCEEDED(rv))
-                    rv = crypto->Update((unsigned char*)mCertDERData, mCertDERLength);
-                if (NS_SUCCEEDED(rv))
-                    rv = crypto->Finish(false, hashString);
-                if (NS_FAILED(rv)) {
-                    free(mCertDERData);
-                    mCertDERData = nullptr;
-                    mCertDERLength = 0;
-                    free(sspi_cbt);
-                    return rv;
-                }
-
-                
-                
-                
-                memcpy(sspi_cbt_ptr, hashString.get(), hash_size);
-
-                
-                free(mCertDERData);
-                mCertDERData = nullptr;
-                mCertDERLength = 0;
-            } 
-
-            
-            ib[ibd.cBuffers].BufferType = SECBUFFER_TOKEN;
-            ib[ibd.cBuffers].cbBuffer = inTokenLen;
-            ib[ibd.cBuffers].pvBuffer = (void *) inToken;
-            ibd.cBuffers++;
-            ctxIn = &mCtxt;
-        }
-    } else { 
-        
-        
-        
-        
-        if (mCtxt.dwLower || mCtxt.dwUpper || mCertDERData || mCertDERLength) {
-            LOG(("Cannot restart authentication sequence!"));
-            return NS_ERROR_UNEXPECTED;
-        }
-        ctxIn = nullptr;
-        mIsFirst = false;
-    }
-
-    obd.ulVersion = SECBUFFER_VERSION;
-    obd.cBuffers = 1;
-    obd.pBuffers = &ob;
-    ob.BufferType = SECBUFFER_TOKEN;
-    ob.cbBuffer = mMaxTokenLen;
-    ob.pvBuffer = moz_xmalloc(ob.cbBuffer);
-    memset(ob.pvBuffer, 0, ob.cbBuffer);
-
-    NS_ConvertUTF8toUTF16 wSN(mServiceName);
-    SEC_WCHAR *sn = (SEC_WCHAR *) wSN.get();
-
-    rc = (sspi->InitializeSecurityContextW)(&mCred,
-                                            ctxIn,
-                                            sn,
-                                            ctxReq,
-                                            0,
-                                            SECURITY_NATIVE_DREP,
-                                            inToken ? &ibd : nullptr,
-                                            0,
-                                            &mCtxt,
-                                            &obd,
-                                            &ctxAttr,
-                                            &ignored);
-    if (rc == SEC_I_CONTINUE_NEEDED || rc == SEC_E_OK) {
-
-        if (rc == SEC_E_OK)
-            LOG(("InitializeSecurityContext: succeeded.\n"));
-        else
-            LOG(("InitializeSecurityContext: continue.\n"));
-
-        if (sspi_cbt)
-            free(sspi_cbt);
-
-        if (!ob.cbBuffer) {
-            free(ob.pvBuffer);
-            ob.pvBuffer = nullptr;
-        }
-        *outToken = ob.pvBuffer;
-        *outTokenLen = ob.cbBuffer;
-
-        if (rc == SEC_E_OK)
-            return NS_SUCCESS_AUTH_FINISHED;
-
-        return NS_OK;
-    }
-
-    LOG(("InitializeSecurityContext failed [rc=%d:%s]\n", rc, MapErrorCode(rc)));
-    Reset();
-    free(ob.pvBuffer);
-    return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
-nsAuthSSPI::Unwrap(const void *inToken,
-                   uint32_t    inTokenLen,
-                   void      **outToken,
-                   uint32_t   *outTokenLen)
-{
-    SECURITY_STATUS rc;
-    SecBufferDesc ibd;
-    SecBuffer ib[2];
-
-    ibd.cBuffers = 2;
-    ibd.pBuffers = ib;
-    ibd.ulVersion = SECBUFFER_VERSION;
-
+  } else {  
     
-    ib[0].BufferType = SECBUFFER_STREAM;
-    ib[0].cbBuffer = inTokenLen;
-    ib[0].pvBuffer = moz_xmalloc(ib[0].cbBuffer);
-
-    memcpy(ib[0].pvBuffer, inToken, inTokenLen);
-
     
-    ib[1].BufferType = SECBUFFER_DATA;
-    ib[1].cbBuffer = 0;
-    ib[1].pvBuffer = nullptr;
-
-    rc = (sspi->DecryptMessage)(
-                                &mCtxt,
-                                &ibd,
-                                0, 
-                                nullptr
-                                );
-
-    if (SEC_SUCCESS(rc)) {
-        
-        
-        
-        if (ib[0].pvBuffer == ib[1].pvBuffer) {
-            *outToken = ib[1].pvBuffer;
-        }
-        else {
-            *outToken = moz_xmemdup(ib[1].pvBuffer, ib[1].cbBuffer);
-            free(ib[0].pvBuffer);
-        }
-        *outTokenLen = ib[1].cbBuffer;
+    
+    
+    if (mCtxt.dwLower || mCtxt.dwUpper || mCertDERData || mCertDERLength) {
+      LOG(("Cannot restart authentication sequence!"));
+      return NS_ERROR_UNEXPECTED;
     }
+    ctxIn = nullptr;
+    mIsFirst = false;
+  }
+
+  obd.ulVersion = SECBUFFER_VERSION;
+  obd.cBuffers = 1;
+  obd.pBuffers = &ob;
+  ob.BufferType = SECBUFFER_TOKEN;
+  ob.cbBuffer = mMaxTokenLen;
+  ob.pvBuffer = moz_xmalloc(ob.cbBuffer);
+  memset(ob.pvBuffer, 0, ob.cbBuffer);
+
+  NS_ConvertUTF8toUTF16 wSN(mServiceName);
+  SEC_WCHAR *sn = (SEC_WCHAR *)wSN.get();
+
+  rc = (sspi->InitializeSecurityContextW)(
+      &mCred, ctxIn, sn, ctxReq, 0, SECURITY_NATIVE_DREP,
+      inToken ? &ibd : nullptr, 0, &mCtxt, &obd, &ctxAttr, &ignored);
+  if (rc == SEC_I_CONTINUE_NEEDED || rc == SEC_E_OK) {
+    if (rc == SEC_E_OK)
+      LOG(("InitializeSecurityContext: succeeded.\n"));
     else
-        free(ib[0].pvBuffer);
+      LOG(("InitializeSecurityContext: continue.\n"));
 
-    if (!SEC_SUCCESS(rc))
-        return NS_ERROR_FAILURE;
+    if (sspi_cbt) free(sspi_cbt);
+
+    if (!ob.cbBuffer) {
+      free(ob.pvBuffer);
+      ob.pvBuffer = nullptr;
+    }
+    *outToken = ob.pvBuffer;
+    *outTokenLen = ob.cbBuffer;
+
+    if (rc == SEC_E_OK) return NS_SUCCESS_AUTH_FINISHED;
 
     return NS_OK;
+  }
+
+  LOG(("InitializeSecurityContext failed [rc=%d:%s]\n", rc, MapErrorCode(rc)));
+  Reset();
+  free(ob.pvBuffer);
+  return NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+nsAuthSSPI::Unwrap(const void *inToken, uint32_t inTokenLen, void **outToken,
+                   uint32_t *outTokenLen) {
+  SECURITY_STATUS rc;
+  SecBufferDesc ibd;
+  SecBuffer ib[2];
+
+  ibd.cBuffers = 2;
+  ibd.pBuffers = ib;
+  ibd.ulVersion = SECBUFFER_VERSION;
+
+  
+  ib[0].BufferType = SECBUFFER_STREAM;
+  ib[0].cbBuffer = inTokenLen;
+  ib[0].pvBuffer = moz_xmalloc(ib[0].cbBuffer);
+
+  memcpy(ib[0].pvBuffer, inToken, inTokenLen);
+
+  
+  ib[1].BufferType = SECBUFFER_DATA;
+  ib[1].cbBuffer = 0;
+  ib[1].pvBuffer = nullptr;
+
+  rc = (sspi->DecryptMessage)(&mCtxt, &ibd,
+                              0,  
+                              nullptr);
+
+  if (SEC_SUCCESS(rc)) {
+    
+    
+    
+    if (ib[0].pvBuffer == ib[1].pvBuffer) {
+      *outToken = ib[1].pvBuffer;
+    } else {
+      *outToken = moz_xmemdup(ib[1].pvBuffer, ib[1].cbBuffer);
+      free(ib[0].pvBuffer);
+    }
+    *outTokenLen = ib[1].cbBuffer;
+  } else
+    free(ib[0].pvBuffer);
+
+  if (!SEC_SUCCESS(rc)) return NS_ERROR_FAILURE;
+
+  return NS_OK;
 }
 
 
-class secBuffers
-{
-public:
+class secBuffers {
+ public:
+  SecBuffer ib[3];
 
-    SecBuffer ib[3];
+  secBuffers() { memset(&ib, 0, sizeof(ib)); }
 
-    secBuffers() { memset(&ib, 0, sizeof(ib)); }
+  ~secBuffers() {
+    if (ib[0].pvBuffer) free(ib[0].pvBuffer);
 
-    ~secBuffers()
-    {
-        if (ib[0].pvBuffer)
-            free(ib[0].pvBuffer);
+    if (ib[1].pvBuffer) free(ib[1].pvBuffer);
 
-        if (ib[1].pvBuffer)
-            free(ib[1].pvBuffer);
-
-        if (ib[2].pvBuffer)
-            free(ib[2].pvBuffer);
-    }
+    if (ib[2].pvBuffer) free(ib[2].pvBuffer);
+  }
 };
 
 NS_IMETHODIMP
-nsAuthSSPI::Wrap(const void *inToken,
-                 uint32_t    inTokenLen,
-                 bool        confidential,
-                 void      **outToken,
-                 uint32_t   *outTokenLen)
-{
-    SECURITY_STATUS rc;
+nsAuthSSPI::Wrap(const void *inToken, uint32_t inTokenLen, bool confidential,
+                 void **outToken, uint32_t *outTokenLen) {
+  SECURITY_STATUS rc;
 
-    SecBufferDesc ibd;
-    secBuffers bufs;
-    SecPkgContext_Sizes sizes;
+  SecBufferDesc ibd;
+  secBuffers bufs;
+  SecPkgContext_Sizes sizes;
 
-    rc = (sspi->QueryContextAttributesW)(
-         &mCtxt,
-         SECPKG_ATTR_SIZES,
-         &sizes);
+  rc = (sspi->QueryContextAttributesW)(&mCtxt, SECPKG_ATTR_SIZES, &sizes);
 
-    if (!SEC_SUCCESS(rc))
-        return NS_ERROR_FAILURE;
+  if (!SEC_SUCCESS(rc)) return NS_ERROR_FAILURE;
 
-    ibd.cBuffers = 3;
-    ibd.pBuffers = bufs.ib;
-    ibd.ulVersion = SECBUFFER_VERSION;
+  ibd.cBuffers = 3;
+  ibd.pBuffers = bufs.ib;
+  ibd.ulVersion = SECBUFFER_VERSION;
 
-    
-    bufs.ib[0].cbBuffer = sizes.cbSecurityTrailer;
-    bufs.ib[0].BufferType = SECBUFFER_TOKEN;
-    bufs.ib[0].pvBuffer = moz_xmalloc(sizes.cbSecurityTrailer);
+  
+  bufs.ib[0].cbBuffer = sizes.cbSecurityTrailer;
+  bufs.ib[0].BufferType = SECBUFFER_TOKEN;
+  bufs.ib[0].pvBuffer = moz_xmalloc(sizes.cbSecurityTrailer);
 
-    
-    bufs.ib[1].BufferType = SECBUFFER_DATA;
-    bufs.ib[1].pvBuffer = moz_xmalloc(inTokenLen);
-    bufs.ib[1].cbBuffer = inTokenLen;
+  
+  bufs.ib[1].BufferType = SECBUFFER_DATA;
+  bufs.ib[1].pvBuffer = moz_xmalloc(inTokenLen);
+  bufs.ib[1].cbBuffer = inTokenLen;
 
-    memcpy(bufs.ib[1].pvBuffer, inToken, inTokenLen);
+  memcpy(bufs.ib[1].pvBuffer, inToken, inTokenLen);
 
-    
-    bufs.ib[2].BufferType = SECBUFFER_PADDING;
-    bufs.ib[2].cbBuffer = sizes.cbBlockSize;
-    bufs.ib[2].pvBuffer = moz_xmalloc(bufs.ib[2].cbBuffer);
+  
+  bufs.ib[2].BufferType = SECBUFFER_PADDING;
+  bufs.ib[2].cbBuffer = sizes.cbBlockSize;
+  bufs.ib[2].pvBuffer = moz_xmalloc(bufs.ib[2].cbBuffer);
 
-    rc = (sspi->EncryptMessage)(&mCtxt,
-          confidential ? 0 : KERB_WRAP_NO_ENCRYPT,
-         &ibd, 0);
+  rc = (sspi->EncryptMessage)(&mCtxt, confidential ? 0 : KERB_WRAP_NO_ENCRYPT,
+                              &ibd, 0);
 
-    if (SEC_SUCCESS(rc)) {
-        int len  = bufs.ib[0].cbBuffer + bufs.ib[1].cbBuffer + bufs.ib[2].cbBuffer;
-        char *p = (char *) moz_xmalloc(len);
+  if (SEC_SUCCESS(rc)) {
+    int len = bufs.ib[0].cbBuffer + bufs.ib[1].cbBuffer + bufs.ib[2].cbBuffer;
+    char *p = (char *)moz_xmalloc(len);
 
-        *outToken = (void *) p;
-        *outTokenLen = len;
+    *outToken = (void *)p;
+    *outTokenLen = len;
 
-        memcpy(p, bufs.ib[0].pvBuffer, bufs.ib[0].cbBuffer);
-        p += bufs.ib[0].cbBuffer;
+    memcpy(p, bufs.ib[0].pvBuffer, bufs.ib[0].cbBuffer);
+    p += bufs.ib[0].cbBuffer;
 
-        memcpy(p,bufs.ib[1].pvBuffer, bufs.ib[1].cbBuffer);
-        p += bufs.ib[1].cbBuffer;
+    memcpy(p, bufs.ib[1].pvBuffer, bufs.ib[1].cbBuffer);
+    p += bufs.ib[1].cbBuffer;
 
-        memcpy(p,bufs.ib[2].pvBuffer, bufs.ib[2].cbBuffer);
+    memcpy(p, bufs.ib[2].pvBuffer, bufs.ib[2].cbBuffer);
 
-        return NS_OK;
-    }
+    return NS_OK;
+  }
 
-    return NS_ERROR_FAILURE;
+  return NS_ERROR_FAILURE;
 }

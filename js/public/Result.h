@@ -124,12 +124,11 @@
 
 
 
-#define JS_TRY_BOOL_TO_RESULT(cx, expr) \
-    do { \
-        bool ok_ = (expr); \
-        if (!ok_) \
-            return (cx)->boolToResult(ok_); \
-    } while (0)
+#define JS_TRY_BOOL_TO_RESULT(cx, expr)       \
+  do {                                        \
+    bool ok_ = (expr);                        \
+    if (!ok_) return (cx)->boolToResult(ok_); \
+  } while (0)
 
 
 
@@ -138,43 +137,41 @@
 
 
 
-#define JS_TRY_OR_RETURN_FALSE(cx, expr) \
-    do { \
-        auto tmpResult_ = (expr); \
-        if (tmpResult_.isErr()) \
-            return (cx)->resultToBool(tmpResult_); \
-    } while (0)
+#define JS_TRY_OR_RETURN_FALSE(cx, expr)                           \
+  do {                                                             \
+    auto tmpResult_ = (expr);                                      \
+    if (tmpResult_.isErr()) return (cx)->resultToBool(tmpResult_); \
+  } while (0)
 
 
 
 
 
-#define JS_TRY_OR_RETURN_NULL(cx, expr) \
-    do { \
-        auto tmpResult_ = (expr); \
-        if (tmpResult_.isErr()) { \
-            MOZ_ALWAYS_FALSE((cx)->resultToBool(tmpResult_)); \
-            return nullptr; \
-        } \
-    } while (0)
+#define JS_TRY_OR_RETURN_NULL(cx, expr)                 \
+  do {                                                  \
+    auto tmpResult_ = (expr);                           \
+    if (tmpResult_.isErr()) {                           \
+      MOZ_ALWAYS_FALSE((cx)->resultToBool(tmpResult_)); \
+      return nullptr;                                   \
+    }                                                   \
+  } while (0)
 
-#define JS_TRY_VAR_OR_RETURN_FALSE(cx, target, expr) \
-    do { \
-        auto tmpResult_ = (expr); \
-        if (tmpResult_.isErr()) \
-            return (cx)->resultToBool(tmpResult_); \
-        (target) = tmpResult_.unwrap(); \
-    } while (0)
+#define JS_TRY_VAR_OR_RETURN_FALSE(cx, target, expr)               \
+  do {                                                             \
+    auto tmpResult_ = (expr);                                      \
+    if (tmpResult_.isErr()) return (cx)->resultToBool(tmpResult_); \
+    (target) = tmpResult_.unwrap();                                \
+  } while (0)
 
-#define JS_TRY_VAR_OR_RETURN_NULL(cx, target, expr) \
-    do { \
-        auto tmpResult_ = (expr); \
-        if (tmpResult_.isErr()) {  \
-            MOZ_ALWAYS_FALSE((cx)->resultToBool(tmpResult_)); \
-            return nullptr; \
-        } \
-        (target) = tmpResult_.unwrap(); \
-    } while (0)
+#define JS_TRY_VAR_OR_RETURN_NULL(cx, target, expr)     \
+  do {                                                  \
+    auto tmpResult_ = (expr);                           \
+    if (tmpResult_.isErr()) {                           \
+      MOZ_ALWAYS_FALSE((cx)->resultToBool(tmpResult_)); \
+      return nullptr;                                   \
+    }                                                   \
+    (target) = tmpResult_.unwrap();                     \
+  } while (0)
 
 namespace JS {
 
@@ -184,16 +181,13 @@ using mozilla::Ok;
 
 
 
-struct Error
-{
-    
-    
-    int dummy;
+struct Error {
+  
+  
+  int dummy;
 };
 
-struct OOM : public Error
-{
-};
+struct OOM : public Error {};
 
 
 
@@ -219,6 +213,6 @@ static_assert(sizeof(Result<>) == sizeof(uintptr_t),
 static_assert(sizeof(Result<int*, Error&>) == sizeof(uintptr_t),
               "Result<V*, Error&> should be pointer-sized");
 
-} 
+}  
 
 #endif  

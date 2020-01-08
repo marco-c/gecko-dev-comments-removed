@@ -13,37 +13,34 @@ namespace js {
 
 class GlobalObject;
 
-class NumberObject : public NativeObject
-{
-    
-    static const unsigned PRIMITIVE_VALUE_SLOT = 0;
+class NumberObject : public NativeObject {
+  
+  static const unsigned PRIMITIVE_VALUE_SLOT = 0;
 
-  public:
-    static const unsigned RESERVED_SLOTS = 1;
+ public:
+  static const unsigned RESERVED_SLOTS = 1;
 
-    static const Class class_;
+  static const Class class_;
 
-    
-
+  
 
 
-    static inline NumberObject* create(JSContext* cx, double d,
-                                       HandleObject proto = nullptr);
 
-    double unbox() const {
-        return getFixedSlot(PRIMITIVE_VALUE_SLOT).toNumber();
-    }
+  static inline NumberObject* create(JSContext* cx, double d,
+                                     HandleObject proto = nullptr);
 
-  private:
-    inline void setPrimitiveValue(double d) {
-        setFixedSlot(PRIMITIVE_VALUE_SLOT, NumberValue(d));
-    }
+  double unbox() const { return getFixedSlot(PRIMITIVE_VALUE_SLOT).toNumber(); }
 
-    
-    friend JSObject*
-    js::InitNumberClass(JSContext* cx, Handle<GlobalObject*> global);
+ private:
+  inline void setPrimitiveValue(double d) {
+    setFixedSlot(PRIMITIVE_VALUE_SLOT, NumberValue(d));
+  }
+
+  
+  friend JSObject* js::InitNumberClass(JSContext* cx,
+                                       Handle<GlobalObject*> global);
 };
 
-} 
+}  
 
 #endif 

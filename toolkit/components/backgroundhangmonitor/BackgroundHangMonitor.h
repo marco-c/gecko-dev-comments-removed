@@ -101,17 +101,16 @@ class BackgroundHangManager;
 
 
 
-class BackgroundHangMonitor
-{
-private:
+class BackgroundHangMonitor {
+ private:
   friend BackgroundHangManager;
 
   RefPtr<BackgroundHangThread> mThread;
 
-  static bool ShouldDisableOnBeta(const nsCString &);
+  static bool ShouldDisableOnBeta(const nsCString&);
   static bool DisableOnBeta();
 
-public:
+ public:
   static const uint32_t kNoTimeout = 0;
   enum ThreadType {
     
@@ -153,8 +152,7 @@ public:
 
 
 
-  BackgroundHangMonitor(const char* aName,
-                        uint32_t aTimeoutMs,
+  BackgroundHangMonitor(const char* aName, uint32_t aTimeoutMs,
                         uint32_t aMaxTimeoutMs,
                         ThreadType aThreadType = THREAD_SHARED);
 
@@ -200,6 +198,6 @@ public:
   static bool UnregisterAnnotator(BackgroundHangAnnotator& aAnnotator);
 };
 
-} 
+}  
 
-#endif 
+#endif  

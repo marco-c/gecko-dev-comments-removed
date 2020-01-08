@@ -22,10 +22,10 @@ DLL_BLOCKLIST_DEFINITIONS_BEGIN
 DLL_BLOCKLIST_ENTRY("npffaddon.dll", ALL_VERSIONS)
 
 
-DLL_BLOCKLIST_ENTRY("avgrsstx.dll", MAKE_VERSION(8,5,0,401))
+DLL_BLOCKLIST_ENTRY("avgrsstx.dll", MAKE_VERSION(8, 5, 0, 401))
 
 
-DLL_BLOCKLIST_ENTRY("calc.dll", MAKE_VERSION(1,0,0,1))
+DLL_BLOCKLIST_ENTRY("calc.dll", MAKE_VERSION(1, 0, 0, 1))
 
 
 DLL_BLOCKLIST_ENTRY("hook.dll", ALL_VERSIONS)
@@ -35,31 +35,31 @@ DLL_BLOCKLIST_ENTRY("hook.dll", ALL_VERSIONS)
 DLL_BLOCKLIST_ENTRY("googledesktopnetwork3.dll", UNVERSIONED)
 
 
-DLL_BLOCKLIST_ENTRY("rdolib.dll", MAKE_VERSION(6,0,88,4))
+DLL_BLOCKLIST_ENTRY("rdolib.dll", MAKE_VERSION(6, 0, 88, 4))
 
 
-DLL_BLOCKLIST_ENTRY("fgjk4wvb.dll", MAKE_VERSION(8,8,8,8))
+DLL_BLOCKLIST_ENTRY("fgjk4wvb.dll", MAKE_VERSION(8, 8, 8, 8))
 
 
 DLL_BLOCKLIST_ENTRY("radhslib.dll", UNVERSIONED)
 
 
 
-DLL_BLOCKLIST_ENTRY("vksaver.dll", MAKE_VERSION(2,2,2,0))
+DLL_BLOCKLIST_ENTRY("vksaver.dll", MAKE_VERSION(2, 2, 2, 0))
 
 
-DLL_BLOCKLIST_ENTRY("rlxf.dll", MAKE_VERSION(1,2,323,1))
+DLL_BLOCKLIST_ENTRY("rlxf.dll", MAKE_VERSION(1, 2, 323, 1))
 
 
 
 DLL_BLOCKLIST_ENTRY("psicon.dll", ALL_VERSIONS)
 
 
-DLL_BLOCKLIST_ENTRY("accelerator.dll", MAKE_VERSION(3,2,1,6))
+DLL_BLOCKLIST_ENTRY("accelerator.dll", MAKE_VERSION(3, 2, 1, 6))
 
 
-DLL_BLOCKLIST_ENTRY("rf-firefox.dll", MAKE_VERSION(7,6,1,0))
-DLL_BLOCKLIST_ENTRY("roboform.dll", MAKE_VERSION(7,6,1,0))
+DLL_BLOCKLIST_ENTRY("rf-firefox.dll", MAKE_VERSION(7, 6, 1, 0))
+DLL_BLOCKLIST_ENTRY("roboform.dll", MAKE_VERSION(7, 6, 1, 0))
 
 
 DLL_BLOCKLIST_ENTRY("babyfox.dll", ALL_VERSIONS)
@@ -179,10 +179,12 @@ DLL_BLOCKLIST_ENTRY("nahimic2osd.dll", MAKE_VERSION(2, 5, 19, 0xffff))
 DLL_BLOCKLIST_ENTRY("nahimicmsidevprops.dll", UNVERSIONED)
 
 
-DLL_BLOCKLIST_ENTRY("klsihk64.dll", MAKE_VERSION(14, 0, 456, 0xffff), DllBlockInfo::BLOCK_WIN8_ONLY)
+DLL_BLOCKLIST_ENTRY("klsihk64.dll", MAKE_VERSION(14, 0, 456, 0xffff),
+                    DllBlockInfo::BLOCK_WIN8_ONLY)
 
 
-DLL_BLOCKLIST_ENTRY("onepin-opensc-pkcs11.dll", MAKE_VERSION(0, 15, 0xffff, 0xffff))
+DLL_BLOCKLIST_ENTRY("onepin-opensc-pkcs11.dll",
+                    MAKE_VERSION(0, 15, 0xffff, 0xffff))
 
 
 DLL_BLOCKLIST_ENTRY("pghook.dll", ALL_VERSIONS)
@@ -204,11 +206,13 @@ DLL_BLOCKLIST_ENTRY("nviewh64.dll", MAKE_VERSION(6, 14, 10, 14847))
 
 
 DLL_BLOCKLIST_ENTRY("testdllblocklist_matchbyname.dll", ALL_VERSIONS)
-DLL_BLOCKLIST_ENTRY("testdllblocklist_matchbyversion.dll", MAKE_VERSION(5, 5, 5, 5))
-DLL_BLOCKLIST_ENTRY("testdllblocklist_allowbyversion.dll", MAKE_VERSION(5, 5, 5, 5))
+DLL_BLOCKLIST_ENTRY("testdllblocklist_matchbyversion.dll",
+                    MAKE_VERSION(5, 5, 5, 5))
+DLL_BLOCKLIST_ENTRY("testdllblocklist_allowbyversion.dll",
+                    MAKE_VERSION(5, 5, 5, 5))
 
-#endif 
+#endif  
 
 DLL_BLOCKLIST_DEFINITIONS_END
 
-#endif 
+#endif  

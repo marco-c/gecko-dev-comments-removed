@@ -16,17 +16,13 @@
 namespace mozilla {
 bool ProcessNextEvent();
 void NotifyEvent();
-}
+}  
 
 namespace base {
 
-MessagePumpForUI::MessagePumpForUI()
-  : state_(NULL)
-{
-}
+MessagePumpForUI::MessagePumpForUI() : state_(NULL) {}
 
-MessagePumpForUI::~MessagePumpForUI() {
-}
+MessagePumpForUI::~MessagePumpForUI() {}
 
 void MessagePumpForUI::Run(Delegate* delegate) {
   RunState state;
@@ -62,31 +58,24 @@ void MessagePumpForUI::HandleDispatch() {
   
   
   
-  if (state_->should_quit)
-    return;
+  if (state_->should_quit) return;
 
   state_->more_work_is_plausible = false;
 
-  if (state_->delegate->DoWork())
-    state_->more_work_is_plausible = true;
+  if (state_->delegate->DoWork()) state_->more_work_is_plausible = true;
 
-  if (state_->should_quit)
-    return;
+  if (state_->should_quit) return;
 
   if (state_->delegate->DoDelayedWork(&delayed_work_time_))
     state_->more_work_is_plausible = true;
-  if (state_->should_quit)
-    return;
+  if (state_->should_quit) return;
 
   
   
-  if (state_->more_work_is_plausible)
-    return;
+  if (state_->more_work_is_plausible) return;
 
-  if (state_->delegate->DoIdleWork())
-    state_->more_work_is_plausible = true;
-  if (state_->should_quit)
-    return;
+  if (state_->delegate->DoIdleWork()) state_->more_work_is_plausible = true;
+  if (state_->should_quit) return;
 }
 
 void MessagePumpForUI::Quit() {

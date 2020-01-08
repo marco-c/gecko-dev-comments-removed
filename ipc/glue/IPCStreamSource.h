@@ -17,11 +17,11 @@ namespace mozilla {
 namespace dom {
 class nsIContentChild;
 class nsIContentParent;
-} 
+}  
 
 namespace wr {
 struct ByteBuffer;
-} 
+}  
 
 namespace ipc {
 
@@ -55,52 +55,47 @@ class PParentToChildStreamParent;
 
 
 
-class IPCStreamSource
-{
-public:
+class IPCStreamSource {
+ public:
   
   
   
-  static PChildToParentStreamChild*
-  Create(nsIAsyncInputStream* aInputStream, dom::nsIContentChild* aManager);
+  static PChildToParentStreamChild* Create(nsIAsyncInputStream* aInputStream,
+                                           dom::nsIContentChild* aManager);
 
   
   
   
-  static PChildToParentStreamChild*
-  Create(nsIAsyncInputStream* aInputStream, PBackgroundChild* aManager);
+  static PChildToParentStreamChild* Create(nsIAsyncInputStream* aInputStream,
+                                           PBackgroundChild* aManager);
 
   
   
   
-  static PParentToChildStreamParent*
-  Create(nsIAsyncInputStream* aInputStream, dom::nsIContentParent* aManager);
+  static PParentToChildStreamParent* Create(nsIAsyncInputStream* aInputStream,
+                                            dom::nsIContentParent* aManager);
 
   
   
   
-  static PParentToChildStreamParent*
-  Create(nsIAsyncInputStream* aInputStream, PBackgroundParent* aManager);
+  static PParentToChildStreamParent* Create(nsIAsyncInputStream* aInputStream,
+                                            PBackgroundParent* aManager);
 
-  static IPCStreamSource*
-  Cast(PChildToParentStreamChild* aActor);
+  static IPCStreamSource* Cast(PChildToParentStreamChild* aActor);
 
-  static IPCStreamSource*
-  Cast(PParentToChildStreamParent* aActor);
+  static IPCStreamSource* Cast(PParentToChildStreamParent* aActor);
 
   
   
   
-  void
-  Start();
+  void Start();
 
   
   
   
-  void
-  StartDestroy();
+  void StartDestroy();
 
-protected:
+ protected:
   IPCStreamSource(nsIAsyncInputStream* aInputStream);
   virtual ~IPCStreamSource();
 
@@ -110,16 +105,13 @@ protected:
 
   void OnEnd(nsresult aRv);
 
-  virtual void
-  Close(nsresult aRv) = 0;
+  virtual void Close(nsresult aRv) = 0;
 
-  virtual void
-  SendData(const wr::ByteBuffer& aBuffer) = 0;
+  virtual void SendData(const wr::ByteBuffer& aBuffer) = 0;
 
-  void
-  ActorConstructed();
+  void ActorConstructed();
 
-private:
+ private:
   class Callback;
 
   void DoRead();
@@ -134,20 +126,16 @@ private:
   RefPtr<dom::StrongWorkerRef> mWorkerRef;
 
 #ifdef DEBUG
-protected:
+ protected:
 #endif
 
-  enum {
-   ePending,
-   eActorConstructed,
-   eClosed
-  } mState;
+  enum { ePending, eActorConstructed, eClosed } mState;
 
-private:
+ private:
   NS_DECL_OWNINGTHREAD
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

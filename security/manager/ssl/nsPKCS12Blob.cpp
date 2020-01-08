@@ -33,16 +33,13 @@ extern LazyLogModule gPIPNSSLog;
 #define PIP_PKCS12_BACKUP_FAILED 6
 #define PIP_PKCS12_NSS_ERROR 7
 
-nsPKCS12Blob::nsPKCS12Blob()
-  : mUIContext(new PipUIContext())
-{
-}
+nsPKCS12Blob::nsPKCS12Blob() : mUIContext(new PipUIContext()) {}
 
 
 
-nsresult
-nsPKCS12Blob::ImportFromFile(nsIFile* aFile, const nsAString& aPassword, uint32_t& aError)
-{
+nsresult nsPKCS12Blob::ImportFromFile(nsIFile* aFile,
+                                      const nsAString& aPassword,
+                                      uint32_t& aError) {
   uint32_t passwordBufferLength;
   UniquePtr<uint8_t[]> passwordBuffer;
 
@@ -54,10 +51,10 @@ nsPKCS12Blob::ImportFromFile(nsIFile* aFile, const nsAString& aPassword, uint32_
   passwordBuffer = stringToBigEndianBytes(aPassword, passwordBufferLength);
 
   
-  SECItem unicodePw = { siBuffer, passwordBuffer.get(), passwordBufferLength };
+  SECItem unicodePw = {siBuffer, passwordBuffer.get(), passwordBufferLength};
   UniqueSEC_PKCS12DecoderContext dcx(
-    SEC_PKCS12DecoderStart(&unicodePw, slot.get(), nullptr, nullptr, nullptr,
-                           nullptr, nullptr, nullptr));
+      SEC_PKCS12DecoderStart(&unicodePw, slot.get(), nullptr, nullptr, nullptr,
+                             nullptr, nullptr, nullptr));
   if (!dcx) {
     return NS_ERROR_FAILURE;
   }
@@ -93,12 +90,10 @@ nsPKCS12Blob::ImportFromFile(nsIFile* aFile, const nsAString& aPassword, uint32_
   return NS_OK;
 }
 
-static bool
-isExtractable(UniqueSECKEYPrivateKey& privKey)
-{
+static bool isExtractable(UniqueSECKEYPrivateKey& privKey) {
   ScopedAutoSECItem value;
-  SECStatus rv = PK11_ReadRawAttribute(
-    PK11_TypePrivKey, privKey.get(), CKA_EXTRACTABLE, &value);
+  SECStatus rv = PK11_ReadRawAttribute(PK11_TypePrivKey, privKey.get(),
+                                       CKA_EXTRACTABLE, &value);
   if (rv != SECSuccess) {
     return false;
   }
@@ -112,11 +107,9 @@ isExtractable(UniqueSECKEYPrivateKey& privKey)
 
 
 
-nsresult
-nsPKCS12Blob::ExportToFile(nsIFile* aFile, nsIX509Cert** aCerts, int aNumCerts,
-                           const nsAString& aPassword, uint32_t& aError)
-{
-
+nsresult nsPKCS12Blob::ExportToFile(nsIFile* aFile, nsIX509Cert** aCerts,
+                                    int aNumCerts, const nsAString& aPassword,
+                                    uint32_t& aError) {
   
   uint32_t passwordBufferLength;
   UniquePtr<uint8_t[]> passwordBuffer;
@@ -126,15 +119,15 @@ nsPKCS12Blob::ExportToFile(nsIFile* aFile, nsIX509Cert** aCerts, int aNumCerts,
     return NS_OK;
   }
   UniqueSEC_PKCS12ExportContext ecx(
-    SEC_PKCS12CreateExportContext(nullptr, nullptr, nullptr, nullptr));
+      SEC_PKCS12CreateExportContext(nullptr, nullptr, nullptr, nullptr));
   if (!ecx) {
     aError = nsIX509CertDB::ERROR_PKCS12_BACKUP_FAILED;
     return NS_OK;
   }
   
-  SECItem unicodePw = { siBuffer, passwordBuffer.get(), passwordBufferLength };
-  SECStatus srv = SEC_PKCS12AddPasswordIntegrity(ecx.get(), &unicodePw,
-                                                 SEC_OID_SHA1);
+  SECItem unicodePw = {siBuffer, passwordBuffer.get(), passwordBufferLength};
+  SECStatus srv =
+      SEC_PKCS12AddPasswordIntegrity(ecx.get(), &unicodePw, SEC_OID_SHA1);
   if (srv != SECSuccess) {
     aError = nsIX509CertDB::ERROR_PKCS12_BACKUP_FAILED;
     return NS_OK;
@@ -152,7 +145,7 @@ nsPKCS12Blob::ExportToFile(nsIFile* aFile, nsIX509Cert** aCerts, int aNumCerts,
     if (nssCert->slot && !PK11_IsInternal(nssCert->slot)) {
       
       UniqueSECKEYPrivateKey privKey(
-        PK11_FindKeyByDERCert(nssCert->slot, nssCert.get(), mUIContext));
+          PK11_FindKeyByDERCert(nssCert->slot, nssCert.get(), mUIContext));
       if (privKey && !isExtractable(privKey)) {
         
         
@@ -168,8 +161,8 @@ nsPKCS12Blob::ExportToFile(nsIFile* aFile, nsIX509Cert** aCerts, int aNumCerts,
       certSafe = keySafe;
     } else {
       certSafe = SEC_PKCS12CreatePasswordPrivSafe(
-        ecx.get(), &unicodePw,
-        SEC_OID_PKCS12_V2_PBE_WITH_SHA1_AND_40_BIT_RC2_CBC);
+          ecx.get(), &unicodePw,
+          SEC_OID_PKCS12_V2_PBE_WITH_SHA1_AND_40_BIT_RC2_CBC);
     }
     if (!certSafe || !keySafe) {
       aError = nsIX509CertDB::ERROR_PKCS12_BACKUP_FAILED;
@@ -177,16 +170,9 @@ nsPKCS12Blob::ExportToFile(nsIFile* aFile, nsIX509Cert** aCerts, int aNumCerts,
     }
     
     srv = SEC_PKCS12AddCertAndKey(
-      ecx.get(),
-      certSafe,
-      nullptr,
-      nssCert.get(),
-      CERT_GetDefaultCertDB(),
-      keySafe,
-      nullptr,
-      true,
-      &unicodePw,
-      SEC_OID_PKCS12_V2_PBE_WITH_SHA1_AND_3KEY_TRIPLE_DES_CBC);
+        ecx.get(), certSafe, nullptr, nssCert.get(), CERT_GetDefaultCertDB(),
+        keySafe, nullptr, true, &unicodePw,
+        SEC_OID_PKCS12_V2_PBE_WITH_SHA1_AND_3KEY_TRIPLE_DES_CBC);
     if (srv != SECSuccess) {
       aError = nsIX509CertDB::ERROR_PKCS12_BACKUP_FAILED;
       return NS_OK;
@@ -212,31 +198,29 @@ nsPKCS12Blob::ExportToFile(nsIFile* aFile, nsIX509Cert** aCerts, int aNumCerts,
 
 
 
-UniquePtr<uint8_t[]>
-nsPKCS12Blob::stringToBigEndianBytes(const nsAString& uni, uint32_t& bytesLength)
-{
+UniquePtr<uint8_t[]> nsPKCS12Blob::stringToBigEndianBytes(
+    const nsAString& uni, uint32_t& bytesLength) {
   if (uni.IsVoid()) {
     bytesLength = 0;
     return nullptr;
   }
 
-  uint32_t wideLength = uni.Length() + 1; 
+  uint32_t wideLength = uni.Length() + 1;  
   bytesLength = wideLength * 2;
   auto buffer = MakeUnique<uint8_t[]>(bytesLength);
 
   
   
   mozilla::NativeEndian::copyAndSwapToBigEndian(
-    buffer.get(), static_cast<const char16_t*>(uni.BeginReading()), wideLength);
+      buffer.get(), static_cast<const char16_t*>(uni.BeginReading()),
+      wideLength);
 
   return buffer;
 }
 
 
-nsresult
-nsPKCS12Blob::inputToDecoder(UniqueSEC_PKCS12DecoderContext& dcx, nsIFile* file,
-                             PRErrorCode& nssError)
-{
+nsresult nsPKCS12Blob::inputToDecoder(UniqueSEC_PKCS12DecoderContext& dcx,
+                                      nsIFile* file, PRErrorCode& nssError) {
   nssError = 0;
 
   nsCOMPtr<nsIInputStream> fileStream;
@@ -253,8 +237,8 @@ nsPKCS12Blob::inputToDecoder(UniqueSEC_PKCS12DecoderContext& dcx, nsIFile* file,
       return rv;
     }
     
-    SECStatus srv = SEC_PKCS12DecoderUpdate(
-      dcx.get(), (unsigned char*)buf, amount);
+    SECStatus srv =
+        SEC_PKCS12DecoderUpdate(dcx.get(), (unsigned char*)buf, amount);
     if (srv != SECSuccess) {
       nssError = PR_GetError();
       return NS_OK;
@@ -267,9 +251,8 @@ nsPKCS12Blob::inputToDecoder(UniqueSEC_PKCS12DecoderContext& dcx, nsIFile* file,
 }
 
 
-SECItem*
-nsPKCS12Blob::nicknameCollision(SECItem* oldNick, PRBool* cancel, void* wincx)
-{
+SECItem* nsPKCS12Blob::nicknameCollision(SECItem* oldNick, PRBool* cancel,
+                                         void* wincx) {
   *cancel = false;
   int count = 1;
   nsCString nickname;
@@ -308,14 +291,14 @@ nsPKCS12Blob::nicknameCollision(SECItem* oldNick, PRBool* cancel, void* wincx)
       nickname.AppendPrintf(" #%d", count);
     }
     UniqueCERTCertificate cert(
-      CERT_FindCertByNickname(CERT_GetDefaultCertDB(), nickname.get()));
+        CERT_FindCertByNickname(CERT_GetDefaultCertDB(), nickname.get()));
     if (!cert) {
       break;
     }
     count++;
   }
-  UniqueSECItem newNick(SECITEM_AllocItem(nullptr, nullptr,
-                                          nickname.Length() + 1));
+  UniqueSECItem newNick(
+      SECITEM_AllocItem(nullptr, nullptr, nickname.Length() + 1));
   if (!newNick) {
     return nullptr;
   }
@@ -326,18 +309,15 @@ nsPKCS12Blob::nicknameCollision(SECItem* oldNick, PRBool* cancel, void* wincx)
 }
 
 
-void
-nsPKCS12Blob::writeExportFile(void* arg, const char* buf, unsigned long len)
-{
+void nsPKCS12Blob::writeExportFile(void* arg, const char* buf,
+                                   unsigned long len) {
   PRFileDesc* file = static_cast<PRFileDesc*>(arg);
   MOZ_RELEASE_ASSERT(file);
   PR_Write(file, buf, len);
 }
 
 
-uint32_t
-nsPKCS12Blob::handlePRErrorCode(PRErrorCode aPrerr)
-{
+uint32_t nsPKCS12Blob::handlePRErrorCode(PRErrorCode aPrerr) {
   MOZ_ASSERT(aPrerr != 0);
   uint32_t error = nsIX509CertDB::ERROR_UNKNOWN;
   switch (aPrerr) {

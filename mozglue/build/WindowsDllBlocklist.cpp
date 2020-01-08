@@ -10,7 +10,7 @@
 
 
 #define MALLOC_DECL(name, return_type, ...) \
-  MOZ_MEMORY_API return_type name ## _impl(__VA_ARGS__);
+  MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
 #include "malloc_decls.h"
 #include "mozilla/mozalloc.h"
 #endif
@@ -19,10 +19,10 @@
 #include <winternl.h>
 #include <io.h>
 
-#pragma warning( push )
-#pragma warning( disable : 4275 4530 ) // See msvc-stl-wrapper.template.h
+#pragma warning(push)
+#pragma warning(disable : 4275 4530)  // See msvc-stl-wrapper.template.h
 #include <map>
-#pragma warning( pop )
+#pragma warning(pop)
 
 #include "Authenticode.h"
 #include "CrashAnnotations.h"
@@ -49,8 +49,7 @@ using CrashReporter::AnnotationToString;
 static SRWLOCK gDllServicesLock = SRWLOCK_INIT;
 static glue::detail::DllServicesBase* gDllServices;
 
-#define DLL_BLOCKLIST_ENTRY(name, ...) \
-  { name, __VA_ARGS__ },
+#define DLL_BLOCKLIST_ENTRY(name, ...) {name, __VA_ARGS__},
 #define DLL_BLOCKLIST_STRING_TYPE const char*
 #include "mozilla/WindowsDllBlocklistDefs.h"
 
@@ -63,9 +62,7 @@ static bool sBlocklistInitFailed;
 static bool sUser32BeforeBlocklist;
 
 
-void
-printf_stderr(const char *fmt, ...)
-{
+void printf_stderr(const char* fmt, ...) {
   if (IsDebuggerPresent()) {
     char buf[2048];
     va_list args;
@@ -75,9 +72,8 @@ printf_stderr(const char *fmt, ...)
     OutputDebugStringA(buf);
   }
 
-  FILE *fp = _fdopen(_dup(2), "a");
-  if (!fp)
-      return;
+  FILE* fp = _fdopen(_dup(2), "a");
+  if (!fp) return;
 
   va_list args;
   va_start(args, fmt);
@@ -88,9 +84,7 @@ printf_stderr(const char *fmt, ...)
 }
 
 
-inline static bool
-IsUntrustedDllsHandlerEnabled()
-{
+inline static bool IsUntrustedDllsHandlerEnabled() {
 #ifdef NIGHTLY_BUILD
   return !(sInitFlags & eDllBlocklistInitFlagIsChildProcess);
 #else
@@ -98,23 +92,29 @@ IsUntrustedDllsHandlerEnabled()
 #endif
 }
 
-typedef MOZ_NORETURN_PTR void (__fastcall* BaseThreadInitThunk_func)(BOOL aIsInitialThread, void* aStartAddress, void* aThreadParam);
-static WindowsDllInterceptor::FuncHookType<BaseThreadInitThunk_func> stub_BaseThreadInitThunk;
+typedef MOZ_NORETURN_PTR void(__fastcall* BaseThreadInitThunk_func)(
+    BOOL aIsInitialThread, void* aStartAddress, void* aThreadParam);
+static WindowsDllInterceptor::FuncHookType<BaseThreadInitThunk_func>
+    stub_BaseThreadInitThunk;
 
-typedef NTSTATUS (NTAPI *LdrLoadDll_func) (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileName, PHANDLE handle);
+typedef NTSTATUS(NTAPI* LdrLoadDll_func)(PWCHAR filePath, PULONG flags,
+                                         PUNICODE_STRING moduleFileName,
+                                         PHANDLE handle);
 static WindowsDllInterceptor::FuncHookType<LdrLoadDll_func> stub_LdrLoadDll;
 
 #ifdef _M_AMD64
-typedef decltype(RtlInstallFunctionTableCallback)* RtlInstallFunctionTableCallback_func;
-static WindowsDllInterceptor::FuncHookType<RtlInstallFunctionTableCallback_func> stub_RtlInstallFunctionTableCallback;
+typedef decltype(
+    RtlInstallFunctionTableCallback)* RtlInstallFunctionTableCallback_func;
+static WindowsDllInterceptor::FuncHookType<RtlInstallFunctionTableCallback_func>
+    stub_RtlInstallFunctionTableCallback;
 
 extern uint8_t* sMsMpegJitCodeRegionStart;
 extern size_t sMsMpegJitCodeRegionSize;
 
-BOOLEAN WINAPI patched_RtlInstallFunctionTableCallback(DWORD64 TableIdentifier,
-  DWORD64 BaseAddress, DWORD Length, PGET_RUNTIME_FUNCTION_CALLBACK Callback,
-  PVOID Context, PCWSTR OutOfProcessCallbackDll)
-{
+BOOLEAN WINAPI patched_RtlInstallFunctionTableCallback(
+    DWORD64 TableIdentifier, DWORD64 BaseAddress, DWORD Length,
+    PGET_RUNTIME_FUNCTION_CALLBACK Callback, PVOID Context,
+    PCWSTR OutOfProcessCallbackDll) {
   
   
   
@@ -133,8 +133,8 @@ BOOLEAN WINAPI patched_RtlInstallFunctionTableCallback(DWORD64 TableIdentifier,
 
   if (GetModuleHandleExW(moduleFlags, (LPWSTR)Callback, &callbackModule) &&
       GetModuleHandleW(L"msmpeg2vdec.dll") == callbackModule) {
-      sMsMpegJitCodeRegionStart = (uint8_t*)BaseAddress;
-      sMsMpegJitCodeRegionSize = Length;
+    sMsMpegJitCodeRegionStart = (uint8_t*)BaseAddress;
+    sMsMpegJitCodeRegionSize = Length;
   }
 
   return stub_RtlInstallFunctionTableCallback(TableIdentifier, BaseAddress,
@@ -149,16 +149,18 @@ struct RVAMap {
     SYSTEM_INFO info;
     GetSystemInfo(&info);
 
-    DWORD alignedOffset = (offset / info.dwAllocationGranularity) *
-                          info.dwAllocationGranularity;
+    DWORD alignedOffset =
+        (offset / info.dwAllocationGranularity) * info.dwAllocationGranularity;
 
     MOZ_ASSERT(offset - alignedOffset < info.dwAllocationGranularity, "Wtf");
 
     mRealView = ::MapViewOfFile(map, FILE_MAP_READ, 0, alignedOffset,
                                 sizeof(T) + (offset - alignedOffset));
 
-    mMappedView = mRealView ? reinterpret_cast<T*>((char*)mRealView + (offset - alignedOffset)) :
-                              nullptr;
+    mMappedView =
+        mRealView
+            ? reinterpret_cast<T*>((char*)mRealView + (offset - alignedOffset))
+            : nullptr;
   }
   ~RVAMap() {
     if (mRealView) {
@@ -167,22 +169,20 @@ struct RVAMap {
   }
   operator const T*() const { return mMappedView; }
   const T* operator->() const { return mMappedView; }
-private:
+
+ private:
   const T* mMappedView;
   void* mRealView;
 };
 
-static DWORD
-GetTimestamp(const wchar_t* path)
-{
+static DWORD GetTimestamp(const wchar_t* path) {
   DWORD timestamp = 0;
 
-  HANDLE file = ::CreateFileW(path, GENERIC_READ, FILE_SHARE_READ,
-                              nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
-                              nullptr);
+  HANDLE file = ::CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                              OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
   if (file != INVALID_HANDLE_VALUE) {
-    HANDLE map = ::CreateFileMappingW(file, nullptr, PAGE_READONLY, 0, 0,
-                                      nullptr);
+    HANDLE map =
+        ::CreateFileMappingW(file, nullptr, PAGE_READONLY, 0, 0, nullptr);
     if (map) {
       RVAMap<IMAGE_DOS_HEADER> peHeader(map, 0);
       if (peHeader) {
@@ -213,11 +213,9 @@ static CRITICAL_SECTION sLock;
 
 
 
-class ReentrancySentinel
-{
-public:
-  explicit ReentrancySentinel(const char* dllName)
-  {
+class ReentrancySentinel {
+ public:
+  explicit ReentrancySentinel(const char* dllName) {
     DWORD currentThreadId = GetCurrentThreadId();
     AutoCriticalSection lock(&sLock);
     mPreviousDllName = (*sThreadMap)[currentThreadId];
@@ -228,25 +226,20 @@ public:
     (*sThreadMap)[currentThreadId] = dllName;
   }
 
-  ~ReentrancySentinel()
-  {
+  ~ReentrancySentinel() {
     DWORD currentThreadId = GetCurrentThreadId();
     AutoCriticalSection lock(&sLock);
     (*sThreadMap)[currentThreadId] = mPreviousDllName;
   }
 
-  bool BailOut() const
-  {
-    return mReentered;
-  };
+  bool BailOut() const { return mReentered; };
 
-  static void InitializeStatics()
-  {
+  static void InitializeStatics() {
     InitializeCriticalSection(&sLock);
     sThreadMap = new std::map<DWORD, const char*>;
   }
 
-private:
+ private:
   static std::map<DWORD, const char*>* sThreadMap;
 
   const char* mPreviousDllName;
@@ -260,24 +253,19 @@ std::map<DWORD, const char*>* ReentrancySentinel::sThreadMap;
 
 
 
-class DllBlockSet
-{
-public:
+class DllBlockSet {
+ public:
   static void Add(const char* name, unsigned long long version);
 
   
   
   static void Write(HANDLE file);
 
-private:
+ private:
   DllBlockSet(const char* name, unsigned long long version)
-    : mName(name)
-    , mVersion(version)
-    , mNext(nullptr)
-  {
-  }
+      : mName(name), mVersion(version), mNext(nullptr) {}
 
-  const char* mName; 
+  const char* mName;  
   unsigned long long mVersion;
   DllBlockSet* mNext;
 
@@ -286,9 +274,7 @@ private:
 
 DllBlockSet* DllBlockSet::gFirst;
 
-void
-DllBlockSet::Add(const char* name, unsigned long long version)
-{
+void DllBlockSet::Add(const char* name, unsigned long long version) {
   AutoCriticalSection lock(&sLock);
   for (DllBlockSet* b = gFirst; b; b = b->mNext) {
     if (0 == strcmp(b->mName, name) && b->mVersion == version) {
@@ -301,9 +287,7 @@ DllBlockSet::Add(const char* name, unsigned long long version)
   gFirst = n;
 }
 
-void
-DllBlockSet::Write(HANDLE file)
-{
+void DllBlockSet::Write(HANDLE file) {
   
   
   
@@ -336,14 +320,12 @@ DllBlockSet::Write(HANDLE file)
       WriteFile(file, ";", 1, &nBytes, nullptr);
     }
   }
-  MOZ_SEH_EXCEPT (EXCEPTION_EXECUTE_HANDLER) { }
+  MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {}
 
   ::LeaveCriticalSection(&sLock);
 }
 
-static UniquePtr<wchar_t[]>
-getFullPath (PWCHAR filePath, wchar_t* fname)
-{
+static UniquePtr<wchar_t[]> getFullPath(PWCHAR filePath, wchar_t* fname) {
   
   
   
@@ -354,13 +336,13 @@ getFullPath (PWCHAR filePath, wchar_t* fname)
   }
 
   
-  DWORD pathlen = SearchPathW(sanitizedFilePath, fname, L".dll", 0, nullptr,
-                              nullptr);
+  DWORD pathlen =
+      SearchPathW(sanitizedFilePath, fname, L".dll", 0, nullptr, nullptr);
   if (pathlen == 0) {
     return nullptr;
   }
 
-  auto full_fname = MakeUnique<wchar_t[]>(pathlen+1);
+  auto full_fname = MakeUnique<wchar_t[]>(pathlen + 1);
   if (!full_fname) {
     
     return nullptr;
@@ -373,8 +355,7 @@ getFullPath (PWCHAR filePath, wchar_t* fname)
 }
 
 
-static wchar_t* lastslash(wchar_t* s, int len)
-{
+static wchar_t* lastslash(wchar_t* s, int len) {
   for (wchar_t* c = s + len - 1; c >= s; --c) {
     if (*c == L'\\' || *c == L'/') {
       return c;
@@ -383,19 +364,15 @@ static wchar_t* lastslash(wchar_t* s, int len)
   return nullptr;
 }
 
-
 #ifdef ENABLE_TESTS
 DllLoadHookType gDllLoadHook = nullptr;
 
-void
-DllBlocklist_SetDllLoadHook(DllLoadHookType aHook)
-{
+void DllBlocklist_SetDllLoadHook(DllLoadHookType aHook) {
   gDllLoadHook = aHook;
 }
 
-void
-CallDllLoadHook(bool aDllLoaded, NTSTATUS aStatus, HANDLE aDllBase, PUNICODE_STRING aDllName)
-{
+void CallDllLoadHook(bool aDllLoaded, NTSTATUS aStatus, HANDLE aDllBase,
+                     PUNICODE_STRING aDllName) {
   if (gDllLoadHook) {
     gDllLoadHook(aDllLoaded, aStatus, aDllBase, aDllName);
   }
@@ -403,15 +380,11 @@ CallDllLoadHook(bool aDllLoaded, NTSTATUS aStatus, HANDLE aDllBase, PUNICODE_STR
 
 CreateThreadHookType gCreateThreadHook = nullptr;
 
-void
-DllBlocklist_SetCreateThreadHook(CreateThreadHookType aHook)
-{
+void DllBlocklist_SetCreateThreadHook(CreateThreadHookType aHook) {
   gCreateThreadHook = aHook;
 }
 
-void
-CallCreateThreadHook(bool aWasAllowed, void* aStartAddress)
-{
+void CallCreateThreadHook(bool aWasAllowed, void* aStartAddress) {
   if (gCreateThreadHook) {
     gCreateThreadHook(aWasAllowed, aStartAddress);
   }
@@ -420,9 +393,7 @@ CallCreateThreadHook(bool aWasAllowed, void* aStartAddress)
 
 
 
-const char*
-DllBlocklist_TestBlocklistIntegrity()
-{
+const char* DllBlocklist_TestBlocklistIntegrity() {
   mozilla::Vector<DLL_BLOCKLIST_STRING_TYPE> dupes;
   DECLARE_POINTER_TO_FIRST_DLL_BLOCKLIST_ENTRY(pFirst);
   DECLARE_POINTER_TO_LAST_DLL_BLOCKLIST_ENTRY(pLast);
@@ -463,14 +434,14 @@ DllBlocklist_TestBlocklistIntegrity()
   return nullptr;
 }
 
-#else 
+#else  
 #define CallDllLoadHook(...)
 #define CallCreateThreadHook(...)
-#endif 
+#endif  
 
-static NTSTATUS NTAPI
-patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileName, PHANDLE handle)
-{
+static NTSTATUS NTAPI patched_LdrLoadDll(PWCHAR filePath, PULONG flags,
+                                         PUNICODE_STRING moduleFileName,
+                                         PHANDLE handle) {
   if (IsUntrustedDllsHandlerEnabled()) {
     glue::UntrustedDllsHandler::EnterLoaderCall();
   }
@@ -482,22 +453,22 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   });
 
   
+  
 #define DLLNAME_MAX 128
-  char dllName[DLLNAME_MAX+1];
-  wchar_t *dll_part;
-  char *dot;
+  char dllName[DLLNAME_MAX + 1];
+  wchar_t* dll_part;
+  char* dot;
 
   int len = moduleFileName->Length / 2;
-  wchar_t *fname = moduleFileName->Buffer;
+  wchar_t* fname = moduleFileName->Buffer;
   UniquePtr<wchar_t[]> full_fname;
 
   
   
   
   
-  if (moduleFileName->MaximumLength < moduleFileName->Length+2 ||
-      fname[len] != 0)
-  {
+  if (moduleFileName->MaximumLength < moduleFileName->Length + 2 ||
+      fname[len] != 0) {
 #ifdef DEBUG
     printf_stderr("LdrLoadDll: non-null terminated string found!\n");
 #endif
@@ -537,10 +508,9 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
     }
 
     
-    if (c >= 'A' && c <= 'Z')
-      c += 'a' - 'A';
+    if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
 
-    dllName[i] = (char) c;
+    dllName[i] = (char)c;
   }
 
   dllName[len] = 0;
@@ -553,17 +523,17 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
     
     
     dot = strchr(dllName, '.');
-    if (dot && (strchr(dot+1, '.') == dot+13)) {
-      char * end = nullptr;
-      _strtoui64(dot+1, &end, 16);
-      if (end == dot+13) {
+    if (dot && (strchr(dot + 1, '.') == dot + 13)) {
+      char* end = nullptr;
+      _strtoui64(dot + 1, &end, 16);
+      if (end == dot + 13) {
         CallDllLoadHook(false, STATUS_DLL_NOT_FOUND, 0, moduleFileName);
         return STATUS_DLL_NOT_FOUND;
       }
     }
     
     if (dot && ((dot - dllName) >= 16)) {
-      char * current = dllName;
+      char* current = dllName;
       while (current < dot && isxdigit(*current)) {
         current++;
       }
@@ -576,8 +546,7 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
     
     DECLARE_POINTER_TO_FIRST_DLL_BLOCKLIST_ENTRY(info);
     while (info->name) {
-      if (strcmp(info->name, dllName) == 0)
-        break;
+      if (strcmp(info->name, dllName) == 0) break;
 
       info++;
     }
@@ -615,7 +584,10 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
         full_fname = getFullPath(filePath, fname);
         if (!full_fname) {
           
-          printf_stderr("LdrLoadDll: Blocking load of '%s' (SearchPathW didn't find it?)\n", dllName);
+          printf_stderr(
+              "LdrLoadDll: Blocking load of '%s' (SearchPathW didn't find "
+              "it?)\n",
+              dllName);
           CallDllLoadHook(false, STATUS_DLL_NOT_FOUND, 0, moduleFileName);
           return STATUS_DLL_NOT_FOUND;
         }
@@ -633,27 +605,29 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
 
           if (infoSize != 0) {
             auto infoData = MakeUnique<unsigned char[]>(infoSize);
-            VS_FIXEDFILEINFO *vInfo;
+            VS_FIXEDFILEINFO* vInfo;
             UINT vInfoLen;
 
-            if (GetFileVersionInfoW(full_fname.get(), 0, infoSize, infoData.get()) &&
-                VerQueryValueW(infoData.get(), L"\\", (LPVOID*) &vInfo, &vInfoLen))
-            {
-              fVersion =
-                ((unsigned long long)vInfo->dwFileVersionMS) << 32 |
-                ((unsigned long long)vInfo->dwFileVersionLS);
+            if (GetFileVersionInfoW(full_fname.get(), 0, infoSize,
+                                    infoData.get()) &&
+                VerQueryValueW(infoData.get(), L"\\", (LPVOID*)&vInfo,
+                               &vInfoLen)) {
+              fVersion = ((unsigned long long)vInfo->dwFileVersionMS) << 32 |
+                         ((unsigned long long)vInfo->dwFileVersionLS);
 
               
               
-              if (fVersion > info->maxVersion)
-                load_ok = true;
+              if (fVersion > info->maxVersion) load_ok = true;
             }
           }
         }
       }
 
       if (!load_ok) {
-        printf_stderr("LdrLoadDll: Blocking load of '%s' -- see http://www.mozilla.com/en-US/blocklist/\n", dllName);
+        printf_stderr(
+            "LdrLoadDll: Blocking load of '%s' -- see "
+            "http://www.mozilla.com/en-US/blocklist/\n",
+            dllName);
         DllBlockSet::Add(info->name, fVersion);
         CallDllLoadHook(false, STATUS_DLL_NOT_FOUND, 0, moduleFileName);
         return STATUS_DLL_NOT_FOUND;
@@ -663,7 +637,8 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
 
 continue_loading:
 #ifdef DEBUG_very_verbose
-    printf_stderr("LdrLoadDll: continuing load... ('%S')\n", moduleFileName->Buffer);
+  printf_stderr("LdrLoadDll: continuing load... ('%S')\n",
+                moduleFileName->Buffer);
 #endif
 
   
@@ -707,12 +682,10 @@ continue_loading:
 static mozilla::Vector<void*, 4>* gStartAddressesToBlock;
 #endif
 
-static bool
-ShouldBlockThread(void* aStartAddress)
-{
+static bool ShouldBlockThread(void* aStartAddress) {
   
-  if (aStartAddress == 0)
-    return false;
+  
+  if (aStartAddress == 0) return false;
 
 #if defined(NIGHTLY_BUILD)
   for (auto p : *gStartAddressesToBlock) {
@@ -724,7 +697,8 @@ ShouldBlockThread(void* aStartAddress)
 
   bool shouldBlock = false;
   MEMORY_BASIC_INFORMATION startAddressInfo = {0};
-  if (VirtualQuery(aStartAddress, &startAddressInfo, sizeof(startAddressInfo))) {
+  if (VirtualQuery(aStartAddress, &startAddressInfo,
+                   sizeof(startAddressInfo))) {
     shouldBlock |= startAddressInfo.State != MEM_COMMIT;
     shouldBlock |= startAddressInfo.Protect != PAGE_EXECUTE_READ;
   }
@@ -733,16 +707,11 @@ ShouldBlockThread(void* aStartAddress)
 }
 
 
-static DWORD WINAPI
-NopThreadProc(void* )
-{
-  return 0;
-}
 
-static MOZ_NORETURN void __fastcall
-patched_BaseThreadInitThunk(BOOL aIsInitialThread, void* aStartAddress,
-                            void* aThreadParam)
-{
+static DWORD WINAPI NopThreadProc(void* ) { return 0; }
+
+static MOZ_NORETURN void __fastcall patched_BaseThreadInitThunk(
+    BOOL aIsInitialThread, void* aStartAddress, void* aThreadParam) {
   if (ShouldBlockThread(aStartAddress)) {
     CallCreateThreadHook(false, aStartAddress);
     aStartAddress = (void*)NopThreadProc;
@@ -753,16 +722,12 @@ patched_BaseThreadInitThunk(BOOL aIsInitialThread, void* aStartAddress,
   stub_BaseThreadInitThunk(aIsInitialThread, aStartAddress, aThreadParam);
 }
 
-
 static WindowsDllInterceptor NtDllIntercept;
 static WindowsDllInterceptor Kernel32Intercept;
 
-static void
-GetNativeNtBlockSetWriter();
+static void GetNativeNtBlockSetWriter();
 
-MFBT_API void
-DllBlocklist_Initialize(uint32_t aInitFlags)
-{
+MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags) {
   if (sBlocklistInitAttempted) {
     return;
   }
@@ -819,9 +784,9 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
 #ifdef _M_AMD64
   if (!IsWin8OrLater()) {
     
-    stub_RtlInstallFunctionTableCallback.Set(Kernel32Intercept,
-                                             "RtlInstallFunctionTableCallback",
-                                             &patched_RtlInstallFunctionTableCallback);
+    stub_RtlInstallFunctionTableCallback.Set(
+        Kernel32Intercept, "RtlInstallFunctionTableCallback",
+        &patched_RtlInstallFunctionTableCallback);
   }
 #endif
 
@@ -832,7 +797,7 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
                                             "BaseThreadInitThunk",
                                             &patched_BaseThreadInitThunk)) {
 #ifdef DEBUG
-    printf_stderr("BaseThreadInitThunk hook failed\n");
+      printf_stderr("BaseThreadInitThunk hook failed\n");
 #endif
     }
   }
@@ -867,28 +832,22 @@ DllBlocklist_Initialize(uint32_t aInitFlags)
 }
 
 #ifdef DEBUG
-MFBT_API void
-DllBlocklist_Shutdown()
-{
+MFBT_API void DllBlocklist_Shutdown() {
   if (IsUntrustedDllsHandlerEnabled()) {
     glue::UntrustedDllsHandler::Shutdown();
   }
 }
-#endif 
+#endif  
 
-static void
-WriteAnnotation(HANDLE aFile, Annotation aAnnotation, const char* aValue,
-                DWORD* aNumBytes)
-{
+static void WriteAnnotation(HANDLE aFile, Annotation aAnnotation,
+                            const char* aValue, DWORD* aNumBytes) {
   const char* str = AnnotationToString(aAnnotation);
   WriteFile(aFile, str, strlen(str), aNumBytes, nullptr);
   WriteFile(aFile, "=", 1, aNumBytes, nullptr);
   WriteFile(aFile, aValue, strlen(aValue), aNumBytes, nullptr);
 }
 
-static void
-InternalWriteNotes(HANDLE file)
-{
+static void InternalWriteNotes(HANDLE file) {
   DWORD nBytes;
 
   WriteAnnotation(file, Annotation::BlockedDllList, "", &nBytes);
@@ -907,28 +866,21 @@ InternalWriteNotes(HANDLE file)
 using WriterFn = void (*)(HANDLE);
 static WriterFn gWriterFn = &InternalWriteNotes;
 
-static void
-GetNativeNtBlockSetWriter()
-{
+static void GetNativeNtBlockSetWriter() {
   auto nativeWriter = reinterpret_cast<WriterFn>(
-    ::GetProcAddress(::GetModuleHandleW(nullptr), "NativeNtBlockSet_Write"));
+      ::GetProcAddress(::GetModuleHandleW(nullptr), "NativeNtBlockSet_Write"));
   if (nativeWriter) {
     gWriterFn = nativeWriter;
   }
 }
 
-MFBT_API void
-DllBlocklist_WriteNotes(HANDLE file)
-{
+MFBT_API void DllBlocklist_WriteNotes(HANDLE file) {
   MOZ_ASSERT(gWriterFn);
   gWriterFn(file);
 }
 
-MFBT_API bool
-DllBlocklist_CheckStatus()
-{
-  if (sBlocklistInitFailed || sUser32BeforeBlocklist)
-    return false;
+MFBT_API bool DllBlocklist_CheckStatus() {
+  if (sBlocklistInitFailed || sUser32BeforeBlocklist) return false;
   return true;
 }
 
@@ -938,26 +890,25 @@ DllBlocklist_CheckStatus()
 
 
 
-enum DllNotificationReason
-{
+enum DllNotificationReason {
   LDR_DLL_NOTIFICATION_REASON_LOADED = 1,
   LDR_DLL_NOTIFICATION_REASON_UNLOADED = 2
 };
 
 typedef struct _LDR_DLL_LOADED_NOTIFICATION_DATA {
-  ULONG Flags;                    
-  PCUNICODE_STRING FullDllName;   
-  PCUNICODE_STRING BaseDllName;   
-  PVOID DllBase;                  
-  ULONG SizeOfImage;              
+  ULONG Flags;                   
+  PCUNICODE_STRING FullDllName;  
+  PCUNICODE_STRING BaseDllName;  
+  PVOID DllBase;      
+  ULONG SizeOfImage;  
 } LDR_DLL_LOADED_NOTIFICATION_DATA, *PLDR_DLL_LOADED_NOTIFICATION_DATA;
 
 typedef struct _LDR_DLL_UNLOADED_NOTIFICATION_DATA {
-  ULONG Flags;                    
-  PCUNICODE_STRING FullDllName;   
-  PCUNICODE_STRING BaseDllName;   
-  PVOID DllBase;                  
-  ULONG SizeOfImage;              
+  ULONG Flags;                   
+  PCUNICODE_STRING FullDllName;  
+  PCUNICODE_STRING BaseDllName;  
+  PVOID DllBase;      
+  ULONG SizeOfImage;  
 } LDR_DLL_UNLOADED_NOTIFICATION_DATA, *PLDR_DLL_UNLOADED_NOTIFICATION_DATA;
 
 typedef union _LDR_DLL_NOTIFICATION_DATA {
@@ -967,22 +918,19 @@ typedef union _LDR_DLL_NOTIFICATION_DATA {
 
 typedef const LDR_DLL_NOTIFICATION_DATA* PCLDR_DLL_NOTIFICATION_DATA;
 
-typedef VOID (CALLBACK* PLDR_DLL_NOTIFICATION_FUNCTION)(
-          ULONG aReason,
-          PCLDR_DLL_NOTIFICATION_DATA aNotificationData,
-          PVOID aContext);
+typedef VOID(CALLBACK* PLDR_DLL_NOTIFICATION_FUNCTION)(
+    ULONG aReason, PCLDR_DLL_NOTIFICATION_DATA aNotificationData,
+    PVOID aContext);
 
-NTSTATUS NTAPI
-LdrRegisterDllNotification(ULONG aFlags,
-                           PLDR_DLL_NOTIFICATION_FUNCTION aCallback,
-                           PVOID aContext, PVOID* aCookie);
+NTSTATUS NTAPI LdrRegisterDllNotification(
+    ULONG aFlags, PLDR_DLL_NOTIFICATION_FUNCTION aCallback, PVOID aContext,
+    PVOID* aCookie);
 
 static PVOID gNotificationCookie;
 
-static VOID CALLBACK
-DllLoadNotification(ULONG aReason, PCLDR_DLL_NOTIFICATION_DATA aNotificationData,
-                    PVOID aContext)
-{
+static VOID CALLBACK DllLoadNotification(
+    ULONG aReason, PCLDR_DLL_NOTIFICATION_DATA aNotificationData,
+    PVOID aContext) {
   if (aReason != LDR_DLL_NOTIFICATION_REASON_LOADED) {
     
     return;
@@ -999,25 +947,24 @@ DllLoadNotification(ULONG aReason, PCLDR_DLL_NOTIFICATION_DATA aNotificationData
 
 namespace mozilla {
 Authenticode* GetAuthenticode();
-} 
+}  
 
-MFBT_API void
-DllBlocklist_SetDllServices(mozilla::glue::detail::DllServicesBase* aSvc)
-{
+MFBT_API void DllBlocklist_SetDllServices(
+    mozilla::glue::detail::DllServicesBase* aSvc) {
   glue::AutoExclusiveLock lock(gDllServicesLock);
   if (aSvc) {
     aSvc->SetAuthenticodeImpl(GetAuthenticode());
 
     if (!gNotificationCookie) {
       auto pLdrRegisterDllNotification =
-        reinterpret_cast<decltype(&::LdrRegisterDllNotification)>(
-          ::GetProcAddress(::GetModuleHandleW(L"ntdll.dll"),
-                           "LdrRegisterDllNotification"));
+          reinterpret_cast<decltype(&::LdrRegisterDllNotification)>(
+              ::GetProcAddress(::GetModuleHandleW(L"ntdll.dll"),
+                               "LdrRegisterDllNotification"));
 
       MOZ_DIAGNOSTIC_ASSERT(pLdrRegisterDllNotification);
 
-      NTSTATUS ntStatus = pLdrRegisterDllNotification(0, &DllLoadNotification,
-                                                      nullptr, &gNotificationCookie);
+      NTSTATUS ntStatus = pLdrRegisterDllNotification(
+          0, &DllLoadNotification, nullptr, &gNotificationCookie);
       MOZ_DIAGNOSTIC_ASSERT(NT_SUCCESS(ntStatus));
     }
   }

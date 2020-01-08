@@ -18,15 +18,13 @@ class nsIPresShell;
 
 
 class nsIntervalSet {
+ public:
+  typedef nscoord coord_type;
 
-public:
+  explicit nsIntervalSet(nsIPresShell *aPresShell);
+  ~nsIntervalSet();
 
-    typedef nscoord coord_type;
-
-    explicit nsIntervalSet(nsIPresShell* aPresShell);
-    ~nsIntervalSet();
-
-    
+  
 
 
 
@@ -34,49 +32,39 @@ public:
 
 
 
-    void IncludeInterval(coord_type aBegin, coord_type aEnd);
+  void IncludeInterval(coord_type aBegin, coord_type aEnd);
 
-    
-
-
-
-    bool Intersects(coord_type aBegin, coord_type aEnd) const;
-
-    
+  
 
 
 
-    bool Contains(coord_type aBegin, coord_type aEnd) const;
+  bool Intersects(coord_type aBegin, coord_type aEnd) const;
 
-    bool IsEmpty() const
-    {
-        return !mList;
-    }
+  
 
-private:
 
-    class Interval {
 
-    public:
-        Interval(coord_type aBegin, coord_type aEnd)
-            : mBegin(aBegin),
-              mEnd(aEnd),
-              mPrev(nullptr),
-              mNext(nullptr)
-        {
-        }
+  bool Contains(coord_type aBegin, coord_type aEnd) const;
 
-        coord_type mBegin;
-        coord_type mEnd;
-        Interval *mPrev;
-        Interval *mNext;
-    };
+  bool IsEmpty() const { return !mList; }
 
-    void* AllocateInterval();
-    void FreeInterval(Interval *aInterval);
+ private:
+  class Interval {
+   public:
+    Interval(coord_type aBegin, coord_type aEnd)
+        : mBegin(aBegin), mEnd(aEnd), mPrev(nullptr), mNext(nullptr) {}
 
-    Interval           *mList;
-    nsIPresShell       *mPresShell;
+    coord_type mBegin;
+    coord_type mEnd;
+    Interval *mPrev;
+    Interval *mNext;
+  };
+
+  void *AllocateInterval();
+  void FreeInterval(Interval *aInterval);
+
+  Interval *mList;
+  nsIPresShell *mPresShell;
 };
 
-#endif 
+#endif  

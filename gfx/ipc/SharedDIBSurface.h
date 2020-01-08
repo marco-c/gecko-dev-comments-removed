@@ -18,13 +18,12 @@ namespace gfx {
 
 
 
-class SharedDIBSurface : public gfxImageSurface
-{
-public:
+class SharedDIBSurface : public gfxImageSurface {
+ public:
   typedef base::SharedMemoryHandle Handle;
 
-  SharedDIBSurface() { }
-  ~SharedDIBSurface() { }
+  SharedDIBSurface() {}
+  ~SharedDIBSurface() {}
 
   
 
@@ -51,13 +50,13 @@ public:
 
   static bool IsSharedDIBSurface(gfxASurface* aSurface);
 
-private:
+ private:
   SharedDIBWin mSharedDIB;
 
   void InitSurface(uint32_t aWidth, uint32_t aHeight, bool aTransparent);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

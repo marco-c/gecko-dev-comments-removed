@@ -12,9 +12,8 @@
 namespace mozilla {
 namespace a11y {
 
-class RootAccessibleWrap : public RootAccessible
-{
-public:
+class RootAccessibleWrap : public RootAccessible {
+ public:
   RootAccessibleWrap(nsIDocument* aDocument, nsIPresShell* aPresShell);
   virtual ~RootAccessibleWrap();
 
@@ -39,21 +38,21 @@ public:
   already_AddRefed<IUnknown> GetInternalUnknown();
 
   virtual  HRESULT STDMETHODCALLTYPE accNavigate(
-     long navDir,
-     VARIANT varStart,
-     VARIANT __RPC_FAR *pvarEndUpAt) override;
+       long navDir,
+       VARIANT varStart,
+       VARIANT __RPC_FAR* pvarEndUpAt) override;
 
   virtual  HRESULT STDMETHODCALLTYPE get_accFocus(
-     VARIANT __RPC_FAR *pvarChild) override;
+       VARIANT __RPC_FAR* pvarChild) override;
 
-private:
+ private:
   
   
   DECLARE_AGGREGATABLE(RootAccessibleWrap);
   IUnknown* mOuter;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

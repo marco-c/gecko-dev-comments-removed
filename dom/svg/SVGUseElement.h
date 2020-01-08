@@ -18,12 +18,11 @@
 class nsIContent;
 class nsSVGUseFrame;
 
-nsresult
-NS_NewSVGSVGElement(nsIContent **aResult,
-                    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-                    mozilla::dom::FromParser aFromParser);
-nsresult NS_NewSVGUseElement(nsIContent **aResult,
-                             already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+nsresult NS_NewSVGSVGElement(
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    mozilla::dom::FromParser aFromParser);
+nsresult NS_NewSVGUseElement(
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
 namespace mozilla {
 struct URLExtraData;
@@ -33,24 +32,24 @@ namespace dom {
 typedef SVGGraphicsElement SVGUseElementBase;
 
 class SVGUseElement final : public SVGUseElementBase,
-                            public nsStubMutationObserver
-{
+                            public nsStubMutationObserver {
   friend class ::nsSVGUseFrame;
-protected:
-  friend nsresult (::NS_NewSVGUseElement(nsIContent **aResult,
-                                         already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+
+ protected:
+  friend nsresult(::NS_NewSVGUseElement(
+      nsIContent** aResult,
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
   explicit SVGUseElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
   virtual ~SVGUseElement();
-  virtual JSObject* WrapNode(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapNode(JSContext* cx,
+                             JS::Handle<JSObject*> aGivenProto) override;
 
-public:
+ public:
   NS_IMPL_FROMNODE_WITH_TAG(SVGUseElement, kNameSpaceID_SVG, use)
 
-  nsresult BindToTree(nsIDocument* aDocument,
-                      nsIContent* aParent,
+  nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                       nsIContent* aBindingParent) override;
-  void UnbindFromTree(bool aDeep = true,
-                      bool aNullParent = true) override;
+  void UnbindFromTree(bool aDeep = true, bool aNullParent = true) override;
 
   
   NS_DECL_ISUPPORTS_INHERITED
@@ -65,8 +64,8 @@ public:
 
   
   virtual gfxMatrix PrependLocalTransformsTo(
-    const gfxMatrix &aMatrix,
-    SVGTransformTypes aWhich = eAllTransforms) const override;
+      const gfxMatrix& aMatrix,
+      SVGTransformTypes aWhich = eAllTransforms) const override;
   virtual bool HasValidDimensions() const override;
 
   
@@ -92,14 +91,11 @@ public:
   
   void ProcessAttributeChange(int32_t aNamespaceID, nsAtom* aAttribute);
 
-  nsresult AfterSetAttr(int32_t aNamespaceID,
-                        nsAtom* aAttribute,
-                        const nsAttrValue* aValue,
-                        const nsAttrValue* aOldValue,
-                        nsIPrincipal* aSubjectPrincipal,
-                        bool aNotify) final;
+  nsresult AfterSetAttr(int32_t aNamespaceID, nsAtom* aAttribute,
+                        const nsAttrValue* aValue, const nsAttrValue* aOldValue,
+                        nsIPrincipal* aSubjectPrincipal, bool aNotify) final;
 
-protected:
+ protected:
   
 
 
@@ -107,15 +103,12 @@ protected:
 
 
   class ElementTracker final : public IDTracker {
-  public:
+   public:
     explicit ElementTracker(SVGUseElement* aOwningUseElement)
-      : mOwningUseElement(aOwningUseElement)
-    {}
+        : mOwningUseElement(aOwningUseElement) {}
 
-  private:
-
-    void ElementChanged(Element* aFrom, Element* aTo) override
-    {
+   private:
+    void ElementChanged(Element* aFrom, Element* aTo) override {
       IDTracker::ElementChanged(aFrom, aTo);
       if (aFrom) {
         aFrom->RemoveMutationObserver(mOwningUseElement);
@@ -137,7 +130,7 @@ protected:
 
 
   bool OurWidthAndHeightAreUsed() const;
-  void SyncWidthOrHeight(nsAtom *aName);
+  void SyncWidthOrHeight(nsAtom* aName);
   void LookupHref();
   void TriggerReclone();
   void UnlinkSource();
@@ -150,12 +143,12 @@ protected:
   nsSVGString mStringAttributes[2];
   static StringInfo sStringInfo[2];
 
-  nsCOMPtr<nsIContent> mOriginal; 
+  nsCOMPtr<nsIContent> mOriginal;  
   ElementTracker mReferencedElementTracker;
-  RefPtr<URLExtraData> mContentURLData; 
+  RefPtr<URLExtraData> mContentURLData;  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

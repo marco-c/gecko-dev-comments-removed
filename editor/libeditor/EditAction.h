@@ -12,8 +12,7 @@ namespace mozilla {
 
 
 
-enum class EditAction
-{
+enum class EditAction {
   
   eNone,
 
@@ -348,8 +347,7 @@ enum class EditAction
 
 
 
-enum class EditSubAction : int32_t
-{
+enum class EditSubAction : int32_t {
   
   
   eNone,
@@ -465,11 +463,10 @@ enum class EditSubAction : int32_t
   eCreateBogusNode,
 };
 
-} 
+}  
 
-inline bool operator!(const mozilla::EditSubAction& aEditSubAction)
-{
+inline bool operator!(const mozilla::EditSubAction& aEditSubAction) {
   return aEditSubAction == mozilla::EditSubAction::eNone;
 }
 
-#endif 
+#endif  

@@ -27,7 +27,7 @@
 #if defined(MOZ_SANDBOX)
 #include "sandboxPermissions.h"
 #endif
-#endif 
+#endif  
 
 
 
@@ -171,23 +171,24 @@ extern PtrToIdMap sPtrToIdMap;
 typedef std::map<uint64_t, void*> IdToPtrMap;
 extern IdToPtrMap sIdToPtrMap;
 
-#else 
+#else  
 
 
 #define HOOK_CALL
 
-#endif 
+#endif  
 
 inline bool IsOdd(uint64_t aVal) { return aVal & 1; }
 
 
 
 enum Endpoint { SERVER, CLIENT };
-inline const char *EndpointMsg(Endpoint aVal) { return aVal == SERVER ? "SERVER" : "CLIENT";  }
+inline const char* EndpointMsg(Endpoint aVal) {
+  return aVal == SERVER ? "SERVER" : "CLIENT";
+}
 
 template <typename ParamType>
-inline void LogParameterValue(int aIndex, const ParamType& aParam)
-{
+inline void LogParameterValue(int aIndex, const ParamType& aParam) {
   
 #ifdef DEBUG
   if (!MOZ_LOG_TEST(sPluginHooksLog, LogLevel::Verbose)) {
@@ -203,8 +204,7 @@ inline void LogParameterValue(int aIndex, const ParamType& aParam)
 
 
 template <typename ParamType>
-inline void LogParameterValue(int aIndex, ParamType* const& aParam)
-{
+inline void LogParameterValue(int aIndex, ParamType* const& aParam) {
 #ifdef DEBUG
   HOOK_LOG(LogLevel::Verbose,
            ("Parameter %d: pointer value - %p", aIndex, aParam));
@@ -212,8 +212,7 @@ inline void LogParameterValue(int aIndex, ParamType* const& aParam)
 }
 
 template <>
-inline void LogParameterValue(int aIndex, const nsDependentCSubstring& aParam)
-{
+inline void LogParameterValue(int aIndex, const nsDependentCSubstring& aParam) {
 #ifdef DEBUG
   HOOK_LOG(LogLevel::Verbose,
            ("Parameter %d : %s", aIndex, FormatBlob(aParam).Data()));
@@ -221,13 +220,13 @@ inline void LogParameterValue(int aIndex, const nsDependentCSubstring& aParam)
 }
 
 template <>
-inline void LogParameterValue(int aIndex, char* const& aParam)
-{
+inline void LogParameterValue(int aIndex, char* const& aParam) {
 #ifdef DEBUG
   
   nsDependentCSubstring str;
   if (aParam) {
-    str.Rebind(const_cast<char*>(aParam), strnlen(aParam, MAX_BLOB_CHARS_TO_LOG));
+    str.Rebind(const_cast<char*>(aParam),
+               strnlen(aParam, MAX_BLOB_CHARS_TO_LOG));
   } else {
     str.SetIsVoid(true);
   }
@@ -236,8 +235,7 @@ inline void LogParameterValue(int aIndex, char* const& aParam)
 }
 
 template <>
-inline void LogParameterValue(int aIndex, const char* const& aParam)
-{
+inline void LogParameterValue(int aIndex, const char* const& aParam) {
 #ifdef DEBUG
   LogParameterValue(aIndex, const_cast<char* const&>(aParam));
 #endif
@@ -245,8 +243,7 @@ inline void LogParameterValue(int aIndex, const char* const& aParam)
 
 #if defined(XP_WIN)
 template <>
-inline void LogParameterValue(int aIndex, const SEC_GET_KEY_FN& aParam)
-{
+inline void LogParameterValue(int aIndex, const SEC_GET_KEY_FN& aParam) {
 #ifdef DEBUG
   MOZ_ASSERT(aParam == nullptr);
   HOOK_LOG(LogLevel::Verbose, ("Parameter %d: null function.", aIndex));
@@ -254,36 +251,35 @@ inline void LogParameterValue(int aIndex, const SEC_GET_KEY_FN& aParam)
 }
 
 template <>
-inline void LogParameterValue(int aIndex, LPVOID* const & aParam)
-{
+inline void LogParameterValue(int aIndex, LPVOID* const& aParam) {
 #ifdef DEBUG
   MOZ_ASSERT(aParam == nullptr);
   HOOK_LOG(LogLevel::Verbose, ("Parameter %d: null void pointer.", aIndex));
 #endif
 }
-#endif 
+#endif  
 
 
 
 template <typename ParamType>
-inline bool ParameterEquality(const ParamType& aParam1, const ParamType& aParam2)
-{
+inline bool ParameterEquality(const ParamType& aParam1,
+                              const ParamType& aParam2) {
   return aParam1 == aParam2;
 }
 
 
 template <>
-inline bool ParameterEquality(char* const& aParam1, char* const& aParam2)
-{
+inline bool ParameterEquality(char* const& aParam1, char* const& aParam2) {
   return ((!aParam1 && !aParam2) ||
           (aParam1 && aParam2 && !strcmp(aParam1, aParam2)));
 }
 
 
 template <>
-inline bool ParameterEquality(const char* const& aParam1, const char* const& aParam2)
-{
-  return ParameterEquality(const_cast<char* const&>(aParam1), const_cast<char* const&>(aParam2));
+inline bool ParameterEquality(const char* const& aParam1,
+                              const char* const& aParam2) {
+  return ParameterEquality(const_cast<char* const&>(aParam1),
+                           const_cast<char* const&>(aParam2));
 }
 
 
@@ -292,49 +288,92 @@ inline bool ParameterEquality(const char* const& aParam1, const char* const& aPa
 
 
 
-template<typename OrigType> struct IPCTypeMap     { typedef OrigType ipc_type; };
-template<> struct IPCTypeMap<char*>               { typedef nsDependentCSubstring ipc_type; };
-template<> struct IPCTypeMap<const char*>         { typedef nsDependentCSubstring ipc_type; };
-template<> struct IPCTypeMap<wchar_t*>            { typedef nsString ipc_type; };
-template<> struct IPCTypeMap<const wchar_t*>      { typedef nsString ipc_type; };
-template<> struct IPCTypeMap<long>                { typedef int32_t ipc_type; };
-template<> struct IPCTypeMap<unsigned long>       { typedef uint32_t ipc_type; };
+template <typename OrigType>
+struct IPCTypeMap {
+  typedef OrigType ipc_type;
+};
+template <>
+struct IPCTypeMap<char*> {
+  typedef nsDependentCSubstring ipc_type;
+};
+template <>
+struct IPCTypeMap<const char*> {
+  typedef nsDependentCSubstring ipc_type;
+};
+template <>
+struct IPCTypeMap<wchar_t*> {
+  typedef nsString ipc_type;
+};
+template <>
+struct IPCTypeMap<const wchar_t*> {
+  typedef nsString ipc_type;
+};
+template <>
+struct IPCTypeMap<long> {
+  typedef int32_t ipc_type;
+};
+template <>
+struct IPCTypeMap<unsigned long> {
+  typedef uint32_t ipc_type;
+};
 
 #if defined(XP_WIN)
-template<> struct IPCTypeMap<PSecHandle>          { typedef uint64_t ipc_type; };
-template<> struct IPCTypeMap<PTimeStamp>          { typedef uint64_t ipc_type; };
-template<> struct IPCTypeMap<void*>               { typedef uint64_t ipc_type; }; 
-template<> struct IPCTypeMap<HWND>                { typedef NativeWindowHandle ipc_type; };
-template<> struct IPCTypeMap<PSCHANNEL_CRED>      { typedef IPCSchannelCred ipc_type; };
-template<> struct IPCTypeMap<LPINTERNET_BUFFERSA> { typedef IPCInternetBuffers ipc_type; };
-template<> struct IPCTypeMap<LPDWORD>             { typedef uint32_t ipc_type; };
+template <>
+struct IPCTypeMap<PSecHandle> {
+  typedef uint64_t ipc_type;
+};
+template <>
+struct IPCTypeMap<PTimeStamp> {
+  typedef uint64_t ipc_type;
+};
+template <>
+struct IPCTypeMap<void*> {
+  typedef uint64_t ipc_type;
+};  
+template <>
+struct IPCTypeMap<HWND> {
+  typedef NativeWindowHandle ipc_type;
+};
+template <>
+struct IPCTypeMap<PSCHANNEL_CRED> {
+  typedef IPCSchannelCred ipc_type;
+};
+template <>
+struct IPCTypeMap<LPINTERNET_BUFFERSA> {
+  typedef IPCInternetBuffers ipc_type;
+};
+template <>
+struct IPCTypeMap<LPDWORD> {
+  typedef uint32_t ipc_type;
+};
 #endif
 
 template <typename AllocType>
-static void DeleteDestructor(void* aObj) { delete static_cast<AllocType*>(aObj); }
+static void DeleteDestructor(void* aObj) {
+  delete static_cast<AllocType*>(aObj);
+}
 
 extern void FreeDestructor(void* aObj);
 
 
 
-class ServerCallData
-{
-public:
-  typedef void (DestructorType)(void*);
+class ServerCallData {
+ public:
+  typedef void(DestructorType)(void*);
 
   
   template <typename AllocType>
-  AllocType* Allocate(DestructorType* aDestructor = &DeleteDestructor<AllocType>)
-  {
+  AllocType* Allocate(
+      DestructorType* aDestructor = &DeleteDestructor<AllocType>) {
     AllocType* ret = new AllocType();
     mList.AppendElement(FreeItem(ret, aDestructor));
     return ret;
   }
 
   template <typename AllocType>
-  AllocType* Allocate(const AllocType& aValueToCopy,
-                      DestructorType* aDestructor = &DeleteDestructor<AllocType>)
-  {
+  AllocType* Allocate(
+      const AllocType& aValueToCopy,
+      DestructorType* aDestructor = &DeleteDestructor<AllocType>) {
     AllocType* ret = Allocate<AllocType>(aDestructor);
     *ret = aValueToCopy;
     return ret;
@@ -342,8 +381,7 @@ public:
 
   
   template <typename PtrType>
-  void AllocateMemory(unsigned long aBufLen, PtrType& aBuf)
-  {
+  void AllocateMemory(unsigned long aBufLen, PtrType& aBuf) {
     if (aBufLen) {
       aBuf = static_cast<PtrType>(malloc(aBufLen));
       mList.AppendElement(FreeItem(aBuf, FreeDestructor));
@@ -353,8 +391,8 @@ public:
   }
 
   template <typename PtrType>
-  void AllocateString(const nsACString& aStr, PtrType& aBuf, bool aCopyNullTerminator=true)
-  {
+  void AllocateString(const nsACString& aStr, PtrType& aBuf,
+                      bool aCopyNullTerminator = true) {
     uint32_t nullByte = aCopyNullTerminator ? 1 : 0;
     char* tempBuf = static_cast<char*>(malloc(aStr.Length() + nullByte));
     memcpy(tempBuf, aStr.Data(), aStr.Length() + nullByte);
@@ -364,8 +402,7 @@ public:
 
   
   
-  void PostDestructor(void* aMem, DestructorType* aDestructor)
-  {
+  void PostDestructor(void* aMem, DestructorType* aDestructor) {
     mList.AppendElement(FreeItem(aMem, aDestructor));
   }
 
@@ -373,40 +410,38 @@ public:
   
   
   template <typename PtrType>
-  void AllocateMemory(DWORD aBufLen, PtrType& aBuf, LPDWORD& aBufLenCopy)
-  {
+  void AllocateMemory(DWORD aBufLen, PtrType& aBuf, LPDWORD& aBufLenCopy) {
     aBufLenCopy = static_cast<LPDWORD>(malloc(sizeof(DWORD)));
     *aBufLenCopy = aBufLen;
     mList.AppendElement(FreeItem(aBufLenCopy, FreeDestructor));
     AllocateMemory(aBufLen, aBuf);
   }
-#endif 
+#endif  
 
-private:
+ private:
   
   
-  class FreeItem
-  {
+  class FreeItem {
     void* mPtr;
     DestructorType* mDestructor;
     FreeItem(FreeItem& aOther);  
-  public:
-    explicit FreeItem(void* aPtr, DestructorType* aDestructor) :
-        mPtr(aPtr)
-      , mDestructor(aDestructor)
-    {
+   public:
+    explicit FreeItem(void* aPtr, DestructorType* aDestructor)
+        : mPtr(aPtr), mDestructor(aDestructor) {
       MOZ_ASSERT(mDestructor || !aPtr);
     }
 
-    FreeItem(FreeItem&& aOther) :
-        mPtr(aOther.mPtr)
-      , mDestructor(aOther.mDestructor)
-    {
+    FreeItem(FreeItem&& aOther)
+        : mPtr(aOther.mPtr), mDestructor(aOther.mDestructor) {
       aOther.mPtr = nullptr;
       aOther.mDestructor = nullptr;
     }
 
-    ~FreeItem() { if (mDestructor) { mDestructor(mPtr); } }
+    ~FreeItem() {
+      if (mDestructor) {
+        mDestructor(mPtr);
+      }
+    }
   };
 
   typedef nsTArray<FreeItem> FreeItemList;
@@ -418,32 +453,30 @@ private:
 
 
 
-class IpdlTupleContext
-{
-public:
-  explicit IpdlTupleContext(const IpdlTuple* aTuple, ServerCallData* aScd=nullptr) :
-    mTuple(aTuple), mScd(aScd)
-  {
+class IpdlTupleContext {
+ public:
+  explicit IpdlTupleContext(const IpdlTuple* aTuple,
+                            ServerCallData* aScd = nullptr)
+      : mTuple(aTuple), mScd(aScd) {
     MOZ_ASSERT(aTuple);
   }
 
   ServerCallData* GetServerCallData() { return mScd; }
-  const IpdlTuple* GetIpdlTuple() { return mTuple;  }
+  const IpdlTuple* GetIpdlTuple() { return mTuple; }
 
-private:
+ private:
   const IpdlTuple* mTuple;
   ServerCallData* mScd;
 };
 
-template<typename DestType, typename SrcType>
-inline void Copy(DestType& aDest, const SrcType& aSrc)
-{
+template <typename DestType, typename SrcType>
+inline void Copy(DestType& aDest, const SrcType& aSrc) {
   aDest = (DestType)aSrc;
 }
 
-template<>
-inline void Copy(nsDependentCSubstring& aDest, const nsDependentCSubstring& aSrc)
-{
+template <>
+inline void Copy(nsDependentCSubstring& aDest,
+                 const nsDependentCSubstring& aSrc) {
   if (aSrc.IsVoid()) {
     aDest.SetIsVoid(true);
   } else {
@@ -453,42 +486,40 @@ inline void Copy(nsDependentCSubstring& aDest, const nsDependentCSubstring& aSrc
 
 #if defined(XP_WIN)
 
-template<>
-inline void Copy(uint64_t& aDest, const PTimeStamp& aSrc)
-{
+template <>
+inline void Copy(uint64_t& aDest, const PTimeStamp& aSrc) {
   aDest = static_cast<uint64_t>(aSrc->QuadPart);
 }
 
-template<>
-inline void Copy(PTimeStamp& aDest, const uint64_t& aSrc)
-{
+template <>
+inline void Copy(PTimeStamp& aDest, const uint64_t& aSrc) {
   aDest->QuadPart = static_cast<LONGLONG>(aSrc);
 }
 
-#endif 
+#endif  
 
-template<Endpoint e, typename SelfType> struct BaseEndpointHandler;
-template<typename SelfType>
-struct BaseEndpointHandler<CLIENT,SelfType> {
+template <Endpoint e, typename SelfType>
+struct BaseEndpointHandler;
+template <typename SelfType>
+struct BaseEndpointHandler<CLIENT, SelfType> {
   static const Endpoint OtherSide = SERVER;
 
-  template<typename DestType, typename SrcType>
-  inline static void Copy(ServerCallData* aScd, DestType& aDest, const SrcType& aSrc)
-  {
-    MOZ_ASSERT(!aScd);    
+  template <typename DestType, typename SrcType>
+  inline static void Copy(ServerCallData* aScd, DestType& aDest,
+                          const SrcType& aSrc) {
+    MOZ_ASSERT(!aScd);  
     SelfType::Copy(aDest, aSrc);
   }
 
-  template<typename DestType, typename SrcType>
-  inline static void Copy(DestType& aDest, const SrcType& aSrc)
-  {
+  template <typename DestType, typename SrcType>
+  inline static void Copy(DestType& aDest, const SrcType& aSrc) {
     mozilla::plugins::Copy(aDest, aSrc);
   }
 
   
   
-  inline static void Copy(nsDependentCSubstring& aDest, const char* const& aSrc)
-  {
+  inline static void Copy(nsDependentCSubstring& aDest,
+                          const char* const& aSrc) {
     
     if (aSrc) {
       aDest.Rebind(aSrc, strlen(aSrc));
@@ -497,13 +528,12 @@ struct BaseEndpointHandler<CLIENT,SelfType> {
     }
   }
 
-  inline static void Copy(const char*& aDest, const nsDependentCSubstring& aSrc)
-  {
+  inline static void Copy(const char*& aDest,
+                          const nsDependentCSubstring& aSrc) {
     MOZ_ASSERT_UNREACHABLE("Cannot return const parameters.");
   }
 
-  inline static void Copy(nsDependentCSubstring& aDest, char* const& aSrc)
-  {
+  inline static void Copy(nsDependentCSubstring& aDest, char* const& aSrc) {
     
     if (aSrc) {
       aDest.Rebind(aSrc, strlen(aSrc));
@@ -512,9 +542,9 @@ struct BaseEndpointHandler<CLIENT,SelfType> {
     }
   }
 
-  inline static void Copy(nsString& aDest, wchar_t* const& aSrc)
-  {
+  inline static void Copy(nsString& aDest, wchar_t* const& aSrc) {
     if (aSrc) {
+      
       
       
       aDest.Rebind(reinterpret_cast<char16_t*>(aSrc), wcslen(aSrc));
@@ -523,25 +553,22 @@ struct BaseEndpointHandler<CLIENT,SelfType> {
     }
   }
 
-  inline static void Copy(char*& aDest, const nsDependentCSubstring& aSrc)
-  {
+  inline static void Copy(char*& aDest, const nsDependentCSubstring& aSrc) {
     MOZ_ASSERT_UNREACHABLE("Returning char* parameters is not yet suported.");
   }
 
 #if defined(XP_WIN)
-  inline static void Copy(uint32_t& aDest, const LPDWORD& aSrc)
-  {
+  inline static void Copy(uint32_t& aDest, const LPDWORD& aSrc) {
     aDest = *aSrc;
   }
 
-  inline static void Copy(LPDWORD& aDest, const uint32_t& aSrc)
-  {
+  inline static void Copy(LPDWORD& aDest, const uint32_t& aSrc) {
     *aDest = aSrc;
   }
-#endif 
+#endif  
 };
 
-template<typename SelfType>
+template <typename SelfType>
 struct BaseEndpointHandler<SERVER, SelfType> {
   static const Endpoint OtherSide = CLIENT;
 
@@ -550,38 +577,37 @@ struct BaseEndpointHandler<SERVER, SelfType> {
   
   
   
-  template<typename DestType, typename SrcType>
-  inline static void Copy(ServerCallData* aScd, DestType& aDest, const SrcType& aSrc)
-  {
+  template <typename DestType, typename SrcType>
+  inline static void Copy(ServerCallData* aScd, DestType& aDest,
+                          const SrcType& aSrc) {
     SelfType::Copy(aDest, aSrc);
   }
 
-  template<typename DestType, typename SrcType>
-  inline static void Copy(DestType& aDest, const SrcType& aSrc)
-  {
+  template <typename DestType, typename SrcType>
+  inline static void Copy(DestType& aDest, const SrcType& aSrc) {
     mozilla::plugins::Copy(aDest, aSrc);
   }
 
-  inline static void Copy(nsDependentCSubstring& aDest, const nsDependentCSubstring& aSrc)
-  {
+  inline static void Copy(nsDependentCSubstring& aDest,
+                          const nsDependentCSubstring& aSrc) {
     aDest.Rebind(aSrc.Data(), aSrc.Length());
     aDest.SetIsVoid(aSrc.IsVoid());
   }
 
   
   
-  inline static void Copy(nsDependentCSubstring& aDest, const char* const& aSrc)
-  {
-    MOZ_ASSERT_UNREACHABLE("Const parameter cannot be returned by brokering process.");
+  inline static void Copy(nsDependentCSubstring& aDest,
+                          const char* const& aSrc) {
+    MOZ_ASSERT_UNREACHABLE(
+        "Const parameter cannot be returned by brokering process.");
   }
 
-  inline static void Copy(nsDependentCSubstring& aDest, char* const& aSrc)
-  {
+  inline static void Copy(nsDependentCSubstring& aDest, char* const& aSrc) {
     MOZ_ASSERT_UNREACHABLE("Returning char* parameters is not yet suported.");
   }
 
-  inline static void Copy(ServerCallData* aScd, char*& aDest, const nsDependentCSubstring& aSrc)
-  {
+  inline static void Copy(ServerCallData* aScd, char*& aDest,
+                          const nsDependentCSubstring& aSrc) {
     
     MOZ_ASSERT(aScd);
     if (aSrc.IsVoid()) {
@@ -593,15 +619,15 @@ struct BaseEndpointHandler<SERVER, SelfType> {
     aDest[aSrc.Length()] = '\0';
   }
 
-  inline static void Copy(ServerCallData* aScd, const char*& aDest, const nsDependentCSubstring& aSrc)
-  {
+  inline static void Copy(ServerCallData* aScd, const char*& aDest,
+                          const nsDependentCSubstring& aSrc) {
     char* nonConstDest;
     Copy(aScd, nonConstDest, aSrc);
     aDest = nonConstDest;
   }
 
-  inline static void Copy(ServerCallData* aScd, wchar_t*& aDest, const nsString& aSrc)
-  {
+  inline static void Copy(ServerCallData* aScd, wchar_t*& aDest,
+                          const nsString& aSrc) {
     
     
     MOZ_ASSERT(aScd);
@@ -609,76 +635,73 @@ struct BaseEndpointHandler<SERVER, SelfType> {
       aDest = nullptr;
       return;
     }
-    aScd->AllocateMemory((aSrc.Length() + 1)*sizeof(wchar_t), aDest);
+    aScd->AllocateMemory((aSrc.Length() + 1) * sizeof(wchar_t), aDest);
     memcpy(aDest, aSrc.Data(), aSrc.Length() * sizeof(wchar_t));
     aDest[aSrc.Length()] = L'\0';
   }
 
-  inline static void Copy(ServerCallData* aScd, const wchar_t*& aDest, const nsString& aSrc)
-  {
+  inline static void Copy(ServerCallData* aScd, const wchar_t*& aDest,
+                          const nsString& aSrc) {
     wchar_t* nonConstDest;
     Copy(aScd, nonConstDest, aSrc);
     aDest = nonConstDest;
   }
 
 #if defined(XP_WIN)
-  inline static void Copy(uint32_t& aDest, const LPDWORD& aSrc)
-  {
+  inline static void Copy(uint32_t& aDest, const LPDWORD& aSrc) {
     aDest = *aSrc;
   }
 
-  inline static void Copy(LPDWORD& aDest, const uint32_t& aSrc)
-  {
+  inline static void Copy(LPDWORD& aDest, const uint32_t& aSrc) {
     MOZ_RELEASE_ASSERT(aDest);
     *aDest = aSrc;
   }
 
-  inline static void Copy(ServerCallData* aScd, PTimeStamp& aDest, const uint64_t& aSrc)
-  {
+  inline static void Copy(ServerCallData* aScd, PTimeStamp& aDest,
+                          const uint64_t& aSrc) {
     MOZ_ASSERT(!aDest);
     aDest = aScd->Allocate<::TimeStamp>();
     Copy(aDest, aSrc);
   }
-#endif 
+#endif  
 };
 
 
-template<Endpoint endpoint, typename PhaseHandler>
-struct Marshaler
-{
+template <Endpoint endpoint, typename PhaseHandler>
+struct Marshaler {
   
-  template<int firstIndex = 0, typename ... VarParams>
-  static void Marshal(IpdlTuple& aMarshaledTuple,
-                         const VarParams&... aParams)
-  {
+  template <int firstIndex = 0, typename... VarParams>
+  static void Marshal(IpdlTuple& aMarshaledTuple, const VarParams&... aParams) {
     MarshalParameters<firstIndex>(aMarshaledTuple, aParams...);
   }
 
   
-  template<int firstIndex = 0, typename ... VarParams>
-  static bool Unmarshal(IpdlTupleContext& aUnmarshaledTuple, VarParams&... aParams)
-  {
+  template <int firstIndex = 0, typename... VarParams>
+  static bool Unmarshal(IpdlTupleContext& aUnmarshaledTuple,
+                        VarParams&... aParams) {
     return UnmarshalParameters<firstIndex>(aUnmarshaledTuple, 0, aParams...);
   }
 
-  template<int paramIndex, typename OrigType,
-           bool shouldMarshal = PhaseHandler::Info::template ShouldMarshal<paramIndex>::value>
+  template <int paramIndex, typename OrigType,
+            bool shouldMarshal =
+                PhaseHandler::Info::template ShouldMarshal<paramIndex>::value>
   struct MaybeMarshalParameter {};
 
   
 
 
-  template<int paramIndex, typename OrigType>
-  struct MaybeMarshalParameter<paramIndex, OrigType, true>
-  {
-    template<typename IPCType = typename PhaseHandler::template IPCTypeMap<OrigType>::ipc_type>
-    static void MarshalParameter(IpdlTuple& aMarshaledTuple, const OrigType& aParam)
-    {
-      HOOK_LOG(LogLevel::Verbose,
-               ("%s marshaling parameter %d.", EndpointMsg(endpoint), paramIndex));
+  template <int paramIndex, typename OrigType>
+  struct MaybeMarshalParameter<paramIndex, OrigType, true> {
+    template <typename IPCType = typename PhaseHandler::template IPCTypeMap<
+                  OrigType>::ipc_type>
+    static void MarshalParameter(IpdlTuple& aMarshaledTuple,
+                                 const OrigType& aParam) {
+      HOOK_LOG(LogLevel::Verbose, ("%s marshaling parameter %d.",
+                                   EndpointMsg(endpoint), paramIndex));
       IPCType ipcObject;
       
-      PhaseHandler::EHContainer::template EndpointHandler<endpoint>::Copy(ipcObject, aParam);
+      PhaseHandler::EHContainer::template EndpointHandler<endpoint>::Copy(
+          ipcObject, aParam);
       LogParameterValue(paramIndex, ipcObject);
       aMarshaledTuple.AddElement(ipcObject);
     }
@@ -687,13 +710,12 @@ struct Marshaler
   
 
 
-  template<int paramIndex, typename OrigType>
-  struct MaybeMarshalParameter<paramIndex, OrigType, false>
-  {
-    static void MarshalParameter(IpdlTuple& aMarshaledTuple, const OrigType& aParam)
-    {
-      HOOK_LOG(LogLevel::Verbose,
-               ("%s not marshaling parameter %d.", EndpointMsg(endpoint), paramIndex));
+  template <int paramIndex, typename OrigType>
+  struct MaybeMarshalParameter<paramIndex, OrigType, false> {
+    static void MarshalParameter(IpdlTuple& aMarshaledTuple,
+                                 const OrigType& aParam) {
+      HOOK_LOG(LogLevel::Verbose, ("%s not marshaling parameter %d.",
+                                   EndpointMsg(endpoint), paramIndex));
     }
   };
 
@@ -701,47 +723,51 @@ struct Marshaler
 
 
 
-  template<int paramIndex,
-           typename VarParam,
-           typename ... VarParams>
+  template <int paramIndex, typename VarParam, typename... VarParams>
   static void MarshalParameters(IpdlTuple& aMarshaledTuple,
-                         const VarParam& aFirstParam,
-                         const VarParams&... aRemainingParams)
-  {
-    MaybeMarshalParameter<paramIndex, VarParam>::MarshalParameter(aMarshaledTuple, aFirstParam);
+                                const VarParam& aFirstParam,
+                                const VarParams&... aRemainingParams) {
+    MaybeMarshalParameter<paramIndex, VarParam>::MarshalParameter(
+        aMarshaledTuple, aFirstParam);
     MarshalParameters<paramIndex + 1, VarParams...>(aMarshaledTuple,
-                                              aRemainingParams...);
+                                                    aRemainingParams...);
   }
 
   
 
 
-  template <int paramIndex> static void MarshalParameters(IpdlTuple& aMarshaledTuple) {}
+  template <int paramIndex>
+  static void MarshalParameters(IpdlTuple& aMarshaledTuple) {}
 
-  template<int tupleIndex, typename OrigType,
-           bool shouldMarshal = PhaseHandler::Info::template ShouldMarshal<tupleIndex>::value,
-           bool hasFixedValue = PhaseHandler::Info::template HasFixedValue<tupleIndex>::value>
+  template <int tupleIndex, typename OrigType,
+            bool shouldMarshal =
+                PhaseHandler::Info::template ShouldMarshal<tupleIndex>::value,
+            bool hasFixedValue =
+                PhaseHandler::Info::template HasFixedValue<tupleIndex>::value>
   struct MaybeUnmarshalParameter {};
 
   
 
 
-  template<int tupleIndex, typename VarParam>
-  struct MaybeUnmarshalParameter<tupleIndex, VarParam, true, false>
-  {
-    template<typename IPCType = typename PhaseHandler::template IPCTypeMap<VarParam>::ipc_type>
-    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple, int& aNextTupleIdx, VarParam& aParam)
-    {
-      const IPCType* ipcObject = aUnmarshaledTuple.GetIpdlTuple()->Element<IPCType>(aNextTupleIdx);
+  template <int tupleIndex, typename VarParam>
+  struct MaybeUnmarshalParameter<tupleIndex, VarParam, true, false> {
+    template <typename IPCType = typename PhaseHandler::template IPCTypeMap<
+                  VarParam>::ipc_type>
+    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple,
+                                          int& aNextTupleIdx,
+                                          VarParam& aParam) {
+      const IPCType* ipcObject =
+          aUnmarshaledTuple.GetIpdlTuple()->Element<IPCType>(aNextTupleIdx);
       if (!ipcObject) {
-        HOOK_LOG(LogLevel::Error,
-                 ("%s failed to unmarshal parameter %d.", EndpointMsg(endpoint), tupleIndex));
+        HOOK_LOG(LogLevel::Error, ("%s failed to unmarshal parameter %d.",
+                                   EndpointMsg(endpoint), tupleIndex));
         return false;
       }
-      HOOK_LOG(LogLevel::Verbose,
-               ("%s unmarshaled parameter %d.", EndpointMsg(endpoint), tupleIndex));
+      HOOK_LOG(LogLevel::Verbose, ("%s unmarshaled parameter %d.",
+                                   EndpointMsg(endpoint), tupleIndex));
       LogParameterValue(tupleIndex, *ipcObject);
-      PhaseHandler::EHContainer::template EndpointHandler<endpoint>::Copy(aUnmarshaledTuple.GetServerCallData(), aParam, *ipcObject);
+      PhaseHandler::EHContainer::template EndpointHandler<endpoint>::Copy(
+          aUnmarshaledTuple.GetServerCallData(), aParam, *ipcObject);
       ++aNextTupleIdx;
       return true;
     }
@@ -750,20 +776,23 @@ struct Marshaler
   
 
 
-  template<int tupleIndex>
-  struct MaybeUnmarshalParameter<tupleIndex, nsDependentCSubstring, true, false>
-  {
-    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple, int& aNextTupleIdx, nsDependentCSubstring& aParam)
-    {
+  template <int tupleIndex>
+  struct MaybeUnmarshalParameter<tupleIndex, nsDependentCSubstring, true,
+                                 false> {
+    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple,
+                                          int& aNextTupleIdx,
+                                          nsDependentCSubstring& aParam) {
       
-      const nsCString* ipcObject = aUnmarshaledTuple.GetIpdlTuple()->Element<nsCString>(aNextTupleIdx);
+      
+      const nsCString* ipcObject =
+          aUnmarshaledTuple.GetIpdlTuple()->Element<nsCString>(aNextTupleIdx);
       if (!ipcObject) {
-        HOOK_LOG(LogLevel::Error,
-                 ("%s failed to unmarshal parameter %d.", EndpointMsg(endpoint), tupleIndex));
+        HOOK_LOG(LogLevel::Error, ("%s failed to unmarshal parameter %d.",
+                                   EndpointMsg(endpoint), tupleIndex));
         return false;
       }
-      HOOK_LOG(LogLevel::Verbose,
-               ("%s unmarshaled parameter %d.", EndpointMsg(endpoint), tupleIndex));
+      HOOK_LOG(LogLevel::Verbose, ("%s unmarshaled parameter %d.",
+                                   EndpointMsg(endpoint), tupleIndex));
 
       aParam.Rebind(ipcObject->Data(), ipcObject->Length());
       aParam.SetIsVoid(ipcObject->IsVoid());
@@ -776,14 +805,18 @@ struct Marshaler
   
 
 
-  template<int tupleIndex>
-  struct MaybeUnmarshalParameter<tupleIndex, char*, true, false>
-  {
-    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple, int& aNextTupleIdx, char*& aParam)
-    {
+  template <int tupleIndex>
+  struct MaybeUnmarshalParameter<tupleIndex, char*, true, false> {
+    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple,
+                                          int& aNextTupleIdx, char*& aParam) {
       nsDependentCSubstring tempStr;
-      bool ret = MaybeUnmarshalParameter<tupleIndex, nsDependentCSubstring, true, false>::UnmarshalParameter(aUnmarshaledTuple, aNextTupleIdx, tempStr);
-      PhaseHandler::EHContainer::template EndpointHandler<endpoint>::Copy(aUnmarshaledTuple.GetServerCallData(), aParam, tempStr);
+      bool ret =
+          MaybeUnmarshalParameter<tupleIndex, nsDependentCSubstring, true,
+                                  false>::UnmarshalParameter(aUnmarshaledTuple,
+                                                             aNextTupleIdx,
+                                                             tempStr);
+      PhaseHandler::EHContainer::template EndpointHandler<endpoint>::Copy(
+          aUnmarshaledTuple.GetServerCallData(), aParam, tempStr);
       return ret;
     }
   };
@@ -791,13 +824,17 @@ struct Marshaler
   
 
 
-  template<int tupleIndex>
-  struct MaybeUnmarshalParameter<tupleIndex, const char*, true, false>
-  {
-    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple, int& aNextTupleIdx, const char*& aParam)
-    {
+  template <int tupleIndex>
+  struct MaybeUnmarshalParameter<tupleIndex, const char*, true, false> {
+    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple,
+                                          int& aNextTupleIdx,
+                                          const char*& aParam) {
       char* tempStr;
-      bool ret = MaybeUnmarshalParameter<tupleIndex, char*, true, false>::UnmarshalParameter(aUnmarshaledTuple, aNextTupleIdx, tempStr);
+      bool ret =
+          MaybeUnmarshalParameter<tupleIndex, char*, true,
+                                  false>::UnmarshalParameter(aUnmarshaledTuple,
+                                                             aNextTupleIdx,
+                                                             tempStr);
       aParam = tempStr;
       return ret;
     }
@@ -806,14 +843,17 @@ struct Marshaler
   
 
 
-  template<int tupleIndex, typename VarParam>
-  struct MaybeUnmarshalParameter<tupleIndex, VarParam, false, true>
-  {
-    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple,  int& aNextTupleIdx, VarParam& aParam) {
+  template <int tupleIndex, typename VarParam>
+  struct MaybeUnmarshalParameter<tupleIndex, VarParam, false, true> {
+    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple,
+                                          int& aNextTupleIdx,
+                                          VarParam& aParam) {
+      
       
       PhaseHandler::template CopyFixedParam<tupleIndex, VarParam>(aParam);
       HOOK_LOG(LogLevel::Verbose,
-               ("%s parameter %d not unmarshaling -- using fixed value.", EndpointMsg(endpoint), tupleIndex));
+               ("%s parameter %d not unmarshaling -- using fixed value.",
+                EndpointMsg(endpoint), tupleIndex));
       LogParameterValue(tupleIndex, aParam);
       return true;
     }
@@ -822,12 +862,15 @@ struct Marshaler
   
 
 
-  template<int tupleIndex, typename VarParam>
-  struct MaybeUnmarshalParameter<tupleIndex, VarParam, false, false>
-  {
-    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple,  int& aNextTupleIdx, VarParam& aParam) {
+
+  template <int tupleIndex, typename VarParam>
+  struct MaybeUnmarshalParameter<tupleIndex, VarParam, false, false> {
+    static inline bool UnmarshalParameter(IpdlTupleContext& aUnmarshaledTuple,
+                                          int& aNextTupleIdx,
+                                          VarParam& aParam) {
       HOOK_LOG(LogLevel::Verbose,
-               ("%s parameter %d not automatically unmarshaling.", EndpointMsg(endpoint), tupleIndex));
+               ("%s parameter %d not automatically unmarshaling.",
+                EndpointMsg(endpoint), tupleIndex));
       
       return true;
     }
@@ -838,44 +881,50 @@ struct Marshaler
 
 
 
-  template <int tupleIndex,
-            typename VarParam,
-            typename ... VarParams>
-  static bool UnmarshalParameters(IpdlTupleContext& aUnmarshaledTuple, int aNextTupleIdx,
-                           VarParam& aFirstParam, VarParams&... aRemainingParams)
-  {
+  template <int tupleIndex, typename VarParam, typename... VarParams>
+  static bool UnmarshalParameters(IpdlTupleContext& aUnmarshaledTuple,
+                                  int aNextTupleIdx, VarParam& aFirstParam,
+                                  VarParams&... aRemainingParams) {
     
-    if (!MaybeUnmarshalParameter<tupleIndex, VarParam>::UnmarshalParameter(aUnmarshaledTuple, aNextTupleIdx, aFirstParam)) {
+    
+    if (!MaybeUnmarshalParameter<tupleIndex, VarParam>::UnmarshalParameter(
+            aUnmarshaledTuple, aNextTupleIdx, aFirstParam)) {
       return false;
     }
-    return UnmarshalParameters<tupleIndex + 1, VarParams...>(aUnmarshaledTuple, aNextTupleIdx, aRemainingParams...);
+    return UnmarshalParameters<tupleIndex + 1, VarParams...>(
+        aUnmarshaledTuple, aNextTupleIdx, aRemainingParams...);
   }
 
   
 
 
   template <int>
-  static bool UnmarshalParameters(IpdlTupleContext& aUnmarshaledTuple, int aNextTupleIdx)
-  {
+  static bool UnmarshalParameters(IpdlTupleContext& aUnmarshaledTuple,
+                                  int aNextTupleIdx) {
     return true;
   }
 };
 
 
+template <FunctionHookId functionId>
+struct RequestInfo {
+  template <int paramIndex>
+  struct FixedValue;
 
-template<FunctionHookId functionId> struct RequestInfo
-{
-  template<int paramIndex> struct FixedValue;
-
-  template<int paramIndex, typename = int> struct HasFixedValue { static const bool value = false; };
-  template<int paramIndex> struct HasFixedValue<paramIndex, decltype(FixedValue<paramIndex>::value,0)>
-  {
+  template <int paramIndex, typename = int>
+  struct HasFixedValue {
+    static const bool value = false;
+  };
+  template <int paramIndex>
+  struct HasFixedValue<paramIndex, decltype(FixedValue<paramIndex>::value, 0)> {
     static const bool value = true;
   };
 
   
-  template<int paramIndex>
-  struct ShouldMarshal { static const bool value = !HasFixedValue<paramIndex>::value; };
+  template <int paramIndex>
+  struct ShouldMarshal {
+    static const bool value = !HasFixedValue<paramIndex>::value;
+  };
 };
 
 
@@ -884,12 +933,10 @@ template<FunctionHookId functionId> struct RequestInfo
 
 
 
-struct RequestHandlerBase
-{
+struct RequestHandlerBase {
   
-  template<typename OrigType>
-  struct IPCTypeMap
-  {
+  template <typename OrigType>
+  struct IPCTypeMap {
     typedef typename mozilla::plugins::IPCTypeMap<OrigType>::ipc_type ipc_type;
   };
 };
@@ -897,33 +944,37 @@ struct RequestHandlerBase
 #if defined(XP_WIN)
 
 
-template<>
-struct RequestHandlerBase::IPCTypeMap<LPOPENFILENAMEW> { typedef OpenFileNameIPC ipc_type; };
-
-#endif 
-
-struct BaseEHContainer {
-  template <Endpoint e> struct EndpointHandler : public BaseEndpointHandler<e,EndpointHandler<e>> {};
+template <>
+struct RequestHandlerBase::IPCTypeMap<LPOPENFILENAMEW> {
+  typedef OpenFileNameIPC ipc_type;
 };
 
-template<FunctionHookId functionId, typename FunctionType, typename EHContainer> struct RequestHandler;
+#endif  
 
-template<FunctionHookId functionId, typename EHContainerType, typename ResultType, typename ... ParamTypes>
-struct RequestHandler<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainerType> :
-  public RequestHandlerBase
-{
+struct BaseEHContainer {
+  template <Endpoint e>
+  struct EndpointHandler : public BaseEndpointHandler<e, EndpointHandler<e>> {};
+};
+
+template <FunctionHookId functionId, typename FunctionType,
+          typename EHContainer>
+struct RequestHandler;
+
+template <FunctionHookId functionId, typename EHContainerType,
+          typename ResultType, typename... ParamTypes>
+struct RequestHandler<functionId, ResultType HOOK_CALL(ParamTypes...),
+                      EHContainerType> : public RequestHandlerBase {
   typedef ResultType(HOOK_CALL FunctionType)(ParamTypes...);
   typedef RequestHandler<functionId, FunctionType, EHContainerType> SelfType;
   typedef RequestInfo<functionId> Info;
   typedef EHContainerType EHContainer;
 
-  static void Marshal(IpdlTuple& aTuple, const ParamTypes&... aParams)
-  {
+  static void Marshal(IpdlTuple& aTuple, const ParamTypes&... aParams) {
     ReqMarshaler::Marshal(aTuple, aParams...);
   }
 
-  static bool Unmarshal(ServerCallData& aScd, const IpdlTuple& aTuple, ParamTypes&... aParams)
-  {
+  static bool Unmarshal(ServerCallData& aScd, const IpdlTuple& aTuple,
+                        ParamTypes&... aParams) {
     IpdlTupleContext cxt(&aTuple, &aScd);
     return ReqUnmarshaler::Unmarshal(cxt, aParams...);
   }
@@ -935,74 +986,79 @@ struct RequestHandler<functionId, ResultType HOOK_CALL (ParamTypes...), EHContai
 
 
 
-  static bool ShouldBroker(Endpoint aEndpoint, const ParamTypes&... aParams)
-  {
+  static bool ShouldBroker(Endpoint aEndpoint, const ParamTypes&... aParams) {
     
     return CheckFixedParams(aParams...);
   }
 
   template <int paramIndex, typename VarParam>
-  static void CopyFixedParam(VarParam& aParam)
-  {
+  static void CopyFixedParam(VarParam& aParam) {
     aParam = Info::template FixedValue<paramIndex>::value;
   }
 
-protected:
+ protected:
   
-  static bool CheckFixedParams(const ParamTypes&... aParams)
-  {
+  static bool CheckFixedParams(const ParamTypes&... aParams) {
     return CheckFixedParamsHelper<0>(aParams...);
   }
 
   
-  template<int paramIndex, typename = int>
-  struct CheckFixedParam
-  {
-    template<typename ParamType>
-    static inline bool Check(const ParamType& aParam) { return true; }
-  };
-
   
-  template<int paramIndex>
-  struct CheckFixedParam<paramIndex, decltype(Info::template FixedValue<paramIndex>::value,0)>
-  {
-    template<typename ParamType>
-    static inline bool Check(ParamType& aParam)
-    {
-      return ParameterEquality(aParam, Info::template FixedValue<paramIndex>::value);
+  template <int paramIndex, typename = int>
+  struct CheckFixedParam {
+    template <typename ParamType>
+    static inline bool Check(const ParamType& aParam) {
+      return true;
     }
   };
 
   
-  template<int index, typename VarParam, typename ... VarParams>
-  static bool CheckFixedParamsHelper(const VarParam& aParam, const VarParams&... aParams)
-  {
+  template <int paramIndex>
+  struct CheckFixedParam<
+      paramIndex, decltype(Info::template FixedValue<paramIndex>::value, 0)> {
+    template <typename ParamType>
+    static inline bool Check(ParamType& aParam) {
+      return ParameterEquality(aParam,
+                               Info::template FixedValue<paramIndex>::value);
+    }
+  };
+
+  
+  template <int index, typename VarParam, typename... VarParams>
+  static bool CheckFixedParamsHelper(const VarParam& aParam,
+                                     const VarParams&... aParams) {
     if (!CheckFixedParam<index>::Check(aParam)) {
-      return false;     
+      return false;  
     }
     return CheckFixedParamsHelper<index + 1>(aParams...);
   }
 
   
-  template<int> static bool CheckFixedParamsHelper() { return true; }
+  template <int>
+  static bool CheckFixedParamsHelper() {
+    return true;
+  }
 };
 
 
-template<FunctionHookId functionId>
-struct ResponseInfo
-{
-  template<int paramIndex> struct HasFixedValue
-  {
-    static const bool value = RequestInfo<functionId>::template HasFixedValue<paramIndex>::value;
+template <FunctionHookId functionId>
+struct ResponseInfo {
+  template <int paramIndex>
+  struct HasFixedValue {
+    static const bool value =
+        RequestInfo<functionId>::template HasFixedValue<paramIndex>::value;
   };
 
   
-  template<int paramIndex> struct ShouldMarshal { static const bool value = (paramIndex == -1); };
+  template <int paramIndex>
+  struct ShouldMarshal {
+    static const bool value = (paramIndex == -1);
+  };
 
   
   
   
-  template<typename ResultType>
+  template <typename ResultType>
   static bool ShouldTransmitError(const ResultType& aResult) {
     return !static_cast<bool>(aResult);
   }
@@ -1011,12 +1067,10 @@ struct ResponseInfo
 
 
 
-struct ResponseHandlerBase
-{
+struct ResponseHandlerBase {
   
-  template<typename OrigType>
-  struct IPCTypeMap
-  {
+  template <typename OrigType>
+  struct IPCTypeMap {
     typedef typename mozilla::plugins::IPCTypeMap<OrigType>::ipc_type ipc_type;
   };
 };
@@ -1024,31 +1078,35 @@ struct ResponseHandlerBase
 #if defined(XP_WIN)
 
 
-template<>
-struct ResponseHandlerBase::IPCTypeMap<LPOPENFILENAMEW> { typedef OpenFileNameRetIPC ipc_type; };
+template <>
+struct ResponseHandlerBase::IPCTypeMap<LPOPENFILENAMEW> {
+  typedef OpenFileNameRetIPC ipc_type;
+};
 
 #endif
 
-template<FunctionHookId functionId, typename FunctionType, typename EHContainer> struct ResponseHandler;
+template <FunctionHookId functionId, typename FunctionType,
+          typename EHContainer>
+struct ResponseHandler;
 
-template<FunctionHookId functionId, typename EHContainerType, typename ResultType, typename ... ParamTypes>
-struct ResponseHandler<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainerType> :
-  public ResponseHandlerBase
-{
+template <FunctionHookId functionId, typename EHContainerType,
+          typename ResultType, typename... ParamTypes>
+struct ResponseHandler<functionId, ResultType HOOK_CALL(ParamTypes...),
+                       EHContainerType> : public ResponseHandlerBase {
   typedef ResultType(HOOK_CALL FunctionType)(ParamTypes...);
   typedef ResponseHandler<functionId, FunctionType, EHContainerType> SelfType;
   typedef ResponseInfo<functionId> Info;
   typedef EHContainerType EHContainer;
 
-  static void Marshal(IpdlTuple& aTuple, const ResultType& aResult, const ParamTypes&... aParams)
-  {
+  static void Marshal(IpdlTuple& aTuple, const ResultType& aResult,
+                      const ParamTypes&... aParams) {
     
     
     
     RspMarshaler::template Marshal<-1>(aTuple, aResult, aParams...);
   }
-  static bool Unmarshal(const IpdlTuple& aTuple, ResultType& aResult, ParamTypes&... aParams)
-  {
+  static bool Unmarshal(const IpdlTuple& aTuple, ResultType& aResult,
+                        ParamTypes&... aParams) {
     IpdlTupleContext cxt(&aTuple);
     return RspUnmarshaler::template Unmarshal<-1>(cxt, aResult, aParams...);
   }
@@ -1065,15 +1123,13 @@ struct ResponseHandler<functionId, ResultType HOOK_CALL (ParamTypes...), EHConta
 
 
 
-class FDMonitor : public Monitor
-{
-public:
-  FDMonitor() : Monitor("FunctionDispatchThread lock")
-  {}
+class FDMonitor : public Monitor {
+ public:
+  FDMonitor() : Monitor("FunctionDispatchThread lock") {}
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FDMonitor)
 
-private:
+ private:
   ~FDMonitor() {}
 };
 
@@ -1085,18 +1141,20 @@ template <FunctionHookId functionId, typename FunctionType,
           typename EHContainer = BaseEHContainer>
 class FunctionBroker;
 
-template <FunctionHookId functionId, typename EHContainer, typename ResultType, typename ... ParamTypes>
-class FunctionBroker<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainer> :
-  public BasicFunctionHook<functionId, ResultType HOOK_CALL (ParamTypes...)>
-{
-public:
+template <FunctionHookId functionId, typename EHContainer, typename ResultType,
+          typename... ParamTypes>
+class FunctionBroker<functionId, ResultType HOOK_CALL(ParamTypes...),
+                     EHContainer>
+    : public BasicFunctionHook<functionId,
+                               ResultType HOOK_CALL(ParamTypes...)> {
+ public:
   typedef Tuple<ParamTypes...> TupleParamTypes;
   typedef Tuple<mozilla::Maybe<ParamTypes>...> TupleMaybeParamTypes;
   typedef Tuple<ParamTypes*...> TupleParamPtrTypes;
   typedef Tuple<ParamTypes&...> TupleParamRefTypes;
   static const size_t numParams = sizeof...(ParamTypes);
 
-  typedef ResultType (HOOK_CALL FunctionType)(ParamTypes...);
+  typedef ResultType(HOOK_CALL FunctionType)(ParamTypes...);
   typedef FunctionBroker<functionId, FunctionType, EHContainer> SelfType;
   typedef BasicFunctionHook<functionId, FunctionType> FunctionHookInfoType;
   typedef FunctionHookInfoType BaseType;
@@ -1105,20 +1163,19 @@ public:
   typedef ResponseHandler<functionId, FunctionType, EHContainer> Response;
 
   template <typename DelegateFcnType>
-  using RequestDelegate = RequestHandler<functionId, DelegateFcnType, EHContainer>;
+  using RequestDelegate =
+      RequestHandler<functionId, DelegateFcnType, EHContainer>;
   template <typename DelegateFcnType>
-  using ResponseDelegate = ResponseHandler<functionId, DelegateFcnType, EHContainer>;
+  using ResponseDelegate =
+      ResponseHandler<functionId, DelegateFcnType, EHContainer>;
 
   FunctionBroker(const char* aModuleName, const char* aMethodName,
-                       FunctionType* aOriginalFunction) :
-    BasicFunctionHook<functionId, FunctionType>(aModuleName, aMethodName,
-                                                aOriginalFunction, InterceptorStub)
-  {
-  }
+                 FunctionType* aOriginalFunction)
+      : BasicFunctionHook<functionId, FunctionType>(
+            aModuleName, aMethodName, aOriginalFunction, InterceptorStub) {}
 
   
-  static ResultType HOOK_CALL InterceptorStub(ParamTypes... aParams)
-  {
+  static ResultType HOOK_CALL InterceptorStub(ParamTypes... aParams) {
     MOZ_ASSERT(functionId < FunctionHook::GetHooks()->Length());
     FunctionHook* self = FunctionHook::GetHooks()->ElementAt(functionId);
     MOZ_ASSERT(self && self->FunctionId() == functionId);
@@ -1140,28 +1197,28 @@ public:
 
 
 
-  bool
-  RunOriginalFunction(base::ProcessId aClientId, const IPC::IpdlTuple &aInTuple,
-                      IPC::IpdlTuple *aOutTuple) const override
-  {
+  bool RunOriginalFunction(base::ProcessId aClientId,
+                           const IPC::IpdlTuple& aInTuple,
+                           IPC::IpdlTuple* aOutTuple) const override {
     return BrokerCallServer(aClientId, aInTuple, aOutTuple);
   }
 
-protected:
-  bool BrokerCallServer(base::ProcessId aClientId, const IpdlTuple &aInTuple,
-                        IpdlTuple *aOutTuple) const
-  {
+ protected:
+  bool BrokerCallServer(base::ProcessId aClientId, const IpdlTuple& aInTuple,
+                        IpdlTuple* aOutTuple) const {
     return BrokerCallServer(aClientId, aInTuple, aOutTuple,
-                             std::index_sequence_for<ParamTypes...>{});
+                            std::index_sequence_for<ParamTypes...>{});
   }
 
-  bool BrokerCallClient(uint32_t& aWinError, ResultType& aResult, ParamTypes&... aParameters) const;
-  bool PostToDispatchThread(uint32_t& aWinError, ResultType& aRet, ParamTypes&... aParameters) const;
+  bool BrokerCallClient(uint32_t& aWinError, ResultType& aResult,
+                        ParamTypes&... aParameters) const;
+  bool PostToDispatchThread(uint32_t& aWinError, ResultType& aRet,
+                            ParamTypes&... aParameters) const;
 
-  static void
-  PostToDispatchHelper(const SelfType* bmhi, RefPtr<FDMonitor> monitor, bool* notified,
-                       bool* ok, uint32_t* winErr, ResultType* r, ParamTypes*... p)
-  {
+  static void PostToDispatchHelper(const SelfType* bmhi,
+                                   RefPtr<FDMonitor> monitor, bool* notified,
+                                   bool* ok, uint32_t* winErr, ResultType* r,
+                                   ParamTypes*... p) {
     
     MOZ_ASSERT(bmhi && monitor && notified && ok && winErr && r);
     MOZ_ASSERT(*notified == false);
@@ -1178,52 +1235,53 @@ protected:
     monitor->Notify();
   };
 
-  template<typename ... VarParams>
-  ResultType
-  RunFunction(FunctionType* aFunction, base::ProcessId aClientId,
-                VarParams&... aParams) const
-  {
+  template <typename... VarParams>
+  ResultType RunFunction(FunctionType* aFunction, base::ProcessId aClientId,
+                         VarParams&... aParams) const {
     return aFunction(aParams...);
   };
 
-  bool BrokerCallServer(base::ProcessId aClientId, const IpdlTuple &aInTuple,
-                        IpdlTuple *aOutTuple, ParamTypes&... aParams) const;
+  bool BrokerCallServer(base::ProcessId aClientId, const IpdlTuple& aInTuple,
+                        IpdlTuple* aOutTuple, ParamTypes&... aParams) const;
 
-  template<size_t... Indices>
-  bool BrokerCallServer(base::ProcessId aClientId, const IpdlTuple &aInTuple,
-                         IpdlTuple *aOutTuple, std::index_sequence<Indices...>) const
-  {
+  template <size_t... Indices>
+  bool BrokerCallServer(base::ProcessId aClientId, const IpdlTuple& aInTuple,
+                        IpdlTuple* aOutTuple,
+                        std::index_sequence<Indices...>) const {
     TupleParamTypes paramTuple;
     return BrokerCallServer(aClientId, aInTuple, aOutTuple,
-                             Get<Indices>(paramTuple)...);
+                            Get<Indices>(paramTuple)...);
   }
 };
 
-template <FunctionHookId functionId, typename EHContainer, typename ResultType, typename ... ParamTypes>
-ResultType
-FunctionBroker<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainer>::MaybeBrokerCallClient(ParamTypes&... aParameters) const
-{
+template <FunctionHookId functionId, typename EHContainer, typename ResultType,
+          typename... ParamTypes>
+ResultType FunctionBroker<
+    functionId, ResultType HOOK_CALL(ParamTypes...),
+    EHContainer>::MaybeBrokerCallClient(ParamTypes&... aParameters) const {
   MOZ_ASSERT(FunctionBrokerChild::GetInstance());
 
   
   
   if (!FunctionBrokerChild::GetInstance()) {
     HOOK_LOG(LogLevel::Error,
-             ("[%s] Client attempted to broker call without actor.", FunctionHookInfoType::mFunctionName.Data()));
-  }
-  else if (Request::ShouldBroker(CLIENT, aParameters...)) {
-    HOOK_LOG(LogLevel::Debug,
-             ("[%s] Client attempting to broker call.", FunctionHookInfoType::mFunctionName.Data()));
+             ("[%s] Client attempted to broker call without actor.",
+              FunctionHookInfoType::mFunctionName.Data()));
+  } else if (Request::ShouldBroker(CLIENT, aParameters...)) {
+    HOOK_LOG(LogLevel::Debug, ("[%s] Client attempting to broker call.",
+                               FunctionHookInfoType::mFunctionName.Data()));
     uint32_t winError;
     ResultType ret;
     bool success = BrokerCallClient(winError, ret, aParameters...);
     HOOK_LOG(LogLevel::Info,
-             ("[%s] Client brokering %s.", FunctionHookInfoType::mFunctionName.Data(), SuccessMsg(success)));
+             ("[%s] Client brokering %s.",
+              FunctionHookInfoType::mFunctionName.Data(), SuccessMsg(success)));
     if (success) {
 #if defined(XP_WIN)
       if (Response::Info::ShouldTransmitError(ret)) {
         HOOK_LOG(LogLevel::Debug,
-                 ("[%s] Client setting thread error code: %08x.", FunctionHookInfoType::mFunctionName.Data(), winError));
+                 ("[%s] Client setting thread error code: %08x.",
+                  FunctionHookInfoType::mFunctionName.Data(), winError));
         ::SetLastError(winError);
       }
 #endif
@@ -1232,45 +1290,51 @@ FunctionBroker<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainer>::M
   }
 
   HOOK_LOG(LogLevel::Info,
-            ("[%s] Client could not broker.  Running original version.", FunctionHookInfoType::mFunctionName.Data()));
+           ("[%s] Client could not broker.  Running original version.",
+            FunctionHookInfoType::mFunctionName.Data()));
   return FunctionHookInfoType::mOldFunction(aParameters...);
 }
 
-template <FunctionHookId functionId, typename EHContainer, typename ResultType, typename ... ParamTypes>
-bool
-FunctionBroker<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainer>::BrokerCallClient(uint32_t& aWinError,
-                                                                  ResultType& aResult,
-                                                                  ParamTypes&... aParameters) const
-{
+template <FunctionHookId functionId, typename EHContainer, typename ResultType,
+          typename... ParamTypes>
+bool FunctionBroker<functionId, ResultType HOOK_CALL(ParamTypes...),
+                    EHContainer>::BrokerCallClient(uint32_t& aWinError,
+                                                   ResultType& aResult,
+                                                   ParamTypes&... aParameters)
+    const {
   if (!FunctionBrokerChild::GetInstance()->IsDispatchThread()) {
     return PostToDispatchThread(aWinError, aResult, aParameters...);
   }
 
   if (FunctionBrokerChild::GetInstance()) {
     IpdlTuple sending, returned;
-    HOOK_LOG(LogLevel::Debug,
-             ("[%s] Client marshaling parameters.", FunctionHookInfoType::mFunctionName.Data()));
+    HOOK_LOG(LogLevel::Debug, ("[%s] Client marshaling parameters.",
+                               FunctionHookInfoType::mFunctionName.Data()));
     Request::Marshal(sending, aParameters...);
-    HOOK_LOG(LogLevel::Info,
-             ("[%s] Client sending broker message.", FunctionHookInfoType::mFunctionName.Data()));
-    if (FunctionBrokerChild::GetInstance()->SendBrokerFunction(FunctionHookInfoType::FunctionId(), sending,
-                                                           &returned)) {
+    HOOK_LOG(LogLevel::Info, ("[%s] Client sending broker message.",
+                              FunctionHookInfoType::mFunctionName.Data()));
+    if (FunctionBrokerChild::GetInstance()->SendBrokerFunction(
+            FunctionHookInfoType::FunctionId(), sending, &returned)) {
       HOOK_LOG(LogLevel::Debug,
-               ("[%s] Client received broker message response.", FunctionHookInfoType::mFunctionName.Data()));
+               ("[%s] Client received broker message response.",
+                FunctionHookInfoType::mFunctionName.Data()));
       bool success = Response::Unmarshal(returned, aResult, aParameters...);
-      HOOK_LOG(LogLevel::Info,
-               ("[%s] Client response unmarshaling: %s.", FunctionHookInfoType::mFunctionName.Data(), SuccessMsg(success)));
+      HOOK_LOG(LogLevel::Info, ("[%s] Client response unmarshaling: %s.",
+                                FunctionHookInfoType::mFunctionName.Data(),
+                                SuccessMsg(success)));
 #if defined(XP_WIN)
       if (success && Response::Info::ShouldTransmitError(aResult)) {
-        uint32_t* winError = returned.Element<UINT32>(returned.NumElements()-1);
+        uint32_t* winError =
+            returned.Element<UINT32>(returned.NumElements() - 1);
         if (!winError) {
           HOOK_LOG(LogLevel::Error,
-                    ("[%s] Client failed to unmarshal error code.", FunctionHookInfoType::mFunctionName.Data()));
+                   ("[%s] Client failed to unmarshal error code.",
+                    FunctionHookInfoType::mFunctionName.Data()));
           return false;
         }
         HOOK_LOG(LogLevel::Debug,
                  ("[%s] Client response unmarshaled error code: %08x.",
-                 FunctionHookInfoType::mFunctionName.Data(), *winError));
+                  FunctionHookInfoType::mFunctionName.Data(), *winError));
         aWinError = *winError;
       }
 #endif
@@ -1278,36 +1342,42 @@ FunctionBroker<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainer>::B
     }
   }
 
-  HOOK_LOG(LogLevel::Error,
-            ("[%s] Client failed to broker call.", FunctionHookInfoType::mFunctionName.Data()));
+  HOOK_LOG(LogLevel::Error, ("[%s] Client failed to broker call.",
+                             FunctionHookInfoType::mFunctionName.Data()));
   return false;
 }
 
-template <FunctionHookId functionId, typename EHContainer, typename ResultType, typename ... ParamTypes>
-bool
-FunctionBroker<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainer>::BrokerCallServer(base::ProcessId aClientId, const IpdlTuple &aInTuple,
-                  IpdlTuple *aOutTuple, ParamTypes&... aParams) const
-{
-  HOOK_LOG(LogLevel::Info, ("[%s] Server brokering function.", FunctionHookInfoType::mFunctionName.Data()));
+template <FunctionHookId functionId, typename EHContainer, typename ResultType,
+          typename... ParamTypes>
+bool FunctionBroker<functionId, ResultType HOOK_CALL(ParamTypes...),
+                    EHContainer>::BrokerCallServer(base::ProcessId aClientId,
+                                                   const IpdlTuple& aInTuple,
+                                                   IpdlTuple* aOutTuple,
+                                                   ParamTypes&... aParams)
+    const {
+  HOOK_LOG(LogLevel::Info, ("[%s] Server brokering function.",
+                            FunctionHookInfoType::mFunctionName.Data()));
 
   ServerCallData scd;
   if (!Request::Unmarshal(scd, aInTuple, aParams...)) {
-    HOOK_LOG(LogLevel::Info,
-             ("[%s] Server failed to unmarshal.", FunctionHookInfoType::mFunctionName.Data()));
+    HOOK_LOG(LogLevel::Info, ("[%s] Server failed to unmarshal.",
+                              FunctionHookInfoType::mFunctionName.Data()));
     return false;
   }
 
   
   
   if (!Request::ShouldBroker(SERVER, aParams...)) {
-    HOOK_LOG(LogLevel::Error,
-             ("[%s] Server rejected brokering request.", FunctionHookInfoType::mFunctionName.Data()));
+    HOOK_LOG(LogLevel::Error, ("[%s] Server rejected brokering request.",
+                               FunctionHookInfoType::mFunctionName.Data()));
     return false;
   }
 
   
-  HOOK_LOG(LogLevel::Info, ("[%s] Server broker running function.", FunctionHookInfoType::mFunctionName.Data()));
-  ResultType ret = RunFunction(FunctionHookInfoType::mOldFunction, aClientId, aParams...);
+  HOOK_LOG(LogLevel::Info, ("[%s] Server broker running function.",
+                            FunctionHookInfoType::mFunctionName.Data()));
+  ResultType ret =
+      RunFunction(FunctionHookInfoType::mOldFunction, aClientId, aParams...);
 
 #if defined(XP_WIN)
   
@@ -1315,11 +1385,12 @@ FunctionBroker<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainer>::B
   bool transmitError = Response::Info::ShouldTransmitError(ret);
   if (transmitError) {
     err = ::GetLastError();
-    HOOK_LOG(LogLevel::Info,
-             ("[%s] Server returning thread error code: %08x.", FunctionHookInfoType::mFunctionName.Data(), err));
+    HOOK_LOG(LogLevel::Info, ("[%s] Server returning thread error code: %08x.",
+                              FunctionHookInfoType::mFunctionName.Data(), err));
   }
 #endif
 
+  
   
   Response::Marshal(*aOutTuple, ret, aParams...);
 #if defined(XP_WIN)
@@ -1331,15 +1402,15 @@ FunctionBroker<functionId, ResultType HOOK_CALL (ParamTypes...), EHContainer>::B
   return true;
 }
 
-template <FunctionHookId functionId, typename EHContainer, typename ResultType, typename ... ParamTypes>
-bool
-FunctionBroker<functionId,ResultType HOOK_CALL (ParamTypes...), EHContainer>::
-PostToDispatchThread(uint32_t& aWinError, ResultType& aRet,
-                     ParamTypes&... aParameters) const
-{
+template <FunctionHookId functionId, typename EHContainer, typename ResultType,
+          typename... ParamTypes>
+bool FunctionBroker<
+    functionId, ResultType HOOK_CALL(ParamTypes...),
+    EHContainer>::PostToDispatchThread(uint32_t& aWinError, ResultType& aRet,
+                                       ParamTypes&... aParameters) const {
   MOZ_ASSERT(!FunctionBrokerChild::GetInstance()->IsDispatchThread());
-  HOOK_LOG(LogLevel::Debug,
-           ("Posting broker task '%s' to dispatch thread", FunctionHookInfoType::mFunctionName.Data()));
+  HOOK_LOG(LogLevel::Debug, ("Posting broker task '%s' to dispatch thread",
+                             FunctionHookInfoType::mFunctionName.Data()));
 
   
   
@@ -1347,10 +1418,9 @@ PostToDispatchThread(uint32_t& aWinError, ResultType& aRet,
   MonitorAutoLock lock(*monitor);
   bool success = false;
   bool notified = false;
-  FunctionBrokerChild::GetInstance()->PostToDispatchThread(
-    NewRunnableFunction("FunctionDispatchThreadRunnable", &PostToDispatchHelper,
-                        this, monitor, &notified, &success, &aWinError, &aRet,
-                        &aParameters...));
+  FunctionBrokerChild::GetInstance()->PostToDispatchThread(NewRunnableFunction(
+      "FunctionDispatchThreadRunnable", &PostToDispatchHelper, this, monitor,
+      &notified, &success, &aWinError, &aRet, &aParameters...));
 
   
   
@@ -1362,7 +1432,7 @@ PostToDispatchThread(uint32_t& aWinError, ResultType& aRet,
 
 void AddBrokeredFunctionHooks(FunctionHookArray& aHooks);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

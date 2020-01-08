@@ -1,19 +1,21 @@
 #define ANNOTATE(property) __attribute__((annotate(property)))
 
-struct Cell { int f; } ANNOTATE("GC Thing");
+struct Cell {
+  int f;
+} ANNOTATE("GC Thing");
 
 extern void GC() ANNOTATE("GC Call");
 
-void GC()
-{
-    
-    asm("");
+void GC() {
+  
+  
+  asm("");
 }
 
 class RAII_GC {
-  public:
-    RAII_GC() { }
-    ~RAII_GC() { GC(); }
+ public:
+  RAII_GC() {}
+  ~RAII_GC() { GC(); }
 };
 
 
@@ -21,25 +23,24 @@ class RAII_GC {
 
 
 class AutoSomething {
-    RAII_GC gc;
-  public:
-    AutoSomething() : gc() {
-        asm(""); 
-    }
-    ~AutoSomething() {
-        asm("");
-    }
+  RAII_GC gc;
+
+ public:
+  AutoSomething() : gc() {
+    asm("");  
+  }
+  ~AutoSomething() { asm(""); }
 };
 
 extern void usevar(Cell* cell);
 
 void f() {
-    Cell* thing = nullptr; 
+  Cell* thing = nullptr;  
 
-    
-    
-    {
-        AutoSomething smth; 
-        usevar(thing); 
-    } 
+  
+  
+  {
+    AutoSomething smth;  
+    usevar(thing);       
+  }  
 }

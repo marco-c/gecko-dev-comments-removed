@@ -9,65 +9,56 @@
 #include "txList.h"
 #include "nsString.h"
 
-enum txOutputMethod {
-    eMethodNotSet,
-    eXMLOutput,
-    eHTMLOutput,
-    eTextOutput
-};
+enum txOutputMethod { eMethodNotSet, eXMLOutput, eHTMLOutput, eTextOutput };
 
-enum txThreeState {
-    eNotSet,
-    eFalse,
-    eTrue
-};
+enum txThreeState { eNotSet, eFalse, eTrue };
 
 class txOutputFormat {
-public:
-    txOutputFormat();
-    ~txOutputFormat();
+ public:
+  txOutputFormat();
+  ~txOutputFormat();
 
-    
-    void reset();
+  
+  void reset();
 
-    
-    
-    void merge(txOutputFormat& aOutputFormat);
+  
+  
+  void merge(txOutputFormat& aOutputFormat);
 
-    
-    void setFromDefaults();
+  
+  void setFromDefaults();
 
-    
-    txOutputMethod mMethod;
+  
+  txOutputMethod mMethod;
 
-    
-    
-    nsString mVersion;
+  
+  
+  nsString mVersion;
 
-    
-    
-    nsString mEncoding;
+  
+  
+  nsString mEncoding;
 
-    
-    txThreeState mOmitXMLDeclaration;
+  
+  txThreeState mOmitXMLDeclaration;
 
-    
-    txThreeState mStandalone;
+  
+  txThreeState mStandalone;
 
-    
-    nsString mPublicId;
+  
+  nsString mPublicId;
 
-    
-    nsString mSystemId;
+  
+  nsString mSystemId;
 
-    
-    txList mCDATASectionElements;
+  
+  txList mCDATASectionElements;
 
-    
-    txThreeState mIndent;
+  
+  txThreeState mIndent;
 
-    
-    nsString mMediaType;
+  
+  nsString mMediaType;
 };
 
 #endif

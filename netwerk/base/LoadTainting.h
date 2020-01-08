@@ -31,13 +31,8 @@ namespace mozilla {
 
 
 
-enum class LoadTainting : uint8_t
-{
-  Basic = 0,
-  CORS = 1,
-  Opaque = 2
-};
+enum class LoadTainting : uint8_t { Basic = 0, CORS = 1, Opaque = 2 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -14,9 +14,8 @@ namespace mozilla {
 namespace net {
 
 
-class PollableEvent
-{
-public:
+class PollableEvent {
+ public:
   PollableEvent();
   ~PollableEvent();
 
@@ -40,27 +39,27 @@ public:
   
   
   
-  bool IsSignallingAlive(TimeDuration const& timeout);
+  bool IsSignallingAlive(TimeDuration const &timeout);
 
   PRFileDesc *PollableFD() { return mReadFD; }
 
-private:
+ private:
   PRFileDesc *mWriteFD;
   PRFileDesc *mReadFD;
-  bool        mSignaled;
+  bool mSignaled;
   
-  bool        mWriteFailed;
-  
-  
+  bool mWriteFailed;
   
   
-  bool        mSignalTimestampAdjusted;
   
   
-  TimeStamp   mFirstSignalAfterClear;
+  bool mSignalTimestampAdjusted;
+  
+  
+  TimeStamp mFirstSignalAfterClear;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

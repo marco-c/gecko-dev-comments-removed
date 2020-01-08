@@ -8,21 +8,19 @@
 
 #include "txExecutionState.h"
 
-class txXSLTProcessor
-{
-public:
-    
+class txXSLTProcessor {
+ public:
+  
 
 
 
-    static bool init();
-    static void shutdown();
+  static bool init();
+  static void shutdown();
 
+  static nsresult execute(txExecutionState& aEs);
 
-    static nsresult execute(txExecutionState& aEs);
-
-    
-    
+  
+  
 };
 
 #endif

@@ -13,88 +13,80 @@
 namespace mozilla {
 namespace loader {
 
-void
-ScriptCacheChild::Init(const Maybe<FileDescriptor>& cacheFile, bool wantCacheData)
-{
-    mWantCacheData = wantCacheData;
+void ScriptCacheChild::Init(const Maybe<FileDescriptor>& cacheFile,
+                            bool wantCacheData) {
+  mWantCacheData = wantCacheData;
 
-    auto& cache = ScriptPreloader::GetChildSingleton();
-    Unused << cache.InitCache(cacheFile, this);
+  auto& cache = ScriptPreloader::GetChildSingleton();
+  Unused << cache.InitCache(cacheFile, this);
 
-    if (!wantCacheData) {
-        
-        
-        Send__delete__(this, AutoTArray<ScriptData, 0>());
-    }
-}
-
-
-
-void
-ScriptCacheChild::SendScriptsAndFinalize(ScriptPreloader::ScriptHash& scripts)
-{
-    MOZ_ASSERT(mWantCacheData);
-
-    AutoSafeJSAPI jsapi;
-
-    auto matcher = ScriptPreloader::Match<ScriptPreloader::ScriptStatus::Saved>();
-
-    nsTArray<ScriptData> dataArray;
-    for (auto& script : IterHash(scripts, matcher)) {
-        if (!script->mSize && !script->XDREncode(jsapi.cx())) {
-            continue;
-        }
-
-        auto data = dataArray.AppendElement();
-
-        data->url() = script->mURL;
-        data->cachePath() = script->mCachePath;
-        data->loadTime() = script->mLoadTime;
-
-        if (script->HasBuffer()) {
-            auto& xdrData = script->Buffer();
-            data->xdrData().AppendElements(xdrData.begin(), xdrData.length());
-            script->FreeData();
-        }
-    }
-
-    Send__delete__(this, dataArray);
-}
-
-void
-ScriptCacheChild::ActorDestroy(ActorDestroyReason aWhy)
-{
-    auto& cache = ScriptPreloader::GetChildSingleton();
-    cache.mChildActor = nullptr;
-}
-
-
-IPCResult
-ScriptCacheParent::Recv__delete__(nsTArray<ScriptData>&& scripts)
-{
-    if (!mWantCacheData && scripts.Length()) {
-        return IPC_FAIL(this, "UnexpectedScriptData");
-    }
-
+  if (!wantCacheData) {
     
-    mWantCacheData = false;
-
     
-    auto parent = static_cast<dom::ContentParent*>(Manager());
-    auto processType = ScriptPreloader::GetChildProcessType(parent->GetRemoteType());
-
-    auto& cache = ScriptPreloader::GetChildSingleton();
-    for (auto& script : scripts) {
-        cache.NoteScript(script.url(), script.cachePath(), processType,
-                         std::move(script.xdrData()), script.loadTime());
-    }
-
-    return IPC_OK();
+    Send__delete__(this, AutoTArray<ScriptData, 0>());
+  }
 }
 
-void
-ScriptCacheParent::ActorDestroy(ActorDestroyReason aWhy)
-{}
 
-} 
-} 
+
+void ScriptCacheChild::SendScriptsAndFinalize(
+    ScriptPreloader::ScriptHash& scripts) {
+  MOZ_ASSERT(mWantCacheData);
+
+  AutoSafeJSAPI jsapi;
+
+  auto matcher = ScriptPreloader::Match<ScriptPreloader::ScriptStatus::Saved>();
+
+  nsTArray<ScriptData> dataArray;
+  for (auto& script : IterHash(scripts, matcher)) {
+    if (!script->mSize && !script->XDREncode(jsapi.cx())) {
+      continue;
+    }
+
+    auto data = dataArray.AppendElement();
+
+    data->url() = script->mURL;
+    data->cachePath() = script->mCachePath;
+    data->loadTime() = script->mLoadTime;
+
+    if (script->HasBuffer()) {
+      auto& xdrData = script->Buffer();
+      data->xdrData().AppendElements(xdrData.begin(), xdrData.length());
+      script->FreeData();
+    }
+  }
+
+  Send__delete__(this, dataArray);
+}
+
+void ScriptCacheChild::ActorDestroy(ActorDestroyReason aWhy) {
+  auto& cache = ScriptPreloader::GetChildSingleton();
+  cache.mChildActor = nullptr;
+}
+
+IPCResult ScriptCacheParent::Recv__delete__(nsTArray<ScriptData>&& scripts) {
+  if (!mWantCacheData && scripts.Length()) {
+    return IPC_FAIL(this, "UnexpectedScriptData");
+  }
+
+  
+  mWantCacheData = false;
+
+  
+  auto parent = static_cast<dom::ContentParent*>(Manager());
+  auto processType =
+      ScriptPreloader::GetChildProcessType(parent->GetRemoteType());
+
+  auto& cache = ScriptPreloader::GetChildSingleton();
+  for (auto& script : scripts) {
+    cache.NoteScript(script.url(), script.cachePath(), processType,
+                     std::move(script.xdrData()), script.loadTime());
+  }
+
+  return IPC_OK();
+}
+
+void ScriptCacheParent::ActorDestroy(ActorDestroyReason aWhy) {}
+
+}  
+}  

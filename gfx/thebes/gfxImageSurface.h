@@ -19,8 +19,8 @@ namespace mozilla {
 namespace gfx {
 class DataSourceSurface;
 class SourceSurface;
-} 
-} 
+}  
+}  
 
 
 
@@ -28,8 +28,8 @@ class SourceSurface;
 
 
 class gfxImageSurface : public gfxASurface {
-public:
-    
+ public:
+  
 
 
 
@@ -38,151 +38,157 @@ public:
 
 
 
-    gfxImageSurface(unsigned char *aData, const mozilla::gfx::IntSize& aSize,
+  gfxImageSurface(unsigned char* aData, const mozilla::gfx::IntSize& aSize,
+                  long aStride, gfxImageFormat aFormat);
+
+  
+
+
+
+
+
+
+  gfxImageSurface(const mozilla::gfx::IntSize& size, gfxImageFormat format,
+                  bool aClear = true);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  gfxImageSurface(const mozilla::gfx::IntSize& aSize, gfxImageFormat aFormat,
+                  long aStride, int32_t aMinimalAllocation, bool aClear);
+
+  explicit gfxImageSurface(cairo_surface_t* csurf);
+
+  virtual ~gfxImageSurface();
+
+  
+  gfxImageFormat Format() const { return mFormat; }
+
+  virtual const mozilla::gfx::IntSize GetSize() const override { return mSize; }
+  int32_t Width() const {
+    if (mSize.width < 0) {
+      return 0;
+    }
+    return mSize.width;
+  }
+  int32_t Height() const {
+    if (mSize.height < 0) {
+      return 0;
+    }
+    return mSize.height;
+  }
+
+  
+
+
+
+  int32_t Stride() const { return mStride; }
+  
+
+
+
+  unsigned char* Data() const {
+    return mData;
+  }  
+  
+
+
+  int32_t GetDataSize() const {
+    if (mStride < 0 || mSize.height < 0) {
+      return 0;
+    }
+    return mStride * mSize.height;
+  }
+
+  
+
+  bool CopyFrom(gfxImageSurface* other);
+
+  
+
+
+
+
+  bool CopyFrom(mozilla::gfx::SourceSurface* aSurface);
+
+  
+
+
+
+  bool CopyTo(mozilla::gfx::SourceSurface* aSurface);
+
+  
+
+
+
+  virtual already_AddRefed<mozilla::gfx::DataSourceSurface>
+  CopyToB8G8R8A8DataSourceSurface();
+
+  
+
+
+  already_AddRefed<gfxSubimageSurface> GetSubimage(const gfxRect& aRect);
+
+  virtual already_AddRefed<gfxImageSurface> GetAsImageSurface() override;
+
+  
+  static long ComputeStride(const mozilla::gfx::IntSize&, gfxImageFormat);
+
+  virtual size_t SizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) const override;
+  virtual size_t SizeOfIncludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) const override;
+  virtual bool SizeOfIsMeasured() const override;
+
+ protected:
+  gfxImageSurface();
+  void InitWithData(unsigned char* aData, const mozilla::gfx::IntSize& aSize,
                     long aStride, gfxImageFormat aFormat);
-
-    
-
+  
 
 
 
 
+  void AllocateAndInit(long aStride, int32_t aMinimalAllocation, bool aClear);
+  void InitFromSurface(cairo_surface_t* csurf);
 
-    gfxImageSurface(const mozilla::gfx::IntSize& size, gfxImageFormat format, bool aClear = true);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    gfxImageSurface(const mozilla::gfx::IntSize& aSize, gfxImageFormat aFormat,
-                    long aStride, int32_t aMinimalAllocation, bool aClear);
-
-    explicit gfxImageSurface(cairo_surface_t *csurf);
-
-    virtual ~gfxImageSurface();
-
-    
-    gfxImageFormat Format() const { return mFormat; }
-
-    virtual const mozilla::gfx::IntSize GetSize() const override { return mSize; }
-    int32_t Width() const {
-        if (mSize.width < 0) {
-            return 0;
-        }
-        return mSize.width;
+  long ComputeStride() const {
+    if (mSize.height < 0 || mSize.width < 0) {
+      return 0;
     }
-    int32_t Height() const {
-        if (mSize.height < 0) {
-            return 0;
-        }
-        return mSize.height;
-    }
+    return ComputeStride(mSize, mFormat);
+  }
 
-    
+  void MakeInvalid();
 
-
-
-    int32_t Stride() const { return mStride; }
-    
-
-
-
-    unsigned char* Data() const { return mData; } 
-    
-
-
-    int32_t GetDataSize() const {
-        if (mStride < 0 || mSize.height < 0) {
-            return 0;
-        }
-        return mStride*mSize.height;
-    }
-
-    
-    bool CopyFrom (gfxImageSurface *other);
-
-    
-
-
-
-    bool CopyFrom (mozilla::gfx::SourceSurface *aSurface);
-
-    
-
-
-
-    bool CopyTo (mozilla::gfx::SourceSurface *aSurface);
-
-    
-
-
-
-    virtual already_AddRefed<mozilla::gfx::DataSourceSurface> CopyToB8G8R8A8DataSourceSurface();
-
-    
-
-
-    already_AddRefed<gfxSubimageSurface> GetSubimage(const gfxRect& aRect);
-
-    virtual already_AddRefed<gfxImageSurface> GetAsImageSurface() override;
-
-    
-    static long ComputeStride(const mozilla::gfx::IntSize&, gfxImageFormat);
-
-    virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-        override;
-    virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-        override;
-    virtual bool SizeOfIsMeasured() const override;
-
-protected:
-    gfxImageSurface();
-    void InitWithData(unsigned char *aData, const mozilla::gfx::IntSize& aSize,
-                      long aStride, gfxImageFormat aFormat);
-    
-
-
-
-
-    void AllocateAndInit(long aStride, int32_t aMinimalAllocation, bool aClear);
-    void InitFromSurface(cairo_surface_t *csurf);
-
-    long ComputeStride() const { 
-        if (mSize.height < 0 || mSize.width < 0) {
-            return 0;
-        }
-        return ComputeStride(mSize, mFormat);
-    }
-
-    void MakeInvalid();
-
-    mozilla::gfx::IntSize mSize;
-    bool mOwnsData;
-    unsigned char *mData;
-    gfxImageFormat mFormat;
-    long mStride;
+  mozilla::gfx::IntSize mSize;
+  bool mOwnsData;
+  unsigned char* mData;
+  gfxImageFormat mFormat;
+  long mStride;
 };
 
 class gfxSubimageSurface : public gfxImageSurface {
-protected:
-    friend class gfxImageSurface;
-    gfxSubimageSurface(gfxImageSurface* aParent,
-                       unsigned char* aData,
-                       const mozilla::gfx::IntSize& aSize,
-                       gfxImageFormat aFormat);
-private:
-    RefPtr<gfxImageSurface> mParent;
+ protected:
+  friend class gfxImageSurface;
+  gfxSubimageSurface(gfxImageSurface* aParent, unsigned char* aData,
+                     const mozilla::gfx::IntSize& aSize,
+                     gfxImageFormat aFormat);
+
+ private:
+  RefPtr<gfxImageSurface> mParent;
 };
 
 #endif 

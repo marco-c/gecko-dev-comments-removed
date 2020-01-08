@@ -15,17 +15,18 @@ namespace mozilla {
 namespace layers {
 
 class AndroidSpecificState : public PlatformSpecificStateBase {
-public:
+ public:
   AndroidSpecificState();
 
   virtual AndroidSpecificState* AsAndroidSpecificState() override {
     return this;
   }
 
-  virtual AsyncPanZoomAnimation* CreateFlingAnimation(AsyncPanZoomController& aApzc,
-                                                      const FlingHandoffState& aHandoffState,
-                                                      float aPLPPI) override;
-  virtual UniquePtr<VelocityTracker> CreateVelocityTracker(Axis* aAxis) override;
+  virtual AsyncPanZoomAnimation* CreateFlingAnimation(
+      AsyncPanZoomController& aApzc, const FlingHandoffState& aHandoffState,
+      float aPLPPI) override;
+  virtual UniquePtr<VelocityTracker> CreateVelocityTracker(
+      Axis* aAxis) override;
 
   static void InitializeGlobalState();
 
@@ -33,19 +34,22 @@ public:
   TimeStamp mLastFling;
 };
 
-class StackScrollerFlingAnimation: public AsyncPanZoomAnimation {
-public:
-  StackScrollerFlingAnimation(AsyncPanZoomController& aApzc,
-                              PlatformSpecificStateBase* aPlatformSpecificState,
-                              const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
-                              bool aFlingIsHandoff ,
-                              const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
+class StackScrollerFlingAnimation : public AsyncPanZoomAnimation {
+ public:
+  StackScrollerFlingAnimation(
+      AsyncPanZoomController& aApzc,
+      PlatformSpecificStateBase* aPlatformSpecificState,
+      const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
+      bool aFlingIsHandoff ,
+      const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
   virtual bool DoSample(FrameMetrics& aFrameMetrics,
                         const TimeDuration& aDelta) override;
-private:
+
+ private:
   void DeferHandleFlingOverscroll(ParentLayerPoint& aVelocity);
   
-  bool CheckBounds(Axis& aAxis, float aValue, float aDirection, float* aClamped);
+  bool CheckBounds(Axis& aAxis, float aValue, float aDirection,
+                   float* aClamped);
 
   AsyncPanZoomController& mApzc;
   java::StackScroller::GlobalRef mOverScroller;
@@ -61,8 +65,7 @@ private:
   ParentLayerPoint mPreviousVelocity;
 };
 
+}  
+}  
 
-} 
-} 
-
-#endif 
+#endif  

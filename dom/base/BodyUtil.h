@@ -17,54 +17,55 @@
 namespace mozilla {
 namespace dom {
 
-class BodyUtil final
-{
-private:
+class BodyUtil final {
+ private:
   BodyUtil() = delete;
 
-public:
+ public:
   
 
 
 
 
-  static void
-  ConsumeArrayBuffer(JSContext* aCx, JS::MutableHandle<JSObject*> aValue,
-                     uint32_t aInputLength, uint8_t* aInput, ErrorResult& aRv);
+  static void ConsumeArrayBuffer(JSContext* aCx,
+                                 JS::MutableHandle<JSObject*> aValue,
+                                 uint32_t aInputLength, uint8_t* aInput,
+                                 ErrorResult& aRv);
 
   
 
 
 
-  static already_AddRefed<Blob>
-  ConsumeBlob(nsISupports* aParent, const nsString& aMimeType,
-              uint32_t aInputLength, uint8_t* aInput, ErrorResult& aRv);
+  static already_AddRefed<Blob> ConsumeBlob(nsISupports* aParent,
+                                            const nsString& aMimeType,
+                                            uint32_t aInputLength,
+                                            uint8_t* aInput, ErrorResult& aRv);
 
   
 
 
 
-  static already_AddRefed<FormData>
-  ConsumeFormData(nsIGlobalObject* aParent, const nsCString& aMimeType,
-                  const nsCString& aStr, ErrorResult& aRv);
+  static already_AddRefed<FormData> ConsumeFormData(nsIGlobalObject* aParent,
+                                                    const nsCString& aMimeType,
+                                                    const nsCString& aStr,
+                                                    ErrorResult& aRv);
 
   
 
 
 
-  static nsresult
-  ConsumeText(uint32_t aInputLength, uint8_t* aInput, nsString& aText);
+  static nsresult ConsumeText(uint32_t aInputLength, uint8_t* aInput,
+                              nsString& aText);
 
   
 
 
 
-  static void
-  ConsumeJson(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
-              const nsString& aStr, ErrorResult& aRv);
+  static void ConsumeJson(JSContext* aCx, JS::MutableHandle<JS::Value> aValue,
+                          const nsString& aStr, ErrorResult& aRv);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

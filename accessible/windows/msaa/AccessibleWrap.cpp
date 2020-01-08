@@ -66,7 +66,8 @@ static gAccessibles = 0;
 #endif
 
 MsaaIdGenerator AccessibleWrap::sIDGen;
-StaticAutoPtr<nsTArray<AccessibleWrap::HandlerControllerData>> AccessibleWrap::sHandlerControllers;
+StaticAutoPtr<nsTArray<AccessibleWrap::HandlerControllerData>>
+    AccessibleWrap::sHandlerControllers;
 
 static const VARIANT kVarChildIdSelf = {{{VT_I4}}};
 
@@ -75,14 +76,10 @@ static const int32_t kIEnumVariantDisconnected = -1;
 
 
 
-AccessibleWrap::AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc) :
-  Accessible(aContent, aDoc)
-  , mID(kNoID)
-{
-}
+AccessibleWrap::AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
+    : Accessible(aContent, aDoc), mID(kNoID) {}
 
-AccessibleWrap::~AccessibleWrap()
-{
+AccessibleWrap::~AccessibleWrap() {
   if (mID != kNoID) {
     sIDGen.ReleaseID(WrapNotNull(this));
   }
@@ -92,9 +89,7 @@ ITypeInfo* AccessibleWrap::gTypeInfo = nullptr;
 
 NS_IMPL_ISUPPORTS_INHERITED0(AccessibleWrap, Accessible)
 
-void
-AccessibleWrap::Shutdown()
-{
+void AccessibleWrap::Shutdown() {
   if (mID != kNoID) {
     auto doc = static_cast<DocAccessibleWrap*>(mDoc.get());
     MOZ_ASSERT(doc);
@@ -131,10 +126,8 @@ AccessibleWrap::Shutdown()
 
 
 STDMETHODIMP
-AccessibleWrap::QueryInterface(REFIID iid, void** ppv)
-{
-  if (!ppv)
-    return E_INVALIDARG;
+AccessibleWrap::QueryInterface(REFIID iid, void** ppv) {
+  if (!ppv) return E_INVALIDARG;
 
   *ppv = nullptr;
 
@@ -152,41 +145,35 @@ AccessibleWrap::QueryInterface(REFIID iid, void** ppv)
     *ppv = static_cast<IAccessible*>(this);
   else if (IID_IEnumVARIANT == iid && !IsProxy()) {
     
-    if (!HasChildren() || nsAccUtils::MustPrune(this))
-      return E_NOINTERFACE;
+    if (!HasChildren() || nsAccUtils::MustPrune(this)) return E_NOINTERFACE;
 
     *ppv = static_cast<IEnumVARIANT*>(new ChildrenEnumVariant(this));
   } else if (IID_IServiceProvider == iid)
     *ppv = new ServiceProvider(this);
   else if (IID_ISimpleDOMNode == iid && !IsProxy()) {
-    if (IsDefunct() || (!HasOwnContent() && !IsDoc()))
-      return E_NOINTERFACE;
+    if (IsDefunct() || (!HasOwnContent() && !IsDoc())) return E_NOINTERFACE;
 
     *ppv = static_cast<ISimpleDOMNode*>(new sdnAccessible(WrapNotNull(this)));
   }
 
   if (nullptr == *ppv) {
     HRESULT hr = ia2Accessible::QueryInterface(iid, ppv);
-    if (SUCCEEDED(hr))
-      return hr;
+    if (SUCCEEDED(hr)) return hr;
   }
 
   if (nullptr == *ppv && !IsProxy()) {
     HRESULT hr = ia2AccessibleComponent::QueryInterface(iid, ppv);
-    if (SUCCEEDED(hr))
-      return hr;
+    if (SUCCEEDED(hr)) return hr;
   }
 
   if (nullptr == *ppv) {
     HRESULT hr = ia2AccessibleHyperlink::QueryInterface(iid, ppv);
-    if (SUCCEEDED(hr))
-      return hr;
+    if (SUCCEEDED(hr)) return hr;
   }
 
   if (nullptr == *ppv && !IsProxy()) {
     HRESULT hr = ia2AccessibleValue::QueryInterface(iid, ppv);
-    if (SUCCEEDED(hr))
-      return hr;
+    if (SUCCEEDED(hr)) return hr;
   }
 
   if (!*ppv && iid == IID_IGeckoCustom) {
@@ -195,8 +182,7 @@ AccessibleWrap::QueryInterface(REFIID iid, void** ppv)
     return S_OK;
   }
 
-  if (nullptr == *ppv)
-    return E_NOINTERFACE;
+  if (nullptr == *ppv) return E_NOINTERFACE;
 
   (reinterpret_cast<IUnknown*>(*ppv))->AddRef();
   return S_OK;
@@ -207,15 +193,12 @@ AccessibleWrap::QueryInterface(REFIID iid, void** ppv)
 
 
 STDMETHODIMP
-AccessibleWrap::get_accParent( IDispatch __RPC_FAR *__RPC_FAR *ppdispParent)
-{
-  if (!ppdispParent)
-    return E_INVALIDARG;
+AccessibleWrap::get_accParent(IDispatch __RPC_FAR* __RPC_FAR* ppdispParent) {
+  if (!ppdispParent) return E_INVALIDARG;
 
   *ppdispParent = nullptr;
 
-  if (IsDefunct())
-    return CO_E_OBJNOTCONNECTED;
+  if (IsDefunct()) return CO_E_OBJNOTCONNECTED;
 
   DocAccessible* doc = AsDoc();
   if (doc) {
@@ -225,35 +208,30 @@ AccessibleWrap::get_accParent( IDispatch __RPC_FAR *__RPC_FAR *ppdispParent)
         (nsWinUtils::IsWindowEmulationStarted() &&
          nsCoreUtils::IsTabDocument(doc->DocumentNode()))) {
       HWND hwnd = static_cast<HWND>(doc->GetNativeWindow());
-      if (hwnd && SUCCEEDED(::AccessibleObjectFromWindow(hwnd, OBJID_WINDOW,
-                                                         IID_IAccessible,
-                                                         (void**)ppdispParent))) {
+      if (hwnd &&
+          SUCCEEDED(::AccessibleObjectFromWindow(
+              hwnd, OBJID_WINDOW, IID_IAccessible, (void**)ppdispParent))) {
         return S_OK;
       }
     }
   }
 
   Accessible* xpParentAcc = Parent();
-  if (!xpParentAcc)
-    return S_FALSE;
+  if (!xpParentAcc) return S_FALSE;
 
   *ppdispParent = NativeAccessible(xpParentAcc);
   return S_OK;
 }
 
 STDMETHODIMP
-AccessibleWrap::get_accChildCount( long __RPC_FAR *pcountChildren)
-{
-  if (!pcountChildren)
-    return E_INVALIDARG;
+AccessibleWrap::get_accChildCount(long __RPC_FAR* pcountChildren) {
+  if (!pcountChildren) return E_INVALIDARG;
 
   *pcountChildren = 0;
 
-  if (IsDefunct())
-    return CO_E_OBJNOTCONNECTED;
+  if (IsDefunct()) return CO_E_OBJNOTCONNECTED;
 
-  if (nsAccUtils::MustPrune(this))
-    return S_OK;
+  if (nsAccUtils::MustPrune(this)) return S_OK;
 
   *pcountChildren = ChildCount();
   return S_OK;
@@ -261,15 +239,12 @@ AccessibleWrap::get_accChildCount( long __RPC_FAR *pcountChildren)
 
 STDMETHODIMP
 AccessibleWrap::get_accChild(
-       VARIANT varChild,
-       IDispatch __RPC_FAR *__RPC_FAR *ppdispChild)
-{
-  if (!ppdispChild)
-    return E_INVALIDARG;
+     VARIANT varChild,
+     IDispatch __RPC_FAR* __RPC_FAR* ppdispChild) {
+  if (!ppdispChild) return E_INVALIDARG;
 
   *ppdispChild = nullptr;
-  if (IsDefunct())
-    return CO_E_OBJNOTCONNECTED;
+  if (IsDefunct()) return CO_E_OBJNOTCONNECTED;
 
   
   
@@ -316,8 +291,7 @@ AccessibleWrap::get_accChild(
 
 HRESULT
 AccessibleWrap::ResolveChild(const VARIANT& aVarChild,
-                             IAccessible** aOutInterface)
-{
+                             IAccessible** aOutInterface) {
   MOZ_ASSERT(aOutInterface);
   *aOutInterface = nullptr;
 
@@ -349,11 +323,9 @@ AccessibleWrap::ResolveChild(const VARIANT& aVarChild,
 
 STDMETHODIMP
 AccessibleWrap::get_accName(
-       VARIANT varChild,
-       BSTR __RPC_FAR *pszName)
-{
-  if (!pszName || varChild.vt != VT_I4)
-    return E_INVALIDARG;
+     VARIANT varChild,
+     BSTR __RPC_FAR* pszName) {
+  if (!pszName || varChild.vt != VT_I4) return E_INVALIDARG;
 
   *pszName = nullptr;
 
@@ -373,23 +345,18 @@ AccessibleWrap::get_accName(
   
   
   
-  if (name.IsVoid())
-    return S_FALSE;
+  if (name.IsVoid()) return S_FALSE;
 
   *pszName = ::SysAllocStringLen(name.get(), name.Length());
-  if (!*pszName)
-    return E_OUTOFMEMORY;
+  if (!*pszName) return E_OUTOFMEMORY;
   return S_OK;
 }
 
-
 STDMETHODIMP
 AccessibleWrap::get_accValue(
-       VARIANT varChild,
-       BSTR __RPC_FAR *pszValue)
-{
-  if (!pszValue)
-    return E_INVALIDARG;
+     VARIANT varChild,
+     BSTR __RPC_FAR* pszValue) {
+  if (!pszValue) return E_INVALIDARG;
 
   *pszValue = nullptr;
 
@@ -409,21 +376,17 @@ AccessibleWrap::get_accValue(
   
   
   
-  if (value.IsEmpty())
-    return S_FALSE;
+  if (value.IsEmpty()) return S_FALSE;
 
   *pszValue = ::SysAllocStringLen(value.get(), value.Length());
-  if (!*pszValue)
-    return E_OUTOFMEMORY;
+  if (!*pszValue) return E_OUTOFMEMORY;
   return S_OK;
 }
 
 STDMETHODIMP
 AccessibleWrap::get_accDescription(VARIANT varChild,
-                                   BSTR __RPC_FAR *pszDescription)
-{
-  if (!pszDescription)
-    return E_INVALIDARG;
+                                   BSTR __RPC_FAR* pszDescription) {
+  if (!pszDescription) return E_INVALIDARG;
 
   *pszDescription = nullptr;
 
@@ -440,18 +403,16 @@ AccessibleWrap::get_accDescription(VARIANT varChild,
   nsAutoString description;
   Description(description);
 
-  *pszDescription = ::SysAllocStringLen(description.get(),
-                                        description.Length());
+  *pszDescription =
+      ::SysAllocStringLen(description.get(), description.Length());
   return *pszDescription ? S_OK : E_OUTOFMEMORY;
 }
 
 STDMETHODIMP
 AccessibleWrap::get_accRole(
-       VARIANT varChild,
-       VARIANT __RPC_FAR *pvarRole)
-{
-  if (!pvarRole)
-    return E_INVALIDARG;
+     VARIANT varChild,
+     VARIANT __RPC_FAR* pvarRole) {
+  if (!pvarRole) return E_INVALIDARG;
 
   VariantInit(pvarRole);
 
@@ -475,10 +436,10 @@ AccessibleWrap::get_accRole(
 
   uint32_t msaaRole = 0;
 
-#define ROLE(_geckoRole, stringRole, atkRole, macRole, \
-             _msaaRole, ia2Role, androidClass, nameRule) \
-  case roles::_geckoRole: \
-    msaaRole = _msaaRole; \
+#define ROLE(_geckoRole, stringRole, atkRole, macRole, _msaaRole, ia2Role, \
+             androidClass, nameRule)                                       \
+  case roles::_geckoRole:                                                  \
+    msaaRole = _msaaRole;                                                  \
     break;
 
   switch (geckoRole) {
@@ -508,23 +469,22 @@ AccessibleWrap::get_accRole(
   
   
   
-  nsIContent *content = GetContent();
-  if (!content)
-    return E_FAIL;
+  nsIContent* content = GetContent();
+  if (!content) return E_FAIL;
 
   if (content->IsElement()) {
     nsAutoString roleString;
     
-    content->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::role, roleString);
+    content->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::role,
+                                  roleString);
 
     if (roleString.IsEmpty()) {
       
       
-      nsIDocument * document = content->GetUncomposedDoc();
-      if (!document)
-        return E_FAIL;
+      nsIDocument* document = content->GetUncomposedDoc();
+      if (!document) return E_FAIL;
 
-      dom::NodeInfo *nodeInfo = content->NodeInfo();
+      dom::NodeInfo* nodeInfo = content->NodeInfo();
       nodeInfo->GetName(roleString);
 
       
@@ -547,11 +507,9 @@ AccessibleWrap::get_accRole(
 
 STDMETHODIMP
 AccessibleWrap::get_accState(
-       VARIANT varChild,
-       VARIANT __RPC_FAR *pvarState)
-{
-  if (!pvarState)
-    return E_INVALIDARG;
+     VARIANT varChild,
+     VARIANT __RPC_FAR* pvarState) {
+  if (!pvarState) return E_INVALIDARG;
 
   VariantInit(pvarState);
   pvarState->vt = VT_I4;
@@ -583,14 +541,11 @@ AccessibleWrap::get_accState(
   return S_OK;
 }
 
-
 STDMETHODIMP
 AccessibleWrap::get_accHelp(
-       VARIANT varChild,
-       BSTR __RPC_FAR *pszHelp)
-{
-  if (!pszHelp)
-    return E_INVALIDARG;
+     VARIANT varChild,
+     BSTR __RPC_FAR* pszHelp) {
+  if (!pszHelp) return E_INVALIDARG;
 
   *pszHelp = nullptr;
   return S_FALSE;
@@ -598,12 +553,10 @@ AccessibleWrap::get_accHelp(
 
 STDMETHODIMP
 AccessibleWrap::get_accHelpTopic(
-       BSTR __RPC_FAR *pszHelpFile,
-       VARIANT varChild,
-       long __RPC_FAR *pidTopic)
-{
-  if (!pszHelpFile || !pidTopic)
-    return E_INVALIDARG;
+     BSTR __RPC_FAR* pszHelpFile,
+     VARIANT varChild,
+     long __RPC_FAR* pidTopic) {
+  if (!pszHelpFile || !pidTopic) return E_INVALIDARG;
 
   *pszHelpFile = nullptr;
   *pidTopic = 0;
@@ -612,11 +565,9 @@ AccessibleWrap::get_accHelpTopic(
 
 STDMETHODIMP
 AccessibleWrap::get_accKeyboardShortcut(
-       VARIANT varChild,
-       BSTR __RPC_FAR *pszKeyboardShortcut)
-{
-  if (!pszKeyboardShortcut)
-    return E_INVALIDARG;
+     VARIANT varChild,
+     BSTR __RPC_FAR* pszKeyboardShortcut) {
+  if (!pszKeyboardShortcut) return E_INVALIDARG;
   *pszKeyboardShortcut = nullptr;
 
   RefPtr<IAccessible> accessible;
@@ -631,23 +582,19 @@ AccessibleWrap::get_accKeyboardShortcut(
   }
 
   KeyBinding keyBinding = AccessKey();
-  if (keyBinding.IsEmpty())
-    keyBinding = KeyboardShortcut();
+  if (keyBinding.IsEmpty()) keyBinding = KeyboardShortcut();
 
   nsAutoString shortcut;
   keyBinding.ToString(shortcut);
 
-  *pszKeyboardShortcut = ::SysAllocStringLen(shortcut.get(),
-                                             shortcut.Length());
+  *pszKeyboardShortcut = ::SysAllocStringLen(shortcut.get(), shortcut.Length());
   return *pszKeyboardShortcut ? S_OK : E_OUTOFMEMORY;
 }
 
 STDMETHODIMP
 AccessibleWrap::get_accFocus(
-       VARIANT __RPC_FAR *pvarChild)
-{
-  if (!pvarChild)
-    return E_INVALIDARG;
+     VARIANT __RPC_FAR* pvarChild) {
+  if (!pvarChild) return E_INVALIDARG;
 
   VariantInit(pvarChild);
 
@@ -659,8 +606,7 @@ AccessibleWrap::get_accFocus(
   
   
   
-  if (IsDefunct())
-    return CO_E_OBJNOTCONNECTED;
+  if (IsDefunct()) return CO_E_OBJNOTCONNECTED;
 
   
   Accessible* focusedAccessible = FocusedChild();
@@ -668,13 +614,11 @@ AccessibleWrap::get_accFocus(
   if (focusedAccessible == this) {
     pvarChild->vt = VT_I4;
     pvarChild->lVal = CHILDID_SELF;
-  }
-  else if (focusedAccessible) {
+  } else if (focusedAccessible) {
     pvarChild->vt = VT_DISPATCH;
     pvarChild->pdispVal = NativeAccessible(focusedAccessible);
-  }
-  else {
-    pvarChild->vt = VT_EMPTY;   
+  } else {
+    pvarChild->vt = VT_EMPTY;  
   }
 
   return S_OK;
@@ -684,36 +628,34 @@ AccessibleWrap::get_accFocus(
 
 
 
-class AccessibleEnumerator final : public IEnumVARIANT
-{
-public:
-  explicit AccessibleEnumerator(const nsTArray<Accessible*>& aArray) :
-    mArray(aArray), mCurIndex(0) { }
-  AccessibleEnumerator(const AccessibleEnumerator& toCopy) :
-    mArray(toCopy.mArray), mCurIndex(toCopy.mCurIndex) { }
-  ~AccessibleEnumerator() { }
+class AccessibleEnumerator final : public IEnumVARIANT {
+ public:
+  explicit AccessibleEnumerator(const nsTArray<Accessible*>& aArray)
+      : mArray(aArray), mCurIndex(0) {}
+  AccessibleEnumerator(const AccessibleEnumerator& toCopy)
+      : mArray(toCopy.mArray), mCurIndex(toCopy.mCurIndex) {}
+  ~AccessibleEnumerator() {}
 
   
   DECL_IUNKNOWN
 
   
-  STDMETHODIMP Next(unsigned long celt, VARIANT FAR* rgvar, unsigned long FAR* pceltFetched);
+  STDMETHODIMP Next(unsigned long celt, VARIANT FAR* rgvar,
+                    unsigned long FAR* pceltFetched);
   STDMETHODIMP Skip(unsigned long celt);
-  STDMETHODIMP Reset()
-  {
+  STDMETHODIMP Reset() {
     mCurIndex = 0;
     return S_OK;
   }
   STDMETHODIMP Clone(IEnumVARIANT FAR* FAR* ppenum);
 
-private:
+ private:
   nsTArray<Accessible*> mArray;
   uint32_t mCurIndex;
 };
 
 STDMETHODIMP
-AccessibleEnumerator::QueryInterface(REFIID iid, void ** ppvObject)
-{
+AccessibleEnumerator::QueryInterface(REFIID iid, void** ppvObject) {
   if (iid == IID_IEnumVARIANT) {
     *ppvObject = static_cast<IEnumVARIANT*>(this);
     AddRef();
@@ -730,8 +672,8 @@ AccessibleEnumerator::QueryInterface(REFIID iid, void ** ppvObject)
 }
 
 STDMETHODIMP
-AccessibleEnumerator::Next(unsigned long celt, VARIANT FAR* rgvar, unsigned long FAR* pceltFetched)
-{
+AccessibleEnumerator::Next(unsigned long celt, VARIANT FAR* rgvar,
+                           unsigned long FAR* pceltFetched) {
   uint32_t length = mArray.Length();
   HRESULT hr = S_OK;
 
@@ -747,25 +689,21 @@ AccessibleEnumerator::Next(unsigned long celt, VARIANT FAR* rgvar, unsigned long
     rgvar[i].pdispVal = AccessibleWrap::NativeAccessible(mArray[mCurIndex]);
   }
 
-  if (pceltFetched)
-    *pceltFetched = celt;
+  if (pceltFetched) *pceltFetched = celt;
 
   return hr;
 }
 
 STDMETHODIMP
-AccessibleEnumerator::Clone(IEnumVARIANT FAR* FAR* ppenum)
-{
+AccessibleEnumerator::Clone(IEnumVARIANT FAR* FAR* ppenum) {
   *ppenum = new AccessibleEnumerator(*this);
-  if (!*ppenum)
-    return E_OUTOFMEMORY;
+  if (!*ppenum) return E_OUTOFMEMORY;
   NS_ADDREF(*ppenum);
   return S_OK;
 }
 
 STDMETHODIMP
-AccessibleEnumerator::Skip(unsigned long celt)
-{
+AccessibleEnumerator::Skip(unsigned long celt) {
   uint32_t length = mArray.Length();
   
   if (celt > length - mCurIndex) {
@@ -794,24 +732,23 @@ AccessibleEnumerator::Skip(unsigned long celt)
 
 
 STDMETHODIMP
-AccessibleWrap::get_accSelection(VARIANT __RPC_FAR *pvarChildren)
-{
-  if (!pvarChildren)
-    return E_INVALIDARG;
+AccessibleWrap::get_accSelection(VARIANT __RPC_FAR* pvarChildren) {
+  if (!pvarChildren) return E_INVALIDARG;
 
   VariantInit(pvarChildren);
   pvarChildren->vt = VT_EMPTY;
 
-  if (IsDefunct())
-    return CO_E_OBJNOTCONNECTED;
+  if (IsDefunct()) return CO_E_OBJNOTCONNECTED;
 
   if (IsSelect()) {
     AutoTArray<Accessible*, 10> selectedItems;
     SelectedItems(&selectedItems);
 
     
-    RefPtr<AccessibleEnumerator> pEnum = new AccessibleEnumerator(selectedItems);
-    pvarChildren->vt = VT_UNKNOWN;    
+    RefPtr<AccessibleEnumerator> pEnum =
+        new AccessibleEnumerator(selectedItems);
+    pvarChildren->vt =
+        VT_UNKNOWN;  
     NS_ADDREF(pvarChildren->punkVal = pEnum);
   }
   return S_OK;
@@ -819,11 +756,9 @@ AccessibleWrap::get_accSelection(VARIANT __RPC_FAR *pvarChildren)
 
 STDMETHODIMP
 AccessibleWrap::get_accDefaultAction(
-       VARIANT varChild,
-       BSTR __RPC_FAR *pszDefaultAction)
-{
-  if (!pszDefaultAction)
-    return E_INVALIDARG;
+     VARIANT varChild,
+     BSTR __RPC_FAR* pszDefaultAction) {
+  if (!pszDefaultAction) return E_INVALIDARG;
 
   *pszDefaultAction = nullptr;
 
@@ -840,16 +775,15 @@ AccessibleWrap::get_accDefaultAction(
   nsAutoString defaultAction;
   ActionNameAt(0, defaultAction);
 
-  *pszDefaultAction = ::SysAllocStringLen(defaultAction.get(),
-                                          defaultAction.Length());
+  *pszDefaultAction =
+      ::SysAllocStringLen(defaultAction.get(), defaultAction.Length());
   return *pszDefaultAction ? S_OK : E_OUTOFMEMORY;
 }
 
 STDMETHODIMP
 AccessibleWrap::accSelect(
-       long flagsSelect,
-       VARIANT varChild)
-{
+     long flagsSelect,
+     VARIANT varChild) {
   RefPtr<IAccessible> accessible;
   HRESULT hr = ResolveChild(varChild, getter_AddRefs(accessible));
   if (FAILED(hr)) {
@@ -866,9 +800,8 @@ AccessibleWrap::accSelect(
       
       
       
-      nsCOMPtr<nsIRunnable> runnable =
-        mozilla::NewRunnableMethod("Accessible::TakeFocus",
-                                   this, &Accessible::TakeFocus);
+      nsCOMPtr<nsIRunnable> runnable = mozilla::NewRunnableMethod(
+          "Accessible::TakeFocus", this, &Accessible::TakeFocus);
       NS_DispatchToMainThread(runnable, NS_DISPATCH_NORMAL);
       return S_OK;
     }
@@ -896,14 +829,12 @@ AccessibleWrap::accSelect(
 
 STDMETHODIMP
 AccessibleWrap::accLocation(
-       long __RPC_FAR *pxLeft,
-       long __RPC_FAR *pyTop,
-       long __RPC_FAR *pcxWidth,
-       long __RPC_FAR *pcyHeight,
-       VARIANT varChild)
-{
-  if (!pxLeft || !pyTop || !pcxWidth || !pcyHeight)
-    return E_INVALIDARG;
+     long __RPC_FAR* pxLeft,
+     long __RPC_FAR* pyTop,
+     long __RPC_FAR* pcxWidth,
+     long __RPC_FAR* pcyHeight,
+     VARIANT varChild) {
+  if (!pxLeft || !pyTop || !pcxWidth || !pcyHeight) return E_INVALIDARG;
 
   *pxLeft = 0;
   *pyTop = 0;
@@ -936,12 +867,10 @@ AccessibleWrap::accLocation(
 
 STDMETHODIMP
 AccessibleWrap::accNavigate(
-       long navDir,
-       VARIANT varStart,
-       VARIANT __RPC_FAR *pvarEndUpAt)
-{
-  if (!pvarEndUpAt)
-    return E_INVALIDARG;
+     long navDir,
+     VARIANT varStart,
+     VARIANT __RPC_FAR* pvarEndUpAt) {
+  if (!pvarEndUpAt) return E_INVALIDARG;
 
   VariantInit(pvarEndUpAt);
 
@@ -959,19 +888,18 @@ AccessibleWrap::accNavigate(
   Maybe<RelationType> xpRelation;
 
 #define RELATIONTYPE(geckoType, stringType, atkType, msaaType, ia2Type) \
-  case msaaType: \
-    xpRelation.emplace(RelationType::geckoType); \
+  case msaaType:                                                        \
+    xpRelation.emplace(RelationType::geckoType);                        \
     break;
 
-  switch(navDir) {
+  switch (navDir) {
     case NAVDIR_FIRSTCHILD:
       if (IsProxy()) {
         if (!Proxy()->MustPruneChildren()) {
           navAccessible = WrapperFor(Proxy()->FirstChild());
         }
       } else {
-        if (!nsAccUtils::MustPrune(this))
-          navAccessible = FirstChild();
+        if (!nsAccUtils::MustPrune(this)) navAccessible = FirstChild();
       }
       break;
     case NAVDIR_LASTCHILD:
@@ -980,19 +908,16 @@ AccessibleWrap::accNavigate(
           navAccessible = WrapperFor(Proxy()->LastChild());
         }
       } else {
-        if (!nsAccUtils::MustPrune(this))
-          navAccessible = LastChild();
+        if (!nsAccUtils::MustPrune(this)) navAccessible = LastChild();
       }
       break;
     case NAVDIR_NEXT:
-      navAccessible = IsProxy()
-        ? WrapperFor(Proxy()->NextSibling())
-        : NextSibling();
+      navAccessible =
+          IsProxy() ? WrapperFor(Proxy()->NextSibling()) : NextSibling();
       break;
     case NAVDIR_PREVIOUS:
-      navAccessible = IsProxy()
-        ? WrapperFor(Proxy()->PrevSibling())
-        : PrevSibling();
+      navAccessible =
+          IsProxy() ? WrapperFor(Proxy()->PrevSibling()) : PrevSibling();
       break;
     case NAVDIR_DOWN:
     case NAVDIR_LEFT:
@@ -1000,7 +925,7 @@ AccessibleWrap::accNavigate(
     case NAVDIR_UP:
       return E_NOTIMPL;
 
-    
+      
 #include "RelationTypeMap.h"
 
     default:
@@ -1016,8 +941,7 @@ AccessibleWrap::accNavigate(
     navAccessible = rel.Next();
   }
 
-  if (!navAccessible)
-    return E_FAIL;
+  if (!navAccessible) return E_FAIL;
 
   pvarEndUpAt->pdispVal = NativeAccessible(navAccessible);
   pvarEndUpAt->vt = VT_DISPATCH;
@@ -1026,17 +950,14 @@ AccessibleWrap::accNavigate(
 
 STDMETHODIMP
 AccessibleWrap::accHitTest(
-       long xLeft,
-       long yTop,
-       VARIANT __RPC_FAR *pvarChild)
-{
-  if (!pvarChild)
-    return E_INVALIDARG;
+     long xLeft,
+     long yTop,
+     VARIANT __RPC_FAR* pvarChild) {
+  if (!pvarChild) return E_INVALIDARG;
 
   VariantInit(pvarChild);
 
-  if (IsDefunct())
-    return CO_E_OBJNOTCONNECTED;
+  if (IsDefunct()) return CO_E_OBJNOTCONNECTED;
 
   Accessible* accessible = ChildAtPoint(xLeft, yTop, eDirectChild);
 
@@ -1046,7 +967,7 @@ AccessibleWrap::accHitTest(
     if (accessible == this) {
       pvarChild->vt = VT_I4;
       pvarChild->lVal = CHILDID_SELF;
-    } else { 
+    } else {  
       pvarChild->vt = VT_DISPATCH;
       pvarChild->pdispVal = NativeAccessible(accessible);
     }
@@ -1060,8 +981,7 @@ AccessibleWrap::accHitTest(
 
 STDMETHODIMP
 AccessibleWrap::accDoDefaultAction(
-       VARIANT varChild)
-{
+     VARIANT varChild) {
   RefPtr<IAccessible> accessible;
   HRESULT hr = ResolveChild(varChild, getter_AddRefs(accessible));
   if (FAILED(hr)) {
@@ -1077,17 +997,15 @@ AccessibleWrap::accDoDefaultAction(
 
 STDMETHODIMP
 AccessibleWrap::put_accName(
-       VARIANT varChild,
-       BSTR szName)
-{
+     VARIANT varChild,
+     BSTR szName) {
   return E_NOTIMPL;
 }
 
 STDMETHODIMP
 AccessibleWrap::put_accValue(
-       VARIANT varChild,
-       BSTR szValue)
-{
+     VARIANT varChild,
+     BSTR szValue) {
   return E_NOTIMPL;
 }
 
@@ -1095,29 +1013,23 @@ AccessibleWrap::put_accValue(
 
 
 STDMETHODIMP
-AccessibleWrap::GetTypeInfoCount(UINT *pctinfo)
-{
-  if (!pctinfo)
-    return E_INVALIDARG;
+AccessibleWrap::GetTypeInfoCount(UINT* pctinfo) {
+  if (!pctinfo) return E_INVALIDARG;
 
   *pctinfo = 1;
   return S_OK;
 }
 
 STDMETHODIMP
-AccessibleWrap::GetTypeInfo(UINT iTInfo, LCID lcid, ITypeInfo **ppTInfo)
-{
-  if (!ppTInfo)
-    return E_INVALIDARG;
+AccessibleWrap::GetTypeInfo(UINT iTInfo, LCID lcid, ITypeInfo** ppTInfo) {
+  if (!ppTInfo) return E_INVALIDARG;
 
   *ppTInfo = nullptr;
 
-  if (iTInfo != 0)
-    return DISP_E_BADINDEX;
+  if (iTInfo != 0) return DISP_E_BADINDEX;
 
-  ITypeInfo * typeInfo = GetTI(lcid);
-  if (!typeInfo)
-    return E_FAIL;
+  ITypeInfo* typeInfo = GetTI(lcid);
+  if (!typeInfo) return E_FAIL;
 
   typeInfo->AddRef();
   *ppTInfo = typeInfo;
@@ -1126,49 +1038,37 @@ AccessibleWrap::GetTypeInfo(UINT iTInfo, LCID lcid, ITypeInfo **ppTInfo)
 }
 
 STDMETHODIMP
-AccessibleWrap::GetIDsOfNames(REFIID riid, LPOLESTR *rgszNames,
-                              UINT cNames, LCID lcid, DISPID *rgDispId)
-{
-  ITypeInfo *typeInfo = GetTI(lcid);
-  if (!typeInfo)
-    return E_FAIL;
+AccessibleWrap::GetIDsOfNames(REFIID riid, LPOLESTR* rgszNames, UINT cNames,
+                              LCID lcid, DISPID* rgDispId) {
+  ITypeInfo* typeInfo = GetTI(lcid);
+  if (!typeInfo) return E_FAIL;
 
   HRESULT hr = DispGetIDsOfNames(typeInfo, rgszNames, cNames, rgDispId);
   return hr;
 }
 
 STDMETHODIMP
-AccessibleWrap::Invoke(DISPID dispIdMember, REFIID riid,
-                       LCID lcid, WORD wFlags, DISPPARAMS *pDispParams,
-                       VARIANT *pVarResult, EXCEPINFO *pExcepInfo,
-                       UINT *puArgErr)
-{
-  ITypeInfo *typeInfo = GetTI(lcid);
-  if (!typeInfo)
-    return E_FAIL;
+AccessibleWrap::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid, WORD wFlags,
+                       DISPPARAMS* pDispParams, VARIANT* pVarResult,
+                       EXCEPINFO* pExcepInfo, UINT* puArgErr) {
+  ITypeInfo* typeInfo = GetTI(lcid);
+  if (!typeInfo) return E_FAIL;
 
-  return typeInfo->Invoke(static_cast<IAccessible*>(this), dispIdMember,
-                          wFlags, pDispParams, pVarResult, pExcepInfo,
-                          puArgErr);
+  return typeInfo->Invoke(static_cast<IAccessible*>(this), dispIdMember, wFlags,
+                          pDispParams, pVarResult, pExcepInfo, puArgErr);
 }
 
-void
-AccessibleWrap::GetNativeInterface(void** aOutAccessible)
-{
+void AccessibleWrap::GetNativeInterface(void** aOutAccessible) {
   *aOutAccessible = static_cast<IAccessible*>(this);
   NS_ADDREF_THIS();
 }
 
-void
-AccessibleWrap::SetID(uint32_t aID)
-{
+void AccessibleWrap::SetID(uint32_t aID) {
   MOZ_ASSERT(XRE_IsParentProcess() && IsProxy());
   mID = aID;
 }
 
-static bool
-IsHandlerInvalidationNeeded(uint32_t aEvent)
-{
+static bool IsHandlerInvalidationNeeded(uint32_t aEvent) {
   
   
   switch (aEvent) {
@@ -1196,22 +1096,20 @@ IsHandlerInvalidationNeeded(uint32_t aEvent)
   }
 }
 
-void
-AccessibleWrap::FireWinEvent(Accessible* aTarget, uint32_t aEventType)
-{
+void AccessibleWrap::FireWinEvent(Accessible* aTarget, uint32_t aEventType) {
   MOZ_ASSERT(XRE_IsParentProcess());
-  static_assert(sizeof(gWinEventMap)/sizeof(gWinEventMap[0]) == nsIAccessibleEvent::EVENT_LAST_ENTRY,
+  static_assert(sizeof(gWinEventMap) / sizeof(gWinEventMap[0]) ==
+                    nsIAccessibleEvent::EVENT_LAST_ENTRY,
                 "MSAA event map skewed");
 
-  NS_ASSERTION(aEventType > 0 && aEventType < ArrayLength(gWinEventMap), "invalid event type");
+  NS_ASSERTION(aEventType > 0 && aEventType < ArrayLength(gWinEventMap),
+               "invalid event type");
 
   uint32_t winEvent = gWinEventMap[aEventType];
-  if (!winEvent)
-    return;
+  if (!winEvent) return;
 
   int32_t childID = GetChildIDFor(aTarget);
-  if (!childID)
-    return; 
+  if (!childID) return;  
 
   HWND hwnd = GetHWNDFor(aTarget);
   if (!hwnd) {
@@ -1229,9 +1127,7 @@ AccessibleWrap::FireWinEvent(Accessible* aTarget, uint32_t aEventType)
 
 
 
-nsresult
-AccessibleWrap::HandleAccEvent(AccEvent* aEvent)
-{
+nsresult AccessibleWrap::HandleAccEvent(AccEvent* aEvent) {
   nsresult rv = Accessible::HandleAccEvent(aEvent);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1245,8 +1141,7 @@ AccessibleWrap::HandleAccEvent(AccEvent* aEvent)
   NS_ENSURE_TRUE(!IsDefunct(), NS_ERROR_FAILURE);
 
   Accessible* accessible = aEvent->GetAccessible();
-  if (!accessible)
-    return NS_OK;
+  if (!accessible) return NS_OK;
 
   if (eventType == nsIAccessibleEvent::EVENT_TEXT_CARET_MOVED ||
       eventType == nsIAccessibleEvent::EVENT_FOCUS) {
@@ -1258,9 +1153,7 @@ AccessibleWrap::HandleAccEvent(AccEvent* aEvent)
   return NS_OK;
 }
 
-DocProxyAccessibleWrap*
-AccessibleWrap::DocProxyWrapper() const
-{
+DocProxyAccessibleWrap* AccessibleWrap::DocProxyWrapper() const {
   MOZ_ASSERT(IsProxy());
 
   ProxyAccessible* proxy = Proxy();
@@ -1271,7 +1164,7 @@ AccessibleWrap::DocProxyWrapper() const
   AccessibleWrap* acc = WrapperFor(proxy->Document());
   MOZ_ASSERT(acc->IsDoc());
 
- return static_cast<DocProxyAccessibleWrap*>(acc);
+  return static_cast<DocProxyAccessibleWrap*>(acc);
 }
 
 
@@ -1279,9 +1172,7 @@ AccessibleWrap::DocProxyWrapper() const
 
 
 
-int32_t
-AccessibleWrap::GetChildIDFor(Accessible* aAccessible)
-{
+int32_t AccessibleWrap::GetChildIDFor(Accessible* aAccessible) {
   
   
   
@@ -1297,26 +1188,22 @@ AccessibleWrap::GetChildIDFor(Accessible* aAccessible)
     return id;
   }
 
-  if (!aAccessible->Document())
-    return 0;
+  if (!aAccessible->Document()) return 0;
 
-  uint32_t* id = & static_cast<AccessibleWrap*>(aAccessible)->mID;
-  if (*id != kNoID)
-    return *id;
+  uint32_t* id = &static_cast<AccessibleWrap*>(aAccessible)->mID;
+  if (*id != kNoID) return *id;
 
   *id = sIDGen.GetID();
 
   MOZ_ASSERT(!aAccessible->IsProxy());
   DocAccessibleWrap* doc =
-    static_cast<DocAccessibleWrap*>(aAccessible->Document());
+      static_cast<DocAccessibleWrap*>(aAccessible->Document());
   doc->AddID(*id, static_cast<AccessibleWrap*>(aAccessible));
 
   return *id;
 }
 
-HWND
-AccessibleWrap::GetHWNDFor(Accessible* aAccessible)
-{
+HWND AccessibleWrap::GetHWNDFor(Accessible* aAccessible) {
   if (!aAccessible) {
     return nullptr;
   }
@@ -1355,8 +1242,7 @@ AccessibleWrap::GetHWNDFor(Accessible* aAccessible)
   }
 
   DocAccessible* document = aAccessible->Document();
-  if(!document)
-    return nullptr;
+  if (!document) return nullptr;
 
   
   
@@ -1382,9 +1268,7 @@ AccessibleWrap::GetHWNDFor(Accessible* aAccessible)
   return static_cast<HWND>(document->GetNativeWindow());
 }
 
-IDispatch*
-AccessibleWrap::NativeAccessible(Accessible* aAccessible)
-{
+IDispatch* AccessibleWrap::NativeAccessible(Accessible* aAccessible) {
   if (!aAccessible) {
     NS_WARNING("Not passing in an aAccessible");
     return nullptr;
@@ -1395,27 +1279,22 @@ AccessibleWrap::NativeAccessible(Accessible* aAccessible)
   return static_cast<IDispatch*>(msaaAccessible);
 }
 
-static Accessible*
-GetAccessibleInSubtree(DocAccessible* aDoc, uint32_t aID)
-{
-  Accessible* child = static_cast<DocAccessibleWrap*>(aDoc)->GetAccessibleByID(aID);
-  if (child)
-    return child;
+static Accessible* GetAccessibleInSubtree(DocAccessible* aDoc, uint32_t aID) {
+  Accessible* child =
+      static_cast<DocAccessibleWrap*>(aDoc)->GetAccessibleByID(aID);
+  if (child) return child;
 
   uint32_t childDocCount = aDoc->ChildDocumentCount();
   for (uint32_t i = 0; i < childDocCount; i++) {
     child = GetAccessibleInSubtree(aDoc->GetChildDocumentAt(i), aID);
-    if (child)
-      return child;
+    if (child) return child;
   }
 
-    return nullptr;
-  }
+  return nullptr;
+}
 
-static already_AddRefed<IDispatch>
-GetProxiedAccessibleInSubtree(const DocAccessibleParent* aDoc,
-                              const VARIANT& aVarChild)
-{
+static already_AddRefed<IDispatch> GetProxiedAccessibleInSubtree(
+    const DocAccessibleParent* aDoc, const VARIANT& aVarChild) {
   auto wrapper = static_cast<DocProxyAccessibleWrap*>(WrapperFor(aDoc));
   RefPtr<IAccessible> comProxy;
   int32_t docWrapperChildId = AccessibleWrap::GetChildIDFor(wrapper);
@@ -1435,8 +1314,8 @@ GetProxiedAccessibleInSubtree(const DocAccessibleParent* aDoc,
       return nullptr;
     }
 
-    DebugOnly<HRESULT> hr = disp->QueryInterface(IID_IAccessible,
-                                                 getter_AddRefs(comProxy));
+    DebugOnly<HRESULT> hr =
+        disp->QueryInterface(IID_IAccessible, getter_AddRefs(comProxy));
     MOZ_ASSERT(SUCCEEDED(hr));
   }
 
@@ -1457,9 +1336,7 @@ GetProxiedAccessibleInSubtree(const DocAccessibleParent* aDoc,
   return disp.forget();
 }
 
-bool
-AccessibleWrap::IsRootForHWND()
-{
+bool AccessibleWrap::IsRootForHWND() {
   if (IsRoot()) {
     return true;
   }
@@ -1470,11 +1347,9 @@ AccessibleWrap::IsRootForHWND()
   return thisHwnd != parentHwnd;
 }
 
-already_AddRefed<IAccessible>
-AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
-{
-  if (aVarChild.vt != VT_I4)
-    return nullptr;
+already_AddRefed<IAccessible> AccessibleWrap::GetIAccessibleFor(
+    const VARIANT& aVarChild, bool* aIsDefunct) {
+  if (aVarChild.vt != VT_I4) return nullptr;
 
   VARIANT varChild = aVarChild;
 
@@ -1504,7 +1379,9 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
   }
 
   if (varChild.ulVal != GetExistingID() &&
-      (IsProxy() ? Proxy()->MustPruneChildren() : nsAccUtils::MustPrune(this))) {
+      (IsProxy() ? Proxy()->MustPruneChildren()
+                 : nsAccUtils::MustPrune(this))) {
+    
     
     return nullptr;
   }
@@ -1516,8 +1393,8 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
   
   
   
-  if (XRE_IsParentProcess() && !IsProxy() &&
-      varChild.lVal < 0 && !sIDGen.IsChromeID(varChild.lVal)) {
+  if (XRE_IsParentProcess() && !IsProxy() && varChild.lVal < 0 &&
+      !sIDGen.IsChromeID(varChild.lVal)) {
     if (!IsRootForHWND()) {
       
       
@@ -1537,7 +1414,8 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
       return nullptr;
     }
     *aIsDefunct = xpAcc->IsDefunct();
-    static_cast<AccessibleWrap*>(xpAcc)->GetNativeInterface(getter_AddRefs(result));
+    static_cast<AccessibleWrap*>(xpAcc)->GetNativeInterface(
+        getter_AddRefs(result));
     return result.forget();
   }
 
@@ -1549,12 +1427,13 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
   if (!IsProxy()) {
     DocAccessible* document = Document();
     Accessible* child =
-      GetAccessibleInSubtree(document, static_cast<uint32_t>(varChild.lVal));
+        GetAccessibleInSubtree(document, static_cast<uint32_t>(varChild.lVal));
 
     
     if (child && IsDoc()) {
       *aIsDefunct = child->IsDefunct();
-      static_cast<AccessibleWrap*>(child)->GetNativeInterface(getter_AddRefs(result));
+      static_cast<AccessibleWrap*>(child)->GetNativeInterface(
+          getter_AddRefs(result));
       return result.forget();
     }
 
@@ -1564,7 +1443,8 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
     while (parent && parent != document) {
       if (parent == this) {
         *aIsDefunct = child->IsDefunct();
-        static_cast<AccessibleWrap*>(child)->GetNativeInterface(getter_AddRefs(result));
+        static_cast<AccessibleWrap*>(child)->GetNativeInterface(
+            getter_AddRefs(result));
         return result.forget();
       }
 
@@ -1582,8 +1462,8 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
     }
 
     MOZ_ASSERT(mscom::IsProxy(disp));
-    DebugOnly<HRESULT> hr = disp->QueryInterface(IID_IAccessible,
-                                                 getter_AddRefs(result));
+    DebugOnly<HRESULT> hr =
+        disp->QueryInterface(IID_IAccessible, getter_AddRefs(result));
     MOZ_ASSERT(SUCCEEDED(hr));
     return result.forget();
   }
@@ -1591,12 +1471,11 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
   return nullptr;
 }
 
-already_AddRefed<IAccessible>
-AccessibleWrap::GetRemoteIAccessibleFor(const VARIANT& aVarChild)
-{
+already_AddRefed<IAccessible> AccessibleWrap::GetRemoteIAccessibleFor(
+    const VARIANT& aVarChild) {
   a11y::RootAccessible* root = RootAccessible();
   const nsTArray<DocAccessibleParent*>* remoteDocs =
-    DocManager::TopLevelRemoteDocs();
+      DocManager::TopLevelRemoteDocs();
   if (!remoteDocs) {
     return nullptr;
   }
@@ -1624,13 +1503,13 @@ AccessibleWrap::GetRemoteIAccessibleFor(const VARIANT& aVarChild)
     }
 
     RefPtr<IDispatch> disp =
-      GetProxiedAccessibleInSubtree(remoteDoc, aVarChild);
+        GetProxiedAccessibleInSubtree(remoteDoc, aVarChild);
     if (!disp) {
       continue;
     }
 
-    DebugOnly<HRESULT> hr = disp->QueryInterface(IID_IAccessible,
-                                                 getter_AddRefs(result));
+    DebugOnly<HRESULT> hr =
+        disp->QueryInterface(IID_IAccessible, getter_AddRefs(result));
     MOZ_ASSERT(SUCCEEDED(hr));
     return result.forget();
   }
@@ -1638,16 +1517,13 @@ AccessibleWrap::GetRemoteIAccessibleFor(const VARIANT& aVarChild)
   return nullptr;
 }
 
-void
-AccessibleWrap::UpdateSystemCaretFor(Accessible* aAccessible)
-{
+void AccessibleWrap::UpdateSystemCaretFor(Accessible* aAccessible) {
   
   
   ::DestroyCaret();
 
   HyperTextAccessible* text = aAccessible->AsHyperText();
-  if (!text)
-    return;
+  if (!text) return;
 
   nsIWidget* widget = nullptr;
   LayoutDeviceIntRect caretRect = text->GetCaretRect(&widget);
@@ -1656,14 +1532,13 @@ AccessibleWrap::UpdateSystemCaretFor(Accessible* aAccessible)
     return;
   }
 
-  HWND caretWnd = reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
+  HWND caretWnd =
+      reinterpret_cast<HWND>(widget->GetNativeData(NS_NATIVE_WINDOW));
   UpdateSystemCaretFor(caretWnd, caretRect);
 }
 
- void
-AccessibleWrap::UpdateSystemCaretFor(ProxyAccessible* aProxy,
-                                     const LayoutDeviceIntRect& aCaretRect)
-{
+ void AccessibleWrap::UpdateSystemCaretFor(
+    ProxyAccessible* aProxy, const LayoutDeviceIntRect& aCaretRect) {
   ::DestroyCaret();
 
   
@@ -1672,10 +1547,8 @@ AccessibleWrap::UpdateSystemCaretFor(ProxyAccessible* aProxy,
   UpdateSystemCaretFor(GetHWNDFor(outerDoc), aCaretRect);
 }
 
- void
-AccessibleWrap::UpdateSystemCaretFor(HWND aCaretWnd,
-                                     const LayoutDeviceIntRect& aCaretRect)
-{
+ void AccessibleWrap::UpdateSystemCaretFor(
+    HWND aCaretWnd, const LayoutDeviceIntRect& aCaretRect) {
   if (!aCaretWnd || aCaretRect.IsEmpty()) {
     return;
   }
@@ -1683,52 +1556,46 @@ AccessibleWrap::UpdateSystemCaretFor(HWND aCaretWnd,
   
   
   nsAutoBitmap caretBitMap(CreateBitmap(1, aCaretRect.Height(), 1, 1, nullptr));
-  if (::CreateCaret(aCaretWnd, caretBitMap, 1, aCaretRect.Height())) {  
+  if (::CreateCaret(aCaretWnd, caretBitMap, 1,
+                    aCaretRect.Height())) {  
     ::ShowCaret(aCaretWnd);
     RECT windowRect;
     ::GetWindowRect(aCaretWnd, &windowRect);
-    ::SetCaretPos(aCaretRect.X() - windowRect.left, aCaretRect.Y() - windowRect.top);
+    ::SetCaretPos(aCaretRect.X() - windowRect.left,
+                  aCaretRect.Y() - windowRect.top);
   }
 }
 
-ITypeInfo*
-AccessibleWrap::GetTI(LCID lcid)
-{
-  if (gTypeInfo)
-    return gTypeInfo;
+ITypeInfo* AccessibleWrap::GetTI(LCID lcid) {
+  if (gTypeInfo) return gTypeInfo;
 
-  ITypeLib *typeLib = nullptr;
+  ITypeLib* typeLib = nullptr;
   HRESULT hr = LoadRegTypeLib(LIBID_Accessibility, 1, 0, lcid, &typeLib);
-  if (FAILED(hr))
-    return nullptr;
+  if (FAILED(hr)) return nullptr;
 
   hr = typeLib->GetTypeInfoOfGuid(IID_IAccessible, &gTypeInfo);
   typeLib->Release();
 
-  if (FAILED(hr))
-    return nullptr;
+  if (FAILED(hr)) return nullptr;
 
   return gTypeInfo;
 }
 
 
-uint32_t
-AccessibleWrap::GetContentProcessIdFor(dom::ContentParentId aIPCContentId)
-{
+uint32_t AccessibleWrap::GetContentProcessIdFor(
+    dom::ContentParentId aIPCContentId) {
   return sIDGen.GetContentProcessIDFor(aIPCContentId);
 }
 
 
-void
-AccessibleWrap::ReleaseContentProcessIdFor(dom::ContentParentId aIPCContentId)
-{
+void AccessibleWrap::ReleaseContentProcessIdFor(
+    dom::ContentParentId aIPCContentId) {
   sIDGen.ReleaseContentProcessIDFor(aIPCContentId);
 }
 
 
-void
-AccessibleWrap::SetHandlerControl(DWORD aPid, RefPtr<IHandlerControl> aCtrl)
-{
+void AccessibleWrap::SetHandlerControl(DWORD aPid,
+                                       RefPtr<IHandlerControl> aCtrl) {
   MOZ_ASSERT(XRE_IsParentProcess() && NS_IsMainThread());
 
   if (!sHandlerControllers) {
@@ -1745,11 +1612,9 @@ AccessibleWrap::SetHandlerControl(DWORD aPid, RefPtr<IHandlerControl> aCtrl)
 }
 
 
-void
-AccessibleWrap::InvalidateHandlers()
-{
+void AccessibleWrap::InvalidateHandlers() {
   static const HRESULT kErrorServerDied =
-    HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE);
+      HRESULT_FROM_WIN32(RPC_S_SERVER_UNAVAILABLE);
 
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
@@ -1764,8 +1629,8 @@ AccessibleWrap::InvalidateHandlers()
     MOZ_ASSERT(controller.mPid);
     MOZ_ASSERT(controller.mCtrl);
 
-    ASYNC_INVOKER_FOR(IHandlerControl) invoker(controller.mCtrl,
-                                               Some(controller.mIsProxy));
+    ASYNC_INVOKER_FOR(IHandlerControl)
+    invoker(controller.mCtrl, Some(controller.mIsProxy));
 
     HRESULT hr = ASYNC_INVOKE(invoker, Invalidate);
 
@@ -1777,11 +1642,10 @@ AccessibleWrap::InvalidateHandlers()
   }
 }
 
-bool
-AccessibleWrap::DispatchTextChangeToHandler(bool aIsInsert,
-                                            const nsString& aText,
-                                            int32_t aStart, uint32_t aLen)
-{
+bool AccessibleWrap::DispatchTextChangeToHandler(bool aIsInsert,
+                                                 const nsString& aText,
+                                                 int32_t aStart,
+                                                 uint32_t aLen) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -1807,7 +1671,7 @@ AccessibleWrap::DispatchTextChangeToHandler(bool aIsInsert,
   
 
   nsTArray<HandlerControllerData>::index_type ctrlIndex =
-    sHandlerControllers->IndexOf(ourPid);
+      sHandlerControllers->IndexOf(ourPid);
 
   if (ctrlIndex == nsTArray<HandlerControllerData>::NoIndex) {
     ctrlIndex = 0;
@@ -1822,8 +1686,8 @@ AccessibleWrap::DispatchTextChangeToHandler(bool aIsInsert,
   IA2TextSegment textSegment{::SysAllocStringLen(aText.get(), aText.Length()),
                              aStart, static_cast<long>(aLen)};
 
-  ASYNC_INVOKER_FOR(IHandlerControl) invoker(controller.mCtrl,
-                                             Some(controller.mIsProxy));
+  ASYNC_INVOKER_FOR(IHandlerControl)
+  invoker(controller.mCtrl, Some(controller.mIsProxy));
 
   HRESULT hr = ASYNC_INVOKE(invoker, OnTextChange, PtrToLong(hwnd), msaaId,
                             isInsert, &textSegment);
@@ -1833,14 +1697,12 @@ AccessibleWrap::DispatchTextChangeToHandler(bool aIsInsert,
   return SUCCEEDED(hr);
 }
 
- void
-AccessibleWrap::AssignChildIDTo(NotNull<sdnAccessible*> aSdnAcc)
-{
+ void AccessibleWrap::AssignChildIDTo(
+    NotNull<sdnAccessible*> aSdnAcc) {
   aSdnAcc->SetUniqueID(sIDGen.GetID());
 }
 
- void
-AccessibleWrap::ReleaseChildID(NotNull<sdnAccessible*> aSdnAcc)
-{
+ void AccessibleWrap::ReleaseChildID(
+    NotNull<sdnAccessible*> aSdnAcc) {
   sIDGen.ReleaseID(aSdnAcc);
 }

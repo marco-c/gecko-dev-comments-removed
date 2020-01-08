@@ -18,20 +18,14 @@ namespace mozilla {
 namespace dom {
 namespace cache {
 
-nsresult
-OpenDBConnection(const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
-                 mozIStorageConnection** aConnOut);
+nsresult OpenDBConnection(const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
+                          mozIStorageConnection** aConnOut);
 
-class DBAction : public Action
-{
-protected:
+class DBAction : public Action {
+ protected:
   
   
-  enum Mode
-  {
-    Existing,
-    Create
-  };
+  enum Mode { Existing, Create };
 
   explicit DBAction(Mode aMode);
 
@@ -41,14 +35,13 @@ protected:
   
   
   
-  virtual void
-  RunWithDBOnTarget(Resolver* aResolver, const QuotaInfo& aQuotaInfo,
-                    nsIFile* aDBDir, mozIStorageConnection* aConn) = 0;
+  virtual void RunWithDBOnTarget(Resolver* aResolver,
+                                 const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
+                                 mozIStorageConnection* aConn) = 0;
 
-private:
-  virtual void
-  RunOnTarget(Resolver* aResolver, const QuotaInfo& aQuotaInfo,
-              Data* aOptionalData) override;
+ private:
+  virtual void RunOnTarget(Resolver* aResolver, const QuotaInfo& aQuotaInfo,
+                           Data* aOptionalData) override;
 
   nsresult OpenConnection(const QuotaInfo& aQuotaInfo, nsIFile* aQuotaDir,
                           mozIStorageConnection** aConnOut);
@@ -56,26 +49,25 @@ private:
   const Mode mMode;
 };
 
-class SyncDBAction : public DBAction
-{
-protected:
+class SyncDBAction : public DBAction {
+ protected:
   explicit SyncDBAction(Mode aMode);
 
   
   virtual ~SyncDBAction();
 
-  virtual nsresult
-  RunSyncWithDBOnTarget(const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
-                        mozIStorageConnection* aConn) = 0;
+  virtual nsresult RunSyncWithDBOnTarget(const QuotaInfo& aQuotaInfo,
+                                         nsIFile* aDBDir,
+                                         mozIStorageConnection* aConn) = 0;
 
-private:
-  virtual void
-  RunWithDBOnTarget(Resolver* aResolver, const QuotaInfo& aQuotaInfo,
-                    nsIFile* aDBDir, mozIStorageConnection* aConn) override;
+ private:
+  virtual void RunWithDBOnTarget(Resolver* aResolver,
+                                 const QuotaInfo& aQuotaInfo, nsIFile* aDBDir,
+                                 mozIStorageConnection* aConn) override;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

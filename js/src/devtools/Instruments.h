@@ -16,7 +16,7 @@ void Pause();
 bool Resume();
 void Stop(const char* profileName);
 
-}
+}  
 
 #endif 
 

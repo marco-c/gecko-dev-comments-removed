@@ -51,15 +51,13 @@ class SharedPrefMapBuilder;
 
 
 
-class SharedPrefMap
-{
+class SharedPrefMap {
   using FileDescriptor = mozilla::ipc::FileDescriptor;
 
   friend class SharedPrefMapBuilder;
 
   
-  struct DataBlock
-  {
+  struct DataBlock {
     
     
     size_t mOffset;
@@ -232,8 +230,7 @@ class SharedPrefMap
   
   
   
-  struct Header
-  {
+  struct Header {
     
     uint32_t mEntryCount;
 
@@ -267,15 +264,9 @@ class SharedPrefMap
   
   union Value {
     Value(bool aDefaultValue, bool aUserValue)
-      : mDefaultBool(aDefaultValue)
-      , mUserBool(aUserValue)
-    {
-    }
+        : mDefaultBool(aDefaultValue), mUserBool(aUserValue) {}
 
-    MOZ_IMPLICIT Value(uint16_t aIndex)
-      : mIndex(aIndex)
-    {
-    }
+    MOZ_IMPLICIT Value(uint16_t aIndex) : mIndex(aIndex) {}
 
     
     
@@ -286,8 +277,7 @@ class SharedPrefMap
     
     
     uint16_t mIndex;
-    struct
-    {
+    struct {
       bool mDefaultBool;
       bool mUserBool;
     };
@@ -295,8 +285,7 @@ class SharedPrefMap
 
   
   
-  struct Entry
-  {
+  struct Entry {
     
     StringTableEntry mKey;
 
@@ -323,7 +312,7 @@ class SharedPrefMap
     uint8_t mDefaultChanged : 1;
   };
 
-public:
+ public:
   NS_INLINE_DECL_REFCOUNTING(SharedPrefMap)
 
   
@@ -335,15 +324,13 @@ public:
   
   
   
-  class MOZ_STACK_CLASS Pref final
-  {
-  public:
+  class MOZ_STACK_CLASS Pref final {
+   public:
     const char* Name() const { return mMap->KeyTable().GetBare(mEntry->mKey); }
 
     nsCString NameString() const { return mMap->KeyTable().Get(mEntry->mKey); }
 
-    PrefType Type() const
-    {
+    PrefType Type() const {
       MOZ_ASSERT(PrefType(mEntry->mType) != PrefType::None);
       return PrefType(mEntry->mType);
     }
@@ -354,8 +341,7 @@ public:
     bool IsLocked() const { return mEntry->mIsLocked; }
     bool IsSticky() const { return mEntry->mIsSticky; }
 
-    bool GetBoolValue(PrefValueKind aKind = PrefValueKind::User) const
-    {
+    bool GetBoolValue(PrefValueKind aKind = PrefValueKind::User) const {
       MOZ_ASSERT(Type() == PrefType::Bool);
       MOZ_ASSERT(aKind == PrefValueKind::Default ? HasDefaultValue()
                                                  : HasUserValue());
@@ -364,38 +350,34 @@ public:
                                              : mEntry->mValue.mUserBool;
     }
 
-    int32_t GetIntValue(PrefValueKind aKind = PrefValueKind::User) const
-    {
+    int32_t GetIntValue(PrefValueKind aKind = PrefValueKind::User) const {
       MOZ_ASSERT(Type() == PrefType::Int);
       MOZ_ASSERT(aKind == PrefValueKind::Default ? HasDefaultValue()
                                                  : HasUserValue());
 
       return aKind == PrefValueKind::Default
-               ? mMap->DefaultIntValues()[mEntry->mValue.mIndex]
-               : mMap->UserIntValues()[mEntry->mValue.mIndex];
+                 ? mMap->DefaultIntValues()[mEntry->mValue.mIndex]
+                 : mMap->UserIntValues()[mEntry->mValue.mIndex];
     }
 
-  private:
-    const StringTableEntry& GetStringEntry(PrefValueKind aKind) const
-    {
+   private:
+    const StringTableEntry& GetStringEntry(PrefValueKind aKind) const {
       MOZ_ASSERT(Type() == PrefType::String);
       MOZ_ASSERT(aKind == PrefValueKind::Default ? HasDefaultValue()
                                                  : HasUserValue());
 
       return aKind == PrefValueKind::Default
-               ? mMap->DefaultStringValues()[mEntry->mValue.mIndex]
-               : mMap->UserStringValues()[mEntry->mValue.mIndex];
+                 ? mMap->DefaultStringValues()[mEntry->mValue.mIndex]
+                 : mMap->UserStringValues()[mEntry->mValue.mIndex];
     }
 
-  public:
-    nsCString GetStringValue(PrefValueKind aKind = PrefValueKind::User) const
-    {
+   public:
+    nsCString GetStringValue(PrefValueKind aKind = PrefValueKind::User) const {
       return mMap->ValueTable().Get(GetStringEntry(aKind));
     }
 
     const char* GetBareStringValue(
-      PrefValueKind aKind = PrefValueKind::User) const
-    {
+        PrefValueKind aKind = PrefValueKind::User) const {
       return mMap->ValueTable().GetBare(GetStringEntry(aKind));
     }
 
@@ -412,24 +394,20 @@ public:
 
     
     
-    Pref& operator++()
-    {
+    Pref& operator++() {
       mEntry++;
       return *this;
     }
 
     Pref(const Pref& aPref) = default;
 
-  protected:
+   protected:
     friend class SharedPrefMap;
 
     Pref(const SharedPrefMap* aPrefMap, const Entry* aEntry)
-      : mMap(aPrefMap)
-      , mEntry(aEntry)
-    {
-    }
+        : mMap(aPrefMap), mEntry(aEntry) {}
 
-  private:
+   private:
     const SharedPrefMap* const mMap;
     const Entry* mEntry;
   };
@@ -451,12 +429,12 @@ public:
 
   Maybe<const Pref> Get(const nsCString& aKey) const { return Get(aKey.get()); }
 
-private:
+ private:
   
   
   bool Find(const char* aKey, size_t* aIndex) const;
 
-public:
+ public:
   
   uint32_t Count() const { return EntryCount(); }
 
@@ -467,8 +445,7 @@ public:
   
   
   
-  nsCString GetKeyAt(uint32_t aIndex) const
-  {
+  nsCString GetKeyAt(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < Count());
     return KeyTable().Get(Entries()[aIndex].mKey);
   }
@@ -478,25 +455,23 @@ public:
   
   
   
-  const Pref GetValueAt(uint32_t aIndex) const
-  {
+  const Pref GetValueAt(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < Count());
     return UncheckedGetValueAt(aIndex);
   }
 
-private:
+ private:
   
   
   
   
   
   
-  Pref UncheckedGetValueAt(uint32_t aIndex) const
-  {
-    return { this, (Entries() + aIndex).get() };
+  Pref UncheckedGetValueAt(uint32_t aIndex) const {
+    return {this, (Entries() + aIndex).get()};
   }
 
-public:
+ public:
   
   
   
@@ -520,59 +495,51 @@ public:
   
   size_t MapSize() const { return mMap.size(); }
 
-protected:
+ protected:
   ~SharedPrefMap() = default;
 
-private:
-  template<typename T>
+ private:
+  template <typename T>
   using StringTable = mozilla::dom::ipc::StringTable<T>;
 
   
   const Header& GetHeader() const { return mMap.get<Header>()[0]; }
 
-  RangedPtr<const Entry> Entries() const
-  {
-    return { reinterpret_cast<const Entry*>(&GetHeader() + 1), EntryCount() };
+  RangedPtr<const Entry> Entries() const {
+    return {reinterpret_cast<const Entry*>(&GetHeader() + 1), EntryCount()};
   }
 
   uint32_t EntryCount() const { return GetHeader().mEntryCount; }
 
-  template<typename T>
-  RangedPtr<const T> GetBlock(const DataBlock& aBlock) const
-  {
+  template <typename T>
+  RangedPtr<const T> GetBlock(const DataBlock& aBlock) const {
     return RangedPtr<uint8_t>(&mMap.get<uint8_t>()[aBlock.mOffset],
                               aBlock.mSize)
-      .ReinterpretCast<const T>();
+        .ReinterpretCast<const T>();
   }
 
-  RangedPtr<const int32_t> DefaultIntValues() const
-  {
+  RangedPtr<const int32_t> DefaultIntValues() const {
     return GetBlock<int32_t>(GetHeader().mDefaultIntValues);
   }
-  RangedPtr<const int32_t> UserIntValues() const
-  {
+  RangedPtr<const int32_t> UserIntValues() const {
     return GetBlock<int32_t>(GetHeader().mUserIntValues);
   }
 
-  RangedPtr<const StringTableEntry> DefaultStringValues() const
-  {
+  RangedPtr<const StringTableEntry> DefaultStringValues() const {
     return GetBlock<StringTableEntry>(GetHeader().mDefaultStringValues);
   }
-  RangedPtr<const StringTableEntry> UserStringValues() const
-  {
+  RangedPtr<const StringTableEntry> UserStringValues() const {
     return GetBlock<StringTableEntry>(GetHeader().mUserStringValues);
   }
 
-  StringTable<nsCString> KeyTable() const
-  {
+  StringTable<nsCString> KeyTable() const {
     auto& block = GetHeader().mKeyStrings;
-    return { { &mMap.get<uint8_t>()[block.mOffset], block.mSize } };
+    return {{&mMap.get<uint8_t>()[block.mOffset], block.mSize}};
   }
 
-  StringTable<nsCString> ValueTable() const
-  {
+  StringTable<nsCString> ValueTable() const {
     auto& block = GetHeader().mValueStrings;
-    return { { &mMap.get<uint8_t>()[block.mOffset], block.mSize } };
+    return {{&mMap.get<uint8_t>()[block.mOffset], block.mSize}};
   }
 
   loader::AutoMemMap mMap;
@@ -581,14 +548,12 @@ private:
 
 
 
-class MOZ_RAII SharedPrefMapBuilder
-{
-public:
+class MOZ_RAII SharedPrefMapBuilder {
+ public:
   SharedPrefMapBuilder() = default;
 
   
-  struct Flags
-  {
+  struct Flags {
     uint8_t mHasDefaultValue : 1;
     uint8_t mHasUserValue : 1;
     uint8_t mIsSticky : 1;
@@ -596,20 +561,14 @@ public:
     uint8_t mDefaultChanged : 1;
   };
 
-  void Add(const char* aKey,
-           const Flags& aFlags,
-           bool aDefaultValue,
+  void Add(const char* aKey, const Flags& aFlags, bool aDefaultValue,
            bool aUserValue);
 
-  void Add(const char* aKey,
-           const Flags& aFlags,
-           int32_t aDefaultValue,
+  void Add(const char* aKey, const Flags& aFlags, int32_t aDefaultValue,
            int32_t aUserValue);
 
-  void Add(const char* aKey,
-           const Flags& aFlags,
-           const nsCString& aDefaultValue,
-           const nsCString& aUserValue);
+  void Add(const char* aKey, const Flags& aFlags,
+           const nsCString& aDefaultValue, const nsCString& aUserValue);
 
   
   
@@ -620,16 +579,15 @@ public:
   
   Result<Ok, nsresult> Finalize(loader::AutoMemMap& aMap);
 
-private:
+ private:
   using StringTableEntry = mozilla::dom::ipc::StringTableEntry;
-  template<typename T, typename U>
+  template <typename T, typename U>
   using StringTableBuilder = mozilla::dom::ipc::StringTableBuilder<T, U>;
 
   
   
   
-  struct ValueIdx
-  {
+  struct ValueIdx {
     
     
     
@@ -659,44 +617,39 @@ private:
   
   
   
-  template<typename HashKey, typename ValueType_>
-  class ValueTableBuilder
-  {
-  public:
+  template <typename HashKey, typename ValueType_>
+  class ValueTableBuilder {
+   public:
     using ValueType = ValueType_;
 
     
     
-    ValueIdx Add(const ValueType& aDefaultValue)
-    {
+    ValueIdx Add(const ValueType& aDefaultValue) {
       auto index = uint16_t(mDefaultEntries.Count());
 
       auto entry = mDefaultEntries.LookupForAdd(aDefaultValue).OrInsert([&]() {
-        return Entry{ index, false, aDefaultValue };
+        return Entry{index, false, aDefaultValue};
       });
 
-      return { entry.mIndex, false };
+      return {entry.mIndex, false};
     }
 
     
     
     
     
-    ValueIdx Add(const ValueType& aDefaultValue, const ValueType& aUserValue)
-    {
+    ValueIdx Add(const ValueType& aDefaultValue, const ValueType& aUserValue) {
       auto index = uint16_t(mUserEntries.Length());
 
-      mUserEntries.AppendElement(
-        Entry{ index, true, aDefaultValue, aUserValue });
+      mUserEntries.AppendElement(Entry{index, true, aDefaultValue, aUserValue});
 
-      return { index, true };
+      return {index, true};
     }
 
     
     
     
-    uint16_t GetIndex(const ValueIdx& aIndex) const
-    {
+    uint16_t GetIndex(const ValueIdx& aIndex) const {
       uint16_t base = aIndex.mHasUserValue ? 0 : UserCount();
       return base + aIndex.mIndex;
     }
@@ -704,8 +657,7 @@ private:
     
     
     
-    void WriteDefaultValues(const RangedPtr<uint8_t>& aBuffer) const
-    {
+    void WriteDefaultValues(const RangedPtr<uint8_t>& aBuffer) const {
       auto buffer = aBuffer.ReinterpretCast<ValueType>();
 
       for (const auto& entry : mUserEntries) {
@@ -722,8 +674,7 @@ private:
     
     
     
-    void WriteUserValues(const RangedPtr<uint8_t>& aBuffer) const
-    {
+    void WriteUserValues(const RangedPtr<uint8_t>& aBuffer) const {
       auto buffer = aBuffer.ReinterpretCast<ValueType>();
 
       for (const auto& entry : mUserEntries) {
@@ -733,8 +684,7 @@ private:
 
     
     
-    uint32_t DefaultCount() const
-    {
+    uint32_t DefaultCount() const {
       return UserCount() + mDefaultEntries.Count();
     }
     uint32_t UserCount() const { return mUserEntries.Length(); }
@@ -744,17 +694,15 @@ private:
     uint32_t DefaultSize() const { return DefaultCount() * sizeof(ValueType); }
     uint32_t UserSize() const { return UserCount() * sizeof(ValueType); }
 
-    void Clear()
-    {
+    void Clear() {
       mUserEntries.Clear();
       mDefaultEntries.Clear();
     }
 
     static constexpr size_t Alignment() { return alignof(ValueType); }
 
-  private:
-    struct Entry
-    {
+   private:
+    struct Entry {
       uint16_t mIndex;
       bool mHasUserValue;
       ValueType mDefaultValue;
@@ -769,34 +717,27 @@ private:
   
   
   
-  template<typename CharType>
-  class UniqueStringTableBuilder
-  {
-  public:
+  template <typename CharType>
+  class UniqueStringTableBuilder {
+   public:
     using ElemType = CharType;
 
-    explicit UniqueStringTableBuilder(size_t aCapacity)
-      : mEntries(aCapacity)
-    {
-    }
+    explicit UniqueStringTableBuilder(size_t aCapacity) : mEntries(aCapacity) {}
 
-    StringTableEntry Add(const CharType* aKey)
-    {
+    StringTableEntry Add(const CharType* aKey) {
       auto entry =
-        mEntries.AppendElement(Entry{ mSize, uint32_t(strlen(aKey)), aKey });
+          mEntries.AppendElement(Entry{mSize, uint32_t(strlen(aKey)), aKey});
 
       mSize += entry->mLength + 1;
 
-      return { entry->mOffset, entry->mLength };
+      return {entry->mOffset, entry->mLength};
     }
 
-    void Write(const RangedPtr<uint8_t>& aBuffer)
-    {
+    void Write(const RangedPtr<uint8_t>& aBuffer) {
       auto buffer = aBuffer.ReinterpretCast<ElemType>();
 
       for (auto& entry : mEntries) {
-        memcpy(&buffer[entry.mOffset],
-               entry.mValue,
+        memcpy(&buffer[entry.mOffset], entry.mValue,
                sizeof(ElemType) * (entry.mLength + 1));
       }
     }
@@ -809,9 +750,8 @@ private:
 
     static constexpr size_t Alignment() { return alignof(ElemType); }
 
-  private:
-    struct Entry
-    {
+   private:
+    struct Entry {
       uint32_t mOffset;
       uint32_t mLength;
       const CharType* mValue;
@@ -826,19 +766,12 @@ private:
   
   union Value {
     Value(bool aDefaultValue, bool aUserValue)
-      : mDefaultBool(aDefaultValue)
-      , mUserBool(aUserValue)
-    {
-    }
+        : mDefaultBool(aDefaultValue), mUserBool(aUserValue) {}
 
-    MOZ_IMPLICIT Value(const ValueIdx& aIndex)
-      : mIndex(aIndex)
-    {
-    }
+    MOZ_IMPLICIT Value(const ValueIdx& aIndex) : mIndex(aIndex) {}
 
     
-    struct
-    {
+    struct {
       bool mDefaultBool;
       bool mUserBool;
     };
@@ -850,8 +783,7 @@ private:
 
   
   
-  struct Entry
-  {
+  struct Entry {
     
     
     
@@ -871,31 +803,30 @@ private:
   
   
   
-  SharedPrefMap::Value GetValue(const Entry& aEntry) const
-  {
+  SharedPrefMap::Value GetValue(const Entry& aEntry) const {
     switch (PrefType(aEntry.mType)) {
       case PrefType::Bool:
-        return { aEntry.mValue.mDefaultBool, aEntry.mValue.mUserBool };
+        return {aEntry.mValue.mDefaultBool, aEntry.mValue.mUserBool};
       case PrefType::Int:
-        return { mIntValueTable.GetIndex(aEntry.mValue.mIndex) };
+        return {mIntValueTable.GetIndex(aEntry.mValue.mIndex)};
       case PrefType::String:
-        return { mStringValueTable.GetIndex(aEntry.mValue.mIndex) };
+        return {mStringValueTable.GetIndex(aEntry.mValue.mIndex)};
       default:
         MOZ_ASSERT_UNREACHABLE("Invalid pref type");
-        return { false, false };
+        return {false, false};
     }
   }
 
-  UniqueStringTableBuilder<char> mKeyTable{ kExpectedPrefCount };
+  UniqueStringTableBuilder<char> mKeyTable{kExpectedPrefCount};
   StringTableBuilder<nsCStringHashKey, nsCString> mValueStringTable;
 
   ValueTableBuilder<nsUint32HashKey, uint32_t> mIntValueTable;
   ValueTableBuilder<nsGenericHashKey<StringTableEntry>, StringTableEntry>
-    mStringValueTable;
+      mStringValueTable;
 
-  nsTArray<Entry> mEntries{ kExpectedPrefCount };
+  nsTArray<Entry> mEntries{kExpectedPrefCount};
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -16,13 +16,12 @@ namespace mozilla {
 namespace widget {
 
 typedef nsDataHashtable<nsPtrHashKey<struct objc_selector>, CommandInt>
-  SelectorCommandHashtable;
+    SelectorCommandHashtable;
 
-class NativeKeyBindings final
-{
+class NativeKeyBindings final {
   typedef nsIWidget::NativeKeyBindingsType NativeKeyBindingsType;
 
-public:
+ public:
   static NativeKeyBindings* GetInstance(NativeKeyBindingsType aType);
   static void Shutdown();
 
@@ -31,16 +30,16 @@ public:
   void GetEditCommands(const WidgetKeyboardEvent& aEvent,
                        nsTArray<CommandInt>& aCommands);
 
-private:
+ private:
   NativeKeyBindings();
 
   SelectorCommandHashtable mSelectorToCommand;
 
   static NativeKeyBindings* sInstanceForSingleLineEditor;
   static NativeKeyBindings* sInstanceForMultiLineEditor;
-}; 
+};  
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

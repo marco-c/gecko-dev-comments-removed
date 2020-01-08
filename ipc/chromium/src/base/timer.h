@@ -65,14 +65,10 @@ namespace base {
 class BaseTimer_Helper {
  public:
   
-  ~BaseTimer_Helper() {
-    OrphanDelayedTask();
-  }
+  ~BaseTimer_Helper() { OrphanDelayedTask(); }
 
   
-  bool IsRunning() const {
-    return !!delayed_task_;
-  }
+  bool IsRunning() const { return !!delayed_task_; }
 
   
   
@@ -87,11 +83,10 @@ class BaseTimer_Helper {
   
   class TimerTask : public mozilla::Runnable {
    public:
-     explicit TimerTask(TimeDelta delay)
-       : mozilla::Runnable("base::BaseTimer_Helper::TimerTask")
-       , delay_(delay)
-     {
-       
+    explicit TimerTask(TimeDelta delay)
+        : mozilla::Runnable("base::BaseTimer_Helper::TimerTask"),
+          delay_(delay) {
+      
     }
     virtual ~TimerTask() {}
     BaseTimer_Helper* timer_;
@@ -127,9 +122,7 @@ class BaseTimer : public BaseTimer_Helper {
 
   
   
-  void Stop() {
-    OrphanDelayedTask();
-  }
+  void Stop() { OrphanDelayedTask(); }
 
   
   void Reset() {
@@ -145,8 +138,7 @@ class BaseTimer : public BaseTimer_Helper {
     TimerTask(TimeDelta delay, Receiver* receiver, ReceiverMethod method)
         : BaseTimer_Helper::TimerTask(delay),
           receiver_(receiver),
-          method_(method) {
-    }
+          method_(method) {}
 
     virtual ~TimerTask() {
       
@@ -178,8 +170,7 @@ class BaseTimer : public BaseTimer_Helper {
         
         
         
-        if (self->delayed_task_ == this)
-          self->delayed_task_ = nullptr;
+        if (self->delayed_task_ == this) self->delayed_task_ = nullptr;
         
         
         
@@ -227,14 +218,9 @@ class DelayTimer {
   typedef void (Receiver::*ReceiverMethod)();
 
   DelayTimer(TimeDelta delay, Receiver* receiver, ReceiverMethod method)
-      : receiver_(receiver),
-        method_(method),
-        delay_(delay) {
-  }
+      : receiver_(receiver), method_(method), delay_(delay) {}
 
-  void Reset() {
-    DelayFor(delay_);
-  }
+  void Reset() { DelayFor(delay_); }
 
  private:
   void DelayFor(TimeDelta delay) {
@@ -242,8 +228,7 @@ class DelayTimer {
 
     
     
-    if (timer_.IsRunning() && timer_.GetCurrentDelay() <= delay)
-      return;
+    if (timer_.IsRunning() && timer_.GetCurrentDelay() <= delay) return;
 
     
     timer_.Stop();
@@ -251,8 +236,7 @@ class DelayTimer {
   }
 
   void Check() {
-    if (trigger_time_.is_null())
-      return;
+    if (trigger_time_.is_null()) return;
 
     
     const Time now = Time::Now();
@@ -264,7 +248,7 @@ class DelayTimer {
     (receiver_->*method_)();
   }
 
-  Receiver *const receiver_;
+  Receiver* const receiver_;
   const ReceiverMethod method_;
   const TimeDelta delay_;
 

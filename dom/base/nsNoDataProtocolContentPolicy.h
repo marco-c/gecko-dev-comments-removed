@@ -14,27 +14,26 @@
 #define nsNoDataProtocolContentPolicy_h__
 
 
-#define NS_NODATAPROTOCOLCONTENTPOLICY_CID \
- {0xac9e3e82, 0xbfbd, 0x4f26, {0x94, 0x1e, 0xf5, 0x8c, 0x8e, 0xe1, 0x78, 0xc1}}
+#define NS_NODATAPROTOCOLCONTENTPOLICY_CID           \
+  {                                                  \
+    0xac9e3e82, 0xbfbd, 0x4f26, {                    \
+      0x94, 0x1e, 0xf5, 0x8c, 0x8e, 0xe1, 0x78, 0xc1 \
+    }                                                \
+  }
 #define NS_NODATAPROTOCOLCONTENTPOLICY_CONTRACTID \
- "@mozilla.org/no-data-protocol-content-policy;1"
-
+  "@mozilla.org/no-data-protocol-content-policy;1"
 
 #include "nsIContentPolicy.h"
 #include "mozilla/Attributes.h"
 
-class nsNoDataProtocolContentPolicy final : public nsIContentPolicy
-{
-  ~nsNoDataProtocolContentPolicy()
-  {}
+class nsNoDataProtocolContentPolicy final : public nsIContentPolicy {
+  ~nsNoDataProtocolContentPolicy() {}
 
-public:
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSICONTENTPOLICY
 
-  nsNoDataProtocolContentPolicy()
-  {}
+  nsNoDataProtocolContentPolicy() {}
 };
-
 
 #endif 

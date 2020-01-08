@@ -15,112 +15,100 @@ NS_IMPL_ISUPPORTS(AndroidAlerts, nsIAlertsService)
 StaticAutoPtr<AndroidAlerts::ListenerMap> AndroidAlerts::sListenerMap;
 
 NS_IMETHODIMP
-AndroidAlerts::ShowAlertNotification(const nsAString & aImageUrl,
-                                     const nsAString & aAlertTitle,
-                                     const nsAString & aAlertText,
-                                     bool aAlertTextClickable,
-                                     const nsAString & aAlertCookie,
-                                     nsIObserver * aAlertListener,
-                                     const nsAString & aAlertName,
-                                     const nsAString & aBidi,
-                                     const nsAString & aLang,
-                                     const nsAString & aData,
-                                     nsIPrincipal * aPrincipal,
-                                     bool aInPrivateBrowsing,
-                                     bool aRequireInteraction)
-{
-    MOZ_ASSERT_UNREACHABLE("Should be implemented by nsAlertsService.");
-    return NS_ERROR_NOT_IMPLEMENTED;
+AndroidAlerts::ShowAlertNotification(
+    const nsAString& aImageUrl, const nsAString& aAlertTitle,
+    const nsAString& aAlertText, bool aAlertTextClickable,
+    const nsAString& aAlertCookie, nsIObserver* aAlertListener,
+    const nsAString& aAlertName, const nsAString& aBidi, const nsAString& aLang,
+    const nsAString& aData, nsIPrincipal* aPrincipal, bool aInPrivateBrowsing,
+    bool aRequireInteraction) {
+  MOZ_ASSERT_UNREACHABLE("Should be implemented by nsAlertsService.");
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 AndroidAlerts::ShowAlert(nsIAlertNotification* aAlert,
-                         nsIObserver* aAlertListener)
-{
-    return ShowPersistentNotification(EmptyString(), aAlert, aAlertListener);
+                         nsIObserver* aAlertListener) {
+  return ShowPersistentNotification(EmptyString(), aAlert, aAlertListener);
 }
 
 NS_IMETHODIMP
 AndroidAlerts::ShowPersistentNotification(const nsAString& aPersistentData,
                                           nsIAlertNotification* aAlert,
-                                          nsIObserver* aAlertListener)
-{
-    
-    
-    
-    nsresult rv;
+                                          nsIObserver* aAlertListener) {
+  
+  
+  
+  nsresult rv;
 
-    nsAutoString imageUrl;
-    rv = aAlert->GetImageURL(imageUrl);
-    NS_ENSURE_SUCCESS(rv, NS_OK);
+  nsAutoString imageUrl;
+  rv = aAlert->GetImageURL(imageUrl);
+  NS_ENSURE_SUCCESS(rv, NS_OK);
 
-    nsAutoString title;
-    rv = aAlert->GetTitle(title);
-    NS_ENSURE_SUCCESS(rv, NS_OK);
+  nsAutoString title;
+  rv = aAlert->GetTitle(title);
+  NS_ENSURE_SUCCESS(rv, NS_OK);
 
-    nsAutoString text;
-    rv = aAlert->GetText(text);
-    NS_ENSURE_SUCCESS(rv, NS_OK);
+  nsAutoString text;
+  rv = aAlert->GetText(text);
+  NS_ENSURE_SUCCESS(rv, NS_OK);
 
-    nsAutoString cookie;
-    rv = aAlert->GetCookie(cookie);
-    NS_ENSURE_SUCCESS(rv, NS_OK);
+  nsAutoString cookie;
+  rv = aAlert->GetCookie(cookie);
+  NS_ENSURE_SUCCESS(rv, NS_OK);
 
-    nsAutoString name;
-    rv = aAlert->GetName(name);
-    NS_ENSURE_SUCCESS(rv, NS_OK);
+  nsAutoString name;
+  rv = aAlert->GetName(name);
+  NS_ENSURE_SUCCESS(rv, NS_OK);
 
-    nsCOMPtr<nsIPrincipal> principal;
-    rv = aAlert->GetPrincipal(getter_AddRefs(principal));
-    NS_ENSURE_SUCCESS(rv, NS_OK);
+  nsCOMPtr<nsIPrincipal> principal;
+  rv = aAlert->GetPrincipal(getter_AddRefs(principal));
+  NS_ENSURE_SUCCESS(rv, NS_OK);
 
-    nsAutoString host;
-    nsAlertsUtils::GetSourceHostPort(principal, host);
+  nsAutoString host;
+  nsAlertsUtils::GetSourceHostPort(principal, host);
 
-    if (aPersistentData.IsEmpty() && aAlertListener) {
-        if (!sListenerMap) {
-            sListenerMap = new ListenerMap();
-        }
-        
-        sListenerMap->Put(name, aAlertListener);
+  if (aPersistentData.IsEmpty() && aAlertListener) {
+    if (!sListenerMap) {
+      sListenerMap = new ListenerMap();
     }
+    
+    sListenerMap->Put(name, aAlertListener);
+  }
 
-    java::GeckoAppShell::ShowNotification(
-            name, cookie, title, text, host, imageUrl,
-            !aPersistentData.IsEmpty() ? jni::StringParam(aPersistentData)
-                                       : jni::StringParam(nullptr));
-    return NS_OK;
+  java::GeckoAppShell::ShowNotification(
+      name, cookie, title, text, host, imageUrl,
+      !aPersistentData.IsEmpty() ? jni::StringParam(aPersistentData)
+                                 : jni::StringParam(nullptr));
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 AndroidAlerts::CloseAlert(const nsAString& aAlertName,
-                          nsIPrincipal* aPrincipal)
-{
-    
-    
-    java::GeckoAppShell::CloseNotification(aAlertName);
-    return NS_OK;
+                          nsIPrincipal* aPrincipal) {
+  
+  
+  java::GeckoAppShell::CloseNotification(aAlertName);
+  return NS_OK;
 }
 
-void
-AndroidAlerts::NotifyListener(const nsAString& aName, const char* aTopic,
-                              const char16_t* aCookie)
-{
-    if (!sListenerMap) {
-        return;
-    }
+void AndroidAlerts::NotifyListener(const nsAString& aName, const char* aTopic,
+                                   const char16_t* aCookie) {
+  if (!sListenerMap) {
+    return;
+  }
 
-    nsCOMPtr<nsIObserver> listener = sListenerMap->Get(aName);
-    if (!listener) {
-        return;
-    }
+  nsCOMPtr<nsIObserver> listener = sListenerMap->Get(aName);
+  if (!listener) {
+    return;
+  }
 
-    listener->Observe(nullptr, aTopic, aCookie);
+  listener->Observe(nullptr, aTopic, aCookie);
 
-    if (NS_LITERAL_CSTRING("alertfinished").Equals(aTopic)) {
-        sListenerMap->Remove(aName);
-    }
+  if (NS_LITERAL_CSTRING("alertfinished").Equals(aTopic)) {
+    sListenerMap->Remove(aName);
+  }
 }
 
-} 
-} 
+}  
+}  

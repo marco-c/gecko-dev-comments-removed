@@ -54,12 +54,10 @@ static const int wronly = SandboxBroker::MAY_WRITE;
 static const int rdwr = rdonly | wronly;
 static const int rdwrcr = rdwr | SandboxBroker::MAY_CREATE;
 static const int access = SandboxBroker::MAY_ACCESS;
-}
+}  
 #endif
 
-static void
-AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy)
-{
+static void AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy) {
   
   aPolicy->AddPrefix(rdonly, "/sys/dev/char/226:");
 
@@ -75,12 +73,10 @@ AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy)
         if (stat(devPath.get(), &sb) == 0 && S_ISCHR(sb.st_mode)) {
           
           
-          static const Array<const char*, 2> kSuffixes = { "", "/device" };
+          static const Array<const char*, 2> kSuffixes = {"", "/device"};
           for (const auto suffix : kSuffixes) {
-            nsPrintfCString sysPath("/sys/dev/char/%u:%u%s",
-                                    major(sb.st_rdev),
-                                    minor(sb.st_rdev),
-                                    suffix);
+            nsPrintfCString sysPath("/sys/dev/char/%u:%u%s", major(sb.st_rdev),
+                                    minor(sb.st_rdev), suffix);
             
             
             
@@ -88,16 +84,11 @@ AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy)
             UniqueFreePtr<char[]> realSysPath(realpath(sysPath.get(), nullptr));
             if (realSysPath) {
               static const Array<const char*, 7> kMesaAttrSuffixes = {
-                "revision",
-                "vendor",
-                "device",
-                "subsystem_vendor",
-                "subsystem_device",
-                "uevent",
-                "config"
-              };
+                  "revision",         "vendor", "device", "subsystem_vendor",
+                  "subsystem_device", "uevent", "config"};
               for (const auto attrSuffix : kMesaAttrSuffixes) {
-                nsPrintfCString attrPath("%s/%s", realSysPath.get(), attrSuffix);
+                nsPrintfCString attrPath("%s/%s", realSysPath.get(),
+                                         attrSuffix);
                 aPolicy->AddPath(rdonly, attrPath.get());
               }
               
@@ -112,9 +103,8 @@ AddMesaSysfsPaths(SandboxBroker::Policy* aPolicy)
   }
 }
 
-static void
-AddPathsFromFile(SandboxBroker::Policy* aPolicy, nsACString& aPath)
-{
+static void AddPathsFromFile(SandboxBroker::Policy* aPolicy,
+                             nsACString& aPath) {
   nsresult rv;
   nsCOMPtr<nsIFile> ldconfig(do_CreateInstance(NS_LOCAL_FILE_CONTRACTID, &rv));
   if (NS_FAILED(rv)) {
@@ -125,7 +115,7 @@ AddPathsFromFile(SandboxBroker::Policy* aPolicy, nsACString& aPath)
     return;
   }
   nsCOMPtr<nsIFileInputStream> fileStream(
-    do_CreateInstance(NS_LOCALFILEINPUTSTREAM_CONTRACTID, &rv));
+      do_CreateInstance(NS_LOCALFILEINPUTSTREAM_CONTRACTID, &rv));
   if (NS_FAILED(rv)) {
     return;
   }
@@ -167,7 +157,8 @@ AddPathsFromFile(SandboxBroker::Policy* aPolicy, nsACString& aPath)
       nsAutoCString includes(Substring(token_end, end));
       for (const nsACString& includeGlob : includes.Split(' ')) {
         glob_t globbuf;
-        if (!glob(PromiseFlatCString(includeGlob).get(), GLOB_NOSORT, nullptr, &globbuf)) {
+        if (!glob(PromiseFlatCString(includeGlob).get(), GLOB_NOSORT, nullptr,
+                  &globbuf)) {
           for (size_t fileIdx = 0; fileIdx < globbuf.gl_pathc; fileIdx++) {
             nsAutoCString filePath(globbuf.gl_pathv[fileIdx]);
             AddPathsFromFile(aPolicy, filePath);
@@ -193,15 +184,12 @@ AddPathsFromFile(SandboxBroker::Policy* aPolicy, nsACString& aPath)
   } while (more);
 }
 
-static void
-AddLdconfigPaths(SandboxBroker::Policy* aPolicy)
-{
+static void AddLdconfigPaths(SandboxBroker::Policy* aPolicy) {
   nsAutoCString ldconfigPath(NS_LITERAL_CSTRING("/etc/ld.so.conf"));
   AddPathsFromFile(aPolicy, ldconfigPath);
 }
 
-SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
-{
+SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
   
   
 #if defined(MOZ_CONTENT_SANDBOX)
@@ -269,14 +257,14 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   
   
   mozilla::Array<const char*, 3> extraConfDirs = {
-    ".config",   
-    ".themes",
-    ".fonts",
+      ".config",  
+      ".themes",
+      ".fonts",
   };
 
   nsCOMPtr<nsIFile> homeDir;
-  nsresult rv = GetSpecialSystemDirectory(Unix_HomeDirectory,
-                                          getter_AddRefs(homeDir));
+  nsresult rv =
+      GetSpecialSystemDirectory(Unix_HomeDirectory, getter_AddRefs(homeDir));
   if (NS_SUCCEEDED(rv)) {
     nsCOMPtr<nsIFile> confDir;
 
@@ -368,14 +356,14 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
     
     
     
-    const char *developer_repo_dir = PR_GetEnv("MOZ_DEVELOPER_REPO_DIR");
+    const char* developer_repo_dir = PR_GetEnv("MOZ_DEVELOPER_REPO_DIR");
     if (developer_repo_dir) {
       policy->AddDir(rdonly, developer_repo_dir);
     }
   }
 
 #ifdef DEBUG
-  char *bloatLog = PR_GetEnv("XPCOM_MEM_BLOAT_LOG");
+  char* bloatLog = PR_GetEnv("XPCOM_MEM_BLOAT_LOG");
   
   
   
@@ -410,9 +398,8 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
 }
 
 #ifdef MOZ_CONTENT_SANDBOX
-UniquePtr<SandboxBroker::Policy>
-SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
-{
+UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
+    int aPid, bool aFileProcess) {
   
   
   
@@ -425,21 +412,19 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
   }
 
   MOZ_ASSERT(mCommonContentPolicy);
-  UniquePtr<SandboxBroker::Policy>
-    policy(new SandboxBroker::Policy(*mCommonContentPolicy));
+  UniquePtr<SandboxBroker::Policy> policy(
+      new SandboxBroker::Policy(*mCommonContentPolicy));
 
   const int level = GetEffectiveContentSandboxLevel();
 
   
   
   AddDynamicPathList(policy.get(),
-                     "security.sandbox.content.write_path_whitelist",
-                     rdwr);
+                     "security.sandbox.content.write_path_whitelist", rdwr);
 
   
   AddDynamicPathList(policy.get(),
-                    "security.sandbox.content.read_path_whitelist",
-                    rdonly);
+                     "security.sandbox.content.read_path_whitelist", rdonly);
 
   
   
@@ -483,29 +468,29 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
   rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                               getter_AddRefs(profileDir));
   if (NS_SUCCEEDED(rv)) {
-      nsCOMPtr<nsIFile> workDir;
-      rv = profileDir->Clone(getter_AddRefs(workDir));
+    nsCOMPtr<nsIFile> workDir;
+    rv = profileDir->Clone(getter_AddRefs(workDir));
+    if (NS_SUCCEEDED(rv)) {
+      rv = workDir->AppendNative(NS_LITERAL_CSTRING("chrome"));
       if (NS_SUCCEEDED(rv)) {
-        rv = workDir->AppendNative(NS_LITERAL_CSTRING("chrome"));
+        nsAutoCString tmpPath;
+        rv = workDir->GetNativePath(tmpPath);
         if (NS_SUCCEEDED(rv)) {
-          nsAutoCString tmpPath;
-          rv = workDir->GetNativePath(tmpPath);
-          if (NS_SUCCEEDED(rv)) {
-            policy->AddDir(rdonly, tmpPath.get());
-          }
+          policy->AddDir(rdonly, tmpPath.get());
         }
       }
-      rv = profileDir->Clone(getter_AddRefs(workDir));
+    }
+    rv = profileDir->Clone(getter_AddRefs(workDir));
+    if (NS_SUCCEEDED(rv)) {
+      rv = workDir->AppendNative(NS_LITERAL_CSTRING("extensions"));
       if (NS_SUCCEEDED(rv)) {
-        rv = workDir->AppendNative(NS_LITERAL_CSTRING("extensions"));
+        nsAutoCString tmpPath;
+        rv = workDir->GetNativePath(tmpPath);
         if (NS_SUCCEEDED(rv)) {
-          nsAutoCString tmpPath;
-          rv = workDir->GetNativePath(tmpPath);
-          if (NS_SUCCEEDED(rv)) {
-            policy->AddDir(rdonly, tmpPath.get());
-          }
+          policy->AddDir(rdonly, tmpPath.get());
         }
       }
+    }
   }
 
   bool allowPulse = false;
@@ -548,7 +533,7 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
       policy->AddPath(rdonly, pulsePath.get());
     }
   }
-#endif 
+#endif  
 
   if (allowPulse) {
     
@@ -571,11 +556,8 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid, bool aFileProcess)
   return policy;
 }
 
-void
-SandboxBrokerPolicyFactory::AddDynamicPathList(SandboxBroker::Policy *policy,
-                                               const char* aPathListPref,
-                                               int perms)
-{
+void SandboxBrokerPolicyFactory::AddDynamicPathList(
+    SandboxBroker::Policy* policy, const char* aPathListPref, int perms) {
   nsAutoCString pathList;
   nsresult rv = Preferences::GetCString(aPathListPref, pathList);
   if (NS_SUCCEEDED(rv)) {
@@ -587,5 +569,5 @@ SandboxBrokerPolicyFactory::AddDynamicPathList(SandboxBroker::Policy *policy,
   }
 }
 
-#endif 
-} 
+#endif  
+}  

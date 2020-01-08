@@ -13,7 +13,7 @@ namespace mscom {
 void AnnotateInterfaceRegistration(REFIID aIid);
 void AnnotateClassRegistration(REFCLSID aClsid);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

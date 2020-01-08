@@ -10,23 +10,21 @@
 
 class txPattern;
 
-class txPatternOptimizer
-{
-public:
-    
+class txPatternOptimizer {
+ public:
+  
 
 
 
 
 
-    nsresult optimize(txPattern* aInPattern, txPattern** aOutPattern);
+  nsresult optimize(txPattern* aInPattern, txPattern** aOutPattern);
 
-private:
+ private:
+  
+  nsresult optimizeStep(txPattern* aInPattern, txPattern** aOutPattern);
 
-    
-    nsresult optimizeStep(txPattern* aInPattern, txPattern** aOutPattern);
-
-    txXPathOptimizer mXPathOptimizer;
+  txXPathOptimizer mXPathOptimizer;
 };
 
-#endif 
+#endif  

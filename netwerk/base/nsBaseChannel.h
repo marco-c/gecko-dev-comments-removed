@@ -41,18 +41,18 @@ class nsIInputStream;
 
 
 
-class nsBaseChannel : public nsHashPropertyBag
-                    , public nsIChannel
-                    , public nsIThreadRetargetableRequest
-                    , public nsIInterfaceRequestor
-                    , public nsITransportEventSink
-                    , public nsIAsyncVerifyRedirectCallback
-                    , public mozilla::net::PrivateBrowsingChannel<nsBaseChannel>
-                    , public mozilla::net::NeckoTargetHolder
-                    , protected nsIStreamListener
-                    , protected nsIThreadRetargetableStreamListener
-{
-public:
+class nsBaseChannel
+    : public nsHashPropertyBag,
+      public nsIChannel,
+      public nsIThreadRetargetableRequest,
+      public nsIInterfaceRequestor,
+      public nsITransportEventSink,
+      public nsIAsyncVerifyRedirectCallback,
+      public mozilla::net::PrivateBrowsingChannel<nsBaseChannel>,
+      public mozilla::net::NeckoTargetHolder,
+      protected nsIStreamListener,
+      protected nsIThreadRetargetableStreamListener {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIREQUEST
   NS_DECL_NSICHANNEL
@@ -65,17 +65,15 @@ public:
   nsBaseChannel();
 
   
-  nsresult Init() {
-    return NS_OK;
-  }
+  nsresult Init() { return NS_OK; }
 
-protected:
+ protected:
   
   
 
   virtual ~nsBaseChannel();
 
-private:
+ private:
   
   
   
@@ -92,7 +90,7 @@ private:
   
   
   virtual nsresult OpenContentStream(bool async, nsIInputStream **stream,
-                                     nsIChannel** channel) = 0;
+                                     nsIChannel **channel) = 0;
 
   
   
@@ -103,7 +101,8 @@ private:
   
   
   
-  virtual nsresult BeginAsyncRead(nsIStreamListener* listener, nsIRequest** request) {
+  virtual nsresult BeginAsyncRead(nsIStreamListener *listener,
+                                  nsIRequest **request) {
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
@@ -120,14 +119,12 @@ private:
   }
 
   
-  virtual void OnCallbacksChanged() {
-  }
+  virtual void OnCallbacksChanged() {}
 
   
-  virtual void OnChannelDone() {
-  }
+  virtual void OnChannelDone() {}
 
-public:
+ public:
   
   
 
@@ -149,9 +146,7 @@ public:
 
   
   
-  nsIURI *URI() {
-    return mURI;
-  }
+  nsIURI *URI() { return mURI; }
   void SetURI(nsIURI *uri) {
     NS_ASSERTION(uri, "must specify a non-null URI");
     NS_ASSERTION(!mURI, "must not modify URI");
@@ -159,31 +154,24 @@ public:
     mURI = uri;
     mOriginalURI = uri;
   }
-  nsIURI *OriginalURI() {
-    return mOriginalURI;
-  }
+  nsIURI *OriginalURI() { return mOriginalURI; }
 
   
   
-  nsISupports *SecurityInfo() {
-    return mSecurityInfo;
-  }
-  void SetSecurityInfo(nsISupports *info) {
-    mSecurityInfo = info;
-  }
+  nsISupports *SecurityInfo() { return mSecurityInfo; }
+  void SetSecurityInfo(nsISupports *info) { mSecurityInfo = info; }
 
   
-  bool HasLoadFlag(uint32_t flag) {
-    return (mLoadFlags & flag) != 0;
-  }
+  bool HasLoadFlag(uint32_t flag) { return (mLoadFlags & flag) != 0; }
 
   
   virtual bool Pending() const {
     return mPumpingData || mWaitingOnAsyncRedirect;
- }
+  }
 
   
-  template <class T> void GetCallback(nsCOMPtr<T> &result) {
+  template <class T>
+  void GetCallback(nsCOMPtr<T> &result) {
     GetInterface(NS_GET_TEMPLATE_IID(T), getter_AddRefs(result));
   }
 
@@ -197,12 +185,8 @@ public:
 
   
   
-  void SetStreamListener(nsIStreamListener *listener) {
-    mListener = listener;
-  }
-  nsIStreamListener *StreamListener() {
-    return mListener;
-  }
+  void SetStreamListener(nsIStreamListener *listener) { mListener = listener; }
+  nsIStreamListener *StreamListener() { return mListener; }
 
   
   
@@ -215,14 +199,12 @@ public:
                                bool invalidatesContentLength = true,
                                nsIStreamListener **converter = nullptr);
 
-protected:
-  void DisallowThreadRetargeting() {
-    mAllowThreadRetargeting = false;
-  }
+ protected:
+  void DisallowThreadRetargeting() { mAllowThreadRetargeting = false; }
 
   virtual void SetupNeckoTarget();
 
-private:
+ private:
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIREQUESTOBSERVER
 
@@ -237,76 +219,74 @@ private:
   }
 
   
+  
   void ChannelDone() {
-      mListener = nullptr;
-      mListenerContext = nullptr;
-      OnChannelDone();
+    mListener = nullptr;
+    mListenerContext = nullptr;
+    OnChannelDone();
   }
 
   
   
-  void HandleAsyncRedirect(nsIChannel* newChannel);
+  void HandleAsyncRedirect(nsIChannel *newChannel);
   void ContinueHandleAsyncRedirect(nsresult result);
   nsresult ContinueRedirect();
 
   
   void ClassifyURI();
 
-  class RedirectRunnable : public mozilla::Runnable
-  {
-  public:
-    RedirectRunnable(nsBaseChannel* chan, nsIChannel* newChannel)
-      : mozilla::Runnable("nsBaseChannel::RedirectRunnable")
-      , mChannel(chan)
-      , mNewChannel(newChannel)
-    {
+  class RedirectRunnable : public mozilla::Runnable {
+   public:
+    RedirectRunnable(nsBaseChannel *chan, nsIChannel *newChannel)
+        : mozilla::Runnable("nsBaseChannel::RedirectRunnable"),
+          mChannel(chan),
+          mNewChannel(newChannel) {
       MOZ_ASSERT(newChannel, "Must have channel to redirect to");
     }
 
-    NS_IMETHOD Run() override
-    {
+    NS_IMETHOD Run() override {
       mChannel->HandleAsyncRedirect(mNewChannel);
       return NS_OK;
     }
 
-  private:
+   private:
     RefPtr<nsBaseChannel> mChannel;
     nsCOMPtr<nsIChannel> mNewChannel;
   };
   friend class RedirectRunnable;
 
-  RefPtr<nsInputStreamPump>         mPump;
-  RefPtr<nsIRequest>                  mRequest;
-  bool                                mPumpingData;
-  nsCOMPtr<nsIProgressEventSink>      mProgressSink;
-  nsCOMPtr<nsIURI>                    mOriginalURI;
-  nsCOMPtr<nsISupports>               mOwner;
-  nsCOMPtr<nsISupports>               mSecurityInfo;
-  nsCOMPtr<nsIChannel>                mRedirectChannel;
-  nsCString                           mContentType;
-  nsCString                           mContentCharset;
-  uint32_t                            mLoadFlags;
-  bool                                mQueriedProgressSink;
-  bool                                mSynthProgressEvents;
-  bool                                mAllowThreadRetargeting;
-  bool                                mWaitingOnAsyncRedirect;
-  bool                                mOpenRedirectChannel;
-  uint32_t                            mRedirectFlags;
+  RefPtr<nsInputStreamPump> mPump;
+  RefPtr<nsIRequest> mRequest;
+  bool mPumpingData;
+  nsCOMPtr<nsIProgressEventSink> mProgressSink;
+  nsCOMPtr<nsIURI> mOriginalURI;
+  nsCOMPtr<nsISupports> mOwner;
+  nsCOMPtr<nsISupports> mSecurityInfo;
+  nsCOMPtr<nsIChannel> mRedirectChannel;
+  nsCString mContentType;
+  nsCString mContentCharset;
+  uint32_t mLoadFlags;
+  bool mQueriedProgressSink;
+  bool mSynthProgressEvents;
+  bool mAllowThreadRetargeting;
+  bool mWaitingOnAsyncRedirect;
+  bool mOpenRedirectChannel;
+  uint32_t mRedirectFlags;
 
-protected:
-  nsCOMPtr<nsIURI>                    mURI;
-  nsCOMPtr<nsILoadGroup>              mLoadGroup;
-  nsCOMPtr<nsILoadInfo>               mLoadInfo;
-  nsCOMPtr<nsIInterfaceRequestor>     mCallbacks;
-  nsCOMPtr<nsIStreamListener>         mListener;
-  nsCOMPtr<nsISupports>               mListenerContext;
-  nsresult                            mStatus;
-  uint32_t                            mContentDispositionHint;
-  nsAutoPtr<nsString>                 mContentDispositionFilename;
-  int64_t                             mContentLength;
-  bool                                mWasOpened;
+ protected:
+  nsCOMPtr<nsIURI> mURI;
+  nsCOMPtr<nsILoadGroup> mLoadGroup;
+  nsCOMPtr<nsILoadInfo> mLoadInfo;
+  nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
+  nsCOMPtr<nsIStreamListener> mListener;
+  nsCOMPtr<nsISupports> mListenerContext;
+  nsresult mStatus;
+  uint32_t mContentDispositionHint;
+  nsAutoPtr<nsString> mContentDispositionFilename;
+  int64_t mContentLength;
+  bool mWasOpened;
 
   friend class mozilla::net::PrivateBrowsingChannel<nsBaseChannel>;
 };
 
-#endif 
+#endif  

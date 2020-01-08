@@ -13,14 +13,15 @@
 #include "nsTableColGroupFrame.h"
 #include "mozilla/WritingModes.h"
 
-class nsTableColFrame final : public nsSplittableFrame
-{
-public:
+class nsTableColFrame final : public nsSplittableFrame {
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsTableColFrame)
 
-  enum {eWIDTH_SOURCE_NONE          =0,   
-        eWIDTH_SOURCE_CELL          =1,   
-        eWIDTH_SOURCE_CELL_WITH_SPAN=2    
+  enum {
+    eWIDTH_SOURCE_NONE = 0,  
+    eWIDTH_SOURCE_CELL = 1,  
+    eWIDTH_SOURCE_CELL_WITH_SPAN =
+        2  
   };
 
   nsTableColType GetColType() const;
@@ -32,13 +33,11 @@ public:
 
 
   friend nsTableColFrame* NS_NewTableColFrame(nsIPresShell* aPresShell,
-                                              ComputedStyle*  aContext);
+                                              ComputedStyle* aContext);
 
   
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override
-  {
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override {
     nsSplittableFrame::Init(aContent, aParent, aPrevInFlow);
     if (!aPrevInFlow) {
       mWritingMode = GetTableFrame()->GetWritingMode();
@@ -48,33 +47,30 @@ public:
   
   virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
-  virtual void Reflow(nsPresContext*           aPresContext,
-                      ReflowOutput&     aDesiredSize,
+  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus) override;
+                      nsReflowStatus& aStatus) override;
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-  nsTableColGroupFrame* GetTableColGroupFrame() const
-  {
+  nsTableColGroupFrame* GetTableColGroupFrame() const {
     nsIFrame* parent = GetParent();
     MOZ_ASSERT(parent && parent->IsTableColGroupFrame());
     return static_cast<nsTableColGroupFrame*>(parent);
   }
 
-  nsTableFrame* GetTableFrame() const
-  {
+  nsTableFrame* GetTableFrame() const {
     return GetTableColGroupFrame()->GetTableFrame();
   }
 
   int32_t GetColIndex() const;
 
-  void SetColIndex (int32_t aColIndex);
+  void SetColIndex(int32_t aColIndex);
 
   nsTableColFrame* GetNextCol() const;
 
@@ -124,9 +120,7 @@ public:
 
 
 
-  void ResetPrefPercent() {
-    mPrefPercent = 0.0f;
-  }
+  void ResetPrefPercent() { mPrefPercent = 0.0f; }
 
   
 
@@ -167,13 +161,11 @@ public:
       mHasSpecifiedCoord = true;
     }
     if (!aHasSpecifiedCoord && mHasSpecifiedCoord) {
-      aPrefCoord = aMinCoord; 
+      aPrefCoord = aMinCoord;  
     }
 
-    if (aMinCoord > mMinCoord)
-      mMinCoord = aMinCoord;
-    if (aPrefCoord > mPrefCoord)
-      mPrefCoord = aPrefCoord;
+    if (aMinCoord > mMinCoord) mMinCoord = aMinCoord;
+    if (aPrefCoord > mPrefCoord) mPrefCoord = aPrefCoord;
 
     NS_ASSERTION(mMinCoord <= mPrefCoord, "min larger than pref");
   }
@@ -184,8 +176,7 @@ public:
 
 
   void AddPrefPercent(float aPrefPercent) {
-    if (aPrefPercent > mPrefPercent)
-      mPrefPercent = aPrefPercent;
+    if (aPrefPercent > mPrefPercent) mPrefPercent = aPrefPercent;
   }
 
   
@@ -220,13 +211,11 @@ public:
                  "intrinsic widths out of order");
 
     if (!aSpanHasSpecifiedCoord && mHasSpecifiedCoord) {
-      aSpanPrefCoord = aSpanMinCoord; 
+      aSpanPrefCoord = aSpanMinCoord;  
     }
 
-    if (aSpanMinCoord > mSpanMinCoord)
-      mSpanMinCoord = aSpanMinCoord;
-    if (aSpanPrefCoord > mSpanPrefCoord)
-      mSpanPrefCoord = aSpanPrefCoord;
+    if (aSpanMinCoord > mSpanMinCoord) mSpanMinCoord = aSpanMinCoord;
+    if (aSpanPrefCoord > mSpanPrefCoord) mSpanPrefCoord = aSpanPrefCoord;
 
     NS_ASSERTION(mSpanMinCoord <= mSpanPrefCoord, "min larger than pref");
   }
@@ -252,26 +241,20 @@ public:
   
   
   
-  void AdjustPrefPercent(float *aTableTotalPercent) {
+  void AdjustPrefPercent(float* aTableTotalPercent) {
     float allowed = 1.0f - *aTableTotalPercent;
-    if (mPrefPercent > allowed)
-      mPrefPercent = allowed;
+    if (mPrefPercent > allowed) mPrefPercent = allowed;
     *aTableTotalPercent += mPrefPercent;
   }
 
   
   void ResetFinalISize() {
-    mFinalISize = nscoord_MIN; 
+    mFinalISize = nscoord_MIN;  
   }
-  void SetFinalISize(nscoord aFinalISize) {
-    mFinalISize = aFinalISize;
-  }
-  nscoord GetFinalISize() {
-    return mFinalISize;
-  }
+  void SetFinalISize(nscoord aFinalISize) { mFinalISize = aFinalISize; }
+  nscoord GetFinalISize() { return mFinalISize; }
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
     if (aFlags & eSupportsContainLayoutAndPaint) {
       return false;
     }
@@ -279,21 +262,25 @@ public:
     return nsSplittableFrame::IsFrameOfType(aFlags & ~(nsIFrame::eTablePart));
   }
 
-  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true) override;
-  virtual void InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true) override;
-  virtual void InvalidateFrameForRemoval() override { InvalidateFrameSubtree(); }
+  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0,
+                               bool aRebuildDisplayItems = true) override;
+  virtual void InvalidateFrameWithRect(
+      const nsRect& aRect, uint32_t aDisplayItemKey = 0,
+      bool aRebuildDisplayItems = true) override;
+  virtual void InvalidateFrameForRemoval() override {
+    InvalidateFrameSubtree();
+  }
 
-protected:
-
+ protected:
   explicit nsTableColFrame(ComputedStyle* aStyle);
   ~nsTableColFrame();
 
   nscoord mMinCoord;
   nscoord mPrefCoord;
-  nscoord mSpanMinCoord; 
-  nscoord mSpanPrefCoord; 
+  nscoord mSpanMinCoord;   
+  nscoord mSpanPrefCoord;  
   float mPrefPercent;
-  float mSpanPrefPercent; 
+  float mSpanPrefPercent;  
   
   
   
@@ -315,29 +302,19 @@ protected:
   bool mHasSpecifiedCoord;
 };
 
-inline int32_t nsTableColFrame::GetColIndex() const
-{
-  return mColIndex;
-}
+inline int32_t nsTableColFrame::GetColIndex() const { return mColIndex; }
 
-inline void nsTableColFrame::SetColIndex (int32_t aColIndex)
-{
+inline void nsTableColFrame::SetColIndex(int32_t aColIndex) {
   mColIndex = aColIndex;
 }
 
-inline nscoord
-nsTableColFrame::GetContinuousBCBorderWidth(mozilla::WritingMode aWM,
-                                            mozilla::LogicalMargin& aBorder)
-{
+inline nscoord nsTableColFrame::GetContinuousBCBorderWidth(
+    mozilla::WritingMode aWM, mozilla::LogicalMargin& aBorder) {
   int32_t d2a = PresContext()->AppUnitsPerDevPixel();
-  aBorder.BStart(aWM) = BC_BORDER_END_HALF_COORD(d2a,
-                                                 mBStartContBorderWidth);
-  aBorder.IEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a,
-                                                 mIEndContBorderWidth);
-  aBorder.BEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a,
-                                                 mBEndContBorderWidth);
+  aBorder.BStart(aWM) = BC_BORDER_END_HALF_COORD(d2a, mBStartContBorderWidth);
+  aBorder.IEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a, mIEndContBorderWidth);
+  aBorder.BEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a, mBEndContBorderWidth);
   return BC_BORDER_END_HALF_COORD(d2a, mIEndContBorderWidth);
 }
 
 #endif
-

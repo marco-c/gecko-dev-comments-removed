@@ -16,14 +16,13 @@ namespace ipc {
 
 
 class IOThreadChild : public ChildThread {
-public:
+ public:
   IOThreadChild()
-    : ChildThread(base::Thread::Options(MessageLoop::TYPE_IO,
-                                        0)) 
-  { }
+      : ChildThread(base::Thread::Options(MessageLoop::TYPE_IO,
+                                          0))  
+  {}
 
-  ~IOThreadChild()
-  { }
+  ~IOThreadChild() {}
 
   static MessageLoop* message_loop() {
     return IOThreadChild::current()->Thread::message_loop();
@@ -34,16 +33,16 @@ public:
     return IOThreadChild::current()->ChildThread::channel();
   }
 
-protected:
+ protected:
   static IOThreadChild* current() {
     return static_cast<IOThreadChild*>(ChildThread::current());
   }
 
-private:
+ private:
   DISALLOW_EVIL_CONSTRUCTORS(IOThreadChild);
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

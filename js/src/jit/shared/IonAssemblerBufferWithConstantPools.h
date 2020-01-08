@@ -172,221 +172,206 @@ namespace jit {
 
 
 template <unsigned NumRanges>
-class BranchDeadlineSet
-{
+class BranchDeadlineSet {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>> RangeVector;
+
+  
+  
+  
+  
+  
+  mozilla::AlignedStorage2<RangeVector[NumRanges]> deadlineStorage_;
+
+  
+  RangeVector& vectorForRange(unsigned rangeIdx) {
+    MOZ_ASSERT(rangeIdx < NumRanges, "Invalid branch range index");
+    return (*deadlineStorage_.addr())[rangeIdx];
+  }
+
+  const RangeVector& vectorForRange(unsigned rangeIdx) const {
+    MOZ_ASSERT(rangeIdx < NumRanges, "Invalid branch range index");
+    return (*deadlineStorage_.addr())[rangeIdx];
+  }
+
+  
+  
+  BufferOffset earliest_;
+
+  
+  unsigned earliestRange_;
+
+  
+  void recomputeEarliest() {
+    earliest_ = BufferOffset();
+    for (unsigned r = 0; r < NumRanges; r++) {
+      auto& vec = vectorForRange(r);
+      if (!vec.empty() && (!earliest_.assigned() || vec[0] < earliest_)) {
+        earliest_ = vec[0];
+        earliestRange_ = r;
+      }
+    }
+  }
+
+  
+  
+  
+  bool updateEarliest(unsigned rangeIdx, BufferOffset deadline) {
+    if (!earliest_.assigned() || deadline < earliest_) {
+      earliest_ = deadline;
+      earliestRange_ = rangeIdx;
+    }
+    return true;
+  }
+
+ public:
+  explicit BranchDeadlineSet(LifoAlloc& alloc) : earliestRange_(0) {
     
     
     
+    for (unsigned r = 0; r < NumRanges; r++) {
+      new (&vectorForRange(r)) RangeVector(alloc);
+    }
+  }
+
+  ~BranchDeadlineSet() {
     
+    for (unsigned r = 0; r < NumRanges; r++) {
+      vectorForRange(r).~RangeVector();
+    }
+  }
+
+  
+  bool empty() const { return !earliest_.assigned(); }
+
+  
+  size_t size() const {
+    size_t count = 0;
+    for (unsigned r = 0; r < NumRanges; r++) {
+      count += vectorForRange(r).length();
+    }
+    return count;
+  }
+
+  
+  size_t maxRangeSize() const {
+    size_t count = 0;
+    for (unsigned r = 0; r < NumRanges; r++) {
+      count = std::max(count, vectorForRange(r).length());
+    }
+    return count;
+  }
+
+  
+  BufferOffset earliestDeadline() const {
+    MOZ_ASSERT(!empty());
+    return earliest_;
+  }
+
+  
+  unsigned earliestDeadlineRange() const {
+    MOZ_ASSERT(!empty());
+    return earliestRange_;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool addDeadline(unsigned rangeIdx, BufferOffset deadline) {
+    MOZ_ASSERT(deadline.assigned(), "Can only store assigned buffer offsets");
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    typedef Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>> RangeVector;
+    auto& vec = vectorForRange(rangeIdx);
 
     
     
-    
-    
-    
-    mozilla::AlignedStorage2<RangeVector[NumRanges]> deadlineStorage_;
-
-    
-    RangeVector& vectorForRange(unsigned rangeIdx)
-    {
-        MOZ_ASSERT(rangeIdx < NumRanges, "Invalid branch range index");
-        return (*deadlineStorage_.addr())[rangeIdx];
+    if (!vec.empty() && vec.back() < deadline) {
+      return vec.append(deadline);
     }
 
-    const RangeVector& vectorForRange(unsigned rangeIdx) const
-    {
-        MOZ_ASSERT(rangeIdx < NumRanges, "Invalid branch range index");
-        return (*deadlineStorage_.addr())[rangeIdx];
+    
+    if (vec.empty()) {
+      return vec.append(deadline) && updateEarliest(rangeIdx, deadline);
     }
 
-    
-    
-    BufferOffset earliest_;
+    return addDeadlineSlow(rangeIdx, deadline);
+  }
+
+ private:
+  
+  
+  
+  bool addDeadlineSlow(unsigned rangeIdx, BufferOffset deadline) {
+    auto& vec = vectorForRange(rangeIdx);
 
     
-    unsigned earliestRange_;
-
     
-    void recomputeEarliest()
-    {
-        earliest_ = BufferOffset();
-        for (unsigned r = 0; r < NumRanges; r++) {
-            auto& vec = vectorForRange(r);
-            if (!vec.empty() && (!earliest_.assigned() || vec[0] < earliest_)) {
-                earliest_ = vec[0];
-                earliestRange_ = r;
-            }
-        }
+    
+    auto at = std::lower_bound(vec.begin(), vec.end(), deadline);
+    MOZ_ASSERT(at == vec.end() || *at != deadline,
+               "Cannot insert duplicate deadlines");
+    return vec.insert(at, deadline) && updateEarliest(rangeIdx, deadline);
+  }
+
+ public:
+  
+  
+  void removeDeadline(unsigned rangeIdx, BufferOffset deadline) {
+    auto& vec = vectorForRange(rangeIdx);
+
+    if (vec.empty()) {
+      return;
     }
 
-    
-    
-    
-    bool updateEarliest(unsigned rangeIdx, BufferOffset deadline)
-    {
-        if (!earliest_.assigned() || deadline < earliest_) {
-            earliest_ = deadline;
-            earliestRange_ = rangeIdx;
-        }
-        return true;
+    if (deadline == vec.back()) {
+      
+      
+      vec.popBack();
+    } else {
+      
+      auto where = std::lower_bound(vec.begin(), vec.end(), deadline);
+      if (where == vec.end() || *where != deadline) {
+        return;
+      }
+      vec.erase(where);
     }
-
-  public:
-    explicit BranchDeadlineSet(LifoAlloc& alloc)
-      : earliestRange_(0)
-    {
-        
-        
-        
-        for (unsigned r = 0; r < NumRanges; r++) {
-            new (&vectorForRange(r)) RangeVector(alloc);
-        }
+    if (deadline == earliest_) {
+      recomputeEarliest();
     }
-
-    ~BranchDeadlineSet()
-    {
-        
-        for (unsigned r = 0; r < NumRanges; r++) {
-            vectorForRange(r).~RangeVector();
-        }
-    }
-
-    
-    bool empty() const { return !earliest_.assigned(); }
-
-    
-    size_t size() const
-    {
-        size_t count = 0;
-        for (unsigned r = 0; r < NumRanges; r++) {
-            count += vectorForRange(r).length();
-        }
-        return count;
-    }
-
-    
-    size_t maxRangeSize() const
-    {
-        size_t count = 0;
-        for (unsigned r = 0; r < NumRanges; r++) {
-            count = std::max(count, vectorForRange(r).length());
-        }
-        return count;
-    }
-
-    
-    BufferOffset earliestDeadline() const
-    {
-        MOZ_ASSERT(!empty());
-        return earliest_;
-    }
-
-    
-    unsigned earliestDeadlineRange() const
-    {
-        MOZ_ASSERT(!empty());
-        return earliestRange_;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    bool addDeadline(unsigned rangeIdx, BufferOffset deadline)
-    {
-        MOZ_ASSERT(deadline.assigned(), "Can only store assigned buffer offsets");
-        
-        auto& vec = vectorForRange(rangeIdx);
-
-        
-        
-        if (!vec.empty() && vec.back() < deadline) {
-            return vec.append(deadline);
-        }
-
-        
-        if (vec.empty()) {
-            return vec.append(deadline) && updateEarliest(rangeIdx, deadline);
-        }
-
-        return addDeadlineSlow(rangeIdx, deadline);
-    }
-
-  private:
-    
-    
-    
-    bool addDeadlineSlow(unsigned rangeIdx, BufferOffset deadline)
-    {
-        auto& vec = vectorForRange(rangeIdx);
-
-        
-        
-        
-        auto at = std::lower_bound(vec.begin(), vec.end(), deadline);
-        MOZ_ASSERT(at == vec.end() || *at != deadline, "Cannot insert duplicate deadlines");
-        return vec.insert(at, deadline) && updateEarliest(rangeIdx, deadline);
-    }
-
-  public:
-    
-    
-    void removeDeadline(unsigned rangeIdx, BufferOffset deadline)
-    {
-        auto& vec = vectorForRange(rangeIdx);
-
-        if (vec.empty()) {
-            return;
-        }
-
-        if (deadline == vec.back()) {
-            
-            
-            vec.popBack();
-        } else {
-            
-            auto where = std::lower_bound(vec.begin(), vec.end(), deadline);
-            if (where == vec.end() || *where != deadline) {
-                return;
-            }
-            vec.erase(where);
-        }
-        if (deadline == earliest_) {
-            recomputeEarliest();
-        }
-    }
+  }
 };
 
 
 
 template <>
-class BranchDeadlineSet<0u>
-{
-  public:
-    explicit BranchDeadlineSet(LifoAlloc& alloc) {}
-    bool empty() const { return true; }
-    size_t size() const { return 0; }
-    size_t maxRangeSize() const { return 0; }
-    BufferOffset earliestDeadline() const { MOZ_CRASH(); }
-    unsigned earliestDeadlineRange() const { MOZ_CRASH(); }
-    bool addDeadline(unsigned rangeIdx, BufferOffset deadline) { MOZ_CRASH(); }
-    void removeDeadline(unsigned rangeIdx, BufferOffset deadline) { MOZ_CRASH(); }
+class BranchDeadlineSet<0u> {
+ public:
+  explicit BranchDeadlineSet(LifoAlloc& alloc) {}
+  bool empty() const { return true; }
+  size_t size() const { return 0; }
+  size_t maxRangeSize() const { return 0; }
+  BufferOffset earliestDeadline() const { MOZ_CRASH(); }
+  unsigned earliestDeadlineRange() const { MOZ_CRASH(); }
+  bool addDeadline(unsigned rangeIdx, BufferOffset deadline) { MOZ_CRASH(); }
+  void removeDeadline(unsigned rangeIdx, BufferOffset deadline) { MOZ_CRASH(); }
 };
 
 
@@ -399,128 +384,120 @@ typedef int32_t PoolAllocUnit;
 
 const size_t ShortRangeBranchHysteresis = 128;
 
-struct Pool
-{
-  private:
-    
-    
-    
-    
-    const size_t maxOffset_;
-    
-    
-    const unsigned bias_;
+struct Pool {
+ private:
+  
+  
+  
+  
+  const size_t maxOffset_;
+  
+  
+  const unsigned bias_;
 
-    
-    Vector<PoolAllocUnit, 8, LifoAllocPolicy<Fallible>> poolData_;
+  
+  Vector<PoolAllocUnit, 8, LifoAllocPolicy<Fallible>> poolData_;
 
-    
-    bool oom_;
+  
+  bool oom_;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    BufferOffset limitingUser;
-    
-    unsigned limitingUsee;
+  
+  
+  
+  
+  
+  
+  
+  
+  BufferOffset limitingUser;
+  
+  unsigned limitingUsee;
 
-  public:
-    
-    
-    
-    
-    Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>> loadOffsets;
+ public:
+  
+  
+  
+  
+  Vector<BufferOffset, 8, LifoAllocPolicy<Fallible>> loadOffsets;
 
-    
-    explicit Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
+  
+  
+  explicit Pool(size_t maxOffset, unsigned bias, LifoAlloc& lifoAlloc)
       : maxOffset_(maxOffset),
         bias_(bias),
         poolData_(lifoAlloc),
         oom_(false),
         limitingUser(),
         limitingUsee(INT_MIN),
-        loadOffsets(lifoAlloc)
-    {
+        loadOffsets(lifoAlloc) {}
+
+  
+  const PoolAllocUnit* poolData() const { return poolData_.begin(); }
+
+  unsigned numEntries() const { return poolData_.length(); }
+
+  size_t getPoolSize() const { return numEntries() * sizeof(PoolAllocUnit); }
+
+  bool oom() const { return oom_; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void updateLimiter(BufferOffset nextInst) {
+    ptrdiff_t oldRange =
+        limitingUsee * sizeof(PoolAllocUnit) - limitingUser.getOffset();
+    ptrdiff_t newRange = getPoolSize() - nextInst.getOffset();
+    if (!limitingUser.assigned() || newRange > oldRange) {
+      
+      limitingUser = nextInst;
+      limitingUsee = numEntries();
     }
+  }
 
+  
+  
+  
+  
+  
+  bool checkFull(size_t poolOffset) const {
     
-    const PoolAllocUnit* poolData() const {
-        return poolData_.begin();
+    if (!limitingUser.assigned()) {
+      return false;
     }
+    size_t offset = poolOffset + limitingUsee * sizeof(PoolAllocUnit) -
+                    (limitingUser.getOffset() + bias_);
+    return offset >= maxOffset_;
+  }
 
-    unsigned numEntries() const {
-        return poolData_.length();
+  static const unsigned OOM_FAIL = unsigned(-1);
+
+  unsigned insertEntry(unsigned num, uint8_t* data, BufferOffset off,
+                       LifoAlloc& lifoAlloc) {
+    if (oom_) {
+      return OOM_FAIL;
     }
-
-    size_t getPoolSize() const {
-        return numEntries() * sizeof(PoolAllocUnit);
+    unsigned ret = numEntries();
+    if (!poolData_.append((PoolAllocUnit*)data, num) ||
+        !loadOffsets.append(off)) {
+      oom_ = true;
+      return OOM_FAIL;
     }
+    return ret;
+  }
 
-    bool oom() const {
-        return oom_;
-    }
+  void reset() {
+    poolData_.clear();
+    loadOffsets.clear();
 
-    
-    
-    
-    
-    
-    
-    
-    
-    void updateLimiter(BufferOffset nextInst) {
-        ptrdiff_t oldRange = limitingUsee * sizeof(PoolAllocUnit) - limitingUser.getOffset();
-        ptrdiff_t newRange = getPoolSize() - nextInst.getOffset();
-        if (!limitingUser.assigned() || newRange > oldRange) {
-            
-            limitingUser = nextInst;
-            limitingUsee = numEntries();
-        }
-    }
-
-    
-    
-    
-    
-    
-    bool checkFull(size_t poolOffset) const {
-        
-        if (!limitingUser.assigned()) {
-            return false;
-        }
-        size_t offset = poolOffset + limitingUsee * sizeof(PoolAllocUnit)
-                        - (limitingUser.getOffset() + bias_);
-        return offset >= maxOffset_;
-    }
-
-    static const unsigned OOM_FAIL = unsigned(-1);
-
-    unsigned insertEntry(unsigned num, uint8_t* data, BufferOffset off, LifoAlloc& lifoAlloc) {
-        if (oom_) {
-            return OOM_FAIL;
-        }
-        unsigned ret = numEntries();
-        if (!poolData_.append((PoolAllocUnit*)data, num) || !loadOffsets.append(off)) {
-            oom_ = true;
-            return OOM_FAIL;
-        }
-        return ret;
-    }
-
-    void reset() {
-        poolData_.clear();
-        loadOffsets.clear();
-
-        limitingUser = BufferOffset();
-        limitingUsee = -1;
-    }
+    limitingUser = BufferOffset();
+    limitingUsee = -1;
+  }
 };
-
 
 
 
@@ -553,136 +530,123 @@ struct Pool
 
 template <size_t SliceSize, size_t InstSize, class Inst, class Asm,
           unsigned NumShortBranchRanges = 0>
-struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst>
-{
-  private:
-    
-    
-    
-    size_t poolEntryCount;
+struct AssemblerBufferWithConstantPools
+    : public AssemblerBuffer<SliceSize, Inst> {
+ private:
+  
+  
+  
+  size_t poolEntryCount;
 
-  public:
-    class PoolEntry
-    {
-        size_t index_;
+ public:
+  class PoolEntry {
+    size_t index_;
 
-      public:
-        explicit PoolEntry(size_t index)
-          : index_(index)
-        { }
+   public:
+    explicit PoolEntry(size_t index) : index_(index) {}
 
-        PoolEntry()
-          : index_(-1)
-        { }
+    PoolEntry() : index_(-1) {}
 
-        size_t index() const {
-            return index_;
-        }
-    };
+    size_t index() const { return index_; }
+  };
 
-  private:
-    typedef AssemblerBuffer<SliceSize, Inst> Parent;
-    using typename Parent::Slice;
+ private:
+  typedef AssemblerBuffer<SliceSize, Inst> Parent;
+  using typename Parent::Slice;
 
-    
-    const unsigned guardSize_;
-    
-    
-    const unsigned headerSize_;
+  
+  const unsigned guardSize_;
+  
+  
+  const unsigned headerSize_;
 
-    
-    
-    
-    
-    const size_t poolMaxOffset_;
+  
+  
+  
+  
+  const size_t poolMaxOffset_;
 
-    
-    
-    const unsigned pcBias_;
+  
+  
+  const unsigned pcBias_;
 
-    
-    Pool pool_;
+  
+  Pool pool_;
 
-    
-    const size_t instBufferAlign_;
+  
+  const size_t instBufferAlign_;
 
-    struct PoolInfo {
-        
-        
-        unsigned firstEntryIndex;
-
-        
-        
-        
-        BufferOffset offset;
-
-        explicit PoolInfo(unsigned index, BufferOffset data)
-          : firstEntryIndex(index)
-          , offset(data)
-        {
-        }
-    };
-
+  struct PoolInfo {
     
     
-    Vector<PoolInfo, 8, LifoAllocPolicy<Fallible>> poolInfo_;
+    unsigned firstEntryIndex;
 
     
     
     
-    
-    
-    
-    BranchDeadlineSet<NumShortBranchRanges> branchDeadlines_;
+    BufferOffset offset;
 
-    
-    bool canNotPlacePool_;
+    explicit PoolInfo(unsigned index, BufferOffset data)
+        : firstEntryIndex(index), offset(data) {}
+  };
+
+  
+  
+  Vector<PoolInfo, 8, LifoAllocPolicy<Fallible>> poolInfo_;
+
+  
+  
+  
+  
+  
+  
+  BranchDeadlineSet<NumShortBranchRanges> branchDeadlines_;
+
+  
+  bool canNotPlacePool_;
 
 #ifdef DEBUG
-    
-    
-    size_t canNotPlacePoolStartOffset_;
-    
-    
-    size_t canNotPlacePoolMaxInst_;
+  
+  
+  size_t canNotPlacePoolStartOffset_;
+  
+  
+  size_t canNotPlacePoolMaxInst_;
 #endif
 
-    
-    const uint32_t alignFillInst_;
+  
+  const uint32_t alignFillInst_;
 
-    
-    
-    
-    
-    const uint32_t nopFillInst_;
-    const unsigned nopFill_;
+  
+  
+  
+  
+  const uint32_t nopFillInst_;
+  const unsigned nopFill_;
 
-    
-    
-    bool inhibitNops_;
+  
+  
+  bool inhibitNops_;
 
-  public:
-    
-    
-    int id;
+ public:
+  
+  
+  int id;
 
-  private:
-    
-    Slice* getHead() const {
-        return this->head;
-    }
-    Slice* getTail() const {
-        return this->tail;
-    }
+ private:
+  
+  Slice* getHead() const { return this->head; }
+  Slice* getTail() const { return this->tail; }
 
-  public:
-    
-    
-    
-    AssemblerBufferWithConstantPools(unsigned guardSize, unsigned headerSize,
-                                     size_t instBufferAlign, size_t poolMaxOffset,
-                                     unsigned pcBias, uint32_t alignFillInst, uint32_t nopFillInst,
-                                     unsigned nopFill = 0)
+ public:
+  
+  
+  
+  
+  AssemblerBufferWithConstantPools(unsigned guardSize, unsigned headerSize,
+                                   size_t instBufferAlign, size_t poolMaxOffset,
+                                   unsigned pcBias, uint32_t alignFillInst,
+                                   uint32_t nopFillInst, unsigned nopFill = 0)
       : poolEntryCount(0),
         guardSize_(guardSize),
         headerSize_(headerSize),
@@ -701,517 +665,521 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<SliceSize, Inst
         nopFillInst_(nopFillInst),
         nopFill_(nopFill),
         inhibitNops_(false),
-        id(-1)
-    { }
+        id(-1) {
+  }
+
+  
+  
+  void initWithAllocator() {
+    
+    
+    MOZ_ASSERT(this->lifoAlloc_.isEmpty(),
+               "Illegal LIFO allocations before AutoJitContextAlloc");
+  }
+
+ private:
+  size_t sizeExcludingCurrentPool() const {
+    
+    
+    return this->nextOffset().getOffset();
+  }
+
+ public:
+  size_t size() const {
+    
+    
+    MOZ_ASSERT_IF(!this->oom(), pool_.numEntries() == 0);
+    return sizeExcludingCurrentPool();
+  }
+
+ private:
+  void insertNopFill() {
+    
+    if (nopFill_ > 0 && !inhibitNops_ && !canNotPlacePool_) {
+      inhibitNops_ = true;
+
+      
+      
+      for (size_t i = 0; i < nopFill_; i++) {
+        putInt(nopFillInst_);
+      }
+
+      inhibitNops_ = false;
+    }
+  }
+
+  static const unsigned OOM_FAIL = unsigned(-1);
+  static const unsigned DUMMY_INDEX = unsigned(-2);
+
+  
+  
+  bool hasSpaceForInsts(unsigned numInsts, unsigned numPoolEntries) const {
+    size_t nextOffset = sizeExcludingCurrentPool();
+    
+    
+    
+    size_t poolOffset =
+        nextOffset + (numInsts + guardSize_ + headerSize_) * InstSize;
+
+    
+    if (pool_.checkFull(poolOffset)) {
+      return false;
+    }
+
+    
+    if (!branchDeadlines_.empty()) {
+      size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
+      size_t poolEnd = poolOffset + pool_.getPoolSize() +
+                       numPoolEntries * sizeof(PoolAllocUnit);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      
+      size_t secondaryVeneers = guardSize_ * (branchDeadlines_.size() -
+                                              branchDeadlines_.maxRangeSize());
+
+      if (deadline < poolEnd + secondaryVeneers) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  unsigned insertEntryForwards(unsigned numInst, unsigned numPoolEntries,
+                               uint8_t* inst, uint8_t* data) {
+    
+    
+    if (numPoolEntries) {
+      pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
+    }
+
+    if (!hasSpaceForInsts(numInst, numPoolEntries)) {
+      if (numPoolEntries) {
+        JitSpew(JitSpew_Pools, "[%d] Inserting pool entry caused a spill", id);
+      } else {
+        JitSpew(JitSpew_Pools, "[%d] Inserting instruction(%zu) caused a spill",
+                id, sizeExcludingCurrentPool());
+      }
+
+      finishPool();
+      if (this->oom()) {
+        return OOM_FAIL;
+      }
+      return insertEntryForwards(numInst, numPoolEntries, inst, data);
+    }
+    if (numPoolEntries) {
+      unsigned result = pool_.insertEntry(numPoolEntries, data,
+                                          this->nextOffset(), this->lifoAlloc_);
+      if (result == Pool::OOM_FAIL) {
+        this->fail_oom();
+        return OOM_FAIL;
+      }
+      return result;
+    }
 
     
     
-    void initWithAllocator() {
-        
-        
-        MOZ_ASSERT(this->lifoAlloc_.isEmpty(), "Illegal LIFO allocations before AutoJitContextAlloc");
+    
+    return DUMMY_INDEX;
+  }
+
+ public:
+  
+  
+  BufferOffset nextInstrOffset() {
+    if (!hasSpaceForInsts( 1,  0)) {
+      JitSpew(JitSpew_Pools,
+              "[%d] nextInstrOffset @ %d caused a constant pool spill", id,
+              this->nextOffset().getOffset());
+      finishPool();
     }
+    return this->nextOffset();
+  }
 
-  private:
-    size_t sizeExcludingCurrentPool() const {
-        
-        
-        return this->nextOffset().getOffset();
-    }
-
-  public:
-    size_t size() const {
-        
-        
-        MOZ_ASSERT_IF(!this->oom(), pool_.numEntries() == 0);
-        return sizeExcludingCurrentPool();
-    }
-
-  private:
-    void insertNopFill() {
-        
-        if (nopFill_ > 0 && !inhibitNops_ && !canNotPlacePool_) {
-            inhibitNops_ = true;
-
-            
-            
-            for (size_t i = 0; i < nopFill_; i++) {
-                putInt(nopFillInst_);
-            }
-
-            inhibitNops_ = false;
-        }
-    }
-
-    static const unsigned OOM_FAIL = unsigned(-1);
-    static const unsigned DUMMY_INDEX = unsigned(-2);
-
+  MOZ_NEVER_INLINE
+  BufferOffset allocEntry(size_t numInst, unsigned numPoolEntries,
+                          uint8_t* inst, uint8_t* data,
+                          PoolEntry* pe = nullptr) {
     
     
-    bool hasSpaceForInsts(unsigned numInsts, unsigned numPoolEntries) const
-    {
-        size_t nextOffset = sizeExcludingCurrentPool();
-        
-        
-        
-        size_t poolOffset = nextOffset + (numInsts + guardSize_ + headerSize_) * InstSize;
+    MOZ_ASSERT_IF(numPoolEntries, !canNotPlacePool_);
 
-        
-        if (pool_.checkFull(poolOffset)) {
-            return false;
-        }
-
-        
-        if (!branchDeadlines_.empty()) {
-            size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
-            size_t poolEnd =
-              poolOffset + pool_.getPoolSize() + numPoolEntries * sizeof(PoolAllocUnit);
-
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-
-            
-            size_t secondaryVeneers =
-              guardSize_ * (branchDeadlines_.size() - branchDeadlines_.maxRangeSize());
-
-            if (deadline < poolEnd + secondaryVeneers) {
-                return false;
-            }
-        }
-
-        return true;
+    if (this->oom() && !this->bail()) {
+      return BufferOffset();
     }
 
-    unsigned insertEntryForwards(unsigned numInst, unsigned numPoolEntries, uint8_t* inst, uint8_t* data) {
-        
-        
-        if (numPoolEntries) {
-            pool_.updateLimiter(BufferOffset(sizeExcludingCurrentPool()));
-        }
-
-        if (!hasSpaceForInsts(numInst, numPoolEntries)) {
-            if (numPoolEntries) {
-                JitSpew(JitSpew_Pools, "[%d] Inserting pool entry caused a spill", id);
-            } else {
-                JitSpew(JitSpew_Pools, "[%d] Inserting instruction(%zu) caused a spill", id,
-                        sizeExcludingCurrentPool());
-            }
-
-            finishPool();
-            if (this->oom()) {
-                return OOM_FAIL;
-            }
-            return insertEntryForwards(numInst, numPoolEntries, inst, data);
-        }
-        if (numPoolEntries) {
-            unsigned result = pool_.insertEntry(numPoolEntries, data, this->nextOffset(), this->lifoAlloc_);
-            if (result == Pool::OOM_FAIL) {
-                this->fail_oom();
-                return OOM_FAIL;
-            }
-            return result;
-        }
-
-        
-        
-        
-        return DUMMY_INDEX;
-    }
-
-  public:
-    
-    
-    BufferOffset nextInstrOffset()
-    {
-        if (!hasSpaceForInsts( 1,  0)) {
-            JitSpew(JitSpew_Pools, "[%d] nextInstrOffset @ %d caused a constant pool spill", id,
-                    this->nextOffset().getOffset());
-            finishPool();
-        }
-        return this->nextOffset();
-    }
-
-    MOZ_NEVER_INLINE
-    BufferOffset allocEntry(size_t numInst, unsigned numPoolEntries,
-                            uint8_t* inst, uint8_t* data, PoolEntry* pe = nullptr)
-    {
-        
-        
-        MOZ_ASSERT_IF(numPoolEntries, !canNotPlacePool_);
-
-        if (this->oom() && !this->bail()) {
-            return BufferOffset();
-        }
-
-        insertNopFill();
+    insertNopFill();
 
 #ifdef JS_JITSPEW
-        if (numPoolEntries && JitSpewEnabled(JitSpew_Pools)) {
-            JitSpew(JitSpew_Pools, "[%d] Inserting %d entries into pool", id, numPoolEntries);
-            JitSpewStart(JitSpew_Pools, "[%d] data is: 0x", id);
-            size_t length = numPoolEntries * sizeof(PoolAllocUnit);
-            for (unsigned idx = 0; idx < length; idx++) {
-                JitSpewCont(JitSpew_Pools, "%02x", data[length - idx - 1]);
-                if (((idx & 3) == 3) && (idx + 1 != length)) {
-                    JitSpewCont(JitSpew_Pools, "_");
-                }
-            }
-            JitSpewFin(JitSpew_Pools);
+    if (numPoolEntries && JitSpewEnabled(JitSpew_Pools)) {
+      JitSpew(JitSpew_Pools, "[%d] Inserting %d entries into pool", id,
+              numPoolEntries);
+      JitSpewStart(JitSpew_Pools, "[%d] data is: 0x", id);
+      size_t length = numPoolEntries * sizeof(PoolAllocUnit);
+      for (unsigned idx = 0; idx < length; idx++) {
+        JitSpewCont(JitSpew_Pools, "%02x", data[length - idx - 1]);
+        if (((idx & 3) == 3) && (idx + 1 != length)) {
+          JitSpewCont(JitSpew_Pools, "_");
         }
+      }
+      JitSpewFin(JitSpew_Pools);
+    }
 #endif
 
-        
-        unsigned index = insertEntryForwards(numInst, numPoolEntries, inst, data);
-        if (this->oom()) {
-            return BufferOffset();
-        }
-
-        
-        PoolEntry retPE;
-        if (numPoolEntries) {
-            JitSpew(JitSpew_Pools, "[%d] Entry has index %u, offset %zu", id, index,
-                    sizeExcludingCurrentPool());
-            Asm::InsertIndexIntoTag(inst, index);
-            
-            retPE = PoolEntry(poolEntryCount);
-            poolEntryCount += numPoolEntries;
-        }
-        
-        if (pe != nullptr) {
-            *pe = retPE;
-        }
-        return this->putBytes(numInst * InstSize, inst);
+    
+    unsigned index = insertEntryForwards(numInst, numPoolEntries, inst, data);
+    if (this->oom()) {
+      return BufferOffset();
     }
 
+    
+    PoolEntry retPE;
+    if (numPoolEntries) {
+      JitSpew(JitSpew_Pools, "[%d] Entry has index %u, offset %zu", id, index,
+              sizeExcludingCurrentPool());
+      Asm::InsertIndexIntoTag(inst, index);
+      
+      retPE = PoolEntry(poolEntryCount);
+      poolEntryCount += numPoolEntries;
+    }
+    
+    if (pe != nullptr) {
+      *pe = retPE;
+    }
+    return this->putBytes(numInst * InstSize, inst);
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    MOZ_ALWAYS_INLINE
-    BufferOffset putInt(uint32_t value) {
-        if (nopFill_ || !hasSpaceForInsts( 1,  0)) {
-            return allocEntry(1, 0, (uint8_t*)&value, nullptr, nullptr);
-        }
+  MOZ_ALWAYS_INLINE
+  BufferOffset putInt(uint32_t value) {
+    if (nopFill_ ||
+        !hasSpaceForInsts( 1,  0)) {
+      return allocEntry(1, 0, (uint8_t*)&value, nullptr, nullptr);
+    }
 
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
     defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-        return this->putU32Aligned(value);
+    return this->putU32Aligned(value);
 #else
-        return this->AssemblerBuffer<SliceSize, Inst>::putInt(value);
+    return this->AssemblerBuffer<SliceSize, Inst>::putInt(value);
 #endif
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void registerBranchDeadline(unsigned rangeIdx, BufferOffset deadline) {
+    if (!this->oom() && !branchDeadlines_.addDeadline(rangeIdx, deadline)) {
+      this->fail_oom();
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  void unregisterBranchDeadline(unsigned rangeIdx, BufferOffset deadline) {
+    if (!this->oom()) {
+      branchDeadlines_.removeDeadline(rangeIdx, deadline);
+    }
+  }
+
+ private:
+  
+  bool hasExpirableShortRangeBranches() const {
+    if (branchDeadlines_.empty()) {
+      return false;
     }
 
     
     
     
+    return this->nextOffset().getOffset() + ShortRangeBranchHysteresis >
+           size_t(branchDeadlines_.earliestDeadline().getOffset());
+  }
+
+  void finishPool() {
+    JitSpew(JitSpew_Pools,
+            "[%d] Attempting to finish pool %zu with %u entries.", id,
+            poolInfo_.length(), pool_.numEntries());
+
+    if (pool_.numEntries() == 0 && !hasExpirableShortRangeBranches()) {
+      
+      JitSpew(JitSpew_Pools, "[%d] Aborting because the pool is empty", id);
+      return;
+    }
+
     
+    MOZ_ASSERT(!canNotPlacePool_);
+
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    void registerBranchDeadline(unsigned rangeIdx, BufferOffset deadline)
-    {
-        if (!this->oom() && !branchDeadlines_.addDeadline(rangeIdx, deadline)) {
-            this->fail_oom();
-        }
+    BufferOffset guard = this->putBytes(guardSize_ * InstSize, nullptr);
+    BufferOffset header = this->putBytes(headerSize_ * InstSize, nullptr);
+    BufferOffset data = this->putBytesLarge(pool_.getPoolSize(),
+                                            (const uint8_t*)pool_.poolData());
+    if (this->oom()) {
+      return;
     }
 
     
     
-    
-    
-    
-    
-    
-    void unregisterBranchDeadline(unsigned rangeIdx, BufferOffset deadline)
-    {
-        if (!this->oom()) {
-            branchDeadlines_.removeDeadline(rangeIdx, deadline);
-        }
+    while (hasExpirableShortRangeBranches()) {
+      unsigned rangeIdx = branchDeadlines_.earliestDeadlineRange();
+      BufferOffset deadline = branchDeadlines_.earliestDeadline();
+
+      
+      
+      branchDeadlines_.removeDeadline(rangeIdx, deadline);
+
+      
+      BufferOffset veneer = this->putBytes(guardSize_ * InstSize, nullptr);
+      if (this->oom()) {
+        return;
+      }
+
+      
+      
+      
+      Asm::PatchShortRangeBranchToVeneer(this, rangeIdx, deadline, veneer);
     }
 
-  private:
     
-    bool hasExpirableShortRangeBranches() const
-    {
-        if (branchDeadlines_.empty()) {
-            return false;
-        }
+    
+    BufferOffset afterPool = this->nextOffset();
+    Asm::WritePoolGuard(guard, this->getInst(guard), afterPool);
+    Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
 
-        
-        
-        
-        return this->nextOffset().getOffset() + ShortRangeBranchHysteresis >
-               size_t(branchDeadlines_.earliestDeadline().getOffset());
+    
+    
+    
+    size_t poolOffset = data.getOffset();
+
+    unsigned idx = 0;
+    for (BufferOffset* iter = pool_.loadOffsets.begin();
+         iter != pool_.loadOffsets.end(); ++iter, ++idx) {
+      
+      MOZ_ASSERT(iter->getOffset() < guard.getOffset());
+
+      
+      
+      Inst* inst = this->getInst(*iter);
+      size_t codeOffset = poolOffset - iter->getOffset();
+
+      
+      
+      
+      
+      JitSpew(JitSpew_Pools, "[%d] Fixing entry %d offset to %zu", id, idx,
+              codeOffset);
+      Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
     }
 
-    void finishPool() {
-        JitSpew(JitSpew_Pools, "[%d] Attempting to finish pool %zu with %u entries.",
-                id, poolInfo_.length(), pool_.numEntries());
-
-        if (pool_.numEntries() == 0 && !hasExpirableShortRangeBranches()) {
-            
-            JitSpew(JitSpew_Pools, "[%d] Aborting because the pool is empty", id);
-            return;
-        }
-
-        
-        MOZ_ASSERT(!canNotPlacePool_);
-
-        
-        BufferOffset guard = this->putBytes(guardSize_ * InstSize, nullptr);
-        BufferOffset header = this->putBytes(headerSize_ * InstSize, nullptr);
-        BufferOffset data =
-          this->putBytesLarge(pool_.getPoolSize(), (const uint8_t*)pool_.poolData());
-        if (this->oom()) {
-            return;
-        }
-
-        
-        
-        while (hasExpirableShortRangeBranches()) {
-            unsigned rangeIdx = branchDeadlines_.earliestDeadlineRange();
-            BufferOffset deadline = branchDeadlines_.earliestDeadline();
-
-            
-            
-            branchDeadlines_.removeDeadline(rangeIdx, deadline);
-
-            
-            BufferOffset veneer = this->putBytes(guardSize_ * InstSize, nullptr);
-            if (this->oom()) {
-                return;
-            }
-
-            
-            
-            
-            Asm::PatchShortRangeBranchToVeneer(this, rangeIdx, deadline, veneer);
-        }
-
-        
-        
-        BufferOffset afterPool = this->nextOffset();
-        Asm::WritePoolGuard(guard, this->getInst(guard), afterPool);
-        Asm::WritePoolHeader((uint8_t*)this->getInst(header), &pool_, false);
-
-        
-        
-        
-        size_t poolOffset = data.getOffset();
-
-        unsigned idx = 0;
-        for (BufferOffset* iter = pool_.loadOffsets.begin();
-             iter != pool_.loadOffsets.end();
-             ++iter, ++idx)
-        {
-            
-            MOZ_ASSERT(iter->getOffset() < guard.getOffset());
-
-            
-            
-            Inst* inst = this->getInst(*iter);
-            size_t codeOffset = poolOffset - iter->getOffset();
-
-            
-            
-            
-            
-            JitSpew(JitSpew_Pools, "[%d] Fixing entry %d offset to %zu", id, idx, codeOffset);
-            Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
-        }
-
-        
-        unsigned firstEntry = poolEntryCount - pool_.numEntries();
-        if (!poolInfo_.append(PoolInfo(firstEntry, data))) {
-            this->fail_oom();
-            return;
-        }
-
-        
-        pool_.reset();
+    
+    unsigned firstEntry = poolEntryCount - pool_.numEntries();
+    if (!poolInfo_.append(PoolInfo(firstEntry, data))) {
+      this->fail_oom();
+      return;
     }
 
-  public:
-    void flushPool() {
-        if (this->oom()) {
-            return;
-        }
-        JitSpew(JitSpew_Pools, "[%d] Requesting a pool flush", id);
-        finishPool();
+    
+    pool_.reset();
+  }
+
+ public:
+  void flushPool() {
+    if (this->oom()) {
+      return;
     }
+    JitSpew(JitSpew_Pools, "[%d] Requesting a pool flush", id);
+    finishPool();
+  }
 
-    void enterNoPool(size_t maxInst) {
-        
-        MOZ_ASSERT(!canNotPlacePool_);
-        insertNopFill();
+  void enterNoPool(size_t maxInst) {
+    
+    MOZ_ASSERT(!canNotPlacePool_);
+    insertNopFill();
 
-        
-        
-        
-        
-        if (!hasSpaceForInsts(maxInst, 0)) {
-            JitSpew(JitSpew_Pools, "[%d] No-Pool instruction(%zu) caused a spill.", id,
-                    sizeExcludingCurrentPool());
-            finishPool();
-        }
+    
+    
+    
+    
+    if (!hasSpaceForInsts(maxInst, 0)) {
+      JitSpew(JitSpew_Pools, "[%d] No-Pool instruction(%zu) caused a spill.",
+              id, sizeExcludingCurrentPool());
+      finishPool();
+    }
 
 #ifdef DEBUG
-        
-        
-        canNotPlacePoolStartOffset_ = this->nextOffset().getOffset();
-        canNotPlacePoolMaxInst_ = maxInst;
+    
+    
+    canNotPlacePoolStartOffset_ = this->nextOffset().getOffset();
+    canNotPlacePoolMaxInst_ = maxInst;
 #endif
 
-        canNotPlacePool_ = true;
+    canNotPlacePool_ = true;
+  }
+
+  void leaveNoPool() {
+    MOZ_ASSERT(canNotPlacePool_);
+    canNotPlacePool_ = false;
+
+    
+    MOZ_ASSERT(this->nextOffset().getOffset() - canNotPlacePoolStartOffset_ <=
+               canNotPlacePoolMaxInst_ * InstSize);
+  }
+
+  void enterNoNops() {
+    MOZ_ASSERT(!inhibitNops_);
+    inhibitNops_ = true;
+  }
+  void leaveNoNops() {
+    MOZ_ASSERT(inhibitNops_);
+    inhibitNops_ = false;
+  }
+
+  void align(unsigned alignment) {
+    MOZ_ASSERT(mozilla::IsPowerOfTwo(alignment));
+    MOZ_ASSERT(alignment >= InstSize);
+
+    
+    insertNopFill();
+
+    
+    unsigned requiredFill = sizeExcludingCurrentPool() & (alignment - 1);
+    if (requiredFill == 0) {
+      return;
+    }
+    requiredFill = alignment - requiredFill;
+
+    
+    
+    if (!hasSpaceForInsts(requiredFill / InstSize + 1, 0)) {
+      
+      JitSpew(JitSpew_Pools, "[%d] Alignment of %d at %zu caused a spill.", id,
+              alignment, sizeExcludingCurrentPool());
+      finishPool();
     }
 
-    void leaveNoPool() {
-        MOZ_ASSERT(canNotPlacePool_);
-        canNotPlacePool_ = false;
-
-        
-        MOZ_ASSERT(this->nextOffset().getOffset() - canNotPlacePoolStartOffset_ <=
-                   canNotPlacePoolMaxInst_ * InstSize);
+    inhibitNops_ = true;
+    while ((sizeExcludingCurrentPool() & (alignment - 1)) && !this->oom()) {
+      putInt(alignFillInst_);
     }
+    inhibitNops_ = false;
+  }
 
-    void enterNoNops() {
-        MOZ_ASSERT(!inhibitNops_);
-        inhibitNops_ = true;
+ public:
+  void executableCopy(uint8_t* dest) {
+    if (this->oom()) {
+      return;
     }
-    void leaveNoNops() {
-        MOZ_ASSERT(inhibitNops_);
-        inhibitNops_ = false;
+    
+    MOZ_ASSERT(pool_.numEntries() == 0);
+    for (Slice* cur = getHead(); cur != nullptr; cur = cur->getNext()) {
+      memcpy(dest, &cur->instructions[0], cur->length());
+      dest += cur->length();
     }
+  }
 
-    void align(unsigned alignment) {
-        MOZ_ASSERT(mozilla::IsPowerOfTwo(alignment));
-        MOZ_ASSERT(alignment >= InstSize);
-
-        
-        insertNopFill();
-
-        
-        unsigned requiredFill = sizeExcludingCurrentPool() & (alignment - 1);
-        if (requiredFill == 0) {
-            return;
-        }
-        requiredFill = alignment - requiredFill;
-
-        
-        
-        if (!hasSpaceForInsts(requiredFill / InstSize + 1, 0)) {
-            
-            JitSpew(JitSpew_Pools, "[%d] Alignment of %d at %zu caused a spill.",
-                    id, alignment, sizeExcludingCurrentPool());
-            finishPool();
-        }
-
-        inhibitNops_ = true;
-        while ((sizeExcludingCurrentPool() & (alignment - 1)) && !this->oom()) {
-            putInt(alignFillInst_);
-        }
-        inhibitNops_ = false;
+  bool appendRawCode(const uint8_t* code, size_t numBytes) {
+    if (this->oom()) {
+      return false;
     }
-
-  public:
-    void executableCopy(uint8_t* dest) {
-        if (this->oom()) {
-            return;
-        }
-        
-        MOZ_ASSERT(pool_.numEntries() == 0);
-        for (Slice* cur = getHead(); cur != nullptr; cur = cur->getNext()) {
-            memcpy(dest, &cur->instructions[0], cur->length());
-            dest += cur->length();
-        }
+    
+    MOZ_ASSERT(pool_.numEntries() == 0);
+    while (numBytes > SliceSize) {
+      this->putBytes(SliceSize, code);
+      numBytes -= SliceSize;
+      code += SliceSize;
     }
+    this->putBytes(numBytes, code);
+    return !this->oom();
+  }
 
-    bool appendRawCode(const uint8_t* code, size_t numBytes) {
-        if (this->oom()) {
-            return false;
-        }
-        
-        MOZ_ASSERT(pool_.numEntries() == 0);
-        while (numBytes > SliceSize) {
-            this->putBytes(SliceSize, code);
-            numBytes -= SliceSize;
-            code += SliceSize;
-        }
-        this->putBytes(numBytes, code);
-        return !this->oom();
-    }
-
-  public:
-    size_t poolEntryOffset(PoolEntry pe) const {
-        MOZ_ASSERT(pe.index() < poolEntryCount - pool_.numEntries(),
-                   "Invalid pool entry, or not flushed yet.");
-        
-        
-        auto b = poolInfo_.begin(), e = poolInfo_.end();
-        
-        
-        auto i = std::upper_bound(b, e, pe.index(), [](size_t value, const PoolInfo& entry) {
-            return value < entry.firstEntryIndex;
-        });
-        
-        
-        MOZ_ASSERT(i != b, "PoolInfo not sorted or empty?");
-        --i;
-        
-        MOZ_ASSERT(i->firstEntryIndex <= pe.index() &&
-                   (i + 1 == e || (i + 1)->firstEntryIndex > pe.index()));
-        
-        unsigned relativeIndex = pe.index() - i->firstEntryIndex;
-        return i->offset.getOffset() + relativeIndex * sizeof(PoolAllocUnit);
-    }
+ public:
+  size_t poolEntryOffset(PoolEntry pe) const {
+    MOZ_ASSERT(pe.index() < poolEntryCount - pool_.numEntries(),
+               "Invalid pool entry, or not flushed yet.");
+    
+    
+    auto b = poolInfo_.begin(), e = poolInfo_.end();
+    
+    
+    auto i = std::upper_bound(b, e, pe.index(),
+                              [](size_t value, const PoolInfo& entry) {
+                                return value < entry.firstEntryIndex;
+                              });
+    
+    
+    MOZ_ASSERT(i != b, "PoolInfo not sorted or empty?");
+    --i;
+    
+    MOZ_ASSERT(i->firstEntryIndex <= pe.index() &&
+               (i + 1 == e || (i + 1)->firstEntryIndex > pe.index()));
+    
+    unsigned relativeIndex = pe.index() - i->firstEntryIndex;
+    return i->offset.getOffset() + relativeIndex * sizeof(PoolAllocUnit);
+  }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

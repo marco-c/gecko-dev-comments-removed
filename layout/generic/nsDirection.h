@@ -10,10 +10,6 @@
 
 
 
-enum nsDirection {
-  eDirNext    = 0,
-  eDirPrevious= 1
-};
+enum nsDirection { eDirNext = 0, eDirPrevious = 1 };
 
 #endif
-

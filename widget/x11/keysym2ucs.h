@@ -18,14 +18,11 @@
 #endif 
 
 #ifdef __cplusplus
-extern "C" { 
+extern "C" {
 #endif
 
-long keysym2ucs(KeySym keysym); 
+long keysym2ucs(KeySym keysym);
 
 #ifdef __cplusplus
 } 
 #endif
-
-
-

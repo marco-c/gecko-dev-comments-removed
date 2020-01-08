@@ -16,9 +16,8 @@
 
 
 
-class nsSMILSetAnimationFunction : public nsSMILAnimationFunction
-{
-public:
+class nsSMILSetAnimationFunction : public nsSMILAnimationFunction {
+ public:
   
 
 
@@ -33,7 +32,8 @@ public:
 
 
   virtual bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
-                         nsAttrValue& aResult, nsresult* aParseResult = nullptr) override;
+                       nsAttrValue& aResult,
+                       nsresult* aParseResult = nullptr) override;
 
   
 
@@ -43,26 +43,21 @@ public:
 
   virtual bool UnsetAttr(nsAtom* aAttribute) override;
 
-protected:
+ protected:
   
   
   
   
-  virtual bool IsToAnimation() const override {
-    return false;
-  }
+  virtual bool IsToAnimation() const override { return false; }
 
   
-  virtual bool IsValueFixedForSimpleDuration() const override {
-    return true;
-  }
-  virtual bool               HasAttr(nsAtom* aAttName) const override;
+  virtual bool IsValueFixedForSimpleDuration() const override { return true; }
+  virtual bool HasAttr(nsAtom* aAttName) const override;
   virtual const nsAttrValue* GetAttr(nsAtom* aAttName) const override;
-  virtual bool               GetAttr(nsAtom* aAttName,
-                                     nsAString& aResult) const override;
+  virtual bool GetAttr(nsAtom* aAttName, nsAString& aResult) const override;
   virtual bool WillReplace() const override;
 
   bool IsDisallowedAttribute(const nsAtom* aAttribute) const;
 };
 
-#endif 
+#endif  

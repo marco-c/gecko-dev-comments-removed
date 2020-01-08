@@ -29,64 +29,67 @@ namespace mozilla {
 namespace dom {
 
 class BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
-class BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString;
+class
+    BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString;
 class BlobImpl;
 class InternalRequest;
-class OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
-struct  ReadableStream;
+class
+    OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString;
+struct ReadableStream;
 class RequestOrUSVString;
 class WorkerPrivate;
 
 enum class CallerType : uint32_t;
 
-already_AddRefed<Promise>
-FetchRequest(nsIGlobalObject* aGlobal, const RequestOrUSVString& aInput,
-             const RequestInit& aInit, CallerType aCallerType,
-             ErrorResult& aRv);
+already_AddRefed<Promise> FetchRequest(nsIGlobalObject* aGlobal,
+                                       const RequestOrUSVString& aInput,
+                                       const RequestInit& aInit,
+                                       CallerType aCallerType,
+                                       ErrorResult& aRv);
 
-nsresult
-UpdateRequestReferrer(nsIGlobalObject* aGlobal, InternalRequest* aRequest);
+nsresult UpdateRequestReferrer(nsIGlobalObject* aGlobal,
+                               InternalRequest* aRequest);
 
 namespace fetch {
-typedef BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString BodyInit;
-typedef BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString ResponseBodyInit;
-typedef OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString OwningBodyInit;
-};
+typedef BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString
+    BodyInit;
+typedef BlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrReadableStreamOrUSVString
+    ResponseBodyInit;
+typedef OwningBlobOrArrayBufferViewOrArrayBufferOrFormDataOrURLSearchParamsOrUSVString
+    OwningBodyInit;
+};  
 
 
 
 
 
 
-nsresult
-ExtractByteStreamFromBody(const fetch::OwningBodyInit& aBodyInit,
-                          nsIInputStream** aStream,
-                          nsCString& aContentType,
-                          uint64_t& aContentLength);
+nsresult ExtractByteStreamFromBody(const fetch::OwningBodyInit& aBodyInit,
+                                   nsIInputStream** aStream,
+                                   nsCString& aContentType,
+                                   uint64_t& aContentLength);
 
 
 
 
-nsresult
-ExtractByteStreamFromBody(const fetch::BodyInit& aBodyInit,
-                          nsIInputStream** aStream,
-                          nsCString& aContentType,
-                          uint64_t& aContentLength);
+nsresult ExtractByteStreamFromBody(const fetch::BodyInit& aBodyInit,
+                                   nsIInputStream** aStream,
+                                   nsCString& aContentType,
+                                   uint64_t& aContentLength);
 
 
 
 
 
-nsresult
-ExtractByteStreamFromBody(const fetch::ResponseBodyInit& aBodyInit,
-                          nsIInputStream** aStream,
-                          nsCString& aContentType,
-                          uint64_t& aContentLength);
+nsresult ExtractByteStreamFromBody(const fetch::ResponseBodyInit& aBodyInit,
+                                   nsIInputStream** aStream,
+                                   nsCString& aContentType,
+                                   uint64_t& aContentLength);
 
-template <class Derived> class FetchBodyConsumer;
+template <class Derived>
+class FetchBodyConsumer;
 
-enum FetchConsumeType
-{
+enum FetchConsumeType {
   CONSUME_ARRAYBUFFER,
   CONSUME_BLOB,
   CONSUME_FORMDATA,
@@ -94,20 +97,17 @@ enum FetchConsumeType
   CONSUME_TEXT,
 };
 
-class FetchStreamHolder
-{
-public:
+class FetchStreamHolder {
+ public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
-  virtual void
-  NullifyStream() = 0;
+  virtual void NullifyStream() = 0;
 
-  virtual void
-  MarkAsRead() = 0;
+  virtual void MarkAsRead() = 0;
 
-  virtual JSObject*
-  ReadableStreamBody() = 0;
+  virtual JSObject* ReadableStreamBody() = 0;
 };
+
 
 
 
@@ -143,69 +143,50 @@ public:
 
 
 template <class Derived>
-class FetchBody : public FetchStreamHolder
-                , public AbortFollower
-{
-public:
+class FetchBody : public FetchStreamHolder, public AbortFollower {
+ public:
   friend class FetchBodyConsumer<Derived>;
 
-  bool
-  GetBodyUsed(ErrorResult& aRv) const;
+  bool GetBodyUsed(ErrorResult& aRv) const;
 
   
   
-  bool
-  CheckBodyUsed() const;
+  bool CheckBodyUsed() const;
 
-  already_AddRefed<Promise>
-  ArrayBuffer(JSContext* aCx, ErrorResult& aRv)
-  {
+  already_AddRefed<Promise> ArrayBuffer(JSContext* aCx, ErrorResult& aRv) {
     return ConsumeBody(aCx, CONSUME_ARRAYBUFFER, aRv);
   }
 
-  already_AddRefed<Promise>
-  Blob(JSContext* aCx, ErrorResult& aRv)
-  {
+  already_AddRefed<Promise> Blob(JSContext* aCx, ErrorResult& aRv) {
     return ConsumeBody(aCx, CONSUME_BLOB, aRv);
   }
 
-  already_AddRefed<Promise>
-  FormData(JSContext* aCx, ErrorResult& aRv)
-  {
+  already_AddRefed<Promise> FormData(JSContext* aCx, ErrorResult& aRv) {
     return ConsumeBody(aCx, CONSUME_FORMDATA, aRv);
   }
 
-  already_AddRefed<Promise>
-  Json(JSContext* aCx, ErrorResult& aRv)
-  {
+  already_AddRefed<Promise> Json(JSContext* aCx, ErrorResult& aRv) {
     return ConsumeBody(aCx, CONSUME_JSON, aRv);
   }
 
-  already_AddRefed<Promise>
-  Text(JSContext* aCx, ErrorResult& aRv)
-  {
+  already_AddRefed<Promise> Text(JSContext* aCx, ErrorResult& aRv) {
     return ConsumeBody(aCx, CONSUME_TEXT, aRv);
   }
 
-  void
-  GetBody(JSContext* aCx,
-          JS::MutableHandle<JSObject*> aBodyOut,
-          ErrorResult& aRv);
+  void GetBody(JSContext* aCx, JS::MutableHandle<JSObject*> aBodyOut,
+               ErrorResult& aRv);
 
-  const nsACString&
-  BodyBlobURISpec() const;
+  const nsACString& BodyBlobURISpec() const;
 
-  const nsAString&
-  BodyLocalPath() const;
+  const nsAString& BodyLocalPath() const;
 
   
   
-  void
-  MaybeTeeReadableStreamBody(JSContext* aCx,
-                             JS::MutableHandle<JSObject*> aBodyOut,
-                             FetchStreamReader** aStreamReader,
-                             nsIInputStream** aInputStream,
-                             ErrorResult& aRv);
+  void MaybeTeeReadableStreamBody(JSContext* aCx,
+                                  JS::MutableHandle<JSObject*> aBodyOut,
+                                  FetchStreamReader** aStreamReader,
+                                  nsIInputStream** aInputStream,
+                                  ErrorResult& aRv);
 
   
 
@@ -229,48 +210,33 @@ public:
   
   
   
-  void
-  SetBodyUsed(JSContext* aCx, ErrorResult& aRv);
+  void SetBodyUsed(JSContext* aCx, ErrorResult& aRv);
 
-  const nsCString&
-  MimeType() const
-  {
-    return mMimeType;
-  }
+  const nsCString& MimeType() const { return mMimeType; }
 
   
-  void
-  NullifyStream() override
-  {
+  void NullifyStream() override {
     mReadableStreamBody = nullptr;
     mReadableStreamReader = nullptr;
     mFetchStreamReader = nullptr;
   }
 
-  JSObject*
-  ReadableStreamBody() override
-  {
+  JSObject* ReadableStreamBody() override {
     MOZ_ASSERT(mReadableStreamBody);
     return mReadableStreamBody;
   }
 
-  void
-  MarkAsRead() override
-  {
-    mBodyUsed = true;
-  }
+  void MarkAsRead() override { mBodyUsed = true; }
 
-  virtual AbortSignalImpl*
-  GetSignalImpl() const = 0;
+  virtual AbortSignalImpl* GetSignalImpl() const = 0;
 
   
-  void
-  Abort() override;
+  void Abort() override;
 
-  already_AddRefed<Promise>
-  ConsumeBody(JSContext* aCx, FetchConsumeType aType, ErrorResult& aRv);
+  already_AddRefed<Promise> ConsumeBody(JSContext* aCx, FetchConsumeType aType,
+                                        ErrorResult& aRv);
 
-protected:
+ protected:
   nsCOMPtr<nsIGlobalObject> mOwner;
 
   
@@ -288,36 +254,22 @@ protected:
 
   virtual ~FetchBody();
 
-  void
-  SetMimeType();
+  void SetMimeType();
 
-  void
-  OverrideMimeType(const nsACString& aMimeType);
+  void OverrideMimeType(const nsACString& aMimeType);
 
-  void
-  SetReadableStreamBody(JSContext* aCx, JSObject* aBody);
+  void SetReadableStreamBody(JSContext* aCx, JSObject* aBody);
 
-private:
-  Derived*
-  DerivedClass() const
-  {
+ private:
+  Derived* DerivedClass() const {
     return static_cast<Derived*>(const_cast<FetchBody*>(this));
   }
 
-  void
-  LockStream(JSContext* aCx, JS::HandleObject aStream, ErrorResult& aRv);
+  void LockStream(JSContext* aCx, JS::HandleObject aStream, ErrorResult& aRv);
 
-  bool
-  IsOnTargetThread()
-  {
-    return NS_IsMainThread() == !mWorkerPrivate;
-  }
+  bool IsOnTargetThread() { return NS_IsMainThread() == !mWorkerPrivate; }
 
-  void
-  AssertIsOnTargetThread()
-  {
-    MOZ_ASSERT(IsOnTargetThread());
-  }
+  void AssertIsOnTargetThread() { MOZ_ASSERT(IsOnTargetThread()); }
 
   
   bool mBodyUsed;
@@ -327,7 +279,7 @@ private:
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

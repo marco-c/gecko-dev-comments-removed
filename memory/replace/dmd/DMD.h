@@ -23,8 +23,7 @@ class JSONWriteFunc;
 
 namespace dmd {
 
-struct Sizes
-{
+struct Sizes {
   size_t mStackTracesUsed;
   size_t mStackTracesUnused;
   size_t mStackTraceTable;
@@ -38,8 +37,7 @@ struct Sizes
 
 
 
-struct DMDFuncs
-{
+struct DMDFuncs {
   virtual void Report(const void*);
 
   virtual void ReportOnAlloc(const void*);
@@ -70,29 +68,29 @@ struct DMDFuncs
   
   static DMDFuncs* Get() { return sSingleton.Get(); }
 
-private:
+ private:
   
   
   
   
   
-  class Singleton
-  {
-  public:
+  class Singleton {
+   public:
     Singleton()
-      : mValue(ReplaceMalloc::GetDMDFuncs())
+        : mValue(ReplaceMalloc::GetDMDFuncs())
 #ifdef DEBUG
-      , mInitialized(true)
+          ,
+          mInitialized(true)
 #endif
-    {}
-
-    DMDFuncs* Get()
     {
+    }
+
+    DMDFuncs* Get() {
       MOZ_ASSERT(mInitialized);
       return mValue;
     }
 
-  private:
+   private:
     DMDFuncs* mValue;
 #ifdef DEBUG
     bool mInitialized;
@@ -101,15 +99,13 @@ private:
 
   
   
-  static Singleton sSingleton;
+  static  Singleton sSingleton;
 #endif
 };
 
 #ifndef REPLACE_MALLOC_IMPL
 
-inline void
-Report(const void* aPtr)
-{
+inline void Report(const void* aPtr) {
   DMDFuncs* funcs = DMDFuncs::Get();
   if (funcs) {
     funcs->Report(aPtr);
@@ -117,9 +113,7 @@ Report(const void* aPtr)
 }
 
 
-inline void
-ReportOnAlloc(const void* aPtr)
-{
+inline void ReportOnAlloc(const void* aPtr) {
   DMDFuncs* funcs = DMDFuncs::Get();
   if (funcs) {
     funcs->ReportOnAlloc(aPtr);
@@ -132,9 +126,7 @@ ReportOnAlloc(const void* aPtr)
 
 
 
-inline void
-ClearReports()
-{
+inline void ClearReports() {
   DMDFuncs* funcs = DMDFuncs::Get();
   if (funcs) {
     funcs->ClearReports();
@@ -251,9 +243,7 @@ ClearReports()
 
 
 template <typename JSONWriteFunc>
-inline void
-Analyze(UniquePtr<JSONWriteFunc> aWriteFunc)
-{
+inline void Analyze(UniquePtr<JSONWriteFunc> aWriteFunc) {
   DMDFuncs* funcs = DMDFuncs::Get();
   if (funcs) {
     funcs->Analyze(std::move(aWriteFunc));
@@ -262,9 +252,7 @@ Analyze(UniquePtr<JSONWriteFunc> aWriteFunc)
 
 
 
-inline void
-SizeOf(Sizes* aSizes)
-{
+inline void SizeOf(Sizes* aSizes) {
   DMDFuncs* funcs = DMDFuncs::Get();
   if (funcs) {
     funcs->SizeOf(aSizes);
@@ -273,9 +261,7 @@ SizeOf(Sizes* aSizes)
 
 
 MOZ_FORMAT_PRINTF(1, 2)
-inline void
-StatusMsg(const char* aFmt, ...)
-{
+inline void StatusMsg(const char* aFmt, ...) {
   DMDFuncs* funcs = DMDFuncs::Get();
   if (funcs) {
     va_list ap;
@@ -286,18 +272,12 @@ StatusMsg(const char* aFmt, ...)
 }
 
 
-inline bool
-IsRunning()
-{
-  return !!DMDFuncs::Get();
-}
+inline bool IsRunning() { return !!DMDFuncs::Get(); }
 
 
 
 
-inline void
-ResetEverything(const char* aOptions)
-{
+inline void ResetEverything(const char* aOptions) {
   DMDFuncs* funcs = DMDFuncs::Get();
   if (funcs) {
     funcs->ResetEverything(aOptions);
@@ -305,7 +285,7 @@ ResetEverything(const char* aOptions)
 }
 #endif
 
-} 
-} 
+}  
+}  
 
 #endif 

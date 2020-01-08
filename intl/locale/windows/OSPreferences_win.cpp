@@ -12,17 +12,11 @@
 
 using namespace mozilla::intl;
 
-OSPreferences::OSPreferences()
-{
-}
+OSPreferences::OSPreferences() {}
 
-OSPreferences::~OSPreferences()
-{
-}
+OSPreferences::~OSPreferences() {}
 
-bool
-OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList)
-{
+bool OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList) {
   MOZ_ASSERT(aLocaleList.IsEmpty());
 
   ULONG numLanguages = 0;
@@ -49,9 +43,7 @@ OSPreferences::ReadSystemLocales(nsTArray<nsCString>& aLocaleList)
   return false;
 }
 
-bool
-OSPreferences::ReadRegionalPrefsLocales(nsTArray<nsCString>& aLocaleList)
-{
+bool OSPreferences::ReadRegionalPrefsLocales(nsTArray<nsCString>& aLocaleList) {
   MOZ_ASSERT(aLocaleList.IsEmpty());
 
   WCHAR locale[LOCALE_NAME_MAX_LENGTH];
@@ -69,9 +61,7 @@ OSPreferences::ReadRegionalPrefsLocales(nsTArray<nsCString>& aLocaleList)
   return false;
 }
 
-static LCTYPE
-ToDateLCType(OSPreferences::DateTimeFormatStyle aFormatStyle)
-{
+static LCTYPE ToDateLCType(OSPreferences::DateTimeFormatStyle aFormatStyle) {
   switch (aFormatStyle) {
     case OSPreferences::DateTimeFormatStyle::None:
       return LOCALE_SLONGDATE;
@@ -90,9 +80,7 @@ ToDateLCType(OSPreferences::DateTimeFormatStyle aFormatStyle)
   }
 }
 
-static LCTYPE
-ToTimeLCType(OSPreferences::DateTimeFormatStyle aFormatStyle)
-{
+static LCTYPE ToTimeLCType(OSPreferences::DateTimeFormatStyle aFormatStyle) {
   switch (aFormatStyle) {
     case OSPreferences::DateTimeFormatStyle::None:
       return LOCALE_STIMEFORMAT;
@@ -128,11 +116,10 @@ ToTimeLCType(OSPreferences::DateTimeFormatStyle aFormatStyle)
 
 
 
-bool
-OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
-                                   DateTimeFormatStyle aTimeStyle,
-                                   const nsACString& aLocale, nsAString& aRetVal)
-{
+bool OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
+                                        DateTimeFormatStyle aTimeStyle,
+                                        const nsACString& aLocale,
+                                        nsAString& aRetVal) {
   nsAutoString localeName;
   CopyASCIItoUTF16(aLocale, localeName);
 
@@ -163,7 +150,9 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
 
   if (isDate) {
     LCTYPE lcType = ToDateLCType(aDateStyle);
-    size_t len = GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType, nullptr, 0);
+    size_t len = GetLocaleInfoEx(
+        reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType,
+        nullptr, 0);
     if (len == 0) {
       return false;
     }
@@ -171,9 +160,11 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
     
     
     str->SetLength(len);
-    GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType, (WCHAR*)str->BeginWriting(), len);
-    str->SetLength(len - 1); 
+    GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()),
+                    lcType, (WCHAR*)str->BeginWriting(), len);
+    str->SetLength(len - 1);  
 
+    
     
     
     
@@ -217,7 +208,9 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
 
   if (isTime) {
     LCTYPE lcType = ToTimeLCType(aTimeStyle);
-    size_t len = GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType, nullptr, 0);
+    size_t len = GetLocaleInfoEx(
+        reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType,
+        nullptr, 0);
     if (len == 0) {
       return false;
     }
@@ -225,7 +218,8 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
     
     
     str->SetLength(len);
-    GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()), lcType, (WCHAR*)str->BeginWriting(), len);
+    GetLocaleInfoEx(reinterpret_cast<const wchar_t*>(localeName.BeginReading()),
+                    lcType, (WCHAR*)str->BeginWriting(), len);
     str->SetLength(len - 1);
 
     

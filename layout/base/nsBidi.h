@@ -9,33 +9,27 @@
 
 #include "unicode/ubidi.h"
 #include "ICUUtils.h"
-#include "nsIFrame.h" 
+#include "nsIFrame.h"  
 
 
 
 
 
 
-class nsBidi
-{
-public:
+class nsBidi {
+ public:
   
 
 
 
 
-  nsBidi()
-  {
-    mBiDi = ubidi_open();
-  }
+  nsBidi() { mBiDi = ubidi_open(); }
 
   
-  ~nsBidi()
-  {
-    ubidi_close(mBiDi);
-  }
+  ~nsBidi() { ubidi_close(mBiDi); }
 
   
+
 
 
 
@@ -58,8 +52,7 @@ public:
 
 
   nsresult SetPara(const char16_t* aText, int32_t aLength,
-                   nsBidiLevel aParaLevel)
-  {
+                   nsBidiLevel aParaLevel) {
     UErrorCode error = U_ZERO_ERROR;
     ubidi_setPara(mBiDi, reinterpret_cast<const UChar*>(aText), aLength,
                   aParaLevel, nullptr, &error);
@@ -75,8 +68,7 @@ public:
 
 
 
-  nsBidiDirection GetDirection()
-  {
+  nsBidiDirection GetDirection() {
     return nsBidiDirection(ubidi_getDirection(mBiDi));
   }
 
@@ -88,10 +80,7 @@ public:
 
 
 
-  nsBidiLevel GetParaLevel()
-  {
-    return ubidi_getParaLevel(mBiDi);
-  }
+  nsBidiLevel GetParaLevel() { return ubidi_getParaLevel(mBiDi); }
 
   
 
@@ -112,8 +101,8 @@ public:
 
 
 
-  void GetLogicalRun(int32_t aLogicalStart,
-                     int32_t* aLogicalLimit, nsBidiLevel* aLevel);
+  void GetLogicalRun(int32_t aLogicalStart, int32_t* aLogicalLimit,
+                     nsBidiLevel* aLevel);
 
   
 
@@ -175,11 +164,10 @@ public:
 
 
 
-  nsBidiDirection GetVisualRun(int32_t aRunIndex,
-                               int32_t* aLogicalStart, int32_t* aLength)
-  {
-    return nsBidiDirection(ubidi_getVisualRun(mBiDi, aRunIndex,
-                                              aLogicalStart, aLength));
+  nsBidiDirection GetVisualRun(int32_t aRunIndex, int32_t* aLogicalStart,
+                               int32_t* aLength) {
+    return nsBidiDirection(
+        ubidi_getVisualRun(mBiDi, aRunIndex, aLogicalStart, aLength));
   }
 
   
@@ -203,12 +191,11 @@ public:
 
 
   static void ReorderVisual(const nsBidiLevel* aLevels, int32_t aLength,
-                            int32_t* aIndexMap)
-  {
+                            int32_t* aIndexMap) {
     ubidi_reorderVisual(aLevels, aLength, aIndexMap);
   }
 
-private:
+ private:
   nsBidi(const nsBidi&) = delete;
   void operator=(const nsBidi&) = delete;
 
@@ -218,4 +205,4 @@ private:
   int32_t mLength = 0;
 };
 
-#endif 
+#endif  

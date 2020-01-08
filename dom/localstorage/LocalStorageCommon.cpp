@@ -13,13 +13,11 @@ namespace {
 
 Atomic<int32_t> gNextGenLocalStorageEnabled(-1);
 
-} 
+}  
 
 const char16_t* kLocalStorageType = u"localStorage";
 
-bool
-NextGenLocalStorageEnabled()
-{
+bool NextGenLocalStorageEnabled() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (gNextGenLocalStorageEnabled == -1) {
@@ -30,13 +28,11 @@ NextGenLocalStorageEnabled()
   return !!gNextGenLocalStorageEnabled;
 }
 
-bool
-CachedNextGenLocalStorageEnabled()
-{
+bool CachedNextGenLocalStorageEnabled() {
   MOZ_ASSERT(gNextGenLocalStorageEnabled != -1);
 
   return !!gNextGenLocalStorageEnabled;
 }
 
-} 
-} 
+}  
+}  

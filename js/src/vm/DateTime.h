@@ -49,11 +49,9 @@ constexpr unsigned SecondsPerDay = SecondsPerHour * 24;
 constexpr double StartOfTime = -8.64e15;
 constexpr double EndOfTime = 8.64e15;
 
-extern bool
-InitDateTimeState();
+extern bool InitDateTimeState();
 
-extern void
-FinishDateTimeState();
+extern void FinishDateTimeState();
 
 enum class ResetTimeZoneMode : bool {
   DontResetIfOffsetUnchanged,
@@ -66,8 +64,7 @@ enum class ResetTimeZoneMode : bool {
 
 
 
-extern void
-ResetTimeZoneInternal(ResetTimeZoneMode mode);
+extern void ResetTimeZoneInternal(ResetTimeZoneMode mode);
 
 
 
@@ -115,97 +112,97 @@ ResetTimeZoneInternal(ResetTimeZoneMode mode);
 
 
 
-class DateTimeInfo
-{
-    static ExclusiveData<DateTimeInfo>* instance;
-    friend class ExclusiveData<DateTimeInfo>;
+class DateTimeInfo {
+  static ExclusiveData<DateTimeInfo>* instance;
+  friend class ExclusiveData<DateTimeInfo>;
 
-    friend bool InitDateTimeState();
-    friend void FinishDateTimeState();
+  friend bool InitDateTimeState();
+  friend void FinishDateTimeState();
 
-    DateTimeInfo();
-    ~DateTimeInfo();
+  DateTimeInfo();
+  ~DateTimeInfo();
 
-  public:
-    
-    
-    
+ public:
+  
+  
+  
 
-    
-
+  
 
 
 
 
-    static int32_t getDSTOffsetMilliseconds(int64_t utcMilliseconds) {
-        auto guard = instance->lock();
-        return guard->internalGetDSTOffsetMilliseconds(utcMilliseconds);
-    }
 
-    
+  static int32_t getDSTOffsetMilliseconds(int64_t utcMilliseconds) {
+    auto guard = instance->lock();
+    return guard->internalGetDSTOffsetMilliseconds(utcMilliseconds);
+  }
+
+  
 
 
 
-    static int32_t localTZA() {
-        auto guard = instance->lock();
-        return guard->localTZA_;
-    }
+  static int32_t localTZA() {
+    auto guard = instance->lock();
+    return guard->localTZA_;
+  }
 
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
-    enum class TimeZoneOffset { UTC, Local };
+  enum class TimeZoneOffset { UTC, Local };
 
-    
-
-
-
-    static int32_t getOffsetMilliseconds(int64_t milliseconds, TimeZoneOffset offset) {
-        auto guard = instance->lock();
-        return guard->internalGetOffsetMilliseconds(milliseconds, offset);
-    }
-
-    
+  
 
 
 
+  static int32_t getOffsetMilliseconds(int64_t milliseconds,
+                                       TimeZoneOffset offset) {
+    auto guard = instance->lock();
+    return guard->internalGetOffsetMilliseconds(milliseconds, offset);
+  }
+
+  
 
 
-    static bool timeZoneDisplayName(char16_t* buf, size_t buflen, int64_t utcMilliseconds,
-                                    const char* locale)
-    {
-        auto guard = instance->lock();
-        return guard->internalTimeZoneDisplayName(buf, buflen, utcMilliseconds, locale);
-    }
+
+
+
+  static bool timeZoneDisplayName(char16_t* buf, size_t buflen,
+                                  int64_t utcMilliseconds, const char* locale) {
+    auto guard = instance->lock();
+    return guard->internalTimeZoneDisplayName(buf, buflen, utcMilliseconds,
+                                              locale);
+  }
 #endif 
 
-  private:
+ private:
+  
+  
+  
+  
+  friend void js::ResetTimeZoneInternal(ResetTimeZoneMode);
+
+  
+  static bool updateTimeZoneAdjustment(ResetTimeZoneMode mode) {
+    auto guard = instance->lock();
+    return guard->internalUpdateTimeZoneAdjustment(mode);
+  }
+
+  struct RangeCache {
     
     
-    
-    
-    friend void js::ResetTimeZoneInternal(ResetTimeZoneMode);
+    int64_t startSeconds, endSeconds;
+    int64_t oldStartSeconds, oldEndSeconds;
 
     
-    static bool updateTimeZoneAdjustment(ResetTimeZoneMode mode) {
-        auto guard = instance->lock();
-        return guard->internalUpdateTimeZoneAdjustment(mode);
-    }
+    int32_t offsetMilliseconds;
+    int32_t oldOffsetMilliseconds;
 
-    struct RangeCache {
-        
-        
-        int64_t startSeconds, endSeconds;
-        int64_t oldStartSeconds, oldEndSeconds;
+    void reset();
 
-        
-        int32_t offsetMilliseconds;
-        int32_t oldOffsetMilliseconds;
+    void sanityCheck();
+  };
 
-        void reset();
-
-        void sanityCheck();
-    };
-
-    
+  
 
 
 
@@ -215,101 +212,104 @@ class DateTimeInfo
 
 
 
-    int32_t localTZA_;
+  int32_t localTZA_;
 
-    
+  
 
 
 
-    int32_t utcToLocalStandardOffsetSeconds_;
+  int32_t utcToLocalStandardOffsetSeconds_;
 
-    RangeCache dstRange_; 
+  RangeCache dstRange_;  
 
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
-    
-    
-    
-    
+  
+  
+  
+  
 
-    
-    static constexpr int64_t MinTimeT = static_cast<int64_t>(StartOfTime / msPerSecond);
-    static constexpr int64_t MaxTimeT = static_cast<int64_t>(EndOfTime / msPerSecond);
+  
+  static constexpr int64_t MinTimeT =
+      static_cast<int64_t>(StartOfTime / msPerSecond);
+  static constexpr int64_t MaxTimeT =
+      static_cast<int64_t>(EndOfTime / msPerSecond);
 
-    RangeCache utcRange_; 
-    RangeCache localRange_; 
+  RangeCache utcRange_;    
+  RangeCache localRange_;  
 
-    
-
-
-
-    mozilla::UniquePtr<icu::TimeZone> timeZone_;
-
-    
+  
 
 
 
-    JS::UniqueChars locale_;
-    JS::UniqueTwoByteChars standardName_;
-    JS::UniqueTwoByteChars daylightSavingsName_;
+  mozilla::UniquePtr<icu::TimeZone> timeZone_;
+
+  
+
+
+
+  JS::UniqueChars locale_;
+  JS::UniqueTwoByteChars standardName_;
+  JS::UniqueTwoByteChars daylightSavingsName_;
 #else
-    
-    
-    
-    
-    
-    
-    static constexpr int64_t MinTimeT = 0; 
-    static constexpr int64_t MaxTimeT = 2145830400; 
+  
+  
+  
+  
+  
+  
+  static constexpr int64_t MinTimeT = 0;          
+  static constexpr int64_t MaxTimeT = 2145830400; 
 #endif 
 
-    static constexpr int64_t RangeExpansionAmount = 30 * SecondsPerDay;
+  static constexpr int64_t RangeExpansionAmount = 30 * SecondsPerDay;
 
-    bool internalUpdateTimeZoneAdjustment(ResetTimeZoneMode mode);
+  bool internalUpdateTimeZoneAdjustment(ResetTimeZoneMode mode);
 
-    int64_t toClampedSeconds(int64_t milliseconds);
+  int64_t toClampedSeconds(int64_t milliseconds);
 
-    using ComputeFn = int32_t (DateTimeInfo::*)(int64_t);
+  using ComputeFn = int32_t (DateTimeInfo::*)(int64_t);
 
-    
-
-
-    int32_t getOrComputeValue(RangeCache& range, int64_t seconds, ComputeFn compute);
-
-    
+  
 
 
+  int32_t getOrComputeValue(RangeCache& range, int64_t seconds,
+                            ComputeFn compute);
+
+  
 
 
-    int32_t computeDSTOffsetMilliseconds(int64_t utcSeconds);
 
-    int32_t internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds);
+
+  int32_t computeDSTOffsetMilliseconds(int64_t utcSeconds);
+
+  int32_t internalGetDSTOffsetMilliseconds(int64_t utcMilliseconds);
 
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
-    
+  
 
 
 
-    int32_t computeUTCOffsetMilliseconds(int64_t localSeconds);
+  int32_t computeUTCOffsetMilliseconds(int64_t localSeconds);
 
-    
+  
 
 
 
-    int32_t computeLocalOffsetMilliseconds(int64_t utcSeconds);
+  int32_t computeLocalOffsetMilliseconds(int64_t utcSeconds);
 
-    int32_t internalGetOffsetMilliseconds(int64_t milliseconds, TimeZoneOffset offset);
+  int32_t internalGetOffsetMilliseconds(int64_t milliseconds,
+                                        TimeZoneOffset offset);
 
-    bool internalTimeZoneDisplayName(char16_t* buf, size_t buflen, int64_t utcMilliseconds,
-                                     const char* locale);
+  bool internalTimeZoneDisplayName(char16_t* buf, size_t buflen,
+                                   int64_t utcMilliseconds, const char* locale);
 
-    icu::TimeZone* timeZone();
+  icu::TimeZone* timeZone();
 #endif 
 };
 
 enum class IcuTimeZoneStatus { Valid, NeedsUpdate };
 
-extern ExclusiveData<IcuTimeZoneStatus>*
-IcuTimeZoneState;
+extern ExclusiveData<IcuTimeZoneStatus>* IcuTimeZoneState;
 
 
 
@@ -318,9 +318,8 @@ IcuTimeZoneState;
 
 
 
-extern void
-ResyncICUDefaultTimeZone();
+extern void ResyncICUDefaultTimeZone();
 
-}  
+} 
 
 #endif 

@@ -7,16 +7,16 @@
 #ifndef GFX_ImageLayerComposite_H
 #define GFX_ImageLayerComposite_H
 
-#include "GLTextureImage.h"             
-#include "ImageLayers.h"                
-#include "mozilla/Attributes.h"         
+#include "GLTextureImage.h"      
+#include "ImageLayers.h"         
+#include "mozilla/Attributes.h"  
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/RefPtr.h"             
+#include "mozilla/RefPtr.h"                        
 #include "mozilla/layers/LayerManagerComposite.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "nsISupportsImpl.h"            
-#include "nscore.h"                     
-#include "CompositableHost.h"           
+#include "mozilla/layers/LayersTypes.h"            
+#include "nsISupportsImpl.h"   
+#include "nscore.h"            
+#include "CompositableHost.h"  
 
 namespace mozilla {
 namespace layers {
@@ -24,18 +24,16 @@ namespace layers {
 class ImageHost;
 class Layer;
 
-class ImageLayerComposite : public ImageLayer,
-                            public LayerComposite
-{
+class ImageLayerComposite : public ImageLayer, public LayerComposite {
   typedef gl::TextureImage TextureImage;
 
-public:
+ public:
   explicit ImageLayerComposite(LayerManagerComposite* aManager);
 
-protected:
+ protected:
   virtual ~ImageLayerComposite();
 
-public:
+ public:
   virtual void Disconnect() override;
 
   virtual bool SetCompositableHost(CompositableHost* aHost) override;
@@ -47,7 +45,8 @@ public:
   virtual void RenderLayer(const gfx::IntRect& aClipRect,
                            const Maybe<gfx::Polygon>& aGeometry) override;
 
-  virtual void ComputeEffectiveTransforms(const mozilla::gfx::Matrix4x4& aTransformToSurface) override;
+  virtual void ComputeEffectiveTransforms(
+      const mozilla::gfx::Matrix4x4& aTransformToSurface) override;
 
   virtual void CleanupResources() override;
 
@@ -63,17 +62,18 @@ public:
 
   virtual nsIntRegion GetFullyRenderedRegion() override;
 
-protected:
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+ protected:
+  virtual void PrintInfo(std::stringstream& aStream,
+                         const char* aPrefix) override;
 
-private:
+ private:
   gfx::SamplingFilter GetSamplingFilter();
 
-private:
+ private:
   RefPtr<ImageHost> mImageHost;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

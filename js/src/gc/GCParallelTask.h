@@ -22,136 +22,125 @@ class AutoLockHelperThreadState;
 
 
 
-class GCParallelTask
-{
-  public:
-    using TaskFunc = void (*)(GCParallelTask*);
+class GCParallelTask {
+ public:
+  using TaskFunc = void (*)(GCParallelTask*);
 
-  private:
-    JSRuntime* const runtime_;
-    TaskFunc func_;
+ private:
+  JSRuntime* const runtime_;
+  TaskFunc func_;
 
-    
-    enum class State {
-        NotStarted,
-        Dispatched,
-        Finished
-    };
-    UnprotectedData<State> state_;
+  
+  enum class State { NotStarted, Dispatched, Finished };
+  UnprotectedData<State> state_;
 
-    
-    MainThreadOrGCTaskData<mozilla::TimeDuration> duration_;
+  
+  MainThreadOrGCTaskData<mozilla::TimeDuration> duration_;
 
-    explicit GCParallelTask(const GCParallelTask&) = delete;
+  explicit GCParallelTask(const GCParallelTask&) = delete;
 
-  protected:
-    
-    mozilla::Atomic<bool, mozilla::MemoryOrdering::ReleaseAcquire,
-                    mozilla::recordreplay::Behavior::DontPreserve> cancel_;
+ protected:
+  
+  mozilla::Atomic<bool, mozilla::MemoryOrdering::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      cancel_;
 
-  public:
-    explicit GCParallelTask(JSRuntime* runtime, TaskFunc func)
+ public:
+  explicit GCParallelTask(JSRuntime* runtime, TaskFunc func)
       : runtime_(runtime),
         func_(func),
         state_(State::NotStarted),
         duration_(nullptr),
-        cancel_(false)
-    {}
-    GCParallelTask(GCParallelTask&& other)
+        cancel_(false) {}
+  GCParallelTask(GCParallelTask&& other)
       : runtime_(other.runtime_),
         func_(other.func_),
         state_(other.state_),
         duration_(nullptr),
-        cancel_(false)
-    {}
+        cancel_(false) {}
 
+  
+  
+  ~GCParallelTask();
+
+  JSRuntime* runtime() { return runtime_; }
+
+  
+  mozilla::TimeDuration duration() const { return duration_; }
+
+  
+  MOZ_MUST_USE bool start();
+  void join();
+
+  
+  
+  MOZ_MUST_USE bool startWithLockHeld(AutoLockHelperThreadState& locked);
+  void joinWithLockHeld(AutoLockHelperThreadState& locked);
+
+  
+  void runFromMainThread(JSRuntime* rt);
+
+  
+  void cancelAndWait() {
+    cancel_ = true;
+    join();
+  }
+
+  
+  bool isRunningWithLockHeld(const AutoLockHelperThreadState& lock) const {
+    return isDispatched(lock);
+  }
+  bool isRunning() const;
+
+ private:
+  void assertNotStarted() const {
     
     
-    ~GCParallelTask();
+    MOZ_ASSERT(state_ == State::NotStarted);
+  }
+  bool isNotStarted(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::NotStarted;
+  }
+  bool isDispatched(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Dispatched;
+  }
+  bool isFinished(const AutoLockHelperThreadState& lock) const {
+    return state_ == State::Finished;
+  }
+  void setDispatched(const AutoLockHelperThreadState& lock) {
+    MOZ_ASSERT(state_ == State::NotStarted);
+    state_ = State::Dispatched;
+  }
+  void setFinished(const AutoLockHelperThreadState& lock) {
+    MOZ_ASSERT(state_ == State::Dispatched);
+    state_ = State::Finished;
+  }
+  void setNotStarted(const AutoLockHelperThreadState& lock) {
+    MOZ_ASSERT(state_ == State::Finished);
+    state_ = State::NotStarted;
+  }
 
-    JSRuntime* runtime() { return runtime_; }
+  void runTask() { func_(this); }
 
-    
-    mozilla::TimeDuration duration() const { return duration_; }
-
-    
-    MOZ_MUST_USE bool start();
-    void join();
-
-    
-    
-    MOZ_MUST_USE bool startWithLockHeld(AutoLockHelperThreadState& locked);
-    void joinWithLockHeld(AutoLockHelperThreadState& locked);
-
-    
-    void runFromMainThread(JSRuntime* rt);
-
-    
-    void cancelAndWait() {
-        cancel_ = true;
-        join();
-    }
-
-    
-    bool isRunningWithLockHeld(const AutoLockHelperThreadState& lock) const {
-        return isDispatched(lock);
-    }
-    bool isRunning() const;
-
-  private:
-    void assertNotStarted() const {
-        
-        
-        MOZ_ASSERT(state_ == State::NotStarted);
-    }
-    bool isNotStarted(const AutoLockHelperThreadState& lock) const {
-        return state_ == State::NotStarted;
-    }
-    bool isDispatched(const AutoLockHelperThreadState& lock) const {
-        return state_ == State::Dispatched;
-    }
-    bool isFinished(const AutoLockHelperThreadState& lock) const {
-        return state_ == State::Finished;
-    }
-    void setDispatched(const AutoLockHelperThreadState& lock) {
-        MOZ_ASSERT(state_ == State::NotStarted);
-        state_ = State::Dispatched;
-    }
-    void setFinished(const AutoLockHelperThreadState& lock) {
-        MOZ_ASSERT(state_ == State::Dispatched);
-        state_ = State::Finished;
-    }
-    void setNotStarted(const AutoLockHelperThreadState& lock) {
-        MOZ_ASSERT(state_ == State::Finished);
-        state_ = State::NotStarted;
-    }
-
-    void runTask() {
-        func_(this);
-    }
-
-    
-    
-  public:
-    void runFromHelperThread(AutoLockHelperThreadState& locked);
+  
+  
+ public:
+  void runFromHelperThread(AutoLockHelperThreadState& locked);
 };
 
 
 template <typename Derived>
-class GCParallelTaskHelper : public GCParallelTask
-{
-  public:
-    explicit GCParallelTaskHelper(JSRuntime* runtime)
-      : GCParallelTask(runtime, &runTaskTyped)
-    {}
-    GCParallelTaskHelper(GCParallelTaskHelper&& other)
-      : GCParallelTask(std::move(other))
-    {}
+class GCParallelTaskHelper : public GCParallelTask {
+ public:
+  explicit GCParallelTaskHelper(JSRuntime* runtime)
+      : GCParallelTask(runtime, &runTaskTyped) {}
+  GCParallelTaskHelper(GCParallelTaskHelper&& other)
+      : GCParallelTask(std::move(other)) {}
 
-  private:
-    static void runTaskTyped(GCParallelTask* task) {
-        static_cast<Derived*>(task)->run();
-    }
+ private:
+  static void runTaskTyped(GCParallelTask* task) {
+    static_cast<Derived*>(task)->run();
+  }
 };
 
 } 

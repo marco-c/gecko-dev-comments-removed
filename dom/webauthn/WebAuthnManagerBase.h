@@ -21,28 +21,26 @@ class WebAuthnTransactionChild;
 class WebAuthnMakeCredentialResult;
 class WebAuthnGetAssertionResult;
 
-class WebAuthnManagerBase : public nsIDOMEventListener
-{
-public:
+class WebAuthnManagerBase : public nsIDOMEventListener {
+ public:
   NS_DECL_NSIDOMEVENTLISTENER
 
   explicit WebAuthnManagerBase(nsPIDOMWindowInner* aParent);
 
-  virtual void
-  FinishMakeCredential(const uint64_t& aTransactionId,
-                       const WebAuthnMakeCredentialResult& aResult) = 0;
+  virtual void FinishMakeCredential(
+      const uint64_t& aTransactionId,
+      const WebAuthnMakeCredentialResult& aResult) = 0;
 
-  virtual void
-  FinishGetAssertion(const uint64_t& aTransactionId,
-                     const WebAuthnGetAssertionResult& aResult) = 0;
+  virtual void FinishGetAssertion(
+      const uint64_t& aTransactionId,
+      const WebAuthnGetAssertionResult& aResult) = 0;
 
-  virtual void
-  RequestAborted(const uint64_t& aTransactionId,
-                 const nsresult& aError) = 0;
+  virtual void RequestAborted(const uint64_t& aTransactionId,
+                              const nsresult& aError) = 0;
 
   void ActorDestroyed();
 
-protected:
+ protected:
   ~WebAuthnManagerBase();
 
   
@@ -61,7 +59,7 @@ protected:
   RefPtr<WebAuthnTransactionChild> mChild;
 };
 
-}
-}
+}  
+}  
 
-#endif 
+#endif  

@@ -52,8 +52,7 @@ namespace recordreplay {
 bool SaveThreadState(size_t aId, int* aStackSeparator);
 
 
-struct SavedThreadStack
-{
+struct SavedThreadStack {
   
   void* mStackPointer;
 
@@ -64,10 +63,7 @@ struct SavedThreadStack
   
   jmp_buf mRegisters;
 
-  SavedThreadStack()
-  {
-    PodZero(this);
-  }
+  SavedThreadStack() { PodZero(this); }
 
   void ReleaseContents() {
     if (mStackBytes) {
@@ -76,14 +72,12 @@ struct SavedThreadStack
   }
 };
 
-struct SavedCheckpoint
-{
+struct SavedCheckpoint {
   CheckpointId mCheckpoint;
   SavedThreadStack mStacks[MaxRecordedThreadId];
 
   explicit SavedCheckpoint(CheckpointId aCheckpoint)
-    : mCheckpoint(aCheckpoint)
-  {}
+      : mCheckpoint(aCheckpoint) {}
 
   void ReleaseContents() {
     for (SavedThreadStack& stack : mStacks) {
@@ -113,7 +107,7 @@ void RestoreThreadStack(size_t aId);
 
 void InitializeThreadSnapshots(size_t aNumThreads);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

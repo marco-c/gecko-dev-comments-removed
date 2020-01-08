@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef JSDebugger_h
 #define JSDebugger_h
 
@@ -12,19 +13,18 @@
 namespace mozilla {
 namespace jsdebugger {
 
-class JSDebugger final : public IJSDebugger
-{
-public:
+class JSDebugger final : public IJSDebugger {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_IJSDEBUGGER
 
   JSDebugger();
 
-private:
+ private:
   ~JSDebugger();
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

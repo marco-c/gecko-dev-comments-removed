@@ -12,66 +12,66 @@
 #ifdef XGILL_PLUGIN
 
 
-# define JS_HAZ_GC_THING __attribute__((annotate("GC Thing")))
+#define JS_HAZ_GC_THING __attribute__((annotate("GC Thing")))
 
 
 
 
-# define JS_HAZ_GC_POINTER __attribute__((annotate("GC Pointer")))
+#define JS_HAZ_GC_POINTER __attribute__((annotate("GC Pointer")))
 
 
 
 
-# define JS_HAZ_ROOTED __attribute__((annotate("Rooted Pointer")))
+#define JS_HAZ_ROOTED __attribute__((annotate("Rooted Pointer")))
 
 
 
 
-# define JS_HAZ_GC_INVALIDATED __attribute__((annotate("Invalidated by GC")))
-
-
-
-
-
-# define JS_HAZ_ROOTED_BASE __attribute__((annotate("Rooted Base")))
+#define JS_HAZ_GC_INVALIDATED __attribute__((annotate("Invalidated by GC")))
 
 
 
 
 
-
-
-
-# define JS_HAZ_NON_GC_POINTER __attribute__((annotate("Suppressed GC Pointer")))
-
-
-
-# define JS_HAZ_GC_CALL __attribute__((annotate("GC Call")))
-
-
-# define JS_HAZ_GC_SUPPRESSED __attribute__((annotate("Suppress GC")))
-
-
-
-# define JS_HAZ_CAN_RUN_SCRIPT __attribute__((annotate("Can run script")))
+#define JS_HAZ_ROOTED_BASE __attribute__((annotate("Rooted Base")))
 
 
 
 
-# define JS_HAZ_JSNATIVE_CALLER __attribute__((annotate("Calls JSNatives")))
+
+
+
+
+#define JS_HAZ_NON_GC_POINTER __attribute__((annotate("Suppressed GC Pointer")))
+
+
+
+#define JS_HAZ_GC_CALL __attribute__((annotate("GC Call")))
+
+
+#define JS_HAZ_GC_SUPPRESSED __attribute__((annotate("Suppress GC")))
+
+
+
+#define JS_HAZ_CAN_RUN_SCRIPT __attribute__((annotate("Can run script")))
+
+
+
+
+#define JS_HAZ_JSNATIVE_CALLER __attribute__((annotate("Calls JSNatives")))
 
 #else
 
-# define JS_HAZ_GC_THING
-# define JS_HAZ_GC_POINTER
-# define JS_HAZ_ROOTED
-# define JS_HAZ_GC_INVALIDATED
-# define JS_HAZ_ROOTED_BASE
-# define JS_HAZ_NON_GC_POINTER
-# define JS_HAZ_GC_CALL
-# define JS_HAZ_GC_SUPPRESSED
-# define JS_HAZ_CAN_RUN_SCRIPT
-# define JS_HAZ_JSNATIVE_CALLER
+#define JS_HAZ_GC_THING
+#define JS_HAZ_GC_POINTER
+#define JS_HAZ_ROOTED
+#define JS_HAZ_GC_INVALIDATED
+#define JS_HAZ_ROOTED_BASE
+#define JS_HAZ_NON_GC_POINTER
+#define JS_HAZ_GC_CALL
+#define JS_HAZ_GC_SUPPRESSED
+#define JS_HAZ_CAN_RUN_SCRIPT
+#define JS_HAZ_JSNATIVE_CALLER
 
 #endif
 

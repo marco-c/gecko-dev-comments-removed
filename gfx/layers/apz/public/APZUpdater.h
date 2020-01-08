@@ -10,7 +10,7 @@
 #include <deque>
 #include <unordered_map>
 
-#include "base/platform_thread.h"   
+#include "base/platform_thread.h"  
 #include "LayersTypes.h"
 #include "mozilla/layers/APZTestData.h"
 #include "mozilla/layers/WebRenderScrollData.h"
@@ -24,7 +24,7 @@ namespace mozilla {
 
 namespace wr {
 struct WrWindowId;
-} 
+}  
 
 namespace layers {
 
@@ -43,9 +43,8 @@ class WebRenderScrollData;
 class APZUpdater {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZUpdater)
 
-public:
-  APZUpdater(const RefPtr<APZCTreeManager>& aApz,
-             bool aIsUsingWebRender);
+ public:
+  APZUpdater(const RefPtr<APZCTreeManager>& aApz, bool aIsUsingWebRender);
 
   bool HasTreeManager(const RefPtr<APZCTreeManager>& aApz);
   void SetWebRenderWindowId(const wr::WindowId& aWindowId);
@@ -66,10 +65,8 @@ public:
   void UpdateFocusState(LayersId aRootLayerTreeId,
                         LayersId aOriginatingLayersId,
                         const FocusTarget& aFocusTarget);
-  void UpdateHitTestingTree(LayersId aRootLayerTreeId,
-                            Layer* aRoot,
-                            bool aIsFirstPaint,
-                            LayersId aOriginatingLayersId,
+  void UpdateHitTestingTree(LayersId aRootLayerTreeId, Layer* aRoot,
+                            bool aIsFirstPaint, LayersId aOriginatingLayersId,
                             uint32_t aPaintSequenceNumber);
   
 
@@ -144,25 +141,26 @@ public:
 
 
 
-  void RunOnControllerThread(LayersId aLayersId, already_AddRefed<Runnable> aTask);
+  void RunOnControllerThread(LayersId aLayersId,
+                             already_AddRefed<Runnable> aTask);
 
-protected:
+ protected:
   virtual ~APZUpdater();
 
   bool UsingWebRenderUpdaterThread() const;
-  static already_AddRefed<APZUpdater> GetUpdater(const wr::WrWindowId& aWindowId);
+  static already_AddRefed<APZUpdater> GetUpdater(
+      const wr::WrWindowId& aWindowId);
 
   void ProcessQueue();
 
-private:
+ private:
   RefPtr<APZCTreeManager> mApz;
   bool mIsUsingWebRender;
 
   
   
-  std::unordered_map<LayersId,
-                     WebRenderScrollData,
-                     LayersId::HashFn> mScrollData;
+  std::unordered_map<LayersId, WebRenderScrollData, LayersId::HashFn>
+      mScrollData;
 
   
   
@@ -171,6 +169,7 @@ private:
     wr::Epoch mRequired;
     
     Maybe<wr::Epoch> mBuilt;
+    
     
     bool mIsRoot;
 
@@ -191,9 +190,7 @@ private:
 
   
   
-  std::unordered_map<LayersId,
-                     EpochState,
-                     LayersId::HashFn> mEpochData;
+  std::unordered_map<LayersId, EpochState, LayersId::HashFn> mEpochData;
 
   
   
@@ -233,7 +230,7 @@ private:
   std::deque<QueuedTask> mUpdaterQueue;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

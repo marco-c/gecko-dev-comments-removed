@@ -13,32 +13,28 @@
 namespace mozilla {
 namespace dom {
 
- already_AddRefed<ChromeWorker>
-ChromeWorker::Constructor(const GlobalObject& aGlobal,
-                          const nsAString& aScriptURL,
-                          ErrorResult& aRv)
-{
+ already_AddRefed<ChromeWorker> ChromeWorker::Constructor(
+    const GlobalObject& aGlobal, const nsAString& aScriptURL,
+    ErrorResult& aRv) {
   JSContext* cx = aGlobal.Context();
 
-  RefPtr<WorkerPrivate> workerPrivate =
-    WorkerPrivate::Constructor(cx, aScriptURL, true ,
-                               WorkerTypeDedicated, EmptyString(),
-                               VoidCString(), nullptr , aRv);
+  RefPtr<WorkerPrivate> workerPrivate = WorkerPrivate::Constructor(
+      cx, aScriptURL, true , WorkerTypeDedicated,
+      EmptyString(), VoidCString(), nullptr , aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
 
   nsCOMPtr<nsIGlobalObject> globalObject =
-    do_QueryInterface(aGlobal.GetAsSupports());
+      do_QueryInterface(aGlobal.GetAsSupports());
 
   RefPtr<ChromeWorker> worker =
-    new ChromeWorker(globalObject, workerPrivate.forget());
+      new ChromeWorker(globalObject, workerPrivate.forget());
   return worker.forget();
 }
 
- bool
-ChromeWorker::WorkerAvailable(JSContext* aCx, JSObject* )
-{
+ bool ChromeWorker::WorkerAvailable(JSContext* aCx,
+                                                JSObject* ) {
   
   
   
@@ -52,16 +48,14 @@ ChromeWorker::WorkerAvailable(JSContext* aCx, JSObject* )
 
 ChromeWorker::ChromeWorker(nsIGlobalObject* aGlobalObject,
                            already_AddRefed<WorkerPrivate> aWorkerPrivate)
-  : Worker(aGlobalObject, std::move(aWorkerPrivate))
-{}
+    : Worker(aGlobalObject, std::move(aWorkerPrivate)) {}
 
 ChromeWorker::~ChromeWorker() = default;
 
-JSObject*
-ChromeWorker::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
-  JS::Rooted<JSObject*> wrapper(aCx,
-    ChromeWorker_Binding::Wrap(aCx, this, aGivenProto));
+JSObject* ChromeWorker::WrapObject(JSContext* aCx,
+                                   JS::Handle<JSObject*> aGivenProto) {
+  JS::Rooted<JSObject*> wrapper(
+      aCx, ChromeWorker_Binding::Wrap(aCx, this, aGivenProto));
   if (wrapper) {
     
     
@@ -74,5 +68,5 @@ ChromeWorker::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
   return wrapper;
 }
 
-} 
-} 
+}  
+}  

@@ -35,136 +35,126 @@ using namespace js;
 
 using js::frontend::IsIdentifier;
 
-bool
-js::obj_construct(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+bool js::obj_construct(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    RootedObject obj(cx, nullptr);
-    if (args.isConstructing() && (&args.newTarget().toObject() != &args.callee())) {
-        RootedObject newTarget(cx, &args.newTarget().toObject());
-        obj = CreateThis(cx, &PlainObject::class_, newTarget);
-        if (!obj) {
-            return false;
-        }
-    } else if (args.length() > 0 && !args[0].isNullOrUndefined()) {
-        obj = ToObject(cx, args[0]);
-        if (!obj) {
-            return false;
-        }
-    } else {
-        
-        if (!NewObjectScriptedCall(cx, &obj)) {
-            return false;
-        }
-    }
-
-    args.rval().setObject(*obj);
-    return true;
-}
-
-
-bool
-js::obj_propertyIsEnumerable(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    HandleValue idValue = args.get(0);
-
-    
-    
-
-    
-    jsid id;
-    if (args.thisv().isObject() && ValueToId<NoGC>(cx, idValue, &id)) {
-        JSObject* obj = &args.thisv().toObject();
-
-        
-        PropertyResult prop;
-        if (obj->isNative() &&
-            NativeLookupOwnProperty<NoGC>(cx, &obj->as<NativeObject>(), id, &prop))
-        {
-            
-            if (!prop) {
-                args.rval().setBoolean(false);
-                return true;
-            }
-
-            
-            unsigned attrs = GetPropertyAttributes(obj, prop);
-            args.rval().setBoolean((attrs & JSPROP_ENUMERATE) != 0);
-            return true;
-        }
-    }
-
-    
-    RootedId idRoot(cx);
-    if (!ToPropertyKey(cx, idValue, &idRoot)) {
-        return false;
-    }
-
-    
-    RootedObject obj(cx, ToObject(cx, args.thisv()));
+  RootedObject obj(cx, nullptr);
+  if (args.isConstructing() &&
+      (&args.newTarget().toObject() != &args.callee())) {
+    RootedObject newTarget(cx, &args.newTarget().toObject());
+    obj = CreateThis(cx, &PlainObject::class_, newTarget);
     if (!obj) {
-        return false;
+      return false;
     }
-
-    
-    Rooted<PropertyDescriptor> desc(cx);
-    if (!GetOwnPropertyDescriptor(cx, obj, idRoot, &desc)) {
-        return false;
-    }
-
-    
-    args.rval().setBoolean(desc.object() && desc.enumerable());
-    return true;
-}
-
-static bool
-obj_toSource(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    if (!CheckRecursionLimit(cx)) {
-        return false;
-    }
-
-    RootedObject obj(cx, ToObject(cx, args.thisv()));
+  } else if (args.length() > 0 && !args[0].isNullOrUndefined()) {
+    obj = ToObject(cx, args[0]);
     if (!obj) {
-        return false;
+      return false;
     }
-
-    JSString* str = ObjectToSource(cx, obj);
-    if (!str) {
-        return false;
+  } else {
+    
+    if (!NewObjectScriptedCall(cx, &obj)) {
+      return false;
     }
+  }
 
-    args.rval().setString(str);
-    return true;
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+bool js::obj_propertyIsEnumerable(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  HandleValue idValue = args.get(0);
+
+  
+  
+
+  
+  jsid id;
+  if (args.thisv().isObject() && ValueToId<NoGC>(cx, idValue, &id)) {
+    JSObject* obj = &args.thisv().toObject();
+
+    
+    PropertyResult prop;
+    if (obj->isNative() && NativeLookupOwnProperty<NoGC>(
+                               cx, &obj->as<NativeObject>(), id, &prop)) {
+      
+      if (!prop) {
+        args.rval().setBoolean(false);
+        return true;
+      }
+
+      
+      unsigned attrs = GetPropertyAttributes(obj, prop);
+      args.rval().setBoolean((attrs & JSPROP_ENUMERATE) != 0);
+      return true;
+    }
+  }
+
+  
+  RootedId idRoot(cx);
+  if (!ToPropertyKey(cx, idValue, &idRoot)) {
+    return false;
+  }
+
+  
+  RootedObject obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
+
+  
+  Rooted<PropertyDescriptor> desc(cx);
+  if (!GetOwnPropertyDescriptor(cx, obj, idRoot, &desc)) {
+    return false;
+  }
+
+  
+  args.rval().setBoolean(desc.object() && desc.enumerable());
+  return true;
+}
+
+static bool obj_toSource(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (!CheckRecursionLimit(cx)) {
+    return false;
+  }
+
+  RootedObject obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
+
+  JSString* str = ObjectToSource(cx, obj);
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+  return true;
 }
 
 template <typename CharT>
-static bool
-Consume(const CharT*& s, const CharT* e, const char *chars)
-{
-    size_t len = strlen(chars);
-    if (s + len >= e) {
-        return false;
-    }
-    if (!EqualChars(s, chars, len)) {
-        return false;
-    }
-    s += len;
-    return true;
+static bool Consume(const CharT*& s, const CharT* e, const char* chars) {
+  size_t len = strlen(chars);
+  if (s + len >= e) {
+    return false;
+  }
+  if (!EqualChars(s, chars, len)) {
+    return false;
+  }
+  s += len;
+  return true;
 }
 
 template <typename CharT>
-static void
-ConsumeSpaces(const CharT*& s, const CharT* e)
-{
-    while (*s == ' ' && s < e) {
-        s++;
-    }
+static void ConsumeSpaces(const CharT*& s, const CharT* e) {
+  while (*s == ' ' && s < e) {
+    s++;
+  }
 }
 
 
@@ -172,2113 +162,2039 @@ ConsumeSpaces(const CharT*& s, const CharT* e)
 
 
 template <typename CharT>
-static bool
-ArgsAndBodySubstring(mozilla::Range<const CharT> chars, size_t* outOffset, size_t* outLen)
-{
-    const CharT* const start = chars.begin().get();
-    const CharT* s = start;
-    const CharT* e = chars.end().get();
+static bool ArgsAndBodySubstring(mozilla::Range<const CharT> chars,
+                                 size_t* outOffset, size_t* outLen) {
+  const CharT* const start = chars.begin().get();
+  const CharT* s = start;
+  const CharT* e = chars.end().get();
 
-    if (s == e) {
-        return false;
+  if (s == e) {
+    return false;
+  }
+
+  
+  if (*s == '(' && *(e - 1) == ')') {
+    s++;
+    e--;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  (void)Consume(s, e, "async");
+  ConsumeSpaces(s, e);
+  (void)(Consume(s, e, "function") || Consume(s, e, "get") ||
+         Consume(s, e, "set"));
+  ConsumeSpaces(s, e);
+  (void)Consume(s, e, "*");
+  ConsumeSpaces(s, e);
+
+  
+  if (Consume(s, e, "[")) {
+    s = js_strchr_limit(s, ']', e);
+    if (!s) {
+      return false;
     }
-
-    
-    if (*s == '(' && *(e - 1) == ')') {
-        s++;
-        e--;
+    s++;
+    ConsumeSpaces(s, e);
+    if (*s != '(') {
+      return false;
     }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    (void) Consume(s, e, "async");
-    ConsumeSpaces(s, e);
-    (void) (Consume(s, e, "function") || Consume(s, e, "get") || Consume(s, e, "set"));
-    ConsumeSpaces(s, e);
-    (void) Consume(s, e, "*");
-    ConsumeSpaces(s, e);
-
-    
-    if (Consume(s, e, "[")) {
-        s = js_strchr_limit(s, ']', e);
-        if (!s) {
-            return false;
-        }
-        s++;
-        ConsumeSpaces(s, e);
-        if (*s != '(') {
-            return false;
-        }
-    } else {
-        s = js_strchr_limit(s, '(', e);
-        if (!s) {
-            return false;
-        }
+  } else {
+    s = js_strchr_limit(s, '(', e);
+    if (!s) {
+      return false;
     }
+  }
 
-    *outOffset = s - start;
-    *outLen = e - s;
-    MOZ_ASSERT(*outOffset + *outLen <= chars.length());
-    return true;
+  *outOffset = s - start;
+  *outLen = e - s;
+  MOZ_ASSERT(*outOffset + *outLen <= chars.length());
+  return true;
 }
 
-enum class PropertyKind {
-    Getter,
-    Setter,
-    Method,
-    Normal
-};
+enum class PropertyKind { Getter, Setter, Method, Normal };
 
-JSString*
-js::ObjectToSource(JSContext* cx, HandleObject obj)
-{
-    
-    bool outermost = cx->cycleDetectorVector().empty();
+JSString* js::ObjectToSource(JSContext* cx, HandleObject obj) {
+  
+  bool outermost = cx->cycleDetectorVector().empty();
 
-    AutoCycleDetector detector(cx, obj);
-    if (!detector.init()) {
-        return nullptr;
-    }
-    if (detector.foundCycle()) {
-        return NewStringCopyZ<CanGC>(cx, "{}");
-    }
-
-    StringBuffer buf(cx);
-    if (outermost && !buf.append('(')) {
-        return nullptr;
-    }
-    if (!buf.append('{')) {
-        return nullptr;
-    }
-
-    AutoIdVector idv(cx);
-    if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY | JSITER_SYMBOLS, &idv)) {
-        return nullptr;
-    }
-
-    bool comma = false;
-
-    auto AddProperty = [cx, &comma, &buf](HandleId id, HandleValue val, PropertyKind kind) -> bool {
-        
-        RootedString idstr(cx);
-        if (JSID_IS_SYMBOL(id)) {
-            RootedValue v(cx, SymbolValue(JSID_TO_SYMBOL(id)));
-            idstr = ValueToSource(cx, v);
-            if (!idstr) {
-                return false;
-            }
-        } else {
-            RootedValue idv(cx, IdToValue(id));
-            idstr = ToString<CanGC>(cx, idv);
-            if (!idstr) {
-                return false;
-            }
-
-            
-
-
-
-            if (JSID_IS_ATOM(id)
-                ? !IsIdentifier(JSID_TO_ATOM(id))
-                : JSID_TO_INT(id) < 0)
-            {
-                UniqueChars quotedId = QuoteString(cx, idstr, '\'');
-                if (!quotedId) {
-                    return false;
-                }
-                idstr = NewStringCopyZ<CanGC>(cx, quotedId.get());
-                if (!idstr) {
-                    return false;
-                }
-            }
-        }
-
-        RootedString valsource(cx, ValueToSource(cx, val));
-        if (!valsource) {
-            return false;
-        }
-
-        RootedLinearString valstr(cx, valsource->ensureLinear(cx));
-        if (!valstr) {
-            return false;
-        }
-
-        if (comma && !buf.append(", ")) {
-            return false;
-        }
-        comma = true;
-
-        size_t voffset, vlength;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (kind == PropertyKind::Getter || kind == PropertyKind::Setter ||
-            kind == PropertyKind::Method)
-        {
-            RootedFunction fun(cx);
-            if (val.toObject().is<JSFunction>()) {
-                fun = &val.toObject().as<JSFunction>();
-                
-                if (((fun->isGetter() && kind == PropertyKind::Getter) ||
-                     (fun->isSetter() && kind == PropertyKind::Setter) ||
-                     kind == PropertyKind::Method) &&
-                    fun->explicitName())
-                {
-                    bool result;
-                    if (!EqualStrings(cx, fun->explicitName(), idstr, &result)) {
-                        return false;
-                    }
-
-                    if (result)  {
-                        if (!buf.append(valstr)) {
-                            return false;
-                        }
-                        return true;
-                    }
-                }
-            }
-
-            {
-                
-                
-                
-                bool success;
-                JS::AutoCheckCannotGC nogc;
-                if (valstr->hasLatin1Chars()) {
-                    success = ArgsAndBodySubstring(valstr->latin1Range(nogc), &voffset, &vlength);
-                } else {
-                    success = ArgsAndBodySubstring(valstr->twoByteRange(nogc), &voffset, &vlength);
-                }
-                if (!success) {
-                    kind = PropertyKind::Normal;
-                }
-            }
-
-            if (kind == PropertyKind::Getter) {
-                if (!buf.append("get ")) {
-                    return false;
-                }
-            } else if (kind == PropertyKind::Setter) {
-                if (!buf.append("set ")) {
-                    return false;
-                }
-            } else if (kind == PropertyKind::Method && fun) {
-                if (IsWrappedAsyncFunction(fun)) {
-                    if (!buf.append("async ")) {
-                        return false;
-                    }
-                }
-
-                if (fun->isGenerator()) {
-                    if (!buf.append('*')) {
-                        return false;
-                    }
-                }
-            }
-        }
-
-        bool needsBracket = JSID_IS_SYMBOL(id);
-        if (needsBracket && !buf.append('[')) {
-            return false;
-        }
-        if (!buf.append(idstr)) {
-            return false;
-        }
-        if (needsBracket && !buf.append(']')) {
-            return false;
-        }
-
-        if (kind == PropertyKind::Getter || kind == PropertyKind::Setter ||
-            kind == PropertyKind::Method)
-        {
-            if (!buf.appendSubstring(valstr, voffset, vlength)) {
-                return false;
-            }
-        } else {
-            if (!buf.append(':')) {
-                return false;
-            }
-            if (!buf.append(valstr)) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    RootedId id(cx);
-    Rooted<PropertyDescriptor> desc(cx);
-    RootedValue val(cx);
-    RootedFunction fun(cx);
-    for (size_t i = 0; i < idv.length(); ++i) {
-        id = idv[i];
-        if (!GetOwnPropertyDescriptor(cx, obj, id, &desc)) {
-            return nullptr;
-        }
-
-        if (!desc.object()) {
-            continue;
-        }
-
-        if (desc.isAccessorDescriptor()) {
-            if (desc.hasGetterObject() && desc.getterObject()) {
-                val.setObject(*desc.getterObject());
-                if (!AddProperty(id, val, PropertyKind::Getter)) {
-                    return nullptr;
-                }
-            }
-            if (desc.hasSetterObject() && desc.setterObject()) {
-                val.setObject(*desc.setterObject());
-                if (!AddProperty(id, val, PropertyKind::Setter)) {
-                    return nullptr;
-                }
-            }
-            continue;
-        }
-
-        val.set(desc.value());
-        if (IsFunctionObject(val, fun.address())) {
-            if (IsWrappedAsyncFunction(fun)) {
-                fun = GetUnwrappedAsyncFunction(fun);
-            }
-
-            if (fun->isMethod()) {
-                if (!AddProperty(id, val, PropertyKind::Method)) {
-                    return nullptr;
-                }
-                continue;
-            }
-        }
-
-        if (!AddProperty(id, val, PropertyKind::Normal)) {
-            return nullptr;
-        }
-    }
-
-    if (!buf.append('}')) {
-        return nullptr;
-    }
-    if (outermost && !buf.append(')')) {
-        return nullptr;
-    }
-
-    return buf.finishString();
-}
-
-static bool
-GetBuiltinTagSlow(JSContext* cx, HandleObject obj, MutableHandleString builtinTag)
-{
-    
-    bool isArray;
-    if (!IsArray(cx, obj, &isArray)) {
-        return false;
-    }
-
-    
-    if (isArray) {
-        builtinTag.set(cx->names().objectArray);
-        return true;
-    }
-
-    
-    ESClass cls;
-    if (!GetBuiltinClass(cx, obj, &cls)) {
-        return false;
-    }
-
-    switch (cls) {
-      case ESClass::String:
-        builtinTag.set(cx->names().objectString);
-        return true;
-      case ESClass::Arguments:
-        builtinTag.set(cx->names().objectArguments);
-        return true;
-      case ESClass::Error:
-        builtinTag.set(cx->names().objectError);
-        return true;
-      case ESClass::Boolean:
-        builtinTag.set(cx->names().objectBoolean);
-        return true;
-      case ESClass::Number:
-        builtinTag.set(cx->names().objectNumber);
-        return true;
-      case ESClass::Date:
-        builtinTag.set(cx->names().objectDate);
-        return true;
-      case ESClass::RegExp:
-        builtinTag.set(cx->names().objectRegExp);
-        return true;
-      default:
-        if (obj->isCallable()) {
-            
-            RootedObject unwrapped(cx, CheckedUnwrap(obj));
-            if (!unwrapped || !unwrapped->getClass()->isDOMClass()) {
-                builtinTag.set(cx->names().objectFunction);
-                return true;
-            }
-        }
-        builtinTag.set(nullptr);
-        return true;
-    }
-}
-
-static MOZ_ALWAYS_INLINE JSString*
-GetBuiltinTagFast(JSObject* obj, const Class* clasp, JSContext* cx)
-{
-    MOZ_ASSERT(clasp == obj->getClass());
-    MOZ_ASSERT(!clasp->isProxy());
-
-    
-    if (clasp == &PlainObject::class_ || clasp == &UnboxedPlainObject::class_) {
-        
-        
-        return cx->names().objectObject;
-    }
-
-    if (clasp == &ArrayObject::class_) {
-        return cx->names().objectArray;
-    }
-
-    if (clasp == &JSFunction::class_) {
-        return cx->names().objectFunction;
-    }
-
-    if (clasp == &StringObject::class_) {
-        return cx->names().objectString;
-    }
-
-    if (clasp == &NumberObject::class_) {
-        return cx->names().objectNumber;
-    }
-
-    if (clasp == &BooleanObject::class_) {
-        return cx->names().objectBoolean;
-    }
-
-    if (clasp == &DateObject::class_) {
-        return cx->names().objectDate;
-    }
-
-    if (clasp == &RegExpObject::class_) {
-        return cx->names().objectRegExp;
-    }
-
-    if (obj->is<ArgumentsObject>()) {
-        return cx->names().objectArguments;
-    }
-
-    if (obj->is<ErrorObject>()) {
-        return cx->names().objectError;
-    }
-
-    if (obj->isCallable() && !obj->getClass()->isDOMClass()) {
-        
-        return cx->names().objectFunction;
-    }
-
+  AutoCycleDetector detector(cx, obj);
+  if (!detector.init()) {
     return nullptr;
-}
+  }
+  if (detector.foundCycle()) {
+    return NewStringCopyZ<CanGC>(cx, "{}");
+  }
 
+  StringBuffer buf(cx);
+  if (outermost && !buf.append('(')) {
+    return nullptr;
+  }
+  if (!buf.append('{')) {
+    return nullptr;
+  }
 
-bool
-js::obj_toString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+  AutoIdVector idv(cx);
+  if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY | JSITER_SYMBOLS, &idv)) {
+    return nullptr;
+  }
 
+  bool comma = false;
+
+  auto AddProperty = [cx, &comma, &buf](HandleId id, HandleValue val,
+                                        PropertyKind kind) -> bool {
     
-    if (args.thisv().isUndefined()) {
-        args.rval().setString(cx->names().objectUndefined);
-        return true;
-    }
-
-    
-    if (args.thisv().isNull()) {
-        args.rval().setString(cx->names().objectNull);
-        return true;
-    }
-
-    
-    RootedObject obj(cx, ToObject(cx, args.thisv()));
-    if (!obj) {
+    RootedString idstr(cx);
+    if (JSID_IS_SYMBOL(id)) {
+      RootedValue v(cx, SymbolValue(JSID_TO_SYMBOL(id)));
+      idstr = ValueToSource(cx, v);
+      if (!idstr) {
         return false;
-    }
-
-    RootedString builtinTag(cx);
-    const Class* clasp = obj->getClass();
-    if (MOZ_UNLIKELY(clasp->isProxy())) {
-        if (!GetBuiltinTagSlow(cx, obj, &builtinTag)) {
-            return false;
-        }
+      }
     } else {
-        builtinTag = GetBuiltinTagFast(obj, clasp, cx);
-#ifdef DEBUG
+      RootedValue idv(cx, IdToValue(id));
+      idstr = ToString<CanGC>(cx, idv);
+      if (!idstr) {
+        return false;
+      }
+
+      
+
+
+
+      if (JSID_IS_ATOM(id) ? !IsIdentifier(JSID_TO_ATOM(id))
+                           : JSID_TO_INT(id) < 0) {
+        UniqueChars quotedId = QuoteString(cx, idstr, '\'');
+        if (!quotedId) {
+          return false;
+        }
+        idstr = NewStringCopyZ<CanGC>(cx, quotedId.get());
+        if (!idstr) {
+          return false;
+        }
+      }
+    }
+
+    RootedString valsource(cx, ValueToSource(cx, val));
+    if (!valsource) {
+      return false;
+    }
+
+    RootedLinearString valstr(cx, valsource->ensureLinear(cx));
+    if (!valstr) {
+      return false;
+    }
+
+    if (comma && !buf.append(", ")) {
+      return false;
+    }
+    comma = true;
+
+    size_t voffset, vlength;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (kind == PropertyKind::Getter || kind == PropertyKind::Setter ||
+        kind == PropertyKind::Method) {
+      RootedFunction fun(cx);
+      if (val.toObject().is<JSFunction>()) {
+        fun = &val.toObject().as<JSFunction>();
         
-        
-        
-        RootedString builtinTagSlow(cx);
-        if (!GetBuiltinTagSlow(cx, obj, &builtinTagSlow)) {
+        if (((fun->isGetter() && kind == PropertyKind::Getter) ||
+             (fun->isSetter() && kind == PropertyKind::Setter) ||
+             kind == PropertyKind::Method) &&
+            fun->explicitName()) {
+          bool result;
+          if (!EqualStrings(cx, fun->explicitName(), idstr, &result)) {
             return false;
+          }
+
+          if (result) {
+            if (!buf.append(valstr)) {
+              return false;
+            }
+            return true;
+          }
         }
-        if (clasp == &PlainObject::class_ || clasp == &UnboxedPlainObject::class_) {
-            MOZ_ASSERT(!builtinTagSlow);
-        } else {
-            MOZ_ASSERT(builtinTagSlow == builtinTag);
-        }
-#endif
-    }
+      }
 
-    
-    
-
-    
-    RootedValue tag(cx);
-    if (!GetInterestingSymbolProperty(cx, obj, cx->wellKnownSymbols().toStringTag, &tag)) {
-        return false;
-    }
-
-    
-    if (!tag.isString()) {
+      {
         
-        if (!builtinTag) {
-            const char* className = GetObjectClassName(cx, obj);
-            StringBuffer sb(cx);
-            if (!sb.append("[object ") || !sb.append(className, strlen(className)) ||
-                !sb.append(']'))
-            {
-                return false;
-            }
+        
+        
+        bool success;
+        JS::AutoCheckCannotGC nogc;
+        if (valstr->hasLatin1Chars()) {
+          success = ArgsAndBodySubstring(valstr->latin1Range(nogc), &voffset,
+                                         &vlength);
+        } else {
+          success = ArgsAndBodySubstring(valstr->twoByteRange(nogc), &voffset,
+                                         &vlength);
+        }
+        if (!success) {
+          kind = PropertyKind::Normal;
+        }
+      }
 
-            builtinTag = sb.finishAtom();
-            if (!builtinTag) {
-                return false;
-            }
+      if (kind == PropertyKind::Getter) {
+        if (!buf.append("get ")) {
+          return false;
+        }
+      } else if (kind == PropertyKind::Setter) {
+        if (!buf.append("set ")) {
+          return false;
+        }
+      } else if (kind == PropertyKind::Method && fun) {
+        if (IsWrappedAsyncFunction(fun)) {
+          if (!buf.append("async ")) {
+            return false;
+          }
         }
 
-        args.rval().setString(builtinTag);
-        return true;
+        if (fun->isGenerator()) {
+          if (!buf.append('*')) {
+            return false;
+          }
+        }
+      }
     }
 
-    
-    StringBuffer sb(cx);
-    if (!sb.append("[object ") || !sb.append(tag.toString()) || !sb.append(']')) {
+    bool needsBracket = JSID_IS_SYMBOL(id);
+    if (needsBracket && !buf.append('[')) {
+      return false;
+    }
+    if (!buf.append(idstr)) {
+      return false;
+    }
+    if (needsBracket && !buf.append(']')) {
+      return false;
+    }
+
+    if (kind == PropertyKind::Getter || kind == PropertyKind::Setter ||
+        kind == PropertyKind::Method) {
+      if (!buf.appendSubstring(valstr, voffset, vlength)) {
         return false;
-    }
-
-    JSString* str = sb.finishAtom();
-    if (!str) {
+      }
+    } else {
+      if (!buf.append(':')) {
         return false;
+      }
+      if (!buf.append(valstr)) {
+        return false;
+      }
     }
-
-    args.rval().setString(str);
     return true;
+  };
+
+  RootedId id(cx);
+  Rooted<PropertyDescriptor> desc(cx);
+  RootedValue val(cx);
+  RootedFunction fun(cx);
+  for (size_t i = 0; i < idv.length(); ++i) {
+    id = idv[i];
+    if (!GetOwnPropertyDescriptor(cx, obj, id, &desc)) {
+      return nullptr;
+    }
+
+    if (!desc.object()) {
+      continue;
+    }
+
+    if (desc.isAccessorDescriptor()) {
+      if (desc.hasGetterObject() && desc.getterObject()) {
+        val.setObject(*desc.getterObject());
+        if (!AddProperty(id, val, PropertyKind::Getter)) {
+          return nullptr;
+        }
+      }
+      if (desc.hasSetterObject() && desc.setterObject()) {
+        val.setObject(*desc.setterObject());
+        if (!AddProperty(id, val, PropertyKind::Setter)) {
+          return nullptr;
+        }
+      }
+      continue;
+    }
+
+    val.set(desc.value());
+    if (IsFunctionObject(val, fun.address())) {
+      if (IsWrappedAsyncFunction(fun)) {
+        fun = GetUnwrappedAsyncFunction(fun);
+      }
+
+      if (fun->isMethod()) {
+        if (!AddProperty(id, val, PropertyKind::Method)) {
+          return nullptr;
+        }
+        continue;
+      }
+    }
+
+    if (!AddProperty(id, val, PropertyKind::Normal)) {
+      return nullptr;
+    }
+  }
+
+  if (!buf.append('}')) {
+    return nullptr;
+  }
+  if (outermost && !buf.append(')')) {
+    return nullptr;
+  }
+
+  return buf.finishString();
 }
 
-JSString*
-js::ObjectClassToString(JSContext* cx, HandleObject obj)
-{
-    const Class* clasp = obj->getClass();
+static bool GetBuiltinTagSlow(JSContext* cx, HandleObject obj,
+                              MutableHandleString builtinTag) {
+  
+  bool isArray;
+  if (!IsArray(cx, obj, &isArray)) {
+    return false;
+  }
 
-    if (JSString* tag = GetBuiltinTagFast(obj, clasp, cx)) {
-        return tag;
-    }
+  
+  if (isArray) {
+    builtinTag.set(cx->names().objectArray);
+    return true;
+  }
 
-    const char* className = clasp->name;
-    StringBuffer sb(cx);
-    if (!sb.append("[object ") ||
-        !sb.append(className, strlen(className)) ||
-        !sb.append(']'))
-    {
-        return nullptr;
-    }
+  
+  ESClass cls;
+  if (!GetBuiltinClass(cx, obj, &cls)) {
+    return false;
+  }
 
-    return sb.finishAtom();
+  switch (cls) {
+    case ESClass::String:
+      builtinTag.set(cx->names().objectString);
+      return true;
+    case ESClass::Arguments:
+      builtinTag.set(cx->names().objectArguments);
+      return true;
+    case ESClass::Error:
+      builtinTag.set(cx->names().objectError);
+      return true;
+    case ESClass::Boolean:
+      builtinTag.set(cx->names().objectBoolean);
+      return true;
+    case ESClass::Number:
+      builtinTag.set(cx->names().objectNumber);
+      return true;
+    case ESClass::Date:
+      builtinTag.set(cx->names().objectDate);
+      return true;
+    case ESClass::RegExp:
+      builtinTag.set(cx->names().objectRegExp);
+      return true;
+    default:
+      if (obj->isCallable()) {
+        
+        RootedObject unwrapped(cx, CheckedUnwrap(obj));
+        if (!unwrapped || !unwrapped->getClass()->isDOMClass()) {
+          builtinTag.set(cx->names().objectFunction);
+          return true;
+        }
+      }
+      builtinTag.set(nullptr);
+      return true;
+  }
 }
 
-static bool
-obj_setPrototypeOf(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+static MOZ_ALWAYS_INLINE JSString* GetBuiltinTagFast(JSObject* obj,
+                                                     const Class* clasp,
+                                                     JSContext* cx) {
+  MOZ_ASSERT(clasp == obj->getClass());
+  MOZ_ASSERT(!clasp->isProxy());
 
-    if (args.length() < 2) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_MORE_ARGS_NEEDED,
-                                  "Object.setPrototypeOf", "1", "");
+  
+  if (clasp == &PlainObject::class_ || clasp == &UnboxedPlainObject::class_) {
+    
+    
+    return cx->names().objectObject;
+  }
+
+  if (clasp == &ArrayObject::class_) {
+    return cx->names().objectArray;
+  }
+
+  if (clasp == &JSFunction::class_) {
+    return cx->names().objectFunction;
+  }
+
+  if (clasp == &StringObject::class_) {
+    return cx->names().objectString;
+  }
+
+  if (clasp == &NumberObject::class_) {
+    return cx->names().objectNumber;
+  }
+
+  if (clasp == &BooleanObject::class_) {
+    return cx->names().objectBoolean;
+  }
+
+  if (clasp == &DateObject::class_) {
+    return cx->names().objectDate;
+  }
+
+  if (clasp == &RegExpObject::class_) {
+    return cx->names().objectRegExp;
+  }
+
+  if (obj->is<ArgumentsObject>()) {
+    return cx->names().objectArguments;
+  }
+
+  if (obj->is<ErrorObject>()) {
+    return cx->names().objectError;
+  }
+
+  if (obj->isCallable() && !obj->getClass()->isDOMClass()) {
+    
+    return cx->names().objectFunction;
+  }
+
+  return nullptr;
+}
+
+
+bool js::obj_toString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  if (args.thisv().isUndefined()) {
+    args.rval().setString(cx->names().objectUndefined);
+    return true;
+  }
+
+  
+  if (args.thisv().isNull()) {
+    args.rval().setString(cx->names().objectNull);
+    return true;
+  }
+
+  
+  RootedObject obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
+
+  RootedString builtinTag(cx);
+  const Class* clasp = obj->getClass();
+  if (MOZ_UNLIKELY(clasp->isProxy())) {
+    if (!GetBuiltinTagSlow(cx, obj, &builtinTag)) {
+      return false;
+    }
+  } else {
+    builtinTag = GetBuiltinTagFast(obj, clasp, cx);
+#ifdef DEBUG
+    
+    
+    
+    RootedString builtinTagSlow(cx);
+    if (!GetBuiltinTagSlow(cx, obj, &builtinTagSlow)) {
+      return false;
+    }
+    if (clasp == &PlainObject::class_ || clasp == &UnboxedPlainObject::class_) {
+      MOZ_ASSERT(!builtinTagSlow);
+    } else {
+      MOZ_ASSERT(builtinTagSlow == builtinTag);
+    }
+#endif
+  }
+
+  
+  
+
+  
+  RootedValue tag(cx);
+  if (!GetInterestingSymbolProperty(cx, obj, cx->wellKnownSymbols().toStringTag,
+                                    &tag)) {
+    return false;
+  }
+
+  
+  if (!tag.isString()) {
+    
+    if (!builtinTag) {
+      const char* className = GetObjectClassName(cx, obj);
+      StringBuffer sb(cx);
+      if (!sb.append("[object ") || !sb.append(className, strlen(className)) ||
+          !sb.append(']')) {
         return false;
-    }
+      }
 
-    
-    if (args[0].isNullOrUndefined()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
-                                  args[0].isNull() ? "null" : "undefined", "object");
+      builtinTag = sb.finishAtom();
+      if (!builtinTag) {
         return false;
+      }
     }
 
-    
-    if (!args[1].isObjectOrNull()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_EXPECTED_TYPE,
-                                  "Object.setPrototypeOf", "an object or null",
-                                  InformalValueTypeName(args[1]));
-        return false;
-    }
+    args.rval().setString(builtinTag);
+    return true;
+  }
 
-    
-    if (!args[0].isObject()) {
-        args.rval().set(args[0]);
-        return true;
-    }
+  
+  StringBuffer sb(cx);
+  if (!sb.append("[object ") || !sb.append(tag.toString()) || !sb.append(']')) {
+    return false;
+  }
 
-    
-    RootedObject obj(cx, &args[0].toObject());
-    RootedObject newProto(cx, args[1].toObjectOrNull());
-    if (!SetPrototype(cx, obj, newProto)) {
-        return false;
-    }
+  JSString* str = sb.finishAtom();
+  if (!str) {
+    return false;
+  }
 
-    
+  args.rval().setString(str);
+  return true;
+}
+
+JSString* js::ObjectClassToString(JSContext* cx, HandleObject obj) {
+  const Class* clasp = obj->getClass();
+
+  if (JSString* tag = GetBuiltinTagFast(obj, clasp, cx)) {
+    return tag;
+  }
+
+  const char* className = clasp->name;
+  StringBuffer sb(cx);
+  if (!sb.append("[object ") || !sb.append(className, strlen(className)) ||
+      !sb.append(']')) {
+    return nullptr;
+  }
+
+  return sb.finishAtom();
+}
+
+static bool obj_setPrototypeOf(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (args.length() < 2) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_MORE_ARGS_NEEDED, "Object.setPrototypeOf",
+                              "1", "");
+    return false;
+  }
+
+  
+  if (args[0].isNullOrUndefined()) {
+    JS_ReportErrorNumberASCII(
+        cx, GetErrorMessage, nullptr, JSMSG_CANT_CONVERT_TO,
+        args[0].isNull() ? "null" : "undefined", "object");
+    return false;
+  }
+
+  
+  if (!args[1].isObjectOrNull()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_NOT_EXPECTED_TYPE, "Object.setPrototypeOf",
+                              "an object or null",
+                              InformalValueTypeName(args[1]));
+    return false;
+  }
+
+  
+  if (!args[0].isObject()) {
     args.rval().set(args[0]);
     return true;
+  }
+
+  
+  RootedObject obj(cx, &args[0].toObject());
+  RootedObject newProto(cx, args[1].toObjectOrNull());
+  if (!SetPrototype(cx, obj, newProto)) {
+    return false;
+  }
+
+  
+  args.rval().set(args[0]);
+  return true;
 }
 
-static bool
-PropertyIsEnumerable(JSContext* cx, HandleObject obj, HandleId id, bool* enumerable)
-{
-    PropertyResult prop;
-    if (obj->isNative() &&
-        NativeLookupOwnProperty<NoGC>(cx, &obj->as<NativeObject>(), id, &prop))
-    {
-        if (!prop) {
-            *enumerable = false;
-            return true;
-        }
-
-        unsigned attrs = GetPropertyAttributes(obj, prop);
-        *enumerable = (attrs & JSPROP_ENUMERATE) != 0;
-        return true;
+static bool PropertyIsEnumerable(JSContext* cx, HandleObject obj, HandleId id,
+                                 bool* enumerable) {
+  PropertyResult prop;
+  if (obj->isNative() &&
+      NativeLookupOwnProperty<NoGC>(cx, &obj->as<NativeObject>(), id, &prop)) {
+    if (!prop) {
+      *enumerable = false;
+      return true;
     }
 
-    Rooted<PropertyDescriptor> desc(cx);
-    if (!GetOwnPropertyDescriptor(cx, obj, id, &desc)) {
-        return false;
-    }
-
-    *enumerable = desc.object() && desc.enumerable();
+    unsigned attrs = GetPropertyAttributes(obj, prop);
+    *enumerable = (attrs & JSPROP_ENUMERATE) != 0;
     return true;
+  }
+
+  Rooted<PropertyDescriptor> desc(cx);
+  if (!GetOwnPropertyDescriptor(cx, obj, id, &desc)) {
+    return false;
+  }
+
+  *enumerable = desc.object() && desc.enumerable();
+  return true;
 }
 
-static bool
-TryAssignNative(JSContext* cx, HandleObject to, HandleObject from, bool* optimized)
-{
-    *optimized = false;
+static bool TryAssignNative(JSContext* cx, HandleObject to, HandleObject from,
+                            bool* optimized) {
+  *optimized = false;
 
-    if (!from->isNative() || !to->isNative()) {
-        return true;
+  if (!from->isNative() || !to->isNative()) {
+    return true;
+  }
+
+  
+  
+  NativeObject* fromNative = &from->as<NativeObject>();
+  if (fromNative->getDenseInitializedLength() > 0 || fromNative->isIndexed() ||
+      fromNative->is<TypedArrayObject>() ||
+      fromNative->getClass()->getNewEnumerate() ||
+      fromNative->getClass()->getEnumerate()) {
+    return true;
+  }
+
+  
+  
+
+  using ShapeVector = GCVector<Shape*, 8>;
+  Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
+
+  RootedShape fromShape(cx, fromNative->lastProperty());
+  for (Shape::Range<NoGC> r(fromShape); !r.empty(); r.popFront()) {
+    
+    
+    if (MOZ_UNLIKELY(JSID_IS_SYMBOL(r.front().propidRaw()))) {
+      return true;
+    }
+    if (MOZ_UNLIKELY(!shapes.append(&r.front()))) {
+      return false;
+    }
+  }
+
+  *optimized = true;
+
+  RootedShape shape(cx);
+  RootedValue propValue(cx);
+  RootedId nextKey(cx);
+  RootedValue toReceiver(cx, ObjectValue(*to));
+
+  for (size_t i = shapes.length(); i > 0; i--) {
+    shape = shapes[i - 1];
+    nextKey = shape->propid();
+
+    
+    
+    
+    if (MOZ_LIKELY(from->isNative() &&
+                   from->as<NativeObject>().lastProperty() == fromShape &&
+                   shape->isDataProperty())) {
+      if (!shape->enumerable()) {
+        continue;
+      }
+      propValue = from->as<NativeObject>().getSlot(shape->slot());
+    } else {
+      
+      
+      bool enumerable;
+      if (!PropertyIsEnumerable(cx, from, nextKey, &enumerable)) {
+        return false;
+      }
+      if (!enumerable) {
+        continue;
+      }
+      if (!GetProperty(cx, from, from, nextKey, &propValue)) {
+        return false;
+      }
+    }
+
+    ObjectOpResult result;
+    if (MOZ_UNLIKELY(
+            !SetProperty(cx, to, nextKey, propValue, toReceiver, result))) {
+      return false;
+    }
+    if (MOZ_UNLIKELY(!result.checkStrict(cx, to, nextKey))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool TryAssignFromUnboxed(JSContext* cx, HandleObject to,
+                                 HandleObject from, bool* optimized) {
+  *optimized = false;
+
+  if (!from->is<UnboxedPlainObject>() || !to->isNative()) {
+    return true;
+  }
+
+  
+  UnboxedPlainObject* fromUnboxed = &from->as<UnboxedPlainObject>();
+  if (fromUnboxed->maybeExpando()) {
+    return true;
+  }
+
+  *optimized = true;
+
+  RootedObjectGroup fromGroup(cx, from->group());
+
+  RootedValue propValue(cx);
+  RootedId nextKey(cx);
+  RootedValue toReceiver(cx, ObjectValue(*to));
+
+  const UnboxedLayout& layout = fromUnboxed->layout();
+  for (size_t i = 0; i < layout.properties().length(); i++) {
+    const UnboxedLayout::Property& property = layout.properties()[i];
+    nextKey = NameToId(property.name);
+
+    
+    
+    
+    if (MOZ_LIKELY(from->group() == fromGroup)) {
+      propValue = from->as<UnboxedPlainObject>().getValue(property);
+    } else {
+      
+      
+      bool enumerable;
+      if (!PropertyIsEnumerable(cx, from, nextKey, &enumerable)) {
+        return false;
+      }
+      if (!enumerable) {
+        continue;
+      }
+      if (!GetProperty(cx, from, from, nextKey, &propValue)) {
+        return false;
+      }
+    }
+
+    ObjectOpResult result;
+    if (MOZ_UNLIKELY(
+            !SetProperty(cx, to, nextKey, propValue, toReceiver, result))) {
+      return false;
+    }
+    if (MOZ_UNLIKELY(!result.checkStrict(cx, to, nextKey))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool AssignSlow(JSContext* cx, HandleObject to, HandleObject from) {
+  
+  AutoIdVector keys(cx);
+  if (!GetPropertyKeys(
+          cx, from, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS, &keys)) {
+    return false;
+  }
+
+  
+  RootedId nextKey(cx);
+  RootedValue propValue(cx);
+  for (size_t i = 0, len = keys.length(); i < len; i++) {
+    nextKey = keys[i];
+
+    
+    bool enumerable;
+    if (MOZ_UNLIKELY(!PropertyIsEnumerable(cx, from, nextKey, &enumerable))) {
+      return false;
+    }
+    if (!enumerable) {
+      continue;
+    }
+
+    
+    if (MOZ_UNLIKELY(!GetProperty(cx, from, from, nextKey, &propValue))) {
+      return false;
+    }
+
+    
+    if (MOZ_UNLIKELY(!SetProperty(cx, to, nextKey, propValue))) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
+static bool obj_assign(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedObject to(cx, ToObject(cx, args.get(0)));
+  if (!to) {
+    return false;
+  }
+
+  
+  
+
+  
+  RootedObject from(cx);
+  for (size_t i = 1; i < args.length(); i++) {
+    
+    if (args[i].isNullOrUndefined()) {
+      continue;
+    }
+
+    
+    from = ToObject(cx, args[i]);
+    if (!from) {
+      return false;
+    }
+
+    
+    bool optimized;
+    if (!TryAssignNative(cx, to, from, &optimized)) {
+      return false;
+    }
+    if (optimized) {
+      continue;
+    }
+
+    if (!TryAssignFromUnboxed(cx, to, from, &optimized)) {
+      return false;
+    }
+    if (optimized) {
+      continue;
+    }
+
+    if (!AssignSlow(cx, to, from)) {
+      return false;
+    }
+  }
+
+  
+  args.rval().setObject(*to);
+  return true;
+}
+
+
+static bool obj_isPrototypeOf(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  if (args.length() < 1 || !args[0].isObject()) {
+    args.rval().setBoolean(false);
+    return true;
+  }
+
+  
+  RootedObject obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
+
+  
+  bool isPrototype;
+  if (!IsPrototypeOf(cx, obj, &args[0].toObject(), &isPrototype)) {
+    return false;
+  }
+  args.rval().setBoolean(isPrototype);
+  return true;
+}
+
+PlainObject* js::ObjectCreateImpl(JSContext* cx, HandleObject proto,
+                                  NewObjectKind newKind,
+                                  HandleObjectGroup group) {
+  
+  
+  gc::AllocKind allocKind = GuessObjectGCKind(0);
+
+  if (!proto) {
+    
+    
+    
+    
+    RootedObjectGroup ngroup(cx, group);
+    if (!ngroup) {
+      ngroup = ObjectGroup::callingAllocationSiteGroup(cx, JSProto_Null);
+      if (!ngroup) {
+        return nullptr;
+      }
+    }
+
+    MOZ_ASSERT(!ngroup->proto().toObjectOrNull());
+
+    return NewObjectWithGroup<PlainObject>(cx, ngroup, allocKind, newKind);
+  }
+
+  return NewObjectWithGivenProto<PlainObject>(cx, proto, allocKind, newKind);
+}
+
+PlainObject* js::ObjectCreateWithTemplate(JSContext* cx,
+                                          HandlePlainObject templateObj) {
+  RootedObject proto(cx, templateObj->staticPrototype());
+  RootedObjectGroup group(cx, templateObj->group());
+  return ObjectCreateImpl(cx, proto, GenericObject, group);
+}
+
+
+static bool ObjectDefineProperties(JSContext* cx, HandleObject obj,
+                                   HandleValue properties) {
+  
+  
+  RootedObject props(cx, ToObject(cx, properties));
+  if (!props) {
+    return false;
+  }
+
+  
+  AutoIdVector keys(cx);
+  if (!GetPropertyKeys(
+          cx, props, JSITER_OWNONLY | JSITER_SYMBOLS | JSITER_HIDDEN, &keys)) {
+    return false;
+  }
+
+  RootedId nextKey(cx);
+  Rooted<PropertyDescriptor> desc(cx);
+  RootedValue descObj(cx);
+
+  
+  Rooted<PropertyDescriptorVector> descriptors(cx,
+                                               PropertyDescriptorVector(cx));
+  AutoIdVector descriptorKeys(cx);
+
+  
+  for (size_t i = 0, len = keys.length(); i < len; i++) {
+    nextKey = keys[i];
+
+    
+    if (!GetOwnPropertyDescriptor(cx, props, nextKey, &desc)) {
+      return false;
+    }
+
+    
+    if (desc.object() && desc.enumerable()) {
+      if (!GetProperty(cx, props, props, nextKey, &descObj) ||
+          !ToPropertyDescriptor(cx, descObj, true, &desc) ||
+          !descriptors.append(desc) || !descriptorKeys.append(nextKey)) {
+        return false;
+      }
+    }
+  }
+
+  
+  for (size_t i = 0, len = descriptors.length(); i < len; i++) {
+    if (!DefineProperty(cx, obj, descriptorKeys[i], descriptors[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+bool js::obj_create(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  if (args.length() == 0) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_MORE_ARGS_NEEDED, "Object.create", "0",
+                              "s");
+    return false;
+  }
+
+  if (!args[0].isObjectOrNull()) {
+    UniqueChars bytes =
+        DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, args[0], nullptr);
+    if (!bytes) {
+      return false;
+    }
+
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_UNEXPECTED_TYPE, bytes.get(),
+                             "not an object or null");
+    return false;
+  }
+
+  
+  RootedObject proto(cx, args[0].toObjectOrNull());
+  RootedPlainObject obj(cx, ObjectCreateImpl(cx, proto));
+  if (!obj) {
+    return false;
+  }
+
+  
+  if (args.hasDefined(1)) {
+    if (!ObjectDefineProperties(cx, obj, args[1])) {
+      return false;
+    }
+  }
+
+  
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+static bool FromPropertyDescriptorToArray(JSContext* cx,
+                                          Handle<PropertyDescriptor> desc,
+                                          MutableHandleValue vp) {
+  
+  if (!desc.object()) {
+    vp.setUndefined();
+    return true;
+  }
+
+  
+  
+  
+  
+
+  int32_t attrsAndKind = 0;
+  if (desc.enumerable()) {
+    attrsAndKind |= ATTR_ENUMERABLE;
+  }
+  if (desc.configurable()) {
+    attrsAndKind |= ATTR_CONFIGURABLE;
+  }
+  if (!desc.isAccessorDescriptor()) {
+    if (desc.writable()) {
+      attrsAndKind |= ATTR_WRITABLE;
+    }
+    attrsAndKind |= DATA_DESCRIPTOR_KIND;
+  } else {
+    attrsAndKind |= ACCESSOR_DESCRIPTOR_KIND;
+  }
+
+  RootedArrayObject result(cx);
+  if (!desc.isAccessorDescriptor()) {
+    result = NewDenseFullyAllocatedArray(cx, 2);
+    if (!result) {
+      return false;
+    }
+    result->setDenseInitializedLength(2);
+
+    result->initDenseElement(PROP_DESC_ATTRS_AND_KIND_INDEX,
+                             Int32Value(attrsAndKind));
+    result->initDenseElement(PROP_DESC_VALUE_INDEX, desc.value());
+  } else {
+    result = NewDenseFullyAllocatedArray(cx, 3);
+    if (!result) {
+      return false;
+    }
+    result->setDenseInitializedLength(3);
+
+    result->initDenseElement(PROP_DESC_ATTRS_AND_KIND_INDEX,
+                             Int32Value(attrsAndKind));
+
+    if (JSObject* get = desc.getterObject()) {
+      result->initDenseElement(PROP_DESC_GETTER_INDEX, ObjectValue(*get));
+    } else {
+      result->initDenseElement(PROP_DESC_GETTER_INDEX, UndefinedValue());
+    }
+
+    if (JSObject* set = desc.setterObject()) {
+      result->initDenseElement(PROP_DESC_SETTER_INDEX, ObjectValue(*set));
+    } else {
+      result->initDenseElement(PROP_DESC_SETTER_INDEX, UndefinedValue());
+    }
+  }
+
+  vp.setObject(*result);
+  return true;
+}
+
+
+
+bool js::GetOwnPropertyDescriptorToArray(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 2);
+
+  
+  RootedObject obj(cx, ToObject(cx, args[0]));
+  if (!obj) {
+    return false;
+  }
+
+  
+  RootedId id(cx);
+  if (!ToPropertyKey(cx, args[1], &id)) {
+    return false;
+  }
+
+  
+  Rooted<PropertyDescriptor> desc(cx);
+  if (!GetOwnPropertyDescriptor(cx, obj, id, &desc)) {
+    return false;
+  }
+
+  
+  
+  desc.assertCompleteIfFound();
+
+  
+  return FromPropertyDescriptorToArray(cx, desc, args.rval());
+}
+
+static bool NewValuePair(JSContext* cx, HandleValue val1, HandleValue val2,
+                         MutableHandleValue rval) {
+  ArrayObject* array = NewDenseFullyAllocatedArray(cx, 2);
+  if (!array) {
+    return false;
+  }
+
+  array->setDenseInitializedLength(2);
+  array->initDenseElement(0, val1);
+  array->initDenseElement(1, val2);
+
+  rval.setObject(*array);
+  return true;
+}
+
+enum class EnumerableOwnPropertiesKind { Keys, Values, KeysAndValues, Names };
+
+static bool HasEnumerableStringNonDataProperties(NativeObject* obj) {
+  
+  
+  
+  for (Shape::Range<NoGC> r(obj->lastProperty()); !r.empty(); r.popFront()) {
+    Shape* shape = &r.front();
+    if (!shape->isDataProperty() && shape->enumerable() &&
+        !JSID_IS_SYMBOL(shape->propid())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+template <EnumerableOwnPropertiesKind kind>
+static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
+                                             MutableHandleValue rval,
+                                             bool* optimized) {
+  *optimized = false;
+
+  
+  
+  
+  
+  
+  if (!obj->isNative() || obj->as<NativeObject>().isIndexed() ||
+      obj->getClass()->getNewEnumerate() || obj->is<StringObject>()) {
+    return true;
+  }
+
+  HandleNativeObject nobj = obj.as<NativeObject>();
+
+  
+  if (JSEnumerateOp enumerate = nobj->getClass()->getEnumerate()) {
+    if (!enumerate(cx, nobj)) {
+      return false;
+    }
+
+    
+    if (nobj->isIndexed()) {
+      return true;
+    }
+  }
+
+  *optimized = true;
+
+  AutoValueVector properties(cx);
+  RootedValue key(cx);
+  RootedValue value(cx);
+
+  
+  
+  
+
+  for (uint32_t i = 0, len = nobj->getDenseInitializedLength(); i < len; i++) {
+    value.set(nobj->getDenseElement(i));
+    if (value.isMagic(JS_ELEMENTS_HOLE)) {
+      continue;
+    }
+
+    JSString* str;
+    if (kind != EnumerableOwnPropertiesKind::Values) {
+      static_assert(NativeObject::MAX_DENSE_ELEMENTS_COUNT <= JSID_INT_MAX,
+                    "dense elements don't exceed JSID_INT_MAX");
+      str = Int32ToString<CanGC>(cx, i);
+      if (!str) {
+        return false;
+      }
+    }
+
+    if (kind == EnumerableOwnPropertiesKind::Keys ||
+        kind == EnumerableOwnPropertiesKind::Names) {
+      value.setString(str);
+    } else if (kind == EnumerableOwnPropertiesKind::KeysAndValues) {
+      key.setString(str);
+      if (!NewValuePair(cx, key, value, &value)) {
+        return false;
+      }
+    }
+
+    if (!properties.append(value)) {
+      return false;
+    }
+  }
+
+  if (obj->is<TypedArrayObject>()) {
+    Handle<TypedArrayObject*> tobj = obj.as<TypedArrayObject>();
+    uint32_t len = tobj->length();
+
+    
+    
+    
+    
+    if (len > NativeObject::MAX_DENSE_ELEMENTS_COUNT) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+
+    MOZ_ASSERT(properties.empty(), "typed arrays cannot have dense elements");
+    if (!properties.resize(len)) {
+      return false;
+    }
+
+    for (uint32_t i = 0; i < len; i++) {
+      JSString* str;
+      if (kind != EnumerableOwnPropertiesKind::Values) {
+        static_assert(NativeObject::MAX_DENSE_ELEMENTS_COUNT <= JSID_INT_MAX,
+                      "dense elements don't exceed JSID_INT_MAX");
+        str = Int32ToString<CanGC>(cx, i);
+        if (!str) {
+          return false;
+        }
+      }
+
+      if (kind == EnumerableOwnPropertiesKind::Keys ||
+          kind == EnumerableOwnPropertiesKind::Names) {
+        value.setString(str);
+      } else if (kind == EnumerableOwnPropertiesKind::Values) {
+        value.set(tobj->getElement(i));
+      } else {
+        key.setString(str);
+        value.set(tobj->getElement(i));
+        if (!NewValuePair(cx, key, value, &value)) {
+          return false;
+        }
+      }
+
+      properties[i].set(value);
+    }
+  }
+
+  
+  
+  MOZ_ASSERT(obj->isNative());
+
+  if (kind == EnumerableOwnPropertiesKind::Keys ||
+      kind == EnumerableOwnPropertiesKind::Names ||
+      !HasEnumerableStringNonDataProperties(nobj)) {
+    
+    
+    
+    
+    
+
+    size_t elements = properties.length();
+    constexpr bool onlyEnumerable = kind != EnumerableOwnPropertiesKind::Names;
+    constexpr AllowGC allowGC =
+        kind != EnumerableOwnPropertiesKind::KeysAndValues ? AllowGC::NoGC
+                                                           : AllowGC::CanGC;
+    mozilla::MaybeOneOf<Shape::Range<NoGC>, Shape::Range<CanGC>> m;
+    if (allowGC == AllowGC::NoGC) {
+      m.construct<Shape::Range<NoGC>>(nobj->lastProperty());
+    } else {
+      m.construct<Shape::Range<CanGC>>(cx, nobj->lastProperty());
+    }
+    for (Shape::Range<allowGC>& r = m.ref<Shape::Range<allowGC>>(); !r.empty();
+         r.popFront()) {
+      Shape* shape = &r.front();
+      jsid id = shape->propid();
+      if ((onlyEnumerable && !shape->enumerable()) || JSID_IS_SYMBOL(id)) {
+        continue;
+      }
+      MOZ_ASSERT(!JSID_IS_INT(id), "Unexpected indexed property");
+      MOZ_ASSERT_IF(kind == EnumerableOwnPropertiesKind::Values ||
+                        kind == EnumerableOwnPropertiesKind::KeysAndValues,
+                    shape->isDataProperty());
+
+      if (kind == EnumerableOwnPropertiesKind::Keys ||
+          kind == EnumerableOwnPropertiesKind::Names) {
+        value.setString(JSID_TO_STRING(id));
+      } else if (kind == EnumerableOwnPropertiesKind::Values) {
+        value.set(nobj->getSlot(shape->slot()));
+      } else {
+        key.setString(JSID_TO_STRING(id));
+        value.set(nobj->getSlot(shape->slot()));
+        if (!NewValuePair(cx, key, value, &value)) {
+          return false;
+        }
+      }
+
+      if (!properties.append(value)) {
+        return false;
+      }
     }
 
     
     
-    NativeObject* fromNative = &from->as<NativeObject>();
-    if (fromNative->getDenseInitializedLength() > 0 ||
-        fromNative->isIndexed() ||
-        fromNative->is<TypedArrayObject>() ||
-        fromNative->getClass()->getNewEnumerate() ||
-        fromNative->getClass()->getEnumerate())
-    {
-        return true;
-    }
+    Reverse(properties.begin() + elements, properties.end());
+  } else {
+    MOZ_ASSERT(kind == EnumerableOwnPropertiesKind::Values ||
+               kind == EnumerableOwnPropertiesKind::KeysAndValues);
 
     
     
-
+    
     using ShapeVector = GCVector<Shape*, 8>;
     Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
 
-    RootedShape fromShape(cx, fromNative->lastProperty());
-    for (Shape::Range<NoGC> r(fromShape); !r.empty(); r.popFront()) {
-        
-        
-        if (MOZ_UNLIKELY(JSID_IS_SYMBOL(r.front().propidRaw()))) {
-            return true;
-        }
-        if (MOZ_UNLIKELY(!shapes.append(&r.front()))) {
-            return false;
-        }
-    }
-
-    *optimized = true;
-
-    RootedShape shape(cx);
-    RootedValue propValue(cx);
-    RootedId nextKey(cx);
-    RootedValue toReceiver(cx, ObjectValue(*to));
-
-    for (size_t i = shapes.length(); i > 0; i--) {
-        shape = shapes[i - 1];
-        nextKey = shape->propid();
-
-        
-        
-        
-        if (MOZ_LIKELY(from->isNative() &&
-                       from->as<NativeObject>().lastProperty() == fromShape &&
-                       shape->isDataProperty()))
-        {
-            if (!shape->enumerable()) {
-                continue;
-            }
-            propValue = from->as<NativeObject>().getSlot(shape->slot());
-        } else {
-            
-            
-            bool enumerable;
-            if (!PropertyIsEnumerable(cx, from, nextKey, &enumerable)) {
-                return false;
-            }
-            if (!enumerable) {
-                continue;
-            }
-            if (!GetProperty(cx, from, from, nextKey, &propValue)) {
-                return false;
-            }
-        }
-
-        ObjectOpResult result;
-        if (MOZ_UNLIKELY(!SetProperty(cx, to, nextKey, propValue, toReceiver, result))) {
-            return false;
-        }
-        if (MOZ_UNLIKELY(!result.checkStrict(cx, to, nextKey))) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-static bool
-TryAssignFromUnboxed(JSContext* cx, HandleObject to, HandleObject from, bool* optimized)
-{
-    *optimized = false;
-
-    if (!from->is<UnboxedPlainObject>() || !to->isNative()) {
-        return true;
-    }
-
     
-    UnboxedPlainObject* fromUnboxed = &from->as<UnboxedPlainObject>();
-    if (fromUnboxed->maybeExpando()) {
-        return true;
-    }
+    RootedShape objShape(cx, nobj->lastProperty());
+    for (Shape::Range<NoGC> r(objShape); !r.empty(); r.popFront()) {
+      Shape* shape = &r.front();
+      if (JSID_IS_SYMBOL(shape->propid())) {
+        continue;
+      }
+      MOZ_ASSERT(!JSID_IS_INT(shape->propid()), "Unexpected indexed property");
 
-    *optimized = true;
-
-    RootedObjectGroup fromGroup(cx, from->group());
-
-    RootedValue propValue(cx);
-    RootedId nextKey(cx);
-    RootedValue toReceiver(cx, ObjectValue(*to));
-
-    const UnboxedLayout& layout = fromUnboxed->layout();
-    for (size_t i = 0; i < layout.properties().length(); i++) {
-        const UnboxedLayout::Property& property = layout.properties()[i];
-        nextKey = NameToId(property.name);
-
-        
-        
-        
-        if (MOZ_LIKELY(from->group() == fromGroup)) {
-            propValue = from->as<UnboxedPlainObject>().getValue(property);
-        } else {
-            
-            
-            bool enumerable;
-            if (!PropertyIsEnumerable(cx, from, nextKey, &enumerable)) {
-                return false;
-            }
-            if (!enumerable) {
-                continue;
-            }
-            if (!GetProperty(cx, from, from, nextKey, &propValue)) {
-                return false;
-            }
-        }
-
-        ObjectOpResult result;
-        if (MOZ_UNLIKELY(!SetProperty(cx, to, nextKey, propValue, toReceiver, result))) {
-            return false;
-        }
-        if (MOZ_UNLIKELY(!result.checkStrict(cx, to, nextKey))) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-static bool
-AssignSlow(JSContext* cx, HandleObject to, HandleObject from)
-{
-    
-    AutoIdVector keys(cx);
-    if (!GetPropertyKeys(cx, from, JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS, &keys)) {
+      if (!shapes.append(shape)) {
         return false;
+      }
     }
 
-    
-    RootedId nextKey(cx);
-    RootedValue propValue(cx);
-    for (size_t i = 0, len = keys.length(); i < len; i++) {
-        nextKey = keys[i];
+    RootedId id(cx);
+    for (size_t i = shapes.length(); i > 0; i--) {
+      Shape* shape = shapes[i - 1];
+      id = shape->propid();
 
+      
+      
+      
+      if (obj->isNative() &&
+          obj->as<NativeObject>().lastProperty() == objShape &&
+          shape->isDataProperty()) {
+        if (!shape->enumerable()) {
+          continue;
+        }
+        value = obj->as<NativeObject>().getSlot(shape->slot());
+      } else {
+        
+        
         
         bool enumerable;
-        if (MOZ_UNLIKELY(!PropertyIsEnumerable(cx, from, nextKey, &enumerable))) {
-            return false;
+        if (!PropertyIsEnumerable(cx, obj, id, &enumerable)) {
+          return false;
         }
         if (!enumerable) {
-            continue;
+          continue;
         }
-
-        
-        if (MOZ_UNLIKELY(!GetProperty(cx, from, from, nextKey, &propValue))) {
-            return false;
+        if (!GetProperty(cx, obj, obj, id, &value)) {
+          return false;
         }
+      }
 
-        
-        if (MOZ_UNLIKELY(!SetProperty(cx, to, nextKey, propValue))) {
-            return false;
+      if (kind == EnumerableOwnPropertiesKind::KeysAndValues) {
+        key.setString(JSID_TO_STRING(id));
+        if (!NewValuePair(cx, key, value, &value)) {
+          return false;
         }
-    }
+      }
 
-    return true;
-}
-
-
-
-static bool
-obj_assign(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    RootedObject to(cx, ToObject(cx, args.get(0)));
-    if (!to) {
+      if (!properties.append(value)) {
         return false;
+      }
     }
+  }
 
-    
-    
-
-    
-    RootedObject from(cx);
-    for (size_t i = 1; i < args.length(); i++) {
-        
-        if (args[i].isNullOrUndefined()) {
-            continue;
-        }
-
-        
-        from = ToObject(cx, args[i]);
-        if (!from) {
-            return false;
-        }
-
-        
-        bool optimized;
-        if (!TryAssignNative(cx, to, from, &optimized)) {
-            return false;
-        }
-        if (optimized) {
-            continue;
-        }
-
-        if (!TryAssignFromUnboxed(cx, to, from, &optimized)) {
-            return false;
-        }
-        if (optimized) {
-            continue;
-        }
-
-        if (!AssignSlow(cx, to, from)) {
-            return false;
-        }
-    }
-
-    
-    args.rval().setObject(*to);
-    return true;
-}
-
-
-static bool
-obj_isPrototypeOf(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    if (args.length() < 1 || !args[0].isObject()) {
-        args.rval().setBoolean(false);
-        return true;
-    }
-
-    
-    RootedObject obj(cx, ToObject(cx, args.thisv()));
-    if (!obj) {
-        return false;
-    }
-
-    
-    bool isPrototype;
-    if (!IsPrototypeOf(cx, obj, &args[0].toObject(), &isPrototype)) {
-        return false;
-    }
-    args.rval().setBoolean(isPrototype);
-    return true;
-}
-
-PlainObject*
-js::ObjectCreateImpl(JSContext* cx, HandleObject proto, NewObjectKind newKind,
-                     HandleObjectGroup group)
-{
-    
-    
-    gc::AllocKind allocKind = GuessObjectGCKind(0);
-
-    if (!proto) {
-        
-        
-        
-        
-        RootedObjectGroup ngroup(cx, group);
-        if (!ngroup) {
-            ngroup = ObjectGroup::callingAllocationSiteGroup(cx, JSProto_Null);
-            if (!ngroup) {
-                return nullptr;
-            }
-        }
-
-        MOZ_ASSERT(!ngroup->proto().toObjectOrNull());
-
-        return NewObjectWithGroup<PlainObject>(cx, ngroup, allocKind, newKind);
-    }
-
-    return NewObjectWithGivenProto<PlainObject>(cx, proto, allocKind, newKind);
-}
-
-PlainObject*
-js::ObjectCreateWithTemplate(JSContext* cx, HandlePlainObject templateObj)
-{
-    RootedObject proto(cx, templateObj->staticPrototype());
-    RootedObjectGroup group(cx, templateObj->group());
-    return ObjectCreateImpl(cx, proto, GenericObject, group);
-}
-
-
-static bool
-ObjectDefineProperties(JSContext* cx, HandleObject obj, HandleValue properties)
-{
-    
-    
-    RootedObject props(cx, ToObject(cx, properties));
-    if (!props) {
-        return false;
-    }
-
-    
-    AutoIdVector keys(cx);
-    if (!GetPropertyKeys(cx, props, JSITER_OWNONLY | JSITER_SYMBOLS | JSITER_HIDDEN, &keys)) {
-        return false;
-    }
-
-    RootedId nextKey(cx);
-    Rooted<PropertyDescriptor> desc(cx);
-    RootedValue descObj(cx);
-
-    
-    Rooted<PropertyDescriptorVector> descriptors(cx, PropertyDescriptorVector(cx));
-    AutoIdVector descriptorKeys(cx);
-
-    
-    for (size_t i = 0, len = keys.length(); i < len; i++) {
-        nextKey = keys[i];
-
-        
-        if (!GetOwnPropertyDescriptor(cx, props, nextKey, &desc)) {
-            return false;
-        }
-
-        
-        if (desc.object() && desc.enumerable()) {
-            if (!GetProperty(cx, props, props, nextKey, &descObj) ||
-                !ToPropertyDescriptor(cx, descObj, true, &desc) ||
-                !descriptors.append(desc) ||
-                !descriptorKeys.append(nextKey))
-            {
-                return false;
-            }
-        }
-    }
-
-    
-    for (size_t i = 0, len = descriptors.length(); i < len; i++) {
-        if (!DefineProperty(cx, obj, descriptorKeys[i], descriptors[i])) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-
-bool
-js::obj_create(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    if (args.length() == 0) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_MORE_ARGS_NEEDED,
-                                  "Object.create", "0", "s");
-        return false;
-    }
-
-    if (!args[0].isObjectOrNull()) {
-        UniqueChars bytes = DecompileValueGenerator(cx, JSDVG_SEARCH_STACK, args[0], nullptr);
-        if (!bytes) {
-            return false;
-        }
-
-        JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr, JSMSG_UNEXPECTED_TYPE,
-                                 bytes.get(), "not an object or null");
-        return false;
-    }
-
-    
-    RootedObject proto(cx, args[0].toObjectOrNull());
-    RootedPlainObject obj(cx, ObjectCreateImpl(cx, proto));
-    if (!obj) {
-        return false;
-    }
-
-    
-    if (args.hasDefined(1)) {
-        if (!ObjectDefineProperties(cx, obj, args[1])) {
-            return false;
-        }
-    }
-
-    
-    args.rval().setObject(*obj);
-    return true;
-}
-
-
-
-static bool
-FromPropertyDescriptorToArray(JSContext* cx, Handle<PropertyDescriptor> desc, MutableHandleValue vp)
-{
-    
-    if (!desc.object()) {
-        vp.setUndefined();
-        return true;
-    }
-
-    
-    
-    
-    
-
-    int32_t attrsAndKind = 0;
-    if (desc.enumerable()) {
-        attrsAndKind |= ATTR_ENUMERABLE;
-    }
-    if (desc.configurable()) {
-        attrsAndKind |= ATTR_CONFIGURABLE;
-    }
-    if (!desc.isAccessorDescriptor()) {
-        if (desc.writable()) {
-            attrsAndKind |= ATTR_WRITABLE;
-        }
-        attrsAndKind |= DATA_DESCRIPTOR_KIND;
-    } else {
-        attrsAndKind |= ACCESSOR_DESCRIPTOR_KIND;
-    }
-
-    RootedArrayObject result(cx);
-    if (!desc.isAccessorDescriptor()) {
-        result = NewDenseFullyAllocatedArray(cx, 2);
-        if (!result) {
-            return false;
-        }
-        result->setDenseInitializedLength(2);
-
-        result->initDenseElement(PROP_DESC_ATTRS_AND_KIND_INDEX, Int32Value(attrsAndKind));
-        result->initDenseElement(PROP_DESC_VALUE_INDEX, desc.value());
-    } else {
-        result = NewDenseFullyAllocatedArray(cx, 3);
-        if (!result) {
-            return false;
-        }
-        result->setDenseInitializedLength(3);
-
-        result->initDenseElement(PROP_DESC_ATTRS_AND_KIND_INDEX, Int32Value(attrsAndKind));
-
-        if (JSObject* get = desc.getterObject()) {
-            result->initDenseElement(PROP_DESC_GETTER_INDEX, ObjectValue(*get));
-        } else {
-            result->initDenseElement(PROP_DESC_GETTER_INDEX, UndefinedValue());
-        }
-
-        if (JSObject* set = desc.setterObject()) {
-            result->initDenseElement(PROP_DESC_SETTER_INDEX, ObjectValue(*set));
-        } else {
-            result->initDenseElement(PROP_DESC_SETTER_INDEX, UndefinedValue());
-        }
-    }
-
-    vp.setObject(*result);
-    return true;
-}
-
-
-
-bool
-js::GetOwnPropertyDescriptorToArray(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    MOZ_ASSERT(args.length() == 2);
-
-    
-    RootedObject obj(cx, ToObject(cx, args[0]));
-    if (!obj) {
-        return false;
-    }
-
-    
-    RootedId id(cx);
-    if (!ToPropertyKey(cx, args[1], &id)) {
-        return false;
-    }
-
-    
-    Rooted<PropertyDescriptor> desc(cx);
-    if (!GetOwnPropertyDescriptor(cx, obj, id, &desc)) {
-        return false;
-    }
-
-    
-    
-    desc.assertCompleteIfFound();
-
-    
-    return FromPropertyDescriptorToArray(cx, desc, args.rval());
-}
-
-static bool
-NewValuePair(JSContext* cx, HandleValue val1, HandleValue val2, MutableHandleValue rval)
-{
-    ArrayObject* array = NewDenseFullyAllocatedArray(cx, 2);
-    if (!array) {
-        return false;
-    }
-
-    array->setDenseInitializedLength(2);
-    array->initDenseElement(0, val1);
-    array->initDenseElement(1, val2);
-
-    rval.setObject(*array);
-    return true;
-}
-
-enum class EnumerableOwnPropertiesKind {
-    Keys,
-    Values,
-    KeysAndValues,
-    Names
-};
-
-static bool
-HasEnumerableStringNonDataProperties(NativeObject* obj)
-{
-    
-    
-    
-    for (Shape::Range<NoGC> r(obj->lastProperty()); !r.empty(); r.popFront()) {
-        Shape* shape = &r.front();
-        if (!shape->isDataProperty() && shape->enumerable() && !JSID_IS_SYMBOL(shape->propid())) {
-            return true;
-        }
-    }
+  JSObject* array =
+      NewDenseCopiedArray(cx, properties.length(), properties.begin());
+  if (!array) {
     return false;
+  }
+
+  rval.setObject(*array);
+  return true;
 }
 
 template <EnumerableOwnPropertiesKind kind>
-static bool
-TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj, MutableHandleValue rval,
-                                 bool* optimized)
-{
-    *optimized = false;
+static bool TryEnumerableOwnPropertiesUnboxed(JSContext* cx, HandleObject obj,
+                                              MutableHandleValue rval,
+                                              bool* optimized) {
+  *optimized = false;
 
-    
-    
-    
-    
-    
-    if (!obj->isNative() ||
-        obj->as<NativeObject>().isIndexed() ||
-        obj->getClass()->getNewEnumerate() ||
-        obj->is<StringObject>())
-    {
-        return true;
-    }
+  if (!obj->is<UnboxedPlainObject>()) {
+    return true;
+  }
 
-    HandleNativeObject nobj = obj.as<NativeObject>();
+  Handle<UnboxedPlainObject*> uobj = obj.as<UnboxedPlainObject>();
+  if (uobj->maybeExpando()) {
+    return true;
+  }
 
-    
-    if (JSEnumerateOp enumerate = nobj->getClass()->getEnumerate()) {
-        if (!enumerate(cx, nobj)) {
-            return false;
-        }
+  *optimized = true;
 
-        
-        if (nobj->isIndexed()) {
-            return true;
-        }
-    }
+  AutoValueVector properties(cx);
+  RootedValue key(cx);
+  RootedValue value(cx);
 
-    *optimized = true;
+  const UnboxedLayout& layout = uobj->layout();
 
-    AutoValueVector properties(cx);
-    RootedValue key(cx);
-    RootedValue value(cx);
+  for (size_t i = 0, len = layout.properties().length(); i < len; i++) {
+    MOZ_ASSERT(obj->is<UnboxedPlainObject>(), "Object should still be unboxed");
 
-    
-    
-    
-
-    for (uint32_t i = 0, len = nobj->getDenseInitializedLength(); i < len; i++) {
-        value.set(nobj->getDenseElement(i));
-        if (value.isMagic(JS_ELEMENTS_HOLE)) {
-            continue;
-        }
-
-        JSString* str;
-        if (kind != EnumerableOwnPropertiesKind::Values) {
-            static_assert(NativeObject::MAX_DENSE_ELEMENTS_COUNT <= JSID_INT_MAX,
-                          "dense elements don't exceed JSID_INT_MAX");
-            str = Int32ToString<CanGC>(cx, i);
-            if (!str) {
-                return false;
-            }
-        }
-
-        if (kind == EnumerableOwnPropertiesKind::Keys ||
-            kind == EnumerableOwnPropertiesKind::Names)
-        {
-            value.setString(str);
-        } else if (kind == EnumerableOwnPropertiesKind::KeysAndValues) {
-            key.setString(str);
-            if (!NewValuePair(cx, key, value, &value)) {
-                return false;
-            }
-        }
-
-        if (!properties.append(value)) {
-            return false;
-        }
-    }
-
-    if (obj->is<TypedArrayObject>()) {
-        Handle<TypedArrayObject*> tobj = obj.as<TypedArrayObject>();
-        uint32_t len = tobj->length();
-
-        
-        
-        
-        
-        if (len > NativeObject::MAX_DENSE_ELEMENTS_COUNT) {
-            ReportOutOfMemory(cx);
-            return false;
-        }
-
-        MOZ_ASSERT(properties.empty(), "typed arrays cannot have dense elements");
-        if (!properties.resize(len)) {
-            return false;
-        }
-
-        for (uint32_t i = 0; i < len; i++) {
-            JSString* str;
-            if (kind != EnumerableOwnPropertiesKind::Values) {
-                static_assert(NativeObject::MAX_DENSE_ELEMENTS_COUNT <= JSID_INT_MAX,
-                              "dense elements don't exceed JSID_INT_MAX");
-                str = Int32ToString<CanGC>(cx, i);
-                if (!str) {
-                    return false;
-                }
-            }
-
-            if (kind == EnumerableOwnPropertiesKind::Keys ||
-                kind == EnumerableOwnPropertiesKind::Names)
-            {
-                value.setString(str);
-            } else if (kind == EnumerableOwnPropertiesKind::Values) {
-                value.set(tobj->getElement(i));
-            } else {
-                key.setString(str);
-                value.set(tobj->getElement(i));
-                if (!NewValuePair(cx, key, value, &value)) {
-                    return false;
-                }
-            }
-
-            properties[i].set(value);
-        }
-    }
-
-    
-    
-    MOZ_ASSERT(obj->isNative());
+    const UnboxedLayout::Property& property = layout.properties()[i];
 
     if (kind == EnumerableOwnPropertiesKind::Keys ||
-        kind == EnumerableOwnPropertiesKind::Names ||
-        !HasEnumerableStringNonDataProperties(nobj))
-    {
-        
-        
-        
-        
-        
-
-        size_t elements = properties.length();
-        constexpr bool onlyEnumerable = kind != EnumerableOwnPropertiesKind::Names;
-        constexpr AllowGC allowGC = kind != EnumerableOwnPropertiesKind::KeysAndValues
-                                    ? AllowGC::NoGC
-                                    : AllowGC::CanGC;
-        mozilla::MaybeOneOf<Shape::Range<NoGC>, Shape::Range<CanGC>> m;
-        if (allowGC == AllowGC::NoGC) {
-            m.construct<Shape::Range<NoGC>>(nobj->lastProperty());
-        } else {
-            m.construct<Shape::Range<CanGC>>(cx, nobj->lastProperty());
-        }
-        for (Shape::Range<allowGC>& r = m.ref<Shape::Range<allowGC>>(); !r.empty(); r.popFront()) {
-            Shape* shape = &r.front();
-            jsid id = shape->propid();
-            if ((onlyEnumerable && !shape->enumerable()) || JSID_IS_SYMBOL(id)) {
-                continue;
-            }
-            MOZ_ASSERT(!JSID_IS_INT(id), "Unexpected indexed property");
-            MOZ_ASSERT_IF(kind == EnumerableOwnPropertiesKind::Values ||
-                          kind == EnumerableOwnPropertiesKind::KeysAndValues,
-                          shape->isDataProperty());
-
-            if (kind == EnumerableOwnPropertiesKind::Keys ||
-                kind == EnumerableOwnPropertiesKind::Names)
-            {
-                value.setString(JSID_TO_STRING(id));
-            } else if (kind == EnumerableOwnPropertiesKind::Values) {
-                value.set(nobj->getSlot(shape->slot()));
-            } else {
-                key.setString(JSID_TO_STRING(id));
-                value.set(nobj->getSlot(shape->slot()));
-                if (!NewValuePair(cx, key, value, &value)) {
-                    return false;
-                }
-            }
-
-            if (!properties.append(value)) {
-                return false;
-            }
-        }
-
-        
-        
-        Reverse(properties.begin() + elements, properties.end());
+        kind == EnumerableOwnPropertiesKind::Names) {
+      value.setString(property.name);
+    } else if (kind == EnumerableOwnPropertiesKind::Values) {
+      value.set(uobj->getValue(property));
     } else {
-        MOZ_ASSERT(kind == EnumerableOwnPropertiesKind::Values ||
-                   kind == EnumerableOwnPropertiesKind::KeysAndValues);
-
-        
-        
-        
-        using ShapeVector = GCVector<Shape*, 8>;
-        Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
-
-        
-        RootedShape objShape(cx, nobj->lastProperty());
-        for (Shape::Range<NoGC> r(objShape); !r.empty(); r.popFront()) {
-            Shape* shape = &r.front();
-            if (JSID_IS_SYMBOL(shape->propid())) {
-                continue;
-            }
-            MOZ_ASSERT(!JSID_IS_INT(shape->propid()), "Unexpected indexed property");
-
-            if (!shapes.append(shape)) {
-                return false;
-            }
-        }
-
-        RootedId id(cx);
-        for (size_t i = shapes.length(); i > 0; i--) {
-            Shape* shape = shapes[i - 1];
-            id = shape->propid();
-
-            
-            
-            
-            if (obj->isNative() &&
-                obj->as<NativeObject>().lastProperty() == objShape &&
-                shape->isDataProperty())
-            {
-                if (!shape->enumerable()) {
-                    continue;
-                }
-                value = obj->as<NativeObject>().getSlot(shape->slot());
-            } else {
-                
-                
-                
-                bool enumerable;
-                if (!PropertyIsEnumerable(cx, obj, id, &enumerable)) {
-                    return false;
-                }
-                if (!enumerable) {
-                    continue;
-                }
-                if (!GetProperty(cx, obj, obj, id, &value)) {
-                    return false;
-                }
-            }
-
-            if (kind == EnumerableOwnPropertiesKind::KeysAndValues) {
-                key.setString(JSID_TO_STRING(id));
-                if (!NewValuePair(cx, key, value, &value)) {
-                    return false;
-                }
-            }
-
-            if (!properties.append(value)) {
-                return false;
-            }
-        }
-    }
-
-    JSObject* array = NewDenseCopiedArray(cx, properties.length(), properties.begin());
-    if (!array) {
+      key.setString(property.name);
+      value.set(uobj->getValue(property));
+      if (!NewValuePair(cx, key, value, &value)) {
         return false;
+      }
     }
 
-    rval.setObject(*array);
-    return true;
-}
-
-template <EnumerableOwnPropertiesKind kind>
-static bool
-TryEnumerableOwnPropertiesUnboxed(JSContext* cx, HandleObject obj, MutableHandleValue rval,
-                                  bool* optimized)
-{
-    *optimized = false;
-
-    if (!obj->is<UnboxedPlainObject>()) {
-        return true;
+    if (!properties.append(value)) {
+      return false;
     }
+  }
 
-    Handle<UnboxedPlainObject*> uobj = obj.as<UnboxedPlainObject>();
-    if (uobj->maybeExpando()) {
-        return true;
-    }
+  JSObject* array =
+      NewDenseCopiedArray(cx, properties.length(), properties.begin());
+  if (!array) {
+    return false;
+  }
 
-    *optimized = true;
-
-    AutoValueVector properties(cx);
-    RootedValue key(cx);
-    RootedValue value(cx);
-
-    const UnboxedLayout& layout = uobj->layout();
-
-    for (size_t i = 0, len = layout.properties().length(); i < len; i++) {
-        MOZ_ASSERT(obj->is<UnboxedPlainObject>(),
-                   "Object should still be unboxed");
-
-        const UnboxedLayout::Property& property = layout.properties()[i];
-
-        if (kind == EnumerableOwnPropertiesKind::Keys ||
-            kind == EnumerableOwnPropertiesKind::Names)
-        {
-            value.setString(property.name);
-        } else if (kind == EnumerableOwnPropertiesKind::Values) {
-            value.set(uobj->getValue(property));
-        } else {
-            key.setString(property.name);
-            value.set(uobj->getValue(property));
-            if (!NewValuePair(cx, key, value, &value)) {
-                return false;
-            }
-        }
-
-        if (!properties.append(value)) {
-            return false;
-        }
-    }
-
-    JSObject* array = NewDenseCopiedArray(cx, properties.length(), properties.begin());
-    if (!array) {
-        return false;
-    }
-
-    rval.setObject(*array);
-    return true;
+  rval.setObject(*array);
+  return true;
 }
 
 
 
 template <EnumerableOwnPropertiesKind kind>
-static bool
-EnumerableOwnProperties(JSContext* cx, const JS::CallArgs& args)
-{
-    static_assert(kind == EnumerableOwnPropertiesKind::Values ||
-                  kind == EnumerableOwnPropertiesKind::KeysAndValues,
-                  "Only implemented for Object.keys and Object.entries");
+static bool EnumerableOwnProperties(JSContext* cx, const JS::CallArgs& args) {
+  static_assert(kind == EnumerableOwnPropertiesKind::Values ||
+                    kind == EnumerableOwnPropertiesKind::KeysAndValues,
+                "Only implemented for Object.keys and Object.entries");
 
-    
-    RootedObject obj(cx, ToObject(cx, args.get(0)));
-    if (!obj) {
-        return false;
-    }
+  
+  RootedObject obj(cx, ToObject(cx, args.get(0)));
+  if (!obj) {
+    return false;
+  }
 
-    bool optimized;
-    if (!TryEnumerableOwnPropertiesNative<kind>(cx, obj, args.rval(), &optimized)) {
-        return false;
-    }
-    if (optimized) {
-        return true;
-    }
-
-    if (!TryEnumerableOwnPropertiesUnboxed<kind>(cx, obj, args.rval(), &optimized)) {
-        return false;
-    }
-    if (optimized) {
-        return true;
-    }
-
-    
-    MOZ_ASSERT(!obj->is<TypedArrayObject>());
-
-    
-    AutoIdVector ids(cx);
-    if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY | JSITER_HIDDEN, &ids)) {
-        return false;
-    }
-
-    
-    AutoValueVector properties(cx);
-    size_t len = ids.length();
-    if (!properties.resize(len)) {
-        return false;
-    }
-
-    RootedId id(cx);
-    RootedValue key(cx);
-    RootedValue value(cx);
-    RootedShape shape(cx);
-    Rooted<PropertyDescriptor> desc(cx);
-    
-    size_t out = 0;
-    for (size_t i = 0; i < len; i++) {
-        id = ids[i];
-
-        
-        MOZ_ASSERT(!JSID_IS_SYMBOL(id));
-
-        if (kind != EnumerableOwnPropertiesKind::Values) {
-            if (!IdToStringOrSymbol(cx, id, &key)) {
-                return false;
-            }
-        }
-
-        
-        if (obj->is<NativeObject>()) {
-            HandleNativeObject nobj = obj.as<NativeObject>();
-            if (JSID_IS_INT(id) && nobj->containsDenseElement(JSID_TO_INT(id))) {
-                value = nobj->getDenseOrTypedArrayElement(JSID_TO_INT(id));
-            } else {
-                shape = nobj->lookup(cx, id);
-                if (!shape || !shape->enumerable()) {
-                    continue;
-                }
-                if (!shape->isAccessorShape()) {
-                    if (!NativeGetExistingProperty(cx, nobj, nobj, shape, &value)) {
-                        return false;
-                    }
-                } else if (!GetProperty(cx, obj, obj, id, &value)) {
-                    return false;
-                }
-            }
-        } else {
-            if (!GetOwnPropertyDescriptor(cx, obj, id, &desc)) {
-                return false;
-            }
-
-            
-            if (!desc.object() || !desc.enumerable()) {
-                continue;
-            }
-
-            
-            
-
-            
-            if (!GetProperty(cx, obj, obj, id, &value)) {
-                return false;
-            }
-        }
-
-        
-        if (kind == EnumerableOwnPropertiesKind::Values) {
-            properties[out++].set(value);
-        } else if (!NewValuePair(cx, key, value, properties[out++])) {
-            return false;
-        }
-    }
-
-    
-    
-
-    
-    JSObject* aobj = NewDenseCopiedArray(cx, out, properties.begin());
-    if (!aobj) {
-        return false;
-    }
-
-    args.rval().setObject(*aobj);
+  bool optimized;
+  if (!TryEnumerableOwnPropertiesNative<kind>(cx, obj, args.rval(),
+                                              &optimized)) {
+    return false;
+  }
+  if (optimized) {
     return true;
-}
+  }
 
-
-
-static bool
-obj_keys(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    RootedObject obj(cx, ToObject(cx, args.get(0)));
-    if (!obj) {
-        return false;
-    }
-
-    bool optimized;
-    static constexpr EnumerableOwnPropertiesKind kind = EnumerableOwnPropertiesKind::Keys;
-    if (!TryEnumerableOwnPropertiesNative<kind>(cx, obj, args.rval(), &optimized)) {
-        return false;
-    }
-    if (optimized) {
-        return true;
-    }
-
-    if (!TryEnumerableOwnPropertiesUnboxed<kind>(cx, obj, args.rval(), &optimized)) {
-        return false;
-    }
-    if (optimized) {
-        return true;
-    }
-
-    
-    return GetOwnPropertyKeys(cx, obj, JSITER_OWNONLY, args.rval());
-}
-
-
-
-static bool
-obj_values(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    return EnumerableOwnProperties<EnumerableOwnPropertiesKind::Values>(cx, args);
-}
-
-
-
-static bool
-obj_entries(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    return EnumerableOwnProperties<EnumerableOwnPropertiesKind::KeysAndValues>(cx, args);
-}
-
-
-bool
-js::obj_is(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    bool same;
-    if (!SameValue(cx, args.get(0), args.get(1), &same)) {
-        return false;
-    }
-
-    args.rval().setBoolean(same);
+  if (!TryEnumerableOwnPropertiesUnboxed<kind>(cx, obj, args.rval(),
+                                               &optimized)) {
+    return false;
+  }
+  if (optimized) {
     return true;
-}
+  }
 
-bool
-js::IdToStringOrSymbol(JSContext* cx, HandleId id, MutableHandleValue result)
-{
-    if (JSID_IS_INT(id)) {
-        JSString* str = Int32ToString<CanGC>(cx, JSID_TO_INT(id));
-        if (!str) {
-            return false;
+  
+  MOZ_ASSERT(!obj->is<TypedArrayObject>());
+
+  
+  AutoIdVector ids(cx);
+  if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY | JSITER_HIDDEN, &ids)) {
+    return false;
+  }
+
+  
+  AutoValueVector properties(cx);
+  size_t len = ids.length();
+  if (!properties.resize(len)) {
+    return false;
+  }
+
+  RootedId id(cx);
+  RootedValue key(cx);
+  RootedValue value(cx);
+  RootedShape shape(cx);
+  Rooted<PropertyDescriptor> desc(cx);
+  
+  size_t out = 0;
+  for (size_t i = 0; i < len; i++) {
+    id = ids[i];
+
+    
+    MOZ_ASSERT(!JSID_IS_SYMBOL(id));
+
+    if (kind != EnumerableOwnPropertiesKind::Values) {
+      if (!IdToStringOrSymbol(cx, id, &key)) {
+        return false;
+      }
+    }
+
+    
+    if (obj->is<NativeObject>()) {
+      HandleNativeObject nobj = obj.as<NativeObject>();
+      if (JSID_IS_INT(id) && nobj->containsDenseElement(JSID_TO_INT(id))) {
+        value = nobj->getDenseOrTypedArrayElement(JSID_TO_INT(id));
+      } else {
+        shape = nobj->lookup(cx, id);
+        if (!shape || !shape->enumerable()) {
+          continue;
         }
-        result.setString(str);
-    } else if (JSID_IS_ATOM(id)) {
-        result.setString(JSID_TO_STRING(id));
+        if (!shape->isAccessorShape()) {
+          if (!NativeGetExistingProperty(cx, nobj, nobj, shape, &value)) {
+            return false;
+          }
+        } else if (!GetProperty(cx, obj, obj, id, &value)) {
+          return false;
+        }
+      }
     } else {
-        result.setSymbol(JSID_TO_SYMBOL(id));
+      if (!GetOwnPropertyDescriptor(cx, obj, id, &desc)) {
+        return false;
+      }
+
+      
+      if (!desc.object() || !desc.enumerable()) {
+        continue;
+      }
+
+      
+      
+
+      
+      if (!GetProperty(cx, obj, obj, id, &value)) {
+        return false;
+      }
     }
+
+    
+    if (kind == EnumerableOwnPropertiesKind::Values) {
+      properties[out++].set(value);
+    } else if (!NewValuePair(cx, key, value, properties[out++])) {
+      return false;
+    }
+  }
+
+  
+  
+
+  
+  JSObject* aobj = NewDenseCopiedArray(cx, out, properties.begin());
+  if (!aobj) {
+    return false;
+  }
+
+  args.rval().setObject(*aobj);
+  return true;
+}
+
+
+
+static bool obj_keys(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedObject obj(cx, ToObject(cx, args.get(0)));
+  if (!obj) {
+    return false;
+  }
+
+  bool optimized;
+  static constexpr EnumerableOwnPropertiesKind kind =
+      EnumerableOwnPropertiesKind::Keys;
+  if (!TryEnumerableOwnPropertiesNative<kind>(cx, obj, args.rval(),
+                                              &optimized)) {
+    return false;
+  }
+  if (optimized) {
     return true;
-}
+  }
 
-
-
-bool
-js::GetOwnPropertyKeys(JSContext* cx, HandleObject obj, unsigned flags, MutableHandleValue rval)
-{
-    
-
-    
-    AutoIdVector keys(cx);
-    if (!GetPropertyKeys(cx, obj, flags, &keys)) {
-        return false;
-    }
-
-    
-    RootedArrayObject array(cx, NewDenseFullyAllocatedArray(cx, keys.length()));
-    if (!array) {
-        return false;
-    }
-
-    array->ensureDenseInitializedLength(cx, 0, keys.length());
-
-    RootedValue val(cx);
-    for (size_t i = 0, len = keys.length(); i < len; i++) {
-        MOZ_ASSERT_IF(JSID_IS_SYMBOL(keys[i]), flags & JSITER_SYMBOLS);
-        MOZ_ASSERT_IF(!JSID_IS_SYMBOL(keys[i]), !(flags & JSITER_SYMBOLSONLY));
-        if (!IdToStringOrSymbol(cx, keys[i], &val)) {
-            return false;
-        }
-        array->initDenseElement(i, val);
-    }
-
-    rval.setObject(*array);
+  if (!TryEnumerableOwnPropertiesUnboxed<kind>(cx, obj, args.rval(),
+                                               &optimized)) {
+    return false;
+  }
+  if (optimized) {
     return true;
+  }
+
+  
+  return GetOwnPropertyKeys(cx, obj, JSITER_OWNONLY, args.rval());
 }
 
 
 
-bool
-js::obj_getOwnPropertyNames(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+static bool obj_values(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    RootedObject obj(cx, ToObject(cx, args.get(0)));
-    if (!obj) {
-        return false;
-    }
-
-    bool optimized;
-    static constexpr EnumerableOwnPropertiesKind kind = EnumerableOwnPropertiesKind::Names;
-    if (!TryEnumerableOwnPropertiesNative<kind>(cx, obj, args.rval(), &optimized)) {
-        return false;
-    }
-    if (optimized) {
-        return true;
-    }
-
-    if (!TryEnumerableOwnPropertiesUnboxed<kind>(cx, obj, args.rval(), &optimized)) {
-        return false;
-    }
-    if (optimized) {
-        return true;
-    }
-
-    return GetOwnPropertyKeys(cx, obj, JSITER_OWNONLY | JSITER_HIDDEN, args.rval());
+  
+  return EnumerableOwnProperties<EnumerableOwnPropertiesKind::Values>(cx, args);
 }
 
 
 
-static bool
-obj_getOwnPropertySymbols(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+static bool obj_entries(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    RootedObject obj(cx, ToObject(cx, args.get(0)));
-    if (!obj) {
-        return false;
-    }
-
-    return GetOwnPropertyKeys(cx, obj,
-                              JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS | JSITER_SYMBOLSONLY,
-                              args.rval());
+  
+  return EnumerableOwnProperties<EnumerableOwnPropertiesKind::KeysAndValues>(
+      cx, args);
 }
 
 
-static bool
-obj_defineProperties(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+bool js::obj_is(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    
-    RootedObject obj(cx);
-    if (!GetFirstArgumentAsObject(cx, args, "Object.defineProperties", &obj)) {
-        return false;
+  bool same;
+  if (!SameValue(cx, args.get(0), args.get(1), &same)) {
+    return false;
+  }
+
+  args.rval().setBoolean(same);
+  return true;
+}
+
+bool js::IdToStringOrSymbol(JSContext* cx, HandleId id,
+                            MutableHandleValue result) {
+  if (JSID_IS_INT(id)) {
+    JSString* str = Int32ToString<CanGC>(cx, JSID_TO_INT(id));
+    if (!str) {
+      return false;
     }
-    args.rval().setObject(*obj);
-
-    
-    if (args.length() < 2) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_MORE_ARGS_NEEDED,
-                                  "Object.defineProperties", "0", "s");
-        return false;
-    }
-
-    
-    return ObjectDefineProperties(cx, obj, args[1]);
+    result.setString(str);
+  } else if (JSID_IS_ATOM(id)) {
+    result.setString(JSID_TO_STRING(id));
+  } else {
+    result.setSymbol(JSID_TO_SYMBOL(id));
+  }
+  return true;
 }
 
 
-static bool
-obj_preventExtensions(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    args.rval().set(args.get(0));
 
-    
-    if (!args.get(0).isObject()) {
-        return true;
+bool js::GetOwnPropertyKeys(JSContext* cx, HandleObject obj, unsigned flags,
+                            MutableHandleValue rval) {
+  
+
+  
+  AutoIdVector keys(cx);
+  if (!GetPropertyKeys(cx, obj, flags, &keys)) {
+    return false;
+  }
+
+  
+  RootedArrayObject array(cx, NewDenseFullyAllocatedArray(cx, keys.length()));
+  if (!array) {
+    return false;
+  }
+
+  array->ensureDenseInitializedLength(cx, 0, keys.length());
+
+  RootedValue val(cx);
+  for (size_t i = 0, len = keys.length(); i < len; i++) {
+    MOZ_ASSERT_IF(JSID_IS_SYMBOL(keys[i]), flags & JSITER_SYMBOLS);
+    MOZ_ASSERT_IF(!JSID_IS_SYMBOL(keys[i]), !(flags & JSITER_SYMBOLSONLY));
+    if (!IdToStringOrSymbol(cx, keys[i], &val)) {
+      return false;
     }
+    array->initDenseElement(i, val);
+  }
 
-    
+  rval.setObject(*array);
+  return true;
+}
+
+
+
+bool js::obj_getOwnPropertyNames(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  RootedObject obj(cx, ToObject(cx, args.get(0)));
+  if (!obj) {
+    return false;
+  }
+
+  bool optimized;
+  static constexpr EnumerableOwnPropertiesKind kind =
+      EnumerableOwnPropertiesKind::Names;
+  if (!TryEnumerableOwnPropertiesNative<kind>(cx, obj, args.rval(),
+                                              &optimized)) {
+    return false;
+  }
+  if (optimized) {
+    return true;
+  }
+
+  if (!TryEnumerableOwnPropertiesUnboxed<kind>(cx, obj, args.rval(),
+                                               &optimized)) {
+    return false;
+  }
+  if (optimized) {
+    return true;
+  }
+
+  return GetOwnPropertyKeys(cx, obj, JSITER_OWNONLY | JSITER_HIDDEN,
+                            args.rval());
+}
+
+
+
+static bool obj_getOwnPropertySymbols(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  RootedObject obj(cx, ToObject(cx, args.get(0)));
+  if (!obj) {
+    return false;
+  }
+
+  return GetOwnPropertyKeys(
+      cx, obj,
+      JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS | JSITER_SYMBOLSONLY,
+      args.rval());
+}
+
+
+static bool obj_defineProperties(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedObject obj(cx);
+  if (!GetFirstArgumentAsObject(cx, args, "Object.defineProperties", &obj)) {
+    return false;
+  }
+  args.rval().setObject(*obj);
+
+  
+  if (args.length() < 2) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_MORE_ARGS_NEEDED, "Object.defineProperties",
+                              "0", "s");
+    return false;
+  }
+
+  
+  return ObjectDefineProperties(cx, obj, args[1]);
+}
+
+
+static bool obj_preventExtensions(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().set(args.get(0));
+
+  
+  if (!args.get(0).isObject()) {
+    return true;
+  }
+
+  
+  RootedObject obj(cx, &args.get(0).toObject());
+  return PreventExtensions(cx, obj);
+}
+
+
+static bool obj_freeze(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().set(args.get(0));
+
+  
+  if (!args.get(0).isObject()) {
+    return true;
+  }
+
+  
+  RootedObject obj(cx, &args.get(0).toObject());
+  return SetIntegrityLevel(cx, obj, IntegrityLevel::Frozen);
+}
+
+
+static bool obj_isFrozen(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  bool frozen = true;
+
+  
+  if (args.get(0).isObject()) {
     RootedObject obj(cx, &args.get(0).toObject());
-    return PreventExtensions(cx, obj);
+    if (!TestIntegrityLevel(cx, obj, IntegrityLevel::Frozen, &frozen)) {
+      return false;
+    }
+  }
+  args.rval().setBoolean(frozen);
+  return true;
 }
 
 
-static bool
-obj_freeze(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    args.rval().set(args.get(0));
+static bool obj_seal(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().set(args.get(0));
 
-    
-    if (!args.get(0).isObject()) {
-        return true;
-    }
+  
+  if (!args.get(0).isObject()) {
+    return true;
+  }
 
-    
+  
+  RootedObject obj(cx, &args.get(0).toObject());
+  return SetIntegrityLevel(cx, obj, IntegrityLevel::Sealed);
+}
+
+
+static bool obj_isSealed(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  bool sealed = true;
+
+  
+  if (args.get(0).isObject()) {
     RootedObject obj(cx, &args.get(0).toObject());
-    return SetIntegrityLevel(cx, obj, IntegrityLevel::Frozen);
+    if (!TestIntegrityLevel(cx, obj, IntegrityLevel::Sealed, &sealed)) {
+      return false;
+    }
+  }
+  args.rval().setBoolean(sealed);
+  return true;
 }
 
+static bool ProtoGetter(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-static bool
-obj_isFrozen(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    bool frozen = true;
-
-    
-    if (args.get(0).isObject()) {
-        RootedObject obj(cx, &args.get(0).toObject());
-        if (!TestIntegrityLevel(cx, obj, IntegrityLevel::Frozen, &frozen)) {
-            return false;
-        }
-    }
-    args.rval().setBoolean(frozen);
-    return true;
-}
-
-
-static bool
-obj_seal(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    args.rval().set(args.get(0));
-
-    
-    if (!args.get(0).isObject()) {
-        return true;
-    }
-
-    
-    RootedObject obj(cx, &args.get(0).toObject());
-    return SetIntegrityLevel(cx, obj, IntegrityLevel::Sealed);
-}
-
-
-static bool
-obj_isSealed(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    bool sealed = true;
-
-    
-    if (args.get(0).isObject()) {
-        RootedObject obj(cx, &args.get(0).toObject());
-        if (!TestIntegrityLevel(cx, obj, IntegrityLevel::Sealed, &sealed)) {
-            return false;
-        }
-    }
-    args.rval().setBoolean(sealed);
-    return true;
-}
-
-static bool
-ProtoGetter(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    RootedValue thisv(cx, args.thisv());
-    if (thisv.isPrimitive()) {
-        if (thisv.isNullOrUndefined()) {
-            ReportIncompatible(cx, args);
-            return false;
-        }
-
-        if (!BoxNonStrictThis(cx, thisv, &thisv)) {
-            return false;
-        }
-    }
-
-    RootedObject obj(cx, &thisv.toObject());
-    RootedObject proto(cx);
-    if (!GetPrototype(cx, obj, &proto)) {
-        return false;
-    }
-
-    args.rval().setObjectOrNull(proto);
-    return true;
-}
-
-static bool
-ProtoSetter(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    HandleValue thisv = args.thisv();
+  RootedValue thisv(cx, args.thisv());
+  if (thisv.isPrimitive()) {
     if (thisv.isNullOrUndefined()) {
-        ReportIncompatible(cx, args);
-        return false;
-    }
-    if (thisv.isPrimitive()) {
-        
-        args.rval().setUndefined();
-        return true;
+      ReportIncompatible(cx, args);
+      return false;
     }
 
-    Rooted<JSObject*> obj(cx, &args.thisv().toObject());
+    if (!BoxNonStrictThis(cx, thisv, &thisv)) {
+      return false;
+    }
+  }
 
+  RootedObject obj(cx, &thisv.toObject());
+  RootedObject proto(cx);
+  if (!GetPrototype(cx, obj, &proto)) {
+    return false;
+  }
+
+  args.rval().setObjectOrNull(proto);
+  return true;
+}
+
+static bool ProtoSetter(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  HandleValue thisv = args.thisv();
+  if (thisv.isNullOrUndefined()) {
+    ReportIncompatible(cx, args);
+    return false;
+  }
+  if (thisv.isPrimitive()) {
     
-    if (args.length() == 0 || !args[0].isObjectOrNull()) {
-        args.rval().setUndefined();
-        return true;
-    }
-
-    Rooted<JSObject*> newProto(cx, args[0].toObjectOrNull());
-    if (!SetPrototype(cx, obj, newProto)) {
-        return false;
-    }
-
     args.rval().setUndefined();
     return true;
+  }
+
+  Rooted<JSObject*> obj(cx, &args.thisv().toObject());
+
+  
+  if (args.length() == 0 || !args[0].isObjectOrNull()) {
+    args.rval().setUndefined();
+    return true;
+  }
+
+  Rooted<JSObject*> newProto(cx, args[0].toObjectOrNull());
+  if (!SetPrototype(cx, obj, newProto)) {
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return true;
 }
 
 static const JSFunctionSpec object_methods[] = {
-    JS_FN(js_toSource_str,             obj_toSource,                0,0),
-    JS_INLINABLE_FN(js_toString_str,   obj_toString,                0,0, ObjectToString),
+    JS_FN(js_toSource_str, obj_toSource, 0, 0),
+    JS_INLINABLE_FN(js_toString_str, obj_toString, 0, 0, ObjectToString),
     JS_SELF_HOSTED_FN(js_toLocaleString_str, "Object_toLocaleString", 0, 0),
-    JS_SELF_HOSTED_FN(js_valueOf_str,  "Object_valueOf",            0,0),
-    JS_SELF_HOSTED_FN(js_hasOwnProperty_str, "Object_hasOwnProperty", 1,0),
-    JS_FN(js_isPrototypeOf_str,        obj_isPrototypeOf,           1,0),
-    JS_FN(js_propertyIsEnumerable_str, obj_propertyIsEnumerable,    1,0),
-    JS_SELF_HOSTED_FN(js_defineGetter_str, "ObjectDefineGetter",    2,0),
-    JS_SELF_HOSTED_FN(js_defineSetter_str, "ObjectDefineSetter",    2,0),
-    JS_SELF_HOSTED_FN(js_lookupGetter_str, "ObjectLookupGetter",    1,0),
-    JS_SELF_HOSTED_FN(js_lookupSetter_str, "ObjectLookupSetter",    1,0),
-    JS_FS_END
-};
+    JS_SELF_HOSTED_FN(js_valueOf_str, "Object_valueOf", 0, 0),
+    JS_SELF_HOSTED_FN(js_hasOwnProperty_str, "Object_hasOwnProperty", 1, 0),
+    JS_FN(js_isPrototypeOf_str, obj_isPrototypeOf, 1, 0),
+    JS_FN(js_propertyIsEnumerable_str, obj_propertyIsEnumerable, 1, 0),
+    JS_SELF_HOSTED_FN(js_defineGetter_str, "ObjectDefineGetter", 2, 0),
+    JS_SELF_HOSTED_FN(js_defineSetter_str, "ObjectDefineSetter", 2, 0),
+    JS_SELF_HOSTED_FN(js_lookupGetter_str, "ObjectLookupGetter", 1, 0),
+    JS_SELF_HOSTED_FN(js_lookupSetter_str, "ObjectLookupSetter", 1, 0),
+    JS_FS_END};
 
 static const JSPropertySpec object_properties[] = {
-    JS_PSGS("__proto__", ProtoGetter, ProtoSetter, 0),
-    JS_PS_END
-};
+    JS_PSGS("__proto__", ProtoGetter, ProtoSetter, 0), JS_PS_END};
 
 static const JSFunctionSpec object_static_methods[] = {
-    JS_FN("assign",                    obj_assign,                  2, 0),
-    JS_SELF_HOSTED_FN("getPrototypeOf", "ObjectGetPrototypeOf",     1, 0),
-    JS_FN("setPrototypeOf",            obj_setPrototypeOf,          2, 0),
-    JS_SELF_HOSTED_FN("getOwnPropertyDescriptor", "ObjectGetOwnPropertyDescriptor", 2, 0),
-    JS_SELF_HOSTED_FN("getOwnPropertyDescriptors", "ObjectGetOwnPropertyDescriptors", 1, 0),
-    JS_FN("keys",                      obj_keys,                    1, 0),
-    JS_FN("values",                    obj_values,                  1, 0),
-    JS_FN("entries",                   obj_entries,                 1, 0),
-    JS_INLINABLE_FN("is",              obj_is,                      2, 0, ObjectIs),
-    JS_SELF_HOSTED_FN("defineProperty", "ObjectDefineProperty",     3, 0),
-    JS_FN("defineProperties",          obj_defineProperties,        2, 0),
-    JS_INLINABLE_FN("create",          obj_create,                  2, 0, ObjectCreate),
-    JS_FN("getOwnPropertyNames",       obj_getOwnPropertyNames,     1, 0),
-    JS_FN("getOwnPropertySymbols",     obj_getOwnPropertySymbols,   1, 0),
-    JS_SELF_HOSTED_FN("isExtensible",  "ObjectIsExtensible",        1, 0),
-    JS_FN("preventExtensions",         obj_preventExtensions,       1, 0),
-    JS_FN("freeze",                    obj_freeze,                  1, 0),
-    JS_FN("isFrozen",                  obj_isFrozen,                1, 0),
-    JS_FN("seal",                      obj_seal,                    1, 0),
-    JS_FN("isSealed",                  obj_isSealed,                1, 0),
-    JS_SELF_HOSTED_FN("fromEntries",   "ObjectFromEntries",         1, 0),
-    JS_FS_END
-};
+    JS_FN("assign", obj_assign, 2, 0),
+    JS_SELF_HOSTED_FN("getPrototypeOf", "ObjectGetPrototypeOf", 1, 0),
+    JS_FN("setPrototypeOf", obj_setPrototypeOf, 2, 0),
+    JS_SELF_HOSTED_FN("getOwnPropertyDescriptor",
+                      "ObjectGetOwnPropertyDescriptor", 2, 0),
+    JS_SELF_HOSTED_FN("getOwnPropertyDescriptors",
+                      "ObjectGetOwnPropertyDescriptors", 1, 0),
+    JS_FN("keys", obj_keys, 1, 0),
+    JS_FN("values", obj_values, 1, 0),
+    JS_FN("entries", obj_entries, 1, 0),
+    JS_INLINABLE_FN("is", obj_is, 2, 0, ObjectIs),
+    JS_SELF_HOSTED_FN("defineProperty", "ObjectDefineProperty", 3, 0),
+    JS_FN("defineProperties", obj_defineProperties, 2, 0),
+    JS_INLINABLE_FN("create", obj_create, 2, 0, ObjectCreate),
+    JS_FN("getOwnPropertyNames", obj_getOwnPropertyNames, 1, 0),
+    JS_FN("getOwnPropertySymbols", obj_getOwnPropertySymbols, 1, 0),
+    JS_SELF_HOSTED_FN("isExtensible", "ObjectIsExtensible", 1, 0),
+    JS_FN("preventExtensions", obj_preventExtensions, 1, 0),
+    JS_FN("freeze", obj_freeze, 1, 0),
+    JS_FN("isFrozen", obj_isFrozen, 1, 0),
+    JS_FN("seal", obj_seal, 1, 0),
+    JS_FN("isSealed", obj_isSealed, 1, 0),
+    JS_SELF_HOSTED_FN("fromEntries", "ObjectFromEntries", 1, 0),
+    JS_FS_END};
 
-static JSObject*
-CreateObjectConstructor(JSContext* cx, JSProtoKey key)
-{
-    Rooted<GlobalObject*> self(cx, cx->global());
-    if (!GlobalObject::ensureConstructor(cx, self, JSProto_Function)) {
-        return nullptr;
-    }
+static JSObject* CreateObjectConstructor(JSContext* cx, JSProtoKey key) {
+  Rooted<GlobalObject*> self(cx, cx->global());
+  if (!GlobalObject::ensureConstructor(cx, self, JSProto_Function)) {
+    return nullptr;
+  }
 
-    
-    JSFunction *fun = NewNativeConstructor(cx, obj_construct, 1,
-                                           HandlePropertyName(cx->names().Object),
-                                           gc::AllocKind::FUNCTION, SingletonObject);
-    if (!fun) {
-        return nullptr;
-    }
+  
+  JSFunction* fun = NewNativeConstructor(
+      cx, obj_construct, 1, HandlePropertyName(cx->names().Object),
+      gc::AllocKind::FUNCTION, SingletonObject);
+  if (!fun) {
+    return nullptr;
+  }
 
-    fun->setJitInfo(&jit::JitInfo_Object);
-    return fun;
+  fun->setJitInfo(&jit::JitInfo_Object);
+  return fun;
 }
 
-static JSObject*
-CreateObjectPrototype(JSContext* cx, JSProtoKey key)
-{
-    MOZ_ASSERT(!cx->zone()->isAtomsZone());
-    MOZ_ASSERT(cx->global()->isNative());
+static JSObject* CreateObjectPrototype(JSContext* cx, JSProtoKey key) {
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+  MOZ_ASSERT(cx->global()->isNative());
 
-    
+  
 
 
 
-    RootedPlainObject objectProto(cx, NewObjectWithGivenProto<PlainObject>(cx, nullptr,
-                                                                           SingletonObject));
-    if (!objectProto) {
-        return nullptr;
-    }
+  RootedPlainObject objectProto(
+      cx, NewObjectWithGivenProto<PlainObject>(cx, nullptr, SingletonObject));
+  if (!objectProto) {
+    return nullptr;
+  }
 
-    bool succeeded;
-    if (!SetImmutablePrototype(cx, objectProto, &succeeded)) {
-        return nullptr;
-    }
-    MOZ_ASSERT(succeeded,
-               "should have been able to make a fresh Object.prototype's "
-               "[[Prototype]] immutable");
+  bool succeeded;
+  if (!SetImmutablePrototype(cx, objectProto, &succeeded)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(succeeded,
+             "should have been able to make a fresh Object.prototype's "
+             "[[Prototype]] immutable");
 
-    
+  
 
 
 
 
-    ObjectGroupRealm& realm = ObjectGroupRealm::getForNewObject(cx);
-    if (!JSObject::setNewGroupUnknown(cx, realm, &PlainObject::class_, objectProto)) {
-        return nullptr;
-    }
+  ObjectGroupRealm& realm = ObjectGroupRealm::getForNewObject(cx);
+  if (!JSObject::setNewGroupUnknown(cx, realm, &PlainObject::class_,
+                                    objectProto)) {
+    return nullptr;
+  }
 
-    return objectProto;
+  return objectProto;
 }
 
-static bool
-FinishObjectClassInit(JSContext* cx, JS::HandleObject ctor, JS::HandleObject proto)
-{
-    Rooted<GlobalObject*> global(cx, cx->global());
+static bool FinishObjectClassInit(JSContext* cx, JS::HandleObject ctor,
+                                  JS::HandleObject proto) {
+  Rooted<GlobalObject*> global(cx, cx->global());
 
-    
-    RootedId evalId(cx, NameToId(cx->names().eval));
-    JSObject* evalobj = DefineFunction(cx, global, evalId, IndirectEval, 1, JSPROP_RESOLVING);
-    if (!evalobj) {
-        return false;
-    }
-    global->setOriginalEval(evalobj);
+  
+  RootedId evalId(cx, NameToId(cx->names().eval));
+  JSObject* evalobj =
+      DefineFunction(cx, global, evalId, IndirectEval, 1, JSPROP_RESOLVING);
+  if (!evalobj) {
+    return false;
+  }
+  global->setOriginalEval(evalobj);
 
 #ifdef FUZZING
-    if (cx->options().fuzzing()) {
-        if (!DefineTestingFunctions(cx, global,  true,
-                                     false))
-        {
-            return false;
-        }
+  if (cx->options().fuzzing()) {
+    if (!DefineTestingFunctions(cx, global,  true,
+                                 false)) {
+      return false;
     }
+  }
 #endif
 
-    Rooted<NativeObject*> holder(cx, GlobalObject::getIntrinsicsHolder(cx, global));
-    if (!holder) {
-        return false;
+  Rooted<NativeObject*> holder(cx,
+                               GlobalObject::getIntrinsicsHolder(cx, global));
+  if (!holder) {
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+  Rooted<TaggedProto> tagged(cx, TaggedProto(proto));
+  if (global->shouldSplicePrototype()) {
+    if (!JSObject::splicePrototype(cx, global, global->getClass(), tagged)) {
+      return false;
     }
-
-    
-
-
-
-
-
-
-
-    Rooted<TaggedProto> tagged(cx, TaggedProto(proto));
-    if (global->shouldSplicePrototype()) {
-        if (!JSObject::splicePrototype(cx, global, global->getClass(), tagged)) {
-            return false;
-        }
-    }
-    return true;
+  }
+  return true;
 }
 
 static const ClassSpec PlainObjectClassSpec = {
-    CreateObjectConstructor,
-    CreateObjectPrototype,
-    object_static_methods,
-    nullptr,
-    object_methods,
-    object_properties,
-    FinishObjectClassInit
-};
+    CreateObjectConstructor, CreateObjectPrototype,
+    object_static_methods,   nullptr,
+    object_methods,          object_properties,
+    FinishObjectClassInit};
 
-const Class PlainObject::class_ = {
-    js_Object_str,
-    JSCLASS_HAS_CACHED_PROTO(JSProto_Object),
-    JS_NULL_CLASS_OPS,
-    &PlainObjectClassSpec
-};
+const Class PlainObject::class_ = {js_Object_str,
+                                   JSCLASS_HAS_CACHED_PROTO(JSProto_Object),
+                                   JS_NULL_CLASS_OPS, &PlainObjectClassSpec};
 
 const Class* const js::ObjectClassPtr = &PlainObject::class_;

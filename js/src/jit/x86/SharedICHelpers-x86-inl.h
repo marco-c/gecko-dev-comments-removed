@@ -14,91 +14,90 @@
 namespace js {
 namespace jit {
 
-inline void
-EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm, uint32_t argSize)
-{
-    
+inline void EmitBaselineTailCallVM(TrampolinePtr target, MacroAssembler& masm,
+                                   uint32_t argSize) {
+  
 
-    
-    masm.movl(BaselineFrameReg, eax);
-    masm.addl(Imm32(BaselineFrame::FramePointerOffset), eax);
-    masm.subl(BaselineStackReg, eax);
+  
+  masm.movl(BaselineFrameReg, eax);
+  masm.addl(Imm32(BaselineFrame::FramePointerOffset), eax);
+  masm.subl(BaselineStackReg, eax);
 
-    
-    masm.movl(eax, ebx);
-    masm.subl(Imm32(argSize), ebx);
-    masm.store32(ebx, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
+  
+  masm.movl(eax, ebx);
+  masm.subl(Imm32(argSize), ebx);
+  masm.store32(ebx, Address(BaselineFrameReg,
+                            BaselineFrame::reverseOffsetOfFrameSize()));
 
-    
-    masm.makeFrameDescriptor(eax, FrameType::BaselineJS, ExitFrameLayout::Size());
-    masm.push(eax);
-    masm.push(ICTailCallReg);
-    masm.jump(target);
+  
+  masm.makeFrameDescriptor(eax, FrameType::BaselineJS, ExitFrameLayout::Size());
+  masm.push(eax);
+  masm.push(ICTailCallReg);
+  masm.jump(target);
 }
 
-inline void
-EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm, Register reg, uint32_t headerSize)
-{
-    
-    
-    masm.movl(BaselineFrameReg, reg);
-    masm.addl(Imm32(sizeof(void*) * 2), reg);
-    masm.subl(BaselineStackReg, reg);
+inline void EmitBaselineCreateStubFrameDescriptor(MacroAssembler& masm,
+                                                  Register reg,
+                                                  uint32_t headerSize) {
+  
+  
+  masm.movl(BaselineFrameReg, reg);
+  masm.addl(Imm32(sizeof(void*) * 2), reg);
+  masm.subl(BaselineStackReg, reg);
 
-    masm.makeFrameDescriptor(reg, FrameType::BaselineStub, headerSize);
+  masm.makeFrameDescriptor(reg, FrameType::BaselineStub, headerSize);
 }
 
-inline void
-EmitBaselineCallVM(TrampolinePtr target, MacroAssembler& masm)
-{
-    EmitBaselineCreateStubFrameDescriptor(masm, eax, ExitFrameLayout::Size());
-    masm.push(eax);
-    masm.call(target);
+inline void EmitBaselineCallVM(TrampolinePtr target, MacroAssembler& masm) {
+  EmitBaselineCreateStubFrameDescriptor(masm, eax, ExitFrameLayout::Size());
+  masm.push(eax);
+  masm.call(target);
 }
 
 
 static const uint32_t STUB_FRAME_SIZE = 4 * sizeof(void*);
 static const uint32_t STUB_FRAME_SAVED_STUB_OFFSET = sizeof(void*);
 
-inline void
-EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+inline void EmitBaselineEnterStubFrame(MacroAssembler& masm, Register scratch) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    static_assert(BaselineFrame::FramePointerOffset == sizeof(void*),
-                  "FramePointerOffset must be the same as the return address size");
+  static_assert(
+      BaselineFrame::FramePointerOffset == sizeof(void*),
+      "FramePointerOffset must be the same as the return address size");
 
-    masm.movl(BaselineFrameReg, scratch);
-    masm.subl(BaselineStackReg, scratch);
+  masm.movl(BaselineFrameReg, scratch);
+  masm.subl(BaselineStackReg, scratch);
 
-    masm.store32(scratch, Address(BaselineFrameReg, BaselineFrame::reverseOffsetOfFrameSize()));
+  masm.store32(scratch, Address(BaselineFrameReg,
+                                BaselineFrame::reverseOffsetOfFrameSize()));
 
-    
-    
+  
+  
 
-    
-    masm.Push(Operand(BaselineStackReg, 0));
+  
+  masm.Push(Operand(BaselineStackReg, 0));
 
-    
-    masm.makeFrameDescriptor(scratch, FrameType::BaselineJS, BaselineStubFrameLayout::Size());
-    masm.storePtr(scratch, Address(BaselineStackReg, sizeof(uintptr_t)));
+  
+  masm.makeFrameDescriptor(scratch, FrameType::BaselineJS,
+                           BaselineStubFrameLayout::Size());
+  masm.storePtr(scratch, Address(BaselineStackReg, sizeof(uintptr_t)));
 
-    
-    masm.Push(ICStubReg);
-    masm.Push(BaselineFrameReg);
-    masm.mov(BaselineStackReg, BaselineFrameReg);
+  
+  masm.Push(ICStubReg);
+  masm.Push(BaselineFrameReg);
+  masm.mov(BaselineStackReg, BaselineFrameReg);
 }
 
-} 
-} 
+}  
+}  
 
 #endif 

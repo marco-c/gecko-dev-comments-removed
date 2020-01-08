@@ -25,561 +25,549 @@
 using namespace mozilla::net;
 
 NS_IMPL_ISUPPORTS(nsAboutCache, nsIAboutModule)
-NS_IMPL_ISUPPORTS(nsAboutCache::Channel, nsIChannel, nsIRequest, nsICacheStorageVisitor)
+NS_IMPL_ISUPPORTS(nsAboutCache::Channel, nsIChannel, nsIRequest,
+                  nsICacheStorageVisitor)
 
 NS_IMETHODIMP
-nsAboutCache::NewChannel(nsIURI* aURI,
-                         nsILoadInfo* aLoadInfo,
-                         nsIChannel** result)
-{
-    nsresult rv;
+nsAboutCache::NewChannel(nsIURI *aURI, nsILoadInfo *aLoadInfo,
+                         nsIChannel **result) {
+  nsresult rv;
 
-    NS_ENSURE_ARG_POINTER(aURI);
+  NS_ENSURE_ARG_POINTER(aURI);
 
-    RefPtr<Channel> channel = new Channel();
-    rv = channel->Init(aURI, aLoadInfo);
-    if (NS_FAILED(rv)) return rv;
+  RefPtr<Channel> channel = new Channel();
+  rv = channel->Init(aURI, aLoadInfo);
+  if (NS_FAILED(rv)) return rv;
 
-    channel.forget(result);
+  channel.forget(result);
 
-    return NS_OK;
+  return NS_OK;
 }
 
-nsresult
-nsAboutCache::Channel::Init(nsIURI* aURI, nsILoadInfo* aLoadInfo)
-{
-    nsresult rv;
+nsresult nsAboutCache::Channel::Init(nsIURI *aURI, nsILoadInfo *aLoadInfo) {
+  nsresult rv;
 
-    mCancel = false;
+  mCancel = false;
 
-    nsCOMPtr<nsIInputStream> inputStream;
-    rv = NS_NewPipe(getter_AddRefs(inputStream), getter_AddRefs(mStream),
-                    16384, (uint32_t)-1,
-                    true, 
-                    false 
-    );
-    if (NS_FAILED(rv)) return rv;
+  nsCOMPtr<nsIInputStream> inputStream;
+  rv = NS_NewPipe(getter_AddRefs(inputStream), getter_AddRefs(mStream), 16384,
+                  (uint32_t)-1,
+                  true,  
+                  false  
+  );
+  if (NS_FAILED(rv)) return rv;
 
-    nsAutoCString storageName;
-    rv = ParseURI(aURI, storageName);
-    if (NS_FAILED(rv)) return rv;
+  nsAutoCString storageName;
+  rv = ParseURI(aURI, storageName);
+  if (NS_FAILED(rv)) return rv;
 
-    mOverview = storageName.IsEmpty();
-    if (mOverview) {
-        
-        mStorageList.AppendElement(NS_LITERAL_CSTRING("memory"));
-        mStorageList.AppendElement(NS_LITERAL_CSTRING("disk"));
-        mStorageList.AppendElement(NS_LITERAL_CSTRING("appcache"));
+  mOverview = storageName.IsEmpty();
+  if (mOverview) {
+    
+    mStorageList.AppendElement(NS_LITERAL_CSTRING("memory"));
+    mStorageList.AppendElement(NS_LITERAL_CSTRING("disk"));
+    mStorageList.AppendElement(NS_LITERAL_CSTRING("appcache"));
+  } else {
+    
+    mStorageList.AppendElement(storageName);
+  }
+
+  
+  mEntriesHeaderAdded = false;
+
+  rv = NS_NewInputStreamChannelInternal(
+      getter_AddRefs(mChannel), aURI, inputStream.forget(),
+      NS_LITERAL_CSTRING("text/html"), NS_LITERAL_CSTRING("utf-8"), aLoadInfo);
+  if (NS_FAILED(rv)) return rv;
+
+  mBuffer.AssignLiteral(
+      "<!DOCTYPE html>\n"
+      "<html>\n"
+      "<head>\n"
+      "  <title>Network Cache Storage Information</title>\n"
+      "  <meta charset=\"utf-8\">\n"
+      "  <meta http-equiv=\"Content-Security-Policy\" content=\"default-src "
+      "chrome:\"/>\n"
+      "  <link rel=\"stylesheet\" href=\"chrome://global/skin/about.css\"/>\n"
+      "  <link rel=\"stylesheet\" "
+      "href=\"chrome://global/skin/aboutCache.css\"/>\n"
+      "</head>\n"
+      "<body class=\"aboutPageWideContainer\">\n"
+      "<h1>Information about the Network Cache Storage Service</h1>\n");
+
+  
+  mBuffer.AppendLiteral(
+      "<label><input id='priv' type='checkbox'/> Private</label>\n"
+      "<label><input id='anon' type='checkbox'/> Anonymous</label>\n");
+
+  
+  
+  
+  
+  mBuffer.AppendLiteral(
+      "<label><input id='appid' type='text' size='6'/> AppID</label>\n"
+      "<label><input id='inbrowser' type='checkbox'/> In Browser "
+      "Element</label>\n");
+
+  mBuffer.AppendLiteral(
+      "<label><input id='submit' type='button' value='Update'/></label>\n");
+
+  if (!mOverview) {
+    mBuffer.AppendLiteral("<a href=\"about:cache?storage=&amp;context=");
+    nsAppendEscapedHTML(mContextString, mBuffer);
+    mBuffer.AppendLiteral("\">Back to overview</a>");
+  }
+
+  rv = FlushBuffer();
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Failed to flush buffer");
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsAboutCache::Channel::AsyncOpen(nsIStreamListener *aListener,
+                                               nsISupports *aContext) {
+  nsresult rv;
+
+  if (!mChannel) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  
+  rv = VisitNextStorage();
+  if (NS_FAILED(rv)) return rv;
+
+  MOZ_ASSERT(!aContext, "asyncOpen2() does not take a context argument");
+  rv = NS_MaybeOpenChannelUsingAsyncOpen2(mChannel, aListener);
+  if (NS_FAILED(rv)) return rv;
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsAboutCache::Channel::AsyncOpen2(nsIStreamListener *aListener) {
+  return AsyncOpen(aListener, nullptr);
+}
+
+NS_IMETHODIMP nsAboutCache::Channel::Open(nsIInputStream **_retval) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsAboutCache::Channel::Open2(nsIInputStream **_retval) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+nsresult nsAboutCache::Channel::ParseURI(nsIURI *uri, nsACString &storage) {
+  
+  
+  
+  nsresult rv;
+
+  nsAutoCString path;
+  rv = uri->GetPathQueryRef(path);
+  if (NS_FAILED(rv)) return rv;
+
+  mContextString.Truncate();
+  mLoadInfo = CacheFileUtils::ParseKey(NS_LITERAL_CSTRING(""));
+  storage.Truncate();
+
+  nsACString::const_iterator start, valueStart, end;
+  path.BeginReading(start);
+  path.EndReading(end);
+
+  valueStart = end;
+  if (!FindInReadable(NS_LITERAL_CSTRING("?storage="), start, valueStart)) {
+    return NS_OK;
+  }
+
+  nsACString::const_iterator storageNameBegin = valueStart;
+
+  start = valueStart;
+  valueStart = end;
+  if (!FindInReadable(NS_LITERAL_CSTRING("&context="), start, valueStart))
+    start = end;
+
+  nsACString::const_iterator storageNameEnd = start;
+
+  mContextString = Substring(valueStart, end);
+  mLoadInfo = CacheFileUtils::ParseKey(mContextString);
+  storage.Assign(Substring(storageNameBegin, storageNameEnd));
+
+  return NS_OK;
+}
+
+nsresult nsAboutCache::Channel::VisitNextStorage() {
+  if (!mStorageList.Length()) return NS_ERROR_NOT_AVAILABLE;
+
+  mStorageName = mStorageList[0];
+  mStorageList.RemoveElementAt(0);
+
+  
+  
+  
+  
+  return NS_DispatchToMainThread(mozilla::NewRunnableMethod(
+      "nsAboutCache::Channel::FireVisitStorage", this,
+      &nsAboutCache::Channel::FireVisitStorage));
+}
+
+void nsAboutCache::Channel::FireVisitStorage() {
+  nsresult rv;
+
+  rv = VisitStorage(mStorageName);
+  if (NS_FAILED(rv)) {
+    if (mLoadInfo) {
+      nsAutoCString escaped;
+      nsAppendEscapedHTML(mStorageName, escaped);
+      mBuffer.Append(nsPrintfCString(
+          "<p>Unrecognized storage name '%s' in about:cache URL</p>",
+          escaped.get()));
     } else {
-        
-        mStorageList.AppendElement(storageName);
-    }
-
-    
-    mEntriesHeaderAdded = false;
-
-    rv = NS_NewInputStreamChannelInternal(getter_AddRefs(mChannel),
-                                          aURI,
-                                          inputStream.forget(),
-                                          NS_LITERAL_CSTRING("text/html"),
-                                          NS_LITERAL_CSTRING("utf-8"),
-                                          aLoadInfo);
-    if (NS_FAILED(rv)) return rv;
-
-    mBuffer.AssignLiteral(
-        "<!DOCTYPE html>\n"
-        "<html>\n"
-        "<head>\n"
-        "  <title>Network Cache Storage Information</title>\n"
-        "  <meta charset=\"utf-8\">\n"
-        "  <meta http-equiv=\"Content-Security-Policy\" content=\"default-src chrome:\"/>\n"
-        "  <link rel=\"stylesheet\" href=\"chrome://global/skin/about.css\"/>\n"
-        "  <link rel=\"stylesheet\" href=\"chrome://global/skin/aboutCache.css\"/>\n"
-        "</head>\n"
-        "<body class=\"aboutPageWideContainer\">\n"
-        "<h1>Information about the Network Cache Storage Service</h1>\n");
-
-    
-    mBuffer.AppendLiteral(
-        "<label><input id='priv' type='checkbox'/> Private</label>\n"
-        "<label><input id='anon' type='checkbox'/> Anonymous</label>\n"
-    );
-
-    
-    
-    
-    
-    mBuffer.AppendLiteral(
-        "<label><input id='appid' type='text' size='6'/> AppID</label>\n"
-        "<label><input id='inbrowser' type='checkbox'/> In Browser Element</label>\n"
-    );
-
-    mBuffer.AppendLiteral(
-        "<label><input id='submit' type='button' value='Update'/></label>\n"
-    );
-
-    if (!mOverview) {
-        mBuffer.AppendLiteral("<a href=\"about:cache?storage=&amp;context=");
-        nsAppendEscapedHTML(mContextString, mBuffer);
-        mBuffer.AppendLiteral("\">Back to overview</a>");
+      nsAutoCString escaped;
+      nsAppendEscapedHTML(mContextString, escaped);
+      mBuffer.Append(nsPrintfCString(
+          "<p>Unrecognized context key '%s' in about:cache URL</p>",
+          escaped.get()));
     }
 
     rv = FlushBuffer();
     if (NS_FAILED(rv)) {
-        NS_WARNING("Failed to flush buffer");
-    }
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsAboutCache::Channel::AsyncOpen(nsIStreamListener *aListener, nsISupports *aContext)
-{
-    nsresult rv;
-
-    if (!mChannel) {
-        return NS_ERROR_UNEXPECTED;
+      NS_WARNING("Failed to flush buffer");
     }
 
     
-    rv = VisitNextStorage();
-    if (NS_FAILED(rv)) return rv;
-
-    MOZ_ASSERT(!aContext, "asyncOpen2() does not take a context argument");
-    rv = NS_MaybeOpenChannelUsingAsyncOpen2(mChannel, aListener);
-    if (NS_FAILED(rv)) return rv;
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsAboutCache::Channel::AsyncOpen2(nsIStreamListener *aListener)
-{
-    return AsyncOpen(aListener, nullptr);
-}
-
-NS_IMETHODIMP nsAboutCache::Channel::Open(nsIInputStream * *_retval)
-{
-    return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP nsAboutCache::Channel::Open2(nsIInputStream * *_retval)
-{
-    return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-nsresult
-nsAboutCache::Channel::ParseURI(nsIURI * uri, nsACString & storage)
-{
     
-    
-    
-    nsresult rv;
-
-    nsAutoCString path;
-    rv = uri->GetPathQueryRef(path);
-    if (NS_FAILED(rv)) return rv;
-
-    mContextString.Truncate();
-    mLoadInfo = CacheFileUtils::ParseKey(NS_LITERAL_CSTRING(""));
-    storage.Truncate();
-
-    nsACString::const_iterator start, valueStart, end;
-    path.BeginReading(start);
-    path.EndReading(end);
-
-    valueStart = end;
-    if (!FindInReadable(NS_LITERAL_CSTRING("?storage="), start, valueStart)) {
-        return NS_OK;
-    }
-
-    nsACString::const_iterator storageNameBegin = valueStart;
-
-    start = valueStart;
-    valueStart = end;
-    if (!FindInReadable(NS_LITERAL_CSTRING("&context="), start, valueStart))
-        start = end;
-
-    nsACString::const_iterator storageNameEnd = start;
-
-    mContextString = Substring(valueStart, end);
-    mLoadInfo = CacheFileUtils::ParseKey(mContextString);
-    storage.Assign(Substring(storageNameBegin, storageNameEnd));
-
-    return NS_OK;
+    OnCacheEntryVisitCompleted();
+  }
 }
 
-nsresult
-nsAboutCache::Channel::VisitNextStorage()
-{
-    if (!mStorageList.Length())
-        return NS_ERROR_NOT_AVAILABLE;
+nsresult nsAboutCache::Channel::VisitStorage(nsACString const &storageName) {
+  nsresult rv;
 
-    mStorageName = mStorageList[0];
-    mStorageList.RemoveElementAt(0);
+  rv = GetStorage(storageName, mLoadInfo, getter_AddRefs(mStorage));
+  if (NS_FAILED(rv)) return rv;
 
-    
-    
-    
-    
-    return NS_DispatchToMainThread(
-      mozilla::NewRunnableMethod("nsAboutCache::Channel::FireVisitStorage",
-                                 this,
-                                 &nsAboutCache::Channel::FireVisitStorage));
-}
+  rv = mStorage->AsyncVisitStorage(this, !mOverview);
+  if (NS_FAILED(rv)) return rv;
 
-void
-nsAboutCache::Channel::FireVisitStorage()
-{
-    nsresult rv;
-
-    rv = VisitStorage(mStorageName);
-    if (NS_FAILED(rv)) {
-        if (mLoadInfo) {
-            nsAutoCString escaped;
-            nsAppendEscapedHTML(mStorageName, escaped);
-            mBuffer.Append(
-                nsPrintfCString("<p>Unrecognized storage name '%s' in about:cache URL</p>",
-                                escaped.get()));
-        } else {
-            nsAutoCString escaped;
-            nsAppendEscapedHTML(mContextString, escaped);
-            mBuffer.Append(
-                nsPrintfCString("<p>Unrecognized context key '%s' in about:cache URL</p>",
-                                escaped.get()));
-        }
-
-        rv = FlushBuffer();
-        if (NS_FAILED(rv)) {
-            NS_WARNING("Failed to flush buffer");
-        }
-
-        
-        
-        OnCacheEntryVisitCompleted();
-    }
-}
-
-nsresult
-nsAboutCache::Channel::VisitStorage(nsACString const & storageName)
-{
-    nsresult rv;
-
-    rv = GetStorage(storageName, mLoadInfo, getter_AddRefs(mStorage));
-    if (NS_FAILED(rv)) return rv;
-
-    rv = mStorage->AsyncVisitStorage(this, !mOverview);
-    if (NS_FAILED(rv)) return rv;
-
-    return NS_OK;
+  return NS_OK;
 }
 
 
-nsresult
-nsAboutCache::GetStorage(nsACString const & storageName,
-                         nsILoadContextInfo* loadInfo,
-                         nsICacheStorage **storage)
-{
-    nsresult rv;
+nsresult nsAboutCache::GetStorage(nsACString const &storageName,
+                                  nsILoadContextInfo *loadInfo,
+                                  nsICacheStorage **storage) {
+  nsresult rv;
 
-    nsCOMPtr<nsICacheStorageService> cacheService =
-             do_GetService("@mozilla.org/netwerk/cache-storage-service;1", &rv);
-    if (NS_FAILED(rv)) return rv;
+  nsCOMPtr<nsICacheStorageService> cacheService =
+      do_GetService("@mozilla.org/netwerk/cache-storage-service;1", &rv);
+  if (NS_FAILED(rv)) return rv;
 
-    nsCOMPtr<nsICacheStorage> cacheStorage;
-    if (storageName == "disk") {
-        rv = cacheService->DiskCacheStorage(
-            loadInfo, false, getter_AddRefs(cacheStorage));
-    } else if (storageName == "memory") {
-        rv = cacheService->MemoryCacheStorage(
-            loadInfo, getter_AddRefs(cacheStorage));
-    } else if (storageName == "appcache") {
-        rv = cacheService->AppCacheStorage(
-            loadInfo, nullptr, getter_AddRefs(cacheStorage));
-    } else {
-        rv = NS_ERROR_UNEXPECTED;
-    }
-    if (NS_FAILED(rv)) return rv;
+  nsCOMPtr<nsICacheStorage> cacheStorage;
+  if (storageName == "disk") {
+    rv = cacheService->DiskCacheStorage(loadInfo, false,
+                                        getter_AddRefs(cacheStorage));
+  } else if (storageName == "memory") {
+    rv = cacheService->MemoryCacheStorage(loadInfo,
+                                          getter_AddRefs(cacheStorage));
+  } else if (storageName == "appcache") {
+    rv = cacheService->AppCacheStorage(loadInfo, nullptr,
+                                       getter_AddRefs(cacheStorage));
+  } else {
+    rv = NS_ERROR_UNEXPECTED;
+  }
+  if (NS_FAILED(rv)) return rv;
 
-    cacheStorage.forget(storage);
-    return NS_OK;
+  cacheStorage.forget(storage);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsAboutCache::Channel::OnCacheStorageInfo(uint32_t aEntryCount, uint64_t aConsumption,
-                                          uint64_t aCapacity, nsIFile * aDirectory)
-{
-    
-    if (!mStream) {
-        return NS_ERROR_FAILURE;
+nsAboutCache::Channel::OnCacheStorageInfo(uint32_t aEntryCount,
+                                          uint64_t aConsumption,
+                                          uint64_t aCapacity,
+                                          nsIFile *aDirectory) {
+  
+  if (!mStream) {
+    return NS_ERROR_FAILURE;
+  }
+
+  mBuffer.AssignLiteral("<h2>");
+  nsAppendEscapedHTML(mStorageName, mBuffer);
+  mBuffer.AppendLiteral(
+      "</h2>\n"
+      "<table id=\"");
+  mBuffer.AppendLiteral("\">\n");
+
+  
+  
+  mBuffer.AppendLiteral(
+      "  <tr>\n"
+      "    <th>Number of entries:</th>\n"
+      "    <td>");
+  mBuffer.AppendInt(aEntryCount);
+  mBuffer.AppendLiteral(
+      "</td>\n"
+      "  </tr>\n");
+
+  
+  mBuffer.AppendLiteral(
+      "  <tr>\n"
+      "    <th>Maximum storage size:</th>\n"
+      "    <td>");
+  mBuffer.AppendInt(aCapacity / 1024);
+  mBuffer.AppendLiteral(
+      " KiB</td>\n"
+      "  </tr>\n");
+
+  
+  mBuffer.AppendLiteral(
+      "  <tr>\n"
+      "    <th>Storage in use:</th>\n"
+      "    <td>");
+  mBuffer.AppendInt(aConsumption / 1024);
+  mBuffer.AppendLiteral(
+      " KiB</td>\n"
+      "  </tr>\n");
+
+  
+  mBuffer.AppendLiteral(
+      "  <tr>\n"
+      "    <th>Storage disk location:</th>\n"
+      "    <td>");
+  if (aDirectory) {
+    nsAutoString path;
+    aDirectory->GetPath(path);
+    mBuffer.Append(NS_ConvertUTF16toUTF8(path));
+  } else {
+    mBuffer.AppendLiteral("none, only stored in memory");
+  }
+  mBuffer.AppendLiteral(
+      "    </td>\n"
+      "  </tr>\n");
+
+  if (mOverview) {           
+    if (aEntryCount != 0) {  
+      mBuffer.AppendLiteral(
+          "  <tr>\n"
+          "    <th><a href=\"about:cache?storage=");
+      nsAppendEscapedHTML(mStorageName, mBuffer);
+      mBuffer.AppendLiteral("&amp;context=");
+      nsAppendEscapedHTML(mContextString, mBuffer);
+      mBuffer.AppendLiteral(
+          "\">List Cache Entries</a></th>\n"
+          "  </tr>\n");
     }
+  }
 
-    mBuffer.AssignLiteral("<h2>");
-    nsAppendEscapedHTML(mStorageName, mBuffer);
-    mBuffer.AppendLiteral("</h2>\n"
-                          "<table id=\"");
-    mBuffer.AppendLiteral("\">\n");
+  mBuffer.AppendLiteral("</table>\n");
 
+  
+  mEntriesHeaderAdded = false;
+
+  nsresult rv = FlushBuffer();
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Failed to flush buffer");
+  }
+
+  if (mOverview) {
     
     
-    mBuffer.AppendLiteral("  <tr>\n"
-                          "    <th>Number of entries:</th>\n"
-                          "    <td>");
-    mBuffer.AppendInt(aEntryCount);
-    mBuffer.AppendLiteral("</td>\n"
-                          "  </tr>\n");
-
     
-    mBuffer.AppendLiteral("  <tr>\n"
-                          "    <th>Maximum storage size:</th>\n"
-                          "    <td>");
-    mBuffer.AppendInt(aCapacity / 1024);
-    mBuffer.AppendLiteral(" KiB</td>\n"
-                          "  </tr>\n");
+    OnCacheEntryVisitCompleted();
+  }
 
-    
-    mBuffer.AppendLiteral("  <tr>\n"
-                          "    <th>Storage in use:</th>\n"
-                          "    <td>");
-    mBuffer.AppendInt(aConsumption / 1024);
-    mBuffer.AppendLiteral(" KiB</td>\n"
-                          "  </tr>\n");
-
-    
-    mBuffer.AppendLiteral("  <tr>\n"
-                          "    <th>Storage disk location:</th>\n"
-                          "    <td>");
-    if (aDirectory) {
-        nsAutoString path;
-        aDirectory->GetPath(path);
-        mBuffer.Append(NS_ConvertUTF16toUTF8(path));
-    } else {
-        mBuffer.AppendLiteral("none, only stored in memory");
-    }
-    mBuffer.AppendLiteral("    </td>\n"
-                          "  </tr>\n");
-
-    if (mOverview) { 
-        if (aEntryCount != 0) { 
-            mBuffer.AppendLiteral("  <tr>\n"
-                                  "    <th><a href=\"about:cache?storage=");
-            nsAppendEscapedHTML(mStorageName, mBuffer);
-            mBuffer.AppendLiteral("&amp;context=");
-            nsAppendEscapedHTML(mContextString, mBuffer);
-            mBuffer.AppendLiteral("\">List Cache Entries</a></th>\n"
-                                  "  </tr>\n");
-        }
-    }
-
-    mBuffer.AppendLiteral("</table>\n");
-
-    
-    mEntriesHeaderAdded = false;
-
-    nsresult rv = FlushBuffer();
-    if (NS_FAILED(rv)) {
-        NS_WARNING("Failed to flush buffer");
-    }
-
-    if (mOverview) {
-        
-        
-        
-        OnCacheEntryVisitCompleted();
-    }
-
-    return NS_OK;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsAboutCache::Channel::OnCacheEntryInfo(nsIURI *aURI, const nsACString & aIdEnhance,
+nsAboutCache::Channel::OnCacheEntryInfo(nsIURI *aURI,
+                                        const nsACString &aIdEnhance,
                                         int64_t aDataSize, int32_t aFetchCount,
-                                        uint32_t aLastModified, uint32_t aExpirationTime,
-                                        bool aPinned, nsILoadContextInfo* aInfo)
-{
+                                        uint32_t aLastModified,
+                                        uint32_t aExpirationTime, bool aPinned,
+                                        nsILoadContextInfo *aInfo) {
+  
+  if (!mStream || mCancel) {
     
-    if (!mStream || mCancel) {
-        
-        return NS_ERROR_FAILURE;
-    }
+    return NS_ERROR_FAILURE;
+  }
 
-    if (!mEntriesHeaderAdded) {
-        mBuffer.AppendLiteral("<hr/>\n"
-                              "<table id=\"entries\">\n"
-                              "  <colgroup>\n"
-                              "   <col id=\"col-key\">\n"
-                              "   <col id=\"col-dataSize\">\n"
-                              "   <col id=\"col-fetchCount\">\n"
-                              "   <col id=\"col-lastModified\">\n"
-                              "   <col id=\"col-expires\">\n"
-                              "   <col id=\"col-pinned\">\n"
-                              "  </colgroup>\n"
-                              "  <thead>\n"
-                              "    <tr>\n"
-                              "      <th>Key</th>\n"
-                              "      <th>Data size</th>\n"
-                              "      <th>Fetch count</th>\n"
-                              "      <th>Last Modifed</th>\n"
-                              "      <th>Expires</th>\n"
-                              "      <th>Pinning</th>\n"
-                              "    </tr>\n"
-                              "  </thead>\n");
-        mEntriesHeaderAdded = true;
-    }
+  if (!mEntriesHeaderAdded) {
+    mBuffer.AppendLiteral(
+        "<hr/>\n"
+        "<table id=\"entries\">\n"
+        "  <colgroup>\n"
+        "   <col id=\"col-key\">\n"
+        "   <col id=\"col-dataSize\">\n"
+        "   <col id=\"col-fetchCount\">\n"
+        "   <col id=\"col-lastModified\">\n"
+        "   <col id=\"col-expires\">\n"
+        "   <col id=\"col-pinned\">\n"
+        "  </colgroup>\n"
+        "  <thead>\n"
+        "    <tr>\n"
+        "      <th>Key</th>\n"
+        "      <th>Data size</th>\n"
+        "      <th>Fetch count</th>\n"
+        "      <th>Last Modifed</th>\n"
+        "      <th>Expires</th>\n"
+        "      <th>Pinning</th>\n"
+        "    </tr>\n"
+        "  </thead>\n");
+    mEntriesHeaderAdded = true;
+  }
 
-    
+  
 
-    nsAutoCString url;
-    url.AssignLiteral("about:cache-entry?storage=");
-    nsAppendEscapedHTML(mStorageName, url);
+  nsAutoCString url;
+  url.AssignLiteral("about:cache-entry?storage=");
+  nsAppendEscapedHTML(mStorageName, url);
 
-    url.AppendLiteral("&amp;context=");
-    nsAppendEscapedHTML(mContextString, url);
+  url.AppendLiteral("&amp;context=");
+  nsAppendEscapedHTML(mContextString, url);
 
-    url.AppendLiteral("&amp;eid=");
-    nsAppendEscapedHTML(aIdEnhance, url);
+  url.AppendLiteral("&amp;eid=");
+  nsAppendEscapedHTML(aIdEnhance, url);
 
-    nsAutoCString cacheUriSpec;
-    aURI->GetAsciiSpec(cacheUriSpec);
-    nsAutoCString escapedCacheURI;
-    nsAppendEscapedHTML(cacheUriSpec, escapedCacheURI);
-    url.AppendLiteral("&amp;uri=");
-    url += escapedCacheURI;
+  nsAutoCString cacheUriSpec;
+  aURI->GetAsciiSpec(cacheUriSpec);
+  nsAutoCString escapedCacheURI;
+  nsAppendEscapedHTML(cacheUriSpec, escapedCacheURI);
+  url.AppendLiteral("&amp;uri=");
+  url += escapedCacheURI;
 
-    
-    mBuffer.AppendLiteral("  <tr>\n");
+  
+  mBuffer.AppendLiteral("  <tr>\n");
 
-    
-    mBuffer.AppendLiteral("    <td><a href=\"");
-    mBuffer.Append(url);
-    mBuffer.AppendLiteral("\">");
-    if (!aIdEnhance.IsEmpty()) {
-        nsAppendEscapedHTML(aIdEnhance, mBuffer);
-        mBuffer.Append(':');
-    }
-    mBuffer.Append(escapedCacheURI);
-    mBuffer.AppendLiteral("</a></td>\n");
+  
+  mBuffer.AppendLiteral("    <td><a href=\"");
+  mBuffer.Append(url);
+  mBuffer.AppendLiteral("\">");
+  if (!aIdEnhance.IsEmpty()) {
+    nsAppendEscapedHTML(aIdEnhance, mBuffer);
+    mBuffer.Append(':');
+  }
+  mBuffer.Append(escapedCacheURI);
+  mBuffer.AppendLiteral("</a></td>\n");
 
-    
-    mBuffer.AppendLiteral("    <td>");
-    mBuffer.AppendInt(aDataSize);
-    mBuffer.AppendLiteral(" bytes</td>\n");
+  
+  mBuffer.AppendLiteral("    <td>");
+  mBuffer.AppendInt(aDataSize);
+  mBuffer.AppendLiteral(" bytes</td>\n");
 
-    
-    mBuffer.AppendLiteral("    <td>");
-    mBuffer.AppendInt(aFetchCount);
-    mBuffer.AppendLiteral("</td>\n");
+  
+  mBuffer.AppendLiteral("    <td>");
+  mBuffer.AppendInt(aFetchCount);
+  mBuffer.AppendLiteral("</td>\n");
 
-    
-    char buf[255];
+  
+  char buf[255];
 
-    
-    mBuffer.AppendLiteral("    <td>");
-    if (aLastModified) {
-        PrintTimeString(buf, sizeof(buf), aLastModified);
-        mBuffer.Append(buf);
-    } else {
-        mBuffer.AppendLiteral("No last modified time");
-    }
-    mBuffer.AppendLiteral("</td>\n");
+  
+  mBuffer.AppendLiteral("    <td>");
+  if (aLastModified) {
+    PrintTimeString(buf, sizeof(buf), aLastModified);
+    mBuffer.Append(buf);
+  } else {
+    mBuffer.AppendLiteral("No last modified time");
+  }
+  mBuffer.AppendLiteral("</td>\n");
 
-    
-    mBuffer.AppendLiteral("    <td>");
+  
+  mBuffer.AppendLiteral("    <td>");
 
-    
-    
-    
-    if (aExpirationTime == 0) {
-        mBuffer.AppendLiteral("Expired Immediately");
-    } else if (aExpirationTime < 0xFFFFFFFF) {
-        PrintTimeString(buf, sizeof(buf), aExpirationTime);
-        mBuffer.Append(buf);
-    } else {
-        mBuffer.AppendLiteral("No expiration time");
-    }
-    mBuffer.AppendLiteral("</td>\n");
+  
+  
+  
+  if (aExpirationTime == 0) {
+    mBuffer.AppendLiteral("Expired Immediately");
+  } else if (aExpirationTime < 0xFFFFFFFF) {
+    PrintTimeString(buf, sizeof(buf), aExpirationTime);
+    mBuffer.Append(buf);
+  } else {
+    mBuffer.AppendLiteral("No expiration time");
+  }
+  mBuffer.AppendLiteral("</td>\n");
 
-    
-    mBuffer.AppendLiteral("    <td>");
-    if (aPinned) {
-      mBuffer.AppendLiteral("Pinned");
-    } else {
-      mBuffer.AppendLiteral("&nbsp;");
-    }
-    mBuffer.AppendLiteral("</td>\n");
+  
+  mBuffer.AppendLiteral("    <td>");
+  if (aPinned) {
+    mBuffer.AppendLiteral("Pinned");
+  } else {
+    mBuffer.AppendLiteral("&nbsp;");
+  }
+  mBuffer.AppendLiteral("</td>\n");
 
-    
-    mBuffer.AppendLiteral("  </tr>\n");
+  
+  mBuffer.AppendLiteral("  </tr>\n");
 
-    return FlushBuffer();
+  return FlushBuffer();
 }
 
 NS_IMETHODIMP
-nsAboutCache::Channel::OnCacheEntryVisitCompleted()
-{
-    if (!mStream) {
-        return NS_ERROR_FAILURE;
-    }
+nsAboutCache::Channel::OnCacheEntryVisitCompleted() {
+  if (!mStream) {
+    return NS_ERROR_FAILURE;
+  }
 
-    if (mEntriesHeaderAdded) {
-        mBuffer.AppendLiteral("</table>\n");
-    }
+  if (mEntriesHeaderAdded) {
+    mBuffer.AppendLiteral("</table>\n");
+  }
 
-    
-    while (mStorageList.Length()) {
-        nsresult rv = VisitNextStorage();
-        if (NS_SUCCEEDED(rv)) {
-            
-            return NS_OK;
-        }
+  
+  while (mStorageList.Length()) {
+    nsresult rv = VisitNextStorage();
+    if (NS_SUCCEEDED(rv)) {
+      
+      return NS_OK;
     }
+  }
 
-    
-    mBuffer.AppendLiteral("</body>\n"
-                          "<script src=\"chrome://global/content/aboutCache.js\">"
-                          "</script>\n"
-                          "</html>\n");
-    nsresult rv = FlushBuffer();
-    if (NS_FAILED(rv)) {
-        NS_WARNING("Failed to flush buffer");
-    }
-    mStream->Close();
+  
+  mBuffer.AppendLiteral(
+      "</body>\n"
+      "<script src=\"chrome://global/content/aboutCache.js\">"
+      "</script>\n"
+      "</html>\n");
+  nsresult rv = FlushBuffer();
+  if (NS_FAILED(rv)) {
+    NS_WARNING("Failed to flush buffer");
+  }
+  mStream->Close();
 
-    return NS_OK;
+  return NS_OK;
 }
 
-nsresult
-nsAboutCache::Channel::FlushBuffer()
-{
-    nsresult rv;
+nsresult nsAboutCache::Channel::FlushBuffer() {
+  nsresult rv;
 
-    uint32_t bytesWritten;
-    rv = mStream->Write(mBuffer.get(), mBuffer.Length(), &bytesWritten);
-    mBuffer.Truncate();
+  uint32_t bytesWritten;
+  rv = mStream->Write(mBuffer.get(), mBuffer.Length(), &bytesWritten);
+  mBuffer.Truncate();
 
-    if (NS_FAILED(rv)) {
-        mCancel = true;
-    }
+  if (NS_FAILED(rv)) {
+    mCancel = true;
+  }
 
-    return rv;
+  return rv;
 }
 
 NS_IMETHODIMP
-nsAboutCache::GetURIFlags(nsIURI *aURI, uint32_t *result)
-{
-    *result = nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT;
-    return NS_OK;
+nsAboutCache::GetURIFlags(nsIURI *aURI, uint32_t *result) {
+  *result = nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT;
+  return NS_OK;
 }
 
 
-nsresult
-nsAboutCache::Create(nsISupports *aOuter, REFNSIID aIID, void **aResult)
-{
-    nsAboutCache* about = new nsAboutCache();
-    if (about == nullptr)
-        return NS_ERROR_OUT_OF_MEMORY;
-    NS_ADDREF(about);
-    nsresult rv = about->QueryInterface(aIID, aResult);
-    NS_RELEASE(about);
-    return rv;
+nsresult nsAboutCache::Create(nsISupports *aOuter, REFNSIID aIID,
+                              void **aResult) {
+  nsAboutCache *about = new nsAboutCache();
+  if (about == nullptr) return NS_ERROR_OUT_OF_MEMORY;
+  NS_ADDREF(about);
+  nsresult rv = about->QueryInterface(aIID, aResult);
+  NS_RELEASE(about);
+  return rv;
 }
 
 

@@ -10,7 +10,7 @@
 #include "nsChangeHint.h"
 #include "nsCSSPropertyID.h"
 #include "nsCSSPropertyIDSet.h"
-#include "nsDisplayList.h" 
+#include "nsDisplayList.h"  
 #include "mozilla/Array.h"
 
 namespace mozilla {
@@ -20,22 +20,21 @@ struct LayerAnimationInfo {
   
   
   
-  static DisplayItemType
-  GetDisplayItemTypeForProperty(nsCSSPropertyID aProperty);
+  static DisplayItemType GetDisplayItemTypeForProperty(
+      nsCSSPropertyID aProperty);
 
   
   
   
   
-  static inline const nsCSSPropertyIDSet&
-  GetCSSPropertiesFor(DisplayItemType aDisplayItemType)
-  {
+  static inline const nsCSSPropertyIDSet& GetCSSPropertiesFor(
+      DisplayItemType aDisplayItemType) {
     static const nsCSSPropertyIDSet transformProperties =
-      nsCSSPropertyIDSet{ eCSSProperty_transform };
+        nsCSSPropertyIDSet{eCSSProperty_transform};
     static const nsCSSPropertyIDSet opacityProperties =
-      nsCSSPropertyIDSet{ eCSSProperty_opacity };
+        nsCSSPropertyIDSet{eCSSProperty_opacity};
     static const nsCSSPropertyIDSet backgroundColorProperties =
-      nsCSSPropertyIDSet{ eCSSProperty_background_color };
+        nsCSSPropertyIDSet{eCSSProperty_background_color};
     static const nsCSSPropertyIDSet empty = nsCSSPropertyIDSet();
 
     switch (aDisplayItemType) {
@@ -46,9 +45,10 @@ struct LayerAnimationInfo {
       case DisplayItemType::TYPE_TRANSFORM:
         return transformProperties;
       default:
-        MOZ_ASSERT_UNREACHABLE("Should not be called for display item types "
-                               "that are not able to have animations on the "
-                               "compositor");
+        MOZ_ASSERT_UNREACHABLE(
+            "Should not be called for display item types "
+            "that are not able to have animations on the "
+            "compositor");
         return empty;
     }
   }
@@ -58,9 +58,8 @@ struct LayerAnimationInfo {
   
   
   
-  static inline nsChangeHint
-  GetChangeHintFor(DisplayItemType aDisplayItemType)
-  {
+  static inline nsChangeHint GetChangeHintFor(
+      DisplayItemType aDisplayItemType) {
     switch (aDisplayItemType) {
       case DisplayItemType::TYPE_BACKGROUND_COLOR:
         return nsChangeHint_RepaintFrame;
@@ -69,9 +68,10 @@ struct LayerAnimationInfo {
       case DisplayItemType::TYPE_TRANSFORM:
         return nsChangeHint_UpdateTransformLayer;
       default:
-        MOZ_ASSERT_UNREACHABLE("Should not be called for display item types "
-                               "that are not able to have animations on the "
-                               "compositor");
+        MOZ_ASSERT_UNREACHABLE(
+            "Should not be called for display item types "
+            "that are not able to have animations on the "
+            "compositor");
         return nsChangeHint(0);
     }
   }
@@ -83,9 +83,9 @@ struct LayerAnimationInfo {
   
   static const Array<DisplayItemType,
                      nsCSSPropertyIDSet::CompositorAnimatableCount()>
-    sDisplayItemTypes;
+      sDisplayItemTypes;
 };
 
-} 
+}  
 
 #endif 

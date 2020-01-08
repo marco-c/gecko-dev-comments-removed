@@ -19,11 +19,11 @@ class SynchronousTask;
 
 namespace widget {
 
-class WinCompositorWindowThread final
-{
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(WinCompositorWindowThread)
+class WinCompositorWindowThread final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(
+      WinCompositorWindowThread)
 
-public:
+ public:
   
   static WinCompositorWindowThread* Get();
 
@@ -45,7 +45,7 @@ public:
   
   static void DestroyCompositorWindow(HWND aWnd);
 
-private:
+ private:
   explicit WinCompositorWindowThread(base::Thread* aThread);
   ~WinCompositorWindowThread();
 
@@ -54,7 +54,7 @@ private:
   base::Thread* const mThread;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

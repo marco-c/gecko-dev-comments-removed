@@ -16,9 +16,7 @@ using mozilla::ipc::ContentPrincipalInfo;
 using mozilla::ipc::PrincipalInfo;
 using mozilla::net::MozURL;
 
-bool
-ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo)
-{
+bool ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo) {
   
   
   
@@ -27,16 +25,14 @@ ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo)
   switch (aPrincipalInfo.type()) {
     
     case PrincipalInfo::TSystemPrincipalInfo:
-    case PrincipalInfo::TNullPrincipalInfo:
-    {
+    case PrincipalInfo::TNullPrincipalInfo: {
       return true;
     }
 
     
-    case PrincipalInfo::TContentPrincipalInfo:
-    {
+    case PrincipalInfo::TContentPrincipalInfo: {
       const ContentPrincipalInfo& content =
-       aPrincipalInfo.get_ContentPrincipalInfo();
+          aPrincipalInfo.get_ContentPrincipalInfo();
 
       
       RefPtr<MozURL> specURL;
@@ -62,27 +58,21 @@ ClientIsValidPrincipalInfo(const PrincipalInfo& aPrincipalInfo)
       
       return specOrigin == originOrigin;
     }
-    default:
-    {
-      break;
-    }
+    default: { break; }
   }
 
   
   return false;
 }
 
-bool
-ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
-                         const nsACString& aURL)
-{
+bool ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
+                              const nsACString& aURL) {
   RefPtr<MozURL> url;
   nsresult rv = MozURL::Init(getter_AddRefs(url), aURL);
   NS_ENSURE_SUCCESS(rv, false);
 
   switch (aPrincipalInfo.type()) {
-    case PrincipalInfo::TContentPrincipalInfo:
-    {
+    case PrincipalInfo::TContentPrincipalInfo: {
       
       if (aURL.LowerCaseEqualsLiteral("about:blank") ||
           aURL.LowerCaseEqualsLiteral("about:srcdoc")) {
@@ -90,7 +80,7 @@ ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
       }
 
       const ContentPrincipalInfo& content =
-        aPrincipalInfo.get_ContentPrincipalInfo();
+          aPrincipalInfo.get_ContentPrincipalInfo();
 
       
       
@@ -130,8 +120,7 @@ ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
       
       return false;
     }
-    case PrincipalInfo::TSystemPrincipalInfo:
-    {
+    case PrincipalInfo::TSystemPrincipalInfo: {
       nsDependentCSubstring scheme = url->Scheme();
 
       
@@ -147,8 +136,7 @@ ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
              (!ClientPrefsGetDataURLUniqueOpaqueOrigin() &&
               scheme.LowerCaseEqualsLiteral("data"));
     }
-    case PrincipalInfo::TNullPrincipalInfo:
-    {
+    case PrincipalInfo::TNullPrincipalInfo: {
       
       
       
@@ -156,15 +144,12 @@ ClientIsValidCreationURL(const PrincipalInfo& aPrincipalInfo,
       
       return true;
     }
-    default:
-    {
-      break;
-    }
+    default: { break; }
   }
 
   
   return false;
 }
 
-} 
-} 
+}  
+}  

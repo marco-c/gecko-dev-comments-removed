@@ -21,113 +21,106 @@ static const mozilla::CSSIntSize kViewportMaxSize(10000, 10000);
 
 
 
-class MOZ_STACK_CLASS nsViewportInfo
-{
-  public:
-    enum class AutoSizeFlag {
-      AutoSize,
-      FixedSize,
-    };
-    enum class AutoScaleFlag {
-      AutoScale,
-      FixedScale,
-    };
-    enum class ZoomFlag {
-      AllowZoom,
-      DisallowZoom,
-    };
-    nsViewportInfo(const mozilla::ScreenIntSize& aDisplaySize,
-                   const mozilla::CSSToScreenScale& aDefaultZoom,
-                   ZoomFlag aZoomFlag) :
-      mDefaultZoom(aDefaultZoom),
-      mDefaultZoomValid(true),
-      mAutoSize(true),
-      mAllowZoom(aZoomFlag == ZoomFlag::AllowZoom)
-    {
-        mSize = mozilla::ScreenSize(aDisplaySize) / mDefaultZoom;
-        mozilla::CSSToLayoutDeviceScale pixelRatio(1.0f);
-        mMinZoom = pixelRatio * kViewportMinScale;
-        mMaxZoom = pixelRatio * kViewportMaxScale;
-        ConstrainViewportValues();
-    }
+class MOZ_STACK_CLASS nsViewportInfo {
+ public:
+  enum class AutoSizeFlag {
+    AutoSize,
+    FixedSize,
+  };
+  enum class AutoScaleFlag {
+    AutoScale,
+    FixedScale,
+  };
+  enum class ZoomFlag {
+    AllowZoom,
+    DisallowZoom,
+  };
+  nsViewportInfo(const mozilla::ScreenIntSize& aDisplaySize,
+                 const mozilla::CSSToScreenScale& aDefaultZoom,
+                 ZoomFlag aZoomFlag)
+      : mDefaultZoom(aDefaultZoom),
+        mDefaultZoomValid(true),
+        mAutoSize(true),
+        mAllowZoom(aZoomFlag == ZoomFlag::AllowZoom) {
+    mSize = mozilla::ScreenSize(aDisplaySize) / mDefaultZoom;
+    mozilla::CSSToLayoutDeviceScale pixelRatio(1.0f);
+    mMinZoom = pixelRatio * kViewportMinScale;
+    mMaxZoom = pixelRatio * kViewportMaxScale;
+    ConstrainViewportValues();
+  }
 
-    nsViewportInfo(const mozilla::CSSToScreenScale& aDefaultZoom,
-                   const mozilla::CSSToScreenScale& aMinZoom,
-                   const mozilla::CSSToScreenScale& aMaxZoom,
-                   const mozilla::CSSSize& aSize,
-                   AutoSizeFlag aAutoSizeFlag,
-                   AutoScaleFlag aAutoScaleFlag,
-                   ZoomFlag aZoomFlag) :
-                     mDefaultZoom(aDefaultZoom),
-                     mMinZoom(aMinZoom),
-                     mMaxZoom(aMaxZoom),
-                     mSize(aSize),
-                     mDefaultZoomValid(aAutoScaleFlag != AutoScaleFlag::AutoScale),
-                     mAutoSize(aAutoSizeFlag == AutoSizeFlag::AutoSize),
-                     mAllowZoom(aZoomFlag == ZoomFlag::AllowZoom)
-    {
-      ConstrainViewportValues();
-    }
+  nsViewportInfo(const mozilla::CSSToScreenScale& aDefaultZoom,
+                 const mozilla::CSSToScreenScale& aMinZoom,
+                 const mozilla::CSSToScreenScale& aMaxZoom,
+                 const mozilla::CSSSize& aSize, AutoSizeFlag aAutoSizeFlag,
+                 AutoScaleFlag aAutoScaleFlag, ZoomFlag aZoomFlag)
+      : mDefaultZoom(aDefaultZoom),
+        mMinZoom(aMinZoom),
+        mMaxZoom(aMaxZoom),
+        mSize(aSize),
+        mDefaultZoomValid(aAutoScaleFlag != AutoScaleFlag::AutoScale),
+        mAutoSize(aAutoSizeFlag == AutoSizeFlag::AutoSize),
+        mAllowZoom(aZoomFlag == ZoomFlag::AllowZoom) {
+    ConstrainViewportValues();
+  }
 
-    bool IsDefaultZoomValid() const { return mDefaultZoomValid; }
-    mozilla::CSSToScreenScale GetDefaultZoom() const { return mDefaultZoom; }
-    mozilla::CSSToScreenScale GetMinZoom() const { return mMinZoom; }
-    mozilla::CSSToScreenScale GetMaxZoom() const { return mMaxZoom; }
+  bool IsDefaultZoomValid() const { return mDefaultZoomValid; }
+  mozilla::CSSToScreenScale GetDefaultZoom() const { return mDefaultZoom; }
+  mozilla::CSSToScreenScale GetMinZoom() const { return mMinZoom; }
+  mozilla::CSSToScreenScale GetMaxZoom() const { return mMaxZoom; }
 
-    mozilla::CSSSize GetSize() const { return mSize; }
+  mozilla::CSSSize GetSize() const { return mSize; }
 
-    bool IsAutoSizeEnabled() const { return mAutoSize; }
-    bool IsZoomAllowed() const { return mAllowZoom; }
+  bool IsAutoSizeEnabled() const { return mAutoSize; }
+  bool IsZoomAllowed() const { return mAllowZoom; }
 
-    enum {
-      Auto = -1,
-      ExtendToZoom = -2,
-      DeviceSize = -3, 
-    };
-    
-    
-    
-    
-    static const float& Max(const float& aA, const float& aB);
-    static const float& Min(const float& aA, const float& aB);
+  enum {
+    Auto = -1,
+    ExtendToZoom = -2,
+    DeviceSize = -3,  
+  };
+  
+  
+  
+  
+  static const float& Max(const float& aA, const float& aB);
+  static const float& Min(const float& aA, const float& aB);
 
-  private:
-
-    
+ private:
+  
 
 
 
 
-    void ConstrainViewportValues();
+  void ConstrainViewportValues();
 
-    
-    
-    mozilla::CSSToScreenScale mDefaultZoom;
+  
+  
+  mozilla::CSSToScreenScale mDefaultZoom;
 
-    
-    mozilla::CSSToScreenScale mMinZoom;
+  
+  mozilla::CSSToScreenScale mMinZoom;
 
-    
-    mozilla::CSSToScreenScale mMaxZoom;
+  
+  mozilla::CSSToScreenScale mMaxZoom;
 
-    
-    mozilla::CSSSize mSize;
+  
+  mozilla::CSSSize mSize;
 
-    
-    
-    
-    
-    bool mDefaultZoomValid;
+  
+  
+  
+  
+  bool mDefaultZoomValid;
 
-    
-    
-    
-    
-    bool mAutoSize;
+  
+  
+  
+  
+  bool mAutoSize;
 
-    
-    bool mAllowZoom;
+  
+  bool mAllowZoom;
 };
 
 #endif
-

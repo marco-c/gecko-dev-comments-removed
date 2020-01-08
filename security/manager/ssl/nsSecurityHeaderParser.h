@@ -10,8 +10,9 @@
 #include "nsString.h"
 
 
-class nsSecurityHeaderDirective : public mozilla::LinkedListElement<nsSecurityHeaderDirective> {
-public:
+class nsSecurityHeaderDirective
+    : public mozilla::LinkedListElement<nsSecurityHeaderDirective> {
+ public:
   nsCString mName;
   nsCString mValue;
 };
@@ -35,10 +36,11 @@ public:
 
 
 class nsSecurityHeaderParser {
-public:
+ public:
   
   
-  explicit nsSecurityHeaderParser(const nsCString& aHeader);
+  
+  explicit nsSecurityHeaderParser(const nsCString &aHeader);
   ~nsSecurityHeaderParser();
 
   
@@ -46,24 +48,24 @@ public:
   
   mozilla::LinkedList<nsSecurityHeaderDirective> *GetDirectives();
 
-private:
+ private:
   bool Accept(char aChr);
-  bool Accept(bool (*aClassifier) (signed char));
+  bool Accept(bool (*aClassifier)(signed char));
   void Expect(char aChr);
   void Advance();
-  void Header();         
-  void Directive();      
-  void DirectiveName();  
-  void DirectiveValue(); 
-  void Token();          
-  void QuotedString();   
-  void QuotedText();     
-  void QuotedPair();     
+  void Header();          
+  void Directive();       
+  void DirectiveName();   
+  void DirectiveValue();  
+  void Token();           
+  void QuotedString();    
+  void QuotedText();      
+  void QuotedPair();      
 
-                         
-  void LWSMultiple();    
-  void LWSCRLF();        
-  void LWS();            
+  
+  void LWSMultiple();  
+  void LWSCRLF();      
+  void LWS();          
 
   mozilla::LinkedList<nsSecurityHeaderDirective> mDirectives;
   const char *mCursor;
@@ -73,4 +75,4 @@ private:
   bool mError;
 };
 
-#endif 
+#endif  

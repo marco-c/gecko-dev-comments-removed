@@ -11,7 +11,7 @@
 
 
 namespace test {
-  class RtpSourcesTest;
+class RtpSourcesTest;
 }
 
 namespace mozilla {
@@ -21,16 +21,14 @@ namespace mozilla {
 
 
 
-class RtpSourceObserver: public webrtc::RtpPacketObserver {
-public:
-
+class RtpSourceObserver : public webrtc::RtpPacketObserver {
+ public:
   RtpSourceObserver();
 
-  virtual ~RtpSourceObserver() {};
+  virtual ~RtpSourceObserver(){};
 
   void OnRtpPacket(const webrtc::WebRtcRTPHeader* aRtpHeader,
-                   const int64_t aTimestamp,
-                   const uint32_t aJitter) override;
+                   const int64_t aTimestamp, const uint32_t aJitter) override;
 
   
 
@@ -46,16 +44,14 @@ public:
 
 
 
-  void
-  GetRtpSources(const int64_t aTimeNow,
-                nsTArray<dom::RTCRtpSourceEntry>& outSources) const;
+  void GetRtpSources(const int64_t aTimeNow,
+                     nsTArray<dom::RTCRtpSourceEntry>& outSources) const;
 
-private:
+ private:
   
   struct RtpSourceEntry {
     RtpSourceEntry() = default;
-    void Update(const int64_t aTimestamp,
-                const bool aHasAudioLevel,
+    void Update(const int64_t aTimestamp, const bool aHasAudioLevel,
                 const uint8_t aAudioLevel) {
       jitterAdjustedTimestamp = aTimestamp;
       
@@ -93,25 +89,24 @@ private:
 
 
   class RtpSourceHistory {
-  public:
+   public:
     RtpSourceHistory() = default;
     
     
     
     const RtpSourceEntry* FindClosestNotAfter(int64_t aTime) const;
     
-    void Insert(const int64_t aTimeNow,
-                const int64_t aTimestamp,
-                const bool aHasAudioLevel,
-                const uint8_t aAudioLevel);
+    void Insert(const int64_t aTimeNow, const int64_t aTimestamp,
+                const bool aHasAudioLevel, const uint8_t aAudioLevel);
     
     void Prune(const int64_t aTimeNow);
     
     void SetSource(uint32_t aSource, dom::RTCRtpSourceEntryType aType);
-  private:
+
+   private:
     
-    RtpSourceObserver::RtpSourceEntry&
-    Insert(const int64_t aTimeNow, const int64_t aTimestamp);
+    RtpSourceObserver::RtpSourceEntry& Insert(const int64_t aTimeNow,
+                                              const int64_t aTimestamp);
     
     bool Empty() const { return !mDetailedHistory.size(); }
     
@@ -138,11 +133,12 @@ private:
   RtpSourceObserver(const RtpSourceObserver&) = delete;
   RtpSourceObserver& operator=(RtpSourceObserver const&) = delete;
   
-  static uint64_t
-  GetKey(const uint32_t id, const dom::RTCRtpSourceEntryType aType) {
-    return (aType == dom::RTCRtpSourceEntryType::Synchronization) ?
-      (static_cast<uint64_t>(id) | (static_cast<uint64_t>(0x1) << 32)) :
-      (static_cast<uint64_t>(id));
+  static uint64_t GetKey(const uint32_t id,
+                         const dom::RTCRtpSourceEntryType aType) {
+    return (aType == dom::RTCRtpSourceEntryType::Synchronization)
+               ? (static_cast<uint64_t>(id) |
+                  (static_cast<uint64_t>(0x1) << 32))
+               : (static_cast<uint64_t>(id));
   }
   
   static uint32_t GetSourceFromKey(const uint64_t aKey) {
@@ -151,8 +147,8 @@ private:
   
   static dom::RTCRtpSourceEntryType GetTypeFromKey(const uint64_t aKey) {
     return (aKey & (static_cast<uint64_t>(0x1) << 32))
-        ? dom::RTCRtpSourceEntryType::Synchronization
-        : dom::RTCRtpSourceEntryType::Contributing;
+               ? dom::RTCRtpSourceEntryType::Synchronization
+               : dom::RTCRtpSourceEntryType::Contributing;
   }
   
   std::map<uint64_t, RtpSourceHistory> mRtpSources;
@@ -166,13 +162,12 @@ private:
 
   
   
-  friend void InsertAudioLevelForContributingSource(
-      RtpSourceObserver& observer,
-      uint32_t aCsrcSource,
-      int64_t aTimestamp,
-      bool aHasAudioLevel,
-      uint8_t aAudioLevel);
+  friend void InsertAudioLevelForContributingSource(RtpSourceObserver& observer,
+                                                    uint32_t aCsrcSource,
+                                                    int64_t aTimestamp,
+                                                    bool aHasAudioLevel,
+                                                    uint8_t aAudioLevel);
 };
-}
+}  
 #undef NG
-#endif 
+#endif  

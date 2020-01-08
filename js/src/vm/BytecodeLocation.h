@@ -14,161 +14,138 @@ namespace js {
 
 typedef uint32_t RawBytecodeLocationOffset;
 
+class BytecodeLocationOffset {
+  RawBytecodeLocationOffset rawOffset_;
 
-class BytecodeLocationOffset
-{
-    RawBytecodeLocationOffset rawOffset_;
+ public:
+  explicit BytecodeLocationOffset(RawBytecodeLocationOffset offset)
+      : rawOffset_(offset) {}
 
-  public:
-    explicit BytecodeLocationOffset(RawBytecodeLocationOffset offset)
-      : rawOffset_(offset)
-    {}
-
-    RawBytecodeLocationOffset rawOffset() const {
-        return rawOffset_;
-    }
-
+  RawBytecodeLocationOffset rawOffset() const { return rawOffset_; }
 };
-
 
 typedef jsbytecode* RawBytecode;
 
 
 
-class BytecodeLocation
-{
-    RawBytecode rawBytecode_;
+class BytecodeLocation {
+  RawBytecode rawBytecode_;
 #ifdef DEBUG
-    const JSScript* debugOnlyScript_;
+  const JSScript* debugOnlyScript_;
 #endif
 
-    
-    
-    BytecodeLocation(const BytecodeLocation& loc, RawBytecode pc)
+  
+  
+  BytecodeLocation(const BytecodeLocation& loc, RawBytecode pc)
       : rawBytecode_(pc)
 #ifdef DEBUG
-      , debugOnlyScript_(loc.debugOnlyScript_)
+        ,
+        debugOnlyScript_(loc.debugOnlyScript_)
 #endif
-    {
-        MOZ_ASSERT(isValid());
-    }
+  {
+    MOZ_ASSERT(isValid());
+  }
 
-  public:
-    BytecodeLocation(const JSScript* script, RawBytecode pc)
+ public:
+  BytecodeLocation(const JSScript* script, RawBytecode pc)
       : rawBytecode_(pc)
 #ifdef DEBUG
-      , debugOnlyScript_(script)
+        ,
+        debugOnlyScript_(script)
 #endif
-    {
-        MOZ_ASSERT(isValid());
-    }
+  {
+    MOZ_ASSERT(isValid());
+  }
 
-    RawBytecode toRawBytecode() const {
-        return rawBytecode_;
-    }
+  RawBytecode toRawBytecode() const { return rawBytecode_; }
 
+  
+  
+  bool isValid(const JSScript* script) const;
+
+  
+  
+  bool isInBounds(const JSScript* script) const;
+
+  bool operator==(const BytecodeLocation& other) const {
+    MOZ_ASSERT(this->debugOnlyScript_ == other.debugOnlyScript_);
+    return rawBytecode_ == other.rawBytecode_;
+  }
+
+  bool operator!=(const BytecodeLocation& other) const {
+    return !(other == *this);
+  }
+
+  bool operator<(const BytecodeLocation& other) const {
+    MOZ_ASSERT(this->debugOnlyScript_ == other.debugOnlyScript_);
+    return rawBytecode_ < other.rawBytecode_;
+  }
+
+  
+  
+  bool operator>(const BytecodeLocation& other) const { return other < *this; }
+
+  bool operator<=(const BytecodeLocation& other) const {
+    return !(other < *this);
+  }
+
+  bool operator>=(const BytecodeLocation& other) const {
+    return !(*this < other);
+  }
+
+  
+  BytecodeLocation next() const {
+    return BytecodeLocation(*this,
+                            rawBytecode_ + GetBytecodeLength(rawBytecode_));
+  }
+
+  
+  BytecodeLocation operator+(const BytecodeLocationOffset& offset) {
+    return BytecodeLocation(*this, rawBytecode_ + offset.rawOffset());
+  }
+
+  
+  bool is(JSOp op) const {
+    MOZ_ASSERT(isInBounds());
+    return getOp() == op;
+  }
+
+  bool isJumpTarget() const { return BytecodeIsJumpTarget(getOp()); }
+
+  bool isJump() const { return IsJumpOpcode(getOp()); }
+
+  bool fallsThrough() const { return BytecodeFallsThrough(getOp()); }
+
+  
+  JSOp getOp() const { return JSOp(*rawBytecode_); }
+
+  BytecodeLocation getJumpTarget() const {
     
-    
-    bool isValid(const JSScript* script) const;
+    MOZ_ASSERT(isJump() || is(JSOP_TABLESWITCH));
+    return BytecodeLocation(*this,
+                            rawBytecode_ + GET_JUMP_OFFSET(rawBytecode_));
+  }
 
-    
-    
-    bool isInBounds(const JSScript* script) const;
+  
+  int32_t getTableSwitchLow() const {
+    MOZ_ASSERT(is(JSOP_TABLESWITCH));
+    return GET_JUMP_OFFSET(rawBytecode_ + JUMP_OFFSET_LEN);
+  }
 
-    bool operator==(const BytecodeLocation& other) const {
-        MOZ_ASSERT(this->debugOnlyScript_ == other.debugOnlyScript_);
-        return rawBytecode_ == other.rawBytecode_;
-    }
-
-    bool operator!=(const BytecodeLocation& other) const {
-        return !(other == *this);
-    }
-
-    bool operator<(const BytecodeLocation& other) const {
-        MOZ_ASSERT(this->debugOnlyScript_ == other.debugOnlyScript_);
-        return rawBytecode_ < other.rawBytecode_;
-    }
-
-    
-    
-    bool operator>(const BytecodeLocation& other) const {
-        return other < *this;
-    }
-
-    bool operator<=(const BytecodeLocation& other) const {
-        return !(other < *this);
-    }
-
-    bool operator>=(const BytecodeLocation& other) const {
-        return !(*this < other);
-    }
-
-    
-    BytecodeLocation next() const {
-        return BytecodeLocation(*this, rawBytecode_ + GetBytecodeLength(rawBytecode_));
-    }
-
-    
-    BytecodeLocation operator+(const BytecodeLocationOffset& offset) {
-        return BytecodeLocation(*this, rawBytecode_ + offset.rawOffset());
-    }
-
-    
-    bool is(JSOp op) const {
-        MOZ_ASSERT(isInBounds());
-        return getOp() == op;
-    }
-
-    bool isJumpTarget() const {
-        return BytecodeIsJumpTarget(getOp());
-    }
-
-    bool isJump() const {
-        return IsJumpOpcode(getOp());
-    }
-
-    bool fallsThrough() const {
-        return BytecodeFallsThrough(getOp());
-    }
-
-    
-    JSOp getOp() const {
-        return JSOp(*rawBytecode_);
-    }
-
-    BytecodeLocation getJumpTarget() const {
-        
-        MOZ_ASSERT(isJump() || is(JSOP_TABLESWITCH));
-        return BytecodeLocation(*this, rawBytecode_ + GET_JUMP_OFFSET(rawBytecode_));
-    }
-
-    
-    int32_t getTableSwitchLow() const {
-        MOZ_ASSERT(is(JSOP_TABLESWITCH));
-        return GET_JUMP_OFFSET(rawBytecode_ + JUMP_OFFSET_LEN);
-    }
-
-    
-    int32_t getTableSwitchHigh() const {
-        MOZ_ASSERT(is(JSOP_TABLESWITCH));
-        return GET_JUMP_OFFSET(rawBytecode_ + (2 * JUMP_OFFSET_LEN));
-    }
+  
+  int32_t getTableSwitchHigh() const {
+    MOZ_ASSERT(is(JSOP_TABLESWITCH));
+    return GET_JUMP_OFFSET(rawBytecode_ + (2 * JUMP_OFFSET_LEN));
+  }
 
 #ifdef DEBUG
-    
-    bool isValid() const {
-        return isValid(debugOnlyScript_);
-    }
+  
+  bool isValid() const { return isValid(debugOnlyScript_); }
 
-    bool isInBounds() const {
-        return isInBounds(debugOnlyScript_);
-    }
+  bool isInBounds() const { return isInBounds(debugOnlyScript_); }
 #endif
-
 };
 
-
-}
-
+}  
 
 #endif

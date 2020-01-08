@@ -14,196 +14,194 @@
 #include "base/task.h"
 #include "mozilla/gfx/Logging.h"
 
-#define ADDREF_MANUALLY(obj)  (obj)->AddRefManually(__FUNCTION__, __FILE__, __LINE__)
-#define RELEASE_MANUALLY(obj)  (obj)->ReleaseManually(__FUNCTION__, __FILE__, __LINE__)
+#define ADDREF_MANUALLY(obj) \
+  (obj)->AddRefManually(__FUNCTION__, __FILE__, __LINE__)
+#define RELEASE_MANUALLY(obj) \
+  (obj)->ReleaseManually(__FUNCTION__, __FILE__, __LINE__)
 
 namespace mozilla {
 
-template<class U>
+template <class U>
 class StaticRefPtr;
 
 namespace gl {
-template<typename T>
+template <typename T>
 class RefSet;
 
-template<typename T>
+template <typename T>
 class RefQueue;
-} 
+}  
 
-template<typename T>
-class AtomicRefCountedWithFinalize
-{
-protected:
-    explicit AtomicRefCountedWithFinalize(const char* aName)
-      : mRecycleCallback(nullptr)
-      , mClosure(nullptr)
-      , mRefCount(0)
+template <typename T>
+class AtomicRefCountedWithFinalize {
+ protected:
+  explicit AtomicRefCountedWithFinalize(const char* aName)
+      : mRecycleCallback(nullptr),
+        mClosure(nullptr),
+        mRefCount(0)
 #ifdef DEBUG
-      , mSpew(false)
-      , mManualAddRefs(0)
-      , mManualReleases(0)
+        ,
+        mSpew(false),
+        mManualAddRefs(0),
+        mManualReleases(0)
 #endif
 #ifdef NS_BUILD_REFCNT_LOGGING
-      , mName(aName)
+        ,
+        mName(aName)
 #endif
-    {}
+  {
+  }
 
-    ~AtomicRefCountedWithFinalize() {
-      if (mRefCount >= 0) {
-        gfxCriticalError() << "Deleting referenced object? " << mRefCount;
-      }
+  ~AtomicRefCountedWithFinalize() {
+    if (mRefCount >= 0) {
+      gfxCriticalError() << "Deleting referenced object? " << mRefCount;
     }
+  }
 
-public:
-    
-    template<class U>
-    friend class ::mozilla::StaticRefPtr;
+ public:
+  
+  template <class U>
+  friend class ::mozilla::StaticRefPtr;
 
-    template<class U>
-    friend struct mozilla::RefPtrTraits;
+  template <class U>
+  friend struct mozilla::RefPtrTraits;
 
-    template<typename U>
-    friend class ::mozilla::gl::RefSet;
+  template <typename U>
+  friend class ::mozilla::gl::RefSet;
 
-    template<typename U>
-    friend class ::mozilla::gl::RefQueue;
+  template <typename U>
+  friend class ::mozilla::gl::RefQueue;
 
-    
+  
 
-    void AddRefManually(const char* funcName, const char* fileName, uint32_t lineNum) {
+  void AddRefManually(const char* funcName, const char* fileName,
+                      uint32_t lineNum) {
 #ifdef DEBUG
-      uint32_t count = ++mManualAddRefs;
-      if (mSpew) {
-        printf_stderr("AddRefManually() #%u in %s at %s:%u\n", count, funcName,
-                      fileName, lineNum);
-      }
-#else
-      (void)funcName;
-      (void)fileName;
-      (void)lineNum;
-#endif
-      AddRef();
+    uint32_t count = ++mManualAddRefs;
+    if (mSpew) {
+      printf_stderr("AddRefManually() #%u in %s at %s:%u\n", count, funcName,
+                    fileName, lineNum);
     }
+#else
+    (void)funcName;
+    (void)fileName;
+    (void)lineNum;
+#endif
+    AddRef();
+  }
 
-    void ReleaseManually(const char* funcName, const char* fileName, uint32_t lineNum) {
+  void ReleaseManually(const char* funcName, const char* fileName,
+                       uint32_t lineNum) {
 #ifdef DEBUG
-      uint32_t count = ++mManualReleases;
-      if (mSpew) {
-        printf_stderr("ReleaseManually() #%u in %s at %s:%u\n", count, funcName,
-                      fileName, lineNum);
-      }
-#else
-      (void)funcName;
-      (void)fileName;
-      (void)lineNum;
-#endif
-      Release();
+    uint32_t count = ++mManualReleases;
+    if (mSpew) {
+      printf_stderr("ReleaseManually() #%u in %s at %s:%u\n", count, funcName,
+                    fileName, lineNum);
     }
+#else
+    (void)funcName;
+    (void)fileName;
+    (void)lineNum;
+#endif
+    Release();
+  }
 
-private:
-    void AddRef() {
-      MOZ_ASSERT(mRefCount >= 0, "AddRef() during/after Finalize()/dtor.");
+ private:
+  void AddRef() {
+    MOZ_ASSERT(mRefCount >= 0, "AddRef() during/after Finalize()/dtor.");
 #ifdef NS_BUILD_REFCNT_LOGGING
-      int currCount = ++mRefCount;
-      NS_LOG_ADDREF(this, currCount, mName, sizeof(*this));
+    int currCount = ++mRefCount;
+    NS_LOG_ADDREF(this, currCount, mName, sizeof(*this));
 #else
+    ++mRefCount;
+#endif
+  }
+
+  void Release() {
+    MOZ_ASSERT(mRefCount > 0, "Release() during/after Finalize()/dtor.");
+    
+    
+    
+    
+    RecycleCallback recycleCallback = mRecycleCallback;
+    int currCount = --mRefCount;
+    if (currCount < 0) {
+      gfxCriticalError() << "Invalid reference count release" << currCount;
       ++mRefCount;
-#endif
+      return;
     }
-
-    void Release() {
-      MOZ_ASSERT(mRefCount > 0, "Release() during/after Finalize()/dtor.");
-      
-      
-      
-      
-      RecycleCallback recycleCallback = mRecycleCallback;
-      int currCount = --mRefCount;
-      if (currCount < 0) {
-        gfxCriticalError() << "Invalid reference count release" << currCount;
-        ++mRefCount;
-        return;
-      }
 #ifdef NS_BUILD_REFCNT_LOGGING
-      NS_LOG_RELEASE(this, currCount, mName);
+    NS_LOG_RELEASE(this, currCount, mName);
 #endif
 
-      if (0 == currCount) {
-        mRefCount = detail::DEAD;
-        MOZ_ASSERT(IsDead());
+    if (0 == currCount) {
+      mRefCount = detail::DEAD;
+      MOZ_ASSERT(IsDead());
 
-        
-        
-        if (mRecycleCallback) {
-          gfxCriticalError() << "About to release with valid callback";
-          mRecycleCallback = nullptr;
-        }
-
-        MOZ_ASSERT(mManualAddRefs == mManualReleases);
-
-        T* derived = static_cast<T*>(this);
-        derived->Finalize();
-        delete derived;
-      } else if (1 == currCount && recycleCallback) {
-        
-        
-        
-        MOZ_ASSERT(!IsDead());
-        T* derived = static_cast<T*>(this);
-        recycleCallback(derived, mClosure);
+      
+      
+      if (mRecycleCallback) {
+        gfxCriticalError() << "About to release with valid callback";
+        mRecycleCallback = nullptr;
       }
-    }
 
-public:
-    typedef void (*RecycleCallback)(T* aObject, void* aClosure);
-    
+      MOZ_ASSERT(mManualAddRefs == mManualReleases);
 
-
-
-    void SetRecycleCallback(RecycleCallback aCallback, void* aClosure)
-    {
+      T* derived = static_cast<T*>(this);
+      derived->Finalize();
+      delete derived;
+    } else if (1 == currCount && recycleCallback) {
+      
+      
+      
       MOZ_ASSERT(!IsDead());
-      mRecycleCallback = aCallback;
-      mClosure = aClosure;
+      T* derived = static_cast<T*>(this);
+      recycleCallback(derived, mClosure);
     }
-    void ClearRecycleCallback()
-    {
-      MOZ_ASSERT(!IsDead());
-      SetRecycleCallback(nullptr, nullptr);
-    }
+  }
 
-    bool HasRecycleCallback() const
-    {
-      MOZ_ASSERT(!IsDead());
-      return !!mRecycleCallback;
-    }
+ public:
+  typedef void (*RecycleCallback)(T* aObject, void* aClosure);
+  
 
-    bool IsDead() const
-    {
-      return mRefCount < 0;
-    }
 
-    bool HasOneRef() const
-    {
-      return mRefCount == 1;
-    }
 
-private:
-    RecycleCallback mRecycleCallback;
-    void *mClosure;
-    Atomic<int> mRefCount;
+  void SetRecycleCallback(RecycleCallback aCallback, void* aClosure) {
+    MOZ_ASSERT(!IsDead());
+    mRecycleCallback = aCallback;
+    mClosure = aClosure;
+  }
+  void ClearRecycleCallback() {
+    MOZ_ASSERT(!IsDead());
+    SetRecycleCallback(nullptr, nullptr);
+  }
+
+  bool HasRecycleCallback() const {
+    MOZ_ASSERT(!IsDead());
+    return !!mRecycleCallback;
+  }
+
+  bool IsDead() const { return mRefCount < 0; }
+
+  bool HasOneRef() const { return mRefCount == 1; }
+
+ private:
+  RecycleCallback mRecycleCallback;
+  void* mClosure;
+  Atomic<int> mRefCount;
 #ifdef DEBUG
-public:
-    bool mSpew;
-private:
-    Atomic<uint32_t> mManualAddRefs;
-    Atomic<uint32_t> mManualReleases;
+ public:
+  bool mSpew;
+
+ private:
+  Atomic<uint32_t> mManualAddRefs;
+  Atomic<uint32_t> mManualReleases;
 #endif
 #ifdef NS_BUILD_REFCNT_LOGGING
-    const char* mName;
+  const char* mName;
 #endif
 };
 
-} 
+}  
 
 #endif

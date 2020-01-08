@@ -19,15 +19,15 @@ class RuleCache;
 
 
 
-class nsAccessiblePivot final : public nsIAccessiblePivot
-{
-public:
+class nsAccessiblePivot final : public nsIAccessiblePivot {
+ public:
   typedef mozilla::a11y::Accessible Accessible;
 
   explicit nsAccessiblePivot(Accessible* aRoot);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsAccessiblePivot, nsIAccessiblePivot)
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsAccessiblePivot,
+                                           nsIAccessiblePivot)
 
   NS_DECL_NSIACCESSIBLEPIVOT
 
@@ -40,19 +40,18 @@ public:
 
   int32_t EndOffset() { return mEndOffset; }
 
-private:
+ private:
   ~nsAccessiblePivot();
   nsAccessiblePivot() = delete;
   nsAccessiblePivot(const nsAccessiblePivot&) = delete;
-  void operator = (const nsAccessiblePivot&) = delete;
+  void operator=(const nsAccessiblePivot&) = delete;
 
   
 
 
 
-  bool NotifyOfPivotChange(Accessible* aOldAccessible,
-                           int32_t aOldStart, int32_t aOldEnd,
-                           PivotMoveReason aReason,
+  bool NotifyOfPivotChange(Accessible* aOldAccessible, int32_t aOldStart,
+                           int32_t aOldEnd, PivotMoveReason aReason,
                            TextBoundaryType aBoundaryType,
                            bool aIsFromUserInput);
 
@@ -61,22 +60,19 @@ private:
 
   bool IsDescendantOf(Accessible* aAccessible, Accessible* aAncestor);
 
-
   
 
 
   Accessible* SearchForward(Accessible* aAccessible,
                             nsIAccessibleTraversalRule* aRule,
-                            bool aSearchCurrent,
-                            nsresult* aResult);
+                            bool aSearchCurrent, nsresult* aResult);
 
   
 
 
   Accessible* SearchBackward(Accessible* aAccessible,
                              nsIAccessibleTraversalRule* aRule,
-                             bool aSearchCurrent,
-                             nsresult* aResult);
+                             bool aSearchCurrent, nsresult* aResult);
 
   
 
@@ -87,8 +83,7 @@ private:
   
 
 
-  Accessible* GetActiveRoot() const
-  {
+  Accessible* GetActiveRoot() const {
     if (mModalRoot) {
       NS_ENSURE_FALSE(mModalRoot->IsDefunct(), mRoot);
       return mModalRoot;

@@ -7,14 +7,14 @@
 #ifndef mozilla_layers_opengl_FPSCounter_h_
 #define mozilla_layers_opengl_FPSCounter_h_
 
-#include <algorithm>                    
-#include <stddef.h>                     
-#include <map>                          
-#include "GLDefs.h"                     
-#include "mozilla/RefPtr.h"             
-#include "mozilla/TimeStamp.h"          
-#include "nsTArray.h"                   
-#include "prio.h"                       
+#include <algorithm>            
+#include <stddef.h>             
+#include <map>                  
+#include "GLDefs.h"             
+#include "mozilla/RefPtr.h"     
+#include "mozilla/TimeStamp.h"  
+#include "nsTArray.h"           
+#include "prio.h"               
 
 namespace mozilla {
 namespace layers {
@@ -55,7 +55,7 @@ const int kMaxFrames = 2400;
 
 
 class FPSCounter {
-public:
+ public:
   explicit FPSCounter(const char* aName);
   ~FPSCounter();
 
@@ -63,25 +63,25 @@ public:
   double AddFrameAndGetFps(TimeStamp aTimestamp);
   double GetFPS(TimeStamp aTimestamp);
 
-private:
-  void      Init();
-  bool      CapturedFullInterval(TimeStamp aTimestamp);
+ private:
+  void Init();
+  bool CapturedFullInterval(TimeStamp aTimestamp);
 
   
-  void      ResetReverseIterator();
-  bool      HasNext(TimeStamp aTimestamp, double aDuration = kFpsDumpInterval);
+  void ResetReverseIterator();
+  bool HasNext(TimeStamp aTimestamp, double aDuration = kFpsDumpInterval);
   TimeStamp GetNextTimeStamp();
-  int       GetLatestReadIndex();
+  int GetLatestReadIndex();
   TimeStamp GetLatestTimeStamp();
-  void      WriteFrameTimeStamps(PRFileDesc* fd);
-  bool      IteratedFullInterval(TimeStamp aTimestamp, double aDuration);
+  void WriteFrameTimeStamps(PRFileDesc* fd);
+  bool IteratedFullInterval(TimeStamp aTimestamp, double aDuration);
 
-  void      PrintFPS();
-  int       BuildHistogram(std::map<int, int>& aHistogram);
-  void      PrintHistogram(std::map<int, int>& aHistogram);
-  double    GetMean(std::map<int,int> aHistogram);
-  double    GetStdDev(std::map<int, int> aHistogram);
-  nsresult  WriteFrameTimeStamps();
+  void PrintFPS();
+  int BuildHistogram(std::map<int, int>& aHistogram);
+  void PrintHistogram(std::map<int, int>& aHistogram);
+  double GetMean(std::map<int, int> aHistogram);
+  double GetStdDev(std::map<int, int> aHistogram);
+  nsresult WriteFrameTimeStamps();
 
   
 
@@ -90,13 +90,13 @@ private:
 
 
   AutoTArray<TimeStamp, kMaxFrames> mFrameTimestamps;
-  int mWriteIndex;      
-  int mIteratorIndex;   
+  int mWriteIndex;     
+  int mIteratorIndex;  
   const char* mFPSName;
   TimeStamp mLastInterval;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

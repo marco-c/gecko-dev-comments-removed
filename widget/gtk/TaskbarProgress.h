@@ -12,16 +12,15 @@
 
 class nsWindow;
 
-class TaskbarProgress final : public nsIGtkTaskbarProgress
-{
-public:
+class TaskbarProgress final : public nsIGtkTaskbarProgress {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIGTKTASKBARPROGRESS
   NS_DECL_NSITASKBARPROGRESS
 
   TaskbarProgress();
 
-protected:
+ protected:
   ~TaskbarProgress();
 
   
@@ -31,4 +30,4 @@ protected:
   RefPtr<nsWindow> mPrimaryWindow;
 };
 
-#endif 
+#endif  

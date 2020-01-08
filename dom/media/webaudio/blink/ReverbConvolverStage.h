@@ -45,35 +45,40 @@ class ReverbConvolver;
 
 
 
+
 class ReverbConvolverStage {
-public:
-    
-    
-    ReverbConvolverStage(const float* impulseResponse, size_t responseLength, size_t reverbTotalLatency, size_t stageOffset, size_t stageLength, size_t fftSize, size_t renderPhase, ReverbAccumulationBuffer*);
+ public:
+  
+  
+  
+  ReverbConvolverStage(const float* impulseResponse, size_t responseLength,
+                       size_t reverbTotalLatency, size_t stageOffset,
+                       size_t stageLength, size_t fftSize, size_t renderPhase,
+                       ReverbAccumulationBuffer*);
 
-    
-    void process(const float* source);
+  
+  void process(const float* source);
 
-    void processInBackground(ReverbConvolver* convolver);
+  void processInBackground(ReverbConvolver* convolver);
 
-    
-    int inputReadIndex() const { return m_inputReadIndex; }
+  
+  int inputReadIndex() const { return m_inputReadIndex; }
 
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
-    nsAutoPtr<FFTBlock> m_fftKernel;
-    nsAutoPtr<FFTConvolver> m_fftConvolver;
+ private:
+  nsAutoPtr<FFTBlock> m_fftKernel;
+  nsAutoPtr<FFTConvolver> m_fftConvolver;
 
-    ReverbAccumulationBuffer* m_accumulationBuffer;
-    int m_accumulationReadIndex;
-    int m_inputReadIndex;
+  ReverbAccumulationBuffer* m_accumulationBuffer;
+  int m_accumulationReadIndex;
+  int m_inputReadIndex;
 
-    size_t m_postDelayLength;
+  size_t m_postDelayLength;
 
-    nsTArray<float> m_temporaryBuffer;
+  nsTArray<float> m_temporaryBuffer;
 };
 
-} 
+}  
 
-#endif 
+#endif  

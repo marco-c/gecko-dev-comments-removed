@@ -22,9 +22,7 @@ static const int ENCODING = X509_ASN_ENCODING | PKCS_7_ASN_ENCODING;
 
 
 DWORD
-CheckCertificateForPEFile(LPCWSTR filePath,
-                          CertificateCheckInfo &infoToMatch)
-{
+CheckCertificateForPEFile(LPCWSTR filePath, CertificateCheckInfo &infoToMatch) {
   HCERTSTORE certStore = nullptr;
   HCRYPTMSG cryptMsg = nullptr;
   PCCERT_CONTEXT certContext = nullptr;
@@ -33,12 +31,10 @@ CheckCertificateForPEFile(LPCWSTR filePath,
 
   
   DWORD encoding, contentType, formatType;
-  BOOL result = CryptQueryObject(CERT_QUERY_OBJECT_FILE,
-                                  filePath,
-                                  CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED,
-                                  CERT_QUERY_CONTENT_FLAG_ALL,
-                                  0, &encoding, &contentType,
-                                  &formatType, &certStore, &cryptMsg, nullptr);
+  BOOL result = CryptQueryObject(
+      CERT_QUERY_OBJECT_FILE, filePath,
+      CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED, CERT_QUERY_CONTENT_FLAG_ALL,
+      0, &encoding, &contentType, &formatType, &certStore, &cryptMsg, nullptr);
   if (!result) {
     lastError = GetLastError();
     LOG_WARN(("CryptQueryObject failed.  (%d)", lastError));
@@ -47,8 +43,8 @@ CheckCertificateForPEFile(LPCWSTR filePath,
 
   
   DWORD signerInfoSize;
-  result = CryptMsgGetParam(cryptMsg, CMSG_SIGNER_INFO_PARAM, 0,
-                            nullptr, &signerInfoSize);
+  result = CryptMsgGetParam(cryptMsg, CMSG_SIGNER_INFO_PARAM, 0, nullptr,
+                            &signerInfoSize);
   if (!result) {
     lastError = GetLastError();
     LOG_WARN(("CryptMsgGetParam failed.  (%d)", lastError));
@@ -77,9 +73,9 @@ CheckCertificateForPEFile(LPCWSTR filePath,
   CERT_INFO certInfo;
   certInfo.Issuer = signerInfo->Issuer;
   certInfo.SerialNumber = signerInfo->SerialNumber;
-  certContext = CertFindCertificateInStore(certStore, ENCODING, 0,
-                                           CERT_FIND_SUBJECT_CERT,
-                                           (PVOID)&certInfo, nullptr);
+  certContext =
+      CertFindCertificateInStore(certStore, ENCODING, 0, CERT_FIND_SUBJECT_CERT,
+                                 (PVOID)&certInfo, nullptr);
   if (!certContext) {
     lastError = GetLastError();
     LOG_WARN(("CertFindCertificateInStore failed.  (%d)", lastError));
@@ -115,19 +111,15 @@ cleanup:
 
 
 
-BOOL
-DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
-                             CertificateCheckInfo &infoToMatch)
-{
+BOOL DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
+                                  CertificateCheckInfo &infoToMatch) {
   DWORD dwData;
   LPWSTR szName = nullptr;
 
   if (infoToMatch.issuer) {
     
-    dwData = CertGetNameString(certContext,
-                               CERT_NAME_SIMPLE_DISPLAY_TYPE,
-                               CERT_NAME_ISSUER_FLAG, nullptr,
-                               nullptr, 0);
+    dwData = CertGetNameString(certContext, CERT_NAME_SIMPLE_DISPLAY_TYPE,
+                               CERT_NAME_ISSUER_FLAG, nullptr, nullptr, 0);
 
     if (!dwData) {
       LOG_WARN(("CertGetNameString failed.  (%d)", GetLastError()));
@@ -137,22 +129,21 @@ DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
     
     szName = (LPWSTR)LocalAlloc(LPTR, dwData * sizeof(WCHAR));
     if (!szName) {
-      LOG_WARN(("Unable to allocate memory for issuer name.  (%d)",
-                GetLastError()));
+      LOG_WARN(
+          ("Unable to allocate memory for issuer name.  (%d)", GetLastError()));
       return FALSE;
     }
 
     
     if (!CertGetNameStringW(certContext, CERT_NAME_SIMPLE_DISPLAY_TYPE,
-                           CERT_NAME_ISSUER_FLAG, nullptr, szName, dwData)) {
+                            CERT_NAME_ISSUER_FLAG, nullptr, szName, dwData)) {
       LOG_WARN(("CertGetNameString failed.  (%d)", GetLastError()));
       LocalFree(szName);
       return FALSE;
     }
 
     
-    if (!infoToMatch.issuer ||
-        wcscmp(szName, infoToMatch.issuer)) {
+    if (!infoToMatch.issuer || wcscmp(szName, infoToMatch.issuer)) {
       LocalFree(szName);
       return FALSE;
     }
@@ -163,8 +154,8 @@ DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
 
   if (infoToMatch.name) {
     
-    dwData = CertGetNameString(certContext, CERT_NAME_SIMPLE_DISPLAY_TYPE,
-                               0, nullptr, nullptr, 0);
+    dwData = CertGetNameString(certContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0,
+                               nullptr, nullptr, 0);
     if (!dwData) {
       LOG_WARN(("CertGetNameString failed.  (%d)", GetLastError()));
       return FALSE;
@@ -180,15 +171,14 @@ DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
 
     
     if (!(CertGetNameStringW(certContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0,
-                            nullptr, szName, dwData))) {
+                             nullptr, szName, dwData))) {
       LOG_WARN(("CertGetNameString failed.  (%d)", GetLastError()));
       LocalFree(szName);
       return FALSE;
     }
 
     
-    if (!infoToMatch.name ||
-        wcscmp(szName, infoToMatch.name)) {
+    if (!infoToMatch.name || wcscmp(szName, infoToMatch.name)) {
       LocalFree(szName);
       return FALSE;
     }
@@ -208,8 +198,7 @@ DoCertificateAttributesMatch(PCCERT_CONTEXT certContext,
 
 
 DWORD
-VerifyCertificateTrustForFile(LPCWSTR filePath)
-{
+VerifyCertificateTrustForFile(LPCWSTR filePath) {
   
   WINTRUST_FILE_INFO fileToCheck;
   ZeroMemory(&fileToCheck, sizeof(fileToCheck));
@@ -240,11 +229,13 @@ VerifyCertificateTrustForFile(LPCWSTR filePath)
     
     LOG(("The file \"%ls\" is signed and the signature was verified.",
          filePath));
-      return ERROR_SUCCESS;
+    return ERROR_SUCCESS;
   }
 
   DWORD lastError = GetLastError();
-  LOG_WARN(("There was an error validating trust of the certificate for file"
-            " \"%ls\". Returned: %d.  (%d)", filePath, ret, lastError));
+  LOG_WARN(
+      ("There was an error validating trust of the certificate for file"
+       " \"%ls\". Returned: %d.  (%d)",
+       filePath, ret, lastError));
   return ret;
 }

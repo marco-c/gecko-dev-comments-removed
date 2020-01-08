@@ -15,20 +15,16 @@ namespace layers {
 
 class AsyncPanZoomController;
 
-class WheelScrollAnimation
-  : public GenericScrollAnimation
-{
-public:
+class WheelScrollAnimation : public GenericScrollAnimation {
+ public:
   WheelScrollAnimation(AsyncPanZoomController& aApzc,
                        const nsPoint& aInitialPosition,
                        ScrollWheelInput::ScrollDeltaType aDeltaType);
 
-  WheelScrollAnimation* AsWheelScrollAnimation() override {
-    return this;
-  }
+  WheelScrollAnimation* AsWheelScrollAnimation() override { return this; }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

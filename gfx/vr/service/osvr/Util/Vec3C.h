@@ -46,19 +46,19 @@ OSVR_EXTERN_C_BEGIN
 
 
 typedef struct OSVR_Vec3 {
-    
-    double data[3];
+  
+  double data[3];
 } OSVR_Vec3;
 
 #define OSVR_VEC_MEMBER(COMPONENT, INDEX)
-                        \
-    OSVR_INLINE double osvrVec3Get##COMPONENT(OSVR_Vec3 const *v) {            \
-        return v->data[INDEX];                                                 \
-    }                                                                          \
-    /** @brief Setter for Vec3 component COMPONENT */                          \
-    OSVR_INLINE void osvrVec3Set##COMPONENT(OSVR_Vec3 *v, double val) {        \
-        v->data[INDEX] = val;                                                  \
-    }
+                 \
+  OSVR_INLINE double osvrVec3Get##COMPONENT(OSVR_Vec3 const *v) {     \
+    return v->data[INDEX];                                            \
+  }                                                                   \
+  /** @brief Setter for Vec3 component COMPONENT */                   \
+  OSVR_INLINE void osvrVec3Set##COMPONENT(OSVR_Vec3 *v, double val) { \
+    v->data[INDEX] = val;                                             \
+  }
 
 OSVR_VEC_MEMBER(X, 0)
 OSVR_VEC_MEMBER(Y, 1)
@@ -68,9 +68,9 @@ OSVR_VEC_MEMBER(Z, 2)
 
 
 OSVR_INLINE void osvrVec3Zero(OSVR_Vec3 *v) {
-    osvrVec3SetX(v, 0);
-    osvrVec3SetY(v, 0);
-    osvrVec3SetZ(v, 0);
+  osvrVec3SetX(v, 0);
+  osvrVec3SetY(v, 0);
+  osvrVec3SetZ(v, 0);
 }
 
 
@@ -80,9 +80,8 @@ OSVR_EXTERN_C_END
 #ifdef __cplusplus
 template <typename StreamType>
 inline StreamType &operator<<(StreamType &os, OSVR_Vec3 const &vec) {
-    os << "(" << vec.data[0] << ", " << vec.data[1] << ", " << vec.data[2]
-       << ")";
-    return os;
+  os << "(" << vec.data[0] << ", " << vec.data[1] << ", " << vec.data[2] << ")";
+  return os;
 }
 #endif
 

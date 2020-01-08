@@ -45,7 +45,7 @@ static const struct codepair {
   unsigned short keysym;
   unsigned short ucs;
 } keysymtab[] = {
-  
+    
   { 0x01a1, 0x0104 }, 
   { 0x01a2, 0x02d8 }, 
   { 0x01a3, 0x0141 }, 
@@ -832,37 +832,35 @@ static const struct codepair {
   { 0x20aa, 0x20aa }, 
   { 0x20ab, 0x20ab }, 
   { 0x20ac, 0x20ac }, 
-  
+    
 };
 
-long keysym2ucs(KeySym keysym)
-{
-    int min = 0;
-    int max = sizeof(keysymtab) / sizeof(struct codepair) - 1;
-    int mid;
+long keysym2ucs(KeySym keysym) {
+  int min = 0;
+  int max = sizeof(keysymtab) / sizeof(struct codepair) - 1;
+  int mid;
 
-    
-    if ((keysym >= 0x0020 && keysym <= 0x007e) ||
-        (keysym >= 0x00a0 && keysym <= 0x00ff))
-        return keysym;
+  
+  if ((keysym >= 0x0020 && keysym <= 0x007e) ||
+      (keysym >= 0x00a0 && keysym <= 0x00ff))
+    return keysym;
 
-    
-    if ((keysym & 0xff000000) == 0x01000000)
-        return keysym & 0x00ffffff;
+  
+  if ((keysym & 0xff000000) == 0x01000000) return keysym & 0x00ffffff;
 
-    
-    while (max >= min) {
-        mid = (min + max) / 2;
-        if (keysymtab[mid].keysym < keysym)
-            min = mid + 1;
-        else if (keysymtab[mid].keysym > keysym)
-            max = mid - 1;
-        else {
-            
-            return keysymtab[mid].ucs;
-        }
+  
+  while (max >= min) {
+    mid = (min + max) / 2;
+    if (keysymtab[mid].keysym < keysym)
+      min = mid + 1;
+    else if (keysymtab[mid].keysym > keysym)
+      max = mid - 1;
+    else {
+      
+      return keysymtab[mid].ucs;
     }
+  }
 
-    
-    return -1;
+  
+  return -1;
 }

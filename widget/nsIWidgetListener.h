@@ -22,8 +22,7 @@ class nsIXULWindow;
 
 
 
-enum nsSizeMode
-{
+enum nsSizeMode {
   nsSizeMode_Normal = 0,
   nsSizeMode_Minimized,
   nsSizeMode_Maximized,
@@ -34,17 +33,14 @@ enum nsSizeMode
 
 
 
-enum nsWindowZ
-{
-  nsWindowZTop = 0,   
-  nsWindowZBottom,    
-  nsWindowZRelative   
+enum nsWindowZ {
+  nsWindowZTop = 0,  
+  nsWindowZBottom,   
+  nsWindowZRelative  
 };
 
-class nsIWidgetListener
-{
-public:
-
+class nsIWidgetListener {
+ public:
   
 
 
@@ -72,8 +68,8 @@ public:
 
 
 
-  virtual bool WindowResized(nsIWidget* aWidget,
-                             int32_t aWidth, int32_t aHeight);
+  virtual bool WindowResized(nsIWidget* aWidget, int32_t aWidth,
+                             int32_t aHeight);
 
   
 

@@ -19,7 +19,7 @@
 
 class nsSVGElement;
 
-#define MOZ_SVG_LIST_INDEX_BIT_COUNT 31 // supports > 2 billion list items
+#define MOZ_SVG_LIST_INDEX_BIT_COUNT 31  // supports > 2 billion list items
 
 namespace mozilla {
 namespace dom {
@@ -29,19 +29,17 @@ class SVGMatrix;
 
 
 
-class SVGTransform final : public nsWrapperCache
-{
+class SVGTransform final : public nsWrapperCache {
   friend class AutoChangeTransformNotifier;
 
-public:
+ public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SVGTransform)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(SVGTransform)
 
   
 
 
-  SVGTransform(DOMSVGTransformList *aList,
-               uint32_t aListIndex,
+  SVGTransform(DOMSVGTransformList* aList, uint32_t aListIndex,
                bool aIsAnimValItem);
 
   
@@ -52,12 +50,12 @@ public:
 
 
   explicit SVGTransform();
-  explicit SVGTransform(const gfxMatrix &aMatrix);
+  explicit SVGTransform(const gfxMatrix& aMatrix);
 
   
 
 
-  explicit SVGTransform(const nsSVGTransform &aMatrix);
+  explicit SVGTransform(const nsSVGTransform& aMatrix);
 
   
 
@@ -68,17 +66,13 @@ public:
     return new SVGTransform(InternalItem());
   }
 
-  bool IsInList() const {
-    return !!mList;
-  }
+  bool IsInList() const { return !!mList; }
 
   
 
 
 
-  bool HasOwner() const {
-    return !!mList;
-  }
+  bool HasOwner() const { return !!mList; }
 
   
 
@@ -90,8 +84,7 @@ public:
 
 
 
-  void InsertingIntoList(DOMSVGTransformList *aList,
-                         uint32_t aListIndex,
+  void InsertingIntoList(DOMSVGTransformList* aList, uint32_t aListIndex,
                          bool aIsAnimValItem);
 
   static uint32_t MaxListIndex() {
@@ -99,9 +92,7 @@ public:
   }
 
   
-  void UpdateListIndex(uint32_t aListIndex) {
-    mListIndex = aListIndex;
-  }
+  void UpdateListIndex(uint32_t aListIndex) { mListIndex = aListIndex; }
 
   
 
@@ -111,13 +102,12 @@ public:
 
   void RemovingFromList();
 
-  nsSVGTransform ToSVGTransform() const {
-    return Transform();
-  }
+  nsSVGTransform ToSVGTransform() const { return Transform(); }
 
   
   DOMSVGTransformList* GetParentObject() const { return mList; }
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
   uint16_t Type() const;
   dom::SVGMatrix* GetMatrix();
   float Angle() const;
@@ -128,23 +118,17 @@ public:
   void SetSkewX(float angle, ErrorResult& rv);
   void SetSkewY(float angle, ErrorResult& rv);
 
-protected:
+ protected:
   ~SVGTransform();
 
   
   friend class dom::SVGMatrix;
-  bool IsAnimVal() const {
-    return mIsAnimValItem;
-  }
-  const gfxMatrix& Matrixgfx() const {
-    return Transform().GetMatrix();
-  }
+  bool IsAnimVal() const { return mIsAnimValItem; }
+  const gfxMatrix& Matrixgfx() const { return Transform().GetMatrix(); }
   void SetMatrix(const gfxMatrix& aMatrix);
 
-private:
-  nsSVGElement* Element() {
-    return mList->Element();
-  }
+ private:
+  nsSVGElement* Element() { return mList->Element(); }
 
   
 
@@ -169,9 +153,10 @@ private:
   
   
 
-  uint32_t mListIndex:MOZ_SVG_LIST_INDEX_BIT_COUNT;
-  uint32_t mIsAnimValItem:1;
+  uint32_t mListIndex : MOZ_SVG_LIST_INDEX_BIT_COUNT;
+  uint32_t mIsAnimValItem : 1;
 
+  
   
   
   
@@ -181,9 +166,9 @@ private:
   nsAutoPtr<nsSVGTransform> mTransform;
 };
 
-} 
-} 
+}  
+}  
 
 #undef MOZ_SVG_LIST_INDEX_BIT_COUNT
 
-#endif 
+#endif  

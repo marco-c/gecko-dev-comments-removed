@@ -19,44 +19,39 @@ struct AnimationValue;
 class DeclarationBlock;
 namespace dom {
 class Element;
-} 
-} 
+}  
+}  
 
 
 
 
-class nsSMILCSSValueType : public nsISMILType
-{
-public:
+class nsSMILCSSValueType : public nsISMILType {
+ public:
   typedef mozilla::dom::Element Element;
   typedef mozilla::AnimationValue AnimationValue;
 
   
   static nsSMILCSSValueType sSingleton;
 
-protected:
+ protected:
   
   
-  void     Init(nsSMILValue& aValue) const override;
-  void     Destroy(nsSMILValue&) const override;
-  nsresult Assign(nsSMILValue& aDest,
-                  const nsSMILValue& aSrc) const override;
-  bool     IsEqual(const nsSMILValue& aLeft,
-                   const nsSMILValue& aRight) const override;
-  nsresult Add(nsSMILValue& aDest,
-               const nsSMILValue& aValueToAdd,
+  void Init(nsSMILValue& aValue) const override;
+  void Destroy(nsSMILValue&) const override;
+  nsresult Assign(nsSMILValue& aDest, const nsSMILValue& aSrc) const override;
+  bool IsEqual(const nsSMILValue& aLeft,
+               const nsSMILValue& aRight) const override;
+  nsresult Add(nsSMILValue& aDest, const nsSMILValue& aValueToAdd,
                uint32_t aCount) const override;
   nsresult SandwichAdd(nsSMILValue& aDest,
                        const nsSMILValue& aValueToAdd) const override;
-  nsresult ComputeDistance(const nsSMILValue& aFrom,
-                           const nsSMILValue& aTo,
+  nsresult ComputeDistance(const nsSMILValue& aFrom, const nsSMILValue& aTo,
                            double& aDistance) const override;
-  nsresult Interpolate(const nsSMILValue& aStartVal,
-                       const nsSMILValue& aEndVal,
+  nsresult Interpolate(const nsSMILValue& aStartVal, const nsSMILValue& aEndVal,
                        double aUnitDistance,
                        nsSMILValue& aResult) const override;
 
-public:
+ public:
   
   
   
@@ -82,10 +77,8 @@ public:
 
 
 
-  static void ValueFromString(nsCSSPropertyID aPropID,
-                              Element* aTargetElement,
-                              const nsAString& aString,
-                              nsSMILValue& aValue,
+  static void ValueFromString(nsCSSPropertyID aPropID, Element* aTargetElement,
+                              const nsAString& aString, nsSMILValue& aValue,
                               bool* aIsContextSensitive);
 
   
@@ -136,9 +129,9 @@ public:
   static void FinalizeValue(nsSMILValue& aValue,
                             const nsSMILValue& aValueToMatch);
 
-private:
+ private:
   
   constexpr nsSMILCSSValueType() {}
 };
 
-#endif 
+#endif  

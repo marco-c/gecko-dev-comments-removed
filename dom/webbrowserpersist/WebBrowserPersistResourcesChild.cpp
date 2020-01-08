@@ -13,59 +13,55 @@ namespace mozilla {
 NS_IMPL_ISUPPORTS(WebBrowserPersistResourcesChild,
                   nsIWebBrowserPersistResourceVisitor)
 
-WebBrowserPersistResourcesChild::WebBrowserPersistResourcesChild()
-{
-}
+WebBrowserPersistResourcesChild::WebBrowserPersistResourcesChild() {}
 
 WebBrowserPersistResourcesChild::~WebBrowserPersistResourcesChild() = default;
 
 NS_IMETHODIMP
-WebBrowserPersistResourcesChild::VisitResource(nsIWebBrowserPersistDocument *aDocument,
-                                               const nsACString& aURI,
-                                               nsContentPolicyType aContentPolicyType)
-{
-    nsCString copiedURI(aURI); 
-    SendVisitResource(copiedURI, aContentPolicyType);
-    return NS_OK;
+WebBrowserPersistResourcesChild::VisitResource(
+    nsIWebBrowserPersistDocument* aDocument, const nsACString& aURI,
+    nsContentPolicyType aContentPolicyType) {
+  nsCString copiedURI(aURI);  
+  SendVisitResource(copiedURI, aContentPolicyType);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-WebBrowserPersistResourcesChild::VisitDocument(nsIWebBrowserPersistDocument* aDocument,
-                                               nsIWebBrowserPersistDocument* aSubDocument)
-{
-    auto* subActor = new WebBrowserPersistDocumentChild();
+WebBrowserPersistResourcesChild::VisitDocument(
+    nsIWebBrowserPersistDocument* aDocument,
+    nsIWebBrowserPersistDocument* aSubDocument) {
+  auto* subActor = new WebBrowserPersistDocumentChild();
+  
+  
+  
+  
+  
+  
+  if (!Manager()->Manager()->SendPWebBrowserPersistDocumentConstructor(
+          subActor, nullptr, 0)) {
     
-    
-    
-    
-    
-    
-    if (!Manager()->Manager()
-        ->SendPWebBrowserPersistDocumentConstructor(subActor, nullptr, 0)) {
-        
-        return NS_ERROR_FAILURE;
-    }
-    
-    
+    return NS_ERROR_FAILURE;
+  }
+  
+  
 
-    
-    
-    
-    
-    
-    
-    
-    SendVisitDocument(subActor);
-    subActor->Start(aSubDocument);
-    return NS_OK;
+  
+  
+  
+  
+  
+  
+  
+  SendVisitDocument(subActor);
+  subActor->Start(aSubDocument);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-WebBrowserPersistResourcesChild::EndVisit(nsIWebBrowserPersistDocument *aDocument,
-                                          nsresult aStatus)
-{
-    Send__delete__(this, aStatus);
-    return NS_OK;
+WebBrowserPersistResourcesChild::EndVisit(
+    nsIWebBrowserPersistDocument* aDocument, nsresult aStatus) {
+  Send__delete__(this, aStatus);
+  return NS_OK;
 }
 
-} 
+}  

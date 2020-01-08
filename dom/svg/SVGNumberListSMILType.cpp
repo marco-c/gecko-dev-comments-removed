@@ -28,6 +28,8 @@
 
 
 
+
+
 namespace mozilla {
 
  SVGNumberListSMILType SVGNumberListSMILType::sSingleton;
@@ -35,9 +37,7 @@ namespace mozilla {
 
 
 
-void
-SVGNumberListSMILType::Init(nsSMILValue &aValue) const
-{
+void SVGNumberListSMILType::Init(nsSMILValue& aValue) const {
   MOZ_ASSERT(aValue.IsNull(), "Unexpected value type");
 
   SVGNumberListAndInfo* numberList = new SVGNumberListAndInfo();
@@ -46,34 +46,28 @@ SVGNumberListSMILType::Init(nsSMILValue &aValue) const
   aValue.mType = this;
 }
 
-void
-SVGNumberListSMILType::Destroy(nsSMILValue& aValue) const
-{
+void SVGNumberListSMILType::Destroy(nsSMILValue& aValue) const {
   MOZ_ASSERT(aValue.mType == this, "Unexpected SMIL value type");
   delete static_cast<SVGNumberListAndInfo*>(aValue.mU.mPtr);
   aValue.mU.mPtr = nullptr;
   aValue.mType = nsSMILNullType::Singleton();
 }
 
-nsresult
-SVGNumberListSMILType::Assign(nsSMILValue& aDest,
-                              const nsSMILValue& aSrc) const
-{
+nsresult SVGNumberListSMILType::Assign(nsSMILValue& aDest,
+                                       const nsSMILValue& aSrc) const {
   MOZ_ASSERT(aDest.mType == aSrc.mType, "Incompatible SMIL types");
   MOZ_ASSERT(aDest.mType == this, "Unexpected SMIL value");
 
   const SVGNumberListAndInfo* src =
-    static_cast<const SVGNumberListAndInfo*>(aSrc.mU.mPtr);
+      static_cast<const SVGNumberListAndInfo*>(aSrc.mU.mPtr);
   SVGNumberListAndInfo* dest =
-    static_cast<SVGNumberListAndInfo*>(aDest.mU.mPtr);
+      static_cast<SVGNumberListAndInfo*>(aDest.mU.mPtr);
 
   return dest->CopyFrom(*src);
 }
 
-bool
-SVGNumberListSMILType::IsEqual(const nsSMILValue& aLeft,
-                               const nsSMILValue& aRight) const
-{
+bool SVGNumberListSMILType::IsEqual(const nsSMILValue& aLeft,
+                                    const nsSMILValue& aRight) const {
   MOZ_ASSERT(aLeft.mType == aRight.mType, "Incompatible SMIL types");
   MOZ_ASSERT(aLeft.mType == this, "Unexpected type for SMIL value");
 
@@ -81,18 +75,16 @@ SVGNumberListSMILType::IsEqual(const nsSMILValue& aLeft,
          *static_cast<const SVGNumberListAndInfo*>(aRight.mU.mPtr);
 }
 
-nsresult
-SVGNumberListSMILType::Add(nsSMILValue& aDest,
-                           const nsSMILValue& aValueToAdd,
-                           uint32_t aCount) const
-{
+nsresult SVGNumberListSMILType::Add(nsSMILValue& aDest,
+                                    const nsSMILValue& aValueToAdd,
+                                    uint32_t aCount) const {
   MOZ_ASSERT(aDest.mType == this, "Unexpected SMIL type");
   MOZ_ASSERT(aValueToAdd.mType == this, "Incompatible SMIL type");
 
   SVGNumberListAndInfo& dest =
-    *static_cast<SVGNumberListAndInfo*>(aDest.mU.mPtr);
+      *static_cast<SVGNumberListAndInfo*>(aDest.mU.mPtr);
   const SVGNumberListAndInfo& valueToAdd =
-    *static_cast<const SVGNumberListAndInfo*>(aValueToAdd.mU.mPtr);
+      *static_cast<const SVGNumberListAndInfo*>(aValueToAdd.mU.mPtr);
 
   MOZ_ASSERT(dest.Element() || valueToAdd.Element(),
              "Target element propagation failure");
@@ -111,7 +103,7 @@ SVGNumberListSMILType::Add(nsSMILValue& aDest,
     for (uint32_t i = 0; i < dest.Length(); ++i) {
       dest[i] = aCount * valueToAdd[i];
     }
-    dest.SetInfo(valueToAdd.Element()); 
+    dest.SetInfo(valueToAdd.Element());  
     return NS_OK;
   }
   MOZ_ASSERT(dest.Element() == valueToAdd.Element(),
@@ -124,22 +116,20 @@ SVGNumberListSMILType::Add(nsSMILValue& aDest,
   for (uint32_t i = 0; i < dest.Length(); ++i) {
     dest[i] += aCount * valueToAdd[i];
   }
-  dest.SetInfo(valueToAdd.Element()); 
+  dest.SetInfo(valueToAdd.Element());  
   return NS_OK;
 }
 
-nsresult
-SVGNumberListSMILType::ComputeDistance(const nsSMILValue& aFrom,
-                                       const nsSMILValue& aTo,
-                                       double& aDistance) const
-{
+nsresult SVGNumberListSMILType::ComputeDistance(const nsSMILValue& aFrom,
+                                                const nsSMILValue& aTo,
+                                                double& aDistance) const {
   MOZ_ASSERT(aFrom.mType == this, "Unexpected SMIL type");
   MOZ_ASSERT(aTo.mType == this, "Incompatible SMIL type");
 
   const SVGNumberListAndInfo& from =
-    *static_cast<const SVGNumberListAndInfo*>(aFrom.mU.mPtr);
+      *static_cast<const SVGNumberListAndInfo*>(aFrom.mU.mPtr);
   const SVGNumberListAndInfo& to =
-    *static_cast<const SVGNumberListAndInfo*>(aTo.mU.mPtr);
+      *static_cast<const SVGNumberListAndInfo*>(aTo.mU.mPtr);
 
   if (from.Length() != to.Length()) {
     
@@ -165,29 +155,27 @@ SVGNumberListSMILType::ComputeDistance(const nsSMILValue& aFrom,
   return NS_OK;
 }
 
-nsresult
-SVGNumberListSMILType::Interpolate(const nsSMILValue& aStartVal,
-                                   const nsSMILValue& aEndVal,
-                                   double aUnitDistance,
-                                   nsSMILValue& aResult) const
-{
+nsresult SVGNumberListSMILType::Interpolate(const nsSMILValue& aStartVal,
+                                            const nsSMILValue& aEndVal,
+                                            double aUnitDistance,
+                                            nsSMILValue& aResult) const {
   MOZ_ASSERT(aStartVal.mType == aEndVal.mType,
              "Trying to interpolate different types");
   MOZ_ASSERT(aStartVal.mType == this, "Unexpected types for interpolation");
   MOZ_ASSERT(aResult.mType == this, "Unexpected result type");
 
   const SVGNumberListAndInfo& start =
-    *static_cast<const SVGNumberListAndInfo*>(aStartVal.mU.mPtr);
+      *static_cast<const SVGNumberListAndInfo*>(aStartVal.mU.mPtr);
   const SVGNumberListAndInfo& end =
-    *static_cast<const SVGNumberListAndInfo*>(aEndVal.mU.mPtr);
+      *static_cast<const SVGNumberListAndInfo*>(aEndVal.mU.mPtr);
   SVGNumberListAndInfo& result =
-    *static_cast<SVGNumberListAndInfo*>(aResult.mU.mPtr);
+      *static_cast<SVGNumberListAndInfo*>(aResult.mU.mPtr);
 
   MOZ_ASSERT(end.Element(), "Can't propagate target element");
   MOZ_ASSERT(start.Element() == end.Element() || !start.Element(),
              "Different target elements");
 
-  if (start.Element() && 
+  if (start.Element() &&  
       start.Length() != end.Length()) {
     
     
@@ -197,7 +185,7 @@ SVGNumberListSMILType::Interpolate(const nsSMILValue& aStartVal,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  result.SetInfo(end.Element()); 
+  result.SetInfo(end.Element());  
 
   if (start.Length() != end.Length()) {
     MOZ_ASSERT(start.Length() == 0, "Not an identity value");
@@ -212,4 +200,4 @@ SVGNumberListSMILType::Interpolate(const nsSMILValue& aStartVal,
   return NS_OK;
 }
 
-} 
+}  

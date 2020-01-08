@@ -15,14 +15,14 @@
 
 
 class nsNativeAppSupportBase : public nsINativeAppSupport {
-public:
-    nsNativeAppSupportBase();
+ public:
+  nsNativeAppSupportBase();
 
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSINATIVEAPPSUPPORT
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSINATIVEAPPSUPPORT
 
-protected:
-    virtual ~nsNativeAppSupportBase();
+ protected:
+  virtual ~nsNativeAppSupportBase();
 };
 
 #endif

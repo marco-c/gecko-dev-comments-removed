@@ -92,21 +92,21 @@
 
 namespace mozilla {
 
-template<class>
+template <class>
 struct DefaultHasher;
 
-template<class, class>
+template <class, class>
 class HashMapEntry;
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 class HashTableEntry;
 
-template<class T, class HashPolicy, class AllocPolicy>
+template <class T, class HashPolicy, class AllocPolicy>
 class HashTable;
 
-} 
+}  
 
 
 
@@ -135,12 +135,9 @@ using Generation = Opaque<uint64_t>;
 
 
 
-template<class Key,
-         class Value,
-         class HashPolicy = DefaultHasher<Key>,
-         class AllocPolicy = MallocAllocPolicy>
-class HashMap
-{
+template <class Key, class Value, class HashPolicy = DefaultHasher<Key>,
+          class AllocPolicy = MallocAllocPolicy>
+class HashMap {
   
 
   
@@ -149,15 +146,13 @@ class HashMap
 
   using TableEntry = HashMapEntry<Key, Value>;
 
-  struct MapHashPolicy : HashPolicy
-  {
+  struct MapHashPolicy : HashPolicy {
     using Base = HashPolicy;
     using KeyType = Key;
 
     static const Key& getKey(TableEntry& aEntry) { return aEntry.key(); }
 
-    static void setKey(TableEntry& aEntry, Key& aKey)
-    {
+    static void setKey(TableEntry& aEntry, Key& aKey) {
       HashPolicy::rekey(aEntry.mutableKey(), aKey);
     }
   };
@@ -167,7 +162,7 @@ class HashMap
 
   friend class Impl::Enum;
 
-public:
+ public:
   using Lookup = typename HashPolicy::Lookup;
   using Entry = TableEntry;
 
@@ -175,22 +170,13 @@ public:
 
   explicit HashMap(AllocPolicy aAllocPolicy = AllocPolicy(),
                    uint32_t aLen = Impl::sDefaultLen)
-    : mImpl(aAllocPolicy, aLen)
-  {
-  }
+      : mImpl(aAllocPolicy, aLen) {}
 
-  explicit HashMap(uint32_t aLen)
-    : mImpl(AllocPolicy(), aLen)
-  {
-  }
+  explicit HashMap(uint32_t aLen) : mImpl(AllocPolicy(), aLen) {}
 
   
-  HashMap(HashMap&& aRhs)
-    : mImpl(std::move(aRhs.mImpl))
-  {
-  }
-  void operator=(HashMap&& aRhs)
-  {
+  HashMap(HashMap&& aRhs) : mImpl(std::move(aRhs.mImpl)) {}
+  void operator=(HashMap&& aRhs) {
     MOZ_ASSERT(this != &aRhs, "self-move assignment is prohibited");
     mImpl = std::move(aRhs.mImpl);
   }
@@ -213,12 +199,10 @@ public:
   
   
   
-  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     return mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
-  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) +
            mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
@@ -234,8 +218,7 @@ public:
   
 
   
-  bool has(const Lookup& aLookup) const
-  {
+  bool has(const Lookup& aLookup) const {
     return mImpl.lookup(aLookup).found();
   }
 
@@ -250,15 +233,13 @@ public:
   
   
   using Ptr = typename Impl::Ptr;
-  MOZ_ALWAYS_INLINE Ptr lookup(const Lookup& aLookup) const
-  {
+  MOZ_ALWAYS_INLINE Ptr lookup(const Lookup& aLookup) const {
     return mImpl.lookup(aLookup);
   }
 
   
   
-  MOZ_ALWAYS_INLINE Ptr readonlyThreadsafeLookup(const Lookup& aLookup) const
-  {
+  MOZ_ALWAYS_INLINE Ptr readonlyThreadsafeLookup(const Lookup& aLookup) const {
     return mImpl.readonlyThreadsafeLookup(aLookup);
   }
 
@@ -266,25 +247,23 @@ public:
 
   
   
-  template<typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool put(KeyInput&& aKey, ValueInput&& aValue)
-  {
+  template <typename KeyInput, typename ValueInput>
+  MOZ_MUST_USE bool put(KeyInput&& aKey, ValueInput&& aValue) {
     AddPtr p = lookupForAdd(aKey);
     if (p) {
       p->value() = std::forward<ValueInput>(aValue);
       return true;
     }
-    return add(
-      p, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
+    return add(p, std::forward<KeyInput>(aKey),
+               std::forward<ValueInput>(aValue));
   }
 
   
   
-  template<typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool putNew(KeyInput&& aKey, ValueInput&& aValue)
-  {
-    return mImpl.putNew(
-      aKey, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
+  template <typename KeyInput, typename ValueInput>
+  MOZ_MUST_USE bool putNew(KeyInput&& aKey, ValueInput&& aValue) {
+    return mImpl.putNew(aKey, std::forward<KeyInput>(aKey),
+                        std::forward<ValueInput>(aValue));
   }
 
   
@@ -301,11 +280,10 @@ public:
   
   
   
-  template<typename KeyInput, typename ValueInput>
-  void putNewInfallible(KeyInput&& aKey, ValueInput&& aValue)
-  {
-    mImpl.putNewInfallible(
-      aKey, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
+  template <typename KeyInput, typename ValueInput>
+  void putNewInfallible(KeyInput&& aKey, ValueInput&& aValue) {
+    mImpl.putNewInfallible(aKey, std::forward<KeyInput>(aKey),
+                           std::forward<ValueInput>(aValue));
   }
 
   
@@ -341,36 +319,29 @@ public:
   
   
   using AddPtr = typename Impl::AddPtr;
-  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup)
-  {
+  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup) {
     return mImpl.lookupForAdd(aLookup);
   }
 
   
-  template<typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool add(AddPtr& aPtr, KeyInput&& aKey, ValueInput&& aValue)
-  {
-    return mImpl.add(
-      aPtr, std::forward<KeyInput>(aKey), std::forward<ValueInput>(aValue));
+  template <typename KeyInput, typename ValueInput>
+  MOZ_MUST_USE bool add(AddPtr& aPtr, KeyInput&& aKey, ValueInput&& aValue) {
+    return mImpl.add(aPtr, std::forward<KeyInput>(aKey),
+                     std::forward<ValueInput>(aValue));
   }
 
   
-  template<typename KeyInput, typename ValueInput>
-  MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr,
-                                  KeyInput&& aKey,
-                                  ValueInput&& aValue)
-  {
-    return mImpl.relookupOrAdd(aPtr,
-                               aKey,
-                               std::forward<KeyInput>(aKey),
+  template <typename KeyInput, typename ValueInput>
+  MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr, KeyInput&& aKey,
+                                  ValueInput&& aValue) {
+    return mImpl.relookupOrAdd(aPtr, aKey, std::forward<KeyInput>(aKey),
                                std::forward<ValueInput>(aValue));
   }
 
   
 
   
-  void remove(const Lookup& aLookup)
-  {
+  void remove(const Lookup& aLookup) {
     if (Ptr p = lookup(aLookup)) {
       remove(p);
     }
@@ -390,18 +361,15 @@ public:
 
   
   
-  void rekeyIfMoved(const Key& aOldKey, const Key& aNewKey)
-  {
+  void rekeyIfMoved(const Key& aOldKey, const Key& aNewKey) {
     if (aOldKey != aNewKey) {
       rekeyAs(aOldKey, aNewKey, aNewKey);
     }
   }
 
   
-  bool rekeyAs(const Lookup& aOldLookup,
-               const Lookup& aNewLookup,
-               const Key& aNewKey)
-  {
+  bool rekeyAs(const Lookup& aOldLookup, const Lookup& aNewLookup,
+               const Key& aNewKey) {
     if (Ptr p = lookup(aOldLookup)) {
       mImpl.rekeyAndMaybeRehash(p, aNewLookup, aNewKey);
       return true;
@@ -456,19 +424,16 @@ public:
 
 
 
-template<class T,
-         class HashPolicy = DefaultHasher<T>,
-         class AllocPolicy = MallocAllocPolicy>
-class HashSet
-{
+template <class T, class HashPolicy = DefaultHasher<T>,
+          class AllocPolicy = MallocAllocPolicy>
+class HashSet {
   
 
   
   HashSet(const HashSet& hs) = delete;
   HashSet& operator=(const HashSet& hs) = delete;
 
-  struct SetHashPolicy : HashPolicy
-  {
+  struct SetHashPolicy : HashPolicy {
     using Base = HashPolicy;
     using KeyType = T;
 
@@ -482,7 +447,7 @@ class HashSet
 
   friend class Impl::Enum;
 
-public:
+ public:
   using Lookup = typename HashPolicy::Lookup;
   using Entry = T;
 
@@ -490,22 +455,13 @@ public:
 
   explicit HashSet(AllocPolicy aAllocPolicy = AllocPolicy(),
                    uint32_t aLen = Impl::sDefaultLen)
-    : mImpl(aAllocPolicy, aLen)
-  {
-  }
+      : mImpl(aAllocPolicy, aLen) {}
 
-  explicit HashSet(uint32_t aLen)
-    : mImpl(AllocPolicy(), aLen)
-  {
-  }
+  explicit HashSet(uint32_t aLen) : mImpl(AllocPolicy(), aLen) {}
 
   
-  HashSet(HashSet&& aRhs)
-    : mImpl(std::move(aRhs.mImpl))
-  {
-  }
-  void operator=(HashSet&& aRhs)
-  {
+  HashSet(HashSet&& aRhs) : mImpl(std::move(aRhs.mImpl)) {}
+  void operator=(HashSet&& aRhs) {
     MOZ_ASSERT(this != &aRhs, "self-move assignment is prohibited");
     mImpl = std::move(aRhs.mImpl);
   }
@@ -528,12 +484,10 @@ public:
   
   
   
-  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     return mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
-  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) +
            mImpl.shallowSizeOfExcludingThis(aMallocSizeOf);
   }
@@ -549,8 +503,7 @@ public:
   
 
   
-  bool has(const Lookup& aLookup) const
-  {
+  bool has(const Lookup& aLookup) const {
     return mImpl.lookup(aLookup).found();
   }
 
@@ -564,40 +517,35 @@ public:
   
   
   using Ptr = typename Impl::Ptr;
-  MOZ_ALWAYS_INLINE Ptr lookup(const Lookup& aLookup) const
-  {
+  MOZ_ALWAYS_INLINE Ptr lookup(const Lookup& aLookup) const {
     return mImpl.lookup(aLookup);
   }
 
   
   
-  MOZ_ALWAYS_INLINE Ptr readonlyThreadsafeLookup(const Lookup& aLookup) const
-  {
+  MOZ_ALWAYS_INLINE Ptr readonlyThreadsafeLookup(const Lookup& aLookup) const {
     return mImpl.readonlyThreadsafeLookup(aLookup);
   }
 
   
 
   
-  template<typename U>
-  MOZ_MUST_USE bool put(U&& aU)
-  {
+  template <typename U>
+  MOZ_MUST_USE bool put(U&& aU) {
     AddPtr p = lookupForAdd(aU);
     return p ? true : add(p, std::forward<U>(aU));
   }
 
   
   
-  template<typename U>
-  MOZ_MUST_USE bool putNew(U&& aU)
-  {
+  template <typename U>
+  MOZ_MUST_USE bool putNew(U&& aU) {
     return mImpl.putNew(aU, std::forward<U>(aU));
   }
 
   
-  template<typename U>
-  MOZ_MUST_USE bool putNew(const Lookup& aLookup, U&& aU)
-  {
+  template <typename U>
+  MOZ_MUST_USE bool putNew(const Lookup& aLookup, U&& aU) {
     return mImpl.putNew(aLookup, std::forward<U>(aU));
   }
 
@@ -615,9 +563,8 @@ public:
   
   
   
-  template<typename U>
-  void putNewInfallible(const Lookup& aLookup, U&& aU)
-  {
+  template <typename U>
+  void putNewInfallible(const Lookup& aLookup, U&& aU) {
     mImpl.putNewInfallible(aLookup, std::forward<U>(aU));
   }
 
@@ -654,30 +601,26 @@ public:
   
   
   using AddPtr = typename Impl::AddPtr;
-  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup)
-  {
+  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup) {
     return mImpl.lookupForAdd(aLookup);
   }
 
   
-  template<typename U>
-  MOZ_MUST_USE bool add(AddPtr& aPtr, U&& aU)
-  {
+  template <typename U>
+  MOZ_MUST_USE bool add(AddPtr& aPtr, U&& aU) {
     return mImpl.add(aPtr, std::forward<U>(aU));
   }
 
   
-  template<typename U>
-  MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr, const Lookup& aLookup, U&& aU)
-  {
+  template <typename U>
+  MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr, const Lookup& aLookup, U&& aU) {
     return mImpl.relookupOrAdd(aPtr, aLookup, std::forward<U>(aU));
   }
 
   
 
   
-  void remove(const Lookup& aLookup)
-  {
+  void remove(const Lookup& aLookup) {
     if (Ptr p = lookup(aLookup)) {
       remove(p);
     }
@@ -697,18 +640,15 @@ public:
 
   
   
-  void rekeyIfMoved(const Lookup& aOldValue, const T& aNewValue)
-  {
+  void rekeyIfMoved(const Lookup& aOldValue, const T& aNewValue) {
     if (aOldValue != aNewValue) {
       rekeyAs(aOldValue, aNewValue, aNewValue);
     }
   }
 
   
-  bool rekeyAs(const Lookup& aOldLookup,
-               const Lookup& aNewLookup,
-               const T& aNewValue)
-  {
+  bool rekeyAs(const Lookup& aOldLookup, const Lookup& aNewLookup,
+               const T& aNewValue) {
     if (Ptr p = lookup(aOldLookup)) {
       mImpl.rekeyAndMaybeRehash(p, aNewLookup, aNewValue);
       return true;
@@ -720,8 +660,7 @@ public:
   
   
   
-  void replaceKey(Ptr aPtr, const T& aNewValue)
-  {
+  void replaceKey(Ptr aPtr, const T& aNewValue) {
     MOZ_ASSERT(aPtr.found());
     MOZ_ASSERT(*aPtr != aNewValue);
     MOZ_ASSERT(HashPolicy::hash(*aPtr) == HashPolicy::hash(aNewValue));
@@ -792,19 +731,16 @@ public:
 
 
 
-template<typename Key>
-struct PointerHasher
-{
+template <typename Key>
+struct PointerHasher {
   using Lookup = Key;
 
-  static HashNumber hash(const Lookup& aLookup)
-  {
+  static HashNumber hash(const Lookup& aLookup) {
     size_t word = reinterpret_cast<size_t>(aLookup);
     return HashGeneric(word);
   }
 
-  static bool match(const Key& aKey, const Lookup& aLookup)
-  {
+  static bool match(const Key& aKey, const Lookup& aLookup) {
     return aKey == aLookup;
   }
 
@@ -812,21 +748,18 @@ struct PointerHasher
 };
 
 
-template<class Key>
-struct DefaultHasher
-{
+template <class Key>
+struct DefaultHasher {
   using Lookup = Key;
 
-  static HashNumber hash(const Lookup& aLookup)
-  {
+  static HashNumber hash(const Lookup& aLookup) {
     
     
     
     return aLookup;
   }
 
-  static bool match(const Key& aKey, const Lookup& aLookup)
-  {
+  static bool match(const Key& aKey, const Lookup& aLookup) {
     
     return aKey == aLookup;
   }
@@ -835,44 +768,36 @@ struct DefaultHasher
 };
 
 
-template<class T>
-struct DefaultHasher<T*> : PointerHasher<T*>
-{
-};
+template <class T>
+struct DefaultHasher<T*> : PointerHasher<T*> {};
 
 
-template<class T, class D>
-struct DefaultHasher<UniquePtr<T, D>>
-{
+template <class T, class D>
+struct DefaultHasher<UniquePtr<T, D>> {
   using Key = UniquePtr<T, D>;
   using Lookup = Key;
   using PtrHasher = PointerHasher<T*>;
 
-  static HashNumber hash(const Lookup& aLookup)
-  {
+  static HashNumber hash(const Lookup& aLookup) {
     return PtrHasher::hash(aLookup.get());
   }
 
-  static bool match(const Key& aKey, const Lookup& aLookup)
-  {
+  static bool match(const Key& aKey, const Lookup& aLookup) {
     return PtrHasher::match(aKey.get(), aLookup.get());
   }
 
-  static void rekey(UniquePtr<T, D>& aKey, UniquePtr<T, D>&& aNewKey)
-  {
+  static void rekey(UniquePtr<T, D>& aKey, UniquePtr<T, D>&& aNewKey) {
     aKey = std::move(aNewKey);
   }
 };
 
 
-template<>
-struct DefaultHasher<double>
-{
+template <>
+struct DefaultHasher<double> {
   using Key = double;
   using Lookup = Key;
 
-  static HashNumber hash(const Lookup& aLookup)
-  {
+  static HashNumber hash(const Lookup& aLookup) {
     
     
     static_assert(sizeof(HashNumber) == 4,
@@ -881,21 +806,18 @@ struct DefaultHasher<double>
     return HashNumber(u ^ (u >> 32));
   }
 
-  static bool match(const Key& aKey, const Lookup& aLookup)
-  {
+  static bool match(const Key& aKey, const Lookup& aLookup) {
     return BitwiseCast<uint64_t>(aKey) == BitwiseCast<uint64_t>(aLookup);
   }
 };
 
 
-template<>
-struct DefaultHasher<float>
-{
+template <>
+struct DefaultHasher<float> {
   using Key = float;
   using Lookup = Key;
 
-  static HashNumber hash(const Lookup& aLookup)
-  {
+  static HashNumber hash(const Lookup& aLookup) {
     
     
     static_assert(sizeof(HashNumber) == 4,
@@ -903,22 +825,19 @@ struct DefaultHasher<float>
     return HashNumber(BitwiseCast<uint32_t>(aLookup));
   }
 
-  static bool match(const Key& aKey, const Lookup& aLookup)
-  {
+  static bool match(const Key& aKey, const Lookup& aLookup) {
     return BitwiseCast<uint32_t>(aKey) == BitwiseCast<uint32_t>(aLookup);
   }
 };
 
 
-struct CStringHasher
-{
+struct CStringHasher {
   using Key = const char*;
   using Lookup = const char*;
 
   static HashNumber hash(const Lookup& aLookup) { return HashString(aLookup); }
 
-  static bool match(const Key& aKey, const Lookup& aLookup)
-  {
+  static bool match(const Key& aKey, const Lookup& aLookup) {
     return strcmp(aKey, aLookup) == 0;
   }
 };
@@ -933,40 +852,33 @@ struct CStringHasher
 
 
 
-template<typename HashPolicy>
-struct FallibleHashMethods
-{
+template <typename HashPolicy>
+struct FallibleHashMethods {
   
   
-  template<typename Lookup>
-  static bool hasHash(Lookup&& aLookup)
-  {
+  template <typename Lookup>
+  static bool hasHash(Lookup&& aLookup) {
     return true;
   }
 
   
   
-  template<typename Lookup>
-  static bool ensureHash(Lookup&& aLookup)
-  {
+  template <typename Lookup>
+  static bool ensureHash(Lookup&& aLookup) {
     return true;
   }
 };
 
-template<typename HashPolicy, typename Lookup>
-static bool
-HasHash(Lookup&& aLookup)
-{
+template <typename HashPolicy, typename Lookup>
+static bool HasHash(Lookup&& aLookup) {
   return FallibleHashMethods<typename HashPolicy::Base>::hasHash(
-    std::forward<Lookup>(aLookup));
+      std::forward<Lookup>(aLookup));
 }
 
-template<typename HashPolicy, typename Lookup>
-static bool
-EnsureHash(Lookup&& aLookup)
-{
+template <typename HashPolicy, typename Lookup>
+static bool EnsureHash(Lookup&& aLookup) {
   return FallibleHashMethods<typename HashPolicy::Base>::ensureHash(
-    std::forward<Lookup>(aLookup));
+      std::forward<Lookup>(aLookup));
 }
 
 
@@ -978,35 +890,28 @@ EnsureHash(Lookup&& aLookup)
 
 
 
-template<class Key, class Value>
-class HashMapEntry
-{
+template <class Key, class Value>
+class HashMapEntry {
   Key key_;
   Value value_;
 
-  template<class, class, class>
+  template <class, class, class>
   friend class detail::HashTable;
-  template<class>
+  template <class>
   friend class detail::HashTableEntry;
-  template<class, class, class, class>
+  template <class, class, class, class>
   friend class HashMap;
 
-public:
-  template<typename KeyInput, typename ValueInput>
+ public:
+  template <typename KeyInput, typename ValueInput>
   HashMapEntry(KeyInput&& aKey, ValueInput&& aValue)
-    : key_(std::forward<KeyInput>(aKey))
-    , value_(std::forward<ValueInput>(aValue))
-  {
-  }
+      : key_(std::forward<KeyInput>(aKey)),
+        value_(std::forward<ValueInput>(aValue)) {}
 
   HashMapEntry(HashMapEntry&& aRhs)
-    : key_(std::move(aRhs.key_))
-    , value_(std::move(aRhs.value_))
-  {
-  }
+      : key_(std::move(aRhs.key_)), value_(std::move(aRhs.value_)) {}
 
-  void operator=(HashMapEntry&& aRhs)
-  {
+  void operator=(HashMapEntry&& aRhs) {
     key_ = std::move(aRhs.key_);
     value_ = std::move(aRhs.value_);
   }
@@ -1023,26 +928,23 @@ public:
   const Value& value() const { return value_; }
   Value& value() { return value_; }
 
-private:
+ private:
   HashMapEntry(const HashMapEntry&) = delete;
   void operator=(const HashMapEntry&) = delete;
 };
 
-template<typename K, typename V>
+template <typename K, typename V>
 struct IsPod<HashMapEntry<K, V>>
-  : IntegralConstant<bool, IsPod<K>::value && IsPod<V>::value>
-{
-};
+    : IntegralConstant<bool, IsPod<K>::value && IsPod<V>::value> {};
 
 namespace detail {
 
-template<class T, class HashPolicy, class AllocPolicy>
+template <class T, class HashPolicy, class AllocPolicy>
 class HashTable;
 
-template<typename T>
-class HashTableEntry
-{
-private:
+template <typename T>
+class HashTableEntry {
+ private:
   using NonConstT = typename RemoveConst<T>::Type;
 
   static const HashNumber sFreeKey = 0;
@@ -1052,8 +954,8 @@ private:
   HashNumber mKeyHash = sFreeKey;
   alignas(NonConstT) unsigned char mValueData[sizeof(NonConstT)];
 
-private:
-  template<class, class, class>
+ private:
+  template <class, class, class>
   friend class HashTable;
 
   
@@ -1069,18 +971,16 @@ private:
 
   NonConstT* valuePtr() { return reinterpret_cast<NonConstT*>(rawValuePtr()); }
 
-  void destroyStoredT()
-  {
+  void destroyStoredT() {
     NonConstT* ptr = valuePtr();
     ptr->~T();
     MOZ_MAKE_MEM_UNDEFINED(ptr, sizeof(*ptr));
   }
 
-public:
+ public:
   HashTableEntry() = default;
 
-  ~HashTableEntry()
-  {
+  ~HashTableEntry() {
     if (isLive()) {
       destroyStoredT();
     }
@@ -1088,14 +988,12 @@ public:
     MOZ_MAKE_MEM_UNDEFINED(this, sizeof(*this));
   }
 
-  void destroy()
-  {
+  void destroy() {
     MOZ_ASSERT(isLive());
     destroyStoredT();
   }
 
-  void swap(HashTableEntry* aOther)
-  {
+  void swap(HashTableEntry* aOther) {
     if (this == aOther) {
       return;
     }
@@ -1109,29 +1007,25 @@ public:
     Swap(mKeyHash, aOther->mKeyHash);
   }
 
-  T& get()
-  {
+  T& get() {
     MOZ_ASSERT(isLive());
     return *valuePtr();
   }
 
-  NonConstT& getMutable()
-  {
+  NonConstT& getMutable() {
     MOZ_ASSERT(isLive());
     return *valuePtr();
   }
 
   bool isFree() const { return mKeyHash == sFreeKey; }
 
-  void clearLive()
-  {
+  void clearLive() {
     MOZ_ASSERT(isLive());
     mKeyHash = sFreeKey;
     destroyStoredT();
   }
 
-  void clear()
-  {
+  void clear() {
     if (isLive()) {
       destroyStoredT();
     }
@@ -1141,8 +1035,7 @@ public:
 
   bool isRemoved() const { return mKeyHash == sRemovedKey; }
 
-  void removeLive()
-  {
+  void removeLive() {
     MOZ_ASSERT(isLive());
     mKeyHash = sRemovedKey;
     destroyStoredT();
@@ -1150,8 +1043,7 @@ public:
 
   bool isLive() const { return isLiveHash(mKeyHash); }
 
-  void setCollision()
-  {
+  void setCollision() {
     MOZ_ASSERT(isLive());
     mKeyHash |= sCollisionBit;
   }
@@ -1164,9 +1056,8 @@ public:
 
   HashNumber getKeyHash() const { return mKeyHash & ~sCollisionBit; }
 
-  template<typename... Args>
-  void setLive(HashNumber aHashNumber, Args&&... aArgs)
-  {
+  template <typename... Args>
+  void setLive(HashNumber aHashNumber, Args&&... aArgs) {
     MOZ_ASSERT(!isLive());
     mKeyHash = aHashNumber;
     new (KnownNotNull, valuePtr()) T(std::forward<Args>(aArgs)...);
@@ -1174,24 +1065,22 @@ public:
   }
 };
 
-template<class T, class HashPolicy, class AllocPolicy>
-class HashTable : private AllocPolicy
-{
+template <class T, class HashPolicy, class AllocPolicy>
+class HashTable : private AllocPolicy {
   friend class mozilla::ReentrancyGuard;
 
   using NonConstT = typename RemoveConst<T>::Type;
   using Key = typename HashPolicy::KeyType;
   using Lookup = typename HashPolicy::Lookup;
 
-public:
+ public:
   using Entry = HashTableEntry<T>;
 
   
   
   
   
-  class Ptr
-  {
+  class Ptr {
     friend class HashTable;
 
     Entry* mEntry;
@@ -1200,40 +1089,42 @@ public:
     Generation mGeneration;
 #endif
 
-  protected:
+   protected:
     Ptr(Entry& aEntry, const HashTable& aTable)
-      : mEntry(&aEntry)
+        : mEntry(&aEntry)
 #ifdef DEBUG
-      , mTable(&aTable)
-      , mGeneration(aTable.generation())
+          ,
+          mTable(&aTable),
+          mGeneration(aTable.generation())
 #endif
     {
     }
 
     
     explicit Ptr(const HashTable& aTable)
-      : mEntry(nullptr)
+        : mEntry(nullptr)
 #ifdef DEBUG
-      , mTable(&aTable)
-      , mGeneration(aTable.generation())
+          ,
+          mTable(&aTable),
+          mGeneration(aTable.generation())
 #endif
     {
     }
 
     bool isValid() const { return !!mEntry; }
 
-  public:
+   public:
     Ptr()
-      : mEntry(nullptr)
+        : mEntry(nullptr)
 #ifdef DEBUG
-      , mTable(nullptr)
-      , mGeneration(0)
+          ,
+          mTable(nullptr),
+          mGeneration(0)
 #endif
     {
     }
 
-    bool found() const
-    {
+    bool found() const {
       if (!isValid()) {
         return false;
       }
@@ -1245,22 +1136,19 @@ public:
 
     explicit operator bool() const { return found(); }
 
-    bool operator==(const Ptr& aRhs) const
-    {
+    bool operator==(const Ptr& aRhs) const {
       MOZ_ASSERT(found() && aRhs.found());
       return mEntry == aRhs.mEntry;
     }
 
-    bool operator!=(const Ptr& aRhs) const
-    {
+    bool operator!=(const Ptr& aRhs) const {
 #ifdef DEBUG
       MOZ_ASSERT(mGeneration == mTable->generation());
 #endif
       return !(*this == aRhs);
     }
 
-    T& operator*() const
-    {
+    T& operator*() const {
 #ifdef DEBUG
       MOZ_ASSERT(found());
       MOZ_ASSERT(mGeneration == mTable->generation());
@@ -1268,8 +1156,7 @@ public:
       return mEntry->get();
     }
 
-    T* operator->() const
-    {
+    T* operator->() const {
 #ifdef DEBUG
       MOZ_ASSERT(found());
       MOZ_ASSERT(mGeneration == mTable->generation());
@@ -1279,8 +1166,7 @@ public:
   };
 
   
-  class AddPtr : public Ptr
-  {
+  class AddPtr : public Ptr {
     friend class HashTable;
 
     HashNumber mKeyHash;
@@ -1289,10 +1175,11 @@ public:
 #endif
 
     AddPtr(Entry& aEntry, const HashTable& aTable, HashNumber aHashNumber)
-      : Ptr(aEntry, aTable)
-      , mKeyHash(aHashNumber)
+        : Ptr(aEntry, aTable),
+          mKeyHash(aHashNumber)
 #ifdef DEBUG
-      , mMutationCount(aTable.mMutationCount)
+          ,
+          mMutationCount(aTable.mMutationCount)
 #endif
     {
     }
@@ -1301,10 +1188,11 @@ public:
     
     
     AddPtr(const HashTable& aTable, HashNumber aHashNumber)
-      : Ptr(aTable)
-      , mKeyHash(aHashNumber)
+        : Ptr(aTable),
+          mKeyHash(aHashNumber)
 #ifdef DEBUG
-      , mMutationCount(aTable.mMutationCount)
+          ,
+          mMutationCount(aTable.mMutationCount)
 #endif
     {
       MOZ_ASSERT(isLive());
@@ -1312,29 +1200,26 @@ public:
 
     bool isLive() const { return isLiveHash(mKeyHash); }
 
-  public:
-    AddPtr()
-      : mKeyHash(0)
-    {
-    }
+   public:
+    AddPtr() : mKeyHash(0) {}
   };
 
   
   
   
-  class Iterator
-  {
-  protected:
+  class Iterator {
+   protected:
     friend class HashTable;
 
     explicit Iterator(const HashTable& aTable)
-      : mCur(aTable.mTable)
-      , mEnd(aTable.mTable + aTable.capacity())
+        : mCur(aTable.mTable),
+          mEnd(aTable.mTable + aTable.capacity())
 #ifdef DEBUG
-      , mTable(aTable)
-      , mMutationCount(aTable.mMutationCount)
-      , mGeneration(aTable.generation())
-      , mValidEntry(true)
+          ,
+          mTable(aTable),
+          mMutationCount(aTable.mMutationCount),
+          mGeneration(aTable.generation()),
+          mValidEntry(true)
 #endif
     {
       while (mCur < mEnd && !mCur->isLive()) {
@@ -1351,9 +1236,8 @@ public:
     bool mValidEntry;
 #endif
 
-  public:
-    bool done() const
-    {
+   public:
+    bool done() const {
 #ifdef DEBUG
       MOZ_ASSERT(mGeneration == mTable.generation());
       MOZ_ASSERT(mMutationCount == mTable.mMutationCount);
@@ -1361,8 +1245,7 @@ public:
       return mCur == mEnd;
     }
 
-    T& get() const
-    {
+    T& get() const {
       MOZ_ASSERT(!done());
 #ifdef DEBUG
       MOZ_ASSERT(mValidEntry);
@@ -1372,8 +1255,7 @@ public:
       return mCur->get();
     }
 
-    void next()
-    {
+    void next() {
       MOZ_ASSERT(!done());
 #ifdef DEBUG
       MOZ_ASSERT(mGeneration == mTable.generation());
@@ -1393,8 +1275,7 @@ public:
   
   
   
-  class ModIterator : public Iterator
-  {
+  class ModIterator : public Iterator {
     friend class HashTable;
 
     HashTable& mTable;
@@ -1405,30 +1286,23 @@ public:
     ModIterator(const ModIterator&) = delete;
     void operator=(const ModIterator&) = delete;
 
-  protected:
+   protected:
     explicit ModIterator(HashTable& aTable)
-      : Iterator(aTable)
-      , mTable(aTable)
-      , mRekeyed(false)
-      , mRemoved(false)
-    {
-    }
+        : Iterator(aTable), mTable(aTable), mRekeyed(false), mRemoved(false) {}
 
-  public:
+   public:
     MOZ_IMPLICIT ModIterator(ModIterator&& aOther)
-      : Iterator(aOther)
-      , mTable(aOther.mTable)
-      , mRekeyed(aOther.mRekeyed)
-      , mRemoved(aOther.mRemoved)
-    {
+        : Iterator(aOther),
+          mTable(aOther.mTable),
+          mRekeyed(aOther.mRekeyed),
+          mRemoved(aOther.mRemoved) {
       aOther.mRekeyed = false;
       aOther.mRemoved = false;
     }
 
     
     
-    void remove()
-    {
+    void remove() {
       mTable.remove(*this->mCur);
       mRemoved = true;
 #ifdef DEBUG
@@ -1437,8 +1311,7 @@ public:
 #endif
     }
 
-    NonConstT& getMutable()
-    {
+    NonConstT& getMutable() {
       MOZ_ASSERT(!this->done());
 #ifdef DEBUG
       MOZ_ASSERT(this->mValidEntry);
@@ -1451,8 +1324,7 @@ public:
     
     
     
-    void rekey(const Lookup& l, const Key& k)
-    {
+    void rekey(const Lookup& l, const Key& k) {
       MOZ_ASSERT(&k != &HashPolicy::getKey(this->mCur->get()));
       Ptr p(*this->mCur, mTable);
       mTable.rekeyWithoutRehash(p, l, k);
@@ -1466,8 +1338,7 @@ public:
     void rekey(const Key& k) { rekey(k, k); }
 
     
-    ~ModIterator()
-    {
+    ~ModIterator() {
       if (mRekeyed) {
         mTable.mGen++;
         mTable.infallibleRehashIfOverloaded();
@@ -1480,19 +1351,15 @@ public:
   };
 
   
-  class Range
-  {
+  class Range {
     friend class HashTable;
 
     Iterator mIter;
 
-  protected:
-    explicit Range(const HashTable& table)
-      : mIter(table)
-    {
-    }
+   protected:
+    explicit Range(const HashTable& table) : mIter(table) {}
 
-  public:
+   public:
     bool empty() const { return mIter.done(); }
 
     T& front() const { return mIter.get(); }
@@ -1501,25 +1368,18 @@ public:
   };
 
   
-  class Enum
-  {
+  class Enum {
     ModIterator mIter;
 
     
     Enum(const Enum&) = delete;
     void operator=(const Enum&) = delete;
 
-  public:
-    template<class Map>
-    explicit Enum(Map& map)
-      : mIter(map.mImpl)
-    {
-    }
+   public:
+    template <class Map>
+    explicit Enum(Map& map) : mIter(map.mImpl) {}
 
-    MOZ_IMPLICIT Enum(Enum&& other)
-      : mIter(std::move(other.mIter))
-    {
-    }
+    MOZ_IMPLICIT Enum(Enum&& other) : mIter(std::move(other.mIter)) {}
 
     bool empty() const { return mIter.done(); }
 
@@ -1531,8 +1391,7 @@ public:
 
     NonConstT& mutableFront() { return mIter.getMutable(); }
 
-    void rekeyFront(const Lookup& aLookup, const Key& aKey)
-    {
+    void rekeyFront(const Lookup& aLookup, const Key& aKey) {
       mIter.rekey(aLookup, aKey);
     }
 
@@ -1540,14 +1399,11 @@ public:
   };
 
   
-  HashTable(HashTable&& aRhs)
-    : AllocPolicy(aRhs)
-  {
+  HashTable(HashTable&& aRhs) : AllocPolicy(aRhs) {
     PodAssign(this, &aRhs);
     aRhs.mTable = nullptr;
   }
-  void operator=(HashTable&& aRhs)
-  {
+  void operator=(HashTable&& aRhs) {
     MOZ_ASSERT(this != &aRhs, "self-move assignment is prohibited");
     if (mTable) {
       destroyTable(*this, mTable, capacity());
@@ -1556,19 +1412,19 @@ public:
     aRhs.mTable = nullptr;
   }
 
-private:
+ private:
   
   HashTable(const HashTable&) = delete;
   void operator=(const HashTable&) = delete;
 
   static const uint32_t CAP_BITS = 30;
 
-public:
-  uint64_t mGen : 56;      
-  uint64_t mHashShift : 8; 
-  Entry* mTable;           
-  uint32_t mEntryCount;    
-  uint32_t mRemovedCount;  
+ public:
+  uint64_t mGen : 56;       
+  uint64_t mHashShift : 8;  
+  Entry* mTable;            
+  uint32_t mEntryCount;     
+  uint32_t mRemovedCount;   
 
 #ifdef DEBUG
   uint64_t mMutationCount;
@@ -1585,30 +1441,27 @@ public:
   
   
   static const uint8_t sAlphaDenominator = 4;
-  static const uint8_t sMinAlphaNumerator = 1; 
-  static const uint8_t sMaxAlphaNumerator = 3; 
+  static const uint8_t sMinAlphaNumerator = 1;  
+  static const uint8_t sMaxAlphaNumerator = 3;  
 
   static const HashNumber sFreeKey = Entry::sFreeKey;
   static const HashNumber sRemovedKey = Entry::sRemovedKey;
   static const HashNumber sCollisionBit = Entry::sCollisionBit;
 
-  static uint32_t bestCapacity(uint32_t aLen)
-  {
-    static_assert((sMaxInit * sAlphaDenominator) / sAlphaDenominator ==
-                    sMaxInit,
-                  "multiplication in numerator below could overflow");
-    static_assert(sMaxInit * sAlphaDenominator <=
-                    UINT32_MAX - sMaxAlphaNumerator,
-                  "numerator calculation below could potentially overflow");
+  static uint32_t bestCapacity(uint32_t aLen) {
+    static_assert(
+        (sMaxInit * sAlphaDenominator) / sAlphaDenominator == sMaxInit,
+        "multiplication in numerator below could overflow");
+    static_assert(
+        sMaxInit * sAlphaDenominator <= UINT32_MAX - sMaxAlphaNumerator,
+        "numerator calculation below could potentially overflow");
 
     
     
     
-    uint32_t capacity =
-      (aLen * sAlphaDenominator + sMaxAlphaNumerator - 1) / sMaxAlphaNumerator;
-    capacity = (capacity < sMinCapacity)
-             ? sMinCapacity
-             : RoundUpPow2(capacity);
+    uint32_t capacity = (aLen * sAlphaDenominator + sMaxAlphaNumerator - 1) /
+                        sMaxAlphaNumerator;
+    capacity = (capacity < sMinCapacity) ? sMinCapacity : RoundUpPow2(capacity);
 
     MOZ_ASSERT(capacity >= aLen);
     MOZ_ASSERT(capacity <= sMaxCapacity);
@@ -1616,8 +1469,7 @@ public:
     return capacity;
   }
 
-  static uint32_t hashShift(uint32_t aLen)
-  {
+  static uint32_t hashShift(uint32_t aLen) {
     
     
     
@@ -1630,8 +1482,7 @@ public:
 
   static bool isLiveHash(HashNumber aHash) { return Entry::isLiveHash(aHash); }
 
-  static HashNumber prepareHash(const Lookup& aLookup)
-  {
+  static HashNumber prepareHash(const Lookup& aLookup) {
     HashNumber keyHash = ScrambleHashCode(HashPolicy::hash(aLookup));
 
     
@@ -1641,19 +1492,14 @@ public:
     return keyHash & ~sCollisionBit;
   }
 
-  enum FailureBehavior
-  {
-    DontReportFailure = false,
-    ReportFailure = true
-  };
+  enum FailureBehavior { DontReportFailure = false, ReportFailure = true };
 
-  static Entry* createTable(AllocPolicy& aAllocPolicy,
-                            uint32_t aCapacity,
-                            FailureBehavior aReportFailure = ReportFailure)
-  {
-    Entry* table = aReportFailure
-                     ? aAllocPolicy.template pod_malloc<Entry>(aCapacity)
-                     : aAllocPolicy.template maybe_pod_malloc<Entry>(aCapacity);
+  static Entry* createTable(AllocPolicy& aAllocPolicy, uint32_t aCapacity,
+                            FailureBehavior aReportFailure = ReportFailure) {
+    Entry* table =
+        aReportFailure
+            ? aAllocPolicy.template pod_malloc<Entry>(aCapacity)
+            : aAllocPolicy.template maybe_pod_malloc<Entry>(aCapacity);
     if (table) {
       for (uint32_t i = 0; i < aCapacity; i++) {
         new (KnownNotNull, &table[i]) Entry();
@@ -1662,10 +1508,8 @@ public:
     return table;
   }
 
-  static void destroyTable(AllocPolicy& aAllocPolicy,
-                           Entry* aOldTable,
-                           uint32_t aCapacity)
-  {
+  static void destroyTable(AllocPolicy& aAllocPolicy, Entry* aOldTable,
+                           uint32_t aCapacity) {
     Entry* end = aOldTable + aCapacity;
     for (Entry* e = aOldTable; e < end; ++e) {
       e->~Entry();
@@ -1673,73 +1517,62 @@ public:
     aAllocPolicy.free_(aOldTable, aCapacity);
   }
 
-public:
+ public:
   HashTable(AllocPolicy aAllocPolicy, uint32_t aLen)
-    : AllocPolicy(aAllocPolicy)
-    , mGen(0)
-    , mHashShift(hashShift(aLen))
-    , mTable(nullptr)
-    , mEntryCount(0)
-    , mRemovedCount(0)
+      : AllocPolicy(aAllocPolicy),
+        mGen(0),
+        mHashShift(hashShift(aLen)),
+        mTable(nullptr),
+        mEntryCount(0),
+        mRemovedCount(0)
 #ifdef DEBUG
-    , mMutationCount(0)
-    , mEntered(false)
+        ,
+        mMutationCount(0),
+        mEntered(false)
 #endif
   {
   }
 
   explicit HashTable(AllocPolicy aAllocPolicy)
-    : HashTable(aAllocPolicy, sDefaultLen)
-  {
-  }
+      : HashTable(aAllocPolicy, sDefaultLen) {}
 
-  ~HashTable()
-  {
+  ~HashTable() {
     if (mTable) {
       destroyTable(*this, mTable, capacity());
     }
   }
 
-private:
+ private:
   HashNumber hash1(HashNumber aHash0) const { return aHash0 >> mHashShift; }
 
-  struct DoubleHash
-  {
+  struct DoubleHash {
     HashNumber mHash2;
     HashNumber mSizeMask;
   };
 
-  DoubleHash hash2(HashNumber aCurKeyHash) const
-  {
+  DoubleHash hash2(HashNumber aCurKeyHash) const {
     uint32_t sizeLog2 = kHashNumberBits - mHashShift;
-    DoubleHash dh = { ((aCurKeyHash << sizeLog2) >> mHashShift) | 1,
-                      (HashNumber(1) << sizeLog2) - 1 };
+    DoubleHash dh = {((aCurKeyHash << sizeLog2) >> mHashShift) | 1,
+                     (HashNumber(1) << sizeLog2) - 1};
     return dh;
   }
 
   static HashNumber applyDoubleHash(HashNumber aHash1,
-                                    const DoubleHash& aDoubleHash)
-  {
+                                    const DoubleHash& aDoubleHash) {
     return (aHash1 - aDoubleHash.mHash2) & aDoubleHash.mSizeMask;
   }
 
-  static MOZ_ALWAYS_INLINE bool match(Entry& aEntry, const Lookup& aLookup)
-  {
+  static MOZ_ALWAYS_INLINE bool match(Entry& aEntry, const Lookup& aLookup) {
     return HashPolicy::match(HashPolicy::getKey(aEntry.get()), aLookup);
   }
 
-  enum LookupReason
-  {
-    ForNonAdd,
-    ForAdd
-  };
+  enum LookupReason { ForNonAdd, ForAdd };
 
   
   
-  template<LookupReason Reason>
+  template <LookupReason Reason>
   MOZ_ALWAYS_INLINE Entry& lookup(const Lookup& aLookup,
-                                  HashNumber aKeyHash) const
-  {
+                                  HashNumber aKeyHash) const {
     MOZ_ASSERT(isLiveHash(aKeyHash));
     MOZ_ASSERT(!(aKeyHash & sCollisionBit));
     MOZ_ASSERT(mTable);
@@ -1789,8 +1622,7 @@ private:
   
   
   
-  Entry& findNonLiveEntry(HashNumber aKeyHash)
-  {
+  Entry& findNonLiveEntry(HashNumber aKeyHash) {
     MOZ_ASSERT(!(aKeyHash & sCollisionBit));
     MOZ_ASSERT(mTable);
 
@@ -1820,16 +1652,10 @@ private:
     }
   }
 
-  enum RebuildStatus
-  {
-    NotOverloaded,
-    Rehashed,
-    RehashFailed
-  };
+  enum RebuildStatus { NotOverloaded, Rehashed, RehashFailed };
 
-  RebuildStatus changeTableSize(uint32_t newCapacity,
-                                FailureBehavior aReportFailure = ReportFailure)
-  {
+  RebuildStatus changeTableSize(
+      uint32_t newCapacity, FailureBehavior aReportFailure = ReportFailure) {
     MOZ_ASSERT(IsPowerOfTwo(newCapacity));
     MOZ_ASSERT(!!mTable == !!capacity());
 
@@ -1862,7 +1688,7 @@ private:
       if (src->isLive()) {
         HashNumber hn = src->getKeyHash();
         findNonLiveEntry(hn).setLive(
-          hn, std::move(const_cast<typename Entry::NonConstT&>(src->get())));
+            hn, std::move(const_cast<typename Entry::NonConstT&>(src->get())));
       }
 
       src->~Entry();
@@ -1874,8 +1700,7 @@ private:
   }
 
   RebuildStatus rehashIfOverloaded(
-    FailureBehavior aReportFailure = ReportFailure)
-  {
+      FailureBehavior aReportFailure = ReportFailure) {
     static_assert(sMaxCapacity <= UINT32_MAX / sMaxAlphaNumerator,
                   "multiplication below could overflow");
 
@@ -1897,15 +1722,13 @@ private:
     return changeTableSize(newCapacity, aReportFailure);
   }
 
-  void infallibleRehashIfOverloaded()
-  {
+  void infallibleRehashIfOverloaded() {
     if (rehashIfOverloaded(DontReportFailure) == RehashFailed) {
       rehashTableInPlace();
     }
   }
 
-  void remove(Entry& aEntry)
-  {
+  void remove(Entry& aEntry) {
     MOZ_ASSERT(mTable);
 
     if (aEntry.hasCollision()) {
@@ -1920,13 +1743,12 @@ private:
 #endif
   }
 
-  void shrinkIfUnderloaded()
-  {
+  void shrinkIfUnderloaded() {
     static_assert(sMaxCapacity <= UINT32_MAX / sMinAlphaNumerator,
                   "multiplication below could overflow");
     bool underloaded =
-      capacity() > sMinCapacity &&
-      mEntryCount <= capacity() * sMinAlphaNumerator / sAlphaDenominator;
+        capacity() > sMinCapacity &&
+        mEntryCount <= capacity() * sMinAlphaNumerator / sAlphaDenominator;
 
     if (underloaded) {
       (void)changeTableSize(capacity() / 2, DontReportFailure);
@@ -1938,8 +1760,7 @@ private:
   
   
   
-  void rehashTableInPlace()
-  {
+  void rehashTableInPlace() {
     mRemovedCount = 0;
     mGen++;
     for (uint32_t i = 0; i < capacity(); ++i) {
@@ -1981,9 +1802,8 @@ private:
   
   
   
-  template<typename... Args>
-  void putNewInfallibleInternal(const Lookup& aLookup, Args&&... aArgs)
-  {
+  template <typename... Args>
+  void putNewInfallibleInternal(const Lookup& aLookup, Args&&... aArgs) {
     MOZ_ASSERT(mTable);
 
     HashNumber keyHash = prepareHash(aLookup);
@@ -2002,9 +1822,8 @@ private:
 #endif
   }
 
-public:
-  void clear()
-  {
+ public:
+  void clear() {
     Entry* end = mTable + capacity();
     for (Entry* e = mTable; e < end; ++e) {
       e->clear();
@@ -2019,8 +1838,7 @@ public:
   
   
   
-  void compact()
-  {
+  void compact() {
     if (empty()) {
       
       this->free_(mTable, capacity());
@@ -2039,14 +1857,12 @@ public:
     }
   }
 
-  void clearAndCompact()
-  {
+  void clearAndCompact() {
     clear();
     compact();
   }
 
-  MOZ_MUST_USE bool reserve(uint32_t aLen)
-  {
+  MOZ_MUST_USE bool reserve(uint32_t aLen) {
     if (aLen == 0) {
       return true;
     }
@@ -2061,58 +1877,31 @@ public:
     return status != RehashFailed;
   }
 
-  Iterator iter() const
-  {
-    return Iterator(*this);
-  }
+  Iterator iter() const { return Iterator(*this); }
 
-  ModIterator modIter()
-  {
-    return ModIterator(*this);
-  }
+  ModIterator modIter() { return ModIterator(*this); }
 
-  Range all() const
-  {
-    return Range(*this);
-  }
+  Range all() const { return Range(*this); }
 
-  bool empty() const
-  {
-    return mEntryCount == 0;
-  }
+  bool empty() const { return mEntryCount == 0; }
 
-  uint32_t count() const
-  {
-    return mEntryCount;
-  }
+  uint32_t count() const { return mEntryCount; }
 
-  uint32_t rawCapacity() const
-  {
-    return 1u << (kHashNumberBits - mHashShift);
-  }
+  uint32_t rawCapacity() const { return 1u << (kHashNumberBits - mHashShift); }
 
-  uint32_t capacity() const
-  {
-    return mTable ? rawCapacity() : 0;
-  }
+  uint32_t capacity() const { return mTable ? rawCapacity() : 0; }
 
-  Generation generation() const
-  {
-    return Generation(mGen);
-  }
+  Generation generation() const { return Generation(mGen); }
 
-  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t shallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(mTable);
   }
 
-  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t shallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) + shallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
-  MOZ_ALWAYS_INLINE Ptr readonlyThreadsafeLookup(const Lookup& aLookup) const
-  {
+  MOZ_ALWAYS_INLINE Ptr readonlyThreadsafeLookup(const Lookup& aLookup) const {
     if (!mTable || !HasHash<HashPolicy>(aLookup)) {
       return Ptr();
     }
@@ -2120,14 +1909,12 @@ public:
     return Ptr(lookup<ForNonAdd>(aLookup, keyHash), *this);
   }
 
-  MOZ_ALWAYS_INLINE Ptr lookup(const Lookup& aLookup) const
-  {
+  MOZ_ALWAYS_INLINE Ptr lookup(const Lookup& aLookup) const {
     ReentrancyGuard g(*this);
     return readonlyThreadsafeLookup(aLookup);
   }
 
-  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup)
-  {
+  MOZ_ALWAYS_INLINE AddPtr lookupForAdd(const Lookup& aLookup) {
     ReentrancyGuard g(*this);
     if (!EnsureHash<HashPolicy>(aLookup)) {
       return AddPtr();
@@ -2145,9 +1932,8 @@ public:
     return AddPtr(lookup<ForAdd>(aLookup, keyHash), *this, keyHash);
   }
 
-  template<typename... Args>
-  MOZ_MUST_USE bool add(AddPtr& aPtr, Args&&... aArgs)
-  {
+  template <typename... Args>
+  MOZ_MUST_USE bool add(AddPtr& aPtr, Args&&... aArgs) {
     ReentrancyGuard g(*this);
     MOZ_ASSERT_IF(aPtr.isValid(), mTable);
     MOZ_ASSERT_IF(aPtr.isValid(), aPtr.mTable == this);
@@ -2209,9 +1995,8 @@ public:
 
   
   
-  template<typename... Args>
-  void putNewInfallible(const Lookup& aLookup, Args&&... aArgs)
-  {
+  template <typename... Args>
+  void putNewInfallible(const Lookup& aLookup, Args&&... aArgs) {
     MOZ_ASSERT(!lookup(aLookup).found());
     ReentrancyGuard g(*this);
     putNewInfallibleInternal(aLookup, std::forward<Args>(aArgs)...);
@@ -2219,9 +2004,8 @@ public:
 
   
   
-  template<typename... Args>
-  MOZ_MUST_USE bool putNew(const Lookup& aLookup, Args&&... aArgs)
-  {
+  template <typename... Args>
+  MOZ_MUST_USE bool putNew(const Lookup& aLookup, Args&&... aArgs) {
     if (!this->checkSimulatedOOM()) {
       return false;
     }
@@ -2237,11 +2021,9 @@ public:
 
   
   
-  template<typename... Args>
-  MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr,
-                                  const Lookup& aLookup,
-                                  Args&&... aArgs)
-  {
+  template <typename... Args>
+  MOZ_MUST_USE bool relookupOrAdd(AddPtr& aPtr, const Lookup& aLookup,
+                                  Args&&... aArgs) {
     
     if (!aPtr.isLive()) {
       return false;
@@ -2266,8 +2048,7 @@ public:
     return add(aPtr, std::forward<Args>(aArgs)...);
   }
 
-  void remove(Ptr aPtr)
-  {
+  void remove(Ptr aPtr) {
     MOZ_ASSERT(mTable);
     ReentrancyGuard g(*this);
     MOZ_ASSERT(aPtr.found());
@@ -2276,8 +2057,7 @@ public:
     shrinkIfUnderloaded();
   }
 
-  void rekeyWithoutRehash(Ptr aPtr, const Lookup& aLookup, const Key& aKey)
-  {
+  void rekeyWithoutRehash(Ptr aPtr, const Lookup& aLookup, const Key& aKey) {
     MOZ_ASSERT(mTable);
     ReentrancyGuard g(*this);
     MOZ_ASSERT(aPtr.found());
@@ -2288,14 +2068,13 @@ public:
     putNewInfallibleInternal(aLookup, std::move(t));
   }
 
-  void rekeyAndMaybeRehash(Ptr aPtr, const Lookup& aLookup, const Key& aKey)
-  {
+  void rekeyAndMaybeRehash(Ptr aPtr, const Lookup& aLookup, const Key& aKey) {
     rekeyWithoutRehash(aPtr, aLookup, aKey);
     infallibleRehashIfOverloaded();
   }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

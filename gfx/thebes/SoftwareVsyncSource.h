@@ -14,11 +14,10 @@
 #include "nsISupportsImpl.h"
 #include "VsyncSource.h"
 
-class SoftwareDisplay final : public mozilla::gfx::VsyncSource::Display
-{
+class SoftwareDisplay final : public mozilla::gfx::VsyncSource::Display {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SoftwareDisplay)
 
-public:
+ public:
   SoftwareDisplay();
   virtual void EnableVsync() override;
   virtual void DisableVsync() override;
@@ -29,33 +28,32 @@ public:
   void ScheduleNextVsync(mozilla::TimeStamp aVsyncTimestamp);
   void Shutdown() override;
 
-protected:
+ protected:
   ~SoftwareDisplay();
 
-private:
+ private:
   mozilla::TimeDuration mVsyncRate;
   
   base::Thread* mVsyncThread;
-  RefPtr<mozilla::CancelableRunnable> mCurrentVsyncTask; 
-  bool mVsyncEnabled; 
-}; 
+  RefPtr<mozilla::CancelableRunnable>
+      mCurrentVsyncTask;  
+  bool mVsyncEnabled;     
+};                        
 
 
 
 
-class SoftwareVsyncSource : public mozilla::gfx::VsyncSource
-{
-public:
+class SoftwareVsyncSource : public mozilla::gfx::VsyncSource {
+ public:
   SoftwareVsyncSource();
   ~SoftwareVsyncSource();
 
-  virtual Display& GetGlobalDisplay() override
-  {
+  virtual Display& GetGlobalDisplay() override {
     MOZ_ASSERT(mGlobalDisplay != nullptr);
     return *mGlobalDisplay;
   }
 
-private:
+ private:
   RefPtr<SoftwareDisplay> mGlobalDisplay;
 };
 

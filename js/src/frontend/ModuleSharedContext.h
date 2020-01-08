@@ -7,42 +7,38 @@
 #ifndef frontend_ModuleSharedContext_h
 #define frontend_ModuleSharedContext_h
 
-#include "mozilla/Assertions.h" 
-#include "mozilla/Attributes.h" 
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
 
-#include "builtin/ModuleObject.h" 
-#include "frontend/SharedContext.h" 
-#include "js/RootingAPI.h" 
-#include "vm/Scope.h" 
+#include "builtin/ModuleObject.h"    
+#include "frontend/SharedContext.h"  
+#include "js/RootingAPI.h"           
+#include "vm/Scope.h"                
 
 namespace js {
 namespace frontend {
 
-class MOZ_STACK_CLASS ModuleSharedContext
-  : public SharedContext
-{
-    JS::Rooted<ModuleObject*> module_;
-    JS::Rooted<Scope*> enclosingScope_;
+class MOZ_STACK_CLASS ModuleSharedContext : public SharedContext {
+  JS::Rooted<ModuleObject*> module_;
+  JS::Rooted<Scope*> enclosingScope_;
 
-  public:
-    JS::Rooted<ModuleScope::Data*> bindings;
-    ModuleBuilder& builder;
+ public:
+  JS::Rooted<ModuleScope::Data*> bindings;
+  ModuleBuilder& builder;
 
-    ModuleSharedContext(JSContext* cx, ModuleObject* module, Scope* enclosingScope,
-                        ModuleBuilder& builder);
+  ModuleSharedContext(JSContext* cx, ModuleObject* module,
+                      Scope* enclosingScope, ModuleBuilder& builder);
 
-    JS::Handle<ModuleObject*> module() const { return module_; }
-    Scope* compilationEnclosingScope() const override { return enclosingScope_; }
+  JS::Handle<ModuleObject*> module() const { return module_; }
+  Scope* compilationEnclosingScope() const override { return enclosingScope_; }
 };
 
-inline ModuleSharedContext*
-SharedContext::asModuleContext()
-{
-    MOZ_ASSERT(isModuleContext());
-    return static_cast<ModuleSharedContext*>(this);
+inline ModuleSharedContext* SharedContext::asModuleContext() {
+  MOZ_ASSERT(isModuleContext());
+  return static_cast<ModuleSharedContext*>(this);
 }
 
-} 
-} 
+}  
+}  
 
 #endif 

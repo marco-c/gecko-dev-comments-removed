@@ -28,28 +28,22 @@ namespace mozilla {
 
 
 
-class SVGLength
-{
-public:
-
+class SVGLength {
+ public:
   SVGLength()
-    : mValue(0.0f)
-    , mUnit(dom::SVGLength_Binding::SVG_LENGTHTYPE_UNKNOWN) 
+      : mValue(0.0f),
+        mUnit(dom::SVGLength_Binding::SVG_LENGTHTYPE_UNKNOWN)  
+                                                               
   {}
 
-  SVGLength(float aValue, uint8_t aUnit)
-    : mValue(aValue)
-    , mUnit(aUnit)
-  {
+  SVGLength(float aValue, uint8_t aUnit) : mValue(aValue), mUnit(aUnit) {
     NS_ASSERTION(IsValid(), "Constructed an invalid length");
   }
 
   SVGLength(const SVGLength &aOther)
-    : mValue(aOther.mValue)
-    , mUnit(aOther.mUnit)
-  {}
+      : mValue(aOther.mValue), mUnit(aOther.mUnit) {}
 
-  SVGLength& operator=(const SVGLength &rhs) {
+  SVGLength &operator=(const SVGLength &rhs) {
     mValue = rhs.mValue;
     mUnit = rhs.mUnit;
     return *this;
@@ -59,25 +53,21 @@ public:
     return mValue == rhs.mValue && mUnit == rhs.mUnit;
   }
 
-  void GetValueAsString(nsAString& aValue) const;
+  void GetValueAsString(nsAString &aValue) const;
 
   
 
 
 
-  bool SetValueFromString(const nsAString& aValue);
+  bool SetValueFromString(const nsAString &aValue);
 
   
 
 
 
-  float GetValueInCurrentUnits() const {
-    return mValue;
-  }
+  float GetValueInCurrentUnits() const { return mValue; }
 
-  uint8_t GetUnit() const {
-    return mUnit;
-  }
+  uint8_t GetUnit() const { return mUnit; }
 
   void SetValueInCurrentUnits(float aValue) {
     mValue = aValue;
@@ -113,8 +103,7 @@ public:
 
 
 
-  float GetValueInSpecifiedUnit(uint8_t aUnit,
-                                const nsSVGElement *aElement,
+  float GetValueInSpecifiedUnit(uint8_t aUnit, const nsSVGElement *aElement,
                                 uint8_t aAxis) const;
 
   bool IsPercentage() const {
@@ -135,22 +124,16 @@ public:
 
   float GetUserUnitsPerUnit(const nsSVGElement *aElement, uint8_t aAxis) const;
 
-private:
-
+ private:
 #ifdef DEBUG
-  bool IsValid() const {
-    return IsFinite(mValue) && IsValidUnitType(mUnit);
-  }
+  bool IsValid() const { return IsFinite(mValue) && IsValidUnitType(mUnit); }
 #endif
 
   
 
 
 
-  static float GetUserUnitsPerInch()
-  {
-    return 96.0;
-  }
+  static float GetUserUnitsPerInch() { return 96.0; }
 
   
 
@@ -161,12 +144,13 @@ private:
 
 
 
-  static float GetUserUnitsPerPercent(const nsSVGElement *aElement, uint8_t aAxis);
+  static float GetUserUnitsPerPercent(const nsSVGElement *aElement,
+                                      uint8_t aAxis);
 
   float mValue;
   uint8_t mUnit;
 };
 
-} 
+}  
 
-#endif 
+#endif  

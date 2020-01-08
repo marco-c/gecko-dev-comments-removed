@@ -48,9 +48,7 @@ namespace dom {
 
 namespace {
 
-void
-GetBlobURISpecFromChannel(nsIRequest* aRequest, nsCString& aBlobURISpec)
-{
+void GetBlobURISpecFromChannel(nsIRequest* aRequest, nsCString& aBlobURISpec) {
   MOZ_ASSERT(aRequest);
 
   aBlobURISpec.SetIsVoid(true);
@@ -73,10 +71,8 @@ GetBlobURISpecFromChannel(nsIRequest* aRequest, nsCString& aBlobURISpec)
   uri->GetSpec(aBlobURISpec);
 }
 
-bool
-ShouldCheckSRI(const InternalRequest* const aRequest,
-               const InternalResponse* const aResponse)
-{
+bool ShouldCheckSRI(const InternalRequest* const aRequest,
+                    const InternalResponse* const aResponse) {
   MOZ_DIAGNOSTIC_ASSERT(aRequest);
   MOZ_DIAGNOSTIC_ASSERT(aResponse);
 
@@ -84,15 +80,15 @@ ShouldCheckSRI(const InternalRequest* const aRequest,
          aResponse->Type() != ResponseType::Error;
 }
 
-} 
+}  
 
 
 
 
-class AlternativeDataStreamListener final : public nsIStreamListener,
-                                            public nsIThreadRetargetableStreamListener
-{
-public:
+class AlternativeDataStreamListener final
+    : public nsIStreamListener,
+      public nsIThreadRetargetableStreamListener {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
@@ -122,15 +118,11 @@ public:
   
   
   
-  enum eStatus {
-    LOADING = 0,
-    COMPLETED,
-    CANCELED,
-    FALLBACK
-  };
+  
+  
+  enum eStatus { LOADING = 0, COMPLETED, CANCELED, FALLBACK };
 
-  AlternativeDataStreamListener(FetchDriver* aFetchDriver,
-                                nsIChannel* aChannel,
+  AlternativeDataStreamListener(FetchDriver* aFetchDriver, nsIChannel* aChannel,
                                 const nsACString& aAlternativeDataType);
   eStatus Status();
   void Cancel();
@@ -139,7 +131,7 @@ public:
   already_AddRefed<nsICacheInfoChannel> GetCacheInfoChannel();
   already_AddRefed<nsIInputStream> GetAlternativeInputStream();
 
-private:
+ private:
   ~AlternativeDataStreamListener() = default;
 
   
@@ -155,32 +147,26 @@ private:
   Atomic<eStatus> mStatus;
 };
 
-NS_IMPL_ISUPPORTS(AlternativeDataStreamListener,
-                  nsIStreamListener,
+NS_IMPL_ISUPPORTS(AlternativeDataStreamListener, nsIStreamListener,
                   nsIThreadRetargetableStreamListener)
 
-AlternativeDataStreamListener::AlternativeDataStreamListener(FetchDriver* aFetchDriver,
-                                                             nsIChannel* aChannel,
-                                                             const nsACString& aAlternativeDataType)
-  : mFetchDriver(aFetchDriver)
-  , mAlternativeDataType(aAlternativeDataType)
-  , mAlternativeDataCacheEntryId(0)
-  , mChannel(aChannel)
-  , mStatus(AlternativeDataStreamListener::LOADING)
-{
+AlternativeDataStreamListener::AlternativeDataStreamListener(
+    FetchDriver* aFetchDriver, nsIChannel* aChannel,
+    const nsACString& aAlternativeDataType)
+    : mFetchDriver(aFetchDriver),
+      mAlternativeDataType(aAlternativeDataType),
+      mAlternativeDataCacheEntryId(0),
+      mChannel(aChannel),
+      mStatus(AlternativeDataStreamListener::LOADING) {
   MOZ_DIAGNOSTIC_ASSERT(mFetchDriver);
   MOZ_DIAGNOSTIC_ASSERT(mChannel);
 }
 
-AlternativeDataStreamListener::eStatus
-AlternativeDataStreamListener::Status()
-{
+AlternativeDataStreamListener::eStatus AlternativeDataStreamListener::Status() {
   return mStatus;
 }
 
-void
-AlternativeDataStreamListener::Cancel()
-{
+void AlternativeDataStreamListener::Cancel() {
   mAlternativeDataCacheEntryId = 0;
   mCacheInfoChannel = nullptr;
   mPipeAlternativeOutputStream = nullptr;
@@ -194,36 +180,30 @@ AlternativeDataStreamListener::Cancel()
   mStatus = AlternativeDataStreamListener::CANCELED;
 }
 
-uint64_t
-AlternativeDataStreamListener::GetAlternativeDataCacheEntryId()
-{
+uint64_t AlternativeDataStreamListener::GetAlternativeDataCacheEntryId() {
   return mAlternativeDataCacheEntryId;
 }
 
-const nsACString&
-AlternativeDataStreamListener::GetAlternativeDataType() const
-{
+const nsACString& AlternativeDataStreamListener::GetAlternativeDataType()
+    const {
   return mAlternativeDataType;
 }
 
 already_AddRefed<nsIInputStream>
-AlternativeDataStreamListener::GetAlternativeInputStream()
-{
+AlternativeDataStreamListener::GetAlternativeInputStream() {
   nsCOMPtr<nsIInputStream> inputStream = mPipeAlternativeInputStream;
   return inputStream.forget();
 }
 
 already_AddRefed<nsICacheInfoChannel>
-AlternativeDataStreamListener::GetCacheInfoChannel()
-{
+AlternativeDataStreamListener::GetCacheInfoChannel() {
   nsCOMPtr<nsICacheInfoChannel> channel = mCacheInfoChannel;
   return channel.forget();
 }
 
 NS_IMETHODIMP
 AlternativeDataStreamListener::OnStartRequest(nsIRequest* aRequest,
-                                              nsISupports* aContext)
-{
+                                              nsISupports* aContext) {
   AssertIsOnMainThread();
   MOZ_ASSERT(!mAlternativeDataType.IsEmpty());
   
@@ -231,20 +211,17 @@ AlternativeDataStreamListener::OnStartRequest(nsIRequest* aRequest,
   nsAutoCString alternativeDataType;
   nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(aRequest);
   mStatus = AlternativeDataStreamListener::LOADING;
-  if (cic &&
-      NS_SUCCEEDED(cic->GetAlternativeDataType(alternativeDataType)) &&
+  if (cic && NS_SUCCEEDED(cic->GetAlternativeDataType(alternativeDataType)) &&
       mAlternativeDataType.Equals(alternativeDataType) &&
       NS_SUCCEEDED(cic->GetCacheEntryId(&mAlternativeDataCacheEntryId))) {
-
     MOZ_DIAGNOSTIC_ASSERT(!mPipeAlternativeInputStream);
     MOZ_DIAGNOSTIC_ASSERT(!mPipeAlternativeOutputStream);
-    nsresult rv = NS_NewPipe(
-      getter_AddRefs(mPipeAlternativeInputStream),
-      getter_AddRefs(mPipeAlternativeOutputStream),
-      0 ,
-      UINT32_MAX ,
-      true ,
-      false );
+    nsresult rv =
+        NS_NewPipe(getter_AddRefs(mPipeAlternativeInputStream),
+                   getter_AddRefs(mPipeAlternativeOutputStream),
+                   0 , UINT32_MAX ,
+                   true ,
+                   false );
 
     if (NS_FAILED(rv)) {
       mFetchDriver->FailWithNetworkError(rv);
@@ -279,18 +256,17 @@ AlternativeDataStreamListener::OnDataAvailable(nsIRequest* aRequest,
                                                nsISupports* aContext,
                                                nsIInputStream* aInputStream,
                                                uint64_t aOffset,
-                                               uint32_t aCount)
-{
+                                               uint32_t aCount) {
   if (mStatus == AlternativeDataStreamListener::LOADING) {
     MOZ_ASSERT(mPipeAlternativeOutputStream);
     uint32_t read;
-    return aInputStream->ReadSegments(NS_CopySegmentToStream,
-                                      mPipeAlternativeOutputStream,
-                                      aCount, &read);
+    return aInputStream->ReadSegments(
+        NS_CopySegmentToStream, mPipeAlternativeOutputStream, aCount, &read);
   }
   if (mStatus == AlternativeDataStreamListener::FALLBACK) {
     MOZ_ASSERT(mFetchDriver);
-    return mFetchDriver->OnDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount);
+    return mFetchDriver->OnDataAvailable(aRequest, aContext, aInputStream,
+                                         aOffset, aCount);
   }
   return NS_OK;
 }
@@ -298,8 +274,7 @@ AlternativeDataStreamListener::OnDataAvailable(nsIRequest* aRequest,
 NS_IMETHODIMP
 AlternativeDataStreamListener::OnStopRequest(nsIRequest* aRequest,
                                              nsISupports* aContext,
-                                             nsresult aStatusCode)
-{
+                                             nsresult aStatusCode) {
   AssertIsOnMainThread();
 
   
@@ -318,8 +293,7 @@ AlternativeDataStreamListener::OnStopRequest(nsIRequest* aRequest,
 
   MOZ_DIAGNOSTIC_ASSERT(mStatus == AlternativeDataStreamListener::LOADING);
 
-  MOZ_ASSERT(!mAlternativeDataType.IsEmpty() &&
-             mPipeAlternativeOutputStream &&
+  MOZ_ASSERT(!mAlternativeDataType.IsEmpty() && mPipeAlternativeOutputStream &&
              mPipeAlternativeInputStream);
 
   mPipeAlternativeOutputStream->Close();
@@ -340,35 +314,31 @@ AlternativeDataStreamListener::OnStopRequest(nsIRequest* aRequest,
 }
 
 NS_IMETHODIMP
-AlternativeDataStreamListener::CheckListenerChain()
-{
-  return NS_OK;
-}
+AlternativeDataStreamListener::CheckListenerChain() { return NS_OK; }
 
 
 
 
-NS_IMPL_ISUPPORTS(FetchDriver,
-                  nsIStreamListener, nsIChannelEventSink, nsIInterfaceRequestor,
-                  nsIThreadRetargetableStreamListener)
+NS_IMPL_ISUPPORTS(FetchDriver, nsIStreamListener, nsIChannelEventSink,
+                  nsIInterfaceRequestor, nsIThreadRetargetableStreamListener)
 
-FetchDriver::FetchDriver(InternalRequest* aRequest,
-                         nsIPrincipal* aPrincipal,
+FetchDriver::FetchDriver(InternalRequest* aRequest, nsIPrincipal* aPrincipal,
                          nsILoadGroup* aLoadGroup,
                          nsIEventTarget* aMainThreadEventTarget,
                          PerformanceStorage* aPerformanceStorage,
                          bool aIsTrackingFetch)
-  : mPrincipal(aPrincipal)
-  , mLoadGroup(aLoadGroup)
-  , mRequest(aRequest)
-  , mMainThreadEventTarget(aMainThreadEventTarget)
-  , mPerformanceStorage(aPerformanceStorage)
-  , mNeedToObserveOnDataAvailable(false)
-  , mIsTrackingFetch(aIsTrackingFetch)
-  , mOnStopRequestCalled(false)
+    : mPrincipal(aPrincipal),
+      mLoadGroup(aLoadGroup),
+      mRequest(aRequest),
+      mMainThreadEventTarget(aMainThreadEventTarget),
+      mPerformanceStorage(aPerformanceStorage),
+      mNeedToObserveOnDataAvailable(false),
+      mIsTrackingFetch(aIsTrackingFetch),
+      mOnStopRequestCalled(false)
 #ifdef DEBUG
-  , mResponseAvailableCalled(false)
-  , mFetchCalled(false)
+      ,
+      mResponseAvailableCalled(false),
+      mFetchCalled(false)
 #endif
 {
   AssertIsOnMainThread();
@@ -378,8 +348,7 @@ FetchDriver::FetchDriver(InternalRequest* aRequest,
   MOZ_ASSERT(aMainThreadEventTarget);
 }
 
-FetchDriver::~FetchDriver()
-{
+FetchDriver::~FetchDriver() {
   AssertIsOnMainThread();
 
   
@@ -387,9 +356,8 @@ FetchDriver::~FetchDriver()
   MOZ_ASSERT(mResponseAvailableCalled);
 }
 
-nsresult
-FetchDriver::Fetch(AbortSignalImpl* aSignalImpl, FetchDriverObserver* aObserver)
-{
+nsresult FetchDriver::Fetch(AbortSignalImpl* aSignalImpl,
+                            FetchDriverObserver* aObserver) {
   AssertIsOnMainThread();
 #ifdef DEBUG
   MOZ_ASSERT(!mFetchCalled);
@@ -406,8 +374,8 @@ FetchDriver::Fetch(AbortSignalImpl* aSignalImpl, FetchDriverObserver* aObserver)
   MOZ_RELEASE_ASSERT(!mRequest->IsSynchronous(),
                      "Synchronous fetch not supported");
 
-
-  UniquePtr<mozilla::ipc::PrincipalInfo> principalInfo(new mozilla::ipc::PrincipalInfo());
+  UniquePtr<mozilla::ipc::PrincipalInfo> principalInfo(
+      new mozilla::ipc::PrincipalInfo());
   nsresult rv = PrincipalToPrincipalInfo(mPrincipal, principalInfo.get());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -438,9 +406,8 @@ FetchDriver::Fetch(AbortSignalImpl* aSignalImpl, FetchDriverObserver* aObserver)
 
 
 
-nsresult
-FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
-{
+nsresult FetchDriver::HttpFetch(
+    const nsACString& aPreferredAlternativeDataType) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -458,8 +425,7 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (mRequest->Mode() == RequestMode::No_cors &&
-      mRequest->UnsafeRequest() &&
+  if (mRequest->Mode() == RequestMode::No_cors && mRequest->UnsafeRequest() &&
       (!mRequest->HasSimpleMethod() ||
        !mRequest->Headers()->HasOnlySimpleHeaders())) {
     MOZ_ASSERT(false, "The API should have caught this");
@@ -500,8 +466,9 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
   
   
   
-  const nsLoadFlags bypassFlag = mRequest->SkipServiceWorker() ?
-                                 nsIChannel::LOAD_BYPASS_SERVICE_WORKER : 0;
+  const nsLoadFlags bypassFlag = mRequest->SkipServiceWorker()
+                                     ? nsIChannel::LOAD_BYPASS_SERVICE_WORKER
+                                     : 0;
 
   nsSecurityFlags secFlags = 0;
   if (mRequest->Mode() == RequestMode::Cors) {
@@ -527,7 +494,8 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
     secFlags |= nsILoadInfo::SEC_COOKIES_INCLUDE;
   } else if (mRequest->GetCredentialsMode() == RequestCredentials::Omit) {
     secFlags |= nsILoadInfo::SEC_COOKIES_OMIT;
-  } else if (mRequest->GetCredentialsMode() == RequestCredentials::Same_origin) {
+  } else if (mRequest->GetCredentialsMode() ==
+             RequestCredentials::Same_origin) {
     secFlags |= nsILoadInfo::SEC_COOKIES_SAME_ORIGIN;
   } else {
     MOZ_ASSERT_UNREACHABLE("Unexpected credentials mode!");
@@ -539,44 +507,26 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
   MOZ_ASSERT(mLoadGroup);
   nsCOMPtr<nsIChannel> chan;
 
-  nsLoadFlags loadFlags = nsIRequest::LOAD_BACKGROUND |
-    bypassFlag | nsIChannel::LOAD_CLASSIFY_URI;
+  nsLoadFlags loadFlags =
+      nsIRequest::LOAD_BACKGROUND | bypassFlag | nsIChannel::LOAD_CLASSIFY_URI;
   if (mDocument) {
     MOZ_ASSERT(mDocument->NodePrincipal() == mPrincipal);
-    rv = NS_NewChannel(getter_AddRefs(chan),
-                       uri,
-                       mDocument,
-                       secFlags,
+    rv = NS_NewChannel(getter_AddRefs(chan), uri, mDocument, secFlags,
                        mRequest->ContentPolicyType(),
-                       nullptr, 
-                       mLoadGroup,
-                       nullptr, 
-                       loadFlags,
-                       ios);
+                       nullptr,             
+                       mLoadGroup, nullptr, 
+                       loadFlags, ios);
   } else if (mClientInfo.isSome()) {
-    rv = NS_NewChannel(getter_AddRefs(chan),
-                       uri,
-                       mPrincipal,
-                       mClientInfo.ref(),
-                       mController,
-                       secFlags,
-                       mRequest->ContentPolicyType(),
-                       mPerformanceStorage,
-                       mLoadGroup,
-                       nullptr, 
-                       loadFlags,
-                       ios);
+    rv =
+        NS_NewChannel(getter_AddRefs(chan), uri, mPrincipal, mClientInfo.ref(),
+                      mController, secFlags, mRequest->ContentPolicyType(),
+                      mPerformanceStorage, mLoadGroup, nullptr, 
+                      loadFlags, ios);
   } else {
-    rv = NS_NewChannel(getter_AddRefs(chan),
-                       uri,
-                       mPrincipal,
-                       secFlags,
-                       mRequest->ContentPolicyType(),
-                       mPerformanceStorage,
-                       mLoadGroup,
-                       nullptr, 
-                       loadFlags,
-                       ios);
+    rv = NS_NewChannel(getter_AddRefs(chan), uri, mPrincipal, secFlags,
+                       mRequest->ContentPolicyType(), mPerformanceStorage,
+                       mLoadGroup, nullptr, 
+                       loadFlags, ios);
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -629,7 +579,8 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
     
     
     
-    net::ReferrerPolicy net_referrerPolicy = mRequest->GetEnvironmentReferrerPolicy();
+    net::ReferrerPolicy net_referrerPolicy =
+        mRequest->GetEnvironmentReferrerPolicy();
     if (mRequest->ReferrerPolicy_() == ReferrerPolicy::_empty) {
       mRequest->SetReferrerPolicy(net_referrerPolicy);
     }
@@ -639,13 +590,12 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
     if (mRequest->ReferrerPolicy_() == ReferrerPolicy::_empty) {
       nsCOMPtr<nsILoadInfo> loadInfo = httpChan->GetLoadInfo();
       bool isPrivate = loadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
-      net::ReferrerPolicy referrerPolicy = static_cast<net::ReferrerPolicy>(NS_GetDefaultReferrerPolicy(isPrivate));
+      net::ReferrerPolicy referrerPolicy = static_cast<net::ReferrerPolicy>(
+          NS_GetDefaultReferrerPolicy(isPrivate));
       mRequest->SetReferrerPolicy(referrerPolicy);
     }
 
-    rv = FetchUtil::SetRequestReferrer(mPrincipal,
-                                       mDocument,
-                                       httpChan,
+    rv = FetchUtil::SetRequestReferrer(mPrincipal, mDocument, httpChan,
                                        mRequest);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -660,10 +610,12 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
     
     rv = internalChan->SetCorsMode(static_cast<uint32_t>(mRequest->Mode()));
     MOZ_ASSERT(NS_SUCCEEDED(rv));
-    rv = internalChan->SetRedirectMode(static_cast<uint32_t>(mRequest->GetRedirectMode()));
+    rv = internalChan->SetRedirectMode(
+        static_cast<uint32_t>(mRequest->GetRedirectMode()));
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     mRequest->MaybeSkipCacheIfPerformingRevalidation();
-    rv = internalChan->SetFetchCacheMode(static_cast<uint32_t>(mRequest->GetCacheMode()));
+    rv = internalChan->SetFetchCacheMode(
+        static_cast<uint32_t>(mRequest->GetCacheMode()));
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     rv = internalChan->SetIntegrityMetadata(mRequest->GetIntegrity());
     MOZ_ASSERT(NS_SUCCEEDED(rv));
@@ -682,7 +634,8 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
   if (uploadChan) {
     nsAutoCString contentType;
     ErrorResult result;
-    mRequest->Headers()->GetFirst(NS_LITERAL_CSTRING("content-type"), contentType, result);
+    mRequest->Headers()->GetFirst(NS_LITERAL_CSTRING("content-type"),
+                                  contentType, result);
     
     
     
@@ -694,10 +647,10 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
     
 #ifdef DEBUG
     bool hasContentTypeHeader =
-      mRequest->Headers()->Has(NS_LITERAL_CSTRING("content-type"), result);
+        mRequest->Headers()->Has(NS_LITERAL_CSTRING("content-type"), result);
     MOZ_ASSERT(!result.Failed());
     MOZ_ASSERT_IF(!hasContentTypeHeader, contentType.IsVoid());
-#endif 
+#endif  
 
     int64_t bodyLength;
     nsCOMPtr<nsIInputStream> bodyStream;
@@ -744,10 +697,11 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
   if (!aPreferredAlternativeDataType.IsEmpty()) {
     nsCOMPtr<nsICacheInfoChannel> cic = do_QueryInterface(chan);
     if (cic) {
-      cic->PreferAlternativeDataType(aPreferredAlternativeDataType, EmptyCString());
+      cic->PreferAlternativeDataType(aPreferredAlternativeDataType,
+                                     EmptyCString());
       MOZ_ASSERT(!mAltDataListener);
-      mAltDataListener =
-        new AlternativeDataStreamListener(this, chan, aPreferredAlternativeDataType);
+      mAltDataListener = new AlternativeDataStreamListener(
+          this, chan, aPreferredAlternativeDataType);
       rv = chan->AsyncOpen2(mAltDataListener);
     } else {
       rv = chan->AsyncOpen2(this);
@@ -764,10 +718,8 @@ FetchDriver::HttpFetch(const nsACString& aPreferredAlternativeDataType)
   mChannel = chan;
   return NS_OK;
 }
-already_AddRefed<InternalResponse>
-FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse,
-                                         bool aFoundOpaqueRedirect)
-{
+already_AddRefed<InternalResponse> FetchDriver::BeginAndGetFilteredResponse(
+    InternalResponse* aResponse, bool aFoundOpaqueRedirect) {
   MOZ_ASSERT(aResponse);
   AutoTArray<nsCString, 4> reqURLList;
   mRequest->GetURLListWithoutFragment(reqURLList);
@@ -787,7 +739,9 @@ FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse,
       case LoadTainting::Opaque: {
         filteredResponse = aResponse->OpaqueResponse();
         nsresult rv = filteredResponse->GeneratePaddingInfo();
-        if (NS_WARN_IF(NS_FAILED(rv))) { return nullptr; }
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return nullptr;
+        }
         break;
       }
       default:
@@ -799,17 +753,15 @@ FetchDriver::BeginAndGetFilteredResponse(InternalResponse* aResponse,
   MOZ_ASSERT(mObserver);
   if (!ShouldCheckSRI(mRequest, filteredResponse)) {
     mObserver->OnResponseAvailable(filteredResponse);
-  #ifdef DEBUG
+#ifdef DEBUG
     mResponseAvailableCalled = true;
-  #endif
+#endif
   }
 
   return filteredResponse.forget();
 }
 
-void
-FetchDriver::FailWithNetworkError(nsresult rv)
-{
+void FetchDriver::FailWithNetworkError(nsresult rv) {
   AssertIsOnMainThread();
   RefPtr<InternalResponse> error = InternalResponse::NetworkError(rv);
   if (mObserver) {
@@ -825,9 +777,7 @@ FetchDriver::FailWithNetworkError(nsresult rv)
 }
 
 NS_IMETHODIMP
-FetchDriver::OnStartRequest(nsIRequest* aRequest,
-                            nsISupports* aContext)
-{
+FetchDriver::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext) {
   AssertIsOnMainThread();
 
   
@@ -863,7 +813,8 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
 
   int64_t contentLength = InternalResponse::UNKNOWN_BODY_SIZE;
   rv = channel->GetContentLength(&contentLength);
-  MOZ_ASSERT_IF(NS_FAILED(rv), contentLength == InternalResponse::UNKNOWN_BODY_SIZE);
+  MOZ_ASSERT_IF(NS_FAILED(rv),
+                contentLength == InternalResponse::UNKNOWN_BODY_SIZE);
 
   if (httpChannel) {
     uint32_t responseStatus;
@@ -890,9 +841,12 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
 
     
     
+    
     ErrorResult result;
-    if (response->Headers()->Has(NS_LITERAL_CSTRING("content-encoding"), result) ||
-        response->Headers()->Has(NS_LITERAL_CSTRING("transfer-encoding"), result)) {
+    if (response->Headers()->Has(NS_LITERAL_CSTRING("content-encoding"),
+                                 result) ||
+        response->Headers()->Has(NS_LITERAL_CSTRING("transfer-encoding"),
+                                 result)) {
       
       
       
@@ -913,8 +867,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
       }
 
       response->Headers()->Append(NS_LITERAL_CSTRING("Content-Type"),
-                                  contentType,
-                                  result);
+                                  contentType, result);
       MOZ_ASSERT(!result.Failed());
     }
 
@@ -922,8 +875,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
       nsAutoCString contentLenStr;
       contentLenStr.AppendInt(contentLength);
       response->Headers()->Append(NS_LITERAL_CSTRING("Content-Length"),
-                                  contentLenStr,
-                                  result);
+                                  contentLenStr, result);
       MOZ_ASSERT(!result.Failed());
     }
   }
@@ -944,24 +896,26 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
       } else {
         
         
-        nsCOMPtr<nsICacheInfoChannel> cacheInfo = mAltDataListener->GetCacheInfoChannel();
-        nsCOMPtr<nsIInputStream> altInputStream = mAltDataListener->GetAlternativeInputStream();
+        
+        nsCOMPtr<nsICacheInfoChannel> cacheInfo =
+            mAltDataListener->GetCacheInfoChannel();
+        nsCOMPtr<nsIInputStream> altInputStream =
+            mAltDataListener->GetAlternativeInputStream();
         MOZ_ASSERT(altInputStream && cacheInfo);
         response->SetAlternativeBody(altInputStream);
         nsMainThreadPtrHandle<nsICacheInfoChannel> handle(
-          new nsMainThreadPtrHolder<nsICacheInfoChannel>("nsICacheInfoChannel",
-                                                         cacheInfo,
-                                                         false));
+            new nsMainThreadPtrHolder<nsICacheInfoChannel>(
+                "nsICacheInfoChannel", cacheInfo, false));
         response->SetCacheInfoChannel(handle);
       }
     } else if (!mAltDataListener->GetAlternativeDataType().IsEmpty()) {
       
       
       
+      
       nsMainThreadPtrHandle<nsICacheInfoChannel> handle(
-        new nsMainThreadPtrHolder<nsICacheInfoChannel>("nsICacheInfoChannel",
-                                                       cic,
-                                                       false));
+          new nsMainThreadPtrHolder<nsICacheInfoChannel>("nsICacheInfoChannel",
+                                                         cic, false));
       response->SetCacheInfoChannel(handle);
     }
   }
@@ -978,7 +932,7 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
                   0, 
                   UINT32_MAX ,
                   true ,
-                  false  );
+                  false );
   if (NS_WARN_IF(NS_FAILED(rv))) {
     FailWithNetworkError(rv);
     
@@ -1055,16 +1009,17 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
     } else if (!mWorkerScript.IsEmpty()) {
       sourceUri.Assign(mWorkerScript);
     }
-    SRICheck::IntegrityMetadata(mRequest->GetIntegrity(), sourceUri,
-                                reporter, &mSRIMetadata);
-    mSRIDataVerifier = new SRICheckDataVerifier(mSRIMetadata, sourceUri,
-                                                reporter);
+    SRICheck::IntegrityMetadata(mRequest->GetIntegrity(), sourceUri, reporter,
+                                &mSRIMetadata);
+    mSRIDataVerifier =
+        new SRICheckDataVerifier(mSRIMetadata, sourceUri, reporter);
 
     
     return NS_OK;
   }
 
-  nsCOMPtr<nsIEventTarget> sts = do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
+  nsCOMPtr<nsIEventTarget> sts =
+      do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID, &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     FailWithNetworkError(rv);
     
@@ -1081,21 +1036,17 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
 namespace {
 
 
-class DataAvailableRunnable final : public Runnable
-{
+class DataAvailableRunnable final : public Runnable {
   RefPtr<FetchDriverObserver> mObserver;
 
-public:
+ public:
   explicit DataAvailableRunnable(FetchDriverObserver* aObserver)
-    : Runnable("dom::DataAvailableRunnable")
-    , mObserver(aObserver)
-  {
-     MOZ_ASSERT(aObserver);
+      : Runnable("dom::DataAvailableRunnable"), mObserver(aObserver) {
+    MOZ_ASSERT(aObserver);
   }
 
   NS_IMETHOD
-  Run() override
-  {
+  Run() override {
     mObserver->OnDataAvailable();
     mObserver = nullptr;
     return NS_OK;
@@ -1105,33 +1056,25 @@ public:
 struct SRIVerifierAndOutputHolder {
   SRIVerifierAndOutputHolder(SRICheckDataVerifier* aVerifier,
                              nsIOutputStream* aOutputStream)
-    : mVerifier(aVerifier)
-    , mOutputStream(aOutputStream)
-  {}
+      : mVerifier(aVerifier), mOutputStream(aOutputStream) {}
 
   SRICheckDataVerifier* mVerifier;
   nsIOutputStream* mOutputStream;
 
-private:
+ private:
   SRIVerifierAndOutputHolder() = delete;
 };
 
 
 
-nsresult
-CopySegmentToStreamAndSRI(nsIInputStream* aInStr,
-                          void* aClosure,
-                          const char* aBuffer,
-                          uint32_t aOffset,
-                          uint32_t aCount,
-                          uint32_t* aCountWritten)
-{
+nsresult CopySegmentToStreamAndSRI(nsIInputStream* aInStr, void* aClosure,
+                                   const char* aBuffer, uint32_t aOffset,
+                                   uint32_t aCount, uint32_t* aCountWritten) {
   auto holder = static_cast<SRIVerifierAndOutputHolder*>(aClosure);
   MOZ_DIAGNOSTIC_ASSERT(holder && holder->mVerifier && holder->mOutputStream,
                         "Bogus holder");
-  nsresult rv =
-    holder->mVerifier->Update(aCount,
-                              reinterpret_cast<const uint8_t*>(aBuffer));
+  nsresult rv = holder->mVerifier->Update(
+      aCount, reinterpret_cast<const uint8_t*>(aBuffer));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -1149,15 +1092,12 @@ CopySegmentToStreamAndSRI(nsIInputStream* aInStr,
   return NS_OK;
 }
 
-} 
+}  
 
 NS_IMETHODIMP
-FetchDriver::OnDataAvailable(nsIRequest* aRequest,
-                             nsISupports* aContext,
-                             nsIInputStream* aInputStream,
-                             uint64_t aOffset,
-                             uint32_t aCount)
-{
+FetchDriver::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
+                             nsIInputStream* aInputStream, uint64_t aOffset,
+                             uint32_t aCount) {
   
   
   
@@ -1169,8 +1109,8 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest,
         mObserver->OnDataAvailable();
       } else {
         RefPtr<Runnable> runnable = new DataAvailableRunnable(mObserver);
-        nsresult rv =
-          mMainThreadEventTarget->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
+        nsresult rv = mMainThreadEventTarget->Dispatch(runnable.forget(),
+                                                       NS_DISPATCH_NORMAL);
         if (NS_WARN_IF(NS_FAILED(rv))) {
           return rv;
         }
@@ -1192,11 +1132,10 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest,
     MOZ_ASSERT(mSRIDataVerifier);
 
     SRIVerifierAndOutputHolder holder(mSRIDataVerifier, mPipeOutputStream);
-    rv = aInputStream->ReadSegments(CopySegmentToStreamAndSRI,
-                                    &holder, aCount, &aRead);
+    rv = aInputStream->ReadSegments(CopySegmentToStreamAndSRI, &holder, aCount,
+                                    &aRead);
   } else {
-    rv = aInputStream->ReadSegments(NS_CopySegmentToStream,
-                                    mPipeOutputStream,
+    rv = aInputStream->ReadSegments(NS_CopySegmentToStream, mPipeOutputStream,
                                     aCount, &aRead);
   }
 
@@ -1213,25 +1152,26 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest,
 }
 
 NS_IMETHODIMP
-FetchDriver::OnStopRequest(nsIRequest* aRequest,
-                           nsISupports* aContext,
-                           nsresult aStatusCode)
-{
+FetchDriver::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
+                           nsresult aStatusCode) {
   AssertIsOnMainThread();
 
   MOZ_DIAGNOSTIC_ASSERT(!mOnStopRequestCalled);
   mOnStopRequestCalled = true;
 
   
-  RefPtr<AlternativeDataStreamListener> altDataListener = mAltDataListener.forget();
+  RefPtr<AlternativeDataStreamListener> altDataListener =
+      mAltDataListener.forget();
 
   
   
   
   if (NS_FAILED(aStatusCode) || !mObserver) {
-    nsCOMPtr<nsIAsyncOutputStream> outputStream = do_QueryInterface(mPipeOutputStream);
+    nsCOMPtr<nsIAsyncOutputStream> outputStream =
+        do_QueryInterface(mPipeOutputStream);
     if (outputStream) {
-      outputStream->CloseWithStatus(NS_FAILED(aStatusCode) ? aStatusCode : NS_BINDING_FAILED);
+      outputStream->CloseWithStatus(NS_FAILED(aStatusCode) ? aStatusCode
+                                                           : NS_BINDING_FAILED);
     }
     if (altDataListener) {
       altDataListener->Cancel();
@@ -1260,8 +1200,8 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest,
       } else if (!mWorkerScript.IsEmpty()) {
         sourceUri.Assign(mWorkerScript);
       }
-      nsresult rv = mSRIDataVerifier->Verify(mSRIMetadata, channel, sourceUri,
-                                             reporter);
+      nsresult rv =
+          mSRIDataVerifier->Verify(mSRIMetadata, channel, sourceUri, reporter);
       if (NS_FAILED(rv)) {
         if (altDataListener) {
           altDataListener->Cancel();
@@ -1280,9 +1220,8 @@ FetchDriver::OnStopRequest(nsIRequest* aRequest,
   return FinishOnStopRequest(altDataListener);
 }
 
-nsresult
-FetchDriver::FinishOnStopRequest(AlternativeDataStreamListener* aAltDataListener)
-{
+nsresult FetchDriver::FinishOnStopRequest(
+    AlternativeDataStreamListener* aAltDataListener) {
   AssertIsOnMainThread();
   
   
@@ -1304,9 +1243,9 @@ FetchDriver::FinishOnStopRequest(AlternativeDataStreamListener* aAltDataListener
     if (ShouldCheckSRI(mRequest, mResponse)) {
       MOZ_ASSERT(mResponse);
       mObserver->OnResponseAvailable(mResponse);
-      #ifdef DEBUG
-        mResponseAvailableCalled = true;
-      #endif
+#ifdef DEBUG
+      mResponseAvailableCalled = true;
+#endif
     }
 
     mObserver->OnResponseEnd(FetchDriverObserver::eByNetworking);
@@ -1319,10 +1258,8 @@ FetchDriver::FinishOnStopRequest(AlternativeDataStreamListener* aAltDataListener
 
 NS_IMETHODIMP
 FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
-                                    nsIChannel* aNewChannel,
-                                    uint32_t aFlags,
-                                    nsIAsyncVerifyRedirectCallback *aCallback)
-{
+                                    nsIChannel* aNewChannel, uint32_t aFlags,
+                                    nsIAsyncVerifyRedirectCallback* aCallback) {
   nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aNewChannel);
   if (httpChannel) {
     SetRequestHeaders(httpChannel);
@@ -1331,8 +1268,8 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   nsCOMPtr<nsIHttpChannel> oldHttpChannel = do_QueryInterface(aOldChannel);
   nsAutoCString tRPHeaderCValue;
   if (oldHttpChannel) {
-    Unused << oldHttpChannel->GetResponseHeader(NS_LITERAL_CSTRING("referrer-policy"),
-                                                tRPHeaderCValue);
+    Unused << oldHttpChannel->GetResponseHeader(
+        NS_LITERAL_CSTRING("referrer-policy"), tRPHeaderCValue);
   }
 
   
@@ -1344,17 +1281,17 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 
   nsCOMPtr<nsIURI> uriClone;
   nsresult rv = NS_GetURIWithoutRef(uri, getter_AddRefs(uriClone));
-  if(NS_WARN_IF(NS_FAILED(rv))){
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
   nsCString spec;
   rv = uriClone->GetSpec(spec);
-  if(NS_WARN_IF(NS_FAILED(rv))){
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
   nsCString fragment;
   rv = uri->GetRef(fragment);
-  if(NS_WARN_IF(NS_FAILED(rv))){
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
@@ -1371,15 +1308,13 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
   
   if (!tRPHeaderValue.IsEmpty()) {
     net::ReferrerPolicy net_referrerPolicy =
-      nsContentUtils::GetReferrerPolicyFromHeader(tRPHeaderValue);
+        nsContentUtils::GetReferrerPolicyFromHeader(tRPHeaderValue);
     if (net_referrerPolicy != net::RP_Unset) {
       mRequest->SetReferrerPolicy(net_referrerPolicy);
       
       if (httpChannel) {
-        nsresult rv = FetchUtil::SetRequestReferrer(mPrincipal,
-                                                    mDocument,
-                                                    httpChannel,
-                                                    mRequest);
+        nsresult rv = FetchUtil::SetRequestReferrer(mPrincipal, mDocument,
+                                                    httpChannel, mRequest);
         NS_ENSURE_SUCCESS(rv, rv);
       }
     }
@@ -1390,14 +1325,10 @@ FetchDriver::AsyncOnChannelRedirect(nsIChannel* aOldChannel,
 }
 
 NS_IMETHODIMP
-FetchDriver::CheckListenerChain()
-{
-  return NS_OK;
-}
+FetchDriver::CheckListenerChain() { return NS_OK; }
 
 NS_IMETHODIMP
-FetchDriver::GetInterface(const nsIID& aIID, void **aResult)
-{
+FetchDriver::GetInterface(const nsIID& aIID, void** aResult) {
   if (aIID.Equals(NS_GET_IID(nsIChannelEventSink))) {
     *aResult = static_cast<nsIChannelEventSink*>(this);
     NS_ADDREF_THIS();
@@ -1417,38 +1348,29 @@ FetchDriver::GetInterface(const nsIID& aIID, void **aResult)
   return QueryInterface(aIID, aResult);
 }
 
-void
-FetchDriver::SetDocument(nsIDocument* aDocument)
-{
+void FetchDriver::SetDocument(nsIDocument* aDocument) {
   
   MOZ_ASSERT(!mFetchCalled);
   mDocument = aDocument;
 }
 
-void
-FetchDriver::SetCSPEventListener(nsICSPEventListener* aCSPEventListener)
-{
+void FetchDriver::SetCSPEventListener(nsICSPEventListener* aCSPEventListener) {
   MOZ_ASSERT(!mFetchCalled);
   mCSPEventListener = aCSPEventListener;
 }
 
-void
-FetchDriver::SetClientInfo(const ClientInfo& aClientInfo)
-{
+void FetchDriver::SetClientInfo(const ClientInfo& aClientInfo) {
   MOZ_ASSERT(!mFetchCalled);
   mClientInfo.emplace(aClientInfo);
 }
 
-void
-FetchDriver::SetController(const Maybe<ServiceWorkerDescriptor>& aController)
-{
+void FetchDriver::SetController(
+    const Maybe<ServiceWorkerDescriptor>& aController) {
   MOZ_ASSERT(!mFetchCalled);
   mController = aController;
 }
 
-void
-FetchDriver::SetRequestHeaders(nsIHttpChannel* aChannel) const
-{
+void FetchDriver::SetRequestHeaders(nsIHttpChannel* aChannel) const {
   MOZ_ASSERT(aChannel);
 
   AutoTArray<InternalHeaders::Entry, 5> headers;
@@ -1459,21 +1381,20 @@ FetchDriver::SetRequestHeaders(nsIHttpChannel* aChannel) const
       hasAccept = true;
     }
     if (headers[i].mValue.IsEmpty()) {
-      DebugOnly<nsresult> rv = aChannel->SetEmptyRequestHeader(headers[i].mName);
+      DebugOnly<nsresult> rv =
+          aChannel->SetEmptyRequestHeader(headers[i].mName);
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     } else {
-      DebugOnly<nsresult> rv =
-        aChannel->SetRequestHeader(headers[i].mName, headers[i].mValue,
-                                   false );
+      DebugOnly<nsresult> rv = aChannel->SetRequestHeader(
+          headers[i].mName, headers[i].mValue, false );
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
   }
 
   if (!hasAccept) {
-    DebugOnly<nsresult> rv =
-      aChannel->SetRequestHeader(NS_LITERAL_CSTRING("accept"),
-                                 NS_LITERAL_CSTRING("*/*"),
-                                 false );
+    DebugOnly<nsresult> rv = aChannel->SetRequestHeader(
+        NS_LITERAL_CSTRING("accept"), NS_LITERAL_CSTRING("*/*"),
+        false );
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
@@ -1482,22 +1403,19 @@ FetchDriver::SetRequestHeaders(nsIHttpChannel* aChannel) const
   if (!method.EqualsLiteral("GET") && !method.EqualsLiteral("HEAD")) {
     nsAutoString origin;
     if (NS_SUCCEEDED(nsContentUtils::GetUTFOrigin(mPrincipal, origin))) {
-      DebugOnly<nsresult> rv =
-        aChannel->SetRequestHeader(nsDependentCString(net::nsHttp::Origin),
-                                   NS_ConvertUTF16toUTF8(origin),
-                                   false );
+      DebugOnly<nsresult> rv = aChannel->SetRequestHeader(
+          nsDependentCString(net::nsHttp::Origin),
+          NS_ConvertUTF16toUTF8(origin), false );
       MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
   }
 }
 
-void
-FetchDriver::Abort()
-{
+void FetchDriver::Abort() {
   if (mObserver) {
-  #ifdef DEBUG
+#ifdef DEBUG
     mResponseAvailableCalled = true;
-  #endif
+#endif
     mObserver->OnResponseEnd(FetchDriverObserver::eAborted);
     mObserver = nullptr;
   }
@@ -1508,5 +1426,5 @@ FetchDriver::Abort()
   }
 }
 
-} 
-} 
+}  
+}  

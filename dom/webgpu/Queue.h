@@ -11,8 +11,9 @@
 
 namespace mozilla {
 namespace dom {
-template<typename T> class Sequence;
-} 
+template <typename T>
+class Sequence;
+}  
 
 namespace webgpu {
 
@@ -20,22 +21,20 @@ class CommandBuffer;
 class Device;
 class Fence;
 
-class Queue final
-    : public ChildOf<Device>
-{
-public:
-    WEBGPU_DECL_GOOP(Queue)
+class Queue final : public ChildOf<Device> {
+ public:
+  WEBGPU_DECL_GOOP(Queue)
 
-private:
-    Queue() = delete;
-    virtual ~Queue();
+ private:
+  Queue() = delete;
+  virtual ~Queue();
 
-public:
-    void Submit(const dom::Sequence<OwningNonNull<CommandBuffer>>& buffers) const;
-    already_AddRefed<Fence> InsertFence() const;
+ public:
+  void Submit(const dom::Sequence<OwningNonNull<CommandBuffer>>& buffers) const;
+  already_AddRefed<Fence> InsertFence() const;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

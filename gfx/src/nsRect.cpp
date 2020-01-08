@@ -5,23 +5,21 @@
 
 
 #include "nsRect.h"
-#include "mozilla/gfx/Types.h"          
-#include "mozilla/CheckedInt.h"         
-#include "nsDeviceContext.h"            
-#include "nsString.h"               
-#include "nsMargin.h"                   
+#include "mozilla/gfx/Types.h"   
+#include "mozilla/CheckedInt.h"  
+#include "nsDeviceContext.h"     
+#include "nsString.h"            
+#include "nsMargin.h"            
 
-static_assert((int(eSideTop) == 0) &&
-              (int(eSideRight) == 1) &&
-              (int(eSideBottom) == 2) &&
-              (int(eSideLeft) == 3),
-              "The mozilla::Side sequence must match the nsMargin nscoord sequence");
+static_assert(
+    (int(eSideTop) == 0) && (int(eSideRight) == 1) && (int(eSideBottom) == 2) &&
+        (int(eSideLeft) == 3),
+    "The mozilla::Side sequence must match the nsMargin nscoord sequence");
 
 const mozilla::gfx::IntRect& GetMaxSizedIntRect() {
   static const mozilla::gfx::IntRect r(0, 0, INT32_MAX, INT32_MAX);
   return r;
 }
-
 
 bool nsRect::Overflows() const {
 #ifdef NS_COORD_IS_FLOAT
@@ -38,26 +36,22 @@ bool nsRect::Overflows() const {
 #ifdef DEBUG
 
 
-FILE* operator<<(FILE* out, const nsRect& rect)
-{
+FILE* operator<<(FILE* out, const nsRect& rect) {
   nsAutoString tmp;
 
   
   tmp.Append('{');
-  tmp.AppendFloat(NSAppUnitsToFloatPixels(rect.X(),
-                       AppUnitsPerCSSPixel()));
+  tmp.AppendFloat(NSAppUnitsToFloatPixels(rect.X(), AppUnitsPerCSSPixel()));
   tmp.AppendLiteral(", ");
-  tmp.AppendFloat(NSAppUnitsToFloatPixels(rect.Y(),
-                       AppUnitsPerCSSPixel()));
+  tmp.AppendFloat(NSAppUnitsToFloatPixels(rect.Y(), AppUnitsPerCSSPixel()));
   tmp.AppendLiteral(", ");
-  tmp.AppendFloat(NSAppUnitsToFloatPixels(rect.Width(),
-                       AppUnitsPerCSSPixel()));
+  tmp.AppendFloat(NSAppUnitsToFloatPixels(rect.Width(), AppUnitsPerCSSPixel()));
   tmp.AppendLiteral(", ");
-  tmp.AppendFloat(NSAppUnitsToFloatPixels(rect.Height(),
-                       AppUnitsPerCSSPixel()));
+  tmp.AppendFloat(
+      NSAppUnitsToFloatPixels(rect.Height(), AppUnitsPerCSSPixel()));
   tmp.Append('}');
   fputs(NS_LossyConvertUTF16toASCII(tmp).get(), out);
   return out;
 }
 
-#endif 
+#endif  

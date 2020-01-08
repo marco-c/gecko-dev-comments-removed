@@ -26,9 +26,8 @@
 
 
 
-class ProfileBuffer final
-{
-public:
+class ProfileBuffer final {
+ public:
   
   
   
@@ -44,10 +43,10 @@ public:
   uint64_t AddThreadIdEntry(int aThreadId);
 
   void CollectCodeLocation(
-    const char* aLabel, const char* aStr, uint32_t aFrameFlags,
-    const mozilla::Maybe<uint32_t>& aLineNumber,
-    const mozilla::Maybe<uint32_t>& aColumnNumber,
-    const mozilla::Maybe<js::ProfilingStackFrame::Category>& aCategory);
+      const char* aLabel, const char* aStr, uint32_t aFrameFlags,
+      const mozilla::Maybe<uint32_t>& aLineNumber,
+      const mozilla::Maybe<uint32_t>& aColumnNumber,
+      const mozilla::Maybe<js::ProfilingStackFrame::Category>& aCategory);
 
   
   static const size_t kMaxFrameKeyLength = 512;
@@ -55,8 +54,8 @@ public:
   
   
   
-  void AddJITInfoForRange(uint64_t aRangeStart,
-                          int aThreadId, JSContext* aContext,
+  void AddJITInfoForRange(uint64_t aRangeStart, int aThreadId,
+                          JSContext* aContext,
                           JITFrameInfo& aJITFrameInfo) const;
 
   
@@ -100,14 +99,13 @@ public:
   void DeleteExpiredStoredMarkers();
 
   
-  ProfileBufferEntry& GetEntry(uint64_t aPosition) const
-  {
+  ProfileBufferEntry& GetEntry(uint64_t aPosition) const {
     return mEntries[aPosition & mEntryIndexMask];
   }
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
+ private:
   
   
   
@@ -117,7 +115,7 @@ private:
   
   uint32_t mEntryIndexMask;
 
-public:
+ public:
   
   
   
@@ -149,32 +147,27 @@ public:
 
 
 
-class ProfileBufferCollector final : public ProfilerStackCollector
-{
-public:
+class ProfileBufferCollector final : public ProfilerStackCollector {
+ public:
   ProfileBufferCollector(ProfileBuffer& aBuf, uint32_t aFeatures,
                          uint64_t aSamplePos)
-    : mBuf(aBuf)
-    , mSamplePositionInBuffer(aSamplePos)
-    , mFeatures(aFeatures)
-  {}
+      : mBuf(aBuf), mSamplePositionInBuffer(aSamplePos), mFeatures(aFeatures) {}
 
-  mozilla::Maybe<uint64_t> SamplePositionInBuffer() override
-  {
+  mozilla::Maybe<uint64_t> SamplePositionInBuffer() override {
     return mozilla::Some(mSamplePositionInBuffer);
   }
 
-  mozilla::Maybe<uint64_t> BufferRangeStart() override
-  {
+  mozilla::Maybe<uint64_t> BufferRangeStart() override {
     return mozilla::Some(mBuf.mRangeStart);
   }
 
   virtual void CollectNativeLeafAddr(void* aAddr) override;
   virtual void CollectJitReturnAddr(void* aAddr) override;
   virtual void CollectWasmFrame(const char* aLabel) override;
-  virtual void CollectProfilingStackFrame(const js::ProfilingStackFrame& aFrame) override;
+  virtual void CollectProfilingStackFrame(
+      const js::ProfilingStackFrame& aFrame) override;
 
-private:
+ private:
   ProfileBuffer& mBuf;
   uint64_t mSamplePositionInBuffer;
   uint32_t mFeatures;

@@ -31,332 +31,182 @@
 
 namespace mozilla {
 namespace dom {
-    class ContentParent;
+class ContentParent;
 }
 namespace ipc {
-    class FileDescriptor;
+class FileDescriptor;
 }
 namespace loader {
-    class InputBuffer;
-    class ScriptCacheChild;
+class InputBuffer;
+class ScriptCacheChild;
 
-    enum class ProcessType : uint8_t {
-        Uninitialized,
-        Parent,
-        Web,
-        Extension,
-        Privileged,
-    };
+enum class ProcessType : uint8_t {
+  Uninitialized,
+  Parent,
+  Web,
+  Extension,
+  Privileged,
+};
 
-    template <typename T>
-    struct Matcher
-    {
-        virtual bool Matches(T) = 0;
-    };
-}
+template <typename T>
+struct Matcher {
+  virtual bool Matches(T) = 0;
+};
+}  
 
 using namespace mozilla::loader;
 
-class ScriptPreloader : public nsIObserver
-                      , public nsIMemoryReporter
-                      , public nsIRunnable
-{
-    MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
+class ScriptPreloader : public nsIObserver,
+                        public nsIMemoryReporter,
+                        public nsIRunnable {
+  MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
 
-    friend class mozilla::loader::ScriptCacheChild;
+  friend class mozilla::loader::ScriptCacheChild;
 
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIOBSERVER
-    NS_DECL_NSIMEMORYREPORTER
-    NS_DECL_NSIRUNNABLE
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSIMEMORYREPORTER
+  NS_DECL_NSIRUNNABLE
 
-    static ScriptPreloader& GetSingleton();
-    static ScriptPreloader& GetChildSingleton();
+  static ScriptPreloader& GetSingleton();
+  static ScriptPreloader& GetChildSingleton();
 
-    static ProcessType GetChildProcessType(const nsAString& remoteType);
+  static ProcessType GetChildProcessType(const nsAString& remoteType);
 
-    
-    
-    JSScript* GetCachedScript(JSContext* cx, const nsCString& name);
+  
+  
+  JSScript* GetCachedScript(JSContext* cx, const nsCString& name);
 
-    
-    
-    
-    
-    
-    
-    
-    void NoteScript(const nsCString& url, const nsCString& cachePath, JS::HandleScript script,
-                    bool isRunOnce = false);
+  
+  
+  
+  
+  
+  
+  
+  void NoteScript(const nsCString& url, const nsCString& cachePath,
+                  JS::HandleScript script, bool isRunOnce = false);
 
-    void NoteScript(const nsCString& url, const nsCString& cachePath,
-                    ProcessType processType, nsTArray<uint8_t>&& xdrData,
-                    TimeStamp loadTime);
+  void NoteScript(const nsCString& url, const nsCString& cachePath,
+                  ProcessType processType, nsTArray<uint8_t>&& xdrData,
+                  TimeStamp loadTime);
 
-    
-    Result<Ok, nsresult> InitCache(const nsAString& = NS_LITERAL_STRING("scriptCache"));
+  
+  Result<Ok, nsresult> InitCache(
+      const nsAString& = NS_LITERAL_STRING("scriptCache"));
 
-    Result<Ok, nsresult> InitCache(const Maybe<ipc::FileDescriptor>& cacheFile, ScriptCacheChild* cacheChild);
+  Result<Ok, nsresult> InitCache(const Maybe<ipc::FileDescriptor>& cacheFile,
+                                 ScriptCacheChild* cacheChild);
 
-    bool Active()
-    {
-      return mCacheInitialized && !mStartupFinished;
+  bool Active() { return mCacheInitialized && !mStartupFinished; }
+
+ private:
+  Result<Ok, nsresult> InitCacheInternal(JS::HandleObject scope = nullptr);
+
+ public:
+  void Trace(JSTracer* trc);
+
+  static ProcessType CurrentProcessType() {
+    MOZ_ASSERT(sProcessType != ProcessType::Uninitialized);
+    return sProcessType;
+  }
+
+  static void InitContentChild(dom::ContentParent& parent);
+
+ protected:
+  virtual ~ScriptPreloader() = default;
+
+ private:
+  enum class ScriptStatus {
+    Restored,
+    Saved,
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  class CachedScript : public LinkedListElement<CachedScript> {
+   public:
+    CachedScript(CachedScript&&) = delete;
+
+    CachedScript(ScriptPreloader& cache, const nsCString& url,
+                 const nsCString& cachePath, JSScript* script)
+        : mCache(cache),
+          mURL(url),
+          mCachePath(cachePath),
+          mScript(script),
+          mReadyToExecute(true),
+          mIsRunOnce(false) {}
+
+    inline CachedScript(ScriptPreloader& cache, InputBuffer& buf);
+
+    ~CachedScript() = default;
+
+    ScriptStatus Status() const {
+      return mProcessTypes.isEmpty() ? ScriptStatus::Restored
+                                     : ScriptStatus::Saved;
     }
 
-private:
-    Result<Ok, nsresult> InitCacheInternal(JS::HandleObject scope = nullptr);
+    
+    
+    
+    
+    
+    struct Comparator {
+      bool Equals(const CachedScript* a, const CachedScript* b) const {
+        return a->mLoadTime == b->mLoadTime;
+      }
 
-public:
-    void Trace(JSTracer* trc);
-
-    static ProcessType CurrentProcessType()
-    {
-        MOZ_ASSERT(sProcessType != ProcessType::Uninitialized);
-        return sProcessType;
-    }
-
-    static void InitContentChild(dom::ContentParent& parent);
-
-protected:
-    virtual ~ScriptPreloader() = default;
-
-private:
-    enum class ScriptStatus {
-      Restored,
-      Saved,
+      bool LessThan(const CachedScript* a, const CachedScript* b) const {
+        return a->mLoadTime < b->mLoadTime;
+      }
     };
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    class CachedScript : public LinkedListElement<CachedScript>
-    {
-    public:
-        CachedScript(CachedScript&&) = delete;
+    struct StatusMatcher final : public Matcher<CachedScript*> {
+      explicit StatusMatcher(ScriptStatus status) : mStatus(status) {}
 
-        CachedScript(ScriptPreloader& cache, const nsCString& url, const nsCString& cachePath,
-                     JSScript* script)
-            : mCache(cache)
-            , mURL(url)
-            , mCachePath(cachePath)
-            , mScript(script)
-            , mReadyToExecute(true)
-            , mIsRunOnce(false)
-        {}
+      virtual bool Matches(CachedScript* script) override {
+        return script->Status() == mStatus;
+      }
 
-        inline CachedScript(ScriptPreloader& cache, InputBuffer& buf);
+      const ScriptStatus mStatus;
+    };
 
-        ~CachedScript() = default;
+    void FreeData() {
+      
+      
+      if (!mXDRData.empty()) {
+        mXDRRange.reset();
+        mXDRData.destroy();
+      }
+    }
 
-        ScriptStatus Status() const
-        {
-          return mProcessTypes.isEmpty() ? ScriptStatus::Restored : ScriptStatus::Saved;
-        }
-
-        
-        
-        
-        
-        
-        struct Comparator
-        {
-            bool Equals(const CachedScript* a, const CachedScript* b) const
-            {
-              return a->mLoadTime == b->mLoadTime;
-            }
-
-            bool LessThan(const CachedScript* a, const CachedScript* b) const
-            {
-              return a->mLoadTime < b->mLoadTime;
-            }
-        };
-
-        struct StatusMatcher final : public Matcher<CachedScript*>
-        {
-            explicit StatusMatcher(ScriptStatus status) : mStatus(status) {}
-
-            virtual bool Matches(CachedScript* script) override
-            {
-                return script->Status() == mStatus;
-            }
-
-            const ScriptStatus mStatus;
-        };
-
-        void FreeData()
-        {
-            
-            
-            if (!mXDRData.empty()) {
-                mXDRRange.reset();
-                mXDRData.destroy();
-            }
-        }
-
-        void UpdateLoadTime(const TimeStamp& loadTime)
-        {
-          if (mLoadTime.IsNull() || loadTime < mLoadTime) {
-            mLoadTime = loadTime;
-          }
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        bool MaybeDropScript()
-        {
-            if (mIsRunOnce && (HasRange() || !mCache.WillWriteScripts())) {
-                mScript = nullptr;
-                return true;
-            }
-            return false;
-        }
-
-        
-        
-        bool XDREncode(JSContext* cx);
-
-        
-        
-        template<typename Buffer>
-        void Code(Buffer& buffer)
-        {
-            buffer.codeString(mURL);
-            buffer.codeString(mCachePath);
-            buffer.codeUint32(mOffset);
-            buffer.codeUint32(mSize);
-            buffer.codeUint8(mProcessTypes);
-        }
-
-        
-        
-        JS::TranscodeBuffer& Buffer()
-        {
-            MOZ_ASSERT(HasBuffer());
-            return mXDRData.ref<JS::TranscodeBuffer>();
-        }
-
-        bool HasBuffer() { return mXDRData.constructed<JS::TranscodeBuffer>(); }
-
-        
-        const JS::TranscodeRange& Range()
-        {
-            MOZ_ASSERT(HasRange());
-            return mXDRRange.ref();
-        }
-
-        bool HasRange() { return mXDRRange.isSome(); }
-
-        nsTArray<uint8_t>& Array()
-        {
-            MOZ_ASSERT(HasArray());
-            return mXDRData.ref<nsTArray<uint8_t>>();
-        }
-
-        bool HasArray() { return mXDRData.constructed<nsTArray<uint8_t>>(); }
-
-
-        JSScript* GetJSScript(JSContext* cx);
-
-        size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf)
-        {
-            auto size = mallocSizeOf(this);
-
-            if (HasArray()) {
-                size += Array().ShallowSizeOfExcludingThis(mallocSizeOf);
-            } else if (HasBuffer()) {
-                size += Buffer().sizeOfExcludingThis(mallocSizeOf);
-            } else {
-                return size;
-            }
-
-            
-            
-            
-            size += (mURL.SizeOfExcludingThisIfUnshared(mallocSizeOf) +
-                     mCachePath.SizeOfExcludingThisEvenIfShared(mallocSizeOf));
-
-            return size;
-        }
-
-        ScriptPreloader& mCache;
-
-        
-        nsCString mURL;
-        
-        
-        nsCString mCachePath;
-
-        
-        
-        uint32_t mOffset = 0;
-        
-        uint32_t mSize = 0;
-
-        TimeStamp mLoadTime{};
-
-        JS::Heap<JSScript*> mScript;
-
-        
-        
-        
-        
-        bool mReadyToExecute = false;
-
-        
-        
-        
-        bool mIsRunOnce = false;
-
-        
-        EnumSet<ProcessType> mProcessTypes{};
-
-        
-        
-        EnumSet<ProcessType> mOriginalProcessTypes{};
-
-        
-        
-        
-        Maybe<JS::TranscodeRange> mXDRRange;
-
-        
-        
-        MaybeOneOf<JS::TranscodeBuffer, nsTArray<uint8_t>> mXDRData;
-    } JS_HAZ_NON_GC_POINTER;
-
-    template <ScriptStatus status>
-    static Matcher<CachedScript*>* Match()
-    {
-        static CachedScript::StatusMatcher matcher{status};
-        return &matcher;
+    void UpdateLoadTime(const TimeStamp& loadTime) {
+      if (mLoadTime.IsNull() || loadTime < mLoadTime) {
+        mLoadTime = loadTime;
+      }
     }
 
     
@@ -367,144 +217,272 @@ private:
     
     
     
-    
-    
-    
-    
-    static constexpr int OFF_THREAD_FIRST_CHUNK_SIZE = 128 * 1024;
-    static constexpr int OFF_THREAD_CHUNK_SIZE = 512 * 1024;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static constexpr int SMALL_SCRIPT_CHUNK_THRESHOLD = 128 * 1024;
-
-    
-    
-    
-    
-    
-    static constexpr int MAX_MAINTHREAD_DECODE_SIZE = 50 * 1024;
-
-    ScriptPreloader();
-
-    void ForceWriteCacheFile();
-    void Cleanup();
-
-    void FinishPendingParses(MonitorAutoLock& aMal);
-    void InvalidateCache();
-
-    
-    Result<Ok, nsresult> OpenCache();
-
-    
-    Result<Ok, nsresult> WriteCache();
-
-    
-    
-    void PrepareCacheWrite();
-
-    void PrepareCacheWriteInternal();
-
-    void FinishContentStartup();
-
-    
-    
-    
-    
-    bool WillWriteScripts();
-
-    
-    
-    Result<nsCOMPtr<nsIFile>, nsresult>
-    GetCacheFile(const nsAString& suffix);
-
-    
-    
-    JSScript* WaitForCachedScript(JSContext* cx, CachedScript* script);
-
-    void DecodeNextBatch(size_t chunkSize, JS::HandleObject scope = nullptr);
-
-    static void OffThreadDecodeCallback(JS::OffThreadToken* token, void* context);
-    void MaybeFinishOffThreadDecode();
-    void DoFinishOffThreadDecode();
-
-    size_t ShallowHeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf)
-    {
-        return (mallocSizeOf(this) + mScripts.ShallowSizeOfExcludingThis(mallocSizeOf) +
-                mallocSizeOf(mSaveThread.get()) + mallocSizeOf(mProfD.get()));
+    bool MaybeDropScript() {
+      if (mIsRunOnce && (HasRange() || !mCache.WillWriteScripts())) {
+        mScript = nullptr;
+        return true;
+      }
+      return false;
     }
 
-    using ScriptHash = nsClassHashtable<nsCStringHashKey, CachedScript>;
+    
+    
+    bool XDREncode(JSContext* cx);
 
-    template<ScriptStatus status>
-    static size_t SizeOfHashEntries(ScriptHash& scripts, mozilla::MallocSizeOf mallocSizeOf)
-    {
-        size_t size = 0;
-        for (auto elem : IterHash(scripts, Match<status>())) {
-            size += elem->HeapSizeOfIncludingThis(mallocSizeOf);
-        }
+    
+    
+    template <typename Buffer>
+    void Code(Buffer& buffer) {
+      buffer.codeString(mURL);
+      buffer.codeString(mCachePath);
+      buffer.codeUint32(mOffset);
+      buffer.codeUint32(mSize);
+      buffer.codeUint8(mProcessTypes);
+    }
+
+    
+    
+    JS::TranscodeBuffer& Buffer() {
+      MOZ_ASSERT(HasBuffer());
+      return mXDRData.ref<JS::TranscodeBuffer>();
+    }
+
+    bool HasBuffer() { return mXDRData.constructed<JS::TranscodeBuffer>(); }
+
+    
+    const JS::TranscodeRange& Range() {
+      MOZ_ASSERT(HasRange());
+      return mXDRRange.ref();
+    }
+
+    bool HasRange() { return mXDRRange.isSome(); }
+
+    nsTArray<uint8_t>& Array() {
+      MOZ_ASSERT(HasArray());
+      return mXDRData.ref<nsTArray<uint8_t>>();
+    }
+
+    bool HasArray() { return mXDRData.constructed<nsTArray<uint8_t>>(); }
+
+    JSScript* GetJSScript(JSContext* cx);
+
+    size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+      auto size = mallocSizeOf(this);
+
+      if (HasArray()) {
+        size += Array().ShallowSizeOfExcludingThis(mallocSizeOf);
+      } else if (HasBuffer()) {
+        size += Buffer().sizeOfExcludingThis(mallocSizeOf);
+      } else {
         return size;
+      }
+
+      
+      
+      
+      size += (mURL.SizeOfExcludingThisIfUnshared(mallocSizeOf) +
+               mCachePath.SizeOfExcludingThisEvenIfShared(mallocSizeOf));
+
+      return size;
     }
 
-    ScriptHash mScripts;
+    ScriptPreloader& mCache;
+
+    
+    nsCString mURL;
+    
+    
+    nsCString mCachePath;
 
     
     
-    bool mStartupFinished = false;
+    uint32_t mOffset = 0;
+    
+    uint32_t mSize = 0;
 
-    bool mCacheInitialized = false;
-    bool mSaveComplete = false;
-    bool mDataPrepared = false;
-    bool mCacheInvalidated = false;
-    bool mBlockedOnSyncDispatch = false;
+    TimeStamp mLoadTime{};
+
+    JS::Heap<JSScript*> mScript;
 
     
     
-    LinkedList<CachedScript> mPendingScripts;
+    
+    
+    bool mReadyToExecute = false;
 
     
     
-    JS::TranscodeSources mParsingSources;
-    Vector<CachedScript*> mParsingScripts;
+    
+    bool mIsRunOnce = false;
 
     
-    JS::OffThreadToken* mToken = nullptr;
-
-    
-    
-    bool mFinishDecodeRunnablePending = false;
-
-    
-    static ProcessType sProcessType;
+    EnumSet<ProcessType> mProcessTypes{};
 
     
     
-    EnumSet<ProcessType> mInitializedProcesses{};
-
-    RefPtr<ScriptPreloader> mChildCache;
-    ScriptCacheChild* mChildActor = nullptr;
-
-    nsString mBaseName;
-    nsCString mContentStartupFinishedTopic;
-
-    nsCOMPtr<nsIFile> mProfD;
-    nsCOMPtr<nsIThread> mSaveThread;
-    nsCOMPtr<nsITimer> mSaveTimer;
+    EnumSet<ProcessType> mOriginalProcessTypes{};
 
     
-    AutoMemMap mCacheData;
+    
+    
+    Maybe<JS::TranscodeRange> mXDRRange;
 
-    Monitor mMonitor;
-    Monitor mSaveMonitor;
+    
+    
+    MaybeOneOf<JS::TranscodeBuffer, nsTArray<uint8_t>> mXDRData;
+  } JS_HAZ_NON_GC_POINTER;
+
+  template <ScriptStatus status>
+  static Matcher<CachedScript*>* Match() {
+    static CachedScript::StatusMatcher matcher{status};
+    return &matcher;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr int OFF_THREAD_FIRST_CHUNK_SIZE = 128 * 1024;
+  static constexpr int OFF_THREAD_CHUNK_SIZE = 512 * 1024;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static constexpr int SMALL_SCRIPT_CHUNK_THRESHOLD = 128 * 1024;
+
+  
+  
+  
+  
+  
+  static constexpr int MAX_MAINTHREAD_DECODE_SIZE = 50 * 1024;
+
+  ScriptPreloader();
+
+  void ForceWriteCacheFile();
+  void Cleanup();
+
+  void FinishPendingParses(MonitorAutoLock& aMal);
+  void InvalidateCache();
+
+  
+  Result<Ok, nsresult> OpenCache();
+
+  
+  Result<Ok, nsresult> WriteCache();
+
+  
+  
+  void PrepareCacheWrite();
+
+  void PrepareCacheWriteInternal();
+
+  void FinishContentStartup();
+
+  
+  
+  
+  
+  bool WillWriteScripts();
+
+  
+  
+  Result<nsCOMPtr<nsIFile>, nsresult> GetCacheFile(const nsAString& suffix);
+
+  
+  
+  JSScript* WaitForCachedScript(JSContext* cx, CachedScript* script);
+
+  void DecodeNextBatch(size_t chunkSize, JS::HandleObject scope = nullptr);
+
+  static void OffThreadDecodeCallback(JS::OffThreadToken* token, void* context);
+  void MaybeFinishOffThreadDecode();
+  void DoFinishOffThreadDecode();
+
+  size_t ShallowHeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+    return (mallocSizeOf(this) +
+            mScripts.ShallowSizeOfExcludingThis(mallocSizeOf) +
+            mallocSizeOf(mSaveThread.get()) + mallocSizeOf(mProfD.get()));
+  }
+
+  using ScriptHash = nsClassHashtable<nsCStringHashKey, CachedScript>;
+
+  template <ScriptStatus status>
+  static size_t SizeOfHashEntries(ScriptHash& scripts,
+                                  mozilla::MallocSizeOf mallocSizeOf) {
+    size_t size = 0;
+    for (auto elem : IterHash(scripts, Match<status>())) {
+      size += elem->HeapSizeOfIncludingThis(mallocSizeOf);
+    }
+    return size;
+  }
+
+  ScriptHash mScripts;
+
+  
+  
+  bool mStartupFinished = false;
+
+  bool mCacheInitialized = false;
+  bool mSaveComplete = false;
+  bool mDataPrepared = false;
+  bool mCacheInvalidated = false;
+  bool mBlockedOnSyncDispatch = false;
+
+  
+  
+  LinkedList<CachedScript> mPendingScripts;
+
+  
+  
+  JS::TranscodeSources mParsingSources;
+  Vector<CachedScript*> mParsingScripts;
+
+  
+  JS::OffThreadToken* mToken = nullptr;
+
+  
+  
+  bool mFinishDecodeRunnablePending = false;
+
+  
+  static ProcessType sProcessType;
+
+  
+  
+  EnumSet<ProcessType> mInitializedProcesses{};
+
+  RefPtr<ScriptPreloader> mChildCache;
+  ScriptCacheChild* mChildActor = nullptr;
+
+  nsString mBaseName;
+  nsCString mContentStartupFinishedTopic;
+
+  nsCOMPtr<nsIFile> mProfD;
+  nsCOMPtr<nsIThread> mSaveThread;
+  nsCOMPtr<nsITimer> mSaveTimer;
+
+  
+  AutoMemMap mCacheData;
+
+  Monitor mMonitor;
+  Monitor mSaveMonitor;
 };
 
-} 
+}  
 
-#endif 
+#endif  

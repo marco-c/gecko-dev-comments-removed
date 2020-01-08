@@ -18,7 +18,7 @@ class nsHyphenator;
 
 
 class nsILineBreakSink {
-public:
+ public:
   
 
 
@@ -30,13 +30,15 @@ public:
 
 
 
-  virtual void SetBreaks(uint32_t aStart, uint32_t aLength, uint8_t* aBreakBefore) = 0;
+  virtual void SetBreaks(uint32_t aStart, uint32_t aLength,
+                         uint8_t* aBreakBefore) = 0;
 
   
 
 
 
-  virtual void SetCapitalization(uint32_t aStart, uint32_t aLength, bool* aCapitalize) = 0;
+  virtual void SetCapitalization(uint32_t aStart, uint32_t aLength,
+                                 bool* aCapitalize) = 0;
 };
 
 
@@ -62,29 +64,27 @@ public:
 
 
 class nsLineBreaker {
-public:
+ public:
   nsLineBreaker();
   ~nsLineBreaker();
 
-  static inline bool IsSpace(char16_t u) { return mozilla::intl::NS_IsSpace(u); }
-
-  static inline bool IsComplexASCIIChar(char16_t u)
-  {
-    return !((0x0030 <= u && u <= 0x0039) ||
-             (0x0041 <= u && u <= 0x005A) ||
-             (0x0061 <= u && u <= 0x007A) ||
-             (0x000a == u));
+  static inline bool IsSpace(char16_t u) {
+    return mozilla::intl::NS_IsSpace(u);
   }
 
-  static inline bool IsComplexChar(char16_t u)
-  {
+  static inline bool IsComplexASCIIChar(char16_t u) {
+    return !((0x0030 <= u && u <= 0x0039) || (0x0041 <= u && u <= 0x005A) ||
+             (0x0061 <= u && u <= 0x007A) || (0x000a == u));
+  }
+
+  static inline bool IsComplexChar(char16_t u) {
     return IsComplexASCIIChar(u) ||
            mozilla::intl::NS_NeedsPlatformNativeHandling(u) ||
-           (0x1100 <= u && u <= 0x11ff) || 
-           (0x2000 <= u && u <= 0x21ff) || 
-           (0x2e80 <= u && u <= 0xd7ff) || 
-           (0xf900 <= u && u <= 0xfaff) || 
-           (0xff00 <= u && u <= 0xffef);   
+           (0x1100 <= u && u <= 0x11ff) ||  
+           (0x2000 <= u && u <= 0x21ff) ||  
+           (0x2e80 <= u && u <= 0xd7ff) ||  
+           (0xf900 <= u && u <= 0xfaff) ||  
+           (0xff00 <= u && u <= 0xffef);    
   }
 
   
@@ -149,15 +149,17 @@ public:
 
 
 
-  nsresult AppendText(nsAtom* aHyphenationLanguage, const char16_t* aText, uint32_t aLength,
-                      uint32_t aFlags, nsILineBreakSink* aSink);
+  nsresult AppendText(nsAtom* aHyphenationLanguage, const char16_t* aText,
+                      uint32_t aLength, uint32_t aFlags,
+                      nsILineBreakSink* aSink);
   
 
 
 
 
-  nsresult AppendText(nsAtom* aHyphenationLanguage, const uint8_t* aText, uint32_t aLength,
-                      uint32_t aFlags, nsILineBreakSink* aSink);
+  nsresult AppendText(nsAtom* aHyphenationLanguage, const uint8_t* aText,
+                      uint32_t aLength, uint32_t aFlags,
+                      nsILineBreakSink* aSink);
   
 
 
@@ -177,19 +179,22 @@ public:
 
   void SetWordBreak(uint8_t aMode) { mWordBreak = aMode; }
 
-private:
+ private:
   
   
   
   struct TextItem {
     TextItem(nsILineBreakSink* aSink, uint32_t aSinkOffset, uint32_t aLength,
              uint32_t aFlags)
-      : mSink(aSink), mSinkOffset(aSinkOffset), mLength(aLength), mFlags(aFlags) {}
+        : mSink(aSink),
+          mSinkOffset(aSinkOffset),
+          mLength(aLength),
+          mFlags(aFlags) {}
 
     nsILineBreakSink* mSink;
-    uint32_t          mSinkOffset;
-    uint32_t          mLength;
-    uint32_t          mFlags;
+    uint32_t mSinkOffset;
+    uint32_t mLength;
+    uint32_t mFlags;
   };
 
   
@@ -200,27 +205,26 @@ private:
   
   nsresult FlushCurrentWord();
 
-  void UpdateCurrentWordLanguage(nsAtom *aHyphenationLanguage);
+  void UpdateCurrentWordLanguage(nsAtom* aHyphenationLanguage);
 
-  void FindHyphenationPoints(nsHyphenator *aHyphenator,
-                             const char16_t *aTextStart,
-                             const char16_t *aTextLimit,
-                             uint8_t *aBreakState);
+  void FindHyphenationPoints(nsHyphenator* aHyphenator,
+                             const char16_t* aTextStart,
+                             const char16_t* aTextLimit, uint8_t* aBreakState);
 
-  AutoTArray<char16_t,100> mCurrentWord;
+  AutoTArray<char16_t, 100> mCurrentWord;
   
-  AutoTArray<TextItem,2>    mTextItems;
-  nsAtom*                    mCurrentWordLanguage;
-  bool                        mCurrentWordContainsMixedLang;
-  bool                        mCurrentWordContainsComplexChar;
+  AutoTArray<TextItem, 2> mTextItems;
+  nsAtom* mCurrentWordLanguage;
+  bool mCurrentWordContainsMixedLang;
+  bool mCurrentWordContainsComplexChar;
 
   
-  bool                        mAfterBreakableSpace;
+  bool mAfterBreakableSpace;
   
   
-  bool                        mBreakHere;
+  bool mBreakHere;
   
-  uint8_t                     mWordBreak;
+  uint8_t mWordBreak;
 };
 
 #endif 

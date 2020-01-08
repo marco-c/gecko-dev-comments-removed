@@ -15,7 +15,7 @@ namespace dom {
 
 namespace serviceWorkerScriptCache {
 enum class OnFailure : uint8_t;
-} 
+}  
 
 class ServiceWorkerManager;
 class ServiceWorkerRegistrationInfo;
@@ -25,23 +25,19 @@ class ServiceWorkerRegistrationInfo;
 
 
 
-class ServiceWorkerUpdateJob : public ServiceWorkerJob
-{
-public:
+class ServiceWorkerUpdateJob : public ServiceWorkerJob {
+ public:
   
-  ServiceWorkerUpdateJob(nsIPrincipal* aPrincipal,
-                         const nsACString& aScope,
+  ServiceWorkerUpdateJob(nsIPrincipal* aPrincipal, const nsACString& aScope,
                          const nsACString& aScriptSpec,
                          nsILoadGroup* aLoadGroup,
                          ServiceWorkerUpdateViaCache aUpdateViaCache);
 
-  already_AddRefed<ServiceWorkerRegistrationInfo>
-  GetRegistration() const;
+  already_AddRefed<ServiceWorkerRegistrationInfo> GetRegistration() const;
 
-protected:
+ protected:
   
-  ServiceWorkerUpdateJob(Type aType,
-                         nsIPrincipal* aPrincipal,
+  ServiceWorkerUpdateJob(Type aType, nsIPrincipal* aPrincipal,
                          const nsACString& aScope,
                          const nsACString& aScriptSpec,
                          nsILoadGroup* aLoadGroup,
@@ -51,59 +47,47 @@ protected:
 
   
   
-  void
-  FailUpdateJob(ErrorResult& aRv);
+  void FailUpdateJob(ErrorResult& aRv);
 
-  void
-  FailUpdateJob(nsresult aRv);
+  void FailUpdateJob(nsresult aRv);
 
   
   
   
-  virtual void
-  AsyncExecute() override;
+  virtual void AsyncExecute() override;
 
   
   
-  void
-  SetRegistration(ServiceWorkerRegistrationInfo* aRegistration);
+  void SetRegistration(ServiceWorkerRegistrationInfo* aRegistration);
 
   
   
   
   
-  void
-  Update();
+  void Update();
 
-  ServiceWorkerUpdateViaCache
-  GetUpdateViaCache() const;
+  ServiceWorkerUpdateViaCache GetUpdateViaCache() const;
 
-private:
+ private:
   class CompareCallback;
   class ContinueUpdateRunnable;
   class ContinueInstallRunnable;
 
   
   
-  void
-  ComparisonResult(nsresult aStatus,
-                   bool aInCacheAndEqual,
-                   serviceWorkerScriptCache::OnFailure aOnFailure,
-                   const nsAString& aNewCacheName,
-                   const nsACString& aMaxScope,
-                   nsLoadFlags aLoadFlags);
+  void ComparisonResult(nsresult aStatus, bool aInCacheAndEqual,
+                        serviceWorkerScriptCache::OnFailure aOnFailure,
+                        const nsAString& aNewCacheName,
+                        const nsACString& aMaxScope, nsLoadFlags aLoadFlags);
 
   
-  void
-  ContinueUpdateAfterScriptEval(bool aScriptEvaluationResult);
+  void ContinueUpdateAfterScriptEval(bool aScriptEvaluationResult);
 
   
-  void
-  Install();
+  void Install();
 
   
-  void
-  ContinueAfterInstallEvent(bool aInstallEventSuccess);
+  void ContinueAfterInstallEvent(bool aInstallEventSuccess);
 
   RefPtr<ServiceWorkerRegistrationInfo> mRegistration;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
@@ -111,7 +95,7 @@ private:
   serviceWorkerScriptCache::OnFailure mOnFailure;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

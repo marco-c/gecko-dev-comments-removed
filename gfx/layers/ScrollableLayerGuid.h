@@ -7,10 +7,10 @@
 #ifndef GFX_SCROLLABLELAYERGUID_H
 #define GFX_SCROLLABLELAYERGUID_H
 
-#include <stdint.h>                     
-#include "mozilla/HashFunctions.h"      
-#include "mozilla/gfx/Logging.h"        
-#include "mozilla/layers/LayersTypes.h" 
+#include <stdint.h>                      
+#include "mozilla/HashFunctions.h"       
+#include "mozilla/gfx/Logging.h"         
+#include "mozilla/layers/LayersTypes.h"  
 
 namespace mozilla {
 namespace layers {
@@ -26,54 +26,39 @@ namespace layers {
 struct ScrollableLayerGuid {
   
   typedef uint64_t ViewID;
-  static const ViewID NULL_SCROLL_ID;   
+  static const ViewID NULL_SCROLL_ID;  
   static const ViewID START_SCROLL_ID = 2;  
-                                        
+                                            
 
   LayersId mLayersId;
   uint32_t mPresShellId;
   ViewID mScrollId;
 
-  ScrollableLayerGuid()
-    : mLayersId{0}
-    , mPresShellId(0)
-    , mScrollId(0)
-  {
-  }
+  ScrollableLayerGuid() : mLayersId{0}, mPresShellId(0), mScrollId(0) {}
 
   ScrollableLayerGuid(LayersId aLayersId, uint32_t aPresShellId,
                       ViewID aScrollId)
-    : mLayersId(aLayersId)
-    , mPresShellId(aPresShellId)
-    , mScrollId(aScrollId)
-  {
-  }
+      : mLayersId(aLayersId),
+        mPresShellId(aPresShellId),
+        mScrollId(aScrollId) {}
 
   ScrollableLayerGuid(const ScrollableLayerGuid& other)
-    : mLayersId(other.mLayersId)
-    , mPresShellId(other.mPresShellId)
-    , mScrollId(other.mScrollId)
-  {
+      : mLayersId(other.mLayersId),
+        mPresShellId(other.mPresShellId),
+        mScrollId(other.mScrollId) {}
+
+  ~ScrollableLayerGuid() {}
+
+  bool operator==(const ScrollableLayerGuid& other) const {
+    return mLayersId == other.mLayersId && mPresShellId == other.mPresShellId &&
+           mScrollId == other.mScrollId;
   }
 
-  ~ScrollableLayerGuid()
-  {
-  }
-
-  bool operator==(const ScrollableLayerGuid& other) const
-  {
-    return mLayersId == other.mLayersId
-        && mPresShellId == other.mPresShellId
-        && mScrollId == other.mScrollId;
-  }
-
-  bool operator!=(const ScrollableLayerGuid& other) const
-  {
+  bool operator!=(const ScrollableLayerGuid& other) const {
     return !(*this == other);
   }
 
-  bool operator<(const ScrollableLayerGuid& other) const
-  {
+  bool operator<(const ScrollableLayerGuid& other) const {
     if (mLayersId < other.mLayersId) {
       return true;
     }
@@ -97,41 +82,35 @@ struct ScrollableLayerGuid {
   
   
 
-  struct HashFn
-  {
-    std::size_t operator()(const ScrollableLayerGuid& aGuid) const
-    {
-      return HashGeneric(uint64_t(aGuid.mLayersId),
-                         aGuid.mPresShellId,
+  struct HashFn {
+    std::size_t operator()(const ScrollableLayerGuid& aGuid) const {
+      return HashGeneric(uint64_t(aGuid.mLayersId), aGuid.mPresShellId,
                          aGuid.mScrollId);
     }
   };
 
-  struct HashIgnoringPresShellFn
-  {
-    std::size_t operator()(const ScrollableLayerGuid& aGuid) const
-    {
-      return HashGeneric(uint64_t(aGuid.mLayersId),
-                         aGuid.mScrollId);
+  struct HashIgnoringPresShellFn {
+    std::size_t operator()(const ScrollableLayerGuid& aGuid) const {
+      return HashGeneric(uint64_t(aGuid.mLayersId), aGuid.mScrollId);
     }
   };
 
-  struct EqualIgnoringPresShellFn
-  {
-    bool operator()(const ScrollableLayerGuid& lhs, const ScrollableLayerGuid& rhs) const
-    {
-      return lhs.mLayersId == rhs.mLayersId
-          && lhs.mScrollId == rhs.mScrollId;
+  struct EqualIgnoringPresShellFn {
+    bool operator()(const ScrollableLayerGuid& lhs,
+                    const ScrollableLayerGuid& rhs) const {
+      return lhs.mLayersId == rhs.mLayersId && lhs.mScrollId == rhs.mScrollId;
     }
   };
 };
 
 template <int LogLevel>
-gfx::Log<LogLevel>& operator<<(gfx::Log<LogLevel>& log, const ScrollableLayerGuid& aGuid) {
-  return log << '(' << uint64_t(aGuid.mLayersId) << ',' << aGuid.mPresShellId << ',' << aGuid.mScrollId << ')';
+gfx::Log<LogLevel>& operator<<(gfx::Log<LogLevel>& log,
+                               const ScrollableLayerGuid& aGuid) {
+  return log << '(' << uint64_t(aGuid.mLayersId) << ',' << aGuid.mPresShellId
+             << ',' << aGuid.mScrollId << ')';
 }
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -16,15 +16,13 @@
 
 
 
-class nsLayoutStatics
-{
-public:
+class nsLayoutStatics {
+ public:
   
   
   static nsresult Initialize();
 
-  static void AddRef()
-  {
+  static void AddRef() {
     NS_ASSERTION(NS_IsMainThread(),
                  "nsLayoutStatics reference counting must be on main thread");
 
@@ -32,11 +30,10 @@ public:
                  "nsLayoutStatics already dropped to zero!");
 
     ++sLayoutStaticRefcnt;
-    NS_LOG_ADDREF(&sLayoutStaticRefcnt, sLayoutStaticRefcnt,
-                  "nsLayoutStatics", 1);
+    NS_LOG_ADDREF(&sLayoutStaticRefcnt, sLayoutStaticRefcnt, "nsLayoutStatics",
+                  1);
   }
-  static void Release()
-  {
+  static void Release() {
     NS_ASSERTION(NS_IsMainThread(),
                  "nsLayoutStatics reference counting must be on main thread");
 
@@ -44,11 +41,10 @@ public:
     NS_LOG_RELEASE(&sLayoutStaticRefcnt, sLayoutStaticRefcnt,
                    "nsLayoutStatics");
 
-    if (!sLayoutStaticRefcnt)
-      Shutdown();
+    if (!sLayoutStaticRefcnt) Shutdown();
   }
 
-private:
+ private:
   
   nsLayoutStatics();
 
@@ -57,17 +53,10 @@ private:
   static nsrefcnt sLayoutStaticRefcnt;
 };
 
-class nsLayoutStaticsRef
-{
-public:
-  nsLayoutStaticsRef()
-  {
-    nsLayoutStatics::AddRef();
-  }
-  ~nsLayoutStaticsRef()
-  {
-    nsLayoutStatics::Release();
-  }
+class nsLayoutStaticsRef {
+ public:
+  nsLayoutStaticsRef() { nsLayoutStatics::AddRef(); }
+  ~nsLayoutStaticsRef() { nsLayoutStatics::Release(); }
 };
 
-#endif 
+#endif  

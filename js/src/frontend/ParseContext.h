@@ -20,15 +20,12 @@ namespace frontend {
 
 class ParserBase;
 
-const char*
-DeclarationKindString(DeclarationKind kind);
+const char* DeclarationKindString(DeclarationKind kind);
 
 
-bool
-DeclarationKindIsVar(DeclarationKind kind);
+bool DeclarationKindIsVar(DeclarationKind kind);
 
-bool
-DeclarationKindIsParameter(DeclarationKind kind);
+bool DeclarationKindIsParameter(DeclarationKind kind);
 
 
 
@@ -62,124 +59,110 @@ DeclarationKindIsParameter(DeclarationKind kind);
 
 
 
-class UsedNameTracker
-{
-  public:
-    struct Use
-    {
-        uint32_t scriptId;
-        uint32_t scopeId;
-    };
+class UsedNameTracker {
+ public:
+  struct Use {
+    uint32_t scriptId;
+    uint32_t scopeId;
+  };
 
-    class UsedNameInfo
-    {
-        friend class UsedNameTracker;
+  class UsedNameInfo {
+    friend class UsedNameTracker;
 
-        Vector<Use, 6> uses_;
+    Vector<Use, 6> uses_;
 
-        void resetToScope(uint32_t scriptId, uint32_t scopeId);
+    void resetToScope(uint32_t scriptId, uint32_t scopeId);
 
-      public:
-        explicit UsedNameInfo(JSContext* cx)
-          : uses_(cx)
-        { }
+   public:
+    explicit UsedNameInfo(JSContext* cx) : uses_(cx) {}
 
-        UsedNameInfo(UsedNameInfo&& other)
-          : uses_(std::move(other.uses_))
-        { }
+    UsedNameInfo(UsedNameInfo&& other) : uses_(std::move(other.uses_)) {}
 
-        bool noteUsedInScope(uint32_t scriptId, uint32_t scopeId) {
-            if (uses_.empty() || uses_.back().scopeId < scopeId) {
-                return uses_.append(Use { scriptId, scopeId });
-            }
-            return true;
+    bool noteUsedInScope(uint32_t scriptId, uint32_t scopeId) {
+      if (uses_.empty() || uses_.back().scopeId < scopeId) {
+        return uses_.append(Use{scriptId, scopeId});
+      }
+      return true;
+    }
+
+    void noteBoundInScope(uint32_t scriptId, uint32_t scopeId,
+                          bool* closedOver) {
+      *closedOver = false;
+      while (!uses_.empty()) {
+        Use& innermost = uses_.back();
+        if (innermost.scopeId < scopeId) {
+          break;
         }
-
-        void noteBoundInScope(uint32_t scriptId, uint32_t scopeId, bool* closedOver) {
-            *closedOver = false;
-            while (!uses_.empty()) {
-                Use& innermost = uses_.back();
-                if (innermost.scopeId < scopeId) {
-                    break;
-                }
-                if (innermost.scriptId > scriptId) {
-                    *closedOver = true;
-                }
-                uses_.popBack();
-            }
+        if (innermost.scriptId > scriptId) {
+          *closedOver = true;
         }
-
-        bool isUsedInScript(uint32_t scriptId) const {
-            return !uses_.empty() && uses_.back().scriptId >= scriptId;
-        }
-    };
-
-    using UsedNameMap = HashMap<JSAtom*,
-                                UsedNameInfo,
-                                DefaultHasher<JSAtom*>>;
-
-  private:
-    
-    UsedNameMap map_;
-
-    
-    uint32_t scriptCounter_;
-
-    
-    uint32_t scopeCounter_;
-
-  public:
-    explicit UsedNameTracker(JSContext* cx)
-      : map_(cx),
-        scriptCounter_(0),
-        scopeCounter_(0)
-    { }
-
-    uint32_t nextScriptId() {
-        MOZ_ASSERT(scriptCounter_ != UINT32_MAX,
-                   "ParseContext::Scope::init should have prevented wraparound");
-        return scriptCounter_++;
+        uses_.popBack();
+      }
     }
 
-    uint32_t nextScopeId() {
-        MOZ_ASSERT(scopeCounter_ != UINT32_MAX);
-        return scopeCounter_++;
+    bool isUsedInScript(uint32_t scriptId) const {
+      return !uses_.empty() && uses_.back().scriptId >= scriptId;
     }
+  };
 
-    UsedNameMap::Ptr lookup(JSAtom* name) const {
-        return map_.lookup(name);
-    }
+  using UsedNameMap = HashMap<JSAtom*, UsedNameInfo, DefaultHasher<JSAtom*>>;
 
-    MOZ_MUST_USE bool noteUse(JSContext* cx, JSAtom* name,
-                              uint32_t scriptId, uint32_t scopeId);
+ private:
+  
+  UsedNameMap map_;
 
-    struct RewindToken
-    {
-      private:
-        friend class UsedNameTracker;
-        uint32_t scriptId;
-        uint32_t scopeId;
-    };
+  
+  uint32_t scriptCounter_;
 
-    RewindToken getRewindToken() const {
-        RewindToken token;
-        token.scriptId = scriptCounter_;
-        token.scopeId = scopeCounter_;
-        return token;
-    }
+  
+  uint32_t scopeCounter_;
 
-    
-    
-    void rewind(RewindToken token);
+ public:
+  explicit UsedNameTracker(JSContext* cx)
+      : map_(cx), scriptCounter_(0), scopeCounter_(0) {}
 
-    
-    void reset() {
-        map_.clear();
-        RewindToken token;
-        token.scriptId = 0;
-        token.scopeId = 0;
-        rewind(token);
-    }
+  uint32_t nextScriptId() {
+    MOZ_ASSERT(scriptCounter_ != UINT32_MAX,
+               "ParseContext::Scope::init should have prevented wraparound");
+    return scriptCounter_++;
+  }
+
+  uint32_t nextScopeId() {
+    MOZ_ASSERT(scopeCounter_ != UINT32_MAX);
+    return scopeCounter_++;
+  }
+
+  UsedNameMap::Ptr lookup(JSAtom* name) const { return map_.lookup(name); }
+
+  MOZ_MUST_USE bool noteUse(JSContext* cx, JSAtom* name, uint32_t scriptId,
+                            uint32_t scopeId);
+
+  struct RewindToken {
+   private:
+    friend class UsedNameTracker;
+    uint32_t scriptId;
+    uint32_t scopeId;
+  };
+
+  RewindToken getRewindToken() const {
+    RewindToken token;
+    token.scriptId = scriptCounter_;
+    token.scopeId = scopeCounter_;
+    return token;
+  }
+
+  
+  
+  void rewind(RewindToken token);
+
+  
+  void reset() {
+    map_.clear();
+    RewindToken token;
+    token.scriptId = 0;
+    token.scopeId = 0;
+    rewind(token);
+  }
 };
 
 
@@ -189,509 +172,472 @@ class UsedNameTracker
 
 
 
-class ParseContext : public Nestable<ParseContext>
-{
-  public:
-    
-    
-    
-    
-    
-    class Statement : public Nestable<Statement>
-    {
-        StatementKind kind_;
-
-      public:
-        using Nestable<Statement>::enclosing;
-        using Nestable<Statement>::findNearest;
-
-        Statement(ParseContext* pc, StatementKind kind)
-          : Nestable<Statement>(&pc->innermostStatement_),
-            kind_(kind)
-        { }
-
-        template <typename T> inline bool is() const;
-        template <typename T> inline T& as();
-
-        StatementKind kind() const {
-            return kind_;
-        }
-
-        void refineForKind(StatementKind newForKind) {
-            MOZ_ASSERT(kind_ == StatementKind::ForLoop);
-            MOZ_ASSERT(newForKind == StatementKind::ForInLoop ||
-                       newForKind == StatementKind::ForOfLoop);
-            kind_ = newForKind;
-        }
-    };
-
-    class LabelStatement : public Statement
-    {
-        RootedAtom label_;
-
-      public:
-        LabelStatement(ParseContext* pc, JSAtom* label)
-          : Statement(pc, StatementKind::Label),
-            label_(pc->sc_->context, label)
-        { }
-
-        HandleAtom label() const {
-            return label_;
-        }
-    };
-
-    struct ClassStatement : public Statement
-    {
-        FunctionBox* constructorBox;
-
-        explicit ClassStatement(ParseContext* pc)
-          : Statement(pc, StatementKind::Class),
-            constructorBox(nullptr)
-        { }
-    };
-
-    
-    
-    
-    class Scope : public Nestable<Scope>
-    {
-        
-        
-        
-        
-        
-        
-        
-        
-        PooledMapPtr<DeclaredNameMap> declared_;
-
-        
-        
-        
-        PooledVectorPtr<FunctionBoxVector> possibleAnnexBFunctionBoxes_;
-
-        
-        uint32_t id_;
-
-        bool maybeReportOOM(ParseContext* pc, bool result) {
-            if (!result) {
-                ReportOutOfMemory(pc->sc()->context);
-            }
-            return result;
-        }
-
-      public:
-        using DeclaredNamePtr = DeclaredNameMap::Ptr;
-        using AddDeclaredNamePtr = DeclaredNameMap::AddPtr;
-
-        using Nestable<Scope>::enclosing;
-
-        explicit inline Scope(ParserBase* parser);
-        explicit inline Scope(JSContext* cx, ParseContext* pc, UsedNameTracker& usedNames);
-
-        void dump(ParseContext* pc);
-
-        uint32_t id() const {
-            return id_;
-        }
-
-        MOZ_MUST_USE bool init(ParseContext* pc) {
-            if (id_ == UINT32_MAX) {
-                pc->errorReporter_.reportErrorNoOffset(JSMSG_NEED_DIET, js_script_str);
-                return false;
-            }
-
-            return declared_.acquire(pc->sc()->context);
-        }
-
-        bool isEmpty() const {
-            return declared_->all().empty();
-        }
-
-        DeclaredNamePtr lookupDeclaredName(JSAtom* name) {
-            return declared_->lookup(name);
-        }
-
-        AddDeclaredNamePtr lookupDeclaredNameForAdd(JSAtom* name) {
-            return declared_->lookupForAdd(name);
-        }
-
-        MOZ_MUST_USE bool addDeclaredName(ParseContext* pc, AddDeclaredNamePtr& p, JSAtom* name,
-                                          DeclarationKind kind, uint32_t pos)
-        {
-            return maybeReportOOM(pc, declared_->add(p, name, DeclaredNameInfo(kind, pos)));
-        }
-
-        
-        MOZ_MUST_USE bool addPossibleAnnexBFunctionBox(ParseContext* pc, FunctionBox* funbox);
-
-        
-        
-        MOZ_MUST_USE bool propagateAndMarkAnnexBFunctionBoxes(ParseContext* pc);
-
-        
-        
-        bool addCatchParameters(ParseContext* pc, Scope& catchParamScope);
-        void removeCatchParameters(ParseContext* pc, Scope& catchParamScope);
-
-        void useAsVarScope(ParseContext* pc) {
-            MOZ_ASSERT(!pc->varScope_);
-            pc->varScope_ = this;
-        }
-
-        
-        
-        
-        class BindingIter
-        {
-            friend class Scope;
-
-            DeclaredNameMap::Range declaredRange_;
-            mozilla::DebugOnly<uint32_t> count_;
-            bool isVarScope_;
-
-            BindingIter(Scope& scope, bool isVarScope)
-              : declaredRange_(scope.declared_->all()),
-                count_(0),
-                isVarScope_(isVarScope)
-            {
-                settle();
-            }
-
-            void settle() {
-                
-                
-                if (isVarScope_) {
-                    return;
-                }
-
-                
-                
-                while (!declaredRange_.empty()) {
-                    if (BindingKindIsLexical(kind())) {
-                        break;
-                    }
-                    declaredRange_.popFront();
-                }
-            }
-
-          public:
-            bool done() const {
-                return declaredRange_.empty();
-            }
-
-            explicit operator bool() const {
-                return !done();
-            }
-
-            JSAtom* name() {
-                MOZ_ASSERT(!done());
-                return declaredRange_.front().key();
-            }
-
-            DeclarationKind declarationKind() {
-                MOZ_ASSERT(!done());
-                return declaredRange_.front().value()->kind();
-            }
-
-            BindingKind kind() {
-                return DeclarationKindToBindingKind(declarationKind());
-            }
-
-            bool closedOver() {
-                MOZ_ASSERT(!done());
-                return declaredRange_.front().value()->closedOver();
-            }
-
-            void setClosedOver() {
-                MOZ_ASSERT(!done());
-                return declaredRange_.front().value()->setClosedOver();
-            }
-
-            void operator++(int) {
-                MOZ_ASSERT(!done());
-                MOZ_ASSERT(count_ != UINT32_MAX);
-                declaredRange_.popFront();
-                settle();
-            }
-        };
-
-        inline BindingIter bindings(ParseContext* pc);
-    };
-
-    class VarScope : public Scope
-    {
-      public:
-        explicit inline VarScope(ParserBase* parser);
-        explicit inline VarScope(JSContext* cx, ParseContext* pc, UsedNameTracker& usedNames);
-    };
-
-  private:
-    
-    AutoFrontendTraceLog traceLog_;
-
-    
-    SharedContext* sc_;
-
-    
-    ErrorReporter& errorReporter_;
-
-    
-    Statement* innermostStatement_;
-
-    
-    
-    
-    
-    
-    Scope* innermostScope_;
-
-    
-    
-    mozilla::Maybe<Scope> namedLambdaScope_;
-
-    
-    
-    
-    
-    mozilla::Maybe<Scope> functionScope_;
-
-    
-    
-    
-    Scope* varScope_;
-
-    
-    
-    PooledVectorPtr<AtomVector> positionalFormalParameterNames_;
-
-    
-    
-    PooledVectorPtr<AtomVector> closedOverBindingsForLazy_;
-
-  public:
-    
-    Rooted<GCVector<JSFunction*, 8>> innerFunctionsForLazy;
-
-    
-    
-    
-    
-    
-    Directives* newDirectives;
-
-    
-    
-    static const uint32_t NoYieldOffset = UINT32_MAX;
-    uint32_t lastYieldOffset;
-
-    
-    
-    static const uint32_t NoAwaitOffset = UINT32_MAX;
-    uint32_t lastAwaitOffset;
-
-  private:
-    
-    uint32_t scriptId_;
-
-    
-    
-    bool isStandaloneFunctionBody_;
-
-    
-    
-    bool superScopeNeedsHomeObject_;
-
-  public:
-    ParseContext(JSContext* cx, ParseContext*& parent, SharedContext* sc,
-                 ErrorReporter& errorReporter, UsedNameTracker& usedNames,
-                 Directives* newDirectives, bool isFull);
-
-    MOZ_MUST_USE bool init();
-
-    SharedContext* sc() {
-        return sc_;
-    }
-
-    
-    bool isFunctionBox() const {
-        return sc_->isFunctionBox();
-    }
-
-    FunctionBox* functionBox() {
-        return sc_->asFunctionBox();
-    }
-
-    Statement* innermostStatement() {
-        return innermostStatement_;
-    }
-
-    Scope* innermostScope() {
-        
-        MOZ_ASSERT(innermostScope_);
-        return innermostScope_;
-    }
-
-    Scope& namedLambdaScope() {
-        MOZ_ASSERT(functionBox()->function()->isNamedLambda());
-        return *namedLambdaScope_;
-    }
-
-    Scope& functionScope() {
-        MOZ_ASSERT(isFunctionBox());
-        return *functionScope_;
-    }
-
-    Scope& varScope() {
-        MOZ_ASSERT(varScope_);
-        return *varScope_;
-    }
-
-    bool isFunctionExtraBodyVarScopeInnermost() {
-        return isFunctionBox() && functionBox()->hasParameterExprs &&
-               innermostScope() == varScope_;
-    }
-
-    template <typename Predicate >
-    Statement* findInnermostStatement(Predicate predicate) {
-        return Statement::findNearest(innermostStatement_, predicate);
-    }
-
-    template <typename T, typename Predicate >
-    T* findInnermostStatement(Predicate predicate) {
-        return Statement::findNearest<T>(innermostStatement_, predicate);
-    }
+class ParseContext : public Nestable<ParseContext> {
+ public:
+  
+  
+  
+  
+  
+  class Statement : public Nestable<Statement> {
+    StatementKind kind_;
+
+   public:
+    using Nestable<Statement>::enclosing;
+    using Nestable<Statement>::findNearest;
+
+    Statement(ParseContext* pc, StatementKind kind)
+        : Nestable<Statement>(&pc->innermostStatement_), kind_(kind) {}
 
     template <typename T>
-    T* findInnermostStatement() {
-        return Statement::findNearest<T>(innermostStatement_);
+    inline bool is() const;
+    template <typename T>
+    inline T& as();
+
+    StatementKind kind() const { return kind_; }
+
+    void refineForKind(StatementKind newForKind) {
+      MOZ_ASSERT(kind_ == StatementKind::ForLoop);
+      MOZ_ASSERT(newForKind == StatementKind::ForInLoop ||
+                 newForKind == StatementKind::ForOfLoop);
+      kind_ = newForKind;
+    }
+  };
+
+  class LabelStatement : public Statement {
+    RootedAtom label_;
+
+   public:
+    LabelStatement(ParseContext* pc, JSAtom* label)
+        : Statement(pc, StatementKind::Label),
+          label_(pc->sc_->context, label) {}
+
+    HandleAtom label() const { return label_; }
+  };
+
+  struct ClassStatement : public Statement {
+    FunctionBox* constructorBox;
+
+    explicit ClassStatement(ParseContext* pc)
+        : Statement(pc, StatementKind::Class), constructorBox(nullptr) {}
+  };
+
+  
+  
+  
+  class Scope : public Nestable<Scope> {
+    
+    
+    
+    
+    
+    
+    
+    
+    PooledMapPtr<DeclaredNameMap> declared_;
+
+    
+    
+    
+    PooledVectorPtr<FunctionBoxVector> possibleAnnexBFunctionBoxes_;
+
+    
+    uint32_t id_;
+
+    bool maybeReportOOM(ParseContext* pc, bool result) {
+      if (!result) {
+        ReportOutOfMemory(pc->sc()->context);
+      }
+      return result;
     }
 
-    AtomVector& positionalFormalParameterNames() {
-        return *positionalFormalParameterNames_;
+   public:
+    using DeclaredNamePtr = DeclaredNameMap::Ptr;
+    using AddDeclaredNamePtr = DeclaredNameMap::AddPtr;
+
+    using Nestable<Scope>::enclosing;
+
+    explicit inline Scope(ParserBase* parser);
+    explicit inline Scope(JSContext* cx, ParseContext* pc,
+                          UsedNameTracker& usedNames);
+
+    void dump(ParseContext* pc);
+
+    uint32_t id() const { return id_; }
+
+    MOZ_MUST_USE bool init(ParseContext* pc) {
+      if (id_ == UINT32_MAX) {
+        pc->errorReporter_.reportErrorNoOffset(JSMSG_NEED_DIET, js_script_str);
+        return false;
+      }
+
+      return declared_.acquire(pc->sc()->context);
     }
 
-    AtomVector& closedOverBindingsForLazy() {
-        return *closedOverBindingsForLazy_;
+    bool isEmpty() const { return declared_->all().empty(); }
+
+    DeclaredNamePtr lookupDeclaredName(JSAtom* name) {
+      return declared_->lookup(name);
     }
 
-    enum class BreakStatementError {
+    AddDeclaredNamePtr lookupDeclaredNameForAdd(JSAtom* name) {
+      return declared_->lookupForAdd(name);
+    }
+
+    MOZ_MUST_USE bool addDeclaredName(ParseContext* pc, AddDeclaredNamePtr& p,
+                                      JSAtom* name, DeclarationKind kind,
+                                      uint32_t pos) {
+      return maybeReportOOM(
+          pc, declared_->add(p, name, DeclaredNameInfo(kind, pos)));
+    }
+
+    
+    MOZ_MUST_USE bool addPossibleAnnexBFunctionBox(ParseContext* pc,
+                                                   FunctionBox* funbox);
+
+    
+    
+    MOZ_MUST_USE bool propagateAndMarkAnnexBFunctionBoxes(ParseContext* pc);
+
+    
+    
+    bool addCatchParameters(ParseContext* pc, Scope& catchParamScope);
+    void removeCatchParameters(ParseContext* pc, Scope& catchParamScope);
+
+    void useAsVarScope(ParseContext* pc) {
+      MOZ_ASSERT(!pc->varScope_);
+      pc->varScope_ = this;
+    }
+
+    
+    
+    
+    class BindingIter {
+      friend class Scope;
+
+      DeclaredNameMap::Range declaredRange_;
+      mozilla::DebugOnly<uint32_t> count_;
+      bool isVarScope_;
+
+      BindingIter(Scope& scope, bool isVarScope)
+          : declaredRange_(scope.declared_->all()),
+            count_(0),
+            isVarScope_(isVarScope) {
+        settle();
+      }
+
+      void settle() {
         
-        ToughBreak,
-        LabelNotFound,
+        
+        if (isVarScope_) {
+          return;
+        }
+
+        
+        
+        while (!declaredRange_.empty()) {
+          if (BindingKindIsLexical(kind())) {
+            break;
+          }
+          declaredRange_.popFront();
+        }
+      }
+
+     public:
+      bool done() const { return declaredRange_.empty(); }
+
+      explicit operator bool() const { return !done(); }
+
+      JSAtom* name() {
+        MOZ_ASSERT(!done());
+        return declaredRange_.front().key();
+      }
+
+      DeclarationKind declarationKind() {
+        MOZ_ASSERT(!done());
+        return declaredRange_.front().value()->kind();
+      }
+
+      BindingKind kind() {
+        return DeclarationKindToBindingKind(declarationKind());
+      }
+
+      bool closedOver() {
+        MOZ_ASSERT(!done());
+        return declaredRange_.front().value()->closedOver();
+      }
+
+      void setClosedOver() {
+        MOZ_ASSERT(!done());
+        return declaredRange_.front().value()->setClosedOver();
+      }
+
+      void operator++(int) {
+        MOZ_ASSERT(!done());
+        MOZ_ASSERT(count_ != UINT32_MAX);
+        declaredRange_.popFront();
+        settle();
+      }
     };
 
+    inline BindingIter bindings(ParseContext* pc);
+  };
+
+  class VarScope : public Scope {
+   public:
+    explicit inline VarScope(ParserBase* parser);
+    explicit inline VarScope(JSContext* cx, ParseContext* pc,
+                             UsedNameTracker& usedNames);
+  };
+
+ private:
+  
+  AutoFrontendTraceLog traceLog_;
+
+  
+  SharedContext* sc_;
+
+  
+  ErrorReporter& errorReporter_;
+
+  
+  Statement* innermostStatement_;
+
+  
+  
+  
+  
+  
+  Scope* innermostScope_;
+
+  
+  
+  mozilla::Maybe<Scope> namedLambdaScope_;
+
+  
+  
+  
+  
+  mozilla::Maybe<Scope> functionScope_;
+
+  
+  
+  
+  Scope* varScope_;
+
+  
+  
+  PooledVectorPtr<AtomVector> positionalFormalParameterNames_;
+
+  
+  
+  PooledVectorPtr<AtomVector> closedOverBindingsForLazy_;
+
+ public:
+  
+  Rooted<GCVector<JSFunction*, 8>> innerFunctionsForLazy;
+
+  
+  
+  
+  
+  
+  Directives* newDirectives;
+
+  
+  
+  static const uint32_t NoYieldOffset = UINT32_MAX;
+  uint32_t lastYieldOffset;
+
+  
+  
+  static const uint32_t NoAwaitOffset = UINT32_MAX;
+  uint32_t lastAwaitOffset;
+
+ private:
+  
+  uint32_t scriptId_;
+
+  
+  
+  bool isStandaloneFunctionBody_;
+
+  
+  
+  bool superScopeNeedsHomeObject_;
+
+ public:
+  ParseContext(JSContext* cx, ParseContext*& parent, SharedContext* sc,
+               ErrorReporter& errorReporter, UsedNameTracker& usedNames,
+               Directives* newDirectives, bool isFull);
+
+  MOZ_MUST_USE bool init();
+
+  SharedContext* sc() { return sc_; }
+
+  
+  bool isFunctionBox() const { return sc_->isFunctionBox(); }
+
+  FunctionBox* functionBox() { return sc_->asFunctionBox(); }
+
+  Statement* innermostStatement() { return innermostStatement_; }
+
+  Scope* innermostScope() {
     
+    MOZ_ASSERT(innermostScope_);
+    return innermostScope_;
+  }
+
+  Scope& namedLambdaScope() {
+    MOZ_ASSERT(functionBox()->function()->isNamedLambda());
+    return *namedLambdaScope_;
+  }
+
+  Scope& functionScope() {
+    MOZ_ASSERT(isFunctionBox());
+    return *functionScope_;
+  }
+
+  Scope& varScope() {
+    MOZ_ASSERT(varScope_);
+    return *varScope_;
+  }
+
+  bool isFunctionExtraBodyVarScopeInnermost() {
+    return isFunctionBox() && functionBox()->hasParameterExprs &&
+           innermostScope() == varScope_;
+  }
+
+  template <typename Predicate >
+  Statement* findInnermostStatement(Predicate predicate) {
+    return Statement::findNearest(innermostStatement_, predicate);
+  }
+
+  template <typename T, typename Predicate >
+  T* findInnermostStatement(Predicate predicate) {
+    return Statement::findNearest<T>(innermostStatement_, predicate);
+  }
+
+  template <typename T>
+  T* findInnermostStatement() {
+    return Statement::findNearest<T>(innermostStatement_);
+  }
+
+  AtomVector& positionalFormalParameterNames() {
+    return *positionalFormalParameterNames_;
+  }
+
+  AtomVector& closedOverBindingsForLazy() {
+    return *closedOverBindingsForLazy_;
+  }
+
+  enum class BreakStatementError {
     
-    MOZ_MUST_USE inline JS::Result<Ok, BreakStatementError> checkBreakStatement(PropertyName* label);
+    ToughBreak,
+    LabelNotFound,
+  };
 
-    enum class ContinueStatementError {
-        NotInALoop,
-        LabelNotFound,
-    };
-    MOZ_MUST_USE inline JS::Result<Ok, ContinueStatementError> checkContinueStatement(PropertyName* label);
+  
+  
+  MOZ_MUST_USE inline JS::Result<Ok, BreakStatementError> checkBreakStatement(
+      PropertyName* label);
 
-    
-    
-    
-    
-    
-    
-    
-    bool atBodyLevel() {
-        return !innermostStatement_;
-    }
+  enum class ContinueStatementError {
+    NotInALoop,
+    LabelNotFound,
+  };
+  MOZ_MUST_USE inline JS::Result<Ok, ContinueStatementError>
+  checkContinueStatement(PropertyName* label);
 
-    bool atGlobalLevel() {
-        return atBodyLevel() && sc_->isGlobalContext();
-    }
+  
+  
+  
+  
+  
+  
+  
+  bool atBodyLevel() { return !innermostStatement_; }
 
-    
-    bool atModuleLevel() {
-        return atBodyLevel() && sc_->isModuleContext();
-    }
+  bool atGlobalLevel() { return atBodyLevel() && sc_->isGlobalContext(); }
 
-    void setIsStandaloneFunctionBody() {
-        isStandaloneFunctionBody_ = true;
-    }
+  
+  bool atModuleLevel() { return atBodyLevel() && sc_->isModuleContext(); }
 
-    bool isStandaloneFunctionBody() const {
-        return isStandaloneFunctionBody_;
-    }
+  void setIsStandaloneFunctionBody() { isStandaloneFunctionBody_ = true; }
 
-    void setSuperScopeNeedsHomeObject() {
-        MOZ_ASSERT(sc_->allowSuperProperty());
-        superScopeNeedsHomeObject_ = true;
-    }
+  bool isStandaloneFunctionBody() const { return isStandaloneFunctionBody_; }
 
-    bool superScopeNeedsHomeObject() const {
-        return superScopeNeedsHomeObject_;
-    }
+  void setSuperScopeNeedsHomeObject() {
+    MOZ_ASSERT(sc_->allowSuperProperty());
+    superScopeNeedsHomeObject_ = true;
+  }
 
-    bool useAsmOrInsideUseAsm() const {
-        return sc_->isFunctionBox() && sc_->asFunctionBox()->useAsmOrInsideUseAsm();
-    }
+  bool superScopeNeedsHomeObject() const { return superScopeNeedsHomeObject_; }
 
-    
-    GeneratorKind generatorKind() const {
-        return sc_->isFunctionBox()
-               ? sc_->asFunctionBox()->generatorKind()
-               : GeneratorKind::NotGenerator;
-    }
+  bool useAsmOrInsideUseAsm() const {
+    return sc_->isFunctionBox() && sc_->asFunctionBox()->useAsmOrInsideUseAsm();
+  }
 
-    bool isGenerator() const {
-        return generatorKind() == GeneratorKind::Generator;
-    }
+  
+  GeneratorKind generatorKind() const {
+    return sc_->isFunctionBox() ? sc_->asFunctionBox()->generatorKind()
+                                : GeneratorKind::NotGenerator;
+  }
 
-    bool isAsync() const {
-        return sc_->isFunctionBox() && sc_->asFunctionBox()->isAsync();
-    }
+  bool isGenerator() const {
+    return generatorKind() == GeneratorKind::Generator;
+  }
 
-    bool needsDotGeneratorName() const {
-        return isGenerator() || isAsync();
-    }
+  bool isAsync() const {
+    return sc_->isFunctionBox() && sc_->asFunctionBox()->isAsync();
+  }
 
-    FunctionAsyncKind asyncKind() const {
-        return isAsync() ? FunctionAsyncKind::AsyncFunction : FunctionAsyncKind::SyncFunction;
-    }
+  bool needsDotGeneratorName() const { return isGenerator() || isAsync(); }
 
-    bool isArrowFunction() const {
-        return sc_->isFunctionBox() && sc_->asFunctionBox()->function()->isArrow();
-    }
+  FunctionAsyncKind asyncKind() const {
+    return isAsync() ? FunctionAsyncKind::AsyncFunction
+                     : FunctionAsyncKind::SyncFunction;
+  }
 
-    bool isMethod() const {
-        return sc_->isFunctionBox() && sc_->asFunctionBox()->function()->isMethod();
-    }
+  bool isArrowFunction() const {
+    return sc_->isFunctionBox() && sc_->asFunctionBox()->function()->isArrow();
+  }
 
-    bool isGetterOrSetter() const {
-        return sc_->isFunctionBox() && (sc_->asFunctionBox()->function()->isGetter() ||
-                                        sc_->asFunctionBox()->function()->isSetter());
-    }
+  bool isMethod() const {
+    return sc_->isFunctionBox() && sc_->asFunctionBox()->function()->isMethod();
+  }
 
-    uint32_t scriptId() const {
-        return scriptId_;
-    }
+  bool isGetterOrSetter() const {
+    return sc_->isFunctionBox() &&
+           (sc_->asFunctionBox()->function()->isGetter() ||
+            sc_->asFunctionBox()->function()->isSetter());
+  }
 
-    bool annexBAppliesToLexicalFunctionInInnermostScope(FunctionBox* funbox);
+  uint32_t scriptId() const { return scriptId_; }
 
-    bool tryDeclareVar(HandlePropertyName name, DeclarationKind kind, uint32_t beginPos,
-                       mozilla::Maybe<DeclarationKind>* redeclaredKind, uint32_t* prevPos);
+  bool annexBAppliesToLexicalFunctionInInnermostScope(FunctionBox* funbox);
 
-  private:
-    mozilla::Maybe<DeclarationKind> isVarRedeclaredInInnermostScope(HandlePropertyName name,
-                                                                    DeclarationKind kind);
-    mozilla::Maybe<DeclarationKind> isVarRedeclaredInEval(HandlePropertyName name,
-                                                          DeclarationKind kind);
+  bool tryDeclareVar(HandlePropertyName name, DeclarationKind kind,
+                     uint32_t beginPos,
+                     mozilla::Maybe<DeclarationKind>* redeclaredKind,
+                     uint32_t* prevPos);
 
-    enum DryRunOption { NotDryRun, DryRunInnermostScopeOnly };
-    template <DryRunOption dryRunOption>
-    bool tryDeclareVarHelper(HandlePropertyName name, DeclarationKind kind, uint32_t beginPos,
-                             mozilla::Maybe<DeclarationKind>* redeclaredKind, uint32_t* prevPos);
+ private:
+  mozilla::Maybe<DeclarationKind> isVarRedeclaredInInnermostScope(
+      HandlePropertyName name, DeclarationKind kind);
+  mozilla::Maybe<DeclarationKind> isVarRedeclaredInEval(HandlePropertyName name,
+                                                        DeclarationKind kind);
 
+  enum DryRunOption { NotDryRun, DryRunInnermostScopeOnly };
+  template <DryRunOption dryRunOption>
+  bool tryDeclareVarHelper(HandlePropertyName name, DeclarationKind kind,
+                           uint32_t beginPos,
+                           mozilla::Maybe<DeclarationKind>* redeclaredKind,
+                           uint32_t* prevPos);
 };
 
-} 
+}  
 
-} 
+}  
 
-#endif 
+#endif  

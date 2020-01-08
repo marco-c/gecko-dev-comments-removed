@@ -17,9 +17,8 @@
 
 namespace mozilla {
 
-class Omnijar
-{
-private:
+class Omnijar {
+ private:
   
 
 
@@ -49,19 +48,14 @@ private:
 
   static bool sIsUnified;
 
-public:
-  enum Type
-  {
-    GRE = 0,
-    APP = 1
-  };
+ public:
+  enum Type { GRE = 0, APP = 1 };
 
-private:
+ private:
   
 
 
-  static inline bool IsNested(Type aType)
-  {
+  static inline bool IsNested(Type aType) {
     MOZ_ASSERT(IsInitialized(), "Omnijar not initialized");
     return !!sOuterReader[aType];
   }
@@ -71,14 +65,13 @@ private:
 
 
 
-  static inline already_AddRefed<nsZipArchive> GetOuterReader(Type aType)
-  {
+  static inline already_AddRefed<nsZipArchive> GetOuterReader(Type aType) {
     MOZ_ASSERT(IsInitialized(), "Omnijar not initialized");
     RefPtr<nsZipArchive> reader = sOuterReader[aType].get();
     return reader.forget();
   }
 
-public:
+ public:
   
 
 
@@ -104,8 +97,7 @@ public:
 
 
 
-  static inline already_AddRefed<nsIFile> GetPath(Type aType)
-  {
+  static inline already_AddRefed<nsIFile> GetPath(Type aType) {
     MOZ_ASSERT(IsInitialized(), "Omnijar not initialized");
     nsCOMPtr<nsIFile> path = sPath[aType].get();
     return path.forget();
@@ -115,8 +107,7 @@ public:
 
 
 
-  static inline bool HasOmnijar(Type aType)
-  {
+  static inline bool HasOmnijar(Type aType) {
     MOZ_ASSERT(IsInitialized(), "Omnijar not initialized");
     return !!sPath[aType];
   }
@@ -125,8 +116,7 @@ public:
 
 
 
-  static inline already_AddRefed<nsZipArchive> GetReader(Type aType)
-  {
+  static inline already_AddRefed<nsZipArchive> GetReader(Type aType) {
     MOZ_ASSERT(IsInitialized(), "Omnijar not initialized");
     RefPtr<nsZipArchive> reader = sReader[aType].get();
     return reader.forget();
@@ -147,7 +137,7 @@ public:
 
   static nsresult GetURIString(Type aType, nsACString& aResult);
 
-private:
+ private:
   
 
 

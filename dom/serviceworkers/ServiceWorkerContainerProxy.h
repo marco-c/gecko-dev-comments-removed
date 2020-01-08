@@ -12,37 +12,34 @@ namespace dom {
 
 class ServiceWorkerContainerParent;
 
-class ServiceWorkerContainerProxy final
-{
+class ServiceWorkerContainerProxy final {
   
   ServiceWorkerContainerParent* mActor;
 
   ~ServiceWorkerContainerProxy();
 
-public:
+ public:
   explicit ServiceWorkerContainerProxy(ServiceWorkerContainerParent* aActor);
 
-  void
-  RevokeActor(ServiceWorkerContainerParent* aActor);
+  void RevokeActor(ServiceWorkerContainerParent* aActor);
 
-  RefPtr<ServiceWorkerRegistrationPromise>
-  Register(const ClientInfo& aClientInfo, const nsCString& aScopeURL,
-           const nsCString& aScriptURL,
-           ServiceWorkerUpdateViaCache aUpdateViaCache);
+  RefPtr<ServiceWorkerRegistrationPromise> Register(
+      const ClientInfo& aClientInfo, const nsCString& aScopeURL,
+      const nsCString& aScriptURL, ServiceWorkerUpdateViaCache aUpdateViaCache);
 
-  RefPtr<ServiceWorkerRegistrationPromise>
-  GetRegistration(const ClientInfo& aClientInfo, const nsCString& aURL);
+  RefPtr<ServiceWorkerRegistrationPromise> GetRegistration(
+      const ClientInfo& aClientInfo, const nsCString& aURL);
 
-  RefPtr<ServiceWorkerRegistrationListPromise>
-  GetRegistrations(const ClientInfo& aClientInfo);
+  RefPtr<ServiceWorkerRegistrationListPromise> GetRegistrations(
+      const ClientInfo& aClientInfo);
 
-  RefPtr<ServiceWorkerRegistrationPromise>
-  GetReady(const ClientInfo& aClientInfo);
+  RefPtr<ServiceWorkerRegistrationPromise> GetReady(
+      const ClientInfo& aClientInfo);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ServiceWorkerContainerProxy);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

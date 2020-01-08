@@ -16,8 +16,7 @@ using namespace mozilla::intl;
 
 
 
-Locale::Locale(const nsACString& aLocale)
-{
+Locale::Locale(const nsACString& aLocale) {
   if (aLocale.IsEmpty() || !IsASCII(aLocale)) {
     mIsWellFormed = false;
     return;
@@ -29,6 +28,7 @@ Locale::Locale(const nsACString& aLocale)
   normLocale.ReplaceChar('_', '-');
 
   
+
 
 
 
@@ -90,9 +90,7 @@ Locale::Locale(const nsACString& aLocale)
   }
 }
 
-const nsCString
-Locale::AsString() const
-{
+const nsCString Locale::AsString() const {
   nsCString tag;
 
   if (!mIsWellFormed) {
@@ -132,33 +130,16 @@ Locale::AsString() const
   return tag;
 }
 
-const nsCString&
-Locale::GetLanguage() const
-{
-  return mLanguage;
-}
+const nsCString& Locale::GetLanguage() const { return mLanguage; }
 
-const nsCString&
-Locale::GetScript() const
-{
-  return mScript;
-}
+const nsCString& Locale::GetScript() const { return mScript; }
 
-const nsCString&
-Locale::GetRegion() const
-{
-  return mRegion;
-}
+const nsCString& Locale::GetRegion() const { return mRegion; }
 
-const nsTArray<nsCString>&
-Locale::GetVariants() const
-{
-  return mVariants;
-}
+const nsTArray<nsCString>& Locale::GetVariants() const { return mVariants; }
 
-bool
-Locale::Matches(const Locale& aOther, bool aThisRange, bool aOtherRange) const
-{
+bool Locale::Matches(const Locale& aOther, bool aThisRange,
+                     bool aOtherRange) const {
   if (!IsWellFormed() || !aOther.IsWellFormed()) {
     return false;
   }
@@ -187,9 +168,7 @@ Locale::Matches(const Locale& aOther, bool aThisRange, bool aOtherRange) const
   return true;
 }
 
-bool
-Locale::AddLikelySubtags()
-{
+bool Locale::AddLikelySubtags() {
   const int32_t kLocaleMax = 160;
   char maxLocale[kLocaleMax];
 
@@ -217,14 +196,6 @@ Locale::AddLikelySubtags()
   return true;
 }
 
-void
-Locale::ClearVariants()
-{
-  mVariants.Clear();
-}
+void Locale::ClearVariants() { mVariants.Clear(); }
 
-void
-Locale::ClearRegion()
-{
-  mRegion.Truncate();
-}
+void Locale::ClearRegion() { mRegion.Truncate(); }

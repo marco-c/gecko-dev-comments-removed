@@ -12,20 +12,19 @@
 #include "CTLog.h"
 #include "SignedCertificateTimestamp.h"
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
 
 
-struct VerifiedSCT
-{
+struct VerifiedSCT {
   VerifiedSCT();
 
   
   SignedCertificateTimestamp sct;
 
-  enum class Status
-  {
+  enum class Status {
     None,
     
     Valid,
@@ -41,8 +40,7 @@ struct VerifiedSCT
     InvalidTimestamp,
   };
 
-  enum class Origin
-  {
+  enum class Origin {
     Unknown,
     Embedded,
     TLSExtension,
@@ -58,9 +56,8 @@ struct VerifiedSCT
 typedef std::vector<VerifiedSCT> VerifiedSCTList;
 
 
-class CTVerifyResult
-{
-public:
+class CTVerifyResult {
+ public:
   
   
   VerifiedSCTList verifiedScts;
@@ -79,6 +76,7 @@ public:
   void Reset();
 };
 
-} } 
+}  
+}  
 
 #endif  

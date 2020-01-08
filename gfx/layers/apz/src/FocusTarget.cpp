@@ -6,23 +6,23 @@
 
 #include "mozilla/layers/FocusTarget.h"
 
-#include "mozilla/dom/EventTarget.h" 
-#include "mozilla/dom/TabParent.h"   
-#include "mozilla/EventDispatcher.h" 
-#include "mozilla/layout/RenderFrame.h" 
-#include "nsIContentInlines.h" 
-#include "nsIPresShell.h"  
-#include "nsLayoutUtils.h" 
+#include "mozilla/dom/EventTarget.h"     
+#include "mozilla/dom/TabParent.h"       
+#include "mozilla/EventDispatcher.h"     
+#include "mozilla/layout/RenderFrame.h"  
+#include "nsIContentInlines.h"           
+#include "nsIPresShell.h"                
+#include "nsLayoutUtils.h"               
 
 #define ENABLE_FT_LOGGING 0
 
 
 #if ENABLE_FT_LOGGING
-#  define FT_LOG(FMT, ...) printf_stderr("FT (%s): " FMT, \
-                                         XRE_IsParentProcess() ? "chrome" : "content", \
-                                         __VA_ARGS__)
+#define FT_LOG(FMT, ...)                                                       \
+  printf_stderr("FT (%s): " FMT, XRE_IsParentProcess() ? "chrome" : "content", \
+                __VA_ARGS__)
 #else
-#  define FT_LOG(...)
+#define FT_LOG(...)
 #endif
 
 using namespace mozilla::dom;
@@ -31,15 +31,14 @@ using namespace mozilla::layout;
 namespace mozilla {
 namespace layers {
 
-static already_AddRefed<nsIPresShell>
-GetRetargetEventPresShell(nsIPresShell* aRootPresShell)
-{
+static already_AddRefed<nsIPresShell> GetRetargetEventPresShell(
+    nsIPresShell* aRootPresShell) {
   MOZ_ASSERT(aRootPresShell);
 
   
   
   nsCOMPtr<nsPIDOMWindowOuter> window =
-    aRootPresShell->GetFocusedDOMWindowInOurWindow();
+      aRootPresShell->GetFocusedDOMWindowInOurWindow();
   if (!window) {
     return nullptr;
   }
@@ -53,9 +52,7 @@ GetRetargetEventPresShell(nsIPresShell* aRootPresShell)
   return presShell.forget();
 }
 
-static bool
-HasListenersForKeyEvents(nsIContent* aContent)
-{
+static bool HasListenersForKeyEvents(nsIContent* aContent) {
   if (!aContent) {
     return false;
   }
@@ -63,7 +60,7 @@ HasListenersForKeyEvents(nsIContent* aContent)
   WidgetEvent event(true, eVoidEvent);
   nsTArray<EventTarget*> targets;
   nsresult rv = EventDispatcher::Dispatch(aContent, nullptr, &event, nullptr,
-      nullptr, nullptr, &targets);
+                                          nullptr, nullptr, &targets);
   NS_ENSURE_SUCCESS(rv, false);
   for (size_t i = 0; i < targets.Length(); i++) {
     if (targets[i]->HasNonSystemGroupListenersForUntrustedKeyEvents()) {
@@ -73,9 +70,7 @@ HasListenersForKeyEvents(nsIContent* aContent)
   return false;
 }
 
-static bool
-HasListenersForNonPassiveKeyEvents(nsIContent* aContent)
-{
+static bool HasListenersForNonPassiveKeyEvents(nsIContent* aContent) {
   if (!aContent) {
     return false;
   }
@@ -83,35 +78,31 @@ HasListenersForNonPassiveKeyEvents(nsIContent* aContent)
   WidgetEvent event(true, eVoidEvent);
   nsTArray<EventTarget*> targets;
   nsresult rv = EventDispatcher::Dispatch(aContent, nullptr, &event, nullptr,
-      nullptr, nullptr, &targets);
+                                          nullptr, nullptr, &targets);
   NS_ENSURE_SUCCESS(rv, false);
   for (size_t i = 0; i < targets.Length(); i++) {
-    if (targets[i]->HasNonPassiveNonSystemGroupListenersForUntrustedKeyEvents()) {
+    if (targets[i]
+            ->HasNonPassiveNonSystemGroupListenersForUntrustedKeyEvents()) {
       return true;
     }
   }
   return false;
 }
 
-static bool
-IsEditableNode(nsINode* aNode)
-{
+static bool IsEditableNode(nsINode* aNode) {
   return aNode && aNode->IsEditable();
 }
 
 FocusTarget::FocusTarget()
-  : mSequenceNumber(0)
-  , mFocusHasKeyEventListeners(false)
-  , mData(AsVariant(NoFocusTarget()))
-{
-}
+    : mSequenceNumber(0),
+      mFocusHasKeyEventListeners(false),
+      mData(AsVariant(NoFocusTarget())) {}
 
 FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
                          uint64_t aFocusSequenceNumber)
-  : mSequenceNumber(aFocusSequenceNumber)
-  , mFocusHasKeyEventListeners(false)
-  , mData(AsVariant(NoFocusTarget()))
-{
+    : mSequenceNumber(aFocusSequenceNumber),
+      mFocusHasKeyEventListeners(false),
+      mData(AsVariant(NoFocusTarget())) {
   MOZ_ASSERT(aRootPresShell);
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -119,7 +110,8 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   nsCOMPtr<nsIPresShell> presShell = GetRetargetEventPresShell(aRootPresShell);
 
   if (!presShell) {
-    FT_LOG("Creating nil target with seq=%" PRIu64 " (can't find retargeted presshell)\n",
+    FT_LOG("Creating nil target with seq=%" PRIu64
+           " (can't find retargeted presshell)\n",
            aFocusSequenceNumber);
 
     return;
@@ -136,7 +128,8 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   
   
   
-  nsCOMPtr<nsIContent> focusedContent = presShell->GetFocusedContentInOurWindow();
+  nsCOMPtr<nsIContent> focusedContent =
+      presShell->GetFocusedContentInOurWindow();
   nsCOMPtr<nsIContent> keyEventTarget = focusedContent;
 
   
@@ -148,18 +141,18 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   
   
   if (gfxPrefs::APZKeyboardPassiveListeners()) {
-    mFocusHasKeyEventListeners = HasListenersForNonPassiveKeyEvents(keyEventTarget.get());
+    mFocusHasKeyEventListeners =
+        HasListenersForNonPassiveKeyEvents(keyEventTarget.get());
   } else {
     mFocusHasKeyEventListeners = HasListenersForKeyEvents(keyEventTarget.get());
   }
 
   
   
-  if (IsEditableNode(keyEventTarget) ||
-      IsEditableNode(document)) {
-    FT_LOG("Creating nil target with seq=%" PRIu64 ", kl=%d (disabling for editable node)\n",
-           aFocusSequenceNumber,
-           static_cast<int>(mFocusHasKeyEventListeners));
+  if (IsEditableNode(keyEventTarget) || IsEditableNode(document)) {
+    FT_LOG("Creating nil target with seq=%" PRIu64
+           ", kl=%d (disabling for editable node)\n",
+           aFocusSequenceNumber, static_cast<int>(mFocusHasKeyEventListeners));
 
     return;
   }
@@ -170,18 +163,18 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
 
     
     if (rf) {
-      FT_LOG("Creating reflayer target with seq=%" PRIu64 ", kl=%d, lt=%" PRIu64 "\n",
-             aFocusSequenceNumber,
-             mFocusHasKeyEventListeners,
+      FT_LOG("Creating reflayer target with seq=%" PRIu64 ", kl=%d, lt=%" PRIu64
+             "\n",
+             aFocusSequenceNumber, mFocusHasKeyEventListeners,
              rf->GetLayersId());
 
       mData = AsVariant<LayersId>(rf->GetLayersId());
       return;
     }
 
-    FT_LOG("Creating nil target with seq=%" PRIu64 ", kl=%d (remote browser missing layers id)\n",
-           aFocusSequenceNumber,
-           mFocusHasKeyEventListeners);
+    FT_LOG("Creating nil target with seq=%" PRIu64
+           ", kl=%d (remote browser missing layers id)\n",
+           aFocusSequenceNumber, mFocusHasKeyEventListeners);
 
     return;
   }
@@ -192,49 +185,45 @@ FocusTarget::FocusTarget(nsIPresShell* aRootPresShell,
   
   
   if (focusedContent) {
-    FT_LOG("Creating nil target with seq=%" PRIu64 ", kl=%d (disabling for focusing an element)\n",
-           aFocusSequenceNumber,
-           mFocusHasKeyEventListeners);
+    FT_LOG("Creating nil target with seq=%" PRIu64
+           ", kl=%d (disabling for focusing an element)\n",
+           aFocusSequenceNumber, mFocusHasKeyEventListeners);
 
     return;
   }
 
-  nsCOMPtr<nsIContent> selectedContent = presShell->GetSelectedContentForScrolling();
+  nsCOMPtr<nsIContent> selectedContent =
+      presShell->GetSelectedContentForScrolling();
 
   
   
   nsIScrollableFrame* horizontal =
-    presShell->GetScrollableFrameToScrollForContent(selectedContent.get(),
-                                                    nsIPresShell::eHorizontal);
+      presShell->GetScrollableFrameToScrollForContent(
+          selectedContent.get(), nsIPresShell::eHorizontal);
   nsIScrollableFrame* vertical =
-    presShell->GetScrollableFrameToScrollForContent(selectedContent.get(),
-                                                    nsIPresShell::eVertical);
+      presShell->GetScrollableFrameToScrollForContent(selectedContent.get(),
+                                                      nsIPresShell::eVertical);
 
   
   
   ScrollTargets target;
-  target.mHorizontal =  nsLayoutUtils::FindIDForScrollableFrame(horizontal);
+  target.mHorizontal = nsLayoutUtils::FindIDForScrollableFrame(horizontal);
   target.mVertical = nsLayoutUtils::FindIDForScrollableFrame(vertical);
   mData = AsVariant(target);
 
-  FT_LOG("Creating scroll target with seq=%" PRIu64 ", kl=%d, h=%" PRIu64 ", v=%" PRIu64 "\n",
-         aFocusSequenceNumber,
-         mFocusHasKeyEventListeners,
-         target.mHorizontal,
+  FT_LOG("Creating scroll target with seq=%" PRIu64 ", kl=%d, h=%" PRIu64
+         ", v=%" PRIu64 "\n",
+         aFocusSequenceNumber, mFocusHasKeyEventListeners, target.mHorizontal,
          target.mVertical);
 }
 
-bool
-FocusTarget::operator==(const FocusTarget& aRhs) const
-{
+bool FocusTarget::operator==(const FocusTarget& aRhs) const {
   return mSequenceNumber == aRhs.mSequenceNumber &&
          mFocusHasKeyEventListeners == aRhs.mFocusHasKeyEventListeners &&
          mData == aRhs.mData;
 }
 
-const char*
-FocusTarget::Type() const
-{
+const char* FocusTarget::Type() const {
   if (mData.is<LayersId>()) {
     return "LayersId";
   }
@@ -247,5 +236,5 @@ FocusTarget::Type() const
   return "<unknown>";
 }
 
-} 
-} 
+}  
+}  

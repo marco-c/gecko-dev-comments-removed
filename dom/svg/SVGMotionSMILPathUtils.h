@@ -23,26 +23,24 @@ class nsSVGElement;
 
 namespace mozilla {
 
-class SVGMotionSMILPathUtils
-{
+class SVGMotionSMILPathUtils {
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::Path Path;
   typedef mozilla::gfx::PathBuilder PathBuilder;
 
-public:
+ public:
   
   
   class PathGenerator {
-  public:
+   public:
     explicit PathGenerator(const nsSVGElement* aSVGElement)
-      : mSVGElement(aSVGElement),
-        mHaveReceivedCommands(false)
-    {
+        : mSVGElement(aSVGElement), mHaveReceivedCommands(false) {
       RefPtr<DrawTarget> drawTarget =
-        gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-      NS_ASSERTION(gfxPlatform::GetPlatform()->
-                     SupportsAzureContentForDrawTarget(drawTarget),
-                   "Should support Moz2D content drawing");
+          gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+      NS_ASSERTION(
+          gfxPlatform::GetPlatform()->SupportsAzureContentForDrawTarget(
+              drawTarget),
+          "Should support Moz2D content drawing");
 
       mPathBuilder = drawTarget->CreatePathBuilder();
     }
@@ -52,41 +50,38 @@ public:
     
     
     
-    void   MoveToOrigin();
+    void MoveToOrigin();
     bool MoveToAbsolute(const nsAString& aCoordPairStr);
     bool LineToAbsolute(const nsAString& aCoordPairStr,
-                          double& aSegmentDistance);
+                        double& aSegmentDistance);
     bool LineToRelative(const nsAString& aCoordPairStr,
-                          double& aSegmentDistance);
+                        double& aSegmentDistance);
 
     
     inline bool HaveReceivedCommands() { return mHaveReceivedCommands; }
     
     already_AddRefed<Path> GetResultingPath();
 
-  protected:
+   protected:
     
-    bool ParseCoordinatePair(const nsAString& aStr,
-                               float& aXVal, float& aYVal);
+    bool ParseCoordinatePair(const nsAString& aStr, float& aXVal, float& aYVal);
 
     
-    const nsSVGElement* mSVGElement; 
+    const nsSVGElement* mSVGElement;  
     RefPtr<PathBuilder> mPathBuilder;
-    bool          mHaveReceivedCommands;
+    bool mHaveReceivedCommands;
   };
 
   
   
-  class MOZ_STACK_CLASS MotionValueParser :
-    public nsSMILParserUtils::GenericValueParser
-  {
-  public:
+  class MOZ_STACK_CLASS MotionValueParser
+      : public nsSMILParserUtils::GenericValueParser {
+   public:
     MotionValueParser(PathGenerator* aPathGenerator,
                       FallibleTArray<double>* aPointDistances)
-      : mPathGenerator(aPathGenerator),
-        mPointDistances(aPointDistances),
-        mDistanceSoFar(0.0)
-    {
+        : mPathGenerator(aPathGenerator),
+          mPointDistances(aPointDistances),
+          mDistanceSoFar(0.0) {
       MOZ_ASSERT(mPointDistances->IsEmpty(),
                  "expecting point distances array to start empty");
     }
@@ -94,14 +89,13 @@ public:
     
     virtual bool Parse(const nsAString& aValueStr) override;
 
-  protected:
-    PathGenerator*          mPathGenerator;
+   protected:
+    PathGenerator* mPathGenerator;
     FallibleTArray<double>* mPointDistances;
-    double                  mDistanceSoFar;
+    double mDistanceSoFar;
   };
-
 };
 
-} 
+}  
 
-#endif 
+#endif  

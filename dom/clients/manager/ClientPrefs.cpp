@@ -15,21 +15,16 @@ namespace {
 
 bool gDataURLUniqueOpaqueOrigin = false;
 
-} 
+}  
 
-void
-ClientPrefsInit()
-{
+void ClientPrefsInit() {
   Preferences::AddBoolVarCache(&gDataURLUniqueOpaqueOrigin,
-                               "security.data_uri.unique_opaque_origin",
-                               false);
+                               "security.data_uri.unique_opaque_origin", false);
 }
 
-bool
-ClientPrefsGetDataURLUniqueOpaqueOrigin()
-{
+bool ClientPrefsGetDataURLUniqueOpaqueOrigin() {
   return gDataURLUniqueOpaqueOrigin;
 }
 
-} 
-} 
+}  
+}  

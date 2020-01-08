@@ -26,40 +26,37 @@ class Exception;
 
 
 
-bool
-Throw(JSContext* cx, nsresult rv, const nsACString& message = EmptyCString());
+bool Throw(JSContext* cx, nsresult rv,
+           const nsACString& message = EmptyCString());
 
 
-void
-ThrowAndReport(nsPIDOMWindowInner* aWindow, nsresult aRv);
+void ThrowAndReport(nsPIDOMWindowInner* aWindow, nsresult aRv);
 
 
 
-void
-ThrowExceptionObject(JSContext* aCx, Exception* aException);
+void ThrowExceptionObject(JSContext* aCx, Exception* aException);
 
 
 
 
 
 
-already_AddRefed<Exception>
-CreateException(nsresult aRv, const nsACString& aMessage = EmptyCString());
+already_AddRefed<Exception> CreateException(
+    nsresult aRv, const nsACString& aMessage = EmptyCString());
 
 
 
 
-already_AddRefed<nsIStackFrame>
-GetCurrentJSStack(int32_t aMaxDepth = -1);
+already_AddRefed<nsIStackFrame> GetCurrentJSStack(int32_t aMaxDepth = -1);
 
 
 namespace exceptions {
 
-already_AddRefed<nsIStackFrame>
-CreateStack(JSContext* aCx, JS::StackCapture&& aCaptureMode);
+already_AddRefed<nsIStackFrame> CreateStack(JSContext* aCx,
+                                            JS::StackCapture&& aCaptureMode);
 
-} 
-} 
-} 
+}  
+}  
+}  
 
 #endif

@@ -193,55 +193,34 @@ extern const char16_t* kLocalStorageType;
 
 
 
-class MOZ_STACK_CLASS LSNotifyInfo
-{
+class MOZ_STACK_CLASS LSNotifyInfo {
   bool mChanged;
   nsString mOldValue;
 
-public:
-  LSNotifyInfo()
-    : mChanged(false)
-  { }
+ public:
+  LSNotifyInfo() : mChanged(false) {}
 
-  bool
-  changed() const
-  {
-    return mChanged;
-  }
+  bool changed() const { return mChanged; }
 
-  bool&
-  changed()
-  {
-    return mChanged;
-  }
+  bool& changed() { return mChanged; }
 
-  const nsString&
-  oldValue() const
-  {
-    return mOldValue;
-  }
+  const nsString& oldValue() const { return mOldValue; }
 
-  nsString&
-  oldValue()
-  {
-    return mOldValue;
-  }
+  nsString& oldValue() { return mOldValue; }
 };
 
 
 
 
 
-bool
-NextGenLocalStorageEnabled();
+bool NextGenLocalStorageEnabled();
 
 
 
 
-bool
-CachedNextGenLocalStorageEnabled();
+bool CachedNextGenLocalStorageEnabled();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

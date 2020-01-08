@@ -9,14 +9,10 @@
 
 using namespace mozilla::dom;
 
-MIDIManagerChild::MIDIManagerChild()
-  : mShutdown(false)
-{
-}
+MIDIManagerChild::MIDIManagerChild() : mShutdown(false) {}
 
-mozilla::ipc::IPCResult
-MIDIManagerChild::RecvMIDIPortListUpdate(const MIDIPortList& aPortList)
-{
+mozilla::ipc::IPCResult MIDIManagerChild::RecvMIDIPortListUpdate(
+    const MIDIPortList& aPortList) {
   MOZ_ASSERT(NS_IsMainThread());
   if (mShutdown) {
     return IPC_OK();
@@ -26,18 +22,14 @@ MIDIManagerChild::RecvMIDIPortListUpdate(const MIDIPortList& aPortList)
   return IPC_OK();
 }
 
-void
-MIDIManagerChild::SetActorAlive()
-{
+void MIDIManagerChild::SetActorAlive() {
   
   
   
   AddRef();
 }
 
-void
-MIDIManagerChild::Shutdown()
-{
+void MIDIManagerChild::Shutdown() {
   MOZ_ASSERT(!mShutdown);
   mShutdown = true;
   SendShutdown();

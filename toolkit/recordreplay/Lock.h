@@ -25,20 +25,15 @@ namespace recordreplay {
 
 
 
-class Lock
-{
+class Lock {
   
   size_t mId;
 
   
   Atomic<size_t, SequentiallyConsistent, Behavior::DontPreserve> mOwner;
 
-public:
-  explicit Lock(size_t aId)
-    : mId(aId), mOwner(0)
-  {
-    MOZ_ASSERT(aId);
-  }
+ public:
+  explicit Lock(size_t aId) : mId(aId), mOwner(0) { MOZ_ASSERT(aId); }
 
   size_t Id() { return mId; }
 
@@ -68,7 +63,7 @@ public:
   static void LockAquiresUpdated(size_t aLockId);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

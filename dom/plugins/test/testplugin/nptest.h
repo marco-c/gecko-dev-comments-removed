@@ -31,6 +31,7 @@
 
 
 
+
 #ifndef nptest_h_
 #define nptest_h_
 
@@ -43,10 +44,7 @@
 #include <string>
 #include <sstream>
 
-typedef enum  {
-  DM_DEFAULT,
-  DM_SOLID_COLOR
-} DrawMode;
+typedef enum { DM_DEFAULT, DM_SOLID_COLOR } DrawMode;
 
 typedef enum {
   FUNCTION_NONE,
@@ -61,11 +59,7 @@ typedef enum {
   FUNCTION_NPP_WRITE_RPC
 } TestFunction;
 
-typedef enum {
-  AD_NONE,
-  AD_BITMAP,
-  AD_DXGI
-} AsyncDrawing;
+typedef enum { AD_NONE, AD_BITMAP, AD_DXGI } AsyncDrawing;
 
 typedef enum {
   ACTIVATION_STATE_UNKNOWN,
@@ -78,15 +72,12 @@ typedef struct FunctionTable {
   const char* funcName;
 } FunctionTable;
 
-typedef enum {
-  POSTMODE_FRAME,
-  POSTMODE_STREAM
-} PostMode;
+typedef enum { POSTMODE_FRAME, POSTMODE_STREAM } PostMode;
 
 typedef struct TestNPObject : NPObject {
   NPP npp;
   DrawMode drawMode;
-  uint32_t drawColor; 
+  uint32_t drawColor;  
 } TestNPObject;
 
 typedef struct _PlatformData PlatformData;
@@ -142,8 +133,8 @@ typedef struct InstanceData {
   int32_t mouseUpEventCount;
   int32_t bugMode;
   AsyncDrawing asyncDrawing;
-  NPAsyncSurface *frontBuffer;
-  NPAsyncSurface *backBuffer;
+  NPAsyncSurface* frontBuffer;
+  NPAsyncSurface* backBuffer;
   std::string lastComposition;
   void* placeholderWnd;
   double cssZoomFactor;
@@ -156,4 +147,4 @@ bool setupDxgiSurfaces(NPP npp, InstanceData* instanceData);
 void drawDxgiBitmapColor(InstanceData* instanceData);
 #endif
 
-#endif 
+#endif  

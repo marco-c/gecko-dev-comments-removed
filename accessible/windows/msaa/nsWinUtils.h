@@ -26,17 +26,16 @@ const LPCWSTR kClassNameTabContent = L"MozillaContentWindowClass";
 const LPCWSTR kPropNameDocAcc = L"MozDocAccessible";
 const LPCWSTR kPropNameDocAccParent = L"MozDocAccessibleParent";
 
-class nsWinUtils
-{
-public:
+class nsWinUtils {
+ public:
   
 
 
 
 
 
-  static already_AddRefed<nsICSSDeclaration>
-    GetComputedStyleDeclaration(nsIContent* aContent);
+  static already_AddRefed<nsICSSDeclaration> GetComputedStyleDeclaration(
+      nsIContent* aContent);
 
   
 
@@ -78,10 +77,10 @@ public:
 
 
 
-  static HWND CreateNativeWindow(LPCWSTR aWindowClass, HWND aParentWnd,
-                                 int aX, int aY, int aWidth, int aHeight,
-                                 bool aIsActive,
-                                 NativeWindowCreateProc* aOnCreateProc = nullptr);
+  static HWND CreateNativeWindow(
+      LPCWSTR aWindowClass, HWND aParentWnd, int aX, int aY, int aWidth,
+      int aHeight, bool aIsActive,
+      NativeWindowCreateProc* aOnCreateProc = nullptr);
 
   
 
@@ -93,14 +92,14 @@ public:
 
   static void HideNativeWindow(HWND aWnd);
 
-private:
+ private:
   
 
 
   static bool sWindowEmulationStarted;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

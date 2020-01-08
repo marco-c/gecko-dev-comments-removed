@@ -51,9 +51,9 @@ static mozilla::glue::BasicDllServices gDllServices;
 
 #endif
 
+using std::hex;
 using std::ios;
 using std::ios_base;
-using std::hex;
 using std::map;
 using std::showbase;
 using std::string;
@@ -80,7 +80,7 @@ MinidumpAnalyzerOptions gMinidumpAnalyzerOptions;
 static string gMinidumpPath;
 
 struct ModuleCompare {
-  bool operator() (const CodeModule* aLhs, const CodeModule* aRhs) const {
+  bool operator()(const CodeModule* aLhs, const CodeModule* aRhs) const {
     return aLhs->base_address() < aRhs->base_address();
   }
 };
@@ -89,8 +89,7 @@ typedef map<const CodeModule*, unsigned int, ModuleCompare> OrderedModulesMap;
 
 static const char kExtraDataExtension[] = ".extra";
 
-static string
-ToHex(uint64_t aValue) {
+static string ToHex(uint64_t aValue) {
   stringstream output;
 
   output << hex << showbase << aValue;
@@ -100,23 +99,22 @@ ToHex(uint64_t aValue) {
 
 
 
-static string
-FrameTrust(const StackFrame::FrameTrust aTrust) {
+static string FrameTrust(const StackFrame::FrameTrust aTrust) {
   switch (aTrust) {
-  case StackFrame::FRAME_TRUST_NONE:
-    return "none";
-  case StackFrame::FRAME_TRUST_SCAN:
-    return "scan";
-  case StackFrame::FRAME_TRUST_CFI_SCAN:
-    return "cfi_scan";
-  case StackFrame::FRAME_TRUST_FP:
-    return "frame_pointer";
-  case StackFrame::FRAME_TRUST_CFI:
-    return "cfi";
-  case StackFrame::FRAME_TRUST_PREWALKED:
-    return "prewalked";
-  case StackFrame::FRAME_TRUST_CONTEXT:
-    return "context";
+    case StackFrame::FRAME_TRUST_NONE:
+      return "none";
+    case StackFrame::FRAME_TRUST_SCAN:
+      return "scan";
+    case StackFrame::FRAME_TRUST_CFI_SCAN:
+      return "cfi_scan";
+    case StackFrame::FRAME_TRUST_FP:
+      return "frame_pointer";
+    case StackFrame::FRAME_TRUST_CFI:
+      return "cfi";
+    case StackFrame::FRAME_TRUST_PREWALKED:
+      return "prewalked";
+    case StackFrame::FRAME_TRUST_CONTEXT:
+      return "context";
   }
 
   return "none";
@@ -125,44 +123,40 @@ FrameTrust(const StackFrame::FrameTrust aTrust) {
 
 
 
-static string
-ResultString(ProcessResult aResult) {
+static string ResultString(ProcessResult aResult) {
   switch (aResult) {
-  case google_breakpad::PROCESS_OK:
-    return "OK";
-  case google_breakpad::PROCESS_ERROR_MINIDUMP_NOT_FOUND:
-    return "ERROR_MINIDUMP_NOT_FOUND";
-  case google_breakpad::PROCESS_ERROR_NO_MINIDUMP_HEADER:
-    return "ERROR_NO_MINIDUMP_HEADER";
-  case google_breakpad::PROCESS_ERROR_NO_THREAD_LIST:
-    return "ERROR_NO_THREAD_LIST";
-  case google_breakpad::PROCESS_ERROR_GETTING_THREAD:
-    return "ERROR_GETTING_THREAD";
-  case google_breakpad::PROCESS_ERROR_GETTING_THREAD_ID:
-    return "ERROR_GETTING_THREAD_ID";
-  case google_breakpad::PROCESS_ERROR_DUPLICATE_REQUESTING_THREADS:
-    return "ERROR_DUPLICATE_REQUESTING_THREADS";
-  case google_breakpad::PROCESS_SYMBOL_SUPPLIER_INTERRUPTED:
-    return "SYMBOL_SUPPLIER_INTERRUPTED";
-  default:
-    return "";
+    case google_breakpad::PROCESS_OK:
+      return "OK";
+    case google_breakpad::PROCESS_ERROR_MINIDUMP_NOT_FOUND:
+      return "ERROR_MINIDUMP_NOT_FOUND";
+    case google_breakpad::PROCESS_ERROR_NO_MINIDUMP_HEADER:
+      return "ERROR_NO_MINIDUMP_HEADER";
+    case google_breakpad::PROCESS_ERROR_NO_THREAD_LIST:
+      return "ERROR_NO_THREAD_LIST";
+    case google_breakpad::PROCESS_ERROR_GETTING_THREAD:
+      return "ERROR_GETTING_THREAD";
+    case google_breakpad::PROCESS_ERROR_GETTING_THREAD_ID:
+      return "ERROR_GETTING_THREAD_ID";
+    case google_breakpad::PROCESS_ERROR_DUPLICATE_REQUESTING_THREADS:
+      return "ERROR_DUPLICATE_REQUESTING_THREADS";
+    case google_breakpad::PROCESS_SYMBOL_SUPPLIER_INTERRUPTED:
+      return "SYMBOL_SUPPLIER_INTERRUPTED";
+    default:
+      return "";
   }
 }
 
 
 
 
-static void
-ConvertStackToJSON(const ProcessState& aProcessState,
-                   const OrderedModulesMap& aOrderedModules,
-                   const CallStack *aStack,
-                   Json::Value& aNode)
-{
+static void ConvertStackToJSON(const ProcessState& aProcessState,
+                               const OrderedModulesMap& aOrderedModules,
+                               const CallStack* aStack, Json::Value& aNode) {
   int frameCount = aStack->frames()->size();
   unsigned int moduleIndex = 0;
 
   for (int frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
-    const StackFrame *frame = aStack->frames()->at(frameIndex);
+    const StackFrame* frame = aStack->frames()->at(frameIndex);
     Json::Value frameNode;
 
     if (frame->module) {
@@ -185,11 +179,10 @@ ConvertStackToJSON(const ProcessState& aProcessState,
 
 
 
-static int
-ConvertModulesToJSON(const ProcessState& aProcessState,
-                     OrderedModulesMap& aOrderedModules,
-                     Json::Value& aNode, Json::Value& aCertSubjects)
-{
+static int ConvertModulesToJSON(const ProcessState& aProcessState,
+                                OrderedModulesMap& aOrderedModules,
+                                Json::Value& aNode,
+                                Json::Value& aCertSubjects) {
   const CodeModules* modules = aProcessState.modules();
 
   if (!modules) {
@@ -199,15 +192,12 @@ ConvertModulesToJSON(const ProcessState& aProcessState,
   
   
   for (unsigned int i = 0; i < modules->module_count(); ++i) {
-    aOrderedModules.insert(
-      std::pair<const CodeModule*, unsigned int>(
-        modules->GetModuleAtSequence(i), i
-      )
-    );
+    aOrderedModules.insert(std::pair<const CodeModule*, unsigned int>(
+        modules->GetModuleAtSequence(i), i));
   }
 
   uint64_t mainAddress = 0;
-  const CodeModule *mainModule = modules->GetMainModule();
+  const CodeModule* mainModule = modules->GetMainModule();
 
   if (mainModule) {
     mainAddress = mainModule->base_address();
@@ -216,19 +206,17 @@ ConvertModulesToJSON(const ProcessState& aProcessState,
   unsigned int moduleCount = modules->module_count();
   int mainModuleIndex = -1;
 
-  for (unsigned int moduleSequence = 0;
-       moduleSequence < moduleCount;
-       ++moduleSequence)
-  {
-    const CodeModule *module = modules->GetModuleAtSequence(moduleSequence);
+  for (unsigned int moduleSequence = 0; moduleSequence < moduleCount;
+       ++moduleSequence) {
+    const CodeModule* module = modules->GetModuleAtSequence(moduleSequence);
 
     if (module->base_address() == mainAddress) {
       mainModuleIndex = moduleSequence;
     }
 
 #if defined(XP_WIN)
-    auto certSubject = gDllServices.GetBinaryOrgName(
-                         UTF8ToWide(module->code_file()).c_str());
+    auto certSubject =
+        gDllServices.GetBinaryOrgName(UTF8ToWide(module->code_file()).c_str());
     if (certSubject) {
       string strSubject(WideToUTF8(certSubject.get()));
       
@@ -262,12 +250,10 @@ ConvertModulesToJSON(const ProcessState& aProcessState,
 
 
 
-static void
-ConvertProcessStateToJSON(const ProcessState& aProcessState,
-                          Json::Value& aStackTraces,
-                          const bool aFullStacks,
-                          Json::Value& aCertSubjects)
-{
+static void ConvertProcessStateToJSON(const ProcessState& aProcessState,
+                                      Json::Value& aStackTraces,
+                                      const bool aFullStacks,
+                                      Json::Value& aCertSubjects) {
   
   OrderedModulesMap orderedModules;
 
@@ -299,8 +285,8 @@ ConvertProcessStateToJSON(const ProcessState& aProcessState,
 
   
   Json::Value modules(Json::arrayValue);
-  int mainModule = ConvertModulesToJSON(aProcessState, orderedModules,
-                                        modules, aCertSubjects);
+  int mainModule = ConvertModulesToJSON(aProcessState, orderedModules, modules,
+                                        aCertSubjects);
 
   if (mainModule != -1) {
     aStackTraces["main_module"] = mainModule;
@@ -321,7 +307,7 @@ ConvertProcessStateToJSON(const ProcessState& aProcessState,
     ConvertStackToJSON(aProcessState, orderedModules, rawStack, stack);
     thread["frames"] = stack;
     threads.append(thread);
-   } else {
+  } else {
     for (int threadIndex = 0; threadIndex < threadCount; ++threadIndex) {
       Json::Value thread;
       Json::Value stack(Json::arrayValue);
@@ -340,10 +326,9 @@ ConvertProcessStateToJSON(const ProcessState& aProcessState,
 
 
 
-static bool
-ProcessMinidump(Json::Value& aStackTraces, Json::Value& aCertSubjects,
-                const string& aDumpFile, const bool aFullStacks)
-{
+static bool ProcessMinidump(Json::Value& aStackTraces,
+                            Json::Value& aCertSubjects, const string& aDumpFile,
+                            const bool aFullStacks) {
 #if XP_WIN && HAVE_64BIT_BUILD
   MozStackFrameSymbolizer symbolizer;
   MinidumpProcessor minidumpProcessor(&symbolizer, false);
@@ -359,7 +344,7 @@ ProcessMinidump(Json::Value& aStackTraces, Json::Value& aCertSubjects,
   Minidump dump(UTF8ToMBCS(aDumpFile));
 #else
   Minidump dump(aDumpFile);
-#endif 
+#endif  
   if (!dump.Read()) {
     return false;
   }
@@ -377,15 +362,14 @@ ProcessMinidump(Json::Value& aStackTraces, Json::Value& aCertSubjects,
 
 
 
-static bool
-UpdateExtraDataFile(const string &aDumpPath, const Json::Value& aStackTraces,
-                    const Json::Value& aCertSubjects)
-{
+static bool UpdateExtraDataFile(const string& aDumpPath,
+                                const Json::Value& aStackTraces,
+                                const Json::Value& aCertSubjects) {
   string extraDataPath(aDumpPath);
   int dot = extraDataPath.rfind('.');
 
   if (dot < 0) {
-    return false; 
+    return false;  
   }
 
   extraDataPath.replace(dot, extraDataPath.length() - dot, kExtraDataExtension);
@@ -398,7 +382,7 @@ UpdateExtraDataFile(const string &aDumpPath, const Json::Value& aStackTraces,
       UTF8ToWide(extraDataPath).c_str(),
 #else
       extraDataPath.c_str(),
-#endif 
+#endif  
       mode);
 
   if (f.is_open()) {
@@ -418,8 +402,7 @@ UpdateExtraDataFile(const string &aDumpPath, const Json::Value& aStackTraces,
   return res;
 }
 
-bool
-GenerateStacks(const string& aDumpPath, const bool aFullStacks) {
+bool GenerateStacks(const string& aDumpPath, const bool aFullStacks) {
   Json::Value stackTraces;
   Json::Value certSubjects;
 
@@ -430,7 +413,7 @@ GenerateStacks(const string& aDumpPath, const bool aFullStacks) {
   return UpdateExtraDataFile(aDumpPath, stackTraces, certSubjects);
 }
 
-} 
+}  
 
 using namespace CrashReporter;
 
@@ -443,16 +426,13 @@ using namespace CrashReporter;
 template <typename CharT>
 struct CharTraits;
 
-template<>
-struct CharTraits<char>
-{
-  static int compare(const char* left, const char* right)
-  {
+template <>
+struct CharTraits<char> {
+  static int compare(const char* left, const char* right) {
     return strcmp(left, right);
   }
 
-  static string& assign(string& left, const char* right)
-  {
+  static string& assign(string& left, const char* right) {
     left = right;
     return left;
   }
@@ -460,37 +440,31 @@ struct CharTraits<char>
 
 #if defined(XP_WIN)
 
-template<>
-struct CharTraits<wchar_t>
-{
-  static int compare(const wchar_t* left, const wchar_t* right)
-  {
+template <>
+struct CharTraits<wchar_t> {
+  static int compare(const wchar_t* left, const wchar_t* right) {
     return wcscmp(left, right);
   }
 
-  static string& assign(string& left, const wchar_t* right)
-  {
+  static string& assign(string& left, const wchar_t* right) {
     left = WideToUTF8(right);
     return left;
   }
 };
 
-#endif 
+#endif  
 
-static void
-LowerPriority()
-{
+static void LowerPriority() {
 #if defined(XP_WIN)
   Unused << SetPriorityClass(GetCurrentProcess(),
                              PROCESS_MODE_BACKGROUND_BEGIN);
-#else 
+#else  
   Unused << nice(20);
 #endif
 }
 
 template <typename CharT, typename Traits = CharTraits<CharT>>
-static void
-ParseArguments(int argc, CharT** argv) {
+static void ParseArguments(int argc, CharT** argv) {
   if (argc <= 1) {
     exit(EXIT_FAILURE);
   }
@@ -499,7 +473,7 @@ ParseArguments(int argc, CharT** argv) {
     if (!Traits::compare(argv[i], XP_LITERAL("--full"))) {
       gMinidumpAnalyzerOptions.fullMinidump = true;
     } else if (!Traits::compare(argv[i], XP_LITERAL("--force-use-module")) &&
-                 (i < argc - 2)) {
+               (i < argc - 2)) {
       Traits::assign(gMinidumpAnalyzerOptions.forceUseModule, argv[i + 1]);
       ++i;
     } else {
@@ -514,8 +488,8 @@ ParseArguments(int argc, CharT** argv) {
 
 
 
-extern "C"
-int wmain(int argc, wchar_t** argv)
+
+extern "C" int wmain(int argc, wchar_t** argv)
 #else
 int main(int argc, char** argv)
 #endif

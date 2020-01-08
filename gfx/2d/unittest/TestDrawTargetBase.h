@@ -16,14 +16,13 @@
 
 
 
-class TestDrawTargetBase : public TestBase
-{
-public:
+class TestDrawTargetBase : public TestBase {
+ public:
   void Initialized();
   void FillCompletely();
   void FillRect();
 
-protected:
+ protected:
   TestDrawTargetBase();
 
   void RefreshSnapshot();

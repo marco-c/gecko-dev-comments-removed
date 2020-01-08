@@ -7,11 +7,11 @@
 #ifndef MOZILLA_LAYERS_COMPOSITABLETRANSACTIONPARENT_H
 #define MOZILLA_LAYERS_COMPOSITABLETRANSACTIONPARENT_H
 
-#include <vector>                       
-#include "mozilla/Attributes.h"         
+#include <vector>                
+#include "mozilla/Attributes.h"  
 #include "mozilla/NotNull.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
-#include "mozilla/layers/LayersMessages.h"  
+#include "mozilla/layers/LayersMessages.h"     
 #include "mozilla/layers/TextureClient.h"
 #include "CompositableHost.h"
 
@@ -22,29 +22,25 @@ namespace layers {
 
 
 
-class CompositableParentManager : public HostIPCAllocator
-{
-public:
-
+class CompositableParentManager : public HostIPCAllocator {
+ public:
   CompositableParentManager() {}
 
   void DestroyActor(const OpDestroy& aOp);
 
-  void UpdateFwdTransactionId(uint64_t aTransactionId)
-  {
+  void UpdateFwdTransactionId(uint64_t aTransactionId) {
     MOZ_ASSERT(mFwdTransactionId < aTransactionId);
     mFwdTransactionId = aTransactionId;
   }
 
   uint64_t GetFwdTransactionId() { return mFwdTransactionId; }
 
-  RefPtr<CompositableHost> AddCompositable(
-    const CompositableHandle& aHandle,
-    const TextureInfo& aInfo,
-    bool aUseWebRender);
+  RefPtr<CompositableHost> AddCompositable(const CompositableHandle& aHandle,
+                                           const TextureInfo& aInfo,
+                                           bool aUseWebRender);
   RefPtr<CompositableHost> FindCompositable(const CompositableHandle& aHandle);
 
-protected:
+ protected:
   
 
 
@@ -60,10 +56,9 @@ protected:
 
 
   std::map<uint64_t, RefPtr<CompositableHost>> mCompositables;
-
 };
 
-} 
-} 
+}  
+}  
 
 #endif

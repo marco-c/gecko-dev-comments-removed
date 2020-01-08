@@ -52,6 +52,6 @@ struct EventInfo {
   const nsDependentCString object() const;
 };
 
-} 
+}  
 
-#endif 
+#endif  

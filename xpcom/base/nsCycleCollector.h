@@ -10,7 +10,8 @@
 class nsICycleCollectorListener;
 class nsICycleCollectorLogSink;
 class nsISupports;
-template<class T> struct already_AddRefed;
+template <class T>
+struct already_AddRefed;
 
 #include "nsError.h"
 #include "nsID.h"
@@ -19,7 +20,7 @@ template<class T> struct already_AddRefed;
 
 namespace mozilla {
 class CycleCollectedJSContext;
-} 
+}  
 
 bool nsCycleCollector_init();
 
@@ -29,7 +30,8 @@ typedef void (*CC_BeforeUnlinkCallback)(void);
 void nsCycleCollector_setBeforeUnlinkCallback(CC_BeforeUnlinkCallback aCB);
 
 typedef void (*CC_ForgetSkippableCallback)(void);
-void nsCycleCollector_setForgetSkippableCallback(CC_ForgetSkippableCallback aCB);
+void nsCycleCollector_setForgetSkippableCallback(
+    CC_ForgetSkippableCallback aCB);
 
 void nsCycleCollector_forgetSkippable(js::SliceBudget& aBudget,
                                       bool aRemoveChildlessNodes = false,
@@ -64,7 +66,8 @@ void nsCycleCollector_registerJSContext(mozilla::CycleCollectedJSContext* aCx);
 void nsCycleCollector_forgetJSContext();
 
 
-void nsCycleCollector_registerNonPrimaryContext(mozilla::CycleCollectedJSContext* aCx);
+void nsCycleCollector_registerNonPrimaryContext(
+    mozilla::CycleCollectedJSContext* aCx);
 void nsCycleCollector_forgetNonPrimaryContext();
 
-#endif 
+#endif  

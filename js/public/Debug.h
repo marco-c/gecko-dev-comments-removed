@@ -22,7 +22,7 @@
 
 namespace js {
 class Debugger;
-} 
+}  
 
 namespace JS {
 namespace dbg {
@@ -124,135 +124,135 @@ namespace dbg {
 class BuilderOrigin;
 
 class Builder {
-    
-    
-    PersistentRootedObject debuggerObject;
+  
+  
+  PersistentRootedObject debuggerObject;
 
-    
-    js::Debugger* debugger;
+  
+  js::Debugger* debugger;
 
-    
-    
-    
+  
+  
+  
 #if DEBUG
-    void assertBuilt(JSObject* obj);
+  void assertBuilt(JSObject* obj);
 #else
-    void assertBuilt(JSObject* obj) { }
+  void assertBuilt(JSObject* obj) {}
 #endif
 
-  protected:
+ protected:
+  
+  
+  template <typename T>
+  class BuiltThing {
+    friend class BuilderOrigin;
+
+   protected:
     
+    Builder& owner;
+
     
-    template<typename T>
-    class BuiltThing {
-        friend class BuilderOrigin;
+    PersistentRooted<T> value;
 
-      protected:
-        
-        Builder& owner;
+    BuiltThing(JSContext* cx, Builder& owner_,
+               T value_ = SafelyInitialized<T>())
+        : owner(owner_), value(cx, value_) {
+      owner.assertBuilt(value_);
+    }
 
-        
-        PersistentRooted<T> value;
-
-        BuiltThing(JSContext* cx, Builder& owner_, T value_ = SafelyInitialized<T>())
-          : owner(owner_), value(cx, value_)
-        {
-            owner.assertBuilt(value_);
-        }
-
-        
-        js::Debugger* debugger() const { return owner.debugger; }
-        JSObject* debuggerObject() const { return owner.debuggerObject; }
-
-      public:
-        BuiltThing(const BuiltThing& rhs) : owner(rhs.owner), value(rhs.value) { }
-        BuiltThing& operator=(const BuiltThing& rhs) {
-            MOZ_ASSERT(&owner == &rhs.owner);
-            owner.assertBuilt(rhs.value);
-            value = rhs.value;
-            return *this;
-        }
-
-        explicit operator bool() const {
-            
-            return value;
-        }
-
-      private:
-        BuiltThing() = delete;
-    };
-
-  public:
     
-    
-    
-    class Object: private BuiltThing<JSObject*> {
-        friend class Builder;           
-        friend class BuilderOrigin;     
+    js::Debugger* debugger() const { return owner.debugger; }
+    JSObject* debuggerObject() const { return owner.debuggerObject; }
 
-        typedef BuiltThing<JSObject*> Base;
+   public:
+    BuiltThing(const BuiltThing& rhs) : owner(rhs.owner), value(rhs.value) {}
+    BuiltThing& operator=(const BuiltThing& rhs) {
+      MOZ_ASSERT(&owner == &rhs.owner);
+      owner.assertBuilt(rhs.value);
+      value = rhs.value;
+      return *this;
+    }
 
-        
-        
-        Object(JSContext* cx, Builder& owner_, HandleObject obj) : Base(cx, owner_, obj.get()) { }
+    explicit operator bool() const {
+      
+      return value;
+    }
 
-        bool definePropertyToTrusted(JSContext* cx, const char* name,
-                                     JS::MutableHandleValue value);
+   private:
+    BuiltThing() = delete;
+  };
 
-      public:
-        Object(JSContext* cx, Builder& owner_) : Base(cx, owner_, nullptr) { }
-        Object(const Object& rhs) : Base(rhs) { }
+ public:
+  
+  
+  
+  class Object : private BuiltThing<JSObject*> {
+    friend class Builder;        
+    friend class BuilderOrigin;  
 
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        bool defineProperty(JSContext* cx, const char* name, JS::HandleValue value);
-        bool defineProperty(JSContext* cx, const char* name, JS::HandleObject value);
-        bool defineProperty(JSContext* cx, const char* name, Object& value);
-
-        using Base::operator bool;
-    };
+    typedef BuiltThing<JSObject*> Base;
 
     
     
-    Object newObject(JSContext* cx);
+    Object(JSContext* cx, Builder& owner_, HandleObject obj)
+        : Base(cx, owner_, obj.get()) {}
 
-  protected:
-    Builder(JSContext* cx, js::Debugger* debugger);
+    bool definePropertyToTrusted(JSContext* cx, const char* name,
+                                 JS::MutableHandleValue value);
+
+   public:
+    Object(JSContext* cx, Builder& owner_) : Base(cx, owner_, nullptr) {}
+    Object(const Object& rhs) : Base(rhs) {}
+
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    bool defineProperty(JSContext* cx, const char* name, JS::HandleValue value);
+    bool defineProperty(JSContext* cx, const char* name,
+                        JS::HandleObject value);
+    bool defineProperty(JSContext* cx, const char* name, Object& value);
+
+    using Base::operator bool;
+  };
+
+  
+  
+  Object newObject(JSContext* cx);
+
+ protected:
+  Builder(JSContext* cx, js::Debugger* debugger);
 };
 
 
 
 class BuilderOrigin : public Builder {
-    template<typename T>
-    T unwrapAny(const BuiltThing<T>& thing) {
-        MOZ_ASSERT(&thing.owner == this);
-        return thing.value.get();
-    }
+  template <typename T>
+  T unwrapAny(const BuiltThing<T>& thing) {
+    MOZ_ASSERT(&thing.owner == this);
+    return thing.value.get();
+  }
 
-  public:
-    BuilderOrigin(JSContext* cx, js::Debugger* debugger_)
-      : Builder(cx, debugger_)
-    { }
+ public:
+  BuilderOrigin(JSContext* cx, js::Debugger* debugger_)
+      : Builder(cx, debugger_) {}
 
-    JSObject* unwrap(Object& object) { return unwrapAny(object); }
+  JSObject* unwrap(Object& object) { return unwrapAny(object); }
 };
 
 
-
 
 
 
@@ -262,17 +262,13 @@ class BuilderOrigin : public Builder {
 
 
 
-
-JS_PUBLIC_API void
-SetDebuggerMallocSizeOf(JSContext* cx, mozilla::MallocSizeOf mallocSizeOf);
-
+JS_PUBLIC_API void SetDebuggerMallocSizeOf(JSContext* cx,
+                                           mozilla::MallocSizeOf mallocSizeOf);
 
 
-JS_PUBLIC_API mozilla::MallocSizeOf
-GetDebuggerMallocSizeOf(JSContext* cx);
 
+JS_PUBLIC_API mozilla::MallocSizeOf GetDebuggerMallocSizeOf(JSContext* cx);
 
-
 
 
 
@@ -286,25 +282,21 @@ GetDebuggerMallocSizeOf(JSContext* cx);
 
 
 
-JS_PUBLIC_API bool
-FireOnGarbageCollectionHookRequired(JSContext* cx);
+JS_PUBLIC_API bool FireOnGarbageCollectionHookRequired(JSContext* cx);
 
 
 
-JS_PUBLIC_API bool
-FireOnGarbageCollectionHook(JSContext* cx, GarbageCollectionEvent::Ptr&& data);
+JS_PUBLIC_API bool FireOnGarbageCollectionHook(
+    JSContext* cx, GarbageCollectionEvent::Ptr&& data);
 
-
 
-JS_PUBLIC_API bool
-IsDebugger(JSObject& obj);
+JS_PUBLIC_API bool IsDebugger(JSObject& obj);
 
 
 
-JS_PUBLIC_API bool
-GetDebuggeeGlobals(JSContext* cx, JSObject& dbgObj, AutoObjectVector& vector);
+JS_PUBLIC_API bool GetDebuggeeGlobals(JSContext* cx, JSObject& dbgObj,
+                                      AutoObjectVector& vector);
 
-
 
 
 
@@ -319,44 +311,39 @@ GetDebuggeeGlobals(JSContext* cx, JSObject& dbgObj, AutoObjectVector& vector);
 
 
 class MOZ_STACK_CLASS JS_PUBLIC_API AutoEntryMonitor {
-    JSContext* cx_;
-    AutoEntryMonitor* savedMonitor_;
+  JSContext* cx_;
+  AutoEntryMonitor* savedMonitor_;
 
-  public:
-    explicit AutoEntryMonitor(JSContext* cx);
-    ~AutoEntryMonitor();
+ public:
+  explicit AutoEntryMonitor(JSContext* cx);
+  ~AutoEntryMonitor();
 
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
 
-    
-    
-    
-    virtual void Entry(JSContext* cx, JSFunction* function,
-                       HandleValue asyncStack,
-                       const char* asyncCause) = 0;
+  
+  
+  
+  virtual void Entry(JSContext* cx, JSFunction* function,
+                     HandleValue asyncStack, const char* asyncCause) = 0;
 
-    
-    
-    
-    virtual void Entry(JSContext* cx, JSScript* script,
-                       HandleValue asyncStack,
-                       const char* asyncCause) = 0;
+  
+  
+  
+  virtual void Entry(JSContext* cx, JSScript* script, HandleValue asyncStack,
+                     const char* asyncCause) = 0;
 
-    
-    virtual void Exit(JSContext* cx) { }
+  
+  virtual void Exit(JSContext* cx) {}
 };
 
-
-
-} 
-} 
-
+}  
+}  
 
 #endif 

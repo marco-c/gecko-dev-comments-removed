@@ -7,33 +7,35 @@
 #ifndef nsFont_h___
 #define nsFont_h___
 
-#include <stdint.h>                     
-#include <sys/types.h>                  
+#include <stdint.h>     
+#include <sys/types.h>  
 #include "gfxFontFamilyList.h"
-#include "gfxFontConstants.h"           
+#include "gfxFontConstants.h"  
 #include "gfxFontFeatures.h"
 #include "gfxFontVariations.h"
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/RefPtr.h"             
-#include "nsColor.h"                    
-#include "nsCoord.h"                    
-#include "nsTArray.h"                   
+#include "mozilla/RefPtr.h"  
+#include "nsColor.h"         
+#include "nsCoord.h"         
+#include "nsTArray.h"        
 
 struct gfxFontStyle;
 
 
 
 
-const uint8_t kGenericFont_NONE         = 0x00;
+const uint8_t kGenericFont_NONE = 0x00;
 
-const uint8_t kGenericFont_moz_variable = 0x00; 
-const uint8_t kGenericFont_moz_fixed    = 0x01; 
+const uint8_t kGenericFont_moz_variable =
+    0x00;  
+const uint8_t kGenericFont_moz_fixed =
+    0x01;  
 
-const uint8_t kGenericFont_serif        = 0x02;
-const uint8_t kGenericFont_sans_serif   = 0x04;
-const uint8_t kGenericFont_monospace    = 0x08;
-const uint8_t kGenericFont_cursive      = 0x10;
-const uint8_t kGenericFont_fantasy      = 0x20;
+const uint8_t kGenericFont_serif = 0x02;
+const uint8_t kGenericFont_sans_serif = 0x04;
+const uint8_t kGenericFont_monospace = 0x08;
+const uint8_t kGenericFont_cursive = 0x10;
+const uint8_t kGenericFont_fantasy = 0x20;
 
 
 struct nsFont {
@@ -68,7 +70,7 @@ struct nsFont {
 
   
   
-  nscolor fontSmoothingBackgroundColor = NS_RGBA(0,0,0,0);
+  nscolor fontSmoothingBackgroundColor = NS_RGBA(0, 0, 0, 0);
 
   
   
@@ -128,36 +130,27 @@ struct nsFont {
 
   ~nsFont();
 
-  bool operator==(const nsFont& aOther) const {
-    return Equals(aOther);
-  }
+  bool operator==(const nsFont& aOther) const { return Equals(aOther); }
 
-  bool operator!=(const nsFont& aOther) const {
-    return !Equals(aOther);
-  }
+  bool operator!=(const nsFont& aOther) const { return !Equals(aOther); }
 
   bool Equals(const nsFont& aOther) const;
 
   nsFont& operator=(const nsFont& aOther);
 
-  enum class MaxDifference : uint8_t {
-    eNone,
-    eVisual,
-    eLayoutAffecting
-  };
+  enum class MaxDifference : uint8_t { eNone, eVisual, eLayoutAffecting };
 
   MaxDifference CalcDifference(const nsFont& aOther) const;
 
   void CopyAlternates(const nsFont& aOther);
 
   
-  void AddFontFeaturesToStyle(gfxFontStyle *aStyle,
-                              bool aVertical) const;
+  void AddFontFeaturesToStyle(gfxFontStyle* aStyle, bool aVertical) const;
 
-  void AddFontVariationsToStyle(gfxFontStyle *aStyle) const;
+  void AddFontVariationsToStyle(gfxFontStyle* aStyle) const;
 };
 
-#define NS_FONT_VARIANT_NORMAL            0
-#define NS_FONT_VARIANT_SMALL_CAPS        1
+#define NS_FONT_VARIANT_NORMAL 0
+#define NS_FONT_VARIANT_SMALL_CAPS 1
 
 #endif 

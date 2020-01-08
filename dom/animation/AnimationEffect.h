@@ -27,10 +27,8 @@ class Animation;
 class KeyframeEffect;
 struct ComputedEffectTiming;
 
-class AnimationEffect : public nsISupports,
-                        public nsWrapperCache
-{
-public:
+class AnimationEffect : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(AnimationEffect)
 
@@ -39,8 +37,7 @@ public:
   virtual KeyframeEffect* AsKeyframeEffect() { return nullptr; }
 
   virtual ElementPropertyTransition* AsTransition() { return nullptr; }
-  virtual const ElementPropertyTransition* AsTransition() const
-  {
+  virtual const ElementPropertyTransition* AsTransition() const {
     return nullptr;
   }
 
@@ -48,8 +45,7 @@ public:
 
   bool IsCurrent() const;
   bool IsInEffect() const;
-  bool HasFiniteActiveDuration() const
-  {
+  bool HasFiniteActiveDuration() const {
     return SpecifiedTiming().ActiveDuration() != TimeDuration::Forever();
   }
 
@@ -71,10 +67,9 @@ public:
   
   
   
-  static ComputedTiming
-  GetComputedTimingAt(const Nullable<TimeDuration>& aLocalTime,
-                      const TimingParams& aTiming,
-                      double aPlaybackRate);
+  static ComputedTiming GetComputedTimingAt(
+      const Nullable<TimeDuration>& aLocalTime, const TimingParams& aTiming,
+      double aPlaybackRate);
   
   
   ComputedTiming GetComputedTiming(const TimingParams* aTiming = nullptr) const;
@@ -90,18 +85,18 @@ public:
 
   virtual bool AffectsGeometry() const = 0;
 
-protected:
+ protected:
   virtual ~AnimationEffect();
 
   Nullable<TimeDuration> GetLocalTime() const;
 
-protected:
+ protected:
   RefPtr<nsIDocument> mDocument;
   RefPtr<Animation> mAnimation;
   TimingParams mTiming;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

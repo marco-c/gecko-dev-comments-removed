@@ -14,12 +14,12 @@ namespace gfx {
 class DataSourceSurface;
 class DrawTarget;
 class SourceSurface;
-}
+}  
 
 namespace layers {
 class Image;
 class ImageContainer;
-}
+}  
 
 namespace dom {
 
@@ -30,16 +30,17 @@ namespace dom {
 
 
 
-class ImageBitmapRenderingContext final :
-  public nsICanvasRenderingContextInternal,
-  public nsWrapperCache
-{
+
+class ImageBitmapRenderingContext final
+    : public nsICanvasRenderingContextInternal,
+      public nsWrapperCache {
   virtual ~ImageBitmapRenderingContext();
 
-public:
+ public:
   ImageBitmapRenderingContext();
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -55,23 +56,24 @@ public:
 
   NS_IMETHOD SetDimensions(int32_t aWidth, int32_t aHeight) override;
 
-  NS_IMETHOD InitializeWithDrawTarget(nsIDocShell* aDocShell,
-                                      NotNull<gfx::DrawTarget*> aTarget) override;
+  NS_IMETHOD InitializeWithDrawTarget(
+      nsIDocShell* aDocShell, NotNull<gfx::DrawTarget*> aTarget) override;
 
-  virtual mozilla::UniquePtr<uint8_t[]> GetImageBuffer(int32_t* aFormat) override;
+  virtual mozilla::UniquePtr<uint8_t[]> GetImageBuffer(
+      int32_t* aFormat) override;
   NS_IMETHOD GetInputStream(const char* aMimeType,
                             const char16_t* aEncoderOptions,
                             nsIInputStream** aStream) override;
 
-  virtual already_AddRefed<mozilla::gfx::SourceSurface>
-  GetSurfaceSnapshot(gfxAlphaType* aOutAlphaType) override;
+  virtual already_AddRefed<mozilla::gfx::SourceSurface> GetSurfaceSnapshot(
+      gfxAlphaType* aOutAlphaType) override;
 
   virtual void SetOpaqueValueFromOpaqueAttr(bool aOpaqueAttrValue) override;
   virtual bool GetIsOpaque() override;
   NS_IMETHOD Reset() override;
-  virtual already_AddRefed<Layer> GetCanvasLayer(nsDisplayListBuilder* aBuilder,
-                                                 Layer* aOldLayer,
-                                                 LayerManager* aManager) override;
+  virtual already_AddRefed<Layer> GetCanvasLayer(
+      nsDisplayListBuilder* aBuilder, Layer* aOldLayer,
+      LayerManager* aManager) override;
   virtual void MarkContextClean() override;
 
   NS_IMETHOD Redraw(const gfxRect& aDirty) override;
@@ -82,7 +84,7 @@ public:
   virtual void MarkContextCleanForFrameCapture() override;
   virtual bool IsContextCleanForFrameCapture() override;
 
-protected:
+ protected:
   already_AddRefed<gfx::DataSourceSurface> MatchWithIntrinsicSize();
   already_AddRefed<layers::Image> ClipToIntrinsicSize();
   int32_t mWidth;
@@ -91,7 +93,7 @@ protected:
   RefPtr<layers::Image> mImage;
 };
 
-}
-}
+}  
+}  
 
 #endif 

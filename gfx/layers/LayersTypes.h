@@ -7,38 +7,43 @@
 #ifndef GFX_LAYERSTYPES_H
 #define GFX_LAYERSTYPES_H
 
-#include <stdint.h>                     
+#include <stdint.h>  
 
 #include "Units.h"
-#include "mozilla/DefineEnum.h"         
-#include "mozilla/gfx/Point.h"          
+#include "mozilla/DefineEnum.h"  
+#include "mozilla/gfx/Point.h"   
 #include "mozilla/Maybe.h"
 #include "mozilla/TypedEnumBits.h"
 #include "nsRegion.h"
 #include "nsStyleConsts.h"
 
 #include <stdio.h>            
-#include "mozilla/Logging.h"            
+#include "mozilla/Logging.h"  
 
 #ifndef MOZ_LAYERS_HAVE_LOG
-#  define MOZ_LAYERS_HAVE_LOG
+#define MOZ_LAYERS_HAVE_LOG
 #endif
-#define MOZ_LAYERS_LOG(_args)                             \
+#define MOZ_LAYERS_LOG(_args) \
   MOZ_LOG(LayerManager::GetLog(), LogLevel::Debug, _args)
-#define MOZ_LAYERS_LOG_IF_SHADOWABLE(layer, _args)         \
-  do { if (layer->AsShadowableLayer()) { MOZ_LOG(LayerManager::GetLog(), LogLevel::Debug, _args); } } while (0)
+#define MOZ_LAYERS_LOG_IF_SHADOWABLE(layer, _args)             \
+  do {                                                         \
+    if (layer->AsShadowableLayer()) {                          \
+      MOZ_LOG(LayerManager::GetLog(), LogLevel::Debug, _args); \
+    }                                                          \
+  } while (0)
 
 #define INVALID_OVERLAY -1
 
 
 
 namespace IPC {
-template <typename T> struct ParamTraits;
-} 
+template <typename T>
+struct ParamTraits;
+}  
 
 namespace android {
 class MOZ_EXPORT GraphicBuffer;
-} 
+}  
 
 namespace mozilla {
 namespace layers {
@@ -51,39 +56,24 @@ class TextureHost;
 struct LayersId {
   uint64_t mId;
 
-  bool IsValid() const {
-    return mId != 0;
-  }
+  bool IsValid() const { return mId != 0; }
 
   
-  explicit operator uint64_t() const
-  {
-    return mId;
-  }
+  explicit operator uint64_t() const { return mId; }
 
   
   
-  bool operator<(const LayersId& aOther) const
-  {
-    return mId < aOther.mId;
-  }
+  bool operator<(const LayersId& aOther) const { return mId < aOther.mId; }
 
-  bool operator==(const LayersId& aOther) const
-  {
-    return mId == aOther.mId;
-  }
+  bool operator==(const LayersId& aOther) const { return mId == aOther.mId; }
 
-  bool operator!=(const LayersId& aOther) const
-  {
-    return !(*this == aOther);
-  }
+  bool operator!=(const LayersId& aOther) const { return !(*this == aOther); }
 
   
   
   
   struct HashFn {
-    std::size_t operator()(const LayersId& aKey) const
-    {
+    std::size_t operator()(const LayersId& aKey) const {
       return std::hash<uint64_t>{}(aKey.mId);
     }
   };
@@ -92,50 +82,32 @@ struct LayersId {
 struct TransactionId {
   uint64_t mId;
 
-  bool IsValid() const {
-    return mId != 0;
-  }
+  bool IsValid() const { return mId != 0; }
 
-  MOZ_MUST_USE TransactionId Next() const {
-    return TransactionId{mId + 1};
-  }
+  MOZ_MUST_USE TransactionId Next() const { return TransactionId{mId + 1}; }
 
-  MOZ_MUST_USE TransactionId Prev() const {
-    return TransactionId{mId - 1};
-  }
+  MOZ_MUST_USE TransactionId Prev() const { return TransactionId{mId - 1}; }
 
   int64_t operator-(const TransactionId& aOther) const {
     return mId - aOther.mId;
   }
 
   
-  explicit operator uint64_t() const
-  {
-    return mId;
-  }
+  explicit operator uint64_t() const { return mId; }
 
-  bool operator<(const TransactionId& aOther) const
-  {
-    return mId < aOther.mId;
-  }
+  bool operator<(const TransactionId& aOther) const { return mId < aOther.mId; }
 
-  bool operator<=(const TransactionId& aOther) const
-  {
+  bool operator<=(const TransactionId& aOther) const {
     return mId <= aOther.mId;
   }
 
-  bool operator>(const TransactionId& aOther) const
-  {
-    return mId > aOther.mId;
-  }
+  bool operator>(const TransactionId& aOther) const { return mId > aOther.mId; }
 
-  bool operator>=(const TransactionId& aOther) const
-  {
+  bool operator>=(const TransactionId& aOther) const {
     return mId >= aOther.mId;
   }
 
-  bool operator==(const TransactionId& aOther) const
-  {
+  bool operator==(const TransactionId& aOther) const {
     return mId == aOther.mId;
   }
 };
@@ -147,23 +119,19 @@ struct LayersObserverEpoch {
     return LayersObserverEpoch{mId + 1};
   }
 
-  bool operator<=(const LayersObserverEpoch& aOther) const
-  {
+  bool operator<=(const LayersObserverEpoch& aOther) const {
     return mId <= aOther.mId;
   }
 
-  bool operator>=(const LayersObserverEpoch& aOther) const
-  {
+  bool operator>=(const LayersObserverEpoch& aOther) const {
     return mId >= aOther.mId;
   }
 
-  bool operator==(const LayersObserverEpoch& aOther) const
-  {
+  bool operator==(const LayersObserverEpoch& aOther) const {
     return mId == aOther.mId;
   }
 
-  bool operator!=(const LayersObserverEpoch& aOther) const
-  {
+  bool operator!=(const LayersObserverEpoch& aOther) const {
     return mId != aOther.mId;
   }
 };
@@ -178,15 +146,9 @@ enum class LayersBackend : int8_t {
   LAYERS_LAST
 };
 
-enum class BufferMode : int8_t {
-  BUFFER_NONE,
-  BUFFERED
-};
+enum class BufferMode : int8_t { BUFFER_NONE, BUFFERED };
 
-enum class DrawRegionClip : int8_t {
-  DRAW,
-  NONE
-};
+enum class DrawRegionClip : int8_t { DRAW, NONE };
 
 enum class SurfaceMode : int8_t {
   SURFACE_NONE = 0,
@@ -232,16 +194,10 @@ struct EventRegions {
   
   bool mDTCRequiresTargetConfirmation;
 
-  EventRegions()
-    : mDTCRequiresTargetConfirmation(false)
-  {
-  }
+  EventRegions() : mDTCRequiresTargetConfirmation(false) {}
 
   explicit EventRegions(nsIntRegion aHitRegion)
-    : mHitRegion(aHitRegion)
-    , mDTCRequiresTargetConfirmation(false)
-  {
-  }
+      : mHitRegion(aHitRegion), mDTCRequiresTargetConfirmation(false) {}
 
   
   
@@ -254,22 +210,22 @@ struct EventRegions {
                const nsIntRegion& aVerticalPanRegion,
                bool aDTCRequiresTargetConfirmation);
 
-  bool operator==(const EventRegions& aRegions) const
-  {
+  bool operator==(const EventRegions& aRegions) const {
     return mHitRegion == aRegions.mHitRegion &&
-           mDispatchToContentHitRegion == aRegions.mDispatchToContentHitRegion &&
+           mDispatchToContentHitRegion ==
+               aRegions.mDispatchToContentHitRegion &&
            mNoActionRegion == aRegions.mNoActionRegion &&
            mHorizontalPanRegion == aRegions.mHorizontalPanRegion &&
            mVerticalPanRegion == aRegions.mVerticalPanRegion &&
-           mDTCRequiresTargetConfirmation == aRegions.mDTCRequiresTargetConfirmation;
+           mDTCRequiresTargetConfirmation ==
+               aRegions.mDTCRequiresTargetConfirmation;
   }
-  bool operator!=(const EventRegions& aRegions) const
-  {
+  bool operator!=(const EventRegions& aRegions) const {
     return !(*this == aRegions);
   }
 
-  void ApplyTranslationAndScale(float aXTrans, float aYTrans, float aXScale, float aYScale)
-  {
+  void ApplyTranslationAndScale(float aXTrans, float aYTrans, float aXScale,
+                                float aYScale) {
     mHitRegion.ScaleRoundOut(aXScale, aYScale);
     mDispatchToContentHitRegion.ScaleRoundOut(aXScale, aYScale);
     mNoActionRegion.ScaleRoundOut(aXScale, aYScale);
@@ -283,8 +239,7 @@ struct EventRegions {
     mVerticalPanRegion.MoveBy(aXTrans, aYTrans);
   }
 
-  void Transform(const gfx::Matrix4x4& aTransform)
-  {
+  void Transform(const gfx::Matrix4x4& aTransform) {
     mHitRegion.Transform(aTransform);
     mDispatchToContentHitRegion.Transform(aTransform);
     mNoActionRegion.Transform(aTransform);
@@ -292,15 +247,14 @@ struct EventRegions {
     mVerticalPanRegion.Transform(aTransform);
   }
 
-  void OrWith(const EventRegions& aOther)
-  {
+  void OrWith(const EventRegions& aOther) {
     mHitRegion.OrWith(aOther.mHitRegion);
     mDispatchToContentHitRegion.OrWith(aOther.mDispatchToContentHitRegion);
     
     
     bool alreadyHadRegions = !mNoActionRegion.IsEmpty() ||
-        !mHorizontalPanRegion.IsEmpty() ||
-        !mVerticalPanRegion.IsEmpty();
+                             !mHorizontalPanRegion.IsEmpty() ||
+                             !mVerticalPanRegion.IsEmpty();
     mNoActionRegion.OrWith(aOther.mNoActionRegion);
     mHorizontalPanRegion.OrWith(aOther.mHorizontalPanRegion);
     mVerticalPanRegion.OrWith(aOther.mVerticalPanRegion);
@@ -313,17 +267,13 @@ struct EventRegions {
     mDTCRequiresTargetConfirmation |= aOther.mDTCRequiresTargetConfirmation;
   }
 
-  bool IsEmpty() const
-  {
-    return mHitRegion.IsEmpty()
-        && mDispatchToContentHitRegion.IsEmpty()
-        && mNoActionRegion.IsEmpty()
-        && mHorizontalPanRegion.IsEmpty()
-        && mVerticalPanRegion.IsEmpty();
+  bool IsEmpty() const {
+    return mHitRegion.IsEmpty() && mDispatchToContentHitRegion.IsEmpty() &&
+           mNoActionRegion.IsEmpty() && mHorizontalPanRegion.IsEmpty() &&
+           mVerticalPanRegion.IsEmpty();
   }
 
-  void SetEmpty()
-  {
+  void SetEmpty() {
     mHitRegion.SetEmpty();
     mDispatchToContentHitRegion.SetEmpty();
     mNoActionRegion.SetEmpty();
@@ -331,8 +281,7 @@ struct EventRegions {
     mVerticalPanRegion.SetEmpty();
   }
 
-  nsCString ToString() const
-  {
+  nsCString ToString() const {
     nsCString result = mHitRegion.ToString();
     result.AppendLiteral(";dispatchToContent=");
     result.Append(mDispatchToContentHitRegion.ToString());
@@ -346,24 +295,22 @@ struct EventRegions {
 
 enum EventRegionsOverride {
   
-  NoOverride             = 0,
+  NoOverride = 0,
   
   ForceDispatchToContent = (1 << 0),
   
-  ForceEmptyHitRegion    = (1 << 1),
+  ForceEmptyHitRegion = (1 << 1),
   
-  ALL_BITS               = (1 << 2) - 1
+  ALL_BITS = (1 << 2) - 1
 };
 
-MOZ_ALWAYS_INLINE EventRegionsOverride
-operator|(EventRegionsOverride a, EventRegionsOverride b)
-{
+MOZ_ALWAYS_INLINE EventRegionsOverride operator|(EventRegionsOverride a,
+                                                 EventRegionsOverride b) {
   return (EventRegionsOverride)((int)a | (int)b);
 }
 
-MOZ_ALWAYS_INLINE EventRegionsOverride&
-operator|=(EventRegionsOverride& a, EventRegionsOverride b)
-{
+MOZ_ALWAYS_INLINE EventRegionsOverride& operator|=(EventRegionsOverride& a,
+                                                   EventRegionsOverride b) {
   a = a | b;
   return a;
 }
@@ -377,7 +324,8 @@ enum TextureDumpMode {
 typedef uint32_t TouchBehaviorFlags;
 
 
-typedef gfx::Matrix4x4Typed<LayerPixel, CSSTransformedLayerPixel> CSSTransformMatrix;
+typedef gfx::Matrix4x4Typed<LayerPixel, CSSTransformedLayerPixel>
+    CSSTransformMatrix;
 
 
 
@@ -389,8 +337,10 @@ typedef gfx::Matrix4x4Typed<LayerPixel, CSSTransformedLayerPixel> CSSTransformMa
 
 
 
-typedef gfx::Matrix4x4Typed<ParentLayerPixel, ParentLayerPixel> AsyncTransformComponentMatrix;
-typedef gfx::Matrix4x4Typed<CSSTransformedLayerPixel, ParentLayerPixel> AsyncTransformMatrix;
+typedef gfx::Matrix4x4Typed<ParentLayerPixel, ParentLayerPixel>
+    AsyncTransformComponentMatrix;
+typedef gfx::Matrix4x4Typed<CSSTransformedLayerPixel, ParentLayerPixel>
+    AsyncTransformMatrix;
 
 typedef Array<gfx::Color, 4> BorderColors;
 typedef Array<LayerSize, 4> BorderCorners;
@@ -402,29 +352,21 @@ typedef Maybe<LayerRect> MaybeLayerRect;
 
 
 
-class LayerHandle
-{
+class LayerHandle {
   friend struct IPC::ParamTraits<mozilla::layers::LayerHandle>;
-public:
-  LayerHandle() : mHandle(0)
-  {}
-  LayerHandle(const LayerHandle& aOther) : mHandle(aOther.mHandle)
-  {}
-  explicit LayerHandle(uint64_t aHandle) : mHandle(aHandle)
-  {}
-  bool IsValid() const {
-    return mHandle != 0;
-  }
-  explicit operator bool() const {
-    return IsValid();
-  }
-  bool operator ==(const LayerHandle& aOther) const {
+
+ public:
+  LayerHandle() : mHandle(0) {}
+  LayerHandle(const LayerHandle& aOther) : mHandle(aOther.mHandle) {}
+  explicit LayerHandle(uint64_t aHandle) : mHandle(aHandle) {}
+  bool IsValid() const { return mHandle != 0; }
+  explicit operator bool() const { return IsValid(); }
+  bool operator==(const LayerHandle& aOther) const {
     return mHandle == aOther.mHandle;
   }
-  uint64_t Value() const {
-    return mHandle;
-  }
-private:
+  uint64_t Value() const { return mHandle; }
+
+ private:
   uint64_t mHandle;
 };
 
@@ -432,29 +374,22 @@ private:
 
 
 
-class CompositableHandle
-{
+class CompositableHandle {
   friend struct IPC::ParamTraits<mozilla::layers::CompositableHandle>;
-public:
-  CompositableHandle() : mHandle(0)
-  {}
-  CompositableHandle(const CompositableHandle& aOther) : mHandle(aOther.mHandle)
-  {}
-  explicit CompositableHandle(uint64_t aHandle) : mHandle(aHandle)
-  {}
-  bool IsValid() const {
-    return mHandle != 0;
-  }
-  explicit operator bool() const {
-    return IsValid();
-  }
-  bool operator ==(const CompositableHandle& aOther) const {
+
+ public:
+  CompositableHandle() : mHandle(0) {}
+  CompositableHandle(const CompositableHandle& aOther)
+      : mHandle(aOther.mHandle) {}
+  explicit CompositableHandle(uint64_t aHandle) : mHandle(aHandle) {}
+  bool IsValid() const { return mHandle != 0; }
+  explicit operator bool() const { return IsValid(); }
+  bool operator==(const CompositableHandle& aOther) const {
     return mHandle == aOther.mHandle;
   }
-  uint64_t Value() const {
-    return mHandle;
-  }
-private:
+  uint64_t Value() const { return mHandle; }
+
+ private:
   uint64_t mHandle;
 };
 
@@ -465,7 +400,7 @@ MOZ_DEFINE_ENUM_CLASS_WITH_BASE(ScrollDirection, uint32_t, (
 ));
 
 
-} 
-} 
+}  
+}  
 
 #endif 

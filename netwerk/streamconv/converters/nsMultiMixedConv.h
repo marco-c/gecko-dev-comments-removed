@@ -17,13 +17,12 @@
 #include "mozilla/IncrementalTokenizer.h"
 #include "nsHttpResponseHead.h"
 
-#define NS_MULTIMIXEDCONVERTER_CID                         \
-{ /* 7584CE90-5B25-11d3-A175-0050041CAF44 */         \
-    0x7584ce90,                                      \
-    0x5b25,                                          \
-    0x11d3,                                          \
-    {0xa1, 0x75, 0x0, 0x50, 0x4, 0x1c, 0xaf, 0x44}       \
-}
+#define NS_MULTIMIXEDCONVERTER_CID                 \
+  { /* 7584CE90-5B25-11d3-A175-0050041CAF44 */     \
+    0x7584ce90, 0x5b25, 0x11d3, {                  \
+      0xa1, 0x75, 0x0, 0x50, 0x4, 0x1c, 0xaf, 0x44 \
+    }                                              \
+  }
 
 
 
@@ -34,10 +33,9 @@
 
 class nsPartChannel final : public nsIChannel,
                             public nsIByteRangeRequest,
-                            public nsIMultiPartChannel
-{
-public:
-  nsPartChannel(nsIChannel *aMultipartChannel, uint32_t aPartID,
+                            public nsIMultiPartChannel {
+ public:
+  nsPartChannel(nsIChannel* aMultipartChannel, uint32_t aPartID,
                 nsIStreamListener* aListener);
 
   void InitializeByteRange(int64_t aStart, int64_t aEnd);
@@ -49,7 +47,9 @@ public:
   
 
   void SetContentDisposition(const nsACString& aContentDispositionHeader);
-  void SetResponseHead(mozilla::net::nsHttpResponseHead * head) { mResponseHead = head; }
+  void SetResponseHead(mozilla::net::nsHttpResponseHead* head) {
+    mResponseHead = head;
+  }
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUEST
@@ -57,33 +57,33 @@ public:
   NS_DECL_NSIBYTERANGEREQUEST
   NS_DECL_NSIMULTIPARTCHANNEL
 
-protected:
+ protected:
   ~nsPartChannel() = default;
 
-protected:
-  nsCOMPtr<nsIChannel>    mMultipartChannel;
+ protected:
+  nsCOMPtr<nsIChannel> mMultipartChannel;
   nsCOMPtr<nsIStreamListener> mListener;
   nsAutoPtr<mozilla::net::nsHttpResponseHead> mResponseHead;
 
-  nsresult                mStatus;
-  nsLoadFlags             mLoadFlags;
+  nsresult mStatus;
+  nsLoadFlags mLoadFlags;
 
-  nsCOMPtr<nsILoadGroup>  mLoadGroup;
+  nsCOMPtr<nsILoadGroup> mLoadGroup;
 
-  nsCString               mContentType;
-  nsCString               mContentCharset;
-  uint32_t                mContentDisposition;
-  nsString                mContentDispositionFilename;
-  nsCString               mContentDispositionHeader;
-  uint64_t                mContentLength;
+  nsCString mContentType;
+  nsCString mContentCharset;
+  uint32_t mContentDisposition;
+  nsString mContentDispositionFilename;
+  nsCString mContentDispositionHeader;
+  uint64_t mContentLength;
 
-  bool                    mIsByteRangeRequest;
-  int64_t                 mByteRangeStart;
-  int64_t                 mByteRangeEnd;
+  bool mIsByteRangeRequest;
+  int64_t mByteRangeStart;
+  int64_t mByteRangeEnd;
 
-  uint32_t                mPartID; 
-                                   
-  bool                    mIsLastPart;
+  uint32_t mPartID;  
+                     
+  bool mIsLastPart;
 };
 
 
@@ -125,130 +125,133 @@ protected:
 
 
 
+
 class nsMultiMixedConv : public nsIStreamConverter {
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSISTREAMCONVERTER
-    NS_DECL_NSISTREAMLISTENER
-    NS_DECL_NSIREQUESTOBSERVER
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSISTREAMCONVERTER
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSIREQUESTOBSERVER
 
-    explicit nsMultiMixedConv();
+  explicit nsMultiMixedConv();
 
-protected:
-    typedef mozilla::IncrementalTokenizer::Token Token;
+ protected:
+  typedef mozilla::IncrementalTokenizer::Token Token;
 
-    virtual ~nsMultiMixedConv() = default;
+  virtual ~nsMultiMixedConv() = default;
 
-    nsresult SendStart();
-    void AccumulateData(Token const & aToken);
-    nsresult SendData();
-    nsresult SendStop(nsresult aStatus);
+  nsresult SendStart();
+  void AccumulateData(Token const& aToken);
+  nsresult SendData();
+  nsresult SendStop(nsresult aStatus);
 
-    
-    nsCOMPtr<nsIStreamListener> mFinalListener; 
+  
+  nsCOMPtr<nsIStreamListener> mFinalListener;  
+                                               
 
-    nsCOMPtr<nsIChannel> mChannel; 
-    RefPtr<nsPartChannel> mPartChannel;   
-                                        
-    nsCOMPtr<nsISupports> mContext;
-    nsCString           mContentType;
-    nsCString           mContentDisposition;
-    nsCString           mContentSecurityPolicy;
-    nsCString           mRootContentSecurityPolicy;
-    uint64_t            mContentLength;
-    uint64_t            mTotalSent;
+  nsCOMPtr<nsIChannel>
+      mChannel;  
+  RefPtr<nsPartChannel> mPartChannel;  
+                                       
+  nsCOMPtr<nsISupports> mContext;
+  nsCString mContentType;
+  nsCString mContentDisposition;
+  nsCString mContentSecurityPolicy;
+  nsCString mRootContentSecurityPolicy;
+  uint64_t mContentLength;
+  uint64_t mTotalSent;
 
-    
-    
-    
-    int64_t             mByteRangeStart;
-    int64_t             mByteRangeEnd;
-    bool                mIsByteRangeRequest;
-    
-    
-    
-    
-    bool                mRequestListenerNotified;
+  
+  
+  
+  int64_t mByteRangeStart;
+  int64_t mByteRangeEnd;
+  bool mIsByteRangeRequest;
+  
+  
+  
+  
+  bool mRequestListenerNotified;
 
-    uint32_t            mCurrentPartID;
+  uint32_t mCurrentPartID;
 
-    
-    
-    bool                mInOnDataAvailable;
+  
+  
+  bool mInOnDataAvailable;
 
-    
-    enum EParserState {
-      PREAMBLE,
-      BOUNDARY_CRLF,
-      HEADER_NAME,
-      HEADER_SEP,
-      HEADER_VALUE,
-      BODY_INIT,
-      BODY,
-      TRAIL_DASH1,
-      TRAIL_DASH2,
-      EPILOGUE,
+  
+  enum EParserState {
+    PREAMBLE,
+    BOUNDARY_CRLF,
+    HEADER_NAME,
+    HEADER_SEP,
+    HEADER_VALUE,
+    BODY_INIT,
+    BODY,
+    TRAIL_DASH1,
+    TRAIL_DASH2,
+    EPILOGUE,
 
-      INIT = PREAMBLE
-    } mParserState;
+    INIT = PREAMBLE
+  } mParserState;
 
-    
-    
-    enum EHeader : uint32_t {
-      HEADER_FIRST,
-      HEADER_CONTENT_TYPE = HEADER_FIRST,
-      HEADER_CONTENT_LENGTH,
-      HEADER_CONTENT_DISPOSITION,
-      HEADER_SET_COOKIE,
-      HEADER_CONTENT_RANGE,
-      HEADER_RANGE,
-      HEADER_CONTENT_SECURITY_POLICY,
-      HEADER_UNKNOWN
-    } mResponseHeader;
-    
-    nsCString mResponseHeaderValue;
+  
+  
+  enum EHeader : uint32_t {
+    HEADER_FIRST,
+    HEADER_CONTENT_TYPE = HEADER_FIRST,
+    HEADER_CONTENT_LENGTH,
+    HEADER_CONTENT_DISPOSITION,
+    HEADER_SET_COOKIE,
+    HEADER_CONTENT_RANGE,
+    HEADER_RANGE,
+    HEADER_CONTENT_SECURITY_POLICY,
+    HEADER_UNKNOWN
+  } mResponseHeader;
+  
+  nsCString mResponseHeaderValue;
 
-    nsCString mBoundary;
-    mozilla::IncrementalTokenizer mTokenizer;
+  nsCString mBoundary;
+  mozilla::IncrementalTokenizer mTokenizer;
 
-    
-    
-    
-    
-    
-    
-    nsACString::const_char_iterator mRawData;
-    nsACString::size_type mRawDataLength;
+  
+  
+  
+  
+  
+  
+  nsACString::const_char_iterator mRawData;
+  nsACString::size_type mRawDataLength;
 
-    
-    
-    Token mBoundaryToken;
-    Token mBoundaryTokenWithDashes;
-    
-    
-    
-    Token mLFToken;
-    Token mCRLFToken;
-    
-    Token mHeaderTokens[HEADER_UNKNOWN];
+  
+  
+  Token mBoundaryToken;
+  Token mBoundaryTokenWithDashes;
+  
+  
+  
+  Token mLFToken;
+  Token mCRLFToken;
+  
+  Token mHeaderTokens[HEADER_UNKNOWN];
 
-    
-    
-    void HeadersToDefault();
-    
-    nsresult ProcessHeader();
-    
-    
-    void SwitchToBodyParsing();
-    
-    
-    void SwitchToControlParsing();
-    
-    void SetHeaderTokensEnabled(bool aEnable);
+  
+  
+  void HeadersToDefault();
+  
+  nsresult ProcessHeader();
+  
+  
+  void SwitchToBodyParsing();
+  
+  
+  void SwitchToControlParsing();
+  
+  void SetHeaderTokensEnabled(bool aEnable);
 
-    
-    
-    nsresult ConsumeToken(Token const & token);
+  
+  
+  nsresult ConsumeToken(Token const& token);
 };
 
 #endif 

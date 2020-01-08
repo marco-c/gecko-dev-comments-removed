@@ -18,21 +18,14 @@
 namespace mozilla {
 namespace a11y {
 
-class sdnAccessible final : public ISimpleDOMNode
-{
-public:
-  explicit sdnAccessible(nsINode* aNode) :
-    mNode(aNode)
-  {
-    if (!mNode)
-      MOZ_CRASH();
+class sdnAccessible final : public ISimpleDOMNode {
+ public:
+  explicit sdnAccessible(nsINode* aNode) : mNode(aNode) {
+    if (!mNode) MOZ_CRASH();
   }
 
   explicit sdnAccessible(NotNull<AccessibleWrap*> aAccWrap)
-    : mNode(aAccWrap->GetNode())
-    , mWrap(aAccWrap)
-  {
-  }
+      : mNode(aAccWrap->GetNode()), mWrap(aAccWrap) {}
 
   ~sdnAccessible();
 
@@ -51,13 +44,9 @@ public:
 
   AccessibleWrap* GetAccessible();
 
-  void SetUniqueID(uint32_t aNewUniqueId)
-  {
-    mUniqueId = Some(aNewUniqueId);
-  }
+  void SetUniqueID(uint32_t aNewUniqueId) { mUniqueId = Some(aNewUniqueId); }
 
-  Maybe<uint32_t> ReleaseUniqueID()
-  {
+  Maybe<uint32_t> ReleaseUniqueID() {
     Maybe<uint32_t> result = mUniqueId;
     mUniqueId = Nothing();
     return result;
@@ -67,76 +56,77 @@ public:
   DECL_IUNKNOWN
 
   virtual  HRESULT STDMETHODCALLTYPE get_nodeInfo(
-     BSTR __RPC_FAR* aNodeName,
-     short __RPC_FAR* aNameSpaceID,
-     BSTR __RPC_FAR* aNodeValue,
-     unsigned int __RPC_FAR* aNumChildren,
-     unsigned int __RPC_FAR* aUniqueID,
-     unsigned short __RPC_FAR* aNodeType);
+       BSTR __RPC_FAR* aNodeName,
+       short __RPC_FAR* aNameSpaceID,
+       BSTR __RPC_FAR* aNodeValue,
+       unsigned int __RPC_FAR* aNumChildren,
+       unsigned int __RPC_FAR* aUniqueID,
+       unsigned short __RPC_FAR* aNodeType);
 
   virtual  HRESULT STDMETHODCALLTYPE get_attributes(
-     unsigned short aMaxAttribs,
-     BSTR __RPC_FAR* aAttribNames,
-     short __RPC_FAR* aNameSpaceIDs,
-     BSTR __RPC_FAR* aAttribValues,
-     unsigned short __RPC_FAR* aNumAttribs);
+       unsigned short aMaxAttribs,
+       BSTR __RPC_FAR* aAttribNames,
+       short __RPC_FAR* aNameSpaceIDs,
+       BSTR __RPC_FAR* aAttribValues,
+       unsigned short __RPC_FAR* aNumAttribs);
 
   virtual  HRESULT STDMETHODCALLTYPE get_attributesForNames(
-     unsigned short aMaxAttribs,
-     BSTR __RPC_FAR* aAttribNames,
-     short __RPC_FAR* aNameSpaceID,
-     BSTR __RPC_FAR* aAttribValues);
+       unsigned short aMaxAttribs,
+       BSTR __RPC_FAR* aAttribNames,
+       short __RPC_FAR* aNameSpaceID,
+       BSTR __RPC_FAR* aAttribValues);
 
   virtual  HRESULT STDMETHODCALLTYPE get_computedStyle(
-     unsigned short aMaxStyleProperties,
-     boolean aUseAlternateView,
-     BSTR __RPC_FAR* aStyleProperties,
-     BSTR __RPC_FAR* aStyleValues,
-     unsigned short __RPC_FAR* aNumStyleProperties);
+       unsigned short aMaxStyleProperties,
+       boolean aUseAlternateView,
+       BSTR __RPC_FAR* aStyleProperties,
+       BSTR __RPC_FAR* aStyleValues,
+       unsigned short __RPC_FAR* aNumStyleProperties);
 
-  virtual  HRESULT STDMETHODCALLTYPE get_computedStyleForProperties(
-     unsigned short aNumStyleProperties,
-     boolean aUseAlternateView,
-     BSTR __RPC_FAR* aStyleProperties,
-     BSTR __RPC_FAR* aStyleValues);
+  virtual  HRESULT STDMETHODCALLTYPE
+  get_computedStyleForProperties(
+       unsigned short aNumStyleProperties,
+       boolean aUseAlternateView,
+       BSTR __RPC_FAR* aStyleProperties,
+       BSTR __RPC_FAR* aStyleValues);
 
   virtual HRESULT STDMETHODCALLTYPE scrollTo( boolean aScrollTopLeft);
 
   virtual  HRESULT STDMETHODCALLTYPE get_parentNode(
-     ISimpleDOMNode __RPC_FAR *__RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_firstChild(
-     ISimpleDOMNode __RPC_FAR *__RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_lastChild(
-     ISimpleDOMNode __RPC_FAR *__RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_previousSibling(
-     ISimpleDOMNode __RPC_FAR *__RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_nextSibling(
-     ISimpleDOMNode __RPC_FAR *__RPC_FAR* aNode);
+       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_childAt(
-     unsigned aChildIndex,
-     ISimpleDOMNode __RPC_FAR *__RPC_FAR* aNode);
+       unsigned aChildIndex,
+       ISimpleDOMNode __RPC_FAR* __RPC_FAR* aNode);
 
   virtual  HRESULT STDMETHODCALLTYPE get_innerHTML(
-     BSTR __RPC_FAR* aInnerHTML);
+       BSTR __RPC_FAR* aInnerHTML);
 
   virtual  HRESULT STDMETHODCALLTYPE get_localInterface(
-     void __RPC_FAR *__RPC_FAR* aLocalInterface);
+       void __RPC_FAR* __RPC_FAR* aLocalInterface);
 
   virtual  HRESULT STDMETHODCALLTYPE get_language(
-     BSTR __RPC_FAR* aLanguage);
+       BSTR __RPC_FAR* aLanguage);
 
-private:
+ private:
   nsCOMPtr<nsINode> mNode;
   RefPtr<AccessibleWrap> mWrap;
   Maybe<uint32_t> mUniqueId;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

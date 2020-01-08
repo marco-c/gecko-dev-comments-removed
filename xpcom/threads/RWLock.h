@@ -41,9 +41,8 @@ namespace mozilla {
 
 
 
-class RWLock : public BlockingResourceBase
-{
-public:
+class RWLock : public BlockingResourceBase {
+ public:
   explicit RWLock(const char* aName);
 
   
@@ -67,7 +66,7 @@ public:
   void WriteUnlock() { WriteUnlockInternal(); }
 #endif
 
-private:
+ private:
   void ReadLockInternal();
   void ReadUnlockInternal();
   void WriteLockInternal();
@@ -93,21 +92,16 @@ private:
 
 
 
-class MOZ_RAII AutoReadLock final
-{
-public:
+class MOZ_RAII AutoReadLock final {
+ public:
   explicit AutoReadLock(RWLock& aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mLock(&aLock)
-  {
+      : mLock(&aLock) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     MOZ_ASSERT(mLock, "null lock");
     mLock->ReadLock();
   }
 
-  ~AutoReadLock()
-  {
-    mLock->ReadUnlock();
-  }
+  ~AutoReadLock() { mLock->ReadUnlock(); }
 
  private:
   AutoReadLock() = delete;
@@ -120,21 +114,16 @@ public:
 
 
 
-class MOZ_RAII AutoWriteLock final
-{
-public:
+class MOZ_RAII AutoWriteLock final {
+ public:
   explicit AutoWriteLock(RWLock& aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mLock(&aLock)
-  {
+      : mLock(&aLock) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     MOZ_ASSERT(mLock, "null lock");
     mLock->WriteLock();
   }
 
-  ~AutoWriteLock()
-  {
-    mLock->WriteUnlock();
-  }
+  ~AutoWriteLock() { mLock->WriteUnlock(); }
 
  private:
   AutoWriteLock() = delete;
@@ -145,6 +134,6 @@ public:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-} 
+}  
 
-#endif 
+#endif  

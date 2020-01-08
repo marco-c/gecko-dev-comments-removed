@@ -19,20 +19,16 @@ class Promise;
 class PresentationAvailability;
 class PresentationConnection;
 
-class PresentationRequest final : public DOMEventTargetHelper
-{
-public:
+class PresentationRequest final : public DOMEventTargetHelper {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
 
   static already_AddRefed<PresentationRequest> Constructor(
-    const GlobalObject& aGlobal,
-    const nsAString& aUrl,
-    ErrorResult& aRv);
+      const GlobalObject& aGlobal, const nsAString& aUrl, ErrorResult& aRv);
 
   static already_AddRefed<PresentationRequest> Constructor(
-    const GlobalObject& aGlobal,
-    const Sequence<nsString>& aUrls,
-    ErrorResult& aRv);
+      const GlobalObject& aGlobal, const Sequence<nsString>& aUrls,
+      ErrorResult& aRv);
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
@@ -50,13 +46,13 @@ public:
 
   IMPL_EVENT_HANDLER(connectionavailable);
 
-  nsresult DispatchConnectionAvailableEvent(PresentationConnection* aConnection);
+  nsresult DispatchConnectionAvailableEvent(
+      PresentationConnection* aConnection);
 
   void NotifyPromiseSettled();
 
-private:
-  PresentationRequest(nsPIDOMWindowInner* aWindow,
-                      nsTArray<nsString>&& aUrls);
+ private:
+  PresentationRequest(nsPIDOMWindowInner* aWindow, nsTArray<nsString>&& aUrls);
 
   ~PresentationRequest();
 
@@ -68,8 +64,10 @@ private:
   void FindOrCreatePresentationAvailability(RefPtr<Promise>& aPromise);
 
   
+  
   bool IsProhibitMixedSecurityContexts(nsIDocument* aDocument);
 
+  
   
   bool IsPrioriAuthenticatedURL(const nsAString& aUrl);
 
@@ -78,7 +76,7 @@ private:
   nsTArray<nsString> mUrls;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

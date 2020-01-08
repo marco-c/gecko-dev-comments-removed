@@ -7,13 +7,13 @@
 #ifndef MOZILLA_GFX_COMPOSITORMANAGERPARENT_H
 #define MOZILLA_GFX_COMPOSITORMANAGERPARENT_H
 
-#include <stdint.h>                     
-#include "mozilla/Attributes.h"         
-#include "mozilla/StaticPtr.h"          
-#include "mozilla/StaticMutex.h"        
-#include "mozilla/RefPtr.h"             
+#include <stdint.h>               
+#include "mozilla/Attributes.h"   
+#include "mozilla/StaticPtr.h"    
+#include "mozilla/StaticMutex.h"  
+#include "mozilla/RefPtr.h"       
 #include "mozilla/layers/PCompositorManagerParent.h"
-#include "nsTArray.h"                   
+#include "nsTArray.h"  
 
 namespace mozilla {
 namespace layers {
@@ -25,11 +25,10 @@ class CompositorThreadHolder;
 #define COMPOSITOR_MANAGER_PARENT_EXPLICIT_SHUTDOWN
 #endif
 
-class CompositorManagerParent final : public PCompositorManagerParent
-{
+class CompositorManagerParent final : public PCompositorManagerParent {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorManagerParent)
 
-public:
+ public:
   static already_AddRefed<CompositorManagerParent> CreateSameProcess();
   static void Create(Endpoint<PCompositorManagerParent>&& aEndpoint);
   static void Shutdown();
@@ -40,22 +39,27 @@ public:
                                           bool aUseExternalSurfaceSize,
                                           const gfx::IntSize& aSurfaceSize);
 
-  mozilla::ipc::IPCResult RecvAddSharedSurface(const wr::ExternalImageId& aId,
-                                               const SurfaceDescriptorShared& aDesc) override;
-  mozilla::ipc::IPCResult RecvRemoveSharedSurface(const wr::ExternalImageId& aId) override;
-  mozilla::ipc::IPCResult RecvReportSharedSurfacesMemory(ReportSharedSurfacesMemoryResolver&&) override;
+  mozilla::ipc::IPCResult RecvAddSharedSurface(
+      const wr::ExternalImageId& aId,
+      const SurfaceDescriptorShared& aDesc) override;
+  mozilla::ipc::IPCResult RecvRemoveSharedSurface(
+      const wr::ExternalImageId& aId) override;
+  mozilla::ipc::IPCResult RecvReportSharedSurfacesMemory(
+      ReportSharedSurfacesMemoryResolver&&) override;
 
   virtual mozilla::ipc::IPCResult RecvNotifyMemoryPressure() override;
 
-  virtual mozilla::ipc::IPCResult RecvReportMemory(ReportMemoryResolver&&) override;
+  virtual mozilla::ipc::IPCResult RecvReportMemory(
+      ReportMemoryResolver&&) override;
 
   void BindComplete();
   void ActorDestroy(ActorDestroyReason aReason) override;
 
   bool DeallocPCompositorBridgeParent(PCompositorBridgeParent* aActor) override;
-  PCompositorBridgeParent* AllocPCompositorBridgeParent(const CompositorBridgeOptions& aOpt) override;
+  PCompositorBridgeParent* AllocPCompositorBridgeParent(
+      const CompositorBridgeOptions& aOpt) override;
 
-private:
+ private:
   static StaticRefPtr<CompositorManagerParent> sInstance;
   static StaticMutex sMutex;
 
@@ -78,7 +82,7 @@ private:
   AutoTArray<RefPtr<CompositorBridgeParent>, 1> mPendingCompositorBridges;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

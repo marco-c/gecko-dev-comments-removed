@@ -17,9 +17,12 @@ namespace mozilla {
 class SchedulerGroup;
 }
 
-#define NS_ILABELABLERUNNABLE_IID \
-{ 0x40da1ea1, 0x0b81, 0x4249, \
-  { 0x96, 0x46, 0x61, 0x92, 0x23, 0x39, 0xc3, 0xe8 } }
+#define NS_ILABELABLERUNNABLE_IID                    \
+  {                                                  \
+    0x40da1ea1, 0x0b81, 0x4249, {                    \
+      0x96, 0x46, 0x61, 0x92, 0x23, 0x39, 0xc3, 0xe8 \
+    }                                                \
+  }
 
 
 
@@ -34,22 +37,20 @@ class SchedulerGroup;
 
 
 
-class nsILabelableRunnable : public nsISupports
-{
-public:
+class nsILabelableRunnable : public nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ILABELABLERUNNABLE_IID);
 
-  class SchedulerGroupSet
-  {
+  class SchedulerGroupSet {
     friend class nsILabelableRunnable;
 
     using MultipleSchedulerGroups =
-      nsTHashtable<nsRefPtrHashKey<mozilla::SchedulerGroup>>;
+        nsTHashtable<nsRefPtrHashKey<mozilla::SchedulerGroup>>;
 
     RefPtr<mozilla::SchedulerGroup> mSingle;
     mozilla::Maybe<MultipleSchedulerGroups> mMulti;
 
-  public:
+   public:
     void Put(mozilla::SchedulerGroup* aGroup);
 
     void Clear();
@@ -70,4 +71,4 @@ public:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsILabelableRunnable, NS_ILABELABLERUNNABLE_IID);
 
-#endif 
+#endif  

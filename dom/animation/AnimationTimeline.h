@@ -30,24 +30,16 @@ namespace dom {
 
 class Animation;
 
-class AnimationTimeline
-  : public nsISupports
-  , public nsWrapperCache
-{
-public:
-  explicit AnimationTimeline(nsIGlobalObject* aWindow)
-    : mWindow(aWindow)
-  {
+class AnimationTimeline : public nsISupports, public nsWrapperCache {
+ public:
+  explicit AnimationTimeline(nsIGlobalObject* aWindow) : mWindow(aWindow) {
     MOZ_ASSERT(mWindow);
   }
 
-protected:
-  virtual ~AnimationTimeline()
-  {
-    mAnimationOrder.clear();
-  }
+ protected:
+  virtual ~AnimationTimeline() { mAnimationOrder.clear(); }
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(AnimationTimeline)
 
@@ -64,9 +56,8 @@ public:
 
   TimeStamp GetCurrentTimeAsTimeStamp() const {
     Nullable<TimeDuration> currentTime = GetCurrentTime();
-    return !currentTime.IsNull()
-      ? ToTimeStamp(currentTime.Value())
-      : TimeStamp();
+    return !currentTime.IsNull() ? ToTimeStamp(currentTime.Value())
+                                 : TimeStamp();
   }
 
   
@@ -87,8 +78,8 @@ public:
 
 
 
-  virtual Nullable<TimeDuration> ToTimelineTime(const TimeStamp&
-                                                  aTimeStamp) const = 0;
+  virtual Nullable<TimeDuration> ToTimelineTime(
+      const TimeStamp& aTimeStamp) const = 0;
 
   virtual TimeStamp ToTimeStamp(const TimeDuration& aTimelineTime) const = 0;
 
@@ -107,15 +98,13 @@ public:
 
 
 
-  bool HasAnimations() const {
-    return !mAnimations.IsEmpty();
-  }
+  bool HasAnimations() const { return !mAnimations.IsEmpty(); }
 
   virtual void RemoveAnimation(Animation* aAnimation);
 
   virtual nsIDocument* GetDocument() const = 0;
 
-protected:
+ protected:
   nsCOMPtr<nsIGlobalObject> mWindow;
 
   
@@ -130,7 +119,7 @@ protected:
   LinkedList<dom::Animation> mAnimationOrder;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

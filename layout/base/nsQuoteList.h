@@ -20,20 +20,17 @@ struct nsQuoteNode : public nsGenConNode {
   int32_t mDepthBefore;
 
   nsQuoteNode(StyleContentType aType, uint32_t aContentIndex)
-    : nsGenConNode(aContentIndex)
-    , mType(aType)
-    , mDepthBefore(0)
-  {
+      : nsGenConNode(aContentIndex), mType(aType), mDepthBefore(0) {
     NS_ASSERTION(aType == StyleContentType::OpenQuote ||
-                 aType == StyleContentType::CloseQuote ||
-                 aType == StyleContentType::NoOpenQuote ||
-                 aType == StyleContentType::NoCloseQuote,
+                     aType == StyleContentType::CloseQuote ||
+                     aType == StyleContentType::NoOpenQuote ||
+                     aType == StyleContentType::NoCloseQuote,
                  "incorrect type");
     NS_ASSERTION(aContentIndex <= INT32_MAX, "out of range");
   }
 
-  virtual bool InitTextFrame(nsGenConList* aList,
-          nsIFrame* aPseudoFrame, nsIFrame* aTextFrame) override;
+  virtual bool InitTextFrame(nsGenConList* aList, nsIFrame* aPseudoFrame,
+                             nsIFrame* aTextFrame) override;
 
   
   bool IsOpenQuote() {
@@ -42,9 +39,7 @@ struct nsQuoteNode : public nsGenConNode {
   }
 
   
-  bool IsCloseQuote() {
-    return !IsOpenQuote();
-  }
+  bool IsCloseQuote() { return !IsOpenQuote(); }
 
   
   bool IsRealQuote() {
@@ -55,9 +50,7 @@ struct nsQuoteNode : public nsGenConNode {
   
   
   
-  int32_t Depth() {
-    return IsOpenQuote() ? mDepthBefore : mDepthBefore - 1;
-  }
+  int32_t Depth() { return IsOpenQuote() ? mDepthBefore : mDepthBefore - 1; }
 
   
   int32_t DepthAfter() {
@@ -70,9 +63,12 @@ struct nsQuoteNode : public nsGenConNode {
 };
 
 class nsQuoteList : public nsGenConList {
-private:
-  nsQuoteNode* FirstNode() { return static_cast<nsQuoteNode*>(mList.getFirst()); }
-public:
+ private:
+  nsQuoteNode* FirstNode() {
+    return static_cast<nsQuoteNode*>(mList.getFirst());
+  }
+
+ public:
   
   
   void Calc(nsQuoteNode* aNode);

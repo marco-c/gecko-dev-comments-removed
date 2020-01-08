@@ -22,34 +22,32 @@ class MIDIPortInfo;
 
 
 
-class MIDIPortChild final :
-    public PMIDIPortChild,
-    public MIDIPortInterface
-{
-public:
+class MIDIPortChild final : public PMIDIPortChild, public MIDIPortInterface {
+ public:
   NS_INLINE_DECL_REFCOUNTING(MIDIPortChild);
-  virtual mozilla::ipc::IPCResult
-  RecvReceive(nsTArray<MIDIMessage>&& aMsgs) override;
+  virtual mozilla::ipc::IPCResult RecvReceive(
+      nsTArray<MIDIMessage>&& aMsgs) override;
 
-  virtual void
-  ActorDestroy(ActorDestroyReason aWhy) override;
+  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  virtual mozilla::ipc::IPCResult
-  RecvUpdateStatus(const uint32_t& aDeviceState, const uint32_t& aConnectionState) override;
+  virtual mozilla::ipc::IPCResult RecvUpdateStatus(
+      const uint32_t& aDeviceState, const uint32_t& aConnectionState) override;
 
-  MIDIPortChild(const MIDIPortInfo& aPortInfo, bool aSysexEnabled, MIDIPort* aPort);
+  MIDIPortChild(const MIDIPortInfo& aPortInfo, bool aSysexEnabled,
+                MIDIPort* aPort);
   
   void SetActorAlive();
 
   void Teardown();
-private:
+
+ private:
   ~MIDIPortChild() = default;
   
   
   MIDIPort* mDOMPort;
   bool mActorWasAlive;
 };
-}
-}
+}  
+}  
 
 #endif

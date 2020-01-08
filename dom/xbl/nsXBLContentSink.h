@@ -24,7 +24,7 @@ typedef enum {
   eXBL_InResources,      
   eXBL_InImplementation, 
   eXBL_InHandlers,       
-  eXBL_Error             
+  eXBL_Error 
 } XBLPrimaryState;
 
 
@@ -56,73 +56,65 @@ class nsXBLPrototypeBinding;
 
 
 class nsXBLContentSink : public nsXMLContentSink {
-public:
+ public:
   nsXBLContentSink();
   ~nsXBLContentSink();
 
-  nsresult Init(nsIDocument* aDoc,
-                nsIURI* aURL,
-                nsISupports* aContainer);
+  nsresult Init(nsIDocument* aDoc, nsIURI* aURL, nsISupports* aContainer);
 
   
-  NS_IMETHOD HandleStartElement(const char16_t *aName,
-                                const char16_t **aAtts,
-                                uint32_t aAttsCount,
-                                uint32_t aLineNumber,
+  NS_IMETHOD HandleStartElement(const char16_t* aName, const char16_t** aAtts,
+                                uint32_t aAttsCount, uint32_t aLineNumber,
                                 uint32_t aColumnNumber) override;
 
-  NS_IMETHOD HandleEndElement(const char16_t *aName) override;
+  NS_IMETHOD HandleEndElement(const char16_t* aName) override;
 
-  NS_IMETHOD HandleCDataSection(const char16_t *aData,
+  NS_IMETHOD HandleCDataSection(const char16_t* aData,
                                 uint32_t aLength) override;
 
-protected:
-    
-    virtual void MaybeStartLayout(bool aIgnorePendingSheets) override;
+ protected:
+  
+  virtual void MaybeStartLayout(bool aIgnorePendingSheets) override;
 
-    bool OnOpenContainer(const char16_t **aAtts,
-                           uint32_t aAttsCount,
-                           int32_t aNameSpaceID,
-                           nsAtom* aTagName,
-                           uint32_t aLineNumber) override;
+  bool OnOpenContainer(const char16_t** aAtts, uint32_t aAttsCount,
+                       int32_t aNameSpaceID, nsAtom* aTagName,
+                       uint32_t aLineNumber) override;
 
-    bool NotifyForDocElement() override { return false; }
+  bool NotifyForDocElement() override { return false; }
 
-    nsresult CreateElement(const char16_t** aAtts, uint32_t aAttsCount,
-                           mozilla::dom::NodeInfo* aNodeInfo,
-                           uint32_t aLineNumber, uint32_t aColumnNumber,
-                           nsIContent** aResult, bool* aAppendContent,
-                           mozilla::dom::FromParser aFromParser) override;
+  nsresult CreateElement(const char16_t** aAtts, uint32_t aAttsCount,
+                         mozilla::dom::NodeInfo* aNodeInfo,
+                         uint32_t aLineNumber, uint32_t aColumnNumber,
+                         nsIContent** aResult, bool* aAppendContent,
+                         mozilla::dom::FromParser aFromParser) override;
 
-    nsresult AddAttributes(const char16_t** aAtts, Element* aElement) override;
+  nsresult AddAttributes(const char16_t** aAtts, Element* aElement) override;
 
 #ifdef MOZ_XUL
-    nsresult AddAttributesToXULPrototype(const char16_t **aAtts,
-                                         uint32_t aAttsCount,
-                                         nsXULPrototypeElement* aElement);
+  nsresult AddAttributesToXULPrototype(const char16_t** aAtts,
+                                       uint32_t aAttsCount,
+                                       nsXULPrototypeElement* aElement);
 #endif
 
-    
-    nsresult ConstructBinding(uint32_t aLineNumber);
-    void ConstructHandler(const char16_t **aAtts, uint32_t aLineNumber);
-    void ConstructResource(const char16_t **aAtts, nsAtom* aResourceType);
-    void ConstructImplementation(const char16_t **aAtts);
-    void ConstructProperty(const char16_t **aAtts, uint32_t aLineNumber);
-    void ConstructMethod(const char16_t **aAtts);
-    void ConstructParameter(const char16_t **aAtts);
-    void ConstructField(const char16_t **aAtts, uint32_t aLineNumber);
-
+  
+  nsresult ConstructBinding(uint32_t aLineNumber);
+  void ConstructHandler(const char16_t** aAtts, uint32_t aLineNumber);
+  void ConstructResource(const char16_t** aAtts, nsAtom* aResourceType);
+  void ConstructImplementation(const char16_t** aAtts);
+  void ConstructProperty(const char16_t** aAtts, uint32_t aLineNumber);
+  void ConstructMethod(const char16_t** aAtts);
+  void ConstructParameter(const char16_t** aAtts);
+  void ConstructField(const char16_t** aAtts, uint32_t aLineNumber);
 
   
   nsresult FlushText(bool aReleaseTextNode = true) override;
 
   
   NS_IMETHOD ReportError(const char16_t* aErrorText,
-                         const char16_t* aSourceText,
-                         nsIScriptError *aError,
-                         bool *_retval) override;
+                         const char16_t* aSourceText, nsIScriptError* aError,
+                         bool* _retval) override;
 
-protected:
+ protected:
   nsresult ReportUnexpectedElement(nsAtom* aElementName, uint32_t aLineNumber);
 
   void AddMember(nsXBLProtoImplMember* aMember);
@@ -131,13 +123,14 @@ protected:
   XBLPrimaryState mState;
   XBLSecondaryState mSecondaryState;
   nsXBLDocumentInfo* mDocInfo;
-  bool mIsChromeOrResource; 
+  bool mIsChromeOrResource;  
   bool mFoundFirstBinding;
 
   nsString mCurrentBindingID;
 
   nsXBLPrototypeBinding* mBinding;
-  nsXBLPrototypeHandler* mHandler; 
+  nsXBLPrototypeHandler*
+      mHandler;  
   nsXBLProtoImpl* mImplementation;
   nsXBLProtoImplMember* mImplMember;
   nsXBLProtoImplField* mImplField;
@@ -146,9 +139,6 @@ protected:
   nsXBLProtoImplField* mField;
 };
 
-nsresult
-NS_NewXBLContentSink(nsIXMLContentSink** aResult,
-                     nsIDocument* aDoc,
-                     nsIURI* aURL,
-                     nsISupports* aContainer);
-#endif 
+nsresult NS_NewXBLContentSink(nsIXMLContentSink** aResult, nsIDocument* aDoc,
+                              nsIURI* aURL, nsISupports* aContainer);
+#endif  

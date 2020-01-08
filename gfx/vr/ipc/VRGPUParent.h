@@ -13,22 +13,22 @@ namespace mozilla {
 namespace gfx {
 
 class VRGPUParent final : public PVRGPUParent {
-   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRGPUParent)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRGPUParent)
 
-public:
+ public:
   explicit VRGPUParent(ProcessId aChildProcessId);
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
   static RefPtr<VRGPUParent> CreateForGPU(Endpoint<PVRGPUParent>&& aEndpoint);
 
-protected:
+ protected:
   ~VRGPUParent() {}
 
   void Bind(Endpoint<PVRGPUParent>&& aEndpoint);
   virtual mozilla::ipc::IPCResult RecvStartVRService() override;
   virtual mozilla::ipc::IPCResult RecvStopVRService() override;
 
-private:
+ private:
   void DeferredDestroy();
 
   RefPtr<VRGPUParent> mSelfRef;
@@ -37,7 +37,7 @@ private:
 #endif
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

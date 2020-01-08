@@ -14,12 +14,12 @@
 namespace IPC {
 
 template <>
-struct ParamTraits<mozilla::dom::LSSnapshot::LoadState> :
-  public ContiguousEnumSerializer<mozilla::dom::LSSnapshot::LoadState,
-                                  mozilla::dom::LSSnapshot::LoadState::Initial,
-                                  mozilla::dom::LSSnapshot::LoadState::EndGuard>
-{ };
+struct ParamTraits<mozilla::dom::LSSnapshot::LoadState>
+    : public ContiguousEnumSerializer<
+          mozilla::dom::LSSnapshot::LoadState,
+          mozilla::dom::LSSnapshot::LoadState::Initial,
+          mozilla::dom::LSSnapshot::LoadState::EndGuard> {};
 
-} 
+}  
 
-#endif 
+#endif  

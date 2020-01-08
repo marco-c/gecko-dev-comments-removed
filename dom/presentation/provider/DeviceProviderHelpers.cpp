@@ -15,14 +15,11 @@ namespace dom {
 namespace presentation {
 
 static const char* const kFxTVPresentationAppUrls[] = {
-  "app://fling-player.gaiamobile.org/index.html",
-  "app://notification-receiver.gaiamobile.org/index.html",
-  nullptr
-};
+    "app://fling-player.gaiamobile.org/index.html",
+    "app://notification-receiver.gaiamobile.org/index.html", nullptr};
 
- bool
-DeviceProviderHelpers::IsCommonlySupportedScheme(const nsAString& aUrl)
-{
+ bool DeviceProviderHelpers::IsCommonlySupportedScheme(
+    const nsAString& aUrl) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv = NS_NewURI(getter_AddRefs(uri), aUrl);
   if (NS_FAILED(rv) || !uri) {
@@ -39,9 +36,8 @@ DeviceProviderHelpers::IsCommonlySupportedScheme(const nsAString& aUrl)
   return false;
 }
 
- bool
-DeviceProviderHelpers::IsFxTVSupportedAppUrl(const nsAString& aUrl)
-{
+ bool DeviceProviderHelpers::IsFxTVSupportedAppUrl(
+    const nsAString& aUrl) {
   
   for (uint32_t i = 0; kFxTVPresentationAppUrls[i]; i++) {
     if (aUrl.EqualsASCII(kFxTVPresentationAppUrls[i])) {
@@ -52,6 +48,6 @@ DeviceProviderHelpers::IsFxTVSupportedAppUrl(const nsAString& aUrl)
   return false;
 }
 
-} 
-} 
-} 
+}  
+}  
+}  

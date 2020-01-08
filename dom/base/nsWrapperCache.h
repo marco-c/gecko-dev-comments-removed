@@ -9,8 +9,8 @@
 
 #include "nsCycleCollectionParticipant.h"
 #include "mozilla/Assertions.h"
-#include "js/Id.h"          
-#include "js/Value.h"       
+#include "js/Id.h"     
+#include "js/Value.h"  
 #include "js/RootingAPI.h"
 #include "js/TracingAPI.h"
 
@@ -19,14 +19,17 @@ namespace dom {
 class ContentProcessMessageManager;
 class InProcessTabChildMessageManager;
 class TabChildMessageManager;
-} 
-} 
+}  
+}  
 class SandboxPrivate;
 class nsWindowRoot;
 
-#define NS_WRAPPERCACHE_IID \
-{ 0x6f3179a1, 0x36f7, 0x4a5c, \
-  { 0x8c, 0xf1, 0xad, 0xc8, 0x7c, 0xde, 0x3e, 0x87 } }
+#define NS_WRAPPERCACHE_IID                          \
+  {                                                  \
+    0x6f3179a1, 0x36f7, 0x4a5c, {                    \
+      0x8c, 0xf1, 0xad, 0xc8, 0x7c, 0xde, 0x3e, 0x87 \
+    }                                                \
+  }
 
 
 
@@ -85,21 +88,20 @@ static_assert(sizeof(void*) == 4, "Only support 32-bit and 64-bit");
 
 
 
-class nsWrapperCache
-{
-public:
+class nsWrapperCache {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_WRAPPERCACHE_IID)
 
   nsWrapperCache()
-    : mWrapper(nullptr)
-    , mFlags(0)
+      : mWrapper(nullptr),
+        mFlags(0)
 #ifdef BOOL_FLAGS_ON_WRAPPER_CACHE
-    , mBoolFlags(0)
+        ,
+        mBoolFlags(0)
 #endif
   {
   }
-  ~nsWrapperCache()
-  {
+  ~nsWrapperCache() {
     
     if (mozilla::recordreplay::IsReplaying()) {
       mozilla::recordreplay::SetWeakPointerJSRoot(this, nullptr);
@@ -139,8 +141,7 @@ public:
 
 
 
-  JSObject* GetWrapperMaybeDead() const
-  {
+  JSObject* GetWrapperMaybeDead() const {
     
     
     
@@ -162,18 +163,18 @@ public:
   }
 
 #ifdef DEBUG
-private:
+ private:
   static bool HasJSObjectMovedOp(JSObject* aWrapper);
 
-public:
+ public:
 #endif
 
-  void SetWrapper(JSObject* aWrapper)
-  {
+  void SetWrapper(JSObject* aWrapper) {
     MOZ_ASSERT(!PreservingWrapper(), "Clearing a preserved wrapper!");
     MOZ_ASSERT(aWrapper, "Use ClearWrapper!");
     MOZ_ASSERT(HasJSObjectMovedOp(aWrapper),
-               "Object has not provided the hook to update the wrapper if it is moved");
+               "Object has not provided the hook to update the wrapper if it "
+               "is moved");
 
     SetWrapperJSObject(aWrapper);
   }
@@ -181,8 +182,7 @@ public:
   
 
 
-  void ClearWrapper()
-  {
+  void ClearWrapper() {
     MOZ_ASSERT(!PreservingWrapper(), "Clearing a preserved wrapper!");
     SetWrapperJSObject(nullptr);
   }
@@ -191,8 +191,7 @@ public:
 
 
 
-  void ClearWrapper(JSObject* obj)
-  {
+  void ClearWrapper(JSObject* obj) {
     if (obj == mWrapper) {
       ClearWrapper();
     }
@@ -204,16 +203,14 @@ public:
 
 
 
-  void UpdateWrapper(JSObject* aNewObject, const JSObject* aOldObject)
-  {
+  void UpdateWrapper(JSObject* aNewObject, const JSObject* aOldObject) {
     if (mWrapper) {
       MOZ_ASSERT(mWrapper == aOldObject);
       mWrapper = aNewObject;
     }
   }
 
-  bool PreservingWrapper() const
-  {
+  bool PreservingWrapper() const {
     return HasWrapperFlag(WRAPPER_BIT_PRESERVED);
   }
 
@@ -221,7 +218,8 @@ public:
 
 
 
-  virtual JSObject* WrapObject(JSContext* cx, JS::Handle<JSObject*> aGivenProto) = 0;
+  virtual JSObject* WrapObject(JSContext* cx,
+                               JS::Handle<JSObject*> aGivenProto) = 0;
 
   
 
@@ -244,18 +242,15 @@ public:
   void MarkWrapperLive();
 
   
-  void SetPreservingWrapper(bool aPreserve)
-  {
-    if(aPreserve) {
+  void SetPreservingWrapper(bool aPreserve) {
+    if (aPreserve) {
       SetWrapperFlags(WRAPPER_BIT_PRESERVED);
-    }
-    else {
+    } else {
       UnsetWrapperFlags(WRAPPER_BIT_PRESERVED);
     }
   }
 
-  void TraceWrapper(const TraceCallbacks& aCallbacks, void* aClosure)
-  {
+  void TraceWrapper(const TraceCallbacks& aCallbacks, void* aClosure) {
     if (PreservingWrapper() && mWrapper) {
       aCallbacks.Trace(&mWrapper, "Preserved wrapper", aClosure);
     }
@@ -268,45 +263,36 @@ public:
 
   typedef uint32_t FlagsType;
 
-  FlagsType GetFlags() const
-  {
-    return mFlags & ~kWrapperFlagsMask;
-  }
+  FlagsType GetFlags() const { return mFlags & ~kWrapperFlagsMask; }
 
-  bool HasFlag(FlagsType aFlag) const
-  {
+  bool HasFlag(FlagsType aFlag) const {
     MOZ_ASSERT((aFlag & kWrapperFlagsMask) == 0, "Bad flag mask");
     return !!(mFlags & aFlag);
   }
 
   
   
-  bool HasAnyOfFlags(FlagsType aFlags) const
-  {
+  bool HasAnyOfFlags(FlagsType aFlags) const {
     MOZ_ASSERT((aFlags & kWrapperFlagsMask) == 0, "Bad flag mask");
     return !!(mFlags & aFlags);
   }
 
-  bool HasAllFlags(FlagsType aFlags) const
-  {
+  bool HasAllFlags(FlagsType aFlags) const {
     MOZ_ASSERT((aFlags & kWrapperFlagsMask) == 0, "Bad flag mask");
     return (mFlags & aFlags) == aFlags;
   }
 
-  void SetFlags(FlagsType aFlagsToSet)
-  {
+  void SetFlags(FlagsType aFlagsToSet) {
     MOZ_ASSERT((aFlagsToSet & kWrapperFlagsMask) == 0, "Bad flag mask");
     mFlags |= aFlagsToSet;
   }
 
-  void UnsetFlags(FlagsType aFlagsToUnset)
-  {
+  void UnsetFlags(FlagsType aFlagsToUnset) {
     MOZ_ASSERT((aFlagsToUnset & kWrapperFlagsMask) == 0, "Bad flag mask");
     mFlags &= ~aFlagsToUnset;
   }
 
-  void PreserveWrapper(nsISupports* aScriptObjectHolder)
-  {
+  void PreserveWrapper(nsISupports* aScriptObjectHolder) {
     if (PreservingWrapper()) {
       return;
     }
@@ -321,13 +307,13 @@ public:
     PreserveWrapper(ccISupports, participant);
   }
 
-  void PreserveWrapper(void* aScriptObjectHolder, nsScriptObjectTracer* aTracer)
-  {
+  void PreserveWrapper(void* aScriptObjectHolder,
+                       nsScriptObjectTracer* aTracer) {
     if (PreservingWrapper()) {
       return;
     }
 
-    GetWrapper(); 
+    GetWrapper();  
     HoldJSObjects(aScriptObjectHolder, aTracer);
     SetPreservingWrapper(true);
 #ifdef DEBUG
@@ -338,16 +324,14 @@ public:
 
   void ReleaseWrapper(void* aScriptObjectHolder);
 
-protected:
-  void TraceWrapper(JSTracer* aTrc, const char* name)
-  {
+ protected:
+  void TraceWrapper(JSTracer* aTrc, const char* name) {
     if (mWrapper) {
       js::UnsafeTraceManuallyBarrieredEdge(aTrc, &mWrapper, name);
     }
   }
 
-  void PoisonWrapper()
-  {
+  void PoisonWrapper() {
     if (mWrapper) {
       
       
@@ -355,41 +339,37 @@ protected:
     }
   }
 
-private:
+ private:
   void SetWrapperJSObject(JSObject* aWrapper);
 
-  FlagsType GetWrapperFlags() const
-  {
-    return mFlags & kWrapperFlagsMask;
-  }
+  FlagsType GetWrapperFlags() const { return mFlags & kWrapperFlagsMask; }
 
-  bool HasWrapperFlag(FlagsType aFlag) const
-  {
+  bool HasWrapperFlag(FlagsType aFlag) const {
     MOZ_ASSERT((aFlag & ~kWrapperFlagsMask) == 0, "Bad wrapper flag bits");
     return !!(mFlags & aFlag);
   }
 
-  void SetWrapperFlags(FlagsType aFlagsToSet)
-  {
-    MOZ_ASSERT((aFlagsToSet & ~kWrapperFlagsMask) == 0, "Bad wrapper flag bits");
+  void SetWrapperFlags(FlagsType aFlagsToSet) {
+    MOZ_ASSERT((aFlagsToSet & ~kWrapperFlagsMask) == 0,
+               "Bad wrapper flag bits");
     mFlags |= aFlagsToSet;
   }
 
-  void UnsetWrapperFlags(FlagsType aFlagsToUnset)
-  {
-    MOZ_ASSERT((aFlagsToUnset & ~kWrapperFlagsMask) == 0, "Bad wrapper flag bits");
+  void UnsetWrapperFlags(FlagsType aFlagsToUnset) {
+    MOZ_ASSERT((aFlagsToUnset & ~kWrapperFlagsMask) == 0,
+               "Bad wrapper flag bits");
     mFlags &= ~aFlagsToUnset;
   }
 
-  void HoldJSObjects(void* aScriptObjectHolder,
-                     nsScriptObjectTracer* aTracer);
+  void HoldJSObjects(void* aScriptObjectHolder, nsScriptObjectTracer* aTracer);
 
 #ifdef DEBUG
-public:
+ public:
   void CheckCCWrapperTraversal(void* aScriptObjectHolder,
                                nsScriptObjectTracer* aTracer);
-private:
-#endif 
+
+ private:
+#endif  
 
   
 
@@ -407,7 +387,8 @@ private:
 
   JSObject* mWrapper;
   FlagsType mFlags;
-protected:
+
+ protected:
 #ifdef BOOL_FLAGS_ON_WRAPPER_CACHE
   uint32_t mBoolFlags;
 #endif
@@ -417,16 +398,15 @@ enum { WRAPPER_CACHE_FLAGS_BITS_USED = 1 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsWrapperCache, NS_WRAPPERCACHE_IID)
 
-#define NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY                                 \
-  if ( aIID.Equals(NS_GET_IID(nsWrapperCache)) ) {                            \
-    *aInstancePtr = static_cast<nsWrapperCache*>(this);                       \
-    return NS_OK;                                                             \
+#define NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY           \
+  if (aIID.Equals(NS_GET_IID(nsWrapperCache))) {        \
+    *aInstancePtr = static_cast<nsWrapperCache*>(this); \
+    return NS_OK;                                       \
   }
 
-#define NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY                                   \
-  NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY                                       \
+#define NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY \
+  NS_WRAPPERCACHE_INTERFACE_TABLE_ENTRY     \
   else
-
 
 
 

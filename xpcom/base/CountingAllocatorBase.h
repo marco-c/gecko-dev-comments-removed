@@ -37,12 +37,10 @@ namespace mozilla {
 
 
 
-template<typename T>
-class CountingAllocatorBase
-{
-public:
-  CountingAllocatorBase()
-  {
+template <typename T>
+class CountingAllocatorBase {
+ public:
+  CountingAllocatorBase() {
 #ifdef DEBUG
     
     
@@ -52,33 +50,23 @@ public:
 #endif
   }
 
-  static size_t
-  MemoryAllocated()
-  {
-    return sAmount;
-  }
+  static size_t MemoryAllocated() { return sAmount; }
 
-  static void*
-  CountingMalloc(size_t size)
-  {
+  static void* CountingMalloc(size_t size) {
     void* p = malloc(size);
     sAmount += MallocSizeOfOnAlloc(p);
     return p;
   }
 
-  static void*
-  CountingCalloc(size_t nmemb, size_t size)
-  {
+  static void* CountingCalloc(size_t nmemb, size_t size) {
     void* p = calloc(nmemb, size);
     sAmount += MallocSizeOfOnAlloc(p);
     return p;
   }
 
-  static void*
-  CountingRealloc(void* p, size_t size)
-  {
+  static void* CountingRealloc(void* p, size_t size) {
     size_t oldsize = MallocSizeOfOnFree(p);
-    void *pnew = realloc(p, size);
+    void* pnew = realloc(p, size);
     if (pnew) {
       size_t newsize = MallocSizeOfOnAlloc(pnew);
       sAmount += newsize - oldsize;
@@ -109,9 +97,7 @@ public:
   
   
   
-  static void*
-  CountingFreeingRealloc(void* p, size_t size)
-  {
+  static void* CountingFreeingRealloc(void* p, size_t size) {
     if (size == 0) {
       CountingFree(p);
       return nullptr;
@@ -119,24 +105,24 @@ public:
     return CountingRealloc(p, size);
   }
 
-  static void
-  CountingFree(void* p)
-  {
+  static void CountingFree(void* p) {
     sAmount -= MallocSizeOfOnFree(p);
     free(p);
   }
 
-private:
+ private:
   
   
   
-  typedef Atomic<size_t, SequentiallyConsistent, recordreplay::Behavior::DontPreserve> AmountType;
+  typedef Atomic<size_t, SequentiallyConsistent,
+                 recordreplay::Behavior::DontPreserve>
+      AmountType;
   static AmountType sAmount;
 
   MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(MallocSizeOfOnAlloc)
   MOZ_DEFINE_MALLOC_SIZE_OF_ON_FREE(MallocSizeOfOnFree)
 };
 
-} 
+}  
 
-#endif 
+#endif  

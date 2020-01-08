@@ -7,34 +7,34 @@
 #ifndef MOZILLA_GFX_BUFFERHOST_H
 #define MOZILLA_GFX_BUFFERHOST_H
 
-#include <stdint.h>                     
-#include <stdio.h>                      
-#include "gfxRect.h"                    
-#include "mozilla/Assertions.h"         
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/MatrixFwd.h"      
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Polygon.h"        
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/gfx/Types.h"          
+#include <stdint.h>                 
+#include <stdio.h>                  
+#include "gfxRect.h"                
+#include "mozilla/Assertions.h"     
+#include "mozilla/Attributes.h"     
+#include "mozilla/RefPtr.h"         
+#include "mozilla/gfx/MatrixFwd.h"  
+#include "mozilla/gfx/Point.h"      
+#include "mozilla/gfx/Polygon.h"    
+#include "mozilla/gfx/Rect.h"       
+#include "mozilla/gfx/Types.h"      
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/layers/Compositor.h"  
+#include "mozilla/layers/Compositor.h"       
 #include "mozilla/layers/CompositorTypes.h"  
-#include "mozilla/layers/Effects.h"     
-#include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/layers/Effects.h"          
+#include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/layers/LayersMessages.h"
-#include "mozilla/layers/TextureHost.h" 
-#include "mozilla/mozalloc.h"           
-#include "nsCOMPtr.h"                   
-#include "nsRegion.h"                   
-#include "nscore.h"                     
-#include "Units.h"                      
+#include "mozilla/layers/TextureHost.h"  
+#include "mozilla/mozalloc.h"            
+#include "nsCOMPtr.h"                    
+#include "nsRegion.h"                    
+#include "nscore.h"                      
+#include "Units.h"                       
 
 namespace mozilla {
 namespace gfx {
 class DataSourceSurface;
-} 
+}  
 
 namespace layers {
 
@@ -56,14 +56,11 @@ struct ImageCompositeNotificationInfo {
   ImageCompositeNotification mNotification;
 };
 
-struct AsyncCompositableRef
-{
-  AsyncCompositableRef()
-   : mProcessId(mozilla::ipc::kInvalidProcessId)
-  {}
-  AsyncCompositableRef(base::ProcessId aProcessId, const CompositableHandle& aHandle)
-   : mProcessId(aProcessId), mHandle(aHandle)
-  {}
+struct AsyncCompositableRef {
+  AsyncCompositableRef() : mProcessId(mozilla::ipc::kInvalidProcessId) {}
+  AsyncCompositableRef(base::ProcessId aProcessId,
+                       const CompositableHandle& aHandle)
+      : mProcessId(aProcessId), mHandle(aHandle) {}
   explicit operator bool() const { return !!mHandle; }
   base::ProcessId mProcessId;
   CompositableHandle mHandle;
@@ -83,16 +80,16 @@ struct AsyncCompositableRef
 
 
 
-class CompositableHost
-{
-protected:
+class CompositableHost {
+ protected:
   virtual ~CompositableHost();
 
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositableHost)
   explicit CompositableHost(const TextureInfo& aTextureInfo);
 
-  static already_AddRefed<CompositableHost> Create(const TextureInfo& aTextureInfo, bool aUseWebRender);
+  static already_AddRefed<CompositableHost> Create(
+      const TextureInfo& aTextureInfo, bool aUseWebRender);
 
   virtual CompositableType GetType() = 0;
 
@@ -100,10 +97,8 @@ public:
   virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider);
 
   
-  virtual void Composite(Compositor* aCompositor,
-                         LayerComposite* aLayer,
-                         EffectChain& aEffectChain,
-                         float aOpacity,
+  virtual void Composite(Compositor* aCompositor, LayerComposite* aLayer,
+                         EffectChain& aEffectChain, float aOpacity,
                          const gfx::Matrix4x4& aTransform,
                          const gfx::SamplingFilter aSamplingFilter,
                          const gfx::IntRect& aClipRect,
@@ -116,8 +111,7 @@ public:
 
   virtual bool UpdateThebes(const ThebesBufferData& aData,
                             const nsIntRegion& aUpdated,
-                            const nsIntRegion& aOldValidRegionBack)
-  {
+                            const nsIntRegion& aOldValidRegionBack) {
     NS_ERROR("should be implemented or not used");
     return false;
   }
@@ -127,13 +121,11 @@ public:
 
 
 
-  virtual TextureHost* GetAsTextureHost(gfx::IntRect* aPictureRect = nullptr)
-  {
+  virtual TextureHost* GetAsTextureHost(gfx::IntRect* aPictureRect = nullptr) {
     return nullptr;
   }
 
-  virtual gfx::IntSize GetImageSize()
-  {
+  virtual gfx::IntSize GetImageSize() {
     MOZ_ASSERT(false, "Should have been overridden");
     return gfx::IntSize();
   }
@@ -142,8 +134,7 @@ public:
 
 
 
-  bool AddMaskEffect(EffectChain& aEffects,
-                     const gfx::Matrix4x4& aTransform);
+  bool AddMaskEffect(EffectChain& aEffects, const gfx::Matrix4x4& aTransform);
 
   void RemoveMaskEffect();
 
@@ -164,10 +155,8 @@ public:
   static const AttachFlags KEEP_ATTACHED = 2;
   static const AttachFlags FORCE_DETACH = 2;
 
-  virtual void Attach(Layer* aLayer,
-                      TextureSourceProvider* aProvider,
-                      AttachFlags aFlags = NO_FLAGS)
-  {
+  virtual void Attach(Layer* aLayer, TextureSourceProvider* aProvider,
+                      AttachFlags aFlags = NO_FLAGS) {
     MOZ_ASSERT(aProvider);
     NS_ASSERTION(aFlags & ALLOW_REATTACH || !mAttached,
                  "Re-attaching compositables must be explicitly authorised");
@@ -184,11 +173,8 @@ public:
   
   
   
-  virtual void Detach(Layer* aLayer = nullptr, AttachFlags aFlags = NO_FLAGS)
-  {
-    if (!mKeepAttached ||
-        aLayer == mLayer ||
-        aFlags & FORCE_DETACH) {
+  virtual void Detach(Layer* aLayer = nullptr, AttachFlags aFlags = NO_FLAGS) {
+    if (!mKeepAttached || aLayer == mLayer || aFlags & FORCE_DETACH) {
       SetLayer(nullptr);
       mAttached = false;
       mKeepAttached = false;
@@ -196,12 +182,14 @@ public:
   }
   bool IsAttached() { return mAttached; }
 
-  virtual void Dump(std::stringstream& aStream,
-                    const char* aPrefix="",
-                    bool aDumpHtml=false) { }
-  static void DumpTextureHost(std::stringstream& aStream, TextureHost* aTexture);
+  virtual void Dump(std::stringstream& aStream, const char* aPrefix = "",
+                    bool aDumpHtml = false) {}
+  static void DumpTextureHost(std::stringstream& aStream,
+                              TextureHost* aTexture);
 
-  virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface() { return nullptr; }
+  virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface() {
+    return nullptr;
+  }
 
   virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) = 0;
 
@@ -220,7 +208,8 @@ public:
   
   void BumpFlashCounter() {
     mFlashCounter = mFlashCounter >= DIAGNOSTIC_FLASH_COUNTER_MAX
-                  ? DIAGNOSTIC_FLASH_COUNTER_MAX : mFlashCounter + 1;
+                        ? DIAGNOSTIC_FLASH_COUNTER_MAX
+                        : mFlashCounter + 1;
   }
 
   uint64_t GetCompositorBridgeID() const { return mCompositorBridgeID; }
@@ -232,9 +221,10 @@ public:
 
   virtual bool Lock() { return false; }
 
-  virtual void Unlock() { }
+  virtual void Unlock() {}
 
-  virtual already_AddRefed<TexturedEffect> GenEffect(const gfx::SamplingFilter aSamplingFilter) {
+  virtual already_AddRefed<TexturedEffect> GenEffect(
+      const gfx::SamplingFilter aSamplingFilter) {
     return nullptr;
   }
 
@@ -247,31 +237,27 @@ public:
 
   virtual uint32_t GetDroppedFrames() { return 0; }
 
-protected:
+ protected:
   HostLayerManager* GetLayerManager() const;
 
-protected:
+ protected:
   TextureInfo mTextureInfo;
   AsyncCompositableRef mAsyncRef;
   uint64_t mCompositorBridgeID;
   RefPtr<TextureSourceProvider> mTextureSourceProvider;
   Layer* mLayer;
-  uint32_t mFlashCounter; 
+  uint32_t mFlashCounter;  
   bool mAttached;
   bool mKeepAttached;
 };
 
-class AutoLockCompositableHost final
-{
-public:
-  explicit AutoLockCompositableHost(CompositableHost* aHost)
-    : mHost(aHost)
-  {
+class AutoLockCompositableHost final {
+ public:
+  explicit AutoLockCompositableHost(CompositableHost* aHost) : mHost(aHost) {
     mSucceeded = (mHost && mHost->Lock());
   }
 
-  ~AutoLockCompositableHost()
-  {
+  ~AutoLockCompositableHost() {
     if (mSucceeded && mHost) {
       mHost->Unlock();
     }
@@ -279,12 +265,12 @@ public:
 
   bool Failed() const { return !mSucceeded; }
 
-private:
+ private:
   RefPtr<CompositableHost> mHost;
   bool mSucceeded;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

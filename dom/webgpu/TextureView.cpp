@@ -15,5 +15,5 @@ TextureView::~TextureView() = default;
 
 WEBGPU_IMPL_GOOP_0(TextureView)
 
-} 
-} 
+}  
+}  

@@ -13,7 +13,7 @@ namespace gl {
 
 const char* GLenumToStr(GLenum e);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

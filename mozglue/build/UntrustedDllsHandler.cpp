@@ -11,7 +11,7 @@
 
 
 #define MALLOC_DECL(name, return_type, ...) \
-  MOZ_MEMORY_API return_type name ## _impl(__VA_ARGS__);
+  MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
 #include "malloc_decls.h"
 #include "mozilla/mozalloc.h"
 #endif
@@ -27,15 +27,13 @@
 #include "mozilla/ThreadLocal.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
-#include "nsWindowsHelpers.h" 
+#include "nsWindowsHelpers.h"  
 
 namespace mozilla {
 namespace glue {
 
 
-static UniquePtr<wchar_t[]>
-CopyString(const UniquePtr<wchar_t[]>& aOther)
-{
+static UniquePtr<wchar_t[]> CopyString(const UniquePtr<wchar_t[]>& aOther) {
   if (!aOther) {
     return nullptr;
   }
@@ -49,9 +47,7 @@ CopyString(const UniquePtr<wchar_t[]>& aOther)
 
 
 
-static UniquePtr<wchar_t[]>
-CopyString(PCUNICODE_STRING aOther)
-{
+static UniquePtr<wchar_t[]> CopyString(PCUNICODE_STRING aOther) {
   if (!aOther || !aOther->Buffer) {
     return nullptr;
   }
@@ -66,9 +62,7 @@ CopyString(PCUNICODE_STRING aOther)
 
 
 
-static UniquePtr<wchar_t[]>
-GetModuleFullPath(uintptr_t aModuleBase)
-{
+static UniquePtr<wchar_t[]> GetModuleFullPath(uintptr_t aModuleBase) {
   size_t allocated = MAX_PATH;
   auto ret = MakeUnique<wchar_t[]>(allocated);
   size_t len;
@@ -92,9 +86,8 @@ GetModuleFullPath(uintptr_t aModuleBase)
 
 
 
-class TLSData
-{
-public:
+class TLSData {
+ public:
   Vector<ModuleLoadEvent::ModuleInfo, 0, InfallibleAllocPolicy> mModulesLoaded;
   int mCallDepth = 0;
 };
@@ -102,8 +95,7 @@ public:
 static MOZ_THREAD_LOCAL(TLSData*) sTlsData;
 
 
-class UntrustedDllsHandlerImpl
-{
+class UntrustedDllsHandlerImpl {
   
   
   
@@ -131,23 +123,18 @@ class UntrustedDllsHandlerImpl
   
   CRITICAL_SECTION mDataLock;
 
-  UntrustedDllsHandlerImpl()
-  {
-    InitializeCriticalSection(&mDataLock);
-  }
+  UntrustedDllsHandlerImpl() { InitializeCriticalSection(&mDataLock); }
 
-  ~UntrustedDllsHandlerImpl()
-  {
-    { 
+  ~UntrustedDllsHandlerImpl() {
+    {  
       
       AutoCriticalSection lock(&mDataLock);
     }
     DeleteCriticalSection(&mDataLock);
   }
 
-public:
-  static RefPtr<UntrustedDllsHandlerImpl> GetInstance()
-  {
+ public:
+  static RefPtr<UntrustedDllsHandlerImpl> GetInstance() {
     if (sInstanceHasBeenSet) {
       return sInstance;
     }
@@ -157,18 +144,11 @@ public:
     return sInstance;
   }
 
-  static void Shutdown()
-  {
-    sInstance = nullptr;
-  }
+  static void Shutdown() { sInstance = nullptr; }
 
-  int32_t AddRef()
-  {
-    return ++mRefCnt;
-  }
+  int32_t AddRef() { return ++mRefCnt; }
 
-  int32_t Release()
-  {
+  int32_t Release() {
     int32_t ret = --mRefCnt;
     if (!ret) {
       delete this;
@@ -178,8 +158,7 @@ public:
 
   
   
-  void OnAfterTopLevelModuleLoad()
-  {
+  void OnAfterTopLevelModuleLoad() {
     
     RefPtr<UntrustedDllsHandlerImpl> refHolder(this);
     if (!refHolder) {
@@ -193,7 +172,7 @@ public:
       return;
     }
 
-    { 
+    {  
       
       
       AutoCriticalSection lock(&mDataLock);
@@ -221,7 +200,7 @@ public:
     tlsData->mModulesLoaded.clear();
 
     if (thisEvent.mModules.empty()) {
-      return; 
+      return;  
     }
 
     thisEvent.mThreadID = GetCurrentThreadId();
@@ -234,7 +213,8 @@ public:
     auto frames = MakeUnique<void*[]>(kMaxFrames);
 
     
-    USHORT frameCount = CaptureStackBackTrace(1, kMaxFrames, frames.get(), nullptr);
+    USHORT frameCount =
+        CaptureStackBackTrace(1, kMaxFrames, frames.get(), nullptr);
     if (thisEvent.mStack.reserve(frameCount)) {
       for (size_t i = 0; i < frameCount; ++i) {
         Unused << thisEvent.mStack.append((uintptr_t)frames[i]);
@@ -248,8 +228,8 @@ public:
   }
 
   
-  bool TakePendingEvents(Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy>& aOut)
-  {
+  bool TakePendingEvents(
+      Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy>& aOut) {
     
     RefPtr<UntrustedDllsHandlerImpl> refHolder(this);
     if (!refHolder) {
@@ -266,25 +246,15 @@ Atomic<bool> UntrustedDllsHandlerImpl::sInstanceHasBeenSet;
 StaticRefPtr<UntrustedDllsHandlerImpl> UntrustedDllsHandlerImpl::sInstance;
 
 
-void
-UntrustedDllsHandler::Init()
-{
-  Unused << sTlsData.init();
-}
+void UntrustedDllsHandler::Init() { Unused << sTlsData.init(); }
 
 #ifdef DEBUG
 
-void
-UntrustedDllsHandler::Shutdown()
-{
-  UntrustedDllsHandlerImpl::Shutdown();
-}
-#endif 
+void UntrustedDllsHandler::Shutdown() { UntrustedDllsHandlerImpl::Shutdown(); }
+#endif  
 
 
-void
-UntrustedDllsHandler::EnterLoaderCall()
-{
+void UntrustedDllsHandler::EnterLoaderCall() {
   if (!sTlsData.initialized()) {
     return;
   }
@@ -295,9 +265,7 @@ UntrustedDllsHandler::EnterLoaderCall()
 }
 
 
-void
-UntrustedDllsHandler::ExitLoaderCall()
-{
+void UntrustedDllsHandler::ExitLoaderCall() {
   if (!sTlsData.initialized()) {
     return;
   }
@@ -308,10 +276,8 @@ UntrustedDllsHandler::ExitLoaderCall()
 }
 
 
-void
-UntrustedDllsHandler::OnAfterModuleLoad(uintptr_t aBaseAddr,
-                                        PUNICODE_STRING aLdrModuleName)
-{
+void UntrustedDllsHandler::OnAfterModuleLoad(uintptr_t aBaseAddr,
+                                             PUNICODE_STRING aLdrModuleName) {
   RefPtr<UntrustedDllsHandlerImpl> p(UntrustedDllsHandlerImpl::GetInstance());
   if (!p) {
     return;
@@ -341,10 +307,8 @@ UntrustedDllsHandler::OnAfterModuleLoad(uintptr_t aBaseAddr,
 }
 
 
-bool
-UntrustedDllsHandler::TakePendingEvents(
-    Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy>& aOut)
-{
+bool UntrustedDllsHandler::TakePendingEvents(
+    Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy>& aOut) {
   RefPtr<UntrustedDllsHandlerImpl> p(UntrustedDllsHandlerImpl::GetInstance());
   if (!p) {
     return false;
@@ -352,5 +316,5 @@ UntrustedDllsHandler::TakePendingEvents(
   return p->TakePendingEvents(aOut);
 }
 
-} 
-} 
+}  
+}  

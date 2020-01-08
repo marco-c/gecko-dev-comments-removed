@@ -15,30 +15,25 @@ namespace recordreplay {
 
 
 
-class BufferStream
-{
+class BufferStream {
   InfallibleVector<char>* mOutput;
 
   const char* mInput;
   size_t mInputSize;
 
-public:
+ public:
   BufferStream(const char* aInput, size_t aInputSize)
-    : mOutput(nullptr), mInput(aInput), mInputSize(aInputSize)
-  {}
+      : mOutput(nullptr), mInput(aInput), mInputSize(aInputSize) {}
 
   explicit BufferStream(InfallibleVector<char>* aOutput)
-    : mOutput(aOutput), mInput(nullptr), mInputSize(0)
-  {}
+      : mOutput(aOutput), mInput(nullptr), mInputSize(0) {}
 
   void WriteBytes(const void* aData, size_t aSize) {
     MOZ_RELEASE_ASSERT(mOutput);
-    mOutput->append((char*) aData, aSize);
+    mOutput->append((char*)aData, aSize);
   }
 
-  void WriteScalar(size_t aValue) {
-    WriteBytes(&aValue, sizeof(aValue));
-  }
+  void WriteScalar(size_t aValue) { WriteBytes(&aValue, sizeof(aValue)); }
 
   void ReadBytes(void* aData, size_t aSize) {
     if (aSize) {
@@ -62,7 +57,7 @@ public:
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

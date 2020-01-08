@@ -20,13 +20,12 @@
 
 
 
-class nsPrintfCString : public nsAutoCStringN<16>
-{
+class nsPrintfCString : public nsAutoCStringN<16> {
   typedef nsCString string_type;
 
-public:
-  explicit nsPrintfCString(const char_type* aFormat, ...) MOZ_FORMAT_PRINTF(2, 3)
-  {
+ public:
+  explicit nsPrintfCString(const char_type* aFormat, ...)
+      MOZ_FORMAT_PRINTF(2, 3) {
     va_list ap;
     va_start(ap, aFormat);
     AppendPrintf(aFormat, ap);
@@ -34,4 +33,4 @@ public:
   }
 };
 
-#endif 
+#endif  

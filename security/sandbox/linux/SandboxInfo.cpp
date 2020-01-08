@@ -41,12 +41,9 @@
 
 
 
-
 namespace mozilla {
 
-static bool
-HasSeccompBPF()
-{
+static bool HasSeccompBPF() {
   
   if (getenv("MOZ_FAKE_NO_SANDBOX")) {
     return false;
@@ -55,11 +52,11 @@ HasSeccompBPF()
   
   
   
-# if defined(MOZ_VALGRIND)
+#if defined(MOZ_VALGRIND)
   if (RUNNING_ON_VALGRIND) {
     return false;
   }
-# endif
+#endif
 
   
   
@@ -67,15 +64,14 @@ HasSeccompBPF()
   
 
   int rv = prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, nullptr);
-  MOZ_DIAGNOSTIC_ASSERT(rv == -1, "prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER,"
+  MOZ_DIAGNOSTIC_ASSERT(rv == -1,
+                        "prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER,"
                         " nullptr) didn't fail");
   MOZ_DIAGNOSTIC_ASSERT(errno == EFAULT || errno == EINVAL);
   return rv == -1 && errno == EFAULT;
 }
 
-static bool
-HasSeccompTSync()
-{
+static bool HasSeccompTSync() {
   
   
   if (getenv("MOZ_FAKE_NO_SECCOMP_TSYNC")) {
@@ -83,15 +79,14 @@ HasSeccompTSync()
   }
   int rv = syscall(__NR_seccomp, SECCOMP_SET_MODE_FILTER,
                    SECCOMP_FILTER_FLAG_TSYNC, nullptr);
-  MOZ_DIAGNOSTIC_ASSERT(rv == -1, "seccomp(..., SECCOMP_FILTER_FLAG_TSYNC,"
+  MOZ_DIAGNOSTIC_ASSERT(rv == -1,
+                        "seccomp(..., SECCOMP_FILTER_FLAG_TSYNC,"
                         " nullptr) didn't fail");
   MOZ_DIAGNOSTIC_ASSERT(errno == EFAULT || errno == EINVAL || errno == ENOSYS);
   return rv == -1 && errno == EFAULT;
 }
 
-static bool
-HasUserNamespaceSupport()
-{
+static bool HasUserNamespaceSupport() {
   
   
   
@@ -102,10 +97,10 @@ HasUserNamespaceSupport()
   
   
   static const char* const paths[] = {
-    "/proc/self/ns/user",
-    "/proc/self/ns/pid",
-    "/proc/self/ns/net",
-    "/proc/self/ns/ipc",
+      "/proc/self/ns/user",
+      "/proc/self/ns/pid",
+      "/proc/self/ns/net",
+      "/proc/self/ns/ipc",
   };
   for (size_t i = 0; i < ArrayLength(paths); ++i) {
     if (access(paths[i], F_OK) == -1) {
@@ -116,9 +111,7 @@ HasUserNamespaceSupport()
   return true;
 }
 
-static bool
-CanCreateUserNamespace()
-{
+static bool CanCreateUserNamespace() {
   
   
   
@@ -149,9 +142,9 @@ CanCreateUserNamespace()
   }
   if (pid == -1) {
     
-    MOZ_ASSERT(errno == EINVAL || 
-               errno == EPERM  || 
-               errno == EUSERS);  
+    MOZ_ASSERT(errno == EINVAL ||  
+               errno == EPERM ||   
+               errno == EUSERS);   
     setenv(kCacheEnvName, "0", 1);
     return false;
   }
@@ -209,4 +202,4 @@ SandboxInfo::SandboxInfo() {
   mFlags = static_cast<Flags>(flags);
 }
 
-} 
+}  

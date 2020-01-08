@@ -27,17 +27,16 @@ namespace dom {
 
 class XBLChildrenElement;
 
-} 
-} 
+}  
+}  
 
 class nsAnonymousContentList;
 
 
 
 
-class nsXBLBinding final
-{
-public:
+class nsXBLBinding final {
+ public:
   explicit nsXBLBinding(nsXBLPrototypeBinding* aProtoBinding);
 
   
@@ -59,7 +58,7 @@ public:
   nsXBLBinding* GetBindingWithContent();
 
   nsXBLBinding* GetBaseBinding() const { return mNextBinding; }
-  void SetBaseBinding(nsXBLBinding *aBinding);
+  void SetBaseBinding(nsXBLBinding* aBinding);
 
   mozilla::dom::Element* GetBoundElement() { return mBoundElement; }
   void SetBoundElement(mozilla::dom::Element* aElement);
@@ -80,8 +79,7 @@ public:
 
   bool HasField(nsString& aName);
 
-protected:
-
+ protected:
   ~nsXBLBinding();
 
   
@@ -92,8 +90,7 @@ protected:
                             JS::MutableHandle<JS::PropertyDescriptor> aDesc,
                             JS::Handle<JSObject*> aXBLScope);
 
-public:
-
+ public:
   void MarkForDeath();
   bool MarkedForDeath() const { return mMarkedForDeath; }
 
@@ -119,17 +116,16 @@ public:
 
   
   
-  bool ResolveAllFields(JSContext *cx, JS::Handle<JSObject*> obj) const;
+  bool ResolveAllFields(JSContext* cx, JS::Handle<JSObject*> obj) const;
 
   void AttributeChanged(nsAtom* aAttribute, int32_t aNameSpaceID,
                         bool aRemoveFlag, bool aNotify);
 
   void ChangeDocument(nsIDocument* aOldDocument, nsIDocument* aNewDocument);
 
-
   const RawServoAuthorStyles* GetServoStyles() const;
 
-  static nsresult DoInitJSClass(JSContext *cx, JS::Handle<JSObject*> obj,
+  static nsresult DoInitJSClass(JSContext* cx, JS::Handle<JSObject*> obj,
                                 const nsString& aClassName,
                                 nsXBLPrototypeBinding* aProtoBinding,
                                 JS::MutableHandle<JSObject*> aClassObject,
@@ -139,13 +135,9 @@ public:
 
   mozilla::dom::XBLChildrenElement* FindInsertionPointFor(nsIContent* aChild);
 
-  bool HasFilteredInsertionPoints()
-  {
-    return !mInsertionPoints.IsEmpty();
-  }
+  bool HasFilteredInsertionPoints() { return !mInsertionPoints.IsEmpty(); }
 
-  mozilla::dom::XBLChildrenElement* GetDefaultInsertionPoint()
-  {
+  mozilla::dom::XBLChildrenElement* GetDefaultInsertionPoint() {
     return mDefaultInsertionPoint;
   }
 
@@ -156,19 +148,22 @@ public:
   
   nsAnonymousContentList* GetAnonymousNodeList();
 
- nsIURI* GetSourceDocURI();
+  nsIURI* GetSourceDocURI();
 
-
-protected:
-
+  
+ protected:
   bool mMarkedForDeath;
   bool mUsingContentXBLScope;
 
-  nsXBLPrototypeBinding* mPrototypeBinding; 
-  nsCOMPtr<nsIContent> mContent; 
-  RefPtr<nsXBLBinding> mNextBinding; 
+  nsXBLPrototypeBinding*
+      mPrototypeBinding;  
+  nsCOMPtr<nsIContent>
+      mContent;  
+  RefPtr<nsXBLBinding> mNextBinding;  
+                                      
 
-  mozilla::dom::Element* mBoundElement; 
+  mozilla::dom::Element*
+      mBoundElement;  
 
   
   
@@ -180,7 +175,8 @@ protected:
   nsTArray<RefPtr<mozilla::dom::XBLChildrenElement> > mInsertionPoints;
   RefPtr<nsAnonymousContentList> mAnonymousContentList;
 
-  mozilla::dom::XBLChildrenElement* FindInsertionPointForInternal(nsIContent* aChild);
+  mozilla::dom::XBLChildrenElement* FindInsertionPointForInternal(
+      nsIContent* aChild);
 };
 
-#endif 
+#endif  

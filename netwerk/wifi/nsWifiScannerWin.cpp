@@ -25,44 +25,42 @@ using namespace mozilla;
 
 
 
-nsresult
-nsWifiMonitor::DoScan()
-{
+nsresult nsWifiMonitor::DoScan() {
+  if (!mWinWifiScanner) {
+    mWinWifiScanner = new WinWifiScanner();
     if (!mWinWifiScanner) {
-      mWinWifiScanner = new WinWifiScanner();
-      if (!mWinWifiScanner) {
-        
-        return NS_ERROR_FAILURE;
-      }
+      
+      return NS_ERROR_FAILURE;
     }
+  }
+
+  
+
+  nsCOMArray<nsWifiAccessPoint> lastAccessPoints;
+  nsCOMArray<nsWifiAccessPoint> accessPoints;
+
+  do {
+    accessPoints.Clear();
+    nsresult rv = mWinWifiScanner->GetAccessPointsFromWLAN(accessPoints);
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
+
+    bool accessPointsChanged =
+        !AccessPointsEqual(accessPoints, lastAccessPoints);
+    ReplaceArray(lastAccessPoints, accessPoints);
+
+    rv = CallWifiListeners(lastAccessPoints, accessPointsChanged);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
+    LOG(("waiting on monitor\n"));
 
-    nsCOMArray<nsWifiAccessPoint> lastAccessPoints;
-    nsCOMArray<nsWifiAccessPoint> accessPoints;
-
-    do {
-      accessPoints.Clear();
-      nsresult rv = mWinWifiScanner->GetAccessPointsFromWLAN(accessPoints);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-
-      bool accessPointsChanged = !AccessPointsEqual(accessPoints, lastAccessPoints);
-      ReplaceArray(lastAccessPoints, accessPoints);
-
-      rv = CallWifiListeners(lastAccessPoints, accessPointsChanged);
-      NS_ENSURE_SUCCESS(rv, rv);
-
-      
-      LOG(("waiting on monitor\n"));
-
-      ReentrantMonitorAutoEnter mon(mReentrantMonitor);
-      if (mKeepGoing) {
-          mon.Wait(PR_SecondsToInterval(kDefaultWifiScanInterval));
-      }
+    ReentrantMonitorAutoEnter mon(mReentrantMonitor);
+    if (mKeepGoing) {
+      mon.Wait(PR_SecondsToInterval(kDefaultWifiScanInterval));
     }
-    while (mKeepGoing);
+  } while (mKeepGoing);
 
-    return NS_OK;
+  return NS_OK;
 }

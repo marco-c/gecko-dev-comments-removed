@@ -37,12 +37,12 @@
 
 
 
-template<typename CharT>
+template <typename CharT>
 class nsLineBuffer {
-  public:
-    nsLineBuffer() : start(buf), end(buf) { }
+ public:
+  nsLineBuffer() : start(buf), end(buf) {}
 
-  CharT buf[kLineBufferSize+1];
+  CharT buf[kLineBufferSize + 1];
   CharT* start;
   CharT* end;
 };
@@ -69,17 +69,15 @@ class nsLineBuffer {
 
 
 
-template<typename CharT, class StreamType, class StringType>
-nsresult
-NS_ReadLine (StreamType* aStream, nsLineBuffer<CharT> * aBuffer,
-             StringType & aLine, bool *more)
-{
-  CharT eolchar = 0; 
+template <typename CharT, class StreamType, class StringType>
+nsresult NS_ReadLine(StreamType* aStream, nsLineBuffer<CharT>* aBuffer,
+                     StringType& aLine, bool* more) {
+  CharT eolchar = 0;  
 
   aLine.Truncate();
 
-  while (true) { 
-    if (aBuffer->start == aBuffer->end) { 
+  while (true) {  
+    if (aBuffer->start == aBuffer->end) {  
       uint32_t bytesRead;
       nsresult rv = aStream->Read(aBuffer->buf, kLineBufferSize, &bytesRead);
       if (NS_FAILED(rv) || MOZ_UNLIKELY(bytesRead == 0)) {
@@ -103,7 +101,7 @@ NS_ReadLine (StreamType* aStream, nsLineBuffer<CharT> * aBuffer,
 
     CharT* current = aBuffer->start;
     if (MOZ_LIKELY(eolchar == 0)) {
-      for ( ; current < aBuffer->end; ++current) {
+      for (; current < aBuffer->end; ++current) {
         if (*current == '\n' || *current == '\r') {
           eolchar = *current;
           *current++ = '\0';
@@ -113,7 +111,7 @@ NS_ReadLine (StreamType* aStream, nsLineBuffer<CharT> * aBuffer,
       }
     }
     if (MOZ_LIKELY(eolchar != 0)) {
-      for ( ; current < aBuffer->end; ++current) {
+      for (; current < aBuffer->end; ++current) {
         if ((eolchar == '\r' && *current == '\n') ||
             (eolchar == '\n' && *current == '\r')) {
           eolchar = 1;
@@ -125,10 +123,9 @@ NS_ReadLine (StreamType* aStream, nsLineBuffer<CharT> * aBuffer,
       }
     }
 
-    if (eolchar == 0)
-      aLine.Append(aBuffer->start);
-    aBuffer->start = aBuffer->end; 
+    if (eolchar == 0) aLine.Append(aBuffer->start);
+    aBuffer->start = aBuffer->end;  
   }
 }
 
-#endif 
+#endif  

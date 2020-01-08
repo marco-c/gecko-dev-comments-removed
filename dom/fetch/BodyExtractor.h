@@ -16,9 +16,8 @@ class nsIGlobalObject;
 namespace mozilla {
 namespace dom {
 
-class BodyExtractorBase
-{
-public:
+class BodyExtractorBase {
+ public:
   virtual nsresult GetAsStream(nsIInputStream** aResult,
                                uint64_t* aContentLength,
                                nsACString& aContentTypeWithCharset,
@@ -28,21 +27,19 @@ public:
 
 
 
-template<typename Type>
-class BodyExtractor final : public BodyExtractorBase
-{
+template <typename Type>
+class BodyExtractor final : public BodyExtractorBase {
   Type* mBody;
-public:
-  explicit BodyExtractor(Type* aBody) : mBody(aBody)
-  {}
 
-  nsresult GetAsStream(nsIInputStream** aResult,
-                       uint64_t* aContentLength,
+ public:
+  explicit BodyExtractor(Type* aBody) : mBody(aBody) {}
+
+  nsresult GetAsStream(nsIInputStream** aResult, uint64_t* aContentLength,
                        nsACString& aContentTypeWithCharset,
                        nsACString& aCharset) const override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

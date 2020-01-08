@@ -26,7 +26,7 @@ class GLContext;
 namespace layers {
 class CompositorBridgeParent;
 class SyncObjectHost;
-}
+}  
 
 namespace widget {
 class CompositorWidget;
@@ -42,15 +42,15 @@ class RenderTextureHost;
 
 
 
-class RendererOGL
-{
+class RendererOGL {
   friend wr::WrExternalImage LockExternalImage(void* aObj,
                                                wr::WrExternalImageId aId,
                                                uint8_t aChannelIndex,
                                                wr::ImageRendering);
-  friend void UnlockExternalImage(void* aObj, wr::WrExternalImageId aId, uint8_t aChannelIndex);
+  friend void UnlockExternalImage(void* aObj, wr::WrExternalImageId aId,
+                                  uint8_t aChannelIndex);
 
-public:
+ public:
   wr::WrExternalImageHandler GetExternalImageHandler();
 
   
@@ -59,8 +59,7 @@ public:
   
   bool UpdateAndRender(const Maybe<gfx::IntSize>& aReadbackSize,
                        const Maybe<Range<uint8_t>>& aReadbackBuffer,
-                       bool aHadSlowFrame,
-                       RendererStats* aOutStats);
+                       bool aHadSlowFrame, RendererStats* aOutStats);
 
   
   void WaitForGPU();
@@ -76,10 +75,8 @@ public:
 
   
   RendererOGL(RefPtr<RenderThread>&& aThread,
-              UniquePtr<RenderCompositor> aCompositor,
-              wr::WindowId aWindowId,
-              wr::Renderer* aRenderer,
-              layers::CompositorBridgeParent* aBridge);
+              UniquePtr<RenderCompositor> aCompositor, wr::WindowId aWindowId,
+              wr::Renderer* aRenderer, layers::CompositorBridgeParent* aBridge);
 
   
   void Pause();
@@ -104,7 +101,7 @@ public:
 
   gl::GLContext* gl() const;
 
-protected:
+ protected:
   void NotifyWebRenderError(WebRenderError aError);
 
   RefPtr<RenderThread> mThread;
@@ -115,7 +112,7 @@ protected:
   TimeStamp mFrameStartTime;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

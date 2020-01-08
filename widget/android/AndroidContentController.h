@@ -18,32 +18,33 @@ namespace mozilla {
 namespace layers {
 class APZEventState;
 class IAPZCTreeManager;
-}
+}  
 namespace widget {
 
 class AndroidContentController final
-    : public mozilla::layers::ChromeProcessController
-{
-public:
-    AndroidContentController(nsWindow* aWindow,
-                             mozilla::layers::APZEventState* aAPZEventState,
-                             mozilla::layers::IAPZCTreeManager* aAPZCTreeManager)
-      : mozilla::layers::ChromeProcessController(aWindow, aAPZEventState, aAPZCTreeManager)
-      , mAndroidWindow(aWindow)
-    {}
+    : public mozilla::layers::ChromeProcessController {
+ public:
+  AndroidContentController(nsWindow* aWindow,
+                           mozilla::layers::APZEventState* aAPZEventState,
+                           mozilla::layers::IAPZCTreeManager* aAPZCTreeManager)
+      : mozilla::layers::ChromeProcessController(aWindow, aAPZEventState,
+                                                 aAPZCTreeManager),
+        mAndroidWindow(aWindow) {}
 
-    
-    virtual void Destroy() override;
-    void UpdateOverscrollVelocity(const float aX, const float aY, const bool aIsRootContent) override;
-    void UpdateOverscrollOffset(const float aX, const float aY, const bool aIsRootContent) override;
-    void NotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
-                              APZStateChange aChange,
-                              int aArg) override;
-private:
-    nsWindow* mAndroidWindow;
+  
+  virtual void Destroy() override;
+  void UpdateOverscrollVelocity(const float aX, const float aY,
+                                const bool aIsRootContent) override;
+  void UpdateOverscrollOffset(const float aX, const float aY,
+                              const bool aIsRootContent) override;
+  void NotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
+                            APZStateChange aChange, int aArg) override;
+
+ private:
+  nsWindow* mAndroidWindow;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

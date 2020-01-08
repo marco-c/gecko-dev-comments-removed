@@ -37,7 +37,7 @@ extern bool gXPCOMThreadsShutDown;
 #include "nsStringFwd.h"
 namespace mozilla {
 struct Module;
-} 
+}  
 #endif
 
 
@@ -73,8 +73,7 @@ struct Module;
 
 
 XPCOM_API(nsresult)
-NS_InitXPCOM2(nsIServiceManager** aResult,
-              nsIFile* aBinDirectory,
+NS_InitXPCOM2(nsIServiceManager** aResult, nsIFile* aBinDirectory,
               nsIDirectoryServiceProvider* aAppFileLocationProvider);
 
 
@@ -104,7 +103,6 @@ XPCOM_API(nsresult) NS_ShutdownXPCOM(nsIServiceManager* aServMgr);
 
 
 
-
 XPCOM_API(nsresult) NS_GetServiceManager(nsIServiceManager** aResult);
 
 
@@ -116,7 +114,6 @@ XPCOM_API(nsresult) NS_GetServiceManager(nsIServiceManager** aResult);
 
 
 XPCOM_API(nsresult) NS_GetComponentManager(nsIComponentManager** aResult);
-
 
 
 
@@ -161,21 +158,19 @@ XPCOM_API(nsresult) NS_GetMemoryManager(nsIMemory** aResult);
 
 #ifdef __cplusplus
 
-XPCOM_API(nsresult) NS_NewLocalFile(const nsAString& aPath,
-                                    bool aFollowLinks,
-                                    nsIFile** aResult);
+XPCOM_API(nsresult)
+NS_NewLocalFile(const nsAString& aPath, bool aFollowLinks, nsIFile** aResult);
 
-XPCOM_API(nsresult) NS_NewNativeLocalFile(const nsACString& aPath,
-                                          bool aFollowLinks,
-                                          nsIFile** aResult);
+XPCOM_API(nsresult)
+NS_NewNativeLocalFile(const nsACString& aPath, bool aFollowLinks,
+                      nsIFile** aResult);
 
 
 
 
 class NS_ConvertUTF16toUTF8;
 nsresult NS_NewNativeLocalFile(const NS_ConvertUTF16toUTF8& aPath,
-                               bool aFollowLinks,
-                               nsIFile** aResult) = delete;
+                               bool aFollowLinks, nsIFile** aResult) = delete;
 
 #endif
 
@@ -183,8 +178,7 @@ nsresult NS_NewNativeLocalFile(const NS_ConvertUTF16toUTF8& aPath,
 
 
 
-enum
-{
+enum {
   NS_DEBUG_WARNING = 0,
   NS_DEBUG_ASSERTION = 1,
   NS_DEBUG_BREAK = 2,
@@ -206,9 +200,9 @@ enum
 
 
 
-XPCOM_API(void) NS_DebugBreak(uint32_t aSeverity,
-                              const char* aStr, const char* aExpr,
-                              const char* aFile, int32_t aLine);
+XPCOM_API(void)
+NS_DebugBreak(uint32_t aSeverity, const char* aStr, const char* aExpr,
+              const char* aFile, int32_t aLine);
 
 
 
@@ -236,18 +230,11 @@ XPCOM_API(void) NS_LogTerm();
 
 
 
-class ScopedLogging
-{
-public:
-    ScopedLogging()
-    {
-        NS_LogInit();
-    }
+class ScopedLogging {
+ public:
+  ScopedLogging() { NS_LogInit(); }
 
-    ~ScopedLogging()
-    {
-        NS_LogTerm();
-    }
+  ~ScopedLogging() { NS_LogTerm(); }
 };
 #endif
 
@@ -261,13 +248,11 @@ public:
 
 
 
-XPCOM_API(void) NS_LogCtor(void* aPtr, const char* aTypeName,
-                           uint32_t aInstanceSize);
+XPCOM_API(void)
+NS_LogCtor(void* aPtr, const char* aTypeName, uint32_t aInstanceSize);
 
-XPCOM_API(void) NS_LogDtor(void* aPtr, const char* aTypeName,
-                           uint32_t aInstanceSize);
-
-
+XPCOM_API(void)
+NS_LogDtor(void* aPtr, const char* aTypeName, uint32_t aInstanceSize);
 
 
 
@@ -277,11 +262,14 @@ XPCOM_API(void) NS_LogDtor(void* aPtr, const char* aTypeName,
 
 
 
-XPCOM_API(void) NS_LogAddRef(void* aPtr, nsrefcnt aNewRefCnt,
-                             const char* aTypeName, uint32_t aInstanceSize);
 
-XPCOM_API(void) NS_LogRelease(void* aPtr, nsrefcnt aNewRefCnt,
-                              const char* aTypeName);
+
+XPCOM_API(void)
+NS_LogAddRef(void* aPtr, nsrefcnt aNewRefCnt, const char* aTypeName,
+             uint32_t aInstanceSize);
+
+XPCOM_API(void)
+NS_LogRelease(void* aPtr, nsrefcnt aNewRefCnt, const char* aTypeName);
 
 
 
@@ -308,10 +296,10 @@ XPCOM_API(void) NS_LogCOMPtrRelease(void* aCOMPtr, nsISupports* aObject);
 class nsCycleCollectionParticipant;
 class nsCycleCollectingAutoRefCnt;
 
-XPCOM_API(void) NS_CycleCollectorSuspect3(void* aPtr,
-                                          nsCycleCollectionParticipant* aCp,
-                                          nsCycleCollectingAutoRefCnt* aRefCnt,
-                                          bool* aShouldDelete);
+XPCOM_API(void)
+NS_CycleCollectorSuspect3(void* aPtr, nsCycleCollectionParticipant* aCp,
+                          nsCycleCollectingAutoRefCnt* aRefCnt,
+                          bool* aShouldDelete);
 
 XPCOM_API(void)
 NS_CycleCollectorSuspectUsingNursery(void* aPtr,
@@ -353,7 +341,6 @@ NS_CycleCollectorSuspectUsingNursery(void* aPtr,
 
 
 
-
 #define NS_XPCOM_STARTUP_OBSERVER_ID "xpcom-startup"
 
 
@@ -376,8 +363,7 @@ NS_CycleCollectorSuspectUsingNursery(void* aPtr,
 
 
 
-#define NS_XPCOM_CATEGORY_ENTRY_ADDED_OBSERVER_ID \
-  "xpcom-category-entry-added"
+#define NS_XPCOM_CATEGORY_ENTRY_ADDED_OBSERVER_ID "xpcom-category-entry-added"
 
 
 

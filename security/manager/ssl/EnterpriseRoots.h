@@ -11,15 +11,16 @@
 #include "ScopedNSSTypes.h"
 
 #ifdef XP_WIN
-#include "windows.h" 
+#include "windows.h"  
 #include "wincrypt.h"
-#endif 
+#endif  
 
 nsresult GatherEnterpriseRoots(mozilla::UniqueCERTCertList& result);
 
 #ifdef XP_WIN
 
-mozilla::UniqueCERTCertificate PCCERT_CONTEXTToCERTCertificate(PCCERT_CONTEXT pccert);
+mozilla::UniqueCERTCertificate PCCERT_CONTEXTToCERTCertificate(
+    PCCERT_CONTEXT pccert);
 
 extern const wchar_t* kWindowsDefaultRootStoreName;
 extern const nsLiteralCString kMicrosoftFamilySafetyCN;
@@ -28,27 +29,20 @@ extern const nsLiteralCString kMicrosoftFamilySafetyCN;
 
 
 
-class ScopedCertStore final
-{
-public:
+class ScopedCertStore final {
+ public:
   explicit ScopedCertStore(HCERTSTORE certstore) : certstore(certstore) {}
 
-  ~ScopedCertStore()
-  {
-    CertCloseStore(certstore, 0);
-  }
+  ~ScopedCertStore() { CertCloseStore(certstore, 0); }
 
-  HCERTSTORE get()
-  {
-    return certstore;
-  }
+  HCERTSTORE get() { return certstore; }
 
-private:
+ private:
   ScopedCertStore(const ScopedCertStore&) = delete;
   ScopedCertStore& operator=(const ScopedCertStore&) = delete;
   HCERTSTORE certstore;
 };
 
-#endif 
+#endif  
 
-#endif 
+#endif  

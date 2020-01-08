@@ -16,31 +16,28 @@
 
 using namespace mozilla::pkix;
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
 static LazyLogModule gTrustDomainPRLog("CSTrustDomain");
 #define CSTrust_LOG(args) MOZ_LOG(gTrustDomainPRLog, LogLevel::Debug, args)
 
 CSTrustDomain::CSTrustDomain(UniqueCERTCertList& certChain)
-  : mCertChain(certChain)
-  , mCertBlocklist(do_GetService(NS_CERTBLOCKLIST_CONTRACTID))
-{
-}
+    : mCertChain(certChain),
+      mCertBlocklist(do_GetService(NS_CERTBLOCKLIST_CONTRACTID)) {}
 
-Result
-CSTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
-                            const CertPolicyId& policy, Input candidateCertDER,
-                             TrustLevel& trustLevel)
-{
+Result CSTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
+                                   const CertPolicyId& policy,
+                                   Input candidateCertDER,
+                                    TrustLevel& trustLevel) {
   MOZ_ASSERT(policy.IsAnyPolicy());
   if (!policy.IsAnyPolicy()) {
     return Result::FATAL_ERROR_INVALID_ARGS;
   }
 
   SECItem candidateCertDERSECItem = UnsafeMapInputToSECItem(candidateCertDER);
-  UniqueCERTCertificate candidateCert(
-    CERT_NewTempCertificate(CERT_GetDefaultCertDB(), &candidateCertDERSECItem,
-                            nullptr, false, true));
+  UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false, true));
   if (!candidateCert) {
     return MapPRErrorCodeToResult(PR_GetError());
   }
@@ -50,14 +47,15 @@ CSTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   nsAutoCString encSubject;
   nsAutoCString encPubKey;
 
-  nsresult nsrv = BuildRevocationCheckStrings(candidateCert.get(), encIssuer, encSerial, encSubject, encPubKey);
+  nsresult nsrv = BuildRevocationCheckStrings(candidateCert.get(), encIssuer,
+                                              encSerial, encSubject, encPubKey);
   if (NS_FAILED(nsrv)) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
 
   bool isCertRevoked;
-  nsrv = mCertBlocklist->IsCertRevoked(
-    encIssuer, encSerial, encSubject, encPubKey, &isCertRevoked);
+  nsrv = mCertBlocklist->IsCertRevoked(encIssuer, encSerial, encSubject,
+                                       encPubKey, &isCertRevoked);
   if (NS_FAILED(nsrv)) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
@@ -88,24 +86,22 @@ CSTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   return Success;
 }
 
-Result
-CSTrustDomain::FindIssuer(Input encodedIssuerName, IssuerChecker& checker,
-                          Time time)
-{
+Result CSTrustDomain::FindIssuer(Input encodedIssuerName,
+                                 IssuerChecker& checker, Time time) {
   
   for (CERTCertListNode* n = CERT_LIST_HEAD(mCertChain);
-      !CERT_LIST_END(n, mCertChain); n = CERT_LIST_NEXT(n)) {
+       !CERT_LIST_END(n, mCertChain); n = CERT_LIST_NEXT(n)) {
     Input certDER;
     Result rv = certDER.Init(n->cert->derCert.data, n->cert->derCert.len);
     if (rv != Success) {
-      continue; 
+      continue;  
     }
 
     
     Input subjectDER;
     rv = subjectDER.Init(n->cert->derSubject.data, n->cert->derSubject.len);
     if (rv != Success) {
-      continue; 
+      continue;  
     }
     if (!InputsAreEqual(subjectDER, encodedIssuerName)) {
       CSTrust_LOG(("CSTrustDomain: subjects don't match\n"));
@@ -114,7 +110,7 @@ CSTrustDomain::FindIssuer(Input encodedIssuerName, IssuerChecker& checker,
 
     
     bool keepGoing;
-    rv = checker.Check(certDER, nullptr,
+    rv = checker.Check(certDER, nullptr ,
                        keepGoing);
     if (rv != Success) {
       return rv;
@@ -128,22 +124,18 @@ CSTrustDomain::FindIssuer(Input encodedIssuerName, IssuerChecker& checker,
   return Success;
 }
 
-Result
-CSTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
-                               const CertID& certID, Time time,
-                               Duration validityDuration,
-                                const Input* stapledOCSPresponse,
-                                const Input* aiaExtension)
-{
+Result CSTrustDomain::CheckRevocation(
+    EndEntityOrCA endEntityOrCA, const CertID& certID, Time time,
+    Duration validityDuration,
+     const Input* stapledOCSPresponse,
+     const Input* aiaExtension) {
   
   
   return Success;
 }
 
-Result
-CSTrustDomain::IsChainValid(const DERArray& certChain, Time time,
-                            const CertPolicyId& requiredPolicy)
-{
+Result CSTrustDomain::IsChainValid(const DERArray& certChain, Time time,
+                                   const CertPolicyId& requiredPolicy) {
   MOZ_ASSERT(requiredPolicy.IsAnyPolicy());
   
   if (certChain.GetLength() == 0) {
@@ -153,42 +145,34 @@ CSTrustDomain::IsChainValid(const DERArray& certChain, Time time,
   return Success;
 }
 
-Result
-CSTrustDomain::CheckSignatureDigestAlgorithm(DigestAlgorithm digestAlg,
-                                             EndEntityOrCA endEntityOrCA,
-                                             Time notBefore)
-{
+Result CSTrustDomain::CheckSignatureDigestAlgorithm(DigestAlgorithm digestAlg,
+                                                    EndEntityOrCA endEntityOrCA,
+                                                    Time notBefore) {
   if (digestAlg == DigestAlgorithm::sha1) {
     return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
   }
   return Success;
 }
 
-Result
-CSTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
-  EndEntityOrCA endEntityOrCA, unsigned int modulusSizeInBits)
-{
+Result CSTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
+    EndEntityOrCA endEntityOrCA, unsigned int modulusSizeInBits) {
   if (modulusSizeInBits < 2048) {
     return Result::ERROR_INADEQUATE_KEY_SIZE;
   }
   return Success;
 }
 
-Result
-CSTrustDomain::VerifyRSAPKCS1SignedDigest(const SignedDigest& signedDigest,
-                                          Input subjectPublicKeyInfo)
-{
+Result CSTrustDomain::VerifyRSAPKCS1SignedDigest(
+    const SignedDigest& signedDigest, Input subjectPublicKeyInfo) {
   return VerifyRSAPKCS1SignedDigestNSS(signedDigest, subjectPublicKeyInfo,
                                        nullptr);
 }
 
-Result
-CSTrustDomain::CheckECDSACurveIsAcceptable(EndEntityOrCA endEntityOrCA,
-                                           NamedCurve curve)
-{
+Result CSTrustDomain::CheckECDSACurveIsAcceptable(EndEntityOrCA endEntityOrCA,
+                                                  NamedCurve curve) {
   switch (curve) {
-    case NamedCurve::secp256r1: 
-    case NamedCurve::secp384r1: 
+    case NamedCurve::secp256r1:  
+    case NamedCurve::secp384r1:  
     case NamedCurve::secp521r1:
       return Success;
   }
@@ -196,41 +180,32 @@ CSTrustDomain::CheckECDSACurveIsAcceptable(EndEntityOrCA endEntityOrCA,
   return Result::ERROR_UNSUPPORTED_ELLIPTIC_CURVE;
 }
 
-Result
-CSTrustDomain::VerifyECDSASignedDigest(const SignedDigest& signedDigest,
-                                       Input subjectPublicKeyInfo)
-{
+Result CSTrustDomain::VerifyECDSASignedDigest(const SignedDigest& signedDigest,
+                                              Input subjectPublicKeyInfo) {
   return VerifyECDSASignedDigestNSS(signedDigest, subjectPublicKeyInfo,
                                     nullptr);
 }
 
-Result
-CSTrustDomain::CheckValidityIsAcceptable(Time notBefore, Time notAfter,
-                                         EndEntityOrCA endEntityOrCA,
-                                         KeyPurposeId keyPurpose)
-{
+Result CSTrustDomain::CheckValidityIsAcceptable(Time notBefore, Time notAfter,
+                                                EndEntityOrCA endEntityOrCA,
+                                                KeyPurposeId keyPurpose) {
   return Success;
 }
 
-Result
-CSTrustDomain::NetscapeStepUpMatchesServerAuth(Time notBefore,
-                                                bool& matches)
-{
+Result CSTrustDomain::NetscapeStepUpMatchesServerAuth(Time notBefore,
+                                                       bool& matches) {
   matches = false;
   return Success;
 }
 
-void
-CSTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension ,
-                                      Input )
-{
-}
+void CSTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension ,
+                                           Input ) {}
 
-Result
-CSTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
-                          uint8_t* digestBuf, size_t digestBufLen)
-{
+Result CSTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
+                                 uint8_t* digestBuf,
+                                size_t digestBufLen) {
   return DigestBufNSS(item, digestAlg, digestBuf, digestBufLen);
 }
 
-} } 
+}  
+}  

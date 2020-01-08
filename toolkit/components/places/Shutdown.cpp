@@ -12,10 +12,7 @@ uint16_t PlacesShutdownBlocker::sCounter = 0;
 Atomic<bool> PlacesShutdownBlocker::sIsStarted(false);
 
 PlacesShutdownBlocker::PlacesShutdownBlocker(const nsString& aName)
-  : mName(aName)
-  , mState(NOT_STARTED)
-  , mCounter(sCounter++)
-{
+    : mName(aName), mState(NOT_STARTED), mCounter(sCounter++) {
   MOZ_ASSERT(NS_IsMainThread());
   
   
@@ -24,7 +21,8 @@ PlacesShutdownBlocker::PlacesShutdownBlocker(const nsString& aName)
   }
   
   
-  nsCOMPtr<nsIAsyncShutdownService> asyncShutdown = services::GetAsyncShutdown();
+  nsCOMPtr<nsIAsyncShutdownService> asyncShutdown =
+      services::GetAsyncShutdown();
   MOZ_ASSERT(asyncShutdown);
   if (asyncShutdown) {
     nsCOMPtr<nsIAsyncShutdownBarrier> barrier;
@@ -32,27 +30,25 @@ PlacesShutdownBlocker::PlacesShutdownBlocker(const nsString& aName)
     MOZ_ALWAYS_SUCCEEDS(rv);
     if (NS_SUCCEEDED(rv) && barrier) {
       mBarrier = new nsMainThreadPtrHolder<nsIAsyncShutdownBarrier>(
-        "PlacesShutdownBlocker::mBarrier", barrier);
+          "PlacesShutdownBlocker::mBarrier", barrier);
     }
   }
 }
 
 
 NS_IMETHODIMP
-PlacesShutdownBlocker::GetName(nsAString& aName)
-{
+PlacesShutdownBlocker::GetName(nsAString& aName) {
   aName = mName;
   return NS_OK;
 }
 
 
 NS_IMETHODIMP
-PlacesShutdownBlocker::GetState(nsIPropertyBag** _state)
-{
+PlacesShutdownBlocker::GetState(nsIPropertyBag** _state) {
   NS_ENSURE_ARG_POINTER(_state);
 
   nsCOMPtr<nsIWritablePropertyBag2> bag =
-    do_CreateInstance("@mozilla.org/hash-property-bag;1");
+      do_CreateInstance("@mozilla.org/hash-property-bag;1");
   NS_ENSURE_TRUE(bag, NS_ERROR_OUT_OF_MEMORY);
   bag.forget(_state);
 
@@ -61,7 +57,7 @@ PlacesShutdownBlocker::GetState(nsIPropertyBag** _state)
   nsresult rv = progress->SetAsUint8(mState);
   if (NS_WARN_IF(NS_FAILED(rv))) return rv;
   rv = static_cast<nsIWritablePropertyBag2*>(*_state)->SetPropertyAsInterface(
-    NS_LITERAL_STRING("progress"), progress);
+      NS_LITERAL_STRING("progress"), progress);
   if (NS_WARN_IF(NS_FAILED(rv))) return rv;
 
   
@@ -78,15 +74,13 @@ PlacesShutdownBlocker::GetState(nsIPropertyBag** _state)
   rv = barrier->SetAsInterface(NS_GET_IID(nsIPropertyBag), barrierState);
   if (NS_WARN_IF(NS_FAILED(rv))) return rv;
   rv = static_cast<nsIWritablePropertyBag2*>(*_state)->SetPropertyAsInterface(
-    NS_LITERAL_STRING("Barrier"), barrier);
+      NS_LITERAL_STRING("Barrier"), barrier);
   if (NS_WARN_IF(NS_FAILED(rv))) return rv;
 
   return NS_OK;
 }
 
-already_AddRefed<nsIAsyncShutdownClient>
-PlacesShutdownBlocker::GetClient()
-{
+already_AddRefed<nsIAsyncShutdownClient> PlacesShutdownBlocker::GetClient() {
   nsCOMPtr<nsIAsyncShutdownClient> client;
   if (mBarrier) {
     MOZ_ALWAYS_SUCCEEDS(mBarrier->GetClient(getter_AddRefs(client)));
@@ -96,11 +90,10 @@ PlacesShutdownBlocker::GetClient()
 
 
 NS_IMETHODIMP
-PlacesShutdownBlocker::BlockShutdown(nsIAsyncShutdownClient* aParentClient)
-{
+PlacesShutdownBlocker::BlockShutdown(nsIAsyncShutdownClient* aParentClient) {
   MOZ_ASSERT(NS_IsMainThread());
   mParentClient = new nsMainThreadPtrHolder<nsIAsyncShutdownClient>(
-    "ClientsShutdownBlocker::mParentClient", aParentClient);
+      "ClientsShutdownBlocker::mParentClient", aParentClient);
   mState = RECEIVED_BLOCK_SHUTDOWN;
 
   if (NS_WARN_IF(!mBarrier)) {
@@ -116,30 +109,24 @@ PlacesShutdownBlocker::BlockShutdown(nsIAsyncShutdownClient* aParentClient)
 
 
 NS_IMETHODIMP
-PlacesShutdownBlocker::Done()
-{
+PlacesShutdownBlocker::Done() {
   MOZ_ASSERT(false, "Should always be overridden");
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(
-  PlacesShutdownBlocker,
-  nsIAsyncShutdownBlocker,
-  nsIAsyncShutdownCompletionCallback
-)
+NS_IMPL_ISUPPORTS(PlacesShutdownBlocker, nsIAsyncShutdownBlocker,
+                  nsIAsyncShutdownCompletionCallback)
 
 
 
 ClientsShutdownBlocker::ClientsShutdownBlocker()
-  : PlacesShutdownBlocker(NS_LITERAL_STRING("Places Clients shutdown"))
-{
+    : PlacesShutdownBlocker(NS_LITERAL_STRING("Places Clients shutdown")) {
   
 }
 
 
 NS_IMETHODIMP
-ClientsShutdownBlocker::Done()
-{
+ClientsShutdownBlocker::Done() {
   
   
   mState = RECEIVED_DONE;
@@ -157,16 +144,14 @@ ClientsShutdownBlocker::Done()
 
 
 ConnectionShutdownBlocker::ConnectionShutdownBlocker(Database* aDatabase)
-  : PlacesShutdownBlocker(NS_LITERAL_STRING("Places Connection shutdown"))
-  , mDatabase(aDatabase)
-{
+    : PlacesShutdownBlocker(NS_LITERAL_STRING("Places Connection shutdown")),
+      mDatabase(aDatabase) {
   
 }
 
 
 NS_IMETHODIMP
-ConnectionShutdownBlocker::Done()
-{
+ConnectionShutdownBlocker::Done() {
   
   
   mState = RECEIVED_DONE;
@@ -177,7 +162,8 @@ ConnectionShutdownBlocker::Done()
   
   
   
-  MOZ_ASSERT(Database::gDatabase == nullptr || Database::gDatabase == mDatabase);
+  MOZ_ASSERT(Database::gDatabase == nullptr ||
+             Database::gDatabase == mDatabase);
   Database::gDatabase = nullptr;
 
   
@@ -189,8 +175,7 @@ ConnectionShutdownBlocker::Done()
 
 
 NS_IMETHODIMP
-ConnectionShutdownBlocker::Complete(nsresult, nsISupports*)
-{
+ConnectionShutdownBlocker::Complete(nsresult, nsISupports*) {
   MOZ_ASSERT(NS_IsMainThread());
   mState = RECEIVED_STORAGESHUTDOWN_COMPLETE;
 
@@ -202,9 +187,8 @@ ConnectionShutdownBlocker::Complete(nsresult, nsISupports*)
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   MOZ_ASSERT(os);
   if (os) {
-    MOZ_ALWAYS_SUCCEEDS(os->NotifyObservers(nullptr,
-              TOPIC_PLACES_CONNECTION_CLOSED,
-              nullptr));
+    MOZ_ALWAYS_SUCCEEDS(
+        os->NotifyObservers(nullptr, TOPIC_PLACES_CONNECTION_CLOSED, nullptr));
   }
   mState = NOTIFIED_OBSERVERS_PLACES_CONNECTION_CLOSED;
 
@@ -217,11 +201,8 @@ ConnectionShutdownBlocker::Complete(nsresult, nsISupports*)
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS_INHERITED(
-  ConnectionShutdownBlocker,
-  PlacesShutdownBlocker,
-  mozIStorageCompletionCallback
-)
+NS_IMPL_ISUPPORTS_INHERITED(ConnectionShutdownBlocker, PlacesShutdownBlocker,
+                            mozIStorageCompletionCallback)
 
-} 
-} 
+}  
+}  

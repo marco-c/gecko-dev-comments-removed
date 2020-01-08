@@ -2,5 +2,4 @@
 
 
 
-void _dummy(void) {
-}
+void _dummy(void) {}

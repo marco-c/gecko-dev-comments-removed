@@ -14,72 +14,62 @@
 namespace mozilla {
 namespace gl {
 
-class GfxTexturesReporter final : public nsIMemoryReporter
-{
-    ~GfxTexturesReporter() {}
+class GfxTexturesReporter final : public nsIMemoryReporter {
+  ~GfxTexturesReporter() {}
 
-public:
-    NS_DECL_ISUPPORTS
+ public:
+  NS_DECL_ISUPPORTS
 
-    GfxTexturesReporter()
-    {
+  GfxTexturesReporter() {
 #ifdef DEBUG
-        
-        
-        static bool hasRun = false;
-        MOZ_ASSERT(!hasRun);
-        hasRun = true;
+    
+    
+    static bool hasRun = false;
+    MOZ_ASSERT(!hasRun);
+    hasRun = true;
 #endif
-    }
+  }
 
-    enum MemoryUse {
-        
-        MemoryAllocated,
-        
-        MemoryFreed
-    };
-
+  enum MemoryUse {
     
+    MemoryAllocated,
     
-    static void UpdateAmount(MemoryUse action, size_t amount);
+    MemoryFreed
+  };
 
-    static void UpdateWasteAmount(size_t delta) {
-      sTileWasteAmount += delta;
-    }
+  
+  
+  static void UpdateAmount(MemoryUse action, size_t amount);
 
-    NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
-                              nsISupports* aData, bool aAnonymize) override
-    {
-        MOZ_COLLECT_REPORT(
-            "gfx-tiles-waste", KIND_OTHER, UNITS_BYTES,
-            int64_t(sTileWasteAmount),
-            "Memory lost due to tiles extending past content boundaries");
+  static void UpdateWasteAmount(size_t delta) { sTileWasteAmount += delta; }
 
-        MOZ_COLLECT_REPORT(
-            "gfx-textures", KIND_OTHER, UNITS_BYTES,
-            int64_t(sAmount),
-            "Memory used for storing GL textures.");
+  NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
+                            nsISupports* aData, bool aAnonymize) override {
+    MOZ_COLLECT_REPORT(
+        "gfx-tiles-waste", KIND_OTHER, UNITS_BYTES, int64_t(sTileWasteAmount),
+        "Memory lost due to tiles extending past content boundaries");
 
-        MOZ_COLLECT_REPORT(
-            "gfx-textures-peak", KIND_OTHER, UNITS_BYTES,
-            int64_t(sPeakAmount),
-            "Peak memory used for storing GL textures.");
+    MOZ_COLLECT_REPORT("gfx-textures", KIND_OTHER, UNITS_BYTES,
+                       int64_t(sAmount),
+                       "Memory used for storing GL textures.");
 
-        return NS_OK;
-    }
+    MOZ_COLLECT_REPORT("gfx-textures-peak", KIND_OTHER, UNITS_BYTES,
+                       int64_t(sPeakAmount),
+                       "Peak memory used for storing GL textures.");
 
-private:
-    static Atomic<size_t> sAmount;
-    static Atomic<size_t> sPeakAmount;
-    
-    static Atomic<size_t> sTileWasteAmount;
+    return NS_OK;
+  }
+
+ private:
+  static Atomic<size_t> sAmount;
+  static Atomic<size_t> sPeakAmount;
+  
+  static Atomic<size_t> sTileWasteAmount;
 };
 
 class GfxTextureWasteTracker {
-public:
-  GfxTextureWasteTracker()
-    : mBytes(0)
-  {
+ public:
+  GfxTextureWasteTracker() : mBytes(0) {
     MOZ_COUNT_CTOR(GfxTextureWasteTracker);
   }
 
@@ -93,13 +83,14 @@ public:
     GfxTexturesReporter::UpdateWasteAmount(-mBytes);
     MOZ_COUNT_DTOR(GfxTextureWasteTracker);
   }
-private:
+
+ private:
   GfxTextureWasteTracker(const GfxTextureWasteTracker& aRef);
 
   int32_t mBytes;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

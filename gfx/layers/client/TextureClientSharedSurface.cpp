@@ -8,7 +8,7 @@
 
 #include "GLContext.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/Logging.h"        
+#include "mozilla/gfx/Logging.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
@@ -19,21 +19,15 @@ using namespace mozilla::gl;
 namespace mozilla {
 namespace layers {
 
+SharedSurfaceTextureData::SharedSurfaceTextureData(
+    UniquePtr<gl::SharedSurface> surf)
+    : mSurf(std::move(surf)) {}
 
-SharedSurfaceTextureData::SharedSurfaceTextureData(UniquePtr<gl::SharedSurface> surf)
-  : mSurf(std::move(surf))
-{}
+SharedSurfaceTextureData::~SharedSurfaceTextureData() {}
 
-SharedSurfaceTextureData::~SharedSurfaceTextureData()
-{}
+void SharedSurfaceTextureData::Deallocate(LayersIPCChannel*) {}
 
-void
-SharedSurfaceTextureData::Deallocate(LayersIPCChannel*)
-{}
-
-void
-SharedSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const
-{
+void SharedSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const {
   aInfo.size = mSurf->mSize;
   aInfo.format = gfx::SurfaceFormat::UNKNOWN;
   aInfo.hasIntermediateBuffer = false;
@@ -42,35 +36,30 @@ SharedSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const
   aInfo.canExposeMappedData = false;
 }
 
-bool
-SharedSurfaceTextureData::Serialize(SurfaceDescriptor& aOutDescriptor)
-{
+bool SharedSurfaceTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
   return mSurf->ToSurfaceDescriptor(&aOutDescriptor);
 }
 
-
-SharedSurfaceTextureClient::SharedSurfaceTextureClient(SharedSurfaceTextureData* aData,
-                                                       TextureFlags aFlags,
-                                                       LayersIPCChannel* aAllocator)
-: TextureClient(aData, aFlags, aAllocator)
-{
+SharedSurfaceTextureClient::SharedSurfaceTextureClient(
+    SharedSurfaceTextureData* aData, TextureFlags aFlags,
+    LayersIPCChannel* aAllocator)
+    : TextureClient(aData, aFlags, aAllocator) {
   mWorkaroundAnnoyingSharedSurfaceLifetimeIssues = true;
 }
 
-already_AddRefed<SharedSurfaceTextureClient>
-SharedSurfaceTextureClient::Create(UniquePtr<gl::SharedSurface> surf, gl::SurfaceFactory* factory,
-                                   LayersIPCChannel* aAllocator, TextureFlags aFlags)
-{
+already_AddRefed<SharedSurfaceTextureClient> SharedSurfaceTextureClient::Create(
+    UniquePtr<gl::SharedSurface> surf, gl::SurfaceFactory* factory,
+    LayersIPCChannel* aAllocator, TextureFlags aFlags) {
   if (!surf) {
     return nullptr;
   }
   TextureFlags flags = aFlags | TextureFlags::RECYCLE | surf->GetTextureFlags();
-  SharedSurfaceTextureData* data = new SharedSurfaceTextureData(std::move(surf));
+  SharedSurfaceTextureData* data =
+      new SharedSurfaceTextureData(std::move(surf));
   return MakeAndAddRef<SharedSurfaceTextureClient>(data, flags, aAllocator);
 }
 
-SharedSurfaceTextureClient::~SharedSurfaceTextureClient()
-{
+SharedSurfaceTextureClient::~SharedSurfaceTextureClient() {
   
   
   
@@ -88,10 +77,9 @@ SharedSurfaceTextureClient::~SharedSurfaceTextureClient()
     
     
     
-    
     delete data;
   }
 }
 
-} 
-} 
+}  
+}  

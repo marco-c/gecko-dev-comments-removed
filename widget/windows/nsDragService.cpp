@@ -52,50 +52,38 @@ using namespace mozilla::widget;
 
 
 nsDragService::nsDragService()
-  : mDataObject(nullptr), mSentLocalDropEvent(false)
-{
-}
+    : mDataObject(nullptr), mSentLocalDropEvent(false) {}
 
 
 
 
 
 
-nsDragService::~nsDragService()
-{
-  NS_IF_RELEASE(mDataObject);
-}
+nsDragService::~nsDragService() { NS_IF_RELEASE(mDataObject); }
 
-bool
-nsDragService::CreateDragImage(nsINode *aDOMNode,
-                               const Maybe<CSSIntRegion>& aRegion,
-                               SHDRAGIMAGE *psdi)
-{
-  if (!psdi)
-    return false;
+bool nsDragService::CreateDragImage(nsINode* aDOMNode,
+                                    const Maybe<CSSIntRegion>& aRegion,
+                                    SHDRAGIMAGE* psdi) {
+  if (!psdi) return false;
 
   memset(psdi, 0, sizeof(SHDRAGIMAGE));
-  if (!aDOMNode)
-    return false;
+  if (!aDOMNode) return false;
 
   
   LayoutDeviceIntRect dragRect;
   RefPtr<SourceSurface> surface;
   nsPresContext* pc;
   DrawDrag(aDOMNode, aRegion, mScreenPosition, &dragRect, &surface, &pc);
-  if (!surface)
-    return false;
+  if (!surface) return false;
 
   uint32_t bmWidth = dragRect.Width(), bmHeight = dragRect.Height();
 
-  if (bmWidth == 0 || bmHeight == 0)
-    return false;
+  if (bmWidth == 0 || bmHeight == 0) return false;
 
   psdi->crColorKey = CLR_NONE;
 
-  RefPtr<DataSourceSurface> dataSurface =
-    Factory::CreateDataSourceSurface(IntSize(bmWidth, bmHeight),
-                                     SurfaceFormat::B8G8R8A8);
+  RefPtr<DataSourceSurface> dataSurface = Factory::CreateDataSourceSurface(
+      IntSize(bmWidth, bmHeight), SurfaceFormat::B8G8R8A8);
   NS_ENSURE_TRUE(dataSurface, false);
 
   DataSourceSurface::MappedSurface map;
@@ -103,43 +91,40 @@ nsDragService::CreateDragImage(nsINode *aDOMNode,
     return false;
   }
 
-  RefPtr<DrawTarget> dt =
-    Factory::CreateDrawTargetForData(BackendType::CAIRO,
-                                     map.mData,
-                                     dataSurface->GetSize(),
-                                     map.mStride,
-                                     dataSurface->GetFormat());
+  RefPtr<DrawTarget> dt = Factory::CreateDrawTargetForData(
+      BackendType::CAIRO, map.mData, dataSurface->GetSize(), map.mStride,
+      dataSurface->GetFormat());
   if (!dt) {
     dataSurface->Unmap();
     return false;
   }
 
-  dt->DrawSurface(surface,
-                  Rect(0, 0, dataSurface->GetSize().width, dataSurface->GetSize().height),
-                  Rect(0, 0, surface->GetSize().width, surface->GetSize().height),
-                  DrawSurfaceOptions(),
-                  DrawOptions(1.0f, CompositionOp::OP_SOURCE));
+  dt->DrawSurface(
+      surface,
+      Rect(0, 0, dataSurface->GetSize().width, dataSurface->GetSize().height),
+      Rect(0, 0, surface->GetSize().width, surface->GetSize().height),
+      DrawSurfaceOptions(), DrawOptions(1.0f, CompositionOp::OP_SOURCE));
   dt->Flush();
 
   BITMAPV5HEADER bmih;
   memset((void*)&bmih, 0, sizeof(BITMAPV5HEADER));
-  bmih.bV5Size        = sizeof(BITMAPV5HEADER);
-  bmih.bV5Width       = bmWidth;
-  bmih.bV5Height      = -(int32_t)bmHeight; 
-  bmih.bV5Planes      = 1;
-  bmih.bV5BitCount    = 32;
+  bmih.bV5Size = sizeof(BITMAPV5HEADER);
+  bmih.bV5Width = bmWidth;
+  bmih.bV5Height = -(int32_t)bmHeight;  
+  bmih.bV5Planes = 1;
+  bmih.bV5BitCount = 32;
   bmih.bV5Compression = BI_BITFIELDS;
-  bmih.bV5RedMask     = 0x00FF0000;
-  bmih.bV5GreenMask   = 0x0000FF00;
-  bmih.bV5BlueMask    = 0x000000FF;
-  bmih.bV5AlphaMask   = 0xFF000000;
+  bmih.bV5RedMask = 0x00FF0000;
+  bmih.bV5GreenMask = 0x0000FF00;
+  bmih.bV5BlueMask = 0x000000FF;
+  bmih.bV5AlphaMask = 0xFF000000;
 
   HDC hdcSrc = CreateCompatibleDC(nullptr);
-  void *lpBits = nullptr;
+  void* lpBits = nullptr;
   if (hdcSrc) {
     psdi->hbmpDragImage =
-    ::CreateDIBSection(hdcSrc, (BITMAPINFO*)&bmih, DIB_RGB_COLORS,
-                       (void**)&lpBits, nullptr, 0);
+        ::CreateDIBSection(hdcSrc, (BITMAPINFO*)&bmih, DIB_RGB_COLORS,
+                           (void**)&lpBits, nullptr, 0);
     if (psdi->hbmpDragImage && lpBits) {
       CopySurfaceDataToPackedArray(map.mData, static_cast<uint8_t*>(lpBits),
                                    dataSurface->GetSize(), map.mStride,
@@ -150,7 +135,7 @@ nsDragService::CreateDragImage(nsINode *aDOMNode,
     psdi->sizeDragImage.cy = bmHeight;
 
     LayoutDeviceIntPoint screenPoint =
-      ConvertToUnscaledDevPixels(pc, mScreenPosition);
+        ConvertToUnscaledDevPixels(pc, mScreenPosition);
     psdi->ptOffset.x = screenPoint.x - dragRect.X();
     psdi->ptOffset.y = screenPoint.y - dragRect.Y();
 
@@ -163,13 +148,11 @@ nsDragService::CreateDragImage(nsINode *aDOMNode,
 }
 
 
-nsresult
-nsDragService::InvokeDragSessionImpl(nsIArray* anArrayTransferables,
-                                     const Maybe<CSSIntRegion>& aRegion,
-                                     uint32_t aActionType)
-{
+nsresult nsDragService::InvokeDragSessionImpl(
+    nsIArray* anArrayTransferables, const Maybe<CSSIntRegion>& aRegion,
+    uint32_t aActionType) {
   
-  nsIURI *uri = nullptr;
+  nsIURI* uri = nullptr;
 
   nsCOMPtr<nsIDocument> doc(mSourceDocument);
   if (doc) {
@@ -178,8 +161,7 @@ nsDragService::InvokeDragSessionImpl(nsIArray* anArrayTransferables,
 
   uint32_t numItemsToDrag = 0;
   nsresult rv = anArrayTransferables->GetLength(&numItemsToDrag);
-  if (!numItemsToDrag)
-    return NS_ERROR_FAILURE;
+  if (!numItemsToDrag) return NS_ERROR_FAILURE;
 
   
   
@@ -190,17 +172,16 @@ nsDragService::InvokeDragSessionImpl(nsIArray* anArrayTransferables,
   
   RefPtr<IDataObject> itemToDrag;
   if (numItemsToDrag > 1) {
-    nsDataObjCollection * dataObjCollection = new nsDataObjCollection();
-    if (!dataObjCollection)
-      return NS_ERROR_OUT_OF_MEMORY;
+    nsDataObjCollection* dataObjCollection = new nsDataObjCollection();
+    if (!dataObjCollection) return NS_ERROR_OUT_OF_MEMORY;
     itemToDrag = dataObjCollection;
-    for (uint32_t i=0; i<numItemsToDrag; ++i) {
+    for (uint32_t i = 0; i < numItemsToDrag; ++i) {
       nsCOMPtr<nsITransferable> trans =
           do_QueryElementAt(anArrayTransferables, i);
       if (trans) {
         RefPtr<IDataObject> dataObj;
-        rv = nsClipboard::CreateNativeDataObject(trans,
-                                                 getter_AddRefs(dataObj), uri);
+        rv = nsClipboard::CreateNativeDataObject(trans, getter_AddRefs(dataObj),
+                                                 uri);
         NS_ENSURE_SUCCESS(rv, rv);
         
         rv = nsClipboard::SetupNativeDataObject(trans, dataObjCollection);
@@ -209,23 +190,22 @@ nsDragService::InvokeDragSessionImpl(nsIArray* anArrayTransferables,
         dataObjCollection->AddDataObject(dataObj);
       }
     }
-  } 
+  }  
   else {
     nsCOMPtr<nsITransferable> trans =
         do_QueryElementAt(anArrayTransferables, 0);
     if (trans) {
       rv = nsClipboard::CreateNativeDataObject(trans,
-                                               getter_AddRefs(itemToDrag),
-                                               uri);
+                                               getter_AddRefs(itemToDrag), uri);
       NS_ENSURE_SUCCESS(rv, rv);
     }
-  } 
+  }  
 
   
-  IDragSourceHelper *pdsh;
+  IDragSourceHelper* pdsh;
   if (SUCCEEDED(CoCreateInstance(CLSID_DragDropHelper, nullptr,
-                                 CLSCTX_INPROC_SERVER,
-                                 IID_IDragSourceHelper, (void**)&pdsh))) {
+                                 CLSCTX_INPROC_SERVER, IID_IDragSourceHelper,
+                                 (void**)&pdsh))) {
     SHDRAGIMAGE sdi;
     if (CreateDragImage(mSourceNode, aRegion, &sdi)) {
       if (FAILED(pdsh->InitializeFromBitmap(&sdi, itemToDrag)))
@@ -238,31 +218,29 @@ nsDragService::InvokeDragSessionImpl(nsIArray* anArrayTransferables,
   return StartInvokingDragSession(itemToDrag, aActionType);
 }
 
-static bool
-LayoutDevicePointToCSSPoint(const LayoutDevicePoint& aDevPos,
-                            CSSPoint& aCSSPos)
-{
+static bool LayoutDevicePointToCSSPoint(const LayoutDevicePoint& aDevPos,
+                                        CSSPoint& aCSSPos) {
   nsCOMPtr<nsIScreenManager> screenMgr =
-    do_GetService("@mozilla.org/gfx/screenmanager;1");
+      do_GetService("@mozilla.org/gfx/screenmanager;1");
   if (!screenMgr) {
     return false;
   }
 
   nsCOMPtr<nsIScreen> screen;
-  screenMgr->ScreenForRect(NSToIntRound(aDevPos.x), NSToIntRound(aDevPos.y),
-                           1, 1, getter_AddRefs(screen));
+  screenMgr->ScreenForRect(NSToIntRound(aDevPos.x), NSToIntRound(aDevPos.y), 1,
+                           1, getter_AddRefs(screen));
   if (!screen) {
     return false;
   }
 
-  int32_t w,h; 
+  int32_t w, h;  
   LayoutDeviceIntPoint screenOriginDev;
   screen->GetRect(&screenOriginDev.x, &screenOriginDev.y, &w, &h);
 
   double scale;
   screen->GetDefaultCSSScaleFactor(&scale);
   LayoutDeviceToCSSScale devToCSSScale =
-    CSSToLayoutDeviceScale(scale).Inverse();
+      CSSToLayoutDeviceScale(scale).Inverse();
 
   
   CSSIntPoint screenOriginCSS;
@@ -274,13 +252,12 @@ LayoutDevicePointToCSSPoint(const LayoutDevicePoint& aDevPos,
 
 
 NS_IMETHODIMP
-nsDragService::StartInvokingDragSession(IDataObject * aDataObj,
-                                        uint32_t aActionType)
-{
+nsDragService::StartInvokingDragSession(IDataObject* aDataObj,
+                                        uint32_t aActionType) {
   
   
   RefPtr<nsNativeDragSource> nativeDragSrc =
-    new nsNativeDragSource(mDataTransfer);
+      new nsNativeDragSource(mDataTransfer);
 
   
   DWORD winDropRes;
@@ -322,16 +299,16 @@ nsDragService::StartInvokingDragSession(IDataObject * aDataObj,
     uint32_t dropResult;
     
     if (winDropRes & DROPEFFECT_COPY)
-        dropResult = DRAGDROP_ACTION_COPY;
+      dropResult = DRAGDROP_ACTION_COPY;
     else if (winDropRes & DROPEFFECT_LINK)
-        dropResult = DRAGDROP_ACTION_LINK;
+      dropResult = DRAGDROP_ACTION_LINK;
     else if (winDropRes & DROPEFFECT_MOVE)
-        dropResult = DRAGDROP_ACTION_MOVE;
+      dropResult = DRAGDROP_ACTION_MOVE;
     else
-        dropResult = DRAGDROP_ACTION_NONE;
+      dropResult = DRAGDROP_ACTION_NONE;
 
     if (mDataTransfer) {
-      if (res == DRAGDROP_S_DROP) 
+      if (res == DRAGDROP_S_DROP)  
         mDataTransfer->SetDropEffectInt(dropResult);
       else
         mDataTransfer->SetDropEffectInt(DRAGDROP_ACTION_NONE);
@@ -347,11 +324,10 @@ nsDragService::StartInvokingDragSession(IDataObject * aDataObj,
   
   DWORD pos = ::GetMessagePos();
   CSSPoint cssPos;
-  if (!LayoutDevicePointToCSSPoint(LayoutDevicePoint(GET_X_LPARAM(pos),
-                                                     GET_Y_LPARAM(pos)),
-                                   cssPos)) {
+  if (!LayoutDevicePointToCSSPoint(
+          LayoutDevicePoint(GET_X_LPARAM(pos), GET_Y_LPARAM(pos)), cssPos)) {
     
-    POINT pt = { GET_X_LPARAM(pos), GET_Y_LPARAM(pos) };
+    POINT pt = {GET_X_LPARAM(pos), GET_Y_LPARAM(pos)};
     HMONITOR monitor = ::MonitorFromPoint(pt, MONITOR_DEFAULTTOPRIMARY);
     double dpiScale = widget::WinUtils::LogToPhysFactor(monitor);
     cssPos.x = GET_X_LPARAM(pos) / dpiScale;
@@ -360,8 +336,8 @@ nsDragService::StartInvokingDragSession(IDataObject * aDataObj,
   
   
   
-  SetDragEndPoint(LayoutDeviceIntPoint(NSToIntRound(cssPos.x),
-                                       NSToIntRound(cssPos.y)));
+  SetDragEndPoint(
+      LayoutDeviceIntPoint(NSToIntRound(cssPos.x), NSToIntRound(cssPos.y)));
   ModifierKeyState modifierKeyState;
   EndDragSession(true, modifierKeyState.GetModifiers());
 
@@ -372,14 +348,13 @@ nsDragService::StartInvokingDragSession(IDataObject * aDataObj,
 
 
 
-nsDataObjCollection*
-nsDragService::GetDataObjCollection(IDataObject* aDataObj)
-{
-  nsDataObjCollection * dataObjCol = nullptr;
+nsDataObjCollection* nsDragService::GetDataObjCollection(
+    IDataObject* aDataObj) {
+  nsDataObjCollection* dataObjCol = nullptr;
   if (aDataObj) {
     nsIDataObjCollection* dataObj;
-    if (aDataObj->QueryInterface(IID_IDataObjCollection,
-                                 (void**)&dataObj) == S_OK) {
+    if (aDataObj->QueryInterface(IID_IDataObjCollection, (void**)&dataObj) ==
+        S_OK) {
       dataObjCol = static_cast<nsDataObjCollection*>(aDataObj);
       dataObj->Release();
     }
@@ -390,19 +365,17 @@ nsDragService::GetDataObjCollection(IDataObject* aDataObj)
 
 
 NS_IMETHODIMP
-nsDragService::GetNumDropItems(uint32_t * aNumItems)
-{
+nsDragService::GetNumDropItems(uint32_t* aNumItems) {
   if (!mDataObject) {
     *aNumItems = 0;
     return NS_OK;
   }
 
   if (IsCollectionObject(mDataObject)) {
-    nsDataObjCollection * dataObjCol = GetDataObjCollection(mDataObject);
+    nsDataObjCollection* dataObjCol = GetDataObjCollection(mDataObject);
     if (dataObjCol) {
       *aNumItems = dataObjCol->GetNumDataObjects();
-    }
-    else {
+    } else {
       
       
       
@@ -410,8 +383,7 @@ nsDragService::GetNumDropItems(uint32_t * aNumItems)
       
       *aNumItems = 0;
     }
-  }
-  else {
+  } else {
     
     
     
@@ -425,13 +397,10 @@ nsDragService::GetNumDropItems(uint32_t * aNumItems)
         ::GlobalUnlock(stm.hGlobal);
         ::ReleaseStgMedium(&stm);
         
-        if (*aNumItems == 0)
-          *aNumItems = 1;
-      }
-      else
+        if (*aNumItems == 0) *aNumItems = 1;
+      } else
         *aNumItems = 1;
-    }
-    else
+    } else
       *aNumItems = 1;
   }
 
@@ -440,33 +409,29 @@ nsDragService::GetNumDropItems(uint32_t * aNumItems)
 
 
 NS_IMETHODIMP
-nsDragService::GetData(nsITransferable * aTransferable, uint32_t anItem)
-{
+nsDragService::GetData(nsITransferable* aTransferable, uint32_t anItem) {
   
   
   
-  if (!mDataObject)
-    return NS_ERROR_FAILURE;
+  if (!mDataObject) return NS_ERROR_FAILURE;
 
   nsresult dataFound = NS_ERROR_FAILURE;
 
   if (IsCollectionObject(mDataObject)) {
     
-    nsDataObjCollection * dataObjCol = GetDataObjCollection(mDataObject);
+    nsDataObjCollection* dataObjCol = GetDataObjCollection(mDataObject);
     uint32_t cnt = dataObjCol->GetNumDataObjects();
     if (anItem < cnt) {
-      IDataObject * dataObj = dataObjCol->GetDataObjectAt(anItem);
+      IDataObject* dataObj = dataObjCol->GetDataObjectAt(anItem);
       dataFound = nsClipboard::GetDataFromDataObject(dataObj, 0, nullptr,
                                                      aTransferable);
-    }
-    else
+    } else
       NS_WARNING("Index out of range!");
-  }
-  else {
+  } else {
     
     if (anItem == 0) {
-       dataFound = nsClipboard::GetDataFromDataObject(mDataObject, anItem,
-                                                      nullptr, aTransferable);
+      dataFound = nsClipboard::GetDataFromDataObject(mDataObject, anItem,
+                                                     nullptr, aTransferable);
     } else {
       
       FORMATETC fe2;
@@ -475,7 +440,9 @@ nsDragService::GetData(nsITransferable * aTransferable, uint32_t anItem)
         dataFound = nsClipboard::GetDataFromDataObject(mDataObject, anItem,
                                                        nullptr, aTransferable);
       else
-        NS_WARNING("Reqesting non-zero index, but clipboard data is not a collection!");
+        NS_WARNING(
+            "Reqesting non-zero index, but clipboard data is not a "
+            "collection!");
     }
   }
   return dataFound;
@@ -483,8 +450,7 @@ nsDragService::GetData(nsITransferable * aTransferable, uint32_t anItem)
 
 
 NS_IMETHODIMP
-nsDragService::SetIDataObject(IDataObject * aDataObj)
-{
+nsDragService::SetIDataObject(IDataObject* aDataObj) {
   
   
   NS_IF_RELEASE(mDataObject);
@@ -495,9 +461,7 @@ nsDragService::SetIDataObject(IDataObject * aDataObj)
 }
 
 
-void
-nsDragService::SetDroppedLocal()
-{
+void nsDragService::SetDroppedLocal() {
   
   
   mSentLocalDropEvent = true;
@@ -506,14 +470,14 @@ nsDragService::SetDroppedLocal()
 
 
 NS_IMETHODIMP
-nsDragService::IsDataFlavorSupported(const char *aDataFlavor, bool *_retval)
-{
-  if (!aDataFlavor || !mDataObject || !_retval)
-    return NS_ERROR_FAILURE;
+nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
+  if (!aDataFlavor || !mDataObject || !_retval) return NS_ERROR_FAILURE;
 
 #ifdef DEBUG
   if (strcmp(aDataFlavor, kTextMime) == 0)
-    NS_WARNING("DO NOT USE THE text/plain DATA FLAVOR ANY MORE. USE text/unicode INSTEAD");
+    NS_WARNING(
+        "DO NOT USE THE text/plain DATA FLAVOR ANY MORE. USE text/unicode "
+        "INSTEAD");
 #endif
 
   *_retval = false;
@@ -532,13 +496,12 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor, bool *_retval)
     nsDataObjCollection* dataObjCol = GetDataObjCollection(mDataObject);
     if (dataObjCol) {
       uint32_t cnt = dataObjCol->GetNumDataObjects();
-      for (uint32_t i=0;i<cnt;++i) {
-        IDataObject * dataObj = dataObjCol->GetDataObjectAt(i);
-        if (S_OK == dataObj->QueryGetData(&fe))
-          *_retval = true;             
+      for (uint32_t i = 0; i < cnt; ++i) {
+        IDataObject* dataObj = dataObjCol->GetDataObjectAt(i);
+        if (S_OK == dataObj->QueryGetData(&fe)) *_retval = true;  
       }
     }
-  } 
+  }  
   else {
     
     
@@ -548,7 +511,7 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor, bool *_retval)
     SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
                   TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
     if (mDataObject->QueryGetData(&fe) == S_OK)
-      *_retval = true;                 
+      *_retval = true;  
     else {
       
       
@@ -561,9 +524,8 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor, bool *_retval)
         SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
                       TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
         if (mDataObject->QueryGetData(&fe) == S_OK)
-          *_retval = true;                 
-      }
-      else if (strcmp(aDataFlavor, kURLMime) == 0) {
+          *_retval = true;  
+      } else if (strcmp(aDataFlavor, kURLMime) == 0) {
         
         
         
@@ -571,9 +533,9 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor, bool *_retval)
         SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
                       TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
         if (mDataObject->QueryGetData(&fe) == S_OK)
-          *_retval = true;                 
+          *_retval = true;  
       }
-    } 
+    }  
   }
 
   return NS_OK;
@@ -586,10 +548,7 @@ nsDragService::IsDataFlavorSupported(const char *aDataFlavor, bool *_retval)
 
 
 
-
-bool
-nsDragService::IsCollectionObject(IDataObject* inDataObj)
-{
+bool nsDragService::IsCollectionObject(IDataObject* inDataObj) {
   bool isCollection = false;
 
   
@@ -603,13 +562,11 @@ nsDragService::IsCollectionObject(IDataObject* inDataObj)
 
   
   
-  if (inDataObj->QueryGetData(&sFE) == S_OK)
-    isCollection = true;
+  if (inDataObj->QueryGetData(&sFE) == S_OK) isCollection = true;
 
   return isCollection;
 
-} 
-
+}  
 
 
 
@@ -619,8 +576,7 @@ nsDragService::IsCollectionObject(IDataObject* inDataObj)
 
 
 NS_IMETHODIMP
-nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers)
-{
+nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) {
   
   
   
@@ -635,18 +591,18 @@ nsDragService::EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers)
 }
 
 NS_IMETHODIMP
-nsDragService::UpdateDragImage(nsINode* aImage, int32_t aImageX, int32_t aImageY)
-{
+nsDragService::UpdateDragImage(nsINode* aImage, int32_t aImageX,
+                               int32_t aImageY) {
   if (!mDataObject) {
     return NS_OK;
   }
 
   nsBaseDragService::UpdateDragImage(aImage, aImageX, aImageY);
 
-  IDragSourceHelper *pdsh;
+  IDragSourceHelper* pdsh;
   if (SUCCEEDED(CoCreateInstance(CLSID_DragDropHelper, nullptr,
-                                 CLSCTX_INPROC_SERVER,
-                                 IID_IDragSourceHelper, (void**)&pdsh))) {
+                                 CLSCTX_INPROC_SERVER, IID_IDragSourceHelper,
+                                 (void**)&pdsh))) {
     SHDRAGIMAGE sdi;
     if (CreateDragImage(mSourceNode, Nothing(), &sdi)) {
       nsNativeDragTarget::DragImageChanged();
@@ -658,4 +614,3 @@ nsDragService::UpdateDragImage(nsINode* aImage, int32_t aImageX, int32_t aImageY
 
   return NS_OK;
 }
-

@@ -29,10 +29,9 @@ namespace mozilla {
 class ComputedStyle;
 enum class StyleAppearance : uint8_t;
 class EventStates;
-} 
+}  
 
-class nsNativeTheme : public nsITimerCallback, public nsINamed
-{
+class nsNativeTheme : public nsITimerCallback, public nsINamed {
  protected:
   virtual ~nsNativeTheme() {}
 
@@ -41,9 +40,9 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed
   NS_DECL_NSINAMED
 
   enum ScrollbarButtonType {
-    eScrollbarButton_UpTop   = 0,
-    eScrollbarButton_Down    = 1 << 0,
-    eScrollbarButton_Bottom  = 1 << 1
+    eScrollbarButton_UpTop = 0,
+    eScrollbarButton_Down = 1 << 0,
+    eScrollbarButton_Bottom = 1 << 1
   };
 
   enum TreeSortDirection {
@@ -71,8 +70,8 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed
   
   static bool IsFrameRTL(nsIFrame* aFrame);
 
-  bool IsHTMLContent(nsIFrame *aFrame);
-  
+  bool IsHTMLContent(nsIFrame* aFrame);
+
   
   bool IsDefaultButton(nsIFrame* aFrame) {
     return CheckBooleanAttr(aFrame, nsGkAtoms::_default);
@@ -101,23 +100,25 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed
   bool IsSelectedTab(nsIFrame* aFrame) {
     return CheckBooleanAttr(aFrame, nsGkAtoms::visuallyselected);
   }
-  
+
   bool IsNextToSelectedTab(nsIFrame* aFrame, int32_t aOffset);
-  
+
   bool IsBeforeSelectedTab(nsIFrame* aFrame) {
     return IsNextToSelectedTab(aFrame, -1);
   }
-  
+
   bool IsAfterSelectedTab(nsIFrame* aFrame) {
     return IsNextToSelectedTab(aFrame, 1);
   }
 
   bool IsLeftToSelectedTab(nsIFrame* aFrame) {
-    return IsFrameRTL(aFrame) ? IsAfterSelectedTab(aFrame) : IsBeforeSelectedTab(aFrame);
+    return IsFrameRTL(aFrame) ? IsAfterSelectedTab(aFrame)
+                              : IsBeforeSelectedTab(aFrame);
   }
 
   bool IsRightToSelectedTab(nsIFrame* aFrame) {
-    return IsFrameRTL(aFrame) ? IsBeforeSelectedTab(aFrame) : IsAfterSelectedTab(aFrame);
+    return IsFrameRTL(aFrame) ? IsBeforeSelectedTab(aFrame)
+                              : IsAfterSelectedTab(aFrame);
   }
 
   
@@ -143,7 +144,7 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed
   
   bool IsBottomTab(nsIFrame* aFrame);
   bool IsFirstTab(nsIFrame* aFrame);
-  
+
   bool IsHorizontal(nsIFrame* aFrame);
 
   
@@ -156,18 +157,19 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed
 
   
   bool IsReadOnly(nsIFrame* aFrame) {
-      return CheckBooleanAttr(aFrame, nsGkAtoms::readonly);
+    return CheckBooleanAttr(aFrame, nsGkAtoms::readonly);
   }
 
   
   bool IsSubmenu(nsIFrame* aFrame, bool* aLeftOfParent);
 
   
-  bool IsRegularMenuItem(nsIFrame *aFrame);
+  bool IsRegularMenuItem(nsIFrame* aFrame);
 
-  nsIPresShell *GetPresShell(nsIFrame* aFrame);
+  nsIPresShell* GetPresShell(nsIFrame* aFrame);
   static bool CheckBooleanAttr(nsIFrame* aFrame, nsAtom* aAtom);
-  static int32_t CheckIntAttr(nsIFrame* aFrame, nsAtom* aAtom, int32_t defaultValue);
+  static int32_t CheckIntAttr(nsIFrame* aFrame, nsAtom* aAtom,
+                              int32_t defaultValue);
 
   
   static double GetProgressValue(nsIFrame* aFrame);
@@ -177,7 +179,7 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed
   bool GetIndeterminate(nsIFrame* aFrame);
 
   bool QueueAnimatedContentForRefresh(nsIContent* aContent,
-                                        uint32_t aMinimumFrameRate);
+                                      uint32_t aMinimumFrameRate);
 
   nsIFrame* GetAdjacentSiblingFrameWithSameAppearance(nsIFrame* aFrame,
                                                       bool aNextSibling);
@@ -196,4 +198,4 @@ class nsNativeTheme : public nsITimerCallback, public nsINamed
   AutoTArray<nsCOMPtr<nsIContent>, 20> mAnimatedContentList;
 };
 
-#endif 
+#endif  

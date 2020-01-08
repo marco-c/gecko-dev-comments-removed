@@ -19,8 +19,7 @@
 
 
 
-#define NS_ADDREF(_ptr) \
-  (_ptr)->AddRef()
+#define NS_ADDREF(_ptr) (_ptr)->AddRef()
 
 
 
@@ -28,16 +27,12 @@
 
 
 
-#define NS_ADDREF_THIS() \
-  AddRef()
+#define NS_ADDREF_THIS() AddRef()
 
 
 
-
-template<class T>
-inline void
-ns_if_addref(T aExpr)
-{
+template <class T>
+inline void ns_if_addref(T aExpr) {
   if (aExpr) {
     aExpr->AddRef();
   }
@@ -62,17 +57,17 @@ ns_if_addref(T aExpr)
 
 
 
-#define NS_RELEASE(_ptr)                                                      \
-  do {                                                                        \
-    (_ptr)->Release();                                                        \
-    (_ptr) = 0;                                                               \
+
+#define NS_RELEASE(_ptr) \
+  do {                   \
+    (_ptr)->Release();   \
+    (_ptr) = 0;          \
   } while (0)
 
 
 
 
-#define NS_RELEASE_THIS() \
-    Release()
+#define NS_RELEASE_THIS() Release()
 
 
 
@@ -83,23 +78,24 @@ ns_if_addref(T aExpr)
 
 
 
-#define NS_RELEASE2(_ptr, _rc)                                                \
-  do {                                                                        \
-    _rc = (_ptr)->Release();                                                  \
-    if (0 == (_rc)) (_ptr) = 0;                                               \
+#define NS_RELEASE2(_ptr, _rc)  \
+  do {                          \
+    _rc = (_ptr)->Release();    \
+    if (0 == (_rc)) (_ptr) = 0; \
   } while (0)
 
 
 
 
 
-#define NS_IF_RELEASE(_ptr)                                                   \
-  do {                                                                        \
-    if (_ptr) {                                                               \
-      (_ptr)->Release();                                                      \
-      (_ptr) = 0;                                                             \
-    }                                                                         \
+#define NS_IF_RELEASE(_ptr) \
+  do {                      \
+    if (_ptr) {             \
+      (_ptr)->Release();    \
+      (_ptr) = 0;           \
+    }                       \
   } while (0)
+
 
 
 
@@ -118,16 +114,15 @@ ns_if_addref(T aExpr)
   static_cast<nsISupports*>(static_cast<__unambiguousBase>(__expr))
 
 
-template<class T, class DestinationType>
-inline nsresult
-CallQueryInterface(T* aSource, DestinationType** aDestination)
-{
+template <class T, class DestinationType>
+inline nsresult CallQueryInterface(T* aSource, DestinationType** aDestination) {
   
   
-  static_assert(!(mozilla::IsSame<DestinationType, T>::value ||
-                  mozilla::IsBaseOf<DestinationType, T>::value) ||
-                mozilla::IsSame<DestinationType, nsISupports>::value,
-                "don't use CallQueryInterface for compile-time-determinable casts");
+  static_assert(
+      !(mozilla::IsSame<DestinationType, T>::value ||
+        mozilla::IsBaseOf<DestinationType, T>::value) ||
+          mozilla::IsSame<DestinationType, nsISupports>::value,
+      "don't use CallQueryInterface for compile-time-determinable casts");
 
   MOZ_ASSERT(aSource, "null parameter");
   MOZ_ASSERT(aDestination, "null parameter");
@@ -137,9 +132,8 @@ CallQueryInterface(T* aSource, DestinationType** aDestination)
 }
 
 template <class SourceType, class DestinationType>
-inline nsresult
-CallQueryInterface(RefPtr<SourceType>& aSourcePtr, DestinationType** aDestPtr)
-{
+inline nsresult CallQueryInterface(RefPtr<SourceType>& aSourcePtr,
+                                   DestinationType** aDestPtr) {
   return CallQueryInterface(aSourcePtr.get(), aDestPtr);
 }
 

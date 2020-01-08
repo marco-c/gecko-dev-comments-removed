@@ -18,22 +18,20 @@
 
 
 class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
-                                   public nsIFormControlFrame
-{
-public:
+                                   public nsIFormControlFrame {
+ public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsCheckboxRadioFrame)
 
   explicit nsCheckboxRadioFrame(ComputedStyle* aStyle);
 
   
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
-    return nsAtomicContainerFrame::IsFrameOfType(aFlags &
-      ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
+    return nsAtomicContainerFrame::IsFrameOfType(
+        aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
   }
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override {
     DO_GLOBAL_REFLOW_COUNT_DSP("nsCheckboxRadioFrame");
     DisplayBorderBackgroundOutline(aBuilder, aLists);
@@ -43,21 +41,17 @@ public:
 
 
 
-  virtual nscoord GetMinISize(gfxContext *aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext *aRenderingContext) override;
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
   
 
 
-  virtual mozilla::LogicalSize
-  ComputeAutoSize(gfxContext*                 aRenderingContext,
-                  mozilla::WritingMode        aWM,
-                  const mozilla::LogicalSize& aCBSize,
-                  nscoord                     aAvailableISize,
-                  const mozilla::LogicalSize& aMargin,
-                  const mozilla::LogicalSize& aBorder,
-                  const mozilla::LogicalSize& aPadding,
-                  ComputeSizeFlags            aFlags) override;
+  virtual mozilla::LogicalSize ComputeAutoSize(
+      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
+      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
+      const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
+      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags) override;
 
   
 
@@ -67,29 +61,30 @@ public:
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus) override;
 
-  virtual nscoord GetLogicalBaseline(mozilla::WritingMode aWritingMode)
-    const override;
+  virtual nscoord GetLogicalBaseline(
+      mozilla::WritingMode aWritingMode) const override;
 
   
 
 
 
-  virtual void Reflow(nsPresContext*      aCX,
-                      ReflowOutput& aDesiredSize,
+  virtual void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&      aStatus) override;
+                      nsReflowStatus& aStatus) override;
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
 
   
 
   virtual void SetFocus(bool aOn = true, bool aRepaint = false) override;
 
   
-  virtual nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) override;
+  virtual nsresult SetFormProperty(nsAtom* aName,
+                                   const nsAString& aValue) override;
 
   
-  static nsresult RegUnRegAccessKey(nsIFrame * aFrame, bool aDoReg);
+  static nsresult RegUnRegAccessKey(nsIFrame* aFrame, bool aDoReg);
 
   
 
@@ -97,12 +92,10 @@ public:
 
   static nsRect GetUsableScreenRect(nsPresContext* aPresContext);
 
-protected:
-
+ protected:
   virtual ~nsCheckboxRadioFrame();
 
-  static nscoord DefaultSize()
-  {
+  static nscoord DefaultSize() {
     
     
     
@@ -118,4 +111,3 @@ protected:
 };
 
 #endif
-

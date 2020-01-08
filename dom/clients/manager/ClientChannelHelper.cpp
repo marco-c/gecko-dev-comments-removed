@@ -27,17 +27,15 @@ using mozilla::ipc::PrincipalInfoToPrincipal;
 
 namespace {
 
-class ClientChannelHelper final : public nsIInterfaceRequestor
-                                , public nsIChannelEventSink
-{
+class ClientChannelHelper final : public nsIInterfaceRequestor,
+                                  public nsIChannelEventSink {
   nsCOMPtr<nsIInterfaceRequestor> mOuter;
   nsCOMPtr<nsISerialEventTarget> mEventTarget;
 
   ~ClientChannelHelper() = default;
 
   NS_IMETHOD
-  GetInterface(const nsIID& aIID, void** aResultOut) override
-  {
+  GetInterface(const nsIID& aIID, void** aResultOut) override {
     if (aIID.Equals(NS_GET_IID(nsIChannelEventSink))) {
       *aResultOut = static_cast<nsIChannelEventSink*>(this);
       NS_ADDREF_THIS();
@@ -52,11 +50,9 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
   }
 
   NS_IMETHOD
-  AsyncOnChannelRedirect(nsIChannel* aOldChannel,
-                         nsIChannel* aNewChannel,
+  AsyncOnChannelRedirect(nsIChannel* aOldChannel, nsIChannel* aNewChannel,
                          uint32_t aFlags,
-                         nsIAsyncVerifyRedirectCallback *aCallback) override
-  {
+                         nsIAsyncVerifyRedirectCallback* aCallback) override {
     MOZ_ASSERT(NS_IsMainThread());
 
     nsCOMPtr<nsILoadInfo> oldLoadInfo;
@@ -72,7 +68,8 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
       return rv;
     }
 
-    UniquePtr<ClientSource> reservedClient = oldLoadInfo->TakeReservedClientSource();
+    UniquePtr<ClientSource> reservedClient =
+        oldLoadInfo->TakeReservedClientSource();
 
     
     
@@ -86,10 +83,10 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
       
       else if (oldLoadInfo != newLoadInfo) {
         const Maybe<ClientInfo>& reservedClientInfo =
-          oldLoadInfo->GetReservedClientInfo();
+            oldLoadInfo->GetReservedClientInfo();
 
         const Maybe<ClientInfo>& initialClientInfo =
-          oldLoadInfo->GetInitialClientInfo();
+            oldLoadInfo->GetInitialClientInfo();
 
         MOZ_DIAGNOSTIC_ASSERT(reservedClientInfo.isNothing() ||
                               initialClientInfo.isNothing());
@@ -112,7 +109,8 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
       MOZ_DIAGNOSTIC_ASSERT(ssm);
 
       nsCOMPtr<nsIPrincipal> principal;
-      rv = ssm->GetChannelResultPrincipal(aNewChannel, getter_AddRefs(principal));
+      rv = ssm->GetChannelResultPrincipal(aNewChannel,
+                                          getter_AddRefs(principal));
       NS_ENSURE_SUCCESS(rv, rv);
 
       
@@ -159,28 +157,23 @@ class ClientChannelHelper final : public nsIInterfaceRequestor
     return NS_OK;
   }
 
-public:
+ public:
   ClientChannelHelper(nsIInterfaceRequestor* aOuter,
                       nsISerialEventTarget* aEventTarget)
-    : mOuter(aOuter)
-    , mEventTarget(aEventTarget)
-  {
-  }
+      : mOuter(aOuter), mEventTarget(aEventTarget) {}
 
   NS_DECL_ISUPPORTS
 };
 
 NS_IMPL_ISUPPORTS(ClientChannelHelper, nsIInterfaceRequestor,
-                                       nsIChannelEventSink);
+                  nsIChannelEventSink);
 
-} 
+}  
 
-nsresult
-AddClientChannelHelper(nsIChannel* aChannel,
-                       Maybe<ClientInfo>&& aReservedClientInfo,
-                       Maybe<ClientInfo>&& aInitialClientInfo,
-                       nsISerialEventTarget* aEventTarget)
-{
+nsresult AddClientChannelHelper(nsIChannel* aChannel,
+                                Maybe<ClientInfo>&& aReservedClientInfo,
+                                Maybe<ClientInfo>&& aInitialClientInfo,
+                                nsISerialEventTarget* aEventTarget) {
   MOZ_ASSERT(NS_IsMainThread());
 
   Maybe<ClientInfo> initialClientInfo(std::move(aInitialClientInfo));
@@ -195,14 +188,15 @@ AddClientChannelHelper(nsIChannel* aChannel,
   NS_ENSURE_TRUE(ssm, NS_ERROR_FAILURE);
 
   nsCOMPtr<nsIPrincipal> channelPrincipal;
-  nsresult rv = ssm->GetChannelResultPrincipal(aChannel, getter_AddRefs(channelPrincipal));
+  nsresult rv = ssm->GetChannelResultPrincipal(
+      aChannel, getter_AddRefs(channelPrincipal));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
   
   if (initialClientInfo.isSome()) {
-    nsCOMPtr<nsIPrincipal> initialPrincipal =
-      PrincipalInfoToPrincipal(initialClientInfo.ref().PrincipalInfo(), nullptr);
+    nsCOMPtr<nsIPrincipal> initialPrincipal = PrincipalInfoToPrincipal(
+        initialClientInfo.ref().PrincipalInfo(), nullptr);
 
     bool equals = false;
     rv = initialPrincipal ? initialPrincipal->Equals(channelPrincipal, &equals)
@@ -215,12 +209,13 @@ AddClientChannelHelper(nsIChannel* aChannel,
   
   
   if (reservedClientInfo.isSome()) {
-    nsCOMPtr<nsIPrincipal> reservedPrincipal =
-      PrincipalInfoToPrincipal(reservedClientInfo.ref().PrincipalInfo(), nullptr);
+    nsCOMPtr<nsIPrincipal> reservedPrincipal = PrincipalInfoToPrincipal(
+        reservedClientInfo.ref().PrincipalInfo(), nullptr);
 
     bool equals = false;
-    rv = reservedPrincipal ? reservedPrincipal->Equals(channelPrincipal, &equals)
-                           : NS_ERROR_FAILURE;
+    rv = reservedPrincipal
+             ? reservedPrincipal->Equals(channelPrincipal, &equals)
+             : NS_ERROR_FAILURE;
     if (NS_FAILED(rv) || !equals) {
       reservedClientInfo.reset();
     }
@@ -236,14 +231,13 @@ AddClientChannelHelper(nsIChannel* aChannel,
     
     
     
-    reservedClient = ClientManager::CreateSource(ClientType::Window,
-                                                 aEventTarget,
-                                                 channelPrincipal);
+    reservedClient = ClientManager::CreateSource(
+        ClientType::Window, aEventTarget, channelPrincipal);
     MOZ_DIAGNOSTIC_ASSERT(reservedClient);
   }
 
   RefPtr<ClientChannelHelper> helper =
-    new ClientChannelHelper(outerCallbacks, aEventTarget);
+      new ClientChannelHelper(outerCallbacks, aEventTarget);
 
   
   
@@ -267,5 +261,5 @@ AddClientChannelHelper(nsIChannel* aChannel,
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

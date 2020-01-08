@@ -54,504 +54,497 @@ using mozilla::PodCopy;
 
 typedef Rooted<PropertyIteratorObject*> RootedPropertyIteratorObject;
 
-static const gc::AllocKind ITERATOR_FINALIZE_KIND = gc::AllocKind::OBJECT2_BACKGROUND;
+static const gc::AllocKind ITERATOR_FINALIZE_KIND =
+    gc::AllocKind::OBJECT2_BACKGROUND;
 
 
 
 
-void
-NativeIterator::trace(JSTracer* trc)
-{
-    TraceNullableEdge(trc, &objectBeingIterated_, "objectBeingIterated_");
+void NativeIterator::trace(JSTracer* trc) {
+  TraceNullableEdge(trc, &objectBeingIterated_, "objectBeingIterated_");
 
-    
-    
-    if (iterObj_) {
-        TraceManuallyBarrieredEdge(trc, &iterObj_, "iterObj");
-    }
+  
+  
+  if (iterObj_) {
+    TraceManuallyBarrieredEdge(trc, &iterObj_, "iterObj");
+  }
 
-    
-    
-    
-    std::for_each(guardsBegin(), guardsEnd(),
-                  [trc](HeapReceiverGuard& guard) {
-                      guard.trace(trc);
-                  });
+  
+  
+  
+  std::for_each(guardsBegin(), guardsEnd(),
+                [trc](HeapReceiverGuard& guard) { guard.trace(trc); });
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  GCPtrFlatString* begin =
+      MOZ_LIKELY(isInitialized()) ? propertiesBegin() : propertyCursor_;
+  std::for_each(begin, propertiesEnd(), [trc](GCPtrFlatString& prop) {
     
     
     
     
-    
-    
-    
-    
-    
-    
-    GCPtrFlatString* begin = MOZ_LIKELY(isInitialized()) ? propertiesBegin() : propertyCursor_;
-    std::for_each(begin, propertiesEnd(),
-                  [trc](GCPtrFlatString& prop) {
-                      
-                      
-                      
-                      
-                      TraceEdge(trc, &prop, "prop");
-                  });
+    TraceEdge(trc, &prop, "prop");
+  });
 }
 
 using IdSet = GCHashSet<jsid, DefaultHasher<jsid>>;
 
 template <bool CheckForDuplicates>
-static inline bool
-Enumerate(JSContext* cx, HandleObject pobj, jsid id,
-          bool enumerable, unsigned flags, MutableHandle<IdSet> visited, AutoIdVector* props)
-{
-    if (CheckForDuplicates) {
-        
-        IdSet::AddPtr p = visited.lookupForAdd(id);
-        if (MOZ_UNLIKELY(!!p)) {
-            return true;
-        }
-
-        
-        
-        
-        if (pobj->is<ProxyObject>() ||
-            pobj->staticPrototype() ||
-            pobj->getClass()->getNewEnumerate())
-        {
-            if (!visited.add(p, id)) {
-                return false;
-            }
-        }
-    }
-
-    if (!enumerable && !(flags & JSITER_HIDDEN)) {
-        return true;
+static inline bool Enumerate(JSContext* cx, HandleObject pobj, jsid id,
+                             bool enumerable, unsigned flags,
+                             MutableHandle<IdSet> visited,
+                             AutoIdVector* props) {
+  if (CheckForDuplicates) {
+    
+    IdSet::AddPtr p = visited.lookupForAdd(id);
+    if (MOZ_UNLIKELY(!!p)) {
+      return true;
     }
 
     
     
     
-    if (JSID_IS_SYMBOL(id) ? !(flags & JSITER_SYMBOLS) : (flags & JSITER_SYMBOLSONLY)) {
-        return true;
-    }
-
-    return props->append(id);
-}
-
-template <bool CheckForDuplicates>
-static bool
-EnumerateExtraProperties(JSContext* cx, HandleObject obj, unsigned flags,
-                         MutableHandle<IdSet> visited, AutoIdVector* props)
-{
-    MOZ_ASSERT(obj->getClass()->getNewEnumerate());
-
-    AutoIdVector properties(cx);
-    bool enumerableOnly = !(flags & JSITER_HIDDEN);
-    if (!obj->getClass()->getNewEnumerate()(cx, obj, properties, enumerableOnly)) {
+    if (pobj->is<ProxyObject>() || pobj->staticPrototype() ||
+        pobj->getClass()->getNewEnumerate()) {
+      if (!visited.add(p, id)) {
         return false;
+      }
     }
+  }
 
-    RootedId id(cx);
-    for (size_t n = 0; n < properties.length(); n++) {
-        id = properties[n];
-
-        
-        
-        
-        
-        bool enumerable = true;
-        if (!Enumerate<CheckForDuplicates>(cx, obj, id, enumerable, flags, visited, props)) {
-            return false;
-        }
-    }
-
+  if (!enumerable && !(flags & JSITER_HIDDEN)) {
     return true;
-}
+  }
 
-static bool
-SortComparatorIntegerIds(jsid a, jsid b, bool* lessOrEqualp)
-{
-    uint32_t indexA, indexB;
-    MOZ_ALWAYS_TRUE(IdIsIndex(a, &indexA));
-    MOZ_ALWAYS_TRUE(IdIsIndex(b, &indexB));
-    *lessOrEqualp = (indexA <= indexB);
+  
+  
+  
+  if (JSID_IS_SYMBOL(id) ? !(flags & JSITER_SYMBOLS)
+                         : (flags & JSITER_SYMBOLSONLY)) {
     return true;
+  }
+
+  return props->append(id);
 }
 
 template <bool CheckForDuplicates>
-static bool
-EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj, unsigned flags,
-                          MutableHandle<IdSet> visited, AutoIdVector* props,
-                          Handle<UnboxedPlainObject*> unboxed = nullptr)
-{
-    bool enumerateSymbols;
-    if (flags & JSITER_SYMBOLSONLY) {
-        enumerateSymbols = true;
-    } else {
-        
-        size_t firstElemIndex = props->length();
-        size_t initlen = pobj->getDenseInitializedLength();
-        const Value* vp = pobj->getDenseElements();
-        bool hasHoles = false;
-        for (size_t i = 0; i < initlen; ++i, ++vp) {
-            if (vp->isMagic(JS_ELEMENTS_HOLE)) {
-                hasHoles = true;
-            } else {
-                
-                
-                if (!Enumerate<CheckForDuplicates>(cx, pobj, INT_TO_JSID(i),
-                                                    true, flags, visited, props))
-                {
-                    return false;
-                }
-            }
-        }
+static bool EnumerateExtraProperties(JSContext* cx, HandleObject obj,
+                                     unsigned flags,
+                                     MutableHandle<IdSet> visited,
+                                     AutoIdVector* props) {
+  MOZ_ASSERT(obj->getClass()->getNewEnumerate());
 
-        
-        
-        if (pobj->is<TypedArrayObject>()) {
-            size_t len = pobj->as<TypedArrayObject>().length();
-            for (size_t i = 0; i < len; i++) {
-                if (!Enumerate<CheckForDuplicates>(cx, pobj, INT_TO_JSID(i),
-                                                    true, flags, visited, props))
-                {
-                    return false;
-                }
-            }
-        }
+  AutoIdVector properties(cx);
+  bool enumerableOnly = !(flags & JSITER_HIDDEN);
+  if (!obj->getClass()->getNewEnumerate()(cx, obj, properties,
+                                          enumerableOnly)) {
+    return false;
+  }
 
-        
-        bool isIndexed = pobj->isIndexed();
-        if (isIndexed) {
-            
-            
-            if (!hasHoles) {
-                firstElemIndex = props->length();
-            }
+  RootedId id(cx);
+  for (size_t n = 0; n < properties.length(); n++) {
+    id = properties[n];
 
-            for (Shape::Range<NoGC> r(pobj->lastProperty()); !r.empty(); r.popFront()) {
-                Shape& shape = r.front();
-                jsid id = shape.propid();
-                uint32_t dummy;
-                if (IdIsIndex(id, &dummy)) {
-                    if (!Enumerate<CheckForDuplicates>(cx, pobj, id, shape.enumerable(), flags,
-                                                       visited, props))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            MOZ_ASSERT(firstElemIndex <= props->length());
-
-            jsid* ids = props->begin() + firstElemIndex;
-            size_t n = props->length() - firstElemIndex;
-
-            AutoIdVector tmp(cx);
-            if (!tmp.resize(n)) {
-                return false;
-            }
-            PodCopy(tmp.begin(), ids, n);
-
-            if (!MergeSort(ids, n, tmp.begin(), SortComparatorIntegerIds)) {
-                return false;
-            }
-        }
-
-        if (unboxed) {
-            
-            
-            
-            
-            MOZ_ASSERT(pobj->is<UnboxedExpandoObject>());
-            if (!EnumerateExtraProperties<CheckForDuplicates>(cx, unboxed, flags, visited,
-                                                              props))
-            {
-                return false;
-            }
-        }
-
-        size_t initialLength = props->length();
-
-        
-        bool symbolsFound = false;
-        Shape::Range<NoGC> r(pobj->lastProperty());
-        for (; !r.empty(); r.popFront()) {
-            Shape& shape = r.front();
-            jsid id = shape.propid();
-
-            if (JSID_IS_SYMBOL(id)) {
-                symbolsFound = true;
-                continue;
-            }
-
-            uint32_t dummy;
-            if (isIndexed && IdIsIndex(id, &dummy)) {
-                continue;
-            }
-
-            if (!Enumerate<CheckForDuplicates>(cx, pobj, id, shape.enumerable(), flags, visited,
-                                               props))
-            {
-                return false;
-            }
-        }
-        ::Reverse(props->begin() + initialLength, props->end());
-
-        enumerateSymbols = symbolsFound && (flags & JSITER_SYMBOLS);
+    
+    
+    
+    
+    bool enumerable = true;
+    if (!Enumerate<CheckForDuplicates>(cx, obj, id, enumerable, flags, visited,
+                                       props)) {
+      return false;
     }
+  }
 
-    if (enumerateSymbols) {
-        
-        
-        
-        size_t initialLength = props->length();
-        for (Shape::Range<NoGC> r(pobj->lastProperty()); !r.empty(); r.popFront()) {
-            Shape& shape = r.front();
-            jsid id = shape.propid();
-            if (JSID_IS_SYMBOL(id)) {
-                if (!Enumerate<CheckForDuplicates>(cx, pobj, id, shape.enumerable(), flags,
-                                                   visited, props))
-                {
-                    return false;
-                }
-            }
-        }
-        ::Reverse(props->begin() + initialLength, props->end());
-    }
-
-    return true;
+  return true;
 }
 
-static bool
-EnumerateNativeProperties(JSContext* cx, HandleNativeObject pobj, unsigned flags,
-                          MutableHandle<IdSet> visited, AutoIdVector* props,
-                          bool checkForDuplicates, Handle<UnboxedPlainObject*> unboxed = nullptr)
-{
-    if (checkForDuplicates) {
-        return EnumerateNativeProperties<true>(cx, pobj, flags, visited, props, unboxed);
-    }
-    return EnumerateNativeProperties<false>(cx, pobj, flags, visited, props, unboxed);
+static bool SortComparatorIntegerIds(jsid a, jsid b, bool* lessOrEqualp) {
+  uint32_t indexA, indexB;
+  MOZ_ALWAYS_TRUE(IdIsIndex(a, &indexA));
+  MOZ_ALWAYS_TRUE(IdIsIndex(b, &indexB));
+  *lessOrEqualp = (indexA <= indexB);
+  return true;
 }
 
 template <bool CheckForDuplicates>
-static bool
-EnumerateProxyProperties(JSContext* cx, HandleObject pobj, unsigned flags,
-                         MutableHandle<IdSet> visited, AutoIdVector* props)
-{
-    MOZ_ASSERT(pobj->is<ProxyObject>());
-
-    AutoIdVector proxyProps(cx);
-
-    if (flags & JSITER_HIDDEN || flags & JSITER_SYMBOLS) {
+static bool EnumerateNativeProperties(
+    JSContext* cx, HandleNativeObject pobj, unsigned flags,
+    MutableHandle<IdSet> visited, AutoIdVector* props,
+    Handle<UnboxedPlainObject*> unboxed = nullptr) {
+  bool enumerateSymbols;
+  if (flags & JSITER_SYMBOLSONLY) {
+    enumerateSymbols = true;
+  } else {
+    
+    size_t firstElemIndex = props->length();
+    size_t initlen = pobj->getDenseInitializedLength();
+    const Value* vp = pobj->getDenseElements();
+    bool hasHoles = false;
+    for (size_t i = 0; i < initlen; ++i, ++vp) {
+      if (vp->isMagic(JS_ELEMENTS_HOLE)) {
+        hasHoles = true;
+      } else {
         
         
-        
-        if (!Proxy::ownPropertyKeys(cx, pobj, proxyProps)) {
-            return false;
+        if (!Enumerate<CheckForDuplicates>(cx, pobj, INT_TO_JSID(i),
+                                            true, flags,
+                                           visited, props)) {
+          return false;
         }
-
-        Rooted<PropertyDescriptor> desc(cx);
-        for (size_t n = 0, len = proxyProps.length(); n < len; n++) {
-            bool enumerable = false;
-
-            
-            if (!(flags & JSITER_HIDDEN)) {
-                if (!Proxy::getOwnPropertyDescriptor(cx, pobj, proxyProps[n], &desc)) {
-                    return false;
-                }
-                enumerable = desc.enumerable();
-            }
-
-            if (!Enumerate<CheckForDuplicates>(cx, pobj, proxyProps[n], enumerable, flags, visited,
-                                               props))
-            {
-                return false;
-            }
-        }
-
-        return true;
+      }
     }
 
     
-    if (!Proxy::getOwnEnumerablePropertyKeys(cx, pobj, proxyProps)) {
-        return false;
+    
+    if (pobj->is<TypedArrayObject>()) {
+      size_t len = pobj->as<TypedArrayObject>().length();
+      for (size_t i = 0; i < len; i++) {
+        if (!Enumerate<CheckForDuplicates>(cx, pobj, INT_TO_JSID(i),
+                                            true, flags,
+                                           visited, props)) {
+          return false;
+        }
+      }
     }
 
+    
+    bool isIndexed = pobj->isIndexed();
+    if (isIndexed) {
+      
+      
+      if (!hasHoles) {
+        firstElemIndex = props->length();
+      }
+
+      for (Shape::Range<NoGC> r(pobj->lastProperty()); !r.empty();
+           r.popFront()) {
+        Shape& shape = r.front();
+        jsid id = shape.propid();
+        uint32_t dummy;
+        if (IdIsIndex(id, &dummy)) {
+          if (!Enumerate<CheckForDuplicates>(cx, pobj, id, shape.enumerable(),
+                                             flags, visited, props)) {
+            return false;
+          }
+        }
+      }
+
+      MOZ_ASSERT(firstElemIndex <= props->length());
+
+      jsid* ids = props->begin() + firstElemIndex;
+      size_t n = props->length() - firstElemIndex;
+
+      AutoIdVector tmp(cx);
+      if (!tmp.resize(n)) {
+        return false;
+      }
+      PodCopy(tmp.begin(), ids, n);
+
+      if (!MergeSort(ids, n, tmp.begin(), SortComparatorIntegerIds)) {
+        return false;
+      }
+    }
+
+    if (unboxed) {
+      
+      
+      
+      
+      MOZ_ASSERT(pobj->is<UnboxedExpandoObject>());
+      if (!EnumerateExtraProperties<CheckForDuplicates>(cx, unboxed, flags,
+                                                        visited, props)) {
+        return false;
+      }
+    }
+
+    size_t initialLength = props->length();
+
+    
+    bool symbolsFound = false;
+    Shape::Range<NoGC> r(pobj->lastProperty());
+    for (; !r.empty(); r.popFront()) {
+      Shape& shape = r.front();
+      jsid id = shape.propid();
+
+      if (JSID_IS_SYMBOL(id)) {
+        symbolsFound = true;
+        continue;
+      }
+
+      uint32_t dummy;
+      if (isIndexed && IdIsIndex(id, &dummy)) {
+        continue;
+      }
+
+      if (!Enumerate<CheckForDuplicates>(cx, pobj, id, shape.enumerable(),
+                                         flags, visited, props)) {
+        return false;
+      }
+    }
+    ::Reverse(props->begin() + initialLength, props->end());
+
+    enumerateSymbols = symbolsFound && (flags & JSITER_SYMBOLS);
+  }
+
+  if (enumerateSymbols) {
+    
+    
+    
+    size_t initialLength = props->length();
+    for (Shape::Range<NoGC> r(pobj->lastProperty()); !r.empty(); r.popFront()) {
+      Shape& shape = r.front();
+      jsid id = shape.propid();
+      if (JSID_IS_SYMBOL(id)) {
+        if (!Enumerate<CheckForDuplicates>(cx, pobj, id, shape.enumerable(),
+                                           flags, visited, props)) {
+          return false;
+        }
+      }
+    }
+    ::Reverse(props->begin() + initialLength, props->end());
+  }
+
+  return true;
+}
+
+static bool EnumerateNativeProperties(
+    JSContext* cx, HandleNativeObject pobj, unsigned flags,
+    MutableHandle<IdSet> visited, AutoIdVector* props, bool checkForDuplicates,
+    Handle<UnboxedPlainObject*> unboxed = nullptr) {
+  if (checkForDuplicates) {
+    return EnumerateNativeProperties<true>(cx, pobj, flags, visited, props,
+                                           unboxed);
+  }
+  return EnumerateNativeProperties<false>(cx, pobj, flags, visited, props,
+                                          unboxed);
+}
+
+template <bool CheckForDuplicates>
+static bool EnumerateProxyProperties(JSContext* cx, HandleObject pobj,
+                                     unsigned flags,
+                                     MutableHandle<IdSet> visited,
+                                     AutoIdVector* props) {
+  MOZ_ASSERT(pobj->is<ProxyObject>());
+
+  AutoIdVector proxyProps(cx);
+
+  if (flags & JSITER_HIDDEN || flags & JSITER_SYMBOLS) {
+    
+    
+    
+    if (!Proxy::ownPropertyKeys(cx, pobj, proxyProps)) {
+      return false;
+    }
+
+    Rooted<PropertyDescriptor> desc(cx);
     for (size_t n = 0, len = proxyProps.length(); n < len; n++) {
-        if (!Enumerate<CheckForDuplicates>(cx, pobj, proxyProps[n], true, flags, visited, props)) {
-            return false;
+      bool enumerable = false;
+
+      
+      if (!(flags & JSITER_HIDDEN)) {
+        if (!Proxy::getOwnPropertyDescriptor(cx, pobj, proxyProps[n], &desc)) {
+          return false;
         }
+        enumerable = desc.enumerable();
+      }
+
+      if (!Enumerate<CheckForDuplicates>(cx, pobj, proxyProps[n], enumerable,
+                                         flags, visited, props)) {
+        return false;
+      }
     }
 
     return true;
+  }
+
+  
+  if (!Proxy::getOwnEnumerablePropertyKeys(cx, pobj, proxyProps)) {
+    return false;
+  }
+
+  for (size_t n = 0, len = proxyProps.length(); n < len; n++) {
+    if (!Enumerate<CheckForDuplicates>(cx, pobj, proxyProps[n], true, flags,
+                                       visited, props)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 #ifdef JS_MORE_DETERMINISTIC
 
-struct SortComparatorIds
-{
-    JSContext*  const cx;
+struct SortComparatorIds {
+  JSContext* const cx;
 
-    SortComparatorIds(JSContext* cx)
-      : cx(cx) {}
+  SortComparatorIds(JSContext* cx) : cx(cx) {}
 
-    bool operator()(jsid a, jsid b, bool* lessOrEqualp)
-    {
-        
-        
-        if (a == b) {
-            *lessOrEqualp = true;
-            return true;
-        }
-
-        size_t ta = JSID_BITS(a) & JSID_TYPE_MASK;
-        size_t tb = JSID_BITS(b) & JSID_TYPE_MASK;
-        if (ta != tb) {
-            *lessOrEqualp = (ta <= tb);
-            return true;
-        }
-
-        if (JSID_IS_INT(a)) {
-            *lessOrEqualp = (JSID_TO_INT(a) <= JSID_TO_INT(b));
-            return true;
-        }
-
-        RootedString astr(cx), bstr(cx);
-        if (JSID_IS_SYMBOL(a)) {
-            MOZ_ASSERT(JSID_IS_SYMBOL(b));
-            JS::SymbolCode ca = JSID_TO_SYMBOL(a)->code();
-            JS::SymbolCode cb = JSID_TO_SYMBOL(b)->code();
-            if (ca != cb) {
-                *lessOrEqualp = uint32_t(ca) <= uint32_t(cb);
-                return true;
-            }
-            MOZ_ASSERT(ca == JS::SymbolCode::InSymbolRegistry || ca == JS::SymbolCode::UniqueSymbol);
-            astr = JSID_TO_SYMBOL(a)->description();
-            bstr = JSID_TO_SYMBOL(b)->description();
-            if (!astr || !bstr) {
-                *lessOrEqualp = !astr;
-                return true;
-            }
-
-            
-            
-            
-        } else {
-            astr = IdToString(cx, a);
-            if (!astr) {
-                return false;
-            }
-            bstr = IdToString(cx, b);
-            if (!bstr) {
-                return false;
-            }
-        }
-
-        int32_t result;
-        if (!CompareStrings(cx, astr, bstr, &result)) {
-            return false;
-        }
-
-        *lessOrEqualp = (result <= 0);
-        return true;
+  bool operator()(jsid a, jsid b, bool* lessOrEqualp) {
+    
+    
+    if (a == b) {
+      *lessOrEqualp = true;
+      return true;
     }
+
+    size_t ta = JSID_BITS(a) & JSID_TYPE_MASK;
+    size_t tb = JSID_BITS(b) & JSID_TYPE_MASK;
+    if (ta != tb) {
+      *lessOrEqualp = (ta <= tb);
+      return true;
+    }
+
+    if (JSID_IS_INT(a)) {
+      *lessOrEqualp = (JSID_TO_INT(a) <= JSID_TO_INT(b));
+      return true;
+    }
+
+    RootedString astr(cx), bstr(cx);
+    if (JSID_IS_SYMBOL(a)) {
+      MOZ_ASSERT(JSID_IS_SYMBOL(b));
+      JS::SymbolCode ca = JSID_TO_SYMBOL(a)->code();
+      JS::SymbolCode cb = JSID_TO_SYMBOL(b)->code();
+      if (ca != cb) {
+        *lessOrEqualp = uint32_t(ca) <= uint32_t(cb);
+        return true;
+      }
+      MOZ_ASSERT(ca == JS::SymbolCode::InSymbolRegistry ||
+                 ca == JS::SymbolCode::UniqueSymbol);
+      astr = JSID_TO_SYMBOL(a)->description();
+      bstr = JSID_TO_SYMBOL(b)->description();
+      if (!astr || !bstr) {
+        *lessOrEqualp = !astr;
+        return true;
+      }
+
+      
+      
+      
+    } else {
+      astr = IdToString(cx, a);
+      if (!astr) {
+        return false;
+      }
+      bstr = IdToString(cx, b);
+      if (!bstr) {
+        return false;
+      }
+    }
+
+    int32_t result;
+    if (!CompareStrings(cx, astr, bstr, &result)) {
+      return false;
+    }
+
+    *lessOrEqualp = (result <= 0);
+    return true;
+  }
 };
 
 #endif 
 
-static bool
-Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags, AutoIdVector* props)
-{
-    Rooted<IdSet> visited(cx, IdSet(cx));
-    RootedObject pobj(cx, pobj_);
+static bool Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags,
+                     AutoIdVector* props) {
+  Rooted<IdSet> visited(cx, IdSet(cx));
+  RootedObject pobj(cx, pobj_);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    bool checkForDuplicates = !(flags & JSITER_OWNONLY);
+  
+  
+  
+  
+  
+  
+  
+  
+  bool checkForDuplicates = !(flags & JSITER_OWNONLY);
 
-    do {
-        if (pobj->getClass()->getNewEnumerate()) {
-            if (pobj->is<UnboxedPlainObject>() && pobj->as<UnboxedPlainObject>().maybeExpando()) {
-                
-                RootedNativeObject expando(cx, pobj->as<UnboxedPlainObject>().maybeExpando());
-                if (!EnumerateNativeProperties(cx, expando, flags, &visited, props,
-                                               checkForDuplicates, pobj.as<UnboxedPlainObject>()))
-                {
-                    return false;
-                }
-            } else {
-                
-                
-                if (!pobj->is<UnboxedPlainObject>()) {
-                    checkForDuplicates = true;
-                }
-
-                if (checkForDuplicates) {
-                    if (!EnumerateExtraProperties<true>(cx, pobj, flags, &visited, props)) {
-                        return false;
-                    }
-                } else {
-                    if (!EnumerateExtraProperties<false>(cx, pobj, flags, &visited, props)) {
-                        return false;
-                    }
-                }
-
-                if (pobj->isNative()) {
-                    if (!EnumerateNativeProperties(cx, pobj.as<NativeObject>(), flags, &visited,
-                                                   props, checkForDuplicates))
-                    {
-                        return false;
-                    }
-                }
-            }
-        } else if (pobj->isNative()) {
-            
-            if (JSEnumerateOp enumerate = pobj->getClass()->getEnumerate()) {
-                if (!enumerate(cx, pobj.as<NativeObject>())) {
-                    return false;
-                }
-            }
-            if (!EnumerateNativeProperties(cx, pobj.as<NativeObject>(), flags, &visited, props,
-                                           checkForDuplicates))
-            {
-                return false;
-            }
-        } else if (pobj->is<ProxyObject>()) {
-            if (checkForDuplicates) {
-                if (!EnumerateProxyProperties<true>(cx, pobj, flags, &visited, props)) {
-                    return false;
-                }
-            } else {
-                if (!EnumerateProxyProperties<false>(cx, pobj, flags, &visited, props)) {
-                    return false;
-                }
-            }
-        } else {
-            MOZ_CRASH("non-native objects must have an enumerate op");
+  do {
+    if (pobj->getClass()->getNewEnumerate()) {
+      if (pobj->is<UnboxedPlainObject>() &&
+          pobj->as<UnboxedPlainObject>().maybeExpando()) {
+        
+        RootedNativeObject expando(
+            cx, pobj->as<UnboxedPlainObject>().maybeExpando());
+        if (!EnumerateNativeProperties(cx, expando, flags, &visited, props,
+                                       checkForDuplicates,
+                                       pobj.as<UnboxedPlainObject>())) {
+          return false;
+        }
+      } else {
+        
+        
+        if (!pobj->is<UnboxedPlainObject>()) {
+          checkForDuplicates = true;
         }
 
-        if (flags & JSITER_OWNONLY) {
-            break;
-        }
-
-        if (!GetPrototype(cx, pobj, &pobj)) {
+        if (checkForDuplicates) {
+          if (!EnumerateExtraProperties<true>(cx, pobj, flags, &visited,
+                                              props)) {
             return false;
+          }
+        } else {
+          if (!EnumerateExtraProperties<false>(cx, pobj, flags, &visited,
+                                               props)) {
+            return false;
+          }
         }
 
-    } while (pobj != nullptr);
+        if (pobj->isNative()) {
+          if (!EnumerateNativeProperties(cx, pobj.as<NativeObject>(), flags,
+                                         &visited, props, checkForDuplicates)) {
+            return false;
+          }
+        }
+      }
+    } else if (pobj->isNative()) {
+      
+      if (JSEnumerateOp enumerate = pobj->getClass()->getEnumerate()) {
+        if (!enumerate(cx, pobj.as<NativeObject>())) {
+          return false;
+        }
+      }
+      if (!EnumerateNativeProperties(cx, pobj.as<NativeObject>(), flags,
+                                     &visited, props, checkForDuplicates)) {
+        return false;
+      }
+    } else if (pobj->is<ProxyObject>()) {
+      if (checkForDuplicates) {
+        if (!EnumerateProxyProperties<true>(cx, pobj, flags, &visited, props)) {
+          return false;
+        }
+      } else {
+        if (!EnumerateProxyProperties<false>(cx, pobj, flags, &visited,
+                                             props)) {
+          return false;
+        }
+      }
+    } else {
+      MOZ_CRASH("non-native objects must have an enumerate op");
+    }
+
+    if (flags & JSITER_OWNONLY) {
+      break;
+    }
+
+    if (!GetPrototype(cx, pobj, &pobj)) {
+      return false;
+    }
+
+  } while (pobj != nullptr);
 
 #ifdef JS_MORE_DETERMINISTIC
 
-    
+  
 
 
 
@@ -566,111 +559,109 @@ Snapshot(JSContext* cx, HandleObject pobj_, unsigned flags, AutoIdVector* props)
 
 
 
-    jsid* ids = props->begin();
-    size_t n = props->length();
+  jsid* ids = props->begin();
+  size_t n = props->length();
 
-    AutoIdVector tmp(cx);
-    if (!tmp.resize(n)) {
-        return false;
-    }
-    PodCopy(tmp.begin(), ids, n);
+  AutoIdVector tmp(cx);
+  if (!tmp.resize(n)) {
+    return false;
+  }
+  PodCopy(tmp.begin(), ids, n);
 
-    if (!MergeSort(ids, n, tmp.begin(), SortComparatorIds(cx))) {
-        return false;
-    }
+  if (!MergeSort(ids, n, tmp.begin(), SortComparatorIds(cx))) {
+    return false;
+  }
 
 #endif 
 
-    return true;
+  return true;
 }
 
-JS_FRIEND_API bool
-js::GetPropertyKeys(JSContext* cx, HandleObject obj, unsigned flags, AutoIdVector* props)
-{
-    return Snapshot(cx, obj,
-                    flags & (JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS | JSITER_SYMBOLSONLY),
-                    props);
+JS_FRIEND_API bool js::GetPropertyKeys(JSContext* cx, HandleObject obj,
+                                       unsigned flags, AutoIdVector* props) {
+  return Snapshot(cx, obj,
+                  flags & (JSITER_OWNONLY | JSITER_HIDDEN | JSITER_SYMBOLS |
+                           JSITER_SYMBOLSONLY),
+                  props);
 }
 
-static inline void
-RegisterEnumerator(ObjectRealm& realm, NativeIterator* ni)
-{
-    
-    
-    ni->link(realm.enumerators);
+static inline void RegisterEnumerator(ObjectRealm& realm, NativeIterator* ni) {
+  
+  
+  ni->link(realm.enumerators);
 
-    MOZ_ASSERT(!ni->isActive());
-    ni->markActive();
+  MOZ_ASSERT(!ni->isActive());
+  ni->markActive();
 }
 
-static PropertyIteratorObject*
-NewPropertyIteratorObject(JSContext* cx)
-{
-    RootedObjectGroup group(cx, ObjectGroup::defaultNewGroup(cx, &PropertyIteratorObject::class_,
-                                                             TaggedProto(nullptr)));
-    if (!group) {
-        return nullptr;
-    }
+static PropertyIteratorObject* NewPropertyIteratorObject(JSContext* cx) {
+  RootedObjectGroup group(
+      cx, ObjectGroup::defaultNewGroup(cx, &PropertyIteratorObject::class_,
+                                       TaggedProto(nullptr)));
+  if (!group) {
+    return nullptr;
+  }
 
-    const Class* clasp = &PropertyIteratorObject::class_;
-    RootedShape shape(cx, EmptyShape::getInitialShape(cx, clasp, TaggedProto(nullptr),
-                                                      ITERATOR_FINALIZE_KIND));
-    if (!shape) {
-        return nullptr;
-    }
+  const Class* clasp = &PropertyIteratorObject::class_;
+  RootedShape shape(cx,
+                    EmptyShape::getInitialShape(cx, clasp, TaggedProto(nullptr),
+                                                ITERATOR_FINALIZE_KIND));
+  if (!shape) {
+    return nullptr;
+  }
 
-    JSObject* obj;
-    JS_TRY_VAR_OR_RETURN_NULL(cx, obj, NativeObject::create(cx, ITERATOR_FINALIZE_KIND,
-                                                            GetInitialHeap(GenericObject, clasp),
-                                                            shape, group));
+  JSObject* obj;
+  JS_TRY_VAR_OR_RETURN_NULL(
+      cx, obj,
+      NativeObject::create(cx, ITERATOR_FINALIZE_KIND,
+                           GetInitialHeap(GenericObject, clasp), shape, group));
 
-    PropertyIteratorObject* res = &obj->as<PropertyIteratorObject>();
+  PropertyIteratorObject* res = &obj->as<PropertyIteratorObject>();
 
-    
-    
-    MOZ_ASSERT(!js::gc::IsInsideNursery(res));
+  
+  
+  MOZ_ASSERT(!js::gc::IsInsideNursery(res));
 
-    MOZ_ASSERT(res->numFixedSlots() == JSObject::ITER_CLASS_NFIXED_SLOTS);
-    return res;
+  MOZ_ASSERT(res->numFixedSlots() == JSObject::ITER_CLASS_NFIXED_SLOTS);
+  return res;
 }
 
-static PropertyIteratorObject*
-CreatePropertyIterator(JSContext* cx, Handle<JSObject*> objBeingIterated,
-                       const AutoIdVector& props, uint32_t numGuards, uint32_t guardKey)
-{
-    Rooted<PropertyIteratorObject*> propIter(cx, NewPropertyIteratorObject(cx));
-    if (!propIter) {
-        return nullptr;
-    }
+static PropertyIteratorObject* CreatePropertyIterator(
+    JSContext* cx, Handle<JSObject*> objBeingIterated,
+    const AutoIdVector& props, uint32_t numGuards, uint32_t guardKey) {
+  Rooted<PropertyIteratorObject*> propIter(cx, NewPropertyIteratorObject(cx));
+  if (!propIter) {
+    return nullptr;
+  }
 
-    static_assert(sizeof(ReceiverGuard) == 2 * sizeof(GCPtrFlatString),
-                  "NativeIterators are allocated in space for 1) themselves, "
-                  "2) the properties a NativeIterator iterates (as "
-                  "GCPtrFlatStrings), and 3) |numGuards| HeapReceiverGuard "
-                  "objects; the additional-length calculation below assumes "
-                  "this size-relationship when determining the extra space to "
-                  "allocate");
+  static_assert(sizeof(ReceiverGuard) == 2 * sizeof(GCPtrFlatString),
+                "NativeIterators are allocated in space for 1) themselves, "
+                "2) the properties a NativeIterator iterates (as "
+                "GCPtrFlatStrings), and 3) |numGuards| HeapReceiverGuard "
+                "objects; the additional-length calculation below assumes "
+                "this size-relationship when determining the extra space to "
+                "allocate");
 
-    size_t extraCount = props.length() + numGuards * 2;
-    void* mem = cx->pod_malloc_with_extra<NativeIterator, GCPtrFlatString>(extraCount);
-    if (!mem) {
-        return nullptr;
-    }
+  size_t extraCount = props.length() + numGuards * 2;
+  void* mem =
+      cx->pod_malloc_with_extra<NativeIterator, GCPtrFlatString>(extraCount);
+  if (!mem) {
+    return nullptr;
+  }
 
-    
-    bool hadError = false;
-    NativeIterator* ni =
-        new (mem) NativeIterator(cx, propIter, objBeingIterated, props, numGuards, guardKey,
-                                 &hadError);
-    if (hadError) {
-        return nullptr;
-    }
+  
+  bool hadError = false;
+  NativeIterator* ni = new (mem) NativeIterator(
+      cx, propIter, objBeingIterated, props, numGuards, guardKey, &hadError);
+  if (hadError) {
+    return nullptr;
+  }
 
-    ObjectRealm& realm =
-        objBeingIterated ? ObjectRealm::get(objBeingIterated) : ObjectRealm::get(propIter);
-    RegisterEnumerator(realm, ni);
+  ObjectRealm& realm = objBeingIterated ? ObjectRealm::get(objBeingIterated)
+                                        : ObjectRealm::get(propIter);
+  RegisterEnumerator(realm, ni);
 
-    return propIter;
+  return propIter;
 }
 
 
@@ -678,29 +669,27 @@ CreatePropertyIterator(JSContext* cx, Handle<JSObject*> objBeingIterated,
 
 
 
-NativeIterator::NativeIterator()
-{
-    
-    
-    JS_POISON(static_cast<void*>(this), 0xCC, sizeof(*this), MemCheckKind::MakeUndefined);
+NativeIterator::NativeIterator() {
+  
+  
+  JS_POISON(static_cast<void*>(this), 0xCC, sizeof(*this),
+            MemCheckKind::MakeUndefined);
 
-    
-    
-    
-    
-    prev_ = next_ = this;
+  
+  
+  
+  
+  prev_ = next_ = this;
 }
 
-NativeIterator*
-NativeIterator::allocateSentinel(JSContext* cx)
-{
-    NativeIterator* ni = js_new<NativeIterator>();
-    if (!ni) {
-        ReportOutOfMemory(cx);
-        return nullptr;
-    }
+NativeIterator* NativeIterator::allocateSentinel(JSContext* cx) {
+  NativeIterator* ni = js_new<NativeIterator>();
+  if (!ni) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
 
-    return ni;
+  return ni;
 }
 
 
@@ -710,882 +699,837 @@ NativeIterator::allocateSentinel(JSContext* cx)
 
 
 
-NativeIterator::NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> propIter,
-                               Handle<JSObject*> objBeingIterated, const AutoIdVector& props,
-                               uint32_t numGuards, uint32_t guardKey, bool* hadError)
-  : objectBeingIterated_(objBeingIterated),
-    iterObj_(propIter),
-    
-    
-    guardsEnd_(guardsBegin()),
-    
-    propertyCursor_(reinterpret_cast<GCPtrFlatString*>(guardsBegin() + numGuards)),
-    propertiesEnd_(propertyCursor_),
-    guardKey_(guardKey),
-    flags_(0) 
+NativeIterator::NativeIterator(JSContext* cx,
+                               Handle<PropertyIteratorObject*> propIter,
+                               Handle<JSObject*> objBeingIterated,
+                               const AutoIdVector& props, uint32_t numGuards,
+                               uint32_t guardKey, bool* hadError)
+    : objectBeingIterated_(objBeingIterated),
+      iterObj_(propIter),
+      
+      
+      guardsEnd_(guardsBegin()),
+      
+      propertyCursor_(
+          reinterpret_cast<GCPtrFlatString*>(guardsBegin() + numGuards)),
+      propertiesEnd_(propertyCursor_),
+      guardKey_(guardKey),
+      flags_(0)  
 {
-    MOZ_ASSERT(!*hadError);
+  MOZ_ASSERT(!*hadError);
 
-    
-    
-    propIter->setNativeIterator(this);
+  
+  
+  propIter->setNativeIterator(this);
 
-    for (size_t i = 0, len = props.length(); i < len; i++) {
-        JSFlatString* str = IdToString(cx, props[i]);
-        if (!str) {
-            *hadError = true;
-            return;
-        }
-
-        
-        
-        GCPtrFlatString* loc = propertiesEnd_;
-
-        
-        
-        
-        propertiesEnd_++;
-
-        new (loc) GCPtrFlatString(str);
+  for (size_t i = 0, len = props.length(); i < len; i++) {
+    JSFlatString* str = IdToString(cx, props[i]);
+    if (!str) {
+      *hadError = true;
+      return;
     }
 
-    if (numGuards > 0) {
-        
-        
-        
-        
-        JSObject* pobj = objBeingIterated;
+    
+    
+    GCPtrFlatString* loc = propertiesEnd_;
+
+    
+    
+    
+    propertiesEnd_++;
+
+    new (loc) GCPtrFlatString(str);
+  }
+
+  if (numGuards > 0) {
+    
+    
+    
+    
+    JSObject* pobj = objBeingIterated;
 #ifdef DEBUG
-        uint32_t i = 0;
+    uint32_t i = 0;
 #endif
-        uint32_t key = 0;
-        do {
-            ReceiverGuard guard(pobj);
+    uint32_t key = 0;
+    do {
+      ReceiverGuard guard(pobj);
 
-            
-            
-            HeapReceiverGuard* loc = guardsEnd_;
+      
+      
+      HeapReceiverGuard* loc = guardsEnd_;
 
-            
-            
-            
-            guardsEnd_++;
+      
+      
+      
+      guardsEnd_++;
 #ifdef DEBUG
-            i++;
+      i++;
 #endif
 
-            new (loc) HeapReceiverGuard(guard);
+      new (loc) HeapReceiverGuard(guard);
 
-            key = mozilla::AddToHash(key, guard.hash());
+      key = mozilla::AddToHash(key, guard.hash());
 
-            
-            
-            
-            pobj = pobj->staticPrototype();
-        } while (pobj);
+      
+      
+      
+      pobj = pobj->staticPrototype();
+    } while (pobj);
 
-        guardKey_ = key;
-        MOZ_ASSERT(i == numGuards);
-    }
+    guardKey_ = key;
+    MOZ_ASSERT(i == numGuards);
+  }
 
-    
-    
-    MOZ_ASSERT(static_cast<void*>(guardsEnd_) == propertyCursor_);
-    markInitialized();
+  
+  
+  MOZ_ASSERT(static_cast<void*>(guardsEnd_) == propertyCursor_);
+  markInitialized();
 
-    MOZ_ASSERT(!*hadError);
+  MOZ_ASSERT(!*hadError);
 }
 
-static inline PropertyIteratorObject*
-VectorToKeyIterator(JSContext* cx, HandleObject obj, AutoIdVector& props, uint32_t numGuards)
-{
-    if (obj->isSingleton() && !JSObject::setIteratedSingleton(cx, obj)) {
-        return nullptr;
-    }
-    MarkObjectGroupFlags(cx, obj, OBJECT_FLAG_ITERATED);
+static inline PropertyIteratorObject* VectorToKeyIterator(JSContext* cx,
+                                                          HandleObject obj,
+                                                          AutoIdVector& props,
+                                                          uint32_t numGuards) {
+  if (obj->isSingleton() && !JSObject::setIteratedSingleton(cx, obj)) {
+    return nullptr;
+  }
+  MarkObjectGroupFlags(cx, obj, OBJECT_FLAG_ITERATED);
 
-    return CreatePropertyIterator(cx, obj, props, numGuards, 0);
+  return CreatePropertyIterator(cx, obj, props, numGuards, 0);
+}
+
+JSObject* js::EnumeratedIdVectorToIterator(JSContext* cx, HandleObject obj,
+                                           AutoIdVector& props) {
+  return VectorToKeyIterator(cx, obj, props, 0);
 }
 
 
-JSObject*
-js::EnumeratedIdVectorToIterator(JSContext* cx, HandleObject obj, AutoIdVector& props)
-{
-    return VectorToKeyIterator(cx, obj, props, 0);
+JSObject* js::NewEmptyPropertyIterator(JSContext* cx) {
+  AutoIdVector props(cx);  
+  return CreatePropertyIterator(cx, nullptr, props, 0, 0);
 }
 
-
-JSObject*
-js::NewEmptyPropertyIterator(JSContext* cx)
-{
-    AutoIdVector props(cx); 
-    return CreatePropertyIterator(cx, nullptr, props, 0, 0);
-}
-
- bool
-IteratorHashPolicy::match(PropertyIteratorObject* obj, const Lookup& lookup)
-{
-    NativeIterator* ni = obj->getNativeIterator();
-    if (ni->guardKey() != lookup.key || ni->guardCount() != lookup.numGuards) {
-        return false;
-    }
-
-    return ArrayEqual(reinterpret_cast<ReceiverGuard*>(ni->guardsBegin()), lookup.guards,
-                      ni->guardCount());
-}
-
-static inline bool
-CanCompareIterableObjectToCache(JSObject* obj)
-{
-    if (obj->isNative()) {
-        return obj->as<NativeObject>().getDenseInitializedLength() == 0;
-    }
-    if (obj->is<UnboxedPlainObject>()) {
-        if (UnboxedExpandoObject* expando = obj->as<UnboxedPlainObject>().maybeExpando()) {
-            return expando->getDenseInitializedLength() == 0;
-        }
-        return true;
-    }
+ bool IteratorHashPolicy::match(PropertyIteratorObject* obj,
+                                            const Lookup& lookup) {
+  NativeIterator* ni = obj->getNativeIterator();
+  if (ni->guardKey() != lookup.key || ni->guardCount() != lookup.numGuards) {
     return false;
+  }
+
+  return ArrayEqual(reinterpret_cast<ReceiverGuard*>(ni->guardsBegin()),
+                    lookup.guards, ni->guardCount());
+}
+
+static inline bool CanCompareIterableObjectToCache(JSObject* obj) {
+  if (obj->isNative()) {
+    return obj->as<NativeObject>().getDenseInitializedLength() == 0;
+  }
+  if (obj->is<UnboxedPlainObject>()) {
+    if (UnboxedExpandoObject* expando =
+            obj->as<UnboxedPlainObject>().maybeExpando()) {
+      return expando->getDenseInitializedLength() == 0;
+    }
+    return true;
+  }
+  return false;
 }
 
 using ReceiverGuardVector = Vector<ReceiverGuard, 8>;
 
-static MOZ_ALWAYS_INLINE PropertyIteratorObject*
-LookupInIteratorCache(JSContext* cx, JSObject* obj, uint32_t* numGuards)
-{
-    MOZ_ASSERT(*numGuards == 0);
+static MOZ_ALWAYS_INLINE PropertyIteratorObject* LookupInIteratorCache(
+    JSContext* cx, JSObject* obj, uint32_t* numGuards) {
+  MOZ_ASSERT(*numGuards == 0);
 
-    ReceiverGuardVector guards(cx);
-    uint32_t key = 0;
-    JSObject* pobj = obj;
-    do {
-        if (!CanCompareIterableObjectToCache(pobj)) {
-            return nullptr;
-        }
-
-        ReceiverGuard guard(pobj);
-        key = mozilla::AddToHash(key, guard.hash());
-
-        if (MOZ_UNLIKELY(!guards.append(guard))) {
-            cx->recoverFromOutOfMemory();
-            return nullptr;
-        }
-
-        pobj = pobj->staticPrototype();
-    } while (pobj);
-
-    MOZ_ASSERT(!guards.empty());
-    *numGuards = guards.length();
-
-    IteratorHashPolicy::Lookup lookup(guards.begin(), guards.length(), key);
-    auto p = ObjectRealm::get(obj).iteratorCache.lookup(lookup);
-    if (!p) {
-        return nullptr;
+  ReceiverGuardVector guards(cx);
+  uint32_t key = 0;
+  JSObject* pobj = obj;
+  do {
+    if (!CanCompareIterableObjectToCache(pobj)) {
+      return nullptr;
     }
 
-    PropertyIteratorObject* iterobj = *p;
-    MOZ_ASSERT(iterobj->compartment() == cx->compartment());
+    ReceiverGuard guard(pobj);
+    key = mozilla::AddToHash(key, guard.hash());
 
-    NativeIterator* ni = iterobj->getNativeIterator();
-    if (!ni->isReusable()) {
-        return nullptr;
+    if (MOZ_UNLIKELY(!guards.append(guard))) {
+      cx->recoverFromOutOfMemory();
+      return nullptr;
     }
 
-    return iterobj;
+    pobj = pobj->staticPrototype();
+  } while (pobj);
+
+  MOZ_ASSERT(!guards.empty());
+  *numGuards = guards.length();
+
+  IteratorHashPolicy::Lookup lookup(guards.begin(), guards.length(), key);
+  auto p = ObjectRealm::get(obj).iteratorCache.lookup(lookup);
+  if (!p) {
+    return nullptr;
+  }
+
+  PropertyIteratorObject* iterobj = *p;
+  MOZ_ASSERT(iterobj->compartment() == cx->compartment());
+
+  NativeIterator* ni = iterobj->getNativeIterator();
+  if (!ni->isReusable()) {
+    return nullptr;
+  }
+
+  return iterobj;
 }
 
-static bool
-CanStoreInIteratorCache(JSObject* obj)
-{
-    do {
-        if (obj->isNative()) {
-            MOZ_ASSERT(obj->as<NativeObject>().getDenseInitializedLength() == 0);
+static bool CanStoreInIteratorCache(JSObject* obj) {
+  do {
+    if (obj->isNative()) {
+      MOZ_ASSERT(obj->as<NativeObject>().getDenseInitializedLength() == 0);
 
-            
-            
-            const Class* clasp = obj->getClass();
-            if (MOZ_UNLIKELY(IsTypedArrayClass(clasp))) {
-                return false;
-            }
-            if (MOZ_UNLIKELY(clasp->getNewEnumerate() || clasp->getEnumerate())) {
-                return false;
-            }
-        } else {
-            MOZ_ASSERT(obj->is<UnboxedPlainObject>());
-        }
-
-        obj = obj->staticPrototype();
-    } while (obj);
-
-    return true;
-}
-
-static MOZ_MUST_USE bool
-StoreInIteratorCache(JSContext* cx, JSObject* obj, PropertyIteratorObject* iterobj)
-{
-    MOZ_ASSERT(CanStoreInIteratorCache(obj));
-
-    NativeIterator* ni = iterobj->getNativeIterator();
-    MOZ_ASSERT(ni->guardCount() > 0);
-
-    IteratorHashPolicy::Lookup lookup(reinterpret_cast<ReceiverGuard*>(ni->guardsBegin()),
-                                      ni->guardCount(),
-                                      ni->guardKey());
-
-    ObjectRealm::IteratorCache& cache = ObjectRealm::get(obj).iteratorCache;
-    bool ok;
-    auto p = cache.lookupForAdd(lookup);
-    if (MOZ_LIKELY(!p)) {
-        ok = cache.add(p, iterobj);
-    } else {
-        
-        
-        cache.remove(p);
-        ok = cache.relookupOrAdd(p, lookup, iterobj);
-    }
-    if (!ok) {
-        ReportOutOfMemory(cx);
+      
+      
+      const Class* clasp = obj->getClass();
+      if (MOZ_UNLIKELY(IsTypedArrayClass(clasp))) {
         return false;
+      }
+      if (MOZ_UNLIKELY(clasp->getNewEnumerate() || clasp->getEnumerate())) {
+        return false;
+      }
+    } else {
+      MOZ_ASSERT(obj->is<UnboxedPlainObject>());
     }
 
-    return true;
+    obj = obj->staticPrototype();
+  } while (obj);
+
+  return true;
 }
 
-JSObject*
-js::GetIterator(JSContext* cx, HandleObject obj)
-{
-    uint32_t numGuards = 0;
-    if (PropertyIteratorObject* iterobj = LookupInIteratorCache(cx, obj, &numGuards)) {
-        NativeIterator* ni = iterobj->getNativeIterator();
-        ni->changeObjectBeingIterated(*obj);
-        RegisterEnumerator(ObjectRealm::get(obj), ni);
-        return iterobj;
-    }
+static MOZ_MUST_USE bool StoreInIteratorCache(JSContext* cx, JSObject* obj,
+                                              PropertyIteratorObject* iterobj) {
+  MOZ_ASSERT(CanStoreInIteratorCache(obj));
 
-    if (numGuards > 0 && !CanStoreInIteratorCache(obj)) {
-        numGuards = 0;
-    }
+  NativeIterator* ni = iterobj->getNativeIterator();
+  MOZ_ASSERT(ni->guardCount() > 0);
 
-    MOZ_ASSERT(!obj->is<PropertyIteratorObject>());
+  IteratorHashPolicy::Lookup lookup(
+      reinterpret_cast<ReceiverGuard*>(ni->guardsBegin()), ni->guardCount(),
+      ni->guardKey());
 
-    if (MOZ_UNLIKELY(obj->is<ProxyObject>())) {
-        return Proxy::enumerate(cx, obj);
-    }
-
-    AutoIdVector keys(cx);
-    if (!Snapshot(cx, obj, 0, &keys)) {
-        return nullptr;
-    }
-
-    JSObject* res = VectorToKeyIterator(cx, obj, keys, numGuards);
-    if (!res) {
-        return nullptr;
-    }
-
-    PropertyIteratorObject* iterobj = &res->as<PropertyIteratorObject>();
-    cx->check(iterobj);
-
+  ObjectRealm::IteratorCache& cache = ObjectRealm::get(obj).iteratorCache;
+  bool ok;
+  auto p = cache.lookupForAdd(lookup);
+  if (MOZ_LIKELY(!p)) {
+    ok = cache.add(p, iterobj);
+  } else {
     
-    if (numGuards > 0) {
-        if (!StoreInIteratorCache(cx, obj, iterobj)) {
-            return nullptr;
-        }
-    }
+    
+    cache.remove(p);
+    ok = cache.relookupOrAdd(p, lookup, iterobj);
+  }
+  if (!ok) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
 
+  return true;
+}
+
+JSObject* js::GetIterator(JSContext* cx, HandleObject obj) {
+  uint32_t numGuards = 0;
+  if (PropertyIteratorObject* iterobj =
+          LookupInIteratorCache(cx, obj, &numGuards)) {
+    NativeIterator* ni = iterobj->getNativeIterator();
+    ni->changeObjectBeingIterated(*obj);
+    RegisterEnumerator(ObjectRealm::get(obj), ni);
     return iterobj;
-}
+  }
 
-PropertyIteratorObject*
-js::LookupInIteratorCache(JSContext* cx, HandleObject obj)
-{
-    uint32_t numGuards = 0;
-    return LookupInIteratorCache(cx, obj, &numGuards);
-}
+  if (numGuards > 0 && !CanStoreInIteratorCache(obj)) {
+    numGuards = 0;
+  }
 
+  MOZ_ASSERT(!obj->is<PropertyIteratorObject>());
 
-JSObject*
-js::CreateIterResultObject(JSContext* cx, HandleValue value, bool done)
-{
-    
+  if (MOZ_UNLIKELY(obj->is<ProxyObject>())) {
+    return Proxy::enumerate(cx, obj);
+  }
 
-    
-    RootedObject templateObject(cx, cx->realm()->getOrCreateIterResultTemplateObject(cx));
-    if (!templateObject) {
-        return nullptr;
+  AutoIdVector keys(cx);
+  if (!Snapshot(cx, obj, 0, &keys)) {
+    return nullptr;
+  }
+
+  JSObject* res = VectorToKeyIterator(cx, obj, keys, numGuards);
+  if (!res) {
+    return nullptr;
+  }
+
+  PropertyIteratorObject* iterobj = &res->as<PropertyIteratorObject>();
+  cx->check(iterobj);
+
+  
+  if (numGuards > 0) {
+    if (!StoreInIteratorCache(cx, obj, iterobj)) {
+      return nullptr;
     }
+  }
 
-    NativeObject* resultObj;
-    JS_TRY_VAR_OR_RETURN_NULL(cx, resultObj, NativeObject::createWithTemplate(cx, gc::DefaultHeap,
-                                                                              templateObject));
-
-    
-    resultObj->setSlot(Realm::IterResultObjectValueSlot, value);
-
-    
-    resultObj->setSlot(Realm::IterResultObjectDoneSlot,
-                       done ? TrueHandleValue : FalseHandleValue);
-
-    
-    return resultObj;
+  return iterobj;
 }
 
-NativeObject*
-Realm::getOrCreateIterResultTemplateObject(JSContext* cx)
-{
-    MOZ_ASSERT(cx->realm() == this);
+PropertyIteratorObject* js::LookupInIteratorCache(JSContext* cx,
+                                                  HandleObject obj) {
+  uint32_t numGuards = 0;
+  return LookupInIteratorCache(cx, obj, &numGuards);
+}
 
-    if (iterResultTemplate_) {
-        return iterResultTemplate_;
-    }
 
-    NativeObject* templateObj = createIterResultTemplateObject(cx, WithObjectPrototype::Yes);
-    iterResultTemplate_.set(templateObj);
+JSObject* js::CreateIterResultObject(JSContext* cx, HandleValue value,
+                                     bool done) {
+  
+
+  
+  RootedObject templateObject(
+      cx, cx->realm()->getOrCreateIterResultTemplateObject(cx));
+  if (!templateObject) {
+    return nullptr;
+  }
+
+  NativeObject* resultObj;
+  JS_TRY_VAR_OR_RETURN_NULL(
+      cx, resultObj,
+      NativeObject::createWithTemplate(cx, gc::DefaultHeap, templateObject));
+
+  
+  resultObj->setSlot(Realm::IterResultObjectValueSlot, value);
+
+  
+  resultObj->setSlot(Realm::IterResultObjectDoneSlot,
+                     done ? TrueHandleValue : FalseHandleValue);
+
+  
+  return resultObj;
+}
+
+NativeObject* Realm::getOrCreateIterResultTemplateObject(JSContext* cx) {
+  MOZ_ASSERT(cx->realm() == this);
+
+  if (iterResultTemplate_) {
     return iterResultTemplate_;
+  }
+
+  NativeObject* templateObj =
+      createIterResultTemplateObject(cx, WithObjectPrototype::Yes);
+  iterResultTemplate_.set(templateObj);
+  return iterResultTemplate_;
 }
 
-NativeObject*
-Realm::getOrCreateIterResultWithoutPrototypeTemplateObject(JSContext* cx)
-{
-    MOZ_ASSERT(cx->realm() == this);
+NativeObject* Realm::getOrCreateIterResultWithoutPrototypeTemplateObject(
+    JSContext* cx) {
+  MOZ_ASSERT(cx->realm() == this);
 
-    if (iterResultWithoutPrototypeTemplate_) {
-        return iterResultWithoutPrototypeTemplate_;
-    }
-
-    NativeObject* templateObj = createIterResultTemplateObject(cx, WithObjectPrototype::No);
-    iterResultWithoutPrototypeTemplate_.set(templateObj);
+  if (iterResultWithoutPrototypeTemplate_) {
     return iterResultWithoutPrototypeTemplate_;
+  }
+
+  NativeObject* templateObj =
+      createIterResultTemplateObject(cx, WithObjectPrototype::No);
+  iterResultWithoutPrototypeTemplate_.set(templateObj);
+  return iterResultWithoutPrototypeTemplate_;
 }
 
-NativeObject*
-Realm::createIterResultTemplateObject(JSContext* cx, WithObjectPrototype withProto)
-{
-    
-    RootedNativeObject templateObject(cx,
-        withProto == WithObjectPrototype::Yes
-        ? NewBuiltinClassInstance<PlainObject>(cx, TenuredObject)
-        : NewObjectWithNullTaggedProto<PlainObject>(cx));
-    if (!templateObject) {
-        return nullptr;
-    }
+NativeObject* Realm::createIterResultTemplateObject(
+    JSContext* cx, WithObjectPrototype withProto) {
+  
+  RootedNativeObject templateObject(
+      cx, withProto == WithObjectPrototype::Yes
+              ? NewBuiltinClassInstance<PlainObject>(cx, TenuredObject)
+              : NewObjectWithNullTaggedProto<PlainObject>(cx));
+  if (!templateObject) {
+    return nullptr;
+  }
 
-    
-    Rooted<TaggedProto> proto(cx, templateObject->taggedProto());
-    RootedObjectGroup group(cx, ObjectGroupRealm::makeGroup(cx, templateObject->realm(),
-                                                            templateObject->getClass(),
-                                                            proto));
-    if (!group) {
-        return nullptr;
-    }
-    templateObject->setGroup(group);
+  
+  Rooted<TaggedProto> proto(cx, templateObject->taggedProto());
+  RootedObjectGroup group(
+      cx, ObjectGroupRealm::makeGroup(cx, templateObject->realm(),
+                                      templateObject->getClass(), proto));
+  if (!group) {
+    return nullptr;
+  }
+  templateObject->setGroup(group);
 
+  
+  if (!NativeDefineDataProperty(cx, templateObject, cx->names().value,
+                                UndefinedHandleValue, JSPROP_ENUMERATE)) {
+    return nullptr;
+  }
+
+  
+  if (!NativeDefineDataProperty(cx, templateObject, cx->names().done,
+                                TrueHandleValue, JSPROP_ENUMERATE)) {
+    return nullptr;
+  }
+
+  AutoSweepObjectGroup sweep(group);
+  if (!group->unknownProperties(sweep)) {
     
-    if (!NativeDefineDataProperty(cx, templateObject, cx->names().value, UndefinedHandleValue,
-                                  JSPROP_ENUMERATE))
+    HeapTypeSet* types =
+        group->maybeGetProperty(sweep, NameToId(cx->names().value));
+    MOZ_ASSERT(types);
     {
-        return nullptr;
+      AutoEnterAnalysis enter(cx);
+      types->makeUnknown(sweep, cx);
     }
+  }
 
-    
-    if (!NativeDefineDataProperty(cx, templateObject, cx->names().done, TrueHandleValue,
-                                  JSPROP_ENUMERATE))
-    {
-        return nullptr;
-    }
+  
+  DebugOnly<Shape*> shape = templateObject->lastProperty();
+  MOZ_ASSERT(shape->previous()->slot() == Realm::IterResultObjectValueSlot &&
+             shape->previous()->propidRef() == NameToId(cx->names().value));
+  MOZ_ASSERT(shape->slot() == Realm::IterResultObjectDoneSlot &&
+             shape->propidRef() == NameToId(cx->names().done));
 
-    AutoSweepObjectGroup sweep(group);
-    if (!group->unknownProperties(sweep)) {
-        
-        HeapTypeSet* types = group->maybeGetProperty(sweep, NameToId(cx->names().value));
-        MOZ_ASSERT(types);
-        {
-            AutoEnterAnalysis enter(cx);
-            types->makeUnknown(sweep, cx);
-        }
-    }
-
-    
-    DebugOnly<Shape*> shape = templateObject->lastProperty();
-    MOZ_ASSERT(shape->previous()->slot() == Realm::IterResultObjectValueSlot &&
-               shape->previous()->propidRef() == NameToId(cx->names().value));
-    MOZ_ASSERT(shape->slot() == Realm::IterResultObjectDoneSlot &&
-               shape->propidRef() == NameToId(cx->names().done));
-
-    return templateObject;
+  return templateObject;
 }
 
 
 
-size_t
-PropertyIteratorObject::sizeOfMisc(mozilla::MallocSizeOf mallocSizeOf) const
-{
-    return mallocSizeOf(getPrivate());
+size_t PropertyIteratorObject::sizeOfMisc(
+    mozilla::MallocSizeOf mallocSizeOf) const {
+  return mallocSizeOf(getPrivate());
 }
 
-void
-PropertyIteratorObject::trace(JSTracer* trc, JSObject* obj)
-{
-    if (NativeIterator* ni = obj->as<PropertyIteratorObject>().getNativeIterator()) {
-        ni->trace(trc);
-    }
+void PropertyIteratorObject::trace(JSTracer* trc, JSObject* obj) {
+  if (NativeIterator* ni =
+          obj->as<PropertyIteratorObject>().getNativeIterator()) {
+    ni->trace(trc);
+  }
 }
 
-void
-PropertyIteratorObject::finalize(FreeOp* fop, JSObject* obj)
-{
-    if (NativeIterator* ni = obj->as<PropertyIteratorObject>().getNativeIterator()) {
-        fop->free_(ni);
-    }
+void PropertyIteratorObject::finalize(FreeOp* fop, JSObject* obj) {
+  if (NativeIterator* ni =
+          obj->as<PropertyIteratorObject>().getNativeIterator()) {
+    fop->free_(ni);
+  }
 }
 
-const ClassOps PropertyIteratorObject::classOps_ = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    finalize,
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    trace
-};
+const ClassOps PropertyIteratorObject::classOps_ = {nullptr, 
+                                                    nullptr, 
+                                                    nullptr, 
+                                                    nullptr, 
+                                                    nullptr, 
+                                                    nullptr, 
+                                                    finalize,
+                                                    nullptr, 
+                                                    nullptr, 
+                                                    nullptr, 
+                                                    trace};
 
 const Class PropertyIteratorObject::class_ = {
-    "Iterator",
-    JSCLASS_HAS_PRIVATE |
-    JSCLASS_BACKGROUND_FINALIZE,
-    &PropertyIteratorObject::classOps_
-};
+    "Iterator", JSCLASS_HAS_PRIVATE | JSCLASS_BACKGROUND_FINALIZE,
+    &PropertyIteratorObject::classOps_};
 
-static const Class ArrayIteratorPrototypeClass = {
-    "Array Iterator",
-    0
-};
+static const Class ArrayIteratorPrototypeClass = {"Array Iterator", 0};
 
 enum {
-    ArrayIteratorSlotIteratedObject,
-    ArrayIteratorSlotNextIndex,
-    ArrayIteratorSlotItemKind,
-    ArrayIteratorSlotCount
+  ArrayIteratorSlotIteratedObject,
+  ArrayIteratorSlotNextIndex,
+  ArrayIteratorSlotItemKind,
+  ArrayIteratorSlotCount
 };
 
 const Class ArrayIteratorObject::class_ = {
-    "Array Iterator",
-    JSCLASS_HAS_RESERVED_SLOTS(ArrayIteratorSlotCount)
-};
+    "Array Iterator", JSCLASS_HAS_RESERVED_SLOTS(ArrayIteratorSlotCount)};
 
+ArrayIteratorObject* js::NewArrayIteratorObject(JSContext* cx,
+                                                NewObjectKind newKind) {
+  RootedObject proto(
+      cx, GlobalObject::getOrCreateArrayIteratorPrototype(cx, cx->global()));
+  if (!proto) {
+    return nullptr;
+  }
 
-ArrayIteratorObject*
-js::NewArrayIteratorObject(JSContext* cx, NewObjectKind newKind)
-{
-    RootedObject proto(cx, GlobalObject::getOrCreateArrayIteratorPrototype(cx, cx->global()));
-    if (!proto) {
-        return nullptr;
-    }
-
-    return NewObjectWithGivenProto<ArrayIteratorObject>(cx, proto, newKind);
+  return NewObjectWithGivenProto<ArrayIteratorObject>(cx, proto, newKind);
 }
 
 static const JSFunctionSpec array_iterator_methods[] = {
-    JS_SELF_HOSTED_FN("next", "ArrayIteratorNext", 0, 0),
-    JS_FS_END
-};
+    JS_SELF_HOSTED_FN("next", "ArrayIteratorNext", 0, 0), JS_FS_END};
 
-static const Class StringIteratorPrototypeClass = {
-    "String Iterator",
-    0
-};
+static const Class StringIteratorPrototypeClass = {"String Iterator", 0};
 
 enum {
-    StringIteratorSlotIteratedObject,
-    StringIteratorSlotNextIndex,
-    StringIteratorSlotCount
+  StringIteratorSlotIteratedObject,
+  StringIteratorSlotNextIndex,
+  StringIteratorSlotCount
 };
 
 const Class StringIteratorObject::class_ = {
-    "String Iterator",
-    JSCLASS_HAS_RESERVED_SLOTS(StringIteratorSlotCount)
-};
+    "String Iterator", JSCLASS_HAS_RESERVED_SLOTS(StringIteratorSlotCount)};
 
 static const JSFunctionSpec string_iterator_methods[] = {
-    JS_SELF_HOSTED_FN("next", "StringIteratorNext", 0, 0),
-    JS_FS_END
-};
+    JS_SELF_HOSTED_FN("next", "StringIteratorNext", 0, 0), JS_FS_END};
 
-StringIteratorObject*
-js::NewStringIteratorObject(JSContext* cx, NewObjectKind newKind)
-{
-    RootedObject proto(cx, GlobalObject::getOrCreateStringIteratorPrototype(cx, cx->global()));
-    if (!proto) {
-        return nullptr;
-    }
+StringIteratorObject* js::NewStringIteratorObject(JSContext* cx,
+                                                  NewObjectKind newKind) {
+  RootedObject proto(
+      cx, GlobalObject::getOrCreateStringIteratorPrototype(cx, cx->global()));
+  if (!proto) {
+    return nullptr;
+  }
 
-    return NewObjectWithGivenProto<StringIteratorObject>(cx, proto, newKind);
+  return NewObjectWithGivenProto<StringIteratorObject>(cx, proto, newKind);
 }
 
-JSObject*
-js::ValueToIterator(JSContext* cx, HandleValue vp)
-{
-    RootedObject obj(cx);
-    if (vp.isObject()) {
-        
-        obj = &vp.toObject();
-    } else if (vp.isNullOrUndefined()) {
-        
-
-
-
-
-        return NewEmptyPropertyIterator(cx);
-    } else {
-        obj = ToObject(cx, vp);
-        if (!obj) {
-            return nullptr;
-        }
-    }
-
-    return GetIterator(cx, obj);
-}
-
-void
-js::CloseIterator(JSObject* obj)
-{
-    if (obj->is<PropertyIteratorObject>()) {
-        
-        NativeIterator* ni = obj->as<PropertyIteratorObject>().getNativeIterator();
-
-        ni->unlink();
-
-        MOZ_ASSERT(ni->isActive());
-        ni->markInactive();
-
-        
-        
-        ni->resetPropertyCursorForReuse();
-    }
-}
-
-bool
-js::IteratorCloseForException(JSContext* cx, HandleObject obj)
-{
-    MOZ_ASSERT(cx->isExceptionPending());
-
-    bool isClosingGenerator = cx->isClosingGenerator();
-    JS::AutoSaveExceptionState savedExc(cx);
-
+JSObject* js::ValueToIterator(JSContext* cx, HandleValue vp) {
+  RootedObject obj(cx);
+  if (vp.isObject()) {
     
+    obj = &vp.toObject();
+  } else if (vp.isNullOrUndefined()) {
     
 
-    
-    
-    
-    RootedValue returnMethod(cx);
-    if (!GetProperty(cx, obj, obj, cx->names().return_, &returnMethod)) {
-        return false;
-    }
-
-    
-    
-    
-    
-    if (returnMethod.isNullOrUndefined()) {
-        return true;
-    }
-    if (!IsCallable(returnMethod)) {
-        return ReportIsNotFunction(cx, returnMethod);
-    }
-
-    
-    
-    
-    RootedValue rval(cx);
-    bool ok = Call(cx, returnMethod, obj, &rval);
-    if (isClosingGenerator) {
-        
-        
-        
-        if (!ok) {
-            return false;
-        }
-        if (!rval.isObject()) {
-            return ThrowCheckIsObject(cx, CheckIsObjectKind::IteratorReturn);
-        }
-    } else {
-        
-        
-        
-        savedExc.restore();
-    }
-
-    return true;
-}
-
-void
-js::UnwindIteratorForUncatchableException(JSObject* obj)
-{
-    if (obj->is<PropertyIteratorObject>()) {
-        NativeIterator* ni = obj->as<PropertyIteratorObject>().getNativeIterator();
-        ni->unlink();
-    }
-}
-
-static bool
-SuppressDeletedProperty(JSContext* cx, NativeIterator* ni, HandleObject obj,
-                        Handle<JSFlatString*> str)
-{
-    if (ni->objectBeingIterated() != obj) {
-        return true;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (ni->previousPropertyWas(str)) {
-        return true;
-    }
-
-    while (true) {
-        bool restart = false;
-
-        
-        GCPtrFlatString* const cursor = ni->nextProperty();
-        GCPtrFlatString* const end = ni->propertiesEnd();
-        for (GCPtrFlatString* idp = cursor; idp < end; ++idp) {
-            
-            if ((*idp)->isAtom() && str->isAtom()) {
-                if (*idp != str) {
-                    continue;
-                }
-            } else {
-                if (!EqualStrings(*idp, str)) {
-                    continue;
-                }
-            }
-
-            
-            
-            RootedObject proto(cx);
-            if (!GetPrototype(cx, obj, &proto)) {
-                return false;
-            }
-            if (proto) {
-                RootedId id(cx);
-                RootedValue idv(cx, StringValue(*idp));
-                if (!ValueToId<CanGC>(cx, idv, &id)) {
-                    return false;
-                }
-
-                Rooted<PropertyDescriptor> desc(cx);
-                if (!GetPropertyDescriptor(cx, proto, id, &desc)) {
-                    return false;
-                }
-
-                if (desc.object() && desc.enumerable()) {
-                    continue;
-                }
-            }
-
-            
-            
-            if (end != ni->propertiesEnd() || cursor != ni->nextProperty()) {
-                restart = true;
-                break;
-            }
-
-            
-            
-            
-            if (idp == cursor) {
-                ni->incCursor();
-            } else {
-                for (GCPtrFlatString* p = idp; p + 1 != end; p++) {
-                    *p = *(p + 1);
-                }
-
-                ni->trimLastProperty();
-            }
-
-            ni->markHasUnvisitedPropertyDeletion();
-            return true;
-        }
-
-        if (!restart) {
-            return true;
-        }
-    }
-}
 
 
 
-
-
-
-
-
-
-
-
-
-
-static bool
-SuppressDeletedPropertyHelper(JSContext* cx, HandleObject obj, Handle<JSFlatString*> str)
-{
-    NativeIterator* enumeratorList = ObjectRealm::get(obj).enumerators;
-    NativeIterator* ni = enumeratorList->next();
-
-    while (ni != enumeratorList) {
-        if (!SuppressDeletedProperty(cx, ni, obj, str)) {
-            return false;
-        }
-        ni = ni->next();
-    }
-
-    return true;
-}
-
-bool
-js::SuppressDeletedProperty(JSContext* cx, HandleObject obj, jsid id)
-{
-    if (MOZ_LIKELY(!ObjectRealm::get(obj).objectMaybeInIteration(obj))) {
-        return true;
-    }
-
-    if (JSID_IS_SYMBOL(id)) {
-        return true;
-    }
-
-    Rooted<JSFlatString*> str(cx, IdToString(cx, id));
-    if (!str) {
-        return false;
-    }
-    return SuppressDeletedPropertyHelper(cx, obj, str);
-}
-
-bool
-js::SuppressDeletedElement(JSContext* cx, HandleObject obj, uint32_t index)
-{
-    if (MOZ_LIKELY(!ObjectRealm::get(obj).objectMaybeInIteration(obj))) {
-        return true;
-    }
-
-    RootedId id(cx);
-    if (!IndexToId(cx, index, &id)) {
-        return false;
-    }
-
-    Rooted<JSFlatString*> str(cx, IdToString(cx, id));
-    if (!str) {
-        return false;
-    }
-    return SuppressDeletedPropertyHelper(cx, obj, str);
-}
-
-bool
-js::IteratorMore(JSContext* cx, HandleObject iterobj, MutableHandleValue rval)
-{
-    
-    if (MOZ_LIKELY(iterobj->is<PropertyIteratorObject>())) {
-        NativeIterator* ni = iterobj->as<PropertyIteratorObject>().getNativeIterator();
-        rval.set(ni->nextIteratedValueAndAdvance());
-        return true;
-    }
-
-    if (JS_IsDeadWrapper(iterobj)) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
-        return false;
-    }
-
-    MOZ_ASSERT(IsWrapper(iterobj));
-
-    RootedObject obj(cx, CheckedUnwrap(iterobj));
+    return NewEmptyPropertyIterator(cx);
+  } else {
+    obj = ToObject(cx, vp);
     if (!obj) {
+      return nullptr;
+    }
+  }
+
+  return GetIterator(cx, obj);
+}
+
+void js::CloseIterator(JSObject* obj) {
+  if (obj->is<PropertyIteratorObject>()) {
+    
+    NativeIterator* ni = obj->as<PropertyIteratorObject>().getNativeIterator();
+
+    ni->unlink();
+
+    MOZ_ASSERT(ni->isActive());
+    ni->markInactive();
+
+    
+    
+    ni->resetPropertyCursorForReuse();
+  }
+}
+
+bool js::IteratorCloseForException(JSContext* cx, HandleObject obj) {
+  MOZ_ASSERT(cx->isExceptionPending());
+
+  bool isClosingGenerator = cx->isClosingGenerator();
+  JS::AutoSaveExceptionState savedExc(cx);
+
+  
+  
+
+  
+  
+  
+  RootedValue returnMethod(cx);
+  if (!GetProperty(cx, obj, obj, cx->names().return_, &returnMethod)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (returnMethod.isNullOrUndefined()) {
+    return true;
+  }
+  if (!IsCallable(returnMethod)) {
+    return ReportIsNotFunction(cx, returnMethod);
+  }
+
+  
+  
+  
+  RootedValue rval(cx);
+  bool ok = Call(cx, returnMethod, obj, &rval);
+  if (isClosingGenerator) {
+    
+    
+    
+    if (!ok) {
+      return false;
+    }
+    if (!rval.isObject()) {
+      return ThrowCheckIsObject(cx, CheckIsObjectKind::IteratorReturn);
+    }
+  } else {
+    
+    
+    
+    savedExc.restore();
+  }
+
+  return true;
+}
+
+void js::UnwindIteratorForUncatchableException(JSObject* obj) {
+  if (obj->is<PropertyIteratorObject>()) {
+    NativeIterator* ni = obj->as<PropertyIteratorObject>().getNativeIterator();
+    ni->unlink();
+  }
+}
+
+static bool SuppressDeletedProperty(JSContext* cx, NativeIterator* ni,
+                                    HandleObject obj,
+                                    Handle<JSFlatString*> str) {
+  if (ni->objectBeingIterated() != obj) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (ni->previousPropertyWas(str)) {
+    return true;
+  }
+
+  while (true) {
+    bool restart = false;
+
+    
+    GCPtrFlatString* const cursor = ni->nextProperty();
+    GCPtrFlatString* const end = ni->propertiesEnd();
+    for (GCPtrFlatString* idp = cursor; idp < end; ++idp) {
+      
+      if ((*idp)->isAtom() && str->isAtom()) {
+        if (*idp != str) {
+          continue;
+        }
+      } else {
+        if (!EqualStrings(*idp, str)) {
+          continue;
+        }
+      }
+
+      
+      
+      RootedObject proto(cx);
+      if (!GetPrototype(cx, obj, &proto)) {
         return false;
+      }
+      if (proto) {
+        RootedId id(cx);
+        RootedValue idv(cx, StringValue(*idp));
+        if (!ValueToId<CanGC>(cx, idv, &id)) {
+          return false;
+        }
+
+        Rooted<PropertyDescriptor> desc(cx);
+        if (!GetPropertyDescriptor(cx, proto, id, &desc)) {
+          return false;
+        }
+
+        if (desc.object() && desc.enumerable()) {
+          continue;
+        }
+      }
+
+      
+      
+      if (end != ni->propertiesEnd() || cursor != ni->nextProperty()) {
+        restart = true;
+        break;
+      }
+
+      
+      
+      
+      if (idp == cursor) {
+        ni->incCursor();
+      } else {
+        for (GCPtrFlatString* p = idp; p + 1 != end; p++) {
+          *p = *(p + 1);
+        }
+
+        ni->trimLastProperty();
+      }
+
+      ni->markHasUnvisitedPropertyDeletion();
+      return true;
     }
 
-    MOZ_RELEASE_ASSERT(obj->is<PropertyIteratorObject>());
-    {
-        AutoRealm ar(cx, obj);
-        NativeIterator* ni = obj->as<PropertyIteratorObject>().getNativeIterator();
-        rval.set(ni->nextIteratedValueAndAdvance());
+    if (!restart) {
+      return true;
     }
-    return cx->compartment()->wrap(cx, rval);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool SuppressDeletedPropertyHelper(JSContext* cx, HandleObject obj,
+                                          Handle<JSFlatString*> str) {
+  NativeIterator* enumeratorList = ObjectRealm::get(obj).enumerators;
+  NativeIterator* ni = enumeratorList->next();
+
+  while (ni != enumeratorList) {
+    if (!SuppressDeletedProperty(cx, ni, obj, str)) {
+      return false;
+    }
+    ni = ni->next();
+  }
+
+  return true;
+}
+
+bool js::SuppressDeletedProperty(JSContext* cx, HandleObject obj, jsid id) {
+  if (MOZ_LIKELY(!ObjectRealm::get(obj).objectMaybeInIteration(obj))) {
+    return true;
+  }
+
+  if (JSID_IS_SYMBOL(id)) {
+    return true;
+  }
+
+  Rooted<JSFlatString*> str(cx, IdToString(cx, id));
+  if (!str) {
+    return false;
+  }
+  return SuppressDeletedPropertyHelper(cx, obj, str);
+}
+
+bool js::SuppressDeletedElement(JSContext* cx, HandleObject obj,
+                                uint32_t index) {
+  if (MOZ_LIKELY(!ObjectRealm::get(obj).objectMaybeInIteration(obj))) {
+    return true;
+  }
+
+  RootedId id(cx);
+  if (!IndexToId(cx, index, &id)) {
+    return false;
+  }
+
+  Rooted<JSFlatString*> str(cx, IdToString(cx, id));
+  if (!str) {
+    return false;
+  }
+  return SuppressDeletedPropertyHelper(cx, obj, str);
+}
+
+bool js::IteratorMore(JSContext* cx, HandleObject iterobj,
+                      MutableHandleValue rval) {
+  
+  if (MOZ_LIKELY(iterobj->is<PropertyIteratorObject>())) {
+    NativeIterator* ni =
+        iterobj->as<PropertyIteratorObject>().getNativeIterator();
+    rval.set(ni->nextIteratedValueAndAdvance());
+    return true;
+  }
+
+  if (JS_IsDeadWrapper(iterobj)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
+    return false;
+  }
+
+  MOZ_ASSERT(IsWrapper(iterobj));
+
+  RootedObject obj(cx, CheckedUnwrap(iterobj));
+  if (!obj) {
+    return false;
+  }
+
+  MOZ_RELEASE_ASSERT(obj->is<PropertyIteratorObject>());
+  {
+    AutoRealm ar(cx, obj);
+    NativeIterator* ni = obj->as<PropertyIteratorObject>().getNativeIterator();
+    rval.set(ni->nextIteratedValueAndAdvance());
+  }
+  return cx->compartment()->wrap(cx, rval);
 }
 
 static const JSFunctionSpec iterator_proto_methods[] = {
-    JS_SELF_HOSTED_SYM_FN(iterator, "IteratorIdentity", 0, 0),
-    JS_FS_END
-};
+    JS_SELF_HOSTED_SYM_FN(iterator, "IteratorIdentity", 0, 0), JS_FS_END};
 
- bool
-GlobalObject::initIteratorProto(JSContext* cx, Handle<GlobalObject*> global)
-{
-    if (global->getReservedSlot(ITERATOR_PROTO).isObject()) {
-        return true;
-    }
-
-    RootedObject proto(cx, GlobalObject::createBlankPrototype<PlainObject>(cx, global));
-    if (!proto || !DefinePropertiesAndFunctions(cx, proto, nullptr, iterator_proto_methods)) {
-        return false;
-    }
-
-    global->setReservedSlot(ITERATOR_PROTO, ObjectValue(*proto));
+ bool GlobalObject::initIteratorProto(
+    JSContext* cx, Handle<GlobalObject*> global) {
+  if (global->getReservedSlot(ITERATOR_PROTO).isObject()) {
     return true;
+  }
+
+  RootedObject proto(
+      cx, GlobalObject::createBlankPrototype<PlainObject>(cx, global));
+  if (!proto || !DefinePropertiesAndFunctions(cx, proto, nullptr,
+                                              iterator_proto_methods)) {
+    return false;
+  }
+
+  global->setReservedSlot(ITERATOR_PROTO, ObjectValue(*proto));
+  return true;
 }
 
- bool
-GlobalObject::initArrayIteratorProto(JSContext* cx, Handle<GlobalObject*> global)
-{
-    if (global->getReservedSlot(ARRAY_ITERATOR_PROTO).isObject()) {
-        return true;
-    }
-
-    RootedObject iteratorProto(cx, GlobalObject::getOrCreateIteratorPrototype(cx, global));
-    if (!iteratorProto) {
-        return false;
-    }
-
-    const Class* cls = &ArrayIteratorPrototypeClass;
-    RootedObject proto(cx, GlobalObject::createBlankPrototypeInheriting(cx, cls, iteratorProto));
-    if (!proto ||
-        !DefinePropertiesAndFunctions(cx, proto, nullptr, array_iterator_methods) ||
-        !DefineToStringTag(cx, proto, cx->names().ArrayIterator))
-    {
-        return false;
-    }
-
-    global->setReservedSlot(ARRAY_ITERATOR_PROTO, ObjectValue(*proto));
+ bool GlobalObject::initArrayIteratorProto(
+    JSContext* cx, Handle<GlobalObject*> global) {
+  if (global->getReservedSlot(ARRAY_ITERATOR_PROTO).isObject()) {
     return true;
+  }
+
+  RootedObject iteratorProto(
+      cx, GlobalObject::getOrCreateIteratorPrototype(cx, global));
+  if (!iteratorProto) {
+    return false;
+  }
+
+  const Class* cls = &ArrayIteratorPrototypeClass;
+  RootedObject proto(
+      cx, GlobalObject::createBlankPrototypeInheriting(cx, cls, iteratorProto));
+  if (!proto ||
+      !DefinePropertiesAndFunctions(cx, proto, nullptr,
+                                    array_iterator_methods) ||
+      !DefineToStringTag(cx, proto, cx->names().ArrayIterator)) {
+    return false;
+  }
+
+  global->setReservedSlot(ARRAY_ITERATOR_PROTO, ObjectValue(*proto));
+  return true;
 }
 
- bool
-GlobalObject::initStringIteratorProto(JSContext* cx, Handle<GlobalObject*> global)
-{
-    if (global->getReservedSlot(STRING_ITERATOR_PROTO).isObject()) {
-        return true;
-    }
-
-    RootedObject iteratorProto(cx, GlobalObject::getOrCreateIteratorPrototype(cx, global));
-    if (!iteratorProto) {
-        return false;
-    }
-
-    const Class* cls = &StringIteratorPrototypeClass;
-    RootedObject proto(cx, GlobalObject::createBlankPrototypeInheriting(cx, cls, iteratorProto));
-    if (!proto ||
-        !DefinePropertiesAndFunctions(cx, proto, nullptr, string_iterator_methods) ||
-        !DefineToStringTag(cx, proto, cx->names().StringIterator))
-    {
-        return false;
-    }
-
-    global->setReservedSlot(STRING_ITERATOR_PROTO, ObjectValue(*proto));
+ bool GlobalObject::initStringIteratorProto(
+    JSContext* cx, Handle<GlobalObject*> global) {
+  if (global->getReservedSlot(STRING_ITERATOR_PROTO).isObject()) {
     return true;
+  }
+
+  RootedObject iteratorProto(
+      cx, GlobalObject::getOrCreateIteratorPrototype(cx, global));
+  if (!iteratorProto) {
+    return false;
+  }
+
+  const Class* cls = &StringIteratorPrototypeClass;
+  RootedObject proto(
+      cx, GlobalObject::createBlankPrototypeInheriting(cx, cls, iteratorProto));
+  if (!proto ||
+      !DefinePropertiesAndFunctions(cx, proto, nullptr,
+                                    string_iterator_methods) ||
+      !DefineToStringTag(cx, proto, cx->names().StringIterator)) {
+    return false;
+  }
+
+  global->setReservedSlot(STRING_ITERATOR_PROTO, ObjectValue(*proto));
+  return true;
 }

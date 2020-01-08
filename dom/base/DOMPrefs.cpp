@@ -12,9 +12,7 @@
 namespace mozilla {
 namespace dom {
 
-void
-DOMPrefs::Initialize()
-{
+void DOMPrefs::Initialize() {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -29,9 +27,7 @@ DOMPrefs::Initialize()
 #undef DOM_WEBIDL_PREF
 }
 
- bool
-DOMPrefs::DumpEnabled()
-{
+ bool DOMPrefs::DumpEnabled() {
 #if !(defined(DEBUG) || defined(MOZ_ENABLE_JS_DUMP))
   return StaticPrefs::browser_dom_window_dump_enabled();
 #else
@@ -40,15 +36,13 @@ DOMPrefs::DumpEnabled()
 }
 
 #define DOM_WEBIDL_PREF(name)
- bool                              \
-  DOMPrefs::name(JSContext* aCx, JSObject* aObj) \
-  {                                              \
-    return StaticPrefs::name();                  \
+ bool DOMPrefs::name(JSContext* aCx, JSObject* aObj) { \
+    return StaticPrefs::name();                                      \
   }
 
 #include "DOMPrefsInternal.h"
 
 #undef DOM_WEBIDL_PREF
 
-} 
-} 
+}  
+}  

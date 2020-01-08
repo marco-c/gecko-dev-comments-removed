@@ -12,10 +12,11 @@
 namespace mozilla {
 namespace net {
 extern LazyLogModule webrtcProxyLog;
-} 
-} 
+}  
+}  
 
 #undef LOG
-#define LOG(args) MOZ_LOG(mozilla::net::webrtcProxyLog, mozilla::LogLevel::Debug, args)
+#define LOG(args) \
+  MOZ_LOG(mozilla::net::webrtcProxyLog, mozilla::LogLevel::Debug, args)
 
-#endif 
+#endif  

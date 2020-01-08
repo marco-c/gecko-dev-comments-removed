@@ -5,108 +5,104 @@
 
 
 #include "nsDeviceContext.h"
-#include <algorithm>                    
-#include "gfxASurface.h"                
+#include <algorithm>      
+#include "gfxASurface.h"  
 #include "gfxContext.h"
-#include "gfxFont.h"                    
-#include "gfxImageSurface.h"            
-#include "gfxPoint.h"                   
-#include "mozilla/Attributes.h"         
+#include "gfxFont.h"             
+#include "gfxImageSurface.h"     
+#include "gfxPoint.h"            
+#include "mozilla/Attributes.h"  
 #include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/gfx/PrintTarget.h"
-#include "mozilla/Preferences.h"        
-#include "mozilla/Services.h"           
-#include "mozilla/mozalloc.h"           
-#include "nsCRT.h"                      
-#include "nsDebug.h"                    
-#include "nsFont.h"                     
-#include "nsFontMetrics.h"              
-#include "nsAtom.h"                    
+#include "mozilla/Preferences.h"  
+#include "mozilla/Services.h"     
+#include "mozilla/mozalloc.h"     
+#include "nsCRT.h"                
+#include "nsDebug.h"              
+#include "nsFont.h"               
+#include "nsFontMetrics.h"        
+#include "nsAtom.h"               
 #include "nsID.h"
-#include "nsIDeviceContextSpec.h"       
-#include "nsLanguageAtomService.h"      
-#include "nsIObserver.h"                
-#include "nsIObserverService.h"         
-#include "nsIScreen.h"                  
-#include "nsISupportsImpl.h"            
-#include "nsISupportsUtils.h"           
-#include "nsIWidget.h"                  
-#include "nsRect.h"                     
-#include "nsServiceManagerUtils.h"      
+#include "nsIDeviceContextSpec.h"   
+#include "nsLanguageAtomService.h"  
+#include "nsIObserver.h"            
+#include "nsIObserverService.h"     
+#include "nsIScreen.h"              
+#include "nsISupportsImpl.h"        
+#include "nsISupportsUtils.h"       
+#include "nsIWidget.h"              
+#include "nsRect.h"                 
+#include "nsServiceManagerUtils.h"  
 #include "nsString.h"               
-#include "nsTArray.h"                   
-#include "nsThreadUtils.h"              
+#include "nsTArray.h"               
+#include "nsThreadUtils.h"          
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/widget/ScreenManager.h" 
+#include "mozilla/widget/ScreenManager.h"  
 
 using namespace mozilla;
 using namespace mozilla::gfx;
 using mozilla::services::GetObserverService;
 using mozilla::widget::ScreenManager;
 
-class nsFontCache final : public nsIObserver
-{
-public:
-    nsFontCache(): mContext(nullptr) {}
+class nsFontCache final : public nsIObserver {
+ public:
+  nsFontCache() : mContext(nullptr) {}
 
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIOBSERVER
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
 
-    void Init(nsDeviceContext* aContext);
-    void Destroy();
+  void Init(nsDeviceContext* aContext);
+  void Destroy();
 
-    already_AddRefed<nsFontMetrics> GetMetricsFor(
-        const nsFont& aFont, const nsFontMetrics::Params& aParams);
+  already_AddRefed<nsFontMetrics> GetMetricsFor(
+      const nsFont& aFont, const nsFontMetrics::Params& aParams);
 
-    void FontMetricsDeleted(const nsFontMetrics* aFontMetrics);
-    void Compact();
+  void FontMetricsDeleted(const nsFontMetrics* aFontMetrics);
+  void Compact();
 
-    
-    void Flush(int32_t aFlushCount = -1);
+  
+  void Flush(int32_t aFlushCount = -1);
 
-    void UpdateUserFonts(gfxUserFontSet* aUserFontSet);
+  void UpdateUserFonts(gfxUserFontSet* aUserFontSet);
 
-protected:
-    
-    
-    
-    
-    
-    static const int32_t kMaxCacheEntries = 128;
+ protected:
+  
+  
+  
+  
+  
+  static const int32_t kMaxCacheEntries = 128;
 
-    ~nsFontCache() {}
+  ~nsFontCache() {}
 
-    nsDeviceContext*          mContext; 
-    RefPtr<nsAtom>         mLocaleLanguage;
+  nsDeviceContext* mContext;  
+  RefPtr<nsAtom> mLocaleLanguage;
 
-    
-    
-    
-    
-    
-    
-    AutoTArray<nsFontMetrics*,kMaxCacheEntries*2> mFontMetrics;
+  
+  
+  
+  
+  
+  
+  AutoTArray<nsFontMetrics*, kMaxCacheEntries * 2> mFontMetrics;
 
-    bool mFlushPending = false;
+  bool mFlushPending = false;
 
-    class FlushFontMetricsTask : public mozilla::Runnable
-    {
-    public:
-        explicit FlushFontMetricsTask(nsFontCache* aCache)
-            : mozilla::Runnable("FlushFontMetricsTask")
-            , mCache(aCache)
-        { }
-        NS_IMETHOD Run() override
-        {
-            
-            
-            mCache->Flush(mCache->mFontMetrics.Length() - kMaxCacheEntries / 2);
-            mCache->mFlushPending = false;
-            return NS_OK;
-        }
-    private:
-        RefPtr<nsFontCache> mCache;
-    };
+  class FlushFontMetricsTask : public mozilla::Runnable {
+   public:
+    explicit FlushFontMetricsTask(nsFontCache* aCache)
+        : mozilla::Runnable("FlushFontMetricsTask"), mCache(aCache) {}
+    NS_IMETHOD Run() override {
+      
+      
+      mCache->Flush(mCache->mFontMetrics.Length() - kMaxCacheEntries / 2);
+      mCache->mFlushPending = false;
+      return NS_OK;
+    }
+
+   private:
+    RefPtr<nsFontCache> mCache;
+  };
 };
 
 NS_IMPL_ISUPPORTS(nsFontCache, nsIObserver)
@@ -114,591 +110,519 @@ NS_IMPL_ISUPPORTS(nsFontCache, nsIObserver)
 
 
 
-void
-nsFontCache::Init(nsDeviceContext* aContext)
-{
-    mContext = aContext;
-    
-    
-    nsCOMPtr<nsIObserverService> obs = GetObserverService();
-    if (obs)
-        obs->AddObserver(this, "memory-pressure", false);
+void nsFontCache::Init(nsDeviceContext* aContext) {
+  mContext = aContext;
+  
+  
+  nsCOMPtr<nsIObserverService> obs = GetObserverService();
+  if (obs) obs->AddObserver(this, "memory-pressure", false);
 
-    mLocaleLanguage = nsLanguageAtomService::GetService()->GetLocaleLanguage();
-    if (!mLocaleLanguage) {
-        mLocaleLanguage = NS_Atomize("x-western");
-    }
+  mLocaleLanguage = nsLanguageAtomService::GetService()->GetLocaleLanguage();
+  if (!mLocaleLanguage) {
+    mLocaleLanguage = NS_Atomize("x-western");
+  }
 }
 
-void
-nsFontCache::Destroy()
-{
-    nsCOMPtr<nsIObserverService> obs = GetObserverService();
-    if (obs)
-        obs->RemoveObserver(this, "memory-pressure");
-    Flush();
+void nsFontCache::Destroy() {
+  nsCOMPtr<nsIObserverService> obs = GetObserverService();
+  if (obs) obs->RemoveObserver(this, "memory-pressure");
+  Flush();
 }
 
 NS_IMETHODIMP
-nsFontCache::Observe(nsISupports*, const char* aTopic, const char16_t*)
-{
-    if (!nsCRT::strcmp(aTopic, "memory-pressure"))
-        Compact();
-    return NS_OK;
+nsFontCache::Observe(nsISupports*, const char* aTopic, const char16_t*) {
+  if (!nsCRT::strcmp(aTopic, "memory-pressure")) Compact();
+  return NS_OK;
 }
 
-already_AddRefed<nsFontMetrics>
-nsFontCache::GetMetricsFor(const nsFont& aFont,
-                           const nsFontMetrics::Params& aParams)
-{
-    nsAtom* language = aParams.language ? aParams.language
-                                         : mLocaleLanguage.get();
+already_AddRefed<nsFontMetrics> nsFontCache::GetMetricsFor(
+    const nsFont& aFont, const nsFontMetrics::Params& aParams) {
+  nsAtom* language =
+      aParams.language ? aParams.language : mLocaleLanguage.get();
 
-    
-    
-    const int32_t n = mFontMetrics.Length() - 1;
-    for (int32_t i = n; i >= 0; --i) {
-        nsFontMetrics* fm = mFontMetrics[i];
-        if (fm->Font().Equals(aFont) &&
-            fm->GetUserFontSet() == aParams.userFontSet &&
-            fm->Language() == language &&
-            fm->Orientation() == aParams.orientation) {
-            if (i != n) {
-                
-                mFontMetrics.RemoveElementAt(i);
-                mFontMetrics.AppendElement(fm);
-            }
-            fm->GetThebesFontGroup()->UpdateUserFonts();
-            return do_AddRef(fm);
-        }
+  
+  
+  const int32_t n = mFontMetrics.Length() - 1;
+  for (int32_t i = n; i >= 0; --i) {
+    nsFontMetrics* fm = mFontMetrics[i];
+    if (fm->Font().Equals(aFont) &&
+        fm->GetUserFontSet() == aParams.userFontSet &&
+        fm->Language() == language &&
+        fm->Orientation() == aParams.orientation) {
+      if (i != n) {
+        
+        mFontMetrics.RemoveElementAt(i);
+        mFontMetrics.AppendElement(fm);
+      }
+      fm->GetThebesFontGroup()->UpdateUserFonts();
+      return do_AddRef(fm);
     }
+  }
 
-    
-    
-    
-    
-    if (n >= kMaxCacheEntries - 1 && !mFlushPending) {
-        if (NS_IsMainThread()) {
-            Flush(mFontMetrics.Length() - kMaxCacheEntries / 2);
-        } else {
-            mFlushPending = true;
-            nsCOMPtr<nsIRunnable> flushTask = new FlushFontMetricsTask(this);
-            MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(flushTask));
-        }
+  
+  
+  
+  
+  if (n >= kMaxCacheEntries - 1 && !mFlushPending) {
+    if (NS_IsMainThread()) {
+      Flush(mFontMetrics.Length() - kMaxCacheEntries / 2);
+    } else {
+      mFlushPending = true;
+      nsCOMPtr<nsIRunnable> flushTask = new FlushFontMetricsTask(this);
+      MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(flushTask));
     }
+  }
 
-    nsFontMetrics::Params params = aParams;
-    params.language = language;
-    RefPtr<nsFontMetrics> fm = new nsFontMetrics(aFont, params, mContext);
-    
-    
-    mFontMetrics.AppendElement(do_AddRef(fm).take());
-    return fm.forget();
+  nsFontMetrics::Params params = aParams;
+  params.language = language;
+  RefPtr<nsFontMetrics> fm = new nsFontMetrics(aFont, params, mContext);
+  
+  
+  mFontMetrics.AppendElement(do_AddRef(fm).take());
+  return fm.forget();
 }
 
-void
-nsFontCache::UpdateUserFonts(gfxUserFontSet* aUserFontSet)
-{
-    for (nsFontMetrics* fm : mFontMetrics) {
-        gfxFontGroup* fg = fm->GetThebesFontGroup();
-        if (fg->GetUserFontSet() == aUserFontSet) {
-            fg->UpdateUserFonts();
-        }
+void nsFontCache::UpdateUserFonts(gfxUserFontSet* aUserFontSet) {
+  for (nsFontMetrics* fm : mFontMetrics) {
+    gfxFontGroup* fg = fm->GetThebesFontGroup();
+    if (fg->GetUserFontSet() == aUserFontSet) {
+      fg->UpdateUserFonts();
     }
+  }
 }
 
-void
-nsFontCache::FontMetricsDeleted(const nsFontMetrics* aFontMetrics)
-{
-    mFontMetrics.RemoveElement(aFontMetrics);
+void nsFontCache::FontMetricsDeleted(const nsFontMetrics* aFontMetrics) {
+  mFontMetrics.RemoveElement(aFontMetrics);
 }
 
-void
-nsFontCache::Compact()
-{
+void nsFontCache::Compact() {
+  
+  
+  for (int32_t i = mFontMetrics.Length() - 1; i >= 0; --i) {
+    nsFontMetrics* fm = mFontMetrics[i];
+    nsFontMetrics* oldfm = fm;
     
     
-    for (int32_t i = mFontMetrics.Length()-1; i >= 0; --i) {
-        nsFontMetrics* fm = mFontMetrics[i];
-        nsFontMetrics* oldfm = fm;
-        
-        
-        NS_RELEASE(fm); 
-        
-        
-        if (mFontMetrics.IndexOf(oldfm) != mFontMetrics.NoIndex) {
-            
-            NS_ADDREF(oldfm);
-        }
+    NS_RELEASE(fm);  
+    
+    
+    if (mFontMetrics.IndexOf(oldfm) != mFontMetrics.NoIndex) {
+      
+      NS_ADDREF(oldfm);
     }
+  }
 }
 
 
-void
-nsFontCache::Flush(int32_t aFlushCount)
-{
-    int32_t n = aFlushCount < 0
-        ? mFontMetrics.Length()
-        : std::min<int32_t>(aFlushCount, mFontMetrics.Length());
-    for (int32_t i = n - 1; i >= 0; --i) {
-        nsFontMetrics* fm = mFontMetrics[i];
-        
-        
-        
-        fm->Destroy();
-        NS_RELEASE(fm);
-    }
-    mFontMetrics.RemoveElementsAt(0, n);
+void nsFontCache::Flush(int32_t aFlushCount) {
+  int32_t n = aFlushCount < 0
+                  ? mFontMetrics.Length()
+                  : std::min<int32_t>(aFlushCount, mFontMetrics.Length());
+  for (int32_t i = n - 1; i >= 0; --i) {
+    nsFontMetrics* fm = mFontMetrics[i];
+    
+    
+    
+    fm->Destroy();
+    NS_RELEASE(fm);
+  }
+  mFontMetrics.RemoveElementsAt(0, n);
 }
 
 nsDeviceContext::nsDeviceContext()
-    : mWidth(0), mHeight(0),
-      mAppUnitsPerDevPixel(-1), mAppUnitsPerDevPixelAtUnitFullZoom(-1),
+    : mWidth(0),
+      mHeight(0),
+      mAppUnitsPerDevPixel(-1),
+      mAppUnitsPerDevPixelAtUnitFullZoom(-1),
       mAppUnitsPerPhysicalInch(-1),
-      mFullZoom(1.0f), mPrintingScale(1.0f),
+      mFullZoom(1.0f),
+      mPrintingScale(1.0f),
       mPrintingTranslate(gfxPoint(0, 0)),
       mIsCurrentlyPrintingDoc(false)
 #ifdef DEBUG
-    , mIsInitialized(false)
+      ,
+      mIsInitialized(false)
 #endif
 {
-    MOZ_ASSERT(NS_IsMainThread(), "nsDeviceContext created off main thread");
+  MOZ_ASSERT(NS_IsMainThread(), "nsDeviceContext created off main thread");
 }
 
-nsDeviceContext::~nsDeviceContext()
-{
-    if (mFontCache) {
-        mFontCache->Destroy();
-    }
+nsDeviceContext::~nsDeviceContext() {
+  if (mFontCache) {
+    mFontCache->Destroy();
+  }
 }
 
-void
-nsDeviceContext::InitFontCache()
-{
-    if (!mFontCache) {
-        mFontCache = new nsFontCache();
-        mFontCache->Init(this);
-    }
+void nsDeviceContext::InitFontCache() {
+  if (!mFontCache) {
+    mFontCache = new nsFontCache();
+    mFontCache->Init(this);
+  }
 }
 
-void
-nsDeviceContext::UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet)
-{
-    if (mFontCache) {
-        mFontCache->UpdateUserFonts(aUserFontSet);
-    }
+void nsDeviceContext::UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet) {
+  if (mFontCache) {
+    mFontCache->UpdateUserFonts(aUserFontSet);
+  }
 }
 
-already_AddRefed<nsFontMetrics>
-nsDeviceContext::GetMetricsFor(const nsFont& aFont,
-                               const nsFontMetrics::Params& aParams)
-{
-    InitFontCache();
-    return mFontCache->GetMetricsFor(aFont, aParams);
+already_AddRefed<nsFontMetrics> nsDeviceContext::GetMetricsFor(
+    const nsFont& aFont, const nsFontMetrics::Params& aParams) {
+  InitFontCache();
+  return mFontCache->GetMetricsFor(aFont, aParams);
 }
 
-nsresult
-nsDeviceContext::FlushFontCache(void)
-{
-    if (mFontCache)
-        mFontCache->Flush();
-    return NS_OK;
+nsresult nsDeviceContext::FlushFontCache(void) {
+  if (mFontCache) mFontCache->Flush();
+  return NS_OK;
 }
 
-nsresult
-nsDeviceContext::FontMetricsDeleted(const nsFontMetrics* aFontMetrics)
-{
-    if (mFontCache) {
-        mFontCache->FontMetricsDeleted(aFontMetrics);
-    }
-    return NS_OK;
+nsresult nsDeviceContext::FontMetricsDeleted(
+    const nsFontMetrics* aFontMetrics) {
+  if (mFontCache) {
+    mFontCache->FontMetricsDeleted(aFontMetrics);
+  }
+  return NS_OK;
 }
 
-bool
-nsDeviceContext::IsPrinterContext()
-{
-  return mPrintTarget != nullptr;
-}
+bool nsDeviceContext::IsPrinterContext() { return mPrintTarget != nullptr; }
 
-void
-nsDeviceContext::SetDPI(double* aScale)
-{
-    float dpi;
+void nsDeviceContext::SetDPI(double* aScale) {
+  float dpi;
+
+  
+  if (mDeviceContextSpec) {
+    dpi = mDeviceContextSpec->GetDPI();
+    mPrintingScale = mDeviceContextSpec->GetPrintingScale();
+    mPrintingTranslate = mDeviceContextSpec->GetPrintingTranslate();
+    mAppUnitsPerDevPixelAtUnitFullZoom =
+        NS_lround((AppUnitsPerCSSPixel() * 96) / dpi);
+  } else {
+    nsCOMPtr<nsIScreen> primaryScreen;
+    ScreenManager& screenManager = ScreenManager::GetSingleton();
+    screenManager.GetPrimaryScreen(getter_AddRefs(primaryScreen));
+    MOZ_ASSERT(primaryScreen);
 
     
-    if (mDeviceContextSpec) {
-        dpi = mDeviceContextSpec->GetDPI();
-        mPrintingScale = mDeviceContextSpec->GetPrintingScale();
-        mPrintingTranslate = mDeviceContextSpec->GetPrintingTranslate();
-        mAppUnitsPerDevPixelAtUnitFullZoom =
-            NS_lround((AppUnitsPerCSSPixel() * 96) / dpi);
+    
+    
+    
+    int32_t prefDPI = Preferences::GetInt("layout.css.dpi", -1);
+
+    if (prefDPI > 0) {
+      dpi = prefDPI;
+    } else if (mWidget) {
+      
+      dpi = mWidget->GetDPI();
+      
+      
+      if (dpi < 0) {
+        primaryScreen->GetDpi(&dpi);
+      }
+      if (prefDPI < 0) {
+        dpi = std::max(96.0f, dpi);
+      }
     } else {
-        nsCOMPtr<nsIScreen> primaryScreen;
-        ScreenManager& screenManager = ScreenManager::GetSingleton();
-        screenManager.GetPrimaryScreen(getter_AddRefs(primaryScreen));
-        MOZ_ASSERT(primaryScreen);
-
-        
-        
-        
-        
-        int32_t prefDPI = Preferences::GetInt("layout.css.dpi", -1);
-
-        if (prefDPI > 0) {
-            dpi = prefDPI;
-        } else if (mWidget) {
-            
-            dpi = mWidget->GetDPI();
-            
-            
-            if (dpi < 0) {
-                primaryScreen->GetDpi(&dpi);
-            }
-            if (prefDPI < 0) {
-                dpi = std::max(96.0f, dpi);
-            }
-        } else {
-            dpi = 96.0f;
-        }
-
-        double devPixelsPerCSSPixel;
-        if (aScale && *aScale > 0.0) {
-            
-            devPixelsPerCSSPixel = *aScale;
-        } else {
-            
-            
-            CSSToLayoutDeviceScale scale =
-                mWidget ? mWidget->GetDefaultScale()
-                        : CSSToLayoutDeviceScale(1.0);
-            devPixelsPerCSSPixel = scale.scale;
-            
-            
-            if (devPixelsPerCSSPixel < 0) {
-                primaryScreen->GetDefaultCSSScaleFactor(&devPixelsPerCSSPixel);
-            }
-            if (aScale) {
-                *aScale = devPixelsPerCSSPixel;
-            }
-        }
-
-        mAppUnitsPerDevPixelAtUnitFullZoom =
-            std::max(1, NS_lround(AppUnitsPerCSSPixel() / devPixelsPerCSSPixel));
+      dpi = 96.0f;
     }
 
-    NS_ASSERTION(dpi != -1.0, "no dpi set");
+    double devPixelsPerCSSPixel;
+    if (aScale && *aScale > 0.0) {
+      
+      devPixelsPerCSSPixel = *aScale;
+    } else {
+      
+      
+      CSSToLayoutDeviceScale scale =
+          mWidget ? mWidget->GetDefaultScale() : CSSToLayoutDeviceScale(1.0);
+      devPixelsPerCSSPixel = scale.scale;
+      
+      
+      if (devPixelsPerCSSPixel < 0) {
+        primaryScreen->GetDefaultCSSScaleFactor(&devPixelsPerCSSPixel);
+      }
+      if (aScale) {
+        *aScale = devPixelsPerCSSPixel;
+      }
+    }
 
-    mAppUnitsPerPhysicalInch = NS_lround(dpi * mAppUnitsPerDevPixelAtUnitFullZoom);
-    UpdateAppUnitsForFullZoom();
+    mAppUnitsPerDevPixelAtUnitFullZoom =
+        std::max(1, NS_lround(AppUnitsPerCSSPixel() / devPixelsPerCSSPixel));
+  }
+
+  NS_ASSERTION(dpi != -1.0, "no dpi set");
+
+  mAppUnitsPerPhysicalInch =
+      NS_lround(dpi * mAppUnitsPerDevPixelAtUnitFullZoom);
+  UpdateAppUnitsForFullZoom();
 }
 
-nsresult
-nsDeviceContext::Init(nsIWidget *aWidget)
-{
+nsresult nsDeviceContext::Init(nsIWidget* aWidget) {
 #ifdef DEBUG
-    
-    
-    
-    mIsInitialized = true;
+  
+  
+  
+  mIsInitialized = true;
 #endif
 
-    nsresult rv = NS_OK;
-    if (mScreenManager && mWidget == aWidget)
-        return rv;
+  nsresult rv = NS_OK;
+  if (mScreenManager && mWidget == aWidget) return rv;
 
-    mWidget = aWidget;
-    SetDPI();
+  mWidget = aWidget;
+  SetDPI();
 
-    if (mScreenManager)
-        return rv;
+  if (mScreenManager) return rv;
 
-    mScreenManager = do_GetService("@mozilla.org/gfx/screenmanager;1", &rv);
+  mScreenManager = do_GetService("@mozilla.org/gfx/screenmanager;1", &rv);
 
-    return rv;
+  return rv;
 }
 
 
-already_AddRefed<gfxContext>
-nsDeviceContext::CreateRenderingContext()
-{
+already_AddRefed<gfxContext> nsDeviceContext::CreateRenderingContext() {
   return CreateRenderingContextCommon( false);
 }
 
 already_AddRefed<gfxContext>
-nsDeviceContext::CreateReferenceRenderingContext()
-{
+nsDeviceContext::CreateReferenceRenderingContext() {
   return CreateRenderingContextCommon( true);
 }
 
-already_AddRefed<gfxContext>
-nsDeviceContext::CreateRenderingContextCommon(bool aWantReferenceContext)
-{
-    MOZ_ASSERT(IsPrinterContext());
-    MOZ_ASSERT(mWidth > 0 && mHeight > 0);
+already_AddRefed<gfxContext> nsDeviceContext::CreateRenderingContextCommon(
+    bool aWantReferenceContext) {
+  MOZ_ASSERT(IsPrinterContext());
+  MOZ_ASSERT(mWidth > 0 && mHeight > 0);
 
-    RefPtr<gfx::DrawTarget> dt;
-    if (aWantReferenceContext) {
-      dt = mPrintTarget->GetReferenceDrawTarget();
-    } else {
-      
-      RefPtr<DrawEventRecorder> recorder;
-      mDeviceContextSpec->GetDrawEventRecorder(getter_AddRefs(recorder));
-      dt = mPrintTarget->MakeDrawTarget(gfx::IntSize(mWidth, mHeight), recorder);
-    }
+  RefPtr<gfx::DrawTarget> dt;
+  if (aWantReferenceContext) {
+    dt = mPrintTarget->GetReferenceDrawTarget();
+  } else {
+    
+    RefPtr<DrawEventRecorder> recorder;
+    mDeviceContextSpec->GetDrawEventRecorder(getter_AddRefs(recorder));
+    dt = mPrintTarget->MakeDrawTarget(gfx::IntSize(mWidth, mHeight), recorder);
+  }
 
-    if (!dt || !dt->IsValid()) {
-      gfxCriticalNote
-        << "Failed to create draw target in device context sized "
-        << mWidth << "x" << mHeight << " and pointer "
-        << hexa(mPrintTarget);
-      return nullptr;
-    }
+  if (!dt || !dt->IsValid()) {
+    gfxCriticalNote << "Failed to create draw target in device context sized "
+                    << mWidth << "x" << mHeight << " and pointer "
+                    << hexa(mPrintTarget);
+    return nullptr;
+  }
 
 #ifdef XP_MACOSX
-    
-    
-    
-    
-    
-    dt->AddUserData(&gfxContext::sDontUseAsSourceKey, dt, nullptr);
+  
+  
+  
+  
+  
+  dt->AddUserData(&gfxContext::sDontUseAsSourceKey, dt, nullptr);
 #endif
-    dt->AddUserData(&sDisablePixelSnapping, (void*)0x1, nullptr);
+  dt->AddUserData(&sDisablePixelSnapping, (void*)0x1, nullptr);
 
-    RefPtr<gfxContext> pContext = gfxContext::CreateOrNull(dt);
-    MOZ_ASSERT(pContext); 
+  RefPtr<gfxContext> pContext = gfxContext::CreateOrNull(dt);
+  MOZ_ASSERT(pContext);  
 
-    gfxMatrix transform;
-    transform.PreTranslate(mPrintingTranslate);
-    if (mPrintTarget->RotateNeededForLandscape()) {
-      
-      IntSize size = mPrintTarget->GetSize();
-      transform.PreTranslate(gfxPoint(0, size.width));
-      gfxMatrix rotate(0, -1,
-                       1,  0,
-                       0,  0);
-      transform = rotate * transform;
+  gfxMatrix transform;
+  transform.PreTranslate(mPrintingTranslate);
+  if (mPrintTarget->RotateNeededForLandscape()) {
+    
+    IntSize size = mPrintTarget->GetSize();
+    transform.PreTranslate(gfxPoint(0, size.width));
+    gfxMatrix rotate(0, -1, 1, 0, 0, 0);
+    transform = rotate * transform;
+  }
+  transform.PreScale(mPrintingScale, mPrintingScale);
+
+  pContext->SetMatrixDouble(transform);
+  return pContext.forget();
+}
+
+nsresult nsDeviceContext::GetDepth(uint32_t& aDepth) {
+  nsCOMPtr<nsIScreen> screen;
+  FindScreen(getter_AddRefs(screen));
+  if (!screen) {
+    ScreenManager& screenManager = ScreenManager::GetSingleton();
+    screenManager.GetPrimaryScreen(getter_AddRefs(screen));
+    MOZ_ASSERT(screen);
+  }
+  screen->GetColorDepth(reinterpret_cast<int32_t*>(&aDepth));
+
+  return NS_OK;
+}
+
+nsresult nsDeviceContext::GetDeviceSurfaceDimensions(nscoord& aWidth,
+                                                     nscoord& aHeight) {
+  if (IsPrinterContext()) {
+    aWidth = mWidth;
+    aHeight = mHeight;
+  } else {
+    nsRect area;
+    ComputeFullAreaUsingScreen(&area);
+    aWidth = area.Width();
+    aHeight = area.Height();
+  }
+
+  return NS_OK;
+}
+
+nsresult nsDeviceContext::GetRect(nsRect& aRect) {
+  if (IsPrinterContext()) {
+    aRect.SetRect(0, 0, mWidth, mHeight);
+  } else
+    ComputeFullAreaUsingScreen(&aRect);
+
+  return NS_OK;
+}
+
+nsresult nsDeviceContext::GetClientRect(nsRect& aRect) {
+  if (IsPrinterContext()) {
+    aRect.SetRect(0, 0, mWidth, mHeight);
+  } else
+    ComputeClientRectUsingScreen(&aRect);
+
+  return NS_OK;
+}
+
+nsresult nsDeviceContext::InitForPrinting(nsIDeviceContextSpec* aDevice) {
+  NS_ENSURE_ARG_POINTER(aDevice);
+
+  MOZ_ASSERT(!mIsInitialized,
+             "Only initialize once, immediately after construction");
+
+  
+
+  mPrintTarget = aDevice->MakePrintTarget();
+  if (!mPrintTarget) {
+    return NS_ERROR_FAILURE;
+  }
+
+  mDeviceContextSpec = aDevice;
+
+  Init(nullptr);
+
+  if (!CalcPrintingSize()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  return NS_OK;
+}
+
+nsresult nsDeviceContext::BeginDocument(const nsAString& aTitle,
+                                        const nsAString& aPrintToFileName,
+                                        int32_t aStartPage, int32_t aEndPage) {
+  MOZ_ASSERT(!mIsCurrentlyPrintingDoc,
+             "Mismatched BeginDocument/EndDocument calls");
+
+  nsresult rv = mPrintTarget->BeginPrinting(aTitle, aPrintToFileName,
+                                            aStartPage, aEndPage);
+
+  if (NS_SUCCEEDED(rv)) {
+    if (mDeviceContextSpec) {
+      rv = mDeviceContextSpec->BeginDocument(aTitle, aPrintToFileName,
+                                             aStartPage, aEndPage);
     }
-    transform.PreScale(mPrintingScale, mPrintingScale);
+    mIsCurrentlyPrintingDoc = true;
+  }
 
-    pContext->SetMatrixDouble(transform);
-    return pContext.forget();
+  
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv) || rv == NS_ERROR_ABORT,
+                       "nsDeviceContext::BeginDocument failed");
+
+  return rv;
 }
 
-nsresult
-nsDeviceContext::GetDepth(uint32_t& aDepth)
-{
-    nsCOMPtr<nsIScreen> screen;
-    FindScreen(getter_AddRefs(screen));
-    if (!screen) {
-        ScreenManager& screenManager = ScreenManager::GetSingleton();
-        screenManager.GetPrimaryScreen(getter_AddRefs(screen));
-        MOZ_ASSERT(screen);
-    }
-    screen->GetColorDepth(reinterpret_cast<int32_t *>(&aDepth));
+nsresult nsDeviceContext::EndDocument(void) {
+  MOZ_ASSERT(mIsCurrentlyPrintingDoc,
+             "Mismatched BeginDocument/EndDocument calls");
 
-    return NS_OK;
+  mIsCurrentlyPrintingDoc = false;
+
+  nsresult rv = mPrintTarget->EndPrinting();
+  if (NS_SUCCEEDED(rv)) {
+    mPrintTarget->Finish();
+  }
+
+  if (mDeviceContextSpec) mDeviceContextSpec->EndDocument();
+
+  mPrintTarget = nullptr;
+
+  return rv;
 }
 
-nsresult
-nsDeviceContext::GetDeviceSurfaceDimensions(nscoord &aWidth, nscoord &aHeight)
-{
-    if (IsPrinterContext()) {
-        aWidth = mWidth;
-        aHeight = mHeight;
-    } else {
-        nsRect area;
-        ComputeFullAreaUsingScreen(&area);
-        aWidth = area.Width();
-        aHeight = area.Height();
-    }
+nsresult nsDeviceContext::AbortDocument(void) {
+  MOZ_ASSERT(mIsCurrentlyPrintingDoc,
+             "Mismatched BeginDocument/EndDocument calls");
 
-    return NS_OK;
+  nsresult rv = mPrintTarget->AbortPrinting();
+
+  mIsCurrentlyPrintingDoc = false;
+
+  if (mDeviceContextSpec) mDeviceContextSpec->EndDocument();
+
+  mPrintTarget = nullptr;
+
+  return rv;
 }
 
-nsresult
-nsDeviceContext::GetRect(nsRect &aRect)
-{
-    if (IsPrinterContext()) {
-        aRect.SetRect(0, 0, mWidth, mHeight);
-    } else
-        ComputeFullAreaUsingScreen ( &aRect );
+nsresult nsDeviceContext::BeginPage(void) {
+  nsresult rv = NS_OK;
 
-    return NS_OK;
+  if (mDeviceContextSpec) rv = mDeviceContextSpec->BeginPage();
+
+  if (NS_FAILED(rv)) return rv;
+
+  return mPrintTarget->BeginPage();
 }
 
-nsresult
-nsDeviceContext::GetClientRect(nsRect &aRect)
-{
-    if (IsPrinterContext()) {
-        aRect.SetRect(0, 0, mWidth, mHeight);
-    }
-    else
-        ComputeClientRectUsingScreen(&aRect);
+nsresult nsDeviceContext::EndPage(void) {
+  nsresult rv = mPrintTarget->EndPage();
 
-    return NS_OK;
+  if (mDeviceContextSpec) mDeviceContextSpec->EndPage();
+
+  return rv;
 }
 
-nsresult
-nsDeviceContext::InitForPrinting(nsIDeviceContextSpec *aDevice)
-{
-    NS_ENSURE_ARG_POINTER(aDevice);
-
-    MOZ_ASSERT(!mIsInitialized,
-               "Only initialize once, immediately after construction");
+void nsDeviceContext::ComputeClientRectUsingScreen(nsRect* outRect) {
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIScreen> screen;
+  FindScreen(getter_AddRefs(screen));
+  if (screen) {
+    int32_t x, y, width, height;
+    screen->GetAvailRect(&x, &y, &width, &height);
 
     
-
-    mPrintTarget = aDevice->MakePrintTarget();
-    if (!mPrintTarget) {
-        return NS_ERROR_FAILURE;
-    }
-
-    mDeviceContextSpec = aDevice;
-
-    Init(nullptr);
-
-    if (!CalcPrintingSize()) {
-        return NS_ERROR_FAILURE;
-    }
-
-    return NS_OK;
+    outRect->SetRect(NSIntPixelsToAppUnits(x, AppUnitsPerDevPixel()),
+                     NSIntPixelsToAppUnits(y, AppUnitsPerDevPixel()),
+                     NSIntPixelsToAppUnits(width, AppUnitsPerDevPixel()),
+                     NSIntPixelsToAppUnits(height, AppUnitsPerDevPixel()));
+  }
 }
 
-nsresult
-nsDeviceContext::BeginDocument(const nsAString& aTitle,
-                               const nsAString& aPrintToFileName,
-                               int32_t          aStartPage,
-                               int32_t          aEndPage)
-{
-    MOZ_ASSERT(!mIsCurrentlyPrintingDoc,
-               "Mismatched BeginDocument/EndDocument calls");
-
-    nsresult rv = mPrintTarget->BeginPrinting(aTitle, aPrintToFileName,
-                                              aStartPage, aEndPage);
-
-    if (NS_SUCCEEDED(rv)) {
-        if (mDeviceContextSpec) {
-           rv = mDeviceContextSpec->BeginDocument(aTitle, aPrintToFileName,
-                                                  aStartPage, aEndPage);
-        }
-        mIsCurrentlyPrintingDoc = true;
-    }
+void nsDeviceContext::ComputeFullAreaUsingScreen(nsRect* outRect) {
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIScreen> screen;
+  FindScreen(getter_AddRefs(screen));
+  if (screen) {
+    int32_t x, y, width, height;
+    screen->GetRect(&x, &y, &width, &height);
 
     
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv) || rv == NS_ERROR_ABORT,
-                         "nsDeviceContext::BeginDocument failed");
-
-    return rv;
-}
-
-
-nsresult
-nsDeviceContext::EndDocument(void)
-{
-    MOZ_ASSERT(mIsCurrentlyPrintingDoc,
-               "Mismatched BeginDocument/EndDocument calls");
-
-    mIsCurrentlyPrintingDoc = false;
-
-    nsresult rv = mPrintTarget->EndPrinting();
-    if (NS_SUCCEEDED(rv)) {
-        mPrintTarget->Finish();
-    }
-
-    if (mDeviceContextSpec)
-        mDeviceContextSpec->EndDocument();
-
-    mPrintTarget = nullptr;
-
-    return rv;
-}
-
-
-nsresult
-nsDeviceContext::AbortDocument(void)
-{
-    MOZ_ASSERT(mIsCurrentlyPrintingDoc,
-               "Mismatched BeginDocument/EndDocument calls");
-
-    nsresult rv = mPrintTarget->AbortPrinting();
-
-    mIsCurrentlyPrintingDoc = false;
-
-    if (mDeviceContextSpec)
-        mDeviceContextSpec->EndDocument();
-
-    mPrintTarget = nullptr;
-
-    return rv;
-}
-
-
-nsresult
-nsDeviceContext::BeginPage(void)
-{
-    nsresult rv = NS_OK;
-
-    if (mDeviceContextSpec)
-        rv = mDeviceContextSpec->BeginPage();
-
-    if (NS_FAILED(rv)) return rv;
-
-    return mPrintTarget->BeginPage();
-}
-
-nsresult
-nsDeviceContext::EndPage(void)
-{
-    nsresult rv = mPrintTarget->EndPage();
-
-    if (mDeviceContextSpec)
-        mDeviceContextSpec->EndPage();
-
-    return rv;
-}
-
-void
-nsDeviceContext::ComputeClientRectUsingScreen(nsRect* outRect)
-{
-    
-    
-    
-    
-    nsCOMPtr<nsIScreen> screen;
-    FindScreen (getter_AddRefs(screen));
-    if (screen) {
-        int32_t x, y, width, height;
-        screen->GetAvailRect(&x, &y, &width, &height);
-
-        
-        outRect->SetRect(NSIntPixelsToAppUnits(x, AppUnitsPerDevPixel()),
-                         NSIntPixelsToAppUnits(y, AppUnitsPerDevPixel()),
-                         NSIntPixelsToAppUnits(width, AppUnitsPerDevPixel()),
-                         NSIntPixelsToAppUnits(height, AppUnitsPerDevPixel()));
-    }
-}
-
-void
-nsDeviceContext::ComputeFullAreaUsingScreen(nsRect* outRect)
-{
-    
-    
-    
-    
-    nsCOMPtr<nsIScreen> screen;
-    FindScreen ( getter_AddRefs(screen) );
-    if ( screen ) {
-        int32_t x, y, width, height;
-        screen->GetRect ( &x, &y, &width, &height );
-
-        
-        outRect->SetRect(NSIntPixelsToAppUnits(x, AppUnitsPerDevPixel()),
-                         NSIntPixelsToAppUnits(y, AppUnitsPerDevPixel()),
-                         NSIntPixelsToAppUnits(width, AppUnitsPerDevPixel()),
-                         NSIntPixelsToAppUnits(height, AppUnitsPerDevPixel()));
-        mWidth = outRect->Width();
-        mHeight = outRect->Height();
-    }
+    outRect->SetRect(NSIntPixelsToAppUnits(x, AppUnitsPerDevPixel()),
+                     NSIntPixelsToAppUnits(y, AppUnitsPerDevPixel()),
+                     NSIntPixelsToAppUnits(width, AppUnitsPerDevPixel()),
+                     NSIntPixelsToAppUnits(height, AppUnitsPerDevPixel()));
+    mWidth = outRect->Width();
+    mHeight = outRect->Height();
+  }
 }
 
 
@@ -706,101 +630,85 @@ nsDeviceContext::ComputeFullAreaUsingScreen(nsRect* outRect)
 
 
 
-void
-nsDeviceContext::FindScreen(nsIScreen** outScreen)
-{
-    if (!mWidget || !mScreenManager) {
-        return;
-    }
+void nsDeviceContext::FindScreen(nsIScreen** outScreen) {
+  if (!mWidget || !mScreenManager) {
+    return;
+  }
 
-    CheckDPIChange();
+  CheckDPIChange();
 
-    nsCOMPtr<nsIScreen> screen = mWidget->GetWidgetScreen();
-    screen.forget(outScreen);
+  nsCOMPtr<nsIScreen> screen = mWidget->GetWidgetScreen();
+  screen.forget(outScreen);
 
-    if (!(*outScreen)) {
-        mScreenManager->GetPrimaryScreen(outScreen);
-    }
+  if (!(*outScreen)) {
+    mScreenManager->GetPrimaryScreen(outScreen);
+  }
 }
 
-bool
-nsDeviceContext::CalcPrintingSize()
-{
-    gfxSize size(mPrintTarget->GetSize());
-    
-    
-    mWidth = NSToCoordRound(size.width * AppUnitsPerPhysicalInch()
-                            / POINTS_PER_INCH_FLOAT);
-    mHeight = NSToCoordRound(size.height * AppUnitsPerPhysicalInch()
-                             / POINTS_PER_INCH_FLOAT);
+bool nsDeviceContext::CalcPrintingSize() {
+  gfxSize size(mPrintTarget->GetSize());
+  
+  
+  mWidth = NSToCoordRound(size.width * AppUnitsPerPhysicalInch() /
+                          POINTS_PER_INCH_FLOAT);
+  mHeight = NSToCoordRound(size.height * AppUnitsPerPhysicalInch() /
+                           POINTS_PER_INCH_FLOAT);
 
-    return (mWidth > 0 && mHeight > 0);
+  return (mWidth > 0 && mHeight > 0);
 }
 
-bool nsDeviceContext::CheckDPIChange(double* aScale)
-{
-    int32_t oldDevPixels = mAppUnitsPerDevPixelAtUnitFullZoom;
-    int32_t oldInches = mAppUnitsPerPhysicalInch;
+bool nsDeviceContext::CheckDPIChange(double* aScale) {
+  int32_t oldDevPixels = mAppUnitsPerDevPixelAtUnitFullZoom;
+  int32_t oldInches = mAppUnitsPerPhysicalInch;
 
-    SetDPI(aScale);
+  SetDPI(aScale);
 
-    return oldDevPixels != mAppUnitsPerDevPixelAtUnitFullZoom ||
-        oldInches != mAppUnitsPerPhysicalInch;
+  return oldDevPixels != mAppUnitsPerDevPixelAtUnitFullZoom ||
+         oldInches != mAppUnitsPerPhysicalInch;
 }
 
-bool
-nsDeviceContext::SetFullZoom(float aScale)
-{
-    if (aScale <= 0) {
-        MOZ_ASSERT_UNREACHABLE("Invalid full zoom value");
-        return false;
-    }
-    int32_t oldAppUnitsPerDevPixel = mAppUnitsPerDevPixel;
-    mFullZoom = aScale;
-    UpdateAppUnitsForFullZoom();
-    return oldAppUnitsPerDevPixel != mAppUnitsPerDevPixel;
+bool nsDeviceContext::SetFullZoom(float aScale) {
+  if (aScale <= 0) {
+    MOZ_ASSERT_UNREACHABLE("Invalid full zoom value");
+    return false;
+  }
+  int32_t oldAppUnitsPerDevPixel = mAppUnitsPerDevPixel;
+  mFullZoom = aScale;
+  UpdateAppUnitsForFullZoom();
+  return oldAppUnitsPerDevPixel != mAppUnitsPerDevPixel;
 }
 
-void
-nsDeviceContext::UpdateAppUnitsForFullZoom()
-{
-    mAppUnitsPerDevPixel =
-        std::max(1, NSToIntRound(float(mAppUnitsPerDevPixelAtUnitFullZoom) / mFullZoom));
-    
-    mFullZoom = float(mAppUnitsPerDevPixelAtUnitFullZoom) / mAppUnitsPerDevPixel;
+void nsDeviceContext::UpdateAppUnitsForFullZoom() {
+  mAppUnitsPerDevPixel = std::max(
+      1, NSToIntRound(float(mAppUnitsPerDevPixelAtUnitFullZoom) / mFullZoom));
+  
+  mFullZoom = float(mAppUnitsPerDevPixelAtUnitFullZoom) / mAppUnitsPerDevPixel;
 }
 
-DesktopToLayoutDeviceScale
-nsDeviceContext::GetDesktopToDeviceScale()
-{
-    nsCOMPtr<nsIScreen> screen;
-    FindScreen(getter_AddRefs(screen));
+DesktopToLayoutDeviceScale nsDeviceContext::GetDesktopToDeviceScale() {
+  nsCOMPtr<nsIScreen> screen;
+  FindScreen(getter_AddRefs(screen));
 
-    if (screen) {
-        double scale;
-        screen->GetContentsScaleFactor(&scale);
-        return DesktopToLayoutDeviceScale(scale);
-    }
+  if (screen) {
+    double scale;
+    screen->GetContentsScaleFactor(&scale);
+    return DesktopToLayoutDeviceScale(scale);
+  }
 
-    return DesktopToLayoutDeviceScale(1.0);
+  return DesktopToLayoutDeviceScale(1.0);
 }
 
-bool
-nsDeviceContext::IsSyncPagePrinting() const
-{
+bool nsDeviceContext::IsSyncPagePrinting() const {
   MOZ_ASSERT(mPrintTarget);
   return mPrintTarget->IsSyncPagePrinting();
 }
 
-void
-nsDeviceContext::RegisterPageDoneCallback(PrintTarget::PageDoneCallback&& aCallback)
-{
+void nsDeviceContext::RegisterPageDoneCallback(
+    PrintTarget::PageDoneCallback&& aCallback) {
   MOZ_ASSERT(mPrintTarget && aCallback && !IsSyncPagePrinting());
   mPrintTarget->RegisterPageDoneCallback(std::move(aCallback));
 }
-void
-nsDeviceContext::UnregisterPageDoneCallback()
-{
+void nsDeviceContext::UnregisterPageDoneCallback() {
   if (mPrintTarget) {
     mPrintTarget->UnregisterPageDoneCallback();
   }

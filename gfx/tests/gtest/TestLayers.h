@@ -13,17 +13,16 @@
 namespace mozilla {
 namespace layers {
 
-class TestSurfaceAllocator final : public ISurfaceAllocator
-{
-public:
+class TestSurfaceAllocator final : public ISurfaceAllocator {
+ public:
   TestSurfaceAllocator() {}
   ~TestSurfaceAllocator() override {}
 
   bool IsSameProcess() const override { return true; }
 };
 
-} 
-} 
+}  
+}  
 
 
 
@@ -41,12 +40,9 @@ public:
 
 
 already_AddRefed<mozilla::layers::Layer> CreateLayerTree(
-    const char* aLayerTreeDescription,
-    nsIntRegion* aVisibleRegions,
+    const char* aLayerTreeDescription, nsIntRegion* aVisibleRegions,
     const mozilla::gfx::Matrix4x4* aTransforms,
     RefPtr<mozilla::layers::LayerManager>& aLayerManager,
     nsTArray<RefPtr<mozilla::layers::Layer> >& aLayersOut);
 
-
 #endif
-

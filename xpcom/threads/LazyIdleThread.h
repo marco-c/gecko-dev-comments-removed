@@ -33,14 +33,12 @@ namespace mozilla {
 
 
 
-class LazyIdleThread final
-  : public nsIThread
-  , public nsITimerCallback
-  , public nsIThreadObserver
-  , public nsIObserver
-  , public nsINamed
-{
-public:
+class LazyIdleThread final : public nsIThread,
+                             public nsITimerCallback,
+                             public nsIThreadObserver,
+                             public nsIObserver,
+                             public nsINamed {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL
   NS_DECL_NSITHREAD
@@ -49,18 +47,13 @@ public:
   NS_DECL_NSIOBSERVER
   NS_DECL_NSINAMED
 
-  enum ShutdownMethod
-  {
-    AutomaticShutdown = 0,
-    ManualShutdown
-  };
+  enum ShutdownMethod { AutomaticShutdown = 0, ManualShutdown };
 
   
 
 
 
-  LazyIdleThread(uint32_t aIdleTimeoutMS,
-                 const nsACString& aName,
+  LazyIdleThread(uint32_t aIdleTimeoutMS, const nsACString& aName,
                  ShutdownMethod aShutdownMethod = AutomaticShutdown,
                  nsIObserver* aIdleObserver = nullptr);
 
@@ -86,7 +79,7 @@ public:
 
   void EnableIdleTimeout();
 
-private:
+ private:
   
 
 
@@ -133,10 +126,7 @@ private:
 
 
 
-  bool UseRunnableQueue()
-  {
-    return !!mQueuedRunnables;
-  }
+  bool UseRunnableQueue() { return !!mQueuedRunnables; }
 
   
 
@@ -165,9 +155,10 @@ private:
 
 
 
-  nsIObserver* MOZ_UNSAFE_REF("See the documentation for SetWeakIdleObserver for "
-                              "how the owner of LazyIdleThread should manage the "
-                              "lifetime information of this field") mIdleObserver;
+  nsIObserver* MOZ_UNSAFE_REF(
+      "See the documentation for SetWeakIdleObserver for "
+      "how the owner of LazyIdleThread should manage the "
+      "lifetime information of this field") mIdleObserver;
 
   
 
@@ -223,6 +214,6 @@ private:
   nsCString mName;
 };
 
-} 
+}  
 
-#endif 
+#endif  

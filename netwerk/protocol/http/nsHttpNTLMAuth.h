@@ -8,29 +8,29 @@
 #include "nsIHttpAuthenticator.h"
 #include "mozilla/StaticPtr.h"
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
-class nsHttpNTLMAuth : public nsIHttpAuthenticator
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIHTTPAUTHENTICATOR
+class nsHttpNTLMAuth : public nsIHttpAuthenticator {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIHTTPAUTHENTICATOR
 
-    nsHttpNTLMAuth() : mUseNative(false) {}
+  nsHttpNTLMAuth() : mUseNative(false) {}
 
-    static already_AddRefed<nsIHttpAuthenticator> GetOrCreate();
+  static already_AddRefed<nsIHttpAuthenticator> GetOrCreate();
 
-private:
-    virtual ~nsHttpNTLMAuth() = default;
+ private:
+  virtual ~nsHttpNTLMAuth() = default;
 
-    
-    
-    bool  mUseNative;
+  
+  
+  bool mUseNative;
 
-    static StaticRefPtr<nsHttpNTLMAuth> gSingleton;
+  static StaticRefPtr<nsHttpNTLMAuth> gSingleton;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

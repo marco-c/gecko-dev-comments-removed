@@ -51,17 +51,17 @@ namespace layers {
 
 
 template <typename FlingPhysics>
-class GenericFlingAnimation: public AsyncPanZoomAnimation, public FlingPhysics {
-public:
-  GenericFlingAnimation(AsyncPanZoomController& aApzc,
-                        const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
-                        bool aFlingIsHandedOff,
-                        const RefPtr<const AsyncPanZoomController>& aScrolledApzc,
-                        float aPLPPI)
-    : mApzc(aApzc)
-    , mOverscrollHandoffChain(aOverscrollHandoffChain)
-    , mScrolledApzc(aScrolledApzc)
-  {
+class GenericFlingAnimation : public AsyncPanZoomAnimation,
+                              public FlingPhysics {
+ public:
+  GenericFlingAnimation(
+      AsyncPanZoomController& aApzc,
+      const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
+      bool aFlingIsHandedOff,
+      const RefPtr<const AsyncPanZoomController>& aScrolledApzc, float aPLPPI)
+      : mApzc(aApzc),
+        mOverscrollHandoffChain(aOverscrollHandoffChain),
+        mScrolledApzc(aScrolledApzc) {
     MOZ_ASSERT(mOverscrollHandoffChain);
     TimeStamp now = aApzc.GetFrameTime();
 
@@ -69,11 +69,13 @@ public:
     
     
     
-    if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, ScrollDirection::eHorizontal)) {
+    if (!mOverscrollHandoffChain->CanScrollInDirection(
+            &mApzc, ScrollDirection::eHorizontal)) {
       RecursiveMutexAutoLock lock(mApzc.mRecursiveMutex);
       mApzc.mX.SetVelocity(0);
     }
-    if (!mOverscrollHandoffChain->CanScrollInDirection(&mApzc, ScrollDirection::eVertical)) {
+    if (!mOverscrollHandoffChain->CanScrollInDirection(
+            &mApzc, ScrollDirection::eVertical)) {
       RecursiveMutexAutoLock lock(mApzc.mRecursiveMutex);
       mApzc.mY.SetVelocity(0);
     }
@@ -90,19 +92,22 @@ public:
     
     
     bool applyAcceleration = !aFlingIsHandedOff;
-    if (applyAcceleration && !mApzc.mLastFlingTime.IsNull()
-        && (now - mApzc.mLastFlingTime).ToMilliseconds() < gfxPrefs::APZFlingAccelInterval()
-        && velocity.Length() >= gfxPrefs::APZFlingAccelMinVelocity()) {
+    if (applyAcceleration && !mApzc.mLastFlingTime.IsNull() &&
+        (now - mApzc.mLastFlingTime).ToMilliseconds() <
+            gfxPrefs::APZFlingAccelInterval() &&
+        velocity.Length() >= gfxPrefs::APZFlingAccelMinVelocity()) {
       if (SameDirection(velocity.x, mApzc.mLastFlingVelocity.x)) {
         velocity.x = Accelerate(velocity.x, mApzc.mLastFlingVelocity.x);
         FLING_LOG("%p Applying fling x-acceleration from %f to %f (delta %f)\n",
-                  &mApzc, mApzc.mX.GetVelocity(), velocity.x, mApzc.mLastFlingVelocity.x);
+                  &mApzc, mApzc.mX.GetVelocity(), velocity.x,
+                  mApzc.mLastFlingVelocity.x);
         mApzc.mX.SetVelocity(velocity.x);
       }
       if (SameDirection(velocity.y, mApzc.mLastFlingVelocity.y)) {
         velocity.y = Accelerate(velocity.y, mApzc.mLastFlingVelocity.y);
         FLING_LOG("%p Applying fling y-acceleration from %f to %f (delta %f)\n",
-                  &mApzc, mApzc.mY.GetVelocity(), velocity.y, mApzc.mLastFlingVelocity.y);
+                  &mApzc, mApzc.mY.GetVelocity(), velocity.y,
+                  mApzc.mLastFlingVelocity.y);
         mApzc.mY.SetVelocity(velocity.y);
       }
     }
@@ -120,8 +125,7 @@ public:
 
 
   virtual bool DoSample(FrameMetrics& aFrameMetrics,
-                        const TimeDuration& aDelta) override
-  {
+                        const TimeDuration& aDelta) override {
     ParentLayerPoint velocity;
     ParentLayerPoint offset;
     FlingPhysics::Sample(aDelta, &velocity, &offset);
@@ -130,7 +134,8 @@ public:
 
     
     if (IsZero(velocity)) {
-      FLING_LOG("%p ending fling animation. overscrolled=%d\n", &mApzc, mApzc.IsOverscrolled());
+      FLING_LOG("%p ending fling animation. overscrolled=%d\n", &mApzc,
+                mApzc.IsOverscrolled());
       
       
       
@@ -139,10 +144,9 @@ public:
       
       
       mDeferredTasks.AppendElement(NewRunnableMethod<AsyncPanZoomController*>(
-        "layers::OverscrollHandoffChain::SnapBackOverscrolledApzc",
-        mOverscrollHandoffChain.get(),
-        &OverscrollHandoffChain::SnapBackOverscrolledApzc,
-        &mApzc));
+          "layers::OverscrollHandoffChain::SnapBackOverscrolledApzc",
+          mOverscrollHandoffChain.get(),
+          &OverscrollHandoffChain::SnapBackOverscrolledApzc, &mApzc));
       return false;
     }
 
@@ -182,17 +186,15 @@ public:
       
       
       
-      FLING_LOG("%p fling went into overscroll, handing off with velocity %s\n", &mApzc, Stringify(velocity).c_str());
+      FLING_LOG("%p fling went into overscroll, handing off with velocity %s\n",
+                &mApzc, Stringify(velocity).c_str());
       mDeferredTasks.AppendElement(
-        NewRunnableMethod<ParentLayerPoint,
-                          RefPtr<const OverscrollHandoffChain>,
-                          RefPtr<const AsyncPanZoomController>>(
-          "layers::AsyncPanZoomController::HandleFlingOverscroll",
-          &mApzc,
-          &AsyncPanZoomController::HandleFlingOverscroll,
-          velocity,
-          mOverscrollHandoffChain,
-          mScrolledApzc));
+          NewRunnableMethod<ParentLayerPoint,
+                            RefPtr<const OverscrollHandoffChain>,
+                            RefPtr<const AsyncPanZoomController>>(
+              "layers::AsyncPanZoomController::HandleFlingOverscroll", &mApzc,
+              &AsyncPanZoomController::HandleFlingOverscroll, velocity,
+              mOverscrollHandoffChain, mScrolledApzc));
 
       
       
@@ -204,18 +206,15 @@ public:
     return true;
   }
 
-private:
-  static bool SameDirection(float aVelocity1, float aVelocity2)
-  {
-    return (aVelocity1 == 0.0f)
-        || (aVelocity2 == 0.0f)
-        || (IsNegative(aVelocity1) == IsNegative(aVelocity2));
+ private:
+  static bool SameDirection(float aVelocity1, float aVelocity2) {
+    return (aVelocity1 == 0.0f) || (aVelocity2 == 0.0f) ||
+           (IsNegative(aVelocity1) == IsNegative(aVelocity2));
   }
 
-  static float Accelerate(float aBase, float aSupplemental)
-  {
-    return (aBase * gfxPrefs::APZFlingAccelBaseMultiplier())
-         + (aSupplemental * gfxPrefs::APZFlingAccelSupplementalMultiplier());
+  static float Accelerate(float aBase, float aSupplemental) {
+    return (aBase * gfxPrefs::APZFlingAccelBaseMultiplier()) +
+           (aSupplemental * gfxPrefs::APZFlingAccelSupplementalMultiplier());
   }
 
   AsyncPanZoomController& mApzc;
@@ -223,7 +222,7 @@ private:
   RefPtr<const AsyncPanZoomController> mScrolledApzc;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

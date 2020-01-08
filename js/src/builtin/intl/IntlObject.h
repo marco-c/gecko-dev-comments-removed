@@ -23,8 +23,7 @@ extern const Class IntlClass;
 
 
 
-extern JSObject*
-InitIntlClass(JSContext* cx, JS::Handle<GlobalObject*> global);
+extern JSObject* InitIntlClass(JSContext* cx, JS::Handle<GlobalObject*> global);
 
 
 
@@ -50,8 +49,8 @@ InitIntlClass(JSContext* cx, JS::Handle<GlobalObject*> global);
 
 
 
-extern MOZ_MUST_USE bool
-intl_GetCalendarInfo(JSContext* cx, unsigned argc, JS::Value* vp);
+extern MOZ_MUST_USE bool intl_GetCalendarInfo(JSContext* cx, unsigned argc,
+                                              JS::Value* vp);
 
 
 
@@ -64,8 +63,8 @@ intl_GetCalendarInfo(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
-extern MOZ_MUST_USE bool
-intl_GetLocaleInfo(JSContext* cx, unsigned argc, JS::Value* vp);
+extern MOZ_MUST_USE bool intl_GetLocaleInfo(JSContext* cx, unsigned argc,
+                                            JS::Value* vp);
 
 
 
@@ -106,9 +105,9 @@ intl_GetLocaleInfo(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
-extern MOZ_MUST_USE bool
-intl_ComputeDisplayNames(JSContext* cx, unsigned argc, JS::Value* vp);
+extern MOZ_MUST_USE bool intl_ComputeDisplayNames(JSContext* cx, unsigned argc,
+                                                  JS::Value* vp);
 
-} 
+}  
 
 #endif 

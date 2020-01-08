@@ -17,22 +17,22 @@
 class nsIURI;
 
 
-class nsExternalProtocolHandler final : public nsIExternalProtocolHandler, public nsSupportsWeakReference
-{
-public:
-	NS_DECL_THREADSAFE_ISUPPORTS
-	NS_DECL_NSIPROTOCOLHANDLER
-	NS_DECL_NSIEXTERNALPROTOCOLHANDLER
 
-	nsExternalProtocolHandler();
+class nsExternalProtocolHandler final : public nsIExternalProtocolHandler,
+                                        public nsSupportsWeakReference {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIPROTOCOLHANDLER
+  NS_DECL_NSIEXTERNALPROTOCOLHANDLER
 
-protected:
+  nsExternalProtocolHandler();
+
+ protected:
   ~nsExternalProtocolHandler();
 
   
-  bool HaveExternalProtocolHandler(nsIURI * aURI);
-	nsCString	m_schemeName;
+  bool HaveExternalProtocolHandler(nsIURI* aURI);
+  nsCString m_schemeName;
 };
 
-#endif 
-
+#endif  

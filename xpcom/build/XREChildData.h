@@ -20,8 +20,7 @@ class TargetServices;
 
 
 
-struct XREChildData
-{
+struct XREChildData {
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
   
 
@@ -35,4 +34,4 @@ struct XREChildData
 #endif
 };
 
-#endif 
+#endif  

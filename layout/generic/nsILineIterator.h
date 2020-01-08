@@ -23,12 +23,11 @@ struct nsRect;
 
 
 
-class nsILineIterator
-{
-protected:
-  ~nsILineIterator() { }
+class nsILineIterator {
+ protected:
+  ~nsILineIterator() {}
 
-public:
+ public:
   virtual void DisposeLineIterator() = 0;
 
   
@@ -56,10 +55,8 @@ public:
   
   
   
-  NS_IMETHOD GetLine(int32_t aLineNumber,
-                     nsIFrame** aFirstFrameOnLine,
-                     int32_t* aNumFramesOnLine,
-                     nsRect& aLineBounds) = 0;
+  NS_IMETHOD GetLine(int32_t aLineNumber, nsIFrame** aFirstFrameOnLine,
+                     int32_t* aNumFramesOnLine, nsRect& aLineBounds) = 0;
 
   
 
@@ -75,10 +72,8 @@ public:
   
   
   
-  NS_IMETHOD FindFrameAt(int32_t aLineNumber,
-                         nsPoint aPos,
-                         nsIFrame** aFrameFound,
-                         bool* aPosIsBeforeFirstFrame,
+  NS_IMETHOD FindFrameAt(int32_t aLineNumber, nsPoint aPos,
+                         nsIFrame** aFrameFound, bool* aPosIsBeforeFirstFrame,
                          bool* aPosIsAfterLastFrame) = 0;
 
   
@@ -87,38 +82,34 @@ public:
 
   
   
-  NS_IMETHOD CheckLineOrder(int32_t                  aLine,
-                            bool                     *aIsReordered,
-                            nsIFrame                 **aFirstVisual,
-                            nsIFrame                 **aLastVisual) = 0;
+  
+  NS_IMETHOD CheckLineOrder(int32_t aLine, bool* aIsReordered,
+                            nsIFrame** aFirstVisual,
+                            nsIFrame** aLastVisual) = 0;
 };
 
-class nsAutoLineIterator
-{
-public:
-  nsAutoLineIterator() : mRawPtr(nullptr) { }
-  MOZ_IMPLICIT nsAutoLineIterator(nsILineIterator *i) : mRawPtr(i) { }
+class nsAutoLineIterator {
+ public:
+  nsAutoLineIterator() : mRawPtr(nullptr) {}
+  MOZ_IMPLICIT nsAutoLineIterator(nsILineIterator* i) : mRawPtr(i) {}
 
   ~nsAutoLineIterator() {
-    if (mRawPtr)
-      mRawPtr->DisposeLineIterator();
+    if (mRawPtr) mRawPtr->DisposeLineIterator();
   }
 
   operator nsILineIterator*() { return mRawPtr; }
   nsILineIterator* operator->() { return mRawPtr; }
 
   nsILineIterator* operator=(nsILineIterator* i) {
-    if (i == mRawPtr)
-      return i;
+    if (i == mRawPtr) return i;
 
-    if (mRawPtr)
-      mRawPtr->DisposeLineIterator();
+    if (mRawPtr) mRawPtr->DisposeLineIterator();
 
     mRawPtr = i;
     return i;
   }
 
-private:
+ private:
   nsILineIterator* mRawPtr;
 };
 

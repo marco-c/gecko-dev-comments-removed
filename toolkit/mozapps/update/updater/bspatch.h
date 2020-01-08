@@ -68,7 +68,7 @@ typedef struct MBSPatchHeader_ {
 
 
 
-int MBS_ReadHeader(FILE* file, MBSPatchHeader *header);
+int MBS_ReadHeader(FILE* file, MBSPatchHeader* header);
 
 
 
@@ -81,13 +81,13 @@ int MBS_ReadHeader(FILE* file, MBSPatchHeader *header);
 
 
 
-int MBS_ApplyPatch(const MBSPatchHeader *header, FILE* patchFile,
-                   unsigned char *fbuffer, FILE* file);
+int MBS_ApplyPatch(const MBSPatchHeader* header, FILE* patchFile,
+                   unsigned char* fbuffer, FILE* file);
 
 typedef struct MBSPatchTriple_ {
   uint32_t x; 
   uint32_t y; 
-  int32_t  z; 
+  int32_t z;  
 } MBSPatchTriple;
 
 #endif  

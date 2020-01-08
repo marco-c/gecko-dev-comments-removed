@@ -50,8 +50,7 @@ namespace JS {
 
 
 
-extern JS_PUBLIC_API void
-ResetTimeZone();
+extern JS_PUBLIC_API void ResetTimeZone();
 
 class ClippedTime;
 inline ClippedTime TimeClip(double time);
@@ -74,87 +73,77 @@ inline ClippedTime TimeClip(double time);
 
 
 
-class ClippedTime
-{
-    double t;
+class ClippedTime {
+  double t;
 
-    explicit ClippedTime(double time) : t(time) {}
-    friend ClippedTime TimeClip(double time);
+  explicit ClippedTime(double time) : t(time) {}
+  friend ClippedTime TimeClip(double time);
 
-  public:
-    
-    ClippedTime() : t(mozilla::UnspecifiedNaN<double>()) {}
+ public:
+  
+  ClippedTime() : t(mozilla::UnspecifiedNaN<double>()) {}
 
-    
-    
-    static ClippedTime invalid() { return ClippedTime(); }
+  
+  
+  static ClippedTime invalid() { return ClippedTime(); }
 
-    double toDouble() const { return t; }
+  double toDouble() const { return t; }
 
-    bool isValid() const { return !mozilla::IsNaN(t); }
+  bool isValid() const { return !mozilla::IsNaN(t); }
 };
 
 
 
 
 
-inline ClippedTime
-TimeClip(double time)
-{
-    
-    const double MaxTimeMagnitude = 8.64e15;
-    if (!mozilla::IsFinite(time) || mozilla::Abs(time) > MaxTimeMagnitude) {
-        return ClippedTime(mozilla::UnspecifiedNaN<double>());
-    }
+inline ClippedTime TimeClip(double time) {
+  
+  const double MaxTimeMagnitude = 8.64e15;
+  if (!mozilla::IsFinite(time) || mozilla::Abs(time) > MaxTimeMagnitude) {
+    return ClippedTime(mozilla::UnspecifiedNaN<double>());
+  }
 
-    
-    return ClippedTime(ToInteger(time) + (+0.0));
+  
+  return ClippedTime(ToInteger(time) + (+0.0));
 }
 
 
 
-inline Value
-TimeValue(ClippedTime time)
-{
-    return DoubleValue(JS::CanonicalizeNaN(time.toDouble()));
+inline Value TimeValue(ClippedTime time) {
+  return DoubleValue(JS::CanonicalizeNaN(time.toDouble()));
 }
 
 
 
 
-extern JS_PUBLIC_API JSObject*
-NewDateObject(JSContext* cx, ClippedTime time);
+extern JS_PUBLIC_API JSObject* NewDateObject(JSContext* cx, ClippedTime time);
 
 
 
 
 
 
-JS_PUBLIC_API double
-MakeDate(double year, unsigned month, unsigned day);
+JS_PUBLIC_API double MakeDate(double year, unsigned month, unsigned day);
 
 
 
 
 
 
-JS_PUBLIC_API double
-MakeDate(double year, unsigned month, unsigned day, double time);
+JS_PUBLIC_API double MakeDate(double year, unsigned month, unsigned day,
+                              double time);
 
 
 
-JS_PUBLIC_API double
-YearFromTime(double time);
+JS_PUBLIC_API double YearFromTime(double time);
 
 
 
-JS_PUBLIC_API double
-MonthFromTime(double time);
+JS_PUBLIC_API double MonthFromTime(double time);
 
 
 
-JS_PUBLIC_API double
-DayFromTime(double time);
+JS_PUBLIC_API double DayFromTime(double time);
 
 
 
@@ -162,32 +151,30 @@ DayFromTime(double time);
 
 
 
-JS_PUBLIC_API double
-DayFromYear(double year);
+JS_PUBLIC_API double DayFromYear(double year);
 
 
 
 
 
-JS_PUBLIC_API double
-DayWithinYear(double time, double year);
+
+JS_PUBLIC_API double DayWithinYear(double time, double year);
 
 
 
 
-using ReduceMicrosecondTimePrecisionCallback = double(*)(double);
+using ReduceMicrosecondTimePrecisionCallback = double (*)(double);
 
 
 
-JS_PUBLIC_API void
-SetReduceMicrosecondTimePrecisionCallback(ReduceMicrosecondTimePrecisionCallback callback);
+JS_PUBLIC_API void SetReduceMicrosecondTimePrecisionCallback(
+    ReduceMicrosecondTimePrecisionCallback callback);
 
 
 
 
-JS_PUBLIC_API void
-SetTimeResolutionUsec(uint32_t resolution, bool jitter);
+JS_PUBLIC_API void SetTimeResolutionUsec(uint32_t resolution, bool jitter);
 
-} 
+}  
 
 #endif 

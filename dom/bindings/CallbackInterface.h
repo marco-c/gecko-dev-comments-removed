@@ -21,40 +21,32 @@
 namespace mozilla {
 namespace dom {
 
-class CallbackInterface : public CallbackObject
-{
-public:
+class CallbackInterface : public CallbackObject {
+ public:
   
   explicit CallbackInterface(JSContext* aCx, JS::Handle<JSObject*> aCallback,
                              JS::Handle<JSObject*> aCallbackGlobal,
                              nsIGlobalObject* aIncumbentGlobal)
-    : CallbackObject(aCx, aCallback, aCallbackGlobal, aIncumbentGlobal)
-  {
-  }
+      : CallbackObject(aCx, aCallback, aCallbackGlobal, aIncumbentGlobal) {}
 
   
-  explicit CallbackInterface(JSObject* aCallback,
-                             JSObject* aCallbackGlobal,
+  explicit CallbackInterface(JSObject* aCallback, JSObject* aCallbackGlobal,
                              JSObject* aAsyncStack,
                              nsIGlobalObject* aIncumbentGlobal)
-    : CallbackObject(aCallback, aCallbackGlobal, aAsyncStack, aIncumbentGlobal)
-  {
-  }
+      : CallbackObject(aCallback, aCallbackGlobal, aAsyncStack,
+                       aIncumbentGlobal) {}
 
-protected:
+ protected:
   bool GetCallableProperty(JSContext* cx, JS::Handle<jsid> aPropId,
                            JS::MutableHandle<JS::Value> aCallable);
 
   
-  CallbackInterface(JSObject* aCallback,
-                    JSObject* aCallbackGlobal,
+  CallbackInterface(JSObject* aCallback, JSObject* aCallbackGlobal,
                     const FastCallbackConstructor&)
-    : CallbackObject(aCallback, aCallbackGlobal, FastCallbackConstructor())
-  {
-  }
+      : CallbackObject(aCallback, aCallbackGlobal, FastCallbackConstructor()) {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

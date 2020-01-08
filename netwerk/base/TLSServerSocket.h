@@ -16,10 +16,8 @@
 namespace mozilla {
 namespace net {
 
-class TLSServerSocket final : public nsServerSocket
-                            , public nsITLSServerSocket
-{
-public:
+class TLSServerSocket final : public nsServerSocket, public nsITLSServerSocket {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_FORWARD_NSISERVERSOCKET(nsServerSocket::)
   NS_DECL_NSITLSSERVERSOCKET
@@ -32,50 +30,49 @@ public:
 
   TLSServerSocket();
 
-private:
+ private:
   virtual ~TLSServerSocket() = default;
 
   static SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd,
                                        PRBool checksig, PRBool isServer);
 
-  nsCOMPtr<nsIX509Cert>                  mServerCert;
+  nsCOMPtr<nsIX509Cert> mServerCert;
 };
 
-class TLSServerConnectionInfo : public nsITLSServerConnectionInfo
-                              , public nsITLSClientStatus
-{
+class TLSServerConnectionInfo : public nsITLSServerConnectionInfo,
+                                public nsITLSClientStatus {
   friend class TLSServerSocket;
 
-public:
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSITLSSERVERCONNECTIONINFO
   NS_DECL_NSITLSCLIENTSTATUS
 
   TLSServerConnectionInfo();
 
-private:
+ private:
   virtual ~TLSServerConnectionInfo();
 
   static void HandshakeCallback(PRFileDesc* aFD, void* aArg);
   nsresult HandshakeCallback(PRFileDesc* aFD);
 
-  RefPtr<TLSServerSocket>              mServerSocket;
+  RefPtr<TLSServerSocket> mServerSocket;
   
   
   
   
-  nsISocketTransport*                    mTransport;
-  nsCOMPtr<nsIX509Cert>                  mPeerCert;
-  int16_t                                mTlsVersionUsed;
-  nsCString                              mCipherName;
-  uint32_t                               mKeyLength;
-  uint32_t                               mMacLength;
+  nsISocketTransport* mTransport;
+  nsCOMPtr<nsIX509Cert> mPeerCert;
+  int16_t mTlsVersionUsed;
+  nsCString mCipherName;
+  uint32_t mKeyLength;
+  uint32_t mMacLength;
   
-  mozilla::Mutex                         mLock;
+  mozilla::Mutex mLock;
   nsCOMPtr<nsITLSServerSecurityObserver> mSecurityObserver;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

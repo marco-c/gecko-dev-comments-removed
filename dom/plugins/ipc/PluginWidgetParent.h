@@ -18,22 +18,24 @@ namespace mozilla {
 
 namespace dom {
 class TabParent;
-} 
+}  
 
 namespace plugins {
 
-class PluginWidgetParent : public PPluginWidgetParent
-{
-public:
+class PluginWidgetParent : public PPluginWidgetParent {
+ public:
   PluginWidgetParent();
   virtual ~PluginWidgetParent();
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
-  virtual mozilla::ipc::IPCResult RecvCreate(nsresult* aResult, uint64_t* aScrollCaptureId,
-                                          uintptr_t* aPluginInstanceId) override;
+  virtual mozilla::ipc::IPCResult RecvCreate(
+      nsresult* aResult, uint64_t* aScrollCaptureId,
+      uintptr_t* aPluginInstanceId) override;
   virtual mozilla::ipc::IPCResult RecvSetFocus(const bool& aRaise) override;
-  virtual mozilla::ipc::IPCResult RecvGetNativePluginPort(uintptr_t* value) override;
-  mozilla::ipc::IPCResult RecvSetNativeChildWindow(const uintptr_t& aChildWindow) override;
+  virtual mozilla::ipc::IPCResult RecvGetNativePluginPort(
+      uintptr_t* value) override;
+  mozilla::ipc::IPCResult RecvSetNativeChildWindow(
+      const uintptr_t& aChildWindow) override;
 
   
   bool ActorDestroyed() { return !mWidget; }
@@ -44,19 +46,18 @@ public:
   
   void SetParent(nsIWidget* aParent);
 
-private:
+ private:
   
   mozilla::dom::TabParent* GetTabParent();
 
-private:
+ private:
   void KillWidget();
 
   
   nsCOMPtr<nsIWidget> mWidget;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

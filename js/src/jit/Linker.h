@@ -17,32 +17,27 @@
 namespace js {
 namespace jit {
 
-class Linker
-{
-    MacroAssembler& masm;
-    mozilla::Maybe<AutoWritableJitCodeFallible> awjcf;
+class Linker {
+  MacroAssembler& masm;
+  mozilla::Maybe<AutoWritableJitCodeFallible> awjcf;
 
-    JitCode* fail(JSContext* cx) {
-        ReportOutOfMemory(cx);
-        return nullptr;
-    }
+  JitCode* fail(JSContext* cx) {
+    ReportOutOfMemory(cx);
+    return nullptr;
+  }
 
-  public:
-    
-    explicit Linker(MacroAssembler& masm)
-      : masm(masm)
-    {
-        masm.finish();
-    }
+ public:
+  
+  explicit Linker(MacroAssembler& masm) : masm(masm) { masm.finish(); }
 
-    
-    
-    
-    
-    JitCode* newCode(JSContext* cx, CodeKind kind);
+  
+  
+  
+  
+  JitCode* newCode(JSContext* cx, CodeKind kind);
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

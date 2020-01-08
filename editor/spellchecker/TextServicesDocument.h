@@ -34,11 +34,9 @@ class Elemenent;
 
 
 
-class TextServicesDocument final : public nsIEditActionListener
-{
-private:
-  enum class IteratorStatus : uint8_t
-  {
+class TextServicesDocument final : public nsIEditActionListener {
+ private:
+  enum class IteratorStatus : uint8_t {
     
     eDone = 0,
     
@@ -66,10 +64,10 @@ private:
 
   IteratorStatus mIteratorStatus;
 
-protected:
+ protected:
   virtual ~TextServicesDocument();
 
-public:
+ public:
   TextServicesDocument();
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -126,8 +124,7 @@ public:
 
   nsresult FirstBlock();
 
-  enum class BlockSelectionStatus
-  {
+  enum class BlockSelectionStatus {
     
     eBlockNotFound = 0,
     
@@ -153,8 +150,7 @@ public:
 
 
   nsresult LastSelectedBlock(BlockSelectionStatus* aSelStatus,
-                             int32_t* aSelOffset,
-                             int32_t* aSelLength);
+                             int32_t* aSelOffset, int32_t* aSelLength);
 
   
 
@@ -228,22 +224,19 @@ public:
   void DidDeleteNode(nsINode* aChild);
   void DidJoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
 
-  static nsresult GetRangeEndPoints(nsRange* aRange,
-                                    nsINode** aStartContainer,
+  static nsresult GetRangeEndPoints(nsRange* aRange, nsINode** aStartContainer,
                                     int32_t* aStartOffset,
                                     nsINode** aEndContainer,
                                     int32_t* aEndOffset);
 
-private:
+ private:
   nsresult CreateContentIterator(nsRange* aRange,
                                  nsIContentIterator** aIterator);
 
   dom::Element* GetDocumentContentRootNode() const;
   already_AddRefed<nsRange> CreateDocumentContentRange();
   already_AddRefed<nsRange> CreateDocumentContentRootToNodeOffsetRange(
-                              nsINode* aParent,
-                              uint32_t aOffset,
-                              bool aToStart);
+      nsINode* aParent, uint32_t aOffset, bool aToStart);
   nsresult CreateDocumentContentIterator(nsIContentIterator** aIterator);
 
   nsresult AdjustContentIterator();
@@ -271,8 +264,8 @@ private:
 
   nsresult SetSelectionInternal(int32_t aOffset, int32_t aLength,
                                 bool aDoUpdate);
-  nsresult GetSelection(BlockSelectionStatus* aSelStatus,
-                        int32_t* aSelOffset, int32_t* aSelLength);
+  nsresult GetSelection(BlockSelectionStatus* aSelStatus, int32_t* aSelOffset,
+                        int32_t* aSelLength);
   nsresult GetCollapsedSelection(BlockSelectionStatus* aSelStatus,
                                  int32_t* aSelOffset, int32_t* aSelLength);
   nsresult GetUncollapsedSelection(BlockSelectionStatus* aSelStatus,
@@ -288,22 +281,20 @@ private:
   static nsresult ClearOffsetTable(nsTArray<OffsetEntry*>* aOffsetTable);
 
   static nsresult NodeHasOffsetEntry(nsTArray<OffsetEntry*>* aOffsetTable,
-                                     nsINode* aNode,
-                                     bool* aHasEntry,
+                                     nsINode* aNode, bool* aHasEntry,
                                      int32_t* aEntryIndex);
 
   nsresult RemoveInvalidOffsetEntries();
   nsresult SplitOffsetEntry(int32_t aTableIndex, int32_t aOffsetIntoEntry);
 
   static nsresult FindWordBounds(nsTArray<OffsetEntry*>* aOffsetTable,
-                                 nsString* aBlockStr,
-                                 nsINode* aNode, int32_t aNodeOffset,
-                                 nsINode** aWordStartNode,
+                                 nsString* aBlockStr, nsINode* aNode,
+                                 int32_t aNodeOffset, nsINode** aWordStartNode,
                                  int32_t* aWordStartOffset,
                                  nsINode** aWordEndNode,
                                  int32_t* aWordEndOffset);
 };
 
-} 
+}  
 
-#endif 
+#endif  

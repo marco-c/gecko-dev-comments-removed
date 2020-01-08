@@ -22,51 +22,37 @@
 using namespace mozilla;
 using namespace mozilla::gfx;
 
-gfxAlphaBoxBlur::gfxAlphaBoxBlur()
-  : mData(nullptr),
-    mAccelerated(false)
-{
-}
+gfxAlphaBoxBlur::gfxAlphaBoxBlur() : mData(nullptr), mAccelerated(false) {}
 
-gfxAlphaBoxBlur::~gfxAlphaBoxBlur()
-{
-}
+gfxAlphaBoxBlur::~gfxAlphaBoxBlur() {}
 
-already_AddRefed<gfxContext>
-gfxAlphaBoxBlur::Init(gfxContext* aDestinationCtx,
-                      const gfxRect& aRect,
-                      const IntSize& aSpreadRadius,
-                      const IntSize& aBlurRadius,
-                      const gfxRect* aDirtyRect,
-                      const gfxRect* aSkipRect,
-                      bool aUseHardwareAccel)
-{
+already_AddRefed<gfxContext> gfxAlphaBoxBlur::Init(gfxContext* aDestinationCtx,
+                                                   const gfxRect& aRect,
+                                                   const IntSize& aSpreadRadius,
+                                                   const IntSize& aBlurRadius,
+                                                   const gfxRect* aDirtyRect,
+                                                   const gfxRect* aSkipRect,
+                                                   bool aUseHardwareAccel) {
   DrawTarget* refDT = aDestinationCtx->GetDrawTarget();
   Maybe<Rect> dirtyRect = aDirtyRect ? Some(ToRect(*aDirtyRect)) : Nothing();
   Maybe<Rect> skipRect = aSkipRect ? Some(ToRect(*aSkipRect)) : Nothing();
-  RefPtr<DrawTarget> dt =
-    InitDrawTarget(refDT, ToRect(aRect), aSpreadRadius, aBlurRadius,
-                   dirtyRect.ptrOr(nullptr), skipRect.ptrOr(nullptr),
-                   aUseHardwareAccel);
+  RefPtr<DrawTarget> dt = InitDrawTarget(
+      refDT, ToRect(aRect), aSpreadRadius, aBlurRadius,
+      dirtyRect.ptrOr(nullptr), skipRect.ptrOr(nullptr), aUseHardwareAccel);
   if (!dt) {
     return nullptr;
   }
 
   RefPtr<gfxContext> context = gfxContext::CreateOrNull(dt);
-  MOZ_ASSERT(context); 
+  MOZ_ASSERT(context);  
   context->SetMatrix(Matrix::Translation(-mBlur.GetRect().TopLeft()));
   return context.forget();
 }
 
-already_AddRefed<DrawTarget>
-gfxAlphaBoxBlur::InitDrawTarget(const DrawTarget* aReferenceDT,
-                                const Rect& aRect,
-                                const IntSize& aSpreadRadius,
-                                const IntSize& aBlurRadius,
-                                const Rect* aDirtyRect,
-                                const Rect* aSkipRect,
-                                bool aUseHardwareAccel)
-{
+already_AddRefed<DrawTarget> gfxAlphaBoxBlur::InitDrawTarget(
+    const DrawTarget* aReferenceDT, const Rect& aRect,
+    const IntSize& aSpreadRadius, const IntSize& aBlurRadius,
+    const Rect* aDirtyRect, const Rect* aSkipRect, bool aUseHardwareAccel) {
   mBlur.Init(aRect, aSpreadRadius, aBlurRadius, aDirtyRect, aSkipRect);
   size_t blurDataSize = mBlur.GetSurfaceAllocationSize();
   if (blurDataSize == 0) {
@@ -82,27 +68,26 @@ gfxAlphaBoxBlur::InitDrawTarget(const DrawTarget* aReferenceDT,
   
   
   
-  if (aBlurRadius.IsSquare() && aSpreadRadius.IsEmpty() &&
-      aUseHardwareAccel &&
+  if (aBlurRadius.IsSquare() && aSpreadRadius.IsEmpty() && aUseHardwareAccel &&
       backend == BackendType::DIRECT2D1_1) {
     mAccelerated = true;
   }
 
   if (aReferenceDT->IsCaptureDT()) {
     if (mAccelerated) {
-      mDrawTarget = Factory::CreateCaptureDrawTarget(backend, mBlur.GetSize(), SurfaceFormat::A8);
+      mDrawTarget = Factory::CreateCaptureDrawTarget(backend, mBlur.GetSize(),
+                                                     SurfaceFormat::A8);
     } else {
-      mDrawTarget =
-        Factory::CreateCaptureDrawTargetForData(backend, mBlur.GetSize(), SurfaceFormat::A8,
-                                                mBlur.GetStride(), blurDataSize);
+      mDrawTarget = Factory::CreateCaptureDrawTargetForData(
+          backend, mBlur.GetSize(), SurfaceFormat::A8, mBlur.GetStride(),
+          blurDataSize);
     }
   } else if (mAccelerated) {
     
     
-    mDrawTarget =
-      aReferenceDT->CreateShadowDrawTarget(mBlur.GetSize(),
-                                           SurfaceFormat::A8,
-                                           AlphaBoxBlur::CalculateBlurSigma(aBlurRadius.width));
+    mDrawTarget = aReferenceDT->CreateShadowDrawTarget(
+        mBlur.GetSize(), SurfaceFormat::A8,
+        AlphaBoxBlur::CalculateBlurSigma(aBlurRadius.width));
   } else {
     
     
@@ -112,16 +97,12 @@ gfxAlphaBoxBlur::InitDrawTarget(const DrawTarget* aReferenceDT,
       return nullptr;
     }
     mDrawTarget =
-      Factory::DoesBackendSupportDataDrawtarget(backend) ?
-        Factory::CreateDrawTargetForData(backend,
-                                         mData,
-                                         mBlur.GetSize(),
-                                         mBlur.GetStride(),
-                                         SurfaceFormat::A8) :
-        gfxPlatform::CreateDrawTargetForData(mData,
-                                             mBlur.GetSize(),
-                                             mBlur.GetStride(),
-                                             SurfaceFormat::A8);
+        Factory::DoesBackendSupportDataDrawtarget(backend)
+            ? Factory::CreateDrawTargetForData(backend, mData, mBlur.GetSize(),
+                                               mBlur.GetStride(),
+                                               SurfaceFormat::A8)
+            : gfxPlatform::CreateDrawTargetForData(
+                  mData, mBlur.GetSize(), mBlur.GetStride(), SurfaceFormat::A8);
   }
 
   if (!mDrawTarget || !mDrawTarget->IsValid()) {
@@ -134,17 +115,15 @@ gfxAlphaBoxBlur::InitDrawTarget(const DrawTarget* aReferenceDT,
 
   if (mData) {
     mDrawTarget->AddUserData(reinterpret_cast<UserDataKey*>(mDrawTarget.get()),
-                              mData,
-                              free);
+                             mData, free);
   }
 
   mDrawTarget->SetTransform(Matrix::Translation(-mBlur.GetRect().TopLeft()));
   return do_AddRef(mDrawTarget);
 }
 
-already_AddRefed<SourceSurface>
-gfxAlphaBoxBlur::DoBlur(const Color* aShadowColor, IntPoint* aOutTopLeft)
-{
+already_AddRefed<SourceSurface> gfxAlphaBoxBlur::DoBlur(
+    const Color* aShadowColor, IntPoint* aOutTopLeft) {
   if (aOutTopLeft) {
     *aOutTopLeft = mBlur.GetRect().TopLeft();
   }
@@ -155,14 +134,15 @@ gfxAlphaBoxBlur::DoBlur(const Color* aShadowColor, IntPoint* aOutTopLeft)
     blurMask = mDrawTarget->Snapshot();
   } else if (mAccelerated) {
     blurMask = mDrawTarget->Snapshot();
-    RefPtr<DrawTarget> blurDT =
-      mDrawTarget->CreateSimilarDrawTarget(blurMask->GetSize(), SurfaceFormat::A8);
+    RefPtr<DrawTarget> blurDT = mDrawTarget->CreateSimilarDrawTarget(
+        blurMask->GetSize(), SurfaceFormat::A8);
     if (!blurDT) {
       return nullptr;
     }
-    blurDT->DrawSurfaceWithShadow(blurMask, Point(0, 0), Color(1, 1, 1), Point(0, 0),
-                                  AlphaBoxBlur::CalculateBlurSigma(mBlur.GetBlurRadius().width),
-                                  CompositionOp::OP_OVER);
+    blurDT->DrawSurfaceWithShadow(
+        blurMask, Point(0, 0), Color(1, 1, 1), Point(0, 0),
+        AlphaBoxBlur::CalculateBlurSigma(mBlur.GetBlurRadius().width),
+        CompositionOp::OP_OVER);
     blurMask = blurDT->Snapshot();
   } else if (mDrawTarget->IsCaptureDT()) {
     mDrawTarget->Blur(mBlur);
@@ -173,8 +153,8 @@ gfxAlphaBoxBlur::DoBlur(const Color* aShadowColor, IntPoint* aOutTopLeft)
     return blurMask.forget();
   }
 
-  RefPtr<DrawTarget> shadowDT =
-    mDrawTarget->CreateSimilarDrawTarget(blurMask->GetSize(), SurfaceFormat::B8G8R8A8);
+  RefPtr<DrawTarget> shadowDT = mDrawTarget->CreateSimilarDrawTarget(
+      blurMask->GetSize(), SurfaceFormat::B8G8R8A8);
   if (!shadowDT) {
     return nullptr;
   }
@@ -184,14 +164,12 @@ gfxAlphaBoxBlur::DoBlur(const Color* aShadowColor, IntPoint* aOutTopLeft)
   return shadowDT->Snapshot();
 }
 
-void
-gfxAlphaBoxBlur::Paint(gfxContext* aDestinationCtx)
-{
+void gfxAlphaBoxBlur::Paint(gfxContext* aDestinationCtx) {
   if ((mDrawTarget && !mDrawTarget->IsCaptureDT()) && !mAccelerated && !mData) {
     return;
   }
 
-  DrawTarget *dest = aDestinationCtx->GetDrawTarget();
+  DrawTarget* dest = aDestinationCtx->GetDrawTarget();
   if (!dest) {
     NS_WARNING("Blurring not supported for Thebes contexts!");
     return;
@@ -232,11 +210,10 @@ gfxAlphaBoxBlur::Paint(gfxContext* aDestinationCtx)
   }
 }
 
-IntSize gfxAlphaBoxBlur::CalculateBlurRadius(const gfxPoint& aStd)
-{
-    mozilla::gfx::Point std(Float(aStd.x), Float(aStd.y));
-    IntSize size = AlphaBoxBlur::CalculateBlurRadius(std);
-    return IntSize(size.width, size.height);
+IntSize gfxAlphaBoxBlur::CalculateBlurRadius(const gfxPoint& aStd) {
+  mozilla::gfx::Point std(Float(aStd.x), Float(aStd.y));
+  IntSize size = AlphaBoxBlur::CalculateBlurRadius(std);
+  return IntSize(size.width, size.height);
 }
 
 struct BlurCacheKey : public PLDHashEntryHdr {
@@ -257,90 +234,77 @@ struct BlurCacheKey : public PLDHashEntryHdr {
   BlurCacheKey(const IntSize& aMinSize, const IntSize& aBlurRadius,
                const RectCornerRadii* aCornerRadii, const Color& aShadowColor,
                BackendType aBackendType)
-    : BlurCacheKey(aMinSize, IntSize(0, 0),
-                   aBlurRadius, aCornerRadii,
-                   aShadowColor, false,
-                   aBackendType)
-  {}
+      : BlurCacheKey(aMinSize, IntSize(0, 0), aBlurRadius, aCornerRadii,
+                     aShadowColor, false, aBackendType) {}
 
   explicit BlurCacheKey(const BlurCacheKey* aOther)
-    : mMinSize(aOther->mMinSize)
-    , mBlurRadius(aOther->mBlurRadius)
-    , mShadowColor(aOther->mShadowColor)
-    , mBackend(aOther->mBackend)
-    , mCornerRadii(aOther->mCornerRadii)
-    , mIsInset(aOther->mIsInset)
-    , mInnerMinSize(aOther->mInnerMinSize)
-  { }
+      : mMinSize(aOther->mMinSize),
+        mBlurRadius(aOther->mBlurRadius),
+        mShadowColor(aOther->mShadowColor),
+        mBackend(aOther->mBackend),
+        mCornerRadii(aOther->mCornerRadii),
+        mIsInset(aOther->mIsInset),
+        mInnerMinSize(aOther->mInnerMinSize) {}
 
-  explicit BlurCacheKey(const IntSize& aOuterMinSize, const IntSize& aInnerMinSize,
+  explicit BlurCacheKey(const IntSize& aOuterMinSize,
+                        const IntSize& aInnerMinSize,
                         const IntSize& aBlurRadius,
                         const RectCornerRadii* aCornerRadii,
                         const Color& aShadowColor, bool aIsInset,
                         BackendType aBackendType)
-    : mMinSize(aOuterMinSize)
-    , mBlurRadius(aBlurRadius)
-    , mShadowColor(aShadowColor)
-    , mBackend(aBackendType)
-    , mCornerRadii(aCornerRadii ? *aCornerRadii : RectCornerRadii())
-    , mIsInset(aIsInset)
-    , mInnerMinSize(aInnerMinSize)
-  { }
+      : mMinSize(aOuterMinSize),
+        mBlurRadius(aBlurRadius),
+        mShadowColor(aShadowColor),
+        mBackend(aBackendType),
+        mCornerRadii(aCornerRadii ? *aCornerRadii : RectCornerRadii()),
+        mIsInset(aIsInset),
+        mInnerMinSize(aInnerMinSize) {}
 
   BlurCacheKey(BlurCacheKey&&) = default;
 
-  static PLDHashNumber
-  HashKey(const KeyTypePointer aKey)
-  {
+  static PLDHashNumber HashKey(const KeyTypePointer aKey) {
     PLDHashNumber hash = 0;
     hash = AddToHash(hash, aKey->mMinSize.width, aKey->mMinSize.height);
     hash = AddToHash(hash, aKey->mBlurRadius.width, aKey->mBlurRadius.height);
 
-    hash = AddToHash(hash, HashBytes(&aKey->mShadowColor.r,
-                                     sizeof(aKey->mShadowColor.r)));
-    hash = AddToHash(hash, HashBytes(&aKey->mShadowColor.g,
-                                     sizeof(aKey->mShadowColor.g)));
-    hash = AddToHash(hash, HashBytes(&aKey->mShadowColor.b,
-                                     sizeof(aKey->mShadowColor.b)));
-    hash = AddToHash(hash, HashBytes(&aKey->mShadowColor.a,
-                                     sizeof(aKey->mShadowColor.a)));
+    hash = AddToHash(
+        hash, HashBytes(&aKey->mShadowColor.r, sizeof(aKey->mShadowColor.r)));
+    hash = AddToHash(
+        hash, HashBytes(&aKey->mShadowColor.g, sizeof(aKey->mShadowColor.g)));
+    hash = AddToHash(
+        hash, HashBytes(&aKey->mShadowColor.b, sizeof(aKey->mShadowColor.b)));
+    hash = AddToHash(
+        hash, HashBytes(&aKey->mShadowColor.a, sizeof(aKey->mShadowColor.a)));
 
     for (int i = 0; i < 4; i++) {
-      hash = AddToHash(hash, aKey->mCornerRadii[i].width, aKey->mCornerRadii[i].height);
+      hash = AddToHash(hash, aKey->mCornerRadii[i].width,
+                       aKey->mCornerRadii[i].height);
     }
 
     hash = AddToHash(hash, (uint32_t)aKey->mBackend);
 
     if (aKey->mIsInset) {
-      hash = AddToHash(hash, aKey->mInnerMinSize.width, aKey->mInnerMinSize.height);
+      hash = AddToHash(hash, aKey->mInnerMinSize.width,
+                       aKey->mInnerMinSize.height);
     }
     return hash;
   }
 
-  bool
-  KeyEquals(KeyTypePointer aKey) const
-  {
-    if (aKey->mMinSize == mMinSize &&
-        aKey->mBlurRadius == mBlurRadius &&
+  bool KeyEquals(KeyTypePointer aKey) const {
+    if (aKey->mMinSize == mMinSize && aKey->mBlurRadius == mBlurRadius &&
         aKey->mCornerRadii == mCornerRadii &&
-        aKey->mShadowColor == mShadowColor &&
-        aKey->mBackend == mBackend) {
-
+        aKey->mShadowColor == mShadowColor && aKey->mBackend == mBackend) {
       if (mIsInset) {
         return (mInnerMinSize == aKey->mInnerMinSize);
       }
 
       return true;
-     }
+    }
 
-     return false;
+    return false;
   }
 
-  static KeyTypePointer
-  KeyToPointer(KeyType aKey)
-  {
-    return &aKey;
-  }
+  static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
 };
 
 
@@ -348,17 +312,13 @@ struct BlurCacheKey : public PLDHashEntryHdr {
 
 
 struct BlurCacheData {
-  BlurCacheData(SourceSurface* aBlur, const IntMargin& aBlurMargin, BlurCacheKey&& aKey)
-    : mBlur(aBlur)
-    , mBlurMargin(aBlurMargin)
-    , mKey(std::move(aKey))
-  {}
+  BlurCacheData(SourceSurface* aBlur, const IntMargin& aBlurMargin,
+                BlurCacheKey&& aKey)
+      : mBlur(aBlur), mBlurMargin(aBlurMargin), mKey(std::move(aKey)) {}
 
   BlurCacheData(BlurCacheData&& aOther) = default;
 
-  nsExpirationState *GetExpirationState() {
-    return &mExpirationState;
-  }
+  nsExpirationState* GetExpirationState() { return &mExpirationState; }
 
   nsExpirationState mExpirationState;
   RefPtr<SourceSurface> mBlur;
@@ -372,92 +332,78 @@ struct BlurCacheData {
 
 
 
-class BlurCache final : public nsExpirationTracker<BlurCacheData,4>
-{
-  public:
-    BlurCache()
-      : nsExpirationTracker<BlurCacheData, 4>(GENERATION_MS, "BlurCache",
-                                              SystemGroup::EventTargetFor(TaskCategory::Other))
-    {
+class BlurCache final : public nsExpirationTracker<BlurCacheData, 4> {
+ public:
+  BlurCache()
+      : nsExpirationTracker<BlurCacheData, 4>(
+            GENERATION_MS, "BlurCache",
+            SystemGroup::EventTargetFor(TaskCategory::Other)) {}
+
+  virtual void NotifyExpired(BlurCacheData* aObject) override {
+    RemoveObject(aObject);
+    mHashEntries.Remove(aObject->mKey);
+  }
+
+  BlurCacheData* Lookup(const IntSize& aMinSize, const IntSize& aBlurRadius,
+                        const RectCornerRadii* aCornerRadii,
+                        const Color& aShadowColor, BackendType aBackendType) {
+    BlurCacheData* blur = mHashEntries.Get(BlurCacheKey(
+        aMinSize, aBlurRadius, aCornerRadii, aShadowColor, aBackendType));
+    if (blur) {
+      MarkUsed(blur);
     }
 
-    virtual void NotifyExpired(BlurCacheData* aObject) override
-    {
-      RemoveObject(aObject);
-      mHashEntries.Remove(aObject->mKey);
+    return blur;
+  }
+
+  BlurCacheData* LookupInsetBoxShadow(const IntSize& aOuterMinSize,
+                                      const IntSize& aInnerMinSize,
+                                      const IntSize& aBlurRadius,
+                                      const RectCornerRadii* aCornerRadii,
+                                      const Color& aShadowColor,
+                                      BackendType aBackendType) {
+    bool insetBoxShadow = true;
+    BlurCacheKey key(aOuterMinSize, aInnerMinSize, aBlurRadius, aCornerRadii,
+                     aShadowColor, insetBoxShadow, aBackendType);
+    BlurCacheData* blur = mHashEntries.Get(key);
+    if (blur) {
+      MarkUsed(blur);
     }
 
-    BlurCacheData* Lookup(const IntSize& aMinSize,
-                          const IntSize& aBlurRadius,
-                          const RectCornerRadii* aCornerRadii,
-                          const Color& aShadowColor,
-                          BackendType aBackendType)
-    {
-      BlurCacheData* blur =
-        mHashEntries.Get(BlurCacheKey(aMinSize, aBlurRadius,
-                                      aCornerRadii, aShadowColor,
-                                      aBackendType));
-      if (blur) {
-        MarkUsed(blur);
-      }
+    return blur;
+  }
 
-      return blur;
+  
+  
+  bool RegisterEntry(BlurCacheData* aValue) {
+    nsresult rv = AddObject(aValue);
+    if (NS_FAILED(rv)) {
+      
+      
+      
+      
+      
+      return false;
     }
+    mHashEntries.Put(aValue->mKey, aValue);
+    return true;
+  }
 
-    BlurCacheData* LookupInsetBoxShadow(const IntSize& aOuterMinSize,
-                                        const IntSize& aInnerMinSize,
-                                        const IntSize& aBlurRadius,
-                                        const RectCornerRadii* aCornerRadii,
-                                        const Color& aShadowColor,
-                                        BackendType aBackendType)
-    {
-      bool insetBoxShadow = true;
-      BlurCacheKey key(aOuterMinSize, aInnerMinSize,
-                       aBlurRadius, aCornerRadii,
-                       aShadowColor, insetBoxShadow,
-                       aBackendType);
-      BlurCacheData* blur = mHashEntries.Get(key);
-      if (blur) {
-        MarkUsed(blur);
-      }
-
-      return blur;
-    }
-
-    
-    
-    bool RegisterEntry(BlurCacheData* aValue)
-    {
-      nsresult rv = AddObject(aValue);
-      if (NS_FAILED(rv)) {
-        
-        
-        
-        
-        
-        return false;
-      }
-      mHashEntries.Put(aValue->mKey, aValue);
-      return true;
-    }
-
-  protected:
-    static const uint32_t GENERATION_MS = 1000;
-    
+ protected:
+  static const uint32_t GENERATION_MS = 1000;
+  
 
 
 
-    nsClassHashtable<BlurCacheKey, BlurCacheData> mHashEntries;
+  nsClassHashtable<BlurCacheKey, BlurCacheData> mHashEntries;
 };
 
 static BlurCache* gBlurCache = nullptr;
 
-static IntSize
-ComputeMinSizeForShadowShape(const RectCornerRadii* aCornerRadii,
-                             const IntSize& aBlurRadius,
-                             IntMargin& aOutSlice,
-                             const IntSize& aRectSize)
-{
+static IntSize ComputeMinSizeForShadowShape(const RectCornerRadii* aCornerRadii,
+                                            const IntSize& aBlurRadius,
+                                            IntMargin& aOutSlice,
+                                            const IntSize& aRectSize) {
   Size cornerSize(0, 0);
   if (aCornerRadii) {
     const RectCornerRadii& corners = *aCornerRadii;
@@ -468,11 +414,10 @@ ComputeMinSizeForShadowShape(const RectCornerRadii* aCornerRadii,
   }
 
   IntSize margin = IntSize::Ceil(cornerSize) + aBlurRadius;
-  aOutSlice = IntMargin(margin.height, margin.width,
-                        margin.height, margin.width);
+  aOutSlice =
+      IntMargin(margin.height, margin.width, margin.height, margin.width);
 
-  IntSize minSize(aOutSlice.LeftRight() + 1,
-                  aOutSlice.TopBottom() + 1);
+  IntSize minSize(aOutSlice.LeftRight() + 1, aOutSlice.TopBottom() + 1);
 
   
   
@@ -496,32 +441,24 @@ ComputeMinSizeForShadowShape(const RectCornerRadii* aCornerRadii,
   return minSize;
 }
 
-void
-CacheBlur(DrawTarget* aDT,
-          const IntSize& aMinSize,
-          const IntSize& aBlurRadius,
-          const RectCornerRadii* aCornerRadii,
-          const Color& aShadowColor,
-          const IntMargin& aBlurMargin,
-          SourceSurface* aBoxShadow)
-{
-  BlurCacheKey key(aMinSize, aBlurRadius, aCornerRadii, aShadowColor, aDT->GetBackendType());
-  BlurCacheData* data = new BlurCacheData(aBoxShadow, aBlurMargin, std::move(key));
+void CacheBlur(DrawTarget* aDT, const IntSize& aMinSize,
+               const IntSize& aBlurRadius, const RectCornerRadii* aCornerRadii,
+               const Color& aShadowColor, const IntMargin& aBlurMargin,
+               SourceSurface* aBoxShadow) {
+  BlurCacheKey key(aMinSize, aBlurRadius, aCornerRadii, aShadowColor,
+                   aDT->GetBackendType());
+  BlurCacheData* data =
+      new BlurCacheData(aBoxShadow, aBlurMargin, std::move(key));
   if (!gBlurCache->RegisterEntry(data)) {
     delete data;
   }
 }
 
 
-static already_AddRefed<SourceSurface>
-CreateBoxShadow(DrawTarget* aDestDrawTarget,
-                const IntSize& aMinSize,
-                const RectCornerRadii* aCornerRadii,
-                const IntSize& aBlurRadius,
-                const Color& aShadowColor,
-                bool aMirrorCorners,
-                IntMargin& aOutBlurMargin)
-{
+static already_AddRefed<SourceSurface> CreateBoxShadow(
+    DrawTarget* aDestDrawTarget, const IntSize& aMinSize,
+    const RectCornerRadii* aCornerRadii, const IntSize& aBlurRadius,
+    const Color& aShadowColor, bool aMirrorCorners, IntMargin& aOutBlurMargin) {
   gfxAlphaBoxBlur blur;
   Rect minRect(Point(0, 0), Size(aMinSize));
   Rect blurRect(minRect);
@@ -529,11 +466,12 @@ CreateBoxShadow(DrawTarget* aDestDrawTarget,
   
   
   if (aMirrorCorners) {
-    blurRect.SizeTo(ceil(blurRect.Width() * 0.5f), ceil(blurRect.Height() * 0.5f));
+    blurRect.SizeTo(ceil(blurRect.Width() * 0.5f),
+                    ceil(blurRect.Height() * 0.5f));
   }
   IntSize zeroSpread(0, 0);
   RefPtr<DrawTarget> blurDT =
-    blur.InitDrawTarget(aDestDrawTarget, blurRect, zeroSpread, aBlurRadius);
+      blur.InitDrawTarget(aDestDrawTarget, blurRect, zeroSpread, aBlurRadius);
   if (!blurDT) {
     return nullptr;
   }
@@ -542,7 +480,7 @@ CreateBoxShadow(DrawTarget* aDestDrawTarget,
 
   if (aCornerRadii) {
     RefPtr<Path> roundedRect =
-      MakePathForRoundedRect(*blurDT, minRect, *aCornerRadii);
+        MakePathForRoundedRect(*blurDT, minRect, *aCornerRadii);
     blurDT->Fill(roundedRect, black);
   } else {
     blurDT->FillRect(minRect, black);
@@ -562,24 +500,20 @@ CreateBoxShadow(DrawTarget* aDestDrawTarget,
   return result.forget();
 }
 
-static already_AddRefed<SourceSurface>
-GetBlur(gfxContext* aDestinationCtx,
-        const IntSize& aRectSize,
-        const IntSize& aBlurRadius,
-        const RectCornerRadii* aCornerRadii,
-        const Color& aShadowColor,
-        bool aMirrorCorners,
-        IntMargin& aOutBlurMargin,
-        IntMargin& aOutSlice,
-        IntSize& aOutMinSize)
-{
+static already_AddRefed<SourceSurface> GetBlur(
+    gfxContext* aDestinationCtx, const IntSize& aRectSize,
+    const IntSize& aBlurRadius, const RectCornerRadii* aCornerRadii,
+    const Color& aShadowColor, bool aMirrorCorners, IntMargin& aOutBlurMargin,
+    IntMargin& aOutSlice, IntSize& aOutMinSize) {
   if (!gBlurCache) {
     gBlurCache = new BlurCache();
   }
 
-  IntSize minSize =
-    ComputeMinSizeForShadowShape(aCornerRadii, aBlurRadius, aOutSlice, aRectSize);
+  IntSize minSize = ComputeMinSizeForShadowShape(aCornerRadii, aBlurRadius,
+                                                 aOutSlice, aRectSize);
 
+  
+  
   
   
   
@@ -589,7 +523,8 @@ GetBlur(gfxContext* aDestinationCtx,
   
   
   Matrix destMatrix = aDestinationCtx->CurrentMatrix();
-  bool useDestRect = !destMatrix.IsRectilinear() || destMatrix.HasNonIntegerTranslation() ||
+  bool useDestRect = !destMatrix.IsRectilinear() ||
+                     destMatrix.HasNonIntegerTranslation() ||
                      aDestinationCtx->GetDrawTarget()->IsRecording();
   if (useDestRect) {
     minSize = aRectSize;
@@ -605,9 +540,9 @@ GetBlur(gfxContext* aDestinationCtx,
   DrawTarget* destDT = aDestinationCtx->GetDrawTarget();
 
   if (!useDestRect) {
-    BlurCacheData* cached = gBlurCache->Lookup(minSize, aBlurRadius,
-                                               aCornerRadii, aShadowColor,
-                                               destDT->GetBackendType());
+    BlurCacheData* cached =
+        gBlurCache->Lookup(minSize, aBlurRadius, aCornerRadii, aShadowColor,
+                           destDT->GetBackendType());
     if (cached) {
       
       aOutBlurMargin = cached->mBlurMargin;
@@ -617,8 +552,8 @@ GetBlur(gfxContext* aDestinationCtx,
   }
 
   RefPtr<SourceSurface> boxShadow =
-    CreateBoxShadow(destDT, minSize, aCornerRadii, aBlurRadius,
-                    aShadowColor, aMirrorCorners, aOutBlurMargin);
+      CreateBoxShadow(destDT, minSize, aCornerRadii, aBlurRadius, aShadowColor,
+                      aMirrorCorners, aOutBlurMargin);
   if (!boxShadow) {
     return nullptr;
   }
@@ -634,22 +569,17 @@ GetBlur(gfxContext* aDestinationCtx,
   return boxShadow.forget();
 }
 
-void
-gfxAlphaBoxBlur::ShutdownBlurCache()
-{
+void gfxAlphaBoxBlur::ShutdownBlurCache() {
   delete gBlurCache;
   gBlurCache = nullptr;
 }
 
-static Rect
-RectWithEdgesTRBL(Float aTop, Float aRight, Float aBottom, Float aLeft)
-{
+static Rect RectWithEdgesTRBL(Float aTop, Float aRight, Float aBottom,
+                              Float aLeft) {
   return Rect(aLeft, aTop, aRight - aLeft, aBottom - aTop);
 }
 
-static bool
-ShouldStretchSurface(DrawTarget* aDT, SourceSurface* aSurface)
-{
+static bool ShouldStretchSurface(DrawTarget* aDT, SourceSurface* aSurface) {
   
   
   
@@ -662,10 +592,9 @@ ShouldStretchSurface(DrawTarget* aDT, SourceSurface* aSurface)
          (aDT->GetBackendType() == BackendType::DIRECT2D1_1);
 }
 
-static void
-RepeatOrStretchSurface(DrawTarget* aDT, SourceSurface* aSurface,
-                       const Rect& aDest, const Rect& aSrc, const Rect& aSkipRect)
-{
+static void RepeatOrStretchSurface(DrawTarget* aDT, SourceSurface* aSurface,
+                                   const Rect& aDest, const Rect& aSrc,
+                                   const Rect& aSkipRect) {
   if (aSkipRect.Contains(aDest)) {
     return;
   }
@@ -681,10 +610,9 @@ RepeatOrStretchSurface(DrawTarget* aDT, SourceSurface* aSurface,
   aDT->FillRect(aDest, pattern);
 }
 
-static void
-DrawCorner(DrawTarget* aDT, SourceSurface* aSurface,
-           const Rect& aDest, const Rect& aSrc, const Rect& aSkipRect)
-{
+static void DrawCorner(DrawTarget* aDT, SourceSurface* aSurface,
+                       const Rect& aDest, const Rect& aSrc,
+                       const Rect& aSkipRect) {
   if (aSkipRect.Contains(aDest)) {
     return;
   }
@@ -692,25 +620,24 @@ DrawCorner(DrawTarget* aDT, SourceSurface* aSurface,
   aDT->DrawSurface(aSurface, aDest, aSrc);
 }
 
-static void
-DrawMinBoxShadow(DrawTarget* aDestDrawTarget, SourceSurface* aSourceBlur,
-                 const Rect& aDstOuter, const Rect& aDstInner,
-                 const Rect& aSrcOuter, const Rect& aSrcInner,
-                 const Rect& aSkipRect, bool aMiddle = false)
-{
+static void DrawMinBoxShadow(DrawTarget* aDestDrawTarget,
+                             SourceSurface* aSourceBlur, const Rect& aDstOuter,
+                             const Rect& aDstInner, const Rect& aSrcOuter,
+                             const Rect& aSrcInner, const Rect& aSkipRect,
+                             bool aMiddle = false) {
   
   DrawCorner(aDestDrawTarget, aSourceBlur,
-             RectWithEdgesTRBL(aDstOuter.Y(), aDstInner.X(),
-                               aDstInner.Y(), aDstOuter.X()),
-             RectWithEdgesTRBL(aSrcOuter.Y(), aSrcInner.X(),
-                               aSrcInner.Y(), aSrcOuter.X()),
-                               aSkipRect);
+             RectWithEdgesTRBL(aDstOuter.Y(), aDstInner.X(), aDstInner.Y(),
+                               aDstOuter.X()),
+             RectWithEdgesTRBL(aSrcOuter.Y(), aSrcInner.X(), aSrcInner.Y(),
+                               aSrcOuter.X()),
+             aSkipRect);
 
   DrawCorner(aDestDrawTarget, aSourceBlur,
-             RectWithEdgesTRBL(aDstOuter.Y(), aDstOuter.XMost(),
-                               aDstInner.Y(), aDstInner.XMost()),
-             RectWithEdgesTRBL(aSrcOuter.Y(), aSrcOuter.XMost(),
-                               aSrcInner.Y(), aSrcInner.XMost()),
+             RectWithEdgesTRBL(aDstOuter.Y(), aDstOuter.XMost(), aDstInner.Y(),
+                               aDstInner.XMost()),
+             RectWithEdgesTRBL(aSrcOuter.Y(), aSrcOuter.XMost(), aSrcInner.Y(),
+                               aSrcInner.XMost()),
              aSkipRect);
 
   DrawCorner(aDestDrawTarget, aSourceBlur,
@@ -741,12 +668,13 @@ DrawMinBoxShadow(DrawTarget* aDestDrawTarget, SourceSurface* aSourceBlur,
                                            aSrcInner.YMost(), aSrcOuter.X()),
                          aSkipRect);
 
-  RepeatOrStretchSurface(aDestDrawTarget, aSourceBlur,
-                         RectWithEdgesTRBL(aDstInner.Y(), aDstOuter.XMost(),
-                                           aDstInner.YMost(), aDstInner.XMost()),
-                         RectWithEdgesTRBL(aSrcInner.Y(), aSrcOuter.XMost(),
-                                           aSrcInner.YMost(), aSrcInner.XMost()),
-                         aSkipRect);
+  RepeatOrStretchSurface(
+      aDestDrawTarget, aSourceBlur,
+      RectWithEdgesTRBL(aDstInner.Y(), aDstOuter.XMost(), aDstInner.YMost(),
+                        aDstInner.XMost()),
+      RectWithEdgesTRBL(aSrcInner.Y(), aSrcOuter.XMost(), aSrcInner.YMost(),
+                        aSrcInner.XMost()),
+      aSkipRect);
   RepeatOrStretchSurface(aDestDrawTarget, aSourceBlur,
                          RectWithEdgesTRBL(aDstInner.YMost(), aDstInner.XMost(),
                                            aDstOuter.YMost(), aDstInner.X()),
@@ -765,45 +693,39 @@ DrawMinBoxShadow(DrawTarget* aDestDrawTarget, SourceSurface* aSourceBlur,
   }
 }
 
-static void
-DrawMirroredRect(DrawTarget* aDT,
-                 SourceSurface* aSurface,
-                 const Rect& aDest, const Point& aSrc,
-                 Float aScaleX, Float aScaleY)
-{
-  SurfacePattern pattern(aSurface, ExtendMode::CLAMP,
-                         Matrix::Scaling(aScaleX, aScaleY)
-                           .PreTranslate(-aSrc)
-                           .PostTranslate(
-                             aScaleX < 0 ? aDest.XMost() : aDest.X(),
-                             aScaleY < 0 ? aDest.YMost() : aDest.Y()));
+static void DrawMirroredRect(DrawTarget* aDT, SourceSurface* aSurface,
+                             const Rect& aDest, const Point& aSrc,
+                             Float aScaleX, Float aScaleY) {
+  SurfacePattern pattern(
+      aSurface, ExtendMode::CLAMP,
+      Matrix::Scaling(aScaleX, aScaleY)
+          .PreTranslate(-aSrc)
+          .PostTranslate(aScaleX < 0 ? aDest.XMost() : aDest.X(),
+                         aScaleY < 0 ? aDest.YMost() : aDest.Y()));
   aDT->FillRect(aDest, pattern);
 }
 
-static void
-DrawMirroredBoxShadow(DrawTarget* aDT,
-                      SourceSurface* aSurface,
-                      const Rect& aDestRect)
-{
+static void DrawMirroredBoxShadow(DrawTarget* aDT, SourceSurface* aSurface,
+                                  const Rect& aDestRect) {
   Point center(ceil(aDestRect.X() + aDestRect.Width() / 2),
                ceil(aDestRect.Y() + aDestRect.Height() / 2));
-  Rect topLeft(aDestRect.X(), aDestRect.Y(),
-               center.x - aDestRect.X(),
+  Rect topLeft(aDestRect.X(), aDestRect.Y(), center.x - aDestRect.X(),
                center.y - aDestRect.Y());
   Rect bottomRight(topLeft.BottomRight(), aDestRect.Size() - topLeft.Size());
-  Rect topRight(bottomRight.X(), topLeft.Y(), bottomRight.Width(), topLeft.Height());
-  Rect bottomLeft(topLeft.X(), bottomRight.Y(), topLeft.Width(), bottomRight.Height());
+  Rect topRight(bottomRight.X(), topLeft.Y(), bottomRight.Width(),
+                topLeft.Height());
+  Rect bottomLeft(topLeft.X(), bottomRight.Y(), topLeft.Width(),
+                  bottomRight.Height());
   DrawMirroredRect(aDT, aSurface, topLeft, Point(), 1, 1);
   DrawMirroredRect(aDT, aSurface, topRight, Point(), -1, 1);
   DrawMirroredRect(aDT, aSurface, bottomLeft, Point(), 1, -1);
   DrawMirroredRect(aDT, aSurface, bottomRight, Point(), -1, -1);
 }
 
-static void
-DrawMirroredCorner(DrawTarget* aDT, SourceSurface* aSurface,
-                   const Rect& aDest, const Point& aSrc,
-                   const Rect& aSkipRect, Float aScaleX, Float aScaleY)
-{
+static void DrawMirroredCorner(DrawTarget* aDT, SourceSurface* aSurface,
+                               const Rect& aDest, const Point& aSrc,
+                               const Rect& aSkipRect, Float aScaleX,
+                               Float aScaleY) {
   if (aSkipRect.Contains(aDest)) {
     return;
   }
@@ -811,11 +733,11 @@ DrawMirroredCorner(DrawTarget* aDT, SourceSurface* aSurface,
   DrawMirroredRect(aDT, aSurface, aDest, aSrc, aScaleX, aScaleY);
 }
 
-static void
-RepeatOrStretchMirroredSurface(DrawTarget* aDT, SourceSurface* aSurface,
-                               const Rect& aDest, const Rect& aSrc,
-                               const Rect& aSkipRect, Float aScaleX, Float aScaleY)
-{
+static void RepeatOrStretchMirroredSurface(DrawTarget* aDT,
+                                           SourceSurface* aSurface,
+                                           const Rect& aDest, const Rect& aSrc,
+                                           const Rect& aSkipRect, Float aScaleX,
+                                           Float aScaleY) {
   if (aSkipRect.Contains(aDest)) {
     return;
   }
@@ -827,33 +749,32 @@ RepeatOrStretchMirroredSurface(DrawTarget* aDT, SourceSurface* aSurface,
     return;
   }
 
-  SurfacePattern pattern(aSurface, ExtendMode::REPEAT,
-                         Matrix::Scaling(aScaleX, aScaleY)
-                           .PreTranslate(-aSrc.TopLeft())
-                           .PostTranslate(
-                             aScaleX < 0 ? aDest.XMost() : aDest.X(),
-                             aScaleY < 0 ? aDest.YMost() : aDest.Y()),
-                         SamplingFilter::GOOD, RoundedToInt(aSrc));
+  SurfacePattern pattern(
+      aSurface, ExtendMode::REPEAT,
+      Matrix::Scaling(aScaleX, aScaleY)
+          .PreTranslate(-aSrc.TopLeft())
+          .PostTranslate(aScaleX < 0 ? aDest.XMost() : aDest.X(),
+                         aScaleY < 0 ? aDest.YMost() : aDest.Y()),
+      SamplingFilter::GOOD, RoundedToInt(aSrc));
   aDT->FillRect(aDest, pattern);
 }
 
-static void
-DrawMirroredMinBoxShadow(DrawTarget* aDestDrawTarget, SourceSurface* aSourceBlur,
-                         const Rect& aDstOuter, const Rect& aDstInner,
-                         const Rect& aSrcOuter, const Rect& aSrcInner,
-                         const Rect& aSkipRect, bool aMiddle = false)
-{
+static void DrawMirroredMinBoxShadow(
+    DrawTarget* aDestDrawTarget, SourceSurface* aSourceBlur,
+    const Rect& aDstOuter, const Rect& aDstInner, const Rect& aSrcOuter,
+    const Rect& aSrcInner, const Rect& aSkipRect, bool aMiddle = false) {
   
   
   
   Point center(ceil(aDstOuter.X() + aDstOuter.Width() / 2),
                ceil(aDstOuter.Y() + aDstOuter.Height() / 2));
-  Rect topLeft(aDstOuter.X(), aDstOuter.Y(),
-               center.x - aDstOuter.X(),
+  Rect topLeft(aDstOuter.X(), aDstOuter.Y(), center.x - aDstOuter.X(),
                center.y - aDstOuter.Y());
   Rect bottomRight(topLeft.BottomRight(), aDstOuter.Size() - topLeft.Size());
-  Rect topRight(bottomRight.X(), topLeft.Y(), bottomRight.Width(), topLeft.Height());
-  Rect bottomLeft(topLeft.X(), bottomRight.Y(), topLeft.Width(), bottomRight.Height());
+  Rect topRight(bottomRight.X(), topLeft.Y(), bottomRight.Width(),
+                topLeft.Height());
+  Rect bottomLeft(topLeft.X(), bottomRight.Y(), topLeft.Width(),
+                  bottomRight.Height());
 
   
   
@@ -870,8 +791,8 @@ DrawMirroredMinBoxShadow(DrawTarget* aDestDrawTarget, SourceSurface* aSourceBlur
     bottomRight.SetTopEdge(aDstInner.YMost());
   }
 
-  DrawMirroredCorner(aDestDrawTarget, aSourceBlur, topLeft,
-                     aSrcOuter.TopLeft(), aSkipRect, 1, 1);
+  DrawMirroredCorner(aDestDrawTarget, aSourceBlur, topLeft, aSrcOuter.TopLeft(),
+                     aSkipRect, 1, 1);
   DrawMirroredCorner(aDestDrawTarget, aSourceBlur, topRight,
                      aSrcOuter.TopLeft(), aSkipRect, -1, 1);
   DrawMirroredCorner(aDestDrawTarget, aSourceBlur, bottomLeft,
@@ -901,10 +822,10 @@ DrawMirroredMinBoxShadow(DrawTarget* aDestDrawTarget, SourceSurface* aSourceBlur
       dstBottom.SetTopEdge(dstTop.YMost());
       srcBottom.SetHeight(dstBottom.Height());
     }
-    RepeatOrStretchMirroredSurface(aDestDrawTarget, aSourceBlur,
-                                   dstTop, srcTop, aSkipRect, 1, 1);
-    RepeatOrStretchMirroredSurface(aDestDrawTarget, aSourceBlur,
-                                   dstBottom, srcBottom, aSkipRect, 1, -1);
+    RepeatOrStretchMirroredSurface(aDestDrawTarget, aSourceBlur, dstTop, srcTop,
+                                   aSkipRect, 1, 1);
+    RepeatOrStretchMirroredSurface(aDestDrawTarget, aSourceBlur, dstBottom,
+                                   srcBottom, aSkipRect, 1, -1);
   }
 
   if (aSrcInner.Height() == 1) {
@@ -923,10 +844,10 @@ DrawMirroredMinBoxShadow(DrawTarget* aDestDrawTarget, SourceSurface* aSourceBlur
       dstRight.SetLeftEdge(dstLeft.XMost());
       srcRight.SetWidth(dstRight.Width());
     }
-    RepeatOrStretchMirroredSurface(aDestDrawTarget, aSourceBlur,
-                                   dstLeft, srcLeft, aSkipRect, 1, 1);
-    RepeatOrStretchMirroredSurface(aDestDrawTarget, aSourceBlur,
-                                   dstRight, srcRight, aSkipRect, -1, 1);
+    RepeatOrStretchMirroredSurface(aDestDrawTarget, aSourceBlur, dstLeft,
+                                   srcLeft, aSkipRect, 1, 1);
+    RepeatOrStretchMirroredSurface(aDestDrawTarget, aSourceBlur, dstRight,
+                                   srcRight, aSkipRect, -1, 1);
   }
 
   
@@ -952,15 +873,11 @@ DrawMirroredMinBoxShadow(DrawTarget* aDestDrawTarget, SourceSurface* aSourceBlur
 
 
 
- void
-gfxAlphaBoxBlur::BlurRectangle(gfxContext* aDestinationCtx,
-                               const gfxRect& aRect,
-                               const RectCornerRadii* aCornerRadii,
-                               const gfxPoint& aBlurStdDev,
-                               const Color& aShadowColor,
-                               const gfxRect& aDirtyRect,
-                               const gfxRect& aSkipRect)
-{
+ void gfxAlphaBoxBlur::BlurRectangle(
+    gfxContext* aDestinationCtx, const gfxRect& aRect,
+    const RectCornerRadii* aCornerRadii, const gfxPoint& aBlurStdDev,
+    const Color& aShadowColor, const gfxRect& aDirtyRect,
+    const gfxRect& aSkipRect) {
   if (!RectIsInt32Safe(ToRect(aRect))) {
     return;
   }
@@ -972,10 +889,9 @@ gfxAlphaBoxBlur::BlurRectangle(gfxContext* aDestinationCtx,
   IntMargin blurMargin;
   IntMargin slice;
   IntSize minSize;
-  RefPtr<SourceSurface> boxShadow = GetBlur(aDestinationCtx,
-                                            rect.Size(), blurRadius,
-                                            aCornerRadii, aShadowColor, mirrorCorners,
-                                            blurMargin, slice, minSize);
+  RefPtr<SourceSurface> boxShadow =
+      GetBlur(aDestinationCtx, rect.Size(), blurRadius, aCornerRadii,
+              aShadowColor, mirrorCorners, blurMargin, slice, minSize);
   if (!boxShadow) {
     return;
   }
@@ -1010,8 +926,8 @@ gfxAlphaBoxBlur::BlurRectangle(gfxContext* aDestinationCtx,
       DrawMirroredMinBoxShadow(destDrawTarget, boxShadow, dstOuter, dstInner,
                                srcOuter, srcInner, skipRect, true);
     } else {
-      DrawMinBoxShadow(destDrawTarget, boxShadow, dstOuter, dstInner,
-                       srcOuter, srcInner, skipRect, true);
+      DrawMinBoxShadow(destDrawTarget, boxShadow, dstOuter, dstInner, srcOuter,
+                       srcInner, skipRect, true);
     }
   }
 
@@ -1030,11 +946,9 @@ gfxAlphaBoxBlur::BlurRectangle(gfxContext* aDestinationCtx,
   destDrawTarget->PopClip();
 }
 
-static already_AddRefed<Path>
-GetBoxShadowInsetPath(DrawTarget* aDrawTarget,
-                      const Rect aOuterRect, const Rect aInnerRect,
-                      const RectCornerRadii* aInnerClipRadii)
-{
+static already_AddRefed<Path> GetBoxShadowInsetPath(
+    DrawTarget* aDrawTarget, const Rect aOuterRect, const Rect aInnerRect,
+    const RectCornerRadii* aInnerClipRadii) {
   
 
 
@@ -1049,7 +963,7 @@ GetBoxShadowInsetPath(DrawTarget* aDrawTarget,
 
 
   RefPtr<PathBuilder> builder =
-    aDrawTarget->CreatePathBuilder(FillRule::FILL_EVEN_ODD);
+      aDrawTarget->CreatePathBuilder(FillRule::FILL_EVEN_ODD);
   AppendRectToPath(builder, aOuterRect, true);
 
   if (aInnerClipRadii) {
@@ -1060,55 +974,43 @@ GetBoxShadowInsetPath(DrawTarget* aDrawTarget,
   return builder->Finish();
 }
 
-static void
-FillDestinationPath(gfxContext* aDestinationCtx,
-                    const Rect& aDestinationRect,
-                    const Rect& aShadowClipRect,
-                    const Color& aShadowColor,
-                    const RectCornerRadii* aInnerClipRadii = nullptr)
-{
+static void FillDestinationPath(
+    gfxContext* aDestinationCtx, const Rect& aDestinationRect,
+    const Rect& aShadowClipRect, const Color& aShadowColor,
+    const RectCornerRadii* aInnerClipRadii = nullptr) {
   
   
   aDestinationCtx->SetColor(aShadowColor);
   DrawTarget* destDrawTarget = aDestinationCtx->GetDrawTarget();
-  RefPtr<Path> shadowPath = GetBoxShadowInsetPath(destDrawTarget, aDestinationRect,
-                                                  aShadowClipRect, aInnerClipRadii);
+  RefPtr<Path> shadowPath = GetBoxShadowInsetPath(
+      destDrawTarget, aDestinationRect, aShadowClipRect, aInnerClipRadii);
 
   aDestinationCtx->SetPath(shadowPath);
   aDestinationCtx->Fill();
 }
 
-static void
-CacheInsetBlur(const IntSize& aMinOuterSize,
-               const IntSize& aMinInnerSize,
-               const IntSize& aBlurRadius,
-               const RectCornerRadii* aCornerRadii,
-               const Color& aShadowColor,
-               BackendType aBackendType,
-               SourceSurface* aBoxShadow)
-{
+static void CacheInsetBlur(const IntSize& aMinOuterSize,
+                           const IntSize& aMinInnerSize,
+                           const IntSize& aBlurRadius,
+                           const RectCornerRadii* aCornerRadii,
+                           const Color& aShadowColor, BackendType aBackendType,
+                           SourceSurface* aBoxShadow) {
   bool isInsetBlur = true;
-  BlurCacheKey key(aMinOuterSize, aMinInnerSize,
-                   aBlurRadius, aCornerRadii,
-                   aShadowColor, isInsetBlur,
-                   aBackendType);
+  BlurCacheKey key(aMinOuterSize, aMinInnerSize, aBlurRadius, aCornerRadii,
+                   aShadowColor, isInsetBlur, aBackendType);
   IntMargin blurMargin(0, 0, 0, 0);
-  BlurCacheData* data = new BlurCacheData(aBoxShadow, blurMargin, std::move(key));
+  BlurCacheData* data =
+      new BlurCacheData(aBoxShadow, blurMargin, std::move(key));
   if (!gBlurCache->RegisterEntry(data)) {
     delete data;
   }
 }
 
-already_AddRefed<SourceSurface>
-gfxAlphaBoxBlur::GetInsetBlur(const Rect& aOuterRect,
-                              const Rect& aWhitespaceRect,
-                              bool aIsDestRect,
-                              const Color& aShadowColor,
-                              const IntSize& aBlurRadius,
-                              const RectCornerRadii* aInnerClipRadii,
-                              DrawTarget* aDestDrawTarget,
-                              bool aMirrorCorners)
-{
+already_AddRefed<SourceSurface> gfxAlphaBoxBlur::GetInsetBlur(
+    const Rect& aOuterRect, const Rect& aWhitespaceRect, bool aIsDestRect,
+    const Color& aShadowColor, const IntSize& aBlurRadius,
+    const RectCornerRadii* aInnerClipRadii, DrawTarget* aDestDrawTarget,
+    bool aMirrorCorners) {
   if (!gBlurCache) {
     gBlurCache = new BlurCache();
   }
@@ -1116,10 +1018,9 @@ gfxAlphaBoxBlur::GetInsetBlur(const Rect& aOuterRect,
   IntSize outerSize = IntSize::Truncate(aOuterRect.Size());
   IntSize whitespaceSize = IntSize::Truncate(aWhitespaceRect.Size());
   if (!aIsDestRect) {
-    BlurCacheData* cached =
-      gBlurCache->LookupInsetBoxShadow(outerSize, whitespaceSize,
-                                       aBlurRadius, aInnerClipRadii,
-                                       aShadowColor, aDestDrawTarget->GetBackendType());
+    BlurCacheData* cached = gBlurCache->LookupInsetBoxShadow(
+        outerSize, whitespaceSize, aBlurRadius, aInnerClipRadii, aShadowColor,
+        aDestDrawTarget->GetBackendType());
     if (cached) {
       
       RefPtr<SourceSurface> cachedBlur = cached->mBlur;
@@ -1134,15 +1035,17 @@ gfxAlphaBoxBlur::GetInsetBlur(const Rect& aOuterRect,
   
   
   if (aMirrorCorners) {
-    blurRect.SizeTo(ceil(blurRect.Width() * 0.5f), ceil(blurRect.Height() * 0.5f));
+    blurRect.SizeTo(ceil(blurRect.Width() * 0.5f),
+                    ceil(blurRect.Height() * 0.5f));
   }
   IntSize zeroSpread(0, 0);
   RefPtr<DrawTarget> minDrawTarget =
-    InitDrawTarget(aDestDrawTarget, blurRect, zeroSpread, aBlurRadius);
+      InitDrawTarget(aDestDrawTarget, blurRect, zeroSpread, aBlurRadius);
   if (!minDrawTarget) {
     return nullptr;
   }
 
+  
   
   
   
@@ -1155,9 +1058,8 @@ gfxAlphaBoxBlur::GetInsetBlur(const Rect& aOuterRect,
 
   
   
-  RefPtr<Path> maskPath =
-    GetBoxShadowInsetPath(minDrawTarget, aOuterRect,
-                          aWhitespaceRect, aInnerClipRadii);
+  RefPtr<Path> maskPath = GetBoxShadowInsetPath(
+      minDrawTarget, aOuterRect, aWhitespaceRect, aInnerClipRadii);
 
   ColorPattern black(Color(0.f, 0.f, 0.f, 1.f));
   minDrawTarget->Fill(maskPath, black);
@@ -1168,13 +1070,13 @@ gfxAlphaBoxBlur::GetInsetBlur(const Rect& aOuterRect,
     return nullptr;
   }
 
-  if (RefPtr<SourceSurface> opt = aDestDrawTarget->OptimizeSourceSurface(minInsetBlur)) {
+  if (RefPtr<SourceSurface> opt =
+          aDestDrawTarget->OptimizeSourceSurface(minInsetBlur)) {
     minInsetBlur = opt;
   }
 
   if (!aIsDestRect) {
-    CacheInsetBlur(outerSize, whitespaceSize,
-                   aBlurRadius, aInnerClipRadii,
+    CacheInsetBlur(outerSize, whitespaceSize, aBlurRadius, aInnerClipRadii,
                    aShadowColor, aDestDrawTarget->GetBackendType(),
                    minInsetBlur);
   }
@@ -1206,10 +1108,8 @@ gfxAlphaBoxBlur::GetInsetBlur(const Rect& aOuterRect,
 
 
 static void GetBlurMargins(const RectCornerRadii* aInnerClipRadii,
-                           const IntSize& aBlurRadius,
-                           Margin& aOutBlurMargin,
-                           Margin& aOutInnerMargin)
-{
+                           const IntSize& aBlurRadius, Margin& aOutBlurMargin,
+                           Margin& aOutInnerMargin) {
   Size cornerSize(0, 0);
   if (aInnerClipRadii) {
     const RectCornerRadii& corners = *aInnerClipRadii;
@@ -1223,28 +1123,25 @@ static void GetBlurMargins(const RectCornerRadii* aInnerClipRadii,
   
   IntSize margin = IntSize::Ceil(cornerSize) + aBlurRadius;
 
-  aOutInnerMargin.SizeTo(margin.height, margin.width,
-                         margin.height, margin.width);
+  aOutInnerMargin.SizeTo(margin.height, margin.width, margin.height,
+                         margin.width);
   aOutBlurMargin.SizeTo(aBlurRadius.height, aBlurRadius.width,
                         aBlurRadius.height, aBlurRadius.width);
 }
 
-static bool
-GetInsetBoxShadowRects(const Margin& aBlurMargin,
-                       const Margin& aInnerMargin,
-                       const Rect& aShadowClipRect,
-                       const Rect& aDestinationRect,
-                       Rect& aOutWhitespaceRect,
-                       Rect& aOutOuterRect)
-{
+static bool GetInsetBoxShadowRects(const Margin& aBlurMargin,
+                                   const Margin& aInnerMargin,
+                                   const Rect& aShadowClipRect,
+                                   const Rect& aDestinationRect,
+                                   Rect& aOutWhitespaceRect,
+                                   Rect& aOutOuterRect) {
   
   
   
   
   
   
-  Rect insideWhiteSpace(aBlurMargin.left,
-                        aBlurMargin.top,
+  Rect insideWhiteSpace(aBlurMargin.left, aBlurMargin.top,
                         aInnerMargin.LeftRight() + 1,
                         aInnerMargin.TopBottom() + 1);
 
@@ -1266,20 +1163,15 @@ GetInsetBoxShadowRects(const Margin& aBlurMargin,
   return useDestRect;
 }
 
-void
-gfxAlphaBoxBlur::BlurInsetBox(gfxContext* aDestinationCtx,
-                              const Rect& aDestinationRect,
-                              const Rect& aShadowClipRect,
-                              const IntSize& aBlurRadius,
-                              const Color& aShadowColor,
-                              const RectCornerRadii* aInnerClipRadii,
-                              const Rect& aSkipRect,
-                              const Point& aShadowOffset)
-{
-  if ((aBlurRadius.width == 0 && aBlurRadius.height == 0)
-      || aShadowClipRect.IsEmpty()) {
+void gfxAlphaBoxBlur::BlurInsetBox(
+    gfxContext* aDestinationCtx, const Rect& aDestinationRect,
+    const Rect& aShadowClipRect, const IntSize& aBlurRadius,
+    const Color& aShadowColor, const RectCornerRadii* aInnerClipRadii,
+    const Rect& aSkipRect, const Point& aShadowOffset) {
+  if ((aBlurRadius.width == 0 && aBlurRadius.height == 0) ||
+      aShadowClipRect.IsEmpty()) {
     FillDestinationPath(aDestinationCtx, aDestinationRect, aShadowClipRect,
-        aShadowColor, aInnerClipRadii);
+                        aShadowColor, aInnerClipRadii);
     return;
   }
 
@@ -1292,19 +1184,19 @@ gfxAlphaBoxBlur::BlurInsetBox(gfxContext* aDestinationCtx,
   Rect whitespaceRect;
   Rect outerRect;
   bool useDestRect =
-    GetInsetBoxShadowRects(blurMargin, innerMargin, aShadowClipRect,
-                           aDestinationRect, whitespaceRect, outerRect);
+      GetInsetBoxShadowRects(blurMargin, innerMargin, aShadowClipRect,
+                             aDestinationRect, whitespaceRect, outerRect);
 
   
   
+  
   Margin checkMargin = outerRect - whitespaceRect;
-  bool mirrorCorners =
-    checkMargin.left == checkMargin.right &&
-    checkMargin.top == checkMargin.bottom &&
-    (!aInnerClipRadii || aInnerClipRadii->AreRadiiSame());
+  bool mirrorCorners = checkMargin.left == checkMargin.right &&
+                       checkMargin.top == checkMargin.bottom &&
+                       (!aInnerClipRadii || aInnerClipRadii->AreRadiiSame());
   RefPtr<SourceSurface> minBlur =
-    GetInsetBlur(outerRect, whitespaceRect, useDestRect, aShadowColor,
-                 aBlurRadius, aInnerClipRadii, destDrawTarget, mirrorCorners);
+      GetInsetBlur(outerRect, whitespaceRect, useDestRect, aShadowColor,
+                   aBlurRadius, aInnerClipRadii, destDrawTarget, mirrorCorners);
   if (!minBlur) {
     return;
   }
@@ -1328,7 +1220,8 @@ gfxAlphaBoxBlur::BlurInsetBox(gfxContext* aDestinationCtx,
     
     Rect outerFillRect(aShadowClipRect);
     outerFillRect.Inflate(blurMargin);
-    FillDestinationPath(aDestinationCtx, aDestinationRect, outerFillRect, aShadowColor);
+    FillDestinationPath(aDestinationCtx, aDestinationRect, outerFillRect,
+                        aShadowColor);
 
     
     Rect destRect(aShadowClipRect);
@@ -1339,15 +1232,11 @@ gfxAlphaBoxBlur::BlurInsetBox(gfxContext* aDestinationCtx,
     destInnerRect.Deflate(innerMargin);
 
     if (mirrorCorners) {
-      DrawMirroredMinBoxShadow(destDrawTarget, minBlur,
-                               destRect, destInnerRect,
-                               srcOuter, srcInner,
-                               aSkipRect);
+      DrawMirroredMinBoxShadow(destDrawTarget, minBlur, destRect, destInnerRect,
+                               srcOuter, srcInner, aSkipRect);
     } else {
-      DrawMinBoxShadow(destDrawTarget, minBlur,
-                       destRect, destInnerRect,
-                       srcOuter, srcInner,
-                       aSkipRect);
+      DrawMinBoxShadow(destDrawTarget, minBlur, destRect, destInnerRect,
+                       srcOuter, srcInner, aSkipRect);
     }
   }
 }

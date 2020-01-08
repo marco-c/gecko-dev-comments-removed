@@ -9,7 +9,9 @@
 
 #include "threading/Thread.h"
 
-namespace JS { class Zone; }
+namespace JS {
+class Zone;
+}
 
 namespace js {
 
@@ -32,142 +34,164 @@ namespace js {
 #define JS_HAS_PROTECTED_DATA_CHECKS
 #endif
 
-#define DECLARE_ONE_BOOL_OPERATOR(OP, T)        \
-    template <typename U>                       \
-    bool operator OP(const U& other) const { return ref() OP static_cast<T>(other); }
+#define DECLARE_ONE_BOOL_OPERATOR(OP, T)   \
+  template <typename U>                    \
+  bool operator OP(const U& other) const { \
+    return ref() OP static_cast<T>(other); \
+  }
 
-#define DECLARE_BOOL_OPERATORS(T)               \
-    DECLARE_ONE_BOOL_OPERATOR(==, T)            \
-    DECLARE_ONE_BOOL_OPERATOR(!=, T)            \
-    DECLARE_ONE_BOOL_OPERATOR(<=, T)            \
-    DECLARE_ONE_BOOL_OPERATOR(>=, T)            \
-    DECLARE_ONE_BOOL_OPERATOR(<, T)             \
-    DECLARE_ONE_BOOL_OPERATOR(>, T)
-
-
-
-
+#define DECLARE_BOOL_OPERATORS(T)  \
+  DECLARE_ONE_BOOL_OPERATOR(==, T) \
+  DECLARE_ONE_BOOL_OPERATOR(!=, T) \
+  DECLARE_ONE_BOOL_OPERATOR(<=, T) \
+  DECLARE_ONE_BOOL_OPERATOR(>=, T) \
+  DECLARE_ONE_BOOL_OPERATOR(<, T)  \
+  DECLARE_ONE_BOOL_OPERATOR(>, T)
 
 
 
-class MOZ_RAII AutoNoteSingleThreadedRegion
-{
-  public:
+
+
+
+
+class MOZ_RAII AutoNoteSingleThreadedRegion {
+ public:
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-    static mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
-                           mozilla::recordreplay::Behavior::DontPreserve> count;
-    AutoNoteSingleThreadedRegion() { count++; }
-    ~AutoNoteSingleThreadedRegion() { count--; }
+  static mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
+                         mozilla::recordreplay::Behavior::DontPreserve>
+      count;
+  AutoNoteSingleThreadedRegion() { count++; }
+  ~AutoNoteSingleThreadedRegion() { count--; }
 #else
-    AutoNoteSingleThreadedRegion() {}
+  AutoNoteSingleThreadedRegion() {}
 #endif
 };
 
 
 
 template <typename Check, typename T>
-class ProtectedData
-{
-    typedef ProtectedData<Check, T> ThisType;
+class ProtectedData {
+  typedef ProtectedData<Check, T> ThisType;
 
-  public:
-    template <typename... Args>
-    explicit ProtectedData(const Check& check, Args&&... args)
+ public:
+  template <typename... Args>
+  explicit ProtectedData(const Check& check, Args&&... args)
       : value(std::forward<Args>(args)...)
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-      , check(check)
+        ,
+        check(check)
 #endif
-    {}
+  {
+  }
 
-    DECLARE_BOOL_OPERATORS(T)
+  DECLARE_BOOL_OPERATORS(T)
 
-    operator const T&() const { return ref(); }
-    const T& operator->() const { return ref(); }
+  operator const T&() const { return ref(); }
+  const T& operator->() const { return ref(); }
 
-    template <typename U>
-    ThisType& operator=(const U& p) { this->ref() = p; return *this; }
+  template <typename U>
+  ThisType& operator=(const U& p) {
+    this->ref() = p;
+    return *this;
+  }
 
-    template <typename U>
-    ThisType& operator=(U&& p) { this->ref() = std::move(p); return *this; }
+  template <typename U>
+  ThisType& operator=(U&& p) {
+    this->ref() = std::move(p);
+    return *this;
+  }
 
-    template <typename U> T& operator +=(const U& rhs) { return ref() += rhs; }
-    template <typename U> T& operator -=(const U& rhs) { return ref() -= rhs; }
-    template <typename U> T& operator *=(const U& rhs) { return ref() *= rhs; }
-    template <typename U> T& operator /=(const U& rhs) { return ref() /= rhs; }
-    template <typename U> T& operator &=(const U& rhs) { return ref() &= rhs; }
-    template <typename U> T& operator |=(const U& rhs) { return ref() |= rhs; }
-    T& operator ++() { return ++ref(); }
-    T& operator --() { return --ref(); }
-    T operator ++(int) { return ref()++; }
-    T operator --(int) { return ref()--; }
+  template <typename U>
+  T& operator+=(const U& rhs) {
+    return ref() += rhs;
+  }
+  template <typename U>
+  T& operator-=(const U& rhs) {
+    return ref() -= rhs;
+  }
+  template <typename U>
+  T& operator*=(const U& rhs) {
+    return ref() *= rhs;
+  }
+  template <typename U>
+  T& operator/=(const U& rhs) {
+    return ref() /= rhs;
+  }
+  template <typename U>
+  T& operator&=(const U& rhs) {
+    return ref() &= rhs;
+  }
+  template <typename U>
+  T& operator|=(const U& rhs) {
+    return ref() |= rhs;
+  }
+  T& operator++() { return ++ref(); }
+  T& operator--() { return --ref(); }
+  T operator++(int) { return ref()++; }
+  T operator--(int) { return ref()--; }
 
-    T& ref() {
+  T& ref() {
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-        if (!AutoNoteSingleThreadedRegion::count) {
-            check.check();
-        }
+    if (!AutoNoteSingleThreadedRegion::count) {
+      check.check();
+    }
 #endif
-        return value;
-    }
+    return value;
+  }
 
-    const T& ref() const {
+  const T& ref() const {
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-        if (!AutoNoteSingleThreadedRegion::count) {
-            check.check();
-        }
+    if (!AutoNoteSingleThreadedRegion::count) {
+      check.check();
+    }
 #endif
-        return value;
-    }
+    return value;
+  }
 
-    T& refNoCheck() { return value; }
-    const T& refNoCheck() const { return value; }
+  T& refNoCheck() { return value; }
+  const T& refNoCheck() const { return value; }
 
-    static size_t offsetOfValue() {
-        return offsetof(ThisType, value);
-    }
+  static size_t offsetOfValue() { return offsetof(ThisType, value); }
 
-  private:
-    T value;
+ private:
+  T value;
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-    Check check;
+  Check check;
 #endif
 };
+
 
 
 template <typename Check, typename T>
-class ProtectedDataNoCheckArgs : public ProtectedData<Check, T>
-{
-    using Base = ProtectedData<Check, T>;
+class ProtectedDataNoCheckArgs : public ProtectedData<Check, T> {
+  using Base = ProtectedData<Check, T>;
 
-  public:
-    template <typename... Args>
-    explicit ProtectedDataNoCheckArgs(Args&&... args)
-      : ProtectedData<Check, T>(Check(), std::forward<Args>(args)...)
-    {}
+ public:
+  template <typename... Args>
+  explicit ProtectedDataNoCheckArgs(Args&&... args)
+      : ProtectedData<Check, T>(Check(), std::forward<Args>(args)...) {}
 
-    using Base::operator=;
+  using Base::operator=;
 };
+
 
 
 template <typename Check, typename T>
-class ProtectedDataZoneArg : public ProtectedData<Check, T>
-{
-    using Base = ProtectedData<Check, T>;
+class ProtectedDataZoneArg : public ProtectedData<Check, T> {
+  using Base = ProtectedData<Check, T>;
 
-  public:
-    template <typename... Args>
-    explicit ProtectedDataZoneArg(JS::Zone* zone, Args&&... args)
-      : ProtectedData<Check, T>(Check(zone), std::forward<Args>(args)...)
-    {}
+ public:
+  template <typename... Args>
+  explicit ProtectedDataZoneArg(JS::Zone* zone, Args&&... args)
+      : ProtectedData<Check, T>(Check(zone), std::forward<Args>(args)...) {}
 
-    using Base::operator=;
+  using Base::operator=;
 };
 
-class CheckUnprotected
-{
+class CheckUnprotected {
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-  public:
-    inline void check() const {}
+ public:
+  inline void check() const {}
 #endif
 };
 
@@ -177,17 +201,14 @@ class CheckUnprotected
 template <typename T>
 using UnprotectedData = ProtectedDataNoCheckArgs<CheckUnprotected, T>;
 
-class CheckThreadLocal
-{
+class CheckThreadLocal {
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-    Thread::Id id;
+  Thread::Id id;
 
-  public:
-    CheckThreadLocal()
-      : id(ThisThread::GetId())
-    {}
+ public:
+  CheckThreadLocal() : id(ThisThread::GetId()) {}
 
-    void check() const;
+  void check() const;
 #endif
 };
 
@@ -197,19 +218,12 @@ using ThreadData = ProtectedDataNoCheckArgs<CheckThreadLocal, T>;
 
 
 
-enum class AllowedHelperThread
-{
-    None,
-    GCTask,
-    IonCompile,
-    GCTaskOrIonCompile
-};
+enum class AllowedHelperThread { None, GCTask, IonCompile, GCTaskOrIonCompile };
 
 template <AllowedHelperThread Helper>
-class CheckMainThread
-{
-  public:
-    void check() const;
+class CheckMainThread {
+ public:
+  void check() const;
 };
 
 
@@ -224,21 +238,21 @@ using MainThreadOrGCTaskData =
     ProtectedDataNoCheckArgs<CheckMainThread<AllowedHelperThread::GCTask>, T>;
 template <typename T>
 using MainThreadOrIonCompileData =
-    ProtectedDataNoCheckArgs<CheckMainThread<AllowedHelperThread::IonCompile>, T>;
+    ProtectedDataNoCheckArgs<CheckMainThread<AllowedHelperThread::IonCompile>,
+                             T>;
 
 template <AllowedHelperThread Helper>
-class CheckZone
-{
+class CheckZone {
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-  protected:
-    JS::Zone* zone;
+ protected:
+  JS::Zone* zone;
 
-  public:
-    explicit CheckZone(JS::Zone* zone) : zone(zone) {}
-    void check() const;
+ public:
+  explicit CheckZone(JS::Zone* zone) : zone(zone) {}
+  void check() const;
 #else
-  public:
-    explicit CheckZone(JS::Zone* zone) {}
+ public:
+  explicit CheckZone(JS::Zone* zone) {}
 #endif
 };
 
@@ -246,8 +260,7 @@ class CheckZone
 
 
 template <typename T>
-using ZoneData =
-    ProtectedDataZoneArg<CheckZone<AllowedHelperThread::None>, T>;
+using ZoneData = ProtectedDataZoneArg<CheckZone<AllowedHelperThread::None>, T>;
 
 
 
@@ -262,36 +275,31 @@ using ZoneOrGCTaskOrIonCompileData =
     ProtectedDataZoneArg<CheckZone<AllowedHelperThread::GCTaskOrIonCompile>, T>;
 
 
-enum class GlobalLock
-{
-    GCLock,
-    ScriptDataLock,
-    HelperThreadLock
-};
+enum class GlobalLock { GCLock, ScriptDataLock, HelperThreadLock };
 
 template <GlobalLock Lock, AllowedHelperThread Helper>
-class CheckGlobalLock
-{
+class CheckGlobalLock {
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-  public:
-    void check() const;
+ public:
+  void check() const;
 #endif
 };
 
 
 template <typename T>
-using GCLockData =
-    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::GCLock, AllowedHelperThread::None>, T>;
+using GCLockData = ProtectedDataNoCheckArgs<
+    CheckGlobalLock<GlobalLock::GCLock, AllowedHelperThread::None>, T>;
 
 
 template <typename T>
-using ScriptDataLockData =
-    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::ScriptDataLock, AllowedHelperThread::None>, T>;
+using ScriptDataLockData = ProtectedDataNoCheckArgs<
+    CheckGlobalLock<GlobalLock::ScriptDataLock, AllowedHelperThread::None>, T>;
 
 
 template <typename T>
-using HelperThreadLockData =
-    ProtectedDataNoCheckArgs<CheckGlobalLock<GlobalLock::HelperThreadLock, AllowedHelperThread::None>, T>;
+using HelperThreadLockData = ProtectedDataNoCheckArgs<
+    CheckGlobalLock<GlobalLock::HelperThreadLock, AllowedHelperThread::None>,
+    T>;
 
 
 
@@ -300,51 +308,52 @@ using HelperThreadLockData =
 
 
 template <typename Check, typename T>
-class ProtectedDataWriteOnce
-{
-    typedef ProtectedDataWriteOnce<Check, T> ThisType;
+class ProtectedDataWriteOnce {
+  typedef ProtectedDataWriteOnce<Check, T> ThisType;
 
-  public:
-    template <typename... Args>
-    explicit ProtectedDataWriteOnce(Args&&... args)
+ public:
+  template <typename... Args>
+  explicit ProtectedDataWriteOnce(Args&&... args)
       : value(std::forward<Args>(args)...)
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-      , nwrites(0)
+        ,
+        nwrites(0)
 #endif
-    {}
+  {
+  }
 
-    DECLARE_BOOL_OPERATORS(T)
+  DECLARE_BOOL_OPERATORS(T)
 
-    operator const T&() const { return ref(); }
-    const T& operator->() const { return ref(); }
+  operator const T&() const { return ref(); }
+  const T& operator->() const { return ref(); }
 
-    template <typename U>
-    ThisType& operator=(const U& p) {
-        if (ref() != p) {
-            this->writeRef() = p;
-        }
-        return *this;
+  template <typename U>
+  ThisType& operator=(const U& p) {
+    if (ref() != p) {
+      this->writeRef() = p;
     }
+    return *this;
+  }
 
-    const T& ref() const { return value; }
+  const T& ref() const { return value; }
 
-    T& writeRef() {
+  T& writeRef() {
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-        if (!AutoNoteSingleThreadedRegion::count) {
-            check.check();
-        }
-        
-        
-        MOZ_ASSERT(++nwrites <= 2);
+    if (!AutoNoteSingleThreadedRegion::count) {
+      check.check();
+    }
+    
+    
+    MOZ_ASSERT(++nwrites <= 2);
 #endif
-        return value;
-    }
+    return value;
+  }
 
-  private:
-    T value;
+ private:
+  T value;
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-    Check check;
-    size_t nwrites;
+  Check check;
+  size_t nwrites;
 #endif
 };
 
@@ -357,27 +366,27 @@ using WriteOnceData = ProtectedDataWriteOnce<CheckUnprotected, T>;
 
 
 template <AllowedHelperThread Helper>
-class CheckArenaListAccess : public CheckZone<AllowedHelperThread::None>
-{
+class CheckArenaListAccess : public CheckZone<AllowedHelperThread::None> {
 #ifdef JS_HAS_PROTECTED_DATA_CHECKS
-  public:
-    explicit CheckArenaListAccess(JS::Zone* zone)
+ public:
+  explicit CheckArenaListAccess(JS::Zone* zone)
       : CheckZone<AllowedHelperThread::None>(zone) {}
-    void check() const;
+  void check() const;
 #else
-  public:
-    explicit CheckArenaListAccess(JS::Zone* zone)
+ public:
+  explicit CheckArenaListAccess(JS::Zone* zone)
       : CheckZone<AllowedHelperThread::None>(zone) {}
 #endif
 };
 
 template <typename T>
-using ArenaListData = ProtectedDataZoneArg<CheckArenaListAccess<AllowedHelperThread::GCTask>, T>;
+using ArenaListData =
+    ProtectedDataZoneArg<CheckArenaListAccess<AllowedHelperThread::GCTask>, T>;
 
 #undef DECLARE_ASSIGNMENT_OPERATOR
 #undef DECLARE_ONE_BOOL_OPERATOR
 #undef DECLARE_BOOL_OPERATORS
 
-} 
+}  
 
-#endif 
+#endif  

@@ -35,9 +35,9 @@ class nsWindowSizes;
 #undef STYLE_STRUCT
 
 extern "C" {
-  void Servo_ComputedStyle_AddRef(const mozilla::ComputedStyle* aStyle);
-  void Servo_ComputedStyle_Release(const mozilla::ComputedStyle* aStyle);
-  void Gecko_ComputedStyle_Destroy(mozilla::ComputedStyle*);
+void Servo_ComputedStyle_AddRef(const mozilla::ComputedStyle* aStyle);
+void Servo_ComputedStyle_Release(const mozilla::ComputedStyle* aStyle);
+void Gecko_ComputedStyle_Destroy(mozilla::ComputedStyle*);
 }
 
 namespace mozilla {
@@ -62,8 +62,7 @@ class ComputedStyle;
 
 
 
-enum class ComputedStyleBit : uint8_t
-{
+enum class ComputedStyleBit : uint8_t {
   HasTextDecorationLines = 1 << 0,
   HasPseudoElementData = 1 << 1,
   SuppressLineBreak = 1 << 2,
@@ -73,12 +72,11 @@ enum class ComputedStyleBit : uint8_t
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ComputedStyleBit)
 
-class ComputedStyle
-{
+class ComputedStyle {
   using Bit = ComputedStyleBit;
-public:
-  ComputedStyle(nsPresContext* aPresContext,
-                nsAtom* aPseudoTag,
+
+ public:
+  ComputedStyle(nsPresContext* aPresContext, nsAtom* aPseudoTag,
                 CSSPseudoElementType aPseudoType,
                 ServoComputedDataForgotten aComputedValues);
 
@@ -90,8 +88,7 @@ public:
   
   
   
-  static mozilla::ArenaObjectID ArenaObjectID()
-  {
+  static mozilla::ArenaObjectID ArenaObjectID() {
     return mozilla::eArenaObjectID_GeckoComputedStyle;
   }
   nsIPresShell* Arena();
@@ -113,29 +110,25 @@ public:
   
   
   
-  ComputedStyle* GetStyleIfVisited() const
-  {
+  ComputedStyle* GetStyleIfVisited() const {
     return ComputedData()->visited_style.mPtr;
   }
 
-  bool IsLazilyCascadedPseudoElement() const
-  {
+  bool IsLazilyCascadedPseudoElement() const {
     return IsPseudoElement() &&
            !nsCSSPseudoElements::IsEagerlyCascadedInServo(GetPseudoType());
   }
 
   nsAtom* GetPseudo() const { return mPseudoTag; }
-  mozilla::CSSPseudoElementType GetPseudoType() const
-  {
-    return mPseudoType;
-  }
+  mozilla::CSSPseudoElementType GetPseudoType() const { return mPseudoType; }
 
   bool IsInheritingAnonBox() const {
     return GetPseudoType() == mozilla::CSSPseudoElementType::InheritingAnonBox;
   }
 
   bool IsNonInheritingAnonBox() const {
-    return GetPseudoType() == mozilla::CSSPseudoElementType::NonInheritingAnonBox;
+    return GetPseudoType() ==
+           mozilla::CSSPseudoElementType::NonInheritingAnonBox;
   }
 
   
@@ -156,8 +149,7 @@ public:
   
   
   
-  bool HasTextDecorationLines() const
-  {
+  bool HasTextDecorationLines() const {
     return bool(mBits & Bit::HasTextDecorationLines);
   }
 
@@ -168,54 +160,46 @@ public:
   
   
   
-  bool ShouldSuppressLineBreak() const
-  {
+  bool ShouldSuppressLineBreak() const {
     return bool(mBits & Bit::SuppressLineBreak);
   }
 
   
   
-  bool IsTextCombined() const
-  {
-    return bool(mBits & Bit::IsTextCombined);
-  }
+  bool IsTextCombined() const { return bool(mBits & Bit::IsTextCombined); }
 
   
   
   
   
-  bool HasPseudoElementData() const
-  {
+  bool HasPseudoElementData() const {
     return bool(mBits & Bit::HasPseudoElementData);
   }
 
   
   
   
-  bool RelevantLinkVisited() const
-  {
+  bool RelevantLinkVisited() const {
     return bool(mBits & Bit::RelevantLinkVisited);
   }
 
-  ComputedStyle* GetCachedInheritingAnonBoxStyle(nsAtom* aAnonBox) const
-  {
+  ComputedStyle* GetCachedInheritingAnonBoxStyle(nsAtom* aAnonBox) const {
     MOZ_ASSERT(nsCSSAnonBoxes::IsInheritingAnonBox(aAnonBox));
     return mCachedInheritingStyles.Lookup(aAnonBox);
   }
 
-  void SetCachedInheritedAnonBoxStyle(nsAtom* aAnonBox, ComputedStyle* aStyle)
-  {
+  void SetCachedInheritedAnonBoxStyle(nsAtom* aAnonBox, ComputedStyle* aStyle) {
     MOZ_ASSERT(!GetCachedInheritingAnonBoxStyle(aAnonBox));
     mCachedInheritingStyles.Insert(aStyle);
   }
 
   ComputedStyle* GetCachedLazyPseudoStyle(CSSPseudoElementType aPseudo) const;
 
-  void SetCachedLazyPseudoStyle(ComputedStyle* aStyle)
-  {
+  void SetCachedLazyPseudoStyle(ComputedStyle* aStyle) {
     MOZ_ASSERT(aStyle->GetPseudo() && !aStyle->IsAnonBox());
     MOZ_ASSERT(!GetCachedLazyPseudoStyle(aStyle->GetPseudoType()));
-    MOZ_ASSERT(!IsLazilyCascadedPseudoElement(), "lazy pseudos can't inherit lazy pseudos");
+    MOZ_ASSERT(!IsLazilyCascadedPseudoElement(),
+               "lazy pseudos can't inherit lazy pseudos");
     MOZ_ASSERT(aStyle->IsLazilyCascadedPseudoElement());
 
     
@@ -227,37 +211,25 @@ public:
     
     
     
-    if (nsCSSPseudoElements::PseudoElementSupportsUserActionState(aStyle->GetPseudoType())) {
+    if (nsCSSPseudoElements::PseudoElementSupportsUserActionState(
+            aStyle->GetPseudoType())) {
       return;
     }
 
     mCachedInheritingStyles.Insert(aStyle);
   }
 
-  
 
 
 
 
 
 
-  #define STYLE_STRUCT(name_) \
-    inline const nsStyle##name_ * Style##name_() MOZ_NONNULL_RETURN;
-  #include "nsStyleStructList.h"
-  #undef STYLE_STRUCT
 
-  
-
-
-
-
-
-
-  #define STYLE_STRUCT(name_) \
-    inline const nsStyle##name_ * ThreadsafeStyle##name_();
-  #include "nsStyleStructList.h"
-  #undef STYLE_STRUCT
-
+#define STYLE_STRUCT(name_) \
+  inline const nsStyle##name_* Style##name_() MOZ_NONNULL_RETURN;
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT
 
   
 
@@ -266,10 +238,21 @@ public:
 
 
 
-  #define STYLE_STRUCT(name_)  \
-    inline const nsStyle##name_ * PeekStyle##name_();
-  #include "nsStyleStructList.h"
-  #undef STYLE_STRUCT
+#define STYLE_STRUCT(name_) \
+  inline const nsStyle##name_* ThreadsafeStyle##name_();
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT
+
+
+
+
+
+
+
+
+#define STYLE_STRUCT(name_) inline const nsStyle##name_* PeekStyle##name_();
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT
 
   
 
@@ -291,7 +274,7 @@ public:
   nsChangeHint CalcStyleDifference(ComputedStyle* aNewContext,
                                    uint32_t* aEqualStructs);
 
-public:
+ public:
   
 
 
@@ -300,8 +283,8 @@ public:
 
 
 
-  template<typename T, typename S>
-  nscolor GetVisitedDependentColor(T S::* aField);
+  template <typename T, typename S>
+  nscolor GetVisitedDependentColor(T S::*aField);
 
   
 
@@ -334,14 +317,12 @@ public:
   
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const;
 
-protected:
-  bool HasRequestedStruct(StyleStructID aID) const
-  {
+ protected:
+  bool HasRequestedStruct(StyleStructID aID) const {
     return mRequestedStructs & StyleStructConstants::BitFor(aID);
   }
 
-  void SetRequestedStruct(StyleStructID aID)
-  {
+  void SetRequestedStruct(StyleStructID aID) {
     mRequestedStructs |= StyleStructConstants::BitFor(aID);
   }
 
@@ -358,17 +339,17 @@ protected:
   
   CachedInheritingStyles mCachedInheritingStyles;
 
-  
-  #define STYLE_STRUCT_INHERITED(name_)         \
-    template<bool aComputeData>                 \
-    const nsStyle##name_ * DoGetStyle##name_();
-  #define STYLE_STRUCT_RESET(name_)             \
-    template<bool aComputeData>                 \
-    const nsStyle##name_ * DoGetStyle##name_();
 
-  #include "nsStyleStructList.h"
-  #undef STYLE_STRUCT_RESET
-  #undef STYLE_STRUCT_INHERITED
+#define STYLE_STRUCT_INHERITED(name_) \
+  template <bool aComputeData>        \
+  const nsStyle##name_* DoGetStyle##name_();
+#define STYLE_STRUCT_RESET(name_) \
+  template <bool aComputeData>    \
+  const nsStyle##name_* DoGetStyle##name_();
+
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT_RESET
+#undef STYLE_STRUCT_INHERITED
 
   
   
@@ -380,6 +361,6 @@ protected:
   const CSSPseudoElementType mPseudoType;
 };
 
-} 
+}  
 
 #endif

@@ -6,17 +6,17 @@
 #ifndef NSFONTMETRICS__H__
 #define NSFONTMETRICS__H__
 
-#include <stdint.h>                     
-#include <sys/types.h>                  
-#include "gfxTextRun.h"                 
-#include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
-#include "nsCOMPtr.h"                   
-#include "nsCoord.h"                    
-#include "nsError.h"                    
-#include "nsFont.h"                     
-#include "nsISupports.h"                
-#include "nscore.h"                     
+#include <stdint.h>              
+#include <sys/types.h>           
+#include "gfxTextRun.h"          
+#include "mozilla/Assertions.h"  
+#include "mozilla/RefPtr.h"      
+#include "nsCOMPtr.h"            
+#include "nsCoord.h"             
+#include "nsError.h"             
+#include "nsFont.h"              
+#include "nsISupports.h"         
+#include "nscore.h"              
 
 class gfxContext;
 class gfxUserFontSet;
@@ -43,229 +43,223 @@ struct nsBoundingMetrics;
 
 
 
-class nsFontMetrics final
-{
-public:
-    typedef gfxTextRun::Range Range;
-    typedef mozilla::gfx::DrawTarget DrawTarget;
+class nsFontMetrics final {
+ public:
+  typedef gfxTextRun::Range Range;
+  typedef mozilla::gfx::DrawTarget DrawTarget;
 
-    struct MOZ_STACK_CLASS Params
-    {
-      nsAtom* language = nullptr;
-      bool explicitLanguage = false;
-      gfxFont::Orientation orientation = gfxFont::eHorizontal;
-      gfxUserFontSet* userFontSet = nullptr;
-      gfxTextPerfMetrics* textPerf = nullptr;
-    };
+  struct MOZ_STACK_CLASS Params {
+    nsAtom* language = nullptr;
+    bool explicitLanguage = false;
+    gfxFont::Orientation orientation = gfxFont::eHorizontal;
+    gfxUserFontSet* userFontSet = nullptr;
+    gfxTextPerfMetrics* textPerf = nullptr;
+  };
 
-    nsFontMetrics(const nsFont& aFont, const Params& aParams,
-                  nsDeviceContext *aContext);
+  nsFontMetrics(const nsFont& aFont, const Params& aParams,
+                nsDeviceContext* aContext);
 
-    
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsFontMetrics)
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsFontMetrics)
 
-    
+  
 
 
 
-    void Destroy();
+  void Destroy();
 
-    
+  
 
 
-    nscoord XHeight();
+  nscoord XHeight();
 
-    
+  
 
 
-    nscoord CapHeight();
+  nscoord CapHeight();
 
-    
+  
 
 
 
 
-    nscoord SuperscriptOffset();
+  nscoord SuperscriptOffset();
 
-    
+  
 
 
 
 
-    nscoord SubscriptOffset();
+  nscoord SubscriptOffset();
 
-    
+  
 
 
 
 
-    void GetStrikeout(nscoord& aOffset, nscoord& aSize);
+  void GetStrikeout(nscoord& aOffset, nscoord& aSize);
 
-    
+  
 
 
 
 
-    void GetUnderline(nscoord& aOffset, nscoord& aSize);
+  void GetUnderline(nscoord& aOffset, nscoord& aSize);
 
-    
+  
 
 
 
 
-    nscoord InternalLeading();
+  nscoord InternalLeading();
 
-    
+  
 
 
 
 
-    nscoord ExternalLeading();
+  nscoord ExternalLeading();
 
-    
+  
 
 
 
-    nscoord EmHeight();
+  nscoord EmHeight();
 
-    
+  
 
 
-    nscoord EmAscent();
+  nscoord EmAscent();
 
-    
+  
 
 
-    nscoord EmDescent();
+  nscoord EmDescent();
 
-    
+  
 
 
 
-    nscoord MaxHeight();
+  nscoord MaxHeight();
 
-    
+  
 
 
 
-    nscoord MaxAscent();
+  nscoord MaxAscent();
 
-    
+  
 
 
 
-    nscoord MaxDescent();
+  nscoord MaxDescent();
 
-    
+  
 
 
-    nscoord MaxAdvance();
+  nscoord MaxAdvance();
 
-    
+  
 
 
-    nscoord AveCharWidth();
+  nscoord AveCharWidth();
 
-    
+  
 
 
-    nscoord SpaceWidth();
+  nscoord SpaceWidth();
 
-    
+  
 
 
 
-    const nsFont &Font() const { return mFont; }
+  const nsFont& Font() const { return mFont; }
 
-    
+  
 
 
-    nsAtom* Language() const { return mLanguage; }
+  nsAtom* Language() const { return mLanguage; }
 
-    
+  
 
 
-    gfxFont::Orientation Orientation() const { return mOrientation; }
+  gfxFont::Orientation Orientation() const { return mOrientation; }
 
-    int32_t GetMaxStringLength();
+  int32_t GetMaxStringLength();
 
-    
-    
-    
-    nscoord GetWidth(const char* aString, uint32_t aLength,
-                     DrawTarget* aDrawTarget);
-    nscoord GetWidth(const char16_t* aString, uint32_t aLength,
-                     DrawTarget* aDrawTarget);
+  
+  
+  
+  nscoord GetWidth(const char* aString, uint32_t aLength,
+                   DrawTarget* aDrawTarget);
+  nscoord GetWidth(const char16_t* aString, uint32_t aLength,
+                   DrawTarget* aDrawTarget);
 
-    
-    void DrawString(const char *aString, uint32_t aLength,
-                    nscoord aX, nscoord aY,
-                    gfxContext *aContext);
-    void DrawString(const char16_t* aString, uint32_t aLength,
-                    nscoord aX, nscoord aY,
-                    gfxContext *aContext,
-                    DrawTarget* aTextRunConstructionDrawTarget);
+  
+  void DrawString(const char* aString, uint32_t aLength, nscoord aX, nscoord aY,
+                  gfxContext* aContext);
+  void DrawString(const char16_t* aString, uint32_t aLength, nscoord aX,
+                  nscoord aY, gfxContext* aContext,
+                  DrawTarget* aTextRunConstructionDrawTarget);
 
-    nsBoundingMetrics GetBoundingMetrics(const char16_t *aString,
-                                         uint32_t aLength,
-                                         DrawTarget* aDrawTarget);
+  nsBoundingMetrics GetBoundingMetrics(const char16_t* aString,
+                                       uint32_t aLength,
+                                       DrawTarget* aDrawTarget);
 
-    
-    
-    nsBoundingMetrics GetInkBoundsForVisualOverflow(const char16_t *aString,
-                                                    uint32_t aLength,
-                                                    DrawTarget* aDrawTarget);
+  
+  
+  nsBoundingMetrics GetInkBoundsForVisualOverflow(const char16_t* aString,
+                                                  uint32_t aLength,
+                                                  DrawTarget* aDrawTarget);
 
-    void SetTextRunRTL(bool aIsRTL) { mTextRunRTL = aIsRTL; }
-    bool GetTextRunRTL() const { return mTextRunRTL; }
+  void SetTextRunRTL(bool aIsRTL) { mTextRunRTL = aIsRTL; }
+  bool GetTextRunRTL() const { return mTextRunRTL; }
 
-    void SetVertical(bool aVertical) { mVertical = aVertical; }
-    bool GetVertical() const { return mVertical; }
+  void SetVertical(bool aVertical) { mVertical = aVertical; }
+  bool GetVertical() const { return mVertical; }
 
-    void SetTextOrientation(uint8_t aTextOrientation)
-    {
-      mTextOrientation = aTextOrientation;
-    }
-    uint8_t GetTextOrientation() const { return mTextOrientation; }
+  void SetTextOrientation(uint8_t aTextOrientation) {
+    mTextOrientation = aTextOrientation;
+  }
+  uint8_t GetTextOrientation() const { return mTextOrientation; }
 
-    gfxFontGroup* GetThebesFontGroup() const { return mFontGroup; }
-    gfxUserFontSet* GetUserFontSet() const
-    {
-      return mFontGroup->GetUserFontSet();
-    }
+  gfxFontGroup* GetThebesFontGroup() const { return mFontGroup; }
+  gfxUserFontSet* GetUserFontSet() const {
+    return mFontGroup->GetUserFontSet();
+  }
 
-    int32_t AppUnitsPerDevPixel() const { return mP2A; }
+  int32_t AppUnitsPerDevPixel() const { return mP2A; }
 
-private:
-    
-    ~nsFontMetrics();
+ private:
+  
+  ~nsFontMetrics();
 
-    const gfxFont::Metrics& GetMetrics() const {
-      return GetMetrics(mOrientation);
-    }
+  const gfxFont::Metrics& GetMetrics() const {
+    return GetMetrics(mOrientation);
+  }
 
-    const gfxFont::Metrics&
-    GetMetrics(const gfxFont::Orientation aFontOrientation) const;
+  const gfxFont::Metrics& GetMetrics(
+      const gfxFont::Orientation aFontOrientation) const;
 
-    nsFont mFont;
-    RefPtr<gfxFontGroup> mFontGroup;
-    RefPtr<nsAtom> mLanguage;
-    
-    
-    nsDeviceContext* MOZ_NON_OWNING_REF mDeviceContext;
-    int32_t mP2A;
+  nsFont mFont;
+  RefPtr<gfxFontGroup> mFontGroup;
+  RefPtr<nsAtom> mLanguage;
+  
+  
+  nsDeviceContext* MOZ_NON_OWNING_REF mDeviceContext;
+  int32_t mP2A;
 
-    
-    
-    
-    gfxFont::Orientation mOrientation;
+  
+  
+  
+  gfxFont::Orientation mOrientation;
 
-    
-    
-    
-    bool mTextRunRTL;
-    bool mVertical;
-    uint8_t mTextOrientation;
+  
+  
+  
+  bool mTextRunRTL;
+  bool mVertical;
+  uint8_t mTextOrientation;
 };
 
 #endif 

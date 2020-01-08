@@ -27,9 +27,8 @@ class HyperTextAccessible;
 class DocAccessible;
 class Attribute;
 
-class nsAccUtils
-{
-public:
+class nsAccUtils {
+ public:
   
 
 
@@ -37,9 +36,8 @@ public:
 
 
 
-  static void GetAccAttr(nsIPersistentProperties *aAttributes,
-                         nsAtom *aAttrName,
-                         nsAString& aAttrValue);
+  static void GetAccAttr(nsIPersistentProperties* aAttributes,
+                         nsAtom* aAttrName, nsAString& aAttrValue);
 
   
 
@@ -48,18 +46,16 @@ public:
 
 
 
-  static void SetAccAttr(nsIPersistentProperties *aAttributes,
-                         nsAtom *aAttrName,
-                         const nsAString& aAttrValue);
+  static void SetAccAttr(nsIPersistentProperties* aAttributes,
+                         nsAtom* aAttrName, const nsAString& aAttrValue);
 
-  static void SetAccAttr(nsIPersistentProperties *aAttributes,
-                         nsAtom* aAttrName,
-                         nsAtom* aAttrValue);
+  static void SetAccAttr(nsIPersistentProperties* aAttributes,
+                         nsAtom* aAttrName, nsAtom* aAttrValue);
 
   
 
 
-  static void SetAccGroupAttrs(nsIPersistentProperties *aAttributes,
+  static void SetAccGroupAttrs(nsIPersistentProperties* aAttributes,
                                int32_t aLevel, int32_t aSetSize,
                                int32_t aPosInSet);
 
@@ -77,7 +73,7 @@ public:
   
 
 
-  static int32_t GetLevelForXULContainerItem(nsIContent *aContent);
+  static int32_t GetLevelForXULContainerItem(nsIContent* aContent);
 
   
 
@@ -86,7 +82,7 @@ public:
 
 
 
-  static void SetLiveContainerAttributes(nsIPersistentProperties *aAttributes,
+  static void SetLiveContainerAttributes(nsIPersistentProperties* aAttributes,
                                          nsIContent* aStartContent,
                                          mozilla::dom::Element* aTopEl);
 
@@ -97,7 +93,7 @@ public:
 
 
 
-  static bool HasDefinedARIAToken(nsIContent *aContent, nsAtom *aAtom);
+  static bool HasDefinedARIAToken(nsIContent* aContent, nsAtom* aAtom);
 
   
 
@@ -116,17 +112,15 @@ public:
   
 
 
-  static DocAccessible* GetDocAccessibleFor(nsINode* aNode)
-  {
-    nsIPresShell *presShell = nsCoreUtils::GetPresShellFor(aNode);
+  static DocAccessible* GetDocAccessibleFor(nsINode* aNode) {
+    nsIPresShell* presShell = nsCoreUtils::GetPresShellFor(aNode);
     return GetAccService()->GetDocAccessible(presShell);
   }
 
   
 
 
-  static DocAccessible* GetDocAccessibleFor(nsIDocShellTreeItem* aContainer)
-  {
+  static DocAccessible* GetDocAccessibleFor(nsIDocShellTreeItem* aContainer) {
     nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(aContainer));
     return GetAccService()->GetDocAccessible(docShell->GetPresShell());
   }
@@ -233,25 +227,21 @@ public:
   
 
 
-  static inline uint64_t To64State(uint32_t aState1, uint32_t aState2)
-  {
+  static inline uint64_t To64State(uint32_t aState1, uint32_t aState2) {
     return static_cast<uint64_t>(aState1) +
-        (static_cast<uint64_t>(aState2) << 31);
+           (static_cast<uint64_t>(aState2) << 31);
   }
 
   
 
 
-  static inline void To32States(uint64_t aState64,
-                                uint32_t* aState1, uint32_t* aState2)
-  {
+  static inline void To32States(uint64_t aState64, uint32_t* aState1,
+                                uint32_t* aState2) {
     *aState1 = aState64 & 0x7fffffff;
-    if (aState2)
-      *aState2 = static_cast<uint32_t>(aState64 >> 31);
+    if (aState2) *aState2 = static_cast<uint32_t>(aState64 >> 31);
   }
 
-  static uint32_t To32States(uint64_t aState, bool* aIsExtra)
-  {
+  static uint32_t To32States(uint64_t aState, bool* aIsExtra) {
     uint32_t extraState = aState >> 31;
     *aIsExtra = !!extraState;
     return aState | extraState;
@@ -265,10 +255,9 @@ public:
 
   static bool PersistentPropertiesToArray(nsIPersistentProperties* aProps,
                                           nsTArray<Attribute>* aAttributes);
-
 };
 
-} 
-} 
+}  
+}  
 
 #endif

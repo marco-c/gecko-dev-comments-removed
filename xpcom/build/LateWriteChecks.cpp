@@ -42,17 +42,13 @@ using namespace mozilla;
 
 
 
-class SHA1Stream
-{
-public:
-  explicit SHA1Stream(FILE* aStream)
-    : mFile(aStream)
-  {
+class SHA1Stream {
+ public:
+  explicit SHA1Stream(FILE* aStream) : mFile(aStream) {
     MozillaRegisterDebugFILE(mFile);
   }
 
-  void Printf(const char* aFormat, ...) MOZ_FORMAT_PRINTF(2, 3)
-  {
+  void Printf(const char* aFormat, ...) MOZ_FORMAT_PRINTF(2, 3) {
     MOZ_ASSERT(mFile);
     va_list list;
     va_start(list, aFormat);
@@ -62,8 +58,7 @@ public:
     mSHA1.update(str.get(), str.Length());
     Unused << fwrite(str.get(), 1, str.Length(), mFile);
   }
-  void Finish(SHA1Sum::Hash& aHash)
-  {
+  void Finish(SHA1Sum::Hash& aHash) {
     int fd = fileno(mFile);
     fflush(mFile);
     MozillaUnRegisterDebugFD(fd);
@@ -71,16 +66,16 @@ public:
     mSHA1.finish(aHash);
     mFile = nullptr;
   }
-private:
+
+ private:
   FILE* mFile;
   SHA1Sum mSHA1;
 };
 
-static void
-RecordStackWalker(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
-{
+static void RecordStackWalker(uint32_t aFrameNumber, void* aPC, void* aSP,
+                              void* aClosure) {
   std::vector<uintptr_t>* stack =
-    static_cast<std::vector<uintptr_t>*>(aClosure);
+      static_cast<std::vector<uintptr_t>*>(aClosure);
   stack->push_back(reinterpret_cast<uintptr_t>(aPC));
 }
 
@@ -90,29 +85,24 @@ RecordStackWalker(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
 
 
 
-class LateWriteObserver final : public IOInterposeObserver
-{
+class LateWriteObserver final : public IOInterposeObserver {
   using char_type = filesystem::Path::value_type;
-public:
+
+ public:
   explicit LateWriteObserver(const char_type* aProfileDirectory)
-    : mProfileDirectory(NS_xstrdup(aProfileDirectory))
-  {
-  }
-  ~LateWriteObserver()
-  {
+      : mProfileDirectory(NS_xstrdup(aProfileDirectory)) {}
+  ~LateWriteObserver() {
     free(mProfileDirectory);
     mProfileDirectory = nullptr;
   }
 
   void Observe(IOInterposeObserver::Observation& aObservation) override;
 
-private:
+ private:
   char_type* mProfileDirectory;
 };
 
-void
-LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb)
-{
+void LateWriteObserver::Observe(IOInterposeObserver::Observation& aOb) {
   
   if (gShutdownChecks == SCM_CRASH) {
     MOZ_CRASH();
@@ -216,9 +206,7 @@ static StaticAutoPtr<LateWriteObserver> sLateWriteObserver;
 
 namespace mozilla {
 
-void
-InitLateWriteChecks()
-{
+void InitLateWriteChecks() {
   nsCOMPtr<nsIFile> mozFile;
   NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR, getter_AddRefs(mozFile));
   if (mozFile) {
@@ -229,29 +217,20 @@ InitLateWriteChecks()
   }
 }
 
-void
-BeginLateWriteChecks()
-{
+void BeginLateWriteChecks() {
   if (sLateWriteObserver) {
-    IOInterposer::Register(
-      IOInterposeObserver::OpWriteFSync,
-      sLateWriteObserver
-    );
+    IOInterposer::Register(IOInterposeObserver::OpWriteFSync,
+                           sLateWriteObserver);
   }
 }
 
-void
-StopLateWriteChecks()
-{
+void StopLateWriteChecks() {
   if (sLateWriteObserver) {
-    IOInterposer::Unregister(
-      IOInterposeObserver::OpAll,
-      sLateWriteObserver
-    );
+    IOInterposer::Unregister(IOInterposeObserver::OpAll, sLateWriteObserver);
     
     
     
   }
 }
 
-} 
+}  

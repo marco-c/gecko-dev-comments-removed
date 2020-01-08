@@ -21,7 +21,7 @@ namespace ipc {
 
 class PrincipalInfo;
 
-} 
+}  
 
 namespace dom {
 
@@ -55,9 +55,7 @@ class LSRequestResponse;
 
 
 
-class LSObject final
-  : public Storage
-{
+class LSObject final : public Storage {
   typedef mozilla::ipc::PrincipalInfo PrincipalInfo;
 
   friend nsGlobalWindowInner;
@@ -73,36 +71,32 @@ class LSObject final
 
   bool mInExplicitSnapshot;
 
-public:
+ public:
   
 
 
-  static nsresult
-  CreateForWindow(nsPIDOMWindowInner* aWindow,
-                  Storage** aStorage);
-
-  
-
-
-
-
-
-
-
-  static nsresult
-  CreateForPrincipal(nsPIDOMWindowInner* aWindow,
-                     nsIPrincipal* aPrincipal,
-                     const nsAString& aDocumentURI,
-                     bool aPrivate,
-                     LSObject** aObject);
+  static nsresult CreateForWindow(nsPIDOMWindowInner* aWindow,
+                                  Storage** aStorage);
 
   
 
 
 
 
-  static already_AddRefed<nsIEventTarget>
-  GetSyncLoopEventTarget();
+
+
+
+  static nsresult CreateForPrincipal(nsPIDOMWindowInner* aWindow,
+                                     nsIPrincipal* aPrincipal,
+                                     const nsAString& aDocumentURI,
+                                     bool aPrivate, LSObject** aObject);
+
+  
+
+
+
+
+  static already_AddRefed<nsIEventTarget> GetSyncLoopEventTarget();
 
   
 
@@ -114,108 +108,70 @@ public:
 
 
 
-  static void
-  CancelSyncLoop();
+  static void CancelSyncLoop();
 
-  void
-  AssertIsOnOwningThread() const
-  {
-    NS_ASSERT_OWNINGTHREAD(LSObject);
-  }
+  void AssertIsOnOwningThread() const { NS_ASSERT_OWNINGTHREAD(LSObject); }
 
-  const nsString&
-  DocumentURI() const
-  {
-    return mDocumentURI;
-  }
+  const nsString& DocumentURI() const { return mDocumentURI; }
 
-  LSRequestChild*
-  StartRequest(nsIEventTarget* aMainEventTarget,
-               const LSRequestParams& aParams,
-               LSRequestChildCallback* aCallback);
+  LSRequestChild* StartRequest(nsIEventTarget* aMainEventTarget,
+                               const LSRequestParams& aParams,
+                               LSRequestChildCallback* aCallback);
 
   
-  StorageType
-  Type() const override;
+  StorageType Type() const override;
 
-  bool
-  IsForkOf(const Storage* aStorage) const override;
+  bool IsForkOf(const Storage* aStorage) const override;
 
-  int64_t
-  GetOriginQuotaUsage() const override;
+  int64_t GetOriginQuotaUsage() const override;
 
-  uint32_t
-  GetLength(nsIPrincipal& aSubjectPrincipal,
-            ErrorResult& aError) override;
+  uint32_t GetLength(nsIPrincipal& aSubjectPrincipal,
+                     ErrorResult& aError) override;
 
-  void
-  Key(uint32_t aIndex,
-      nsAString& aResult,
-      nsIPrincipal& aSubjectPrincipal,
-      ErrorResult& aError) override;
+  void Key(uint32_t aIndex, nsAString& aResult, nsIPrincipal& aSubjectPrincipal,
+           ErrorResult& aError) override;
 
-  void
-  GetItem(const nsAString& aKey,
-          nsAString& aResult,
-          nsIPrincipal& aSubjectPrincipal,
-          ErrorResult& aError) override;
+  void GetItem(const nsAString& aKey, nsAString& aResult,
+               nsIPrincipal& aSubjectPrincipal, ErrorResult& aError) override;
 
-  void
-  GetSupportedNames(nsTArray<nsString>& aNames) override;
+  void GetSupportedNames(nsTArray<nsString>& aNames) override;
 
-  void
-  SetItem(const nsAString& aKey,
-          const nsAString& aValue,
-          nsIPrincipal& aSubjectPrincipal,
-          ErrorResult& aError) override;
+  void SetItem(const nsAString& aKey, const nsAString& aValue,
+               nsIPrincipal& aSubjectPrincipal, ErrorResult& aError) override;
 
-  void
-  RemoveItem(const nsAString& aKey,
-             nsIPrincipal& aSubjectPrincipal,
-             ErrorResult& aError) override;
+  void RemoveItem(const nsAString& aKey, nsIPrincipal& aSubjectPrincipal,
+                  ErrorResult& aError) override;
 
-  void
-  Clear(nsIPrincipal& aSubjectPrincipal,
-        ErrorResult& aError) override;
+  void Clear(nsIPrincipal& aSubjectPrincipal, ErrorResult& aError) override;
 
   
   
-  void
-  Open(nsIPrincipal& aSubjectPrincipal,
-       ErrorResult& aError) override;
+  void Open(nsIPrincipal& aSubjectPrincipal, ErrorResult& aError) override;
 
-  void
-  Close(nsIPrincipal& aSubjectPrincipal,
-        ErrorResult& aError) override;
+  void Close(nsIPrincipal& aSubjectPrincipal, ErrorResult& aError) override;
 
-  void
-  BeginExplicitSnapshot(nsIPrincipal& aSubjectPrincipal,
-                        ErrorResult& aError) override;
+  void BeginExplicitSnapshot(nsIPrincipal& aSubjectPrincipal,
+                             ErrorResult& aError) override;
 
-  void
-  EndExplicitSnapshot(nsIPrincipal& aSubjectPrincipal,
-                      ErrorResult& aError) override;
+  void EndExplicitSnapshot(nsIPrincipal& aSubjectPrincipal,
+                           ErrorResult& aError) override;
 
   
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(LSObject, Storage)
 
-private:
-  LSObject(nsPIDOMWindowInner* aWindow,
-           nsIPrincipal* aPrincipal);
+ private:
+  LSObject(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
 
   ~LSObject();
 
-  nsresult
-  DoRequestSynchronously(const LSRequestParams& aParams,
-                         LSRequestResponse& aResponse);
+  nsresult DoRequestSynchronously(const LSRequestParams& aParams,
+                                  LSRequestResponse& aResponse);
 
-  nsresult
-  EnsureDatabase();
+  nsresult EnsureDatabase();
 
-  void
-  DropDatabase();
+  void DropDatabase();
 
   
 
@@ -229,34 +185,28 @@ private:
 
 
 
-  nsresult
-  EnsureObserver();
+  nsresult EnsureObserver();
 
   
 
 
 
-  void
-  DropObserver();
+  void DropObserver();
 
   
 
 
 
-  void
-  OnChange(const nsAString& aKey,
-           const nsAString& aOldValue,
-           const nsAString& aNewValue);
+  void OnChange(const nsAString& aKey, const nsAString& aOldValue,
+                const nsAString& aNewValue);
 
-  nsresult
-  EndExplicitSnapshotInternal();
+  nsresult EndExplicitSnapshotInternal();
 
   
-  void
-  LastRelease() override;
+  void LastRelease() override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

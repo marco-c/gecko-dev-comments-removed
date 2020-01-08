@@ -7,11 +7,11 @@
 #ifndef MOZILLA_LAYERS_TEXTUREFORWARDER
 #define MOZILLA_LAYERS_TEXTUREFORWARDER
 
-#include <stdint.h>                     
+#include <stdint.h>  
 #include "gfxTypes.h"
 #include "mozilla/layers/LayersMessages.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "mozilla/layers/TextureClient.h"  
+#include "mozilla/layers/LayersTypes.h"     
+#include "mozilla/layers/TextureClient.h"   
 #include "mozilla/layers/KnowsCompositor.h"
 
 namespace mozilla {
@@ -25,7 +25,7 @@ namespace layers {
 
 
 class LayersIPCActor {
-public:
+ public:
   virtual bool IPCOpen() const { return true; }
 };
 
@@ -35,9 +35,9 @@ public:
 
 
 
-class LayersIPCChannel : public LayersIPCActor
-                       , public mozilla::ipc::IShmemAllocator {
-public:
+class LayersIPCChannel : public LayersIPCActor,
+                         public mozilla::ipc::IShmemAllocator {
+ public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   virtual bool IsSameProcess() const = 0;
@@ -48,13 +48,17 @@ public:
 
   virtual MessageLoop* GetMessageLoop() const = 0;
 
-  virtual FixedSizeSmallShmemSectionAllocator* GetTileLockAllocator() { return nullptr; }
+  virtual FixedSizeSmallShmemSectionAllocator* GetTileLockAllocator() {
+    return nullptr;
+  }
 
   virtual void CancelWaitForRecycle(uint64_t aTextureId) = 0;
 
-  virtual wr::MaybeExternalImageId GetNextExternalImageId() { return Nothing(); }
+  virtual wr::MaybeExternalImageId GetNextExternalImageId() {
+    return Nothing();
+  }
 
-protected:
+ protected:
   virtual ~LayersIPCChannel() {}
 };
 
@@ -64,21 +68,19 @@ protected:
 
 
 class TextureForwarder : public LayersIPCChannel {
-public:
+ public:
   
 
 
+
   virtual PTextureChild* CreateTexture(
-    const SurfaceDescriptor& aSharedData,
-    const ReadLockDescriptor& aReadLock,
-    LayersBackend aLayersBackend,
-    TextureFlags aFlags,
-    uint64_t aSerial,
-    wr::MaybeExternalImageId& aExternalImageId,
-    nsIEventTarget* aTarget = nullptr) = 0;
+      const SurfaceDescriptor& aSharedData, const ReadLockDescriptor& aReadLock,
+      LayersBackend aLayersBackend, TextureFlags aFlags, uint64_t aSerial,
+      wr::MaybeExternalImageId& aExternalImageId,
+      nsIEventTarget* aTarget = nullptr) = 0;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

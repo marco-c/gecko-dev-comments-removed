@@ -25,11 +25,11 @@ struct nsRect;
 namespace mozilla {
 namespace gfx {
 class DrawTarget;
-} 
+}  
 namespace layers {
 class LayerManager;
-} 
-} 
+}  
+}  
 
 struct nsPoint;
 struct nsSize;
@@ -38,49 +38,33 @@ struct nsSize;
 
 
 
-class nsSVGIntegrationUtils final
-{
+class nsSVGIntegrationUtils final {
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::IntRect IntRect;
   typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
-public:
+ public:
   
 
 
 
-  static bool
-  UsingOverflowAffectingEffects(const nsIFrame* aFrame);
+  static bool UsingOverflowAffectingEffects(const nsIFrame* aFrame);
 
   
 
 
-  static bool
-  UsingEffectsForFrame(const nsIFrame* aFrame);
+  static bool UsingEffectsForFrame(const nsIFrame* aFrame);
 
   
 
 
-  static bool
-  UsingMaskOrClipPathForFrame(const nsIFrame* aFrame);
-
-  
-
-
-
-  static nsSize
-  GetContinuationUnionSize(nsIFrame* aNonSVGFrame);
+  static bool UsingMaskOrClipPathForFrame(const nsIFrame* aFrame);
 
   
 
 
 
-
-
-
-
-  static mozilla::gfx::Size
-  GetSVGCoordContextForNonSVGFrame(nsIFrame* aNonSVGFrame);
+  static nsSize GetContinuationUnionSize(nsIFrame* aNonSVGFrame);
 
   
 
@@ -90,10 +74,8 @@ public:
 
 
 
-
-
-  static gfxRect
-  GetSVGBBoxForNonSVGFrame(nsIFrame* aNonSVGFrame, bool aUnionContinuations);
+  static mozilla::gfx::Size GetSVGCoordContextForNonSVGFrame(
+      nsIFrame* aNonSVGFrame);
 
   
 
@@ -105,12 +87,8 @@ public:
 
 
 
-
-
-
-  static nsRect
-  ComputePostEffectsVisualOverflowRect(nsIFrame* aFrame,
-                                       const nsRect& aPreEffectsOverflowRect);
+  static gfxRect GetSVGBBoxForNonSVGFrame(nsIFrame* aNonSVGFrame,
+                                          bool aUnionContinuations);
 
   
 
@@ -124,23 +102,38 @@ public:
 
 
 
-  static nsIntRegion
-  AdjustInvalidAreaForSVGEffects(nsIFrame* aFrame, const nsPoint& aToReferenceFrame,
-                                 const nsIntRegion& aInvalidRegion);
+
+  static nsRect ComputePostEffectsVisualOverflowRect(
+      nsIFrame* aFrame, const nsRect& aPreEffectsOverflowRect);
 
   
 
 
 
-  static nsRect
-  GetRequiredSourceForInvalidArea(nsIFrame* aFrame, const nsRect& aDamageRect);
+
+
+
+
+
+
+
+
+  static nsIntRegion AdjustInvalidAreaForSVGEffects(
+      nsIFrame* aFrame, const nsPoint& aToReferenceFrame,
+      const nsIntRegion& aInvalidRegion);
 
   
 
 
 
-  static bool
-  HitTestFrameForEffects(nsIFrame* aFrame, const nsPoint& aPt);
+  static nsRect GetRequiredSourceForInvalidArea(nsIFrame* aFrame,
+                                                const nsRect& aDamageRect);
+
+  
+
+
+
+  static bool HitTestFrameForEffects(nsIFrame* aFrame, const nsPoint& aPt);
 
   struct MOZ_STACK_CLASS PaintFramesParams {
     gfxContext& ctx;
@@ -149,8 +142,8 @@ public:
     const nsRect& borderArea;
     nsDisplayListBuilder* builder;
     mozilla::layers::LayerManager* layerManager;
-    bool handleOpacity; 
-                        
+    bool handleOpacity;  
+                         
     IntRect maskRect;
     imgDrawingParams& imgParams;
 
@@ -161,52 +154,52 @@ public:
                                mozilla::layers::LayerManager* aLayerManager,
                                bool aHandleOpacity,
                                imgDrawingParams& aImgParams)
-      : ctx(aCtx), frame(aFrame), dirtyRect(aDirtyRect),
-        borderArea(aBorderArea), builder(aBuilder),
-        layerManager(aLayerManager), handleOpacity(aHandleOpacity),
-        imgParams(aImgParams)
-    { }
+        : ctx(aCtx),
+          frame(aFrame),
+          dirtyRect(aDirtyRect),
+          borderArea(aBorderArea),
+          builder(aBuilder),
+          layerManager(aLayerManager),
+          handleOpacity(aHandleOpacity),
+          imgParams(aImgParams) {}
   };
 
   
 
 
-  static void
-  PaintMaskAndClipPath(const PaintFramesParams& aParams);
+  static void PaintMaskAndClipPath(const PaintFramesParams& aParams);
 
   
   
-  static void
-  PaintMaskAndClipPath(const PaintFramesParams& aParams, const std::function<void()>& aPaintChild);
-
-  
-
-
-
-
-  static bool
-  PaintMask(const PaintFramesParams& aParams);
+  static void PaintMaskAndClipPath(const PaintFramesParams& aParams,
+                                   const std::function<void()>& aPaintChild);
 
   
 
 
-  static bool
-  IsMaskResourceReady(nsIFrame* aFrame);
+
+
+  static bool PaintMask(const PaintFramesParams& aParams);
 
   
 
 
-  static void
-  PaintFilter(const PaintFramesParams& aParams);
+  static bool IsMaskResourceReady(nsIFrame* aFrame);
 
   
 
 
-  static bool
-  BuildWebRenderFilters(nsIFrame *aFilteredFrame,
-                        const mozilla::LayoutDeviceIntRect& aPreFilterBounds,
-                        nsTArray<mozilla::wr::WrFilterOp>& aWrFilters,
-                        mozilla::LayoutDeviceIntRect& aPostFilterBounds);
+  static void PaintFilter(const PaintFramesParams& aParams);
+
+  
+
+
+
+  static bool BuildWebRenderFilters(
+      nsIFrame* aFilteredFrame,
+      const mozilla::LayoutDeviceIntRect& aPreFilterBounds,
+      nsTArray<mozilla::wr::WrFilterOp>& aWrFilters,
+      mozilla::LayoutDeviceIntRect& aPostFilterBounds);
 
   
 
@@ -231,21 +224,16 @@ public:
     FLAG_SYNC_DECODE_IMAGES = 0x01,
   };
 
-  static already_AddRefed<gfxDrawable>
-  DrawableFromPaintServer(nsIFrame* aFrame,
-                          nsIFrame* aTarget,
-                          const nsSize& aPaintServerSize,
-                          const mozilla::gfx::IntSize& aRenderSize,
-                          const DrawTarget* aDrawTarget,
-                          const gfxMatrix& aContextMatrix,
-                          uint32_t aFlags);
+  static already_AddRefed<gfxDrawable> DrawableFromPaintServer(
+      nsIFrame* aFrame, nsIFrame* aTarget, const nsSize& aPaintServerSize,
+      const mozilla::gfx::IntSize& aRenderSize, const DrawTarget* aDrawTarget,
+      const gfxMatrix& aContextMatrix, uint32_t aFlags);
 
   
 
 
 
-  static nsPoint
-  GetOffsetToBoundingBox(nsIFrame* aFrame);
+  static nsPoint GetOffsetToBoundingBox(nsIFrame* aFrame);
 };
 
 #endif 

@@ -22,27 +22,27 @@ class GlobalObject;
 
 
 
-class CollatorObject : public NativeObject
-{
-  public:
-    static const Class class_;
+class CollatorObject : public NativeObject {
+ public:
+  static const Class class_;
 
-    static constexpr uint32_t INTERNALS_SLOT = 0;
-    static constexpr uint32_t UCOLLATOR_SLOT = 1;
-    static constexpr uint32_t SLOT_COUNT = 2;
+  static constexpr uint32_t INTERNALS_SLOT = 0;
+  static constexpr uint32_t UCOLLATOR_SLOT = 1;
+  static constexpr uint32_t SLOT_COUNT = 2;
 
-    static_assert(INTERNALS_SLOT == INTL_INTERNALS_OBJECT_SLOT,
-                  "INTERNALS_SLOT must match self-hosting define for internals object slot");
+  static_assert(INTERNALS_SLOT == INTL_INTERNALS_OBJECT_SLOT,
+                "INTERNALS_SLOT must match self-hosting define for internals "
+                "object slot");
 
-  private:
-    static const ClassOps classOps_;
+ private:
+  static const ClassOps classOps_;
 
-    static void finalize(FreeOp* fop, JSObject* obj);
+  static void finalize(FreeOp* fop, JSObject* obj);
 };
 
-extern JSObject*
-CreateCollatorPrototype(JSContext* cx, JS::Handle<JSObject*> Intl,
-                        JS::Handle<GlobalObject*> global);
+extern JSObject* CreateCollatorPrototype(JSContext* cx,
+                                         JS::Handle<JSObject*> Intl,
+                                         JS::Handle<GlobalObject*> global);
 
 
 
@@ -51,19 +51,8 @@ CreateCollatorPrototype(JSContext* cx, JS::Handle<JSObject*> Intl,
 
 
 
-extern MOZ_MUST_USE bool
-intl_Collator(JSContext* cx, unsigned argc, JS::Value* vp);
-
-
-
-
-
-
-
-
-
-extern MOZ_MUST_USE bool
-intl_Collator_availableLocales(JSContext* cx, unsigned argc, JS::Value* vp);
+extern MOZ_MUST_USE bool intl_Collator(JSContext* cx, unsigned argc,
+                                       JS::Value* vp);
 
 
 
@@ -73,8 +62,20 @@ intl_Collator_availableLocales(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
-extern MOZ_MUST_USE bool
-intl_availableCollations(JSContext* cx, unsigned argc, JS::Value* vp);
+extern MOZ_MUST_USE bool intl_Collator_availableLocales(JSContext* cx,
+                                                        unsigned argc,
+                                                        JS::Value* vp);
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool intl_availableCollations(JSContext* cx, unsigned argc,
+                                                  JS::Value* vp);
 
 
 
@@ -86,8 +87,8 @@ intl_availableCollations(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
-extern MOZ_MUST_USE bool
-intl_CompareStrings(JSContext* cx, unsigned argc, JS::Value* vp);
+extern MOZ_MUST_USE bool intl_CompareStrings(JSContext* cx, unsigned argc,
+                                             JS::Value* vp);
 
 
 
@@ -95,9 +96,9 @@ intl_CompareStrings(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
-extern MOZ_MUST_USE bool
-intl_isUpperCaseFirst(JSContext* cx, unsigned argc, JS::Value* vp);
+extern MOZ_MUST_USE bool intl_isUpperCaseFirst(JSContext* cx, unsigned argc,
+                                               JS::Value* vp);
 
-} 
+}  
 
 #endif 

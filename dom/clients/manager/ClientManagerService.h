@@ -20,8 +20,7 @@ class ContentParent;
 
 
 
-class ClientManagerService final
-{
+class ClientManagerService final {
   
   
   nsDataHashtable<nsIDHashKey, ClientSourceParent*> mSourceTable;
@@ -33,53 +32,42 @@ class ClientManagerService final
   ClientManagerService();
   ~ClientManagerService();
 
-  void
-  Shutdown();
+  void Shutdown();
 
-public:
-  static already_AddRefed<ClientManagerService>
-  GetOrCreateInstance();
+ public:
+  static already_AddRefed<ClientManagerService> GetOrCreateInstance();
 
   
-  static already_AddRefed<ClientManagerService>
-  GetInstance();
+  static already_AddRefed<ClientManagerService> GetInstance();
 
-  bool
-  AddSource(ClientSourceParent* aSource);
+  bool AddSource(ClientSourceParent* aSource);
 
-  bool
-  RemoveSource(ClientSourceParent* aSource);
+  bool RemoveSource(ClientSourceParent* aSource);
 
-  ClientSourceParent*
-  FindSource(const nsID& aID,
-             const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+  ClientSourceParent* FindSource(
+      const nsID& aID, const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
-  void
-  AddManager(ClientManagerParent* aManager);
+  void AddManager(ClientManagerParent* aManager);
 
-  void
-  RemoveManager(ClientManagerParent* aManager);
+  void RemoveManager(ClientManagerParent* aManager);
 
-  RefPtr<ClientOpPromise>
-  Navigate(const ClientNavigateArgs& aArgs);
+  RefPtr<ClientOpPromise> Navigate(const ClientNavigateArgs& aArgs);
 
-  RefPtr<ClientOpPromise>
-  MatchAll(const ClientMatchAllArgs& aArgs);
+  RefPtr<ClientOpPromise> MatchAll(const ClientMatchAllArgs& aArgs);
 
-  RefPtr<ClientOpPromise>
-  Claim(const ClientClaimArgs& aArgs);
+  RefPtr<ClientOpPromise> Claim(const ClientClaimArgs& aArgs);
 
-  RefPtr<ClientOpPromise>
-  GetInfoAndState(const ClientGetInfoAndStateArgs& aArgs);
+  RefPtr<ClientOpPromise> GetInfoAndState(
+      const ClientGetInfoAndStateArgs& aArgs);
 
-  RefPtr<ClientOpPromise>
-  OpenWindow(const ClientOpenWindowArgs& aArgs,
-             already_AddRefed<ContentParent> aSourceProcess);
+  RefPtr<ClientOpPromise> OpenWindow(
+      const ClientOpenWindowArgs& aArgs,
+      already_AddRefed<ContentParent> aSourceProcess);
 
   NS_INLINE_DECL_REFCOUNTING(mozilla::dom::ClientManagerService)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

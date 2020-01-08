@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef GFX_WEBRENDERLAYERSLOGGING_H
 #define GFX_WEBRENDERLAYERSLOGGING_H
 
@@ -13,22 +12,20 @@
 namespace mozilla {
 namespace layers {
 
-void
-AppendToString(std::stringstream& aStream, wr::MixBlendMode aMixBlendMode,
-               const char* pfx="", const char* sfx="");
+void AppendToString(std::stringstream& aStream, wr::MixBlendMode aMixBlendMode,
+                    const char* pfx = "", const char* sfx = "");
 
-void
-AppendToString(std::stringstream& aStream, wr::ImageRendering aTextureFilter,
-               const char* pfx="", const char* sfx="");
+void AppendToString(std::stringstream& aStream,
+                    wr::ImageRendering aTextureFilter, const char* pfx = "",
+                    const char* sfx = "");
 
-void
-AppendToString(std::stringstream& aStream, wr::LayoutVector2D aVector,
-               const char* pfx="", const char* sfx="");
+void AppendToString(std::stringstream& aStream, wr::LayoutVector2D aVector,
+                    const char* pfx = "", const char* sfx = "");
 
-} 
-} 
+}  
+}  
 
 
 #include "LayersLogging.h"
 
-#endif 
+#endif  

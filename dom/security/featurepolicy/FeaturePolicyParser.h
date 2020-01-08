@@ -17,20 +17,16 @@ namespace dom {
 
 class Feature;
 
-class FeaturePolicyParser final
-{
-public:
+class FeaturePolicyParser final {
+ public:
   
   
-  static bool
-  ParseString(const nsAString& aPolicy,
-              nsIDocument* aDocument,
-              nsIPrincipal* aSelfOrigin,
-              nsIPrincipal* aSrcOrigin,
-              nsTArray<Feature>& aParsedFeatures);
+  static bool ParseString(const nsAString& aPolicy, nsIDocument* aDocument,
+                          nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin,
+                          nsTArray<Feature>& aParsedFeatures);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -9,37 +9,34 @@
 #include "VTableBuilder.h"
 
 
-static const GUID CLSID_PassthruProxy =
-{ 0x96ef5801, 0xce6d, 0x416e, { 0xa5, 0xa, 0xc, 0x29, 0x59, 0xae, 0xae, 0x1c } };
+static const GUID CLSID_PassthruProxy = {
+    0x96ef5801, 0xce6d, 0x416e, {0xa5, 0xa, 0xc, 0x29, 0x59, 0xae, 0xae, 0x1c}};
 
 namespace mozilla {
 namespace mscom {
 
 PassthruProxy::PassthruProxy()
-  : mRefCnt(0)
-  , mWrappedIid()
-  , mVTableSize(0)
-  , mVTable(nullptr)
-  , mForgetPreservedStream(false)
-{
-}
+    : mRefCnt(0),
+      mWrappedIid(),
+      mVTableSize(0),
+      mVTable(nullptr),
+      mForgetPreservedStream(false) {}
 
 PassthruProxy::PassthruProxy(ProxyStream::Environment* aEnv, REFIID aIidToWrap,
-                             uint32_t aVTableSize, NotNull<IUnknown*> aObjToWrap)
-  : mRefCnt(0)
-  , mWrappedIid(aIidToWrap)
-  , mVTableSize(aVTableSize)
-  , mVTable(nullptr)
-  , mForgetPreservedStream(false)
-{
+                             uint32_t aVTableSize,
+                             NotNull<IUnknown*> aObjToWrap)
+    : mRefCnt(0),
+      mWrappedIid(aIidToWrap),
+      mVTableSize(aVTableSize),
+      mVTable(nullptr),
+      mForgetPreservedStream(false) {
   ProxyStream proxyStream(aIidToWrap, aObjToWrap, aEnv,
                           ProxyStreamFlags::ePreservable);
   mPreservedStream = proxyStream.GetPreservedStream();
   MOZ_ASSERT(mPreservedStream);
 }
 
-PassthruProxy::~PassthruProxy()
-{
+PassthruProxy::~PassthruProxy() {
   if (mForgetPreservedStream) {
     
     IStream* stream = mPreservedStream.release();
@@ -52,8 +49,7 @@ PassthruProxy::~PassthruProxy()
 }
 
 HRESULT
-PassthruProxy::QueryProxyInterface(void** aOutInterface)
-{
+PassthruProxy::QueryProxyInterface(void** aOutInterface) {
   
   
   
@@ -72,8 +68,7 @@ PassthruProxy::QueryProxyInterface(void** aOutInterface)
 }
 
 HRESULT
-PassthruProxy::QueryInterface(REFIID aIid, void** aOutInterface)
-{
+PassthruProxy::QueryInterface(REFIID aIid, void** aOutInterface) {
   if (!aOutInterface) {
     return E_INVALIDARG;
   }
@@ -103,14 +98,10 @@ PassthruProxy::QueryInterface(REFIID aIid, void** aOutInterface)
 }
 
 ULONG
-PassthruProxy::AddRef()
-{
-  return ++mRefCnt;
-}
+PassthruProxy::AddRef() { return ++mRefCnt; }
 
 ULONG
-PassthruProxy::Release()
-{
+PassthruProxy::Release() {
   ULONG result = --mRefCnt;
   if (!result) {
     delete this;
@@ -122,8 +113,7 @@ PassthruProxy::Release()
 HRESULT
 PassthruProxy::GetUnmarshalClass(REFIID riid, void* pv, DWORD dwDestContext,
                                  void* pvDestContext, DWORD mshlflags,
-                                 CLSID* pCid)
-{
+                                 CLSID* pCid) {
   if (!pCid) {
     return E_INVALIDARG;
   }
@@ -146,8 +136,7 @@ PassthruProxy::GetUnmarshalClass(REFIID riid, void* pv, DWORD dwDestContext,
 HRESULT
 PassthruProxy::GetMarshalSizeMax(REFIID riid, void* pv, DWORD dwDestContext,
                                  void* pvDestContext, DWORD mshlflags,
-                                 DWORD* pSize)
-{
+                                 DWORD* pSize) {
   STATSTG statstg;
   HRESULT hr;
 
@@ -183,8 +172,7 @@ PassthruProxy::GetMarshalSizeMax(REFIID riid, void* pv, DWORD dwDestContext,
 HRESULT
 PassthruProxy::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
                                 DWORD dwDestContext, void* pvDestContext,
-                                DWORD mshlflags)
-{
+                                DWORD mshlflags) {
   MOZ_ASSERT(riid == mWrappedIid);
   if (riid != mWrappedIid) {
     return E_NOINTERFACE;
@@ -255,8 +243,7 @@ PassthruProxy::MarshalInterface(IStream* pStm, REFIID riid, void* pv,
 }
 
 HRESULT
-PassthruProxy::UnmarshalInterface(IStream* pStm, REFIID riid, void** ppv)
-{
+PassthruProxy::UnmarshalInterface(IStream* pStm, REFIID riid, void** ppv) {
   
   ULONG bytesRead;
   HRESULT hr = pStm->Read(&mVTableSize, sizeof(mVTableSize), &bytesRead);
@@ -285,8 +272,7 @@ PassthruProxy::UnmarshalInterface(IStream* pStm, REFIID riid, void** ppv)
 }
 
 HRESULT
-PassthruProxy::ReleaseMarshalData(IStream* pStm)
-{
+PassthruProxy::ReleaseMarshalData(IStream* pStm) {
   if (!IsInitialMarshal()) {
     return S_OK;
   }
@@ -315,17 +301,13 @@ PassthruProxy::ReleaseMarshalData(IStream* pStm)
 }
 
 HRESULT
-PassthruProxy::DisconnectObject(DWORD dwReserved)
-{
-  return S_OK;
-}
+PassthruProxy::DisconnectObject(DWORD dwReserved) { return S_OK; }
 
 
 
 
-class PassthruProxyClassObject final : public IClassFactory
-{
-public:
+class PassthruProxyClassObject final : public IClassFactory {
+ public:
   PassthruProxyClassObject();
 
   
@@ -334,23 +316,20 @@ public:
   STDMETHODIMP_(ULONG) Release() override;
 
   
-  STDMETHODIMP CreateInstance(IUnknown* aOuter, REFIID aIid, void** aOutObject) override;
+  STDMETHODIMP CreateInstance(IUnknown* aOuter, REFIID aIid,
+                              void** aOutObject) override;
   STDMETHODIMP LockServer(BOOL aLock) override;
 
-private:
+ private:
   ~PassthruProxyClassObject() = default;
 
   Atomic<ULONG> mRefCnt;
 };
 
-PassthruProxyClassObject::PassthruProxyClassObject()
-  : mRefCnt(0)
-{
-}
+PassthruProxyClassObject::PassthruProxyClassObject() : mRefCnt(0) {}
 
 HRESULT
-PassthruProxyClassObject::QueryInterface(REFIID aIid, void** aOutInterface)
-{
+PassthruProxyClassObject::QueryInterface(REFIID aIid, void** aOutInterface) {
   if (!aOutInterface) {
     return E_INVALIDARG;
   }
@@ -367,14 +346,10 @@ PassthruProxyClassObject::QueryInterface(REFIID aIid, void** aOutInterface)
 }
 
 ULONG
-PassthruProxyClassObject::AddRef()
-{
-  return ++mRefCnt;
-}
+PassthruProxyClassObject::AddRef() { return ++mRefCnt; }
 
 ULONG
-PassthruProxyClassObject::Release()
-{
+PassthruProxyClassObject::Release() {
   ULONG result = --mRefCnt;
   if (!result) {
     delete this;
@@ -385,8 +360,7 @@ PassthruProxyClassObject::Release()
 
 HRESULT
 PassthruProxyClassObject::CreateInstance(IUnknown* aOuter, REFIID aIid,
-                                         void** aOutObject)
-{
+                                         void** aOutObject) {
   
   MOZ_ASSERT(!aOuter);
   if (aOuter) {
@@ -398,15 +372,12 @@ PassthruProxyClassObject::CreateInstance(IUnknown* aOuter, REFIID aIid,
 }
 
 HRESULT
-PassthruProxyClassObject::LockServer(BOOL aLock)
-{
+PassthruProxyClassObject::LockServer(BOOL aLock) {
   
   return S_OK;
 }
 
- HRESULT
-PassthruProxy::Register()
-{
+ HRESULT PassthruProxy::Register() {
   DWORD cookie;
   RefPtr<IClassFactory> classObj(new PassthruProxyClassObject());
   return ::CoRegisterClassObject(CLSID_PassthruProxy, classObj,
@@ -414,11 +385,8 @@ PassthruProxy::Register()
                                  &cookie);
 }
 
-} 
-} 
+}  
+}  
 
 HRESULT
-RegisterPassthruProxy()
-{
-  return mozilla::mscom::PassthruProxy::Register();
-}
+RegisterPassthruProxy() { return mozilla::mscom::PassthruProxy::Register(); }

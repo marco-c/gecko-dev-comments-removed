@@ -33,10 +33,8 @@ std::wstring Channel::GenerateUniqueRandomChannelID() {
   
   
 
-  return StringPrintf(L"%d.%u.%d",
-      base::GetCurrentProcId(),
-      g_last_id++,
-      base::RandInt(0, std::numeric_limits<int32_t>::max()));
+  return StringPrintf(L"%d.%u.%d", base::GetCurrentProcId(), g_last_id++,
+                      base::RandInt(0, std::numeric_limits<int32_t>::max()));
 }
 
 }  

@@ -7,8 +7,8 @@
 #ifndef mozilla_dom_GamepadServiceType_h_
 #define mozilla_dom_GamepadServiceType_h_
 
-namespace mozilla{
-namespace dom{
+namespace mozilla {
+namespace dom {
 
 
 
@@ -19,7 +19,7 @@ enum class GamepadServiceType : uint16_t {
   NumGamepadServiceType
 };
 
-}
-}
+}  
+}  
 
-#endif 
+#endif  

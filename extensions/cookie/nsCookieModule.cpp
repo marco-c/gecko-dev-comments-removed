@@ -3,7 +3,6 @@
 
 
 
-
 #include "mozilla/ModuleUtils.h"
 #include "nsIServiceManager.h"
 #include "nsPermissionManager.h"
@@ -13,34 +12,26 @@
 
 
 NS_GENERIC_FACTORY_SINGLETON_CONSTRUCTOR(nsIPermissionManager,
-  nsPermissionManager::GetXPCOMSingleton)
+                                         nsPermissionManager::GetXPCOMSingleton)
 
 NS_DEFINE_NAMED_CID(NS_PERMISSIONMANAGER_CID);
 
-
 static const mozilla::Module::CIDEntry kCookieCIDs[] = {
-    { &kNS_PERMISSIONMANAGER_CID, false, nullptr, nsIPermissionManagerConstructor },
-    { nullptr }
-};
+    {&kNS_PERMISSIONMANAGER_CID, false, nullptr,
+     nsIPermissionManagerConstructor},
+    {nullptr}};
 
 static const mozilla::Module::ContractIDEntry kCookieContracts[] = {
-    { NS_PERMISSIONMANAGER_CONTRACTID, &kNS_PERMISSIONMANAGER_CID },
-    { nullptr }
-};
+    {NS_PERMISSIONMANAGER_CONTRACTID, &kNS_PERMISSIONMANAGER_CID}, {nullptr}};
 
-static void CookieModuleDtor()
-{
-  nsCookiePermission::Shutdown();
-}
+static void CookieModuleDtor() { nsCookiePermission::Shutdown(); }
 
-static const mozilla::Module kCookieModule = {
-    mozilla::Module::kVersion,
-    kCookieCIDs,
-    kCookieContracts,
-    nullptr,
-    nullptr,
-    nullptr,
-    CookieModuleDtor
-};
+static const mozilla::Module kCookieModule = {mozilla::Module::kVersion,
+                                              kCookieCIDs,
+                                              kCookieContracts,
+                                              nullptr,
+                                              nullptr,
+                                              nullptr,
+                                              CookieModuleDtor};
 
 NSMODULE_DEFN(nsCookieModule) = &kCookieModule;

@@ -26,29 +26,27 @@ namespace net {
 
 
 
-class nsAsyncRedirectVerifyHelper final : public nsIRunnable,
-                                          public nsINamed,
-                                          public nsIAsyncVerifyRedirectCallback
-{
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIRUNNABLE
-    NS_DECL_NSINAMED
-    NS_DECL_NSIASYNCVERIFYREDIRECTCALLBACK
+class nsAsyncRedirectVerifyHelper final
+    : public nsIRunnable,
+      public nsINamed,
+      public nsIAsyncVerifyRedirectCallback {
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIRUNNABLE
+  NS_DECL_NSINAMED
+  NS_DECL_NSIASYNCVERIFYREDIRECTCALLBACK
 
-public:
-    nsAsyncRedirectVerifyHelper();
+ public:
+  nsAsyncRedirectVerifyHelper();
 
-    
+  
 
 
 
-    nsresult DelegateOnChannelRedirect(nsIChannelEventSink *sink,
-                                       nsIChannel *oldChannel,
-                                       nsIChannel *newChannel,
-                                       uint32_t flags);
+  nsresult DelegateOnChannelRedirect(nsIChannelEventSink* sink,
+                                     nsIChannel* oldChannel,
+                                     nsIChannel* newChannel, uint32_t flags);
 
-    
-
+  
 
 
 
@@ -65,70 +63,61 @@ public:
 
 
 
-    nsresult Init(nsIChannel* oldChan,
-                  nsIChannel* newChan,
-                  uint32_t flags,
-                  nsIEventTarget* mainThreadEventTarget,
-                  bool synchronize = false);
 
-protected:
-    nsCOMPtr<nsIChannel> mOldChan;
-    nsCOMPtr<nsIChannel> mNewChan;
-    uint32_t mFlags;
-    bool mWaitingForRedirectCallback;
-    nsCOMPtr<nsIEventTarget> mCallbackEventTarget;
-    bool                     mCallbackInitiated;
-    int32_t                  mExpectedCallbacks;
-    nsresult                 mResult; 
+  nsresult Init(nsIChannel* oldChan, nsIChannel* newChan, uint32_t flags,
+                nsIEventTarget* mainThreadEventTarget,
+                bool synchronize = false);
 
-    void InitCallback();
+ protected:
+  nsCOMPtr<nsIChannel> mOldChan;
+  nsCOMPtr<nsIChannel> mNewChan;
+  uint32_t mFlags;
+  bool mWaitingForRedirectCallback;
+  nsCOMPtr<nsIEventTarget> mCallbackEventTarget;
+  bool mCallbackInitiated;
+  int32_t mExpectedCallbacks;
+  nsresult mResult;  
 
-    
+  void InitCallback();
+
+  
 
 
-    void ExplicitCallback(nsresult result);
+  void ExplicitCallback(nsresult result);
 
-private:
-    ~nsAsyncRedirectVerifyHelper();
+ private:
+  ~nsAsyncRedirectVerifyHelper();
 
-    bool IsOldChannelCanceled();
+  bool IsOldChannelCanceled();
 };
 
 
 
 
-class nsAsyncRedirectAutoCallback
-{
-public:
-    explicit nsAsyncRedirectAutoCallback(nsIAsyncVerifyRedirectCallback* aCallback)
-        : mCallback(aCallback)
-    {
-        mResult = NS_OK;
-    }
-    ~nsAsyncRedirectAutoCallback()
-    {
-        if (mCallback)
-            mCallback->OnRedirectVerifyCallback(mResult);
-    }
-    
+class nsAsyncRedirectAutoCallback {
+ public:
+  explicit nsAsyncRedirectAutoCallback(
+      nsIAsyncVerifyRedirectCallback* aCallback)
+      : mCallback(aCallback) {
+    mResult = NS_OK;
+  }
+  ~nsAsyncRedirectAutoCallback() {
+    if (mCallback) mCallback->OnRedirectVerifyCallback(mResult);
+  }
+  
 
 
-    void SetResult(nsresult aRes)
-    {
-        mResult = aRes;
-    }
-    
+  void SetResult(nsresult aRes) { mResult = aRes; }
+  
 
 
-    void DontCallback()
-    {
-        mCallback = nullptr;
-    }
-private:
-    nsIAsyncVerifyRedirectCallback* mCallback;
-    nsresult mResult;
+  void DontCallback() { mCallback = nullptr; }
+
+ private:
+  nsIAsyncVerifyRedirectCallback* mCallback;
+  nsresult mResult;
 };
 
-} 
-} 
+}  
+}  
 #endif

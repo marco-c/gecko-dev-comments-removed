@@ -33,64 +33,36 @@ namespace net {
 
 
 
-class MozURL final
-{
-public:
+class MozURL final {
+ public:
   static nsresult Init(MozURL** aURL, const nsACString& aSpec,
-                       const MozURL* aBaseURL = nullptr)
-  {
+                       const MozURL* aBaseURL = nullptr) {
     return mozurl_new(aURL, &aSpec, aBaseURL);
   }
 
-  nsDependentCSubstring Spec() const {
-    return mozurl_spec(this);
-  }
-  nsDependentCSubstring Scheme() const {
-    return mozurl_scheme(this);
-  }
-  nsDependentCSubstring Username() const {
-    return mozurl_username(this);
-  }
-  nsDependentCSubstring Password() const {
-    return mozurl_password(this);
-  }
+  nsDependentCSubstring Spec() const { return mozurl_spec(this); }
+  nsDependentCSubstring Scheme() const { return mozurl_scheme(this); }
+  nsDependentCSubstring Username() const { return mozurl_username(this); }
+  nsDependentCSubstring Password() const { return mozurl_password(this); }
   
   
-  nsDependentCSubstring Host() const {
-    return mozurl_host(this);
-  }
+  nsDependentCSubstring Host() const { return mozurl_host(this); }
   
-  int32_t Port() const {
-    return mozurl_port(this);
-  }
+  int32_t Port() const { return mozurl_port(this); }
   
   
   
-  nsDependentCSubstring HostPort() const {
-    return mozurl_host_port(this);
-  }
-  nsDependentCSubstring FilePath() const {
-    return mozurl_filepath(this);
-  }
-  nsDependentCSubstring Path() const {
-    return mozurl_path(this);
-  }
-  nsDependentCSubstring Query() const {
-    return mozurl_query(this);
-  }
-  nsDependentCSubstring Ref() const {
-    return mozurl_fragment(this);
-  }
-  bool HasFragment() const {
-    return mozurl_has_fragment(this);
-  }
+  nsDependentCSubstring HostPort() const { return mozurl_host_port(this); }
+  nsDependentCSubstring FilePath() const { return mozurl_filepath(this); }
+  nsDependentCSubstring Path() const { return mozurl_path(this); }
+  nsDependentCSubstring Query() const { return mozurl_query(this); }
+  nsDependentCSubstring Ref() const { return mozurl_fragment(this); }
+  bool HasFragment() const { return mozurl_has_fragment(this); }
 
   
   
   
-  void Origin(nsACString& aOrigin) const {
-    mozurl_origin(this, &aOrigin);
-  }
+  void Origin(nsACString& aOrigin) const { mozurl_origin(this, &aOrigin); }
 
   nsresult GetCommonBase(const MozURL* aOther, MozURL** aCommon) const {
     return mozurl_common_base(this, aOther, aCommon);
@@ -99,9 +71,8 @@ public:
     return mozurl_relative(this, aOther, aRelative);
   }
 
-  class MOZ_STACK_CLASS Mutator
-  {
-  public:
+  class MOZ_STACK_CLASS Mutator {
+   public:
     
     
     
@@ -194,10 +165,9 @@ public:
     
     
     
-    nsresult GetStatus() {
-      return mURL ? mStatus : NS_ERROR_NOT_AVAILABLE;
-    }
-  private:
+    nsresult GetStatus() { return mURL ? mStatus : NS_ERROR_NOT_AVAILABLE; }
+
+   private:
     explicit Mutator(MozURL* aUrl) : mStatus(NS_OK) {
       mozurl_clone(aUrl, getter_AddRefs(mURL));
     }
@@ -209,23 +179,19 @@ public:
   Mutator Mutate() { return Mutator(this); }
 
   
-  nsrefcnt AddRef() {
-    return mozurl_addref(this);
-  }
-  nsrefcnt Release() {
-    return mozurl_release(this);
-  }
+  nsrefcnt AddRef() { return mozurl_addref(this); }
+  nsrefcnt Release() { return mozurl_release(this); }
 
-private:
+ private:
   
   
-  MozURL(); 
+  MozURL();  
   ~MozURL(); 
   MozURL(const MozURL&) = delete;
   MozURL& operator=(const MozURL&) = delete;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

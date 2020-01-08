@@ -53,7 +53,6 @@
 
 
 
-
 #include <link.h>
 
 #if defined(GP_OS_android)
@@ -61,15 +60,15 @@
 
 
 #ifndef EM_X86_64
-#define EM_X86_64  62
+#define EM_X86_64 62
 #endif
 
 #ifndef EM_PPC64
-#define EM_PPC64   21
+#define EM_PPC64 21
 #endif
 
 #ifndef EM_S390
-#define EM_S390    22
+#define EM_S390 22
 #endif
 
 #ifndef NT_GNU_BUILD_ID
@@ -77,13 +76,12 @@
 #endif
 
 #ifndef ElfW
-#define ElfW(type)      _ElfW (Elf, ELFSIZE, type)
-#define _ElfW(e,w,t)    _ElfW_1 (e, w, _##t)
-#define _ElfW_1(e,w,t)  e##w##t
+#define ElfW(type) _ElfW(Elf, ELFSIZE, type)
+#define _ElfW(e, w, t) _ElfW_1(e, w, _##t)
+#define _ElfW_1(e, w, t) e##w##t
 #endif
 
 #endif
-
 
 namespace lul {
 
@@ -123,44 +121,34 @@ int ElfClass(const void* elf_base);
 
 
 
-bool FindElfSection(const void *elf_mapped_base,
-                    const char *section_name,
-                    uint32_t section_type,
-                    const void **section_start,
-                    int *section_size,
-                    int *elfclass);
+bool FindElfSection(const void* elf_mapped_base, const char* section_name,
+                    uint32_t section_type, const void** section_start,
+                    int* section_size, int* elfclass);
 
 
 
-template<typename ElfClass>
-const typename ElfClass::Shdr*
-FindElfSectionByName(const char* name,
-                     typename ElfClass::Word section_type,
-                     const typename ElfClass::Shdr* sections,
-                     const char* section_names,
-                     const char* names_end,
-                     int nsection);
+template <typename ElfClass>
+const typename ElfClass::Shdr* FindElfSectionByName(
+    const char* name, typename ElfClass::Word section_type,
+    const typename ElfClass::Shdr* sections, const char* section_names,
+    const char* names_end, int nsection);
 
 
 
 
 
 
-bool FindElfSegment(const void *elf_mapped_base,
-                    uint32_t segment_type,
-                    const void **segment_start,
-                    int *segment_size,
-                    int *elfclass);
+bool FindElfSegment(const void* elf_mapped_base, uint32_t segment_type,
+                    const void** segment_start, int* segment_size,
+                    int* elfclass);
 
 
 
 
 
-template<typename ElfClass, typename T>
-const T*
-GetOffset(const typename ElfClass::Ehdr* elf_header,
-          typename ElfClass::Off offset);
-
+template <typename ElfClass, typename T>
+const T* GetOffset(const typename ElfClass::Ehdr* elf_header,
+                   typename ElfClass::Off offset);
 
 
 
@@ -170,7 +158,6 @@ static const size_t kMDGUIDSize = sizeof(MDGUID);
 
 class FileID {
  public:
-
   
   
   
@@ -185,30 +172,24 @@ class FileID {
                                         char* buffer, int buffer_length);
 };
 
-
-
-template<typename ElfClass, typename T>
+template <typename ElfClass, typename T>
 const T* GetOffset(const typename ElfClass::Ehdr* elf_header,
                    typename ElfClass::Off offset) {
   return reinterpret_cast<const T*>(reinterpret_cast<uintptr_t>(elf_header) +
                                     offset);
 }
 
-template<typename ElfClass>
+template <typename ElfClass>
 const typename ElfClass::Shdr* FindElfSectionByName(
-    const char* name,
-    typename ElfClass::Word section_type,
-    const typename ElfClass::Shdr* sections,
-    const char* section_names,
-    const char* names_end,
-    int nsection) {
+    const char* name, typename ElfClass::Word section_type,
+    const typename ElfClass::Shdr* sections, const char* section_names,
+    const char* names_end, int nsection) {
   MOZ_ASSERT(name != NULL);
   MOZ_ASSERT(sections != NULL);
   MOZ_ASSERT(nsection > 0);
 
   int name_len = strlen(name);
-  if (name_len == 0)
-    return NULL;
+  if (name_len == 0) return NULL;
 
   for (int i = 0; i < nsection; ++i) {
     const char* section_name = section_names + sections[i].sh_name;
@@ -221,10 +202,9 @@ const typename ElfClass::Shdr* FindElfSectionByName(
   return NULL;
 }
 
-} 
-
+}  
 
 
 #include "LulElfExt.h"
 
-#endif 
+#endif  

@@ -22,7 +22,7 @@
 class nsIHandleReportCallback;
 namespace mozilla {
 class StyleSheet;
-} 
+}  
 
 
 
@@ -32,114 +32,107 @@ class StyleSheet;
 
 
 
-class nsXULPrototypeCache : public nsIObserver
-{
-public:
-    
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIOBSERVER
+class nsXULPrototypeCache : public nsIObserver {
+ public:
+  
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
 
-    bool IsCached(nsIURI* aURI) {
-        return GetPrototype(aURI) != nullptr;
-    }
-    void AbortCaching();
+  bool IsCached(nsIURI* aURI) { return GetPrototype(aURI) != nullptr; }
+  void AbortCaching();
 
-
-    
+  
 
 
-    bool IsEnabled();
+  bool IsEnabled();
 
-    
+  
 
 
 
-    void Flush();
+  void Flush();
 
+  
+  
 
-    
-    
+  nsXULPrototypeDocument* GetPrototype(nsIURI* aURI);
+  nsresult PutPrototype(nsXULPrototypeDocument* aDocument);
 
-    nsXULPrototypeDocument* GetPrototype(nsIURI* aURI);
-    nsresult PutPrototype(nsXULPrototypeDocument* aDocument);
+  JSScript* GetScript(nsIURI* aURI);
+  nsresult PutScript(nsIURI* aURI, JS::Handle<JSScript*> aScriptObject);
 
-    JSScript* GetScript(nsIURI* aURI);
-    nsresult PutScript(nsIURI* aURI, JS::Handle<JSScript*> aScriptObject);
+  nsXBLDocumentInfo* GetXBLDocumentInfo(nsIURI* aURL);
 
-    nsXBLDocumentInfo* GetXBLDocumentInfo(nsIURI* aURL);
+  nsresult PutXBLDocumentInfo(nsXBLDocumentInfo* aDocumentInfo);
 
-    nsresult PutXBLDocumentInfo(nsXBLDocumentInfo* aDocumentInfo);
-
-    
-
-
-
-    mozilla::StyleSheet* GetStyleSheet(nsIURI* aURI);
-
-    
+  
 
 
 
-    nsresult PutStyleSheet(mozilla::StyleSheet* aStyleSheet);
+  mozilla::StyleSheet* GetStyleSheet(nsIURI* aURI);
 
-    
-
-
-
-    nsresult WritePrototype(nsXULPrototypeDocument* aPrototypeDocument);
-
-    
+  
 
 
 
-    nsresult GetInputStream(nsIURI* aURI, nsIObjectInputStream** objectInput);
-    nsresult FinishInputStream(nsIURI* aURI);
-    nsresult GetOutputStream(nsIURI* aURI, nsIObjectOutputStream** objectOutput);
-    nsresult FinishOutputStream(nsIURI* aURI);
-    nsresult HasData(nsIURI* aURI, bool* exists);
+  nsresult PutStyleSheet(mozilla::StyleSheet* aStyleSheet);
 
-    static nsXULPrototypeCache* GetInstance();
-    static nsXULPrototypeCache* MaybeGetInstance() { return sInstance; }
+  
 
-    static void ReleaseGlobals()
-    {
-        NS_IF_RELEASE(sInstance);
-    }
 
-    void MarkInCCGeneration(uint32_t aGeneration);
-    void MarkInGC(JSTracer* aTrc);
-    void FlushScripts();
 
-    static void CollectMemoryReports(nsIHandleReportCallback* aHandleReport,
-                                     nsISupports* aData);
+  nsresult WritePrototype(nsXULPrototypeDocument* aPrototypeDocument);
 
-protected:
-    friend nsresult
-    NS_NewXULPrototypeCache(nsISupports* aOuter, REFNSIID aIID, void** aResult);
+  
 
-    nsXULPrototypeCache();
-    virtual ~nsXULPrototypeCache();
 
-    static nsXULPrototypeCache* sInstance;
 
-    void FlushSkinFiles();
+  nsresult GetInputStream(nsIURI* aURI, nsIObjectInputStream** objectInput);
+  nsresult FinishInputStream(nsIURI* aURI);
+  nsresult GetOutputStream(nsIURI* aURI, nsIObjectOutputStream** objectOutput);
+  nsresult FinishOutputStream(nsIURI* aURI);
+  nsresult HasData(nsIURI* aURI, bool* exists);
 
-    using StyleSheetTable = nsRefPtrHashtable<nsURIHashKey, mozilla::StyleSheet>;
-    using XBLDocTable = nsRefPtrHashtable<nsURIHashKey, nsXBLDocumentInfo>;
+  static nsXULPrototypeCache* GetInstance();
+  static nsXULPrototypeCache* MaybeGetInstance() { return sInstance; }
 
-    nsRefPtrHashtable<nsURIHashKey,nsXULPrototypeDocument>   mPrototypeTable; 
-    StyleSheetTable                                          mStyleSheetTable;
-    nsJSThingHashtable<nsURIHashKey, JSScript*>              mScriptTable;
-    XBLDocTable                                              mXBLDocTable;
+  static void ReleaseGlobals() { NS_IF_RELEASE(sInstance); }
 
-    
-    nsTHashtable<nsURIHashKey>                               mStartupCacheURITable;
+  void MarkInCCGeneration(uint32_t aGeneration);
+  void MarkInGC(JSTracer* aTrc);
+  void FlushScripts();
 
-    nsInterfaceHashtable<nsURIHashKey, nsIStorageStream>     mOutputStreamTable;
-    nsInterfaceHashtable<nsURIHashKey, nsIObjectInputStream> mInputStreamTable;
+  static void CollectMemoryReports(nsIHandleReportCallback* aHandleReport,
+                                   nsISupports* aData);
 
-    
-    nsresult BeginCaching(nsIURI* aDocumentURI);
+ protected:
+  friend nsresult NS_NewXULPrototypeCache(nsISupports* aOuter, REFNSIID aIID,
+                                          void** aResult);
+
+  nsXULPrototypeCache();
+  virtual ~nsXULPrototypeCache();
+
+  static nsXULPrototypeCache* sInstance;
+
+  void FlushSkinFiles();
+
+  using StyleSheetTable = nsRefPtrHashtable<nsURIHashKey, mozilla::StyleSheet>;
+  using XBLDocTable = nsRefPtrHashtable<nsURIHashKey, nsXBLDocumentInfo>;
+
+  nsRefPtrHashtable<nsURIHashKey, nsXULPrototypeDocument>
+      mPrototypeTable;  
+  StyleSheetTable mStyleSheetTable;
+  nsJSThingHashtable<nsURIHashKey, JSScript*> mScriptTable;
+  XBLDocTable mXBLDocTable;
+
+  
+  nsTHashtable<nsURIHashKey> mStartupCacheURITable;
+
+  nsInterfaceHashtable<nsURIHashKey, nsIStorageStream> mOutputStreamTable;
+  nsInterfaceHashtable<nsURIHashKey, nsIObjectInputStream> mInputStreamTable;
+
+  
+  nsresult BeginCaching(nsIURI* aDocumentURI);
 };
 
-#endif 
+#endif  

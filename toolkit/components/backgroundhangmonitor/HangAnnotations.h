@@ -23,9 +23,8 @@ namespace mozilla {
 
 
 
-class BackgroundHangAnnotations : public nsTArray<HangAnnotation>
-{
-public:
+class BackgroundHangAnnotations : public nsTArray<HangAnnotation> {
+ public:
   void AddAnnotation(const nsString& aName, const int32_t aData);
   void AddAnnotation(const nsString& aName, const double aData);
   void AddAnnotation(const nsString& aName, const nsString& aData);
@@ -33,9 +32,8 @@ public:
   void AddAnnotation(const nsString& aName, const bool aData);
 };
 
-class BackgroundHangAnnotator
-{
-public:
+class BackgroundHangAnnotator {
+ public:
   
 
 
@@ -43,9 +41,8 @@ public:
   virtual void AnnotateHang(BackgroundHangAnnotations& aAnnotations) = 0;
 };
 
-class BackgroundHangAnnotators
-{
-public:
+class BackgroundHangAnnotators {
+ public:
   BackgroundHangAnnotators();
   ~BackgroundHangAnnotators();
 
@@ -54,22 +51,21 @@ public:
 
   BackgroundHangAnnotations GatherAnnotations();
 
-private:
+ private:
   Mutex mMutex;
   std::set<BackgroundHangAnnotator*> mAnnotators;
 };
 
 namespace ipc {
 
-template<>
+template <>
 struct IPDLParamTraits<mozilla::BackgroundHangAnnotations>
-  : public IPDLParamTraits<nsTArray<mozilla::HangAnnotation>>
-{
+    : public IPDLParamTraits<nsTArray<mozilla::HangAnnotation>> {
   typedef mozilla::BackgroundHangAnnotations paramType;
 };
 
-} 
+}  
 
-} 
+}  
 
-#endif 
+#endif  

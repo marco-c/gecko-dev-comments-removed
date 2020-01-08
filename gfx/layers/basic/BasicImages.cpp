@@ -4,91 +4,91 @@
 
 
 
-#include <stdint.h>                     
-#include "BasicLayers.h"                
-#include "ImageContainer.h"             
-#include "ImageTypes.h"                 
-#include "cairo.h"                      
-#include "gfxASurface.h"                
-#include "gfxPlatform.h"                
-#include "gfxUtils.h"                   
+#include <stdint.h>          
+#include "BasicLayers.h"     
+#include "ImageContainer.h"  
+#include "ImageTypes.h"      
+#include "cairo.h"           
+#include "gfxASurface.h"     
+#include "gfxPlatform.h"     
+#include "gfxUtils.h"        
 #include "mozilla/CheckedInt.h"
-#include "mozilla/mozalloc.h"           
+#include "mozilla/mozalloc.h"  
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "nsAutoRef.h"                  
-#include "nsCOMPtr.h"                   
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
-#include "nsThreadUtils.h"              
-#include "mozilla/gfx/Point.h"          
+#include "nsAutoRef.h"          
+#include "nsCOMPtr.h"           
+#include "nsDebug.h"            
+#include "nsISupportsImpl.h"    
+#include "nsThreadUtils.h"      
+#include "mozilla/gfx/Point.h"  
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "gfx2DGlue.h"
-#include "YCbCrUtils.h"                 
+#include "YCbCrUtils.h"  
 
 namespace mozilla {
 namespace layers {
 
-class BasicPlanarYCbCrImage : public RecyclingPlanarYCbCrImage
-{
-public:
-  BasicPlanarYCbCrImage(const gfx::IntSize& aScaleHint, gfxImageFormat aOffscreenFormat, BufferRecycleBin *aRecycleBin)
-    : RecyclingPlanarYCbCrImage(aRecycleBin)
-    , mScaleHint(aScaleHint)
-    , mStride(0)
-    , mDelayedConversion(false)
-  {
+class BasicPlanarYCbCrImage : public RecyclingPlanarYCbCrImage {
+ public:
+  BasicPlanarYCbCrImage(const gfx::IntSize& aScaleHint,
+                        gfxImageFormat aOffscreenFormat,
+                        BufferRecycleBin* aRecycleBin)
+      : RecyclingPlanarYCbCrImage(aRecycleBin),
+        mScaleHint(aScaleHint),
+        mStride(0),
+        mDelayedConversion(false) {
     SetOffscreenFormat(aOffscreenFormat);
   }
 
-  ~BasicPlanarYCbCrImage()
-  {
+  ~BasicPlanarYCbCrImage() {
     if (mDecodedBuffer) {
       
       
-      mRecycleBin->RecycleBuffer(std::move(mDecodedBuffer), mSize.height * mStride);
+      mRecycleBin->RecycleBuffer(std::move(mDecodedBuffer),
+                                 mSize.height * mStride);
     }
   }
 
   virtual bool CopyData(const Data& aData) override;
-  virtual void SetDelayedConversion(bool aDelayed) override { mDelayedConversion = aDelayed; }
+  virtual void SetDelayedConversion(bool aDelayed) override {
+    mDelayedConversion = aDelayed;
+  }
 
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override;
 
-  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override
-  {
+  virtual size_t SizeOfIncludingThis(
+      MallocSizeOf aMallocSizeOf) const override {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override
-  {
+  virtual size_t SizeOfExcludingThis(
+      MallocSizeOf aMallocSizeOf) const override {
     size_t size = RecyclingPlanarYCbCrImage::SizeOfExcludingThis(aMallocSizeOf);
     size += aMallocSizeOf(mDecodedBuffer.get());
     return size;
   }
 
-private:
+ private:
   UniquePtr<uint8_t[]> mDecodedBuffer;
   gfx::IntSize mScaleHint;
   int mStride;
   bool mDelayedConversion;
 };
 
-class BasicImageFactory : public ImageFactory
-{
-public:
+class BasicImageFactory : public ImageFactory {
+ public:
   BasicImageFactory() {}
 
-  virtual RefPtr<PlanarYCbCrImage>
-  CreatePlanarYCbCrImage(const gfx::IntSize& aScaleHint, BufferRecycleBin* aRecycleBin) override
-  {
-    return new BasicPlanarYCbCrImage(aScaleHint, gfxPlatform::GetPlatform()->GetOffscreenFormat(), aRecycleBin);
+  virtual RefPtr<PlanarYCbCrImage> CreatePlanarYCbCrImage(
+      const gfx::IntSize& aScaleHint, BufferRecycleBin* aRecycleBin) override {
+    return new BasicPlanarYCbCrImage(
+        aScaleHint, gfxPlatform::GetPlatform()->GetOffscreenFormat(),
+        aRecycleBin);
   }
 };
 
-bool
-BasicPlanarYCbCrImage::CopyData(const Data& aData)
-{
+bool BasicPlanarYCbCrImage::CopyData(const Data& aData) {
   RecyclingPlanarYCbCrImage::CopyData(aData);
 
   if (mDelayedConversion) {
@@ -102,7 +102,8 @@ BasicPlanarYCbCrImage::CopyData(const Data& aData)
     return false;
   }
 
-  gfx::SurfaceFormat format = gfx::ImageFormatToSurfaceFormat(GetOffscreenFormat());
+  gfx::SurfaceFormat format =
+      gfx::ImageFormatToSurfaceFormat(GetOffscreenFormat());
 
   gfx::IntSize size(mScaleHint);
   gfx::GetYCbCrToRGBDestFormatAndSize(aData, format, size);
@@ -114,7 +115,7 @@ BasicPlanarYCbCrImage::CopyData(const Data& aData)
 
   mStride = gfx::StrideForFormatAndWidth(format, size.width);
   mozilla::CheckedInt32 requiredBytes =
-    mozilla::CheckedInt32(size.height) * mozilla::CheckedInt32(mStride);
+      mozilla::CheckedInt32(size.height) * mozilla::CheckedInt32(mStride);
   if (!requiredBytes.isValid()) {
     
     return false;
@@ -133,8 +134,7 @@ BasicPlanarYCbCrImage::CopyData(const Data& aData)
 }
 
 already_AddRefed<gfx::SourceSurface>
-BasicPlanarYCbCrImage::GetAsSourceSurface()
-{
+BasicPlanarYCbCrImage::GetAsSourceSurface() {
   NS_ASSERTION(NS_IsMainThread(), "Must be main thread");
 
   if (mSourceSurface) {
@@ -153,11 +153,9 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
     
     
     
-    RefPtr<gfx::DrawTarget> drawTarget
-      = gfxPlatform::CreateDrawTargetForData(mDecodedBuffer.get(),
-                                             mSize,
-                                             mStride,
-                                             gfx::ImageFormatToSurfaceFormat(format));
+    RefPtr<gfx::DrawTarget> drawTarget = gfxPlatform::CreateDrawTargetForData(
+        mDecodedBuffer.get(), mSize, mStride,
+        gfx::ImageFormatToSurfaceFormat(format));
     if (!drawTarget) {
       return nullptr;
     }
@@ -171,10 +169,7 @@ BasicPlanarYCbCrImage::GetAsSourceSurface()
   return surface.forget();
 }
 
-
-ImageFactory*
-BasicLayerManager::GetImageFactory()
-{
+ImageFactory* BasicLayerManager::GetImageFactory() {
   if (!mFactory) {
     mFactory = new BasicImageFactory();
   }
@@ -182,5 +177,5 @@ BasicLayerManager::GetImageFactory()
   return mFactory.get();
 }
 
-} 
-} 
+}  
+}  

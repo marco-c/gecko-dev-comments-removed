@@ -23,109 +23,109 @@ namespace mozilla {
 class Mutex;
 
 namespace net {
-    class nsHttpResponseHead;
-    class nsHttpRequestHead;
-    class CacheControlParser;
+class nsHttpResponseHead;
+class nsHttpRequestHead;
+class CacheControlParser;
 
-    enum class HttpVersion {
-        UNKNOWN = 0,
-        v0_9 = 9,
-        v1_0 = 10,
-        v1_1 = 11,
-        v2_0 = 20
-    };
+enum class HttpVersion {
+  UNKNOWN = 0,
+  v0_9 = 9,
+  v1_0 = 10,
+  v1_1 = 11,
+  v2_0 = 20
+};
 
-    enum class SpdyVersion {
-        NONE = 0,
-        
-        
-        
-        HTTP_2 = 5
+enum class SpdyVersion {
+  NONE = 0,
+  
+  
+  
+  HTTP_2 = 5
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-    };
-
-
-
-
-
-#define NS_HTTP_ALLOW_KEEPALIVE      (1<<0)
-#define NS_HTTP_LARGE_KEEPALIVE      (1<<1)
-
-
-
-#define NS_HTTP_STICKY_CONNECTION    (1<<2)
-
-
-
-#define NS_HTTP_REFRESH_DNS          (1<<3)
-
-
-
-#define NS_HTTP_LOAD_ANONYMOUS       (1<<4)
-
-
-#define NS_HTTP_TIMING_ENABLED       (1<<5)
-
-
-
-#define NS_HTTP_LOAD_AS_BLOCKING     (1<<6)
-
-
-
-
-#define NS_HTTP_DISALLOW_SPDY        (1<<7)
-
-
-
-#define NS_HTTP_LOAD_UNBLOCKED       (1<<8)
-
-
-#define NS_HTTP_ONPUSH_LISTENER      (1<<9)
-
-
-
-#define NS_HTTP_ERROR_SOFTLY         (1<<10)
-
-
-
-
-#define NS_HTTP_BE_CONSERVATIVE      (1<<11)
-
-
-#define NS_HTTP_URGENT_START         (1<<12)
-
-
-
-#define NS_HTTP_CONNECTION_RESTARTABLE  (1<<13)
-
-
-
-#define NS_HTTP_DISABLE_TRR (1<<14)
-
-
-
-
-#define NS_HTTP_ALLOW_SPDY_WITHOUT_KEEPALIVE (1<<15)
-
-
-
-
-#define NS_HTTP_CONNECT_ONLY            (1<<16)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+};
 
 
 
 
 
-#define NS_HTTP_DEFAULT_PORT  80
+#define NS_HTTP_ALLOW_KEEPALIVE (1 << 0)
+#define NS_HTTP_LARGE_KEEPALIVE (1 << 1)
+
+
+
+#define NS_HTTP_STICKY_CONNECTION (1 << 2)
+
+
+
+#define NS_HTTP_REFRESH_DNS (1 << 3)
+
+
+
+#define NS_HTTP_LOAD_ANONYMOUS (1 << 4)
+
+
+#define NS_HTTP_TIMING_ENABLED (1 << 5)
+
+
+
+#define NS_HTTP_LOAD_AS_BLOCKING (1 << 6)
+
+
+
+
+#define NS_HTTP_DISALLOW_SPDY (1 << 7)
+
+
+
+#define NS_HTTP_LOAD_UNBLOCKED (1 << 8)
+
+
+#define NS_HTTP_ONPUSH_LISTENER (1 << 9)
+
+
+
+#define NS_HTTP_ERROR_SOFTLY (1 << 10)
+
+
+
+
+#define NS_HTTP_BE_CONSERVATIVE (1 << 11)
+
+
+#define NS_HTTP_URGENT_START (1 << 12)
+
+
+
+#define NS_HTTP_CONNECTION_RESTARTABLE (1 << 13)
+
+
+
+#define NS_HTTP_DISABLE_TRR (1 << 14)
+
+
+
+
+#define NS_HTTP_ALLOW_SPDY_WITHOUT_KEEPALIVE (1 << 15)
+
+
+
+
+#define NS_HTTP_CONNECT_ONLY (1 << 16)
+
+
+
+
+
+#define NS_HTTP_DEFAULT_PORT 80
 #define NS_HTTPS_DEFAULT_PORT 443
 
 #define NS_HTTP_HEADER_SEPS ", \t"
@@ -134,205 +134,196 @@ namespace net {
 
 
 
-struct nsHttpAtom
-{
-    operator const char *() const { return _val; }
-    const char *get() const { return _val; }
+struct nsHttpAtom {
+  operator const char *() const { return _val; }
+  const char *get() const { return _val; }
 
-    void operator=(const char *v) { _val = v; }
-    void operator=(const nsHttpAtom &a) { _val = a._val; }
+  void operator=(const char *v) { _val = v; }
+  void operator=(const nsHttpAtom &a) { _val = a._val; }
 
-    
-    const char *_val;
+  
+  const char *_val;
 };
 
-namespace nsHttp
-{
-    MOZ_MUST_USE nsresult CreateAtomTable();
-    void DestroyAtomTable();
+namespace nsHttp {
+MOZ_MUST_USE nsresult CreateAtomTable();
+void DestroyAtomTable();
 
-    
-    
-    
-    Mutex *GetLock();
 
-    
-    nsHttpAtom ResolveAtom(const char *);
-    inline nsHttpAtom ResolveAtom(const nsACString &s)
-    {
-        return ResolveAtom(PromiseFlatCString(s).get());
-    }
 
-    
-    
-    bool IsValidToken(const char *start, const char *end);
 
-    inline bool IsValidToken(const nsACString &s) {
-        return IsValidToken(s.BeginReading(), s.EndReading());
-    }
+Mutex *GetLock();
 
-    
-    void TrimHTTPWhitespace(const nsACString& aSource,
-                                   nsACString& aDest);
 
-    
-    
-    
-    bool IsReasonableHeaderValue(const nsACString &s);
-
-    
-    
-    
-    
-    
-    const char *FindToken(const char *input, const char *token,
-                                 const char *separators);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE bool ParseInt64(const char *input, const char **next,
-                                        int64_t *result);
-
-    
-    
-    inline MOZ_MUST_USE bool ParseInt64(const char *input,
-                                               int64_t *result) {
-        const char *next;
-        return ParseInt64(input, &next, result) && *next == '\0';
-    }
-
-    
-    bool IsPermanentRedirect(uint32_t httpStatus);
-
-    
-    const char* GetProtocolVersion(HttpVersion pv);
-
-    bool ValidationRequired(bool isForcedValid, nsHttpResponseHead *cachedResponseHead,
-                   uint32_t loadFlags, bool allowStaleCacheContent,
-                   bool isImmutable, bool customConditionalRequest,
-                   nsHttpRequestHead &requestHead,
-                   nsICacheEntry *entry, CacheControlParser &cacheControlRequest,
-                   bool fromPreviousSession);
-
-    nsresult GetHttpResponseHeadFromCacheEntry(nsICacheEntry *entry,
-                                               nsHttpResponseHead *cachedResponseHead);
-
-    nsresult CheckPartial(nsICacheEntry* aEntry, int64_t *aSize,
-                          int64_t *aContentLength,
-                          nsHttpResponseHead *responseHead);
-
-    void DetermineFramingAndImmutability(nsICacheEntry *entry, nsHttpResponseHead *cachedResponseHead,
-                                         bool isHttps, bool *weaklyFramed,
-                                         bool *isImmutable);
-
-    
-    
-    
-    void NotifyActiveTabLoadOptimization();
-    TimeStamp const GetLastActiveTabLoadOptimizationHit();
-    void SetLastActiveTabLoadOptimizationHit(TimeStamp const &when);
-    bool IsBeforeLastActiveTabLoadOptimization(TimeStamp const &when);
-
-    HttpVersion GetHttpVersionFromSpdy(SpdyVersion sv);
-
-    
-    
-    
-    
-    
-    
-#define HTTP_ATOM(_name, _value) extern nsHttpAtom _name;
-#include "nsHttpAtomList.h"
-#undef HTTP_ATOM
+nsHttpAtom ResolveAtom(const char *);
+inline nsHttpAtom ResolveAtom(const nsACString &s) {
+  return ResolveAtom(PromiseFlatCString(s).get());
 }
 
 
 
+bool IsValidToken(const char *start, const char *end);
+
+inline bool IsValidToken(const nsACString &s) {
+  return IsValidToken(s.BeginReading(), s.EndReading());
+}
 
 
-static inline uint32_t
-PRTimeToSeconds(PRTime t_usec)
-{
-    return uint32_t( t_usec / PR_USEC_PER_SEC );
+void TrimHTTPWhitespace(const nsACString &aSource, nsACString &aDest);
+
+
+
+
+bool IsReasonableHeaderValue(const nsACString &s);
+
+
+
+
+
+
+const char *FindToken(const char *input, const char *token,
+                      const char *separators);
+
+
+
+
+
+
+
+
+
+MOZ_MUST_USE bool ParseInt64(const char *input, const char **next,
+                             int64_t *result);
+
+
+
+inline MOZ_MUST_USE bool ParseInt64(const char *input, int64_t *result) {
+  const char *next;
+  return ParseInt64(input, &next, result) && *next == '\0';
+}
+
+
+bool IsPermanentRedirect(uint32_t httpStatus);
+
+
+const char *GetProtocolVersion(HttpVersion pv);
+
+bool ValidationRequired(bool isForcedValid,
+                        nsHttpResponseHead *cachedResponseHead,
+                        uint32_t loadFlags, bool allowStaleCacheContent,
+                        bool isImmutable, bool customConditionalRequest,
+                        nsHttpRequestHead &requestHead, nsICacheEntry *entry,
+                        CacheControlParser &cacheControlRequest,
+                        bool fromPreviousSession);
+
+nsresult GetHttpResponseHeadFromCacheEntry(
+    nsICacheEntry *entry, nsHttpResponseHead *cachedResponseHead);
+
+nsresult CheckPartial(nsICacheEntry *aEntry, int64_t *aSize,
+                      int64_t *aContentLength,
+                      nsHttpResponseHead *responseHead);
+
+void DetermineFramingAndImmutability(nsICacheEntry *entry,
+                                     nsHttpResponseHead *cachedResponseHead,
+                                     bool isHttps, bool *weaklyFramed,
+                                     bool *isImmutable);
+
+
+
+
+void NotifyActiveTabLoadOptimization();
+TimeStamp const GetLastActiveTabLoadOptimizationHit();
+void SetLastActiveTabLoadOptimizationHit(TimeStamp const &when);
+bool IsBeforeLastActiveTabLoadOptimization(TimeStamp const &when);
+
+HttpVersion GetHttpVersionFromSpdy(SpdyVersion sv);
+
+
+
+
+
+
+
+#define HTTP_ATOM(_name, _value) extern nsHttpAtom _name;
+#include "nsHttpAtomList.h"
+#undef HTTP_ATOM
+}  
+
+
+
+
+
+static inline uint32_t PRTimeToSeconds(PRTime t_usec) {
+  return uint32_t(t_usec / PR_USEC_PER_SEC);
 }
 
 #define NowInSeconds() PRTimeToSeconds(PR_Now())
 
 
-#define QVAL_TO_UINT(q) ((unsigned int) ((q + 0.005) * 100.0))
+#define QVAL_TO_UINT(q) ((unsigned int)((q + 0.005) * 100.0))
 
 #define HTTP_LWS " \t"
 #define HTTP_HEADER_VALUE_SEPS HTTP_LWS ","
 
-void EnsureBuffer(UniquePtr<char[]> &buf, uint32_t newSize,
-                  uint32_t preserve, uint32_t &objSize);
+void EnsureBuffer(UniquePtr<char[]> &buf, uint32_t newSize, uint32_t preserve,
+                  uint32_t &objSize);
 void EnsureBuffer(UniquePtr<uint8_t[]> &buf, uint32_t newSize,
                   uint32_t preserve, uint32_t &objSize);
 
 
 
 
-class ParsedHeaderPair
-{
-public:
-    ParsedHeaderPair(const char *name, int32_t nameLen,
-                     const char *val, int32_t valLen, bool isQuotedValue);
+class ParsedHeaderPair {
+ public:
+  ParsedHeaderPair(const char *name, int32_t nameLen, const char *val,
+                   int32_t valLen, bool isQuotedValue);
 
-    ParsedHeaderPair(ParsedHeaderPair const &copy)
-        : mName(copy.mName)
-        , mValue(copy.mValue)
-        , mUnquotedValue(copy.mUnquotedValue)
-        , mIsQuotedValue(copy.mIsQuotedValue)
-    {
-        if (mIsQuotedValue) {
-            mValue.Rebind(mUnquotedValue.BeginReading(), mUnquotedValue.Length());
-        }
+  ParsedHeaderPair(ParsedHeaderPair const &copy)
+      : mName(copy.mName),
+        mValue(copy.mValue),
+        mUnquotedValue(copy.mUnquotedValue),
+        mIsQuotedValue(copy.mIsQuotedValue) {
+    if (mIsQuotedValue) {
+      mValue.Rebind(mUnquotedValue.BeginReading(), mUnquotedValue.Length());
     }
+  }
 
-    nsDependentCSubstring mName;
-    nsDependentCSubstring mValue;
+  nsDependentCSubstring mName;
+  nsDependentCSubstring mValue;
 
-private:
-    nsCString mUnquotedValue;
-    bool mIsQuotedValue;
+ private:
+  nsCString mUnquotedValue;
+  bool mIsQuotedValue;
 
-    void RemoveQuotedStringEscapes(const char *val, int32_t valLen);
+  void RemoveQuotedStringEscapes(const char *val, int32_t valLen);
 };
 
-class ParsedHeaderValueList
-{
-public:
-    ParsedHeaderValueList(const char *t, uint32_t len, bool allowInvalidValue);
-    nsTArray<ParsedHeaderPair> mValues;
+class ParsedHeaderValueList {
+ public:
+  ParsedHeaderValueList(const char *t, uint32_t len, bool allowInvalidValue);
+  nsTArray<ParsedHeaderPair> mValues;
 
-private:
-    void ParseNameAndValue(const char *input, bool allowInvalidValue);
+ private:
+  void ParseNameAndValue(const char *input, bool allowInvalidValue);
 };
 
-class ParsedHeaderValueListList
-{
-public:
-    
-    
-    
-    
-    
-    
-    explicit ParsedHeaderValueListList(const nsCString &txt,
-                                       bool allowInvalidValue = true);
-    nsTArray<ParsedHeaderValueList> mValues;
+class ParsedHeaderValueListList {
+ public:
+  
+  
+  
+  
+  
+  
+  explicit ParsedHeaderValueListList(const nsCString &txt,
+                                     bool allowInvalidValue = true);
+  nsTArray<ParsedHeaderValueList> mValues;
 
-private:
-    nsCString mFull;
+ private:
+  nsCString mFull;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

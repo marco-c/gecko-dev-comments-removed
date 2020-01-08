@@ -5,47 +5,44 @@
 
 
 #include "ColorLayerComposite.h"
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/Matrix.h"         
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/gfx/Types.h"          
-#include "mozilla/layers/Compositor.h"  
+#include "mozilla/RefPtr.h"                  
+#include "mozilla/gfx/Matrix.h"              
+#include "mozilla/gfx/Point.h"               
+#include "mozilla/gfx/Rect.h"                
+#include "mozilla/gfx/Types.h"               
+#include "mozilla/layers/Compositor.h"       
 #include "mozilla/layers/CompositorTypes.h"  
-#include "mozilla/layers/Effects.h"     
-#include "mozilla/mozalloc.h"           
+#include "mozilla/layers/Effects.h"          
+#include "mozilla/mozalloc.h"                
 
 namespace mozilla {
 namespace layers {
 
 using namespace mozilla::gfx;
 
-void
-ColorLayerComposite::RenderLayer(const gfx::IntRect& aClipRect,
-                                 const Maybe<gfx::Polygon>& aGeometry)
-{
+void ColorLayerComposite::RenderLayer(const gfx::IntRect& aClipRect,
+                                      const Maybe<gfx::Polygon>& aGeometry) {
   Rect rect(GetBounds());
 
   const Matrix4x4& transform = GetEffectiveTransform();
 
   RenderWithAllMasks(this, mCompositor, aClipRect,
                      [&](EffectChain& effectChain, const IntRect& clipRect) {
-    GenEffectChain(effectChain);
+                       GenEffectChain(effectChain);
 
-    mCompositor->DrawGeometry(rect, clipRect, effectChain,
-                              GetEffectiveOpacity(), transform, aGeometry);
-  });
+                       mCompositor->DrawGeometry(rect, clipRect, effectChain,
+                                                 GetEffectiveOpacity(),
+                                                 transform, aGeometry);
+                     });
 
   mCompositor->DrawDiagnostics(DiagnosticFlags::COLOR, rect, aClipRect,
                                transform);
 }
 
-void
-ColorLayerComposite::GenEffectChain(EffectChain& aEffect)
-{
+void ColorLayerComposite::GenEffectChain(EffectChain& aEffect) {
   aEffect.mLayerRef = this;
   aEffect.mPrimaryEffect = new EffectSolidColor(GetColor());
 }
 
-} 
-} 
+}  
+}  

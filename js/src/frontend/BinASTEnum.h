@@ -19,129 +19,129 @@ namespace binast {
 
 
 enum class AssertedDeclaredKind {
-    
-    Var,
-    
-    NonConstLexical,
-    
-    ConstLexical,
+  
+  Var,
+  
+  NonConstLexical,
+  
+  ConstLexical,
 };
 
 enum class BinaryOperator {
-    
-    Comma,
-    
-    LogicalOr,
-    
-    LogicalAnd,
-    
-    BitOr,
-    
-    BitXor,
-    
-    BitAnd,
-    
-    Eq,
-    
-    Neq,
-    
-    StrictEq,
-    
-    StrictNeq,
-    
-    LessThan,
-    
-    LeqThan,
-    
-    GreaterThan,
-    
-    GeqThan,
-    
-    In,
-    
-    Instanceof,
-    
-    Lsh,
-    
-    Rsh,
-    
-    Ursh,
-    
-    Plus,
-    
-    Minus,
-    
-    Mul,
-    
-    Div,
-    
-    Mod,
-    
-    Pow,
+  
+  Comma,
+  
+  LogicalOr,
+  
+  LogicalAnd,
+  
+  BitOr,
+  
+  BitXor,
+  
+  BitAnd,
+  
+  Eq,
+  
+  Neq,
+  
+  StrictEq,
+  
+  StrictNeq,
+  
+  LessThan,
+  
+  LeqThan,
+  
+  GreaterThan,
+  
+  GeqThan,
+  
+  In,
+  
+  Instanceof,
+  
+  Lsh,
+  
+  Rsh,
+  
+  Ursh,
+  
+  Plus,
+  
+  Minus,
+  
+  Mul,
+  
+  Div,
+  
+  Mod,
+  
+  Pow,
 };
 
 enum class CompoundAssignmentOperator {
-    
-    PlusAssign,
-    
-    MinusAssign,
-    
-    MulAssign,
-    
-    DivAssign,
-    
-    ModAssign,
-    
-    PowAssign,
-    
-    LshAssign,
-    
-    RshAssign,
-    
-    UrshAssign,
-    
-    BitOrAssign,
-    
-    BitXorAssign,
-    
-    BitAndAssign,
+  
+  PlusAssign,
+  
+  MinusAssign,
+  
+  MulAssign,
+  
+  DivAssign,
+  
+  ModAssign,
+  
+  PowAssign,
+  
+  LshAssign,
+  
+  RshAssign,
+  
+  UrshAssign,
+  
+  BitOrAssign,
+  
+  BitXorAssign,
+  
+  BitAndAssign,
 };
 
 enum class UnaryOperator {
-    
-    Plus,
-    
-    Minus,
-    
-    Not,
-    
-    BitNot,
-    
-    Typeof,
-    
-    Void,
-    
-    Delete,
+  
+  Plus,
+  
+  Minus,
+  
+  Not,
+  
+  BitNot,
+  
+  Typeof,
+  
+  Void,
+  
+  Delete,
 };
 
 enum class UpdateOperator {
-    
-    Incr,
-    
-    Decr,
+  
+  Incr,
+  
+  Decr,
 };
 
 enum class VariableDeclarationKind {
-    
-    Var,
-    
-    Let,
-    
-    Const,
+  
+  Var,
+  
+  Let,
+  
+  Const,
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

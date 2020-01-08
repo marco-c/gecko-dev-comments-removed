@@ -14,4 +14,4 @@ bool GenerateStacks(const std::string& aDumpPath, const bool aFullStacks);
 
 }
 
-#endif 
+#endif  

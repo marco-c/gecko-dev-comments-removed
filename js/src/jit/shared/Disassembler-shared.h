@@ -11,14 +11,14 @@
 
 #include "jit/Label.h"
 #ifdef JS_DISASM_SUPPORTED
-# include "jit/shared/IonAssemblerBuffer.h"
+#include "jit/shared/IonAssemblerBuffer.h"
 #endif
 
-using js::jit::Label;
 using js::Sprinter;
+using js::jit::Label;
 
 #if defined(JS_DISASM_ARM) || defined(JS_DISASM_ARM64)
-#  define JS_DISASM_SUPPORTED
+#define JS_DISASM_SUPPORTED
 #endif
 
 namespace js {
@@ -30,155 +30,151 @@ namespace jit {
 
 
 
-class DisassemblerSpew
-{
+class DisassemblerSpew {
 #ifdef JS_DISASM_SUPPORTED
-    struct Node
-    {
-        const Label* key;       
-        uint32_t value;         
-        bool bound;             
-        Node* next;
-    };
+  struct Node {
+    const Label* key;  
+    uint32_t value;    
+    bool bound;        
+    Node* next;
+  };
 
-    Node* lookup(const Label* key);
-    Node* add(const Label* key, uint32_t value);
-    bool remove(const Label* key);
+  Node* lookup(const Label* key);
+  Node* add(const Label* key, uint32_t value);
+  bool remove(const Label* key);
 
-    uint32_t probe(const Label* l);
-    uint32_t define(const Label* l);
-    uint32_t internalResolve(const Label* l);
+  uint32_t probe(const Label* l);
+  uint32_t define(const Label* l);
+  uint32_t internalResolve(const Label* l);
 #endif
 
-    void spewVA(const char* fmt, va_list args) MOZ_FORMAT_PRINTF(2, 0);
+  void spewVA(const char* fmt, va_list args) MOZ_FORMAT_PRINTF(2, 0);
 
-  public:
-    DisassemblerSpew();
-    ~DisassemblerSpew();
+ public:
+  DisassemblerSpew();
+  ~DisassemblerSpew();
 
 #ifdef JS_DISASM_SUPPORTED
-    
-    void setLabelIndent(const char* s);
-    void setTargetIndent(const char* s);
+  
+  void setLabelIndent(const char* s);
+  void setTargetIndent(const char* s);
 #endif
 
-    
-    
-    
-    void setPrinter(Sprinter* sp);
+  
+  
+  
+  void setPrinter(Sprinter* sp);
 
-    
-    
-    bool isDisabled();
+  
+  
+  bool isDisabled();
 
-    
-    
-    void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+  
+  
+  void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
 
-    
-    struct LabelDoc
-    {
+  
+  struct LabelDoc {
 #ifdef JS_DISASM_SUPPORTED
-	LabelDoc() : doc(0), bound(false), valid(false) {}
-	LabelDoc(uint32_t doc, bool bound) : doc(doc), bound(bound), valid(true) {}
-	const uint32_t doc;
-	const bool bound;
-	const bool valid;
+    LabelDoc() : doc(0), bound(false), valid(false) {}
+    LabelDoc(uint32_t doc, bool bound) : doc(doc), bound(bound), valid(true) {}
+    const uint32_t doc;
+    const bool bound;
+    const bool valid;
 #else
-	LabelDoc() {}
-	LabelDoc(uint32_t, bool) {}
+    LabelDoc() {}
+    LabelDoc(uint32_t, bool) {}
 #endif
-    };
+  };
 
-    
-    struct LiteralDoc
-    {
+  
+  struct LiteralDoc {
 #ifdef JS_DISASM_SUPPORTED
-        enum class Type { Patchable, I32, U32, I64, U64, F32, F64 };
-        const Type type;
-        union {
-            int32_t  i32;
-            uint32_t u32;
-            int64_t  i64;
-            uint64_t u64;
-            float    f32;
-            double   f64;
-        } value;
-        LiteralDoc() : type(Type::Patchable) {}
-        explicit LiteralDoc(int32_t v) : type(Type::I32) { value.i32 = v; }
-        explicit LiteralDoc(uint32_t v) : type(Type::U32) { value.u32 = v; }
-        explicit LiteralDoc(int64_t v) : type(Type::I64) { value.i64 = v; }
-        explicit LiteralDoc(uint64_t v) : type(Type::U64) { value.u64 = v; }
-        explicit LiteralDoc(float v) : type(Type::F32) { value.f32 = v; }
-        explicit LiteralDoc(double v) : type(Type::F64) { value.f64 = v; }
+    enum class Type { Patchable, I32, U32, I64, U64, F32, F64 };
+    const Type type;
+    union {
+      int32_t i32;
+      uint32_t u32;
+      int64_t i64;
+      uint64_t u64;
+      float f32;
+      double f64;
+    } value;
+    LiteralDoc() : type(Type::Patchable) {}
+    explicit LiteralDoc(int32_t v) : type(Type::I32) { value.i32 = v; }
+    explicit LiteralDoc(uint32_t v) : type(Type::U32) { value.u32 = v; }
+    explicit LiteralDoc(int64_t v) : type(Type::I64) { value.i64 = v; }
+    explicit LiteralDoc(uint64_t v) : type(Type::U64) { value.u64 = v; }
+    explicit LiteralDoc(float v) : type(Type::F32) { value.f32 = v; }
+    explicit LiteralDoc(double v) : type(Type::F64) { value.f64 = v; }
 #else
-        LiteralDoc() {}
-        explicit LiteralDoc(int32_t) {}
-        explicit LiteralDoc(uint32_t) {}
-        explicit LiteralDoc(int64_t) {}
-        explicit LiteralDoc(uint64_t) {}
-        explicit LiteralDoc(float) {}
-        explicit LiteralDoc(double) {}
+    LiteralDoc() {}
+    explicit LiteralDoc(int32_t) {}
+    explicit LiteralDoc(uint32_t) {}
+    explicit LiteralDoc(int64_t) {}
+    explicit LiteralDoc(uint64_t) {}
+    explicit LiteralDoc(float) {}
+    explicit LiteralDoc(double) {}
 #endif
-    };
+  };
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    LabelDoc refLabel(const Label* l);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  LabelDoc refLabel(const Label* l);
 
 #ifdef JS_DISASM_SUPPORTED
-    
-    
-    
-    void spewRef(const LabelDoc& target);
+  
+  
+  
+  void spewRef(const LabelDoc& target);
 
-    
-    
-    void spewBind(const Label* label);
+  
+  
+  void spewBind(const Label* label);
 
-    
-    
-    void spewRetarget(const Label* label, const Label* target);
+  
+  
+  void spewRetarget(const Label* label, const Label* target);
 
-    
-    
-    void formatLiteral(const LiteralDoc& doc, char* buffer, size_t bufsize);
+  
+  
+  void formatLiteral(const LiteralDoc& doc, char* buffer, size_t bufsize);
 
-    
-    
-    
-    
-    void spewOrphans();
+  
+  
+  
+  
+  void spewOrphans();
 #endif
 
-  private:
-    Sprinter* printer_;
+ private:
+  Sprinter* printer_;
 #ifdef JS_DISASM_SUPPORTED
-    const char* labelIndent_;
-    const char* targetIndent_;
-    uint32_t spewNext_;
-    Node* nodes_;
-    uint32_t tag_;
+  const char* labelIndent_;
+  const char* targetIndent_;
+  uint32_t spewNext_;
+  Node* nodes_;
+  uint32_t tag_;
 
-    
-    
-    
-    
-    
-    
-    
-    static mozilla::Atomic<uint32_t> counter_;
+  
+  
+  
+  
+  
+  
+  
+  static mozilla::Atomic<uint32_t> counter_;
 #endif
 };
 
-}
-}
+}  
+}  
 
-#endif 
+#endif  

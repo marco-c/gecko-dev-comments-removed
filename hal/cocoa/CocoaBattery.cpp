@@ -20,10 +20,10 @@
 #define IOKIT_FRAMEWORK_PATH "/System/Library/Frameworks/IOKit.framework/IOKit"
 
 #ifndef kIOPSTimeRemainingUnknown
-  #define kIOPSTimeRemainingUnknown ((CFTimeInterval)-1.0)
+#define kIOPSTimeRemainingUnknown ((CFTimeInterval)-1.0)
 #endif
 #ifndef kIOPSTimeRemainingUnlimited
-  #define kIOPSTimeRemainingUnlimited ((CFTimeInterval)-2.0)
+#define kIOPSTimeRemainingUnlimited ((CFTimeInterval)-2.0)
 #endif
 
 using namespace mozilla::dom::battery;
@@ -33,9 +33,8 @@ namespace hal_impl {
 
 typedef CFTimeInterval (*IOPSGetTimeRemainingEstimateFunc)(void);
 
-class MacPowerInformationService
-{
-public:
+class MacPowerInformationService {
+ public:
   static MacPowerInformationService* GetInstance();
   static void Shutdown();
   static bool IsShuttingDown();
@@ -43,11 +42,11 @@ public:
   void BeginListening();
   void StopListening();
 
-  static void HandleChange(void *aContext);
+  static void HandleChange(void* aContext);
 
   ~MacPowerInformationService();
 
-private:
+ private:
   MacPowerInformationService();
 
   
@@ -58,7 +57,8 @@ private:
   double mRemainingTime;
   bool mShouldNotify;
 
-  friend void GetCurrentBatteryInformation(hal::BatteryInformation* aBatteryInfo);
+  friend void GetCurrentBatteryInformation(
+      hal::BatteryInformation* aBatteryInfo);
 
   static MacPowerInformationService* sInstance;
   static bool sShuttingDown;
@@ -68,7 +68,8 @@ private:
 };
 
 void* MacPowerInformationService::sIOKitFramework;
-IOPSGetTimeRemainingEstimateFunc MacPowerInformationService::sIOPSGetTimeRemainingEstimate;
+IOPSGetTimeRemainingEstimateFunc
+    MacPowerInformationService::sIOPSGetTimeRemainingEstimate;
 
 
 
@@ -76,26 +77,21 @@ IOPSGetTimeRemainingEstimateFunc MacPowerInformationService::sIOPSGetTimeRemaini
 
 
 
-void
-EnableBatteryNotifications()
-{
+void EnableBatteryNotifications() {
   if (!MacPowerInformationService::IsShuttingDown()) {
     MacPowerInformationService::GetInstance()->BeginListening();
   }
 }
 
-void
-DisableBatteryNotifications()
-{
+void DisableBatteryNotifications() {
   if (!MacPowerInformationService::IsShuttingDown()) {
     MacPowerInformationService::GetInstance()->StopListening();
   }
 }
 
-void
-GetCurrentBatteryInformation(hal::BatteryInformation* aBatteryInfo)
-{
-  MacPowerInformationService* powerService = MacPowerInformationService::GetInstance();
+void GetCurrentBatteryInformation(hal::BatteryInformation* aBatteryInfo) {
+  MacPowerInformationService* powerService =
+      MacPowerInformationService::GetInstance();
 
   aBatteryInfo->level() = powerService->mLevel;
   aBatteryInfo->charging() = powerService->mCharging;
@@ -111,29 +107,26 @@ bool MacPowerInformationService::sShuttingDown = false;
 MacPowerInformationService* MacPowerInformationService::sInstance = nullptr;
 
 namespace {
-struct SingletonDestroyer final : public nsIObserver
-{
+struct SingletonDestroyer final : public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-private:
+ private:
   ~SingletonDestroyer() {}
 };
 
 NS_IMPL_ISUPPORTS(SingletonDestroyer, nsIObserver)
 
 NS_IMETHODIMP
-SingletonDestroyer::Observe(nsISupports*, const char* aTopic, const char16_t*)
-{
+SingletonDestroyer::Observe(nsISupports*, const char* aTopic, const char16_t*) {
   MOZ_ASSERT(!strcmp(aTopic, "xpcom-shutdown"));
   MacPowerInformationService::Shutdown();
   return NS_OK;
 }
-} 
+}  
 
  MacPowerInformationService*
-MacPowerInformationService::GetInstance()
-{
+MacPowerInformationService::GetInstance() {
   if (sInstance) {
     return sInstance;
   }
@@ -148,55 +141,46 @@ MacPowerInformationService::GetInstance()
   return sInstance;
 }
 
-bool
-MacPowerInformationService::IsShuttingDown()
-{
-  return sShuttingDown;
-}
+bool MacPowerInformationService::IsShuttingDown() { return sShuttingDown; }
 
-void
-MacPowerInformationService::Shutdown()
-{
+void MacPowerInformationService::Shutdown() {
   sShuttingDown = true;
   delete sInstance;
   sInstance = nullptr;
 }
 
 MacPowerInformationService::MacPowerInformationService()
-  : mRunLoopSource(nullptr)
-  , mLevel(kDefaultLevel)
-  , mCharging(kDefaultCharging)
-  , mRemainingTime(kDefaultRemainingTime)
-  , mShouldNotify(false)
-{
+    : mRunLoopSource(nullptr),
+      mLevel(kDefaultLevel),
+      mCharging(kDefaultCharging),
+      mRemainingTime(kDefaultRemainingTime),
+      mShouldNotify(false) {
   
   
   sIOKitFramework = dlopen(IOKIT_FRAMEWORK_PATH, RTLD_LAZY | RTLD_LOCAL);
   if (sIOKitFramework) {
-    sIOPSGetTimeRemainingEstimate =
-      (IOPSGetTimeRemainingEstimateFunc)dlsym(sIOKitFramework, "IOPSGetTimeRemainingEstimate");
+    sIOPSGetTimeRemainingEstimate = (IOPSGetTimeRemainingEstimateFunc)dlsym(
+        sIOKitFramework, "IOPSGetTimeRemainingEstimate");
   } else {
     sIOPSGetTimeRemainingEstimate = nullptr;
   }
 }
 
-MacPowerInformationService::~MacPowerInformationService()
-{
+MacPowerInformationService::~MacPowerInformationService() {
   MOZ_ASSERT(!mRunLoopSource,
-               "The observers have not been correctly removed! "
-               "(StopListening should have been called)");
+             "The observers have not been correctly removed! "
+             "(StopListening should have been called)");
 
   if (sIOKitFramework) {
     dlclose(sIOKitFramework);
   }
 }
 
-void
-MacPowerInformationService::BeginListening()
-{
+void MacPowerInformationService::BeginListening() {
   
-  MOZ_ASSERT(!mRunLoopSource, "IOPS Notification Loop Source already set up. "
-                              "(StopListening should have been called)");
+  MOZ_ASSERT(!mRunLoopSource,
+             "IOPS Notification Loop Source already set up. "
+             "(StopListening should have been called)");
 
   mRunLoopSource = ::IOPSNotificationCreateRunLoopSource(HandleChange, this);
   if (mRunLoopSource) {
@@ -210,21 +194,19 @@ MacPowerInformationService::BeginListening()
   }
 }
 
-void
-MacPowerInformationService::StopListening()
-{
-  MOZ_ASSERT(mRunLoopSource, "IOPS Notification Loop Source not set up. "
-                             "(StopListening without BeginListening)");
+void MacPowerInformationService::StopListening() {
+  MOZ_ASSERT(mRunLoopSource,
+             "IOPS Notification Loop Source not set up. "
+             "(StopListening without BeginListening)");
 
   ::CFRunLoopRemoveSource(::CFRunLoopGetCurrent(), mRunLoopSource,
                           kCFRunLoopDefaultMode);
   mRunLoopSource = nullptr;
 }
 
-void
-MacPowerInformationService::HandleChange(void* aContext) {
+void MacPowerInformationService::HandleChange(void* aContext) {
   MacPowerInformationService* power =
-    static_cast<MacPowerInformationService*>(aContext);
+      static_cast<MacPowerInformationService*>(aContext);
 
   CFTypeRef data = ::IOPSCopyPowerSourcesInfo();
   if (!data) {
@@ -249,7 +231,8 @@ MacPowerInformationService::HandleChange(void* aContext) {
   
   for (CFIndex i = 0; i < ::CFArrayGetCount(list); ++i) {
     CFTypeRef source = ::CFArrayGetValueAtIndex(list, i);
-    CFDictionaryRef currPowerSourceDesc = ::IOPSGetPowerSourceDescription(data, source);
+    CFDictionaryRef currPowerSourceDesc =
+        ::IOPSGetPowerSourceDescription(data, source);
     if (!currPowerSourceDesc) {
       continue;
     }
@@ -257,25 +240,30 @@ MacPowerInformationService::HandleChange(void* aContext) {
     
     
     int currentCapacity = 0;
-    const void* cfRef = ::CFDictionaryGetValue(currPowerSourceDesc, CFSTR(kIOPSCurrentCapacityKey));
+    const void* cfRef = ::CFDictionaryGetValue(currPowerSourceDesc,
+                                               CFSTR(kIOPSCurrentCapacityKey));
     if (!cfRef) {
       continue;
     }
-    ::CFNumberGetValue((CFNumberRef)cfRef, kCFNumberSInt32Type, &currentCapacity);
+    ::CFNumberGetValue((CFNumberRef)cfRef, kCFNumberSInt32Type,
+                       &currentCapacity);
 
     
     int maxCapacity = 0;
-    cfRef = ::CFDictionaryGetValue(currPowerSourceDesc, CFSTR(kIOPSMaxCapacityKey));
+    cfRef =
+        ::CFDictionaryGetValue(currPowerSourceDesc, CFSTR(kIOPSMaxCapacityKey));
     ::CFNumberGetValue((CFNumberRef)cfRef, kCFNumberSInt32Type, &maxCapacity);
 
     if (maxCapacity > 0) {
-      level = static_cast<double>(currentCapacity)/static_cast<double>(maxCapacity);
+      level = static_cast<double>(currentCapacity) /
+              static_cast<double>(maxCapacity);
     }
 
     
     
     
-    if(::CFDictionaryGetValueIfPresent(currPowerSourceDesc, CFSTR(kIOPSIsChargingKey), &cfRef)) {
+    if (::CFDictionaryGetValueIfPresent(currPowerSourceDesc,
+                                        CFSTR(kIOPSIsChargingKey), &cfRef)) {
       charging = ::CFBooleanGetValue((CFBooleanRef)cfRef);
 
       
@@ -283,20 +271,23 @@ MacPowerInformationService::HandleChange(void* aContext) {
       if (charging) {
         
         
-        remainingTime = level == 1.0 ? kDefaultRemainingTime : kUnknownRemainingTime;
+        remainingTime =
+            level == 1.0 ? kDefaultRemainingTime : kUnknownRemainingTime;
 
-        if (::CFDictionaryGetValueIfPresent(currPowerSourceDesc,
-                CFSTR(kIOPSTimeToFullChargeKey), &cfRef)) {
+        if (::CFDictionaryGetValueIfPresent(
+                currPowerSourceDesc, CFSTR(kIOPSTimeToFullChargeKey), &cfRef)) {
           int timeToCharge;
-          ::CFNumberGetValue((CFNumberRef)cfRef, kCFNumberIntType, &timeToCharge);
+          ::CFNumberGetValue((CFNumberRef)cfRef, kCFNumberIntType,
+                             &timeToCharge);
           if (timeToCharge != kIOPSTimeRemainingUnknown) {
-            remainingTime = timeToCharge*60;
+            remainingTime = timeToCharge * 60;
           }
         }
-      } else if (sIOPSGetTimeRemainingEstimate) { 
+      } else if (sIOPSGetTimeRemainingEstimate) {  
         
         CFTimeInterval estimate = sIOPSGetTimeRemainingEstimate();
-        if (estimate == kIOPSTimeRemainingUnlimited || estimate == kIOPSTimeRemainingUnknown) {
+        if (estimate == kIOPSTimeRemainingUnlimited ||
+            estimate == kIOPSTimeRemainingUnknown) {
           remainingTime = kUnknownRemainingTime;
         } else {
           remainingTime = estimate;
@@ -316,14 +307,13 @@ MacPowerInformationService::HandleChange(void* aContext) {
 
   
   if (power->mShouldNotify && isNewData) {
-    hal::NotifyBatteryChange(hal::BatteryInformation(power->mLevel,
-                                                     power->mCharging,
-                                                     power->mRemainingTime));
+    hal::NotifyBatteryChange(hal::BatteryInformation(
+        power->mLevel, power->mCharging, power->mRemainingTime));
   }
 
   ::CFRelease(data);
   ::CFRelease(list);
 }
 
-} 
-} 
+}  
+}  

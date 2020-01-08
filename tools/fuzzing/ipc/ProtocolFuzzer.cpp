@@ -9,9 +9,7 @@
 namespace mozilla {
 namespace ipc {
 
-nsTArray<nsCString>
-LoadIPCMessageBlacklist(const char* aPath)
-{
+nsTArray<nsCString> LoadIPCMessageBlacklist(const char* aPath) {
   nsTArray<nsCString> blacklist;
   if (aPath) {
     nsresult result = Faulty::ReadFile(aPath, blacklist);
@@ -20,16 +18,13 @@ LoadIPCMessageBlacklist(const char* aPath)
   return blacklist;
 }
 
-
-mozilla::dom::ContentParent*
-ProtocolFuzzerHelper::CreateContentParent(mozilla::dom::ContentParent* aOpener,
-                                          const nsAString& aRemoteType)
-{
+mozilla::dom::ContentParent* ProtocolFuzzerHelper::CreateContentParent(
+    mozilla::dom::ContentParent* aOpener, const nsAString& aRemoteType) {
   auto* cp = new mozilla::dom::ContentParent(aOpener, aRemoteType);
   
   cp->GetIPCChannel()->mWorkerThread = GetCurrentVirtualThread();
   cp->GetIPCChannel()->mMonitor = new RefCountedMonitor();
   return cp;
 }
-}
-}
+}  
+}  

@@ -8,31 +8,22 @@
 
 DWORD tid = -1;
 
-DWORD WINAPI CrashingThread(
-  LPVOID lpParameter
-)
-{
+DWORD WINAPI CrashingThread(LPVOID lpParameter) {
   
-  volatile int* x = (int *)0x0;
+  volatile int* x = (int*)0x0;
   *x = 1;
   return 0;
 }
 
-BOOL WINAPI DllMain(
-  HANDLE hinstDLL,
-  DWORD dwReason,
-  LPVOID lpvReserved
-)
-{
+BOOL WINAPI DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved) {
   if (tid == (DWORD)-1)
     
     
-    CreateThread(
-                 nullptr,                
-                 0,                      
-                 CrashingThread,         
-                 nullptr,                
-                 0,                      
-                 &tid);                  
+    CreateThread(nullptr,         
+                 0,               
+                 CrashingThread,  
+                 nullptr,         
+                 0,               
+                 &tid);           
   return TRUE;
 }

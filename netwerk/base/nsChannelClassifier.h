@@ -21,97 +21,96 @@ namespace mozilla {
 namespace net {
 
 class nsChannelClassifier final : public nsIURIClassifierCallback,
-                                  public nsIObserver
-{
-public:
-    explicit nsChannelClassifier(nsIChannel* aChannel);
+                                  public nsIObserver {
+ public:
+  explicit nsChannelClassifier(nsIChannel* aChannel);
 
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIURICLASSIFIERCALLBACK
-    NS_DECL_NSIOBSERVER
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIURICLASSIFIERCALLBACK
+  NS_DECL_NSIOBSERVER
 
-    
-    
-    void Start();
-    
-    bool ShouldEnableTrackingProtection();
-    
-    bool ShouldEnableTrackingAnnotation();
+  
+  
+  void Start();
+  
+  bool ShouldEnableTrackingProtection();
+  
+  bool ShouldEnableTrackingAnnotation();
 
-    
-    nsresult IsTrackerWhitelisted(nsIURI* aWhiteListURI,
-                                  bool aUseTrackingTable,
-                                  bool aUseAnnotationTable,
-                                  nsIURIClassifierCallback* aCallback);
+  
+  nsresult IsTrackerWhitelisted(nsIURI* aWhiteListURI, bool aUseTrackingTable,
+                                bool aUseAnnotationTable,
+                                nsIURIClassifierCallback* aCallback);
 
-    
-    
-    nsresult OnClassifyCompleteInternal(nsresult aErrorCode,
-                                        const nsACString& aList,
-                                        const nsACString& aProvider,
-                                        const nsACString& aFullHash);
-
-    
-    
-    
-    nsresult CheckIsTrackerWithLocalTable(std::function<void()>&& aCallback);
-
-    
-    nsresult CreateWhiteListURI(nsIURI** aURI) const;
-
-    already_AddRefed<nsIChannel> GetChannel();
-
-    
-    bool IsTrackingURLWhitelisted(nsIURI *aUri);
-
-private:
-    
-    bool mIsAllowListed;
-    
-    bool mSuspendedChannel;
-    nsCOMPtr<nsIChannel> mChannel;
-    Maybe<bool> mTrackingProtectionEnabled;
-    Maybe<bool> mTrackingAnnotationEnabled;
-
-    ~nsChannelClassifier();
-    
-    void MarkEntryClassified(nsresult status);
-    bool HasBeenClassified(nsIChannel *aChannel);
-    
-    
-    
-    nsresult StartInternal();
-    
-    bool IsHostnameWhitelisted(nsIURI *aUri, const nsACString &aWhitelisted);
-    
-    
-    
-    
-    nsresult ShouldEnableTrackingProtectionInternal(nsIChannel *aChannel,
-                                                    bool aAnnotationsOnly,
-                                                    bool *result);
-
-    bool AddonMayLoad(nsIChannel *aChannel, nsIURI *aUri);
-    void AddShutdownObserver();
-    void RemoveShutdownObserver();
-    static nsresult SendThreatHitReport(nsIChannel *aChannel,
-                                        const nsACString& aProvider,
-                                        const nsACString& aList,
-                                        const nsACString& aFullHash);
-
-    static void NotifyChannelBlocked(nsIChannel* aChannel, unsigned aBlockedReason);
-public:
-    
-    
-    static nsresult SetBlockedContent(nsIChannel *channel,
-                                      nsresult aErrorCode,
+  
+  
+  nsresult OnClassifyCompleteInternal(nsresult aErrorCode,
                                       const nsACString& aList,
                                       const nsACString& aProvider,
                                       const nsACString& aFullHash);
-    static nsresult NotifyTrackingProtectionDisabled(nsIChannel *aChannel);
+
+  
+  
+  
+  nsresult CheckIsTrackerWithLocalTable(std::function<void()>&& aCallback);
+
+  
+  nsresult CreateWhiteListURI(nsIURI** aURI) const;
+
+  already_AddRefed<nsIChannel> GetChannel();
+
+  
+  bool IsTrackingURLWhitelisted(nsIURI* aUri);
+
+ private:
+  
+  bool mIsAllowListed;
+  
+  bool mSuspendedChannel;
+  nsCOMPtr<nsIChannel> mChannel;
+  Maybe<bool> mTrackingProtectionEnabled;
+  Maybe<bool> mTrackingAnnotationEnabled;
+
+  ~nsChannelClassifier();
+  
+  void MarkEntryClassified(nsresult status);
+  bool HasBeenClassified(nsIChannel* aChannel);
+  
+  
+  
+  nsresult StartInternal();
+  
+  bool IsHostnameWhitelisted(nsIURI* aUri, const nsACString& aWhitelisted);
+  
+  
+  
+  
+  nsresult ShouldEnableTrackingProtectionInternal(nsIChannel* aChannel,
+                                                  bool aAnnotationsOnly,
+                                                  bool* result);
+
+  bool AddonMayLoad(nsIChannel* aChannel, nsIURI* aUri);
+  void AddShutdownObserver();
+  void RemoveShutdownObserver();
+  static nsresult SendThreatHitReport(nsIChannel* aChannel,
+                                      const nsACString& aProvider,
+                                      const nsACString& aList,
+                                      const nsACString& aFullHash);
+
+  static void NotifyChannelBlocked(nsIChannel* aChannel,
+                                   unsigned aBlockedReason);
+
+ public:
+  
+  
+  static nsresult SetBlockedContent(nsIChannel* channel, nsresult aErrorCode,
+                                    const nsACString& aList,
+                                    const nsACString& aProvider,
+                                    const nsACString& aFullHash);
+  static nsresult NotifyTrackingProtectionDisabled(nsIChannel* aChannel);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

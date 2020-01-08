@@ -16,10 +16,10 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
-#include "AttrArray.h"                    
-#include "nsCycleCollectionParticipant.h" 
-#include "nsIContent.h"                   
-#include "nsNodeUtils.h"                  
+#include "AttrArray.h"                     
+#include "nsCycleCollectionParticipant.h"  
+#include "nsIContent.h"                    
+#include "nsNodeUtils.h"  
 #include "nsIHTMLCollection.h"
 #include "nsDataHashtable.h"
 #include "nsXBLBinding.h"
@@ -41,19 +41,15 @@ class DeclarationBlock;
 namespace dom {
 struct CustomElementData;
 class Element;
-} 
-} 
+}  
+}  
 
 
 
 
-class nsNodeSupportsWeakRefTearoff final : public nsISupportsWeakReference
-{
-public:
-  explicit nsNodeSupportsWeakRefTearoff(nsINode* aNode)
-    : mNode(aNode)
-  {
-  }
+class nsNodeSupportsWeakRefTearoff final : public nsISupportsWeakReference {
+ public:
+  explicit nsNodeSupportsWeakRefTearoff(nsINode* aNode) : mNode(aNode) {}
 
   
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -63,7 +59,7 @@ public:
 
   NS_DECL_CYCLE_COLLECTION_CLASS(nsNodeSupportsWeakRefTearoff)
 
-private:
+ private:
   ~nsNodeSupportsWeakRefTearoff() {}
 
   nsCOMPtr<nsINode> mNode;
@@ -78,11 +74,12 @@ namespace dom {
 
 class ShadowRoot;
 
-class FragmentOrElement : public nsIContent
-{
-public:
-  explicit FragmentOrElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
-  explicit FragmentOrElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+class FragmentOrElement : public nsIContent {
+ public:
+  explicit FragmentOrElement(
+      already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
+  explicit FragmentOrElement(
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   
   
@@ -101,7 +98,7 @@ public:
 
   
   virtual already_AddRefed<nsINodeList> GetChildren(uint32_t aFilter) override;
-  virtual const nsTextFragment *GetText() override;
+  virtual const nsTextFragment* GetText() override;
   virtual uint32_t TextLength() const override;
   virtual bool TextIsOnlyWhitespace() override;
   virtual bool ThreadSafeTextIsOnlyWhitespace() const override;
@@ -112,22 +109,18 @@ public:
   virtual void SaveSubtreeState() override;
 
   nsIHTMLCollection* Children();
-  uint32_t ChildElementCount()
-  {
-    return Children()->Length();
-  }
+  uint32_t ChildElementCount() { return Children()->Length(); }
 
-public:
+ public:
   
 
 
 
-  static void FireNodeInserted(nsIDocument* aDoc,
-                               nsINode* aParent,
+  static void FireNodeInserted(nsIDocument* aDoc, nsINode* aParent,
                                nsTArray<nsCOMPtr<nsIContent> >& aNodes);
 
-  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS_INHERITED(FragmentOrElement,
-                                                                   nsIContent)
+  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS_INHERITED(
+      FragmentOrElement, nsIContent)
 
   
 
@@ -146,7 +139,8 @@ public:
 
 
   static bool IsHTMLVoid(nsAtom* aLocalName);
-protected:
+
+ protected:
   virtual ~FragmentOrElement();
 
   
@@ -155,7 +149,7 @@ protected:
 
   nsresult CopyInnerTo(FragmentOrElement* aDest);
 
-public:
+ public:
   
 
 
@@ -165,9 +159,8 @@ public:
 
 
 
-  class nsExtendedDOMSlots : public nsIContent::nsExtendedContentSlots
-  {
-  public:
+  class nsExtendedDOMSlots : public nsIContent::nsExtendedContentSlots {
+   public:
     nsExtendedDOMSlots();
     ~nsExtendedDOMSlots();
 
@@ -213,9 +206,8 @@ public:
     RefPtr<CustomElementData> mCustomElementData;
   };
 
-  class nsDOMSlots : public nsIContent::nsContentSlots
-  {
-  public:
+  class nsDOMSlots : public nsIContent::nsContentSlots {
+   public:
     nsDOMSlots();
     ~nsDOMSlots();
 
@@ -235,7 +227,7 @@ public:
 
 
 
-    nsDOMStringMap* mDataset; 
+    nsDOMStringMap* mDataset;  
 
     
 
@@ -259,50 +251,36 @@ public:
 
 
 
-  class FatSlots final : public nsDOMSlots, public nsExtendedDOMSlots
-  {
-  public:
-    FatSlots()
-      : nsDOMSlots()
-      , nsExtendedDOMSlots()
-    {
+  class FatSlots final : public nsDOMSlots, public nsExtendedDOMSlots {
+   public:
+    FatSlots() : nsDOMSlots(), nsExtendedDOMSlots() {
       MOZ_COUNT_CTOR(FatSlots);
       SetExtendedContentSlots(this, false);
     }
 
-    ~FatSlots() final
-    {
-      MOZ_COUNT_DTOR(FatSlots);
-    }
+    ~FatSlots() final { MOZ_COUNT_DTOR(FatSlots); }
   };
 
-protected:
+ protected:
   void GetMarkup(bool aIncludeSelf, nsAString& aMarkup);
   void SetInnerHTMLInternal(const nsAString& aInnerHTML, ErrorResult& aError);
 
   
-  nsIContent::nsContentSlots* CreateSlots() override
-  {
+  nsIContent::nsContentSlots* CreateSlots() override {
     return new nsDOMSlots();
   }
 
-  nsIContent::nsExtendedContentSlots* CreateExtendedSlots() final
-  {
+  nsIContent::nsExtendedContentSlots* CreateExtendedSlots() final {
     return new nsExtendedDOMSlots();
   }
 
-  nsDOMSlots* DOMSlots()
-  {
-    return static_cast<nsDOMSlots*>(Slots());
-  }
+  nsDOMSlots* DOMSlots() { return static_cast<nsDOMSlots*>(Slots()); }
 
-  nsDOMSlots *GetExistingDOMSlots() const
-  {
+  nsDOMSlots* GetExistingDOMSlots() const {
     return static_cast<nsDOMSlots*>(GetExistingSlots());
   }
 
-  nsExtendedDOMSlots* ExtendedDOMSlots()
-  {
+  nsExtendedDOMSlots* ExtendedDOMSlots() {
     nsContentSlots* slots = GetExistingContentSlots();
     if (!slots) {
       FatSlots* fatSlots = new FatSlots();
@@ -317,14 +295,12 @@ protected:
     return static_cast<nsExtendedDOMSlots*>(slots->GetExtendedContentSlots());
   }
 
-  const nsExtendedDOMSlots* GetExistingExtendedDOMSlots() const
-  {
+  const nsExtendedDOMSlots* GetExistingExtendedDOMSlots() const {
     return static_cast<const nsExtendedDOMSlots*>(
-      GetExistingExtendedContentSlots());
+        GetExistingExtendedContentSlots());
   }
 
-  nsExtendedDOMSlots* GetExistingExtendedDOMSlots()
-  {
+  nsExtendedDOMSlots* GetExistingExtendedDOMSlots() {
     return static_cast<nsExtendedDOMSlots*>(GetExistingExtendedContentSlots());
   }
 
@@ -335,14 +311,13 @@ protected:
   AttrArray mAttrs;
 };
 
-} 
-} 
+}  
+}  
 
-#define NS_ELEMENT_INTERFACE_TABLE_TO_MAP_SEGUE                               \
-    if (NS_SUCCEEDED(rv))                                                     \
-      return rv;                                                              \
-                                                                              \
-    rv = FragmentOrElement::QueryInterface(aIID, aInstancePtr);               \
-    NS_INTERFACE_TABLE_TO_MAP_SEGUE
+#define NS_ELEMENT_INTERFACE_TABLE_TO_MAP_SEGUE               \
+  if (NS_SUCCEEDED(rv)) return rv;                            \
+                                                              \
+  rv = FragmentOrElement::QueryInterface(aIID, aInstancePtr); \
+  NS_INTERFACE_TABLE_TO_MAP_SEGUE
 
 #endif 

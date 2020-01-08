@@ -13,19 +13,11 @@ namespace storage {
 
 
 
-ResultSet::ResultSet()
-: mCurrentIndex(0)
-{
-}
+ResultSet::ResultSet() : mCurrentIndex(0) {}
 
-ResultSet::~ResultSet()
-{
-  mData.Clear();
-}
+ResultSet::~ResultSet() { mData.Clear(); }
 
-nsresult
-ResultSet::add(mozIStorageRow *aRow)
-{
+nsresult ResultSet::add(mozIStorageRow *aRow) {
   return mData.AppendObject(aRow) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
 
@@ -33,17 +25,13 @@ ResultSet::add(mozIStorageRow *aRow)
 
 
 
-NS_IMPL_ISUPPORTS(
-  ResultSet,
-  mozIStorageResultSet
-)
+NS_IMPL_ISUPPORTS(ResultSet, mozIStorageResultSet)
 
 
 
 
 NS_IMETHODIMP
-ResultSet::GetNextRow(mozIStorageRow **_row)
-{
+ResultSet::GetNextRow(mozIStorageRow **_row) {
   NS_ENSURE_ARG_POINTER(_row);
 
   if (mCurrentIndex >= mData.Count()) {
@@ -55,5 +43,5 @@ ResultSet::GetNextRow(mozIStorageRow **_row)
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

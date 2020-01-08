@@ -34,394 +34,379 @@ struct nsProtocolInfo;
 
 
 
-#define NS_PROTOCOL_PROXY_SERVICE_IMPL_CID        \
-{ 0x091eedd8, 0x8bae, 0x4fe3, \
-        { 0xad, 0x62, 0x0c, 0x87, 0x35, 0x1e, 0x64, 0x0d } }
+#define NS_PROTOCOL_PROXY_SERVICE_IMPL_CID           \
+  {                                                  \
+    0x091eedd8, 0x8bae, 0x4fe3, {                    \
+      0xad, 0x62, 0x0c, 0x87, 0x35, 0x1e, 0x64, 0x0d \
+    }                                                \
+  }
 
-class nsProtocolProxyService final : public nsIProtocolProxyService2
-                                   , public nsIObserver
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIPROTOCOLPROXYSERVICE2
-    NS_DECL_NSIPROTOCOLPROXYSERVICE
-    NS_DECL_NSIOBSERVER
+class nsProtocolProxyService final : public nsIProtocolProxyService2,
+                                     public nsIObserver {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPROTOCOLPROXYSERVICE2
+  NS_DECL_NSIPROTOCOLPROXYSERVICE
+  NS_DECL_NSIOBSERVER
 
-    NS_DECLARE_STATIC_IID_ACCESSOR(NS_PROTOCOL_PROXY_SERVICE_IMPL_CID)
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_PROTOCOL_PROXY_SERVICE_IMPL_CID)
 
-    nsProtocolProxyService();
+  nsProtocolProxyService();
 
-    nsresult Init();
+  nsresult Init();
 
-public:
-    
-    
-    class FilterLink {
-    public:
-      NS_INLINE_DECL_REFCOUNTING(FilterLink)
+ public:
+  
+  
+  class FilterLink {
+   public:
+    NS_INLINE_DECL_REFCOUNTING(FilterLink)
 
-      uint32_t position;
-      nsCOMPtr<nsIProtocolProxyFilter> filter;
-      nsCOMPtr<nsIProtocolProxyChannelFilter> channelFilter;
+    uint32_t position;
+    nsCOMPtr<nsIProtocolProxyFilter> filter;
+    nsCOMPtr<nsIProtocolProxyChannelFilter> channelFilter;
 
-      FilterLink(uint32_t p, nsIProtocolProxyFilter *f);
-      FilterLink(uint32_t p, nsIProtocolProxyChannelFilter *cf);
+    FilterLink(uint32_t p, nsIProtocolProxyFilter *f);
+    FilterLink(uint32_t p, nsIProtocolProxyChannelFilter *cf);
 
-    private:
-      ~FilterLink();
+   private:
+    ~FilterLink();
+  };
+
+ protected:
+  friend class nsAsyncResolveRequest;
+  friend class TestProtocolProxyService_LoadHostFilters_Test;  
+
+  ~nsProtocolProxyService();
+
+  
+
+
+
+
+
+
+
+
+
+  void PrefsChanged(nsIPrefBranch *prefs, const char *name);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const char *ExtractProxyInfo(const char *proxy, uint32_t aResolveFlags,
+                               nsProxyInfo **result);
+
+  
+
+
+
+
+
+  nsresult ConfigureFromPAC(const nsCString &pacURI, bool forceReload);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  void ProcessPACString(const nsCString &pacString, uint32_t aResolveFlags,
+                        nsIProxyInfo **result);
+
+  
+
+
+
+
+
+
+
+
+  void GetProxyKey(nsProxyInfo *pi, nsCString &result);
+
+  
+
+
+  uint32_t SecondsSinceSessionStart();
+
+  
+
+
+
+
+
+  void EnableProxy(nsProxyInfo *pi);
+
+  
+
+
+
+
+
+  void DisableProxy(nsProxyInfo *pi);
+
+  
+
+
+
+
+
+
+
+  bool IsProxyDisabled(nsProxyInfo *pi);
+
+  
+
+
+
+
+
+
+
+
+
+
+  nsresult GetProtocolInfo(nsIURI *uri, nsProtocolInfo *result);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult NewProxyInfo_Internal(const char *type, const nsACString &host,
+                                 int32_t port, const nsACString &username,
+                                 const nsACString &password, uint32_t flags,
+                                 uint32_t timeout, nsIProxyInfo *next,
+                                 uint32_t aResolveFlags, nsIProxyInfo **result);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  nsresult Resolve_Internal(nsIChannel *channel, const nsProtocolInfo &info,
+                            uint32_t flags, bool *usePAC,
+                            nsIProxyInfo **result);
+
+  
+
+
+
+
+  void CopyFilters(nsTArray<RefPtr<FilterLink>> &aCopy);
+
+  
+
+
+
+
+  bool ApplyFilter(FilterLink const *filterLink, nsIChannel *channel,
+                   const nsProtocolInfo &info, nsCOMPtr<nsIProxyInfo> proxyInfo,
+                   nsIProxyProtocolFilterResult *callback);
+
+  
+
+
+
+
+
+
+
+
+  void PruneProxyInfo(const nsProtocolInfo &info, nsIProxyInfo **proxyInfo);
+
+  
+
+
+
+  void PruneProxyInfo(const nsProtocolInfo &info,
+                      nsCOMPtr<nsIProxyInfo> &proxyInfo) {
+    nsIProxyInfo *pi = nullptr;
+    proxyInfo.swap(pi);
+    PruneProxyInfo(info, &pi);
+    proxyInfo.swap(pi);
+  }
+
+  
+
+
+
+
+
+  void LoadHostFilters(const nsACString &hostFilters);
+
+  
+
+
+
+
+
+
+
+
+
+  bool CanUseProxy(nsIURI *uri, int32_t defaultPort);
+
+  
+
+
+
+
+
+  void MaybeDisableDNSPrefetch(nsIProxyInfo *aProxy);
+
+ private:
+  nsresult SetupPACThread(nsIEventTarget *mainThreadEventTarget = nullptr);
+  nsresult ResetPACThread();
+  nsresult ReloadNetworkPAC();
+
+  nsresult AsyncConfigureFromPAC(bool aForceReload, bool aResetPACThread);
+  nsresult OnAsyncGetPACURI(bool aForceReload, bool aResetPACThread,
+                            nsresult aResult, const nsACString &aUri);
+
+ public:
+  
+  
+  
+
+  struct HostInfoIP {
+    uint16_t family;
+    uint16_t mask_len;
+    PRIPv6Addr addr;  
+  };
+
+  struct HostInfoName {
+    char *host;
+    uint32_t host_len;
+  };
+
+ protected:
+  
+  struct HostInfo {
+    bool is_ipaddr;
+    int32_t port;
+    union {
+      HostInfoIP ip;
+      HostInfoName name;
     };
 
-protected:
-    friend class nsAsyncResolveRequest;
-    friend class TestProtocolProxyService_LoadHostFilters_Test; 
-
-    ~nsProtocolProxyService();
-
-    
-
-
-
-
-
-
-
-
-
-    void PrefsChanged(nsIPrefBranch *prefs, const char *name);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    const char * ExtractProxyInfo(const char *proxy,
-                                              uint32_t aResolveFlags,
-                                              nsProxyInfo **result);
-
-    
-
-
-
-
-
-    nsresult ConfigureFromPAC(const nsCString &pacURI, bool forceReload);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    void ProcessPACString(const nsCString &pacString,
-                                      uint32_t aResolveFlags,
-                                      nsIProxyInfo **result);
-
-    
-
-
-
-
-
-
-
-
-    void GetProxyKey(nsProxyInfo *pi, nsCString &result);
-
-    
-
-
-    uint32_t SecondsSinceSessionStart();
-
-    
-
-
-
-
-
-    void EnableProxy(nsProxyInfo *pi);
-
-    
-
-
-
-
-
-    void DisableProxy(nsProxyInfo *pi);
-
-    
-
-
-
-
-
-
-
-    bool IsProxyDisabled(nsProxyInfo *pi);
-
-    
-
-
-
-
-
-
-
-
-
-
-    nsresult GetProtocolInfo(nsIURI *uri, nsProtocolInfo *result);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    nsresult NewProxyInfo_Internal(const char *type,
-                                               const nsACString &host,
-                                               int32_t port,
-                                               const nsACString &username,
-                                               const nsACString &password,
-                                               uint32_t flags,
-                                               uint32_t timeout,
-                                               nsIProxyInfo *next,
-                                               uint32_t aResolveFlags,
-                                               nsIProxyInfo **result);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    nsresult Resolve_Internal(nsIChannel *channel,
-                              const nsProtocolInfo &info,
-                              uint32_t flags,
-                              bool *usePAC,
-                              nsIProxyInfo **result);
-
-    
-
-
-
-
-    void CopyFilters(nsTArray<RefPtr<FilterLink>> &aCopy);
-
-    
-
-
-
-
-    bool ApplyFilter(FilterLink const* filterLink,
-                     nsIChannel *channel,
-                     const nsProtocolInfo &info,
-                     nsCOMPtr<nsIProxyInfo> proxyInfo,
-                     nsIProxyProtocolFilterResult* callback);
-
-    
-
-
-
-
-
-
-
-
-    void PruneProxyInfo(const nsProtocolInfo &info,
-                        nsIProxyInfo **proxyInfo);
-
-    
-
-
-
-    void PruneProxyInfo(const nsProtocolInfo &info,
-                        nsCOMPtr<nsIProxyInfo> &proxyInfo)
-    {
-      nsIProxyInfo *pi = nullptr;
-      proxyInfo.swap(pi);
-      PruneProxyInfo(info, &pi);
-      proxyInfo.swap(pi);
+    HostInfo()
+        : is_ipaddr(false),
+          port(0) { 
     }
+    ~HostInfo() {
+      if (!is_ipaddr && name.host) free(name.host);
+    }
+  };
 
-    
+ private:
+  
+  nsresult InsertFilterLink(RefPtr<FilterLink> &&link);
+  nsresult RemoveFilterLink(nsISupports *givenObject);
 
+ protected:
+  
+  bool mFilterLocalHosts;
 
+  
+  nsTArray<nsAutoPtr<HostInfo>> mHostFiltersArray;
 
+  
+  nsTArray<RefPtr<FilterLink>> mFilters;
 
+  uint32_t mProxyConfig;
 
-    void LoadHostFilters(const nsACString& hostFilters);
+  nsCString mHTTPProxyHost;
+  int32_t mHTTPProxyPort;
 
-    
+  nsCString mFTPProxyHost;
+  int32_t mFTPProxyPort;
 
+  nsCString mHTTPSProxyHost;
+  int32_t mHTTPSProxyPort;
 
+  
+  
+  nsCString mSOCKSProxyTarget;
+  int32_t mSOCKSProxyPort;
+  int32_t mSOCKSProxyVersion;
+  bool mSOCKSProxyRemoteDNS;
+  bool mProxyOverTLS;
+  bool mWPADOverDHCPEnabled;
 
+  RefPtr<nsPACMan> mPACMan;  
+  nsCOMPtr<nsISystemProxySettings> mSystemProxySettings;
 
+  PRTime mSessionStart;
+  nsFailedProxyTable mFailedProxies;
+  int32_t mFailedProxyTimeout;
 
-
-
-
-
-    bool CanUseProxy(nsIURI *uri, int32_t defaultPort);
-
-    
-
-
-
-
-
-    void MaybeDisableDNSPrefetch(nsIProxyInfo *aProxy);
-
-private:
-    nsresult SetupPACThread(nsIEventTarget *mainThreadEventTarget = nullptr);
-    nsresult ResetPACThread();
-    nsresult ReloadNetworkPAC();
-
-    nsresult AsyncConfigureFromPAC(bool aForceReload, bool aResetPACThread);
-    nsresult OnAsyncGetPACURI(bool aForceReload,
-                              bool aResetPACThread,
-                              nsresult aResult,
-                              const nsACString& aUri);
-
-public:
-    
-    
-    
-
-    struct HostInfoIP {
-        uint16_t   family;
-        uint16_t   mask_len;
-        PRIPv6Addr addr; 
-    };
-
-    struct HostInfoName {
-        char    *host;
-        uint32_t host_len;
-    };
-
-protected:
-
-    
-    struct HostInfo {
-        bool    is_ipaddr;
-        int32_t port;
-        union {
-            HostInfoIP   ip;
-            HostInfoName name;
-        };
-
-        HostInfo()
-            : is_ipaddr(false)
-            , port(0)
-            {  }
-       ~HostInfo() {
-            if (!is_ipaddr && name.host)
-                free(name.host);
-        }
-    };
-
-private:
-    
-    nsresult InsertFilterLink(RefPtr<FilterLink>&& link);
-    nsresult RemoveFilterLink(nsISupports *givenObject);
-
-protected:
-    
-    bool mFilterLocalHosts;
-
-    
-    nsTArray<nsAutoPtr<HostInfo>> mHostFiltersArray;
-
-    
-    nsTArray<RefPtr<FilterLink>> mFilters;
-
-    uint32_t                     mProxyConfig;
-
-    nsCString                    mHTTPProxyHost;
-    int32_t                      mHTTPProxyPort;
-
-    nsCString                    mFTPProxyHost;
-    int32_t                      mFTPProxyPort;
-
-    nsCString                    mHTTPSProxyHost;
-    int32_t                      mHTTPSProxyPort;
-
-    
-    
-    nsCString                    mSOCKSProxyTarget;
-    int32_t                      mSOCKSProxyPort;
-    int32_t                      mSOCKSProxyVersion;
-    bool                         mSOCKSProxyRemoteDNS;
-    bool                         mProxyOverTLS;
-    bool                         mWPADOverDHCPEnabled;
-
-    RefPtr<nsPACMan>           mPACMan;  
-    nsCOMPtr<nsISystemProxySettings> mSystemProxySettings;
-
-    PRTime                       mSessionStart;
-    nsFailedProxyTable           mFailedProxies;
-    int32_t                      mFailedProxyTimeout;
-
-private:
-    nsresult AsyncResolveInternal(nsIChannel *channel, uint32_t flags,
-                                  nsIProtocolProxyCallback *callback,
-                                  nsICancelable **result,
-                                  bool isSyncOK,
-                                  nsIEventTarget *mainThreadEventTarget);
-    bool                          mIsShutdown;
-    nsCOMPtr<nsIEventTarget> mProxySettingTarget;
+ private:
+  nsresult AsyncResolveInternal(nsIChannel *channel, uint32_t flags,
+                                nsIProtocolProxyCallback *callback,
+                                nsICancelable **result, bool isSyncOK,
+                                nsIEventTarget *mainThreadEventTarget);
+  bool mIsShutdown;
+  nsCOMPtr<nsIEventTarget> mProxySettingTarget;
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(nsProtocolProxyService, NS_PROTOCOL_PROXY_SERVICE_IMPL_CID)
+NS_DEFINE_STATIC_IID_ACCESSOR(nsProtocolProxyService,
+                              NS_PROTOCOL_PROXY_SERVICE_IMPL_CID)
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

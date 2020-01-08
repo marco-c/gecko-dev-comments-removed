@@ -39,404 +39,388 @@ using namespace js;
 using JS::AutoStableStringChars;
 
 Compartment::Compartment(Zone* zone)
-  : zone_(zone),
-    runtime_(zone->runtimeFromAnyThread()),
-    crossCompartmentWrappers(0)
-{}
+    : zone_(zone),
+      runtime_(zone->runtimeFromAnyThread()),
+      crossCompartmentWrappers(0) {}
 
 #ifdef JSGC_HASH_TABLE_CHECKS
 
 namespace {
 struct CheckGCThingAfterMovingGCFunctor {
-    template <class T> void operator()(T* t) { CheckGCThingAfterMovingGC(*t); }
+  template <class T>
+  void operator()(T* t) {
+    CheckGCThingAfterMovingGC(*t);
+  }
 };
-} 
+}  
 
-void
-Compartment::checkWrapperMapAfterMovingGC()
-{
-    
+void Compartment::checkWrapperMapAfterMovingGC() {
+  
 
 
 
 
-    for (WrapperMap::Enum e(crossCompartmentWrappers); !e.empty(); e.popFront()) {
-        e.front().mutableKey().applyToWrapped(CheckGCThingAfterMovingGCFunctor());
-        e.front().mutableKey().applyToDebugger(CheckGCThingAfterMovingGCFunctor());
+  for (WrapperMap::Enum e(crossCompartmentWrappers); !e.empty(); e.popFront()) {
+    e.front().mutableKey().applyToWrapped(CheckGCThingAfterMovingGCFunctor());
+    e.front().mutableKey().applyToDebugger(CheckGCThingAfterMovingGCFunctor());
 
-        WrapperMap::Ptr ptr = crossCompartmentWrappers.lookup(e.front().key());
-        MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &e.front());
-    }
+    WrapperMap::Ptr ptr = crossCompartmentWrappers.lookup(e.front().key());
+    MOZ_RELEASE_ASSERT(ptr.found() && &*ptr == &e.front());
+  }
 }
 
-#endif 
+#endif  
 
-bool
-Compartment::putWrapper(JSContext* cx, const CrossCompartmentKey& wrapped,
-                        const js::Value& wrapper)
-{
-    MOZ_ASSERT(wrapped.is<JSString*>() == wrapper.isString());
-    MOZ_ASSERT_IF(!wrapped.is<JSString*>(), wrapper.isObject());
+bool Compartment::putWrapper(JSContext* cx, const CrossCompartmentKey& wrapped,
+                             const js::Value& wrapper) {
+  MOZ_ASSERT(wrapped.is<JSString*>() == wrapper.isString());
+  MOZ_ASSERT_IF(!wrapped.is<JSString*>(), wrapper.isObject());
 
-    if (!crossCompartmentWrappers.put(wrapped, wrapper)) {
-        ReportOutOfMemory(cx);
-        return false;
-    }
+  if (!crossCompartmentWrappers.put(wrapped, wrapper)) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
-static JSString*
-CopyStringPure(JSContext* cx, JSString* str)
-{
+static JSString* CopyStringPure(JSContext* cx, JSString* str) {
+  
+
+
+
+
+
+  size_t len = str->length();
+  JSString* copy;
+  if (str->isLinear()) {
     
-
-
-
-
-
-    size_t len = str->length();
-    JSString* copy;
-    if (str->isLinear()) {
-        
-        if (str->hasLatin1Chars()) {
-            JS::AutoCheckCannotGC nogc;
-            copy = NewStringCopyN<NoGC>(cx, str->asLinear().latin1Chars(nogc), len);
-        } else {
-            JS::AutoCheckCannotGC nogc;
-            copy = NewStringCopyNDontDeflate<NoGC>(cx, str->asLinear().twoByteChars(nogc), len);
-        }
-        if (copy) {
-            return copy;
-        }
-
-        AutoStableStringChars chars(cx);
-        if (!chars.init(cx, str)) {
-            return nullptr;
-        }
-
-        return chars.isLatin1()
-               ? NewStringCopyN<CanGC>(cx, chars.latin1Range().begin().get(), len)
-               : NewStringCopyNDontDeflate<CanGC>(cx, chars.twoByteRange().begin().get(), len);
-    }
-
     if (str->hasLatin1Chars()) {
-        UniquePtr<Latin1Char[], JS::FreePolicy> copiedChars = str->asRope().copyLatin1CharsZ(cx);
-        if (!copiedChars) {
-            return nullptr;
-        }
-
-        return NewString<CanGC>(cx, std::move(copiedChars), len);
+      JS::AutoCheckCannotGC nogc;
+      copy = NewStringCopyN<NoGC>(cx, str->asLinear().latin1Chars(nogc), len);
+    } else {
+      JS::AutoCheckCannotGC nogc;
+      copy = NewStringCopyNDontDeflate<NoGC>(
+          cx, str->asLinear().twoByteChars(nogc), len);
+    }
+    if (copy) {
+      return copy;
     }
 
-    UniqueTwoByteChars copiedChars = str->asRope().copyTwoByteCharsZ(cx);
+    AutoStableStringChars chars(cx);
+    if (!chars.init(cx, str)) {
+      return nullptr;
+    }
+
+    return chars.isLatin1() ? NewStringCopyN<CanGC>(
+                                  cx, chars.latin1Range().begin().get(), len)
+                            : NewStringCopyNDontDeflate<CanGC>(
+                                  cx, chars.twoByteRange().begin().get(), len);
+  }
+
+  if (str->hasLatin1Chars()) {
+    UniquePtr<Latin1Char[], JS::FreePolicy> copiedChars =
+        str->asRope().copyLatin1CharsZ(cx);
     if (!copiedChars) {
-        return nullptr;
+      return nullptr;
     }
 
-    return NewStringDontDeflate<CanGC>(cx, std::move(copiedChars), len);
+    return NewString<CanGC>(cx, std::move(copiedChars), len);
+  }
+
+  UniqueTwoByteChars copiedChars = str->asRope().copyTwoByteCharsZ(cx);
+  if (!copiedChars) {
+    return nullptr;
+  }
+
+  return NewStringDontDeflate<CanGC>(cx, std::move(copiedChars), len);
 }
 
-bool
-Compartment::wrap(JSContext* cx, MutableHandleString strp)
-{
-    MOZ_ASSERT(cx->compartment() == this);
+bool Compartment::wrap(JSContext* cx, MutableHandleString strp) {
+  MOZ_ASSERT(cx->compartment() == this);
 
-    
-    JSString* str = strp;
-    if (str->zoneFromAnyThread() == zone()) {
-        return true;
-    }
-
-    
-
-
-
-    if (str->isAtom()) {
-        cx->markAtom(&str->asAtom());
-        return true;
-    }
-
-    
-    RootedValue key(cx, StringValue(str));
-    if (WrapperMap::Ptr p = crossCompartmentWrappers.lookup(CrossCompartmentKey(key))) {
-        strp.set(p->value().get().toString());
-        return true;
-    }
-
-    
-    JSString* copy = CopyStringPure(cx, str);
-    if (!copy) {
-        return false;
-    }
-    if (!putWrapper(cx, CrossCompartmentKey(key), StringValue(copy))) {
-        return false;
-    }
-
-    strp.set(copy);
+  
+  JSString* str = strp;
+  if (str->zoneFromAnyThread() == zone()) {
     return true;
+  }
+
+  
+
+
+
+  if (str->isAtom()) {
+    cx->markAtom(&str->asAtom());
+    return true;
+  }
+
+  
+  RootedValue key(cx, StringValue(str));
+  if (WrapperMap::Ptr p =
+          crossCompartmentWrappers.lookup(CrossCompartmentKey(key))) {
+    strp.set(p->value().get().toString());
+    return true;
+  }
+
+  
+  JSString* copy = CopyStringPure(cx, str);
+  if (!copy) {
+    return false;
+  }
+  if (!putWrapper(cx, CrossCompartmentKey(key), StringValue(copy))) {
+    return false;
+  }
+
+  strp.set(copy);
+  return true;
 }
 
 #ifdef ENABLE_BIGINT
-bool
-Compartment::wrap(JSContext* cx, MutableHandleBigInt bi)
-{
-    MOZ_ASSERT(cx->compartment() == this);
+bool Compartment::wrap(JSContext* cx, MutableHandleBigInt bi) {
+  MOZ_ASSERT(cx->compartment() == this);
 
-    if (bi->zone() == cx->zone()) {
-        return true;
-    }
-
-    BigInt* copy = BigInt::copy(cx, bi);
-    if (!copy) {
-        return false;
-    }
-    bi.set(copy);
+  if (bi->zone() == cx->zone()) {
     return true;
+  }
+
+  BigInt* copy = BigInt::copy(cx, bi);
+  if (!copy) {
+    return false;
+  }
+  bi.set(copy);
+  return true;
 }
 #endif
 
-bool
-Compartment::getNonWrapperObjectForCurrentCompartment(JSContext* cx, MutableHandleObject obj)
-{
-    
-    MOZ_ASSERT(cx->global());
+bool Compartment::getNonWrapperObjectForCurrentCompartment(
+    JSContext* cx, MutableHandleObject obj) {
+  
+  MOZ_ASSERT(cx->global());
 
-    
-    
-    
-    
-    MOZ_ASSERT(!cx->runtime()->isSelfHostingZone(cx->zone()));
-    MOZ_ASSERT(!cx->runtime()->isSelfHostingZone(obj->zone()));
+  
+  
+  
+  
+  MOZ_ASSERT(!cx->runtime()->isSelfHostingZone(cx->zone()));
+  MOZ_ASSERT(!cx->runtime()->isSelfHostingZone(obj->zone()));
 
-    
-    
-    
-    if (obj->compartment() == this) {
-        obj.set(ToWindowProxyIfWindow(obj));
-        return true;
-    }
+  
+  
+  
+  if (obj->compartment() == this) {
+    obj.set(ToWindowProxyIfWindow(obj));
+    return true;
+  }
 
-    
-    
-    
-    
-    
-    RootedObject objectPassedToWrap(cx, obj);
-    obj.set(UncheckedUnwrap(obj,  true));
-    if (obj->compartment() == this) {
-        MOZ_ASSERT(!IsWindow(obj));
-        return true;
-    }
-
-    
-    
-    
-    
-    
-    
-    auto preWrap = cx->runtime()->wrapObjectCallbacks->preWrap;
-    if (!CheckSystemRecursionLimit(cx)) {
-        return false;
-    }
-    if (preWrap) {
-        preWrap(cx, cx->global(), obj, objectPassedToWrap, obj);
-        if (!obj) {
-            return false;
-        }
-    }
+  
+  
+  
+  
+  
+  RootedObject objectPassedToWrap(cx, obj);
+  obj.set(UncheckedUnwrap(obj,  true));
+  if (obj->compartment() == this) {
     MOZ_ASSERT(!IsWindow(obj));
-
     return true;
-}
+  }
 
-bool
-Compartment::getOrCreateWrapper(JSContext* cx, HandleObject existing, MutableHandleObject obj)
-{
-    
-    RootedValue key(cx, ObjectValue(*obj));
-    if (WrapperMap::Ptr p = crossCompartmentWrappers.lookup(CrossCompartmentKey(key))) {
-        obj.set(&p->value().get().toObject());
-        MOZ_ASSERT(obj->is<CrossCompartmentWrapperObject>());
-        return true;
-    }
-
-    
-    
-    ExposeObjectToActiveJS(obj);
-
-    
-    auto wrap = cx->runtime()->wrapObjectCallbacks->wrap;
-    RootedObject wrapper(cx, wrap(cx, existing, obj));
-    if (!wrapper) {
-        return false;
-    }
-
-    
-    
-    MOZ_ASSERT(Wrapper::wrappedObject(wrapper) == &key.get().toObject());
-
-    if (!putWrapper(cx, CrossCompartmentKey(key), ObjectValue(*wrapper))) {
-        
-        
-        
-        
-        
-        if (wrapper->is<CrossCompartmentWrapperObject>()) {
-            NukeCrossCompartmentWrapper(cx, wrapper);
-        }
-        return false;
-    }
-
-    obj.set(wrapper);
-    return true;
-}
-
-bool
-Compartment::wrap(JSContext* cx, MutableHandleObject obj)
-{
-    MOZ_ASSERT(cx->compartment() == this);
-
+  
+  
+  
+  
+  
+  
+  auto preWrap = cx->runtime()->wrapObjectCallbacks->preWrap;
+  if (!CheckSystemRecursionLimit(cx)) {
+    return false;
+  }
+  if (preWrap) {
+    preWrap(cx, cx->global(), obj, objectPassedToWrap, obj);
     if (!obj) {
-        return true;
+      return false;
     }
+  }
+  MOZ_ASSERT(!IsWindow(obj));
 
-    AutoDisableProxyCheck adpc;
+  return true;
+}
 
-    
-    
-    MOZ_ASSERT(JS::ObjectIsNotGray(obj));
-
-    
-    
-    if (!getNonWrapperObjectForCurrentCompartment(cx, obj)) {
-        return false;
-    }
-
-    
-    
-    if (obj->compartment() != this) {
-        if (!getOrCreateWrapper(cx, nullptr, obj)) {
-            return false;
-        }
-    }
-
-    
-    ExposeObjectToActiveJS(obj);
+bool Compartment::getOrCreateWrapper(JSContext* cx, HandleObject existing,
+                                     MutableHandleObject obj) {
+  
+  RootedValue key(cx, ObjectValue(*obj));
+  if (WrapperMap::Ptr p =
+          crossCompartmentWrappers.lookup(CrossCompartmentKey(key))) {
+    obj.set(&p->value().get().toObject());
+    MOZ_ASSERT(obj->is<CrossCompartmentWrapperObject>());
     return true;
+  }
+
+  
+  
+  ExposeObjectToActiveJS(obj);
+
+  
+  auto wrap = cx->runtime()->wrapObjectCallbacks->wrap;
+  RootedObject wrapper(cx, wrap(cx, existing, obj));
+  if (!wrapper) {
+    return false;
+  }
+
+  
+  
+  MOZ_ASSERT(Wrapper::wrappedObject(wrapper) == &key.get().toObject());
+
+  if (!putWrapper(cx, CrossCompartmentKey(key), ObjectValue(*wrapper))) {
+    
+    
+    
+    
+    
+    if (wrapper->is<CrossCompartmentWrapperObject>()) {
+      NukeCrossCompartmentWrapper(cx, wrapper);
+    }
+    return false;
+  }
+
+  obj.set(wrapper);
+  return true;
 }
 
-bool
-Compartment::rewrap(JSContext* cx, MutableHandleObject obj, HandleObject existingArg)
-{
-    MOZ_ASSERT(cx->compartment() == this);
-    MOZ_ASSERT(obj);
-    MOZ_ASSERT(existingArg);
-    MOZ_ASSERT(existingArg->compartment() == cx->compartment());
-    MOZ_ASSERT(IsDeadProxyObject(existingArg));
+bool Compartment::wrap(JSContext* cx, MutableHandleObject obj) {
+  MOZ_ASSERT(cx->compartment() == this);
 
-    AutoDisableProxyCheck adpc;
-
-    
-    
-    
-    RootedObject existing(cx, existingArg);
-    if (existing->hasStaticPrototype() ||
-        
-        existing->isCallable() ||
-        obj->isCallable())
-    {
-        existing.set(nullptr);
-    }
-
-    
-    
-    if (!getNonWrapperObjectForCurrentCompartment(cx, obj)) {
-        return false;
-    }
-
-    
-    
-    if (obj->compartment() == this) {
-        return true;
-    }
-
-    return getOrCreateWrapper(cx, existing, obj);
-}
-
-bool
-Compartment::wrap(JSContext* cx, MutableHandle<JS::PropertyDescriptor> desc)
-{
-    if (!wrap(cx, desc.object())) {
-        return false;
-    }
-
-    if (desc.hasGetterObject()) {
-        if (!wrap(cx, desc.getterObject())) {
-            return false;
-        }
-    }
-    if (desc.hasSetterObject()) {
-        if (!wrap(cx, desc.setterObject())) {
-            return false;
-        }
-    }
-
-    return wrap(cx, desc.value());
-}
-
-bool
-Compartment::wrap(JSContext* cx, MutableHandle<GCVector<Value>> vec)
-{
-    for (size_t i = 0; i < vec.length(); ++i) {
-        if (!wrap(cx, vec[i])) {
-            return false;
-        }
-    }
+  if (!obj) {
     return true;
-}
+  }
 
-void
-Compartment::traceOutgoingCrossCompartmentWrappers(JSTracer* trc)
-{
-    MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
-    MOZ_ASSERT(!zone()->isCollectingFromAnyThread() || trc->runtime()->gc.isHeapCompacting());
+  AutoDisableProxyCheck adpc;
 
-    for (NonStringWrapperEnum e(this); !e.empty(); e.popFront()) {
-        if (e.front().key().is<JSObject*>()) {
-            Value v = e.front().value().unbarrieredGet();
-            ProxyObject* wrapper = &v.toObject().as<ProxyObject>();
+  
+  
+  MOZ_ASSERT(JS::ObjectIsNotGray(obj));
 
-            
+  
+  
+  if (!getNonWrapperObjectForCurrentCompartment(cx, obj)) {
+    return false;
+  }
 
-
-
-            ProxyObject::traceEdgeToTarget(trc, wrapper);
-        }
+  
+  
+  if (obj->compartment() != this) {
+    if (!getOrCreateWrapper(cx, nullptr, obj)) {
+      return false;
     }
+  }
+
+  
+  ExposeObjectToActiveJS(obj);
+  return true;
 }
 
- void
-Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(JSTracer* trc)
-{
-    gcstats::AutoPhase ap(trc->runtime()->gc.stats(), gcstats::PhaseKind::MARK_CCWS);
-    MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
-    for (CompartmentsIter c(trc->runtime()); !c.done(); c.next()) {
-        if (!c->zone()->isCollecting()) {
-            c->traceOutgoingCrossCompartmentWrappers(trc);
-        }
+bool Compartment::rewrap(JSContext* cx, MutableHandleObject obj,
+                         HandleObject existingArg) {
+  MOZ_ASSERT(cx->compartment() == this);
+  MOZ_ASSERT(obj);
+  MOZ_ASSERT(existingArg);
+  MOZ_ASSERT(existingArg->compartment() == cx->compartment());
+  MOZ_ASSERT(IsDeadProxyObject(existingArg));
+
+  AutoDisableProxyCheck adpc;
+
+  
+  
+  
+  RootedObject existing(cx, existingArg);
+  if (existing->hasStaticPrototype() ||
+      
+      existing->isCallable() || obj->isCallable()) {
+    existing.set(nullptr);
+  }
+
+  
+  
+  if (!getNonWrapperObjectForCurrentCompartment(cx, obj)) {
+    return false;
+  }
+
+  
+  
+  if (obj->compartment() == this) {
+    return true;
+  }
+
+  return getOrCreateWrapper(cx, existing, obj);
+}
+
+bool Compartment::wrap(JSContext* cx,
+                       MutableHandle<JS::PropertyDescriptor> desc) {
+  if (!wrap(cx, desc.object())) {
+    return false;
+  }
+
+  if (desc.hasGetterObject()) {
+    if (!wrap(cx, desc.getterObject())) {
+      return false;
     }
-    Debugger::traceIncomingCrossCompartmentEdges(trc);
-}
-
-void
-Compartment::sweepAfterMinorGC(JSTracer* trc)
-{
-    crossCompartmentWrappers.sweepAfterMinorGC(trc);
-
-    for (RealmsInCompartmentIter r(this); !r.done(); r.next()) {
-        r->sweepAfterMinorGC();
+  }
+  if (desc.hasSetterObject()) {
+    if (!wrap(cx, desc.setterObject())) {
+      return false;
     }
+  }
+
+  return wrap(cx, desc.value());
+}
+
+bool Compartment::wrap(JSContext* cx, MutableHandle<GCVector<Value>> vec) {
+  for (size_t i = 0; i < vec.length(); ++i) {
+    if (!wrap(cx, vec[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void Compartment::traceOutgoingCrossCompartmentWrappers(JSTracer* trc) {
+  MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
+  MOZ_ASSERT(!zone()->isCollectingFromAnyThread() ||
+             trc->runtime()->gc.isHeapCompacting());
+
+  for (NonStringWrapperEnum e(this); !e.empty(); e.popFront()) {
+    if (e.front().key().is<JSObject*>()) {
+      Value v = e.front().value().unbarrieredGet();
+      ProxyObject* wrapper = &v.toObject().as<ProxyObject>();
+
+      
+
+
+
+      ProxyObject::traceEdgeToTarget(trc, wrapper);
+    }
+  }
+}
+
+ void Compartment::traceIncomingCrossCompartmentEdgesForZoneGC(
+    JSTracer* trc) {
+  gcstats::AutoPhase ap(trc->runtime()->gc.stats(),
+                        gcstats::PhaseKind::MARK_CCWS);
+  MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
+  for (CompartmentsIter c(trc->runtime()); !c.done(); c.next()) {
+    if (!c->zone()->isCollecting()) {
+      c->traceOutgoingCrossCompartmentWrappers(trc);
+    }
+  }
+  Debugger::traceIncomingCrossCompartmentEdges(trc);
+}
+
+void Compartment::sweepAfterMinorGC(JSTracer* trc) {
+  crossCompartmentWrappers.sweepAfterMinorGC(trc);
+
+  for (RealmsInCompartmentIter r(this); !r.done(); r.next()) {
+    r->sweepAfterMinorGC();
+  }
 }
 
 
@@ -444,77 +428,73 @@ Compartment::sweepAfterMinorGC(JSTracer* trc)
 
 
 
-void
-Compartment::sweepCrossCompartmentWrappers()
-{
-    crossCompartmentWrappers.sweep();
+void Compartment::sweepCrossCompartmentWrappers() {
+  crossCompartmentWrappers.sweep();
 }
 
 namespace {
 struct TraceRootFunctor {
-    JSTracer* trc;
-    const char* name;
-    TraceRootFunctor(JSTracer* trc, const char* name) : trc(trc), name(name) {}
-    template <class T> void operator()(T* t) { return TraceRoot(trc, t, name); }
+  JSTracer* trc;
+  const char* name;
+  TraceRootFunctor(JSTracer* trc, const char* name) : trc(trc), name(name) {}
+  template <class T>
+  void operator()(T* t) {
+    return TraceRoot(trc, t, name);
+  }
 };
 struct NeedsSweepUnbarrieredFunctor {
-    template <class T> bool operator()(T* t) const { return IsAboutToBeFinalizedUnbarriered(t); }
+  template <class T>
+  bool operator()(T* t) const {
+    return IsAboutToBeFinalizedUnbarriered(t);
+  }
 };
-} 
+}  
 
-void
-CrossCompartmentKey::trace(JSTracer* trc)
-{
-    applyToWrapped(TraceRootFunctor(trc, "CrossCompartmentKey::wrapped"));
-    applyToDebugger(TraceRootFunctor(trc, "CrossCompartmentKey::debugger"));
+void CrossCompartmentKey::trace(JSTracer* trc) {
+  applyToWrapped(TraceRootFunctor(trc, "CrossCompartmentKey::wrapped"));
+  applyToDebugger(TraceRootFunctor(trc, "CrossCompartmentKey::debugger"));
 }
 
-bool
-CrossCompartmentKey::needsSweep()
-{
-    return applyToWrapped(NeedsSweepUnbarrieredFunctor()) ||
-           applyToDebugger(NeedsSweepUnbarrieredFunctor());
+bool CrossCompartmentKey::needsSweep() {
+  return applyToWrapped(NeedsSweepUnbarrieredFunctor()) ||
+         applyToDebugger(NeedsSweepUnbarrieredFunctor());
 }
 
- void
-Compartment::fixupCrossCompartmentWrappersAfterMovingGC(JSTracer* trc)
-{
-    MOZ_ASSERT(trc->runtime()->gc.isHeapCompacting());
+ void Compartment::fixupCrossCompartmentWrappersAfterMovingGC(
+    JSTracer* trc) {
+  MOZ_ASSERT(trc->runtime()->gc.isHeapCompacting());
 
-    for (CompartmentsIter comp(trc->runtime()); !comp.done(); comp.next()) {
-        
-        
-        comp->sweepCrossCompartmentWrappers();
-        
-        
-        comp->traceOutgoingCrossCompartmentWrappers(trc);
-    }
-}
-
-void
-Compartment::fixupAfterMovingGC()
-{
-    MOZ_ASSERT(zone()->isGCCompacting());
-
-    for (RealmsInCompartmentIter r(this); !r.done(); r.next()) {
-        r->fixupAfterMovingGC();
-    }
-
+  for (CompartmentsIter comp(trc->runtime()); !comp.done(); comp.next()) {
     
     
-    sweepCrossCompartmentWrappers();
+    comp->sweepCrossCompartmentWrappers();
+    
+    
+    comp->traceOutgoingCrossCompartmentWrappers(trc);
+  }
 }
 
-void
-Compartment::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
-                                    size_t* compartmentObjects,
-                                    size_t* crossCompartmentWrappersTables,
-                                    size_t* compartmentsPrivateData)
-{
-    *compartmentObjects += mallocSizeOf(this);
-    *crossCompartmentWrappersTables += crossCompartmentWrappers.sizeOfExcludingThis(mallocSizeOf);
+void Compartment::fixupAfterMovingGC() {
+  MOZ_ASSERT(zone()->isGCCompacting());
 
-    if (auto callback = runtime_->sizeOfIncludingThisCompartmentCallback) {
-        *compartmentsPrivateData += callback(mallocSizeOf, this);
-    }
+  for (RealmsInCompartmentIter r(this); !r.done(); r.next()) {
+    r->fixupAfterMovingGC();
+  }
+
+  
+  
+  sweepCrossCompartmentWrappers();
+}
+
+void Compartment::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                                         size_t* compartmentObjects,
+                                         size_t* crossCompartmentWrappersTables,
+                                         size_t* compartmentsPrivateData) {
+  *compartmentObjects += mallocSizeOf(this);
+  *crossCompartmentWrappersTables +=
+      crossCompartmentWrappers.sizeOfExcludingThis(mallocSizeOf);
+
+  if (auto callback = runtime_->sizeOfIncludingThisCompartmentCallback) {
+    *compartmentsPrivateData += callback(mallocSizeOf, this);
+  }
 }

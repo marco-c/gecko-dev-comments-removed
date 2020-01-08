@@ -20,39 +20,27 @@
 
 
 
-template<typename NST>
+template <typename NST>
 class scoped_nsobject {
  public:
   typedef NST* element_type;
 
-  explicit scoped_nsobject(NST* object = nil)
-      : object_(object) {
-  }
+  explicit scoped_nsobject(NST* object = nil) : object_(object) {}
 
-  ~scoped_nsobject() {
-    [object_ release];
-  }
+  ~scoped_nsobject() { [object_ release]; }
 
   void reset(NST* object = nil) {
     [object_ release];
     object_ = object;
   }
 
-  bool operator==(NST* that) const {
-    return object_ == that;
-  }
+  bool operator==(NST* that) const { return object_ == that; }
 
-  bool operator!=(NST* that) const {
-    return object_ != that;
-  }
+  bool operator!=(NST* that) const { return object_ != that; }
 
-  operator NST*() const {
-    return object_;
-  }
+  operator NST*() const { return object_; }
 
-  NST* get() const {
-    return object_;
-  }
+  NST* get() const { return object_; }
 
   void swap(scoped_nsobject& that) {
     NST* temp = that.object_;

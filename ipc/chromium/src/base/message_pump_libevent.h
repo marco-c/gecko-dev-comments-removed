@@ -22,33 +22,32 @@ namespace base {
 
 class MessagePumpLibevent : public MessagePump {
  public:
-
   
   class FileDescriptorWatcher {
-    public:
-     FileDescriptorWatcher();
-     ~FileDescriptorWatcher();  
+   public:
+    FileDescriptorWatcher();
+    ~FileDescriptorWatcher();  
 
-     
-     
+    
+    
 
-     
-     
-     bool StopWatchingFileDescriptor();
+    
+    
+    bool StopWatchingFileDescriptor();
 
-    private:
-     
-     
-     void Init(event* e, bool is_persistent);
+   private:
+    
+    
+    void Init(event* e, bool is_persistent);
 
-     
-     event *ReleaseEvent();
-     friend class MessagePumpLibevent;
+    
+    event* ReleaseEvent();
+    friend class MessagePumpLibevent;
 
-    private:
-     bool is_persistent_;  
-     event* event_;
-     DISALLOW_COPY_AND_ASSIGN(FileDescriptorWatcher);
+   private:
+    bool is_persistent_;  
+    event* event_;
+    DISALLOW_COPY_AND_ASSIGN(FileDescriptorWatcher);
   };
 
   
@@ -81,12 +80,9 @@ class MessagePumpLibevent : public MessagePump {
   
   
   
-  bool WatchFileDescriptor(int fd,
-                           bool persistent,
-                           Mode mode,
-                           FileDescriptorWatcher *controller,
-                           Watcher *delegate);
-
+  bool WatchFileDescriptor(int fd, bool persistent, Mode mode,
+                           FileDescriptorWatcher* controller,
+                           Watcher* delegate);
 
   
   
@@ -97,16 +93,16 @@ class MessagePumpLibevent : public MessagePump {
   
   
   class SignalEvent {
-     friend class MessagePumpLibevent;
+    friend class MessagePumpLibevent;
 
-  public:
+   public:
     SignalEvent();
-    ~SignalEvent();             
+    ~SignalEvent();  
 
     
     bool StopCatching();
 
-  private:
+   private:
     void Init(event* e);
     event* ReleaseEvent();
 
@@ -116,7 +112,7 @@ class MessagePumpLibevent : public MessagePump {
   };
 
   class SignalWatcher {
-  public:
+   public:
     virtual ~SignalWatcher() {}
     
     
@@ -128,10 +124,7 @@ class MessagePumpLibevent : public MessagePump {
   
   
   
-  bool CatchSignal(int sig,
-                   SignalEvent* sigevent,
-                   SignalWatcher* delegate);
-
+  bool CatchSignal(int sig, SignalEvent* sigevent, SignalWatcher* delegate);
 
   
   virtual void Run(Delegate* delegate) override;
@@ -140,11 +133,9 @@ class MessagePumpLibevent : public MessagePump {
   virtual void ScheduleDelayedWork(const TimeTicks& delayed_work_time) override;
 
  protected:
-
   virtual ~MessagePumpLibevent();
 
  private:
-
   
   bool Init();
 
@@ -162,12 +153,10 @@ class MessagePumpLibevent : public MessagePump {
   event_base* event_base_;
 
   
-  static void OnLibeventNotification(int fd, short flags,
-                                     void* context);
+  static void OnLibeventNotification(int fd, short flags, void* context);
 
   
-  static void OnLibeventSignalNotification(int sig, short flags,
-                                           void* context);
+  static void OnLibeventSignalNotification(int sig, short flags, void* context);
 
   
   
@@ -186,19 +175,16 @@ class MessagePumpLibevent : public MessagePump {
 
 
 
-class LineWatcher : public MessagePumpLibevent::Watcher
-{
-public:
-  LineWatcher(char aTerminator, int aBufferSize) : mReceivedIndex(0),
-    mBufferSize(aBufferSize),
-    mTerminator(aTerminator)
-  {
+class LineWatcher : public MessagePumpLibevent::Watcher {
+ public:
+  LineWatcher(char aTerminator, int aBufferSize)
+      : mReceivedIndex(0), mBufferSize(aBufferSize), mTerminator(aTerminator) {
     mReceiveBuffer = mozilla::MakeUnique<char[]>(mBufferSize);
   }
 
   ~LineWatcher() {}
 
-protected:
+ protected:
   
 
 
@@ -206,7 +192,8 @@ protected:
   virtual void OnError() {}
   virtual void OnLineRead(int aFd, nsDependentCSubstring& aMessage) = 0;
   virtual void OnFileCanWriteWithoutBlocking(int ) override {}
-private:
+
+ private:
   void OnFileCanReadWithoutBlocking(int aFd) final;
 
   mozilla::UniquePtr<char[]> mReceiveBuffer;

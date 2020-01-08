@@ -30,18 +30,16 @@ class Promise;
 
 
 
-class LocalStorageManager2 final
-  : public nsIDOMStorageManager
-  , public nsILocalStorageManager
-{
-public:
+class LocalStorageManager2 final : public nsIDOMStorageManager,
+                                   public nsILocalStorageManager {
+ public:
   LocalStorageManager2();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMSTORAGEMANAGER
   NS_DECL_NSILOCALSTORAGEMANAGER
 
-private:
+ private:
   ~LocalStorageManager2();
 
   
@@ -50,20 +48,17 @@ private:
 
 
 
-  nsresult
-  StartRequest(Promise* aPromise,
-               const LSRequestParams& aParams);
+  nsresult StartRequest(Promise* aPromise, const LSRequestParams& aParams);
 
   
 
 
 
-  nsresult
-  StartSimpleRequest(Promise* aPromise,
-                     const LSSimpleRequestParams& aParams);
+  nsresult StartSimpleRequest(Promise* aPromise,
+                              const LSSimpleRequestParams& aParams);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

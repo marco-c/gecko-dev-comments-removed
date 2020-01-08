@@ -4,14 +4,14 @@
 
 
 
-#include <stdint.h>                     
-#include "ImageContainer.h"             
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
-#include "mozilla/ipc/Shmem.h"          
-#include "nsCOMPtr.h"                   
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
+#include <stdint.h>              
+#include "ImageContainer.h"      
+#include "mozilla/Attributes.h"  
+#include "mozilla/RefPtr.h"      
+#include "mozilla/ipc/Shmem.h"   
+#include "nsCOMPtr.h"            
+#include "nsDebug.h"             
+#include "nsISupportsImpl.h"     
 
 #ifndef MOZILLA_LAYERS_SHAREDPLANARYCBCRIMAGE_H
 #define MOZILLA_LAYERS_SHAREDPLANARYCBCRIMAGE_H
@@ -22,15 +22,14 @@ namespace layers {
 class ImageClient;
 class TextureClient;
 
-class SharedPlanarYCbCrImage : public PlanarYCbCrImage
-{
-public:
+class SharedPlanarYCbCrImage : public PlanarYCbCrImage {
+ public:
   explicit SharedPlanarYCbCrImage(ImageClient* aCompositable);
 
-protected:
+ protected:
   virtual ~SharedPlanarYCbCrImage();
 
-public:
+ public:
   TextureClient* GetTextureClient(KnowsCompositor* aForwarder) override;
   uint8_t* GetBuffer() const override;
 
@@ -42,19 +41,18 @@ public:
 
   bool IsValid() const override;
 
-  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override
-  {
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
 
-private:
+ private:
   RefPtr<TextureClient> mTextureClient;
   RefPtr<ImageClient> mCompositable;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

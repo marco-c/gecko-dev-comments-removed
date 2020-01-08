@@ -11,8 +11,7 @@ namespace widget {
  uint32_t nsAutoRollup::sCount = 0;
  StaticRefPtr<nsIContent> nsAutoRollup::sLastRollup;
 
-nsAutoRollup::nsAutoRollup()
-{
+nsAutoRollup::nsAutoRollup() {
   
   
   
@@ -20,36 +19,30 @@ nsAutoRollup::nsAutoRollup()
   sCount++;
 }
 
-nsAutoRollup::nsAutoRollup(nsIContent* aRollup)
-{
+nsAutoRollup::nsAutoRollup(nsIContent* aRollup) {
   MOZ_ASSERT(!sLastRollup);
   mWasClear = true;
   sCount++;
   SetLastRollup(aRollup);
 }
 
-nsAutoRollup::~nsAutoRollup()
-{
+nsAutoRollup::~nsAutoRollup() {
   if (sLastRollup && mWasClear) {
     sLastRollup = nullptr;
   }
   sCount--;
 }
 
- void
-nsAutoRollup::SetLastRollup(nsIContent* aLastRollup)
-{
+ void nsAutoRollup::SetLastRollup(nsIContent* aLastRollup) {
   
   MOZ_ASSERT(sCount);
 
   sLastRollup = aLastRollup;
 }
 
- nsIContent*
-nsAutoRollup::GetLastRollup()
-{
+ nsIContent* nsAutoRollup::GetLastRollup() {
   return sLastRollup.get();
 }
 
-} 
-} 
+}  
+}  

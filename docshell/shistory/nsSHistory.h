@@ -25,39 +25,33 @@ class nsISHEntry;
 
 class nsSHistory final : public mozilla::LinkedListElement<nsSHistory>,
                          public nsISHistory,
-                         public nsSupportsWeakReference
-{
-public:
-
+                         public nsSupportsWeakReference {
+ public:
   
-  class HistoryTracker final : public nsExpirationTracker<nsSHEntryShared, 3>
-  {
-  public:
-    explicit HistoryTracker(nsSHistory* aSHistory,
-                            uint32_t aTimeout,
+  class HistoryTracker final : public nsExpirationTracker<nsSHEntryShared, 3> {
+   public:
+    explicit HistoryTracker(nsSHistory* aSHistory, uint32_t aTimeout,
                             nsIEventTarget* aEventTarget)
-      : nsExpirationTracker(1000 * aTimeout / 2, "HistoryTracker", aEventTarget)
-    {
+        : nsExpirationTracker(1000 * aTimeout / 2, "HistoryTracker",
+                              aEventTarget) {
       MOZ_ASSERT(aSHistory);
       mSHistory = aSHistory;
     }
 
-  protected:
-    virtual void NotifyExpired(nsSHEntryShared* aObj) override
-    {
+   protected:
+    virtual void NotifyExpired(nsSHEntryShared* aObj) override {
       RemoveObject(aObj);
       mSHistory->EvictExpiredContentViewerForEntry(aObj);
     }
 
-  private:
+   private:
     
     
     nsSHistory* mSHistory;
   };
 
   
-  struct SwapEntriesData
-  {
+  struct SwapEntriesData {
     nsDocShell* ignoreShell;     
     nsISHEntry* destTreeRoot;    
     nsISHEntry* destTreeParent;  
@@ -89,10 +83,9 @@ public:
   
   
   
-  typedef nsresult(*WalkHistoryEntriesFunc)(nsISHEntry* aEntry,
-                                            nsDocShell* aShell,
-                                            int32_t aChildIndex,
-                                            void* aData);
+  typedef nsresult (*WalkHistoryEntriesFunc)(nsISHEntry* aEntry,
+                                             nsDocShell* aShell,
+                                             int32_t aChildIndex, void* aData);
 
   
   
@@ -102,17 +95,13 @@ public:
   
   
   
-  static nsresult CloneAndReplace(nsISHEntry* aSrcEntry,
-                                  nsDocShell* aSrcShell,
-                                  uint32_t aCloneID,
-                                  nsISHEntry* aReplaceEntry,
-                                  bool aCloneChildren,
-                                  nsISHEntry** aDestEntry);
+  static nsresult CloneAndReplace(nsISHEntry* aSrcEntry, nsDocShell* aSrcShell,
+                                  uint32_t aCloneID, nsISHEntry* aReplaceEntry,
+                                  bool aCloneChildren, nsISHEntry** aDestEntry);
 
   
   static nsresult CloneAndReplaceChild(nsISHEntry* aEntry, nsDocShell* aShell,
                                        int32_t aChildIndex, void* aData);
-
 
   
   static nsresult SetChildHistoryEntry(nsISHEntry* aEntry, nsDocShell* aShell,
@@ -126,7 +115,7 @@ public:
                                      WalkHistoryEntriesFunc aCallback,
                                      void* aData);
 
-private:
+ private:
   virtual ~nsSHistory();
   friend class nsSHistoryObserver;
 
@@ -151,8 +140,7 @@ private:
 
   
   
-  nsresult FindEntryForBFCache(nsIBFCacheEntry* aBFEntry,
-                               nsISHEntry** aResult,
+  nsresult FindEntryForBFCache(nsIBFCacheEntry* aBFEntry, nsISHEntry** aResult,
                                int32_t* aResultIndex);
 
   
@@ -177,9 +165,9 @@ private:
   
   mozilla::UniquePtr<HistoryTracker> mHistoryTracker;
 
-  nsTArray<nsCOMPtr<nsISHEntry>> mEntries; 
-  int32_t mIndex;           
-  int32_t mRequestedIndex;  
+  nsTArray<nsCOMPtr<nsISHEntry>> mEntries;  
+  int32_t mIndex;                           
+  int32_t mRequestedIndex;                  
 
   void WindowIndices(int32_t aIndex, int32_t* aOutStartIndex,
                      int32_t* aOutEndIndex);
@@ -197,9 +185,7 @@ private:
   static int32_t sHistoryMaxTotalViewers;
 };
 
-inline nsISupports*
-ToSupports(nsSHistory* aObj)
-{
+inline nsISupports* ToSupports(nsSHistory* aObj) {
   return static_cast<nsISHistory*>(aObj);
 }
 

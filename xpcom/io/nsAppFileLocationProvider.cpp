@@ -29,10 +29,9 @@
 
 
 
-
 #if defined(MOZ_WIDGET_COCOA)
 #define APP_REGISTRY_NAME NS_LITERAL_CSTRING("Application Registry")
-#define ESSENTIAL_FILES   NS_LITERAL_CSTRING("Essential Files")
+#define ESSENTIAL_FILES NS_LITERAL_CSTRING("Essential Files")
 #elif defined(XP_WIN)
 #define APP_REGISTRY_NAME NS_LITERAL_CSTRING("registry.dat")
 #else
@@ -43,36 +42,33 @@
 #define DEFAULT_PRODUCT_DIR NS_LITERAL_CSTRING(MOZ_USER_DIR)
 
 
-#define NS_ENV_PLUGINS_DIR          "EnvPlugins"    // env var MOZ_PLUGIN_PATH
-#define NS_USER_PLUGINS_DIR         "UserPlugins"
+#define NS_ENV_PLUGINS_DIR "EnvPlugins"  // env var MOZ_PLUGIN_PATH
+#define NS_USER_PLUGINS_DIR "UserPlugins"
 
 #ifdef MOZ_WIDGET_COCOA
-#define NS_MACOSX_USER_PLUGIN_DIR   "OSXUserPlugins"
-#define NS_MACOSX_LOCAL_PLUGIN_DIR  "OSXLocalPlugins"
+#define NS_MACOSX_USER_PLUGIN_DIR "OSXUserPlugins"
+#define NS_MACOSX_LOCAL_PLUGIN_DIR "OSXLocalPlugins"
 #elif XP_UNIX
-#define NS_SYSTEM_PLUGINS_DIR       "SysPlugins"
+#define NS_SYSTEM_PLUGINS_DIR "SysPlugins"
 #endif
 
-#define DEFAULTS_DIR_NAME           NS_LITERAL_CSTRING("defaults")
-#define DEFAULTS_PREF_DIR_NAME      NS_LITERAL_CSTRING("pref")
-#define RES_DIR_NAME                NS_LITERAL_CSTRING("res")
-#define CHROME_DIR_NAME             NS_LITERAL_CSTRING("chrome")
-#define PLUGINS_DIR_NAME            NS_LITERAL_CSTRING("plugins")
+#define DEFAULTS_DIR_NAME NS_LITERAL_CSTRING("defaults")
+#define DEFAULTS_PREF_DIR_NAME NS_LITERAL_CSTRING("pref")
+#define RES_DIR_NAME NS_LITERAL_CSTRING("res")
+#define CHROME_DIR_NAME NS_LITERAL_CSTRING("chrome")
+#define PLUGINS_DIR_NAME NS_LITERAL_CSTRING("plugins")
 
 
 
 
 
-nsAppFileLocationProvider::nsAppFileLocationProvider()
-{
-}
+nsAppFileLocationProvider::nsAppFileLocationProvider() {}
 
 
 
 
 
-NS_IMPL_ISUPPORTS(nsAppFileLocationProvider,
-                  nsIDirectoryServiceProvider,
+NS_IMPL_ISUPPORTS(nsAppFileLocationProvider, nsIDirectoryServiceProvider,
                   nsIDirectoryServiceProvider2)
 
 
@@ -81,13 +77,12 @@ NS_IMPL_ISUPPORTS(nsAppFileLocationProvider,
 
 NS_IMETHODIMP
 nsAppFileLocationProvider::GetFile(const char* aProp, bool* aPersistent,
-                                   nsIFile** aResult)
-{
+                                   nsIFile** aResult) {
   if (NS_WARN_IF(!aProp)) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  nsCOMPtr<nsIFile>  localFile;
+  nsCOMPtr<nsIFile> localFile;
   nsresult rv = NS_ERROR_FAILURE;
 
   *aResult = nullptr;
@@ -158,8 +153,10 @@ nsAppFileLocationProvider::GetFile(const char* aProp, bool* aPersistent,
   }
 #else
   else if (nsCRT::strcmp(aProp, NS_ENV_PLUGINS_DIR) == 0) {
-    NS_ERROR("Don't use nsAppFileLocationProvider::GetFile(NS_ENV_PLUGINS_DIR, ...). "
-             "Use nsAppFileLocationProvider::GetFiles(...).");
+    NS_ERROR(
+        "Don't use nsAppFileLocationProvider::GetFile(NS_ENV_PLUGINS_DIR, "
+        "...). "
+        "Use nsAppFileLocationProvider::GetFiles(...).");
     const char* pathVar = PR_GetEnv("MOZ_PLUGIN_PATH");
     if (pathVar && *pathVar)
       rv = NS_NewNativeLocalFile(nsDependentCString(pathVar), true,
@@ -179,14 +176,14 @@ nsAppFileLocationProvider::GetFile(const char* aProp, bool* aPersistent,
 #ifdef ENABLE_SYSTEM_EXTENSION_DIRS
     static const char* const sysLPlgDir =
 #if defined(HAVE_USR_LIB64_DIR) && defined(__LP64__)
-      "/usr/lib64/mozilla/plugins";
-#elif defined(__OpenBSD__) || defined (__FreeBSD__)
-      "/usr/local/lib/mozilla/plugins";
+        "/usr/lib64/mozilla/plugins";
+#elif defined(__OpenBSD__) || defined(__FreeBSD__)
+        "/usr/local/lib/mozilla/plugins";
 #else
-      "/usr/lib/mozilla/plugins";
+        "/usr/lib/mozilla/plugins";
 #endif
-    rv = NS_NewNativeLocalFile(nsDependentCString(sysLPlgDir),
-                               false, getter_AddRefs(localFile));
+    rv = NS_NewNativeLocalFile(nsDependentCString(sysLPlgDir), false,
+                               getter_AddRefs(localFile));
 #else
     rv = NS_ERROR_FAILURE;
 #endif
@@ -207,10 +204,7 @@ nsAppFileLocationProvider::GetFile(const char* aProp, bool* aPersistent,
   return rv;
 }
 
-
-nsresult
-nsAppFileLocationProvider::CloneMozBinDirectory(nsIFile** aLocalFile)
-{
+nsresult nsAppFileLocationProvider::CloneMozBinDirectory(nsIFile** aLocalFile) {
   if (NS_WARN_IF(!aLocalFile)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -221,14 +215,15 @@ nsAppFileLocationProvider::CloneMozBinDirectory(nsIFile** aLocalFile)
     
     
     
-    nsCOMPtr<nsIProperties>
-    directoryService(do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv));
+    nsCOMPtr<nsIProperties> directoryService(
+        do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv));
     if (NS_FAILED(rv)) {
       return rv;
     }
 
-    rv = directoryService->Get(NS_XPCOM_CURRENT_PROCESS_DIR, NS_GET_IID(nsIFile),
-                               getter_AddRefs(mMozBinDirectory));
+    rv =
+        directoryService->Get(NS_XPCOM_CURRENT_PROCESS_DIR, NS_GET_IID(nsIFile),
+                              getter_AddRefs(mMozBinDirectory));
     if (NS_FAILED(rv)) {
       rv = directoryService->Get(NS_OS_CURRENT_PROCESS_DIR, NS_GET_IID(nsIFile),
                                  getter_AddRefs(mMozBinDirectory));
@@ -256,10 +251,8 @@ nsAppFileLocationProvider::CloneMozBinDirectory(nsIFile** aLocalFile)
 
 
 
-nsresult
-nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
-                                               bool aLocal)
-{
+nsresult nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
+                                                        bool aLocal) {
   if (NS_WARN_IF(!aLocalFile)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -270,8 +263,8 @@ nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
 
 #if defined(MOZ_WIDGET_COCOA)
   FSRef fsRef;
-  OSType folderType = aLocal ? (OSType)kCachedDataFolderType :
-                               (OSType)kDomainLibraryFolderType;
+  OSType folderType =
+      aLocal ? (OSType)kCachedDataFolderType : (OSType)kDomainLibraryFolderType;
   OSErr err = ::FSFindFolder(kUserDomain, folderType, kCreateFolder, &fsRef);
   if (err) {
     return NS_ERROR_FAILURE;
@@ -287,12 +280,13 @@ nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
   }
 #elif defined(XP_WIN)
   nsCOMPtr<nsIProperties> directoryService =
-    do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
+      do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID, &rv);
   if (NS_FAILED(rv)) {
     return rv;
   }
   const char* prop = aLocal ? NS_WIN_LOCAL_APPDATA_DIR : NS_WIN_APPDATA_DIR;
-  rv = directoryService->Get(prop, NS_GET_IID(nsIFile), getter_AddRefs(localDir));
+  rv = directoryService->Get(prop, NS_GET_IID(nsIFile),
+                             getter_AddRefs(localDir));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -333,10 +327,8 @@ nsAppFileLocationProvider::GetProductDirectory(nsIFile** aLocalFile,
 
 
 
-nsresult
-nsAppFileLocationProvider::GetDefaultUserProfileRoot(nsIFile** aLocalFile,
-                                                     bool aLocal)
-{
+nsresult nsAppFileLocationProvider::GetDefaultUserProfileRoot(
+    nsIFile** aLocalFile, bool aLocal) {
   if (NS_WARN_IF(!aLocalFile)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -375,29 +367,24 @@ nsAppFileLocationProvider::GetDefaultUserProfileRoot(nsIFile** aLocalFile,
 
 
 
-class nsAppDirectoryEnumerator : public nsSimpleEnumerator
-{
-public:
-
+class nsAppDirectoryEnumerator : public nsSimpleEnumerator {
+ public:
   
 
 
 
   nsAppDirectoryEnumerator(nsIDirectoryServiceProvider* aProvider,
-                           const char* aKeyList[]) :
-    mProvider(aProvider),
-    mCurrentKey(aKeyList)
-  {
-  }
+                           const char* aKeyList[])
+      : mProvider(aProvider), mCurrentKey(aKeyList) {}
 
   const nsID& DefaultInterface() override { return NS_GET_IID(nsIFile); }
 
-  NS_IMETHOD HasMoreElements(bool* aResult) override
-  {
+  NS_IMETHOD HasMoreElements(bool* aResult) override {
     while (!mNext && *mCurrentKey) {
       bool dontCare;
       nsCOMPtr<nsIFile> testFile;
-      (void)mProvider->GetFile(*mCurrentKey++, &dontCare, getter_AddRefs(testFile));
+      (void)mProvider->GetFile(*mCurrentKey++, &dontCare,
+                               getter_AddRefs(testFile));
       
       bool exists;
       if (testFile && NS_SUCCEEDED(testFile->Exists(&exists)) && exists) {
@@ -408,8 +395,7 @@ public:
     return NS_OK;
   }
 
-  NS_IMETHOD GetNext(nsISupports** aResult) override
-  {
+  NS_IMETHOD GetNext(nsISupports** aResult) override {
     if (NS_WARN_IF(!aResult)) {
       return NS_ERROR_INVALID_ARG;
     }
@@ -428,7 +414,7 @@ public:
     return *aResult ? NS_OK : NS_ERROR_FAILURE;
   }
 
-protected:
+ protected:
   nsCOMPtr<nsIDirectoryServiceProvider> mProvider;
   const char** mCurrentKey;
   nsCOMPtr<nsIFile> mNext;
@@ -443,12 +429,10 @@ protected:
 #define PATH_SEPARATOR ':'
 #endif
 
-class nsPathsDirectoryEnumerator final
-  : public nsAppDirectoryEnumerator
-{
+class nsPathsDirectoryEnumerator final : public nsAppDirectoryEnumerator {
   ~nsPathsDirectoryEnumerator() {}
 
-public:
+ public:
   
 
 
@@ -456,14 +440,11 @@ public:
 
 
   nsPathsDirectoryEnumerator(nsIDirectoryServiceProvider* aProvider,
-                             const char* aKeyList[]) :
-    nsAppDirectoryEnumerator(aProvider, aKeyList + 1),
-    mEndPath(aKeyList[0])
-  {
-  }
+                             const char* aKeyList[])
+      : nsAppDirectoryEnumerator(aProvider, aKeyList + 1),
+        mEndPath(aKeyList[0]) {}
 
-  NS_IMETHOD HasMoreElements(bool* aResult) override
-  {
+  NS_IMETHOD HasMoreElements(bool* aResult) override {
     if (mEndPath)
       while (!mNext && *mEndPath) {
         const char* pathVar = mEndPath;
@@ -478,17 +459,14 @@ public:
         } while (*mEndPath && *mEndPath != PATH_SEPARATOR);
 
         nsCOMPtr<nsIFile> localFile;
-        NS_NewNativeLocalFile(Substring(pathVar, mEndPath),
-                              true,
+        NS_NewNativeLocalFile(Substring(pathVar, mEndPath), true,
                               getter_AddRefs(localFile));
         if (*mEndPath == PATH_SEPARATOR) {
           ++mEndPath;
         }
         
         bool exists;
-        if (localFile &&
-            NS_SUCCEEDED(localFile->Exists(&exists)) &&
-            exists) {
+        if (localFile && NS_SUCCEEDED(localFile->Exists(&exists)) && exists) {
           mNext = localFile;
         }
       }
@@ -501,14 +479,13 @@ public:
     return NS_OK;
   }
 
-protected:
+ protected:
   const char* mEndPath;
 };
 
 NS_IMETHODIMP
 nsAppFileLocationProvider::GetFiles(const char* aProp,
-                                    nsISimpleEnumerator** aResult)
-{
+                                    nsISimpleEnumerator** aResult) {
   if (NS_WARN_IF(!aResult)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -517,18 +494,17 @@ nsAppFileLocationProvider::GetFiles(const char* aProp,
 
   if (!nsCRT::strcmp(aProp, NS_APP_PLUGINS_DIR_LIST)) {
 #ifdef MOZ_WIDGET_COCOA
-    static const char* keys[] = {
-      NS_APP_PLUGINS_DIR,
-      NS_MACOSX_USER_PLUGIN_DIR,
-      NS_MACOSX_LOCAL_PLUGIN_DIR,
-      nullptr
-    };
+    static const char* keys[] = {NS_APP_PLUGINS_DIR, NS_MACOSX_USER_PLUGIN_DIR,
+                                 NS_MACOSX_LOCAL_PLUGIN_DIR, nullptr};
     *aResult = new nsAppDirectoryEnumerator(this, keys);
 #else
 #ifdef XP_UNIX
-    static const char* keys[] = { nullptr, NS_USER_PLUGINS_DIR, NS_APP_PLUGINS_DIR, NS_SYSTEM_PLUGINS_DIR, nullptr };
+    static const char* keys[] = {nullptr, NS_USER_PLUGINS_DIR,
+                                 NS_APP_PLUGINS_DIR, NS_SYSTEM_PLUGINS_DIR,
+                                 nullptr};
 #else
-    static const char* keys[] = { nullptr, NS_USER_PLUGINS_DIR, NS_APP_PLUGINS_DIR, nullptr };
+    static const char* keys[] = {nullptr, NS_USER_PLUGINS_DIR,
+                                 NS_APP_PLUGINS_DIR, nullptr};
 #endif
     if (!keys[0] && !(keys[0] = PR_GetEnv("MOZ_PLUGIN_PATH"))) {
       static const char nullstr = 0;

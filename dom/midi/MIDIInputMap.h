@@ -18,26 +18,22 @@ namespace dom {
 
 
 
-class MIDIInputMap final : public nsISupports,
-                           public nsWrapperCache
-{
-public:
+class MIDIInputMap final : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(MIDIInputMap)
-  nsPIDOMWindowInner*
-  GetParentObject() const
-  {
-    return mParent;
-  }
+  nsPIDOMWindowInner* GetParentObject() const { return mParent; }
 
   explicit MIDIInputMap(nsPIDOMWindowInner* aParent);
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-private:
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
+
+ private:
   ~MIDIInputMap() = default;
   nsCOMPtr<nsPIDOMWindowInner> mParent;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -24,18 +24,13 @@ using namespace mozilla::gfx;
 #define GFX_ARGB32_OFFSET_B 0
 #endif
 
-
-void
-ComputesRGBLuminanceMask_NEON(const uint8_t *aSourceData,
-                              int32_t aSourceStride,
-                              uint8_t *aDestData,
-                              int32_t aDestStride,
-                              const IntSize &aSize,
-                              float aOpacity)
-{
-  int32_t redFactor = 55 * aOpacity; 
-  int32_t greenFactor = 183 * aOpacity; 
-  int32_t blueFactor = 18 * aOpacity; 
+void ComputesRGBLuminanceMask_NEON(const uint8_t *aSourceData,
+                                   int32_t aSourceStride, uint8_t *aDestData,
+                                   int32_t aDestStride, const IntSize &aSize,
+                                   float aOpacity) {
+  int32_t redFactor = 55 * aOpacity;     
+  int32_t greenFactor = 183 * aOpacity;  
+  int32_t blueFactor = 18 * aOpacity;    
   const uint8_t *sourcePixel = aSourceData;
   int32_t sourceOffset = aSourceStride - 4 * aSize.width;
   uint8_t *destPixel = aDestData;
@@ -54,14 +49,18 @@ ComputesRGBLuminanceMask_NEON(const uint8_t *aSourceData,
   for (int32_t y = 0; y < aSize.height; y++) {
     
     for (int32_t x = 0; x < roundedWidth; x += 8) {
-      uint8x8x4_t argb  = vld4_u8(sourcePixel);
-      temp = vmull_u8(argb.val[GFX_ARGB32_OFFSET_R], redVector); 
-      temp = vmlal_u8(temp, argb.val[GFX_ARGB32_OFFSET_G], greenVector); 
-      temp = vmlal_u8(temp, argb.val[GFX_ARGB32_OFFSET_B], blueVector); 
-      gray = vshrn_n_u16(temp, 8); 
+      uint8x8x4_t argb = vld4_u8(sourcePixel);
+      temp = vmull_u8(argb.val[GFX_ARGB32_OFFSET_R],
+                      redVector);  
+      temp = vmlal_u8(temp, argb.val[GFX_ARGB32_OFFSET_G],
+                      greenVector);  
+      temp = vmlal_u8(temp, argb.val[GFX_ARGB32_OFFSET_B],
+                      blueVector);  
+      gray = vshrn_n_u16(temp, 8);  
 
       
-      uint8x8_t alphaVector = vtst_u8(argb.val[GFX_ARGB32_OFFSET_A], fullBitVector);
+      uint8x8_t alphaVector =
+          vtst_u8(argb.val[GFX_ARGB32_OFFSET_A], fullBitVector);
       gray = vmul_u8(gray, vand_u8(alphaVector, oneVector));
 
       
@@ -73,9 +72,10 @@ ComputesRGBLuminanceMask_NEON(const uint8_t *aSourceData,
     
     for (int32_t x = 0; x < remainderWidth; x++) {
       if (sourcePixel[GFX_ARGB32_OFFSET_A] > 0) {
-        *destPixel = (redFactor * sourcePixel[GFX_ARGB32_OFFSET_R]+
+        *destPixel = (redFactor * sourcePixel[GFX_ARGB32_OFFSET_R] +
                       greenFactor * sourcePixel[GFX_ARGB32_OFFSET_G] +
-                      blueFactor * sourcePixel[GFX_ARGB32_OFFSET_B]) >> 8;
+                      blueFactor * sourcePixel[GFX_ARGB32_OFFSET_B]) >>
+                     8;
       } else {
         *destPixel = 0;
       }
@@ -86,4 +86,3 @@ ComputesRGBLuminanceMask_NEON(const uint8_t *aSourceData,
     destPixel += destOffset;
   }
 }
-

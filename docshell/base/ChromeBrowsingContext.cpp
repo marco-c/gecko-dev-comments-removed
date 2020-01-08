@@ -15,9 +15,8 @@ ChromeBrowsingContext::ChromeBrowsingContext(BrowsingContext* aParent,
                                              uint64_t aBrowsingContextId,
                                              uint64_t aProcessId,
                                              BrowsingContext::Type aType)
-  : BrowsingContext(aParent, aOpener, aName, aBrowsingContextId, aType)
-  , mProcessId(aProcessId)
-{
+    : BrowsingContext(aParent, aOpener, aName, aBrowsingContextId, aType),
+      mProcessId(aProcessId) {
   
   
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
@@ -28,9 +27,7 @@ ChromeBrowsingContext::ChromeBrowsingContext(BrowsingContext* aParent,
 
 
 
- void
-ChromeBrowsingContext::CleanupContexts(uint64_t aProcessId)
-{
+ void ChromeBrowsingContext::CleanupContexts(uint64_t aProcessId) {
   nsTArray<RefPtr<BrowsingContext>> roots;
   BrowsingContext::GetRootBrowsingContexts(roots);
 
@@ -41,26 +38,23 @@ ChromeBrowsingContext::CleanupContexts(uint64_t aProcessId)
   }
 }
 
- already_AddRefed<ChromeBrowsingContext>
-ChromeBrowsingContext::Get(uint64_t aId)
-{
+ already_AddRefed<ChromeBrowsingContext> ChromeBrowsingContext::Get(
+    uint64_t aId) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   return BrowsingContext::Get(aId).downcast<ChromeBrowsingContext>();
 }
 
- ChromeBrowsingContext*
-ChromeBrowsingContext::Cast(BrowsingContext* aContext)
-{
+ ChromeBrowsingContext* ChromeBrowsingContext::Cast(
+    BrowsingContext* aContext) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   return static_cast<ChromeBrowsingContext*>(aContext);
 }
 
- const ChromeBrowsingContext*
-ChromeBrowsingContext::Cast(const BrowsingContext* aContext)
-{
+ const ChromeBrowsingContext* ChromeBrowsingContext::Cast(
+    const BrowsingContext* aContext) {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   return static_cast<const ChromeBrowsingContext*>(aContext);
 }
 
-} 
-} 
+}  
+}  

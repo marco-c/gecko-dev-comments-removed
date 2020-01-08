@@ -12,22 +12,16 @@
 namespace mozilla {
 namespace dom {
 
-class SVGAnimatedString : public nsISupports,
-                          public nsWrapperCache
-{
-public:
+class SVGAnimatedString : public nsISupports, public nsWrapperCache {
+ public:
   explicit SVGAnimatedString(nsSVGElement* aSVGElement)
-    : mSVGElement(aSVGElement)
-  {
-  }
+      : mSVGElement(aSVGElement) {}
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   
-  nsSVGElement* GetParentObject() const
-  {
-    return mSVGElement;
-  }
+  nsSVGElement* GetParentObject() const { return mSVGElement; }
 
   virtual void GetBaseVal(nsAString& aResult) = 0;
   virtual void SetBaseVal(const nsAString& aValue) = 0;
@@ -36,7 +30,7 @@ public:
   RefPtr<nsSVGElement> mSVGElement;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

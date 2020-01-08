@@ -19,11 +19,8 @@
 
 class nsAtom;
 
-typedef void
-(*NSPropertyFunc)(void           *aObject,
-                  nsAtom        *aPropertyName,
-                  void           *aPropertyValue,
-                  void           *aData);
+typedef void (*NSPropertyFunc)(void* aObject, nsAtom* aPropertyName,
+                               void* aPropertyValue, void* aData);
 
 
 
@@ -35,9 +32,8 @@ typedef NSPropertyFunc NSPropertyDtorFunc;
 class nsINode;
 class nsIFrame;
 
-class nsPropertyOwner
-{
-public:
+class nsPropertyOwner {
+ public:
   nsPropertyOwner(const nsPropertyOwner& aOther) : mObject(aOther.mObject) {}
 
   
@@ -49,21 +45,18 @@ public:
   operator const void*() { return mObject; }
   const void* get() { return mObject; }
 
-private:
+ private:
   const void* mObject;
 };
 
-class nsPropertyTable
-{
+class nsPropertyTable {
  public:
   
 
 
 
-  void* GetProperty(const nsPropertyOwner& aObject,
-                    const nsAtom *aPropertyName,
-                    nsresult   *aResult = nullptr)
-  {
+  void* GetProperty(const nsPropertyOwner& aObject, const nsAtom* aPropertyName,
+                    nsresult* aResult = nullptr) {
     return GetPropertyInternal(aObject, aPropertyName, false, aResult);
   }
 
@@ -82,15 +75,11 @@ class nsPropertyTable
 
 
 
-  nsresult SetProperty(const nsPropertyOwner& aObject,
-                       nsAtom* aPropertyName,
-                       void* aPropertyValue,
-                       NSPropertyDtorFunc aDtor,
-                       void* aDtorData,
-                       bool aTransfer = false)
-  {
-    return SetPropertyInternal(aObject, aPropertyName, aPropertyValue,
-                               aDtor, aDtorData, aTransfer);
+  nsresult SetProperty(const nsPropertyOwner& aObject, nsAtom* aPropertyName,
+                       void* aPropertyValue, NSPropertyDtorFunc aDtor,
+                       void* aDtorData, bool aTransfer = false) {
+    return SetPropertyInternal(aObject, aPropertyName, aPropertyValue, aDtor,
+                               aDtorData, aTransfer);
   }
 
   
@@ -106,8 +95,7 @@ class nsPropertyTable
 
   void* UnsetProperty(const nsPropertyOwner& aObject,
                       const nsAtom* aPropertyName,
-                      nsresult* aStatus = nullptr)
-  {
+                      nsresult* aStatus = nullptr) {
     return GetPropertyInternal(aObject, aPropertyName, true, aStatus);
   }
 
@@ -132,14 +120,15 @@ class nsPropertyTable
 
 
 
-  void Enumerate(nsPropertyOwner aObject, NSPropertyFunc aCallback, void* aData);
+  void Enumerate(nsPropertyOwner aObject, NSPropertyFunc aCallback,
+                 void* aData);
 
   
 
 
 
 
-  void EnumerateAll(NSPropertyFunc aCallback, void *aData);
+  void EnumerateAll(NSPropertyFunc aCallback, void* aData);
 
   
 
@@ -148,17 +137,15 @@ class nsPropertyTable
   void DeleteAllProperties();
 
   nsPropertyTable() : mPropertyList(nullptr) {}
-  ~nsPropertyTable() {
-    DeleteAllProperties();
-  }
+  ~nsPropertyTable() { DeleteAllProperties(); }
 
   
 
 
 
 
-  static void SupportsDtorFunc(void *aObject, nsAtom *aPropertyName,
-                               void *aPropertyValue, void *aData);
+  static void SupportsDtorFunc(void* aObject, nsAtom* aPropertyName,
+                               void* aPropertyValue, void* aData);
 
   class PropertyList;
 
@@ -169,16 +156,12 @@ class nsPropertyTable
   void DestroyPropertyList();
   PropertyList* GetPropertyListFor(const nsAtom* aPropertyName) const;
   void* GetPropertyInternal(nsPropertyOwner aObject,
-                            const nsAtom* aPropertyName,
-                            bool aRemove,
+                            const nsAtom* aPropertyName, bool aRemove,
                             nsresult* aStatus);
-  nsresult SetPropertyInternal(nsPropertyOwner aObject,
-                               nsAtom* aPropertyName,
-                               void* aPropertyValue,
-                               NSPropertyDtorFunc  aDtor,
-                               void* aDtorData,
-                               bool aTransfer);
+  nsresult SetPropertyInternal(nsPropertyOwner aObject, nsAtom* aPropertyName,
+                               void* aPropertyValue, NSPropertyDtorFunc aDtor,
+                               void* aDtorData, bool aTransfer);
 
-  PropertyList *mPropertyList;
+  PropertyList* mPropertyList;
 };
 #endif

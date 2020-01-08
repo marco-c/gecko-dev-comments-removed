@@ -29,7 +29,7 @@ using namespace mozilla;
 static LazyLogModule sFuzzyfoxLog("Fuzzyfox");
 
 #define US_TO_NS(x) ((x)*1000)
-#define NS_TO_US(x) ((x)/1000)
+#define NS_TO_US(x) ((x) / 1000)
 
 #ifdef LOG
 #undef LOG
@@ -37,19 +37,17 @@ static LazyLogModule sFuzzyfoxLog("Fuzzyfox");
 
 #define LOG(level, args) MOZ_LOG(sFuzzyfoxLog, mozilla::LogLevel::level, args)
 
-#define FUZZYFOX_ENABLED_PREF             "privacy.fuzzyfox.enabled"
-#define FUZZYFOX_ENABLED_PREF_DEFAULT     false
-#define FUZZYFOX_CLOCKGRAIN_PREF          "privacy.fuzzyfox.clockgrainus"
-#define FUZZYFOX_CLOCKGRAIN_PREF_DEFAULT  100
+#define FUZZYFOX_ENABLED_PREF "privacy.fuzzyfox.enabled"
+#define FUZZYFOX_ENABLED_PREF_DEFAULT false
+#define FUZZYFOX_CLOCKGRAIN_PREF "privacy.fuzzyfox.clockgrainus"
+#define FUZZYFOX_CLOCKGRAIN_PREF_DEFAULT 100
 
 static bool sFuzzyfoxInitializing;
 Atomic<uint32_t, Relaxed> Fuzzyfox::sFuzzyfoxClockGrain;
 
 NS_IMPL_ISUPPORTS_INHERITED(Fuzzyfox, Runnable, nsIObserver)
 
- void
-Fuzzyfox::Start()
-{
+ void Fuzzyfox::Start() {
   MOZ_ASSERT(NS_IsMainThread());
 
   RefPtr<Fuzzyfox> r = new Fuzzyfox();
@@ -57,12 +55,11 @@ Fuzzyfox::Start()
 }
 
 Fuzzyfox::Fuzzyfox()
-  : Runnable("Fuzzyfox")
-  , mSanityCheck(false)
-  , mStartTime(0)
-  , mDuration(PickDuration())
-  , mTickType(eUptick)
-{
+    : Runnable("Fuzzyfox"),
+      mSanityCheck(false),
+      mStartTime(0),
+      mDuration(PickDuration()),
+      mTickType(eUptick) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -72,11 +69,11 @@ Fuzzyfox::Fuzzyfox()
                                      FUZZYFOX_CLOCKGRAIN_PREF,
                                      FUZZYFOX_CLOCKGRAIN_PREF_DEFAULT);
 
-  bool fuzzyfoxEnabled =
-    Preferences::GetBool(FUZZYFOX_ENABLED_PREF, FUZZYFOX_ENABLED_PREF_DEFAULT);
+  bool fuzzyfoxEnabled = Preferences::GetBool(FUZZYFOX_ENABLED_PREF,
+                                              FUZZYFOX_ENABLED_PREF_DEFAULT);
 
-  LOG(Info, ("PT(%p) Created Fuzzyfox, FuzzyFox is now %s \n",
-         this, (fuzzyfoxEnabled ? "initializing" : "disabled")));
+  LOG(Info, ("PT(%p) Created Fuzzyfox, FuzzyFox is now %s \n", this,
+             (fuzzyfoxEnabled ? "initializing" : "disabled")));
 
   sFuzzyfoxInitializing = fuzzyfoxEnabled;
 
@@ -97,18 +94,16 @@ Fuzzyfox::~Fuzzyfox() = default;
 
 NS_IMETHODIMP
 Fuzzyfox::Observe(nsISupports* aObject, const char* aTopic,
-                      const char16_t* aMessage)
-{
+                  const char16_t* aMessage) {
   if (!strcmp(NS_PREFBRANCH_PREFCHANGE_TOPIC_ID, aTopic)) {
     NS_ConvertUTF16toUTF8 pref(aMessage);
 
     if (pref.EqualsLiteral(FUZZYFOX_ENABLED_PREF)) {
-      bool fuzzyfoxEnabled =
-        Preferences::GetBool(FUZZYFOX_ENABLED_PREF, FUZZYFOX_ENABLED_PREF_DEFAULT);
+      bool fuzzyfoxEnabled = Preferences::GetBool(
+          FUZZYFOX_ENABLED_PREF, FUZZYFOX_ENABLED_PREF_DEFAULT);
 
-      LOG(Info, ("PT(%p) Observed a pref change, FuzzyFox is now %s \n",
-         this, (fuzzyfoxEnabled ? "initializing" : "disabled")));
-
+      LOG(Info, ("PT(%p) Observed a pref change, FuzzyFox is now %s \n", this,
+                 (fuzzyfoxEnabled ? "initializing" : "disabled")));
 
       sFuzzyfoxInitializing = fuzzyfoxEnabled;
 
@@ -127,17 +122,17 @@ Fuzzyfox::Observe(nsISupports* aObject, const char* aTopic,
   return NS_OK;
 }
 
-#define DISPATCH_AND_RETURN() \
-  nsCOMPtr<nsIRunnable> r = this; \
+#define DISPATCH_AND_RETURN()                             \
+  nsCOMPtr<nsIRunnable> r = this;                         \
   SystemGroup::Dispatch(TaskCategory::Other, r.forget()); \
   return NS_OK
 
 NS_IMETHODIMP
-Fuzzyfox::Run()
-{
+Fuzzyfox::Run() {
   MOZ_ASSERT(NS_IsMainThread());
   if (!sFuzzyfoxInitializing && !TimeStamp::GetFuzzyfoxEnabled()) {
-    LOG(Info, ("[FuzzyfoxEvent] PT(%p) Fuzzyfox is shut down, doing nothing \n", this));
+    LOG(Info, ("[FuzzyfoxEvent] PT(%p) Fuzzyfox is shut down, doing nothing \n",
+               this));
     return NS_OK;
   }
 
@@ -151,9 +146,11 @@ Fuzzyfox::Run()
     Fuzzyfox::UpdateClocks(mStartTime, newTimeStamp);
 
     mSanityCheck = true;
-    LOG(Info, ("[FuzzyfoxEvent] PT(%p) Going to start Fuzzyfox, queuing up the job \n",
-       this));
+    LOG(Info, ("[FuzzyfoxEvent] PT(%p) Going to start Fuzzyfox, queuing up the "
+               "job \n",
+               this));
 
+    
     
     TimeStamp::SetFuzzyfoxEnabled(true);
     sFuzzyfoxInitializing = false;
@@ -173,21 +170,25 @@ Fuzzyfox::Run()
     
     
     MOZ_ASSERT(mSanityCheck);
-    LOG(Warning, ("[FuzzyfoxEvent] Unusual!! PT(%p) endTime < mStartTime mStartTime %" PRIu64 " endTime %" PRIu64 " \n",
-         this, mStartTime, endTime));
+    LOG(Warning, ("[FuzzyfoxEvent] Unusual!! PT(%p) endTime < mStartTime "
+                  "mStartTime %" PRIu64 " endTime %" PRIu64 " \n",
+                  this, mStartTime, endTime));
 
     mSanityCheck = true;
     DISPATCH_AND_RETURN();
   }
 
   uint64_t actualRunDuration = endTime - mStartTime;
-  LOG(Verbose, ("[FuzzyfoxEvent] PT(%p) mDuration: %" PRIu32 " endTime: %" PRIu64 " mStartTime: %" PRIu64 " actualRunDuration: %" PRIu64 " \n",
-         this, mDuration, endTime, mStartTime, actualRunDuration));
+  LOG(Verbose,
+      ("[FuzzyfoxEvent] PT(%p) mDuration: %" PRIu32 " endTime: %" PRIu64
+       " mStartTime: %" PRIu64 " actualRunDuration: %" PRIu64 " \n",
+       this, mDuration, endTime, mStartTime, actualRunDuration));
   if (actualRunDuration > mDuration) {
     
     uint64_t over = actualRunDuration - mDuration;
-    LOG(Debug, ("[FuzzyfoxEvent] PT(%p) Overran budget of %" PRIu32 " by %" PRIu64 " \n",
-         this, mDuration, over));
+    LOG(Debug, ("[FuzzyfoxEvent] PT(%p) Overran budget of %" PRIu32
+                " by %" PRIu64 " \n",
+                this, mDuration, over));
 
     uint64_t nextDuration = PickDuration();
     while (over > nextDuration) {
@@ -200,8 +201,9 @@ Fuzzyfox::Run()
   } else {
     
     remaining = mDuration - actualRunDuration;
-    LOG(Debug, ("[FuzzyfoxEvent] PT(%p) Finishing budget of %" PRIu32 " with %" PRIu64 " \n",
-        this, mDuration, remaining));
+    LOG(Debug, ("[FuzzyfoxEvent] PT(%p) Finishing budget of %" PRIu32
+                " with %" PRIu64 " \n",
+                this, mDuration, remaining));
   }
   mSanityCheck = false;
 
@@ -228,6 +230,7 @@ Fuzzyfox::Run()
 
 
 
+
   uint64_t newTime = FloorToGrain(ActualTime());
   TimeStamp newTimeStamp = FloorToGrain(TimeStamp::NowUnfuzzed());
   UpdateClocks(newTime, newTimeStamp);
@@ -237,8 +240,9 @@ Fuzzyfox::Run()
   mStartTime = ActualTime();
   mDuration = PickDuration();
 
-  LOG(Verbose, ("[FuzzyfoxEvent] PT(%p) For next time mDuration: %" PRIu32 " mStartTime: %" PRIu64 " \n",
-      this, mDuration, mStartTime));
+  LOG(Verbose, ("[FuzzyfoxEvent] PT(%p) For next time mDuration: %" PRIu32
+                " mStartTime: %" PRIu64 " \n",
+                this, mDuration, mStartTime));
 
   DISPATCH_AND_RETURN();
 }
@@ -246,18 +250,13 @@ Fuzzyfox::Run()
 
 
 
-uint64_t
-Fuzzyfox::ActualTime()
-{
-  return PR_Now();
-}
+
+uint64_t Fuzzyfox::ActualTime() { return PR_Now(); }
 
 
 
 
-uint64_t
-Fuzzyfox::PickDuration()
-{
+uint64_t Fuzzyfox::PickDuration() {
   
   long int rval = rand();
 
@@ -275,16 +274,17 @@ Fuzzyfox::PickDuration()
 
 
 
-void
-Fuzzyfox::UpdateClocks(uint64_t aNewTime, TimeStamp aNewTimeStamp)
-{
-  
-  #ifndef XP_WIN
-  LOG(Debug, ("[Time] New time is %" PRIu64 " (compare to %" PRIu64 ") and timestamp is %" PRIu64 " (compare to %" PRIu64 ")\n",
-    aNewTime, ActualTime(), aNewTimeStamp.mValue.mTimeStamp, TimeStamp::NowUnfuzzed().mValue.mTimeStamp));
-  #else
-  LOG(Debug, ("[Time] New time is %" PRIu64 " (compare to %" PRIu64 ") \n", aNewTime, ActualTime()));
-  #endif
+void Fuzzyfox::UpdateClocks(uint64_t aNewTime, TimeStamp aNewTimeStamp) {
+
+#ifndef XP_WIN
+  LOG(Debug, ("[Time] New time is %" PRIu64 " (compare to %" PRIu64
+              ") and timestamp is %" PRIu64 " (compare to %" PRIu64 ")\n",
+              aNewTime, ActualTime(), aNewTimeStamp.mValue.mTimeStamp,
+              TimeStamp::NowUnfuzzed().mValue.mTimeStamp));
+#else
+  LOG(Debug, ("[Time] New time is %" PRIu64 " (compare to %" PRIu64 ") \n",
+              aNewTime, ActualTime()));
+#endif
 
   
   if (MOZ_UNLIKELY(!mObs)) {
@@ -296,7 +296,8 @@ Fuzzyfox::UpdateClocks(uint64_t aNewTime, TimeStamp aNewTimeStamp)
 
   
   if (mTickType == eDowntick) {
-    mObs->NotifyObservers(nullptr, FUZZYFOX_FIREOUTBOUND_OBSERVER_TOPIC, nullptr);
+    mObs->NotifyObservers(nullptr, FUZZYFOX_FIREOUTBOUND_OBSERVER_TOPIC,
+                          nullptr);
   }
 
   if (!mTimeUpdateWrapper) {
@@ -309,28 +310,22 @@ Fuzzyfox::UpdateClocks(uint64_t aNewTime, TimeStamp aNewTimeStamp)
   mTimeUpdateWrapper->SetData(aNewTime);
 
   
-  mObs->NotifyObservers(mTimeUpdateWrapper, FUZZYFOX_UPDATECLOCK_OBSERVER_TOPIC, nullptr);
+  mObs->NotifyObservers(mTimeUpdateWrapper, FUZZYFOX_UPDATECLOCK_OBSERVER_TOPIC,
+                        nullptr);
 
   
   TimeStamp::UpdateFuzzyTime(aNewTime);
   TimeStamp::UpdateFuzzyTimeStamp(aNewTimeStamp);
 }
 
-uint64_t
-Fuzzyfox::GetClockGrain()
-{
-  return sFuzzyfoxClockGrain;
-}
+uint64_t Fuzzyfox::GetClockGrain() { return sFuzzyfoxClockGrain; }
 
 
 
 
 
 
-
-uint64_t
-Fuzzyfox::FloorToGrain(uint64_t aValue)
-{
+uint64_t Fuzzyfox::FloorToGrain(uint64_t aValue) {
   return aValue - (aValue % GetClockGrain());
 }
 
@@ -338,10 +333,7 @@ Fuzzyfox::FloorToGrain(uint64_t aValue)
 
 
 
-
-TimeStamp
-Fuzzyfox::FloorToGrain(TimeStamp aValue)
-{
+TimeStamp Fuzzyfox::FloorToGrain(TimeStamp aValue) {
 #ifdef XP_WIN
   
   uint64_t grain = GetClockGrain();
@@ -349,12 +341,12 @@ Fuzzyfox::FloorToGrain(TimeStamp aValue)
   uint64_t GTC = mt2ms(aValue.mValue.mGTC) * 1000;
   uint64_t QPC = mt2ms(aValue.mValue.mQPC) * 1000;
 
-  return TimeStamp(TimeStampValue(
-    ms2mt((GTC - (GTC % grain)) / 1000),
-    ms2mt((QPC - (QPC % grain)) / 1000),
-    aValue.mValue.mHasQPC, true));
+  return TimeStamp(TimeStampValue(ms2mt((GTC - (GTC % grain)) / 1000),
+                                  ms2mt((QPC - (QPC % grain)) / 1000),
+                                  aValue.mValue.mHasQPC, true));
 #else
-  return TimeStamp(TimeStampValue(true, US_TO_NS(FloorToGrain(NS_TO_US(aValue.mValue.mTimeStamp)))));
+  return TimeStamp(TimeStampValue(
+      true, US_TO_NS(FloorToGrain(NS_TO_US(aValue.mValue.mTimeStamp)))));
 #endif
 }
 
@@ -363,9 +355,7 @@ Fuzzyfox::FloorToGrain(TimeStamp aValue)
 
 
 
-uint64_t
-Fuzzyfox::CeilToGrain(uint64_t aValue)
-{
+uint64_t Fuzzyfox::CeilToGrain(uint64_t aValue) {
   return (aValue / GetClockGrain()) * GetClockGrain();
 }
 
@@ -373,9 +363,7 @@ Fuzzyfox::CeilToGrain(uint64_t aValue)
 
 
 
-TimeStamp
-Fuzzyfox::CeilToGrain(TimeStamp aValue)
-{
+TimeStamp Fuzzyfox::CeilToGrain(TimeStamp aValue) {
 #ifdef XP_WIN
   
   uint64_t grain = GetClockGrain();
@@ -383,11 +371,11 @@ Fuzzyfox::CeilToGrain(TimeStamp aValue)
   uint64_t GTC = mt2ms(aValue.mValue.mGTC) * 1000;
   uint64_t QPC = mt2ms(aValue.mValue.mQPC) * 1000;
 
-  return TimeStamp(TimeStampValue(
-    ms2mt(((GTC / grain) * grain) / 1000),
-    ms2mt(((QPC / grain) * grain) / 1000),
-    aValue.mValue.mHasQPC, true));
+  return TimeStamp(TimeStampValue(ms2mt(((GTC / grain) * grain) / 1000),
+                                  ms2mt(((QPC / grain) * grain) / 1000),
+                                  aValue.mValue.mHasQPC, true));
 #else
-  return TimeStamp(TimeStampValue(true, US_TO_NS(CeilToGrain(NS_TO_US(aValue.mValue.mTimeStamp)))));
+  return TimeStamp(TimeStampValue(
+      true, US_TO_NS(CeilToGrain(NS_TO_US(aValue.mValue.mTimeStamp)))));
 #endif
 }

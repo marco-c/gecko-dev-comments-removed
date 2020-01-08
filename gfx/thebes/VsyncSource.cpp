@@ -12,9 +12,8 @@
 namespace mozilla {
 namespace gfx {
 
-void
-VsyncSource::AddCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher)
-{
+void VsyncSource::AddCompositorVsyncDispatcher(
+    CompositorVsyncDispatcher* aCompositorVsyncDispatcher) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
   
@@ -22,42 +21,37 @@ VsyncSource::AddCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositor
   GetGlobalDisplay().AddCompositorVsyncDispatcher(aCompositorVsyncDispatcher);
 }
 
-void
-VsyncSource::RemoveCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher)
-{
+void VsyncSource::RemoveCompositorVsyncDispatcher(
+    CompositorVsyncDispatcher* aCompositorVsyncDispatcher) {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(NS_IsMainThread());
   
-  GetGlobalDisplay().RemoveCompositorVsyncDispatcher(aCompositorVsyncDispatcher);
+  GetGlobalDisplay().RemoveCompositorVsyncDispatcher(
+      aCompositorVsyncDispatcher);
 }
 
 RefPtr<RefreshTimerVsyncDispatcher>
-VsyncSource::GetRefreshTimerVsyncDispatcher()
-{
+VsyncSource::GetRefreshTimerVsyncDispatcher() {
   MOZ_ASSERT(XRE_IsParentProcess());
   
   return GetGlobalDisplay().GetRefreshTimerVsyncDispatcher();
 }
 
 VsyncSource::Display::Display()
-  : mDispatcherLock("display dispatcher lock")
-  , mRefreshTimerNeedsVsync(false)
-{
+    : mDispatcherLock("display dispatcher lock"),
+      mRefreshTimerNeedsVsync(false) {
   MOZ_ASSERT(NS_IsMainThread());
   mRefreshTimerVsyncDispatcher = new RefreshTimerVsyncDispatcher();
 }
 
-VsyncSource::Display::~Display()
-{
+VsyncSource::Display::~Display() {
   MOZ_ASSERT(NS_IsMainThread());
   MutexAutoLock lock(mDispatcherLock);
   mRefreshTimerVsyncDispatcher = nullptr;
   mCompositorVsyncDispatchers.Clear();
 }
 
-void
-VsyncSource::Display::NotifyVsync(TimeStamp aVsyncTimestamp)
-{
+void VsyncSource::Display::NotifyVsync(TimeStamp aVsyncTimestamp) {
   
   MutexAutoLock lock(mDispatcherLock);
 
@@ -68,19 +62,16 @@ VsyncSource::Display::NotifyVsync(TimeStamp aVsyncTimestamp)
   mRefreshTimerVsyncDispatcher->NotifyVsync(aVsyncTimestamp);
 }
 
-TimeDuration
-VsyncSource::Display::GetVsyncRate()
-{
+TimeDuration VsyncSource::Display::GetVsyncRate() {
   
   return TimeDuration::FromMilliseconds(1000.0 / 60.0);
 }
 
-void
-VsyncSource::Display::AddCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher)
-{
+void VsyncSource::Display::AddCompositorVsyncDispatcher(
+    CompositorVsyncDispatcher* aCompositorVsyncDispatcher) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCompositorVsyncDispatcher);
-  { 
+  {  
     MutexAutoLock lock(mDispatcherLock);
     if (!mCompositorVsyncDispatchers.Contains(aCompositorVsyncDispatcher)) {
       mCompositorVsyncDispatchers.AppendElement(aCompositorVsyncDispatcher);
@@ -89,12 +80,11 @@ VsyncSource::Display::AddCompositorVsyncDispatcher(CompositorVsyncDispatcher* aC
   UpdateVsyncStatus();
 }
 
-void
-VsyncSource::Display::RemoveCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher)
-{
+void VsyncSource::Display::RemoveCompositorVsyncDispatcher(
+    CompositorVsyncDispatcher* aCompositorVsyncDispatcher) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCompositorVsyncDispatcher);
-  { 
+  {  
     MutexAutoLock lock(mDispatcherLock);
     if (mCompositorVsyncDispatchers.Contains(aCompositorVsyncDispatcher)) {
       mCompositorVsyncDispatchers.RemoveElement(aCompositorVsyncDispatcher);
@@ -103,17 +93,13 @@ VsyncSource::Display::RemoveCompositorVsyncDispatcher(CompositorVsyncDispatcher*
   UpdateVsyncStatus();
 }
 
-void
-VsyncSource::Display::NotifyRefreshTimerVsyncStatus(bool aEnable)
-{
+void VsyncSource::Display::NotifyRefreshTimerVsyncStatus(bool aEnable) {
   MOZ_ASSERT(NS_IsMainThread());
   mRefreshTimerNeedsVsync = aEnable;
   UpdateVsyncStatus();
 }
 
-void
-VsyncSource::Display::UpdateVsyncStatus()
-{
+void VsyncSource::Display::UpdateVsyncStatus() {
   MOZ_ASSERT(NS_IsMainThread());
   
   
@@ -121,9 +107,10 @@ VsyncSource::Display::UpdateVsyncStatus()
   
   
   bool enableVsync = false;
-  { 
+  {  
     MutexAutoLock lock(mDispatcherLock);
-    enableVsync = !mCompositorVsyncDispatchers.IsEmpty() || mRefreshTimerNeedsVsync;
+    enableVsync =
+        !mCompositorVsyncDispatchers.IsEmpty() || mRefreshTimerNeedsVsync;
   }
 
   if (enableVsync) {
@@ -138,16 +125,11 @@ VsyncSource::Display::UpdateVsyncStatus()
 }
 
 RefPtr<RefreshTimerVsyncDispatcher>
-VsyncSource::Display::GetRefreshTimerVsyncDispatcher()
-{
+VsyncSource::Display::GetRefreshTimerVsyncDispatcher() {
   return mRefreshTimerVsyncDispatcher;
 }
 
-void
-VsyncSource::Shutdown()
-{
-  GetGlobalDisplay().Shutdown();
-}
+void VsyncSource::Shutdown() { GetGlobalDisplay().Shutdown(); }
 
-} 
-} 
+}  
+}  

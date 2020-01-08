@@ -14,9 +14,10 @@ namespace gfx {
 
 class DrawTarget;
 
-void PadDrawTargetOutFromRegion(DrawTarget* aDrawTarget, const nsIntRegion &aRegion);
+void PadDrawTargetOutFromRegion(DrawTarget* aDrawTarget,
+                                const nsIntRegion& aRegion);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

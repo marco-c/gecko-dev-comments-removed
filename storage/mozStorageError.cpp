@@ -12,38 +12,29 @@ namespace storage {
 
 
 
-Error::Error(int aResult,
-             const char *aMessage)
-: mResult(aResult)
-, mMessage(aMessage)
-{
-}
+Error::Error(int aResult, const char *aMessage)
+    : mResult(aResult), mMessage(aMessage) {}
 
 
 
 
 
-NS_IMPL_ISUPPORTS(
-  Error,
-  mozIStorageError
-)
+NS_IMPL_ISUPPORTS(Error, mozIStorageError)
 
 
 
 
 NS_IMETHODIMP
-Error::GetResult(int32_t *_result)
-{
+Error::GetResult(int32_t *_result) {
   *_result = mResult;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-Error::GetMessage(nsACString &_message)
-{
+Error::GetMessage(nsACString &_message) {
   _message = mMessage;
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

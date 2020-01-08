@@ -56,169 +56,162 @@ struct BytecodeEmitter;
 
 
 
-class MOZ_STACK_CLASS TryEmitter
-{
-  public:
-    enum class Kind {
-        TryCatch,
-        TryCatchFinally,
-        TryFinally
-    };
+class MOZ_STACK_CLASS TryEmitter {
+ public:
+  enum class Kind { TryCatch, TryCatchFinally, TryFinally };
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    enum class ControlKind {
-        Syntactic,
-        NonSyntactic
-    };
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class ControlKind { Syntactic, NonSyntactic };
 
-  private:
-    BytecodeEmitter* bce_;
-    Kind kind_;
-    ControlKind controlKind_;
+ private:
+  BytecodeEmitter* bce_;
+  Kind kind_;
+  ControlKind controlKind_;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mozilla::Maybe<TryFinallyControl> controlInfo_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Maybe<TryFinallyControl> controlInfo_;
 
-    
-    int depth_;
+  
+  int depth_;
 
-    
-    unsigned noteIndex_;
+  
+  unsigned noteIndex_;
 
-    
-    ptrdiff_t tryStart_;
+  
+  ptrdiff_t tryStart_;
 
-    
-    JumpList catchAndFinallyJump_;
+  
+  JumpList catchAndFinallyJump_;
 
-    
-    JumpTarget tryEnd_;
+  
+  JumpTarget tryEnd_;
 
-    
-    JumpTarget finallyStart_;
+  
+  JumpTarget finallyStart_;
 
 #ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    enum class State {
-        
-        Start,
+    Start,
 
-        
-        Try,
+    
+    Try,
 
-        
-        Catch,
+    
+    Catch,
 
-        
-        Finally,
+    
+    Finally,
 
-        
-        End
-    };
-    State state_;
+    
+    End
+  };
+  State state_;
 #endif
 
-    bool hasCatch() const {
-        return kind_ == Kind::TryCatch || kind_ == Kind::TryCatchFinally;
-    }
-    bool hasFinally() const {
-        return kind_ == Kind::TryCatchFinally || kind_ == Kind::TryFinally;
-    }
+  bool hasCatch() const {
+    return kind_ == Kind::TryCatch || kind_ == Kind::TryCatchFinally;
+  }
+  bool hasFinally() const {
+    return kind_ == Kind::TryCatchFinally || kind_ == Kind::TryFinally;
+  }
 
-  public:
-    TryEmitter(BytecodeEmitter* bce, Kind kind, ControlKind controlKind);
+ public:
+  TryEmitter(BytecodeEmitter* bce, Kind kind, ControlKind controlKind);
 
-    
-    
-    MOZ_MUST_USE bool emitJumpOverCatchAndFinally();
+  
+  
+  MOZ_MUST_USE bool emitJumpOverCatchAndFinally();
 
-    MOZ_MUST_USE bool emitTry();
-    MOZ_MUST_USE bool emitCatch();
+  MOZ_MUST_USE bool emitTry();
+  MOZ_MUST_USE bool emitCatch();
 
-    
-    
-    
-    
-    MOZ_MUST_USE bool emitFinally(const mozilla::Maybe<uint32_t>& finallyPos = mozilla::Nothing());
+  
+  
+  
+  
+  MOZ_MUST_USE bool emitFinally(
+      const mozilla::Maybe<uint32_t>& finallyPos = mozilla::Nothing());
 
-    MOZ_MUST_USE bool emitEnd();
+  MOZ_MUST_USE bool emitEnd();
 
-  private:
-    MOZ_MUST_USE bool emitTryEnd();
-    MOZ_MUST_USE bool emitCatchEnd();
-    MOZ_MUST_USE bool emitFinallyEnd();
+ private:
+  MOZ_MUST_USE bool emitTryEnd();
+  MOZ_MUST_USE bool emitCatchEnd();
+  MOZ_MUST_USE bool emitFinallyEnd();
 };
 
 } 

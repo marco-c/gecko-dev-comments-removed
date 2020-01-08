@@ -37,31 +37,26 @@ class TenuredCell;
 
 
 
-struct SortedArenaListSegment
-{
-    Arena* head;
-    Arena** tailp;
+struct SortedArenaListSegment {
+  Arena* head;
+  Arena** tailp;
 
-    void clear() {
-        head = nullptr;
-        tailp = &head;
-    }
+  void clear() {
+    head = nullptr;
+    tailp = &head;
+  }
 
-    bool isEmpty() const {
-        return tailp == &head;
-    }
+  bool isEmpty() const { return tailp == &head; }
 
-    
-    inline void append(Arena* arena);
+  
+  inline void append(Arena* arena);
 
-    
-    
-    
-    
-    
-    void linkTo(Arena* arena) {
-        *tailp = arena;
-    }
+  
+  
+  
+  
+  
+  void linkTo(Arena* arena) { *tailp = arena; }
 };
 
 
@@ -78,77 +73,78 @@ struct SortedArenaListSegment
 
 
 class ArenaList {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Arena* head_;
-    Arena** cursorp_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Arena* head_;
+  Arena** cursorp_;
 
-    inline void copy(const ArenaList& other);
+  inline void copy(const ArenaList& other);
 
-  public:
-    inline ArenaList();
-    inline ArenaList(const ArenaList& other);
+ public:
+  inline ArenaList();
+  inline ArenaList(const ArenaList& other);
 
-    inline ArenaList& operator=(const ArenaList& other);
+  inline ArenaList& operator=(const ArenaList& other);
 
-    inline explicit ArenaList(const SortedArenaListSegment& segment);
+  inline explicit ArenaList(const SortedArenaListSegment& segment);
 
-    inline void check() const;
+  inline void check() const;
 
-    inline void clear();
-    inline ArenaList copyAndClear();
-    inline bool isEmpty() const;
+  inline void clear();
+  inline ArenaList copyAndClear();
+  inline bool isEmpty() const;
 
-    
-    inline Arena* head() const;
+  
+  inline Arena* head() const;
 
-    inline bool isCursorAtHead() const;
-    inline bool isCursorAtEnd() const;
+  inline bool isCursorAtHead() const;
+  inline bool isCursorAtEnd() const;
 
-    inline void moveCursorToEnd();
+  inline void moveCursorToEnd();
 
-    
-    inline Arena* arenaAfterCursor() const;
+  
+  inline Arena* arenaAfterCursor() const;
 
-    
-    inline Arena* takeNextArena();
+  
+  inline Arena* takeNextArena();
 
-    
-    
-    
-    
-    inline void insertAtCursor(Arena* a);
+  
+  
+  
+  
+  inline void insertAtCursor(Arena* a);
 
-    
-    inline void insertBeforeCursor(Arena* a);
+  
+  inline void insertBeforeCursor(Arena* a);
 
-    
-    inline ArenaList& insertListWithCursorAtEnd(const ArenaList& other);
+  
+  inline ArenaList& insertListWithCursorAtEnd(const ArenaList& other);
 
-    Arena* removeRemainingArenas(Arena** arenap);
-    Arena** pickArenasToRelocate(size_t& arenaTotalOut, size_t& relocTotalOut);
-    Arena* relocateArenas(Arena* toRelocate, Arena* relocated,
-                          js::SliceBudget& sliceBudget, gcstats::Statistics& stats);
+  Arena* removeRemainingArenas(Arena** arenap);
+  Arena** pickArenasToRelocate(size_t& arenaTotalOut, size_t& relocTotalOut);
+  Arena* relocateArenas(Arena* toRelocate, Arena* relocated,
+                        js::SliceBudget& sliceBudget,
+                        gcstats::Statistics& stats);
 };
 
 
@@ -156,57 +152,58 @@ class ArenaList {
 
 
 
-class SortedArenaList
-{
-  public:
-    
-    static const size_t MinThingSize = 16;
+class SortedArenaList {
+ public:
+  
+  static const size_t MinThingSize = 16;
 
-    static_assert(ArenaSize <= 4096, "When increasing the Arena size, please consider how"\
-                                     " this will affect the size of a SortedArenaList.");
+  static_assert(ArenaSize <= 4096,
+                "When increasing the Arena size, please consider how"
+                " this will affect the size of a SortedArenaList.");
 
-    static_assert(MinThingSize >= 16, "When decreasing the minimum thing size, please consider"\
-                                      " how this will affect the size of a SortedArenaList.");
+  static_assert(MinThingSize >= 16,
+                "When decreasing the minimum thing size, please consider"
+                " how this will affect the size of a SortedArenaList.");
 
-  private:
-    
-    static const size_t MaxThingsPerArena = (ArenaSize - ArenaHeaderSize) / MinThingSize;
+ private:
+  
+  static const size_t MaxThingsPerArena =
+      (ArenaSize - ArenaHeaderSize) / MinThingSize;
 
-    size_t thingsPerArena_;
-    SortedArenaListSegment segments[MaxThingsPerArena + 1];
+  size_t thingsPerArena_;
+  SortedArenaListSegment segments[MaxThingsPerArena + 1];
 
-    
-    Arena* headAt(size_t n) { return segments[n].head; }
-    Arena** tailAt(size_t n) { return segments[n].tailp; }
+  
+  Arena* headAt(size_t n) { return segments[n].head; }
+  Arena** tailAt(size_t n) { return segments[n].tailp; }
 
-  public:
-    inline explicit SortedArenaList(size_t thingsPerArena = MaxThingsPerArena);
+ public:
+  inline explicit SortedArenaList(size_t thingsPerArena = MaxThingsPerArena);
 
-    inline void setThingsPerArena(size_t thingsPerArena);
+  inline void setThingsPerArena(size_t thingsPerArena);
 
-    
-    inline void reset(size_t thingsPerArena = MaxThingsPerArena);
+  
+  inline void reset(size_t thingsPerArena = MaxThingsPerArena);
 
-    
-    inline void insertAt(Arena* arena, size_t nfree);
+  
+  inline void insertAt(Arena* arena, size_t nfree);
 
-    
-    inline void extractEmpty(Arena** empty);
+  
+  inline void extractEmpty(Arena** empty);
 
-    
-    
-    
-    
-    
-    
-    
-    inline ArenaList toArenaList();
+  
+  
+  
+  
+  
+  
+  
+  inline ArenaList toArenaList();
 };
 
-enum class ShouldCheckThresholds
-{
-    DontCheckThresholds = 0,
-    CheckThresholds = 1
+enum class ShouldCheckThresholds {
+  DontCheckThresholds = 0,
+  CheckThresholds = 1
 };
 
 
@@ -216,161 +213,166 @@ enum class ShouldCheckThresholds
 
 
 
-class FreeLists
-{
-    AllAllocKindArray<FreeSpan*> freeLists_;
+class FreeLists {
+  AllAllocKindArray<FreeSpan*> freeLists_;
 
-  public:
-    
-    
-    
-    static FreeSpan emptySentinel;
+ public:
+  
+  
+  
+  static FreeSpan emptySentinel;
 
-    FreeLists();
+  FreeLists();
 
 #ifdef DEBUG
-    inline bool allEmpty() const;
-    inline bool isEmpty(AllocKind kind) const;
+  inline bool allEmpty() const;
+  inline bool isEmpty(AllocKind kind) const;
 #endif
 
-    inline void clear();
+  inline void clear();
 
-    MOZ_ALWAYS_INLINE TenuredCell* allocate(AllocKind kind);
+  MOZ_ALWAYS_INLINE TenuredCell* allocate(AllocKind kind);
 
-    inline TenuredCell* setArenaAndAllocate(Arena* arena, AllocKind kind);
+  inline TenuredCell* setArenaAndAllocate(Arena* arena, AllocKind kind);
 
-    inline void unmarkPreMarkedFreeCells(AllocKind kind);
+  inline void unmarkPreMarkedFreeCells(AllocKind kind);
 
-    FreeSpan** addressOfFreeList(AllocKind thingKind) {
-        return &freeLists_[thingKind];
-    }
+  FreeSpan** addressOfFreeList(AllocKind thingKind) {
+    return &freeLists_[thingKind];
+  }
 };
 
-class ArenaLists
-{
-    JS::Zone* zone_;
+class ArenaLists {
+  JS::Zone* zone_;
 
-    ZoneData<FreeLists> freeLists_;
+  ZoneData<FreeLists> freeLists_;
 
-    ArenaListData<AllAllocKindArray<ArenaList>> arenaLists_;
+  ArenaListData<AllAllocKindArray<ArenaList>> arenaLists_;
 
-    ArenaList& arenaLists(AllocKind i) { return arenaLists_.ref()[i]; }
-    const ArenaList& arenaLists(AllocKind i) const { return arenaLists_.ref()[i]; }
+  ArenaList& arenaLists(AllocKind i) { return arenaLists_.ref()[i]; }
+  const ArenaList& arenaLists(AllocKind i) const {
+    return arenaLists_.ref()[i];
+  }
 
-    enum class ConcurrentUse : uint32_t {
-        None,
-        BackgroundFinalize,
-        ParallelAlloc
-    };
+  enum class ConcurrentUse : uint32_t {
+    None,
+    BackgroundFinalize,
+    ParallelAlloc
+  };
 
-    using ConcurrentUseState = mozilla::Atomic<ConcurrentUse, mozilla::SequentiallyConsistent,
-                                               mozilla::recordreplay::Behavior::DontPreserve>;
+  using ConcurrentUseState =
+      mozilla::Atomic<ConcurrentUse, mozilla::SequentiallyConsistent,
+                      mozilla::recordreplay::Behavior::DontPreserve>;
 
-    
-    UnprotectedData<AllAllocKindArray<ConcurrentUseState>> concurrentUseState_;
+  
+  UnprotectedData<AllAllocKindArray<ConcurrentUseState>> concurrentUseState_;
 
-    ConcurrentUseState& concurrentUse(AllocKind i) { return concurrentUseState_.ref()[i]; }
-    ConcurrentUse concurrentUse(AllocKind i) const { return concurrentUseState_.ref()[i]; }
+  ConcurrentUseState& concurrentUse(AllocKind i) {
+    return concurrentUseState_.ref()[i];
+  }
+  ConcurrentUse concurrentUse(AllocKind i) const {
+    return concurrentUseState_.ref()[i];
+  }
 
-    
-    MainThreadOrGCTaskData<AllAllocKindArray<Arena*>> arenaListsToSweep_;
-    Arena*& arenaListsToSweep(AllocKind i) { return arenaListsToSweep_.ref()[i]; }
-    Arena* arenaListsToSweep(AllocKind i) const { return arenaListsToSweep_.ref()[i]; }
+  
+  MainThreadOrGCTaskData<AllAllocKindArray<Arena*>> arenaListsToSweep_;
+  Arena*& arenaListsToSweep(AllocKind i) { return arenaListsToSweep_.ref()[i]; }
+  Arena* arenaListsToSweep(AllocKind i) const {
+    return arenaListsToSweep_.ref()[i];
+  }
 
-    
-    ZoneOrGCTaskData<AllocKind> incrementalSweptArenaKind;
-    ZoneOrGCTaskData<ArenaList> incrementalSweptArenas;
+  
+  ZoneOrGCTaskData<AllocKind> incrementalSweptArenaKind;
+  ZoneOrGCTaskData<ArenaList> incrementalSweptArenas;
 
-    
-    
-    ZoneData<Arena*> gcShapeArenasToUpdate;
-    ZoneData<Arena*> gcAccessorShapeArenasToUpdate;
-    ZoneData<Arena*> gcScriptArenasToUpdate;
-    ZoneData<Arena*> gcObjectGroupArenasToUpdate;
+  
+  
+  ZoneData<Arena*> gcShapeArenasToUpdate;
+  ZoneData<Arena*> gcAccessorShapeArenasToUpdate;
+  ZoneData<Arena*> gcScriptArenasToUpdate;
+  ZoneData<Arena*> gcObjectGroupArenasToUpdate;
 
-    
-    
-    ZoneData<Arena*> savedEmptyArenas;
+  
+  
+  ZoneData<Arena*> savedEmptyArenas;
 
-  public:
-    explicit ArenaLists(JS::Zone* zone);
-    ~ArenaLists();
+ public:
+  explicit ArenaLists(JS::Zone* zone);
+  ~ArenaLists();
 
-    FreeLists& freeLists() { return freeLists_.ref(); }
-    const FreeLists& freeLists() const { return freeLists_.ref(); }
+  FreeLists& freeLists() { return freeLists_.ref(); }
+  const FreeLists& freeLists() const { return freeLists_.ref(); }
 
-    FreeSpan** addressOfFreeList(AllocKind thingKind) {
-        return freeLists_.refNoCheck().addressOfFreeList(thingKind);
-    }
+  FreeSpan** addressOfFreeList(AllocKind thingKind) {
+    return freeLists_.refNoCheck().addressOfFreeList(thingKind);
+  }
 
-    inline Arena* getFirstArena(AllocKind thingKind) const;
-    inline Arena* getFirstArenaToSweep(AllocKind thingKind) const;
-    inline Arena* getFirstSweptArena(AllocKind thingKind) const;
-    inline Arena* getArenaAfterCursor(AllocKind thingKind) const;
+  inline Arena* getFirstArena(AllocKind thingKind) const;
+  inline Arena* getFirstArenaToSweep(AllocKind thingKind) const;
+  inline Arena* getFirstSweptArena(AllocKind thingKind) const;
+  inline Arena* getArenaAfterCursor(AllocKind thingKind) const;
 
-    inline bool arenaListsAreEmpty() const;
+  inline bool arenaListsAreEmpty() const;
 
-    inline void unmarkAll();
+  inline void unmarkAll();
 
-    inline bool doneBackgroundFinalize(AllocKind kind) const;
-    inline bool needBackgroundFinalizeWait(AllocKind kind) const;
+  inline bool doneBackgroundFinalize(AllocKind kind) const;
+  inline bool needBackgroundFinalizeWait(AllocKind kind) const;
 
-    
-    inline void clearFreeLists();
+  
+  inline void clearFreeLists();
 
-    inline void unmarkPreMarkedFreeCells();
+  inline void unmarkPreMarkedFreeCells();
 
-    MOZ_ALWAYS_INLINE TenuredCell* allocateFromFreeList(AllocKind thingKind);
+  MOZ_ALWAYS_INLINE TenuredCell* allocateFromFreeList(AllocKind thingKind);
 
-    
-    void adoptArenas(ArenaLists* fromArenaLists, bool targetZoneIsCollecting);
+  
+  void adoptArenas(ArenaLists* fromArenaLists, bool targetZoneIsCollecting);
 
-    inline void checkEmptyFreeLists();
-    inline bool checkEmptyArenaLists();
-    inline void checkEmptyFreeList(AllocKind kind);
+  inline void checkEmptyFreeLists();
+  inline bool checkEmptyArenaLists();
+  inline void checkEmptyFreeList(AllocKind kind);
 
-    bool checkEmptyArenaList(AllocKind kind);
+  bool checkEmptyArenaList(AllocKind kind);
 
-    bool relocateArenas(Arena*& relocatedListOut, JS::gcreason::Reason reason,
-                        js::SliceBudget& sliceBudget, gcstats::Statistics& stats);
+  bool relocateArenas(Arena*& relocatedListOut, JS::gcreason::Reason reason,
+                      js::SliceBudget& sliceBudget, gcstats::Statistics& stats);
 
-    void queueForegroundObjectsForSweep(FreeOp* fop);
-    void queueForegroundThingsForSweep();
+  void queueForegroundObjectsForSweep(FreeOp* fop);
+  void queueForegroundThingsForSweep();
 
-    void releaseForegroundSweptEmptyArenas();
+  void releaseForegroundSweptEmptyArenas();
 
-    bool foregroundFinalize(FreeOp* fop, AllocKind thingKind, js::SliceBudget& sliceBudget,
-                            SortedArenaList& sweepList);
-    static void backgroundFinalize(FreeOp* fop, Arena* listHead, Arena** empty);
+  bool foregroundFinalize(FreeOp* fop, AllocKind thingKind,
+                          js::SliceBudget& sliceBudget,
+                          SortedArenaList& sweepList);
+  static void backgroundFinalize(FreeOp* fop, Arena* listHead, Arena** empty);
 
-    void setParallelAllocEnabled(bool enabled);
+  void setParallelAllocEnabled(bool enabled);
 
-    
-    
-    enum KeepArenasEnum {
-        RELEASE_ARENAS,
-        KEEP_ARENAS
-    };
+  
+  
+  enum KeepArenasEnum { RELEASE_ARENAS, KEEP_ARENAS };
 
-  private:
-    inline JSRuntime* runtime();
-    inline JSRuntime* runtimeFromAnyThread();
+ private:
+  inline JSRuntime* runtime();
+  inline JSRuntime* runtimeFromAnyThread();
 
-    inline void queueForForegroundSweep(FreeOp* fop, const FinalizePhase& phase);
-    inline void queueForBackgroundSweep(FreeOp* fop, const FinalizePhase& phase);
-    inline void queueForForegroundSweep(AllocKind thingKind);
-    inline void queueForBackgroundSweep(AllocKind thingKind);
+  inline void queueForForegroundSweep(FreeOp* fop, const FinalizePhase& phase);
+  inline void queueForBackgroundSweep(FreeOp* fop, const FinalizePhase& phase);
+  inline void queueForForegroundSweep(AllocKind thingKind);
+  inline void queueForBackgroundSweep(AllocKind thingKind);
 
-    TenuredCell* refillFreeListAndAllocate(FreeLists& freeLists, AllocKind thingKind,
-                                           ShouldCheckThresholds checkThresholds);
+  TenuredCell* refillFreeListAndAllocate(FreeLists& freeLists,
+                                         AllocKind thingKind,
+                                         ShouldCheckThresholds checkThresholds);
 
-    friend class GCRuntime;
-    friend class js::Nursery;
-    friend class js::TenuringTracer;
+  friend class GCRuntime;
+  friend class js::Nursery;
+  friend class js::TenuringTracer;
 };
 
 } 
 } 
 
 #endif 
-

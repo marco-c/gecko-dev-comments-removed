@@ -12,13 +12,12 @@
 #include "gc/ObjectKind-inl.h"
 
 
-js::gc::AllocKind
-js::InlineTypedObject::allocKindForTypeDescriptor(TypeDescr* descr)
-{
-    size_t nbytes = descr->size();
-    MOZ_ASSERT(nbytes <= MaximumSize);
+js::gc::AllocKind js::InlineTypedObject::allocKindForTypeDescriptor(
+    TypeDescr* descr) {
+  size_t nbytes = descr->size();
+  MOZ_ASSERT(nbytes <= MaximumSize);
 
-    return gc::GetGCObjectKindForBytes(nbytes + sizeof(TypedObject));
+  return gc::GetGCObjectKindForBytes(nbytes + sizeof(TypedObject));
 }
 
-#endif 
+#endif  

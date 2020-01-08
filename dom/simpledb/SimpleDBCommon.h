@@ -12,7 +12,7 @@ namespace dom {
 
 extern const char* kPrefSimpleDBEnabled;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

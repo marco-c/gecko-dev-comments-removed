@@ -69,7 +69,7 @@
 
 #ifndef PRINT_MACH_RESULT
 #define PRINT_MACH_RESULT(result_, message_) \
-  printf(message_" %s (%d)\n", mach_error_string(result_), result_ );
+  printf(message_ " %s (%d)\n", mach_error_string(result_), result_);
 #endif
 
 
@@ -97,7 +97,7 @@ class MachMsgPortDescriptor : public mach_msg_port_descriptor_t {
   }
 
   
-  MachMsgPortDescriptor(const MachMsgPortDescriptor& desc) {
+  MachMsgPortDescriptor(const MachMsgPortDescriptor &desc) {
     name = desc.name;
     pad1 = desc.pad1;
     pad2 = desc.pad2;
@@ -105,18 +105,12 @@ class MachMsgPortDescriptor : public mach_msg_port_descriptor_t {
     type = desc.type;
   }
 
-  mach_port_t GetMachPort() const {
-    return name;
-  }
+  mach_port_t GetMachPort() const { return name; }
 
-  mach_msg_type_name_t GetDisposition() const {
-    return disposition;
-  }
+  mach_msg_type_name_t GetDisposition() const { return disposition; }
 
   
-  operator mach_port_t() const {
-    return GetMachPort();
-  }
+  operator mach_port_t() const { return GetMachPort(); }
 };
 
 
@@ -139,7 +133,6 @@ class MachMsgPortDescriptor : public mach_msg_port_descriptor_t {
 
 class MachMessage {
  public:
-
   virtual ~MachMessage();
 
   
@@ -159,8 +152,8 @@ class MachMessage {
   bool AddDescriptor(const MachMsgPortDescriptor &desc);
 
   int GetDescriptorCount() const {
-                                   return storage_->body.msgh_descriptor_count;
-                                 }
+    return storage_->body.msgh_descriptor_count;
+  }
   MachMsgPortDescriptor *GetDescriptor(int n);
 
   
@@ -170,7 +163,7 @@ class MachMessage {
   bool IsSimpleMessage() const { return GetDescriptorCount() == 0; }
 
   
-  bool SetData(const void* data, int32_t data_length);
+  bool SetData(const void *data, int32_t data_length);
 
  protected:
   
@@ -186,12 +179,12 @@ class MachMessage {
 
   
   struct MessageDataPacket {
-    int32_t  id;          
-    int32_t  data_length; 
+    int32_t id;           
+    int32_t data_length;  
     u_int8_t data[1];     
   };
 
-  MessageDataPacket* GetDataPacket();
+  MessageDataPacket *GetDataPacket();
 
   void SetDescriptorCount(int n);
   void SetDescriptor(int n, const MachMsgPortDescriptor &desc);
@@ -208,16 +201,16 @@ class MachMessage {
 
  private:
   struct MachMessageData {
-    mach_msg_header_t  head;
-    mach_msg_body_t    body;
+    mach_msg_header_t head;
+    mach_msg_body_t body;
     
-    u_int8_t           padding[1024];
+    u_int8_t padding[1024];
   };
 
- 
- 
+  
+  
  public:
-   
+  
   static const size_t kEmptyMessageSize = sizeof(mach_msg_header_t) +
                                           sizeof(mach_msg_body_t) +
                                           sizeof(MessageDataPacket);
@@ -243,7 +236,7 @@ class MachReceiveMessage : public MachMessage {
       : MachMessage(storage, storage_length) {}
 
  private:
-    DISALLOW_COPY_AND_ASSIGN(MachReceiveMessage);
+  DISALLOW_COPY_AND_ASSIGN(MachReceiveMessage);
 };
 
 
@@ -278,14 +271,14 @@ class ReceivePort {
   kern_return_t WaitForMessage(MachReceiveMessage *out_message,
                                mach_msg_timeout_t timeout);
 
-  kern_return_t SendMessageToSelf(MachSendMessage& msg,
+  kern_return_t SendMessageToSelf(MachSendMessage &msg,
                                   mach_msg_timeout_t timeout);
 
   
-  mach_port_t  GetPort() const { return port_; }
+  mach_port_t GetPort() const { return port_; }
 
  private:
-  mach_port_t   port_;
+  mach_port_t port_;
   kern_return_t init_result_;
 
   DISALLOW_COPY_AND_ASSIGN(ReceivePort);
@@ -298,7 +291,6 @@ class MachPortSender {
   
   explicit MachPortSender(const char *receive_port_name);
 
-
   
   explicit MachPortSender(mach_port_t send_port);
 
@@ -306,10 +298,10 @@ class MachPortSender {
                             mach_msg_timeout_t timeout);
 
  private:
-  mach_port_t   send_port_;
+  mach_port_t send_port_;
   kern_return_t init_result_;
 
   DISALLOW_COPY_AND_ASSIGN(MachPortSender);
 };
 
-#endif 
+#endif  

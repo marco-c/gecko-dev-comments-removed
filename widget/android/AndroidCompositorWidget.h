@@ -20,22 +20,21 @@ namespace widget {
 
 
 
-class AndroidCompositorWidget final : public InProcessCompositorWidget
-{
-public:
-    using InProcessCompositorWidget::InProcessCompositorWidget;
+class AndroidCompositorWidget final : public InProcessCompositorWidget {
+ public:
+  using InProcessCompositorWidget::InProcessCompositorWidget;
 
-    AndroidCompositorWidget* AsAndroid() override { return this; }
+  AndroidCompositorWidget* AsAndroid() override { return this; }
 
-    EGLNativeWindowType GetEGLNativeWindow();
+  EGLNativeWindowType GetEGLNativeWindow();
 
-    EGLSurface GetPresentationEGLSurface();
-    void SetPresentationEGLSurface(EGLSurface aVal);
+  EGLSurface GetPresentationEGLSurface();
+  void SetPresentationEGLSurface(EGLSurface aVal);
 
-    ANativeWindow* GetPresentationANativeWindow();
+  ANativeWindow* GetPresentationANativeWindow();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

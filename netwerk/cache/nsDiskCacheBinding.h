@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef _nsDiskCacheBinding_h_
 #define _nsDiskCacheBinding_h_
 
@@ -27,43 +26,39 @@
 
 
 
-
 class nsDiskCacheDeviceDeactivateEntryEvent;
 
 class nsDiskCacheBinding : public nsISupports, public PRCList {
-    virtual ~nsDiskCacheBinding();
+  virtual ~nsDiskCacheBinding();
 
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
 
-    nsDiskCacheBinding(nsCacheEntry* entry, nsDiskCacheRecord * record);
+  nsDiskCacheBinding(nsCacheEntry* entry, nsDiskCacheRecord* record);
 
-    nsresult EnsureStreamIO();
-    bool     IsActive() { return mCacheEntry != nullptr;}
+  nsresult EnsureStreamIO();
+  bool IsActive() { return mCacheEntry != nullptr; }
 
+  
+ public:
+  nsCacheEntry* mCacheEntry;  
+  nsDiskCacheRecord mRecord;
+  nsDiskCacheStreamIO* mStreamIO;  
+  bool mDoomed;                    
+  uint8_t mGeneration;             
 
-public:
-    nsCacheEntry*           mCacheEntry;    
-    nsDiskCacheRecord       mRecord;
-    nsDiskCacheStreamIO*    mStreamIO;      
-    bool                    mDoomed;        
-    uint8_t                 mGeneration;    
-
-    
-    
-    
-    
-    nsDiskCacheDeviceDeactivateEntryEvent *mDeactivateEvent;
+  
+  
+  
+  
+  nsDiskCacheDeviceDeactivateEntryEvent* mDeactivateEvent;
 };
 
 
 
 
 
-
-nsDiskCacheBinding *   GetCacheEntryBinding(nsCacheEntry * entry);
-
-
+nsDiskCacheBinding* GetCacheEntryBinding(nsCacheEntry* entry);
 
 
 
@@ -95,31 +90,31 @@ nsDiskCacheBinding *   GetCacheEntryBinding(nsCacheEntry * entry);
 
 
 class nsDiskCacheBindery {
-public:
-    nsDiskCacheBindery();
-    ~nsDiskCacheBindery();
+ public:
+  nsDiskCacheBindery();
+  ~nsDiskCacheBindery();
 
-    void                    Init();
-    void                    Reset();
+  void Init();
+  void Reset();
 
-    nsDiskCacheBinding *    CreateBinding(nsCacheEntry *       entry,
-                                          nsDiskCacheRecord *  record);
+  nsDiskCacheBinding* CreateBinding(nsCacheEntry* entry,
+                                    nsDiskCacheRecord* record);
 
-    nsDiskCacheBinding *    FindActiveBinding(uint32_t  hashNumber) const;
-    void                    RemoveBinding(nsDiskCacheBinding * binding);
-    bool                    ActiveBindings();
+  nsDiskCacheBinding* FindActiveBinding(uint32_t hashNumber) const;
+  void RemoveBinding(nsDiskCacheBinding* binding);
+  bool ActiveBindings();
 
-    size_t                 SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-private:
-    nsresult                AddBinding(nsDiskCacheBinding * binding);
+ private:
+  nsresult AddBinding(nsDiskCacheBinding* binding);
 
-    
-    static const PLDHashTableOps ops;
-    PLDHashTable           table;
-    bool                   initialized;
+  
+  static const PLDHashTableOps ops;
+  PLDHashTable table;
+  bool initialized;
 
-    static const uint32_t kInitialTableLength = 0;
+  static const uint32_t kInitialTableLength = 0;
 };
 
 #endif 

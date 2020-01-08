@@ -29,38 +29,33 @@ static const nscolor kColors[] = {
 
 using namespace mozilla;
 
-static const char* kJunkNames[] = {
-  nullptr,
-  "",
-  "123",
-  "backgroundz",
-  "zzzzzz",
-  "#@$&@#*@*$@$#"
-};
+static const char* kJunkNames[] = {nullptr,       "",       "123",
+                                   "backgroundz", "zzzzzz", "#@$&@#*@*$@$#"};
 
-static
-void RunColorTests() {
+static void RunColorTests() {
   nscolor rgb;
   
   
   
 
-  for (uint32_t index = 0 ; index < ArrayLength(kColorNames); index++) {
+  for (uint32_t index = 0; index < ArrayLength(kColorNames); index++) {
     
     nsCString tagName(kColorNames[index]);
 
     
-    ASSERT_TRUE(NS_ColorNameToRGB(NS_ConvertASCIItoUTF16(tagName), &rgb)) <<
-      "can't find '" << tagName.get() << "'";
-    ASSERT_TRUE((rgb == kColors[index])) <<
-      "failed at index " << index << " out of " << ArrayLength(kColorNames);
+    ASSERT_TRUE(NS_ColorNameToRGB(NS_ConvertASCIItoUTF16(tagName), &rgb))
+        << "can't find '" << tagName.get() << "'";
+    ASSERT_TRUE((rgb == kColors[index]))
+        << "failed at index " << index << " out of "
+        << ArrayLength(kColorNames);
 
     
     tagName.SetCharAt(tagName.CharAt(0) - 32, 0);
-    ASSERT_TRUE(NS_ColorNameToRGB(NS_ConvertASCIItoUTF16(tagName), &rgb)) <<
-      "can't find '" << tagName.get() << "'";
-    ASSERT_TRUE((rgb == kColors[index])) <<
-      "failed at index " << index << " out of " << ArrayLength(kColorNames);
+    ASSERT_TRUE(NS_ColorNameToRGB(NS_ConvertASCIItoUTF16(tagName), &rgb))
+        << "can't find '" << tagName.get() << "'";
+    ASSERT_TRUE((rgb == kColors[index]))
+        << "failed at index " << index << " out of "
+        << ArrayLength(kColorNames);
 
     
     uint8_t r = NS_GET_R(rgb);
@@ -75,27 +70,22 @@ void RunColorTests() {
     }
     nscolor hexrgb;
     ASSERT_TRUE(NS_HexToRGBA(NS_ConvertASCIItoUTF16(cbuf),
-                             nsHexColorType::AllowAlpha, &hexrgb)) <<
-      "hex conversion to color of '" << cbuf << "'";
+                             nsHexColorType::AllowAlpha, &hexrgb))
+        << "hex conversion to color of '" << cbuf << "'";
     ASSERT_TRUE(hexrgb == rgb);
   }
 }
 
-static
-void RunJunkColorTests() {
+static void RunJunkColorTests() {
   nscolor rgb;
   
   for (uint32_t i = 0; i < ArrayLength(kJunkNames); i++) {
     nsCString tag(kJunkNames[i]);
-    ASSERT_FALSE(NS_ColorNameToRGB(NS_ConvertASCIItoUTF16(tag), &rgb)) <<
-      "Failed at junk color " << kJunkNames[i];
+    ASSERT_FALSE(NS_ColorNameToRGB(NS_ConvertASCIItoUTF16(tag), &rgb))
+        << "Failed at junk color " << kJunkNames[i];
   }
 }
 
-TEST(Gfx, ColorNames) {
-  RunColorTests();
-}
+TEST(Gfx, ColorNames) { RunColorTests(); }
 
-TEST(Gfx, JunkColorNames) {
-  RunJunkColorTests();
-}
+TEST(Gfx, JunkColorNames) { RunJunkColorTests(); }

@@ -30,17 +30,15 @@ class nsISVGPoint;
 
 
 
-class SVGPointList
-{
+class SVGPointList {
   friend class mozilla::nsISVGPoint;
   friend class SVGAnimatedPointList;
   friend class DOMSVGPointList;
   friend class DOMSVGPoint;
 
-public:
-
-  SVGPointList(){}
-  ~SVGPointList(){}
+ public:
+  SVGPointList() {}
+  ~SVGPointList() {}
 
   
   
@@ -48,17 +46,11 @@ public:
   
   void GetValueAsString(nsAString& aValue) const;
 
-  bool IsEmpty() const {
-    return mItems.IsEmpty();
-  }
+  bool IsEmpty() const { return mItems.IsEmpty(); }
 
-  uint32_t Length() const {
-    return mItems.Length();
-  }
+  uint32_t Length() const { return mItems.Length(); }
 
-  const SVGPoint& operator[](uint32_t aIndex) const {
-    return mItems[aIndex];
-  }
+  const SVGPoint& operator[](uint32_t aIndex) const { return mItems[aIndex]; }
 
   bool operator==(const SVGPointList& rhs) const {
     
@@ -71,9 +63,7 @@ public:
     return mItems.SetCapacity(aSize, fallible);
   }
 
-  void Compact() {
-    mItems.Compact();
-  }
+  void Compact() { mItems.Compact(); }
 
   
   
@@ -82,17 +72,14 @@ public:
   
   
 
-protected:
-
+ protected:
   
 
 
 
   nsresult CopyFrom(const SVGPointList& rhs);
 
-  SVGPoint& operator[](uint32_t aIndex) {
-    return mItems[aIndex];
-  }
+  SVGPoint& operator[](uint32_t aIndex) { return mItems[aIndex]; }
 
   
 
@@ -102,26 +89,23 @@ protected:
     return mItems.SetLength(aNumberOfItems, fallible);
   }
 
-private:
-
+ private:
   
   
   
 
   nsresult SetValueFromString(const nsAString& aValue);
 
-  void Clear() {
-    mItems.Clear();
-  }
+  void Clear() { mItems.Clear(); }
 
-  bool InsertItem(uint32_t aIndex, const SVGPoint &aPoint) {
+  bool InsertItem(uint32_t aIndex, const SVGPoint& aPoint) {
     if (aIndex >= mItems.Length()) {
       aIndex = mItems.Length();
     }
     return !!mItems.InsertElementAt(aIndex, aPoint, fallible);
   }
 
-  void ReplaceItem(uint32_t aIndex, const SVGPoint &aPoint) {
+  void ReplaceItem(uint32_t aIndex, const SVGPoint& aPoint) {
     MOZ_ASSERT(aIndex < mItems.Length(),
                "DOM wrapper caller should have raised INDEX_SIZE_ERR");
     mItems[aIndex] = aPoint;
@@ -137,8 +121,7 @@ private:
     return !!mItems.AppendElement(aPoint, fallible);
   }
 
-protected:
-
+ protected:
   
 
 
@@ -157,16 +140,12 @@ protected:
 
 
 
+class SVGPointListAndInfo : public SVGPointList {
+ public:
+  explicit SVGPointListAndInfo(nsSVGElement* aElement = nullptr)
+      : mElement(do_GetWeakReference(static_cast<nsINode*>(aElement))) {}
 
-class SVGPointListAndInfo : public SVGPointList
-{
-public:
-
-  explicit SVGPointListAndInfo(nsSVGElement *aElement = nullptr)
-    : mElement(do_GetWeakReference(static_cast<nsINode*>(aElement)))
-  {}
-
-  void SetInfo(nsSVGElement *aElement) {
+  void SetInfo(nsSVGElement* aElement) {
     mElement = do_GetWeakReference(static_cast<nsINode*>(aElement));
   }
 
@@ -211,7 +190,7 @@ public:
     return SVGPointList::SetLength(aNumberOfItems);
   }
 
-private:
+ private:
   
   
   
@@ -219,6 +198,6 @@ private:
   nsWeakPtr mElement;
 };
 
-} 
+}  
 
-#endif 
+#endif  

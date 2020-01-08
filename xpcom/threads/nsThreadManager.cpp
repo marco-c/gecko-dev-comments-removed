@@ -36,21 +36,11 @@ using namespace mozilla;
 static MOZ_THREAD_LOCAL(bool) sTLSIsMainThread;
 static MOZ_THREAD_LOCAL(PRThread*) gTlsCurrentVirtualThread;
 
-bool
-NS_IsMainThreadTLSInitialized()
-{
-  return sTLSIsMainThread.initialized();
-}
+bool NS_IsMainThreadTLSInitialized() { return sTLSIsMainThread.initialized(); }
 
-bool
-NS_IsMainThread()
-{
-  return sTLSIsMainThread.get();
-}
+bool NS_IsMainThread() { return sTLSIsMainThread.get(); }
 
-void
-NS_SetMainThread()
-{
+void NS_SetMainThread() {
   if (!sTLSIsMainThread.init()) {
     MOZ_CRASH();
   }
@@ -58,9 +48,7 @@ NS_SetMainThread()
   MOZ_ASSERT(NS_IsMainThread());
 }
 
-void
-NS_SetMainThread(PRThread* aVirtualThread)
-{
+void NS_SetMainThread(PRThread* aVirtualThread) {
   MOZ_ASSERT(Scheduler::IsCooperativeThread());
 
   MOZ_ASSERT(!gTlsCurrentVirtualThread.get());
@@ -68,9 +56,7 @@ NS_SetMainThread(PRThread* aVirtualThread)
   NS_SetMainThread();
 }
 
-void
-NS_UnsetMainThread()
-{
+void NS_UnsetMainThread() {
   MOZ_ASSERT(Scheduler::IsCooperativeThread());
 
   sTLSIsMainThread.set(false);
@@ -82,13 +68,9 @@ NS_UnsetMainThread()
 
 namespace mozilla {
 
-void
-AssertIsOnMainThread()
-{
-  MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!");
-}
+void AssertIsOnMainThread() { MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!"); }
 
-} 
+}  
 
 #endif
 
@@ -98,9 +80,7 @@ static bool sShutdownComplete;
 
 
 
- void
-nsThreadManager::ReleaseThread(void* aData)
-{
+ void nsThreadManager::ReleaseThread(void* aData) {
   if (sShutdownComplete) {
     
     
@@ -117,15 +97,9 @@ nsThreadManager::ReleaseThread(void* aData)
 
 
 NS_IMETHODIMP_(MozExternalRefCountType)
-nsThreadManager::AddRef()
-{
-  return 2;
-}
+nsThreadManager::AddRef() { return 2; }
 NS_IMETHODIMP_(MozExternalRefCountType)
-nsThreadManager::Release()
-{
-  return 1;
-}
+nsThreadManager::Release() { return 1; }
 NS_IMPL_CLASSINFO(nsThreadManager, nullptr,
                   nsIClassInfo::THREADSAFE | nsIClassInfo::SINGLETON,
                   NS_THREADMANAGER_CID)
@@ -135,15 +109,12 @@ NS_IMPL_CI_INTERFACE_GETTER(nsThreadManager, nsIThreadManager)
 namespace {
 
 
-class ShutdownObserveHelper final : public nsIObserver
-                                  , public nsSupportsWeakReference
-{
-public:
+class ShutdownObserveHelper final : public nsIObserver,
+                                    public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
 
-  static nsresult
-  Create(ShutdownObserveHelper** aObserver)
-  {
+  static nsresult Create(ShutdownObserveHelper** aObserver) {
     MOZ_ASSERT(aObserver);
 
     RefPtr<ShutdownObserveHelper> observer = new ShutdownObserveHelper();
@@ -153,7 +124,8 @@ public:
       return NS_ERROR_FAILURE;
     }
 
-    nsresult rv = obs->AddObserver(observer, NS_XPCOM_SHUTDOWN_OBSERVER_ID, true);
+    nsresult rv =
+        obs->AddObserver(observer, NS_XPCOM_SHUTDOWN_OBSERVER_ID, true);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -169,8 +141,7 @@ public:
 
   NS_IMETHOD
   Observe(nsISupports* aSubject, const char* aTopic,
-          const char16_t* aData) override
-  {
+          const char16_t* aData) override {
     if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) ||
         !strcmp(aTopic, "content-child-will-shutdown")) {
       mShuttingDown = true;
@@ -180,16 +151,10 @@ public:
     return NS_OK;
   }
 
-  bool
-  ShuttingDown() const
-  {
-    return mShuttingDown;
-  }
+  bool ShuttingDown() const { return mShuttingDown; }
 
-private:
-  explicit ShutdownObserveHelper()
-    : mShuttingDown(false)
-  {}
+ private:
+  explicit ShutdownObserveHelper() : mShuttingDown(false) {}
 
   ~ShutdownObserveHelper() = default;
 
@@ -207,20 +172,16 @@ NS_IMPL_RELEASE(ShutdownObserveHelper)
 
 StaticRefPtr<ShutdownObserveHelper> gShutdownObserveHelper;
 
-} 
+}  
 
 
 
- nsThreadManager&
-nsThreadManager::get()
-{
+ nsThreadManager& nsThreadManager::get() {
   static nsThreadManager sInstance;
   return sInstance;
 }
 
- void
-nsThreadManager::InitializeShutdownObserver()
-{
+ void nsThreadManager::InitializeShutdownObserver() {
   MOZ_ASSERT(!gShutdownObserveHelper);
 
   RefPtr<ShutdownObserveHelper> observer;
@@ -233,9 +194,7 @@ nsThreadManager::InitializeShutdownObserver()
   ClearOnShutdown(&gShutdownObserveHelper);
 }
 
-nsresult
-nsThreadManager::Init()
-{
+nsresult nsThreadManager::Init() {
   
   
   
@@ -253,15 +212,14 @@ nsThreadManager::Init()
     return NS_ERROR_FAILURE;
   }
 
-
 #ifdef MOZ_CANARY
   const int flags = O_WRONLY | O_APPEND | O_CREAT | O_NONBLOCK;
   const mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH;
   char* env_var_flag = getenv("MOZ_KILL_CANARIES");
   sCanaryOutputFD =
-    env_var_flag ? (env_var_flag[0] ? open(env_var_flag, flags, mode) :
-                                      STDERR_FILENO) :
-                   0;
+      env_var_flag
+          ? (env_var_flag[0] ? open(env_var_flag, flags, mode) : STDERR_FILENO)
+          : 0;
 #endif
 
   nsCOMPtr<nsIIdlePeriod> idlePeriod = new MainThreadIdlePeriod();
@@ -272,9 +230,13 @@ nsThreadManager::Init()
     startScheduler = true;
   } else {
     if (XRE_IsContentProcess() && Scheduler::UseMultipleQueues()) {
-      mMainThread = CreateMainThread<ThreadEventQueue<PrioritizedEventQueue<LabeledEventQueue>>, LabeledEventQueue>(idlePeriod);
+      mMainThread = CreateMainThread<
+          ThreadEventQueue<PrioritizedEventQueue<LabeledEventQueue>>,
+          LabeledEventQueue>(idlePeriod);
     } else {
-      mMainThread = CreateMainThread<ThreadEventQueue<PrioritizedEventQueue<EventQueue>>, EventQueue>(idlePeriod);
+      mMainThread =
+          CreateMainThread<ThreadEventQueue<PrioritizedEventQueue<EventQueue>>,
+                           EventQueue>(idlePeriod);
     }
   }
 
@@ -300,9 +262,7 @@ nsThreadManager::Init()
   return NS_OK;
 }
 
-void
-nsThreadManager::Shutdown()
-{
+void nsThreadManager::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread(), "shutdown not called from main thread");
 
   
@@ -383,9 +343,7 @@ nsThreadManager::Shutdown()
   sShutdownComplete = true;
 }
 
-void
-nsThreadManager::RegisterCurrentThread(nsThread& aThread)
-{
+void nsThreadManager::RegisterCurrentThread(nsThread& aThread) {
   MOZ_ASSERT(aThread.GetPRThread() == PR_GetCurrentThread(), "bad aThread");
 
   aThread.AddRef();  
@@ -393,19 +351,15 @@ nsThreadManager::RegisterCurrentThread(nsThread& aThread)
   PR_SetThreadPrivate(mCurThreadIndex, &aThread);
 }
 
-void
-nsThreadManager::UnregisterCurrentThread(nsThread& aThread)
-{
+void nsThreadManager::UnregisterCurrentThread(nsThread& aThread) {
   MOZ_ASSERT(aThread.GetPRThread() == PR_GetCurrentThread(), "bad aThread");
 
   PR_SetThreadPrivate(mCurThreadIndex, nullptr);
   
 }
 
-nsThread*
-nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue,
-                                     nsThread::MainThreadFlag aMainThread)
-{
+nsThread* nsThreadManager::CreateCurrentThread(
+    SynchronizedEventQueue* aQueue, nsThread::MainThreadFlag aMainThread) {
   
   MOZ_ASSERT(!PR_GetThreadPrivate(mCurThreadIndex));
 
@@ -421,9 +375,7 @@ nsThreadManager::CreateCurrentThread(SynchronizedEventQueue* aQueue,
   return thread.get();  
 }
 
-nsThread*
-nsThreadManager::GetCurrentThread()
-{
+nsThread* nsThreadManager::GetCurrentThread() {
   
   void* data = PR_GetThreadPrivate(mCurThreadIndex);
   if (data) {
@@ -447,9 +399,7 @@ nsThreadManager::GetCurrentThread()
   return thread.get();  
 }
 
-bool
-nsThreadManager::IsNSThread() const
-{
+bool nsThreadManager::IsNSThread() const {
   if (!mInitialized) {
     return false;
   }
@@ -460,18 +410,14 @@ nsThreadManager::IsNSThread() const
 }
 
 NS_IMETHODIMP
-nsThreadManager::NewThread(uint32_t aCreationFlags,
-                           uint32_t aStackSize,
-                           nsIThread** aResult)
-{
+nsThreadManager::NewThread(uint32_t aCreationFlags, uint32_t aStackSize,
+                           nsIThread** aResult) {
   return NewNamedThread(NS_LITERAL_CSTRING(""), aStackSize, aResult);
 }
 
 NS_IMETHODIMP
-nsThreadManager::NewNamedThread(const nsACString& aName,
-                                uint32_t aStackSize,
-                                nsIThread** aResult)
-{
+nsThreadManager::NewNamedThread(const nsACString& aName, uint32_t aStackSize,
+                                nsIThread** aResult) {
   
 
   
@@ -480,9 +426,11 @@ nsThreadManager::NewNamedThread(const nsACString& aName,
   }
 
   RefPtr<ThreadEventQueue<EventQueue>> queue =
-    new ThreadEventQueue<EventQueue>(MakeUnique<EventQueue>());
-  RefPtr<nsThread> thr = new nsThread(WrapNotNull(queue), nsThread::NOT_MAIN_THREAD, aStackSize);
-  nsresult rv = thr->Init(aName);  
+      new ThreadEventQueue<EventQueue>(MakeUnique<EventQueue>());
+  RefPtr<nsThread> thr =
+      new nsThread(WrapNotNull(queue), nsThread::NOT_MAIN_THREAD, aStackSize);
+  nsresult rv =
+      thr->Init(aName);  
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -494,7 +442,7 @@ nsThreadManager::NewNamedThread(const nsACString& aName,
 
   if (NS_WARN_IF(!mInitialized)) {
     if (thr->ShutdownRequired()) {
-      thr->Shutdown(); 
+      thr->Shutdown();  
     }
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -504,8 +452,7 @@ nsThreadManager::NewNamedThread(const nsACString& aName,
 }
 
 NS_IMETHODIMP
-nsThreadManager::GetMainThread(nsIThread** aResult)
-{
+nsThreadManager::GetMainThread(nsIThread** aResult) {
   
   if (NS_WARN_IF(!mMainThread)) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -515,8 +462,7 @@ nsThreadManager::GetMainThread(nsIThread** aResult)
 }
 
 NS_IMETHODIMP
-nsThreadManager::GetCurrentThread(nsIThread** aResult)
-{
+nsThreadManager::GetCurrentThread(nsIThread** aResult) {
   
   if (!mMainThread) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -530,21 +476,18 @@ nsThreadManager::GetCurrentThread(nsIThread** aResult)
 }
 
 NS_IMETHODIMP
-nsThreadManager::SpinEventLoopUntil(nsINestedEventLoopCondition* aCondition)
-{
+nsThreadManager::SpinEventLoopUntil(nsINestedEventLoopCondition* aCondition) {
   return SpinEventLoopUntilInternal(aCondition, false);
 }
 
 NS_IMETHODIMP
-nsThreadManager::SpinEventLoopUntilOrShutdown(nsINestedEventLoopCondition* aCondition)
-{
+nsThreadManager::SpinEventLoopUntilOrShutdown(
+    nsINestedEventLoopCondition* aCondition) {
   return SpinEventLoopUntilInternal(aCondition, true);
 }
 
-nsresult
-nsThreadManager::SpinEventLoopUntilInternal(nsINestedEventLoopCondition* aCondition,
-                                            bool aCheckingShutdown)
-{
+nsresult nsThreadManager::SpinEventLoopUntilInternal(
+    nsINestedEventLoopCondition* aCondition, bool aCheckingShutdown) {
   nsCOMPtr<nsINestedEventLoopCondition> condition(aCondition);
   nsresult rv = NS_OK;
 
@@ -557,9 +500,8 @@ nsThreadManager::SpinEventLoopUntilInternal(nsINestedEventLoopCondition* aCondit
 
   if (!mozilla::SpinEventLoopUntil([&]() -> bool {
         
-        if (aCheckingShutdown &&
-            (!gShutdownObserveHelper ||
-             gShutdownObserveHelper->ShuttingDown())) {
+        if (aCheckingShutdown && (!gShutdownObserveHelper ||
+                                  gShutdownObserveHelper->ShuttingDown())) {
           return true;
         }
 
@@ -583,8 +525,7 @@ nsThreadManager::SpinEventLoopUntilInternal(nsINestedEventLoopCondition* aCondit
 }
 
 NS_IMETHODIMP
-nsThreadManager::SpinEventLoopUntilEmpty()
-{
+nsThreadManager::SpinEventLoopUntilEmpty() {
   nsIThread* thread = NS_GetCurrentThread();
 
   while (NS_HasPendingEvents(thread)) {
@@ -595,22 +536,19 @@ nsThreadManager::SpinEventLoopUntilEmpty()
 }
 
 NS_IMETHODIMP
-nsThreadManager::GetSystemGroupEventTarget(nsIEventTarget** aTarget)
-{
-  nsCOMPtr<nsIEventTarget> target = SystemGroup::EventTargetFor(TaskCategory::Other);
+nsThreadManager::GetSystemGroupEventTarget(nsIEventTarget** aTarget) {
+  nsCOMPtr<nsIEventTarget> target =
+      SystemGroup::EventTargetFor(TaskCategory::Other);
   target.forget(aTarget);
   return NS_OK;
 }
 
-uint32_t
-nsThreadManager::GetHighestNumberOfThreads()
-{
+uint32_t nsThreadManager::GetHighestNumberOfThreads() {
   return nsThread::MaxActiveThreads();
 }
 
 NS_IMETHODIMP
-nsThreadManager::DispatchToMainThread(nsIRunnable *aEvent, uint32_t aPriority)
-{
+nsThreadManager::DispatchToMainThread(nsIRunnable* aEvent, uint32_t aPriority) {
   
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -621,43 +559,35 @@ nsThreadManager::DispatchToMainThread(nsIRunnable *aEvent, uint32_t aPriority)
   if (aPriority != nsIRunnablePriority::PRIORITY_NORMAL) {
     nsCOMPtr<nsIRunnable> event(aEvent);
     return mMainThread->DispatchFromScript(
-             new PrioritizableRunnable(event.forget(), aPriority), 0);
+        new PrioritizableRunnable(event.forget(), aPriority), 0);
   }
   return mMainThread->DispatchFromScript(aEvent, 0);
 }
 
-void
-nsThreadManager::EnableMainThreadEventPrioritization()
-{
+void nsThreadManager::EnableMainThreadEventPrioritization() {
   MOZ_ASSERT(NS_IsMainThread());
   InputEventStatistics::Get().SetEnable(true);
   mMainThread->EnableInputEventPrioritization();
 }
 
-void
-nsThreadManager::FlushInputEventPrioritization()
-{
+void nsThreadManager::FlushInputEventPrioritization() {
   MOZ_ASSERT(NS_IsMainThread());
   mMainThread->FlushInputEventPrioritization();
 }
 
-void
-nsThreadManager::SuspendInputEventPrioritization()
-{
+void nsThreadManager::SuspendInputEventPrioritization() {
   MOZ_ASSERT(NS_IsMainThread());
   mMainThread->SuspendInputEventPrioritization();
 }
 
-void
-nsThreadManager::ResumeInputEventPrioritization()
-{
+void nsThreadManager::ResumeInputEventPrioritization() {
   MOZ_ASSERT(NS_IsMainThread());
   mMainThread->ResumeInputEventPrioritization();
 }
 
 NS_IMETHODIMP
-nsThreadManager::IdleDispatchToMainThread(nsIRunnable *aEvent, uint32_t aTimeout)
-{
+nsThreadManager::IdleDispatchToMainThread(nsIRunnable* aEvent,
+                                          uint32_t aTimeout) {
   
   
   MOZ_ASSERT(NS_IsMainThread());
@@ -672,9 +602,7 @@ nsThreadManager::IdleDispatchToMainThread(nsIRunnable *aEvent, uint32_t aTimeout
 
 namespace mozilla {
 
-PRThread*
-GetCurrentVirtualThread()
-{
+PRThread* GetCurrentVirtualThread() {
   
   
   if (gTlsCurrentVirtualThread.initialized()) {
@@ -685,10 +613,6 @@ GetCurrentVirtualThread()
   return PR_GetCurrentThread();
 }
 
-PRThread*
-GetCurrentPhysicalThread()
-{
-  return PR_GetCurrentThread();
-}
+PRThread* GetCurrentPhysicalThread() { return PR_GetCurrentThread(); }
 
-} 
+}  

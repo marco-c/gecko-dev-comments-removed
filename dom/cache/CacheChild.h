@@ -23,26 +23,18 @@ namespace cache {
 class Cache;
 class CacheOpArgs;
 
-class CacheChild final : public PCacheChild
-                       , public ActorChild
-{
-public:
-  class MOZ_RAII AutoLock final
-  {
+class CacheChild final : public PCacheChild, public ActorChild {
+ public:
+  class MOZ_RAII AutoLock final {
     CacheChild* mActor;
 
-  public:
-    explicit AutoLock(CacheChild* aActor)
-      : mActor(aActor)
-    {
+   public:
+    explicit AutoLock(CacheChild* aActor) : mActor(aActor) {
       MOZ_DIAGNOSTIC_ASSERT(mActor);
       mActor->Lock();
     }
 
-    ~AutoLock()
-    {
-      mActor->Unlock();
-    }
+    ~AutoLock() { mActor->Unlock(); }
   };
 
   CacheChild();
@@ -55,43 +47,36 @@ public:
   
   void ClearListener();
 
-  void
-  ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
-            nsISupports* aParent, const CacheOpArgs& aArgs);
+  void ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
+                 nsISupports* aParent, const CacheOpArgs& aArgs);
 
   
   void StartDestroyFromListener();
 
-private:
+ private:
   
 
   
   virtual void StartDestroy() override;
 
   
-  virtual void
-  ActorDestroy(ActorDestroyReason aReason) override;
+  virtual void ActorDestroy(ActorDestroyReason aReason) override;
 
-  virtual PCacheOpChild*
-  AllocPCacheOpChild(const CacheOpArgs& aOpArgs) override;
+  virtual PCacheOpChild* AllocPCacheOpChild(
+      const CacheOpArgs& aOpArgs) override;
 
-  virtual bool
-  DeallocPCacheOpChild(PCacheOpChild* aActor) override;
+  virtual bool DeallocPCacheOpChild(PCacheOpChild* aActor) override;
 
   
-  void
-  NoteDeletedActor();
+  void NoteDeletedActor();
 
-  void
-  MaybeFlushDelayedDestroy();
+  void MaybeFlushDelayedDestroy();
 
   
   
-  void
-  Lock();
+  void Lock();
 
-  void
-  Unlock();
+  void Unlock();
 
   
   
@@ -104,8 +89,8 @@ private:
   NS_DECL_OWNINGTHREAD
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

@@ -15,80 +15,59 @@
 #include "mozilla/mscom/Ptr.h"
 #if defined(MOZ_CONTENT_SANDBOX)
 #include "mozilla/SandboxSettings.h"
-#endif 
+#endif  
 #include "nsExceptionHandler.h"
 
 namespace mozilla {
 namespace mscom {
 
-template<typename Interface, const IID& _IID>
-class COMPtrHolder
-{
-public:
+template <typename Interface, const IID& _IID>
+class COMPtrHolder {
+ public:
   typedef ProxyUniquePtr<Interface> COMPtrType;
   typedef COMPtrHolder<Interface, _IID> ThisType;
   typedef typename detail::EnvironmentSelector<Interface>::Type EnvType;
 
   COMPtrHolder() {}
 
-  MOZ_IMPLICIT COMPtrHolder(decltype(nullptr))
-  {
-  }
+  MOZ_IMPLICIT COMPtrHolder(decltype(nullptr)) {}
 
   explicit COMPtrHolder(COMPtrType&& aPtr)
-    : mPtr(std::forward<COMPtrType>(aPtr))
-  {
-  }
+      : mPtr(std::forward<COMPtrType>(aPtr)) {}
 
   COMPtrHolder(COMPtrType&& aPtr, const ActivationContext& aActCtx)
-    : mPtr(std::forward<COMPtrType>(aPtr))
-    , mActCtx(aActCtx)
-  {
-  }
+      : mPtr(std::forward<COMPtrType>(aPtr)), mActCtx(aActCtx) {}
 
-  Interface* Get() const
-  {
-    return mPtr.get();
-  }
+  Interface* Get() const { return mPtr.get(); }
 
-  MOZ_MUST_USE Interface* Release()
-  {
-    return mPtr.release();
-  }
+  MOZ_MUST_USE Interface* Release() { return mPtr.release(); }
 
-  void Set(COMPtrType&& aPtr)
-  {
-    mPtr = std::forward<COMPtrType>(aPtr);
-  }
+  void Set(COMPtrType&& aPtr) { mPtr = std::forward<COMPtrType>(aPtr); }
 
-  void SetActCtx(const ActivationContext& aActCtx)
-  {
-    mActCtx = aActCtx;
-  }
+  void SetActCtx(const ActivationContext& aActCtx) { mActCtx = aActCtx; }
 
 #if defined(MOZ_CONTENT_SANDBOX)
   
   
   
-  void PreserveStream(PreservedStreamPtr aPtr) const
-  {
+  void PreserveStream(PreservedStreamPtr aPtr) const {
     MOZ_ASSERT(!mMarshaledStream);
     mMarshaledStream = std::move(aPtr);
   }
 
-  PreservedStreamPtr GetPreservedStream()
-  {
+  PreservedStreamPtr GetPreservedStream() {
     return std::move(mMarshaledStream);
   }
-#endif 
+#endif  
 
   COMPtrHolder(const COMPtrHolder& aOther) = delete;
 
   COMPtrHolder(COMPtrHolder&& aOther)
-    : mPtr(std::move(aOther.mPtr))
+      : mPtr(std::move(aOther.mPtr))
 #if defined(MOZ_CONTENT_SANDBOX)
-    , mMarshaledStream(std::move(aOther.mMarshaledStream))
-#endif 
+        ,
+        mMarshaledStream(std::move(aOther.mMarshaledStream))
+#endif  
   {
   }
 
@@ -99,74 +78,66 @@ public:
   
   
   
-  ThisType& operator=(const ThisType& aOther)
-  {
+  ThisType& operator=(const ThisType& aOther) {
     Set(std::move(aOther.mPtr));
 
 #if defined(MOZ_CONTENT_SANDBOX)
     mMarshaledStream = std::move(aOther.mMarshaledStream);
-#endif 
+#endif  
 
     return *this;
   }
 
-  ThisType& operator=(ThisType&& aOther)
-  {
+  ThisType& operator=(ThisType&& aOther) {
     Set(std::move(aOther.mPtr));
 
 #if defined(MOZ_CONTENT_SANDBOX)
     mMarshaledStream = std::move(aOther.mMarshaledStream);
-#endif 
+#endif  
 
     return *this;
   }
 
-  bool operator==(const ThisType& aOther) const
-  {
-    return mPtr == aOther.mPtr;
-  }
+  bool operator==(const ThisType& aOther) const { return mPtr == aOther.mPtr; }
 
-  bool IsNull() const
-  {
-    return !mPtr;
-  }
+  bool IsNull() const { return !mPtr; }
 
-private:
+ private:
   
-  mutable COMPtrType  mPtr;
-  ActivationContext   mActCtx;
+  mutable COMPtrType mPtr;
+  ActivationContext mActCtx;
 
 #if defined(MOZ_CONTENT_SANDBOX)
   
   
   mutable PreservedStreamPtr mMarshaledStream;
-#endif 
+#endif  
 };
 
-} 
-} 
+}  
+}  
 
 namespace IPC {
 
-template<typename Interface, const IID& _IID>
-struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>>
-{
+template <typename Interface, const IID& _IID>
+struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>> {
   typedef mozilla::mscom::COMPtrHolder<Interface, _IID> paramType;
 
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
+  static void Write(Message* aMsg, const paramType& aParam) {
 #if defined(MOZ_CONTENT_SANDBOX)
     static const bool sIsStreamPreservationNeeded =
-      XRE_IsParentProcess() && mozilla::GetEffectiveContentSandboxLevel() >= 3;
+        XRE_IsParentProcess() &&
+        mozilla::GetEffectiveContentSandboxLevel() >= 3;
 #else
     const bool sIsStreamPreservationNeeded = false;
-#endif 
+#endif  
 
     typename paramType::EnvType env;
 
-    mozilla::mscom::ProxyStreamFlags flags = sIsStreamPreservationNeeded ?
-         mozilla::mscom::ProxyStreamFlags::ePreservable :
-         mozilla::mscom::ProxyStreamFlags::eDefault;
+    mozilla::mscom::ProxyStreamFlags flags =
+        sIsStreamPreservationNeeded
+            ? mozilla::mscom::ProxyStreamFlags::ePreservable
+            : mozilla::mscom::ProxyStreamFlags::eDefault;
 
     mozilla::mscom::ProxyStream proxyStream(_IID, aParam.Get(), &env, flags);
     int bufLen;
@@ -188,11 +159,11 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>>
 
       aParam.PreserveStream(proxyStream.GetPreservedStream());
     }
-#endif 
+#endif  
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
     int length;
     if (!aMsg->ReadLength(aIter, &length)) {
       return false;
@@ -211,8 +182,8 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>>
     mozilla::mscom::ProxyStream proxyStream(_IID, buf.get(), length, &env);
     if (!proxyStream.IsValid()) {
       CrashReporter::AnnotateCrashReport(
-        CrashReporter::Annotation::ProxyStreamValid,
-        NS_LITERAL_CSTRING("false"));
+          CrashReporter::Annotation::ProxyStreamValid,
+          NS_LITERAL_CSTRING("false"));
       return false;
     }
 
@@ -226,7 +197,6 @@ struct ParamTraits<mozilla::mscom::COMPtrHolder<Interface, _IID>>
   }
 };
 
-} 
+}  
 
-#endif 
-
+#endif  

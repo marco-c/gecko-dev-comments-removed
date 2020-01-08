@@ -13,16 +13,15 @@
 namespace mozilla {
 namespace net {
 class nsSimpleURI;
-} 
-} 
+}  
+}  
 
 
 
 
 
-class gfxFontSrcPrincipal
-{
-public:
+class gfxFontSrcPrincipal {
+ public:
   explicit gfxFontSrcPrincipal(nsIPrincipal* aPrincipal);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontSrcPrincipal)
@@ -33,7 +32,7 @@ public:
 
   PLDHashNumber Hash() const { return mHash; }
 
-private:
+ private:
   ~gfxFontSrcPrincipal();
 
   
@@ -43,4 +42,4 @@ private:
   PLDHashNumber mHash;
 };
 
-#endif 
+#endif  

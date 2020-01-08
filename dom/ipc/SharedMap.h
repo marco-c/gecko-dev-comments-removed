@@ -53,12 +53,10 @@ namespace ipc {
 
 
 
-class SharedMap : public DOMEventTargetHelper
-{
+class SharedMap : public DOMEventTargetHelper {
   using FileDescriptor = mozilla::ipc::FileDescriptor;
 
-public:
-
+ public:
   SharedMap();
 
   SharedMap(nsIGlobalObject* aGlobal, const FileDescriptor&, size_t,
@@ -69,30 +67,21 @@ public:
 
   
   
-  void Get(JSContext* cx, const nsACString& name, JS::MutableHandleValue aRetVal,
-           ErrorResult& aRv);
-
+  void Get(JSContext* cx, const nsACString& name,
+           JS::MutableHandleValue aRetVal, ErrorResult& aRv);
 
   
-  bool Has(const nsAString& aName)
-  {
-    return Has(NS_ConvertUTF16toUTF8(aName));
-  }
+  bool Has(const nsAString& aName) { return Has(NS_ConvertUTF16toUTF8(aName)); }
 
-  void Get(JSContext* aCx, const nsAString& aName, JS::MutableHandleValue aRetVal,
-           ErrorResult& aRv)
-  {
+  void Get(JSContext* aCx, const nsAString& aName,
+           JS::MutableHandleValue aRetVal, ErrorResult& aRv) {
     return Get(aCx, NS_ConvertUTF16toUTF8(aName), aRetVal, aRv);
   }
 
-
   
 
 
-  uint32_t GetIterableLength() const
-  {
-    return EntryArray().Length();
-  }
+  uint32_t GetIterableLength() const { return EntryArray().Length(); }
 
   
 
@@ -102,7 +91,6 @@ public:
   const nsString GetKeyAtIndex(uint32_t aIndex) const;
   bool GetValueAtIndex(JSContext* aCx, uint32_t aIndex,
                        JS::MutableHandle<JS::Value> aResult) const;
-
 
   
 
@@ -128,23 +116,17 @@ public:
               nsTArray<RefPtr<BlobImpl>>&& aBlobs,
               nsTArray<nsCString>&& aChangedKeys);
 
-
   JSObject* WrapObject(JSContext* aCx, JS::HandleObject aGivenProto) override;
 
-protected:
+ protected:
   ~SharedMap() override = default;
 
-  class Entry
-  {
-  public:
+  class Entry {
+   public:
     Entry(Entry&&) = delete;
 
     explicit Entry(SharedMap& aMap, const nsACString& aName = EmptyCString())
-      : mMap(aMap)
-      , mName(aName)
-      , mData(AsVariant(uint32_t(0)))
-    {
-    }
+        : mMap(aMap), mName(aName), mData(AsVariant(uint32_t(0))) {}
 
     ~Entry() = default;
 
@@ -152,9 +134,8 @@ protected:
 
 
 
-    template<typename Buffer>
-    void Code(Buffer& buffer)
-    {
+    template <typename Buffer>
+    void Code(Buffer& buffer) {
       DebugOnly<size_t> startOffset = buffer.cursor();
 
       buffer.codeString(mName);
@@ -170,13 +151,9 @@ protected:
 
 
 
-    size_t HeaderSize() const
-    {
-      return (sizeof(uint16_t) + mName.Length() +
-              sizeof(DataOffset()) +
-              sizeof(mSize) +
-              sizeof(mBlobOffset) +
-              sizeof(mBlobCount));
+    size_t HeaderSize() const {
+      return (sizeof(uint16_t) + mName.Length() + sizeof(DataOffset()) +
+              sizeof(mSize) + sizeof(mBlobOffset) + sizeof(mBlobCount));
     }
 
     
@@ -201,7 +178,8 @@ protected:
 
 
 
-    void ExtractData(char* aDestPtr, uint32_t aNewOffset, uint16_t aNewBlobOffset);
+    void ExtractData(char* aDestPtr, uint32_t aNewOffset,
+                     uint16_t aNewBlobOffset);
 
     
     
@@ -209,51 +187,39 @@ protected:
 
     
     
-    void Read(JSContext* aCx, JS::MutableHandleValue aRetVal,
-              ErrorResult& aRv);
+    void Read(JSContext* aCx, JS::MutableHandleValue aRetVal, ErrorResult& aRv);
 
     
     uint32_t Size() const { return mSize; }
 
-  private:
+   private:
     
     
     
-    const char* Data() const
-    {
-      return mMap.Data() + DataOffset();
-    }
+    const char* Data() const { return mMap.Data() + DataOffset(); }
 
     
     
     
-    uint32_t& DataOffset()
-    {
-      return mData.as<uint32_t>();
-    }
-    const uint32_t& DataOffset() const
-    {
-      return mData.as<uint32_t>();
-    }
+    uint32_t& DataOffset() { return mData.as<uint32_t>(); }
+    const uint32_t& DataOffset() const { return mData.as<uint32_t>(); }
 
-  public:
+   public:
     uint16_t BlobOffset() const { return mBlobOffset; }
     uint16_t BlobCount() const { return mBlobCount; }
 
-    Span<const RefPtr<BlobImpl>> Blobs()
-    {
+    Span<const RefPtr<BlobImpl>> Blobs() {
       if (mData.is<StructuredCloneData>()) {
         return mData.as<StructuredCloneData>().BlobImpls();
       }
       return {&mMap.mBlobImpls[mBlobOffset], BlobCount()};
     }
 
-  private:
+   private:
     
     
     
-    const StructuredCloneData& Holder() const
-    {
+    const StructuredCloneData& Holder() const {
       return mData.as<StructuredCloneData>();
     }
 
@@ -319,9 +285,8 @@ protected:
   char* Data() { return mMap.get<char>().get(); }
 };
 
-class WritableSharedMap final : public SharedMap
-{
-public:
+class WritableSharedMap final : public SharedMap {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(WritableSharedMap, SharedMap)
 
@@ -329,32 +294,28 @@ public:
 
   
   
-  void Set(JSContext* cx, const nsACString& name, JS::HandleValue value, ErrorResult& aRv);
+  void Set(JSContext* cx, const nsACString& name, JS::HandleValue value,
+           ErrorResult& aRv);
 
   
   void Delete(const nsACString& name);
 
-
   
-  void Set(JSContext* aCx, const nsAString& aName, JS::HandleValue aValue, ErrorResult& aRv)
-  {
+  void Set(JSContext* aCx, const nsAString& aName, JS::HandleValue aValue,
+           ErrorResult& aRv) {
     return Set(aCx, NS_ConvertUTF16toUTF8(aName), aValue, aRv);
   }
 
-  void Delete(const nsAString& aName)
-  {
+  void Delete(const nsAString& aName) {
     return Delete(NS_ConvertUTF16toUTF8(aName));
   }
-
 
   
   
   void Flush();
 
-
   
   void SendTo(ContentParent* aContentParent) const;
-
 
   
 
@@ -362,13 +323,12 @@ public:
 
   SharedMap* GetReadOnly();
 
-
   JSObject* WrapObject(JSContext* aCx, JS::HandleObject aGivenProto) override;
 
-protected:
+ protected:
   ~WritableSharedMap() override = default;
 
-private:
+ private:
   
   
   nsTArray<nsCString> mChangedKeys;
@@ -393,8 +353,8 @@ private:
   nsresult KeyChanged(const nsACString& aName);
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

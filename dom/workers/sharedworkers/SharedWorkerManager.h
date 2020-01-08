@@ -20,9 +20,8 @@ class MessagePortIdentifier;
 class RemoteWorkerData;
 class SharedWorkerParent;
 
-class SharedWorkerManager final : public RemoteWorkerObserver
-{
-public:
+class SharedWorkerManager final : public RemoteWorkerObserver {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedWorkerManager, override);
 
   
@@ -31,50 +30,38 @@ public:
                       const RemoteWorkerData& aData,
                       nsIPrincipal* aLoadingPrincipal);
 
-  bool
-  MatchOnMainThread(const nsACString& aDomain,
-                    nsIURI* aScriptURL,
-                    const nsAString& aName,
-                    nsIPrincipal* aLoadingPrincipal) const;
+  bool MatchOnMainThread(const nsACString& aDomain, nsIURI* aScriptURL,
+                         const nsAString& aName,
+                         nsIPrincipal* aLoadingPrincipal) const;
 
   
 
-  void
-  CreationFailed() override;
+  void CreationFailed() override;
 
-  void
-  CreationSucceeded() override;
+  void CreationSucceeded() override;
 
-  void
-  ErrorReceived(const ErrorValue& aValue) override;
+  void ErrorReceived(const ErrorValue& aValue) override;
 
-  void
-  Terminated() override;
+  void Terminated() override;
 
   
 
-  bool
-  MaybeCreateRemoteWorker(const RemoteWorkerData& aData,
-                          uint64_t aWindowID,
-                          const MessagePortIdentifier& aPortIdentifier,
-                          base::ProcessId aProcessId);
+  bool MaybeCreateRemoteWorker(const RemoteWorkerData& aData,
+                               uint64_t aWindowID,
+                               const MessagePortIdentifier& aPortIdentifier,
+                               base::ProcessId aProcessId);
 
-  void
-  AddActor(SharedWorkerParent* aParent);
+  void AddActor(SharedWorkerParent* aParent);
 
-  void
-  RemoveActor(SharedWorkerParent* aParent);
+  void RemoveActor(SharedWorkerParent* aParent);
 
-  void
-  UpdateSuspend();
+  void UpdateSuspend();
 
-  void
-  UpdateFrozen();
+  void UpdateFrozen();
 
-  bool
-  IsSecureContext() const;
+  bool IsSecureContext() const;
 
-private:
+ private:
   ~SharedWorkerManager();
 
   nsCOMPtr<nsIEventTarget> mPBackgroundEventTarget;
@@ -88,12 +75,13 @@ private:
   bool mFrozen;
 
   
+  
   nsTArray<SharedWorkerParent*> mActors;
 
   RefPtr<RemoteWorkerController> mRemoteWorkerController;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

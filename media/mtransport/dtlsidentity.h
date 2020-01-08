@@ -23,10 +23,11 @@ namespace mozilla {
 class DtlsIdentity final {
  public:
   
-  DtlsIdentity(UniqueSECKEYPrivateKey privkey,
-               UniqueCERTCertificate cert,
+  DtlsIdentity(UniqueSECKEYPrivateKey privkey, UniqueCERTCertificate cert,
                SSLKEAType authType)
-      : private_key_(std::move(privkey)), cert_(std::move(cert)), auth_type_(authType) {}
+      : private_key_(std::move(privkey)),
+        cert_(std::move(cert)),
+        auth_type_(authType) {}
 
   
   
@@ -34,28 +35,23 @@ class DtlsIdentity final {
 
   
   
-  const UniqueCERTCertificate& cert() const { return cert_; }
-  const UniqueSECKEYPrivateKey& privkey() const { return private_key_; }
+  const UniqueCERTCertificate &cert() const { return cert_; }
+  const UniqueSECKEYPrivateKey &privkey() const { return private_key_; }
   
   
   
   
   SSLKEAType auth_type() const { return auth_type_; }
 
-  nsresult ComputeFingerprint(const std::string algorithm,
-                              uint8_t *digest,
-                              size_t size,
-                              size_t *digest_length) const;
-  static nsresult ComputeFingerprint(const UniqueCERTCertificate& cert,
+  nsresult ComputeFingerprint(const std::string algorithm, uint8_t *digest,
+                              size_t size, size_t *digest_length) const;
+  static nsresult ComputeFingerprint(const UniqueCERTCertificate &cert,
                                      const std::string algorithm,
-                                     uint8_t *digest,
-                                     size_t size,
+                                     uint8_t *digest, size_t size,
                                      size_t *digest_length);
 
   static const std::string DEFAULT_HASH_ALGORITHM;
-  enum {
-    HASH_ALGORITHM_MAX_LENGTH = 64
-  };
+  enum { HASH_ALGORITHM_MAX_LENGTH = 64 };
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DtlsIdentity)
 

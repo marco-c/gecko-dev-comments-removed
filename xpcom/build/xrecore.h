@@ -14,4 +14,4 @@
 
 #define XRE_API(type, name, params) type name params;
 
-#endif 
+#endif  

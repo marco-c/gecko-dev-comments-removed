@@ -56,19 +56,18 @@
 namespace mozilla {
 namespace layers {
 class ShadowLayerForwarder;
-} 
+}  
 
 namespace ipc {
 
-class Shmem final
-{
+class Shmem final {
   friend struct IPDLParamTraits<mozilla::ipc::Shmem>;
 #ifdef DEBUG
   
   friend class mozilla::layers::ShadowLayerForwarder;
 #endif
 
-public:
+ public:
   typedef int32_t id_t;
   
   typedef mozilla::ipc::SharedMemory SharedMemory;
@@ -79,46 +78,30 @@ public:
   
   struct PrivateIPDLCaller {};
 
-  Shmem() :
-    mSegment(nullptr),
-    mData(nullptr),
-    mSize(0),
-    mId(0)
-  {
-  }
+  Shmem() : mSegment(nullptr), mData(nullptr), mSize(0), mId(0) {}
 
-  Shmem(const Shmem& aOther) :
-    mSegment(aOther.mSegment),
-    mData(aOther.mData),
-    mSize(aOther.mSize),
-    mId(aOther.mId)
-  {
-  }
+  Shmem(const Shmem& aOther)
+      : mSegment(aOther.mSegment),
+        mData(aOther.mData),
+        mSize(aOther.mSize),
+        mId(aOther.mId) {}
 
 #if !defined(DEBUG)
-  Shmem(PrivateIPDLCaller,
-        SharedMemory* aSegment, id_t aId) :
-    mSegment(aSegment),
-    mData(aSegment->memory()),
-    mSize(0),
-    mId(aId)
-  {
+  Shmem(PrivateIPDLCaller, SharedMemory* aSegment, id_t aId)
+      : mSegment(aSegment), mData(aSegment->memory()), mSize(0), mId(aId) {
     mSize = static_cast<size_t>(*PtrToSize(mSegment));
   }
 #else
-  Shmem(PrivateIPDLCaller,
-        SharedMemory* aSegment, id_t aId);
+  Shmem(PrivateIPDLCaller, SharedMemory* aSegment, id_t aId);
 #endif
 
-  ~Shmem()
-  {
+  ~Shmem() {
     
     
     forget(PrivateIPDLCaller());
   }
 
-  Shmem& operator=(const Shmem& aRhs)
-  {
+  Shmem& operator=(const Shmem& aRhs) {
     mSegment = aRhs.mSegment;
     mData = aRhs.mData;
     mSize = aRhs.mSize;
@@ -126,32 +109,19 @@ public:
     return *this;
   }
 
-  bool operator==(const Shmem& aRhs) const
-  {
-    return mSegment == aRhs.mSegment;
-  }
+  bool operator==(const Shmem& aRhs) const { return mSegment == aRhs.mSegment; }
 
   
   
-  bool
-  IsWritable() const
-  {
-    return mSegment != nullptr;
-  }
+  bool IsWritable() const { return mSegment != nullptr; }
 
   
   
-  bool
-  IsReadable() const
-  {
-    return mSegment != nullptr;
-  }
+  bool IsReadable() const { return mSegment != nullptr; }
 
   
-  template<typename T>
-  T*
-  get() const
-  {
+  template <typename T>
+  T* get() const {
     AssertInvariants();
     AssertAligned<T>();
 
@@ -162,10 +132,8 @@ public:
   
   
   
-  template<typename T>
-  size_t
-  Size() const
-  {
+  template <typename T>
+  size_t Size() const {
     AssertInvariants();
     AssertAligned<T>();
 
@@ -173,85 +141,64 @@ public:
   }
 
   
-  id_t Id(PrivateIPDLCaller) const {
-    return mId;
-  }
+  id_t Id(PrivateIPDLCaller) const { return mId; }
 
-  SharedMemory* Segment(PrivateIPDLCaller) const {
-    return mSegment;
-  }
+  SharedMemory* Segment(PrivateIPDLCaller) const { return mSegment; }
 
 #ifndef DEBUG
-  void RevokeRights(PrivateIPDLCaller)
-  {
-  }
+  void RevokeRights(PrivateIPDLCaller) {}
 #else
   void RevokeRights(PrivateIPDLCaller);
 #endif
 
-  void forget(PrivateIPDLCaller)
-  {
+  void forget(PrivateIPDLCaller) {
     mSegment = nullptr;
     mData = nullptr;
     mSize = 0;
     mId = 0;
   }
 
-  static already_AddRefed<Shmem::SharedMemory>
-  Alloc(PrivateIPDLCaller,
-        size_t aNBytes,
-        SharedMemoryType aType,
-        bool aUnsafe,
-        bool aProtect=false);
+  static already_AddRefed<Shmem::SharedMemory> Alloc(PrivateIPDLCaller,
+                                                     size_t aNBytes,
+                                                     SharedMemoryType aType,
+                                                     bool aUnsafe,
+                                                     bool aProtect = false);
 
   
   
   
   
-  IPC::Message*
-  ShareTo(PrivateIPDLCaller,
-          base::ProcessId aTargetPid,
-          int32_t routingId);
+  IPC::Message* ShareTo(PrivateIPDLCaller, base::ProcessId aTargetPid,
+                        int32_t routingId);
 
   
   
   
   
-  IPC::Message*
-  UnshareFrom(PrivateIPDLCaller,
-              int32_t routingId);
+  IPC::Message* UnshareFrom(PrivateIPDLCaller, int32_t routingId);
 
   
   
   
   
-  static already_AddRefed<SharedMemory>
-  OpenExisting(PrivateIPDLCaller,
-               const IPC::Message& aDescriptor,
-               id_t* aId,
-               bool aProtect=false);
+  static already_AddRefed<SharedMemory> OpenExisting(
+      PrivateIPDLCaller, const IPC::Message& aDescriptor, id_t* aId,
+      bool aProtect = false);
 
-  static void
-  Dealloc(PrivateIPDLCaller,
-          SharedMemory* aSegment);
+  static void Dealloc(PrivateIPDLCaller, SharedMemory* aSegment);
 
-private:
-  template<typename T>
-  void AssertAligned() const
-  {
-    if (0 != (mSize % sizeof(T)))
-      MOZ_CRASH("shmem is not T-aligned");
+ private:
+  template <typename T>
+  void AssertAligned() const {
+    if (0 != (mSize % sizeof(T))) MOZ_CRASH("shmem is not T-aligned");
   }
 
 #if !defined(DEBUG)
-  void AssertInvariants() const
-  { }
+  void AssertInvariants() const {}
 
-  static uint32_t*
-  PtrToSize(SharedMemory* aSegment)
-  {
+  static uint32_t* PtrToSize(SharedMemory* aSegment) {
     char* endOfSegment =
-      reinterpret_cast<char*>(aSegment->memory()) + aSegment->Size();
+        reinterpret_cast<char*>(aSegment->memory()) + aSegment->Size();
     return reinterpret_cast<uint32_t*>(endOfSegment - sizeof(uint32_t));
   }
 
@@ -265,21 +212,20 @@ private:
   id_t mId;
 };
 
-template<>
-struct IPDLParamTraits<Shmem>
-{
+template <>
+struct IPDLParamTraits<Shmem> {
   typedef Shmem paramType;
 
   static void Write(IPC::Message* aMsg, IProtocol* aActor, paramType& aParam);
-  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter, IProtocol* aActor, paramType* aResult);
+  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                   IProtocol* aActor, paramType* aResult);
 
-  static void Log(const paramType& aParam, std::wstring* aLog)
-  {
+  static void Log(const paramType& aParam, std::wstring* aLog) {
     aLog->append(L"(shmem segment)");
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

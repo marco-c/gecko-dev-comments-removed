@@ -24,8 +24,8 @@ class nsXULPrototypePI;
 namespace mozilla {
 namespace dom {
 class XULDocument;
-} 
-} 
+}  
+}  
 
 
 
@@ -34,28 +34,26 @@ class XULDocument;
 
 
 
-class nsXULPrototypeDocument final : public nsISerializable
-{
-public:
-    static nsresult
-    Create(nsIURI* aURI, nsXULPrototypeDocument** aResult);
+class nsXULPrototypeDocument final : public nsISerializable {
+ public:
+  static nsresult Create(nsIURI* aURI, nsXULPrototypeDocument** aResult);
 
-    
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
-    
-    NS_DECL_NSISERIALIZABLE
+  
+  NS_DECL_NSISERIALIZABLE
 
-    nsresult InitPrincipal(nsIURI* aURI, nsIPrincipal* aPrincipal);
-    nsIURI* GetURI();
+  nsresult InitPrincipal(nsIURI* aURI, nsIPrincipal* aPrincipal);
+  nsIURI* GetURI();
 
-    
+  
 
 
-    nsXULPrototypeElement* GetRootElement();
-    void SetRootElement(nsXULPrototypeElement* aElement);
+  nsXULPrototypeElement* GetRootElement();
+  void SetRootElement(nsXULPrototypeElement* aElement);
 
-    
+  
 
 
 
@@ -64,61 +62,61 @@ public:
 
 
 
-    nsresult AddProcessingInstruction(nsXULPrototypePI* aPI);
-    
+  nsresult AddProcessingInstruction(nsXULPrototypePI* aPI);
+  
 
 
 
-    const nsTArray<RefPtr<nsXULPrototypePI> >& GetProcessingInstructions() const;
+  const nsTArray<RefPtr<nsXULPrototypePI> >& GetProcessingInstructions() const;
 
-    nsIPrincipal *DocumentPrincipal();
-    void SetDocumentPrincipal(nsIPrincipal *aPrincipal);
+  nsIPrincipal* DocumentPrincipal();
+  void SetDocumentPrincipal(nsIPrincipal* aPrincipal);
 
-    
-
-
-
-
-
-    nsresult AwaitLoadDone(mozilla::dom::XULDocument* aDocument, bool* aResult);
-
-    
+  
 
 
 
 
 
-    nsresult NotifyLoadDone();
+  nsresult AwaitLoadDone(mozilla::dom::XULDocument* aDocument, bool* aResult);
 
-    nsNodeInfoManager *GetNodeInfoManager();
+  
 
-    void MarkInCCGeneration(uint32_t aCCGeneration);
 
-    NS_DECL_CYCLE_COLLECTION_CLASS(nsXULPrototypeDocument)
 
-    void TraceProtos(JSTracer* aTrc);
 
-protected:
-    nsCOMPtr<nsIURI> mURI;
-    RefPtr<nsXULPrototypeElement> mRoot;
-    nsTArray<RefPtr<nsXULPrototypePI> > mProcessingInstructions;
 
-    bool mLoaded;
-    nsTArray< RefPtr<mozilla::dom::XULDocument> > mPrototypeWaiters;
+  nsresult NotifyLoadDone();
 
-    RefPtr<nsNodeInfoManager> mNodeInfoManager;
+  nsNodeInfoManager* GetNodeInfoManager();
 
-    uint32_t mCCGeneration;
-    uint32_t mGCNumber;
+  void MarkInCCGeneration(uint32_t aCCGeneration);
 
-    nsXULPrototypeDocument();
-    virtual ~nsXULPrototypeDocument();
-    nsresult Init();
+  NS_DECL_CYCLE_COLLECTION_CLASS(nsXULPrototypeDocument)
 
-    friend NS_IMETHODIMP
-    NS_NewXULPrototypeDocument(nsXULPrototypeDocument** aResult);
+  void TraceProtos(JSTracer* aTrc);
 
-    static uint32_t gRefCnt;
+ protected:
+  nsCOMPtr<nsIURI> mURI;
+  RefPtr<nsXULPrototypeElement> mRoot;
+  nsTArray<RefPtr<nsXULPrototypePI> > mProcessingInstructions;
+
+  bool mLoaded;
+  nsTArray<RefPtr<mozilla::dom::XULDocument> > mPrototypeWaiters;
+
+  RefPtr<nsNodeInfoManager> mNodeInfoManager;
+
+  uint32_t mCCGeneration;
+  uint32_t mGCNumber;
+
+  nsXULPrototypeDocument();
+  virtual ~nsXULPrototypeDocument();
+  nsresult Init();
+
+  friend NS_IMETHODIMP NS_NewXULPrototypeDocument(
+      nsXULPrototypeDocument** aResult);
+
+  static uint32_t gRefCnt;
 };
 
-#endif 
+#endif  

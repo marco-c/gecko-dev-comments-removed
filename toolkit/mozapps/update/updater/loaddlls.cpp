@@ -8,10 +8,8 @@
 
 
 
-struct AutoLoadSystemDependencies
-{
-  AutoLoadSystemDependencies()
-  {
+struct AutoLoadSystemDependencies {
+  AutoLoadSystemDependencies() {
     
     
     SetDllDirectory(L"");
@@ -22,7 +20,8 @@ struct AutoLoadSystemDependencies
       
       
       decltype(SetDefaultDllDirectories)* setDefaultDllDirectories =
-        (decltype(SetDefaultDllDirectories)*) GetProcAddress(module, "SetDefaultDllDirectories");
+          (decltype(SetDefaultDllDirectories)*)GetProcAddress(
+              module, "SetDefaultDllDirectories");
       if (setDefaultDllDirectories) {
         setDefaultDllDirectories(LOAD_LIBRARY_SEARCH_SYSTEM32);
         return;
@@ -36,42 +35,24 @@ struct AutoLoadSystemDependencies
     
     
     
-    static LPCWSTR delayDLLs[] = { L"apphelp.dll",
-                                   L"cryptbase.dll",
-                                   L"cryptsp.dll",
-                                   L"dwmapi.dll",
-                                   L"mpr.dll",
-                                   L"ntmarta.dll",
-                                   L"profapi.dll",
-                                   L"propsys.dll",
-                                   L"sspicli.dll",
-                                   L"wsock32.dll" };
+    static LPCWSTR delayDLLs[] = {
+        L"apphelp.dll", L"cryptbase.dll", L"cryptsp.dll", L"dwmapi.dll",
+        L"mpr.dll",     L"ntmarta.dll",   L"profapi.dll", L"propsys.dll",
+        L"sspicli.dll", L"wsock32.dll"};
 
 #else
     
     
     
-    static LPCWSTR delayDLLs[] = { L"apphelp.dll",
-                                   L"crypt32.dll",
-                                   L"cryptbase.dll",
-                                   L"cryptsp.dll",
-                                   L"dwmapi.dll",
-                                   L"mpr.dll",
-                                   L"msasn1.dll",
-                                   L"ntmarta.dll",
-                                   L"profapi.dll",
-                                   L"propsys.dll",
-                                   L"psapi.dll",
-                                   L"secur32.dll",
-                                   L"sspicli.dll",
-                                   L"userenv.dll",
-                                   L"uxtheme.dll",
-                                   L"ws2_32.dll",
-                                   L"ws2help.dll",
-                                   L"wsock32.dll" };
+    static LPCWSTR delayDLLs[] = {
+        L"apphelp.dll", L"crypt32.dll", L"cryptbase.dll", L"cryptsp.dll",
+        L"dwmapi.dll",  L"mpr.dll",     L"msasn1.dll",    L"ntmarta.dll",
+        L"profapi.dll", L"propsys.dll", L"psapi.dll",     L"secur32.dll",
+        L"sspicli.dll", L"userenv.dll", L"uxtheme.dll",   L"ws2_32.dll",
+        L"ws2help.dll", L"wsock32.dll"};
 #endif
 
-    WCHAR systemDirectory[MAX_PATH + 1] = { L'\0' };
+    WCHAR systemDirectory[MAX_PATH + 1] = {L'\0'};
     
     
     GetSystemDirectoryW(systemDirectory, MAX_PATH + 1);
@@ -94,7 +75,7 @@ struct AutoLoadSystemDependencies
       } else {
         systemDirectory[MAX_PATH] = L'\0';
       }
-      LPCWSTR fullModulePath = systemDirectory; 
+      LPCWSTR fullModulePath = systemDirectory;  
       
       
       LoadLibraryExW(fullModulePath, nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);

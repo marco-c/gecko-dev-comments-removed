@@ -20,43 +20,41 @@ namespace detail {
 
 
 template <typename T>
-class UnsafeBareReadBarriered : public ReadBarrieredBase<T>
-{
-  public:
-    UnsafeBareReadBarriered() : ReadBarrieredBase<T>(JS::SafelyInitialized<T>()) {}
-    MOZ_IMPLICIT UnsafeBareReadBarriered(const T& v) : ReadBarrieredBase<T>(v) {}
-    explicit UnsafeBareReadBarriered(const UnsafeBareReadBarriered& v) : ReadBarrieredBase<T>(v) {}
-    UnsafeBareReadBarriered(UnsafeBareReadBarriered&& v)
-      : ReadBarrieredBase<T>(std::move(v))
-    {}
+class UnsafeBareReadBarriered : public ReadBarrieredBase<T> {
+ public:
+  UnsafeBareReadBarriered()
+      : ReadBarrieredBase<T>(JS::SafelyInitialized<T>()) {}
+  MOZ_IMPLICIT UnsafeBareReadBarriered(const T& v) : ReadBarrieredBase<T>(v) {}
+  explicit UnsafeBareReadBarriered(const UnsafeBareReadBarriered& v)
+      : ReadBarrieredBase<T>(v) {}
+  UnsafeBareReadBarriered(UnsafeBareReadBarriered&& v)
+      : ReadBarrieredBase<T>(std::move(v)) {}
 
-    UnsafeBareReadBarriered& operator=(const UnsafeBareReadBarriered& v) {
-        this->value = v.value;
-        return *this;
+  UnsafeBareReadBarriered& operator=(const UnsafeBareReadBarriered& v) {
+    this->value = v.value;
+    return *this;
+  }
+
+  UnsafeBareReadBarriered& operator=(const T& v) {
+    this->value = v;
+    return *this;
+  }
+
+  const T get() const {
+    if (!InternalBarrierMethods<T>::isMarkable(this->value)) {
+      return JS::SafelyInitialized<T>();
     }
+    this->read();
+    return this->value;
+  }
 
-    UnsafeBareReadBarriered& operator=(const T& v) {
-        this->value = v;
-        return *this;
-    }
+  explicit operator bool() const { return bool(this->value); }
 
-    const T get() const {
-        if (!InternalBarrierMethods<T>::isMarkable(this->value)) {
-            return JS::SafelyInitialized<T>();
-        }
-        this->read();
-        return this->value;
-    }
-
-    explicit operator bool() const {
-        return bool(this->value);
-    }
-
-    const T unbarrieredGet() const { return this->value; }
-    T* unsafeGet() { return &this->value; }
-    T const* unsafeGet() const { return &this->value; }
+  const T unbarrieredGet() const { return this->value; }
+  T* unsafeGet() { return &this->value; }
+  T const* unsafeGet() const { return &this->value; }
 };
-} 
+}  
 
 
 
@@ -69,131 +67,129 @@ class UnsafeBareReadBarriered : public ReadBarrieredBase<T>
 
 
 
-template <typename Key,
-          typename Value,
+template <typename Key, typename Value,
           typename HashPolicy = DefaultHasher<Key>,
           typename AllocPolicy = TempAllocPolicy>
-class NurseryAwareHashMap
-{
-    using BarrieredValue = detail::UnsafeBareReadBarriered<Value>;
-    using MapType = GCRekeyableHashMap<Key, BarrieredValue, HashPolicy, AllocPolicy>;
-    MapType map;
+class NurseryAwareHashMap {
+  using BarrieredValue = detail::UnsafeBareReadBarriered<Value>;
+  using MapType =
+      GCRekeyableHashMap<Key, BarrieredValue, HashPolicy, AllocPolicy>;
+  MapType map;
 
-    
-    
-    
-    Vector<Key, 0, AllocPolicy> nurseryEntries;
+  
+  
+  
+  Vector<Key, 0, AllocPolicy> nurseryEntries;
 
-  public:
-    using Lookup = typename MapType::Lookup;
-    using Ptr = typename MapType::Ptr;
-    using Range = typename MapType::Range;
-    using Entry = typename MapType::Entry;
+ public:
+  using Lookup = typename MapType::Lookup;
+  using Ptr = typename MapType::Ptr;
+  using Range = typename MapType::Range;
+  using Entry = typename MapType::Entry;
 
-    explicit NurseryAwareHashMap(AllocPolicy a = AllocPolicy()) : map(a) {}
-    explicit NurseryAwareHashMap(size_t length) : map(length) {}
-    NurseryAwareHashMap(AllocPolicy a, size_t length) : map(a, length) {}
+  explicit NurseryAwareHashMap(AllocPolicy a = AllocPolicy()) : map(a) {}
+  explicit NurseryAwareHashMap(size_t length) : map(length) {}
+  NurseryAwareHashMap(AllocPolicy a, size_t length) : map(a, length) {}
 
-    bool empty() const { return map.empty(); }
-    Ptr lookup(const Lookup& l) const { return map.lookup(l); }
-    void remove(Ptr p) { map.remove(p); }
-    Range all() const { return map.all(); }
-    struct Enum : public MapType::Enum {
-        explicit Enum(NurseryAwareHashMap& namap) : MapType::Enum(namap.map) {}
-    };
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return map.shallowSizeOfExcludingThis(mallocSizeOf) +
-               nurseryEntries.sizeOfExcludingThis(mallocSizeOf);
-    }
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return map.shallowSizeOfIncludingThis(mallocSizeOf) +
-               nurseryEntries.sizeOfIncludingThis(mallocSizeOf);
-    }
+  bool empty() const { return map.empty(); }
+  Ptr lookup(const Lookup& l) const { return map.lookup(l); }
+  void remove(Ptr p) { map.remove(p); }
+  Range all() const { return map.all(); }
+  struct Enum : public MapType::Enum {
+    explicit Enum(NurseryAwareHashMap& namap) : MapType::Enum(namap.map) {}
+  };
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return map.shallowSizeOfExcludingThis(mallocSizeOf) +
+           nurseryEntries.sizeOfExcludingThis(mallocSizeOf);
+  }
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return map.shallowSizeOfIncludingThis(mallocSizeOf) +
+           nurseryEntries.sizeOfIncludingThis(mallocSizeOf);
+  }
 
-    MOZ_MUST_USE bool put(const Key& k, const Value& v) {
-        auto p = map.lookupForAdd(k);
-        if (p) {
-            if (!JS::GCPolicy<Key>::isTenured(k) || !JS::GCPolicy<Value>::isTenured(v)) {
-                if (!nurseryEntries.append(k)) {
-                    return false;
-                }
-            }
-            p->value() = v;
-            return true;
+  MOZ_MUST_USE bool put(const Key& k, const Value& v) {
+    auto p = map.lookupForAdd(k);
+    if (p) {
+      if (!JS::GCPolicy<Key>::isTenured(k) ||
+          !JS::GCPolicy<Value>::isTenured(v)) {
+        if (!nurseryEntries.append(k)) {
+          return false;
         }
-
-        bool ok = map.add(p, k, v);
-        if (!ok) {
-            return false;
-        }
-
-        if (!JS::GCPolicy<Key>::isTenured(k) || !JS::GCPolicy<Value>::isTenured(v)) {
-            if (!nurseryEntries.append(k)) {
-                map.remove(k);
-                return false;
-            }
-        }
-
-        return true;
+      }
+      p->value() = v;
+      return true;
     }
 
-    void sweepAfterMinorGC(JSTracer* trc) {
-        for (auto& key : nurseryEntries) {
-            auto p = map.lookup(key);
-            if (!p) {
-                continue;
-            }
-
-            
-            if (JS::GCPolicy<BarrieredValue>::needsSweep(&p->value())) {
-                map.remove(key);
-                continue;
-            }
-
-            
-            
-            
-            
-            
-            
-            
-            
-            Key copy(key);
-            bool sweepKey = JS::GCPolicy<Key>::needsSweep(&copy);
-            if (sweepKey) {
-                map.remove(key);
-                continue;
-            }
-            map.rekeyIfMoved(key, copy);
-        }
-        nurseryEntries.clear();
+    bool ok = map.add(p, k, v);
+    if (!ok) {
+      return false;
     }
 
-    void sweep() {
-        MOZ_ASSERT(nurseryEntries.empty());
-        map.sweep();
+    if (!JS::GCPolicy<Key>::isTenured(k) ||
+        !JS::GCPolicy<Value>::isTenured(v)) {
+      if (!nurseryEntries.append(k)) {
+        map.remove(k);
+        return false;
+      }
     }
 
-    bool hasNurseryEntries() const {
-        return !nurseryEntries.empty();
+    return true;
+  }
+
+  void sweepAfterMinorGC(JSTracer* trc) {
+    for (auto& key : nurseryEntries) {
+      auto p = map.lookup(key);
+      if (!p) {
+        continue;
+      }
+
+      
+      if (JS::GCPolicy<BarrieredValue>::needsSweep(&p->value())) {
+        map.remove(key);
+        continue;
+      }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      Key copy(key);
+      bool sweepKey = JS::GCPolicy<Key>::needsSweep(&copy);
+      if (sweepKey) {
+        map.remove(key);
+        continue;
+      }
+      map.rekeyIfMoved(key, copy);
     }
+    nurseryEntries.clear();
+  }
+
+  void sweep() {
+    MOZ_ASSERT(nurseryEntries.empty());
+    map.sweep();
+  }
+
+  bool hasNurseryEntries() const { return !nurseryEntries.empty(); }
 };
 
-} 
+}  
 
 namespace JS {
 template <typename T>
-struct GCPolicy<js::detail::UnsafeBareReadBarriered<T>>
-{
-    static void trace(JSTracer* trc, js::detail::UnsafeBareReadBarriered<T>* thingp,
-                      const char* name)
-    {
-        js::TraceEdge(trc, thingp, name);
-    }
-    static bool needsSweep(js::detail::UnsafeBareReadBarriered<T>* thingp) {
-        return js::gc::IsAboutToBeFinalized(thingp);
-    }
+struct GCPolicy<js::detail::UnsafeBareReadBarriered<T>> {
+  static void trace(JSTracer* trc,
+                    js::detail::UnsafeBareReadBarriered<T>* thingp,
+                    const char* name) {
+    js::TraceEdge(trc, thingp, name);
+  }
+  static bool needsSweep(js::detail::UnsafeBareReadBarriered<T>* thingp) {
+    return js::gc::IsAboutToBeFinalized(thingp);
+  }
 };
-} 
+}  
 
-#endif 
+#endif  

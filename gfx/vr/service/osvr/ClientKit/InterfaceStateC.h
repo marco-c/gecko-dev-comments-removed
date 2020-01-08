@@ -48,10 +48,10 @@ OSVR_EXTERN_C_BEGIN
 
 #define OSVR_CALLBACK_METHODS(TYPE)
 
-                                                               \
-    OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrGet##TYPE##State(                \
-        OSVR_ClientInterface iface, struct OSVR_TimeValue *timestamp,          \
-        OSVR_##TYPE##State *state);
+                                                           \
+  OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrGet##TYPE##State(            \
+      OSVR_ClientInterface iface, struct OSVR_TimeValue *timestamp,      \
+      OSVR_##TYPE##State *state);
 
 OSVR_CALLBACK_METHODS(Pose)
 OSVR_CALLBACK_METHODS(Position)

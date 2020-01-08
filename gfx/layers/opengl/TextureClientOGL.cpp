@@ -4,12 +4,12 @@
 
 
 
-#include "GLContext.h"                  
-#include "mozilla/Assertions.h"         
+#include "GLContext.h"           
+#include "mozilla/Assertions.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/TextureClientOGL.h"
-#include "mozilla/gfx/2D.h"             
-#include "mozilla/gfx/Point.h"          
+#include "mozilla/gfx/2D.h"     
+#include "mozilla/gfx/Point.h"  
 #include "GLLibraryEGL.h"
 
 #ifdef MOZ_WIDGET_ANDROID
@@ -30,39 +30,28 @@ class CompositableForwarder;
 
 #ifdef MOZ_WIDGET_ANDROID
 
-already_AddRefed<TextureClient>
-AndroidSurfaceTextureData::CreateTextureClient(AndroidSurfaceTextureHandle aHandle,
-                                               gfx::IntSize aSize,
-                                               bool aContinuous,
-                                               gl::OriginPos aOriginPos,
-                                               LayersIPCChannel* aAllocator,
-                                               TextureFlags aFlags)
-{
+already_AddRefed<TextureClient> AndroidSurfaceTextureData::CreateTextureClient(
+    AndroidSurfaceTextureHandle aHandle, gfx::IntSize aSize, bool aContinuous,
+    gl::OriginPos aOriginPos, LayersIPCChannel* aAllocator,
+    TextureFlags aFlags) {
   if (aOriginPos == gl::OriginPos::BottomLeft) {
     aFlags |= TextureFlags::ORIGIN_BOTTOM_LEFT;
   }
 
   return TextureClient::CreateWithData(
-    new AndroidSurfaceTextureData(aHandle, aSize, aContinuous),
-    aFlags, aAllocator
-  );
+      new AndroidSurfaceTextureData(aHandle, aSize, aContinuous), aFlags,
+      aAllocator);
 }
 
-AndroidSurfaceTextureData::AndroidSurfaceTextureData(AndroidSurfaceTextureHandle aHandle,
-                                                     gfx::IntSize aSize, bool aContinuous)
-  : mHandle(aHandle)
-  , mSize(aSize)
-  , mContinuous(aContinuous)
-{
+AndroidSurfaceTextureData::AndroidSurfaceTextureData(
+    AndroidSurfaceTextureHandle aHandle, gfx::IntSize aSize, bool aContinuous)
+    : mHandle(aHandle), mSize(aSize), mContinuous(aContinuous) {
   MOZ_ASSERT(mHandle);
 }
 
-AndroidSurfaceTextureData::~AndroidSurfaceTextureData()
-{}
+AndroidSurfaceTextureData::~AndroidSurfaceTextureData() {}
 
-void
-AndroidSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const
-{
+void AndroidSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const {
   aInfo.size = mSize;
   aInfo.format = gfx::SurfaceFormat::UNKNOWN;
   aInfo.hasIntermediateBuffer = false;
@@ -71,28 +60,22 @@ AndroidSurfaceTextureData::FillInfo(TextureData::Info& aInfo) const
   aInfo.canExposeMappedData = false;
 }
 
-bool
-AndroidSurfaceTextureData::Serialize(SurfaceDescriptor& aOutDescriptor)
-{
-  aOutDescriptor = SurfaceTextureDescriptor(mHandle,
-                                            mSize,
-                                            gfx::SurfaceFormat::R8G8B8A8,
-                                            mContinuous,
-                                            false );
+bool AndroidSurfaceTextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
+  aOutDescriptor = SurfaceTextureDescriptor(
+      mHandle, mSize, gfx::SurfaceFormat::R8G8B8A8, mContinuous,
+      false );
   return true;
 }
 
-#endif 
+#endif  
 
 
 
 
 #ifdef MOZ_WIDGET_ANDROID
 
-AndroidNativeWindowTextureData*
-AndroidNativeWindowTextureData::Create(gfx::IntSize aSize,
-                                       gfx::SurfaceFormat aFormat)
-{
+AndroidNativeWindowTextureData* AndroidNativeWindowTextureData::Create(
+    gfx::IntSize aSize, gfx::SurfaceFormat aFormat) {
   if (aFormat != gfx::SurfaceFormat::R8G8B8A8 &&
       aFormat != gfx::SurfaceFormat::R8G8B8X8 &&
       aFormat != gfx::SurfaceFormat::B8G8R8A8 &&
@@ -101,9 +84,9 @@ AndroidNativeWindowTextureData::Create(gfx::IntSize aSize,
     return nullptr;
   }
 
-  auto surface = java::GeckoSurface::LocalRef(
-      java::SurfaceAllocator::AcquireSurface(aSize.width, aSize.height,
-                                             true ));
+  auto surface =
+      java::GeckoSurface::LocalRef(java::SurfaceAllocator::AcquireSurface(
+          aSize.width, aSize.height, true ));
   if (surface) {
     return new AndroidNativeWindowTextureData(surface, aSize, aFormat);
   }
@@ -111,43 +94,38 @@ AndroidNativeWindowTextureData::Create(gfx::IntSize aSize,
   return nullptr;
 }
 
-AndroidNativeWindowTextureData::AndroidNativeWindowTextureData(java::GeckoSurface::Param aSurface,
-                                                               gfx::IntSize aSize,
-                                                               gfx::SurfaceFormat aFormat)
-: mSurface(aSurface)
-, mIsLocked(false)
-, mSize(aSize)
-, mFormat(aFormat)
-{
-  mNativeWindow = ANativeWindow_fromSurface(jni::GetEnvForThread(),
-                                            mSurface.Get());
+AndroidNativeWindowTextureData::AndroidNativeWindowTextureData(
+    java::GeckoSurface::Param aSurface, gfx::IntSize aSize,
+    gfx::SurfaceFormat aFormat)
+    : mSurface(aSurface), mIsLocked(false), mSize(aSize), mFormat(aFormat) {
+  mNativeWindow =
+      ANativeWindow_fromSurface(jni::GetEnvForThread(), mSurface.Get());
   MOZ_ASSERT(mNativeWindow, "Failed to create NativeWindow.");
 
   
+  
   int32_t format = WINDOW_FORMAT_RGBA_8888;
   switch (aFormat) {
-  case gfx::SurfaceFormat::R8G8B8A8:
-  case gfx::SurfaceFormat::B8G8R8A8:
-    format = WINDOW_FORMAT_RGBA_8888;
-    break;
+    case gfx::SurfaceFormat::R8G8B8A8:
+    case gfx::SurfaceFormat::B8G8R8A8:
+      format = WINDOW_FORMAT_RGBA_8888;
+      break;
 
-  case gfx::SurfaceFormat::R8G8B8X8:
-  case gfx::SurfaceFormat::B8G8R8X8:
-    format = WINDOW_FORMAT_RGBX_8888;
-    break;
+    case gfx::SurfaceFormat::R8G8B8X8:
+    case gfx::SurfaceFormat::B8G8R8X8:
+      format = WINDOW_FORMAT_RGBX_8888;
+      break;
 
-  case gfx::SurfaceFormat::R5G6B5_UINT16:
-    format = WINDOW_FORMAT_RGB_565;
-    break;
+    case gfx::SurfaceFormat::R5G6B5_UINT16:
+      format = WINDOW_FORMAT_RGB_565;
+      break;
 
-  default:
-    MOZ_ASSERT(false, "Unsupported AndroidNativeWindowTextureData format.");
+    default:
+      MOZ_ASSERT(false, "Unsupported AndroidNativeWindowTextureData format.");
   }
 
-  DebugOnly<int32_t> r = ANativeWindow_setBuffersGeometry(mNativeWindow,
-                                                          mSize.width,
-                                                          mSize.height,
-                                                          format);
+  DebugOnly<int32_t> r = ANativeWindow_setBuffersGeometry(
+      mNativeWindow, mSize.width, mSize.height, format);
   MOZ_ASSERT(r == 0, "ANativeWindow_setBuffersGeometry failed.");
 
   
@@ -155,9 +133,7 @@ AndroidNativeWindowTextureData::AndroidNativeWindowTextureData(java::GeckoSurfac
   
 }
 
-void
-AndroidNativeWindowTextureData::FillInfo(TextureData::Info& aInfo) const
-{
+void AndroidNativeWindowTextureData::FillInfo(TextureData::Info& aInfo) const {
   aInfo.size = mSize;
   aInfo.format = mFormat;
   aInfo.hasIntermediateBuffer = false;
@@ -167,20 +143,15 @@ AndroidNativeWindowTextureData::FillInfo(TextureData::Info& aInfo) const
   aInfo.canConcurrentlyReadLock = false;
 }
 
-bool
-AndroidNativeWindowTextureData::Serialize(SurfaceDescriptor& aOutDescriptor)
-{
-  aOutDescriptor = SurfaceTextureDescriptor(mSurface->GetHandle(),
-                                            mSize,
-                                            mFormat,
-                                            false ,
+bool AndroidNativeWindowTextureData::Serialize(
+    SurfaceDescriptor& aOutDescriptor) {
+  aOutDescriptor = SurfaceTextureDescriptor(mSurface->GetHandle(), mSize,
+                                            mFormat, false ,
                                             true );
   return true;
 }
 
-bool
-AndroidNativeWindowTextureData::Lock(OpenMode)
-{
+bool AndroidNativeWindowTextureData::Lock(OpenMode) {
   
   
   
@@ -196,17 +167,14 @@ AndroidNativeWindowTextureData::Lock(OpenMode)
   return true;
 }
 
-void
-AndroidNativeWindowTextureData::Unlock()
-{
+void AndroidNativeWindowTextureData::Unlock() {
   
   
 }
 
-void
-AndroidNativeWindowTextureData::Forget(LayersIPCChannel*)
-{
-  MOZ_ASSERT(!mIsLocked, "ANativeWindow should not be released while locked.\n");
+void AndroidNativeWindowTextureData::Forget(LayersIPCChannel*) {
+  MOZ_ASSERT(!mIsLocked,
+             "ANativeWindow should not be released while locked.\n");
   ANativeWindow_release(mNativeWindow);
   mNativeWindow = nullptr;
   java::SurfaceAllocator::DisposeSurface(mSurface);
@@ -214,22 +182,16 @@ AndroidNativeWindowTextureData::Forget(LayersIPCChannel*)
 }
 
 already_AddRefed<gfx::DrawTarget>
-AndroidNativeWindowTextureData::BorrowDrawTarget()
-{
+AndroidNativeWindowTextureData::BorrowDrawTarget() {
   const int bpp = (mFormat == gfx::SurfaceFormat::R5G6B5_UINT16) ? 2 : 4;
 
   return gfx::Factory::CreateDrawTargetForData(
-      gfx::BackendType::SKIA,
-      static_cast<unsigned char*>(mBuffer.bits),
-      gfx::IntSize(mBuffer.width, mBuffer.height),
-      mBuffer.stride * bpp,
-      mFormat,
-      true);
+      gfx::BackendType::SKIA, static_cast<unsigned char*>(mBuffer.bits),
+      gfx::IntSize(mBuffer.width, mBuffer.height), mBuffer.stride * bpp,
+      mFormat, true);
 }
 
-void
-AndroidNativeWindowTextureData::OnForwardedToHost()
-{
+void AndroidNativeWindowTextureData::OnForwardedToHost() {
   if (mIsLocked) {
     int32_t r = ANativeWindow_unlockAndPost(mNativeWindow);
     if (r < 0) {
@@ -239,7 +201,7 @@ AndroidNativeWindowTextureData::OnForwardedToHost()
   }
 }
 
-#endif 
+#endif  
 
-} 
-} 
+}  
+}  

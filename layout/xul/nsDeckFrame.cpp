@@ -35,37 +35,29 @@
 
 using namespace mozilla;
 
-nsIFrame*
-NS_NewDeckFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewDeckFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsDeckFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsDeckFrame)
 
 NS_QUERYFRAME_HEAD(nsDeckFrame)
-  NS_QUERYFRAME_ENTRY(nsDeckFrame)
+NS_QUERYFRAME_ENTRY(nsDeckFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsBoxFrame)
 
 nsDeckFrame::nsDeckFrame(ComputedStyle* aStyle)
-  : nsBoxFrame(aStyle, kClassID)
-  , mIndex(0)
-{
+    : nsBoxFrame(aStyle, kClassID), mIndex(0) {
   nsCOMPtr<nsBoxLayout> layout;
   NS_NewStackLayout(layout);
   SetXULLayoutManager(layout);
 }
 
-nsresult
-nsDeckFrame::AttributeChanged(int32_t         aNameSpaceID,
-                              nsAtom*        aAttribute,
-                              int32_t         aModType)
-{
-  nsresult rv = nsBoxFrame::AttributeChanged(aNameSpaceID, aAttribute,
-                                             aModType);
+nsresult nsDeckFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                       int32_t aModType) {
+  nsresult rv =
+      nsBoxFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 
-
-   
+  
   if (aAttribute == nsGkAtoms::selectedIndex) {
     IndexChanged();
   }
@@ -73,36 +65,28 @@ nsDeckFrame::AttributeChanged(int32_t         aNameSpaceID,
   return rv;
 }
 
-void
-nsDeckFrame::Init(nsIContent*       aContent,
-                  nsContainerFrame* aParent,
-                  nsIFrame*         aPrevInFlow)
-{
+void nsDeckFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                       nsIFrame* aPrevInFlow) {
   nsBoxFrame::Init(aContent, aParent, aPrevInFlow);
 
   mIndex = GetSelectedIndex();
 }
 
-void
-nsDeckFrame::HideBox(nsIFrame* aBox)
-{
+void nsDeckFrame::HideBox(nsIFrame* aBox) {
   nsIPresShell::ClearMouseCapture(aBox);
 }
 
-void
-nsDeckFrame::IndexChanged()
-{
+void nsDeckFrame::IndexChanged() {
   
   int32_t index = GetSelectedIndex();
-  if (index == mIndex)
-    return;
+  if (index == mIndex) return;
 
   
   InvalidateFrame();
 
   
   nsIFrame* currentBox = GetSelectedBox();
-  if (currentBox) 
+  if (currentBox)  
     HideBox(currentBox);
 
   mIndex = index;
@@ -123,9 +107,7 @@ nsDeckFrame::IndexChanged()
   }
 }
 
-int32_t
-nsDeckFrame::GetSelectedIndex()
-{
+int32_t nsDeckFrame::GetSelectedIndex() {
   
   int32_t index = 0;
 
@@ -142,31 +124,21 @@ nsDeckFrame::GetSelectedIndex()
   return index;
 }
 
-nsIFrame*
-nsDeckFrame::GetSelectedBox()
-{
+nsIFrame* nsDeckFrame::GetSelectedBox() {
   return (mIndex >= 0) ? mFrames.FrameAt(mIndex) : nullptr;
 }
 
-void
-nsDeckFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                              const nsDisplayListSet& aLists)
-{
+void nsDeckFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                   const nsDisplayListSet& aLists) {
   
-  if (!StyleVisibility()->mVisible)
-    return;
+  if (!StyleVisibility()->mVisible) return;
 
   nsBoxFrame::BuildDisplayList(aBuilder, aLists);
 }
 
-void
-nsDeckFrame::RemoveFrame(ChildListID aListID,
-                         nsIFrame* aOldFrame)
-{
+void nsDeckFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
   nsIFrame* currentFrame = GetSelectedBox();
-  if (currentFrame &&
-      aOldFrame &&
-      currentFrame != aOldFrame) {
+  if (currentFrame && aOldFrame && currentFrame != aOldFrame) {
     
     
     
@@ -181,20 +153,17 @@ nsDeckFrame::RemoveFrame(ChildListID aListID,
       
       
       nsContentUtils::AddScriptRunner(new nsSetAttrRunnable(
-        mContent->AsElement(), nsGkAtoms::selectedIndex, mIndex));
+          mContent->AsElement(), nsGkAtoms::selectedIndex, mIndex));
     }
   }
   nsBoxFrame::RemoveFrame(aListID, aOldFrame);
 }
 
-void
-nsDeckFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
-                                         const nsDisplayListSet& aLists)
-{
+void nsDeckFrame::BuildDisplayListForChildren(nsDisplayListBuilder* aBuilder,
+                                              const nsDisplayListSet& aLists) {
   
   nsIFrame* box = GetSelectedBox();
-  if (!box)
-    return;
+  if (!box) return;
 
   
   
@@ -203,8 +172,7 @@ nsDeckFrame::BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
 }
 
 NS_IMETHODIMP
-nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState)
-{
+nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState) {
   
   
   uint32_t oldFlags = aState.LayoutFlags();
@@ -217,11 +185,9 @@ nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState)
   nsIFrame* box = nsBox::GetChildXULBox(this);
 
   nscoord count = 0;
-  while (box)
-  {
+  while (box) {
     
-    if (count != mIndex)
-      HideBox(box);
+    if (count != mIndex) HideBox(box);
 
     box = GetNextXULBox(box);
     count++;
@@ -231,4 +197,3 @@ nsDeckFrame::DoXULLayout(nsBoxLayoutState& aState)
 
   return rv;
 }
-

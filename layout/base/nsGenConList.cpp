@@ -10,9 +10,7 @@
 #include "nsLayoutUtils.h"
 #include "nsIContent.h"
 
-void
-nsGenConList::Clear()
-{
+void nsGenConList::Clear() {
   
   mNodes.Clear();
   while (nsGenConNode* node = mList.popFirst()) {
@@ -22,9 +20,7 @@ nsGenConList::Clear()
   mLastInserted = nullptr;
 }
 
-bool
-nsGenConList::DestroyNodesFor(nsIFrame* aFrame)
-{
+bool nsGenConList::DestroyNodesFor(nsIFrame* aFrame) {
   
   
   
@@ -56,9 +52,8 @@ nsGenConList::DestroyNodesFor(nsIFrame* aFrame)
 
 
 
-inline int32_t PseudoCompareType(nsIFrame* aFrame, nsIContent** aContent)
-{
-  nsAtom *pseudo = aFrame->Style()->GetPseudo();
+inline int32_t PseudoCompareType(nsIFrame* aFrame, nsIContent** aContent) {
+  nsAtom* pseudo = aFrame->Style()->GetPseudo();
   if (pseudo == nsCSSPseudoElements::before()) {
     *aContent = aFrame->GetContent()->GetParent();
     return -1;
@@ -71,9 +66,8 @@ inline int32_t PseudoCompareType(nsIFrame* aFrame, nsIContent** aContent)
   return 0;
 }
 
- bool
-nsGenConList::NodeAfter(const nsGenConNode* aNode1, const nsGenConNode* aNode2)
-{
+ bool nsGenConList::NodeAfter(const nsGenConNode* aNode1,
+                                          const nsGenConNode* aNode2) {
   nsIFrame* frame1 = aNode1->mPseudoFrame;
   nsIFrame* frame2 = aNode2->mPseudoFrame;
   if (frame1 == frame2) {
@@ -106,9 +100,7 @@ nsGenConList::NodeAfter(const nsGenConNode* aNode1, const nsGenConNode* aNode2)
   return cmp > 0;
 }
 
-void
-nsGenConList::Insert(nsGenConNode* aNode)
-{
+void nsGenConList::Insert(nsGenConNode* aNode) {
   
   if (mList.isEmpty() || NodeAfter(aNode, mList.getLast())) {
     mList.insertBack(aNode);
@@ -131,11 +123,9 @@ nsGenConList::Insert(nsGenConNode* aNode)
     while (first != last) {
       uint32_t test = (first + last) / 2;
       if (last == curIndex) {
-        for ( ; curIndex != test; --curIndex)
-          curNode = Prev(curNode);
+        for (; curIndex != test; --curIndex) curNode = Prev(curNode);
       } else {
-        for ( ; curIndex != test; ++curIndex)
-          curNode = Next(curNode);
+        for (; curIndex != test; ++curIndex) curNode = Next(curNode);
       }
 
       if (NodeAfter(aNode, curNode)) {
@@ -156,8 +146,7 @@ nsGenConList::Insert(nsGenConNode* aNode)
   
   
   
-  if (IsFirst(aNode) ||
-      Prev(aNode)->mPseudoFrame != aNode->mPseudoFrame) {
+  if (IsFirst(aNode) || Prev(aNode)->mPseudoFrame != aNode->mPseudoFrame) {
 #ifdef DEBUG
     if (nsGenConNode* oldFrameFirstNode = mNodes.Get(aNode->mPseudoFrame)) {
       MOZ_ASSERT(Next(aNode) == oldFrameFirstNode,
@@ -183,8 +172,8 @@ nsGenConList::Insert(nsGenConNode* aNode)
 #ifdef DEBUG
     nsGenConNode* frameFirstNode = mNodes.Get(aNode->mPseudoFrame);
     MOZ_ASSERT(frameFirstNode, "There should exist node map for the frame.");
-    for (nsGenConNode* curNode = Prev(aNode);
-         curNode != frameFirstNode; curNode = Prev(curNode)) {
+    for (nsGenConNode* curNode = Prev(aNode); curNode != frameFirstNode;
+         curNode = Prev(curNode)) {
       MOZ_ASSERT(curNode->mPseudoFrame == aNode->mPseudoFrame,
                  "Every node between frameFirstNode and the new node inserted "
                  "should refer to the same frame.");
@@ -198,6 +187,5 @@ nsGenConList::Insert(nsGenConNode* aNode)
 
   NS_ASSERTION(IsFirst(aNode) || NodeAfter(aNode, Prev(aNode)),
                "sorting error");
-  NS_ASSERTION(IsLast(aNode) || NodeAfter(Next(aNode), aNode),
-               "sorting error");
+  NS_ASSERTION(IsLast(aNode) || NodeAfter(Next(aNode), aNode), "sorting error");
 }

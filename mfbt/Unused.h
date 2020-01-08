@@ -18,22 +18,24 @@ namespace mozilla {
 
 
 
-struct unused_t
-{
-  template<typename T>
-  MOZ_ALWAYS_INLINE_EVEN_DEBUG void
-  operator<<(const T& ) const {}
+struct unused_t {
+  template <typename T>
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG void operator<<(const T& ) const {}
 };
 
 extern MFBT_DATA const unused_t Unused;
 
-} 
+}  
 
-#endif 
+#endif  
 
 
 
 #define MOZ_UNUSED(expr) \
-  do { if (expr) { (void)0; } } while (0)
+  do {                   \
+    if (expr) {          \
+      (void)0;           \
+    }                    \
+  } while (0)
 
-#endif 
+#endif  

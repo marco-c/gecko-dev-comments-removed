@@ -5,8 +5,8 @@
 #ifndef nsAutoRollup_h__
 #define nsAutoRollup_h__
 
-#include "mozilla/Attributes.h"     
-#include "mozilla/StaticPtr.h"      
+#include "mozilla/Attributes.h"  
+#include "mozilla/StaticPtr.h"   
 #include "nsIContent.h"
 
 namespace mozilla {
@@ -24,9 +24,8 @@ namespace widget {
 
 
 
-class MOZ_RAII nsAutoRollup
-{
-public:
+class MOZ_RAII nsAutoRollup {
+ public:
   nsAutoRollup();
   ~nsAutoRollup();
 
@@ -38,7 +37,7 @@ public:
   
   static nsIContent* GetLastRollup();
 
-private:
+ private:
   
   
   bool mWasClear;
@@ -49,7 +48,7 @@ private:
   static StaticRefPtr<nsIContent> sLastRollup;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

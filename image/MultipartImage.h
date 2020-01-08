@@ -19,11 +19,8 @@ class NextPartObserver;
 
 
 
-class MultipartImage
-  : public ImageWrapper
-  , public IProgressObserver
-{
-public:
+class MultipartImage : public ImageWrapper, public IProgressObserver {
+ public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(MultipartImage)
   
   
@@ -41,33 +38,31 @@ public:
                                         uint64_t aSourceOffset,
                                         uint32_t aCount) override;
   virtual nsresult OnImageDataComplete(nsIRequest* aRequest,
-                                       nsISupports* aContext,
-                                       nsresult aStatus,
+                                       nsISupports* aContext, nsresult aStatus,
                                        bool aLastPart) override;
 
   
   
   NS_IMETHOD LockImage() override { return NS_OK; }
   NS_IMETHOD UnlockImage() override { return NS_OK; }
-  virtual void IncrementAnimationConsumers() override { }
-  virtual void DecrementAnimationConsumers() override { }
+  virtual void IncrementAnimationConsumers() override {}
+  virtual void DecrementAnimationConsumers() override {}
 #ifdef DEBUG
   virtual uint32_t GetAnimationConsumers() override { return 1; }
 #endif
 
   
-  virtual void Notify(int32_t aType,
-                      const nsIntRect* aRect = nullptr) override;
+  virtual void Notify(int32_t aType, const nsIntRect* aRect = nullptr) override;
   virtual void OnLoadComplete(bool aLastPart) override;
   virtual void SetHasImage() override;
   virtual bool NotificationsDeferred() const override;
   virtual void MarkPendingNotify() override;
   virtual void ClearPendingNotify() override;
 
-protected:
+ protected:
   virtual ~MultipartImage();
 
-private:
+ private:
   friend class ImageFactory;
   friend class NextPartObserver;
 
@@ -82,7 +77,7 @@ private:
   bool mPendingNotify : 1;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

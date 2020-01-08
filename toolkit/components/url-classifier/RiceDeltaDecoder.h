@@ -9,7 +9,7 @@ namespace mozilla {
 namespace safebrowsing {
 
 class RiceDeltaDecoder {
-public:
+ public:
   
   
   
@@ -23,17 +23,15 @@ public:
   
   
   
-  bool Decode(uint32_t aRiceParameter,
-              uint32_t aFirstValue,
-              uint32_t aNumEntries,
-              uint32_t* aDecodedData);
+  bool Decode(uint32_t aRiceParameter, uint32_t aFirstValue,
+              uint32_t aNumEntries, uint32_t* aDecodedData);
 
-private:
+ private:
   uint8_t* mEncodedData;
   size_t mEncodedDataSize;
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

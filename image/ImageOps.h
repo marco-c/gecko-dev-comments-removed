@@ -27,17 +27,17 @@ class Image;
 struct Orientation;
 class SourceBuffer;
 
-class ImageOps
-{
-public:
+class ImageOps {
+ public:
   class ImageBuffer {
-  public:
+   public:
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ImageOps::ImageBuffer);
-  protected:
+
+   protected:
     friend class ImageOps;
 
-    ImageBuffer() { }
-    virtual ~ImageBuffer() { }
+    ImageBuffer() {}
+    virtual ~ImageBuffer() {}
 
     virtual already_AddRefed<SourceBuffer> GetSourceBuffer() const = 0;
   };
@@ -60,13 +60,12 @@ public:
 
 
 
-  static already_AddRefed<Image> Clip(Image* aImage, nsIntRect aClip,
-                                      const Maybe<nsSize>& aSVGViewportSize =
-                                        Nothing());
-  static already_AddRefed<imgIContainer> Clip(imgIContainer* aImage,
-                                              nsIntRect aClip,
-                                              const Maybe<nsSize>& aSVGViewportSize =
-                                                Nothing());
+  static already_AddRefed<Image> Clip(
+      Image* aImage, nsIntRect aClip,
+      const Maybe<nsSize>& aSVGViewportSize = Nothing());
+  static already_AddRefed<imgIContainer> Clip(
+      imgIContainer* aImage, nsIntRect aClip,
+      const Maybe<nsSize>& aSVGViewportSize = Nothing());
 
   
 
@@ -85,8 +84,8 @@ public:
 
 
 
-  static already_AddRefed<imgIContainer>
-  CreateFromDrawable(gfxDrawable* aDrawable);
+  static already_AddRefed<imgIContainer> CreateFromDrawable(
+      gfxDrawable* aDrawable);
 
   
 
@@ -97,31 +96,8 @@ public:
 
 
 
-  static already_AddRefed<ImageBuffer>
-  CreateImageBuffer(already_AddRefed<nsIInputStream> aInputStream);
-
-  
-
-
-
-
-
-
-
-
-
-  static nsresult
-  DecodeMetadata(already_AddRefed<nsIInputStream> aInputStream,
-                 const nsACString& aMimeType,
-                 ImageMetadata& aMetadata);
-
-  
-
-
-  static nsresult
-  DecodeMetadata(ImageBuffer* aBuffer,
-                 const nsACString& aMimeType,
-                 ImageMetadata& aMetadata);
+  static already_AddRefed<ImageBuffer> CreateImageBuffer(
+      already_AddRefed<nsIInputStream> aInputStream);
 
   
 
@@ -133,32 +109,50 @@ public:
 
 
 
-
-
-
-  static already_AddRefed<gfx::SourceSurface>
-  DecodeToSurface(already_AddRefed<nsIInputStream> aInputStream,
-                  const nsACString& aMimeType,
-                  uint32_t aFlags,
-                  const Maybe<gfx::IntSize>& aSize = Nothing());
+  static nsresult DecodeMetadata(already_AddRefed<nsIInputStream> aInputStream,
+                                 const nsACString& aMimeType,
+                                 ImageMetadata& aMetadata);
 
   
 
 
-  static already_AddRefed<gfx::SourceSurface>
-  DecodeToSurface(ImageBuffer* aBuffer,
-                  const nsACString& aMimeType,
-                  uint32_t aFlags,
-                  const Maybe<gfx::IntSize>& aSize = Nothing());
+  static nsresult DecodeMetadata(ImageBuffer* aBuffer,
+                                 const nsACString& aMimeType,
+                                 ImageMetadata& aMetadata);
 
-private:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<gfx::SourceSurface> DecodeToSurface(
+      already_AddRefed<nsIInputStream> aInputStream,
+      const nsACString& aMimeType, uint32_t aFlags,
+      const Maybe<gfx::IntSize>& aSize = Nothing());
+
+  
+
+
+  static already_AddRefed<gfx::SourceSurface> DecodeToSurface(
+      ImageBuffer* aBuffer, const nsACString& aMimeType, uint32_t aFlags,
+      const Maybe<gfx::IntSize>& aSize = Nothing());
+
+ private:
   class ImageBufferImpl;
 
   
   virtual ~ImageOps() = 0;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

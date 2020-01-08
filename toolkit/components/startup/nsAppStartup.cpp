@@ -70,46 +70,52 @@ static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 
 
 
-#define NS_APPLICATION_TRACING_CID \
-  { 0x509962E0, 0x406B, 0x46F4, \
-  { 0x99, 0xBA, 0x5A, 0x00, 0x9F, 0x8D, 0x22, 0x25} }
+#define NS_APPLICATION_TRACING_CID                   \
+  {                                                  \
+    0x509962E0, 0x406B, 0x46F4, {                    \
+      0x99, 0xBA, 0x5A, 0x00, 0x9F, 0x8D, 0x22, 0x25 \
+    }                                                \
+  }
 
 
 
-#define NS_PLACES_INIT_COMPLETE_EVENT_CID \
-  { 0xA3DA04E0, 0x57D7, 0x482A, \
-  { 0xA1, 0xC1, 0x61, 0xDA, 0x5F, 0x95, 0xBA, 0xCB} }
+#define NS_PLACES_INIT_COMPLETE_EVENT_CID            \
+  {                                                  \
+    0xA3DA04E0, 0x57D7, 0x482A, {                    \
+      0xA1, 0xC1, 0x61, 0xDA, 0x5F, 0x95, 0xBA, 0xCB \
+    }                                                \
+  }
 
-#define NS_SESSION_STORE_WINDOW_RESTORED_EVENT_CID \
-  { 0x917B96B1, 0xECAD, 0x4DAB, \
-  { 0xA7, 0x60, 0x8D, 0x49, 0x02, 0x77, 0x48, 0xAE} }
+#define NS_SESSION_STORE_WINDOW_RESTORED_EVENT_CID   \
+  {                                                  \
+    0x917B96B1, 0xECAD, 0x4DAB, {                    \
+      0xA7, 0x60, 0x8D, 0x49, 0x02, 0x77, 0x48, 0xAE \
+    }                                                \
+  }
 
-#define NS_XPCOM_SHUTDOWN_EVENT_CID \
-  { 0x26D1E091, 0x0AE7, 0x4F49, \
-  { 0xA5, 0x54, 0x42, 0x14, 0x44, 0x5C, 0x50, 0x5C} }
+#define NS_XPCOM_SHUTDOWN_EVENT_CID                  \
+  {                                                  \
+    0x26D1E091, 0x0AE7, 0x4F49, {                    \
+      0xA5, 0x54, 0x42, 0x14, 0x44, 0x5C, 0x50, 0x5C \
+    }                                                \
+  }
 
-static NS_DEFINE_CID(kApplicationTracingCID,
-  NS_APPLICATION_TRACING_CID);
-static NS_DEFINE_CID(kPlacesInitCompleteCID,
-  NS_PLACES_INIT_COMPLETE_EVENT_CID);
+static NS_DEFINE_CID(kApplicationTracingCID, NS_APPLICATION_TRACING_CID);
+static NS_DEFINE_CID(kPlacesInitCompleteCID, NS_PLACES_INIT_COMPLETE_EVENT_CID);
 static NS_DEFINE_CID(kSessionStoreWindowRestoredCID,
-  NS_SESSION_STORE_WINDOW_RESTORED_EVENT_CID);
-static NS_DEFINE_CID(kXPCOMShutdownCID,
-  NS_XPCOM_SHUTDOWN_EVENT_CID);
-#endif 
+                     NS_SESSION_STORE_WINDOW_RESTORED_EVENT_CID);
+static NS_DEFINE_CID(kXPCOMShutdownCID, NS_XPCOM_SHUTDOWN_EVENT_CID);
+#endif  
 
 using namespace mozilla;
 
 class nsAppExitEvent : public mozilla::Runnable {
-private:
+ private:
   RefPtr<nsAppStartup> mService;
 
-public:
-  explicit nsAppExitEvent(nsAppStartup* service)
-    : mozilla::Runnable("nsAppExitEvent")
-    , mService(service)
-  {
-  }
+ public:
+  explicit nsAppExitEvent(nsAppStartup *service)
+      : mozilla::Runnable("nsAppExitEvent"), mService(service) {}
 
   NS_IMETHOD Run() override {
     
@@ -129,9 +135,7 @@ public:
 
 
 
-static uint64_t
-ComputeAbsoluteTimestamp(TimeStamp stamp)
-{
+static uint64_t ComputeAbsoluteTimestamp(TimeStamp stamp) {
   static PRTime sAbsoluteNow = PR_Now();
   static TimeStamp sMonotonicNow = TimeStamp::Now();
 
@@ -142,33 +146,27 @@ ComputeAbsoluteTimestamp(TimeStamp stamp)
 
 
 
-nsAppStartup::nsAppStartup() :
-  mConsiderQuitStopper(0),
-  mRunning(false),
-  mShuttingDown(false),
-  mStartingUp(true),
-  mAttemptingQuit(false),
-  mRestart(false),
-  mInterrupted(false),
-  mIsSafeModeNecessary(false),
-  mStartupCrashTrackingEnded(false),
-  mRestartNotSameProfile(false)
-{ }
+nsAppStartup::nsAppStartup()
+    : mConsiderQuitStopper(0),
+      mRunning(false),
+      mShuttingDown(false),
+      mStartingUp(true),
+      mAttemptingQuit(false),
+      mRestart(false),
+      mInterrupted(false),
+      mIsSafeModeNecessary(false),
+      mStartupCrashTrackingEnded(false),
+      mRestartNotSameProfile(false) {}
 
-
-nsresult
-nsAppStartup::Init()
-{
+nsresult nsAppStartup::Init() {
   nsresult rv;
 
   
   mAppShell = do_GetService(kAppShellCID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsCOMPtr<nsIObserverService> os =
-    mozilla::services::GetObserverService();
-  if (!os)
-    return NS_ERROR_FAILURE;
+  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
+  if (!os) return NS_ERROR_FAILURE;
 
   os->AddObserver(this, "quit-application", true);
   os->AddObserver(this, "quit-application-forced", true);
@@ -185,33 +183,26 @@ nsAppStartup::Init()
   
 
   
-  mProbesManager =
-    new ProbeManager(
-                     kApplicationTracingCID,
-                     NS_LITERAL_CSTRING("Application startup probe"));
+  mProbesManager = new ProbeManager(
+      kApplicationTracingCID, NS_LITERAL_CSTRING("Application startup probe"));
   
   
 
   if (mProbesManager) {
-    mPlacesInitCompleteProbe =
-      mProbesManager->
-      GetProbe(kPlacesInitCompleteCID,
-               NS_LITERAL_CSTRING("places-init-complete"));
+    mPlacesInitCompleteProbe = mProbesManager->GetProbe(
+        kPlacesInitCompleteCID, NS_LITERAL_CSTRING("places-init-complete"));
     NS_WARNING_ASSERTION(mPlacesInitCompleteProbe,
                          "Cannot initialize probe 'places-init-complete'");
 
-    mSessionWindowRestoredProbe =
-      mProbesManager->
-      GetProbe(kSessionStoreWindowRestoredCID,
-               NS_LITERAL_CSTRING("sessionstore-windows-restored"));
+    mSessionWindowRestoredProbe = mProbesManager->GetProbe(
+        kSessionStoreWindowRestoredCID,
+        NS_LITERAL_CSTRING("sessionstore-windows-restored"));
     NS_WARNING_ASSERTION(
-      mSessionWindowRestoredProbe,
-      "Cannot initialize probe 'sessionstore-windows-restored'");
+        mSessionWindowRestoredProbe,
+        "Cannot initialize probe 'sessionstore-windows-restored'");
 
-    mXPCOMShutdownProbe =
-      mProbesManager->
-      GetProbe(kXPCOMShutdownCID,
-               NS_LITERAL_CSTRING("xpcom-shutdown"));
+    mXPCOMShutdownProbe = mProbesManager->GetProbe(
+        kXPCOMShutdownCID, NS_LITERAL_CSTRING("xpcom-shutdown"));
     NS_WARNING_ASSERTION(mXPCOMShutdownProbe,
                          "Cannot initialize probe 'xpcom-shutdown'");
 
@@ -219,7 +210,7 @@ nsAppStartup::Init()
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                          "Cannot initialize system probe manager");
   }
-#endif 
+#endif  
 
   return NS_OK;
 }
@@ -228,42 +219,33 @@ nsAppStartup::Init()
 
 
 
-
-NS_IMPL_ISUPPORTS(nsAppStartup,
-                  nsIAppStartup,
-                  nsIWindowCreator,
-                  nsIWindowCreator2,
-                  nsIObserver,
-                  nsISupportsWeakReference)
-
+NS_IMPL_ISUPPORTS(nsAppStartup, nsIAppStartup, nsIWindowCreator,
+                  nsIWindowCreator2, nsIObserver, nsISupportsWeakReference)
 
 
 
 
 
 NS_IMETHODIMP
-nsAppStartup::CreateHiddenWindow()
-{
+nsAppStartup::CreateHiddenWindow() {
 #if defined(MOZ_WIDGET_UIKIT)
   return NS_OK;
 #else
-  nsCOMPtr<nsIAppShellService> appShellService
-    (do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
+  nsCOMPtr<nsIAppShellService> appShellService(
+      do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
   NS_ENSURE_TRUE(appShellService, NS_ERROR_FAILURE);
 
   return appShellService->CreateHiddenWindow();
 #endif
 }
 
-
 NS_IMETHODIMP
-nsAppStartup::DestroyHiddenWindow()
-{
+nsAppStartup::DestroyHiddenWindow() {
 #if defined(MOZ_WIDGET_UIKIT)
   return NS_OK;
 #else
-  nsCOMPtr<nsIAppShellService> appShellService
-    (do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
+  nsCOMPtr<nsIAppShellService> appShellService(
+      do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
   NS_ENSURE_TRUE(appShellService, NS_ERROR_FAILURE);
 
   return appShellService->DestroyHiddenWindow();
@@ -271,8 +253,7 @@ nsAppStartup::DestroyHiddenWindow()
 }
 
 NS_IMETHODIMP
-nsAppStartup::Run(void)
-{
+nsAppStartup::Run(void) {
   NS_ASSERTION(!mRunning, "Reentrant appstartup->Run()");
 
   
@@ -288,8 +269,7 @@ nsAppStartup::Run(void)
     mRunning = true;
 
     nsresult rv = mAppShell->Run();
-    if (NS_FAILED(rv))
-      return rv;
+    if (NS_FAILED(rv)) return rv;
   }
 
   nsresult retval = NS_OK;
@@ -302,11 +282,8 @@ nsAppStartup::Run(void)
   return retval;
 }
 
-
-
 NS_IMETHODIMP
-nsAppStartup::Quit(uint32_t aMode)
-{
+nsAppStartup::Quit(uint32_t aMode) {
   uint32_t ferocity = (aMode & 0xF);
 
   
@@ -315,14 +292,13 @@ nsAppStartup::Quit(uint32_t aMode)
   nsresult rv = NS_OK;
   bool postedExitEvent = false;
 
-  if (mShuttingDown)
-    return NS_OK;
+  if (mShuttingDown) return NS_OK;
 
   
   if (ferocity == eConsiderQuit) {
 #ifdef XP_MACOSX
-    nsCOMPtr<nsIAppShellService> appShell
-      (do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
+    nsCOMPtr<nsIAppShellService> appShell(
+        do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
     bool hasHiddenPrivateWindow = false;
     if (appShell) {
       appShell->GetHasHiddenPrivateWindow(&hasHiddenPrivateWindow);
@@ -339,8 +315,7 @@ nsAppStartup::Quit(uint32_t aMode)
       
 
       
-      if (!appShell)
-        return NS_OK;
+      if (!appShell) return NS_OK;
 
       bool usefulHiddenWindow;
       appShell->GetApplicationProvidedHiddenWindow(&usefulHiddenWindow);
@@ -363,9 +338,9 @@ nsAppStartup::Quit(uint32_t aMode)
 
   nsCOMPtr<nsIObserverService> obsService;
   if (ferocity == eAttemptQuit || ferocity == eForceQuit) {
-
     nsCOMPtr<nsISimpleEnumerator> windowEnumerator;
-    nsCOMPtr<nsIWindowMediator> mediator (do_GetService(NS_WINDOWMEDIATOR_CONTRACTID));
+    nsCOMPtr<nsIWindowMediator> mediator(
+        do_GetService(NS_WINDOWMEDIATOR_CONTRACTID));
     if (mediator) {
       mediator->GetEnumerator(nullptr, getter_AddRefs(windowEnumerator));
       if (windowEnumerator) {
@@ -380,8 +355,7 @@ nsAppStartup::Quit(uint32_t aMode)
           windowEnumerator->GetNext(getter_AddRefs(window));
           nsCOMPtr<nsPIDOMWindowOuter> domWindow(do_QueryInterface(window));
           if (domWindow) {
-            if (!domWindow->CanClose())
-              return NS_OK;
+            if (!domWindow->CanClose()) return NS_OK;
           }
           windowEnumerator->HasMoreElements(&more);
         }
@@ -417,7 +391,8 @@ nsAppStartup::Quit(uint32_t aMode)
       ExitLastWindowClosingSurvivalArea();
 #endif
       if (obsService)
-        obsService->NotifyObservers(nullptr, "quit-application-granted", nullptr);
+        obsService->NotifyObservers(nullptr, "quit-application-granted",
+                                    nullptr);
     }
 
     
@@ -428,7 +403,7 @@ nsAppStartup::Quit(uint32_t aMode)
 
     if (mediator) {
       if (ferocity == eAttemptQuit) {
-        ferocity = eForceQuit; 
+        ferocity = eForceQuit;  
 
         
 
@@ -465,14 +440,14 @@ nsAppStartup::Quit(uint32_t aMode)
     
     
     if (obsService) {
-      obsService->NotifyObservers(nullptr, "quit-application",
-        (mRestart || mRestartNotSameProfile) ? u"restart" : u"shutdown");
+      obsService->NotifyObservers(
+          nullptr, "quit-application",
+          (mRestart || mRestartNotSameProfile) ? u"restart" : u"shutdown");
     }
 
     if (!mRunning) {
       postedExitEvent = true;
-    }
-    else {
+    } else {
       
       
       
@@ -480,8 +455,7 @@ nsAppStartup::Quit(uint32_t aMode)
       rv = NS_DispatchToCurrentThread(event);
       if (NS_SUCCEEDED(rv)) {
         postedExitEvent = true;
-      }
-      else {
+      } else {
         NS_WARNING("failed to dispatch nsAppExitEvent");
       }
     }
@@ -489,30 +463,24 @@ nsAppStartup::Quit(uint32_t aMode)
 
   
   
-  if (!postedExitEvent)
-    mShuttingDown = false;
+  if (!postedExitEvent) mShuttingDown = false;
   return rv;
 }
 
-
-void
-nsAppStartup::CloseAllWindows()
-{
-  nsCOMPtr<nsIWindowMediator> mediator
-    (do_GetService(NS_WINDOWMEDIATOR_CONTRACTID));
+void nsAppStartup::CloseAllWindows() {
+  nsCOMPtr<nsIWindowMediator> mediator(
+      do_GetService(NS_WINDOWMEDIATOR_CONTRACTID));
 
   nsCOMPtr<nsISimpleEnumerator> windowEnumerator;
 
   mediator->GetEnumerator(nullptr, getter_AddRefs(windowEnumerator));
 
-  if (!windowEnumerator)
-    return;
+  if (!windowEnumerator) return;
 
   bool more;
   while (NS_SUCCEEDED(windowEnumerator->HasMoreElements(&more)) && more) {
     nsCOMPtr<nsISupports> isupports;
-    if (NS_FAILED(windowEnumerator->GetNext(getter_AddRefs(isupports))))
-      break;
+    if (NS_FAILED(windowEnumerator->GetNext(getter_AddRefs(isupports)))) break;
 
     nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryInterface(isupports);
     NS_ASSERTION(window, "not an nsPIDOMWindow");
@@ -523,21 +491,17 @@ nsAppStartup::CloseAllWindows()
 }
 
 NS_IMETHODIMP
-nsAppStartup::EnterLastWindowClosingSurvivalArea(void)
-{
+nsAppStartup::EnterLastWindowClosingSurvivalArea(void) {
   ++mConsiderQuitStopper;
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
-nsAppStartup::ExitLastWindowClosingSurvivalArea(void)
-{
+nsAppStartup::ExitLastWindowClosingSurvivalArea(void) {
   NS_ASSERTION(mConsiderQuitStopper > 0, "consider quit stopper out of bounds");
   --mConsiderQuitStopper;
 
-  if (mRunning)
-    Quit(eConsiderQuit);
+  if (mRunning) Quit(eConsiderQuit);
 
   return NS_OK;
 }
@@ -547,22 +511,19 @@ nsAppStartup::ExitLastWindowClosingSurvivalArea(void)
 
 
 NS_IMETHODIMP
-nsAppStartup::GetShuttingDown(bool *aResult)
-{
+nsAppStartup::GetShuttingDown(bool *aResult) {
   *aResult = mShuttingDown;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsAppStartup::GetStartingUp(bool *aResult)
-{
+nsAppStartup::GetStartingUp(bool *aResult) {
   *aResult = mStartingUp;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsAppStartup::DoneStartingUp()
-{
+nsAppStartup::DoneStartingUp() {
   
   MOZ_ASSERT(mStartingUp);
 
@@ -571,15 +532,13 @@ nsAppStartup::DoneStartingUp()
 }
 
 NS_IMETHODIMP
-nsAppStartup::GetRestarting(bool *aResult)
-{
+nsAppStartup::GetRestarting(bool *aResult) {
   *aResult = mRestart;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsAppStartup::GetWasRestarted(bool *aResult)
-{
+nsAppStartup::GetWasRestarted(bool *aResult) {
   char *mozAppRestart = PR_GetEnv("MOZ_APP_RESTART");
 
   
@@ -591,15 +550,13 @@ nsAppStartup::GetWasRestarted(bool *aResult)
 }
 
 NS_IMETHODIMP
-nsAppStartup::SetInterrupted(bool aInterrupted)
-{
+nsAppStartup::SetInterrupted(bool aInterrupted) {
   mInterrupted = aInterrupted;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsAppStartup::GetInterrupted(bool *aInterrupted)
-{
+nsAppStartup::GetInterrupted(bool *aInterrupted) {
   *aInterrupted = mInterrupted;
   return NS_OK;
 }
@@ -611,21 +568,20 @@ nsAppStartup::GetInterrupted(bool *aInterrupted)
 NS_IMETHODIMP
 nsAppStartup::CreateChromeWindow(nsIWebBrowserChrome *aParent,
                                  uint32_t aChromeFlags,
-                                 nsIWebBrowserChrome **_retval)
-{
+                                 nsIWebBrowserChrome **_retval) {
   bool cancel;
-  return CreateChromeWindow2(aParent, aChromeFlags, nullptr, nullptr, 0, &cancel, _retval);
+  return CreateChromeWindow2(aParent, aChromeFlags, nullptr, nullptr, 0,
+                             &cancel, _retval);
 }
 
 
 
 
 
-
 NS_IMETHODIMP
-nsAppStartup::SetScreenId(uint32_t aScreenId)
-{
-  nsCOMPtr<nsIAppShellService> appShell(do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
+nsAppStartup::SetScreenId(uint32_t aScreenId) {
+  nsCOMPtr<nsIAppShellService> appShell(
+      do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
   if (!appShell) {
     return NS_ERROR_FAILURE;
   }
@@ -637,35 +593,36 @@ NS_IMETHODIMP
 nsAppStartup::CreateChromeWindow2(nsIWebBrowserChrome *aParent,
                                   uint32_t aChromeFlags,
                                   nsITabParent *aOpeningTab,
-                                  mozIDOMWindowProxy* aOpener,
-                                  uint64_t aNextTabParentId,
-                                  bool *aCancel,
-                                  nsIWebBrowserChrome **_retval)
-{
+                                  mozIDOMWindowProxy *aOpener,
+                                  uint64_t aNextTabParentId, bool *aCancel,
+                                  nsIWebBrowserChrome **_retval) {
   NS_ENSURE_ARG_POINTER(aCancel);
   NS_ENSURE_ARG_POINTER(_retval);
   *aCancel = false;
   *_retval = 0;
 
   
-  if (mAttemptingQuit && (aChromeFlags & nsIWebBrowserChrome::CHROME_MODAL) == 0)
+  if (mAttemptingQuit &&
+      (aChromeFlags & nsIWebBrowserChrome::CHROME_MODAL) == 0)
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
 
   nsCOMPtr<nsIXULWindow> newWindow;
 
   if (aParent) {
     nsCOMPtr<nsIXULWindow> xulParent(do_GetInterface(aParent));
-    NS_ASSERTION(xulParent, "window created using non-XUL parent. that's unexpected, but may work.");
+    NS_ASSERTION(xulParent,
+                 "window created using non-XUL parent. that's unexpected, but "
+                 "may work.");
 
     if (xulParent)
       xulParent->CreateNewWindow(aChromeFlags, aOpeningTab, aOpener,
-                                 aNextTabParentId,
-                                 getter_AddRefs(newWindow));
+                                 aNextTabParentId, getter_AddRefs(newWindow));
     
     
-  } else { 
+  } else {  
     MOZ_RELEASE_ASSERT(aNextTabParentId == 0,
-                       "Unexpected aNextTabParentId, we shouldn't ever have a next actor ID without a parent");
+                       "Unexpected aNextTabParentId, we shouldn't ever have a "
+                       "next actor ID without a parent");
 
     
 
@@ -673,22 +630,20 @@ nsAppStartup::CreateChromeWindow2(nsIWebBrowserChrome *aParent,
     if (aChromeFlags & nsIWebBrowserChrome::CHROME_DEPENDENT)
       NS_WARNING("dependent window created without a parent");
 
-    nsCOMPtr<nsIAppShellService> appShell(do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
-    if (!appShell)
-      return NS_ERROR_FAILURE;
+    nsCOMPtr<nsIAppShellService> appShell(
+        do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
+    if (!appShell) return NS_ERROR_FAILURE;
 
-    appShell->CreateTopLevelWindow(0, 0, aChromeFlags,
-                                   nsIAppShellService::SIZE_TO_CONTENT,
-                                   nsIAppShellService::SIZE_TO_CONTENT,
-                                   aOpeningTab, aOpener,
-                                   getter_AddRefs(newWindow));
+    appShell->CreateTopLevelWindow(
+        0, 0, aChromeFlags, nsIAppShellService::SIZE_TO_CONTENT,
+        nsIAppShellService::SIZE_TO_CONTENT, aOpeningTab, aOpener,
+        getter_AddRefs(newWindow));
   }
 
   
   if (newWindow) {
     nsCOMPtr<nsIInterfaceRequestor> thing(do_QueryInterface(newWindow));
-    if (thing)
-      CallGetInterface(thing.get(), _retval);
+    if (thing) CallGetInterface(thing.get(), _retval);
   }
 
   return *_retval ? NS_OK : NS_ERROR_FAILURE;
@@ -698,16 +653,13 @@ nsAppStartup::CreateChromeWindow2(nsIWebBrowserChrome *aParent,
 
 
 
-
 NS_IMETHODIMP
-nsAppStartup::Observe(nsISupports *aSubject,
-                      const char *aTopic, const char16_t *aData)
-{
+nsAppStartup::Observe(nsISupports *aSubject, const char *aTopic,
+                      const char16_t *aData) {
   NS_ASSERTION(mAppShell, "appshell service notified before appshell built");
   if (!strcmp(aTopic, "quit-application-forced")) {
     mShuttingDown = true;
-  }
-  else if (!strcmp(aTopic, "profile-change-teardown")) {
+  } else if (!strcmp(aTopic, "profile-change-teardown")) {
     if (!mShuttingDown) {
       EnterLastWindowClosingSurvivalArea();
       CloseAllWindows();
@@ -737,7 +689,7 @@ nsAppStartup::Observe(nsISupports *aSubject,
     if (mXPCOMShutdownProbe) {
       mXPCOMShutdownProbe->Trigger();
     }
-#endif 
+#endif  
   } else if (!strcmp(aTopic, "quit-application")) {
     StartupTimeline::Record(StartupTimeline::QUIT_APPLICATION);
   } else if (!strcmp(aTopic, "profile-before-change")) {
@@ -750,9 +702,9 @@ nsAppStartup::Observe(nsISupports *aSubject,
 }
 
 NS_IMETHODIMP
-nsAppStartup::GetStartupInfo(JSContext* aCx, JS::MutableHandle<JS::Value> aRetval)
-{
-  JS::Rooted<JSObject*> obj(aCx, JS_NewPlainObject(aCx));
+nsAppStartup::GetStartupInfo(JSContext *aCx,
+                             JS::MutableHandle<JS::Value> aRetval) {
+  JS::Rooted<JSObject *> obj(aCx, JS_NewPlainObject(aCx));
 
   aRetval.setObject(*obj);
 
@@ -765,16 +717,14 @@ nsAppStartup::GetStartupInfo(JSContext* aCx, JS::MutableHandle<JS::Value> aRetva
 
     if (error) {
       Telemetry::Accumulate(Telemetry::STARTUP_MEASUREMENT_ERRORS,
-        StartupTimeline::PROCESS_CREATION);
+                            StartupTimeline::PROCESS_CREATION);
     }
 
     StartupTimeline::Record(StartupTimeline::PROCESS_CREATION, procTime);
   }
 
   for (int i = StartupTimeline::PROCESS_CREATION;
-       i < StartupTimeline::MAX_EVENT_ID;
-       ++i)
-  {
+       i < StartupTimeline::MAX_EVENT_ID; ++i) {
     StartupTimeline::Event ev = static_cast<StartupTimeline::Event>(i);
     TimeStamp stamp = StartupTimeline::Get(ev);
 
@@ -783,15 +733,16 @@ nsAppStartup::GetStartupInfo(JSContext* aCx, JS::MutableHandle<JS::Value> aRetva
       stamp = procTime;
       MOZ_ASSERT(!stamp.IsNull());
       Telemetry::Accumulate(Telemetry::STARTUP_MEASUREMENT_ERRORS,
-        StartupTimeline::MAIN);
+                            StartupTimeline::MAIN);
     }
 
     if (!stamp.IsNull()) {
       if (stamp >= procTime) {
-        PRTime prStamp = ComputeAbsoluteTimestamp(stamp)
-          / PR_USEC_PER_MSEC;
-        JS::Rooted<JSObject*> date(aCx, JS::NewDateObject(aCx, JS::TimeClip(prStamp)));
-        JS_DefineProperty(aCx, obj, StartupTimeline::Describe(ev), date, JSPROP_ENUMERATE);
+        PRTime prStamp = ComputeAbsoluteTimestamp(stamp) / PR_USEC_PER_MSEC;
+        JS::Rooted<JSObject *> date(
+            aCx, JS::NewDateObject(aCx, JS::TimeClip(prStamp)));
+        JS_DefineProperty(aCx, obj, StartupTimeline::Describe(ev), date,
+                          JSPROP_ENUMERATE);
       } else {
         Telemetry::Accumulate(Telemetry::STARTUP_MEASUREMENT_ERRORS, ev);
       }
@@ -802,8 +753,7 @@ nsAppStartup::GetStartupInfo(JSContext* aCx, JS::MutableHandle<JS::Value> aRetva
 }
 
 NS_IMETHODIMP
-nsAppStartup::GetAutomaticSafeModeNecessary(bool *_retval)
-{
+nsAppStartup::GetAutomaticSafeModeNecessary(bool *_retval) {
   NS_ENSURE_ARG_POINTER(_retval);
 
   bool alwaysSafe = false;
@@ -822,8 +772,7 @@ nsAppStartup::GetAutomaticSafeModeNecessary(bool *_retval)
 }
 
 NS_IMETHODIMP
-nsAppStartup::TrackStartupCrashBegin(bool *aIsSafeModeNecessary)
-{
+nsAppStartup::TrackStartupCrashBegin(bool *aIsSafeModeNecessary) {
   const int32_t MAX_TIME_SINCE_STARTUP = 6 * 60 * 60 * 1000;
   const int32_t MAX_STARTUP_BUFFER = 10;
   nsresult rv;
@@ -850,8 +799,7 @@ nsAppStartup::TrackStartupCrashBegin(bool *aIsSafeModeNecessary)
   rv = xr->GetReplacedLockTime(&replacedLockTime);
 
   if (NS_FAILED(rv) || !replacedLockTime) {
-    if (!inSafeMode)
-      Preferences::ClearUser(kPrefRecentCrashes);
+    if (!inSafeMode) Preferences::ClearUser(kPrefRecentCrashes);
     GetAutomaticSafeModeNecessary(aIsSafeModeNecessary);
     return NS_OK;
   }
@@ -863,8 +811,10 @@ nsAppStartup::TrackStartupCrashBegin(bool *aIsSafeModeNecessary)
 
   int32_t recentCrashes = 0;
   Preferences::GetInt(kPrefRecentCrashes, &recentCrashes);
-  mIsSafeModeNecessary = (recentCrashes > maxResumedCrashes && maxResumedCrashes != -1);
+  mIsSafeModeNecessary =
+      (recentCrashes > maxResumedCrashes && maxResumedCrashes != -1);
 
+  
   
   
   
@@ -882,16 +832,18 @@ nsAppStartup::TrackStartupCrashBegin(bool *aIsSafeModeNecessary)
   int32_t lockSeconds = (int32_t)(replacedLockTime / PR_MSEC_PER_SEC);
 
   
-  if (lockSeconds <= lastSuccessfulStartup + MAX_STARTUP_BUFFER
-      && lockSeconds >= lastSuccessfulStartup - MAX_STARTUP_BUFFER) {
+  if (lockSeconds <= lastSuccessfulStartup + MAX_STARTUP_BUFFER &&
+      lockSeconds >= lastSuccessfulStartup - MAX_STARTUP_BUFFER) {
     GetAutomaticSafeModeNecessary(aIsSafeModeNecessary);
     return NS_OK;
   }
 
   
+  
   if (PR_Now() / PR_USEC_PER_SEC <= lastSuccessfulStartup)
     return NS_ERROR_FAILURE;
 
+  
   
   Telemetry::Accumulate(Telemetry::STARTUP_CRASH_DETECTED, true);
 
@@ -909,38 +861,39 @@ nsAppStartup::TrackStartupCrashBegin(bool *aIsSafeModeNecessary)
   } else {
     
     
+    
     rv = Preferences::ClearUser(kPrefRecentCrashes);
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  mIsSafeModeNecessary = (recentCrashes > maxResumedCrashes && maxResumedCrashes != -1);
+  mIsSafeModeNecessary =
+      (recentCrashes > maxResumedCrashes && maxResumedCrashes != -1);
 
   nsCOMPtr<nsIPrefService> prefs = Preferences::GetService();
-  rv = static_cast<Preferences *>(prefs.get())->SavePrefFileBlocking(); 
+  rv = static_cast<Preferences *>(prefs.get())
+           ->SavePrefFileBlocking();  
+                                      
   NS_ENSURE_SUCCESS(rv, rv);
 
   GetAutomaticSafeModeNecessary(aIsSafeModeNecessary);
   return rv;
 }
 
-static nsresult
-RemoveIncompleteStartupFile()
-{
+static nsresult RemoveIncompleteStartupFile() {
   nsCOMPtr<nsIFile> file;
-  MOZ_TRY(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR, getter_AddRefs(file)));
+  MOZ_TRY(NS_GetSpecialDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR,
+                                 getter_AddRefs(file)));
 
   MOZ_TRY_VAR(file, mozilla::startup::GetIncompleteStartupFile(file));
   return file->Remove(false);
 }
 
 NS_IMETHODIMP
-nsAppStartup::TrackStartupCrashEnd()
-{
+nsAppStartup::TrackStartupCrashEnd() {
   bool inSafeMode = false;
   nsCOMPtr<nsIXULRuntime> xr = do_GetService(XULRUNTIME_SERVICE_CONTRACTID);
-  if (xr)
-    xr->GetInSafeMode(&inSafeMode);
+  if (xr) xr->GetInSafeMode(&inSafeMode);
 
   
   if (mStartupCrashTrackingEnded || (mIsSafeModeNecessary && !inSafeMode))
@@ -964,7 +917,7 @@ nsAppStartup::TrackStartupCrashEnd()
     uint64_t lockFileTime = ComputeAbsoluteTimestamp(mainTime);
 
     rv = Preferences::SetInt(kPrefLastSuccess,
-      (int32_t)(lockFileTime / PR_USEC_PER_SEC));
+                             (int32_t)(lockFileTime / PR_USEC_PER_SEC));
 
     if (NS_FAILED(rv))
       NS_WARNING("Could not set startup crash detection pref.");
@@ -975,8 +928,8 @@ nsAppStartup::TrackStartupCrashEnd()
     
     int32_t maxResumedCrashes = 0;
     int32_t prefType;
-    rv = Preferences::GetRootBranch(
-      PrefValueKind::Default)->GetPrefType(kPrefMaxResumedCrashes, &prefType);
+    rv = Preferences::GetRootBranch(PrefValueKind::Default)
+             ->GetPrefType(kPrefMaxResumedCrashes, &prefType);
     NS_ENSURE_SUCCESS(rv, rv);
     if (prefType == nsIPrefBranch::PREF_INT) {
       rv = Preferences::GetInt(kPrefMaxResumedCrashes, &maxResumedCrashes);
@@ -985,6 +938,7 @@ nsAppStartup::TrackStartupCrashEnd()
     rv = Preferences::SetInt(kPrefRecentCrashes, maxResumedCrashes);
     NS_ENSURE_SUCCESS(rv, rv);
   } else if (!inSafeMode) {
+    
     
     rv = Preferences::ClearUser(kPrefRecentCrashes);
     if (NS_FAILED(rv)) NS_WARNING("Could not clear startup crash count.");
@@ -999,8 +953,7 @@ nsAppStartup::TrackStartupCrashEnd()
 }
 
 NS_IMETHODIMP
-nsAppStartup::RestartInSafeMode(uint32_t aQuitMode)
-{
+nsAppStartup::RestartInSafeMode(uint32_t aQuitMode) {
   PR_SetEnv("MOZ_SAFE_MODE_RESTART=1");
   this->Quit(aQuitMode | nsIAppStartup::eRestart);
 
@@ -1008,8 +961,7 @@ nsAppStartup::RestartInSafeMode(uint32_t aQuitMode)
 }
 
 NS_IMETHODIMP
-nsAppStartup::CreateInstanceWithProfile(nsIToolkitProfile* aProfile)
-{
+nsAppStartup::CreateInstanceWithProfile(nsIToolkitProfile *aProfile) {
   if (NS_WARN_IF(!aProfile)) {
     return NS_ERROR_FAILURE;
   }
@@ -1019,8 +971,8 @@ nsAppStartup::CreateInstanceWithProfile(nsIToolkitProfile* aProfile)
   }
 
   nsCOMPtr<nsIFile> execPath;
-  nsresult rv = NS_NewLocalFile(gAbsoluteArgv0Path,
-                                true, getter_AddRefs(execPath));
+  nsresult rv =
+      NS_NewLocalFile(gAbsoluteArgv0Path, true, getter_AddRefs(execPath));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1041,7 +993,7 @@ nsAppStartup::CreateInstanceWithProfile(nsIToolkitProfile* aProfile)
     return rv;
   }
 
-  const char *args[] = { "-no-remote", "-P", profileName.get() };
+  const char *args[] = {"-no-remote", "-P", profileName.get()};
   rv = process->Run(false, args, 3);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;

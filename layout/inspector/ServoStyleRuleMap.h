@@ -20,21 +20,19 @@ class ServoCSSRuleList;
 class ServoStyleSet;
 namespace css {
 class Rule;
-} 
+}  
 namespace dom {
 class ShadowRoot;
 }
-class ServoStyleRuleMap
-{
-public:
+class ServoStyleRuleMap {
+ public:
   ServoStyleRuleMap() = default;
 
   void EnsureTable(ServoStyleSet&);
   void EnsureTable(nsXBLPrototypeResources&);
   void EnsureTable(dom::ShadowRoot&);
 
-  dom::CSSStyleRule* Lookup(const RawServoStyleRule* aRawRule) const
-  {
+  dom::CSSStyleRule* Lookup(const RawServoStyleRule* aRawRule) const {
     return mTable.Get(aRawRule);
   }
 
@@ -48,7 +46,7 @@ public:
 
   ~ServoStyleRuleMap() = default;
 
-private:
+ private:
   
   
   
@@ -59,10 +57,11 @@ private:
   void FillTableFromStyleSheet(StyleSheet&);
 
   typedef nsDataHashtable<nsPtrHashKey<const RawServoStyleRule>,
-                          WeakPtr<dom::CSSStyleRule>> Hashtable;
+                          WeakPtr<dom::CSSStyleRule>>
+      Hashtable;
   Hashtable mTable;
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -4,20 +4,19 @@
 
 
 
- #ifndef GFX_VR_THREAD_H
- #define GFX_VR_THREAD_H
+#ifndef GFX_VR_THREAD_H
+#define GFX_VR_THREAD_H
 
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
-#include "base/thread.h"                
+#include "base/thread.h"  
 
 namespace mozilla {
 namespace gfx {
 
-class VRThread final
-{
+class VRThread final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRThread)
 
-public:
+ public:
   explicit VRThread(const nsCString& aName);
 
   void Start();
@@ -30,10 +29,10 @@ public:
   const nsCOMPtr<nsIThread> GetThread() const;
   bool IsActive();
 
-protected:
+ protected:
   ~VRThread();
 
-private:
+ private:
   nsCOMPtr<nsIThread> mThread;
   TimeStamp mLastActiveTime;
   nsCString mName;
@@ -41,7 +40,7 @@ private:
   Atomic<bool> mStarted;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -25,8 +25,7 @@ NS_INTERFACE_MAP_END
 NS_IMPL_ADDREF(xpcAccessibleGeneric)
 NS_IMPL_RELEASE(xpcAccessibleGeneric)
 
-xpcAccessibleGeneric::~xpcAccessibleGeneric()
-{
+xpcAccessibleGeneric::~xpcAccessibleGeneric() {
   if (mIntl.IsNull()) {
     return;
   }
@@ -50,17 +49,11 @@ xpcAccessibleGeneric::~xpcAccessibleGeneric()
 
 
 
-Accessible*
-xpcAccessibleGeneric::ToInternalAccessible() const
-{
+Accessible* xpcAccessibleGeneric::ToInternalAccessible() const {
   return mIntl.AsAccessible();
 }
 
 
 
 
-void
-xpcAccessibleGeneric::Shutdown()
-{
-  mIntl = nullptr;
-}
+void xpcAccessibleGeneric::Shutdown() { mIntl = nullptr; }

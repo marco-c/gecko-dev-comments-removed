@@ -12,8 +12,7 @@ namespace mozilla {
 namespace hal {
 class WakeLockInformation;
 typedef Observer<hal::WakeLockInformation> WakeLockObserver;
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

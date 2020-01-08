@@ -26,26 +26,21 @@ namespace dom {
 class Element;
 struct L10nKey;
 
-class PromiseResolver final : public PromiseNativeHandler
-{
-public:
+class PromiseResolver final : public PromiseNativeHandler {
+ public:
   NS_DECL_ISUPPORTS
 
   explicit PromiseResolver(Promise* aPromise);
   void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override;
   void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) override;
 
-protected:
+ protected:
   virtual ~PromiseResolver();
 
   RefPtr<Promise> mPromise;
 };
 
-enum class DocumentL10nState
-{
-  Initialized = 0,
-  InitialTranslationTriggered
-};
+enum class DocumentL10nState { Initialized = 0, InitialTranslationTriggered };
 
 
 
@@ -57,19 +52,17 @@ enum class DocumentL10nState
 
 
 
-class DocumentL10n final : public nsIDOMEventListener,
-                           public nsWrapperCache
-{
-public:
+class DocumentL10n final : public nsIDOMEventListener, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DocumentL10n)
   NS_DECL_NSIDOMEVENTLISTENER
 
-public:
+ public:
   explicit DocumentL10n(nsIDocument* aDocument);
   bool Init(nsTArray<nsString>& aResourceIds);
 
-protected:
+ protected:
   virtual ~DocumentL10n();
 
   nsCOMPtr<nsIDocument> mDocument;
@@ -79,10 +72,11 @@ protected:
 
   already_AddRefed<Promise> MaybeWrapPromise(Promise* aPromise);
 
-public:
+ public:
   nsIDocument* GetParentObject() const { return mDocument; };
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   
 
@@ -98,22 +92,32 @@ public:
 
   uint32_t RemoveResourceIds(nsTArray<nsString>& aResourceIds);
 
-  already_AddRefed<Promise> FormatMessages(JSContext* aCx, const Sequence<L10nKey>& aKeys, ErrorResult& aRv);
-  already_AddRefed<Promise> FormatValues(JSContext* aCx, const Sequence<L10nKey>& aKeys, ErrorResult& aRv);
-  already_AddRefed<Promise> FormatValue(JSContext* aCx, const nsAString& aId, const Optional<JS::Handle<JSObject*>>& aArgs, ErrorResult& aRv);
+  already_AddRefed<Promise> FormatMessages(JSContext* aCx,
+                                           const Sequence<L10nKey>& aKeys,
+                                           ErrorResult& aRv);
+  already_AddRefed<Promise> FormatValues(JSContext* aCx,
+                                         const Sequence<L10nKey>& aKeys,
+                                         ErrorResult& aRv);
+  already_AddRefed<Promise> FormatValue(
+      JSContext* aCx, const nsAString& aId,
+      const Optional<JS::Handle<JSObject*>>& aArgs, ErrorResult& aRv);
 
-  void SetAttributes(JSContext* aCx, Element& aElement, const nsAString& aId, const Optional<JS::Handle<JSObject*>>& aArgs, ErrorResult& aRv);
-  void GetAttributes(JSContext* aCx, Element& aElement, L10nKey& aResult, ErrorResult& aRv);
+  void SetAttributes(JSContext* aCx, Element& aElement, const nsAString& aId,
+                     const Optional<JS::Handle<JSObject*>>& aArgs,
+                     ErrorResult& aRv);
+  void GetAttributes(JSContext* aCx, Element& aElement, L10nKey& aResult,
+                     ErrorResult& aRv);
 
   already_AddRefed<Promise> TranslateFragment(nsINode& aNode, ErrorResult& aRv);
-  already_AddRefed<Promise> TranslateElements(const Sequence<OwningNonNull<Element>>& aElements, ErrorResult& aRv);
+  already_AddRefed<Promise> TranslateElements(
+      const Sequence<OwningNonNull<Element>>& aElements, ErrorResult& aRv);
 
   Promise* Ready();
 
   void TriggerInitialDocumentTranslation();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

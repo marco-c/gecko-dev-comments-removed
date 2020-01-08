@@ -12,17 +12,16 @@
 namespace mozilla {
 namespace widget {
 
-class HeadlessScreenHelper final : public ScreenManager::Helper
-{
-public:
+class HeadlessScreenHelper final : public ScreenManager::Helper {
+ public:
   HeadlessScreenHelper();
-  ~HeadlessScreenHelper() override { };
+  ~HeadlessScreenHelper() override{};
 
-private:
+ private:
   static LayoutDeviceIntRect GetScreenRect();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

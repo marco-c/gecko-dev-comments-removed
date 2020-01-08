@@ -12,65 +12,63 @@
 #include "nsTArray.h"
 
 namespace mozilla {
-    namespace dom {
-        class FontListEntry;
-    };
+namespace dom {
+class FontListEntry;
 };
+};  
 using mozilla::dom::FontListEntry;
 
 class gfxAndroidPlatform : public gfxPlatform {
-public:
-    gfxAndroidPlatform();
-    virtual ~gfxAndroidPlatform();
+ public:
+  gfxAndroidPlatform();
+  virtual ~gfxAndroidPlatform();
 
-    static gfxAndroidPlatform *GetPlatform() {
-        return (gfxAndroidPlatform*) gfxPlatform::GetPlatform();
-    }
+  static gfxAndroidPlatform* GetPlatform() {
+    return (gfxAndroidPlatform*)gfxPlatform::GetPlatform();
+  }
 
-    virtual already_AddRefed<gfxASurface>
-    CreateOffscreenSurface(const IntSize& aSize,
-                           gfxImageFormat aFormat) override;
+  virtual already_AddRefed<gfxASurface> CreateOffscreenSurface(
+      const IntSize& aSize, gfxImageFormat aFormat) override;
+
+  virtual gfxImageFormat GetOffscreenFormat() override {
+    return mOffscreenFormat;
+  }
+
+  
+  void GetSystemFontList(InfallibleTArray<FontListEntry>* retValue);
+
+  
+  virtual gfxPlatformFontList* CreatePlatformFontList() override;
+
+  virtual void GetCommonFallbackFonts(
+      uint32_t aCh, uint32_t aNextCh, Script aRunScript,
+      nsTArray<const char*>& aFontList) override;
+
+  gfxFontGroup* CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
+                                const gfxFontStyle* aStyle,
+                                gfxTextPerfMetrics* aTextPerf,
+                                gfxUserFontSet* aUserFontSet,
+                                gfxFloat aDevToCssSize) override;
+
+  virtual bool FontHintingEnabled() override;
+  virtual bool RequiresLinearZoom() override;
+
+  FT_Library GetFTLibrary() override;
+
+  virtual already_AddRefed<mozilla::gfx::VsyncSource>
+  CreateHardwareVsyncSource() override;
+
+ protected:
+  bool AccelerateLayersByDefault() override { return true; }
+
+  bool CheckVariationFontSupport() override {
     
-    virtual gfxImageFormat GetOffscreenFormat() override { return mOffscreenFormat; }
-
     
-    void GetSystemFontList(InfallibleTArray<FontListEntry>* retValue);
+    return true;
+  }
 
-    
-    virtual gfxPlatformFontList* CreatePlatformFontList() override;
-
-    virtual void GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
-                                        Script aRunScript,
-                                        nsTArray<const char*>& aFontList) override;
-
-    gfxFontGroup*
-    CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
-                    const gfxFontStyle *aStyle,
-                    gfxTextPerfMetrics* aTextPerf,
-                    gfxUserFontSet *aUserFontSet,
-                    gfxFloat aDevToCssSize) override;
-
-    virtual bool FontHintingEnabled() override;
-    virtual bool RequiresLinearZoom() override;
-
-    FT_Library GetFTLibrary() override;
-
-    virtual already_AddRefed<mozilla::gfx::VsyncSource> CreateHardwareVsyncSource() override;
-
-protected:
-    bool AccelerateLayersByDefault() override {
-      return true;
-    }
-
-    bool CheckVariationFontSupport() override {
-        
-        
-        return true;
-    }
-
-private:
-    gfxImageFormat mOffscreenFormat;
+ private:
+  gfxImageFormat mOffscreenFormat;
 };
 
 #endif 
-

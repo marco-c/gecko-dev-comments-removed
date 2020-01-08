@@ -34,10 +34,8 @@ using namespace mozilla;
 namespace WebCore {
 
 FFTConvolver::FFTConvolver(size_t fftSize, size_t renderPhase)
-    : m_frame(fftSize)
-    , m_readWriteIndex(renderPhase % (fftSize / 2))
-{
-    MOZ_ASSERT(fftSize >= 2 * WEBAUDIO_BLOCK_SIZE);
+    : m_frame(fftSize), m_readWriteIndex(renderPhase % (fftSize / 2)) {
+  MOZ_ASSERT(fftSize >= 2 * WEBAUDIO_BLOCK_SIZE);
   m_inputBuffer.SetLength(fftSize);
   PodZero(m_inputBuffer.Elements(), fftSize);
   m_outputBuffer.SetLength(fftSize);
@@ -46,74 +44,75 @@ FFTConvolver::FFTConvolver(size_t fftSize, size_t renderPhase)
   PodZero(m_lastOverlapBuffer.Elements(), fftSize / 2);
 }
 
-size_t FFTConvolver::sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-{
-    size_t amount = 0;
-    amount += m_frame.SizeOfExcludingThis(aMallocSizeOf);
-    amount += m_inputBuffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    amount += m_outputBuffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    amount += m_lastOverlapBuffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    return amount;
+size_t FFTConvolver::sizeOfExcludingThis(
+    mozilla::MallocSizeOf aMallocSizeOf) const {
+  size_t amount = 0;
+  amount += m_frame.SizeOfExcludingThis(aMallocSizeOf);
+  amount += m_inputBuffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  amount += m_outputBuffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  amount += m_lastOverlapBuffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  return amount;
 }
 
-size_t FFTConvolver::sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-{
+size_t FFTConvolver::sizeOfIncludingThis(
+    mozilla::MallocSizeOf aMallocSizeOf) const {
   return aMallocSizeOf(this) + sizeOfExcludingThis(aMallocSizeOf);
 }
 
-const float* FFTConvolver::process(FFTBlock* fftKernel, const float* sourceP)
-{
-    size_t halfSize = fftSize() / 2;
+const float* FFTConvolver::process(FFTBlock* fftKernel, const float* sourceP) {
+  size_t halfSize = fftSize() / 2;
+
+  
+  
+  
+  MOZ_ASSERT(halfSize % WEBAUDIO_BLOCK_SIZE == 0 &&
+             WEBAUDIO_BLOCK_SIZE <= halfSize);
+
+  
+  float* inputP = m_inputBuffer.Elements();
+
+  MOZ_ASSERT(sourceP && inputP &&
+             m_readWriteIndex + WEBAUDIO_BLOCK_SIZE <= m_inputBuffer.Length());
+
+  memcpy(inputP + m_readWriteIndex, sourceP,
+         sizeof(float) * WEBAUDIO_BLOCK_SIZE);
+
+  float* outputP = m_outputBuffer.Elements();
+  m_readWriteIndex += WEBAUDIO_BLOCK_SIZE;
+
+  
+  if (m_readWriteIndex == halfSize) {
+    
+    m_frame.PerformFFT(m_inputBuffer.Elements());
+    m_frame.Multiply(*fftKernel);
+    m_frame.GetInverseWithoutScaling(m_outputBuffer.Elements());
 
     
-    
-    
-    MOZ_ASSERT(halfSize % WEBAUDIO_BLOCK_SIZE == 0 &&
-               WEBAUDIO_BLOCK_SIZE <= halfSize);
+    AudioBufferAddWithScale(m_lastOverlapBuffer.Elements(), 1.0f,
+                            m_outputBuffer.Elements(), halfSize);
 
     
-    float* inputP = m_inputBuffer.Elements();
+    MOZ_ASSERT(m_outputBuffer.Length() == 2 * halfSize &&
+               m_lastOverlapBuffer.Length() == halfSize);
 
-    MOZ_ASSERT(sourceP && inputP && m_readWriteIndex + WEBAUDIO_BLOCK_SIZE <= m_inputBuffer.Length());
-
-    memcpy(inputP + m_readWriteIndex, sourceP, sizeof(float) * WEBAUDIO_BLOCK_SIZE);
-
-    float* outputP = m_outputBuffer.Elements();
-    m_readWriteIndex += WEBAUDIO_BLOCK_SIZE;
+    memcpy(m_lastOverlapBuffer.Elements(), m_outputBuffer.Elements() + halfSize,
+           sizeof(float) * halfSize);
 
     
-    if (m_readWriteIndex == halfSize) {
-        
-        m_frame.PerformFFT(m_inputBuffer.Elements());
-        m_frame.Multiply(*fftKernel);
-        m_frame.GetInverseWithoutScaling(m_outputBuffer.Elements());
-
-        
-        AudioBufferAddWithScale(m_lastOverlapBuffer.Elements(), 1.0f,
-                                m_outputBuffer.Elements(), halfSize);
-
-        
-        MOZ_ASSERT(m_outputBuffer.Length() == 2 * halfSize && m_lastOverlapBuffer.Length() == halfSize);
-
-        memcpy(m_lastOverlapBuffer.Elements(), m_outputBuffer.Elements() + halfSize, sizeof(float) * halfSize);
-
-        
-        m_readWriteIndex = 0;
-    }
-
-    return outputP + m_readWriteIndex;
-}
-
-void FFTConvolver::reset()
-{
-    PodZero(m_lastOverlapBuffer.Elements(), m_lastOverlapBuffer.Length());
     m_readWriteIndex = 0;
+  }
+
+  return outputP + m_readWriteIndex;
 }
 
-size_t FFTConvolver::latencyFrames() const
-{
-    return std::max<size_t>(fftSize()/2, WEBAUDIO_BLOCK_SIZE) -
-        WEBAUDIO_BLOCK_SIZE;
+void FFTConvolver::reset() {
+  PodZero(m_lastOverlapBuffer.Elements(), m_lastOverlapBuffer.Length());
+  m_readWriteIndex = 0;
 }
 
-} 
+size_t FFTConvolver::latencyFrames() const {
+  return std::max<size_t>(fftSize() / 2, WEBAUDIO_BLOCK_SIZE) -
+         WEBAUDIO_BLOCK_SIZE;
+}
+
+}  

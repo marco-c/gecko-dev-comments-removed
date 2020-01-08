@@ -64,17 +64,17 @@ class SandboxOpenedFile final {
 
 
 class SandboxOpenedFiles {
-public:
+ public:
   SandboxOpenedFiles() = default;
 
-  template<typename... Args>
+  template <typename... Args>
   void Add(Args&&... aArgs) {
     mFiles.emplace_back(std::forward<Args>(aArgs)...);
   }
 
   int GetDesc(const char* aPath) const;
 
-private:
+ private:
   std::vector<SandboxOpenedFile> mFiles;
 
   
@@ -84,6 +84,6 @@ private:
   ~SandboxOpenedFiles() = delete;
 };
 
-} 
+}  
 
-#endif 
+#endif  

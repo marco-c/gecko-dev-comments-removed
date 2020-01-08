@@ -10,35 +10,27 @@
 namespace mozilla {
 namespace gl {
 
-SurfaceCaps::SurfaceCaps()
-{
-    Clear();
-}
+SurfaceCaps::SurfaceCaps() { Clear(); }
 
 
 
 SurfaceCaps::SurfaceCaps(const SurfaceCaps& other) = default;
-SurfaceCaps&
-SurfaceCaps::operator=(const SurfaceCaps& other) = default;
+SurfaceCaps& SurfaceCaps::operator=(const SurfaceCaps& other) = default;
 
-void
-SurfaceCaps::Clear()
-{
-    any = false;
-    color = false;
-    alpha = false;
-    bpp16 = false;
-    depth = false;
-    stencil = false;
-    antialias = false;
-    premultAlpha = true;
-    preserve = false;
-    surfaceAllocator = nullptr;
+void SurfaceCaps::Clear() {
+  any = false;
+  color = false;
+  alpha = false;
+  bpp16 = false;
+  depth = false;
+  stencil = false;
+  antialias = false;
+  premultAlpha = true;
+  preserve = false;
+  surfaceAllocator = nullptr;
 }
 
-SurfaceCaps::~SurfaceCaps()
-{
-}
+SurfaceCaps::~SurfaceCaps() {}
 
-} 
-} 
+}  
+}  

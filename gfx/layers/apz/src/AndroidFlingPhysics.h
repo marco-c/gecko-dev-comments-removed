@@ -16,14 +16,14 @@ namespace mozilla {
 namespace layers {
 
 class AndroidFlingPhysics {
-public:
+ public:
   void Init(const ParentLayerPoint& aVelocity, float aPLPPI);
-  void Sample(const TimeDuration& aDelta,
-              ParentLayerPoint* aOutVelocity,
+  void Sample(const TimeDuration& aDelta, ParentLayerPoint* aOutVelocity,
               ParentLayerPoint* aOutOffset);
 
   static void InitializeGlobalState();
-private:
+
+ private:
   
   bool SampleImpl(const TimeDuration& aDelta, float* aOutVelocity);
 
@@ -35,12 +35,12 @@ private:
   ParentLayerPoint mLastPos;
   ParentLayerPoint mCurrentPos;
   ParentLayerCoord mTargetDistance;  
-  ParentLayerPoint mTargetPos;  
-                                
-  ParentLayerPoint mDeltaNorm;  
+  ParentLayerPoint mTargetPos;       
+                                     
+  ParentLayerPoint mDeltaNorm;       
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

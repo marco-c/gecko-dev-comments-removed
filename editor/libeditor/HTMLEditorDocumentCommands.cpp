@@ -3,32 +3,31 @@
 
 
 
-
-#include "mozilla/HTMLEditor.h"         
-#include "mozilla/HTMLEditorCommands.h" 
-#include "mozilla/TextEditor.h"         
-#include "nsCommandParams.h"            
-#include "nsCOMPtr.h"                   
-#include "nsCRT.h"                      
-#include "nsDebug.h"                    
-#include "nsError.h"                    
-#include "nsIDocShell.h"                
-#include "nsIDocument.h"                
-#include "nsIEditingSession.h"          
-#include "nsIEditor.h"                  
-#include "nsIPlaintextEditor.h"         
-#include "nsIPresShell.h"               
-#include "nsISelectionController.h"     
-#include "nsISupportsImpl.h"            
-#include "nsISupportsUtils.h"           
-#include "nsIURI.h"                     
-#include "nsPresContext.h"              
-#include "nscore.h"                     
+#include "mozilla/HTMLEditor.h"          
+#include "mozilla/HTMLEditorCommands.h"  
+#include "mozilla/TextEditor.h"          
+#include "nsCommandParams.h"             
+#include "nsCOMPtr.h"                    
+#include "nsCRT.h"                       
+#include "nsDebug.h"                     
+#include "nsError.h"                     
+#include "nsIDocShell.h"                 
+#include "nsIDocument.h"                 
+#include "nsIEditingSession.h"           
+#include "nsIEditor.h"                   
+#include "nsIPlaintextEditor.h"          
+#include "nsIPresShell.h"                
+#include "nsISelectionController.h"      
+#include "nsISupportsImpl.h"             
+#include "nsISupportsUtils.h"            
+#include "nsIURI.h"                      
+#include "nsPresContext.h"               
+#include "nscore.h"                      
 
 class nsISupports;
 
 
-#define STATE_ENABLED  "state_enabled"
+#define STATE_ENABLED "state_enabled"
 #define STATE_ALL "state_all"
 #define STATE_ATTRIBUTE "state_attribute"
 #define STATE_DATA "state_data"
@@ -38,8 +37,7 @@ namespace mozilla {
 NS_IMETHODIMP
 SetDocumentOptionsCommand::IsCommandEnabled(const char* aCommandName,
                                             nsISupports* refCon,
-                                            bool* outCmdEnabled)
-{
+                                            bool* outCmdEnabled) {
   if (NS_WARN_IF(!outCmdEnabled)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -57,16 +55,14 @@ SetDocumentOptionsCommand::IsCommandEnabled(const char* aCommandName,
 
 NS_IMETHODIMP
 SetDocumentOptionsCommand::DoCommand(const char* aCommandName,
-                                     nsISupports* refCon)
-{
+                                     nsISupports* refCon) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 SetDocumentOptionsCommand::DoCommandParams(const char* aCommandName,
                                            nsICommandParams* aParams,
-                                           nsISupports* refCon)
-{
+                                           nsISupports* refCon) {
   if (NS_WARN_IF(!aParams)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -115,8 +111,7 @@ SetDocumentOptionsCommand::DoCommandParams(const char* aCommandName,
 NS_IMETHODIMP
 SetDocumentOptionsCommand::GetCommandStateParams(const char* aCommandName,
                                                  nsICommandParams* aParams,
-                                                 nsISupports* refCon)
-{
+                                                 nsISupports* refCon) {
   if (NS_WARN_IF(!aParams) || NS_WARN_IF(!refCon)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -184,12 +179,10 @@ SetDocumentOptionsCommand::GetCommandStateParams(const char* aCommandName,
 
 
 
-
 NS_IMETHODIMP
 SetDocumentStateCommand::IsCommandEnabled(const char* aCommandName,
                                           nsISupports* refCon,
-                                          bool* outCmdEnabled)
-{
+                                          bool* outCmdEnabled) {
   if (NS_WARN_IF(!outCmdEnabled)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -201,16 +194,14 @@ SetDocumentStateCommand::IsCommandEnabled(const char* aCommandName,
 
 NS_IMETHODIMP
 SetDocumentStateCommand::DoCommand(const char* aCommandName,
-                                   nsISupports* refCon)
-{
+                                   nsISupports* refCon) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 SetDocumentStateCommand::DoCommandParams(const char* aCommandName,
                                          nsICommandParams* aParams,
-                                         nsISupports* refCon)
-{
+                                         nsISupports* refCon) {
   if (NS_WARN_IF(!aParams)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -254,14 +245,14 @@ SetDocumentStateCommand::DoCommandParams(const char* aCommandName,
     }
     if (isReadOnly) {
       nsresult rv =
-        textEditor->AddFlags(nsIPlaintextEditor::eEditorReadonlyMask);
+          textEditor->AddFlags(nsIPlaintextEditor::eEditorReadonlyMask);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
       return NS_OK;
     }
     nsresult rv =
-      textEditor->RemoveFlags(nsIPlaintextEditor::eEditorReadonlyMask);
+        textEditor->RemoveFlags(nsIPlaintextEditor::eEditorReadonlyMask);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -296,7 +287,7 @@ SetDocumentStateCommand::DoCommandParams(const char* aCommandName,
       return error.StealNSResult();
     }
     nsresult rv =
-      htmlEditor->SetReturnInParagraphCreatesNewParagraph(!insertBrOnReturn);
+        htmlEditor->SetReturnInParagraphCreatesNewParagraph(!insertBrOnReturn);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -383,8 +374,7 @@ SetDocumentStateCommand::DoCommandParams(const char* aCommandName,
 NS_IMETHODIMP
 SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
                                                nsICommandParams* aParams,
-                                               nsISupports* refCon)
-{
+                                               nsISupports* refCon) {
   if (NS_WARN_IF(!aParams) || NS_WARN_IF(!refCon)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -478,23 +468,23 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
     switch (htmlEditor->GetDefaultParagraphSeparator()) {
       case ParagraphSeparator::div: {
         DebugOnly<nsresult> rv =
-          params->SetCString(STATE_ATTRIBUTE, NS_LITERAL_CSTRING("div"));
+            params->SetCString(STATE_ATTRIBUTE, NS_LITERAL_CSTRING("div"));
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-          "Failed to set command params to return \"div\"");
+                             "Failed to set command params to return \"div\"");
         return NS_OK;
       }
       case ParagraphSeparator::p: {
         DebugOnly<nsresult> rv =
-          params->SetCString(STATE_ATTRIBUTE, NS_LITERAL_CSTRING("p"));
+            params->SetCString(STATE_ATTRIBUTE, NS_LITERAL_CSTRING("p"));
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-          "Failed to set command params to return \"p\"");
+                             "Failed to set command params to return \"p\"");
         return NS_OK;
       }
       case ParagraphSeparator::br: {
         DebugOnly<nsresult> rv =
-          params->SetCString(STATE_ATTRIBUTE, NS_LITERAL_CSTRING("br"));
+            params->SetCString(STATE_ATTRIBUTE, NS_LITERAL_CSTRING("br"));
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-          "Failed to set command params to return \"br\"");
+                             "Failed to set command params to return \"br\"");
         return NS_OK;
       }
       default:
@@ -594,8 +584,7 @@ SetDocumentStateCommand::GetCommandStateParams(const char* aCommandName,
 NS_IMETHODIMP
 DocumentStateCommand::IsCommandEnabled(const char* aCommandName,
                                        nsISupports* refCon,
-                                       bool* outCmdEnabled)
-{
+                                       bool* outCmdEnabled) {
   if (NS_WARN_IF(!outCmdEnabled)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -606,25 +595,21 @@ DocumentStateCommand::IsCommandEnabled(const char* aCommandName,
 }
 
 NS_IMETHODIMP
-DocumentStateCommand::DoCommand(const char* aCommandName,
-                                nsISupports* refCon)
-{
+DocumentStateCommand::DoCommand(const char* aCommandName, nsISupports* refCon) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 DocumentStateCommand::DoCommandParams(const char* aCommandName,
                                       nsICommandParams* aParams,
-                                      nsISupports* refCon)
-{
+                                      nsISupports* refCon) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 DocumentStateCommand::GetCommandStateParams(const char* aCommandName,
                                             nsICommandParams* aParams,
-                                            nsISupports* refCon)
-{
+                                            nsISupports* refCon) {
   if (NS_WARN_IF(!aParams) || NS_WARN_IF(!aCommandName)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -686,4 +671,4 @@ DocumentStateCommand::GetCommandStateParams(const char* aCommandName,
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-} 
+}  

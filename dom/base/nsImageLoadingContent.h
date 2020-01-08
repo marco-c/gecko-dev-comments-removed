@@ -36,23 +36,23 @@ namespace mozilla {
 class AsyncEventDispatcher;
 namespace dom {
 class Element;
-} 
-} 
+}  
+}  
 
 #ifdef LoadImage
 
 #undef LoadImage
 #endif
 
-class nsImageLoadingContent : public nsIImageLoadingContent
-{
-  template <typename T> using Maybe = mozilla::Maybe<T>;
+class nsImageLoadingContent : public nsIImageLoadingContent {
+  template <typename T>
+  using Maybe = mozilla::Maybe<T>;
   using Nothing = mozilla::Nothing;
   using OnNonvisible = mozilla::OnNonvisible;
   using Visibility = mozilla::Visibility;
 
   
-public:
+ public:
   nsImageLoadingContent();
   virtual ~nsImageLoadingContent();
 
@@ -65,16 +65,12 @@ public:
   
 
   bool LoadingEnabled() const { return mLoadingEnabled; }
-  int16_t ImageBlockingStatus() const
-  {
-    return mImageBlockingStatus;
-  }
+  int16_t ImageBlockingStatus() const { return mImageBlockingStatus; }
   void AddObserver(imgINotificationObserver* aObserver);
   void RemoveObserver(imgINotificationObserver* aObserver);
-  already_AddRefed<imgIRequest>
-    GetRequest(int32_t aRequestType, mozilla::ErrorResult& aError);
-  int32_t
-    GetRequestType(imgIRequest* aRequest, mozilla::ErrorResult& aError);
+  already_AddRefed<imgIRequest> GetRequest(int32_t aRequestType,
+                                           mozilla::ErrorResult& aError);
+  int32_t GetRequestType(imgIRequest* aRequest, mozilla::ErrorResult& aError);
   already_AddRefed<nsIURI> GetCurrentURI(mozilla::ErrorResult& aError);
   already_AddRefed<nsIURI> GetCurrentRequestFinalURI();
   void ForceReload(bool aNotify, mozilla::ErrorResult& aError);
@@ -86,7 +82,7 @@ public:
 
   void SetSyncDecodingHint(bool aHint);
 
-protected:
+ protected:
   enum ImageLoadType {
     
     eImageLoadType_Normal,
@@ -111,8 +107,8 @@ protected:
 
 
 
-  nsresult LoadImage(const nsAString& aNewURI, bool aForce,
-                     bool aNotify, ImageLoadType aImageLoadType,
+  nsresult LoadImage(const nsAString& aNewURI, bool aForce, bool aNotify,
+                     ImageLoadType aImageLoadType,
                      nsIPrincipal* aTriggeringPrincipal = nullptr);
 
   
@@ -154,11 +150,9 @@ protected:
 
   nsresult LoadImage(nsIURI* aNewURI, bool aForce, bool aNotify,
                      ImageLoadType aImageLoadType,
-                     nsIPrincipal* aTriggeringPrincipal)
-  {
-    return LoadImage(aNewURI, aForce, aNotify, aImageLoadType,
-                     true, nullptr, nsIRequest::LOAD_NORMAL,
-                     aTriggeringPrincipal);
+                     nsIPrincipal* aTriggeringPrincipal) {
+    return LoadImage(aNewURI, aForce, aNotify, aImageLoadType, true, nullptr,
+                     nsIRequest::LOAD_NORMAL, aTriggeringPrincipal);
   }
 
   
@@ -223,7 +217,7 @@ protected:
 
   nsresult OnLoadComplete(imgIRequest* aRequest, nsresult aStatus);
   void OnUnlockedDraw();
-  nsresult OnImageIsAnimated(imgIRequest *aRequest);
+  nsresult OnImageIsAnimated(imgIRequest* aRequest);
 
   
   static nsContentPolicyType PolicyTypeForLoad(ImageLoadType aImageLoadType);
@@ -247,7 +241,7 @@ protected:
   static const nsAttrValue::EnumTable kDecodingTable[];
   static const nsAttrValue::EnumTable* kDecodingTableDefault;
 
-private:
+ private:
   
 
 
@@ -263,7 +257,7 @@ private:
 
 
   class ScriptedImageObserver final {
-  public:
+   public:
     NS_INLINE_DECL_REFCOUNTING(ScriptedImageObserver)
 
     ScriptedImageObserver(imgINotificationObserver* aObserver,
@@ -275,7 +269,7 @@ private:
     RefPtr<imgRequestProxy> mCurrentRequest;
     RefPtr<imgRequestProxy> mPendingRequest;
 
-  private:
+   private:
     ~ScriptedImageObserver();
   };
 
@@ -283,15 +277,11 @@ private:
 
 
   struct AutoStateChanger {
-    AutoStateChanger(nsImageLoadingContent* aImageContent,
-                     bool aNotify) :
-      mImageContent(aImageContent),
-      mNotify(aNotify)
-    {
+    AutoStateChanger(nsImageLoadingContent* aImageContent, bool aNotify)
+        : mImageContent(aImageContent), mNotify(aNotify) {
       mImageContent->mStateChangerDepth++;
     }
-    ~AutoStateChanger()
-    {
+    ~AutoStateChanger() {
       mImageContent->mStateChangerDepth--;
       mImageContent->UpdateImageState(mNotify);
     }
@@ -325,7 +315,7 @@ private:
 
   RefPtr<mozilla::AsyncEventDispatcher> mPendingEvent;
 
-protected:
+ protected:
   
 
 
@@ -348,7 +338,7 @@ protected:
 
 
 
-   RefPtr<imgRequestProxy>& PrepareNextRequest(ImageLoadType aImageLoadType);
+  RefPtr<imgRequestProxy>& PrepareNextRequest(ImageLoadType aImageLoadType);
 
   
 
@@ -373,10 +363,12 @@ protected:
 
 
 
-  void ClearCurrentRequest(nsresult aReason,
-                           const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
-  void ClearPendingRequest(nsresult aReason,
-                           const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
+  void ClearCurrentRequest(
+      nsresult aReason,
+      const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
+  void ClearPendingRequest(
+      nsresult aReason,
+      const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
 
   
 
@@ -392,13 +384,14 @@ protected:
 
 
 
+
   void ResetAnimationIfNeeded();
 
   
 
 
 
-  static bool HaveSize(imgIRequest *aImage);
+  static bool HaveSize(imgIRequest* aImage);
 
   
 
@@ -441,9 +434,9 @@ protected:
   
   
   
-  nsCOMPtr<nsIURI>      mCurrentURI;
+  nsCOMPtr<nsIURI> mCurrentURI;
 
-private:
+ private:
   
 
 
@@ -517,7 +510,7 @@ private:
   bool mUserDisabled : 1;
   bool mSuppressed : 1;
 
-protected:
+ protected:
   
 
 
@@ -535,7 +528,8 @@ protected:
 
 
   bool mUseUrgentStartForChannel;
-private:
+
+ private:
   
   uint8_t mStateChangerDepth;
 
@@ -553,10 +547,11 @@ private:
   
   
   
+  
   bool mIsStartingImageLoad;
 
   
   bool mSyncDecodingHint;
 };
 
-#endif 
+#endif  

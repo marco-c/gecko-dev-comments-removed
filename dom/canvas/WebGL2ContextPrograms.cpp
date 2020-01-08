@@ -13,17 +13,14 @@ namespace mozilla {
 
 
 
-GLint
-WebGL2Context::GetFragDataLocation(const WebGLProgram& prog, const nsAString& name)
-{
-    const FuncScope funcScope(*this, "getFragDataLocation");
-    if (IsContextLost())
-        return -1;
+GLint WebGL2Context::GetFragDataLocation(const WebGLProgram& prog,
+                                         const nsAString& name) {
+  const FuncScope funcScope(*this, "getFragDataLocation");
+  if (IsContextLost()) return -1;
 
-    if (!ValidateObject("program", prog))
-        return -1;
+  if (!ValidateObject("program", prog)) return -1;
 
-    return prog.GetFragDataLocation(name);
+  return prog.GetFragDataLocation(name);
 }
 
-} 
+}  

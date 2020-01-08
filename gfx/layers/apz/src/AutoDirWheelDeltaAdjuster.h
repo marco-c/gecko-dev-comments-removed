@@ -7,8 +7,8 @@
 #ifndef __mozilla_layers_AutoDirWheelDeltaAdjuster_h__
 #define __mozilla_layers_AutoDirWheelDeltaAdjuster_h__
 
-#include "Axis.h"                        
-#include "mozilla/WheelHandlingHelper.h" 
+#include "Axis.h"                         
+#include "mozilla/WheelHandlingHelper.h"  
 
 namespace mozilla {
 namespace layers {
@@ -25,9 +25,8 @@ namespace layers {
 
 
 class MOZ_STACK_CLASS APZAutoDirWheelDeltaAdjuster final
-                        : public AutoDirWheelDeltaAdjuster
-{
-public:
+    : public AutoDirWheelDeltaAdjuster {
+ public:
   
 
 
@@ -48,46 +47,35 @@ public:
 
 
 
-  explicit
-  APZAutoDirWheelDeltaAdjuster(double& aDeltaX,
-                               double& aDeltaY,
-                               const AxisX& aAxisX,
-                               const AxisY& aAxisY,
-                               bool aIsHorizontalContentRightToLeft)
-    : AutoDirWheelDeltaAdjuster(aDeltaX, aDeltaY)
-    , mAxisX(aAxisX)
-    , mAxisY(aAxisY)
-    , mIsHorizontalContentRightToLeft(aIsHorizontalContentRightToLeft)
-  {
-  }
+  explicit APZAutoDirWheelDeltaAdjuster(double& aDeltaX, double& aDeltaY,
+                                        const AxisX& aAxisX,
+                                        const AxisY& aAxisY,
+                                        bool aIsHorizontalContentRightToLeft)
+      : AutoDirWheelDeltaAdjuster(aDeltaX, aDeltaY),
+        mAxisX(aAxisX),
+        mAxisY(aAxisY),
+        mIsHorizontalContentRightToLeft(aIsHorizontalContentRightToLeft) {}
 
-private:
-  virtual bool CanScrollAlongXAxis() const override
-  {
+ private:
+  virtual bool CanScrollAlongXAxis() const override {
     return mAxisX.CanScroll();
   }
-  virtual bool CanScrollAlongYAxis() const override
-  {
+  virtual bool CanScrollAlongYAxis() const override {
     return mAxisY.CanScroll();
   }
-  virtual bool CanScrollUpwards() const override
-  {
+  virtual bool CanScrollUpwards() const override {
     return mAxisY.CanScrollTo(eSideTop);
   }
-  virtual bool CanScrollDownwards() const override
-  {
+  virtual bool CanScrollDownwards() const override {
     return mAxisY.CanScrollTo(eSideBottom);
   }
-  virtual bool CanScrollLeftwards() const override
-  {
+  virtual bool CanScrollLeftwards() const override {
     return mAxisX.CanScrollTo(eSideLeft);
   }
-  virtual bool CanScrollRightwards() const override
-  {
+  virtual bool CanScrollRightwards() const override {
     return mAxisX.CanScrollTo(eSideRight);
   }
-  virtual bool IsHorizontalContentRightToLeft() const override
-  {
+  virtual bool IsHorizontalContentRightToLeft() const override {
     return mIsHorizontalContentRightToLeft;
   }
 
@@ -96,7 +84,7 @@ private:
   bool mIsHorizontalContentRightToLeft;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

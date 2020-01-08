@@ -7,9 +7,9 @@
 #ifndef mozilla_layers_APZInputBridge_h
 #define mozilla_layers_APZInputBridge_h
 
-#include "APZUtils.h"                   
-#include "mozilla/EventForwards.h"      
-#include "Units.h"                      
+#include "APZUtils.h"               
+#include "mozilla/EventForwards.h"  
+#include "Units.h"                  
 
 namespace mozilla {
 
@@ -30,7 +30,7 @@ struct ScrollableLayerGuid;
 
 
 class APZInputBridge {
-public:
+ public:
   
 
 
@@ -65,10 +65,9 @@ public:
 
 
 
-  virtual nsEventStatus ReceiveInputEvent(
-      InputData& aEvent,
-      ScrollableLayerGuid* aOutTargetGuid,
-      uint64_t* aOutInputBlockId) = 0;
+  virtual nsEventStatus ReceiveInputEvent(InputData& aEvent,
+                                          ScrollableLayerGuid* aOutTargetGuid,
+                                          uint64_t* aOutInputBlockId) = 0;
 
   
 
@@ -86,10 +85,9 @@ public:
 
 
 
-  nsEventStatus ReceiveInputEvent(
-      WidgetInputEvent& aEvent,
-      ScrollableLayerGuid* aOutTargetGuid,
-      uint64_t* aOutInputBlockId);
+  nsEventStatus ReceiveInputEvent(WidgetInputEvent& aEvent,
+                                  ScrollableLayerGuid* aOutTargetGuid,
+                                  uint64_t* aOutInputBlockId);
 
   
   
@@ -99,24 +97,23 @@ public:
   
   static Maybe<APZWheelAction> ActionForWheelEvent(WidgetWheelEvent* aEvent);
 
-protected:
+ protected:
   friend class APZInputBridgeParent;
 
   
+  
 
-  virtual void ProcessUnhandledEvent(
-      LayoutDeviceIntPoint* aRefPoint,
-      ScrollableLayerGuid* aOutTargetGuid,
-      uint64_t* aOutFocusSequenceNumber) = 0;
+  virtual void ProcessUnhandledEvent(LayoutDeviceIntPoint* aRefPoint,
+                                     ScrollableLayerGuid* aOutTargetGuid,
+                                     uint64_t* aOutFocusSequenceNumber) = 0;
 
-  virtual void UpdateWheelTransaction(
-      LayoutDeviceIntPoint aRefPoint,
-      EventMessage aEventMessage) = 0;
+  virtual void UpdateWheelTransaction(LayoutDeviceIntPoint aRefPoint,
+                                      EventMessage aEventMessage) = 0;
 
-  virtual ~APZInputBridge() { }
+  virtual ~APZInputBridge() {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -42,7 +42,7 @@ class QueuedInput;
 class InputQueue {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(InputQueue)
 
-public:
+ public:
   InputQueue();
 
   
@@ -68,7 +68,9 @@ public:
 
 
 
-  void SetConfirmedTargetApzc(uint64_t aInputBlockId, const RefPtr<AsyncPanZoomController>& aTargetApzc);
+  void SetConfirmedTargetApzc(
+      uint64_t aInputBlockId,
+      const RefPtr<AsyncPanZoomController>& aTargetApzc);
   
 
 
@@ -83,7 +85,8 @@ public:
 
 
 
-  void SetAllowedTouchBehavior(uint64_t aInputBlockId, const nsTArray<TouchBehaviorFlags>& aBehaviors);
+  void SetAllowedTouchBehavior(uint64_t aInputBlockId,
+                               const nsTArray<TouchBehaviorFlags>& aBehaviors);
   
 
 
@@ -136,22 +139,23 @@ public:
 
   bool IsDragOnScrollbar(bool aOnScrollbar);
 
-private:
+ private:
   ~InputQueue();
 
   
   
   class AutoRunImmediateTimeout {
-  public:
+   public:
     explicit AutoRunImmediateTimeout(InputQueue* aQueue);
     ~AutoRunImmediateTimeout();
-  private:
+
+   private:
     InputQueue* mQueue;
   };
 
-  TouchBlockState* StartNewTouchBlock(const RefPtr<AsyncPanZoomController>& aTarget,
-                                      TargetConfirmationFlags aFlags,
-                                      bool aCopyPropertiesFromCurrent);
+  TouchBlockState* StartNewTouchBlock(
+      const RefPtr<AsyncPanZoomController>& aTarget,
+      TargetConfirmationFlags aFlags, bool aCopyPropertiesFromCurrent);
 
   
 
@@ -163,8 +167,9 @@ private:
   
 
 
-  void MaybeRequestContentResponse(const RefPtr<AsyncPanZoomController>& aTarget,
-                                   CancelableBlockState* aBlock);
+  void MaybeRequestContentResponse(
+      const RefPtr<AsyncPanZoomController>& aTarget,
+      CancelableBlockState* aBlock);
 
   nsEventStatus ReceiveTouchInput(const RefPtr<AsyncPanZoomController>& aTarget,
                                   TargetConfirmationFlags aFlags,
@@ -174,17 +179,17 @@ private:
                                   TargetConfirmationFlags aFlags,
                                   const MouseInput& aEvent,
                                   uint64_t* aOutInputBlockId);
-  nsEventStatus ReceiveScrollWheelInput(const RefPtr<AsyncPanZoomController>& aTarget,
-                                        TargetConfirmationFlags aFlags,
-                                        const ScrollWheelInput& aEvent,
-                                        uint64_t* aOutInputBlockId);
-  nsEventStatus ReceivePanGestureInput(const RefPtr<AsyncPanZoomController>& aTarget,
-                                       TargetConfirmationFlags aFlags,
-                                       const PanGestureInput& aEvent,
-                                       uint64_t* aOutInputBlockId);
-  nsEventStatus ReceiveKeyboardInput(const RefPtr<AsyncPanZoomController>& aTarget,
-                                     const KeyboardInput& aEvent,
-                                     uint64_t* aOutInputBlockId);
+  nsEventStatus ReceiveScrollWheelInput(
+      const RefPtr<AsyncPanZoomController>& aTarget,
+      TargetConfirmationFlags aFlags, const ScrollWheelInput& aEvent,
+      uint64_t* aOutInputBlockId);
+  nsEventStatus ReceivePanGestureInput(
+      const RefPtr<AsyncPanZoomController>& aTarget,
+      TargetConfirmationFlags aFlags, const PanGestureInput& aEvent,
+      uint64_t* aOutInputBlockId);
+  nsEventStatus ReceiveKeyboardInput(
+      const RefPtr<AsyncPanZoomController>& aTarget,
+      const KeyboardInput& aEvent, uint64_t* aOutInputBlockId);
 
   
 
@@ -204,7 +209,7 @@ private:
   bool CanDiscardBlock(InputBlockState* aBlock);
   void UpdateActiveApzc(const RefPtr<AsyncPanZoomController>& aNewActive);
 
-private:
+ private:
   
   
   nsTArray<UniquePtr<QueuedInput>> mQueuedInputs;
@@ -234,7 +239,7 @@ private:
   RefPtr<Runnable> mImmediateTimeout;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

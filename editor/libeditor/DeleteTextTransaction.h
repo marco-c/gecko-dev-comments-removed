@@ -22,16 +22,12 @@ class RangeUpdater;
 
 
 
-class DeleteTextTransaction final : public EditTransactionBase
-{
-protected:
-  DeleteTextTransaction(EditorBase& aEditorBase,
-                        dom::CharacterData& aCharData,
-                        uint32_t aOffset,
-                        uint32_t aLengthToDelete);
+class DeleteTextTransaction final : public EditTransactionBase {
+ protected:
+  DeleteTextTransaction(EditorBase& aEditorBase, dom::CharacterData& aCharData,
+                        uint32_t aOffset, uint32_t aLengthToDelete);
 
-public:
-
+ public:
   
 
 
@@ -41,11 +37,9 @@ public:
 
 
 
-  static already_AddRefed<DeleteTextTransaction>
-  MaybeCreate(EditorBase& aEditorBase,
-              dom::CharacterData& aCharData,
-              uint32_t aOffset,
-              uint32_t aLengthToDelete);
+  static already_AddRefed<DeleteTextTransaction> MaybeCreate(
+      EditorBase& aEditorBase, dom::CharacterData& aCharData, uint32_t aOffset,
+      uint32_t aLengthToDelete);
 
   
 
@@ -59,10 +53,8 @@ public:
   MaybeCreateForPreviousCharacter(EditorBase& aEditorBase,
                                   dom::CharacterData& aCharData,
                                   uint32_t aOffset);
-  static already_AddRefed<DeleteTextTransaction>
-  MaybeCreateForNextCharacter(EditorBase& aEditorBase,
-                              dom::CharacterData& aCharData,
-                              uint32_t aOffset);
+  static already_AddRefed<DeleteTextTransaction> MaybeCreateForNextCharacter(
+      EditorBase& aEditorBase, dom::CharacterData& aCharData, uint32_t aOffset);
 
   
 
@@ -80,7 +72,7 @@ public:
 
   uint32_t LengthToDelete() { return mLengthToDelete; }
 
-protected:
+ protected:
   
   RefPtr<EditorBase> mEditorBase;
 
@@ -97,6 +89,6 @@ protected:
   nsString mDeletedText;
 };
 
-} 
+}  
 
-#endif 
+#endif  

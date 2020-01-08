@@ -7,13 +7,13 @@
 #ifndef GFX_CanvasLayerComposite_H
 #define GFX_CanvasLayerComposite_H
 
-#include "Layers.h"                     
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "Layers.h"                                
+#include "mozilla/Attributes.h"                    
+#include "mozilla/RefPtr.h"                        
 #include "mozilla/layers/LayerManagerComposite.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "nsRect.h"                     
-#include "nscore.h"                     
+#include "mozilla/layers/LayersTypes.h"            
+#include "nsRect.h"                                
+#include "nscore.h"                                
 
 namespace mozilla {
 namespace layers {
@@ -23,22 +23,17 @@ class CompositableHost;
 
 class ImageHost;
 
-class CanvasLayerComposite : public CanvasLayer,
-                             public LayerComposite
-{
-public:
+class CanvasLayerComposite : public CanvasLayer, public LayerComposite {
+ public:
   explicit CanvasLayerComposite(LayerManagerComposite* aManager);
 
-protected:
+ protected:
   virtual ~CanvasLayerComposite();
 
-public:
+ public:
   virtual bool SetCompositableHost(CompositableHost* aHost) override;
 
-  virtual void Disconnect() override
-  {
-    Destroy();
-  }
+  virtual void Disconnect() override { Destroy(); }
 
   virtual void SetLayerManager(HostLayerManager* aManager) override;
 
@@ -56,22 +51,23 @@ public:
 
   virtual const char* Name() const override { return "CanvasLayerComposite"; }
 
-protected:
+ protected:
   CanvasRenderer* CreateCanvasRendererInternal() override {
     MOZ_CRASH("Incompatible surface type");
     return nullptr;
   }
 
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+  virtual void PrintInfo(std::stringstream& aStream,
+                         const char* aPrefix) override;
 
-private:
+ private:
   gfx::SamplingFilter GetSamplingFilter();
 
-private:
+ private:
   RefPtr<CompositableHost> mCompositableHost;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -23,15 +23,12 @@
 
 #define DEFAULT_PROTOCOL_VERSION "2.2"
 
-static char int_to_hex_digit(int32_t i)
-{
+static char int_to_hex_digit(int32_t i) {
   NS_ASSERTION((i >= 0) && (i <= 15), "int too big in int_to_hex_digit");
   return static_cast<char>(((i < 10) ? (i + '0') : ((i - 10) + 'A')));
 }
 
-static bool
-IsDecimal(const nsACString & num)
-{
+static bool IsDecimal(const nsACString& num) {
   for (uint32_t i = 0; i < num.Length(); i++) {
     if (!mozilla::IsAsciiDigit(num[i])) {
       return false;
@@ -41,9 +38,7 @@ IsDecimal(const nsACString & num)
   return true;
 }
 
-static bool
-IsHex(const nsACString & num)
-{
+static bool IsHex(const nsACString& num) {
   if (num.Length() < 3) {
     return false;
   }
@@ -61,9 +56,7 @@ IsHex(const nsACString & num)
   return true;
 }
 
-static bool
-IsOctal(const nsACString & num)
-{
+static bool IsOctal(const nsACString& num) {
   if (num.Length() < 2) {
     return false;
   }
@@ -87,9 +80,7 @@ IsOctal(const nsACString & num)
 namespace mozilla {
 namespace safebrowsing {
 
-static PlatformType
-GetPlatformType()
-{
+static PlatformType GetPlatformType() {
 #if defined(ANDROID)
   return ANDROID_PLATFORM;
 #elif defined(XP_MACOSX)
@@ -107,11 +98,9 @@ GetPlatformType()
 typedef FetchThreatListUpdatesRequest_ListUpdateRequest ListUpdateRequest;
 typedef FetchThreatListUpdatesRequest_ListUpdateRequest_Constraints Constraints;
 
-static void
-InitListUpdateRequest(ThreatType aThreatType,
-                      const char* aStateBase64,
-                      ListUpdateRequest* aListUpdateRequest)
-{
+static void InitListUpdateRequest(ThreatType aThreatType,
+                                  const char* aStateBase64,
+                                  ListUpdateRequest* aListUpdateRequest) {
   aListUpdateRequest->set_threat_type(aThreatType);
   PlatformType platform = GetPlatformType();
 #if defined(ANDROID)
@@ -138,19 +127,16 @@ InitListUpdateRequest(ThreatType aThreatType,
   }
 }
 
-static ClientInfo*
-CreateClientInfo()
-{
+static ClientInfo* CreateClientInfo() {
   ClientInfo* c = new ClientInfo();
 
-  nsCOMPtr<nsIPrefBranch> prefBranch =
-    do_GetService(NS_PREFSERVICE_CONTRACTID);
+  nsCOMPtr<nsIPrefBranch> prefBranch = do_GetService(NS_PREFSERVICE_CONTRACTID);
 
   nsAutoCString clientId;
   nsresult rv = prefBranch->GetCharPref("browser.safebrowsing.id", clientId);
 
   if (NS_FAILED(rv)) {
-    clientId = "Firefox"; 
+    clientId = "Firefox";  
   }
 
   c->set_client_id(clientId.get());
@@ -158,37 +144,31 @@ CreateClientInfo()
   return c;
 }
 
-static bool
-IsAllowedOnCurrentPlatform(uint32_t aThreatType)
-{
+static bool IsAllowedOnCurrentPlatform(uint32_t aThreatType) {
   PlatformType platform = GetPlatformType();
 
   switch (aThreatType) {
-  case POTENTIALLY_HARMFUL_APPLICATION:
-    
-    
-    return ANDROID_PLATFORM == platform;
-  case MALICIOUS_BINARY:
-  case CSD_DOWNLOAD_WHITELIST:
-    
-    
-    return ANDROID_PLATFORM != platform;
+    case POTENTIALLY_HARMFUL_APPLICATION:
+      
+      
+      return ANDROID_PLATFORM == platform;
+    case MALICIOUS_BINARY:
+    case CSD_DOWNLOAD_WHITELIST:
+      
+      
+      return ANDROID_PLATFORM != platform;
   }
   
   return true;
 }
 
-} 
-} 
+}  
+}  
 
 nsUrlClassifierUtils::nsUrlClassifierUtils()
-  : mProviderDictLock("nsUrlClassifierUtils.mProviderDictLock")
-{
-}
+    : mProviderDictLock("nsUrlClassifierUtils.mProviderDictLock") {}
 
-nsresult
-nsUrlClassifierUtils::Init()
-{
+nsresult nsUrlClassifierUtils::Init() {
   
   
   
@@ -201,8 +181,7 @@ nsUrlClassifierUtils::Init()
   
   nsCOMPtr<nsIObserverService> observerService =
       mozilla::services::GetObserverService();
-  if (!observerService)
-    return NS_ERROR_FAILURE;
+  if (!observerService) return NS_ERROR_FAILURE;
 
   observerService->AddObserver(this, "xpcom-shutdown-threads", false);
   Preferences::AddStrongObserver(this, "browser.safebrowsing");
@@ -210,19 +189,15 @@ nsUrlClassifierUtils::Init()
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(nsUrlClassifierUtils,
-                  nsIUrlClassifierUtils,
-                  nsIObserver)
+NS_IMPL_ISUPPORTS(nsUrlClassifierUtils, nsIUrlClassifierUtils, nsIObserver)
 
 
 
 
 NS_IMETHODIMP
-nsUrlClassifierUtils::GetKeyForURI(nsIURI * uri, nsACString & _retval)
-{
+nsUrlClassifierUtils::GetKeyForURI(nsIURI* uri, nsACString& _retval) {
   nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(uri);
-  if (!innerURI)
-    innerURI = uri;
+  if (!innerURI) innerURI = uri;
 
   nsAutoCString host;
   innerURI->GetAsciiHost(host);
@@ -240,8 +215,7 @@ nsUrlClassifierUtils::GetKeyForURI(nsIURI * uri, nsACString & _retval)
 
   
   int32_t ref = path.FindChar('#');
-  if (ref != kNotFound)
-    path.SetLength(ref);
+  if (ref != kNotFound) path.SetLength(ref);
 
   nsAutoCString temp;
   rv = CanonicalizePath(path, temp);
@@ -261,29 +235,28 @@ static const struct {
   const char* mListName;
   uint32_t mThreatType;
 } THREAT_TYPE_CONV_TABLE[] = {
-  { "goog-malware-proto",  MALWARE_THREAT},                  
-  { "googpub-phish-proto", SOCIAL_ENGINEERING_PUBLIC},       
-  { "goog-unwanted-proto", UNWANTED_SOFTWARE},               
-  { "goog-harmful-proto",  POTENTIALLY_HARMFUL_APPLICATION}, 
-  { "goog-phish-proto",    SOCIAL_ENGINEERING},              
+    {"goog-malware-proto", MALWARE_THREAT},                   
+    {"googpub-phish-proto", SOCIAL_ENGINEERING_PUBLIC},       
+    {"goog-unwanted-proto", UNWANTED_SOFTWARE},               
+    {"goog-harmful-proto", POTENTIALLY_HARMFUL_APPLICATION},  
+    {"goog-phish-proto", SOCIAL_ENGINEERING},                 
 
-  
-  { "goog-badbinurl-proto", MALICIOUS_BINARY},            
-  { "goog-downloadwhite-proto", CSD_DOWNLOAD_WHITELIST},  
+    
+    {"goog-badbinurl-proto", MALICIOUS_BINARY},            
+    {"goog-downloadwhite-proto", CSD_DOWNLOAD_WHITELIST},  
 
-  
-  { "goog-passwordwhite-proto", CSD_WHITELIST}, 
+    
+    {"goog-passwordwhite-proto", CSD_WHITELIST},  
 
-  
-  { "test-phish-proto",    SOCIAL_ENGINEERING_PUBLIC}, 
-  { "test-unwanted-proto", UNWANTED_SOFTWARE},         
-  { "test-passwordwhite-proto", CSD_WHITELIST},        
+    
+    {"test-phish-proto", SOCIAL_ENGINEERING_PUBLIC},  
+    {"test-unwanted-proto", UNWANTED_SOFTWARE},       
+    {"test-passwordwhite-proto", CSD_WHITELIST},      
 };
 
 NS_IMETHODIMP
 nsUrlClassifierUtils::ConvertThreatTypeToListNames(uint32_t aThreatType,
-                                                   nsACString& aListNames)
-{
+                                                   nsACString& aListNames) {
   for (uint32_t i = 0; i < ArrayLength(THREAT_TYPE_CONV_TABLE); i++) {
     if (aThreatType == THREAT_TYPE_CONV_TABLE[i].mThreatType) {
       if (!aListNames.IsEmpty()) {
@@ -298,8 +271,7 @@ nsUrlClassifierUtils::ConvertThreatTypeToListNames(uint32_t aThreatType,
 
 NS_IMETHODIMP
 nsUrlClassifierUtils::ConvertListNameToThreatType(const nsACString& aListName,
-                                                  uint32_t* aThreatType)
-{
+                                                  uint32_t* aThreatType) {
   for (uint32_t i = 0; i < ArrayLength(THREAT_TYPE_CONV_TABLE); i++) {
     if (aListName.EqualsASCII(THREAT_TYPE_CONV_TABLE[i].mListName)) {
       *aThreatType = THREAT_TYPE_CONV_TABLE[i].mThreatType;
@@ -312,8 +284,7 @@ nsUrlClassifierUtils::ConvertListNameToThreatType(const nsACString& aListName,
 
 NS_IMETHODIMP
 nsUrlClassifierUtils::GetProvider(const nsACString& aTableName,
-                                  nsACString& aProvider)
-{
+                                  nsACString& aProvider) {
   MutexAutoLock lock(mProviderDictLock);
   nsCString* provider = nullptr;
   if (StringBeginsWith(aTableName, NS_LITERAL_CSTRING("test"))) {
@@ -328,8 +299,7 @@ nsUrlClassifierUtils::GetProvider(const nsACString& aTableName,
 
 NS_IMETHODIMP
 nsUrlClassifierUtils::GetTelemetryProvider(const nsACString& aTableName,
-                                  nsACString& aProvider)
-{
+                                           nsACString& aProvider) {
   GetProvider(aTableName, aProvider);
   
   
@@ -348,18 +318,17 @@ nsUrlClassifierUtils::GetTelemetryProvider(const nsACString& aTableName,
 
 NS_IMETHODIMP
 nsUrlClassifierUtils::GetProtocolVersion(const nsACString& aProvider,
-                                         nsACString& aVersion)
-{
+                                         nsACString& aVersion) {
   nsCOMPtr<nsIPrefBranch> prefBranch = do_GetService(NS_PREFSERVICE_CONTRACTID);
   if (prefBranch) {
-      nsPrintfCString prefName("browser.safebrowsing.provider.%s.pver",
-                               nsCString(aProvider).get());
-      nsAutoCString version;
-      nsresult rv = prefBranch->GetCharPref(prefName.get(), version);
+    nsPrintfCString prefName("browser.safebrowsing.provider.%s.pver",
+                             nsCString(aProvider).get());
+    nsAutoCString version;
+    nsresult rv = prefBranch->GetCharPref(prefName.get(), version);
 
-      aVersion = NS_SUCCEEDED(rv) ? version.get() : DEFAULT_PROTOCOL_VERSION;
+    aVersion = NS_SUCCEEDED(rv) ? version.get() : DEFAULT_PROTOCOL_VERSION;
   } else {
-      aVersion = DEFAULT_PROTOCOL_VERSION;
+    aVersion = DEFAULT_PROTOCOL_VERSION;
   }
 
   return NS_OK;
@@ -369,8 +338,7 @@ NS_IMETHODIMP
 nsUrlClassifierUtils::MakeUpdateRequestV4(const char** aListNames,
                                           const char** aStatesBase64,
                                           uint32_t aCount,
-                                          nsACString &aRequest)
-{
+                                          nsACString& aRequest) {
   using namespace mozilla::safebrowsing;
 
   FetchThreatListUpdatesRequest r;
@@ -381,17 +349,19 @@ nsUrlClassifierUtils::MakeUpdateRequestV4(const char** aListNames,
     uint32_t threatType;
     nsresult rv = ConvertListNameToThreatType(listName, &threatType);
     if (NS_FAILED(rv)) {
-      continue; 
+      continue;  
     }
     if (!IsAllowedOnCurrentPlatform(threatType)) {
-      NS_WARNING(nsPrintfCString("Threat type %d (%s) is unsupported on current platform: %d",
-                                 threatType,
-                                 aListNames[i],
-                                 GetPlatformType()).get());
-      continue; 
+      NS_WARNING(
+          nsPrintfCString(
+              "Threat type %d (%s) is unsupported on current platform: %d",
+              threatType, aListNames[i], GetPlatformType())
+              .get());
+      continue;  
     }
     auto lur = r.mutable_list_update_requests()->Add();
-    InitListUpdateRequest(static_cast<ThreatType>(threatType), aStatesBase64[i], lur);
+    InitListUpdateRequest(static_cast<ThreatType>(threatType), aStatesBase64[i],
+                          lur);
   }
 
   
@@ -399,10 +369,8 @@ nsUrlClassifierUtils::MakeUpdateRequestV4(const char** aListNames,
   r.SerializeToString(&s);
 
   nsCString out;
-  nsresult rv = Base64URLEncode(s.size(),
-                                (const uint8_t*)s.c_str(),
-                                Base64URLEncodePaddingPolicy::Include,
-                                out);
+  nsresult rv = Base64URLEncode(s.size(), (const uint8_t*)s.c_str(),
+                                Base64URLEncodePaddingPolicy::Include, out);
   NS_ENSURE_SUCCESS(rv, rv);
 
   aRequest = out;
@@ -416,8 +384,7 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(const char** aListNames,
                                                 const char** aPrefixesBase64,
                                                 uint32_t aListCount,
                                                 uint32_t aPrefixCount,
-                                                nsACString &aRequest)
-{
+                                                nsACString& aRequest) {
   FindFullHashesRequest r;
   r.set_allocated_client(CreateClientInfo());
 
@@ -433,13 +400,15 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(const char** aListNames,
   for (uint32_t i = 0; i < aListCount; i++) {
     
     uint32_t threatType;
-    rv = ConvertListNameToThreatType(nsDependentCString(aListNames[i]), &threatType);
+    rv = ConvertListNameToThreatType(nsDependentCString(aListNames[i]),
+                                     &threatType);
     NS_ENSURE_SUCCESS(rv, rv);
     if (!IsAllowedOnCurrentPlatform(threatType)) {
-      NS_WARNING(nsPrintfCString("Threat type %d (%s) is unsupported on current platform: %d",
-                                 threatType,
-                                 aListNames[i],
-                                 GetPlatformType()).get());
+      NS_WARNING(
+          nsPrintfCString(
+              "Threat type %d (%s) is unsupported on current platform: %d",
+              threatType, aListNames[i], GetPlatformType())
+              .get());
       continue;
     }
     threatInfo->add_threat_types((ThreatType)threatType);
@@ -480,10 +449,8 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(const char** aListNames,
   r.SerializeToString(&s);
 
   nsCString out;
-  rv = Base64URLEncode(s.size(),
-                       (const uint8_t*)s.c_str(),
-                       Base64URLEncodePaddingPolicy::Include,
-                       out);
+  rv = Base64URLEncode(s.size(), (const uint8_t*)s.c_str(),
+                       Base64URLEncodePaddingPolicy::Include, out);
   NS_ENSURE_SUCCESS(rv, rv);
 
   aRequest = out;
@@ -492,9 +459,7 @@ nsUrlClassifierUtils::MakeFindFullHashRequestV4(const char** aListNames,
 }
 
 
-static nsresult
-GetSpecWithoutSensitiveData(nsIURI* aUri, nsACString &aSpec)
-{
+static nsresult GetSpecWithoutSensitiveData(nsIURI* aUri, nsACString& aSpec) {
   if (NS_WARN_IF(!aUri)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -504,10 +469,10 @@ GetSpecWithoutSensitiveData(nsIURI* aUri, nsACString &aSpec)
   if (url) {
     nsCOMPtr<nsIURI> clone;
     rv = NS_MutateURI(url)
-           .SetQuery(EmptyCString())
-           .SetRef(EmptyCString())
-           .SetUserPass(EmptyCString())
-           .Finalize(clone);
+             .SetQuery(EmptyCString())
+             .SetRef(EmptyCString())
+             .SetUserPass(EmptyCString())
+             .Finalize(clone);
     NS_ENSURE_SUCCESS(rv, rv);
     rv = clone->GetAsciiSpec(aSpec);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -515,10 +480,9 @@ GetSpecWithoutSensitiveData(nsIURI* aUri, nsACString &aSpec)
   return NS_OK;
 }
 
-static nsresult
-AddThreatSourceFromChannel(ThreatHit& aHit, nsIChannel *aChannel,
-                           ThreatHit_ThreatSourceType aType)
-{
+static nsresult AddThreatSourceFromChannel(ThreatHit& aHit,
+                                           nsIChannel* aChannel,
+                                           ThreatHit_ThreatSourceType aType) {
   if (NS_WARN_IF(!aChannel)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -537,8 +501,7 @@ AddThreatSourceFromChannel(ThreatHit& aHit, nsIChannel *aChannel,
   NS_ENSURE_SUCCESS(rv, rv);
   matchingSource->set_url(spec.get());
 
-  nsCOMPtr<nsIHttpChannel> httpChannel =
-    do_QueryInterface(aChannel);
+  nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(aChannel);
   if (httpChannel) {
     nsCOMPtr<nsIURI> referrer;
     rv = httpChannel->GetReferrer(getter_AddRefs(referrer));
@@ -551,7 +514,7 @@ AddThreatSourceFromChannel(ThreatHit& aHit, nsIChannel *aChannel,
   }
 
   nsCOMPtr<nsIHttpChannelInternal> httpChannelInternal =
-    do_QueryInterface(aChannel);
+      do_QueryInterface(aChannel);
   if (httpChannelInternal) {
     nsCString remoteIp;
     rv = httpChannelInternal->GetRemoteAddress(remoteIp);
@@ -561,11 +524,9 @@ AddThreatSourceFromChannel(ThreatHit& aHit, nsIChannel *aChannel,
   }
   return NS_OK;
 }
-static nsresult
-AddThreatSourceFromRedirectEntry(ThreatHit& aHit,
-                                 nsIRedirectHistoryEntry *aRedirectEntry,
-                                 ThreatHit_ThreatSourceType aType)
-{
+static nsresult AddThreatSourceFromRedirectEntry(
+    ThreatHit& aHit, nsIRedirectHistoryEntry* aRedirectEntry,
+    ThreatHit_ThreatSourceType aType) {
   if (NS_WARN_IF(!aRedirectEntry)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -605,9 +566,7 @@ AddThreatSourceFromRedirectEntry(ThreatHit& aHit,
 }
 
 
-static nsresult
-AddTabThreatSources(ThreatHit& aHit, nsIChannel *aChannel)
-{
+static nsresult AddTabThreatSources(ThreatHit& aHit, nsIChannel* aChannel) {
   if (NS_WARN_IF(!aChannel)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -615,7 +574,7 @@ AddTabThreatSources(ThreatHit& aHit, nsIChannel *aChannel)
   nsresult rv;
   nsCOMPtr<mozIDOMWindowProxy> win;
   nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-    do_GetService(THIRDPARTYUTIL_CONTRACTID, &rv);
+      do_GetService(THIRDPARTYUTIL_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = thirdPartyUtil->GetTopWindowForChannel(aChannel, getter_AddRefs(win));
@@ -674,13 +633,11 @@ AddTabThreatSources(ThreatHit& aHit, nsIChannel *aChannel)
 }
 
 NS_IMETHODIMP
-nsUrlClassifierUtils::MakeThreatHitReport(nsIChannel *aChannel,
+nsUrlClassifierUtils::MakeThreatHitReport(nsIChannel* aChannel,
                                           const nsACString& aListName,
                                           const nsACString& aHashBase64,
-                                          nsACString &aRequest)
-{
-  if (NS_WARN_IF(aListName.IsEmpty()) ||
-      NS_WARN_IF(aHashBase64.IsEmpty()) ||
+                                          nsACString& aRequest) {
+  if (NS_WARN_IF(aListName.IsEmpty()) || NS_WARN_IF(aHashBase64.IsEmpty()) ||
       NS_WARN_IF(!aChannel)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -718,10 +675,8 @@ nsUrlClassifierUtils::MakeThreatHitReport(nsIChannel *aChannel,
   hit.SerializeToString(&s);
 
   nsCString out;
-  rv = Base64URLEncode(s.size(),
-                       reinterpret_cast<const uint8_t*>(s.c_str()),
-                       Base64URLEncodePaddingPolicy::Include,
-                       out);
+  rv = Base64URLEncode(s.size(), reinterpret_cast<const uint8_t*>(s.c_str()),
+                       Base64URLEncodePaddingPolicy::Include, out);
   NS_ENSURE_SUCCESS(rv, rv);
 
   aRequest = out;
@@ -729,17 +684,15 @@ nsUrlClassifierUtils::MakeThreatHitReport(nsIChannel *aChannel,
   return NS_OK;
 }
 
-static uint32_t
-DurationToMs(const Duration& aDuration)
-{
+static uint32_t DurationToMs(const Duration& aDuration) {
   
   return aDuration.seconds() * 1000;
 }
 
 NS_IMETHODIMP
-nsUrlClassifierUtils::ParseFindFullHashResponseV4(const nsACString& aResponse,
-                                                  nsIUrlClassifierParseFindFullHashCallback *aCallback)
-{
+nsUrlClassifierUtils::ParseFindFullHashResponseV4(
+    const nsACString& aResponse,
+    nsIUrlClassifierParseFindFullHashCallback* aCallback) {
   enum CompletionErrorType {
     SUCCESS = 0,
     PARSING_FAILURE = 1,
@@ -761,12 +714,13 @@ nsUrlClassifierUtils::ParseFindFullHashResponseV4(const nsACString& aResponse,
     nsresult rv = ConvertThreatTypeToListNames(m.threat_type(), tableNames);
     if (NS_FAILED(rv)) {
       hasUnknownThreatType = true;
-      continue; 
+      continue;  
     }
     auto& hash = m.threat().hash();
     auto cacheDurationSec = m.cache_duration().seconds();
-    aCallback->OnCompleteHashFound(nsDependentCString(hash.c_str(), hash.length()),
-                                   tableNames, cacheDurationSec);
+    aCallback->OnCompleteHashFound(
+        nsDependentCString(hash.c_str(), hash.length()), tableNames,
+        cacheDurationSec);
 
     Telemetry::Accumulate(Telemetry::URLCLASSIFIER_POSITIVE_CACHE_DURATION,
                           cacheDurationSec * PR_MSEC_PER_SEC);
@@ -790,9 +744,8 @@ nsUrlClassifierUtils::ParseFindFullHashResponseV4(const nsACString& aResponse,
 
 
 NS_IMETHODIMP
-nsUrlClassifierUtils::Observe(nsISupports *aSubject, const char *aTopic,
-                              const char16_t *aData)
-{
+nsUrlClassifierUtils::Observe(nsISupports* aSubject, const char* aTopic,
+                              const char16_t* aData) {
   if (0 == strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID)) {
     MutexAutoLock lock(mProviderDictLock);
     return ReadProvidersFromPrefs(mProviderDict);
@@ -810,16 +763,15 @@ nsUrlClassifierUtils::Observe(nsISupports *aSubject, const char *aTopic,
 
 
 
-nsresult
-nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict)
-{
-  MOZ_ASSERT(NS_IsMainThread(), "ReadProvidersFromPrefs must be on main thread");
+nsresult nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict) {
+  MOZ_ASSERT(NS_IsMainThread(),
+             "ReadProvidersFromPrefs must be on main thread");
 
   nsCOMPtr<nsIPrefService> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
   NS_ENSURE_TRUE(prefs, NS_ERROR_FAILURE);
   nsCOMPtr<nsIPrefBranch> prefBranch;
   nsresult rv = prefs->GetBranch("browser.safebrowsing.provider.",
-                                  getter_AddRefs(prefBranch));
+                                 getter_AddRefs(prefBranch));
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -870,14 +822,11 @@ nsUrlClassifierUtils::ReadProvidersFromPrefs(ProviderDictType& aDict)
   return NS_OK;
 }
 
-nsresult
-nsUrlClassifierUtils::CanonicalizeHostname(const nsACString & hostname,
-                                           nsACString & _retval)
-{
+nsresult nsUrlClassifierUtils::CanonicalizeHostname(const nsACString& hostname,
+                                                    nsACString& _retval) {
   nsAutoCString unescaped;
   if (!NS_UnescapeURL(PromiseFlatCString(hostname).get(),
-                      PromiseFlatCString(hostname).Length(),
-                      0, unescaped)) {
+                      PromiseFlatCString(hostname).Length(), 0, unescaped)) {
     unescaped.Assign(hostname);
   }
 
@@ -896,11 +845,8 @@ nsUrlClassifierUtils::CanonicalizeHostname(const nsACString & hostname,
   return NS_OK;
 }
 
-
-nsresult
-nsUrlClassifierUtils::CanonicalizePath(const nsACString & path,
-                                       nsACString & _retval)
-{
+nsresult nsUrlClassifierUtils::CanonicalizePath(const nsACString& path,
+                                                nsACString& _retval) {
   _retval.Truncate();
 
   nsAutoCString decodedPath(path);
@@ -916,10 +862,8 @@ nsUrlClassifierUtils::CanonicalizePath(const nsACString & path,
   return NS_OK;
 }
 
-void
-nsUrlClassifierUtils::CleanupHostname(const nsACString & hostname,
-                                      nsACString & _retval)
-{
+void nsUrlClassifierUtils::CleanupHostname(const nsACString& hostname,
+                                           nsACString& _retval) {
   _retval.Truncate();
 
   const char* curChar = hostname.BeginReading();
@@ -942,10 +886,8 @@ nsUrlClassifierUtils::CleanupHostname(const nsACString & hostname,
   }
 }
 
-void
-nsUrlClassifierUtils::ParseIPAddress(const nsACString & host,
-                                     nsACString & _retval)
-{
+void nsUrlClassifierUtils::ParseIPAddress(const nsACString& host,
+                                          nsACString& _retval) {
   _retval.Truncate();
   nsACString::const_iterator iter, end;
   host.BeginReading(iter);
@@ -966,7 +908,8 @@ nsUrlClassifierUtils::ParseIPAddress(const nsACString & host,
   }
 
   for (host.BeginReading(iter); iter != end; iter++) {
-    if (!(mozilla::IsAsciiHexDigit(*iter) || *iter == 'x' || *iter == 'X' || *iter == '.')) {
+    if (!(mozilla::IsAsciiHexDigit(*iter) || *iter == 'x' || *iter == 'X' ||
+          *iter == '.')) {
       
       return;
     }
@@ -1024,12 +967,8 @@ nsUrlClassifierUtils::ParseIPAddress(const nsACString & host,
   }
 }
 
-void
-nsUrlClassifierUtils::CanonicalNum(const nsACString& num,
-                                   uint32_t bytes,
-                                   bool allowOctal,
-                                   nsACString& _retval)
-{
+void nsUrlClassifierUtils::CanonicalNum(const nsACString& num, uint32_t bytes,
+                                        bool allowOctal, nsACString& _retval) {
   _retval.Truncate();
 
   if (num.Length() < 1) {
@@ -1046,8 +985,8 @@ nsUrlClassifierUtils::CanonicalNum(const nsACString& num,
       return;
     }
   } else if (IsHex(num)) {
-  if (PR_sscanf(PromiseFlatCString(num).get(), num[1] == 'X' ? "0X%x" : "0x%x",
-                &val) != 1) {
+    if (PR_sscanf(PromiseFlatCString(num).get(),
+                  num[1] == 'X' ? "0X%x" : "0x%x", &val) != 1) {
       return;
     }
   } else {
@@ -1069,11 +1008,9 @@ nsUrlClassifierUtils::CanonicalNum(const nsACString& num,
 
 
 
-bool
-nsUrlClassifierUtils::SpecialEncode(const nsACString & url,
-                                    bool foldSlashes,
-                                    nsACString & _retval)
-{
+bool nsUrlClassifierUtils::SpecialEncode(const nsACString& url,
+                                         bool foldSlashes,
+                                         nsACString& _retval) {
   bool changed = false;
   const char* curChar = url.BeginReading();
   const char* end = url.EndReading();
@@ -1098,8 +1035,6 @@ nsUrlClassifierUtils::SpecialEncode(const nsACString & url,
   return changed;
 }
 
-bool
-nsUrlClassifierUtils::ShouldURLEscape(const unsigned char c) const
-{
-  return c <= 32 || c == '%' || c >=127;
+bool nsUrlClassifierUtils::ShouldURLEscape(const unsigned char c) const {
+  return c <= 32 || c == '%' || c >= 127;
 }

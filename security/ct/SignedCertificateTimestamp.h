@@ -12,17 +12,13 @@
 #include "mozpkix/Result.h"
 
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
-struct LogEntry
-{
-
+struct LogEntry {
   
-  enum class Type {
-    X509 = 0,
-    Precert = 1
-  };
+  enum class Type { X509 = 0, Precert = 1 };
 
   void Reset();
 
@@ -38,8 +34,7 @@ struct LogEntry
 
 
 
-struct DigitallySigned
-{
+struct DigitallySigned {
   enum class HashAlgorithm {
     None = 0,
     MD5 = 1,
@@ -50,12 +45,7 @@ struct DigitallySigned
     SHA512 = 6,
   };
 
-  enum class SignatureAlgorithm {
-    Anonymous = 0,
-    RSA = 1,
-    DSA = 2,
-    ECDSA = 3
-  };
+  enum class SignatureAlgorithm { Anonymous = 0, RSA = 1, DSA = 2, ECDSA = 3 };
 
   
   
@@ -69,8 +59,7 @@ struct DigitallySigned
 };
 
 
-struct SignedCertificateTimestamp
-{
+struct SignedCertificateTimestamp {
   
   enum class Version {
     V1 = 0,
@@ -85,20 +74,19 @@ struct SignedCertificateTimestamp
   DigitallySigned signature;
 };
 
-inline pkix::Result BufferToInput(const Buffer& buffer, pkix::Input& input)
-{
+inline pkix::Result BufferToInput(const Buffer& buffer, pkix::Input& input) {
   if (buffer.empty()) {
     return pkix::Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
   return input.Init(buffer.data(), buffer.size());
 }
 
-inline void InputToBuffer(pkix::Input input, Buffer& buffer)
-{
+inline void InputToBuffer(pkix::Input input, Buffer& buffer) {
   buffer.assign(input.UnsafeGetData(),
                 input.UnsafeGetData() + input.GetLength());
 }
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

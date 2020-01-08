@@ -24,82 +24,60 @@ namespace recordreplay {
 
 
 
-class SpinLock
-{
-public:
+class SpinLock {
+ public:
   inline void Lock();
   inline void Unlock();
 
-private:
+ private:
   Atomic<bool, SequentiallyConsistent, Behavior::DontPreserve> mLocked;
 };
 
 
 
-class ReadWriteSpinLock
-{
-public:
+class ReadWriteSpinLock {
+ public:
   inline void ReadLock();
   inline void ReadUnlock();
   inline void WriteLock();
   inline void WriteUnlock();
 
-private:
-  SpinLock mLock; 
-  int32_t mReaders; 
+ private:
+  SpinLock mLock;    
+  int32_t mReaders;  
 };
 
 
-struct MOZ_RAII AutoSpinLock
-{
-  explicit AutoSpinLock(SpinLock& aLock)
-    : mLock(aLock)
-  {
-    mLock.Lock();
-  }
+struct MOZ_RAII AutoSpinLock {
+  explicit AutoSpinLock(SpinLock& aLock) : mLock(aLock) { mLock.Lock(); }
 
-  ~AutoSpinLock()
-  {
-    mLock.Unlock();
-  }
+  ~AutoSpinLock() { mLock.Unlock(); }
 
-private:
+ private:
   SpinLock& mLock;
 };
 
 
-struct AutoReadSpinLock
-{
-  explicit AutoReadSpinLock(ReadWriteSpinLock& aLock)
-    : mLock(aLock)
-  {
+struct AutoReadSpinLock {
+  explicit AutoReadSpinLock(ReadWriteSpinLock& aLock) : mLock(aLock) {
     mLock.ReadLock();
   }
 
-  ~AutoReadSpinLock()
-  {
-    mLock.ReadUnlock();
-  }
+  ~AutoReadSpinLock() { mLock.ReadUnlock(); }
 
-private:
+ private:
   ReadWriteSpinLock& mLock;
 };
 
 
-struct AutoWriteSpinLock
-{
-  explicit AutoWriteSpinLock(ReadWriteSpinLock& aLock)
-    : mLock(aLock)
-  {
+struct AutoWriteSpinLock {
+  explicit AutoWriteSpinLock(ReadWriteSpinLock& aLock) : mLock(aLock) {
     mLock.WriteLock();
   }
 
-  ~AutoWriteSpinLock()
-  {
-    mLock.WriteUnlock();
-  }
+  ~AutoWriteSpinLock() { mLock.WriteUnlock(); }
 
-private:
+ private:
   ReadWriteSpinLock& mLock;
 };
 
@@ -108,30 +86,20 @@ private:
 
 
 
-static inline void
-ThreadYield()
-{
-  sched_yield();
-}
+static inline void ThreadYield() { sched_yield(); }
 
-inline void
-SpinLock::Lock()
-{
+inline void SpinLock::Lock() {
   while (mLocked.exchange(true)) {
     ThreadYield();
   }
 }
 
-inline void
-SpinLock::Unlock()
-{
+inline void SpinLock::Unlock() {
   DebugOnly<bool> rv = mLocked.exchange(false);
   MOZ_ASSERT(rv);
 }
 
-inline void
-ReadWriteSpinLock::ReadLock()
-{
+inline void ReadWriteSpinLock::ReadLock() {
   while (true) {
     AutoSpinLock ex(mLock);
     if (mReaders != -1) {
@@ -141,17 +109,13 @@ ReadWriteSpinLock::ReadLock()
   }
 }
 
-inline void
-ReadWriteSpinLock::ReadUnlock()
-{
+inline void ReadWriteSpinLock::ReadUnlock() {
   AutoSpinLock ex(mLock);
   MOZ_ASSERT(mReaders > 0);
   mReaders--;
 }
 
-inline void
-ReadWriteSpinLock::WriteLock()
-{
+inline void ReadWriteSpinLock::WriteLock() {
   while (true) {
     AutoSpinLock ex(mLock);
     if (mReaders == 0) {
@@ -161,15 +125,13 @@ ReadWriteSpinLock::WriteLock()
   }
 }
 
-inline void
-ReadWriteSpinLock::WriteUnlock()
-{
+inline void ReadWriteSpinLock::WriteUnlock() {
   AutoSpinLock ex(mLock);
   MOZ_ASSERT(mReaders == -1);
   mReaders = 0;
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

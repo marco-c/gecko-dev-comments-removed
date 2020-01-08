@@ -39,193 +39,175 @@ namespace WebCore {
 nsTHashtable<HRTFDatabaseLoader::LoaderByRateEntry>*
     HRTFDatabaseLoader::s_loaderMap = nullptr;
 
-size_t HRTFDatabaseLoader::sizeOfLoaders(mozilla::MallocSizeOf aMallocSizeOf)
-{
-    return s_loaderMap ? s_loaderMap->SizeOfIncludingThis(aMallocSizeOf) : 0;
+size_t HRTFDatabaseLoader::sizeOfLoaders(mozilla::MallocSizeOf aMallocSizeOf) {
+  return s_loaderMap ? s_loaderMap->SizeOfIncludingThis(aMallocSizeOf) : 0;
 }
 
-already_AddRefed<HRTFDatabaseLoader> HRTFDatabaseLoader::createAndLoadAsynchronouslyIfNecessary(float sampleRate)
-{
-    MOZ_ASSERT(NS_IsMainThread());
+already_AddRefed<HRTFDatabaseLoader>
+HRTFDatabaseLoader::createAndLoadAsynchronouslyIfNecessary(float sampleRate) {
+  MOZ_ASSERT(NS_IsMainThread());
 
-    RefPtr<HRTFDatabaseLoader> loader;
+  RefPtr<HRTFDatabaseLoader> loader;
 
-    if (!s_loaderMap) {
-        s_loaderMap = new nsTHashtable<LoaderByRateEntry>();
-    }
+  if (!s_loaderMap) {
+    s_loaderMap = new nsTHashtable<LoaderByRateEntry>();
+  }
 
-    LoaderByRateEntry* entry = s_loaderMap->PutEntry(sampleRate);
-    loader = entry->mLoader;
-    if (loader) { 
-        MOZ_ASSERT(sampleRate == loader->databaseSampleRate());
-        return loader.forget();
-    }
-
-    loader = new HRTFDatabaseLoader(sampleRate);
-    entry->mLoader = loader;
-
-    loader->loadAsynchronously();
-
+  LoaderByRateEntry* entry = s_loaderMap->PutEntry(sampleRate);
+  loader = entry->mLoader;
+  if (loader) {  
+    MOZ_ASSERT(sampleRate == loader->databaseSampleRate());
     return loader.forget();
+  }
+
+  loader = new HRTFDatabaseLoader(sampleRate);
+  entry->mLoader = loader;
+
+  loader->loadAsynchronously();
+
+  return loader.forget();
 }
 
 HRTFDatabaseLoader::HRTFDatabaseLoader(float sampleRate)
-    : m_refCnt(0)
-    , m_threadLock("HRTFDatabaseLoader")
-    , m_databaseLoaderThread(nullptr)
-    , m_databaseSampleRate(sampleRate)
-{
-    MOZ_ASSERT(NS_IsMainThread());
+    : m_refCnt(0),
+      m_threadLock("HRTFDatabaseLoader"),
+      m_databaseLoaderThread(nullptr),
+      m_databaseSampleRate(sampleRate) {
+  MOZ_ASSERT(NS_IsMainThread());
 }
 
-HRTFDatabaseLoader::~HRTFDatabaseLoader()
-{
-    MOZ_ASSERT(NS_IsMainThread());
+HRTFDatabaseLoader::~HRTFDatabaseLoader() {
+  MOZ_ASSERT(NS_IsMainThread());
 
-    waitForLoaderThreadCompletion();
-    m_hrtfDatabase.reset();
+  waitForLoaderThreadCompletion();
+  m_hrtfDatabase.reset();
 
-    if (s_loaderMap) {
-        
-        s_loaderMap->RemoveEntry(m_databaseSampleRate);
-        if (s_loaderMap->Count() == 0) {
-            delete s_loaderMap;
-            s_loaderMap = nullptr;
-        }
-    }
-}
-
-size_t HRTFDatabaseLoader::sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-{
-    size_t amount = aMallocSizeOf(this);
-
+  if (s_loaderMap) {
     
-    const_cast<HRTFDatabaseLoader*>(this)->waitForLoaderThreadCompletion();
-
-    if (m_hrtfDatabase) {
-        amount += m_hrtfDatabase->sizeOfIncludingThis(aMallocSizeOf);
+    s_loaderMap->RemoveEntry(m_databaseSampleRate);
+    if (s_loaderMap->Count() == 0) {
+      delete s_loaderMap;
+      s_loaderMap = nullptr;
     }
+  }
+}
 
-    return amount;
+size_t HRTFDatabaseLoader::sizeOfIncludingThis(
+    mozilla::MallocSizeOf aMallocSizeOf) const {
+  size_t amount = aMallocSizeOf(this);
+
+  
+  const_cast<HRTFDatabaseLoader*>(this)->waitForLoaderThreadCompletion();
+
+  if (m_hrtfDatabase) {
+    amount += m_hrtfDatabase->sizeOfIncludingThis(aMallocSizeOf);
+  }
+
+  return amount;
 }
 
 class HRTFDatabaseLoader::ProxyReleaseEvent final : public Runnable {
-public:
+ public:
   explicit ProxyReleaseEvent(HRTFDatabaseLoader* loader)
-    : mozilla::Runnable("WebCore::HRTFDatabaseLoader::ProxyReleaseEvent")
-    , mLoader(loader)
-  {
-  }
-  NS_IMETHOD Run() override
-  {
+      : mozilla::Runnable("WebCore::HRTFDatabaseLoader::ProxyReleaseEvent"),
+        mLoader(loader) {}
+  NS_IMETHOD Run() override {
     mLoader->MainThreadRelease();
     return NS_OK;
-    }
-private:
-    
-    HRTFDatabaseLoader* MOZ_OWNING_REF mLoader;
+  }
+
+ private:
+  
+  HRTFDatabaseLoader* MOZ_OWNING_REF mLoader;
 };
 
-void HRTFDatabaseLoader::ProxyRelease()
-{
-    nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadEventTarget();
-    if (MOZ_LIKELY(mainTarget)) {
-        RefPtr<ProxyReleaseEvent> event = new ProxyReleaseEvent(this);
-        DebugOnly<nsresult> rv =
-            mainTarget->Dispatch(event, NS_DISPATCH_NORMAL);
-        MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed to dispatch release event");
-    } else {
-        
-        MOZ_ASSERT(NS_IsMainThread(),
-                   "Main thread is not available for dispatch.");
-        MainThreadRelease();
+void HRTFDatabaseLoader::ProxyRelease() {
+  nsCOMPtr<nsIEventTarget> mainTarget = GetMainThreadEventTarget();
+  if (MOZ_LIKELY(mainTarget)) {
+    RefPtr<ProxyReleaseEvent> event = new ProxyReleaseEvent(this);
+    DebugOnly<nsresult> rv = mainTarget->Dispatch(event, NS_DISPATCH_NORMAL);
+    MOZ_ASSERT(NS_SUCCEEDED(rv), "Failed to dispatch release event");
+  } else {
+    
+    MOZ_ASSERT(NS_IsMainThread(), "Main thread is not available for dispatch.");
+    MainThreadRelease();
+  }
+}
+
+void HRTFDatabaseLoader::MainThreadRelease() {
+  MOZ_ASSERT(NS_IsMainThread());
+  int count = --m_refCnt;
+  MOZ_ASSERT(count >= 0, "extra release");
+  NS_LOG_RELEASE(this, count, "HRTFDatabaseLoader");
+  if (count == 0) {
+    
+    
+    delete this;
+  }
+}
+
+
+static void databaseLoaderEntry(void* threadData) {
+  AUTO_PROFILER_REGISTER_THREAD("HRTFDatabaseLdr");
+  NS_SetCurrentThreadName("HRTFDatabaseLdr");
+
+  HRTFDatabaseLoader* loader =
+      reinterpret_cast<HRTFDatabaseLoader*>(threadData);
+  MOZ_ASSERT(loader);
+  loader->load();
+}
+
+void HRTFDatabaseLoader::load() {
+  MOZ_ASSERT(!NS_IsMainThread());
+  MOZ_ASSERT(!m_hrtfDatabase.get(), "Called twice");
+  
+  m_hrtfDatabase = HRTFDatabase::create(m_databaseSampleRate);
+  
+  Release();
+}
+
+void HRTFDatabaseLoader::loadAsynchronously() {
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(m_refCnt, "Must not be called before a reference is added");
+
+  
+  
+  AddRef();
+
+  MutexAutoLock locker(m_threadLock);
+
+  MOZ_ASSERT(!m_hrtfDatabase.get() && !m_databaseLoaderThread, "Called twice");
+  
+  m_databaseLoaderThread = PR_CreateThread(
+      PR_USER_THREAD, databaseLoaderEntry, this, PR_PRIORITY_NORMAL,
+      PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+}
+
+bool HRTFDatabaseLoader::isLoaded() const { return m_hrtfDatabase.get(); }
+
+void HRTFDatabaseLoader::waitForLoaderThreadCompletion() {
+  MutexAutoLock locker(m_threadLock);
+
+  
+  if (m_databaseLoaderThread) {
+    DebugOnly<PRStatus> status = PR_JoinThread(m_databaseLoaderThread);
+    MOZ_ASSERT(status == PR_SUCCESS, "PR_JoinThread failed");
+  }
+  m_databaseLoaderThread = nullptr;
+}
+
+void HRTFDatabaseLoader::shutdown() {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (s_loaderMap) {
+    
+    
+    nsTHashtable<LoaderByRateEntry>* loaderMap = s_loaderMap;
+    s_loaderMap = nullptr;
+    for (auto iter = loaderMap->Iter(); !iter.Done(); iter.Next()) {
+      iter.Get()->mLoader->waitForLoaderThreadCompletion();
     }
+    delete loaderMap;
+  }
 }
 
-void HRTFDatabaseLoader::MainThreadRelease()
-{
-    MOZ_ASSERT(NS_IsMainThread());
-    int count = --m_refCnt;
-    MOZ_ASSERT(count >= 0, "extra release");
-    NS_LOG_RELEASE(this, count, "HRTFDatabaseLoader");
-    if (count == 0) {
-        
-        
-        delete this;
-    }
-}
-
-
-static void databaseLoaderEntry(void* threadData)
-{
-    AUTO_PROFILER_REGISTER_THREAD("HRTFDatabaseLdr");
-    NS_SetCurrentThreadName("HRTFDatabaseLdr");
-
-    HRTFDatabaseLoader* loader = reinterpret_cast<HRTFDatabaseLoader*>(threadData);
-    MOZ_ASSERT(loader);
-    loader->load();
-}
-
-void HRTFDatabaseLoader::load()
-{
-    MOZ_ASSERT(!NS_IsMainThread());
-    MOZ_ASSERT(!m_hrtfDatabase.get(), "Called twice");
-    
-    m_hrtfDatabase = HRTFDatabase::create(m_databaseSampleRate);
-    
-    Release();
-}
-
-void HRTFDatabaseLoader::loadAsynchronously()
-{
-    MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(m_refCnt, "Must not be called before a reference is added");
-
-    
-    
-    AddRef();
-
-    MutexAutoLock locker(m_threadLock);
-
-    MOZ_ASSERT(!m_hrtfDatabase.get() && !m_databaseLoaderThread,
-               "Called twice");
-    
-    m_databaseLoaderThread =
-        PR_CreateThread(PR_USER_THREAD, databaseLoaderEntry, this,
-                        PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
-                        PR_JOINABLE_THREAD, 0);
-}
-
-bool HRTFDatabaseLoader::isLoaded() const
-{
-    return m_hrtfDatabase.get();
-}
-
-void HRTFDatabaseLoader::waitForLoaderThreadCompletion()
-{
-    MutexAutoLock locker(m_threadLock);
-
-    
-    if (m_databaseLoaderThread) {
-        DebugOnly<PRStatus> status = PR_JoinThread(m_databaseLoaderThread);
-        MOZ_ASSERT(status == PR_SUCCESS, "PR_JoinThread failed");
-    }
-    m_databaseLoaderThread = nullptr;
-}
-
-void HRTFDatabaseLoader::shutdown()
-{
-    MOZ_ASSERT(NS_IsMainThread());
-    if (s_loaderMap) {
-        
-        
-        nsTHashtable<LoaderByRateEntry>* loaderMap = s_loaderMap;
-        s_loaderMap = nullptr;
-        for (auto iter = loaderMap->Iter(); !iter.Done(); iter.Next()) {
-          iter.Get()->mLoader->waitForLoaderThreadCompletion();
-        }
-        delete loaderMap;
-    }
-}
-
-} 
+}  

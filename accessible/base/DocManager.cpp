@@ -21,7 +21,7 @@
 #endif
 
 #include "mozilla/EventListenerManager.h"
-#include "mozilla/dom/Event.h" 
+#include "mozilla/dom/Event.h"  
 #include "nsContentUtils.h"
 #include "nsCURILoader.h"
 #include "nsDocShellLoadTypes.h"
@@ -39,37 +39,29 @@ using namespace mozilla::a11y;
 using namespace mozilla::dom;
 
 StaticAutoPtr<nsTArray<DocAccessibleParent*>> DocManager::sRemoteDocuments;
-nsRefPtrHashtable<nsPtrHashKey<const DocAccessibleParent>, xpcAccessibleDocument>*
-DocManager::sRemoteXPCDocumentCache = nullptr;
+nsRefPtrHashtable<nsPtrHashKey<const DocAccessibleParent>,
+                  xpcAccessibleDocument>* DocManager::sRemoteXPCDocumentCache =
+    nullptr;
 
 
 
 
 
-DocManager::DocManager()
-  : mDocAccessibleCache(2), mXPCDocumentCache(0)
-{
-}
+DocManager::DocManager() : mDocAccessibleCache(2), mXPCDocumentCache(0) {}
 
 
 
 
-DocAccessible*
-DocManager::GetDocAccessible(nsIDocument* aDocument)
-{
-  if (!aDocument)
-    return nullptr;
+DocAccessible* DocManager::GetDocAccessible(nsIDocument* aDocument) {
+  if (!aDocument) return nullptr;
 
   DocAccessible* docAcc = GetExistingDocAccessible(aDocument);
-  if (docAcc)
-    return docAcc;
+  if (docAcc) return docAcc;
 
   return CreateDocOrRootAccessible(aDocument);
 }
 
-Accessible*
-DocManager::FindAccessibleInCache(nsINode* aNode) const
-{
+Accessible* DocManager::FindAccessibleInCache(nsINode* aNode) const {
   for (auto iter = mDocAccessibleCache.ConstIter(); !iter.Done(); iter.Next()) {
     DocAccessible* docAccessible = iter.UserData();
     NS_ASSERTION(docAccessible,
@@ -85,9 +77,7 @@ DocManager::FindAccessibleInCache(nsINode* aNode) const
   return nullptr;
 }
 
-void
-DocManager::RemoveFromXPCDocumentCache(DocAccessible* aDocument)
-{
+void DocManager::RemoveFromXPCDocumentCache(DocAccessible* aDocument) {
   xpcAccessibleDocument* xpcDoc = mXPCDocumentCache.GetWeak(aDocument);
   if (xpcDoc) {
     xpcDoc->Shutdown();
@@ -99,10 +89,8 @@ DocManager::RemoveFromXPCDocumentCache(DocAccessible* aDocument)
   }
 }
 
-void
-DocManager::NotifyOfDocumentShutdown(DocAccessible* aDocument,
-                                     nsIDocument* aDOMDocument)
-{
+void DocManager::NotifyOfDocumentShutdown(DocAccessible* aDocument,
+                                          nsIDocument* aDOMDocument) {
   
   
   RemoveListeners(aDOMDocument);
@@ -117,9 +105,7 @@ DocManager::NotifyOfDocumentShutdown(DocAccessible* aDocument,
   mDocAccessibleCache.Remove(aDOMDocument);
 }
 
-void
-DocManager::RemoveFromRemoteXPCDocumentCache(DocAccessibleParent* aDoc)
-{
+void DocManager::RemoveFromRemoteXPCDocumentCache(DocAccessibleParent* aDoc) {
   xpcAccessibleDocument* doc = GetCachedXPCDocument(aDoc);
   if (doc) {
     doc->Shutdown();
@@ -131,17 +117,12 @@ DocManager::RemoveFromRemoteXPCDocumentCache(DocAccessibleParent* aDoc)
   }
 }
 
-void
-DocManager::NotifyOfRemoteDocShutdown(DocAccessibleParent* aDoc)
-{
+void DocManager::NotifyOfRemoteDocShutdown(DocAccessibleParent* aDoc) {
   RemoveFromRemoteXPCDocumentCache(aDoc);
 }
 
-xpcAccessibleDocument*
-DocManager::GetXPCDocument(DocAccessible* aDocument)
-{
-  if (!aDocument)
-    return nullptr;
+xpcAccessibleDocument* DocManager::GetXPCDocument(DocAccessible* aDocument) {
+  if (!aDocument) return nullptr;
 
   xpcAccessibleDocument* xpcDoc = mXPCDocumentCache.GetWeak(aDocument);
   if (!xpcDoc) {
@@ -151,9 +132,7 @@ DocManager::GetXPCDocument(DocAccessible* aDocument)
   return xpcDoc;
 }
 
-xpcAccessibleDocument*
-DocManager::GetXPCDocument(DocAccessibleParent* aDoc)
-{
+xpcAccessibleDocument* DocManager::GetXPCDocument(DocAccessibleParent* aDoc) {
   xpcAccessibleDocument* doc = GetCachedXPCDocument(aDoc);
   if (doc) {
     return doc;
@@ -161,20 +140,19 @@ DocManager::GetXPCDocument(DocAccessibleParent* aDoc)
 
   if (!sRemoteXPCDocumentCache) {
     sRemoteXPCDocumentCache =
-      new nsRefPtrHashtable<nsPtrHashKey<const DocAccessibleParent>, xpcAccessibleDocument>;
+        new nsRefPtrHashtable<nsPtrHashKey<const DocAccessibleParent>,
+                              xpcAccessibleDocument>;
   }
 
-  doc =
-    new xpcAccessibleDocument(aDoc, Interfaces::DOCUMENT | Interfaces::HYPERTEXT);
+  doc = new xpcAccessibleDocument(aDoc,
+                                  Interfaces::DOCUMENT | Interfaces::HYPERTEXT);
   sRemoteXPCDocumentCache->Put(aDoc, doc);
 
   return doc;
 }
 
 #ifdef DEBUG
-bool
-DocManager::IsProcessingRefreshDriverNotification() const
-{
+bool DocManager::IsProcessingRefreshDriverNotification() const {
   for (auto iter = mDocAccessibleCache.ConstIter(); !iter.Done(); iter.Next()) {
     DocAccessible* docAccessible = iter.UserData();
     NS_ASSERTION(docAccessible,
@@ -192,15 +170,11 @@ DocManager::IsProcessingRefreshDriverNotification() const
 
 
 
-
-bool
-DocManager::Init()
-{
+bool DocManager::Init() {
   nsCOMPtr<nsIWebProgress> progress =
-    do_GetService(NS_DOCUMENTLOADER_SERVICE_CONTRACTID);
+      do_GetService(NS_DOCUMENTLOADER_SERVICE_CONTRACTID);
 
-  if (!progress)
-    return false;
+  if (!progress) return false;
 
   progress->AddProgressListener(static_cast<nsIWebProgressListener*>(this),
                                 nsIWebProgress::NOTIFY_STATE_DOCUMENT);
@@ -208,14 +182,13 @@ DocManager::Init()
   return true;
 }
 
-void
-DocManager::Shutdown()
-{
+void DocManager::Shutdown() {
   nsCOMPtr<nsIWebProgress> progress =
-    do_GetService(NS_DOCUMENTLOADER_SERVICE_CONTRACTID);
+      do_GetService(NS_DOCUMENTLOADER_SERVICE_CONTRACTID);
 
   if (progress)
-    progress->RemoveProgressListener(static_cast<nsIWebProgressListener*>(this));
+    progress->RemoveProgressListener(
+        static_cast<nsIWebProgressListener*>(this));
 
   ClearDocCache();
 }
@@ -223,19 +196,15 @@ DocManager::Shutdown()
 
 
 
-NS_IMPL_ISUPPORTS(DocManager,
-                  nsIWebProgressListener,
-                  nsIDOMEventListener,
+NS_IMPL_ISUPPORTS(DocManager, nsIWebProgressListener, nsIDOMEventListener,
                   nsISupportsWeakReference)
 
 
 
 
 NS_IMETHODIMP
-DocManager::OnStateChange(nsIWebProgress* aWebProgress,
-                          nsIRequest* aRequest, uint32_t aStateFlags,
-                          nsresult aStatus)
-{
+DocManager::OnStateChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
+                          uint32_t aStateFlags, nsresult aStatus) {
   NS_ASSERTION(aStateFlags & STATE_IS_DOCUMENT, "Other notifications excluded");
 
   if (nsAccessibilityService::IsShutdown() || !aWebProgress ||
@@ -274,8 +243,7 @@ DocManager::OnStateChange(nsIWebProgress* aWebProgress,
     if (aRequest) {
       uint32_t loadFlags = 0;
       aRequest->GetLoadFlags(&loadFlags);
-      if (loadFlags & nsIChannel::LOAD_RETARGETED_DOCUMENT_URI)
-        eventType = 0;
+      if (loadFlags & nsIChannel::LOAD_RETARGETED_DOCUMENT_URI) eventType = 0;
     }
 
     HandleDOMDocumentLoad(document, eventType);
@@ -285,12 +253,12 @@ DocManager::OnStateChange(nsIWebProgress* aWebProgress,
   
 #ifdef A11Y_LOG
   if (logging::IsEnabled(logging::eDocLoad))
-    logging::DocLoad("start document loading", aWebProgress, aRequest, aStateFlags);
+    logging::DocLoad("start document loading", aWebProgress, aRequest,
+                     aStateFlags);
 #endif
 
   DocAccessible* docAcc = GetExistingDocAccessible(document);
-  if (!docAcc)
-    return NS_OK;
+  if (!docAcc) return NS_OK;
 
   nsCOMPtr<nsIWebNavigation> webNav(do_GetInterface(DOMWindow));
   nsCOMPtr<nsIDocShell> docShell(do_QueryInterface(webNav));
@@ -299,8 +267,7 @@ DocManager::OnStateChange(nsIWebProgress* aWebProgress,
   bool isReloading = false;
   uint32_t loadType;
   docShell->GetLoadType(&loadType);
-  if (loadType == LOAD_RELOAD_NORMAL ||
-      loadType == LOAD_RELOAD_BYPASS_CACHE ||
+  if (loadType == LOAD_RELOAD_NORMAL || loadType == LOAD_RELOAD_BYPASS_CACHE ||
       loadType == LOAD_RELOAD_BYPASS_PROXY ||
       loadType == LOAD_RELOAD_BYPASS_PROXY_AND_CACHE ||
       loadType == LOAD_RELOAD_ALLOW_MIXED_CONTENT) {
@@ -312,42 +279,32 @@ DocManager::OnStateChange(nsIWebProgress* aWebProgress,
 }
 
 NS_IMETHODIMP
-DocManager::OnProgressChange(nsIWebProgress* aWebProgress,
-                             nsIRequest* aRequest,
-                             int32_t aCurSelfProgress,
-                             int32_t aMaxSelfProgress,
+DocManager::OnProgressChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
+                             int32_t aCurSelfProgress, int32_t aMaxSelfProgress,
                              int32_t aCurTotalProgress,
-                             int32_t aMaxTotalProgress)
-{
+                             int32_t aMaxTotalProgress) {
   MOZ_ASSERT_UNREACHABLE("notification excluded in AddProgressListener(...)");
   return NS_OK;
 }
 
 NS_IMETHODIMP
-DocManager::OnLocationChange(nsIWebProgress* aWebProgress,
-                             nsIRequest* aRequest, nsIURI* aLocation,
-                             uint32_t aFlags)
-{
+DocManager::OnLocationChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
+                             nsIURI* aLocation, uint32_t aFlags) {
   MOZ_ASSERT_UNREACHABLE("notification excluded in AddProgressListener(...)");
   return NS_OK;
 }
 
 NS_IMETHODIMP
-DocManager::OnStatusChange(nsIWebProgress* aWebProgress,
-                           nsIRequest* aRequest, nsresult aStatus,
-                           const char16_t* aMessage)
-{
+DocManager::OnStatusChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
+                           nsresult aStatus, const char16_t* aMessage) {
   MOZ_ASSERT_UNREACHABLE("notification excluded in AddProgressListener(...)");
   return NS_OK;
 }
 
 NS_IMETHODIMP
-DocManager::OnSecurityChange(nsIWebProgress* aWebProgress,
-                             nsIRequest* aRequest,
-                             uint32_t aOldState,
-                             uint32_t aState,
-                             const nsAString& aContentBlockingLogJSON)
-{
+DocManager::OnSecurityChange(nsIWebProgress* aWebProgress, nsIRequest* aRequest,
+                             uint32_t aOldState, uint32_t aState,
+                             const nsAString& aContentBlockingLogJSON) {
   MOZ_ASSERT_UNREACHABLE("notification excluded in AddProgressListener(...)");
   return NS_OK;
 }
@@ -356,15 +313,13 @@ DocManager::OnSecurityChange(nsIWebProgress* aWebProgress,
 
 
 NS_IMETHODIMP
-DocManager::HandleEvent(Event* aEvent)
-{
+DocManager::HandleEvent(Event* aEvent) {
   nsAutoString type;
   aEvent->GetType(type);
 
   nsCOMPtr<nsIDocument> document = do_QueryInterface(aEvent->GetTarget());
   NS_ASSERTION(document, "pagehide or DOMContentLoaded for non document!");
-  if (!document)
-    return NS_OK;
+  if (!document) return NS_OK;
 
   if (type.EqualsLiteral("pagehide")) {
     
@@ -383,8 +338,7 @@ DocManager::HandleEvent(Event* aEvent)
     
     
     DocAccessible* docAccessible = GetExistingDocAccessible(document);
-    if (docAccessible)
-      docAccessible->Shutdown();
+    if (docAccessible) docAccessible->Shutdown();
 
     return NS_OK;
   }
@@ -408,26 +362,21 @@ DocManager::HandleEvent(Event* aEvent)
 
 
 
-void
-DocManager::HandleDOMDocumentLoad(nsIDocument* aDocument,
-                                  uint32_t aLoadEventType)
-{
+void DocManager::HandleDOMDocumentLoad(nsIDocument* aDocument,
+                                       uint32_t aLoadEventType) {
   
   
   DocAccessible* docAcc = GetExistingDocAccessible(aDocument);
   if (!docAcc) {
     docAcc = CreateDocOrRootAccessible(aDocument);
-    if (!docAcc)
-      return;
+    if (!docAcc) return;
   }
 
   docAcc->NotifyOfLoad(aLoadEventType);
 }
 
-void
-DocManager::AddListeners(nsIDocument* aDocument,
-                         bool aAddDOMContentLoadedListener)
-{
+void DocManager::AddListeners(nsIDocument* aDocument,
+                              bool aAddDOMContentLoadedListener) {
   nsPIDOMWindowOuter* window = aDocument->GetWindow();
   EventTarget* target = window->GetChromeEventHandler();
   EventListenerManager* elm = target->GetOrCreateListenerManager();
@@ -449,16 +398,12 @@ DocManager::AddListeners(nsIDocument* aDocument,
   }
 }
 
-void
-DocManager::RemoveListeners(nsIDocument* aDocument)
-{
+void DocManager::RemoveListeners(nsIDocument* aDocument) {
   nsPIDOMWindowOuter* window = aDocument->GetWindow();
-  if (!window)
-    return;
+  if (!window) return;
 
   EventTarget* target = window->GetChromeEventHandler();
-  if (!target)
-    return;
+  if (!target) return;
 
   EventListenerManager* elm = target->GetOrCreateListenerManager();
   elm->RemoveEventListenerByType(this, NS_LITERAL_STRING("pagehide"),
@@ -468,9 +413,7 @@ DocManager::RemoveListeners(nsIDocument* aDocument)
                                  TrustedEventsAtCapture());
 }
 
-DocAccessible*
-DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
-{
+DocAccessible* DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument) {
   
   
   if (!aDocument->IsVisibleConsideringAncestors() ||
@@ -491,8 +434,7 @@ DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
 
   
   nsIPresShell* presShell = aDocument->GetShell();
-  if (!presShell || presShell->IsDestroying())
-    return nullptr;
+  if (!presShell || presShell->IsDestroying()) return nullptr;
 
   bool isRootDoc = nsCoreUtils::IsRootDocument(aDocument);
 
@@ -501,17 +443,15 @@ DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
     
     
     parentDocAcc = GetDocAccessible(aDocument->GetParentDocument());
-    NS_ASSERTION(parentDocAcc,
-                 "Can't create an accessible for the document!");
-    if (!parentDocAcc)
-      return nullptr;
+    NS_ASSERTION(parentDocAcc, "Can't create an accessible for the document!");
+    if (!parentDocAcc) return nullptr;
   }
 
   
   
-  RefPtr<DocAccessible> docAcc = isRootDoc ?
-    new RootAccessibleWrap(aDocument, presShell) :
-    new DocAccessibleWrap(aDocument, presShell);
+  RefPtr<DocAccessible> docAcc =
+      isRootDoc ? new RootAccessibleWrap(aDocument, presShell)
+                : new DocAccessibleWrap(aDocument, presShell);
 
   
   mDocAccessibleCache.Put(aDocument, docAcc);
@@ -553,9 +493,7 @@ DocManager::CreateDocOrRootAccessible(nsIDocument* aDocument)
 
 
 
-void
-DocManager::ClearDocCache()
-{
+void DocManager::ClearDocCache() {
   while (mDocAccessibleCache.Count() > 0) {
     auto iter = mDocAccessibleCache.Iter();
     MOZ_ASSERT(!iter.Done());
@@ -581,19 +519,17 @@ DocManager::ClearDocCache()
     }
 
     iter.Remove();
-   }
+  }
 }
 
-void
-DocManager::RemoteDocAdded(DocAccessibleParent* aDoc)
-{
+void DocManager::RemoteDocAdded(DocAccessibleParent* aDoc) {
   if (!sRemoteDocuments) {
     sRemoteDocuments = new nsTArray<DocAccessibleParent*>;
     ClearOnShutdown(&sRemoteDocuments);
   }
 
   MOZ_ASSERT(!sRemoteDocuments->Contains(aDoc),
-      "How did we already have the doc!");
+             "How did we already have the doc!");
   sRemoteDocuments->AppendElement(aDoc);
   ProxyCreated(aDoc, Interfaces::DOCUMENT | Interfaces::HYPERTEXT);
 }

@@ -17,26 +17,27 @@ class nsIThread;
 
 
 class nsShutdownThread : public mozilla::Runnable {
-public:
+ public:
   explicit nsShutdownThread(nsIThread *aThread);
   ~nsShutdownThread() = default;
 
   NS_IMETHOD Run() override;
 
-
+  
 
 
   static nsresult Shutdown(nsIThread *aThread);
 
+  
 
 
 
 
   static nsresult BlockingShutdown(nsIThread *aThread);
 
-private:
-  mozilla::Monitor    mMonitor;
-  bool                mShuttingDown;
+ private:
+  mozilla::Monitor mMonitor;
+  bool mShuttingDown;
   nsCOMPtr<nsIThread> mThread;
 };
 

@@ -14,8 +14,7 @@ namespace a11y {
 
 typedef class HyperTextAccessible HyperTextAccessibleWrap;
 
-} 
-} 
+}  
+}  
 
 #endif
-

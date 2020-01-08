@@ -30,19 +30,13 @@ struct DeclarationBlockMutationClosure;
 namespace css {
 class Loader;
 class Rule;
-} 
+}  
 namespace dom {
 class Element;
 }
 
-struct MutationClosureData
-{
-  MutationClosureData()
-    : mClosure(nullptr)
-    , mElement(nullptr)
-    , mModType(0)
-  {
-  }
+struct MutationClosureData {
+  MutationClosureData() : mClosure(nullptr), mElement(nullptr), mModType(0) {}
 
   
   
@@ -54,11 +48,10 @@ struct MutationClosureData
   uint8_t mModType;
 };
 
-} 
+}  
 
-class nsDOMCSSDeclaration : public nsICSSDeclaration
-{
-public:
+class nsDOMCSSDeclaration : public nsICSSDeclaration {
+ public:
   
   
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
@@ -87,42 +80,37 @@ public:
 
   
   
-  void GetCssText(nsAString & aCssText) override;
-  void SetCssText(const nsAString & aCssText,
-                  nsIPrincipal* aSubjectPrincipal,
+  void GetCssText(nsAString& aCssText) override;
+  void SetCssText(const nsAString& aCssText, nsIPrincipal* aSubjectPrincipal,
                   mozilla::ErrorResult& aRv) override;
-  NS_IMETHOD GetPropertyValue(const nsAString & propertyName,
-                              nsAString & _retval) override;
-  NS_IMETHOD RemoveProperty(const nsAString & propertyName,
-                            nsAString & _retval) override;
-  void GetPropertyPriority(const nsAString & propertyName,
-                           nsAString & aPriority) override;
-  NS_IMETHOD SetProperty(const nsAString& propertyName,
-                         const nsAString& value,
+  NS_IMETHOD GetPropertyValue(const nsAString& propertyName,
+                              nsAString& _retval) override;
+  NS_IMETHOD RemoveProperty(const nsAString& propertyName,
+                            nsAString& _retval) override;
+  void GetPropertyPriority(const nsAString& propertyName,
+                           nsAString& aPriority) override;
+  NS_IMETHOD SetProperty(const nsAString& propertyName, const nsAString& value,
                          const nsAString& priority,
                          nsIPrincipal* aSubjectPrincipal) override;
   uint32_t Length() override;
 
   
 #define CSS_PROP_PUBLIC_OR_PRIVATE(publicname_, privatename_) publicname_
-#define CSS_PROP(id_, method_)                                               \
-  void                                                                       \
-  Get##method_(nsAString& aValue, mozilla::ErrorResult& rv)                  \
-  {                                                                          \
-    rv = GetPropertyValue(eCSSProperty_##id_, aValue);                       \
-  }                                                                          \
-                                                                             \
-  void                                                                       \
-  Set##method_(const nsAString& aValue, nsIPrincipal* aSubjectPrincipal,     \
-               mozilla::ErrorResult& rv)                                     \
-  {                                                                          \
-    rv = SetPropertyValue(eCSSProperty_##id_, aValue, aSubjectPrincipal);    \
+#define CSS_PROP(id_, method_)                                                \
+  void Get##method_(nsAString& aValue, mozilla::ErrorResult& rv) {            \
+    rv = GetPropertyValue(eCSSProperty_##id_, aValue);                        \
+  }                                                                           \
+                                                                              \
+  void Set##method_(const nsAString& aValue, nsIPrincipal* aSubjectPrincipal, \
+                    mozilla::ErrorResult& rv) {                               \
+    rv = SetPropertyValue(eCSSProperty_##id_, aValue, aSubjectPrincipal);     \
   }
 
 #define CSS_PROP_LIST_EXCLUDE_INTERNAL
 #define CSS_PROP_LONGHAND(name_, id_, method_, ...) CSS_PROP(id_, method_)
-#define CSS_PROP_SHORTHAND(name_, id_, method_, ...)  CSS_PROP(id_, method_)
-#define CSS_PROP_ALIAS(name_, aliasid_, id_, method_, ...) CSS_PROP(id_, method_)
+#define CSS_PROP_SHORTHAND(name_, id_, method_, ...) CSS_PROP(id_, method_)
+#define CSS_PROP_ALIAS(name_, aliasid_, id_, method_, ...) \
+  CSS_PROP(id_, method_)
 #include "mozilla/ServoCSSPropList.h"
 #undef CSS_PROP_ALIAS
 #undef CSS_PROP_SHORTHAND
@@ -131,36 +119,31 @@ public:
 #undef CSS_PROP
 #undef CSS_PROP_PUBLIC_OR_PRIVATE
 
-  virtual void IndexedGetter(uint32_t aIndex, bool& aFound, nsAString& aPropName) override;
+  virtual void IndexedGetter(uint32_t aIndex, bool& aFound,
+                             nsAString& aPropName) override;
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   
   
-  struct MOZ_STACK_CLASS ParsingEnvironment
-  {
+  struct MOZ_STACK_CLASS ParsingEnvironment {
     RefPtr<mozilla::URLExtraData> mUrlExtraData;
     nsCompatibility mCompatMode;
     mozilla::css::Loader* mLoader;
 
     ParsingEnvironment(mozilla::URLExtraData* aUrlData,
-                               nsCompatibility aCompatMode,
-                               mozilla::css::Loader* aLoader)
-      : mUrlExtraData(aUrlData)
-      , mCompatMode(aCompatMode)
-      , mLoader(aLoader)
-    {}
+                       nsCompatibility aCompatMode,
+                       mozilla::css::Loader* aLoader)
+        : mUrlExtraData(aUrlData), mCompatMode(aCompatMode), mLoader(aLoader) {}
 
     ParsingEnvironment(already_AddRefed<mozilla::URLExtraData> aUrlData,
-                               nsCompatibility aCompatMode,
-                               mozilla::css::Loader* aLoader)
-      : mUrlExtraData(aUrlData)
-      , mCompatMode(aCompatMode)
-      , mLoader(aLoader)
-    {}
+                       nsCompatibility aCompatMode,
+                       mozilla::css::Loader* aLoader)
+        : mUrlExtraData(aUrlData), mCompatMode(aCompatMode), mLoader(aLoader) {}
   };
 
-protected:
+ protected:
   
   enum Operation {
     
@@ -183,10 +166,11 @@ protected:
   
   
   virtual mozilla::DeclarationBlock* GetOrCreateCSSDeclaration(
-    Operation aOperation, mozilla::DeclarationBlock** aCreated) = 0;
+      Operation aOperation, mozilla::DeclarationBlock** aCreated) = 0;
 
-  virtual nsresult SetCSSDeclaration(mozilla::DeclarationBlock* aDecl,
-                                     mozilla::MutationClosureData* aClosureData) = 0;
+  virtual nsresult SetCSSDeclaration(
+      mozilla::DeclarationBlock* aDecl,
+      mozilla::MutationClosureData* aClosureData) = 0;
   
   
   
@@ -197,17 +181,16 @@ protected:
   
   
   
-  virtual ParsingEnvironment
-  GetParsingEnvironment(nsIPrincipal* aSubjectPrincipal = nullptr) const = 0;
+  virtual ParsingEnvironment GetParsingEnvironment(
+      nsIPrincipal* aSubjectPrincipal = nullptr) const = 0;
 
   
   
-  static ParsingEnvironment
-    GetParsingEnvironmentForRule(const mozilla::css::Rule* aRule);
+  static ParsingEnvironment GetParsingEnvironmentForRule(
+      const mozilla::css::Rule* aRule);
 
   nsresult ParsePropertyValue(const nsCSSPropertyID aPropID,
-                              const nsAString& aPropValue,
-                              bool aIsImportant,
+                              const nsAString& aPropValue, bool aIsImportant,
                               nsIPrincipal* aSubjectPrincipal);
 
   nsresult ParseCustomPropertyValue(const nsAString& aPropertyName,
@@ -218,20 +201,18 @@ protected:
   nsresult RemovePropertyInternal(nsCSSPropertyID aPropID);
   nsresult RemovePropertyInternal(const nsAString& aProperty);
 
-  virtual void
-  GetPropertyChangeClosure(mozilla::DeclarationBlockMutationClosure* aClosure,
-                           mozilla::MutationClosureData* aClosureData)
-  {
-  }
+  virtual void GetPropertyChangeClosure(
+      mozilla::DeclarationBlockMutationClosure* aClosure,
+      mozilla::MutationClosureData* aClosureData) {}
 
-protected:
+ protected:
   virtual ~nsDOMCSSDeclaration();
 
-private:
-  template<typename ServoFunc>
+ private:
+  template <typename ServoFunc>
   inline nsresult ModifyDeclaration(nsIPrincipal* aSubjectPrincipal,
                                     mozilla::MutationClosureData* aClosureData,
                                     ServoFunc aServoFunc);
 };
 
-#endif 
+#endif  

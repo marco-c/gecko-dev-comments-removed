@@ -15,95 +15,87 @@
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(mozEnglishWordUtils, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(mozEnglishWordUtils, Release)
 
-NS_IMPL_CYCLE_COLLECTION(mozEnglishWordUtils,
-                         mURLDetector)
+NS_IMPL_CYCLE_COLLECTION(mozEnglishWordUtils, mURLDetector)
 
-mozEnglishWordUtils::mozEnglishWordUtils()
-{
+mozEnglishWordUtils::mozEnglishWordUtils() {
   mURLDetector = do_CreateInstance(MOZ_TXTTOHTMLCONV_CONTRACTID);
 }
 
-mozEnglishWordUtils::~mozEnglishWordUtils()
-{
-}
+mozEnglishWordUtils::~mozEnglishWordUtils() {}
 
 
 
 
-bool
-mozEnglishWordUtils::ucIsAlpha(char16_t aChar)
-{
+bool mozEnglishWordUtils::ucIsAlpha(char16_t aChar) {
   
   return nsUGenCategory::kLetter == mozilla::unicode::GetGenCategory(aChar);
 }
 
-nsresult
-mozEnglishWordUtils::FindNextWord(const char16_t *word, uint32_t length,
-                                  uint32_t offset, int32_t *begin, int32_t *end)
-{
+nsresult mozEnglishWordUtils::FindNextWord(const char16_t *word,
+                                           uint32_t length, uint32_t offset,
+                                           int32_t *begin, int32_t *end) {
   const char16_t *p = word + offset;
   const char16_t *endbuf = word + length;
-  const char16_t *startWord=p;
-  if(p<endbuf){
+  const char16_t *startWord = p;
+  if (p < endbuf) {
     
     
-    if (offset > 0 && ucIsAlpha(*(p-1))) {
-      while (p < endbuf && ucIsAlpha(*p))
-        p++;
+    
+    if (offset > 0 && ucIsAlpha(*(p - 1))) {
+      while (p < endbuf && ucIsAlpha(*p)) p++;
     }
-    while((p < endbuf) && (!ucIsAlpha(*p)))
-      {
-        p++;
-      }
-    startWord=p;
-    while((p < endbuf) && ((ucIsAlpha(*p))||(*p=='\'')))
-      {
-        p++;
-      }
+    while ((p < endbuf) && (!ucIsAlpha(*p))) {
+      p++;
+    }
+    startWord = p;
+    while ((p < endbuf) && ((ucIsAlpha(*p)) || (*p == '\''))) {
+      p++;
+    }
 
     
     
     
 
+    
     
     
     if ((p < endbuf - 1) && (*p == ':' || *p == '@' || *p == '.')) {
+      
+      
+
+      if (mURLDetector) {
+        int32_t startPos = -1;
+        int32_t endPos = -1;
+
+        mURLDetector->FindURLInPlaintext(startWord, endbuf - startWord,
+                                         p - startWord, &startPos, &endPos);
 
         
         
-
-        if (mURLDetector)
-        {
-          int32_t startPos = -1;
-          int32_t endPos = -1;
-
-          mURLDetector->FindURLInPlaintext(startWord, endbuf - startWord, p - startWord, &startPos, &endPos);
+        if (startPos != -1 && endPos != -1) {
+          startWord = p + endPos + 1;  
+          p = startWord;               
 
           
-          if (startPos != -1 && endPos != -1) {
-            startWord = p + endPos + 1; 
-            p = startWord; 
-
-            
-            return FindNextWord(word, length, startWord - word, begin, end);
-          }
+          
+          return FindNextWord(word, length, startWord - word, begin, end);
         }
+      }
     }
 
-    while((p > startWord)&&(*(p-1) == '\'')){  
+    while ((p > startWord) &&
+           (*(p - 1) == '\'')) {  
       p--;
     }
-  }
-  else{
+  } else {
     startWord = endbuf;
   }
-  if(startWord == endbuf){
+  if (startWord == endbuf) {
     *begin = -1;
     *end = -1;
-  }
-  else{
-    *begin = startWord-word;
-    *end = p-word;
+  } else {
+    *begin = startWord - word;
+    *end = p - word;
   }
   return NS_OK;
 }

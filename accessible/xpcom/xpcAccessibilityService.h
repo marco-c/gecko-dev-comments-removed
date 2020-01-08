@@ -7,10 +7,8 @@
 
 #include "nsIAccessibilityService.h"
 
-class xpcAccessibilityService : public nsIAccessibilityService
-{
-
-public:
+class xpcAccessibilityService : public nsIAccessibilityService {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIACCESSIBILITYSERVICE
 
@@ -21,10 +19,11 @@ public:
     
     
     
-    return gXPCAccessibilityService ? gXPCAccessibilityService->mRefCnt > 1 : false;
+    return gXPCAccessibilityService ? gXPCAccessibilityService->mRefCnt > 1
+                                    : false;
   }
 
-protected:
+ protected:
   virtual ~xpcAccessibilityService() {
     if (mShutdownTimer) {
       mShutdownTimer->Cancel();
@@ -33,10 +32,10 @@ protected:
     gXPCAccessibilityService = nullptr;
   }
 
-private:
+ private:
   
   
-  xpcAccessibilityService() { };
+  xpcAccessibilityService(){};
 
   nsCOMPtr<nsITimer> mShutdownTimer;
 
@@ -56,10 +55,13 @@ private:
 
 
 
-#define NS_ACCESSIBILITY_SERVICE_CID \
-{ 0x3b265b69, 0xf813, 0x48ff, { 0x88, 0x0d, 0xd8, 0x8d, 0x10, 0x1a, 0xf4, 0x04 } }
+#define NS_ACCESSIBILITY_SERVICE_CID                 \
+  {                                                  \
+    0x3b265b69, 0xf813, 0x48ff, {                    \
+      0x88, 0x0d, 0xd8, 0x8d, 0x10, 0x1a, 0xf4, 0x04 \
+    }                                                \
+  }
 
-extern nsresult
-NS_GetAccessibilityService(nsIAccessibilityService** aResult);
+extern nsresult NS_GetAccessibilityService(nsIAccessibilityService** aResult);
 
 #endif

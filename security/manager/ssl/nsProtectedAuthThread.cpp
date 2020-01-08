@@ -20,131 +20,116 @@ using namespace mozilla::psm;
 
 NS_IMPL_ISUPPORTS(nsProtectedAuthThread, nsIProtectedAuthThread)
 
-static void nsProtectedAuthThreadRunner(void *arg)
-{
-    AUTO_PROFILER_REGISTER_THREAD("Protected Auth");
-    NS_SetCurrentThreadName("Protected Auth");
+static void nsProtectedAuthThreadRunner(void *arg) {
+  AUTO_PROFILER_REGISTER_THREAD("Protected Auth");
+  NS_SetCurrentThreadName("Protected Auth");
 
-    nsProtectedAuthThread *self = static_cast<nsProtectedAuthThread *>(arg);
-    self->Run();
+  nsProtectedAuthThread *self = static_cast<nsProtectedAuthThread *>(arg);
+  self->Run();
 }
 
 nsProtectedAuthThread::nsProtectedAuthThread()
-: mMutex("nsProtectedAuthThread.mMutex")
-, mIAmRunning(false)
-, mLoginReady(false)
-, mThreadHandle(nullptr)
-, mSlot(0)
-, mLoginResult(SECFailure)
-{
+    : mMutex("nsProtectedAuthThread.mMutex"),
+      mIAmRunning(false),
+      mLoginReady(false),
+      mThreadHandle(nullptr),
+      mSlot(0),
+      mLoginResult(SECFailure) {}
+
+nsProtectedAuthThread::~nsProtectedAuthThread() {}
+
+NS_IMETHODIMP nsProtectedAuthThread::Login(nsIObserver *aObserver) {
+  NS_ENSURE_ARG(aObserver);
+
+  if (!mSlot)
+    
+    return NS_ERROR_FAILURE;
+
+  MutexAutoLock lock(mMutex);
+
+  if (mIAmRunning || mLoginReady) {
+    return NS_OK;
+  }
+
+  if (aObserver) {
+    
+    
+    mNotifyObserver =
+        new NotifyObserverRunnable(aObserver, "operation-completed");
+  }
+
+  mIAmRunning = true;
+
+  mThreadHandle = PR_CreateThread(PR_USER_THREAD, nsProtectedAuthThreadRunner,
+                                  static_cast<void *>(this), PR_PRIORITY_NORMAL,
+                                  PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+
+  
+  
+  MOZ_ASSERT(mThreadHandle,
+             "Could not create nsProtectedAuthThreadRunner thread");
+  return NS_OK;
 }
 
-nsProtectedAuthThread::~nsProtectedAuthThread()
-{
+NS_IMETHODIMP nsProtectedAuthThread::GetTokenName(nsAString &_retval) {
+  MutexAutoLock lock(mMutex);
+
+  
+  CopyUTF8toUTF16(nsDependentCString(PK11_GetTokenName(mSlot)), _retval);
+
+  return NS_OK;
 }
 
-NS_IMETHODIMP nsProtectedAuthThread::Login(nsIObserver *aObserver)
-{
-    NS_ENSURE_ARG(aObserver);
+NS_IMETHODIMP nsProtectedAuthThread::GetSlot(nsIPKCS11Slot **_retval) {
+  RefPtr<nsPKCS11Slot> slot;
+  {
+    MutexAutoLock lock(mMutex);
+    slot = new nsPKCS11Slot(mSlot);
+  }
 
-    if (!mSlot)
-        
-        return NS_ERROR_FAILURE;
+  slot.forget(_retval);
+  return NS_OK;
+}
 
+void nsProtectedAuthThread::SetParams(PK11SlotInfo *aSlot) {
+  MutexAutoLock lock(mMutex);
+
+  mSlot = (aSlot) ? PK11_ReferenceSlot(aSlot) : 0;
+}
+
+SECStatus nsProtectedAuthThread::GetResult() { return mLoginResult; }
+
+void nsProtectedAuthThread::Run(void) {
+  
+  
+  mLoginResult = PK11_CheckUserPassword(mSlot, 0);
+
+  nsCOMPtr<nsIRunnable> notifyObserver;
+  {
     MutexAutoLock lock(mMutex);
 
-    if (mIAmRunning || mLoginReady) {
-        return NS_OK;
-    }
-
-    if (aObserver) {
-      
-      
-      mNotifyObserver = new NotifyObserverRunnable(aObserver,
-                                                   "operation-completed");
-    }
-
-    mIAmRunning = true;
-
-    mThreadHandle = PR_CreateThread(PR_USER_THREAD, nsProtectedAuthThreadRunner, static_cast<void*>(this),
-        PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+    mLoginReady = true;
+    mIAmRunning = false;
 
     
-    
-    MOZ_ASSERT(mThreadHandle,
-               "Could not create nsProtectedAuthThreadRunner thread");
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsProtectedAuthThread::GetTokenName(nsAString &_retval)
-{
-    MutexAutoLock lock(mMutex);
-
-    
-    CopyUTF8toUTF16(nsDependentCString(PK11_GetTokenName(mSlot)), _retval);
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP nsProtectedAuthThread::GetSlot(nsIPKCS11Slot **_retval)
-{
-    RefPtr<nsPKCS11Slot> slot;
-    {
-        MutexAutoLock lock(mMutex);
-        slot = new nsPKCS11Slot(mSlot);
+    if (mSlot) {
+      PK11_FreeSlot(mSlot);
+      mSlot = 0;
     }
 
-    slot.forget(_retval);
-    return NS_OK;
+    notifyObserver.swap(mNotifyObserver);
+  }
+
+  if (notifyObserver) {
+    DebugOnly<nsresult> rv = NS_DispatchToMainThread(notifyObserver);
+    MOZ_ASSERT(NS_SUCCEEDED(rv),
+               "Failed to dispatch protected auth observer to main thread");
+  }
 }
 
-void nsProtectedAuthThread::SetParams(PK11SlotInfo* aSlot)
-{
-    MutexAutoLock lock(mMutex);
+void nsProtectedAuthThread::Join() {
+  if (!mThreadHandle) return;
 
-    mSlot = (aSlot) ? PK11_ReferenceSlot(aSlot) : 0;
-}
-
-SECStatus nsProtectedAuthThread::GetResult()
-{
-    return mLoginResult;
-}
-
-void nsProtectedAuthThread::Run(void)
-{
-    
-    
-    mLoginResult = PK11_CheckUserPassword(mSlot, 0);
-
-    nsCOMPtr<nsIRunnable> notifyObserver;
-    {
-        MutexAutoLock lock(mMutex);
-
-        mLoginReady = true;
-        mIAmRunning = false;
-
-        
-        if (mSlot)
-        {
-            PK11_FreeSlot(mSlot);
-            mSlot = 0;
-        }
-
-        notifyObserver.swap(mNotifyObserver);
-    }
-
-    if (notifyObserver) {
-        DebugOnly<nsresult> rv = NS_DispatchToMainThread(notifyObserver);
-	MOZ_ASSERT(NS_SUCCEEDED(rv),
-		   "Failed to dispatch protected auth observer to main thread");
-    }
-}
-
-void nsProtectedAuthThread::Join()
-{
-    if (!mThreadHandle)
-        return;
-
-    PR_JoinThread(mThreadHandle);
-    mThreadHandle = nullptr;
+  PR_JoinThread(mThreadHandle);
+  mThreadHandle = nullptr;
 }

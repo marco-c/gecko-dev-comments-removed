@@ -2,7 +2,7 @@
 
 
 
- 
+
 
 
 
@@ -57,234 +57,55 @@ class nsIDTD;
 class nsIRunnable;
 
 #ifdef _MSC_VER
-#pragma warning( disable : 4275 )
+#pragma warning(disable : 4275)
 #endif
-
 
 class nsParser final : public nsIParser,
                        public nsIStreamListener,
-                       public nsSupportsWeakReference
-{
-    
-
-
-
-    virtual ~nsParser();
-
-  public:
-    
-
-
-    static nsresult Init();
-
-    
-
-
-    static void Shutdown();
-
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-    NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsParser, nsIParser)
-
-    
-
-
-
-    nsParser();
-
-    
-
-
-
-
-
-    NS_IMETHOD_(void) SetContentSink(nsIContentSink* aSink) override;
-
-    
-
-
-
-
-
-    NS_IMETHOD_(nsIContentSink*) GetContentSink(void) override;
-    
-    
-
-
-
-
-
-
-
-
-    NS_IMETHOD_(void) GetCommand(nsCString& aCommand) override;
-    NS_IMETHOD_(void) SetCommand(const char* aCommand) override;
-    NS_IMETHOD_(void) SetCommand(eParserCommands aParserCommand) override;
-
-    
-
-
-
-
-
-
-
-
-    virtual void SetDocumentCharset(NotNull<const Encoding*> aCharset,
-                                    int32_t aSource) override;
-
-    NotNull<const Encoding*> GetDocumentCharset(int32_t& aSource)
-    {
-         aSource = mCharsetSource;
-         return mCharset;
-    }
-
-    
-
-
-
-
-
-
-    NS_IMETHOD Parse(nsIURI* aURL,
-                     nsIRequestObserver* aListener = nullptr,
-                     void* aKey = 0,
-                     nsDTDMode aMode = eDTDMode_autodetect) override;
-
-    
-
-
-    NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
-                             nsTArray<nsString>& aTagStack) override;
-                             
-    
-
-
-
-
-
-    NS_IMETHOD BuildModel(void) override;
-
-    NS_IMETHOD        ContinueInterruptedParsing() override;
-    NS_IMETHOD_(void) BlockParser() override;
-    NS_IMETHOD_(void) UnblockParser() override;
-    NS_IMETHOD_(void) ContinueInterruptedParsingAsync() override;
-    NS_IMETHOD        Terminate(void) override;
-
-    
-
-
-
-
-
-    NS_IMETHOD_(bool) IsParserEnabled() override;
-
-    
-
-
-
-
-
-    NS_IMETHOD_(bool) IsComplete() override;
-
-    
-
-
-
-
-
-
-
-
-
-    void SetUnusedInput(nsString& aBuffer);
-
-    
-
-
-
-
-    virtual nsresult ResumeParse(bool allowIteration = true, 
-                                 bool aIsFinalChunk = false,
-                                 bool aCanInterrupt = true);
-
-     
-      
-      
-      
-    
-    NS_DECL_NSIREQUESTOBSERVER
-
-    
-    NS_DECL_NSISTREAMLISTENER
-
-    void              PushContext(CParserContext& aContext);
-    CParserContext*   PopContext();
-    CParserContext*   PeekContext() {return mParserContext;}
-
-    
-
-
-
-
-
-    NS_IMETHOD GetChannel(nsIChannel** aChannel) override;
-
-    
-
-
-
-
-
-    NS_IMETHOD GetDTD(nsIDTD** aDTD) override;
+                       public nsSupportsWeakReference {
   
-    
-
-
-    virtual nsIStreamListener* GetStreamListener() override;
-
-    void SetSinkCharset(NotNull<const Encoding*> aCharset);
-
-    
 
 
 
+  virtual ~nsParser();
 
-    NS_IMETHOD CancelParsingEvents() override;
-
-    
-
-
-    virtual bool IsInsertionPointDefined() override;
-
-    
+ public:
+  
 
 
-    virtual void PushDefinedInsertionPoint() override;
+  static nsresult Init();
 
-    
-
-
-    virtual void PopDefinedInsertionPoint() override;
-
-    
+  
 
 
-    virtual void MarkAsNotScriptCreated(const char* aCommand) override;
+  static void Shutdown();
 
-    
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsParser, nsIParser)
+
+  
 
 
-    virtual bool IsScriptCreated() override;
 
-    
+  nsParser();
+
+  
 
 
 
 
 
-    void SetCanInterrupt(bool aCanInterrupt);
+  NS_IMETHOD_(void) SetContentSink(nsIContentSink* aSink) override;
 
-    
+  
+
+
+
+
+
+  NS_IMETHOD_(nsIContentSink*) GetContentSink(void) override;
+
+  
 
 
 
@@ -292,55 +113,226 @@ class nsParser final : public nsIParser,
 
 
 
-    nsresult PostContinueEvent();
 
-    
+  NS_IMETHOD_(void) GetCommand(nsCString& aCommand) override;
+  NS_IMETHOD_(void) SetCommand(const char* aCommand) override;
+  NS_IMETHOD_(void) SetCommand(eParserCommands aParserCommand) override;
+
+  
 
 
 
-    void HandleParserContinueEvent(class nsParserContinueEvent *);
 
-    virtual void Reset() override {
-      Cleanup();
-      Initialize();
-    }
 
-    bool IsScriptExecuting() {
-      return mSink && mSink->IsScriptExecuting();
-    }
 
-    bool IsOkToProcessNetworkData() {
-      return !IsScriptExecuting() && !mProcessingNetworkData;
-    }
+
+
+  virtual void SetDocumentCharset(NotNull<const Encoding*> aCharset,
+                                  int32_t aSource) override;
+
+  NotNull<const Encoding*> GetDocumentCharset(int32_t& aSource) {
+    aSource = mCharsetSource;
+    return mCharset;
+  }
+
+  
+
+
+
+
+
+
+  NS_IMETHOD Parse(nsIURI* aURL, nsIRequestObserver* aListener = nullptr,
+                   void* aKey = 0,
+                   nsDTDMode aMode = eDTDMode_autodetect) override;
+
+  
+
+
+  NS_IMETHOD ParseFragment(const nsAString& aSourceBuffer,
+                           nsTArray<nsString>& aTagStack) override;
+
+  
+
+
+
+
+
+  NS_IMETHOD BuildModel(void) override;
+
+  NS_IMETHOD ContinueInterruptedParsing() override;
+  NS_IMETHOD_(void) BlockParser() override;
+  NS_IMETHOD_(void) UnblockParser() override;
+  NS_IMETHOD_(void) ContinueInterruptedParsingAsync() override;
+  NS_IMETHOD Terminate(void) override;
+
+  
+
+
+
+
+
+  NS_IMETHOD_(bool) IsParserEnabled() override;
+
+  
+
+
+
+
+
+  NS_IMETHOD_(bool) IsComplete() override;
+
+  
+
+
+
+
+
+
+
+
+
+  void SetUnusedInput(nsString& aBuffer);
+
+  
+
+
+
+
+  virtual nsresult ResumeParse(bool allowIteration = true,
+                               bool aIsFinalChunk = false,
+                               bool aCanInterrupt = true);
+
+  
+  
+  
+  
+  
+  NS_DECL_NSIREQUESTOBSERVER
+
+  
+  NS_DECL_NSISTREAMLISTENER
+
+  void PushContext(CParserContext& aContext);
+  CParserContext* PopContext();
+  CParserContext* PeekContext() { return mParserContext; }
+
+  
+
+
+
+
+
+  NS_IMETHOD GetChannel(nsIChannel** aChannel) override;
+
+  
+
+
+
+
+
+  NS_IMETHOD GetDTD(nsIDTD** aDTD) override;
+
+  
+
+
+  virtual nsIStreamListener* GetStreamListener() override;
+
+  void SetSinkCharset(NotNull<const Encoding*> aCharset);
+
+  
+
+
+
+
+  NS_IMETHOD CancelParsingEvents() override;
+
+  
+
+
+  virtual bool IsInsertionPointDefined() override;
+
+  
+
+
+  virtual void PushDefinedInsertionPoint() override;
+
+  
+
+
+  virtual void PopDefinedInsertionPoint() override;
+
+  
+
+
+  virtual void MarkAsNotScriptCreated(const char* aCommand) override;
+
+  
+
+
+  virtual bool IsScriptCreated() override;
+
+  
+
+
+
+
+
+  void SetCanInterrupt(bool aCanInterrupt);
+
+  
+
+
+
+
+
+
+
+  nsresult PostContinueEvent();
+
+  
+
+
+
+  void HandleParserContinueEvent(class nsParserContinueEvent*);
+
+  virtual void Reset() override {
+    Cleanup();
+    Initialize();
+  }
+
+  bool IsScriptExecuting() { return mSink && mSink->IsScriptExecuting(); }
+
+  bool IsOkToProcessNetworkData() {
+    return !IsScriptExecuting() && !mProcessingNetworkData;
+  }
 
  protected:
+  void Initialize(bool aConstructor = false);
+  void Cleanup();
 
-    void Initialize(bool aConstructor = false);
-    void Cleanup();
-
-    
-
-
-
-
-
-    nsresult WillBuildModel(nsString& aFilename);
-
-    
+  
 
 
 
 
 
-    nsresult DidBuildModel(nsresult anErrorCode);
+  nsresult WillBuildModel(nsString& aFilename);
 
-private:
-
-    
+  
 
 
 
-    
+
+
+  nsresult DidBuildModel(nsresult anErrorCode);
+
+ private:
+  
+
+
+
+  
 
 
 
@@ -349,53 +341,48 @@ private:
 
 
 
-    bool WillTokenize(bool aIsFinalChunk = false);
+  bool WillTokenize(bool aIsFinalChunk = false);
 
-   
-    
-
+  
 
 
 
 
 
 
-    nsresult Tokenize(bool aIsFinalChunk = false);
 
-    
+  nsresult Tokenize(bool aIsFinalChunk = false);
+
+  
 
 
-    nsresult Parse(const nsAString& aSourceBuffer,
-                   void* aKey,
-                   bool aLastCall);
+  nsresult Parse(const nsAString& aSourceBuffer, void* aKey, bool aLastCall);
 
-protected:
-    
-    
-    
-    
-      
-    CParserContext*              mParserContext;
-    nsCOMPtr<nsIDTD>             mDTD;
-    nsCOMPtr<nsIRequestObserver> mObserver;
-    nsCOMPtr<nsIContentSink>     mSink;
-    nsIRunnable*                 mContinueEvent;  
+ protected:
+  
+  
+  
 
-    eParserCommands     mCommand;
-    nsresult            mInternalState;
-    nsresult            mStreamStatus;
-    int32_t             mCharsetSource;
-    
-    uint16_t            mFlags;
-    uint32_t            mBlocked;
+  CParserContext* mParserContext;
+  nsCOMPtr<nsIDTD> mDTD;
+  nsCOMPtr<nsIRequestObserver> mObserver;
+  nsCOMPtr<nsIContentSink> mSink;
+  nsIRunnable* mContinueEvent;  
 
-    nsString            mUnusedInput;
-    NotNull<const Encoding*> mCharset;
-    nsCString           mCommandStr;
+  eParserCommands mCommand;
+  nsresult mInternalState;
+  nsresult mStreamStatus;
+  int32_t mCharsetSource;
 
-    bool                mProcessingNetworkData;
-    bool                mIsAboutBlank;
+  uint16_t mFlags;
+  uint32_t mBlocked;
+
+  nsString mUnusedInput;
+  NotNull<const Encoding*> mCharset;
+  nsCString mCommandStr;
+
+  bool mProcessingNetworkData;
+  bool mIsAboutBlank;
 };
 
-#endif 
-
+#endif

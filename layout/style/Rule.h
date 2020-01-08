@@ -18,26 +18,22 @@
 
 class nsIDocument;
 struct nsRuleData;
-template<class T> struct already_AddRefed;
+template <class T>
+struct already_AddRefed;
 class nsHTMLCSSStyleSheet;
 
 namespace mozilla {
 namespace css {
 class GroupRule;
 
-class Rule : public nsISupports
-           , public nsWrapperCache
-{
-protected:
-  Rule(StyleSheet* aSheet,
-       Rule* aParentRule,
-       uint32_t aLineNumber,
+class Rule : public nsISupports, public nsWrapperCache {
+ protected:
+  Rule(StyleSheet* aSheet, Rule* aParentRule, uint32_t aLineNumber,
        uint32_t aColumnNumber)
-    : mSheet(aSheet)
-    , mParentRule(aParentRule)
-    , mLineNumber(aLineNumber)
-    , mColumnNumber(aColumnNumber)
-  {
+      : mSheet(aSheet),
+        mParentRule(aParentRule),
+        mLineNumber(aLineNumber),
+        mColumnNumber(aColumnNumber) {
 #ifdef DEBUG
     
     
@@ -53,17 +49,14 @@ protected:
   }
 
   Rule(const Rule& aCopy)
-    : mSheet(aCopy.mSheet),
-      mParentRule(aCopy.mParentRule),
-      mLineNumber(aCopy.mLineNumber),
-      mColumnNumber(aCopy.mColumnNumber)
-  {
-  }
+      : mSheet(aCopy.mSheet),
+        mParentRule(aCopy.mParentRule),
+        mLineNumber(aCopy.mLineNumber),
+        mColumnNumber(aCopy.mColumnNumber) {}
 
   virtual ~Rule() = default;
 
-public:
-
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS(Rule)
   
@@ -79,8 +72,7 @@ public:
   
   
   
-  nsIDocument* GetComposedDoc() const
-  {
+  nsIDocument* GetComposedDoc() const {
     return mSheet ? mSheet->GetComposedDoc() : nullptr;
   }
 
@@ -88,13 +80,9 @@ public:
   virtual void DropSheetReference();
 
   
-  void DropParentRuleReference()
-  {
-    mParentRule = nullptr;
-  }
+  void DropParentRuleReference() { mParentRule = nullptr; }
 
-  void DropReferences()
-  {
+  void DropReferences() {
     DropSheetReference();
     DropParentRuleReference();
   }
@@ -104,8 +92,8 @@ public:
 
   
   
-  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
-    const MOZ_MUST_OVERRIDE = 0;
+  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
+      MOZ_MUST_OVERRIDE = 0;
 
   
   virtual uint16_t Type() const = 0;
@@ -113,8 +101,7 @@ public:
   void SetCssText(const nsAString& aCssText);
   Rule* GetParentRule() const;
   StyleSheet* GetParentStyleSheet() const { return GetStyleSheet(); }
-  nsINode* GetParentObject() const
-  {
+  nsINode* GetParentObject() const {
     if (!mSheet) {
       return nullptr;
     }
@@ -122,7 +109,7 @@ public:
     return associated ? &associated->AsNode() : nullptr;
   }
 
-protected:
+ protected:
   
   bool IsKnownLive() const;
 
@@ -136,11 +123,11 @@ protected:
   Rule* MOZ_NON_OWNING_REF mParentRule;
 
   
-  uint32_t          mLineNumber;
-  uint32_t          mColumnNumber;
+  uint32_t mLineNumber;
+  uint32_t mColumnNumber;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

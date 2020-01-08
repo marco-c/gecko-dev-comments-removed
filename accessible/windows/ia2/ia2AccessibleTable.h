@@ -16,13 +16,10 @@ namespace a11y {
 
 class TableAccessible;
 
-class ia2AccessibleTable : public IAccessibleTable,
-                           public IAccessibleTable2
-{
-public:
-
+class ia2AccessibleTable : public IAccessibleTable, public IAccessibleTable2 {
+ public:
   
-  STDMETHODIMP QueryInterface(REFIID, void**);
+  STDMETHODIMP QueryInterface(REFIID, void **);
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_accessibleAt(
@@ -141,7 +138,6 @@ public:
   virtual  HRESULT STDMETHODCALLTYPE get_modelChange(
        IA2TableModelChange *modelChange);
 
-
   
 
   virtual  HRESULT STDMETHODCALLTYPE get_cellAt(
@@ -164,13 +160,13 @@ public:
        long **selectedRows,
        long *nRows);
 
-protected:
-  ia2AccessibleTable(TableAccessible* aTable) : mTable(aTable) {}
+ protected:
+  ia2AccessibleTable(TableAccessible *aTable) : mTable(aTable) {}
 
-  TableAccessible* mTable;
+  TableAccessible *mTable;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

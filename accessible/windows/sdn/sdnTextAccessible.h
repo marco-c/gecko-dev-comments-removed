@@ -18,10 +18,10 @@ struct nsPoint;
 namespace mozilla {
 namespace a11y {
 
-class sdnTextAccessible final : public ISimpleDOMText
-{
-public:
-  explicit sdnTextAccessible(AccessibleWrap* aAccessible) : mAccessible(aAccessible) {};
+class sdnTextAccessible final : public ISimpleDOMText {
+ public:
+  explicit sdnTextAccessible(AccessibleWrap* aAccessible)
+      : mAccessible(aAccessible){};
   ~sdnTextAccessible() {}
 
   DECL_IUNKNOWN
@@ -29,43 +29,42 @@ public:
   
 
   virtual  HRESULT STDMETHODCALLTYPE get_domText(
-     BSTR __RPC_FAR *aText);
+       BSTR __RPC_FAR* aText);
 
   virtual HRESULT STDMETHODCALLTYPE get_clippedSubstringBounds(
-     unsigned int startIndex,
-     unsigned int endIndex,
-     int __RPC_FAR* aX,
-     int __RPC_FAR* aY,
-     int __RPC_FAR* aWidth,
-     int __RPC_FAR* aHeight);
+       unsigned int startIndex,
+       unsigned int endIndex,
+       int __RPC_FAR* aX,
+       int __RPC_FAR* aY,
+       int __RPC_FAR* aWidth,
+       int __RPC_FAR* aHeight);
 
   virtual HRESULT STDMETHODCALLTYPE get_unclippedSubstringBounds(
-     unsigned int aStartIndex,
-     unsigned int aEndIndex,
-     int __RPC_FAR* aX,
-     int __RPC_FAR* aY,
-     int __RPC_FAR* aWidth,
-     int __RPC_FAR* aHeight);
+       unsigned int aStartIndex,
+       unsigned int aEndIndex,
+       int __RPC_FAR* aX,
+       int __RPC_FAR* aY,
+       int __RPC_FAR* aWidth,
+       int __RPC_FAR* aHeight);
 
   virtual HRESULT STDMETHODCALLTYPE scrollToSubstring(
-     unsigned int aStartIndex,
-     unsigned int aEndIndex);
+       unsigned int aStartIndex,
+       unsigned int aEndIndex);
 
   virtual  HRESULT STDMETHODCALLTYPE get_fontFamily(
-     BSTR __RPC_FAR* aFontFamily);
+       BSTR __RPC_FAR* aFontFamily);
 
-private:
+ private:
   
 
 
-  nsIFrame* GetPointFromOffset(nsIFrame* aContainingFrame,
-                               int32_t aOffset, bool aPreferNext,
-                               nsPoint& aOutPoint);
+  nsIFrame* GetPointFromOffset(nsIFrame* aContainingFrame, int32_t aOffset,
+                               bool aPreferNext, nsPoint& aOutPoint);
 
   RefPtr<AccessibleWrap> mAccessible;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

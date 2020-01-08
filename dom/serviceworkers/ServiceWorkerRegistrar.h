@@ -28,18 +28,17 @@ namespace mozilla {
 
 namespace ipc {
 class PrincipalInfo;
-} 
+}  
 
 namespace dom {
 
 class ServiceWorkerRegistrationData;
 
-class ServiceWorkerRegistrar : public nsIObserver
-                             , public nsIAsyncShutdownBlocker
-{
+class ServiceWorkerRegistrar : public nsIObserver,
+                               public nsIAsyncShutdownBlocker {
   friend class ServiceWorkerRegistrarSaveDataRunnable;
 
-public:
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
@@ -55,11 +54,12 @@ public:
   void GetRegistrations(nsTArray<ServiceWorkerRegistrationData>& aValues);
 
   void RegisterServiceWorker(const ServiceWorkerRegistrationData& aData);
-  void UnregisterServiceWorker(const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
-                               const nsACString& aScope);
+  void UnregisterServiceWorker(
+      const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
+      const nsACString& aScope);
   void RemoveAll();
 
-protected:
+ protected:
   
   
   void LoadData();
@@ -69,12 +69,13 @@ protected:
   nsresult WriteData(const nsTArray<ServiceWorkerRegistrationData>& aData);
   void DeleteData();
 
-  void RegisterServiceWorkerInternal(const ServiceWorkerRegistrationData& aData);
+  void RegisterServiceWorkerInternal(
+      const ServiceWorkerRegistrationData& aData);
 
   ServiceWorkerRegistrar();
   virtual ~ServiceWorkerRegistrar();
 
-private:
+ private:
   void ProfileStarted();
   void ProfileStopped();
 
@@ -91,7 +92,7 @@ private:
 
   mozilla::Monitor mMonitor;
 
-protected:
+ protected:
   
   nsCOMPtr<nsIFile> mProfileDir;
   nsTArray<ServiceWorkerRegistrationData> mData;
@@ -105,7 +106,7 @@ protected:
   bool mRunnableDispatched;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

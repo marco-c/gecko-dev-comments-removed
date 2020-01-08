@@ -25,8 +25,8 @@ namespace mozilla {
 class SVGContextPaint;
 namespace dom {
 class Element;
-} 
-} 
+}  
+}  
 
 
 
@@ -36,40 +36,39 @@ class Element;
 
 
 
-class gfxSVGGlyphsDocument final : public nsAPostRefreshObserver
-{
-    typedef mozilla::dom::Element Element;
+class gfxSVGGlyphsDocument final : public nsAPostRefreshObserver {
+  typedef mozilla::dom::Element Element;
 
-public:
-    gfxSVGGlyphsDocument(const uint8_t *aBuffer, uint32_t aBufLen,
-                         gfxSVGGlyphs *aSVGGlyphs);
+ public:
+  gfxSVGGlyphsDocument(const uint8_t *aBuffer, uint32_t aBufLen,
+                       gfxSVGGlyphs *aSVGGlyphs);
 
-    Element *GetGlyphElement(uint32_t aGlyphId);
+  Element *GetGlyphElement(uint32_t aGlyphId);
 
-    ~gfxSVGGlyphsDocument();
+  ~gfxSVGGlyphsDocument();
 
-    virtual void DidRefresh() override;
+  virtual void DidRefresh() override;
 
-    size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
-    nsresult ParseDocument(const uint8_t *aBuffer, uint32_t aBufLen);
+ private:
+  nsresult ParseDocument(const uint8_t *aBuffer, uint32_t aBufLen);
 
-    nsresult SetupPresentation();
+  nsresult SetupPresentation();
 
-    void FindGlyphElements(Element *aElement);
+  void FindGlyphElements(Element *aElement);
 
-    void InsertGlyphId(Element *aGlyphElement);
+  void InsertGlyphId(Element *aGlyphElement);
 
-    
-    gfxSVGGlyphs* mOwner;
-    nsCOMPtr<nsIDocument> mDocument;
-    nsCOMPtr<nsIContentViewer> mViewer;
-    nsCOMPtr<nsIPresShell> mPresShell;
+  
+  gfxSVGGlyphs *mOwner;
+  nsCOMPtr<nsIDocument> mDocument;
+  nsCOMPtr<nsIContentViewer> mViewer;
+  nsCOMPtr<nsIPresShell> mPresShell;
 
-    nsBaseHashtable<nsUint32HashKey, Element*, Element*> mGlyphIdMap;
+  nsBaseHashtable<nsUint32HashKey, Element *, Element *> mGlyphIdMap;
 
-    nsCString mSVGGlyphsDocumentURI;
+  nsCString mSVGGlyphsDocumentURI;
 };
 
 
@@ -78,91 +77,91 @@ private:
 
 
 
-class gfxSVGGlyphs
-{
-private:
-    typedef mozilla::dom::Element Element;
+class gfxSVGGlyphs {
+ private:
+  typedef mozilla::dom::Element Element;
 
-public:
-    
-
+ public:
+  
 
 
 
 
 
-    gfxSVGGlyphs(hb_blob_t *aSVGTable, gfxFontEntry *aFontEntry);
 
-    
+  gfxSVGGlyphs(hb_blob_t *aSVGTable, gfxFontEntry *aFontEntry);
 
-
-    ~gfxSVGGlyphs();
-
-    
+  
 
 
-    void DidRefresh();
+  ~gfxSVGGlyphs();
 
-    
-
-
+  
 
 
-    gfxSVGGlyphsDocument *FindOrCreateGlyphsDocument(uint32_t aGlyphId);
+  void DidRefresh();
 
-    
-
-
-    bool HasSVGGlyph(uint32_t aGlyphId);
-
-    
+  
 
 
 
 
-    void RenderGlyph(gfxContext *aContext, uint32_t aGlyphId,
-                     mozilla::SVGContextPaint* aContextPaint);
 
-    
+  gfxSVGGlyphsDocument *FindOrCreateGlyphsDocument(uint32_t aGlyphId);
 
-
+  
 
 
-    bool GetGlyphExtents(uint32_t aGlyphId, const gfxMatrix& aSVGToAppSpace,
-                         gfxRect *aResult);
+  bool HasSVGGlyph(uint32_t aGlyphId);
 
-    size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  
 
-private:
-    Element *GetGlyphElement(uint32_t aGlyphId);
 
-    nsClassHashtable<nsUint32HashKey, gfxSVGGlyphsDocument> mGlyphDocs;
-    nsBaseHashtable<nsUint32HashKey, Element*, Element*> mGlyphIdMap;
 
-    hb_blob_t *mSVGData;
 
-    
-    gfxFontEntry* MOZ_NON_OWNING_REF mFontEntry;
+  void RenderGlyph(gfxContext *aContext, uint32_t aGlyphId,
+                   mozilla::SVGContextPaint *aContextPaint);
 
-    const struct Header {
-        mozilla::AutoSwap_PRUint16 mVersion;
-        mozilla::AutoSwap_PRUint32 mDocIndexOffset;
-        mozilla::AutoSwap_PRUint32 mColorPalettesOffset;
-    } *mHeader;
+  
 
-    struct IndexEntry {
-        mozilla::AutoSwap_PRUint16 mStartGlyph;
-        mozilla::AutoSwap_PRUint16 mEndGlyph;
-        mozilla::AutoSwap_PRUint32 mDocOffset;
-        mozilla::AutoSwap_PRUint32 mDocLength;
-    };
 
-    const struct DocIndex {
-      mozilla::AutoSwap_PRUint16 mNumEntries;
-      IndexEntry mEntries[1]; 
-    } *mDocIndex;
 
-    static int CompareIndexEntries(const void *_a, const void *_b);
+
+  bool GetGlyphExtents(uint32_t aGlyphId, const gfxMatrix &aSVGToAppSpace,
+                       gfxRect *aResult);
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+ private:
+  Element *GetGlyphElement(uint32_t aGlyphId);
+
+  nsClassHashtable<nsUint32HashKey, gfxSVGGlyphsDocument> mGlyphDocs;
+  nsBaseHashtable<nsUint32HashKey, Element *, Element *> mGlyphIdMap;
+
+  hb_blob_t *mSVGData;
+
+  
+  gfxFontEntry *MOZ_NON_OWNING_REF mFontEntry;
+
+  const struct Header {
+    mozilla::AutoSwap_PRUint16 mVersion;
+    mozilla::AutoSwap_PRUint32 mDocIndexOffset;
+    mozilla::AutoSwap_PRUint32 mColorPalettesOffset;
+  } * mHeader;
+
+  struct IndexEntry {
+    mozilla::AutoSwap_PRUint16 mStartGlyph;
+    mozilla::AutoSwap_PRUint16 mEndGlyph;
+    mozilla::AutoSwap_PRUint32 mDocOffset;
+    mozilla::AutoSwap_PRUint32 mDocLength;
+  };
+
+  const struct DocIndex {
+    mozilla::AutoSwap_PRUint16 mNumEntries;
+    IndexEntry mEntries[1]; 
+  } * mDocIndex;
+
+  static int CompareIndexEntries(const void *_a, const void *_b);
 };
 
 
@@ -176,73 +175,65 @@ private:
 
 
 
-class SimpleTextContextPaint : public mozilla::SVGContextPaint
-{
-private:
-    static const mozilla::gfx::Color sZero;
+class SimpleTextContextPaint : public mozilla::SVGContextPaint {
+ private:
+  static const mozilla::gfx::Color sZero;
 
-    static gfxMatrix SetupDeviceToPatternMatrix(gfxPattern *aPattern,
-                                                const gfxMatrix& aCTM)
-    {
-        if (!aPattern) {
-            return gfxMatrix();
-        }
-        gfxMatrix deviceToUser = aCTM;
-        if (!deviceToUser.Invert()) {
-            return gfxMatrix(0, 0, 0, 0, 0, 0); 
-        }
-        return deviceToUser * aPattern->GetMatrix();
+  static gfxMatrix SetupDeviceToPatternMatrix(gfxPattern *aPattern,
+                                              const gfxMatrix &aCTM) {
+    if (!aPattern) {
+      return gfxMatrix();
     }
-
-public:
-    SimpleTextContextPaint(gfxPattern *aFillPattern, gfxPattern *aStrokePattern,
-                          const gfxMatrix& aCTM) :
-        mFillPattern(aFillPattern ? aFillPattern : new gfxPattern(sZero)),
-        mStrokePattern(aStrokePattern ? aStrokePattern : new gfxPattern(sZero))
-    {
-        mFillMatrix = SetupDeviceToPatternMatrix(aFillPattern, aCTM);
-        mStrokeMatrix = SetupDeviceToPatternMatrix(aStrokePattern, aCTM);
+    gfxMatrix deviceToUser = aCTM;
+    if (!deviceToUser.Invert()) {
+      return gfxMatrix(0, 0, 0, 0, 0, 0);  
     }
+    return deviceToUser * aPattern->GetMatrix();
+  }
 
-    already_AddRefed<gfxPattern>
-    GetFillPattern(const DrawTarget* aDrawTarget,
-                   float aOpacity,
-                   const gfxMatrix& aCTM,
-                   imgDrawingParams& aImgParams) override {
-        if (mFillPattern) {
-            mFillPattern->SetMatrix(aCTM * mFillMatrix);
-        }
-        RefPtr<gfxPattern> fillPattern = mFillPattern;
-        return fillPattern.forget();
+ public:
+  SimpleTextContextPaint(gfxPattern *aFillPattern, gfxPattern *aStrokePattern,
+                         const gfxMatrix &aCTM)
+      : mFillPattern(aFillPattern ? aFillPattern : new gfxPattern(sZero)),
+        mStrokePattern(aStrokePattern ? aStrokePattern
+                                      : new gfxPattern(sZero)) {
+    mFillMatrix = SetupDeviceToPatternMatrix(aFillPattern, aCTM);
+    mStrokeMatrix = SetupDeviceToPatternMatrix(aStrokePattern, aCTM);
+  }
+
+  already_AddRefed<gfxPattern> GetFillPattern(
+      const DrawTarget *aDrawTarget, float aOpacity, const gfxMatrix &aCTM,
+      imgDrawingParams &aImgParams) override {
+    if (mFillPattern) {
+      mFillPattern->SetMatrix(aCTM * mFillMatrix);
     }
+    RefPtr<gfxPattern> fillPattern = mFillPattern;
+    return fillPattern.forget();
+  }
 
-    already_AddRefed<gfxPattern>
-    GetStrokePattern(const DrawTarget* aDrawTarget,
-                     float aOpacity,
-                     const gfxMatrix& aCTM,
-                     imgDrawingParams& aImgParams) override {
-        if (mStrokePattern) {
-            mStrokePattern->SetMatrix(aCTM * mStrokeMatrix);
-        }
-        RefPtr<gfxPattern> strokePattern = mStrokePattern;
-        return strokePattern.forget();
+  already_AddRefed<gfxPattern> GetStrokePattern(
+      const DrawTarget *aDrawTarget, float aOpacity, const gfxMatrix &aCTM,
+      imgDrawingParams &aImgParams) override {
+    if (mStrokePattern) {
+      mStrokePattern->SetMatrix(aCTM * mStrokeMatrix);
     }
+    RefPtr<gfxPattern> strokePattern = mStrokePattern;
+    return strokePattern.forget();
+  }
 
-    float GetFillOpacity() const override {
-        return mFillPattern ? 1.0f : 0.0f;
-    }
+  float GetFillOpacity() const override { return mFillPattern ? 1.0f : 0.0f; }
 
-    float GetStrokeOpacity() const override {
-        return mStrokePattern ? 1.0f : 0.0f;
-    }
+  float GetStrokeOpacity() const override {
+    return mStrokePattern ? 1.0f : 0.0f;
+  }
 
-private:
-    RefPtr<gfxPattern> mFillPattern;
-    RefPtr<gfxPattern> mStrokePattern;
+ private:
+  RefPtr<gfxPattern> mFillPattern;
+  RefPtr<gfxPattern> mStrokePattern;
 
-    
-    gfxMatrix mFillMatrix;
-    gfxMatrix mStrokeMatrix;
+  
+  gfxMatrix mFillMatrix;
+  gfxMatrix mStrokeMatrix;
 };
 
 #endif

@@ -15,42 +15,43 @@
 
 namespace mozilla {
 
-enum nsDateFormatSelector : long
-{
+enum nsDateFormatSelector : long {
   
-  kDateFormatNone = 0,            
-  kDateFormatLong,                
-  kDateFormatShort,               
-  kDateFormatYearMonth,           
-  kDateFormatWeekday,             
-  kDateFormatYearMonthLong,       
-  kDateFormatMonthLong            
+  kDateFormatNone = 0,   
+  kDateFormatLong,       
+  kDateFormatShort,      
+  kDateFormatYearMonth,  
+  kDateFormatWeekday,    
+  kDateFormatYearMonthLong,  
+  kDateFormatMonthLong       
 };
 
-enum nsTimeFormatSelector : long
-{
-  kTimeFormatNone = 0,            
-  kTimeFormatSeconds,             
-  kTimeFormatNoSeconds            
+enum nsTimeFormatSelector : long {
+  kTimeFormatNone = 0,  
+  kTimeFormatSeconds,   
+                        
+  kTimeFormatNoSeconds  
+                        
 };
 
 class DateTimeFormat {
-public:
+ public:
+  
   
   static nsresult FormatPRTime(const nsDateFormatSelector aDateFormatSelector,
                                const nsTimeFormatSelector aTimeFormatSelector,
-                               const PRTime aPrTime,
-                               nsAString& aStringOut);
+                               const PRTime aPrTime, nsAString& aStringOut);
 
   
-  static nsresult FormatPRExplodedTime(const nsDateFormatSelector aDateFormatSelector,
-                                       const nsTimeFormatSelector aTimeFormatSelector,
-                                       const PRExplodedTime* aExplodedTime,
-                                       nsAString& aStringOut);
+  
+  static nsresult FormatPRExplodedTime(
+      const nsDateFormatSelector aDateFormatSelector,
+      const nsTimeFormatSelector aTimeFormatSelector,
+      const PRExplodedTime* aExplodedTime, nsAString& aStringOut);
 
   static void Shutdown();
 
-private:
+ private:
   DateTimeFormat() = delete;
 
   static nsresult Initialize();
@@ -61,15 +62,15 @@ private:
   FRIEND_TEST(DateTimeFormat, DateFormatSelectorsForeign);
 
   
-  static nsresult FormatUDateTime(const nsDateFormatSelector aDateFormatSelector,
-                                  const nsTimeFormatSelector aTimeFormatSelector,
-                                  const UDate aUDateTime,
-                                  const PRTimeParameters* aTimeParameters,
-                                  nsAString& aStringOut);
+  
+  static nsresult FormatUDateTime(
+      const nsDateFormatSelector aDateFormatSelector,
+      const nsTimeFormatSelector aTimeFormatSelector, const UDate aUDateTime,
+      const PRTimeParameters* aTimeParameters, nsAString& aStringOut);
 
   static nsCString* mLocale;
 };
 
-}
+}  
 
-#endif  
+#endif 

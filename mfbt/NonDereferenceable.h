@@ -47,15 +47,11 @@ namespace mozilla {
 
 
 
-template<typename T>
-class NonDereferenceable
-{
-public:
+template <typename T>
+class NonDereferenceable {
+ public:
   
-  NonDereferenceable()
-    : mPtr(nullptr)
-  {
-  }
+  NonDereferenceable() : mPtr(nullptr) {}
 
   
   NO_POINTEE_CHECKS
@@ -72,49 +68,39 @@ public:
   
   
   NO_POINTEE_CHECKS
-  explicit NonDereferenceable(T* aPtr)
-    : mPtr(aPtr)
-  {
-  }
+  explicit NonDereferenceable(T* aPtr) : mPtr(aPtr) {}
   NO_POINTEE_CHECKS
-  NonDereferenceable& operator=(T* aPtr)
-  {
+  NonDereferenceable& operator=(T* aPtr) {
     mPtr = aPtr;
     return *this;
   }
 
   
-  template<typename U>
+  template <typename U>
   NO_POINTEE_CHECKS explicit NonDereferenceable(U* aOther)
-    : mPtr(static_cast<T*>(aOther))
-  {
-  }
-  template<typename U>
-  NO_POINTEE_CHECKS NonDereferenceable& operator=(U* aOther)
-  {
+      : mPtr(static_cast<T*>(aOther)) {}
+  template <typename U>
+  NO_POINTEE_CHECKS NonDereferenceable& operator=(U* aOther) {
     mPtr = static_cast<T*>(aOther);
     return *this;
   }
 
   
-  template<typename U>
+  template <typename U>
   NO_POINTEE_CHECKS MOZ_IMPLICIT
   NonDereferenceable(const NonDereferenceable<U>& aOther)
-    : mPtr(static_cast<T*>(aOther.mPtr))
-  {
-  }
-  template<typename U>
+      : mPtr(static_cast<T*>(aOther.mPtr)) {}
+  template <typename U>
   NO_POINTEE_CHECKS NonDereferenceable& operator=(
-    const NonDereferenceable<U>& aOther)
-  {
+      const NonDereferenceable<U>& aOther) {
     mPtr = static_cast<T*>(aOther.mPtr);
     return *this;
   }
 
   
   
-  T& operator*() = delete;  
-  T* operator->() = delete; 
+  T& operator*() = delete;   
+  T* operator->() = delete;  
 
   
   NO_POINTEE_CHECKS
@@ -124,15 +110,16 @@ public:
   NO_POINTEE_CHECKS
   uintptr_t value() const { return reinterpret_cast<uintptr_t>(mPtr); }
 
-private:
+ private:
   
   
-  template<typename> friend class NonDereferenceable;
+  template <typename>
+  friend class NonDereferenceable;
 
   T* MOZ_NON_OWNING_REF mPtr;
 };
 
-} 
+}  
 
 #undef NO_POINTEE_CHECKS
 

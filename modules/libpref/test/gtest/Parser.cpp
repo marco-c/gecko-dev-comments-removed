@@ -13,25 +13,24 @@ using namespace mozilla;
 
 
 
-void
-TestParseError(PrefValueKind aKind, const char* aText, nsCString& aErrorMsg);
+void TestParseError(PrefValueKind aKind, const char* aText,
+                    nsCString& aErrorMsg);
 
-TEST(PrefsParser, Errors)
-{
+TEST(PrefsParser, Errors) {
   nsAutoCStringN<128> actualErrorMsg;
 
 
 
-#define P(kind_, text_, expectedErrorMsg_)                                     \
-  do {                                                                         \
-    TestParseError(kind_, text_, actualErrorMsg);                              \
-    ASSERT_STREQ(expectedErrorMsg_, actualErrorMsg.get());                     \
+#define P(kind_, text_, expectedErrorMsg_)                 \
+  do {                                                     \
+    TestParseError(kind_, text_, actualErrorMsg);          \
+    ASSERT_STREQ(expectedErrorMsg_, actualErrorMsg.get()); \
   } while (0)
 
-#define DEFAULT(text_, expectedErrorMsg_)                                      \
+#define DEFAULT(text_, expectedErrorMsg_) \
   P(PrefValueKind::Default, text_, expectedErrorMsg_)
 
-#define USER(text_, expectedErrorMsg_)                                         \
+#define USER(text_, expectedErrorMsg_) \
   P(PrefValueKind::User, text_, expectedErrorMsg_)
 
   

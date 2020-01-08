@@ -11,7 +11,7 @@
 #include "mozilla/TimeStamp.h"
 
 #include "threading/ConditionVariable.h"
-#include "threading/ProtectedData.h" 
+#include "threading/ProtectedData.h"  
 #include "vm/JSObject.h"
 #include "vm/MutexIDs.h"
 #include "vm/NativeObject.h"
@@ -21,15 +21,16 @@ namespace js {
 class GlobalObject;
 class SharedArrayRawBuffer;
 
-class AtomicsObject : public NativeObject
-{
-  public:
-    static const Class class_;
-    static JSObject* initClass(JSContext* cx, Handle<GlobalObject*> global);
-    static MOZ_MUST_USE bool toString(JSContext* cx, unsigned int argc, Value* vp);
+class AtomicsObject : public NativeObject {
+ public:
+  static const Class class_;
+  static JSObject* initClass(JSContext* cx, Handle<GlobalObject*> global);
+  static MOZ_MUST_USE bool toString(JSContext* cx, unsigned int argc,
+                                    Value* vp);
 };
 
-MOZ_MUST_USE bool atomics_compareExchange(JSContext* cx, unsigned argc, Value* vp);
+MOZ_MUST_USE bool atomics_compareExchange(JSContext* cx, unsigned argc,
+                                          Value* vp);
 MOZ_MUST_USE bool atomics_exchange(JSContext* cx, unsigned argc, Value* vp);
 MOZ_MUST_USE bool atomics_load(JSContext* cx, unsigned argc, Value* vp);
 MOZ_MUST_USE bool atomics_store(JSContext* cx, unsigned argc, Value* vp);
@@ -42,127 +43,123 @@ MOZ_MUST_USE bool atomics_isLockFree(JSContext* cx, unsigned argc, Value* vp);
 MOZ_MUST_USE bool atomics_wait(JSContext* cx, unsigned argc, Value* vp);
 MOZ_MUST_USE bool atomics_notify(JSContext* cx, unsigned argc, Value* vp);
 
-class FutexThread
-{
-    friend class AutoLockFutexAPI;
+class FutexThread {
+  friend class AutoLockFutexAPI;
 
-public:
-    static MOZ_MUST_USE bool initialize();
-    static void destroy();
+ public:
+  static MOZ_MUST_USE bool initialize();
+  static void destroy();
 
-    static void lock();
-    static void unlock();
+  static void lock();
+  static void unlock();
 
-    FutexThread();
-    MOZ_MUST_USE bool initInstance();
-    void destroyInstance();
+  FutexThread();
+  MOZ_MUST_USE bool initInstance();
+  void destroyInstance();
 
-    
-    enum NotifyReason {
-        NotifyExplicit,           
-        NotifyForJSInterrupt      
-    };
+  
+  enum NotifyReason {
+    NotifyExplicit,       
+    NotifyForJSInterrupt  
+  };
 
-    
-    enum class WaitResult {
-        Error,                  
-        NotEqual,               
-        OK,                     
-        TimedOut                
-    };
+  
+  enum class WaitResult {
+    Error,     
+    NotEqual,  
+    OK,        
+    TimedOut   
+  };
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE WaitResult wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
-                                 const mozilla::Maybe<mozilla::TimeDuration>& timeout);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE WaitResult
+  wait(JSContext* cx, js::UniqueLock<js::Mutex>& locked,
+       const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    void notify(NotifyReason reason);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void notify(NotifyReason reason);
 
-    bool isWaiting();
+  bool isWaiting();
 
-    
-    
-    bool canWait() {
-        return canWait_;
-    }
+  
+  
+  bool canWait() { return canWait_; }
 
-    void setCanWait(bool flag) {
-        canWait_ = flag;
-    }
+  void setCanWait(bool flag) { canWait_ = flag; }
 
-  private:
-    enum FutexState {
-        Idle,                        
-        Waiting,                     
-        WaitingNotifiedForInterrupt, 
-                                     
-                                     
-        WaitingInterrupted,          
-                                     
-        Woken                        
-    };
+ private:
+  enum FutexState {
+    Idle,                         
+    Waiting,                      
+    WaitingNotifiedForInterrupt,  
+                                  
+                                  
+    WaitingInterrupted,           
+                                  
+    Woken                         
+  };
 
-    
-    js::ConditionVariable* cond_;
+  
+  js::ConditionVariable* cond_;
 
-    
-    
-    
-    FutexState state_;
+  
+  
+  
+  FutexState state_;
 
-    
-    
-    
-    static mozilla::Atomic<js::Mutex*, mozilla::SequentiallyConsistent,
-                           mozilla::recordreplay::Behavior::DontPreserve> lock_;
+  
+  
+  
+  static mozilla::Atomic<js::Mutex*, mozilla::SequentiallyConsistent,
+                         mozilla::recordreplay::Behavior::DontPreserve>
+      lock_;
 
-    
-    ThreadData<bool> canWait_;
+  
+  ThreadData<bool> canWait_;
 };
 
-JSObject*
-InitAtomicsClass(JSContext* cx, Handle<GlobalObject*> global);
+JSObject* InitAtomicsClass(JSContext* cx, Handle<GlobalObject*> global);
 
 
-MOZ_MUST_USE FutexThread::WaitResult
-atomics_wait_impl(JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset, int32_t value,
-                  const mozilla::Maybe<mozilla::TimeDuration>& timeout);
+MOZ_MUST_USE FutexThread::WaitResult atomics_wait_impl(
+    JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset,
+    int32_t value, const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
 
-MOZ_MUST_USE FutexThread::WaitResult
-atomics_wait_impl(JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t value,
-                  const mozilla::Maybe<mozilla::TimeDuration>& timeout);
-
-
+MOZ_MUST_USE FutexThread::WaitResult atomics_wait_impl(
+    JSContext* cx, SharedArrayRawBuffer* sarb, uint32_t byteOffset,
+    int64_t value, const mozilla::Maybe<mozilla::TimeDuration>& timeout);
 
 
 
-MOZ_MUST_USE int64_t
-atomics_notify_impl(SharedArrayRawBuffer* sarb, uint32_t byteOffset, int64_t count);
 
-}  
+
+MOZ_MUST_USE int64_t atomics_notify_impl(SharedArrayRawBuffer* sarb,
+                                         uint32_t byteOffset, int64_t count);
+
+} 
 
 #endif 

@@ -20,37 +20,30 @@ namespace mozilla {
 namespace ipc {
 
 class ProcessChild : public ChildProcess {
-protected:
+ protected:
   typedef base::ProcessId ProcessId;
 
-public:
+ public:
   explicit ProcessChild(ProcessId aParentPid);
   virtual ~ProcessChild();
 
   virtual bool Init(int aArgc, char* aArgv[]) = 0;
-  virtual void CleanUp()
-  { }
+  virtual void CleanUp() {}
 
-  static MessageLoop* message_loop() {
-    return gProcessChild->mUILoop;
-  }
+  static MessageLoop* message_loop() { return gProcessChild->mUILoop; }
 
-    
+  
 
 
 
   static void QuickExit();
 
-protected:
-  static ProcessChild* current() {
-    return gProcessChild;
-  }
+ protected:
+  static ProcessChild* current() { return gProcessChild; }
 
-  ProcessId ParentPid() {
-    return mParentPid;
-  }
+  ProcessId ParentPid() { return mParentPid; }
 
-private:
+ private:
   static ProcessChild* gProcessChild;
 
   MessageLoop* mUILoop;
@@ -59,8 +52,7 @@ private:
   DISALLOW_EVIL_CONSTRUCTORS(ProcessChild);
 };
 
-} 
-} 
+}  
+}  
 
-
-#endif 
+#endif  

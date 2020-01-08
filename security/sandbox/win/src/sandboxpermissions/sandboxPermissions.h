@@ -13,16 +13,15 @@
 namespace mozilla {
 
 namespace sandboxing {
-  class PermissionsService;
+class PermissionsService;
 }
 
 
 
 
 
-class SandboxPermissions
-{
-public:
+class SandboxPermissions {
+ public:
   
 
 
@@ -48,10 +47,10 @@ public:
 
   void RemovePermissionsForProcess(uint32_t aProcessId);
 
-private:
+ private:
   static sandboxing::PermissionsService* sPermissionsService;
 };
 
-} 
+}  
 
 #endif  

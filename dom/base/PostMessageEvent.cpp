@@ -34,25 +34,19 @@ PostMessageEvent::PostMessageEvent(nsGlobalWindowOuter* aSource,
                                    nsGlobalWindowOuter* aTargetWindow,
                                    nsIPrincipal* aProvidedPrincipal,
                                    nsIDocument* aSourceDocument)
-  : Runnable("dom::PostMessageEvent")
-  , StructuredCloneHolder(CloningSupported,
-                          TransferringSupported,
-                          StructuredCloneScope::SameProcessSameThread)
-  , mSource(aSource)
-  , mCallerOrigin(aCallerOrigin)
-  , mTargetWindow(aTargetWindow)
-  , mProvidedPrincipal(aProvidedPrincipal)
-  , mSourceDocument(aSourceDocument)
-{
-}
+    : Runnable("dom::PostMessageEvent"),
+      StructuredCloneHolder(CloningSupported, TransferringSupported,
+                            StructuredCloneScope::SameProcessSameThread),
+      mSource(aSource),
+      mCallerOrigin(aCallerOrigin),
+      mTargetWindow(aTargetWindow),
+      mProvidedPrincipal(aProvidedPrincipal),
+      mSourceDocument(aSourceDocument) {}
 
-PostMessageEvent::~PostMessageEvent()
-{
-}
+PostMessageEvent::~PostMessageEvent() {}
 
 NS_IMETHODIMP
-PostMessageEvent::Run()
-{
+PostMessageEvent::Run() {
   
   
   
@@ -90,8 +84,7 @@ PostMessageEvent::Run()
     
     
     nsIPrincipal* targetPrin = targetWindow->GetPrincipal();
-    if (NS_WARN_IF(!targetPrin))
-      return NS_OK;
+    if (NS_WARN_IF(!targetPrin)) return NS_OK;
 
     
     
@@ -102,12 +95,16 @@ PostMessageEvent::Run()
       OriginAttributes sourceAttrs = mProvidedPrincipal->OriginAttributesRef();
       OriginAttributes targetAttrs = targetPrin->OriginAttributesRef();
 
-      MOZ_DIAGNOSTIC_ASSERT(sourceAttrs.mAppId == targetAttrs.mAppId,
-        "Target and source should have the same mAppId attribute.");
-      MOZ_DIAGNOSTIC_ASSERT(sourceAttrs.mUserContextId == targetAttrs.mUserContextId,
-        "Target and source should have the same userContextId attribute.");
-      MOZ_DIAGNOSTIC_ASSERT(sourceAttrs.mInIsolatedMozBrowser == targetAttrs.mInIsolatedMozBrowser,
-        "Target and source should have the same inIsolatedMozBrowser attribute.");
+      MOZ_DIAGNOSTIC_ASSERT(
+          sourceAttrs.mAppId == targetAttrs.mAppId,
+          "Target and source should have the same mAppId attribute.");
+      MOZ_DIAGNOSTIC_ASSERT(
+          sourceAttrs.mUserContextId == targetAttrs.mUserContextId,
+          "Target and source should have the same userContextId attribute.");
+      MOZ_DIAGNOSTIC_ASSERT(sourceAttrs.mInIsolatedMozBrowser ==
+                                targetAttrs.mInIsolatedMozBrowser,
+                            "Target and source should have the same "
+                            "inIsolatedMozBrowser attribute.");
 
       nsAutoString providedOrigin, targetOrigin;
       nsresult rv = nsContentUtils::GetUTFOrigin(targetPrin, targetOrigin);
@@ -115,13 +112,12 @@ PostMessageEvent::Run()
       rv = nsContentUtils::GetUTFOrigin(mProvidedPrincipal, providedOrigin);
       NS_ENSURE_SUCCESS(rv, rv);
 
-      const char16_t* params[] = { providedOrigin.get(), targetOrigin.get() };
+      const char16_t* params[] = {providedOrigin.get(), targetOrigin.get()};
 
-      nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-        NS_LITERAL_CSTRING("DOM Window"), sourceDocument,
-        nsContentUtils::eDOM_PROPERTIES,
-        "TargetPrincipalDoesNotMatch",
-        params, ArrayLength(params));
+      nsContentUtils::ReportToConsole(
+          nsIScriptError::errorFlag, NS_LITERAL_CSTRING("DOM Window"),
+          sourceDocument, nsContentUtils::eDOM_PROPERTIES,
+          "TargetPrincipalDoesNotMatch", params, ArrayLength(params));
 
       return NS_OK;
     }
@@ -129,7 +125,8 @@ PostMessageEvent::Run()
 
   IgnoredErrorResult rv;
   JS::Rooted<JS::Value> messageData(cx);
-  nsCOMPtr<mozilla::dom::EventTarget> eventTarget = do_QueryObject(targetWindow);
+  nsCOMPtr<mozilla::dom::EventTarget> eventTarget =
+      do_QueryObject(targetWindow);
 
   Read(targetWindow->AsInner(), cx, &messageData, rv);
   if (NS_WARN_IF(rv.Failed())) {
@@ -140,7 +137,6 @@ PostMessageEvent::Run()
   
   RefPtr<MessageEvent> event = new MessageEvent(eventTarget, nullptr, nullptr);
 
-
   Nullable<WindowProxyOrMessagePortOrServiceWorker> source;
   source.SetValue().SetAsWindowProxy() = mSource ? mSource->AsOuter() : nullptr;
 
@@ -150,19 +146,17 @@ PostMessageEvent::Run()
     return NS_OK;
   }
 
-  event->InitMessageEvent(nullptr, NS_LITERAL_STRING("message"),
-                          CanBubble::eNo, Cancelable::eNo,
-                          messageData, mCallerOrigin,
+  event->InitMessageEvent(nullptr, NS_LITERAL_STRING("message"), CanBubble::eNo,
+                          Cancelable::eNo, messageData, mCallerOrigin,
                           EmptyString(), source, ports);
 
   Dispatch(targetWindow, event);
   return NS_OK;
 }
 
-void
-PostMessageEvent::DispatchError(JSContext* aCx, nsGlobalWindowInner* aTargetWindow,
-                                mozilla::dom::EventTarget* aEventTarget)
-{
+void PostMessageEvent::DispatchError(JSContext* aCx,
+                                     nsGlobalWindowInner* aTargetWindow,
+                                     mozilla::dom::EventTarget* aEventTarget) {
   RootedDictionary<MessageEventInit> init(aCx);
   init.mBubbles = false;
   init.mCancelable = false;
@@ -172,33 +166,28 @@ PostMessageEvent::DispatchError(JSContext* aCx, nsGlobalWindowInner* aTargetWind
     init.mSource.SetValue().SetAsWindowProxy() = mSource->AsOuter();
   }
 
-  RefPtr<Event> event =
-    MessageEvent::Constructor(aEventTarget, NS_LITERAL_STRING("messageerror"),
-                              init);
+  RefPtr<Event> event = MessageEvent::Constructor(
+      aEventTarget, NS_LITERAL_STRING("messageerror"), init);
   Dispatch(aTargetWindow, event);
 }
 
-void
-PostMessageEvent::Dispatch(nsGlobalWindowInner* aTargetWindow, Event* aEvent)
-{
+void PostMessageEvent::Dispatch(nsGlobalWindowInner* aTargetWindow,
+                                Event* aEvent) {
   
   
   
   
 
   RefPtr<nsPresContext> presContext =
-    aTargetWindow->GetExtantDoc()->GetPresContext();
+      aTargetWindow->GetExtantDoc()->GetPresContext();
 
   aEvent->SetTrusted(true);
   WidgetEvent* internalEvent = aEvent->WidgetEventPtr();
 
   nsEventStatus status = nsEventStatus_eIgnore;
-  EventDispatcher::Dispatch(aTargetWindow->AsInner(),
-                            presContext,
-                            internalEvent,
-                            aEvent,
-                            &status);
+  EventDispatcher::Dispatch(aTargetWindow->AsInner(), presContext,
+                            internalEvent, aEvent, &status);
 }
 
-} 
-} 
+}  
+}  

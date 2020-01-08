@@ -14,15 +14,12 @@ namespace a11y {
 
 
 
-class CheckboxAccessible : public LeafAccessible
-{
-
-public:
+class CheckboxAccessible : public LeafAccessible {
+ public:
   enum { eAction_Click = 0 };
 
-  CheckboxAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    LeafAccessible(aContent, aDoc)
-  {
+  CheckboxAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : LeafAccessible(aContent, aDoc) {
     
     
     if (aContent->IsHTMLElement()) {
@@ -46,10 +43,8 @@ public:
 
 
 
-class RadioButtonAccessible : public LeafAccessible
-{
-
-public:
+class RadioButtonAccessible : public LeafAccessible {
+ public:
   RadioButtonAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -66,8 +61,7 @@ public:
   virtual bool IsWidget() const override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif
-

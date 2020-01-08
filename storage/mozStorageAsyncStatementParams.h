@@ -17,25 +17,20 @@ namespace storage {
 
 class AsyncStatement;
 
-class AsyncStatementParams final : public nsISupports
-                                 , public nsWrapperCache
-{
-public:
+class AsyncStatementParams final : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(AsyncStatementParams)
 
-  explicit AsyncStatementParams(nsPIDOMWindowInner* aWindow, AsyncStatement* aStatement);
+  explicit AsyncStatementParams(nsPIDOMWindowInner* aWindow,
+                                AsyncStatement* aStatement);
 
-  void NamedGetter(JSContext* aCx,
-                   const nsAString& aName,
-                   bool& aFound,
+  void NamedGetter(JSContext* aCx, const nsAString& aName, bool& aFound,
                    JS::MutableHandle<JS::Value> aResult,
                    mozilla::ErrorResult& aRv);
 
-  void NamedSetter(JSContext* aCx,
-                   const nsAString& aName,
-                   JS::Handle<JS::Value> aValue,
-                   mozilla::ErrorResult& aRv);
+  void NamedSetter(JSContext* aCx, const nsAString& aName,
+                   JS::Handle<JS::Value> aValue, mozilla::ErrorResult& aRv);
 
   uint32_t Length() const {
     
@@ -44,27 +39,21 @@ public:
     return UINT16_MAX;
   }
 
-  void IndexedGetter(JSContext* aCx,
-                     uint32_t aIndex,
-                     bool& aFound,
+  void IndexedGetter(JSContext* aCx, uint32_t aIndex, bool& aFound,
                      JS::MutableHandle<JS::Value> aResult,
                      mozilla::ErrorResult& aRv);
 
-  void IndexedSetter(JSContext* aCx,
-                     uint32_t aIndex,
-                     JS::Handle<JS::Value> aValue,
-                     mozilla::ErrorResult& aRv);
+  void IndexedSetter(JSContext* aCx, uint32_t aIndex,
+                     JS::Handle<JS::Value> aValue, mozilla::ErrorResult& aRv);
 
   void GetSupportedNames(nsTArray<nsString>& aNames);
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
-  nsPIDOMWindowInner* GetParentObject() const
-  {
-    return mWindow;
-  }
+  nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
 
-private:
+ private:
   virtual ~AsyncStatementParams() {}
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
@@ -73,7 +62,7 @@ private:
   friend class AsyncStatementParamsHolder;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

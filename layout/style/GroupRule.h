@@ -25,24 +25,20 @@ class StyleSheet;
 
 namespace dom {
 class CSSRuleList;
-} 
+}  
 
 namespace css {
 
 
 
-class GroupRule : public Rule
-{
-protected:
-  GroupRule(already_AddRefed<ServoCssRules> aRules,
-            StyleSheet* aSheet,
-            Rule* aParentRule,
-            uint32_t aLineNumber,
-            uint32_t aColumnNumber);
+class GroupRule : public Rule {
+ protected:
+  GroupRule(already_AddRefed<ServoCssRules> aRules, StyleSheet* aSheet,
+            Rule* aParentRule, uint32_t aLineNumber, uint32_t aColumnNumber);
   GroupRule(const GroupRule& aCopy) = delete;
   virtual ~GroupRule();
-public:
 
+ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(GroupRule, Rule)
   NS_DECL_ISUPPORTS_INHERITED
   virtual bool IsCCLeaf() const override;
@@ -52,8 +48,7 @@ public:
 #endif
   void DropSheetReference() override;
 
-public:
-
+ public:
   int32_t StyleRuleCount() const { return mRuleList->Length(); }
 
   Rule* GetStyleRuleAt(int32_t aIndex) const {
@@ -70,7 +65,8 @@ public:
 
   
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override = 0;
+  virtual size_t SizeOfIncludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) const override = 0;
 
   
   dom::CSSRuleList* CssRules() { return mRuleList; }
@@ -78,23 +74,22 @@ public:
                       ErrorResult& aRv);
   void DeleteRule(uint32_t aIndex, ErrorResult& aRv);
 
-private:
+ private:
   RefPtr<ServoCSSRuleList> mRuleList;
 };
 
 
-class ConditionRule : public GroupRule
-{
-protected:
+class ConditionRule : public GroupRule {
+ protected:
   using GroupRule::GroupRule;
 
-public:
+ public:
   virtual void GetConditionText(nsAString& aConditionText) = 0;
   virtual void SetConditionText(const nsAString& aConditionText,
                                 ErrorResult& aRv) = 0;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

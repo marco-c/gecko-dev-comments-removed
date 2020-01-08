@@ -54,41 +54,36 @@ using namespace mozilla::hal;
 
 
 #if defined(ANDROID) && defined(ENABLE_LOGGING)
-#  include <android/log.h>
-#  define LOG(fmt, ...) \
-     __android_log_print(ANDROID_LOG_INFO, \
-       "Gecko:ProcessPriorityManager", \
-       fmt, ## __VA_ARGS__)
-#  define LOGP(fmt, ...) \
-    __android_log_print(ANDROID_LOG_INFO, \
-      "Gecko:ProcessPriorityManager", \
-      "[%schild-id=%" PRIu64 ", pid=%d] " fmt, \
-      NameWithComma().get(), \
-      static_cast<uint64_t>(ChildID()), Pid(), ## __VA_ARGS__)
+#include <android/log.h>
+#define LOG(fmt, ...)                                                        \
+  __android_log_print(ANDROID_LOG_INFO, "Gecko:ProcessPriorityManager", fmt, \
+                      ##__VA_ARGS__)
+#define LOGP(fmt, ...)                                                         \
+  __android_log_print(ANDROID_LOG_INFO, "Gecko:ProcessPriorityManager",        \
+                      "[%schild-id=%" PRIu64 ", pid=%d] " fmt,                 \
+                      NameWithComma().get(), static_cast<uint64_t>(ChildID()), \
+                      Pid(), ##__VA_ARGS__)
 
 #elif defined(ENABLE_LOGGING)
-#  define LOG(fmt, ...) \
-     printf("ProcessPriorityManager - " fmt "\n", ##__VA_ARGS__)
-#  define LOGP(fmt, ...) \
-     printf("ProcessPriorityManager[%schild-id=%" PRIu64 ", pid=%d] - " \
-       fmt "\n", \
-       NameWithComma().get(), \
-       static_cast<uint64_t>(ChildID()), Pid(), ##__VA_ARGS__)
+#define LOG(fmt, ...) \
+  printf("ProcessPriorityManager - " fmt "\n", ##__VA_ARGS__)
+#define LOGP(fmt, ...)                                                         \
+  printf("ProcessPriorityManager[%schild-id=%" PRIu64 ", pid=%d] - " fmt "\n", \
+         NameWithComma().get(), static_cast<uint64_t>(ChildID()), Pid(),       \
+         ##__VA_ARGS__)
 #else
-  static LogModule*
-  GetPPMLog()
-  {
-    static LazyLogModule sLog("ProcessPriorityManager");
-    return sLog;
-  }
-#  define LOG(fmt, ...) \
-     MOZ_LOG(GetPPMLog(), LogLevel::Debug, \
-            ("ProcessPriorityManager - " fmt, ##__VA_ARGS__))
-#  define LOGP(fmt, ...) \
-     MOZ_LOG(GetPPMLog(), LogLevel::Debug, \
-            ("ProcessPriorityManager[%schild-id=%" PRIu64 ", pid=%d] - " fmt, \
-            NameWithComma().get(), \
-            static_cast<uint64_t>(ChildID()), Pid(), ##__VA_ARGS__))
+static LogModule* GetPPMLog() {
+  static LazyLogModule sLog("ProcessPriorityManager");
+  return sLog;
+}
+#define LOG(fmt, ...)                   \
+  MOZ_LOG(GetPPMLog(), LogLevel::Debug, \
+          ("ProcessPriorityManager - " fmt, ##__VA_ARGS__))
+#define LOGP(fmt, ...)                                                      \
+  MOZ_LOG(GetPPMLog(), LogLevel::Debug,                                     \
+          ("ProcessPriorityManager[%schild-id=%" PRIu64 ", pid=%d] - " fmt, \
+           NameWithComma().get(), static_cast<uint64_t>(ChildID()), Pid(),  \
+           ##__VA_ARGS__))
 #endif
 
 namespace {
@@ -106,12 +101,10 @@ class ParticularProcessPriorityManager;
 
 
 
-class ProcessPriorityManagerImpl final
-  : public nsIObserver
-  , public WakeLockObserver
-  , public nsSupportsWeakReference
-{
-public:
+class ProcessPriorityManagerImpl final : public nsIObserver,
+                                         public WakeLockObserver,
+                                         public nsSupportsWeakReference {
+ public:
   
 
 
@@ -135,16 +128,16 @@ public:
 
 
 
-  void FireTestOnlyObserverNotification(const char* aTopic,
-                                        const nsACString& aData = EmptyCString());
+  void FireTestOnlyObserverNotification(
+      const char* aTopic, const nsACString& aData = EmptyCString());
 
   
 
 
 
   void NotifyProcessPriorityChanged(
-    ParticularProcessPriorityManager* aParticularManager,
-    hal::ProcessPriority aOldPriority);
+      ParticularProcessPriorityManager* aParticularManager,
+      hal::ProcessPriority aOldPriority);
 
   
 
@@ -160,7 +153,7 @@ public:
 
   void ShutDown();
 
-private:
+ private:
   static bool sPrefsEnabled;
   static bool sRemoteTabsDisabled;
   static bool sTestMode;
@@ -183,7 +176,7 @@ private:
   void ObserveContentParentDestroyed(nsISupports* aSubject);
 
   nsDataHashtable<nsUint64HashKey, RefPtr<ParticularProcessPriorityManager> >
-    mParticularManagers;
+      mParticularManagers;
 
   
   bool mHighPriority;
@@ -196,10 +189,8 @@ private:
 
 
 
-class ProcessPriorityManagerChild final
-  : public nsIObserver
-{
-public:
+class ProcessPriorityManagerChild final : public nsIObserver {
+ public:
   static void StaticInit();
   static ProcessPriorityManagerChild* Singleton();
 
@@ -208,7 +199,7 @@ public:
 
   bool CurrentProcessIsForeground();
 
-private:
+ private:
   static StaticRefPtr<ProcessPriorityManagerChild> sSingleton;
 
   ProcessPriorityManagerChild();
@@ -224,15 +215,14 @@ private:
 
 
 
-class ParticularProcessPriorityManager final
-  : public WakeLockObserver
-  , public nsIObserver
-  , public nsITimerCallback
-  , public nsINamed
-  , public nsSupportsWeakReference
-{
+class ParticularProcessPriorityManager final : public WakeLockObserver,
+                                               public nsIObserver,
+                                               public nsITimerCallback,
+                                               public nsINamed,
+                                               public nsSupportsWeakReference {
   ~ParticularProcessPriorityManager();
-public:
+
+ public:
   explicit ParticularProcessPriorityManager(ContentParent* aContentParent);
 
   NS_DECL_ISUPPORTS
@@ -277,23 +267,20 @@ public:
 
   void ShutDown();
 
-  NS_IMETHOD GetName(nsACString& aName) override
-  {
+  NS_IMETHOD GetName(nsACString& aName) override {
     aName.AssignLiteral("ParticularProcessPriorityManager");
     return NS_OK;
   }
 
-private:
+ private:
   static uint32_t sBackgroundPerceivableGracePeriodMS;
   static uint32_t sBackgroundGracePeriodMS;
 
   void FireTestOnlyObserverNotification(
-    const char* aTopic,
-    const nsACString& aData = EmptyCString());
+      const char* aTopic, const nsACString& aData = EmptyCString());
 
-  void FireTestOnlyObserverNotification(
-    const char* aTopic,
-    const char* aData = nullptr);
+  void FireTestOnlyObserverNotification(const char* aTopic,
+                                        const char* aData = nullptr);
 
   ContentParent* mContentParent;
   uint64_t mChildID;
@@ -318,18 +305,17 @@ private:
  bool ProcessPriorityManagerImpl::sTestMode = false;
  bool ProcessPriorityManagerImpl::sPrefListenersRegistered = false;
  StaticRefPtr<ProcessPriorityManagerImpl>
-  ProcessPriorityManagerImpl::sSingleton;
- uint32_t ParticularProcessPriorityManager::sBackgroundPerceivableGracePeriodMS = 0;
- uint32_t ParticularProcessPriorityManager::sBackgroundGracePeriodMS = 0;
+    ProcessPriorityManagerImpl::sSingleton;
+ uint32_t
+    ParticularProcessPriorityManager::sBackgroundPerceivableGracePeriodMS = 0;
+ uint32_t
+    ParticularProcessPriorityManager::sBackgroundGracePeriodMS = 0;
 
-NS_IMPL_ISUPPORTS(ProcessPriorityManagerImpl,
-                  nsIObserver,
+NS_IMPL_ISUPPORTS(ProcessPriorityManagerImpl, nsIObserver,
                   nsISupportsWeakReference);
 
- void
-ProcessPriorityManagerImpl::PrefChangedCallback(const char* aPref,
-                                                void* aClosure)
-{
+ void ProcessPriorityManagerImpl::PrefChangedCallback(
+    const char* aPref, void* aClosure) {
   StaticInit();
   if (!PrefsEnabled() && sSingleton) {
     sSingleton->ShutDown();
@@ -338,21 +324,14 @@ ProcessPriorityManagerImpl::PrefChangedCallback(const char* aPref,
   }
 }
 
- bool
-ProcessPriorityManagerImpl::PrefsEnabled()
-{
-  return sPrefsEnabled && hal::SetProcessPrioritySupported() && !sRemoteTabsDisabled;
+ bool ProcessPriorityManagerImpl::PrefsEnabled() {
+  return sPrefsEnabled && hal::SetProcessPrioritySupported() &&
+         !sRemoteTabsDisabled;
 }
 
- bool
-ProcessPriorityManagerImpl::TestMode()
-{
-  return sTestMode;
-}
+ bool ProcessPriorityManagerImpl::TestMode() { return sTestMode; }
 
- void
-ProcessPriorityManagerImpl::StaticInit()
-{
+ void ProcessPriorityManagerImpl::StaticInit() {
   if (sInitialized) {
     return;
   }
@@ -366,8 +345,7 @@ ProcessPriorityManagerImpl::StaticInit()
   if (!sPrefListenersRegistered) {
     Preferences::AddBoolVarCache(&sPrefsEnabled,
                                  "dom.ipc.processPriorityManager.enabled");
-    Preferences::AddBoolVarCache(&sRemoteTabsDisabled,
-                                 "dom.ipc.tabs.disabled");
+    Preferences::AddBoolVarCache(&sRemoteTabsDisabled, "dom.ipc.tabs.disabled");
     Preferences::AddBoolVarCache(&sTestMode,
                                  "dom.ipc.processPriorityManager.testMode");
   }
@@ -396,8 +374,7 @@ ProcessPriorityManagerImpl::StaticInit()
 }
 
  ProcessPriorityManagerImpl*
-ProcessPriorityManagerImpl::GetSingleton()
-{
+ProcessPriorityManagerImpl::GetSingleton() {
   if (!sSingleton) {
     StaticInit();
   }
@@ -406,26 +383,18 @@ ProcessPriorityManagerImpl::GetSingleton()
 }
 
 ProcessPriorityManagerImpl::ProcessPriorityManagerImpl()
-  : mHighPriority(false)
-{
+    : mHighPriority(false) {
   MOZ_ASSERT(XRE_IsParentProcess());
   RegisterWakeLockObserver(this);
 }
 
-ProcessPriorityManagerImpl::~ProcessPriorityManagerImpl()
-{
-  ShutDown();
-}
+ProcessPriorityManagerImpl::~ProcessPriorityManagerImpl() { ShutDown(); }
 
-void
-ProcessPriorityManagerImpl::ShutDown()
-{
+void ProcessPriorityManagerImpl::ShutDown() {
   UnregisterWakeLockObserver(this);
 }
 
-void
-ProcessPriorityManagerImpl::Init()
-{
+void ProcessPriorityManagerImpl::Init() {
   LOG("Starting up.  This is the master process.");
 
   
@@ -441,11 +410,8 @@ ProcessPriorityManagerImpl::Init()
 }
 
 NS_IMETHODIMP
-ProcessPriorityManagerImpl::Observe(
-  nsISupports* aSubject,
-  const char* aTopic,
-  const char16_t* aData)
-{
+ProcessPriorityManagerImpl::Observe(nsISupports* aSubject, const char* aTopic,
+                                    const char16_t* aData) {
   nsDependentCString topic(aTopic);
   if (topic.EqualsLiteral("ipc:content-created")) {
     ObserveContentParentCreated(aSubject);
@@ -460,51 +426,45 @@ ProcessPriorityManagerImpl::Observe(
 
 already_AddRefed<ParticularProcessPriorityManager>
 ProcessPriorityManagerImpl::GetParticularProcessPriorityManager(
-  ContentParent* aContentParent)
-{
+    ContentParent* aContentParent) {
   uint64_t cpId = aContentParent->ChildID();
   auto entry = mParticularManagers.LookupForAdd(cpId);
-  RefPtr<ParticularProcessPriorityManager> pppm = entry.OrInsert(
-    [aContentParent]() {
-      return new ParticularProcessPriorityManager(aContentParent);
-    });
+  RefPtr<ParticularProcessPriorityManager> pppm =
+      entry.OrInsert([aContentParent]() {
+        return new ParticularProcessPriorityManager(aContentParent);
+      });
 
   if (!entry) {
     
     pppm->Init();
     FireTestOnlyObserverNotification("process-created",
-      nsPrintfCString("%" PRIu64, cpId));
+                                     nsPrintfCString("%" PRIu64, cpId));
   }
 
   return pppm.forget();
 }
 
-void
-ProcessPriorityManagerImpl::SetProcessPriority(ContentParent* aContentParent,
-                                               ProcessPriority aPriority)
-{
+void ProcessPriorityManagerImpl::SetProcessPriority(
+    ContentParent* aContentParent, ProcessPriority aPriority) {
   MOZ_ASSERT(aContentParent);
   RefPtr<ParticularProcessPriorityManager> pppm =
-    GetParticularProcessPriorityManager(aContentParent);
+      GetParticularProcessPriorityManager(aContentParent);
   if (pppm) {
     pppm->SetPriorityNow(aPriority);
   }
 }
 
-void
-ProcessPriorityManagerImpl::ObserveContentParentCreated(
-  nsISupports* aContentParent)
-{
+void ProcessPriorityManagerImpl::ObserveContentParentCreated(
+    nsISupports* aContentParent) {
   
   
   nsCOMPtr<nsIContentParent> cp = do_QueryInterface(aContentParent);
   RefPtr<ParticularProcessPriorityManager> pppm =
-    GetParticularProcessPriorityManager(cp->AsContentParent());
+      GetParticularProcessPriorityManager(cp->AsContentParent());
 }
 
-void
-ProcessPriorityManagerImpl::ObserveContentParentDestroyed(nsISupports* aSubject)
-{
+void ProcessPriorityManagerImpl::ObserveContentParentDestroyed(
+    nsISupports* aSubject) {
   nsCOMPtr<nsIPropertyBag2> props = do_QueryInterface(aSubject);
   NS_ENSURE_TRUE_VOID(props);
 
@@ -519,25 +479,22 @@ ProcessPriorityManagerImpl::ObserveContentParentDestroyed(nsISupports* aSubject)
   }
 }
 
-void
-ProcessPriorityManagerImpl::NotifyProcessPriorityChanged(
-  ParticularProcessPriorityManager* aParticularManager,
-  ProcessPriority aOldPriority)
-{
+void ProcessPriorityManagerImpl::NotifyProcessPriorityChanged(
+    ParticularProcessPriorityManager* aParticularManager,
+    ProcessPriority aOldPriority) {
   ProcessPriority newPriority = aParticularManager->CurrentPriority();
 
   if (newPriority >= PROCESS_PRIORITY_FOREGROUND_HIGH &&
-    aOldPriority < PROCESS_PRIORITY_FOREGROUND_HIGH) {
+      aOldPriority < PROCESS_PRIORITY_FOREGROUND_HIGH) {
     mHighPriorityChildIDs.PutEntry(aParticularManager->ChildID());
   } else if (newPriority < PROCESS_PRIORITY_FOREGROUND_HIGH &&
-    aOldPriority >= PROCESS_PRIORITY_FOREGROUND_HIGH) {
+             aOldPriority >= PROCESS_PRIORITY_FOREGROUND_HIGH) {
     mHighPriorityChildIDs.RemoveEntry(aParticularManager->ChildID());
   }
 }
 
- void
-ProcessPriorityManagerImpl::Notify(const WakeLockInformation& aInfo)
-{
+ void ProcessPriorityManagerImpl::Notify(
+    const WakeLockInformation& aInfo) {
   
 
 
@@ -549,17 +506,16 @@ ProcessPriorityManagerImpl::Notify(const WakeLockInformation& aInfo)
     }
 
     LOG("Got wake lock changed event. "
-        "Now mHighPriorityParent = %d\n", mHighPriority);
+        "Now mHighPriorityParent = %d\n",
+        mHighPriority);
   }
 }
 
-void
-ProcessPriorityManagerImpl::TabActivityChanged(TabParent* aTabParent,
-                                               bool aIsActive)
-{
+void ProcessPriorityManagerImpl::TabActivityChanged(TabParent* aTabParent,
+                                                    bool aIsActive) {
   ContentParent* cp = aTabParent->Manager()->AsContentParent();
   RefPtr<ParticularProcessPriorityManager> pppm =
-    GetParticularProcessPriorityManager(cp);
+      GetParticularProcessPriorityManager(cp);
   if (!pppm) {
     return;
   }
@@ -567,36 +523,30 @@ ProcessPriorityManagerImpl::TabActivityChanged(TabParent* aTabParent,
   pppm->TabActivityChanged(aTabParent, aIsActive);
 }
 
-NS_IMPL_ISUPPORTS(ParticularProcessPriorityManager,
-                  nsIObserver,
-                  nsITimerCallback,
-                  nsISupportsWeakReference,
-                  nsINamed);
+NS_IMPL_ISUPPORTS(ParticularProcessPriorityManager, nsIObserver,
+                  nsITimerCallback, nsISupportsWeakReference, nsINamed);
 
 ParticularProcessPriorityManager::ParticularProcessPriorityManager(
-  ContentParent* aContentParent)
-  : mContentParent(aContentParent)
-  , mChildID(aContentParent->ChildID())
-  , mPriority(PROCESS_PRIORITY_UNKNOWN)
-  , mHoldsCPUWakeLock(false)
-  , mHoldsHighPriorityWakeLock(false)
-{
+    ContentParent* aContentParent)
+    : mContentParent(aContentParent),
+      mChildID(aContentParent->ChildID()),
+      mPriority(PROCESS_PRIORITY_UNKNOWN),
+      mHoldsCPUWakeLock(false),
+      mHoldsHighPriorityWakeLock(false) {
   MOZ_ASSERT(XRE_IsParentProcess());
   LOGP("Creating ParticularProcessPriorityManager.");
 }
 
-void
-ParticularProcessPriorityManager::StaticInit()
-{
-  Preferences::AddUintVarCache(&sBackgroundPerceivableGracePeriodMS,
-                               "dom.ipc.processPriorityManager.backgroundPerceivableGracePeriodMS");
-  Preferences::AddUintVarCache(&sBackgroundGracePeriodMS,
-                               "dom.ipc.processPriorityManager.backgroundGracePeriodMS");
+void ParticularProcessPriorityManager::StaticInit() {
+  Preferences::AddUintVarCache(
+      &sBackgroundPerceivableGracePeriodMS,
+      "dom.ipc.processPriorityManager.backgroundPerceivableGracePeriodMS");
+  Preferences::AddUintVarCache(
+      &sBackgroundGracePeriodMS,
+      "dom.ipc.processPriorityManager.backgroundGracePeriodMS");
 }
 
-void
-ParticularProcessPriorityManager::Init()
-{
+void ParticularProcessPriorityManager::Init() {
   RegisterWakeLockObserver(this);
 
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
@@ -617,8 +567,7 @@ ParticularProcessPriorityManager::Init()
        mHoldsCPUWakeLock, mHoldsHighPriorityWakeLock);
 }
 
-ParticularProcessPriorityManager::~ParticularProcessPriorityManager()
-{
+ParticularProcessPriorityManager::~ParticularProcessPriorityManager() {
   LOGP("Destroying ParticularProcessPriorityManager.");
 
   
@@ -631,9 +580,8 @@ ParticularProcessPriorityManager::~ParticularProcessPriorityManager()
   }
 }
 
- void
-ParticularProcessPriorityManager::Notify(const WakeLockInformation& aInfo)
-{
+ void ParticularProcessPriorityManager::Notify(
+    const WakeLockInformation& aInfo) {
   if (!mContentParent) {
     
     return;
@@ -650,9 +598,10 @@ ParticularProcessPriorityManager::Notify(const WakeLockInformation& aInfo)
     bool thisProcessLocks = aInfo.lockingProcesses().Contains(ChildID());
     if (thisProcessLocks != *dest) {
       *dest = thisProcessLocks;
-      LOGP("Got wake lock changed event. "
-           "Now mHoldsCPUWakeLock=%d, mHoldsHighPriorityWakeLock=%d",
-           mHoldsCPUWakeLock, mHoldsHighPriorityWakeLock);
+      LOGP(
+          "Got wake lock changed event. "
+          "Now mHoldsCPUWakeLock=%d, mHoldsHighPriorityWakeLock=%d",
+          mHoldsCPUWakeLock, mHoldsHighPriorityWakeLock);
       ResetPriority();
     }
   }
@@ -661,8 +610,7 @@ ParticularProcessPriorityManager::Notify(const WakeLockInformation& aInfo)
 NS_IMETHODIMP
 ParticularProcessPriorityManager::Observe(nsISupports* aSubject,
                                           const char* aTopic,
-                                          const char16_t* aData)
-{
+                                          const char16_t* aData) {
   if (!mContentParent) {
     
     return NS_OK;
@@ -681,9 +629,7 @@ ParticularProcessPriorityManager::Observe(nsISupports* aSubject,
   return NS_OK;
 }
 
-uint64_t
-ParticularProcessPriorityManager::ChildID() const
-{
+uint64_t ParticularProcessPriorityManager::ChildID() const {
   
   
   
@@ -691,24 +637,20 @@ ParticularProcessPriorityManager::ChildID() const
   return mChildID;
 }
 
-int32_t
-ParticularProcessPriorityManager::Pid() const
-{
+int32_t ParticularProcessPriorityManager::Pid() const {
   return mContentParent ? mContentParent->Pid() : -1;
 }
 
-const nsAutoCString&
-ParticularProcessPriorityManager::NameWithComma()
-{
+const nsAutoCString& ParticularProcessPriorityManager::NameWithComma() {
   mNameWithComma.Truncate();
   if (!mContentParent) {
-    return mNameWithComma; 
+    return mNameWithComma;  
   }
 
   nsAutoString name;
   mContentParent->FriendlyName(name);
   if (name.IsEmpty()) {
-    return mNameWithComma; 
+    return mNameWithComma;  
   }
 
   mNameWithComma = NS_ConvertUTF16toUTF8(name);
@@ -716,9 +658,8 @@ ParticularProcessPriorityManager::NameWithComma()
   return mNameWithComma;
 }
 
-void
-ParticularProcessPriorityManager::OnRemoteBrowserFrameShown(nsISupports* aSubject)
-{
+void ParticularProcessPriorityManager::OnRemoteBrowserFrameShown(
+    nsISupports* aSubject) {
   RefPtr<nsFrameLoader> fl = do_QueryObject(aSubject);
   NS_ENSURE_TRUE_VOID(fl);
 
@@ -741,9 +682,8 @@ ParticularProcessPriorityManager::OnRemoteBrowserFrameShown(nsISupports* aSubjec
   }
 }
 
-void
-ParticularProcessPriorityManager::OnTabParentDestroyed(nsISupports* aSubject)
-{
+void ParticularProcessPriorityManager::OnTabParentDestroyed(
+    nsISupports* aSubject) {
   nsCOMPtr<nsITabParent> tp = do_QueryInterface(aSubject);
   NS_ENSURE_TRUE_VOID(tp);
 
@@ -762,12 +702,9 @@ ParticularProcessPriorityManager::OnTabParentDestroyed(nsISupports* aSubject)
   ResetPriority();
 }
 
-void
-ParticularProcessPriorityManager::ResetPriority()
-{
+void ParticularProcessPriorityManager::ResetPriority() {
   ProcessPriority processPriority = ComputePriority();
-  if (mPriority == PROCESS_PRIORITY_UNKNOWN ||
-      mPriority > processPriority) {
+  if (mPriority == PROCESS_PRIORITY_UNKNOWN || mPriority > processPriority) {
     
     
     
@@ -784,15 +721,12 @@ ParticularProcessPriorityManager::ResetPriority()
   SetPriorityNow(processPriority);
 }
 
-void
-ParticularProcessPriorityManager::ResetPriorityNow()
-{
+void ParticularProcessPriorityManager::ResetPriorityNow() {
   SetPriorityNow(ComputePriority());
 }
 
-void
-ParticularProcessPriorityManager::ScheduleResetPriority(TimeoutPref aTimeoutPref)
-{
+void ParticularProcessPriorityManager::ScheduleResetPriority(
+    TimeoutPref aTimeoutPref) {
   if (mResetPriorityTimer) {
     LOGP("ScheduleResetPriority bailing; the timer is already running.");
     return;
@@ -812,28 +746,23 @@ ParticularProcessPriorityManager::ScheduleResetPriority(TimeoutPref aTimeoutPref
   }
 
   LOGP("Scheduling reset timer to fire in %dms.", timeout);
-  NS_NewTimerWithCallback(getter_AddRefs(mResetPriorityTimer),
-                          this, timeout, nsITimer::TYPE_ONE_SHOT);
+  NS_NewTimerWithCallback(getter_AddRefs(mResetPriorityTimer), this, timeout,
+                          nsITimer::TYPE_ONE_SHOT);
 }
 
 NS_IMETHODIMP
-ParticularProcessPriorityManager::Notify(nsITimer* aTimer)
-{
+ParticularProcessPriorityManager::Notify(nsITimer* aTimer) {
   LOGP("Reset priority timer callback; about to ResetPriorityNow.");
   ResetPriorityNow();
   mResetPriorityTimer = nullptr;
   return NS_OK;
 }
 
-ProcessPriority
-ParticularProcessPriorityManager::CurrentPriority()
-{
+ProcessPriority ParticularProcessPriorityManager::CurrentPriority() {
   return mPriority;
 }
 
-ProcessPriority
-ParticularProcessPriorityManager::ComputePriority()
-{
+ProcessPriority ParticularProcessPriorityManager::ComputePriority() {
   if (!mActiveTabParents.IsEmpty() ||
       mContentParent->GetRemoteType().EqualsLiteral(EXTENSION_REMOTE_TYPE)) {
     return PROCESS_PRIORITY_FOREGROUND;
@@ -846,16 +775,14 @@ ParticularProcessPriorityManager::ComputePriority()
   return PROCESS_PRIORITY_BACKGROUND;
 }
 
-void
-ParticularProcessPriorityManager::SetPriorityNow(ProcessPriority aPriority)
-{
+void ParticularProcessPriorityManager::SetPriorityNow(
+    ProcessPriority aPriority) {
   if (aPriority == PROCESS_PRIORITY_UNKNOWN) {
     MOZ_ASSERT(false);
     return;
   }
 
-  if (!ProcessPriorityManagerImpl::PrefsEnabled() ||
-      !mContentParent ||
+  if (!ProcessPriorityManagerImpl::PrefsEnabled() || !mContentParent ||
       mPriority == aPriority) {
     return;
   }
@@ -865,8 +792,7 @@ ParticularProcessPriorityManager::SetPriorityNow(ProcessPriority aPriority)
     return;
   }
 
-  LOGP("Changing priority from %s to %s.",
-       ProcessPriorityToString(mPriority),
+  LOGP("Changing priority from %s to %s.", ProcessPriorityToString(mPriority),
        ProcessPriorityToString(aPriority));
 
   ProcessPriority oldPriority = mPriority;
@@ -875,20 +801,18 @@ ParticularProcessPriorityManager::SetPriorityNow(ProcessPriority aPriority)
   hal::SetProcessPriority(Pid(), mPriority);
 
   if (oldPriority != mPriority) {
-    ProcessPriorityManagerImpl::GetSingleton()->
-      NotifyProcessPriorityChanged(this, oldPriority);
+    ProcessPriorityManagerImpl::GetSingleton()->NotifyProcessPriorityChanged(
+        this, oldPriority);
 
     Unused << mContentParent->SendNotifyProcessPriorityChanged(mPriority);
   }
 
   FireTestOnlyObserverNotification("process-priority-set",
-    ProcessPriorityToString(mPriority));
+                                   ProcessPriorityToString(mPriority));
 }
 
-void
-ParticularProcessPriorityManager::TabActivityChanged(TabParent* aTabParent,
-                                                     bool aIsActive)
-{
+void ParticularProcessPriorityManager::TabActivityChanged(TabParent* aTabParent,
+                                                          bool aIsActive) {
   MOZ_ASSERT(aTabParent);
 
   if (!aIsActive) {
@@ -900,9 +824,7 @@ ParticularProcessPriorityManager::TabActivityChanged(TabParent* aTabParent,
   ResetPriority();
 }
 
-void
-ParticularProcessPriorityManager::ShutDown()
-{
+void ParticularProcessPriorityManager::ShutDown() {
   MOZ_ASSERT(mContentParent);
 
   UnregisterWakeLockObserver(this);
@@ -915,11 +837,8 @@ ParticularProcessPriorityManager::ShutDown()
   mContentParent = nullptr;
 }
 
-void
-ProcessPriorityManagerImpl::FireTestOnlyObserverNotification(
-  const char* aTopic,
-  const nsACString& aData )
-{
+void ProcessPriorityManagerImpl::FireTestOnlyObserverNotification(
+    const char* aTopic, const nsACString& aData ) {
   if (!TestMode()) {
     return;
   }
@@ -929,16 +848,13 @@ ProcessPriorityManagerImpl::FireTestOnlyObserverNotification(
 
   nsPrintfCString topic("process-priority-manager:TEST-ONLY:%s", aTopic);
 
-  LOG("Notifying observer %s, data %s",
-      topic.get(), PromiseFlatCString(aData).get());
+  LOG("Notifying observer %s, data %s", topic.get(),
+      PromiseFlatCString(aData).get());
   os->NotifyObservers(nullptr, topic.get(), NS_ConvertUTF8toUTF16(aData).get());
 }
 
-void
-ParticularProcessPriorityManager::FireTestOnlyObserverNotification(
-  const char* aTopic,
-  const char* aData  )
-{
+void ParticularProcessPriorityManager::FireTestOnlyObserverNotification(
+    const char* aTopic, const char* aData ) {
   if (!ProcessPriorityManagerImpl::TestMode()) {
     return;
   }
@@ -951,11 +867,8 @@ ParticularProcessPriorityManager::FireTestOnlyObserverNotification(
   FireTestOnlyObserverNotification(aTopic, data);
 }
 
-void
-ParticularProcessPriorityManager::FireTestOnlyObserverNotification(
-  const char* aTopic,
-  const nsACString& aData )
-{
+void ParticularProcessPriorityManager::FireTestOnlyObserverNotification(
+    const char* aTopic, const nsACString& aData ) {
   if (!ProcessPriorityManagerImpl::TestMode()) {
     return;
   }
@@ -970,16 +883,14 @@ ParticularProcessPriorityManager::FireTestOnlyObserverNotification(
   
   
 
-  ProcessPriorityManagerImpl::GetSingleton()->
-    FireTestOnlyObserverNotification(aTopic, data);
+  ProcessPriorityManagerImpl::GetSingleton()->FireTestOnlyObserverNotification(
+      aTopic, data);
 }
 
 StaticRefPtr<ProcessPriorityManagerChild>
-ProcessPriorityManagerChild::sSingleton;
+    ProcessPriorityManagerChild::sSingleton;
 
- void
-ProcessPriorityManagerChild::StaticInit()
-{
+ void ProcessPriorityManagerChild::StaticInit() {
   if (!sSingleton) {
     sSingleton = new ProcessPriorityManagerChild();
     sSingleton->Init();
@@ -988,16 +899,14 @@ ProcessPriorityManagerChild::StaticInit()
 }
 
  ProcessPriorityManagerChild*
-ProcessPriorityManagerChild::Singleton()
-{
+ProcessPriorityManagerChild::Singleton() {
   StaticInit();
   return sSingleton;
 }
 
 NS_IMPL_ISUPPORTS(ProcessPriorityManagerChild, nsIObserver)
 
-ProcessPriorityManagerChild::ProcessPriorityManagerChild()
-{
+ProcessPriorityManagerChild::ProcessPriorityManagerChild() {
   if (XRE_IsParentProcess()) {
     mCachedPriority = PROCESS_PRIORITY_MASTER;
   } else {
@@ -1005,9 +914,7 @@ ProcessPriorityManagerChild::ProcessPriorityManagerChild()
   }
 }
 
-void
-ProcessPriorityManagerChild::Init()
-{
+void ProcessPriorityManagerChild::Init() {
   
   
   if (!XRE_IsParentProcess()) {
@@ -1018,10 +925,8 @@ ProcessPriorityManagerChild::Init()
 }
 
 NS_IMETHODIMP
-ProcessPriorityManagerChild::Observe(nsISupports* aSubject,
-                                     const char* aTopic,
-                                     const char16_t* aData)
-{
+ProcessPriorityManagerChild::Observe(nsISupports* aSubject, const char* aTopic,
+                                     const char16_t* aData) {
   MOZ_ASSERT(!strcmp(aTopic, "ipc:process-priority-changed"));
 
   nsCOMPtr<nsIPropertyBag2> props = do_QueryInterface(aSubject);
@@ -1036,53 +941,42 @@ ProcessPriorityManagerChild::Observe(nsISupports* aSubject,
   return NS_OK;
 }
 
-bool
-ProcessPriorityManagerChild::CurrentProcessIsForeground()
-{
+bool ProcessPriorityManagerChild::CurrentProcessIsForeground() {
   return mCachedPriority == PROCESS_PRIORITY_UNKNOWN ||
          mCachedPriority >= PROCESS_PRIORITY_FOREGROUND;
 }
 
-} 
+}  
 
 namespace mozilla {
 
- void
-ProcessPriorityManager::Init()
-{
+ void ProcessPriorityManager::Init() {
   ProcessPriorityManagerImpl::StaticInit();
   ProcessPriorityManagerChild::StaticInit();
   ParticularProcessPriorityManager::StaticInit();
 }
 
- void
-ProcessPriorityManager::SetProcessPriority(ContentParent* aContentParent,
-                                           ProcessPriority aPriority)
-{
+ void ProcessPriorityManager::SetProcessPriority(
+    ContentParent* aContentParent, ProcessPriority aPriority) {
   MOZ_ASSERT(aContentParent);
 
   ProcessPriorityManagerImpl* singleton =
-    ProcessPriorityManagerImpl::GetSingleton();
+      ProcessPriorityManagerImpl::GetSingleton();
   if (singleton) {
     singleton->SetProcessPriority(aContentParent, aPriority);
   }
 }
 
- bool
-ProcessPriorityManager::CurrentProcessIsForeground()
-{
-  return ProcessPriorityManagerChild::Singleton()->
-    CurrentProcessIsForeground();
+ bool ProcessPriorityManager::CurrentProcessIsForeground() {
+  return ProcessPriorityManagerChild::Singleton()->CurrentProcessIsForeground();
 }
 
- void
-ProcessPriorityManager::TabActivityChanged(TabParent* aTabParent,
-                                           bool aIsActive)
-{
+ void ProcessPriorityManager::TabActivityChanged(
+    TabParent* aTabParent, bool aIsActive) {
   MOZ_ASSERT(aTabParent);
 
   ProcessPriorityManagerImpl* singleton =
-    ProcessPriorityManagerImpl::GetSingleton();
+      ProcessPriorityManagerImpl::GetSingleton();
   if (!singleton) {
     return;
   }
@@ -1090,4 +984,4 @@ ProcessPriorityManager::TabActivityChanged(TabParent* aTabParent,
   singleton->TabActivityChanged(aTabParent, aIsActive);
 }
 
-} 
+}  

@@ -6,8 +6,8 @@
 #ifndef GFX_COLOR_H
 #define GFX_COLOR_H
 
-#include "mozilla/Attributes.h" 
-#include "mozilla/EndianUtils.h" 
+#include "mozilla/Attributes.h"   
+#include "mozilla/EndianUtils.h"  
 
 
 
@@ -17,20 +17,21 @@
 
 
 
-#define GFX_BLOCK_RGB_TO_FRGB(from,to) \
-  PR_BEGIN_MACRO \
-    uint32_t m0 = ((uint32_t*)from)[0], \
-             m1 = ((uint32_t*)from)[1], \
-             m2 = ((uint32_t*)from)[2], \
-             rgbr = mozilla::NativeEndian::swapToBigEndian(m0), \
-             gbrg = mozilla::NativeEndian::swapToBigEndian(m1), \
-             brgb = mozilla::NativeEndian::swapToBigEndian(m2), \
-             p0, p1, p2, p3; \
-    p0 = 0xFF000000 | ((rgbr) >>  8); \
-    p1 = 0xFF000000 | ((rgbr) << 16) | ((gbrg) >> 16); \
-    p2 = 0xFF000000 | ((gbrg) <<  8) | ((brgb) >> 24); \
-    p3 = 0xFF000000 | (brgb); \
-    to[0] = p0; to[1] = p1; to[2] = p2; to[3] = p3; \
+#define GFX_BLOCK_RGB_TO_FRGB(from, to)                                       \
+  PR_BEGIN_MACRO                                                              \
+  uint32_t m0 = ((uint32_t*)from)[0], m1 = ((uint32_t*)from)[1],              \
+           m2 = ((uint32_t*)from)[2],                                         \
+           rgbr = mozilla::NativeEndian::swapToBigEndian(m0),                 \
+           gbrg = mozilla::NativeEndian::swapToBigEndian(m1),                 \
+           brgb = mozilla::NativeEndian::swapToBigEndian(m2), p0, p1, p2, p3; \
+  p0 = 0xFF000000 | ((rgbr) >> 8);                                            \
+  p1 = 0xFF000000 | ((rgbr) << 16) | ((gbrg) >> 16);                          \
+  p2 = 0xFF000000 | ((gbrg) << 8) | ((brgb) >> 24);                           \
+  p3 = 0xFF000000 | (brgb);                                                   \
+  to[0] = p0;                                                                 \
+  to[1] = p1;                                                                 \
+  to[2] = p2;                                                                 \
+  to[3] = p3;                                                                 \
   PR_END_MACRO
 
 
@@ -41,8 +42,8 @@
 
 
 
-#define GFX_DIVIDE_BY_255(v)  \
-     (((((unsigned)(v)) << 8) + ((unsigned)(v)) + 255) >> 16)
+#define GFX_DIVIDE_BY_255(v) \
+  (((((unsigned)(v)) << 8) + ((unsigned)(v)) + 255) >> 16)
 
 
 
@@ -50,34 +51,32 @@
 
 
 uint8_t MOZ_ALWAYS_INLINE gfxPreMultiply(uint8_t c, uint8_t a) {
-    return GFX_DIVIDE_BY_255((c)*(a));
+  return GFX_DIVIDE_BY_255((c) * (a));
 }
 
 
 
 
 
-uint32_t MOZ_ALWAYS_INLINE
-gfxPackedPixelNoPreMultiply(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
-    return (((a) << 24) | ((r) << 16) | ((g) << 8) | (b));
+uint32_t MOZ_ALWAYS_INLINE gfxPackedPixelNoPreMultiply(uint8_t a, uint8_t r,
+                                                       uint8_t g, uint8_t b) {
+  return (((a) << 24) | ((r) << 16) | ((g) << 8) | (b));
 }
 
 
 
 
 
-uint32_t MOZ_ALWAYS_INLINE
-gfxPackedPixel(uint8_t a, uint8_t r, uint8_t g, uint8_t b) {
-    if (a == 0x00)
-        return 0x00000000;
-    else if (a == 0xFF) {
-        return gfxPackedPixelNoPreMultiply(a, r, g, b);
-    } else {
-        return  ((a) << 24) |
-                (gfxPreMultiply(r,a) << 16) |
-                (gfxPreMultiply(g,a) << 8)  |
-                (gfxPreMultiply(b,a));
-    }
+uint32_t MOZ_ALWAYS_INLINE gfxPackedPixel(uint8_t a, uint8_t r, uint8_t g,
+                                          uint8_t b) {
+  if (a == 0x00)
+    return 0x00000000;
+  else if (a == 0xFF) {
+    return gfxPackedPixelNoPreMultiply(a, r, g, b);
+  } else {
+    return ((a) << 24) | (gfxPreMultiply(r, a) << 16) |
+           (gfxPreMultiply(g, a) << 8) | (gfxPreMultiply(b, a));
+  }
 }
 
 #endif 

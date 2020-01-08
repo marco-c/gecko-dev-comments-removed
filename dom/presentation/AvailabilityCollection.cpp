@@ -13,13 +13,10 @@ namespace mozilla {
 namespace dom {
 
 
-StaticAutoPtr<AvailabilityCollection>
-AvailabilityCollection::sSingleton;
+StaticAutoPtr<AvailabilityCollection> AvailabilityCollection::sSingleton;
 static bool gOnceAliveNowDead = false;
 
- AvailabilityCollection*
-AvailabilityCollection::GetSingleton()
-{
+ AvailabilityCollection* AvailabilityCollection::GetSingleton() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!sSingleton && !gOnceAliveNowDead) {
@@ -30,20 +27,16 @@ AvailabilityCollection::GetSingleton()
   return sSingleton;
 }
 
-AvailabilityCollection::AvailabilityCollection()
-{
+AvailabilityCollection::AvailabilityCollection() {
   MOZ_COUNT_CTOR(AvailabilityCollection);
 }
 
-AvailabilityCollection::~AvailabilityCollection()
-{
+AvailabilityCollection::~AvailabilityCollection() {
   MOZ_COUNT_DTOR(AvailabilityCollection);
   gOnceAliveNowDead = true;
 }
 
-void
-AvailabilityCollection::Add(PresentationAvailability* aAvailability)
-{
+void AvailabilityCollection::Add(PresentationAvailability* aAvailability) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!aAvailability) {
@@ -58,9 +51,7 @@ AvailabilityCollection::Add(PresentationAvailability* aAvailability)
   mAvailabilities.AppendElement(aAvailability);
 }
 
-void
-AvailabilityCollection::Remove(PresentationAvailability* aAvailability)
-{
+void AvailabilityCollection::Remove(PresentationAvailability* aAvailability) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (!aAvailability) {
@@ -71,9 +62,8 @@ AvailabilityCollection::Remove(PresentationAvailability* aAvailability)
   mAvailabilities.RemoveElement(availability);
 }
 
-already_AddRefed<PresentationAvailability>
-AvailabilityCollection::Find(const uint64_t aWindowId, const nsTArray<nsString>& aUrls)
-{
+already_AddRefed<PresentationAvailability> AvailabilityCollection::Find(
+    const uint64_t aWindowId, const nsTArray<nsString>& aUrls) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -91,9 +81,8 @@ AvailabilityCollection::Find(const uint64_t aWindowId, const nsTArray<nsString>&
     }
   }
 
-
   return nullptr;
 }
 
-} 
-} 
+}  
+}  

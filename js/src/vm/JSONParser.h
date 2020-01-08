@@ -20,107 +20,116 @@ namespace js {
 
 
 
-class MOZ_STACK_CLASS JSONParserBase
-{
-  public:
-    enum ErrorHandling { RaiseError, NoError };
+class MOZ_STACK_CLASS JSONParserBase {
+ public:
+  enum ErrorHandling { RaiseError, NoError };
 
-  private:
+ private:
+  
+  Value v;
+
+ protected:
+  JSContext* const cx;
+
+  const ErrorHandling errorHandling;
+
+  enum Token {
+    String,
+    Number,
+    True,
+    False,
+    Null,
+    ArrayOpen,
+    ArrayClose,
+    ObjectOpen,
+    ObjectClose,
+    Colon,
+    Comma,
+    OOM,
+    Error
+  };
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  typedef GCVector<Value, 20> ElementVector;
+
+  
+  
+  typedef GCVector<IdValuePair, 10> PropertyVector;
+
+  
+  enum ParserState {
     
-    Value v;
-
-  protected:
-    JSContext * const cx;
-
-    const ErrorHandling errorHandling;
-
-    enum Token { String, Number, True, False, Null,
-                 ArrayOpen, ArrayClose,
-                 ObjectOpen, ObjectClose,
-                 Colon, Comma,
-                 OOM, Error };
-
-    
-    
-    
-    
-    
-    
-
-    
-    
-    typedef GCVector<Value, 20> ElementVector;
-
-    
-    
-    typedef GCVector<IdValuePair, 10> PropertyVector;
-
-    
-    enum ParserState {
-        
-        FinishArrayElement,
-
-        
-        FinishObjectMember,
-
-        
-        JSONValue
-    };
-
-    
-    struct StackEntry {
-        ElementVector& elements() {
-            MOZ_ASSERT(state == FinishArrayElement);
-            return * static_cast<ElementVector*>(vector);
-        }
-
-        PropertyVector& properties() {
-            MOZ_ASSERT(state == FinishObjectMember);
-            return * static_cast<PropertyVector*>(vector);
-        }
-
-        explicit StackEntry(ElementVector* elements)
-          : state(FinishArrayElement), vector(elements)
-        {}
-
-        explicit StackEntry(PropertyVector* properties)
-          : state(FinishObjectMember), vector(properties)
-        {}
-
-        ParserState state;
-
-      private:
-        void* vector;
-    };
+    FinishArrayElement,
 
     
-    
-    Vector<StackEntry, 10> stack;
+    FinishObjectMember,
 
     
-    
-    
-    Vector<ElementVector*, 5> freeElements;
-    Vector<PropertyVector*, 5> freeProperties;
+    JSONValue
+  };
+
+  
+  struct StackEntry {
+    ElementVector& elements() {
+      MOZ_ASSERT(state == FinishArrayElement);
+      return *static_cast<ElementVector*>(vector);
+    }
+
+    PropertyVector& properties() {
+      MOZ_ASSERT(state == FinishObjectMember);
+      return *static_cast<PropertyVector*>(vector);
+    }
+
+    explicit StackEntry(ElementVector* elements)
+        : state(FinishArrayElement), vector(elements) {}
+
+    explicit StackEntry(PropertyVector* properties)
+        : state(FinishObjectMember), vector(properties) {}
+
+    ParserState state;
+
+   private:
+    void* vector;
+  };
+
+  
+  
+  Vector<StackEntry, 10> stack;
+
+  
+  
+  
+  Vector<ElementVector*, 5> freeElements;
+  Vector<PropertyVector*, 5> freeProperties;
 
 #ifdef DEBUG
-    Token lastToken;
+  Token lastToken;
 #endif
 
-    JSONParserBase(JSContext* cx, ErrorHandling errorHandling)
+  JSONParserBase(JSContext* cx, ErrorHandling errorHandling)
       : cx(cx),
         errorHandling(errorHandling),
         stack(cx),
         freeElements(cx),
         freeProperties(cx)
 #ifdef DEBUG
-      , lastToken(Error)
+        ,
+        lastToken(Error)
 #endif
-    {}
-    ~JSONParserBase();
+  {
+  }
+  ~JSONParserBase();
 
-    
-    JSONParserBase(JSONParserBase&& other)
+  
+  JSONParserBase(JSONParserBase&& other)
       : v(other.v),
         cx(other.cx),
         errorHandling(other.errorHandling),
@@ -128,100 +137,97 @@ class MOZ_STACK_CLASS JSONParserBase
         freeElements(std::move(other.freeElements)),
         freeProperties(std::move(other.freeProperties))
 #ifdef DEBUG
-      , lastToken(std::move(other.lastToken))
+        ,
+        lastToken(std::move(other.lastToken))
 #endif
-    {}
+  {
+  }
 
+  Value numberValue() const {
+    MOZ_ASSERT(lastToken == Number);
+    MOZ_ASSERT(v.isNumber());
+    return v;
+  }
 
-    Value numberValue() const {
-        MOZ_ASSERT(lastToken == Number);
-        MOZ_ASSERT(v.isNumber());
-        return v;
-    }
+  Value stringValue() const {
+    MOZ_ASSERT(lastToken == String);
+    MOZ_ASSERT(v.isString());
+    return v;
+  }
 
-    Value stringValue() const {
-        MOZ_ASSERT(lastToken == String);
-        MOZ_ASSERT(v.isString());
-        return v;
-    }
+  JSAtom* atomValue() const {
+    Value strval = stringValue();
+    return &strval.toString()->asAtom();
+  }
 
-    JSAtom* atomValue() const {
-        Value strval = stringValue();
-        return &strval.toString()->asAtom();
-    }
-
-    Token token(Token t) {
-        MOZ_ASSERT(t != String);
-        MOZ_ASSERT(t != Number);
+  Token token(Token t) {
+    MOZ_ASSERT(t != String);
+    MOZ_ASSERT(t != Number);
 #ifdef DEBUG
-        lastToken = t;
+    lastToken = t;
 #endif
-        return t;
-    }
+    return t;
+  }
 
-    Token stringToken(JSString* str) {
-        this->v = StringValue(str);
+  Token stringToken(JSString* str) {
+    this->v = StringValue(str);
 #ifdef DEBUG
-        lastToken = String;
+    lastToken = String;
 #endif
-        return String;
-    }
+    return String;
+  }
 
-    Token numberToken(double d) {
-        this->v = NumberValue(d);
+  Token numberToken(double d) {
+    this->v = NumberValue(d);
 #ifdef DEBUG
-        lastToken = Number;
+    lastToken = Number;
 #endif
-        return Number;
-    }
+    return Number;
+  }
 
-    enum StringType { PropertyName, LiteralValue };
+  enum StringType { PropertyName, LiteralValue };
 
-    bool errorReturn();
+  bool errorReturn();
 
-    bool finishObject(MutableHandleValue vp, PropertyVector& properties);
-    bool finishArray(MutableHandleValue vp, ElementVector& elements);
+  bool finishObject(MutableHandleValue vp, PropertyVector& properties);
+  bool finishArray(MutableHandleValue vp, ElementVector& elements);
 
-    void trace(JSTracer* trc);
+  void trace(JSTracer* trc);
 
-  private:
-    JSONParserBase(const JSONParserBase& other) = delete;
-    void operator=(const JSONParserBase& other) = delete;
+ private:
+  JSONParserBase(const JSONParserBase& other) = delete;
+  void operator=(const JSONParserBase& other) = delete;
 };
 
 template <typename CharT>
-class MOZ_STACK_CLASS JSONParser : public JSONParserBase
-{
-  private:
-    typedef mozilla::RangedPtr<const CharT> CharPtr;
+class MOZ_STACK_CLASS JSONParser : public JSONParserBase {
+ private:
+  typedef mozilla::RangedPtr<const CharT> CharPtr;
 
-    CharPtr current;
-    const CharPtr begin, end;
+  CharPtr current;
+  const CharPtr begin, end;
 
-  public:
-    
+ public:
+  
 
-    
-    JSONParser(JSContext* cx, mozilla::Range<const CharT> data,
-               ErrorHandling errorHandling = RaiseError)
+  
+  JSONParser(JSContext* cx, mozilla::Range<const CharT> data,
+             ErrorHandling errorHandling = RaiseError)
       : JSONParserBase(cx, errorHandling),
         current(data.begin()),
         begin(current),
-        end(data.end())
-    {
-        MOZ_ASSERT(current <= end);
-    }
+        end(data.end()) {
+    MOZ_ASSERT(current <= end);
+  }
 
-    
-    JSONParser(JSONParser&& other)
+  
+  JSONParser(JSONParser&& other)
       : JSONParserBase(std::move(other)),
         current(other.current),
         begin(other.begin),
-        end(other.end)
-    {}
+        end(other.end) {}
 
-    
-
+  
 
 
 
@@ -230,40 +236,43 @@ class MOZ_STACK_CLASS JSONParser : public JSONParserBase
 
 
 
-    bool parse(MutableHandleValue vp);
 
-    static void trace(JSONParser<CharT>* parser, JSTracer* trc) { parser->trace(trc); }
-    void trace(JSTracer* trc) { JSONParserBase::trace(trc); }
+  bool parse(MutableHandleValue vp);
 
-  private:
-    template<StringType ST> Token readString();
+  static void trace(JSONParser<CharT>* parser, JSTracer* trc) {
+    parser->trace(trc);
+  }
+  void trace(JSTracer* trc) { JSONParserBase::trace(trc); }
 
-    Token readNumber();
+ private:
+  template <StringType ST>
+  Token readString();
 
-    Token advance();
-    Token advancePropertyName();
-    Token advancePropertyColon();
-    Token advanceAfterProperty();
-    Token advanceAfterObjectOpen();
-    Token advanceAfterArrayElement();
+  Token readNumber();
 
-    void error(const char* msg);
+  Token advance();
+  Token advancePropertyName();
+  Token advancePropertyColon();
+  Token advanceAfterProperty();
+  Token advanceAfterObjectOpen();
+  Token advanceAfterArrayElement();
 
-    void getTextPosition(uint32_t* column, uint32_t* line);
+  void error(const char* msg);
 
-  private:
-    JSONParser(const JSONParser& other) = delete;
-    void operator=(const JSONParser& other) = delete;
+  void getTextPosition(uint32_t* column, uint32_t* line);
+
+ private:
+  JSONParser(const JSONParser& other) = delete;
+  void operator=(const JSONParser& other) = delete;
 };
 
 template <typename CharT, typename Wrapper>
 class MutableWrappedPtrOperations<JSONParser<CharT>, Wrapper>
-  : public WrappedPtrOperations<JSONParser<CharT>, Wrapper>
-{
-  public:
-    bool parse(MutableHandleValue vp) {
-        return static_cast<Wrapper*>(this)->get().parse(vp);
-    }
+    : public WrappedPtrOperations<JSONParser<CharT>, Wrapper> {
+ public:
+  bool parse(MutableHandleValue vp) {
+    return static_cast<Wrapper*>(this)->get().parse(vp);
+  }
 };
 
 } 

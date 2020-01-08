@@ -11,7 +11,7 @@
 #include "mozilla/StickyTimeDuration.h"
 #include "mozilla/ComputedTimingFunction.h"
 
-#include "mozilla/dom/AnimationEffectBinding.h" 
+#include "mozilla/dom/AnimationEffectBinding.h"  
 
 namespace mozilla {
 
@@ -19,58 +19,55 @@ namespace mozilla {
 
 
 
-struct ComputedTiming
-{
+struct ComputedTiming {
   
   
   
-  StickyTimeDuration  mActiveDuration;
+  StickyTimeDuration mActiveDuration;
   
-  StickyTimeDuration  mActiveTime;
-  
-  
-  
-  StickyTimeDuration  mEndTime;
+  StickyTimeDuration mActiveTime;
   
   
   
-  
-  dom::Nullable<double>    mProgress;
-  
-  uint64_t            mCurrentIteration = 0;
+  StickyTimeDuration mEndTime;
   
   
-  double              mIterations = 1.0;
-  double              mIterationStart = 0.0;
-  StickyTimeDuration  mDuration;
+  
+  
+  dom::Nullable<double> mProgress;
+  
+  uint64_t mCurrentIteration = 0;
+  
+  
+  double mIterations = 1.0;
+  double mIterationStart = 0.0;
+  StickyTimeDuration mDuration;
 
   
-  dom::FillMode       mFill = dom::FillMode::None;
+  dom::FillMode mFill = dom::FillMode::None;
   bool FillsForwards() const {
     MOZ_ASSERT(mFill != dom::FillMode::Auto,
                "mFill should not be Auto in ComputedTiming.");
-    return mFill == dom::FillMode::Both ||
-           mFill == dom::FillMode::Forwards;
+    return mFill == dom::FillMode::Both || mFill == dom::FillMode::Forwards;
   }
   bool FillsBackwards() const {
     MOZ_ASSERT(mFill != dom::FillMode::Auto,
                "mFill should not be Auto in ComputedTiming.");
-    return mFill == dom::FillMode::Both ||
-           mFill == dom::FillMode::Backwards;
+    return mFill == dom::FillMode::Both || mFill == dom::FillMode::Backwards;
   }
 
   enum class AnimationPhase {
-    Idle,   
-    Before, 
-    Active, 
-    After   
+    Idle,    
+    Before,  
+    Active,  
+    After    
   };
-  AnimationPhase      mPhase = AnimationPhase::Idle;
+  AnimationPhase mPhase = AnimationPhase::Idle;
 
   ComputedTimingFunction::BeforeFlag mBeforeFlag =
-    ComputedTimingFunction::BeforeFlag::Unset;
+      ComputedTimingFunction::BeforeFlag::Unset;
 };
 
-} 
+}  
 
-#endif 
+#endif  

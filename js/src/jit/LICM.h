@@ -19,7 +19,7 @@ class MIRGraph;
 
 MOZ_MUST_USE bool LICM(MIRGenerator* mir, MIRGraph& graph);
 
-} 
-} 
+}  
+}  
 
 #endif 

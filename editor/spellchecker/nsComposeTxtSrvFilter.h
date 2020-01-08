@@ -15,15 +15,12 @@
 
 
 
-class nsComposeTxtSrvFilter final
-{
-public:
-  static mozilla::UniquePtr<nsComposeTxtSrvFilter> CreateNormalFilter()
-  {
+class nsComposeTxtSrvFilter final {
+ public:
+  static mozilla::UniquePtr<nsComposeTxtSrvFilter> CreateNormalFilter() {
     return CreateHelper(false);
   }
-  static mozilla::UniquePtr<nsComposeTxtSrvFilter> CreateMailFilter()
-  {
+  static mozilla::UniquePtr<nsComposeTxtSrvFilter> CreateMailFilter() {
     return CreateHelper(true);
   }
 
@@ -33,13 +30,14 @@ public:
 
   bool Skip(nsINode* aNode) const;
 
-private:
+ private:
   
   void Init(bool aIsForMail) { mIsForMail = aIsForMail; }
 
-  static mozilla::UniquePtr<nsComposeTxtSrvFilter> CreateHelper(bool aIsForMail);
+  static mozilla::UniquePtr<nsComposeTxtSrvFilter> CreateHelper(
+      bool aIsForMail);
 
-  bool              mIsForMail = false;
+  bool mIsForMail = false;
 };
 
 #endif

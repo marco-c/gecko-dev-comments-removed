@@ -41,8 +41,8 @@
 
 enum EStateMapEntryType {
   kMapDirectly,
-  kMapOpposite,   
-  kNoStateChange, 
+  kMapOpposite,    
+  kNoStateChange,  
 };
 
 const AtkStateType kNone = ATK_STATE_INVALID;
@@ -53,9 +53,11 @@ struct AtkStateMap {
 };
 
 
-
-static const AtkStateMap gAtkStateMap[] = {                     
-  
+static const AtkStateMap
+    gAtkStateMap[] =
+        {
+            
+            
   { kNone,                                    kMapOpposite },   
   { ATK_STATE_SELECTED,                       kMapDirectly },   
   { ATK_STATE_FOCUSED,                        kMapDirectly },   
@@ -105,10 +107,11 @@ static const AtkStateMap gAtkStateMap[] = {
   { ATK_STATE_EXPANDABLE,                     kMapDirectly },   
   { kNone,                                    kMapDirectly },   
   { ATK_STATE_ACTIVE,                         kMapDirectly }    
-  
+                                              
 };
 
 static const auto gAtkStateMapLen = std::extent<decltype(gAtkStateMap)>::value;
 
-static_assert(((uint64_t) 0x1) << (gAtkStateMapLen - 1) == mozilla::a11y::states::LAST_ENTRY,
+static_assert(((uint64_t)0x1) << (gAtkStateMapLen - 1) ==
+                  mozilla::a11y::states::LAST_ENTRY,
               "ATK states map is out of sync with internal states");

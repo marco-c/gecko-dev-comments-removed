@@ -11,18 +11,12 @@ namespace dom {
 
 namespace {
 
-bool
-TokenizerIgnoreNothing(char16_t )
-{
-  return false;
-}
+bool TokenizerIgnoreNothing(char16_t ) { return false; }
 
-} 
+}  
 
- bool
-FileSystemUtils::IsDescendantPath(const nsAString& aPath,
-                                  const nsAString& aDescendantPath)
-{
+ bool FileSystemUtils::IsDescendantPath(
+    const nsAString& aPath, const nsAString& aDescendantPath) {
   
   if (!aDescendantPath.Equals(aPath) &&
       !StringBeginsWith(aDescendantPath, aPath)) {
@@ -32,10 +26,8 @@ FileSystemUtils::IsDescendantPath(const nsAString& aPath,
   return true;
 }
 
- bool
-FileSystemUtils::IsValidRelativeDOMPath(const nsAString& aPath,
-                                        nsTArray<nsString>& aParts)
-{
+ bool FileSystemUtils::IsValidRelativeDOMPath(
+    const nsAString& aPath, nsTArray<nsString>& aParts) {
   
   if (aPath.IsEmpty()) {
     return false;
@@ -51,16 +43,15 @@ FileSystemUtils::IsValidRelativeDOMPath(const nsAString& aPath,
   NS_NAMED_LITERAL_STRING(kParentDir, "..");
 
   
-  nsCharSeparatedTokenizerTemplate<TokenizerIgnoreNothing>
-    tokenizer(aPath, FILESYSTEM_DOM_PATH_SEPARATOR_CHAR);
+  nsCharSeparatedTokenizerTemplate<TokenizerIgnoreNothing> tokenizer(
+      aPath, FILESYSTEM_DOM_PATH_SEPARATOR_CHAR);
 
   while (tokenizer.hasMoreTokens()) {
     nsDependentSubstring pathComponent = tokenizer.nextToken();
     
     
     
-    if (pathComponent.IsEmpty() ||
-        pathComponent.Equals(kCurrentDir) ||
+    if (pathComponent.IsEmpty() || pathComponent.Equals(kCurrentDir) ||
         pathComponent.Equals(kParentDir)) {
       return false;
     }
@@ -71,10 +62,8 @@ FileSystemUtils::IsValidRelativeDOMPath(const nsAString& aPath,
   return true;
 }
 
- nsresult
-FileSystemUtils::DispatchRunnable(nsIGlobalObject* aGlobal,
-                                  already_AddRefed<nsIRunnable>&& aRunnable)
-{
+ nsresult FileSystemUtils::DispatchRunnable(
+    nsIGlobalObject* aGlobal, already_AddRefed<nsIRunnable>&& aRunnable) {
   nsCOMPtr<nsIRunnable> runnable = aRunnable;
 
   nsCOMPtr<nsIEventTarget> target;
@@ -94,5 +83,5 @@ FileSystemUtils::DispatchRunnable(nsIGlobalObject* aGlobal,
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

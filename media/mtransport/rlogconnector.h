@@ -66,64 +66,61 @@
 namespace mozilla {
 
 class RLogConnector {
-  public:
-    
+ public:
+  
 
 
 
-    static RLogConnector* CreateInstance();
-    static RLogConnector* GetInstance();
-    static void DestroyInstance();
+  static RLogConnector* CreateInstance();
+  static RLogConnector* GetInstance();
+  static void DestroyInstance();
 
-    
-
-
-
-
-
-    void Filter(const std::string& substring,
-                uint32_t limit,
-                std::deque<std::string>* matching_logs);
-
-    void FilterAny(const std::vector<std::string>& substrings,
-                   uint32_t limit,
-                   std::deque<std::string>* matching_logs);
-
-    inline void GetAny(uint32_t limit,
-                       std::deque<std::string>* matching_logs) {
-      Filter("", limit, matching_logs);
-    }
-
-    void SetLogLimit(uint32_t new_limit);
-    void Log(int level, std::string&& log);
-    void Clear();
-
-    
-    void EnterPrivateMode();
-    void ExitPrivateMode();
-
-  private:
-    RLogConnector();
-    ~RLogConnector();
-    void RemoveOld();
-    void AddMsg(std::string&& msg);
-
-    static RLogConnector* instance;
-
-    
+  
 
 
 
 
-    std::deque<std::string> log_messages_;
-    
-    uint32_t log_limit_;
-    OffTheBooksMutex mutex_;
-    uint32_t disableCount_;
 
-    DISALLOW_COPY_ASSIGN(RLogConnector);
-}; 
+  void Filter(const std::string& substring, uint32_t limit,
+              std::deque<std::string>* matching_logs);
 
-} 
+  void FilterAny(const std::vector<std::string>& substrings, uint32_t limit,
+                 std::deque<std::string>* matching_logs);
 
-#endif 
+  inline void GetAny(uint32_t limit, std::deque<std::string>* matching_logs) {
+    Filter("", limit, matching_logs);
+  }
+
+  void SetLogLimit(uint32_t new_limit);
+  void Log(int level, std::string&& log);
+  void Clear();
+
+  
+  void EnterPrivateMode();
+  void ExitPrivateMode();
+
+ private:
+  RLogConnector();
+  ~RLogConnector();
+  void RemoveOld();
+  void AddMsg(std::string&& msg);
+
+  static RLogConnector* instance;
+
+  
+
+
+
+
+  std::deque<std::string> log_messages_;
+  
+  uint32_t log_limit_;
+  OffTheBooksMutex mutex_;
+  uint32_t disableCount_;
+
+  DISALLOW_COPY_ASSIGN(RLogConnector);
+};  
+
+}  
+
+#endif  

@@ -47,9 +47,9 @@ namespace layout {
 
 
 class ScrollVelocityQueue final {
-public:
-  explicit ScrollVelocityQueue(nsPresContext *aPresContext)
-    : mPresContext(aPresContext) {}
+ public:
+  explicit ScrollVelocityQueue(nsPresContext* aPresContext)
+      : mPresContext(aPresContext) {}
 
   
   
@@ -61,7 +61,8 @@ public:
 
   
   nsPoint GetVelocity();
-private:
+
+ private:
   
   
   
@@ -86,7 +87,7 @@ private:
   void TrimQueue();
 };
 
-} 
-} 
+}  
+}  
 
-#endif  
+#endif 

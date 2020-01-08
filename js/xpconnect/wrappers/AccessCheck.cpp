@@ -30,306 +30,278 @@ using namespace js;
 
 namespace xpc {
 
-nsIPrincipal*
-GetCompartmentPrincipal(JS::Compartment* compartment)
-{
-    return nsJSPrincipals::get(JS_GetCompartmentPrincipals(compartment));
+nsIPrincipal* GetCompartmentPrincipal(JS::Compartment* compartment) {
+  return nsJSPrincipals::get(JS_GetCompartmentPrincipals(compartment));
 }
 
-nsIPrincipal*
-GetRealmPrincipal(JS::Realm* realm)
-{
-    return nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
+nsIPrincipal* GetRealmPrincipal(JS::Realm* realm) {
+  return nsJSPrincipals::get(JS::GetRealmPrincipals(realm));
 }
 
-nsIPrincipal*
-GetObjectPrincipal(JSObject* obj)
-{
-    return GetRealmPrincipal(js::GetNonCCWObjectRealm(obj));
+nsIPrincipal* GetObjectPrincipal(JSObject* obj) {
+  return GetRealmPrincipal(js::GetNonCCWObjectRealm(obj));
 }
 
-bool
-AccessCheck::subsumes(JSObject* a, JSObject* b)
-{
-    return CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(a),
-                                           js::GetObjectCompartment(b));
+bool AccessCheck::subsumes(JSObject* a, JSObject* b) {
+  return CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(a),
+                                         js::GetObjectCompartment(b));
 }
 
 
-bool
-AccessCheck::subsumesConsideringDomain(JS::Compartment* a, JS::Compartment* b)
-{
-    MOZ_ASSERT(OriginAttributes::IsRestrictOpenerAccessForFPI());
-    nsIPrincipal* aprin = GetCompartmentPrincipal(a);
-    nsIPrincipal* bprin = GetCompartmentPrincipal(b);
-    return BasePrincipal::Cast(aprin)->FastSubsumesConsideringDomain(bprin);
+bool AccessCheck::subsumesConsideringDomain(JS::Compartment* a,
+                                            JS::Compartment* b) {
+  MOZ_ASSERT(OriginAttributes::IsRestrictOpenerAccessForFPI());
+  nsIPrincipal* aprin = GetCompartmentPrincipal(a);
+  nsIPrincipal* bprin = GetCompartmentPrincipal(b);
+  return BasePrincipal::Cast(aprin)->FastSubsumesConsideringDomain(bprin);
 }
 
-bool
-AccessCheck::subsumesConsideringDomainIgnoringFPD(JS::Compartment* a,
-                                                  JS::Compartment* b)
-{
-    MOZ_ASSERT(!OriginAttributes::IsRestrictOpenerAccessForFPI());
-    nsIPrincipal* aprin = GetCompartmentPrincipal(a);
-    nsIPrincipal* bprin = GetCompartmentPrincipal(b);
-    return BasePrincipal::Cast(aprin)->FastSubsumesConsideringDomainIgnoringFPD(bprin);
-}
-
-
-bool
-AccessCheck::wrapperSubsumes(JSObject* wrapper)
-{
-    MOZ_ASSERT(js::IsWrapper(wrapper));
-    JSObject* wrapped = js::UncheckedUnwrap(wrapper);
-    return CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(wrapper),
-                                           js::GetObjectCompartment(wrapped));
-}
-
-bool
-AccessCheck::isChrome(JS::Compartment* compartment)
-{
-    return js::IsSystemCompartment(compartment);
-}
-
-bool
-AccessCheck::isChrome(JSObject* obj)
-{
-    return isChrome(js::GetObjectCompartment(obj));
+bool AccessCheck::subsumesConsideringDomainIgnoringFPD(JS::Compartment* a,
+                                                       JS::Compartment* b) {
+  MOZ_ASSERT(!OriginAttributes::IsRestrictOpenerAccessForFPI());
+  nsIPrincipal* aprin = GetCompartmentPrincipal(a);
+  nsIPrincipal* bprin = GetCompartmentPrincipal(b);
+  return BasePrincipal::Cast(aprin)->FastSubsumesConsideringDomainIgnoringFPD(
+      bprin);
 }
 
 
-static bool
-IsPermitted(CrossOriginObjectType type, JSFlatString* prop, bool set)
-{
-    size_t propLength = JS_GetStringLength(JS_FORGET_STRING_FLATNESS(prop));
-    if (!propLength) {
-        return false;
-    }
+bool AccessCheck::wrapperSubsumes(JSObject* wrapper) {
+  MOZ_ASSERT(js::IsWrapper(wrapper));
+  JSObject* wrapped = js::UncheckedUnwrap(wrapper);
+  return CompartmentOriginInfo::Subsumes(js::GetObjectCompartment(wrapper),
+                                         js::GetObjectCompartment(wrapped));
+}
 
-    char16_t propChar0 = JS_GetFlatStringCharAt(prop, 0);
-    if (type == CrossOriginLocation) {
-        return dom::Location_Binding::IsPermitted(prop, propChar0, set);
-    }
-    if (type == CrossOriginWindow) {
-        return dom::Window_Binding::IsPermitted(prop, propChar0, set);
-    }
+bool AccessCheck::isChrome(JS::Compartment* compartment) {
+  return js::IsSystemCompartment(compartment);
+}
 
+bool AccessCheck::isChrome(JSObject* obj) {
+  return isChrome(js::GetObjectCompartment(obj));
+}
+
+
+static bool IsPermitted(CrossOriginObjectType type, JSFlatString* prop,
+                        bool set) {
+  size_t propLength = JS_GetStringLength(JS_FORGET_STRING_FLATNESS(prop));
+  if (!propLength) {
     return false;
+  }
+
+  char16_t propChar0 = JS_GetFlatStringCharAt(prop, 0);
+  if (type == CrossOriginLocation) {
+    return dom::Location_Binding::IsPermitted(prop, propChar0, set);
+  }
+  if (type == CrossOriginWindow) {
+    return dom::Window_Binding::IsPermitted(prop, propChar0, set);
+  }
+
+  return false;
 }
 
-static bool
-IsFrameId(JSContext* cx, JSObject* obj, jsid idArg)
-{
-    MOZ_ASSERT(!js::IsWrapper(obj));
-    RootedId id(cx, idArg);
+static bool IsFrameId(JSContext* cx, JSObject* obj, jsid idArg) {
+  MOZ_ASSERT(!js::IsWrapper(obj));
+  RootedId id(cx, idArg);
 
-    nsGlobalWindowInner* win = WindowOrNull(obj);
-    if (!win) {
-        return false;
-    }
-
-    nsDOMWindowList* col = win->GetFrames();
-    if (!col) {
-        return false;
-    }
-
-    nsCOMPtr<mozIDOMWindowProxy> domwin;
-    if (JSID_IS_INT(id)) {
-        domwin = col->IndexedGetter(JSID_TO_INT(id));
-    } else if (JSID_IS_STRING(id)) {
-        nsAutoJSString idAsString;
-        if (!idAsString.init(cx, JSID_TO_STRING(id))) {
-            return false;
-        }
-        domwin = col->NamedItem(idAsString);
-    }
-
-    return domwin != nullptr;
-}
-
-CrossOriginObjectType
-IdentifyCrossOriginObject(JSObject* obj)
-{
-    obj = js::UncheckedUnwrap(obj,  false);
-    const js::Class* clasp = js::GetObjectClass(obj);
-
-    if (clasp->name[0] == 'L' && !strcmp(clasp->name, "Location")) {
-        return CrossOriginLocation;
-    }
-    if (clasp->name[0] == 'W' && !strcmp(clasp->name, "Window")) {
-        return CrossOriginWindow;
-    }
-
-    return CrossOriginOpaque;
-}
-
-bool
-AccessCheck::isCrossOriginAccessPermitted(JSContext* cx, HandleObject wrapper, HandleId id,
-                                          Wrapper::Action act)
-{
-    if (act == Wrapper::CALL) {
-        return false;
-    }
-
-    if (act == Wrapper::ENUMERATE) {
-        return true;
-    }
-
-    
-    
-    if (act == Wrapper::GET_PROPERTY_DESCRIPTOR) {
-        return isCrossOriginAccessPermitted(cx, wrapper, id, Wrapper::GET) ||
-               isCrossOriginAccessPermitted(cx, wrapper, id, Wrapper::SET);
-    }
-
-    RootedObject obj(cx, js::UncheckedUnwrap(wrapper,  false));
-    CrossOriginObjectType type = IdentifyCrossOriginObject(obj);
-    if (JSID_IS_STRING(id)) {
-        if (IsPermitted(type, JSID_TO_FLAT_STRING(id), act == Wrapper::SET)) {
-            return true;
-        }
-    }
-
-    if (type != CrossOriginOpaque &&
-        IsCrossOriginWhitelistedProp(cx, id)) {
-        
-        
-        
-        return true;
-    }
-
-    if (act != Wrapper::GET) {
-        return false;
-    }
-
-    
-    
-    if (type == CrossOriginWindow) {
-        if (JSID_IS_STRING(id)) {
-            bool wouldShadow = false;
-            if (!XrayUtils::HasNativeProperty(cx, wrapper, id, &wouldShadow) ||
-                wouldShadow)
-            {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                JS_ClearPendingException(cx);
-                return false;
-            }
-        }
-        return IsFrameId(cx, obj, id);
-    }
+  nsGlobalWindowInner* win = WindowOrNull(obj);
+  if (!win) {
     return false;
-}
+  }
 
-bool
-AccessCheck::checkPassToPrivilegedCode(JSContext* cx, HandleObject wrapper, HandleValue v)
-{
-    
-    if (!v.isObject()) {
-        return true;
-    }
-    RootedObject obj(cx, &v.toObject());
-
-    
-    if (!js::IsWrapper(obj)) {
-        return true;
-    }
-
-    
-    
-    
-    if (mozilla::jsipc::IsWrappedCPOW(obj) &&
-        js::GetObjectCompartment(wrapper) == js::GetObjectCompartment(xpc::UnprivilegedJunkScope()) &&
-        XRE_IsParentProcess())
-    {
-        return true;
-    }
-
-    
-    if (AccessCheck::wrapperSubsumes(obj)) {
-        return true;
-    }
-
-    
-    JS_ReportErrorASCII(cx, "Permission denied to pass object to privileged code");
+  nsDOMWindowList* col = win->GetFrames();
+  if (!col) {
     return false;
+  }
+
+  nsCOMPtr<mozIDOMWindowProxy> domwin;
+  if (JSID_IS_INT(id)) {
+    domwin = col->IndexedGetter(JSID_TO_INT(id));
+  } else if (JSID_IS_STRING(id)) {
+    nsAutoJSString idAsString;
+    if (!idAsString.init(cx, JSID_TO_STRING(id))) {
+      return false;
+    }
+    domwin = col->NamedItem(idAsString);
+  }
+
+  return domwin != nullptr;
 }
 
-bool
-AccessCheck::checkPassToPrivilegedCode(JSContext* cx, HandleObject wrapper, const CallArgs& args)
-{
-    if (!checkPassToPrivilegedCode(cx, wrapper, args.thisv())) {
-        return false;
-    }
-    for (size_t i = 0; i < args.length(); ++i) {
-        if (!checkPassToPrivilegedCode(cx, wrapper, args[i])) {
-            return false;
-        }
-    }
+CrossOriginObjectType IdentifyCrossOriginObject(JSObject* obj) {
+  obj = js::UncheckedUnwrap(obj,  false);
+  const js::Class* clasp = js::GetObjectClass(obj);
+
+  if (clasp->name[0] == 'L' && !strcmp(clasp->name, "Location")) {
+    return CrossOriginLocation;
+  }
+  if (clasp->name[0] == 'W' && !strcmp(clasp->name, "Window")) {
+    return CrossOriginWindow;
+  }
+
+  return CrossOriginOpaque;
+}
+
+bool AccessCheck::isCrossOriginAccessPermitted(JSContext* cx,
+                                               HandleObject wrapper,
+                                               HandleId id,
+                                               Wrapper::Action act) {
+  if (act == Wrapper::CALL) {
+    return false;
+  }
+
+  if (act == Wrapper::ENUMERATE) {
     return true;
-}
+  }
 
-void
-AccessCheck::reportCrossOriginDenial(JSContext* cx, JS::HandleId id,
-                                     const nsACString& accessType)
-{
-    
-    
-    
-    
-    if (JS_IsExceptionPending(cx)) {
-        return;
+  
+  
+  
+  if (act == Wrapper::GET_PROPERTY_DESCRIPTOR) {
+    return isCrossOriginAccessPermitted(cx, wrapper, id, Wrapper::GET) ||
+           isCrossOriginAccessPermitted(cx, wrapper, id, Wrapper::SET);
+  }
+
+  RootedObject obj(
+      cx, js::UncheckedUnwrap(wrapper,  false));
+  CrossOriginObjectType type = IdentifyCrossOriginObject(obj);
+  if (JSID_IS_STRING(id)) {
+    if (IsPermitted(type, JSID_TO_FLAT_STRING(id), act == Wrapper::SET)) {
+      return true;
     }
+  }
 
-    nsAutoCString message;
-    if (JSID_IS_VOID(id)) {
-        message = NS_LITERAL_CSTRING("Permission denied to access object");
-    } else {
-        
-        
-        
-        JS::RootedValue idVal(cx, js::IdToValue(id));
-        nsAutoJSString propName;
-        JS::RootedString idStr(cx, JS_ValueToSource(cx, idVal));
-        if (!idStr || !propName.init(cx, idStr)) {
-            return;
-        }
-        message = NS_LITERAL_CSTRING("Permission denied to ") +
-                  accessType +
-                  NS_LITERAL_CSTRING(" property ") +
-                  NS_ConvertUTF16toUTF8(propName) +
-                  NS_LITERAL_CSTRING(" on cross-origin object");
-    }
-    ErrorResult rv;
-    rv.ThrowDOMException(NS_ERROR_DOM_SECURITY_ERR, message);
-    MOZ_ALWAYS_TRUE(rv.MaybeSetPendingException(cx));
-}
-
-bool
-OpaqueWithSilentFailing::deny(JSContext* cx, js::Wrapper::Action act, HandleId id,
-                              bool mayThrow)
-{
+  if (type != CrossOriginOpaque && IsCrossOriginWhitelistedProp(cx, id)) {
     
-    if (act == js::Wrapper::GET || act == js::Wrapper::ENUMERATE ||
-        act == js::Wrapper::GET_PROPERTY_DESCRIPTOR)
-    {
-        
-        
-        return ReportWrapperDenial(cx, id, WrapperDenialForCOW,
-                                   "Access to privileged JS object not permitted");
-    }
+    
+    
+    return true;
+  }
 
+  if (act != Wrapper::GET) {
     return false;
+  }
+
+  
+  
+  if (type == CrossOriginWindow) {
+    if (JSID_IS_STRING(id)) {
+      bool wouldShadow = false;
+      if (!XrayUtils::HasNativeProperty(cx, wrapper, id, &wouldShadow) ||
+          wouldShadow) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        JS_ClearPendingException(cx);
+        return false;
+      }
+    }
+    return IsFrameId(cx, obj, id);
+  }
+  return false;
 }
 
-} 
+bool AccessCheck::checkPassToPrivilegedCode(JSContext* cx, HandleObject wrapper,
+                                            HandleValue v) {
+  
+  if (!v.isObject()) {
+    return true;
+  }
+  RootedObject obj(cx, &v.toObject());
+
+  
+  if (!js::IsWrapper(obj)) {
+    return true;
+  }
+
+  
+  
+  
+  if (mozilla::jsipc::IsWrappedCPOW(obj) &&
+      js::GetObjectCompartment(wrapper) ==
+          js::GetObjectCompartment(xpc::UnprivilegedJunkScope()) &&
+      XRE_IsParentProcess()) {
+    return true;
+  }
+
+  
+  if (AccessCheck::wrapperSubsumes(obj)) {
+    return true;
+  }
+
+  
+  JS_ReportErrorASCII(cx,
+                      "Permission denied to pass object to privileged code");
+  return false;
+}
+
+bool AccessCheck::checkPassToPrivilegedCode(JSContext* cx, HandleObject wrapper,
+                                            const CallArgs& args) {
+  if (!checkPassToPrivilegedCode(cx, wrapper, args.thisv())) {
+    return false;
+  }
+  for (size_t i = 0; i < args.length(); ++i) {
+    if (!checkPassToPrivilegedCode(cx, wrapper, args[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void AccessCheck::reportCrossOriginDenial(JSContext* cx, JS::HandleId id,
+                                          const nsACString& accessType) {
+  
+  
+  
+  
+  if (JS_IsExceptionPending(cx)) {
+    return;
+  }
+
+  nsAutoCString message;
+  if (JSID_IS_VOID(id)) {
+    message = NS_LITERAL_CSTRING("Permission denied to access object");
+  } else {
+    
+    
+    
+    JS::RootedValue idVal(cx, js::IdToValue(id));
+    nsAutoJSString propName;
+    JS::RootedString idStr(cx, JS_ValueToSource(cx, idVal));
+    if (!idStr || !propName.init(cx, idStr)) {
+      return;
+    }
+    message = NS_LITERAL_CSTRING("Permission denied to ") + accessType +
+              NS_LITERAL_CSTRING(" property ") +
+              NS_ConvertUTF16toUTF8(propName) +
+              NS_LITERAL_CSTRING(" on cross-origin object");
+  }
+  ErrorResult rv;
+  rv.ThrowDOMException(NS_ERROR_DOM_SECURITY_ERR, message);
+  MOZ_ALWAYS_TRUE(rv.MaybeSetPendingException(cx));
+}
+
+bool OpaqueWithSilentFailing::deny(JSContext* cx, js::Wrapper::Action act,
+                                   HandleId id, bool mayThrow) {
+  
+  if (act == js::Wrapper::GET || act == js::Wrapper::ENUMERATE ||
+      act == js::Wrapper::GET_PROPERTY_DESCRIPTOR) {
+    
+    
+    return ReportWrapperDenial(cx, id, WrapperDenialForCOW,
+                               "Access to privileged JS object not permitted");
+  }
+
+  return false;
+}
+
+}  

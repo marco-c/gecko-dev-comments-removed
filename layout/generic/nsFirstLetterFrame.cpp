@@ -21,146 +21,126 @@
 using namespace mozilla;
 using namespace mozilla::layout;
 
-nsFirstLetterFrame*
-NS_NewFirstLetterFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsFirstLetterFrame* NS_NewFirstLetterFrame(nsIPresShell* aPresShell,
+                                           ComputedStyle* aStyle) {
   return new (aPresShell) nsFirstLetterFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsFirstLetterFrame)
 
 NS_QUERYFRAME_HEAD(nsFirstLetterFrame)
-  NS_QUERYFRAME_ENTRY(nsFirstLetterFrame)
+NS_QUERYFRAME_ENTRY(nsFirstLetterFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 #ifdef DEBUG_FRAME_DUMP
-nsresult
-nsFirstLetterFrame::GetFrameName(nsAString& aResult) const
-{
+nsresult nsFirstLetterFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(NS_LITERAL_STRING("Letter"), aResult);
 }
 #endif
 
-void
-nsFirstLetterFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                     const nsDisplayListSet& aLists)
-{
+void nsFirstLetterFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                          const nsDisplayListSet& aLists) {
   BuildDisplayListForInline(aBuilder, aLists);
 }
 
-void
-nsFirstLetterFrame::Init(nsIContent*       aContent,
-                         nsContainerFrame* aParent,
-                         nsIFrame*         aPrevInFlow)
-{
+void nsFirstLetterFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                              nsIFrame* aPrevInFlow) {
   RefPtr<ComputedStyle> newSC;
   if (aPrevInFlow) {
     
     
     
     nsIFrame* styleParent =
-      CorrectStyleParentFrame(aParent, nsCSSPseudoElements::firstLetter());
+        CorrectStyleParentFrame(aParent, nsCSSPseudoElements::firstLetter());
     ComputedStyle* parentComputedStyle = styleParent->Style();
-    newSC = PresContext()->StyleSet()->
-      ResolveStyleForFirstLetterContinuation(parentComputedStyle);
+    newSC = PresContext()->StyleSet()->ResolveStyleForFirstLetterContinuation(
+        parentComputedStyle);
     SetComputedStyleWithoutNotification(newSC);
   }
 
   nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
 }
 
-void
-nsFirstLetterFrame::SetInitialChildList(ChildListID  aListID,
-                                        nsFrameList& aChildList)
-{
-  MOZ_ASSERT(aListID == kPrincipalList, "Principal child list is the only "
+void nsFirstLetterFrame::SetInitialChildList(ChildListID aListID,
+                                             nsFrameList& aChildList) {
+  MOZ_ASSERT(aListID == kPrincipalList,
+             "Principal child list is the only "
              "list that nsFirstLetterFrame should set via this function");
   for (nsIFrame* f : aChildList) {
     MOZ_ASSERT(f->GetParent() == this, "Unexpected parent");
-    MOZ_ASSERT(f->IsTextFrame(), "We should not have kids that are containers!");
-    nsLayoutUtils::MarkDescendantsDirty(f); 
+    MOZ_ASSERT(f->IsTextFrame(),
+               "We should not have kids that are containers!");
+    nsLayoutUtils::MarkDescendantsDirty(f);  
   }
 
   mFrames.SetFrames(aChildList);
 }
 
-nsresult
-nsFirstLetterFrame::GetChildFrameContainingOffset(int32_t inContentOffset,
-                                                  bool inHint,
-                                                  int32_t* outFrameContentOffset,
-                                                  nsIFrame **outChildFrame)
-{
-  nsIFrame *kid = mFrames.FirstChild();
+nsresult nsFirstLetterFrame::GetChildFrameContainingOffset(
+    int32_t inContentOffset, bool inHint, int32_t* outFrameContentOffset,
+    nsIFrame** outChildFrame) {
+  nsIFrame* kid = mFrames.FirstChild();
   if (kid) {
-    return kid->GetChildFrameContainingOffset(inContentOffset, inHint, outFrameContentOffset, outChildFrame);
+    return kid->GetChildFrameContainingOffset(
+        inContentOffset, inHint, outFrameContentOffset, outChildFrame);
   } else {
-    return nsFrame::GetChildFrameContainingOffset(inContentOffset, inHint, outFrameContentOffset, outChildFrame);
+    return nsFrame::GetChildFrameContainingOffset(
+        inContentOffset, inHint, outFrameContentOffset, outChildFrame);
   }
 }
 
 
 
- void
-nsFirstLetterFrame::AddInlineMinISize(gfxContext *aRenderingContext,
-                                      nsIFrame::InlineMinISizeData *aData)
-{
+ void nsFirstLetterFrame::AddInlineMinISize(
+    gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::MIN_ISIZE);
 }
 
 
 
- void
-nsFirstLetterFrame::AddInlinePrefISize(gfxContext *aRenderingContext,
-                                       nsIFrame::InlinePrefISizeData *aData)
-{
+ void nsFirstLetterFrame::AddInlinePrefISize(
+    gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::PREF_ISIZE);
   aData->mLineIsEmpty = false;
 }
 
 
- nscoord
-nsFirstLetterFrame::GetMinISize(gfxContext *aRenderingContext)
-{
+ nscoord nsFirstLetterFrame::GetMinISize(
+    gfxContext* aRenderingContext) {
   return nsLayoutUtils::MinISizeFromInline(this, aRenderingContext);
 }
 
 
- nscoord
-nsFirstLetterFrame::GetPrefISize(gfxContext *aRenderingContext)
-{
+ nscoord nsFirstLetterFrame::GetPrefISize(
+    gfxContext* aRenderingContext) {
   return nsLayoutUtils::PrefISizeFromInline(this, aRenderingContext);
 }
 
 
-LogicalSize
-nsFirstLetterFrame::ComputeSize(gfxContext *aRenderingContext,
-                                WritingMode aWM,
-                                const LogicalSize& aCBSize,
-                                nscoord aAvailableISize,
-                                const LogicalSize& aMargin,
-                                const LogicalSize& aBorder,
-                                const LogicalSize& aPadding,
-                                ComputeSizeFlags aFlags)
-{
+LogicalSize nsFirstLetterFrame::ComputeSize(
+    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
+    nscoord aAvailableISize, const LogicalSize& aMargin,
+    const LogicalSize& aBorder, const LogicalSize& aPadding,
+    ComputeSizeFlags aFlags) {
   if (GetPrevInFlow()) {
     
     
     return LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
   }
-  return nsContainerFrame::ComputeSize(aRenderingContext, aWM,
-      aCBSize, aAvailableISize, aMargin, aBorder, aPadding, aFlags);
+  return nsContainerFrame::ComputeSize(aRenderingContext, aWM, aCBSize,
+                                       aAvailableISize, aMargin, aBorder,
+                                       aPadding, aFlags);
 }
 
-void
-nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
-                           ReflowOutput&     aMetrics,
-                           const ReflowInput& aReflowInput,
-                           nsReflowStatus&          aReflowStatus)
-{
+void nsFirstLetterFrame::Reflow(nsPresContext* aPresContext,
+                                ReflowOutput& aMetrics,
+                                const ReflowInput& aReflowInput,
+                                nsReflowStatus& aReflowStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsFirstLetterFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aMetrics, aReflowStatus);
-  MOZ_ASSERT(aReflowStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
+  MOZ_ASSERT(aReflowStatus.IsEmpty(),
+             "Caller should pass a fresh reflow status!");
 
   
   DrainOverflowFrames(aPresContext);
@@ -191,11 +171,10 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
     ReflowInput rs(aPresContext, aReflowInput, kid, kidAvailSize);
     nsLineLayout ll(aPresContext, nullptr, &aReflowInput, nullptr, nullptr);
 
-    ll.BeginLineReflow(bp.IStart(wm), bp.BStart(wm),
-                       availSize.ISize(wm), NS_UNCONSTRAINEDSIZE,
-                       false, true, kidWritingMode,
-                       nsSize(aReflowInput.AvailableWidth(),
-                              aReflowInput.AvailableHeight()));
+    ll.BeginLineReflow(
+        bp.IStart(wm), bp.BStart(wm), availSize.ISize(wm), NS_UNCONSTRAINEDSIZE,
+        false, true, kidWritingMode,
+        nsSize(aReflowInput.AvailableWidth(), aReflowInput.AvailableHeight()));
     rs.mLineLayout = &ll;
     ll.SetInFirstLetter(true);
     ll.SetFirstLetterStyleOK(true);
@@ -211,16 +190,15 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
 
     
     LogicalSize convertedSize = kidMetrics.Size(lineWM).ConvertTo(wm, lineWM);
-    kid->SetRect(nsRect(bp.IStart(wm), bp.BStart(wm),
-                        convertedSize.ISize(wm), convertedSize.BSize(wm)));
+    kid->SetRect(nsRect(bp.IStart(wm), bp.BStart(wm), convertedSize.ISize(wm),
+                        convertedSize.BSize(wm)));
     kid->FinishAndStoreOverflow(&kidMetrics, rs.mStyleDisplay);
     kid->DidReflow(aPresContext, nullptr);
 
     convertedSize.ISize(wm) += bp.IStartEnd(wm);
     convertedSize.BSize(wm) += bp.BStartEnd(wm);
     aMetrics.SetSize(wm, convertedSize);
-    aMetrics.SetBlockStartAscent(kidMetrics.BlockStartAscent() +
-                                 bp.BStart(wm));
+    aMetrics.SetBlockStartAscent(kidMetrics.BlockStartAscent() + bp.BStart(wm));
 
     
     
@@ -233,12 +211,12 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
   } else {
     
     nsLineLayout* ll = aReflowInput.mLineLayout;
-    bool          pushedFrame;
+    bool pushedFrame;
 
-    ll->SetInFirstLetter(
-      mComputedStyle->GetPseudo() == nsCSSPseudoElements::firstLetter());
-    ll->BeginSpan(this, &aReflowInput, bp.IStart(wm),
-                  availSize.ISize(wm), &mBaseline);
+    ll->SetInFirstLetter(mComputedStyle->GetPseudo() ==
+                         nsCSSPseudoElements::firstLetter());
+    ll->BeginSpan(this, &aReflowInput, bp.IStart(wm), availSize.ISize(wm),
+                  &mBaseline);
     ll->ReflowFrame(kid, aReflowStatus, &kidMetrics, pushedFrame);
     NS_ASSERTION(lineWM.IsVertical() == wm.IsVertical(),
                  "we're assuming we can mix sizes between lineWM and wm "
@@ -283,8 +261,8 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
         
         
         nsIFrame* continuation;
-        CreateContinuationForFloatingParent(aPresContext, kid,
-                                            &continuation, true);
+        CreateContinuationForFloatingParent(aPresContext, kid, &continuation,
+                                            true);
       }
     }
   }
@@ -292,19 +270,14 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
   NS_FRAME_SET_TRUNCATION(aReflowStatus, aReflowInput, aMetrics);
 }
 
- bool
-nsFirstLetterFrame::CanContinueTextRun() const
-{
+ bool nsFirstLetterFrame::CanContinueTextRun() const {
   
   return true;
 }
 
-nsresult
-nsFirstLetterFrame::CreateContinuationForFloatingParent(nsPresContext* aPresContext,
-                                                        nsIFrame* aChild,
-                                                        nsIFrame** aContinuation,
-                                                        bool aIsFluid)
-{
+nsresult nsFirstLetterFrame::CreateContinuationForFloatingParent(
+    nsPresContext* aPresContext, nsIFrame* aChild, nsIFrame** aContinuation,
+    bool aIsFluid) {
   NS_ASSERTION(IsFloating(),
                "can only call this on floating first letter frames");
   MOZ_ASSERT(aContinuation, "bad args");
@@ -315,8 +288,8 @@ nsFirstLetterFrame::CreateContinuationForFloatingParent(nsPresContext* aPresCont
   nsPlaceholderFrame* placeholderFrame = GetPlaceholderFrame();
   nsContainerFrame* parent = placeholderFrame->GetParent();
 
-  nsIFrame* continuation = presShell->FrameConstructor()->
-    CreateContinuingFrame(aPresContext, aChild, parent, aIsFluid);
+  nsIFrame* continuation = presShell->FrameConstructor()->CreateContinuingFrame(
+      aPresContext, aChild, parent, aIsFluid);
 
   
   
@@ -328,7 +301,8 @@ nsFirstLetterFrame::CreateContinuationForFloatingParent(nsPresContext* aPresCont
   ComputedStyle* parentSC = parent->Style();
   if (parentSC) {
     RefPtr<ComputedStyle> newSC;
-    newSC = presShell->StyleSet()->ResolveStyleForFirstLetterContinuation(parentSC);
+    newSC =
+        presShell->StyleSet()->ResolveStyleForFirstLetterContinuation(parentSC);
     continuation->SetComputedStyle(newSC);
     nsLayoutUtils::MarkDescendantsDirty(continuation);
   }
@@ -344,9 +318,7 @@ nsFirstLetterFrame::CreateContinuationForFloatingParent(nsPresContext* aPresCont
   return NS_OK;
 }
 
-void
-nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext)
-{
+void nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext) {
   
   nsFirstLetterFrame* prevInFlow = (nsFirstLetterFrame*)GetPrevInFlow();
   if (prevInFlow) {
@@ -377,36 +349,31 @@ nsFirstLetterFrame::DrainOverflowFrames(nsPresContext* aPresContext)
   if (kid) {
     nsIContent* kidContent = kid->GetContent();
     if (kidContent) {
-      NS_ASSERTION(kidContent->IsText(),
-                   "should contain only text nodes");
+      NS_ASSERTION(kidContent->IsText(), "should contain only text nodes");
       ComputedStyle* parentSC;
       if (prevInFlow) {
         
-        nsIFrame* styleParent =
-          CorrectStyleParentFrame(GetParent(),
-                                  nsCSSPseudoElements::firstLetter());
+        nsIFrame* styleParent = CorrectStyleParentFrame(
+            GetParent(), nsCSSPseudoElements::firstLetter());
         parentSC = styleParent->Style();
       } else {
         
         parentSC = mComputedStyle;
       }
       RefPtr<ComputedStyle> sc =
-        aPresContext->StyleSet()->ResolveStyleForText(kidContent, parentSC);
+          aPresContext->StyleSet()->ResolveStyleForText(kidContent, parentSC);
       kid->SetComputedStyle(sc);
       nsLayoutUtils::MarkDescendantsDirty(kid);
     }
   }
 }
 
-nscoord
-nsFirstLetterFrame::GetLogicalBaseline(WritingMode aWritingMode) const
-{
+nscoord nsFirstLetterFrame::GetLogicalBaseline(WritingMode aWritingMode) const {
   return mBaseline;
 }
 
-nsIFrame::LogicalSides
-nsFirstLetterFrame::GetLogicalSkipSides(const ReflowInput* aReflowInput) const
-{
+nsIFrame::LogicalSides nsFirstLetterFrame::GetLogicalSkipSides(
+    const ReflowInput* aReflowInput) const {
   if (GetPrevContinuation()) {
     
     

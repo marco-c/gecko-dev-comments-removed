@@ -23,12 +23,10 @@ namespace mozilla {
 class ComputedTimingFunction;
 class EffectSet;
 
-class AnimationUtils
-{
-public:
-  static dom::Nullable<double>
-  TimeDurationToDouble(const dom::Nullable<TimeDuration>& aTime)
-  {
+class AnimationUtils {
+ public:
+  static dom::Nullable<double> TimeDurationToDouble(
+      const dom::Nullable<TimeDuration>& aTime) {
     dom::Nullable<double> result;
 
     if (!aTime.IsNull()) {
@@ -36,17 +34,15 @@ public:
       
       
       
-      result.SetValue(
-        nsRFPService::ReduceTimePrecisionAsMSecs(aTime.Value().ToMilliseconds(), 0, TimerPrecisionType::RFPOnly)
-      );
+      result.SetValue(nsRFPService::ReduceTimePrecisionAsMSecs(
+          aTime.Value().ToMilliseconds(), 0, TimerPrecisionType::RFPOnly));
     }
 
     return result;
   }
 
-  static dom::Nullable<TimeDuration>
-  DoubleToTimeDuration(const dom::Nullable<double>& aTime)
-  {
+  static dom::Nullable<TimeDuration> DoubleToTimeDuration(
+      const dom::Nullable<double>& aTime) {
     dom::Nullable<TimeDuration> result;
 
     if (!aTime.IsNull()) {
@@ -62,22 +58,19 @@ public:
   
 
 
-  static nsIDocument*
-  GetCurrentRealmDocument(JSContext* aCx);
+  static nsIDocument* GetCurrentRealmDocument(JSContext* aCx);
 
   
 
 
 
 
-  static nsIDocument*
-  GetDocumentFromGlobal(JSObject* aGlobalObject);
+  static nsIDocument* GetDocumentFromGlobal(JSObject* aGlobalObject);
 
   
 
 
-  static bool
-  IsOffscreenThrottlingEnabled();
+  static bool IsOffscreenThrottlingEnabled();
 
   
 
@@ -87,6 +80,6 @@ public:
                                              const nsIFrame* aFrame);
 };
 
-} 
+}  
 
 #endif

@@ -18,10 +18,8 @@ class nsIWebNavigationInfo;
 class nsPIDOMWindowOuter;
 
 
-class MaybeCloseWindowHelper final
-  : public nsITimerCallback
-{
-public:
+class MaybeCloseWindowHelper final : public nsITimerCallback {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSITIMERCALLBACK
 
@@ -35,10 +33,10 @@ public:
 
   void SetShouldCloseWindow(bool aShouldCloseWindow);
 
-protected:
+ protected:
   ~MaybeCloseWindowHelper();
 
-private:
+ private:
   
 
 
@@ -59,30 +57,27 @@ private:
   bool mShouldCloseWindow;
 };
 
-class nsDSURIContentListener final
-  : public nsIURIContentListener
-  , public nsSupportsWeakReference
-{
+class nsDSURIContentListener final : public nsIURIContentListener,
+                                     public nsSupportsWeakReference {
   friend class nsDocShell;
 
-public:
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIURICONTENTLISTENER
 
   nsresult Init();
 
-protected:
+ protected:
   explicit nsDSURIContentListener(nsDocShell* aDocShell);
   virtual ~nsDSURIContentListener();
 
-  void DropDocShellReference()
-  {
+  void DropDocShellReference() {
     mDocShell = nullptr;
     mExistingJPEGRequest = nullptr;
     mExistingJPEGStreamListener = nullptr;
   }
 
-protected:
+ protected:
   nsDocShell* mDocShell;
   
   nsCOMPtr<nsIStreamListener> mExistingJPEGStreamListener;

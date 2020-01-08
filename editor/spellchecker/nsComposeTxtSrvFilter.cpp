@@ -4,26 +4,22 @@
 
 
 #include "nsComposeTxtSrvFilter.h"
-#include "nsError.h"                    
-#include "nsIContent.h"                 
-#include "nsLiteralString.h"            
-#include "mozilla/dom/Element.h"                 
+#include "nsError.h"              
+#include "nsIContent.h"           
+#include "nsLiteralString.h"      
+#include "mozilla/dom/Element.h"  
 
 using namespace mozilla;
 
-bool
-nsComposeTxtSrvFilter::Skip(nsINode* aNode) const
-{
+bool nsComposeTxtSrvFilter::Skip(nsINode* aNode) const {
   if (NS_WARN_IF(!aNode)) {
     return false;
   }
 
   
 
-  if (aNode->IsAnyOfHTMLElements(nsGkAtoms::script,
-                                 nsGkAtoms::textarea,
-                                 nsGkAtoms::select,
-                                 nsGkAtoms::style,
+  if (aNode->IsAnyOfHTMLElements(nsGkAtoms::script, nsGkAtoms::textarea,
+                                 nsGkAtoms::select, nsGkAtoms::style,
                                  nsGkAtoms::map)) {
     return true;
   }
@@ -35,41 +31,33 @@ nsComposeTxtSrvFilter::Skip(nsINode* aNode) const
   
   
   if (aNode->IsHTMLElement(nsGkAtoms::blockquote)) {
-    return aNode->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                           nsGkAtoms::type,
-                                           nsGkAtoms::cite,
-                                           eIgnoreCase);
+    return aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
+                                           nsGkAtoms::cite, eIgnoreCase);
   }
 
   if (aNode->IsHTMLElement(nsGkAtoms::span)) {
-    if (aNode->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                        nsGkAtoms::mozquote,
-                                        nsGkAtoms::_true,
-                                        eIgnoreCase)) {
+    if (aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::mozquote,
+                                        nsGkAtoms::_true, eIgnoreCase)) {
       return true;
     }
 
-    return aNode->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                           nsGkAtoms::_class,
+    return aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::_class,
                                            nsGkAtoms::mozsignature,
                                            eCaseMatters);
   }
 
   if (aNode->IsHTMLElement(nsGkAtoms::table)) {
     return aNode->AsElement()->AttrValueIs(
-                                 kNameSpaceID_None,
-                                 nsGkAtoms::_class,
-                                 NS_LITERAL_STRING("moz-email-headers-table"),
-                                 eCaseMatters);
+        kNameSpaceID_None, nsGkAtoms::_class,
+        NS_LITERAL_STRING("moz-email-headers-table"), eCaseMatters);
   }
 
   return false;
 }
 
 
-UniquePtr<nsComposeTxtSrvFilter>
-nsComposeTxtSrvFilter::CreateHelper(bool aIsForMail)
-{
+UniquePtr<nsComposeTxtSrvFilter> nsComposeTxtSrvFilter::CreateHelper(
+    bool aIsForMail) {
   auto filter = MakeUnique<nsComposeTxtSrvFilter>();
   filter->Init(aIsForMail);
   return filter;

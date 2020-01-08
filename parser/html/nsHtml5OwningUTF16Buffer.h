@@ -8,28 +8,27 @@
 #include "nsHtml5UTF16Buffer.h"
 #include "mozilla/Span.h"
 
-class nsHtml5OwningUTF16Buffer : public nsHtml5UTF16Buffer
-{
-private:
+class nsHtml5OwningUTF16Buffer : public nsHtml5UTF16Buffer {
+ private:
   
 
 
   explicit nsHtml5OwningUTF16Buffer(char16_t* aBuffer);
 
-public:
+ public:
   
 
 
 
   explicit nsHtml5OwningUTF16Buffer(void* aKey);
 
-protected:
+ protected:
   
 
 
   ~nsHtml5OwningUTF16Buffer();
 
-public:
+ public:
   
 
 
@@ -41,7 +40,7 @@ public:
   void* key;
 
   static already_AddRefed<nsHtml5OwningUTF16Buffer> FalliblyCreate(
-    int32_t aLength);
+      int32_t aLength);
 
   
 
@@ -61,8 +60,8 @@ public:
   nsrefcnt AddRef();
   nsrefcnt Release();
 
-private:
+ private:
   nsAutoRefCnt mRefCnt;
 };
 
-#endif 
+#endif  

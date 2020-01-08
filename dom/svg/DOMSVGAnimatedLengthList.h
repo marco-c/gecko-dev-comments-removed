@@ -103,11 +103,10 @@ class DOMSVGLengthList;
 
 
 
-class DOMSVGAnimatedLengthList final : public nsWrapperCache
-{
+class DOMSVGAnimatedLengthList final : public nsWrapperCache {
   friend class DOMSVGLengthList;
 
-public:
+ public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGAnimatedLengthList)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(DOMSVGAnimatedLengthList)
 
@@ -122,19 +121,17 @@ public:
 
 
 
-  static already_AddRefed<DOMSVGAnimatedLengthList>
-    GetDOMWrapper(SVGAnimatedLengthList *aList,
-                  nsSVGElement *aElement,
-                  uint8_t aAttrEnum,
-                  uint8_t aAxis);
+  static already_AddRefed<DOMSVGAnimatedLengthList> GetDOMWrapper(
+      SVGAnimatedLengthList* aList, nsSVGElement* aElement, uint8_t aAttrEnum,
+      uint8_t aAxis);
 
   
 
 
 
 
-  static DOMSVGAnimatedLengthList*
-    GetDOMWrapperIfExists(SVGAnimatedLengthList *aList);
+  static DOMSVGAnimatedLengthList* GetDOMWrapperIfExists(
+      SVGAnimatedLengthList* aList);
 
   
 
@@ -159,25 +156,24 @@ public:
 
   
   nsSVGElement* GetParentObject() const { return mElement; }
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
   
   already_AddRefed<DOMSVGLengthList> BaseVal();
   already_AddRefed<DOMSVGLengthList> AnimVal();
 
-private:
-
+ private:
   
 
 
 
-  DOMSVGAnimatedLengthList(nsSVGElement *aElement, uint8_t aAttrEnum, uint8_t aAxis)
-    : mBaseVal(nullptr)
-    , mAnimVal(nullptr)
-    , mElement(aElement)
-    , mAttrEnum(aAttrEnum)
-    , mAxis(aAxis)
-  {
-  }
+  DOMSVGAnimatedLengthList(nsSVGElement* aElement, uint8_t aAttrEnum,
+                           uint8_t aAxis)
+      : mBaseVal(nullptr),
+        mAnimVal(nullptr),
+        mElement(aElement),
+        mAttrEnum(aAttrEnum),
+        mAxis(aAxis) {}
 
   ~DOMSVGAnimatedLengthList();
 
@@ -188,8 +184,8 @@ private:
   
   
   
-  DOMSVGLengthList *mBaseVal;
-  DOMSVGLengthList *mAnimVal;
+  DOMSVGLengthList* mBaseVal;
+  DOMSVGLengthList* mAnimVal;
 
   
   
@@ -199,6 +195,6 @@ private:
   uint8_t mAxis;
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -2,15 +2,12 @@
 
 
 
-#ifndef  MEDIA_ENGINE_WRAPPER_H_
+#ifndef MEDIA_ENGINE_WRAPPER_H_
 #define MEDIA_ENGINE_WRAPPER_H_
 
 #include <mozilla/Scoped.h>
 
-
-
-namespace mozilla
-{
+namespace mozilla {
 
 
 
@@ -18,22 +15,18 @@ namespace mozilla
 
 
 
-template<typename T>
-struct ScopedCustomReleaseTraits0
-{
+template <typename T>
+struct ScopedCustomReleaseTraits0 {
   typedef T* type;
   static T* empty() { return nullptr; }
-  static void release(T* ptr)
-  {
-    if(ptr)
-    {
+  static void release(T* ptr) {
+    if (ptr) {
       (ptr)->Release();
     }
   }
 };
 
 SCOPED_TEMPLATE(ScopedCustomReleasePtr, ScopedCustomReleaseTraits0)
-}
-
+}  
 
 #endif

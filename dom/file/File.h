@@ -19,70 +19,67 @@ struct ChromeFilePropertyBag;
 struct FilePropertyBag;
 class Promise;
 
-class File final : public Blob
-{
+class File final : public Blob {
   friend class Blob;
 
-public:
+ public:
   
   
-  static File*
-  Create(nsISupports* aParent, BlobImpl* aImpl);
+  static File* Create(nsISupports* aParent, BlobImpl* aImpl);
 
-  static already_AddRefed<File>
-  Create(nsISupports* aParent, const nsAString& aName,
-         const nsAString& aContentType, uint64_t aLength,
-         int64_t aLastModifiedDate);
-
-  
-  
-  
-  static already_AddRefed<File>
-  CreateMemoryFile(nsISupports* aParent, void* aMemoryBuffer, uint64_t aLength,
-                   const nsAString& aName, const nsAString& aContentType,
-                   int64_t aLastModifiedDate);
+  static already_AddRefed<File> Create(nsISupports* aParent,
+                                       const nsAString& aName,
+                                       const nsAString& aContentType,
+                                       uint64_t aLength,
+                                       int64_t aLastModifiedDate);
 
   
   
   
-  
-  
-  
-  static already_AddRefed<File>
-  CreateFromFile(nsISupports* aParent, nsIFile* aFile);
-
-  static already_AddRefed<File>
-  CreateFromFile(nsISupports* aParent, nsIFile* aFile, const nsAString& aName,
-                 const nsAString& aContentType);
+  static already_AddRefed<File> CreateMemoryFile(nsISupports* aParent,
+                                                 void* aMemoryBuffer,
+                                                 uint64_t aLength,
+                                                 const nsAString& aName,
+                                                 const nsAString& aContentType,
+                                                 int64_t aLastModifiedDate);
 
   
+  
+  
+  
+  
+  
+  static already_AddRefed<File> CreateFromFile(nsISupports* aParent,
+                                               nsIFile* aFile);
 
-  virtual JSObject* WrapObject(JSContext *cx,
+  static already_AddRefed<File> CreateFromFile(nsISupports* aParent,
+                                               nsIFile* aFile,
+                                               const nsAString& aName,
+                                               const nsAString& aContentType);
+
+  
+
+  virtual JSObject* WrapObject(JSContext* cx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  static already_AddRefed<File>
-  Constructor(const GlobalObject& aGlobal,
-              const Sequence<BlobPart>& aData,
-              const nsAString& aName,
-              const FilePropertyBag& aBag,
-              ErrorResult& aRv);
+  static already_AddRefed<File> Constructor(const GlobalObject& aGlobal,
+                                            const Sequence<BlobPart>& aData,
+                                            const nsAString& aName,
+                                            const FilePropertyBag& aBag,
+                                            ErrorResult& aRv);
 
   
-  static already_AddRefed<Promise>
-  CreateFromFileName(const GlobalObject& aGlobal,
-                     const nsAString& aFilePath,
-                     const ChromeFilePropertyBag& aBag,
-                     SystemCallerGuarantee aGuarantee,
-                     ErrorResult& aRv);
+  static already_AddRefed<Promise> CreateFromFileName(
+      const GlobalObject& aGlobal, const nsAString& aFilePath,
+      const ChromeFilePropertyBag& aBag, SystemCallerGuarantee aGuarantee,
+      ErrorResult& aRv);
 
   
-  static already_AddRefed<Promise>
-  CreateFromNsIFile(const GlobalObject& aGlobal,
-                    nsIFile* aFile,
-                    const ChromeFilePropertyBag& aBag,
-                    SystemCallerGuarantee aGuarantee,
-                    ErrorResult& aRv);
+  static already_AddRefed<Promise> CreateFromNsIFile(
+      const GlobalObject& aGlobal, nsIFile* aFile,
+      const ChromeFilePropertyBag& aBag, SystemCallerGuarantee aGuarantee,
+      ErrorResult& aRv);
 
   void GetName(nsAString& aName) const;
 
@@ -95,17 +92,17 @@ public:
 
   void GetMozFullPathInternal(nsAString& aName, ErrorResult& aRv) const;
 
-protected:
+ protected:
   virtual bool HasFileInterface() const override { return true; }
 
-private:
+ private:
   
   
   File(nsISupports* aParent, BlobImpl* aImpl);
   ~File();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

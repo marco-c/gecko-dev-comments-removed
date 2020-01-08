@@ -17,26 +17,23 @@
 
 namespace CrashReporter {
 
-  extern MinidumpAnalyzerOptions gMinidumpAnalyzerOptions;
+extern MinidumpAnalyzerOptions gMinidumpAnalyzerOptions;
 
-  using google_breakpad::CFIFrameInfo;
+using google_breakpad::CFIFrameInfo;
 
-MozStackFrameSymbolizer::MozStackFrameSymbolizer() :
-  StackFrameSymbolizer(nullptr, nullptr)
-{
-}
+MozStackFrameSymbolizer::MozStackFrameSymbolizer()
+    : StackFrameSymbolizer(nullptr, nullptr) {}
 
 MozStackFrameSymbolizer::SymbolizerResult
 MozStackFrameSymbolizer::FillSourceLineInfo(const CodeModules* modules,
                                             const CodeModules* unloaded_modules,
                                             const SystemInfo* system_info,
-                                            StackFrame* stack_frame)
-{
+                                            StackFrame* stack_frame) {
   SymbolizerResult ret = StackFrameSymbolizer::FillSourceLineInfo(
-    modules, unloaded_modules, system_info, stack_frame);
+      modules, unloaded_modules, system_info, stack_frame);
 
   if (ret == kNoError && this->HasImplementation() &&
-    stack_frame->function_name.empty()) {
+      stack_frame->function_name.empty()) {
     
     
     
@@ -52,9 +49,8 @@ MozStackFrameSymbolizer::FillSourceLineInfo(const CodeModules* modules,
   return ret;
 }
 
-CFIFrameInfo*
-MozStackFrameSymbolizer::FindCFIFrameInfo(const StackFrame* frame)
-{
+CFIFrameInfo* MozStackFrameSymbolizer::FindCFIFrameInfo(
+    const StackFrame* frame) {
   std::string modulePath;
 
   
@@ -116,6 +112,6 @@ MozStackFrameSymbolizer::FindCFIFrameInfo(const StackFrame* frame)
   return rules.release();
 }
 
-} 
+}  
 
-#endif 
+#endif  

@@ -32,91 +32,113 @@ namespace js {
 
 
 struct PerformanceGroupHolder {
-
-    
-
+  
 
 
 
 
 
 
-    const PerformanceGroupVector* getGroups(JSContext*);
 
-    explicit PerformanceGroupHolder(JSRuntime* runtime)
-      : runtime_(runtime)
-      , initialized_(false)
-    {  }
-    ~PerformanceGroupHolder();
-    void unlink();
-  private:
-    JSRuntime* runtime_;
+  const PerformanceGroupVector* getGroups(JSContext*);
 
-    
-    bool initialized_;
+  explicit PerformanceGroupHolder(JSRuntime* runtime)
+      : runtime_(runtime), initialized_(false) {}
+  ~PerformanceGroupHolder();
+  void unlink();
 
-    
-    
-    PerformanceGroupVector groups_;
+ private:
+  JSRuntime* runtime_;
+
+  
+  bool initialized_;
+
+  
+  
+  PerformanceGroupVector groups_;
 };
 
 
 
 
 struct PerformanceMonitoring {
-    
+  
 
 
-    uint64_t iteration() {
-        return iteration_;
+  uint64_t iteration() { return iteration_; }
+
+  explicit PerformanceMonitoring()
+      : totalCPOWTime(0),
+        stopwatchStartCallback(nullptr),
+        stopwatchStartClosure(nullptr),
+        stopwatchCommitCallback(nullptr),
+        stopwatchCommitClosure(nullptr),
+        getGroupsCallback(nullptr),
+        getGroupsClosure(nullptr),
+        isMonitoringJank_(false),
+        isMonitoringCPOW_(false),
+        iteration_(0),
+        startedAtIteration_(0),
+        highestTimestampCounter_(0) {}
+
+  
+
+
+
+
+
+
+
+  void reset();
+
+  
+
+
+
+
+
+
+  void start();
+
+  
+
+
+
+  bool commit();
+
+  
+
+
+  void dispose(JSRuntime* rtx);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool setIsMonitoringJank(bool value) {
+    if (isMonitoringJank_ != value) {
+      reset();
     }
 
-    explicit PerformanceMonitoring()
-      : totalCPOWTime(0)
-      , stopwatchStartCallback(nullptr)
-      , stopwatchStartClosure(nullptr)
-      , stopwatchCommitCallback(nullptr)
-      , stopwatchCommitClosure(nullptr)
-      , getGroupsCallback(nullptr)
-      , getGroupsClosure(nullptr)
-      , isMonitoringJank_(false)
-      , isMonitoringCPOW_(false)
-      , iteration_(0)
-      , startedAtIteration_(0)
-      , highestTimestampCounter_(0)
-    { }
+    isMonitoringJank_ = value;
+    return true;
+  }
+  bool isMonitoringJank() const { return isMonitoringJank_; }
 
-    
+  
 
 
+  bool addRecentGroup(PerformanceGroup* group);
 
-
-
-
-
-    void reset();
-
-    
-
-
-
-
-
-
-    void start();
-
-    
-
-
-
-    bool commit();
-
-    
-
-
-    void dispose(JSRuntime* rtx);
-
-    
+  
 
 
 
@@ -128,181 +150,148 @@ struct PerformanceMonitoring {
 
 
 
-    bool setIsMonitoringJank(bool value) {
-        if (isMonitoringJank_ != value) {
-            reset();
-        }
-
-        isMonitoringJank_ = value;
-        return true;
-    }
-    bool isMonitoringJank() const {
-        return isMonitoringJank_;
+  bool setIsMonitoringCPOW(bool value) {
+    if (isMonitoringCPOW_ != value) {
+      reset();
     }
 
+    isMonitoringCPOW_ = value;
+    return true;
+  }
+
+  bool isMonitoringCPOW() const { return isMonitoringCPOW_; }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void setStopwatchStartCallback(js::StopwatchStartCallback cb, void* closure) {
+    stopwatchStartCallback = cb;
+    stopwatchStartClosure = closure;
+  }
+  void setStopwatchCommitCallback(js::StopwatchCommitCallback cb,
+                                  void* closure) {
+    stopwatchCommitCallback = cb;
+    stopwatchCommitClosure = closure;
+  }
+
+  
+
+
+
+
+  void setGetGroupsCallback(js::GetGroupsCallback cb, void* closure) {
+    getGroupsCallback = cb;
+    getGroupsClosure = closure;
+  }
+
+  
+
+
+
+  uint64_t totalCPOWTime;
+
+  
+
+
+
+
+  uint64_t monotonicReadTimestampCounter();
+
+  
+
+
+
+
+
+
+
+
+  struct TestCpuRescheduling {
     
-
-
-    bool addRecentGroup(PerformanceGroup* group);
-
     
-
-
-
-
-
-
-
-
-
-
-
-    bool setIsMonitoringCPOW(bool value) {
-        if (isMonitoringCPOW_ != value) {
-            reset();
-        }
-
-        isMonitoringCPOW_ = value;
-        return true;
-    }
-
-    bool isMonitoringCPOW() const {
-        return isMonitoringCPOW_;
-    }
-
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void setStopwatchStartCallback(js::StopwatchStartCallback cb, void* closure) {
-        stopwatchStartCallback = cb;
-        stopwatchStartClosure = closure;
-    }
-    void setStopwatchCommitCallback(js::StopwatchCommitCallback cb, void* closure) {
-        stopwatchCommitCallback = cb;
-        stopwatchCommitClosure = closure;
-    }
-
     
-
-
-
-
-    void setGetGroupsCallback(js::GetGroupsCallback cb, void* closure) {
-        getGroupsCallback = cb;
-        getGroupsClosure = closure;
-    }
-
+    uint64_t stayed;
     
-
-
-
-    uint64_t totalCPOWTime;
-
     
-
-
-
-
-    uint64_t monotonicReadTimestampCounter();
-
     
-
-
-
-
-
-
-
-
-    struct TestCpuRescheduling
-    {
-        
-        
-        
-        
-        uint64_t stayed;
-        
-        
-        
-        
-        uint64_t moved;
-        TestCpuRescheduling()
-            : stayed(0),
-              moved(0)
-        { }
-    };
-    TestCpuRescheduling testCpuRescheduling;
-  private:
-    PerformanceMonitoring(const PerformanceMonitoring&) = delete;
-    PerformanceMonitoring& operator=(const PerformanceMonitoring&) = delete;
-
-  private:
-    friend struct PerformanceGroupHolder;
-    js::StopwatchStartCallback stopwatchStartCallback;
-    void* stopwatchStartClosure;
-    js::StopwatchCommitCallback stopwatchCommitCallback;
-    void* stopwatchCommitClosure;
-
-    js::GetGroupsCallback getGroupsCallback;
-    void* getGroupsClosure;
-
     
+    uint64_t moved;
+    TestCpuRescheduling() : stayed(0), moved(0) {}
+  };
+  TestCpuRescheduling testCpuRescheduling;
+
+ private:
+  PerformanceMonitoring(const PerformanceMonitoring&) = delete;
+  PerformanceMonitoring& operator=(const PerformanceMonitoring&) = delete;
+
+ private:
+  friend struct PerformanceGroupHolder;
+  js::StopwatchStartCallback stopwatchStartCallback;
+  void* stopwatchStartClosure;
+  js::StopwatchCommitCallback stopwatchCommitCallback;
+  void* stopwatchCommitClosure;
+
+  js::GetGroupsCallback getGroupsCallback;
+  void* getGroupsClosure;
+
+  
 
 
-    bool isMonitoringJank_;
-    
+  bool isMonitoringJank_;
+  
 
 
-    bool isMonitoringCPOW_;
+  bool isMonitoringCPOW_;
 
-    
-
-
-
-
-
-
-
-
-    uint64_t iteration_;
-
-    
-
-
-
-
-
-
-    uint64_t startedAtIteration_;
-
-    
-
-
-    PerformanceGroupVector recentGroups_;
-
-    
+  
 
 
 
-    uint64_t highestTimestampCounter_;
+
+
+
+
+
+  uint64_t iteration_;
+
+  
+
+
+
+
+
+
+  uint64_t startedAtIteration_;
+
+  
+
+
+  PerformanceGroupVector recentGroups_;
+
+  
+
+
+
+  uint64_t highestTimestampCounter_;
 };
 
 
-#if 0 
+#if 0  
 struct cpuid_t {
     uint16_t group_;
     uint8_t number_;
@@ -316,94 +305,96 @@ struct cpuid_t {
     { }
 };
 #else
-    typedef struct {} cpuid_t;
-#endif 
+typedef struct {
+} cpuid_t;
+#endif  
 
 
 
 
 
 class AutoStopwatch final {
-    
-    
-    JSContext* const cx_;
+  
+  
+  JSContext* const cx_;
 
-    
-    
-    uint64_t iteration_;
+  
+  
+  uint64_t iteration_;
 
-    
-    bool isMonitoringJank_;
-    
-    bool isMonitoringCPOW_;
+  
+  bool isMonitoringJank_;
+  
+  bool isMonitoringCPOW_;
 
-    
-    uint64_t cyclesStart_;
-    uint64_t CPOWTimeStart_;
+  
+  uint64_t cyclesStart_;
+  uint64_t CPOWTimeStart_;
 
-    
-    
-    cpuid_t cpuStart_;
+  
+  
+  cpuid_t cpuStart_;
 
-    PerformanceGroupVector groups_;
+  PerformanceGroupVector groups_;
 
-  public:
-    
-    
-    
-    
-    
-    explicit AutoStopwatch(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    ~AutoStopwatch();
-  private:
-    void inline enter();
+ public:
+  
+  
+  
+  
+  
+  explicit AutoStopwatch(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+  ~AutoStopwatch();
 
-    bool inline exit();
+ private:
+  void inline enter();
 
-    
-    
-    
-    
-    
-    PerformanceGroup* acquireGroup(PerformanceGroup* group);
+  bool inline exit();
 
-    
-    
-    void releaseGroup(PerformanceGroup* group);
+  
+  
+  
+  
+  
+  PerformanceGroup* acquireGroup(PerformanceGroup* group);
 
-    
-    
-    bool addToGroups(uint64_t cyclesDelta, uint64_t CPOWTimeDelta);
+  
+  
+  void releaseGroup(PerformanceGroup* group);
 
-    
-    bool addToGroup(JSRuntime* runtime, uint64_t cyclesDelta, uint64_t CPOWTimeDelta, PerformanceGroup* group);
+  
+  
+  bool addToGroups(uint64_t cyclesDelta, uint64_t CPOWTimeDelta);
 
-    
-    void updateTelemetry(const cpuid_t& a, const cpuid_t& b);
+  
+  bool addToGroup(JSRuntime* runtime, uint64_t cyclesDelta,
+                  uint64_t CPOWTimeDelta, PerformanceGroup* group);
 
-    
-    
-    
-    
-    
-    uint64_t inline getDelta(const uint64_t end, const uint64_t start) const;
+  
+  void updateTelemetry(const cpuid_t& a, const cpuid_t& b);
 
-    
-    
-    uint64_t inline getCycles(JSRuntime*) const;
+  
+  
+  
+  
+  
+  uint64_t inline getDelta(const uint64_t end, const uint64_t start) const;
 
+  
+  
+  uint64_t inline getCycles(JSRuntime*) const;
 
-    
-    
-    cpuid_t inline getCPU() const;
+  
+  
+  cpuid_t inline getCPU() const;
 
-    
-    bool inline isSameCPU(const cpuid_t& a, const cpuid_t& b) const;
-  private:
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
+  
+  bool inline isSameCPU(const cpuid_t& a, const cpuid_t& b) const;
+
+ private:
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
 };
 
+}  
 
-} 
-
-#endif 
+#endif  

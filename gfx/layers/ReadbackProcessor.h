@@ -7,10 +7,10 @@
 #ifndef GFX_READBACKPROCESSOR_H
 #define GFX_READBACKPROCESSOR_H
 
-#include <stdint.h>                     
-#include "nsRect.h"                     
-#include "nsRegionFwd.h"                
-#include "nsTArray.h"                   
+#include <stdint.h>       
+#include "nsRect.h"       
+#include "nsRegionFwd.h"  
+#include "nsTArray.h"     
 
 namespace mozilla {
 namespace layers {
@@ -20,7 +20,7 @@ class ReadbackLayer;
 class PaintedLayer;
 
 class ReadbackProcessor {
-public:
+ public:
   
 
 
@@ -46,11 +46,11 @@ public:
 
 
 
-    gfx::IntRect      mUpdateRect;
+    gfx::IntRect mUpdateRect;
     
 
 
-    uint64_t       mSequenceCounter;
+    uint64_t mSequenceCounter;
   };
   
 
@@ -63,19 +63,18 @@ public:
 
 
 
-  void GetPaintedLayerUpdates(PaintedLayer* aLayer,
-                             nsTArray<Update>* aUpdates,
-                             nsIntRegion* aUpdateRegion = nullptr);
+  void GetPaintedLayerUpdates(PaintedLayer* aLayer, nsTArray<Update>* aUpdates,
+                              nsIntRegion* aUpdateRegion = nullptr);
 
   ~ReadbackProcessor();
 
-protected:
+ protected:
   void BuildUpdatesForLayer(ReadbackLayer* aLayer);
 
   nsTArray<Update> mAllUpdates;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

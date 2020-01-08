@@ -15,8 +15,7 @@ namespace dom {
 
 
 template <typename ActorType>
-class ClientThing
-{
+class ClientThing {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   static const uint32_t kMagic1 = 0xC9FE2C9C;
   static const uint32_t kMagic2 = 0x832072D4;
@@ -29,19 +28,19 @@ class ClientThing
 #endif
   bool mShutdown;
 
-protected:
+ protected:
   ClientThing()
-    : mActor(nullptr)
+      : mActor(nullptr)
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    , mMagic1(kMagic1)
-    , mMagic2(kMagic2)
+        ,
+        mMagic1(kMagic1),
+        mMagic2(kMagic2)
 #endif
-    , mShutdown(false)
-  {
+        ,
+        mShutdown(false) {
   }
 
-  ~ClientThing()
-  {
+  ~ClientThing() {
     AssertIsValid();
     ShutdownThing();
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -50,35 +49,27 @@ protected:
 #endif
   }
 
-  void
-  AssertIsValid() const
-  {
+  void AssertIsValid() const {
     MOZ_DIAGNOSTIC_ASSERT(mMagic1 == kMagic1);
     MOZ_DIAGNOSTIC_ASSERT(mMagic2 == kMagic2);
   }
 
   
-  ActorType*
-  GetActor() const
-  {
+  ActorType* GetActor() const {
     AssertIsValid();
     return mActor;
   }
 
   
-  bool
-  IsShutdown() const
-  {
+  bool IsShutdown() const {
     AssertIsValid();
     return mShutdown;
   }
 
   
-  template<typename Callable>
-  void
-  MaybeExecute(const Callable& aSuccess,
-               const std::function<void()>& aFailure = []{})
-  {
+  template <typename Callable>
+  void MaybeExecute(const Callable& aSuccess,
+                    const std::function<void()>& aFailure = [] {}) {
     AssertIsValid();
     if (mShutdown) {
       aFailure();
@@ -92,9 +83,7 @@ protected:
   
   
   
-  void
-  ActivateThing(ActorType* aActor)
-  {
+  void ActivateThing(ActorType* aActor) {
     AssertIsValid();
     MOZ_DIAGNOSTIC_ASSERT(aActor);
     MOZ_DIAGNOSTIC_ASSERT(!mActor);
@@ -104,9 +93,7 @@ protected:
   }
 
   
-  void
-  ShutdownThing()
-  {
+  void ShutdownThing() {
     AssertIsValid();
     if (mShutdown) {
       return;
@@ -125,17 +112,13 @@ protected:
   }
 
   
-  virtual void
-  OnShutdownThing()
-  {
+  virtual void OnShutdownThing() {
     
   }
 
-public:
+ public:
   
-  void
-  RevokeActor(ActorType* aActor)
-  {
+  void RevokeActor(ActorType* aActor) {
     AssertIsValid();
     MOZ_DIAGNOSTIC_ASSERT(mActor);
     MOZ_DIAGNOSTIC_ASSERT(mActor == aActor);
@@ -151,7 +134,7 @@ public:
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

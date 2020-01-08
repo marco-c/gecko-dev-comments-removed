@@ -9,17 +9,16 @@
 #include "AccEvent.h"
 
 namespace mozilla {
-template<typename T> class StaticRefPtr;
+template <typename T>
+class StaticRefPtr;
 }
 class nsIPersistentProperties;
 
 
 
 
-class nsEventShell
-{
-public:
-
+class nsEventShell {
+ public:
   
 
 
@@ -33,19 +32,19 @@ public:
 
   static void FireEvent(uint32_t aEventType,
                         mozilla::a11y::Accessible* aAccessible,
-                        mozilla::a11y::EIsFromUserInput aIsFromUserInput = mozilla::a11y::eAutoDetect);
+                        mozilla::a11y::EIsFromUserInput aIsFromUserInput =
+                            mozilla::a11y::eAutoDetect);
 
   
 
 
   static void FireEvent(mozilla::a11y::Accessible* aTarget, uint64_t aState,
-                        bool aIsEnabled, bool aIsFromUserInput)
-  {
+                        bool aIsEnabled, bool aIsFromUserInput) {
     RefPtr<mozilla::a11y::AccStateChangeEvent> stateChangeEvent =
-      new mozilla::a11y::AccStateChangeEvent(aTarget, aState, aIsEnabled,
-                                             (aIsFromUserInput ?
-                                               mozilla::a11y::eFromUserInput :
-                                               mozilla::a11y::eNoUserInput));
+        new mozilla::a11y::AccStateChangeEvent(
+            aTarget, aState, aIsEnabled,
+            (aIsFromUserInput ? mozilla::a11y::eFromUserInput
+                              : mozilla::a11y::eNoUserInput));
     FireEvent(stateChangeEvent);
   }
 
@@ -56,10 +55,10 @@ public:
 
 
 
-  static void GetEventAttributes(nsINode *aNode,
-                                 nsIPersistentProperties *aAttributes);
+  static void GetEventAttributes(nsINode* aNode,
+                                 nsIPersistentProperties* aAttributes);
 
-private:
+ private:
   static mozilla::StaticRefPtr<nsINode> sEventTargetNode;
   static bool sEventFromUserInput;
 };

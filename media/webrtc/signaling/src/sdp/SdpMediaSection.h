@@ -14,61 +14,59 @@
 #include <vector>
 #include <sstream>
 
-namespace mozilla
-{
+namespace mozilla {
 
 class SdpAttributeList;
 
 class SdpConnection;
 
-class SdpMediaSection
-{
-public:
+class SdpMediaSection {
+ public:
   enum MediaType { kAudio, kVideo, kText, kApplication, kMessage };
   
   static const size_t kMediaTypes = static_cast<size_t>(kMessage) + 1;
 
   enum Protocol {
-    kRtpAvp,            
-    kUdp,               
-    kVat,               
-    kRtp,               
-    kUdptl,             
-    kTcp,               
-    kRtpAvpf,           
-    kTcpRtpAvp,         
-    kRtpSavp,           
-    kTcpBfcp,           
-    kTcpTlsBfcp,        
-    kTcpTls,            
-    kFluteUdp,          
-    kTcpMsrp,           
-    kTcpTlsMsrp,        
-    kDccp,              
-    kDccpRtpAvp,        
-    kDccpRtpSavp,       
-    kDccpRtpAvpf,       
-    kDccpRtpSavpf,      
-    kRtpSavpf,          
-    kUdpTlsRtpSavp,     
-    kTcpTlsRtpSavp,     
-    kDccpTlsRtpSavp,    
-    kUdpTlsRtpSavpf,    
-    kTcpTlsRtpSavpf,    
-    kDccpTlsRtpSavpf,   
-    kUdpMbmsFecRtpAvp,  
-    kUdpMbmsFecRtpSavp, 
-    kUdpMbmsRepair,     
-    kFecUdp,            
-    kUdpFec,            
-    kTcpMrcpv2,         
-    kTcpTlsMrcpv2,      
-    kPstn,              
-    kUdpTlsUdptl,       
-    kSctp,              
-    kDtlsSctp,          
-    kUdpDtlsSctp,       
-    kTcpDtlsSctp        
+    kRtpAvp,             
+    kUdp,                
+    kVat,                
+    kRtp,                
+    kUdptl,              
+    kTcp,                
+    kRtpAvpf,            
+    kTcpRtpAvp,          
+    kRtpSavp,            
+    kTcpBfcp,            
+    kTcpTlsBfcp,         
+    kTcpTls,             
+    kFluteUdp,           
+    kTcpMsrp,            
+    kTcpTlsMsrp,         
+    kDccp,               
+    kDccpRtpAvp,         
+    kDccpRtpSavp,        
+    kDccpRtpAvpf,        
+    kDccpRtpSavpf,       
+    kRtpSavpf,           
+    kUdpTlsRtpSavp,      
+    kTcpTlsRtpSavp,      
+    kDccpTlsRtpSavp,     
+    kUdpTlsRtpSavpf,     
+    kTcpTlsRtpSavpf,     
+    kDccpTlsRtpSavpf,    
+    kUdpMbmsFecRtpAvp,   
+    kUdpMbmsFecRtpSavp,  
+    kUdpMbmsRepair,      
+    kFecUdp,             
+    kUdpFec,             
+    kTcpMrcpv2,          
+    kTcpTlsMrcpv2,       
+    kPstn,               
+    kUdpTlsUdptl,        
+    kSctp,               
+    kDtlsSctp,           
+    kUdpDtlsSctp,        
+    kTcpDtlsSctp         
   };
 
   explicit SdpMediaSection(size_t level) : mLevel(level) {}
@@ -99,61 +97,39 @@ public:
   virtual void AddDataChannel(const std::string& name, uint16_t port,
                               uint16_t streams, uint32_t message_size) = 0;
 
-  size_t
-  GetLevel() const
-  {
-    return mLevel;
-  }
+  size_t GetLevel() const { return mLevel; }
 
-  inline bool
-  IsReceiving() const
-  {
-    return GetDirection() & sdp::kRecv;
-  }
+  inline bool IsReceiving() const { return GetDirection() & sdp::kRecv; }
 
-  inline bool
-  IsSending() const
-  {
-    return GetDirection() & sdp::kSend;
-  }
+  inline bool IsSending() const { return GetDirection() & sdp::kSend; }
 
-  inline void
-  SetReceiving(bool receiving)
-  {
+  inline void SetReceiving(bool receiving) {
     auto direction = GetDirection();
     if (direction & sdp::kSend) {
-      SetDirection(receiving ?
-                   SdpDirectionAttribute::kSendrecv :
-                   SdpDirectionAttribute::kSendonly);
+      SetDirection(receiving ? SdpDirectionAttribute::kSendrecv
+                             : SdpDirectionAttribute::kSendonly);
     } else {
-      SetDirection(receiving ?
-                   SdpDirectionAttribute::kRecvonly :
-                   SdpDirectionAttribute::kInactive);
+      SetDirection(receiving ? SdpDirectionAttribute::kRecvonly
+                             : SdpDirectionAttribute::kInactive);
     }
   }
 
-  inline void
-  SetSending(bool sending)
-  {
+  inline void SetSending(bool sending) {
     auto direction = GetDirection();
     if (direction & sdp::kRecv) {
-      SetDirection(sending ?
-                   SdpDirectionAttribute::kSendrecv :
-                   SdpDirectionAttribute::kRecvonly);
+      SetDirection(sending ? SdpDirectionAttribute::kSendrecv
+                           : SdpDirectionAttribute::kRecvonly);
     } else {
-      SetDirection(sending ?
-                   SdpDirectionAttribute::kSendonly :
-                   SdpDirectionAttribute::kInactive);
+      SetDirection(sending ? SdpDirectionAttribute::kSendonly
+                           : SdpDirectionAttribute::kInactive);
     }
   }
 
-  inline void SetDirection(SdpDirectionAttribute::Direction direction)
-  {
+  inline void SetDirection(SdpDirectionAttribute::Direction direction) {
     GetAttributeList().SetAttribute(new SdpDirectionAttribute(direction));
   }
 
-  inline SdpDirectionAttribute::Direction GetDirection() const
-  {
+  inline SdpDirectionAttribute::Direction GetDirection() const {
     return GetDirectionAttribute().mValue;
   }
 
@@ -164,33 +140,29 @@ public:
   const SdpSctpmapAttributeList::Sctpmap* GetSctpmap() const;
   uint32_t GetSctpPort() const;
   bool GetMaxMessageSize(uint32_t* size) const;
-  bool HasRtcpFb(const std::string& pt,
-                 SdpRtcpFbAttributeList::Type type,
+  bool HasRtcpFb(const std::string& pt, SdpRtcpFbAttributeList::Type type,
                  const std::string& subType) const;
   SdpRtcpFbAttributeList GetRtcpFbs() const;
   void SetRtcpFbs(const SdpRtcpFbAttributeList& rtcpfbs);
-  bool HasFormat(const std::string& format) const
-  {
+  bool HasFormat(const std::string& format) const {
     return std::find(GetFormats().begin(), GetFormats().end(), format) !=
-        GetFormats().end();
+           GetFormats().end();
   }
-  void SetSsrcs(const std::vector<uint32_t>& ssrcs,
-                const std::string& cname);
+  void SetSsrcs(const std::vector<uint32_t>& ssrcs, const std::string& cname);
   void AddMsid(const std::string& id, const std::string& appdata);
   const SdpRidAttributeList::Rid* FindRid(const std::string& id) const;
 
-private:
+ private:
   size_t mLevel;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const SdpMediaSection& ms)
-{
+inline std::ostream& operator<<(std::ostream& os, const SdpMediaSection& ms) {
   ms.Serialize(os);
   return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, SdpMediaSection::MediaType t)
-{
+inline std::ostream& operator<<(std::ostream& os,
+                                SdpMediaSection::MediaType t) {
   switch (t) {
     case SdpMediaSection::kAudio:
       return os << "audio";
@@ -207,8 +179,7 @@ inline std::ostream& operator<<(std::ostream& os, SdpMediaSection::MediaType t)
   return os << "?";
 }
 
-inline std::ostream& operator<<(std::ostream& os, SdpMediaSection::Protocol p)
-{
+inline std::ostream& operator<<(std::ostream& os, SdpMediaSection::Protocol p) {
   switch (p) {
     case SdpMediaSection::kRtpAvp:
       return os << "RTP/AVP";
@@ -295,29 +266,16 @@ inline std::ostream& operator<<(std::ostream& os, SdpMediaSection::Protocol p)
   return os << "?";
 }
 
-class SdpConnection
-{
-public:
+class SdpConnection {
+ public:
   SdpConnection(sdp::AddrType addrType, std::string addr, uint8_t ttl = 0,
                 uint32_t count = 0)
-      : mAddrType(addrType), mAddr(addr), mTtl(ttl), mCount(count)
-  {
-  }
+      : mAddrType(addrType), mAddr(addr), mTtl(ttl), mCount(count) {}
   ~SdpConnection() {}
 
-  sdp::AddrType
-  GetAddrType() const
-  {
-    return mAddrType;
-  }
-  const std::string&
-  GetAddress() const
-  {
-    return mAddr;
-  }
-  void
-  SetAddress(const std::string& address)
-  {
+  sdp::AddrType GetAddrType() const { return mAddrType; }
+  const std::string& GetAddress() const { return mAddr; }
+  void SetAddress(const std::string& address) {
     mAddr = address;
     if (mAddr.find(':') != std::string::npos) {
       mAddrType = sdp::kIPv6;
@@ -325,20 +283,10 @@ public:
       mAddrType = sdp::kIPv4;
     }
   }
-  uint8_t
-  GetTtl() const
-  {
-    return mTtl;
-  }
-  uint32_t
-  GetCount() const
-  {
-    return mCount;
-  }
+  uint8_t GetTtl() const { return mTtl; }
+  uint32_t GetCount() const { return mCount; }
 
-  void
-  Serialize(std::ostream& os) const
-  {
+  void Serialize(std::ostream& os) const {
     sdp::NetType netType = sdp::kInternet;
 
     os << "c=" << netType << " " << mAddrType << " " << mAddr;
@@ -352,19 +300,18 @@ public:
     os << "\r\n";
   }
 
-private:
+ private:
   sdp::AddrType mAddrType;
   std::string mAddr;
-  uint8_t mTtl;    
-  uint32_t mCount; 
+  uint8_t mTtl;     
+  uint32_t mCount;  
 };
 
-inline std::ostream& operator<<(std::ostream& os, const SdpConnection& c)
-{
+inline std::ostream& operator<<(std::ostream& os, const SdpConnection& c) {
   c.Serialize(os);
   return os;
 }
 
-} 
+}  
 
 #endif

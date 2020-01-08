@@ -12,13 +12,11 @@
 namespace mozilla {
 namespace dom {
 
-JSPrincipals*
-GetWorkerPrincipal();
+JSPrincipals* GetWorkerPrincipal();
 
-void
-DestroyWorkerPrincipals(JSPrincipals* aPrincipals);
+void DestroyWorkerPrincipals(JSPrincipals* aPrincipals);
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -19,21 +19,21 @@ namespace dom {
 
 
 
-class MIDIManagerChild final : public PMIDIManagerChild
-{
-public:
+class MIDIManagerChild final : public PMIDIManagerChild {
+ public:
   NS_INLINE_DECL_REFCOUNTING(MIDIManagerChild)
 
   MIDIManagerChild();
   mozilla::ipc::IPCResult RecvMIDIPortListUpdate(const MIDIPortList& aPortList);
   void SetActorAlive();
   void Shutdown();
-private:
+
+ private:
   ~MIDIManagerChild() = default;
   bool mShutdown;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -13,9 +13,8 @@
 class nsIDocShell;
 class nsIDOMWindow;
 
-class nsDOMWindowList final
-{
-public:
+class nsDOMWindowList final {
+ public:
   explicit nsDOMWindowList(nsIDocShell* aDocShell);
 
   NS_INLINE_DECL_REFCOUNTING(nsDOMWindowList)
@@ -26,8 +25,7 @@ public:
 
   
   void SetDocShell(nsIDocShell* aDocShell);
-  already_AddRefed<nsIDocShellTreeItem> GetDocShellTreeItemAt(uint32_t aIndex)
-  {
+  already_AddRefed<nsIDocShellTreeItem> GetDocShellTreeItemAt(uint32_t aIndex) {
     EnsureFresh();
     nsCOMPtr<nsIDocShellTreeItem> item;
     if (mDocShellNode) {
@@ -36,13 +34,13 @@ public:
     return item.forget();
   }
 
-protected:
+ protected:
   ~nsDOMWindowList();
 
   
   void EnsureFresh();
 
-  nsIDocShell* mDocShellNode; 
+  nsIDocShell* mDocShellNode;  
 };
 
-#endif 
+#endif  

@@ -11,20 +11,20 @@ namespace mozilla {
 
 namespace gfx {
 class DrawTarget;
-} 
+}  
 
 namespace layers {
 
-class CompositorVsyncSchedulerOwner
-{
-public:
+class CompositorVsyncSchedulerOwner {
+ public:
   virtual bool IsPendingComposite() = 0;
   virtual void FinishPendingComposite() = 0;
-  virtual void CompositeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect = nullptr) = 0;
+  virtual void CompositeToTarget(gfx::DrawTarget* aTarget,
+                                 const gfx::IntRect* aRect = nullptr) = 0;
   virtual TimeDuration GetVsyncInterval() const = 0;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -21,9 +21,8 @@ namespace dom {
 class BroadcastChannelParent;
 class ClonedMessageData;
 
-class BroadcastChannelService final
-{
-public:
+class BroadcastChannelService final {
+ public:
   NS_INLINE_DECL_REFCOUNTING(BroadcastChannelService)
 
   static already_AddRefed<BroadcastChannelService> GetOrCreate();
@@ -37,16 +36,15 @@ public:
                    const ClonedMessageData& aData,
                    const nsAString& aOriginChannelKey);
 
-private:
+ private:
   BroadcastChannelService();
   ~BroadcastChannelService();
 
   
-  nsClassHashtable<nsStringHashKey,
-                  nsTArray<BroadcastChannelParent*>> mAgents;
+  nsClassHashtable<nsStringHashKey, nsTArray<BroadcastChannelParent*>> mAgents;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

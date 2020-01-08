@@ -17,26 +17,24 @@ namespace net {
 
 class CacheIndexIterator;
 
-struct CacheFileContextEvictorEntry
-{
+struct CacheFileContextEvictorEntry {
   nsCOMPtr<nsILoadContextInfo> mInfo;
-  bool                         mPinned;
-  nsString                     mOrigin; 
-  PRTime                       mTimeStamp; 
+  bool mPinned;
+  nsString mOrigin;   
+  PRTime mTimeStamp;  
   RefPtr<CacheIndexIterator> mIterator;
 };
 
-class CacheFileContextEvictor
-{
-public:
+class CacheFileContextEvictor {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheFileContextEvictor)
 
   CacheFileContextEvictor();
 
-private:
+ private:
   virtual ~CacheFileContextEvictor();
 
-public:
+ public:
   nsresult Init(nsIFile *aCacheDirectory);
   void Shutdown();
 
@@ -44,7 +42,7 @@ public:
   uint32_t ContextsCount();
   
   nsresult AddContext(nsILoadContextInfo *aLoadContextInfo, bool aPinned,
-                      const nsAString& aOrigin);
+                      const nsAString &aOrigin);
   
   
   
@@ -57,26 +55,26 @@ public:
   nsresult WasEvicted(const nsACString &aKey, nsIFile *aFile,
                       bool *aEvictedAsPinned, bool *aEvictedAsNonPinned);
 
-private:
+ private:
   
   
   
   
   nsresult PersistEvictionInfoToDisk(nsILoadContextInfo *aLoadContextInfo,
-                                     bool aPinned, const nsAString& aOrigin);
+                                     bool aPinned, const nsAString &aOrigin);
   
   
   nsresult RemoveEvictInfoFromDisk(nsILoadContextInfo *aLoadContextInfo,
-                                   bool aPinned, const nsAString& aOrigin);
+                                   bool aPinned, const nsAString &aOrigin);
   
   
   nsresult LoadEvictInfoFromDisk();
   nsresult GetContextFile(nsILoadContextInfo *aLoadContextInfo, bool aPinned,
-                          const nsAString& aOrigin, nsIFile **_retval);
+                          const nsAString &aOrigin, nsIFile **_retval);
 
-  void     CreateIterators();
-  void     CloseIterators();
-  void     StartEvicting();
+  void CreateIterators();
+  void CloseIterators();
+  void StartEvicting();
   nsresult EvictEntries();
 
   
@@ -95,7 +93,7 @@ private:
   nsCOMPtr<nsIFile> mEntriesDir;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

@@ -13,7 +13,6 @@
 
 
 
-
 #include "nsHTMLTokenizer.h"
 #include "nsIParser.h"
 
@@ -29,16 +28,11 @@ NS_IMPL_ISUPPORTS(nsHTMLTokenizer, nsITokenizer)
 
 
 
-nsHTMLTokenizer::nsHTMLTokenizer()
-{
+nsHTMLTokenizer::nsHTMLTokenizer() {
   
 }
 
-nsresult
-nsHTMLTokenizer::WillTokenize(bool aIsFinalChunk)
-{
-  return NS_OK;
-}
+nsresult nsHTMLTokenizer::WillTokenize(bool aIsFinalChunk) { return NS_OK; }
 
 
 
@@ -52,8 +46,7 @@ nsHTMLTokenizer::WillTokenize(bool aIsFinalChunk)
 
 
 
-nsresult
-nsHTMLTokenizer::ConsumeToken(nsScanner& aScanner, bool& aFlushTokens)
-{
+nsresult nsHTMLTokenizer::ConsumeToken(nsScanner& aScanner,
+                                       bool& aFlushTokens) {
   return NS_ERROR_HTMLPARSER_EOF;
 }

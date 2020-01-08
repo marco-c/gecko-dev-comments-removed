@@ -28,7 +28,7 @@
 
 
 class nsStubDocumentObserver : public nsIDocumentObserver {
-public:
+ public:
   NS_DECL_NSIDOCUMENTOBSERVER
 };
 

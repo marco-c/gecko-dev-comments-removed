@@ -16,34 +16,30 @@
 namespace mozilla {
 
 class WebBrowserPersistSerializeParent
-    : public PWebBrowserPersistSerializeParent
-{
-public:
-    WebBrowserPersistSerializeParent(
-        nsIWebBrowserPersistDocument* aDocument,
-        nsIOutputStream* aStream,
-        nsIWebBrowserPersistWriteCompletion* aFinish);
-    virtual ~WebBrowserPersistSerializeParent();
+    : public PWebBrowserPersistSerializeParent {
+ public:
+  WebBrowserPersistSerializeParent(
+      nsIWebBrowserPersistDocument* aDocument, nsIOutputStream* aStream,
+      nsIWebBrowserPersistWriteCompletion* aFinish);
+  virtual ~WebBrowserPersistSerializeParent();
 
-    virtual mozilla::ipc::IPCResult
-    RecvWriteData(nsTArray<uint8_t>&& aData) override;
+  virtual mozilla::ipc::IPCResult RecvWriteData(
+      nsTArray<uint8_t>&& aData) override;
 
-    virtual mozilla::ipc::IPCResult
-    Recv__delete__(const nsCString& aContentType,
-                   const nsresult& aStatus) override;
+  virtual mozilla::ipc::IPCResult Recv__delete__(
+      const nsCString& aContentType, const nsresult& aStatus) override;
 
-    virtual void
-    ActorDestroy(ActorDestroyReason aWhy) override;
+  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-private:
-    
-    
-    nsCOMPtr<nsIWebBrowserPersistDocument> mDocument;
-    nsCOMPtr<nsIOutputStream> mStream;
-    nsCOMPtr<nsIWebBrowserPersistWriteCompletion> mFinish;
-    nsresult mOutputError;
+ private:
+  
+  
+  nsCOMPtr<nsIWebBrowserPersistDocument> mDocument;
+  nsCOMPtr<nsIOutputStream> mStream;
+  nsCOMPtr<nsIWebBrowserPersistWriteCompletion> mFinish;
+  nsresult mOutputError;
 };
 
-} 
+}  
 
-#endif 
+#endif  

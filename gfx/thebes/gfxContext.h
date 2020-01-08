@@ -23,11 +23,11 @@ class GlyphBufferAzure;
 namespace mozilla {
 namespace gfx {
 struct RectCornerRadii;
-} 
+}  
 namespace layout {
 class TextDrawTarget;
-} 
-} 
+}  
+}  
 
 class ClipExporter;
 
@@ -46,179 +46,180 @@ class ClipExporter;
 
 
 class gfxContext final {
-    typedef mozilla::gfx::CapStyle CapStyle;
-    typedef mozilla::gfx::CompositionOp CompositionOp;
-    typedef mozilla::gfx::JoinStyle JoinStyle;
-    typedef mozilla::gfx::FillRule FillRule;
-    typedef mozilla::gfx::Float Float;
-    typedef mozilla::gfx::Path Path;
-    typedef mozilla::gfx::Pattern Pattern;
-    typedef mozilla::gfx::Rect Rect;
-    typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
-    typedef mozilla::gfx::Size Size;
+  typedef mozilla::gfx::CapStyle CapStyle;
+  typedef mozilla::gfx::CompositionOp CompositionOp;
+  typedef mozilla::gfx::JoinStyle JoinStyle;
+  typedef mozilla::gfx::FillRule FillRule;
+  typedef mozilla::gfx::Float Float;
+  typedef mozilla::gfx::Path Path;
+  typedef mozilla::gfx::Pattern Pattern;
+  typedef mozilla::gfx::Rect Rect;
+  typedef mozilla::gfx::RectCornerRadii RectCornerRadii;
+  typedef mozilla::gfx::Size Size;
 
-    NS_INLINE_DECL_REFCOUNTING(gfxContext)
+  NS_INLINE_DECL_REFCOUNTING(gfxContext)
 
-public:
-    
+ public:
+  
 
 
 
 
 
 
-    static already_AddRefed<gfxContext>
-        CreateOrNull(mozilla::gfx::DrawTarget* aTarget,
-                     const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
+  static already_AddRefed<gfxContext> CreateOrNull(
+      mozilla::gfx::DrawTarget* aTarget,
+      const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
 
-    
+  
 
 
 
 
 
 
-    static already_AddRefed<gfxContext>
-        CreatePreservingTransformOrNull(mozilla::gfx::DrawTarget* aTarget);
+  static already_AddRefed<gfxContext> CreatePreservingTransformOrNull(
+      mozilla::gfx::DrawTarget* aTarget);
 
-    mozilla::gfx::DrawTarget *GetDrawTarget() { return mDT; }
+  mozilla::gfx::DrawTarget* GetDrawTarget() { return mDT; }
 
-    
+  
 
 
-    mozilla::layout::TextDrawTarget* GetTextDrawer();
+  mozilla::layout::TextDrawTarget* GetTextDrawer();
 
-    
+  
 
 
-    
-    void Save();
-    void Restore();
+  
+  void Save();
+  void Restore();
 
-    
+  
 
 
 
-    
+  
 
 
 
 
-    void Fill();
-    void Fill(const Pattern& aPattern);
+  void Fill();
+  void Fill(const Pattern& aPattern);
 
-    
+  
 
 
-    void NewPath();
+  void NewPath();
 
-    
+  
 
 
 
 
-    void ClosePath();
+  void ClosePath();
 
-    
+  
 
 
-    already_AddRefed<Path> GetPath();
+  already_AddRefed<Path> GetPath();
 
-    
+  
 
 
-    void SetPath(Path* path);
+  void SetPath(Path* path);
 
-    
+  
 
 
-    void MoveTo(const gfxPoint& pt);
+  void MoveTo(const gfxPoint& pt);
 
-    
+  
 
 
 
 
-    void LineTo(const gfxPoint& pt);
+  void LineTo(const gfxPoint& pt);
 
-    
-    
+  
+  
 
 
-    void Line(const gfxPoint& start, const gfxPoint& end); 
+  void Line(const gfxPoint& start,
+            const gfxPoint& end);  
 
-    
+  
 
 
-    void Rectangle(const gfxRect& rect) { return Rectangle(rect, false); }
-    void SnappedRectangle(const gfxRect& rect) { return Rectangle(rect, true); }
-private:
-    void Rectangle(const gfxRect& rect, bool snapToPixels);
-public:
+  void Rectangle(const gfxRect& rect) { return Rectangle(rect, false); }
+  void SnappedRectangle(const gfxRect& rect) { return Rectangle(rect, true); }
 
-    
+ private:
+  void Rectangle(const gfxRect& rect, bool snapToPixels);
 
+ public:
+  
 
 
-    
 
+  
 
 
 
-    void Multiply(const gfxMatrix& other);
 
-    
+  void Multiply(const gfxMatrix& other);
 
+  
 
-    void SetMatrix(const mozilla::gfx::Matrix& matrix);
-    void SetMatrixDouble(const gfxMatrix& matrix);
 
-    
+  void SetMatrix(const mozilla::gfx::Matrix& matrix);
+  void SetMatrixDouble(const gfxMatrix& matrix);
 
+  
 
-    mozilla::gfx::Matrix CurrentMatrix() const;
-    gfxMatrix CurrentMatrixDouble() const;
 
-    
+  mozilla::gfx::Matrix CurrentMatrix() const;
+  gfxMatrix CurrentMatrixDouble() const;
 
+  
 
 
-    gfxPoint DeviceToUser(const gfxPoint& point) const;
 
-    
+  gfxPoint DeviceToUser(const gfxPoint& point) const;
 
+  
 
 
-    Size DeviceToUser(const Size& size) const;
 
-    
+  Size DeviceToUser(const Size& size) const;
 
+  
 
 
 
-    gfxRect DeviceToUser(const gfxRect& rect) const;
 
-    
+  gfxRect DeviceToUser(const gfxRect& rect) const;
 
+  
 
 
-    gfxPoint UserToDevice(const gfxPoint& point) const;
 
-    
+  gfxPoint UserToDevice(const gfxPoint& point) const;
 
+  
 
 
-    Size UserToDevice(const Size& size) const;
 
-    
+  Size UserToDevice(const Size& size) const;
 
+  
 
 
 
-    gfxRect UserToDevice(const gfxRect& rect) const;
 
-    
+  gfxRect UserToDevice(const gfxRect& rect) const;
 
+  
 
 
 
@@ -228,10 +229,10 @@ public:
 
 
 
-    bool UserToDevicePixelSnapped(gfxRect& rect, bool ignoreScale = false) const;
 
-    
+  bool UserToDevicePixelSnapped(gfxRect& rect, bool ignoreScale = false) const;
 
+  
 
 
 
@@ -241,174 +242,179 @@ public:
 
 
 
-    bool UserToDevicePixelSnapped(gfxPoint& pt, bool ignoreScale = false) const;
 
-    
+  bool UserToDevicePixelSnapped(gfxPoint& pt, bool ignoreScale = false) const;
 
+  
 
 
-    
 
+  
 
 
-    void SetDeviceColor(const mozilla::gfx::Color& aColor);
 
-    
+  void SetDeviceColor(const mozilla::gfx::Color& aColor);
 
+  
 
 
 
-    bool GetDeviceColor(mozilla::gfx::Color& aColorOut);
 
-    
+  bool GetDeviceColor(mozilla::gfx::Color& aColorOut);
 
+  
 
 
-    bool HasNonOpaqueNonTransparentColor(mozilla::gfx::Color& aColorOut) {
-        return GetDeviceColor(aColorOut) &&
-               0.f < aColorOut.a && aColorOut.a < 1.f;
-    }
 
-    
+  bool HasNonOpaqueNonTransparentColor(mozilla::gfx::Color& aColorOut) {
+    return GetDeviceColor(aColorOut) && 0.f < aColorOut.a && aColorOut.a < 1.f;
+  }
 
+  
 
 
 
-    void SetColor(const mozilla::gfx::Color& aColor);
 
-    
+  void SetColor(const mozilla::gfx::Color& aColor);
 
+  
 
-    void SetPattern(gfxPattern *pattern);
 
-    
+  void SetPattern(gfxPattern* pattern);
 
+  
 
-    already_AddRefed<gfxPattern> GetPattern();
 
-    
+  already_AddRefed<gfxPattern> GetPattern();
 
+  
 
-    
 
+  
 
 
-    void Paint(Float alpha = 1.0);
 
-    
+  void Paint(Float alpha = 1.0);
 
+  
 
-    
 
+  
 
 
-    void Mask(mozilla::gfx::SourceSurface *aSurface, mozilla::gfx::Float aAlpha, const mozilla::gfx::Matrix& aTransform);
-    void Mask(mozilla::gfx::SourceSurface *aSurface, const mozilla::gfx::Matrix& aTransform) { Mask(aSurface, 1.0f, aTransform); }
-    void Mask(mozilla::gfx::SourceSurface *surface, float alpha = 1.0f, const mozilla::gfx::Point& offset = mozilla::gfx::Point());
 
-    
+  void Mask(mozilla::gfx::SourceSurface* aSurface, mozilla::gfx::Float aAlpha,
+            const mozilla::gfx::Matrix& aTransform);
+  void Mask(mozilla::gfx::SourceSurface* aSurface,
+            const mozilla::gfx::Matrix& aTransform) {
+    Mask(aSurface, 1.0f, aTransform);
+  }
+  void Mask(mozilla::gfx::SourceSurface* surface, float alpha = 1.0f,
+            const mozilla::gfx::Point& offset = mozilla::gfx::Point());
 
+  
 
 
-    void SetDash(const Float *dashes, int ndash, Float offset);
-    
-    
-    
-    bool CurrentDash(FallibleTArray<Float>& dashes, Float* offset) const;
 
-    
+  void SetDash(const Float* dashes, int ndash, Float offset);
+  
+  
+  
+  bool CurrentDash(FallibleTArray<Float>& dashes, Float* offset) const;
 
+  
 
-    void SetLineWidth(Float width);
 
-    
+  void SetLineWidth(Float width);
 
+  
 
 
 
-    Float CurrentLineWidth() const;
 
-    
+  Float CurrentLineWidth() const;
 
+  
 
-    void SetLineCap(CapStyle cap);
-    CapStyle CurrentLineCap() const;
 
-    
+  void SetLineCap(CapStyle cap);
+  CapStyle CurrentLineCap() const;
 
+  
 
 
-    void SetLineJoin(JoinStyle join);
-    JoinStyle CurrentLineJoin() const;
 
-    void SetMiterLimit(Float limit);
-    Float CurrentMiterLimit() const;
+  void SetLineJoin(JoinStyle join);
+  JoinStyle CurrentLineJoin() const;
 
-    
+  void SetMiterLimit(Float limit);
+  Float CurrentMiterLimit() const;
 
+  
 
 
 
 
-    void SetOp(CompositionOp op);
-    CompositionOp CurrentOp() const;
 
-    void SetAntialiasMode(mozilla::gfx::AntialiasMode mode);
-    mozilla::gfx::AntialiasMode CurrentAntialiasMode() const;
+  void SetOp(CompositionOp op);
+  CompositionOp CurrentOp() const;
 
-    
+  void SetAntialiasMode(mozilla::gfx::AntialiasMode mode);
+  mozilla::gfx::AntialiasMode CurrentAntialiasMode() const;
 
+  
 
 
-    
 
+  
 
 
-    void Clip();
 
-    
+  void Clip();
 
+  
 
 
-    void Clip(const Rect& rect);
-    void Clip(const gfxRect& rect); 
-    void SnappedClip(const gfxRect& rect); 
-    void Clip(Path* aPath);
 
-    void PopClip();
+  void Clip(const Rect& rect);
+  void Clip(const gfxRect& rect);         
+  void SnappedClip(const gfxRect& rect);  
+  void Clip(Path* aPath);
 
-    enum ClipExtentsSpace {
-        eUserSpace = 0,
-        eDeviceSpace = 1,
-    };
+  void PopClip();
 
-    
+  enum ClipExtentsSpace {
+    eUserSpace = 0,
+    eDeviceSpace = 1,
+  };
 
+  
 
 
-    gfxRect GetClipExtents(ClipExtentsSpace aSpace = eUserSpace) const;
 
-    
+  gfxRect GetClipExtents(ClipExtentsSpace aSpace = eUserSpace) const;
 
+  
 
 
 
-    bool ClipContainsRect(const gfxRect& aRect);
 
-     
+  bool ClipContainsRect(const gfxRect& aRect);
 
+  
 
-    bool ExportClip(ClipExporter& aExporter);
 
-    
+  bool ExportClip(ClipExporter& aExporter);
 
+  
 
-    void PushGroupForBlendBack(gfxContentType content, mozilla::gfx::Float aOpacity = 1.0f,
-                               mozilla::gfx::SourceSurface* aMask = nullptr,
-                               const mozilla::gfx::Matrix& aMaskTransform = mozilla::gfx::Matrix());
 
-    
+  void PushGroupForBlendBack(
+      gfxContentType content, mozilla::gfx::Float aOpacity = 1.0f,
+      mozilla::gfx::SourceSurface* aMask = nullptr,
+      const mozilla::gfx::Matrix& aMaskTransform = mozilla::gfx::Matrix());
 
+  
 
 
 
@@ -416,50 +422,52 @@ public:
 
 
 
-    void PushGroupAndCopyBackground(gfxContentType content = gfxContentType::COLOR,
-                                    mozilla::gfx::Float aOpacity = 1.0f,
-                                    mozilla::gfx::SourceSurface* aMask = nullptr,
-                                    const mozilla::gfx::Matrix& aMaskTransform = mozilla::gfx::Matrix());
-    void PopGroupAndBlend();
 
-    mozilla::gfx::Point GetDeviceOffset() const;
-    void SetDeviceOffset(const mozilla::gfx::Point& aOffset);
+  void PushGroupAndCopyBackground(
+      gfxContentType content = gfxContentType::COLOR,
+      mozilla::gfx::Float aOpacity = 1.0f,
+      mozilla::gfx::SourceSurface* aMask = nullptr,
+      const mozilla::gfx::Matrix& aMaskTransform = mozilla::gfx::Matrix());
+  void PopGroupAndBlend();
+
+  mozilla::gfx::Point GetDeviceOffset() const;
+  void SetDeviceOffset(const mozilla::gfx::Point& aOffset);
 
 #ifdef MOZ_DUMP_PAINTING
-    
+  
 
 
 
-    
+  
 
 
-    void WriteAsPNG(const char* aFile);
+  void WriteAsPNG(const char* aFile);
 
-    
-
-
-    void DumpAsDataURI();
-
-    
+  
 
 
-    void CopyAsDataURI();
+  void DumpAsDataURI();
+
+  
+
+
+  void CopyAsDataURI();
 #endif
 
-    static mozilla::gfx::UserDataKey sDontUseAsSourceKey;
+  static mozilla::gfx::UserDataKey sDontUseAsSourceKey;
 
-private:
-
-    
-
+ private:
+  
 
 
 
 
 
-    explicit gfxContext(mozilla::gfx::DrawTarget *aTarget,
-                        const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
-    ~gfxContext();
+
+  explicit gfxContext(
+      mozilla::gfx::DrawTarget* aTarget,
+      const mozilla::gfx::Point& aDeviceOffset = mozilla::gfx::Point());
+  ~gfxContext();
 
   friend class PatternFromState;
   friend class GlyphBufferAzure;
@@ -473,14 +481,16 @@ private:
 
   struct AzureState {
     AzureState()
-      : op(mozilla::gfx::CompositionOp::OP_OVER)
-      , color(0, 0, 0, 1.0f)
-      , aaMode(mozilla::gfx::AntialiasMode::SUBPIXEL)
-      , patternTransformChanged(false)
+        : op(mozilla::gfx::CompositionOp::OP_OVER),
+          color(0, 0, 0, 1.0f),
+          aaMode(mozilla::gfx::AntialiasMode::SUBPIXEL),
+          patternTransformChanged(false)
 #ifdef DEBUG
-      , mContentChanged(false)
+          ,
+          mContentChanged(false)
 #endif
-    {}
+    {
+    }
 
     mozilla::gfx::CompositionOp op;
     Color color;
@@ -512,7 +522,8 @@ private:
   
   void EnsurePathBuilder();
   CompositionOp GetOp();
-  void ChangeTransform(const mozilla::gfx::Matrix &aNewMatrix, bool aUpdatePatternTransform = true);
+  void ChangeTransform(const mozilla::gfx::Matrix& aNewMatrix,
+                       bool aUpdatePatternTransform = true);
   Rect GetAzureDeviceSpaceClipBounds() const;
   Matrix GetDeviceTransform() const;
   Matrix GetDTTransform() const;
@@ -526,8 +537,10 @@ private:
   Matrix mTransform;
   nsTArray<AzureState> mStateStack;
 
-  AzureState &CurrentState() { return mStateStack[mStateStack.Length() - 1]; }
-  const AzureState &CurrentState() const { return mStateStack[mStateStack.Length() - 1]; }
+  AzureState& CurrentState() { return mStateStack[mStateStack.Length() - 1]; }
+  const AzureState& CurrentState() const {
+    return mStateStack[mStateStack.Length() - 1];
+  }
 
   RefPtr<DrawTarget> mDT;
 };
@@ -537,30 +550,28 @@ private:
 
 
 
-class gfxContextAutoSaveRestore
-{
-public:
+class gfxContextAutoSaveRestore {
+ public:
   gfxContextAutoSaveRestore() : mContext(nullptr) {}
 
-  explicit gfxContextAutoSaveRestore(gfxContext *aContext) : mContext(aContext) {
+  explicit gfxContextAutoSaveRestore(gfxContext* aContext)
+      : mContext(aContext) {
     mContext->Save();
   }
 
-  ~gfxContextAutoSaveRestore() {
-    Restore();
-  }
+  ~gfxContextAutoSaveRestore() { Restore(); }
 
-  void SetContext(gfxContext *aContext) {
+  void SetContext(gfxContext* aContext) {
     NS_ASSERTION(!mContext, "Not going to call Restore() on some context!!!");
     mContext = aContext;
     mContext->Save();
   }
 
-  void EnsureSaved(gfxContext *aContext) {
+  void EnsureSaved(gfxContext* aContext) {
     MOZ_ASSERT(!mContext || mContext == aContext, "wrong context");
     if (!mContext) {
-        mContext = aContext;
-        mContext->Save();
+      mContext = aContext;
+      mContext->Save();
     }
   }
 
@@ -571,8 +582,8 @@ public:
     }
   }
 
-private:
-  gfxContext *mContext;
+ private:
+  gfxContext* mContext;
 };
 
 
@@ -580,106 +591,97 @@ private:
 
 
 
-class gfxContextMatrixAutoSaveRestore
-{
-public:
-    gfxContextMatrixAutoSaveRestore() :
-      mContext(nullptr)
-    {
+class gfxContextMatrixAutoSaveRestore {
+ public:
+  gfxContextMatrixAutoSaveRestore() : mContext(nullptr) {}
+
+  explicit gfxContextMatrixAutoSaveRestore(gfxContext* aContext)
+      : mContext(aContext), mMatrix(aContext->CurrentMatrix()) {}
+
+  ~gfxContextMatrixAutoSaveRestore() {
+    if (mContext) {
+      mContext->SetMatrix(mMatrix);
     }
+  }
 
-    explicit gfxContextMatrixAutoSaveRestore(gfxContext *aContext) :
-      mContext(aContext), mMatrix(aContext->CurrentMatrix())
-    {
+  void SetContext(gfxContext* aContext) {
+    NS_ASSERTION(!mContext, "Not going to restore the matrix on some context!");
+    mContext = aContext;
+    mMatrix = aContext->CurrentMatrix();
+  }
+
+  void Restore() {
+    if (mContext) {
+      mContext->SetMatrix(mMatrix);
+      mContext = nullptr;
     }
+  }
 
-    ~gfxContextMatrixAutoSaveRestore()
-    {
-      if (mContext) {
-        mContext->SetMatrix(mMatrix);
-      }
-    }
+  const mozilla::gfx::Matrix& Matrix() {
+    MOZ_ASSERT(mContext, "mMatrix doesn't contain a useful matrix");
+    return mMatrix;
+  }
 
-    void SetContext(gfxContext *aContext)
-    {
-      NS_ASSERTION(!mContext,
-                   "Not going to restore the matrix on some context!");
-      mContext = aContext;
-      mMatrix = aContext->CurrentMatrix();
-    }
+  bool HasMatrix() const { return !!mContext; }
 
-    void Restore()
-    {
-      if (mContext) {
-        mContext->SetMatrix(mMatrix);
-        mContext = nullptr;
-      }
-    }
-
-    const mozilla::gfx::Matrix& Matrix()
-    {
-      MOZ_ASSERT(mContext, "mMatrix doesn't contain a useful matrix");
-      return mMatrix;
-    }
-
-    bool HasMatrix() const { return !!mContext; }
-
-private:
-    gfxContext *mContext;
-    mozilla::gfx::Matrix mMatrix;
+ private:
+  gfxContext* mContext;
+  mozilla::gfx::Matrix mMatrix;
 };
-
 
 class DrawTargetAutoDisableSubpixelAntialiasing {
-public:
-    typedef mozilla::gfx::DrawTarget DrawTarget;
+ public:
+  typedef mozilla::gfx::DrawTarget DrawTarget;
 
-    DrawTargetAutoDisableSubpixelAntialiasing(DrawTarget* aDT, bool aDisable) :
-      mSubpixelAntialiasingEnabled(false)
-    {
-        if (aDisable) {
-            mDT = aDT;
-            mSubpixelAntialiasingEnabled = mDT->GetPermitSubpixelAA();
-            mDT->SetPermitSubpixelAA(false);
-        }
+  DrawTargetAutoDisableSubpixelAntialiasing(DrawTarget* aDT, bool aDisable)
+      : mSubpixelAntialiasingEnabled(false) {
+    if (aDisable) {
+      mDT = aDT;
+      mSubpixelAntialiasingEnabled = mDT->GetPermitSubpixelAA();
+      mDT->SetPermitSubpixelAA(false);
     }
-    ~DrawTargetAutoDisableSubpixelAntialiasing()
-    {
-        if (mDT) {
-            mDT->SetPermitSubpixelAA(mSubpixelAntialiasingEnabled);
-        }
+  }
+  ~DrawTargetAutoDisableSubpixelAntialiasing() {
+    if (mDT) {
+      mDT->SetPermitSubpixelAA(mSubpixelAntialiasingEnabled);
     }
+  }
 
-private:
-    RefPtr<DrawTarget> mDT;
-    bool mSubpixelAntialiasingEnabled;
+ private:
+  RefPtr<DrawTarget> mDT;
+  bool mSubpixelAntialiasingEnabled;
 };
 
 
 
 
-class PatternFromState
-{
-public:
-  explicit PatternFromState(gfxContext *aContext) : mContext(aContext), mPattern(nullptr) {}
-  ~PatternFromState() { if (mPattern) { mPattern->~Pattern(); } }
+class PatternFromState {
+ public:
+  explicit PatternFromState(gfxContext* aContext)
+      : mContext(aContext), mPattern(nullptr) {}
+  ~PatternFromState() {
+    if (mPattern) {
+      mPattern->~Pattern();
+    }
+  }
 
   operator mozilla::gfx::Pattern&();
 
-private:
+ private:
   union {
     mozilla::AlignedStorage2<mozilla::gfx::ColorPattern> mColorPattern;
     mozilla::AlignedStorage2<mozilla::gfx::SurfacePattern> mSurfacePattern;
   };
 
-  gfxContext *mContext;
-  mozilla::gfx::Pattern *mPattern;
+  gfxContext* mContext;
+  mozilla::gfx::Pattern* mPattern;
 };
 
 
 
+
 class ClipExporter : public mozilla::gfx::PathSink {
-public:
+ public:
   virtual void BeginClip(const mozilla::gfx::Matrix& aMatrix) = 0;
   virtual void EndClip() = 0;
 };

@@ -18,9 +18,8 @@ namespace net {
 
 
 
-class ADivertableParentChannel : public nsISupports
-{
-public:
+class ADivertableParentChannel : public nsISupports {
+ public:
   
   
   
@@ -54,7 +53,7 @@ public:
   virtual nsresult CancelDiversion() = 0;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

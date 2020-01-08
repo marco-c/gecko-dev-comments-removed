@@ -18,90 +18,88 @@ class NativeTemplateObject;
 
 
 
-class TemplateObject
-{
-  protected:
-    JSObject* obj_;
-    bool denseElementsAreCopyOnWrite_;
-    bool convertDoubleElements_;
+class TemplateObject {
+ protected:
+  JSObject* obj_;
+  bool denseElementsAreCopyOnWrite_;
+  bool convertDoubleElements_;
 
-  public:
-    explicit TemplateObject(JSObject* obj)
+ public:
+  explicit TemplateObject(JSObject* obj)
       : obj_(obj),
         denseElementsAreCopyOnWrite_(false),
-        convertDoubleElements_(false)
-    {}
-    void setDenseElementsAreCopyOnWrite() { denseElementsAreCopyOnWrite_ = true; }
-    void setConvertDoubleElements() { convertDoubleElements_ = true; }
+        convertDoubleElements_(false) {}
+  void setDenseElementsAreCopyOnWrite() { denseElementsAreCopyOnWrite_ = true; }
+  void setConvertDoubleElements() { convertDoubleElements_ = true; }
 
-    inline gc::AllocKind getAllocKind() const;
+  inline gc::AllocKind getAllocKind() const;
 
-    
-    
-    inline bool isNative() const;
-    inline const NativeTemplateObject& asNativeTemplateObject() const;
-    inline bool isArrayObject() const;
-    inline bool isArgumentsObject() const;
-    inline bool isTypedArrayObject() const;
-    inline bool isRegExpObject() const;
-    inline bool isInlineTypedObject() const;
-    inline bool isUnboxedPlainObject() const;
-    inline bool isCallObject() const;
-    inline bool isPlainObject() const;
+  
+  
+  inline bool isNative() const;
+  inline const NativeTemplateObject& asNativeTemplateObject() const;
+  inline bool isArrayObject() const;
+  inline bool isArgumentsObject() const;
+  inline bool isTypedArrayObject() const;
+  inline bool isRegExpObject() const;
+  inline bool isInlineTypedObject() const;
+  inline bool isUnboxedPlainObject() const;
+  inline bool isCallObject() const;
+  inline bool isPlainObject() const;
 
-    
-    
-    inline gc::Cell* group() const;
-    inline gc::Cell* maybeShape() const;
+  
+  
+  inline gc::Cell* group() const;
+  inline gc::Cell* maybeShape() const;
 
-    
-    
-    inline uint32_t getInlineTypedObjectSize() const;
-    inline uint8_t* getInlineTypedObjectMem(const JS::AutoRequireNoGC& nogc) const;
-    inline const UnboxedLayout& unboxedObjectLayout() const;
+  
+  
+  inline uint32_t getInlineTypedObjectSize() const;
+  inline uint8_t* getInlineTypedObjectMem(
+      const JS::AutoRequireNoGC& nogc) const;
+  inline const UnboxedLayout& unboxedObjectLayout() const;
 #ifdef DEBUG
-    inline bool unboxedObjectHasExpando() const;
+  inline bool unboxedObjectHasExpando() const;
 #endif
 };
 
-class NativeTemplateObject : public TemplateObject
-{
-  protected:
-    NativeObject& asNative() const {
-        return obj_->as<NativeObject>();
-    }
+class NativeTemplateObject : public TemplateObject {
+ protected:
+  NativeObject& asNative() const { return obj_->as<NativeObject>(); }
 
-  public:
-    
-    
-    inline bool hasDynamicSlots() const;
-    inline uint32_t numDynamicSlots() const;
-    inline uint32_t numUsedFixedSlots() const;
-    inline uint32_t numFixedSlots() const;
-    inline uint32_t slotSpan() const;
-    inline Value getSlot(uint32_t i) const;
+ public:
+  
+  
+  inline bool hasDynamicSlots() const;
+  inline uint32_t numDynamicSlots() const;
+  inline uint32_t numUsedFixedSlots() const;
+  inline uint32_t numFixedSlots() const;
+  inline uint32_t slotSpan() const;
+  inline Value getSlot(uint32_t i) const;
 
-    
-    
-    
-    bool denseElementsAreCopyOnWrite() const { return denseElementsAreCopyOnWrite_; }
-    bool convertDoubleElements() const { return convertDoubleElements_; }
+  
+  
+  
+  bool denseElementsAreCopyOnWrite() const {
+    return denseElementsAreCopyOnWrite_;
+  }
+  bool convertDoubleElements() const { return convertDoubleElements_; }
 #ifdef DEBUG
-    inline bool isSharedMemory() const;
+  inline bool isSharedMemory() const;
 #endif
-    inline uint32_t getDenseCapacity() const;
-    inline uint32_t getDenseInitializedLength() const;
-    inline uint32_t getArrayLength() const;
-    inline bool hasDynamicElements() const;
-    inline const Value* getDenseElements() const;
+  inline uint32_t getDenseCapacity() const;
+  inline uint32_t getDenseInitializedLength() const;
+  inline uint32_t getArrayLength() const;
+  inline bool hasDynamicElements() const;
+  inline const Value* getDenseElements() const;
 
-    
-    inline bool hasPrivate() const;
-    inline gc::Cell* regExpShared() const;
-    inline void* getPrivate() const;
+  
+  inline bool hasPrivate() const;
+  inline gc::Cell* regExpShared() const;
+  inline void* getPrivate() const;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

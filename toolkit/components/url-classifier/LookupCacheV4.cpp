@@ -10,8 +10,10 @@
 
 
 extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
-#define LOG(args) MOZ_LOG(gUrlClassifierDbServiceLog, mozilla::LogLevel::Debug, args)
-#define LOG_ENABLED() MOZ_LOG_TEST(gUrlClassifierDbServiceLog, mozilla::LogLevel::Debug)
+#define LOG(args) \
+  MOZ_LOG(gUrlClassifierDbServiceLog, mozilla::LogLevel::Debug, args)
+#define LOG_ENABLED() \
+  MOZ_LOG_TEST(gUrlClassifierDbServiceLog, mozilla::LogLevel::Debug)
 
 #define METADATA_SUFFIX NS_LITERAL_CSTRING(".metadata")
 
@@ -27,9 +29,8 @@ const uint32_t LookupCacheV4::MAX_METADATA_VALUE_LENGTH = 256;
 
 
 
-class VLPrefixSet
-{
-public:
+class VLPrefixSet {
+ public:
   explicit VLPrefixSet(const PrefixStringMap& aMap);
 
   
@@ -41,16 +42,13 @@ public:
   
   uint32_t Count() const { return mCount; }
 
-private:
+ private:
   
   
   
   struct PrefixString {
     PrefixString(const nsACString& aStr, uint32_t aSize)
-      : data(aStr)
-      , pos(0)
-      , size(aSize)
-    {
+        : data(aStr), pos(0), size(aSize) {
       MOZ_ASSERT(data.Length() % size == 0,
                  "PrefixString length must be a multiple of the prefix size.");
     }
@@ -88,9 +86,7 @@ private:
   uint32_t mCount;
 };
 
-nsresult
-LookupCacheV4::Init()
-{
+nsresult LookupCacheV4::Init() {
   mVLPrefixSet = new VariableLengthPrefixSet();
   nsresult rv = mVLPrefixSet->Init(mTableName);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -98,18 +94,14 @@ LookupCacheV4::Init()
   return NS_OK;
 }
 
-nsresult
-LookupCacheV4::Has(const Completion& aCompletion,
-                   bool* aHas,
-                   uint32_t* aMatchLength,
-                   bool* aConfirmed)
-{
+nsresult LookupCacheV4::Has(const Completion& aCompletion, bool* aHas,
+                            uint32_t* aMatchLength, bool* aConfirmed) {
   *aHas = *aConfirmed = false;
   *aMatchLength = 0;
 
   uint32_t length = 0;
   nsDependentCSubstring fullhash;
-  fullhash.Rebind((const char *)aCompletion.buf, COMPLETE_SIZE);
+  fullhash.Rebind((const char*)aCompletion.buf, COMPLETE_SIZE);
 
   nsresult rv = mVLPrefixSet->Matches(fullhash, &length);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -121,8 +113,8 @@ LookupCacheV4::Has(const Completion& aCompletion,
 
   if (LOG_ENABLED()) {
     uint32_t prefix = aCompletion.ToUint32();
-    LOG(("Probe in V4 %s: %X, found %d, complete %d", mTableName.get(),
-          prefix, *aHas, length == COMPLETE_SIZE));
+    LOG(("Probe in V4 %s: %X, found %d, complete %d", mTableName.get(), prefix,
+         *aHas, length == COMPLETE_SIZE));
   }
 
   
@@ -135,17 +127,13 @@ LookupCacheV4::Has(const Completion& aCompletion,
   return CheckCache(aCompletion, aHas, aConfirmed);
 }
 
-bool
-LookupCacheV4::IsEmpty() const
-{
+bool LookupCacheV4::IsEmpty() const {
   bool isEmpty;
   mVLPrefixSet->IsEmpty(&isEmpty);
   return isEmpty;
 }
 
-nsresult
-LookupCacheV4::Build(PrefixStringMap& aPrefixMap)
-{
+nsresult LookupCacheV4::Build(PrefixStringMap& aPrefixMap) {
   Telemetry::AutoTimer<Telemetry::URLCLASSIFIER_VLPS_CONSTRUCT_TIME> timer;
 
   nsresult rv = mVLPrefixSet->SetPrefixes(aPrefixMap);
@@ -155,9 +143,7 @@ LookupCacheV4::Build(PrefixStringMap& aPrefixMap)
   return rv;
 }
 
-nsresult
-LookupCacheV4::GetPrefixes(PrefixStringMap& aPrefixMap)
-{
+nsresult LookupCacheV4::GetPrefixes(PrefixStringMap& aPrefixMap) {
   if (!mPrimed) {
     
     LOG(("GetPrefixes from empty LookupCache"));
@@ -166,29 +152,22 @@ LookupCacheV4::GetPrefixes(PrefixStringMap& aPrefixMap)
   return mVLPrefixSet->GetPrefixes(aPrefixMap);
 }
 
-nsresult
-LookupCacheV4::GetFixedLengthPrefixes(FallibleTArray<uint32_t>& aPrefixes)
-{
+nsresult LookupCacheV4::GetFixedLengthPrefixes(
+    FallibleTArray<uint32_t>& aPrefixes) {
   return mVLPrefixSet->GetFixedLengthPrefixes(aPrefixes);
 }
 
-nsresult
-LookupCacheV4::ClearPrefixes()
-{
+nsresult LookupCacheV4::ClearPrefixes() {
   
   PrefixStringMap map;
   return mVLPrefixSet->SetPrefixes(map);
 }
 
-nsresult
-LookupCacheV4::StoreToFile(nsCOMPtr<nsIFile>& aFile)
-{
+nsresult LookupCacheV4::StoreToFile(nsCOMPtr<nsIFile>& aFile) {
   return mVLPrefixSet->StoreToFile(aFile);
 }
 
-nsresult
-LookupCacheV4::LoadFromFile(nsCOMPtr<nsIFile>& aFile)
-{
+nsresult LookupCacheV4::LoadFromFile(nsCOMPtr<nsIFile>& aFile) {
   nsresult rv = mVLPrefixSet->LoadFromFile(aFile);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -209,15 +188,12 @@ LookupCacheV4::LoadFromFile(nsCOMPtr<nsIFile>& aFile)
   return rv;
 }
 
-size_t
-LookupCacheV4::SizeOfPrefixSet() const
-{
+size_t LookupCacheV4::SizeOfPrefixSet() const {
   return mVLPrefixSet->SizeOfIncludingThis(moz_malloc_size_of);
 }
 
-static nsresult
-AppendPrefixToMap(PrefixStringMap& prefixes, const nsACString& prefix)
-{
+static nsresult AppendPrefixToMap(PrefixStringMap& prefixes,
+                                  const nsACString& prefix) {
   uint32_t len = prefix.Length();
   MOZ_ASSERT(len >= PREFIX_SIZE && len <= COMPLETE_SIZE);
   if (!len) {
@@ -232,9 +208,7 @@ AppendPrefixToMap(PrefixStringMap& prefixes, const nsACString& prefix)
   return NS_OK;
 }
 
-static nsresult
-InitCrypto(nsCOMPtr<nsICryptoHash>& aCrypto)
-{
+static nsresult InitCrypto(nsCOMPtr<nsICryptoHash>& aCrypto) {
   nsresult rv;
   aCrypto = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -249,22 +223,18 @@ InitCrypto(nsCOMPtr<nsICryptoHash>& aCrypto)
 
 
 
-static void
-UpdateChecksum(nsICryptoHash* aCrypto, const nsACString& aPrefix)
-{
+static void UpdateChecksum(nsICryptoHash* aCrypto, const nsACString& aPrefix) {
   MOZ_ASSERT(aCrypto);
-  aCrypto->Update(reinterpret_cast<uint8_t*>(const_cast<char*>(
-                  aPrefix.BeginReading())),
-                  aPrefix.Length());
+  aCrypto->Update(
+      reinterpret_cast<uint8_t*>(const_cast<char*>(aPrefix.BeginReading())),
+      aPrefix.Length());
 }
 
 
 
-nsresult
-LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
-                           PrefixStringMap& aInputMap,
-                           PrefixStringMap& aOutputMap)
-{
+nsresult LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
+                                    PrefixStringMap& aInputMap,
+                                    PrefixStringMap& aOutputMap) {
   MOZ_ASSERT(aOutputMap.IsEmpty());
 
   nsCOMPtr<nsICryptoHash> crypto;
@@ -275,6 +245,7 @@ LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
 
   
   
+  
   VLPrefixSet oldPSet(aInputMap);
   VLPrefixSet addPSet(aTableUpdate->Prefixes());
 
@@ -282,7 +253,9 @@ LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
   
   
   
-  const TableUpdateV4::RemovalIndiceArray& removalArray = aTableUpdate->RemovalIndices();
+  
+  const TableUpdateV4::RemovalIndiceArray& removalArray =
+      aTableUpdate->RemovalIndices();
   uint32_t removalIndex = 0;
   int32_t numOldPrefixPicked = -1;
 
@@ -293,8 +266,9 @@ LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
 
   
   
+  
   int32_t index = oldPSet.Count() + addPSet.Count() + 1;
-  for(;index > 0; index--) {
+  for (; index > 0; index--) {
     
     if (smallestOldPrefix.IsEmpty() && !isOldMapEmpty) {
       isOldMapEmpty = !oldPSet.GetSmallestPrefix(smallestOldPrefix);
@@ -322,7 +296,7 @@ LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
       pickOld = true;
     } else if (isOldMapEmpty && !isAddMapEmpty) {
       pickOld = false;
-    
+      
     } else {
       break;
     }
@@ -363,7 +337,9 @@ LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
   }
 
   if (removalIndex < removalArray.Length()) {
-    LOG(("There are still prefixes to remove after exhausting the old PrefixSet."));
+    LOG(
+        ("There are still prefixes to remove after exhausting the old "
+         "PrefixSet."));
     return NS_ERROR_UC_UPDATE_WRONG_REMOVAL_INDICES;
   }
 
@@ -371,14 +347,15 @@ LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
   crypto->Finish(false, checksum);
   if (aTableUpdate->Checksum().IsEmpty()) {
     LOG(("Update checksum missing."));
-    Telemetry::Accumulate(Telemetry::URLCLASSIFIER_UPDATE_ERROR, mProvider,
+    Telemetry::Accumulate(
+        Telemetry::URLCLASSIFIER_UPDATE_ERROR, mProvider,
         NS_ERROR_GET_CODE(NS_ERROR_UC_UPDATE_MISSING_CHECKSUM));
 
     
     
     std::string stdChecksum(checksum.BeginReading(), checksum.Length());
     aTableUpdate->NewChecksum(stdChecksum);
-  } else if (aTableUpdate->Checksum() != checksum){
+  } else if (aTableUpdate->Checksum() != checksum) {
     LOG(("Checksum mismatch after applying partial update"));
     return NS_ERROR_UC_UPDATE_CHECKSUM_MISMATCH;
   }
@@ -386,17 +363,14 @@ LookupCacheV4::ApplyUpdate(RefPtr<TableUpdateV4> aTableUpdate,
   return NS_OK;
 }
 
-nsresult
-LookupCacheV4::AddFullHashResponseToCache(const FullHashResponseMap& aResponseMap)
-{
+nsresult LookupCacheV4::AddFullHashResponseToCache(
+    const FullHashResponseMap& aResponseMap) {
   CopyClassHashTable<FullHashResponseMap>(aResponseMap, mFullHashCache);
 
   return NS_OK;
 }
 
-nsresult
-LookupCacheV4::VerifyChecksum(const nsACString& aChecksum)
-{
+nsresult LookupCacheV4::VerifyChecksum(const nsACString& aChecksum) {
   nsCOMPtr<nsICryptoHash> crypto;
   nsresult rv = InitCrypto(crypto);
   if (NS_FAILED(rv)) {
@@ -408,7 +382,7 @@ LookupCacheV4::VerifyChecksum(const nsACString& aChecksum)
 
   VLPrefixSet loadPSet(map);
   uint32_t index = loadPSet.Count() + 1;
-  for(;index > 0; index--) {
+  for (; index > 0; index--) {
     nsAutoCString prefix;
     if (!loadPSet.GetSmallestPrefix(prefix)) {
       break;
@@ -432,9 +406,8 @@ LookupCacheV4::VerifyChecksum(const nsACString& aChecksum)
 
 namespace {
 
-template<typename T>
-struct ValueTraits
-{
+template <typename T>
+struct ValueTraits {
   static_assert(sizeof(T) <= LookupCacheV4::MAX_METADATA_VALUE_LENGTH,
                 "LookupCacheV4::MAX_METADATA_VALUE_LENGTH is too small.");
   static uint32_t Length(const T& aValue) { return sizeof(T); }
@@ -443,31 +416,24 @@ struct ValueTraits
   static bool IsFixedLength() { return true; }
 };
 
-template<>
-struct ValueTraits<nsACString>
-{
+template <>
+struct ValueTraits<nsACString> {
   static bool IsFixedLength() { return false; }
 
-  static uint32_t Length(const nsACString& aValue)
-  {
-    return aValue.Length();
-  }
+  static uint32_t Length(const nsACString& aValue) { return aValue.Length(); }
 
-  static char* WritePtr(nsACString& aValue, uint32_t aLength)
-  {
+  static char* WritePtr(nsACString& aValue, uint32_t aLength) {
     aValue.SetLength(aLength);
     return aValue.BeginWriting();
   }
 
-  static const char* ReadPtr(const nsACString& aValue)
-  {
+  static const char* ReadPtr(const nsACString& aValue) {
     return aValue.BeginReading();
   }
 };
 
-template<typename T> static nsresult
-WriteValue(nsIOutputStream *aOutputStream, const T& aValue)
-{
+template <typename T>
+static nsresult WriteValue(nsIOutputStream* aOutputStream, const T& aValue) {
   uint32_t writeLength = ValueTraits<T>::Length(aValue);
   MOZ_ASSERT(writeLength <= LookupCacheV4::MAX_METADATA_VALUE_LENGTH,
              "LookupCacheV4::MAX_METADATA_VALUE_LENGTH is too small.");
@@ -489,9 +455,8 @@ WriteValue(nsIOutputStream *aOutputStream, const T& aValue)
   return rv;
 }
 
-template<typename T> static nsresult
-ReadValue(nsIInputStream* aInputStream, T& aValue)
-{
+template <typename T>
+static nsresult ReadValue(nsIInputStream* aInputStream, T& aValue) {
   nsresult rv;
 
   uint32_t readLength;
@@ -521,12 +486,11 @@ ReadValue(nsIInputStream* aInputStream, T& aValue)
   return rv;
 }
 
-} 
+}  
 
 
-nsresult
-LookupCacheV4::WriteMetadata(RefPtr<const TableUpdateV4> aTableUpdate)
-{
+nsresult LookupCacheV4::WriteMetadata(
+    RefPtr<const TableUpdateV4> aTableUpdate) {
   NS_ENSURE_ARG_POINTER(aTableUpdate);
   if (nsUrlClassifierDBService::ShutdownHasStarted()) {
     return NS_ERROR_ABORT;
@@ -555,9 +519,8 @@ LookupCacheV4::WriteMetadata(RefPtr<const TableUpdateV4> aTableUpdate)
   return rv;
 }
 
-nsresult
-LookupCacheV4::LoadMetadata(nsACString& aState, nsACString& aChecksum)
-{
+nsresult LookupCacheV4::LoadMetadata(nsACString& aState,
+                                     nsACString& aChecksum) {
   nsCOMPtr<nsIFile> metaFile;
   nsresult rv = mStoreDirectory->Clone(getter_AddRefs(metaFile));
   NS_ENSURE_SUCCESS(rv, rv);
@@ -590,9 +553,7 @@ LookupCacheV4::LoadMetadata(nsACString& aState, nsACString& aChecksum)
   return rv;
 }
 
-VLPrefixSet::VLPrefixSet(const PrefixStringMap& aMap)
-  : mCount(0)
-{
+VLPrefixSet::VLPrefixSet(const PrefixStringMap& aMap) : mCount(0) {
   for (auto iter = aMap.ConstIter(); !iter.Done(); iter.Next()) {
     uint32_t size = iter.Key();
     MOZ_ASSERT(iter.Data()->Length() % size == 0,
@@ -602,8 +563,7 @@ VLPrefixSet::VLPrefixSet(const PrefixStringMap& aMap)
   }
 }
 
-void
-VLPrefixSet::Merge(PrefixStringMap& aPrefixMap) {
+void VLPrefixSet::Merge(PrefixStringMap& aPrefixMap) {
   for (auto iter = mMap.ConstIter(); !iter.Done(); iter.Next()) {
     nsCString* prefixString = aPrefixMap.LookupOrAdd(iter.Key());
     PrefixString* str = iter.Data();
@@ -617,8 +577,7 @@ VLPrefixSet::Merge(PrefixStringMap& aPrefixMap) {
   }
 }
 
-bool
-VLPrefixSet::GetSmallestPrefix(nsACString& aOutString) const {
+bool VLPrefixSet::GetSmallestPrefix(nsACString& aOutString) const {
   PrefixString* pick = nullptr;
   for (auto iter = mMap.ConstIter(); !iter.Done(); iter.Next()) {
     PrefixString* str = iter.Data();
@@ -650,5 +609,5 @@ VLPrefixSet::GetSmallestPrefix(nsACString& aOutString) const {
   return pick != nullptr;
 }
 
-} 
-} 
+}  
+}  

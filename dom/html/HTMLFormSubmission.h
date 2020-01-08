@@ -29,9 +29,8 @@ class HTMLFormElement;
 
 
 
-class HTMLFormSubmission
-{
-public:
+class HTMLFormSubmission {
+ public:
   
 
 
@@ -40,15 +39,11 @@ public:
 
 
 
-  static nsresult
-  GetFromForm(HTMLFormElement* aForm,
-              nsGenericHTMLElement* aOriginatingElement,
-              HTMLFormSubmission** aFormSubmission);
+  static nsresult GetFromForm(HTMLFormElement* aForm,
+                              nsGenericHTMLElement* aOriginatingElement,
+                              HTMLFormSubmission** aFormSubmission);
 
-  virtual ~HTMLFormSubmission()
-  {
-    MOZ_COUNT_DTOR(HTMLFormSubmission);
-  }
+  virtual ~HTMLFormSubmission() { MOZ_COUNT_DTOR(HTMLFormSubmission); }
 
   
 
@@ -56,8 +51,8 @@ public:
 
 
 
-  virtual nsresult
-  AddNameValuePair(const nsAString& aName, const nsAString& aValue) = 0;
+  virtual nsresult AddNameValuePair(const nsAString& aName,
+                                    const nsAString& aValue) = 0;
 
   
 
@@ -67,8 +62,8 @@ public:
 
 
 
-  virtual nsresult
-  AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob) = 0;
+  virtual nsresult AddNameBlobOrNullPair(const nsAString& aName,
+                                         Blob* aBlob) = 0;
 
   
 
@@ -87,52 +82,41 @@ public:
 
 
 
-  virtual nsresult
-  GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream,
-                       nsCOMPtr<nsIURI>& aOutURI) = 0;
+  virtual nsresult GetEncodedSubmission(nsIURI* aURI,
+                                        nsIInputStream** aPostDataStream,
+                                        nsCOMPtr<nsIURI>& aOutURI) = 0;
 
   
 
 
   void GetCharset(nsACString& aCharset) { mEncoding->Name(aCharset); }
 
-  Element* GetOriginatingElement() const
-  {
-    return mOriginatingElement.get();
-  }
+  Element* GetOriginatingElement() const { return mOriginatingElement.get(); }
 
   
 
 
-  nsIURI* GetActionURL() const
-  {
-    return mActionURL;
-  }
+  nsIURI* GetActionURL() const { return mActionURL; }
 
   
 
 
-  void GetTarget(nsAString& aTarget)
-  {
-    aTarget = mTarget;
-  }
+  void GetTarget(nsAString& aTarget) { aTarget = mTarget; }
 
-protected:
+ protected:
   
 
 
 
 
 
-  HTMLFormSubmission(nsIURI* aActionURL,
-                     const nsAString& aTarget,
+  HTMLFormSubmission(nsIURI* aActionURL, const nsAString& aTarget,
                      mozilla::NotNull<const mozilla::Encoding*> aEncoding,
                      Element* aOriginatingElement)
-    : mActionURL(aActionURL)
-    , mTarget(aTarget)
-    , mEncoding(aEncoding)
-    , mOriginatingElement(aOriginatingElement)
-  {
+      : mActionURL(aActionURL),
+        mTarget(aTarget),
+        mEncoding(aEncoding),
+        mOriginatingElement(aOriginatingElement) {
     MOZ_COUNT_CTOR(HTMLFormSubmission);
   }
 
@@ -149,11 +133,9 @@ protected:
   RefPtr<Element> mOriginatingElement;
 };
 
-class EncodingFormSubmission : public HTMLFormSubmission
-{
-public:
-  EncodingFormSubmission(nsIURI* aActionURL,
-                         const nsAString& aTarget,
+class EncodingFormSubmission : public HTMLFormSubmission {
+ public:
+  EncodingFormSubmission(nsIURI* aActionURL, const nsAString& aTarget,
                          mozilla::NotNull<const mozilla::Encoding*> aEncoding,
                          Element* aOriginatingElement);
 
@@ -176,52 +158,46 @@ public:
 
 
 
-class FSMultipartFormData : public EncodingFormSubmission
-{
-public:
+class FSMultipartFormData : public EncodingFormSubmission {
+ public:
   
 
 
-  FSMultipartFormData(nsIURI* aActionURL,
-                      const nsAString& aTarget,
+  FSMultipartFormData(nsIURI* aActionURL, const nsAString& aTarget,
                       mozilla::NotNull<const mozilla::Encoding*> aEncoding,
                       Element* aOriginatingElement);
   ~FSMultipartFormData();
 
-  virtual nsresult
-  AddNameValuePair(const nsAString& aName, const nsAString& aValue) override;
+  virtual nsresult AddNameValuePair(const nsAString& aName,
+                                    const nsAString& aValue) override;
 
-  virtual nsresult
-  AddNameBlobOrNullPair(const nsAString& aName, Blob* aBlob) override;
+  virtual nsresult AddNameBlobOrNullPair(const nsAString& aName,
+                                         Blob* aBlob) override;
 
-  virtual nsresult
-  AddNameDirectoryPair(const nsAString& aName, Directory* aDirectory) override;
+  virtual nsresult AddNameDirectoryPair(const nsAString& aName,
+                                        Directory* aDirectory) override;
 
-  virtual nsresult
-  GetEncodedSubmission(nsIURI* aURI, nsIInputStream** aPostDataStream,
-                       nsCOMPtr<nsIURI>& aOutURI) override;
+  virtual nsresult GetEncodedSubmission(nsIURI* aURI,
+                                        nsIInputStream** aPostDataStream,
+                                        nsCOMPtr<nsIURI>& aOutURI) override;
 
-  void GetContentType(nsACString& aContentType)
-  {
+  void GetContentType(nsACString& aContentType) {
     aContentType =
-      NS_LITERAL_CSTRING("multipart/form-data; boundary=") + mBoundary;
+        NS_LITERAL_CSTRING("multipart/form-data; boundary=") + mBoundary;
   }
 
   nsIInputStream* GetSubmissionBody(uint64_t* aContentLength);
 
-protected:
-
+ protected:
   
 
 
   nsresult AddPostDataStream();
 
-private:
-  void AddDataChunk(const nsACString& aName,
-                    const nsACString& aFilename,
+ private:
+  void AddDataChunk(const nsACString& aName, const nsACString& aFilename,
                     const nsACString& aContentType,
-                    nsIInputStream* aInputStream,
-                    uint64_t aInputStreamSize);
+                    nsIInputStream* aInputStream, uint64_t aInputStreamSize);
   
 
 
@@ -257,7 +233,7 @@ private:
   uint64_t mTotalLength;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -19,14 +19,11 @@ using namespace mozilla;
 static LazyLogModule gContentVerifierPRLog("ContentVerifier");
 #define CSV_LOG(args) MOZ_LOG(gContentVerifierPRLog, LogLevel::Debug, args)
 
-NS_IMPL_ISUPPORTS(ContentVerifier,
-                  nsIContentSignatureReceiverCallback,
+NS_IMPL_ISUPPORTS(ContentVerifier, nsIContentSignatureReceiverCallback,
                   nsIStreamListener);
 
-nsresult
-ContentVerifier::Init(const nsACString& aContentSignatureHeader,
-                      nsIRequest* aRequest, nsISupports* aContext)
-{
+nsresult ContentVerifier::Init(const nsACString& aContentSignatureHeader,
+                               nsIRequest* aRequest, nsISupports* aContext) {
   MOZ_ASSERT(NS_IsMainThread());
   if (aContentSignatureHeader.IsEmpty()) {
     CSV_LOG(("Content-Signature header must not be empty!\n"));
@@ -35,8 +32,8 @@ ContentVerifier::Init(const nsACString& aContentSignatureHeader,
 
   
   nsresult rv;
-  mVerifier =
-    do_CreateInstance("@mozilla.org/security/contentsignatureverifier;1", &rv);
+  mVerifier = do_CreateInstance(
+      "@mozilla.org/security/contentsignatureverifier;1", &rv);
   if (NS_FAILED(rv) || !mVerifier) {
     return NS_ERROR_INVALID_SIGNATURE;
   }
@@ -47,9 +44,9 @@ ContentVerifier::Init(const nsACString& aContentSignatureHeader,
   mContentContext = aContext;
 
   rv = mVerifier->CreateContextWithoutCertChain(
-    this, aContentSignatureHeader,
-    NS_LITERAL_CSTRING("remotenewtab.content-signature.mozilla.org"));
-  if (NS_FAILED(rv)){
+      this, aContentSignatureHeader,
+      NS_LITERAL_CSTRING("remotenewtab.content-signature.mozilla.org"));
+  if (NS_FAILED(rv)) {
     mVerifier = nullptr;
   }
   return rv;
@@ -59,13 +56,11 @@ ContentVerifier::Init(const nsACString& aContentSignatureHeader,
 
 
 
-nsresult
-AppendNextSegment(nsIInputStream* aInputStream, void* aClosure,
-                  const char* aRawSegment, uint32_t aToOffset, uint32_t aCount,
-                  uint32_t* outWrittenCount)
-{
+nsresult AppendNextSegment(nsIInputStream* aInputStream, void* aClosure,
+                           const char* aRawSegment, uint32_t aToOffset,
+                           uint32_t aCount, uint32_t* outWrittenCount) {
   FallibleTArray<nsCString>* decodedData =
-    static_cast<FallibleTArray<nsCString>*>(aClosure);
+      static_cast<FallibleTArray<nsCString>*>(aClosure);
   nsDependentCSubstring segment(aRawSegment, aCount);
   if (!decodedData->AppendElement(segment, fallible)) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -74,9 +69,7 @@ AppendNextSegment(nsIInputStream* aInputStream, void* aClosure,
   return NS_OK;
 }
 
-void
-ContentVerifier::FinishSignature()
-{
+void ContentVerifier::FinishSignature() {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIStreamListener> nextListener;
   nextListener.swap(mNextListener);
@@ -122,16 +115,14 @@ ContentVerifier::FinishSignature()
 }
 
 NS_IMETHODIMP
-ContentVerifier::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
-{
+ContentVerifier::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext) {
   MOZ_CRASH("This OnStartRequest should've never been called!");
   return NS_OK;
 }
 
 NS_IMETHODIMP
 ContentVerifier::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
-                               nsresult aStatus)
-{
+                               nsresult aStatus) {
   
   
   if (!mNextListener) {
@@ -159,12 +150,11 @@ ContentVerifier::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
 NS_IMETHODIMP
 ContentVerifier::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
                                  nsIInputStream* aInputStream, uint64_t aOffset,
-                                 uint32_t aCount)
-{
+                                 uint32_t aCount) {
   
   uint32_t read;
-  nsresult rv = aInputStream->ReadSegments(AppendNextSegment, &mContent, aCount,
-                                           &read);
+  nsresult rv =
+      aInputStream->ReadSegments(AppendNextSegment, &mContent, aCount, &read);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -178,10 +168,10 @@ ContentVerifier::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
 }
 
 NS_IMETHODIMP
-ContentVerifier::ContextCreated(bool successful)
-{
+ContentVerifier::ContextCreated(bool successful) {
   MOZ_ASSERT(NS_IsMainThread());
   if (!successful) {
+    
     
     if (!mNextListener) {
       return NS_OK;
@@ -198,8 +188,8 @@ ContentVerifier::ContextCreated(bool successful)
     CSV_LOG(("failed to get a valid cert chain\n"));
     if (mContentRequest && nextListener) {
       mContentRequest->Cancel(NS_ERROR_INVALID_SIGNATURE);
-      nsresult rv = nextListener->OnStopRequest(mContentRequest, mContentContext,
-                                                NS_ERROR_INVALID_SIGNATURE);
+      nsresult rv = nextListener->OnStopRequest(
+          mContentRequest, mContentContext, NS_ERROR_INVALID_SIGNATURE);
       mContentRequest = nullptr;
       mContentContext = nullptr;
       return rv;
@@ -207,7 +197,7 @@ ContentVerifier::ContextCreated(bool successful)
 
     
     MOZ_ASSERT_UNREACHABLE(
-      "ContentVerifier was used without getting OnStartRequest!");
+        "ContentVerifier was used without getting OnStartRequest!");
     return NS_OK;
   }
 

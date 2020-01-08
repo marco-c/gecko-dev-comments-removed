@@ -19,7 +19,7 @@ namespace mozilla {
 
 
 class RtpLogger {
-public:
+ public:
   static bool IsPacketLoggingOn();
   static void LogPacket(const MediaPacket& packet, bool input,
                         std::string desc);
@@ -27,4 +27,3 @@ public:
 
 }  
 #endif
-

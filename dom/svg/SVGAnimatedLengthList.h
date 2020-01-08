@@ -20,7 +20,7 @@ namespace mozilla {
 
 namespace dom {
 class SVGAnimationElement;
-} 
+}  
 
 
 
@@ -36,13 +36,12 @@ class SVGAnimationElement;
 
 
 
-class SVGAnimatedLengthList
-{
+class SVGAnimatedLengthList {
   
   friend class DOMSVGLength;
   friend class DOMSVGLengthList;
 
-public:
+ public:
   SVGAnimatedLengthList() {}
 
   
@@ -52,9 +51,7 @@ public:
 
 
 
-  const SVGLengthList& GetBaseValue() const {
-    return mBaseVal;
-  }
+  const SVGLengthList& GetBaseValue() const { return mBaseVal; }
 
   nsresult SetBaseValueString(const nsAString& aValue);
 
@@ -64,23 +61,18 @@ public:
     return mAnimVal ? *mAnimVal : mBaseVal;
   }
 
-  nsresult SetAnimValue(const SVGLengthList& aValue,
-                        nsSVGElement *aElement,
+  nsresult SetAnimValue(const SVGLengthList& aValue, nsSVGElement* aElement,
                         uint32_t aAttrEnum);
 
-  void ClearAnimValue(nsSVGElement *aElement,
-                      uint32_t aAttrEnum);
+  void ClearAnimValue(nsSVGElement* aElement, uint32_t aAttrEnum);
 
-  bool IsAnimating() const {
-    return !!mAnimVal;
-  }
+  bool IsAnimating() const { return !!mAnimVal; }
 
   UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aSVGElement,
                                     uint8_t aAttrEnum, uint8_t aAxis,
                                     bool aCanZeroPadList);
 
-private:
-
+ private:
   
   
   
@@ -89,20 +81,16 @@ private:
   SVGLengthList mBaseVal;
   nsAutoPtr<SVGLengthList> mAnimVal;
 
-  struct SMILAnimatedLengthList : public nsISMILAttr
-  {
-  public:
+  struct SMILAnimatedLengthList : public nsISMILAttr {
+   public:
     SMILAnimatedLengthList(SVGAnimatedLengthList* aVal,
-                           nsSVGElement* aSVGElement,
-                           uint8_t aAttrEnum,
-                           uint8_t aAxis,
-                           bool aCanZeroPadList)
-      : mVal(aVal)
-      , mElement(aSVGElement)
-      , mAttrEnum(aAttrEnum)
-      , mAxis(aAxis)
-      , mCanZeroPadList(aCanZeroPadList)
-    {}
+                           nsSVGElement* aSVGElement, uint8_t aAttrEnum,
+                           uint8_t aAxis, bool aCanZeroPadList)
+        : mVal(aVal),
+          mElement(aSVGElement),
+          mAttrEnum(aAttrEnum),
+          mAxis(aAxis),
+          mCanZeroPadList(aCanZeroPadList) {}
 
     
     
@@ -111,19 +99,18 @@ private:
     nsSVGElement* mElement;
     uint8_t mAttrEnum;
     uint8_t mAxis;
-    bool mCanZeroPadList; 
+    bool mCanZeroPadList;  
 
     
-    virtual nsresult ValueFromString(const nsAString& aStr,
-                                     const dom::SVGAnimationElement* aSrcElement,
-                                     nsSMILValue& aValue,
-                                     bool& aPreventCachingOfSandwich) const override;
+    virtual nsresult ValueFromString(
+        const nsAString& aStr, const dom::SVGAnimationElement* aSrcElement,
+        nsSMILValue& aValue, bool& aPreventCachingOfSandwich) const override;
     virtual nsSMILValue GetBaseValue() const override;
     virtual void ClearAnimValue() override;
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   };
 };
 
-} 
+}  
 
-#endif 
+#endif  

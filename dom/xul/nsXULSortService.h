@@ -17,7 +17,7 @@ namespace mozilla {
 
 namespace dom {
 class Element;
-} 
+}  
 
 
 
@@ -34,10 +34,9 @@ class Element;
 
 
 
-nsresult XULWidgetSort(dom::Element* aNode,
-                       const nsAString& aSortKey,
+nsresult XULWidgetSort(dom::Element* aNode, const nsAString& aSortKey,
                        const nsAString& aSortHints);
 
-} 
+}  
 
-#endif 
+#endif  

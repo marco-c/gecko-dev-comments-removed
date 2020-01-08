@@ -42,171 +42,172 @@ namespace wasm {
 
 
 
-class Instance
-{
-    JS::Realm* const                realm_;
-    ReadBarrieredWasmInstanceObject object_;
-    jit::TrampolinePtr              jsJitArgsRectifier_;
-    jit::TrampolinePtr              jsJitExceptionHandler_;
-    jit::TrampolinePtr              preBarrierCode_;
-    const SharedCode                code_;
-    const UniqueTlsData             tlsData_;
-    GCPtrWasmMemoryObject           memory_;
-    const SharedTableVector         tables_;
-    DataSegmentVector               passiveDataSegments_;
-    ElemSegmentVector               passiveElemSegments_;
-    const UniqueDebugState          maybeDebug_;
-    StructTypeDescrVector           structTypeDescrs_;
+class Instance {
+  JS::Realm* const realm_;
+  ReadBarrieredWasmInstanceObject object_;
+  jit::TrampolinePtr jsJitArgsRectifier_;
+  jit::TrampolinePtr jsJitExceptionHandler_;
+  jit::TrampolinePtr preBarrierCode_;
+  const SharedCode code_;
+  const UniqueTlsData tlsData_;
+  GCPtrWasmMemoryObject memory_;
+  const SharedTableVector tables_;
+  DataSegmentVector passiveDataSegments_;
+  ElemSegmentVector passiveElemSegments_;
+  const UniqueDebugState maybeDebug_;
+  StructTypeDescrVector structTypeDescrs_;
 
-    friend void Zone::sweepBreakpoints(js::FreeOp*);
+  friend void Zone::sweepBreakpoints(js::FreeOp*);
 
-    
-    const void** addressOfFuncTypeId(const FuncTypeIdDesc& funcTypeId) const;
-    FuncImportTls& funcImportTls(const FuncImport& fi);
-    TableTls& tableTls(const TableDesc& td) const;
+  
+  const void** addressOfFuncTypeId(const FuncTypeIdDesc& funcTypeId) const;
+  FuncImportTls& funcImportTls(const FuncImport& fi);
+  TableTls& tableTls(const TableDesc& td) const;
 
-    
-    friend class js::WasmInstanceObject;
-    void tracePrivate(JSTracer* trc);
+  
+  friend class js::WasmInstanceObject;
+  void tracePrivate(JSTracer* trc);
 
-    bool callImport(JSContext* cx, uint32_t funcImportIndex, unsigned argc, const uint64_t* argv,
-                    MutableHandleValue rval);
+  bool callImport(JSContext* cx, uint32_t funcImportIndex, unsigned argc,
+                  const uint64_t* argv, MutableHandleValue rval);
 
-  public:
-    Instance(JSContext* cx,
-             HandleWasmInstanceObject object,
-             SharedCode code,
-             UniqueTlsData tlsData,
-             HandleWasmMemoryObject memory,
-             SharedTableVector&& tables,
-             StructTypeDescrVector&& structTypeDescrs,
-             Handle<FunctionVector> funcImports,
-             HandleValVector globalImportValues,
-             const WasmGlobalObjectVector& globalObjs,
-             UniqueDebugState maybeDebug);
-    ~Instance();
-    bool init(JSContext* cx,
-              const DataSegmentVector& dataSegments,
-              const ElemSegmentVector& elemSegments);
-    void trace(JSTracer* trc);
+ public:
+  Instance(JSContext* cx, HandleWasmInstanceObject object, SharedCode code,
+           UniqueTlsData tlsData, HandleWasmMemoryObject memory,
+           SharedTableVector&& tables, StructTypeDescrVector&& structTypeDescrs,
+           Handle<FunctionVector> funcImports,
+           HandleValVector globalImportValues,
+           const WasmGlobalObjectVector& globalObjs,
+           UniqueDebugState maybeDebug);
+  ~Instance();
+  bool init(JSContext* cx, const DataSegmentVector& dataSegments,
+            const ElemSegmentVector& elemSegments);
+  void trace(JSTracer* trc);
 
-    JS::Realm* realm() const { return realm_; }
-    const Code& code() const { return *code_; }
-    const CodeTier& code(Tier t) const { return code_->codeTier(t); }
-    bool debugEnabled() const { return !!maybeDebug_; }
-    DebugState& debug() { return *maybeDebug_; }
-    const ModuleSegment& moduleSegment(Tier t) const { return code_->segment(t); }
-    TlsData* tlsData() const { return tlsData_.get(); }
-    uint8_t* globalData() const { return (uint8_t*)&tlsData_->globalArea; }
-    uint8_t* codeBase(Tier t) const { return code_->segment(t).base(); }
-    const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
-    const Metadata& metadata() const { return code_->metadata(); }
-    bool isAsmJS() const { return metadata().isAsmJS(); }
-    const SharedTableVector& tables() const { return tables_; }
-    SharedMem<uint8_t*> memoryBase() const;
-    WasmMemoryObject* memory() const;
-    size_t memoryMappedSize() const;
-    SharedArrayRawBuffer* sharedMemoryBuffer() const; 
-    bool memoryAccessInGuardRegion(uint8_t* addr, unsigned numBytes) const;
-    const StructTypeVector& structTypes() const { return code_->structTypes(); }
+  JS::Realm* realm() const { return realm_; }
+  const Code& code() const { return *code_; }
+  const CodeTier& code(Tier t) const { return code_->codeTier(t); }
+  bool debugEnabled() const { return !!maybeDebug_; }
+  DebugState& debug() { return *maybeDebug_; }
+  const ModuleSegment& moduleSegment(Tier t) const { return code_->segment(t); }
+  TlsData* tlsData() const { return tlsData_.get(); }
+  uint8_t* globalData() const { return (uint8_t*)&tlsData_->globalArea; }
+  uint8_t* codeBase(Tier t) const { return code_->segment(t).base(); }
+  const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
+  const Metadata& metadata() const { return code_->metadata(); }
+  bool isAsmJS() const { return metadata().isAsmJS(); }
+  const SharedTableVector& tables() const { return tables_; }
+  SharedMem<uint8_t*> memoryBase() const;
+  WasmMemoryObject* memory() const;
+  size_t memoryMappedSize() const;
+  SharedArrayRawBuffer* sharedMemoryBuffer() const;  
+  bool memoryAccessInGuardRegion(uint8_t* addr, unsigned numBytes) const;
+  const StructTypeVector& structTypes() const { return code_->structTypes(); }
 
-    static constexpr size_t offsetOfJSJitArgsRectifier() {
-        return offsetof(Instance, jsJitArgsRectifier_);
-    }
-    static constexpr size_t offsetOfJSJitExceptionHandler() {
-        return offsetof(Instance, jsJitExceptionHandler_);
-    }
-    static constexpr size_t offsetOfPreBarrierCode() {
-        return offsetof(Instance, preBarrierCode_);
-    }
+  static constexpr size_t offsetOfJSJitArgsRectifier() {
+    return offsetof(Instance, jsJitArgsRectifier_);
+  }
+  static constexpr size_t offsetOfJSJitExceptionHandler() {
+    return offsetof(Instance, jsJitExceptionHandler_);
+  }
+  static constexpr size_t offsetOfPreBarrierCode() {
+    return offsetof(Instance, preBarrierCode_);
+  }
 
-    
-    
-    
-    
+  
+  
+  
+  
 
-    WasmInstanceObject* object() const;
-    WasmInstanceObject* objectUnbarriered() const;
+  WasmInstanceObject* object() const;
+  WasmInstanceObject* objectUnbarriered() const;
 
-    
-    
+  
+  
 
-    MOZ_MUST_USE bool callExport(JSContext* cx, uint32_t funcIndex, CallArgs args);
+  MOZ_MUST_USE bool callExport(JSContext* cx, uint32_t funcIndex,
+                               CallArgs args);
 
-    
-    
+  
+  
 
-    JSAtom* getFuncDisplayAtom(JSContext* cx, uint32_t funcIndex) const;
-    void ensureProfilingLabels(bool profilingEnabled) const;
+  JSAtom* getFuncDisplayAtom(JSContext* cx, uint32_t funcIndex) const;
+  void ensureProfilingLabels(bool profilingEnabled) const;
 
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
 
-    void deoptimizeImportExit(uint32_t funcImportIndex);
+  void deoptimizeImportExit(uint32_t funcImportIndex);
 
-    
+  
 
-    void onMovingGrowMemory(uint8_t* prevMemoryBase);
-    void onMovingGrowTable(const Table* theTable);
+  void onMovingGrowMemory(uint8_t* prevMemoryBase);
+  void onMovingGrowTable(const Table* theTable);
 
-    
-    
+  
+  
 
-    void initElems(uint32_t tableIndex, const ElemSegment& seg, uint32_t dstOffset,
-                   uint32_t srcOffset, uint32_t len);
+  void initElems(uint32_t tableIndex, const ElemSegment& seg,
+                 uint32_t dstOffset, uint32_t srcOffset, uint32_t len);
 
-    
+  
 
-    JSString* createDisplayURL(JSContext* cx);
+  JSString* createDisplayURL(JSContext* cx);
 
-    
+  
 
-    void addSizeOfMisc(MallocSizeOf mallocSizeOf,
-                       Metadata::SeenSet* seenMetadata,
-                       ShareableBytes::SeenSet* seenBytes,
-                       Code::SeenSet* seenCode,
-                       Table::SeenSet* seenTables,
-                       size_t* code,
-                       size_t* data) const;
+  void addSizeOfMisc(MallocSizeOf mallocSizeOf, Metadata::SeenSet* seenMetadata,
+                     ShareableBytes::SeenSet* seenBytes,
+                     Code::SeenSet* seenCode, Table::SeenSet* seenTables,
+                     size_t* code, size_t* data) const;
 
-  public:
-    
-    static int32_t callImport_void(Instance*, int32_t, int32_t, uint64_t*);
-    static int32_t callImport_i32(Instance*, int32_t, int32_t, uint64_t*);
-    static int32_t callImport_i64(Instance*, int32_t, int32_t, uint64_t*);
-    static int32_t callImport_f64(Instance*, int32_t, int32_t, uint64_t*);
-    static int32_t callImport_ref(Instance*, int32_t, int32_t, uint64_t*);
-    static uint32_t growMemory_i32(Instance* instance, uint32_t delta);
-    static uint32_t currentMemory_i32(Instance* instance);
-    static int32_t wait_i32(Instance* instance, uint32_t byteOffset, int32_t value, int64_t timeout);
-    static int32_t wait_i64(Instance* instance, uint32_t byteOffset, int64_t value, int64_t timeout);
-    static int32_t wake(Instance* instance, uint32_t byteOffset, int32_t count);
-    static int32_t memCopy(Instance* instance, uint32_t destByteOffset, uint32_t srcByteOffset, uint32_t len);
-    static int32_t memDrop(Instance* instance, uint32_t segIndex);
-    static int32_t memFill(Instance* instance, uint32_t byteOffset, uint32_t value, uint32_t len);
-    static int32_t memInit(Instance* instance, uint32_t dstOffset,
-                           uint32_t srcOffset, uint32_t len, uint32_t segIndex);
-    static int32_t tableCopy(Instance* instance, uint32_t dstOffset, uint32_t srcOffset, uint32_t len,
-                             uint32_t dstTableIndex, uint32_t srcTableIndex);
-    static int32_t tableDrop(Instance* instance, uint32_t segIndex);
-    static void* tableGet(Instance* instance, uint32_t index, uint32_t tableIndex);
-    static uint32_t tableGrow(Instance* instance, uint32_t delta, void* initValue, uint32_t tableIndex);
-    static int32_t tableSet(Instance* instance, uint32_t index, void* value, uint32_t tableIndex);
-    static uint32_t tableSize(Instance* instance, uint32_t tableIndex);
-    static int32_t tableInit(Instance* instance, uint32_t dstOffset,
-                             uint32_t srcOffset, uint32_t len, uint32_t segIndex, uint32_t tableIndex);
-    static void postBarrier(Instance* instance, gc::Cell** location);
-    static void* structNew(Instance* instance, uint32_t typeIndex);
-    static void* structNarrow(Instance* instance, uint32_t mustUnboxAnyref, uint32_t outputTypeIndex,
-                              void* maybeNullPtr);
+ public:
+  
+  static int32_t callImport_void(Instance*, int32_t, int32_t, uint64_t*);
+  static int32_t callImport_i32(Instance*, int32_t, int32_t, uint64_t*);
+  static int32_t callImport_i64(Instance*, int32_t, int32_t, uint64_t*);
+  static int32_t callImport_f64(Instance*, int32_t, int32_t, uint64_t*);
+  static int32_t callImport_ref(Instance*, int32_t, int32_t, uint64_t*);
+  static uint32_t growMemory_i32(Instance* instance, uint32_t delta);
+  static uint32_t currentMemory_i32(Instance* instance);
+  static int32_t wait_i32(Instance* instance, uint32_t byteOffset,
+                          int32_t value, int64_t timeout);
+  static int32_t wait_i64(Instance* instance, uint32_t byteOffset,
+                          int64_t value, int64_t timeout);
+  static int32_t wake(Instance* instance, uint32_t byteOffset, int32_t count);
+  static int32_t memCopy(Instance* instance, uint32_t destByteOffset,
+                         uint32_t srcByteOffset, uint32_t len);
+  static int32_t memDrop(Instance* instance, uint32_t segIndex);
+  static int32_t memFill(Instance* instance, uint32_t byteOffset,
+                         uint32_t value, uint32_t len);
+  static int32_t memInit(Instance* instance, uint32_t dstOffset,
+                         uint32_t srcOffset, uint32_t len, uint32_t segIndex);
+  static int32_t tableCopy(Instance* instance, uint32_t dstOffset,
+                           uint32_t srcOffset, uint32_t len,
+                           uint32_t dstTableIndex, uint32_t srcTableIndex);
+  static int32_t tableDrop(Instance* instance, uint32_t segIndex);
+  static void* tableGet(Instance* instance, uint32_t index,
+                        uint32_t tableIndex);
+  static uint32_t tableGrow(Instance* instance, uint32_t delta, void* initValue,
+                            uint32_t tableIndex);
+  static int32_t tableSet(Instance* instance, uint32_t index, void* value,
+                          uint32_t tableIndex);
+  static uint32_t tableSize(Instance* instance, uint32_t tableIndex);
+  static int32_t tableInit(Instance* instance, uint32_t dstOffset,
+                           uint32_t srcOffset, uint32_t len, uint32_t segIndex,
+                           uint32_t tableIndex);
+  static void postBarrier(Instance* instance, gc::Cell** location);
+  static void* structNew(Instance* instance, uint32_t typeIndex);
+  static void* structNarrow(Instance* instance, uint32_t mustUnboxAnyref,
+                            uint32_t outputTypeIndex, void* maybeNullPtr);
 };
 
 typedef UniquePtr<Instance> UniqueInstance;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

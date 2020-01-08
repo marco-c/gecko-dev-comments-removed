@@ -20,18 +20,17 @@ class PProfilerParent;
 
 
 
-class ChildProfilerController final
-{
-public:
+class ChildProfilerController final {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ChildProfilerController)
 
-  static already_AddRefed<ChildProfilerController>
-  Create(mozilla::ipc::Endpoint<PProfilerChild>&& aEndpoint);
+  static already_AddRefed<ChildProfilerController> Create(
+      mozilla::ipc::Endpoint<PProfilerChild>&& aEndpoint);
 
   MOZ_MUST_USE nsCString GrabShutdownProfileAndShutdown();
   void Shutdown();
 
-private:
+ private:
   ChildProfilerController();
   ~ChildProfilerController();
   void Init(mozilla::ipc::Endpoint<PProfilerChild>&& aEndpoint);
@@ -41,10 +40,10 @@ private:
   void SetupProfilerChild(mozilla::ipc::Endpoint<PProfilerChild>&& aEndpoint);
   void ShutdownProfilerChild(nsCString* aOutShutdownProfile);
 
-  RefPtr<ProfilerChild> mProfilerChild; 
+  RefPtr<ProfilerChild> mProfilerChild;  
   RefPtr<nsIThread> mThread;
 };
 
-} 
+}  
 
 #endif  

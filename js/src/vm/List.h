@@ -30,40 +30,42 @@ namespace js {
 
 
 class ListObject : public NativeObject {
-  public:
-    static const Class class_;
+ public:
+  static const Class class_;
 
-    inline static MOZ_MUST_USE ListObject* create(JSContext* cx);
+  inline static MOZ_MUST_USE ListObject* create(JSContext* cx);
 
-    uint32_t length() const { return getDenseInitializedLength(); }
+  uint32_t length() const { return getDenseInitializedLength(); }
 
-    const Value& get(uint32_t index) const { return getDenseElement(index); }
+  const Value& get(uint32_t index) const { return getDenseElement(index); }
 
-    template <class T>
-    T& getAs(uint32_t index) const { return get(index).toObject().as<T>(); }
+  template <class T>
+  T& getAs(uint32_t index) const {
+    return get(index).toObject().as<T>();
+  }
 
-    
-
-
-    inline MOZ_MUST_USE bool append(JSContext* cx, HandleValue value);
-
-    
+  
 
 
+  inline MOZ_MUST_USE bool append(JSContext* cx, HandleValue value);
 
-
-    inline JS::Value popFirst(JSContext* cx);
-
-    
+  
 
 
 
 
+  inline JS::Value popFirst(JSContext* cx);
 
-    template <class T>
-    inline T& popFirstAs(JSContext* cx);
+  
+
+
+
+
+
+  template <class T>
+  inline T& popFirstAs(JSContext* cx);
 };
 
-} 
+}  
 
-#endif 
+#endif  

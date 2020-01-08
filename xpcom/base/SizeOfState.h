@@ -23,13 +23,11 @@ namespace mozilla {
 
 
 
-class SeenPtrs : public nsTHashtable<nsPtrHashKey<const void>>
-{
-public:
+class SeenPtrs : public nsTHashtable<nsPtrHashKey<const void>> {
+ public:
   
   
-  bool HaveSeenPtr(const void* aPtr)
-  {
+  bool HaveSeenPtr(const void* aPtr) {
     uint32_t oldCount = Count();
 
     mozilla::Unused << PutEntry(aPtr, fallible);
@@ -54,12 +52,10 @@ public:
 
 
 
-class SizeOfState
-{
-public:
+class SizeOfState {
+ public:
   explicit SizeOfState(MallocSizeOf aMallocSizeOf)
-    : mMallocSizeOf(aMallocSizeOf)
-  {}
+      : mMallocSizeOf(aMallocSizeOf) {}
 
   bool HaveSeenPtr(const void* aPtr) { return mSeenPtrs.HaveSeenPtr(aPtr); }
 
@@ -67,7 +63,6 @@ public:
   SeenPtrs mSeenPtrs;
 };
 
-} 
+}  
 
-#endif 
-
+#endif  

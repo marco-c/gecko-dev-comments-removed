@@ -25,11 +25,9 @@ namespace mscom {
 
 
 
-class FastMarshaler final : public IMarshal
-{
-public:
-  static HRESULT Create(IUnknown* aOuter,
-                        IUnknown** aOutMarshalerUnk);
+class FastMarshaler final : public IMarshal {
+ public:
+  static HRESULT Create(IUnknown* aOuter, IUnknown** aOutMarshalerUnk);
 
   
   STDMETHODIMP GetUnmarshalClass(REFIID riid, void* pv, DWORD dwDestContext,
@@ -46,20 +44,20 @@ public:
   STDMETHODIMP ReleaseMarshalData(IStream* pStm) override;
   STDMETHODIMP DisconnectObject(DWORD dwReserved) override;
 
-private:
+ private:
   FastMarshaler(IUnknown* aOuter, HRESULT* aResult);
   ~FastMarshaler() = default;
 
   static DWORD GetMarshalFlags(DWORD aDestContext, DWORD aMshlFlags);
 
-  Atomic<ULONG>     mRefCnt;
-  IUnknown*         mOuter;
-  RefPtr<IUnknown>  mStdMarshalUnk;
-  IMarshal*         mStdMarshalWeak;
+  Atomic<ULONG> mRefCnt;
+  IUnknown* mOuter;
+  RefPtr<IUnknown> mStdMarshalUnk;
+  IMarshal* mStdMarshalWeak;
   DECLARE_AGGREGATABLE(FastMarshaler);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

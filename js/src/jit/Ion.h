@@ -20,21 +20,20 @@ namespace jit {
 
 class TempAllocator;
 
-enum MethodStatus
-{
-    Method_Error,
-    Method_CantCompile,
-    Method_Skipped,
-    Method_Compiled
+enum MethodStatus {
+  Method_Error,
+  Method_CantCompile,
+  Method_Skipped,
+  Method_Compiled
 };
 
 enum class AbortReason : uint8_t {
-    Alloc,
-    Inlining,
-    PreliminaryObjects,
-    Disable,
-    Error,
-    NoAbort
+  Alloc,
+  Inlining,
+  PreliminaryObjects,
+  Disable,
+  Error,
+  NoAbort
 };
 
 template <typename V>
@@ -43,43 +42,41 @@ using mozilla::Err;
 using mozilla::Ok;
 
 static_assert(sizeof(AbortReasonOr<Ok>) <= sizeof(uintptr_t),
-    "Unexpected size of AbortReasonOr<Ok>");
+              "Unexpected size of AbortReasonOr<Ok>");
 static_assert(sizeof(AbortReasonOr<bool>) <= sizeof(uintptr_t),
-    "Unexpected size of AbortReasonOr<bool>");
+              "Unexpected size of AbortReasonOr<bool>");
 
 
 
 
 
 
-class JitContext
-{
-  public:
-    JitContext(JSContext* cx, TempAllocator* temp);
-    JitContext(CompileRuntime* rt, CompileRealm* realm, TempAllocator* temp);
-    explicit JitContext(TempAllocator* temp);
-    JitContext();
-    ~JitContext();
+class JitContext {
+ public:
+  JitContext(JSContext* cx, TempAllocator* temp);
+  JitContext(CompileRuntime* rt, CompileRealm* realm, TempAllocator* temp);
+  explicit JitContext(TempAllocator* temp);
+  JitContext();
+  ~JitContext();
 
-    
-    
-    JSContext* cx;
+  
+  
+  JSContext* cx;
 
-    
-    TempAllocator* temp;
+  
+  TempAllocator* temp;
 
-    
-    
-    CompileRuntime* runtime;
-    CompileRealm* realm;
-    CompileZone* zone;
+  
+  
+  CompileRuntime* runtime;
+  CompileRealm* realm;
+  CompileZone* zone;
 
-    int getNextAssemblerId() {
-        return assemblerCount_++;
-    }
-  private:
-    JitContext* prev_;
-    int assemblerCount_;
+  int getNextAssemblerId() { return assemblerCount_++; }
+
+ private:
+  JitContext* prev_;
+  int assemblerCount_;
 };
 
 
@@ -94,32 +91,30 @@ void SetJitContext(JitContext* ctx);
 bool CanIonCompileScript(JSContext* cx, JSScript* script);
 bool CanIonInlineScript(JSScript* script);
 
-MOZ_MUST_USE bool IonCompileScriptForBaseline(JSContext* cx, BaselineFrame* frame, jsbytecode* pc);
+MOZ_MUST_USE bool IonCompileScriptForBaseline(JSContext* cx,
+                                              BaselineFrame* frame,
+                                              jsbytecode* pc);
 
 MethodStatus CanEnterIon(JSContext* cx, RunState& state);
 
-MethodStatus
-Recompile(JSContext* cx, HandleScript script, BaselineFrame* osrFrame, jsbytecode* osrPc,
-          bool force);
+MethodStatus Recompile(JSContext* cx, HandleScript script,
+                       BaselineFrame* osrFrame, jsbytecode* osrPc, bool force);
 
-enum JitExecStatus
-{
-    
-    
-    JitExec_Aborted,
+enum JitExecStatus {
+  
+  
+  JitExec_Aborted,
 
-    
-    
-    JitExec_Error,
+  
+  
+  JitExec_Error,
 
-    
-    JitExec_Ok
+  
+  JitExec_Ok
 };
 
-static inline bool
-IsErrorStatus(JitExecStatus status)
-{
-    return status == JitExec_Error || status == JitExec_Aborted;
+static inline bool IsErrorStatus(JitExecStatus status) {
+  return status == JitExec_Error || status == JitExec_Aborted;
 }
 
 struct EnterJitData;
@@ -128,8 +123,8 @@ struct EnterJitData;
 void Invalidate(TypeZone& types, FreeOp* fop,
                 const RecompileInfoVector& invalid, bool resetUses = true,
                 bool cancelOffThread = true);
-void Invalidate(JSContext* cx, const RecompileInfoVector& invalid, bool resetUses = true,
-                bool cancelOffThread = true);
+void Invalidate(JSContext* cx, const RecompileInfoVector& invalid,
+                bool resetUses = true, bool cancelOffThread = true);
 void Invalidate(JSContext* cx, JSScript* script, bool resetUses = true,
                 bool cancelOffThread = true);
 
@@ -152,49 +147,38 @@ void FreeIonBuilder(IonBuilder* builder);
 void LinkIonScript(JSContext* cx, HandleScript calleescript);
 uint8_t* LazyLinkTopActivation(JSContext* cx, LazyLinkExitFrameLayout* frame);
 
-static inline bool
-IsIonEnabled(JSContext* cx)
-{
-    
+static inline bool IsIonEnabled(JSContext* cx) {
+  
 #if defined(JS_CODEGEN_NONE) || defined(JS_CODEGEN_ARM64)
-    return false;
+  return false;
 #else
-    return cx->options().ion() &&
-           cx->options().baseline() &&
-           cx->runtime()->jitSupportsFloatingPoint;
+  return cx->options().ion() && cx->options().baseline() &&
+         cx->runtime()->jitSupportsFloatingPoint;
 #endif
 }
 
-inline bool
-IsIonInlinablePC(jsbytecode* pc) {
-    
-    
-    
-    return (IsCallPC(pc) && !IsSpreadCallPC(pc)) ||
-           IsGetPropPC(pc) ||
-           IsSetPropPC(pc);
+inline bool IsIonInlinablePC(jsbytecode* pc) {
+  
+  
+  
+  return (IsCallPC(pc) && !IsSpreadCallPC(pc)) || IsGetPropPC(pc) ||
+         IsSetPropPC(pc);
 }
 
-inline bool
-TooManyActualArguments(unsigned nargs)
-{
-    return nargs > JitOptions.maxStackArgs;
+inline bool TooManyActualArguments(unsigned nargs) {
+  return nargs > JitOptions.maxStackArgs;
 }
 
-inline bool
-TooManyFormalArguments(unsigned nargs)
-{
-    return nargs >= SNAPSHOT_MAX_NARGS || TooManyActualArguments(nargs);
+inline bool TooManyFormalArguments(unsigned nargs) {
+  return nargs >= SNAPSHOT_MAX_NARGS || TooManyActualArguments(nargs);
 }
 
-inline size_t
-NumLocalsAndArgs(JSScript* script)
-{
-    size_t num = 1  + script->nfixed();
-    if (JSFunction* fun = script->functionNonDelazifying()) {
-        num += fun->nargs();
-    }
-    return num;
+inline size_t NumLocalsAndArgs(JSScript* script) {
+  size_t num = 1  + script->nfixed();
+  if (JSFunction* fun = script->functionNonDelazifying()) {
+    num += fun->nargs();
+  }
+  return num;
 }
 
 bool OffThreadCompilationAvailable(JSContext* cx);
@@ -210,7 +194,7 @@ bool JitSupportsUnalignedAccesses();
 bool JitSupportsSimd();
 bool JitSupportsAtomics();
 
-} 
-} 
+}  
+}  
 
 #endif 

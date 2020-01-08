@@ -17,151 +17,152 @@ class CodeGeneratorARM;
 class OutOfLineBailout;
 class OutOfLineTableSwitch;
 
-using OutOfLineWasmTruncateCheck = OutOfLineWasmTruncateCheckBase<CodeGeneratorARM>;
+using OutOfLineWasmTruncateCheck =
+    OutOfLineWasmTruncateCheckBase<CodeGeneratorARM>;
 
-class CodeGeneratorARM : public CodeGeneratorShared
-{
-    friend class MoveResolverARM;
+class CodeGeneratorARM : public CodeGeneratorShared {
+  friend class MoveResolverARM;
 
-  protected:
-    CodeGeneratorARM(MIRGenerator* gen, LIRGraph* graph, MacroAssembler* masm);
+ protected:
+  CodeGeneratorARM(MIRGenerator* gen, LIRGraph* graph, MacroAssembler* masm);
 
-    NonAssertingLabel deoptLabel_;
+  NonAssertingLabel deoptLabel_;
 
-    MoveOperand toMoveOperand(LAllocation a) const;
+  MoveOperand toMoveOperand(LAllocation a) const;
 
-    void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
-    void bailoutFrom(Label* label, LSnapshot* snapshot);
-    void bailout(LSnapshot* snapshot);
+  void bailoutIf(Assembler::Condition condition, LSnapshot* snapshot);
+  void bailoutFrom(Label* label, LSnapshot* snapshot);
+  void bailout(LSnapshot* snapshot);
 
-    template <typename T1, typename T2>
-    void bailoutCmpPtr(Assembler::Condition c, T1 lhs, T2 rhs, LSnapshot* snapshot) {
-        masm.cmpPtr(lhs, rhs);
-        bailoutIf(c, snapshot);
-    }
-    void bailoutTestPtr(Assembler::Condition c, Register lhs, Register rhs, LSnapshot* snapshot) {
-        masm.testPtr(lhs, rhs);
-        bailoutIf(c, snapshot);
-    }
-    template <typename T1, typename T2>
-    void bailoutCmp32(Assembler::Condition c, T1 lhs, T2 rhs, LSnapshot* snapshot) {
-        masm.cmp32(lhs, rhs);
-        bailoutIf(c, snapshot);
-    }
-    template <typename T1, typename T2>
-    void bailoutTest32(Assembler::Condition c, T1 lhs, T2 rhs, LSnapshot* snapshot) {
-        masm.test32(lhs, rhs);
-        bailoutIf(c, snapshot);
-    }
-    void bailoutIfFalseBool(Register reg, LSnapshot* snapshot) {
-        masm.test32(reg, Imm32(0xFF));
-        bailoutIf(Assembler::Zero, snapshot);
-    }
+  template <typename T1, typename T2>
+  void bailoutCmpPtr(Assembler::Condition c, T1 lhs, T2 rhs,
+                     LSnapshot* snapshot) {
+    masm.cmpPtr(lhs, rhs);
+    bailoutIf(c, snapshot);
+  }
+  void bailoutTestPtr(Assembler::Condition c, Register lhs, Register rhs,
+                      LSnapshot* snapshot) {
+    masm.testPtr(lhs, rhs);
+    bailoutIf(c, snapshot);
+  }
+  template <typename T1, typename T2>
+  void bailoutCmp32(Assembler::Condition c, T1 lhs, T2 rhs,
+                    LSnapshot* snapshot) {
+    masm.cmp32(lhs, rhs);
+    bailoutIf(c, snapshot);
+  }
+  template <typename T1, typename T2>
+  void bailoutTest32(Assembler::Condition c, T1 lhs, T2 rhs,
+                     LSnapshot* snapshot) {
+    masm.test32(lhs, rhs);
+    bailoutIf(c, snapshot);
+  }
+  void bailoutIfFalseBool(Register reg, LSnapshot* snapshot) {
+    masm.test32(reg, Imm32(0xFF));
+    bailoutIf(Assembler::Zero, snapshot);
+  }
 
-    template<class T>
-    void generateUDivModZeroCheck(Register rhs, Register output, Label* done, LSnapshot* snapshot,
-                                  T* mir);
+  template <class T>
+  void generateUDivModZeroCheck(Register rhs, Register output, Label* done,
+                                LSnapshot* snapshot, T* mir);
 
-    bool generateOutOfLineCode();
+  bool generateOutOfLineCode();
 
-    void emitRoundDouble(FloatRegister src, Register dest, Label* fail);
+  void emitRoundDouble(FloatRegister src, Register dest, Label* fail);
 
-    
-    
-    void emitBranch(Assembler::Condition cond, MBasicBlock* ifTrue, MBasicBlock* ifFalse);
+  
+  
+  void emitBranch(Assembler::Condition cond, MBasicBlock* ifTrue,
+                  MBasicBlock* ifFalse);
 
-    void testNullEmitBranch(Assembler::Condition cond, const ValueOperand& value,
-                            MBasicBlock* ifTrue, MBasicBlock* ifFalse)
-    {
-        cond = masm.testNull(cond, value);
-        emitBranch(cond, ifTrue, ifFalse);
-    }
-    void testUndefinedEmitBranch(Assembler::Condition cond, const ValueOperand& value,
-                                 MBasicBlock* ifTrue, MBasicBlock* ifFalse)
-    {
-        cond = masm.testUndefined(cond, value);
-        emitBranch(cond, ifTrue, ifFalse);
-    }
-    void testObjectEmitBranch(Assembler::Condition cond, const ValueOperand& value,
-                              MBasicBlock* ifTrue, MBasicBlock* ifFalse)
-    {
-        cond = masm.testObject(cond, value);
-        emitBranch(cond, ifTrue, ifFalse);
-    }
-    void testZeroEmitBranch(Assembler::Condition cond, Register reg,
-                            MBasicBlock* ifTrue, MBasicBlock* ifFalse)
-    {
-        MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
-        masm.cmpPtr(reg, ImmWord(0));
-        emitBranch(cond, ifTrue, ifFalse);
-    }
+  void testNullEmitBranch(Assembler::Condition cond, const ValueOperand& value,
+                          MBasicBlock* ifTrue, MBasicBlock* ifFalse) {
+    cond = masm.testNull(cond, value);
+    emitBranch(cond, ifTrue, ifFalse);
+  }
+  void testUndefinedEmitBranch(Assembler::Condition cond,
+                               const ValueOperand& value, MBasicBlock* ifTrue,
+                               MBasicBlock* ifFalse) {
+    cond = masm.testUndefined(cond, value);
+    emitBranch(cond, ifTrue, ifFalse);
+  }
+  void testObjectEmitBranch(Assembler::Condition cond,
+                            const ValueOperand& value, MBasicBlock* ifTrue,
+                            MBasicBlock* ifFalse) {
+    cond = masm.testObject(cond, value);
+    emitBranch(cond, ifTrue, ifFalse);
+  }
+  void testZeroEmitBranch(Assembler::Condition cond, Register reg,
+                          MBasicBlock* ifTrue, MBasicBlock* ifFalse) {
+    MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
+    masm.cmpPtr(reg, ImmWord(0));
+    emitBranch(cond, ifTrue, ifFalse);
+  }
 
-    void emitTableSwitchDispatch(MTableSwitch* mir, Register index, Register base);
+  void emitTableSwitchDispatch(MTableSwitch* mir, Register index,
+                               Register base);
 
-    template <typename T>
-    void emitWasmLoad(T* ins);
-    template <typename T>
-    void emitWasmUnalignedLoad(T* ins);
-    template <typename T>
-    void emitWasmStore(T* ins);
-    template <typename T>
-    void emitWasmUnalignedStore(T* ins);
+  template <typename T>
+  void emitWasmLoad(T* ins);
+  template <typename T>
+  void emitWasmUnalignedLoad(T* ins);
+  template <typename T>
+  void emitWasmStore(T* ins);
+  template <typename T>
+  void emitWasmUnalignedStore(T* ins);
 
-    ValueOperand ToValue(LInstruction* ins, size_t pos);
-    ValueOperand ToTempValue(LInstruction* ins, size_t pos);
+  ValueOperand ToValue(LInstruction* ins, size_t pos);
+  ValueOperand ToTempValue(LInstruction* ins, size_t pos);
 
-    Register64 ToOperandOrRegister64(const LInt64Allocation input);
+  Register64 ToOperandOrRegister64(const LInt64Allocation input);
 
-    
-    void splitTagForTest(const ValueOperand& value, ScratchTagScope& tag);
+  
+  void splitTagForTest(const ValueOperand& value, ScratchTagScope& tag);
 
-    void divICommon(MDiv* mir, Register lhs, Register rhs, Register output, LSnapshot* snapshot,
-                    Label& done);
-    void modICommon(MMod* mir, Register lhs, Register rhs, Register output, LSnapshot* snapshot,
-                    Label& done);
+  void divICommon(MDiv* mir, Register lhs, Register rhs, Register output,
+                  LSnapshot* snapshot, Label& done);
+  void modICommon(MMod* mir, Register lhs, Register rhs, Register output,
+                  LSnapshot* snapshot, Label& done);
 
-    void generateInvalidateEpilogue();
+  void generateInvalidateEpilogue();
 
-    
-    template<typename S, typename T>
-    void atomicBinopToTypedIntArray(AtomicOp op, Scalar::Type arrayType, const S& value,
-                                    const T& mem, Register flagTemp, Register outTemp,
-                                    AnyRegister output);
+  
+  template <typename S, typename T>
+  void atomicBinopToTypedIntArray(AtomicOp op, Scalar::Type arrayType,
+                                  const S& value, const T& mem,
+                                  Register flagTemp, Register outTemp,
+                                  AnyRegister output);
 
-    
-    template<typename S, typename T>
-    void atomicBinopToTypedIntArray(AtomicOp op, Scalar::Type arrayType, const S& value,
-                                    const T& mem, Register flagTemp);
+  
+  template <typename S, typename T>
+  void atomicBinopToTypedIntArray(AtomicOp op, Scalar::Type arrayType,
+                                  const S& value, const T& mem,
+                                  Register flagTemp);
 
-  public:
-    void visitOutOfLineBailout(OutOfLineBailout* ool);
-    void visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool);
-    void visitOutOfLineWasmTruncateCheck(OutOfLineWasmTruncateCheck* ool);
+ public:
+  void visitOutOfLineBailout(OutOfLineBailout* ool);
+  void visitOutOfLineTableSwitch(OutOfLineTableSwitch* ool);
+  void visitOutOfLineWasmTruncateCheck(OutOfLineWasmTruncateCheck* ool);
 };
 
 typedef CodeGeneratorARM CodeGeneratorSpecific;
 
 
-class OutOfLineBailout : public OutOfLineCodeBase<CodeGeneratorARM>
-{
-  protected: 
-    LSnapshot* snapshot_;
-    uint32_t frameSize_;
+class OutOfLineBailout : public OutOfLineCodeBase<CodeGeneratorARM> {
+ protected:  
+  LSnapshot* snapshot_;
+  uint32_t frameSize_;
 
-  public:
-    OutOfLineBailout(LSnapshot* snapshot, uint32_t frameSize)
-      : snapshot_(snapshot),
-        frameSize_(frameSize)
-    { }
+ public:
+  OutOfLineBailout(LSnapshot* snapshot, uint32_t frameSize)
+      : snapshot_(snapshot), frameSize_(frameSize) {}
 
-    void accept(CodeGeneratorARM* codegen) override;
+  void accept(CodeGeneratorARM* codegen) override;
 
-    LSnapshot* snapshot() const {
-        return snapshot_;
-    }
+  LSnapshot* snapshot() const { return snapshot_; }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

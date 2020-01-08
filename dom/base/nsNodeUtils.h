@@ -8,25 +8,25 @@
 #define nsNodeUtils_h___
 
 #include "mozilla/Maybe.h"
-#include "nsIContent.h"          
-#include "nsIMutationObserver.h" 
+#include "nsIContent.h"  
+#include "nsIMutationObserver.h"  
 #include "js/TypeDecls.h"
 #include "nsCOMArray.h"
 
 struct CharacterDataChangeInfo;
-template<class E> class nsCOMArray;
+template <class E>
+class nsCOMArray;
 class nsCycleCollectionTraversalCallback;
 namespace mozilla {
 struct NonOwningAnimationTarget;
 class ErrorResult;
 namespace dom {
 class Animation;
-} 
-} 
+}  
+}  
 
-class nsNodeUtils
-{
-public:
+class nsNodeUtils {
+ public:
   
 
 
@@ -56,8 +56,7 @@ public:
 
 
   static void AttributeWillChange(mozilla::dom::Element* aElement,
-                                  int32_t aNameSpaceID,
-                                  nsAtom* aAttribute,
+                                  int32_t aNameSpaceID, nsAtom* aAttribute,
                                   int32_t aModType,
                                   const nsAttrValue* aNewValue);
 
@@ -72,10 +71,8 @@ public:
 
 
   static void AttributeChanged(mozilla::dom::Element* aElement,
-                               int32_t aNameSpaceID,
-                               nsAtom* aAttribute,
-                               int32_t aModType,
-                               const nsAttrValue* aOldValue);
+                               int32_t aNameSpaceID, nsAtom* aAttribute,
+                               int32_t aModType, const nsAttrValue* aOldValue);
 
   
 
@@ -112,8 +109,7 @@ public:
 
 
 
-  static void ContentInserted(nsINode* aContainer,
-                              nsIContent* aChild);
+  static void ContentInserted(nsINode* aContainer, nsIContent* aChild);
   
 
 
@@ -121,22 +117,19 @@ public:
 
 
 
-  static void ContentRemoved(nsINode* aContainer,
-                             nsIContent* aChild,
+  static void ContentRemoved(nsINode* aContainer, nsIContent* aChild,
                              nsIContent* aPreviousSibling);
   
 
 
 
 
-  static inline void ParentChainChanged(nsIContent *aContent)
-  {
+  static inline void ParentChainChanged(nsIContent* aContent) {
     nsINode::nsSlots* slots = aContent->GetExistingSlots();
     if (slots && !slots->mMutationObservers.IsEmpty()) {
       NS_OBSERVER_AUTO_ARRAY_NOTIFY_OBSERVERS(slots->mMutationObservers,
                                               nsIMutationObserver, 1,
-                                              ParentChainChanged,
-                                              (aContent));
+                                              ParentChainChanged, (aContent));
     }
   }
 
@@ -146,7 +139,7 @@ public:
 
 
   static mozilla::Maybe<mozilla::NonOwningAnimationTarget>
-    GetTargetForAnimation(const mozilla::dom::Animation* aAnimation);
+  GetTargetForAnimation(const mozilla::dom::Animation* aAnimation);
 
   
 
@@ -183,13 +176,11 @@ public:
 
 
 
-  static already_AddRefed<nsINode> Clone(nsINode *aNode, bool aDeep,
-                                         nsNodeInfoManager *aNewNodeInfoManager,
-                                         nsCOMArray<nsINode> *aNodesWithProperties,
-                                         mozilla::ErrorResult& aError)
-  {
-    return CloneAndAdopt(aNode, true, aDeep, aNewNodeInfoManager,
-                         nullptr, aNodesWithProperties, nullptr, aError);
+  static already_AddRefed<nsINode> Clone(
+      nsINode* aNode, bool aDeep, nsNodeInfoManager* aNewNodeInfoManager,
+      nsCOMArray<nsINode>* aNodesWithProperties, mozilla::ErrorResult& aError) {
+    return CloneAndAdopt(aNode, true, aDeep, aNewNodeInfoManager, nullptr,
+                         aNodesWithProperties, nullptr, aError);
   }
 
   
@@ -210,16 +201,15 @@ public:
 
 
 
-  static void Adopt(nsINode *aNode, nsNodeInfoManager *aNewNodeInfoManager,
+  static void Adopt(nsINode* aNode, nsNodeInfoManager* aNewNodeInfoManager,
                     JS::Handle<JSObject*> aReparentScope,
                     nsCOMArray<nsINode>& aNodesWithProperties,
-                    mozilla::ErrorResult& aError)
-  {
+                    mozilla::ErrorResult& aError) {
     
     
-    nsCOMPtr<nsINode> node = CloneAndAdopt(aNode, false, true, aNewNodeInfoManager,
-                                           aReparentScope, &aNodesWithProperties,
-                                           nullptr, aError);
+    nsCOMPtr<nsINode> node =
+        CloneAndAdopt(aNode, false, true, aNewNodeInfoManager, aReparentScope,
+                      &aNodesWithProperties, nullptr, aError);
 
     nsMutationGuard::DidMutate();
   }
@@ -234,7 +224,7 @@ public:
 
 
 
-  static already_AddRefed<nsINode> CloneNodeImpl(nsINode *aNode, bool aDeep,
+  static already_AddRefed<nsINode> CloneNodeImpl(nsINode* aNode, bool aDeep,
                                                  mozilla::ErrorResult& aError);
 
   
@@ -242,7 +232,7 @@ public:
 
 
 
-  static bool IsTemplateElement(const nsINode *aNode);
+  static bool IsTemplateElement(const nsINode* aNode);
 
   
 
@@ -253,7 +243,7 @@ public:
 
   static nsIContent* GetFirstChildOfTemplateOrNode(nsINode* aNode);
 
-private:
+ private:
   
 
 
@@ -287,19 +277,14 @@ private:
 
 
 
-  static already_AddRefed<nsINode>
-    CloneAndAdopt(nsINode *aNode, bool aClone, bool aDeep,
-                  nsNodeInfoManager* aNewNodeInfoManager,
-                  JS::Handle<JSObject*> aReparentScope,
-                  nsCOMArray<nsINode>* aNodesWithProperties,
-                  nsINode *aParent, mozilla::ErrorResult& aError);
+  static already_AddRefed<nsINode> CloneAndAdopt(
+      nsINode* aNode, bool aClone, bool aDeep,
+      nsNodeInfoManager* aNewNodeInfoManager,
+      JS::Handle<JSObject*> aReparentScope,
+      nsCOMArray<nsINode>* aNodesWithProperties, nsINode* aParent,
+      mozilla::ErrorResult& aError);
 
-  enum class AnimationMutationType
-  {
-    Added,
-    Changed,
-    Removed
-  };
+  enum class AnimationMutationType { Added, Changed, Removed };
   
 
 
@@ -308,7 +293,6 @@ private:
 
   static void AnimationMutated(mozilla::dom::Animation* aAnimation,
                                AnimationMutationType aMutatedType);
-
 };
 
-#endif 
+#endif  

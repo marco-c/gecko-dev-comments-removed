@@ -17,13 +17,13 @@
 
 
 class MOZ_STACK_CLASS AutoObjectMapperPOSIX {
-public:
+ public:
   
   
   
   
   
-  explicit AutoObjectMapperPOSIX(void(*aLog)(const char*));
+  explicit AutoObjectMapperPOSIX(void (*aLog)(const char*));
 
   
   ~AutoObjectMapperPOSIX();
@@ -34,18 +34,18 @@ public:
   
   
   
-  bool Map(void** start, size_t* length, std::string fileName);
+  bool Map( void** start,  size_t* length, std::string fileName);
 
-protected:
+ protected:
   
   
-  void*  mImage;
+  void* mImage;
   size_t mSize;
 
   
   void (*mLog)(const char*);
 
-private:
+ private:
   
   
   
@@ -57,8 +57,8 @@ private:
   
   void* operator new(size_t);
   void* operator new[](size_t);
-  void  operator delete(void*);
-  void  operator delete[](void*);
+  void operator delete(void*);
+  void operator delete[](void*);
 };
 
 #if defined(GP_OS_android)
@@ -85,14 +85,14 @@ private:
 
 
 class MOZ_STACK_CLASS AutoObjectMapperFaultyLib : public AutoObjectMapperPOSIX {
-public:
-  explicit AutoObjectMapperFaultyLib(void(*aLog)(const char*));
+ public:
+  explicit AutoObjectMapperFaultyLib(void (*aLog)(const char*));
 
   ~AutoObjectMapperFaultyLib();
 
-  bool Map(void** start, size_t* length, std::string fileName);
+  bool Map( void** start,  size_t* length, std::string fileName);
 
-private:
+ private:
   
   
   
@@ -105,10 +105,10 @@ private:
   
   void* operator new(size_t);
   void* operator new[](size_t);
-  void  operator delete(void*);
-  void  operator delete[](void*);
+  void operator delete(void*);
+  void operator delete[](void*);
 };
 
-#endif 
+#endif  
 
-#endif 
+#endif  

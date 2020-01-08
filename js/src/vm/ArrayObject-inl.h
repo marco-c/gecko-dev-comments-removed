@@ -14,118 +14,116 @@
 
 #include "vm/JSObject-inl.h"
 #include "vm/ObjectGroup-inl.h"
-#include "vm/ObjectOperations-inl.h" 
+#include "vm/ObjectOperations-inl.h"  
 #include "vm/TypeInference-inl.h"
 
 namespace js {
 
-inline void
-ArrayObject::setLength(JSContext* cx, uint32_t length)
-{
-    MOZ_ASSERT(lengthIsWritable());
-    MOZ_ASSERT_IF(length != getElementsHeader()->length, !denseElementsAreFrozen());
+inline void ArrayObject::setLength(JSContext* cx, uint32_t length) {
+  MOZ_ASSERT(lengthIsWritable());
+  MOZ_ASSERT_IF(length != getElementsHeader()->length,
+                !denseElementsAreFrozen());
 
-    if (length > INT32_MAX) {
-        
-        MarkObjectGroupFlags(cx, this, OBJECT_FLAG_LENGTH_OVERFLOW);
-    }
+  if (length > INT32_MAX) {
+    
+    MarkObjectGroupFlags(cx, this, OBJECT_FLAG_LENGTH_OVERFLOW);
+  }
 
-    getElementsHeader()->length = length;
+  getElementsHeader()->length = length;
 }
 
- inline ArrayObject*
-ArrayObject::createArrayInternal(JSContext* cx, gc::AllocKind kind, gc::InitialHeap heap,
-                                 HandleShape shape, HandleObjectGroup group,
-                                 AutoSetNewObjectMetadata&)
-{
-    const js::Class* clasp = group->clasp();
-    MOZ_ASSERT(shape && group);
-    MOZ_ASSERT(clasp == shape->getObjectClass());
-    MOZ_ASSERT(clasp == &ArrayObject::class_);
-    MOZ_ASSERT_IF(clasp->hasFinalize(), heap == gc::TenuredHeap);
-    MOZ_ASSERT_IF(group->hasUnanalyzedPreliminaryObjects(),
-                  heap == js::gc::TenuredHeap);
+ inline ArrayObject* ArrayObject::createArrayInternal(
+    JSContext* cx, gc::AllocKind kind, gc::InitialHeap heap, HandleShape shape,
+    HandleObjectGroup group, AutoSetNewObjectMetadata&) {
+  const js::Class* clasp = group->clasp();
+  MOZ_ASSERT(shape && group);
+  MOZ_ASSERT(clasp == shape->getObjectClass());
+  MOZ_ASSERT(clasp == &ArrayObject::class_);
+  MOZ_ASSERT_IF(clasp->hasFinalize(), heap == gc::TenuredHeap);
+  MOZ_ASSERT_IF(group->hasUnanalyzedPreliminaryObjects(),
+                heap == js::gc::TenuredHeap);
 
-    
-    
-    MOZ_ASSERT(shape->numFixedSlots() == 0);
+  
+  
+  MOZ_ASSERT(shape->numFixedSlots() == 0);
 
-    size_t nDynamicSlots = dynamicSlotsCount(0, shape->slotSpan(), clasp);
-    JSObject* obj = js::Allocate<JSObject>(cx, kind, nDynamicSlots, heap, clasp);
-    if (!obj) {
-        return nullptr;
-    }
+  size_t nDynamicSlots = dynamicSlotsCount(0, shape->slotSpan(), clasp);
+  JSObject* obj = js::Allocate<JSObject>(cx, kind, nDynamicSlots, heap, clasp);
+  if (!obj) {
+    return nullptr;
+  }
 
-    ArrayObject* aobj = static_cast<ArrayObject*>(obj);
-    aobj->initGroup(group);
-    aobj->initShape(shape);
-    
-    if (!nDynamicSlots) {
-        aobj->initSlots(nullptr);
-    }
+  ArrayObject* aobj = static_cast<ArrayObject*>(obj);
+  aobj->initGroup(group);
+  aobj->initShape(shape);
+  
+  if (!nDynamicSlots) {
+    aobj->initSlots(nullptr);
+  }
 
-    MOZ_ASSERT(clasp->shouldDelayMetadataBuilder());
-    cx->realm()->setObjectPendingMetadata(cx, aobj);
+  MOZ_ASSERT(clasp->shouldDelayMetadataBuilder());
+  cx->realm()->setObjectPendingMetadata(cx, aobj);
 
-    return aobj;
+  return aobj;
 }
 
- inline ArrayObject*
-ArrayObject::finishCreateArray(ArrayObject* obj, HandleShape shape, AutoSetNewObjectMetadata& metadata)
-{
-    size_t span = shape->slotSpan();
-    if (span) {
-        obj->initializeSlotRange(0, span);
-    }
+ inline ArrayObject* ArrayObject::finishCreateArray(
+    ArrayObject* obj, HandleShape shape, AutoSetNewObjectMetadata& metadata) {
+  size_t span = shape->slotSpan();
+  if (span) {
+    obj->initializeSlotRange(0, span);
+  }
 
-    gc::gcTracer.traceCreateObject(obj);
+  gc::gcTracer.traceCreateObject(obj);
 
-    return obj;
+  return obj;
 }
 
- inline ArrayObject*
-ArrayObject::createArray(JSContext* cx, gc::AllocKind kind, gc::InitialHeap heap,
-                         HandleShape shape, HandleObjectGroup group,
-                         uint32_t length, AutoSetNewObjectMetadata& metadata)
-{
-    ArrayObject* obj = createArrayInternal(cx, kind, heap, shape, group, metadata);
-    if (!obj) {
-        return nullptr;
-    }
+ inline ArrayObject* ArrayObject::createArray(
+    JSContext* cx, gc::AllocKind kind, gc::InitialHeap heap, HandleShape shape,
+    HandleObjectGroup group, uint32_t length,
+    AutoSetNewObjectMetadata& metadata) {
+  ArrayObject* obj =
+      createArrayInternal(cx, kind, heap, shape, group, metadata);
+  if (!obj) {
+    return nullptr;
+  }
 
-    uint32_t capacity = gc::GetGCKindSlots(kind) - ObjectElements::VALUES_PER_HEADER;
+  uint32_t capacity =
+      gc::GetGCKindSlots(kind) - ObjectElements::VALUES_PER_HEADER;
 
-    obj->setFixedElements();
-    new (obj->getElementsHeader()) ObjectElements(capacity, length);
+  obj->setFixedElements();
+  new (obj->getElementsHeader()) ObjectElements(capacity, length);
 
-    return finishCreateArray(obj, shape, metadata);
+  return finishCreateArray(obj, shape, metadata);
 }
 
- inline ArrayObject*
-ArrayObject::createCopyOnWriteArray(JSContext* cx, gc::InitialHeap heap,
-                                    HandleArrayObject sharedElementsOwner)
-{
-    MOZ_ASSERT(sharedElementsOwner->getElementsHeader()->isCopyOnWrite());
-    MOZ_ASSERT(sharedElementsOwner->getElementsHeader()->ownerObject() == sharedElementsOwner);
+ inline ArrayObject* ArrayObject::createCopyOnWriteArray(
+    JSContext* cx, gc::InitialHeap heap,
+    HandleArrayObject sharedElementsOwner) {
+  MOZ_ASSERT(sharedElementsOwner->getElementsHeader()->isCopyOnWrite());
+  MOZ_ASSERT(sharedElementsOwner->getElementsHeader()->ownerObject() ==
+             sharedElementsOwner);
 
-    
-    
-    
-    gc::AllocKind kind = gc::AllocKind::OBJECT0_BACKGROUND;
+  
+  
+  
+  gc::AllocKind kind = gc::AllocKind::OBJECT0_BACKGROUND;
 
-    AutoSetNewObjectMetadata metadata(cx);
-    RootedShape shape(cx, sharedElementsOwner->lastProperty());
-    RootedObjectGroup group(cx, sharedElementsOwner->group());
-    ArrayObject* obj = createArrayInternal(cx, kind, heap, shape, group, metadata);
-    if (!obj) {
-        return nullptr;
-    }
+  AutoSetNewObjectMetadata metadata(cx);
+  RootedShape shape(cx, sharedElementsOwner->lastProperty());
+  RootedObjectGroup group(cx, sharedElementsOwner->group());
+  ArrayObject* obj =
+      createArrayInternal(cx, kind, heap, shape, group, metadata);
+  if (!obj) {
+    return nullptr;
+  }
 
-    obj->elements_ = sharedElementsOwner->getDenseElementsAllowCopyOnWrite();
+  obj->elements_ = sharedElementsOwner->getDenseElementsAllowCopyOnWrite();
 
-    return finishCreateArray(obj, shape, metadata);
+  return finishCreateArray(obj, shape, metadata);
 }
 
-} 
+}  
 
-#endif 
+#endif  

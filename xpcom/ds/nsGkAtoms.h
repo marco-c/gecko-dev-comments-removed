@@ -56,13 +56,12 @@
 
 
 
-#define DEFINE_STATIC_ATOM_SUBCLASS(name_)                                     \
-  class name_ : public nsStaticAtom                                            \
-  {                                                                            \
-  public:                                                                      \
-    constexpr name_(uint32_t aLength, uint32_t aHash, uint32_t aOffset,        \
-                    bool aIsAsciiLowercase)                                    \
-      : nsStaticAtom(aLength, aHash, aOffset, aIsAsciiLowercase) {}            \
+#define DEFINE_STATIC_ATOM_SUBCLASS(name_)                              \
+  class name_ : public nsStaticAtom {                                   \
+   public:                                                              \
+    constexpr name_(uint32_t aLength, uint32_t aHash, uint32_t aOffset, \
+                    bool aIsAsciiLowercase)                             \
+        : nsStaticAtom(aLength, aHash, aOffset, aIsAsciiLowercase) {}   \
   };
 
 DEFINE_STATIC_ATOM_SUBCLASS(nsCSSAnonBoxPseudoStaticAtom)
@@ -79,33 +78,31 @@ namespace detail {
 
 
 
-struct GkAtoms
-{
-  
-  
-  
-  
-  
-  
-  
-  
-  #define GK_ATOM(name_, value_, hash_, is_ascii_lower_, type_, atom_type_) \
-    const char16_t name_##_string[sizeof(value_)];
-  #include "nsGkAtomList.h"
-  #undef GK_ATOM
+struct GkAtoms {
+
+
+
+
+
+
+
+
+#define GK_ATOM(name_, value_, hash_, is_ascii_lower_, type_, atom_type_) \
+  const char16_t name_##_string[sizeof(value_)];
+#include "nsGkAtomList.h"
+#undef GK_ATOM
 
   
   enum class Atoms {
-    
-    
-    
-    
-    
-    
-    #define GK_ATOM(name_, value_, hash_, is_ascii_lower_, type_, atom_type_) \
-      name_,
-    #include "nsGkAtomList.h"
-    #undef GK_ATOM
+
+
+
+
+
+
+#define GK_ATOM(name_, value_, hash_, is_ascii_lower_, type_, atom_type_) name_,
+#include "nsGkAtomList.h"
+#undef GK_ATOM
     AtomsCount
   };
 
@@ -122,13 +119,12 @@ extern NS_EXTERNAL_VIS const GkAtoms gGkAtoms;
 extern const GkAtoms gGkAtoms;
 #endif
 
-} 
-} 
+}  
+}  
 
 
-class nsGkAtoms
-{
-private:
+class nsGkAtoms {
+ private:
   friend void NS_InitAtomTable();
 
   
@@ -137,45 +133,43 @@ private:
 
   
   static constexpr size_t sAtomsLen =
-    static_cast<size_t>(mozilla::detail::GkAtoms::Atoms::AtomsCount);
+      static_cast<size_t>(mozilla::detail::GkAtoms::Atoms::AtomsCount);
 
-public:
-  static nsStaticAtom* GetAtomByIndex(size_t aIndex)
-  {
+ public:
+  static nsStaticAtom* GetAtomByIndex(size_t aIndex) {
     MOZ_ASSERT(aIndex < sAtomsLen);
     return const_cast<nsStaticAtom*>(&sAtoms[aIndex]);
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  #define GK_ATOM(name_, value_, hash_, is_ascii_lower_, type_, atom_type_)   \
-    static constexpr nsStaticAtom* name_ =                                    \
-      const_cast<nsStaticAtom*>(                                              \
-        &mozilla::detail::gGkAtoms.mAtoms[                                    \
-          static_cast<size_t>(mozilla::detail::GkAtoms::Atoms::name_)]);
-  #include "nsGkAtomList.h"
-  #undef GK_ATOM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define GK_ATOM(name_, value_, hash_, is_ascii_lower_, type_, atom_type_) \
+  static constexpr nsStaticAtom* name_ = const_cast<nsStaticAtom*>(       \
+      &mozilla::detail::gGkAtoms.mAtoms[static_cast<size_t>(              \
+          mozilla::detail::GkAtoms::Atoms::name_)]);
+#include "nsGkAtomList.h"
+#undef GK_ATOM
 };
 
 #endif 

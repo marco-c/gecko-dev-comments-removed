@@ -5,29 +5,29 @@
 
 
 #include "RotatedBuffer.h"
-#include <sys/types.h>                  
-#include <algorithm>                    
-#include "BasicImplData.h"              
-#include "BasicLayersImpl.h"            
-#include "GeckoProfiler.h"              
-#include "Layers.h"                     
-#include "gfxPlatform.h"                
-#include "gfxPrefs.h"                   
-#include "gfxUtils.h"                   
-#include "mozilla/ArrayUtils.h"         
-#include "mozilla/gfx/BasePoint.h"      
-#include "mozilla/gfx/BaseRect.h"       
-#include "mozilla/gfx/BaseSize.h"       
-#include "mozilla/gfx/Matrix.h"         
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/gfx/Types.h"          
-#include "mozilla/layers/ShadowLayers.h"  
+#include <sys/types.h>              
+#include <algorithm>                
+#include "BasicImplData.h"          
+#include "BasicLayersImpl.h"        
+#include "GeckoProfiler.h"          
+#include "Layers.h"                 
+#include "gfxPlatform.h"            
+#include "gfxPrefs.h"               
+#include "gfxUtils.h"               
+#include "mozilla/ArrayUtils.h"     
+#include "mozilla/gfx/BasePoint.h"  
+#include "mozilla/gfx/BaseRect.h"   
+#include "mozilla/gfx/BaseSize.h"   
+#include "mozilla/gfx/Matrix.h"     
+#include "mozilla/gfx/Point.h"      
+#include "mozilla/gfx/Rect.h"       
+#include "mozilla/gfx/Types.h"      
+#include "mozilla/layers/ShadowLayers.h"   
 #include "mozilla/layers/TextureClient.h"  
-#include "mozilla/Move.h"               
-#include "mozilla/gfx/Point.h"          
+#include "mozilla/Move.h"                  
+#include "mozilla/gfx/Point.h"             
 #include "gfx2DGlue.h"
-#include "nsLayoutUtils.h"              
+#include "nsLayoutUtils.h"  
 #include "PaintThread.h"
 
 namespace mozilla {
@@ -36,9 +36,7 @@ using namespace gfx;
 
 namespace layers {
 
-void
-BorrowDrawTarget::ReturnDrawTarget(gfx::DrawTarget*& aReturned)
-{
+void BorrowDrawTarget::ReturnDrawTarget(gfx::DrawTarget*& aReturned) {
   MOZ_ASSERT(mLoanedDrawTarget);
   MOZ_ASSERT(aReturned == mLoanedDrawTarget);
   if (mLoanedDrawTarget) {
@@ -48,9 +46,7 @@ BorrowDrawTarget::ReturnDrawTarget(gfx::DrawTarget*& aReturned)
   aReturned = nullptr;
 }
 
-IntRect
-RotatedBuffer::GetQuadrantRectangle(XSide aXSide, YSide aYSide) const
-{
+IntRect RotatedBuffer::GetQuadrantRectangle(XSide aXSide, YSide aYSide) const {
   
   
   IntPoint quadrantTranslation = -mBufferRotation;
@@ -59,9 +55,7 @@ RotatedBuffer::GetQuadrantRectangle(XSide aXSide, YSide aYSide) const
   return mBufferRect + quadrantTranslation;
 }
 
-Rect
-RotatedBuffer::GetSourceRectangle(XSide aXSide, YSide aYSide) const
-{
+Rect RotatedBuffer::GetSourceRectangle(XSide aXSide, YSide aYSide) const {
   Rect result;
   if (aXSide == LEFT) {
     result.SetBoxX(0, mBufferRotation.x);
@@ -76,19 +70,16 @@ RotatedBuffer::GetSourceRectangle(XSide aXSide, YSide aYSide) const
   return result;
 }
 
-void
-RotatedBuffer::BeginCapture()
-{
+void RotatedBuffer::BeginCapture() {
   RefPtr<gfx::DrawTarget> target = GetBufferTarget();
 
   MOZ_ASSERT(!mCapture);
   MOZ_ASSERT(target);
-  mCapture = Factory::CreateCaptureDrawTargetForTarget(target, gfxPrefs::LayersOMTPCaptureLimit());
+  mCapture = Factory::CreateCaptureDrawTargetForTarget(
+      target, gfxPrefs::LayersOMTPCaptureLimit());
 }
 
-RefPtr<gfx::DrawTargetCapture>
-RotatedBuffer::EndCapture()
-{
+RefPtr<gfx::DrawTargetCapture> RotatedBuffer::EndCapture() {
   MOZ_ASSERT(mCapture);
   return std::move(mCapture);
 }
@@ -103,29 +94,25 @@ RotatedBuffer::EndCapture()
 
 
 
-void
-RotatedBuffer::DrawBufferQuadrant(gfx::DrawTarget* aTarget,
-                                  XSide aXSide, YSide aYSide,
-                                  float aOpacity,
-                                  gfx::CompositionOp aOperator,
-                                  gfx::SourceSurface* aMask,
-                                  const gfx::Matrix* aMaskTransform) const
-{
+void RotatedBuffer::DrawBufferQuadrant(
+    gfx::DrawTarget* aTarget, XSide aXSide, YSide aYSide, float aOpacity,
+    gfx::CompositionOp aOperator, gfx::SourceSurface* aMask,
+    const gfx::Matrix* aMaskTransform) const {
   
   
   
   
   IntRect quadrantRect = GetQuadrantRectangle(aXSide, aYSide);
   IntRect fillRect;
-  if (!fillRect.IntersectRect(mBufferRect, quadrantRect))
-    return;
+  if (!fillRect.IntersectRect(mBufferRect, quadrantRect)) return;
 
   gfx::Point quadrantTranslation(quadrantRect.X(), quadrantRect.Y());
 
   RefPtr<SourceSurface> snapshot = GetBufferSource();
 
   if (!snapshot) {
-    gfxCriticalError() << "Invalid snapshot in RotatedBuffer::DrawBufferQuadrant";
+    gfxCriticalError()
+        << "Invalid snapshot in RotatedBuffer::DrawBufferQuadrant";
     return;
   }
 
@@ -148,7 +135,6 @@ RotatedBuffer::DrawBufferQuadrant(gfx::DrawTarget* aTarget,
   
   
   
-  
   aTarget->PushClipRect(IntRectToRect(fillRect));
 
   if (aMask) {
@@ -156,7 +142,7 @@ RotatedBuffer::DrawBufferQuadrant(gfx::DrawTarget* aTarget,
 
     
     Matrix transform =
-      Matrix::Translation(quadrantTranslation.x, quadrantTranslation.y);
+        Matrix::Translation(quadrantTranslation.x, quadrantTranslation.y);
 
     Matrix inverseMask = *aMaskTransform;
     inverseMask.Invert();
@@ -165,13 +151,15 @@ RotatedBuffer::DrawBufferQuadrant(gfx::DrawTarget* aTarget,
     transform *= inverseMask;
 
 #ifdef MOZ_GFX_OPTIMIZE_MOBILE
-    SurfacePattern source(snapshot, ExtendMode::CLAMP, transform, SamplingFilter::POINT);
+    SurfacePattern source(snapshot, ExtendMode::CLAMP, transform,
+                          SamplingFilter::POINT);
 #else
     SurfacePattern source(snapshot, ExtendMode::CLAMP, transform);
 #endif
 
     aTarget->SetTransform(*aMaskTransform);
-    aTarget->MaskSurface(source, aMask, Point(0, 0), DrawOptions(aOpacity, aOperator));
+    aTarget->MaskSurface(source, aMask, Point(0, 0),
+                         DrawOptions(aOpacity, aOperator));
     aTarget->SetTransform(oldTransform);
   } else {
 #ifdef MOZ_GFX_OPTIMIZE_MOBILE
@@ -180,48 +168,41 @@ RotatedBuffer::DrawBufferQuadrant(gfx::DrawTarget* aTarget,
     DrawSurfaceOptions options;
 #endif
     aTarget->DrawSurface(snapshot, IntRectToRect(fillRect),
-                         GetSourceRectangle(aXSide, aYSide),
-                         options,
+                         GetSourceRectangle(aXSide, aYSide), options,
                          DrawOptions(aOpacity, aOperator));
   }
 
   aTarget->PopClip();
 }
 
-void
-RotatedBuffer::DrawBufferWithRotation(gfx::DrawTarget *aTarget,
-                                      float aOpacity,
-                                      gfx::CompositionOp aOperator,
-                                      gfx::SourceSurface* aMask,
-                                      const gfx::Matrix* aMaskTransform) const
-{
+void RotatedBuffer::DrawBufferWithRotation(
+    gfx::DrawTarget* aTarget, float aOpacity, gfx::CompositionOp aOperator,
+    gfx::SourceSurface* aMask, const gfx::Matrix* aMaskTransform) const {
   AUTO_PROFILER_LABEL("RotatedBuffer::DrawBufferWithRotation", GRAPHICS);
 
   
   
   
-  DrawBufferQuadrant(aTarget, LEFT, TOP, aOpacity, aOperator, aMask, aMaskTransform);
-  DrawBufferQuadrant(aTarget, RIGHT, TOP, aOpacity, aOperator, aMask, aMaskTransform);
-  DrawBufferQuadrant(aTarget, LEFT, BOTTOM, aOpacity, aOperator, aMask, aMaskTransform);
-  DrawBufferQuadrant(aTarget, RIGHT, BOTTOM, aOpacity, aOperator,aMask, aMaskTransform);
+  DrawBufferQuadrant(aTarget, LEFT, TOP, aOpacity, aOperator, aMask,
+                     aMaskTransform);
+  DrawBufferQuadrant(aTarget, RIGHT, TOP, aOpacity, aOperator, aMask,
+                     aMaskTransform);
+  DrawBufferQuadrant(aTarget, LEFT, BOTTOM, aOpacity, aOperator, aMask,
+                     aMaskTransform);
+  DrawBufferQuadrant(aTarget, RIGHT, BOTTOM, aOpacity, aOperator, aMask,
+                     aMaskTransform);
 }
 
-bool IsClippingCheap(gfx::DrawTarget* aTarget, const nsIntRegion& aRegion)
-{
+bool IsClippingCheap(gfx::DrawTarget* aTarget, const nsIntRegion& aRegion) {
   
   
   return !aTarget->GetTransform().HasNonIntegerTranslation() &&
          aRegion.GetNumRects() <= 1;
 }
 
-void
-RotatedBuffer::DrawTo(PaintedLayer* aLayer,
-                      DrawTarget* aTarget,
-                      float aOpacity,
-                      CompositionOp aOp,
-                      SourceSurface* aMask,
-                      const Matrix* aMaskTransform)
-{
+void RotatedBuffer::DrawTo(PaintedLayer* aLayer, DrawTarget* aTarget,
+                           float aOpacity, CompositionOp aOp,
+                           SourceSurface* aMask, const Matrix* aMaskTransform) {
   bool clipped = false;
 
   
@@ -231,13 +212,15 @@ RotatedBuffer::DrawTo(PaintedLayer* aLayer,
   if (!aLayer->GetValidRegion().Contains(BufferRect()) ||
       (ToData(aLayer)->GetClipToVisibleRegion() &&
        !aLayer->GetVisibleRegion().ToUnknownRegion().Contains(BufferRect())) ||
-      IsClippingCheap(aTarget, aLayer->GetLocalVisibleRegion().ToUnknownRegion())) {
+      IsClippingCheap(aTarget,
+                      aLayer->GetLocalVisibleRegion().ToUnknownRegion())) {
     
     
     
     
     
-    gfxUtils::ClipToRegion(aTarget, aLayer->GetLocalVisibleRegion().ToUnknownRegion());
+    gfxUtils::ClipToRegion(aTarget,
+                           aLayer->GetLocalVisibleRegion().ToUnknownRegion());
     clipped = true;
   }
 
@@ -247,13 +230,11 @@ RotatedBuffer::DrawTo(PaintedLayer* aLayer,
   }
 }
 
-void
-RotatedBuffer::UpdateDestinationFrom(const RotatedBuffer& aSource,
-                                     const gfx::IntRect& aUpdateRect)
-{
+void RotatedBuffer::UpdateDestinationFrom(const RotatedBuffer& aSource,
+                                          const gfx::IntRect& aUpdateRect) {
   DrawIterator iter;
   while (DrawTarget* destDT =
-    BorrowDrawTargetForQuadrantUpdate(aUpdateRect, &iter)) {
+             BorrowDrawTargetForQuadrantUpdate(aUpdateRect, &iter)) {
     bool isClippingCheap = IsClippingCheap(destDT, iter.mDrawRegion);
     if (isClippingCheap) {
       gfxUtils::ClipToRegion(destDT, iter.mDrawRegion);
@@ -267,9 +248,7 @@ RotatedBuffer::UpdateDestinationFrom(const RotatedBuffer& aSource,
   }
 }
 
-static void
-WrapRotationAxis(int32_t* aRotationPoint, int32_t aSize)
-{
+static void WrapRotationAxis(int32_t* aRotationPoint, int32_t aSize) {
   if (*aRotationPoint < 0) {
     *aRotationPoint += aSize;
   } else if (*aRotationPoint >= aSize) {
@@ -277,41 +256,36 @@ WrapRotationAxis(int32_t* aRotationPoint, int32_t aSize)
   }
 }
 
-bool
-RotatedBuffer::Parameters::IsRotated() const
-{
-  return mBufferRotation != IntPoint(0,0);
+bool RotatedBuffer::Parameters::IsRotated() const {
+  return mBufferRotation != IntPoint(0, 0);
 }
 
-bool
-RotatedBuffer::Parameters::RectWrapsBuffer(const gfx::IntRect& aRect) const
-{
+bool RotatedBuffer::Parameters::RectWrapsBuffer(
+    const gfx::IntRect& aRect) const {
   int32_t xBoundary = mBufferRect.XMost() - mBufferRotation.x;
   int32_t yBoundary = mBufferRect.YMost() - mBufferRotation.y;
   return (aRect.X() < xBoundary && xBoundary < aRect.XMost()) ||
          (aRect.Y() < yBoundary && yBoundary < aRect.YMost());
 }
 
-void
-RotatedBuffer::Parameters::SetUnrotated()
-{
-  mBufferRotation = IntPoint(0,0);
+void RotatedBuffer::Parameters::SetUnrotated() {
+  mBufferRotation = IntPoint(0, 0);
   mDidSelfCopy = true;
 }
 
-RotatedBuffer::Parameters
-RotatedBuffer::AdjustedParameters(const gfx::IntRect& aDestBufferRect) const
-{
+RotatedBuffer::Parameters RotatedBuffer::AdjustedParameters(
+    const gfx::IntRect& aDestBufferRect) const {
   IntRect keepArea;
   if (keepArea.IntersectRect(aDestBufferRect, mBufferRect)) {
     
     
     
-    IntPoint newRotation = mBufferRotation +
-      (aDestBufferRect.TopLeft() - mBufferRect.TopLeft());
+    IntPoint newRotation =
+        mBufferRotation + (aDestBufferRect.TopLeft() - mBufferRect.TopLeft());
     WrapRotationAxis(&newRotation.x, mBufferRect.Width());
     WrapRotationAxis(&newRotation.y, mBufferRect.Height());
-    NS_ASSERTION(gfx::IntRect(gfx::IntPoint(0,0), mBufferRect.Size()).Contains(newRotation),
+    NS_ASSERTION(gfx::IntRect(gfx::IntPoint(0, 0), mBufferRect.Size())
+                     .Contains(newRotation),
                  "newRotation out of bounds");
 
     return Parameters{aDestBufferRect, newRotation};
@@ -320,16 +294,14 @@ RotatedBuffer::AdjustedParameters(const gfx::IntRect& aDestBufferRect) const
   
   
   
-  return Parameters{aDestBufferRect, IntPoint(0,0)};
+  return Parameters{aDestBufferRect, IntPoint(0, 0)};
 }
 
-bool
-RotatedBuffer::UnrotateBufferTo(const Parameters& aParameters)
-{
+bool RotatedBuffer::UnrotateBufferTo(const Parameters& aParameters) {
   RefPtr<gfx::DrawTarget> drawTarget = GetDrawTarget();
   MOZ_ASSERT(drawTarget && drawTarget->IsValid());
 
-  if (mBufferRotation == IntPoint(0,0)) {
+  if (mBufferRotation == IntPoint(0, 0)) {
     IntRect srcRect(IntPoint(0, 0), mBufferRect.Size());
     IntPoint dest = mBufferRect.TopLeft() - aParameters.mBufferRect.TopLeft();
 
@@ -340,24 +312,19 @@ RotatedBuffer::UnrotateBufferTo(const Parameters& aParameters)
   }
 }
 
-void
-RotatedBuffer::SetParameters(const RotatedBuffer::Parameters& aParameters)
-{
+void RotatedBuffer::SetParameters(
+    const RotatedBuffer::Parameters& aParameters) {
   mBufferRect = aParameters.mBufferRect;
   mBufferRotation = aParameters.mBufferRotation;
   mDidSelfCopy = aParameters.mDidSelfCopy;
 }
 
-RotatedBuffer::ContentType
-RotatedBuffer::GetContentType() const
-{
+RotatedBuffer::ContentType RotatedBuffer::GetContentType() const {
   return ContentForFormat(GetFormat());
 }
 
-DrawTarget*
-RotatedBuffer::BorrowDrawTargetForQuadrantUpdate(const IntRect& aBounds,
-                                                 DrawIterator* aIter)
-{
+DrawTarget* RotatedBuffer::BorrowDrawTargetForQuadrantUpdate(
+    const IntRect& aBounds, DrawIterator* aIter) {
   IntRect bounds = aBounds;
   if (aIter) {
     
@@ -365,10 +332,12 @@ RotatedBuffer::BorrowDrawTargetForQuadrantUpdate(const IntRect& aBounds,
     
     
     
+    
     aIter->mDrawRegion.SetEmpty();
     while (aIter->mCount < 4) {
-      IntRect quadrant = GetQuadrantRectangle((aIter->mCount & 1) ? LEFT : RIGHT,
-        (aIter->mCount & 2) ? TOP : BOTTOM);
+      IntRect quadrant =
+          GetQuadrantRectangle((aIter->mCount & 1) ? LEFT : RIGHT,
+                               (aIter->mCount & 2) ? TOP : BOTTOM);
       aIter->mDrawRegion.And(aBounds, quadrant);
       aIter->mCount++;
       if (!aIter->mDrawRegion.IsEmpty()) {
@@ -381,7 +350,8 @@ RotatedBuffer::BorrowDrawTargetForQuadrantUpdate(const IntRect& aBounds,
     bounds = aIter->mDrawRegion.GetBounds();
   }
 
-  MOZ_ASSERT(!mLoanedDrawTarget, "draw target has been borrowed and not returned");
+  MOZ_ASSERT(!mLoanedDrawTarget,
+             "draw target has been borrowed and not returned");
   mLoanedDrawTarget = GetDrawTarget();
 
   
@@ -394,33 +364,24 @@ RotatedBuffer::BorrowDrawTargetForQuadrantUpdate(const IntRect& aBounds,
 
   mLoanedTransform = mLoanedDrawTarget->GetTransform();
   Matrix transform = Matrix(mLoanedTransform)
-                          .PreTranslate(-quadrantRect.X(),
-                                        -quadrantRect.Y());
+                         .PreTranslate(-quadrantRect.X(), -quadrantRect.Y());
   mLoanedDrawTarget->SetTransform(transform);
 
   return mLoanedDrawTarget;
 }
 
-gfx::SurfaceFormat
-RemoteRotatedBuffer::GetFormat() const
-{
+gfx::SurfaceFormat RemoteRotatedBuffer::GetFormat() const {
   return mClient->GetFormat();
 }
 
-bool
-RemoteRotatedBuffer::IsLocked()
-{
-  return mClient->IsLocked();
-}
+bool RemoteRotatedBuffer::IsLocked() { return mClient->IsLocked(); }
 
-bool
-RemoteRotatedBuffer::Lock(OpenMode aMode)
-{
+bool RemoteRotatedBuffer::Lock(OpenMode aMode) {
   MOZ_ASSERT(!mTarget);
   MOZ_ASSERT(!mTargetOnWhite);
 
-  bool locked = mClient->Lock(aMode) &&
-                (!mClientOnWhite || mClientOnWhite->Lock(aMode));
+  bool locked =
+      mClient->Lock(aMode) && (!mClientOnWhite || mClientOnWhite->Lock(aMode));
   if (!locked) {
     Unlock();
     return false;
@@ -437,8 +398,8 @@ RemoteRotatedBuffer::Lock(OpenMode aMode)
   if (mClientOnWhite) {
     mTargetOnWhite = mClientOnWhite->BorrowDrawTarget();
     if (!mTargetOnWhite || !mTargetOnWhite->IsValid()) {
-      gfxCriticalNote << "Invalid draw target(s) " << hexa(mTarget)
-                      << " and " << hexa(mTargetOnWhite)
+      gfxCriticalNote << "Invalid draw target(s) " << hexa(mTarget) << " and "
+                      << hexa(mTargetOnWhite)
                       << " in RemoteRotatedBuffer::Lock";
       Unlock();
       return false;
@@ -461,9 +422,7 @@ RemoteRotatedBuffer::Lock(OpenMode aMode)
   return true;
 }
 
-void
-RemoteRotatedBuffer::Unlock()
-{
+void RemoteRotatedBuffer::Unlock() {
   mTarget = nullptr;
   mTargetOnWhite = nullptr;
   mTargetDual = nullptr;
@@ -476,54 +435,39 @@ RemoteRotatedBuffer::Unlock()
   }
 }
 
-void
-RemoteRotatedBuffer::SyncWithObject(SyncObjectClient* aSyncObject)
-{
+void RemoteRotatedBuffer::SyncWithObject(SyncObjectClient* aSyncObject) {
   mClient->SyncWithObject(aSyncObject);
   if (mClientOnWhite) {
     mClientOnWhite->SyncWithObject(aSyncObject);
   }
 }
 
-void
-RemoteRotatedBuffer::Clear()
-{
+void RemoteRotatedBuffer::Clear() {
   MOZ_ASSERT(!mTarget && !mTargetOnWhite);
   mClient = nullptr;
   mClientOnWhite = nullptr;
 }
 
-gfx::DrawTarget*
-RemoteRotatedBuffer::GetBufferTarget() const
-{
+gfx::DrawTarget* RemoteRotatedBuffer::GetBufferTarget() const {
   return mTargetDual;
 }
 
-gfx::SurfaceFormat
-DrawTargetRotatedBuffer::GetFormat() const
-{
+gfx::SurfaceFormat DrawTargetRotatedBuffer::GetFormat() const {
   return mTarget->GetFormat();
 }
 
-gfx::DrawTarget*
-DrawTargetRotatedBuffer::GetBufferTarget() const
-{
+gfx::DrawTarget* DrawTargetRotatedBuffer::GetBufferTarget() const {
   return mTargetDual;
 }
 
-gfx::SurfaceFormat
-SourceRotatedBuffer::GetFormat() const
-{
+gfx::SurfaceFormat SourceRotatedBuffer::GetFormat() const {
   return mSource->GetFormat();
 }
 
-already_AddRefed<SourceSurface>
-SourceRotatedBuffer::GetBufferSource() const
-{
+already_AddRefed<SourceSurface> SourceRotatedBuffer::GetBufferSource() const {
   RefPtr<SourceSurface> sourceDual = mSourceDual;
   return sourceDual.forget();
 }
 
-} 
-} 
-
+}  
+}  

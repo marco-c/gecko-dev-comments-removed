@@ -17,49 +17,43 @@
 
 
 struct PRMJTime {
-    int32_t tm_usec;            
-    int8_t tm_sec;              
-    int8_t tm_min;              
-    int8_t tm_hour;             
-    int8_t tm_mday;             
-    int8_t tm_mon;              
-    int8_t tm_wday;             
-    int32_t tm_year;            
-    int16_t tm_yday;            
-    int8_t tm_isdst;            
+  int32_t tm_usec; 
+  int8_t tm_sec;   
+  int8_t tm_min;   
+  int8_t tm_hour;  
+  int8_t tm_mday;  
+  int8_t tm_mon;   
+  int8_t tm_wday;  
+  int32_t tm_year; 
+  int16_t tm_yday; 
+  int8_t tm_isdst; 
 };
 
 
-#define PRMJ_USEC_PER_SEC       1000000L
-#define PRMJ_USEC_PER_MSEC      1000L
+#define PRMJ_USEC_PER_SEC 1000000L
+#define PRMJ_USEC_PER_MSEC 1000L
 
 
-extern int64_t
-PRMJ_Now();
+extern int64_t PRMJ_Now();
 
 
 #if defined(XP_WIN)
-extern void
-PRMJ_NowInit();
+extern void PRMJ_NowInit();
 #else
-inline void
-PRMJ_NowInit() {}
+inline void PRMJ_NowInit() {}
 #endif
 
 
 #ifdef XP_WIN
-extern void
-PRMJ_NowShutdown();
+extern void PRMJ_NowShutdown();
 #else
-inline void
-PRMJ_NowShutdown() {}
+inline void PRMJ_NowShutdown() {}
 #endif
 
 
-extern size_t
-PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt, const PRMJTime* tm,
-                int timeZoneYear, int offsetInSeconds);
-
+extern size_t PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt,
+                              const PRMJTime* tm, int timeZoneYear,
+                              int offsetInSeconds);
 
 
 
@@ -132,39 +126,33 @@ PRMJ_FormatTime(char* buf, size_t buflen, const char* fmt, const PRMJTime* tm,
 #if defined(_WIN32) && (defined(_M_IX86) || defined(_M_AMD64))
 
 #include <intrin.h>
-static __inline uint64_t
-ReadTimestampCounter(void)
-{
-    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-        return 0;
-    }
-    return __rdtsc();
+static __inline uint64_t ReadTimestampCounter(void) {
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return 0;
+  }
+  return __rdtsc();
 }
 
 #elif defined(__i386__)
 
-static __inline__ uint64_t
-ReadTimestampCounter(void)
-{
-    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-        return 0;
-    }
-    uint64_t x;
-    __asm__ volatile (".byte 0x0f, 0x31" : "=A" (x));
-    return x;
+static __inline__ uint64_t ReadTimestampCounter(void) {
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return 0;
+  }
+  uint64_t x;
+  __asm__ volatile(".byte 0x0f, 0x31" : "=A"(x));
+  return x;
 }
 
 #elif defined(__x86_64__)
 
-static __inline__ uint64_t
-ReadTimestampCounter(void)
-{
-    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-        return 0;
-    }
-    unsigned hi, lo;
-    __asm__ __volatile__ ("rdtsc" : "=a"(lo), "=d"(hi));
-    return ( (uint64_t)lo)|( ((uint64_t)hi)<<32 );
+static __inline__ uint64_t ReadTimestampCounter(void) {
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return 0;
+  }
+  unsigned hi, lo;
+  __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
+  return ((uint64_t)lo) | (((uint64_t)hi) << 32);
 }
 
 #else
@@ -176,13 +164,11 @@ ReadTimestampCounter(void)
 namespace js {
 
 
-static inline mozilla::TimeStamp
-ReallyNow()
-{
-    mozilla::recordreplay::AutoPassThroughThreadEvents pt;
-    return mozilla::TimeStamp::NowUnfuzzed();
+static inline mozilla::TimeStamp ReallyNow() {
+  mozilla::recordreplay::AutoPassThroughThreadEvents pt;
+  return mozilla::TimeStamp::NowUnfuzzed();
 }
 
-} 
+}  
 
 #endif 

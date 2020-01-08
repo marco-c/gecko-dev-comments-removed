@@ -4,7 +4,6 @@
 
 
 
-
 #include "nsAnonymousTemporaryFile.h"
 #include "nsDirectoryServiceUtils.h"
 #include "nsDirectoryServiceDefs.h"
@@ -50,9 +49,7 @@ using namespace mozilla;
 
 
 
-static nsresult
-GetTempDir(nsIFile** aTempDir)
-{
+static nsresult GetTempDir(nsIFile** aTempDir) {
   if (NS_WARN_IF(!aTempDir)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -81,9 +78,7 @@ GetTempDir(nsIFile** aTempDir)
   return NS_OK;
 }
 
-nsresult
-NS_OpenAnonymousTemporaryNsIFile(nsIFile** aFile)
-{
+nsresult NS_OpenAnonymousTemporaryNsIFile(nsIFile** aFile) {
   MOZ_ASSERT(XRE_IsParentProcess());
 
   if (NS_WARN_IF(!aFile)) {
@@ -120,17 +115,15 @@ NS_OpenAnonymousTemporaryNsIFile(nsIFile** aFile)
   return NS_OK;
 }
 
-nsresult
-NS_OpenAnonymousTemporaryFile(PRFileDesc** aOutFileDesc)
-{
+nsresult NS_OpenAnonymousTemporaryFile(PRFileDesc** aOutFileDesc) {
   nsCOMPtr<nsIFile> tmpFile;
   nsresult rv = NS_OpenAnonymousTemporaryNsIFile(getter_AddRefs(tmpFile));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  rv = tmpFile->OpenNSPRFileDesc(PR_RDWR | nsIFile::DELETE_ON_CLOSE,
-                                 PR_IRWXU, aOutFileDesc);
+  rv = tmpFile->OpenNSPRFileDesc(PR_RDWR | nsIFile::DELETE_ON_CLOSE, PR_IRWXU,
+                                 aOutFileDesc);
 
   return rv;
 }
@@ -161,22 +154,19 @@ NS_OpenAnonymousTemporaryFile(PRFileDesc** aOutFileDesc)
 
 
 
-class nsAnonTempFileRemover final : public nsIObserver
-{
-public:
+class nsAnonTempFileRemover final : public nsIObserver {
+ public:
   NS_DECL_ISUPPORTS
 
   nsAnonTempFileRemover() {}
 
-  nsresult Init()
-  {
+  nsresult Init() {
     
     
     
     
     
-    MOZ_TRY_VAR(mTimer, NS_NewTimerWithObserver(this,
-                                                SCHEDULE_TIMEOUT_MS,
+    MOZ_TRY_VAR(mTimer, NS_NewTimerWithObserver(this, SCHEDULE_TIMEOUT_MS,
                                                 nsITimer::TYPE_ONE_SHOT));
 
     
@@ -188,8 +178,7 @@ public:
     return obsSrv->AddObserver(this, XPCOM_SHUTDOWN_TOPIC, false);
   }
 
-  void Cleanup()
-  {
+  void Cleanup() {
     
     if (mTimer) {
       mTimer->Cancel();
@@ -197,7 +186,7 @@ public:
     }
     
     nsCOMPtr<nsIIdleService> idleSvc =
-      do_GetService("@mozilla.org/widget/idleservice;1");
+        do_GetService("@mozilla.org/widget/idleservice;1");
     if (idleSvc) {
       idleSvc->RemoveIdleObserver(this, TEMP_FILE_IDLE_TIME_S);
     }
@@ -208,10 +197,8 @@ public:
     }
   }
 
-  NS_IMETHODIMP Observe(nsISupports* aSubject,
-                        const char* aTopic,
-                        const char16_t* aData)
-  {
+  NS_IMETHODIMP Observe(nsISupports* aSubject, const char* aTopic,
+                        const char16_t* aData) {
     if (nsCRT::strcmp(aTopic, NS_TIMER_CALLBACK_TOPIC) == 0 &&
         NS_FAILED(RegisterIdleObserver())) {
       Cleanup();
@@ -227,21 +214,19 @@ public:
     return NS_OK;
   }
 
-  nsresult RegisterIdleObserver()
-  {
+  nsresult RegisterIdleObserver() {
     
     
     
     nsCOMPtr<nsIIdleService> idleSvc =
-      do_GetService("@mozilla.org/widget/idleservice;1");
+        do_GetService("@mozilla.org/widget/idleservice;1");
     if (!idleSvc) {
       return NS_ERROR_FAILURE;
     }
     return idleSvc->AddIdleObserver(this, TEMP_FILE_IDLE_TIME_S);
   }
 
-  void RemoveAnonTempFileFiles()
-  {
+  void RemoveAnonTempFileFiles() {
     nsCOMPtr<nsIFile> tmpDir;
     nsresult rv = GetTempDir(getter_AddRefs(tmpDir));
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -252,7 +237,7 @@ public:
     tmpDir->Remove(true);
   }
 
-private:
+ private:
   ~nsAnonTempFileRemover() {}
 
   nsCOMPtr<nsITimer> mTimer;
@@ -260,9 +245,7 @@ private:
 
 NS_IMPL_ISUPPORTS(nsAnonTempFileRemover, nsIObserver)
 
-nsresult
-CreateAnonTempFileRemover()
-{
+nsresult CreateAnonTempFileRemover() {
   
   
   
@@ -276,4 +259,3 @@ CreateAnonTempFileRemover()
 }
 
 #endif
-

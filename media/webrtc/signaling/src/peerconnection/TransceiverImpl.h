@@ -33,7 +33,7 @@ class JsepTrackNegotiatedDetails;
 namespace dom {
 class RTCRtpTransceiver;
 struct RTCRtpSourceEntry;
-}
+}  
 
 
 
@@ -44,7 +44,7 @@ struct RTCRtpSourceEntry;
 
 
 class TransceiverImpl : public nsISupports {
-public:
+ public:
   
 
 
@@ -53,16 +53,12 @@ public:
   TransceiverImpl(const std::string& aPCHandle,
                   MediaTransportHandler* aTransportHandler,
                   JsepTransceiver* aJsepTransceiver,
-                  nsIEventTarget* aMainThread,
-                  nsIEventTarget* aStsThread,
+                  nsIEventTarget* aMainThread, nsIEventTarget* aStsThread,
                   dom::MediaStreamTrack* aReceiveTrack,
                   dom::MediaStreamTrack* aSendTrack,
                   WebRtcCallWrapper* aCallWrapper);
 
-  bool IsValid() const
-  {
-    return !!mConduit;
-  }
+  bool IsValid() const { return !!mConduit; }
 
   nsresult UpdateSendTrack(dom::MediaStreamTrack* aSendTrack);
 
@@ -90,10 +86,7 @@ public:
   
   
   
-  RefPtr<dom::MediaStreamTrack> GetSendTrack()
-  {
-    return mSendTrack;
-  }
+  RefPtr<dom::MediaStreamTrack> GetSendTrack() { return mSendTrack; }
 
   
   bool WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
@@ -110,8 +103,7 @@ public:
 
   RefPtr<MediaPipeline> GetReceivePipeline();
 
-  std::string GetTransportId() const
-  {
+  std::string GetTransportId() const {
     return mJsepTransceiver->mTransport.mTransportId;
   }
 
@@ -126,13 +118,12 @@ public:
 
   
   void InsertAudioLevelForContributingSource(uint32_t aSource,
-                                             int64_t aTimestamp,
-                                             bool aHasLevel,
+                                             int64_t aTimestamp, bool aHasLevel,
                                              uint8_t aLevel);
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
-private:
+ private:
   virtual ~TransceiverImpl();
   void InitAudio();
   void InitVideo();
@@ -160,7 +151,6 @@ private:
   RefPtr<MediaPipelineTransmit> mTransmitPipeline;
 };
 
-} 
+}  
 
-#endif 
-
+#endif  

@@ -20,64 +20,68 @@ namespace gfx {
 
 
 
-class VsyncSource
-{
+class VsyncSource {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VsyncSource)
 
   typedef mozilla::RefreshTimerVsyncDispatcher RefreshTimerVsyncDispatcher;
   typedef mozilla::CompositorVsyncDispatcher CompositorVsyncDispatcher;
 
-public:
+ public:
   
   class Display {
-    public:
-      Display();
-      virtual ~Display();
+   public:
+    Display();
+    virtual ~Display();
 
-      
-      
-      
-      
-      
-      
-      
-      
-      virtual void NotifyVsync(TimeStamp aVsyncTimestamp);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    virtual void NotifyVsync(TimeStamp aVsyncTimestamp);
 
-      RefPtr<RefreshTimerVsyncDispatcher> GetRefreshTimerVsyncDispatcher();
+    RefPtr<RefreshTimerVsyncDispatcher> GetRefreshTimerVsyncDispatcher();
 
-      void AddCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
-      void RemoveCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
-      void NotifyRefreshTimerVsyncStatus(bool aEnable);
-      virtual TimeDuration GetVsyncRate();
+    void AddCompositorVsyncDispatcher(
+        CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
+    void RemoveCompositorVsyncDispatcher(
+        CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
+    void NotifyRefreshTimerVsyncStatus(bool aEnable);
+    virtual TimeDuration GetVsyncRate();
 
-      
-      virtual void EnableVsync() = 0;
-      virtual void DisableVsync() = 0;
-      virtual bool IsVsyncEnabled() = 0;
-      virtual void Shutdown() = 0;
+    
+    virtual void EnableVsync() = 0;
+    virtual void DisableVsync() = 0;
+    virtual bool IsVsyncEnabled() = 0;
+    virtual void Shutdown() = 0;
 
-    private:
-      void UpdateVsyncStatus();
+   private:
+    void UpdateVsyncStatus();
 
-      Mutex mDispatcherLock;
-      bool mRefreshTimerNeedsVsync;
-      nsTArray<RefPtr<CompositorVsyncDispatcher>> mCompositorVsyncDispatchers;
-      RefPtr<RefreshTimerVsyncDispatcher> mRefreshTimerVsyncDispatcher;
+    Mutex mDispatcherLock;
+    bool mRefreshTimerNeedsVsync;
+    nsTArray<RefPtr<CompositorVsyncDispatcher>> mCompositorVsyncDispatchers;
+    RefPtr<RefreshTimerVsyncDispatcher> mRefreshTimerVsyncDispatcher;
   };
 
-  void AddCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
-  void RemoveCompositorVsyncDispatcher(CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
+  void AddCompositorVsyncDispatcher(
+      CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
+  void RemoveCompositorVsyncDispatcher(
+      CompositorVsyncDispatcher* aCompositorVsyncDispatcher);
 
   RefPtr<RefreshTimerVsyncDispatcher> GetRefreshTimerVsyncDispatcher();
-  virtual Display& GetGlobalDisplay() = 0; 
+  virtual Display& GetGlobalDisplay() = 0;  
   void Shutdown();
 
-protected:
+ protected:
   virtual ~VsyncSource() {}
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

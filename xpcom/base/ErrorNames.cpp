@@ -14,9 +14,7 @@
 
 namespace mozilla {
 
-void
-GetErrorName(nsresult rv, nsACString& name)
-{
+void GetErrorName(nsresult rv, nsACString& name) {
   if (const char* errorName = GetErrorNameInternal(rv)) {
     name.AssignASCII(errorName);
     return;
@@ -46,11 +44,10 @@ GetErrorName(nsresult rv, nsACString& name)
 
   name.AppendLiteral(", ");
 
-  const char * nsprName = nullptr;
+  const char* nsprName = nullptr;
   if (isSecurityError) {
     
-    PRErrorCode nsprCode
-      = -1 * static_cast<PRErrorCode>(NS_ERROR_GET_CODE(rv));
+    PRErrorCode nsprCode = -1 * static_cast<PRErrorCode>(NS_ERROR_GET_CODE(rv));
     nsprName = PR_ErrorToName(nsprCode);
 
     
@@ -66,16 +63,13 @@ GetErrorName(nsresult rv, nsACString& name)
   name.AppendLiteral(")");
 }
 
-} 
+}  
 
 extern "C" {
 
 
 
-void
-Gecko_GetErrorName(nsresult aRv, nsACString& aName)
-{
+void Gecko_GetErrorName(nsresult aRv, nsACString& aName) {
   mozilla::GetErrorName(aRv, aName);
 }
-
 }

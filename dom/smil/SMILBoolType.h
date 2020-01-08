@@ -12,22 +12,21 @@
 
 namespace mozilla {
 
-class SMILBoolType : public nsISMILType
-{
-public:
+class SMILBoolType : public nsISMILType {
+ public:
   
-  static SMILBoolType* Singleton()
-  {
+  static SMILBoolType* Singleton() {
     static SMILBoolType sSingleton;
     return &sSingleton;
   }
 
-protected:
+ protected:
   
   
   virtual void Init(nsSMILValue& aValue) const override;
   virtual void Destroy(nsSMILValue& aValue) const override;
-  virtual nsresult Assign(nsSMILValue& aDest, const nsSMILValue& aSrc) const override;
+  virtual nsresult Assign(nsSMILValue& aDest,
+                          const nsSMILValue& aSrc) const override;
   virtual nsresult Add(nsSMILValue& aDest, const nsSMILValue& aValueToAdd,
                        uint32_t aCount) const override;
   virtual bool IsEqual(const nsSMILValue& aLeft,
@@ -36,15 +35,14 @@ protected:
                                    const nsSMILValue& aTo,
                                    double& aDistance) const override;
   virtual nsresult Interpolate(const nsSMILValue& aStartVal,
-                               const nsSMILValue& aEndVal,
-                               double aUnitDistance,
+                               const nsSMILValue& aEndVal, double aUnitDistance,
                                nsSMILValue& aResult) const override;
 
-private:
+ private:
   
   constexpr SMILBoolType() {}
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -15,10 +15,8 @@
 namespace mozilla {
 namespace a11y {
 
-class ia2AccessibleEditableText: public IAccessibleEditableText
-{
-public:
-
+class ia2AccessibleEditableText : public IAccessibleEditableText {
+ public:
   
   virtual HRESULT STDMETHODCALLTYPE copyText(
        long startOffset,
@@ -50,7 +48,7 @@ public:
        BSTR *attributes);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

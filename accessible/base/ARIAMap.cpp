@@ -35,9 +35,8 @@ static const uint32_t kGenericAccType = 0;
 
 
 
-static const nsRoleMapEntry sWAIRoleMaps[] =
-{
-  
+static const nsRoleMapEntry sWAIRoleMaps[] = {
+    
   { 
     nsGkAtoms::alert,
     roles::ALERT,
@@ -1241,30 +1240,16 @@ static const nsRoleMapEntry sWAIRoleMaps[] =
     eARIASelectable,
     eARIACheckedMixed
   }
-  
+    
 };
 
 static const nsRoleMapEntry sLandmarkRoleMap = {
-  nsGkAtoms::_empty,
-  roles::NOTHING,
-  kUseNativeRole,
-  eNoValue,
-  eNoAction,
-  eNoLiveAttr,
-  kGenericAccType,
-  kNoReqStates
-};
+    nsGkAtoms::_empty, roles::NOTHING, kUseNativeRole,  eNoValue,
+    eNoAction,         eNoLiveAttr,    kGenericAccType, kNoReqStates};
 
 nsRoleMapEntry aria::gEmptyRoleMap = {
-  nsGkAtoms::_empty,
-  roles::NOTHING,
-  kUseMapRole,
-  eNoValue,
-  eNoAction,
-  eNoLiveAttr,
-  kGenericAccType,
-  kNoReqStates
-};
+    nsGkAtoms::_empty, roles::NOTHING, kUseMapRole,     eNoValue,
+    eNoAction,         eNoLiveAttr,    kGenericAccType, kNoReqStates};
 
 
 
@@ -1272,31 +1257,25 @@ nsRoleMapEntry aria::gEmptyRoleMap = {
 
 
 static const EStateRule sWAIUnivStateMap[] = {
-  eARIABusy,
-  eARIACurrent,
-  eARIADisabled,
-  eARIAExpanded,  
-  eARIAHasPopup,  
-  eARIAInvalid,
-  eARIAModal,
-  eARIARequired,  
-  eARIANone
-};
+    eARIABusy,     eARIACurrent, eARIADisabled,
+    eARIAExpanded,  
+    eARIAHasPopup,  
+    eARIAInvalid,  eARIAModal,
+    eARIARequired,  
+    eARIANone};
 
 
 
 
 
 
-
-struct AttrCharacteristics
-{
+struct AttrCharacteristics {
   const nsStaticAtom* const attributeName;
   const uint8_t characteristics;
 };
 
 static const AttrCharacteristics gWAIUnivAttrMap[] = {
-  
+    
   {nsGkAtoms::aria_activedescendant,  ATTR_BYPASSOBJ                               },
   {nsGkAtoms::aria_atomic,   ATTR_BYPASSOBJ_IF_FALSE | ATTR_VALTOKEN | ATTR_GLOBAL },
   {nsGkAtoms::aria_busy,                               ATTR_VALTOKEN | ATTR_GLOBAL },
@@ -1335,13 +1314,12 @@ static const AttrCharacteristics gWAIUnivAttrMap[] = {
   {nsGkAtoms::aria_valuemin,          ATTR_BYPASSOBJ                               },
   {nsGkAtoms::aria_valuemax,          ATTR_BYPASSOBJ                               },
   {nsGkAtoms::aria_valuetext,         ATTR_BYPASSOBJ                               }
-  
+    
 };
 
 namespace {
 
-struct RoleComparator
-{
+struct RoleComparator {
   const nsDependentSubstring& mRole;
   explicit RoleComparator(const nsDependentSubstring& aRole) : mRole(aRole) {}
   int operator()(const nsRoleMapEntry& aEntry) const {
@@ -1349,17 +1327,13 @@ struct RoleComparator
   }
 };
 
-}
+}  
 
-const nsRoleMapEntry*
-aria::GetRoleMap(dom::Element* aEl)
-{
+const nsRoleMapEntry* aria::GetRoleMap(dom::Element* aEl) {
   return GetRoleMapFromIndex(GetRoleMapIndex(aEl));
 }
 
-uint8_t
-aria::GetRoleMapIndex(dom::Element* aEl)
-{
+uint8_t aria::GetRoleMapIndex(dom::Element* aEl) {
   nsAutoString roles;
   if (!aEl || !aEl->GetAttr(kNameSpaceID_None, nsGkAtoms::role, roles) ||
       roles.IsEmpty()) {
@@ -1383,10 +1357,7 @@ aria::GetRoleMapIndex(dom::Element* aEl)
   return LANDMARK_ROLE_MAP_ENTRY_INDEX;
 }
 
-
-const nsRoleMapEntry*
-aria::GetRoleMapFromIndex(uint8_t aRoleMapIndex)
-{
+const nsRoleMapEntry* aria::GetRoleMapFromIndex(uint8_t aRoleMapIndex) {
   switch (aRoleMapIndex) {
     case NO_ROLE_MAP_ENTRY_INDEX:
       return nullptr;
@@ -1399,34 +1370,27 @@ aria::GetRoleMapFromIndex(uint8_t aRoleMapIndex)
   }
 }
 
-uint8_t
-aria::GetIndexFromRoleMap(const nsRoleMapEntry* aRoleMapEntry)
-{
+uint8_t aria::GetIndexFromRoleMap(const nsRoleMapEntry* aRoleMapEntry) {
   if (aRoleMapEntry == nullptr) {
     return NO_ROLE_MAP_ENTRY_INDEX;
   } else if (aRoleMapEntry == &gEmptyRoleMap) {
     return EMPTY_ROLE_MAP_ENTRY_INDEX;
   } else if (aRoleMapEntry == &sLandmarkRoleMap) {
-      return LANDMARK_ROLE_MAP_ENTRY_INDEX;
+    return LANDMARK_ROLE_MAP_ENTRY_INDEX;
   } else {
     return aRoleMapEntry - sWAIRoleMaps;
   }
 }
 
-uint64_t
-aria::UniversalStatesFor(mozilla::dom::Element* aElement)
-{
+uint64_t aria::UniversalStatesFor(mozilla::dom::Element* aElement) {
   uint64_t state = 0;
   uint32_t index = 0;
-  while (MapToState(sWAIUnivStateMap[index], aElement, &state))
-    index++;
+  while (MapToState(sWAIUnivStateMap[index], aElement, &state)) index++;
 
   return state;
 }
 
-uint8_t
-aria::AttrCharacteristicsFor(nsAtom* aAtom)
-{
+uint8_t aria::AttrCharacteristicsFor(nsAtom* aAtom) {
   for (uint32_t i = 0; i < ArrayLength(gWAIUnivAttrMap); i++)
     if (gWAIUnivAttrMap[i].attributeName == aAtom)
       return gWAIUnivAttrMap[i].characteristics;
@@ -1434,21 +1398,17 @@ aria::AttrCharacteristicsFor(nsAtom* aAtom)
   return 0;
 }
 
-bool
-aria::HasDefinedARIAHidden(nsIContent* aContent)
-{
+bool aria::HasDefinedARIAHidden(nsIContent* aContent) {
   return aContent && aContent->IsElement() &&
-    aContent->AsElement()->AttrValueIs(kNameSpaceID_None,
-                                       nsGkAtoms::aria_hidden,
-                                       nsGkAtoms::_true, eCaseMatters);
+         aContent->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                            nsGkAtoms::aria_hidden,
+                                            nsGkAtoms::_true, eCaseMatters);
 }
 
 
 
 
-bool
-AttrIterator::Next(nsAString& aAttrName, nsAString& aAttrValue)
-{
+bool AttrIterator::Next(nsAString& aAttrName, nsAString& aAttrValue) {
   while (mAttrIdx < mAttrCount) {
     const nsAttrName* attr = mElement->GetAttrNameAt(mAttrIdx);
     mAttrIdx++;
@@ -1456,20 +1416,20 @@ AttrIterator::Next(nsAString& aAttrName, nsAString& aAttrValue)
       nsAtom* attrAtom = attr->Atom();
       nsDependentAtomString attrStr(attrAtom);
       if (!StringBeginsWith(attrStr, NS_LITERAL_STRING("aria-")))
-        continue; 
+        continue;  
 
       uint8_t attrFlags = aria::AttrCharacteristicsFor(attrAtom);
       if (attrFlags & ATTR_BYPASSOBJ)
-        continue; 
+        continue;  
 
       if ((attrFlags & ATTR_VALTOKEN) &&
-           !nsAccUtils::HasDefinedARIAToken(mElement, attrAtom))
-        continue; 
+          !nsAccUtils::HasDefinedARIAToken(mElement, attrAtom))
+        continue;  
 
       if ((attrFlags & ATTR_BYPASSOBJ_IF_FALSE) &&
-          mElement->AttrValueIs(kNameSpaceID_None, attrAtom,
-                                nsGkAtoms::_false, eCaseMatters)) {
-        continue; 
+          mElement->AttrValueIs(kNameSpaceID_None, attrAtom, nsGkAtoms::_false,
+                                eCaseMatters)) {
+        continue;  
       }
 
       nsAutoString value;
@@ -1477,7 +1437,7 @@ AttrIterator::Next(nsAString& aAttrName, nsAString& aAttrValue)
         aAttrName.Assign(Substring(attrStr, 5));
         if (attrFlags & ATTR_VALTOKEN) {
           nsAtom* normalizedValue =
-            nsAccUtils::NormalizeARIAToken(mElement, attrAtom);
+              nsAccUtils::NormalizeARIAToken(mElement, attrAtom);
           if (normalizedValue) {
             nsDependentAtomString normalizedValueStr(normalizedValue);
             aAttrValue.Assign(normalizedValueStr);
@@ -1492,4 +1452,3 @@ AttrIterator::Next(nsAString& aAttrName, nsAString& aAttrValue)
 
   return false;
 }
-

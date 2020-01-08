@@ -1,18 +1,15 @@
 
 
 namespace n1 {
-    namespace n2 {
-         namespace n3 {
-             int qux = 42;
-         }
-    }
+namespace n2 {
+namespace n3 {
+int qux = 42;
 }
+}  
+}  
 
 namespace n1_unused = ::n1;     
 namespace n12_unused = n1::n2;  
 namespace n123 = n1::n2::n3;    
 
-int test()
-{
-  return n123::qux;
-}
+int test() { return n123::qux; }

@@ -11,31 +11,26 @@
 namespace mozilla {
 namespace gfx {
 
-static cairo_status_t
-write_func(void *closure, const unsigned char *data, unsigned int length)
-{
+static cairo_status_t write_func(void* closure, const unsigned char* data,
+                                 unsigned int length) {
   nsCOMPtr<nsIOutputStream> out = reinterpret_cast<nsIOutputStream*>(closure);
   do {
     uint32_t wrote = 0;
     if (NS_FAILED(out->Write((const char*)data, length, &wrote))) {
       break;
     }
-    data += wrote; length -= wrote;
+    data += wrote;
+    length -= wrote;
   } while (length > 0);
   NS_ASSERTION(length == 0, "not everything was written to the file");
   return CAIRO_STATUS_SUCCESS;
 }
 
 PrintTargetPDF::PrintTargetPDF(cairo_surface_t* aCairoSurface,
-                               const IntSize& aSize,
-                               nsIOutputStream *aStream)
-  : PrintTarget(aCairoSurface, aSize)
-  , mStream(aStream)
-{
-}
+                               const IntSize& aSize, nsIOutputStream* aStream)
+    : PrintTarget(aCairoSurface, aSize), mStream(aStream) {}
 
-PrintTargetPDF::~PrintTargetPDF()
-{
+PrintTargetPDF::~PrintTargetPDF() {
   
   
   
@@ -46,40 +41,32 @@ PrintTargetPDF::~PrintTargetPDF()
   Finish();
 }
 
- already_AddRefed<PrintTargetPDF>
-PrintTargetPDF::CreateOrNull(nsIOutputStream *aStream,
-                             const IntSize& aSizeInPoints)
-{
-  cairo_surface_t* surface =
-    cairo_pdf_surface_create_for_stream(write_func, (void*)aStream,
-                                        aSizeInPoints.width,
-                                        aSizeInPoints.height);
+ already_AddRefed<PrintTargetPDF> PrintTargetPDF::CreateOrNull(
+    nsIOutputStream* aStream, const IntSize& aSizeInPoints) {
+  cairo_surface_t* surface = cairo_pdf_surface_create_for_stream(
+      write_func, (void*)aStream, aSizeInPoints.width, aSizeInPoints.height);
   if (cairo_surface_status(surface)) {
     return nullptr;
   }
 
   
-  RefPtr<PrintTargetPDF> target = new PrintTargetPDF(surface, aSizeInPoints,
-                                                     aStream);
+  RefPtr<PrintTargetPDF> target =
+      new PrintTargetPDF(surface, aSizeInPoints, aStream);
   return target.forget();
 }
 
-nsresult
-PrintTargetPDF::EndPage()
-{
+nsresult PrintTargetPDF::EndPage() {
   cairo_surface_show_page(mCairoSurface);
   return PrintTarget::EndPage();
 }
 
-void
-PrintTargetPDF::Finish()
-{
+void PrintTargetPDF::Finish() {
   if (mIsFinished) {
-    return; 
+    return;  
   }
   PrintTarget::Finish();
   mStream->Close();
 }
 
-} 
-} 
+}  
+}  

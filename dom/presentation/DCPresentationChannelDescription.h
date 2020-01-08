@@ -14,24 +14,22 @@ namespace mozilla {
 namespace dom {
 
 
-class DCPresentationChannelDescription final : public nsIPresentationChannelDescription
-{
-public:
+class DCPresentationChannelDescription final
+    : public nsIPresentationChannelDescription {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRESENTATIONCHANNELDESCRIPTION
 
   explicit DCPresentationChannelDescription(const nsAString& aSDP)
-    : mSDP(aSDP)
-  {
-  }
+      : mSDP(aSDP) {}
 
-private:
+ private:
   virtual ~DCPresentationChannelDescription() = default;
 
   nsString mSDP;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

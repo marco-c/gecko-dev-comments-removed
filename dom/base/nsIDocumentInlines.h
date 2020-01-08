@@ -11,18 +11,14 @@
 #include "mozilla/dom/HTMLBodyElement.h"
 #include "nsStyleSheetService.h"
 
-inline mozilla::dom::HTMLBodyElement*
-nsIDocument::GetBodyElement()
-{
-  return static_cast<mozilla::dom::HTMLBodyElement*>(GetHtmlChildElement(nsGkAtoms::body));
+inline mozilla::dom::HTMLBodyElement* nsIDocument::GetBodyElement() {
+  return static_cast<mozilla::dom::HTMLBodyElement*>(
+      GetHtmlChildElement(nsGkAtoms::body));
 }
 
-template<typename T>
-size_t
-nsIDocument::FindDocStyleSheetInsertionPoint(
-    const nsTArray<T>& aDocSheets,
-    const mozilla::StyleSheet& aSheet)
-{
+template <typename T>
+size_t nsIDocument::FindDocStyleSheetInsertionPoint(
+    const nsTArray<T>& aDocSheets, const mozilla::StyleSheet& aSheet) {
   nsStyleSheetService* sheetService = nsStyleSheetService::GetInstance();
 
   
@@ -34,8 +30,7 @@ nsIDocument::FindDocStyleSheetInsertionPoint(
     auto* sheet = static_cast<mozilla::StyleSheet*>(aDocSheets[index]);
     MOZ_ASSERT(sheet);
     int32_t sheetDocIndex = IndexOfSheet(*sheet);
-    if (sheetDocIndex > newDocIndex)
-      break;
+    if (sheetDocIndex > newDocIndex) break;
 
     
     
@@ -57,14 +52,13 @@ nsIDocument::FindDocStyleSheetInsertionPoint(
   return size_t(index);
 }
 
-inline void
-nsIDocument::SetServoRestyleRoot(nsINode* aRoot, uint32_t aDirtyBits)
-{
+inline void nsIDocument::SetServoRestyleRoot(nsINode* aRoot,
+                                             uint32_t aDirtyBits) {
   MOZ_ASSERT(aRoot);
 
-  MOZ_ASSERT(!mServoRestyleRoot ||
-             mServoRestyleRoot == aRoot ||
-             nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(mServoRestyleRoot, aRoot));
+  MOZ_ASSERT(!mServoRestyleRoot || mServoRestyleRoot == aRoot ||
+             nsContentUtils::ContentIsFlattenedTreeDescendantOfForStyle(
+                 mServoRestyleRoot, aRoot));
   MOZ_ASSERT(aRoot == aRoot->OwnerDocAsNode() || aRoot->IsElement());
   mServoRestyleRoot = aRoot;
   SetServoRestyleRootDirtyBits(aDirtyBits);
@@ -73,15 +67,13 @@ nsIDocument::SetServoRestyleRoot(nsINode* aRoot, uint32_t aDirtyBits)
 
 
 
-inline void
-nsIDocument::SetServoRestyleRootDirtyBits(uint32_t aDirtyBits)
-{
+inline void nsIDocument::SetServoRestyleRootDirtyBits(uint32_t aDirtyBits) {
   MOZ_ASSERT(aDirtyBits);
   MOZ_ASSERT((aDirtyBits & ~Element::kAllServoDescendantBits) == 0);
-  MOZ_ASSERT((aDirtyBits & mServoRestyleRootDirtyBits) == mServoRestyleRootDirtyBits);
+  MOZ_ASSERT((aDirtyBits & mServoRestyleRootDirtyBits) ==
+             mServoRestyleRootDirtyBits);
   MOZ_ASSERT(mServoRestyleRoot);
   mServoRestyleRootDirtyBits = aDirtyBits;
 }
 
-
-#endif 
+#endif  

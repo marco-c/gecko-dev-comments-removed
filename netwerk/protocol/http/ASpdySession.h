@@ -13,16 +13,16 @@
 
 class nsISocketTransport;
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
-class ASpdySession : public nsAHttpTransaction
-{
-public:
+class ASpdySession : public nsAHttpTransaction {
+ public:
   ASpdySession() = default;
   virtual ~ASpdySession() = default;
 
-  virtual MOZ_MUST_USE bool
-  AddStream(nsAHttpTransaction *, int32_t, bool, bool, nsIInterfaceRequestor *) = 0;
+  virtual MOZ_MUST_USE bool AddStream(nsAHttpTransaction *, int32_t, bool, bool,
+                                      nsIInterfaceRequestor *) = 0;
   virtual bool CanReuse() = 0;
   virtual bool RoomForMoreStreams() = 0;
   virtual PRIntervalTime IdleTime() = 0;
@@ -30,7 +30,8 @@ public:
   virtual void DontReuse() = 0;
   virtual enum SpdyVersion SpdyVersion() = 0;
 
-  static ASpdySession *NewSpdySession(net::SpdyVersion version, nsISocketTransport *, bool);
+  static ASpdySession *NewSpdySession(net::SpdyVersion version,
+                                      nsISocketTransport *, bool);
 
   virtual bool TestJoinConnection(const nsACString &hostname, int32_t port) = 0;
   virtual bool JoinConnection(const nsACString &hostname, int32_t port) = 0;
@@ -44,11 +45,9 @@ public:
   
   virtual bool MaybeReTunnel(nsAHttpTransaction *) = 0;
 
-  virtual void PrintDiagnostics (nsCString &log) = 0;
+  virtual void PrintDiagnostics(nsCString &log) = 0;
 
-  bool ResponseTimeoutEnabled() const final {
-    return true;
-  }
+  bool ResponseTimeoutEnabled() const final { return true; }
 
   virtual void SendPing() = 0;
 
@@ -57,15 +56,14 @@ public:
 
   
   
-  const static uint32_t kInitialRwin = 12 * 1024 * 1024; 
+  const static uint32_t kInitialRwin = 12 * 1024 * 1024;  
 
   const static uint32_t kDefaultMaxConcurrent = 100;
 
   
   
   
-  bool SoftStreamError(nsresult code)
-  {
+  bool SoftStreamError(nsresult code) {
     if (NS_SUCCEEDED(code) || code == NS_BASE_STREAM_WOULD_BLOCK) {
       return false;
     }
@@ -84,21 +82,21 @@ public:
     return (code == NS_BASE_STREAM_CLOSED || code == NS_BINDING_FAILED ||
             code == NS_BINDING_ABORTED || code == NS_BINDING_REDIRECTED ||
             code == NS_ERROR_INVALID_CONTENT_ENCODING ||
-            code == NS_BINDING_RETARGETED || code == NS_ERROR_CORRUPTED_CONTENT);
+            code == NS_BINDING_RETARGETED ||
+            code == NS_ERROR_CORRUPTED_CONTENT);
   }
 
   virtual void SetCleanShutdown(bool) = 0;
   virtual bool CanAcceptWebsocket() = 0;
 };
 
-typedef bool (*ALPNCallback) (nsISupports *); 
+typedef bool (*ALPNCallback)(nsISupports *);  
 
 
 
 
-class SpdyInformation
-{
-public:
+class SpdyInformation {
+ public:
   SpdyInformation();
   ~SpdyInformation() = default;
 
@@ -106,13 +104,14 @@ public:
 
   
   
-  MOZ_MUST_USE nsresult GetNPNIndex(const nsACString &npnString, uint32_t *result) const;
+  MOZ_MUST_USE nsresult GetNPNIndex(const nsACString &npnString,
+                                    uint32_t *result) const;
 
   
   bool ProtocolEnabled(uint32_t index) const;
 
-  SpdyVersion Version[kCount]; 
-  nsCString VersionString[kCount]; 
+  SpdyVersion Version[kCount];      
+  nsCString VersionString[kCount];  
 
   
   
@@ -121,7 +120,7 @@ public:
   ALPNCallback ALPNCallbacks[kCount];
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

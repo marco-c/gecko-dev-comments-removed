@@ -12,7 +12,7 @@
 #define mozilla_dom_Link_h__
 
 #include "mozilla/MemoryReporting.h"
-#include "nsIContent.h" 
+#include "nsIContent.h"  
 #include "nsIContentPolicy.h"
 
 namespace mozilla {
@@ -24,19 +24,21 @@ namespace dom {
 
 class Element;
 
-#define MOZILLA_DOM_LINK_IMPLEMENTATION_IID               \
-{ 0xb25edee6, 0xdd35, 0x4f8b,                             \
-  { 0xab, 0x90, 0x66, 0xd0, 0xbd, 0x3c, 0x22, 0xd5 } }
+#define MOZILLA_DOM_LINK_IMPLEMENTATION_IID          \
+  {                                                  \
+    0xb25edee6, 0xdd35, 0x4f8b, {                    \
+      0xab, 0x90, 0x66, 0xd0, 0xbd, 0x3c, 0x22, 0xd5 \
+    }                                                \
+  }
 
-class Link : public nsISupports
-{
-public:
+class Link : public nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(MOZILLA_DOM_LINK_IMPLEMENTATION_IID)
 
   
 
 
-  explicit Link(Element* aElement);
+  explicit Link(Element *aElement);
 
   
 
@@ -55,10 +57,8 @@ public:
   
 
 
-  nsIURI* GetURI() const;
-  virtual nsIURI* GetURIExternal() const {
-    return GetURI();
-  }
+  nsIURI *GetURI() const;
+  virtual nsIURI *GetURIExternal() const { return GetURI(); }
 
   
 
@@ -93,17 +93,19 @@ public:
   void ResetLinkState(bool aNotify, bool aHasHref);
 
   
-  Element* GetElement() const { return mElement; }
+  Element *GetElement() const { return mElement; }
 
   
 
 
-  virtual void OnDNSPrefetchDeferred() {  }
+  virtual void OnDNSPrefetchDeferred() { 
+  }
 
   
 
 
-  virtual void OnDNSPrefetchRequested() {  }
+  virtual void OnDNSPrefetchRequested() { 
+  }
 
   
 
@@ -113,8 +115,7 @@ public:
 
   virtual bool HasDeferredDNSPrefetchRequest() { return true; }
 
-  virtual size_t
-    SizeOfExcludingThis(mozilla::SizeOfState& aState) const;
+  virtual size_t SizeOfExcludingThis(mozilla::SizeOfState &aState) const;
 
   virtual bool ElementHasHref() const;
 
@@ -125,8 +126,8 @@ public:
 
   
   void TryDNSPrefetchOrPreconnectOrPrefetchOrPreloadOrPrerender();
-  void UpdatePreload(nsAtom* aName, const nsAttrValue* aValue,
-                     const nsAttrValue* aOldValue);
+  void UpdatePreload(nsAtom *aName, const nsAttrValue *aValue,
+                     const nsAttrValue *aOldValue);
   void CancelPrefetchOrPreload();
 
   bool HasPendingLinkUpdate() const { return mHasPendingLinkUpdate; }
@@ -137,22 +138,22 @@ public:
   
   
   
-  virtual void NodeInfoChanged(nsIDocument* aOldDoc) = 0;
+  virtual void NodeInfoChanged(nsIDocument *aOldDoc) = 0;
 
   bool IsInDNSPrefetch() { return mInDNSPrefetch; }
   void SetIsInDNSPrefetch() { mInDNSPrefetch = true; }
   void ClearIsInDNSPrefetch() { mInDNSPrefetch = false; }
 
-  static void ParseAsValue(const nsAString& aValue, nsAttrValue& aResult);
-  static nsContentPolicyType AsValueToContentPolicy(const nsAttrValue& aValue);
-protected:
+  static void ParseAsValue(const nsAString &aValue, nsAttrValue &aResult);
+  static nsContentPolicyType AsValueToContentPolicy(const nsAttrValue &aValue);
+
+ protected:
   virtual ~Link();
 
   
 
 
-  bool HasURI() const
-  {
+  bool HasURI() const {
     if (HasCachedURI()) {
       return true;
     }
@@ -160,10 +161,10 @@ protected:
     return !!GetURI();
   }
 
-  nsIURI* GetCachedURI() const { return mCachedURI; }
+  nsIURI *GetCachedURI() const { return mCachedURI; }
   bool HasCachedURI() const { return !!mCachedURI; }
 
-private:
+ private:
   
 
 
@@ -172,14 +173,13 @@ private:
 
   void SetHrefAttribute(nsIURI *aURI);
 
-  void GetContentPolicyMimeTypeMedia(nsAttrValue& aAsAttr,
-                                     nsContentPolicyType& aPolicyType,
-                                     nsString& aMimeType,
-                                     nsAString& aMedia);
+  void GetContentPolicyMimeTypeMedia(nsAttrValue &aAsAttr,
+                                     nsContentPolicyType &aPolicyType,
+                                     nsString &aMimeType, nsAString &aMedia);
 
   mutable nsCOMPtr<nsIURI> mCachedURI;
 
-  Element * const mElement;
+  Element *const mElement;
 
   uint16_t mLinkState;
 
@@ -191,7 +191,7 @@ private:
 
   bool mInDNSPrefetch : 1;
 
-  bool mHistory: 1;
+  bool mHistory : 1;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Link, MOZILLA_DOM_LINK_IMPLEMENTATION_IID)
@@ -217,7 +217,7 @@ enum ASDestination : uint8_t {
   DESTINATION_FETCH
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

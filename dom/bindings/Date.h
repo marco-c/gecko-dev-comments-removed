@@ -15,33 +15,21 @@
 namespace mozilla {
 namespace dom {
 
-class Date
-{
-public:
+class Date {
+ public:
   Date() {}
   explicit Date(JS::ClippedTime aMilliseconds)
-    : mMsecSinceEpoch(aMilliseconds)
-  {}
+      : mMsecSinceEpoch(aMilliseconds) {}
 
-  bool IsUndefined() const
-  {
-    return !mMsecSinceEpoch.isValid();
-  }
+  bool IsUndefined() const { return !mMsecSinceEpoch.isValid(); }
 
-  JS::ClippedTime TimeStamp() const
-  {
-    return mMsecSinceEpoch;
-  }
+  JS::ClippedTime TimeStamp() const { return mMsecSinceEpoch; }
 
   
   
-  double ToDouble() const
-  {
-    return mMsecSinceEpoch.toDouble();
-  }
+  double ToDouble() const { return mMsecSinceEpoch.toDouble(); }
 
-  void SetTimeStamp(JS::ClippedTime aMilliseconds)
-  {
+  void SetTimeStamp(JS::ClippedTime aMilliseconds) {
     mMsecSinceEpoch = aMilliseconds;
   }
 
@@ -51,11 +39,11 @@ public:
 
   bool ToDateObject(JSContext* aCx, JS::MutableHandle<JS::Value> aRval) const;
 
-private:
+ private:
   JS::ClippedTime mMsecSinceEpoch;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

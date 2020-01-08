@@ -10,37 +10,28 @@
 #include "txNodeSet.h"
 #include "nsAutoPtr.h"
 
-class txNodeSetContext : public txIEvalContext
-{
-public:
-    txNodeSetContext(txNodeSet* aContextNodeSet, txIMatchContext* aContext)
-        : mContextSet(aContextNodeSet), mPosition(0), mInner(aContext)
-    {
-    }
+class txNodeSetContext : public txIEvalContext {
+ public:
+  txNodeSetContext(txNodeSet* aContextNodeSet, txIMatchContext* aContext)
+      : mContextSet(aContextNodeSet), mPosition(0), mInner(aContext) {}
 
-    
-    bool hasNext()
-    {
-        return mPosition < size();
-    }
-    void next()
-    {
-        NS_ASSERTION(mPosition < size(), "Out of bounds.");
-        mPosition++;
-    }
-    void setPosition(uint32_t aPosition)
-    {
-        NS_ASSERTION(aPosition > 0 &&
-                     aPosition <= size(), "Out of bounds.");
-        mPosition = aPosition;
-    }
+  
+  bool hasNext() { return mPosition < size(); }
+  void next() {
+    NS_ASSERTION(mPosition < size(), "Out of bounds.");
+    mPosition++;
+  }
+  void setPosition(uint32_t aPosition) {
+    NS_ASSERTION(aPosition > 0 && aPosition <= size(), "Out of bounds.");
+    mPosition = aPosition;
+  }
 
-    TX_DECL_EVAL_CONTEXT;
+  TX_DECL_EVAL_CONTEXT;
 
-protected:
-    RefPtr<txNodeSet> mContextSet;
-    uint32_t mPosition;
-    txIMatchContext* mInner;
+ protected:
+  RefPtr<txNodeSet> mContextSet;
+  uint32_t mPosition;
+  txIMatchContext* mInner;
 };
 
-#endif 
+#endif  

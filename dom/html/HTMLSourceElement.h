@@ -18,10 +18,10 @@ namespace dom {
 
 class MediaList;
 
-class HTMLSourceElement final : public nsGenericHTMLElement
-{
-public:
-  explicit HTMLSourceElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+class HTMLSourceElement final : public nsGenericHTMLElement {
+ public:
+  explicit HTMLSourceElement(
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   
   NS_DECL_ISUPPORTS_INHERITED
@@ -45,81 +45,64 @@ public:
   
   
   static bool WouldMatchMediaForDocument(const nsAString& aMediaStr,
-                                         const nsIDocument *aDocument);
+                                         const nsIDocument* aDocument);
 
   
   
   MediaSource* GetSrcMediaSource() { return mSrcMediaSource; };
 
   
-  void GetSrc(nsString& aSrc)
-  {
-    GetURIAttr(nsGkAtoms::src, nullptr, aSrc);
-  }
-  void SetSrc(const nsAString& aSrc, nsIPrincipal* aTriggeringPrincipal, mozilla::ErrorResult& rv)
-  {
+  void GetSrc(nsString& aSrc) { GetURIAttr(nsGkAtoms::src, nullptr, aSrc); }
+  void SetSrc(const nsAString& aSrc, nsIPrincipal* aTriggeringPrincipal,
+              mozilla::ErrorResult& rv) {
     SetHTMLAttr(nsGkAtoms::src, aSrc, aTriggeringPrincipal, rv);
   }
 
-  nsIPrincipal* GetSrcTriggeringPrincipal() const
-  {
+  nsIPrincipal* GetSrcTriggeringPrincipal() const {
     return mSrcTriggeringPrincipal;
   }
 
-  nsIPrincipal* GetSrcsetTriggeringPrincipal() const
-  {
+  nsIPrincipal* GetSrcsetTriggeringPrincipal() const {
     return mSrcsetTriggeringPrincipal;
   }
 
-  void GetType(DOMString& aType)
-  {
-    GetHTMLAttr(nsGkAtoms::type, aType);
-  }
-  void SetType(const nsAString& aType, ErrorResult& rv)
-  {
+  void GetType(DOMString& aType) { GetHTMLAttr(nsGkAtoms::type, aType); }
+  void SetType(const nsAString& aType, ErrorResult& rv) {
     SetHTMLAttr(nsGkAtoms::type, aType, rv);
   }
 
-  void GetSrcset(DOMString& aSrcset)
-  {
+  void GetSrcset(DOMString& aSrcset) {
     GetHTMLAttr(nsGkAtoms::srcset, aSrcset);
   }
-  void SetSrcset(const nsAString& aSrcset, nsIPrincipal* aTriggeringPrincipal, mozilla::ErrorResult& rv)
-  {
+  void SetSrcset(const nsAString& aSrcset, nsIPrincipal* aTriggeringPrincipal,
+                 mozilla::ErrorResult& rv) {
     SetHTMLAttr(nsGkAtoms::srcset, aSrcset, aTriggeringPrincipal, rv);
   }
 
-  void GetSizes(DOMString& aSizes)
-  {
-    GetHTMLAttr(nsGkAtoms::sizes, aSizes);
-  }
-  void SetSizes(const nsAString& aSizes, mozilla::ErrorResult& rv)
-  {
+  void GetSizes(DOMString& aSizes) { GetHTMLAttr(nsGkAtoms::sizes, aSizes); }
+  void SetSizes(const nsAString& aSizes, mozilla::ErrorResult& rv) {
     SetHTMLAttr(nsGkAtoms::sizes, aSizes, rv);
   }
 
-  void GetMedia(DOMString& aMedia)
-  {
-    GetHTMLAttr(nsGkAtoms::media, aMedia);
-  }
-  void SetMedia(const nsAString& aMedia, mozilla::ErrorResult& rv)
-  {
+  void GetMedia(DOMString& aMedia) { GetHTMLAttr(nsGkAtoms::media, aMedia); }
+  void SetMedia(const nsAString& aMedia, mozilla::ErrorResult& rv) {
     SetHTMLAttr(nsGkAtoms::media, aMedia, rv);
   }
 
-protected:
+ protected:
   virtual ~HTMLSourceElement();
 
-  virtual JSObject* WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapNode(JSContext* aCx,
+                             JS::Handle<JSObject*> aGivenProto) override;
 
-protected:
+ protected:
   virtual nsresult AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                                 const nsAttrValue* aValue,
                                 const nsAttrValue* aOldValue,
                                 nsIPrincipal* aMaybeScriptedPrincipal,
                                 bool aNotify) override;
 
-private:
+ private:
   RefPtr<MediaList> mMediaList;
   RefPtr<MediaSource> mSrcMediaSource;
 
@@ -133,7 +116,7 @@ private:
   void UpdateMediaList(const nsAttrValue* aValue);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -49,87 +49,79 @@
 
 
 
-class nsSMILTimeValue
-{
-public:
+class nsSMILTimeValue {
+ public:
   
   nsSMILTimeValue()
-  : mMilliseconds(kUnresolvedMillis),
-    mState(STATE_UNRESOLVED)
-  { }
+      : mMilliseconds(kUnresolvedMillis), mState(STATE_UNRESOLVED) {}
 
   
   explicit nsSMILTimeValue(nsSMILTime aMillis)
-  : mMilliseconds(aMillis),
-    mState(STATE_DEFINITE)
-  { }
+      : mMilliseconds(aMillis), mState(STATE_DEFINITE) {}
 
   
-  static nsSMILTimeValue Indefinite()
-  {
+  static nsSMILTimeValue Indefinite() {
     nsSMILTimeValue value;
     value.SetIndefinite();
     return value;
   }
 
   bool IsIndefinite() const { return mState == STATE_INDEFINITE; }
-  void SetIndefinite()
-  {
+  void SetIndefinite() {
     mState = STATE_INDEFINITE;
     mMilliseconds = kUnresolvedMillis;
   }
 
   bool IsResolved() const { return mState != STATE_UNRESOLVED; }
-  void SetUnresolved()
-  {
+  void SetUnresolved() {
     mState = STATE_UNRESOLVED;
     mMilliseconds = kUnresolvedMillis;
   }
 
   bool IsDefinite() const { return mState == STATE_DEFINITE; }
-  nsSMILTime GetMillis() const
-  {
+  nsSMILTime GetMillis() const {
     MOZ_ASSERT(mState == STATE_DEFINITE,
                "GetMillis() called for unresolved or indefinite time");
 
     return mState == STATE_DEFINITE ? mMilliseconds : kUnresolvedMillis;
   }
 
-  void SetMillis(nsSMILTime aMillis)
-  {
+  void SetMillis(nsSMILTime aMillis) {
     mState = STATE_DEFINITE;
     mMilliseconds = aMillis;
   }
 
   int8_t CompareTo(const nsSMILTimeValue& aOther) const;
 
-  bool operator==(const nsSMILTimeValue& aOther) const
-  { return CompareTo(aOther) == 0; }
+  bool operator==(const nsSMILTimeValue& aOther) const {
+    return CompareTo(aOther) == 0;
+  }
 
-  bool operator!=(const nsSMILTimeValue& aOther) const
-  { return CompareTo(aOther) != 0; }
+  bool operator!=(const nsSMILTimeValue& aOther) const {
+    return CompareTo(aOther) != 0;
+  }
 
-  bool operator<(const nsSMILTimeValue& aOther) const
-  { return CompareTo(aOther) < 0; }
+  bool operator<(const nsSMILTimeValue& aOther) const {
+    return CompareTo(aOther) < 0;
+  }
 
-  bool operator>(const nsSMILTimeValue& aOther) const
-  { return CompareTo(aOther) > 0; }
+  bool operator>(const nsSMILTimeValue& aOther) const {
+    return CompareTo(aOther) > 0;
+  }
 
-  bool operator<=(const nsSMILTimeValue& aOther) const
-  { return CompareTo(aOther) <= 0; }
+  bool operator<=(const nsSMILTimeValue& aOther) const {
+    return CompareTo(aOther) <= 0;
+  }
 
-  bool operator>=(const nsSMILTimeValue& aOther) const
-  { return CompareTo(aOther) >= 0; }
+  bool operator>=(const nsSMILTimeValue& aOther) const {
+    return CompareTo(aOther) >= 0;
+  }
 
-private:
+ private:
   static const nsSMILTime kUnresolvedMillis;
 
   nsSMILTime mMilliseconds;
-  enum {
-    STATE_DEFINITE,
-    STATE_INDEFINITE,
-    STATE_UNRESOLVED
-  } mState;
+  enum { STATE_DEFINITE, STATE_INDEFINITE, STATE_UNRESOLVED } mState;
 };
 
-#endif 
+#endif  

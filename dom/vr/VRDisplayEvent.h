@@ -20,39 +20,41 @@ struct JSContext;
 namespace mozilla {
 namespace gfx {
 class VRDisplay;
-} 
+}  
 
 namespace dom {
 
-class VRDisplayEvent final : public Event
-{
-public:
+class VRDisplayEvent final : public Event {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(VRDisplayEvent, Event)
 
   VRDisplay* Display();
   Nullable<VRDisplayEventReason> GetReason() const;
 
-protected:
+ protected:
   virtual ~VRDisplayEvent() = default;
   explicit VRDisplayEvent(mozilla::dom::EventTarget* aOwner);
-  VRDisplayEvent(EventTarget* aOwner,
-                 nsPresContext* aPresContext,
+  VRDisplayEvent(EventTarget* aOwner, nsPresContext* aPresContext,
                  InternalClipboardEvent* aEvent);
 
   Maybe<VRDisplayEventReason> mReason;
   RefPtr<VRDisplay> mDisplay;
 
-public:
+ public:
+  virtual JSObject* WrapObjectInternal(
+      JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  virtual JSObject* WrapObjectInternal(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  static already_AddRefed<VRDisplayEvent> Constructor(
+      mozilla::dom::EventTarget* aOwner, const nsAString& aType,
+      const VRDisplayEventInit& aEventInitDict);
 
-  static already_AddRefed<VRDisplayEvent> Constructor(mozilla::dom::EventTarget* aOwner, const nsAString& aType, const VRDisplayEventInit& aEventInitDict);
-
-  static already_AddRefed<VRDisplayEvent> Constructor(const GlobalObject& aGlobal, const nsAString& aType, const VRDisplayEventInit& aEventInitDict, ErrorResult& aRv);
+  static already_AddRefed<VRDisplayEvent> Constructor(
+      const GlobalObject& aGlobal, const nsAString& aType,
+      const VRDisplayEventInit& aEventInitDict, ErrorResult& aRv);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

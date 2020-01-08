@@ -24,10 +24,8 @@ class nsIPresShell;
 
 nsresult NS_NewStackLayout(nsCOMPtr<nsBoxLayout>& aNewLayout);
 
-class nsStackLayout : public nsBoxLayout
-{
-public:
-
+class nsStackLayout : public nsBoxLayout {
+ public:
   friend nsresult NS_NewStackLayout(nsCOMPtr<nsBoxLayout>& aNewLayout);
   static void Shutdown();
 
@@ -35,10 +33,14 @@ public:
 
   NS_IMETHOD XULLayout(nsIFrame* aBox, nsBoxLayoutState& aState) override;
 
-  virtual nsSize GetXULPrefSize(nsIFrame* aBox, nsBoxLayoutState& aBoxLayoutState) override;
-  virtual nsSize GetXULMinSize(nsIFrame* aBox, nsBoxLayoutState& aBoxLayoutState) override;
-  virtual nsSize GetXULMaxSize(nsIFrame* aBox, nsBoxLayoutState& aBoxLayoutState) override;
-  virtual nscoord GetAscent(nsIFrame* aBox, nsBoxLayoutState& aBoxLayoutState) override;
+  virtual nsSize GetXULPrefSize(nsIFrame* aBox,
+                                nsBoxLayoutState& aBoxLayoutState) override;
+  virtual nsSize GetXULMinSize(nsIFrame* aBox,
+                               nsBoxLayoutState& aBoxLayoutState) override;
+  virtual nsSize GetXULMaxSize(nsIFrame* aBox,
+                               nsBoxLayoutState& aBoxLayoutState) override;
+  virtual nscoord GetAscent(nsIFrame* aBox,
+                            nsBoxLayoutState& aBoxLayoutState) override;
 
   
   
@@ -46,12 +48,9 @@ public:
   
   static uint8_t GetOffset(nsIFrame* aChild, nsMargin& aMargin);
 
-private:
+ private:
   static nsBoxLayout* gInstance;
 
-}; 
-
-
+};  
 
 #endif
-

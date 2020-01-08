@@ -19,15 +19,17 @@ class nsSVGElement;
 namespace mozilla {
 class DOMSVGStringList;
 
-#define MOZILLA_DOMSVGTESTS_IID \
-   { 0x92370da8, 0xda28, 0x4895, \
-     {0x9b, 0x1b, 0xe0, 0x06, 0x0d, 0xb7, 0x3f, 0xc3 } }
+#define MOZILLA_DOMSVGTESTS_IID                      \
+  {                                                  \
+    0x92370da8, 0xda28, 0x4895, {                    \
+      0x9b, 0x1b, 0xe0, 0x06, 0x0d, 0xb7, 0x3f, 0xc3 \
+    }                                                \
+  }
 
 namespace dom {
 
-class SVGTests : public nsISupports
-{
-public:
+class SVGTests : public nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(MOZILLA_DOMSVGTESTS_IID)
 
   SVGTests();
@@ -53,7 +55,7 @@ public:
 
 
 
-  static const nsString * const kIgnoreSystemLanguage;
+  static const nsString* const kIgnoreSystemLanguage;
 
   
 
@@ -67,7 +69,7 @@ public:
 
 
   bool PassesConditionalProcessingTests(
-         const nsString *aAcceptLangs = nullptr) const;
+      const nsString* aAcceptLangs = nullptr) const;
 
   
 
@@ -75,10 +77,9 @@ public:
 
   bool IsConditionalProcessingAttribute(const nsAtom* aAttribute) const;
 
-  bool ParseConditionalProcessingAttribute(
-         nsAtom* aAttribute,
-         const nsAString& aValue,
-         nsAttrValue& aResult);
+  bool ParseConditionalProcessingAttribute(nsAtom* aAttribute,
+                                           const nsAString& aValue,
+                                           nsAttrValue& aResult);
 
   
 
@@ -86,7 +87,7 @@ public:
   void UnsetAttr(const nsAtom* aAttribute);
 
   nsStaticAtom* GetAttrName(uint8_t aAttrEnum) const;
-  void GetAttrValue(uint8_t aAttrEnum, nsAttrValue &aValue) const;
+  void GetAttrValue(uint8_t aAttrEnum, nsAttrValue& aValue) const;
 
   void MaybeInvalidate();
 
@@ -98,15 +99,14 @@ public:
 
   virtual nsSVGElement* AsSVGElement() = 0;
 
-  const nsSVGElement* AsSVGElement() const
-  {
+  const nsSVGElement* AsSVGElement() const {
     return const_cast<SVGTests*>(this)->AsSVGElement();
   }
 
-protected:
+ protected:
   virtual ~SVGTests() {}
 
-private:
+ private:
   enum { FEATURES, EXTENSIONS, LANGUAGE };
   SVGStringList mStringListAttributes[3];
   static nsStaticAtom* const sStringListNames[3];
@@ -114,7 +114,7 @@ private:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(SVGTests, MOZILLA_DOMSVGTESTS_IID)
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -5,29 +5,29 @@
 
 
 #include "ShadowLayerUtilsX11.h"
-#include <X11/X.h>                      
-#include <X11/Xlib.h>                   
-#include <X11/extensions/Xrender.h>     
-#include <X11/extensions/render.h>      
+#include <X11/X.h>                   
+#include <X11/Xlib.h>                
+#include <X11/extensions/Xrender.h>  
+#include <X11/extensions/render.h>   
 #include "cairo-xlib.h"
 #include "X11UndefineNone.h"
-#include <stdint.h>                     
-#include "GLDefs.h"                     
-#include "gfxPlatform.h"                
-#include "gfxXlibSurface.h"             
-#include "gfx2DGlue.h"                  
-#include "mozilla/X11Util.h"            
-#include "mozilla/gfx/Point.h"          
+#include <stdint.h>             
+#include "GLDefs.h"             
+#include "gfxPlatform.h"        
+#include "gfxXlibSurface.h"     
+#include "gfx2DGlue.h"          
+#include "mozilla/X11Util.h"    
+#include "mozilla/gfx/Point.h"  
 #include "mozilla/layers/CompositableForwarder.h"
-#include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/CompositorTypes.h"    
 #include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/layers/ShadowLayers.h"  
-#include "mozilla/mozalloc.h"           
+#include "mozilla/layers/ShadowLayers.h"    
+#include "mozilla/mozalloc.h"               
 #include "gfxEnv.h"
-#include "nsCOMPtr.h"                   
-#include "nsDebug.h"                    
+#include "nsCOMPtr.h"  
+#include "nsDebug.h"   
 
 using namespace mozilla::gl;
 
@@ -35,17 +35,15 @@ namespace mozilla {
 namespace gl {
 class GLContext;
 class TextureImage;
-}
+}  
 
 namespace layers {
 
 
 
-static bool
-UsingXCompositing()
-{
+static bool UsingXCompositing() {
   if (!gfxEnv::LayersEnableXlibSurfaces()) {
-      return false;
+    return false;
   }
   return (gfxSurfaceType::Xlib ==
           gfxPlatform::GetPlatform()->ScreenReferenceSurface()->GetType());
@@ -53,9 +51,8 @@ UsingXCompositing()
 
 
 
-static XRenderPictFormat*
-GetXRenderPictFormatFromId(Display* aDisplay, PictFormat aFormatId)
-{
+static XRenderPictFormat* GetXRenderPictFormatFromId(Display* aDisplay,
+                                                     PictFormat aFormatId) {
   XRenderPictFormat tmplate;
   tmplate.id = aFormatId;
   return XRenderFindFormat(aDisplay, PictFormatID, &tmplate, 0);
@@ -63,11 +60,8 @@ GetXRenderPictFormatFromId(Display* aDisplay, PictFormat aFormatId)
 
 SurfaceDescriptorX11::SurfaceDescriptorX11(gfxXlibSurface* aSurf,
                                            bool aForwardGLX)
-  : mId(aSurf->XDrawable())
-  , mSize(aSurf->GetSize())
-  , mGLXPixmap(X11None)
-{
-  const XRenderPictFormat *pictFormat = aSurf->XRenderFormat();
+    : mId(aSurf->XDrawable()), mSize(aSurf->GetSize()), mGLXPixmap(X11None) {
+  const XRenderPictFormat* pictFormat = aSurf->XRenderFormat();
   if (pictFormat) {
     mFormat = pictFormat->id;
   } else {
@@ -81,15 +75,9 @@ SurfaceDescriptorX11::SurfaceDescriptorX11(gfxXlibSurface* aSurf,
 
 SurfaceDescriptorX11::SurfaceDescriptorX11(Drawable aDrawable, XID aFormatID,
                                            const gfx::IntSize& aSize)
-  : mId(aDrawable)
-  , mFormat(aFormatID)
-  , mSize(aSize)
-  , mGLXPixmap(X11None)
-{ }
+    : mId(aDrawable), mFormat(aFormatID), mSize(aSize), mGLXPixmap(X11None) {}
 
-already_AddRefed<gfxXlibSurface>
-SurfaceDescriptorX11::OpenForeign() const
-{
+already_AddRefed<gfxXlibSurface> SurfaceDescriptorX11::OpenForeign() const {
   Display* display = DefaultXDisplay();
   if (!display) {
     return nullptr;
@@ -104,21 +92,17 @@ SurfaceDescriptorX11::OpenForeign() const
     Visual* visual;
     int depth;
     FindVisualAndDepth(display, mFormat, &visual, &depth);
-    if (!visual)
-      return nullptr;
+    if (!visual) return nullptr;
 
     surf = new gfxXlibSurface(display, mId, visual, mSize);
   }
 
-  if (mGLXPixmap)
-    surf->BindGLXPixmap(mGLXPixmap);
+  if (mGLXPixmap) surf->BindGLXPixmap(mGLXPixmap);
 
   return surf->CairoStatus() ? nullptr : surf.forget();
 }
 
- void
-ShadowLayerForwarder::PlatformSyncBeforeUpdate()
-{
+ void ShadowLayerForwarder::PlatformSyncBeforeUpdate() {
   if (UsingXCompositing()) {
     
     
@@ -128,9 +112,7 @@ ShadowLayerForwarder::PlatformSyncBeforeUpdate()
   }
 }
 
- void
-LayerManagerComposite::PlatformSyncBeforeReplyUpdate()
-{
+ void LayerManagerComposite::PlatformSyncBeforeReplyUpdate() {
   if (UsingXCompositing()) {
     
     
@@ -141,11 +123,9 @@ LayerManagerComposite::PlatformSyncBeforeReplyUpdate()
   }
 }
 
- bool
-LayerManagerComposite::SupportsDirectTexturing()
-{
+ bool LayerManagerComposite::SupportsDirectTexturing() {
   return false;
 }
 
-} 
-} 
+}  
+}  

@@ -37,16 +37,18 @@ class DOMStringList;
 class Element;
 class FileList;
 class Promise;
-template<typename T> class Optional;
+template <typename T>
+class Optional;
 
-#define NS_DATATRANSFER_IID \
-{ 0x6c5f90d1, 0xa886, 0x42c8, \
-  { 0x85, 0x06, 0x10, 0xbe, 0x5c, 0x0d, 0xc6, 0x77 } }
+#define NS_DATATRANSFER_IID                          \
+  {                                                  \
+    0x6c5f90d1, 0xa886, 0x42c8, {                    \
+      0x85, 0x06, 0x10, 0xbe, 0x5c, 0x0d, 0xc6, 0x77 \
+    }                                                \
+  }
 
-class DataTransfer final : public nsISupports,
-                           public nsWrapperCache
-{
-public:
+class DataTransfer final : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_DATATRANSFER_IID)
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -63,32 +65,25 @@ public:
     Protected,
   };
 
-protected:
-
+ protected:
   
   DataTransfer();
 
   
   
   
-  DataTransfer(nsISupports* aParent,
-               EventMessage aEventMessage,
-               const uint32_t aEffectAllowed,
-               bool aCursorState,
-               bool aIsExternal,
-               bool aUserCancelled,
-               bool aIsCrossDomainSubFrameDrop,
-               int32_t aClipboardType,
-               DataTransferItemList* aItems,
-               Element* aDragImage,
-               uint32_t aDragImageX,
-               uint32_t aDragImageY);
+  DataTransfer(nsISupports* aParent, EventMessage aEventMessage,
+               const uint32_t aEffectAllowed, bool aCursorState,
+               bool aIsExternal, bool aUserCancelled,
+               bool aIsCrossDomainSubFrameDrop, int32_t aClipboardType,
+               DataTransferItemList* aItems, Element* aDragImage,
+               uint32_t aDragImageX, uint32_t aDragImageY);
 
   ~DataTransfer();
 
   static const char sEffects[8][9];
 
-public:
+ public:
   
   
   
@@ -101,16 +96,12 @@ public:
   DataTransfer(nsISupports* aParent, EventMessage aEventMessage,
                bool aIsExternal, int32_t aClipboardType);
 
-  virtual JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-  nsISupports* GetParentObject() const
-  {
-    return mParent;
-  }
+  nsISupports* GetParentObject() const { return mParent; }
 
-  void SetParentObject(nsISupports* aNewParent)
-  {
+  void SetParentObject(nsISupports* aNewParent) {
     MOZ_ASSERT(aNewParent);
     
     
@@ -118,8 +109,8 @@ public:
     mParent = aNewParent;
   }
 
-  static already_AddRefed<DataTransfer>
-  Constructor(const GlobalObject& aGlobal, ErrorResult& aRv);
+  static already_AddRefed<DataTransfer> Constructor(const GlobalObject& aGlobal,
+                                                    ErrorResult& aRv);
 
   
 
@@ -148,8 +139,7 @@ public:
 
 
 
-  void GetDropEffect(nsAString& aDropEffect)
-  {
+  void GetDropEffect(nsAString& aDropEffect) {
     aDropEffect.AssignASCII(sEffects[mDropEffect]);
   }
   void SetDropEffect(const nsAString& aDropEffect);
@@ -171,8 +161,7 @@ public:
 
 
 
-  void GetEffectAllowed(nsAString& aEffectAllowed)
-  {
+  void GetEffectAllowed(nsAString& aEffectAllowed) {
     if (mEffectAllowed == nsIDragService::DRAGDROP_ACTION_UNINITIALIZED) {
       aEffectAllowed.AssignLiteral("uninitialized");
     } else {
@@ -205,41 +194,33 @@ public:
   void GetTypes(nsTArray<nsString>& aTypes, CallerType aCallerType) const;
 
   void GetData(const nsAString& aFormat, nsAString& aData,
-               nsIPrincipal& aSubjectPrincipal,
-               ErrorResult& aRv);
+               nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
 
   void SetData(const nsAString& aFormat, const nsAString& aData,
-               nsIPrincipal& aSubjectPrincipal,
-               ErrorResult& aRv);
+               nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
 
   void ClearData(const mozilla::dom::Optional<nsAString>& aFormat,
-                 nsIPrincipal& aSubjectPrincipal,
-                 mozilla::ErrorResult& aRv);
+                 nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aRv);
 
   
 
 
 
 
-  already_AddRefed<FileList>
-  GetFiles(nsIPrincipal& aSubjectPrincipal);
+  already_AddRefed<FileList> GetFiles(nsIPrincipal& aSubjectPrincipal);
 
-  already_AddRefed<Promise>
-  GetFilesAndDirectories(nsIPrincipal& aSubjectPrincipal,
-                         mozilla::ErrorResult& aRv);
+  already_AddRefed<Promise> GetFilesAndDirectories(
+      nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aRv);
 
-  already_AddRefed<Promise>
-  GetFiles(bool aRecursiveFlag,
-           nsIPrincipal& aSubjectPrincipal,
-           ErrorResult& aRv);
-
+  already_AddRefed<Promise> GetFiles(bool aRecursiveFlag,
+                                     nsIPrincipal& aSubjectPrincipal,
+                                     ErrorResult& aRv);
 
   void AddElement(Element& aElement, mozilla::ErrorResult& aRv);
 
   uint32_t MozItemCount() const;
 
-  void GetMozCursor(nsAString& aCursor)
-  {
+  void GetMozCursor(nsAString& aCursor) {
     if (mCursorState) {
       aCursor.AssignLiteral("default");
     } else {
@@ -258,30 +239,22 @@ public:
 
   void MozSetDataAt(JSContext* aCx, const nsAString& aFormat,
                     JS::Handle<JS::Value> aData, uint32_t aIndex,
-                    nsIPrincipal& aSubjectPrincipal,
-                    mozilla::ErrorResult& aRv);
+                    nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aRv);
 
-  void MozGetDataAt(JSContext* aCx, const nsAString& aFormat,
-                    uint32_t aIndex, JS::MutableHandle<JS::Value> aRetval,
-                    nsIPrincipal& aSubjectPrincipal,
-                    mozilla::ErrorResult& aRv);
+  void MozGetDataAt(JSContext* aCx, const nsAString& aFormat, uint32_t aIndex,
+                    JS::MutableHandle<JS::Value> aRetval,
+                    nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aRv);
 
-  bool MozUserCancelled() const
-  {
-    return mUserCancelled;
-  }
+  bool MozUserCancelled() const { return mUserCancelled; }
 
   already_AddRefed<nsINode> GetMozSourceNode();
 
   
 
 
-  uint32_t DropEffectInt() const
-  {
-    return mDropEffect;
-  }
-  void SetDropEffectInt(uint32_t aDropEffectInt)
-  {
+
+  uint32_t DropEffectInt() const { return mDropEffect; }
+  void SetDropEffectInt(uint32_t aDropEffectInt) {
     MOZ_RELEASE_ASSERT(aDropEffectInt < ArrayLength(sEffects),
                        "Bogus drop effect value");
     mDropEffect = aDropEffectInt;
@@ -291,70 +264,48 @@ public:
 
 
 
-  uint32_t EffectAllowedInt() const
-  {
-    return mEffectAllowed;
-  }
+  uint32_t EffectAllowedInt() const { return mEffectAllowed; }
 
   void GetMozTriggeringPrincipalURISpec(nsAString& aPrincipalURISpec);
 
-  mozilla::dom::Element* GetDragTarget() const
-  {
-    return mDragTarget;
-  }
+  mozilla::dom::Element* GetDragTarget() const { return mDragTarget; }
 
   nsresult GetDataAtNoSecurityCheck(const nsAString& aFormat, uint32_t aIndex,
                                     nsIVariant** aData);
 
-  DataTransferItemList* Items() const {
-    return mItems;
-  }
+  DataTransferItemList* Items() const { return mItems; }
 
   
   
   
-  Mode GetMode() const {
-    return mMode;
-  }
+  Mode GetMode() const { return mMode; }
   void SetMode(Mode aMode);
 
   
   
-  bool IsReadOnly() const {
-    return mMode != Mode::ReadWrite;
-  }
+  bool IsReadOnly() const { return mMode != Mode::ReadWrite; }
   
   
-  bool IsProtected() const {
-    return mMode == Mode::Protected;
-  }
+  bool IsProtected() const { return mMode == Mode::Protected; }
 
-  int32_t ClipboardType() const {
-    return mClipboardType;
-  }
-  EventMessage GetEventMessage() const {
-    return mEventMessage;
-  }
-  bool IsCrossDomainSubFrameDrop() const {
-    return mIsCrossDomainSubFrameDrop;
-  }
+  int32_t ClipboardType() const { return mClipboardType; }
+  EventMessage GetEventMessage() const { return mEventMessage; }
+  bool IsCrossDomainSubFrameDrop() const { return mIsCrossDomainSubFrameDrop; }
 
   
   
   already_AddRefed<nsIArray> GetTransferables(nsINode* aDragTarget);
 
-  already_AddRefed<nsIArray>
-  GetTransferables(nsILoadContext* aLoadContext);
+  already_AddRefed<nsIArray> GetTransferables(nsILoadContext* aLoadContext);
 
   
   
-  already_AddRefed<nsITransferable>
-  GetTransferable(uint32_t aIndex, nsILoadContext* aLoadContext);
+  already_AddRefed<nsITransferable> GetTransferable(
+      uint32_t aIndex, nsILoadContext* aLoadContext);
 
   
   
-  bool ConvertFromVariant(nsIVariant* aVariant,
-                          nsISupports** aSupports,
+  bool ConvertFromVariant(nsIVariant* aVariant, nsISupports** aSupports,
                           uint32_t* aLength) const;
 
   
@@ -369,23 +320,19 @@ public:
   
   
   
-  nsresult SetDataWithPrincipal(const nsAString& aFormat,
-                                nsIVariant* aData,
-                                uint32_t aIndex,
-                                nsIPrincipal* aPrincipal,
-                                bool aHidden=false);
+  nsresult SetDataWithPrincipal(const nsAString& aFormat, nsIVariant* aData,
+                                uint32_t aIndex, nsIPrincipal* aPrincipal,
+                                bool aHidden = false);
 
   
   
   void SetDataWithPrincipalFromOtherProcess(const nsAString& aFormat,
-                                            nsIVariant* aData,
-                                            uint32_t aIndex,
+                                            nsIVariant* aData, uint32_t aIndex,
                                             nsIPrincipal* aPrincipal,
                                             bool aHidden);
 
   
-  Element* GetDragImage(int32_t* aX, int32_t* aY) const
-  {
+  Element* GetDragImage(int32_t* aX, int32_t* aY) const {
     *aX = mDragImageX;
     *aY = mDragImageY;
     return mDragImage;
@@ -405,8 +352,7 @@ public:
   
   void GetRealFormat(const nsAString& aInFormat, nsAString& aOutFormat) const;
 
-  static bool PrincipalMaySetData(const nsAString& aFormat,
-                                  nsIVariant* aData,
+  static bool PrincipalMaySetData(const nsAString& aFormat, nsIVariant* aData,
                                   nsIPrincipal* aPrincipal);
 
   
@@ -423,18 +369,17 @@ public:
   
   
   
-  static void
-  GetExternalClipboardFormats(const int32_t& aWhichClipboard,
-                              const bool& aPlainTextOnly,
-                              nsTArray<nsCString>* aResult);
+  static void GetExternalClipboardFormats(const int32_t& aWhichClipboard,
+                                          const bool& aPlainTextOnly,
+                                          nsTArray<nsCString>* aResult);
 
+  
   
   
   
   static bool MozAtAPIsEnabled(JSContext* cx, JSObject* obj);
 
-protected:
-
+ protected:
   
   
   nsresult CacheExternalData(const char* aFormat, uint32_t aIndex,
@@ -515,7 +460,7 @@ protected:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DataTransfer, NS_DATATRANSFER_IID)
 
-} 
-} 
+}  
+}  
 
 #endif 

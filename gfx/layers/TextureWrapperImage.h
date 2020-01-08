@@ -16,9 +16,8 @@ namespace layers {
 
 
 
-class TextureWrapperImage final : public Image
-{
-public:
+class TextureWrapperImage final : public Image {
+ public:
   TextureWrapperImage(TextureClient* aClient, const gfx::IntRect& aPictureRect);
   virtual ~TextureWrapperImage();
 
@@ -27,12 +26,12 @@ public:
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override;
   TextureClient* GetTextureClient(KnowsCompositor* aForwarder) override;
 
-private:
+ private:
   gfx::IntRect mPictureRect;
   RefPtr<TextureClient> mTextureClient;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

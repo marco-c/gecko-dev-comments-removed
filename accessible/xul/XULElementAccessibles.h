@@ -17,9 +17,8 @@ class XULLabelTextLeafAccessible;
 
 
 
-class XULLabelAccessible : public HyperTextAccessibleWrap
-{
-public:
+class XULLabelAccessible : public HyperTextAccessibleWrap {
+ public:
   XULLabelAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -30,17 +29,15 @@ public:
 
   void UpdateLabelValue(const nsString& aValue);
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 
-private:
+ private:
   RefPtr<XULLabelTextLeafAccessible> mValueTextLeaf;
 };
 
-inline XULLabelAccessible*
-Accessible::AsXULLabel()
-{
+inline XULLabelAccessible* Accessible::AsXULLabel() {
   return IsXULLabel() ? static_cast<XULLabelAccessible*>(this) : nullptr;
 }
 
@@ -48,15 +45,14 @@ Accessible::AsXULLabel()
 
 
 
+class XULLabelTextLeafAccessible final : public TextLeafAccessibleWrap {
+ public:
+  XULLabelTextLeafAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : TextLeafAccessibleWrap(aContent, aDoc) {
+    mStateFlags |= eSharedNode;
+  }
 
-class XULLabelTextLeafAccessible final : public TextLeafAccessibleWrap
-{
-public:
-  XULLabelTextLeafAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    TextLeafAccessibleWrap(aContent, aDoc)
-  { mStateFlags |= eSharedNode; }
-
-  virtual ~XULLabelTextLeafAccessible() { }
+  virtual ~XULLabelTextLeafAccessible() {}
 
   
   virtual a11y::role NativeRole() const override;
@@ -66,11 +62,8 @@ public:
 
 
 
-
-class XULTooltipAccessible : public LeafAccessible
-{
-
-public:
+class XULTooltipAccessible : public LeafAccessible {
+ public:
   XULTooltipAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -78,10 +71,8 @@ public:
   virtual uint64_t NativeState() const override;
 };
 
-class XULLinkAccessible : public XULLabelAccessible
-{
-
-public:
+class XULLinkAccessible : public XULLabelAccessible {
+ public:
   XULLinkAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -98,19 +89,19 @@ public:
   virtual bool IsLink() const override;
   virtual uint32_t StartOffset() override;
   virtual uint32_t EndOffset() override;
-  virtual already_AddRefed<nsIURI> AnchorURIAt(uint32_t aAnchorIndex) const override;
+  virtual already_AddRefed<nsIURI> AnchorURIAt(
+      uint32_t aAnchorIndex) const override;
 
-protected:
+ protected:
   virtual ~XULLinkAccessible();
 
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 
   enum { eAction_Jump = 0 };
-
 };
 
-} 
-} 
+}  
+}  
 
 #endif

@@ -17,9 +17,8 @@ namespace recordreplay {
 
 
 
-class Assembler
-{
-public:
+class Assembler {
+ public:
   
   
   Assembler();
@@ -37,9 +36,9 @@ public:
   
   uint8_t* Current();
 
-
-
-
+  
+  
+  
 
   
   
@@ -98,9 +97,9 @@ public:
   
   static  int NormalizeRegister( int aRegister);
 
-
-
-
+  
+  
+  
 
   
   static bool CanPatchShortJump(uint8_t* aIp, void* aTarget);
@@ -117,7 +116,7 @@ public:
   
   static void PatchClobber(uint8_t* aIp);
 
-private:
+ private:
   
   static void PatchJump(uint8_t* aIp, void* aTarget);
 
@@ -160,13 +159,13 @@ private:
 
   
   
-  InfallibleVector<std::pair<uint8_t*,uint8_t*>> mCopiedInstructions;
+  InfallibleVector<std::pair<uint8_t*, uint8_t*>> mCopiedInstructions;
 
   
   
   
   
-  InfallibleVector<std::pair<uint8_t*,uint8_t*>> mJumps;
+  InfallibleVector<std::pair<uint8_t*, uint8_t*>> mJumps;
 };
 
 
@@ -181,7 +180,7 @@ static const size_t MaximumInstructionLength = 15;
 
 void UnprotectExecutableMemory(uint8_t* aAddress, size_t aSize);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

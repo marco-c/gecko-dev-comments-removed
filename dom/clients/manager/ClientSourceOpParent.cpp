@@ -13,21 +13,16 @@ namespace dom {
 
 using mozilla::ipc::IPCResult;
 
-void
-ClientSourceOpParent::ActorDestroy(ActorDestroyReason aReason)
-{
+void ClientSourceOpParent::ActorDestroy(ActorDestroyReason aReason) {
   if (mPromise) {
     mPromise->Reject(NS_ERROR_ABORT, __func__);
     mPromise = nullptr;
   }
 }
 
-IPCResult
-ClientSourceOpParent::Recv__delete__(const ClientOpResult& aResult)
-{
+IPCResult ClientSourceOpParent::Recv__delete__(const ClientOpResult& aResult) {
   if (aResult.type() == ClientOpResult::Tnsresult &&
       NS_FAILED(aResult.get_nsresult())) {
-
     
     
     
@@ -50,16 +45,13 @@ ClientSourceOpParent::Recv__delete__(const ClientOpResult& aResult)
 
 ClientSourceOpParent::ClientSourceOpParent(const ClientOpConstructorArgs& aArgs,
                                            ClientOpPromise::Private* aPromise)
-  : mArgs(aArgs)
-  , mPromise(aPromise)
-{
+    : mArgs(aArgs), mPromise(aPromise) {
   MOZ_DIAGNOSTIC_ASSERT(mPromise);
 }
 
-ClientSourceOpParent::~ClientSourceOpParent()
-{
+ClientSourceOpParent::~ClientSourceOpParent() {
   MOZ_DIAGNOSTIC_ASSERT(!mPromise);
 }
 
-} 
-} 
+}  
+}  

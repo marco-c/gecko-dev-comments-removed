@@ -4,17 +4,12 @@
 
 
 
-
 namespace mozilla {
 namespace dom {
 
-void StartGamepadMonitoring()
-{
-}
+void StartGamepadMonitoring() {}
 
-void StopGamepadMonitoring()
-{
-}
+void StopGamepadMonitoring() {}
 
-} 
-} 
+}  
+}  

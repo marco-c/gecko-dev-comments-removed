@@ -10,30 +10,34 @@
 #include "nsMenuX.h"
 #include "nsIStandaloneNativeMenu.h"
 
-class nsStandaloneNativeMenu : public nsMenuGroupOwnerX, public nsIStandaloneNativeMenu
-{
-public:
+class nsStandaloneNativeMenu : public nsMenuGroupOwnerX,
+                               public nsIStandaloneNativeMenu {
+ public:
   nsStandaloneNativeMenu();
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSISTANDALONENATIVEMENU
 
   
-  nsMenuObjectTypeX MenuObjectType() override { return eStandaloneNativeMenuObjectType; }
-  void * NativeData() override { return mMenu != nullptr ? mMenu->NativeData() : nullptr; }
+  nsMenuObjectTypeX MenuObjectType() override {
+    return eStandaloneNativeMenuObjectType;
+  }
+  void* NativeData() override {
+    return mMenu != nullptr ? mMenu->NativeData() : nullptr;
+  }
   virtual void IconUpdated() override;
 
-  nsMenuX * GetMenuXObject() { return mMenu; }
+  nsMenuX* GetMenuXObject() { return mMenu; }
 
   
   
   
   void SetContainerStatusBarItem(NSStatusItem* aItem);
 
-protected:
+ protected:
   virtual ~nsStandaloneNativeMenu();
 
-  nsMenuX * mMenu;
+  nsMenuX* mMenu;
   NSStatusItem* mContainerStatusBarItem;
 };
 

@@ -10,9 +10,6 @@
 
 
 
-enum nsCaseTreatment {
-  eCaseMatters,
-  eIgnoreCase
-};
+enum nsCaseTreatment { eCaseMatters, eIgnoreCase };
 
 #endif 

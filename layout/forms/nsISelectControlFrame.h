@@ -12,9 +12,8 @@
 
 
 
-class nsISelectControlFrame : public nsQueryFrame
-{
-public:
+class nsISelectControlFrame : public nsQueryFrame {
+ public:
   NS_DECL_QUERYFRAME_TARGET(nsISelectControlFrame)
 
   
@@ -45,7 +44,6 @@ public:
 
 
   NS_IMETHOD OnSetSelectedIndex(int32_t aOldIndex, int32_t aNewIndex) = 0;
-
 };
 
 #endif

@@ -14,89 +14,79 @@
 namespace js {
 namespace gc {
 
-inline size_t
-GetAtomBit(TenuredCell* thing)
-{
-    MOZ_ASSERT(thing->zoneFromAnyThread()->isAtomsZone());
-    Arena* arena = thing->arena();
-    size_t arenaBit = (reinterpret_cast<uintptr_t>(thing) - arena->address()) / CellBytesPerMarkBit;
-    return arena->atomBitmapStart() * JS_BITS_PER_WORD + arenaBit;
+inline size_t GetAtomBit(TenuredCell* thing) {
+  MOZ_ASSERT(thing->zoneFromAnyThread()->isAtomsZone());
+  Arena* arena = thing->arena();
+  size_t arenaBit = (reinterpret_cast<uintptr_t>(thing) - arena->address()) /
+                    CellBytesPerMarkBit;
+  return arena->atomBitmapStart() * JS_BITS_PER_WORD + arenaBit;
 }
 
-inline bool
-ThingIsPermanent(JSAtom* atom)
-{
-    return atom->isPinned();
-}
+inline bool ThingIsPermanent(JSAtom* atom) { return atom->isPinned(); }
 
-inline bool
-ThingIsPermanent(JS::Symbol* symbol)
-{
-    return symbol->isWellKnownSymbol();
+inline bool ThingIsPermanent(JS::Symbol* symbol) {
+  return symbol->isWellKnownSymbol();
 }
 
 template <typename T, bool Fallible>
-MOZ_ALWAYS_INLINE bool
-AtomMarkingRuntime::inlinedMarkAtomInternal(JSContext* cx, T* thing)
-{
-    static_assert(mozilla::IsSame<T, JSAtom>::value ||
-                  mozilla::IsSame<T, JS::Symbol>::value,
-                  "Should only be called with JSAtom* or JS::Symbol* argument");
+MOZ_ALWAYS_INLINE bool AtomMarkingRuntime::inlinedMarkAtomInternal(
+    JSContext* cx, T* thing) {
+  static_assert(mozilla::IsSame<T, JSAtom>::value ||
+                    mozilla::IsSame<T, JS::Symbol>::value,
+                "Should only be called with JSAtom* or JS::Symbol* argument");
 
-    MOZ_ASSERT(thing);
-    js::gc::TenuredCell* cell = &thing->asTenured();
-    MOZ_ASSERT(cell->zoneFromAnyThread()->isAtomsZone());
+  MOZ_ASSERT(thing);
+  js::gc::TenuredCell* cell = &thing->asTenured();
+  MOZ_ASSERT(cell->zoneFromAnyThread()->isAtomsZone());
 
-    
-    if (!cx->zone()) {
-        return true;
-    }
-    MOZ_ASSERT(!cx->zone()->isAtomsZone());
-
-    if (ThingIsPermanent(thing)) {
-        return true;
-    }
-
-    size_t bit = GetAtomBit(cell);
-    MOZ_ASSERT(bit / JS_BITS_PER_WORD < allocatedWords);
-
-    if (Fallible) {
-        if (!cx->zone()->markedAtoms().setBitFallible(bit)) {
-            return false;
-        }
-    } else {
-        cx->zone()->markedAtoms().setBit(bit);
-    }
-
-    if (!cx->helperThread()) {
-        
-        
-        
-        
-        T::readBarrier(thing);
-    }
-
-    
-    
-    
-    markChildren(cx, thing);
-
+  
+  if (!cx->zone()) {
     return true;
+  }
+  MOZ_ASSERT(!cx->zone()->isAtomsZone());
+
+  if (ThingIsPermanent(thing)) {
+    return true;
+  }
+
+  size_t bit = GetAtomBit(cell);
+  MOZ_ASSERT(bit / JS_BITS_PER_WORD < allocatedWords);
+
+  if (Fallible) {
+    if (!cx->zone()->markedAtoms().setBitFallible(bit)) {
+      return false;
+    }
+  } else {
+    cx->zone()->markedAtoms().setBit(bit);
+  }
+
+  if (!cx->helperThread()) {
+    
+    
+    
+    
+    T::readBarrier(thing);
+  }
+
+  
+  
+  
+  markChildren(cx, thing);
+
+  return true;
 }
 
 template <typename T>
-MOZ_ALWAYS_INLINE void
-AtomMarkingRuntime::inlinedMarkAtom(JSContext* cx, T* thing)
-{
-    MOZ_ALWAYS_TRUE((inlinedMarkAtomInternal<T, false>(cx, thing)));
+MOZ_ALWAYS_INLINE void AtomMarkingRuntime::inlinedMarkAtom(JSContext* cx,
+                                                           T* thing) {
+  MOZ_ALWAYS_TRUE((inlinedMarkAtomInternal<T, false>(cx, thing)));
 }
 
 template <typename T>
-MOZ_ALWAYS_INLINE bool
-AtomMarkingRuntime::inlinedMarkAtomFallible(JSContext* cx, T* thing)
-{
-    return inlinedMarkAtomInternal<T, true>(cx, thing);
+MOZ_ALWAYS_INLINE bool AtomMarkingRuntime::inlinedMarkAtomFallible(
+    JSContext* cx, T* thing) {
+  return inlinedMarkAtomInternal<T, true>(cx, thing);
 }
 
-} 
-} 
+}  
+}  

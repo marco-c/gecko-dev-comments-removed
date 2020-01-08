@@ -17,21 +17,18 @@ class nsIFile;
 
 
 
-class nsAppFileLocationProvider final : public nsIDirectoryServiceProvider2
-{
-public:
+class nsAppFileLocationProvider final : public nsIDirectoryServiceProvider2 {
+ public:
   nsAppFileLocationProvider();
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIDIRECTORYSERVICEPROVIDER
   NS_DECL_NSIDIRECTORYSERVICEPROVIDER2
 
-private:
-  ~nsAppFileLocationProvider()
-  {
-  }
+ private:
+  ~nsAppFileLocationProvider() {}
 
-protected:
+ protected:
   nsresult CloneMozBinDirectory(nsIFile** aLocalFile);
   
 
@@ -40,10 +37,8 @@ protected:
 
 
 
-  nsresult GetProductDirectory(nsIFile** aLocalFile,
-                               bool aLocal = false);
-  nsresult GetDefaultUserProfileRoot(nsIFile** aLocalFile,
-                                     bool aLocal = false);
+  nsresult GetProductDirectory(nsIFile** aLocalFile, bool aLocal = false);
+  nsresult GetDefaultUserProfileRoot(nsIFile** aLocalFile, bool aLocal = false);
 
   nsCOMPtr<nsIFile> mMozBinDirectory;
 };

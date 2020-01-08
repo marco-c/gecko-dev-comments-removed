@@ -14,18 +14,16 @@ namespace webgpu {
 
 class Device;
 
-class CommandBuffer final
-    : public ChildOf<Device>
-{
-public:
-    WEBGPU_DECL_GOOP(CommandBuffer)
+class CommandBuffer final : public ChildOf<Device> {
+ public:
+  WEBGPU_DECL_GOOP(CommandBuffer)
 
-private:
-    CommandBuffer() = delete;
-    virtual ~CommandBuffer();
+ private:
+  CommandBuffer() = delete;
+  virtual ~CommandBuffer();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

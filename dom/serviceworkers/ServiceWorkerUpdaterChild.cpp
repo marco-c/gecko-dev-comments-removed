@@ -10,12 +10,10 @@
 namespace mozilla {
 namespace dom {
 
-ServiceWorkerUpdaterChild::ServiceWorkerUpdaterChild(GenericPromise* aPromise,
-                                                     CancelableRunnable* aSuccessRunnable,
-                                                     CancelableRunnable* aFailureRunnable)
-  : mSuccessRunnable(aSuccessRunnable)
-  , mFailureRunnable(aFailureRunnable)
-{
+ServiceWorkerUpdaterChild::ServiceWorkerUpdaterChild(
+    GenericPromise* aPromise, CancelableRunnable* aSuccessRunnable,
+    CancelableRunnable* aFailureRunnable)
+    : mSuccessRunnable(aSuccessRunnable), mFailureRunnable(aFailureRunnable) {
   
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -25,16 +23,17 @@ ServiceWorkerUpdaterChild::ServiceWorkerUpdaterChild(GenericPromise* aPromise,
   MOZ_ASSERT(aSuccessRunnable);
   MOZ_ASSERT(aFailureRunnable);
 
-  aPromise->Then(GetMainThreadSerialEventTarget(), __func__,
-    [this]() {
-      mPromiseHolder.Complete();
-      Unused << Send__delete__(this);
-  }).Track(mPromiseHolder);
+  aPromise
+      ->Then(GetMainThreadSerialEventTarget(), __func__,
+             [this]() {
+               mPromiseHolder.Complete();
+               Unused << Send__delete__(this);
+             })
+      .Track(mPromiseHolder);
 }
 
-mozilla::ipc::IPCResult
-ServiceWorkerUpdaterChild::RecvProceed(const bool& aAllowed)
-{
+mozilla::ipc::IPCResult ServiceWorkerUpdaterChild::RecvProceed(
+    const bool& aAllowed) {
   
 
   if (aAllowed) {
@@ -51,9 +50,7 @@ ServiceWorkerUpdaterChild::RecvProceed(const bool& aAllowed)
   return IPC_OK();
 }
 
-void
-ServiceWorkerUpdaterChild::ActorDestroy(ActorDestroyReason aWhy)
-{
+void ServiceWorkerUpdaterChild::ActorDestroy(ActorDestroyReason aWhy) {
   if (mSuccessRunnable) {
     mSuccessRunnable->Cancel();
   }
@@ -65,5 +62,5 @@ ServiceWorkerUpdaterChild::ActorDestroy(ActorDestroyReason aWhy)
   mPromiseHolder.DisconnectIfExists();
 }
 
-} 
-} 
+}  
+}  

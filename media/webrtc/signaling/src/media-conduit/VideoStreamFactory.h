@@ -15,11 +15,11 @@
 namespace mozilla {
 
 
-class VideoStreamFactory : public webrtc::VideoEncoderConfig::VideoStreamFactoryInterface
-{
-public:
-  struct ResolutionAndBitrateLimits
-  {
+
+class VideoStreamFactory
+    : public webrtc::VideoEncoderConfig::VideoStreamFactoryInterface {
+ public:
+  struct ResolutionAndBitrateLimits {
     int resolution_in_mb;
     int min_bitrate_bps;
     int start_bitrate_bps;
@@ -27,30 +27,27 @@ public:
   };
 
   VideoStreamFactory(VideoCodecConfig aConfig,
-                     webrtc::VideoCodecMode aCodecMode,
-                     int aMinBitrate, int aStartBitrate,
-                     int aPrefMaxBitrate, int aNegotiatedMaxBitrate,
-                     unsigned int aSendingFramerate)
-    : mCodecMode(aCodecMode)
-    , mSendingFramerate(aSendingFramerate)
-    , mCodecConfig(std::forward<VideoCodecConfig>(aConfig))
-    , mMinBitrate(aMinBitrate)
-    , mStartBitrate(aStartBitrate)
-    , mPrefMaxBitrate(aPrefMaxBitrate)
-    , mNegotiatedMaxBitrate(aNegotiatedMaxBitrate)
-    , mSimulcastAdapter(MakeUnique<cricket::VideoAdapter>())
-  {}
+                     webrtc::VideoCodecMode aCodecMode, int aMinBitrate,
+                     int aStartBitrate, int aPrefMaxBitrate,
+                     int aNegotiatedMaxBitrate, unsigned int aSendingFramerate)
+      : mCodecMode(aCodecMode),
+        mSendingFramerate(aSendingFramerate),
+        mCodecConfig(std::forward<VideoCodecConfig>(aConfig)),
+        mMinBitrate(aMinBitrate),
+        mStartBitrate(aStartBitrate),
+        mPrefMaxBitrate(aPrefMaxBitrate),
+        mNegotiatedMaxBitrate(aNegotiatedMaxBitrate),
+        mSimulcastAdapter(MakeUnique<cricket::VideoAdapter>()) {}
 
   void SetCodecMode(webrtc::VideoCodecMode aCodecMode);
   void SetSendingFramerate(unsigned int aSendingFramerate);
 
   
   
-  std::vector<webrtc::VideoStream>
-    CreateEncoderStreams(int width, int height,
-                         const webrtc::VideoEncoderConfig& config) override;
+  std::vector<webrtc::VideoStream> CreateEncoderStreams(
+      int width, int height, const webrtc::VideoEncoderConfig& config) override;
 
-private:
+ private:
   
   Atomic<webrtc::VideoCodecMode> mCodecMode;
 
@@ -72,7 +69,6 @@ private:
   UniquePtr<cricket::VideoAdapter> mSimulcastAdapter;
 };
 
-} 
+}  
 
 #endif
-

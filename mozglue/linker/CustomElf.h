@@ -14,11 +14,11 @@
 
 
 
-class CustomElf: public BaseElf, private ElfLoader::link_map
-{
+class CustomElf : public BaseElf, private ElfLoader::link_map {
   friend class ElfLoader;
   friend class SEGVHandler;
-public:
+
+ public:
   
 
 
@@ -28,25 +28,25 @@ public:
 
 
 
-  static already_AddRefed<LibHandle> Load(Mappable *mappable,
-                                               const char *path, int flags);
+  static already_AddRefed<LibHandle> Load(Mappable *mappable, const char *path,
+                                          int flags);
 
   
 
 
   virtual ~CustomElf();
 
-protected:
+ protected:
   virtual Mappable *GetMappable() const;
 
-public:
+ public:
   
 
 
 
   virtual BaseElf *AsBaseElf() { return this; }
 
-private:
+ private:
   
 
 
@@ -58,13 +58,12 @@ private:
 
 
   CustomElf(Mappable *mappable, const char *path)
-  : BaseElf(path, mappable)
-  , link_map()
-  , init(0)
-  , fini(0)
-  , initialized(false)
-  , has_text_relocs(false)
-  { }
+      : BaseElf(path, mappable),
+        link_map(),
+        init(0),
+        fini(0),
+        initialized(false),
+        has_text_relocs(false) {}
 
   
 
@@ -106,8 +105,7 @@ private:
   
 
 
-  void CallFunction(void *ptr) const
-  {
+  void CallFunction(void *ptr) const {
     
 
     union {
@@ -122,10 +120,7 @@ private:
   
 
 
-  void CallFunction(Elf::Addr addr) const
-  {
-    return CallFunction(GetPtr(addr));
-  }
+  void CallFunction(Elf::Addr addr) const { return CallFunction(GetPtr(addr)); }
 
   
   std::vector<RefPtr<LibHandle> > dependencies;

@@ -17,9 +17,8 @@
 namespace mozilla {
 
 class NativeFileWatcherService final : public nsINativeFileWatcherService,
-                                       public nsIObserver
-{
-public:
+                                       public nsIObserver {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSINATIVEFILEWATCHERSERVICE
   NS_DECL_NSIOBSERVER
@@ -28,7 +27,7 @@ public:
 
   nsresult Init();
 
-private:
+ private:
   
   HANDLE mIOCompletionPort;
   nsCOMPtr<nsIThread> mIOThread;
@@ -40,11 +39,12 @@ private:
   void WakeUpWorkerThread();
 
   
+  
   ~NativeFileWatcherService();
   NativeFileWatcherService(const NativeFileWatcherService& other) = delete;
   void operator=(const NativeFileWatcherService& other) = delete;
 };
 
-} 
+}  
 
-#endif 
+#endif  

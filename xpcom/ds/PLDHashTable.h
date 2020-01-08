@@ -11,7 +11,7 @@
 #define PLDHashTable_h
 
 #include "mozilla/Atomics.h"
-#include "mozilla/Attributes.h" 
+#include "mozilla/Attributes.h"  
 #include "mozilla/fallible.h"
 #include "mozilla/FunctionTypeTraits.h"
 #include "mozilla/HashFunctions.h"
@@ -41,15 +41,14 @@ struct PLDHashTableOps;
 
 
 
-struct PLDHashEntryHdr
-{
+struct PLDHashEntryHdr {
   PLDHashEntryHdr() = default;
   PLDHashEntryHdr(const PLDHashEntryHdr&) = delete;
   PLDHashEntryHdr& operator=(const PLDHashEntryHdr&) = delete;
   PLDHashEntryHdr(PLDHashEntryHdr&&) = default;
   PLDHashEntryHdr& operator=(PLDHashEntryHdr&&) = default;
 
-private:
+ private:
   friend class PLDHashTable;
 };
 
@@ -81,9 +80,8 @@ private:
 
 
 
-class Checker
-{
-public:
+class Checker {
+ public:
   constexpr Checker() : mState(kIdle), mIsWritable(1) {}
 
   Checker& operator=(Checker&& aOther) {
@@ -96,9 +94,10 @@ public:
     return *this;
   }
 
-  static bool IsIdle(uint32_t aState)  { return aState == kIdle; }
-  static bool IsRead(uint32_t aState)  { return kRead1 <= aState &&
-                                                aState <= kReadMax; }
+  static bool IsIdle(uint32_t aState) { return aState == kIdle; }
+  static bool IsRead(uint32_t aState) {
+    return kRead1 <= aState && aState <= kReadMax;
+  }
   static bool IsRead1(uint32_t aState) { return aState == kRead1; }
   static bool IsWrite(uint32_t aState) { return aState == kWrite; }
 
@@ -121,28 +120,24 @@ public:
   
   
 
-  void StartReadOp()
-  {
-    uint32_t oldState = mState++;     
+  void StartReadOp() {
+    uint32_t oldState = mState++;  
     MOZ_ASSERT(IsIdle(oldState) || IsRead(oldState));
     MOZ_ASSERT(oldState < kReadMax);  
   }
 
-  void EndReadOp()
-  {
-    uint32_t oldState = mState--;     
+  void EndReadOp() {
+    uint32_t oldState = mState--;  
     MOZ_ASSERT(IsRead(oldState));
   }
 
-  void StartWriteOp()
-  {
+  void StartWriteOp() {
     MOZ_ASSERT(IsWritable());
     uint32_t oldState = mState.exchange(kWrite);
     MOZ_ASSERT(IsIdle(oldState));
   }
 
-  void EndWriteOp()
-  {
+  void EndWriteOp() {
     
     
     
@@ -151,8 +146,7 @@ public:
     MOZ_ASSERT(IsWrite(oldState));
   }
 
-  void StartIteratorRemovalOp()
-  {
+  void StartIteratorRemovalOp() {
     
     
     MOZ_ASSERT(IsWritable());
@@ -160,8 +154,7 @@ public:
     MOZ_ASSERT(IsRead1(oldState));
   }
 
-  void EndIteratorRemovalOp()
-  {
+  void EndIteratorRemovalOp() {
     
     
     
@@ -170,37 +163,35 @@ public:
     MOZ_ASSERT(IsWrite(oldState));
   }
 
-  void StartDestructorOp()
-  {
+  void StartDestructorOp() {
     
     
     uint32_t oldState = mState.exchange(kWrite);
     MOZ_ASSERT(IsIdle(oldState));
   }
 
-  void EndDestructorOp()
-  {
+  void EndDestructorOp() {
     uint32_t oldState = mState.exchange(kIdle);
     MOZ_ASSERT(IsWrite(oldState));
   }
 
-private:
+ private:
   
   
   
   
   
-  static const uint32_t kIdle    = 0;
-  static const uint32_t kRead1   = 1;
+  static const uint32_t kIdle = 0;
+  static const uint32_t kRead1 = 1;
   static const uint32_t kReadMax = 9999;
-  static const uint32_t kWrite   = 10000;
+  static const uint32_t kWrite = 10000;
 
-  mutable mozilla::Atomic<uint32_t,
-                          mozilla::SequentiallyConsistent,
-                          mozilla::recordreplay::Behavior::DontPreserve> mState;
-  mutable mozilla::Atomic<uint32_t,
-                          mozilla::SequentiallyConsistent,
-                          mozilla::recordreplay::Behavior::DontPreserve> mIsWritable;
+  mutable mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent,
+                          mozilla::recordreplay::Behavior::DontPreserve>
+      mState;
+  mutable mozilla::Atomic<uint32_t, mozilla::SequentiallyConsistent,
+                          mozilla::recordreplay::Behavior::DontPreserve>
+      mIsWritable;
 };
 #endif
 
@@ -217,17 +208,13 @@ private:
 
 
 
-class PLDHashTable
-{
-private:
+class PLDHashTable {
+ private:
   
   
-  struct Slot
-  {
+  struct Slot {
     Slot(PLDHashEntryHdr* aEntry, PLDHashNumber* aKeyHash)
-      : mEntry(aEntry)
-      , mKeyHash(aKeyHash)
-    {}
+        : mEntry(aEntry), mKeyHash(aKeyHash) {}
 
     Slot(const Slot&) = default;
     Slot(Slot&& aOther) = default;
@@ -262,7 +249,7 @@ private:
     }
     PLDHashNumber* HashPtr() const { return mKeyHash; }
 
-  private:
+   private:
     PLDHashEntryHdr* mEntry;
     PLDHashNumber* mKeyHash;
   };
@@ -317,26 +304,22 @@ private:
   
   
   
-  class EntryStore
-  {
-  private:
+  class EntryStore {
+   private:
     char* mEntryStore;
 
-    static char* Entries(char* aStore, uint32_t aCapacity)
-    {
+    static char* Entries(char* aStore, uint32_t aCapacity) {
       return aStore + aCapacity * sizeof(PLDHashNumber);
     }
 
-    char* Entries(uint32_t aCapacity) const
-    {
+    char* Entries(uint32_t aCapacity) const {
       return Entries(Get(), aCapacity);
     }
 
-  public:
+   public:
     EntryStore() : mEntryStore(nullptr) {}
 
-    ~EntryStore()
-    {
+    ~EntryStore() {
       free(mEntryStore);
       mEntryStore = nullptr;
     }
@@ -344,17 +327,16 @@ private:
     char* Get() const { return mEntryStore; }
 
     Slot SlotForIndex(uint32_t aIndex, uint32_t aEntrySize,
-                      uint32_t aCapacity) const
-    {
+                      uint32_t aCapacity) const {
       char* entries = Entries(aCapacity);
-      auto entry = reinterpret_cast<PLDHashEntryHdr*>(entries + aIndex * aEntrySize);
+      auto entry =
+          reinterpret_cast<PLDHashEntryHdr*>(entries + aIndex * aEntrySize);
       auto hashes = reinterpret_cast<PLDHashNumber*>(Get());
       return Slot(entry, &hashes[aIndex]);
     }
 
-    Slot SlotForPLDHashEntry(PLDHashEntryHdr* aEntry,
-                             uint32_t aCapacity, uint32_t aEntrySize)
-    {
+    Slot SlotForPLDHashEntry(PLDHashEntryHdr* aEntry, uint32_t aCapacity,
+                             uint32_t aEntrySize) {
       char* entries = Entries(aCapacity);
       char* entry = reinterpret_cast<char*>(aEntry);
       uint32_t entryOffset = entry - entries;
@@ -362,14 +344,14 @@ private:
       return SlotForIndex(slotIndex, aEntrySize, aCapacity);
     }
 
-    template<typename F>
+    template <typename F>
     void ForEachSlot(uint32_t aCapacity, uint32_t aEntrySize, F&& aFunc) {
       ForEachSlot(Get(), aCapacity, aEntrySize, std::move(aFunc));
     }
 
-    template<typename F>
-    static void ForEachSlot(char* aStore, uint32_t aCapacity, uint32_t aEntrySize,
-                            F&& aFunc) {
+    template <typename F>
+    static void ForEachSlot(char* aStore, uint32_t aCapacity,
+                            uint32_t aEntrySize, F&& aFunc) {
       char* entries = Entries(aStore, aCapacity);
       Slot slot(reinterpret_cast<PLDHashEntryHdr*>(entries),
                 reinterpret_cast<PLDHashNumber*>(aStore));
@@ -379,8 +361,7 @@ private:
       }
     }
 
-    void Set(char* aEntryStore, uint16_t* aGeneration)
-    {
+    void Set(char* aEntryStore, uint16_t* aGeneration) {
       mEntryStore = aEntryStore;
       *aGeneration += 1;
     }
@@ -390,18 +371,18 @@ private:
   
   
   const PLDHashTableOps* const mOps;  
-  EntryStore          mEntryStore;    
-  uint16_t            mGeneration;    
-  uint8_t             mHashShift;     
-  const uint8_t       mEntrySize;     
-  uint32_t            mEntryCount;    
-  uint32_t            mRemovedCount;  
+  EntryStore mEntryStore;             
+  uint16_t mGeneration;               
+  uint8_t mHashShift;                 
+  const uint8_t mEntrySize;           
+  uint32_t mEntryCount;               
+  uint32_t mRemovedCount;             
 
 #ifdef DEBUG
   mutable Checker mChecker;
 #endif
 
-public:
+ public:
   
   
   
@@ -433,12 +414,13 @@ public:
   PLDHashTable(PLDHashTable&& aOther)
       
       
-    : mOps(nullptr)
-    , mEntryStore()
-    , mGeneration(0)
-    , mEntrySize(0)
+      : mOps(nullptr),
+        mEntryStore(),
+        mGeneration(0),
+        mEntrySize(0)
 #ifdef DEBUG
-    , mChecker()
+        ,
+        mChecker()
 #endif
   {
     *this = std::move(aOther);
@@ -449,20 +431,18 @@ public:
   ~PLDHashTable();
 
   
-  const PLDHashTableOps* Ops() const
-  {
+  const PLDHashTableOps* Ops() const {
     return mozilla::recordreplay::UnwrapPLDHashTableCallbacks(mOps);
   }
 
   
   
   
-  uint32_t Capacity() const
-  {
+  uint32_t Capacity() const {
     return mEntryStore.Get() ? CapacityFromHashShift() : 0;
   }
 
-  uint32_t EntrySize()  const { return mEntrySize; }
+  uint32_t EntrySize() const { return mEntrySize; }
   uint32_t EntryCount() const { return mEntryCount; }
   uint32_t Generation() const { return mGeneration; }
 
@@ -585,9 +565,8 @@ public:
   
   
   
-  class Iterator
-  {
-  public:
+  class Iterator {
+   public:
     explicit Iterator(PLDHashTable* aTable);
     Iterator(Iterator&& aOther);
     ~Iterator();
@@ -596,8 +575,7 @@ public:
     bool Done() const { return mNexts == mNextsLimit; }
 
     
-    PLDHashEntryHdr* Get() const
-    {
+    PLDHashEntryHdr* Get() const {
       MOZ_ASSERT(!Done());
       MOZ_ASSERT(mCurrent.IsLive());
       return mCurrent.ToEntry();
@@ -610,16 +588,16 @@ public:
     
     void Remove();
 
-  protected:
-    PLDHashTable* mTable;             
+   protected:
+    PLDHashTable* mTable;  
 
-  private:
-    Slot mCurrent;                    
-    uint32_t mNexts;                  
-    uint32_t mNextsLimit;             
+   private:
+    Slot mCurrent;         
+    uint32_t mNexts;       
+    uint32_t mNextsLimit;  
 
-    bool mHaveRemoved;                
-    uint8_t mEntrySize;               
+    bool mHaveRemoved;   
+    uint8_t mEntrySize;  
 
     bool IsOnNonLiveEntry() const;
 
@@ -635,27 +613,25 @@ public:
 
   
   
-  Iterator ConstIter() const
-  {
+  Iterator ConstIter() const {
     return Iterator(const_cast<PLDHashTable*>(this));
   }
 
-private:
+ private:
   static uint32_t HashShift(uint32_t aEntrySize, uint32_t aLength);
 
   static const PLDHashNumber kCollisionFlag = 1;
 
   PLDHashNumber Hash1(PLDHashNumber aHash0) const;
-  void Hash2(PLDHashNumber aHash,
-             uint32_t& aHash2Out, uint32_t& aSizeMaskOut) const;
+  void Hash2(PLDHashNumber aHash, uint32_t& aHash2Out,
+             uint32_t& aSizeMaskOut) const;
 
   static bool MatchSlotKeyhash(Slot& aSlot, const PLDHashNumber aHash);
   Slot SlotForIndex(uint32_t aIndex) const;
 
   
   
-  uint32_t CapacityFromHashShift() const
-  {
+  uint32_t CapacityFromHashShift() const {
     return ((uint32_t)1 << (kPLDHashNumberBits - mHashShift));
   }
 
@@ -666,9 +642,8 @@ private:
   
   
   template <SearchReason Reason, typename PLDSuccess, typename PLDFailure>
-  auto
-  SearchTable(const void* aKey, PLDHashNumber aKeyHash,
-              PLDSuccess&& aSucess, PLDFailure&& aFailure) const;
+  auto SearchTable(const void* aKey, PLDHashNumber aKeyHash,
+                   PLDSuccess&& aSucess, PLDFailure&& aFailure) const;
 
   Slot FindFreeSlot(PLDHashNumber aKeyHash) const;
 
@@ -726,21 +701,19 @@ typedef void (*PLDHashInitEntry)(PLDHashEntryHdr* aEntry, const void* aKey);
 
 
 
-struct PLDHashTableOps
-{
+struct PLDHashTableOps {
   
-  PLDHashHashKey      hashKey;
-  PLDHashMatchEntry   matchEntry;
-  PLDHashMoveEntry    moveEntry;
-  PLDHashClearEntry   clearEntry;
+  PLDHashHashKey hashKey;
+  PLDHashMatchEntry matchEntry;
+  PLDHashMoveEntry moveEntry;
+  PLDHashClearEntry clearEntry;
 
   
-  PLDHashInitEntry    initEntry;
+  PLDHashInitEntry initEntry;
 };
 
 
-struct PLDHashEntryStub : public PLDHashEntryHdr
-{
+struct PLDHashEntryStub : public PLDHashEntryHdr {
   const void* key;
 };
 

@@ -15,25 +15,22 @@ namespace dom {
 
 
 
-class ServiceWorkerRegisterJob final : public ServiceWorkerUpdateJob
-{
-public:
-  ServiceWorkerRegisterJob(nsIPrincipal* aPrincipal,
-                           const nsACString& aScope,
+class ServiceWorkerRegisterJob final : public ServiceWorkerUpdateJob {
+ public:
+  ServiceWorkerRegisterJob(nsIPrincipal* aPrincipal, const nsACString& aScope,
                            const nsACString& aScriptSpec,
                            nsILoadGroup* aLoadGroup,
                            ServiceWorkerUpdateViaCache aUpdateViaCache);
 
-private:
+ private:
   
   
-  virtual void
-  AsyncExecute() override;
+  virtual void AsyncExecute() override;
 
   virtual ~ServiceWorkerRegisterJob();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -15,8 +15,7 @@ NS_IMPL_ISUPPORTS(nsLocalHandlerApp, nsILocalHandlerApp, nsIHandlerApp)
 
 
 
-NS_IMETHODIMP nsLocalHandlerApp::GetName(nsAString& aName)
-{
+NS_IMETHODIMP nsLocalHandlerApp::GetName(nsAString &aName) {
   if (mName.IsEmpty() && mExecutable) {
     
     
@@ -24,51 +23,45 @@ NS_IMETHODIMP nsLocalHandlerApp::GetName(nsAString& aName)
   } else {
     aName.Assign(mName);
   }
-  
+
   return NS_OK;
 }
 
-NS_IMETHODIMP nsLocalHandlerApp::SetName(const nsAString & aName)
-{
+NS_IMETHODIMP nsLocalHandlerApp::SetName(const nsAString &aName) {
   mName.Assign(aName);
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsLocalHandlerApp::SetDetailedDescription(const nsAString & aDescription)
-{
+nsLocalHandlerApp::SetDetailedDescription(const nsAString &aDescription) {
   mDetailedDescription.Assign(aDescription);
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsLocalHandlerApp::GetDetailedDescription(nsAString& aDescription)
-{
+nsLocalHandlerApp::GetDetailedDescription(nsAString &aDescription) {
   aDescription.Assign(mDetailedDescription);
-  
+
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsLocalHandlerApp::Equals(nsIHandlerApp *aHandlerApp, bool *_retval)
-{
+nsLocalHandlerApp::Equals(nsIHandlerApp *aHandlerApp, bool *_retval) {
   NS_ENSURE_ARG_POINTER(aHandlerApp);
 
   *_retval = false;
 
   
-  nsCOMPtr <nsILocalHandlerApp> localHandlerApp = do_QueryInterface(aHandlerApp);
-  if (!localHandlerApp)
-    return NS_OK;
+  nsCOMPtr<nsILocalHandlerApp> localHandlerApp = do_QueryInterface(aHandlerApp);
+  if (!localHandlerApp) return NS_OK;
 
   
   
   nsCOMPtr<nsIFile> executable;
   nsresult rv = localHandlerApp->GetExecutable(getter_AddRefs(executable));
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
   
   if (!executable && !mExecutable) {
@@ -77,14 +70,12 @@ nsLocalHandlerApp::Equals(nsIHandlerApp *aHandlerApp, bool *_retval)
   }
 
   
-  if (!mExecutable || !executable)
-    return NS_OK;
+  if (!mExecutable || !executable) return NS_OK;
 
   
   uint32_t len;
   localHandlerApp->GetParameterCount(&len);
-  if (mParameters.Length() != len)
-    return NS_OK;
+  if (mParameters.Length() != len) return NS_OK;
 
   
   for (uint32_t idx = 0; idx < mParameters.Length(); idx++) {
@@ -99,24 +90,19 @@ nsLocalHandlerApp::Equals(nsIHandlerApp *aHandlerApp, bool *_retval)
 
 NS_IMETHODIMP
 nsLocalHandlerApp::LaunchWithURI(nsIURI *aURI,
-                                 nsIInterfaceRequestor *aWindowContext)
-{
+                                 nsIInterfaceRequestor *aWindowContext) {
   
   nsAutoCString spec;
   aURI->GetAsciiSpec(spec);
   return LaunchWithIProcess(spec);
 }
 
-nsresult
-nsLocalHandlerApp::LaunchWithIProcess(const nsCString& aArg)
-{
+nsresult nsLocalHandlerApp::LaunchWithIProcess(const nsCString &aArg) {
   nsresult rv;
   nsCOMPtr<nsIProcess> process = do_CreateInstance(NS_PROCESS_CONTRACTID, &rv);
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
-  if (NS_FAILED(rv = process->Init(mExecutable)))
-    return rv;
+  if (NS_FAILED(rv = process->Init(mExecutable))) return rv;
 
   const char *string = aArg.get();
 
@@ -127,53 +113,45 @@ nsLocalHandlerApp::LaunchWithIProcess(const nsCString& aArg)
 
 
 NS_IMETHODIMP
-nsLocalHandlerApp::GetExecutable(nsIFile **aExecutable)
-{
+nsLocalHandlerApp::GetExecutable(nsIFile **aExecutable) {
   NS_IF_ADDREF(*aExecutable = mExecutable);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsLocalHandlerApp::SetExecutable(nsIFile *aExecutable)
-{
+nsLocalHandlerApp::SetExecutable(nsIFile *aExecutable) {
   mExecutable = aExecutable;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsLocalHandlerApp::GetParameterCount(uint32_t *aParameterCount)
-{
+nsLocalHandlerApp::GetParameterCount(uint32_t *aParameterCount) {
   *aParameterCount = mParameters.Length();
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsLocalHandlerApp::ClearParameters()
-{
+nsLocalHandlerApp::ClearParameters() {
   mParameters.Clear();
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsLocalHandlerApp::AppendParameter(const nsAString & aParam)
-{
+nsLocalHandlerApp::AppendParameter(const nsAString &aParam) {
   mParameters.AppendElement(aParam);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsLocalHandlerApp::GetParameter(uint32_t parameterIndex, nsAString & _retval)
-{
-  if (mParameters.Length() <= parameterIndex)
-    return NS_ERROR_INVALID_ARG;
+nsLocalHandlerApp::GetParameter(uint32_t parameterIndex, nsAString &_retval) {
+  if (mParameters.Length() <= parameterIndex) return NS_ERROR_INVALID_ARG;
 
   _retval.Assign(mParameters[parameterIndex]);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsLocalHandlerApp::ParameterExists(const nsAString & aParam, bool *_retval)
-{
+nsLocalHandlerApp::ParameterExists(const nsAString &aParam, bool *_retval) {
   *_retval = mParameters.Contains(aParam);
   return NS_OK;
 }

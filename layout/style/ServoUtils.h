@@ -22,8 +22,7 @@ void AssertIsMainThreadOrServoFontMetricsLocked();
 
 class ServoStyleSet;
 extern ServoStyleSet* sInServoTraversal;
-inline bool IsInServoTraversal()
-{
+inline bool IsInServoTraversal() {
   
   
   
@@ -35,6 +34,6 @@ inline bool IsInServoTraversal()
   MOZ_ASSERT(sInServoTraversal || NS_IsMainThread());
   return sInServoTraversal;
 }
-} 
+}  
 
-#endif 
+#endif  

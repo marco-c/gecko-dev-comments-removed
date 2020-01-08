@@ -52,10 +52,11 @@ void NotifyPaintStart();
 void NotifyPaintComplete();
 
 
-already_AddRefed<gfx::DrawTarget> DrawTargetForRemoteDrawing(LayoutDeviceIntSize aSize);
+already_AddRefed<gfx::DrawTarget> DrawTargetForRemoteDrawing(
+    LayoutDeviceIntSize aSize);
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

@@ -19,15 +19,13 @@ namespace mozilla {
 namespace layers {
 
 class DesktopFlingPhysics {
-public:
-  void Init(const ParentLayerPoint& aStartingVelocity, float aPLPPI )
-  {
+ public:
+  void Init(const ParentLayerPoint& aStartingVelocity,
+            float aPLPPI ) {
     mVelocity = aStartingVelocity;
   }
-  void Sample(const TimeDuration& aDelta,
-              ParentLayerPoint* aOutVelocity,
-              ParentLayerPoint* aOutOffset)
-  {
+  void Sample(const TimeDuration& aDelta, ParentLayerPoint* aOutVelocity,
+              ParentLayerPoint* aOutOffset) {
     float friction = gfxPrefs::APZFlingFriction();
     float threshold = gfxPrefs::APZFlingStoppedThreshold();
 
@@ -38,7 +36,8 @@ public:
     *aOutVelocity = mVelocity;
     *aOutOffset = mVelocity * aDelta.ToMilliseconds();
   }
-private:
+
+ private:
   
 
 
@@ -48,9 +47,9 @@ private:
 
 
 
-  static float ApplyFrictionOrCancel(float aVelocity, const TimeDuration& aDelta,
-                                     float aFriction, float aThreshold)
-  {
+  static float ApplyFrictionOrCancel(float aVelocity,
+                                     const TimeDuration& aDelta,
+                                     float aFriction, float aThreshold) {
     if (fabsf(aVelocity) <= aThreshold) {
       
       
@@ -65,7 +64,7 @@ private:
   ParentLayerPoint mVelocity;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

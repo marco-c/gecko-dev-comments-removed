@@ -21,47 +21,39 @@ class FileSystemBase;
 class Promise;
 class StringOrFileOrDirectory;
 
-class Directory final
-  : public nsISupports
-  , public nsWrapperCache
-{
-public:
+class Directory final : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Directory)
 
-  static already_AddRefed<Directory>
-  Constructor(const GlobalObject& aGlobal,
-              const nsAString& aRealPath,
-              ErrorResult& aRv);
+  static already_AddRefed<Directory> Constructor(const GlobalObject& aGlobal,
+                                                 const nsAString& aRealPath,
+                                                 ErrorResult& aRv);
 
-  static already_AddRefed<Directory>
-  Create(nsISupports* aParent, nsIFile* aDirectory,
-         FileSystemBase* aFileSystem = 0);
-
-  
-
-  nsISupports*
-  GetParentObject() const;
-
-  virtual JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-
-  void
-  GetName(nsAString& aRetval, ErrorResult& aRv);
+  static already_AddRefed<Directory> Create(nsISupports* aParent,
+                                            nsIFile* aDirectory,
+                                            FileSystemBase* aFileSystem = 0);
 
   
 
-  void
-  GetPath(nsAString& aRetval, ErrorResult& aRv);
+  nsISupports* GetParentObject() const;
 
-  nsresult
-  GetFullRealPath(nsAString& aPath);
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-  already_AddRefed<Promise>
-  GetFilesAndDirectories(ErrorResult& aRv);
+  void GetName(nsAString& aRetval, ErrorResult& aRv);
 
-  already_AddRefed<Promise>
-  GetFiles(bool aRecursiveFlag, ErrorResult& aRv);
+  
+  
+  
+
+  void GetPath(nsAString& aRetval, ErrorResult& aRv);
+
+  nsresult GetFullRealPath(nsAString& aPath);
+
+  already_AddRefed<Promise> GetFilesAndDirectories(ErrorResult& aRv);
+
+  already_AddRefed<Promise> GetFiles(bool aRecursiveFlag, ErrorResult& aRv);
 
   
 
@@ -87,29 +79,21 @@ public:
 
 
 
-  void
-  SetContentFilters(const nsAString& aFilters);
+  void SetContentFilters(const nsAString& aFilters);
 
-  FileSystemBase*
-  GetFileSystem(ErrorResult& aRv);
+  FileSystemBase* GetFileSystem(ErrorResult& aRv);
 
-  nsIFile*
-  GetInternalNsIFile() const
-  {
-    return mFile;
-  }
+  nsIFile* GetInternalNsIFile() const { return mFile; }
 
-private:
-  Directory(nsISupports* aParent,
-            nsIFile* aFile,
+ private:
+  Directory(nsISupports* aParent, nsIFile* aFile,
             FileSystemBase* aFileSystem = nullptr);
   ~Directory();
 
   
 
 
-  nsresult
-  DOMPathToRealPath(const nsAString& aPath, nsIFile** aFile) const;
+  nsresult DOMPathToRealPath(const nsAString& aPath, nsIFile** aFile) const;
 
   nsCOMPtr<nsISupports> mParent;
   RefPtr<FileSystemBase> mFileSystem;
@@ -119,7 +103,7 @@ private:
   nsString mPath;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

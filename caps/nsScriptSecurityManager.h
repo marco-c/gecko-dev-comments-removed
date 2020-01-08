@@ -25,113 +25,102 @@ class nsIStringBundle;
 namespace mozilla {
 class OriginAttributes;
 class SystemPrincipal;
-} 
+}  
 
 
 
 
-#define NS_SCRIPTSECURITYMANAGER_CID \
-{ 0x7ee2a4c0, 0x4b93, 0x17d3, \
-{ 0xba, 0x18, 0x00, 0x60, 0xb0, 0xf1, 0x99, 0xa2 }}
+#define NS_SCRIPTSECURITYMANAGER_CID                 \
+  {                                                  \
+    0x7ee2a4c0, 0x4b93, 0x17d3, {                    \
+      0xba, 0x18, 0x00, 0x60, 0xb0, 0xf1, 0x99, 0xa2 \
+    }                                                \
+  }
 
-class nsScriptSecurityManager final : public nsIScriptSecurityManager
-{
-public:
-    static void Shutdown();
+class nsScriptSecurityManager final : public nsIScriptSecurityManager {
+ public:
+  static void Shutdown();
 
-    NS_DEFINE_STATIC_CID_ACCESSOR(NS_SCRIPTSECURITYMANAGER_CID)
+  NS_DEFINE_STATIC_CID_ACCESSOR(NS_SCRIPTSECURITYMANAGER_CID)
 
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSISCRIPTSECURITYMANAGER
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSISCRIPTSECURITYMANAGER
 
-    static nsScriptSecurityManager*
-    GetScriptSecurityManager();
+  static nsScriptSecurityManager* GetScriptSecurityManager();
 
-    
-    static void InitStatics();
+  
+  static void InitStatics();
 
-    static already_AddRefed<mozilla::SystemPrincipal>
-    SystemPrincipalSingletonConstructor();
+  static already_AddRefed<mozilla::SystemPrincipal>
+  SystemPrincipalSingletonConstructor();
 
-    
-
-
-
+  
 
 
-    static bool SecurityCompareURIs(nsIURI* aSourceURI, nsIURI* aTargetURI);
-    static uint32_t SecurityHashURI(nsIURI* aURI);
 
-    static nsresult
-    ReportError(const char* aMessageTag, nsIURI* aSource,
-                nsIURI* aTarget, bool aFromPrivateWindow);
 
-    static uint32_t
-    HashPrincipalByOrigin(nsIPrincipal* aPrincipal);
 
-    static bool
-    GetStrictFileOriginPolicy()
-    {
-        return sStrictFileOriginPolicy;
-    }
+  static bool SecurityCompareURIs(nsIURI* aSourceURI, nsIURI* aTargetURI);
+  static uint32_t SecurityHashURI(nsIURI* aURI);
 
-    void DeactivateDomainPolicy();
+  static nsresult ReportError(const char* aMessageTag, nsIURI* aSource,
+                              nsIURI* aTarget, bool aFromPrivateWindow);
 
-private:
+  static uint32_t HashPrincipalByOrigin(nsIPrincipal* aPrincipal);
 
-    
-    nsScriptSecurityManager();
-    virtual ~nsScriptSecurityManager();
+  static bool GetStrictFileOriginPolicy() { return sStrictFileOriginPolicy; }
 
-    
-    static bool
-    ContentSecurityPolicyPermitsJSAction(JSContext *cx, JS::HandleValue aValue);
+  void DeactivateDomainPolicy();
 
-    static bool
-    JSPrincipalsSubsume(JSPrincipals *first, JSPrincipals *second);
+ private:
+  
+  nsScriptSecurityManager();
+  virtual ~nsScriptSecurityManager();
 
-    nsresult
-    Init();
+  
+  static bool ContentSecurityPolicyPermitsJSAction(JSContext* cx,
+                                                   JS::HandleValue aValue);
 
-    nsresult
-    InitPrefs();
+  static bool JSPrincipalsSubsume(JSPrincipals* first, JSPrincipals* second);
 
-    void
-    ScriptSecurityPrefChanged(const char* aPref = nullptr);
+  nsresult Init();
 
-    inline void
-    AddSitesToFileURIAllowlist(const nsCString& aSiteList);
+  nsresult InitPrefs();
 
-    nsresult GetChannelResultPrincipal(nsIChannel* aChannel,
-                                       nsIPrincipal** aPrincipal,
-                                       bool aIgnoreSandboxing);
+  void ScriptSecurityPrefChanged(const char* aPref = nullptr);
 
-    nsresult
-    CheckLoadURIFlags(nsIURI* aSourceURI, nsIURI* aTargetURI, nsIURI* aSourceBaseURI,
-                      nsIURI* aTargetBaseURI, uint32_t aFlags, bool aFromPrivateWindow);
+  inline void AddSitesToFileURIAllowlist(const nsCString& aSiteList);
 
-    
-    
-    const nsTArray<nsCOMPtr<nsIURI>>& EnsureFileURIAllowlist();
+  nsresult GetChannelResultPrincipal(nsIChannel* aChannel,
+                                     nsIPrincipal** aPrincipal,
+                                     bool aIgnoreSandboxing);
 
-    nsCOMPtr<nsIPrincipal> mSystemPrincipal;
-    bool mPrefInitialized;
-    bool mIsJavaScriptEnabled;
+  nsresult CheckLoadURIFlags(nsIURI* aSourceURI, nsIURI* aTargetURI,
+                             nsIURI* aSourceBaseURI, nsIURI* aTargetBaseURI,
+                             uint32_t aFlags, bool aFromPrivateWindow);
 
-    
-    
-    
-    mozilla::Maybe<nsTArray<nsCOMPtr<nsIURI>>> mFileURIAllowlist;
+  
+  
+  const nsTArray<nsCOMPtr<nsIURI>>& EnsureFileURIAllowlist();
 
-    
-    
-    nsCOMPtr<nsIDomainPolicy> mDomainPolicy;
+  nsCOMPtr<nsIPrincipal> mSystemPrincipal;
+  bool mPrefInitialized;
+  bool mIsJavaScriptEnabled;
 
-    static bool sStrictFileOriginPolicy;
+  
+  
+  
+  mozilla::Maybe<nsTArray<nsCOMPtr<nsIURI>>> mFileURIAllowlist;
 
-    static nsIIOService    *sIOService;
-    static nsIStringBundle *sStrBundle;
-    static JSContext       *sContext;
+  
+  
+  nsCOMPtr<nsIDomainPolicy> mDomainPolicy;
+
+  static bool sStrictFileOriginPolicy;
+
+  static nsIIOService* sIOService;
+  static nsIStringBundle* sStrBundle;
+  static JSContext* sContext;
 };
 
-#endif 
+#endif  

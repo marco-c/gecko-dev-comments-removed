@@ -40,676 +40,623 @@ static LazyLogModule gURLLog("URLPreloader");
 
 #define LOG(level, ...) MOZ_LOG(gURLLog, LogLevel::level, (__VA_ARGS__))
 
-template<typename T>
-bool
-StartsWith(const T& haystack, const T& needle)
-{
-    return StringHead(haystack, needle.Length()) == needle;
+template <typename T>
+bool StartsWith(const T& haystack, const T& needle) {
+  return StringHead(haystack, needle.Length()) == needle;
 }
-} 
+}  
 
 using namespace mozilla::loader;
 
-nsresult
-URLPreloader::CollectReports(nsIHandleReportCallback* aHandleReport,
-                             nsISupports* aData, bool aAnonymize)
-{
-    MOZ_COLLECT_REPORT(
-        "explicit/url-preloader/other", KIND_HEAP, UNITS_BYTES,
-        ShallowSizeOfIncludingThis(MallocSizeOf),
-        "Memory used by the URL preloader service itself.");
+nsresult URLPreloader::CollectReports(nsIHandleReportCallback* aHandleReport,
+                                      nsISupports* aData, bool aAnonymize) {
+  MOZ_COLLECT_REPORT("explicit/url-preloader/other", KIND_HEAP, UNITS_BYTES,
+                     ShallowSizeOfIncludingThis(MallocSizeOf),
+                     "Memory used by the URL preloader service itself.");
 
-    for (const auto& elem : IterHash(mCachedURLs)) {
-        nsAutoCString pathName;
-        pathName.Append(elem->mPath);
-        
-        
-        
-        pathName.ReplaceChar('/', '\\');
+  for (const auto& elem : IterHash(mCachedURLs)) {
+    nsAutoCString pathName;
+    pathName.Append(elem->mPath);
+    
+    
+    
+    pathName.ReplaceChar('/', '\\');
 
-        nsPrintfCString path("explicit/url-preloader/cached-urls/%s/[%s]",
-                             elem->TypeString(), pathName.get());
+    nsPrintfCString path("explicit/url-preloader/cached-urls/%s/[%s]",
+                         elem->TypeString(), pathName.get());
 
-        aHandleReport->Callback(
-            EmptyCString(), path, KIND_HEAP, UNITS_BYTES,
-            elem->SizeOfIncludingThis(MallocSizeOf),
-            NS_LITERAL_CSTRING("Memory used to hold cache data for files which "
-                               "have been read or pre-loaded during this session."),
-            aData);
-    }
+    aHandleReport->Callback(
+        EmptyCString(), path, KIND_HEAP, UNITS_BYTES,
+        elem->SizeOfIncludingThis(MallocSizeOf),
+        NS_LITERAL_CSTRING("Memory used to hold cache data for files which "
+                           "have been read or pre-loaded during this session."),
+        aData);
+  }
 
-    return NS_OK;
+  return NS_OK;
 }
 
-URLPreloader&
-URLPreloader::GetSingleton()
-{
-    if (!sSingleton) {
-        sSingleton = new URLPreloader();
-        ClearOnShutdown(&sSingleton);
-    }
+URLPreloader& URLPreloader::GetSingleton() {
+  if (!sSingleton) {
+    sSingleton = new URLPreloader();
+    ClearOnShutdown(&sSingleton);
+  }
 
-    return *sSingleton;
+  return *sSingleton;
 }
 
 bool URLPreloader::sInitialized = false;
 
 StaticRefPtr<URLPreloader> URLPreloader::sSingleton;
 
-URLPreloader::URLPreloader()
-{
-    if (InitInternal().isOk()) {
-        sInitialized = true;
-        RegisterWeakMemoryReporter(this);
-    }
+URLPreloader::URLPreloader() {
+  if (InitInternal().isOk()) {
+    sInitialized = true;
+    RegisterWeakMemoryReporter(this);
+  }
 }
 
-URLPreloader::~URLPreloader()
-{
-    if (sInitialized) {
-        UnregisterWeakMemoryReporter(this);
-    }
+URLPreloader::~URLPreloader() {
+  if (sInitialized) {
+    UnregisterWeakMemoryReporter(this);
+  }
 }
 
-Result<Ok, nsresult>
-URLPreloader::InitInternal()
-{
-    MOZ_RELEASE_ASSERT(NS_IsMainThread());
+Result<Ok, nsresult> URLPreloader::InitInternal() {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-    if (Omnijar::HasOmnijar(Omnijar::GRE)) {
-        MOZ_TRY(Omnijar::GetURIString(Omnijar::GRE, mGREPrefix));
-    }
-    if (Omnijar::HasOmnijar(Omnijar::APP)) {
-        MOZ_TRY(Omnijar::GetURIString(Omnijar::APP, mAppPrefix));
-    }
+  if (Omnijar::HasOmnijar(Omnijar::GRE)) {
+    MOZ_TRY(Omnijar::GetURIString(Omnijar::GRE, mGREPrefix));
+  }
+  if (Omnijar::HasOmnijar(Omnijar::APP)) {
+    MOZ_TRY(Omnijar::GetURIString(Omnijar::APP, mAppPrefix));
+  }
 
-    nsresult rv;
-    nsCOMPtr<nsIIOService> ios = do_GetIOService(&rv);
-    MOZ_TRY(rv);
+  nsresult rv;
+  nsCOMPtr<nsIIOService> ios = do_GetIOService(&rv);
+  MOZ_TRY(rv);
 
-    nsCOMPtr<nsIProtocolHandler> ph;
-    MOZ_TRY(ios->GetProtocolHandler("resource", getter_AddRefs(ph)));
+  nsCOMPtr<nsIProtocolHandler> ph;
+  MOZ_TRY(ios->GetProtocolHandler("resource", getter_AddRefs(ph)));
 
-    mResProto = do_QueryInterface(ph, &rv);
-    MOZ_TRY(rv);
+  mResProto = do_QueryInterface(ph, &rv);
+  MOZ_TRY(rv);
 
-    mChromeReg = services::GetChromeRegistryService();
-    if (!mChromeReg) {
-        return Err(NS_ERROR_UNEXPECTED);
-    }
+  mChromeReg = services::GetChromeRegistryService();
+  if (!mChromeReg) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
 
-    if (XRE_IsParentProcess()) {
-        nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (XRE_IsParentProcess()) {
+    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
 
-        obs->AddObserver(this, DELAYED_STARTUP_TOPIC, false);
+    obs->AddObserver(this, DELAYED_STARTUP_TOPIC, false);
 
-        MOZ_TRY(NS_GetSpecialDirectory("ProfLDS", getter_AddRefs(mProfD)));
-    } else {
-        mStartupFinished = true;
-        mReaderInitialized = true;
-    }
+    MOZ_TRY(NS_GetSpecialDirectory("ProfLDS", getter_AddRefs(mProfD)));
+  } else {
+    mStartupFinished = true;
+    mReaderInitialized = true;
+  }
 
-    return Ok();
+  return Ok();
 }
 
-URLPreloader&
-URLPreloader::ReInitialize()
-{
-    sSingleton = new URLPreloader();
+URLPreloader& URLPreloader::ReInitialize() {
+  sSingleton = new URLPreloader();
 
-    return *sSingleton;
+  return *sSingleton;
 }
 
-Result<nsCOMPtr<nsIFile>, nsresult>
-URLPreloader::GetCacheFile(const nsAString& suffix)
-{
-    if (!mProfD) {
-        return Err(NS_ERROR_NOT_INITIALIZED);
-    }
+Result<nsCOMPtr<nsIFile>, nsresult> URLPreloader::GetCacheFile(
+    const nsAString& suffix) {
+  if (!mProfD) {
+    return Err(NS_ERROR_NOT_INITIALIZED);
+  }
 
-    nsCOMPtr<nsIFile> cacheFile;
-    MOZ_TRY(mProfD->Clone(getter_AddRefs(cacheFile)));
+  nsCOMPtr<nsIFile> cacheFile;
+  MOZ_TRY(mProfD->Clone(getter_AddRefs(cacheFile)));
 
-    MOZ_TRY(cacheFile->AppendNative(NS_LITERAL_CSTRING("startupCache")));
-    Unused << cacheFile->Create(nsIFile::DIRECTORY_TYPE, 0777);
+  MOZ_TRY(cacheFile->AppendNative(NS_LITERAL_CSTRING("startupCache")));
+  Unused << cacheFile->Create(nsIFile::DIRECTORY_TYPE, 0777);
 
-    MOZ_TRY(cacheFile->Append(NS_LITERAL_STRING("urlCache") + suffix));
+  MOZ_TRY(cacheFile->Append(NS_LITERAL_STRING("urlCache") + suffix));
 
-    return std::move(cacheFile);
+  return std::move(cacheFile);
 }
 
 static const uint8_t URL_MAGIC[] = "mozURLcachev002";
 
-Result<nsCOMPtr<nsIFile>, nsresult>
-URLPreloader::FindCacheFile()
-{
-    nsCOMPtr<nsIFile> cacheFile;
-    MOZ_TRY_VAR(cacheFile, GetCacheFile(NS_LITERAL_STRING(".bin")));
+Result<nsCOMPtr<nsIFile>, nsresult> URLPreloader::FindCacheFile() {
+  nsCOMPtr<nsIFile> cacheFile;
+  MOZ_TRY_VAR(cacheFile, GetCacheFile(NS_LITERAL_STRING(".bin")));
 
-    bool exists;
+  bool exists;
+  MOZ_TRY(cacheFile->Exists(&exists));
+  if (exists) {
+    MOZ_TRY(
+        cacheFile->MoveTo(nullptr, NS_LITERAL_STRING("urlCache-current.bin")));
+  } else {
+    MOZ_TRY(cacheFile->SetLeafName(NS_LITERAL_STRING("urlCache-current.bin")));
     MOZ_TRY(cacheFile->Exists(&exists));
-    if (exists) {
-        MOZ_TRY(cacheFile->MoveTo(nullptr, NS_LITERAL_STRING("urlCache-current.bin")));
-    } else {
-        MOZ_TRY(cacheFile->SetLeafName(NS_LITERAL_STRING("urlCache-current.bin")));
-        MOZ_TRY(cacheFile->Exists(&exists));
-        if (!exists) {
-            return Err(NS_ERROR_FILE_NOT_FOUND);
-        }
+    if (!exists) {
+      return Err(NS_ERROR_FILE_NOT_FOUND);
     }
+  }
 
-    return std::move(cacheFile);
+  return std::move(cacheFile);
 }
 
-Result<Ok, nsresult>
-URLPreloader::WriteCache()
-{
-    MOZ_ASSERT(!NS_IsMainThread());
+Result<Ok, nsresult> URLPreloader::WriteCache() {
+  MOZ_ASSERT(!NS_IsMainThread());
 
-    
-    
-    
-    
-    
-    
-    
-    if (mCacheWritten) {
-        return Ok();
-    }
-    mCacheWritten = true;
-
-    LOG(Debug, "Writing cache...");
-
-    nsCOMPtr<nsIFile> cacheFile;
-    MOZ_TRY_VAR(cacheFile, GetCacheFile(NS_LITERAL_STRING("-new.bin")));
-
-    bool exists;
-    MOZ_TRY(cacheFile->Exists(&exists));
-    if (exists) {
-        MOZ_TRY(cacheFile->Remove(false));
-    }
-
-    {
-        AutoFDClose fd;
-        MOZ_TRY(cacheFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE, 0644, &fd.rwget()));
-
-        nsTArray<URLEntry*> entries;
-        for (auto& entry : IterHash(mCachedURLs)) {
-            if (entry->mReadTime) {
-                entries.AppendElement(entry);
-            }
-        }
-
-        entries.Sort(URLEntry::Comparator());
-
-        OutputBuffer buf;
-        for (auto entry : entries) {
-            entry->Code(buf);
-        }
-
-        uint8_t headerSize[4];
-        LittleEndian::writeUint32(headerSize, buf.cursor());
-
-        MOZ_TRY(Write(fd, URL_MAGIC, sizeof(URL_MAGIC)));
-        MOZ_TRY(Write(fd, headerSize, sizeof(headerSize)));
-        MOZ_TRY(Write(fd, buf.Get(), buf.cursor()));
-    }
-
-    MOZ_TRY(cacheFile->MoveTo(nullptr, NS_LITERAL_STRING("urlCache.bin")));
-
-    NS_DispatchToMainThread(
-        NewRunnableMethod("URLPreloader::Cleanup",
-                          this,
-                          &URLPreloader::Cleanup));
-
+  
+  
+  
+  
+  
+  
+  
+  if (mCacheWritten) {
     return Ok();
+  }
+  mCacheWritten = true;
+
+  LOG(Debug, "Writing cache...");
+
+  nsCOMPtr<nsIFile> cacheFile;
+  MOZ_TRY_VAR(cacheFile, GetCacheFile(NS_LITERAL_STRING("-new.bin")));
+
+  bool exists;
+  MOZ_TRY(cacheFile->Exists(&exists));
+  if (exists) {
+    MOZ_TRY(cacheFile->Remove(false));
+  }
+
+  {
+    AutoFDClose fd;
+    MOZ_TRY(cacheFile->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE, 0644,
+                                        &fd.rwget()));
+
+    nsTArray<URLEntry*> entries;
+    for (auto& entry : IterHash(mCachedURLs)) {
+      if (entry->mReadTime) {
+        entries.AppendElement(entry);
+      }
+    }
+
+    entries.Sort(URLEntry::Comparator());
+
+    OutputBuffer buf;
+    for (auto entry : entries) {
+      entry->Code(buf);
+    }
+
+    uint8_t headerSize[4];
+    LittleEndian::writeUint32(headerSize, buf.cursor());
+
+    MOZ_TRY(Write(fd, URL_MAGIC, sizeof(URL_MAGIC)));
+    MOZ_TRY(Write(fd, headerSize, sizeof(headerSize)));
+    MOZ_TRY(Write(fd, buf.Get(), buf.cursor()));
+  }
+
+  MOZ_TRY(cacheFile->MoveTo(nullptr, NS_LITERAL_STRING("urlCache.bin")));
+
+  NS_DispatchToMainThread(
+      NewRunnableMethod("URLPreloader::Cleanup", this, &URLPreloader::Cleanup));
+
+  return Ok();
 }
 
-void
-URLPreloader::Cleanup()
-{
-    mCachedURLs.Clear();
-}
+void URLPreloader::Cleanup() { mCachedURLs.Clear(); }
 
-Result<Ok, nsresult>
-URLPreloader::ReadCache(LinkedList<URLEntry>& pendingURLs)
-{
-    LOG(Debug, "Reading cache...");
+Result<Ok, nsresult> URLPreloader::ReadCache(
+    LinkedList<URLEntry>& pendingURLs) {
+  LOG(Debug, "Reading cache...");
 
-    nsCOMPtr<nsIFile> cacheFile;
-    MOZ_TRY_VAR(cacheFile, FindCacheFile());
+  nsCOMPtr<nsIFile> cacheFile;
+  MOZ_TRY_VAR(cacheFile, FindCacheFile());
 
-    AutoMemMap cache;
-    MOZ_TRY(cache.init(cacheFile));
+  AutoMemMap cache;
+  MOZ_TRY(cache.init(cacheFile));
 
-    auto size = cache.size();
+  auto size = cache.size();
 
-    uint32_t headerSize;
-    if (size < sizeof(URL_MAGIC) + sizeof(headerSize)) {
-        return Err(NS_ERROR_UNEXPECTED);
-    }
+  uint32_t headerSize;
+  if (size < sizeof(URL_MAGIC) + sizeof(headerSize)) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
 
-    auto data = cache.get<uint8_t>();
-    auto end = data + size;
+  auto data = cache.get<uint8_t>();
+  auto end = data + size;
 
-    if (memcmp(URL_MAGIC, data.get(), sizeof(URL_MAGIC))) {
-        return Err(NS_ERROR_UNEXPECTED);
-    }
-    data += sizeof(URL_MAGIC);
+  if (memcmp(URL_MAGIC, data.get(), sizeof(URL_MAGIC))) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+  data += sizeof(URL_MAGIC);
 
-    headerSize = LittleEndian::readUint32(data.get());
-    data += sizeof(headerSize);
+  headerSize = LittleEndian::readUint32(data.get());
+  data += sizeof(headerSize);
 
-    if (data + headerSize > end) {
-        return Err(NS_ERROR_UNEXPECTED);
-    }
+  if (data + headerSize > end) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
 
-    {
-        mMonitor.AssertCurrentThreadOwns();
+  {
+    mMonitor.AssertCurrentThreadOwns();
 
-        auto cleanup = MakeScopeExit([&] () {
-            while (auto* elem = pendingURLs.getFirst()) {
-                elem->remove();
-            }
-            mCachedURLs.Clear();
-        });
-
-        Range<uint8_t> header(data, data + headerSize);
-        data += headerSize;
-
-        InputBuffer buf(header);
-        while (!buf.finished()) {
-            CacheKey key(buf);
-
-            LOG(Debug, "Cached file: %s %s", key.TypeString(), key.mPath.get());
-
-            auto entry = mCachedURLs.LookupOrAdd(key, key);
-            entry->mResultCode = NS_ERROR_NOT_INITIALIZED;
-
-            pendingURLs.insertBack(entry);
-        }
-
-        if (buf.error()) {
-            return Err(NS_ERROR_UNEXPECTED);
-        }
-
-        cleanup.release();
-    }
-
-    return Ok();
-}
-
-void
-URLPreloader::BackgroundReadFiles()
-{
-    auto cleanup = MakeScopeExit([&] () {
-        NS_DispatchToMainThread(
-            NewRunnableMethod("nsIThread::Shutdown",
-                              mReaderThread, &nsIThread::Shutdown));
-        mReaderThread = nullptr;
+    auto cleanup = MakeScopeExit([&]() {
+      while (auto* elem = pendingURLs.getFirst()) {
+        elem->remove();
+      }
+      mCachedURLs.Clear();
     });
 
-    Vector<nsZipCursor> cursors;
-    LinkedList<URLEntry> pendingURLs;
-    {
-        MonitorAutoLock mal(mMonitor);
+    Range<uint8_t> header(data, data + headerSize);
+    data += headerSize;
 
-        if (ReadCache(pendingURLs).isErr()) {
-            mReaderInitialized = true;
-            mal.NotifyAll();
-            return;
-        }
+    InputBuffer buf(header);
+    while (!buf.finished()) {
+      CacheKey key(buf);
 
-        int numZipEntries = 0;
-        for (auto entry : pendingURLs) {
-            if (entry->mType != entry->TypeFile) {
-                numZipEntries++;
-            }
-        }
-        MOZ_RELEASE_ASSERT(cursors.reserve(numZipEntries));
+      LOG(Debug, "Cached file: %s %s", key.TypeString(), key.mPath.get());
 
-        
-        
-        
-        
-        
-        
-        for (auto entry : pendingURLs) {
-            if (entry->mType == entry->TypeFile) {
-                continue;
-            }
+      auto entry = mCachedURLs.LookupOrAdd(key, key);
+      entry->mResultCode = NS_ERROR_NOT_INITIALIZED;
 
-            RefPtr<nsZipArchive> zip = entry->Archive();
-            if (!zip) {
-                MOZ_CRASH_UNSAFE_PRINTF(
-                    "Failed to get Omnijar %s archive for entry (path: \"%s\")",
-                    entry->TypeString(), entry->mPath.get());
-            }
-
-            auto item = zip->GetItem(entry->mPath.get());
-            if (!item) {
-                entry->mResultCode = NS_ERROR_FILE_NOT_FOUND;
-                continue;
-            }
-
-            size_t size = item->RealSize();
-
-            entry->mData.SetLength(size);
-            auto data = entry->mData.BeginWriting();
-
-            cursors.infallibleEmplaceBack(item, zip, reinterpret_cast<uint8_t*>(data),
-                                          size, true);
-        }
-
-        mReaderInitialized = true;
-        mal.NotifyAll();
+      pendingURLs.insertBack(entry);
     }
 
-    
-    
-    
-    uint32_t i = 0;
+    if (buf.error()) {
+      return Err(NS_ERROR_UNEXPECTED);
+    }
+
+    cleanup.release();
+  }
+
+  return Ok();
+}
+
+void URLPreloader::BackgroundReadFiles() {
+  auto cleanup = MakeScopeExit([&]() {
+    NS_DispatchToMainThread(NewRunnableMethod(
+        "nsIThread::Shutdown", mReaderThread, &nsIThread::Shutdown));
+    mReaderThread = nullptr;
+  });
+
+  Vector<nsZipCursor> cursors;
+  LinkedList<URLEntry> pendingURLs;
+  {
+    MonitorAutoLock mal(mMonitor);
+
+    if (ReadCache(pendingURLs).isErr()) {
+      mReaderInitialized = true;
+      mal.NotifyAll();
+      return;
+    }
+
+    int numZipEntries = 0;
     for (auto entry : pendingURLs) {
-        
-        
-        if (entry->mResultCode != NS_ERROR_NOT_INITIALIZED) {
-            continue;
-        }
+      if (entry->mType != entry->TypeFile) {
+        numZipEntries++;
+      }
+    }
+    MOZ_RELEASE_ASSERT(cursors.reserve(numZipEntries));
 
-        nsresult rv = NS_OK;
+    
+    
+    
+    
+    
+    
+    for (auto entry : pendingURLs) {
+      if (entry->mType == entry->TypeFile) {
+        continue;
+      }
 
-        LOG(Debug, "Background reading %s file %s", entry->TypeString(), entry->mPath.get());
+      RefPtr<nsZipArchive> zip = entry->Archive();
+      if (!zip) {
+        MOZ_CRASH_UNSAFE_PRINTF(
+            "Failed to get Omnijar %s archive for entry (path: \"%s\")",
+            entry->TypeString(), entry->mPath.get());
+      }
 
-        if (entry->mType == entry->TypeFile) {
-            auto result = entry->Read();
-            if (result.isErr()) {
-                rv = result.unwrapErr();
-            }
-        } else {
-            auto& cursor = cursors[i++];
+      auto item = zip->GetItem(entry->mPath.get());
+      if (!item) {
+        entry->mResultCode = NS_ERROR_FILE_NOT_FOUND;
+        continue;
+      }
 
-            uint32_t len;
-            cursor.Copy(&len);
-            if (len != entry->mData.Length()) {
-                entry->mData.Truncate();
-                rv = NS_ERROR_FAILURE;
-            }
-        }
+      size_t size = item->RealSize();
 
-        entry->mResultCode = rv;
-        mMonitor.NotifyAll();
+      entry->mData.SetLength(size);
+      auto data = entry->mData.BeginWriting();
+
+      cursors.infallibleEmplaceBack(item, zip, reinterpret_cast<uint8_t*>(data),
+                                    size, true);
     }
 
+    mReaderInitialized = true;
+    mal.NotifyAll();
+  }
+
+  
+  
+  
+  uint32_t i = 0;
+  for (auto entry : pendingURLs) {
     
-    pendingURLs.clear();
-}
-
-void
-URLPreloader::BeginBackgroundRead()
-{
-    if (!mReaderThread && !mReaderInitialized && sInitialized) {
-        nsCOMPtr<nsIRunnable> runnable =
-            NewRunnableMethod("URLPreloader::BackgroundReadFiles",
-                              this,
-                              &URLPreloader::BackgroundReadFiles);
-
-        Unused << NS_NewNamedThread(
-            "BGReadURLs", getter_AddRefs(mReaderThread), runnable);
-    }
-}
-
-
-Result<const nsCString, nsresult>
-URLPreloader::ReadInternal(const CacheKey& key, ReadType readType)
-{
-    if (mStartupFinished) {
-        URLEntry entry(key);
-
-        return entry.Read();
+    
+    if (entry->mResultCode != NS_ERROR_NOT_INITIALIZED) {
+      continue;
     }
 
-    auto entry = mCachedURLs.LookupOrAdd(key, key);
+    nsresult rv = NS_OK;
 
-    entry->UpdateUsedTime();
+    LOG(Debug, "Background reading %s file %s", entry->TypeString(),
+        entry->mPath.get());
 
-    return entry->ReadOrWait(readType);
-}
-
-Result<const nsCString, nsresult>
-URLPreloader::ReadURIInternal(nsIURI* uri, ReadType readType)
-{
-    CacheKey key;
-    MOZ_TRY_VAR(key, ResolveURI(uri));
-
-    return ReadInternal(key, readType);
-}
-
- Result<const nsCString, nsresult>
-URLPreloader::Read(const CacheKey& key, ReadType readType)
-{
-    
-    
-    
-    
-    if (!sInitialized) {
-        return URLEntry(key).Read();
-    }
-
-    return GetSingleton().ReadInternal(key, readType);
-}
-
- Result<const nsCString, nsresult>
-URLPreloader::ReadURI(nsIURI* uri, ReadType readType)
-{
-    if (!sInitialized) {
-        return Err(NS_ERROR_NOT_INITIALIZED);
-    }
-
-    return GetSingleton().ReadURIInternal(uri, readType);
-}
-
- Result<const nsCString, nsresult>
-URLPreloader::ReadFile(nsIFile* file, ReadType readType)
-{
-    return Read(CacheKey(file), readType);
-}
-
- Result<const nsCString, nsresult>
-URLPreloader::Read(FileLocation& location, ReadType readType)
-{
-    if (location.IsZip()) {
-        if (location.GetBaseZip()) {
-            nsCString path;
-            location.GetPath(path);
-            return ReadZip(location.GetBaseZip(), path);
-        }
-        return URLEntry::ReadLocation(location);
-    }
-
-    nsCOMPtr<nsIFile> file = location.GetBaseFile();
-    return ReadFile(file, readType);
-}
-
- Result<const nsCString, nsresult>
-URLPreloader::ReadZip(nsZipArchive* zip, const nsACString& path, ReadType readType)
-{
-    
-    
-    
-    
-    RefPtr<nsZipArchive> reader = Omnijar::GetReader(Omnijar::GRE);
-    if (zip == reader) {
-        CacheKey key(CacheKey::TypeGREJar, path);
-        return Read(key, readType);
-    }
-
-    reader = Omnijar::GetReader(Omnijar::APP);
-    if (zip == reader) {
-        CacheKey key(CacheKey::TypeAppJar, path);
-        return Read(key, readType);
-    }
-
-    
-    FileLocation location(zip, PromiseFlatCString(path).BeginReading());
-    return URLEntry::ReadLocation(location);
-}
-
-Result<URLPreloader::CacheKey, nsresult>
-URLPreloader::ResolveURI(nsIURI* uri)
-{
-    nsCString spec;
-    nsCString scheme;
-    MOZ_TRY(uri->GetSpec(spec));
-    MOZ_TRY(uri->GetScheme(scheme));
-
-    nsCOMPtr<nsIURI> resolved;
-
-    
-    
-    if (scheme.EqualsLiteral("resource")) {
-        MOZ_TRY(mResProto->ResolveURI(uri, spec));
-        MOZ_TRY(NS_NewURI(getter_AddRefs(resolved), spec));
-    } else if (scheme.EqualsLiteral("chrome")) {
-        MOZ_TRY(mChromeReg->ConvertChromeURL(uri, getter_AddRefs(resolved)));
-        MOZ_TRY(resolved->GetSpec(spec));
+    if (entry->mType == entry->TypeFile) {
+      auto result = entry->Read();
+      if (result.isErr()) {
+        rv = result.unwrapErr();
+      }
     } else {
-        resolved = uri;
-    }
-    MOZ_TRY(resolved->GetScheme(scheme));
+      auto& cursor = cursors[i++];
 
-    
-    if (mGREPrefix.Length() && StartsWith(spec, mGREPrefix)) {
-        return CacheKey(CacheKey::TypeGREJar,
-                        Substring(spec, mGREPrefix.Length()));
-    }
-
-    if (mAppPrefix.Length() && StartsWith(spec, mAppPrefix)) {
-        return CacheKey(CacheKey::TypeAppJar,
-                        Substring(spec, mAppPrefix.Length()));
+      uint32_t len;
+      cursor.Copy(&len);
+      if (len != entry->mData.Length()) {
+        entry->mData.Truncate();
+        rv = NS_ERROR_FAILURE;
+      }
     }
 
-    
-    if (scheme.EqualsLiteral("file")) {
-        nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(resolved);
-        MOZ_ASSERT(fileURL);
+    entry->mResultCode = rv;
+    mMonitor.NotifyAll();
+  }
 
-        nsCOMPtr<nsIFile> file;
-        MOZ_TRY(fileURL->GetFile(getter_AddRefs(file)));
-
-        nsString path;
-        MOZ_TRY(file->GetPath(path));
-
-        return CacheKey(CacheKey::TypeFile, NS_ConvertUTF16toUTF8(path));
-    }
-
-    
-    return Err(NS_ERROR_INVALID_ARG);
+  
+  pendingURLs.clear();
 }
 
-size_t
-URLPreloader::ShallowSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf)
-{
-    return (mallocSizeOf(this) +
-            mAppPrefix.SizeOfExcludingThisEvenIfShared(mallocSizeOf) +
-            mGREPrefix.SizeOfExcludingThisEvenIfShared(mallocSizeOf) +
-            mCachedURLs.ShallowSizeOfExcludingThis(mallocSizeOf));
+void URLPreloader::BeginBackgroundRead() {
+  if (!mReaderThread && !mReaderInitialized && sInitialized) {
+    nsCOMPtr<nsIRunnable> runnable =
+        NewRunnableMethod("URLPreloader::BackgroundReadFiles", this,
+                          &URLPreloader::BackgroundReadFiles);
+
+    Unused << NS_NewNamedThread("BGReadURLs", getter_AddRefs(mReaderThread),
+                                runnable);
+  }
 }
 
-Result<FileLocation, nsresult>
-URLPreloader::CacheKey::ToFileLocation()
-{
-    if (mType == TypeFile) {
-        nsCOMPtr<nsIFile> file;
-        MOZ_TRY(NS_NewLocalFile(NS_ConvertUTF8toUTF16(mPath), false,
-                                getter_AddRefs(file)));
-        return FileLocation(file);
+Result<const nsCString, nsresult> URLPreloader::ReadInternal(
+    const CacheKey& key, ReadType readType) {
+  if (mStartupFinished) {
+    URLEntry entry(key);
+
+    return entry.Read();
+  }
+
+  auto entry = mCachedURLs.LookupOrAdd(key, key);
+
+  entry->UpdateUsedTime();
+
+  return entry->ReadOrWait(readType);
+}
+
+Result<const nsCString, nsresult> URLPreloader::ReadURIInternal(
+    nsIURI* uri, ReadType readType) {
+  CacheKey key;
+  MOZ_TRY_VAR(key, ResolveURI(uri));
+
+  return ReadInternal(key, readType);
+}
+
+ Result<const nsCString, nsresult> URLPreloader::Read(
+    const CacheKey& key, ReadType readType) {
+  
+  
+  
+  
+  if (!sInitialized) {
+    return URLEntry(key).Read();
+  }
+
+  return GetSingleton().ReadInternal(key, readType);
+}
+
+ Result<const nsCString, nsresult> URLPreloader::ReadURI(
+    nsIURI* uri, ReadType readType) {
+  if (!sInitialized) {
+    return Err(NS_ERROR_NOT_INITIALIZED);
+  }
+
+  return GetSingleton().ReadURIInternal(uri, readType);
+}
+
+ Result<const nsCString, nsresult> URLPreloader::ReadFile(
+    nsIFile* file, ReadType readType) {
+  return Read(CacheKey(file), readType);
+}
+
+ Result<const nsCString, nsresult> URLPreloader::Read(
+    FileLocation& location, ReadType readType) {
+  if (location.IsZip()) {
+    if (location.GetBaseZip()) {
+      nsCString path;
+      location.GetPath(path);
+      return ReadZip(location.GetBaseZip(), path);
     }
+    return URLEntry::ReadLocation(location);
+  }
 
-    RefPtr<nsZipArchive> zip = Archive();
-    return FileLocation(zip, mPath.get());
+  nsCOMPtr<nsIFile> file = location.GetBaseFile();
+  return ReadFile(file, readType);
 }
 
-Result<const nsCString, nsresult>
-URLPreloader::URLEntry::Read()
-{
-    FileLocation location;
-    MOZ_TRY_VAR(location, ToFileLocation());
+ Result<const nsCString, nsresult> URLPreloader::ReadZip(
+    nsZipArchive* zip, const nsACString& path, ReadType readType) {
+  
+  
+  
+  
+  RefPtr<nsZipArchive> reader = Omnijar::GetReader(Omnijar::GRE);
+  if (zip == reader) {
+    CacheKey key(CacheKey::TypeGREJar, path);
+    return Read(key, readType);
+  }
 
-    MOZ_TRY_VAR(mData, ReadLocation(location));
-    return mData;
+  reader = Omnijar::GetReader(Omnijar::APP);
+  if (zip == reader) {
+    CacheKey key(CacheKey::TypeAppJar, path);
+    return Read(key, readType);
+  }
+
+  
+  FileLocation location(zip, PromiseFlatCString(path).BeginReading());
+  return URLEntry::ReadLocation(location);
+}
+
+Result<URLPreloader::CacheKey, nsresult> URLPreloader::ResolveURI(nsIURI* uri) {
+  nsCString spec;
+  nsCString scheme;
+  MOZ_TRY(uri->GetSpec(spec));
+  MOZ_TRY(uri->GetScheme(scheme));
+
+  nsCOMPtr<nsIURI> resolved;
+
+  
+  
+  if (scheme.EqualsLiteral("resource")) {
+    MOZ_TRY(mResProto->ResolveURI(uri, spec));
+    MOZ_TRY(NS_NewURI(getter_AddRefs(resolved), spec));
+  } else if (scheme.EqualsLiteral("chrome")) {
+    MOZ_TRY(mChromeReg->ConvertChromeURL(uri, getter_AddRefs(resolved)));
+    MOZ_TRY(resolved->GetSpec(spec));
+  } else {
+    resolved = uri;
+  }
+  MOZ_TRY(resolved->GetScheme(scheme));
+
+  
+  if (mGREPrefix.Length() && StartsWith(spec, mGREPrefix)) {
+    return CacheKey(CacheKey::TypeGREJar, Substring(spec, mGREPrefix.Length()));
+  }
+
+  if (mAppPrefix.Length() && StartsWith(spec, mAppPrefix)) {
+    return CacheKey(CacheKey::TypeAppJar, Substring(spec, mAppPrefix.Length()));
+  }
+
+  
+  if (scheme.EqualsLiteral("file")) {
+    nsCOMPtr<nsIFileURL> fileURL = do_QueryInterface(resolved);
+    MOZ_ASSERT(fileURL);
+
+    nsCOMPtr<nsIFile> file;
+    MOZ_TRY(fileURL->GetFile(getter_AddRefs(file)));
+
+    nsString path;
+    MOZ_TRY(file->GetPath(path));
+
+    return CacheKey(CacheKey::TypeFile, NS_ConvertUTF16toUTF8(path));
+  }
+
+  
+  return Err(NS_ERROR_INVALID_ARG);
+}
+
+size_t URLPreloader::ShallowSizeOfIncludingThis(
+    mozilla::MallocSizeOf mallocSizeOf) {
+  return (mallocSizeOf(this) +
+          mAppPrefix.SizeOfExcludingThisEvenIfShared(mallocSizeOf) +
+          mGREPrefix.SizeOfExcludingThisEvenIfShared(mallocSizeOf) +
+          mCachedURLs.ShallowSizeOfExcludingThis(mallocSizeOf));
+}
+
+Result<FileLocation, nsresult> URLPreloader::CacheKey::ToFileLocation() {
+  if (mType == TypeFile) {
+    nsCOMPtr<nsIFile> file;
+    MOZ_TRY(NS_NewLocalFile(NS_ConvertUTF8toUTF16(mPath), false,
+                            getter_AddRefs(file)));
+    return FileLocation(file);
+  }
+
+  RefPtr<nsZipArchive> zip = Archive();
+  return FileLocation(zip, mPath.get());
+}
+
+Result<const nsCString, nsresult> URLPreloader::URLEntry::Read() {
+  FileLocation location;
+  MOZ_TRY_VAR(location, ToFileLocation());
+
+  MOZ_TRY_VAR(mData, ReadLocation(location));
+  return mData;
 }
 
  Result<const nsCString, nsresult>
-URLPreloader::URLEntry::ReadLocation(FileLocation& location)
-{
-    FileLocation::Data data;
-    MOZ_TRY(location.GetData(data));
+URLPreloader::URLEntry::ReadLocation(FileLocation& location) {
+  FileLocation::Data data;
+  MOZ_TRY(location.GetData(data));
 
-    uint32_t size;
-    MOZ_TRY(data.GetSize(&size));
+  uint32_t size;
+  MOZ_TRY(data.GetSize(&size));
 
-    nsCString result;
-    result.SetLength(size);
-    MOZ_TRY(data.Copy(result.BeginWriting(), size));
+  nsCString result;
+  result.SetLength(size);
+  MOZ_TRY(data.Copy(result.BeginWriting(), size));
 
-    return std::move(result);
+  return std::move(result);
 }
 
-Result<const nsCString, nsresult>
-URLPreloader::URLEntry::ReadOrWait(ReadType readType)
-{
-    auto now = TimeStamp::Now();
-    LOG(Info, "Reading %s\n", mPath.get());
-    auto cleanup = MakeScopeExit([&] () {
-        LOG(Info, "Read in %fms\n", (TimeStamp::Now() - now).ToMilliseconds());
-    });
+Result<const nsCString, nsresult> URLPreloader::URLEntry::ReadOrWait(
+    ReadType readType) {
+  auto now = TimeStamp::Now();
+  LOG(Info, "Reading %s\n", mPath.get());
+  auto cleanup = MakeScopeExit([&]() {
+    LOG(Info, "Read in %fms\n", (TimeStamp::Now() - now).ToMilliseconds());
+  });
 
-    if (mResultCode == NS_ERROR_NOT_INITIALIZED) {
-        MonitorAutoLock mal(GetSingleton().mMonitor);
+  if (mResultCode == NS_ERROR_NOT_INITIALIZED) {
+    MonitorAutoLock mal(GetSingleton().mMonitor);
 
-        while (mResultCode == NS_ERROR_NOT_INITIALIZED) {
-            mal.Wait();
-        }
+    while (mResultCode == NS_ERROR_NOT_INITIALIZED) {
+      mal.Wait();
     }
+  }
 
-    if (mResultCode == NS_OK && mData.IsVoid()) {
-        LOG(Info, "Reading synchronously...\n");
-        return Read();
-    }
+  if (mResultCode == NS_OK && mData.IsVoid()) {
+    LOG(Info, "Reading synchronously...\n");
+    return Read();
+  }
 
-    if (NS_FAILED(mResultCode)) {
-        return Err(mResultCode);
-    }
+  if (NS_FAILED(mResultCode)) {
+    return Err(mResultCode);
+  }
 
-    nsCString res = mData;
+  nsCString res = mData;
 
-    if (readType == Forget) {
-        mData.SetIsVoid(true);
-    }
-    return res;
+  if (readType == Forget) {
+    mData.SetIsVoid(true);
+  }
+  return res;
 }
 
-inline
-URLPreloader::CacheKey::CacheKey(InputBuffer& buffer)
-{
-    Code(buffer);
+inline URLPreloader::CacheKey::CacheKey(InputBuffer& buffer) { Code(buffer); }
+
+nsresult URLPreloader::Observe(nsISupports* subject, const char* topic,
+                               const char16_t* data) {
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (!strcmp(topic, DELAYED_STARTUP_TOPIC)) {
+    obs->RemoveObserver(this, DELAYED_STARTUP_TOPIC);
+    mStartupFinished = true;
+  }
+
+  return NS_OK;
 }
-
-nsresult
-URLPreloader::Observe(nsISupports* subject, const char* topic, const char16_t* data)
-{
-    nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
-    if (!strcmp(topic, DELAYED_STARTUP_TOPIC)) {
-        obs->RemoveObserver(this, DELAYED_STARTUP_TOPIC);
-        mStartupFinished = true;
-    }
-
-    return NS_OK;
-}
-
 
 NS_IMPL_ISUPPORTS(URLPreloader, nsIObserver, nsIMemoryReporter)
 
 #undef LOG
 
-} 
+}  

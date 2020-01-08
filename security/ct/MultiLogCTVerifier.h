@@ -16,13 +16,13 @@
 #include "mozpkix/Time.h"
 #include "SignedCertificateTimestamp.h"
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
 
-class MultiLogCTVerifier
-{
-public:
+class MultiLogCTVerifier {
+ public:
   
   void AddLog(CTLogVerifier&& log);
 
@@ -53,36 +53,33 @@ public:
   
   
   
-  pkix::Result Verify(pkix::Input cert,
-                      pkix::Input issuerSubjectPublicKeyInfo,
+  pkix::Result Verify(pkix::Input cert, pkix::Input issuerSubjectPublicKeyInfo,
                       pkix::Input sctListFromCert,
                       pkix::Input sctListFromOCSPResponse,
-                      pkix::Input sctListFromTLSExtension,
-                      pkix::Time time,
+                      pkix::Input sctListFromTLSExtension, pkix::Time time,
                       CTVerifyResult& result);
 
-private:
+ private:
   
   
   
   pkix::Result VerifySCTs(pkix::Input encodedSctList,
                           const LogEntry& expectedEntry,
-                          VerifiedSCT::Origin origin,
-                          pkix::Time time,
+                          VerifiedSCT::Origin origin, pkix::Time time,
                           CTVerifyResult& result);
 
   
   
   pkix::Result VerifySingleSCT(SignedCertificateTimestamp&& sct,
                                const ct::LogEntry& expectedEntry,
-                               VerifiedSCT::Origin origin,
-                               pkix::Time time,
+                               VerifiedSCT::Origin origin, pkix::Time time,
                                CTVerifyResult& result);
 
   
   std::vector<CTLogVerifier> mLogs;
 };
 
-} } 
+}  
+}  
 
 #endif  

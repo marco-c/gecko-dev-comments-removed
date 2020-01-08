@@ -9,6 +9,6 @@
 #include "nsError.h"
 
 
-#define NECKO_MSGS_URL  "chrome://necko/locale/necko.properties"
+#define NECKO_MSGS_URL "chrome://necko/locale/necko.properties"
 
-#endif 
+#endif  

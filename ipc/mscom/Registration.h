@@ -23,9 +23,8 @@ namespace mscom {
 
 
 
-class RegisteredProxy
-{
-public:
+class RegisteredProxy {
+ public:
   RegisteredProxy(uintptr_t aModule, IUnknown* aClassObject,
                   uint32_t aRegCookie, ITypeLib* aTypeLib);
   RegisteredProxy(IUnknown* aClassObject, uint32_t aRegCookie,
@@ -40,7 +39,7 @@ public:
 
   static bool Find(REFIID aIid, ITypeInfo** aOutTypeInfo);
 
-private:
+ private:
   RegisteredProxy() = delete;
   RegisteredProxy(RegisteredProxy&) = delete;
   RegisteredProxy& operator=(RegisteredProxy&) = delete;
@@ -48,37 +47,33 @@ private:
   static void AddToRegistry(RegisteredProxy* aProxy);
   static void DeleteFromRegistry(RegisteredProxy* aProxy);
 
-private:
+ private:
   
   
   
   uintptr_t mModule;
   IUnknown* mClassObject;
-  uint32_t  mRegCookie;
+  uint32_t mRegCookie;
   ITypeLib* mTypeLib;
 #if defined(MOZILLA_INTERNAL_API)
-  bool      mIsRegisteredInMTA;
-#endif 
+  bool mIsRegisteredInMTA;
+#endif  
 };
 
-enum class RegistrationFlags
-{
-  eUseBinDirectory,
-  eUseSystemDirectory
-};
+enum class RegistrationFlags { eUseBinDirectory, eUseSystemDirectory };
 
 
 
 UniquePtr<RegisteredProxy> RegisterProxy();
 
 
-UniquePtr<RegisteredProxy> RegisterProxy(const wchar_t* aLeafName,
-                                         RegistrationFlags aFlags =
-                                           RegistrationFlags::eUseBinDirectory);
+UniquePtr<RegisteredProxy> RegisterProxy(
+    const wchar_t* aLeafName,
+    RegistrationFlags aFlags = RegistrationFlags::eUseBinDirectory);
 
-UniquePtr<RegisteredProxy> RegisterTypelib(const wchar_t* aLeafName,
-                                           RegistrationFlags aFlags =
-                                             RegistrationFlags::eUseBinDirectory);
+UniquePtr<RegisteredProxy> RegisterTypelib(
+    const wchar_t* aLeafName,
+    RegistrationFlags aFlags = RegistrationFlags::eUseBinDirectory);
 
 #if defined(MOZILLA_INTERNAL_API)
 
@@ -89,34 +84,26 @@ UniquePtr<RegisteredProxy> RegisterTypelib(const wchar_t* aLeafName,
 
 
 
-struct ArrayData
-{
-  enum class Flag
-  {
+struct ArrayData {
+  enum class Flag {
     eNone = 0,
-    eAllocatedByServer = 1 
+    eAllocatedByServer = 1  
   };
 
   ArrayData(REFIID aIid, ULONG aMethodIndex, ULONG aArrayParamIndex,
             VARTYPE aArrayParamType, REFIID aArrayParamIid,
             ULONG aLengthParamIndex, Flag aFlag = Flag::eNone)
-    : mIid(aIid)
-    , mMethodIndex(aMethodIndex)
-    , mArrayParamIndex(aArrayParamIndex)
-    , mArrayParamType(aArrayParamType)
-    , mArrayParamIid(aArrayParamIid)
-    , mLengthParamIndex(aLengthParamIndex)
-    , mFlag(aFlag)
-  {
-  }
+      : mIid(aIid),
+        mMethodIndex(aMethodIndex),
+        mArrayParamIndex(aArrayParamIndex),
+        mArrayParamType(aArrayParamType),
+        mArrayParamIid(aArrayParamIid),
+        mLengthParamIndex(aLengthParamIndex),
+        mFlag(aFlag) {}
 
-  ArrayData(const ArrayData& aOther)
-  {
-    *this = aOther;
-  }
+  ArrayData(const ArrayData& aOther) { *this = aOther; }
 
-  ArrayData& operator=(const ArrayData& aOther)
-  {
+  ArrayData& operator=(const ArrayData& aOther) {
     mIid = aOther.mIid;
     mMethodIndex = aOther.mMethodIndex;
     mArrayParamIndex = aOther.mArrayParamIndex;
@@ -127,31 +114,27 @@ struct ArrayData
     return *this;
   }
 
-  IID     mIid;
-  ULONG   mMethodIndex;
-  ULONG   mArrayParamIndex;
+  IID mIid;
+  ULONG mMethodIndex;
+  ULONG mArrayParamIndex;
   VARTYPE mArrayParamType;
-  IID     mArrayParamIid;
-  ULONG   mLengthParamIndex;
-  Flag    mFlag;
+  IID mArrayParamIid;
+  ULONG mLengthParamIndex;
+  Flag mFlag;
 };
 
 void RegisterArrayData(const ArrayData* aArrayData, size_t aLength);
 
 template <size_t N>
-inline void
-RegisterArrayData(const ArrayData (&aData)[N])
-{
+inline void RegisterArrayData(const ArrayData (&aData)[N]) {
   RegisterArrayData(aData, N);
 }
 
-const ArrayData*
-FindArrayData(REFIID aIid, ULONG aMethodIndex);
+const ArrayData* FindArrayData(REFIID aIid, ULONG aMethodIndex);
 
-#endif 
+#endif  
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

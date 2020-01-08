@@ -23,23 +23,21 @@ namespace image {
 class RasterImage;
 class DrawableSurface;
 
-class AnimationState
-{
-public:
+class AnimationState {
+ public:
   explicit AnimationState(uint16_t aAnimationMode)
-    : mFrameCount(0)
-    , mCurrentAnimationFrameIndex(0)
-    , mLoopRemainingCount(-1)
-    , mLoopCount(-1)
-    , mFirstFrameTimeout(FrameTimeout::FromRawMilliseconds(0))
-    , mAnimationMode(aAnimationMode)
-    , mHasBeenDecoded(false)
-    , mHasRequestedDecode(false)
-    , mIsCurrentlyDecoded(false)
-    , mCompositedFrameInvalid(false)
-    , mCompositedFrameRequested(false)
-    , mDiscarded(false)
-  { }
+      : mFrameCount(0),
+        mCurrentAnimationFrameIndex(0),
+        mLoopRemainingCount(-1),
+        mLoopCount(-1),
+        mFirstFrameTimeout(FrameTimeout::FromRawMilliseconds(0)),
+        mAnimationMode(aAnimationMode),
+        mHasBeenDecoded(false),
+        mHasRequestedDecode(false),
+        mIsCurrentlyDecoded(false),
+        mCompositedFrameInvalid(false),
+        mCompositedFrameRequested(false),
+        mDiscarded(false) {}
 
   
 
@@ -47,17 +45,17 @@ public:
 
 
 
-  const gfx::IntRect UpdateState(bool aAnimationFinished,
-                            RasterImage *aImage,
-                            const gfx::IntSize& aSize,
-                            bool aAllowInvalidation = true);
-private:
-  const gfx::IntRect UpdateStateInternal(LookupResult& aResult,
-                                    bool aAnimationFinished,
-                                    const gfx::IntSize& aSize,
-                                    bool aAllowInvalidation = true);
+  const gfx::IntRect UpdateState(bool aAnimationFinished, RasterImage* aImage,
+                                 const gfx::IntSize& aSize,
+                                 bool aAllowInvalidation = true);
 
-public:
+ private:
+  const gfx::IntRect UpdateStateInternal(LookupResult& aResult,
+                                         bool aAnimationFinished,
+                                         const gfx::IntSize& aSize,
+                                         bool aAllowInvalidation = true);
+
+ public:
   
 
 
@@ -90,16 +88,12 @@ public:
   
 
 
-  bool GetCompositedFrameInvalid() {
-    return mCompositedFrameInvalid;
-  }
+  bool GetCompositedFrameInvalid() { return mCompositedFrameInvalid; }
 
   
 
 
-  bool GetIsCurrentlyDecoded() {
-    return mIsCurrentlyDecoded;
-  }
+  bool GetIsCurrentlyDecoded() { return mIsCurrentlyDecoded; }
 
   
 
@@ -175,10 +169,12 @@ public:
 
 
 
-  void SetFirstFrameTimeout(FrameTimeout aTimeout) { mFirstFrameTimeout = aTimeout; }
+  void SetFirstFrameTimeout(FrameTimeout aTimeout) {
+    mFirstFrameTimeout = aTimeout;
+  }
   FrameTimeout FirstFrameTimeout() const { return mFirstFrameTimeout; }
 
-private:
+ private:
   friend class FrameAnimator;
 
   
@@ -259,16 +255,11 @@ private:
 
 
 
-struct RefreshResult
-{
-  RefreshResult()
-    : mFrameAdvanced(false)
-    , mAnimationFinished(false)
-  { }
+struct RefreshResult {
+  RefreshResult() : mFrameAdvanced(false), mAnimationFinished(false) {}
 
   
-  void Accumulate(const RefreshResult& aOther)
-  {
+  void Accumulate(const RefreshResult& aOther) {
     mFrameAdvanced = mFrameAdvanced || aOther.mFrameAdvanced;
     mAnimationFinished = mAnimationFinished || aOther.mAnimationFinished;
     mDirtyRect = mDirtyRect.Union(aOther.mDirtyRect);
@@ -285,21 +276,14 @@ struct RefreshResult
   bool mAnimationFinished : 1;
 };
 
-class FrameAnimator
-{
-public:
+class FrameAnimator {
+ public:
   FrameAnimator(RasterImage* aImage, const gfx::IntSize& aSize)
-    : mImage(aImage)
-    , mSize(aSize)
-    , mLastCompositedFrameIndex(-1)
-  {
-     MOZ_COUNT_CTOR(FrameAnimator);
+      : mImage(aImage), mSize(aSize), mLastCompositedFrameIndex(-1) {
+    MOZ_COUNT_CTOR(FrameAnimator);
   }
 
-  ~FrameAnimator()
-  {
-    MOZ_COUNT_DTOR(FrameAnimator);
-  }
+  ~FrameAnimator() { MOZ_COUNT_DTOR(FrameAnimator); }
 
   
 
@@ -314,8 +298,7 @@ public:
 
 
 
-  RefreshResult RequestRefresh(AnimationState& aState,
-                               const TimeStamp& aTime,
+  RefreshResult RequestRefresh(AnimationState& aState, const TimeStamp& aTime,
                                bool aAnimationFinished);
 
   
@@ -323,18 +306,18 @@ public:
 
 
 
-  LookupResult GetCompositedFrame(AnimationState& aState,
-                                  bool aMarkUsed);
+  LookupResult GetCompositedFrame(AnimationState& aState, bool aMarkUsed);
 
   
 
 
 
 
-  void CollectSizeOfCompositingSurfaces(nsTArray<SurfaceMemoryCounter>& aCounters,
-                                        MallocSizeOf aMallocSizeOf) const;
+  void CollectSizeOfCompositingSurfaces(
+      nsTArray<SurfaceMemoryCounter>& aCounters,
+      MallocSizeOf aMallocSizeOf) const;
 
-private: 
+ private:  
   
 
 
@@ -351,10 +334,8 @@ private:
 
 
 
-  RefreshResult AdvanceFrame(AnimationState& aState,
-                             DrawableSurface& aFrames,
-                             RefPtr<imgFrame>& aCurrentFrame,
-                             TimeStamp aTime);
+  RefreshResult AdvanceFrame(AnimationState& aState, DrawableSurface& aFrames,
+                             RefPtr<imgFrame>& aCurrentFrame, TimeStamp aTime);
 
   
 
@@ -366,8 +347,7 @@ private:
                                       FrameTimeout aCurrentTimeout) const;
 
   bool DoBlend(const RawAccessFrameRef& aPrevFrame,
-               const RawAccessFrameRef& aNextFrame,
-               uint32_t aNextFrameIndex,
+               const RawAccessFrameRef& aNextFrame, uint32_t aNextFrameIndex,
                gfx::IntRect* aDirtyRect);
 
   
@@ -384,8 +364,9 @@ private:
                          const gfx::IntRect& aRectToClear);
 
   
-  static bool CopyFrameImage(const uint8_t* aDataSrc, const gfx::IntRect& aRectSrc,
-                             uint8_t* aDataDest, const gfx::IntRect& aRectDest);
+  static bool CopyFrameImage(const uint8_t* aDataSrc,
+                             const gfx::IntRect& aRectSrc, uint8_t* aDataDest,
+                             const gfx::IntRect& aRectDest);
 
   
 
@@ -410,7 +391,7 @@ private:
                               BlendMethod aBlendMethod,
                               const gfx::IntRect& aBlendRect);
 
-private: 
+ private:  
   
   RasterImage* mImage;
 
@@ -439,7 +420,7 @@ private:
   int32_t mLastCompositedFrameIndex;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -7,9 +7,9 @@
 #ifndef nsPrintSettingsImpl_h__
 #define nsPrintSettingsImpl_h__
 
-#include "nsIPrintSettings.h"  
+#include "nsIPrintSettings.h"
 #include "nsIWeakReferenceUtils.h"
-#include "nsMargin.h"  
+#include "nsMargin.h"
 #include "nsString.h"
 
 #define NUM_HEAD_FOOT 3
@@ -18,9 +18,8 @@
 
 
 
-class nsPrintSettings : public nsIPrintSettings
-{
-public:
+class nsPrintSettings : public nsIPrintSettings {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRINTSETTINGS
 
@@ -29,71 +28,67 @@ public:
 
   nsPrintSettings& operator=(const nsPrintSettings& rhs);
 
-protected:
+ protected:
   virtual ~nsPrintSettings();
 
   
-  virtual nsresult _Clone(nsIPrintSettings **_retval);
-  virtual nsresult _Assign(nsIPrintSettings *aPS);
-  
-  typedef enum {
-    eHeader,
-    eFooter
-  } nsHeaderFooterEnum;
+  virtual nsresult _Clone(nsIPrintSettings** _retval);
+  virtual nsresult _Assign(nsIPrintSettings* aPS);
 
+  typedef enum { eHeader, eFooter } nsHeaderFooterEnum;
 
   
-  nsWeakPtr     mSession; 
- 
-  
-  nsIntMargin   mMargin;
-  nsIntMargin   mEdge;
-  nsIntMargin   mUnwriteableMargin;
-
-  int32_t       mPrintOptions;
+  nsWeakPtr mSession;  
 
   
-  int16_t       mPrintRange;
-  int32_t       mStartPageNum; 
-  int32_t       mEndPageNum;
-  double        mScaling;
-  bool          mPrintBGColors;  
-  bool          mPrintBGImages;  
+  nsIntMargin mMargin;
+  nsIntMargin mEdge;
+  nsIntMargin mUnwriteableMargin;
 
-  int16_t       mPrintFrameTypeUsage;
-  int16_t       mPrintFrameType;
-  int16_t       mHowToEnableFrameUI;
-  bool          mIsCancelled;
-  bool          mPrintSilent;
-  bool          mPrintPreview;
-  bool          mShrinkToFit;
-  bool          mShowPrintProgress;
-  int32_t       mPrintPageDelay;
+  int32_t mPrintOptions;
 
-  nsString      mTitle;
-  nsString      mURL;
-  nsString      mPageNumberFormat;
-  nsString      mHeaderStrs[NUM_HEAD_FOOT];
-  nsString      mFooterStrs[NUM_HEAD_FOOT];
+  
+  int16_t mPrintRange;
+  int32_t mStartPageNum;  
+  int32_t mEndPageNum;
+  double mScaling;
+  bool mPrintBGColors;  
+  bool mPrintBGImages;  
 
-  nsString      mPaperName;
-  int16_t       mPaperData;
-  double        mPaperWidth;
-  double        mPaperHeight;
-  int16_t       mPaperSizeUnit;
+  int16_t mPrintFrameTypeUsage;
+  int16_t mPrintFrameType;
+  int16_t mHowToEnableFrameUI;
+  bool mIsCancelled;
+  bool mPrintSilent;
+  bool mPrintPreview;
+  bool mShrinkToFit;
+  bool mShowPrintProgress;
+  int32_t mPrintPageDelay;
 
-  bool          mPrintReversed;
-  bool          mPrintInColor; 
-  int32_t       mOrientation;  
-  int32_t       mResolution;
-  int32_t       mDuplex;
-  int32_t       mNumCopies;
-  nsString      mPrinter;
-  bool          mPrintToFile;
-  nsString      mToFileName;
-  int16_t       mOutputFormat;
-  bool          mIsInitedFromPrinter;
-  bool          mIsInitedFromPrefs;
+  nsString mTitle;
+  nsString mURL;
+  nsString mPageNumberFormat;
+  nsString mHeaderStrs[NUM_HEAD_FOOT];
+  nsString mFooterStrs[NUM_HEAD_FOOT];
+
+  nsString mPaperName;
+  int16_t mPaperData;
+  double mPaperWidth;
+  double mPaperHeight;
+  int16_t mPaperSizeUnit;
+
+  bool mPrintReversed;
+  bool mPrintInColor;    
+  int32_t mOrientation;  
+  int32_t mResolution;
+  int32_t mDuplex;
+  int32_t mNumCopies;
+  nsString mPrinter;
+  bool mPrintToFile;
+  nsString mToFileName;
+  int16_t mOutputFormat;
+  bool mIsInitedFromPrinter;
+  bool mIsInitedFromPrefs;
 };
 
 #endif 

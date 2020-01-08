@@ -13,4 +13,4 @@ union nsHtml5ContentCreatorFunction {
   mozilla::dom::SVGContentCreatorFunction svg;
 };
 
-#endif 
+#endif  

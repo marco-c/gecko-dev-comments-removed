@@ -12,20 +12,17 @@ NS_IMPL_NS_NEW_NAMESPACED_SVG_ELEMENT(Defs)
 namespace mozilla {
 namespace dom {
 
-JSObject*
-SVGDefsElement::WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
+JSObject* SVGDefsElement::WrapNode(JSContext* aCx,
+                                   JS::Handle<JSObject*> aGivenProto) {
   return SVGDefsElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 
 
 
-SVGDefsElement::SVGDefsElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-  : SVGGraphicsElement(std::move(aNodeInfo))
-{
-}
-
+SVGDefsElement::SVGDefsElement(
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    : SVGGraphicsElement(std::move(aNodeInfo)) {}
 
 
 
@@ -35,25 +32,20 @@ NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGDefsElement)
 
 
 
-
 NS_IMETHODIMP_(bool)
-SVGDefsElement::IsAttributeMapped(const nsAtom* name) const
-{
-  static const MappedAttributeEntry* const map[] = {
-    sFEFloodMap,
-    sFiltersMap,
-    sFontSpecificationMap,
-    sGradientStopMap,
-    sLightingEffectsMap,
-    sMarkersMap,
-    sTextContentElementsMap,
-    sViewportsMap
-  };
+SVGDefsElement::IsAttributeMapped(const nsAtom* name) const {
+  static const MappedAttributeEntry* const map[] = {sFEFloodMap,
+                                                    sFiltersMap,
+                                                    sFontSpecificationMap,
+                                                    sGradientStopMap,
+                                                    sLightingEffectsMap,
+                                                    sMarkersMap,
+                                                    sTextContentElementsMap,
+                                                    sViewportsMap};
 
   return FindAttributeDependence(name, map) ||
-    SVGGraphicsElement::IsAttributeMapped(name);
+         SVGGraphicsElement::IsAttributeMapped(name);
 }
 
-} 
-} 
-
+}  
+}  

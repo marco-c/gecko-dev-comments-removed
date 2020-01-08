@@ -42,40 +42,39 @@ struct Cell;
 
 
 
-template <typename T> struct MapTypeToFinalizeKind {};
-#define EXPAND_MAPTYPETOFINALIZEKIND(allocKind, traceKind, type, sizedType, bgFinal, nursery, compact) \
-    template <> struct MapTypeToFinalizeKind<type> { \
-        static const AllocKind kind = AllocKind::allocKind; \
-    };
+template <typename T>
+struct MapTypeToFinalizeKind {};
+#define EXPAND_MAPTYPETOFINALIZEKIND(allocKind, traceKind, type, sizedType, \
+                                     bgFinal, nursery, compact)             \
+  template <>                                                               \
+  struct MapTypeToFinalizeKind<type> {                                      \
+    static const AllocKind kind = AllocKind::allocKind;                     \
+  };
 FOR_EACH_NONOBJECT_ALLOCKIND(EXPAND_MAPTYPETOFINALIZEKIND)
 #undef EXPAND_MAPTYPETOFINALIZEKIND
 
 } 
 
-extern void
-TraceRuntime(JSTracer* trc);
+extern void TraceRuntime(JSTracer* trc);
 
-extern void
-ReleaseAllJITCode(FreeOp* op);
+extern void ReleaseAllJITCode(FreeOp* op);
 
-extern void
-PrepareForDebugGC(JSRuntime* rt);
+extern void PrepareForDebugGC(JSRuntime* rt);
 
 
 
-extern void
-NotifyGCNukeWrapper(JSObject* o);
+extern void NotifyGCNukeWrapper(JSObject* o);
 
-extern unsigned
-NotifyGCPreSwap(JSObject* a, JSObject* b);
+extern unsigned NotifyGCPreSwap(JSObject* a, JSObject* b);
 
-extern void
-NotifyGCPostSwap(JSObject* a, JSObject* b, unsigned preResult);
+extern void NotifyGCPostSwap(JSObject* a, JSObject* b, unsigned preResult);
 
-typedef void (*IterateChunkCallback)(JSRuntime* rt, void* data, gc::Chunk* chunk);
+typedef void (*IterateChunkCallback)(JSRuntime* rt, void* data,
+                                     gc::Chunk* chunk);
 typedef void (*IterateZoneCallback)(JSRuntime* rt, void* data, JS::Zone* zone);
-typedef void (*IterateArenaCallback)(JSRuntime* rt, void* data, gc::Arena* arena,
-                                     JS::TraceKind traceKind, size_t thingSize);
+typedef void (*IterateArenaCallback)(JSRuntime* rt, void* data,
+                                     gc::Arena* arena, JS::TraceKind traceKind,
+                                     size_t thingSize);
 typedef void (*IterateCellCallback)(JSRuntime* rt, void* data, void* thing,
                                     JS::TraceKind traceKind, size_t thingSize);
 
@@ -87,46 +86,44 @@ typedef void (*IterateCellCallback)(JSRuntime* rt, void* data, void* thing,
 
 
 
-extern void
-IterateHeapUnbarriered(JSContext* cx, void* data,
-                       IterateZoneCallback zoneCallback,
-                       JS::IterateRealmCallback realmCallback,
-                       IterateArenaCallback arenaCallback,
-                       IterateCellCallback cellCallback);
+extern void IterateHeapUnbarriered(JSContext* cx, void* data,
+                                   IterateZoneCallback zoneCallback,
+                                   JS::IterateRealmCallback realmCallback,
+                                   IterateArenaCallback arenaCallback,
+                                   IterateCellCallback cellCallback);
 
 
 
 
-extern void
-IterateHeapUnbarrieredForZone(JSContext* cx, JS::Zone* zone, void* data,
-                              IterateZoneCallback zoneCallback,
-                              JS::IterateRealmCallback realmCallback,
-                              IterateArenaCallback arenaCallback,
-                              IterateCellCallback cellCallback);
+extern void IterateHeapUnbarrieredForZone(
+    JSContext* cx, JS::Zone* zone, void* data, IterateZoneCallback zoneCallback,
+    JS::IterateRealmCallback realmCallback, IterateArenaCallback arenaCallback,
+    IterateCellCallback cellCallback);
 
 
 
 
-extern void
-IterateChunks(JSContext* cx, void* data, IterateChunkCallback chunkCallback);
+extern void IterateChunks(JSContext* cx, void* data,
+                          IterateChunkCallback chunkCallback);
 
-typedef void (*IterateScriptCallback)(JSRuntime* rt, void* data, JSScript* script,
+typedef void (*IterateScriptCallback)(JSRuntime* rt, void* data,
+                                      JSScript* script,
                                       const JS::AutoRequireNoGC& nogc);
-typedef void (*IterateLazyScriptCallback)(JSRuntime* rt, void* data, LazyScript* lazyScript,
+typedef void (*IterateLazyScriptCallback)(JSRuntime* rt, void* data,
+                                          LazyScript* lazyScript,
                                           const JS::AutoRequireNoGC& nogc);
 
 
 
 
 
-extern void
-IterateScripts(JSContext* cx, JS::Realm* realm, void* data, IterateScriptCallback scriptCallback);
-extern void
-IterateLazyScripts(JSContext* cx, JS::Realm* realm, void* data,
-                   IterateLazyScriptCallback lazyScriptCallback);
+extern void IterateScripts(JSContext* cx, JS::Realm* realm, void* data,
+                           IterateScriptCallback scriptCallback);
+extern void IterateLazyScripts(JSContext* cx, JS::Realm* realm, void* data,
+                               IterateLazyScriptCallback lazyScriptCallback);
 
-JS::Realm*
-NewRealm(JSContext* cx, JSPrincipals* principals, const JS::RealmOptions& options);
+JS::Realm* NewRealm(JSContext* cx, JSPrincipals* principals,
+                    const JS::RealmOptions& options);
 
 namespace gc {
 
@@ -136,33 +133,26 @@ void FinishGC(JSContext* cx);
 
 
 
-void
-MergeRealms(JS::Realm* source, JS::Realm* target);
+void MergeRealms(JS::Realm* source, JS::Realm* target);
 
-enum VerifierType {
-    PreBarrierVerifier
-};
+enum VerifierType { PreBarrierVerifier };
 
 #ifdef JS_GC_ZEAL
 
 extern const char ZealModeHelpText[];
 
 
-void
-VerifyBarriers(JSRuntime* rt, VerifierType type);
+void VerifyBarriers(JSRuntime* rt, VerifierType type);
 
-void
-MaybeVerifyBarriers(JSContext* cx, bool always = false);
+void MaybeVerifyBarriers(JSContext* cx, bool always = false);
 
 void DumpArenaInfo();
 
 #else
 
-static inline void
-VerifyBarriers(JSRuntime* rt, VerifierType type) {}
+static inline void VerifyBarriers(JSRuntime* rt, VerifierType type) {}
 
-static inline void
-MaybeVerifyBarriers(JSContext* cx, bool always = false) {}
+static inline void MaybeVerifyBarriers(JSContext* cx, bool always = false) {}
 
 #endif
 
@@ -173,48 +163,40 @@ MaybeVerifyBarriers(JSContext* cx, bool always = false) {}
 
 
 
-class MOZ_RAII JS_HAZ_GC_SUPPRESSED AutoSuppressGC
-{
-    int32_t& suppressGC_;
+class MOZ_RAII JS_HAZ_GC_SUPPRESSED AutoSuppressGC {
+  int32_t& suppressGC_;
 
-  public:
-    explicit AutoSuppressGC(JSContext* cx);
+ public:
+  explicit AutoSuppressGC(JSContext* cx);
 
-    ~AutoSuppressGC()
-    {
-        suppressGC_--;
-    }
+  ~AutoSuppressGC() { suppressGC_--; }
 };
 
-const char*
-StateName(State state);
+const char* StateName(State state);
 
 } 
 
 
-class MOZ_RAII AutoDisableProxyCheck
-{
-  public:
+class MOZ_RAII AutoDisableProxyCheck {
+ public:
 #ifdef DEBUG
-    AutoDisableProxyCheck();
-    ~AutoDisableProxyCheck();
+  AutoDisableProxyCheck();
+  ~AutoDisableProxyCheck();
 #else
-    AutoDisableProxyCheck() {}
+  AutoDisableProxyCheck() {}
 #endif
 };
 
-struct MOZ_RAII AutoDisableCompactingGC
-{
-    explicit AutoDisableCompactingGC(JSContext* cx);
-    ~AutoDisableCompactingGC();
+struct MOZ_RAII AutoDisableCompactingGC {
+  explicit AutoDisableCompactingGC(JSContext* cx);
+  ~AutoDisableCompactingGC();
 
-  private:
-    JSContext* cx;
+ private:
+  JSContext* cx;
 };
 
 
-bool
-UninlinedIsInsideNursery(const gc::Cell* cell);
+bool UninlinedIsInsideNursery(const gc::Cell* cell);
 
 } 
 

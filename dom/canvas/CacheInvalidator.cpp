@@ -8,48 +8,43 @@
 
 namespace mozilla {
 
-void
-CacheInvalidator::InvalidateCaches() const
-{
+void CacheInvalidator::InvalidateCaches() const {
+  
+  while (mCaches.size()) {
+    const auto& itr = mCaches.begin();
+    const auto pEntry = *itr;
+    pEntry->OnInvalidate();
+    MOZ_ASSERT(mCaches.find(pEntry) == mCaches.end());
+  }
+}
+
+
+
+AbstractCache::InvalidatorListT AbstractCache::ResetInvalidators(
+    InvalidatorListT&& newList) {
+  for (const auto& cur : mInvalidators) {
+    if (cur) {
+      (void)cur->mCaches.erase(this);
+    }
+  }
+
+  auto ret = std::move(mInvalidators);
+  mInvalidators = std::move(newList);
+
+  for (const auto& cur : mInvalidators) {
     
-    while (mCaches.size()) {
-        const auto& itr = mCaches.begin();
-        const auto pEntry = *itr;
-        pEntry->OnInvalidate();
-        MOZ_ASSERT(mCaches.find(pEntry) == mCaches.end());
+    
+    if (cur) {
+      (void)cur->mCaches.insert(this);
     }
+  }
+
+  return ret;
 }
 
-
-
-AbstractCache::InvalidatorListT
-AbstractCache::ResetInvalidators(InvalidatorListT&& newList)
-{
-    for (const auto& cur : mInvalidators) {
-        if (cur) {
-            (void)cur->mCaches.erase(this);
-        }
-    }
-
-    auto ret = std::move(mInvalidators);
-    mInvalidators = std::move(newList);
-
-    for (const auto& cur : mInvalidators) {
-        
-        
-        if (cur) {
-            (void)cur->mCaches.insert(this);
-        }
-    }
-
-    return ret;
+void AbstractCache::AddInvalidator(const CacheInvalidator& x) {
+  mInvalidators.push_back(&x);
+  x.mCaches.insert(this);
 }
 
-void
-AbstractCache::AddInvalidator(const CacheInvalidator& x)
-{
-    mInvalidators.push_back(&x);
-    x.mCaches.insert(this);
-}
-
-} 
+}  

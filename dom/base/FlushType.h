@@ -20,34 +20,33 @@ namespace mozilla {
 
 
 enum class FlushType : uint8_t {
-  None             = 0, 
-  Event            = 1, 
-  Content          = 2, 
+  None = 0,             
+  Event = 1,            
+  Content = 2,          
   ContentAndNotify = 3, 
 
 
-  Style            = 4, 
-  Frames           = Style,
-  EnsurePresShellInitAndFrames = 5, 
+  Style = 4,            
+  Frames = Style,
+  EnsurePresShellInitAndFrames =
+      5,                   
   InterruptibleLayout = 6, 
 
 
-  Layout           = 7, 
+  Layout = 7,              
 
-  Display          = 8, 
+  Display = 8,             
   Count
 };
 
 struct ChangesToFlush {
   ChangesToFlush(FlushType aFlushType, bool aFlushAnimations)
-    : mFlushType(aFlushType)
-    , mFlushAnimations(aFlushAnimations)
-  {}
+      : mFlushType(aFlushType), mFlushAnimations(aFlushAnimations) {}
 
   FlushType mFlushType;
   bool mFlushAnimations;
 };
 
-} 
+}  
 
-#endif 
+#endif  

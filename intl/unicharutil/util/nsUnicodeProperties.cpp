@@ -11,31 +11,31 @@
 #include "nsCharTraits.h"
 
 #define UNICODE_BMP_LIMIT 0x10000
-#define UNICODE_LIMIT     0x110000
+#define UNICODE_LIMIT 0x110000
 
-const nsCharProps2&
-GetCharProps2(uint32_t aCh)
-{
-    if (aCh < UNICODE_BMP_LIMIT) {
-        return sCharProp2Values[sCharProp2Pages[0][aCh >> kCharProp2CharBits]]
-                              [aCh & ((1 << kCharProp2CharBits) - 1)];
-    }
-    if (aCh < (kCharProp2MaxPlane + 1) * 0x10000) {
-        return sCharProp2Values[sCharProp2Pages[sCharProp2Planes[(aCh >> 16) - 1]]
-                                               [(aCh & 0xffff) >> kCharProp2CharBits]]
-                               [aCh & ((1 << kCharProp2CharBits) - 1)];
-    }
+const nsCharProps2& GetCharProps2(uint32_t aCh) {
+  if (aCh < UNICODE_BMP_LIMIT) {
+    return sCharProp2Values[sCharProp2Pages[0][aCh >> kCharProp2CharBits]]
+                           [aCh & ((1 << kCharProp2CharBits) - 1)];
+  }
+  if (aCh < (kCharProp2MaxPlane + 1) * 0x10000) {
+    return sCharProp2Values[sCharProp2Pages[sCharProp2Planes[(aCh >> 16) - 1]]
+                                           [(aCh & 0xffff) >>
+                                            kCharProp2CharBits]]
+                           [aCh & ((1 << kCharProp2CharBits) - 1)];
+  }
 
-    MOZ_ASSERT_UNREACHABLE("Getting CharProps for codepoint outside Unicode "
-                           "range");
+  MOZ_ASSERT_UNREACHABLE(
+      "Getting CharProps for codepoint outside Unicode "
+      "range");
 
-    
-    using namespace mozilla::unicode;
-    static const nsCharProps2 undefined = {
-        VERTICAL_ORIENTATION_R,
-        0 
-    };
-    return undefined;
+  
+  using namespace mozilla::unicode;
+  static const nsCharProps2 undefined = {
+      VERTICAL_ORIENTATION_R,
+      0  
+  };
+  return undefined;
 }
 
 namespace mozilla {
@@ -64,7 +64,7 @@ namespace unicode {
 
 
 const nsUGenCategory sDetailedToGeneralCategory[] = {
-  
+    
   
 
 
@@ -99,11 +99,11 @@ const nsUGenCategory sDetailedToGeneralCategory[] = {
         nsUGenCategory::kSeparator,
    nsUGenCategory::kSeparator,
        nsUGenCategory::kSeparator
-  
+    
 };
 
 const hb_unicode_general_category_t sICUtoHBcategory[U_CHAR_CATEGORY_COUNT] = {
-  
+    
   HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED, 
   HB_UNICODE_GENERAL_CATEGORY_UPPERCASE_LETTER, 
   HB_UNICODE_GENERAL_CATEGORY_LOWERCASE_LETTER, 
@@ -134,19 +134,18 @@ const hb_unicode_general_category_t sICUtoHBcategory[U_CHAR_CATEGORY_COUNT] = {
   HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL, 
   HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION, 
   HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION, 
-  
+    
 };
 
-#define DEFINE_BMP_1PLANE_MAPPING_GET_FUNC(prefix_) \
-  uint32_t Get##prefix_(uint32_t aCh) \
-  { \
-    if (aCh >= UNICODE_BMP_LIMIT) { \
-      return aCh; \
-    } \
+#define DEFINE_BMP_1PLANE_MAPPING_GET_FUNC(prefix_)             \
+  uint32_t Get##prefix_(uint32_t aCh) {                         \
+    if (aCh >= UNICODE_BMP_LIMIT) {                             \
+      return aCh;                                               \
+    }                                                           \
     auto page = s##prefix_##Pages[aCh >> k##prefix_##CharBits]; \
-    auto index = aCh & ((1 << k##prefix_##CharBits) - 1); \
-    uint32_t v = s##prefix_##Values[page][index]; \
-    return v ? v : aCh; \
+    auto index = aCh & ((1 << k##prefix_##CharBits) - 1);       \
+    uint32_t v = s##prefix_##Values[page][index];               \
+    return v ? v : aCh;                                         \
   }
 
 
@@ -154,141 +153,130 @@ const hb_unicode_general_category_t sICUtoHBcategory[U_CHAR_CATEGORY_COUNT] = {
 DEFINE_BMP_1PLANE_MAPPING_GET_FUNC(FullWidth)
 DEFINE_BMP_1PLANE_MAPPING_GET_FUNC(FullWidthInverse)
 
-bool
-IsClusterExtender(uint32_t aCh, uint8_t aCategory)
-{
-    return ((aCategory >= HB_UNICODE_GENERAL_CATEGORY_SPACING_MARK &&
-             aCategory <= HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK) ||
-            (aCh >= 0x200c && aCh <= 0x200d) || 
-            (aCh >= 0xff9e && aCh <= 0xff9f) || 
-            (aCh >= 0x1F3FB && aCh <= 0x1F3FF) || 
-            (aCh >= 0xe0020 && aCh <= 0xe007f)); 
+bool IsClusterExtender(uint32_t aCh, uint8_t aCategory) {
+  return (
+      (aCategory >= HB_UNICODE_GENERAL_CATEGORY_SPACING_MARK &&
+       aCategory <= HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK) ||
+      (aCh >= 0x200c && aCh <= 0x200d) ||    
+      (aCh >= 0xff9e && aCh <= 0xff9f) ||    
+      (aCh >= 0x1F3FB && aCh <= 0x1F3FF) ||  
+      (aCh >= 0xe0020 && aCh <= 0xe007f));   
 }
 
 enum HSType {
-    HST_NONE = U_HST_NOT_APPLICABLE,
-    HST_L    = U_HST_LEADING_JAMO,
-    HST_V    = U_HST_VOWEL_JAMO,
-    HST_T    = U_HST_TRAILING_JAMO,
-    HST_LV   = U_HST_LV_SYLLABLE,
-    HST_LVT  = U_HST_LVT_SYLLABLE
+  HST_NONE = U_HST_NOT_APPLICABLE,
+  HST_L = U_HST_LEADING_JAMO,
+  HST_V = U_HST_VOWEL_JAMO,
+  HST_T = U_HST_TRAILING_JAMO,
+  HST_LV = U_HST_LV_SYLLABLE,
+  HST_LVT = U_HST_LVT_SYLLABLE
 };
 
-static HSType
-GetHangulSyllableType(uint32_t aCh)
-{
-    return HSType(u_getIntPropertyValue(aCh, UCHAR_HANGUL_SYLLABLE_TYPE));
+static HSType GetHangulSyllableType(uint32_t aCh) {
+  return HSType(u_getIntPropertyValue(aCh, UCHAR_HANGUL_SYLLABLE_TYPE));
 }
 
-void
-ClusterIterator::Next()
-{
-    if (AtEnd()) {
-        NS_WARNING("ClusterIterator has already reached the end");
-        return;
-    }
+void ClusterIterator::Next() {
+  if (AtEnd()) {
+    NS_WARNING("ClusterIterator has already reached the end");
+    return;
+  }
 
-    uint32_t ch = *mPos++;
+  uint32_t ch = *mPos++;
 
-    if (NS_IS_HIGH_SURROGATE(ch) && mPos < mLimit &&
-        NS_IS_LOW_SURROGATE(*mPos)) {
-        ch = SURROGATE_TO_UCS4(ch, *mPos++);
-    } else if ((ch & ~0xff) == 0x1100 ||
-        (ch >= 0xa960 && ch <= 0xa97f) ||
-        (ch >= 0xac00 && ch <= 0xd7ff)) {
-        
-        HSType hangulState = GetHangulSyllableType(ch);
-        while (mPos < mLimit) {
-            ch = *mPos;
-            HSType hangulType = GetHangulSyllableType(ch);
-            switch (hangulType) {
-            case HST_L:
-            case HST_LV:
-            case HST_LVT:
-                if (hangulState == HST_L) {
-                    hangulState = hangulType;
-                    mPos++;
-                    continue;
-                }
-                break;
-            case HST_V:
-                if ((hangulState != HST_NONE) && (hangulState != HST_T) &&
-                    (hangulState != HST_LVT)) {
-                    hangulState = hangulType;
-                    mPos++;
-                    continue;
-                }
-                break;
-            case HST_T:
-                if (hangulState != HST_NONE && hangulState != HST_L) {
-                    hangulState = hangulType;
-                    mPos++;
-                    continue;
-                }
-                break;
-            default:
-                break;
-            }
-            break;
-        }
-    }
-
+  if (NS_IS_HIGH_SURROGATE(ch) && mPos < mLimit && NS_IS_LOW_SURROGATE(*mPos)) {
+    ch = SURROGATE_TO_UCS4(ch, *mPos++);
+  } else if ((ch & ~0xff) == 0x1100 || (ch >= 0xa960 && ch <= 0xa97f) ||
+             (ch >= 0xac00 && ch <= 0xd7ff)) {
+    
+    HSType hangulState = GetHangulSyllableType(ch);
     while (mPos < mLimit) {
-        ch = *mPos;
-
-        
-        
-        
-        if (NS_IS_HIGH_SURROGATE(ch) && mPos < mLimit - 1 &&
-            NS_IS_LOW_SURROGATE(*(mPos + 1))) {
-            ch = SURROGATE_TO_UCS4(ch, *(mPos + 1));
-        }
-
-        if (!IsClusterExtender(ch)) {
-            break;
-        }
-
-        mPos++;
-        if (!IS_IN_BMP(ch)) {
+      ch = *mPos;
+      HSType hangulType = GetHangulSyllableType(ch);
+      switch (hangulType) {
+        case HST_L:
+        case HST_LV:
+        case HST_LVT:
+          if (hangulState == HST_L) {
+            hangulState = hangulType;
             mPos++;
-        }
+            continue;
+          }
+          break;
+        case HST_V:
+          if ((hangulState != HST_NONE) && (hangulState != HST_T) &&
+              (hangulState != HST_LVT)) {
+            hangulState = hangulType;
+            mPos++;
+            continue;
+          }
+          break;
+        case HST_T:
+          if (hangulState != HST_NONE && hangulState != HST_L) {
+            hangulState = hangulType;
+            mPos++;
+            continue;
+          }
+          break;
+        default:
+          break;
+      }
+      break;
     }
+  }
 
-    NS_ASSERTION(mText < mPos && mPos <= mLimit,
-                 "ClusterIterator::Next has overshot the string!");
-}
-
-void
-ClusterReverseIterator::Next()
-{
-    if (AtEnd()) {
-        NS_WARNING("ClusterReverseIterator has already reached the end");
-        return;
-    }
-
-    uint32_t ch;
-    do {
-        ch = *--mPos;
-
-        if (NS_IS_LOW_SURROGATE(ch) && mPos > mLimit &&
-            NS_IS_HIGH_SURROGATE(*(mPos - 1))) {
-            ch = SURROGATE_TO_UCS4(*--mPos, ch);
-        }
-
-        if (!IsClusterExtender(ch)) {
-            break;
-        }
-    } while (mPos > mLimit);
+  while (mPos < mLimit) {
+    ch = *mPos;
 
     
+    
+    
+    if (NS_IS_HIGH_SURROGATE(ch) && mPos < mLimit - 1 &&
+        NS_IS_LOW_SURROGATE(*(mPos + 1))) {
+      ch = SURROGATE_TO_UCS4(ch, *(mPos + 1));
+    }
 
-    NS_ASSERTION(mPos >= mLimit,
-                 "ClusterReverseIterator::Next has overshot the string!");
+    if (!IsClusterExtender(ch)) {
+      break;
+    }
+
+    mPos++;
+    if (!IS_IN_BMP(ch)) {
+      mPos++;
+    }
+  }
+
+  NS_ASSERTION(mText < mPos && mPos <= mLimit,
+               "ClusterIterator::Next has overshot the string!");
 }
 
-uint32_t
-CountGraphemeClusters(const char16_t* aText, uint32_t aLength)
-{
+void ClusterReverseIterator::Next() {
+  if (AtEnd()) {
+    NS_WARNING("ClusterReverseIterator has already reached the end");
+    return;
+  }
+
+  uint32_t ch;
+  do {
+    ch = *--mPos;
+
+    if (NS_IS_LOW_SURROGATE(ch) && mPos > mLimit &&
+        NS_IS_HIGH_SURROGATE(*(mPos - 1))) {
+      ch = SURROGATE_TO_UCS4(*--mPos, ch);
+    }
+
+    if (!IsClusterExtender(ch)) {
+      break;
+    }
+  } while (mPos > mLimit);
+
+  
+
+  NS_ASSERTION(mPos >= mLimit,
+               "ClusterReverseIterator::Next has overshot the string!");
+}
+
+uint32_t CountGraphemeClusters(const char16_t* aText, uint32_t aLength) {
   ClusterIterator iter(aText, aLength);
   uint32_t result = 0;
   while (!iter.AtEnd()) {
@@ -298,6 +286,6 @@ CountGraphemeClusters(const char16_t* aText, uint32_t aLength)
   return result;
 }
 
-} 
+}  
 
-} 
+}  

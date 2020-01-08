@@ -11,11 +11,11 @@
 #include "mozilla/DataStorage.h"
 
 namespace IPC {
-  template<>
-  struct ParamTraits<mozilla::DataStorageType> :
-    public ContiguousEnumSerializer<mozilla::DataStorageType,
-                                    mozilla::DataStorage_Persistent,
-                                    mozilla::DataStorageType(mozilla::DataStorage_Private + 1)> {};
-} 
+template <>
+struct ParamTraits<mozilla::DataStorageType>
+    : public ContiguousEnumSerializer<
+          mozilla::DataStorageType, mozilla::DataStorage_Persistent,
+          mozilla::DataStorageType(mozilla::DataStorage_Private + 1)> {};
+}  
 
-#endif 
+#endif  

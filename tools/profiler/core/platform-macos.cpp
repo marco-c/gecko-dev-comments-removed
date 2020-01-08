@@ -32,24 +32,16 @@
 
 
 
- int
-Thread::GetCurrentId()
-{
-  return gettid();
-}
+ int Thread::GetCurrentId() { return gettid(); }
 
-void*
-GetStackTop(void* aGuess)
-{
+void* GetStackTop(void* aGuess) {
   pthread_t thread = pthread_self();
   return pthread_get_stackaddr_np(thread);
 }
 
-class PlatformData
-{
-public:
-  explicit PlatformData(int aThreadId) : mProfiledThread(mach_thread_self())
-  {
+class PlatformData {
+ public:
+  explicit PlatformData(int aThreadId) : mProfiledThread(mach_thread_self()) {
     MOZ_COUNT_CTOR(PlatformData);
   }
 
@@ -62,7 +54,7 @@ public:
 
   thread_act_t ProfiledThread() { return mProfiledThread; }
 
-private:
+ private:
   
   
   
@@ -72,23 +64,16 @@ private:
 
 
 
-Sampler::Sampler(PSLockRef aLock)
-{
-}
+Sampler::Sampler(PSLockRef aLock) {}
 
-void
-Sampler::Disable(PSLockRef aLock)
-{
-}
+void Sampler::Disable(PSLockRef aLock) {}
 
-template<typename Func>
-void
-Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                         const RegisteredThread& aRegisteredThread,
-                                         const Func& aProcessRegs)
-{
+template <typename Func>
+void Sampler::SuspendAndSampleAndResumeThread(
+    PSLockRef aLock, const RegisteredThread& aRegisteredThread,
+    const Func& aProcessRegs) {
   thread_act_t samplee_thread =
-    aRegisteredThread.GetPlatformData()->ProfiledThread();
+      aRegisteredThread.GetPlatformData()->ProfiledThread();
 
   
   
@@ -114,14 +99,13 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   thread_state_flavor_t flavor = x86_THREAD_STATE64;
   x86_thread_state64_t state;
   mach_msg_type_number_t count = x86_THREAD_STATE64_COUNT;
-# if __DARWIN_UNIX03
-#  define REGISTER_FIELD(name) __r ## name
-# else
-#  define REGISTER_FIELD(name) r ## name
-# endif  
+#if __DARWIN_UNIX03
+#define REGISTER_FIELD(name) __r##name
+#else
+#define REGISTER_FIELD(name) r##name
+#endif  
 
-  if (thread_get_state(samplee_thread,
-                       flavor,
+  if (thread_get_state(samplee_thread, flavor,
                        reinterpret_cast<natural_t*>(&state),
                        &count) == KERN_SUCCESS) {
     Registers regs;
@@ -151,37 +135,28 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
 
 
 
-static void*
-ThreadEntry(void* aArg)
-{
+static void* ThreadEntry(void* aArg) {
   auto thread = static_cast<SamplerThread*>(aArg);
   thread->Run();
   return nullptr;
 }
 
-SamplerThread::SamplerThread(PSLockRef aLock,
-                             uint32_t aActivityGeneration,
+SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
                              double aIntervalMilliseconds)
-  : Sampler(aLock)
-  , mActivityGeneration(aActivityGeneration)
-  , mIntervalMicroseconds(
-      std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
-  , mThread{nullptr}
-{
+    : Sampler(aLock),
+      mActivityGeneration(aActivityGeneration),
+      mIntervalMicroseconds(
+          std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))),
+      mThread{nullptr} {
   pthread_attr_t* attr_ptr = nullptr;
   if (pthread_create(&mThread, attr_ptr, ThreadEntry, this) != 0) {
     MOZ_CRASH("pthread_create failed");
   }
 }
 
-SamplerThread::~SamplerThread()
-{
-  pthread_join(mThread, nullptr);
-}
+SamplerThread::~SamplerThread() { pthread_join(mThread, nullptr); }
 
-void
-SamplerThread::SleepMicro(uint32_t aMicroseconds)
-{
+void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
   usleep(aMicroseconds);
   
   
@@ -189,37 +164,24 @@ SamplerThread::SleepMicro(uint32_t aMicroseconds)
   
 }
 
-void
-SamplerThread::Stop(PSLockRef aLock)
-{
-  Sampler::Disable(aLock);
-}
+void SamplerThread::Stop(PSLockRef aLock) { Sampler::Disable(aLock); }
 
 
 
 
-static void
-PlatformInit(PSLockRef aLock)
-{
-}
+static void PlatformInit(PSLockRef aLock) {}
 
 #if defined(HAVE_NATIVE_UNWIND)
-void
-Registers::SyncPopulate()
-{
-  asm (
+void Registers::SyncPopulate() {
+  asm(
       
       
       "leaq 0x10(%%rbp), %0\n\t"
       
       "movq (%%rbp), %1\n\t"
-      :
-      "=r"(mSP),
-      "=r"(mFP)
-  );
-  mPC = reinterpret_cast<Address>(__builtin_extract_return_addr(
-                                    __builtin_return_address(0)));
+      : "=r"(mSP), "=r"(mFP));
+  mPC = reinterpret_cast<Address>(
+      __builtin_extract_return_addr(__builtin_return_address(0)));
   mLR = 0;
 }
 #endif
-

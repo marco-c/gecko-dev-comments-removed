@@ -20,41 +20,29 @@
 
 
 
-template<typename CFT>
+template <typename CFT>
 class scoped_cftyperef {
  public:
   typedef CFT element_type;
 
-  explicit scoped_cftyperef(CFT object = NULL)
-      : object_(object) {
-  }
+  explicit scoped_cftyperef(CFT object = NULL) : object_(object) {}
 
   ~scoped_cftyperef() {
-    if (object_)
-      CFRelease(object_);
+    if (object_) CFRelease(object_);
   }
 
   void reset(CFT object = NULL) {
-    if (object_)
-      CFRelease(object_);
+    if (object_) CFRelease(object_);
     object_ = object;
   }
 
-  bool operator==(CFT that) const {
-    return object_ == that;
-  }
+  bool operator==(CFT that) const { return object_ == that; }
 
-  bool operator!=(CFT that) const {
-    return object_ != that;
-  }
+  bool operator!=(CFT that) const { return object_ != that; }
 
-  operator CFT() const {
-    return object_;
-  }
+  operator CFT() const { return object_; }
 
-  CFT get() const {
-    return object_;
-  }
+  CFT get() const { return object_; }
 
   void swap(scoped_cftyperef& that) {
     CFT temp = that.object_;

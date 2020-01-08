@@ -22,9 +22,8 @@ class DocAccessible;
 
 
 
-class TreeWalker final
-{
-public:
+class TreeWalker final {
+ public:
   enum {
     
     eWalkCache = 1,
@@ -46,7 +45,8 @@ public:
 
 
 
-  TreeWalker(Accessible* aContext, nsIContent* aAnchorNode, uint32_t aFlags = eWalkCache);
+  TreeWalker(Accessible* aContext, nsIContent* aAnchorNode,
+             uint32_t aFlags = eWalkCache);
 
   
 
@@ -64,8 +64,7 @@ public:
   
 
 
-  void Reset()
-  {
+  void Reset() {
     mPhase = eAtStart;
     mStateStack.Clear();
     mARIAOwnsIdx = 0;
@@ -89,10 +88,10 @@ public:
   Accessible* Context() const { return mContext; }
   DocAccessible* Document() const { return mDoc; }
 
-private:
+ private:
   TreeWalker();
   TreeWalker(const TreeWalker&);
-  TreeWalker& operator =(const TreeWalker&);
+  TreeWalker& operator=(const TreeWalker&);
 
   
 
@@ -108,16 +107,14 @@ private:
 
 
   dom::AllChildrenIterator* PushState(nsIContent* aContent,
-                                      bool aStartAtBeginning)
-  {
+                                      bool aStartAtBeginning) {
     return mStateStack.AppendElement(
-      dom::AllChildrenIterator(aContent, mChildFilter, aStartAtBeginning));
+        dom::AllChildrenIterator(aContent, mChildFilter, aStartAtBeginning));
   }
   dom::AllChildrenIterator* PrependState(nsIContent* aContent,
-                                         bool aStartAtBeginning)
-  {
-    return mStateStack.InsertElementAt(0,
-      dom::AllChildrenIterator(aContent, mChildFilter, aStartAtBeginning));
+                                         bool aStartAtBeginning) {
+    return mStateStack.InsertElementAt(
+        0, dom::AllChildrenIterator(aContent, mChildFilter, aStartAtBeginning));
   }
 
   
@@ -135,16 +132,11 @@ private:
   int32_t mChildFilter;
   uint32_t mFlags;
 
-  enum Phase {
-    eAtStart,
-    eAtDOM,
-    eAtARIAOwns,
-    eAtEnd
-  };
+  enum Phase { eAtStart, eAtDOM, eAtARIAOwns, eAtEnd };
   Phase mPhase;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

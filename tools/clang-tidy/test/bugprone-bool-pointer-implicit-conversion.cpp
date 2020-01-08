@@ -1,17 +1,16 @@
 
 
-bool test(bool* pointer_to_bool, int* pointer_to_int)
-{
-  if (pointer_to_bool) { 
+bool test(bool* pointer_to_bool, int* pointer_to_int) {
+  if (pointer_to_bool) {  
   }
 
-  if (pointer_to_int) { 
+  if (pointer_to_int) {  
   }
 
-  if (!pointer_to_bool) { 
+  if (!pointer_to_bool) {  
   }
 
-  if (pointer_to_bool != nullptr) { 
+  if (pointer_to_bool != nullptr) {  
   }
 
   

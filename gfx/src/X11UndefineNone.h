@@ -10,15 +10,15 @@
 
 
 #ifdef None
-#  undef None
-#  define X11None 0L
+#undef None
+#define X11None 0L
 
 
 
-#  ifdef RevertToNone
-#    undef RevertToNone
-#    define RevertToNone (int)X11None
-#  endif
+#ifdef RevertToNone
+#undef RevertToNone
+#define RevertToNone (int)X11None
+#endif
 #endif
 
 

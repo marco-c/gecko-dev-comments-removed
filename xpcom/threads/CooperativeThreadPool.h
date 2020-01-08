@@ -33,18 +33,18 @@ namespace mozilla {
 
 
 
-class CooperativeThreadPool
-{
-public:
+class CooperativeThreadPool {
+ public:
   
-  class Controller
-  {
-  public:
+  class Controller {
+   public:
     
     
     
     
-    virtual void OnStartThread(size_t aIndex, const nsACString& aName, void* aStackTop) = 0;
+    
+    virtual void OnStartThread(size_t aIndex, const nsACString& aName,
+                               void* aStackTop) = 0;
 
     
     virtual void OnStopThread(size_t aIndex) = 0;
@@ -63,8 +63,7 @@ public:
     virtual void OnSuspendThread(size_t aIndex) = 0;
   };
 
-  CooperativeThreadPool(size_t aNumThreads,
-                        Mutex& aMutex,
+  CooperativeThreadPool(size_t aNumThreads, Mutex& aMutex,
                         Controller& aController);
   ~CooperativeThreadPool();
 
@@ -75,7 +74,7 @@ public:
   
   
   class Resource {
-  public:
+   public:
     virtual bool IsAvailable(const MutexAutoLock& aProofOfLock) = 0;
   };
 
@@ -99,14 +98,12 @@ public:
 
   static const size_t kMaxThreads = 16;
 
-private:
-  class CooperativeThread
-  {
+ private:
+  class CooperativeThread {
     friend class CooperativeThreadPool;
 
-  public:
-    CooperativeThread(CooperativeThreadPool* aPool,
-                      size_t aIndex);
+   public:
+    CooperativeThread(CooperativeThreadPool* aPool, size_t aIndex);
 
     void BeginShutdown();
     void EndShutdown();
@@ -118,7 +115,7 @@ private:
 
     void Yield(const MutexAutoLock& aProofOfLock);
 
-  private:
+   private:
     static void ThreadFunc(void* aArg);
     void ThreadMethod();
 
@@ -148,6 +145,6 @@ private:
   static MOZ_THREAD_LOCAL(CooperativeThread*) sTlsCurrentThread;
 };
 
-} 
+}  
 
-#endif 
+#endif  

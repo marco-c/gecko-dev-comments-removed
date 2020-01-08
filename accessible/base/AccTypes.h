@@ -89,7 +89,7 @@ enum AccGenericType {
   eLastAccGenericType = eText
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

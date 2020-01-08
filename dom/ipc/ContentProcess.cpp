@@ -30,9 +30,7 @@ namespace mozilla {
 namespace dom {
 
 #if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
-static void
-SetTmpEnvironmentVariable(nsIFile* aValue)
-{
+static void SetTmpEnvironmentVariable(nsIFile* aValue) {
   
   
   
@@ -48,13 +46,11 @@ SetTmpEnvironmentVariable(nsIFile* aValue)
 }
 #endif
 
-
 #if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
-static void
-SetUpSandboxEnvironment()
-{
-  MOZ_ASSERT(nsDirectoryService::gService,
-    "SetUpSandboxEnvironment relies on nsDirectoryService being initialized");
+static void SetUpSandboxEnvironment() {
+  MOZ_ASSERT(
+      nsDirectoryService::gService,
+      "SetUpSandboxEnvironment relies on nsDirectoryService being initialized");
 
   
   
@@ -63,10 +59,9 @@ SetUpSandboxEnvironment()
   }
 
   nsCOMPtr<nsIFile> sandboxedContentTemp;
-  nsresult rv =
-    nsDirectoryService::gService->Get(NS_APP_CONTENT_PROCESS_TEMP_DIR,
-                                      NS_GET_IID(nsIFile),
-                                      getter_AddRefs(sandboxedContentTemp));
+  nsresult rv = nsDirectoryService::gService->Get(
+      NS_APP_CONTENT_PROCESS_TEMP_DIR, NS_GET_IID(nsIFile),
+      getter_AddRefs(sandboxedContentTemp));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
@@ -87,22 +82,12 @@ SetUpSandboxEnvironment()
 static int gPrefsFd = -1;
 static int gPrefMapFd = -1;
 
-void
-SetPrefsFd(int aFd)
-{
-  gPrefsFd = aFd;
-}
+void SetPrefsFd(int aFd) { gPrefsFd = aFd; }
 
-void
-SetPrefMapFd(int aFd)
-{
-  gPrefMapFd = aFd;
-}
+void SetPrefMapFd(int aFd) { gPrefMapFd = aFd; }
 #endif
 
-bool
-ContentProcess::Init(int aArgc, char* aArgv[])
-{
+bool ContentProcess::Init(int aArgc, char* aArgv[]) {
   Maybe<uint64_t> childID;
   Maybe<bool> isForBrowser;
   Maybe<base::SharedMemoryHandle> prefsHandle;
@@ -116,7 +101,7 @@ ContentProcess::Init(int aArgc, char* aArgv[])
 #endif
 
   
-  auto parseUIntPtrArg = [] (char*& aArg) {
+  auto parseUIntPtrArg = [](char*& aArg) {
     
     
     
@@ -124,7 +109,7 @@ ContentProcess::Init(int aArgc, char* aArgv[])
   };
 
 #ifdef XP_WIN
-  auto parseHandleArg = [&] (char*& aArg) {
+  auto parseHandleArg = [&](char*& aArg) {
     return HANDLE(parseUIntPtrArg(aArg));
   };
 #endif
@@ -252,14 +237,10 @@ ContentProcess::Init(int aArgc, char* aArgv[])
 #endif
 
   
-  if (childID.isNothing() ||
-      isForBrowser.isNothing() ||
-      prefsHandle.isNothing() ||
-      prefsLen.isNothing() ||
-      prefMapHandle.isNothing() ||
-      prefMapSize.isNothing() ||
-      schedulerPrefs.isNothing() ||
-      parentBuildID.isNothing()) {
+  if (childID.isNothing() || isForBrowser.isNothing() ||
+      prefsHandle.isNothing() || prefsLen.isNothing() ||
+      prefMapHandle.isNothing() || prefMapSize.isNothing() ||
+      schedulerPrefs.isNothing() || parentBuildID.isNothing()) {
     return false;
   }
 
@@ -287,12 +268,8 @@ ContentProcess::Init(int aArgc, char* aArgv[])
                                               *prefsHandle, *prefMapHandle);
   }
 
-  mContent.Init(IOThreadChild::message_loop(),
-                ParentPid(),
-                *parentBuildID,
-                IOThreadChild::channel(),
-                *childID,
-                *isForBrowser);
+  mContent.Init(IOThreadChild::message_loop(), ParentPid(), *parentBuildID,
+                IOThreadChild::channel(), *childID, *isForBrowser);
 
   mXREEmbed.Start();
 #if (defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
@@ -317,11 +294,7 @@ ContentProcess::Init(int aArgc, char* aArgv[])
 
 
 
-void
-ContentProcess::CleanUp()
-{
-  mXREEmbed.Stop();
-}
+void ContentProcess::CleanUp() { mXREEmbed.Stop(); }
 
-} 
-} 
+}  
+}  

@@ -26,8 +26,8 @@ mozilla::LogModule *GetHalLog();
 #define HAL_ERR(...) \
   MOZ_LOG(mozilla::hal::GetHalLog(), LogLevel::Error, (__VA_ARGS__))
 
-} 
+}  
 
-} 
+}  
 
-#endif 
+#endif  

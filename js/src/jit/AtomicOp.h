@@ -13,11 +13,11 @@ namespace jit {
 
 
 enum AtomicOp {
-    AtomicFetchAddOp,
-    AtomicFetchSubOp,
-    AtomicFetchAndOp,
-    AtomicFetchOrOp,
-    AtomicFetchXorOp
+  AtomicFetchAddOp,
+  AtomicFetchSubOp,
+  AtomicFetchAndOp,
+  AtomicFetchOrOp,
+  AtomicFetchXorOp
 };
 
 
@@ -27,78 +27,72 @@ enum AtomicOp {
 
 
 enum MemoryBarrierBits {
-    MembarLoadLoad = 1,
-    MembarLoadStore = 2,
-    MembarStoreStore = 4,
-    MembarStoreLoad = 8,
+  MembarLoadLoad = 1,
+  MembarLoadStore = 2,
+  MembarStoreStore = 4,
+  MembarStoreLoad = 8,
 
-    MembarSynchronizing = 16,
+  MembarSynchronizing = 16,
 
-    
-    MembarNobits = 0,
-    MembarAllbits = 31,
+  
+  MembarNobits = 0,
+  MembarAllbits = 31,
 };
 
-static inline constexpr MemoryBarrierBits
-operator|(MemoryBarrierBits a, MemoryBarrierBits b)
-{
-    return MemoryBarrierBits(int(a) | int(b));
+static inline constexpr MemoryBarrierBits operator|(MemoryBarrierBits a,
+                                                    MemoryBarrierBits b) {
+  return MemoryBarrierBits(int(a) | int(b));
 }
 
-static inline constexpr MemoryBarrierBits
-operator&(MemoryBarrierBits a, MemoryBarrierBits b)
-{
-    return MemoryBarrierBits(int(a) & int(b));
+static inline constexpr MemoryBarrierBits operator&(MemoryBarrierBits a,
+                                                    MemoryBarrierBits b) {
+  return MemoryBarrierBits(int(a) & int(b));
 }
 
-static inline constexpr MemoryBarrierBits
-operator~(MemoryBarrierBits a)
-{
-    return MemoryBarrierBits(~int(a));
+static inline constexpr MemoryBarrierBits operator~(MemoryBarrierBits a) {
+  return MemoryBarrierBits(~int(a));
 }
 
 
-static constexpr MemoryBarrierBits MembarFull = MembarLoadLoad|MembarLoadStore|MembarStoreLoad|MembarStoreStore;
+static constexpr MemoryBarrierBits MembarFull =
+    MembarLoadLoad | MembarLoadStore | MembarStoreLoad | MembarStoreStore;
 
 
 
 static constexpr MemoryBarrierBits MembarBeforeLoad = MembarNobits;
-static constexpr MemoryBarrierBits MembarAfterLoad = MembarLoadLoad|MembarLoadStore;
+static constexpr MemoryBarrierBits MembarAfterLoad =
+    MembarLoadLoad | MembarLoadStore;
 static constexpr MemoryBarrierBits MembarBeforeStore = MembarStoreStore;
 static constexpr MemoryBarrierBits MembarAfterStore = MembarStoreLoad;
 
-struct Synchronization
-{
-    const MemoryBarrierBits barrierBefore;
-    const MemoryBarrierBits barrierAfter;
+struct Synchronization {
+  const MemoryBarrierBits barrierBefore;
+  const MemoryBarrierBits barrierAfter;
 
-    constexpr Synchronization(MemoryBarrierBits before, MemoryBarrierBits after)
-        : barrierBefore(before),
-          barrierAfter(after)
-    {}
+  constexpr Synchronization(MemoryBarrierBits before, MemoryBarrierBits after)
+      : barrierBefore(before), barrierAfter(after) {}
 
-    static Synchronization None() {
-        return Synchronization(MemoryBarrierBits(MembarNobits), MemoryBarrierBits(MembarNobits));
-    }
+  static Synchronization None() {
+    return Synchronization(MemoryBarrierBits(MembarNobits),
+                           MemoryBarrierBits(MembarNobits));
+  }
 
-    static Synchronization Full() {
-        return Synchronization(MembarFull, MembarFull);
-    }
+  static Synchronization Full() {
+    return Synchronization(MembarFull, MembarFull);
+  }
 
-    static Synchronization Load() {
-        return Synchronization(MembarBeforeLoad, MembarAfterLoad);
-    }
+  static Synchronization Load() {
+    return Synchronization(MembarBeforeLoad, MembarAfterLoad);
+  }
 
-    static Synchronization Store() {
-        return Synchronization(MembarBeforeStore, MembarAfterStore);
-    }
+  static Synchronization Store() {
+    return Synchronization(MembarBeforeStore, MembarAfterStore);
+  }
 
-    bool isNone() const {
-        return (barrierBefore | barrierAfter) == MembarNobits;
-    }
+  bool isNone() const { return (barrierBefore | barrierAfter) == MembarNobits; }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -20,185 +20,172 @@ struct nsCounterUseNode;
 struct nsCounterChangeNode;
 
 struct nsCounterNode : public nsGenConNode {
-    enum Type {
-        RESET,     
-        INCREMENT, 
-        USE        
-    };
+  enum Type {
+    RESET,      
+    INCREMENT,  
+    USE         
+  };
 
-    Type mType;
+  Type mType;
 
-    
-    int32_t mValueAfter;
+  
+  int32_t mValueAfter;
 
-    
-    
-    
-    
+  
+  
+  
+  
 
-    
-    
-    
-    
-    nsCounterNode *mScopeStart;
+  
+  
+  
+  
+  nsCounterNode* mScopeStart;
 
-    
-    
-    
+  
+  
+  
 
-    
-    
-    
-    
-    
-    nsCounterNode *mScopePrev;
+  
+  
+  
+  
+  
+  nsCounterNode* mScopePrev;
 
-    inline nsCounterUseNode* UseNode();
-    inline nsCounterChangeNode* ChangeNode();
+  inline nsCounterUseNode* UseNode();
+  inline nsCounterChangeNode* ChangeNode();
 
-    
-    
-    
-    
-    
-    
-    nsCounterNode(int32_t aContentIndex, Type aType)
-        : nsGenConNode(aContentIndex)
-        , mType(aType)
-        , mValueAfter(0)
-        , mScopeStart(nullptr)
-        , mScopePrev(nullptr)
-    {
-    }
+  
+  
+  
+  
+  
+  
+  nsCounterNode(int32_t aContentIndex, Type aType)
+      : nsGenConNode(aContentIndex),
+        mType(aType),
+        mValueAfter(0),
+        mScopeStart(nullptr),
+        mScopePrev(nullptr) {}
 
-    
-    inline void Calc(nsCounterList* aList);
+  
+  inline void Calc(nsCounterList* aList);
 };
 
 struct nsCounterUseNode : public nsCounterNode {
-    mozilla::CounterStylePtr mCounterStyle;
-    nsString mSeparator;
+  mozilla::CounterStylePtr mCounterStyle;
+  nsString mSeparator;
 
-    
-    bool mAllCounters;
+  
+  bool mAllCounters;
 
-    
-    nsCounterUseNode(nsStyleContentData::CounterFunction* aCounterFunction,
-                     uint32_t aContentIndex, bool aAllCounters)
-        : nsCounterNode(aContentIndex, USE)
-        , mCounterStyle(aCounterFunction->mCounterStyle)
-        , mSeparator(aCounterFunction->mSeparator)
-        , mAllCounters(aAllCounters)
-    {
-        NS_ASSERTION(aContentIndex <= INT32_MAX, "out of range");
-    }
+  
+  nsCounterUseNode(nsStyleContentData::CounterFunction* aCounterFunction,
+                   uint32_t aContentIndex, bool aAllCounters)
+      : nsCounterNode(aContentIndex, USE),
+        mCounterStyle(aCounterFunction->mCounterStyle),
+        mSeparator(aCounterFunction->mSeparator),
+        mAllCounters(aAllCounters) {
+    NS_ASSERTION(aContentIndex <= INT32_MAX, "out of range");
+  }
 
-    virtual bool InitTextFrame(nsGenConList* aList,
-            nsIFrame* aPseudoFrame, nsIFrame* aTextFrame) override;
+  virtual bool InitTextFrame(nsGenConList* aList, nsIFrame* aPseudoFrame,
+                             nsIFrame* aTextFrame) override;
 
-    
-    
-    void Calc(nsCounterList* aList);
+  
+  
+  void Calc(nsCounterList* aList);
 
-    
-    void GetText(nsString& aResult);
+  
+  void GetText(nsString& aResult);
 };
 
 struct nsCounterChangeNode : public nsCounterNode {
-    int32_t mChangeValue; 
+  int32_t mChangeValue;  
 
-    
-    
-    
-    
-    
-    nsCounterChangeNode(nsIFrame* aPseudoFrame,
-                        nsCounterNode::Type aChangeType,
-                        int32_t aChangeValue,
-                        int32_t aPropIndex)
-        : nsCounterNode(
+  
+  
+  
+  
+  
+  nsCounterChangeNode(nsIFrame* aPseudoFrame, nsCounterNode::Type aChangeType,
+                      int32_t aChangeValue,
+                      int32_t aPropIndex)
+      : nsCounterNode(  
                         
                         
-                        aPropIndex + (aChangeType == RESET
-                                        ? (INT32_MIN)
-                                        : (INT32_MIN / 2)),
-                        aChangeType)
-        , mChangeValue(aChangeValue)
-    {
-        NS_ASSERTION(aPropIndex >= 0, "out of range");
-        NS_ASSERTION(aChangeType == INCREMENT || aChangeType == RESET,
-                     "bad type");
-        mPseudoFrame = aPseudoFrame;
-        CheckFrameAssertions();
-    }
+            aPropIndex + (aChangeType == RESET ? (INT32_MIN) : (INT32_MIN / 2)),
+            aChangeType),
+        mChangeValue(aChangeValue) {
+    NS_ASSERTION(aPropIndex >= 0, "out of range");
+    NS_ASSERTION(aChangeType == INCREMENT || aChangeType == RESET, "bad type");
+    mPseudoFrame = aPseudoFrame;
+    CheckFrameAssertions();
+  }
 
-    
-    
-    void Calc(nsCounterList* aList);
+  
+  
+  void Calc(nsCounterList* aList);
 };
 
-inline nsCounterUseNode* nsCounterNode::UseNode()
-{
-    NS_ASSERTION(mType == USE, "wrong type");
-    return static_cast<nsCounterUseNode*>(this);
+inline nsCounterUseNode* nsCounterNode::UseNode() {
+  NS_ASSERTION(mType == USE, "wrong type");
+  return static_cast<nsCounterUseNode*>(this);
 }
 
-inline nsCounterChangeNode* nsCounterNode::ChangeNode()
-{
-    NS_ASSERTION(mType == INCREMENT || mType == RESET, "wrong type");
-    return static_cast<nsCounterChangeNode*>(this);
+inline nsCounterChangeNode* nsCounterNode::ChangeNode() {
+  NS_ASSERTION(mType == INCREMENT || mType == RESET, "wrong type");
+  return static_cast<nsCounterChangeNode*>(this);
 }
 
-inline void nsCounterNode::Calc(nsCounterList* aList)
-{
-    if (mType == USE)
-        UseNode()->Calc(aList);
-    else
-        ChangeNode()->Calc(aList);
+inline void nsCounterNode::Calc(nsCounterList* aList) {
+  if (mType == USE)
+    UseNode()->Calc(aList);
+  else
+    ChangeNode()->Calc(aList);
 }
 
 class nsCounterList : public nsGenConList {
-public:
-    nsCounterList() : nsGenConList(),
-                      mDirty(false)
-    {}
+ public:
+  nsCounterList() : nsGenConList(), mDirty(false) {}
 
-    void Insert(nsCounterNode* aNode) {
-        nsGenConList::Insert(aNode);
-        
-        
-        if (MOZ_LIKELY(!IsDirty())) {
-            SetScope(aNode);
-        }
-    }
-
-    nsCounterNode* First() {
-        return static_cast<nsCounterNode*>(mList.getFirst());
-    }
-
-    static nsCounterNode* Next(nsCounterNode* aNode) {
-        return static_cast<nsCounterNode*>(nsGenConList::Next(aNode));
-    }
-    static nsCounterNode* Prev(nsCounterNode* aNode) {
-        return static_cast<nsCounterNode*>(nsGenConList::Prev(aNode));
-    }
-
-    static int32_t ValueBefore(nsCounterNode* aNode) {
-        return aNode->mScopePrev ? aNode->mScopePrev->mValueAfter : 0;
-    }
-
-    
-    void SetScope(nsCounterNode *aNode);
-
+  void Insert(nsCounterNode* aNode) {
+    nsGenConList::Insert(aNode);
     
     
-    void RecalcAll();
+    if (MOZ_LIKELY(!IsDirty())) {
+      SetScope(aNode);
+    }
+  }
 
-    bool IsDirty() { return mDirty; }
-    void SetDirty() { mDirty = true; }
+  nsCounterNode* First() {
+    return static_cast<nsCounterNode*>(mList.getFirst());
+  }
 
-private:
-    bool mDirty;
+  static nsCounterNode* Next(nsCounterNode* aNode) {
+    return static_cast<nsCounterNode*>(nsGenConList::Next(aNode));
+  }
+  static nsCounterNode* Prev(nsCounterNode* aNode) {
+    return static_cast<nsCounterNode*>(nsGenConList::Prev(aNode));
+  }
+
+  static int32_t ValueBefore(nsCounterNode* aNode) {
+    return aNode->mScopePrev ? aNode->mScopePrev->mValueAfter : 0;
+  }
+
+  
+  void SetScope(nsCounterNode* aNode);
+
+  
+  
+  void RecalcAll();
+
+  bool IsDirty() { return mDirty; }
+  void SetDirty() { mDirty = true; }
+
+ private:
+  bool mDirty;
 };
 
 
@@ -206,57 +193,56 @@ private:
 
 
 class nsCounterManager {
-public:
-    
-    bool AddCounterResetsAndIncrements(nsIFrame *aFrame);
+ public:
+  
+  bool AddCounterResetsAndIncrements(nsIFrame* aFrame);
 
-    
-    
-    nsCounterList* CounterListFor(const nsAString& aCounterName);
+  
+  
+  nsCounterList* CounterListFor(const nsAString& aCounterName);
 
-    
-    void RecalcAll();
+  
+  void RecalcAll();
 
-    
-    void SetAllDirty();
+  
+  void SetAllDirty();
 
-    
-    
-    bool DestroyNodesFor(nsIFrame *aFrame);
+  
+  
+  bool DestroyNodesFor(nsIFrame* aFrame);
 
-    
-    void Clear() { mNames.Clear(); }
+  
+  void Clear() { mNames.Clear(); }
 
 #ifdef DEBUG
-    void Dump();
+  void Dump();
 #endif
 
-    static int32_t IncrementCounter(int32_t aOldValue, int32_t aIncrement)
-    {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        int32_t newValue = int32_t(uint32_t(aOldValue) + uint32_t(aIncrement));
-        
-        
-        
-        
-        
-        
-        if ((aIncrement > 0) != (newValue > aOldValue)) {
-          newValue = aOldValue;
-        }
-        return newValue;
-    }
-
-private:
+  static int32_t IncrementCounter(int32_t aOldValue, int32_t aIncrement) {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    int32_t newValue = int32_t(uint32_t(aOldValue) + uint32_t(aIncrement));
+    
+    
+    
+    
+    
+    
+    if ((aIncrement > 0) != (newValue > aOldValue)) {
+      newValue = aOldValue;
+    }
+    return newValue;
+  }
+
+ private:
+  
   bool AddResetOrIncrement(nsIFrame* aFrame, int32_t aIndex,
                            const nsStyleCounterData& aCounterData,
                            nsCounterNode::Type aType);

@@ -18,9 +18,8 @@ namespace a11y {
 
 
 
-class Compatibility
-{
-public:
+class Compatibility {
+ public:
   
 
 
@@ -51,7 +50,7 @@ public:
 
 
 
-  static void GetHumanReadableConsumersStr(nsAString &aResult);
+  static void GetHumanReadableConsumersStr(nsAString& aResult);
 
   
 
@@ -77,14 +76,15 @@ public:
   static bool IsModuleVersionLessThan(HMODULE aModuleHandle,
                                       unsigned long long aVersion);
 
-private:
+ private:
   Compatibility();
   Compatibility(const Compatibility&);
-  Compatibility& operator = (const Compatibility&);
+  Compatibility& operator=(const Compatibility&);
 
   static void InitConsumers();
 
   
+
 
 
   enum {
@@ -101,20 +101,20 @@ private:
     UNKNOWN = 1 << 10,
     UIAUTOMATION = 1 << 11
   };
-  #define CONSUMERS_ENUM_LEN 12
+#define CONSUMERS_ENUM_LEN 12
 
-private:
+ private:
   static uint32_t sConsumers;
   static Maybe<DWORD> sUiaRemotePid;
 };
 
-} 
-} 
+}  
+}  
 
 
 
 
-#define MAKE_FILE_VERSION(a,b,c,d)\
+#define MAKE_FILE_VERSION(a, b, c, d) \
   ((a##ULL << 48) + (b##ULL << 32) + (c##ULL << 16) + d##ULL)
 
 #endif

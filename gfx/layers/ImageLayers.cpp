@@ -5,30 +5,28 @@
 
 
 #include "ImageLayers.h"
-#include "ImageContainer.h"             
-#include "gfxRect.h"                    
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
+#include "ImageContainer.h"   
+#include "gfxRect.h"          
+#include "nsDebug.h"          
+#include "nsISupportsImpl.h"  
 #include "gfx2DGlue.h"
 
 namespace mozilla {
 namespace layers {
 
 ImageLayer::ImageLayer(LayerManager* aManager, void* aImplData)
-: Layer(aManager, aImplData), mSamplingFilter(gfx::SamplingFilter::GOOD)
-, mScaleMode(ScaleMode::SCALE_NONE)
-{}
+    : Layer(aManager, aImplData),
+      mSamplingFilter(gfx::SamplingFilter::GOOD),
+      mScaleMode(ScaleMode::SCALE_NONE) {}
 
-ImageLayer::~ImageLayer()
-{}
+ImageLayer::~ImageLayer() {}
 
-void ImageLayer::SetContainer(ImageContainer* aContainer) 
-{
+void ImageLayer::SetContainer(ImageContainer* aContainer) {
   mContainer = aContainer;
 }
 
-void ImageLayer::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface)
-{
+void ImageLayer::ComputeEffectiveTransforms(
+    const gfx::Matrix4x4& aTransformToSurface) {
   gfx::Matrix4x4 local = GetLocalTransform();
 
   
@@ -40,9 +38,8 @@ void ImageLayer::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSu
   
   
   
-  mEffectiveTransform =
-      SnapTransform(local, sourceRect, nullptr) *
-      SnapTransformTranslation(aTransformToSurface, nullptr);
+  mEffectiveTransform = SnapTransform(local, sourceRect, nullptr) *
+                        SnapTransformTranslation(aTransformToSurface, nullptr);
 
   if (mScaleMode != ScaleMode::SCALE_NONE && !sourceRect.IsZeroArea()) {
     NS_ASSERTION(mScaleMode == ScaleMode::STRETCH,
@@ -60,5 +57,5 @@ void ImageLayer::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSu
   ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
 }
 
-} 
-} 
+}  
+}  

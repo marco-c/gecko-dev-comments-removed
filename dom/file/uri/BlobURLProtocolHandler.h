@@ -29,11 +29,10 @@ class BlobURLRegistrationData;
 class ContentParent;
 class MediaSource;
 
-class BlobURLProtocolHandler final : public nsIProtocolHandler
-                                   , public nsIProtocolHandlerWithDynamicFlags
-                                   , public nsSupportsWeakReference
-{
-public:
+class BlobURLProtocolHandler final : public nsIProtocolHandler,
+                                     public nsIProtocolHandlerWithDynamicFlags,
+                                     public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPROTOCOLHANDLER
   NS_DECL_NSIPROTOCOLHANDLERWITHDYNAMICFLAGS
@@ -43,14 +42,11 @@ public:
   
   
   static nsresult AddDataEntry(mozilla::dom::BlobImpl* aBlobImpl,
-                               nsIPrincipal* aPrincipal,
-                               nsACString& aUri);
+                               nsIPrincipal* aPrincipal, nsACString& aUri);
   static nsresult AddDataEntry(mozilla::dom::MediaSource* aMediaSource,
-                               nsIPrincipal* aPrincipal,
-                               nsACString& aUri);
+                               nsIPrincipal* aPrincipal, nsACString& aUri);
   
-  static nsresult AddDataEntry(const nsACString& aURI,
-                               nsIPrincipal* aPrincipal,
+  static nsresult AddDataEntry(const nsACString& aURI, nsIPrincipal* aPrincipal,
                                mozilla::dom::BlobImpl* aBlobImpl);
 
   
@@ -64,11 +60,12 @@ public:
   static bool HasDataEntry(const nsACString& aUri);
 
   static nsIPrincipal* GetDataEntryPrincipal(const nsACString& aUri);
-  static void Traverse(const nsACString& aUri, nsCycleCollectionTraversalCallback& aCallback);
+  static void Traverse(const nsACString& aUri,
+                       nsCycleCollectionTraversalCallback& aCallback);
 
-  static bool
-  GetAllBlobURLEntries(nsTArray<mozilla::dom::BlobURLRegistrationData>& aRegistrations,
-                       mozilla::dom::ContentParent* aCP);
+  static bool GetAllBlobURLEntries(
+      nsTArray<mozilla::dom::BlobURLRegistrationData>& aRegistrations,
+      mozilla::dom::ContentParent* aCP);
 
   
   
@@ -82,33 +79,30 @@ public:
   
   
   
-  static bool
-  GetBlobURLPrincipal(nsIURI* aURI,
-                      nsIPrincipal** aPrincipal);
+  static bool GetBlobURLPrincipal(nsIURI* aURI, nsIPrincipal** aPrincipal);
 
-private:
+ private:
   ~BlobURLProtocolHandler();
 
   static void Init();
 
   
-  static nsresult GenerateURIString(nsIPrincipal* aPrincipal,
-                                    nsACString &aUri);
+  static nsresult GenerateURIString(nsIPrincipal* aPrincipal, nsACString& aUri);
 };
 
 bool IsBlobURI(nsIURI* aUri);
 bool IsMediaSourceURI(nsIURI* aUri);
 
-} 
-} 
+}  
+}  
 
-extern nsresult
-NS_GetBlobForBlobURI(nsIURI* aURI, mozilla::dom::BlobImpl** aBlob);
+extern nsresult NS_GetBlobForBlobURI(nsIURI* aURI,
+                                     mozilla::dom::BlobImpl** aBlob);
 
-extern nsresult
-NS_GetBlobForBlobURISpec(const nsACString& aSpec, mozilla::dom::BlobImpl** aBlob);
+extern nsresult NS_GetBlobForBlobURISpec(const nsACString& aSpec,
+                                         mozilla::dom::BlobImpl** aBlob);
 
-extern nsresult
-NS_GetSourceForMediaSourceURI(nsIURI* aURI, mozilla::dom::MediaSource** aSource);
+extern nsresult NS_GetSourceForMediaSourceURI(
+    nsIURI* aURI, mozilla::dom::MediaSource** aSource);
 
 #endif 

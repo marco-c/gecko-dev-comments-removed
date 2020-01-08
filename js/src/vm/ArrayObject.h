@@ -13,71 +13,63 @@ namespace js {
 
 class AutoSetNewObjectMetadata;
 
-class ArrayObject : public NativeObject
-{
-  public:
-    
-    
-    
-    static const uint32_t EagerAllocationMaxLength = 2048 - ObjectElements::VALUES_PER_HEADER;
+class ArrayObject : public NativeObject {
+ public:
+  
+  
+  
+  static const uint32_t EagerAllocationMaxLength =
+      2048 - ObjectElements::VALUES_PER_HEADER;
 
-    static const Class class_;
+  static const Class class_;
 
-    bool lengthIsWritable() const {
-        return !getElementsHeader()->hasNonwritableArrayLength();
-    }
+  bool lengthIsWritable() const {
+    return !getElementsHeader()->hasNonwritableArrayLength();
+  }
 
-    uint32_t length() const {
-        return getElementsHeader()->length;
-    }
+  uint32_t length() const { return getElementsHeader()->length; }
 
-    void setNonWritableLength(JSContext* cx) {
-        shrinkCapacityToInitializedLength(cx);
-        getElementsHeader()->setNonwritableArrayLength();
-    }
+  void setNonWritableLength(JSContext* cx) {
+    shrinkCapacityToInitializedLength(cx);
+    getElementsHeader()->setNonwritableArrayLength();
+  }
 
-    inline void setLength(JSContext* cx, uint32_t length);
+  inline void setLength(JSContext* cx, uint32_t length);
 
-    
-    void setLengthInt32(uint32_t length) {
-        MOZ_ASSERT(lengthIsWritable());
-        MOZ_ASSERT_IF(length != getElementsHeader()->length, !denseElementsAreFrozen());
-        MOZ_ASSERT(length <= INT32_MAX);
-        getElementsHeader()->length = length;
-    }
+  
+  
+  void setLengthInt32(uint32_t length) {
+    MOZ_ASSERT(lengthIsWritable());
+    MOZ_ASSERT_IF(length != getElementsHeader()->length,
+                  !denseElementsAreFrozen());
+    MOZ_ASSERT(length <= INT32_MAX);
+    getElementsHeader()->length = length;
+  }
 
-    
-    static inline ArrayObject*
-    createArray(JSContext* cx,
-                gc::AllocKind kind,
-                gc::InitialHeap heap,
-                HandleShape shape,
-                HandleObjectGroup group,
-                uint32_t length,
-                AutoSetNewObjectMetadata& metadata);
+  
+  static inline ArrayObject* createArray(JSContext* cx, gc::AllocKind kind,
+                                         gc::InitialHeap heap,
+                                         HandleShape shape,
+                                         HandleObjectGroup group,
+                                         uint32_t length,
+                                         AutoSetNewObjectMetadata& metadata);
 
-    
-    
-    static inline ArrayObject*
-    createCopyOnWriteArray(JSContext* cx,
-                           gc::InitialHeap heap,
-                           HandleArrayObject sharedElementsOwner);
+  
+  
+  static inline ArrayObject* createCopyOnWriteArray(
+      JSContext* cx, gc::InitialHeap heap,
+      HandleArrayObject sharedElementsOwner);
 
-  private:
-    
-    static inline ArrayObject*
-    createArrayInternal(JSContext* cx,
-                        gc::AllocKind kind,
-                        gc::InitialHeap heap,
-                        HandleShape shape,
-                        HandleObjectGroup group,
-                        AutoSetNewObjectMetadata&);
+ private:
+  
+  static inline ArrayObject* createArrayInternal(
+      JSContext* cx, gc::AllocKind kind, gc::InitialHeap heap,
+      HandleShape shape, HandleObjectGroup group, AutoSetNewObjectMetadata&);
 
-    static inline ArrayObject*
-    finishCreateArray(ArrayObject* obj, HandleShape shape, AutoSetNewObjectMetadata& metadata);
+  static inline ArrayObject* finishCreateArray(
+      ArrayObject* obj, HandleShape shape, AutoSetNewObjectMetadata& metadata);
 };
 
-} 
+}  
 
-#endif 
-
+#endif  

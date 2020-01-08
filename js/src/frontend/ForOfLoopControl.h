@@ -22,73 +22,70 @@ namespace frontend {
 struct BytecodeEmitter;
 class EmitterScope;
 
-class ForOfLoopControl : public LoopControl
-{
-    
-    int32_t iterDepth_;
+class ForOfLoopControl : public LoopControl {
+  
+  int32_t iterDepth_;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    mozilla::Maybe<TryEmitter> tryCatch_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Maybe<TryEmitter> tryCatch_;
 
-    
-    
-    uint32_t numYieldsAtBeginCodeNeedingIterClose_;
+  
+  
+  uint32_t numYieldsAtBeginCodeNeedingIterClose_;
 
-    bool allowSelfHosted_;
+  bool allowSelfHosted_;
 
-    IteratorKind iterKind_;
+  IteratorKind iterKind_;
 
-  public:
-    ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth, bool allowSelfHosted,
-                     IteratorKind iterKind);
+ public:
+  ForOfLoopControl(BytecodeEmitter* bce, int32_t iterDepth,
+                   bool allowSelfHosted, IteratorKind iterKind);
 
-    MOZ_MUST_USE bool emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce);
-    MOZ_MUST_USE bool emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce);
+  MOZ_MUST_USE bool emitBeginCodeNeedingIteratorClose(BytecodeEmitter* bce);
+  MOZ_MUST_USE bool emitEndCodeNeedingIteratorClose(BytecodeEmitter* bce);
 
-    MOZ_MUST_USE bool emitIteratorCloseInInnermostScope(BytecodeEmitter* bce,
-                                                        CompletionKind completionKind = CompletionKind::Normal);
-    MOZ_MUST_USE bool emitIteratorCloseInScope(BytecodeEmitter* bce,
-                                               EmitterScope& currentScope,
-                                               CompletionKind completionKind = CompletionKind::Normal);
+  MOZ_MUST_USE bool emitIteratorCloseInInnermostScope(
+      BytecodeEmitter* bce,
+      CompletionKind completionKind = CompletionKind::Normal);
+  MOZ_MUST_USE bool emitIteratorCloseInScope(
+      BytecodeEmitter* bce, EmitterScope& currentScope,
+      CompletionKind completionKind = CompletionKind::Normal);
 
-    MOZ_MUST_USE bool emitPrepareForNonLocalJumpFromScope(BytecodeEmitter* bce,
-                                                          EmitterScope& currentScope,
-                                                          bool isTarget);
+  MOZ_MUST_USE bool emitPrepareForNonLocalJumpFromScope(
+      BytecodeEmitter* bce, EmitterScope& currentScope, bool isTarget);
 };
 template <>
-inline bool
-NestableControl::is<ForOfLoopControl>() const
-{
-    return kind_ == StatementKind::ForOfLoop;
+inline bool NestableControl::is<ForOfLoopControl>() const {
+  return kind_ == StatementKind::ForOfLoop;
 }
 
 } 

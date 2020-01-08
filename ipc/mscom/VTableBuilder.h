@@ -34,4 +34,4 @@ void DeleteNullVTable(IUnknown* aUnk);
 }
 #endif
 
-#endif 
+#endif  

@@ -17,9 +17,8 @@ class CompositorThreadHolder;
 
 class VideoBridgeParent final : public PVideoBridgeParent,
                                 public HostIPCAllocator,
-                                public ShmemAllocator
-{
-public:
+                                public ShmemAllocator {
+ public:
   VideoBridgeParent();
   ~VideoBridgeParent();
 
@@ -36,12 +35,11 @@ public:
   bool DeallocPTextureParent(PTextureParent* actor) override;
 
   
-  base::ProcessId GetChildProcessId() override
-  {
-    return OtherPid();
-  }
-  void NotifyNotUsed(PTextureParent* aTexture, uint64_t aTransactionId) override;
-  void SendAsyncMessage(const InfallibleTArray<AsyncParentMessageData>& aMessage) override;
+  base::ProcessId GetChildProcessId() override { return OtherPid(); }
+  void NotifyNotUsed(PTextureParent* aTexture,
+                     uint64_t aTransactionId) override;
+  void SendAsyncMessage(
+      const InfallibleTArray<AsyncParentMessageData>& aMessage) override;
 
   
   ShmemAllocator* AsShmemAllocator() override { return this; }
@@ -49,17 +47,15 @@ public:
   bool IPCOpen() const override { return !mClosed; }
 
   
-  bool AllocShmem(size_t aSize,
-                  ipc::SharedMemory::SharedMemoryType aType,
+  bool AllocShmem(size_t aSize, ipc::SharedMemory::SharedMemoryType aType,
                   ipc::Shmem* aShmem) override;
 
-  bool AllocUnsafeShmem(size_t aSize,
-                        ipc::SharedMemory::SharedMemoryType aType,
+  bool AllocUnsafeShmem(size_t aSize, ipc::SharedMemory::SharedMemoryType aType,
                         ipc::Shmem* aShmem) override;
 
   void DeallocShmem(ipc::Shmem& aShmem) override;
 
-private:
+ private:
   void DeallocPVideoBridgeParent() override;
 
   
@@ -72,7 +68,7 @@ private:
   bool mClosed;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

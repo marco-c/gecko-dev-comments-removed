@@ -16,9 +16,8 @@ class mozIDOMWindowProxy;
 @class NSColorPanelWrapper;
 @class NSColor;
 
-class nsColorPicker final : public nsIColorPicker
-{
-public:
+class nsColorPicker final : public nsIColorPicker {
+ public:
   NS_DECL_ISUPPORTS
 
   NS_IMETHOD Init(mozIDOMWindowProxy* aParent, const nsAString& aTitle,
@@ -34,7 +33,7 @@ public:
   
   void Done();
 
-private:
+ private:
   ~nsColorPicker();
 
   static NSColor* GetNSColorFromHexString(const nsAString& aColor);
@@ -42,9 +41,9 @@ private:
 
   static NSColorPanelWrapper* sColorPanelWrapper;
 
-  nsString             mTitle;
-  nsString             mColor;
+  nsString mTitle;
+  nsString mColor;
   nsCOMPtr<nsIColorPickerShownCallback> mCallback;
 };
 
-#endif 
+#endif  

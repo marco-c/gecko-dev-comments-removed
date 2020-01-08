@@ -18,32 +18,23 @@ namespace mozilla {
 
 class PresShell;
 
-class PointerCaptureInfo final
-{
-public:
+class PointerCaptureInfo final {
+ public:
   nsCOMPtr<nsIContent> mPendingContent;
   nsCOMPtr<nsIContent> mOverrideContent;
 
   explicit PointerCaptureInfo(nsIContent* aPendingContent)
-    : mPendingContent(aPendingContent)
-  {
+      : mPendingContent(aPendingContent) {
     MOZ_COUNT_CTOR(PointerCaptureInfo);
   }
 
-  ~PointerCaptureInfo()
-  {
-    MOZ_COUNT_DTOR(PointerCaptureInfo);
-  }
+  ~PointerCaptureInfo() { MOZ_COUNT_DTOR(PointerCaptureInfo); }
 
-  bool Empty()
-  {
-    return !(mPendingContent || mOverrideContent);
-  }
+  bool Empty() { return !(mPendingContent || mOverrideContent); }
 };
 
-class PointerEventHandler final
-{
-public:
+class PointerEventHandler final {
+ public:
   
   
   static void Initialize();
@@ -121,8 +112,7 @@ public:
 
 
   static void PreHandlePointerEventsPreventDefault(
-                WidgetPointerEvent* aPointerEvent,
-                WidgetGUIEvent* aMouseOrTouchEvent);
+      WidgetPointerEvent* aPointerEvent, WidgetGUIEvent* aMouseOrTouchEvent);
 
   
 
@@ -135,17 +125,13 @@ public:
 
 
   static void PostHandlePointerEventsPreventDefault(
-                WidgetPointerEvent* aPointerEvent,
-                WidgetGUIEvent* aMouseOrTouchEvent);
+      WidgetPointerEvent* aPointerEvent, WidgetGUIEvent* aMouseOrTouchEvent);
 
   MOZ_CAN_RUN_SCRIPT
-  static void DispatchPointerFromMouseOrTouch(PresShell* aShell,
-                                              nsIFrame* aFrame,
-                                              nsIContent* aContent,
-                                              WidgetGUIEvent* aEvent,
-                                              bool aDontRetargetEvents,
-                                              nsEventStatus* aStatus,
-                                              nsIContent** aTargetContent);
+  static void DispatchPointerFromMouseOrTouch(
+      PresShell* aShell, nsIFrame* aFrame, nsIContent* aContent,
+      WidgetGUIEvent* aEvent, bool aDontRetargetEvents, nsEventStatus* aStatus,
+      nsIContent** aTargetContent);
 
   static void InitPointerEventFromMouse(WidgetPointerEvent* aPointerEvent,
                                         WidgetMouseEvent* aMouseEvent,
@@ -156,25 +142,22 @@ public:
                                         mozilla::dom::Touch* aTouch,
                                         bool aIsPrimary);
 
-  static bool ShouldGeneratePointerEventFromMouse(WidgetGUIEvent* aEvent)
-  {
+  static bool ShouldGeneratePointerEventFromMouse(WidgetGUIEvent* aEvent) {
     return aEvent->mMessage == eMouseDown || aEvent->mMessage == eMouseUp ||
            aEvent->mMessage == eMouseMove;
   }
 
-  static bool ShouldGeneratePointerEventFromTouch(WidgetGUIEvent* aEvent)
-  {
+  static bool ShouldGeneratePointerEventFromTouch(WidgetGUIEvent* aEvent) {
     return aEvent->mMessage == eTouchStart || aEvent->mMessage == eTouchMove ||
            aEvent->mMessage == eTouchEnd || aEvent->mMessage == eTouchCancel ||
            aEvent->mMessage == eTouchPointerCancel;
   }
 
-  static MOZ_ALWAYS_INLINE int32_t GetSpoofedPointerIdForRFP()
-  {
+  static MOZ_ALWAYS_INLINE int32_t GetSpoofedPointerIdForRFP() {
     return sSpoofedPointerId.valueOr(0);
   }
 
-private:
+ private:
   
   
   
@@ -185,9 +168,8 @@ private:
   static bool GetPointerPrimaryState(uint32_t aPointerId);
 
   static void DispatchGotOrLostPointerCaptureEvent(
-                bool aIsGotCapture,
-                const WidgetPointerEvent* aPointerEvent,
-                nsIContent* aCaptureTarget);
+      bool aIsGotCapture, const WidgetPointerEvent* aPointerEvent,
+      nsIContent* aCaptureTarget);
 
   
   
@@ -201,6 +183,6 @@ private:
                                          uint32_t aPointerId);
 };
 
-} 
+}  
 
-#endif 
+#endif  

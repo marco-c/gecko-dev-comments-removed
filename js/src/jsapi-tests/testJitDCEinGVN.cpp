@@ -16,132 +16,132 @@
 using namespace js;
 using namespace js::jit;
 
-BEGIN_TEST(testJitDCEinGVN_ins)
-{
-    MinimalFunc func;
-    MBasicBlock* block = func.createEntryBlock();
+BEGIN_TEST(testJitDCEinGVN_ins) {
+  MinimalFunc func;
+  MBasicBlock* block = func.createEntryBlock();
 
-    
-    
-    
-    MParameter* p = func.createParameter();
-    block->add(p);
-    MMul* mul0 = MMul::New(func.alloc, p, p, MIRType::Double);
-    block->add(mul0);
-    if (!mul0->typePolicy()->adjustInputs(func.alloc, mul0)) {
-        return false;
-    }
-    MMul* mul1 = MMul::New(func.alloc, mul0, mul0, MIRType::Double);
-    block->add(mul1);
-    if (!mul1->typePolicy()->adjustInputs(func.alloc, mul1)) {
-        return false;
-    }
-    MReturn* ret = MReturn::New(func.alloc, p);
-    block->end(ret);
+  
+  
+  
+  MParameter* p = func.createParameter();
+  block->add(p);
+  MMul* mul0 = MMul::New(func.alloc, p, p, MIRType::Double);
+  block->add(mul0);
+  if (!mul0->typePolicy()->adjustInputs(func.alloc, mul0)) {
+    return false;
+  }
+  MMul* mul1 = MMul::New(func.alloc, mul0, mul0, MIRType::Double);
+  block->add(mul1);
+  if (!mul1->typePolicy()->adjustInputs(func.alloc, mul1)) {
+    return false;
+  }
+  MReturn* ret = MReturn::New(func.alloc, p);
+  block->end(ret);
 
-    if (!func.runGVN()) {
-        return false;
-    }
+  if (!func.runGVN()) {
+    return false;
+  }
 
-    
-    for (MInstructionIterator ins = block->begin(); ins != block->end(); ins++) {
-        CHECK(!ins->isMul() || (ins->getOperand(0) != p && ins->getOperand(1) != p));
-        CHECK(!ins->isMul() || (ins->getOperand(0) != mul0 && ins->getOperand(1) != mul0));
-    }
-    return true;
+  
+  for (MInstructionIterator ins = block->begin(); ins != block->end(); ins++) {
+    CHECK(!ins->isMul() ||
+          (ins->getOperand(0) != p && ins->getOperand(1) != p));
+    CHECK(!ins->isMul() ||
+          (ins->getOperand(0) != mul0 && ins->getOperand(1) != mul0));
+  }
+  return true;
 }
 END_TEST(testJitDCEinGVN_ins)
 
-BEGIN_TEST(testJitDCEinGVN_phi)
-{
-    MinimalFunc func;
-    MBasicBlock* block = func.createEntryBlock();
-    MBasicBlock* thenBlock1 = func.createBlock(block);
-    MBasicBlock* thenBlock2 = func.createBlock(block);
-    MBasicBlock* elifBlock = func.createBlock(block);
-    MBasicBlock* elseBlock = func.createBlock(block);
-    MBasicBlock* joinBlock = func.createBlock(block);
+BEGIN_TEST(testJitDCEinGVN_phi) {
+  MinimalFunc func;
+  MBasicBlock* block = func.createEntryBlock();
+  MBasicBlock* thenBlock1 = func.createBlock(block);
+  MBasicBlock* thenBlock2 = func.createBlock(block);
+  MBasicBlock* elifBlock = func.createBlock(block);
+  MBasicBlock* elseBlock = func.createBlock(block);
+  MBasicBlock* joinBlock = func.createBlock(block);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    MConstant* c1 = MConstant::New(func.alloc, DoubleValue(1.0));
-    block->add(c1);
-    MPhi* x = MPhi::New(func.alloc);
-    MPhi* y = MPhi::New(func.alloc);
+  MConstant* c1 = MConstant::New(func.alloc, DoubleValue(1.0));
+  block->add(c1);
+  MPhi* x = MPhi::New(func.alloc);
+  MPhi* y = MPhi::New(func.alloc);
 
-    
-    MParameter* p = func.createParameter();
-    block->add(p);
-    block->end(MTest::New(func.alloc, p, thenBlock1, elifBlock));
+  
+  MParameter* p = func.createParameter();
+  block->add(p);
+  block->end(MTest::New(func.alloc, p, thenBlock1, elifBlock));
 
-    
-    
-    MOZ_RELEASE_ASSERT(x->addInputSlow(c1));
-    MConstant* c3 = MConstant::New(func.alloc, DoubleValue(3.0));
-    thenBlock1->add(c3);
-    MOZ_RELEASE_ASSERT(y->addInputSlow(c3));
-    thenBlock1->end(MGoto::New(func.alloc, joinBlock));
-    MOZ_ALWAYS_TRUE(joinBlock->addPredecessor(func.alloc, thenBlock1));
+  
+  
+  MOZ_RELEASE_ASSERT(x->addInputSlow(c1));
+  MConstant* c3 = MConstant::New(func.alloc, DoubleValue(3.0));
+  thenBlock1->add(c3);
+  MOZ_RELEASE_ASSERT(y->addInputSlow(c3));
+  thenBlock1->end(MGoto::New(func.alloc, joinBlock));
+  MOZ_ALWAYS_TRUE(joinBlock->addPredecessor(func.alloc, thenBlock1));
 
-    
-    MParameter* q = func.createParameter();
-    elifBlock->add(q);
-    elifBlock->end(MTest::New(func.alloc, q, thenBlock2, elseBlock));
+  
+  MParameter* q = func.createParameter();
+  elifBlock->add(q);
+  elifBlock->end(MTest::New(func.alloc, q, thenBlock2, elseBlock));
 
-    
-    
-    MConstant* c2 = MConstant::New(func.alloc, DoubleValue(2.0));
-    thenBlock2->add(c2);
-    MOZ_RELEASE_ASSERT(x->addInputSlow(c2));
-    MConstant* c4 = MConstant::New(func.alloc, DoubleValue(4.0));
-    thenBlock2->add(c4);
-    MOZ_RELEASE_ASSERT(y->addInputSlow(c4));
-    thenBlock2->end(MGoto::New(func.alloc, joinBlock));
-    MOZ_ALWAYS_TRUE(joinBlock->addPredecessor(func.alloc, thenBlock2));
+  
+  
+  MConstant* c2 = MConstant::New(func.alloc, DoubleValue(2.0));
+  thenBlock2->add(c2);
+  MOZ_RELEASE_ASSERT(x->addInputSlow(c2));
+  MConstant* c4 = MConstant::New(func.alloc, DoubleValue(4.0));
+  thenBlock2->add(c4);
+  MOZ_RELEASE_ASSERT(y->addInputSlow(c4));
+  thenBlock2->end(MGoto::New(func.alloc, joinBlock));
+  MOZ_ALWAYS_TRUE(joinBlock->addPredecessor(func.alloc, thenBlock2));
 
-    
-    
-    
-    
-    MOZ_RELEASE_ASSERT(x->addInputSlow(c1));
-    MConstant* c5 = MConstant::New(func.alloc, DoubleValue(5.0));
-    elseBlock->add(c5);
-    MOZ_RELEASE_ASSERT(y->addInputSlow(c5));
-    elseBlock->end(MGoto::New(func.alloc, joinBlock));
-    MOZ_ALWAYS_TRUE(joinBlock->addPredecessor(func.alloc, elseBlock));
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(x->addInputSlow(c1));
+  MConstant* c5 = MConstant::New(func.alloc, DoubleValue(5.0));
+  elseBlock->add(c5);
+  MOZ_RELEASE_ASSERT(y->addInputSlow(c5));
+  elseBlock->end(MGoto::New(func.alloc, joinBlock));
+  MOZ_ALWAYS_TRUE(joinBlock->addPredecessor(func.alloc, elseBlock));
 
-    
-    
-    
-    
-    joinBlock->addPhi(x);
-    joinBlock->addPhi(y);
-    MMul* z = MMul::New(func.alloc, x, y, MIRType::Double);
-    joinBlock->add(z);
-    MReturn* ret = MReturn::New(func.alloc, y);
-    joinBlock->end(ret);
+  
+  
+  
+  
+  joinBlock->addPhi(x);
+  joinBlock->addPhi(y);
+  MMul* z = MMul::New(func.alloc, x, y, MIRType::Double);
+  joinBlock->add(z);
+  MReturn* ret = MReturn::New(func.alloc, y);
+  joinBlock->end(ret);
 
-    if (!func.runGVN()) {
-        return false;
-    }
+  if (!func.runGVN()) {
+    return false;
+  }
 
-    
-    for (MInstructionIterator ins = block->begin(); ins != block->end(); ins++) {
-        CHECK(!ins->isConstant() || (ins->toConstant()->numberToDouble() != 1.0));
-    }
-    return true;
+  
+  for (MInstructionIterator ins = block->begin(); ins != block->end(); ins++) {
+    CHECK(!ins->isConstant() || (ins->toConstant()->numberToDouble() != 1.0));
+  }
+  return true;
 }
 END_TEST(testJitDCEinGVN_phi)

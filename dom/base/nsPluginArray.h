@@ -20,9 +20,8 @@ class nsIInternalPluginTag;
 
 class nsPluginArray final : public nsIObserver,
                             public nsSupportsWeakReference,
-                            public nsWrapperCache
-{
-public:
+                            public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(nsPluginArray,
                                                          nsIObserver)
@@ -32,7 +31,8 @@ public:
 
   explicit nsPluginArray(nsPIDOMWindowInner* aWindow);
   nsPIDOMWindowInner* GetParentObject() const;
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   
   
@@ -52,32 +52,30 @@ public:
   nsPluginElement* NamedItem(const nsAString& aName,
                              mozilla::dom::CallerType aCallerType);
   void Refresh(bool aReloadDocuments);
-  nsPluginElement* IndexedGetter(uint32_t aIndex, bool &aFound,
+  nsPluginElement* IndexedGetter(uint32_t aIndex, bool& aFound,
                                  mozilla::dom::CallerType aCallerType);
-  nsPluginElement* NamedGetter(const nsAString& aName, bool &aFound,
+  nsPluginElement* NamedGetter(const nsAString& aName, bool& aFound,
                                mozilla::dom::CallerType aCallerType);
   uint32_t Length(mozilla::dom::CallerType aCallerType);
   void GetSupportedNames(nsTArray<nsString>& aRetval,
                          mozilla::dom::CallerType aCallerType);
 
-private:
+ private:
   virtual ~nsPluginArray();
 
   bool AllowPlugins() const;
   void EnsurePlugins();
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
-  nsTArray<RefPtr<nsPluginElement> > mPlugins;
+  nsTArray<RefPtr<nsPluginElement>> mPlugins;
   
 
 
-  nsTArray<RefPtr<nsPluginElement> > mCTPPlugins;
+  nsTArray<RefPtr<nsPluginElement>> mCTPPlugins;
 };
 
-class nsPluginElement final : public nsISupports,
-                              public nsWrapperCache
-{
-public:
+class nsPluginElement final : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsPluginElement)
 
@@ -85,12 +83,10 @@ public:
                   nsIInternalPluginTag* aPluginTag);
 
   nsPIDOMWindowInner* GetParentObject() const;
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-  nsIInternalPluginTag* PluginTag() const
-  {
-    return mPluginTag;
-  }
+  nsIInternalPluginTag* PluginTag() const { return mPluginTag; }
 
   
 
@@ -100,21 +96,21 @@ public:
   void GetName(nsString& retval) const;
   nsMimeType* Item(uint32_t index);
   nsMimeType* NamedItem(const nsAString& name);
-  nsMimeType* IndexedGetter(uint32_t index, bool &found);
-  nsMimeType* NamedGetter(const nsAString& name, bool &found);
+  nsMimeType* IndexedGetter(uint32_t index, bool& found);
+  nsMimeType* NamedGetter(const nsAString& name, bool& found);
   uint32_t Length();
   void GetSupportedNames(nsTArray<nsString>& retval);
 
-  nsTArray<RefPtr<nsMimeType> >& MimeTypes();
+  nsTArray<RefPtr<nsMimeType>>& MimeTypes();
 
-protected:
+ protected:
   ~nsPluginElement();
 
   void EnsurePluginMimeTypes();
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
   nsCOMPtr<nsIInternalPluginTag> mPluginTag;
-  nsTArray<RefPtr<nsMimeType> > mMimeTypes;
+  nsTArray<RefPtr<nsMimeType>> mMimeTypes;
 };
 
 #endif 

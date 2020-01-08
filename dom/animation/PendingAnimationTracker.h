@@ -17,18 +17,15 @@ class nsIFrame;
 
 namespace mozilla {
 
-class PendingAnimationTracker final
-{
-public:
+class PendingAnimationTracker final {
+ public:
   explicit PendingAnimationTracker(nsIDocument* aDocument)
-    : mDocument(aDocument)
-  { }
+      : mDocument(aDocument) {}
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(PendingAnimationTracker)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(PendingAnimationTracker)
 
-  void AddPlayPending(dom::Animation& aAnimation)
-  {
+  void AddPlayPending(dom::Animation& aAnimation) {
     
     
     
@@ -40,30 +37,25 @@ public:
     AddPending(aAnimation, mPlayPendingSet);
     mHasPlayPendingGeometricAnimations = CheckState::Indeterminate;
   }
-  void RemovePlayPending(dom::Animation& aAnimation)
-  {
+  void RemovePlayPending(dom::Animation& aAnimation) {
     RemovePending(aAnimation, mPlayPendingSet);
     mHasPlayPendingGeometricAnimations = CheckState::Indeterminate;
   }
-  bool IsWaitingToPlay(const dom::Animation& aAnimation) const
-  {
+  bool IsWaitingToPlay(const dom::Animation& aAnimation) const {
     return IsWaiting(aAnimation, mPlayPendingSet);
   }
 
-  void AddPausePending(dom::Animation& aAnimation)
-  {
+  void AddPausePending(dom::Animation& aAnimation) {
     
     
     
     
     AddPending(aAnimation, mPausePendingSet);
   }
-  void RemovePausePending(dom::Animation& aAnimation)
-  {
+  void RemovePausePending(dom::Animation& aAnimation) {
     RemovePending(aAnimation, mPausePendingSet);
   }
-  bool IsWaitingToPause(const dom::Animation& aAnimation) const
-  {
+  bool IsWaitingToPause(const dom::Animation& aAnimation) const {
     return IsWaiting(aAnimation, mPausePendingSet);
   }
 
@@ -80,8 +72,8 @@ public:
 
   void MarkAnimationsThatMightNeedSynchronization();
 
-private:
-  ~PendingAnimationTracker() { }
+ private:
+  ~PendingAnimationTracker() {}
 
   void EnsurePaintIsScheduled();
 
@@ -96,7 +88,7 @@ private:
   AnimationSet mPausePendingSet;
   nsCOMPtr<nsIDocument> mDocument;
 
-public:
+ public:
   enum class CheckState {
     Indeterminate = 0,
     Absent = 1 << 0,
@@ -104,12 +96,12 @@ public:
     TransitionsPresent = 1 << 2,
   };
 
-private:
+ private:
   CheckState mHasPlayPendingGeometricAnimations = CheckState::Indeterminate;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(PendingAnimationTracker::CheckState)
 
-} 
+}  
 
-#endif 
+#endif  

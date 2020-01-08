@@ -21,24 +21,25 @@ class FunctionBrokerThread;
 
 
 
-class FunctionBrokerParent : public PFunctionBrokerParent
-{
-public:
-  static FunctionBrokerParent* Create(Endpoint<PFunctionBrokerParent>&& aParentEnd);
+class FunctionBrokerParent : public PFunctionBrokerParent {
+ public:
+  static FunctionBrokerParent* Create(
+      Endpoint<PFunctionBrokerParent>&& aParentEnd);
   static void Destroy(FunctionBrokerParent* aInst);
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  mozilla::ipc::IPCResult
-  RecvBrokerFunction(const FunctionHookId &aFunctionId, const IpdlTuple &aInTuple,
-                   IpdlTuple *aOutTuple) override;
+  mozilla::ipc::IPCResult RecvBrokerFunction(const FunctionHookId& aFunctionId,
+                                             const IpdlTuple& aInTuple,
+                                             IpdlTuple* aOutTuple) override;
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
-  static mozilla::SandboxPermissions*
-  GetSandboxPermissions() { return &sSandboxPermissions; }
-#endif 
+  static mozilla::SandboxPermissions* GetSandboxPermissions() {
+    return &sSandboxPermissions;
+  }
+#endif  
 
-private:
+ private:
   explicit FunctionBrokerParent(FunctionBrokerThread* aThread,
                                 Endpoint<PFunctionBrokerParent>&& aParentEnd);
   ~FunctionBrokerParent();
@@ -46,21 +47,21 @@ private:
   void Bind(Endpoint<PFunctionBrokerParent>&& aEnd);
 
   static bool RunBrokeredFunction(base::ProcessId aClientId,
-                                  const FunctionHookId &aFunctionId,
-                                  const IPC::IpdlTuple &aInTuple,
-                                  IPC::IpdlTuple *aOutTuple);
+                                  const FunctionHookId& aFunctionId,
+                                  const IPC::IpdlTuple& aInTuple,
+                                  IPC::IpdlTuple* aOutTuple);
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
   static void RemovePermissionsForProcess(base::ProcessId aClientId);
   static mozilla::SandboxPermissions sSandboxPermissions;
-#endif 
+#endif  
 
   nsAutoPtr<FunctionBrokerThread> mThread;
   Monitor mMonitor;
   bool mShutdownDone;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

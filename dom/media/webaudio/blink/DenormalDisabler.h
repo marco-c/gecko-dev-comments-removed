@@ -34,7 +34,7 @@ namespace WebCore {
 
 
 
-#if defined (XP_WIN) && defined(_MSC_VER)
+#if defined(XP_WIN) && defined(_MSC_VER)
 
 #define HAVE_DENORMAL 1
 #endif
@@ -50,119 +50,95 @@ namespace WebCore {
 
 #ifdef HAVE_DENORMAL
 class DenormalDisabler {
-public:
-    DenormalDisabler()
-            : m_savedCSR(0)
-    {
-        disableDenormals();
-    }
+ public:
+  DenormalDisabler() : m_savedCSR(0) { disableDenormals(); }
 
-    ~DenormalDisabler()
-    {
-        restoreState();
-    }
+  ~DenormalDisabler() { restoreState(); }
 
-    
-    static inline float flushDenormalFloatToZero(float f)
-    {
-        return f;
-    }
-private:
-    unsigned m_savedCSR;
+  
+  static inline float flushDenormalFloatToZero(float f) { return f; }
+
+ private:
+  unsigned m_savedCSR;
 
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
-    inline void disableDenormals()
-    {
-        m_savedCSR = getCSR();
-        setCSR(m_savedCSR | 0x8040);
-    }
+  inline void disableDenormals() {
+    m_savedCSR = getCSR();
+    setCSR(m_savedCSR | 0x8040);
+  }
 
-    inline void restoreState()
-    {
-        setCSR(m_savedCSR);
-    }
+  inline void restoreState() { setCSR(m_savedCSR); }
 
-    inline int getCSR()
-    {
-        int result;
-        asm volatile("stmxcsr %0" : "=m" (result));
-        return result;
-    }
+  inline int getCSR() {
+    int result;
+    asm volatile("stmxcsr %0" : "=m"(result));
+    return result;
+  }
 
-    inline void setCSR(int a)
-    {
-        int temp = a;
-        asm volatile("ldmxcsr %0" : : "m" (temp));
-    }
+  inline void setCSR(int a) {
+    int temp = a;
+    asm volatile("ldmxcsr %0" : : "m"(temp));
+  }
 
-#elif defined (XP_WIN) && defined(_MSC_VER)
-    inline void disableDenormals()
-    {
-        
-        
-        
-        _controlfp_s(&m_savedCSR, 0, 0);
-        unsigned unused;
-        _controlfp_s(&unused, _DN_FLUSH, _MCW_DN);
-    }
+#elif defined(XP_WIN) && defined(_MSC_VER)
+  inline void disableDenormals() {
+    
+    
+    
+    _controlfp_s(&m_savedCSR, 0, 0);
+    unsigned unused;
+    _controlfp_s(&unused, _DN_FLUSH, _MCW_DN);
+  }
 
-    inline void restoreState()
-    {
-        unsigned unused;
-        _controlfp_s(&unused, m_savedCSR, _MCW_DN);
-    }
+  inline void restoreState() {
+    unsigned unused;
+    _controlfp_s(&unused, m_savedCSR, _MCW_DN);
+  }
 #elif defined(__arm__) || defined(__aarch64__)
-    inline void disableDenormals()
-    {
-        m_savedCSR = getStatusWord();
-        
-        setStatusWord(m_savedCSR | (1 << 24));
-    }
+  inline void disableDenormals() {
+    m_savedCSR = getStatusWord();
+    
+    
+    setStatusWord(m_savedCSR | (1 << 24));
+  }
 
-    inline void restoreState()
-    {
-        setStatusWord(m_savedCSR);
-    }
+  inline void restoreState() { setStatusWord(m_savedCSR); }
 
-    inline int getStatusWord()
-    {
-        int result;
+  inline int getStatusWord() {
+    int result;
 #if defined(__aarch64__)
-        asm volatile("mrs %x[result], FPCR" : [result] "=r" (result));
+    asm volatile("mrs %x[result], FPCR" : [result] "=r"(result));
 #else
-        asm volatile("vmrs %[result], FPSCR" : [result] "=r" (result));
+    asm volatile("vmrs %[result], FPSCR" : [result] "=r"(result));
 #endif
-        return result;
-    }
+    return result;
+  }
 
-    inline void setStatusWord(int a)
-    {
+  inline void setStatusWord(int a) {
 #if defined(__aarch64__)
-        asm volatile("msr FPCR, %x[src]" : : [src] "r" (a));
+    asm volatile("msr FPCR, %x[src]" : : [src] "r"(a));
 #else
-        asm volatile("vmsr FPSCR, %[src]" : : [src] "r" (a));
+    asm volatile("vmsr FPSCR, %[src]" : : [src] "r"(a));
 #endif
-    }
+  }
 
 #endif
-
 };
 
 #else
 
 class DenormalDisabler {
-public:
-    DenormalDisabler() { }
+ public:
+  DenormalDisabler() {}
 
-    
-    
-    static inline float flushDenormalFloatToZero(float f)
-    {
-        return (fabs(f) < FLT_MIN) ? 0.0f : f;
-    }
+  
+  
+  static inline float flushDenormalFloatToZero(float f) {
+    return (fabs(f) < FLT_MIN) ? 0.0f : f;
+  }
 };
 
 #endif
 
-} 
-#endif 
+}  
+#endif  

@@ -5,26 +5,23 @@
 
 #include "JoinNodeTransaction.h"
 
-#include "mozilla/EditorBase.h"         
+#include "mozilla/EditorBase.h"  
 #include "mozilla/dom/Text.h"
 #include "nsAString.h"
-#include "nsDebug.h"                    
-#include "nsError.h"                    
-#include "nsIContent.h"                 
-#include "nsISupportsImpl.h"            
+#include "nsDebug.h"          
+#include "nsError.h"          
+#include "nsIContent.h"       
+#include "nsISupportsImpl.h"  
 
 namespace mozilla {
 
 using namespace dom;
 
 
-already_AddRefed<JoinNodeTransaction>
-JoinNodeTransaction::MaybeCreate(EditorBase& aEditorBase,
-                                 nsINode& aLeftNode,
-                                 nsINode& aRightNode)
-{
+already_AddRefed<JoinNodeTransaction> JoinNodeTransaction::MaybeCreate(
+    EditorBase& aEditorBase, nsINode& aLeftNode, nsINode& aRightNode) {
   RefPtr<JoinNodeTransaction> transaction =
-    new JoinNodeTransaction(aEditorBase, aLeftNode, aRightNode);
+      new JoinNodeTransaction(aEditorBase, aLeftNode, aRightNode);
   if (NS_WARN_IF(!transaction->CanDoIt())) {
     return nullptr;
   }
@@ -34,29 +31,20 @@ JoinNodeTransaction::MaybeCreate(EditorBase& aEditorBase,
 JoinNodeTransaction::JoinNodeTransaction(EditorBase& aEditorBase,
                                          nsINode& aLeftNode,
                                          nsINode& aRightNode)
-  : mEditorBase(&aEditorBase)
-  , mLeftNode(&aLeftNode)
-  , mRightNode(&aRightNode)
-  , mOffset(0)
-{
-}
+    : mEditorBase(&aEditorBase),
+      mLeftNode(&aLeftNode),
+      mRightNode(&aRightNode),
+      mOffset(0) {}
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(JoinNodeTransaction, EditTransactionBase,
-                                   mEditorBase,
-                                   mLeftNode,
-                                   mRightNode,
-                                   mParent)
+                                   mEditorBase, mLeftNode, mRightNode, mParent)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(JoinNodeTransaction)
 NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 
-bool
-JoinNodeTransaction::CanDoIt() const
-{
-  if (NS_WARN_IF(!mLeftNode) ||
-      NS_WARN_IF(!mRightNode) ||
-      NS_WARN_IF(!mEditorBase) ||
-      !mLeftNode->GetParentNode()) {
+bool JoinNodeTransaction::CanDoIt() const {
+  if (NS_WARN_IF(!mLeftNode) || NS_WARN_IF(!mRightNode) ||
+      NS_WARN_IF(!mEditorBase) || !mLeftNode->GetParentNode()) {
     return false;
   }
   return mEditorBase->IsModifiableNode(*mLeftNode->GetParentNode());
@@ -65,10 +53,8 @@ JoinNodeTransaction::CanDoIt() const
 
 
 NS_IMETHODIMP
-JoinNodeTransaction::DoTransaction()
-{
-  if (NS_WARN_IF(!mEditorBase) ||
-      NS_WARN_IF(!mLeftNode) ||
+JoinNodeTransaction::DoTransaction() {
+  if (NS_WARN_IF(!mEditorBase) || NS_WARN_IF(!mLeftNode) ||
       NS_WARN_IF(!mRightNode)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -94,10 +80,8 @@ JoinNodeTransaction::DoTransaction()
 
 
 NS_IMETHODIMP
-JoinNodeTransaction::UndoTransaction()
-{
-  if (NS_WARN_IF(!mParent) ||
-      NS_WARN_IF(!mLeftNode) ||
+JoinNodeTransaction::UndoTransaction() {
+  if (NS_WARN_IF(!mParent) || NS_WARN_IF(!mLeftNode) ||
       NS_WARN_IF(!mRightNode)) {
     return NS_ERROR_NOT_INITIALIZED;
   }
@@ -129,4 +113,4 @@ JoinNodeTransaction::UndoTransaction()
   return rv.StealNSResult();
 }
 
-} 
+}  

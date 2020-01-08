@@ -15,8 +15,7 @@ namespace layers {
 
 
 
-struct ClearRegionHelper
-{
+struct ClearRegionHelper {
   
   nsTArray<gfx::IntRect> mRects;
 
@@ -25,7 +24,7 @@ struct ClearRegionHelper
   ConstantBufferSection mVSBuffer;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

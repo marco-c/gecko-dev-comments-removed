@@ -38,27 +38,28 @@
 #include "nsWindowsHelpers.h"
 #include "mozilla/UniquePtr.h"
 
-using mozilla::UniquePtr;
 using mozilla::MakeUnique;
+using mozilla::UniquePtr;
 
 
-class CoInitScope
-{
-private:
+class CoInitScope {
+ private:
   HRESULT hr;
 
-public:
+ public:
   CoInitScope() {
     hr = ::CoInitializeEx(0, COINIT_APARTMENTTHREADED);
 
     if (SUCCEEDED(hr)) {
       hr = ::CoInitializeSecurity(
-        nullptr, -1, nullptr, nullptr,  
-        RPC_C_AUTHN_LEVEL_DEFAULT,      
-        RPC_C_IMP_LEVEL_IMPERSONATE,    
-        nullptr,    
-        EOAC_NONE,  
-        nullptr     
+          nullptr, -1, nullptr,
+          nullptr,                      
+          RPC_C_AUTHN_LEVEL_DEFAULT,    
+          RPC_C_IMP_LEVEL_IMPERSONATE,  
+                                        
+          nullptr,                      
+          EOAC_NONE,                    
+          nullptr                       
       );
 
       if (!SUCCEEDED(hr)) {
@@ -67,22 +68,17 @@ public:
     }
   }
 
-  MOZ_IMPLICIT operator bool() const {
-    return SUCCEEDED(hr);
-  }
+  MOZ_IMPLICIT operator bool() const { return SUCCEEDED(hr); }
 
-  HRESULT GetHRESULT() const {
-    return hr;
-  }
+  HRESULT GetHRESULT() const { return hr; }
 
-  ~CoInitScope()
-  {
+  ~CoInitScope() {
     if (SUCCEEDED(hr)) {
       ::CoUninitialize();
     }
   }
 
-private:
+ private:
   CoInitScope(const CoInitScope&) = delete;
   CoInitScope& operator=(const CoInitScope&) = delete;
   CoInitScope(CoInitScope&&) = delete;
@@ -90,46 +86,32 @@ private:
 };
 
 
-class AutoVariant
-{
-private:
+class AutoVariant {
+ private:
   VARIANT v;
 
-public:
-  AutoVariant() {
-    ::VariantInit(&v);
-  }
+ public:
+  AutoVariant() { ::VariantInit(&v); }
 
-  ~AutoVariant()
-  {
-    ::VariantClear(&v);
-  }
+  ~AutoVariant() { ::VariantClear(&v); }
 
-  VARIANT& get()
-  {
-    return v;
-  }
+  VARIANT& get() { return v; }
 
-private:
+ private:
   AutoVariant(const AutoVariant&) = delete;
   AutoVariant& operator=(const AutoVariant&) = delete;
-  AutoVariant (AutoVariant&&) = delete;
+  AutoVariant(AutoVariant&&) = delete;
   AutoVariant& operator=(AutoVariant&&) = delete;
 };
 
 
-struct SysFreeStringDeleter
-{
-  void operator()(void* aPtr)
-  {
-    SysFreeString((BSTR)aPtr);
-  }
+struct SysFreeStringDeleter {
+  void operator()(void* aPtr) { SysFreeString((BSTR)aPtr); }
 };
 
 typedef UniquePtr<WCHAR, SysFreeStringDeleter> UniqueBstr;
 
-static inline UniqueBstr
-UniqueBstrFromWSTR(LPCWSTR wstr) {
+static inline UniqueBstr UniqueBstrFromWSTR(LPCWSTR wstr) {
   UniqueBstr bstr(SysAllocString(wstr));
   return bstr;
 }
@@ -137,18 +119,15 @@ UniqueBstrFromWSTR(LPCWSTR wstr) {
 
 
 
-
-static UniquePtr<WCHAR[]>
-QuoteWQLString(LPCWSTR src)
-{
+static UniquePtr<WCHAR[]> QuoteWQLString(LPCWSTR src) {
   
   
   const WCHAR kQuote = L'\'';
   const WCHAR kBs = L'\\';
 
   
-  size_t quotedLength = 3; 
-  for (size_t i = 0; ; i++) {
+  size_t quotedLength = 3;  
+  for (size_t i = 0;; i++) {
     WCHAR c = src[i];
 
     if (c == kQuote || c == kBs) {
@@ -168,7 +147,7 @@ QuoteWQLString(LPCWSTR src)
 
   
   quoted[0] = kQuote;
-  for (size_t i = 0, quotedIdx = 1; ; i++) {
+  for (size_t i = 0, quotedIdx = 1;; i++) {
     WCHAR c = src[i];
 
     if (c == kQuote || c == kBs) {
@@ -201,11 +180,8 @@ QuoteWQLString(LPCWSTR src)
 
 
 
-
-static bool
-CheckCreationTime(const CoInitScope& coInited,
-                  HANDLE hProc, BSTR checkCreationDateLocal)
-{
+static bool CheckCreationTime(const CoInitScope& coInited, HANDLE hProc,
+                              BSTR checkCreationDateLocal) {
   if (!coInited) {
     return false;
   }
@@ -215,8 +191,8 @@ CheckCreationTime(const CoInitScope& coInited,
   {
     RefPtr<ISWbemDateTime> pCheckDateTime;
     if (FAILED(CoCreateInstance(CLSID_SWbemDateTime, nullptr,
-          CLSCTX_INPROC_SERVER, IID_ISWbemDateTime,
-          getter_AddRefs(pCheckDateTime)))) {
+                                CLSCTX_INPROC_SERVER, IID_ISWbemDateTime,
+                                getter_AddRefs(pCheckDateTime)))) {
       return false;
     }
 
@@ -224,10 +200,9 @@ CheckCreationTime(const CoInitScope& coInited,
     UniqueBstr checkCreationFILETIME;
     {
       BSTR checkCreationFILETIMERaw = nullptr;
-      if (FAILED(
-            pCheckDateTime->put_Value(checkCreationDateLocal)) ||
-          FAILED(
-            pCheckDateTime->GetFileTime(VARIANT_FALSE, &checkCreationFILETIMERaw))) {
+      if (FAILED(pCheckDateTime->put_Value(checkCreationDateLocal)) ||
+          FAILED(pCheckDateTime->GetFileTime(VARIANT_FALSE,
+                                             &checkCreationFILETIMERaw))) {
         return false;
       }
       checkCreationFILETIME.reset(checkCreationFILETIMERaw);
@@ -235,10 +210,9 @@ CheckCreationTime(const CoInitScope& coInited,
 
     
     BSTR checkCreationDateRaw;
-    if (FAILED(
-          pCheckDateTime->SetFileTime(checkCreationFILETIME.get(), VARIANT_FALSE)) ||
-        FAILED(
-          pCheckDateTime->get_Value(&checkCreationDateRaw))) {
+    if (FAILED(pCheckDateTime->SetFileTime(checkCreationFILETIME.get(),
+                                           VARIANT_FALSE)) ||
+        FAILED(pCheckDateTime->get_Value(&checkCreationDateRaw))) {
       return false;
     }
     checkCreationDate.reset(checkCreationDateRaw);
@@ -248,8 +222,8 @@ CheckCreationTime(const CoInitScope& coInited,
   UniqueBstr procCreationDate;
   {
     FILETIME procCreationTime, _exitTime, _kernelTime, _userTime;
-    if (!GetProcessTimes(hProc,
-          &procCreationTime, &_exitTime, &_kernelTime, &_userTime)) {
+    if (!GetProcessTimes(hProc, &procCreationTime, &_exitTime, &_kernelTime,
+                         &_userTime)) {
       LOG_WARN(("GetProcessTimes failed. (%lu)", GetLastError()));
       return false;
     }
@@ -274,24 +248,22 @@ CheckCreationTime(const CoInitScope& coInited,
 
     RefPtr<ISWbemDateTime> pProcDateTime;
     if (FAILED(CoCreateInstance(CLSID_SWbemDateTime, nullptr,
-          CLSCTX_INPROC_SERVER, IID_ISWbemDateTime,
-          getter_AddRefs(pProcDateTime)))) {
+                                CLSCTX_INPROC_SERVER, IID_ISWbemDateTime,
+                                getter_AddRefs(pProcDateTime)))) {
       return false;
     }
 
     
     BSTR procCreationDateRaw;
     if (FAILED(
-          pProcDateTime->SetFileTime(createFILETIME.get(), VARIANT_FALSE)) ||
-        FAILED(
-          pProcDateTime->get_Value(&procCreationDateRaw))) {
+            pProcDateTime->SetFileTime(createFILETIME.get(), VARIANT_FALSE)) ||
+        FAILED(pProcDateTime->get_Value(&procCreationDateRaw))) {
       return false;
     }
     procCreationDate.reset(procCreationDateRaw);
   }
 
-  return !wcscmp(checkCreationDate.get(),
-                 procCreationDate.get());
+  return !wcscmp(checkCreationDate.get(), procCreationDate.get());
 }
 
 
@@ -304,10 +276,9 @@ CheckCreationTime(const CoInitScope& coInited,
 
 
 
-
 HANDLE
-GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
-{
+GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc,
+                    LPCWSTR updaterArgv[]) {
   CoInitScope coInited;
   if (!coInited) {
     LOG_WARN(("Failed to initialize COM or COM security. (hr = %ld)",
@@ -349,16 +320,18 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
   RefPtr<IEnumWbemClassObject> pQueryRows;
   {
     
-    static const WCHAR queryFormat[] = L"SELECT ProcessId, CreationDate, CommandLine "
-                                        "FROM Win32_Process "
-                                        "WHERE ExecutablePath=%ls";
+    static const WCHAR queryFormat[] =
+        L"SELECT ProcessId, CreationDate, CommandLine "
+        "FROM Win32_Process "
+        "WHERE ExecutablePath=%ls";
     UniqueBstr queryBstr;
     {
       UniquePtr<WCHAR[]> quotedExePath = QuoteWQLString(updaterPath);
       if (!quotedExePath) {
         return nullptr;
       }
-      const size_t queryBufLen = _scwprintf(queryFormat, quotedExePath.get()) + 1;
+      const size_t queryBufLen =
+          _scwprintf(queryFormat, quotedExePath.get()) + 1;
 
       UniquePtr<WCHAR[]> query = MakeUnique<WCHAR[]>(queryBufLen);
       if (!query) {
@@ -374,9 +347,8 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
 
     
     RefPtr<IWbemLocator> pLocator;
-    hr = CoCreateInstance(CLSID_WbemLocator, nullptr,
-        CLSCTX_INPROC_SERVER, IID_IWbemLocator,
-        getter_AddRefs(pLocator));
+    hr = CoCreateInstance(CLSID_WbemLocator, nullptr, CLSCTX_INPROC_SERVER,
+                          IID_IWbemLocator, getter_AddRefs(pLocator));
     if (FAILED(hr)) {
       LOG_WARN(("Failed to create WbemLocator. (hr = %ld)", hr));
       return nullptr;
@@ -388,12 +360,12 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
       return nullptr;
     }
     hr = pLocator->ConnectServer(
-        resourceBstr.get(),
-        nullptr, nullptr, 
-        nullptr,          
-        WBEM_FLAG_CONNECT_USE_MAX_WAIT,   
-        nullptr,          
-        nullptr,          
+        resourceBstr.get(), nullptr,
+        nullptr,  
+        nullptr,  
+        WBEM_FLAG_CONNECT_USE_MAX_WAIT,  
+        nullptr,                         
+        nullptr,  
         getter_AddRefs(pServices));
     if (FAILED(hr)) {
       LOG_WARN(("Failed to connect to WMI server. (hr = %ld)", hr));
@@ -402,14 +374,14 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
 
     
     if (FAILED(CoSetProxyBlanket(
-        pServices,
-        RPC_C_AUTHN_WINNT,        
-        RPC_C_AUTHZ_NONE,         
-        nullptr,                  
-        RPC_C_AUTHN_LEVEL_CALL,   
-        RPC_C_IMP_LEVEL_IMPERSONATE, 
-        nullptr,                  
-        EOAC_NONE))) {             
+            pServices,
+            RPC_C_AUTHN_WINNT,       
+            RPC_C_AUTHZ_NONE,        
+            nullptr,                 
+            RPC_C_AUTHN_LEVEL_CALL,  
+            RPC_C_IMP_LEVEL_IMPERSONATE,  
+            nullptr,                      
+            EOAC_NONE))) {                
       LOG_WARN(("Failed to set proxy blanket. (hr = %ld)", hr));
       return nullptr;
     }
@@ -417,10 +389,11 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
     
 
     UniqueBstr wqlBstr(SysAllocString(L"WQL"));
-    hr = pServices->ExecQuery(wqlBstr.get(), queryBstr.get(),
-        0,        
-        nullptr,  
-        getter_AddRefs(pQueryRows));
+    hr =
+        pServices->ExecQuery(wqlBstr.get(), queryBstr.get(),
+                             0,        
+                             nullptr,  
+                             getter_AddRefs(pQueryRows));
     if (FAILED(hr)) {
       LOG_WARN(("Command line query failed. (hr = %ld)", hr));
       return nullptr;
@@ -432,11 +405,8 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
 
   RefPtr<IWbemClassObject> pRow;
   DWORD uReturned = 0;
-  while (SUCCEEDED(hIterRes =
-           pQueryRows->Next(WBEM_INFINITE,
-                            1,
-                            getter_AddRefs(pRow),
-                            &uReturned))) {
+  while (SUCCEEDED(hIterRes = pQueryRows->Next(
+                       WBEM_INFINITE, 1, getter_AddRefs(pRow), &uReturned))) {
     if (hIterRes == WBEM_S_FALSE && uReturned == 0) {
       
       break;
@@ -447,10 +417,8 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
     }
 
     AutoVariant commandLine;
-    if (FAILED(pRow->Get(commandLineName.get(),
-                         0,
-                         &commandLine.get(),
-                         nullptr, nullptr))) {
+    if (FAILED(pRow->Get(commandLineName.get(), 0, &commandLine.get(), nullptr,
+                         nullptr))) {
       return nullptr;
     }
     if (V_VT(&commandLine.get()) != VT_BSTR) {
@@ -462,7 +430,7 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
     {
       int resultArgc = 0;
       UniquePtr<LPWSTR, LocalFreeDeleter> resultArgv(
-        CommandLineToArgvW(commandLine.get().bstrVal, &resultArgc));
+          CommandLineToArgvW(commandLine.get().bstrVal, &resultArgc));
 
       if (!resultArgv || resultArgc != updaterArgc) {
         continue;
@@ -494,8 +462,7 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
       }
       
       
-      if (V_VT(&processId.get()) != VT_I4 ||
-          processIdCimType != CIM_UINT32) {
+      if (V_VT(&processId.get()) != VT_I4 || processIdCimType != CIM_UINT32) {
         LOG_WARN(("Unexpected variant type %d or CIM type %d for processId",
                   V_VT(&processId.get()), processIdCimType));
         return nullptr;
@@ -537,8 +504,8 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
       if (!OpenProcessToken(hProc,
                             TOKEN_DUPLICATE | TOKEN_IMPERSONATE | TOKEN_QUERY,
                             (PVOID*)&hRawProcToken)) {
-        LOG_WARN(("Failed to open impersonation token for pid (%lu). (%d)",
-                  pid, GetLastError()));
+        LOG_WARN(("Failed to open impersonation token for pid (%lu). (%d)", pid,
+                  GetLastError()));
         continue;
       }
 
@@ -549,9 +516,9 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
       sa.lpSecurityDescriptor = nullptr;
 
       HANDLE hRawDupToken = nullptr;
-      BOOL result = DuplicateTokenEx(hRawProcToken,
-        TOKEN_DUPLICATE | TOKEN_IMPERSONATE | TOKEN_QUERY, &sa,
-        SecurityImpersonation, TokenImpersonation, &hRawDupToken);
+      BOOL result = DuplicateTokenEx(
+          hRawProcToken, TOKEN_DUPLICATE | TOKEN_IMPERSONATE | TOKEN_QUERY, &sa,
+          SecurityImpersonation, TokenImpersonation, &hRawDupToken);
       CloseHandle(hRawProcToken);
       if (!result) {
         LOG_WARN(("Failed to duplicate impersonation token for pid (%lu). (%d)",
@@ -586,16 +553,17 @@ GetUserProcessToken(LPCWSTR updaterPath, int updaterArgc, LPCWSTR updaterArgv[])
     if (rv) {
       
       
-      LOG_WARN(("Matched multiple possible updater processes "
-                "(pids %lu and %lu), can't choose one to impersonate.",
-                pid, matchedPid));
+      LOG_WARN(
+          ("Matched multiple possible updater processes "
+           "(pids %lu and %lu), can't choose one to impersonate.",
+           pid, matchedPid));
       return nullptr;
     }
 
     
     rv.swap(hDupToken);
     matchedPid = pid;
-  } 
+  }  
 
   if (!rv) {
     LOG_WARN(("Found no matching updater process to impersonate."));

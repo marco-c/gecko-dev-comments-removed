@@ -18,10 +18,10 @@ namespace {
 const DWORD kVCThreadNameException = 0x406D1388;
 
 typedef struct tagTHREADNAME_INFO {
-  DWORD dwType;  
-  LPCSTR szName;  
+  DWORD dwType;      
+  LPCSTR szName;     
   DWORD dwThreadID;  
-  DWORD dwFlags;  
+  DWORD dwFlags;     
 } THREADNAME_INFO;
 
 DWORD __stdcall ThreadFunc(void* closure) {
@@ -34,19 +34,13 @@ DWORD __stdcall ThreadFunc(void* closure) {
 }  
 
 
-PlatformThreadId PlatformThread::CurrentId() {
-  return GetCurrentThreadId();
-}
+PlatformThreadId PlatformThread::CurrentId() { return GetCurrentThreadId(); }
 
 
-void PlatformThread::YieldCurrentThread() {
-  ::Sleep(0);
-}
+void PlatformThread::YieldCurrentThread() { ::Sleep(0); }
 
 
-void PlatformThread::Sleep(int duration_ms) {
-  ::Sleep(duration_ms);
-}
+void PlatformThread::Sleep(int duration_ms) { ::Sleep(duration_ms); }
 
 
 void PlatformThread::SetName(const char* name) {
@@ -71,8 +65,8 @@ bool PlatformThread::Create(size_t stack_size, Delegate* delegate,
   
   
   
-  *thread_handle = CreateThread(
-      NULL, stack_size, ThreadFunc, delegate, flags, NULL);
+  *thread_handle =
+      CreateThread(NULL, stack_size, ThreadFunc, delegate, flags, NULL);
   return *thread_handle != NULL;
 }
 

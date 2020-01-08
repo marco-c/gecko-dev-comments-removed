@@ -27,61 +27,53 @@ class ICStub;
 class ControlFlowGraph;
 class ReturnAddressEntry;
 
-class PCMappingSlotInfo
-{
-    uint8_t slotInfo_;
+class PCMappingSlotInfo {
+  uint8_t slotInfo_;
 
-  public:
-    
-    
-    
-    
-    
-    
-    enum SlotLocation { SlotInR0 = 0, SlotInR1 = 1, SlotIgnore = 3 };
+ public:
+  
+  
+  
+  
+  
+  
+  enum SlotLocation { SlotInR0 = 0, SlotInR1 = 1, SlotIgnore = 3 };
 
-    PCMappingSlotInfo()
-      : slotInfo_(0)
-    { }
+  PCMappingSlotInfo() : slotInfo_(0) {}
 
-    explicit PCMappingSlotInfo(uint8_t slotInfo)
-      : slotInfo_(slotInfo)
-    { }
+  explicit PCMappingSlotInfo(uint8_t slotInfo) : slotInfo_(slotInfo) {}
 
-    static inline bool ValidSlotLocation(SlotLocation loc) {
-        return (loc == SlotInR0) || (loc == SlotInR1) || (loc == SlotIgnore);
-    }
+  static inline bool ValidSlotLocation(SlotLocation loc) {
+    return (loc == SlotInR0) || (loc == SlotInR1) || (loc == SlotIgnore);
+  }
 
-    static SlotLocation ToSlotLocation(const StackValue* stackVal);
+  static SlotLocation ToSlotLocation(const StackValue* stackVal);
 
-    inline static PCMappingSlotInfo MakeSlotInfo() { return PCMappingSlotInfo(0); }
+  inline static PCMappingSlotInfo MakeSlotInfo() {
+    return PCMappingSlotInfo(0);
+  }
 
-    inline static PCMappingSlotInfo MakeSlotInfo(SlotLocation topSlotLoc) {
-        MOZ_ASSERT(ValidSlotLocation(topSlotLoc));
-        return PCMappingSlotInfo(1 | (topSlotLoc << 2));
-    }
+  inline static PCMappingSlotInfo MakeSlotInfo(SlotLocation topSlotLoc) {
+    MOZ_ASSERT(ValidSlotLocation(topSlotLoc));
+    return PCMappingSlotInfo(1 | (topSlotLoc << 2));
+  }
 
-    inline static PCMappingSlotInfo MakeSlotInfo(SlotLocation topSlotLoc, SlotLocation nextSlotLoc) {
-        MOZ_ASSERT(ValidSlotLocation(topSlotLoc));
-        MOZ_ASSERT(ValidSlotLocation(nextSlotLoc));
-        return PCMappingSlotInfo(2 | (topSlotLoc << 2) | (nextSlotLoc) << 4);
-    }
+  inline static PCMappingSlotInfo MakeSlotInfo(SlotLocation topSlotLoc,
+                                               SlotLocation nextSlotLoc) {
+    MOZ_ASSERT(ValidSlotLocation(topSlotLoc));
+    MOZ_ASSERT(ValidSlotLocation(nextSlotLoc));
+    return PCMappingSlotInfo(2 | (topSlotLoc << 2) | (nextSlotLoc) << 4);
+  }
 
-    inline bool isStackSynced() const {
-        return numUnsynced() == 0;
-    }
-    inline unsigned numUnsynced() const {
-        return slotInfo_ & 0x3;
-    }
-    inline SlotLocation topSlotLocation() const {
-        return static_cast<SlotLocation>((slotInfo_ >> 2) & 0x3);
-    }
-    inline SlotLocation nextSlotLocation() const {
-        return static_cast<SlotLocation>((slotInfo_ >> 4) & 0x3);
-    }
-    inline uint8_t toByte() const {
-        return slotInfo_;
-    }
+  inline bool isStackSynced() const { return numUnsynced() == 0; }
+  inline unsigned numUnsynced() const { return slotInfo_ & 0x3; }
+  inline SlotLocation topSlotLocation() const {
+    return static_cast<SlotLocation>((slotInfo_ >> 2) & 0x3);
+  }
+  inline SlotLocation nextSlotLocation() const {
+    return static_cast<SlotLocation>((slotInfo_ >> 4) & 0x3);
+  }
+  inline uint8_t toByte() const { return slotInfo_; }
 };
 
 
@@ -89,29 +81,25 @@ class PCMappingSlotInfo
 
 
 
-struct PCMappingIndexEntry
-{
-    
-    uint32_t pcOffset;
+struct PCMappingIndexEntry {
+  
+  uint32_t pcOffset;
 
-    
-    uint32_t nativeOffset;
+  
+  uint32_t nativeOffset;
 
-    
-    uint32_t bufferOffset;
+  
+  uint32_t bufferOffset;
 };
 
 
 
-struct DependentWasmImport
-{
-    wasm::Instance* instance;
-    size_t importIndex;
+struct DependentWasmImport {
+  wasm::Instance* instance;
+  size_t importIndex;
 
-    DependentWasmImport(wasm::Instance& instance, size_t importIndex)
-      : instance(&instance),
-        importIndex(importIndex)
-    { }
+  DependentWasmImport(wasm::Instance& instance, size_t importIndex)
+      : instance(&instance), importIndex(importIndex) {}
 };
 
 
@@ -143,607 +131,548 @@ static constexpr uint32_t BaselineMaxScriptSlots = 0xffffu;
 
 
 
-class RetAddrEntry
-{
+class RetAddrEntry {
+  
+  uint32_t returnOffset_;
+
+  
+  uint32_t pcOffset_ : 28;
+
+ public:
+  enum class Kind : uint32_t {
     
-    uint32_t returnOffset_;
-
-    
-    uint32_t pcOffset_ : 28;
-
-  public:
-    enum class Kind : uint32_t {
-        
-        IC,
-
-        
-        NonOpIC,
-
-        
-        CallVM,
-
-        
-        NonOpCallVM,
-
-        
-        WarmupCounter,
-
-        
-        StackCheck,
-
-        
-        DebugTrap,
-
-        
-        DebugPrologue,
-        DebugAfterYield,
-        DebugEpilogue,
-
-        Invalid
-    };
-
-  private:
-    
-    uint32_t kind_ : 4;
-
-  public:
-    RetAddrEntry(uint32_t pcOffset, Kind kind, CodeOffset retOffset)
-      : returnOffset_(uint32_t(retOffset.offset())), pcOffset_(pcOffset)
-    {
-        MOZ_ASSERT(returnOffset_ == retOffset.offset(),
-                   "retOffset must fit in returnOffset_");
-
-        
-        
-        MOZ_ASSERT(pcOffset_ == pcOffset);
-        JS_STATIC_ASSERT(BaselineMaxScriptLength <= (1u << 28) - 1);
-        MOZ_ASSERT(pcOffset <= BaselineMaxScriptLength);
-        setKind(kind);
-    }
+    IC,
 
     
-    void setKind(Kind kind) {
-        MOZ_ASSERT(kind < Kind::Invalid);
-        kind_ = uint32_t(kind);
-        MOZ_ASSERT(this->kind() == kind);
-    }
+    NonOpIC,
 
-    CodeOffset returnOffset() const {
-        return CodeOffset(returnOffset_);
-    }
+    
+    CallVM,
 
-    uint32_t pcOffset() const {
-        return pcOffset_;
-    }
+    
+    NonOpCallVM,
 
-    jsbytecode* pc(JSScript* script) const {
-        return script->offsetToPC(pcOffset_);
-    }
+    
+    WarmupCounter,
 
-    Kind kind() const {
-        MOZ_ASSERT(kind_ < uint32_t(Kind::Invalid));
-        return Kind(kind_);
-    }
-    bool isForOp() const {
-        return kind() == Kind::IC;
-    }
+    
+    StackCheck,
 
-    void setNonICKind(Kind kind) {
-        MOZ_ASSERT(kind != Kind::IC && kind != Kind::NonOpIC);
-        setKind(kind);
-    }
+    
+    DebugTrap,
+
+    
+    DebugPrologue,
+    DebugAfterYield,
+    DebugEpilogue,
+
+    Invalid
+  };
+
+ private:
+  
+  uint32_t kind_ : 4;
+
+ public:
+  RetAddrEntry(uint32_t pcOffset, Kind kind, CodeOffset retOffset)
+      : returnOffset_(uint32_t(retOffset.offset())), pcOffset_(pcOffset) {
+    MOZ_ASSERT(returnOffset_ == retOffset.offset(),
+               "retOffset must fit in returnOffset_");
+
+    
+    
+    MOZ_ASSERT(pcOffset_ == pcOffset);
+    JS_STATIC_ASSERT(BaselineMaxScriptLength <= (1u << 28) - 1);
+    MOZ_ASSERT(pcOffset <= BaselineMaxScriptLength);
+    setKind(kind);
+  }
+
+  
+  void setKind(Kind kind) {
+    MOZ_ASSERT(kind < Kind::Invalid);
+    kind_ = uint32_t(kind);
+    MOZ_ASSERT(this->kind() == kind);
+  }
+
+  CodeOffset returnOffset() const { return CodeOffset(returnOffset_); }
+
+  uint32_t pcOffset() const { return pcOffset_; }
+
+  jsbytecode* pc(JSScript* script) const {
+    return script->offsetToPC(pcOffset_);
+  }
+
+  Kind kind() const {
+    MOZ_ASSERT(kind_ < uint32_t(Kind::Invalid));
+    return Kind(kind_);
+  }
+  bool isForOp() const { return kind() == Kind::IC; }
+
+  void setNonICKind(Kind kind) {
+    MOZ_ASSERT(kind != Kind::IC && kind != Kind::NonOpIC);
+    setKind(kind);
+  }
 };
 
-struct BaselineScript final
-{
-  private:
-    
-    HeapPtr<JitCode*> method_ = nullptr;
+struct BaselineScript final {
+ private:
+  
+  HeapPtr<JitCode*> method_ = nullptr;
 
-    
-    
-    
-    HeapPtr<EnvironmentObject*> templateEnv_ = nullptr;
+  
+  
+  
+  HeapPtr<EnvironmentObject*> templateEnv_ = nullptr;
 
-    
-    
-    Vector<DependentWasmImport>* dependentWasmImports_ = nullptr;
+  
+  
+  Vector<DependentWasmImport>* dependentWasmImports_ = nullptr;
 
-    
-    
-    uint32_t bailoutPrologueOffset_;
+  
+  
+  uint32_t bailoutPrologueOffset_;
 
-    
-    
-    uint32_t debugOsrPrologueOffset_;
+  
+  
+  uint32_t debugOsrPrologueOffset_;
 
-    
-    
-    uint32_t debugOsrEpilogueOffset_;
+  
+  
+  uint32_t debugOsrEpilogueOffset_;
 
-    
-    uint32_t profilerEnterToggleOffset_;
-    uint32_t profilerExitToggleOffset_;
+  
+  uint32_t profilerEnterToggleOffset_;
+  uint32_t profilerExitToggleOffset_;
 
-    
+  
 #ifdef JS_TRACE_LOGGING
-# ifdef DEBUG
-    bool traceLoggerScriptsEnabled_ = false;
-    bool traceLoggerEngineEnabled_ = false;
-# endif
-    TraceLoggerEvent traceLoggerScriptEvent_ = {};
+#ifdef DEBUG
+  bool traceLoggerScriptsEnabled_ = false;
+  bool traceLoggerEngineEnabled_ = false;
+#endif
+  TraceLoggerEvent traceLoggerScriptEvent_ = {};
 #endif
 
-  public:
-    enum Flag {
-        
-
-        
-        
-        ACTIVE = 1 << 1,
-
-        
-        
-        MODIFIES_ARGUMENTS = 1 << 2,
-
-        
-        
-        HAS_DEBUG_INSTRUMENTATION = 1 << 3,
-
-        
-        
-        
-        ION_COMPILED_OR_INLINED = 1 << 4,
-
-        
-        PROFILER_INSTRUMENTATION_ON = 1 << 5,
-
-        
-        
-        
-        USES_ENVIRONMENT_CHAIN = 1 << 6,
-    };
-
-  private:
-    uint32_t flags_ = 0;
-
-  private:
-    void trace(JSTracer* trc);
-
-    uint32_t retAddrEntriesOffset_ = 0;
-    uint32_t retAddrEntries_ = 0;
-
-    uint32_t pcMappingIndexOffset_ = 0;
-    uint32_t pcMappingIndexEntries_ = 0;
-
-    uint32_t pcMappingOffset_ = 0;
-    uint32_t pcMappingSize_ = 0;
+ public:
+  enum Flag {
+    
 
     
     
-    uint32_t bytecodeTypeMapOffset_ = 0;
+    ACTIVE = 1 << 1,
 
     
     
-    uint32_t resumeEntriesOffset_ = 0;
+    MODIFIES_ARGUMENTS = 1 << 2,
 
     
     
-    uint32_t traceLoggerToggleOffsetsOffset_ = 0;
-    uint32_t numTraceLoggerToggleOffsets_ = 0;
+    HAS_DEBUG_INSTRUMENTATION = 1 << 3,
 
     
     
     
-    uint16_t inlinedBytecodeLength_ = 0;
+    ION_COMPILED_OR_INLINED = 1 << 4,
+
+    
+    PROFILER_INSTRUMENTATION_ON = 1 << 5,
 
     
     
     
-    
-    
-    uint8_t maxInliningDepth_ = UINT8_MAX;
+    USES_ENVIRONMENT_CHAIN = 1 << 6,
+  };
 
-    
-    IonBuilder *pendingBuilder_ = nullptr;
+ private:
+  uint32_t flags_ = 0;
 
-    ControlFlowGraph* controlFlowGraph_ = nullptr;
+ private:
+  void trace(JSTracer* trc);
 
-    
-    
-    BaselineScript(uint32_t bailoutPrologueOffset,
-                   uint32_t debugOsrPrologueOffset,
-                   uint32_t debugOsrEpilogueOffset,
-                   uint32_t profilerEnterToggleOffset,
-                   uint32_t profilerExitToggleOffset)
+  uint32_t retAddrEntriesOffset_ = 0;
+  uint32_t retAddrEntries_ = 0;
+
+  uint32_t pcMappingIndexOffset_ = 0;
+  uint32_t pcMappingIndexEntries_ = 0;
+
+  uint32_t pcMappingOffset_ = 0;
+  uint32_t pcMappingSize_ = 0;
+
+  
+  
+  uint32_t bytecodeTypeMapOffset_ = 0;
+
+  
+  
+  uint32_t resumeEntriesOffset_ = 0;
+
+  
+  
+  uint32_t traceLoggerToggleOffsetsOffset_ = 0;
+  uint32_t numTraceLoggerToggleOffsets_ = 0;
+
+  
+  
+  
+  uint16_t inlinedBytecodeLength_ = 0;
+
+  
+  
+  
+  
+  
+  uint8_t maxInliningDepth_ = UINT8_MAX;
+
+  
+  IonBuilder* pendingBuilder_ = nullptr;
+
+  ControlFlowGraph* controlFlowGraph_ = nullptr;
+
+  
+  
+  BaselineScript(uint32_t bailoutPrologueOffset,
+                 uint32_t debugOsrPrologueOffset,
+                 uint32_t debugOsrEpilogueOffset,
+                 uint32_t profilerEnterToggleOffset,
+                 uint32_t profilerExitToggleOffset)
       : bailoutPrologueOffset_(bailoutPrologueOffset),
         debugOsrPrologueOffset_(debugOsrPrologueOffset),
         debugOsrEpilogueOffset_(debugOsrEpilogueOffset),
         profilerEnterToggleOffset_(profilerEnterToggleOffset),
-        profilerExitToggleOffset_(profilerExitToggleOffset)
-    { }
+        profilerExitToggleOffset_(profilerExitToggleOffset) {}
 
-  public:
-    static BaselineScript* New(JSScript* jsscript,
-                               uint32_t bailoutPrologueOffset,
-                               uint32_t debugOsrPrologueOffset,
-                               uint32_t debugOsrEpilogueOffset,
-                               uint32_t profilerEnterToggleOffset,
-                               uint32_t profilerExitToggleOffset,
-                               size_t retAddrEntries,
-                               size_t pcMappingIndexEntries, size_t pcMappingSize,
-                               size_t bytecodeTypeMapEntries,
-                               size_t resumeEntries,
-                               size_t traceLoggerToggleOffsetEntries);
+ public:
+  static BaselineScript* New(
+      JSScript* jsscript, uint32_t bailoutPrologueOffset,
+      uint32_t debugOsrPrologueOffset, uint32_t debugOsrEpilogueOffset,
+      uint32_t profilerEnterToggleOffset, uint32_t profilerExitToggleOffset,
+      size_t retAddrEntries, size_t pcMappingIndexEntries, size_t pcMappingSize,
+      size_t bytecodeTypeMapEntries, size_t resumeEntries,
+      size_t traceLoggerToggleOffsetEntries);
 
-    static void Trace(JSTracer* trc, BaselineScript* script);
-    static void Destroy(FreeOp* fop, BaselineScript* script);
+  static void Trace(JSTracer* trc, BaselineScript* script);
+  static void Destroy(FreeOp* fop, BaselineScript* script);
 
-    static inline size_t offsetOfMethod() {
-        return offsetof(BaselineScript, method_);
-    }
+  static inline size_t offsetOfMethod() {
+    return offsetof(BaselineScript, method_);
+  }
 
-    void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, size_t* data) const {
-        *data += mallocSizeOf(this);
-    }
+  void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                              size_t* data) const {
+    *data += mallocSizeOf(this);
+  }
 
-    bool active() const {
-        return flags_ & ACTIVE;
-    }
-    void setActive() {
-        flags_ |= ACTIVE;
-    }
-    void resetActive() {
-        flags_ &= ~ACTIVE;
-    }
+  bool active() const { return flags_ & ACTIVE; }
+  void setActive() { flags_ |= ACTIVE; }
+  void resetActive() { flags_ &= ~ACTIVE; }
 
-    void setModifiesArguments() {
-        flags_ |= MODIFIES_ARGUMENTS;
-    }
-    bool modifiesArguments() {
-        return flags_ & MODIFIES_ARGUMENTS;
-    }
+  void setModifiesArguments() { flags_ |= MODIFIES_ARGUMENTS; }
+  bool modifiesArguments() { return flags_ & MODIFIES_ARGUMENTS; }
 
-    void setHasDebugInstrumentation() {
-        flags_ |= HAS_DEBUG_INSTRUMENTATION;
-    }
-    bool hasDebugInstrumentation() const {
-        return flags_ & HAS_DEBUG_INSTRUMENTATION;
-    }
+  void setHasDebugInstrumentation() { flags_ |= HAS_DEBUG_INSTRUMENTATION; }
+  bool hasDebugInstrumentation() const {
+    return flags_ & HAS_DEBUG_INSTRUMENTATION;
+  }
 
-    void setIonCompiledOrInlined() {
-        flags_ |= ION_COMPILED_OR_INLINED;
-    }
-    void clearIonCompiledOrInlined() {
-        flags_ &= ~ION_COMPILED_OR_INLINED;
-    }
-    bool ionCompiledOrInlined() const {
-        return flags_ & ION_COMPILED_OR_INLINED;
-    }
+  void setIonCompiledOrInlined() { flags_ |= ION_COMPILED_OR_INLINED; }
+  void clearIonCompiledOrInlined() { flags_ &= ~ION_COMPILED_OR_INLINED; }
+  bool ionCompiledOrInlined() const { return flags_ & ION_COMPILED_OR_INLINED; }
 
-    void setUsesEnvironmentChain() {
-        flags_ |= USES_ENVIRONMENT_CHAIN;
-    }
-    bool usesEnvironmentChain() const {
-        return flags_ & USES_ENVIRONMENT_CHAIN;
-    }
+  void setUsesEnvironmentChain() { flags_ |= USES_ENVIRONMENT_CHAIN; }
+  bool usesEnvironmentChain() const { return flags_ & USES_ENVIRONMENT_CHAIN; }
 
-    uint8_t* bailoutPrologueEntryAddr() const {
-        return method_->raw() + bailoutPrologueOffset_;
-    }
-    uint8_t* debugOsrPrologueEntryAddr() const {
-        return method_->raw() + debugOsrPrologueOffset_;
-    }
-    uint8_t* debugOsrEpilogueEntryAddr() const {
-        return method_->raw() + debugOsrEpilogueOffset_;
-    }
+  uint8_t* bailoutPrologueEntryAddr() const {
+    return method_->raw() + bailoutPrologueOffset_;
+  }
+  uint8_t* debugOsrPrologueEntryAddr() const {
+    return method_->raw() + debugOsrPrologueOffset_;
+  }
+  uint8_t* debugOsrEpilogueEntryAddr() const {
+    return method_->raw() + debugOsrEpilogueOffset_;
+  }
 
-    RetAddrEntry* retAddrEntryList() {
-        return (RetAddrEntry*)(reinterpret_cast<uint8_t*>(this) + retAddrEntriesOffset_);
-    }
-    uint8_t** resumeEntryList() {
-        return (uint8_t**)(reinterpret_cast<uint8_t*>(this) + resumeEntriesOffset_);
-    }
-    PCMappingIndexEntry* pcMappingIndexEntryList() {
-        return (PCMappingIndexEntry*)(reinterpret_cast<uint8_t*>(this) + pcMappingIndexOffset_);
-    }
-    uint8_t* pcMappingData() {
-        return reinterpret_cast<uint8_t*>(this) + pcMappingOffset_;
-    }
+  RetAddrEntry* retAddrEntryList() {
+    return (RetAddrEntry*)(reinterpret_cast<uint8_t*>(this) +
+                           retAddrEntriesOffset_);
+  }
+  uint8_t** resumeEntryList() {
+    return (uint8_t**)(reinterpret_cast<uint8_t*>(this) + resumeEntriesOffset_);
+  }
+  PCMappingIndexEntry* pcMappingIndexEntryList() {
+    return (PCMappingIndexEntry*)(reinterpret_cast<uint8_t*>(this) +
+                                  pcMappingIndexOffset_);
+  }
+  uint8_t* pcMappingData() {
+    return reinterpret_cast<uint8_t*>(this) + pcMappingOffset_;
+  }
 
-    JitCode* method() const {
-        return method_;
-    }
-    void setMethod(JitCode* code) {
-        MOZ_ASSERT(!method_);
-        method_ = code;
-    }
+  JitCode* method() const { return method_; }
+  void setMethod(JitCode* code) {
+    MOZ_ASSERT(!method_);
+    method_ = code;
+  }
 
-    EnvironmentObject* templateEnvironment() const {
-        return templateEnv_;
-    }
-    void setTemplateEnvironment(EnvironmentObject* templateEnv) {
-        MOZ_ASSERT(!templateEnv_);
-        templateEnv_ = templateEnv;
-    }
+  EnvironmentObject* templateEnvironment() const { return templateEnv_; }
+  void setTemplateEnvironment(EnvironmentObject* templateEnv) {
+    MOZ_ASSERT(!templateEnv_);
+    templateEnv_ = templateEnv;
+  }
 
-    bool containsCodeAddress(uint8_t* addr) const {
-        return method()->raw() <= addr && addr <= method()->raw() + method()->instructionsSize();
-    }
+  bool containsCodeAddress(uint8_t* addr) const {
+    return method()->raw() <= addr &&
+           addr <= method()->raw() + method()->instructionsSize();
+  }
 
-    uint8_t* returnAddressForEntry(const RetAddrEntry& ent);
+  uint8_t* returnAddressForEntry(const RetAddrEntry& ent);
 
-    RetAddrEntry& retAddrEntry(size_t index);
-    RetAddrEntry& retAddrEntryFromPCOffset(uint32_t pcOffset, RetAddrEntry::Kind kind);
-    RetAddrEntry& prologueRetAddrEntry(RetAddrEntry::Kind kind);
-    RetAddrEntry& retAddrEntryFromReturnOffset(CodeOffset returnOffset);
-    RetAddrEntry& retAddrEntryFromReturnAddress(uint8_t* returnAddr);
+  RetAddrEntry& retAddrEntry(size_t index);
+  RetAddrEntry& retAddrEntryFromPCOffset(uint32_t pcOffset,
+                                         RetAddrEntry::Kind kind);
+  RetAddrEntry& prologueRetAddrEntry(RetAddrEntry::Kind kind);
+  RetAddrEntry& retAddrEntryFromReturnOffset(CodeOffset returnOffset);
+  RetAddrEntry& retAddrEntryFromReturnAddress(uint8_t* returnAddr);
 
-    size_t numRetAddrEntries() const {
-        return retAddrEntries_;
-    }
+  size_t numRetAddrEntries() const { return retAddrEntries_; }
 
-    void copyRetAddrEntries(JSScript* script, const RetAddrEntry* entries);
+  void copyRetAddrEntries(JSScript* script, const RetAddrEntry* entries);
 
-    
-    
-    void computeResumeNativeOffsets(JSScript* script);
+  
+  
+  void computeResumeNativeOffsets(JSScript* script);
 
-    PCMappingIndexEntry& pcMappingIndexEntry(size_t index);
-    CompactBufferReader pcMappingReader(size_t indexEntry);
+  PCMappingIndexEntry& pcMappingIndexEntry(size_t index);
+  CompactBufferReader pcMappingReader(size_t indexEntry);
 
-    size_t numPCMappingIndexEntries() const {
-        return pcMappingIndexEntries_;
-    }
+  size_t numPCMappingIndexEntries() const { return pcMappingIndexEntries_; }
 
-    void copyPCMappingIndexEntries(const PCMappingIndexEntry* entries);
-    void copyPCMappingEntries(const CompactBufferWriter& entries);
+  void copyPCMappingIndexEntries(const PCMappingIndexEntry* entries);
+  void copyPCMappingEntries(const CompactBufferWriter& entries);
 
-    
-    
-    uint8_t* maybeNativeCodeForPC(JSScript* script, jsbytecode* pc, PCMappingSlotInfo* slotInfo);
-    uint8_t* nativeCodeForPC(JSScript* script, jsbytecode* pc, PCMappingSlotInfo* slotInfo)
-    {
-        uint8_t* native = maybeNativeCodeForPC(script, pc, slotInfo);
-        MOZ_ASSERT(native);
-        return native;
-    }
+  
+  
+  uint8_t* maybeNativeCodeForPC(JSScript* script, jsbytecode* pc,
+                                PCMappingSlotInfo* slotInfo);
+  uint8_t* nativeCodeForPC(JSScript* script, jsbytecode* pc,
+                           PCMappingSlotInfo* slotInfo) {
+    uint8_t* native = maybeNativeCodeForPC(script, pc, slotInfo);
+    MOZ_ASSERT(native);
+    return native;
+  }
 
-    
-    
-    
-    jsbytecode* approximatePcForNativeAddress(JSScript* script, uint8_t* nativeAddress);
+  
+  
+  
+  jsbytecode* approximatePcForNativeAddress(JSScript* script,
+                                            uint8_t* nativeAddress);
 
-    MOZ_MUST_USE bool addDependentWasmImport(JSContext* cx, wasm::Instance& instance, uint32_t idx);
-    void removeDependentWasmImport(wasm::Instance& instance, uint32_t idx);
-    void unlinkDependentWasmImports(FreeOp* fop);
-    void clearDependentWasmImports();
+  MOZ_MUST_USE bool addDependentWasmImport(JSContext* cx,
+                                           wasm::Instance& instance,
+                                           uint32_t idx);
+  void removeDependentWasmImport(wasm::Instance& instance, uint32_t idx);
+  void unlinkDependentWasmImports(FreeOp* fop);
+  void clearDependentWasmImports();
 
-    
-    
-    
-    void toggleDebugTraps(JSScript* script, jsbytecode* pc);
+  
+  
+  
+  void toggleDebugTraps(JSScript* script, jsbytecode* pc);
 
-    void toggleProfilerInstrumentation(bool enable);
-    bool isProfilerInstrumentationOn() const {
-        return flags_ & PROFILER_INSTRUMENTATION_ON;
-    }
+  void toggleProfilerInstrumentation(bool enable);
+  bool isProfilerInstrumentationOn() const {
+    return flags_ & PROFILER_INSTRUMENTATION_ON;
+  }
 
 #ifdef JS_TRACE_LOGGING
-    void initTraceLogger(JSScript* script, const Vector<CodeOffset>& offsets);
-    void toggleTraceLoggerScripts(JSScript* script, bool enable);
-    void toggleTraceLoggerEngine(bool enable);
+  void initTraceLogger(JSScript* script, const Vector<CodeOffset>& offsets);
+  void toggleTraceLoggerScripts(JSScript* script, bool enable);
+  void toggleTraceLoggerEngine(bool enable);
 
-    static size_t offsetOfTraceLoggerScriptEvent() {
-        return offsetof(BaselineScript, traceLoggerScriptEvent_);
-    }
+  static size_t offsetOfTraceLoggerScriptEvent() {
+    return offsetof(BaselineScript, traceLoggerScriptEvent_);
+  }
 
-    uint32_t* traceLoggerToggleOffsets() {
-        MOZ_ASSERT(traceLoggerToggleOffsetsOffset_);
-        return reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) +
-                                           traceLoggerToggleOffsetsOffset_);
-    }
+  uint32_t* traceLoggerToggleOffsets() {
+    MOZ_ASSERT(traceLoggerToggleOffsetsOffset_);
+    return reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) +
+                                       traceLoggerToggleOffsetsOffset_);
+  }
 #endif
 
-    static size_t offsetOfFlags() {
-        return offsetof(BaselineScript, flags_);
+  static size_t offsetOfFlags() { return offsetof(BaselineScript, flags_); }
+  static size_t offsetOfResumeEntriesOffset() {
+    return offsetof(BaselineScript, resumeEntriesOffset_);
+  }
+
+  static void writeBarrierPre(Zone* zone, BaselineScript* script);
+
+  uint32_t* bytecodeTypeMap() {
+    MOZ_ASSERT(bytecodeTypeMapOffset_);
+    return reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) +
+                                       bytecodeTypeMapOffset_);
+  }
+
+  uint8_t maxInliningDepth() const { return maxInliningDepth_; }
+  void setMaxInliningDepth(uint32_t depth) {
+    MOZ_ASSERT(depth <= UINT8_MAX);
+    maxInliningDepth_ = depth;
+  }
+  void resetMaxInliningDepth() { maxInliningDepth_ = UINT8_MAX; }
+
+  uint16_t inlinedBytecodeLength() const { return inlinedBytecodeLength_; }
+  void setInlinedBytecodeLength(uint32_t len) {
+    if (len > UINT16_MAX) {
+      len = UINT16_MAX;
     }
-    static size_t offsetOfResumeEntriesOffset() {
-        return offsetof(BaselineScript, resumeEntriesOffset_);
+    inlinedBytecodeLength_ = len;
+  }
+
+  bool hasPendingIonBuilder() const { return !!pendingBuilder_; }
+
+  js::jit::IonBuilder* pendingIonBuilder() {
+    MOZ_ASSERT(hasPendingIonBuilder());
+    return pendingBuilder_;
+  }
+  void setPendingIonBuilder(JSRuntime* rt, JSScript* script,
+                            js::jit::IonBuilder* builder) {
+    MOZ_ASSERT(script->baselineScript() == this);
+    MOZ_ASSERT(!builder || !hasPendingIonBuilder());
+
+    if (script->isIonCompilingOffThread()) {
+      script->setIonScript(rt, ION_PENDING_SCRIPT);
     }
 
-    static void writeBarrierPre(Zone* zone, BaselineScript* script);
+    pendingBuilder_ = builder;
 
-    uint32_t* bytecodeTypeMap() {
-        MOZ_ASSERT(bytecodeTypeMapOffset_);
-        return reinterpret_cast<uint32_t*>(reinterpret_cast<uint8_t*>(this) + bytecodeTypeMapOffset_);
-    }
+    
+    clearDependentWasmImports();
 
-    uint8_t maxInliningDepth() const {
-        return maxInliningDepth_;
+    script->updateJitCodeRaw(rt);
+  }
+  void removePendingIonBuilder(JSRuntime* rt, JSScript* script) {
+    setPendingIonBuilder(rt, script, nullptr);
+    if (script->maybeIonScript() == ION_PENDING_SCRIPT) {
+      script->setIonScript(rt, nullptr);
     }
-    void setMaxInliningDepth(uint32_t depth) {
-        MOZ_ASSERT(depth <= UINT8_MAX);
-        maxInliningDepth_ = depth;
-    }
-    void resetMaxInliningDepth() {
-        maxInliningDepth_ = UINT8_MAX;
-    }
+  }
 
-    uint16_t inlinedBytecodeLength() const {
-        return inlinedBytecodeLength_;
-    }
-    void setInlinedBytecodeLength(uint32_t len) {
-        if (len > UINT16_MAX) {
-            len = UINT16_MAX;
-        }
-        inlinedBytecodeLength_ = len;
-    }
+  const ControlFlowGraph* controlFlowGraph() const { return controlFlowGraph_; }
 
-    bool hasPendingIonBuilder() const {
-        return !!pendingBuilder_;
-    }
-
-    js::jit::IonBuilder* pendingIonBuilder() {
-        MOZ_ASSERT(hasPendingIonBuilder());
-        return pendingBuilder_;
-    }
-    void setPendingIonBuilder(JSRuntime* rt, JSScript* script, js::jit::IonBuilder* builder) {
-        MOZ_ASSERT(script->baselineScript() == this);
-        MOZ_ASSERT(!builder || !hasPendingIonBuilder());
-
-        if (script->isIonCompilingOffThread()) {
-            script->setIonScript(rt, ION_PENDING_SCRIPT);
-        }
-
-        pendingBuilder_ = builder;
-
-        
-        clearDependentWasmImports();
-
-        script->updateJitCodeRaw(rt);
-    }
-    void removePendingIonBuilder(JSRuntime* rt, JSScript* script) {
-        setPendingIonBuilder(rt, script, nullptr);
-        if (script->maybeIonScript() == ION_PENDING_SCRIPT) {
-            script->setIonScript(rt, nullptr);
-        }
-    }
-
-    const ControlFlowGraph* controlFlowGraph() const {
-        return controlFlowGraph_;
-    }
-
-    void setControlFlowGraph(ControlFlowGraph* controlFlowGraph) {
-        controlFlowGraph_ = controlFlowGraph;
-    }
-
+  void setControlFlowGraph(ControlFlowGraph* controlFlowGraph) {
+    controlFlowGraph_ = controlFlowGraph;
+  }
 };
-static_assert(sizeof(BaselineScript) % sizeof(uintptr_t) == 0,
-              "The data attached to the script must be aligned for fast JIT access.");
+static_assert(
+    sizeof(BaselineScript) % sizeof(uintptr_t) == 0,
+    "The data attached to the script must be aligned for fast JIT access.");
 
-inline bool
-IsBaselineEnabled(JSContext* cx)
-{
+inline bool IsBaselineEnabled(JSContext* cx) {
 #ifdef JS_CODEGEN_NONE
-    return false;
+  return false;
 #else
-    return cx->options().baseline() &&
-           cx->runtime()->jitSupportsFloatingPoint;
+  return cx->options().baseline() && cx->runtime()->jitSupportsFloatingPoint;
 #endif
 }
 
-MethodStatus
-CanEnterBaselineMethod(JSContext* cx, RunState& state);
+MethodStatus CanEnterBaselineMethod(JSContext* cx, RunState& state);
 
-MethodStatus
-CanEnterBaselineAtBranch(JSContext* cx, InterpreterFrame* fp);
+MethodStatus CanEnterBaselineAtBranch(JSContext* cx, InterpreterFrame* fp);
 
-JitExecStatus
-EnterBaselineAtBranch(JSContext* cx, InterpreterFrame* fp, jsbytecode* pc);
+JitExecStatus EnterBaselineAtBranch(JSContext* cx, InterpreterFrame* fp,
+                                    jsbytecode* pc);
 
-void
-FinishDiscardBaselineScript(FreeOp* fop, JSScript* script);
+void FinishDiscardBaselineScript(FreeOp* fop, JSScript* script);
 
-void
-AddSizeOfBaselineData(JSScript* script, mozilla::MallocSizeOf mallocSizeOf, size_t* data,
-                      size_t* fallbackStubs);
+void AddSizeOfBaselineData(JSScript* script, mozilla::MallocSizeOf mallocSizeOf,
+                           size_t* data, size_t* fallbackStubs);
 
-void
-ToggleBaselineProfiling(JSRuntime* runtime, bool enable);
+void ToggleBaselineProfiling(JSRuntime* runtime, bool enable);
 
-void
-ToggleBaselineTraceLoggerScripts(JSRuntime* runtime, bool enable);
-void
-ToggleBaselineTraceLoggerEngine(JSRuntime* runtime, bool enable);
+void ToggleBaselineTraceLoggerScripts(JSRuntime* runtime, bool enable);
+void ToggleBaselineTraceLoggerEngine(JSRuntime* runtime, bool enable);
 
-struct BaselineBailoutInfo
-{
-    
-    uint8_t* incomingStack;
+struct BaselineBailoutInfo {
+  
+  uint8_t* incomingStack;
 
-    
-    
-    uint8_t* copyStackTop;
-    uint8_t* copyStackBottom;
+  
+  
+  uint8_t* copyStackTop;
+  uint8_t* copyStackBottom;
 
-    
-    
-    
-    uint32_t setR0;
-    Value valueR0;
-    uint32_t setR1;
-    Value valueR1;
+  
+  
+  
+  uint32_t setR0;
+  Value valueR0;
+  uint32_t setR1;
+  Value valueR1;
 
-    
-    void* resumeFramePtr;
+  
+  void* resumeFramePtr;
 
-    
-    void* resumeAddr;
+  
+  void* resumeAddr;
 
-    
-    jsbytecode* resumePC;
+  
+  jsbytecode* resumePC;
 
-    
-    jsbytecode* tryPC;
-    jsbytecode* faultPC;
+  
+  jsbytecode* tryPC;
+  jsbytecode* faultPC;
 
-    
-    
-    
-    
-    
-    
-    ICStub* monitorStub;
+  
+  
+  
+  
+  
+  
+  ICStub* monitorStub;
 
-    
-    uint32_t numFrames;
+  
+  uint32_t numFrames;
 
-    
-    
-    
-    
-    bool checkGlobalDeclarationConflicts;
+  
+  
+  
+  
+  bool checkGlobalDeclarationConflicts;
 
-    
-    BailoutKind bailoutKind;
+  
+  BailoutKind bailoutKind;
 };
 
-MOZ_MUST_USE bool
-BailoutIonToBaseline(JSContext* cx, JitActivation* activation, const JSJitFrameIter& iter,
-                     bool invalidate, BaselineBailoutInfo** bailoutInfo,
-                     const ExceptionBailoutInfo* exceptionInfo);
+MOZ_MUST_USE bool BailoutIonToBaseline(
+    JSContext* cx, JitActivation* activation, const JSJitFrameIter& iter,
+    bool invalidate, BaselineBailoutInfo** bailoutInfo,
+    const ExceptionBailoutInfo* exceptionInfo);
 
 
 
-void
-MarkActiveBaselineScripts(Zone* zone);
+void MarkActiveBaselineScripts(Zone* zone);
 
-MethodStatus
-BaselineCompile(JSContext* cx, JSScript* script, bool forceDebugInstrumentation = false);
+MethodStatus BaselineCompile(JSContext* cx, JSScript* script,
+                             bool forceDebugInstrumentation = false);
 
 #ifdef JS_STRUCTURED_SPEW
-void
-JitSpewBaselineICStats(JSScript* script, const char* dumpReason);
+void JitSpewBaselineICStats(JSScript* script, const char* dumpReason);
 #endif
 
 static const unsigned BASELINE_MAX_ARGS_LENGTH = 20000;
 
-} 
-} 
+}  
+}  
 
 namespace JS {
 
 template <>
-struct DeletePolicy<js::jit::BaselineScript>
-{
-    explicit DeletePolicy(JSRuntime* rt) : rt_(rt) {}
-    void operator()(const js::jit::BaselineScript* script);
+struct DeletePolicy<js::jit::BaselineScript> {
+  explicit DeletePolicy(JSRuntime* rt) : rt_(rt) {}
+  void operator()(const js::jit::BaselineScript* script);
 
-  private:
-    JSRuntime* rt_;
+ private:
+  JSRuntime* rt_;
 };
 
-} 
+}  
 
 #endif 

@@ -83,8 +83,7 @@ namespace recordreplay {
 
 
 
-struct CheckpointId
-{
+struct CheckpointId {
   
   
   size_t mNormal;
@@ -98,8 +97,7 @@ struct CheckpointId
   size_t mTemporary;
 
   explicit CheckpointId(size_t aNormal = Invalid, size_t aTemporary = 0)
-    : mNormal(aNormal), mTemporary(aTemporary)
-  {}
+      : mNormal(aNormal), mTemporary(aTemporary) {}
 
   inline bool operator==(const CheckpointId& o) const {
     return mNormal == o.mNormal && mTemporary == o.mTemporary;
@@ -178,7 +176,7 @@ bool IsActiveChild();
 
 bool NewCheckpoint(bool aTemporary);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

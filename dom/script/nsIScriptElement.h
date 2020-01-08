@@ -19,39 +19,40 @@
 #include "mozilla/net/ReferrerPolicy.h"
 
 
-#define NS_ISCRIPTELEMENT_IID \
-{ 0xe60fca9b, 0x1b96, 0x4e4e, \
- { 0xa9, 0xb4, 0xdc, 0x98, 0x4f, 0x88, 0x3f, 0x9c } }
+#define NS_ISCRIPTELEMENT_IID                        \
+  {                                                  \
+    0xe60fca9b, 0x1b96, 0x4e4e, {                    \
+      0xa9, 0xb4, 0xdc, 0x98, 0x4f, 0x88, 0x3f, 0x9c \
+    }                                                \
+  }
 
 
 
 
-class nsIScriptElement : public nsIScriptLoaderObserver
-{
-public:
+class nsIScriptElement : public nsIScriptLoaderObserver {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ISCRIPTELEMENT_IID)
 
   explicit nsIScriptElement(mozilla::dom::FromParser aFromParser)
-    : mLineNumber(1),
-      mColumnNumber(1),
-      mAlreadyStarted(false),
-      mMalformed(false),
-      mDoneAddingChildren(aFromParser == mozilla::dom::NOT_FROM_PARSER ||
-                          aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT),
-      mForceAsync(aFromParser == mozilla::dom::NOT_FROM_PARSER ||
-                  aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT),
-      mFrozen(false),
-      mIsModule(false),
-      mDefer(false),
-      mAsync(false),
-      mExternal(false),
-      mParserCreated(aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT ?
-                     mozilla::dom::NOT_FROM_PARSER : aFromParser),
-                     
-                     
-      mCreatorParser(nullptr)
-  {
-  }
+      : mLineNumber(1),
+        mColumnNumber(1),
+        mAlreadyStarted(false),
+        mMalformed(false),
+        mDoneAddingChildren(aFromParser == mozilla::dom::NOT_FROM_PARSER ||
+                            aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT),
+        mForceAsync(aFromParser == mozilla::dom::NOT_FROM_PARSER ||
+                    aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT),
+        mFrozen(false),
+        mIsModule(false),
+        mDefer(false),
+        mAsync(false),
+        mExternal(false),
+        mParserCreated(aFromParser == mozilla::dom::FROM_PARSER_FRAGMENT
+                           ? mozilla::dom::NOT_FROM_PARSER
+                           : aFromParser),
+        
+        
+        mCreatorParser(nullptr) {}
 
   
 
@@ -64,14 +65,12 @@ public:
 
 
 
-  nsIURI* GetScriptURI()
-  {
+  nsIURI* GetScriptURI() {
     MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
     return mUri;
   }
 
-  nsIPrincipal* GetScriptURITriggeringPrincipal()
-  {
+  nsIPrincipal* GetScriptURITriggeringPrincipal() {
     MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
     return mSrcTriggeringPrincipal;
   }
@@ -97,8 +96,7 @@ public:
   
 
 
-  bool GetScriptIsModule()
-  {
+  bool GetScriptIsModule() {
     MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
     return mIsModule;
   }
@@ -106,8 +104,7 @@ public:
   
 
 
-  bool GetScriptDeferred()
-  {
+  bool GetScriptDeferred() {
     MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
     return mDefer;
   }
@@ -115,8 +112,7 @@ public:
   
 
 
-  bool GetScriptAsync()
-  {
+  bool GetScriptAsync() {
     MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
     return mAsync;
   }
@@ -124,8 +120,7 @@ public:
   
 
 
-  bool GetScriptExternal()
-  {
+  bool GetScriptExternal() {
     MOZ_ASSERT(mFrozen, "Not ready for this call yet!");
     return mExternal;
   }
@@ -133,48 +128,25 @@ public:
   
 
 
-  mozilla::dom::FromParser GetParserCreated()
-  {
-    return mParserCreated;
-  }
+  mozilla::dom::FromParser GetParserCreated() { return mParserCreated; }
 
-  void SetScriptLineNumber(uint32_t aLineNumber)
-  {
-    mLineNumber = aLineNumber;
-  }
+  void SetScriptLineNumber(uint32_t aLineNumber) { mLineNumber = aLineNumber; }
 
-  uint32_t GetScriptLineNumber()
-  {
-    return mLineNumber;
-  }
+  uint32_t GetScriptLineNumber() { return mLineNumber; }
 
-  void SetScriptColumnNumber(uint32_t aColumnNumber)
-  {
+  void SetScriptColumnNumber(uint32_t aColumnNumber) {
     mColumnNumber = aColumnNumber;
   }
 
-  uint32_t GetScriptColumnNumber()
-  {
-    return mColumnNumber;
-  }
+  uint32_t GetScriptColumnNumber() { return mColumnNumber; }
 
-  void SetIsMalformed()
-  {
-    mMalformed = true;
-  }
+  void SetIsMalformed() { mMalformed = true; }
 
-  bool IsMalformed()
-  {
-    return mMalformed;
-  }
+  bool IsMalformed() { return mMalformed; }
 
-  void PreventExecution()
-  {
-    mAlreadyStarted = true;
-  }
+  void PreventExecution() { mAlreadyStarted = true; }
 
-  void LoseParserInsertedness()
-  {
+  void LoseParserInsertedness() {
     mUri = nullptr;
     mCreatorParser = nullptr;
     mParserCreated = mozilla::dom::NOT_FROM_PARSER;
@@ -188,16 +160,14 @@ public:
     mDefer = false;
   }
 
-  void SetCreatorParser(nsIParser* aParser)
-  {
+  void SetCreatorParser(nsIParser* aParser) {
     mCreatorParser = do_GetWeakReference(aParser);
   }
 
   
 
 
-  void UnblockParser()
-  {
+  void UnblockParser() {
     nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
     if (parser) {
       parser->UnblockParser();
@@ -207,8 +177,7 @@ public:
   
 
 
-  void ContinueParserAsync()
-  {
+  void ContinueParserAsync() {
     nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
     if (parser) {
       parser->ContinueInterruptedParsingAsync();
@@ -218,8 +187,7 @@ public:
   
 
 
-  void BeginEvaluating()
-  {
+  void BeginEvaluating() {
     nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
     if (parser) {
       parser->PushDefinedInsertionPoint();
@@ -229,8 +197,7 @@ public:
   
 
 
-  void EndEvaluating()
-  {
+  void EndEvaluating() {
     nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
     if (parser) {
       parser->PopDefinedInsertionPoint();
@@ -240,8 +207,7 @@ public:
   
 
 
-  already_AddRefed<nsIParser> GetCreatorParser()
-  {
+  already_AddRefed<nsIParser> GetCreatorParser() {
     nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
     return parser.forget();
   }
@@ -253,8 +219,7 @@ public:
 
 
 
-  bool AttemptToExecute()
-  {
+  bool AttemptToExecute() {
     mDoneAddingChildren = true;
     bool block = MaybeProcessScript();
     if (!mAlreadyStarted) {
@@ -268,8 +233,7 @@ public:
   
 
 
-  virtual mozilla::CORSMode GetCORSMode() const
-  {
+  virtual mozilla::CORSMode GetCORSMode() const {
     
     return mozilla::CORS_NONE;
   }
@@ -277,8 +241,7 @@ public:
   
 
 
-  virtual mozilla::net::ReferrerPolicy GetReferrerPolicy()
-  {
+  virtual mozilla::net::ReferrerPolicy GetReferrerPolicy() {
     return mozilla::net::RP_Unset;
   }
 
@@ -287,7 +250,7 @@ public:
 
   virtual nsresult FireErrorEvent() = 0;
 
-protected:
+ protected:
   
 
 
@@ -392,4 +355,4 @@ protected:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIScriptElement, NS_ISCRIPTELEMENT_IID)
 
-#endif 
+#endif  

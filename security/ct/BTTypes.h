@@ -11,7 +11,8 @@
 
 #include "Buffer.h"
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
 
@@ -27,8 +28,7 @@ namespace mozilla { namespace ct {
 
 
 
-struct InclusionProofDataV2
-{
+struct InclusionProofDataV2 {
   Buffer logId;
   uint64_t treeSize;
   uint64_t leafIndex;
@@ -51,14 +51,14 @@ struct InclusionProofDataV2
 
 
 
-struct SignedTreeHeadDataV2
-{
+struct SignedTreeHeadDataV2 {
   Buffer logId;
   uint64_t timestamp;
   uint64_t treeSize;
   Buffer rootHash;
 };
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

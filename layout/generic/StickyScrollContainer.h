@@ -23,37 +23,32 @@ class nsIScrollableFrame;
 
 namespace mozilla {
 
-class StickyScrollContainer final : public nsIScrollPositionListener
-{
-public:
+class StickyScrollContainer final : public nsIScrollPositionListener {
+ public:
   
 
 
 
-  static StickyScrollContainer* GetStickyScrollContainerForFrame(nsIFrame* aFrame);
+  static StickyScrollContainer* GetStickyScrollContainerForFrame(
+      nsIFrame* aFrame);
 
   
 
 
 
-  static StickyScrollContainer* GetStickyScrollContainerForScrollFrame(nsIFrame* aScrollFrame);
+  static StickyScrollContainer* GetStickyScrollContainerForScrollFrame(
+      nsIFrame* aScrollFrame);
 
   
 
 
-  static void NotifyReparentedFrameAcrossScrollFrameBoundary(nsIFrame* aFrame,
-                                                             nsIFrame* aOldParent);
+  static void NotifyReparentedFrameAcrossScrollFrameBoundary(
+      nsIFrame* aFrame, nsIFrame* aOldParent);
 
-  void AddFrame(nsIFrame* aFrame) {
-    mFrames.AppendElement(aFrame);
-  }
-  void RemoveFrame(nsIFrame* aFrame) {
-    mFrames.RemoveElement(aFrame);
-  }
+  void AddFrame(nsIFrame* aFrame) { mFrames.AppendElement(aFrame); }
+  void RemoveFrame(nsIFrame* aFrame) { mFrames.RemoveElement(aFrame); }
 
-  nsIScrollableFrame* ScrollFrame() const {
-    return mScrollFrame;
-  }
+  nsIScrollableFrame* ScrollFrame() const { return mScrollFrame; }
 
   
   static void ComputeStickyOffsets(nsIFrame* aFrame);
@@ -68,7 +63,8 @@ public:
 
 
 
-  void GetScrollRanges(nsIFrame* aFrame, nsRectAbsolute* aOuter, nsRectAbsolute* aInner) const;
+  void GetScrollRanges(nsIFrame* aFrame, nsRectAbsolute* aOuter,
+                       nsRectAbsolute* aInner) const;
 
   
 
@@ -89,7 +85,7 @@ public:
 
   ~StickyScrollContainer();
 
-private:
+ private:
   explicit StickyScrollContainer(nsIScrollableFrame* aScrollFrame);
 
   
@@ -106,6 +102,6 @@ private:
   nsPoint mScrollPosition;
 };
 
-} 
+}  
 
 #endif 

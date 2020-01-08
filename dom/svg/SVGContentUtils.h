@@ -10,7 +10,7 @@
 
 #include <math.h>
 
-#include "mozilla/gfx/2D.h" 
+#include "mozilla/gfx/2D.h"  
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/RangedPtr.h"
 #include "nsError.h"
@@ -34,9 +34,9 @@ namespace dom {
 class Element;
 class SVGSVGElement;
 class SVGViewportElement;
-} 
+}  
 
-} 
+}  
 
 #define SVG_ZERO_LENGTH_PATH_FIX_FACTOR 512
 
@@ -64,30 +64,31 @@ class SVGViewportElement;
 
 
 enum SVGTransformTypes {
-   eAllTransforms,
-   eUserSpaceToParent,
-   eChildToUserSpace
+  eAllTransforms,
+  eUserSpaceToParent,
+  eChildToUserSpace
 };
 
 
 
 
 
-class SVGContentUtils
-{
-public:
+class SVGContentUtils {
+ public:
   typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::gfx::Float Float;
   typedef mozilla::gfx::Matrix Matrix;
   typedef mozilla::gfx::Rect Rect;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
-  typedef mozilla::SVGAnimatedPreserveAspectRatio SVGAnimatedPreserveAspectRatio;
+  typedef mozilla::SVGAnimatedPreserveAspectRatio
+      SVGAnimatedPreserveAspectRatio;
   typedef mozilla::SVGPreserveAspectRatio SVGPreserveAspectRatio;
 
   
 
 
-  static mozilla::dom::SVGSVGElement *GetOuterSVGElement(nsSVGElement *aSVGElement);
+  static mozilla::dom::SVGSVGElement* GetOuterSVGElement(
+      nsSVGElement* aSVGElement);
 
   
 
@@ -97,7 +98,8 @@ public:
 
 
 
-  static void ActivateByHyperlink(nsIContent *aContent);
+
+  static void ActivateByHyperlink(nsIContent* aContent);
 
   
 
@@ -109,13 +111,12 @@ public:
 
 
   struct AutoStrokeOptions : public StrokeOptions {
-    AutoStrokeOptions()
-    {
+    AutoStrokeOptions() {
       MOZ_ASSERT(mDashLength == 0, "InitDashPattern() depends on this");
     }
     ~AutoStrokeOptions() {
       if (mDashPattern && mDashPattern != mSmallArray) {
-        delete [] mDashPattern;
+        delete[] mDashPattern;
       }
     }
     
@@ -135,20 +136,18 @@ public:
     }
     void DiscardDashPattern() {
       if (mDashPattern && mDashPattern != mSmallArray) {
-        delete [] mDashPattern;
+        delete[] mDashPattern;
       }
       mDashLength = 0;
       mDashPattern = nullptr;
     }
-  private:
+
+   private:
     
     Float mSmallArray[16];
   };
 
-  enum StrokeOptionFlags {
-    eAllStrokeOptions,
-    eIgnoreStrokeDashing
-  };
+  enum StrokeOptionFlags { eAllStrokeOptions, eIgnoreStrokeDashing };
   
 
 
@@ -198,12 +197,11 @@ public:
   
 
 
-  static nsresult ReportToConsole(nsIDocument* doc,
-                                  const char* aWarning,
-                                  const char16_t **aParams,
+  static nsresult ReportToConsole(nsIDocument* doc, const char* aWarning,
+                                  const char16_t** aParams,
                                   uint32_t aParamsLength);
 
-  static Matrix GetCTM(nsSVGElement *aElement, bool aScreenCTM);
+  static Matrix GetCTM(nsSVGElement* aElement, bool aScreenCTM);
 
   
 
@@ -214,21 +212,19 @@ public:
 
 
 
-  static void
-  RectilinearGetStrokeBounds(const Rect& aRect,
-                             const Matrix& aToBoundsSpace,
-                             const Matrix& aToNonScalingStrokeSpace,
-                             float aStrokeWidth,
-                             Rect* aBounds);
+  static void RectilinearGetStrokeBounds(const Rect& aRect,
+                                         const Matrix& aToBoundsSpace,
+                                         const Matrix& aToNonScalingStrokeSpace,
+                                         float aStrokeWidth, Rect* aBounds);
 
   
 
 
 
-  static bool EstablishesViewport(nsIContent *aContent);
+  static bool EstablishesViewport(nsIContent* aContent);
 
-  static mozilla::dom::SVGViewportElement*
-  GetNearestViewportElement(const nsIContent *aContent);
+  static mozilla::dom::SVGViewportElement* GetNearestViewportElement(
+      const nsIContent* aContent);
 
   
   enum ctxDirection { X, Y, XY };
@@ -239,28 +235,25 @@ public:
   static double ComputeNormalizedHypotenuse(double aWidth, double aHeight);
 
   
-  static float
-  AngleBisect(float a1, float a2);
+  static float AngleBisect(float a1, float a2);
 
   
 
-  static Matrix
-  GetViewBoxTransform(float aViewportWidth, float aViewportHeight,
-                      float aViewboxX, float aViewboxY,
-                      float aViewboxWidth, float aViewboxHeight,
-                      const SVGAnimatedPreserveAspectRatio &aPreserveAspectRatio);
+  static Matrix GetViewBoxTransform(
+      float aViewportWidth, float aViewportHeight, float aViewboxX,
+      float aViewboxY, float aViewboxWidth, float aViewboxHeight,
+      const SVGAnimatedPreserveAspectRatio& aPreserveAspectRatio);
 
-  static Matrix
-  GetViewBoxTransform(float aViewportWidth, float aViewportHeight,
-                      float aViewboxX, float aViewboxY,
-                      float aViewboxWidth, float aViewboxHeight,
-                      const SVGPreserveAspectRatio &aPreserveAspectRatio);
+  static Matrix GetViewBoxTransform(
+      float aViewportWidth, float aViewportHeight, float aViewboxX,
+      float aViewboxY, float aViewboxWidth, float aViewboxHeight,
+      const SVGPreserveAspectRatio& aPreserveAspectRatio);
 
-  static mozilla::RangedPtr<const char16_t>
-  GetStartRangedPtr(const nsAString& aString);
+  static mozilla::RangedPtr<const char16_t> GetStartRangedPtr(
+      const nsAString& aString);
 
-  static mozilla::RangedPtr<const char16_t>
-  GetEndRangedPtr(const nsAString& aString);
+  static mozilla::RangedPtr<const char16_t> GetEndRangedPtr(
+      const nsAString& aString);
 
   
 
@@ -269,11 +262,10 @@ public:
 
 
 
-  static inline bool
-  ParseOptionalSign(mozilla::RangedPtr<const char16_t>& aIter,
-                    const mozilla::RangedPtr<const char16_t>& aEnd,
-                    int32_t& aSignMultiplier)
-  {
+  static inline bool ParseOptionalSign(
+      mozilla::RangedPtr<const char16_t>& aIter,
+      const mozilla::RangedPtr<const char16_t>& aEnd,
+      int32_t& aSignMultiplier) {
     if (aIter == aEnd) {
       return false;
     }
@@ -298,11 +290,10 @@ public:
 
 
 
-  template<class floatType>
-  static bool
-  ParseNumber(mozilla::RangedPtr<const char16_t>& aIter,
-              const mozilla::RangedPtr<const char16_t>& aEnd,
-              floatType& aValue);
+  template <class floatType>
+  static bool ParseNumber(mozilla::RangedPtr<const char16_t>& aIter,
+                          const mozilla::RangedPtr<const char16_t>& aEnd,
+                          floatType& aValue);
 
   
 
@@ -310,9 +301,8 @@ public:
 
 
 
-  template<class floatType>
-  static bool
-  ParseNumber(const nsAString& aString, floatType& aValue);
+  template <class floatType>
+  static bool ParseNumber(const nsAString& aString, floatType& aValue);
 
   
 
@@ -338,15 +328,14 @@ public:
 
 
 
-  static float CoordToFloat(nsSVGElement *aContent,
-                            const nsStyleCoord &aCoord);
+  static float CoordToFloat(nsSVGElement* aContent, const nsStyleCoord& aCoord);
   
 
 
 
 
-  static already_AddRefed<mozilla::gfx::Path>
-  GetPath(const nsAString& aPathString);
+  static already_AddRefed<mozilla::gfx::Path> GetPath(
+      const nsAString& aPathString);
 
   
 

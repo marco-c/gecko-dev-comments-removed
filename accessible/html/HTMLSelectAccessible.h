@@ -29,10 +29,8 @@ namespace a11y {
 
 
 
-class HTMLSelectListAccessible : public AccessibleWrap
-{
-public:
-
+class HTMLSelectListAccessible : public AccessibleWrap {
+ public:
   HTMLSelectListAccessible(nsIContent* aContent, DocAccessible* aDoc);
   virtual ~HTMLSelectListAccessible() {}
 
@@ -56,9 +54,8 @@ public:
 
 
 
-class HTMLSelectOptionAccessible : public HyperTextAccessibleWrap
-{
-public:
+class HTMLSelectOptionAccessible : public HyperTextAccessibleWrap {
+ public:
   enum { eAction_Select = 0 };
 
   HTMLSelectOptionAccessible(nsIContent* aContent, DocAccessible* aDoc);
@@ -81,20 +78,17 @@ public:
   
   virtual Accessible* ContainerWidget() const override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 
-private:
-
+ private:
   
 
 
-  Accessible* GetSelect() const
-  {
+  Accessible* GetSelect() const {
     Accessible* parent = mParent;
-    if (parent && parent->IsHTMLOptGroup())
-      parent = parent->Parent();
+    if (parent && parent->IsHTMLOptGroup()) parent = parent->Parent();
 
     if (parent && parent->IsListControl()) {
       Accessible* combobox = parent->Parent();
@@ -107,11 +101,9 @@ private:
   
 
 
-  Accessible* GetCombobox() const
-  {
+  Accessible* GetCombobox() const {
     Accessible* parent = mParent;
-    if (parent && parent->IsHTMLOptGroup())
-      parent = parent->Parent();
+    if (parent && parent->IsHTMLOptGroup()) parent = parent->Parent();
 
     if (parent && parent->IsListControl()) {
       Accessible* combobox = parent->Parent();
@@ -125,13 +117,12 @@ private:
 
 
 
-class HTMLSelectOptGroupAccessible : public HTMLSelectOptionAccessible
-{
-public:
-
-  HTMLSelectOptGroupAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    HTMLSelectOptionAccessible(aContent, aDoc)
-    { mType = eHTMLOptGroupType; }
+class HTMLSelectOptGroupAccessible : public HTMLSelectOptionAccessible {
+ public:
+  HTMLSelectOptGroupAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : HTMLSelectOptionAccessible(aContent, aDoc) {
+    mType = eHTMLOptGroupType;
+  }
   virtual ~HTMLSelectOptGroupAccessible() {}
 
   
@@ -154,9 +145,8 @@ class HTMLComboboxListAccessible;
 
 
 
-class HTMLComboboxAccessible final : public AccessibleWrap
-{
-public:
+class HTMLComboboxAccessible final : public AccessibleWrap {
+ public:
   enum { eAction_Click = 0 };
 
   HTMLComboboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
@@ -183,13 +173,13 @@ public:
   virtual Accessible* CurrentItem() const override;
   virtual void SetCurrentItem(const Accessible* aItem) override;
 
-protected:
+ protected:
   
 
 
   Accessible* SelectedOption() const;
 
-private:
+ private:
   RefPtr<HTMLComboboxListAccessible> mListAccessible;
 };
 
@@ -198,10 +188,8 @@ private:
 
 
 
-class HTMLComboboxListAccessible : public HTMLSelectListAccessible
-{
-public:
-
+class HTMLComboboxListAccessible : public HTMLSelectListAccessible {
+ public:
   HTMLComboboxListAccessible(Accessible* aParent, nsIContent* aContent,
                              DocAccessible* aDoc);
   virtual ~HTMLComboboxListAccessible() {}
@@ -218,7 +206,7 @@ public:
   virtual bool AreItemsOperable() const override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

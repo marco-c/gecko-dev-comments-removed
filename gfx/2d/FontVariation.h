@@ -13,8 +13,7 @@ namespace mozilla {
 namespace gfx {
 
 
-struct FontVariation
-{
+struct FontVariation {
   uint32_t mTag;
   float mValue;
 
@@ -23,7 +22,7 @@ struct FontVariation
   }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

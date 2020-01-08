@@ -11,11 +11,9 @@
 
 
 
-void
-read_procmaps(lul::LUL* aLUL);
+void read_procmaps(lul::LUL* aLUL);
 
 
-void
-logging_sink_for_LUL(const char* str);
+void logging_sink_for_LUL(const char* str);
 
 #endif 

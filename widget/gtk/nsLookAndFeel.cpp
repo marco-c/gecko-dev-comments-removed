@@ -38,821 +38,770 @@ using namespace mozilla;
 using mozilla::LookAndFeel;
 
 #define GDK_COLOR_TO_NS_RGB(c) \
-    ((nscolor) NS_RGB(c.red>>8, c.green>>8, c.blue>>8))
-#define GDK_RGBA_TO_NS_RGBA(c) \
-    ((nscolor) NS_RGBA((int)((c).red*255), (int)((c).green*255), \
-                       (int)((c).blue*255), (int)((c).alpha*255)))
+  ((nscolor)NS_RGB(c.red >> 8, c.green >> 8, c.blue >> 8))
+#define GDK_RGBA_TO_NS_RGBA(c)                                    \
+  ((nscolor)NS_RGBA((int)((c).red * 255), (int)((c).green * 255), \
+                    (int)((c).blue * 255), (int)((c).alpha * 255)))
 
-#if !GTK_CHECK_VERSION(3,12,0)
+#if !GTK_CHECK_VERSION(3, 12, 0)
 #define GTK_STATE_FLAG_LINK (static_cast<GtkStateFlags>(1 << 9))
 #endif
 
 nsLookAndFeel::nsLookAndFeel()
     : nsXPLookAndFeel(),
-      mDefaultFontCached(false), mButtonFontCached(false),
-      mFieldFontCached(false), mMenuFontCached(false),
-      mInitialized(false)
-{
+      mDefaultFontCached(false),
+      mButtonFontCached(false),
+      mFieldFontCached(false),
+      mMenuFontCached(false),
+      mInitialized(false) {}
+
+nsLookAndFeel::~nsLookAndFeel() {}
+
+
+
+static void ApplyColorOver(const GdkRGBA& aSource, GdkRGBA* aDest) {
+  gdouble sourceCoef = aSource.alpha;
+  gdouble destCoef = aDest->alpha * (1.0 - sourceCoef);
+  gdouble resultAlpha = sourceCoef + destCoef;
+  if (resultAlpha != 0.0) {  
+    destCoef /= resultAlpha;
+    sourceCoef /= resultAlpha;
+    aDest->red = sourceCoef * aSource.red + destCoef * aDest->red;
+    aDest->green = sourceCoef * aSource.green + destCoef * aDest->green;
+    aDest->blue = sourceCoef * aSource.blue + destCoef * aDest->blue;
+    aDest->alpha = resultAlpha;
+  }
 }
 
-nsLookAndFeel::~nsLookAndFeel()
-{
+static void GetLightAndDarkness(const GdkRGBA& aColor, double* aLightness,
+                                double* aDarkness) {
+  double sum = aColor.red + aColor.green + aColor.blue;
+  *aLightness = sum * aColor.alpha;
+  *aDarkness = (3.0 - sum) * aColor.alpha;
 }
 
+static bool GetGradientColors(const GValue* aValue, GdkRGBA* aLightColor,
+                              GdkRGBA* aDarkColor) {
+  if (!G_TYPE_CHECK_VALUE_TYPE(aValue, CAIRO_GOBJECT_TYPE_PATTERN))
+    return false;
 
+  auto pattern = static_cast<cairo_pattern_t*>(g_value_get_boxed(aValue));
+  if (!pattern) return false;
 
-static void
-ApplyColorOver(const GdkRGBA& aSource, GdkRGBA* aDest) {
-    gdouble sourceCoef = aSource.alpha;
-    gdouble destCoef = aDest->alpha * (1.0 - sourceCoef);
-    gdouble resultAlpha = sourceCoef + destCoef;
-    if (resultAlpha != 0.0) { 
-        destCoef /= resultAlpha;
-        sourceCoef /= resultAlpha;
-        aDest->red = sourceCoef * aSource.red + destCoef * aDest->red;
-        aDest->green = sourceCoef * aSource.green + destCoef * aDest->green;
-        aDest->blue = sourceCoef * aSource.blue + destCoef * aDest->blue;
-        aDest->alpha = resultAlpha;
+  
+  
+  if (CAIRO_STATUS_SUCCESS !=
+      cairo_pattern_get_color_stop_rgba(pattern, 0, nullptr, &aDarkColor->red,
+                                        &aDarkColor->green, &aDarkColor->blue,
+                                        &aDarkColor->alpha))
+    return false;
+
+  double maxLightness, maxDarkness;
+  GetLightAndDarkness(*aDarkColor, &maxLightness, &maxDarkness);
+  *aLightColor = *aDarkColor;
+
+  GdkRGBA stop;
+  for (int index = 1;
+       CAIRO_STATUS_SUCCESS ==
+       cairo_pattern_get_color_stop_rgba(pattern, index, nullptr, &stop.red,
+                                         &stop.green, &stop.blue, &stop.alpha);
+       ++index) {
+    double lightness, darkness;
+    GetLightAndDarkness(stop, &lightness, &darkness);
+    if (lightness > maxLightness) {
+      maxLightness = lightness;
+      *aLightColor = stop;
     }
+    if (darkness > maxDarkness) {
+      maxDarkness = darkness;
+      *aDarkColor = stop;
+    }
+  }
+
+  return true;
 }
 
-static void
-GetLightAndDarkness(const GdkRGBA& aColor,
-                    double* aLightness, double* aDarkness)
-{
-    double sum = aColor.red + aColor.green + aColor.blue;
-    *aLightness = sum * aColor.alpha;
-    *aDarkness = (3.0 - sum) * aColor.alpha;
+static bool GetUnicoBorderGradientColors(GtkStyleContext* aContext,
+                                         GdkRGBA* aLightColor,
+                                         GdkRGBA* aDarkColor) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const char* propertyName = "-unico-border-gradient";
+  if (!gtk_style_properties_lookup_property(propertyName, nullptr, nullptr))
+    return false;
+
+  
+  GtkThemingEngine* engine;
+  GtkStateFlags state = gtk_style_context_get_state(aContext);
+  gtk_style_context_get(aContext, state, "engine", &engine, nullptr);
+  if (strcmp(g_type_name(G_TYPE_FROM_INSTANCE(engine)), "UnicoEngine") != 0)
+    return false;
+
+  
+  
+  GValue value = G_VALUE_INIT;
+  gtk_style_context_get_property(aContext, propertyName, state, &value);
+
+  bool result = GetGradientColors(&value, aLightColor, aDarkColor);
+
+  g_value_unset(&value);
+  return result;
 }
 
-static bool
-GetGradientColors(const GValue* aValue,
-                  GdkRGBA* aLightColor, GdkRGBA* aDarkColor)
-{
-    if (!G_TYPE_CHECK_VALUE_TYPE(aValue, CAIRO_GOBJECT_TYPE_PATTERN))
-        return false;
 
-    auto pattern = static_cast<cairo_pattern_t*>(g_value_get_boxed(aValue));
-    if (!pattern)
-        return false;
 
+
+
+
+static bool GetBorderColors(GtkStyleContext* aContext, GdkRGBA* aLightColor,
+                            GdkRGBA* aDarkColor) {
+  
+  GtkStateFlags state = gtk_style_context_get_state(aContext);
+  GtkBorderStyle borderStyle;
+  gtk_style_context_get(aContext, state, GTK_STYLE_PROPERTY_BORDER_STYLE,
+                        &borderStyle, nullptr);
+  bool visible = borderStyle != GTK_BORDER_STYLE_NONE &&
+                 borderStyle != GTK_BORDER_STYLE_HIDDEN;
+  if (visible) {
     
     
-    if (CAIRO_STATUS_SUCCESS !=
-        cairo_pattern_get_color_stop_rgba(pattern, 0, nullptr, &aDarkColor->red,
-                                          &aDarkColor->green, &aDarkColor->blue,
-                                          &aDarkColor->alpha))
-        return false;
+    GtkBorder border;
+    gtk_style_context_get_border(aContext, state, &border);
+    visible = border.top != 0 || border.right != 0 || border.bottom != 0 ||
+              border.left != 0;
+  }
 
-    double maxLightness, maxDarkness;
-    GetLightAndDarkness(*aDarkColor, &maxLightness, &maxDarkness);
-    *aLightColor = *aDarkColor;
-
-    GdkRGBA stop;
-    for (int index = 1;
-         CAIRO_STATUS_SUCCESS ==
-             cairo_pattern_get_color_stop_rgba(pattern, index, nullptr,
-                                               &stop.red, &stop.green,
-                                               &stop.blue, &stop.alpha);
-         ++index) {
-        double lightness, darkness;
-        GetLightAndDarkness(stop, &lightness, &darkness);
-        if (lightness > maxLightness) {
-            maxLightness = lightness;
-            *aLightColor = stop;
-        }
-        if (darkness > maxDarkness) {
-            maxDarkness = darkness;
-            *aDarkColor = stop;
-        }
-    }
-
+  if (visible &&
+      GetUnicoBorderGradientColors(aContext, aLightColor, aDarkColor))
     return true;
+
+  
+  
+  
+  gtk_style_context_get_border_color(aContext, state, aDarkColor);
+  
+  
+  
+  *aLightColor = *aDarkColor;
+  return visible;
 }
 
-static bool
-GetUnicoBorderGradientColors(GtkStyleContext* aContext,
-                             GdkRGBA* aLightColor, GdkRGBA* aDarkColor)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const char* propertyName = "-unico-border-gradient";
-    if (!gtk_style_properties_lookup_property(propertyName, nullptr, nullptr))
-        return false;
-
-    
-    GtkThemingEngine* engine;
-    GtkStateFlags state = gtk_style_context_get_state(aContext);
-    gtk_style_context_get(aContext, state, "engine", &engine, nullptr);
-    if (strcmp(g_type_name(G_TYPE_FROM_INSTANCE(engine)), "UnicoEngine") != 0)
-        return false;
-
-    
-    
-    GValue value = G_VALUE_INIT;
-    gtk_style_context_get_property(aContext, propertyName, state, &value);
-
-    bool result = GetGradientColors(&value, aLightColor, aDarkColor);
-
-    g_value_unset(&value);
-    return result;
+static bool GetBorderColors(GtkStyleContext* aContext, nscolor* aLightColor,
+                            nscolor* aDarkColor) {
+  GdkRGBA lightColor, darkColor;
+  bool ret = GetBorderColors(aContext, &lightColor, &darkColor);
+  *aLightColor = GDK_RGBA_TO_NS_RGBA(lightColor);
+  *aDarkColor = GDK_RGBA_TO_NS_RGBA(darkColor);
+  return ret;
 }
 
 
 
 
+nsresult nsLookAndFeel::InitCellHighlightColors() {
+  
+  
+  
+  int32_t minLuminosityDifference = NS_SUFFICIENT_LUMINOSITY_DIFFERENCE / 5;
+  int32_t backLuminosityDifference =
+      NS_LUMINOSITY_DIFFERENCE(mMozWindowBackground, mMozFieldBackground);
+  if (backLuminosityDifference >= minLuminosityDifference) {
+    mMozCellHighlightBackground = mMozWindowBackground;
+    mMozCellHighlightText = mMozWindowText;
+    return NS_OK;
+  }
 
+  uint16_t hue, sat, luminance;
+  uint8_t alpha;
+  mMozCellHighlightBackground = mMozFieldBackground;
+  mMozCellHighlightText = mMozFieldText;
 
-static bool
-GetBorderColors(GtkStyleContext* aContext,
-                GdkRGBA* aLightColor, GdkRGBA* aDarkColor)
-{
-    
-    GtkStateFlags state = gtk_style_context_get_state(aContext);
-    GtkBorderStyle borderStyle;
-    gtk_style_context_get(aContext, state, GTK_STYLE_PROPERTY_BORDER_STYLE,
-                          &borderStyle, nullptr);
-    bool visible = borderStyle != GTK_BORDER_STYLE_NONE &&
-        borderStyle != GTK_BORDER_STYLE_HIDDEN;
-    if (visible) {
-        
-        
-        GtkBorder border;
-        gtk_style_context_get_border(aContext, state, &border);
-        visible = border.top != 0 || border.right != 0 ||
-            border.bottom != 0 || border.left != 0;
-    }
+  NS_RGB2HSV(mMozCellHighlightBackground, hue, sat, luminance, alpha);
 
-    if (visible &&
-        GetUnicoBorderGradientColors(aContext, aLightColor, aDarkColor))
-        return true;
-
+  uint16_t step = 30;
+  
+  if (luminance <= step) {
+    luminance += step;
+  }
+  
+  else if (luminance >= 255 - step) {
+    luminance -= step;
+  }
+  
+  else {
+    uint16_t textHue, textSat, textLuminance;
+    uint8_t textAlpha;
+    NS_RGB2HSV(mMozCellHighlightText, textHue, textSat, textLuminance,
+               textAlpha);
     
-    
-    
-    gtk_style_context_get_border_color(aContext, state, aDarkColor);
-    
-    
-    
-    *aLightColor = *aDarkColor;
-    return visible;
-}
-
-static bool
-GetBorderColors(GtkStyleContext* aContext,
-                nscolor* aLightColor, nscolor* aDarkColor)
-{
-    GdkRGBA lightColor, darkColor;
-    bool ret = GetBorderColors(aContext, &lightColor, &darkColor);
-    *aLightColor = GDK_RGBA_TO_NS_RGBA(lightColor);
-    *aDarkColor = GDK_RGBA_TO_NS_RGBA(darkColor);
-    return ret;
-}
-
-
-
-
-nsresult
-nsLookAndFeel::InitCellHighlightColors() {
-    
-    
-    
-    int32_t minLuminosityDifference = NS_SUFFICIENT_LUMINOSITY_DIFFERENCE / 5;
-    int32_t backLuminosityDifference = NS_LUMINOSITY_DIFFERENCE(
-        mMozWindowBackground, mMozFieldBackground);
-    if (backLuminosityDifference >= minLuminosityDifference) {
-        mMozCellHighlightBackground = mMozWindowBackground;
-        mMozCellHighlightText = mMozWindowText;
-        return NS_OK;
-    }
-
-    uint16_t hue, sat, luminance;
-    uint8_t alpha;
-    mMozCellHighlightBackground = mMozFieldBackground;
-    mMozCellHighlightText = mMozFieldText;
-
-    NS_RGB2HSV(mMozCellHighlightBackground, hue, sat, luminance, alpha);
-
-    uint16_t step = 30;
-    
-    if (luminance <= step) {
-        luminance += step;
-    }
-    
-    else if (luminance >= 255 - step) {
-        luminance -= step;
+    if (textLuminance < luminance) {
+      luminance += step;
     }
     
     else {
-        uint16_t textHue, textSat, textLuminance;
-        uint8_t textAlpha;
-        NS_RGB2HSV(mMozCellHighlightText, textHue, textSat, textLuminance,
-            textAlpha);
-        
-        if (textLuminance < luminance) {
-            luminance += step;
-        }
-        
-        else {
-            luminance -= step;
-        }
+      luminance -= step;
     }
-    NS_HSV2RGB(mMozCellHighlightBackground, hue, sat, luminance, alpha);
-    return NS_OK;
+  }
+  NS_HSV2RGB(mMozCellHighlightBackground, hue, sat, luminance, alpha);
+  return NS_OK;
 }
 
-void
-nsLookAndFeel::NativeInit()
-{
-    EnsureInit();
+void nsLookAndFeel::NativeInit() { EnsureInit(); }
+
+void nsLookAndFeel::RefreshImpl() {
+  nsXPLookAndFeel::RefreshImpl();
+  moz_gtk_refresh();
+
+  mDefaultFontCached = false;
+  mButtonFontCached = false;
+  mFieldFontCached = false;
+  mMenuFontCached = false;
+
+  mInitialized = false;
 }
 
-void
-nsLookAndFeel::RefreshImpl()
-{
-    nsXPLookAndFeel::RefreshImpl();
-    moz_gtk_refresh();
+nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
+  EnsureInit();
 
-    mDefaultFontCached = false;
-    mButtonFontCached = false;
-    mFieldFontCached = false;
-    mMenuFontCached = false;
+  nsresult res = NS_OK;
 
-    mInitialized = false;
-}
-
-nsresult
-nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor)
-{
-    EnsureInit();
-
-    nsresult res = NS_OK;
-
-    switch (aID) {
-        
-        
-        
+  switch (aID) {
+      
+      
+      
     case eColorID_WindowBackground:
     case eColorID_WidgetBackground:
     case eColorID_TextBackground:
-    case eColorID_activecaption: 
-    case eColorID_appworkspace: 
-    case eColorID_background: 
+    case eColorID_activecaption:  
+    case eColorID_appworkspace:   
+    case eColorID_background:     
     case eColorID_window:
     case eColorID_windowframe:
     case eColorID__moz_dialog:
     case eColorID__moz_combobox:
-        aColor = mMozWindowBackground;
-        break;
+      aColor = mMozWindowBackground;
+      break;
     case eColorID_WindowForeground:
     case eColorID_WidgetForeground:
     case eColorID_TextForeground:
-    case eColorID_captiontext: 
+    case eColorID_captiontext:  
+                                
     case eColorID_windowtext:
     case eColorID__moz_dialogtext:
-        aColor = mMozWindowText;
-        break;
+      aColor = mMozWindowText;
+      break;
     case eColorID_WidgetSelectBackground:
     case eColorID_TextSelectBackground:
     case eColorID_IMESelectedRawTextBackground:
     case eColorID_IMESelectedConvertedTextBackground:
     case eColorID__moz_dragtargetzone:
     case eColorID__moz_html_cellhighlight:
-    case eColorID_highlight: 
-        aColor = mTextSelectedBackground;
-        break;
+    case eColorID_highlight:  
+      aColor = mTextSelectedBackground;
+      break;
     case eColorID_WidgetSelectForeground:
     case eColorID_TextSelectForeground:
     case eColorID_IMESelectedRawTextForeground:
     case eColorID_IMESelectedConvertedTextForeground:
     case eColorID_highlighttext:
     case eColorID__moz_html_cellhighlighttext:
-        aColor = mTextSelectedText;
-        break;
+      aColor = mTextSelectedText;
+      break;
     case eColorID__moz_cellhighlight:
-        aColor = mMozCellHighlightBackground;
-        break;
+      aColor = mMozCellHighlightBackground;
+      break;
     case eColorID__moz_cellhighlighttext:
-        aColor = mMozCellHighlightText;
-        break;
+      aColor = mMozCellHighlightText;
+      break;
     case eColorID_Widget3DHighlight:
-        aColor = NS_RGB(0xa0,0xa0,0xa0);
-        break;
+      aColor = NS_RGB(0xa0, 0xa0, 0xa0);
+      break;
     case eColorID_Widget3DShadow:
-        aColor = NS_RGB(0x40,0x40,0x40);
-        break;
+      aColor = NS_RGB(0x40, 0x40, 0x40);
+      break;
     case eColorID_IMERawInputBackground:
     case eColorID_IMEConvertedTextBackground:
-        aColor = NS_TRANSPARENT;
-        break;
+      aColor = NS_TRANSPARENT;
+      break;
     case eColorID_IMERawInputForeground:
     case eColorID_IMEConvertedTextForeground:
-        aColor = NS_SAME_AS_FOREGROUND_COLOR;
-        break;
+      aColor = NS_SAME_AS_FOREGROUND_COLOR;
+      break;
     case eColorID_IMERawInputUnderline:
     case eColorID_IMEConvertedTextUnderline:
-        aColor = NS_SAME_AS_FOREGROUND_COLOR;
-        break;
+      aColor = NS_SAME_AS_FOREGROUND_COLOR;
+      break;
     case eColorID_IMESelectedRawTextUnderline:
     case eColorID_IMESelectedConvertedTextUnderline:
-        aColor = NS_TRANSPARENT;
-        break;
+      aColor = NS_TRANSPARENT;
+      break;
     case eColorID_SpellCheckerUnderline:
-        aColor = NS_RGB(0xff, 0, 0);
-        break;
+      aColor = NS_RGB(0xff, 0, 0);
+      break;
 
-        
+      
     case eColorID_activeborder:
-        
-        aColor = mMozWindowActiveBorder;
-        break;
+      
+      aColor = mMozWindowActiveBorder;
+      break;
     case eColorID_inactiveborder:
-        
-        aColor = mMozWindowInactiveBorder;
-        break;
-    case eColorID_graytext: 
-    case eColorID_inactivecaptiontext: 
-        aColor = mMenuTextInactive;
-        break;
+      
+      aColor = mMozWindowInactiveBorder;
+      break;
+    case eColorID_graytext:             
+    case eColorID_inactivecaptiontext:  
+      aColor = mMenuTextInactive;
+      break;
     case eColorID_inactivecaption:
-        
-        aColor = mMozWindowInactiveCaption;
-        break;
+      
+      aColor = mMozWindowInactiveCaption;
+      break;
     case eColorID_infobackground:
-        
-        aColor = mInfoBackground;
-        break;
+      
+      aColor = mInfoBackground;
+      break;
     case eColorID_infotext:
-        
-        aColor = mInfoText;
-        break;
+      
+      aColor = mInfoText;
+      break;
     case eColorID_menu:
-        
-        aColor = mMenuBackground;
-        break;
+      
+      aColor = mMenuBackground;
+      break;
     case eColorID_menutext:
-        
-        aColor = mMenuText;
-        break;
+      
+      aColor = mMenuText;
+      break;
     case eColorID_scrollbar:
-        
-        aColor = mMozScrollbar;
-        break;
+      
+      aColor = mMozScrollbar;
+      break;
 
     case eColorID_threedlightshadow:
-        
-        
+      
+      
     case eColorID_threedface:
     case eColorID_buttonface:
-        
-        aColor = mMozWindowBackground;
-        break;
+      
+      aColor = mMozWindowBackground;
+      break;
 
     case eColorID_buttontext:
-        
-        aColor = mButtonText;
-        break;
+      
+      aColor = mButtonText;
+      break;
 
     case eColorID_buttonhighlight:
-        
+      
     case eColorID_threedhighlight:
-        
-        aColor = mFrameOuterLightBorder;
-        break;
+      
+      aColor = mFrameOuterLightBorder;
+      break;
 
     case eColorID_buttonshadow:
-        
+      
     case eColorID_threedshadow:
-        
-        aColor = mFrameInnerDarkBorder;
-        break;
+      
+      aColor = mFrameInnerDarkBorder;
+      break;
 
     case eColorID_threeddarkshadow:
-        
-        aColor = NS_RGB(0x00,0x00,0x00);
-        break;
+      
+      aColor = NS_RGB(0x00, 0x00, 0x00);
+      break;
 
     case eColorID__moz_eventreerow:
     case eColorID__moz_field:
-        aColor = mMozFieldBackground;
-        break;
+      aColor = mMozFieldBackground;
+      break;
     case eColorID__moz_fieldtext:
-        aColor = mMozFieldText;
-        break;
+      aColor = mMozFieldText;
+      break;
     case eColorID__moz_buttondefault:
-        
-        aColor = mButtonDefault;
-        break;
+      
+      aColor = mButtonDefault;
+      break;
     case eColorID__moz_buttonhoverface:
-        aColor = mButtonHoverFace;
-        break;
+      aColor = mButtonHoverFace;
+      break;
     case eColorID__moz_buttonhovertext:
-        aColor = mButtonHoverText;
-        break;
+      aColor = mButtonHoverText;
+      break;
     case eColorID__moz_menuhover:
-        aColor = mMenuHover;
-        break;
+      aColor = mMenuHover;
+      break;
     case eColorID__moz_menuhovertext:
-        aColor = mMenuHoverText;
-        break;
+      aColor = mMenuHoverText;
+      break;
     case eColorID__moz_oddtreerow:
-        aColor = mOddCellBackground;
-        break;
+      aColor = mOddCellBackground;
+      break;
     case eColorID__moz_nativehyperlinktext:
-        aColor = mNativeHyperLinkText;
-        break;
+      aColor = mNativeHyperLinkText;
+      break;
     case eColorID__moz_comboboxtext:
-        aColor = mComboBoxText;
-        break;
+      aColor = mComboBoxText;
+      break;
     case eColorID__moz_menubartext:
-        aColor = mMenuBarText;
-        break;
+      aColor = mMenuBarText;
+      break;
     case eColorID__moz_menubarhovertext:
-        aColor = mMenuBarHoverText;
-        break;
+      aColor = mMenuBarHoverText;
+      break;
     case eColorID__moz_gtk_info_bar_text:
-        aColor = mInfoBarText;
-        break;
+      aColor = mInfoBarText;
+      break;
     default:
-        
-        aColor = 0;
-        res    = NS_ERROR_FAILURE;
-        break;
-    }
+      
+      aColor = 0;
+      res = NS_ERROR_FAILURE;
+      break;
+  }
 
-    return res;
+  return res;
 }
 
-static int32_t CheckWidgetStyle(GtkWidget* aWidget, const char* aStyle, int32_t aResult) {
-    gboolean value = FALSE;
-    gtk_widget_style_get(aWidget, aStyle, &value, nullptr);
-    return value ? aResult : 0;
+static int32_t CheckWidgetStyle(GtkWidget* aWidget, const char* aStyle,
+                                int32_t aResult) {
+  gboolean value = FALSE;
+  gtk_widget_style_get(aWidget, aStyle, &value, nullptr);
+  return value ? aResult : 0;
 }
 
-static int32_t ConvertGTKStepperStyleToMozillaScrollArrowStyle(GtkWidget* aWidget)
-{
-    if (!aWidget)
-        return mozilla::LookAndFeel::eScrollArrowStyle_Single;
+static int32_t ConvertGTKStepperStyleToMozillaScrollArrowStyle(
+    GtkWidget* aWidget) {
+  if (!aWidget) return mozilla::LookAndFeel::eScrollArrowStyle_Single;
 
-    return
-        CheckWidgetStyle(aWidget, "has-backward-stepper",
-                         mozilla::LookAndFeel::eScrollArrow_StartBackward) |
-        CheckWidgetStyle(aWidget, "has-forward-stepper",
-                         mozilla::LookAndFeel::eScrollArrow_EndForward) |
-        CheckWidgetStyle(aWidget, "has-secondary-backward-stepper",
-                         mozilla::LookAndFeel::eScrollArrow_EndBackward) |
-        CheckWidgetStyle(aWidget, "has-secondary-forward-stepper",
-                         mozilla::LookAndFeel::eScrollArrow_StartForward);
+  return CheckWidgetStyle(aWidget, "has-backward-stepper",
+                          mozilla::LookAndFeel::eScrollArrow_StartBackward) |
+         CheckWidgetStyle(aWidget, "has-forward-stepper",
+                          mozilla::LookAndFeel::eScrollArrow_EndForward) |
+         CheckWidgetStyle(aWidget, "has-secondary-backward-stepper",
+                          mozilla::LookAndFeel::eScrollArrow_EndBackward) |
+         CheckWidgetStyle(aWidget, "has-secondary-forward-stepper",
+                          mozilla::LookAndFeel::eScrollArrow_StartForward);
 }
 
-nsresult
-nsLookAndFeel::GetIntImpl(IntID aID, int32_t &aResult)
-{
-    nsresult res = NS_OK;
+nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
+  nsresult res = NS_OK;
 
-    
-    switch (aID) {
+  
+  switch (aID) {
     case eIntID_ScrollButtonLeftMouseButtonAction:
-        aResult = 0;
-        return NS_OK;
+      aResult = 0;
+      return NS_OK;
     case eIntID_ScrollButtonMiddleMouseButtonAction:
-        aResult = 1;
-        return NS_OK;
+      aResult = 1;
+      return NS_OK;
     case eIntID_ScrollButtonRightMouseButtonAction:
-        aResult = 2;
-        return NS_OK;
+      aResult = 2;
+      return NS_OK;
     default:
-        break;
-    }
+      break;
+  }
 
-    res = nsXPLookAndFeel::GetIntImpl(aID, aResult);
-    if (NS_SUCCEEDED(res))
-        return res;
-    res = NS_OK;
+  res = nsXPLookAndFeel::GetIntImpl(aID, aResult);
+  if (NS_SUCCEEDED(res)) return res;
+  res = NS_OK;
 
-    
-    
-    
-    
-    
-    switch (aID) {
-    case eIntID_CaretBlinkTime:
-        {
-            GtkSettings *settings;
-            gint blink_time;
-            gboolean blink;
+  
+  
+  
+  
+  
+  switch (aID) {
+    case eIntID_CaretBlinkTime: {
+      GtkSettings* settings;
+      gint blink_time;
+      gboolean blink;
 
-            settings = gtk_settings_get_default ();
-            g_object_get (settings,
-                          "gtk-cursor-blink-time", &blink_time,
-                          "gtk-cursor-blink", &blink,
-                          nullptr);
+      settings = gtk_settings_get_default();
+      g_object_get(settings, "gtk-cursor-blink-time", &blink_time,
+                   "gtk-cursor-blink", &blink, nullptr);
 
-            if (blink)
-                aResult = (int32_t) blink_time;
-            else
-                aResult = 0;
-            break;
-        }
-    case eIntID_CaretWidth:
-        aResult = 1;
-        break;
-    case eIntID_ShowCaretDuringSelection:
+      if (blink)
+        aResult = (int32_t)blink_time;
+      else
         aResult = 0;
-        break;
-    case eIntID_SelectTextfieldsOnKeyFocus:
-        {
-            GtkWidget *entry;
-            GtkSettings *settings;
-            gboolean select_on_focus;
+      break;
+    }
+    case eIntID_CaretWidth:
+      aResult = 1;
+      break;
+    case eIntID_ShowCaretDuringSelection:
+      aResult = 0;
+      break;
+    case eIntID_SelectTextfieldsOnKeyFocus: {
+      GtkWidget* entry;
+      GtkSettings* settings;
+      gboolean select_on_focus;
 
-            entry = gtk_entry_new();
-            g_object_ref_sink(entry);
-            settings = gtk_widget_get_settings(entry);
-            g_object_get(settings,
-                         "gtk-entry-select-on-focus",
-                         &select_on_focus,
-                         nullptr);
+      entry = gtk_entry_new();
+      g_object_ref_sink(entry);
+      settings = gtk_widget_get_settings(entry);
+      g_object_get(settings, "gtk-entry-select-on-focus", &select_on_focus,
+                   nullptr);
 
-            if(select_on_focus)
-                aResult = 1;
-            else
-                aResult = 0;
+      if (select_on_focus)
+        aResult = 1;
+      else
+        aResult = 0;
 
-            gtk_widget_destroy(entry);
-            g_object_unref(entry);
-        }
-        break;
-    case eIntID_ScrollToClick:
-        {
-            GtkSettings *settings;
-            gboolean warps_slider = FALSE;
+      gtk_widget_destroy(entry);
+      g_object_unref(entry);
+    } break;
+    case eIntID_ScrollToClick: {
+      GtkSettings* settings;
+      gboolean warps_slider = FALSE;
 
-            settings = gtk_settings_get_default ();
-            if (g_object_class_find_property (G_OBJECT_GET_CLASS(settings),
-                                              "gtk-primary-button-warps-slider")) {
-                g_object_get (settings,
-                              "gtk-primary-button-warps-slider",
-                              &warps_slider,
-                              nullptr);
-            }
+      settings = gtk_settings_get_default();
+      if (g_object_class_find_property(G_OBJECT_GET_CLASS(settings),
+                                       "gtk-primary-button-warps-slider")) {
+        g_object_get(settings, "gtk-primary-button-warps-slider", &warps_slider,
+                     nullptr);
+      }
 
-            if (warps_slider)
-                aResult = 1;
-            else
-                aResult = 0;
-        }
-        break;
-    case eIntID_SubmenuDelay:
-        {
-            GtkSettings *settings;
-            gint delay;
+      if (warps_slider)
+        aResult = 1;
+      else
+        aResult = 0;
+    } break;
+    case eIntID_SubmenuDelay: {
+      GtkSettings* settings;
+      gint delay;
 
-            settings = gtk_settings_get_default ();
-            g_object_get (settings, "gtk-menu-popup-delay", &delay, nullptr);
-            aResult = (int32_t) delay;
-            break;
-        }
-    case eIntID_TooltipDelay:
-        {
-            aResult = 500;
-            break;
-        }
+      settings = gtk_settings_get_default();
+      g_object_get(settings, "gtk-menu-popup-delay", &delay, nullptr);
+      aResult = (int32_t)delay;
+      break;
+    }
+    case eIntID_TooltipDelay: {
+      aResult = 500;
+      break;
+    }
     case eIntID_MenusCanOverlapOSBar:
-        
-        aResult = 1;
-        break;
+      
+      aResult = 1;
+      break;
     case eIntID_SkipNavigatingDisabledMenuItem:
-        aResult = 1;
-        break;
+      aResult = 1;
+      break;
     case eIntID_DragThresholdX:
-    case eIntID_DragThresholdY:
-        {
-            GtkWidget* box = gtk_hbox_new(FALSE, 5);
-            gint threshold = 0;
-            g_object_get(gtk_widget_get_settings(box),
-                         "gtk-dnd-drag-threshold", &threshold,
-                         nullptr);
-            g_object_ref_sink(box);
+    case eIntID_DragThresholdY: {
+      GtkWidget* box = gtk_hbox_new(FALSE, 5);
+      gint threshold = 0;
+      g_object_get(gtk_widget_get_settings(box), "gtk-dnd-drag-threshold",
+                   &threshold, nullptr);
+      g_object_ref_sink(box);
 
-            aResult = threshold;
-        }
-        break;
+      aResult = threshold;
+    } break;
     case eIntID_ScrollArrowStyle: {
-        GtkWidget* scrollbar = GetWidget(MOZ_GTK_SCROLLBAR_HORIZONTAL);
-        aResult = ConvertGTKStepperStyleToMozillaScrollArrowStyle(scrollbar);
-        break;
+      GtkWidget* scrollbar = GetWidget(MOZ_GTK_SCROLLBAR_HORIZONTAL);
+      aResult = ConvertGTKStepperStyleToMozillaScrollArrowStyle(scrollbar);
+      break;
     }
     case eIntID_ScrollSliderStyle:
-        aResult = eScrollThumbStyle_Proportional;
-        break;
+      aResult = eScrollThumbStyle_Proportional;
+      break;
     case eIntID_TreeOpenDelay:
-        aResult = 1000;
-        break;
+      aResult = 1000;
+      break;
     case eIntID_TreeCloseDelay:
-        aResult = 1000;
-        break;
+      aResult = 1000;
+      break;
     case eIntID_TreeLazyScrollDelay:
-        aResult = 150;
-        break;
+      aResult = 150;
+      break;
     case eIntID_TreeScrollDelay:
-        aResult = 100;
-        break;
+      aResult = 100;
+      break;
     case eIntID_TreeScrollLinesMax:
-        aResult = 3;
-        break;
+      aResult = 3;
+      break;
     case eIntID_DWMCompositor:
     case eIntID_WindowsClassic:
     case eIntID_WindowsDefaultTheme:
     case eIntID_WindowsThemeIdentifier:
     case eIntID_OperatingSystemVersionIdentifier:
-        aResult = 0;
-        res = NS_ERROR_NOT_IMPLEMENTED;
-        break;
+      aResult = 0;
+      res = NS_ERROR_NOT_IMPLEMENTED;
+      break;
     case eIntID_TouchEnabled:
-        aResult = mozilla::widget::WidgetUtils::IsTouchDeviceSupportPresent();
-        break;
+      aResult = mozilla::widget::WidgetUtils::IsTouchDeviceSupportPresent();
+      break;
     case eIntID_MacGraphiteTheme:
-        aResult = 0;
-        res = NS_ERROR_NOT_IMPLEMENTED;
-        break;
+      aResult = 0;
+      res = NS_ERROR_NOT_IMPLEMENTED;
+      break;
     case eIntID_AlertNotificationOrigin:
-        aResult = NS_ALERT_TOP;
-        break;
+      aResult = NS_ALERT_TOP;
+      break;
     case eIntID_IMERawInputUnderlineStyle:
     case eIntID_IMEConvertedTextUnderlineStyle:
-        aResult = NS_STYLE_TEXT_DECORATION_STYLE_SOLID;
-        break;
+      aResult = NS_STYLE_TEXT_DECORATION_STYLE_SOLID;
+      break;
     case eIntID_IMESelectedRawTextUnderlineStyle:
     case eIntID_IMESelectedConvertedTextUnderline:
-        aResult = NS_STYLE_TEXT_DECORATION_STYLE_NONE;
-        break;
+      aResult = NS_STYLE_TEXT_DECORATION_STYLE_NONE;
+      break;
     case eIntID_SpellCheckerUnderlineStyle:
-        aResult = NS_STYLE_TEXT_DECORATION_STYLE_WAVY;
-        break;
+      aResult = NS_STYLE_TEXT_DECORATION_STYLE_WAVY;
+      break;
     case eIntID_MenuBarDrag:
-        EnsureInit();
-        aResult = mMenuSupportsDrag;
-        break;
+      EnsureInit();
+      aResult = mMenuSupportsDrag;
+      break;
     case eIntID_ScrollbarButtonAutoRepeatBehavior:
-        aResult = 1;
-        break;
+      aResult = 1;
+      break;
     case eIntID_SwipeAnimationEnabled:
-        aResult = 0;
-        break;
+      aResult = 0;
+      break;
     case eIntID_ContextMenuOffsetVertical:
     case eIntID_ContextMenuOffsetHorizontal:
-        aResult = 2;
-        break;
+      aResult = 2;
+      break;
     case eIntID_GTKCSDAvailable:
-        EnsureInit();
-        aResult = mCSDAvailable;
-        break;
+      EnsureInit();
+      aResult = mCSDAvailable;
+      break;
     case eIntID_GTKCSDMaximizeButton:
-        EnsureInit();
-        aResult = mCSDMaximizeButton;
-        break;
+      EnsureInit();
+      aResult = mCSDMaximizeButton;
+      break;
     case eIntID_GTKCSDMinimizeButton:
-        EnsureInit();
-        aResult = mCSDMinimizeButton;
-        break;
+      EnsureInit();
+      aResult = mCSDMinimizeButton;
+      break;
     case eIntID_GTKCSDCloseButton:
-        EnsureInit();
-        aResult = mCSDCloseButton;
-        break;
+      EnsureInit();
+      aResult = mCSDCloseButton;
+      break;
     case eIntID_GTKCSDTransparentBackground:
-        aResult = nsWindow::TopLevelWindowUseARGBVisual();
-        break;
+      aResult = nsWindow::TopLevelWindowUseARGBVisual();
+      break;
     case eIntID_PrefersReducedMotion: {
-        GtkSettings *settings;
-        gboolean enableAnimations;
+      GtkSettings* settings;
+      gboolean enableAnimations;
 
-        settings = gtk_settings_get_default();
-        g_object_get(settings,
-                     "gtk-enable-animations",
-                     &enableAnimations, nullptr);
-        aResult = enableAnimations ? 0 : 1;
-        break;
+      settings = gtk_settings_get_default();
+      g_object_get(settings, "gtk-enable-animations", &enableAnimations,
+                   nullptr);
+      aResult = enableAnimations ? 0 : 1;
+      break;
     }
     default:
-        aResult = 0;
-        res     = NS_ERROR_FAILURE;
-    }
+      aResult = 0;
+      res = NS_ERROR_FAILURE;
+  }
 
-    return res;
+  return res;
 }
 
-nsresult
-nsLookAndFeel::GetFloatImpl(FloatID aID, float &aResult)
-{
-    nsresult res = NS_OK;
-    res = nsXPLookAndFeel::GetFloatImpl(aID, aResult);
-    if (NS_SUCCEEDED(res))
-        return res;
-    res = NS_OK;
+nsresult nsLookAndFeel::GetFloatImpl(FloatID aID, float& aResult) {
+  nsresult res = NS_OK;
+  res = nsXPLookAndFeel::GetFloatImpl(aID, aResult);
+  if (NS_SUCCEEDED(res)) return res;
+  res = NS_OK;
 
-    switch (aID) {
-    case eFloatID_IMEUnderlineRelativeSize:
-        aResult = 1.0f;
-        break;
-    case eFloatID_SpellCheckerUnderlineRelativeSize:
-        aResult = 1.0f;
-        break;
-    case eFloatID_CaretAspectRatio:
-        EnsureInit();
-        aResult = mCaretRatio;
-        break;
-    default:
-        aResult = -1.0;
-        res = NS_ERROR_FAILURE;
-    }
-    return res;
-}
-
-static void
-GetSystemFontInfo(GtkStyleContext *aStyle,
-                  nsString *aFontName,
-                  gfxFontStyle *aFontStyle)
-{
-    aFontStyle->style = FontSlantStyle::Normal();
-
-    
-    
-    PangoFontDescription *desc;
-    gtk_style_context_get(aStyle, gtk_style_context_get_state(aStyle),
-                          "font", &desc, nullptr);
-
-    aFontStyle->systemFont = true;
-
-    NS_NAMED_LITERAL_STRING(quote, "\"");
-    NS_ConvertUTF8toUTF16 family(pango_font_description_get_family(desc));
-    *aFontName = quote + family + quote;
-
-    aFontStyle->weight = FontWeight(pango_font_description_get_weight(desc));
-
-    
-    aFontStyle->stretch = FontStretch::Normal();
-
-    float size = float(pango_font_description_get_size(desc)) / PANGO_SCALE;
-
-    
-
-    if (!pango_font_description_get_size_is_absolute(desc)) {
-        
-        size *= float(gfxPlatformGtk::GetFontScaleDPI()) / POINTS_PER_INCH_FLOAT;
-    }
-    
-    
-    
-
-    aFontStyle->size = size;
-
-    pango_font_description_free(desc);
-}
-
-bool
-nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
-                           gfxFontStyle& aFontStyle,
-                           float aDevPixPerCSSPixel)
-{
   switch (aID) {
-    case eFont_Menu:         
-    case eFont_PullDownMenu: 
+    case eFloatID_IMEUnderlineRelativeSize:
+      aResult = 1.0f;
+      break;
+    case eFloatID_SpellCheckerUnderlineRelativeSize:
+      aResult = 1.0f;
+      break;
+    case eFloatID_CaretAspectRatio:
+      EnsureInit();
+      aResult = mCaretRatio;
+      break;
+    default:
+      aResult = -1.0;
+      res = NS_ERROR_FAILURE;
+  }
+  return res;
+}
+
+static void GetSystemFontInfo(GtkStyleContext* aStyle, nsString* aFontName,
+                              gfxFontStyle* aFontStyle) {
+  aFontStyle->style = FontSlantStyle::Normal();
+
+  
+  
+  PangoFontDescription* desc;
+  gtk_style_context_get(aStyle, gtk_style_context_get_state(aStyle), "font",
+                        &desc, nullptr);
+
+  aFontStyle->systemFont = true;
+
+  NS_NAMED_LITERAL_STRING(quote, "\"");
+  NS_ConvertUTF8toUTF16 family(pango_font_description_get_family(desc));
+  *aFontName = quote + family + quote;
+
+  aFontStyle->weight = FontWeight(pango_font_description_get_weight(desc));
+
+  
+  aFontStyle->stretch = FontStretch::Normal();
+
+  float size = float(pango_font_description_get_size(desc)) / PANGO_SCALE;
+
+  
+
+  if (!pango_font_description_get_size_is_absolute(desc)) {
+    
+    size *= float(gfxPlatformGtk::GetFontScaleDPI()) / POINTS_PER_INCH_FLOAT;
+  }
+  
+  
+  
+
+  aFontStyle->size = size;
+
+  pango_font_description_free(desc);
+}
+
+bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
+                                gfxFontStyle& aFontStyle,
+                                float aDevPixPerCSSPixel) {
+  switch (aID) {
+    case eFont_Menu:          
+    case eFont_PullDownMenu:  
       aFontName = mMenuFontName;
       aFontStyle = mMenuFontStyle;
       break;
 
-    case eFont_Field:        
-    case eFont_List:         
+    case eFont_Field:  
+    case eFont_List:   
       aFontName = mFieldFontName;
       aFontStyle = mFieldFontStyle;
       break;
 
-    case eFont_Button:       
+    case eFont_Button:  
       aFontName = mButtonFontName;
       aFontStyle = mButtonFontStyle;
       break;
 
-    case eFont_Caption:      
-    case eFont_Icon:         
-    case eFont_MessageBox:   
-    case eFont_SmallCaption: 
-    case eFont_StatusBar:    
-    case eFont_Window:       
-    case eFont_Document:     
-    case eFont_Workspace:    
-    case eFont_Desktop:      
-    case eFont_Info:         
-    case eFont_Dialog:       
-    case eFont_Tooltips:     
-    case eFont_Widget:       
+    case eFont_Caption:       
+    case eFont_Icon:          
+    case eFont_MessageBox:    
+    case eFont_SmallCaption:  
+    case eFont_StatusBar:     
+    case eFont_Window:        
+    case eFont_Document:      
+    case eFont_Workspace:     
+    case eFont_Desktop:       
+    case eFont_Info:          
+    case eFont_Dialog:        
+    case eFont_Tooltips:      
+    case eFont_Widget:        
     default:
       aFontName = mDefaultFontName;
       aFontStyle = mDefaultFontStyle;
@@ -861,341 +810,335 @@ nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
   
   double scaleFactor = nsIWidget::DefaultScaleOverride();
   if (scaleFactor > 0) {
-    aFontStyle.size *= mozilla::widget::ScreenHelperGTK::GetGTKMonitorScaleFactor();
+    aFontStyle.size *=
+        mozilla::widget::ScreenHelperGTK::GetGTKMonitorScaleFactor();
   } else {
     
     
-    aFontStyle.size *= aDevPixPerCSSPixel / gfxPlatformGtk::GetFontScaleFactor();
+    aFontStyle.size *=
+        aDevPixPerCSSPixel / gfxPlatformGtk::GetFontScaleFactor();
   }
   return true;
 }
 
-void
-nsLookAndFeel::EnsureInit()
-{
-    GdkColor colorValue;
-    GdkColor *colorValuePtr;
+void nsLookAndFeel::EnsureInit() {
+  GdkColor colorValue;
+  GdkColor* colorValuePtr;
 
-    if (mInitialized)
-        return;
-    mInitialized = true;
+  if (mInitialized) return;
+  mInitialized = true;
 
-    
-    MOZ_ASSERT(NS_IsMainThread());
+  
+  MOZ_ASSERT(NS_IsMainThread());
 
-    GdkRGBA color;
-    GtkStyleContext *style;
+  GdkRGBA color;
+  GtkStyleContext* style;
 
-    
-    
-    
-    GtkSettings *settings = gtk_settings_get_for_screen(gdk_screen_get_default());
+  
+  
+  
+  GtkSettings* settings = gtk_settings_get_for_screen(gdk_screen_get_default());
 
-    
-    
-    
-    const gchar* dark_setting = "gtk-application-prefer-dark-theme";
-    gboolean darkThemeDefault;
-    g_object_get(settings, dark_setting, &darkThemeDefault, nullptr);
+  
+  
+  
+  const gchar* dark_setting = "gtk-application-prefer-dark-theme";
+  gboolean darkThemeDefault;
+  g_object_get(settings, dark_setting, &darkThemeDefault, nullptr);
 
-    
-    
-    if (darkThemeDefault) {
-        bool allowDarkTheme;
-        if (XRE_IsContentProcess()) {
-            allowDarkTheme =
-                mozilla::Preferences::GetBool("widget.content.allow-gtk-dark-theme",
-                                              false);
-        } else {
-            allowDarkTheme = (PR_GetEnv("MOZ_ALLOW_GTK_DARK_THEME") != nullptr) ||
-                mozilla::Preferences::GetBool("widget.chrome.allow-gtk-dark-theme",
-                                              false);
-        }
-        if (!allowDarkTheme) {
-            g_object_set(settings, dark_setting, FALSE, nullptr);
-        }
-    }
-
-    
-    
+  
+  
+  if (darkThemeDefault) {
+    bool allowDarkTheme;
     if (XRE_IsContentProcess()) {
-        nsAutoCString contentThemeName;
-        mozilla::Preferences::GetCString("widget.content.gtk-theme-override",
-                                         contentThemeName);
-        if (!contentThemeName.IsEmpty()) {
-            g_object_set(settings, "gtk-theme-name", contentThemeName.get(), nullptr);
-        }
-    }
-
-    
-    
-    
-    GtkWidget *labelWidget = gtk_label_new("M");
-    g_object_ref_sink(labelWidget);
-
-    
-    style = GetStyleContext(MOZ_GTK_SCROLLBAR_TROUGH_VERTICAL);
-    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mMozScrollbar = GDK_RGBA_TO_NS_RGBA(color);
-
-    
-    style = GetStyleContext(MOZ_GTK_WINDOW);
-    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mMozWindowBackground = GDK_RGBA_TO_NS_RGBA(color);
-    gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mMozWindowText = GDK_RGBA_TO_NS_RGBA(color);
-    gtk_style_context_get_border_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mMozWindowActiveBorder = GDK_RGBA_TO_NS_RGBA(color);
-    gtk_style_context_get_border_color(style, GTK_STATE_FLAG_INSENSITIVE,
-                                       &color);
-    mMozWindowInactiveBorder = GDK_RGBA_TO_NS_RGBA(color);
-    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_INSENSITIVE,
-                                           &color);
-    mMozWindowInactiveCaption = GDK_RGBA_TO_NS_RGBA(color);
-
-    style = GetStyleContext(MOZ_GTK_WINDOW_CONTAINER);
-    {
-        GtkStyleContext* labelStyle = CreateStyleForWidget(labelWidget, style);
-        GetSystemFontInfo(labelStyle, &mDefaultFontName, &mDefaultFontStyle);
-        g_object_unref(labelStyle);
-    }
-
-    
-    style = GetStyleContext(MOZ_GTK_TOOLTIP);
-    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mInfoBackground = GDK_RGBA_TO_NS_RGBA(color);
-
-    style = GetStyleContext(MOZ_GTK_TOOLTIP_BOX_LABEL);
-    gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mInfoText = GDK_RGBA_TO_NS_RGBA(color);
-
-    style = GetStyleContext(MOZ_GTK_MENUITEM);
-    {
-        GtkStyleContext* accelStyle =
-            CreateStyleForWidget(gtk_accel_label_new("M"), style);
-
-        GetSystemFontInfo(accelStyle, &mMenuFontName, &mMenuFontStyle);
-
-        gtk_style_context_get_color(accelStyle, GTK_STATE_FLAG_NORMAL, &color);
-        mMenuText = GDK_RGBA_TO_NS_RGBA(color);
-        gtk_style_context_get_color(accelStyle, GTK_STATE_FLAG_INSENSITIVE, &color);
-        mMenuTextInactive = GDK_RGBA_TO_NS_RGBA(color);
-        g_object_unref(accelStyle);
-    }
-
-    style = GetStyleContext(MOZ_GTK_MENUPOPUP);
-    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mMenuBackground = GDK_RGBA_TO_NS_RGBA(color);
-
-    style = GetStyleContext(MOZ_GTK_MENUITEM);
-    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_PRELIGHT, &color);
-    mMenuHover = GDK_RGBA_TO_NS_RGBA(color);
-    gtk_style_context_get_color(style, GTK_STATE_FLAG_PRELIGHT, &color);
-    mMenuHoverText = GDK_RGBA_TO_NS_RGBA(color);
-
-    GtkWidget *parent = gtk_fixed_new();
-    GtkWidget *window = gtk_window_new(GTK_WINDOW_POPUP);
-    GtkWidget *treeView = gtk_tree_view_new();
-    GtkWidget *linkButton = gtk_link_button_new("http://example.com/");
-    GtkWidget *menuBar = gtk_menu_bar_new();
-    GtkWidget *menuBarItem = gtk_menu_item_new();
-    GtkWidget *entry = gtk_entry_new();
-    GtkWidget *textView = gtk_text_view_new();
-
-    gtk_container_add(GTK_CONTAINER(parent), treeView);
-    gtk_container_add(GTK_CONTAINER(parent), linkButton);
-    gtk_container_add(GTK_CONTAINER(parent), menuBar);
-    gtk_menu_shell_append(GTK_MENU_SHELL(menuBar), menuBarItem);
-    gtk_container_add(GTK_CONTAINER(window), parent);
-    gtk_container_add(GTK_CONTAINER(parent), entry);
-    gtk_container_add(GTK_CONTAINER(parent), textView);
-
-    
-    GdkRGBA bgColor;
-    
-    
-    style = GetStyleContext(MOZ_GTK_TEXT_VIEW);
-    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
-                                           &bgColor);
-
-    style = GetStyleContext(MOZ_GTK_TEXT_VIEW_TEXT);
-    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
-                                           &color);
-    ApplyColorOver(color, &bgColor);
-    mMozFieldBackground = GDK_RGBA_TO_NS_RGBA(bgColor);
-    gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mMozFieldText = GDK_RGBA_TO_NS_RGBA(color);
-
-    
-    gtk_style_context_get_background_color(style,
-        static_cast<GtkStateFlags>(GTK_STATE_FLAG_FOCUSED|GTK_STATE_FLAG_SELECTED),
-        &color);
-    mTextSelectedBackground = GDK_RGBA_TO_NS_RGBA(color);
-    gtk_style_context_get_color(style,
-        static_cast<GtkStateFlags>(GTK_STATE_FLAG_FOCUSED|GTK_STATE_FLAG_SELECTED),
-        &color);
-    mTextSelectedText = GDK_RGBA_TO_NS_RGBA(color);
-
-    
-    style = GetStyleContext(MOZ_GTK_BUTTON);
-    {
-        GtkStyleContext* labelStyle = CreateStyleForWidget(labelWidget, style);
-
-        GetSystemFontInfo(labelStyle, &mButtonFontName, &mButtonFontStyle);
-
-        gtk_style_context_get_border_color(style, GTK_STATE_FLAG_NORMAL, &color);
-        mButtonDefault = GDK_RGBA_TO_NS_RGBA(color);
-        gtk_style_context_get_color(labelStyle, GTK_STATE_FLAG_NORMAL, &color);
-        mButtonText = GDK_RGBA_TO_NS_RGBA(color);
-        gtk_style_context_get_color(labelStyle, GTK_STATE_FLAG_PRELIGHT, &color);
-        mButtonHoverText = GDK_RGBA_TO_NS_RGBA(color);
-        gtk_style_context_get_background_color(style, GTK_STATE_FLAG_PRELIGHT,
-                                               &color);
-        mButtonHoverFace = GDK_RGBA_TO_NS_RGBA(color);
-        g_object_unref(labelStyle);
-    }
-
-    
-    style = GetStyleContext(MOZ_GTK_COMBOBOX_ENTRY_TEXTAREA);
-    gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mComboBoxText = GDK_RGBA_TO_NS_RGBA(color);
-
-    
-    style = GetStyleContext(MOZ_GTK_MENUBARITEM);
-    gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mMenuBarText = GDK_RGBA_TO_NS_RGBA(color);
-    gtk_style_context_get_color(style, GTK_STATE_FLAG_PRELIGHT, &color);
-    mMenuBarHoverText = GDK_RGBA_TO_NS_RGBA(color);
-
-    
-    
-    
-    
-    
-    
-    style = GetStyleContext(MOZ_GTK_TREEVIEW);
-
-    
-    gtk_style_context_save(style);
-    gtk_style_context_add_region(style, GTK_STYLE_REGION_ROW, GTK_REGION_ODD);
-    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mOddCellBackground = GDK_RGBA_TO_NS_RGBA(color);
-    gtk_style_context_restore(style);
-
-    
-    InitCellHighlightColors();
-
-    
-    
-    
-    
-    style = GetStyleContext(MOZ_GTK_FRAME_BORDER);
-    bool themeUsesColors =
-        GetBorderColors(style, &mFrameOuterLightBorder, &mFrameInnerDarkBorder);
-    if (!themeUsesColors) {
-        style = GetStyleContext(MOZ_GTK_FRAME);
-        GetBorderColors(style, &mFrameOuterLightBorder, &mFrameInnerDarkBorder);
-    }
-
-    
-    
-    GtkWidget* infoBar = gtk_info_bar_new();
-    GtkWidget* infoBarContent = gtk_info_bar_get_content_area(GTK_INFO_BAR(infoBar));
-    GtkWidget* infoBarLabel = gtk_label_new(nullptr);
-    gtk_container_add(GTK_CONTAINER(parent), infoBar);
-    gtk_container_add(GTK_CONTAINER(infoBarContent), infoBarLabel);
-    style = gtk_widget_get_style_context(infoBarLabel);
-    gtk_style_context_add_class(style, GTK_STYLE_CLASS_INFO);
-    gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
-    mInfoBarText = GDK_RGBA_TO_NS_RGBA(color);
-    
-    gboolean supports_menubar_drag = FALSE;
-    GParamSpec *param_spec =
-        gtk_widget_class_find_style_property(GTK_WIDGET_GET_CLASS(menuBar),
-                                             "window-dragging");
-    if (param_spec) {
-        if (g_type_is_a(G_PARAM_SPEC_VALUE_TYPE(param_spec), G_TYPE_BOOLEAN)) {
-            gtk_widget_style_get(menuBar,
-                                 "window-dragging", &supports_menubar_drag,
-                                 nullptr);
-        }
-    }
-    mMenuSupportsDrag = supports_menubar_drag;
-
-    if (gtk_check_version(3, 12, 0) == nullptr) {
-        
-        
-        
-        style = gtk_widget_get_style_context(linkButton);
-        gtk_style_context_get_color(style, GTK_STATE_FLAG_LINK, &color);
-        mNativeHyperLinkText = GDK_RGBA_TO_NS_RGBA(color);
+      allowDarkTheme = mozilla::Preferences::GetBool(
+          "widget.content.allow-gtk-dark-theme", false);
     } else {
-        colorValuePtr = nullptr;
-        gtk_widget_style_get(linkButton, "link-color", &colorValuePtr, nullptr);
-        if (colorValuePtr) {
-            colorValue = *colorValuePtr; 
-            mNativeHyperLinkText = GDK_COLOR_TO_NS_RGB(colorValue);
-            gdk_color_free(colorValuePtr);
-        } else {
-            mNativeHyperLinkText = NS_RGB(0x00,0x00,0xEE);
-        }
+      allowDarkTheme = (PR_GetEnv("MOZ_ALLOW_GTK_DARK_THEME") != nullptr) ||
+                       mozilla::Preferences::GetBool(
+                           "widget.chrome.allow-gtk-dark-theme", false);
     }
-
-    
-    guint value;
-    g_object_get (entry, "invisible-char", &value, nullptr);
-    mInvisibleCharacter = char16_t(value);
-
-    
-    gtk_widget_style_get(entry,
-                         "cursor-aspect-ratio", &mCaretRatio,
-                         nullptr);
-
-    GetSystemFontInfo(gtk_widget_get_style_context(entry),
-                      &mFieldFontName, &mFieldFontStyle);
-
-    gtk_widget_destroy(window);
-    g_object_unref(labelWidget);
-
-    mCSDAvailable =
-        nsWindow::GetSystemCSDSupportLevel() != nsWindow::CSD_SUPPORT_NONE;
-
-    mCSDCloseButton = false;
-    mCSDMinimizeButton = false;
-    mCSDMaximizeButton = false;
-
-    
-    
-    WidgetNodeType buttonLayout[TOOLBAR_BUTTONS];
-
-    int activeButtons =
-        GetGtkHeaderBarButtonLayout(buttonLayout, TOOLBAR_BUTTONS);
-    for (int i = 0; i < activeButtons; i++) {
-        switch(buttonLayout[i]) {
-        case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
-            mCSDMinimizeButton = true;
-            break;
-        case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
-            mCSDMaximizeButton = true;
-            break;
-        case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
-            mCSDCloseButton = true;
-            break;
-        default:
-            break;
-        }
+    if (!allowDarkTheme) {
+      g_object_set(settings, dark_setting, FALSE, nullptr);
     }
+  }
+
+  
+  
+  if (XRE_IsContentProcess()) {
+    nsAutoCString contentThemeName;
+    mozilla::Preferences::GetCString("widget.content.gtk-theme-override",
+                                     contentThemeName);
+    if (!contentThemeName.IsEmpty()) {
+      g_object_set(settings, "gtk-theme-name", contentThemeName.get(), nullptr);
+    }
+  }
+
+  
+  
+  
+  GtkWidget* labelWidget = gtk_label_new("M");
+  g_object_ref_sink(labelWidget);
+
+  
+  style = GetStyleContext(MOZ_GTK_SCROLLBAR_TROUGH_VERTICAL);
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mMozScrollbar = GDK_RGBA_TO_NS_RGBA(color);
+
+  
+  style = GetStyleContext(MOZ_GTK_WINDOW);
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mMozWindowBackground = GDK_RGBA_TO_NS_RGBA(color);
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mMozWindowText = GDK_RGBA_TO_NS_RGBA(color);
+  gtk_style_context_get_border_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mMozWindowActiveBorder = GDK_RGBA_TO_NS_RGBA(color);
+  gtk_style_context_get_border_color(style, GTK_STATE_FLAG_INSENSITIVE, &color);
+  mMozWindowInactiveBorder = GDK_RGBA_TO_NS_RGBA(color);
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_INSENSITIVE,
+                                         &color);
+  mMozWindowInactiveCaption = GDK_RGBA_TO_NS_RGBA(color);
+
+  style = GetStyleContext(MOZ_GTK_WINDOW_CONTAINER);
+  {
+    GtkStyleContext* labelStyle = CreateStyleForWidget(labelWidget, style);
+    GetSystemFontInfo(labelStyle, &mDefaultFontName, &mDefaultFontStyle);
+    g_object_unref(labelStyle);
+  }
+
+  
+  style = GetStyleContext(MOZ_GTK_TOOLTIP);
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mInfoBackground = GDK_RGBA_TO_NS_RGBA(color);
+
+  style = GetStyleContext(MOZ_GTK_TOOLTIP_BOX_LABEL);
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mInfoText = GDK_RGBA_TO_NS_RGBA(color);
+
+  style = GetStyleContext(MOZ_GTK_MENUITEM);
+  {
+    GtkStyleContext* accelStyle =
+        CreateStyleForWidget(gtk_accel_label_new("M"), style);
+
+    GetSystemFontInfo(accelStyle, &mMenuFontName, &mMenuFontStyle);
+
+    gtk_style_context_get_color(accelStyle, GTK_STATE_FLAG_NORMAL, &color);
+    mMenuText = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_color(accelStyle, GTK_STATE_FLAG_INSENSITIVE, &color);
+    mMenuTextInactive = GDK_RGBA_TO_NS_RGBA(color);
+    g_object_unref(accelStyle);
+  }
+
+  style = GetStyleContext(MOZ_GTK_MENUPOPUP);
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mMenuBackground = GDK_RGBA_TO_NS_RGBA(color);
+
+  style = GetStyleContext(MOZ_GTK_MENUITEM);
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_PRELIGHT,
+                                         &color);
+  mMenuHover = GDK_RGBA_TO_NS_RGBA(color);
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_PRELIGHT, &color);
+  mMenuHoverText = GDK_RGBA_TO_NS_RGBA(color);
+
+  GtkWidget* parent = gtk_fixed_new();
+  GtkWidget* window = gtk_window_new(GTK_WINDOW_POPUP);
+  GtkWidget* treeView = gtk_tree_view_new();
+  GtkWidget* linkButton = gtk_link_button_new("http://example.com/");
+  GtkWidget* menuBar = gtk_menu_bar_new();
+  GtkWidget* menuBarItem = gtk_menu_item_new();
+  GtkWidget* entry = gtk_entry_new();
+  GtkWidget* textView = gtk_text_view_new();
+
+  gtk_container_add(GTK_CONTAINER(parent), treeView);
+  gtk_container_add(GTK_CONTAINER(parent), linkButton);
+  gtk_container_add(GTK_CONTAINER(parent), menuBar);
+  gtk_menu_shell_append(GTK_MENU_SHELL(menuBar), menuBarItem);
+  gtk_container_add(GTK_CONTAINER(window), parent);
+  gtk_container_add(GTK_CONTAINER(parent), entry);
+  gtk_container_add(GTK_CONTAINER(parent), textView);
+
+  
+  GdkRGBA bgColor;
+  
+  
+  style = GetStyleContext(MOZ_GTK_TEXT_VIEW);
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL,
+                                         &bgColor);
+
+  style = GetStyleContext(MOZ_GTK_TEXT_VIEW_TEXT);
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  ApplyColorOver(color, &bgColor);
+  mMozFieldBackground = GDK_RGBA_TO_NS_RGBA(bgColor);
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mMozFieldText = GDK_RGBA_TO_NS_RGBA(color);
+
+  
+  gtk_style_context_get_background_color(
+      style,
+      static_cast<GtkStateFlags>(GTK_STATE_FLAG_FOCUSED |
+                                 GTK_STATE_FLAG_SELECTED),
+      &color);
+  mTextSelectedBackground = GDK_RGBA_TO_NS_RGBA(color);
+  gtk_style_context_get_color(
+      style,
+      static_cast<GtkStateFlags>(GTK_STATE_FLAG_FOCUSED |
+                                 GTK_STATE_FLAG_SELECTED),
+      &color);
+  mTextSelectedText = GDK_RGBA_TO_NS_RGBA(color);
+
+  
+  style = GetStyleContext(MOZ_GTK_BUTTON);
+  {
+    GtkStyleContext* labelStyle = CreateStyleForWidget(labelWidget, style);
+
+    GetSystemFontInfo(labelStyle, &mButtonFontName, &mButtonFontStyle);
+
+    gtk_style_context_get_border_color(style, GTK_STATE_FLAG_NORMAL, &color);
+    mButtonDefault = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_color(labelStyle, GTK_STATE_FLAG_NORMAL, &color);
+    mButtonText = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_color(labelStyle, GTK_STATE_FLAG_PRELIGHT, &color);
+    mButtonHoverText = GDK_RGBA_TO_NS_RGBA(color);
+    gtk_style_context_get_background_color(style, GTK_STATE_FLAG_PRELIGHT,
+                                           &color);
+    mButtonHoverFace = GDK_RGBA_TO_NS_RGBA(color);
+    g_object_unref(labelStyle);
+  }
+
+  
+  style = GetStyleContext(MOZ_GTK_COMBOBOX_ENTRY_TEXTAREA);
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mComboBoxText = GDK_RGBA_TO_NS_RGBA(color);
+
+  
+  style = GetStyleContext(MOZ_GTK_MENUBARITEM);
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mMenuBarText = GDK_RGBA_TO_NS_RGBA(color);
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_PRELIGHT, &color);
+  mMenuBarHoverText = GDK_RGBA_TO_NS_RGBA(color);
+
+  
+  
+  
+  
+  
+  
+  style = GetStyleContext(MOZ_GTK_TREEVIEW);
+
+  
+  gtk_style_context_save(style);
+  gtk_style_context_add_region(style, GTK_STYLE_REGION_ROW, GTK_REGION_ODD);
+  gtk_style_context_get_background_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mOddCellBackground = GDK_RGBA_TO_NS_RGBA(color);
+  gtk_style_context_restore(style);
+
+  
+  InitCellHighlightColors();
+
+  
+  
+  
+  
+  style = GetStyleContext(MOZ_GTK_FRAME_BORDER);
+  bool themeUsesColors =
+      GetBorderColors(style, &mFrameOuterLightBorder, &mFrameInnerDarkBorder);
+  if (!themeUsesColors) {
+    style = GetStyleContext(MOZ_GTK_FRAME);
+    GetBorderColors(style, &mFrameOuterLightBorder, &mFrameInnerDarkBorder);
+  }
+
+  
+  
+  GtkWidget* infoBar = gtk_info_bar_new();
+  GtkWidget* infoBarContent =
+      gtk_info_bar_get_content_area(GTK_INFO_BAR(infoBar));
+  GtkWidget* infoBarLabel = gtk_label_new(nullptr);
+  gtk_container_add(GTK_CONTAINER(parent), infoBar);
+  gtk_container_add(GTK_CONTAINER(infoBarContent), infoBarLabel);
+  style = gtk_widget_get_style_context(infoBarLabel);
+  gtk_style_context_add_class(style, GTK_STYLE_CLASS_INFO);
+  gtk_style_context_get_color(style, GTK_STATE_FLAG_NORMAL, &color);
+  mInfoBarText = GDK_RGBA_TO_NS_RGBA(color);
+  
+  gboolean supports_menubar_drag = FALSE;
+  GParamSpec* param_spec = gtk_widget_class_find_style_property(
+      GTK_WIDGET_GET_CLASS(menuBar), "window-dragging");
+  if (param_spec) {
+    if (g_type_is_a(G_PARAM_SPEC_VALUE_TYPE(param_spec), G_TYPE_BOOLEAN)) {
+      gtk_widget_style_get(menuBar, "window-dragging", &supports_menubar_drag,
+                           nullptr);
+    }
+  }
+  mMenuSupportsDrag = supports_menubar_drag;
+
+  if (gtk_check_version(3, 12, 0) == nullptr) {
+    
+    
+    
+    style = gtk_widget_get_style_context(linkButton);
+    gtk_style_context_get_color(style, GTK_STATE_FLAG_LINK, &color);
+    mNativeHyperLinkText = GDK_RGBA_TO_NS_RGBA(color);
+  } else {
+    colorValuePtr = nullptr;
+    gtk_widget_style_get(linkButton, "link-color", &colorValuePtr, nullptr);
+    if (colorValuePtr) {
+      colorValue = *colorValuePtr;  
+                                    
+      mNativeHyperLinkText = GDK_COLOR_TO_NS_RGB(colorValue);
+      gdk_color_free(colorValuePtr);
+    } else {
+      mNativeHyperLinkText = NS_RGB(0x00, 0x00, 0xEE);
+    }
+  }
+
+  
+  guint value;
+  g_object_get(entry, "invisible-char", &value, nullptr);
+  mInvisibleCharacter = char16_t(value);
+
+  
+  gtk_widget_style_get(entry, "cursor-aspect-ratio", &mCaretRatio, nullptr);
+
+  GetSystemFontInfo(gtk_widget_get_style_context(entry), &mFieldFontName,
+                    &mFieldFontStyle);
+
+  gtk_widget_destroy(window);
+  g_object_unref(labelWidget);
+
+  mCSDAvailable =
+      nsWindow::GetSystemCSDSupportLevel() != nsWindow::CSD_SUPPORT_NONE;
+
+  mCSDCloseButton = false;
+  mCSDMinimizeButton = false;
+  mCSDMaximizeButton = false;
+
+  
+  
+  WidgetNodeType buttonLayout[TOOLBAR_BUTTONS];
+
+  int activeButtons =
+      GetGtkHeaderBarButtonLayout(buttonLayout, TOOLBAR_BUTTONS);
+  for (int i = 0; i < activeButtons; i++) {
+    switch (buttonLayout[i]) {
+      case MOZ_GTK_HEADER_BAR_BUTTON_MINIMIZE:
+        mCSDMinimizeButton = true;
+        break;
+      case MOZ_GTK_HEADER_BAR_BUTTON_MAXIMIZE:
+        mCSDMaximizeButton = true;
+        break;
+      case MOZ_GTK_HEADER_BAR_BUTTON_CLOSE:
+        mCSDCloseButton = true;
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 
-char16_t
-nsLookAndFeel::GetPasswordCharacterImpl()
-{
-    EnsureInit();
-    return mInvisibleCharacter;
+char16_t nsLookAndFeel::GetPasswordCharacterImpl() {
+  EnsureInit();
+  return mInvisibleCharacter;
 }
 
-bool
-nsLookAndFeel::GetEchoPasswordImpl() {
-    return false;
-}
+bool nsLookAndFeel::GetEchoPasswordImpl() { return false; }

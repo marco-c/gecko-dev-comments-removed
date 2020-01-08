@@ -13,7 +13,7 @@
 
 
 class nsCocoaFeatures {
-public:
+ public:
   static int32_t OSXVersion();
   static int32_t OSXVersionMajor();
   static int32_t OSXVersionMinor();
@@ -25,8 +25,10 @@ public:
   static bool OnHighSierraOrLater();
   static bool OnMojaveOrLater();
 
-  static bool IsAtLeastVersion(int32_t aMajor, int32_t aMinor, int32_t aBugFix=0);
+  static bool IsAtLeastVersion(int32_t aMajor, int32_t aMinor,
+                               int32_t aBugFix = 0);
 
+  
   
   
   
@@ -37,7 +39,7 @@ public:
   static int32_t ExtractMinorVersion(int32_t aVersion);
   static int32_t ExtractBugFixVersion(int32_t aVersion);
 
-private:
+ private:
   static void InitializeVersionNumbers();
 
   static int32_t mOSXVersion;
@@ -45,8 +47,8 @@ private:
 
 
 extern "C" {
-    bool Gecko_OnSierraExactly();
-    bool Gecko_OnHighSierraOrLater();
+bool Gecko_OnSierraExactly();
+bool Gecko_OnHighSierraOrLater();
 }
 
-#endif 
+#endif  

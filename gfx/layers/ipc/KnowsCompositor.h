@@ -22,29 +22,26 @@ class ImageBridgeChild;
 
 
 
-class ActiveResource
-{
-public:
- virtual void NotifyInactive() = 0;
+class ActiveResource {
+ public:
+  virtual void NotifyInactive() = 0;
   nsExpirationState* GetExpirationState() { return &mExpirationState; }
   bool IsActivityTracked() { return mExpirationState.IsTracked(); }
-private:
+
+ private:
   nsExpirationState mExpirationState;
 };
 
 
 
 
-class ActiveResourceTracker : public nsExpirationTracker<ActiveResource, 3>
-{
-public:
+class ActiveResourceTracker : public nsExpirationTracker<ActiveResource, 3> {
+ public:
   ActiveResourceTracker(uint32_t aExpirationCycle, const char* aName,
                         nsIEventTarget* aEventTarget)
-  : nsExpirationTracker(aExpirationCycle, aName, aEventTarget)
-  {}
+      : nsExpirationTracker(aExpirationCycle, aName, aEventTarget) {}
 
-  virtual void NotifyExpired(ActiveResource* aResource) override
-  {
+  virtual void NotifyExpired(ActiveResource* aResource) override {
     RemoveObject(aResource);
     aResource->NotifyInactive();
   }
@@ -54,9 +51,8 @@ public:
 
 
 
-class KnowsCompositor
-{
-public:
+class KnowsCompositor {
+ public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   KnowsCompositor();
@@ -70,10 +66,11 @@ public:
   
   virtual bool IsThreadSafe() const { return true; }
 
-  virtual RefPtr<KnowsCompositor> GetForMedia() { return RefPtr<KnowsCompositor>(this); }
+  virtual RefPtr<KnowsCompositor> GetForMedia() {
+    return RefPtr<KnowsCompositor>(this);
+  }
 
-  int32_t GetMaxTextureSize() const
-  {
+  int32_t GetMaxTextureSize() const {
     return mTextureFactoryIdentifier.mMaxTextureSize;
   }
 
@@ -82,54 +79,45 @@ public:
 
 
 
-  LayersBackend GetCompositorBackendType() const
-  {
+  LayersBackend GetCompositorBackendType() const {
     return mTextureFactoryIdentifier.mParentBackend;
   }
 
-  bool SupportsTextureBlitting() const
-  {
+  bool SupportsTextureBlitting() const {
     return mTextureFactoryIdentifier.mSupportsTextureBlitting;
   }
 
-  bool SupportsPartialUploads() const
-  {
+  bool SupportsPartialUploads() const {
     return mTextureFactoryIdentifier.mSupportsPartialUploads;
   }
 
-  bool SupportsComponentAlpha() const
-  {
+  bool SupportsComponentAlpha() const {
     return mTextureFactoryIdentifier.mSupportsComponentAlpha;
   }
 
-  bool SupportsTextureDirectMapping() const
-  {
+  bool SupportsTextureDirectMapping() const {
     return mTextureFactoryIdentifier.mSupportsTextureDirectMapping;
   }
 
-  bool SupportsD3D11() const
-  {
+  bool SupportsD3D11() const {
     return GetCompositorBackendType() == layers::LayersBackend::LAYERS_D3D11 ||
-           (GetCompositorBackendType() == layers::LayersBackend::LAYERS_WR && GetCompositorUseANGLE());
+           (GetCompositorBackendType() == layers::LayersBackend::LAYERS_WR &&
+            GetCompositorUseANGLE());
   }
 
-  bool GetCompositorUseANGLE() const
-  {
+  bool GetCompositorUseANGLE() const {
     return mTextureFactoryIdentifier.mCompositorUseANGLE;
   }
 
-  bool GetCompositorUseDComp() const
-  {
+  bool GetCompositorUseDComp() const {
     return mTextureFactoryIdentifier.mCompositorUseDComp;
   }
 
-  const TextureFactoryIdentifier& GetTextureFactoryIdentifier() const
-  {
+  const TextureFactoryIdentifier& GetTextureFactoryIdentifier() const {
     return mTextureFactoryIdentifier;
   }
 
-  bool DeviceCanReset() const
-  {
+  bool DeviceCanReset() const {
     return GetCompositorBackendType() != LayersBackend::LAYERS_BASIC;
   }
 
@@ -143,23 +131,19 @@ public:
 
 
 
-  virtual void SyncWithCompositor()
-  {
-    MOZ_ASSERT_UNREACHABLE("Unimplemented");
-  }
+  virtual void SyncWithCompositor() { MOZ_ASSERT_UNREACHABLE("Unimplemented"); }
 
   
 
 
-   virtual TextureForwarder* GetTextureForwarder() = 0;
+  virtual TextureForwarder* GetTextureForwarder() = 0;
   virtual LayersIPCActor* GetLayersIPCActor() = 0;
-  virtual ActiveResourceTracker* GetActiveResourceTracker()
-  {
+  virtual ActiveResourceTracker* GetActiveResourceTracker() {
     MOZ_ASSERT_UNREACHABLE("Unimplemented");
     return nullptr;
   }
 
-protected:
+ protected:
   TextureFactoryIdentifier mTextureFactoryIdentifier;
   RefPtr<SyncObjectClient> mSyncObject;
 
@@ -178,16 +162,14 @@ protected:
 
 
 
-
-class KnowsCompositorMediaProxy: public KnowsCompositor
-{
-public:
+class KnowsCompositorMediaProxy : public KnowsCompositor {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(KnowsCompositorMediaProxy, override);
 
-  explicit KnowsCompositorMediaProxy(const TextureFactoryIdentifier& aIdentifier);
+  explicit KnowsCompositorMediaProxy(
+      const TextureFactoryIdentifier& aIdentifier);
 
   virtual TextureForwarder* GetTextureForwarder() override;
-
 
   virtual LayersIPCActor* GetLayersIPCActor() override;
 
@@ -195,13 +177,13 @@ public:
 
   virtual void SyncWithCompositor() override;
 
-protected:
+ protected:
   virtual ~KnowsCompositorMediaProxy();
 
   RefPtr<ImageBridgeChild> mThreadSafeAllocator;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

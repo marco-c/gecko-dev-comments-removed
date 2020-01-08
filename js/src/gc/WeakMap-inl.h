@@ -15,29 +15,26 @@
 namespace js {
 
 template <typename T>
-static T extractUnbarriered(const WriteBarrieredBase<T>& v)
-{
-    return v.get();
+static T extractUnbarriered(const WriteBarrieredBase<T>& v) {
+  return v.get();
 }
 template <typename T>
-static T* extractUnbarriered(T* v)
-{
-    return v;
+static T* extractUnbarriered(T* v) {
+  return v;
 }
 
 template <class K, class V>
 WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
-  : Base(cx->zone()), WeakMapBase(memOf, cx->zone())
-{
-    using ElemType = typename K::ElementType;
-    using NonPtrType = typename mozilla::RemovePointer<ElemType>::Type;
-    
-    
-    static_assert(JS::IsCCTraceKind(NonPtrType::TraceKind),
-                  "Object's TraceKind should be added to CC graph.");
+    : Base(cx->zone()), WeakMapBase(memOf, cx->zone()) {
+  using ElemType = typename K::ElementType;
+  using NonPtrType = typename mozilla::RemovePointer<ElemType>::Type;
+  
+  
+  static_assert(JS::IsCCTraceKind(NonPtrType::TraceKind),
+                "Object's TraceKind should be added to CC graph.");
 
-    zone()->gcWeakMapList().insertFront(this);
-    marked = JS::IsIncrementalGCInProgress(TlsContext.get());
+  zone()->gcWeakMapList().insertFront(this);
+  marked = JS::IsIncrementalGCInProgress(TlsContext.get());
 }
 
 
@@ -48,229 +45,205 @@ WeakMap<K, V>::WeakMap(JSContext* cx, JSObject* memOf)
 
 
 template <class K, class V>
-void
-WeakMap<K, V>::markEntry(GCMarker* marker, gc::Cell* markedCell, JS::GCCellPtr origKey)
-{
-    MOZ_ASSERT(marked);
+void WeakMap<K, V>::markEntry(GCMarker* marker, gc::Cell* markedCell,
+                              JS::GCCellPtr origKey) {
+  MOZ_ASSERT(marked);
 
-    
-    
-    
-    Ptr p = Base::lookup(static_cast<Lookup>(origKey.asCell()));
-    MOZ_ASSERT(p.found());
+  
+  
+  
+  Ptr p = Base::lookup(static_cast<Lookup>(origKey.asCell()));
+  MOZ_ASSERT(p.found());
 
-    K key(p->key());
-    MOZ_ASSERT((markedCell == extractUnbarriered(key)) || (markedCell == getDelegate(key)));
-    if (gc::IsMarked(marker->runtime(), &key)) {
-        TraceEdge(marker, &p->value(), "ephemeron value");
-    } else if (keyNeedsMark(key)) {
-        TraceEdge(marker, &p->value(), "WeakMap ephemeron value");
-        TraceEdge(marker, &key, "proxy-preserved WeakMap ephemeron key");
-        MOZ_ASSERT(key == p->key()); 
-    }
-    key.unsafeSet(nullptr); 
+  K key(p->key());
+  MOZ_ASSERT((markedCell == extractUnbarriered(key)) ||
+             (markedCell == getDelegate(key)));
+  if (gc::IsMarked(marker->runtime(), &key)) {
+    TraceEdge(marker, &p->value(), "ephemeron value");
+  } else if (keyNeedsMark(key)) {
+    TraceEdge(marker, &p->value(), "WeakMap ephemeron value");
+    TraceEdge(marker, &key, "proxy-preserved WeakMap ephemeron key");
+    MOZ_ASSERT(key == p->key());  
+  }
+  key.unsafeSet(nullptr);  
 }
 
 template <class K, class V>
-void
-WeakMap<K, V>::trace(JSTracer* trc)
-{
-    MOZ_ASSERT_IF(JS::RuntimeHeapIsBusy(), isInList());
+void WeakMap<K, V>::trace(JSTracer* trc) {
+  MOZ_ASSERT_IF(JS::RuntimeHeapIsBusy(), isInList());
 
-    TraceNullableEdge(trc, &memberOf, "WeakMap owner");
+  TraceNullableEdge(trc, &memberOf, "WeakMap owner");
 
-    if (trc->isMarkingTracer()) {
-        MOZ_ASSERT(trc->weakMapAction() == ExpandWeakMaps);
-        marked = true;
-        (void) markIteratively(GCMarker::fromTracer(trc));
-        return;
-    }
+  if (trc->isMarkingTracer()) {
+    MOZ_ASSERT(trc->weakMapAction() == ExpandWeakMaps);
+    marked = true;
+    (void)markIteratively(GCMarker::fromTracer(trc));
+    return;
+  }
 
-    if (trc->weakMapAction() == DoNotTraceWeakMaps) {
-        return;
-    }
+  if (trc->weakMapAction() == DoNotTraceWeakMaps) {
+    return;
+  }
 
-    
-    if (trc->weakMapAction() == TraceWeakMapKeysValues) {
-        for (Enum e(*this); !e.empty(); e.popFront()) {
-            TraceEdge(trc, &e.front().mutableKey(), "WeakMap entry key");
-        }
-    }
-
-    
-    
-    for (Range r = Base::all(); !r.empty(); r.popFront()) {
-        TraceEdge(trc, &r.front().value(), "WeakMap entry value");
-    }
-}
-
-template <class K, class V>
- void
-WeakMap<K, V>::addWeakEntry(GCMarker* marker, JS::GCCellPtr key,
-                                const gc::WeakMarkable& markable)
-{
-    Zone* zone = key.asCell()->asTenured().zone();
-
-    auto p = zone->gcWeakKeys().get(key);
-    if (p) {
-        gc::WeakEntryVector& weakEntries = p->value;
-        if (!weakEntries.append(markable)) {
-            marker->abortLinearWeakMarking();
-        }
-    } else {
-        gc::WeakEntryVector weakEntries;
-        MOZ_ALWAYS_TRUE(weakEntries.append(markable));
-        if (!zone->gcWeakKeys().put(JS::GCCellPtr(key), std::move(weakEntries))) {
-            marker->abortLinearWeakMarking();
-        }
-    }
-}
-
-template <class K, class V>
-bool
-WeakMap<K, V>::markIteratively(GCMarker* marker)
-{
-    MOZ_ASSERT(marked);
-
-    bool markedAny = false;
-
+  
+  if (trc->weakMapAction() == TraceWeakMapKeysValues) {
     for (Enum e(*this); !e.empty(); e.popFront()) {
-        
-        bool keyIsMarked = gc::IsMarked(marker->runtime(), &e.front().mutableKey());
-        if (!keyIsMarked && keyNeedsMark(e.front().key())) {
-            TraceEdge(marker, &e.front().mutableKey(), "proxy-preserved WeakMap entry key");
-            keyIsMarked = true;
-            markedAny = true;
-        }
-
-        if (keyIsMarked) {
-            if (!gc::IsMarked(marker->runtime(), &e.front().value())) {
-                TraceEdge(marker, &e.front().value(), "WeakMap entry value");
-                markedAny = true;
-            }
-        } else if (marker->isWeakMarkingTracer()) {
-            
-            
-            
-            
-            JS::GCCellPtr weakKey(extractUnbarriered(e.front().key()));
-            gc::WeakMarkable markable(this, weakKey);
-            addWeakEntry(marker, weakKey, markable);
-            if (JSObject* delegate = getDelegate(e.front().key())) {
-                addWeakEntry(marker, JS::GCCellPtr(delegate), markable);
-            }
-        }
+      TraceEdge(trc, &e.front().mutableKey(), "WeakMap entry key");
     }
+  }
 
-    return markedAny;
+  
+  
+  for (Range r = Base::all(); !r.empty(); r.popFront()) {
+    TraceEdge(trc, &r.front().value(), "WeakMap entry value");
+  }
 }
 
 template <class K, class V>
-inline JSObject*
-WeakMap<K, V>::getDelegate(JSObject* key) const
-{
-    JS::AutoSuppressGCAnalysis nogc;
+ void WeakMap<K, V>::addWeakEntry(
+    GCMarker* marker, JS::GCCellPtr key, const gc::WeakMarkable& markable) {
+  Zone* zone = key.asCell()->asTenured().zone();
 
-    JSWeakmapKeyDelegateOp op = key->getClass()->extWeakmapKeyDelegateOp();
-    if (!op) {
-        return nullptr;
+  auto p = zone->gcWeakKeys().get(key);
+  if (p) {
+    gc::WeakEntryVector& weakEntries = p->value;
+    if (!weakEntries.append(markable)) {
+      marker->abortLinearWeakMarking();
     }
-
-    JSObject* obj = op(key);
-    if (!obj) {
-        return nullptr;
+  } else {
+    gc::WeakEntryVector weakEntries;
+    MOZ_ALWAYS_TRUE(weakEntries.append(markable));
+    if (!zone->gcWeakKeys().put(JS::GCCellPtr(key), std::move(weakEntries))) {
+      marker->abortLinearWeakMarking();
     }
-
-    MOZ_ASSERT(obj->runtimeFromMainThread() == zone()->runtimeFromMainThread());
-    return obj;
+  }
 }
 
 template <class K, class V>
-inline JSObject*
-WeakMap<K, V>::getDelegate(JSScript* script) const
-{
-    return nullptr;
-}
+bool WeakMap<K, V>::markIteratively(GCMarker* marker) {
+  MOZ_ASSERT(marked);
 
-template <class K, class V>
-inline JSObject*
-WeakMap<K, V>::getDelegate(LazyScript* script) const
-{
-    return nullptr;
-}
+  bool markedAny = false;
 
-template <class K, class V>
-inline bool
-WeakMap<K, V>::keyNeedsMark(JSObject* key) const
-{
-    JSObject* delegate = getDelegate(key);
+  for (Enum e(*this); !e.empty(); e.popFront()) {
     
-
-
-
-    return delegate && gc::IsMarkedUnbarriered(zone()->runtimeFromMainThread(), &delegate);
-}
-
-template <class K, class V>
-inline bool
-WeakMap<K, V>::keyNeedsMark(JSScript* script) const
-{
-    return false;
-}
-
-template <class K, class V>
-inline bool
-WeakMap<K, V>::keyNeedsMark(LazyScript* script) const
-{
-    return false;
-}
-
-
-template <class K, class V>
-void
-WeakMap<K, V>::sweep()
-{
-    
-    for (Enum e(*this); !e.empty(); e.popFront()) {
-        if (gc::IsAboutToBeFinalized(&e.front().mutableKey())) {
-            e.removeFront();
-        }
+    bool keyIsMarked = gc::IsMarked(marker->runtime(), &e.front().mutableKey());
+    if (!keyIsMarked && keyNeedsMark(e.front().key())) {
+      TraceEdge(marker, &e.front().mutableKey(),
+                "proxy-preserved WeakMap entry key");
+      keyIsMarked = true;
+      markedAny = true;
     }
+
+    if (keyIsMarked) {
+      if (!gc::IsMarked(marker->runtime(), &e.front().value())) {
+        TraceEdge(marker, &e.front().value(), "WeakMap entry value");
+        markedAny = true;
+      }
+    } else if (marker->isWeakMarkingTracer()) {
+      
+      
+      
+      
+      JS::GCCellPtr weakKey(extractUnbarriered(e.front().key()));
+      gc::WeakMarkable markable(this, weakKey);
+      addWeakEntry(marker, weakKey, markable);
+      if (JSObject* delegate = getDelegate(e.front().key())) {
+        addWeakEntry(marker, JS::GCCellPtr(delegate), markable);
+      }
+    }
+  }
+
+  return markedAny;
+}
+
+template <class K, class V>
+inline JSObject* WeakMap<K, V>::getDelegate(JSObject* key) const {
+  JS::AutoSuppressGCAnalysis nogc;
+
+  JSWeakmapKeyDelegateOp op = key->getClass()->extWeakmapKeyDelegateOp();
+  if (!op) {
+    return nullptr;
+  }
+
+  JSObject* obj = op(key);
+  if (!obj) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(obj->runtimeFromMainThread() == zone()->runtimeFromMainThread());
+  return obj;
+}
+
+template <class K, class V>
+inline JSObject* WeakMap<K, V>::getDelegate(JSScript* script) const {
+  return nullptr;
+}
+
+template <class K, class V>
+inline JSObject* WeakMap<K, V>::getDelegate(LazyScript* script) const {
+  return nullptr;
+}
+
+template <class K, class V>
+inline bool WeakMap<K, V>::keyNeedsMark(JSObject* key) const {
+  JSObject* delegate = getDelegate(key);
+  
+
+
+
+  return delegate &&
+         gc::IsMarkedUnbarriered(zone()->runtimeFromMainThread(), &delegate);
+}
+
+template <class K, class V>
+inline bool WeakMap<K, V>::keyNeedsMark(JSScript* script) const {
+  return false;
+}
+
+template <class K, class V>
+inline bool WeakMap<K, V>::keyNeedsMark(LazyScript* script) const {
+  return false;
+}
+
+template <class K, class V>
+void WeakMap<K, V>::sweep() {
+  
+  for (Enum e(*this); !e.empty(); e.popFront()) {
+    if (gc::IsAboutToBeFinalized(&e.front().mutableKey())) {
+      e.removeFront();
+    }
+  }
 
 #if DEBUG
-    
-    
-    assertEntriesNotAboutToBeFinalized();
+  
+  
+  assertEntriesNotAboutToBeFinalized();
 #endif
 }
 
 
 template <class K, class V>
-void
-WeakMap<K, V>::traceMappings(WeakMapTracer* tracer)
-{
-    for (Range r = Base::all(); !r.empty(); r.popFront()) {
-        gc::Cell* key = gc::ToMarkable(r.front().key());
-        gc::Cell* value = gc::ToMarkable(r.front().value());
-        if (key && value) {
-            tracer->trace(memberOf,
-                          JS::GCCellPtr(r.front().key().get()),
-                          JS::GCCellPtr(r.front().value().get()));
-        }
+void WeakMap<K, V>::traceMappings(WeakMapTracer* tracer) {
+  for (Range r = Base::all(); !r.empty(); r.popFront()) {
+    gc::Cell* key = gc::ToMarkable(r.front().key());
+    gc::Cell* value = gc::ToMarkable(r.front().value());
+    if (key && value) {
+      tracer->trace(memberOf, JS::GCCellPtr(r.front().key().get()),
+                    JS::GCCellPtr(r.front().value().get()));
     }
+  }
 }
 
 #if DEBUG
 template <class K, class V>
-void
-WeakMap<K, V>::assertEntriesNotAboutToBeFinalized()
-{
-    for (Range r = Base::all(); !r.empty(); r.popFront()) {
-        K k(r.front().key());
-        MOZ_ASSERT(!gc::IsAboutToBeFinalized(&k));
-        MOZ_ASSERT(!gc::IsAboutToBeFinalized(&r.front().value()));
-        MOZ_ASSERT(k == r.front().key());
-    }
+void WeakMap<K, V>::assertEntriesNotAboutToBeFinalized() {
+  for (Range r = Base::all(); !r.empty(); r.popFront()) {
+    K k(r.front().key());
+    MOZ_ASSERT(!gc::IsAboutToBeFinalized(&k));
+    MOZ_ASSERT(!gc::IsAboutToBeFinalized(&r.front().value()));
+    MOZ_ASSERT(k == r.front().key());
+  }
 }
 #endif
 

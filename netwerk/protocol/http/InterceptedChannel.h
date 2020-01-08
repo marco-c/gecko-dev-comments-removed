@@ -25,8 +25,10 @@ class InterceptStreamListener;
 
 
 
+
 class InterceptedChannelBase : public nsIInterceptedChannel {
-protected:
+ protected:
+  
   
   nsCOMPtr<nsINetworkInterceptController> mController;
 
@@ -54,14 +56,11 @@ protected:
 
   TimeStamp mFinishResponseStart;
   TimeStamp mFinishResponseEnd;
-  enum {
-    Invalid = 0,
-    Synthesized,
-    Reset
-  } mSynthesizedOrReset;
+  enum { Invalid = 0, Synthesized, Reset } mSynthesizedOrReset;
 
   virtual ~InterceptedChannelBase() = default;
-public:
+
+ public:
   explicit InterceptedChannelBase(nsINetworkInterceptController* aController);
 
   
@@ -70,77 +69,68 @@ public:
 
   NS_DECL_ISUPPORTS
 
-  NS_IMETHOD GetConsoleReportCollector(nsIConsoleReportCollector** aCollectorOut) override;
+  NS_IMETHOD GetConsoleReportCollector(
+      nsIConsoleReportCollector** aCollectorOut) override;
   NS_IMETHOD SetReleaseHandle(nsISupports* aHandle) override;
 
   NS_IMETHODIMP
-  SetLaunchServiceWorkerStart(TimeStamp aTimeStamp) override
-  {
+  SetLaunchServiceWorkerStart(TimeStamp aTimeStamp) override {
     mLaunchServiceWorkerStart = aTimeStamp;
     return NS_OK;
   }
 
   NS_IMETHODIMP
-  GetLaunchServiceWorkerStart(TimeStamp* aTimeStamp) override
-  {
+  GetLaunchServiceWorkerStart(TimeStamp* aTimeStamp) override {
     MOZ_DIAGNOSTIC_ASSERT(aTimeStamp);
     *aTimeStamp = mLaunchServiceWorkerStart;
     return NS_OK;
   }
 
   NS_IMETHODIMP
-  SetLaunchServiceWorkerEnd(TimeStamp aTimeStamp) override
-  {
+  SetLaunchServiceWorkerEnd(TimeStamp aTimeStamp) override {
     mLaunchServiceWorkerEnd = aTimeStamp;
     return NS_OK;
   }
 
   NS_IMETHODIMP
-  GetLaunchServiceWorkerEnd(TimeStamp* aTimeStamp) override
-  {
+  GetLaunchServiceWorkerEnd(TimeStamp* aTimeStamp) override {
     MOZ_DIAGNOSTIC_ASSERT(aTimeStamp);
     *aTimeStamp = mLaunchServiceWorkerEnd;
     return NS_OK;
   }
 
   NS_IMETHODIMP
-  SetDispatchFetchEventStart(TimeStamp aTimeStamp) override
-  {
+  SetDispatchFetchEventStart(TimeStamp aTimeStamp) override {
     mDispatchFetchEventStart = aTimeStamp;
     return NS_OK;
   }
 
   NS_IMETHODIMP
-  SetDispatchFetchEventEnd(TimeStamp aTimeStamp) override
-  {
+  SetDispatchFetchEventEnd(TimeStamp aTimeStamp) override {
     mDispatchFetchEventEnd = aTimeStamp;
     return NS_OK;
   }
 
   NS_IMETHODIMP
-  SetHandleFetchEventStart(TimeStamp aTimeStamp) override
-  {
+  SetHandleFetchEventStart(TimeStamp aTimeStamp) override {
     mHandleFetchEventStart = aTimeStamp;
     return NS_OK;
   }
 
   NS_IMETHODIMP
-  SetHandleFetchEventEnd(TimeStamp aTimeStamp) override
-  {
+  SetHandleFetchEventEnd(TimeStamp aTimeStamp) override {
     mHandleFetchEventEnd = aTimeStamp;
     return NS_OK;
   }
 
   NS_IMETHODIMP
-  SetFinishResponseStart(TimeStamp aTimeStamp) override
-  {
+  SetFinishResponseStart(TimeStamp aTimeStamp) override {
     mFinishResponseStart = aTimeStamp;
     return NS_OK;
   }
 
   NS_IMETHODIMP
-  SetFinishSynthesizedResponseEnd(TimeStamp aTimeStamp) override
-  {
+  SetFinishSynthesizedResponseEnd(TimeStamp aTimeStamp) override {
     MOZ_ASSERT(mSynthesizedOrReset == Invalid);
     mSynthesizedOrReset = Synthesized;
     mFinishResponseEnd = aTimeStamp;
@@ -148,8 +138,7 @@ public:
   }
 
   NS_IMETHODIMP
-  SetChannelResetEnd(TimeStamp aTimeStamp) override
-  {
+  SetChannelResetEnd(TimeStamp aTimeStamp) override {
     MOZ_ASSERT(mSynthesizedOrReset == Invalid);
     mSynthesizedOrReset = Reset;
     mFinishResponseEnd = aTimeStamp;
@@ -158,12 +147,10 @@ public:
 
   NS_IMETHODIMP SaveTimeStamps() override;
 
-  static already_AddRefed<nsIURI>
-  SecureUpgradeChannelURI(nsIChannel* aChannel);
+  static already_AddRefed<nsIURI> SecureUpgradeChannelURI(nsIChannel* aChannel);
 };
 
-class InterceptedChannelContent : public InterceptedChannelBase
-{
+class InterceptedChannelContent : public InterceptedChannelBase {
   
   RefPtr<HttpChannelChild> mChannel;
 
@@ -173,7 +160,8 @@ class InterceptedChannelContent : public InterceptedChannelBase
 
   
   bool mSecureUpgrade;
-public:
+
+ public:
   InterceptedChannelContent(HttpChannelChild* aChannel,
                             nsINetworkInterceptController* aController,
                             InterceptStreamListener* aListener,
@@ -188,16 +176,19 @@ public:
   NS_IMETHOD FinishSynthesizedResponse() override;
   NS_IMETHOD GetChannel(nsIChannel** aChannel) override;
   NS_IMETHOD GetSecureUpgradedChannelURI(nsIURI** aURI) override;
-  NS_IMETHOD SynthesizeStatus(uint16_t aStatus, const nsACString& aReason) override;
-  NS_IMETHOD SynthesizeHeader(const nsACString& aName, const nsACString& aValue) override;
+  NS_IMETHOD SynthesizeStatus(uint16_t aStatus,
+                              const nsACString& aReason) override;
+  NS_IMETHOD SynthesizeHeader(const nsACString& aName,
+                              const nsACString& aValue) override;
   NS_IMETHOD CancelInterception(nsresult aStatus) override;
   NS_IMETHOD SetChannelInfo(mozilla::dom::ChannelInfo* aChannelInfo) override;
-  NS_IMETHOD GetInternalContentPolicyType(nsContentPolicyType *aInternalContentPolicyType) override;
+  NS_IMETHOD GetInternalContentPolicyType(
+      nsContentPolicyType* aInternalContentPolicyType) override;
 
   virtual void NotifyController() override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

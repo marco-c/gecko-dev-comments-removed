@@ -2517,28 +2517,28 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-    IF_BIGINT(,MACRO(234)) \
-    MACRO(235) \
-    MACRO(236) \
-    MACRO(237) \
-    MACRO(238) \
-    MACRO(239) \
-    MACRO(240) \
-    MACRO(241) \
-    MACRO(242) \
-    MACRO(243) \
-    MACRO(244) \
-    MACRO(245) \
-    MACRO(246) \
-    MACRO(247) \
-    MACRO(248) \
-    MACRO(249) \
-    MACRO(250) \
-    MACRO(251) \
-    MACRO(252) \
-    MACRO(253) \
-    MACRO(254) \
-    MACRO(255)
+  IF_BIGINT(, MACRO(234))                      \
+  MACRO(235)                                   \
+  MACRO(236)                                   \
+  MACRO(237)                                   \
+  MACRO(238)                                   \
+  MACRO(239)                                   \
+  MACRO(240)                                   \
+  MACRO(241)                                   \
+  MACRO(242)                                   \
+  MACRO(243)                                   \
+  MACRO(244)                                   \
+  MACRO(245)                                   \
+  MACRO(246)                                   \
+  MACRO(247)                                   \
+  MACRO(248)                                   \
+  MACRO(249)                                   \
+  MACRO(250)                                   \
+  MACRO(251)                                   \
+  MACRO(252)                                   \
+  MACRO(253)                                   \
+  MACRO(254)                                   \
+  MACRO(255)
 
 namespace js {
 
@@ -2563,10 +2563,10 @@ static_assert((0 ==
 
 
 #define DEFINE_LENGTH_CONSTANT(op, val, name, image, len, ...) \
-    constexpr size_t op##_LENGTH = len;
+  constexpr size_t op##_LENGTH = len;
 FOR_EACH_OPCODE(DEFINE_LENGTH_CONSTANT)
 #undef DEFINE_LENGTH_CONSTANT
 
-} 
+}  
 
-#endif 
+#endif  

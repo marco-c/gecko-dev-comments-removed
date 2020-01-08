@@ -20,19 +20,20 @@ namespace js {
 
 
 
-extern UniqueChars
-AtomToPrintableString(JSContext* cx, JSAtom* atom);
+extern UniqueChars AtomToPrintableString(JSContext* cx, JSAtom* atom);
 
 class PropertyName;
 
-}  
+} 
 
 
-#define DECLARE_PROTO_STR(name,init,clasp) extern const char js_##name##_str[];
+#define DECLARE_PROTO_STR(name, init, clasp) \
+  extern const char js_##name##_str[];
 JS_FOR_EACH_PROTOTYPE(DECLARE_PROTO_STR)
 #undef DECLARE_PROTO_STR
 
-#define DECLARE_CONST_CHAR_STR(idpart, id, text)  extern const char js_##idpart##_str[];
+#define DECLARE_CONST_CHAR_STR(idpart, id, text) \
+  extern const char js_##idpart##_str[];
 FOR_EACH_COMMON_PROPERTYNAME(DECLARE_CONST_CHAR_STR)
 #undef DECLARE_CONST_CHAR_STR
 
@@ -43,41 +44,34 @@ class AutoAccessAtomsZone;
 
 
 
-void
-TraceAtoms(JSTracer* trc, const AutoAccessAtomsZone& access);
+void TraceAtoms(JSTracer* trc, const AutoAccessAtomsZone& access);
 
-void
-TraceWellKnownSymbols(JSTracer* trc);
+void TraceWellKnownSymbols(JSTracer* trc);
 
 
-enum PinningBehavior
-{
-    DoNotPinAtom = false,
-    PinAtom = true
-};
+enum PinningBehavior { DoNotPinAtom = false, PinAtom = true };
 
-extern JSAtom*
-Atomize(JSContext* cx, const char* bytes, size_t length,
-        js::PinningBehavior pin = js::DoNotPinAtom,
-        const mozilla::Maybe<uint32_t>& indexValue = mozilla::Nothing());
+extern JSAtom* Atomize(
+    JSContext* cx, const char* bytes, size_t length,
+    js::PinningBehavior pin = js::DoNotPinAtom,
+    const mozilla::Maybe<uint32_t>& indexValue = mozilla::Nothing());
 
 template <typename CharT>
-extern JSAtom*
-AtomizeChars(JSContext* cx, const CharT* chars, size_t length,
-             js::PinningBehavior pin = js::DoNotPinAtom);
+extern JSAtom* AtomizeChars(JSContext* cx, const CharT* chars, size_t length,
+                            js::PinningBehavior pin = js::DoNotPinAtom);
 
-extern JSAtom*
-AtomizeUTF8Chars(JSContext* cx, const char* utf8Chars, size_t utf8ByteLength);
+extern JSAtom* AtomizeUTF8Chars(JSContext* cx, const char* utf8Chars,
+                                size_t utf8ByteLength);
 
-extern JSAtom*
-AtomizeWTF8Chars(JSContext* cx, const char* wtf8Chars, size_t wtf8ByteLength);
+extern JSAtom* AtomizeWTF8Chars(JSContext* cx, const char* wtf8Chars,
+                                size_t wtf8ByteLength);
 
-extern JSAtom*
-AtomizeString(JSContext* cx, JSString* str, js::PinningBehavior pin = js::DoNotPinAtom);
+extern JSAtom* AtomizeString(JSContext* cx, JSString* str,
+                             js::PinningBehavior pin = js::DoNotPinAtom);
 
 template <AllowGC allowGC>
-extern JSAtom*
-ToAtom(JSContext* cx, typename MaybeRooted<JS::Value, allowGC>::HandleType v);
+extern JSAtom* ToAtom(JSContext* cx,
+                      typename MaybeRooted<JS::Value, allowGC>::HandleType v);
 
 
 
@@ -85,8 +79,7 @@ ToAtom(JSContext* cx, typename MaybeRooted<JS::Value, allowGC>::HandleType v);
 
 
 
-extern JS::Handle<PropertyName*>
-ClassName(JSProtoKey key, JSContext* cx);
+extern JS::Handle<PropertyName*> ClassName(JSProtoKey key, JSContext* cx);
 
 #ifdef DEBUG
 
@@ -94,7 +87,7 @@ bool AtomIsMarked(JS::Zone* zone, JSAtom* atom);
 bool AtomIsMarked(JS::Zone* zone, jsid id);
 bool AtomIsMarked(JS::Zone* zone, const JS::Value& value);
 
-#endif 
+#endif  
 
 } 
 

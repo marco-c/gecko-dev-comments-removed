@@ -16,16 +16,15 @@
 
 namespace mozilla {
 
-class SnappyUncompressInputStream final : public nsIInputStream
-                                        , protected detail::SnappyFrameUtils
-{
-public:
+class SnappyUncompressInputStream final : public nsIInputStream,
+                                          protected detail::SnappyFrameUtils {
+ public:
   
   
   
   explicit SnappyUncompressInputStream(nsIInputStream* aBaseStream);
 
-private:
+ private:
   virtual ~SnappyUncompressInputStream();
 
   
@@ -80,11 +79,11 @@ private:
   
   bool mNeedFirstStreamIdentifier;
 
-public:
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
 };
 
-} 
+}  
 
-#endif 
+#endif  

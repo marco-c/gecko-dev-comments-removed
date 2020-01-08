@@ -8,74 +8,53 @@
 #include <stdint.h>
 #include <math.h>
 
-#define NEWTON_ITERATIONS          4
-#define NEWTON_MIN_SLOPE           0.02
-#define SUBDIVISION_PRECISION      0.0000001
+#define NEWTON_ITERATIONS 4
+#define NEWTON_MIN_SLOPE 0.02
+#define SUBDIVISION_PRECISION 0.0000001
 #define SUBDIVISION_MAX_ITERATIONS 10
 
 const double nsSMILKeySpline::kSampleStepSize =
-                                        1.0 / double(kSplineTableSize - 1);
+    1.0 / double(kSplineTableSize - 1);
 
-void
-nsSMILKeySpline::Init(double aX1,
-                      double aY1,
-                      double aX2,
-                      double aY2)
-{
+void nsSMILKeySpline::Init(double aX1, double aY1, double aX2, double aY2) {
   mX1 = aX1;
   mY1 = aY1;
   mX2 = aX2;
   mY2 = aY2;
 
-  if (mX1 != mY1 || mX2 != mY2)
-    CalcSampleValues();
+  if (mX1 != mY1 || mX2 != mY2) CalcSampleValues();
 }
 
-double
-nsSMILKeySpline::GetSplineValue(double aX) const
-{
-  if (mX1 == mY1 && mX2 == mY2)
-    return aX;
+double nsSMILKeySpline::GetSplineValue(double aX) const {
+  if (mX1 == mY1 && mX2 == mY2) return aX;
 
   return CalcBezier(GetTForX(aX), mY1, mY2);
 }
 
-void
-nsSMILKeySpline::GetSplineDerivativeValues(double aX, double& aDX, double& aDY) const
-{
+void nsSMILKeySpline::GetSplineDerivativeValues(double aX, double& aDX,
+                                                double& aDY) const {
   double t = GetTForX(aX);
   aDX = GetSlope(t, mX1, mX2);
   aDY = GetSlope(t, mY1, mY2);
 }
 
-void
-nsSMILKeySpline::CalcSampleValues()
-{
+void nsSMILKeySpline::CalcSampleValues() {
   for (uint32_t i = 0; i < kSplineTableSize; ++i) {
     mSampleValues[i] = CalcBezier(double(i) * kSampleStepSize, mX1, mX2);
   }
 }
 
- double
-nsSMILKeySpline::CalcBezier(double aT,
-                            double aA1,
-                            double aA2)
-{
+ double nsSMILKeySpline::CalcBezier(double aT, double aA1,
+                                              double aA2) {
   
-  return ((A(aA1, aA2)*aT + B(aA1, aA2))*aT + C(aA1))*aT;
+  return ((A(aA1, aA2) * aT + B(aA1, aA2)) * aT + C(aA1)) * aT;
 }
 
- double
-nsSMILKeySpline::GetSlope(double aT,
-                          double aA1,
-                          double aA2)
-{
-  return 3.0 * A(aA1, aA2)*aT*aT + 2.0 * B(aA1, aA2) * aT + C(aA1);
+ double nsSMILKeySpline::GetSlope(double aT, double aA1, double aA2) {
+  return 3.0 * A(aA1, aA2) * aT * aT + 2.0 * B(aA1, aA2) * aT + C(aA1);
 }
 
-double
-nsSMILKeySpline::GetTForX(double aX) const
-{
+double nsSMILKeySpline::GetTForX(double aX) const {
   
   if (aX == 1.0) {
     return 1.0;
@@ -84,15 +63,13 @@ nsSMILKeySpline::GetTForX(double aX) const
   double intervalStart = 0.0;
   const double* currentSample = &mSampleValues[1];
   const double* const lastSample = &mSampleValues[kSplineTableSize - 1];
-  for (; currentSample != lastSample && *currentSample <= aX;
-        ++currentSample) {
+  for (; currentSample != lastSample && *currentSample <= aX; ++currentSample) {
     intervalStart += kSampleStepSize;
   }
-  --currentSample; 
+  --currentSample;  
 
   
-  double dist = (aX - *currentSample) /
-                (*(currentSample+1) - *currentSample);
+  double dist = (aX - *currentSample) / (*(currentSample + 1) - *currentSample);
   double guessForT = intervalStart + dist * kSampleStepSize;
 
   
@@ -108,9 +85,7 @@ nsSMILKeySpline::GetTForX(double aX) const
   }
 }
 
-double
-nsSMILKeySpline::NewtonRaphsonIterate(double aX, double aGuessT) const
-{
+double nsSMILKeySpline::NewtonRaphsonIterate(double aX, double aGuessT) const {
   
   for (uint32_t i = 0; i < NEWTON_ITERATIONS; ++i) {
     
@@ -118,8 +93,7 @@ nsSMILKeySpline::NewtonRaphsonIterate(double aX, double aGuessT) const
     double currentX = CalcBezier(aGuessT, mX1, mX2) - aX;
     double currentSlope = GetSlope(aGuessT, mX1, mX2);
 
-    if (currentSlope == 0.0)
-      return aGuessT;
+    if (currentSlope == 0.0) return aGuessT;
 
     aGuessT -= currentX / currentSlope;
   }
@@ -127,15 +101,12 @@ nsSMILKeySpline::NewtonRaphsonIterate(double aX, double aGuessT) const
   return aGuessT;
 }
 
-double
-nsSMILKeySpline::BinarySubdivide(double aX, double aA, double aB) const
-{
+double nsSMILKeySpline::BinarySubdivide(double aX, double aA, double aB) const {
   double currentX;
   double currentT;
   uint32_t i = 0;
 
-  do
-  {
+  do {
     currentT = aA + (aB - aA) / 2.0;
     currentX = CalcBezier(currentT, mX1, mX2) - aX;
 
@@ -144,8 +115,8 @@ nsSMILKeySpline::BinarySubdivide(double aX, double aA, double aB) const
     } else {
       aA = currentT;
     }
-  } while (fabs(currentX) > SUBDIVISION_PRECISION
-           && ++i < SUBDIVISION_MAX_ITERATIONS);
+  } while (fabs(currentX) > SUBDIVISION_PRECISION &&
+           ++i < SUBDIVISION_MAX_ITERATIONS);
 
   return currentT;
 }

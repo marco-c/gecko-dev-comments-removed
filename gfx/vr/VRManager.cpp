@@ -4,7 +4,6 @@
 
 
 
-
 #include "VRManager.h"
 #include "VRManagerParent.h"
 #include "VRGPUChild.h"
@@ -38,24 +37,22 @@ namespace gfx {
 
 static StaticRefPtr<VRManager> sVRManagerSingleton;
 
- 
-
-
-
-
-const uint32_t kVRActiveTaskInterval = 1; 
-
- 
 
 
 
 
 
-const uint32_t kVRIdleTaskInterval = 100; 
+const uint32_t kVRActiveTaskInterval = 1;  
 
- void
-VRManager::ManagerInit()
-{
+
+
+
+
+
+
+const uint32_t kVRIdleTaskInterval = 100;  
+
+ void VRManager::ManagerInit() {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -67,14 +64,13 @@ VRManager::ManagerInit()
 }
 
 VRManager::VRManager()
-  : mInitialized(false)
-  , mAccumulator100ms(0.0f)
-  , mVRDisplaysRequested(false)
-  , mVRDisplaysRequestedNonFocus(false)
-  , mVRControllersRequested(false)
-  , mVRServiceStarted(false)
-  , mTaskInterval(0)
-{
+    : mInitialized(false),
+      mAccumulator100ms(0.0f),
+      mVRDisplaysRequested(false),
+      mVRDisplaysRequestedNonFocus(false),
+      mVRControllersRequested(false),
+      mVRServiceStarted(false),
+      mTaskInterval(0) {
   MOZ_COUNT_CTOR(VRManager);
   MOZ_ASSERT(sVRManagerSingleton == nullptr);
 
@@ -91,7 +87,8 @@ VRManager::VRManager()
     Unused << gpu->SendCreateVRProcess();
   }
   if (mVRService) {
-    mExternalManager = VRSystemManagerExternal::Create(mVRService->GetAPIShmem());
+    mExternalManager =
+        VRSystemManagerExternal::Create(mVRService->GetAPIShmem());
   }
   if (mExternalManager) {
     mManagers.AppendElement(mExternalManager);
@@ -112,16 +109,13 @@ VRManager::VRManager()
   }
 }
 
-VRManager::~VRManager()
-{
+VRManager::~VRManager() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(!mInitialized);
   MOZ_COUNT_DTOR(VRManager);
 }
 
-void
-VRManager::Destroy()
-{
+void VRManager::Destroy() {
   StopTasks();
   mVRDisplays.Clear();
   mVRControllers.Clear();
@@ -137,9 +131,7 @@ VRManager::Destroy()
   mInitialized = false;
 }
 
-void
-VRManager::Shutdown()
-{
+void VRManager::Shutdown() {
   mVRDisplays.Clear();
   mVRControllers.Clear();
   for (uint32_t i = 0; i < mManagers.Length(); ++i) {
@@ -149,14 +141,12 @@ VRManager::Shutdown()
   if (mVRService) {
     mVRService->Stop();
   }
-  if (gfxPrefs::VRProcessEnabled() &&
-      VRGPUChild::IsCreated()) {
-    RefPtr<Runnable> task = NS_NewRunnableFunction(
-      "VRGPUChild::SendStopVRService",
-      [] () -> void {
-        VRGPUChild* vrGPUChild = VRGPUChild::Get();
-        vrGPUChild->SendStopVRService();
-    });
+  if (gfxPrefs::VRProcessEnabled() && VRGPUChild::IsCreated()) {
+    RefPtr<Runnable> task =
+        NS_NewRunnableFunction("VRGPUChild::SendStopVRService", []() -> void {
+          VRGPUChild* vrGPUChild = VRGPUChild::Get();
+          vrGPUChild->SendStopVRService();
+        });
 
     NS_DispatchToMainThread(task.forget());
   }
@@ -164,49 +154,38 @@ VRManager::Shutdown()
   mVRServiceStarted = false;
 }
 
-void
-VRManager::Init()
-{
-  mInitialized = true;
-}
+void VRManager::Init() { mInitialized = true; }
 
-VRManager*
-VRManager::Get()
-{
+ VRManager* VRManager::Get() {
   MOZ_ASSERT(sVRManagerSingleton != nullptr);
 
   return sVRManagerSingleton;
 }
 
-void
-VRManager::AddVRManagerParent(VRManagerParent* aVRManagerParent)
-{
+void VRManager::AddVRManagerParent(VRManagerParent* aVRManagerParent) {
   if (mVRManagerParents.IsEmpty()) {
     Init();
   }
   mVRManagerParents.PutEntry(aVRManagerParent);
 }
 
-void
-VRManager::RemoveVRManagerParent(VRManagerParent* aVRManagerParent)
-{
+void VRManager::RemoveVRManagerParent(VRManagerParent* aVRManagerParent) {
   mVRManagerParents.RemoveEntry(aVRManagerParent);
   if (mVRManagerParents.IsEmpty()) {
     Destroy();
   }
 }
 
-void
-VRManager::UpdateRequestedDevices()
-{
+void VRManager::UpdateRequestedDevices() {
   bool bHaveEventListener = false;
   bool bHaveEventListenerNonFocus = false;
   bool bHaveControllerListener = false;
 
   for (auto iter = mVRManagerParents.Iter(); !iter.Done(); iter.Next()) {
-    VRManagerParent *vmp = iter.Get()->GetKey();
+    VRManagerParent* vmp = iter.Get()->GetKey();
     bHaveEventListener |= vmp->HaveEventListener() && vmp->GetVRActiveStatus();
-    bHaveEventListenerNonFocus |= vmp->HaveEventListener() && !vmp->GetVRActiveStatus();
+    bHaveEventListenerNonFocus |=
+        vmp->HaveEventListener() && !vmp->GetVRActiveStatus();
     bHaveControllerListener |= vmp->HaveControllerListener();
   }
 
@@ -223,42 +202,32 @@ VRManager::UpdateRequestedDevices()
 
 
 
-void
-VRManager::NotifyVsync(const TimeStamp& aVsyncTimestamp)
-{
+void VRManager::NotifyVsync(const TimeStamp& aVsyncTimestamp) {
   for (const auto& manager : mManagers) {
     manager->NotifyVSync();
   }
 }
 
-void
-VRManager::StartTasks()
-{
+void VRManager::StartTasks() {
   if (!mTaskTimer) {
     mTaskInterval = GetOptimalTaskInterval();
     mTaskTimer = NS_NewTimer();
     mTaskTimer->SetTarget(CompositorThreadHolder::Loop()->SerialEventTarget());
     mTaskTimer->InitWithNamedFuncCallback(
-      TaskTimerCallback,
-      this,
-      mTaskInterval,
-      nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP,
-      "VRManager::TaskTimerCallback");
+        TaskTimerCallback, this, mTaskInterval,
+        nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP,
+        "VRManager::TaskTimerCallback");
   }
 }
 
-void
-VRManager::StopTasks()
-{
+void VRManager::StopTasks() {
   if (mTaskTimer) {
     mTaskTimer->Cancel();
     mTaskTimer = nullptr;
   }
 }
 
- void
-VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure)
-{
+ void VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure) {
   
 
 
@@ -270,9 +239,7 @@ VRManager::TaskTimerCallback(nsITimer* aTimer, void* aClosure)
   self->RunTasks();
 }
 
-void
-VRManager::RunTasks()
-{
+void VRManager::RunTasks() {
   
   
   
@@ -295,7 +262,7 @@ VRManager::RunTasks()
   if (floor(mAccumulator100ms * 0.1f) != floor(lastTickMs * 0.1f)) {
     
     
-     Run10msTasks();
+    Run10msTasks();
   }
 
   if (mAccumulator100ms >= 100.0f) {
@@ -312,18 +279,14 @@ VRManager::RunTasks()
   }
 }
 
-uint32_t
-VRManager::GetOptimalTaskInterval()
-{
+uint32_t VRManager::GetOptimalTaskInterval() {
   
 
 
 
 
-  bool wantGranularTasks = mVRDisplaysRequested ||
-                           mVRControllersRequested ||
-                           mVRDisplays.Count() ||
-                           mVRControllers.Count();
+  bool wantGranularTasks = mVRDisplaysRequested || mVRControllersRequested ||
+                           mVRDisplays.Count() || mVRControllers.Count();
   if (wantGranularTasks) {
     return kVRActiveTaskInterval;
   }
@@ -338,9 +301,7 @@ VRManager::GetOptimalTaskInterval()
 
 
 
-void
-VRManager::Run1msTasks(double aDeltaTime)
-{
+void VRManager::Run1msTasks(double aDeltaTime) {
   for (const auto& manager : mManagers) {
     manager->Run1msTasks(aDeltaTime);
   }
@@ -358,9 +319,7 @@ VRManager::Run1msTasks(double aDeltaTime)
 
 
 
-void
-VRManager::Run10msTasks()
-{
+void VRManager::Run10msTasks() {
   UpdateRequestedDevices();
 
   for (const auto& manager : mManagers) {
@@ -380,9 +339,7 @@ VRManager::Run10msTasks()
 
 
 
-void
-VRManager::Run100msTasks()
-{
+void VRManager::Run100msTasks() {
   
   
   
@@ -405,19 +362,15 @@ VRManager::Run100msTasks()
   }
 }
 
-void
-VRManager::CheckForInactiveTimeout()
-{
+void VRManager::CheckForInactiveTimeout() {
   
   if (mVRDisplaysRequested || mVRDisplaysRequestedNonFocus ||
       mVRControllersRequested) {
     
     mLastActiveTime = TimeStamp::Now();
-  }
-  else if (mLastActiveTime.IsNull()) {
+  } else if (mLastActiveTime.IsNull()) {
     Shutdown();
-  }
-  else {
+  } else {
     TimeDuration duration = TimeStamp::Now() - mLastActiveTime;
     if (duration.ToMilliseconds() > gfxPrefs::VRInactiveTimeout()) {
       Shutdown();
@@ -431,10 +384,8 @@ VRManager::CheckForInactiveTimeout()
   }
 }
 
-void
-VRManager::NotifyVRVsync(const uint32_t& aDisplayID)
-{
-  for (const auto& manager: mManagers) {
+void VRManager::NotifyVRVsync(const uint32_t& aDisplayID) {
+  for (const auto& manager : mManagers) {
     if (manager->GetIsPresenting()) {
       manager->HandleInput();
     }
@@ -448,9 +399,7 @@ VRManager::NotifyVRVsync(const uint32_t& aDisplayID)
   DispatchVRDisplayInfoUpdate();
 }
 
-void
-VRManager::EnumerateVRDisplays()
-{
+void VRManager::EnumerateVRDisplays() {
   StartTasks();
   
 
@@ -490,23 +439,22 @@ VRManager::EnumerateVRDisplays()
 
 
 #if !defined(MOZ_WIDGET_ANDROID)
-    
-    if (gfxPrefs::VRProcessEnabled() && !mVRServiceStarted) {
-      RefPtr<Runnable> task = NS_NewRunnableFunction(
-        "VRGPUChild::SendStartVRService",
-        [] () -> void {
+  
+  if (gfxPrefs::VRProcessEnabled() && !mVRServiceStarted) {
+    RefPtr<Runnable> task =
+        NS_NewRunnableFunction("VRGPUChild::SendStartVRService", []() -> void {
           VRGPUChild* vrGPUChild = VRGPUChild::Get();
           vrGPUChild->SendStartVRService();
-      });
+        });
 
-      NS_DispatchToMainThread(task.forget());
+    NS_DispatchToMainThread(task.forget());
+    mVRServiceStarted = true;
+  } else if (!gfxPrefs::VRProcessEnabled()) {
+    if (mVRService) {
+      mVRService->Start();
       mVRServiceStarted = true;
-    } else if (!gfxPrefs::VRProcessEnabled()){
-      if (mVRService) {
-        mVRService->Start();
-        mVRServiceStarted = true;
-      }
     }
+  }
 #endif
 
   
@@ -531,9 +479,7 @@ VRManager::EnumerateVRDisplays()
   }
 }
 
-void
-VRManager::RefreshVRDisplays(bool aMustDispatch)
-{
+void VRManager::RefreshVRDisplays(bool aMustDispatch) {
   
 
 
@@ -554,8 +500,8 @@ VRManager::RefreshVRDisplays(bool aMustDispatch)
 
 
 
-  nsTArray<RefPtr<gfx::VRDisplayHost> > displays;
-  for (const auto& manager: mManagers) {
+  nsTArray<RefPtr<gfx::VRDisplayHost>> displays;
+  for (const auto& manager : mManagers) {
     manager->GetHMDs(displays);
   }
 
@@ -567,7 +513,7 @@ VRManager::RefreshVRDisplays(bool aMustDispatch)
     displaySetChanged = true;
   }
 
-  for (const auto& display: displays) {
+  for (const auto& display : displays) {
     if (!GetDisplay(display->GetDisplayInfo().GetDisplayID())) {
       
       displaySetChanged = true;
@@ -584,7 +530,7 @@ VRManager::RefreshVRDisplays(bool aMustDispatch)
   
   if (displaySetChanged) {
     mVRDisplays.Clear();
-    for (const auto& display: displays) {
+    for (const auto& display : displays) {
       mVRDisplays.Put(display->GetDisplayInfo().GetDisplayID(), display);
     }
   }
@@ -594,9 +540,7 @@ VRManager::RefreshVRDisplays(bool aMustDispatch)
   }
 }
 
-void
-VRManager::DispatchVRDisplayInfoUpdate()
-{
+void VRManager::DispatchVRDisplayInfoUpdate() {
   nsTArray<VRDisplayInfo> update;
   GetVRDisplayInfo(update);
 
@@ -609,10 +553,7 @@ VRManager::DispatchVRDisplayInfoUpdate()
 
 
 
-
-void
-VRManager::GetVRDisplayInfo(nsTArray<VRDisplayInfo>& aDisplayInfo)
-{
+void VRManager::GetVRDisplayInfo(nsTArray<VRDisplayInfo>& aDisplayInfo) {
   aDisplayInfo.Clear();
   for (auto iter = mVRDisplays.Iter(); !iter.Done(); iter.Next()) {
     gfx::VRDisplayHost* display = iter.UserData();
@@ -620,9 +561,7 @@ VRManager::GetVRDisplayInfo(nsTArray<VRDisplayInfo>& aDisplayInfo)
   }
 }
 
-RefPtr<gfx::VRDisplayHost>
-VRManager::GetDisplay(const uint32_t& aDisplayID)
-{
+RefPtr<gfx::VRDisplayHost> VRManager::GetDisplay(const uint32_t& aDisplayID) {
   RefPtr<gfx::VRDisplayHost> display;
   if (mVRDisplays.Get(aDisplayID, getter_AddRefs(display))) {
     return display;
@@ -630,9 +569,8 @@ VRManager::GetDisplay(const uint32_t& aDisplayID)
   return nullptr;
 }
 
-RefPtr<gfx::VRControllerHost>
-VRManager::GetController(const uint32_t& aControllerID)
-{
+RefPtr<gfx::VRControllerHost> VRManager::GetController(
+    const uint32_t& aControllerID) {
   RefPtr<gfx::VRControllerHost> controller;
   if (mVRControllers.Get(aControllerID, getter_AddRefs(controller))) {
     return controller;
@@ -640,25 +578,23 @@ VRManager::GetController(const uint32_t& aControllerID)
   return nullptr;
 }
 
-void
-VRManager::GetVRControllerInfo(nsTArray<VRControllerInfo>& aControllerInfo)
-{
+void VRManager::GetVRControllerInfo(
+    nsTArray<VRControllerInfo>& aControllerInfo) {
   aControllerInfo.Clear();
   for (auto iter = mVRControllers.Iter(); !iter.Done(); iter.Next()) {
     gfx::VRControllerHost* controller = iter.UserData();
-    aControllerInfo.AppendElement(VRControllerInfo(controller->GetControllerInfo()));
+    aControllerInfo.AppendElement(
+        VRControllerInfo(controller->GetControllerInfo()));
   }
 }
 
-void
-VRManager::RefreshVRControllers()
-{
+void VRManager::RefreshVRControllers() {
   ScanForControllers();
 
   nsTArray<RefPtr<gfx::VRControllerHost>> controllers;
 
-  for (uint32_t i = 0; i < mManagers.Length()
-      && controllers.Length() == 0; ++i) {
+  for (uint32_t i = 0; i < mManagers.Length() && controllers.Length() == 0;
+       ++i) {
     mManagers[i]->GetControllers(controllers);
   }
 
@@ -669,7 +605,7 @@ VRManager::RefreshVRControllers()
     controllerInfoChanged = true;
   }
 
-  for (const auto& controller: controllers) {
+  for (const auto& controller : controllers) {
     if (!GetController(controller->GetControllerInfo().GetControllerID())) {
       
       controllerInfoChanged = true;
@@ -679,16 +615,14 @@ VRManager::RefreshVRControllers()
 
   if (controllerInfoChanged) {
     mVRControllers.Clear();
-    for (const auto& controller: controllers) {
+    for (const auto& controller : controllers) {
       mVRControllers.Put(controller->GetControllerInfo().GetControllerID(),
                          controller);
     }
   }
 }
 
-void
-VRManager::ScanForControllers()
-{
+void VRManager::ScanForControllers() {
   
   
   if (!mLastControllerEnumerationTime.IsNull()) {
@@ -710,18 +644,14 @@ VRManager::ScanForControllers()
   mLastControllerEnumerationTime = TimeStamp::Now();
 }
 
-void
-VRManager::RemoveControllers()
-{
+void VRManager::RemoveControllers() {
   for (uint32_t i = 0; i < mManagers.Length(); ++i) {
     mManagers[i]->RemoveControllers();
   }
   mVRControllers.Clear();
 }
 
-void
-VRManager::CreateVRTestSystem()
-{
+void VRManager::CreateVRTestSystem() {
   if (mPuppetManager) {
     mPuppetManager->ClearTestDisplays();
     return;
@@ -731,24 +661,18 @@ VRManager::CreateVRTestSystem()
   mManagers.AppendElement(mPuppetManager);
 }
 
-VRSystemManagerPuppet*
-VRManager::GetPuppetManager()
-{
+VRSystemManagerPuppet* VRManager::GetPuppetManager() {
   MOZ_ASSERT(mPuppetManager);
   return mPuppetManager;
 }
 
-VRSystemManagerExternal*
-VRManager::GetExternalManager()
-{
+VRSystemManagerExternal* VRManager::GetExternalManager() {
   MOZ_ASSERT(mExternalManager);
   return mExternalManager;
 }
 
-template<class T>
-void
-VRManager::NotifyGamepadChange(uint32_t aIndex, const T& aInfo)
-{
+template <class T>
+void VRManager::NotifyGamepadChange(uint32_t aIndex, const T& aInfo) {
   dom::GamepadChangeEventBody body(aInfo);
   dom::GamepadChangeEvent e(aIndex, dom::GamepadServiceType::VR, body);
 
@@ -757,57 +681,49 @@ VRManager::NotifyGamepadChange(uint32_t aIndex, const T& aInfo)
   }
 }
 
-void
-VRManager::VibrateHaptic(uint32_t aControllerIdx, uint32_t aHapticIndex,
-                         double aIntensity, double aDuration,
-                         const VRManagerPromise& aPromise)
+void VRManager::VibrateHaptic(uint32_t aControllerIdx, uint32_t aHapticIndex,
+                              double aIntensity, double aDuration,
+                              const VRManagerPromise& aPromise)
 
 {
   for (uint32_t i = 0; i < mManagers.Length(); ++i) {
-    mManagers[i]->VibrateHaptic(aControllerIdx, aHapticIndex,
-                                aIntensity, aDuration, aPromise);
+    mManagers[i]->VibrateHaptic(aControllerIdx, aHapticIndex, aIntensity,
+                                aDuration, aPromise);
   }
 }
 
-void
-VRManager::StopVibrateHaptic(uint32_t aControllerIdx)
-{
-  for (const auto& manager: mManagers) {
+void VRManager::StopVibrateHaptic(uint32_t aControllerIdx) {
+  for (const auto& manager : mManagers) {
     manager->StopVibrateHaptic(aControllerIdx);
   }
 }
 
-void
-VRManager::NotifyVibrateHapticCompleted(const VRManagerPromise& aPromise)
-{
+void VRManager::NotifyVibrateHapticCompleted(const VRManagerPromise& aPromise) {
   aPromise.mParent->SendReplyGamepadVibrateHaptic(aPromise.mPromiseID);
 }
 
-void
-VRManager::DispatchSubmitFrameResult(uint32_t aDisplayID, const VRSubmitFrameResultInfo& aResult)
-{
+void VRManager::DispatchSubmitFrameResult(
+    uint32_t aDisplayID, const VRSubmitFrameResultInfo& aResult) {
   for (auto iter = mVRManagerParents.Iter(); !iter.Done(); iter.Next()) {
-    Unused << iter.Get()->GetKey()->SendDispatchSubmitFrameResult(aDisplayID, aResult);
+    Unused << iter.Get()->GetKey()->SendDispatchSubmitFrameResult(aDisplayID,
+                                                                  aResult);
   }
 }
 
-void
-VRManager::StartVRNavigation(const uint32_t& aDisplayID)
-{
+void VRManager::StartVRNavigation(const uint32_t& aDisplayID) {
   RefPtr<VRDisplayHost> display = GetDisplay(aDisplayID);
   if (display) {
     display->StartVRNavigation();
   }
 }
 
-void
-VRManager::StopVRNavigation(const uint32_t& aDisplayID, const TimeDuration& aTimeout)
-{
+void VRManager::StopVRNavigation(const uint32_t& aDisplayID,
+                                 const TimeDuration& aTimeout) {
   RefPtr<VRDisplayHost> display = GetDisplay(aDisplayID);
   if (display) {
     display->StopVRNavigation(aTimeout);
   }
 }
 
-} 
-} 
+}  
+}  

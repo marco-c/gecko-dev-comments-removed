@@ -25,9 +25,8 @@ class IPCPaymentActionRequest;
 
 
 
-class PaymentRequestManager final
-{
-public:
+class PaymentRequestManager final {
+ public:
   NS_INLINE_DECL_REFCOUNTING(PaymentRequestManager)
 
   static already_AddRefed<PaymentRequestManager> GetSingleton();
@@ -37,14 +36,12 @@ public:
 
 
 
-  nsresult
-  CreatePayment(JSContext* aCx,
-                nsPIDOMWindowInner* aWindow,
-                nsIPrincipal* aTopLevelPrincipal,
-                const Sequence<PaymentMethodData>& aMethodData,
-                const PaymentDetailsInit& aDetails,
-                const PaymentOptions& aOptions,
-                PaymentRequest** aRequest);
+  nsresult CreatePayment(JSContext* aCx, nsPIDOMWindowInner* aWindow,
+                         nsIPrincipal* aTopLevelPrincipal,
+                         const Sequence<PaymentMethodData>& aMethodData,
+                         const PaymentDetailsInit& aDetails,
+                         const PaymentOptions& aOptions,
+                         PaymentRequest** aRequest);
 
   nsresult CanMakePayment(PaymentRequest* aRequest);
   nsresult ShowPayment(PaymentRequest* aRequest);
@@ -52,13 +49,11 @@ public:
   nsresult CompletePayment(PaymentRequest* aRequest,
                            const PaymentComplete& aComplete,
                            bool aTimedOut = false);
-  nsresult UpdatePayment(JSContext* aCx,
-                         PaymentRequest* aRequest,
+  nsresult UpdatePayment(JSContext* aCx, PaymentRequest* aRequest,
                          const PaymentDetailsUpdate& aDetails,
                          bool aRequestShipping);
   nsresult ClosePayment(PaymentRequest* aRequest);
-  nsresult RetryPayment(JSContext* aCx,
-                        PaymentRequest* aRequest,
+  nsresult RetryPayment(JSContext* aCx, PaymentRequest* aRequest,
                         const PaymentValidationErrors& aErrors);
 
   nsresult RespondPayment(PaymentRequest* aRequest,
@@ -81,7 +76,7 @@ public:
   
   void RequestIPCOver(PaymentRequest* aRequest);
 
-private:
+ private:
   PaymentRequestManager();
   ~PaymentRequestManager();
 
@@ -99,7 +94,7 @@ private:
   nsTArray<nsString> mSupportedRegions;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

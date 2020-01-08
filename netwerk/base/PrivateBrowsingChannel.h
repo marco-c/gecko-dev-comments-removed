@@ -20,113 +20,102 @@ namespace mozilla {
 namespace net {
 
 template <class Channel>
-class PrivateBrowsingChannel : public nsIPrivateBrowsingChannel
-{
-public:
-  PrivateBrowsingChannel() :
-    mPrivateBrowsingOverriden(false),
-    mPrivateBrowsing(false)
-  {
+class PrivateBrowsingChannel : public nsIPrivateBrowsingChannel {
+ public:
+  PrivateBrowsingChannel()
+      : mPrivateBrowsingOverriden(false), mPrivateBrowsing(false) {}
+
+  NS_IMETHOD SetPrivate(bool aPrivate) override {
+    
+    
+    
+    nsCOMPtr<nsILoadContext> loadContext;
+    NS_QueryNotificationCallbacks(static_cast<Channel*>(this), loadContext);
+    MOZ_ASSERT(!loadContext);
+    if (loadContext) {
+      return NS_ERROR_FAILURE;
+    }
+
+    mPrivateBrowsingOverriden = true;
+    mPrivateBrowsing = aPrivate;
+    return NS_OK;
   }
 
-  NS_IMETHOD SetPrivate(bool aPrivate) override
-  {
-      
-      
-      
-      nsCOMPtr<nsILoadContext> loadContext;
-      NS_QueryNotificationCallbacks(static_cast<Channel*>(this), loadContext);
-      MOZ_ASSERT(!loadContext);
-      if (loadContext) {
-          return NS_ERROR_FAILURE;
-      }
-
-      mPrivateBrowsingOverriden = true;
-      mPrivateBrowsing = aPrivate;
-      return NS_OK;
+  NS_IMETHOD GetIsChannelPrivate(bool* aResult) override {
+    NS_ENSURE_ARG_POINTER(aResult);
+    *aResult = mPrivateBrowsing;
+    return NS_OK;
   }
 
-  NS_IMETHOD GetIsChannelPrivate(bool *aResult) override
-  {
-      NS_ENSURE_ARG_POINTER(aResult);
-      *aResult = mPrivateBrowsing;
-      return NS_OK;
-  }
-
-  NS_IMETHOD IsPrivateModeOverriden(bool* aValue, bool *aResult) override
-  {
-      NS_ENSURE_ARG_POINTER(aValue);
-      NS_ENSURE_ARG_POINTER(aResult);
-      *aResult = mPrivateBrowsingOverriden;
-      if (mPrivateBrowsingOverriden) {
-          *aValue = mPrivateBrowsing;
-      }
-      return NS_OK;
+  NS_IMETHOD IsPrivateModeOverriden(bool* aValue, bool* aResult) override {
+    NS_ENSURE_ARG_POINTER(aValue);
+    NS_ENSURE_ARG_POINTER(aResult);
+    *aResult = mPrivateBrowsingOverriden;
+    if (mPrivateBrowsingOverriden) {
+      *aValue = mPrivateBrowsing;
+    }
+    return NS_OK;
   }
 
   
-  void UpdatePrivateBrowsing()
-  {
-      
-      if (mPrivateBrowsing) {
-          return;
-      }
+  void UpdatePrivateBrowsing() {
+    
+    if (mPrivateBrowsing) {
+      return;
+    }
 
-      auto channel = static_cast<Channel*>(this);
+    auto channel = static_cast<Channel*>(this);
 
-      nsCOMPtr<nsILoadContext> loadContext;
-      NS_QueryNotificationCallbacks(channel, loadContext);
-      if (loadContext) {
-          mPrivateBrowsing = loadContext->UsePrivateBrowsing();
-          return;
-      }
+    nsCOMPtr<nsILoadContext> loadContext;
+    NS_QueryNotificationCallbacks(channel, loadContext);
+    if (loadContext) {
+      mPrivateBrowsing = loadContext->UsePrivateBrowsing();
+      return;
+    }
 
-      nsCOMPtr<nsILoadInfo> loadInfo;
-      Unused << channel->GetLoadInfo(getter_AddRefs(loadInfo));
-      if (loadInfo) {
-          OriginAttributes attrs = loadInfo->GetOriginAttributes();
-          mPrivateBrowsing = attrs.mPrivateBrowsingId > 0;
-      }
+    nsCOMPtr<nsILoadInfo> loadInfo;
+    Unused << channel->GetLoadInfo(getter_AddRefs(loadInfo));
+    if (loadInfo) {
+      OriginAttributes attrs = loadInfo->GetOriginAttributes();
+      mPrivateBrowsing = attrs.mPrivateBrowsingId > 0;
+    }
   }
 
-  bool CanSetCallbacks(nsIInterfaceRequestor* aCallbacks) const
-  {
-      
-      
-      
-      if (!aCallbacks) {
-          return true;
-      }
-      nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(aCallbacks);
-      if (!loadContext) {
-          return true;
-      }
-      MOZ_ASSERT(!mPrivateBrowsingOverriden);
-      return !mPrivateBrowsingOverriden;
+  bool CanSetCallbacks(nsIInterfaceRequestor* aCallbacks) const {
+    
+    
+    
+    if (!aCallbacks) {
+      return true;
+    }
+    nsCOMPtr<nsILoadContext> loadContext = do_GetInterface(aCallbacks);
+    if (!loadContext) {
+      return true;
+    }
+    MOZ_ASSERT(!mPrivateBrowsingOverriden);
+    return !mPrivateBrowsingOverriden;
   }
 
-  bool CanSetLoadGroup(nsILoadGroup* aLoadGroup) const
-  {
-      
-      
-      
-      if (!aLoadGroup) {
-          return true;
-      }
-      nsCOMPtr<nsIInterfaceRequestor> callbacks;
-      aLoadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
-      
-      
-      return CanSetCallbacks(callbacks);
+  bool CanSetLoadGroup(nsILoadGroup* aLoadGroup) const {
+    
+    
+    
+    if (!aLoadGroup) {
+      return true;
+    }
+    nsCOMPtr<nsIInterfaceRequestor> callbacks;
+    aLoadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
+    
+    
+    return CanSetCallbacks(callbacks);
   }
 
-protected:
+ protected:
   bool mPrivateBrowsingOverriden;
   bool mPrivateBrowsing;
 };
 
-} 
-} 
+}  
+}  
 
 #endif
-

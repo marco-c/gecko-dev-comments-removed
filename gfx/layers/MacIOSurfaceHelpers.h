@@ -8,7 +8,8 @@
 #define GFX_MACIOSURFACEHELPERS_H
 
 class MacIOSurface;
-template<class T> struct already_AddRefed;
+template <class T>
+struct already_AddRefed;
 
 namespace mozilla {
 
@@ -20,10 +21,10 @@ namespace layers {
 
 
 
-already_AddRefed<gfx::SourceSurface>
-CreateSourceSurfaceFromMacIOSurface(MacIOSurface* aSurface);
+already_AddRefed<gfx::SourceSurface> CreateSourceSurfaceFromMacIOSurface(
+    MacIOSurface* aSurface);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

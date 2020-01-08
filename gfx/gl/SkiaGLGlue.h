@@ -19,28 +19,27 @@ namespace gl {
 
 class GLContext;
 
-class SkiaGLGlue : public GenericAtomicRefCounted
-{
-public:
+class SkiaGLGlue : public GenericAtomicRefCounted {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SkiaGLGlue, override)
 
   explicit SkiaGLGlue(GLContext* context);
   GLContext* GetGLContext() const { return mGLContext.get(); }
   GrContext* GetGrContext() const { return mGrContext.get(); }
 
-protected:
+ protected:
   virtual ~SkiaGLGlue();
 
-private:
+ private:
   RefPtr<GLContext> mGLContext;
   sk_sp<GrGLInterface> mGrGLInterface;
   sk_sp<GrContext> mGrContext;
 };
 
-} 
-} 
+}  
+}  
 
-#else 
+#else  
 
 class GrContext;
 
@@ -49,17 +48,16 @@ namespace gl {
 
 class GLContext;
 
-class SkiaGLGlue : public GenericAtomicRefCounted
-{
-public:
+class SkiaGLGlue : public GenericAtomicRefCounted {
+ public:
   SkiaGLGlue(GLContext* context);
   GLContext* GetGLContext() const { return nullptr; }
   GrContext* GetGrContext() const { return nullptr; }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  
 
-#endif 
+#endif  

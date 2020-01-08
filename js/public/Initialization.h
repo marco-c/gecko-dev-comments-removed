@@ -13,12 +13,7 @@
 namespace JS {
 namespace detail {
 
-enum class InitState {
-    Uninitialized = 0,
-    Initializing,
-    Running,
-    ShutDown
-};
+enum class InitState { Uninitialized = 0, Initializing, Running, ShutDown };
 
 
 
@@ -27,14 +22,12 @@ enum class InitState {
 
 
 
-extern JS_PUBLIC_DATA InitState
-libraryInitState;
+extern JS_PUBLIC_DATA InitState libraryInitState;
 
-extern JS_PUBLIC_API const char*
-InitWithFailureDiagnostic(bool isDebugBuild);
+extern JS_PUBLIC_API const char* InitWithFailureDiagnostic(bool isDebugBuild);
 
-} 
-} 
+}  
+}  
 
 
 
@@ -48,10 +41,9 @@ typedef void (*JS_ICUFreeFn)(const void*, void* p);
 
 
 
-extern JS_PUBLIC_API bool
-JS_SetICUMemoryFunctions(JS_ICUAllocFn allocFn,
-                         JS_ICUReallocFn reallocFn,
-                         JS_ICUFreeFn freeFn);
+extern JS_PUBLIC_API bool JS_SetICUMemoryFunctions(JS_ICUAllocFn allocFn,
+                                                   JS_ICUReallocFn reallocFn,
+                                                   JS_ICUFreeFn freeFn);
 
 #ifdef ENABLE_BIGINT
 namespace JS {
@@ -65,12 +57,11 @@ using GMPFreeFn = void (*)(void* p, size_t size);
 
 
 
-extern JS_PUBLIC_API void
-SetGMPMemoryFunctions(GMPAllocFn allocFn,
-                      GMPReallocFn reallocFn,
-                      GMPFreeFn freeFn);
+extern JS_PUBLIC_API void SetGMPMemoryFunctions(GMPAllocFn allocFn,
+                                                GMPReallocFn reallocFn,
+                                                GMPFreeFn freeFn);
 
-}; 
+};  
 #endif
 
 
@@ -86,13 +77,11 @@ SetGMPMemoryFunctions(GMPAllocFn allocFn,
 
 
 
-inline bool
-JS_Init(void)
-{
+inline bool JS_Init(void) {
 #ifdef DEBUG
-    return !JS::detail::InitWithFailureDiagnostic(true);
+  return !JS::detail::InitWithFailureDiagnostic(true);
 #else
-    return !JS::detail::InitWithFailureDiagnostic(false);
+  return !JS::detail::InitWithFailureDiagnostic(false);
 #endif
 }
 
@@ -101,13 +90,11 @@ JS_Init(void)
 
 
 
-inline const char*
-JS_InitWithFailureDiagnostic(void)
-{
+inline const char* JS_InitWithFailureDiagnostic(void) {
 #ifdef DEBUG
-    return JS::detail::InitWithFailureDiagnostic(true);
+  return JS::detail::InitWithFailureDiagnostic(true);
 #else
-    return JS::detail::InitWithFailureDiagnostic(false);
+  return JS::detail::InitWithFailureDiagnostic(false);
 #endif
 }
 
@@ -121,9 +108,7 @@ JS_InitWithFailureDiagnostic(void)
 
 
 
-inline bool
-JS_IsInitialized(void)
-{
+inline bool JS_IsInitialized(void) {
   return JS::detail::libraryInitState >= JS::detail::InitState::Running;
 }
 
@@ -144,7 +129,6 @@ JS_IsInitialized(void)
 
 
 
-extern JS_PUBLIC_API void
-JS_ShutDown(void);
+extern JS_PUBLIC_API void JS_ShutDown(void);
 
 #endif 

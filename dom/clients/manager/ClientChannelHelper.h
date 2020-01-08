@@ -22,13 +22,12 @@ class ClientInfo;
 
 
 
-nsresult
-AddClientChannelHelper(nsIChannel* aChannel,
-                       Maybe<ClientInfo>&& aReservedClientInfo,
-                       Maybe<ClientInfo>&& aInitialClientInfo,
-                       nsISerialEventTarget* aEventTarget);
+nsresult AddClientChannelHelper(nsIChannel* aChannel,
+                                Maybe<ClientInfo>&& aReservedClientInfo,
+                                Maybe<ClientInfo>&& aInitialClientInfo,
+                                nsISerialEventTarget* aEventTarget);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

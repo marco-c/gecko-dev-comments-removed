@@ -15,32 +15,26 @@ namespace js {
 
 
 
+
 extern const char sWrapperFamily;
 
-class WrapperObject : public ProxyObject
-{
+class WrapperObject : public ProxyObject {};
+
+class CrossCompartmentWrapperObject : public WrapperObject {
+ public:
+  static const unsigned GrayLinkReservedSlot = 1;
 };
 
-class CrossCompartmentWrapperObject : public WrapperObject
-{
-  public:
-    static const unsigned GrayLinkReservedSlot = 1;
-};
+}  
 
-} 
-
-template<>
-inline bool
-JSObject::is<js::WrapperObject>() const
-{
-    return js::IsWrapper(this);
+template <>
+inline bool JSObject::is<js::WrapperObject>() const {
+  return js::IsWrapper(this);
 }
 
-template<>
-inline bool
-JSObject::is<js::CrossCompartmentWrapperObject>() const
-{
-    return js::IsCrossCompartmentWrapper(this);
+template <>
+inline bool JSObject::is<js::CrossCompartmentWrapperObject>() const {
+  return js::IsCrossCompartmentWrapper(this);
 }
 
 #endif 

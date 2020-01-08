@@ -18,29 +18,26 @@
 
 class nsINode;
 
-class nsTraversal
-{
-public:
-    nsTraversal(nsINode *aRoot,
-                uint32_t aWhatToShow,
-                mozilla::dom::NodeFilter* aFilter);
-    virtual ~nsTraversal();
+class nsTraversal {
+ public:
+  nsTraversal(nsINode* aRoot, uint32_t aWhatToShow,
+              mozilla::dom::NodeFilter* aFilter);
+  virtual ~nsTraversal();
 
-protected:
-    nsCOMPtr<nsINode> mRoot;
-    uint32_t mWhatToShow;
-    RefPtr<mozilla::dom::NodeFilter> mFilter;
-    bool mInAcceptNode;
+ protected:
+  nsCOMPtr<nsINode> mRoot;
+  uint32_t mWhatToShow;
+  RefPtr<mozilla::dom::NodeFilter> mFilter;
+  bool mInAcceptNode;
 
-    
+  
 
 
 
 
 
 
-    int16_t TestNode(nsINode* aNode, mozilla::ErrorResult& aResult);
+  int16_t TestNode(nsINode* aNode, mozilla::ErrorResult& aResult);
 };
 
 #endif
-

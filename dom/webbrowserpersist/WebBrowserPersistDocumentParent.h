@@ -31,48 +31,45 @@ namespace mozilla {
 class WebBrowserPersistRemoteDocument;
 
 class WebBrowserPersistDocumentParent final
-    : public PWebBrowserPersistDocumentParent
-{
-public:
-    WebBrowserPersistDocumentParent();
-    virtual ~WebBrowserPersistDocumentParent();
+    : public PWebBrowserPersistDocumentParent {
+ public:
+  WebBrowserPersistDocumentParent();
+  virtual ~WebBrowserPersistDocumentParent();
 
-    
-    
-    
-    void SetOnReady(nsIWebBrowserPersistDocumentReceiver* aOnReady);
+  
+  
+  
+  void SetOnReady(nsIWebBrowserPersistDocumentReceiver* aOnReady);
 
-    using Attrs = WebBrowserPersistDocumentAttrs;
+  using Attrs = WebBrowserPersistDocumentAttrs;
 
-    
-    virtual mozilla::ipc::IPCResult
-    RecvAttributes(const Attrs& aAttrs,
-                   const OptionalIPCStream& aPostStream) override;
-    virtual mozilla::ipc::IPCResult
-    RecvInitFailure(const nsresult& aFailure) override;
+  
+  virtual mozilla::ipc::IPCResult RecvAttributes(
+      const Attrs& aAttrs, const OptionalIPCStream& aPostStream) override;
+  virtual mozilla::ipc::IPCResult RecvInitFailure(
+      const nsresult& aFailure) override;
 
-    virtual PWebBrowserPersistResourcesParent*
-    AllocPWebBrowserPersistResourcesParent() override;
-    virtual bool
-    DeallocPWebBrowserPersistResourcesParent(PWebBrowserPersistResourcesParent* aActor) override;
+  virtual PWebBrowserPersistResourcesParent*
+  AllocPWebBrowserPersistResourcesParent() override;
+  virtual bool DeallocPWebBrowserPersistResourcesParent(
+      PWebBrowserPersistResourcesParent* aActor) override;
 
-    virtual PWebBrowserPersistSerializeParent*
-    AllocPWebBrowserPersistSerializeParent(
-            const WebBrowserPersistURIMap& aMap,
-            const nsCString& aRequestedContentType,
-            const uint32_t& aEncoderFlags,
-            const uint32_t& aWrapColumn) override;
-    virtual bool
-    DeallocPWebBrowserPersistSerializeParent(PWebBrowserPersistSerializeParent* aActor) override;
+  virtual PWebBrowserPersistSerializeParent*
+  AllocPWebBrowserPersistSerializeParent(const WebBrowserPersistURIMap& aMap,
+                                         const nsCString& aRequestedContentType,
+                                         const uint32_t& aEncoderFlags,
+                                         const uint32_t& aWrapColumn) override;
+  virtual bool DeallocPWebBrowserPersistSerializeParent(
+      PWebBrowserPersistSerializeParent* aActor) override;
 
-    virtual void
-    ActorDestroy(ActorDestroyReason aWhy) override;
-private:
-    
-    nsCOMPtr<nsIWebBrowserPersistDocumentReceiver> mOnReady;
-    WebBrowserPersistRemoteDocument* mReflection;
+  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
+
+ private:
+  
+  nsCOMPtr<nsIWebBrowserPersistDocumentReceiver> mOnReady;
+  WebBrowserPersistRemoteDocument* mReflection;
 };
 
-} 
+}  
 
-#endif 
+#endif  

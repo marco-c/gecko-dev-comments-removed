@@ -20,32 +20,30 @@ class nsIRedirectHistoryEntry;
 namespace IPC {
 
 namespace detail {
-template<class ParamType>
-struct OriginAttributesParamTraits
-{
+template <class ParamType>
+struct OriginAttributesParamTraits {
   typedef ParamType paramType;
 
-  static void Write(Message* aMsg, const paramType& aParam)
-  {
+  static void Write(Message* aMsg, const paramType& aParam) {
     nsAutoCString suffix;
     aParam.CreateSuffix(suffix);
     WriteParam(aMsg, suffix);
   }
 
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-  {
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
     nsAutoCString suffix;
     return ReadParam(aMsg, aIter, &suffix) &&
            aResult->PopulateFromSuffix(suffix);
   }
 };
-} 
+}  
 
-template<>
+template <>
 struct ParamTraits<mozilla::OriginAttributes>
-  : public detail::OriginAttributesParamTraits<mozilla::OriginAttributes> {};
+    : public detail::OriginAttributesParamTraits<mozilla::OriginAttributes> {};
 
-} 
+}  
 
 namespace mozilla {
 namespace net {
@@ -53,7 +51,7 @@ class ChildLoadInfoForwarderArgs;
 class OptionalLoadInfoArgs;
 class ParentLoadInfoForwarderArgs;
 class RedirectHistoryEntryInfo;
-} 
+}  
 
 namespace ipc {
 
@@ -64,87 +62,85 @@ class PrincipalInfo;
 
 
 
-already_AddRefed<nsIPrincipal>
-PrincipalInfoToPrincipal(const PrincipalInfo& aPrincipalInfo,
-                         nsresult* aOptionalResult = nullptr);
+already_AddRefed<nsIPrincipal> PrincipalInfoToPrincipal(
+    const PrincipalInfo& aPrincipalInfo, nsresult* aOptionalResult = nullptr);
 
 
 
 
 
 
-nsresult
-PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
-                         PrincipalInfo* aPrincipalInfo);
+nsresult PrincipalToPrincipalInfo(nsIPrincipal* aPrincipal,
+                                  PrincipalInfo* aPrincipalInfo);
 
 
 
 
 
-bool
-IsPincipalInfoPrivate(const PrincipalInfo& aPrincipalInfo);
+bool IsPincipalInfoPrivate(const PrincipalInfo& aPrincipalInfo);
 
 
 
 
 
-already_AddRefed<nsIRedirectHistoryEntry>
-RHEntryInfoToRHEntry(const mozilla::net::RedirectHistoryEntryInfo& aRHEntryInfo);
+already_AddRefed<nsIRedirectHistoryEntry> RHEntryInfoToRHEntry(
+    const mozilla::net::RedirectHistoryEntryInfo& aRHEntryInfo);
 
 
 
 
 
-nsresult
-RHEntryToRHEntryInfo(nsIRedirectHistoryEntry* aRHEntry,
-                     mozilla::net::RedirectHistoryEntryInfo* aRHEntryInfo);
+nsresult RHEntryToRHEntryInfo(
+    nsIRedirectHistoryEntry* aRHEntry,
+    mozilla::net::RedirectHistoryEntryInfo* aRHEntryInfo);
 
 
 
 
-nsresult
-LoadInfoToLoadInfoArgs(nsILoadInfo *aLoadInfo,
-                       mozilla::net::OptionalLoadInfoArgs* outOptionalLoadInfoArgs);
+nsresult LoadInfoToLoadInfoArgs(
+    nsILoadInfo* aLoadInfo,
+    mozilla::net::OptionalLoadInfoArgs* outOptionalLoadInfoArgs);
 
 
 
 
-nsresult
-LoadInfoArgsToLoadInfo(const mozilla::net::OptionalLoadInfoArgs& aOptionalLoadInfoArgs,
-                       nsILoadInfo** outLoadInfo);
-
-
-
-
-void
-LoadInfoToParentLoadInfoForwarder(nsILoadInfo *aLoadInfo,
-                                  mozilla::net::ParentLoadInfoForwarderArgs* aForwarderArgsOut);
+nsresult LoadInfoArgsToLoadInfo(
+    const mozilla::net::OptionalLoadInfoArgs& aOptionalLoadInfoArgs,
+    nsILoadInfo** outLoadInfo);
 
 
 
 
 
-nsresult
-MergeParentLoadInfoForwarder(mozilla::net::ParentLoadInfoForwarderArgs const& aForwarderArgs,
-                             nsILoadInfo *aLoadInfo);
+void LoadInfoToParentLoadInfoForwarder(
+    nsILoadInfo* aLoadInfo,
+    mozilla::net::ParentLoadInfoForwarderArgs* aForwarderArgsOut);
 
 
 
 
 
-void
-LoadInfoToChildLoadInfoForwarder(nsILoadInfo* aLoadInfo,
-                                 mozilla::net::ChildLoadInfoForwarderArgs* aForwarderArgsOut);
+nsresult MergeParentLoadInfoForwarder(
+    mozilla::net::ParentLoadInfoForwarderArgs const& aForwarderArgs,
+    nsILoadInfo* aLoadInfo);
 
 
 
 
 
-nsresult
-MergeChildLoadInfoForwarder(const mozilla::net::ChildLoadInfoForwarderArgs& aForwardArgs,
-                            nsILoadInfo* aLoadInfo);
+void LoadInfoToChildLoadInfoForwarder(
+    nsILoadInfo* aLoadInfo,
+    mozilla::net::ChildLoadInfoForwarderArgs* aForwarderArgsOut);
 
-} 
-} 
 
-#endif 
+
+
+
+nsresult MergeChildLoadInfoForwarder(
+    const mozilla::net::ChildLoadInfoForwarderArgs& aForwardArgs,
+    nsILoadInfo* aLoadInfo);
+
+}  
+}  
+
+#endif  

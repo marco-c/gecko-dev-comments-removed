@@ -21,18 +21,17 @@ class SurfaceDescriptor;
 
 
 
-class WebRenderTextureHost : public TextureHost
-{
-public:
-  WebRenderTextureHost(const SurfaceDescriptor& aDesc,
-                       TextureFlags aFlags,
+class WebRenderTextureHost : public TextureHost {
+ public:
+  WebRenderTextureHost(const SurfaceDescriptor& aDesc, TextureFlags aFlags,
                        TextureHost* aTexture,
                        wr::ExternalImageId& aExternalImageId);
   virtual ~WebRenderTextureHost();
 
   virtual void DeallocateDeviceData() override {}
 
-  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
+  virtual void SetTextureSourceProvider(
+      TextureSourceProvider* aProvider) override;
 
   virtual bool Lock() override;
 
@@ -46,7 +45,8 @@ public:
   
   virtual gfx::SurfaceFormat GetReadFormat() const override;
 
-  virtual bool BindTextureSource(CompositableTextureSourceRef& aTexture) override;
+  virtual bool BindTextureSource(
+      CompositableTextureSourceRef& aTexture) override;
 
   virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override;
 
@@ -58,7 +58,9 @@ public:
   virtual const char* Name() override { return "WebRenderTextureHost"; }
 #endif
 
-  virtual WebRenderTextureHost* AsWebRenderTextureHost() override { return this; }
+  virtual WebRenderTextureHost* AsWebRenderTextureHost() override {
+    return this;
+  }
 
   wr::ExternalImageId GetExternalImageKey() { return mExternalImageId; }
 
@@ -81,14 +83,15 @@ public:
 
   virtual bool SupportsWrNativeTexture() override;
 
-protected:
-  void CreateRenderTextureHost(const SurfaceDescriptor& aDesc, TextureHost* aTexture);
+ protected:
+  void CreateRenderTextureHost(const SurfaceDescriptor& aDesc,
+                               TextureHost* aTexture);
 
   RefPtr<TextureHost> mWrappedTextureHost;
   wr::ExternalImageId mExternalImageId;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

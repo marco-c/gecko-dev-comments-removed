@@ -35,19 +35,13 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(AnimationEffect)
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
 
-AnimationEffect::AnimationEffect(nsIDocument* aDocument,
-                                 TimingParams&& aTiming)
-  : mDocument(aDocument)
-  , mTiming(std::move(aTiming))
-{
-}
+AnimationEffect::AnimationEffect(nsIDocument* aDocument, TimingParams&& aTiming)
+    : mDocument(aDocument), mTiming(std::move(aTiming)) {}
 
 AnimationEffect::~AnimationEffect() = default;
 
 
-bool
-AnimationEffect::IsCurrent() const
-{
+bool AnimationEffect::IsCurrent() const {
   if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {
     return false;
   }
@@ -58,16 +52,12 @@ AnimationEffect::IsCurrent() const
 }
 
 
-bool
-AnimationEffect::IsInEffect() const
-{
+bool AnimationEffect::IsInEffect() const {
   ComputedTiming computedTiming = GetComputedTiming();
   return !computedTiming.mProgress.IsNull();
 }
 
-void
-AnimationEffect::SetSpecifiedTiming(TimingParams&& aTiming)
-{
+void AnimationEffect::SetSpecifiedTiming(TimingParams&& aTiming) {
   if (mTiming == aTiming) {
     return;
   }
@@ -95,12 +85,9 @@ AnimationEffect::SetSpecifiedTiming(TimingParams&& aTiming)
   
 }
 
-ComputedTiming
-AnimationEffect::GetComputedTimingAt(
-    const Nullable<TimeDuration>& aLocalTime,
-    const TimingParams& aTiming,
-    double aPlaybackRate)
-{
+ComputedTiming AnimationEffect::GetComputedTimingAt(
+    const Nullable<TimeDuration>& aLocalTime, const TimingParams& aTiming,
+    double aPlaybackRate) {
   static const StickyTimeDuration zeroDuration;
 
   
@@ -124,9 +111,8 @@ AnimationEffect::GetComputedTimingAt(
 
   result.mActiveDuration = aTiming.ActiveDuration();
   result.mEndTime = aTiming.EndTime();
-  result.mFill = aTiming.Fill() == dom::FillMode::Auto ?
-                 dom::FillMode::None :
-                 aTiming.Fill();
+  result.mFill = aTiming.Fill() == dom::FillMode::Auto ? dom::FillMode::None
+                                                       : aTiming.Fill();
 
   
   
@@ -136,14 +122,13 @@ AnimationEffect::GetComputedTimingAt(
   const TimeDuration& localTime = aLocalTime.Value();
 
   StickyTimeDuration beforeActiveBoundary =
-    std::max(std::min(StickyTimeDuration(aTiming.Delay()), result.mEndTime),
-             zeroDuration);
+      std::max(std::min(StickyTimeDuration(aTiming.Delay()), result.mEndTime),
+               zeroDuration);
 
-  StickyTimeDuration activeAfterBoundary =
-    std::max(std::min(StickyTimeDuration(aTiming.Delay() +
-                                         result.mActiveDuration),
-                      result.mEndTime),
-             zeroDuration);
+  StickyTimeDuration activeAfterBoundary = std::max(
+      std::min(StickyTimeDuration(aTiming.Delay() + result.mActiveDuration),
+               result.mEndTime),
+      zeroDuration);
 
   if (localTime > activeAfterBoundary ||
       (aPlaybackRate >= 0 && localTime == activeAfterBoundary)) {
@@ -153,9 +138,9 @@ AnimationEffect::GetComputedTimingAt(
       return result;
     }
     result.mActiveTime =
-      std::max(std::min(StickyTimeDuration(localTime - aTiming.Delay()),
-                        result.mActiveDuration),
-               zeroDuration);
+        std::max(std::min(StickyTimeDuration(localTime - aTiming.Delay()),
+                          result.mActiveDuration),
+                 zeroDuration);
   } else if (localTime < beforeActiveBoundary ||
              (aPlaybackRate < 0 && localTime == beforeActiveBoundary)) {
     result.mPhase = ComputedTiming::AnimationPhase::Before;
@@ -163,9 +148,8 @@ AnimationEffect::GetComputedTimingAt(
       
       return result;
     }
-    result.mActiveTime
-      = std::max(StickyTimeDuration(localTime - aTiming.Delay()),
-                 zeroDuration);
+    result.mActiveTime =
+        std::max(StickyTimeDuration(localTime - aTiming.Delay()), zeroDuration);
   } else {
     MOZ_ASSERT(result.mActiveDuration,
                "How can we be in the middle of a zero-duration interval?");
@@ -178,8 +162,8 @@ AnimationEffect::GetComputedTimingAt(
   double overallProgress;
   if (!result.mDuration) {
     overallProgress = result.mPhase == ComputedTiming::AnimationPhase::Before
-                      ? 0.0
-                      : result.mIterations;
+                          ? 0.0
+                          : result.mIterations;
   } else {
     overallProgress = result.mActiveTime / result.mDuration;
   }
@@ -192,19 +176,19 @@ AnimationEffect::GetComputedTimingAt(
   
   
   result.mCurrentIteration =
-    (result.mIterations >= UINT64_MAX
-     && result.mPhase == ComputedTiming::AnimationPhase::After)
-    || overallProgress >= UINT64_MAX
-    ? UINT64_MAX 
-                 
-    : static_cast<uint64_t>(overallProgress);
+      (result.mIterations >= UINT64_MAX &&
+       result.mPhase == ComputedTiming::AnimationPhase::After) ||
+              overallProgress >= UINT64_MAX
+          ? UINT64_MAX  
+                        
+          : static_cast<uint64_t>(overallProgress);
 
   
   
   
   double progress = IsFinite(overallProgress)
-                    ? fmod(overallProgress, 1.0)
-                    : fmod(result.mIterationStart, 1.0);
+                        ? fmod(overallProgress, 1.0)
+                        : fmod(result.mIterationStart, 1.0);
 
   
   
@@ -267,19 +251,16 @@ AnimationEffect::GetComputedTimingAt(
   return result;
 }
 
-ComputedTiming
-AnimationEffect::GetComputedTiming(const TimingParams* aTiming) const
-{
+ComputedTiming AnimationEffect::GetComputedTiming(
+    const TimingParams* aTiming) const {
   double playbackRate = mAnimation ? mAnimation->PlaybackRate() : 1;
-  return GetComputedTimingAt(GetLocalTime(),
-                             aTiming ? *aTiming : SpecifiedTiming(),
-                             playbackRate);
+  return GetComputedTimingAt(
+      GetLocalTime(), aTiming ? *aTiming : SpecifiedTiming(), playbackRate);
 }
 
 
-static void
-GetEffectTimingDictionary(const TimingParams& aTiming, EffectTiming& aRetVal)
-{
+static void GetEffectTimingDictionary(const TimingParams& aTiming,
+                                      EffectTiming& aRetVal) {
   aRetVal.mDelay = aTiming.Delay().ToMilliseconds();
   aRetVal.mEndDelay = aTiming.EndDelay().ToMilliseconds();
   aRetVal.mFill = aTiming.Fill();
@@ -287,7 +268,7 @@ GetEffectTimingDictionary(const TimingParams& aTiming, EffectTiming& aRetVal)
   aRetVal.mIterations = aTiming.Iterations();
   if (aTiming.Duration()) {
     aRetVal.mDuration.SetAsUnrestrictedDouble() =
-      aTiming.Duration()->ToMilliseconds();
+        aTiming.Duration()->ToMilliseconds();
   }
   aRetVal.mDirection = aTiming.Direction();
   if (aTiming.TimingFunction()) {
@@ -296,15 +277,12 @@ GetEffectTimingDictionary(const TimingParams& aTiming, EffectTiming& aRetVal)
   }
 }
 
-void
-AnimationEffect::GetTiming(EffectTiming& aRetVal) const
-{
+void AnimationEffect::GetTiming(EffectTiming& aRetVal) const {
   GetEffectTimingDictionary(SpecifiedTiming(), aRetVal);
 }
 
-void
-AnimationEffect::GetComputedTimingAsDict(ComputedEffectTiming& aRetVal) const
-{
+void AnimationEffect::GetComputedTimingAsDict(
+    ComputedEffectTiming& aRetVal) const {
   
   GetEffectTimingDictionary(SpecifiedTiming(), aRetVal);
 
@@ -312,10 +290,10 @@ AnimationEffect::GetComputedTimingAsDict(ComputedEffectTiming& aRetVal) const
   double playbackRate = mAnimation ? mAnimation->PlaybackRate() : 1;
   const Nullable<TimeDuration> currentTime = GetLocalTime();
   ComputedTiming computedTiming =
-    GetComputedTimingAt(currentTime, SpecifiedTiming(), playbackRate);
+      GetComputedTimingAt(currentTime, SpecifiedTiming(), playbackRate);
 
   aRetVal.mDuration.SetAsUnrestrictedDouble() =
-    computedTiming.mDuration.ToMilliseconds();
+      computedTiming.mDuration.ToMilliseconds();
   aRetVal.mFill = computedTiming.mFill;
   aRetVal.mActiveDuration = computedTiming.mActiveDuration.ToMilliseconds();
   aRetVal.mEndTime = computedTiming.mEndTime.ToMilliseconds();
@@ -325,19 +303,18 @@ AnimationEffect::GetComputedTimingAsDict(ComputedEffectTiming& aRetVal) const
   if (!aRetVal.mProgress.IsNull()) {
     
     
-    double iteration = computedTiming.mCurrentIteration == UINT64_MAX
-                       ? PositiveInfinity<double>()
-                       : static_cast<double>(computedTiming.mCurrentIteration);
+    double iteration =
+        computedTiming.mCurrentIteration == UINT64_MAX
+            ? PositiveInfinity<double>()
+            : static_cast<double>(computedTiming.mCurrentIteration);
     aRetVal.mCurrentIteration.SetValue(iteration);
   }
 }
 
-void
-AnimationEffect::UpdateTiming(const OptionalEffectTiming& aTiming,
-                              ErrorResult& aRv)
-{
+void AnimationEffect::UpdateTiming(const OptionalEffectTiming& aTiming,
+                                   ErrorResult& aRv) {
   TimingParams timing =
-    TimingParams::MergeOptionalEffectTiming(mTiming, aTiming, mDocument, aRv);
+      TimingParams::MergeOptionalEffectTiming(mTiming, aTiming, mDocument, aRv);
   if (aRv.Failed()) {
     return;
   }
@@ -345,9 +322,7 @@ AnimationEffect::UpdateTiming(const OptionalEffectTiming& aTiming,
   SetSpecifiedTiming(std::move(timing));
 }
 
-Nullable<TimeDuration>
-AnimationEffect::GetLocalTime() const
-{
+Nullable<TimeDuration> AnimationEffect::GetLocalTime() const {
   
   
   Nullable<TimeDuration> result;
@@ -357,5 +332,5 @@ AnimationEffect::GetLocalTime() const
   return result;
 }
 
-} 
-} 
+}  
+}  

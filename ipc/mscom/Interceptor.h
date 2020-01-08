@@ -24,26 +24,23 @@ namespace detail {
 
 class LiveSetAutoLock;
 
-} 
+}  
 
 
-DEFINE_GUID(IID_IInterceptorSink,
-0x8831eb53, 0xa937, 0x42bc, 0x99, 0x21, 0xb3, 0xe1, 0x12, 0x1f, 0xdf, 0x86);
+DEFINE_GUID(IID_IInterceptorSink, 0x8831eb53, 0xa937, 0x42bc, 0x99, 0x21, 0xb3,
+            0xe1, 0x12, 0x1f, 0xdf, 0x86);
 
-struct IInterceptorSink : public ICallFrameEvents
-                        , public HandlerProvider
-{
+struct IInterceptorSink : public ICallFrameEvents, public HandlerProvider {
   virtual STDMETHODIMP SetInterceptor(IWeakReference* aInterceptor) = 0;
 };
 
 
-DEFINE_GUID(IID_IInterceptor,
-0x3710799b, 0xeca2, 0x4165, 0xb9, 0xb0, 0x3f, 0xa1, 0xe4, 0xa9, 0xb2, 0x30);
+DEFINE_GUID(IID_IInterceptor, 0x3710799b, 0xeca2, 0x4165, 0xb9, 0xb0, 0x3f,
+            0xa1, 0xe4, 0xa9, 0xb2, 0x30);
 
-struct IInterceptor : public IUnknown
-{
-  virtual STDMETHODIMP GetTargetForIID(REFIID aIid,
-                                       InterceptorTargetPtr<IUnknown>& aTarget) = 0;
+struct IInterceptor : public IUnknown {
+  virtual STDMETHODIMP GetTargetForIID(
+      REFIID aIid, InterceptorTargetPtr<IUnknown>& aTarget) = 0;
   virtual STDMETHODIMP GetInterceptorForIID(REFIID aIid,
                                             void** aOutInterceptor) = 0;
 };
@@ -65,12 +62,11 @@ struct IInterceptor : public IUnknown
 
 
 
-class Interceptor final : public WeakReferenceSupport
-                        , public IStdMarshalInfo
-                        , public IMarshal
-                        , public IInterceptor
-{
-public:
+class Interceptor final : public WeakReferenceSupport,
+                          public IStdMarshalInfo,
+                          public IMarshal,
+                          public IInterceptor {
+ public:
   static HRESULT Create(STAUniquePtr<IUnknown> aTarget, IInterceptorSink* aSink,
                         REFIID aInitialIid, void** aOutInterface);
 
@@ -119,25 +115,24 @@ public:
   STDMETHODIMP DisconnectObject(DWORD dwReserved) override;
 
   
-  STDMETHODIMP GetTargetForIID(REFIID aIid,
-                               InterceptorTargetPtr<IUnknown>& aTarget) override;
-  STDMETHODIMP GetInterceptorForIID(REFIID aIid, void** aOutInterceptor) override;
+  STDMETHODIMP GetTargetForIID(
+      REFIID aIid, InterceptorTargetPtr<IUnknown>& aTarget) override;
+  STDMETHODIMP GetInterceptorForIID(REFIID aIid,
+                                    void** aOutInterceptor) override;
 
-private:
-  struct MapEntry
-  {
+ private:
+  struct MapEntry {
     MapEntry(REFIID aIid, IUnknown* aInterceptor, IUnknown* aTargetInterface)
-      : mIID(aIid)
-      , mInterceptor(aInterceptor)
-      , mTargetInterface(aTargetInterface)
-    {}
+        : mIID(aIid),
+          mInterceptor(aInterceptor),
+          mTargetInterface(aTargetInterface) {}
 
-    IID               mIID;
-    RefPtr<IUnknown>  mInterceptor;
-    IUnknown*         mTargetInterface;
+    IID mIID;
+    RefPtr<IUnknown> mInterceptor;
+    IUnknown* mTargetInterface;
   };
 
-private:
+ private:
   explicit Interceptor(IInterceptorSink* aSink);
   ~Interceptor();
   HRESULT GetInitialInterceptorForIID(detail::LiveSetAutoLock& aLiveSetLock,
@@ -149,33 +144,29 @@ private:
   MapEntry* Lookup(REFIID aIid);
   HRESULT QueryInterfaceTarget(REFIID aIid, void** aOutput,
                                TimeDuration* aOutDuration = nullptr);
-  HRESULT WeakRefQueryInterface(REFIID aIid,
-                                IUnknown** aOutInterface) override;
+  HRESULT WeakRefQueryInterface(REFIID aIid, IUnknown** aOutInterface) override;
   HRESULT CreateInterceptor(REFIID aIid, IUnknown* aOuter, IUnknown** aOutput);
   REFIID MarshalAs(REFIID aIid) const;
   HRESULT PublishTarget(detail::LiveSetAutoLock& aLiveSetLock,
-                        RefPtr<IUnknown> aInterceptor,
-                        REFIID aTargetIid,
+                        RefPtr<IUnknown> aInterceptor, REFIID aTargetIid,
                         STAUniquePtr<IUnknown> aTarget);
 
-private:
-  InterceptorTargetPtr<IUnknown>  mTarget;
-  RefPtr<IInterceptorSink>  mEventSink;
-  mozilla::Mutex            mInterceptorMapMutex; 
+ private:
+  InterceptorTargetPtr<IUnknown> mTarget;
+  RefPtr<IInterceptorSink> mEventSink;
+  mozilla::Mutex mInterceptorMapMutex;  
   
-  nsTArray<MapEntry>        mInterceptorMap;
-  mozilla::Mutex            mStdMarshalMutex; 
-  RefPtr<IUnknown>          mStdMarshalUnk;
-  IMarshal*                 mStdMarshal; 
+  nsTArray<MapEntry> mInterceptorMap;
+  mozilla::Mutex mStdMarshalMutex;  
+  RefPtr<IUnknown> mStdMarshalUnk;
+  IMarshal* mStdMarshal;  
   static MOZ_THREAD_LOCAL(bool) tlsCreatingStdMarshal;
 };
 
 template <typename InterfaceT>
-inline HRESULT
-CreateInterceptor(STAUniquePtr<InterfaceT> aTargetInterface,
-                  IInterceptorSink* aEventSink,
-                  InterfaceT** aOutInterface)
-{
+inline HRESULT CreateInterceptor(STAUniquePtr<InterfaceT> aTargetInterface,
+                                 IInterceptorSink* aEventSink,
+                                 InterfaceT** aOutInterface) {
   if (!aTargetInterface || !aEventSink) {
     return E_INVALIDARG;
   }
@@ -187,7 +178,7 @@ CreateInterceptor(STAUniquePtr<InterfaceT> aTargetInterface,
                              (void**)aOutInterface);
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

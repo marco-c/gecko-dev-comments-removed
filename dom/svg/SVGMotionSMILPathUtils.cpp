@@ -7,7 +7,7 @@
 #include "SVGMotionSMILPathUtils.h"
 
 #include "nsCharSeparatedTokenizer.h"
-#include "nsContentUtils.h" 
+#include "nsContentUtils.h"  
 #include "SVGContentUtils.h"
 #include "SVGLength.h"
 
@@ -19,10 +19,7 @@ namespace mozilla {
 
 
 
-void
-SVGMotionSMILPathUtils::PathGenerator::
-  MoveToOrigin()
-{
+void SVGMotionSMILPathUtils::PathGenerator::MoveToOrigin() {
   MOZ_ASSERT(!mHaveReceivedCommands,
              "Not expecting requests for mid-path MoveTo commands");
   mHaveReceivedCommands = true;
@@ -30,10 +27,8 @@ SVGMotionSMILPathUtils::PathGenerator::
 }
 
 
-bool
-SVGMotionSMILPathUtils::PathGenerator::
-  MoveToAbsolute(const nsAString& aCoordPairStr)
-{
+bool SVGMotionSMILPathUtils::PathGenerator::MoveToAbsolute(
+    const nsAString& aCoordPairStr) {
   MOZ_ASSERT(!mHaveReceivedCommands,
              "Not expecting requests for mid-path MoveTo commands");
   mHaveReceivedCommands = true;
@@ -47,10 +42,8 @@ SVGMotionSMILPathUtils::PathGenerator::
 }
 
 
-bool
-SVGMotionSMILPathUtils::PathGenerator::
-  LineToAbsolute(const nsAString& aCoordPairStr, double& aSegmentDistance)
-{
+bool SVGMotionSMILPathUtils::PathGenerator::LineToAbsolute(
+    const nsAString& aCoordPairStr, double& aSegmentDistance) {
   mHaveReceivedCommands = true;
 
   float xVal, yVal;
@@ -60,15 +53,13 @@ SVGMotionSMILPathUtils::PathGenerator::
   Point initialPoint = mPathBuilder->CurrentPoint();
 
   mPathBuilder->LineTo(Point(xVal, yVal));
-  aSegmentDistance = NS_hypot(initialPoint.x - xVal, initialPoint.y -yVal);
+  aSegmentDistance = NS_hypot(initialPoint.x - xVal, initialPoint.y - yVal);
   return true;
 }
 
 
-bool
-SVGMotionSMILPathUtils::PathGenerator::
-  LineToRelative(const nsAString& aCoordPairStr, double& aSegmentDistance)
-{
+bool SVGMotionSMILPathUtils::PathGenerator::LineToRelative(
+    const nsAString& aCoordPairStr, double& aSegmentDistance) {
   mHaveReceivedCommands = true;
 
   float xVal, yVal;
@@ -81,22 +72,17 @@ SVGMotionSMILPathUtils::PathGenerator::
 }
 
 already_AddRefed<Path>
-SVGMotionSMILPathUtils::PathGenerator::GetResultingPath()
-{
+SVGMotionSMILPathUtils::PathGenerator::GetResultingPath() {
   return mPathBuilder->Finish();
 }
 
 
 
 
-bool
-SVGMotionSMILPathUtils::PathGenerator::
-  ParseCoordinatePair(const nsAString& aCoordPairStr,
-                      float& aXVal, float& aYVal)
-{
-  nsCharSeparatedTokenizerTemplate<nsContentUtils::IsHTMLWhitespace>
-    tokenizer(aCoordPairStr, ',',
-              nsCharSeparatedTokenizer::SEPARATOR_OPTIONAL);
+bool SVGMotionSMILPathUtils::PathGenerator::ParseCoordinatePair(
+    const nsAString& aCoordPairStr, float& aXVal, float& aYVal) {
+  nsCharSeparatedTokenizerTemplate<nsContentUtils::IsHTMLWhitespace> tokenizer(
+      aCoordPairStr, ',', nsCharSeparatedTokenizer::SEPARATOR_OPTIONAL);
 
   SVGLength x, y;
 
@@ -127,10 +113,8 @@ SVGMotionSMILPathUtils::PathGenerator::
 
 
 
-bool
-SVGMotionSMILPathUtils::MotionValueParser::
-  Parse(const nsAString& aValueStr)
-{
+bool SVGMotionSMILPathUtils::MotionValueParser::Parse(
+    const nsAString& aValueStr) {
   bool success;
   if (!mPathGenerator->HaveReceivedCommands()) {
     
@@ -149,4 +133,4 @@ SVGMotionSMILPathUtils::MotionValueParser::
   return success;
 }
 
-} 
+}  

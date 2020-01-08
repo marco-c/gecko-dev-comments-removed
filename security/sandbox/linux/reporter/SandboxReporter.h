@@ -21,10 +21,8 @@ namespace mozilla {
 
 
 
-class SandboxReporter final
-  : public PlatformThread::Delegate
-{
-public:
+class SandboxReporter final : public PlatformThread::Delegate {
+ public:
   
   
   
@@ -61,7 +59,8 @@ public:
   
   
   static SandboxReporter* Singleton();
-private:
+
+ private:
   
   int mClientFd;
   int mServerFd;
@@ -82,6 +81,6 @@ private:
 
 static const size_t kSandboxReporterBufferSize = 32;
 
-} 
+}  
 
-#endif 
+#endif  

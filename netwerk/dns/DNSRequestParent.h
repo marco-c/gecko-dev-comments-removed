@@ -14,39 +14,35 @@
 namespace mozilla {
 namespace net {
 
-class DNSRequestParent
-  : public PDNSRequestParent
-  , public nsIDNSListener
-{
-public:
+class DNSRequestParent : public PDNSRequestParent, public nsIDNSListener {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDNSLISTENER
 
   DNSRequestParent();
 
-  void DoAsyncResolve(const nsACString  &hostname,
-                      const OriginAttributes &originAttributes,
-                      uint32_t flags);
+  void DoAsyncResolve(const nsACString& hostname,
+                      const OriginAttributes& originAttributes, uint32_t flags);
 
   
   
-  mozilla::ipc::IPCResult RecvCancelDNSRequest(const nsCString& hostName,
-                                               const uint16_t& type,
-                                               const OriginAttributes& originAttributes,
-                                               const uint32_t& flags,
-                                               const nsresult& reason) override;
+  mozilla::ipc::IPCResult RecvCancelDNSRequest(
+      const nsCString& hostName, const uint16_t& type,
+      const OriginAttributes& originAttributes, const uint32_t& flags,
+      const nsresult& reason) override;
   mozilla::ipc::IPCResult Recv__delete__() override;
 
-protected:
+ protected:
   virtual void ActorDestroy(ActorDestroyReason why) override;
-private:
+
+ private:
   virtual ~DNSRequestParent() = default;
 
   uint32_t mFlags;
   bool mIPCClosed;  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

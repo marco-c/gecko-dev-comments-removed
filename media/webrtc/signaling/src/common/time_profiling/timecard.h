@@ -14,7 +14,7 @@
 extern "C" {
 #endif
 
-#define STAMP_TIMECARD(card,event)                                       \
+#define STAMP_TIMECARD(card, event)                                      \
   do {                                                                   \
     if (card) {                                                          \
       stamp_timecard((card), (event), __FILE__, __LINE__, __FUNCTION__); \
@@ -46,33 +46,26 @@ typedef struct Timecard {
 
 
 
-Timecard *
-create_timecard();
+Timecard *create_timecard();
 
 
 
 
 
-void
-destroy_timecard(Timecard *tc);
+void destroy_timecard(Timecard *tc);
 
 
 
 
 
 
-void
-stamp_timecard(Timecard *tc,
-               const char *event,
-               const char *file,
-               unsigned int line,
-               const char *function);
+void stamp_timecard(Timecard *tc, const char *event, const char *file,
+                    unsigned int line, const char *function);
 
 
 
 
-void
-print_timecard(Timecard *tc);
+void print_timecard(Timecard *tc);
 
 #ifdef __cplusplus
 }

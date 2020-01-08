@@ -7,199 +7,193 @@
 #include "util/NativeStack.h"
 
 #ifdef XP_WIN
-# include "util/Windows.h"
+#include "util/Windows.h"
 #elif defined(XP_DARWIN) || defined(DARWIN) || defined(XP_UNIX)
-# include <pthread.h>
-# if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
-#  include <pthread_np.h>
-# endif
-# if defined(SOLARIS) || defined(AIX)
-#  include <ucontext.h>
-# endif
-# if defined(ANDROID) && !defined(__aarch64__)
-#  include <sys/types.h>
-#  include <unistd.h>
-# endif
-# if defined(XP_LINUX) && !defined(ANDROID) && defined(__GLIBC__)
-#  include <dlfcn.h>
-#  include <sys/syscall.h>
-#  include <sys/types.h>
-#  include <unistd.h>
-static pid_t
-gettid()
-{
-    return syscall(__NR_gettid);
-}
-# endif
+#include <pthread.h>
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
+#include <pthread_np.h>
+#endif
+#if defined(SOLARIS) || defined(AIX)
+#include <ucontext.h>
+#endif
+#if defined(ANDROID) && !defined(__aarch64__)
+#include <sys/types.h>
+#include <unistd.h>
+#endif
+#if defined(XP_LINUX) && !defined(ANDROID) && defined(__GLIBC__)
+#include <dlfcn.h>
+#include <sys/syscall.h>
+#include <sys/types.h>
+#include <unistd.h>
+static pid_t gettid() { return syscall(__NR_gettid); }
+#endif
 #else
-# error "Unsupported platform"
+#error "Unsupported platform"
 #endif
 
 #include "jsfriendapi.h"
 
 #if defined(XP_WIN)
 
-void*
-js::GetNativeStackBaseImpl()
-{
-    PNT_TIB pTib = reinterpret_cast<PNT_TIB>(NtCurrentTeb());
-    return static_cast<void*>(pTib->StackBase);
+void* js::GetNativeStackBaseImpl() {
+  PNT_TIB pTib = reinterpret_cast<PNT_TIB>(NtCurrentTeb());
+  return static_cast<void*>(pTib->StackBase);
 }
 
 #elif defined(SOLARIS)
 
 JS_STATIC_ASSERT(JS_STACK_GROWTH_DIRECTION < 0);
 
-void*
-js::GetNativeStackBaseImpl()
-{
-    stack_t st;
-    stack_getbounds(&st);
-    return static_cast<char*>(st.ss_sp) + st.ss_size;
+void* js::GetNativeStackBaseImpl() {
+  stack_t st;
+  stack_getbounds(&st);
+  return static_cast<char*>(st.ss_sp) + st.ss_size;
 }
 
 #elif defined(AIX)
 
 JS_STATIC_ASSERT(JS_STACK_GROWTH_DIRECTION < 0);
 
-void*
-js::GetNativeStackBaseImpl()
-{
-    ucontext_t context;
-    getcontext(&context);
-    return static_cast<char*>(context.uc_stack.ss_sp) +
-        context.uc_stack.ss_size;
+void* js::GetNativeStackBaseImpl() {
+  ucontext_t context;
+  getcontext(&context);
+  return static_cast<char*>(context.uc_stack.ss_sp) + context.uc_stack.ss_size;
 }
 
 #elif defined(XP_LINUX) && !defined(ANDROID) && defined(__GLIBC__)
-void*
-js::GetNativeStackBaseImpl()
-{
+void* js::GetNativeStackBaseImpl() {
+  
+  
+  
+  
+  
+  
+  
+  if (gettid() == getpid()) {
+    void** pLibcStackEnd = (void**)dlsym(RTLD_DEFAULT, "__libc_stack_end");
 
     
     
-    
-    
-    
-    if (gettid() == getpid()) {
-        void** pLibcStackEnd = (void**)dlsym(RTLD_DEFAULT, "__libc_stack_end");
-
-        
-        
-        MOZ_RELEASE_ASSERT(pLibcStackEnd, "__libc_stack_end unavailable, unable to setup stack range for JS");
-        void* stackBase = *pLibcStackEnd;
-        MOZ_RELEASE_ASSERT(stackBase, "invalid stack base, unable to setup stack range for JS");
-
-        
-        return stackBase;
-    }
+    MOZ_RELEASE_ASSERT(
+        pLibcStackEnd,
+        "__libc_stack_end unavailable, unable to setup stack range for JS");
+    void* stackBase = *pLibcStackEnd;
+    MOZ_RELEASE_ASSERT(
+        stackBase, "invalid stack base, unable to setup stack range for JS");
 
     
-    pthread_t thread = pthread_self();
-    pthread_attr_t sattr;
-    pthread_attr_init(&sattr);
-    pthread_getattr_np(thread, &sattr);
-
     
-    void* stackBase = nullptr;
-    size_t stackSize = 0;
-    int rc = pthread_attr_getstack(&sattr, &stackBase, &stackSize);
-    if (rc) {
-        MOZ_CRASH("call to pthread_attr_getstack failed, unable to setup stack range for JS");
-    }
-    MOZ_RELEASE_ASSERT(stackBase, "invalid stack base, unable to setup stack range for JS");
-    pthread_attr_destroy(&sattr);
-
-# if JS_STACK_GROWTH_DIRECTION > 0
     return stackBase;
-# else
-    return static_cast<char*>(stackBase) + stackSize;
-# endif
+  }
+
+  
+  
+  pthread_t thread = pthread_self();
+  pthread_attr_t sattr;
+  pthread_attr_init(&sattr);
+  pthread_getattr_np(thread, &sattr);
+
+  
+  void* stackBase = nullptr;
+  size_t stackSize = 0;
+  int rc = pthread_attr_getstack(&sattr, &stackBase, &stackSize);
+  if (rc) {
+    MOZ_CRASH(
+        "call to pthread_attr_getstack failed, unable to setup stack range for "
+        "JS");
+  }
+  MOZ_RELEASE_ASSERT(stackBase,
+                     "invalid stack base, unable to setup stack range for JS");
+  pthread_attr_destroy(&sattr);
+
+#if JS_STACK_GROWTH_DIRECTION > 0
+  return stackBase;
+#else
+  return static_cast<char*>(stackBase) + stackSize;
+#endif
 }
 
 #else 
 
-void*
-js::GetNativeStackBaseImpl()
-{
-    pthread_t thread = pthread_self();
-# if defined(XP_DARWIN) || defined(DARWIN)
-    return pthread_get_stackaddr_np(thread);
+void* js::GetNativeStackBaseImpl() {
+  pthread_t thread = pthread_self();
+#if defined(XP_DARWIN) || defined(DARWIN)
+  return pthread_get_stackaddr_np(thread);
 
-# else
-    pthread_attr_t sattr;
-    pthread_attr_init(&sattr);
-#  if defined(__OpenBSD__)
-    stack_t ss;
-#  elif defined(PTHREAD_NP_H) || defined(_PTHREAD_NP_H_) || defined(NETBSD)
+#else
+  pthread_attr_t sattr;
+  pthread_attr_init(&sattr);
+#if defined(__OpenBSD__)
+  stack_t ss;
+#elif defined(PTHREAD_NP_H) || defined(_PTHREAD_NP_H_) || defined(NETBSD)
+  
+  pthread_attr_get_np(thread, &sattr);
+#else
+  
+
+
+
+  pthread_getattr_np(thread, &sattr);
+#endif
+
+  void* stackBase = 0;
+  size_t stackSize = 0;
+  int rc;
+#if defined(__OpenBSD__)
+  rc = pthread_stackseg_np(pthread_self(), &ss);
+  stackBase = (void*)((size_t)ss.ss_sp - ss.ss_size);
+  stackSize = ss.ss_size;
+#elif defined(ANDROID) && !defined(__aarch64__)
+  if (gettid() == getpid()) {
     
-    pthread_attr_get_np(thread, &sattr);
-#  else
     
+    
+    rc = -1;
 
+    
+    
+    
+    
+    
+    volatile char path[] = "/proc/self/maps";
+    FILE* fs = fopen((const char*)path, "r");
 
-
-    pthread_getattr_np(thread, &sattr);
-#  endif
-
-    void* stackBase = 0;
-    size_t stackSize = 0;
-    int rc;
-# if defined(__OpenBSD__)
-    rc = pthread_stackseg_np(pthread_self(), &ss);
-    stackBase = (void*)((size_t) ss.ss_sp - ss.ss_size);
-    stackSize = ss.ss_size;
-# elif defined(ANDROID) && !defined(__aarch64__)
-    if (gettid() == getpid()) {
-        
-        
-        
-        rc = -1;
-
-        
-        
-        
-        
-        
-        volatile char path[] = "/proc/self/maps";
-        FILE* fs = fopen((const char*)path, "r");
-
-        if (fs) {
-            char line[100];
-            unsigned long stackAddr = (unsigned long)&sattr;
-            while (fgets(line, sizeof(line), fs) != nullptr) {
-                unsigned long stackStart;
-                unsigned long stackEnd;
-                if (sscanf(line, "%lx-%lx ", &stackStart, &stackEnd) == 2 &&
-                    stackAddr >= stackStart && stackAddr < stackEnd) {
-                    stackBase = (void*)stackStart;
-                    stackSize = stackEnd - stackStart;
-                    rc = 0;
-                    break;
-                }
-            }
-            fclose(fs);
+    if (fs) {
+      char line[100];
+      unsigned long stackAddr = (unsigned long)&sattr;
+      while (fgets(line, sizeof(line), fs) != nullptr) {
+        unsigned long stackStart;
+        unsigned long stackEnd;
+        if (sscanf(line, "%lx-%lx ", &stackStart, &stackEnd) == 2 &&
+            stackAddr >= stackStart && stackAddr < stackEnd) {
+          stackBase = (void*)stackStart;
+          stackSize = stackEnd - stackStart;
+          rc = 0;
+          break;
         }
-    } else {
-        
-        
-        rc = pthread_attr_getstack(&sattr, &stackBase, &stackSize);
+      }
+      fclose(fs);
     }
-# else
+  } else {
+    
+    
     rc = pthread_attr_getstack(&sattr, &stackBase, &stackSize);
-# endif
-    if (rc) {
-        MOZ_CRASH();
-    }
-    MOZ_ASSERT(stackBase);
-    pthread_attr_destroy(&sattr);
+  }
+#else
+  rc = pthread_attr_getstack(&sattr, &stackBase, &stackSize);
+#endif
+  if (rc) {
+    MOZ_CRASH();
+  }
+  MOZ_ASSERT(stackBase);
+  pthread_attr_destroy(&sattr);
 
-#  if JS_STACK_GROWTH_DIRECTION > 0
-    return stackBase;
-#  else
-    return static_cast<char*>(stackBase) + stackSize;
-#  endif
-# endif
+#if JS_STACK_GROWTH_DIRECTION > 0
+  return stackBase;
+#else
+  return static_cast<char*>(stackBase) + stackSize;
+#endif
+#endif
 }
 
 #endif 

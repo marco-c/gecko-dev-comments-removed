@@ -20,105 +20,99 @@ namespace frontend {
 
 extern const uint64_t NULL_FLOAT_REPRESENTATION;
 
-class MOZ_STACK_CLASS BinTokenReaderBase
-{
-  public:
-    template<typename T> using ErrorResult = mozilla::GenericErrorResult<T>;
+class MOZ_STACK_CLASS BinTokenReaderBase {
+ public:
+  template <typename T>
+  using ErrorResult = mozilla::GenericErrorResult<T>;
+
+  
+  class SkippableSubTree {
+   public:
+    SkippableSubTree(const size_t startOffset, const size_t length)
+        : startOffset_(startOffset), length_(length) {}
 
     
-    class SkippableSubTree {
-      public:
-        SkippableSubTree(const size_t startOffset, const size_t length)
-          : startOffset_(startOffset)
-          , length_(length)
-        { }
-
-        
-        
-        
-        size_t startOffset() const {
-            return startOffset_;
-        }
-
-        
-        size_t length() const {
-            return length_;
-        }
-      private:
-        const size_t startOffset_;
-        const size_t length_;
-    };
+    
+    
+    size_t startOffset() const { return startOffset_; }
 
     
+    size_t length() const { return length_; }
+
+   private:
+    const size_t startOffset_;
+    const size_t length_;
+  };
+
+  
 
 
-    TokenPos pos();
-    TokenPos pos(size_t startOffset);
-    size_t offset() const;
+  TokenPos pos();
+  TokenPos pos(size_t startOffset);
+  size_t offset() const;
 
-    
-    void seek(size_t offset);
+  
+  void seek(size_t offset);
 
-     
-
-
-    void poison();
-
-    
+  
 
 
+  void poison();
+
+  
 
 
-    MOZ_MUST_USE ErrorResult<JS::Error&> raiseError(const char* description);
-    MOZ_MUST_USE ErrorResult<JS::Error&> raiseOOM();
-    MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidNumberOfFields(
-        const BinKind kind, const uint32_t expected, const uint32_t got);
-    MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidField(const char* kind,
-        const BinField field);
 
-  protected:
-    BinTokenReaderBase(JSContext* cx, ErrorReporter* er, const uint8_t* start, const size_t length)
-        : cx_(cx)
-        , errorReporter_(er)
-        , poisoned_(false)
-        , start_(start)
-        , current_(start)
-        , stop_(start + length)
-        , latestKnownGoodPos_(0)
-    {
-        MOZ_ASSERT(errorReporter_);
+
+  MOZ_MUST_USE ErrorResult<JS::Error&> raiseError(const char* description);
+  MOZ_MUST_USE ErrorResult<JS::Error&> raiseOOM();
+  MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidNumberOfFields(
+      const BinKind kind, const uint32_t expected, const uint32_t got);
+  MOZ_MUST_USE ErrorResult<JS::Error&> raiseInvalidField(const char* kind,
+                                                         const BinField field);
+
+ protected:
+  BinTokenReaderBase(JSContext* cx, ErrorReporter* er, const uint8_t* start,
+                     const size_t length)
+      : cx_(cx),
+        errorReporter_(er),
+        poisoned_(false),
+        start_(start),
+        current_(start),
+        stop_(start + length),
+        latestKnownGoodPos_(0) {
+    MOZ_ASSERT(errorReporter_);
+  }
+
+  
+
+
+  MOZ_MUST_USE JS::Result<uint8_t> readByte();
+
+  
+
+
+
+
+
+  MOZ_MUST_USE JS::Result<Ok> readBuf(uint8_t* bytes, uint32_t len);
+
+  
+
+
+
+
+
+  template <size_t N>
+  MOZ_MUST_USE JS::Result<Ok> readConst(const char (&value)[N]) {
+    updateLatestKnownGood();
+    if (!matchConst(value, false)) {
+      return raiseError("Could not find expected literal");
     }
+    return Ok();
+  }
 
-    
-
-
-    MOZ_MUST_USE JS::Result<uint8_t> readByte();
-
-    
-
-
-
-
-
-    MOZ_MUST_USE JS::Result<Ok> readBuf(uint8_t* bytes, uint32_t len);
-
-    
-
-
-
-
-
-     template <size_t N>
-     MOZ_MUST_USE JS::Result<Ok> readConst(const char (&value)[N])
-     {
-        updateLatestKnownGood();
-        if (!matchConst(value, false)) {
-            return raiseError("Could not find expected literal");
-        }
-        return Ok();
-     }
-
-     
+  
 
 
 
@@ -128,60 +122,62 @@ class MOZ_STACK_CLASS BinTokenReaderBase
 
 
 
-    template <size_t N>
-    MOZ_MUST_USE bool matchConst(const char (&value)[N], bool expectNul) {
-        MOZ_ASSERT(N > 0);
-        MOZ_ASSERT(value[N - 1] == 0);
-        MOZ_ASSERT(!hasRaisedError());
+  template <size_t N>
+  MOZ_MUST_USE bool matchConst(const char (&value)[N], bool expectNul) {
+    MOZ_ASSERT(N > 0);
+    MOZ_ASSERT(value[N - 1] == 0);
+    MOZ_ASSERT(!hasRaisedError());
 
-        if (current_ + N - 1 > stop_) {
-            return false;
-        }
+    if (current_ + N - 1 > stop_) {
+      return false;
+    }
 
 #ifndef FUZZING
-        
-        if (!std::equal(current_, current_ + N + (expectNul ? 0 : -1), value)) {
-            return false;
-        }
+    
+    if (!std::equal(current_,
+                    current_ + N + (expectNul ? 0 : -1) ,
+                    value)) {
+      return false;
+    }
 #endif
 
-        
-        current_ += N + (expectNul ? 0 : -1);
-        updateLatestKnownGood();
-        return true;
-    }
-
-    void updateLatestKnownGood();
-
-    bool hasRaisedError() const;
-
-    JSContext* cx_;
-
-    ErrorReporter* errorReporter_;
-
     
-    
-    bool poisoned_;
+    current_ += N + (expectNul ? 0 : -1);
+    updateLatestKnownGood();
+    return true;
+  }
 
-    
-    const uint8_t* start_;
+  void updateLatestKnownGood();
 
-    
-    const uint8_t* current_;
+  bool hasRaisedError() const;
 
-    
-    const uint8_t* stop_;
+  JSContext* cx_;
 
-    
-    size_t latestKnownGoodPos_;
+  ErrorReporter* errorReporter_;
 
-  private:
-    BinTokenReaderBase(const BinTokenReaderBase&) = delete;
-    BinTokenReaderBase(BinTokenReaderBase&&) = delete;
-    BinTokenReaderBase& operator=(BinTokenReaderBase&) = delete;
+  
+  
+  bool poisoned_;
+
+  
+  const uint8_t* start_;
+
+  
+  const uint8_t* current_;
+
+  
+  const uint8_t* stop_;
+
+  
+  size_t latestKnownGoodPos_;
+
+ private:
+  BinTokenReaderBase(const BinTokenReaderBase&) = delete;
+  BinTokenReaderBase(BinTokenReaderBase&&) = delete;
+  BinTokenReaderBase& operator=(BinTokenReaderBase&) = delete;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

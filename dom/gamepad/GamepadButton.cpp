@@ -20,11 +20,10 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(GamepadButton, mParent)
 
- JSObject*
-GamepadButton::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
+ JSObject* GamepadButton::WrapObject(
+    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return GamepadButton_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-} 
-} 
+}  
+}  

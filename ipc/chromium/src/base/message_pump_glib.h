@@ -59,7 +59,9 @@ class MessagePumpForUI : public MessagePump {
   
   virtual void RunWithDispatcher(Delegate* delegate, Dispatcher* dispatcher);
 
-  virtual void Run(Delegate* delegate) override { RunWithDispatcher(delegate, NULL); }
+  virtual void Run(Delegate* delegate) override {
+    RunWithDispatcher(delegate, NULL);
+  }
   virtual void Quit() override;
   virtual void ScheduleWork() override;
   virtual void ScheduleDelayedWork(const TimeTicks& delayed_work_time) override;

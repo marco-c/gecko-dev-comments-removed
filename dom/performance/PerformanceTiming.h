@@ -22,51 +22,32 @@ namespace dom {
 
 class PerformanceTiming;
 
-class PerformanceTimingData final
-{
+class PerformanceTimingData final {
   friend class PerformanceTiming;
 
-public:
+ public:
   
-  static PerformanceTimingData*
-  Create(nsITimedChannel* aChannel,
-         nsIHttpChannel* aHttpChannel,
-         DOMHighResTimeStamp aZeroTime,
-         nsAString& aInitiatorType,
-         nsAString& aEntryName);
+  static PerformanceTimingData* Create(nsITimedChannel* aChannel,
+                                       nsIHttpChannel* aHttpChannel,
+                                       DOMHighResTimeStamp aZeroTime,
+                                       nsAString& aInitiatorType,
+                                       nsAString& aEntryName);
 
-  PerformanceTimingData(nsITimedChannel* aChannel,
-                        nsIHttpChannel* aHttpChannel,
+  PerformanceTimingData(nsITimedChannel* aChannel, nsIHttpChannel* aHttpChannel,
                         DOMHighResTimeStamp aZeroTime);
 
-  void
-  SetPropertiesFromHttpChannel(nsIHttpChannel* aHttpChannel,
-                               nsITimedChannel* aChannel);
+  void SetPropertiesFromHttpChannel(nsIHttpChannel* aHttpChannel,
+                                    nsITimedChannel* aChannel);
 
-  bool IsInitialized() const
-  {
-    return mInitialized;
-  }
+  bool IsInitialized() const { return mInitialized; }
 
-  const nsString& NextHopProtocol() const
-  {
-    return mNextHopProtocol;
-  }
+  const nsString& NextHopProtocol() const { return mNextHopProtocol; }
 
-  uint64_t TransferSize() const
-  {
-    return mTransferSize;
-  }
+  uint64_t TransferSize() const { return mTransferSize; }
 
-  uint64_t EncodedBodySize() const
-  {
-    return mEncodedBodySize;
-  }
+  uint64_t EncodedBodySize() const { return mEncodedBodySize; }
 
-  uint64_t DecodedBodySize() const
-  {
-    return mDecodedBodySize;
-  }
+  uint64_t DecodedBodySize() const { return mDecodedBodySize; }
 
   
 
@@ -77,23 +58,22 @@ public:
 
 
 
-  inline DOMHighResTimeStamp
-  TimeStampToReducedDOMHighResOrFetchStart(Performance* aPerformance,
-                                           TimeStamp aStamp)
-  {
+  inline DOMHighResTimeStamp TimeStampToReducedDOMHighResOrFetchStart(
+      Performance* aPerformance, TimeStamp aStamp) {
     MOZ_ASSERT(aPerformance);
 
-    if(aStamp.IsNull()) {
+    if (aStamp.IsNull()) {
       return FetchStartHighRes(aPerformance);
     }
 
-    DOMHighResTimeStamp rawTimestamp = TimeStampToDOMHighRes(aPerformance, aStamp);
+    DOMHighResTimeStamp rawTimestamp =
+        TimeStampToDOMHighRes(aPerformance, aStamp);
     if (aPerformance->IsSystemPrincipal()) {
       return rawTimestamp;
     }
 
-    return nsRFPService::ReduceTimePrecisionAsMSecs(rawTimestamp,
-      aPerformance->GetRandomTimelineSeed());
+    return nsRFPService::ReduceTimePrecisionAsMSecs(
+        rawTimestamp, aPerformance->GetRandomTimelineSeed());
   }
 
   
@@ -123,9 +103,8 @@ public:
 
 
 
-  inline DOMHighResTimeStamp
-  TimeStampToDOMHighRes(Performance* aPerformance, TimeStamp aStamp) const
-  {
+  inline DOMHighResTimeStamp TimeStampToDOMHighRes(Performance* aPerformance,
+                                                   TimeStamp aStamp) const {
     MOZ_ASSERT(aPerformance);
     MOZ_ASSERT(!aStamp.IsNull());
 
@@ -165,14 +144,11 @@ public:
 
   
   
-  bool TimingAllowed() const
-  {
-    return mTimingAllowed;
-  }
+  bool TimingAllowed() const { return mTimingAllowed; }
 
   nsTArray<nsCOMPtr<nsIServerTiming>> GetServerTiming();
 
-private:
+ private:
   
   
   
@@ -230,9 +206,9 @@ private:
 };
 
 
-class PerformanceTiming final : public nsWrapperCache
-{
-public:
+class PerformanceTiming final : public nsWrapperCache {
+ public:
+  
 
 
 
@@ -251,30 +227,23 @@ public:
 
 
 
-
-  PerformanceTiming(Performance* aPerformance,
-                    nsITimedChannel* aChannel,
+  PerformanceTiming(Performance* aPerformance, nsITimedChannel* aChannel,
                     nsIHttpChannel* aHttpChannel,
                     DOMHighResTimeStamp aZeroTime);
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(PerformanceTiming)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(PerformanceTiming)
 
-  nsDOMNavigationTiming* GetDOMTiming() const
-  {
+  nsDOMNavigationTiming* GetDOMTiming() const {
     return mPerformance->GetDOMTiming();
   }
 
-  Performance* GetParentObject() const
-  {
-    return mPerformance;
-  }
+  Performance* GetParentObject() const { return mPerformance; }
 
-  virtual JSObject* WrapObject(JSContext *cx,
+  virtual JSObject* WrapObject(JSContext* cx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  DOMTimeMilliSec NavigationStart() const
-  {
+  DOMTimeMilliSec NavigationStart() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -283,12 +252,11 @@ public:
       return GetDOMTiming()->GetNavigationStart();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetNavigationStart(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetNavigationStart(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec UnloadEventStart()
-  {
+  DOMTimeMilliSec UnloadEventStart() {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -297,12 +265,11 @@ public:
       return GetDOMTiming()->GetUnloadEventStart();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetUnloadEventStart(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetUnloadEventStart(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec UnloadEventEnd()
-  {
+  DOMTimeMilliSec UnloadEventEnd() {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -311,8 +278,8 @@ public:
       return GetDOMTiming()->GetUnloadEventEnd();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetUnloadEventEnd(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetUnloadEventEnd(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
   
@@ -328,8 +295,7 @@ public:
   DOMTimeMilliSec ResponseStart();
   DOMTimeMilliSec ResponseEnd();
 
-  DOMTimeMilliSec DomLoading()
-  {
+  DOMTimeMilliSec DomLoading() {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -338,12 +304,10 @@ public:
       return GetDOMTiming()->GetDomLoading();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomLoading(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetDomLoading(), mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec DomInteractive() const
-  {
+  DOMTimeMilliSec DomInteractive() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -352,12 +316,11 @@ public:
       return GetDOMTiming()->GetDomInteractive();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomInteractive(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetDomInteractive(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec DomContentLoadedEventStart() const
-  {
+  DOMTimeMilliSec DomContentLoadedEventStart() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -366,12 +329,11 @@ public:
       return GetDOMTiming()->GetDomContentLoadedEventStart();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomContentLoadedEventStart(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetDomContentLoadedEventStart(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec DomContentLoadedEventEnd() const
-  {
+  DOMTimeMilliSec DomContentLoadedEventEnd() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -380,12 +342,11 @@ public:
       return GetDOMTiming()->GetDomContentLoadedEventEnd();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomContentLoadedEventEnd(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetDomContentLoadedEventEnd(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec DomComplete() const
-  {
+  DOMTimeMilliSec DomComplete() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -394,12 +355,11 @@ public:
       return GetDOMTiming()->GetDomComplete();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetDomComplete(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetDomComplete(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec LoadEventStart() const
-  {
+  DOMTimeMilliSec LoadEventStart() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -408,12 +368,11 @@ public:
       return GetDOMTiming()->GetLoadEventStart();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetLoadEventStart(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetLoadEventStart(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec LoadEventEnd() const
-  {
+  DOMTimeMilliSec LoadEventEnd() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -422,12 +381,11 @@ public:
       return GetDOMTiming()->GetLoadEventEnd();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetLoadEventEnd(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetLoadEventEnd(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec TimeToNonBlankPaint() const
-  {
+  DOMTimeMilliSec TimeToNonBlankPaint() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -436,12 +394,11 @@ public:
       return GetDOMTiming()->GetTimeToNonBlankPaint();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetTimeToNonBlankPaint(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetTimeToNonBlankPaint(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec TimeToContentfulPaint() const
-  {
+  DOMTimeMilliSec TimeToContentfulPaint() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -450,12 +407,11 @@ public:
       return GetDOMTiming()->GetTimeToContentfulPaint();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetTimeToContentfulPaint(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetTimeToContentfulPaint(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec TimeToDOMContentFlushed() const
-  {
+  DOMTimeMilliSec TimeToDOMContentFlushed() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -464,12 +420,11 @@ public:
       return GetDOMTiming()->GetTimeToDOMContentFlushed();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetTimeToDOMContentFlushed(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetTimeToDOMContentFlushed(),
+        mPerformance->GetRandomTimelineSeed());
   }
 
-  DOMTimeMilliSec TimeToFirstInteractive() const
-  {
+  DOMTimeMilliSec TimeToFirstInteractive() const {
     if (!nsContentUtils::IsPerformanceTimingEnabled() ||
         nsContentUtils::ShouldResistFingerprinting()) {
       return 0;
@@ -478,16 +433,12 @@ public:
       return GetDOMTiming()->GetTimeToTTFI();
     }
     return nsRFPService::ReduceTimePrecisionAsMSecs(
-      GetDOMTiming()->GetTimeToTTFI(),
-      mPerformance->GetRandomTimelineSeed());
+        GetDOMTiming()->GetTimeToTTFI(), mPerformance->GetRandomTimelineSeed());
   }
 
-  PerformanceTimingData* Data() const
-  {
-    return mTimingData.get();
-  }
+  PerformanceTimingData* Data() const { return mTimingData.get(); }
 
-private:
+ private:
   ~PerformanceTiming();
 
   bool IsTopLevelContentDocument() const;
@@ -497,7 +448,7 @@ private:
   UniquePtr<PerformanceTimingData> mTimingData;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -29,8 +29,8 @@ using RawGeckoGfxMatrix4x4 = mozilla::gfx::Float[16];
 namespace mozilla {
 namespace css {
 class Loader;
-} 
-} 
+}  
+}  
 
 namespace mozilla {
 
@@ -38,9 +38,8 @@ class ServoStyleSet;
 class SharedFontList;
 struct URLExtraData;
 
-class ServoCSSParser
-{
-public:
+class ServoCSSParser {
+ public:
   using ParsingEnvironment = nsDOMCSSDeclaration::ParsingEnvironment;
 
   
@@ -66,10 +65,8 @@ public:
 
 
 
-  static bool ComputeColor(ServoStyleSet* aStyleSet,
-                           nscolor aCurrentColor,
-                           const nsAString& aValue,
-                           nscolor* aResultColor,
+  static bool ComputeColor(ServoStyleSet* aStyleSet, nscolor aCurrentColor,
+                           const nsAString& aValue, nscolor* aResultColor,
                            bool* aWasCurrentColor = nullptr,
                            css::Loader* aLoader = nullptr);
 
@@ -86,10 +83,9 @@ public:
 
 
   static already_AddRefed<RawServoDeclarationBlock> ParseProperty(
-    nsCSSPropertyID aProperty,
-    const nsAString& aValue,
-    const ParsingEnvironment& aParsingEnvironment,
-    ParsingMode aParsingMode = ParsingMode::Default);
+      nsCSSPropertyID aProperty, const nsAString& aValue,
+      const ParsingEnvironment& aParsingEnvironment,
+      ParsingMode aParsingMode = ParsingMode::Default);
 
   
 
@@ -99,8 +95,7 @@ public:
 
 
 
-  static bool ParseEasing(const nsAString& aValue,
-                          URLExtraData* aUrl,
+  static bool ParseEasing(const nsAString& aValue, URLExtraData* aUrl,
                           nsTimingFunction& aResult);
 
   
@@ -128,12 +123,10 @@ public:
 
 
 
-  static bool ParseFontShorthandForMatching(const nsAString& aValue,
-                                            URLExtraData* aUrl,
-                                            RefPtr<SharedFontList>& aList,
-                                            StyleComputedFontStyleDescriptor& aStyle,
-                                            float& aStretch,
-                                            float& aWeight);
+  static bool ParseFontShorthandForMatching(
+      const nsAString& aValue, URLExtraData* aUrl,
+      RefPtr<SharedFontList>& aList, StyleComputedFontStyleDescriptor& aStyle,
+      float& aStretch, float& aWeight);
 
   
 
@@ -152,6 +145,6 @@ public:
   static ParsingEnvironment GetParsingEnvironment(nsIDocument* aDocument);
 };
 
-} 
+}  
 
-#endif 
+#endif  

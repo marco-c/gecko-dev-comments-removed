@@ -15,39 +15,39 @@
 namespace mozilla {
 namespace a11y {
 
-class sdnDocAccessible final : public ISimpleDOMDocument
-{
-public:
-  explicit sdnDocAccessible(DocAccessibleWrap* aAccessible) : mAccessible(aAccessible) {};
-  ~sdnDocAccessible() { };
+class sdnDocAccessible final : public ISimpleDOMDocument {
+ public:
+  explicit sdnDocAccessible(DocAccessibleWrap *aAccessible)
+      : mAccessible(aAccessible){};
+  ~sdnDocAccessible(){};
 
   DECL_IUNKNOWN
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_URL(
-     BSTR __RPC_FAR *url);
+       BSTR __RPC_FAR *url);
 
   virtual  HRESULT STDMETHODCALLTYPE get_title(
-     BSTR __RPC_FAR *title);
+       BSTR __RPC_FAR *title);
 
   virtual  HRESULT STDMETHODCALLTYPE get_mimeType(
-     BSTR __RPC_FAR *mimeType);
+       BSTR __RPC_FAR *mimeType);
 
   virtual  HRESULT STDMETHODCALLTYPE get_docType(
-     BSTR __RPC_FAR *docType);
+       BSTR __RPC_FAR *docType);
 
   virtual  HRESULT STDMETHODCALLTYPE get_nameSpaceURIForID(
-     short nameSpaceID,
-     BSTR __RPC_FAR *nameSpaceURI);
+       short nameSpaceID,
+       BSTR __RPC_FAR *nameSpaceURI);
 
   virtual  HRESULT STDMETHODCALLTYPE put_alternateViewMediaTypes(
-     BSTR __RPC_FAR *commaSeparatedMediaTypes);
+       BSTR __RPC_FAR *commaSeparatedMediaTypes);
 
-protected:
+ protected:
   RefPtr<DocAccessibleWrap> mAccessible;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

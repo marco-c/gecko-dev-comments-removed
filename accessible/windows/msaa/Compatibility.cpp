@@ -24,26 +24,13 @@ using namespace mozilla::a11y;
 
 
 
-static const wchar_t* ConsumerStringMap[CONSUMERS_ENUM_LEN+1] = {
-  L"NVDA",
-  L"JAWS",
-  L"OLDJAWS",
-  L"WE",
-  L"DOLPHIN",
-  L"SEROTEK",
-  L"COBRA",
-  L"ZOOMTEXT",
-  L"KAZAGURU",
-  L"YOUDAO",
-  L"UNKNOWN",
-  L"UIAUTOMATION",
-  L"\0"
-};
+static const wchar_t* ConsumerStringMap[CONSUMERS_ENUM_LEN + 1] = {
+    L"NVDA",    L"JAWS",         L"OLDJAWS",  L"WE",       L"DOLPHIN",
+    L"SEROTEK", L"COBRA",        L"ZOOMTEXT", L"KAZAGURU", L"YOUDAO",
+    L"UNKNOWN", L"UIAUTOMATION", L"\0"};
 
-bool
-Compatibility::IsModuleVersionLessThan(HMODULE aModuleHandle,
-                                       unsigned long long aVersion)
-{
+bool Compatibility::IsModuleVersionLessThan(HMODULE aModuleHandle,
+                                            unsigned long long aVersion) {
   
   
   DWORD fnSize = MAX_PATH;
@@ -55,12 +42,11 @@ Compatibility::IsModuleVersionLessThan(HMODULE aModuleHandle,
     if (retLen == 0) {
       return true;
     }
-    if (retLen == fnSize &&
-        ::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
+    if (retLen == fnSize && ::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
       
       fnSize *= 2;
     }
-    break; 
+    break;  
   }
 
   
@@ -77,14 +63,14 @@ Compatibility::IsModuleVersionLessThan(HMODULE aModuleHandle,
   UINT uLen;
   VS_FIXEDFILEINFO* fixedFileInfo = nullptr;
   if (!::VerQueryValueW(versionInfo.get(), L"\\", (LPVOID*)&fixedFileInfo,
-      &uLen)) {
+                        &uLen)) {
     return true;
   }
 
   
   unsigned long long version =
-    ((unsigned long long)fixedFileInfo->dwFileVersionMS) << 32 |
-    ((unsigned long long)fixedFileInfo->dwFileVersionLS);
+      ((unsigned long long)fixedFileInfo->dwFileVersionMS) << 32 |
+      ((unsigned long long)fixedFileInfo->dwFileVersionLS);
 
   return version < aVersion;
 }
@@ -93,10 +79,9 @@ Compatibility::IsModuleVersionLessThan(HMODULE aModuleHandle,
 
 
 
-
 static WindowsDllInterceptor sUser32Interceptor;
 static WindowsDllInterceptor::FuncHookType<decltype(&InSendMessageEx)>
-  sInSendMessageExStub;
+    sInSendMessageExStub;
 static bool sInSendMessageExHackEnabled = false;
 static PVOID sVectoredExceptionHandler = nullptr;
 
@@ -105,12 +90,12 @@ static PVOID sVectoredExceptionHandler = nullptr;
 #pragma intrinsic(_ReturnAddress)
 #define RETURN_ADDRESS() _ReturnAddress()
 #elif defined(__GNUC__) || defined(__clang__)
-#define RETURN_ADDRESS() __builtin_extract_return_addr(__builtin_return_address(0))
+#define RETURN_ADDRESS() \
+  __builtin_extract_return_addr(__builtin_return_address(0))
 #endif
 
-static inline bool
-IsCurrentThreadInBlockingMessageSend(const DWORD aStateBits)
-{
+static inline bool IsCurrentThreadInBlockingMessageSend(
+    const DWORD aStateBits) {
   
   return (aStateBits & (ISMEX_REPLIED | ISMEX_SEND)) == ISMEX_SEND;
 }
@@ -127,9 +112,7 @@ IsCurrentThreadInBlockingMessageSend(const DWORD aStateBits)
 
 
 
-static DWORD WINAPI
-InSendMessageExHook(LPVOID lpReserved)
-{
+static DWORD WINAPI InSendMessageExHook(LPVOID lpReserved) {
   MOZ_ASSERT(XRE_IsParentProcess());
   DWORD result = sInSendMessageExStub(lpReserved);
   if (NS_IsMainThread() && sInSendMessageExHackEnabled &&
@@ -155,9 +138,10 @@ InSendMessageExHook(LPVOID lpReserved)
     
     HMODULE callingModule;
     if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                          GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                              GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
                           reinterpret_cast<LPCWSTR>(RETURN_ADDRESS()),
-                          &callingModule) && callingModule == comModule) {
+                          &callingModule) &&
+        callingModule == comModule) {
       result = ISMEX_NOTIFY;
     }
   }
@@ -165,11 +149,9 @@ InSendMessageExHook(LPVOID lpReserved)
 }
 
 static LONG CALLBACK
-DetectInSendMessageExCompat(PEXCEPTION_POINTERS aExceptionInfo)
-{
+DetectInSendMessageExCompat(PEXCEPTION_POINTERS aExceptionInfo) {
   DWORD exceptionCode = aExceptionInfo->ExceptionRecord->ExceptionCode;
-  if (exceptionCode == RPC_E_CANTCALLOUT_ININPUTSYNCCALL &&
-      NS_IsMainThread()) {
+  if (exceptionCode == RPC_E_CANTCALLOUT_ININPUTSYNCCALL && NS_IsMainThread()) {
     sInSendMessageExHackEnabled = true;
     
     if (RemoveVectoredExceptionHandler(sVectoredExceptionHandler)) {
@@ -184,36 +166,29 @@ uint32_t Compatibility::sConsumers = Compatibility::UNKNOWN;
 
 
 
- void
-Compatibility::InitConsumers()
-{
+ void Compatibility::InitConsumers() {
   HMODULE jawsHandle = ::GetModuleHandleW(L"jhook");
   if (jawsHandle) {
     sConsumers |=
-      IsModuleVersionLessThan(jawsHandle, MAKE_FILE_VERSION(19, 0, 0, 0)) ?
-      OLDJAWS : JAWS;
+        IsModuleVersionLessThan(jawsHandle, MAKE_FILE_VERSION(19, 0, 0, 0))
+            ? OLDJAWS
+            : JAWS;
   }
 
-  if (::GetModuleHandleW(L"gwm32inc"))
-    sConsumers |= WE;
+  if (::GetModuleHandleW(L"gwm32inc")) sConsumers |= WE;
 
-  if (::GetModuleHandleW(L"dolwinhk"))
-    sConsumers |= DOLPHIN;
+  if (::GetModuleHandleW(L"dolwinhk")) sConsumers |= DOLPHIN;
 
-  if (::GetModuleHandleW(L"STSA32"))
-    sConsumers |= SEROTEK;
+  if (::GetModuleHandleW(L"STSA32")) sConsumers |= SEROTEK;
 
-  if (::GetModuleHandleW(L"nvdaHelperRemote"))
-    sConsumers |= NVDA;
+  if (::GetModuleHandleW(L"nvdaHelperRemote")) sConsumers |= NVDA;
 
   if (::GetModuleHandleW(L"OsmHooks") || ::GetModuleHandleW(L"OsmHks64"))
     sConsumers |= COBRA;
 
-  if (::GetModuleHandleW(L"WebFinderRemote"))
-    sConsumers |= ZOOMTEXT;
+  if (::GetModuleHandleW(L"WebFinderRemote")) sConsumers |= ZOOMTEXT;
 
-  if (::GetModuleHandleW(L"Kazahook"))
-    sConsumers |= KAZAGURU;
+  if (::GetModuleHandleW(L"Kazahook")) sConsumers |= KAZAGURU;
 
   if (::GetModuleHandleW(L"TextExtractorImpl32") ||
       ::GetModuleHandleW(L"TextExtractorImpl64"))
@@ -228,28 +203,23 @@ Compatibility::InitConsumers()
     sConsumers &= ~Compatibility::UNKNOWN;
 }
 
- bool
-Compatibility::HasKnownNonUiaConsumer()
-{
+ bool Compatibility::HasKnownNonUiaConsumer() {
   InitConsumers();
   return sConsumers & ~(Compatibility::UNKNOWN | UIAUTOMATION);
 }
 
-void
-Compatibility::Init()
-{
+void Compatibility::Init() {
   
   InitConsumers();
 
-  CrashReporter::
-    AnnotateCrashReport(CrashReporter::Annotation::AccessibilityInProcClient,
-                        nsPrintfCString("0x%X", sConsumers));
+  CrashReporter::AnnotateCrashReport(
+      CrashReporter::Annotation::AccessibilityInProcClient,
+      nsPrintfCString("0x%X", sConsumers));
 
   
   uint32_t temp = sConsumers;
   for (int i = 0; temp; i++) {
-    if (temp & 0x1)
-      statistics::A11yConsumers(i);
+    if (temp & 0x1) statistics::A11yConsumers(i);
 
     temp >>= 1;
   }
@@ -265,8 +235,7 @@ Compatibility::Init()
   
   
   
-  if ((sConsumers & (~(UIAUTOMATION | NVDA))) &&
-      BrowserTabsRemoteAutostart()) {
+  if ((sConsumers & (~(UIAUTOMATION | NVDA))) && BrowserTabsRemoteAutostart()) {
     sUser32Interceptor.Init("user32.dll");
     sInSendMessageExStub.Set(sUser32Interceptor, "InSendMessageEx",
                              &InSendMessageExHook);
@@ -278,17 +247,16 @@ Compatibility::Init()
       
       
       const ULONG firstHandler = FALSE;
-      sVectoredExceptionHandler =
-        AddVectoredExceptionHandler(firstHandler, &DetectInSendMessageExCompat);
+      sVectoredExceptionHandler = AddVectoredExceptionHandler(
+          firstHandler, &DetectInSendMessageExCompat);
     }
   }
 }
 
 #if !defined(HAVE_64BIT_BUILD)
 
-static bool
-ReadCOMRegDefaultString(const nsString& aRegPath, nsAString& aOutBuf)
-{
+static bool ReadCOMRegDefaultString(const nsString& aRegPath,
+                                    nsAString& aOutBuf) {
   aOutBuf.Truncate();
 
   nsAutoString fullyQualifiedRegPath;
@@ -310,8 +278,9 @@ ReadCOMRegDefaultString(const nsString& aRegPath, nsAString& aOutBuf)
 
   aOutBuf.SetLength((bufLen + 1) / sizeof(char16_t));
 
-  result = ::RegGetValue(HKEY_LOCAL_MACHINE, fullyQualifiedRegPath.get(), nullptr,
-                         flags, nullptr, aOutBuf.BeginWriting(), &bufLen);
+  result =
+      ::RegGetValue(HKEY_LOCAL_MACHINE, fullyQualifiedRegPath.get(), nullptr,
+                    flags, nullptr, aOutBuf.BeginWriting(), &bufLen);
   if (result != ERROR_SUCCESS) {
     aOutBuf.Truncate();
     return false;
@@ -322,16 +291,14 @@ ReadCOMRegDefaultString(const nsString& aRegPath, nsAString& aOutBuf)
   return true;
 }
 
-static bool
-IsSystemOleAcc(nsCOMPtr<nsIFile>& aFile)
-{
+static bool IsSystemOleAcc(nsCOMPtr<nsIFile>& aFile) {
   
   
   
   
   PWSTR systemPath = nullptr;
-  HRESULT hr = ::SHGetKnownFolderPath(FOLDERID_SystemX86, 0, nullptr,
-                                      &systemPath);
+  HRESULT hr =
+      ::SHGetKnownFolderPath(FOLDERID_SystemX86, 0, nullptr, &systemPath);
   if (FAILED(hr)) {
     return false;
   }
@@ -357,15 +324,14 @@ IsSystemOleAcc(nsCOMPtr<nsIFile>& aFile)
   return NS_SUCCEEDED(rv) && isEqual;
 }
 
-static bool
-IsTypelibPreferred()
-{
+static bool IsTypelibPreferred() {
   
   
   NS_NAMED_LITERAL_STRING(kUniversalMarshalerClsid,
-      "{00020424-0000-0000-C000-000000000046}");
+                          "{00020424-0000-0000-C000-000000000046}");
 
-  NS_NAMED_LITERAL_STRING(kIAccessiblePSClsidPath,
+  NS_NAMED_LITERAL_STRING(
+      kIAccessiblePSClsidPath,
       "Interface\\{618736E0-3C3D-11CF-810C-00AA00389B71}\\ProxyStubClsid32");
 
   nsAutoString psClsid;
@@ -377,13 +343,12 @@ IsTypelibPreferred()
                         nsCaseInsensitiveStringComparator());
 }
 
-static bool
-IsIAccessibleTypelibRegistered()
-{
+static bool IsIAccessibleTypelibRegistered() {
   
   
-  NS_NAMED_LITERAL_STRING(kIAccessibleTypelibRegPath,
-    "TypeLib\\{1EA4DBF0-3C3B-11CF-810C-00AA00389B71}\\1.1\\0\\win32");
+  NS_NAMED_LITERAL_STRING(
+      kIAccessibleTypelibRegPath,
+      "TypeLib\\{1EA4DBF0-3C3B-11CF-810C-00AA00389B71}\\1.1\\0\\win32");
 
   nsAutoString typelibPath;
   if (!ReadCOMRegDefaultString(kIAccessibleTypelibRegPath, typelibPath)) {
@@ -391,7 +356,8 @@ IsIAccessibleTypelibRegistered()
   }
 
   nsCOMPtr<nsIFile> libTestFile;
-  nsresult rv = NS_NewLocalFile(typelibPath, false, getter_AddRefs(libTestFile));
+  nsresult rv =
+      NS_NewLocalFile(typelibPath, false, getter_AddRefs(libTestFile));
   if (NS_FAILED(rv)) {
     return false;
   }
@@ -399,11 +365,10 @@ IsIAccessibleTypelibRegistered()
   return IsSystemOleAcc(libTestFile);
 }
 
-static bool
-IsIAccessiblePSRegistered()
-{
-  NS_NAMED_LITERAL_STRING(kIAccessiblePSRegPath,
-    "CLSID\\{03022430-ABC4-11D0-BDE2-00AA001A1953}\\InProcServer32");
+static bool IsIAccessiblePSRegistered() {
+  NS_NAMED_LITERAL_STRING(
+      kIAccessiblePSRegPath,
+      "CLSID\\{03022430-ABC4-11D0-BDE2-00AA001A1953}\\InProcServer32");
 
   nsAutoString proxyStubPath;
   if (!ReadCOMRegDefaultString(kIAccessiblePSRegPath, proxyStubPath)) {
@@ -411,7 +376,8 @@ IsIAccessiblePSRegistered()
   }
 
   nsCOMPtr<nsIFile> libTestFile;
-  nsresult rv = NS_NewLocalFile(proxyStubPath, false, getter_AddRefs(libTestFile));
+  nsresult rv =
+      NS_NewLocalFile(proxyStubPath, false, getter_AddRefs(libTestFile));
   if (NS_FAILED(rv)) {
     return false;
   }
@@ -419,9 +385,7 @@ IsIAccessiblePSRegistered()
   return IsSystemOleAcc(libTestFile);
 }
 
-static bool
-UseIAccessibleProxyStub()
-{
+static bool UseIAccessibleProxyStub() {
   
   
   if (IsTypelibPreferred() && IsIAccessibleTypelibRegistered()) {
@@ -437,16 +401,14 @@ UseIAccessibleProxyStub()
   
   
   CrashReporter::AnnotateCrashReport(
-    CrashReporter::Annotation::IAccessibleConfig,
-    NS_LITERAL_CSTRING("NoSystemTypeLibOrPS"));
+      CrashReporter::Annotation::IAccessibleConfig,
+      NS_LITERAL_CSTRING("NoSystemTypeLibOrPS"));
   return false;
 }
 
-#endif 
+#endif  
 
-uint16_t
-Compatibility::GetActCtxResourceId()
-{
+uint16_t Compatibility::GetActCtxResourceId() {
 #if defined(HAVE_64BIT_BUILD)
   
   return 64;
@@ -455,19 +417,16 @@ Compatibility::GetActCtxResourceId()
   
   
   
-  if (mozilla::IsWin10CreatorsUpdateOrLater() ||
-      UseIAccessibleProxyStub()) {
+  if (mozilla::IsWin10CreatorsUpdateOrLater() || UseIAccessibleProxyStub()) {
     return 64;
   }
 
   return 32;
-#endif 
+#endif  
 }
 
 
-void
-Compatibility::GetHumanReadableConsumersStr(nsAString &aResult)
-{
+void Compatibility::GetHumanReadableConsumersStr(nsAString& aResult) {
   bool appened = false;
   uint32_t index = 0;
   for (uint32_t consumers = sConsumers; consumers; consumers = consumers >> 1) {

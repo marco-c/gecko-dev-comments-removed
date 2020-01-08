@@ -20,66 +20,65 @@ class nsIProxyInfo;
 class nsITransportEventSink;
 
 class nsFtpControlConnectionListener : public nsISupports {
-public:
-    
+ public:
+  
 
 
 
 
 
 
-    virtual void OnControlDataAvailable(const char *data, uint32_t dataLen) = 0;
+  virtual void OnControlDataAvailable(const char* data, uint32_t dataLen) = 0;
 
-    
-
-
+  
 
 
-    virtual void OnControlError(nsresult status) = 0;
+
+
+  virtual void OnControlError(nsresult status) = 0;
 };
 
-class nsFtpControlConnection final : public nsIInputStreamCallback
-{
-    ~nsFtpControlConnection();
+class nsFtpControlConnection final : public nsIInputStreamCallback {
+  ~nsFtpControlConnection();
 
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIINPUTSTREAMCALLBACK
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIINPUTSTREAMCALLBACK
 
-    nsFtpControlConnection(const nsACString& host, uint32_t port);
+  nsFtpControlConnection(const nsACString& host, uint32_t port);
 
-    nsresult Connect(nsIProxyInfo* proxyInfo, nsITransportEventSink* eventSink);
-    nsresult Disconnect(nsresult status);
-    nsresult Write(const nsACString& command);
+  nsresult Connect(nsIProxyInfo* proxyInfo, nsITransportEventSink* eventSink);
+  nsresult Disconnect(nsresult status);
+  nsresult Write(const nsACString& command);
 
-    bool IsAlive();
+  bool IsAlive();
 
-    nsITransport *Transport()   { return mSocket; }
+  nsITransport* Transport() { return mSocket; }
 
-    
-
+  
 
 
 
 
-    nsresult WaitData(nsFtpControlConnectionListener *listener);
 
-    uint32_t         mServerType;           
-    nsString         mPassword;
-    int32_t          mSuspendedWrite;
-    nsCString        mPwd;
-    uint32_t         mSessionId;
-    bool             mUseUTF8;
+  nsresult WaitData(nsFtpControlConnectionListener* listener);
 
-private:
-    nsCString mHost;
-    uint32_t  mPort;
+  uint32_t mServerType;  
+  nsString mPassword;
+  int32_t mSuspendedWrite;
+  nsCString mPwd;
+  uint32_t mSessionId;
+  bool mUseUTF8;
 
-    nsCOMPtr<nsISocketTransport>     mSocket;
-    nsCOMPtr<nsIOutputStream>        mSocketOutput;
-    nsCOMPtr<nsIAsyncInputStream>    mSocketInput;
+ private:
+  nsCString mHost;
+  uint32_t mPort;
 
-    RefPtr<nsFtpControlConnectionListener> mListener;
+  nsCOMPtr<nsISocketTransport> mSocket;
+  nsCOMPtr<nsIOutputStream> mSocketOutput;
+  nsCOMPtr<nsIAsyncInputStream> mSocketInput;
+
+  RefPtr<nsFtpControlConnectionListener> mListener;
 };
 
 #endif

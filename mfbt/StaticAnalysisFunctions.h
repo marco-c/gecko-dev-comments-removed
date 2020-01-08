@@ -32,13 +32,17 @@
 
 
 template <typename T>
-static MOZ_ALWAYS_INLINE T* MOZ_KnownLive(T* ptr) { return ptr; }
+static MOZ_ALWAYS_INLINE T* MOZ_KnownLive(T* ptr) {
+  return ptr;
+}
 
 
 
 
 template <typename T>
-static MOZ_ALWAYS_INLINE T& MOZ_KnownLive(T& ref) { return ref; }
+static MOZ_ALWAYS_INLINE T& MOZ_KnownLive(T& ref) {
+  return ref;
+}
 
 #endif
 
@@ -49,7 +53,8 @@ static MOZ_ALWAYS_INLINE T& MOZ_KnownLive(T& ref) { return ref; }
 
 
 
-static MOZ_ALWAYS_INLINE MOZ_CONSTEXPR bool MOZ_AssertAssignmentTest(bool exprResult) {
+static MOZ_ALWAYS_INLINE MOZ_CONSTEXPR bool MOZ_AssertAssignmentTest(
+    bool exprResult) {
   return exprResult;
 }
 

@@ -18,51 +18,49 @@ using mozilla::layers::IAPZCTreeManager;
 namespace mozilla {
 namespace widget {
 
-void
-AndroidContentController::Destroy()
-{
-    mAndroidWindow = nullptr;
-    ChromeProcessController::Destroy();
+void AndroidContentController::Destroy() {
+  mAndroidWindow = nullptr;
+  ChromeProcessController::Destroy();
 }
 
-void
-AndroidContentController::UpdateOverscrollVelocity(const float aX, const float aY, const bool aIsRootContent)
-{
+void AndroidContentController::UpdateOverscrollVelocity(
+    const float aX, const float aY, const bool aIsRootContent) {
   if (aIsRootContent && mAndroidWindow) {
     mAndroidWindow->UpdateOverscrollVelocity(aX, aY);
   }
 }
 
-void
-AndroidContentController::UpdateOverscrollOffset(const float aX, const float aY, const bool aIsRootContent)
-{
+void AndroidContentController::UpdateOverscrollOffset(
+    const float aX, const float aY, const bool aIsRootContent) {
   if (aIsRootContent && mAndroidWindow) {
     mAndroidWindow->UpdateOverscrollOffset(aX, aY);
   }
 }
 
-void
-AndroidContentController::NotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
-                                               APZStateChange aChange,
-                                               int aArg)
-{
+void AndroidContentController::NotifyAPZStateChange(
+    const ScrollableLayerGuid& aGuid, APZStateChange aChange, int aArg) {
   
   
   
   
   ChromeProcessController::NotifyAPZStateChange(aGuid, aChange, aArg);
   if (NS_IsMainThread()) {
-    nsCOMPtr<nsIObserverService> observerService = mozilla::services::GetObserverService();
-    if (aChange == layers::GeckoContentController::APZStateChange::eTransformEnd) {
+    nsCOMPtr<nsIObserverService> observerService =
+        mozilla::services::GetObserverService();
+    if (aChange ==
+        layers::GeckoContentController::APZStateChange::eTransformEnd) {
       
       
       observerService->NotifyObservers(nullptr, "APZ:TransformEnd", nullptr);
-      observerService->NotifyObservers(nullptr, "PanZoom:StateChange", u"NOTHING");
-    } else if (aChange == layers::GeckoContentController::APZStateChange::eTransformBegin) {
-      observerService->NotifyObservers(nullptr, "PanZoom:StateChange", u"PANNING");
+      observerService->NotifyObservers(nullptr, "PanZoom:StateChange",
+                                       u"NOTHING");
+    } else if (aChange == layers::GeckoContentController::APZStateChange::
+                              eTransformBegin) {
+      observerService->NotifyObservers(nullptr, "PanZoom:StateChange",
+                                       u"PANNING");
     }
   }
 }
 
-} 
-} 
+}  
+}  

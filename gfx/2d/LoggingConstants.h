@@ -17,7 +17,7 @@ const int LOG_CRITICAL = 1;
 const int LOG_WARNING = 2;
 const int LOG_DEBUG = 3;
 const int LOG_DEBUG_PRLOG = 4;
-const int LOG_EVERYTHING = 5; 
+const int LOG_EVERYTHING = 5;  
 
 #if defined(DEBUG)
 const int LOG_DEFAULT = LOG_EVERYTHING;
@@ -25,7 +25,7 @@ const int LOG_DEFAULT = LOG_EVERYTHING;
 const int LOG_DEFAULT = LOG_CRITICAL;
 #endif
 
-} 
-} 
+}  
+}  
 
 #endif 

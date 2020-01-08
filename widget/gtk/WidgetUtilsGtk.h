@@ -11,9 +11,8 @@
 namespace mozilla {
 namespace widget {
 
-class WidgetUtilsGTK
-{
-public:
+class WidgetUtilsGTK {
+ public:
   
   static int32_t IsTouchDeviceSupportPresent();
 };
@@ -22,4 +21,4 @@ public:
 
 }  
 
-#endif 
+#endif  

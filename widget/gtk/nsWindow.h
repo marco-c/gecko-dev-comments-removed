@@ -67,16 +67,14 @@ extern mozilla::LazyLogModule gWidgetDrawLog;
 #ifdef MOZ_WAYLAND
 class nsWaylandDragContext;
 
-gboolean
-WindowDragMotionHandler(GtkWidget *aWidget, GdkDragContext *aDragContext,
-                        nsWaylandDragContext *aWaylandDragContext,
-                        gint aX, gint aY, guint aTime);
-gboolean
-WindowDragDropHandler(GtkWidget *aWidget, GdkDragContext *aDragContext,
-                      nsWaylandDragContext *aWaylandDragContext, gint aX, gint aY,
-                      guint aTime);
-void
-WindowDragLeaveHandler(GtkWidget *aWidget);
+gboolean WindowDragMotionHandler(GtkWidget* aWidget,
+                                 GdkDragContext* aDragContext,
+                                 nsWaylandDragContext* aWaylandDragContext,
+                                 gint aX, gint aY, guint aTime);
+gboolean WindowDragDropHandler(GtkWidget* aWidget, GdkDragContext* aDragContext,
+                               nsWaylandDragContext* aWaylandDragContext,
+                               gint aX, gint aY, guint aTime);
+void WindowDragLeaveHandler(GtkWidget* aWidget);
 #endif
 
 class gfxPattern;
@@ -84,129 +82,124 @@ class gfxPattern;
 namespace mozilla {
 class TimeStamp;
 class CurrentX11TimeGetter;
-}
+}  
 
-class nsWindow final : public nsBaseWidget
-{
-public:
-    typedef mozilla::gfx::DrawTarget DrawTarget;
-    typedef mozilla::WidgetEventTime WidgetEventTime;
-    typedef mozilla::WidgetKeyboardEvent WidgetKeyboardEvent;
-    typedef mozilla::widget::PlatformCompositorWidgetDelegate PlatformCompositorWidgetDelegate;
+class nsWindow final : public nsBaseWidget {
+ public:
+  typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::WidgetEventTime WidgetEventTime;
+  typedef mozilla::WidgetKeyboardEvent WidgetKeyboardEvent;
+  typedef mozilla::widget::PlatformCompositorWidgetDelegate
+      PlatformCompositorWidgetDelegate;
 
-    nsWindow();
+  nsWindow();
 
-    static void ReleaseGlobals();
+  static void ReleaseGlobals();
 
-    NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsBaseWidget)
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsWindow, nsBaseWidget)
 
-    void CommonCreate(nsIWidget *aParent, bool aListenForResizes);
+  void CommonCreate(nsIWidget* aParent, bool aListenForResizes);
 
-    virtual nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
-                                   nsEventStatus& aStatus) override;
+  virtual nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
+                                 nsEventStatus& aStatus) override;
 
-    
-    virtual void OnDestroy(void) override;
+  
+  virtual void OnDestroy(void) override;
 
-    
-    bool AreBoundsSane(void);
+  
+  bool AreBoundsSane(void);
 
-    
-    using nsBaseWidget::Create; 
-    virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent,
-                                         nsNativeWidget aNativeParent,
-                                         const LayoutDeviceIntRect& aRect,
-                                         nsWidgetInitData* aInitData) override;
-    virtual void       Destroy() override;
-    virtual nsIWidget *GetParent() override;
-    virtual float      GetDPI() override;
-    virtual double     GetDefaultScaleInternal() override;
-    mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override;
-    mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScaleByScreen() override;
-    virtual void       SetParent(nsIWidget* aNewParent) override;
-    virtual void       SetModal(bool aModal) override;
-    virtual bool       IsVisible() const override;
-    virtual void       ConstrainPosition(bool aAllowSlop,
-                                         int32_t *aX,
-                                         int32_t *aY) override;
-    virtual void       SetSizeConstraints(const SizeConstraints& aConstraints) override;
-    virtual void       Move(double aX, double aY) override;
-    virtual void       Show             (bool aState) override;
-    virtual void       Resize           (double aWidth,
-                                         double aHeight,
-                                         bool   aRepaint) override;
-    virtual void       Resize           (double aX,
-                                         double aY,
-                                         double aWidth,
-                                         double aHeight,
-                                         bool   aRepaint) override;
-    virtual bool       IsEnabled() const override;
+  
+  using nsBaseWidget::Create;  
+  virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent,
+                                       nsNativeWidget aNativeParent,
+                                       const LayoutDeviceIntRect& aRect,
+                                       nsWidgetInitData* aInitData) override;
+  virtual void Destroy() override;
+  virtual nsIWidget* GetParent() override;
+  virtual float GetDPI() override;
+  virtual double GetDefaultScaleInternal() override;
+  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() override;
+  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScaleByScreen()
+      override;
+  virtual void SetParent(nsIWidget* aNewParent) override;
+  virtual void SetModal(bool aModal) override;
+  virtual bool IsVisible() const override;
+  virtual void ConstrainPosition(bool aAllowSlop, int32_t* aX,
+                                 int32_t* aY) override;
+  virtual void SetSizeConstraints(const SizeConstraints& aConstraints) override;
+  virtual void Move(double aX, double aY) override;
+  virtual void Show(bool aState) override;
+  virtual void Resize(double aWidth, double aHeight, bool aRepaint) override;
+  virtual void Resize(double aX, double aY, double aWidth, double aHeight,
+                      bool aRepaint) override;
+  virtual bool IsEnabled() const override;
 
-    void               SetZIndex(int32_t aZIndex) override;
-    virtual void       SetSizeMode(nsSizeMode aMode) override;
-    virtual void       Enable(bool aState) override;
-    virtual nsresult   SetFocus(bool aRaise = false) override;
-    virtual LayoutDeviceIntRect GetScreenBounds() override;
-    virtual LayoutDeviceIntRect GetClientBounds() override;
-    virtual LayoutDeviceIntSize GetClientSize() override;
-    virtual LayoutDeviceIntPoint GetClientOffset() override;
-    virtual void       SetCursor(nsCursor aCursor) override;
-    virtual nsresult   SetCursor(imgIContainer* aCursor,
-                                 uint32_t aHotspotX, uint32_t aHotspotY) override;
-    virtual void       Invalidate(const LayoutDeviceIntRect& aRect) override;
-    virtual void*      GetNativeData(uint32_t aDataType) override;
-    virtual nsresult   SetTitle(const nsAString& aTitle) override;
-    virtual void       SetIcon(const nsAString& aIconSpec) override;
-    virtual void       SetWindowClass(const nsAString& xulWinType) override;
-    virtual LayoutDeviceIntPoint WidgetToScreenOffset() override;
-    virtual void       CaptureMouse(bool aCapture) override;
-    virtual void       CaptureRollupEvents(nsIRollupListener *aListener,
-                                           bool aDoCapture) override;
-    virtual MOZ_MUST_USE nsresult GetAttention(int32_t aCycleCount) override;
-    virtual nsresult   SetWindowClipRegion(const nsTArray<LayoutDeviceIntRect>& aRects,
-                                           bool aIntersectWithExisting) override;
-    virtual bool       HasPendingInputEvent() override;
+  void SetZIndex(int32_t aZIndex) override;
+  virtual void SetSizeMode(nsSizeMode aMode) override;
+  virtual void Enable(bool aState) override;
+  virtual nsresult SetFocus(bool aRaise = false) override;
+  virtual LayoutDeviceIntRect GetScreenBounds() override;
+  virtual LayoutDeviceIntRect GetClientBounds() override;
+  virtual LayoutDeviceIntSize GetClientSize() override;
+  virtual LayoutDeviceIntPoint GetClientOffset() override;
+  virtual void SetCursor(nsCursor aCursor) override;
+  virtual nsresult SetCursor(imgIContainer* aCursor, uint32_t aHotspotX,
+                             uint32_t aHotspotY) override;
+  virtual void Invalidate(const LayoutDeviceIntRect& aRect) override;
+  virtual void* GetNativeData(uint32_t aDataType) override;
+  virtual nsresult SetTitle(const nsAString& aTitle) override;
+  virtual void SetIcon(const nsAString& aIconSpec) override;
+  virtual void SetWindowClass(const nsAString& xulWinType) override;
+  virtual LayoutDeviceIntPoint WidgetToScreenOffset() override;
+  virtual void CaptureMouse(bool aCapture) override;
+  virtual void CaptureRollupEvents(nsIRollupListener* aListener,
+                                   bool aDoCapture) override;
+  virtual MOZ_MUST_USE nsresult GetAttention(int32_t aCycleCount) override;
+  virtual nsresult SetWindowClipRegion(
+      const nsTArray<LayoutDeviceIntRect>& aRects,
+      bool aIntersectWithExisting) override;
+  virtual bool HasPendingInputEvent() override;
 
-    virtual bool PrepareForFullscreenTransition(nsISupports** aData) override;
-    virtual void PerformFullscreenTransition(FullscreenTransitionStage aStage,
-                                             uint16_t aDuration,
-                                             nsISupports* aData,
-                                             nsIRunnable* aCallback) override;
-    virtual already_AddRefed<nsIScreen> GetWidgetScreen() override;
-    virtual nsresult   MakeFullScreen(bool aFullScreen,
-                                      nsIScreen* aTargetScreen = nullptr) override;
-    virtual void       HideWindowChrome(bool aShouldHide) override;
+  virtual bool PrepareForFullscreenTransition(nsISupports** aData) override;
+  virtual void PerformFullscreenTransition(FullscreenTransitionStage aStage,
+                                           uint16_t aDuration,
+                                           nsISupports* aData,
+                                           nsIRunnable* aCallback) override;
+  virtual already_AddRefed<nsIScreen> GetWidgetScreen() override;
+  virtual nsresult MakeFullScreen(bool aFullScreen,
+                                  nsIScreen* aTargetScreen = nullptr) override;
+  virtual void HideWindowChrome(bool aShouldHide) override;
 
-    
+  
 
 
 
-    static guint32     GetLastUserInputTime();
+  static guint32 GetLastUserInputTime();
 
-    
-    
-    gint               ConvertBorderStyles(nsBorderStyle aStyle);
+  
+  
+  gint ConvertBorderStyles(nsBorderStyle aStyle);
 
-    GdkRectangle DevicePixelsToGdkRectRoundOut(LayoutDeviceIntRect aRect);
+  GdkRectangle DevicePixelsToGdkRectRoundOut(LayoutDeviceIntRect aRect);
 
-    
-    gboolean           OnExposeEvent(cairo_t *cr);
-    gboolean           OnConfigureEvent(GtkWidget *aWidget,
-                                        GdkEventConfigure *aEvent);
-    void               OnContainerUnrealize();
-    void               OnSizeAllocate(GtkAllocation *aAllocation);
-    void               OnDeleteEvent();
-    void               OnEnterNotifyEvent(GdkEventCrossing *aEvent);
-    void               OnLeaveNotifyEvent(GdkEventCrossing *aEvent);
-    void               OnMotionNotifyEvent(GdkEventMotion *aEvent);
-    void               OnButtonPressEvent(GdkEventButton *aEvent);
-    void               OnButtonReleaseEvent(GdkEventButton *aEvent);
-    void               OnContainerFocusInEvent(GdkEventFocus *aEvent);
-    void               OnContainerFocusOutEvent(GdkEventFocus *aEvent);
-    gboolean           OnKeyPressEvent(GdkEventKey *aEvent);
-    gboolean           OnKeyReleaseEvent(GdkEventKey *aEvent);
+  
+  gboolean OnExposeEvent(cairo_t* cr);
+  gboolean OnConfigureEvent(GtkWidget* aWidget, GdkEventConfigure* aEvent);
+  void OnContainerUnrealize();
+  void OnSizeAllocate(GtkAllocation* aAllocation);
+  void OnDeleteEvent();
+  void OnEnterNotifyEvent(GdkEventCrossing* aEvent);
+  void OnLeaveNotifyEvent(GdkEventCrossing* aEvent);
+  void OnMotionNotifyEvent(GdkEventMotion* aEvent);
+  void OnButtonPressEvent(GdkEventButton* aEvent);
+  void OnButtonReleaseEvent(GdkEventButton* aEvent);
+  void OnContainerFocusInEvent(GdkEventFocus* aEvent);
+  void OnContainerFocusOutEvent(GdkEventFocus* aEvent);
+  gboolean OnKeyPressEvent(GdkEventKey* aEvent);
+  gboolean OnKeyReleaseEvent(GdkEventKey* aEvent);
 
-    
+  
 
 
 
@@ -216,86 +209,81 @@ public:
 
 
 
-    bool               MaybeDispatchContextMenuEvent(const GdkEventKey* aEvent);
+  bool MaybeDispatchContextMenuEvent(const GdkEventKey* aEvent);
 
-    void               OnScrollEvent(GdkEventScroll *aEvent);
-    void               OnVisibilityNotifyEvent(GdkEventVisibility *aEvent);
-    void               OnWindowStateEvent(GtkWidget *aWidget,
-                                          GdkEventWindowState *aEvent);
-    void               OnDragDataReceivedEvent(GtkWidget       *aWidget,
-                                               GdkDragContext  *aDragContext,
-                                               gint             aX,
-                                               gint             aY,
-                                               GtkSelectionData*aSelectionData,
-                                               guint            aInfo,
-                                               guint            aTime,
-                                               gpointer         aData);
-    gboolean           OnPropertyNotifyEvent(GtkWidget *aWidget,
-                                             GdkEventProperty *aEvent);
-#if GTK_CHECK_VERSION(3,4,0)
-    gboolean           OnTouchEvent(GdkEventTouch* aEvent);
+  void OnScrollEvent(GdkEventScroll* aEvent);
+  void OnVisibilityNotifyEvent(GdkEventVisibility* aEvent);
+  void OnWindowStateEvent(GtkWidget* aWidget, GdkEventWindowState* aEvent);
+  void OnDragDataReceivedEvent(GtkWidget* aWidget, GdkDragContext* aDragContext,
+                               gint aX, gint aY,
+                               GtkSelectionData* aSelectionData, guint aInfo,
+                               guint aTime, gpointer aData);
+  gboolean OnPropertyNotifyEvent(GtkWidget* aWidget, GdkEventProperty* aEvent);
+#if GTK_CHECK_VERSION(3, 4, 0)
+  gboolean OnTouchEvent(GdkEventTouch* aEvent);
 #endif
 
-    virtual already_AddRefed<mozilla::gfx::DrawTarget>
-                       StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
-                                                  mozilla::layers::BufferMode* aBufferMode) override;
-    virtual void       EndRemoteDrawingInRegion(mozilla::gfx::DrawTarget* aDrawTarget,
-                                                LayoutDeviceIntRegion& aInvalidRegion) override;
+  virtual already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawingInRegion(
+      LayoutDeviceIntRegion& aInvalidRegion,
+      mozilla::layers::BufferMode* aBufferMode) override;
+  virtual void EndRemoteDrawingInRegion(
+      mozilla::gfx::DrawTarget* aDrawTarget,
+      LayoutDeviceIntRegion& aInvalidRegion) override;
 
-    void               SetProgress(unsigned long progressPercent);
+  void SetProgress(unsigned long progressPercent);
 
-private:
-    void               UpdateAlpha(mozilla::gfx::SourceSurface* aSourceSurface, nsIntRect aBoundsRect);
+ private:
+  void UpdateAlpha(mozilla::gfx::SourceSurface* aSourceSurface,
+                   nsIntRect aBoundsRect);
 
-    void               NativeMove();
-    void               NativeResize();
-    void               NativeMoveResize();
+  void NativeMove();
+  void NativeResize();
+  void NativeMoveResize();
 
-    void               NativeShow  (bool    aAction);
-    void               SetHasMappedToplevel(bool aState);
-    LayoutDeviceIntSize GetSafeWindowSize(LayoutDeviceIntSize aSize);
+  void NativeShow(bool aAction);
+  void SetHasMappedToplevel(bool aState);
+  LayoutDeviceIntSize GetSafeWindowSize(LayoutDeviceIntSize aSize);
 
-    void               EnsureGrabs  (void);
-    void               GrabPointer  (guint32 aTime);
-    void               ReleaseGrabs (void);
+  void EnsureGrabs(void);
+  void GrabPointer(guint32 aTime);
+  void ReleaseGrabs(void);
 
-    void               UpdateClientOffset();
+  void UpdateClientOffset();
 
-    void               DispatchContextMenuEventFromMouseEvent(uint16_t domButton,
-                                                              GdkEventButton *aEvent);
-public:
-    void               ThemeChanged(void);
-    void               OnDPIChanged(void);
-    void               OnCheckResize(void);
-    void               OnCompositedChanged(void);
+  void DispatchContextMenuEventFromMouseEvent(uint16_t domButton,
+                                              GdkEventButton* aEvent);
+
+ public:
+  void ThemeChanged(void);
+  void OnDPIChanged(void);
+  void OnCheckResize(void);
+  void OnCompositedChanged(void);
 
 #ifdef MOZ_X11
-    Window             mOldFocusWindow;
+  Window mOldFocusWindow;
 #endif 
 
-    static guint32     sLastButtonPressTime;
+  static guint32 sLastButtonPressTime;
 
-    virtual MOZ_MUST_USE nsresult
-                       BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
-                                       int32_t aHorizontal,
-                                       int32_t aVertical) override;
-    virtual MOZ_MUST_USE nsresult
-                       BeginMoveDrag(mozilla::WidgetMouseEvent* aEvent) override;
+  virtual MOZ_MUST_USE nsresult BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
+                                                int32_t aHorizontal,
+                                                int32_t aVertical) override;
+  virtual MOZ_MUST_USE nsresult
+  BeginMoveDrag(mozilla::WidgetMouseEvent* aEvent) override;
 
-    MozContainer*      GetMozContainer() { return mContainer; }
-    
-    
-    GtkWidget*         GetMozContainerWidget();
-    GdkWindow*         GetGdkWindow() { return mGdkWindow; }
-    GtkWidget*         GetGtkWidget() { return mShell; }
-    bool               IsDestroyed() { return mIsDestroyed; }
+  MozContainer* GetMozContainer() { return mContainer; }
+  
+  
+  GtkWidget* GetMozContainerWidget();
+  GdkWindow* GetGdkWindow() { return mGdkWindow; }
+  GtkWidget* GetGtkWidget() { return mShell; }
+  bool IsDestroyed() { return mIsDestroyed; }
 
-    void               DispatchDragEvent(mozilla::EventMessage aMsg,
-                                         const LayoutDeviceIntPoint& aRefPoint,
-                                         guint aTime);
-    static void        UpdateDragStatus (GdkDragContext *aDragContext,
-                                         nsIDragService *aDragService);
-    
+  void DispatchDragEvent(mozilla::EventMessage aMsg,
+                         const LayoutDeviceIntPoint& aRefPoint, guint aTime);
+  static void UpdateDragStatus(GdkDragContext* aDragContext,
+                               nsIDragService* aDragService);
+  
 
 
 
@@ -305,12 +293,10 @@ public:
 
 
 
-    bool DispatchKeyDownOrKeyUpEvent(GdkEventKey* aEvent,
-                                     bool aProcessedByIME,
-                                     bool* aIsCancelled);
+  bool DispatchKeyDownOrKeyUpEvent(GdkEventKey* aEvent, bool aProcessedByIME,
+                                   bool* aIsCancelled);
 
-    
-
+  
 
 
 
@@ -318,332 +304,325 @@ public:
 
 
 
-    bool DispatchKeyDownOrKeyUpEvent(WidgetKeyboardEvent& aEvent,
-                                     bool* aIsCancelled);
 
-    WidgetEventTime    GetWidgetEventTime(guint32 aEventTime);
-    mozilla::TimeStamp GetEventTimeStamp(guint32 aEventTime);
-    mozilla::CurrentX11TimeGetter* GetCurrentTimeGetter();
+  bool DispatchKeyDownOrKeyUpEvent(WidgetKeyboardEvent& aEvent,
+                                   bool* aIsCancelled);
 
-    virtual void SetInputContext(const InputContext& aContext,
-                                 const InputContextAction& aAction) override;
-    virtual InputContext GetInputContext() override;
-    virtual TextEventDispatcherListener*
-        GetNativeTextEventDispatcherListener() override;
-    void GetEditCommandsRemapped(NativeKeyBindingsType aType,
-                                 const mozilla::WidgetKeyboardEvent& aEvent,
-                                 nsTArray<mozilla::CommandInt>& aCommands,
-                                 uint32_t aGeckoKeyCode,
-                                 uint32_t aNativeKeyCode);
-    virtual void GetEditCommands(
-                     NativeKeyBindingsType aType,
-                     const mozilla::WidgetKeyboardEvent& aEvent,
-                     nsTArray<mozilla::CommandInt>& aCommands) override;
+  WidgetEventTime GetWidgetEventTime(guint32 aEventTime);
+  mozilla::TimeStamp GetEventTimeStamp(guint32 aEventTime);
+  mozilla::CurrentX11TimeGetter* GetCurrentTimeGetter();
 
-    
-    void               ResizeTransparencyBitmap();
-    void               ApplyTransparencyBitmap();
-    void               ClearTransparencyBitmap();
+  virtual void SetInputContext(const InputContext& aContext,
+                               const InputContextAction& aAction) override;
+  virtual InputContext GetInputContext() override;
+  virtual TextEventDispatcherListener* GetNativeTextEventDispatcherListener()
+      override;
+  void GetEditCommandsRemapped(NativeKeyBindingsType aType,
+                               const mozilla::WidgetKeyboardEvent& aEvent,
+                               nsTArray<mozilla::CommandInt>& aCommands,
+                               uint32_t aGeckoKeyCode, uint32_t aNativeKeyCode);
+  virtual void GetEditCommands(
+      NativeKeyBindingsType aType, const mozilla::WidgetKeyboardEvent& aEvent,
+      nsTArray<mozilla::CommandInt>& aCommands) override;
 
-   virtual void        SetTransparencyMode(nsTransparencyMode aMode) override;
-   virtual nsTransparencyMode GetTransparencyMode() override;
-   virtual void        UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion) override;
-   virtual nsresult    ConfigureChildren(const nsTArray<Configuration>& aConfigurations) override;
-   nsresult            UpdateTranslucentWindowAlphaInternal(const nsIntRect& aRect,
-                                                            uint8_t* aAlphas, int32_t aStride);
+  
+  void ResizeTransparencyBitmap();
+  void ApplyTransparencyBitmap();
+  void ClearTransparencyBitmap();
 
-    virtual void       ReparentNativeWidget(nsIWidget* aNewParent) override;
+  virtual void SetTransparencyMode(nsTransparencyMode aMode) override;
+  virtual nsTransparencyMode GetTransparencyMode() override;
+  virtual void UpdateOpaqueRegion(
+      const LayoutDeviceIntRegion& aOpaqueRegion) override;
+  virtual nsresult ConfigureChildren(
+      const nsTArray<Configuration>& aConfigurations) override;
+  nsresult UpdateTranslucentWindowAlphaInternal(const nsIntRect& aRect,
+                                                uint8_t* aAlphas,
+                                                int32_t aStride);
 
-    virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
-                                                uint32_t aNativeMessage,
-                                                uint32_t aModifierFlags,
-                                                nsIObserver* aObserver) override;
+  virtual void ReparentNativeWidget(nsIWidget* aNewParent) override;
 
-    virtual nsresult SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
-                                               nsIObserver* aObserver) override
-    { return SynthesizeNativeMouseEvent(aPoint, GDK_MOTION_NOTIFY, 0, aObserver); }
+  virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
+                                              uint32_t aNativeMessage,
+                                              uint32_t aModifierFlags,
+                                              nsIObserver* aObserver) override;
 
-    virtual nsresult SynthesizeNativeMouseScrollEvent(LayoutDeviceIntPoint aPoint,
-                                                      uint32_t aNativeMessage,
-                                                      double aDeltaX,
-                                                      double aDeltaY,
-                                                      double aDeltaZ,
-                                                      uint32_t aModifierFlags,
-                                                      uint32_t aAdditionalFlags,
-                                                      nsIObserver* aObserver) override;
+  virtual nsresult SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
+                                             nsIObserver* aObserver) override {
+    return SynthesizeNativeMouseEvent(aPoint, GDK_MOTION_NOTIFY, 0, aObserver);
+  }
 
-#if GTK_CHECK_VERSION(3,4,0)
-    virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
-                                                TouchPointerState aPointerState,
-                                                LayoutDeviceIntPoint aPoint,
-                                                double aPointerPressure,
-                                                uint32_t aPointerOrientation,
-                                                nsIObserver* aObserver) override;
+  virtual nsresult SynthesizeNativeMouseScrollEvent(
+      LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
+      double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
+      uint32_t aAdditionalFlags, nsIObserver* aObserver) override;
+
+#if GTK_CHECK_VERSION(3, 4, 0)
+  virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
+                                              TouchPointerState aPointerState,
+                                              LayoutDeviceIntPoint aPoint,
+                                              double aPointerPressure,
+                                              uint32_t aPointerOrientation,
+                                              nsIObserver* aObserver) override;
 #endif
 
-
 #ifdef MOZ_X11
-    Display* XDisplay() { return mXDisplay; }
+  Display* XDisplay() { return mXDisplay; }
 #endif
 #ifdef MOZ_WAYLAND
-    wl_display* GetWaylandDisplay();
-    wl_surface* GetWaylandSurface();
-    bool WaylandSurfaceNeedsClear();
+  wl_display* GetWaylandDisplay();
+  wl_surface* GetWaylandSurface();
+  bool WaylandSurfaceNeedsClear();
 #endif
-    virtual void GetCompositorWidgetInitData(mozilla::widget::CompositorWidgetInitData* aInitData) override;
+  virtual void GetCompositorWidgetInitData(
+      mozilla::widget::CompositorWidgetInitData* aInitData) override;
 
-    virtual nsresult SetNonClientMargins(LayoutDeviceIntMargin& aMargins) override;
-    void SetDrawsInTitlebar(bool aState) override;
-    virtual void UpdateWindowDraggingRegion(const LayoutDeviceIntRegion& aRegion) override;
+  virtual nsresult SetNonClientMargins(
+      LayoutDeviceIntMargin& aMargins) override;
+  void SetDrawsInTitlebar(bool aState) override;
+  virtual void UpdateWindowDraggingRegion(
+      const LayoutDeviceIntRegion& aRegion) override;
 
-    
-    gint GdkScaleFactor();
+  
+  gint GdkScaleFactor();
 
-    
-    gint DevicePixelsToGdkCoordRoundUp(int pixels);
-    gint DevicePixelsToGdkCoordRoundDown(int pixels);
-    GdkPoint DevicePixelsToGdkPointRoundDown(LayoutDeviceIntPoint point);
-    GdkRectangle DevicePixelsToGdkSizeRoundUp(LayoutDeviceIntSize pixelSize);
+  
+  gint DevicePixelsToGdkCoordRoundUp(int pixels);
+  gint DevicePixelsToGdkCoordRoundDown(int pixels);
+  GdkPoint DevicePixelsToGdkPointRoundDown(LayoutDeviceIntPoint point);
+  GdkRectangle DevicePixelsToGdkSizeRoundUp(LayoutDeviceIntSize pixelSize);
 
-    
-    int GdkCoordToDevicePixels(gint coord);
-    LayoutDeviceIntPoint GdkPointToDevicePixels(GdkPoint point);
-    LayoutDeviceIntPoint GdkEventCoordsToDevicePixels(gdouble x, gdouble y);
-    LayoutDeviceIntRect GdkRectToDevicePixels(GdkRectangle rect);
+  
+  int GdkCoordToDevicePixels(gint coord);
+  LayoutDeviceIntPoint GdkPointToDevicePixels(GdkPoint point);
+  LayoutDeviceIntPoint GdkEventCoordsToDevicePixels(gdouble x, gdouble y);
+  LayoutDeviceIntRect GdkRectToDevicePixels(GdkRectangle rect);
 
-    virtual bool WidgetTypeSupportsAcceleration() override;
+  virtual bool WidgetTypeSupportsAcceleration() override;
 
-    nsresult SetSystemFont(const nsCString& aFontName) override;
-    nsresult GetSystemFont(nsCString& aFontName) override;
+  nsresult SetSystemFont(const nsCString& aFontName) override;
+  nsresult GetSystemFont(nsCString& aFontName) override;
 
-    typedef enum { CSD_SUPPORT_SYSTEM,    
-                   CSD_SUPPORT_CLIENT,    
-                   CSD_SUPPORT_NONE,      
-                   CSD_SUPPORT_UNKNOWN
-    } CSDSupportLevel;
-    
+  typedef enum {
+    CSD_SUPPORT_SYSTEM,  
+    CSD_SUPPORT_CLIENT,  
+    CSD_SUPPORT_NONE,    
+    CSD_SUPPORT_UNKNOWN
+  } CSDSupportLevel;
+  
 
 
 
-    static CSDSupportLevel GetSystemCSDSupportLevel();
+  static CSDSupportLevel GetSystemCSDSupportLevel();
 
-    static bool TopLevelWindowUseARGBVisual();
+  static bool TopLevelWindowUseARGBVisual();
 
-protected:
-    virtual ~nsWindow();
+ protected:
+  virtual ~nsWindow();
 
-    
-    void DispatchActivateEvent(void);
-    void DispatchDeactivateEvent(void);
-    void DispatchResized();
-    void MaybeDispatchResized();
+  
+  void DispatchActivateEvent(void);
+  void DispatchDeactivateEvent(void);
+  void DispatchResized();
+  void MaybeDispatchResized();
 
-    
-    void ReparentNativeWidgetInternal(nsIWidget* aNewParent,
-                                      GtkWidget* aNewContainer,
-                                      GdkWindow* aNewParentWindow,
-                                      GtkWidget* aOldContainer);
+  
+  void ReparentNativeWidgetInternal(nsIWidget* aNewParent,
+                                    GtkWidget* aNewContainer,
+                                    GdkWindow* aNewParentWindow,
+                                    GtkWidget* aOldContainer);
 
-    virtual void RegisterTouchWindow() override;
+  virtual void RegisterTouchWindow() override;
 
-    nsCOMPtr<nsIWidget> mParent;
-    
-    bool                mIsTopLevel;
-    
-    bool                mIsDestroyed;
+  nsCOMPtr<nsIWidget> mParent;
+  
+  bool mIsTopLevel;
+  
+  bool mIsDestroyed;
 
-    
-    bool                mListenForResizes;
-    
-    bool                mNeedsDispatchResized;
-    
-    bool                mIsShown;
-    bool                mNeedsShow;
-    
-    bool                mEnabled;
-    
-    bool                mCreated;
-#if GTK_CHECK_VERSION(3,4,0)
-    
-    bool                mHandleTouchEvent;
+  
+  bool mListenForResizes;
+  
+  bool mNeedsDispatchResized;
+  
+  bool mIsShown;
+  bool mNeedsShow;
+  
+  bool mEnabled;
+  
+  bool mCreated;
+#if GTK_CHECK_VERSION(3, 4, 0)
+  
+  bool mHandleTouchEvent;
 #endif
-    
-    bool               mIsDragPopup;
-    
-    bool               mIsX11Display;
+  
+  bool mIsDragPopup;
+  
+  bool mIsX11Display;
 
-private:
-    void               DestroyChildWindows();
-    GtkWidget         *GetToplevelWidget();
-    nsWindow          *GetContainerWindow();
-    void               SetUrgencyHint(GtkWidget *top_window, bool state);
-    void               SetDefaultIcon(void);
-    void               SetWindowDecoration(nsBorderStyle aStyle);
-    void               InitButtonEvent(mozilla::WidgetMouseEvent& aEvent,
-                                       GdkEventButton* aGdkEvent);
-    bool               DispatchCommandEvent(nsAtom* aCommand);
-    bool               DispatchContentCommandEvent(mozilla::EventMessage aMsg);
-    bool               CheckForRollup(gdouble aMouseX, gdouble aMouseY,
-                                      bool aIsWheel, bool aAlwaysRollup);
-    void               CheckForRollupDuringGrab()
-    {
-      CheckForRollup(0, 0, false, true);
-    }
+ private:
+  void DestroyChildWindows();
+  GtkWidget* GetToplevelWidget();
+  nsWindow* GetContainerWindow();
+  void SetUrgencyHint(GtkWidget* top_window, bool state);
+  void SetDefaultIcon(void);
+  void SetWindowDecoration(nsBorderStyle aStyle);
+  void InitButtonEvent(mozilla::WidgetMouseEvent& aEvent,
+                       GdkEventButton* aGdkEvent);
+  bool DispatchCommandEvent(nsAtom* aCommand);
+  bool DispatchContentCommandEvent(mozilla::EventMessage aMsg);
+  bool CheckForRollup(gdouble aMouseX, gdouble aMouseY, bool aIsWheel,
+                      bool aAlwaysRollup);
+  void CheckForRollupDuringGrab() { CheckForRollup(0, 0, false, true); }
 
-    bool               GetDragInfo(mozilla::WidgetMouseEvent* aMouseEvent,
-                                   GdkWindow** aWindow, gint* aButton,
-                                   gint* aRootX, gint* aRootY);
-    void               ClearCachedResources();
-    nsIWidgetListener* GetListener();
+  bool GetDragInfo(mozilla::WidgetMouseEvent* aMouseEvent, GdkWindow** aWindow,
+                   gint* aButton, gint* aRootX, gint* aRootY);
+  void ClearCachedResources();
+  nsIWidgetListener* GetListener();
 
-    void               UpdateClientOffsetForCSDWindow();
+  void UpdateClientOffsetForCSDWindow();
 
-    nsWindow*          GetTransientForWindowIfPopup();
-    bool               IsHandlingTouchSequence(GdkEventSequence* aSequence);
+  nsWindow* GetTransientForWindowIfPopup();
+  bool IsHandlingTouchSequence(GdkEventSequence* aSequence);
 
 #ifdef MOZ_X11
-    typedef enum { GTK_WIDGET_COMPOSIDED_DEFAULT = 0,
-                   GTK_WIDGET_COMPOSIDED_DISABLED = 1,
-                   GTK_WIDGET_COMPOSIDED_ENABLED = 2
-    } WindowComposeRequest;
+  typedef enum {GTK_WIDGET_COMPOSIDED_DEFAULT = 0,
+                GTK_WIDGET_COMPOSIDED_DISABLED = 1,
+                GTK_WIDGET_COMPOSIDED_ENABLED = 2} WindowComposeRequest;
 
-    void                SetCompositorHint(WindowComposeRequest aState);
+  void SetCompositorHint(WindowComposeRequest aState);
 #endif
-    nsCString           mGtkWindowTypeName;
-    nsCString           mGtkWindowRoleName;
-    void                RefreshWindowClass();
+  nsCString mGtkWindowTypeName;
+  nsCString mGtkWindowRoleName;
+  void RefreshWindowClass();
 
-    GtkWidget          *mShell;
-    MozContainer       *mContainer;
-    GdkWindow          *mGdkWindow;
-    PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate;
+  GtkWidget* mShell;
+  MozContainer* mContainer;
+  GdkWindow* mGdkWindow;
+  PlatformCompositorWidgetDelegate* mCompositorWidgetDelegate;
 
+  uint32_t mHasMappedToplevel : 1, mIsFullyObscured : 1, mRetryPointerGrab : 1;
+  nsSizeMode mSizeState;
 
-    uint32_t            mHasMappedToplevel : 1,
-                        mIsFullyObscured : 1,
-                        mRetryPointerGrab : 1;
-    nsSizeMode          mSizeState;
+  int32_t mTransparencyBitmapWidth;
+  int32_t mTransparencyBitmapHeight;
 
-    int32_t             mTransparencyBitmapWidth;
-    int32_t             mTransparencyBitmapHeight;
+  nsIntPoint mClientOffset;
 
-    nsIntPoint          mClientOffset;
+#if GTK_CHECK_VERSION(3, 4, 0)
+  
+  guint32 mLastScrollEventTime;
 
-#if GTK_CHECK_VERSION(3,4,0)
-    
-    guint32             mLastScrollEventTime;
-
-    
-    nsRefPtrHashtable<nsPtrHashKey<GdkEventSequence>, mozilla::dom::Touch> mTouches;
+  
+  nsRefPtrHashtable<nsPtrHashKey<GdkEventSequence>, mozilla::dom::Touch>
+      mTouches;
 #endif
 
 #ifdef MOZ_X11
-    Display*            mXDisplay;
-    Window              mXWindow;
-    Visual*             mXVisual;
-    int                 mXDepth;
-    mozilla::widget::WindowSurfaceProvider mSurfaceProvider;
+  Display* mXDisplay;
+  Window mXWindow;
+  Visual* mXVisual;
+  int mXDepth;
+  mozilla::widget::WindowSurfaceProvider mSurfaceProvider;
 #endif
 
-    
-    
-    unsigned int mPendingConfigures;
+  
+  
+  unsigned int mPendingConfigures;
 
-    
-    
-    CSDSupportLevel    mCSDSupportLevel;
-    
-    bool               mDrawInTitlebar;
-    
-    LayoutDeviceIntRegion mDraggableRegion;
+  
+  
+  CSDSupportLevel mCSDSupportLevel;
+  
+  bool mDrawInTitlebar;
+  
+  LayoutDeviceIntRegion mDraggableRegion;
 
 #ifdef ACCESSIBILITY
-    RefPtr<mozilla::a11y::Accessible> mRootAccessible;
+  RefPtr<mozilla::a11y::Accessible> mRootAccessible;
 
-    
-
-
-    void                CreateRootAccessible();
-
-    
+  
 
 
+  void CreateRootAccessible();
 
-
-    void                DispatchEventToRootAccessible(uint32_t aEventType);
-
-    
+  
 
 
 
-    void                DispatchActivateEventAccessible();
 
-    
+  void DispatchEventToRootAccessible(uint32_t aEventType);
 
-
-
-    void                DispatchDeactivateEventAccessible();
-
-    
+  
 
 
 
-    void                DispatchMaximizeEventAccessible();
+  void DispatchActivateEventAccessible();
 
-    
-
-
-
-    void                DispatchMinimizeEventAccessible();
-
-    
+  
 
 
 
-    void                DispatchRestoreEventAccessible();
+  void DispatchDeactivateEventAccessible();
+
+  
+
+
+
+  void DispatchMaximizeEventAccessible();
+
+  
+
+
+
+  void DispatchMinimizeEventAccessible();
+
+  
+
+
+
+  void DispatchRestoreEventAccessible();
 #endif
 
-    
-    static GdkCursor   *gsGtkCursorCache[eCursorCount];
+  
+  static GdkCursor* gsGtkCursorCache[eCursorCount];
 
-    
-    bool         mIsTransparent;
-    
-    
-    
-    gchar*       mTransparencyBitmap;
-    
-    
-    bool         mHasAlphaVisual;
+  
+  bool mIsTransparent;
+  
+  
+  
+  gchar* mTransparencyBitmap;
+  
+  
+  bool mHasAlphaVisual;
 
-    
-    void   InitDragEvent(mozilla::WidgetDragEvent& aEvent);
+  
+  void InitDragEvent(mozilla::WidgetDragEvent& aEvent);
 
-    float              mLastMotionPressure;
+  float mLastMotionPressure;
 
-    
-    
-    nsSizeMode         mLastSizeMode;
+  
+  
+  nsSizeMode mLastSizeMode;
 
-    static bool DragInProgress(void);
+  static bool DragInProgress(void);
 
-    void DispatchMissedButtonReleases(GdkEventCrossing *aGdkEvent);
+  void DispatchMissedButtonReleases(GdkEventCrossing* aGdkEvent);
 
-    
-    virtual LayerManager* GetLayerManager(PLayerTransactionChild* aShadowManager = nullptr,
-                                          LayersBackend aBackendHint = mozilla::layers::LayersBackend::LAYERS_NONE,
-                                          LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) override;
+  
+  virtual LayerManager* GetLayerManager(
+      PLayerTransactionChild* aShadowManager = nullptr,
+      LayersBackend aBackendHint = mozilla::layers::LayersBackend::LAYERS_NONE,
+      LayerManagerPersistence aPersistence = LAYER_MANAGER_CURRENT) override;
 
-    void SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) override;
+  void SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) override;
 
-    void CleanLayerManagerRecursive();
+  void CleanLayerManagerRecursive();
 
-    virtual int32_t RoundsWidgetCoordinatesTo() override;
+  virtual int32_t RoundsWidgetCoordinatesTo() override;
 
-    
-
-
-
+  
 
 
 
@@ -653,10 +632,13 @@ private:
 
 
 
-    RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
 
-    mozilla::UniquePtr<mozilla::CurrentX11TimeGetter> mCurrentTimeGetter;
-    static CSDSupportLevel sCSDSupportLevel;
+
+
+  RefPtr<mozilla::widget::IMContextWrapper> mIMContext;
+
+  mozilla::UniquePtr<mozilla::CurrentX11TimeGetter> mCurrentTimeGetter;
+  static CSDSupportLevel sCSDSupportLevel;
 };
 
 #endif 

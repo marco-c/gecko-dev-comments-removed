@@ -33,413 +33,414 @@ class nsHttpHandler;
 class ASpdySession;
 
 
-#define NS_HTTPCONNECTION_IID \
-{ 0x1dcc863e, 0xdb90, 0x4652, {0xa1, 0xfe, 0x13, 0xfe, 0xa0, 0xb5, 0x4e, 0x46 }}
-
-
-
-
-
-
-
-
-class nsHttpConnection final : public nsAHttpSegmentReader
-                             , public nsAHttpSegmentWriter
-                             , public nsIInputStreamCallback
-                             , public nsIOutputStreamCallback
-                             , public nsITransportEventSink
-                             , public nsIInterfaceRequestor
-                             , public NudgeTunnelCallback
-                             , public ARefBase
-                             , public nsSupportsWeakReference
-{
-private:
-    virtual ~nsHttpConnection();
-
-public:
-    NS_DECLARE_STATIC_IID_ACCESSOR(NS_HTTPCONNECTION_IID)
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSAHTTPSEGMENTREADER
-    NS_DECL_NSAHTTPSEGMENTWRITER
-    NS_DECL_NSIINPUTSTREAMCALLBACK
-    NS_DECL_NSIOUTPUTSTREAMCALLBACK
-    NS_DECL_NSITRANSPORTEVENTSINK
-    NS_DECL_NSIINTERFACEREQUESTOR
-    NS_DECL_NUDGETUNNELCALLBACK
-
-    nsHttpConnection();
-
-    
-    
-    
-    
-    
-    MOZ_MUST_USE nsresult Init(nsHttpConnectionInfo *info, uint16_t maxHangTime,
-                               nsISocketTransport *, nsIAsyncInputStream *,
-                               nsIAsyncOutputStream *, bool connectedTransport,
-                               nsIInterfaceRequestor *, PRIntervalTime);
-
-    
-    
-    
-    MOZ_MUST_USE nsresult Activate(nsAHttpTransaction *, uint32_t caps,
-                                   int32_t pri);
-
-    void SetFastOpen(bool aFastOpen);
-    
-    
-    
-    nsAHttpTransaction * CloseConnectionFastOpenTakesTooLongOrError(bool aCloseocketTransport);
-
-    
-    void Close(nsresult reason, bool aIsShutdown = false);
-
-    
-    
-
-    bool IsKeepAlive()
-    {
-        return (mUsingSpdyVersion != SpdyVersion::NONE) || (mKeepAliveMask && mKeepAlive);
-    }
-    bool CanReuse();   
-    bool CanDirectlyActivate();
-
-    
-    uint32_t TimeToLive();
-
-    void DontReuse();
-
-    bool IsProxyConnectInProgress()
-    {
-        return mProxyConnectInProgress;
-    }
-
-    bool LastTransactionExpectedNoContent()
-    {
-        return mLastTransactionExpectedNoContent;
-    }
-
-    void SetLastTransactionExpectedNoContent(bool val)
-    {
-        mLastTransactionExpectedNoContent = val;
-    }
-
-    bool NeedSpdyTunnel()
-    {
-        return mConnInfo->UsingHttpsProxy() && !mTLSFilter && mConnInfo->UsingConnect();
-    }
-
-    
-    
-    void ForcePlainText()
-    {
-        mForcePlainText = true;
-    }
-
-    bool IsUrgentStartPreferred() const { return mUrgentStartPreferredKnown && mUrgentStartPreferred; }
-    void SetUrgentStartPreferred(bool urgent);
-
-    nsISocketTransport   *Transport()      { return mSocketTransport; }
-    nsAHttpTransaction   *Transaction()    { return mTransaction; }
-    nsHttpConnectionInfo *ConnectionInfo() { return mConnInfo; }
-
-    
-    MOZ_MUST_USE nsresult OnHeadersAvailable(nsAHttpTransaction *,
-                                             nsHttpRequestHead *,
-                                             nsHttpResponseHead *, bool *reset);
-    void     CloseTransaction(nsAHttpTransaction *, nsresult reason,
-                              bool aIsShutdown = false);
-    void     GetConnectionInfo(nsHttpConnectionInfo **ci) { NS_IF_ADDREF(*ci = mConnInfo); }
-    MOZ_MUST_USE nsresult TakeTransport(nsISocketTransport **,
-                                        nsIAsyncInputStream **,
-                                        nsIAsyncOutputStream **);
-    void     GetSecurityInfo(nsISupports **);
-    bool     IsPersistent() { return IsKeepAlive() && !mDontReuse; }
-    bool     IsReused();
-    void     SetIsReusedAfter(uint32_t afterMilliseconds);
-    MOZ_MUST_USE nsresult PushBack(const char *data, uint32_t length);
-    MOZ_MUST_USE nsresult ResumeSend();
-    MOZ_MUST_USE nsresult ResumeRecv();
-    int64_t  MaxBytesRead() {return mMaxBytesRead;}
-    HttpVersion GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
-
-    friend class HttpConnectionForceIO;
-    MOZ_MUST_USE nsresult ForceSend();
-    MOZ_MUST_USE nsresult ForceRecv();
-
-    static MOZ_MUST_USE nsresult ReadFromStream(nsIInputStream *, void *,
-                                                const char *, uint32_t,
-                                                uint32_t, uint32_t *);
-
-    
-    
-    
-    
-    void BeginIdleMonitoring();
-    void EndIdleMonitoring();
-
-    bool UsingSpdy() { return (mUsingSpdyVersion != SpdyVersion::NONE); }
-    SpdyVersion GetSpdyVersion() { return mUsingSpdyVersion; }
-    bool EverUsedSpdy() { return mEverUsedSpdy; }
-    PRIntervalTime Rtt() { return mRtt; }
-
-    
-    
-    bool ReportedNPN() { return mReportedSpdy; }
-
-    
-    
-    
-    
-    uint32_t  ReadTimeoutTick(PRIntervalTime now);
-
-    
-    
-    
-    static void UpdateTCPKeepalive(nsITimer *aTimer, void *aClosure);
-
-    
-    void  ReadTimeoutTick();
-
-    int64_t BytesWritten() { return mTotalBytesWritten; } 
-    int64_t ContentBytesWritten() { return mContentBytesWritten; }
-
-    void    SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks);
-    void    PrintDiagnostics(nsCString &log);
-
-    void    SetTransactionCaps(uint32_t aCaps) { mTransactionCaps = aCaps; }
-
-    
-    
-    bool    IsExperienced() { return mExperienced; }
-
-    static MOZ_MUST_USE nsresult MakeConnectString(nsAHttpTransaction *trans,
-                                                   nsHttpRequestHead *request,
-                                                   nsACString &result,
-                                                   bool h2ws);
-    void    SetupSecondaryTLS(nsAHttpTransaction *aSpdyConnectTransaction = nullptr);
-    void    SetInSpdyTunnel(bool arg);
-
-    
-    
-    
-    void CheckForTraffic(bool check);
-
-    
-    
-    bool NoTraffic() {
-        return mTrafficStamp &&
-            (mTrafficCount == (mTotalBytesWritten + mTotalBytesRead)) &&
-            !mFastOpen;
-    }
-    
-    virtual HttpVersion Version();
-
-    bool TestJoinConnection(const nsACString &hostname, int32_t port);
-    bool JoinConnection(const nsACString &hostname, int32_t port);
-
-    void SetFastOpenStatus(uint8_t tfoStatus);
-    uint8_t GetFastOpenStatus() {
-      return mFastOpenStatus;
-    }
-
-    void SetEvent(nsresult aStatus);
-
-    
-    
-    
-    bool NoClientCertAuth() const;
-
-    
-    bool CanAcceptWebsocket();
-
-private:
-    
-    enum TCPKeepaliveConfig {
-      kTCPKeepaliveDisabled = 0,
-      kTCPKeepaliveShortLivedConfig,
-      kTCPKeepaliveLongLivedConfig
-    };
-
-    
-    MOZ_MUST_USE nsresult InitSSLParams(bool connectingToProxy,
-                                        bool ProxyStartSSL);
-    MOZ_MUST_USE nsresult SetupNPNList(nsISSLSocketControl *ssl, uint32_t caps);
-
-    MOZ_MUST_USE nsresult OnTransactionDone(nsresult reason);
-    MOZ_MUST_USE nsresult OnSocketWritable();
-    MOZ_MUST_USE nsresult OnSocketReadable();
-
-    MOZ_MUST_USE nsresult SetupProxyConnect();
-
-    PRIntervalTime IdleTime();
-    bool     IsAlive();
-
-    
-    
-    MOZ_MUST_USE bool EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
-                                        uint32_t &aOut0RTTBytesWritten);
-    void     SetupSSL();
-
-    
-    void     StartSpdy(nsISSLSocketControl *ssl, SpdyVersion versionLevel);
-    
-    
-    void     Start0RTTSpdy(SpdyVersion versionLevel);
-
-    
-    nsresult TryTakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> > &list);
-    nsresult MoveTransactionsToSpdy(nsresult status, nsTArray<RefPtr<nsAHttpTransaction> > &list);
-
-    
-    MOZ_MUST_USE nsresult AddTransaction(nsAHttpTransaction *, int32_t);
-
-    
-    
-    MOZ_MUST_USE nsresult StartShortLivedTCPKeepalives();
-    MOZ_MUST_USE nsresult StartLongLivedTCPKeepalives();
-    MOZ_MUST_USE nsresult DisableTCPKeepalives();
-
-private:
-    nsCOMPtr<nsISocketTransport>    mSocketTransport;
-    nsCOMPtr<nsIAsyncInputStream>   mSocketIn;
-    nsCOMPtr<nsIAsyncOutputStream>  mSocketOut;
-
-    nsresult                        mSocketInCondition;
-    nsresult                        mSocketOutCondition;
-
-    nsCOMPtr<nsIInputStream>        mProxyConnectStream;
-    nsCOMPtr<nsIInputStream>        mRequestStream;
-
-    
-    
-    RefPtr<nsAHttpTransaction>    mTransaction;
-    RefPtr<TLSFilterTransaction>  mTLSFilter;
-    nsWeakPtr                     mWeakTrans; 
-
-    RefPtr<nsHttpHandler>         mHttpHandler; 
-
-    Mutex                           mCallbacksLock;
-    nsMainThreadPtrHandle<nsIInterfaceRequestor> mCallbacks;
-
-    RefPtr<nsHttpConnectionInfo> mConnInfo;
-
-    PRIntervalTime                  mLastReadTime;
-    PRIntervalTime                  mLastWriteTime;
-    PRIntervalTime                  mMaxHangTime;    
-    PRIntervalTime                  mIdleTimeout;    
-    PRIntervalTime                  mConsiderReusedAfterInterval;
-    PRIntervalTime                  mConsiderReusedAfterEpoch;
-    int64_t                         mCurrentBytesRead;   
-    int64_t                         mMaxBytesRead;       
-    int64_t                         mTotalBytesRead;     
-    int64_t                         mTotalBytesWritten;  
-    int64_t                         mContentBytesWritten;  
-
-    RefPtr<nsIAsyncInputStream>   mInputOverflow;
-
-    PRIntervalTime                  mRtt;
-
-    
-    
-    bool                            mUrgentStartPreferred;
-    
-    bool                            mUrgentStartPreferredKnown;
-    bool                            mConnectedTransport;
-    bool                            mKeepAlive;
-    bool                            mKeepAliveMask;
-    bool                            mDontReuse;
-    bool                            mIsReused;
-    bool                            mCompletedProxyConnect;
-    bool                            mLastTransactionExpectedNoContent;
-    bool                            mIdleMonitoring;
-    bool                            mProxyConnectInProgress;
-    bool                            mExperienced;
-    bool                            mInSpdyTunnel;
-    bool                            mForcePlainText;
-
-    
-    int64_t                         mTrafficCount;
-    bool                            mTrafficStamp; 
-
-    
-    
-    uint32_t                        mHttp1xTransactionCount;
-
-    
-    
-    
-    uint32_t                        mRemainingConnectionUses;
-
-    
-    bool                            mNPNComplete;
-    bool                            mSetupSSLCalled;
-
-    
-    SpdyVersion                     mUsingSpdyVersion;
-
-    RefPtr<ASpdySession>            mSpdySession;
-    int32_t                         mPriority;
-    bool                            mReportedSpdy;
-
-    
-    bool                            mEverUsedSpdy;
-
-    
-    HttpVersion                     mLastHttpResponseVersion;
-
-    
-    uint32_t                        mTransactionCaps;
-
-    
-    
-    uint32_t                        mDefaultTimeoutFactor;
-
-    bool                            mResponseTimeoutEnabled;
-
-    
-    uint32_t                        mTCPKeepaliveConfig;
-    nsCOMPtr<nsITimer>              mTCPKeepaliveTransitionTimer;
-
-private:
-    
-    static void                     ForceSendIO(nsITimer *aTimer, void *aClosure);
-    MOZ_MUST_USE nsresult           MaybeForceSendIO();
-    bool                            mForceSendPending;
-    nsCOMPtr<nsITimer>              mForceSendTimer;
-
-    
-    bool                            m0RTTChecked; 
-                                                  
-    bool                            mWaitingFor0RTTResponse; 
-                                                             
-                                                             
-                                                             
-                                                             
-                                                             
-    int64_t                        mContentBytesWritten0RTT;
-    bool                           mEarlyDataNegotiated; 
-    nsCString                      mEarlyNegotiatedALPN;
-    bool                           mDid0RTTSpdy;
-
-    bool                           mFastOpen;
-    uint8_t                        mFastOpenStatus;
-
-    bool                           mForceSendDuringFastOpenPending;
-    bool                           mReceivedSocketWouldBlockDuringFastOpen;
-    bool                           mCheckNetworkStallsWithTFO;
-    PRIntervalTime                 mLastRequestBytesSentTime;
-
-public:
-    void BootstrapTimings(TimingStruct times);
-private:
-    TimingStruct    mBootstrappedTimings;
-    bool            mBootstrappedTimingsSet;
+#define NS_HTTPCONNECTION_IID                        \
+  {                                                  \
+    0x1dcc863e, 0xdb90, 0x4652, {                    \
+      0xa1, 0xfe, 0x13, 0xfe, 0xa0, 0xb5, 0x4e, 0x46 \
+    }                                                \
+  }
+
+
+
+
+
+
+
+
+class nsHttpConnection final : public nsAHttpSegmentReader,
+                               public nsAHttpSegmentWriter,
+                               public nsIInputStreamCallback,
+                               public nsIOutputStreamCallback,
+                               public nsITransportEventSink,
+                               public nsIInterfaceRequestor,
+                               public NudgeTunnelCallback,
+                               public ARefBase,
+                               public nsSupportsWeakReference {
+ private:
+  virtual ~nsHttpConnection();
+
+ public:
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_HTTPCONNECTION_IID)
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSAHTTPSEGMENTREADER
+  NS_DECL_NSAHTTPSEGMENTWRITER
+  NS_DECL_NSIINPUTSTREAMCALLBACK
+  NS_DECL_NSIOUTPUTSTREAMCALLBACK
+  NS_DECL_NSITRANSPORTEVENTSINK
+  NS_DECL_NSIINTERFACEREQUESTOR
+  NS_DECL_NUDGETUNNELCALLBACK
+
+  nsHttpConnection();
+
+  
+  
+  
+  
+  
+  MOZ_MUST_USE nsresult Init(nsHttpConnectionInfo *info, uint16_t maxHangTime,
+                             nsISocketTransport *, nsIAsyncInputStream *,
+                             nsIAsyncOutputStream *, bool connectedTransport,
+                             nsIInterfaceRequestor *, PRIntervalTime);
+
+  
+  
+  
+  MOZ_MUST_USE nsresult Activate(nsAHttpTransaction *, uint32_t caps,
+                                 int32_t pri);
+
+  void SetFastOpen(bool aFastOpen);
+  
+  
+  
+  nsAHttpTransaction *CloseConnectionFastOpenTakesTooLongOrError(
+      bool aCloseocketTransport);
+
+  
+  void Close(nsresult reason, bool aIsShutdown = false);
+
+  
+  
+
+  bool IsKeepAlive() {
+    return (mUsingSpdyVersion != SpdyVersion::NONE) ||
+           (mKeepAliveMask && mKeepAlive);
+  }
+  bool CanReuse();  
+  bool CanDirectlyActivate();
+
+  
+  uint32_t TimeToLive();
+
+  void DontReuse();
+
+  bool IsProxyConnectInProgress() { return mProxyConnectInProgress; }
+
+  bool LastTransactionExpectedNoContent() {
+    return mLastTransactionExpectedNoContent;
+  }
+
+  void SetLastTransactionExpectedNoContent(bool val) {
+    mLastTransactionExpectedNoContent = val;
+  }
+
+  bool NeedSpdyTunnel() {
+    return mConnInfo->UsingHttpsProxy() && !mTLSFilter &&
+           mConnInfo->UsingConnect();
+  }
+
+  
+  
+  
+  void ForcePlainText() { mForcePlainText = true; }
+
+  bool IsUrgentStartPreferred() const {
+    return mUrgentStartPreferredKnown && mUrgentStartPreferred;
+  }
+  void SetUrgentStartPreferred(bool urgent);
+
+  nsISocketTransport *Transport() { return mSocketTransport; }
+  nsAHttpTransaction *Transaction() { return mTransaction; }
+  nsHttpConnectionInfo *ConnectionInfo() { return mConnInfo; }
+
+  
+  MOZ_MUST_USE nsresult OnHeadersAvailable(nsAHttpTransaction *,
+                                           nsHttpRequestHead *,
+                                           nsHttpResponseHead *, bool *reset);
+  void CloseTransaction(nsAHttpTransaction *, nsresult reason,
+                        bool aIsShutdown = false);
+  void GetConnectionInfo(nsHttpConnectionInfo **ci) {
+    NS_IF_ADDREF(*ci = mConnInfo);
+  }
+  MOZ_MUST_USE nsresult TakeTransport(nsISocketTransport **,
+                                      nsIAsyncInputStream **,
+                                      nsIAsyncOutputStream **);
+  void GetSecurityInfo(nsISupports **);
+  bool IsPersistent() { return IsKeepAlive() && !mDontReuse; }
+  bool IsReused();
+  void SetIsReusedAfter(uint32_t afterMilliseconds);
+  MOZ_MUST_USE nsresult PushBack(const char *data, uint32_t length);
+  MOZ_MUST_USE nsresult ResumeSend();
+  MOZ_MUST_USE nsresult ResumeRecv();
+  int64_t MaxBytesRead() { return mMaxBytesRead; }
+  HttpVersion GetLastHttpResponseVersion() { return mLastHttpResponseVersion; }
+
+  friend class HttpConnectionForceIO;
+  MOZ_MUST_USE nsresult ForceSend();
+  MOZ_MUST_USE nsresult ForceRecv();
+
+  static MOZ_MUST_USE nsresult ReadFromStream(nsIInputStream *, void *,
+                                              const char *, uint32_t, uint32_t,
+                                              uint32_t *);
+
+  
+  
+  
+  
+  void BeginIdleMonitoring();
+  void EndIdleMonitoring();
+
+  bool UsingSpdy() { return (mUsingSpdyVersion != SpdyVersion::NONE); }
+  SpdyVersion GetSpdyVersion() { return mUsingSpdyVersion; }
+  bool EverUsedSpdy() { return mEverUsedSpdy; }
+  PRIntervalTime Rtt() { return mRtt; }
+
+  
+  
+  bool ReportedNPN() { return mReportedSpdy; }
+
+  
+  
+  
+  
+  uint32_t ReadTimeoutTick(PRIntervalTime now);
+
+  
+  
+  
+  static void UpdateTCPKeepalive(nsITimer *aTimer, void *aClosure);
+
+  
+  void ReadTimeoutTick();
+
+  int64_t BytesWritten() { return mTotalBytesWritten; }  
+  int64_t ContentBytesWritten() { return mContentBytesWritten; }
+
+  void SetSecurityCallbacks(nsIInterfaceRequestor *aCallbacks);
+  void PrintDiagnostics(nsCString &log);
+
+  void SetTransactionCaps(uint32_t aCaps) { mTransactionCaps = aCaps; }
+
+  
+  
+  bool IsExperienced() { return mExperienced; }
+
+  static MOZ_MUST_USE nsresult MakeConnectString(nsAHttpTransaction *trans,
+                                                 nsHttpRequestHead *request,
+                                                 nsACString &result, bool h2ws);
+  void SetupSecondaryTLS(nsAHttpTransaction *aSpdyConnectTransaction = nullptr);
+  void SetInSpdyTunnel(bool arg);
+
+  
+  
+  
+  void CheckForTraffic(bool check);
+
+  
+  
+  bool NoTraffic() {
+    return mTrafficStamp &&
+           (mTrafficCount == (mTotalBytesWritten + mTotalBytesRead)) &&
+           !mFastOpen;
+  }
+  
+  virtual HttpVersion Version();
+
+  bool TestJoinConnection(const nsACString &hostname, int32_t port);
+  bool JoinConnection(const nsACString &hostname, int32_t port);
+
+  void SetFastOpenStatus(uint8_t tfoStatus);
+  uint8_t GetFastOpenStatus() { return mFastOpenStatus; }
+
+  void SetEvent(nsresult aStatus);
+
+  
+  
+  
+  bool NoClientCertAuth() const;
+
+  
+  bool CanAcceptWebsocket();
+
+ private:
+  
+  enum TCPKeepaliveConfig {
+    kTCPKeepaliveDisabled = 0,
+    kTCPKeepaliveShortLivedConfig,
+    kTCPKeepaliveLongLivedConfig
+  };
+
+  
+  MOZ_MUST_USE nsresult InitSSLParams(bool connectingToProxy,
+                                      bool ProxyStartSSL);
+  MOZ_MUST_USE nsresult SetupNPNList(nsISSLSocketControl *ssl, uint32_t caps);
+
+  MOZ_MUST_USE nsresult OnTransactionDone(nsresult reason);
+  MOZ_MUST_USE nsresult OnSocketWritable();
+  MOZ_MUST_USE nsresult OnSocketReadable();
+
+  MOZ_MUST_USE nsresult SetupProxyConnect();
+
+  PRIntervalTime IdleTime();
+  bool IsAlive();
+
+  
+  
+  MOZ_MUST_USE bool EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
+                                      uint32_t &aOut0RTTBytesWritten);
+  void SetupSSL();
+
+  
+  void StartSpdy(nsISSLSocketControl *ssl, SpdyVersion versionLevel);
+  
+  
+  void Start0RTTSpdy(SpdyVersion versionLevel);
+
+  
+  nsresult TryTakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> > &list);
+  nsresult MoveTransactionsToSpdy(nsresult status,
+                                  nsTArray<RefPtr<nsAHttpTransaction> > &list);
+
+  
+  MOZ_MUST_USE nsresult AddTransaction(nsAHttpTransaction *, int32_t);
+
+  
+  
+  MOZ_MUST_USE nsresult StartShortLivedTCPKeepalives();
+  MOZ_MUST_USE nsresult StartLongLivedTCPKeepalives();
+  MOZ_MUST_USE nsresult DisableTCPKeepalives();
+
+ private:
+  nsCOMPtr<nsISocketTransport> mSocketTransport;
+  nsCOMPtr<nsIAsyncInputStream> mSocketIn;
+  nsCOMPtr<nsIAsyncOutputStream> mSocketOut;
+
+  nsresult mSocketInCondition;
+  nsresult mSocketOutCondition;
+
+  nsCOMPtr<nsIInputStream> mProxyConnectStream;
+  nsCOMPtr<nsIInputStream> mRequestStream;
+
+  
+  
+  RefPtr<nsAHttpTransaction> mTransaction;
+  RefPtr<TLSFilterTransaction> mTLSFilter;
+  nsWeakPtr mWeakTrans;  
+
+  RefPtr<nsHttpHandler> mHttpHandler;  
+
+  Mutex mCallbacksLock;
+  nsMainThreadPtrHandle<nsIInterfaceRequestor> mCallbacks;
+
+  RefPtr<nsHttpConnectionInfo> mConnInfo;
+
+  PRIntervalTime mLastReadTime;
+  PRIntervalTime mLastWriteTime;
+  PRIntervalTime
+      mMaxHangTime;  
+  PRIntervalTime mIdleTimeout;  
+  PRIntervalTime mConsiderReusedAfterInterval;
+  PRIntervalTime mConsiderReusedAfterEpoch;
+  int64_t mCurrentBytesRead;     
+  int64_t mMaxBytesRead;         
+  int64_t mTotalBytesRead;       
+  int64_t mTotalBytesWritten;    
+  int64_t mContentBytesWritten;  
+
+  RefPtr<nsIAsyncInputStream> mInputOverflow;
+
+  PRIntervalTime mRtt;
+
+  
+  
+  bool mUrgentStartPreferred;
+  
+  bool mUrgentStartPreferredKnown;
+  bool mConnectedTransport;
+  bool mKeepAlive;
+  bool mKeepAliveMask;
+  bool mDontReuse;
+  bool mIsReused;
+  bool mCompletedProxyConnect;
+  bool mLastTransactionExpectedNoContent;
+  bool mIdleMonitoring;
+  bool mProxyConnectInProgress;
+  bool mExperienced;
+  bool mInSpdyTunnel;
+  bool mForcePlainText;
+
+  
+  int64_t mTrafficCount;
+  bool mTrafficStamp;  
+
+  
+  
+  uint32_t mHttp1xTransactionCount;
+
+  
+  
+  
+  uint32_t mRemainingConnectionUses;
+
+  
+  bool mNPNComplete;
+  bool mSetupSSLCalled;
+
+  
+  SpdyVersion mUsingSpdyVersion;
+
+  RefPtr<ASpdySession> mSpdySession;
+  int32_t mPriority;
+  bool mReportedSpdy;
+
+  
+  bool mEverUsedSpdy;
+
+  
+  HttpVersion mLastHttpResponseVersion;
+
+  
+  uint32_t mTransactionCaps;
+
+  
+  
+  uint32_t mDefaultTimeoutFactor;
+
+  bool mResponseTimeoutEnabled;
+
+  
+  uint32_t mTCPKeepaliveConfig;
+  nsCOMPtr<nsITimer> mTCPKeepaliveTransitionTimer;
+
+ private:
+  
+  static void ForceSendIO(nsITimer *aTimer, void *aClosure);
+  MOZ_MUST_USE nsresult MaybeForceSendIO();
+  bool mForceSendPending;
+  nsCOMPtr<nsITimer> mForceSendTimer;
+
+  
+  bool m0RTTChecked;             
+                                 
+  bool mWaitingFor0RTTResponse;  
+                                 
+                                 
+                                 
+                                 
+                                 
+  int64_t mContentBytesWritten0RTT;
+  bool mEarlyDataNegotiated;  
+  nsCString mEarlyNegotiatedALPN;
+  bool mDid0RTTSpdy;
+
+  bool mFastOpen;
+  uint8_t mFastOpenStatus;
+
+  bool mForceSendDuringFastOpenPending;
+  bool mReceivedSocketWouldBlockDuringFastOpen;
+  bool mCheckNetworkStallsWithTFO;
+  PRIntervalTime mLastRequestBytesSentTime;
+
+ public:
+  void BootstrapTimings(TimingStruct times);
+
+ private:
+  TimingStruct mBootstrappedTimings;
+  bool mBootstrappedTimingsSet;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsHttpConnection, NS_HTTPCONNECTION_IID)
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

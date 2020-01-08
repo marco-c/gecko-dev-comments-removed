@@ -1,5 +1,5 @@
 #define NULL 0
 void f(void) {
-  char *str = NULL; 
+  char *str = NULL;  
   (void)str;
 }

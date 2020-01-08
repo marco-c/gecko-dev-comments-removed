@@ -37,15 +37,12 @@ namespace dom {
 
 
 class IDTracker {
-public:
+ public:
   typedef mozilla::dom::Element Element;
 
   IDTracker() = default;
 
-  ~IDTracker()
-  {
-    Unlink();
-  }
+  ~IDTracker() { Unlink(); }
 
   
 
@@ -89,16 +86,13 @@ public:
 
   void Traverse(nsCycleCollectionTraversalCallback* aCB);
 
-protected:
+ protected:
   
 
 
 
 
-  virtual void ElementChanged(Element* aFrom, Element* aTo)
-  {
-    mElement = aTo;
-  }
+  virtual void ElementChanged(Element* aFrom, Element* aTo) { mElement = aTo; }
 
   
 
@@ -110,40 +104,32 @@ protected:
 
 
 
-  void HaveNewDocumentOrShadowRoot(DocumentOrShadowRoot*,
-                                   bool aWatch,
+  void HaveNewDocumentOrShadowRoot(DocumentOrShadowRoot*, bool aWatch,
                                    const nsString& aRef);
 
-private:
-  static bool Observe(Element* aOldElement,
-                        Element* aNewElement, void* aData);
+ private:
+  static bool Observe(Element* aOldElement, Element* aNewElement, void* aData);
 
   class Notification : public nsISupports {
-  public:
+   public:
     virtual void SetTo(Element* aTo) = 0;
     virtual void Clear() { mTarget = nullptr; }
     virtual ~Notification() {}
-  protected:
-    explicit Notification(IDTracker* aTarget)
-      : mTarget(aTarget)
-    {
+
+   protected:
+    explicit Notification(IDTracker* aTarget) : mTarget(aTarget) {
       MOZ_ASSERT(aTarget, "Must have a target");
     }
     IDTracker* mTarget;
   };
 
-  class ChangeNotification : public mozilla::Runnable,
-                             public Notification
-  {
-  public:
-    ChangeNotification(IDTracker* aTarget,
-                       Element* aFrom,
-                       Element* aTo)
-      : mozilla::Runnable("IDTracker::ChangeNotification")
-      , Notification(aTarget)
-      , mFrom(aFrom)
-      , mTo(aTo)
-    {}
+  class ChangeNotification : public mozilla::Runnable, public Notification {
+   public:
+    ChangeNotification(IDTracker* aTarget, Element* aFrom, Element* aTo)
+        : mozilla::Runnable("IDTracker::ChangeNotification"),
+          Notification(aTarget),
+          mFrom(aFrom),
+          mTo(aTo) {}
 
     
     
@@ -156,11 +142,13 @@ private:
       return NS_OK;
     }
     virtual void SetTo(Element* aTo) override { mTo = aTo; }
-    virtual void Clear() override
-    {
-      Notification::Clear(); mFrom = nullptr; mTo = nullptr;
+    virtual void Clear() override {
+      Notification::Clear();
+      mFrom = nullptr;
+      mTo = nullptr;
     }
-  protected:
+
+   protected:
     virtual ~ChangeNotification() {}
 
     RefPtr<Element> mFrom;
@@ -168,13 +156,10 @@ private:
   };
   friend class ChangeNotification;
 
-  class DocumentLoadNotification : public Notification,
-                                   public nsIObserver
-  {
-  public:
+  class DocumentLoadNotification : public Notification, public nsIObserver {
+   public:
     DocumentLoadNotification(IDTracker* aTarget, const nsString& aRef)
-      : Notification(aTarget)
-    {
+        : Notification(aTarget) {
       if (!mTarget->IsPersistent()) {
         mRef = aRef;
       }
@@ -182,51 +167,45 @@ private:
 
     NS_DECL_ISUPPORTS
     NS_DECL_NSIOBSERVER
-  private:
+   private:
     virtual ~DocumentLoadNotification() {}
 
-    virtual void SetTo(Element* aTo) override { }
+    virtual void SetTo(Element* aTo) override {}
 
     nsString mRef;
   };
   friend class DocumentLoadNotification;
 
-  DocumentOrShadowRoot* GetWatchDocOrShadowRoot() const
-  {
+  DocumentOrShadowRoot* GetWatchDocOrShadowRoot() const {
     if (!mWatchDocumentOrShadowRoot) {
       return nullptr;
     }
     MOZ_ASSERT(mWatchDocumentOrShadowRoot->IsDocument() ||
                mWatchDocumentOrShadowRoot->IsShadowRoot());
-    if (ShadowRoot* shadow = ShadowRoot::FromNode(*mWatchDocumentOrShadowRoot)) {
+    if (ShadowRoot* shadow =
+            ShadowRoot::FromNode(*mWatchDocumentOrShadowRoot)) {
       return shadow;
     }
     return mWatchDocumentOrShadowRoot->AsDocument();
   }
 
   RefPtr<nsAtom> mWatchID;
-  nsCOMPtr<nsINode> mWatchDocumentOrShadowRoot; 
+  nsCOMPtr<nsINode>
+      mWatchDocumentOrShadowRoot;  
   RefPtr<Element> mElement;
   RefPtr<Notification> mPendingNotification;
   bool mReferencingImage = false;
 };
 
-inline void
-ImplCycleCollectionUnlink(IDTracker& aField)
-{
-  aField.Unlink();
-}
+inline void ImplCycleCollectionUnlink(IDTracker& aField) { aField.Unlink(); }
 
-inline void
-ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            IDTracker& aField,
-                            const char* aName,
-                            uint32_t aFlags = 0)
-{
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback, IDTracker& aField,
+    const char* aName, uint32_t aFlags = 0) {
   aField.Traverse(&aCallback);
 }
 
-} 
-} 
+}  
+}  
 
 #endif 

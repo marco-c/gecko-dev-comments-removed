@@ -22,27 +22,23 @@ using mozilla::intl::LocaleService;
 
 
 static bool gLocaleNumberGroupingEnabled;
-static const char LOCALE_NUMBER_GROUPING_PREF_STR[] = "dom.forms.number.grouping";
+static const char LOCALE_NUMBER_GROUPING_PREF_STR[] =
+    "dom.forms.number.grouping";
 
-static bool
-LocaleNumberGroupingIsEnabled()
-{
+static bool LocaleNumberGroupingIsEnabled() {
   static bool sInitialized = false;
 
   if (!sInitialized) {
     
     Preferences::AddBoolVarCache(&gLocaleNumberGroupingEnabled,
-                                 LOCALE_NUMBER_GROUPING_PREF_STR,
-                                 false);
+                                 LOCALE_NUMBER_GROUPING_PREF_STR, false);
     sInitialized = true;
   }
 
   return gLocaleNumberGroupingEnabled;
 }
 
-void
-ICUUtils::LanguageTagIterForContent::GetNext(nsACString& aBCP47LangTag)
-{
+void ICUUtils::LanguageTagIterForContent::GetNext(nsACString& aBCP47LangTag) {
   if (mCurrentFallbackIndex < 0) {
     mCurrentFallbackIndex = 0;
     
@@ -80,14 +76,12 @@ ICUUtils::LanguageTagIterForContent::GetNext(nsACString& aBCP47LangTag)
   
   
 
-  aBCP47LangTag.Truncate(); 
+  aBCP47LangTag.Truncate();  
 }
 
- bool
-ICUUtils::LocalizeNumber(double aValue,
-                         LanguageTagIterForContent& aLangTags,
-                         nsAString& aLocalizedValue)
-{
+ bool ICUUtils::LocalizeNumber(double aValue,
+                                           LanguageTagIterForContent& aLangTags,
+                                           nsAString& aLocalizedValue) {
   MOZ_ASSERT(aLangTags.IsAtStart(), "Don't call Next() before passing");
 
   static const int32_t kBufferSize = 256;
@@ -98,8 +92,8 @@ ICUUtils::LocalizeNumber(double aValue,
   aLangTags.GetNext(langTag);
   while (!langTag.IsEmpty()) {
     UErrorCode status = U_ZERO_ERROR;
-    AutoCloseUNumberFormat format(unum_open(UNUM_DECIMAL, nullptr, 0,
-                                            langTag.get(), nullptr, &status));
+    AutoCloseUNumberFormat format(
+        unum_open(UNUM_DECIMAL, nullptr, 0, langTag.get(), nullptr, &status));
     
     
     if (U_FAILURE(status)) {
@@ -114,9 +108,8 @@ ICUUtils::LocalizeNumber(double aValue,
     unum_setAttribute(format, UNUM_MAX_FRACTION_DIGITS, 16);
     int32_t length = unum_formatDouble(format, aValue, buffer, kBufferSize,
                                        nullptr, &status);
-    NS_ASSERTION(length < kBufferSize &&
-                 status != U_BUFFER_OVERFLOW_ERROR &&
-                 status != U_STRING_NOT_TERMINATED_WARNING,
+    NS_ASSERTION(length < kBufferSize && status != U_BUFFER_OVERFLOW_ERROR &&
+                     status != U_STRING_NOT_TERMINATED_WARNING,
                  "Need a bigger buffer?!");
     if (U_SUCCESS(status)) {
       ICUUtils::AssignUCharArrayToString(buffer, length, aLocalizedValue);
@@ -127,10 +120,8 @@ ICUUtils::LocalizeNumber(double aValue,
   return false;
 }
 
- double
-ICUUtils::ParseNumber(nsAString& aValue,
-                      LanguageTagIterForContent& aLangTags)
-{
+ double ICUUtils::ParseNumber(
+    nsAString& aValue, LanguageTagIterForContent& aLangTags) {
   MOZ_ASSERT(aLangTags.IsAtStart(), "Don't call Next() before passing");
 
   if (aValue.IsEmpty()) {
@@ -143,17 +134,17 @@ ICUUtils::ParseNumber(nsAString& aValue,
   aLangTags.GetNext(langTag);
   while (!langTag.IsEmpty()) {
     UErrorCode status = U_ZERO_ERROR;
-    AutoCloseUNumberFormat format(unum_open(UNUM_DECIMAL, nullptr, 0,
-                                            langTag.get(), nullptr, &status));
+    AutoCloseUNumberFormat format(
+        unum_open(UNUM_DECIMAL, nullptr, 0, langTag.get(), nullptr, &status));
     if (!LocaleNumberGroupingIsEnabled()) {
       unum_setAttribute(format.rwget(), UNUM_GROUPING_USED, UBool(0));
     }
     int32_t parsePos = 0;
     static_assert(sizeof(UChar) == 2 && sizeof(nsAString::char_type) == 2,
                   "Unexpected character size - the following cast is unsafe");
-    double val = unum_parseDouble(format,
-                                  (const UChar*)PromiseFlatString(aValue).get(),
-                                  length, &parsePos, &status);
+    double val =
+        unum_parseDouble(format, (const UChar*)PromiseFlatString(aValue).get(),
+                         length, &parsePos, &status);
     if (U_SUCCESS(status) && parsePos == (int32_t)length) {
       return val;
     }
@@ -162,11 +153,9 @@ ICUUtils::ParseNumber(nsAString& aValue,
   return std::numeric_limits<float>::quiet_NaN();
 }
 
- void
-ICUUtils::AssignUCharArrayToString(UChar* aICUString,
-                                   int32_t aLength,
-                                   nsAString& aMozString)
-{
+ void ICUUtils::AssignUCharArrayToString(UChar* aICUString,
+                                                     int32_t aLength,
+                                                     nsAString& aMozString) {
   
   
 
@@ -178,14 +167,12 @@ ICUUtils::AssignUCharArrayToString(UChar* aICUString,
   NS_ASSERTION((int32_t)aMozString.Length() == aLength, "Conversion failed");
 }
 
- nsresult
-ICUUtils::UErrorToNsResult(const UErrorCode aErrorCode)
-{
+ nsresult ICUUtils::UErrorToNsResult(const UErrorCode aErrorCode) {
   if (U_SUCCESS(aErrorCode)) {
     return NS_OK;
   }
 
-  switch(aErrorCode) {
+  switch (aErrorCode) {
     case U_ILLEGAL_ARGUMENT_ERROR:
       return NS_ERROR_INVALID_ARG;
 
@@ -283,4 +270,3 @@ ICUUtils::ToICUString(nsAString& aMozString, UnicodeString& aICUString)
 #endif
 
 #endif 
-

@@ -6,6 +6,7 @@
 
 
 
+
 #ifndef mozilla_ResultExtensions_h
 #define mozilla_ResultExtensions_h
 
@@ -18,15 +19,14 @@ namespace mozilla {
 
 
 template <>
-class MOZ_MUST_USE_TYPE GenericErrorResult<nsresult>
-{
+class MOZ_MUST_USE_TYPE GenericErrorResult<nsresult> {
   nsresult mErrorValue;
 
-  template<typename V, typename E2> friend class Result;
+  template <typename V, typename E2>
+  friend class Result;
 
-public:
-  explicit GenericErrorResult(nsresult aErrorValue) : mErrorValue(aErrorValue)
-  {
+ public:
+  explicit GenericErrorResult(nsresult aErrorValue) : mErrorValue(aErrorValue) {
     MOZ_ASSERT(NS_FAILED(aErrorValue));
   }
 
@@ -36,30 +36,26 @@ public:
 
 inline Result<Ok, nsresult> ToResult(PRStatus aValue);
 
-} 
+}  
 
 #include "mozilla/Result.h"
 
 namespace mozilla {
 
-inline Result<Ok, nsresult>
-ToResult(nsresult aValue)
-{
+inline Result<Ok, nsresult> ToResult(nsresult aValue) {
   if (NS_FAILED(aValue)) {
     return Err(aValue);
   }
   return Ok();
 }
 
-inline Result<Ok, nsresult>
-ToResult(PRStatus aValue)
-{
+inline Result<Ok, nsresult> ToResult(PRStatus aValue) {
   if (aValue == PR_SUCCESS) {
     return Ok();
   }
   return Err(NS_ERROR_FAILURE);
 }
 
-} 
+}  
 
-#endif 
+#endif  

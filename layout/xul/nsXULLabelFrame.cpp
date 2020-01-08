@@ -13,9 +13,7 @@
 
 using namespace mozilla;
 
-nsIFrame*
-NS_NewXULLabelFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewXULLabelFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
   nsXULLabelFrame* it = new (aPresShell) nsXULLabelFrame(aStyle);
   it->AddStateBits(NS_BLOCK_FORMATTING_CONTEXT_STATE_BITS);
   return it;
@@ -25,9 +23,7 @@ NS_IMPL_FRAMEARENA_HELPERS(nsXULLabelFrame)
 
 
 
-nsresult
-nsXULLabelFrame::RegUnregAccessKey(bool aDoReg)
-{
+nsresult nsXULLabelFrame::RegUnregAccessKey(bool aDoReg) {
   
   
   
@@ -37,10 +33,10 @@ nsXULLabelFrame::RegUnregAccessKey(bool aDoReg)
     return NS_OK;
 
   nsAutoString accessKey;
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey, accessKey);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::accesskey,
+                                 accessKey);
 
-  if (accessKey.IsEmpty())
-    return NS_OK;
+  if (accessKey.IsEmpty()) return NS_OK;
 
   
   
@@ -58,32 +54,26 @@ nsXULLabelFrame::RegUnregAccessKey(bool aDoReg)
 
 
 
-void
-nsXULLabelFrame::Init(nsIContent*       aContent,
-                      nsContainerFrame* aParent,
-                      nsIFrame*         aPrevInFlow)
-{
+void nsXULLabelFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                           nsIFrame* aPrevInFlow) {
   nsBlockFrame::Init(aContent, aParent, aPrevInFlow);
 
   
   RegUnregAccessKey(true);
 }
 
-void
-nsXULLabelFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
-{
+void nsXULLabelFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                  PostDestroyData& aPostDestroyData) {
   
   RegUnregAccessKey(false);
   nsBlockFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
-nsresult
-nsXULLabelFrame::AttributeChanged(int32_t aNameSpaceID,
-                                  nsAtom* aAttribute,
-                                  int32_t aModType)
-{
-  nsresult rv = nsBlockFrame::AttributeChanged(aNameSpaceID,
-                                               aAttribute, aModType);
+nsresult nsXULLabelFrame::AttributeChanged(int32_t aNameSpaceID,
+                                           nsAtom* aAttribute,
+                                           int32_t aModType) {
+  nsresult rv =
+      nsBlockFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 
   
   
@@ -97,9 +87,7 @@ nsXULLabelFrame::AttributeChanged(int32_t aNameSpaceID,
 
 
 #ifdef DEBUG_FRAME_DUMP
-nsresult
-nsXULLabelFrame::GetFrameName(nsAString& aResult) const
-{
+nsresult nsXULLabelFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(NS_LITERAL_STRING("XULLabel"), aResult);
 }
 #endif

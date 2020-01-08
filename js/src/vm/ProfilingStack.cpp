@@ -14,35 +14,33 @@
 
 using namespace js;
 
-ProfilingStack::~ProfilingStack()
-{
-    
-    
-    
-    MOZ_RELEASE_ASSERT(stackPointer == 0);
+ProfilingStack::~ProfilingStack() {
+  
+  
+  
+  MOZ_RELEASE_ASSERT(stackPointer == 0);
 
-    delete[] frames;
+  delete[] frames;
 }
 
-void
-ProfilingStack::ensureCapacitySlow()
-{
-    MOZ_ASSERT(stackPointer >= capacity);
-    const uint32_t kInitialCapacity = 128;
+void ProfilingStack::ensureCapacitySlow() {
+  MOZ_ASSERT(stackPointer >= capacity);
+  const uint32_t kInitialCapacity = 128;
 
-    uint32_t sp = stackPointer;
-    auto newCapacity = std::max(sp + 1,  capacity ? capacity * 2 : kInitialCapacity);
+  uint32_t sp = stackPointer;
+  auto newCapacity =
+      std::max(sp + 1, capacity ? capacity * 2 : kInitialCapacity);
 
-    auto* newFrames = new js::ProfilingStackFrame[newCapacity];
+  auto* newFrames = new js::ProfilingStackFrame[newCapacity];
 
-    
-    
-    for (auto i : mozilla::IntegerRange(capacity)) {
-        newFrames[i] = frames[i];
-    }
+  
+  
+  for (auto i : mozilla::IntegerRange(capacity)) {
+    newFrames[i] = frames[i];
+  }
 
-    js::ProfilingStackFrame* oldFrames = frames;
-    frames = newFrames;
-    capacity = newCapacity;
-    delete[] oldFrames;
+  js::ProfilingStackFrame* oldFrames = frames;
+  frames = newFrames;
+  capacity = newCapacity;
+  delete[] oldFrames;
 }

@@ -22,7 +22,7 @@ namespace mozilla {
 namespace dom {
 class SVGMatrix;
 class SVGTransform;
-} 
+}  
 
 
 
@@ -32,9 +32,7 @@ class SVGTransform;
 
 
 
-class DOMSVGTransformList final : public nsISupports,
-                                  public nsWrapperCache
-{
+class DOMSVGTransformList final : public nsISupports, public nsWrapperCache {
   friend class AutoChangeTransformListNotifier;
   friend class dom::SVGTransform;
 
@@ -43,32 +41,29 @@ class DOMSVGTransformList final : public nsISupports,
     
     
     if (mAList) {
-      ( IsAnimValList() ? mAList->mAnimVal : mAList->mBaseVal ) = nullptr;
+      (IsAnimValList() ? mAList->mAnimVal : mAList->mBaseVal) = nullptr;
     }
   }
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGTransformList)
 
-  DOMSVGTransformList(dom::SVGAnimatedTransformList *aAList,
-                      const SVGTransformList &aInternalList)
-    : mAList(aAList)
-  {
+  DOMSVGTransformList(dom::SVGAnimatedTransformList* aAList,
+                      const SVGTransformList& aInternalList)
+      : mAList(aAList) {
     
     
     
     
 
-    InternalListLengthWillChange(aInternalList.Length()); 
+    InternalListLengthWillChange(aInternalList.Length());  
   }
 
-  virtual JSObject* WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* cx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-  nsISupports* GetParentObject()
-  {
-    return static_cast<nsIContent*>(Element());
-  }
+  nsISupports* GetParentObject() { return static_cast<nsIContent*>(Element()); }
 
   
 
@@ -87,9 +82,7 @@ public:
 
 
 
-  bool IsAnimating() const {
-    return mAList->IsAnimating();
-  }
+  bool IsAnimating() const { return mAList->IsAnimating(); }
   
 
 
@@ -97,8 +90,7 @@ public:
     return mAList->mAnimVal && !mAList->IsAnimating();
   }
 
-  uint32_t NumberOfItems() const
-  {
+  uint32_t NumberOfItems() const {
     if (IsAnimValList()) {
       Element()->FlushAnimations();
     }
@@ -111,31 +103,24 @@ public:
                                               ErrorResult& error);
   already_AddRefed<dom::SVGTransform> IndexedGetter(uint32_t index, bool& found,
                                                     ErrorResult& error);
-  already_AddRefed<dom::SVGTransform> InsertItemBefore(dom::SVGTransform& newItem,
-                                                       uint32_t index,
-                                                       ErrorResult& error);
+  already_AddRefed<dom::SVGTransform> InsertItemBefore(
+      dom::SVGTransform& newItem, uint32_t index, ErrorResult& error);
   already_AddRefed<dom::SVGTransform> ReplaceItem(dom::SVGTransform& newItem,
                                                   uint32_t index,
                                                   ErrorResult& error);
   already_AddRefed<dom::SVGTransform> RemoveItem(uint32_t index,
                                                  ErrorResult& error);
   already_AddRefed<dom::SVGTransform> AppendItem(dom::SVGTransform& newItem,
-                                                 ErrorResult& error)
-  {
+                                                 ErrorResult& error) {
     return InsertItemBefore(newItem, LengthNoFlush(), error);
   }
-  already_AddRefed<dom::SVGTransform> CreateSVGTransformFromMatrix(dom::SVGMatrix& matrix);
+  already_AddRefed<dom::SVGTransform> CreateSVGTransformFromMatrix(
+      dom::SVGMatrix& matrix);
   already_AddRefed<dom::SVGTransform> Consolidate(ErrorResult& error);
-  uint32_t Length() const
-  {
-    return NumberOfItems();
-  }
+  uint32_t Length() const { return NumberOfItems(); }
 
-private:
-
-  nsSVGElement* Element() const {
-    return mAList->mElement;
-  }
+ private:
+  nsSVGElement* Element() const { return mAList->mElement; }
 
   
   bool IsAnimValList() const {
@@ -167,6 +152,6 @@ private:
   RefPtr<dom::SVGAnimatedTransformList> mAList;
 };
 
-} 
+}  
 
-#endif 
+#endif  

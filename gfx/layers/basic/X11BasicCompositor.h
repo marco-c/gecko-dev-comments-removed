@@ -17,13 +17,14 @@ namespace mozilla {
 namespace layers {
 
 
-class X11DataTextureSourceBasic : public DataTextureSource
-                                , public TextureSourceBasic
-{
-public:
-  X11DataTextureSourceBasic() {};
+class X11DataTextureSourceBasic : public DataTextureSource,
+                                  public TextureSourceBasic {
+ public:
+  X11DataTextureSourceBasic(){};
 
-  virtual const char* Name() const override { return "X11DataTextureSourceBasic"; }
+  virtual const char* Name() const override {
+    return "X11DataTextureSourceBasic";
+  }
 
   virtual bool Update(gfx::DataSourceSurface* aSurface,
                       nsIntRegion* aDestRegion = nullptr,
@@ -39,28 +40,29 @@ public:
 
   virtual gfx::SurfaceFormat GetFormat() const override;
 
-private:
+ private:
   
   RefPtr<mozilla::gfx::DrawTarget> mBufferDrawTarget;
 };
 
-class X11BasicCompositor : public BasicCompositor
-{
-public:
-  explicit X11BasicCompositor(CompositorBridgeParent* aParent, widget::CompositorWidget* aWidget)
-    : BasicCompositor(aParent, aWidget)
-  {}
+class X11BasicCompositor : public BasicCompositor {
+ public:
+  explicit X11BasicCompositor(CompositorBridgeParent* aParent,
+                              widget::CompositorWidget* aWidget)
+      : BasicCompositor(aParent, aWidget) {}
 
-  virtual already_AddRefed<DataTextureSource>
-  CreateDataTextureSource(TextureFlags aFlags = TextureFlags::NO_FLAGS) override;
+  virtual already_AddRefed<DataTextureSource> CreateDataTextureSource(
+      TextureFlags aFlags = TextureFlags::NO_FLAGS) override;
 
-  virtual already_AddRefed<DataTextureSource>
-  CreateDataTextureSourceAround(gfx::DataSourceSurface* aSurface) override { return nullptr; }
+  virtual already_AddRefed<DataTextureSource> CreateDataTextureSourceAround(
+      gfx::DataSourceSurface* aSurface) override {
+    return nullptr;
+  }
 
   virtual void EndFrame() override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

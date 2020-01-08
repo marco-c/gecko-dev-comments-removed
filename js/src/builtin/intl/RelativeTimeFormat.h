@@ -19,27 +19,27 @@ namespace js {
 
 class FreeOp;
 
-class RelativeTimeFormatObject : public NativeObject
-{
-  public:
-    static const Class class_;
+class RelativeTimeFormatObject : public NativeObject {
+ public:
+  static const Class class_;
 
-    static constexpr uint32_t INTERNALS_SLOT = 0;
-    static constexpr uint32_t URELATIVE_TIME_FORMAT_SLOT = 1;
-    static constexpr uint32_t SLOT_COUNT = 2;
+  static constexpr uint32_t INTERNALS_SLOT = 0;
+  static constexpr uint32_t URELATIVE_TIME_FORMAT_SLOT = 1;
+  static constexpr uint32_t SLOT_COUNT = 2;
 
-    static_assert(INTERNALS_SLOT == INTL_INTERNALS_OBJECT_SLOT,
-                  "INTERNALS_SLOT must match self-hosting define for internals object slot");
+  static_assert(INTERNALS_SLOT == INTL_INTERNALS_OBJECT_SLOT,
+                "INTERNALS_SLOT must match self-hosting define for internals "
+                "object slot");
 
-  private:
-    static const ClassOps classOps_;
+ private:
+  static const ClassOps classOps_;
 
-    static void finalize(FreeOp* fop, JSObject* obj);
+  static void finalize(FreeOp* fop, JSObject* obj);
 };
 
-extern JSObject*
-CreateRelativeTimeFormatPrototype(JSContext* cx, JS::Handle<JSObject*> Intl,
-                                  JS::Handle<GlobalObject*> global);
+extern JSObject* CreateRelativeTimeFormatPrototype(
+    JSContext* cx, JS::Handle<JSObject*> Intl,
+    JS::Handle<GlobalObject*> global);
 
 
 
@@ -49,8 +49,8 @@ CreateRelativeTimeFormatPrototype(JSContext* cx, JS::Handle<JSObject*> Intl,
 
 
 
-extern MOZ_MUST_USE bool
-intl_RelativeTimeFormat_availableLocales(JSContext* cx, unsigned argc, JS::Value* vp);
+extern MOZ_MUST_USE bool intl_RelativeTimeFormat_availableLocales(
+    JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
@@ -64,9 +64,9 @@ intl_RelativeTimeFormat_availableLocales(JSContext* cx, unsigned argc, JS::Value
 
 
 
-extern MOZ_MUST_USE bool
-intl_FormatRelativeTime(JSContext* cx, unsigned argc, JS::Value* vp);
+extern MOZ_MUST_USE bool intl_FormatRelativeTime(JSContext* cx, unsigned argc,
+                                                 JS::Value* vp);
 
-} 
+}  
 
 #endif 

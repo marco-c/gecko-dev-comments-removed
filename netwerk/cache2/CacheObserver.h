@@ -14,9 +14,7 @@
 namespace mozilla {
 namespace net {
 
-class CacheObserver : public nsIObserver
-                    , public nsSupportsWeakReference
-{
+class CacheObserver : public nsIObserver, public nsSupportsWeakReference {
   virtual ~CacheObserver() = default;
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -27,55 +25,62 @@ class CacheObserver : public nsIObserver
   static CacheObserver* Self() { return sSelf; }
 
   
-  static bool UseDiskCache()
-    { return sUseDiskCache; }
-  static bool UseMemoryCache()
-    { return sUseMemoryCache; }
-  static uint32_t MetadataMemoryLimit() 
-    { return sMetadataMemoryLimit << 10; }
-  static uint32_t MemoryCacheCapacity(); 
-  static uint32_t DiskCacheCapacity() 
-    { return sDiskCacheCapacity << 10; }
-  static void SetDiskCacheCapacity(uint32_t); 
-  static uint32_t DiskFreeSpaceSoftLimit() 
-    { return sDiskFreeSpaceSoftLimit << 10; }
-  static uint32_t DiskFreeSpaceHardLimit() 
-    { return sDiskFreeSpaceHardLimit << 10; }
-  static bool SmartCacheSizeEnabled()
-    { return sSmartCacheSizeEnabled; }
-  static uint32_t PreloadChunkCount()
-    { return sPreloadChunkCount; }
-  static uint32_t MaxMemoryEntrySize() 
-    { return sMaxMemoryEntrySize << 10; }
-  static uint32_t MaxDiskEntrySize() 
-    { return sMaxDiskEntrySize << 10; }
-  static uint32_t MaxDiskChunksMemoryUsage(bool aPriority) 
-    { return aPriority ? sMaxDiskPriorityChunksMemoryUsage << 10
-                       : sMaxDiskChunksMemoryUsage << 10; }
-  static uint32_t CompressionLevel()
-    { return sCompressionLevel; }
-  static uint32_t HalfLifeSeconds()
-    { return sHalfLifeHours * 60.0F * 60.0F; }
-  static bool ClearCacheOnShutdown()
-    { return sSanitizeOnShutdown && sClearCacheOnShutdown; }
-  static bool CacheFSReported()
-    { return sCacheFSReported; }
+  static bool UseDiskCache() { return sUseDiskCache; }
+  static bool UseMemoryCache() { return sUseMemoryCache; }
+  static uint32_t MetadataMemoryLimit()  
+  {
+    return sMetadataMemoryLimit << 10;
+  }
+  static uint32_t MemoryCacheCapacity();  
+  static uint32_t DiskCacheCapacity()     
+  {
+    return sDiskCacheCapacity << 10;
+  }
+  static void SetDiskCacheCapacity(uint32_t);  
+  static uint32_t DiskFreeSpaceSoftLimit()     
+  {
+    return sDiskFreeSpaceSoftLimit << 10;
+  }
+  static uint32_t DiskFreeSpaceHardLimit()  
+  {
+    return sDiskFreeSpaceHardLimit << 10;
+  }
+  static bool SmartCacheSizeEnabled() { return sSmartCacheSizeEnabled; }
+  static uint32_t PreloadChunkCount() { return sPreloadChunkCount; }
+  static uint32_t MaxMemoryEntrySize()  
+  {
+    return sMaxMemoryEntrySize << 10;
+  }
+  static uint32_t MaxDiskEntrySize()  
+  {
+    return sMaxDiskEntrySize << 10;
+  }
+  static uint32_t MaxDiskChunksMemoryUsage(bool aPriority)  
+  {
+    return aPriority ? sMaxDiskPriorityChunksMemoryUsage << 10
+                     : sMaxDiskChunksMemoryUsage << 10;
+  }
+  static uint32_t CompressionLevel() { return sCompressionLevel; }
+  static uint32_t HalfLifeSeconds() { return sHalfLifeHours * 60.0F * 60.0F; }
+  static bool ClearCacheOnShutdown() {
+    return sSanitizeOnShutdown && sClearCacheOnShutdown;
+  }
+  static bool CacheFSReported() { return sCacheFSReported; }
   static void SetCacheFSReported();
-  static bool HashStatsReported()
-    { return sHashStatsReported; }
+  static bool HashStatsReported() { return sHashStatsReported; }
   static void SetHashStatsReported();
-  static void ParentDirOverride(nsIFile ** aDir);
+  static void ParentDirOverride(nsIFile** aDir);
 
   static bool EntryIsTooBig(int64_t aSize, bool aUsingDisk);
 
-  static uint32_t MaxShutdownIOLag()
-    { return sMaxShutdownIOLag; }
+  static uint32_t MaxShutdownIOLag() { return sMaxShutdownIOLag; }
   static bool IsPastShutdownIOLag();
 
-  static bool ShuttingDown()
-    { return sShutdownDemandedTime != PR_INTERVAL_NO_TIMEOUT; }
+  static bool ShuttingDown() {
+    return sShutdownDemandedTime != PR_INTERVAL_NO_TIMEOUT;
+  }
 
-private:
+ private:
   static CacheObserver* sSelf;
 
   void StoreDiskCacheCapacity();
@@ -110,7 +115,7 @@ private:
   nsCOMPtr<nsIFile> mCacheParentDirectoryOverride;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

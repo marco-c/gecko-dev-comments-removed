@@ -26,55 +26,38 @@ namespace widget {
 
 struct MSGResult;
 
-class IMEContext final
-{
-public:
-  IMEContext()
-    : mWnd(nullptr)
-    , mIMC(nullptr)
-  {
-  }
+class IMEContext final {
+ public:
+  IMEContext() : mWnd(nullptr), mIMC(nullptr) {}
 
   explicit IMEContext(HWND aWnd);
   explicit IMEContext(nsWindowBase* aWindowBase);
 
-  ~IMEContext()
-  {
-    Clear();
-  }
+  ~IMEContext() { Clear(); }
 
-  HIMC get() const
-  {
-    return mIMC;
-  }
+  HIMC get() const { return mIMC; }
 
   void Init(HWND aWnd);
   void Init(nsWindowBase* aWindowBase);
   void Clear();
 
-  bool IsValid() const
-  {
-    return !!mIMC;
-  }
+  bool IsValid() const { return !!mIMC; }
 
-  void SetOpenState(bool aOpen) const
-  {
+  void SetOpenState(bool aOpen) const {
     if (!mIMC) {
       return;
     }
     ::ImmSetOpenStatus(mIMC, aOpen);
   }
 
-  bool GetOpenState() const
-  {
+  bool GetOpenState() const {
     if (!mIMC) {
       return false;
     }
     return (::ImmGetOpenStatus(mIMC) != FALSE);
   }
 
-  bool AssociateDefaultContext()
-  {
+  bool AssociateDefaultContext() {
     
     if (mIMC) {
       return false;
@@ -86,8 +69,7 @@ public:
     return (mIMC != nullptr);
   }
 
-  bool Disassociate()
-  {
+  bool Disassociate() {
     if (!mIMC) {
       return false;
     }
@@ -99,32 +81,23 @@ public:
     return true;
   }
 
-protected:
-  IMEContext(const IMEContext& aOther)
-  {
-    MOZ_CRASH("Don't copy IMEContext");
-  }
+ protected:
+  IMEContext(const IMEContext& aOther) { MOZ_CRASH("Don't copy IMEContext"); }
 
   HWND mWnd;
   HIMC mIMC;
 };
 
-class IMMHandler final
-{
-public:
+class IMMHandler final {
+ public:
   static void Initialize();
   static void Terminate();
 
   
-  static bool ProcessMessage(nsWindow* aWindow, UINT msg,
-                             WPARAM& wParam, LPARAM& lParam,
-                             MSGResult& aResult);
-  static bool IsComposing()
-  {
-    return IsComposingOnOurEditor();
-  }
-  static bool IsComposingOn(nsWindow* aWindow)
-  {
+  static bool ProcessMessage(nsWindow* aWindow, UINT msg, WPARAM& wParam,
+                             LPARAM& lParam, MSGResult& aResult);
+  static bool IsComposing() { return IsComposingOnOurEditor(); }
+  static bool IsComposingOn(nsWindow* aWindow) {
     return IsComposing() && IsComposingWindow(aWindow);
   }
 
@@ -157,8 +130,8 @@ public:
   static void DefaultProcOfPluginEvent(nsWindow* aWindow,
                                        const NPEvent* aEvent);
 
-#define DECL_IS_IME_ACTIVE(aReadableName)                                      \
-  static bool Is ## aReadableName ## Active();                                 \
+#define DECL_IS_IME_ACTIVE(aReadableName) \
+  static bool Is##aReadableName##Active();
 
   
   DECL_IS_IME_ACTIVE(ATOK2006)
@@ -178,7 +151,7 @@ public:
 
   static bool IsActiveIMEInBlockList();
 
-protected:
+ protected:
   static void EnsureHandlerInstance();
 
   static bool IsComposingOnOurEditor();
@@ -198,13 +171,11 @@ protected:
 
   static bool IsTopLevelWindowOfComposition(nsWindow* aWindow);
 
-  static bool ProcessInputLangChangeMessage(nsWindow* aWindow,
-                                              WPARAM wParam,
-                                              LPARAM lParam,
-                                              MSGResult& aResult);
+  static bool ProcessInputLangChangeMessage(nsWindow* aWindow, WPARAM wParam,
+                                            LPARAM lParam, MSGResult& aResult);
   static bool ProcessMessageForPlugin(nsWindow* aWindow, UINT msg,
-                                        WPARAM &wParam, LPARAM &lParam,
-                                        bool &aRet, MSGResult& aResult);
+                                      WPARAM& wParam, LPARAM& lParam,
+                                      bool& aRet, MSGResult& aResult);
 
   IMMHandler();
   ~IMMHandler();
@@ -215,8 +186,8 @@ protected:
                              MSGResult& aResult);
 
   bool OnIMEStartComposition(nsWindow* aWindow, MSGResult& aResult);
-  void OnIMEStartCompositionOnPlugin(nsWindow* aWindow,
-                                     WPARAM wParam, LPARAM lParam);
+  void OnIMEStartCompositionOnPlugin(nsWindow* aWindow, WPARAM wParam,
+                                     LPARAM lParam);
   bool OnIMEComposition(nsWindow* aWindow, WPARAM wParam, LPARAM lParam,
                         MSGResult& aResult);
   void OnIMECompositionOnPlugin(nsWindow* aWindow, WPARAM wParam,
@@ -241,9 +212,8 @@ protected:
                         MSGResult& aResult);
   static bool OnIMESetContext(nsWindow* aWindow, WPARAM wParam, LPARAM lParam,
                               MSGResult& aResult);
-  static bool OnIMESetContextOnPlugin(nsWindow* aWindow,
-                                      WPARAM wParam, LPARAM lParam,
-                                      MSGResult& aResult);
+  static bool OnIMESetContextOnPlugin(nsWindow* aWindow, WPARAM wParam,
+                                      LPARAM lParam, MSGResult& aResult);
   static bool OnIMECompositionFull(nsWindow* aWindow, MSGResult& aResult);
   static bool OnIMENotify(nsWindow* aWindow, WPARAM wParam, LPARAM lParam,
                           MSGResult& aResult);
@@ -251,19 +221,17 @@ protected:
                           MSGResult& aResult);
 
   
-  void HandleStartComposition(nsWindow* aWindow,
-                              const IMEContext& aContext);
-  bool HandleComposition(nsWindow* aWindow,
-                         const IMEContext& aContext,
+  void HandleStartComposition(nsWindow* aWindow, const IMEContext& aContext);
+  bool HandleComposition(nsWindow* aWindow, const IMEContext& aContext,
                          LPARAM lParam);
   
   
   void HandleEndComposition(nsWindow* aWindow,
                             const nsAString* aCommitString = nullptr);
-  bool HandleReconvert(nsWindow* aWindow, LPARAM lParam, LRESULT *oResult);
+  bool HandleReconvert(nsWindow* aWindow, LPARAM lParam, LRESULT* oResult);
   bool HandleQueryCharPosition(nsWindow* aWindow, LPARAM lParam,
-                                 LRESULT *oResult);
-  bool HandleDocumentFeed(nsWindow* aWindow, LPARAM lParam, LRESULT *oResult);
+                               LRESULT* oResult);
+  bool HandleDocumentFeed(nsWindow* aWindow, LPARAM lParam, LRESULT* oResult);
 
   
 
@@ -296,12 +264,10 @@ protected:
                           nsIWidget* aNewOriginWidget,
                           mozilla::LayoutDeviceIntRect& aOutRect);
 
-  bool ConvertToANSIString(const nsString& aStr,
-                             UINT aCodePage,
-                             nsACString& aANSIStr);
+  bool ConvertToANSIString(const nsString& aStr, UINT aCodePage,
+                           nsACString& aANSIStr);
 
-  bool SetIMERelatedWindowsPos(nsWindow* aWindow,
-                               const IMEContext& aContext);
+  bool SetIMERelatedWindowsPos(nsWindow* aWindow, const IMEContext& aContext);
   void SetIMERelatedWindowsPosOnPlugin(nsWindow* aWindow,
                                        const IMEContext& aContext);
   
@@ -322,10 +288,9 @@ protected:
 
 
   bool GetCharacterRectOfSelectedTextAt(
-         nsWindow* aWindow,
-         uint32_t aOffset,
-         mozilla::LayoutDeviceIntRect& aCharRect,
-         mozilla::WritingMode* aWritingMode = nullptr);
+      nsWindow* aWindow, uint32_t aOffset,
+      mozilla::LayoutDeviceIntRect& aCharRect,
+      mozilla::WritingMode* aWritingMode = nullptr);
   
 
 
@@ -337,11 +302,9 @@ protected:
 
 
 
-  bool GetCaretRect(nsWindow* aWindow,
-                    mozilla::LayoutDeviceIntRect& aCaretRect,
+  bool GetCaretRect(nsWindow* aWindow, mozilla::LayoutDeviceIntRect& aCaretRect,
                     mozilla::WritingMode* aWritingMode = nullptr);
-  void GetCompositionString(const IMEContext& aContext,
-                            DWORD aIndex,
+  void GetCompositionString(const IMEContext& aContext, DWORD aIndex,
                             nsAString& aCompositionString) const;
 
   
@@ -349,8 +312,7 @@ protected:
 
 
 
-  void AdjustCompositionFont(nsWindow* aWindow,
-                             const IMEContext& aContext,
+  void AdjustCompositionFont(nsWindow* aWindow, const IMEContext& aContext,
                              const mozilla::WritingMode& aWritingMode,
                              bool aForceUpdate = false);
 
@@ -360,9 +322,8 @@ protected:
 
 
   static void MaybeAdjustCompositionFont(
-                nsWindow* aWindow,
-                const mozilla::WritingMode& aWritingMode,
-                bool aForceUpdate = false);
+      nsWindow* aWindow, const mozilla::WritingMode& aWritingMode,
+      bool aForceUpdate = false);
 
   
 
@@ -376,7 +337,7 @@ protected:
 
 
 
-  bool GetTargetClauseRange(uint32_t *aOffset, uint32_t *aLength = nullptr);
+  bool GetTargetClauseRange(uint32_t* aOffset, uint32_t* aLength = nullptr);
 
   
 
@@ -410,23 +371,15 @@ protected:
 
   nsTArray<MSG> mPassedIMEChar;
 
-  bool IsIMECharRecordsEmpty()
-  {
-    return mPassedIMEChar.IsEmpty();
-  }
-  void ResetIMECharRecords()
-  {
-    mPassedIMEChar.Clear();
-  }
-  void DequeueIMECharRecords(WPARAM &wParam, LPARAM &lParam)
-  {
+  bool IsIMECharRecordsEmpty() { return mPassedIMEChar.IsEmpty(); }
+  void ResetIMECharRecords() { mPassedIMEChar.Clear(); }
+  void DequeueIMECharRecords(WPARAM& wParam, LPARAM& lParam) {
     MSG msg = mPassedIMEChar.ElementAt(0);
     wParam = msg.wParam;
     lParam = msg.lParam;
     mPassedIMEChar.RemoveElementAt(0);
   }
-  void EnqueueIMECharRecords(WPARAM wParam, LPARAM lParam)
-  {
+  void EnqueueIMECharRecords(WPARAM wParam, LPARAM lParam) {
     MSG msg;
     msg.wParam = wParam;
     msg.lParam = lParam;
@@ -437,28 +390,22 @@ protected:
 
   nsWindow* mComposingWindow;
   RefPtr<TextEventDispatcher> mDispatcher;
-  nsString  mCompositionString;
+  nsString mCompositionString;
   InfallibleTArray<uint32_t> mClauseArray;
   InfallibleTArray<uint8_t> mAttributeArray;
 
   int32_t mCursorPosition;
   uint32_t mCompositionStart;
 
-  struct Selection
-  {
+  struct Selection {
     nsString mString;
     uint32_t mOffset;
     mozilla::WritingMode mWritingMode;
     bool mIsValid;
 
-    Selection()
-      : mOffset(UINT32_MAX)
-      , mIsValid(false)
-    {
-    }
+    Selection() : mOffset(UINT32_MAX), mIsValid(false) {}
 
-    void Clear()
-    {
+    void Clear() {
       mOffset = UINT32_MAX;
       mIsValid = false;
     }
@@ -469,17 +416,17 @@ protected:
     bool Update(const IMENotification& aIMENotification);
     bool Init(nsWindow* aWindow);
     bool EnsureValidSelection(nsWindow* aWindow);
-  private:
+
+   private:
     Selection(const Selection& aOther) = delete;
-    void operator =(const Selection& aOther) = delete;
+    void operator=(const Selection& aOther) = delete;
   };
   
   
   
   Selection mSelection;
 
-  Selection& GetSelection()
-  {
+  Selection& GetSelection() {
     
     
     if (sHasFocus) {
@@ -507,7 +454,7 @@ protected:
   static bool sNativeCaretIsCreatedForPlugin;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

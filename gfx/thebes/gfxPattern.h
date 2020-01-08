@@ -17,59 +17,59 @@
 
 typedef struct _cairo_pattern cairo_pattern_t;
 
+class gfxPattern final {
+  NS_INLINE_DECL_REFCOUNTING(gfxPattern)
 
-class gfxPattern final{
-    NS_INLINE_DECL_REFCOUNTING(gfxPattern)
+ public:
+  explicit gfxPattern(const mozilla::gfx::Color &aColor);
+  
+  gfxPattern(gfxFloat x0, gfxFloat y0, gfxFloat x1, gfxFloat y1);  
+  gfxPattern(gfxFloat cx0, gfxFloat cy0, gfxFloat radius0, gfxFloat cx1,
+             gfxFloat cy1, gfxFloat radius1);  
+  gfxPattern(mozilla::gfx::SourceSurface *aSurface,
+             const mozilla::gfx::Matrix &aPatternToUserSpace);
 
-public:
-    explicit gfxPattern(const mozilla::gfx::Color& aColor);
-    
-    gfxPattern(gfxFloat x0, gfxFloat y0, gfxFloat x1, gfxFloat y1); 
-    gfxPattern(gfxFloat cx0, gfxFloat cy0, gfxFloat radius0,
-               gfxFloat cx1, gfxFloat cy1, gfxFloat radius1); 
-    gfxPattern(mozilla::gfx::SourceSurface *aSurface,
-               const mozilla::gfx::Matrix &aPatternToUserSpace);
+  void AddColorStop(gfxFloat offset, const mozilla::gfx::Color &c);
+  void SetColorStops(mozilla::gfx::GradientStops *aStops);
 
-    void AddColorStop(gfxFloat offset, const mozilla::gfx::Color& c);
-    void SetColorStops(mozilla::gfx::GradientStops* aStops);
+  
+  
+  
+  void CacheColorStops(const mozilla::gfx::DrawTarget *aDT);
 
-    
-    
-    
-    void CacheColorStops(const mozilla::gfx::DrawTarget *aDT);
+  void SetMatrix(const gfxMatrix &matrix);
+  gfxMatrix GetMatrix() const;
+  gfxMatrix GetInverseMatrix() const;
 
-    void SetMatrix(const gfxMatrix& matrix);
-    gfxMatrix GetMatrix() const;
-    gfxMatrix GetInverseMatrix() const;
-
-    
-
+  
 
 
 
-    mozilla::gfx::Pattern *GetPattern(const mozilla::gfx::DrawTarget *aTarget,
-                                      const mozilla::gfx::Matrix *aOriginalUserToDevice = nullptr);
-    bool IsOpaque();
 
-    
-    void SetExtend(mozilla::gfx::ExtendMode aExtend);
+  mozilla::gfx::Pattern *GetPattern(
+      const mozilla::gfx::DrawTarget *aTarget,
+      const mozilla::gfx::Matrix *aOriginalUserToDevice = nullptr);
+  bool IsOpaque();
 
-    void SetSamplingFilter(mozilla::gfx::SamplingFilter aSamplingFilter);
-    mozilla::gfx::SamplingFilter SamplingFilter() const;
+  
+  void SetExtend(mozilla::gfx::ExtendMode aExtend);
 
-    
-    bool GetSolidColor(mozilla::gfx::Color& aColorOut);
+  void SetSamplingFilter(mozilla::gfx::SamplingFilter aSamplingFilter);
+  mozilla::gfx::SamplingFilter SamplingFilter() const;
 
-private:
-    
-    ~gfxPattern() {}
+  
+  bool GetSolidColor(mozilla::gfx::Color &aColorOut);
 
-    mozilla::gfx::GeneralPattern mGfxPattern;
-    RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
-    mozilla::gfx::Matrix mPatternToUserSpace;
-    RefPtr<mozilla::gfx::GradientStops> mStops;
-    nsTArray<mozilla::gfx::GradientStop> mStopsList;
-    mozilla::gfx::ExtendMode mExtend;
+ private:
+  
+  ~gfxPattern() {}
+
+  mozilla::gfx::GeneralPattern mGfxPattern;
+  RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
+  mozilla::gfx::Matrix mPatternToUserSpace;
+  RefPtr<mozilla::gfx::GradientStops> mStops;
+  nsTArray<mozilla::gfx::GradientStop> mStopsList;
+  mozilla::gfx::ExtendMode mExtend;
 };
 
 #endif 

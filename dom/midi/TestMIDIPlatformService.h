@@ -22,7 +22,7 @@ class MIDIPortInterface;
 
 
 class TestMIDIPlatformService : public MIDIPlatformService {
-public:
+ public:
   TestMIDIPlatformService();
   virtual void Init() override;
   virtual void Open(MIDIPortParent* aPort) override;
@@ -33,7 +33,8 @@ public:
   
   
   void ProcessMessages(const nsAString& aPort);
-private:
+
+ private:
   virtual ~TestMIDIPlatformService();
   
   
@@ -55,7 +56,7 @@ private:
   bool mIsInitialized;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

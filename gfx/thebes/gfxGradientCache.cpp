@@ -25,25 +25,23 @@ struct GradientCacheKey : public PLDHashEntryHdr {
   ExtendMode mExtend;
   BackendType mBackendType;
 
-  GradientCacheKey(const nsTArray<GradientStop>& aStops, ExtendMode aExtend, BackendType aBackendType)
-    : mStops(aStops), mExtend(aExtend), mBackendType(aBackendType)
-  { }
+  GradientCacheKey(const nsTArray<GradientStop>& aStops, ExtendMode aExtend,
+                   BackendType aBackendType)
+      : mStops(aStops), mExtend(aExtend), mBackendType(aBackendType) {}
 
   explicit GradientCacheKey(const GradientCacheKey* aOther)
-    : mStops(aOther->mStops), mExtend(aOther->mExtend), mBackendType(aOther->mBackendType)
-  { }
+      : mStops(aOther->mStops),
+        mExtend(aOther->mExtend),
+        mBackendType(aOther->mBackendType) {}
 
   GradientCacheKey(GradientCacheKey&& aOther) = default;
 
-  union FloatUint32
-  {
-    float    f;
+  union FloatUint32 {
+    float f;
     uint32_t u;
   };
 
-  static PLDHashNumber
-  HashKey(const KeyTypePointer aKey)
-  {
+  static PLDHashNumber HashKey(const KeyTypePointer aKey) {
     PLDHashNumber hash = 0;
     FloatUint32 convert;
     hash = AddToHash(hash, int(aKey->mBackendType));
@@ -51,14 +49,14 @@ struct GradientCacheKey : public PLDHashEntryHdr {
     for (uint32_t i = 0; i < aKey->mStops.Length(); i++) {
       hash = AddToHash(hash, aKey->mStops[i].color.ToABGR());
       
+      
       convert.f = aKey->mStops[i].offset;
       hash = AddToHash(hash, convert.f ? convert.u : 0);
     }
     return hash;
   }
 
-  bool KeyEquals(KeyTypePointer aKey) const
-  {
+  bool KeyEquals(KeyTypePointer aKey) const {
     bool sameStops = true;
     if (aKey->mStops.Length() != mStops.Length()) {
       sameStops = false;
@@ -72,14 +70,10 @@ struct GradientCacheKey : public PLDHashEntryHdr {
       }
     }
 
-    return sameStops &&
-           (aKey->mBackendType == mBackendType) &&
+    return sameStops && (aKey->mBackendType == mBackendType) &&
            (aKey->mExtend == mExtend);
   }
-  static KeyTypePointer KeyToPointer(KeyType aKey)
-  {
-    return &aKey;
-  }
+  static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
 };
 
 
@@ -88,15 +82,11 @@ struct GradientCacheKey : public PLDHashEntryHdr {
 
 struct GradientCacheData {
   GradientCacheData(GradientStops* aStops, GradientCacheKey&& aKey)
-    : mStops(aStops),
-      mKey(std::move(aKey))
-  {}
+      : mStops(aStops), mKey(std::move(aKey)) {}
 
   GradientCacheData(GradientCacheData&& aOther) = default;
 
-  nsExpirationState *GetExpirationState() {
-    return &mExpirationState;
-  }
+  nsExpirationState* GetExpirationState() { return &mExpirationState; }
 
   nsExpirationState mExpirationState;
   const RefPtr<GradientStops> mStops;
@@ -117,72 +107,67 @@ struct GradientCacheData {
 
 
 
-class GradientCache final : public nsExpirationTracker<GradientCacheData,4>
-{
-  public:
-    GradientCache()
-      : nsExpirationTracker<GradientCacheData,4>(MAX_GENERATION_MS,
-                                                 "GradientCache",
-                                                 SystemGroup::EventTargetFor(TaskCategory::Other))
-    {
-      srand(time(nullptr));
-    }
+class GradientCache final : public nsExpirationTracker<GradientCacheData, 4> {
+ public:
+  GradientCache()
+      : nsExpirationTracker<GradientCacheData, 4>(
+            MAX_GENERATION_MS, "GradientCache",
+            SystemGroup::EventTargetFor(TaskCategory::Other)) {
+    srand(time(nullptr));
+  }
 
-    virtual void NotifyExpired(GradientCacheData* aObject) override
-    {
-      
-      RemoveObject(aObject);
-      mHashEntries.Remove(aObject->mKey);
-    }
+  virtual void NotifyExpired(GradientCacheData* aObject) override {
+    
+    RemoveObject(aObject);
+    mHashEntries.Remove(aObject->mKey);
+  }
 
-    GradientCacheData* Lookup(const nsTArray<GradientStop>& aStops, ExtendMode aExtend, BackendType aBackendType)
-    {
-      GradientCacheData* gradient =
+  GradientCacheData* Lookup(const nsTArray<GradientStop>& aStops,
+                            ExtendMode aExtend, BackendType aBackendType) {
+    GradientCacheData* gradient =
         mHashEntries.Get(GradientCacheKey(aStops, aExtend, aBackendType));
 
-      if (gradient) {
-        MarkUsed(gradient);
-      }
-
-      return gradient;
+    if (gradient) {
+      MarkUsed(gradient);
     }
 
-    
-    
-    bool RegisterEntry(GradientCacheData* aValue)
-    {
-      nsresult rv = AddObject(aValue);
-      if (NS_FAILED(rv)) {
-        
-        
-        
-        
-        
-        return false;
-      }
-      mHashEntries.Put(aValue->mKey, aValue);
-      return true;
+    return gradient;
+  }
+
+  
+  
+  bool RegisterEntry(GradientCacheData* aValue) {
+    nsresult rv = AddObject(aValue);
+    if (NS_FAILED(rv)) {
+      
+      
+      
+      
+      
+      return false;
     }
+    mHashEntries.Put(aValue->mKey, aValue);
+    return true;
+  }
 
-  protected:
-    static const uint32_t MAX_GENERATION_MS = 10000;
-    
+ protected:
+  static const uint32_t MAX_GENERATION_MS = 10000;
+  
 
 
 
-    nsClassHashtable<GradientCacheKey, GradientCacheData> mHashEntries;
+  nsClassHashtable<GradientCacheKey, GradientCacheData> mHashEntries;
 };
 
 static GradientCache* gGradientCache = nullptr;
 
-GradientStops *
-gfxGradientCache::GetGradientStops(const DrawTarget *aDT, nsTArray<GradientStop>& aStops, ExtendMode aExtend)
-{
+GradientStops* gfxGradientCache::GetGradientStops(
+    const DrawTarget* aDT, nsTArray<GradientStop>& aStops, ExtendMode aExtend) {
   if (!gGradientCache) {
     gGradientCache = new GradientCache();
   }
   GradientCacheData* cached =
-    gGradientCache->Lookup(aStops, aExtend, aDT->GetBackendType());
+      gGradientCache->Lookup(aStops, aExtend, aDT->GetBackendType());
   if (cached && cached->mStops) {
     if (!cached->mStops->IsValid()) {
       gGradientCache->NotifyExpired(cached);
@@ -194,11 +179,11 @@ gfxGradientCache::GetGradientStops(const DrawTarget *aDT, nsTArray<GradientStop>
   return nullptr;
 }
 
-already_AddRefed<GradientStops>
-gfxGradientCache::GetOrCreateGradientStops(const DrawTarget *aDT, nsTArray<GradientStop>& aStops, ExtendMode aExtend)
-{
+already_AddRefed<GradientStops> gfxGradientCache::GetOrCreateGradientStops(
+    const DrawTarget* aDT, nsTArray<GradientStop>& aStops, ExtendMode aExtend) {
   if (aDT->IsRecording()) {
-    return aDT->CreateGradientStops(aStops.Elements(), aStops.Length(), aExtend);
+    return aDT->CreateGradientStops(aStops.Elements(), aStops.Length(),
+                                    aExtend);
   }
 
   RefPtr<GradientStops> gs = GetGradientStops(aDT, aStops, aExtend);
@@ -207,9 +192,8 @@ gfxGradientCache::GetOrCreateGradientStops(const DrawTarget *aDT, nsTArray<Gradi
     if (!gs) {
       return nullptr;
     }
-    GradientCacheData *cached =
-      new GradientCacheData(gs, GradientCacheKey(aStops, aExtend,
-                                                 aDT->GetBackendType()));
+    GradientCacheData* cached = new GradientCacheData(
+        gs, GradientCacheKey(aStops, aExtend, aDT->GetBackendType()));
     if (!gGradientCache->RegisterEntry(cached)) {
       delete cached;
     }
@@ -217,20 +201,16 @@ gfxGradientCache::GetOrCreateGradientStops(const DrawTarget *aDT, nsTArray<Gradi
   return gs.forget();
 }
 
-void
-gfxGradientCache::PurgeAllCaches()
-{
+void gfxGradientCache::PurgeAllCaches() {
   if (gGradientCache) {
     gGradientCache->AgeAllGenerations();
   }
 }
 
-void
-gfxGradientCache::Shutdown()
-{
+void gfxGradientCache::Shutdown() {
   delete gGradientCache;
   gGradientCache = nullptr;
 }
 
-} 
-} 
+}  
+}  

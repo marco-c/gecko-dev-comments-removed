@@ -53,9 +53,9 @@
 #include <unistd.h>     
 #include <semaphore.h>
 #ifdef __GLIBC__
-#include <execinfo.h>   
-#endif  
-#include <strings.h>    
+#include <execinfo.h>  
+#endif                 
+#include <strings.h>   
 #include <errno.h>
 #include <stdarg.h>
 
@@ -69,21 +69,11 @@
 
 using namespace mozilla;
 
- int
-Thread::GetCurrentId()
-{
-  return gettid();
-}
+ int Thread::GetCurrentId() { return gettid(); }
 
-void*
-GetStackTop(void* aGuess)
-{
-  return aGuess;
-}
+void* GetStackTop(void* aGuess) { return aGuess; }
 
-static void
-PopulateRegsFromContext(Registers& aRegs, ucontext_t* aContext)
-{
+static void PopulateRegsFromContext(Registers& aRegs, ucontext_t* aContext) {
   aRegs.mContext = aContext;
   mcontext_t& mcontext = aContext->uc_mcontext;
 
@@ -114,32 +104,23 @@ PopulateRegsFromContext(Registers& aRegs, ucontext_t* aContext)
   aRegs.mFP = reinterpret_cast<Address>(mcontext.gregs[30]);
 
 #else
-# error "bad platform"
+#error "bad platform"
 #endif
 }
 
 #if defined(GP_OS_android)
-# define SYS_tgkill __NR_tgkill
+#define SYS_tgkill __NR_tgkill
 #endif
 
-int
-tgkill(pid_t tgid, pid_t tid, int signalno)
-{
+int tgkill(pid_t tgid, pid_t tid, int signalno) {
   return syscall(SYS_tgkill, tgid, tid, signalno);
 }
 
-class PlatformData
-{
-public:
-  explicit PlatformData(int aThreadId)
-  {
-    MOZ_COUNT_CTOR(PlatformData);
-  }
+class PlatformData {
+ public:
+  explicit PlatformData(int aThreadId) { MOZ_COUNT_CTOR(PlatformData); }
 
-  ~PlatformData()
-  {
-    MOZ_COUNT_DTOR(PlatformData);
-  }
+  ~PlatformData() { MOZ_COUNT_DTOR(PlatformData); }
 };
 
 
@@ -187,36 +168,31 @@ public:
 
 
 
-struct SigHandlerCoordinator
-{
-  SigHandlerCoordinator()
-  {
+struct SigHandlerCoordinator {
+  SigHandlerCoordinator() {
     PodZero(&mUContext);
     int r = sem_init(&mMessage2,  0, 0);
-    r    |= sem_init(&mMessage3,  0, 0);
-    r    |= sem_init(&mMessage4,  0, 0);
+    r |= sem_init(&mMessage3,  0, 0);
+    r |= sem_init(&mMessage4,  0, 0);
     MOZ_ASSERT(r == 0);
   }
 
-  ~SigHandlerCoordinator()
-  {
+  ~SigHandlerCoordinator() {
     int r = sem_destroy(&mMessage2);
-    r    |= sem_destroy(&mMessage3);
-    r    |= sem_destroy(&mMessage4);
+    r |= sem_destroy(&mMessage3);
+    r |= sem_destroy(&mMessage4);
     MOZ_ASSERT(r == 0);
   }
 
-  sem_t mMessage2; 
-  sem_t mMessage3; 
-  sem_t mMessage4; 
-  ucontext_t mUContext; 
+  sem_t mMessage2;       
+  sem_t mMessage3;       
+  sem_t mMessage4;       
+  ucontext_t mUContext;  
 };
 
 struct SigHandlerCoordinator* Sampler::sSigHandlerCoordinator = nullptr;
 
-static void
-SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext)
-{
+static void SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext) {
   
   int savedErrno = errno;
 
@@ -227,7 +203,7 @@ SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext)
   
   
   Sampler::sSigHandlerCoordinator->mUContext =
-    *static_cast<ucontext_t*>(aContext);
+      *static_cast<ucontext_t*>(aContext);
 
   
   
@@ -260,12 +236,12 @@ SigprofHandler(int aSignal, siginfo_t* aInfo, void* aContext)
 }
 
 Sampler::Sampler(PSLockRef aLock)
-  : mMyPid(getpid())
-  
-  
-  
-  , mSamplerTid(-1)
-{
+    : mMyPid(getpid())
+      
+      
+      
+      ,
+      mSamplerTid(-1) {
 #if defined(USE_EHABI_STACKWALK)
   mozilla::EHABIStackWalkInit();
 #endif
@@ -285,20 +261,16 @@ Sampler::Sampler(PSLockRef aLock)
   }
 }
 
-void
-Sampler::Disable(PSLockRef aLock)
-{
+void Sampler::Disable(PSLockRef aLock) {
   
   
   sigaction(SIGPROF, &mOldSigprofHandler, 0);
 }
 
-template<typename Func>
-void
-Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
-                                         const RegisteredThread& aRegisteredThread,
-                                         const Func& aProcessRegs)
-{
+template <typename Func>
+void Sampler::SuspendAndSampleAndResumeThread(
+    PSLockRef aLock, const RegisteredThread& aRegisteredThread,
+    const Func& aProcessRegs) {
   
   
   MOZ_ASSERT(!sSigHandlerCoordinator);
@@ -312,7 +284,7 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
   
   
 
-  SigHandlerCoordinator coord;   
+  SigHandlerCoordinator coord;  
   sSigHandlerCoordinator = &coord;
 
   
@@ -389,9 +361,7 @@ Sampler::SuspendAndSampleAndResumeThread(PSLockRef aLock,
 
 
 
-static void*
-ThreadEntry(void* aArg)
-{
+static void* ThreadEntry(void* aArg) {
   auto thread = static_cast<SamplerThread*>(aArg);
   thread->Run();
   return nullptr;
@@ -399,11 +369,10 @@ ThreadEntry(void* aArg)
 
 SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
                              double aIntervalMilliseconds)
-  : Sampler(aLock)
-  , mActivityGeneration(aActivityGeneration)
-  , mIntervalMicroseconds(
-      std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
-{
+    : Sampler(aLock),
+      mActivityGeneration(aActivityGeneration),
+      mIntervalMicroseconds(
+          std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5)))) {
 #if defined(USE_LUL_STACKWALK)
   lul::LUL* lul = CorePS::Lul(aLock);
   if (!lul) {
@@ -433,14 +402,9 @@ SamplerThread::SamplerThread(PSLockRef aLock, uint32_t aActivityGeneration,
   }
 }
 
-SamplerThread::~SamplerThread()
-{
-  pthread_join(mThread, nullptr);
-}
+SamplerThread::~SamplerThread() { pthread_join(mThread, nullptr); }
 
-void
-SamplerThread::SleepMicro(uint32_t aMicroseconds)
-{
+void SamplerThread::SleepMicro(uint32_t aMicroseconds) {
   if (aMicroseconds >= 1000000) {
     
     
@@ -449,7 +413,7 @@ SamplerThread::SleepMicro(uint32_t aMicroseconds)
   }
 
   struct timespec ts;
-  ts.tv_sec  = 0;
+  ts.tv_sec = 0;
   ts.tv_nsec = aMicroseconds * 1000UL;
 
   int rv = ::nanosleep(&ts, &ts);
@@ -463,9 +427,7 @@ SamplerThread::SleepMicro(uint32_t aMicroseconds)
   MOZ_ASSERT(!rv, "nanosleep call failed");
 }
 
-void
-SamplerThread::Stop(PSLockRef aLock)
-{
+void SamplerThread::Stop(PSLockRef aLock) {
   
   
   
@@ -494,9 +456,7 @@ SamplerThread::Stop(PSLockRef aLock)
 
 
 
-static void
-paf_prepare()
-{
+static void paf_prepare() {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -508,9 +468,7 @@ paf_prepare()
 }
 
 
-static void
-paf_parent()
-{
+static void paf_parent() {
   MOZ_RELEASE_ASSERT(CorePS::Exists());
 
   PSAutoLock lock(gPSMutex);
@@ -521,19 +479,14 @@ paf_parent()
   }
 }
 
-static void
-PlatformInit(PSLockRef aLock)
-{
+static void PlatformInit(PSLockRef aLock) {
   
   pthread_atfork(paf_prepare, paf_parent, nullptr);
 }
 
 #else
 
-static void
-PlatformInit(PSLockRef aLock)
-{
-}
+static void PlatformInit(PSLockRef aLock) {}
 
 #endif
 
@@ -543,12 +496,9 @@ PlatformInit(PSLockRef aLock)
 
 ucontext_t sSyncUContext;
 
-void
-Registers::SyncPopulate()
-{
+void Registers::SyncPopulate() {
   if (!getcontext(&sSyncUContext)) {
     PopulateRegsFromContext(*this, &sSyncUContext);
   }
 }
 #endif
-

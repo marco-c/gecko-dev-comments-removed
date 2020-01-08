@@ -17,46 +17,35 @@
 #include "AutoObjectMapper.h"
 
 #if defined(GP_OS_android)
-# include <dlfcn.h>
-# include "mozilla/Types.h"
-  
-  
-  
-  extern "C" {
-    MFBT_API size_t
-    __dl_get_mappable_length(void *handle);
-    MFBT_API void *
-    __dl_mmap(void *handle, void *addr, size_t length, off_t offset);
-    MFBT_API void
-    __dl_munmap(void *handle, void *addr, size_t length);
-  }
-  
-# include "nsString.h"
-# include "nsDirectoryServiceUtils.h"
-# include "nsDirectoryServiceDefs.h"
+#include <dlfcn.h>
+#include "mozilla/Types.h"
+
+
+
+extern "C" {
+MFBT_API size_t __dl_get_mappable_length(void* handle);
+MFBT_API void* __dl_mmap(void* handle, void* addr, size_t length, off_t offset);
+MFBT_API void __dl_munmap(void* handle, void* addr, size_t length);
+}
+
+#include "nsString.h"
+#include "nsDirectoryServiceUtils.h"
+#include "nsDirectoryServiceDefs.h"
 #endif
 
 
 
-
-static void
-failedToMessage(void(*aLog)(const char*),
-                const char* aHowFailed, std::string aFileName)
-{
+static void failedToMessage(void (*aLog)(const char*), const char* aHowFailed,
+                            std::string aFileName) {
   char buf[300];
-  SprintfLiteral(buf, "AutoObjectMapper::Map: Failed to %s \'%s\'",
-                 aHowFailed, aFileName.c_str());
-  buf[sizeof(buf)-1] = 0;
+  SprintfLiteral(buf, "AutoObjectMapper::Map: Failed to %s \'%s\'", aHowFailed,
+                 aFileName.c_str());
+  buf[sizeof(buf) - 1] = 0;
   aLog(buf);
 }
 
-
-AutoObjectMapperPOSIX::AutoObjectMapperPOSIX(void(*aLog)(const char*))
-  : mImage(nullptr)
-  , mSize(0)
-  , mLog(aLog)
-  , mIsMapped(false)
-{}
+AutoObjectMapperPOSIX::AutoObjectMapperPOSIX(void (*aLog)(const char*))
+    : mImage(nullptr), mSize(0), mLog(aLog), mIsMapped(false) {}
 
 AutoObjectMapperPOSIX::~AutoObjectMapperPOSIX() {
   if (!mIsMapped) {
@@ -73,9 +62,8 @@ AutoObjectMapperPOSIX::~AutoObjectMapperPOSIX() {
   munmap(mImage, mSize);
 }
 
-bool AutoObjectMapperPOSIX::Map(void** start, size_t* length,
-                                std::string fileName)
-{
+bool AutoObjectMapperPOSIX::Map( void** start,  size_t* length,
+                                std::string fileName) {
   MOZ_ASSERT(!mIsMapped);
 
   int fd = open(fileName.c_str(), O_RDONLY);
@@ -85,8 +73,8 @@ bool AutoObjectMapperPOSIX::Map(void** start, size_t* length,
   }
 
   struct stat st;
-  int    err = fstat(fd, &st);
-  size_t sz  = (err == 0) ? st.st_size : 0;
+  int err = fstat(fd, &st);
+  size_t sz = (err == 0) ? st.st_size : 0;
   if (err != 0 || sz == 0) {
     failedToMessage(mLog, "fstat", fileName);
     close(fd);
@@ -102,22 +90,19 @@ bool AutoObjectMapperPOSIX::Map(void** start, size_t* length,
 
   close(fd);
   mIsMapped = true;
-  mImage = *start  = image;
-  mSize  = *length = sz;
+  mImage = *start = image;
+  mSize = *length = sz;
   return true;
 }
-
 
 #if defined(GP_OS_android)
 
 
 
 
-static char*
-get_installation_lib_dir()
-{
-  nsCOMPtr<nsIProperties>
-    directoryService(do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID));
+static char* get_installation_lib_dir() {
+  nsCOMPtr<nsIProperties> directoryService(
+      do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID));
   if (!directoryService) {
     return nullptr;
   }
@@ -133,10 +118,8 @@ get_installation_lib_dir()
   return strdup(path.get());
 }
 
-AutoObjectMapperFaultyLib::AutoObjectMapperFaultyLib(void(*aLog)(const char*))
-  : AutoObjectMapperPOSIX(aLog)
-  , mHdl(nullptr)
-{}
+AutoObjectMapperFaultyLib::AutoObjectMapperFaultyLib(void (*aLog)(const char*))
+    : AutoObjectMapperPOSIX(aLog), mHdl(nullptr) {}
 
 AutoObjectMapperFaultyLib::~AutoObjectMapperFaultyLib() {
   if (mHdl) {
@@ -148,7 +131,7 @@ AutoObjectMapperFaultyLib::~AutoObjectMapperFaultyLib() {
     dlclose(mHdl);
     
     mImage = nullptr;
-    mSize  = 0;
+    mSize = 0;
   }
   
   
@@ -157,13 +140,12 @@ AutoObjectMapperFaultyLib::~AutoObjectMapperFaultyLib() {
   
 }
 
-bool AutoObjectMapperFaultyLib::Map(void** start, size_t* length,
-                                    std::string fileName)
-{
+bool AutoObjectMapperFaultyLib::Map( void** start,
+                                     size_t* length,
+                                    std::string fileName) {
   MOZ_ASSERT(!mHdl);
 
   if (fileName == "libmozglue.so") {
-
     
     char* libdir = get_installation_lib_dir();
     if (libdir) {
@@ -174,7 +156,6 @@ bool AutoObjectMapperFaultyLib::Map(void** start, size_t* length,
     return AutoObjectMapperPOSIX::Map(start, length, fileName);
 
   } else {
-
     
     
     void* hdl = dlopen(fileName.c_str(), RTLD_GLOBAL | RTLD_LAZY);
@@ -197,11 +178,11 @@ bool AutoObjectMapperFaultyLib::Map(void** start, size_t* length,
       return false;
     }
 
-    mHdl   = hdl;
-    mImage = *start  = image;
-    mSize  = *length = sz;
+    mHdl = hdl;
+    mImage = *start = image;
+    mSize = *length = sz;
     return true;
   }
 }
 
-#endif 
+#endif  

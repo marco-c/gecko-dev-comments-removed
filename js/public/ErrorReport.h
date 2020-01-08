@@ -17,19 +17,19 @@
 #ifndef js_ErrorReport_h
 #define js_ErrorReport_h
 
-#include "mozilla/Assertions.h" 
+#include "mozilla/Assertions.h"  
 
-#include <iterator> 
-#include <stddef.h> 
-#include <stdint.h> 
-#include <string.h> 
+#include <iterator>  
+#include <stddef.h>  
+#include <stdint.h>  
+#include <string.h>  
 
-#include "jstypes.h" 
+#include "jstypes.h"  
 
-#include "js/AllocPolicy.h" 
-#include "js/CharacterEncoding.h" 
-#include "js/UniquePtr.h" 
-#include "js/Vector.h" 
+#include "js/AllocPolicy.h"        
+#include "js/CharacterEncoding.h"  
+#include "js/UniquePtr.h"          
+#include "js/Vector.h"             
 
 struct JSContext;
 class JSString;
@@ -42,40 +42,38 @@ class JSString;
 
 
 
-enum JSExnType
-{
-    JSEXN_ERR,
-    JSEXN_FIRST = JSEXN_ERR,
-        JSEXN_INTERNALERR,
-        JSEXN_EVALERR,
-        JSEXN_RANGEERR,
-        JSEXN_REFERENCEERR,
-        JSEXN_SYNTAXERR,
-        JSEXN_TYPEERR,
-        JSEXN_URIERR,
-        JSEXN_DEBUGGEEWOULDRUN,
-        JSEXN_WASMCOMPILEERROR,
-        JSEXN_WASMLINKERROR,
-        JSEXN_WASMRUNTIMEERROR,
-    JSEXN_ERROR_LIMIT,
-    JSEXN_WARN = JSEXN_ERROR_LIMIT,
-    JSEXN_NOTE,
-    JSEXN_LIMIT
+enum JSExnType {
+  JSEXN_ERR,
+  JSEXN_FIRST = JSEXN_ERR,
+  JSEXN_INTERNALERR,
+  JSEXN_EVALERR,
+  JSEXN_RANGEERR,
+  JSEXN_REFERENCEERR,
+  JSEXN_SYNTAXERR,
+  JSEXN_TYPEERR,
+  JSEXN_URIERR,
+  JSEXN_DEBUGGEEWOULDRUN,
+  JSEXN_WASMCOMPILEERROR,
+  JSEXN_WASMLINKERROR,
+  JSEXN_WASMRUNTIMEERROR,
+  JSEXN_ERROR_LIMIT,
+  JSEXN_WARN = JSEXN_ERROR_LIMIT,
+  JSEXN_NOTE,
+  JSEXN_LIMIT
 };
 
-struct JSErrorFormatString
-{
-     
-    const char* name;
+struct JSErrorFormatString {
+  
+  const char* name;
 
-    
-    const char* format;
+  
+  const char* format;
 
-    
-    uint16_t argCount;
+  
+  uint16_t argCount;
 
-    
-    int16_t exnType;
+  
+  int16_t exnType;
 };
 
 using JSErrorCallback =
@@ -85,210 +83,187 @@ using JSErrorCallback =
 
 
 
-class JSErrorBase
-{
-  private:
-    
-    
-    JS::ConstUTF8CharsZ message_;
+class JSErrorBase {
+ private:
+  
+  
+  JS::ConstUTF8CharsZ message_;
 
-  public:
-    
-    const char* filename;
+ public:
+  
+  const char* filename;
 
-    
-    unsigned lineno;
+  
+  unsigned lineno;
 
-    
-    unsigned column;
+  
+  unsigned column;
 
-    
-    unsigned errorNumber;
+  
+  unsigned errorNumber;
 
-  private:
-    bool ownsMessage_ : 1;
+ private:
+  bool ownsMessage_ : 1;
 
-  public:
-    JSErrorBase()
-      : filename(nullptr), lineno(0), column(0),
+ public:
+  JSErrorBase()
+      : filename(nullptr),
+        lineno(0),
+        column(0),
         errorNumber(0),
-        ownsMessage_(false)
-    {}
+        ownsMessage_(false) {}
 
-    ~JSErrorBase() {
-        freeMessage();
-    }
+  ~JSErrorBase() { freeMessage(); }
 
-  public:
-    const JS::ConstUTF8CharsZ message() const {
-        return message_;
-    }
+ public:
+  const JS::ConstUTF8CharsZ message() const { return message_; }
 
-    void initOwnedMessage(const char* messageArg) {
-        initBorrowedMessage(messageArg);
-        ownsMessage_ = true;
-    }
-    void initBorrowedMessage(const char* messageArg) {
-        MOZ_ASSERT(!message_);
-        message_ = JS::ConstUTF8CharsZ(messageArg, strlen(messageArg));
-    }
+  void initOwnedMessage(const char* messageArg) {
+    initBorrowedMessage(messageArg);
+    ownsMessage_ = true;
+  }
+  void initBorrowedMessage(const char* messageArg) {
+    MOZ_ASSERT(!message_);
+    message_ = JS::ConstUTF8CharsZ(messageArg, strlen(messageArg));
+  }
 
-    JSString* newMessageString(JSContext* cx);
+  JSString* newMessageString(JSContext* cx);
 
-  private:
-    void freeMessage();
+ private:
+  void freeMessage();
 };
 
 
 
 
-class JSErrorNotes
-{
-  public:
-    class Note final : public JSErrorBase
-    {};
+class JSErrorNotes {
+ public:
+  class Note final : public JSErrorBase {};
 
-  private:
-    
-    js::Vector<js::UniquePtr<Note>, 1, js::SystemAllocPolicy> notes_;
+ private:
+  
+  js::Vector<js::UniquePtr<Note>, 1, js::SystemAllocPolicy> notes_;
 
-  public:
-    JSErrorNotes();
-    ~JSErrorNotes();
+ public:
+  JSErrorNotes();
+  ~JSErrorNotes();
 
-    
-    bool addNoteASCII(JSContext* cx,
-                      const char* filename, unsigned lineno, unsigned column,
-                      JSErrorCallback errorCallback, void* userRef,
-                      const unsigned errorNumber, ...);
-    bool addNoteLatin1(JSContext* cx,
-                       const char* filename, unsigned lineno, unsigned column,
-                       JSErrorCallback errorCallback, void* userRef,
-                       const unsigned errorNumber, ...);
-    bool addNoteUTF8(JSContext* cx,
-                     const char* filename, unsigned lineno, unsigned column,
-                     JSErrorCallback errorCallback, void* userRef,
-                     const unsigned errorNumber, ...);
+  
+  bool addNoteASCII(JSContext* cx, const char* filename, unsigned lineno,
+                    unsigned column, JSErrorCallback errorCallback,
+                    void* userRef, const unsigned errorNumber, ...);
+  bool addNoteLatin1(JSContext* cx, const char* filename, unsigned lineno,
+                     unsigned column, JSErrorCallback errorCallback,
+                     void* userRef, const unsigned errorNumber, ...);
+  bool addNoteUTF8(JSContext* cx, const char* filename, unsigned lineno,
+                   unsigned column, JSErrorCallback errorCallback,
+                   void* userRef, const unsigned errorNumber, ...);
 
-    JS_PUBLIC_API size_t length();
+  JS_PUBLIC_API size_t length();
 
-    
-    js::UniquePtr<JSErrorNotes> copy(JSContext* cx);
+  
+  js::UniquePtr<JSErrorNotes> copy(JSContext* cx);
 
-    class iterator final
-      : public std::iterator<std::input_iterator_tag, js::UniquePtr<Note>>
-    {
-      private:
-        js::UniquePtr<Note>* note_;
+  class iterator final
+      : public std::iterator<std::input_iterator_tag, js::UniquePtr<Note>> {
+   private:
+    js::UniquePtr<Note>* note_;
 
-      public:
-        explicit iterator(js::UniquePtr<Note>* note = nullptr) : note_(note)
-        {}
+   public:
+    explicit iterator(js::UniquePtr<Note>* note = nullptr) : note_(note) {}
 
-        bool operator==(iterator other) const {
-            return note_ == other.note_;
-        }
-        bool operator!=(iterator other) const {
-            return !(*this == other);
-        }
-        iterator& operator++() {
-            note_++;
-            return *this;
-        }
-        reference operator*() {
-            return *note_;
-        }
-    };
+    bool operator==(iterator other) const { return note_ == other.note_; }
+    bool operator!=(iterator other) const { return !(*this == other); }
+    iterator& operator++() {
+      note_++;
+      return *this;
+    }
+    reference operator*() { return *note_; }
+  };
 
-    JS_PUBLIC_API iterator begin();
-    JS_PUBLIC_API iterator end();
+  JS_PUBLIC_API iterator begin();
+  JS_PUBLIC_API iterator end();
 };
 
 
 
 
-class JSErrorReport : public JSErrorBase
-{
-  private:
-    
-    
-    const char16_t* linebuf_;
+class JSErrorReport : public JSErrorBase {
+ private:
+  
+  
+  const char16_t* linebuf_;
 
-    
-    size_t linebufLength_;
+  
+  size_t linebufLength_;
 
-    
-    size_t tokenOffset_;
+  
+  size_t tokenOffset_;
 
-  public:
-    
-    js::UniquePtr<JSErrorNotes> notes;
+ public:
+  
+  js::UniquePtr<JSErrorNotes> notes;
 
-    
-    unsigned flags;
+  
+  unsigned flags;
 
-    
-    int16_t exnType;
+  
+  int16_t exnType;
 
-    
-    bool isMuted : 1;
+  
+  bool isMuted : 1;
 
-  private:
-    bool ownsLinebuf_ : 1;
+ private:
+  bool ownsLinebuf_ : 1;
 
-  public:
-    JSErrorReport()
-      : linebuf_(nullptr), linebufLength_(0), tokenOffset_(0),
+ public:
+  JSErrorReport()
+      : linebuf_(nullptr),
+        linebufLength_(0),
+        tokenOffset_(0),
         notes(nullptr),
-        flags(0), exnType(0), isMuted(false),
-        ownsLinebuf_(false)
-    {}
+        flags(0),
+        exnType(0),
+        isMuted(false),
+        ownsLinebuf_(false) {}
 
-    ~JSErrorReport() {
-        freeLinebuf();
-    }
+  ~JSErrorReport() { freeLinebuf(); }
 
-  public:
-    const char16_t* linebuf() const {
-        return linebuf_;
-    }
-    size_t linebufLength() const {
-        return linebufLength_;
-    }
-    size_t tokenOffset() const {
-        return tokenOffset_;
-    }
-    void initOwnedLinebuf(const char16_t* linebufArg, size_t linebufLengthArg,
-                          size_t tokenOffsetArg) {
-        initBorrowedLinebuf(linebufArg, linebufLengthArg, tokenOffsetArg);
-        ownsLinebuf_ = true;
-    }
-    void initBorrowedLinebuf(const char16_t* linebufArg, size_t linebufLengthArg,
-                             size_t tokenOffsetArg);
+ public:
+  const char16_t* linebuf() const { return linebuf_; }
+  size_t linebufLength() const { return linebufLength_; }
+  size_t tokenOffset() const { return tokenOffset_; }
+  void initOwnedLinebuf(const char16_t* linebufArg, size_t linebufLengthArg,
+                        size_t tokenOffsetArg) {
+    initBorrowedLinebuf(linebufArg, linebufLengthArg, tokenOffsetArg);
+    ownsLinebuf_ = true;
+  }
+  void initBorrowedLinebuf(const char16_t* linebufArg, size_t linebufLengthArg,
+                           size_t tokenOffsetArg);
 
-  private:
-    void freeLinebuf();
+ private:
+  void freeLinebuf();
 };
 
 
 
 
-#define JSREPORT_ERROR      0x0     /* pseudo-flag for default case */
-#define JSREPORT_WARNING    0x1     /* reported via JS_ReportWarning */
-#define JSREPORT_EXCEPTION  0x2     /* exception was thrown */
-#define JSREPORT_STRICT     0x4     /* error or warning due to strict option */
+#define JSREPORT_ERROR 0x0     /* pseudo-flag for default case */
+#define JSREPORT_WARNING 0x1   /* reported via JS_ReportWarning */
+#define JSREPORT_EXCEPTION 0x2 /* exception was thrown */
+#define JSREPORT_STRICT 0x4    /* error or warning due to strict option */
 
-#define JSREPORT_USER_1     0x8     /* user-defined flag */
-
-
+#define JSREPORT_USER_1 0x8 /* user-defined flag */
 
 
 
 
 
 
-#define JSREPORT_IS_WARNING(flags)      (((flags) & JSREPORT_WARNING) != 0)
-#define JSREPORT_IS_EXCEPTION(flags)    (((flags) & JSREPORT_EXCEPTION) != 0)
-#define JSREPORT_IS_STRICT(flags)       (((flags) & JSREPORT_STRICT) != 0)
+
+
+#define JSREPORT_IS_WARNING(flags) (((flags)&JSREPORT_WARNING) != 0)
+#define JSREPORT_IS_EXCEPTION(flags) (((flags)&JSREPORT_EXCEPTION) != 0)
+#define JSREPORT_IS_STRICT(flags) (((flags)&JSREPORT_STRICT) != 0)
 
 #endif 

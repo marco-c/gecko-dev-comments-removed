@@ -28,13 +28,12 @@ class SVGPointList;
 class SVGAnimatedPreserveAspectRatio;
 class SVGStringList;
 class SVGTransformList;
-} 
+}  
 
 namespace mozilla {
 
-class SVGAttrValueWrapper
-{
-public:
+class SVGAttrValueWrapper {
+ public:
   static void ToString(const nsSVGAngle* aAngle, nsAString& aResult);
   static void ToString(const nsSVGIntegerPair* aIntegerPair,
                        nsAString& aResult);
@@ -49,8 +48,8 @@ public:
   static void ToString(const mozilla::SVGPointList* aPointList,
                        nsAString& aResult);
   static void ToString(
-    const mozilla::SVGAnimatedPreserveAspectRatio* aPreserveAspectRatio,
-    nsAString& aResult);
+      const mozilla::SVGAnimatedPreserveAspectRatio* aPreserveAspectRatio,
+      nsAString& aResult);
   static void ToString(const mozilla::SVGStringList* aStringList,
                        nsAString& aResult);
   static void ToString(const mozilla::SVGTransformList* aTransformList,
@@ -60,4 +59,4 @@ public:
 
 } 
 
-#endif 
+#endif  

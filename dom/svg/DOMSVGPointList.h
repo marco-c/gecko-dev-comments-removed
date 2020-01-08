@@ -12,7 +12,7 @@
 #include "nsDebug.h"
 #include "nsSVGElement.h"
 #include "nsTArray.h"
-#include "SVGPointList.h" 
+#include "SVGPointList.h"  
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 
@@ -47,23 +47,19 @@ class SVGAnimatedPointList;
 
 
 
-class DOMSVGPointList final : public nsISupports,
-                              public nsWrapperCache
-{
+class DOMSVGPointList final : public nsISupports, public nsWrapperCache {
   friend class AutoChangePointListNotifier;
   friend class nsISVGPoint;
   friend class mozilla::DOMSVGPoint;
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGPointList)
 
-  virtual JSObject* WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* cx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-  nsISupports* GetParentObject()
-  {
-    return static_cast<nsIContent*>(mElement);
-  }
+  nsISupports* GetParentObject() { return static_cast<nsIContent*>(mElement); }
 
   
 
@@ -82,27 +78,25 @@ public:
 
 
 
-  static already_AddRefed<DOMSVGPointList>
-  GetDOMWrapper(void *aList,
-                nsSVGElement *aElement,
-                bool aIsAnimValList);
+  static already_AddRefed<DOMSVGPointList> GetDOMWrapper(void* aList,
+                                                         nsSVGElement* aElement,
+                                                         bool aIsAnimValList);
 
   
 
 
 
 
-  static DOMSVGPointList*
-  GetDOMWrapperIfExists(void *aList);
+  static DOMSVGPointList* GetDOMWrapperIfExists(void* aList);
 
   
 
 
 
   uint32_t LengthNoFlush() const {
-    MOZ_ASSERT(mItems.Length() == 0 ||
-               mItems.Length() == InternalList().Length(),
-               "DOM wrapper's list length is out of sync");
+    MOZ_ASSERT(
+        mItems.Length() == 0 || mItems.Length() == InternalList().Length(),
+        "DOM wrapper's list length is out of sync");
     return mItems.Length();
   }
 
@@ -134,8 +128,7 @@ public:
 
   bool AnimListMirrorsBaseList() const;
 
-  uint32_t NumberOfItems() const
-  {
+  uint32_t NumberOfItems() const {
     if (IsAnimValList()) {
       Element()->FlushAnimations();
     }
@@ -144,8 +137,7 @@ public:
   void Clear(ErrorResult& aError);
   already_AddRefed<nsISVGPoint> Initialize(nsISVGPoint& aNewItem,
                                            ErrorResult& aError);
-  already_AddRefed<nsISVGPoint> GetItem(uint32_t index,
-                                        ErrorResult& error);
+  already_AddRefed<nsISVGPoint> GetItem(uint32_t index, ErrorResult& error);
   already_AddRefed<nsISVGPoint> IndexedGetter(uint32_t index, bool& found,
                                               ErrorResult& error);
   already_AddRefed<nsISVGPoint> InsertItemBefore(nsISVGPoint& aNewItem,
@@ -157,38 +149,27 @@ public:
   already_AddRefed<nsISVGPoint> RemoveItem(uint32_t aIndex,
                                            ErrorResult& aError);
   already_AddRefed<nsISVGPoint> AppendItem(nsISVGPoint& aNewItem,
-                                           ErrorResult& aError)
-  {
+                                           ErrorResult& aError) {
     return InsertItemBefore(aNewItem, LengthNoFlush(), aError);
   }
-  uint32_t Length() const
-  {
-    return NumberOfItems();
-  }
+  uint32_t Length() const { return NumberOfItems(); }
 
-private:
-
+ private:
   
 
 
 
-  DOMSVGPointList(nsSVGElement *aElement, bool aIsAnimValList)
-    : mElement(aElement)
-    , mIsAnimValList(aIsAnimValList)
-  {
-    InternalListWillChangeTo(InternalList()); 
+  DOMSVGPointList(nsSVGElement* aElement, bool aIsAnimValList)
+      : mElement(aElement), mIsAnimValList(aIsAnimValList) {
+    InternalListWillChangeTo(InternalList());  
   }
 
   ~DOMSVGPointList();
 
-  nsSVGElement* Element() const {
-    return mElement.get();
-  }
+  nsSVGElement* Element() const { return mElement.get(); }
 
   
-  bool IsAnimValList() const {
-    return mIsAnimValList;
-  }
+  bool IsAnimValList() const { return mIsAnimValList; }
 
   
 
@@ -219,6 +200,6 @@ private:
   bool mIsAnimValList;
 };
 
-} 
+}  
 
-#endif 
+#endif  

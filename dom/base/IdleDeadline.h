@@ -23,11 +23,8 @@ class nsPIDOMWindowInner;
 namespace mozilla {
 namespace dom {
 
-class IdleDeadline final
-  : public nsISupports
-  , public nsWrapperCache
-{
-public:
+class IdleDeadline final : public nsISupports, public nsWrapperCache {
+ public:
   IdleDeadline(nsPIDOMWindowInner* aWindow, bool aDidTimeout,
                DOMHighResTimeStamp aDeadline);
 
@@ -45,7 +42,7 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(IdleDeadline)
 
-private:
+ private:
   ~IdleDeadline();
 
   nsCOMPtr<nsPIDOMWindowInner> mWindow;
@@ -54,7 +51,7 @@ private:
   const DOMHighResTimeStamp mDeadline;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

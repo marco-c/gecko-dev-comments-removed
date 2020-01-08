@@ -23,25 +23,27 @@ enum ClipboardReadType {
 class Promise;
 
 
-class Clipboard : public DOMEventTargetHelper
-{
-public:
+class Clipboard : public DOMEventTargetHelper {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(Clipboard,
-                                           DOMEventTargetHelper)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(Clipboard, DOMEventTargetHelper)
 
   IMPL_EVENT_HANDLER(message)
   IMPL_EVENT_HANDLER(messageerror)
 
   explicit Clipboard(nsPIDOMWindowInner* aWindow);
-  already_AddRefed<Promise> Read(JSContext* aCx, nsIPrincipal& aSubjectPrincipal,
+  already_AddRefed<Promise> Read(JSContext* aCx,
+                                 nsIPrincipal& aSubjectPrincipal,
                                  ErrorResult& aRv);
-  already_AddRefed<Promise> ReadText(JSContext* aCx, nsIPrincipal& aSubjectPrincipal,
+  already_AddRefed<Promise> ReadText(JSContext* aCx,
+                                     nsIPrincipal& aSubjectPrincipal,
                                      ErrorResult& aRv);
   already_AddRefed<Promise> Write(JSContext* aCx, DataTransfer& aData,
-                                  nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
+                                  nsIPrincipal& aSubjectPrincipal,
+                                  ErrorResult& aRv);
   already_AddRefed<Promise> WriteText(JSContext* aCx, const nsAString& aData,
-                                    nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
+                                      nsIPrincipal& aSubjectPrincipal,
+                                      ErrorResult& aRv);
 
   static LogModule* GetClipboardLog();
 
@@ -52,23 +54,24 @@ public:
   
   static bool ReadTextEnabled(JSContext* aCx, JSObject* aGlobal);
 
-  virtual JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-private:
+ private:
+  
   
   
   
   static bool IsTestingPrefEnabled();
 
-  already_AddRefed<Promise> ReadHelper(JSContext* aCx, nsIPrincipal& aSubjectPrincipal,
-                                       ClipboardReadType aClipboardReadType, ErrorResult& aRv);
+  already_AddRefed<Promise> ReadHelper(JSContext* aCx,
+                                       nsIPrincipal& aSubjectPrincipal,
+                                       ClipboardReadType aClipboardReadType,
+                                       ErrorResult& aRv);
 
   ~Clipboard();
-
-
 };
 
-} 
-} 
-#endif 
+}  
+}  
+#endif  

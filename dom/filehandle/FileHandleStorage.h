@@ -10,15 +10,14 @@
 namespace mozilla {
 namespace dom {
 
-enum FileHandleStorage
-{
+enum FileHandleStorage {
   FILE_HANDLE_STORAGE_IDB = 0,
   
   
   FILE_HANDLE_STORAGE_MAX
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

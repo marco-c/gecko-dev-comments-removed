@@ -7,8 +7,8 @@
 #ifndef mozilla_layers_KeyboardScrollAction_h
 #define mozilla_layers_KeyboardScrollAction_h
 
-#include "mozilla/DefineEnum.h" 
-#include "nsIScrollableFrame.h" 
+#include "mozilla/DefineEnum.h"  
+#include "nsIScrollableFrame.h"  
 
 namespace mozilla {
 namespace layers {
@@ -16,9 +16,9 @@ namespace layers {
 
 
 
-struct KeyboardScrollAction final
-{
-public:
+
+struct KeyboardScrollAction final {
+ public:
   
   MOZ_DEFINE_ENUM_WITH_BASE_AT_CLASS_SCOPE(
     KeyboardScrollActionType, uint8_t, (
@@ -29,8 +29,8 @@ public:
   ));
   
 
-  static nsIScrollableFrame::ScrollUnit
-  GetScrollUnit(KeyboardScrollActionType aDeltaType);
+  static nsIScrollableFrame::ScrollUnit GetScrollUnit(
+      KeyboardScrollActionType aDeltaType);
 
   KeyboardScrollAction();
   KeyboardScrollAction(KeyboardScrollActionType aType, bool aForward);
@@ -41,7 +41,7 @@ public:
   bool mForward;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

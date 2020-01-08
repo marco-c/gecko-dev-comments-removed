@@ -12,18 +12,18 @@
 
 namespace mozilla {
 
-  namespace mips_private {
-    extern bool MFBT_DATA isLoongson3;
-  } 
+namespace mips_private {
+extern bool MFBT_DATA isLoongson3;
+}  
 
-  inline bool supports_mmi() {
+inline bool supports_mmi() {
 #ifdef __mips__
-    return mips_private::isLoongson3;
+  return mips_private::isLoongson3;
 #else
-    return false;
+  return false;
 #endif
-  }
+}
 
-} 
+}  
 
 #endif 

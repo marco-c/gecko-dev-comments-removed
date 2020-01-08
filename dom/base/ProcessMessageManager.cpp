@@ -12,16 +12,16 @@
 namespace mozilla {
 namespace dom {
 
-ProcessMessageManager::ProcessMessageManager(ipc::MessageManagerCallback* aCallback,
-                                             ParentProcessMessageManager* aParentManager,
-                                             MessageManagerFlags aFlags)
-  : MessageSender(aCallback, aParentManager,
-                  aFlags | MessageManagerFlags::MM_CHROME |
-                           MessageManagerFlags::MM_PROCESSMANAGER)
-{
+ProcessMessageManager::ProcessMessageManager(
+    ipc::MessageManagerCallback* aCallback,
+    ParentProcessMessageManager* aParentManager, MessageManagerFlags aFlags)
+    : MessageSender(aCallback, aParentManager,
+                    aFlags | MessageManagerFlags::MM_CHROME |
+                        MessageManagerFlags::MM_PROCESSMANAGER) {
   MOZ_ASSERT(!(aFlags & ~(MessageManagerFlags::MM_GLOBAL |
                           MessageManagerFlags::MM_OWNSCALLBACK)));
 
+  
   
   
   
@@ -30,14 +30,12 @@ ProcessMessageManager::ProcessMessageManager(ipc::MessageManagerCallback* aCallb
   }
 }
 
-JSObject*
-ProcessMessageManager::WrapObject(JSContext* aCx,
-                                  JS::Handle<JSObject*> aGivenProto)
-{
+JSObject* ProcessMessageManager::WrapObject(JSContext* aCx,
+                                            JS::Handle<JSObject*> aGivenProto) {
   MOZ_ASSERT(nsContentUtils::IsSystemCaller(aCx));
 
   return ProcessMessageManager_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-} 
-} 
+}  
+}  

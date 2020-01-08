@@ -14,10 +14,10 @@ struct _AtkObject;
 typedef struct _AtkObject AtkObject;
 
 enum AtkProperty {
-  PROP_0,           
+  PROP_0,  
   PROP_NAME,
   PROP_DESCRIPTION,
-  PROP_PARENT,      
+  PROP_PARENT,  
   PROP_ROLE,
   PROP_LAYER,
   PROP_MDI_ZORDER,
@@ -27,13 +27,13 @@ enum AtkProperty {
   PROP_TABLE_ROW_DESCRIPTION,
   PROP_TABLE_ROW_HEADER,
   PROP_TABLE_SUMMARY,
-  PROP_LAST         
+  PROP_LAST  
 };
 
 struct AtkPropertyChange {
-  int32_t type;     
-  void *oldvalue;
-  void *newvalue;
+  int32_t type;  
+  void* oldvalue;
+  void* newvalue;
 };
 
 namespace mozilla {
@@ -45,9 +45,8 @@ class MaiHyperlink;
 
 
 
-class AccessibleWrap : public Accessible
-{
-public:
+class AccessibleWrap : public Accessible {
+ public:
   AccessibleWrap(nsIContent* aContent, DocAccessible* aDoc);
   virtual ~AccessibleWrap();
   void ShutdownAtkObject();
@@ -58,12 +57,12 @@ public:
   virtual void GetNativeInterface(void** aOutAccessible) override;
   virtual nsresult HandleAccEvent(AccEvent* aEvent) override;
 
-  AtkObject * GetAtkObject(void);
+  AtkObject* GetAtkObject(void);
   static AtkObject* GetAtkObject(Accessible* aAccessible);
 
   bool IsValidObject();
 
-  static const char * ReturnString(nsAString &aString) {
+  static const char* ReturnString(nsAString& aString) {
     static nsCString returnedString;
     returnedString = NS_ConvertUTF16toUTF8(aString);
     return returnedString.get();
@@ -75,18 +74,18 @@ public:
                                      int32_t aColIdx);
   static Accessible* GetRowHeader(TableAccessible* aAccessible,
                                   int32_t aRowIdx);
-protected:
 
-  nsresult FireAtkStateChangeEvent(AccEvent* aEvent, AtkObject *aObject);
-  nsresult FireAtkTextChangedEvent(AccEvent* aEvent, AtkObject *aObject);
+ protected:
+  nsresult FireAtkStateChangeEvent(AccEvent* aEvent, AtkObject* aObject);
+  nsresult FireAtkTextChangedEvent(AccEvent* aEvent, AtkObject* aObject);
 
-  AtkObject *mAtkObject;
+  AtkObject* mAtkObject;
 
-private:
+ private:
   uint16_t CreateMaiInterfaces();
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

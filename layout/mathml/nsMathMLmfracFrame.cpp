@@ -4,7 +4,6 @@
 
 
 
-
 #include "nsMathMLmfracFrame.h"
 
 #include "gfxUtils.h"
@@ -27,50 +26,41 @@ using namespace mozilla::gfx;
 
 
 
-#define THIN_FRACTION_LINE                   0.5f
-#define THIN_FRACTION_LINE_MINIMUM_PIXELS    1  // minimum of 1 pixel
 
-#define THICK_FRACTION_LINE                  2.0f
-#define THICK_FRACTION_LINE_MINIMUM_PIXELS   2  // minimum of 2 pixels
+#define THIN_FRACTION_LINE 0.5f
+#define THIN_FRACTION_LINE_MINIMUM_PIXELS 1  // minimum of 1 pixel
 
-nsIFrame*
-NS_NewMathMLmfracFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+#define THICK_FRACTION_LINE 2.0f
+#define THICK_FRACTION_LINE_MINIMUM_PIXELS 2  // minimum of 2 pixels
+
+nsIFrame* NS_NewMathMLmfracFrame(nsIPresShell* aPresShell,
+                                 ComputedStyle* aStyle) {
   return new (aPresShell) nsMathMLmfracFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmfracFrame)
 
-nsMathMLmfracFrame::~nsMathMLmfracFrame()
-{
-}
+nsMathMLmfracFrame::~nsMathMLmfracFrame() {}
 
-eMathMLFrameType
-nsMathMLmfracFrame::GetMathMLFrameType()
-{
+eMathMLFrameType nsMathMLmfracFrame::GetMathMLFrameType() {
   
   return eMathMLFrameType_Inner;
 }
 
-uint8_t
-nsMathMLmfracFrame::ScriptIncrement(nsIFrame* aFrame)
-{
-  if (!StyleFont()->mMathDisplay &&
-      aFrame && (mFrames.FirstChild() == aFrame ||
-                 mFrames.LastChild() == aFrame)) {
+uint8_t nsMathMLmfracFrame::ScriptIncrement(nsIFrame* aFrame) {
+  if (!StyleFont()->mMathDisplay && aFrame &&
+      (mFrames.FirstChild() == aFrame || mFrames.LastChild() == aFrame)) {
     return 1;
   }
   return 0;
 }
 
 NS_IMETHODIMP
-nsMathMLmfracFrame::TransmitAutomaticData()
-{
+nsMathMLmfracFrame::TransmitAutomaticData() {
   
   
-  UpdatePresentationDataFromChildAt(1,  1,
-     NS_MATHML_COMPRESSED,
-     NS_MATHML_COMPRESSED);
+  UpdatePresentationDataFromChildAt(1, 1, NS_MATHML_COMPRESSED,
+                                    NS_MATHML_COMPRESSED);
 
   
   
@@ -92,14 +82,12 @@ nsMathMLmfracFrame::TransmitAutomaticData()
   return NS_OK;
 }
 
-nscoord
-nsMathMLmfracFrame::CalcLineThickness(nsPresContext*  aPresContext,
-                                      ComputedStyle*  aComputedStyle,
-                                      nsString&        aThicknessAttribute,
-                                      nscoord          onePixel,
-                                      nscoord          aDefaultRuleThickness,
-                                      float            aFontSizeInflation)
-{
+nscoord nsMathMLmfracFrame::CalcLineThickness(nsPresContext* aPresContext,
+                                              ComputedStyle* aComputedStyle,
+                                              nsString& aThicknessAttribute,
+                                              nscoord onePixel,
+                                              nscoord aDefaultRuleThickness,
+                                              float aFontSizeInflation) {
   nscoord defaultThickness = aDefaultRuleThickness;
   nscoord lineThickness = aDefaultRuleThickness;
   nscoord minimumThickness = onePixel;
@@ -118,25 +106,24 @@ nsMathMLmfracFrame::CalcLineThickness(nsPresContext*  aPresContext,
       lineThickness = NSToCoordFloor(defaultThickness * THIN_FRACTION_LINE);
       minimumThickness = onePixel * THIN_FRACTION_LINE_MINIMUM_PIXELS;
       
-      if (defaultThickness > onePixel && lineThickness > defaultThickness - onePixel)
-        lineThickness = defaultThickness - onePixel;
-    }
-    else if (aThicknessAttribute.EqualsLiteral("medium")) {
       
-    }
-    else if (aThicknessAttribute.EqualsLiteral("thick")) {
+      if (defaultThickness > onePixel &&
+          lineThickness > defaultThickness - onePixel)
+        lineThickness = defaultThickness - onePixel;
+    } else if (aThicknessAttribute.EqualsLiteral("medium")) {
+      
+    } else if (aThicknessAttribute.EqualsLiteral("thick")) {
       lineThickness = NSToCoordCeil(defaultThickness * THICK_FRACTION_LINE);
       minimumThickness = onePixel * THICK_FRACTION_LINE_MINIMUM_PIXELS;
       
       if (lineThickness < defaultThickness + onePixel)
         lineThickness = defaultThickness + onePixel;
-    }
-    else {
+    } else {
       
       lineThickness = defaultThickness;
       ParseNumericValue(aThicknessAttribute, &lineThickness,
-                        nsMathMLElement::PARSE_ALLOW_UNITLESS,
-                        aPresContext, aComputedStyle, aFontSizeInflation);
+                        nsMathMLElement::PARSE_ALLOW_UNITLESS, aPresContext,
+                        aComputedStyle, aFontSizeInflation);
     }
   }
 
@@ -147,10 +134,8 @@ nsMathMLmfracFrame::CalcLineThickness(nsPresContext*  aPresContext,
   return lineThickness;
 }
 
-void
-nsMathMLmfracFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                     const nsDisplayListSet& aLists)
-{
+void nsMathMLmfracFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                          const nsDisplayListSet& aLists) {
   
   
   nsMathMLContainerFrame::BuildDisplayList(aBuilder, aLists);
@@ -164,30 +149,22 @@ nsMathMLmfracFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   }
 }
 
-
-nsresult
-nsMathMLmfracFrame::AttributeChanged(int32_t  aNameSpaceID,
-                                     nsAtom* aAttribute,
-                                     int32_t  aModType)
-{
+nsresult nsMathMLmfracFrame::AttributeChanged(int32_t aNameSpaceID,
+                                              nsAtom* aAttribute,
+                                              int32_t aModType) {
   if (nsGkAtoms::linethickness_ == aAttribute) {
     InvalidateFrame();
   }
-  return
-    nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,
-                                             aModType);
+  return nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,
+                                                  aModType);
 }
 
- nsresult
-nsMathMLmfracFrame::MeasureForWidth(DrawTarget* aDrawTarget,
-                                    ReflowOutput& aDesiredSize)
-{
+ nsresult nsMathMLmfracFrame::MeasureForWidth(
+    DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize) {
   return PlaceInternal(aDrawTarget, false, aDesiredSize, true);
 }
 
-nscoord
-nsMathMLmfracFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize)
-{
+nscoord nsMathMLmfracFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize) {
   nscoord gap = nsMathMLContainerFrame::FixInterFrameSpacing(aDesiredSize);
   if (!gap) return 0;
 
@@ -195,20 +172,16 @@ nsMathMLmfracFrame::FixInterFrameSpacing(ReflowOutput& aDesiredSize)
   return gap;
 }
 
- nsresult
-nsMathMLmfracFrame::Place(DrawTarget*          aDrawTarget,
-                          bool                 aPlaceOrigin,
-                          ReflowOutput& aDesiredSize)
-{
+ nsresult nsMathMLmfracFrame::Place(DrawTarget* aDrawTarget,
+                                                 bool aPlaceOrigin,
+                                                 ReflowOutput& aDesiredSize) {
   return PlaceInternal(aDrawTarget, aPlaceOrigin, aDesiredSize, false);
 }
 
-nsresult
-nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
-                                  bool                 aPlaceOrigin,
-                                  ReflowOutput& aDesiredSize,
-                                  bool                 aWidthOnly)
-{
+nsresult nsMathMLmfracFrame::PlaceInternal(DrawTarget* aDrawTarget,
+                                           bool aPlaceOrigin,
+                                           ReflowOutput& aDesiredSize,
+                                           bool aWidthOnly) {
   
   
   nsBoundingMetrics bmNum, bmDen;
@@ -216,8 +189,7 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
   ReflowOutput sizeDen(aDesiredSize.GetWritingMode());
   nsIFrame* frameDen = nullptr;
   nsIFrame* frameNum = mFrames.FirstChild();
-  if (frameNum)
-    frameDen = frameNum->GetNextSibling();
+  if (frameNum) frameDen = frameNum->GetNextSibling();
   if (!frameNum || !frameDen || frameDen->GetNextSibling()) {
     
     if (aPlaceOrigin) {
@@ -233,14 +205,14 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
 
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
   RefPtr<nsFontMetrics> fm =
-    nsLayoutUtils::GetFontMetricsForFrame(this, fontSizeInflation);
+      nsLayoutUtils::GetFontMetricsForFrame(this, fontSizeInflation);
 
   nscoord defaultRuleThickness, axisHeight;
   nscoord oneDevPixel = fm->AppUnitsPerDevPixel();
   gfxFont* mathFont = fm->GetThebesFontGroup()->GetFirstMathFont();
   if (mathFont) {
-    defaultRuleThickness = mathFont->MathTable()->
-      Constant(gfxMathTable::FractionRuleThickness, oneDevPixel);
+    defaultRuleThickness = mathFont->MathTable()->Constant(
+        gfxMathTable::FractionRuleThickness, oneDevPixel);
   } else {
     GetRuleThickness(aDrawTarget, fm, defaultRuleThickness);
   }
@@ -255,13 +227,15 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
 
   
   nsAutoString value;
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::linethickness_, value);
-  mLineThickness = CalcLineThickness(presContext, mComputedStyle, value,
-                                     onePixel, defaultRuleThickness,
-                                     fontSizeInflation);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::linethickness_,
+                                 value);
+  mLineThickness =
+      CalcLineThickness(presContext, mComputedStyle, value, onePixel,
+                        defaultRuleThickness, fontSizeInflation);
 
   
-  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::bevelled_, value);
+  mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::bevelled_,
+                                 value);
   mIsBevelled = value.EqualsLiteral("true");
 
   bool displayStyle = StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK;
@@ -279,13 +253,13 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
     if (outermostEmbellished) {
       nsEmbellishData coreData;
       GetEmbellishDataFrom(mEmbellishData.coreFrame, coreData);
-      leftSpace += StyleVisibility()->mDirection ?
-                     coreData.trailingSpace : coreData.leadingSpace;
-      rightSpace += StyleVisibility()->mDirection ?
-                      coreData.leadingSpace : coreData.trailingSpace;
+      leftSpace += StyleVisibility()->mDirection ? coreData.trailingSpace
+                                                 : coreData.leadingSpace;
+      rightSpace += StyleVisibility()->mDirection ? coreData.leadingSpace
+                                                  : coreData.trailingSpace;
     }
 
-    nscoord actualRuleThickness =  mLineThickness;
+    nscoord actualRuleThickness = mLineThickness;
 
     
     
@@ -303,31 +277,28 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       numShift = displayStyle ? numShift1 : numShift3;
       denShift = displayStyle ? denShift1 : denShift2;
       if (mathFont) {
-        numShift = mathFont->
-          MathTable()->Constant(displayStyle ?
-                                gfxMathTable::StackTopDisplayStyleShiftUp :
-                                gfxMathTable::StackTopShiftUp,
-                                oneDevPixel);
-        denShift = mathFont->
-          MathTable()->Constant(displayStyle ?
-                                gfxMathTable::StackBottomDisplayStyleShiftDown :
-                                gfxMathTable::StackBottomShiftDown,
-                                oneDevPixel);
+        numShift = mathFont->MathTable()->Constant(
+            displayStyle ? gfxMathTable::StackTopDisplayStyleShiftUp
+                         : gfxMathTable::StackTopShiftUp,
+            oneDevPixel);
+        denShift = mathFont->MathTable()->Constant(
+            displayStyle ? gfxMathTable::StackBottomDisplayStyleShiftDown
+                         : gfxMathTable::StackBottomShiftDown,
+            oneDevPixel);
       }
     } else {
       numShift = displayStyle ? numShift1 : numShift2;
       denShift = displayStyle ? denShift1 : denShift2;
       if (mathFont) {
-        numShift = mathFont->MathTable()->
-          Constant(displayStyle ?
-                   gfxMathTable::FractionNumeratorDisplayStyleShiftUp :
-                   gfxMathTable::FractionNumeratorShiftUp,
-                   oneDevPixel);
-        denShift = mathFont->MathTable()->
-          Constant(displayStyle ?
-                   gfxMathTable::FractionDenominatorDisplayStyleShiftDown :
-                   gfxMathTable::FractionDenominatorShiftDown,
-                   oneDevPixel);
+        numShift = mathFont->MathTable()->Constant(
+            displayStyle ? gfxMathTable::FractionNumeratorDisplayStyleShiftUp
+                         : gfxMathTable::FractionNumeratorShiftUp,
+            oneDevPixel);
+        denShift = mathFont->MathTable()->Constant(
+            displayStyle
+                ? gfxMathTable::FractionDenominatorDisplayStyleShiftDown
+                : gfxMathTable::FractionDenominatorShiftDown,
+            oneDevPixel);
       }
     }
 
@@ -335,14 +306,13 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       
 
       
-      nscoord minClearance = displayStyle ?
-        7 * defaultRuleThickness : 3 * defaultRuleThickness;
+      nscoord minClearance =
+          displayStyle ? 7 * defaultRuleThickness : 3 * defaultRuleThickness;
       if (mathFont) {
-        minClearance = mathFont->MathTable()->
-          Constant(displayStyle ?
-                   gfxMathTable::StackDisplayStyleGapMin :
-                   gfxMathTable::StackGapMin,
-                   oneDevPixel);
+        minClearance = mathFont->MathTable()->Constant(
+            displayStyle ? gfxMathTable::StackDisplayStyleGapMin
+                         : gfxMathTable::StackGapMin,
+            oneDevPixel);
       }
       
       
@@ -350,53 +320,50 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       denShift += axisHeight;
 
       nscoord actualClearance =
-        (numShift - bmNum.descent) - (bmDen.ascent - denShift);
+          (numShift - bmNum.descent) - (bmDen.ascent - denShift);
       
       if (actualClearance < minClearance) {
-        nscoord halfGap = (minClearance - actualClearance)/2;
+        nscoord halfGap = (minClearance - actualClearance) / 2;
         numShift += halfGap;
         denShift += halfGap;
       }
-    }
-    else {
-    
+    } else {
+      
 
-    
+      
 
-    
-    
-    
-    
+      
+      
+      
+      
 
-    
-    
-    
-    
-      nscoord minClearanceNum = displayStyle ?
-        3 * defaultRuleThickness : defaultRuleThickness + onePixel;
+      
+      
+      
+      
+      nscoord minClearanceNum = displayStyle ? 3 * defaultRuleThickness
+                                             : defaultRuleThickness + onePixel;
       nscoord minClearanceDen = minClearanceNum;
       if (mathFont) {
-        minClearanceNum = mathFont->
-          MathTable()->Constant(displayStyle ?
-                                gfxMathTable::FractionNumDisplayStyleGapMin :
-                                gfxMathTable::FractionNumeratorGapMin,
-                                oneDevPixel);
-        minClearanceDen = mathFont->
-          MathTable()->Constant(displayStyle ?
-                                gfxMathTable::FractionDenomDisplayStyleGapMin :
-                                gfxMathTable::FractionDenominatorGapMin,
-                                oneDevPixel);
+        minClearanceNum = mathFont->MathTable()->Constant(
+            displayStyle ? gfxMathTable::FractionNumDisplayStyleGapMin
+                         : gfxMathTable::FractionNumeratorGapMin,
+            oneDevPixel);
+        minClearanceDen = mathFont->MathTable()->Constant(
+            displayStyle ? gfxMathTable::FractionDenomDisplayStyleGapMin
+                         : gfxMathTable::FractionDenominatorGapMin,
+            oneDevPixel);
       }
 
       
       nscoord actualClearanceNum =
-        (numShift - bmNum.descent) - (axisHeight + actualRuleThickness/2);
+          (numShift - bmNum.descent) - (axisHeight + actualRuleThickness / 2);
       if (actualClearanceNum < minClearanceNum) {
         numShift += (minClearanceNum - actualClearanceNum);
       }
       
       nscoord actualClearanceDen =
-        (axisHeight - actualRuleThickness/2) - (bmDen.ascent - denShift);
+          (axisHeight - actualRuleThickness / 2) - (bmDen.ascent - denShift);
       if (actualClearanceDen < minClearanceDen) {
         denShift += (minClearanceDen - actualClearanceDen);
       }
@@ -408,30 +375,32 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
     
     
     nscoord width = std::max(bmNum.width, bmDen.width);
-    nscoord dxNum = leftSpace + (width - sizeNum.Width())/2;
-    nscoord dxDen = leftSpace + (width - sizeDen.Width())/2;
+    nscoord dxNum = leftSpace + (width - sizeNum.Width()) / 2;
+    nscoord dxDen = leftSpace + (width - sizeDen.Width()) / 2;
     width += leftSpace + rightSpace;
 
     
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::numalign_, value);
+    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::numalign_,
+                                   value);
     if (value.EqualsLiteral("left"))
       dxNum = leftSpace;
     else if (value.EqualsLiteral("right"))
       dxNum = width - rightSpace - sizeNum.Width();
 
     
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::denomalign_, value);
+    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::denomalign_,
+                                   value);
     if (value.EqualsLiteral("left"))
       dxDen = leftSpace;
     else if (value.EqualsLiteral("right"))
       dxDen = width - rightSpace - sizeDen.Width();
 
     mBoundingMetrics.rightBearing =
-      std::max(dxNum + bmNum.rightBearing, dxDen + bmDen.rightBearing);
+        std::max(dxNum + bmNum.rightBearing, dxDen + bmDen.rightBearing);
     if (mBoundingMetrics.rightBearing < width - rightSpace)
       mBoundingMetrics.rightBearing = width - rightSpace;
     mBoundingMetrics.leftBearing =
-      std::min(dxNum + bmNum.leftBearing, dxDen + bmDen.leftBearing);
+        std::min(dxNum + bmNum.leftBearing, dxDen + bmDen.leftBearing);
     if (mBoundingMetrics.leftBearing > leftSpace)
       mBoundingMetrics.leftBearing = leftSpace;
     mBoundingMetrics.ascent = bmNum.ascent + numShift;
@@ -439,8 +408,8 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
     mBoundingMetrics.width = width;
 
     aDesiredSize.SetBlockStartAscent(sizeNum.BlockStartAscent() + numShift);
-    aDesiredSize.Height() = aDesiredSize.BlockStartAscent() +
-      sizeDen.Height() - sizeDen.BlockStartAscent() + denShift;
+    aDesiredSize.Height() = aDesiredSize.BlockStartAscent() + sizeDen.Height() -
+                            sizeDen.BlockStartAscent() + denShift;
     aDesiredSize.Width() = mBoundingMetrics.width;
     aDesiredSize.mBoundingMetrics = mBoundingMetrics;
 
@@ -456,7 +425,8 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       dy = aDesiredSize.Height() - sizeDen.Height();
       FinishReflowChild(frameDen, presContext, sizeDen, nullptr, dxDen, dy, 0);
       
-      dy = aDesiredSize.BlockStartAscent() - (axisHeight + actualRuleThickness/2);
+      dy = aDesiredSize.BlockStartAscent() -
+           (axisHeight + actualRuleThickness / 2);
       mLineRect.SetRect(leftSpace, dy, width - (leftSpace + rightSpace),
                         actualRuleThickness);
     }
@@ -472,8 +442,8 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
 
     
     
-    nscoord slashMinHeight = slashRatio *
-      std::min(2 * mLineThickness, slashMaxWidthConstant);
+    nscoord slashMinHeight =
+        slashRatio * std::min(2 * mLineThickness, slashMaxWidthConstant);
 
     nscoord leadingSpace = padding;
     nscoord trailingSpace = padding;
@@ -500,16 +470,18 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
 
     
     
-    delta = std::max(bmDen.ascent - bmNum.ascent,
-                   bmNum.descent - bmDen.descent) / 2;
+    delta =
+        std::max(bmDen.ascent - bmNum.ascent, bmNum.descent - bmDen.descent) /
+        2;
     if (delta > 0) {
       numShift += delta;
       denShift += delta;
     }
 
     if (StyleFont()->mMathDisplay == NS_MATHML_DISPLAYSTYLE_BLOCK) {
-      delta = std::min(bmDen.ascent + bmDen.descent,
-                     bmNum.ascent + bmNum.descent) / 2;
+      delta =
+          std::min(bmDen.ascent + bmDen.descent, bmNum.ascent + bmNum.descent) /
+          2;
       numShift += delta;
       denShift += delta;
     } else {
@@ -526,7 +498,8 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
     
     
     delta = (slashMinHeight -
-             (mBoundingMetrics.ascent + mBoundingMetrics.descent)) / 2;
+             (mBoundingMetrics.ascent + mBoundingMetrics.descent)) /
+            2;
     if (delta > 0) {
       mBoundingMetrics.ascent += delta;
       mBoundingMetrics.descent += delta;
@@ -536,28 +509,30 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
     if (aWidthOnly) {
       mLineRect.width = mLineThickness + slashMaxWidthConstant;
     } else {
-      mLineRect.width = mLineThickness +
-        std::min(slashMaxWidthConstant,
-               (mBoundingMetrics.ascent + mBoundingMetrics.descent) /
-               slashRatio);
+      mLineRect.width =
+          mLineThickness +
+          std::min(slashMaxWidthConstant,
+                   (mBoundingMetrics.ascent + mBoundingMetrics.descent) /
+                       slashRatio);
     }
 
     
     if (StyleVisibility()->mDirection) {
       mBoundingMetrics.leftBearing = trailingSpace + bmDen.leftBearing;
-      mBoundingMetrics.rightBearing = trailingSpace + bmDen.width + mLineRect.width + bmNum.rightBearing;
+      mBoundingMetrics.rightBearing =
+          trailingSpace + bmDen.width + mLineRect.width + bmNum.rightBearing;
     } else {
       mBoundingMetrics.leftBearing = leadingSpace + bmNum.leftBearing;
-      mBoundingMetrics.rightBearing = leadingSpace + bmNum.width + mLineRect.width + bmDen.rightBearing;
+      mBoundingMetrics.rightBearing =
+          leadingSpace + bmNum.width + mLineRect.width + bmDen.rightBearing;
     }
-    mBoundingMetrics.width =
-      leadingSpace + bmNum.width + mLineRect.width + bmDen.width +
-      trailingSpace;
+    mBoundingMetrics.width = leadingSpace + bmNum.width + mLineRect.width +
+                             bmDen.width + trailingSpace;
 
     
     aDesiredSize.SetBlockStartAscent(mBoundingMetrics.ascent + padding);
     aDesiredSize.Height() =
-      mBoundingMetrics.ascent + mBoundingMetrics.descent + 2 * padding;
+        mBoundingMetrics.ascent + mBoundingMetrics.descent + 2 * padding;
     aDesiredSize.Width() = mBoundingMetrics.width;
     aDesiredSize.mBoundingMetrics = mBoundingMetrics;
 
@@ -568,58 +543,55 @@ nsMathMLmfracFrame::PlaceInternal(DrawTarget*          aDrawTarget,
       nscoord dx, dy;
 
       
-      dx = MirrorIfRTL(aDesiredSize.Width(), sizeNum.Width(),
-                       leadingSpace);
-      dy = aDesiredSize.BlockStartAscent() - numShift - sizeNum.BlockStartAscent();
+      dx = MirrorIfRTL(aDesiredSize.Width(), sizeNum.Width(), leadingSpace);
+      dy = aDesiredSize.BlockStartAscent() - numShift -
+           sizeNum.BlockStartAscent();
       FinishReflowChild(frameNum, presContext, sizeNum, nullptr, dx, dy, 0);
 
       
       dx = MirrorIfRTL(aDesiredSize.Width(), mLineRect.width,
                        leadingSpace + bmNum.width);
       dy = aDesiredSize.BlockStartAscent() - mBoundingMetrics.ascent;
-      mLineRect.SetRect(dx, dy,
-                        mLineRect.width, aDesiredSize.Height() - 2 * padding);
+      mLineRect.SetRect(dx, dy, mLineRect.width,
+                        aDesiredSize.Height() - 2 * padding);
 
       
       dx = MirrorIfRTL(aDesiredSize.Width(), sizeDen.Width(),
                        leadingSpace + bmNum.width + mLineRect.width);
-      dy = aDesiredSize.BlockStartAscent() + denShift - sizeDen.BlockStartAscent();
+      dy = aDesiredSize.BlockStartAscent() + denShift -
+           sizeDen.BlockStartAscent();
       FinishReflowChild(frameDen, presContext, sizeDen, nullptr, dx, dy, 0);
     }
-
   }
 
   return NS_OK;
 }
 
 class nsDisplayMathMLSlash : public nsDisplayItem {
-public:
-  nsDisplayMathMLSlash(nsDisplayListBuilder* aBuilder,
-                       nsIFrame* aFrame, const nsRect& aRect,
-                       nscoord aThickness, bool aRTL)
-    : nsDisplayItem(aBuilder, aFrame), mRect(aRect), mThickness(aThickness),
-      mRTL(aRTL) {
+ public:
+  nsDisplayMathMLSlash(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+                       const nsRect& aRect, nscoord aThickness, bool aRTL)
+      : nsDisplayItem(aBuilder, aFrame),
+        mRect(aRect),
+        mThickness(aThickness),
+        mRTL(aRTL) {
     MOZ_COUNT_CTOR(nsDisplayMathMLSlash);
   }
 #ifdef NS_BUILD_REFCNT_LOGGING
-  virtual ~nsDisplayMathMLSlash() {
-    MOZ_COUNT_DTOR(nsDisplayMathMLSlash);
-  }
+  virtual ~nsDisplayMathMLSlash() { MOZ_COUNT_DTOR(nsDisplayMathMLSlash); }
 #endif
 
-  virtual void Paint(nsDisplayListBuilder* aBuilder,
-                     gfxContext* aCtx) override;
+  virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
   NS_DISPLAY_DECL_NAME("MathMLSlash", TYPE_MATHML_SLASH)
 
-private:
-  nsRect    mRect;
-  nscoord   mThickness;
-  bool      mRTL;
+ private:
+  nsRect mRect;
+  nscoord mThickness;
+  bool mRTL;
 };
 
 void nsDisplayMathMLSlash::Paint(nsDisplayListBuilder* aBuilder,
-                                 gfxContext* aCtx)
-{
+                                 gfxContext* aCtx) {
   DrawTarget& aDrawTarget = *aCtx->GetDrawTarget();
 
   
@@ -628,7 +600,7 @@ void nsDisplayMathMLSlash::Paint(nsDisplayListBuilder* aBuilder,
                            presContext->AppUnitsPerDevPixel());
 
   ColorPattern color(ToDeviceColor(
-    mFrame->GetVisitedDependentColor(&nsStyleText::mWebkitTextFillColor)));
+      mFrame->GetVisitedDependentColor(&nsStyleText::mWebkitTextFillColor)));
 
   
   Point delta = Point(presContext->AppUnitsToGfxUnits(mThickness), 0);
@@ -648,15 +620,12 @@ void nsDisplayMathMLSlash::Paint(nsDisplayListBuilder* aBuilder,
   aDrawTarget.Fill(path, color);
 }
 
-void
-nsMathMLmfracFrame::DisplaySlash(nsDisplayListBuilder* aBuilder,
-                                 nsIFrame* aFrame, const nsRect& aRect,
-                                 nscoord aThickness,
-                                 const nsDisplayListSet& aLists) {
-  if (!aFrame->StyleVisibility()->IsVisible() || aRect.IsEmpty())
-    return;
+void nsMathMLmfracFrame::DisplaySlash(nsDisplayListBuilder* aBuilder,
+                                      nsIFrame* aFrame, const nsRect& aRect,
+                                      nscoord aThickness,
+                                      const nsDisplayListSet& aLists) {
+  if (!aFrame->StyleVisibility()->IsVisible() || aRect.IsEmpty()) return;
 
-  aLists.Content()->AppendToTop(
-    MakeDisplayItem<nsDisplayMathMLSlash>(aBuilder, aFrame, aRect, aThickness,
-                                          StyleVisibility()->mDirection));
+  aLists.Content()->AppendToTop(MakeDisplayItem<nsDisplayMathMLSlash>(
+      aBuilder, aFrame, aRect, aThickness, StyleVisibility()->mDirection));
 }

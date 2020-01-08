@@ -5,42 +5,36 @@
 
 #include "mozilla/ChangeStyleTransaction.h"
 
-#include "mozilla/dom/Element.h"        
-#include "nsAString.h"                  
-#include "nsCRT.h"                      
-#include "nsDebug.h"                    
-#include "nsError.h"                    
-#include "nsGkAtoms.h"                  
-#include "nsICSSDeclaration.h"          
-#include "nsLiteralString.h"            
-#include "nsReadableUtils.h"            
-#include "nsString.h"                   
-#include "nsStyledElement.h"            
-#include "nsUnicharUtils.h"             
+#include "mozilla/dom/Element.h"  
+#include "nsAString.h"            
+#include "nsCRT.h"                
+#include "nsDebug.h"              
+#include "nsError.h"              
+#include "nsGkAtoms.h"            
+#include "nsICSSDeclaration.h"    
+#include "nsLiteralString.h"      
+#include "nsReadableUtils.h"      
+#include "nsString.h"             
+#include "nsStyledElement.h"      
+#include "nsUnicharUtils.h"       
 
 namespace mozilla {
 
 using namespace dom;
 
 
-already_AddRefed<ChangeStyleTransaction>
-ChangeStyleTransaction::Create(Element& aElement,
-                               nsAtom& aProperty,
-                               const nsAString& aValue)
-{
+already_AddRefed<ChangeStyleTransaction> ChangeStyleTransaction::Create(
+    Element& aElement, nsAtom& aProperty, const nsAString& aValue) {
   RefPtr<ChangeStyleTransaction> transaction =
-    new ChangeStyleTransaction(aElement, aProperty, aValue, false);
+      new ChangeStyleTransaction(aElement, aProperty, aValue, false);
   return transaction.forget();
 }
 
 
-already_AddRefed<ChangeStyleTransaction>
-ChangeStyleTransaction::CreateToRemove(Element& aElement,
-                                       nsAtom& aProperty,
-                                       const nsAString& aValue)
-{
+already_AddRefed<ChangeStyleTransaction> ChangeStyleTransaction::CreateToRemove(
+    Element& aElement, nsAtom& aProperty, const nsAString& aValue) {
   RefPtr<ChangeStyleTransaction> transaction =
-    new ChangeStyleTransaction(aElement, aProperty, aValue, true);
+      new ChangeStyleTransaction(aElement, aProperty, aValue, true);
   return transaction.forget();
 }
 
@@ -48,17 +42,15 @@ ChangeStyleTransaction::ChangeStyleTransaction(Element& aElement,
                                                nsAtom& aProperty,
                                                const nsAString& aValue,
                                                bool aRemove)
-  : EditTransactionBase()
-  , mElement(&aElement)
-  , mProperty(&aProperty)
-  , mValue(aValue)
-  , mRemoveProperty(aRemove)
-  , mUndoValue()
-  , mRedoValue()
-  , mUndoAttributeWasSet(false)
-  , mRedoAttributeWasSet(false)
-{
-}
+    : EditTransactionBase(),
+      mElement(&aElement),
+      mProperty(&aProperty),
+      mValue(aValue),
+      mRemoveProperty(aRemove),
+      mUndoValue(),
+      mRedoValue(),
+      mUndoAttributeWasSet(false),
+      mRedoAttributeWasSet(false) {}
 
 #define kNullCh (char16_t('\0'))
 
@@ -71,16 +63,12 @@ NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 NS_IMPL_ADDREF_INHERITED(ChangeStyleTransaction, EditTransactionBase)
 NS_IMPL_RELEASE_INHERITED(ChangeStyleTransaction, EditTransactionBase)
 
-ChangeStyleTransaction::~ChangeStyleTransaction()
-{
-}
+ChangeStyleTransaction::~ChangeStyleTransaction() {}
 
 
 
-bool
-ChangeStyleTransaction::ValueIncludes(const nsAString& aValueList,
-                                      const nsAString& aValue)
-{
+bool ChangeStyleTransaction::ValueIncludes(const nsAString& aValueList,
+                                           const nsAString& aValue) {
   nsAutoString valueList(aValueList);
   bool result = false;
 
@@ -106,8 +94,8 @@ ChangeStyleTransaction::ValueIncludes(const nsAString& aValueList,
     *end = kNullCh;
 
     if (start < end) {
-      if (nsDependentString(value).Equals(nsDependentString(start),
-            nsCaseInsensitiveStringComparator())) {
+      if (nsDependentString(value).Equals(
+              nsDependentString(start), nsCaseInsensitiveStringComparator())) {
         result = true;
         break;
       }
@@ -120,11 +108,8 @@ ChangeStyleTransaction::ValueIncludes(const nsAString& aValueList,
 
 
 
-void
-ChangeStyleTransaction::RemoveValueFromListOfValues(
-                          nsAString& aValues,
-                          const nsAString& aRemoveValue)
-{
+void ChangeStyleTransaction::RemoveValueFromListOfValues(
+    nsAString& aValues, const nsAString& aRemoveValue) {
   nsAutoString classStr(aValues);
   nsAutoString outString;
   
@@ -158,18 +143,16 @@ ChangeStyleTransaction::RemoveValueFromListOfValues(
 }
 
 NS_IMETHODIMP
-ChangeStyleTransaction::DoTransaction()
-{
+ChangeStyleTransaction::DoTransaction() {
   nsCOMPtr<nsStyledElement> inlineStyles = do_QueryInterface(mElement);
   NS_ENSURE_TRUE(inlineStyles, NS_ERROR_NULL_POINTER);
 
   nsCOMPtr<nsICSSDeclaration> cssDecl = inlineStyles->Style();
- 
+
   nsAutoString propertyNameString;
   mProperty->ToString(propertyNameString);
 
-  mUndoAttributeWasSet = mElement->HasAttr(kNameSpaceID_None,
-                                           nsGkAtoms::style);
+  mUndoAttributeWasSet = mElement->HasAttr(kNameSpaceID_None, nsGkAtoms::style);
 
   nsAutoString values;
   nsresult rv = cssDecl->GetPropertyValue(propertyNameString, values);
@@ -223,10 +206,8 @@ ChangeStyleTransaction::DoTransaction()
   return cssDecl->GetPropertyValue(propertyNameString, mRedoValue);
 }
 
-nsresult
-ChangeStyleTransaction::SetStyle(bool aAttributeWasSet,
-                                 nsAString& aValue)
-{
+nsresult ChangeStyleTransaction::SetStyle(bool aAttributeWasSet,
+                                          nsAString& aValue) {
   if (aAttributeWasSet) {
     
     nsAutoString propertyNameString;
@@ -250,29 +231,23 @@ ChangeStyleTransaction::SetStyle(bool aAttributeWasSet,
 }
 
 NS_IMETHODIMP
-ChangeStyleTransaction::UndoTransaction()
-{
+ChangeStyleTransaction::UndoTransaction() {
   return SetStyle(mUndoAttributeWasSet, mUndoValue);
 }
 
 NS_IMETHODIMP
-ChangeStyleTransaction::RedoTransaction()
-{
+ChangeStyleTransaction::RedoTransaction() {
   return SetStyle(mRedoAttributeWasSet, mRedoValue);
 }
 
 
-bool
-ChangeStyleTransaction::AcceptsMoreThanOneValue(nsAtom& aCSSProperty)
-{
+bool ChangeStyleTransaction::AcceptsMoreThanOneValue(nsAtom& aCSSProperty) {
   return &aCSSProperty == nsGkAtoms::text_decoration;
 }
 
 
-void
-ChangeStyleTransaction::AddValueToMultivalueProperty(nsAString& aValues,
-                                                     const nsAString& aNewValue)
-{
+void ChangeStyleTransaction::AddValueToMultivalueProperty(
+    nsAString& aValues, const nsAString& aNewValue) {
   if (aValues.IsEmpty() || aValues.LowerCaseEqualsLiteral("none")) {
     aValues.Assign(aNewValue);
   } else if (!ValueIncludes(aValues, aNewValue)) {
@@ -282,4 +257,4 @@ ChangeStyleTransaction::AddValueToMultivalueProperty(nsAString& aValues,
   }
 }
 
-} 
+}  

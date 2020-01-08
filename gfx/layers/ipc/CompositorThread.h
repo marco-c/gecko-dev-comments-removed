@@ -6,9 +6,9 @@
 #ifndef mozilla_layers_CompositorThread_h
 #define mozilla_layers_CompositorThread_h
 
-#include "base/basictypes.h"            
-#include "base/platform_thread.h"       
-#include "base/thread.h"                
+#include "base/basictypes.h"       
+#include "base/platform_thread.h"  
+#include "base/thread.h"           
 #include "base/message_loop.h"
 #include "nsISupportsImpl.h"
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
@@ -16,22 +16,18 @@
 namespace mozilla {
 namespace layers {
 
-class CompositorThreadHolder final
-{
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(CompositorThreadHolder)
+class CompositorThreadHolder final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(
+      CompositorThreadHolder)
 
-public:
+ public:
   CompositorThreadHolder();
 
-  base::Thread* GetCompositorThread() const {
-    return mCompositorThread;
-  }
+  base::Thread* GetCompositorThread() const { return mCompositorThread; }
 
   static CompositorThreadHolder* GetSingleton();
 
-  static bool IsActive() {
-    return !!GetSingleton();
-  }
+  static bool IsActive() { return !!GetSingleton(); }
 
   
 
@@ -49,7 +45,7 @@ public:
   
   static bool IsInCompositorThread();
 
-private:
+ private:
   ~CompositorThreadHolder();
 
   base::Thread* const mCompositorThread;
@@ -62,7 +58,7 @@ private:
 
 base::Thread* CompositorThread();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

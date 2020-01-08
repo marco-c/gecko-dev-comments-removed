@@ -15,29 +15,23 @@ using namespace mozilla;
 
 class CheckResponsivenessTask : public CancelableRunnable,
                                 public nsITimerCallback {
-public:
+ public:
   explicit CheckResponsivenessTask(nsIEventTarget* aThread, bool aIsMainThread)
-    : CancelableRunnable("CheckResponsivenessTask")
-    , mStartToPrevTracer_us(uint64_t(profiler_time() * 1000.0))
-    , mStop(false)
-    , mHasEverBeenSuccessfullyDispatched(false)
-    , mThread(aThread)
-    , mIsMainThread(aIsMainThread)
-  {
-  }
+      : CancelableRunnable("CheckResponsivenessTask"),
+        mStartToPrevTracer_us(uint64_t(profiler_time() * 1000.0)),
+        mStop(false),
+        mHasEverBeenSuccessfullyDispatched(false),
+        mThread(aThread),
+        mIsMainThread(aIsMainThread) {}
 
-protected:
-  ~CheckResponsivenessTask()
-  {
-  }
+ protected:
+  ~CheckResponsivenessTask() {}
 
-public:
-
+ public:
   
   
   
-  bool DoFirstDispatchIfNeeded()
-  {
+  bool DoFirstDispatchIfNeeded() {
     if (mHasEverBeenSuccessfullyDispatched) {
       return true;
     }
@@ -57,7 +51,8 @@ public:
       }
 
       if (mThread) {
-        nsresult rv = SystemGroup::Dispatch(TaskCategory::Other, do_AddRef(this));
+        nsresult rv =
+            SystemGroup::Dispatch(TaskCategory::Other, do_AddRef(this));
         if (NS_SUCCEEDED(rv)) {
           mHasEverBeenSuccessfullyDispatched = true;
         }
@@ -72,16 +67,14 @@ public:
     return mHasEverBeenSuccessfullyDispatched;
   }
 
-  nsresult Cancel() override
-  {
+  nsresult Cancel() override {
     
     return NS_OK;
   }
 
   
   
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     
     
     
@@ -93,8 +86,8 @@ public:
     if (!mStop) {
       if (!mTimer) {
         if (mIsMainThread) {
-          mTimer = NS_NewTimer(
-            SystemGroup::EventTargetFor(TaskCategory::Other));
+          mTimer =
+              NS_NewTimer(SystemGroup::EventTargetFor(TaskCategory::Other));
         } else {
           mTimer = NS_NewTimer();
         }
@@ -106,16 +99,13 @@ public:
   }
 
   
-  NS_IMETHOD Notify(nsITimer* aTimer) final
-  {
+  NS_IMETHOD Notify(nsITimer* aTimer) final {
     Run();
     return NS_OK;
   }
 
   
-  void Terminate() {
-    mStop = true;
-  }
+  void Terminate() { mStop = true; }
 
   
   double GetStartToPrevTracer_ms() const {
@@ -124,7 +114,7 @@ public:
 
   NS_DECL_ISUPPORTS_INHERITED
 
-private:
+ private:
   
   
   nsCOMPtr<nsITimer> mTimer;
@@ -155,23 +145,18 @@ NS_IMPL_ISUPPORTS_INHERITED(CheckResponsivenessTask, CancelableRunnable,
 
 ThreadResponsiveness::ThreadResponsiveness(nsIEventTarget* aThread,
                                            bool aIsMainThread)
-  : mActiveTracerEvent(new CheckResponsivenessTask(aThread, aIsMainThread))
-{
+    : mActiveTracerEvent(new CheckResponsivenessTask(aThread, aIsMainThread)) {
   MOZ_COUNT_CTOR(ThreadResponsiveness);
 }
 
-ThreadResponsiveness::~ThreadResponsiveness()
-{
+ThreadResponsiveness::~ThreadResponsiveness() {
   MOZ_COUNT_DTOR(ThreadResponsiveness);
   mActiveTracerEvent->Terminate();
 }
 
-void
-ThreadResponsiveness::Update()
-{
+void ThreadResponsiveness::Update() {
   if (!mActiveTracerEvent->DoFirstDispatchIfNeeded()) {
     return;
   }
   mStartToPrevTracer_ms = Some(mActiveTracerEvent->GetStartToPrevTracer_ms());
 }
-

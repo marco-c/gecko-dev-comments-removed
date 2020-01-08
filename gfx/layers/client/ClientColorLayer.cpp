@@ -4,72 +4,59 @@
 
 
 
-#include "ClientLayerManager.h"         
-#include "Layers.h"                     
+#include "ClientLayerManager.h"             
+#include "Layers.h"                         
 #include "mozilla/layers/LayersMessages.h"  
-#include "mozilla/mozalloc.h"           
-#include "nsCOMPtr.h"                   
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
-#include "nsRegion.h"                   
+#include "mozilla/mozalloc.h"               
+#include "nsCOMPtr.h"                       
+#include "nsDebug.h"                        
+#include "nsISupportsImpl.h"                
+#include "nsRegion.h"                       
 
 namespace mozilla {
 namespace layers {
 
 using namespace mozilla::gfx;
 
-class ClientColorLayer : public ColorLayer,
-                         public ClientLayer {
-public:
-  explicit ClientColorLayer(ClientLayerManager* aLayerManager) :
-    ColorLayer(aLayerManager, static_cast<ClientLayer*>(this))
-  {
+class ClientColorLayer : public ColorLayer, public ClientLayer {
+ public:
+  explicit ClientColorLayer(ClientLayerManager* aLayerManager)
+      : ColorLayer(aLayerManager, static_cast<ClientLayer*>(this)) {
     MOZ_COUNT_CTOR(ClientColorLayer);
   }
 
-protected:
-  virtual ~ClientColorLayer()
-  {
-    MOZ_COUNT_DTOR(ClientColorLayer);
-  }
+ protected:
+  virtual ~ClientColorLayer() { MOZ_COUNT_DTOR(ClientColorLayer); }
 
-public:
-  virtual void SetVisibleRegion(const LayerIntRegion& aRegion) override
-  {
+ public:
+  virtual void SetVisibleRegion(const LayerIntRegion& aRegion) override {
     NS_ASSERTION(ClientManager()->InConstruction(),
                  "Can only set properties in construction phase");
     ColorLayer::SetVisibleRegion(aRegion);
   }
 
-  virtual void RenderLayer() override
-  {
-    RenderMaskLayers(this);
-  }
+  virtual void RenderLayer() override { RenderMaskLayers(this); }
 
-  virtual void FillSpecificAttributes(SpecificLayerAttributes& aAttrs) override
-  {
+  virtual void FillSpecificAttributes(
+      SpecificLayerAttributes& aAttrs) override {
     aAttrs = ColorLayerAttributes(GetColor(), GetBounds());
   }
 
   virtual Layer* AsLayer() override { return this; }
   virtual ShadowableLayer* AsShadowableLayer() override { return this; }
 
-protected:
-  ClientLayerManager* ClientManager()
-  {
+ protected:
+  ClientLayerManager* ClientManager() {
     return static_cast<ClientLayerManager*>(mManager);
   }
 };
 
-already_AddRefed<ColorLayer>
-ClientLayerManager::CreateColorLayer()
-{
+already_AddRefed<ColorLayer> ClientLayerManager::CreateColorLayer() {
   NS_ASSERTION(InConstruction(), "Only allowed in construction phase");
-  RefPtr<ClientColorLayer> layer =
-    new ClientColorLayer(this);
+  RefPtr<ClientColorLayer> layer = new ClientColorLayer(this);
   CREATE_SHADOW(Color);
   return layer.forget();
 }
 
-} 
-} 
+}  
+}  

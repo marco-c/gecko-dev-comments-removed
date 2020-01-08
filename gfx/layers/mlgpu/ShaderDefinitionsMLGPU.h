@@ -48,41 +48,33 @@ static const uint32_t kMaxPixelShaderConstantBuffers = 3;
 
 static const int32_t kDepthLimit = 1000000;
 
-struct WorldConstants
-{
+struct WorldConstants {
   float projection[4][4];
   gfx::Point targetOffset;
   int sortIndexOffset;
   unsigned debugFrameNumber;
 };
 
-struct ClearConstants
-{
-  explicit ClearConstants(int aDepth) : depth(aDepth)
-  {}
+struct ClearConstants {
+  explicit ClearConstants(int aDepth) : depth(aDepth) {}
   int depth;
   int padding[3];
 };
 
-struct LayerConstants
-{
+struct LayerConstants {
   float transform[4][4];
   gfx::Rect clipRect;
   uint32_t maskIndex;
   uint32_t padding[3];
 };
 
-struct MaskCombineInput
-{
+struct MaskCombineInput {
   float texCoords[4];
 };
 
-struct MaskInformation
-{
+struct MaskInformation {
   MaskInformation(float aOpacity, bool aHasMask)
-   : opacity(aOpacity),
-     hasMask(aHasMask ? 1 : 0)
-  {}
+      : opacity(aOpacity), hasMask(aHasMask ? 1 : 0) {}
   float opacity;
   uint32_t hasMask;
   uint32_t padding[2];
@@ -102,9 +94,7 @@ struct BlendVertexShaderConstants {
 };
 
 template <typename T>
-static inline nsTArray<gfx::IntRect>
-ToRectArray(const T& aRegion)
-{
+static inline nsTArray<gfx::IntRect> ToRectArray(const T& aRegion) {
   nsTArray<gfx::IntRect> rects;
   for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
     rects.AppendElement(iter.Get().ToUnknownRect());
@@ -112,19 +102,16 @@ ToRectArray(const T& aRegion)
   return rects;
 }
 
-struct SimpleTraits
-{
+struct SimpleTraits {
   explicit SimpleTraits(const ItemInfo& aItem, const gfx::Rect& aRect)
-   : mItem(aItem),
-     mRect(aRect)
-  {}
+      : mItem(aItem), mRect(aRect) {}
 
   
   
-  struct AnyTriangle { };
-  struct FirstTriangle : AnyTriangle { };
-  struct SecondTriangle : AnyTriangle { };
-  struct UnitQuad { };
+  struct AnyTriangle {};
+  struct FirstTriangle : AnyTriangle {};
+  struct SecondTriangle : AnyTriangle {};
+  struct UnitQuad {};
 
   
   struct UnitQuadVertex {
@@ -159,19 +146,16 @@ struct SimpleTraits
 
   
   const Maybe<gfx::Polygon>& geometry() const;
-  const gfx::Rect& rect() const {
-    return mRect;
-  }
+  const gfx::Rect& rect() const { return mRect; }
 
   const ItemInfo& mItem;
   gfx::Rect mRect;
 };
 
-struct ColorTraits : public SimpleTraits
-{
-  ColorTraits(const ItemInfo& aItem, const gfx::Rect& aRect, const gfx::Color& aColor)
-   : SimpleTraits(aItem, aRect), mColor(aColor)
-  {}
+struct ColorTraits : public SimpleTraits {
+  ColorTraits(const ItemInfo& aItem, const gfx::Rect& aRect,
+              const gfx::Color& aColor)
+      : SimpleTraits(aItem, aRect), mColor(aColor) {}
 
   
   template <typename VertexType>
@@ -182,14 +166,14 @@ struct ColorTraits : public SimpleTraits
   gfx::Color mColor;
 };
 
-struct TexturedTraits : public SimpleTraits
-{
-  TexturedTraits(const ItemInfo& aItem, const gfx::Rect& aRect, const gfx::Rect& aTexCoords)
-   : SimpleTraits(aItem, aRect), mTexCoords(aTexCoords)
-  {}
+struct TexturedTraits : public SimpleTraits {
+  TexturedTraits(const ItemInfo& aItem, const gfx::Rect& aRect,
+                 const gfx::Rect& aTexCoords)
+      : SimpleTraits(aItem, aRect), mTexCoords(aTexCoords) {}
 
   
-  nsTArray<gfx::TexturedTriangle> GenerateTriangles(const gfx::Polygon& aPolygon) const;
+  nsTArray<gfx::TexturedTriangle> GenerateTriangles(
+      const gfx::Polygon& aPolygon) const;
 
   struct VertexData {
     gfx::Point p1, p2, p3;
@@ -204,8 +188,8 @@ struct TexturedTraits : public SimpleTraits
   gfx::Rect mTexCoords;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
 #endif

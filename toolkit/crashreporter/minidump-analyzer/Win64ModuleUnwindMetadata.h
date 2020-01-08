@@ -18,8 +18,7 @@
 
 namespace CrashReporter {
 
-struct UnwindCFI
-{
+struct UnwindCFI {
   uint32_t beginAddress;
   uint32_t size;
   uint32_t stackSize;
@@ -43,15 +42,15 @@ class ModuleUnwindParser {
                               UnwindCFI& aRet);
   void* RvaToVa(ULONG aRva);
 
-public:
+ public:
   explicit ModuleUnwindParser(const std::string& aPath);
   ~ModuleUnwindParser();
   bool GetCFI(DWORD aAddress, UnwindCFI& aRet);
   DWORD GetAnyOffsetAddr() const;
 };
 
-} 
+}  
 
-#endif 
+#endif  
 
-#endif 
+#endif  

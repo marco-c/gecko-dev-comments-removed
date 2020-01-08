@@ -16,31 +16,30 @@ namespace script {
 
 
 
-#define TRACE_FOR_TEST(elem, str)                                    \
-  PR_BEGIN_MACRO                                                     \
-    nsresult rv = NS_OK;                                             \
-    rv = script::TestingDispatchEvent(elem, NS_LITERAL_STRING(str)); \
-    NS_ENSURE_SUCCESS(rv, rv);                                       \
+#define TRACE_FOR_TEST(elem, str)                                  \
+  PR_BEGIN_MACRO                                                   \
+  nsresult rv = NS_OK;                                             \
+  rv = script::TestingDispatchEvent(elem, NS_LITERAL_STRING(str)); \
+  NS_ENSURE_SUCCESS(rv, rv);                                       \
   PR_END_MACRO
 
-#define TRACE_FOR_TEST_BOOL(elem, str)                               \
-  PR_BEGIN_MACRO                                                     \
-    nsresult rv = NS_OK;                                             \
-    rv = script::TestingDispatchEvent(elem, NS_LITERAL_STRING(str)); \
-    NS_ENSURE_SUCCESS(rv, false);                                    \
+#define TRACE_FOR_TEST_BOOL(elem, str)                             \
+  PR_BEGIN_MACRO                                                   \
+  nsresult rv = NS_OK;                                             \
+  rv = script::TestingDispatchEvent(elem, NS_LITERAL_STRING(str)); \
+  NS_ENSURE_SUCCESS(rv, false);                                    \
   PR_END_MACRO
 
-#define TRACE_FOR_TEST_NONE(elem, str)                          \
-  PR_BEGIN_MACRO                                                \
-    script::TestingDispatchEvent(elem, NS_LITERAL_STRING(str)); \
+#define TRACE_FOR_TEST_NONE(elem, str)                        \
+  PR_BEGIN_MACRO                                              \
+  script::TestingDispatchEvent(elem, NS_LITERAL_STRING(str)); \
   PR_END_MACRO
 
-static nsresult
-TestingDispatchEvent(nsIScriptElement* aScriptElement,
-                     const nsAString& aEventType);
+static nsresult TestingDispatchEvent(nsIScriptElement* aScriptElement,
+                                     const nsAString& aEventType);
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

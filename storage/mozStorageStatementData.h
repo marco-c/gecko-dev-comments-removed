@@ -24,31 +24,24 @@ struct sqlite3_stmt;
 namespace mozilla {
 namespace storage {
 
-class StatementData
-{
-public:
+class StatementData {
+ public:
   StatementData(sqlite3_stmt *aStatement,
                 already_AddRefed<BindingParamsArray> aParamsArray,
                 StorageBaseStatementInternal *aStatementOwner)
-  : mStatement(aStatement)
-  , mParamsArray(aParamsArray)
-  , mStatementOwner(aStatementOwner)
-  {
+      : mStatement(aStatement),
+        mParamsArray(aParamsArray),
+        mStatementOwner(aStatementOwner) {
     MOZ_ASSERT(mStatementOwner, "Must have a statement owner!");
   }
   StatementData(const StatementData &aSource)
-  : mStatement(aSource.mStatement)
-  , mParamsArray(aSource.mParamsArray)
-  , mStatementOwner(aSource.mStatementOwner)
-  {
+      : mStatement(aSource.mStatement),
+        mParamsArray(aSource.mParamsArray),
+        mStatementOwner(aSource.mStatementOwner) {
     MOZ_ASSERT(mStatementOwner, "Must have a statement owner!");
   }
-  StatementData()
-  : mStatement(nullptr)
-  {
-  }
-  ~StatementData()
-  {
+  StatementData() : mStatement(nullptr) {}
+  ~StatementData() {
     
     
     
@@ -60,8 +53,7 @@ public:
 
 
 
-  inline int getSqliteStatement(sqlite3_stmt **_stmt)
-  {
+  inline int getSqliteStatement(sqlite3_stmt **_stmt) {
     if (!mStatement) {
       int rc = mStatementOwner->getAsyncStatement(&mStatement);
       NS_ENSURE_TRUE(rc == SQLITE_OK, rc);
@@ -76,8 +68,7 @@ public:
 
 
 
-  inline void reset()
-  {
+  inline void reset() {
     MOZ_ASSERT(mStatementOwner, "Must have a statement owner!");
     
     
@@ -107,8 +98,7 @@ public:
 
 
 
-  inline uint32_t needsTransaction()
-  {
+  inline uint32_t needsTransaction() {
     MOZ_ASSERT(!NS_IsMainThread());
     
     
@@ -121,7 +111,7 @@ public:
     return mParamsArray ? mParamsArray->length() : 1;
   }
 
-private:
+ private:
   sqlite3_stmt *mStatement;
   RefPtr<BindingParamsArray> mParamsArray;
 
@@ -132,7 +122,7 @@ private:
   nsCOMPtr<StorageBaseStatementInternal> mStatementOwner;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -24,18 +24,11 @@ using namespace mozilla;
 
 NS_IMPL_ISUPPORTS(nsUUIDGenerator, nsIUUIDGenerator)
 
-nsUUIDGenerator::nsUUIDGenerator()
-  : mLock("nsUUIDGenerator.mLock")
-{
-}
+nsUUIDGenerator::nsUUIDGenerator() : mLock("nsUUIDGenerator.mLock") {}
 
-nsUUIDGenerator::~nsUUIDGenerator()
-{
-}
+nsUUIDGenerator::~nsUUIDGenerator() {}
 
-nsresult
-nsUUIDGenerator::Init()
-{
+nsresult nsUUIDGenerator::Init() {
   
   
 
@@ -82,8 +75,7 @@ nsUUIDGenerator::Init()
 }
 
 NS_IMETHODIMP
-nsUUIDGenerator::GenerateUUID(nsID** aRet)
-{
+nsUUIDGenerator::GenerateUUID(nsID** aRet) {
   nsID* id = static_cast<nsID*>(moz_xmalloc(sizeof(nsID)));
 
   nsresult rv = GenerateUUIDInPlace(id);
@@ -97,8 +89,7 @@ nsUUIDGenerator::GenerateUUID(nsID** aRet)
 }
 
 NS_IMETHODIMP
-nsUUIDGenerator::GenerateUUIDInPlace(nsID* aId)
-{
+nsUUIDGenerator::GenerateUUIDInPlace(nsID* aId) {
   
   
   MutexAutoLock lock(mLock);
@@ -138,7 +129,6 @@ nsUUIDGenerator::GenerateUUIDInPlace(nsID* aId)
 #else
     long rval = random();
 #endif
-
 
     uint8_t* src = (uint8_t*)&rval;
     

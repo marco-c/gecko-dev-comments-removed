@@ -23,24 +23,20 @@
 namespace mozilla {
 
 namespace Telemetry {
-  enum HistogramID : uint32_t;
-} 
+enum HistogramID : uint32_t;
+}  
 
 namespace image {
 
 class imgFrame;
 
-struct DecoderFinalStatus final
-{
-  DecoderFinalStatus(bool aWasMetadataDecode,
-                     bool aFinished,
-                     bool aHadError,
+struct DecoderFinalStatus final {
+  DecoderFinalStatus(bool aWasMetadataDecode, bool aFinished, bool aHadError,
                      bool aShouldReportError)
-    : mWasMetadataDecode(aWasMetadataDecode)
-    , mFinished(aFinished)
-    , mHadError(aHadError)
-    , mShouldReportError(aShouldReportError)
-  { }
+      : mWasMetadataDecode(aWasMetadataDecode),
+        mFinished(aFinished),
+        mHadError(aHadError),
+        mShouldReportError(aShouldReportError) {}
 
   
   const bool mWasMetadataDecode : 1;
@@ -56,21 +52,17 @@ struct DecoderFinalStatus final
   const bool mShouldReportError : 1;
 };
 
-struct DecoderTelemetry final
-{
+struct DecoderTelemetry final {
   DecoderTelemetry(const Maybe<Telemetry::HistogramID>& aSpeedHistogram,
-                   size_t aBytesDecoded,
-                   uint32_t aChunkCount,
+                   size_t aBytesDecoded, uint32_t aChunkCount,
                    TimeDuration aDecodeTime)
-    : mSpeedHistogram(aSpeedHistogram)
-    , mBytesDecoded(aBytesDecoded)
-    , mChunkCount(aChunkCount)
-    , mDecodeTime(aDecodeTime)
-  { }
+      : mSpeedHistogram(aSpeedHistogram),
+        mBytesDecoded(aBytesDecoded),
+        mChunkCount(aChunkCount),
+        mDecodeTime(aDecodeTime) {}
 
   
-  int32_t Speed() const
-  {
+  int32_t Speed() const {
     return mBytesDecoded / (1024 * mDecodeTime.ToSeconds());
   }
 
@@ -96,9 +88,8 @@ struct DecoderTelemetry final
 
 
 
-class IDecoderFrameRecycler
-{
-public:
+class IDecoderFrameRecycler {
+ public:
   
 
 
@@ -111,9 +102,8 @@ public:
   virtual RawAccessFrameRef RecycleFrame(gfx::IntRect& aRecycleRect) = 0;
 };
 
-class Decoder
-{
-public:
+class Decoder {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_RECORDED(Decoder)
 
   explicit Decoder(RasterImage* aImage);
@@ -164,8 +154,7 @@ public:
 
 
 
-  nsIntRect TakeInvalidRect()
-  {
+  nsIntRect TakeInvalidRect() {
     nsIntRect invalidRect = mInvalidRect;
     mInvalidRect.SetEmpty();
     return invalidRect;
@@ -176,8 +165,7 @@ public:
 
 
 
-  Progress TakeProgress()
-  {
+  Progress TakeProgress() {
     Progress progress = mProgress;
     mProgress = NoProgress;
     return progress;
@@ -186,9 +174,9 @@ public:
   
 
 
-  bool HasProgress() const
-  {
-    return mProgress != NoProgress || !mInvalidRect.IsEmpty() || mFinishedNewFrame;
+  bool HasProgress() const {
+    return mProgress != NoProgress || !mInvalidRect.IsEmpty() ||
+           mFinishedNewFrame;
   }
 
   
@@ -200,8 +188,7 @@ public:
 
 
 
-  void SetMetadataDecode(bool aMetadataDecode)
-  {
+  void SetMetadataDecode(bool aMetadataDecode) {
     MOZ_ASSERT(!mInitialized, "Shouldn't be initialized yet");
     mMetadataDecode = aMetadataDecode;
   }
@@ -230,7 +217,10 @@ public:
 
 
 
-  gfx::IntSize OutputSize() const { MOZ_ASSERT(HasSize()); return *mOutputSize; }
+  gfx::IntSize OutputSize() const {
+    MOZ_ASSERT(HasSize());
+    return *mOutputSize;
+  }
 
   
 
@@ -242,16 +232,14 @@ public:
 
 
 
-  void SetExpectedSize(const gfx::IntSize& aSize)
-  {
+  void SetExpectedSize(const gfx::IntSize& aSize) {
     mExpectedSize.emplace(aSize);
   }
 
   
 
 
-  bool IsExpectedSize() const
-  {
+  bool IsExpectedSize() const {
     return mExpectedSize.isNothing() || *mExpectedSize == Size();
   }
 
@@ -262,30 +250,24 @@ public:
 
 
 
-  void SetIterator(SourceBufferIterator&& aIterator)
-  {
+  void SetIterator(SourceBufferIterator&& aIterator) {
     MOZ_ASSERT(!mInitialized, "Shouldn't be initialized yet");
     mIterator.emplace(std::move(aIterator));
   }
 
-  SourceBuffer* GetSourceBuffer() const
-  {
-    return mIterator->Owner();
-  }
+  SourceBuffer* GetSourceBuffer() const { return mIterator->Owner(); }
 
   
 
 
-  bool ShouldSendPartialInvalidations() const
-  {
+  bool ShouldSendPartialInvalidations() const {
     return !(mDecoderFlags & DecoderFlags::IS_REDECODE);
   }
 
   
 
 
-  bool IsFirstFrameDecode() const
-  {
+  bool IsFirstFrameDecode() const {
     return bool(mDecoderFlags & DecoderFlags::FIRST_FRAME_ONLY);
   }
 
@@ -293,8 +275,7 @@ public:
 
 
 
-  bool ShouldBlendAnimation() const
-  {
+  bool ShouldBlendAnimation() const {
     return bool(mDecoderFlags & DecoderFlags::BLEND_ANIMATION);
   }
 
@@ -321,8 +302,8 @@ public:
   bool GetFinalizeFrames() const { return mFinalizeFrames; }
 
   
-  bool GetDecodeDone() const
-  {
+  
+  bool GetDecodeDone() const {
     return mReachedTerminalState || mDecodeDone ||
            (mMetadataDecode && HasSize()) || HasError();
   }
@@ -331,28 +312,21 @@ public:
   bool InFrame() const { return mInFrame; }
 
   
-  virtual bool IsValidICOResource() const
-  {
-    return false;
-  }
+  virtual bool IsValidICOResource() const { return false; }
 
   
-  virtual DecoderType GetType() const
-  {
-    return DecoderType::UNKNOWN;
-  }
+  virtual DecoderType GetType() const { return DecoderType::UNKNOWN; }
 
   enum DecodeStyle {
-      PROGRESSIVE, 
-                   
-      SEQUENTIAL   
+    PROGRESSIVE,  
+                  
+    SEQUENTIAL    
   };
 
   
 
 
-  void SetDecoderFlags(DecoderFlags aDecoderFlags)
-  {
+  void SetDecoderFlags(DecoderFlags aDecoderFlags) {
     MOZ_ASSERT(!mInitialized);
     mDecoderFlags = aDecoderFlags;
   }
@@ -362,8 +336,7 @@ public:
 
 
 
-  void SetSurfaceFlags(SurfaceFlags aSurfaceFlags)
-  {
+  void SetSurfaceFlags(SurfaceFlags aSurfaceFlags) {
     MOZ_ASSERT(!mInitialized);
     mSurfaceFlags = aSurfaceFlags;
   }
@@ -377,8 +350,7 @@ public:
 
 
 
-  gfx::IntSize Size() const
-  {
+  gfx::IntSize Size() const {
     MOZ_ASSERT(HasSize());
     return mImageMetadata.GetSize();
   }
@@ -390,8 +362,7 @@ public:
 
 
 
-  gfx::IntRect FullFrame() const
-  {
+  gfx::IntRect FullFrame() const {
     return gfx::IntRect(gfx::IntPoint(), Size());
   }
 
@@ -406,8 +377,7 @@ public:
 
 
 
-  gfx::IntRect FullOutputFrame() const
-  {
+  gfx::IntRect FullOutputFrame() const {
     return gfx::IntRect(gfx::IntPoint(), OutputSize());
   }
 
@@ -434,45 +404,36 @@ public:
 
   RasterImage* GetImageMaybeNull() const { return mImage.get(); }
 
-  RawAccessFrameRef GetCurrentFrameRef()
-  {
-    return mCurrentFrame ? mCurrentFrame->RawAccessRef()
-                         : RawAccessFrameRef();
+  RawAccessFrameRef GetCurrentFrameRef() {
+    return mCurrentFrame ? mCurrentFrame->RawAccessRef() : RawAccessFrameRef();
   }
 
   
 
 
 
-  imgFrame* GetCurrentFrame()
-  {
-    return mCurrentFrame.get();
-  }
+  imgFrame* GetCurrentFrame() { return mCurrentFrame.get(); }
 
   
 
 
 
-  const RawAccessFrameRef& GetRestoreFrameRef() const
-  {
+  const RawAccessFrameRef& GetRestoreFrameRef() const {
     MOZ_ASSERT(ShouldBlendAnimation());
     return mRestoreFrame;
   }
 
-  const gfx::IntRect& GetRestoreDirtyRect() const
-  {
+  const gfx::IntRect& GetRestoreDirtyRect() const {
     MOZ_ASSERT(ShouldBlendAnimation());
     return mRestoreDirtyRect;
   }
 
-  const gfx::IntRect& GetRecycleRect() const
-  {
+  const gfx::IntRect& GetRecycleRect() const {
     MOZ_ASSERT(ShouldBlendAnimation());
     return mRecycleRect;
   }
 
-  const gfx::IntRect& GetFirstFrameRefreshArea() const
-  {
+  const gfx::IntRect& GetFirstFrameRefreshArea() const {
     return mFirstFrameRefreshArea;
   }
 
@@ -483,12 +444,11 @@ public:
   }
 
   IDecoderFrameRecycler* GetFrameRecycler() const { return mFrameRecycler; }
-  void SetFrameRecycler(IDecoderFrameRecycler* aFrameRecycler)
-  {
+  void SetFrameRecycler(IDecoderFrameRecycler* aFrameRecycler) {
     mFrameRecycler = aFrameRecycler;
   }
 
-protected:
+ protected:
   friend class AutoRecordDecoderTelemetry;
   friend class DecoderTestHelper;
   friend class nsICODecoder;
@@ -517,17 +477,17 @@ protected:
 
 
 
-  virtual Maybe<Telemetry::HistogramID> SpeedHistogram() const { return Nothing(); }
+  virtual Maybe<Telemetry::HistogramID> SpeedHistogram() const {
+    return Nothing();
+  }
+
+  
+
 
 
   
-
-
-
   
-  
-  void PostSize(int32_t aWidth,
-                int32_t aHeight,
+  void PostSize(int32_t aWidth, int32_t aHeight,
                 Orientation aOrientation = Orientation());
 
   
@@ -566,8 +526,9 @@ protected:
 
 
 
-  void PostInvalidation(const gfx::IntRect& aRect,
-                        const Maybe<gfx::IntRect>& aRectAtOutputSize = Nothing());
+  void PostInvalidation(
+      const gfx::IntRect& aRect,
+      const Maybe<gfx::IntRect>& aRectAtOutputSize = Nothing());
 
   
   
@@ -586,11 +547,10 @@ protected:
 
   nsresult AllocateFrame(const gfx::IntSize& aOutputSize,
                          const gfx::IntRect& aFrameRect,
-                         gfx::SurfaceFormat aFormat,
-                         uint8_t aPaletteDepth = 0,
+                         gfx::SurfaceFormat aFormat, uint8_t aPaletteDepth = 0,
                          const Maybe<AnimationParams>& aAnimParams = Nothing());
 
-private:
+ private:
   
   void PostError();
 
@@ -603,8 +563,7 @@ private:
 
   
   
-  uint32_t GetCompleteFrameCount()
-  {
+  uint32_t GetCompleteFrameCount() {
     if (mFrameCount == 0) {
       return 0;
     }
@@ -612,14 +571,13 @@ private:
     return mInFrame ? mFrameCount - 1 : mFrameCount;
   }
 
-  RawAccessFrameRef AllocateFrameInternal(const gfx::IntSize& aOutputSize,
-                                          const gfx::IntRect& aFrameRect,
-                                          gfx::SurfaceFormat aFormat,
-                                          uint8_t aPaletteDepth,
-                                          const Maybe<AnimationParams>& aAnimParams,
-                                          RawAccessFrameRef&& aPreviousFrame);
+  RawAccessFrameRef AllocateFrameInternal(
+      const gfx::IntSize& aOutputSize, const gfx::IntRect& aFrameRect,
+      gfx::SurfaceFormat aFormat, uint8_t aPaletteDepth,
+      const Maybe<AnimationParams>& aAnimParams,
+      RawAccessFrameRef&& aPreviousFrame);
 
-protected:
+ protected:
   Maybe<Downscaler> mDownscaler;
 
   uint8_t* mImageData;  
@@ -627,7 +585,7 @@ protected:
   uint32_t* mColormap;  
   uint32_t mColormapSize;
 
-private:
+ private:
   RefPtr<RasterImage> mImage;
   Maybe<SourceBufferIterator> mIterator;
   IDecoderFrameRecycler* mFrameRecycler;
@@ -641,19 +599,21 @@ private:
 
   ImageMetadata mImageMetadata;
 
-  gfx::IntRect mInvalidRect; 
-  gfx::IntRect mRestoreDirtyRect; 
-                                  
-  gfx::IntRect mRecycleRect; 
-                             
+  gfx::IntRect
+      mInvalidRect;  
+  gfx::IntRect mRestoreDirtyRect;   
+                                    
+  gfx::IntRect mRecycleRect;        
+                                    
   Maybe<gfx::IntSize> mOutputSize;  
-  Maybe<gfx::IntSize> mExpectedSize; 
+  Maybe<gfx::IntSize> mExpectedSize;  
   Progress mProgress;
 
-  uint32_t mFrameCount; 
+  uint32_t mFrameCount;      
   FrameTimeout mLoopLength;  
-  gfx::IntRect mFirstFrameRefreshArea;  
-                                        
+  gfx::IntRect
+      mFirstFrameRefreshArea;  
+                               
 
   
   TimeDuration mDecodeTime;
@@ -678,7 +638,7 @@ private:
   bool mFinalizeFrames : 1;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

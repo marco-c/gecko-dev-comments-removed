@@ -22,62 +22,53 @@ class WorkerPrivate;
 
 
 
-class WorkerHolderToken final : public WorkerHolder
-{
-public:
+class WorkerHolderToken final : public WorkerHolder {
+ public:
   
   
-  class Listener
-  {
-  public:
-    virtual void
-    WorkerShuttingDown() = 0;
+  class Listener {
+   public:
+    virtual void WorkerShuttingDown() = 0;
   };
 
   
   
   
-  static already_AddRefed<WorkerHolderToken>
-  Create(WorkerPrivate* aWorkerPrivate,
-         WorkerStatus aShutdownStatus,
-         Behavior aBehavior = PreventIdleShutdownStart);
+  static already_AddRefed<WorkerHolderToken> Create(
+      WorkerPrivate* aWorkerPrivate, WorkerStatus aShutdownStatus,
+      Behavior aBehavior = PreventIdleShutdownStart);
 
   
   
   
   
-  void
-  AddListener(Listener* aListener);
+  void AddListener(Listener* aListener);
 
   
   
-  void
-  RemoveListener(Listener* aListener);
+  void RemoveListener(Listener* aListener);
 
-  bool
-  IsShuttingDown() const;
+  bool IsShuttingDown() const;
 
-  WorkerPrivate*
-  GetWorkerPrivate() const;
+  WorkerPrivate* GetWorkerPrivate() const;
 
-private:
+ private:
   WorkerHolderToken(WorkerStatus aShutdownStatus, Behavior aBehavior);
 
   ~WorkerHolderToken();
 
   
-  virtual bool
-  Notify(WorkerStatus aStatus) override;
+  virtual bool Notify(WorkerStatus aStatus) override;
 
   nsTObserverArray<Listener*> mListenerList;
   const WorkerStatus mShutdownStatus;
   bool mShuttingDown;
 
-public:
+ public:
   NS_INLINE_DECL_REFCOUNTING(WorkerHolderToken)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

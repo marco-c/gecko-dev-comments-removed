@@ -15,7 +15,7 @@ namespace mozilla {
 
 namespace gfx {
 class DataSourceSurface;
-} 
+}  
 
 namespace gl {
 
@@ -44,19 +44,13 @@ class GLContext;
 
 
 
-gfx::SurfaceFormat
-UploadImageDataToTexture(GLContext* gl,
-                         unsigned char* aData,
-                         const gfx::IntSize& aDataSize,
-                         int32_t aStride,
-                         gfx::SurfaceFormat aFormat,
-                         const nsIntRegion& aDstRegion,
-                         GLuint aTexture,
-                         const gfx::IntSize& aSize,
-                         size_t* aOutUploadSize = nullptr,
-                         bool aNeedInit = false,
-                         GLenum aTextureUnit = LOCAL_GL_TEXTURE0,
-                         GLenum aTextureTarget = LOCAL_GL_TEXTURE_2D);
+gfx::SurfaceFormat UploadImageDataToTexture(
+    GLContext* gl, unsigned char* aData, const gfx::IntSize& aDataSize,
+    int32_t aStride, gfx::SurfaceFormat aFormat, const nsIntRegion& aDstRegion,
+    GLuint aTexture, const gfx::IntSize& aSize,
+    size_t* aOutUploadSize = nullptr, bool aNeedInit = false,
+    GLenum aTextureUnit = LOCAL_GL_TEXTURE0,
+    GLenum aTextureTarget = LOCAL_GL_TEXTURE_2D);
 
 
 
@@ -65,22 +59,18 @@ UploadImageDataToTexture(GLContext* gl,
 
 
 
-gfx::SurfaceFormat
-UploadSurfaceToTexture(GLContext* gl,
-                       gfx::DataSourceSurface* aSurface,
-                       const nsIntRegion& aDstRegion,
-                       GLuint aTexture,
-                       const gfx::IntSize& aSize,
-                       size_t* aOutUploadSize = nullptr,
-                       bool aNeedInit = false,
-                       const gfx::IntPoint& aSrcPoint = gfx::IntPoint(0, 0),
-                       GLenum aTextureUnit = LOCAL_GL_TEXTURE0,
-                       GLenum aTextureTarget = LOCAL_GL_TEXTURE_2D);
+gfx::SurfaceFormat UploadSurfaceToTexture(
+    GLContext* gl, gfx::DataSourceSurface* aSurface,
+    const nsIntRegion& aDstRegion, GLuint aTexture, const gfx::IntSize& aSize,
+    size_t* aOutUploadSize = nullptr, bool aNeedInit = false,
+    const gfx::IntPoint& aSrcPoint = gfx::IntPoint(0, 0),
+    GLenum aTextureUnit = LOCAL_GL_TEXTURE0,
+    GLenum aTextureTarget = LOCAL_GL_TEXTURE_2D);
 
 bool CanUploadSubTextures(GLContext* gl);
 bool CanUploadNonPowerOfTwo(GLContext* gl);
 
-} 
-} 
+}  
+}  
 
 #endif

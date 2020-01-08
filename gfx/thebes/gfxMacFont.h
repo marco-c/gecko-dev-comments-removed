@@ -15,100 +15,83 @@
 
 class MacOSFontEntry;
 
-class gfxMacFont : public gfxFont
-{
-public:
-    gfxMacFont(const RefPtr<mozilla::gfx::UnscaledFontMac>& aUnscaledFont,
-               MacOSFontEntry *aFontEntry, const gfxFontStyle *aFontStyle);
+class gfxMacFont : public gfxFont {
+ public:
+  gfxMacFont(const RefPtr<mozilla::gfx::UnscaledFontMac> &aUnscaledFont, MacOSFontEntry *aFontEntry,
+             const gfxFontStyle *aFontStyle);
 
-    virtual ~gfxMacFont();
+  virtual ~gfxMacFont();
 
-    CGFontRef GetCGFontRef() const { return mCGFont; }
+  CGFontRef GetCGFontRef() const { return mCGFont; }
 
-    
-    uint32_t GetSpaceGlyph() override {
-        return mSpaceGlyph;
-    }
+  
+  uint32_t GetSpaceGlyph() override { return mSpaceGlyph; }
 
-    bool SetupCairoFont(DrawTarget* aDrawTarget) override;
+  bool SetupCairoFont(DrawTarget *aDrawTarget) override;
 
-    
-    RunMetrics Measure(const gfxTextRun *aTextRun,
-                       uint32_t aStart, uint32_t aEnd,
-                       BoundingBoxType aBoundingBoxType,
-                       DrawTarget *aDrawTargetForTightBoundingBox,
-                       Spacing *aSpacing,
-                       mozilla::gfx::ShapedTextFlags aOrientation) override;
+  
+  RunMetrics Measure(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
+                     BoundingBoxType aBoundingBoxType, DrawTarget *aDrawTargetForTightBoundingBox,
+                     Spacing *aSpacing, mozilla::gfx::ShapedTextFlags aOrientation) override;
 
-    
-    
-    
-    bool ProvidesGlyphWidths() const override {
-        return mVariationFont ||
-               mFontEntry->HasFontTable(TRUETYPE_TAG('s','b','i','x'));
-    }
+  
+  
+  
+  bool ProvidesGlyphWidths() const override {
+    return mVariationFont || mFontEntry->HasFontTable(TRUETYPE_TAG('s', 'b', 'i', 'x'));
+  }
 
-    int32_t GetGlyphWidth(DrawTarget& aDrawTarget,
-                          uint16_t aGID) override;
+  int32_t GetGlyphWidth(DrawTarget &aDrawTarget, uint16_t aGID) override;
 
-    already_AddRefed<mozilla::gfx::ScaledFont>
-    GetScaledFont(mozilla::gfx::DrawTarget *aTarget) override;
+  already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(
+      mozilla::gfx::DrawTarget *aTarget) override;
 
-    void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                FontCacheSizes* aSizes) const override;
-    void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                FontCacheSizes* aSizes) const override;
+  void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                              FontCacheSizes *aSizes) const override;
+  void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                              FontCacheSizes *aSizes) const override;
 
-    FontType GetType() const override { return FONT_TYPE_MAC; }
+  FontType GetType() const override { return FONT_TYPE_MAC; }
 
-    
-    
-    
-    static CTFontRef
-    CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont,
-                                         CGFloat aSize,
-                                         bool aInstalledFont,
-                                         CTFontDescriptorRef aFontDesc = nullptr);
+  
+  
+  
+  static CTFontRef CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize,
+                                                        bool aInstalledFont,
+                                                        CTFontDescriptorRef aFontDesc = nullptr);
 
-protected:
-    const Metrics& GetHorizontalMetrics() override {
-        return mMetrics;
-    }
+ protected:
+  const Metrics &GetHorizontalMetrics() override { return mMetrics; }
 
-    
-    bool ShapeText(DrawTarget     *aDrawTarget,
-                   const char16_t *aText,
-                   uint32_t        aOffset,
-                   uint32_t        aLength,
-                   Script          aScript,
-                   bool            aVertical,
-                   RoundingFlags   aRounding,
-                   gfxShapedText  *aShapedText) override;
+  
+  bool ShapeText(DrawTarget *aDrawTarget, const char16_t *aText, uint32_t aOffset, uint32_t aLength,
+                 Script aScript, bool aVertical, RoundingFlags aRounding,
+                 gfxShapedText *aShapedText) override;
 
-    void InitMetrics();
-    void InitMetricsFromPlatform();
+  void InitMetrics();
+  void InitMetricsFromPlatform();
 
-    
-    
-    gfxFloat GetCharWidth(CFDataRef aCmap, char16_t aUniChar,
-                          uint32_t *aGlyphID, gfxFloat aConvFactor);
+  
+  
+  gfxFloat GetCharWidth(CFDataRef aCmap, char16_t aUniChar, uint32_t *aGlyphID,
+                        gfxFloat aConvFactor);
 
-    
-    CGFontRef             mCGFont;
+  
+  CGFontRef mCGFont;
 
-    
-    
-    CTFontRef             mCTFont;
+  
+  
+  CTFontRef mCTFont;
 
-    cairo_font_face_t    *mFontFace;
+  cairo_font_face_t *mFontFace;
 
-    mozilla::UniquePtr<gfxFontShaper> mCoreTextShaper;
+  mozilla::UniquePtr<gfxFontShaper> mCoreTextShaper;
 
-    Metrics               mMetrics;
-    uint32_t              mSpaceGlyph;
-    nscolor               mFontSmoothingBackgroundColor;
+  Metrics mMetrics;
+  uint32_t mSpaceGlyph;
+  nscolor mFontSmoothingBackgroundColor;
 
-    bool                  mVariationFont; 
+  bool mVariationFont;  
 };
 
 #endif 

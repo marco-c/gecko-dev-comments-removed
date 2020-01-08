@@ -9,14 +9,14 @@ using namespace mozilla::safebrowsing;
 
 namespace mozilla {
 namespace safebrowsing {
-    class Classifier;
+class Classifier;
 }
-}
+}  
 
 typedef nsCString _Fragment;
 typedef nsTArray<nsCString> _PrefixArray;
 
-template<typename Function>
+template <typename Function>
 void RunTestInNewThread(Function&& aFunction);
 
 
@@ -25,8 +25,7 @@ nsresult SyncApplyUpdates(Classifier* aClassifier,
 
 
 
-already_AddRefed<nsIFile>
-GetFile(const nsTArray<nsString>& path);
+already_AddRefed<nsIFile> GetFile(const nsTArray<nsString>& path);
 
 
 void ApplyUpdate(nsTArray<TableUpdate*>& updates);
@@ -45,5 +44,5 @@ nsresult PrefixArrayToAddPrefixArrayV2(const nsTArray<nsCString>& prefixArray,
 nsCString GeneratePrefix(const nsCString& aFragment, uint8_t aLength);
 
 
-template<typename T>
+template <typename T>
 RefPtr<T> SetupLookupCache(const _PrefixArray& prefixArray);

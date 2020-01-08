@@ -24,87 +24,80 @@ using namespace mozilla;
 
 
 const nsACString& Unescape(const nsACString& aStr, nsACString& aBuffer,
-                           nsresult* rv)
-{
-    MOZ_ASSERT(rv);
+                           nsresult* rv) {
+  MOZ_ASSERT(rv);
 
-    bool appended = false;
-    *rv = NS_UnescapeURL(aStr.Data(), aStr.Length(),  0,
-                         aBuffer, appended, mozilla::fallible);
-    if (NS_FAILED(*rv) || !appended) {
-        return aStr;
-    }
+  bool appended = false;
+  *rv = NS_UnescapeURL(aStr.Data(), aStr.Length(),  0, aBuffer,
+                       appended, mozilla::fallible);
+  if (NS_FAILED(*rv) || !appended) {
+    return aStr;
+  }
 
-    return aBuffer;
+  return aBuffer;
 }
 
-nsresult
-nsDataChannel::OpenContentStream(bool async, nsIInputStream **result,
-                                 nsIChannel** channel)
-{
-    NS_ENSURE_TRUE(URI(), NS_ERROR_NOT_INITIALIZED);
+nsresult nsDataChannel::OpenContentStream(bool async, nsIInputStream** result,
+                                          nsIChannel** channel) {
+  NS_ENSURE_TRUE(URI(), NS_ERROR_NOT_INITIALIZED);
 
-    nsresult rv;
+  nsresult rv;
 
+  
+  
+  
+  
+  nsCOMPtr<nsIURI> uri;
+  rv = NS_GetURIWithoutRef(URI(), getter_AddRefs(uri));
+  if (NS_FAILED(rv)) return rv;
+
+  nsAutoCString path;
+  rv = uri->GetPathQueryRef(path);
+  if (NS_FAILED(rv)) return rv;
+
+  nsCString contentType, contentCharset;
+  nsDependentCSubstring dataRange;
+  bool lBase64;
+  rv = nsDataHandler::ParsePathWithoutRef(path, contentType, &contentCharset,
+                                          lBase64, &dataRange);
+  if (NS_FAILED(rv)) return rv;
+
+  
+  nsAutoCString unescapedBuffer;
+  const nsACString& data = Unescape(dataRange, unescapedBuffer, &rv);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  if (lBase64 && &data == &unescapedBuffer) {
     
     
     
     
-    nsCOMPtr<nsIURI> uri;
-    rv = NS_GetURIWithoutRef(URI(), getter_AddRefs(uri));
-    if (NS_FAILED(rv))
-        return rv;
+    unescapedBuffer.StripWhitespace();
+  }
 
-    nsAutoCString path;
-    rv = uri->GetPathQueryRef(path);
-    if (NS_FAILED(rv))
-        return rv;
+  nsCOMPtr<nsIInputStream> bufInStream;
+  uint32_t contentLen;
+  if (lBase64) {
+    nsAutoCString decodedData;
+    rv = Base64Decode(data, decodedData);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCString contentType, contentCharset;
-    nsDependentCSubstring dataRange;
-    bool lBase64;
-    rv = nsDataHandler::ParsePathWithoutRef(path, contentType, &contentCharset,
-                                            lBase64, &dataRange);
-    if (NS_FAILED(rv))
-        return rv;
+    contentLen = decodedData.Length();
+    rv = NS_NewCStringInputStream(getter_AddRefs(bufInStream), decodedData);
+  } else {
+    contentLen = data.Length();
+    rv = NS_NewCStringInputStream(getter_AddRefs(bufInStream), data);
+  }
 
-    
-    nsAutoCString unescapedBuffer;
-    const nsACString& data = Unescape(dataRange, unescapedBuffer, &rv);
-    if (NS_FAILED(rv)) {
-        return rv;
-    }
+  if (NS_FAILED(rv)) return rv;
 
-    if (lBase64 && &data == &unescapedBuffer) {
-        
-        
-        
-        
-        unescapedBuffer.StripWhitespace();
-    }
+  SetContentType(contentType);
+  SetContentCharset(contentCharset);
+  mContentLength = contentLen;
 
-    nsCOMPtr<nsIInputStream> bufInStream;
-    uint32_t contentLen;
-    if (lBase64) {
-        nsAutoCString decodedData;
-        rv = Base64Decode(data, decodedData);
-        NS_ENSURE_SUCCESS(rv, rv);
+  bufInStream.forget(result);
 
-        contentLen = decodedData.Length();
-        rv = NS_NewCStringInputStream(getter_AddRefs(bufInStream), decodedData);
-    } else {
-        contentLen = data.Length();
-        rv = NS_NewCStringInputStream(getter_AddRefs(bufInStream), data);
-    }
-
-    if (NS_FAILED(rv))
-        return rv;
-
-    SetContentType(contentType);
-    SetContentCharset(contentCharset);
-    mContentLength = contentLen;
-
-    bufInStream.forget(result);
-
-    return NS_OK;
+  return NS_OK;
 }

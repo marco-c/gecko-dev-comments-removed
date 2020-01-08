@@ -13,12 +13,10 @@ namespace mozilla {
 
 
 
-class RelativeLuminanceUtils
-{
-public:
+class RelativeLuminanceUtils {
+ public:
   
-  static float Compute(nscolor aColor)
-  {
+  static float Compute(nscolor aColor) {
     float r = ComputeComponent(NS_GET_R(aColor));
     float g = ComputeComponent(NS_GET_G(aColor));
     float b = ComputeComponent(NS_GET_B(aColor));
@@ -26,8 +24,7 @@ public:
   }
 
   
-  static nscolor Adjust(nscolor aColor, float aLuminance)
-  {
+  static nscolor Adjust(nscolor aColor, float aLuminance) {
     float r = ComputeComponent(NS_GET_R(aColor));
     float g = ComputeComponent(NS_GET_G(aColor));
     float b = ComputeComponent(NS_GET_B(aColor));
@@ -39,9 +36,8 @@ public:
     return NS_RGBA(r1, g1, b1, NS_GET_A(aColor));
   }
 
-private:
-  static float ComputeComponent(uint8_t aComponent)
-  {
+ private:
+  static float ComputeComponent(uint8_t aComponent) {
     float v = float(aComponent) / 255.0f;
     if (v <= 0.03928f) {
       return v / 12.92f;
@@ -49,14 +45,12 @@ private:
     return std::pow((v + 0.055f) / 1.055f, 2.4f);
   }
 
-  static constexpr float ComputeFromComponents(float aR, float aG, float aB)
-  {
+  static constexpr float ComputeFromComponents(float aR, float aG, float aB) {
     return 0.2126f * aR + 0.7152f * aG + 0.0722f * aB;
   }
 
   
-  static uint8_t DecomputeComponent(float aComponent)
-  {
+  static uint8_t DecomputeComponent(float aComponent) {
     if (aComponent <= 0.03928f / 12.92f) {
       aComponent *= 12.92f;
     } else {
@@ -66,6 +60,6 @@ private:
   }
 };
 
-} 
+}  
 
-#endif 
+#endif  

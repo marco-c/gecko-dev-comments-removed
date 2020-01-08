@@ -14,6 +14,5 @@ namespace mscom {
 
 ULONG Module::sRefCount = 0;
 
-} 
-} 
-
+}  
+}  

@@ -20,6 +20,6 @@ int64_t RunAndroidUiTasks();
 MessageLoop* GetAndroidUiThreadMessageLoop();
 RefPtr<nsThread> GetAndroidUiThread();
 
-} 
+}  
 
-#endif 
+#endif  

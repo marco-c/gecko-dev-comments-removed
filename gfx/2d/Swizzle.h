@@ -16,27 +16,32 @@ namespace gfx {
 
 
 
-GFX2D_API bool PremultiplyData(const uint8_t* aSrc, int32_t aSrcStride, SurfaceFormat aSrcFormat,
-                               uint8_t* aDst, int32_t aDstStride, SurfaceFormat aDstFormat,
+
+GFX2D_API bool PremultiplyData(const uint8_t* aSrc, int32_t aSrcStride,
+                               SurfaceFormat aSrcFormat, uint8_t* aDst,
+                               int32_t aDstStride, SurfaceFormat aDstFormat,
                                const IntSize& aSize);
 
 
 
 
 
-GFX2D_API bool UnpremultiplyData(const uint8_t* aSrc, int32_t aSrcStride, SurfaceFormat aSrcFormat,
-                                 uint8_t* aDst, int32_t aDstStride, SurfaceFormat aDstFormat,
+
+GFX2D_API bool UnpremultiplyData(const uint8_t* aSrc, int32_t aSrcStride,
+                                 SurfaceFormat aSrcFormat, uint8_t* aDst,
+                                 int32_t aDstStride, SurfaceFormat aDstFormat,
                                  const IntSize& aSize);
 
 
 
 
 
-GFX2D_API bool SwizzleData(const uint8_t* aSrc, int32_t aSrcStride, SurfaceFormat aSrcFormat,
-                           uint8_t* aDst, int32_t aDstStride, SurfaceFormat aDstFormat,
+GFX2D_API bool SwizzleData(const uint8_t* aSrc, int32_t aSrcStride,
+                           SurfaceFormat aSrcFormat, uint8_t* aDst,
+                           int32_t aDstStride, SurfaceFormat aDstFormat,
                            const IntSize& aSize);
 
-} 
-} 
+}  
+}  
 
 #endif 

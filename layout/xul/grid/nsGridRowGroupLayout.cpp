@@ -15,7 +15,6 @@
 
 
 
-
 #include "nsGridRowGroupLayout.h"
 #include "nsCOMPtr.h"
 #include "nsIScrollableFrame.h"
@@ -25,34 +24,27 @@
 #include "nsGridRow.h"
 #include "mozilla/ReflowInput.h"
 
-already_AddRefed<nsBoxLayout> NS_NewGridRowGroupLayout()
-{
+already_AddRefed<nsBoxLayout> NS_NewGridRowGroupLayout() {
   RefPtr<nsBoxLayout> layout = new nsGridRowGroupLayout();
   return layout.forget();
 }
 
-nsGridRowGroupLayout::nsGridRowGroupLayout():nsGridRowLayout(), mRowCount(0)
-{
-}
+nsGridRowGroupLayout::nsGridRowGroupLayout()
+    : nsGridRowLayout(), mRowCount(0) {}
 
-nsGridRowGroupLayout::~nsGridRowGroupLayout()
-{
-}
+nsGridRowGroupLayout::~nsGridRowGroupLayout() {}
 
-void
-nsGridRowGroupLayout::ChildAddedOrRemoved(nsIFrame* aBox, nsBoxLayoutState& aState)
-{
+void nsGridRowGroupLayout::ChildAddedOrRemoved(nsIFrame* aBox,
+                                               nsBoxLayoutState& aState) {
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
   bool isHorizontal = IsXULHorizontal(aBox);
 
-  if (grid)
-    grid->RowAddedOrRemoved(aState, index, isHorizontal);
+  if (grid) grid->RowAddedOrRemoved(aState, index, isHorizontal);
 }
 
-void
-nsGridRowGroupLayout::AddWidth(nsSize& aSize, nscoord aSize2, bool aIsHorizontal)
-{
+void nsGridRowGroupLayout::AddWidth(nsSize& aSize, nscoord aSize2,
+                                    bool aIsHorizontal) {
   nscoord& size = GET_WIDTH(aSize, aIsHorizontal);
 
   if (size == NS_INTRINSICSIZE || aSize2 == NS_INTRINSICSIZE)
@@ -61,13 +53,12 @@ nsGridRowGroupLayout::AddWidth(nsSize& aSize, nscoord aSize2, bool aIsHorizontal
     size += aSize2;
 }
 
-nsSize
-nsGridRowGroupLayout::GetXULPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
-{
+nsSize nsGridRowGroupLayout::GetXULPrefSize(nsIFrame* aBox,
+                                            nsBoxLayoutState& aState) {
   nsSize vpref = nsGridRowLayout::GetXULPrefSize(aBox, aState);
 
+  
 
- 
 
 
 
@@ -77,16 +68,15 @@ nsGridRowGroupLayout::GetXULPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
 
-  if (grid)
-  {
+  if (grid) {
     
     bool isHorizontal = IsXULHorizontal(aBox);
     int32_t extraColumns = grid->GetExtraColumnCount(isHorizontal);
-    int32_t start = grid->GetColumnCount(isHorizontal) - grid->GetExtraColumnCount(isHorizontal);
-    for (int32_t i=0; i < extraColumns; i++)
-    {
-      nscoord pref =
-        grid->GetPrefRowHeight(aState, i+start, !isHorizontal); 
+    int32_t start = grid->GetColumnCount(isHorizontal) -
+                    grid->GetExtraColumnCount(isHorizontal);
+    for (int32_t i = 0; i < extraColumns; i++) {
+      nscoord pref = grid->GetPrefRowHeight(
+          aState, i + start, !isHorizontal);  
 
       AddWidth(vpref, pref, isHorizontal);
     }
@@ -95,24 +85,22 @@ nsGridRowGroupLayout::GetXULPrefSize(nsIFrame* aBox, nsBoxLayoutState& aState)
   return vpref;
 }
 
-nsSize
-nsGridRowGroupLayout::GetXULMaxSize(nsIFrame* aBox, nsBoxLayoutState& aState)
-{
- nsSize maxSize = nsGridRowLayout::GetXULMaxSize(aBox, aState);
+nsSize nsGridRowGroupLayout::GetXULMaxSize(nsIFrame* aBox,
+                                           nsBoxLayoutState& aState) {
+  nsSize maxSize = nsGridRowLayout::GetXULMaxSize(aBox, aState);
 
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
 
-  if (grid)
-  {
+  if (grid) {
     
     bool isHorizontal = IsXULHorizontal(aBox);
     int32_t extraColumns = grid->GetExtraColumnCount(isHorizontal);
-    int32_t start = grid->GetColumnCount(isHorizontal) - grid->GetExtraColumnCount(isHorizontal);
-    for (int32_t i=0; i < extraColumns; i++)
-    {
-      nscoord max =
-        grid->GetMaxRowHeight(aState, i+start, !isHorizontal); 
+    int32_t start = grid->GetColumnCount(isHorizontal) -
+                    grid->GetExtraColumnCount(isHorizontal);
+    for (int32_t i = 0; i < extraColumns; i++) {
+      nscoord max = grid->GetMaxRowHeight(aState, i + start,
+                                          !isHorizontal);  
 
       AddWidth(maxSize, max, isHorizontal);
     }
@@ -121,24 +109,22 @@ nsGridRowGroupLayout::GetXULMaxSize(nsIFrame* aBox, nsBoxLayoutState& aState)
   return maxSize;
 }
 
-nsSize
-nsGridRowGroupLayout::GetXULMinSize(nsIFrame* aBox, nsBoxLayoutState& aState)
-{
+nsSize nsGridRowGroupLayout::GetXULMinSize(nsIFrame* aBox,
+                                           nsBoxLayoutState& aState) {
   nsSize minSize = nsGridRowLayout::GetXULMinSize(aBox, aState);
 
   int32_t index = 0;
   nsGrid* grid = GetGrid(aBox, &index);
 
-  if (grid)
-  {
+  if (grid) {
     
     bool isHorizontal = IsXULHorizontal(aBox);
     int32_t extraColumns = grid->GetExtraColumnCount(isHorizontal);
-    int32_t start = grid->GetColumnCount(isHorizontal) - grid->GetExtraColumnCount(isHorizontal);
-    for (int32_t i=0; i < extraColumns; i++)
-    {
-      nscoord min =
-        grid->GetMinRowHeight(aState, i+start, !isHorizontal); 
+    int32_t start = grid->GetColumnCount(isHorizontal) -
+                    grid->GetExtraColumnCount(isHorizontal);
+    for (int32_t i = 0; i < extraColumns; i++) {
+      nscoord min = grid->GetMinRowHeight(aState, i + start,
+                                          !isHorizontal);  
       AddWidth(minSize, min, isHorizontal);
     }
   }
@@ -149,9 +135,7 @@ nsGridRowGroupLayout::GetXULMinSize(nsIFrame* aBox, nsBoxLayoutState& aState)
 
 
 
-void
-nsGridRowGroupLayout::DirtyRows(nsIFrame* aBox, nsBoxLayoutState& aState)
-{
+void nsGridRowGroupLayout::DirtyRows(nsIFrame* aBox, nsBoxLayoutState& aState) {
   if (aBox) {
     
     
@@ -160,32 +144,28 @@ nsGridRowGroupLayout::DirtyRows(nsIFrame* aBox, nsBoxLayoutState& aState)
                                          NS_FRAME_IS_DIRTY);
     nsIFrame* child = nsBox::GetChildXULBox(aBox);
 
-    while(child) {
-
+    while (child) {
       
       nsIFrame* deepChild = nsGrid::GetScrolledBox(child);
 
       
       nsIGridPart* monument = nsGrid::GetPartFromBox(deepChild);
-      if (monument)
-        monument->DirtyRows(deepChild, aState);
+      if (monument) monument->DirtyRows(deepChild, aState);
 
       child = nsBox::GetNextXULBox(child);
     }
   }
 }
 
-
-void
-nsGridRowGroupLayout::CountRowsColumns(nsIFrame* aBox, int32_t& aRowCount, int32_t& aComputedColumnCount)
-{
+void nsGridRowGroupLayout::CountRowsColumns(nsIFrame* aBox, int32_t& aRowCount,
+                                            int32_t& aComputedColumnCount) {
   if (aBox) {
     int32_t startCount = aRowCount;
 
     nsIFrame* child = nsBox::GetChildXULBox(aBox);
 
-    while(child) {
-
+    while (child) {
+      
       
       nsIFrame* deepChild = nsGrid::GetScrolledBox(child);
 
@@ -210,17 +190,14 @@ nsGridRowGroupLayout::CountRowsColumns(nsIFrame* aBox, int32_t& aRowCount, int32
 
 
 
-
-int32_t
-nsGridRowGroupLayout::BuildRows(nsIFrame* aBox, nsGridRow* aRows)
-{
+int32_t nsGridRowGroupLayout::BuildRows(nsIFrame* aBox, nsGridRow* aRows) {
   int32_t rowCount = 0;
 
   if (aBox) {
     nsIFrame* child = nsBox::GetChildXULBox(aBox);
 
-    while(child) {
-
+    while (child) {
+      
       
       nsIFrame* deepChild = nsGrid::GetScrolledBox(child);
 
@@ -244,9 +221,8 @@ nsGridRowGroupLayout::BuildRows(nsIFrame* aBox, nsGridRow* aRows)
   return rowCount;
 }
 
-nsMargin
-nsGridRowGroupLayout::GetTotalMargin(nsIFrame* aBox, bool aIsHorizontal)
-{
+nsMargin nsGridRowGroupLayout::GetTotalMargin(nsIFrame* aBox,
+                                              bool aIsHorizontal) {
   
 
   nsMargin margin = nsGridRowLayout::GetTotalMargin(aBox, aIsHorizontal);
@@ -256,11 +232,9 @@ nsGridRowGroupLayout::GetTotalMargin(nsIFrame* aBox, bool aIsHorizontal)
   aBox = nsGrid::GetScrollBox(aBox);
 
   
-  nsMargin borderPadding(0,0,0,0);
+  nsMargin borderPadding(0, 0, 0, 0);
   aBox->GetXULBorderAndPadding(borderPadding);
   margin += borderPadding;
 
   return margin;
 }
-
-

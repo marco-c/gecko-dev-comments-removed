@@ -12,23 +12,22 @@
 namespace mozilla {
 namespace layers {
 struct KeyboardScrollAction;
-} 
-} 
+}  
+}  
 
 class nsIControllerCommandTable;
 
-class nsWindowCommandRegistration
-{
-public:
-  static nsresult  RegisterWindowCommands(nsIControllerCommandTable *ccm);
+class nsWindowCommandRegistration {
+ public:
+  static nsresult RegisterWindowCommands(nsIControllerCommandTable* ccm);
 };
 
-class nsGlobalWindowCommands
-{
-public:
+class nsGlobalWindowCommands {
+ public:
   typedef mozilla::layers::KeyboardScrollAction KeyboardScrollAction;
 
   
+
 
 
 
@@ -40,5 +39,4 @@ public:
                                 KeyboardScrollAction* aOutAction);
 };
 
-#endif 
-
+#endif  

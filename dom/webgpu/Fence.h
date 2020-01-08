@@ -12,27 +12,25 @@
 namespace mozilla {
 namespace dom {
 class Promise;
-} 
+}  
 namespace webgpu {
 
 class Device;
 
-class Fence final
-    : public ChildOf<Device>
-{
-public:
-    WEBGPU_DECL_GOOP(Fence)
+class Fence final : public ChildOf<Device> {
+ public:
+  WEBGPU_DECL_GOOP(Fence)
 
-private:
-    Fence() = delete;
-    virtual ~Fence();
+ private:
+  Fence() = delete;
+  virtual ~Fence();
 
-public:
-    bool Wait(double milliseconds) const;
-    already_AddRefed<dom::Promise> Promise() const;
+ public:
+  bool Wait(double milliseconds) const;
+  already_AddRefed<dom::Promise> Promise() const;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

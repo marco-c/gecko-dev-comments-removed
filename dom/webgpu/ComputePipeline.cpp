@@ -15,5 +15,5 @@ ComputePipeline::~ComputePipeline() = default;
 
 WEBGPU_IMPL_GOOP_0(ComputePipeline)
 
-} 
-} 
+}  
+}  

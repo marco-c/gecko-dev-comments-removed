@@ -17,9 +17,8 @@ namespace ipc {
 
 class CrashReporterMetadataShmem;
 
-class CrashReporterClient
-{
-public:
+class CrashReporterClient {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CrashReporterClient);
 
   
@@ -44,8 +43,7 @@ public:
 
     InitSingletonWithShmem(shmem);
     Unused << aToplevelProtocol->SendInitCrashReporter(
-      shmem,
-      CrashReporter::CurrentThreadId());
+        shmem, CrashReporter::CurrentThreadId());
     return true;
   }
 
@@ -55,9 +53,7 @@ public:
     static const size_t kShmemSize = 16 * 1024;
 
     return aToplevelProtocol->AllocUnsafeShmem(
-      kShmemSize,
-      SharedMemory::TYPE_BASIC,
-      aOutShmem);
+        kShmemSize, SharedMemory::TYPE_BASIC, aOutShmem);
   }
 
   static void InitSingletonWithShmem(const Shmem& aShmem);
@@ -69,20 +65,19 @@ public:
                            const nsCString& aData);
   void AppendAppNotes(const nsCString& aData);
 
-private:
+ private:
   explicit CrashReporterClient(const Shmem& aShmem);
   ~CrashReporterClient();
 
-private:
+ private:
   static StaticMutex sLock;
   static StaticRefPtr<CrashReporterClient> sClientSingleton;
 
-private:
+ private:
   UniquePtr<CrashReporterMetadataShmem> mMetadata;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

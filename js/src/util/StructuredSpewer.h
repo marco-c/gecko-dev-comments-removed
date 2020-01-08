@@ -65,137 +65,121 @@ class JSScript;
 
 namespace js {
 
-#define STRUCTURED_CHANNEL_LIST(_) \
-    _(BaselineICStats)
+#define STRUCTURED_CHANNEL_LIST(_) _(BaselineICStats)
 
 
 enum class SpewChannel {
 #define STRUCTURED_CHANNEL(name) name,
-    STRUCTURED_CHANNEL_LIST(STRUCTURED_CHANNEL)
+  STRUCTURED_CHANNEL_LIST(STRUCTURED_CHANNEL)
 #undef STRUCTURED_CHANNEL
-    Count
+      Count
 };
 
 
 
 
 
-class StructuredSpewFilter
-{
-    
-    
-    mozilla::EnumSet<SpewChannel> bits_;
+class StructuredSpewFilter {
+  
+  
+  mozilla::EnumSet<SpewChannel> bits_;
 
-  public:
-    
-    StructuredSpewFilter()
-      : bits_()
-    {}
+ public:
+  
+  StructuredSpewFilter() : bits_() {}
 
-    
-    
-    bool enabled(SpewChannel x) const {
-        return bits_.contains(x);
-    }
+  
+  
+  bool enabled(SpewChannel x) const { return bits_.contains(x); }
 
-    void enableChannel(SpewChannel x) {
-        bits_ += x;
-    }
+  void enableChannel(SpewChannel x) { bits_ += x; }
 
-    void disableAll() {
-        bits_.clear();
-    }
-
+  void disableAll() { bits_.clear(); }
 };
 
-class StructuredSpewer
-{
-  public:
-    StructuredSpewer()
+class StructuredSpewer {
+ public:
+  StructuredSpewer()
       : outputInitializationAttempted_(false),
         json_(mozilla::Nothing()),
-        selectedChannels_()
-    {
-        
-        if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-            return;
-        }
-        if (getenv("SPEW")) {
-            parseSpewFlags(getenv("SPEW"));
-        }
+        selectedChannels_() {
+    
+    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+      return;
     }
-
-    ~StructuredSpewer() {
-        if (json_.isSome()) {
-            json_->endList();
-            output_.flush();
-            output_.finish();
-        }
+    if (getenv("SPEW")) {
+      parseSpewFlags(getenv("SPEW"));
     }
+  }
 
-    
-    
-    static bool enabled(JSScript* script);
-
-    
-    static void spew(JSContext* cx, SpewChannel channel, const char* fmt, ...) MOZ_FORMAT_PRINTF(3,4);
-
-  private:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool outputInitializationAttempted_;
-    Fprinter output_;
-    mozilla::Maybe<JSONPrinter> json_;
-
-    
-    StructuredSpewFilter selectedChannels_;
-
-    using NameArray = mozilla::EnumeratedArray<SpewChannel,
-                                               SpewChannel::Count,
-                                               const char*>;
-    
-    static NameArray const names_;
-
-    
-    StructuredSpewFilter& filter() {
-        return selectedChannels_;
+  ~StructuredSpewer() {
+    if (json_.isSome()) {
+      json_->endList();
+      output_.flush();
+      output_.finish();
     }
+  }
 
-    
-    static const char* getName(SpewChannel channel) {
-        return names_[channel];
-    }
+  
+  
+  static bool enabled(JSScript* script);
 
-    
-    
-    
-    void ensureInitializationAttempted();
+  
+  static void spew(JSContext* cx, SpewChannel channel, const char* fmt, ...)
+      MOZ_FORMAT_PRINTF(3, 4);
 
-    void tryToInitializeOutput(const char* path);
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool outputInitializationAttempted_;
+  Fprinter output_;
+  mozilla::Maybe<JSONPrinter> json_;
 
-    
-    void parseSpewFlags(const char* flags);
+  
+  StructuredSpewFilter selectedChannels_;
 
-    
-    bool enabled(JSContext* cx, const JSScript* script, SpewChannel channel) const;
+  using NameArray =
+      mozilla::EnumeratedArray<SpewChannel, SpewChannel::Count, const char*>;
+  
+  static NameArray const names_;
 
-    
-    void startObject(JSContext* cx, const JSScript* script, SpewChannel channel);
+  
+  StructuredSpewFilter& filter() { return selectedChannels_; }
 
-    friend class AutoStructuredSpewer;
+  
+  static const char* getName(SpewChannel channel) { return names_[channel]; }
+
+  
+  
+  
+  void ensureInitializationAttempted();
+
+  void tryToInitializeOutput(const char* path);
+
+  
+  void parseSpewFlags(const char* flags);
+
+  
+  bool enabled(JSContext* cx, const JSScript* script,
+               SpewChannel channel) const;
+
+  
+  void startObject(JSContext* cx, const JSScript* script, SpewChannel channel);
+
+  friend class AutoStructuredSpewer;
 };
 
 
@@ -220,36 +204,34 @@ class StructuredSpewer
 
 
 class MOZ_RAII AutoStructuredSpewer {
-    mozilla::Maybe<JSONPrinter*> printer_;
-    AutoStructuredSpewer(const AutoStructuredSpewer&) = delete;
-    void operator=(AutoStructuredSpewer&) = delete;
-  public:
+  mozilla::Maybe<JSONPrinter*> printer_;
+  AutoStructuredSpewer(const AutoStructuredSpewer&) = delete;
+  void operator=(AutoStructuredSpewer&) = delete;
 
-    explicit AutoStructuredSpewer(JSContext* cx, SpewChannel channel, JSScript* script);
+ public:
+  explicit AutoStructuredSpewer(JSContext* cx, SpewChannel channel,
+                                JSScript* script);
 
-    ~AutoStructuredSpewer() {
-        if (printer_.isSome()) {
-            printer_.ref()->endObject();
-        }
+  ~AutoStructuredSpewer() {
+    if (printer_.isSome()) {
+      printer_.ref()->endObject();
     }
+  }
 
-    explicit operator bool() const {
-        return printer_.isSome();
-    }
+  explicit operator bool() const { return printer_.isSome(); }
 
-    JSONPrinter* operator->() {
-        MOZ_ASSERT(printer_.isSome());
-        return printer_.ref();
-    }
+  JSONPrinter* operator->() {
+    MOZ_ASSERT(printer_.isSome());
+    return printer_.ref();
+  }
 
-    JSONPrinter& operator*() {
-        MOZ_ASSERT(printer_.isSome());
-        return *printer_.ref();
-    }
-
+  JSONPrinter& operator*() {
+    MOZ_ASSERT(printer_.isSome());
+    return *printer_.ref();
+  }
 };
 
-} 
+}  
 
 #endif
 #endif 

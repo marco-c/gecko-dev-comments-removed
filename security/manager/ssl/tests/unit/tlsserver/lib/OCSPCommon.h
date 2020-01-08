@@ -12,51 +12,55 @@
 #include "certt.h"
 #include "seccomon.h"
 
-enum OCSPResponseType
-{
+enum OCSPResponseType {
   ORTNull = 0,
-  ORTGood,             
-  ORTRevoked,          
-  ORTRevokedOld,       
-  ORTUnknown,          
-  ORTUnknownOld,       
-  ORTGoodOtherCert,    
-  ORTGoodOtherCA,      
-  ORTExpired,          
-  ORTExpiredFreshCA,   
-  ORTNone,             
-  ORTEmpty,            
-  ORTMalformed,        
-  ORTSrverr,           
-  ORTTryLater,         
-  ORTNeedsSig,         
-  ORTUnauthorized,     
-  ORTBadSignature,     
-  ORTSkipResponseBytes, 
-  ORTCriticalExtension, 
-  ORTNoncriticalExtension, 
+  ORTGood,               
+  ORTRevoked,            
+  ORTRevokedOld,         
+  ORTUnknown,            
+  ORTUnknownOld,         
+  ORTGoodOtherCert,      
+  ORTGoodOtherCA,        
+  ORTExpired,            
+  ORTExpiredFreshCA,     
+  ORTNone,               
+  ORTEmpty,              
+  ORTMalformed,          
+  ORTSrverr,             
+  ORTTryLater,           
+  ORTNeedsSig,           
+  ORTUnauthorized,       
+  ORTBadSignature,       
+  ORTSkipResponseBytes,  
+  ORTCriticalExtension,  
+  ORTNoncriticalExtension,  
+                            
   ORTEmptyExtensions,  
-  ORTDelegatedIncluded, 
-  ORTDelegatedIncludedLast, 
-  ORTDelegatedMissing, 
-  ORTDelegatedMissingMultiple, 
-  ORTLongValidityAlmostExpired, 
-  ORTAncientAlmostExpired, 
+                       
+  ORTDelegatedIncluded,      
+                             
+  ORTDelegatedIncludedLast,  
+                             
+  ORTDelegatedMissing,  
+                        
+  ORTDelegatedMissingMultiple,   
+                                 
+  ORTLongValidityAlmostExpired,  
+                                 
+  ORTAncientAlmostExpired,  
+                            
 };
 
-struct OCSPHost
-{
-  const char *mHostName;
+struct OCSPHost {
+  const char* mHostName;
   OCSPResponseType mORT;
-  const char *mAdditionalCertName; 
-  const char *mServerCertName;
+  const char* mAdditionalCertName;  
+  const char* mServerCertName;
 };
 
-SECItemArray*
-GetOCSPResponseForType(OCSPResponseType aORT,
-                       const mozilla::UniqueCERTCertificate& aCert,
-                       const mozilla::UniquePLArenaPool& aArena,
-                       const char* aAdditionalCertName,
-                       time_t aThisUpdateSkew);
+SECItemArray* GetOCSPResponseForType(
+    OCSPResponseType aORT, const mozilla::UniqueCERTCertificate& aCert,
+    const mozilla::UniquePLArenaPool& aArena, const char* aAdditionalCertName,
+    time_t aThisUpdateSkew);
 
-#endif 
+#endif  

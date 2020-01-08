@@ -56,9 +56,8 @@
 
 
 
-class nsHtml5AtomTable
-{
-public:
+class nsHtml5AtomTable {
+ public:
   nsHtml5AtomTable();
   ~nsHtml5AtomTable();
 
@@ -70,25 +69,23 @@ public:
   
 
 
-  void Clear()
-  {
+  void Clear() {
     for (uint32_t i = 0; i < RECENTLY_USED_PARSER_ATOMS_SIZE; ++i) {
       mRecentlyUsedParserAtoms[i] = nullptr;
     }
   }
 
 #ifdef DEBUG
-  void SetPermittedLookupEventTarget(nsISerialEventTarget* aEventTarget)
-  {
+  void SetPermittedLookupEventTarget(nsISerialEventTarget* aEventTarget) {
     mPermittedLookupEventTarget = aEventTarget;
   }
 #endif
 
-private:
+ private:
   RefPtr<nsAtom> mRecentlyUsedParserAtoms[RECENTLY_USED_PARSER_ATOMS_SIZE];
 #ifdef DEBUG
   nsCOMPtr<nsISerialEventTarget> mPermittedLookupEventTarget;
 #endif
 };
 
-#endif 
+#endif  

@@ -10,30 +10,30 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
 
 
 
 
 
-class nsHttpBasicAuth : public nsIHttpAuthenticator
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIHTTPAUTHENTICATOR
+class nsHttpBasicAuth : public nsIHttpAuthenticator {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIHTTPAUTHENTICATOR
 
-    nsHttpBasicAuth() = default;
+  nsHttpBasicAuth() = default;
 
-    static already_AddRefed<nsIHttpAuthenticator> GetOrCreate();
+  static already_AddRefed<nsIHttpAuthenticator> GetOrCreate();
 
-private:
-    virtual ~nsHttpBasicAuth() = default;
+ private:
+  virtual ~nsHttpBasicAuth() = default;
 
-    static StaticRefPtr<nsHttpBasicAuth> gSingleton;
+  static StaticRefPtr<nsHttpBasicAuth> gSingleton;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

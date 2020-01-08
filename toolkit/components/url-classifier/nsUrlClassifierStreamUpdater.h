@@ -21,15 +21,15 @@
 
 class nsIURI;
 
-class nsUrlClassifierStreamUpdater final : public nsIUrlClassifierStreamUpdater,
-                                           public nsIUrlClassifierUpdateObserver,
-                                           public nsIStreamListener,
-                                           public nsIObserver,
-                                           public nsIInterfaceRequestor,
-                                           public nsITimerCallback,
-                                           public nsINamed
-{
-public:
+class nsUrlClassifierStreamUpdater final
+    : public nsIUrlClassifierStreamUpdater,
+      public nsIUrlClassifierUpdateObserver,
+      public nsIStreamListener,
+      public nsIObserver,
+      public nsIInterfaceRequestor,
+      public nsITimerCallback,
+      public nsINamed {
+ public:
   nsUrlClassifierStreamUpdater();
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -42,7 +42,7 @@ public:
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
 
-private:
+ private:
   
   ~nsUrlClassifierStreamUpdater() {}
 
@@ -51,20 +51,16 @@ private:
   void DownloadDone();
 
   
-  nsUrlClassifierStreamUpdater(nsUrlClassifierStreamUpdater&);
+  nsUrlClassifierStreamUpdater(nsUrlClassifierStreamUpdater &);
 
   nsresult AddRequestBody(const nsACString &aRequestBody);
 
   
-  nsresult FetchUpdate(nsIURI *aURI,
-                       const nsACString &aRequest,
-                       bool aIsPostRequest,
-                       const nsACString &aTable);
+  nsresult FetchUpdate(nsIURI *aURI, const nsACString &aRequest,
+                       bool aIsPostRequest, const nsACString &aTable);
   
-  nsresult FetchUpdate(const nsACString &aURI,
-                       const nsACString &aRequest,
-                       bool aIsPostRequest,
-                       const nsACString &aTable);
+  nsresult FetchUpdate(const nsACString &aURI, const nsACString &aRequest,
+                       bool aIsPostRequest, const nsACString &aTable);
 
   
   nsresult FetchNext();
@@ -81,15 +77,13 @@ private:
     nsCOMPtr<nsIUrlClassifierCallback> mDownloadErrorCallback;
   };
   
-  void
-  BuildUpdateRequest(const nsACString &aRequestTables,
-                     const nsACString &aRequestPayload,
-                     bool aIsPostRequest,
-                     const nsACString &aUpdateUrl,
-                     nsIUrlClassifierCallback *aSuccessCallback,
-                     nsIUrlClassifierCallback *aUpdateErrorCallback,
-                     nsIUrlClassifierCallback *aDownloadErrorCallback,
-                     UpdateRequest* aRequest);
+  void BuildUpdateRequest(const nsACString &aRequestTables,
+                          const nsACString &aRequestPayload,
+                          bool aIsPostRequest, const nsACString &aUpdateUrl,
+                          nsIUrlClassifierCallback *aSuccessCallback,
+                          nsIUrlClassifierCallback *aUpdateErrorCallback,
+                          nsIUrlClassifierCallback *aDownloadErrorCallback,
+                          UpdateRequest *aRequest);
 
   bool mIsUpdating;
   bool mInitialized;
@@ -128,11 +122,10 @@ private:
   };
   nsTArray<PendingUpdate> mPendingUpdates;
 
-
   
   
   nsCString mTelemetryProvider;
   PRIntervalTime mTelemetryClockStart;
 };
 
-#endif 
+#endif  

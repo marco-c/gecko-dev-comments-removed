@@ -16,7 +16,7 @@
 
 namespace JS {
 class Zone;
-} 
+}  
 
 namespace js {
 
@@ -26,7 +26,7 @@ struct WeakMapTracer;
 
 namespace gc {
 struct WeakMarkable;
-} 
+}  
 
 
 
@@ -42,191 +42,194 @@ struct WeakMarkable;
 
 
 
-typedef HashSet<WeakMapBase*, DefaultHasher<WeakMapBase*>, SystemAllocPolicy> WeakMapSet;
+
+typedef HashSet<WeakMapBase*, DefaultHasher<WeakMapBase*>, SystemAllocPolicy>
+    WeakMapSet;
 
 
 
-class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase>
-{
-    friend class js::GCMarker;
+class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
+  friend class js::GCMarker;
 
-  public:
-    WeakMapBase(JSObject* memOf, JS::Zone* zone);
-    virtual ~WeakMapBase();
+ public:
+  WeakMapBase(JSObject* memOf, JS::Zone* zone);
+  virtual ~WeakMapBase();
 
-    JS::Zone* zone() const { return zone_; }
+  JS::Zone* zone() const { return zone_; }
 
-    
+  
 
-    
-    static void unmarkZone(JS::Zone* zone);
+  
+  static void unmarkZone(JS::Zone* zone);
 
-    
-    static void traceZone(JS::Zone* zone, JSTracer* tracer);
+  
+  static void traceZone(JS::Zone* zone, JSTracer* tracer);
 
-    
-    
-    
-    
-    static bool markZoneIteratively(JS::Zone* zone, GCMarker* marker);
+  
+  
+  
+  
+  
+  static bool markZoneIteratively(JS::Zone* zone, GCMarker* marker);
 
-    
-    static bool findInterZoneEdges(JS::Zone* zone);
+  
+  static bool findInterZoneEdges(JS::Zone* zone);
 
-    
-    
-    static void sweepZone(JS::Zone* zone);
+  
+  
+  static void sweepZone(JS::Zone* zone);
 
-    
-    static void traceAllMappings(WeakMapTracer* tracer);
+  
+  static void traceAllMappings(WeakMapTracer* tracer);
 
-    
-    static bool saveZoneMarkedWeakMaps(JS::Zone* zone, WeakMapSet& markedWeakMaps);
+  
+  static bool saveZoneMarkedWeakMaps(JS::Zone* zone,
+                                     WeakMapSet& markedWeakMaps);
 
-    
-    static void restoreMarkedWeakMaps(WeakMapSet& markedWeakMaps);
+  
+  static void restoreMarkedWeakMaps(WeakMapSet& markedWeakMaps);
 
-  protected:
-    
-    
-    virtual void trace(JSTracer* tracer) = 0;
-    virtual bool findZoneEdges() = 0;
-    virtual void sweep() = 0;
-    virtual void traceMappings(WeakMapTracer* tracer) = 0;
-    virtual void clearAndCompact() = 0;
+ protected:
+  
+  
+  virtual void trace(JSTracer* tracer) = 0;
+  virtual bool findZoneEdges() = 0;
+  virtual void sweep() = 0;
+  virtual void traceMappings(WeakMapTracer* tracer) = 0;
+  virtual void clearAndCompact() = 0;
 
-    
-    
-    virtual void markEntry(GCMarker* marker, gc::Cell* markedCell, JS::GCCellPtr l) = 0;
+  
+  
+  virtual void markEntry(GCMarker* marker, gc::Cell* markedCell,
+                         JS::GCCellPtr l) = 0;
 
-    virtual bool markIteratively(GCMarker* marker) = 0;
+  virtual bool markIteratively(GCMarker* marker) = 0;
 
-  protected:
-    
-    GCPtrObject memberOf;
+ protected:
+  
+  GCPtrObject memberOf;
 
-    
-    JS::Zone* zone_;
+  
+  JS::Zone* zone_;
 
-    
-    bool marked;
+  
+  bool marked;
 };
 
 template <class Key, class Value>
-class WeakMap : public HashMap<Key, Value, MovableCellHasher<Key>, ZoneAllocPolicy>,
-                public WeakMapBase
-{
-  public:
-    typedef HashMap<Key, Value, MovableCellHasher<Key>, ZoneAllocPolicy> Base;
-    typedef typename Base::Enum Enum;
-    typedef typename Base::Lookup Lookup;
-    typedef typename Base::Entry Entry;
-    typedef typename Base::Range Range;
-    typedef typename Base::Ptr Ptr;
-    typedef typename Base::AddPtr AddPtr;
+class WeakMap
+    : public HashMap<Key, Value, MovableCellHasher<Key>, ZoneAllocPolicy>,
+      public WeakMapBase {
+ public:
+  typedef HashMap<Key, Value, MovableCellHasher<Key>, ZoneAllocPolicy> Base;
+  typedef typename Base::Enum Enum;
+  typedef typename Base::Lookup Lookup;
+  typedef typename Base::Entry Entry;
+  typedef typename Base::Range Range;
+  typedef typename Base::Ptr Ptr;
+  typedef typename Base::AddPtr AddPtr;
 
-    explicit WeakMap(JSContext* cx, JSObject* memOf = nullptr);
+  explicit WeakMap(JSContext* cx, JSObject* memOf = nullptr);
 
-    
-    
-    
-    Ptr lookup(const Lookup& l) const {
-        Ptr p = Base::lookup(l);
-        if (p) {
-            exposeGCThingToActiveJS(p->value());
-        }
-        return p;
+  
+  
+  
+  Ptr lookup(const Lookup& l) const {
+    Ptr p = Base::lookup(l);
+    if (p) {
+      exposeGCThingToActiveJS(p->value());
     }
+    return p;
+  }
 
-    AddPtr lookupForAdd(const Lookup& l) {
-        AddPtr p = Base::lookupForAdd(l);
-        if (p) {
-            exposeGCThingToActiveJS(p->value());
-        }
-        return p;
+  AddPtr lookupForAdd(const Lookup& l) {
+    AddPtr p = Base::lookupForAdd(l);
+    if (p) {
+      exposeGCThingToActiveJS(p->value());
     }
+    return p;
+  }
 
+  
+  using Base::remove;
+
+  void markEntry(GCMarker* marker, gc::Cell* markedCell,
+                 JS::GCCellPtr origKey) override;
+
+  void trace(JSTracer* trc) override;
+
+ protected:
+  static void addWeakEntry(GCMarker* marker, JS::GCCellPtr key,
+                           const gc::WeakMarkable& markable);
+
+  bool markIteratively(GCMarker* marker) override;
+
+  JSObject* getDelegate(JSObject* key) const;
+  JSObject* getDelegate(JSScript* script) const;
+  JSObject* getDelegate(LazyScript* script) const;
+
+ private:
+  void exposeGCThingToActiveJS(const JS::Value& v) const {
+    JS::ExposeValueToActiveJS(v);
+  }
+  void exposeGCThingToActiveJS(JSObject* obj) const {
+    JS::ExposeObjectToActiveJS(obj);
+  }
+
+  bool keyNeedsMark(JSObject* key) const;
+  bool keyNeedsMark(JSScript* script) const;
+  bool keyNeedsMark(LazyScript* script) const;
+
+  bool findZoneEdges() override {
     
-    using Base::remove;
+    return true;
+  }
 
-    void markEntry(GCMarker* marker, gc::Cell* markedCell, JS::GCCellPtr origKey) override;
+  void sweep() override;
 
-    void trace(JSTracer* trc) override;
+  void clearAndCompact() override {
+    Base::clear();
+    Base::compact();
+  }
 
-  protected:
-    static void addWeakEntry(GCMarker* marker, JS::GCCellPtr key,
-                             const gc::WeakMarkable& markable);
+  
+  
+  void traceMappings(WeakMapTracer* tracer) override;
 
-    bool markIteratively(GCMarker* marker) override;
-
-    JSObject* getDelegate(JSObject* key) const;
-    JSObject* getDelegate(JSScript* script) const;
-    JSObject* getDelegate(LazyScript* script) const;
-
-  private:
-    void exposeGCThingToActiveJS(const JS::Value& v) const { JS::ExposeValueToActiveJS(v); }
-    void exposeGCThingToActiveJS(JSObject* obj) const { JS::ExposeObjectToActiveJS(obj); }
-
-    bool keyNeedsMark(JSObject* key) const;
-    bool keyNeedsMark(JSScript* script) const;
-    bool keyNeedsMark(LazyScript* script) const;
-
-    bool findZoneEdges() override {
-        
-        return true;
-    }
-
-    void sweep() override;
-
-    void clearAndCompact() override {
-        Base::clear();
-        Base::compact();
-    }
-
-    
-    
-    void traceMappings(WeakMapTracer* tracer) override;
-
-  protected:
+ protected:
 #if DEBUG
-    void assertEntriesNotAboutToBeFinalized();
+  void assertEntriesNotAboutToBeFinalized();
 #endif
 };
 
+class ObjectValueMap : public WeakMap<HeapPtr<JSObject*>, HeapPtr<Value>> {
+ public:
+  ObjectValueMap(JSContext* cx, JSObject* obj) : WeakMap(cx, obj) {}
 
-class ObjectValueMap : public WeakMap<HeapPtr<JSObject*>, HeapPtr<Value>>
-{
-  public:
-    ObjectValueMap(JSContext* cx, JSObject* obj)
-      : WeakMap(cx, obj)
-    {}
-
-    bool findZoneEdges() override;
+  bool findZoneEdges() override;
 };
 
 
+class ObjectWeakMap {
+  ObjectValueMap map;
 
-class ObjectWeakMap
-{
-    ObjectValueMap map;
+ public:
+  explicit ObjectWeakMap(JSContext* cx);
 
-  public:
-    explicit ObjectWeakMap(JSContext* cx);
+  JS::Zone* zone() const { return map.zone(); }
 
-    JS::Zone* zone() const { return map.zone(); }
+  JSObject* lookup(const JSObject* obj);
+  bool add(JSContext* cx, JSObject* obj, JSObject* target);
+  void clear();
 
-    JSObject* lookup(const JSObject* obj);
-    bool add(JSContext* cx, JSObject* obj, JSObject* target);
-    void clear();
-
-    void trace(JSTracer* trc);
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-        return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
-    }
+  void trace(JSTracer* trc);
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+  }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
-    void checkAfterMovingGC();
+  void checkAfterMovingGC();
 #endif
 };
 
@@ -235,8 +238,8 @@ class ObjectWeakMap
 namespace JS {
 
 template <>
-struct DeletePolicy<js::ObjectValueMap> : public js::GCManagedDeletePolicy<js::ObjectValueMap>
-{};
+struct DeletePolicy<js::ObjectValueMap>
+    : public js::GCManagedDeletePolicy<js::ObjectValueMap> {};
 
 } 
 

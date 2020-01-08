@@ -21,84 +21,72 @@ using namespace mozilla;
 static StaticAutoPtr<nsRepeatService> gRepeatService;
 
 nsRepeatService::nsRepeatService()
-: mCallback(nullptr), mCallbackData(nullptr)
-{
+    : mCallback(nullptr), mCallbackData(nullptr) {}
+
+nsRepeatService::~nsRepeatService() {
+  NS_ASSERTION(!mCallback && !mCallbackData,
+               "Callback was not removed before shutdown");
 }
 
-nsRepeatService::~nsRepeatService()
-{
-  NS_ASSERTION(!mCallback && !mCallbackData, "Callback was not removed before shutdown");
-}
-
- nsRepeatService*
-nsRepeatService::GetInstance()
-{
+ nsRepeatService* nsRepeatService::GetInstance() {
   if (!gRepeatService) {
     gRepeatService = new nsRepeatService();
   }
   return gRepeatService;
 }
 
- void
-nsRepeatService::Shutdown()
-{
-  gRepeatService = nullptr;
-}
+ void nsRepeatService::Shutdown() { gRepeatService = nullptr; }
 
-void
-nsRepeatService::Start(Callback aCallback, void* aCallbackData,
-                       nsIDocument* aDocument, const nsACString& aCallbackName,
-                       uint32_t aInitialDelay)
-{
+void nsRepeatService::Start(Callback aCallback, void* aCallbackData,
+                            nsIDocument* aDocument,
+                            const nsACString& aCallbackName,
+                            uint32_t aInitialDelay) {
   MOZ_ASSERT(aCallback != nullptr, "null ptr");
 
   mCallback = aCallback;
   mCallbackData = aCallbackData;
   mCallbackName = aCallbackName;
 
-  mRepeatTimer = NS_NewTimer(
-    aDocument->EventTargetFor(TaskCategory::Other));
+  mRepeatTimer = NS_NewTimer(aDocument->EventTargetFor(TaskCategory::Other));
 
-  if (mRepeatTimer)  {
+  if (mRepeatTimer) {
     InitTimerCallback(aInitialDelay);
   }
 }
 
-void nsRepeatService::Stop(Callback aCallback, void* aCallbackData)
-{
-  if (mCallback != aCallback || mCallbackData != aCallbackData)
-    return;
+void nsRepeatService::Stop(Callback aCallback, void* aCallbackData) {
+  if (mCallback != aCallback || mCallbackData != aCallbackData) return;
 
   
   if (mRepeatTimer) {
-     mRepeatTimer->Cancel();
-     mRepeatTimer = nullptr;
+    mRepeatTimer->Cancel();
+    mRepeatTimer = nullptr;
   }
   mCallback = nullptr;
   mCallbackData = nullptr;
 }
 
-void
-nsRepeatService::InitTimerCallback(uint32_t aInitialDelay)
-{
+void nsRepeatService::InitTimerCallback(uint32_t aInitialDelay) {
   if (!mRepeatTimer) {
     return;
   }
 
-  mRepeatTimer->InitWithNamedFuncCallback([](nsITimer* aTimer, void* aClosure) {
-    
-    
-    
-    
-    nsRepeatService* rs = gRepeatService;
-    if (!rs) {
-      return;
-    }
+  mRepeatTimer->InitWithNamedFuncCallback(
+      [](nsITimer* aTimer, void* aClosure) {
+        
+        
+        
+        
+        nsRepeatService* rs = gRepeatService;
+        if (!rs) {
+          return;
+        }
 
-    if (rs->mCallback) {
-      rs->mCallback(rs->mCallbackData);
-    }
+        if (rs->mCallback) {
+          rs->mCallback(rs->mCallbackData);
+        }
 
-    rs->InitTimerCallback(REPEAT_DELAY);
-  }, nullptr, aInitialDelay, nsITimer::TYPE_ONE_SHOT, mCallbackName.Data());
+        rs->InitTimerCallback(REPEAT_DELAY);
+      },
+      nullptr, aInitialDelay, nsITimer::TYPE_ONE_SHOT, mCallbackName.Data());
 }

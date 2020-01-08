@@ -24,9 +24,8 @@ class nsIDocument;
 class nsMappedAttributes;
 struct RawServoDeclarationBlock;
 
-class nsHTMLStyleSheet final
-{
-public:
+class nsHTMLStyleSheet final {
+ public:
   explicit nsHTMLStyleSheet(nsIDocument* aDocument);
 
   void SetOwningDocument(nsIDocument* aDocument);
@@ -51,40 +50,36 @@ public:
   }
 
   
-  already_AddRefed<nsMappedAttributes>
-    UniqueMappedAttributes(nsMappedAttributes* aMapped);
+  already_AddRefed<nsMappedAttributes> UniqueMappedAttributes(
+      nsMappedAttributes* aMapped);
   void DropMappedAttributes(nsMappedAttributes* aMapped);
   
   
   
   void CalculateMappedServoDeclarations();
 
-private:
+ private:
   nsHTMLStyleSheet(const nsHTMLStyleSheet& aCopy) = delete;
   nsHTMLStyleSheet& operator=(const nsHTMLStyleSheet& aCopy) = delete;
 
   ~nsHTMLStyleSheet() {}
 
-
   
-  nsresult ImplLinkColorSetter(
-      RefPtr<RawServoDeclarationBlock>& aDecl,
-      nscolor aColor);
+  nsresult ImplLinkColorSetter(RefPtr<RawServoDeclarationBlock>& aDecl,
+                               nscolor aColor);
 
-public: 
-
-
-private:
-  nsIDocument*            mDocument;
+ public:  
+ private:
+  nsIDocument* mDocument;
   RefPtr<RawServoDeclarationBlock> mServoUnvisitedLinkDecl;
   RefPtr<RawServoDeclarationBlock> mServoVisitedLinkDecl;
   RefPtr<RawServoDeclarationBlock> mServoActiveLinkDecl;
 
-  PLDHashTable            mMappedAttrTable;
+  PLDHashTable mMappedAttrTable;
   
   
   
-  bool                    mMappedAttrsDirty;
+  bool mMappedAttrsDirty;
 };
 
 #endif 

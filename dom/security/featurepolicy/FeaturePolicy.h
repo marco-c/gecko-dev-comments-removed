@@ -64,12 +64,10 @@ namespace dom {
 
 class FeaturePolicyUtils;
 
-class FeaturePolicy final : public nsISupports
-                          , public nsWrapperCache
-{
+class FeaturePolicy final : public nsISupports, public nsWrapperCache {
   friend class FeaturePolicyUtils;
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(FeaturePolicy)
 
@@ -78,85 +76,63 @@ public:
   
   
   
-  void
-  SetDefaultOrigin(nsIPrincipal* aPrincipal)
-  {
+  void SetDefaultOrigin(nsIPrincipal* aPrincipal) {
     mDefaultOrigin = aPrincipal;
   }
 
-  nsIPrincipal* DefaultOrigin() const
-  {
-    return mDefaultOrigin;
-  }
+  nsIPrincipal* DefaultOrigin() const { return mDefaultOrigin; }
 
   
-  void
-  InheritPolicy(FeaturePolicy* aParentFeaturePolicy);
+  void InheritPolicy(FeaturePolicy* aParentFeaturePolicy);
 
   
   
-  void
-  SetDeclaredPolicy(nsIDocument* aDocument,
-                    const nsAString& aPolicyString,
-                    nsIPrincipal* aSelfOrigin,
-                    nsIPrincipal* aSrcOrigin);
+  void SetDeclaredPolicy(nsIDocument* aDocument, const nsAString& aPolicyString,
+                         nsIPrincipal* aSelfOrigin, nsIPrincipal* aSrcOrigin);
 
   
   
   
-  void
-  MaybeSetAllowedPolicy(const nsAString& aFeatureName);
+  void MaybeSetAllowedPolicy(const nsAString& aFeatureName);
 
   
   
   
-  void
-  ResetDeclaredPolicy();
+  void ResetDeclaredPolicy();
 
   
 
-  JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
-  nsINode*
-  GetParentObject() const
-  {
-    return mParentNode;
-  }
+  nsINode* GetParentObject() const { return mParentNode; }
 
   
 
-  bool
-  AllowsFeature(const nsAString& aFeatureName,
-                const Optional<nsAString>& aOrigin) const;
+  bool AllowsFeature(const nsAString& aFeatureName,
+                     const Optional<nsAString>& aOrigin) const;
 
-  void
-  AllowedFeatures(nsTArray<nsString>& aAllowedFeatures);
+  void AllowedFeatures(nsTArray<nsString>& aAllowedFeatures);
 
-  void
-  GetAllowlistForFeature(const nsAString& aFeatureName,
-                         nsTArray<nsString>& aList) const;
+  void GetAllowlistForFeature(const nsAString& aFeatureName,
+                              nsTArray<nsString>& aList) const;
 
-private:
+ private:
   ~FeaturePolicy() = default;
 
   
   
   
-  bool
-  AllowsFeatureInternal(const nsAString& aFeatureName,
-                        nsIPrincipal* aOrigin) const;
+  bool AllowsFeatureInternal(const nsAString& aFeatureName,
+                             nsIPrincipal* aOrigin) const;
 
   
-  void
-  SetInheritedDeniedFeature(const nsAString& aFeatureName);
+  void SetInheritedDeniedFeature(const nsAString& aFeatureName);
 
-  bool
-  HasInheritedDeniedFeature(const nsAString& aFeatureName) const;
+  bool HasInheritedDeniedFeature(const nsAString& aFeatureName) const;
 
   
-  bool
-  HasDeclaredFeature(const nsAString& aFeatureName) const;
+  bool HasDeclaredFeature(const nsAString& aFeatureName) const;
 
   nsCOMPtr<nsINode> mParentNode;
 
@@ -170,7 +146,7 @@ private:
   nsCOMPtr<nsIPrincipal> mDefaultOrigin;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

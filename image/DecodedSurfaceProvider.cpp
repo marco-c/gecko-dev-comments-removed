@@ -18,26 +18,20 @@ namespace image {
 DecodedSurfaceProvider::DecodedSurfaceProvider(NotNull<RasterImage*> aImage,
                                                const SurfaceKey& aSurfaceKey,
                                                NotNull<Decoder*> aDecoder)
-  : ISurfaceProvider(ImageKey(aImage.get()), aSurfaceKey,
-                     AvailabilityState::StartAsPlaceholder())
-  , mImage(aImage.get())
-  , mMutex("mozilla::image::DecodedSurfaceProvider")
-  , mDecoder(aDecoder.get())
-{
+    : ISurfaceProvider(ImageKey(aImage.get()), aSurfaceKey,
+                       AvailabilityState::StartAsPlaceholder()),
+      mImage(aImage.get()),
+      mMutex("mozilla::image::DecodedSurfaceProvider"),
+      mDecoder(aDecoder.get()) {
   MOZ_ASSERT(!mDecoder->IsMetadataDecode(),
              "Use MetadataDecodingTask for metadata decodes");
   MOZ_ASSERT(mDecoder->IsFirstFrameDecode(),
              "Use AnimationSurfaceProvider for animation decodes");
 }
 
-DecodedSurfaceProvider::~DecodedSurfaceProvider()
-{
-  DropImageReference();
-}
+DecodedSurfaceProvider::~DecodedSurfaceProvider() { DropImageReference(); }
 
-void
-DecodedSurfaceProvider::DropImageReference()
-{
+void DecodedSurfaceProvider::DropImageReference() {
   if (!mImage) {
     return;  
   }
@@ -52,9 +46,7 @@ DecodedSurfaceProvider::DropImageReference()
   NS_ReleaseOnMainThreadSystemGroup(image.forget(),  true);
 }
 
-DrawableFrameRef
-DecodedSurfaceProvider::DrawableRef(size_t aFrame)
-{
+DrawableFrameRef DecodedSurfaceProvider::DrawableRef(size_t aFrame) {
   MOZ_ASSERT(aFrame == 0,
              "Requesting an animation frame from a DecodedSurfaceProvider?");
 
@@ -76,9 +68,7 @@ DecodedSurfaceProvider::DrawableRef(size_t aFrame)
   return mSurface->DrawableRef();
 }
 
-bool
-DecodedSurfaceProvider::IsFinished() const
-{
+bool DecodedSurfaceProvider::IsFinished() const {
   
   if (Availability().IsPlaceholder()) {
     MOZ_ASSERT_UNREACHABLE("Calling IsFinished() on a placeholder");
@@ -93,9 +83,7 @@ DecodedSurfaceProvider::IsFinished() const
   return mSurface->IsFinished();
 }
 
-void
-DecodedSurfaceProvider::SetLocked(bool aLocked)
-{
+void DecodedSurfaceProvider::SetLocked(bool aLocked) {
   
   if (Availability().IsPlaceholder()) {
     MOZ_ASSERT_UNREACHABLE("Calling SetLocked() on a placeholder");
@@ -113,21 +101,16 @@ DecodedSurfaceProvider::SetLocked(bool aLocked)
 
   
   
-  mLockRef = aLocked ? mSurface->DrawableRef()
-                     : DrawableFrameRef();
+  mLockRef = aLocked ? mSurface->DrawableRef() : DrawableFrameRef();
 }
 
-size_t
-DecodedSurfaceProvider::LogicalSizeInBytes() const
-{
+size_t DecodedSurfaceProvider::LogicalSizeInBytes() const {
   
   IntSize size = GetSurfaceKey().Size();
   return size_t(size.width) * size_t(size.height) * sizeof(uint32_t);
 }
 
-void
-DecodedSurfaceProvider::Run()
-{
+void DecodedSurfaceProvider::Run() {
   MutexAutoLock lock(mMutex);
 
   if (!mDecoder || !mImage) {
@@ -165,9 +148,7 @@ DecodedSurfaceProvider::Run()
   FinishDecoding();
 }
 
-void
-DecodedSurfaceProvider::CheckForNewSurface()
-{
+void DecodedSurfaceProvider::CheckForNewSurface() {
   mMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(mDecoder);
 
@@ -190,9 +171,7 @@ DecodedSurfaceProvider::CheckForNewSurface()
   SurfaceCache::SurfaceAvailable(WrapNotNull(this));
 }
 
-void
-DecodedSurfaceProvider::FinishDecoding()
-{
+void DecodedSurfaceProvider::FinishDecoding() {
   mMutex.AssertCurrentThreadOwns();
   MOZ_ASSERT(mImage);
   MOZ_ASSERT(mDecoder);
@@ -220,11 +199,9 @@ DecodedSurfaceProvider::FinishDecoding()
   DropImageReference();
 }
 
-bool
-DecodedSurfaceProvider::ShouldPreferSyncRun() const
-{
+bool DecodedSurfaceProvider::ShouldPreferSyncRun() const {
   return mDecoder->ShouldSyncDecode(gfxPrefs::ImageMemDecodeBytesAtATime());
 }
 
-} 
-} 
+}  
+}  

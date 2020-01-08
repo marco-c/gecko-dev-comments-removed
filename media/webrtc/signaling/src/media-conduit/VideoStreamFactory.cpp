@@ -17,7 +17,8 @@ namespace mozilla {
 #endif
 #define LOGTAG "WebrtcVideoSessionConduit"
 
-#define MB_OF(w,h) ((unsigned int)((((w+15)>>4))*((unsigned int)((h+15)>>4))))
+#define MB_OF(w, h) \
+  ((unsigned int)((((w + 15) >> 4)) * ((unsigned int)((h + 15) >> 4))))
 
 
 
@@ -25,8 +26,9 @@ namespace mozilla {
 
 
 
-static VideoStreamFactory::ResolutionAndBitrateLimits kResolutionAndBitrateLimits[] = {
-  
+static VideoStreamFactory::ResolutionAndBitrateLimits
+    kResolutionAndBitrateLimits[] = {
+        
   {MB_OF(1920, 1200), KBPS(1500), KBPS(2000), KBPS(10000)}, 
   {MB_OF(1280, 720), KBPS(1200), KBPS(1500), KBPS(5000)}, 
   {MB_OF(800, 480), KBPS(600), KBPS(800), KBPS(2500)}, 
@@ -34,12 +36,11 @@ static VideoStreamFactory::ResolutionAndBitrateLimits kResolutionAndBitrateLimit
   {tl::Max<MB_OF(400, 240), MB_OF(352, 288)>::value, KBPS(125), KBPS(300), KBPS(1300)}, 
   {MB_OF(176, 144), KBPS(100), KBPS(150), KBPS(500)}, 
   {0 , KBPS(40), KBPS(80), KBPS(250)} 
-  
+        
 };
 
-static VideoStreamFactory::ResolutionAndBitrateLimits
-GetLimitsFor(unsigned int aWidth, unsigned int aHeight, int aCapBps = 0)
-{
+static VideoStreamFactory::ResolutionAndBitrateLimits GetLimitsFor(
+    unsigned int aWidth, unsigned int aHeight, int aCapBps = 0) {
   
   
   int fs = MB_OF(aWidth, aHeight);
@@ -48,8 +49,7 @@ GetLimitsFor(unsigned int aWidth, unsigned int aHeight, int aCapBps = 0)
     if (fs > resAndLimits.resolution_in_mb &&
         
         
-        (aCapBps == 0 ||
-         resAndLimits.start_bitrate_bps <= aCapBps ||
+        (aCapBps == 0 || resAndLimits.start_bitrate_bps <= aCapBps ||
          resAndLimits.resolution_in_mb == 0)) {
       return resAndLimits;
     }
@@ -68,19 +68,16 @@ GetLimitsFor(unsigned int aWidth, unsigned int aHeight, int aCapBps = 0)
 
 
 
-static void
-SelectBitrates(
-  unsigned short width, unsigned short height,
-  int min, int start,
-  int cap, int pref_cap, int negotiated_cap,
-  webrtc::VideoStream& aVideoStream)
-{
+
+static void SelectBitrates(unsigned short width, unsigned short height, int min,
+                           int start, int cap, int pref_cap, int negotiated_cap,
+                           webrtc::VideoStream& aVideoStream) {
   int& out_min = aVideoStream.min_bitrate_bps;
   int& out_start = aVideoStream.target_bitrate_bps;
   int& out_max = aVideoStream.max_bitrate_bps;
 
   VideoStreamFactory::ResolutionAndBitrateLimits resAndLimits =
-    GetLimitsFor(width, height);
+      GetLimitsFor(width, height);
   out_min = MinIgnoreZero(resAndLimits.min_bitrate_bps, cap);
   out_start = MinIgnoreZero(resAndLimits.start_bitrate_bps, cap);
   out_max = MinIgnoreZero(resAndLimits.max_bitrate_bps, cap);
@@ -113,24 +110,18 @@ SelectBitrates(
   MOZ_ASSERT(pref_cap == 0 || out_max <= pref_cap);
 }
 
-void
-VideoStreamFactory::SetCodecMode(webrtc::VideoCodecMode aCodecMode)
-{
+void VideoStreamFactory::SetCodecMode(webrtc::VideoCodecMode aCodecMode) {
   MOZ_ASSERT(NS_IsMainThread());
   mCodecMode = aCodecMode;
 }
 
-void
-VideoStreamFactory::SetSendingFramerate(unsigned int aSendingFramerate)
-{
+void VideoStreamFactory::SetSendingFramerate(unsigned int aSendingFramerate) {
   MOZ_ASSERT(NS_IsMainThread());
   mSendingFramerate = aSendingFramerate;
 }
 
-std::vector<webrtc::VideoStream>
-VideoStreamFactory::CreateEncoderStreams(
-  int width, int height, const webrtc::VideoEncoderConfig& config)
-{
+std::vector<webrtc::VideoStream> VideoStreamFactory::CreateEncoderStreams(
+    int width, int height, const webrtc::VideoEncoderConfig& config) {
   size_t streamCount = config.number_of_streams;
 
   
@@ -144,8 +135,9 @@ VideoStreamFactory::CreateEncoderStreams(
   
 
   
+  
   mSimulcastAdapter->OnOutputFormatRequest(
-    cricket::VideoFormat(width, height, 0, 0));
+      cricket::VideoFormat(width, height, 0, 0));
 
   for (size_t idx = streamCount - 1; streamCount > 0; idx--, streamCount--) {
     webrtc::VideoStream video_stream;
@@ -165,23 +157,20 @@ VideoStreamFactory::CreateEncoderStreams(
       outHeight = height;
     } else {
       float effectiveScaleDownBy =
-        simulcastEncoding.constraints.scaleDownBy /
-        mCodecConfig.mSimulcastEncodings[0].constraints.scaleDownBy;
+          simulcastEncoding.constraints.scaleDownBy /
+          mCodecConfig.mSimulcastEncodings[0].constraints.scaleDownBy;
       MOZ_ASSERT(effectiveScaleDownBy >= 1.0);
       mSimulcastAdapter->OnScaleResolutionBy(
-        effectiveScaleDownBy > 1.0 ?
-          rtc::Optional<float>(effectiveScaleDownBy) :
-          rtc::Optional<float>());
+          effectiveScaleDownBy > 1.0
+              ? rtc::Optional<float>(effectiveScaleDownBy)
+              : rtc::Optional<float>());
       bool rv = mSimulcastAdapter->AdaptFrameResolution(
-        width,
-        height,
-        0, 
-        &unusedCropWidth,
-        &unusedCropHeight,
-        &outWidth,
-        &outHeight);
+          width, height,
+          0,  
+          &unusedCropWidth, &unusedCropHeight, &outWidth, &outHeight);
 
       if (!rv) {
+        
         
         
         outWidth = 0;
@@ -215,10 +204,9 @@ VideoStreamFactory::CreateEncoderStreams(
     
     video_stream.max_framerate = mSendingFramerate;
 
-    SelectBitrates(
-      video_stream.width, video_stream.height,
-      mMinBitrate, mStartBitrate, simulcastEncoding.constraints.maxBr,
-      mPrefMaxBitrate, mNegotiatedMaxBitrate, video_stream);
+    SelectBitrates(video_stream.width, video_stream.height, mMinBitrate,
+                   mStartBitrate, simulcastEncoding.constraints.maxBr,
+                   mPrefMaxBitrate, mNegotiatedMaxBitrate, video_stream);
 
     video_stream.max_qp = kQpMax;
     video_stream.SetRid(simulcastEncoding.rid);
@@ -237,7 +225,8 @@ VideoStreamFactory::CreateEncoderStreams(
       
       
       if (mCodecMode == webrtc::VideoCodecMode::kScreensharing) {
-        video_stream.temporal_layer_thresholds_bps.push_back(video_stream.target_bitrate_bps);
+        video_stream.temporal_layer_thresholds_bps.push_back(
+            video_stream.target_bitrate_bps);
       } else {
         video_stream.temporal_layer_thresholds_bps.resize(2);
       }
@@ -248,7 +237,8 @@ VideoStreamFactory::CreateEncoderStreams(
     if (mCodecConfig.mName == "H264") {
       if (mCodecConfig.mEncodingConstraints.maxMbps > 0) {
         
-        CSFLogError(LOGTAG, "%s H.264 max_mbps not supported yet", __FUNCTION__);
+        CSFLogError(LOGTAG, "%s H.264 max_mbps not supported yet",
+                    __FUNCTION__);
       }
     }
     streams.push_back(video_stream);
@@ -256,5 +246,4 @@ VideoStreamFactory::CreateEncoderStreams(
   return streams;
 }
 
-} 
-
+}  

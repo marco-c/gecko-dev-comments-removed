@@ -13,49 +13,43 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/TypedEnumBits.h"
 
-#define COPY_CODES(NBYTES)  do {    \
-  tramp.CopyFrom(origBytes.GetAddress(), NBYTES); \
-  origBytes += NBYTES;              \
-} while (0)
+#define COPY_CODES(NBYTES)                          \
+  do {                                              \
+    tramp.CopyFrom(origBytes.GetAddress(), NBYTES); \
+    origBytes += NBYTES;                            \
+  } while (0)
 
 namespace mozilla {
 namespace interceptor {
 
-enum class DetourFlags : uint32_t
-{
+enum class DetourFlags : uint32_t {
   eDefault = 0,
-  eEnable10BytePatch = 1, 
-  eTestOnlyForce10BytePatch = 3, 
+  eEnable10BytePatch = 1,  
+  eTestOnlyForce10BytePatch =
+      3,  
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DetourFlags)
 
 template <typename VMPolicy>
-class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy>
-{
+class WindowsDllDetourPatcher final : public WindowsDllPatcherBase<VMPolicy> {
   typedef typename VMPolicy::MMPolicyT MMPolicyT;
   DetourFlags mFlags;
 
-public:
+ public:
   template <typename... Args>
   explicit WindowsDllDetourPatcher(Args... aArgs)
-    : WindowsDllPatcherBase<VMPolicy>(std::forward<Args>(aArgs)...)
-    , mFlags(DetourFlags::eDefault)
-  {
-  }
+      : WindowsDllPatcherBase<VMPolicy>(std::forward<Args>(aArgs)...),
+        mFlags(DetourFlags::eDefault) {}
 
-  ~WindowsDllDetourPatcher()
-  {
-    Clear();
-  }
+  ~WindowsDllDetourPatcher() { Clear(); }
 
   WindowsDllDetourPatcher(const WindowsDllDetourPatcher&) = delete;
   WindowsDllDetourPatcher(WindowsDllDetourPatcher&&) = delete;
   WindowsDllDetourPatcher& operator=(const WindowsDllDetourPatcher&) = delete;
   WindowsDllDetourPatcher& operator=(WindowsDllDetourPatcher&&) = delete;
 
-  void Clear()
-  {
+  void Clear() {
     if (!this->mVMPolicy.ShouldUnhookUponDestruction()) {
       return;
     }
@@ -72,7 +66,6 @@ public:
 
     const auto& tramps = this->mVMPolicy.Items();
     for (auto&& tramp : tramps) {
-
 #if defined(_M_ARM64)
       MOZ_RELEASE_ASSERT(false, "Shouldn't get here");
 #endif
@@ -101,8 +94,8 @@ public:
         continue;
       }
 
-      WritableTargetFunction<MMPolicyT> origBytes(this->mVMPolicy,
-                                                  interceptedFn.value(), nBytes);
+      WritableTargetFunction<MMPolicyT> origBytes(
+          this->mVMPolicy, interceptedFn.value(), nBytes);
       if (!origBytes) {
         continue;
       }
@@ -122,7 +115,7 @@ public:
       }
 
       intptr_t startOfTrampInstructions =
-        static_cast<intptr_t>(tramp.GetCurrentRemoteAddress());
+          static_cast<intptr_t>(tramp.GetCurrentRemoteAddress());
 
       origBytes.WriteDisp32(startOfTrampInstructions);
       if (!origBytes) {
@@ -154,8 +147,7 @@ public:
   }
 
   bool Clear13BytePatch(WritableTargetFunction<MMPolicyT>& aOrigBytes,
-                        const uintptr_t aResetToAddress)
-  {
+                        const uintptr_t aResetToAddress) {
     Maybe<uint8_t> maybeOpcode2 = aOrigBytes.ReadByte();
     if (!maybeOpcode2) {
       return false;
@@ -174,8 +166,7 @@ public:
     return aOrigBytes.Commit();
   }
 
-  bool Clear10BytePatch(WritableTargetFunction<MMPolicyT>& aOrigBytes)
-  {
+  bool Clear10BytePatch(WritableTargetFunction<MMPolicyT>& aOrigBytes) {
     Maybe<uint32_t> maybePtr32 = aOrigBytes.ReadLong();
     if (!maybePtr32) {
       return false;
@@ -192,8 +183,8 @@ public:
     
     
     
-    WritableTargetFunction<MMPolicyT> writableIntermediate(this->mVMPolicy,
-        trampPtr - sizeof(uintptr_t), 13 + sizeof(uintptr_t));
+    WritableTargetFunction<MMPolicyT> writableIntermediate(
+        this->mVMPolicy, trampPtr - sizeof(uintptr_t), 13 + sizeof(uintptr_t));
     if (!writableIntermediate) {
       return false;
     }
@@ -219,8 +210,7 @@ public:
     return Clear13BytePatch(writableIntermediate, stubTramp.value());
   }
 
-  void Init(DetourFlags aFlags = DetourFlags::eDefault, int aNumHooks = 0)
-  {
+  void Init(DetourFlags aFlags = DetourFlags::eDefault, int aNumHooks = 0) {
     if (Initialized()) {
       return;
     }
@@ -242,14 +232,11 @@ public:
     this->mVMPolicy.Reserve(aNumHooks, resFlags);
   }
 
-  bool Initialized() const
-  {
-    return !!this->mVMPolicy;
-  }
+  bool Initialized() const { return !!this->mVMPolicy; }
 
-  bool AddHook(FARPROC aTargetFn, intptr_t aHookDest, void** aOrigFunc)
-  {
-    ReadOnlyTargetFunction<MMPolicyT> target(this->ResolveRedirectedAddress(aTargetFn));
+  bool AddHook(FARPROC aTargetFn, intptr_t aHookDest, void** aOrigFunc) {
+    ReadOnlyTargetFunction<MMPolicyT> target(
+        this->ResolveRedirectedAddress(aTargetFn));
 
     CreateTrampoline(target, aHookDest, aOrigFunc);
     if (!*aOrigFunc) {
@@ -259,7 +246,7 @@ public:
     return true;
   }
 
-protected:
+ protected:
   const static int kPageSize = 4096;
   const static int kHookSize = 128;
 
@@ -315,9 +302,8 @@ protected:
 
 
   int CountModRmSib(const ReadOnlyTargetFunction<MMPolicyT>& aModRm,
-                    BYTE* aSubOpcode = nullptr)
-  {
-    int numBytes = 1; 
+                    BYTE* aSubOpcode = nullptr) {
+    int numBytes = 1;  
     switch (*aModRm & kMaskMod) {
       case kModReg:
         return numBytes;
@@ -339,7 +325,7 @@ protected:
           numBytes += 4;
 #endif
         } else if (((*aModRm & kMaskRm) == kRmNeedSib &&
-             (*(aModRm + 1) & kMaskSibBase) == kSibBaseEbp)) {
+                    (*(aModRm + 1) & kMaskSibBase) == kSibBaseEbp)) {
           numBytes += 4;
         }
         break;
@@ -359,18 +345,10 @@ protected:
   }
 
 #if defined(_M_X64)
-  enum class JumpType
-  {
-   Je,
-   Jne,
-   Jmp,
-   Call
-  };
+  enum class JumpType{Je, Jne, Jmp, Call};
 
-  static bool
-  GenerateJump(Trampoline<MMPolicyT>& aTramp, uintptr_t aAbsTargetAddress,
-               const JumpType aType)
-  {
+  static bool GenerateJump(Trampoline<MMPolicyT>& aTramp,
+                           uintptr_t aAbsTargetAddress, const JumpType aType) {
     
     if (aType == JumpType::Call) {
       
@@ -378,7 +356,7 @@ protected:
       aTramp.WriteByte(0x15);
       
       aTramp.WriteInteger(2);
-      aTramp.WriteByte(0xeb);       
+      aTramp.WriteByte(0xeb);  
       aTramp.WriteByte(8);
       aTramp.WritePointer(aAbsTargetAddress);
       return !!aTramp;
@@ -406,8 +384,7 @@ protected:
   }
 #endif
 
-  enum ePrefixGroupBits
-  {
+  enum ePrefixGroupBits {
     eNoPrefixes = 0,
     ePrefixGroup1 = (1 << 0),
     ePrefixGroup2 = (1 << 1),
@@ -416,18 +393,16 @@ protected:
   };
 
   int CountPrefixBytes(const ReadOnlyTargetFunction<MMPolicyT>& aBytes,
-                       const int aBytesIndex,
-                       unsigned char* aOutGroupBits)
-  {
+                       const int aBytesIndex, unsigned char* aOutGroupBits) {
     unsigned char& groupBits = *aOutGroupBits;
     groupBits = eNoPrefixes;
     int index = aBytesIndex;
     while (true) {
       switch (aBytes[index]) {
         
-        case 0xF0: 
-        case 0xF2: 
-        case 0xF3: 
+        case 0xF0:  
+        case 0xF2:  
+        case 0xF3:  
           if (groupBits & ePrefixGroup1) {
             return -1;
           }
@@ -436,11 +411,11 @@ protected:
           break;
 
         
-        case 0x2E: 
-        case 0x36: 
-        case 0x3E: 
-        case 0x64: 
-        case 0x65: 
+        case 0x2E:  
+        case 0x36:  
+        case 0x3E:  
+        case 0x64:  
+        case 0x65:  
           if (groupBits & ePrefixGroup2) {
             return -1;
           }
@@ -449,7 +424,7 @@ protected:
           break;
 
         
-        case 0x66: 
+        case 0x66:  
           if (groupBits & ePrefixGroup3) {
             return -1;
           }
@@ -458,7 +433,7 @@ protected:
           break;
 
         
-        case 0x67: 
+        case 0x67:  
           if (groupBits & ePrefixGroup4) {
             return -1;
           }
@@ -474,17 +449,16 @@ protected:
 
   
   
-  BYTE BuildModRmByte(BYTE aModBits, BYTE aReg, BYTE aRm)
-  {
+  BYTE BuildModRmByte(BYTE aModBits, BYTE aReg, BYTE aRm) {
     MOZ_ASSERT((aRm & kMaskRm) == aRm);
     MOZ_ASSERT((aModBits & kMaskMod) == aModBits);
-    MOZ_ASSERT(((aReg << kRegFieldShift) & kMaskReg) == (aReg << kRegFieldShift));
+    MOZ_ASSERT(((aReg << kRegFieldShift) & kMaskReg) ==
+               (aReg << kRegFieldShift));
     return aModBits | (aReg << kRegFieldShift) | aRm;
   }
 
   void CreateTrampoline(ReadOnlyTargetFunction<MMPolicyT>& origBytes,
-                        intptr_t aDest, void** aOutTramp)
-  {
+                        intptr_t aDest, void** aOutTramp) {
     *aOutTramp = nullptr;
 
     Trampoline<MMPolicyT> tramp(this->mVMPolicy.GetNextTrampoline());
@@ -530,8 +504,10 @@ protected:
       
       
       unsigned char prefixGroups;
-      int numPrefixBytes = CountPrefixBytes(origBytes, origBytes.GetOffset(), &prefixGroups);
-      if (numPrefixBytes < 0 || (prefixGroups & (ePrefixGroup3 | ePrefixGroup4))) {
+      int numPrefixBytes =
+          CountPrefixBytes(origBytes, origBytes.GetOffset(), &prefixGroups);
+      if (numPrefixBytes < 0 ||
+          (prefixGroups & (ePrefixGroup3 | ePrefixGroup4))) {
         
         
         MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
@@ -549,8 +525,7 @@ protected:
         }
         origBytes += len;
       } else if (*origBytes == 0x0f &&
-                 (origBytes[1] == 0x10 ||
-                  origBytes[1] == 0x11)) {
+                 (origBytes[1] == 0x10 || origBytes[1] == 0x11)) {
         
         
         origBytes += 2;
@@ -566,8 +541,7 @@ protected:
       } else if (*origBytes == 0xB8) {
         
         origBytes += 5;
-      } else if (*origBytes == 0x33 &&
-                 (origBytes[1] & kMaskMod) == kModReg) {
+      } else if (*origBytes == 0x33 && (origBytes[1] & kMaskMod) == kModReg) {
         
         origBytes += 2;
       } else if ((*origBytes & 0xf8) == 0x40) {
@@ -597,17 +571,18 @@ protected:
         pJmp32 = origBytes.GetOffset();
         
         origBytes += 5;
-      } else if (*origBytes == 0xff &&
-                 origBytes[1] == 0x25) {
+      } else if (*origBytes == 0xff && origBytes[1] == 0x25) {
         
         origBytes += 6;
       } else if (*origBytes == 0xc2) {
+        
         
 #if defined(MOZILLA_INTERNAL_API)
         NS_WARNING("Cannot hook method -- RET opcode found");
 #endif
         return;
       } else {
+        
         
         MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
         return;
@@ -661,8 +636,7 @@ protected:
         if (*origBytes == 0x1f) {
           
           COPY_CODES(1);
-          if ((*origBytes & 0xc0) == 0x40 &&
-              (*origBytes & 0x7) == 0x04) {
+          if ((*origBytes & 0xc0) == 0x40 && (*origBytes & 0x7) == 0x04) {
             COPY_CODES(3);
           } else {
             MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
@@ -671,8 +645,7 @@ protected:
         } else if (*origBytes == 0x05) {
           
           COPY_CODES(1);
-        } else if (*origBytes == 0x10 ||
-                   *origBytes == 0x11) {
+        } else if (*origBytes == 0x10 || *origBytes == 0x11) {
           
           
           COPY_CODES(1);
@@ -686,10 +659,9 @@ protected:
         } else if (*origBytes == 0x84) {
           
           ++origBytes;
-          --tramp; 
+          --tramp;  
 
-          if (!GenerateJump(tramp,
-                            origBytes.ReadDisp32AsAbsolute(),
+          if (!GenerateJump(tramp, origBytes.ReadDisp32AsAbsolute(),
                             JumpType::Je)) {
             return;
           }
@@ -706,8 +678,7 @@ protected:
           return;
         }
         COPY_CODES(len);
-      } else if (*origBytes == 0x40 ||
-                 *origBytes == 0x41) {
+      } else if (*origBytes == 0x40 || *origBytes == 0x41) {
         
         COPY_CODES(1);
         if ((*origBytes & 0xf0) == 0x50) {
@@ -738,7 +709,7 @@ protected:
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
-       } else if (*origBytes == 0x45) {
+      } else if (*origBytes == 0x45) {
         
         COPY_CODES(1);
 
@@ -753,24 +724,20 @@ protected:
         
         COPY_CODES(1);
 
-        if (*origBytes == 0x81 &&
-            (origBytes[1] & 0xf8) == 0xe8) {
+        if (*origBytes == 0x81 && (origBytes[1] & 0xf8) == 0xe8) {
           
           COPY_CODES(6);
-        } else if (*origBytes == 0x83 &&
-                   (origBytes[1] & 0xf8) == 0xe8) {
+        } else if (*origBytes == 0x83 && (origBytes[1] & 0xf8) == 0xe8) {
           
           COPY_CODES(3);
         } else if (*origBytes == 0x83 &&
-                   (origBytes[1] & (kMaskMod|kMaskReg)) == kModReg) {
+                   (origBytes[1] & (kMaskMod | kMaskReg)) == kModReg) {
           
           COPY_CODES(3);
-        } else if (*origBytes == 0x83 &&
-                   (origBytes[1] & 0xf8) == 0x60) {
+        } else if (*origBytes == 0x83 && (origBytes[1] & 0xf8) == 0x60) {
           
           COPY_CODES(5);
-        } else if (*origBytes == 0x2b &&
-                   (origBytes[1] & kMaskMod) == kModReg) {
+        } else if (*origBytes == 0x2b && (origBytes[1] & kMaskMod) == kModReg) {
           
           COPY_CODES(2);
         } else if (*origBytes == 0x85) {
@@ -790,7 +757,7 @@ protected:
             if (len != kModOperand64) {
               return;
             }
-            origBytes += 2;   
+            origBytes += 2;  
 
             
             
@@ -814,7 +781,7 @@ protected:
               tramp.WriteByte(BuildModRmByte(kModNoRegDisp, reg, reg));
             }
           } else {
-            COPY_CODES(len+1);
+            COPY_CODES(len + 1);
           }
         } else if (*origBytes == 0xc7) {
           
@@ -828,10 +795,9 @@ protected:
           }
         } else if (*origBytes == 0xff) {
           
-          if ((origBytes[1] & 0xc0) == 0x0 &&
-              (origBytes[1] & 0x07) == 0x5) {
+          if ((origBytes[1] & 0xc0) == 0x0 && (origBytes[1] & 0x07) == 0x5) {
             origBytes += 2;
-            --tramp; 
+            --tramp;  
 
             if (!GenerateJump(tramp, origBytes.ChasePointerFromDisp(),
                               JumpType::Jmp)) {
@@ -854,7 +820,7 @@ protected:
             BYTE reg = (origBytes[1] & kMaskReg) >> kRegFieldShift;
             origBytes += 2;
             uintptr_t absAddr = origBytes.ReadDisp32AsAbsolute();
-            tramp.WriteByte(0xb8 + reg); 
+            tramp.WriteByte(0xb8 + reg);  
             tramp.WritePointer(absAddr);
           } else {
             
@@ -864,8 +830,7 @@ protected:
             MOZ_ASSERT(len > 0);
             COPY_CODES(len + 1);
           }
-        } else if (*origBytes == 0x63 &&
-                   (origBytes[1] & kMaskMod) == kModReg) {
+        } else if (*origBytes == 0x63 && (origBytes[1] & kMaskMod) == kModReg) {
           
           COPY_CODES(2);
         } else {
@@ -881,8 +846,8 @@ protected:
           
           unsigned char b = origBytes[1];
           if (((b & 0xc0) == 0xc0) ||
-              (((b & 0xc0) == 0x00) &&
-               ((b & 0x07) != 0x04) && ((b & 0x07) != 0x05))) {
+              (((b & 0xc0) == 0x00) && ((b & 0x07) != 0x04) &&
+               ((b & 0x07) != 0x05))) {
             
             COPY_CODES(2);
           } else if ((b & 0xc0) == 0x40) {
@@ -898,8 +863,7 @@ protected:
             MOZ_ASSERT_UNREACHABLE("Unrecognized MOV opcode sequence");
             return;
           }
-        } else if (*origBytes == 0x44 &&
-                   origBytes[1] == 0x89) {
+        } else if (*origBytes == 0x44 && origBytes[1] == 0x89) {
           
           COPY_CODES(2);
           int len = CountModRmSib(origBytes);
@@ -933,8 +897,7 @@ protected:
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
-      } else if (*origBytes == 0x80 &&
-                 origBytes[1] == 0x3d) {
+      } else if (*origBytes == 0x80 && origBytes[1] == 0x3d) {
         origBytes += 2;
 
         
@@ -991,8 +954,7 @@ protected:
           return;
         }
         COPY_CODES(1 + nModRmSibBytes);
-      } else if (*origBytes == 0xd1 &&
-                  (origBytes[1] & kMaskMod) == kModReg) {
+      } else if (*origBytes == 0xd1 && (origBytes[1] & kMaskMod) == kModReg) {
         
         
         COPY_CODES(2);
@@ -1002,8 +964,7 @@ protected:
       } else if (*origBytes == 0xcc) {
         
         COPY_CODES(1);
-      } else if (*origBytes == 0xe8 ||
-                 *origBytes == 0xe9) {
+      } else if (*origBytes == 0xe8 || *origBytes == 0xe9) {
         
         foundJmp = *origBytes == 0xe9;
         ++origBytes;
@@ -1012,8 +973,8 @@ protected:
                           foundJmp ? JumpType::Jmp : JumpType::Call)) {
           return;
         }
-      } else if (*origBytes == 0x74 || 
-                 *origBytes == 0x75) { 
+      } else if (*origBytes == 0x74 ||  
+                 *origBytes == 0x75) {  
         uint8_t offset = origBytes[1];
         auto jumpType = JumpType::Je;
         if (*origBytes == 0x75) {
@@ -1022,11 +983,12 @@ protected:
 
         origBytes += 2;
 
-        if (!GenerateJump(tramp, origBytes.OffsetToAbsolute(offset), jumpType)) {
+        if (!GenerateJump(tramp, origBytes.OffsetToAbsolute(offset),
+                          jumpType)) {
           return;
         }
       } else if (*origBytes == 0xff) {
-        if ((origBytes[1] & (kMaskMod|kMaskReg)) == 0xf0) {
+        if ((origBytes[1] & (kMaskMod | kMaskReg)) == 0xf0) {
           
           COPY_CODES(2);
         } else if (origBytes[1] == 0x25) {
@@ -1040,7 +1002,8 @@ protected:
           if (!GenerateJump(tramp, jmpDest, JumpType::Jmp)) {
             return;
           }
-        } else if ((origBytes[1] & (kMaskMod|kMaskReg)) == BuildModRmByte(kModReg, 2, 0)) {
+        } else if ((origBytes[1] & (kMaskMod | kMaskReg)) ==
+                   BuildModRmByte(kModReg, 2, 0)) {
           
           COPY_CODES(2);
         } else if (((origBytes[1] & kMaskReg) >> kRegFieldShift) == 4) {
@@ -1059,8 +1022,7 @@ protected:
           MOZ_ASSERT_UNREACHABLE("Unrecognized opcode sequence");
           return;
         }
-      } else if (*origBytes == 0x83 &&
-                 (origBytes[1] & 0xf8) == 0x60) {
+      } else if (*origBytes == 0x83 && (origBytes[1] & 0xf8) == 0x60) {
         
         COPY_CODES(5);
       } else if (*origBytes == 0xc6) {
@@ -1122,8 +1084,8 @@ protected:
 
 #if defined(_M_IX86)
     
-    target.WriteByte(0xe9); 
-    target.WriteDisp32(aDest); 
+    target.WriteByte(0xe9);     
+    target.WriteDisp32(aDest);  
 #elif defined(_M_X64)
     if (use10BytePatch) {
       
@@ -1157,18 +1119,20 @@ protected:
         return;
       }
 
-      target.WriteByte(0xB8); 
+      target.WriteByte(0xB8);  
 
       
-      MOZ_ASSERT(!(reinterpret_cast<uintptr_t>(callTrampStart) & (~0x7FFFFFFFULL)));
+      MOZ_ASSERT(
+          !(reinterpret_cast<uintptr_t>(callTrampStart) & (~0x7FFFFFFFULL)));
 
-      target.WriteLong(static_cast<uint32_t>(reinterpret_cast<uintptr_t>(callTrampStart) & 0x7FFFFFFFU));
-      target.WriteByte(0x48); 
-      target.WriteByte(0x63); 
+      target.WriteLong(static_cast<uint32_t>(
+          reinterpret_cast<uintptr_t>(callTrampStart) & 0x7FFFFFFFU));
+      target.WriteByte(0x48);  
+      target.WriteByte(0x63);  
       
       target.WriteByte(BuildModRmByte(kModReg, kRegAx, kRegAx));
-      target.WriteByte(0xFF); 
-      target.WriteByte(BuildModRmByte(kModReg, 4, kRegAx)); 
+      target.WriteByte(0xFF);                                
+      target.WriteByte(BuildModRmByte(kModReg, 4, kRegAx));  
     } else {
       
       target.WriteByte(0x49);
@@ -1191,8 +1155,7 @@ protected:
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

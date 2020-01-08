@@ -27,16 +27,15 @@
 
 
 #if defined(XP_LINUX) || defined(XP_WIN) || defined(XP_MACOSX)
-#  define MOZ_THREADSTACKHELPER_PROFILING_STACK
-#  define MOZ_THREADSTACKHELPER_NATIVE_STACK
+#define MOZ_THREADSTACKHELPER_PROFILING_STACK
+#define MOZ_THREADSTACKHELPER_NATIVE_STACK
 #endif
 
 
 
-
 #if defined(__ANDROID__)
-#  undef MOZ_THREADSTACKHELPER_PROFILING_STACK
-#  undef MOZ_THREADSTACKHELPER_NATIVE_STACK
+#undef MOZ_THREADSTACKHELPER_PROFILING_STACK
+#undef MOZ_THREADSTACKHELPER_NATIVE_STACK
 #endif
 
 namespace mozilla {
@@ -51,9 +50,8 @@ namespace mozilla {
 
 
 
-class ThreadStackHelper : public ProfilerStackCollector
-{
-private:
+class ThreadStackHelper : public ProfilerStackCollector {
+ private:
   HangStack* mStackToFill;
   Array<char, nsThread::kRunnableNameBufSize>* mRunnableNameBuffer;
   size_t mMaxStackSize;
@@ -63,13 +61,14 @@ private:
 
   bool PrepareStackBuffer(HangStack& aStack);
 
-public:
+ public:
   
 
 
   ThreadStackHelper();
 
   
+
 
 
 
@@ -84,7 +83,7 @@ public:
 
   int GetThreadId() const { return mThreadId; }
 
-protected:
+ protected:
   
 
 
@@ -92,17 +91,18 @@ protected:
   virtual void CollectNativeLeafAddr(void* aAddr) override;
   virtual void CollectJitReturnAddr(void* aAddr) override;
   virtual void CollectWasmFrame(const char* aLabel) override;
-  virtual void CollectProfilingStackFrame(const js::ProfilingStackFrame& aEntry) override;
+  virtual void CollectProfilingStackFrame(
+      const js::ProfilingStackFrame& aEntry) override;
 
-private:
+ private:
   void TryAppendFrame(mozilla::HangEntry aFrame);
 
   
   int mThreadId;
 };
 
-} 
+}  
 
-#endif 
+#endif  
 
-#endif 
+#endif  

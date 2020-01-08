@@ -9,9 +9,7 @@
 
 namespace mozilla {
 
-nsresult
-CryptoTask::Dispatch(const nsACString& taskThreadName)
-{
+nsresult CryptoTask::Dispatch(const nsACString& taskThreadName) {
   MOZ_ASSERT(taskThreadName.Length() <= 15);
 
   
@@ -21,9 +19,9 @@ CryptoTask::Dispatch(const nsACString& taskThreadName)
   }
 
   
-  nsresult rv = NS_NewNamedThread(taskThreadName, getter_AddRefs(mThread),
-                                  nullptr,
-                                  nsIThreadManager::DEFAULT_STACK_SIZE);
+  nsresult rv =
+      NS_NewNamedThread(taskThreadName, getter_AddRefs(mThread), nullptr,
+                        nsIThreadManager::DEFAULT_STACK_SIZE);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -33,8 +31,7 @@ CryptoTask::Dispatch(const nsACString& taskThreadName)
 }
 
 NS_IMETHODIMP
-CryptoTask::Run()
-{
+CryptoTask::Run() {
   if (!NS_IsMainThread()) {
     mRv = CalculateResult();
     NS_DispatchToMainThread(this);
@@ -46,7 +43,7 @@ CryptoTask::Run()
     
     if (mThread) {
       
-      mThread->Shutdown(); 
+      mThread->Shutdown();  
       
       
       
@@ -58,4 +55,4 @@ CryptoTask::Run()
   return NS_OK;
 }
 
-} 
+}  

@@ -24,22 +24,14 @@ namespace dom {
 namespace {
 
 StaticRefPtr<MIDIAccessManager> gMIDIAccessManager;
-}
+}  
 
-MIDIAccessManager::MIDIAccessManager() :
-  mHasPortList(false),
-  mChild(nullptr)
-{
-}
+MIDIAccessManager::MIDIAccessManager() : mHasPortList(false), mChild(nullptr) {}
 
-MIDIAccessManager::~MIDIAccessManager()
-{
-}
+MIDIAccessManager::~MIDIAccessManager() {}
 
 
-MIDIAccessManager*
-MIDIAccessManager::Get()
-{
+MIDIAccessManager* MIDIAccessManager::Get() {
   if (!gMIDIAccessManager) {
     gMIDIAccessManager = new MIDIAccessManager();
     ClearOnShutdown(&gMIDIAccessManager);
@@ -48,17 +40,11 @@ MIDIAccessManager::Get()
 }
 
 
-bool
-MIDIAccessManager::IsRunning()
-{
-  return !!gMIDIAccessManager;
-}
+bool MIDIAccessManager::IsRunning() { return !!gMIDIAccessManager; }
 
-already_AddRefed<Promise>
-MIDIAccessManager::RequestMIDIAccess(nsPIDOMWindowInner* aWindow,
-                                     const MIDIOptions& aOptions,
-                                     ErrorResult& aRv)
-{
+already_AddRefed<Promise> MIDIAccessManager::RequestMIDIAccess(
+    nsPIDOMWindowInner* aWindow, const MIDIOptions& aOptions,
+    ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aWindow);
   nsCOMPtr<nsIGlobalObject> go = do_QueryInterface(aWindow);
@@ -77,7 +63,8 @@ MIDIAccessManager::RequestMIDIAccess(nsPIDOMWindowInner* aWindow,
     return nullptr;
   }
 
-  nsCOMPtr<nsIRunnable> permRunnable = new MIDIPermissionRequest(aWindow, p, aOptions);
+  nsCOMPtr<nsIRunnable> permRunnable =
+      new MIDIPermissionRequest(aWindow, p, aOptions);
   aRv = NS_DispatchToMainThread(permRunnable);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
@@ -85,9 +72,7 @@ MIDIAccessManager::RequestMIDIAccess(nsPIDOMWindowInner* aWindow,
   return p.forget();
 }
 
-bool
-MIDIAccessManager::AddObserver(Observer<MIDIPortList>* aObserver)
-{
+bool MIDIAccessManager::AddObserver(Observer<MIDIPortList>* aObserver) {
   
   
   mChangeObservers.AddObserver(aObserver);
@@ -97,13 +82,13 @@ MIDIAccessManager::AddObserver(Observer<MIDIPortList>* aObserver)
     
     
     MOZ_ASSERT(NS_IsMainThread());
-    ::mozilla::ipc::PBackgroundChild* actor = BackgroundChild::GetOrCreateForCurrentThread();
+    ::mozilla::ipc::PBackgroundChild* actor =
+        BackgroundChild::GetOrCreateForCurrentThread();
     if (NS_WARN_IF(!actor)) {
       return false;
     }
     RefPtr<MIDIManagerChild> mgr(new MIDIManagerChild());
-    PMIDIManagerChild* constructedMgr =
-      actor->SendPMIDIManagerConstructor(mgr);
+    PMIDIManagerChild* constructedMgr = actor->SendPMIDIManagerConstructor(mgr);
 
     if (NS_WARN_IF(!constructedMgr)) {
       return false;
@@ -117,9 +102,7 @@ MIDIAccessManager::AddObserver(Observer<MIDIPortList>* aObserver)
   return true;
 }
 
-void
-MIDIAccessManager::RemoveObserver(Observer<MIDIPortList>* aObserver)
-{
+void MIDIAccessManager::RemoveObserver(Observer<MIDIPortList>* aObserver) {
   mChangeObservers.RemoveObserver(aObserver);
   if (mChangeObservers.Length() == 0) {
     
@@ -132,11 +115,8 @@ MIDIAccessManager::RemoveObserver(Observer<MIDIPortList>* aObserver)
   }
 }
 
-void
-MIDIAccessManager::CreateMIDIAccess(nsPIDOMWindowInner* aWindow,
-                                    bool aNeedsSysex,
-                                    Promise* aPromise)
-{
+void MIDIAccessManager::CreateMIDIAccess(nsPIDOMWindowInner* aWindow,
+                                         bool aNeedsSysex, Promise* aPromise) {
   MOZ_ASSERT(aWindow);
   MOZ_ASSERT(aPromise);
   RefPtr<MIDIAccess> a(new MIDIAccess(aWindow, aNeedsSysex, aPromise));
@@ -154,9 +134,7 @@ MIDIAccessManager::CreateMIDIAccess(nsPIDOMWindowInner* aWindow,
   }
 }
 
-void
-MIDIAccessManager::Update(const MIDIPortList& aPortList)
-{
+void MIDIAccessManager::Update(const MIDIPortList& aPortList) {
   mPortList = aPortList;
   mChangeObservers.Broadcast(aPortList);
   if (!mHasPortList) {
@@ -168,5 +146,5 @@ MIDIAccessManager::Update(const MIDIPortList& aPortList)
   }
 }
 
-}
-}
+}  
+}  

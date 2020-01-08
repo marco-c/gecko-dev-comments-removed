@@ -15,31 +15,25 @@
 namespace mozilla {
 
 
-class PseudoElementHashEntry : public PLDHashEntryHdr
-{
-public:
+class PseudoElementHashEntry : public PLDHashEntryHdr {
+ public:
   typedef NonOwningAnimationTarget KeyType;
   typedef const NonOwningAnimationTarget* KeyTypePointer;
 
   explicit PseudoElementHashEntry(KeyTypePointer aKey)
-    : mElement(aKey->mElement)
-    , mPseudoType(aKey->mPseudoType) { }
+      : mElement(aKey->mElement), mPseudoType(aKey->mPseudoType) {}
   PseudoElementHashEntry(PseudoElementHashEntry&& aOther) = default;
 
   ~PseudoElementHashEntry() = default;
 
-  KeyType GetKey() const { return { mElement, mPseudoType }; }
-  bool KeyEquals(KeyTypePointer aKey) const
-  {
-    return mElement == aKey->mElement &&
-           mPseudoType == aKey->mPseudoType;
+  KeyType GetKey() const { return {mElement, mPseudoType}; }
+  bool KeyEquals(KeyTypePointer aKey) const {
+    return mElement == aKey->mElement && mPseudoType == aKey->mPseudoType;
   }
 
   static KeyTypePointer KeyToPointer(KeyType& aKey) { return &aKey; }
-  static PLDHashNumber HashKey(KeyTypePointer aKey)
-  {
-    if (!aKey)
-      return 0;
+  static PLDHashNumber HashKey(KeyTypePointer aKey) {
+    if (!aKey) return 0;
 
     
     
@@ -53,6 +47,6 @@ public:
   CSSPseudoElementType mPseudoType;
 };
 
-} 
+}  
 
-#endif 
+#endif  

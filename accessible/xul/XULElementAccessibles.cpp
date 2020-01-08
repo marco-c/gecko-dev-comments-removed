@@ -31,10 +31,9 @@ using namespace mozilla::a11y;
 
 
 
-XULLabelAccessible::
-  XULLabelAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-  HyperTextAccessibleWrap(aContent, aDoc)
-{
+XULLabelAccessible::XULLabelAccessible(nsIContent* aContent,
+                                       DocAccessible* aDoc)
+    : HyperTextAccessibleWrap(aContent, aDoc) {
   mType = eXULLabelType;
 
   
@@ -53,41 +52,28 @@ XULLabelAccessible::
   }
 }
 
-void
-XULLabelAccessible::Shutdown()
-{
+void XULLabelAccessible::Shutdown() {
   mValueTextLeaf = nullptr;
   HyperTextAccessibleWrap::Shutdown();
 }
 
-ENameValueFlag
-XULLabelAccessible::NativeName(nsString& aName) const
-{
+ENameValueFlag XULLabelAccessible::NativeName(nsString& aName) const {
   
   
-  if (mValueTextLeaf)
-    return mValueTextLeaf->Name(aName);
+  if (mValueTextLeaf) return mValueTextLeaf->Name(aName);
 
   return Accessible::NativeName(aName);
 }
 
-role
-XULLabelAccessible::NativeRole() const
-{
-  return roles::LABEL;
-}
+role XULLabelAccessible::NativeRole() const { return roles::LABEL; }
 
-uint64_t
-XULLabelAccessible::NativeState() const
-{
+uint64_t XULLabelAccessible::NativeState() const {
   
   
   return HyperTextAccessibleWrap::NativeState() | states::READONLY;
 }
 
-Relation
-XULLabelAccessible::RelationByType(RelationType aType) const
-{
+Relation XULLabelAccessible::RelationByType(RelationType aType) const {
   Relation rel = HyperTextAccessibleWrap::RelationByType(aType);
 
   
@@ -105,17 +91,14 @@ XULLabelAccessible::RelationByType(RelationType aType) const
   return rel;
 }
 
-void
-XULLabelAccessible::UpdateLabelValue(const nsString& aValue)
-{
+void XULLabelAccessible::UpdateLabelValue(const nsString& aValue) {
 #ifdef A11Y_LOG
   if (logging::IsEnabled(logging::eText)) {
     logging::MsgBegin("TEXT", "text may be changed (xul:label @value update)");
     logging::Node("container", mContent);
     logging::MsgEntry("old text '%s'",
                       NS_ConvertUTF16toUTF8(mValueTextLeaf->Text()).get());
-    logging::MsgEntry("new text: '%s'",
-                      NS_ConvertUTF16toUTF8(aValue).get());
+    logging::MsgEntry("new text: '%s'", NS_ConvertUTF16toUTF8(aValue).get());
     logging::MsgEnd();
   }
 #endif
@@ -127,16 +110,9 @@ XULLabelAccessible::UpdateLabelValue(const nsString& aValue)
 
 
 
+role XULLabelTextLeafAccessible::NativeRole() const { return roles::TEXT_LEAF; }
 
-role
-XULLabelTextLeafAccessible::NativeRole() const
-{
-  return roles::TEXT_LEAF;
-}
-
-uint64_t
-XULLabelTextLeafAccessible::NativeState() const
-{
+uint64_t XULLabelTextLeafAccessible::NativeState() const {
   return TextLeafAccessibleWrap::NativeState() | states::READONLY;
 }
 
@@ -144,95 +120,56 @@ XULLabelTextLeafAccessible::NativeState() const
 
 
 
+XULTooltipAccessible::XULTooltipAccessible(nsIContent* aContent,
+                                           DocAccessible* aDoc)
+    : LeafAccessible(aContent, aDoc) {}
 
-XULTooltipAccessible::
-  XULTooltipAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-  LeafAccessible(aContent, aDoc)
-{
-}
-
-uint64_t
-XULTooltipAccessible::NativeState() const
-{
+uint64_t XULTooltipAccessible::NativeState() const {
   return LeafAccessible::NativeState() | states::READONLY;
 }
 
-role
-XULTooltipAccessible::NativeRole() const
-{
-  return roles::TOOLTIP;
-}
+role XULTooltipAccessible::NativeRole() const { return roles::TOOLTIP; }
 
 
 
 
 
+XULLinkAccessible::XULLinkAccessible(nsIContent* aContent, DocAccessible* aDoc)
+    : XULLabelAccessible(aContent, aDoc) {}
 
-XULLinkAccessible::
-  XULLinkAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-  XULLabelAccessible(aContent, aDoc)
-{
-}
-
-XULLinkAccessible::~XULLinkAccessible()
-{
-}
+XULLinkAccessible::~XULLinkAccessible() {}
 
 
 
 
-void
-XULLinkAccessible::Value(nsString& aValue) const
-{
+void XULLinkAccessible::Value(nsString& aValue) const {
   aValue.Truncate();
 
   mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::href, aValue);
 }
 
-ENameValueFlag
-XULLinkAccessible::NativeName(nsString& aName) const
-{
+ENameValueFlag XULLinkAccessible::NativeName(nsString& aName) const {
   mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::value, aName);
-  if (!aName.IsEmpty())
-    return eNameOK;
+  if (!aName.IsEmpty()) return eNameOK;
 
   nsTextEquivUtils::GetNameFromSubtree(this, aName);
   return aName.IsEmpty() ? eNameOK : eNameFromSubtree;
 }
 
-role
-XULLinkAccessible::NativeRole() const
-{
-  return roles::LINK;
-}
+role XULLinkAccessible::NativeRole() const { return roles::LINK; }
 
+uint64_t XULLinkAccessible::NativeLinkState() const { return states::LINKED; }
 
-uint64_t
-XULLinkAccessible::NativeLinkState() const
-{
-  return states::LINKED;
-}
+uint8_t XULLinkAccessible::ActionCount() const { return 1; }
 
-uint8_t
-XULLinkAccessible::ActionCount() const
-{
-  return 1;
-}
-
-void
-XULLinkAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName)
-{
+void XULLinkAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
   aName.Truncate();
 
-  if (aIndex == eAction_Jump)
-    aName.AssignLiteral("jump");
+  if (aIndex == eAction_Jump) aName.AssignLiteral("jump");
 }
 
-bool
-XULLinkAccessible::DoAction(uint8_t aIndex) const
-{
-  if (aIndex != eAction_Jump)
-    return false;
+bool XULLinkAccessible::DoAction(uint8_t aIndex) const {
+  if (aIndex != eAction_Jump) return false;
 
   DoCommand();
   return true;
@@ -241,39 +178,29 @@ XULLinkAccessible::DoAction(uint8_t aIndex) const
 
 
 
-bool
-XULLinkAccessible::IsLink() const
-{
+bool XULLinkAccessible::IsLink() const {
   
   return true;
 }
 
-uint32_t
-XULLinkAccessible::StartOffset()
-{
+uint32_t XULLinkAccessible::StartOffset() {
   
   
   
   
   
-  if (Accessible::IsLink())
-    return Accessible::StartOffset();
+  if (Accessible::IsLink()) return Accessible::StartOffset();
   return IndexInParent();
 }
 
-uint32_t
-XULLinkAccessible::EndOffset()
-{
-  if (Accessible::IsLink())
-    return Accessible::EndOffset();
+uint32_t XULLinkAccessible::EndOffset() {
+  if (Accessible::IsLink()) return Accessible::EndOffset();
   return IndexInParent() + 1;
 }
 
-already_AddRefed<nsIURI>
-XULLinkAccessible::AnchorURIAt(uint32_t aAnchorIndex) const
-{
-  if (aAnchorIndex != 0)
-    return nullptr;
+already_AddRefed<nsIURI> XULLinkAccessible::AnchorURIAt(
+    uint32_t aAnchorIndex) const {
+  if (aAnchorIndex != 0) return nullptr;
 
   nsAutoString href;
   mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::href, href);
@@ -283,8 +210,7 @@ XULLinkAccessible::AnchorURIAt(uint32_t aAnchorIndex) const
 
   nsCOMPtr<nsIURI> anchorURI;
   NS_NewURI(getter_AddRefs(anchorURI), href,
-            document->GetDocumentCharacterSet(),
-            baseURI);
+            document->GetDocumentCharacterSet(), baseURI);
 
   return anchorURI.forget();
 }

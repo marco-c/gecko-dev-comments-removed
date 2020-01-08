@@ -27,9 +27,8 @@ class DocAccessibleParent;
 
 class DocManager : public nsIWebProgressListener,
                    public nsIDOMEventListener,
-                   public nsSupportsWeakReference
-{
-public:
+                   public nsSupportsWeakReference {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIWEBPROGRESSLISTENER
   NS_DECL_NSIDOMEVENTLISTENER
@@ -42,14 +41,11 @@ public:
   
 
 
-  DocAccessible* GetDocAccessible(const nsIPresShell* aPresShell)
-  {
-    if (!aPresShell)
-      return nullptr;
+  DocAccessible* GetDocAccessible(const nsIPresShell* aPresShell) {
+    if (!aPresShell) return nullptr;
 
     DocAccessible* doc = aPresShell->GetDocAccessible();
-    if (doc)
-      return doc;
+    if (doc) return doc;
 
     return GetDocAccessible(aPresShell->GetDocument());
   }
@@ -72,14 +68,14 @@ public:
 
 
   xpcAccessibleDocument* GetXPCDocument(DocAccessible* aDocument);
-  xpcAccessibleDocument* GetCachedXPCDocument(DocAccessible* aDocument) const
-    { return mXPCDocumentCache.GetWeak(aDocument); }
+  xpcAccessibleDocument* GetCachedXPCDocument(DocAccessible* aDocument) const {
+    return mXPCDocumentCache.GetWeak(aDocument);
+  }
 
   
 
 
-  static void RemoteDocShutdown(DocAccessibleParent* aDoc)
-  {
+  static void RemoteDocShutdown(DocAccessibleParent* aDoc) {
     DebugOnly<bool> result = sRemoteDocuments->RemoveElement(aDoc);
     MOZ_ASSERT(result, "Why didn't we find the document!");
   }
@@ -89,8 +85,9 @@ public:
 
   static void RemoteDocAdded(DocAccessibleParent* aDoc);
 
-  static const nsTArray<DocAccessibleParent*>* TopLevelRemoteDocs()
-    { return sRemoteDocuments; }
+  static const nsTArray<DocAccessibleParent*>* TopLevelRemoteDocs() {
+    return sRemoteDocuments;
+  }
 
   
 
@@ -103,19 +100,19 @@ public:
 
 
   static xpcAccessibleDocument* GetXPCDocument(DocAccessibleParent* aDoc);
-  static xpcAccessibleDocument* GetCachedXPCDocument(const DocAccessibleParent* aDoc)
-  {
+  static xpcAccessibleDocument* GetCachedXPCDocument(
+      const DocAccessibleParent* aDoc) {
     return sRemoteXPCDocumentCache ? sRemoteXPCDocumentCache->GetWeak(aDoc)
-      : nullptr;
+                                   : nullptr;
   }
 
 #ifdef DEBUG
   bool IsProcessingRefreshDriverNotification() const;
 #endif
 
-protected:
+ protected:
   DocManager();
-  virtual ~DocManager() { }
+  virtual ~DocManager() {}
 
   
 
@@ -127,17 +124,16 @@ protected:
 
   void Shutdown();
 
-  bool HasXPCDocuments()
-  {
+  bool HasXPCDocuments() {
     return mXPCDocumentCache.Count() > 0 ||
            (sRemoteXPCDocumentCache && sRemoteXPCDocumentCache->Count() > 0);
   }
 
-private:
+ private:
   DocManager(const DocManager&);
-  DocManager& operator =(const DocManager&);
+  DocManager& operator=(const DocManager&);
 
-private:
+ private:
   
 
 
@@ -146,13 +142,12 @@ private:
 
 
 
-  void HandleDOMDocumentLoad(nsIDocument* aDocument,
-                             uint32_t aLoadEventType);
+  void HandleDOMDocumentLoad(nsIDocument* aDocument, uint32_t aLoadEventType);
 
   
 
 
-  void AddListeners(nsIDocument *aDocument, bool aAddPageShowListener);
+  void AddListeners(nsIDocument* aDocument, bool aAddPageShowListener);
   void RemoveListeners(nsIDocument* aDocument);
 
   
@@ -166,14 +161,15 @@ private:
   void ClearDocCache();
 
   typedef nsRefPtrHashtable<nsPtrHashKey<const nsIDocument>, DocAccessible>
-    DocAccessibleHashtable;
+      DocAccessibleHashtable;
   DocAccessibleHashtable mDocAccessibleCache;
 
-  typedef nsRefPtrHashtable<nsPtrHashKey<const DocAccessible>, xpcAccessibleDocument>
-    XPCDocumentHashtable;
+  typedef nsRefPtrHashtable<nsPtrHashKey<const DocAccessible>,
+                            xpcAccessibleDocument>
+      XPCDocumentHashtable;
   XPCDocumentHashtable mXPCDocumentCache;
-  static nsRefPtrHashtable<nsPtrHashKey<const DocAccessibleParent>, xpcAccessibleDocument>*
-    sRemoteXPCDocumentCache;
+  static nsRefPtrHashtable<nsPtrHashKey<const DocAccessibleParent>,
+                           xpcAccessibleDocument>* sRemoteXPCDocumentCache;
 
   
 
@@ -186,14 +182,12 @@ private:
 
 
 
-inline DocAccessible*
-GetExistingDocAccessible(const nsIDocument* aDocument)
-{
+inline DocAccessible* GetExistingDocAccessible(const nsIDocument* aDocument) {
   nsIPresShell* ps = aDocument->GetShell();
   return ps ? ps->GetDocAccessible() : nullptr;
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

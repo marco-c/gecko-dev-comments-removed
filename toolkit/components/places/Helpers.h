@@ -23,23 +23,21 @@ namespace places {
 
 
 
-class WeakAsyncStatementCallback : public mozIStorageStatementCallback
-{
-public:
+class WeakAsyncStatementCallback : public mozIStorageStatementCallback {
+ public:
   NS_DECL_MOZISTORAGESTATEMENTCALLBACK
   WeakAsyncStatementCallback() {}
 
-protected:
+ protected:
   virtual ~WeakAsyncStatementCallback() {}
 };
 
-class AsyncStatementCallback : public WeakAsyncStatementCallback
-{
-public:
+class AsyncStatementCallback : public WeakAsyncStatementCallback {
+ public:
   NS_DECL_ISUPPORTS
   AsyncStatementCallback() {}
 
-protected:
+ protected:
   virtual ~AsyncStatementCallback() {}
 };
 
@@ -47,8 +45,8 @@ protected:
 
 
 
-#define NS_DECL_ASYNCSTATEMENTCALLBACK \
-  NS_IMETHOD HandleResult(mozIStorageResultSet *) override; \
+#define NS_DECL_ASYNCSTATEMENTCALLBACK                     \
+  NS_IMETHOD HandleResult(mozIStorageResultSet*) override; \
   NS_IMETHOD HandleCompletion(uint16_t) override;
 
 
@@ -56,41 +54,33 @@ protected:
 
 
 
-class URIBinder 
+class URIBinder  
 {
-public:
+ public:
   
-  static nsresult Bind(mozIStorageStatement* statement,
-                       int32_t index,
+  static nsresult Bind(mozIStorageStatement* statement, int32_t index,
                        nsIURI* aURI);
   
-  static nsresult Bind(mozIStorageStatement* statement,
-                       int32_t index,
+  static nsresult Bind(mozIStorageStatement* statement, int32_t index,
                        const nsACString& aURLString);
   
-  static nsresult Bind(mozIStorageStatement* statement,
-                       const nsACString& aName,
+  static nsresult Bind(mozIStorageStatement* statement, const nsACString& aName,
                        nsIURI* aURI);
   
-  static nsresult Bind(mozIStorageStatement* statement,
-                       const nsACString& aName,
+  static nsresult Bind(mozIStorageStatement* statement, const nsACString& aName,
                        const nsACString& aURLString);
   
-  static nsresult Bind(mozIStorageBindingParams* aParams,
-                       int32_t index,
+  static nsresult Bind(mozIStorageBindingParams* aParams, int32_t index,
                        nsIURI* aURI);
   
-  static nsresult Bind(mozIStorageBindingParams* aParams,
-                       int32_t index,
+  static nsresult Bind(mozIStorageBindingParams* aParams, int32_t index,
                        const nsACString& aURLString);
   
   static nsresult Bind(mozIStorageBindingParams* aParams,
-                       const nsACString& aName,
-                       nsIURI* aURI);
+                       const nsACString& aName, nsIURI* aURI);
   
   static nsresult Bind(mozIStorageBindingParams* aParams,
-                       const nsACString& aName,
-                       const nsACString& aURLString);
+                       const nsACString& aName, const nsACString& aURLString);
 };
 
 
@@ -175,14 +165,11 @@ PRTime RoundToMilliseconds(PRTime aTime);
 PRTime RoundedPRNow();
 
 nsresult HashURL(const nsAString& aSpec, const nsACString& aMode,
-                 uint64_t *_hash);
+                 uint64_t* _hash);
 
-class QueryKeyValuePair final
-{
-public:
-
-  QueryKeyValuePair(const nsACString &aKey, const nsACString &aValue)
-  {
+class QueryKeyValuePair final {
+ public:
+  QueryKeyValuePair(const nsACString& aKey, const nsACString& aValue) {
     key = aKey;
     value = aValue;
   };
@@ -199,19 +186,17 @@ public:
   
 
   QueryKeyValuePair(const nsACString& aSource, int32_t aKeyBegin,
-                    int32_t aEquals, int32_t aPastEnd)
-  {
-    if (aEquals == aKeyBegin)
-      aEquals = aPastEnd;
+                    int32_t aEquals, int32_t aPastEnd) {
+    if (aEquals == aKeyBegin) aEquals = aPastEnd;
     key = Substring(aSource, aKeyBegin, aEquals - aKeyBegin);
     if (aPastEnd - aEquals > 0)
       value = Substring(aSource, aEquals + 1, aPastEnd - aEquals - 1);
   }
   nsCString key;
   nsCString value;
- };
+};
 
- 
+
 
 
 
@@ -220,16 +205,15 @@ public:
 nsresult TokenizeQueryString(const nsACString& aQuery,
                              nsTArray<QueryKeyValuePair>* aTokens);
 
-void TokensToQueryString(const nsTArray<QueryKeyValuePair> &aTokens,
-                         nsACString &aQuery);
+void TokensToQueryString(const nsTArray<QueryKeyValuePair>& aTokens,
+                         nsACString& aQuery);
 
 
 
 
-template<typename StatementType>
-class FinalizeStatementCacheProxy : public Runnable
-{
-public:
+template <typename StatementType>
+class FinalizeStatementCacheProxy : public Runnable {
+ public:
   
 
 
@@ -241,25 +225,22 @@ public:
 
 
   FinalizeStatementCacheProxy(
-    mozilla::storage::StatementCache<StatementType>& aStatementCache,
-    nsISupports* aOwner)
-    : Runnable("places::FinalizeStatementCacheProxy")
-    , mStatementCache(aStatementCache)
-    , mOwner(aOwner)
-    , mCallingThread(do_GetCurrentThread())
-  {
-  }
+      mozilla::storage::StatementCache<StatementType>& aStatementCache,
+      nsISupports* aOwner)
+      : Runnable("places::FinalizeStatementCacheProxy"),
+        mStatementCache(aStatementCache),
+        mOwner(aOwner),
+        mCallingThread(do_GetCurrentThread()) {}
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     mStatementCache.FinalizeStatements();
     
-    NS_ProxyRelease("FinalizeStatementCacheProxy::mOwner",
-      mCallingThread, mOwner.forget());
+    NS_ProxyRelease("FinalizeStatementCacheProxy::mOwner", mCallingThread,
+                    mOwner.forget());
     return NS_OK;
   }
 
-protected:
+ protected:
   mozilla::storage::StatementCache<StatementType>& mStatementCache;
   nsCOMPtr<nsISupports> mOwner;
   nsCOMPtr<nsIThread> mCallingThread;
@@ -275,47 +256,39 @@ protected:
 
 
 
-bool GetHiddenState(bool aIsRedirect,
-                    uint32_t aTransitionType);
+bool GetHiddenState(bool aIsRedirect, uint32_t aTransitionType);
 
 
 
 
-class AsyncStatementCallbackNotifier : public AsyncStatementCallback
-{
-public:
+class AsyncStatementCallbackNotifier : public AsyncStatementCallback {
+ public:
   explicit AsyncStatementCallbackNotifier(const char* aTopic)
-    : mTopic(aTopic)
-  {
-  }
+      : mTopic(aTopic) {}
 
   NS_IMETHOD HandleCompletion(uint16_t aReason) override;
 
-private:
+ private:
   const char* mTopic;
 };
 
 
 
 
-class AsyncStatementTelemetryTimer : public AsyncStatementCallback
-{
-public:
+class AsyncStatementTelemetryTimer : public AsyncStatementCallback {
+ public:
   explicit AsyncStatementTelemetryTimer(Telemetry::HistogramID aHistogramId,
                                         TimeStamp aStart = TimeStamp::Now())
-    : mHistogramId(aHistogramId)
-    , mStart(aStart)
-  {
-  }
+      : mHistogramId(aHistogramId), mStart(aStart) {}
 
   NS_IMETHOD HandleCompletion(uint16_t aReason) override;
 
-private:
+ private:
   const Telemetry::HistogramID mHistogramId;
   const TimeStamp mStart;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

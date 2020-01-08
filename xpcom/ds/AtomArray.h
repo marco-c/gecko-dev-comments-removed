@@ -16,4 +16,4 @@ namespace mozilla {
 typedef nsTArray<RefPtr<nsAtom>> AtomArray;
 }
 
-#endif 
+#endif  

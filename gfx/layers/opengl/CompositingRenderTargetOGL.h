@@ -15,57 +15,44 @@
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/Compositor.h"  
-#include "mozilla/layers/TextureHost.h" 
+#include "mozilla/layers/TextureHost.h"    
 #include "mozilla/layers/CompositorOGL.h"  
-#include "mozilla/mozalloc.h"           
+#include "mozilla/mozalloc.h"              
 #include "nsAString.h"
-#include "nsCOMPtr.h"                   
-#include "nsDebug.h"                    
-#include "nsString.h"                   
-
+#include "nsCOMPtr.h"  
+#include "nsDebug.h"   
+#include "nsString.h"  
 
 namespace mozilla {
 namespace gl {
-  class BindableTexture;
-} 
+class BindableTexture;
+}  
 namespace gfx {
-  class DataSourceSurface;
-} 
+class DataSourceSurface;
+}  
 
 namespace layers {
 
 class TextureSource;
 
-class CompositingRenderTargetOGL : public CompositingRenderTarget
-{
+class CompositingRenderTargetOGL : public CompositingRenderTarget {
   typedef mozilla::gl::GLContext GLContext;
 
   friend class CompositorOGL;
 
   
-  struct InitParams
-  {
+  struct InitParams {
     InitParams()
-      : mStatus(NO_PARAMS)
-      , mFBOTextureTarget(0)
-      , mInit(INIT_MODE_NONE)
-    {}
-    InitParams(const gfx::IntSize& aSize,
-               const gfx::IntSize& aPhySize,
-               GLenum aFBOTextureTarget,
-               SurfaceInitMode aInit)
-      : mStatus(READY)
-      , mSize(aSize)
-      , mPhySize(aPhySize)
-      , mFBOTextureTarget(aFBOTextureTarget)
-      , mInit(aInit)
-    {}
+        : mStatus(NO_PARAMS), mFBOTextureTarget(0), mInit(INIT_MODE_NONE) {}
+    InitParams(const gfx::IntSize& aSize, const gfx::IntSize& aPhySize,
+               GLenum aFBOTextureTarget, SurfaceInitMode aInit)
+        : mStatus(READY),
+          mSize(aSize),
+          mPhySize(aPhySize),
+          mFBOTextureTarget(aFBOTextureTarget),
+          mInit(aInit) {}
 
-    enum {
-      NO_PARAMS,
-      READY,
-      INITIALIZED
-    } mStatus;
+    enum { NO_PARAMS, READY, INITIALIZED } mStatus;
     
 
 
@@ -73,39 +60,39 @@ class CompositingRenderTargetOGL : public CompositingRenderTarget
 
 
 
-    gfx::IntSize mSize; 
-    gfx::IntSize mPhySize; 
+    gfx::IntSize mSize;     
+    gfx::IntSize mPhySize;  
     GLenum mFBOTextureTarget;
     SurfaceInitMode mInit;
   };
 
-public:
-  CompositingRenderTargetOGL(CompositorOGL* aCompositor, const gfx::IntPoint& aOrigin,
-                             GLuint aTexure, GLuint aFBO)
-    : CompositingRenderTarget(aOrigin)
-    , mInitParams()
-    , mCompositor(aCompositor)
-    , mGL(aCompositor->gl())
-    , mTextureHandle(aTexure)
-    , mFBO(aFBO)
-  {
+ public:
+  CompositingRenderTargetOGL(CompositorOGL* aCompositor,
+                             const gfx::IntPoint& aOrigin, GLuint aTexure,
+                             GLuint aFBO)
+      : CompositingRenderTarget(aOrigin),
+        mInitParams(),
+        mCompositor(aCompositor),
+        mGL(aCompositor->gl()),
+        mTextureHandle(aTexure),
+        mFBO(aFBO) {
     MOZ_ASSERT(mGL);
   }
 
   ~CompositingRenderTargetOGL();
 
-  virtual const char* Name() const override { return "CompositingRenderTargetOGL"; }
+  virtual const char* Name() const override {
+    return "CompositingRenderTargetOGL";
+  }
 
   
 
 
 
-  static already_AddRefed<CompositingRenderTargetOGL>
-  RenderTargetForWindow(CompositorOGL* aCompositor,
-                        const gfx::IntSize& aSize)
-  {
-    RefPtr<CompositingRenderTargetOGL> result
-      = new CompositingRenderTargetOGL(aCompositor, gfx::IntPoint(), 0, 0);
+  static already_AddRefed<CompositingRenderTargetOGL> RenderTargetForWindow(
+      CompositorOGL* aCompositor, const gfx::IntSize& aSize) {
+    RefPtr<CompositingRenderTargetOGL> result =
+        new CompositingRenderTargetOGL(aCompositor, gfx::IntPoint(), 0, 0);
     result->mInitParams = InitParams(aSize, aSize, 0, INIT_MODE_NONE);
     result->mInitParams.mStatus = InitParams::INITIALIZED;
     return result.forget();
@@ -117,12 +104,10 @@ public:
 
 
 
-  void Initialize(const gfx::IntSize& aSize,
-                  const gfx::IntSize& aPhySize,
-                  GLenum aFBOTextureTarget,
-                  SurfaceInitMode aInit)
-  {
-    MOZ_ASSERT(mInitParams.mStatus == InitParams::NO_PARAMS, "Initialized twice?");
+  void Initialize(const gfx::IntSize& aSize, const gfx::IntSize& aPhySize,
+                  GLenum aFBOTextureTarget, SurfaceInitMode aInit) {
+    MOZ_ASSERT(mInitParams.mStatus == InitParams::NO_PARAMS,
+               "Initialized twice?");
     
     mInitParams = InitParams(aSize, aPhySize, aFBOTextureTarget, aInit);
   }
@@ -136,46 +121,40 @@ public:
 
   bool IsWindow() { return GetFBO() == 0; }
 
-  GLuint GetFBO() const
-  {
+  GLuint GetFBO() const {
     MOZ_ASSERT(mInitParams.mStatus == InitParams::INITIALIZED);
     return mFBO;
   }
 
-  GLuint GetTextureHandle() const
-  {
+  GLuint GetTextureHandle() const {
     MOZ_ASSERT(mInitParams.mStatus == InitParams::INITIALIZED);
     return mTextureHandle;
   }
 
   
-  TextureSourceOGL* AsSourceOGL() override
-  {
+  TextureSourceOGL* AsSourceOGL() override {
     
-    MOZ_ASSERT(false, "CompositingRenderTargetOGL should not be used as a TextureSource");
+    MOZ_ASSERT(
+        false,
+        "CompositingRenderTargetOGL should not be used as a TextureSource");
     return nullptr;
   }
-  gfx::IntSize GetSize() const override
-  {
-    return mInitParams.mSize;
-  }
+  gfx::IntSize GetSize() const override { return mInitParams.mSize; }
 
-  gfx::SurfaceFormat GetFormat() const override
-  {
+  gfx::SurfaceFormat GetFormat() const override {
     
     MOZ_ASSERT(false, "Not implemented");
     return gfx::SurfaceFormat::UNKNOWN;
   }
 
 #ifdef MOZ_DUMP_PAINTING
-  virtual already_AddRefed<gfx::DataSourceSurface> Dump(Compositor* aCompositor) override;
+  virtual already_AddRefed<gfx::DataSourceSurface> Dump(
+      Compositor* aCompositor) override;
 #endif
 
-  const gfx::IntSize& GetInitSize() const {
-    return mInitParams.mSize;
-  }
+  const gfx::IntSize& GetInitSize() const { return mInitParams.mSize; }
 
-private:
+ private:
   
 
 
@@ -194,7 +173,7 @@ private:
   GLuint mFBO;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

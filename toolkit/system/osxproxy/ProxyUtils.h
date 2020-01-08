@@ -14,8 +14,8 @@ namespace system {
 
 bool IsHostProxyEntry(const nsACString& aHost, const nsACString& aOverride);
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

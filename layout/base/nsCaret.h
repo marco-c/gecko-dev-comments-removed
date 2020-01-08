@@ -29,76 +29,31 @@ class nsITimer;
 namespace mozilla {
 namespace gfx {
 class DrawTarget;
-} 
-} 
+}  
+}  
 
 
-class nsCaret final : public nsISelectionListener
-{
-    typedef mozilla::gfx::DrawTarget DrawTarget;
+class nsCaret final : public nsISelectionListener {
+  typedef mozilla::gfx::DrawTarget DrawTarget;
 
-  public:
-    nsCaret();
+ public:
+  nsCaret();
 
-  protected:
-    virtual ~nsCaret();
+ protected:
+  virtual ~nsCaret();
 
-  public:
-    NS_DECL_ISUPPORTS
+ public:
+  NS_DECL_ISUPPORTS
 
-    typedef mozilla::CaretAssociationHint CaretAssociationHint;
+  typedef mozilla::CaretAssociationHint CaretAssociationHint;
 
-    nsresult Init(nsIPresShell *inPresShell);
-    void Terminate();
+  nsresult Init(nsIPresShell* inPresShell);
+  void Terminate();
 
-    void SetSelection(mozilla::dom::Selection *aDOMSel);
-    mozilla::dom::Selection* GetSelection();
+  void SetSelection(mozilla::dom::Selection* aDOMSel);
+  mozilla::dom::Selection* GetSelection();
 
-    
-
-
-
-
-
-
-
-    void SetIgnoreUserModify(bool aIgnoreUserModify);
-    
-
-
-    void SetVisible(bool intMakeVisible);
-    
-
-
-
-
-
-
-    bool IsVisible(mozilla::dom::Selection* aSelection = nullptr)
-    {
-      if (!mVisible || mHideCount) {
-        return false;
-      }
-
-      if (!mShowDuringSelection) {
-        mozilla::dom::Selection* selection;
-        if (aSelection) {
-          selection = aSelection;
-        } else {
-          selection = GetSelection();
-        }
-        if (!selection || !selection->IsCollapsed()) {
-          return false;
-        }
-      }
-
-      if (IsMenuPopupHidingCaret()) {
-        return false;
-      }
-
-      return true;
-    }
-    
+  
 
 
 
@@ -106,188 +61,225 @@ class nsCaret final : public nsISelectionListener
 
 
 
-    void AddForceHide();
-    
+  void SetIgnoreUserModify(bool aIgnoreUserModify);
+  
 
 
-
-
-    void RemoveForceHide();
-    
-
-
-
-    void SetCaretReadOnly(bool inMakeReadonly);
-    
-
-
-
-    void SetVisibilityDuringSelection(bool aVisibility);
-
-    
-
-
-
-
-    void SetCaretPosition(nsINode* aNode, int32_t aOffset);
-
-    
-
-
-
-    void SchedulePaint(mozilla::dom::Selection* aSelection = nullptr);
-
-    
+  void SetVisible(bool intMakeVisible);
+  
 
 
 
 
 
 
-    nsIFrame* GetPaintGeometry(nsRect* aRect);
-    
-
-
-
-    nsIFrame* GetGeometry(nsRect* aRect)
-    {
-      return GetGeometry(GetSelection(), aRect);
+  bool IsVisible(mozilla::dom::Selection* aSelection = nullptr) {
+    if (!mVisible || mHideCount) {
+      return false;
     }
 
-    
+    if (!mShowDuringSelection) {
+      mozilla::dom::Selection* selection;
+      if (aSelection) {
+        selection = aSelection;
+      } else {
+        selection = GetSelection();
+      }
+      if (!selection || !selection->IsCollapsed()) {
+        return false;
+      }
+    }
 
+    if (IsMenuPopupHidingCaret()) {
+      return false;
+    }
 
-    void PaintCaret(DrawTarget& aDrawTarget,
-                    nsIFrame *aForFrame,
-                    const nsPoint &aOffset);
-
-    
-    NS_DECL_NSISELECTIONLISTENER
-
-    
-
-
-
-
-
-
-
-
-
-    static nsIFrame* GetGeometry(mozilla::dom::Selection* aSelection,
-                                 nsRect* aRect);
-    static nsresult GetCaretFrameForNodeOffset(nsFrameSelection* aFrameSelection,
-                                               nsIContent* aContentNode,
-                                               int32_t aOffset,
-                                               CaretAssociationHint aFrameHint,
-                                               uint8_t aBidiLevel,
-                                               nsIFrame** aReturnFrame,
-                                               nsIFrame** aReturnUnadjustedFrame,
-                                               int32_t* aReturnOffset);
-    static nsRect GetGeometryForFrame(nsIFrame* aFrame,
-                                      int32_t   aFrameOffset,
-                                      nscoord*  aBidiIndicatorSize);
-
-    
-    
-    
-    
-    
-    
-    
-    static nsIFrame* GetFrameAndOffset(mozilla::dom::Selection* aSelection,
-                                       nsINode* aOverrideNode,
-                                       int32_t aOverrideOffset,
-                                       int32_t* aFrameOffset,
-                                       nsIFrame** aUnadjustedFrame = nullptr);
-
-    size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-    nsIFrame*     GetFrame(int32_t* aContentOffset);
-    void          ComputeCaretRects(nsIFrame* aFrame, int32_t aFrameOffset,
-                                    nsRect* aCaretRect, nsRect* aHookRect);
-
-protected:
-    static void   CaretBlinkCallback(nsITimer *aTimer, void *aClosure);
-
-    void          CheckSelectionLanguageChange();
-
-    void          ResetBlinking();
-    void          StopBlinking();
-
-    struct Metrics {
-      nscoord mBidiIndicatorSize; 
-      nscoord mCaretWidth;        
-    };
-    static Metrics ComputeMetrics(nsIFrame* aFrame, int32_t aOffset,
-                                  nscoord aCaretHeight);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    bool IsMenuPopupHidingCaret();
-
-    nsWeakPtr             mPresShell;
-    mozilla::WeakPtr<mozilla::dom::Selection> mDomSelectionWeak;
-
-    nsCOMPtr<nsITimer>    mBlinkTimer;
-
-    
-
-
-
-    nsCOMPtr<nsINode>     mOverrideContent;
-    
-
-
-
-    int32_t               mOverrideOffset;
-    
+    return true;
+  }
+  
 
 
 
 
-    int32_t               mBlinkCount;
-    
+
+
+
+  void AddForceHide();
+  
 
 
 
 
-    uint32_t              mBlinkRate;
-    
+  void RemoveForceHide();
+  
 
 
 
-    uint32_t              mHideCount;
-
-    
-
-
-    bool                  mIsBlinkOn;
-    
-
-
-    bool                  mVisible;
-    
+  void SetCaretReadOnly(bool inMakeReadonly);
+  
 
 
 
-    bool                  mReadOnly;
-    
+  void SetVisibilityDuringSelection(bool aVisibility);
+
+  
 
 
 
-    bool                  mShowDuringSelection;
-    
+
+  void SetCaretPosition(nsINode* aNode, int32_t aOffset);
+
+  
 
 
 
-    bool                  mIgnoreUserModify;
+  void SchedulePaint(mozilla::dom::Selection* aSelection = nullptr);
+
+  
+
+
+
+
+
+
+  nsIFrame* GetPaintGeometry(nsRect* aRect);
+  
+
+
+
+  nsIFrame* GetGeometry(nsRect* aRect) {
+    return GetGeometry(GetSelection(), aRect);
+  }
+
+  
+
+
+  void PaintCaret(DrawTarget& aDrawTarget, nsIFrame* aForFrame,
+                  const nsPoint& aOffset);
+
+  
+  NS_DECL_NSISELECTIONLISTENER
+
+  
+
+
+
+
+
+
+
+
+
+  static nsIFrame* GetGeometry(mozilla::dom::Selection* aSelection,
+                               nsRect* aRect);
+  static nsresult GetCaretFrameForNodeOffset(
+      nsFrameSelection* aFrameSelection, nsIContent* aContentNode,
+      int32_t aOffset, CaretAssociationHint aFrameHint, uint8_t aBidiLevel,
+      nsIFrame** aReturnFrame, nsIFrame** aReturnUnadjustedFrame,
+      int32_t* aReturnOffset);
+  static nsRect GetGeometryForFrame(nsIFrame* aFrame, int32_t aFrameOffset,
+                                    nscoord* aBidiIndicatorSize);
+
+  
+  
+  
+  
+  
+  
+  
+  static nsIFrame* GetFrameAndOffset(mozilla::dom::Selection* aSelection,
+                                     nsINode* aOverrideNode,
+                                     int32_t aOverrideOffset,
+                                     int32_t* aFrameOffset,
+                                     nsIFrame** aUnadjustedFrame = nullptr);
+
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+  nsIFrame* GetFrame(int32_t* aContentOffset);
+  void ComputeCaretRects(nsIFrame* aFrame, int32_t aFrameOffset,
+                         nsRect* aCaretRect, nsRect* aHookRect);
+
+ protected:
+  static void CaretBlinkCallback(nsITimer* aTimer, void* aClosure);
+
+  void CheckSelectionLanguageChange();
+
+  void ResetBlinking();
+  void StopBlinking();
+
+  struct Metrics {
+    nscoord mBidiIndicatorSize;  
+    nscoord mCaretWidth;         
+  };
+  static Metrics ComputeMetrics(nsIFrame* aFrame, int32_t aOffset,
+                                nscoord aCaretHeight);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool IsMenuPopupHidingCaret();
+
+  nsWeakPtr mPresShell;
+  mozilla::WeakPtr<mozilla::dom::Selection> mDomSelectionWeak;
+
+  nsCOMPtr<nsITimer> mBlinkTimer;
+
+  
+
+
+
+  nsCOMPtr<nsINode> mOverrideContent;
+  
+
+
+
+  int32_t mOverrideOffset;
+  
+
+
+
+
+  int32_t mBlinkCount;
+  
+
+
+
+
+  uint32_t mBlinkRate;
+  
+
+
+
+  uint32_t mHideCount;
+
+  
+
+
+  bool mIsBlinkOn;
+  
+
+
+  bool mVisible;
+  
+
+
+
+  bool mReadOnly;
+  
+
+
+
+  bool mShowDuringSelection;
+  
+
+
+
+  bool mIgnoreUserModify;
 };
 
-#endif 
+#endif  

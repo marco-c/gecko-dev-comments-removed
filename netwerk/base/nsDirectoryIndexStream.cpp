@@ -13,7 +13,6 @@
 
 
 
-
 #include "nsEscape.h"
 #include "nsDirectoryIndexStream.h"
 #include "mozilla/Logging.h"
@@ -41,299 +40,283 @@ using namespace mozilla;
 static LazyLogModule gLog("nsDirectoryIndexStream");
 
 nsDirectoryIndexStream::nsDirectoryIndexStream()
-    : mOffset(0), mStatus(NS_OK), mPos(0)
-{
-    MOZ_LOG(gLog, LogLevel::Debug,
-           ("nsDirectoryIndexStream[%p]: created", this));
+    : mOffset(0), mStatus(NS_OK), mPos(0) {
+  MOZ_LOG(gLog, LogLevel::Debug, ("nsDirectoryIndexStream[%p]: created", this));
 }
 
-static int compare(nsIFile* aElement1, nsIFile* aElement2, void* aData)
-{
-    if (!NS_IsNativeUTF8()) {
-        
-        nsAutoString name1, name2;
-        aElement1->GetLeafName(name1);
-        aElement2->GetLeafName(name2);
+static int compare(nsIFile* aElement1, nsIFile* aElement2, void* aData) {
+  if (!NS_IsNativeUTF8()) {
+    
+    nsAutoString name1, name2;
+    aElement1->GetLeafName(name1);
+    aElement2->GetLeafName(name2);
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        return Compare(name1, name2);
-    }
-
-    nsAutoCString name1, name2;
-    aElement1->GetNativeLeafName(name1);
-    aElement2->GetNativeLeafName(name2);
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     return Compare(name1, name2);
+  }
+
+  nsAutoCString name1, name2;
+  aElement1->GetNativeLeafName(name1);
+  aElement2->GetNativeLeafName(name2);
+
+  return Compare(name1, name2);
 }
 
-nsresult
-nsDirectoryIndexStream::Init(nsIFile* aDir)
-{
-    nsresult rv;
-    bool isDir;
-    rv = aDir->IsDirectory(&isDir);
-    if (NS_FAILED(rv)) return rv;
-    MOZ_ASSERT(isDir, "not a directory");
-    if (!isDir)
-        return NS_ERROR_ILLEGAL_VALUE;
+nsresult nsDirectoryIndexStream::Init(nsIFile* aDir) {
+  nsresult rv;
+  bool isDir;
+  rv = aDir->IsDirectory(&isDir);
+  if (NS_FAILED(rv)) return rv;
+  MOZ_ASSERT(isDir, "not a directory");
+  if (!isDir) return NS_ERROR_ILLEGAL_VALUE;
 
-    if (MOZ_LOG_TEST(gLog, LogLevel::Debug)) {
-        MOZ_LOG(gLog, LogLevel::Debug,
-               ("nsDirectoryIndexStream[%p]: initialized on %s",
-                this, aDir->HumanReadablePath().get()));
-    }
+  if (MOZ_LOG_TEST(gLog, LogLevel::Debug)) {
+    MOZ_LOG(gLog, LogLevel::Debug,
+            ("nsDirectoryIndexStream[%p]: initialized on %s", this,
+             aDir->HumanReadablePath().get()));
+  }
 
-    
-    
-    nsCOMPtr<nsIDirectoryEnumerator> iter;
-    rv = aDir->GetDirectoryEntries(getter_AddRefs(iter));
-    if (NS_FAILED(rv)) return rv;
+  
+  
+  nsCOMPtr<nsIDirectoryEnumerator> iter;
+  rv = aDir->GetDirectoryEntries(getter_AddRefs(iter));
+  if (NS_FAILED(rv)) return rv;
 
-    
-    
-    
+  
+  
+  
 
-    nsCOMPtr<nsIFile> file;
-    while (NS_SUCCEEDED(iter->GetNextFile(getter_AddRefs(file))) && file) {
-        mArray.AppendObject(file); 
-    }
+  nsCOMPtr<nsIFile> file;
+  while (NS_SUCCEEDED(iter->GetNextFile(getter_AddRefs(file))) && file) {
+    mArray.AppendObject(file);  
+  }
 
 #ifdef THREADSAFE_I18N
-    nsCOMPtr<nsICollationFactory> cf = do_CreateInstance(NS_COLLATIONFACTORY_CONTRACTID,
-                                                         &rv);
-    if (NS_FAILED(rv)) return rv;
+  nsCOMPtr<nsICollationFactory> cf =
+      do_CreateInstance(NS_COLLATIONFACTORY_CONTRACTID, &rv);
+  if (NS_FAILED(rv)) return rv;
 
-    nsCOMPtr<nsICollation> coll;
-    rv = cf->CreateCollation(getter_AddRefs(coll));
-    if (NS_FAILED(rv)) return rv;
+  nsCOMPtr<nsICollation> coll;
+  rv = cf->CreateCollation(getter_AddRefs(coll));
+  if (NS_FAILED(rv)) return rv;
 
-    mArray.Sort(compare, coll);
+  mArray.Sort(compare, coll);
 #else
-    mArray.Sort(compare, nullptr);
+  mArray.Sort(compare, nullptr);
 #endif
 
-    mBuf.AppendLiteral("300: ");
-    nsAutoCString url;
-    rv = net_GetURLSpecFromFile(aDir, url);
-    if (NS_FAILED(rv)) return rv;
-    mBuf.Append(url);
-    mBuf.Append('\n');
+  mBuf.AppendLiteral("300: ");
+  nsAutoCString url;
+  rv = net_GetURLSpecFromFile(aDir, url);
+  if (NS_FAILED(rv)) return rv;
+  mBuf.Append(url);
+  mBuf.Append('\n');
 
-    mBuf.AppendLiteral("200: filename content-length last-modified file-type\n");
+  mBuf.AppendLiteral("200: filename content-length last-modified file-type\n");
 
-    return NS_OK;
+  return NS_OK;
 }
 
-nsDirectoryIndexStream::~nsDirectoryIndexStream()
-{
-    MOZ_LOG(gLog, LogLevel::Debug,
-           ("nsDirectoryIndexStream[%p]: destroyed", this));
+nsDirectoryIndexStream::~nsDirectoryIndexStream() {
+  MOZ_LOG(gLog, LogLevel::Debug,
+          ("nsDirectoryIndexStream[%p]: destroyed", this));
 }
 
-nsresult
-nsDirectoryIndexStream::Create(nsIFile* aDir, nsIInputStream** aResult)
-{
-    RefPtr<nsDirectoryIndexStream> result = new nsDirectoryIndexStream();
-    if (! result)
-        return NS_ERROR_OUT_OF_MEMORY;
+nsresult nsDirectoryIndexStream::Create(nsIFile* aDir,
+                                        nsIInputStream** aResult) {
+  RefPtr<nsDirectoryIndexStream> result = new nsDirectoryIndexStream();
+  if (!result) return NS_ERROR_OUT_OF_MEMORY;
 
-    nsresult rv = result->Init(aDir);
-    if (NS_FAILED(rv)) {
-        return rv;
-    }
+  nsresult rv = result->Init(aDir);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
-    result.forget(aResult);
-    return NS_OK;
+  result.forget(aResult);
+  return NS_OK;
 }
 
 NS_IMPL_ISUPPORTS(nsDirectoryIndexStream, nsIInputStream)
 
 
 NS_IMETHODIMP
-nsDirectoryIndexStream::Close()
-{
-    mStatus = NS_BASE_STREAM_CLOSED;
-    return NS_OK;
+nsDirectoryIndexStream::Close() {
+  mStatus = NS_BASE_STREAM_CLOSED;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDirectoryIndexStream::Available(uint64_t* aLength)
-{
-    if (NS_FAILED(mStatus))
-        return mStatus;
+nsDirectoryIndexStream::Available(uint64_t* aLength) {
+  if (NS_FAILED(mStatus)) return mStatus;
 
-    
-    if (mOffset < (int32_t)mBuf.Length()) {
-        *aLength = mBuf.Length() - mOffset;
-        return NS_OK;
-    }
-
-    
-    *aLength = (mPos < mArray.Count()) ? 1 : 0;
+  
+  if (mOffset < (int32_t)mBuf.Length()) {
+    *aLength = mBuf.Length() - mOffset;
     return NS_OK;
+  }
+
+  
+  *aLength = (mPos < mArray.Count()) ? 1 : 0;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDirectoryIndexStream::Read(char* aBuf, uint32_t aCount, uint32_t* aReadCount)
-{
-    if (mStatus == NS_BASE_STREAM_CLOSED) {
-        *aReadCount = 0;
-        return NS_OK;
-    }
-    if (NS_FAILED(mStatus))
-        return mStatus;
+nsDirectoryIndexStream::Read(char* aBuf, uint32_t aCount,
+                             uint32_t* aReadCount) {
+  if (mStatus == NS_BASE_STREAM_CLOSED) {
+    *aReadCount = 0;
+    return NS_OK;
+  }
+  if (NS_FAILED(mStatus)) return mStatus;
 
-    uint32_t nread = 0;
+  uint32_t nread = 0;
+
+  
+  
+  while (mOffset < (int32_t)mBuf.Length() && aCount != 0) {
+    *(aBuf++) = char(mBuf.CharAt(mOffset++));
+    --aCount;
+    ++nread;
+  }
+
+  
+  if (aCount > 0) {
+    mOffset = 0;
+    mBuf.Truncate();
+
+    
+    while (uint32_t(mBuf.Length()) < aCount) {
+      bool more = mPos < mArray.Count();
+      if (!more) break;
+
+      
+      
+      nsIFile* current = mArray.ObjectAt(mPos);
+      ++mPos;
+
+      if (MOZ_LOG_TEST(gLog, LogLevel::Debug)) {
+        MOZ_LOG(gLog, LogLevel::Debug,
+                ("nsDirectoryIndexStream[%p]: iterated %s", this,
+                 current->HumanReadablePath().get()));
+      }
+
+      
+      
+      nsresult rv;
+#ifndef XP_UNIX
+      bool hidden = false;
+      current->IsHidden(&hidden);
+      if (hidden) {
+        MOZ_LOG(gLog, LogLevel::Debug,
+                ("nsDirectoryIndexStream[%p]: skipping hidden file/directory",
+                 this));
+        continue;
+      }
+#endif
+
+      int64_t fileSize = 0;
+      current->GetFileSize(&fileSize);
+
+      PRTime fileInfoModifyTime = 0;
+      current->GetLastModifiedTime(&fileInfoModifyTime);
+      fileInfoModifyTime *= PR_USEC_PER_MSEC;
+
+      mBuf.AppendLiteral("201: ");
+
+      
+      if (!NS_IsNativeUTF8()) {
+        nsAutoString leafname;
+        rv = current->GetLeafName(leafname);
+        if (NS_FAILED(rv)) return rv;
+
+        nsAutoCString escaped;
+        if (!leafname.IsEmpty() &&
+            NS_Escape(NS_ConvertUTF16toUTF8(leafname), escaped, url_Path)) {
+          mBuf.Append(escaped);
+          mBuf.Append(' ');
+        }
+      } else {
+        nsAutoCString leafname;
+        rv = current->GetNativeLeafName(leafname);
+        if (NS_FAILED(rv)) return rv;
+
+        nsAutoCString escaped;
+        if (!leafname.IsEmpty() && NS_Escape(leafname, escaped, url_Path)) {
+          mBuf.Append(escaped);
+          mBuf.Append(' ');
+        }
+      }
+
+      
+      mBuf.AppendInt(fileSize, 10);
+      mBuf.Append(' ');
+
+      
+      PRExplodedTime tm;
+      PR_ExplodeTime(fileInfoModifyTime, PR_GMTParameters, &tm);
+      {
+        char buf[64];
+        PR_FormatTimeUSEnglish(
+            buf, sizeof(buf), "%a,%%20%d%%20%b%%20%Y%%20%H:%M:%S%%20GMT ", &tm);
+        mBuf.Append(buf);
+      }
+
+      
+      bool isFile = true;
+      current->IsFile(&isFile);
+      if (isFile) {
+        mBuf.AppendLiteral("FILE ");
+      } else {
+        bool isDir;
+        rv = current->IsDirectory(&isDir);
+        if (NS_FAILED(rv)) return rv;
+        if (isDir) {
+          mBuf.AppendLiteral("DIRECTORY ");
+        } else {
+          bool isLink;
+          rv = current->IsSymlink(&isLink);
+          if (NS_FAILED(rv)) return rv;
+          if (isLink) {
+            mBuf.AppendLiteral("SYMBOLIC-LINK ");
+          }
+        }
+      }
+
+      mBuf.Append('\n');
+    }
 
     
     
     while (mOffset < (int32_t)mBuf.Length() && aCount != 0) {
-        *(aBuf++) = char(mBuf.CharAt(mOffset++));
-        --aCount;
-        ++nread;
+      *(aBuf++) = char(mBuf.CharAt(mOffset++));
+      --aCount;
+      ++nread;
     }
+  }
 
-    
-    if (aCount > 0) {
-        mOffset = 0;
-        mBuf.Truncate();
-
-        
-        while (uint32_t(mBuf.Length()) < aCount) {
-            bool more = mPos < mArray.Count();
-            if (!more) break;
-
-            
-            
-            nsIFile* current = mArray.ObjectAt(mPos);
-            ++mPos;
-
-            if (MOZ_LOG_TEST(gLog, LogLevel::Debug)) {
-                MOZ_LOG(gLog, LogLevel::Debug,
-                       ("nsDirectoryIndexStream[%p]: iterated %s",
-                        this, current->HumanReadablePath().get()));
-            }
-
-            
-            
-            nsresult rv;
-#ifndef XP_UNIX
-            bool hidden = false;
-            current->IsHidden(&hidden);
-            if (hidden) {
-                MOZ_LOG(gLog, LogLevel::Debug,
-                       ("nsDirectoryIndexStream[%p]: skipping hidden file/directory",
-                        this));
-                continue;
-            }
-#endif
-
-            int64_t fileSize = 0;
-            current->GetFileSize( &fileSize );
-
-            PRTime fileInfoModifyTime = 0;
-            current->GetLastModifiedTime( &fileInfoModifyTime );
-            fileInfoModifyTime *= PR_USEC_PER_MSEC;
-
-            mBuf.AppendLiteral("201: ");
-
-            
-            if (!NS_IsNativeUTF8()) {
-                nsAutoString leafname;
-                rv = current->GetLeafName(leafname);
-                if (NS_FAILED(rv)) return rv;
-
-                nsAutoCString escaped;
-                if (!leafname.IsEmpty() &&
-                    NS_Escape(NS_ConvertUTF16toUTF8(leafname), escaped, url_Path)) {
-                    mBuf.Append(escaped);
-                    mBuf.Append(' ');
-                }
-            } else {
-                nsAutoCString leafname;
-                rv = current->GetNativeLeafName(leafname);
-                if (NS_FAILED(rv)) return rv;
-
-                nsAutoCString escaped;
-                if (!leafname.IsEmpty() &&
-                    NS_Escape(leafname, escaped, url_Path)) {
-                    mBuf.Append(escaped);
-                    mBuf.Append(' ');
-                }
-            }
-
-            
-            mBuf.AppendInt(fileSize, 10);
-            mBuf.Append(' ');
-
-            
-            PRExplodedTime tm;
-            PR_ExplodeTime(fileInfoModifyTime, PR_GMTParameters, &tm);
-            {
-                char buf[64];
-                PR_FormatTimeUSEnglish(buf, sizeof(buf), "%a,%%20%d%%20%b%%20%Y%%20%H:%M:%S%%20GMT ", &tm);
-                mBuf.Append(buf);
-            }
-
-            
-            bool isFile = true;
-            current->IsFile(&isFile);
-            if (isFile) {
-                mBuf.AppendLiteral("FILE ");
-            }
-            else {
-                bool isDir;
-                rv = current->IsDirectory(&isDir);
-                if (NS_FAILED(rv)) return rv;
-                if (isDir) {
-                    mBuf.AppendLiteral("DIRECTORY ");
-                }
-                else {
-                    bool isLink;
-                    rv = current->IsSymlink(&isLink);
-                    if (NS_FAILED(rv)) return rv;
-                    if (isLink) {
-                        mBuf.AppendLiteral("SYMBOLIC-LINK ");
-                    }
-                }
-            }
-
-            mBuf.Append('\n');
-        }
-
-        
-        
-        while (mOffset < (int32_t)mBuf.Length() && aCount != 0) {
-            *(aBuf++) = char(mBuf.CharAt(mOffset++));
-            --aCount;
-            ++nread;
-        }
-    }
-
-    *aReadCount = nread;
-    return NS_OK;
+  *aReadCount = nread;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDirectoryIndexStream::ReadSegments(nsWriteSegmentFun writer, void * closure, uint32_t count, uint32_t *_retval)
-{
-    return NS_ERROR_NOT_IMPLEMENTED;
+nsDirectoryIndexStream::ReadSegments(nsWriteSegmentFun writer, void* closure,
+                                     uint32_t count, uint32_t* _retval) {
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsDirectoryIndexStream::IsNonBlocking(bool *aNonBlocking)
-{
-    *aNonBlocking = false;
-    return NS_OK;
+nsDirectoryIndexStream::IsNonBlocking(bool* aNonBlocking) {
+  *aNonBlocking = false;
+  return NS_OK;
 }

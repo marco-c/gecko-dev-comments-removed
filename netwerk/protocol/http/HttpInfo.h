@@ -12,14 +12,13 @@ namespace net {
 
 struct HttpRetParams;
 
-class HttpInfo
-{
-public:
-    
-    static void GetHttpConnectionData(nsTArray<HttpRetParams> *);
+class HttpInfo {
+ public:
+  
+  static void GetHttpConnectionData(nsTArray<HttpRetParams> *);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -28,35 +28,35 @@ class SchedulerGroup;
 
 
 
-class LabeledEventQueue final : public AbstractEventQueue
-{
-public:
+class LabeledEventQueue final : public AbstractEventQueue {
+ public:
   explicit LabeledEventQueue(EventPriority aPriority);
   ~LabeledEventQueue();
 
-  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
-                EventPriority aPriority,
+  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent, EventPriority aPriority,
                 const MutexAutoLock& aProofOfLock) final;
-  already_AddRefed<nsIRunnable> GetEvent(EventPriority* aPriority,
-                                         const MutexAutoLock& aProofOfLock) final;
+  already_AddRefed<nsIRunnable> GetEvent(
+      EventPriority* aPriority, const MutexAutoLock& aProofOfLock) final;
 
   bool IsEmpty(const MutexAutoLock& aProofOfLock) final;
   size_t Count(const MutexAutoLock& aProofOfLock) const final;
   bool HasReadyEvent(const MutexAutoLock& aProofOfLock) final;
 
-  void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {}
+  void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {
+  }
   void FlushInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {}
-  void SuspendInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {}
-  void ResumeInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {}
+  void SuspendInputEventPrioritization(
+      const MutexAutoLock& aProofOfLock) final {}
+  void ResumeInputEventPrioritization(const MutexAutoLock& aProofOfLock) final {
+  }
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override
-  {
+  size_t SizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) const override {
     return mEpochs.ShallowSizeOfExcludingThis(aMallocSizeOf) +
            mUnlabeled.ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
-private:
-
+ private:
   
   
   
@@ -90,17 +90,14 @@ private:
   
   
 
-  struct Epoch
-  {
-    static Epoch First(bool aIsLabeled)
-    {
+  struct Epoch {
+    static Epoch First(bool aIsLabeled) {
       
       uintptr_t number = aIsLabeled ? 1 : 0;
       return Epoch(number, aIsLabeled);
     }
 
-    static bool EpochNumberIsLabeled(uintptr_t aEpochNumber)
-    {
+    static bool EpochNumberIsLabeled(uintptr_t aEpochNumber) {
       
       return (aEpochNumber & 1) ? true : false;
     }
@@ -109,16 +106,13 @@ private:
     size_t mNumEvents;
 
     Epoch(uintptr_t aEpochNumber, bool aIsLabeled)
-      : mEpochNumber(aEpochNumber)
-      , mNumEvents(0)
-    {
+        : mEpochNumber(aEpochNumber), mNumEvents(0) {
       MOZ_ASSERT(aIsLabeled == EpochNumberIsLabeled(aEpochNumber));
     }
 
     bool IsLabeled() const { return EpochNumberIsLabeled(mEpochNumber); }
 
-    Epoch NextEpoch(bool aIsLabeled) const
-    {
+    Epoch NextEpoch(bool aIsLabeled) const {
       MOZ_ASSERT(aIsLabeled == !IsLabeled());
       return Epoch(mEpochNumber + 1, aIsLabeled);
     }
@@ -151,6 +145,6 @@ private:
   EventPriority mPriority;
 };
 
-} 
+}  
 
-#endif 
+#endif  

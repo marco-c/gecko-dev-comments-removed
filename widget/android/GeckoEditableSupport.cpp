@@ -24,537 +24,608 @@
 #include <android/log.h>
 
 #ifdef DEBUG_ANDROID_IME
-#define ALOGIME(args...) __android_log_print(ANDROID_LOG_INFO, \
-                                             "GeckoEditableSupport" , ## args)
+#define ALOGIME(args...) \
+  __android_log_print(ANDROID_LOG_INFO, "GeckoEditableSupport", ##args)
 #else
-#define ALOGIME(args...) do { } while (0)
+#define ALOGIME(args...) \
+  do {                   \
+  } while (0)
 #endif
 
-template<> const char
-nsWindow::NativePtr<mozilla::widget::GeckoEditableSupport>::sName[] =
-        "GeckoEditableSupport";
+template <>
+const char nsWindow::NativePtr<mozilla::widget::GeckoEditableSupport>::sName[] =
+    "GeckoEditableSupport";
 
 enum {
-    AKEYCODE_dummy, 
+  AKEYCODE_dummy,  
 
-    
-    
-    
-    
-    
+
+
+
+
+
 #if __ANDROID_API__ < 13 && !defined(__ANDROID_API_I__)
-    AKEYCODE_ESCAPE             = 111,
-    AKEYCODE_FORWARD_DEL        = 112,
-    AKEYCODE_CTRL_LEFT          = 113,
-    AKEYCODE_CTRL_RIGHT         = 114,
-    AKEYCODE_CAPS_LOCK          = 115,
-    AKEYCODE_SCROLL_LOCK        = 116,
-    AKEYCODE_META_LEFT          = 117,
-    AKEYCODE_META_RIGHT         = 118,
-    AKEYCODE_FUNCTION           = 119,
-    AKEYCODE_SYSRQ              = 120,
-    AKEYCODE_BREAK              = 121,
-    AKEYCODE_MOVE_HOME          = 122,
-    AKEYCODE_MOVE_END           = 123,
-    AKEYCODE_INSERT             = 124,
-    AKEYCODE_FORWARD            = 125,
-    AKEYCODE_MEDIA_PLAY         = 126,
-    AKEYCODE_MEDIA_PAUSE        = 127,
-    AKEYCODE_MEDIA_CLOSE        = 128,
-    AKEYCODE_MEDIA_EJECT        = 129,
-    AKEYCODE_MEDIA_RECORD       = 130,
-    AKEYCODE_F1                 = 131,
-    AKEYCODE_F2                 = 132,
-    AKEYCODE_F3                 = 133,
-    AKEYCODE_F4                 = 134,
-    AKEYCODE_F5                 = 135,
-    AKEYCODE_F6                 = 136,
-    AKEYCODE_F7                 = 137,
-    AKEYCODE_F8                 = 138,
-    AKEYCODE_F9                 = 139,
-    AKEYCODE_F10                = 140,
-    AKEYCODE_F11                = 141,
-    AKEYCODE_F12                = 142,
-    AKEYCODE_NUM_LOCK           = 143,
-    AKEYCODE_NUMPAD_0           = 144,
-    AKEYCODE_NUMPAD_1           = 145,
-    AKEYCODE_NUMPAD_2           = 146,
-    AKEYCODE_NUMPAD_3           = 147,
-    AKEYCODE_NUMPAD_4           = 148,
-    AKEYCODE_NUMPAD_5           = 149,
-    AKEYCODE_NUMPAD_6           = 150,
-    AKEYCODE_NUMPAD_7           = 151,
-    AKEYCODE_NUMPAD_8           = 152,
-    AKEYCODE_NUMPAD_9           = 153,
-    AKEYCODE_NUMPAD_DIVIDE      = 154,
-    AKEYCODE_NUMPAD_MULTIPLY    = 155,
-    AKEYCODE_NUMPAD_SUBTRACT    = 156,
-    AKEYCODE_NUMPAD_ADD         = 157,
-    AKEYCODE_NUMPAD_DOT         = 158,
-    AKEYCODE_NUMPAD_COMMA       = 159,
-    AKEYCODE_NUMPAD_ENTER       = 160,
-    AKEYCODE_NUMPAD_EQUALS      = 161,
-    AKEYCODE_NUMPAD_LEFT_PAREN  = 162,
-    AKEYCODE_NUMPAD_RIGHT_PAREN = 163,
-    AKEYCODE_VOLUME_MUTE        = 164,
-    AKEYCODE_INFO               = 165,
-    AKEYCODE_CHANNEL_UP         = 166,
-    AKEYCODE_CHANNEL_DOWN       = 167,
-    AKEYCODE_ZOOM_IN            = 168,
-    AKEYCODE_ZOOM_OUT           = 169,
-    AKEYCODE_TV                 = 170,
-    AKEYCODE_WINDOW             = 171,
-    AKEYCODE_GUIDE              = 172,
-    AKEYCODE_DVR                = 173,
-    AKEYCODE_BOOKMARK           = 174,
-    AKEYCODE_CAPTIONS           = 175,
-    AKEYCODE_SETTINGS           = 176,
-    AKEYCODE_TV_POWER           = 177,
-    AKEYCODE_TV_INPUT           = 178,
-    AKEYCODE_STB_POWER          = 179,
-    AKEYCODE_STB_INPUT          = 180,
-    AKEYCODE_AVR_POWER          = 181,
-    AKEYCODE_AVR_INPUT          = 182,
-    AKEYCODE_PROG_RED           = 183,
-    AKEYCODE_PROG_GREEN         = 184,
-    AKEYCODE_PROG_YELLOW        = 185,
-    AKEYCODE_PROG_BLUE          = 186,
-    AKEYCODE_APP_SWITCH         = 187,
-    AKEYCODE_BUTTON_1           = 188,
-    AKEYCODE_BUTTON_2           = 189,
-    AKEYCODE_BUTTON_3           = 190,
-    AKEYCODE_BUTTON_4           = 191,
-    AKEYCODE_BUTTON_5           = 192,
-    AKEYCODE_BUTTON_6           = 193,
-    AKEYCODE_BUTTON_7           = 194,
-    AKEYCODE_BUTTON_8           = 195,
-    AKEYCODE_BUTTON_9           = 196,
-    AKEYCODE_BUTTON_10          = 197,
-    AKEYCODE_BUTTON_11          = 198,
-    AKEYCODE_BUTTON_12          = 199,
-    AKEYCODE_BUTTON_13          = 200,
-    AKEYCODE_BUTTON_14          = 201,
-    AKEYCODE_BUTTON_15          = 202,
-    AKEYCODE_BUTTON_16          = 203,
+  AKEYCODE_ESCAPE = 111,
+  AKEYCODE_FORWARD_DEL = 112,
+  AKEYCODE_CTRL_LEFT = 113,
+  AKEYCODE_CTRL_RIGHT = 114,
+  AKEYCODE_CAPS_LOCK = 115,
+  AKEYCODE_SCROLL_LOCK = 116,
+  AKEYCODE_META_LEFT = 117,
+  AKEYCODE_META_RIGHT = 118,
+  AKEYCODE_FUNCTION = 119,
+  AKEYCODE_SYSRQ = 120,
+  AKEYCODE_BREAK = 121,
+  AKEYCODE_MOVE_HOME = 122,
+  AKEYCODE_MOVE_END = 123,
+  AKEYCODE_INSERT = 124,
+  AKEYCODE_FORWARD = 125,
+  AKEYCODE_MEDIA_PLAY = 126,
+  AKEYCODE_MEDIA_PAUSE = 127,
+  AKEYCODE_MEDIA_CLOSE = 128,
+  AKEYCODE_MEDIA_EJECT = 129,
+  AKEYCODE_MEDIA_RECORD = 130,
+  AKEYCODE_F1 = 131,
+  AKEYCODE_F2 = 132,
+  AKEYCODE_F3 = 133,
+  AKEYCODE_F4 = 134,
+  AKEYCODE_F5 = 135,
+  AKEYCODE_F6 = 136,
+  AKEYCODE_F7 = 137,
+  AKEYCODE_F8 = 138,
+  AKEYCODE_F9 = 139,
+  AKEYCODE_F10 = 140,
+  AKEYCODE_F11 = 141,
+  AKEYCODE_F12 = 142,
+  AKEYCODE_NUM_LOCK = 143,
+  AKEYCODE_NUMPAD_0 = 144,
+  AKEYCODE_NUMPAD_1 = 145,
+  AKEYCODE_NUMPAD_2 = 146,
+  AKEYCODE_NUMPAD_3 = 147,
+  AKEYCODE_NUMPAD_4 = 148,
+  AKEYCODE_NUMPAD_5 = 149,
+  AKEYCODE_NUMPAD_6 = 150,
+  AKEYCODE_NUMPAD_7 = 151,
+  AKEYCODE_NUMPAD_8 = 152,
+  AKEYCODE_NUMPAD_9 = 153,
+  AKEYCODE_NUMPAD_DIVIDE = 154,
+  AKEYCODE_NUMPAD_MULTIPLY = 155,
+  AKEYCODE_NUMPAD_SUBTRACT = 156,
+  AKEYCODE_NUMPAD_ADD = 157,
+  AKEYCODE_NUMPAD_DOT = 158,
+  AKEYCODE_NUMPAD_COMMA = 159,
+  AKEYCODE_NUMPAD_ENTER = 160,
+  AKEYCODE_NUMPAD_EQUALS = 161,
+  AKEYCODE_NUMPAD_LEFT_PAREN = 162,
+  AKEYCODE_NUMPAD_RIGHT_PAREN = 163,
+  AKEYCODE_VOLUME_MUTE = 164,
+  AKEYCODE_INFO = 165,
+  AKEYCODE_CHANNEL_UP = 166,
+  AKEYCODE_CHANNEL_DOWN = 167,
+  AKEYCODE_ZOOM_IN = 168,
+  AKEYCODE_ZOOM_OUT = 169,
+  AKEYCODE_TV = 170,
+  AKEYCODE_WINDOW = 171,
+  AKEYCODE_GUIDE = 172,
+  AKEYCODE_DVR = 173,
+  AKEYCODE_BOOKMARK = 174,
+  AKEYCODE_CAPTIONS = 175,
+  AKEYCODE_SETTINGS = 176,
+  AKEYCODE_TV_POWER = 177,
+  AKEYCODE_TV_INPUT = 178,
+  AKEYCODE_STB_POWER = 179,
+  AKEYCODE_STB_INPUT = 180,
+  AKEYCODE_AVR_POWER = 181,
+  AKEYCODE_AVR_INPUT = 182,
+  AKEYCODE_PROG_RED = 183,
+  AKEYCODE_PROG_GREEN = 184,
+  AKEYCODE_PROG_YELLOW = 185,
+  AKEYCODE_PROG_BLUE = 186,
+  AKEYCODE_APP_SWITCH = 187,
+  AKEYCODE_BUTTON_1 = 188,
+  AKEYCODE_BUTTON_2 = 189,
+  AKEYCODE_BUTTON_3 = 190,
+  AKEYCODE_BUTTON_4 = 191,
+  AKEYCODE_BUTTON_5 = 192,
+  AKEYCODE_BUTTON_6 = 193,
+  AKEYCODE_BUTTON_7 = 194,
+  AKEYCODE_BUTTON_8 = 195,
+  AKEYCODE_BUTTON_9 = 196,
+  AKEYCODE_BUTTON_10 = 197,
+  AKEYCODE_BUTTON_11 = 198,
+  AKEYCODE_BUTTON_12 = 199,
+  AKEYCODE_BUTTON_13 = 200,
+  AKEYCODE_BUTTON_14 = 201,
+  AKEYCODE_BUTTON_15 = 202,
+  AKEYCODE_BUTTON_16 = 203,
 #endif
 #if __ANDROID_API__ < 14 && !defined(__ANDROID_API_I__)
-    AKEYCODE_LANGUAGE_SWITCH    = 204,
-    AKEYCODE_MANNER_MODE        = 205,
-    AKEYCODE_3D_MODE            = 206,
+  AKEYCODE_LANGUAGE_SWITCH = 204,
+  AKEYCODE_MANNER_MODE = 205,
+  AKEYCODE_3D_MODE = 206,
 #endif
 #if __ANDROID_API__ < 15 && !defined(__ANDROID_API_J__)
-    AKEYCODE_CONTACTS           = 207,
-    AKEYCODE_CALENDAR           = 208,
-    AKEYCODE_MUSIC              = 209,
-    AKEYCODE_CALCULATOR         = 210,
+  AKEYCODE_CONTACTS = 207,
+  AKEYCODE_CALENDAR = 208,
+  AKEYCODE_MUSIC = 209,
+  AKEYCODE_CALCULATOR = 210,
 #endif
 #if __ANDROID_API__ < 16 && !defined(__ANDROID_API_J__)
-    AKEYCODE_ZENKAKU_HANKAKU    = 211,
-    AKEYCODE_EISU               = 212,
-    AKEYCODE_MUHENKAN           = 213,
-    AKEYCODE_HENKAN             = 214,
-    AKEYCODE_KATAKANA_HIRAGANA  = 215,
-    AKEYCODE_YEN                = 216,
-    AKEYCODE_RO                 = 217,
-    AKEYCODE_KANA               = 218,
-    AKEYCODE_ASSIST             = 219,
+  AKEYCODE_ZENKAKU_HANKAKU = 211,
+  AKEYCODE_EISU = 212,
+  AKEYCODE_MUHENKAN = 213,
+  AKEYCODE_HENKAN = 214,
+  AKEYCODE_KATAKANA_HIRAGANA = 215,
+  AKEYCODE_YEN = 216,
+  AKEYCODE_RO = 217,
+  AKEYCODE_KANA = 218,
+  AKEYCODE_ASSIST = 219,
 #endif
 #if __ANDROID_API__ < 18 && !defined(__ANDROID_API_J_MR2__)
-    AKEYCODE_BRIGHTNESS_DOWN    = 220,
-    AKEYCODE_BRIGHTNESS_UP      = 221,
+  AKEYCODE_BRIGHTNESS_DOWN = 220,
+  AKEYCODE_BRIGHTNESS_UP = 221,
 #endif
 #if __ANDROID_API__ < 19 && !defined(__ANDROID_API_K__)
-    AKEYCODE_MEDIA_AUDIO_TRACK  = 222,
+  AKEYCODE_MEDIA_AUDIO_TRACK = 222,
 #endif
 #if __ANDROID_API__ < 20 && !defined(__ANDROID_API_L__)
-    AKEYCODE_SLEEP              = 223,
-    AKEYCODE_WAKEUP             = 224,
+  AKEYCODE_SLEEP = 223,
+  AKEYCODE_WAKEUP = 224,
 #endif
 #if __ANDROID_API__ < 21 && !defined(__ANDROID_API_L__)
-    AKEYCODE_PAIRING                       = 225,
-    AKEYCODE_MEDIA_TOP_MENU                = 226,
-    AKEYCODE_11                            = 227,
-    AKEYCODE_12                            = 228,
-    AKEYCODE_LAST_CHANNEL                  = 229,
-    AKEYCODE_TV_DATA_SERVICE               = 230,
-    AKEYCODE_VOICE_ASSIST                  = 231,
-    AKEYCODE_TV_RADIO_SERVICE              = 232,
-    AKEYCODE_TV_TELETEXT                   = 233,
-    AKEYCODE_TV_NUMBER_ENTRY               = 234,
-    AKEYCODE_TV_TERRESTRIAL_ANALOG         = 235,
-    AKEYCODE_TV_TERRESTRIAL_DIGITAL        = 236,
-    AKEYCODE_TV_SATELLITE                  = 237,
-    AKEYCODE_TV_SATELLITE_BS               = 238,
-    AKEYCODE_TV_SATELLITE_CS               = 239,
-    AKEYCODE_TV_SATELLITE_SERVICE          = 240,
-    AKEYCODE_TV_NETWORK                    = 241,
-    AKEYCODE_TV_ANTENNA_CABLE              = 242,
-    AKEYCODE_TV_INPUT_HDMI_1               = 243,
-    AKEYCODE_TV_INPUT_HDMI_2               = 244,
-    AKEYCODE_TV_INPUT_HDMI_3               = 245,
-    AKEYCODE_TV_INPUT_HDMI_4               = 246,
-    AKEYCODE_TV_INPUT_COMPOSITE_1          = 247,
-    AKEYCODE_TV_INPUT_COMPOSITE_2          = 248,
-    AKEYCODE_TV_INPUT_COMPONENT_1          = 249,
-    AKEYCODE_TV_INPUT_COMPONENT_2          = 250,
-    AKEYCODE_TV_INPUT_VGA_1                = 251,
-    AKEYCODE_TV_AUDIO_DESCRIPTION          = 252,
-    AKEYCODE_TV_AUDIO_DESCRIPTION_MIX_UP   = 253,
-    AKEYCODE_TV_AUDIO_DESCRIPTION_MIX_DOWN = 254,
-    AKEYCODE_TV_ZOOM_MODE                  = 255,
-    AKEYCODE_TV_CONTENTS_MENU              = 256,
-    AKEYCODE_TV_MEDIA_CONTEXT_MENU         = 257,
-    AKEYCODE_TV_TIMER_PROGRAMMING          = 258,
-    AKEYCODE_HELP                          = 259,
+  AKEYCODE_PAIRING = 225,
+  AKEYCODE_MEDIA_TOP_MENU = 226,
+  AKEYCODE_11 = 227,
+  AKEYCODE_12 = 228,
+  AKEYCODE_LAST_CHANNEL = 229,
+  AKEYCODE_TV_DATA_SERVICE = 230,
+  AKEYCODE_VOICE_ASSIST = 231,
+  AKEYCODE_TV_RADIO_SERVICE = 232,
+  AKEYCODE_TV_TELETEXT = 233,
+  AKEYCODE_TV_NUMBER_ENTRY = 234,
+  AKEYCODE_TV_TERRESTRIAL_ANALOG = 235,
+  AKEYCODE_TV_TERRESTRIAL_DIGITAL = 236,
+  AKEYCODE_TV_SATELLITE = 237,
+  AKEYCODE_TV_SATELLITE_BS = 238,
+  AKEYCODE_TV_SATELLITE_CS = 239,
+  AKEYCODE_TV_SATELLITE_SERVICE = 240,
+  AKEYCODE_TV_NETWORK = 241,
+  AKEYCODE_TV_ANTENNA_CABLE = 242,
+  AKEYCODE_TV_INPUT_HDMI_1 = 243,
+  AKEYCODE_TV_INPUT_HDMI_2 = 244,
+  AKEYCODE_TV_INPUT_HDMI_3 = 245,
+  AKEYCODE_TV_INPUT_HDMI_4 = 246,
+  AKEYCODE_TV_INPUT_COMPOSITE_1 = 247,
+  AKEYCODE_TV_INPUT_COMPOSITE_2 = 248,
+  AKEYCODE_TV_INPUT_COMPONENT_1 = 249,
+  AKEYCODE_TV_INPUT_COMPONENT_2 = 250,
+  AKEYCODE_TV_INPUT_VGA_1 = 251,
+  AKEYCODE_TV_AUDIO_DESCRIPTION = 252,
+  AKEYCODE_TV_AUDIO_DESCRIPTION_MIX_UP = 253,
+  AKEYCODE_TV_AUDIO_DESCRIPTION_MIX_DOWN = 254,
+  AKEYCODE_TV_ZOOM_MODE = 255,
+  AKEYCODE_TV_CONTENTS_MENU = 256,
+  AKEYCODE_TV_MEDIA_CONTEXT_MENU = 257,
+  AKEYCODE_TV_TIMER_PROGRAMMING = 258,
+  AKEYCODE_HELP = 259,
 #endif
 #if __ANDROID_API__ < 23 && !defined(__ANDROID_API_M__)
-    AKEYCODE_NAVIGATE_PREVIOUS  = 260,
-    AKEYCODE_NAVIGATE_NEXT      = 261,
-    AKEYCODE_NAVIGATE_IN        = 262,
-    AKEYCODE_NAVIGATE_OUT       = 263,
-    AKEYCODE_MEDIA_SKIP_FORWARD  = 272,
-    AKEYCODE_MEDIA_SKIP_BACKWARD = 273,
-    AKEYCODE_MEDIA_STEP_FORWARD  = 274,
-    AKEYCODE_MEDIA_STEP_BACKWARD = 275,
+  AKEYCODE_NAVIGATE_PREVIOUS = 260,
+  AKEYCODE_NAVIGATE_NEXT = 261,
+  AKEYCODE_NAVIGATE_IN = 262,
+  AKEYCODE_NAVIGATE_OUT = 263,
+  AKEYCODE_MEDIA_SKIP_FORWARD = 272,
+  AKEYCODE_MEDIA_SKIP_BACKWARD = 273,
+  AKEYCODE_MEDIA_STEP_FORWARD = 274,
+  AKEYCODE_MEDIA_STEP_BACKWARD = 275,
 #endif
 #if __ANDROID_API__ < 24 && !defined(__ANDROID_API_N__)
-    AKEYCODE_STEM_PRIMARY       = 264,
-    AKEYCODE_STEM_1             = 265,
-    AKEYCODE_STEM_2             = 266,
-    AKEYCODE_STEM_3             = 267,
-    AKEYCODE_DPAD_UP_LEFT       = 268,
-    AKEYCODE_DPAD_DOWN_LEFT     = 269,
-    AKEYCODE_DPAD_UP_RIGHT      = 270,
-    AKEYCODE_DPAD_DOWN_RIGHT    = 271,
-    AKEYCODE_SOFT_SLEEP         = 276,
-    AKEYCODE_CUT                = 277,
-    AKEYCODE_COPY               = 278,
-    AKEYCODE_PASTE              = 279,
+  AKEYCODE_STEM_PRIMARY = 264,
+  AKEYCODE_STEM_1 = 265,
+  AKEYCODE_STEM_2 = 266,
+  AKEYCODE_STEM_3 = 267,
+  AKEYCODE_DPAD_UP_LEFT = 268,
+  AKEYCODE_DPAD_DOWN_LEFT = 269,
+  AKEYCODE_DPAD_UP_RIGHT = 270,
+  AKEYCODE_DPAD_DOWN_RIGHT = 271,
+  AKEYCODE_SOFT_SLEEP = 276,
+  AKEYCODE_CUT = 277,
+  AKEYCODE_COPY = 278,
+  AKEYCODE_PASTE = 279,
 #endif
 #if __ANDROID_API__ < 25 && !defined(__ANDROID_API_N_MR1__)
-    AKEYCODE_SYSTEM_NAVIGATION_UP    = 280,
-    AKEYCODE_SYSTEM_NAVIGATION_DOWN  = 281,
-    AKEYCODE_SYSTEM_NAVIGATION_LEFT  = 282,
-    AKEYCODE_SYSTEM_NAVIGATION_RIGHT = 283,
+  AKEYCODE_SYSTEM_NAVIGATION_UP = 280,
+  AKEYCODE_SYSTEM_NAVIGATION_DOWN = 281,
+  AKEYCODE_SYSTEM_NAVIGATION_LEFT = 282,
+  AKEYCODE_SYSTEM_NAVIGATION_RIGHT = 283,
 #endif
 };
 
-static uint32_t
-ConvertAndroidKeyCodeToDOMKeyCode(int32_t androidKeyCode)
-{
+static uint32_t ConvertAndroidKeyCodeToDOMKeyCode(int32_t androidKeyCode) {
+  
+  if (androidKeyCode >= AKEYCODE_A && androidKeyCode <= AKEYCODE_Z) {
+    return androidKeyCode - AKEYCODE_A + NS_VK_A;
+  }
+
+  if (androidKeyCode >= AKEYCODE_0 && androidKeyCode <= AKEYCODE_9) {
+    return androidKeyCode - AKEYCODE_0 + NS_VK_0;
+  }
+
+  switch (androidKeyCode) {
     
-    if (androidKeyCode >= AKEYCODE_A &&
-        androidKeyCode <= AKEYCODE_Z) {
-        return androidKeyCode - AKEYCODE_A + NS_VK_A;
-    }
+    case AKEYCODE_BACK:
+      return NS_VK_ESCAPE;
+    
+    case AKEYCODE_DPAD_UP:
+      return NS_VK_UP;
+    case AKEYCODE_DPAD_DOWN:
+      return NS_VK_DOWN;
+    case AKEYCODE_DPAD_LEFT:
+      return NS_VK_LEFT;
+    case AKEYCODE_DPAD_RIGHT:
+      return NS_VK_RIGHT;
+    case AKEYCODE_DPAD_CENTER:
+      return NS_VK_RETURN;
+    case AKEYCODE_VOLUME_UP:
+      return NS_VK_VOLUME_UP;
+    case AKEYCODE_VOLUME_DOWN:
+      return NS_VK_VOLUME_DOWN;
+    
+    case AKEYCODE_COMMA:
+      return NS_VK_COMMA;
+    case AKEYCODE_PERIOD:
+      return NS_VK_PERIOD;
+    case AKEYCODE_ALT_LEFT:
+      return NS_VK_ALT;
+    case AKEYCODE_ALT_RIGHT:
+      return NS_VK_ALT;
+    case AKEYCODE_SHIFT_LEFT:
+      return NS_VK_SHIFT;
+    case AKEYCODE_SHIFT_RIGHT:
+      return NS_VK_SHIFT;
+    case AKEYCODE_TAB:
+      return NS_VK_TAB;
+    case AKEYCODE_SPACE:
+      return NS_VK_SPACE;
+    
+    case AKEYCODE_ENTER:
+      return NS_VK_RETURN;
+    case AKEYCODE_DEL:
+      return NS_VK_BACK;  
+    case AKEYCODE_GRAVE:
+      return NS_VK_BACK_QUOTE;
+    
+    case AKEYCODE_EQUALS:
+      return NS_VK_EQUALS;
+    case AKEYCODE_LEFT_BRACKET:
+      return NS_VK_OPEN_BRACKET;
+    case AKEYCODE_RIGHT_BRACKET:
+      return NS_VK_CLOSE_BRACKET;
+    case AKEYCODE_BACKSLASH:
+      return NS_VK_BACK_SLASH;
+    case AKEYCODE_SEMICOLON:
+      return NS_VK_SEMICOLON;
+    
+    case AKEYCODE_SLASH:
+      return NS_VK_SLASH;
+    
+    case AKEYCODE_MUTE:
+      return NS_VK_VOLUME_MUTE;
+    case AKEYCODE_PAGE_UP:
+      return NS_VK_PAGE_UP;
+    case AKEYCODE_PAGE_DOWN:
+      return NS_VK_PAGE_DOWN;
+    
+    case AKEYCODE_ESCAPE:
+      return NS_VK_ESCAPE;
+    case AKEYCODE_FORWARD_DEL:
+      return NS_VK_DELETE;
+    case AKEYCODE_CTRL_LEFT:
+      return NS_VK_CONTROL;
+    case AKEYCODE_CTRL_RIGHT:
+      return NS_VK_CONTROL;
+    case AKEYCODE_CAPS_LOCK:
+      return NS_VK_CAPS_LOCK;
+    case AKEYCODE_SCROLL_LOCK:
+      return NS_VK_SCROLL_LOCK;
+    
+    case AKEYCODE_SYSRQ:
+      return NS_VK_PRINTSCREEN;
+    case AKEYCODE_BREAK:
+      return NS_VK_PAUSE;
+    case AKEYCODE_MOVE_HOME:
+      return NS_VK_HOME;
+    case AKEYCODE_MOVE_END:
+      return NS_VK_END;
+    case AKEYCODE_INSERT:
+      return NS_VK_INSERT;
+    
+    case AKEYCODE_F1:
+      return NS_VK_F1;
+    case AKEYCODE_F2:
+      return NS_VK_F2;
+    case AKEYCODE_F3:
+      return NS_VK_F3;
+    case AKEYCODE_F4:
+      return NS_VK_F4;
+    case AKEYCODE_F5:
+      return NS_VK_F5;
+    case AKEYCODE_F6:
+      return NS_VK_F6;
+    case AKEYCODE_F7:
+      return NS_VK_F7;
+    case AKEYCODE_F8:
+      return NS_VK_F8;
+    case AKEYCODE_F9:
+      return NS_VK_F9;
+    case AKEYCODE_F10:
+      return NS_VK_F10;
+    case AKEYCODE_F11:
+      return NS_VK_F11;
+    case AKEYCODE_F12:
+      return NS_VK_F12;
+    case AKEYCODE_NUM_LOCK:
+      return NS_VK_NUM_LOCK;
+    case AKEYCODE_NUMPAD_0:
+      return NS_VK_NUMPAD0;
+    case AKEYCODE_NUMPAD_1:
+      return NS_VK_NUMPAD1;
+    case AKEYCODE_NUMPAD_2:
+      return NS_VK_NUMPAD2;
+    case AKEYCODE_NUMPAD_3:
+      return NS_VK_NUMPAD3;
+    case AKEYCODE_NUMPAD_4:
+      return NS_VK_NUMPAD4;
+    case AKEYCODE_NUMPAD_5:
+      return NS_VK_NUMPAD5;
+    case AKEYCODE_NUMPAD_6:
+      return NS_VK_NUMPAD6;
+    case AKEYCODE_NUMPAD_7:
+      return NS_VK_NUMPAD7;
+    case AKEYCODE_NUMPAD_8:
+      return NS_VK_NUMPAD8;
+    case AKEYCODE_NUMPAD_9:
+      return NS_VK_NUMPAD9;
+    case AKEYCODE_NUMPAD_DIVIDE:
+      return NS_VK_DIVIDE;
+    case AKEYCODE_NUMPAD_MULTIPLY:
+      return NS_VK_MULTIPLY;
+    case AKEYCODE_NUMPAD_SUBTRACT:
+      return NS_VK_SUBTRACT;
+    case AKEYCODE_NUMPAD_ADD:
+      return NS_VK_ADD;
+    case AKEYCODE_NUMPAD_DOT:
+      return NS_VK_DECIMAL;
+    case AKEYCODE_NUMPAD_COMMA:
+      return NS_VK_SEPARATOR;
+    case AKEYCODE_NUMPAD_ENTER:
+      return NS_VK_RETURN;
+    case AKEYCODE_NUMPAD_EQUALS:
+      return NS_VK_EQUALS;
+    
 
-    if (androidKeyCode >= AKEYCODE_0 &&
-        androidKeyCode <= AKEYCODE_9) {
-        return androidKeyCode - AKEYCODE_0 + NS_VK_0;
-    }
+    
+    
+    
+    
+    case AKEYCODE_ZENKAKU_HANKAKU:
+      return 0;
+    case AKEYCODE_EISU:
+      return NS_VK_EISU;
+    case AKEYCODE_MUHENKAN:
+      return NS_VK_NONCONVERT;
+    case AKEYCODE_HENKAN:
+      return NS_VK_CONVERT;
+    case AKEYCODE_KATAKANA_HIRAGANA:
+      return 0;
+    case AKEYCODE_YEN:
+      return NS_VK_BACK_SLASH;  
+    case AKEYCODE_RO:
+      return NS_VK_BACK_SLASH;  
+    case AKEYCODE_KANA:
+      return NS_VK_KANA;
+    case AKEYCODE_ASSIST:
+      return NS_VK_HELP;
 
-    switch (androidKeyCode) {
-        
-        case AKEYCODE_BACK:               return NS_VK_ESCAPE;
-        
-        case AKEYCODE_DPAD_UP:            return NS_VK_UP;
-        case AKEYCODE_DPAD_DOWN:          return NS_VK_DOWN;
-        case AKEYCODE_DPAD_LEFT:          return NS_VK_LEFT;
-        case AKEYCODE_DPAD_RIGHT:         return NS_VK_RIGHT;
-        case AKEYCODE_DPAD_CENTER:        return NS_VK_RETURN;
-        case AKEYCODE_VOLUME_UP:          return NS_VK_VOLUME_UP;
-        case AKEYCODE_VOLUME_DOWN:        return NS_VK_VOLUME_DOWN;
-        
-        case AKEYCODE_COMMA:              return NS_VK_COMMA;
-        case AKEYCODE_PERIOD:             return NS_VK_PERIOD;
-        case AKEYCODE_ALT_LEFT:           return NS_VK_ALT;
-        case AKEYCODE_ALT_RIGHT:          return NS_VK_ALT;
-        case AKEYCODE_SHIFT_LEFT:         return NS_VK_SHIFT;
-        case AKEYCODE_SHIFT_RIGHT:        return NS_VK_SHIFT;
-        case AKEYCODE_TAB:                return NS_VK_TAB;
-        case AKEYCODE_SPACE:              return NS_VK_SPACE;
-        
-        case AKEYCODE_ENTER:              return NS_VK_RETURN;
-        case AKEYCODE_DEL:                return NS_VK_BACK; 
-        case AKEYCODE_GRAVE:              return NS_VK_BACK_QUOTE;
-        
-        case AKEYCODE_EQUALS:             return NS_VK_EQUALS;
-        case AKEYCODE_LEFT_BRACKET:       return NS_VK_OPEN_BRACKET;
-        case AKEYCODE_RIGHT_BRACKET:      return NS_VK_CLOSE_BRACKET;
-        case AKEYCODE_BACKSLASH:          return NS_VK_BACK_SLASH;
-        case AKEYCODE_SEMICOLON:          return NS_VK_SEMICOLON;
-        
-        case AKEYCODE_SLASH:              return NS_VK_SLASH;
-        
-        case AKEYCODE_MUTE:               return NS_VK_VOLUME_MUTE;
-        case AKEYCODE_PAGE_UP:            return NS_VK_PAGE_UP;
-        case AKEYCODE_PAGE_DOWN:          return NS_VK_PAGE_DOWN;
-        
-        case AKEYCODE_ESCAPE:             return NS_VK_ESCAPE;
-        case AKEYCODE_FORWARD_DEL:        return NS_VK_DELETE;
-        case AKEYCODE_CTRL_LEFT:          return NS_VK_CONTROL;
-        case AKEYCODE_CTRL_RIGHT:         return NS_VK_CONTROL;
-        case AKEYCODE_CAPS_LOCK:          return NS_VK_CAPS_LOCK;
-        case AKEYCODE_SCROLL_LOCK:        return NS_VK_SCROLL_LOCK;
-        
-        case AKEYCODE_SYSRQ:              return NS_VK_PRINTSCREEN;
-        case AKEYCODE_BREAK:              return NS_VK_PAUSE;
-        case AKEYCODE_MOVE_HOME:          return NS_VK_HOME;
-        case AKEYCODE_MOVE_END:           return NS_VK_END;
-        case AKEYCODE_INSERT:             return NS_VK_INSERT;
-        
-        case AKEYCODE_F1:                 return NS_VK_F1;
-        case AKEYCODE_F2:                 return NS_VK_F2;
-        case AKEYCODE_F3:                 return NS_VK_F3;
-        case AKEYCODE_F4:                 return NS_VK_F4;
-        case AKEYCODE_F5:                 return NS_VK_F5;
-        case AKEYCODE_F6:                 return NS_VK_F6;
-        case AKEYCODE_F7:                 return NS_VK_F7;
-        case AKEYCODE_F8:                 return NS_VK_F8;
-        case AKEYCODE_F9:                 return NS_VK_F9;
-        case AKEYCODE_F10:                return NS_VK_F10;
-        case AKEYCODE_F11:                return NS_VK_F11;
-        case AKEYCODE_F12:                return NS_VK_F12;
-        case AKEYCODE_NUM_LOCK:           return NS_VK_NUM_LOCK;
-        case AKEYCODE_NUMPAD_0:           return NS_VK_NUMPAD0;
-        case AKEYCODE_NUMPAD_1:           return NS_VK_NUMPAD1;
-        case AKEYCODE_NUMPAD_2:           return NS_VK_NUMPAD2;
-        case AKEYCODE_NUMPAD_3:           return NS_VK_NUMPAD3;
-        case AKEYCODE_NUMPAD_4:           return NS_VK_NUMPAD4;
-        case AKEYCODE_NUMPAD_5:           return NS_VK_NUMPAD5;
-        case AKEYCODE_NUMPAD_6:           return NS_VK_NUMPAD6;
-        case AKEYCODE_NUMPAD_7:           return NS_VK_NUMPAD7;
-        case AKEYCODE_NUMPAD_8:           return NS_VK_NUMPAD8;
-        case AKEYCODE_NUMPAD_9:           return NS_VK_NUMPAD9;
-        case AKEYCODE_NUMPAD_DIVIDE:      return NS_VK_DIVIDE;
-        case AKEYCODE_NUMPAD_MULTIPLY:    return NS_VK_MULTIPLY;
-        case AKEYCODE_NUMPAD_SUBTRACT:    return NS_VK_SUBTRACT;
-        case AKEYCODE_NUMPAD_ADD:         return NS_VK_ADD;
-        case AKEYCODE_NUMPAD_DOT:         return NS_VK_DECIMAL;
-        case AKEYCODE_NUMPAD_COMMA:       return NS_VK_SEPARATOR;
-        case AKEYCODE_NUMPAD_ENTER:       return NS_VK_RETURN;
-        case AKEYCODE_NUMPAD_EQUALS:      return NS_VK_EQUALS;
-        
+    
+    case AKEYCODE_BUTTON_A:
+      return NS_VK_RETURN;
 
-        
-        
-        
-        
-        case AKEYCODE_ZENKAKU_HANKAKU:    return 0;
-        case AKEYCODE_EISU:               return NS_VK_EISU;
-        case AKEYCODE_MUHENKAN:           return NS_VK_NONCONVERT;
-        case AKEYCODE_HENKAN:             return NS_VK_CONVERT;
-        case AKEYCODE_KATAKANA_HIRAGANA:  return 0;
-        case AKEYCODE_YEN:                return NS_VK_BACK_SLASH; 
-        case AKEYCODE_RO:                 return NS_VK_BACK_SLASH; 
-        case AKEYCODE_KANA:               return NS_VK_KANA;
-        case AKEYCODE_ASSIST:             return NS_VK_HELP;
-
-        
-        case AKEYCODE_BUTTON_A:          return NS_VK_RETURN;
-
-        default:
-            ALOG("ConvertAndroidKeyCodeToDOMKeyCode: "
-                 "No DOM keycode for Android keycode %d", int(androidKeyCode));
-        return 0;
-    }
+    default:
+      ALOG(
+          "ConvertAndroidKeyCodeToDOMKeyCode: "
+          "No DOM keycode for Android keycode %d",
+          int(androidKeyCode));
+      return 0;
+  }
 }
 
-static KeyNameIndex
-ConvertAndroidKeyCodeToKeyNameIndex(int32_t keyCode, int32_t action,
-                                    int32_t domPrintableKeyValue)
-{
-    
-    if (keyCode >= AKEYCODE_A && keyCode <= AKEYCODE_Z) {
-        return KEY_NAME_INDEX_USE_STRING;
-    }
+static KeyNameIndex ConvertAndroidKeyCodeToKeyNameIndex(
+    int32_t keyCode, int32_t action, int32_t domPrintableKeyValue) {
+  
+  if (keyCode >= AKEYCODE_A && keyCode <= AKEYCODE_Z) {
+    return KEY_NAME_INDEX_USE_STRING;
+  }
 
-    if (keyCode >= AKEYCODE_0 && keyCode <= AKEYCODE_9) {
-        return KEY_NAME_INDEX_USE_STRING;
-    }
+  if (keyCode >= AKEYCODE_0 && keyCode <= AKEYCODE_9) {
+    return KEY_NAME_INDEX_USE_STRING;
+  }
 
-    switch (keyCode) {
-
+  switch (keyCode) {
 #define NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX(aNativeKey, aKeyNameIndex) \
-        case aNativeKey: return aKeyNameIndex;
+  case aNativeKey:                                                     \
+    return aKeyNameIndex;
 
 #include "NativeKeyToDOMKeyName.h"
 
 #undef NS_NATIVE_KEY_TO_DOM_KEY_NAME_INDEX
 
-        
-        case AKEYCODE_STAR:               
-        case AKEYCODE_POUND:              
+    
+    case AKEYCODE_STAR:   
+    case AKEYCODE_POUND:  
 
-        
+      
 
-        case AKEYCODE_COMMA:              
-        case AKEYCODE_PERIOD:             
-        case AKEYCODE_SPACE:
-        case AKEYCODE_GRAVE:              
-        case AKEYCODE_MINUS:              
-        case AKEYCODE_EQUALS:             
-        case AKEYCODE_LEFT_BRACKET:       
-        case AKEYCODE_RIGHT_BRACKET:      
-        case AKEYCODE_BACKSLASH:          
-        case AKEYCODE_SEMICOLON:          
-        case AKEYCODE_APOSTROPHE:         
-        case AKEYCODE_SLASH:              
-        case AKEYCODE_AT:                 
-        case AKEYCODE_PLUS:               
+    case AKEYCODE_COMMA:   
+    case AKEYCODE_PERIOD:  
+    case AKEYCODE_SPACE:
+    case AKEYCODE_GRAVE:          
+    case AKEYCODE_MINUS:          
+    case AKEYCODE_EQUALS:         
+    case AKEYCODE_LEFT_BRACKET:   
+    case AKEYCODE_RIGHT_BRACKET:  
+    case AKEYCODE_BACKSLASH:      
+    case AKEYCODE_SEMICOLON:      
+    case AKEYCODE_APOSTROPHE:     
+    case AKEYCODE_SLASH:          
+    case AKEYCODE_AT:             
+    case AKEYCODE_PLUS:           
 
-        case AKEYCODE_NUMPAD_0:
-        case AKEYCODE_NUMPAD_1:
-        case AKEYCODE_NUMPAD_2:
-        case AKEYCODE_NUMPAD_3:
-        case AKEYCODE_NUMPAD_4:
-        case AKEYCODE_NUMPAD_5:
-        case AKEYCODE_NUMPAD_6:
-        case AKEYCODE_NUMPAD_7:
-        case AKEYCODE_NUMPAD_8:
-        case AKEYCODE_NUMPAD_9:
-        case AKEYCODE_NUMPAD_DIVIDE:
-        case AKEYCODE_NUMPAD_MULTIPLY:
-        case AKEYCODE_NUMPAD_SUBTRACT:
-        case AKEYCODE_NUMPAD_ADD:
-        case AKEYCODE_NUMPAD_DOT:
-        case AKEYCODE_NUMPAD_COMMA:
-        case AKEYCODE_NUMPAD_EQUALS:
-        case AKEYCODE_NUMPAD_LEFT_PAREN:
-        case AKEYCODE_NUMPAD_RIGHT_PAREN:
+    case AKEYCODE_NUMPAD_0:
+    case AKEYCODE_NUMPAD_1:
+    case AKEYCODE_NUMPAD_2:
+    case AKEYCODE_NUMPAD_3:
+    case AKEYCODE_NUMPAD_4:
+    case AKEYCODE_NUMPAD_5:
+    case AKEYCODE_NUMPAD_6:
+    case AKEYCODE_NUMPAD_7:
+    case AKEYCODE_NUMPAD_8:
+    case AKEYCODE_NUMPAD_9:
+    case AKEYCODE_NUMPAD_DIVIDE:
+    case AKEYCODE_NUMPAD_MULTIPLY:
+    case AKEYCODE_NUMPAD_SUBTRACT:
+    case AKEYCODE_NUMPAD_ADD:
+    case AKEYCODE_NUMPAD_DOT:
+    case AKEYCODE_NUMPAD_COMMA:
+    case AKEYCODE_NUMPAD_EQUALS:
+    case AKEYCODE_NUMPAD_LEFT_PAREN:
+    case AKEYCODE_NUMPAD_RIGHT_PAREN:
 
-        case AKEYCODE_YEN:                
-        case AKEYCODE_RO:                 
-            return KEY_NAME_INDEX_USE_STRING;
+    case AKEYCODE_YEN:  
+    case AKEYCODE_RO:   
+      return KEY_NAME_INDEX_USE_STRING;
 
-        case AKEYCODE_NUM:                
-        case AKEYCODE_PICTSYMBOLS:
+    case AKEYCODE_NUM:  
+    case AKEYCODE_PICTSYMBOLS:
 
-        case AKEYCODE_BUTTON_A:
-        case AKEYCODE_BUTTON_B:
-        case AKEYCODE_BUTTON_C:
-        case AKEYCODE_BUTTON_X:
-        case AKEYCODE_BUTTON_Y:
-        case AKEYCODE_BUTTON_Z:
-        case AKEYCODE_BUTTON_L1:
-        case AKEYCODE_BUTTON_R1:
-        case AKEYCODE_BUTTON_L2:
-        case AKEYCODE_BUTTON_R2:
-        case AKEYCODE_BUTTON_THUMBL:
-        case AKEYCODE_BUTTON_THUMBR:
-        case AKEYCODE_BUTTON_START:
-        case AKEYCODE_BUTTON_SELECT:
-        case AKEYCODE_BUTTON_MODE:
+    case AKEYCODE_BUTTON_A:
+    case AKEYCODE_BUTTON_B:
+    case AKEYCODE_BUTTON_C:
+    case AKEYCODE_BUTTON_X:
+    case AKEYCODE_BUTTON_Y:
+    case AKEYCODE_BUTTON_Z:
+    case AKEYCODE_BUTTON_L1:
+    case AKEYCODE_BUTTON_R1:
+    case AKEYCODE_BUTTON_L2:
+    case AKEYCODE_BUTTON_R2:
+    case AKEYCODE_BUTTON_THUMBL:
+    case AKEYCODE_BUTTON_THUMBR:
+    case AKEYCODE_BUTTON_START:
+    case AKEYCODE_BUTTON_SELECT:
+    case AKEYCODE_BUTTON_MODE:
 
-        case AKEYCODE_MEDIA_CLOSE:
+    case AKEYCODE_MEDIA_CLOSE:
 
-        case AKEYCODE_BUTTON_1:
-        case AKEYCODE_BUTTON_2:
-        case AKEYCODE_BUTTON_3:
-        case AKEYCODE_BUTTON_4:
-        case AKEYCODE_BUTTON_5:
-        case AKEYCODE_BUTTON_6:
-        case AKEYCODE_BUTTON_7:
-        case AKEYCODE_BUTTON_8:
-        case AKEYCODE_BUTTON_9:
-        case AKEYCODE_BUTTON_10:
-        case AKEYCODE_BUTTON_11:
-        case AKEYCODE_BUTTON_12:
-        case AKEYCODE_BUTTON_13:
-        case AKEYCODE_BUTTON_14:
-        case AKEYCODE_BUTTON_15:
-        case AKEYCODE_BUTTON_16:
-            return KEY_NAME_INDEX_Unidentified;
+    case AKEYCODE_BUTTON_1:
+    case AKEYCODE_BUTTON_2:
+    case AKEYCODE_BUTTON_3:
+    case AKEYCODE_BUTTON_4:
+    case AKEYCODE_BUTTON_5:
+    case AKEYCODE_BUTTON_6:
+    case AKEYCODE_BUTTON_7:
+    case AKEYCODE_BUTTON_8:
+    case AKEYCODE_BUTTON_9:
+    case AKEYCODE_BUTTON_10:
+    case AKEYCODE_BUTTON_11:
+    case AKEYCODE_BUTTON_12:
+    case AKEYCODE_BUTTON_13:
+    case AKEYCODE_BUTTON_14:
+    case AKEYCODE_BUTTON_15:
+    case AKEYCODE_BUTTON_16:
+      return KEY_NAME_INDEX_Unidentified;
 
-        case AKEYCODE_UNKNOWN:
-            MOZ_ASSERT(
-                action != AKEY_EVENT_ACTION_MULTIPLE,
-                "Don't call this when action is AKEY_EVENT_ACTION_MULTIPLE!");
-            
-            
-            return domPrintableKeyValue ?
-                KEY_NAME_INDEX_USE_STRING : KEY_NAME_INDEX_Unidentified;
+    case AKEYCODE_UNKNOWN:
+      MOZ_ASSERT(action != AKEY_EVENT_ACTION_MULTIPLE,
+                 "Don't call this when action is AKEY_EVENT_ACTION_MULTIPLE!");
+      
+      
+      return domPrintableKeyValue ? KEY_NAME_INDEX_USE_STRING
+                                  : KEY_NAME_INDEX_Unidentified;
 
-        default:
-            ALOG("ConvertAndroidKeyCodeToKeyNameIndex: "
-                 "No DOM key name index for Android keycode %d", keyCode);
-            return KEY_NAME_INDEX_Unidentified;
-    }
+    default:
+      ALOG(
+          "ConvertAndroidKeyCodeToKeyNameIndex: "
+          "No DOM key name index for Android keycode %d",
+          keyCode);
+      return KEY_NAME_INDEX_Unidentified;
+  }
 }
 
-static CodeNameIndex
-ConvertAndroidScanCodeToCodeNameIndex(int32_t scanCode)
-{
-    switch (scanCode) {
-
+static CodeNameIndex ConvertAndroidScanCodeToCodeNameIndex(int32_t scanCode) {
+  switch (scanCode) {
 #define NS_NATIVE_KEY_TO_DOM_CODE_NAME_INDEX(aNativeKey, aCodeNameIndex) \
-        case aNativeKey: return aCodeNameIndex;
+  case aNativeKey:                                                       \
+    return aCodeNameIndex;
 
 #include "NativeKeyToDOMCodeName.h"
 
 #undef NS_NATIVE_KEY_TO_DOM_CODE_NAME_INDEX
 
-        default:
-          return CODE_NAME_INDEX_UNKNOWN;
-    }
+    default:
+      return CODE_NAME_INDEX_UNKNOWN;
+  }
 }
 
-static void
-InitKeyEvent(WidgetKeyboardEvent& aEvent, int32_t aAction, int32_t aKeyCode,
-             int32_t aScanCode, int32_t aMetaState, int64_t aTime,
-             int32_t aDomPrintableKeyValue, int32_t aRepeatCount,
-             int32_t aFlags)
-{
-    const uint32_t domKeyCode = ConvertAndroidKeyCodeToDOMKeyCode(aKeyCode);
+static void InitKeyEvent(WidgetKeyboardEvent& aEvent, int32_t aAction,
+                         int32_t aKeyCode, int32_t aScanCode,
+                         int32_t aMetaState, int64_t aTime,
+                         int32_t aDomPrintableKeyValue, int32_t aRepeatCount,
+                         int32_t aFlags) {
+  const uint32_t domKeyCode = ConvertAndroidKeyCodeToDOMKeyCode(aKeyCode);
 
-    aEvent.mModifiers = nsWindow::GetModifiers(aMetaState);
-    aEvent.mKeyCode = domKeyCode;
+  aEvent.mModifiers = nsWindow::GetModifiers(aMetaState);
+  aEvent.mKeyCode = domKeyCode;
 
-    aEvent.mIsRepeat =
-        (aEvent.mMessage == eKeyDown || aEvent.mMessage == eKeyPress) &&
-        ((aFlags & sdk::KeyEvent::FLAG_LONG_PRESS) || aRepeatCount);
+  aEvent.mIsRepeat =
+      (aEvent.mMessage == eKeyDown || aEvent.mMessage == eKeyPress) &&
+      ((aFlags & sdk::KeyEvent::FLAG_LONG_PRESS) || aRepeatCount);
 
-    aEvent.mKeyNameIndex = ConvertAndroidKeyCodeToKeyNameIndex(
-            aKeyCode, aAction, aDomPrintableKeyValue);
-    aEvent.mCodeNameIndex = ConvertAndroidScanCodeToCodeNameIndex(aScanCode);
+  aEvent.mKeyNameIndex = ConvertAndroidKeyCodeToKeyNameIndex(
+      aKeyCode, aAction, aDomPrintableKeyValue);
+  aEvent.mCodeNameIndex = ConvertAndroidScanCodeToCodeNameIndex(aScanCode);
 
-    if (aEvent.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
-            aDomPrintableKeyValue) {
-        aEvent.mKeyValue = char16_t(aDomPrintableKeyValue);
-    }
+  if (aEvent.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
+      aDomPrintableKeyValue) {
+    aEvent.mKeyValue = char16_t(aDomPrintableKeyValue);
+  }
 
-    aEvent.mLocation =
-        WidgetKeyboardEvent::ComputeLocationFromCodeValue(aEvent.mCodeNameIndex);
-    aEvent.mTime = aTime;
-    aEvent.mTimeStamp = nsWindow::GetEventTimeStamp(aTime);
+  aEvent.mLocation =
+      WidgetKeyboardEvent::ComputeLocationFromCodeValue(aEvent.mCodeNameIndex);
+  aEvent.mTime = aTime;
+  aEvent.mTimeStamp = nsWindow::GetEventTimeStamp(aTime);
 }
 
-static nscolor
-ConvertAndroidColor(uint32_t aArgb)
-{
-    return NS_RGBA((aArgb & 0x00ff0000) >> 16,
-                   (aArgb & 0x0000ff00) >> 8,
-                   (aArgb & 0x000000ff),
-                   (aArgb & 0xff000000) >> 24);
+static nscolor ConvertAndroidColor(uint32_t aArgb) {
+  return NS_RGBA((aArgb & 0x00ff0000) >> 16, (aArgb & 0x0000ff00) >> 8,
+                 (aArgb & 0x000000ff), (aArgb & 0xff000000) >> 24);
 }
 
-static jni::ObjectArray::LocalRef
-ConvertRectArrayToJavaRectFArray(const nsTArray<LayoutDeviceIntRect>& aRects,
-                                 const CSSToLayoutDeviceScale aScale)
-{
-    const size_t length = aRects.Length();
-    auto rects = jni::ObjectArray::New<sdk::RectF>(length);
+static jni::ObjectArray::LocalRef ConvertRectArrayToJavaRectFArray(
+    const nsTArray<LayoutDeviceIntRect>& aRects,
+    const CSSToLayoutDeviceScale aScale) {
+  const size_t length = aRects.Length();
+  auto rects = jni::ObjectArray::New<sdk::RectF>(length);
 
-    for (size_t i = 0; i < length; i++) {
-        const LayoutDeviceIntRect& tmp = aRects[i];
+  for (size_t i = 0; i < length; i++) {
+    const LayoutDeviceIntRect& tmp = aRects[i];
 
-        
-        auto rect = sdk::RectF::New(tmp.x / aScale.scale, tmp.y / aScale.scale,
-                                    (tmp.x + tmp.width) / aScale.scale,
-                                    (tmp.y + tmp.height) / aScale.scale);
-        rects->SetElement(i, rect);
-    }
-    return rects;
+    
+    auto rect = sdk::RectF::New(tmp.x / aScale.scale, tmp.y / aScale.scale,
+                                (tmp.x + tmp.width) / aScale.scale,
+                                (tmp.y + tmp.height) / aScale.scale);
+    rects->SetElement(i, rect);
+  }
+  return rects;
 }
 
 namespace mozilla {
@@ -562,1044 +633,981 @@ namespace widget {
 
 bool GeckoEditableSupport::sDispatchKeyEventsInCompositionForAnyApps = false;
 
-NS_IMPL_ISUPPORTS(GeckoEditableSupport,
-                  TextEventDispatcherListener,
+NS_IMPL_ISUPPORTS(GeckoEditableSupport, TextEventDispatcherListener,
                   nsISupportsWeakReference)
 
-void
-GeckoEditableSupport::ObservePrefs()
-{
-    static bool sIsObservingPref = false;
-    if (sIsObservingPref) {
-        return;
-    }
-    sIsObservingPref = true;
-    Preferences::AddBoolVarCache(
-        &sDispatchKeyEventsInCompositionForAnyApps,
-        "intl.ime.hack.on_any_apps.fire_key_events_for_composition",
-        false);
+void GeckoEditableSupport::ObservePrefs() {
+  static bool sIsObservingPref = false;
+  if (sIsObservingPref) {
+    return;
+  }
+  sIsObservingPref = true;
+  Preferences::AddBoolVarCache(
+      &sDispatchKeyEventsInCompositionForAnyApps,
+      "intl.ime.hack.on_any_apps.fire_key_events_for_composition", false);
 }
 
-RefPtr<TextComposition>
-GeckoEditableSupport::GetComposition() const
-{
-    nsCOMPtr<nsIWidget> widget = GetWidget();
-    return widget ? IMEStateManager::GetTextCompositionFor(widget) : nullptr;
+RefPtr<TextComposition> GeckoEditableSupport::GetComposition() const {
+  nsCOMPtr<nsIWidget> widget = GetWidget();
+  return widget ? IMEStateManager::GetTextCompositionFor(widget) : nullptr;
 }
 
-bool
-GeckoEditableSupport::RemoveComposition(RemoveCompositionFlag aFlag)
-{
-    if (!mDispatcher || !mDispatcher->IsComposing()) {
-        return false;
-    }
+bool GeckoEditableSupport::RemoveComposition(RemoveCompositionFlag aFlag) {
+  if (!mDispatcher || !mDispatcher->IsComposing()) {
+    return false;
+  }
 
-    nsEventStatus status = nsEventStatus_eIgnore;
+  nsEventStatus status = nsEventStatus_eIgnore;
 
-    NS_ENSURE_SUCCESS(BeginInputTransaction(mDispatcher), false);
-    mDispatcher->CommitComposition(
-            status, aFlag == CANCEL_IME_COMPOSITION ? &EmptyString() : nullptr);
-    return true;
+  NS_ENSURE_SUCCESS(BeginInputTransaction(mDispatcher), false);
+  mDispatcher->CommitComposition(
+      status, aFlag == CANCEL_IME_COMPOSITION ? &EmptyString() : nullptr);
+  return true;
 }
 
-void
-GeckoEditableSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
-        int32_t aScanCode, int32_t aMetaState, int32_t aKeyPressMetaState,
-        int64_t aTime, int32_t aDomPrintableKeyValue, int32_t aRepeatCount,
-        int32_t aFlags, bool aIsSynthesizedImeKey,
-        jni::Object::Param aOriginalEvent)
-{
-    nsCOMPtr<nsIWidget> widget = GetWidget();
-    RefPtr<TextEventDispatcher> dispatcher =
-            mDispatcher ? mDispatcher.get() :
-            widget      ? widget->GetTextEventDispatcher() : nullptr;
-    NS_ENSURE_TRUE_VOID(dispatcher && widget);
+void GeckoEditableSupport::OnKeyEvent(int32_t aAction, int32_t aKeyCode,
+                                      int32_t aScanCode, int32_t aMetaState,
+                                      int32_t aKeyPressMetaState, int64_t aTime,
+                                      int32_t aDomPrintableKeyValue,
+                                      int32_t aRepeatCount, int32_t aFlags,
+                                      bool aIsSynthesizedImeKey,
+                                      jni::Object::Param aOriginalEvent) {
+  nsCOMPtr<nsIWidget> widget = GetWidget();
+  RefPtr<TextEventDispatcher> dispatcher =
+      mDispatcher ? mDispatcher.get()
+                  : widget ? widget->GetTextEventDispatcher() : nullptr;
+  NS_ENSURE_TRUE_VOID(dispatcher && widget);
 
-    if (!aIsSynthesizedImeKey && mWindow) {
-        mWindow->UserActivity();
-    } else if (aIsSynthesizedImeKey && mIMEMaskEventsCount > 0) {
-        
-        return;
-    }
-
-    EventMessage msg;
-    if (aAction == sdk::KeyEvent::ACTION_DOWN) {
-        msg = eKeyDown;
-    } else if (aAction == sdk::KeyEvent::ACTION_UP) {
-        msg = eKeyUp;
-    } else if (aAction == sdk::KeyEvent::ACTION_MULTIPLE) {
-        
-        
-        MOZ_CRASH("Cannot handle key with multiple action");
-    } else {
-        NS_WARNING("Unknown key action event");
-        return;
-    }
-
-    nsEventStatus status = nsEventStatus_eIgnore;
-    WidgetKeyboardEvent event(true, msg, widget);
-    InitKeyEvent(event, aAction, aKeyCode, aScanCode, aMetaState, aTime,
-                 aDomPrintableKeyValue, aRepeatCount, aFlags);
-
-    if (nsIWidget::UsePuppetWidgets()) {
-        
-        event.PreventNativeKeyBindings();
-    }
-
-    if (aIsSynthesizedImeKey) {
-        
-        
-        
-        mIMEKeyEvents.AppendElement(UniquePtr<WidgetEvent>(event.Duplicate()));
-    } else {
-        RemoveComposition();
-        NS_ENSURE_SUCCESS_VOID(BeginInputTransaction(dispatcher));
-        dispatcher->DispatchKeyboardEvent(msg, event, status);
-        if (widget->Destroyed() || status == nsEventStatus_eConsumeNoDefault) {
-            
-            return;
-        }
-        mEditable->OnDefaultKeyEvent(aOriginalEvent);
-    }
-
+  if (!aIsSynthesizedImeKey && mWindow) {
+    mWindow->UserActivity();
+  } else if (aIsSynthesizedImeKey && mIMEMaskEventsCount > 0) {
     
-    if (msg != eKeyDown) {
-        return;
-    }
+    return;
+  }
 
-    WidgetKeyboardEvent pressEvent(true, eKeyPress, widget);
-    InitKeyEvent(pressEvent, aAction, aKeyCode, aScanCode, aKeyPressMetaState,
-                 aTime, aDomPrintableKeyValue, aRepeatCount, aFlags);
-
-    if (nsIWidget::UsePuppetWidgets()) {
-        
-        pressEvent.PreventNativeKeyBindings();
-    }
-
-    if (aIsSynthesizedImeKey) {
-        mIMEKeyEvents.AppendElement(
-                UniquePtr<WidgetEvent>(pressEvent.Duplicate()));
-    } else {
-        dispatcher->MaybeDispatchKeypressEvents(pressEvent, status);
-    }
-}
-
-
-
-
-
-void
-GeckoEditableSupport::SendIMEDummyKeyEvent(nsIWidget* aWidget, EventMessage msg)
-{
-    nsEventStatus status = nsEventStatus_eIgnore;
-    MOZ_ASSERT(mDispatcher);
-
-    WidgetKeyboardEvent event(true, msg, aWidget);
-    event.mTime = PR_Now() / 1000;
+  EventMessage msg;
+  if (aAction == sdk::KeyEvent::ACTION_DOWN) {
+    msg = eKeyDown;
+  } else if (aAction == sdk::KeyEvent::ACTION_UP) {
+    msg = eKeyUp;
+  } else if (aAction == sdk::KeyEvent::ACTION_MULTIPLE) {
     
     
-    
-    
-    event.mKeyCode = NS_VK_PROCESSKEY;
-    event.mKeyNameIndex = KEY_NAME_INDEX_Process;
-    
-    
-    
+    MOZ_CRASH("Cannot handle key with multiple action");
+  } else {
+    NS_WARNING("Unknown key action event");
+    return;
+  }
+
+  nsEventStatus status = nsEventStatus_eIgnore;
+  WidgetKeyboardEvent event(true, msg, widget);
+  InitKeyEvent(event, aAction, aKeyCode, aScanCode, aMetaState, aTime,
+               aDomPrintableKeyValue, aRepeatCount, aFlags);
+
+  if (nsIWidget::UsePuppetWidgets()) {
     
     event.PreventNativeKeyBindings();
-    NS_ENSURE_SUCCESS_VOID(BeginInputTransaction(mDispatcher));
-    mDispatcher->DispatchKeyboardEvent(msg, event, status);
+  }
+
+  if (aIsSynthesizedImeKey) {
+    
+    
+    
+    mIMEKeyEvents.AppendElement(UniquePtr<WidgetEvent>(event.Duplicate()));
+  } else {
+    RemoveComposition();
+    NS_ENSURE_SUCCESS_VOID(BeginInputTransaction(dispatcher));
+    dispatcher->DispatchKeyboardEvent(msg, event, status);
+    if (widget->Destroyed() || status == nsEventStatus_eConsumeNoDefault) {
+      
+      return;
+    }
+    mEditable->OnDefaultKeyEvent(aOriginalEvent);
+  }
+
+  
+  if (msg != eKeyDown) {
+    return;
+  }
+
+  WidgetKeyboardEvent pressEvent(true, eKeyPress, widget);
+  InitKeyEvent(pressEvent, aAction, aKeyCode, aScanCode, aKeyPressMetaState,
+               aTime, aDomPrintableKeyValue, aRepeatCount, aFlags);
+
+  if (nsIWidget::UsePuppetWidgets()) {
+    
+    pressEvent.PreventNativeKeyBindings();
+  }
+
+  if (aIsSynthesizedImeKey) {
+    mIMEKeyEvents.AppendElement(UniquePtr<WidgetEvent>(pressEvent.Duplicate()));
+  } else {
+    dispatcher->MaybeDispatchKeypressEvents(pressEvent, status);
+  }
 }
 
-void
-GeckoEditableSupport::AddIMETextChange(const IMETextChange& aChange)
-{
-    mIMETextChanges.AppendElement(aChange);
 
-    
-    
-    mIMETextChangedDuringFlush = true;
 
-    
-    
-    
-    
-    const int32_t delta = aChange.mNewEnd - aChange.mOldEnd;
-    for (int32_t i = mIMETextChanges.Length() - 2; i >= 0; i--) {
-        IMETextChange& previousChange = mIMETextChanges[i];
-        if (previousChange.mStart > aChange.mOldEnd) {
-            previousChange.mStart += delta;
-            previousChange.mOldEnd += delta;
-            previousChange.mNewEnd += delta;
-        }
-    }
 
-    
-    
-    
-    int32_t srcIndex = mIMETextChanges.Length() - 1;
-    int32_t dstIndex = srcIndex;
 
-    while (--dstIndex >= 0) {
-        IMETextChange& src = mIMETextChanges[srcIndex];
-        IMETextChange& dst = mIMETextChanges[dstIndex];
-        
-        
-        
-        if (src.mOldEnd < dst.mStart || dst.mNewEnd < src.mStart) {
-            
-            continue;
-        }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        dst.mStart = std::min(dst.mStart, src.mStart);
-        if (src.mOldEnd < dst.mNewEnd) {
-            
-            dst.mNewEnd += src.mNewEnd - src.mOldEnd;
-        } else { 
-            
-            dst.mOldEnd += src.mOldEnd - dst.mNewEnd;
-            dst.mNewEnd = src.mNewEnd;
-        }
-        
-        mIMETextChanges.RemoveElementAt(srcIndex);
-        
-        
-        srcIndex = dstIndex;
-    }
+void GeckoEditableSupport::SendIMEDummyKeyEvent(nsIWidget* aWidget,
+                                                EventMessage msg) {
+  nsEventStatus status = nsEventStatus_eIgnore;
+  MOZ_ASSERT(mDispatcher);
+
+  WidgetKeyboardEvent event(true, msg, aWidget);
+  event.mTime = PR_Now() / 1000;
+  
+  
+  
+  
+  event.mKeyCode = NS_VK_PROCESSKEY;
+  event.mKeyNameIndex = KEY_NAME_INDEX_Process;
+  
+  
+  
+  
+  event.PreventNativeKeyBindings();
+  NS_ENSURE_SUCCESS_VOID(BeginInputTransaction(mDispatcher));
+  mDispatcher->DispatchKeyboardEvent(msg, event, status);
 }
 
-void
-GeckoEditableSupport::PostFlushIMEChanges()
-{
-    if (!mIMETextChanges.IsEmpty() || mIMESelectionChanged) {
-        
-        return;
+void GeckoEditableSupport::AddIMETextChange(const IMETextChange& aChange) {
+  mIMETextChanges.AppendElement(aChange);
+
+  
+  
+  mIMETextChangedDuringFlush = true;
+
+  
+  
+  
+  
+  const int32_t delta = aChange.mNewEnd - aChange.mOldEnd;
+  for (int32_t i = mIMETextChanges.Length() - 2; i >= 0; i--) {
+    IMETextChange& previousChange = mIMETextChanges[i];
+    if (previousChange.mStart > aChange.mOldEnd) {
+      previousChange.mStart += delta;
+      previousChange.mOldEnd += delta;
+      previousChange.mNewEnd += delta;
     }
+  }
 
-    RefPtr<GeckoEditableSupport> self(this);
+  
+  
+  
+  int32_t srcIndex = mIMETextChanges.Length() - 1;
+  int32_t dstIndex = srcIndex;
 
-    nsAppShell::PostEvent([this, self] {
-        nsCOMPtr<nsIWidget> widget = GetWidget();
-        if (widget && !widget->Destroyed()) {
-            FlushIMEChanges();
-        }
-    });
+  while (--dstIndex >= 0) {
+    IMETextChange& src = mIMETextChanges[srcIndex];
+    IMETextChange& dst = mIMETextChanges[dstIndex];
+    
+    
+    
+    if (src.mOldEnd < dst.mStart || dst.mNewEnd < src.mStart) {
+      
+      continue;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    dst.mStart = std::min(dst.mStart, src.mStart);
+    if (src.mOldEnd < dst.mNewEnd) {
+      
+      dst.mNewEnd += src.mNewEnd - src.mOldEnd;
+    } else {  
+      
+      dst.mOldEnd += src.mOldEnd - dst.mNewEnd;
+      dst.mNewEnd = src.mNewEnd;
+    }
+    
+    mIMETextChanges.RemoveElementAt(srcIndex);
+    
+    
+    srcIndex = dstIndex;
+  }
 }
 
-void
-GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags)
-{
+void GeckoEditableSupport::PostFlushIMEChanges() {
+  if (!mIMETextChanges.IsEmpty() || mIMESelectionChanged) {
     
-    
-    NS_ENSURE_TRUE_VOID(!mIMEMaskEventsCount);
+    return;
+  }
 
-    if (mIMEDelaySynchronizeReply && mIMEActiveCompositionCount > 0) {
-        
-        
-        return;
-    }
+  RefPtr<GeckoEditableSupport> self(this);
 
+  nsAppShell::PostEvent([this, self] {
     nsCOMPtr<nsIWidget> widget = GetWidget();
-    NS_ENSURE_TRUE_VOID(widget);
-
-    struct TextRecord
-    {
-        nsString text;
-        int32_t start;
-        int32_t oldEnd;
-        int32_t newEnd;
-    };
-    AutoTArray<TextRecord, 4> textTransaction;
-    textTransaction.SetCapacity(mIMETextChanges.Length());
-
-    nsEventStatus status = nsEventStatus_eIgnore;
-    mIMETextChangedDuringFlush = false;
-
-    auto shouldAbort = [=] (bool aForce) -> bool {
-        if (!aForce && !mIMETextChangedDuringFlush) {
-            return false;
-        }
-        
-        
-        
-        if (aFlags == FLUSH_FLAG_NONE) {
-            FlushIMEChanges(FLUSH_FLAG_RETRY);
-        } else {
-            
-            __android_log_print(ANDROID_LOG_WARN, "GeckoEditableSupport",
-                    "Already retrying IME flush");
-        }
-        return true;
-    };
-
-    for (const IMETextChange &change : mIMETextChanges) {
-        if (change.mStart == change.mOldEnd &&
-                change.mStart == change.mNewEnd) {
-            continue;
-        }
-
-        WidgetQueryContentEvent event(true, eQueryTextContent, widget);
-
-        if (change.mNewEnd != change.mStart) {
-            event.InitForQueryTextContent(change.mStart,
-                                          change.mNewEnd - change.mStart);
-            widget->DispatchEvent(&event, status);
-
-            if (shouldAbort(NS_WARN_IF(!event.mSucceeded))) {
-                return;
-            }
-        }
-
-        textTransaction.AppendElement(
-                TextRecord{event.mReply.mString, change.mStart,
-                           change.mOldEnd, change.mNewEnd});
+    if (widget && !widget->Destroyed()) {
+      FlushIMEChanges();
     }
-
-    int32_t selStart = -1;
-    int32_t selEnd = -1;
-
-    if (mIMESelectionChanged) {
-        WidgetQueryContentEvent event(true, eQuerySelectedText, widget);
-        widget->DispatchEvent(&event, status);
-
-        if (shouldAbort(NS_WARN_IF(!event.mSucceeded))) {
-            return;
-        }
-
-        selStart = int32_t(event.GetSelectionStart());
-        selEnd = int32_t(event.GetSelectionEnd());
-
-        if (aFlags == FLUSH_FLAG_RECOVER) {
-            
-            
-            for (const TextRecord& record : textTransaction) {
-                const int32_t end = record.start + record.text.Length();
-                selStart = std::min(selStart, end);
-                selEnd = std::min(selEnd, end);
-            }
-        }
-    }
-
-    JNIEnv* const env = jni::GetGeckoThreadEnv();
-    auto flushOnException = [=] () -> bool {
-        if (!env->ExceptionCheck()) {
-            return false;
-        }
-        if (aFlags != FLUSH_FLAG_RECOVER) {
-            
-            env->ExceptionClear();
-            __android_log_print(ANDROID_LOG_WARN, "GeckoEditableSupport",
-                    "Recovering from IME exception");
-            FlushIMEText(FLUSH_FLAG_RECOVER);
-        } else {
-            
-#ifdef RELEASE_OR_BETA
-            env->ExceptionClear();
-#else
-            MOZ_CATCH_JNI_EXCEPTION(env);
-#endif
-        }
-        return true;
-    };
-
-    
-    mIMETextChanges.Clear();
-
-    for (const TextRecord& record : textTransaction) {
-        mEditable->OnTextChange(record.text, record.start,
-                                record.oldEnd, record.newEnd);
-        if (flushOnException()) {
-            return;
-        }
-    }
-
-    while (mIMEDelaySynchronizeReply && mIMEActiveSynchronizeCount) {
-        mIMEActiveSynchronizeCount--;
-        mEditable->NotifyIME(EditableListener::NOTIFY_IME_REPLY_EVENT);
-    }
-    mIMEDelaySynchronizeReply = false;
-    mIMEActiveSynchronizeCount = 0;
-    mIMEActiveCompositionCount = 0;
-
-    if (mIMESelectionChanged) {
-        mIMESelectionChanged = false;
-        mEditable->OnSelectionChange(selStart, selEnd);
-        flushOnException();
-    }
+  });
 }
 
-void
-GeckoEditableSupport::FlushIMEText(FlushChangesFlag aFlags)
-{
-    
-    mIMETextChanges.Clear();
-    mIMESelectionChanged = true;
+void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
+  
+  
+  NS_ENSURE_TRUE_VOID(!mIMEMaskEventsCount);
 
-    
+  if (mIMEDelaySynchronizeReply && mIMEActiveCompositionCount > 0) {
     
     
-    IMENotification notification(NOTIFY_IME_OF_TEXT_CHANGE);
-    notification.mTextChangeData.mStartOffset = 0;
-    notification.mTextChangeData.mRemovedEndOffset = INT32_MAX / 2;
-    notification.mTextChangeData.mAddedEndOffset = INT32_MAX / 2;
-    NotifyIME(mDispatcher, notification);
+    return;
+  }
 
-    FlushIMEChanges(aFlags);
-}
+  nsCOMPtr<nsIWidget> widget = GetWidget();
+  NS_ENSURE_TRUE_VOID(widget);
 
-void
-GeckoEditableSupport::UpdateCompositionRects()
-{
-    nsCOMPtr<nsIWidget> widget = GetWidget();
-    RefPtr<TextComposition> composition(GetComposition());
-    NS_ENSURE_TRUE_VOID(mDispatcher && widget);
+  struct TextRecord {
+    nsString text;
+    int32_t start;
+    int32_t oldEnd;
+    int32_t newEnd;
+  };
+  AutoTArray<TextRecord, 4> textTransaction;
+  textTransaction.SetCapacity(mIMETextChanges.Length());
 
-    if (!composition) {
-        return;
+  nsEventStatus status = nsEventStatus_eIgnore;
+  mIMETextChangedDuringFlush = false;
+
+  auto shouldAbort = [=](bool aForce) -> bool {
+    if (!aForce && !mIMETextChangedDuringFlush) {
+      return false;
     }
-
-    nsEventStatus status = nsEventStatus_eIgnore;
-    uint32_t offset = composition->NativeOffsetOfStartComposition();
-    WidgetQueryContentEvent textRects(true, eQueryTextRectArray, widget);
-    textRects.InitForQueryTextRectArray(offset, composition->String().Length());
-    widget->DispatchEvent(&textRects, status);
-
-    auto rects = ConvertRectArrayToJavaRectFArray(
-            textRects.mReply.mRectArray,
-            widget->GetDefaultScale());
-
-    mEditable->UpdateCompositionRects(rects);
-}
-
-void
-GeckoEditableSupport::OnImeSynchronize()
-{
-    if (mIMEDelaySynchronizeReply) {
-        
-        
-        mIMEActiveSynchronizeCount++;
-        return;
-    }
-    if (!mIMEMaskEventsCount) {
-        FlushIMEChanges();
-    }
-    mEditable->NotifyIME(EditableListener::NOTIFY_IME_REPLY_EVENT);
-}
-
-void
-GeckoEditableSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
-                                       jni::String::Param aText)
-{
-    if (DoReplaceText(aStart, aEnd, aText)) {
-        mIMEDelaySynchronizeReply = true;
-    }
-
-    OnImeSynchronize();
-}
-
-bool
-GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
-                                    jni::String::Param aText)
-{
     
     
     
-
-    if (mIMEMaskEventsCount > 0) {
-        
-        return false;
-    }
-
-    if (mWindow) {
-        mWindow->UserActivity();
-    }
-
-    
-
-
-    nsCOMPtr<nsIWidget> widget = GetWidget();
-    NS_ENSURE_TRUE(mDispatcher && widget, false);
-    NS_ENSURE_SUCCESS(BeginInputTransaction(mDispatcher), false);
-
-    RefPtr<TextComposition> composition(GetComposition());
-    MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
-
-    nsString string(aText->ToString());
-    const bool composing = !mIMERanges->IsEmpty();
-    nsEventStatus status = nsEventStatus_eIgnore;
-    bool textChanged = composing;
-
-    if (!mIMEKeyEvents.IsEmpty() ||
-        !composition || !mDispatcher->IsComposing() ||
-        uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
-        uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
-                          composition->String().Length()) {
-        
-        
-        
-        textChanged |= RemoveComposition();
-
-        {
-            
-            
-            WidgetSelectionEvent event(true, eSetSelection, widget);
-            event.mOffset = uint32_t(aStart);
-            event.mLength = uint32_t(aEnd - aStart);
-            event.mExpandToClusterBoundary = false;
-            event.mReason = nsISelectionListener::IME_REASON;
-            widget->DispatchEvent(&event, status);
-        }
-
-        if (!mIMEKeyEvents.IsEmpty()) {
-            for (uint32_t i = 0; i < mIMEKeyEvents.Length(); i++) {
-                const auto event = mIMEKeyEvents[i]->AsKeyboardEvent();
-                
-                event->mWidget = widget;
-
-                if (event->mMessage != eKeyPress) {
-                    mDispatcher->DispatchKeyboardEvent(
-                            event->mMessage, *event, status);
-                } else {
-                    mDispatcher->MaybeDispatchKeypressEvents(*event, status);
-                }
-                if (!mDispatcher || widget->Destroyed()) {
-                    break;
-                }
-            }
-            mIMEKeyEvents.Clear();
-            return false;
-        }
-
-        if (aStart != aEnd) {
-            
-            WidgetContentCommandEvent event(
-                    true, eContentCommandDelete, widget);
-            event.mTime = PR_Now() / 1000;
-            widget->DispatchEvent(&event, status);
-            if (!mDispatcher || widget->Destroyed()) {
-                return false;
-            }
-            textChanged = true;
-        }
-    } else if (composition->String().Equals(string)) {
-        
-
-
-
-        IMETextChange dummyChange;
-        dummyChange.mStart = aStart;
-        dummyChange.mOldEnd = dummyChange.mNewEnd = aEnd;
-        PostFlushIMEChanges();
-        mIMESelectionChanged = true;
-        AddIMETextChange(dummyChange);
-        textChanged = true;
-    }
-
-    if (sDispatchKeyEventsInCompositionForAnyApps ||
-        mInputContext.mMayBeIMEUnaware) {
-        SendIMEDummyKeyEvent(widget, eKeyDown);
-        if (!mDispatcher || widget->Destroyed()) {
-            return false;
-        }
-    }
-
-    if (composing) {
-        mDispatcher->SetPendingComposition(string, mIMERanges);
-        mDispatcher->FlushPendingComposition(status);
-        mIMEActiveCompositionCount++;
-        
-        mIMERanges->Clear();
-    } else if (!string.IsEmpty() || mDispatcher->IsComposing()) {
-        mDispatcher->CommitComposition(status, &string);
-        mIMEActiveCompositionCount++;
-        textChanged = true;
-    }
-    if (!mDispatcher || widget->Destroyed()) {
-        return false;
-    }
-
-    if (sDispatchKeyEventsInCompositionForAnyApps ||
-        mInputContext.mMayBeIMEUnaware) {
-        SendIMEDummyKeyEvent(widget, eKeyUp);
-        
-    }
-    return textChanged;
-}
-
-void
-GeckoEditableSupport::OnImeAddCompositionRange(
-        int32_t aStart, int32_t aEnd, int32_t aRangeType, int32_t aRangeStyle,
-        int32_t aRangeLineStyle, bool aRangeBoldLine, int32_t aRangeForeColor,
-        int32_t aRangeBackColor, int32_t aRangeLineColor)
-{
-    if (mIMEMaskEventsCount > 0) {
-        
-        return;
-    }
-
-    TextRange range;
-    range.mStartOffset = aStart;
-    range.mEndOffset = aEnd;
-    range.mRangeType = ToTextRangeType(aRangeType);
-    range.mRangeStyle.mDefinedStyles = aRangeStyle;
-    range.mRangeStyle.mLineStyle = aRangeLineStyle;
-    range.mRangeStyle.mIsBoldLine = aRangeBoldLine;
-    range.mRangeStyle.mForegroundColor =
-            ConvertAndroidColor(uint32_t(aRangeForeColor));
-    range.mRangeStyle.mBackgroundColor =
-            ConvertAndroidColor(uint32_t(aRangeBackColor));
-    range.mRangeStyle.mUnderlineColor =
-            ConvertAndroidColor(uint32_t(aRangeLineColor));
-    mIMERanges->AppendElement(range);
-}
-
-void
-GeckoEditableSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd,
-                                             int32_t aFlags)
-{
-    if (DoUpdateComposition(aStart, aEnd, aFlags)) {
-        mIMEDelaySynchronizeReply = true;
-    }
-}
-
-bool
-GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
-                                          int32_t aFlags)
-{
-    if (mIMEMaskEventsCount > 0) {
-        
-        return false;
-    }
-
-    nsCOMPtr<nsIWidget> widget = GetWidget();
-    nsEventStatus status = nsEventStatus_eIgnore;
-    NS_ENSURE_TRUE(mDispatcher && widget, false);
-
-    const bool keepCurrent = !!(aFlags &
-            java::GeckoEditableChild::FLAG_KEEP_CURRENT_COMPOSITION);
-
-    
-    if (mIMERanges->IsEmpty()) {
-        if (keepCurrent && mDispatcher->IsComposing()) {
-            
-            return false;
-        }
-
-        MOZ_ASSERT(aStart >= 0 && aEnd >= 0);
-        const bool compositionChanged = RemoveComposition();
-
-        WidgetSelectionEvent selEvent(true, eSetSelection, widget);
-        selEvent.mOffset = std::min(aStart, aEnd);
-        selEvent.mLength = std::max(aStart, aEnd) - selEvent.mOffset;
-        selEvent.mReversed = aStart > aEnd;
-        selEvent.mExpandToClusterBoundary = false;
-        widget->DispatchEvent(&selEvent, status);
-        return compositionChanged;
-    }
-
-    
-
-
-
-
-
-
-    nsString string;
-    RefPtr<TextComposition> composition(GetComposition());
-    MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
-
-    if (!composition || !mDispatcher->IsComposing() ||
-        uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
-        uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
-                          composition->String().Length()) {
-        if (keepCurrent) {
-            
-            mIMERanges->Clear();
-            return false;
-        }
-
-        
-        
-        RemoveComposition();
-
-        {
-            WidgetSelectionEvent event(true, eSetSelection, widget);
-            event.mOffset = uint32_t(aStart);
-            event.mLength = uint32_t(aEnd - aStart);
-            event.mExpandToClusterBoundary = false;
-            event.mReason = nsISelectionListener::IME_REASON;
-            widget->DispatchEvent(&event, status);
-        }
-
-        {
-            WidgetQueryContentEvent event(true, eQuerySelectedText, widget);
-            widget->DispatchEvent(&event, status);
-            MOZ_ASSERT(event.mSucceeded);
-            string = event.mReply.mString;
-        }
+    if (aFlags == FLUSH_FLAG_NONE) {
+      FlushIMEChanges(FLUSH_FLAG_RETRY);
     } else {
-        
-        
-        string = composition->String();
+      
+      __android_log_print(ANDROID_LOG_WARN, "GeckoEditableSupport",
+                          "Already retrying IME flush");
+    }
+    return true;
+  };
+
+  for (const IMETextChange& change : mIMETextChanges) {
+    if (change.mStart == change.mOldEnd && change.mStart == change.mNewEnd) {
+      continue;
     }
 
-#ifdef DEBUG_ANDROID_IME
-    const NS_ConvertUTF16toUTF8 data(string);
-    const char* text = data.get();
-    ALOGIME("IME: IME_SET_TEXT: text=\"%s\", length=%u, range=%u",
-            text, string.Length(), mIMERanges->Length());
-#endif 
+    WidgetQueryContentEvent event(true, eQueryTextContent, widget);
 
-    if (NS_WARN_IF(NS_FAILED(BeginInputTransaction(mDispatcher)))) {
-        mIMERanges->Clear();
+    if (change.mNewEnd != change.mStart) {
+      event.InitForQueryTextContent(change.mStart,
+                                    change.mNewEnd - change.mStart);
+      widget->DispatchEvent(&event, status);
+
+      if (shouldAbort(NS_WARN_IF(!event.mSucceeded))) {
+        return;
+      }
+    }
+
+    textTransaction.AppendElement(TextRecord{
+        event.mReply.mString, change.mStart, change.mOldEnd, change.mNewEnd});
+  }
+
+  int32_t selStart = -1;
+  int32_t selEnd = -1;
+
+  if (mIMESelectionChanged) {
+    WidgetQueryContentEvent event(true, eQuerySelectedText, widget);
+    widget->DispatchEvent(&event, status);
+
+    if (shouldAbort(NS_WARN_IF(!event.mSucceeded))) {
+      return;
+    }
+
+    selStart = int32_t(event.GetSelectionStart());
+    selEnd = int32_t(event.GetSelectionEnd());
+
+    if (aFlags == FLUSH_FLAG_RECOVER) {
+      
+      
+      for (const TextRecord& record : textTransaction) {
+        const int32_t end = record.start + record.text.Length();
+        selStart = std::min(selStart, end);
+        selEnd = std::min(selEnd, end);
+      }
+    }
+  }
+
+  JNIEnv* const env = jni::GetGeckoThreadEnv();
+  auto flushOnException = [=]() -> bool {
+    if (!env->ExceptionCheck()) {
+      return false;
+    }
+    if (aFlags != FLUSH_FLAG_RECOVER) {
+      
+      env->ExceptionClear();
+      __android_log_print(ANDROID_LOG_WARN, "GeckoEditableSupport",
+                          "Recovering from IME exception");
+      FlushIMEText(FLUSH_FLAG_RECOVER);
+    } else {
+      
+#ifdef RELEASE_OR_BETA
+      env->ExceptionClear();
+#else
+      MOZ_CATCH_JNI_EXCEPTION(env);
+#endif
+    }
+    return true;
+  };
+
+  
+  mIMETextChanges.Clear();
+
+  for (const TextRecord& record : textTransaction) {
+    mEditable->OnTextChange(record.text, record.start, record.oldEnd,
+                            record.newEnd);
+    if (flushOnException()) {
+      return;
+    }
+  }
+
+  while (mIMEDelaySynchronizeReply && mIMEActiveSynchronizeCount) {
+    mIMEActiveSynchronizeCount--;
+    mEditable->NotifyIME(EditableListener::NOTIFY_IME_REPLY_EVENT);
+  }
+  mIMEDelaySynchronizeReply = false;
+  mIMEActiveSynchronizeCount = 0;
+  mIMEActiveCompositionCount = 0;
+
+  if (mIMESelectionChanged) {
+    mIMESelectionChanged = false;
+    mEditable->OnSelectionChange(selStart, selEnd);
+    flushOnException();
+  }
+}
+
+void GeckoEditableSupport::FlushIMEText(FlushChangesFlag aFlags) {
+  
+  mIMETextChanges.Clear();
+  mIMESelectionChanged = true;
+
+  
+  
+  
+  IMENotification notification(NOTIFY_IME_OF_TEXT_CHANGE);
+  notification.mTextChangeData.mStartOffset = 0;
+  notification.mTextChangeData.mRemovedEndOffset = INT32_MAX / 2;
+  notification.mTextChangeData.mAddedEndOffset = INT32_MAX / 2;
+  NotifyIME(mDispatcher, notification);
+
+  FlushIMEChanges(aFlags);
+}
+
+void GeckoEditableSupport::UpdateCompositionRects() {
+  nsCOMPtr<nsIWidget> widget = GetWidget();
+  RefPtr<TextComposition> composition(GetComposition());
+  NS_ENSURE_TRUE_VOID(mDispatcher && widget);
+
+  if (!composition) {
+    return;
+  }
+
+  nsEventStatus status = nsEventStatus_eIgnore;
+  uint32_t offset = composition->NativeOffsetOfStartComposition();
+  WidgetQueryContentEvent textRects(true, eQueryTextRectArray, widget);
+  textRects.InitForQueryTextRectArray(offset, composition->String().Length());
+  widget->DispatchEvent(&textRects, status);
+
+  auto rects = ConvertRectArrayToJavaRectFArray(textRects.mReply.mRectArray,
+                                                widget->GetDefaultScale());
+
+  mEditable->UpdateCompositionRects(rects);
+}
+
+void GeckoEditableSupport::OnImeSynchronize() {
+  if (mIMEDelaySynchronizeReply) {
+    
+    
+    mIMEActiveSynchronizeCount++;
+    return;
+  }
+  if (!mIMEMaskEventsCount) {
+    FlushIMEChanges();
+  }
+  mEditable->NotifyIME(EditableListener::NOTIFY_IME_REPLY_EVENT);
+}
+
+void GeckoEditableSupport::OnImeReplaceText(int32_t aStart, int32_t aEnd,
+                                            jni::String::Param aText) {
+  if (DoReplaceText(aStart, aEnd, aText)) {
+    mIMEDelaySynchronizeReply = true;
+  }
+
+  OnImeSynchronize();
+}
+
+bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
+                                         jni::String::Param aText) {
+  
+  
+  
+
+  if (mIMEMaskEventsCount > 0) {
+    
+    return false;
+  }
+
+  if (mWindow) {
+    mWindow->UserActivity();
+  }
+
+  
+
+
+  nsCOMPtr<nsIWidget> widget = GetWidget();
+  NS_ENSURE_TRUE(mDispatcher && widget, false);
+  NS_ENSURE_SUCCESS(BeginInputTransaction(mDispatcher), false);
+
+  RefPtr<TextComposition> composition(GetComposition());
+  MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
+
+  nsString string(aText->ToString());
+  const bool composing = !mIMERanges->IsEmpty();
+  nsEventStatus status = nsEventStatus_eIgnore;
+  bool textChanged = composing;
+
+  if (!mIMEKeyEvents.IsEmpty() || !composition || !mDispatcher->IsComposing() ||
+      uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
+      uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
+                            composition->String().Length()) {
+    
+    
+    
+    textChanged |= RemoveComposition();
+
+    {
+      
+      
+      WidgetSelectionEvent event(true, eSetSelection, widget);
+      event.mOffset = uint32_t(aStart);
+      event.mLength = uint32_t(aEnd - aStart);
+      event.mExpandToClusterBoundary = false;
+      event.mReason = nsISelectionListener::IME_REASON;
+      widget->DispatchEvent(&event, status);
+    }
+
+    if (!mIMEKeyEvents.IsEmpty()) {
+      for (uint32_t i = 0; i < mIMEKeyEvents.Length(); i++) {
+        const auto event = mIMEKeyEvents[i]->AsKeyboardEvent();
+        
+        event->mWidget = widget;
+
+        if (event->mMessage != eKeyPress) {
+          mDispatcher->DispatchKeyboardEvent(event->mMessage, *event, status);
+        } else {
+          mDispatcher->MaybeDispatchKeypressEvents(*event, status);
+        }
+        if (!mDispatcher || widget->Destroyed()) {
+          break;
+        }
+      }
+      mIMEKeyEvents.Clear();
+      return false;
+    }
+
+    if (aStart != aEnd) {
+      
+      WidgetContentCommandEvent event(true, eContentCommandDelete, widget);
+      event.mTime = PR_Now() / 1000;
+      widget->DispatchEvent(&event, status);
+      if (!mDispatcher || widget->Destroyed()) {
         return false;
+      }
+      textChanged = true;
     }
+  } else if (composition->String().Equals(string)) {
+    
+
+
+
+    IMETextChange dummyChange;
+    dummyChange.mStart = aStart;
+    dummyChange.mOldEnd = dummyChange.mNewEnd = aEnd;
+    PostFlushIMEChanges();
+    mIMESelectionChanged = true;
+    AddIMETextChange(dummyChange);
+    textChanged = true;
+  }
+
+  if (sDispatchKeyEventsInCompositionForAnyApps ||
+      mInputContext.mMayBeIMEUnaware) {
+    SendIMEDummyKeyEvent(widget, eKeyDown);
+    if (!mDispatcher || widget->Destroyed()) {
+      return false;
+    }
+  }
+
+  if (composing) {
     mDispatcher->SetPendingComposition(string, mIMERanges);
     mDispatcher->FlushPendingComposition(status);
+    mIMEActiveCompositionCount++;
+    
     mIMERanges->Clear();
-    return true;
+  } else if (!string.IsEmpty() || mDispatcher->IsComposing()) {
+    mDispatcher->CommitComposition(status, &string);
+    mIMEActiveCompositionCount++;
+    textChanged = true;
+  }
+  if (!mDispatcher || widget->Destroyed()) {
+    return false;
+  }
+
+  if (sDispatchKeyEventsInCompositionForAnyApps ||
+      mInputContext.mMayBeIMEUnaware) {
+    SendIMEDummyKeyEvent(widget, eKeyUp);
+    
+  }
+  return textChanged;
 }
 
-void
-GeckoEditableSupport::OnImeRequestCursorUpdates(int aRequestMode)
-{
-    if (aRequestMode == EditableClient::ONE_SHOT) {
-        UpdateCompositionRects();
-        return;
+void GeckoEditableSupport::OnImeAddCompositionRange(
+    int32_t aStart, int32_t aEnd, int32_t aRangeType, int32_t aRangeStyle,
+    int32_t aRangeLineStyle, bool aRangeBoldLine, int32_t aRangeForeColor,
+    int32_t aRangeBackColor, int32_t aRangeLineColor) {
+  if (mIMEMaskEventsCount > 0) {
+    
+    return;
+  }
+
+  TextRange range;
+  range.mStartOffset = aStart;
+  range.mEndOffset = aEnd;
+  range.mRangeType = ToTextRangeType(aRangeType);
+  range.mRangeStyle.mDefinedStyles = aRangeStyle;
+  range.mRangeStyle.mLineStyle = aRangeLineStyle;
+  range.mRangeStyle.mIsBoldLine = aRangeBoldLine;
+  range.mRangeStyle.mForegroundColor =
+      ConvertAndroidColor(uint32_t(aRangeForeColor));
+  range.mRangeStyle.mBackgroundColor =
+      ConvertAndroidColor(uint32_t(aRangeBackColor));
+  range.mRangeStyle.mUnderlineColor =
+      ConvertAndroidColor(uint32_t(aRangeLineColor));
+  mIMERanges->AppendElement(range);
+}
+
+void GeckoEditableSupport::OnImeUpdateComposition(int32_t aStart, int32_t aEnd,
+                                                  int32_t aFlags) {
+  if (DoUpdateComposition(aStart, aEnd, aFlags)) {
+    mIMEDelaySynchronizeReply = true;
+  }
+}
+
+bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
+                                               int32_t aFlags) {
+  if (mIMEMaskEventsCount > 0) {
+    
+    return false;
+  }
+
+  nsCOMPtr<nsIWidget> widget = GetWidget();
+  nsEventStatus status = nsEventStatus_eIgnore;
+  NS_ENSURE_TRUE(mDispatcher && widget, false);
+
+  const bool keepCurrent =
+      !!(aFlags & java::GeckoEditableChild::FLAG_KEEP_CURRENT_COMPOSITION);
+
+  
+  if (mIMERanges->IsEmpty()) {
+    if (keepCurrent && mDispatcher->IsComposing()) {
+      
+      return false;
     }
 
-    mIMEMonitorCursor = (aRequestMode == EditableClient::START_MONITOR);
-}
+    MOZ_ASSERT(aStart >= 0 && aEnd >= 0);
+    const bool compositionChanged = RemoveComposition();
 
-void
-GeckoEditableSupport::AsyncNotifyIME(int32_t aNotification)
-{
-    RefPtr<GeckoEditableSupport> self(this);
+    WidgetSelectionEvent selEvent(true, eSetSelection, widget);
+    selEvent.mOffset = std::min(aStart, aEnd);
+    selEvent.mLength = std::max(aStart, aEnd) - selEvent.mOffset;
+    selEvent.mReversed = aStart > aEnd;
+    selEvent.mExpandToClusterBoundary = false;
+    widget->DispatchEvent(&selEvent, status);
+    return compositionChanged;
+  }
 
-    nsAppShell::PostEvent([this, self, aNotification] {
-        if (!mIMEMaskEventsCount) {
-            mEditable->NotifyIME(aNotification);
-        }
-    });
-}
+  
 
-nsresult
-GeckoEditableSupport::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
-                                const IMENotification& aNotification)
-{
-    MOZ_ASSERT(mEditable);
 
-    switch (aNotification.mMessage) {
-        case REQUEST_TO_COMMIT_COMPOSITION: {
-            ALOGIME("IME: REQUEST_TO_COMMIT_COMPOSITION");
 
-            RemoveComposition(COMMIT_IME_COMPOSITION);
-            AsyncNotifyIME(EditableListener::
-                           NOTIFY_IME_TO_COMMIT_COMPOSITION);
-            break;
-        }
 
-        case REQUEST_TO_CANCEL_COMPOSITION: {
-            ALOGIME("IME: REQUEST_TO_CANCEL_COMPOSITION");
 
-            RemoveComposition(CANCEL_IME_COMPOSITION);
-            AsyncNotifyIME(EditableListener::
-                           NOTIFY_IME_TO_CANCEL_COMPOSITION);
-            break;
-        }
 
-        case NOTIFY_IME_OF_FOCUS: {
-            ALOGIME("IME: NOTIFY_IME_OF_FOCUS");
+  nsString string;
+  RefPtr<TextComposition> composition(GetComposition());
+  MOZ_ASSERT(!composition || !composition->IsEditorHandlingEvent());
 
-            mIMEFocusCount++;
-
-            RefPtr<GeckoEditableSupport> self(this);
-            RefPtr<TextEventDispatcher> dispatcher = aTextEventDispatcher;
-
-            
-            
-            
-            nsAppShell::PostEvent([this, self, dispatcher] {
-                nsCOMPtr<nsIWidget> widget = dispatcher->GetWidget();
-
-                --mIMEMaskEventsCount;
-                if (!mIMEFocusCount || !widget || widget->Destroyed()) {
-                    return;
-                }
-
-                mEditable->NotifyIME(
-                        EditableListener::NOTIFY_IME_OF_TOKEN);
-
-                if (mIsRemote) {
-                    if (!mEditableAttached) {
-                        
-                        AttachNative(mEditable, this);
-                        mEditableAttached = true;
-                    }
-                    
-                    
-                    
-                    
-                    mInputContext = widget->GetInputContext();
-                }
-                mDispatcher = dispatcher;
-                mIMEKeyEvents.Clear();
-                FlushIMEText();
-
-                
-                
-                mIMEMonitorCursor = false;
-
-                mEditable->NotifyIME(
-                        EditableListener::NOTIFY_IME_OF_FOCUS);
-            });
-            break;
-        }
-
-        case NOTIFY_IME_OF_BLUR: {
-            ALOGIME("IME: NOTIFY_IME_OF_BLUR");
-
-            mIMEFocusCount--;
-            MOZ_ASSERT(mIMEFocusCount >= 0);
-
-            RefPtr<GeckoEditableSupport> self(this);
-            nsAppShell::PostEvent([this, self] {
-                if (!mIMEFocusCount) {
-                    mIMEDelaySynchronizeReply = false;
-                    mIMEActiveSynchronizeCount = 0;
-                    mIMEActiveCompositionCount = 0;
-                    mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_BLUR);
-                    OnRemovedFrom(mDispatcher);
-                }
-            });
-
-            
-            mIMEMaskEventsCount++;
-            break;
-        }
-
-        case NOTIFY_IME_OF_SELECTION_CHANGE: {
-            ALOGIME("IME: NOTIFY_IME_OF_SELECTION_CHANGE");
-
-            PostFlushIMEChanges();
-            mIMESelectionChanged = true;
-            break;
-        }
-
-        case NOTIFY_IME_OF_TEXT_CHANGE: {
-            ALOGIME("IME: NotifyIMEOfTextChange: s=%d, oe=%d, ne=%d",
-                    aNotification.mTextChangeData.mStartOffset,
-                    aNotification.mTextChangeData.mRemovedEndOffset,
-                    aNotification.mTextChangeData.mAddedEndOffset);
-
-            
-            PostFlushIMEChanges();
-            mIMESelectionChanged = true;
-            AddIMETextChange(IMETextChange(aNotification));
-            break;
-        }
-
-        case NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED: {
-            ALOGIME("IME: NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED");
-
-            
-            
-            
-            
-            if (!(--mIMEActiveCompositionCount) && mIMEDelaySynchronizeReply) {
-                FlushIMEChanges();
-            }
-
-            
-            if (mIMEMonitorCursor) {
-                UpdateCompositionRects();
-            }
-            break;
-        }
-
-        default:
-            break;
+  if (!composition || !mDispatcher->IsComposing() ||
+      uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
+      uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
+                            composition->String().Length()) {
+    if (keepCurrent) {
+      
+      mIMERanges->Clear();
+      return false;
     }
-    return NS_OK;
+
+    
+    
+    RemoveComposition();
+
+    {
+      WidgetSelectionEvent event(true, eSetSelection, widget);
+      event.mOffset = uint32_t(aStart);
+      event.mLength = uint32_t(aEnd - aStart);
+      event.mExpandToClusterBoundary = false;
+      event.mReason = nsISelectionListener::IME_REASON;
+      widget->DispatchEvent(&event, status);
+    }
+
+    {
+      WidgetQueryContentEvent event(true, eQuerySelectedText, widget);
+      widget->DispatchEvent(&event, status);
+      MOZ_ASSERT(event.mSucceeded);
+      string = event.mReply.mString;
+    }
+  } else {
+    
+    
+    string = composition->String();
+  }
+
+#ifdef DEBUG_ANDROID_IME
+  const NS_ConvertUTF16toUTF8 data(string);
+  const char* text = data.get();
+  ALOGIME("IME: IME_SET_TEXT: text=\"%s\", length=%u, range=%u", text,
+          string.Length(), mIMERanges->Length());
+#endif  
+
+  if (NS_WARN_IF(NS_FAILED(BeginInputTransaction(mDispatcher)))) {
+    mIMERanges->Clear();
+    return false;
+  }
+  mDispatcher->SetPendingComposition(string, mIMERanges);
+  mDispatcher->FlushPendingComposition(status);
+  mIMERanges->Clear();
+  return true;
 }
 
-void
-GeckoEditableSupport::OnRemovedFrom(TextEventDispatcher* aTextEventDispatcher)
-{
-    mDispatcher = nullptr;
+void GeckoEditableSupport::OnImeRequestCursorUpdates(int aRequestMode) {
+  if (aRequestMode == EditableClient::ONE_SHOT) {
+    UpdateCompositionRects();
+    return;
+  }
 
-    if (mIsRemote && mEditable->HasEditableParent()) {
+  mIMEMonitorCursor = (aRequestMode == EditableClient::START_MONITOR);
+}
+
+void GeckoEditableSupport::AsyncNotifyIME(int32_t aNotification) {
+  RefPtr<GeckoEditableSupport> self(this);
+
+  nsAppShell::PostEvent([this, self, aNotification] {
+    if (!mIMEMaskEventsCount) {
+      mEditable->NotifyIME(aNotification);
+    }
+  });
+}
+
+nsresult GeckoEditableSupport::NotifyIME(
+    TextEventDispatcher* aTextEventDispatcher,
+    const IMENotification& aNotification) {
+  MOZ_ASSERT(mEditable);
+
+  switch (aNotification.mMessage) {
+    case REQUEST_TO_COMMIT_COMPOSITION: {
+      ALOGIME("IME: REQUEST_TO_COMMIT_COMPOSITION");
+
+      RemoveComposition(COMMIT_IME_COMPOSITION);
+      AsyncNotifyIME(EditableListener::NOTIFY_IME_TO_COMMIT_COMPOSITION);
+      break;
+    }
+
+    case REQUEST_TO_CANCEL_COMPOSITION: {
+      ALOGIME("IME: REQUEST_TO_CANCEL_COMPOSITION");
+
+      RemoveComposition(CANCEL_IME_COMPOSITION);
+      AsyncNotifyIME(EditableListener::NOTIFY_IME_TO_CANCEL_COMPOSITION);
+      break;
+    }
+
+    case NOTIFY_IME_OF_FOCUS: {
+      ALOGIME("IME: NOTIFY_IME_OF_FOCUS");
+
+      mIMEFocusCount++;
+
+      RefPtr<GeckoEditableSupport> self(this);
+      RefPtr<TextEventDispatcher> dispatcher = aTextEventDispatcher;
+
+      
+      
+      
+      nsAppShell::PostEvent([this, self, dispatcher] {
+        nsCOMPtr<nsIWidget> widget = dispatcher->GetWidget();
+
+        --mIMEMaskEventsCount;
+        if (!mIMEFocusCount || !widget || widget->Destroyed()) {
+          return;
+        }
+
+        mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_TOKEN);
+
+        if (mIsRemote) {
+          if (!mEditableAttached) {
+            
+            AttachNative(mEditable, this);
+            mEditableAttached = true;
+          }
+          
+          
+          
+          
+          mInputContext = widget->GetInputContext();
+        }
+        mDispatcher = dispatcher;
+        mIMEKeyEvents.Clear();
+        FlushIMEText();
+
         
-        OnDetach(NS_NewRunnableFunction("GeckoEditableSupport::OnRemovedFrom",
-                 [editable = java::GeckoEditableChild::GlobalRef(mEditable)] {
-                     DisposeNative(editable);
-                 }));
+        
+        mIMEMonitorCursor = false;
+
+        mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_FOCUS);
+      });
+      break;
     }
+
+    case NOTIFY_IME_OF_BLUR: {
+      ALOGIME("IME: NOTIFY_IME_OF_BLUR");
+
+      mIMEFocusCount--;
+      MOZ_ASSERT(mIMEFocusCount >= 0);
+
+      RefPtr<GeckoEditableSupport> self(this);
+      nsAppShell::PostEvent([this, self] {
+        if (!mIMEFocusCount) {
+          mIMEDelaySynchronizeReply = false;
+          mIMEActiveSynchronizeCount = 0;
+          mIMEActiveCompositionCount = 0;
+          mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_BLUR);
+          OnRemovedFrom(mDispatcher);
+        }
+      });
+
+      
+      mIMEMaskEventsCount++;
+      break;
+    }
+
+    case NOTIFY_IME_OF_SELECTION_CHANGE: {
+      ALOGIME("IME: NOTIFY_IME_OF_SELECTION_CHANGE");
+
+      PostFlushIMEChanges();
+      mIMESelectionChanged = true;
+      break;
+    }
+
+    case NOTIFY_IME_OF_TEXT_CHANGE: {
+      ALOGIME("IME: NotifyIMEOfTextChange: s=%d, oe=%d, ne=%d",
+              aNotification.mTextChangeData.mStartOffset,
+              aNotification.mTextChangeData.mRemovedEndOffset,
+              aNotification.mTextChangeData.mAddedEndOffset);
+
+      
+      PostFlushIMEChanges();
+      mIMESelectionChanged = true;
+      AddIMETextChange(IMETextChange(aNotification));
+      break;
+    }
+
+    case NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED: {
+      ALOGIME("IME: NOTIFY_IME_OF_COMPOSITION_EVENT_HANDLED");
+
+      
+      
+      
+      
+      if (!(--mIMEActiveCompositionCount) && mIMEDelaySynchronizeReply) {
+        FlushIMEChanges();
+      }
+
+      
+      if (mIMEMonitorCursor) {
+        UpdateCompositionRects();
+      }
+      break;
+    }
+
+    default:
+      break;
+  }
+  return NS_OK;
 }
 
-void
-GeckoEditableSupport::WillDispatchKeyboardEvent(
-        TextEventDispatcher* aTextEventDispatcher,
-        WidgetKeyboardEvent& aKeyboardEvent, uint32_t aIndexOfKeypress,
-        void* aData)
-{
+void GeckoEditableSupport::OnRemovedFrom(
+    TextEventDispatcher* aTextEventDispatcher) {
+  mDispatcher = nullptr;
+
+  if (mIsRemote && mEditable->HasEditableParent()) {
+    
+    OnDetach(NS_NewRunnableFunction(
+        "GeckoEditableSupport::OnRemovedFrom",
+        [editable = java::GeckoEditableChild::GlobalRef(mEditable)] {
+          DisposeNative(editable);
+        }));
+  }
 }
+
+void GeckoEditableSupport::WillDispatchKeyboardEvent(
+    TextEventDispatcher* aTextEventDispatcher,
+    WidgetKeyboardEvent& aKeyboardEvent, uint32_t aIndexOfKeypress,
+    void* aData) {}
 
 NS_IMETHODIMP_(IMENotificationRequests)
-GeckoEditableSupport::GetIMENotificationRequests()
-{
-    return IMENotificationRequests(IMENotificationRequests::NOTIFY_TEXT_CHANGE);
+GeckoEditableSupport::GetIMENotificationRequests() {
+  return IMENotificationRequests(IMENotificationRequests::NOTIFY_TEXT_CHANGE);
 }
 
-void
-GeckoEditableSupport::SetInputContext(const InputContext& aContext,
-                                      const InputContextAction& aAction)
-{
-    MOZ_ASSERT(mEditable);
+void GeckoEditableSupport::SetInputContext(const InputContext& aContext,
+                                           const InputContextAction& aAction) {
+  MOZ_ASSERT(mEditable);
 
-    ALOGIME("IME: SetInputContext: s=0x%X, 0x%X, action=0x%X, 0x%X",
-            aContext.mIMEState.mEnabled, aContext.mIMEState.mOpen,
-            aAction.mCause, aAction.mFocusChange);
+  ALOGIME("IME: SetInputContext: s=0x%X, 0x%X, action=0x%X, 0x%X",
+          aContext.mIMEState.mEnabled, aContext.mIMEState.mOpen, aAction.mCause,
+          aAction.mFocusChange);
 
-    mInputContext = aContext;
+  mInputContext = aContext;
 
-    if (mInputContext.mIMEState.mEnabled != IMEState::DISABLED &&
-        aAction.UserMightRequestOpenVKB()) {
-        
-        mEditable->NotifyIME(EditableListener::NOTIFY_IME_OPEN_VKB);
-        return;
+  if (mInputContext.mIMEState.mEnabled != IMEState::DISABLED &&
+      aAction.UserMightRequestOpenVKB()) {
+    
+    mEditable->NotifyIME(EditableListener::NOTIFY_IME_OPEN_VKB);
+    return;
+  }
+
+  
+  nsAppShell::PostEvent([this, self = RefPtr<GeckoEditableSupport>(this),
+                         context = mInputContext, action = aAction] {
+    nsCOMPtr<nsIWidget> widget = GetWidget();
+
+    if (!widget || widget->Destroyed()) {
+      return;
     }
-
-    
-    nsAppShell::PostEvent([this, self = RefPtr<GeckoEditableSupport>(this),
-                           context = mInputContext, action = aAction] {
-        nsCOMPtr<nsIWidget> widget = GetWidget();
-
-        if (!widget || widget->Destroyed()) {
-            return;
-        }
-        NotifyIMEContext(context, action);
-    });
+    NotifyIMEContext(context, action);
+  });
 }
 
-void
-GeckoEditableSupport::NotifyIMEContext(const InputContext& aContext,
-                                       const InputContextAction& aAction)
-{
-    const bool inPrivateBrowsing = aContext.mInPrivateBrowsing;
-    const bool isUserAction =
-            aAction.IsHandlingUserInput() || aContext.mHasHandledUserInput;
-    const int32_t flags =
-            (inPrivateBrowsing ? EditableListener::IME_FLAG_PRIVATE_BROWSING : 0) |
-            (isUserAction ? EditableListener::IME_FLAG_USER_ACTION : 0);
+void GeckoEditableSupport::NotifyIMEContext(const InputContext& aContext,
+                                            const InputContextAction& aAction) {
+  const bool inPrivateBrowsing = aContext.mInPrivateBrowsing;
+  const bool isUserAction =
+      aAction.IsHandlingUserInput() || aContext.mHasHandledUserInput;
+  const int32_t flags =
+      (inPrivateBrowsing ? EditableListener::IME_FLAG_PRIVATE_BROWSING : 0) |
+      (isUserAction ? EditableListener::IME_FLAG_USER_ACTION : 0);
 
-    mEditable->NotifyIMEContext(aContext.mIMEState.mEnabled,
-                                aContext.mHTMLInputType,
-                                aContext.mHTMLInputInputmode,
-                                aContext.mActionHint,
-                                flags);
+  mEditable->NotifyIMEContext(
+      aContext.mIMEState.mEnabled, aContext.mHTMLInputType,
+      aContext.mHTMLInputInputmode, aContext.mActionHint, flags);
 }
 
-InputContext
-GeckoEditableSupport::GetInputContext()
-{
-    InputContext context = mInputContext;
-    context.mIMEState.mOpen = IMEState::OPEN_STATE_NOT_SUPPORTED;
-    return context;
+InputContext GeckoEditableSupport::GetInputContext() {
+  InputContext context = mInputContext;
+  context.mIMEState.mOpen = IMEState::OPEN_STATE_NOT_SUPPORTED;
+  return context;
 }
 
-void
-GeckoEditableSupport::TransferParent(jni::Object::Param aEditableParent)
-{
-    mEditable->SetParent(aEditableParent);
+void GeckoEditableSupport::TransferParent(jni::Object::Param aEditableParent) {
+  mEditable->SetParent(aEditableParent);
 
-    
-    
-    if (mIMEFocusCount > 0) {
-        mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_TOKEN);
-        NotifyIMEContext(mInputContext, InputContextAction());
-        mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_FOCUS);
-    }
+  
+  
+  if (mIMEFocusCount > 0) {
+    mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_TOKEN);
+    NotifyIMEContext(mInputContext, InputContextAction());
+    mEditable->NotifyIME(EditableListener::NOTIFY_IME_OF_FOCUS);
+  }
 
-    if (mIsRemote && !mDispatcher) {
-        
-        OnRemovedFrom( nullptr);
-    }
+  if (mIsRemote && !mDispatcher) {
+    
+    OnRemovedFrom( nullptr);
+  }
 }
 
-void
-GeckoEditableSupport::SetOnTabChild(dom::TabChild* aTabChild)
-{
-    MOZ_ASSERT(!XRE_IsParentProcess());
-    NS_ENSURE_TRUE_VOID(aTabChild);
+void GeckoEditableSupport::SetOnTabChild(dom::TabChild* aTabChild) {
+  MOZ_ASSERT(!XRE_IsParentProcess());
+  NS_ENSURE_TRUE_VOID(aTabChild);
 
-    const dom::ContentChild* const contentChild =
-            dom::ContentChild::GetSingleton();
-    RefPtr<widget::PuppetWidget> widget(aTabChild->WebWidget());
-    NS_ENSURE_TRUE_VOID(contentChild && widget);
+  const dom::ContentChild* const contentChild =
+      dom::ContentChild::GetSingleton();
+  RefPtr<widget::PuppetWidget> widget(aTabChild->WebWidget());
+  NS_ENSURE_TRUE_VOID(contentChild && widget);
+
+  
+  
+  
+  const uint64_t contentId = contentChild->GetID();
+  const uint64_t tabId = aTabChild->GetTabId();
+  NS_ENSURE_TRUE_VOID(contentId && tabId);
+
+  RefPtr<widget::TextEventDispatcherListener> listener =
+      widget->GetNativeTextEventDispatcherListener();
+
+  if (!listener ||
+      listener.get() ==
+          static_cast<widget::TextEventDispatcherListener*>(widget)) {
+    
+    const auto editableChild = java::GeckoEditableChild::New(
+         nullptr,  false);
+    RefPtr<widget::GeckoEditableSupport> editableSupport =
+        new widget::GeckoEditableSupport(editableChild);
 
     
-    
-    
-    const uint64_t contentId = contentChild->GetID();
-    const uint64_t tabId = aTabChild->GetTabId();
-    NS_ENSURE_TRUE_VOID(contentId && tabId);
-
-    RefPtr<widget::TextEventDispatcherListener> listener =
-            widget->GetNativeTextEventDispatcherListener();
-
-    if (!listener || listener.get() ==
-            static_cast<widget::TextEventDispatcherListener*>(widget)) {
-        
-        const auto editableChild = java::GeckoEditableChild::New(
-                 nullptr,  false);
-        RefPtr<widget::GeckoEditableSupport> editableSupport =
-                new widget::GeckoEditableSupport(editableChild);
-
-        
-        widget->SetNativeTextEventDispatcherListener(editableSupport);
-
-        
-        AttachNative(editableChild, editableSupport);
-        editableSupport->mEditableAttached = true;
-
-        
-        java::GeckoServiceChildProcess::GetEditableParent(
-                editableChild, contentId, tabId);
-        return;
-    }
+    widget->SetNativeTextEventDispatcherListener(editableSupport);
 
     
+    AttachNative(editableChild, editableSupport);
+    editableSupport->mEditableAttached = true;
 
     
-    
-    
-    const RefPtr<widget::GeckoEditableSupport> dummy =
-            new widget::GeckoEditableSupport( nullptr);
-    NS_ENSURE_TRUE_VOID(*reinterpret_cast<const uintptr_t*>(listener.get()) ==
-            *reinterpret_cast<const uintptr_t*>(dummy.get()));
+    java::GeckoServiceChildProcess::GetEditableParent(editableChild, contentId,
+                                                      tabId);
+    return;
+  }
 
-    const auto support =
-            static_cast<widget::GeckoEditableSupport*>(listener.get());
-    if (!support->mEditableAttached) {
-        
-        AttachNative(support->GetJavaEditable(), support);
-        support->mEditableAttached = true;
-    }
+  
 
+  
+  
+  
+  const RefPtr<widget::GeckoEditableSupport> dummy =
+      new widget::GeckoEditableSupport( nullptr);
+  NS_ENSURE_TRUE_VOID(*reinterpret_cast<const uintptr_t*>(listener.get()) ==
+                      *reinterpret_cast<const uintptr_t*>(dummy.get()));
+
+  const auto support =
+      static_cast<widget::GeckoEditableSupport*>(listener.get());
+  if (!support->mEditableAttached) {
     
-    java::GeckoServiceChildProcess::GetEditableParent(
-            support->GetJavaEditable(), contentId, tabId);
+    AttachNative(support->GetJavaEditable(), support);
+    support->mEditableAttached = true;
+  }
+
+  
+  java::GeckoServiceChildProcess::GetEditableParent(support->GetJavaEditable(),
+                                                    contentId, tabId);
 }
 
-} 
-} 
+}  
+}  

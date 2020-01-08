@@ -29,9 +29,7 @@ extern mozilla::LazyLogModule gStorageLog;
 namespace mozilla {
 namespace storage {
 
-nsresult
-convertResultCode(int aSQLiteResultCode)
-{
+nsresult convertResultCode(int aSQLiteResultCode) {
   
   int rc = aSQLiteResultCode & 0xFF;
 
@@ -68,7 +66,7 @@ convertResultCode(int aSQLiteResultCode)
       return NS_ERROR_STORAGE_CONSTRAINT;
   }
 
-  
+    
 #ifdef DEBUG
   nsAutoCString message;
   message.AppendLiteral("SQLite returned error code ");
@@ -79,20 +77,16 @@ convertResultCode(int aSQLiteResultCode)
   return NS_ERROR_FAILURE;
 }
 
-void
-checkAndLogStatementPerformance(sqlite3_stmt *aStatement)
-{
+void checkAndLogStatementPerformance(sqlite3_stmt *aStatement) {
   
   
   int count = ::sqlite3_stmt_status(aStatement, SQLITE_STMTSTATUS_SORT, 1);
-  if (count <= 0)
-    return;
+  if (count <= 0) return;
 
   const char *sql = ::sqlite3_sql(aStatement);
 
   
-  if (::strstr(sql, "/* do not warn (bug "))
-    return;
+  if (::strstr(sql, "/* do not warn (bug ")) return;
 
   
   
@@ -114,40 +108,29 @@ checkAndLogStatementPerformance(sqlite3_stmt *aStatement)
   NS_WARNING(message.get());
 }
 
-nsIVariant *
-convertJSValToVariant(
-  JSContext *aCtx,
-  const JS::Value& aValue)
-{
-  if (aValue.isInt32())
-    return new IntegerVariant(aValue.toInt32());
+nsIVariant *convertJSValToVariant(JSContext *aCtx, const JS::Value &aValue) {
+  if (aValue.isInt32()) return new IntegerVariant(aValue.toInt32());
 
-  if (aValue.isDouble())
-    return new FloatVariant(aValue.toDouble());
+  if (aValue.isDouble()) return new FloatVariant(aValue.toDouble());
 
   if (aValue.isString()) {
     nsAutoJSString value;
-    if (!value.init(aCtx, aValue.toString()))
-        return nullptr;
+    if (!value.init(aCtx, aValue.toString())) return nullptr;
     return new TextVariant(value);
   }
 
-  if (aValue.isBoolean())
-    return new IntegerVariant(aValue.isTrue() ? 1 : 0);
+  if (aValue.isBoolean()) return new IntegerVariant(aValue.isTrue() ? 1 : 0);
 
-  if (aValue.isNull())
-    return new NullVariant();
+  if (aValue.isNull()) return new NullVariant();
 
   if (aValue.isObject()) {
-    JS::Rooted<JSObject*> obj(aCtx, &aValue.toObject());
+    JS::Rooted<JSObject *> obj(aCtx, &aValue.toObject());
     
     bool valid;
-    if (!js::DateIsValid(aCtx, obj, &valid) || !valid)
-      return nullptr;
+    if (!js::DateIsValid(aCtx, obj, &valid) || !valid) return nullptr;
 
     double msecd;
-    if (!js::DateGetMsecSinceEpoch(aCtx, obj, &msecd))
-      return nullptr;
+    if (!js::DateGetMsecSinceEpoch(aCtx, obj, &msecd)) return nullptr;
 
     msecd *= 1000.0;
     int64_t msec = msecd;
@@ -158,9 +141,7 @@ convertJSValToVariant(
   return nullptr;
 }
 
-Variant_base *
-convertVariantToStorageVariant(nsIVariant* aVariant)
-{
+Variant_base *convertVariantToStorageVariant(nsIVariant *aVariant) {
   RefPtr<Variant_base> variant = do_QueryObject(aVariant);
   if (variant) {
     
@@ -168,8 +149,7 @@ convertVariantToStorageVariant(nsIVariant* aVariant)
     return variant;
   }
 
-  if (!aVariant)
-    return new NullVariant();
+  if (!aVariant) return new NullVariant();
 
   uint16_t dataType = aVariant->GetDataType();
 
@@ -245,31 +225,26 @@ convertVariantToStorageVariant(nsIVariant* aVariant)
 }
 
 namespace {
-class CallbackEvent : public Runnable
-{
-public:
-  explicit CallbackEvent(mozIStorageCompletionCallback* aCallback)
-    : Runnable("storage::CallbackEvent")
-    , mCallback(aCallback)
-  {
-  }
+class CallbackEvent : public Runnable {
+ public:
+  explicit CallbackEvent(mozIStorageCompletionCallback *aCallback)
+      : Runnable("storage::CallbackEvent"), mCallback(aCallback) {}
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     (void)mCallback->Complete(NS_OK, nullptr);
     return NS_OK;
   }
-private:
+
+ private:
   nsCOMPtr<mozIStorageCompletionCallback> mCallback;
 };
-} 
-already_AddRefed<nsIRunnable>
-newCompletionEvent(mozIStorageCompletionCallback *aCallback)
-{
+}  
+already_AddRefed<nsIRunnable> newCompletionEvent(
+    mozIStorageCompletionCallback *aCallback) {
   NS_ASSERTION(aCallback, "Passing a null callback is a no-no!");
   nsCOMPtr<nsIRunnable> event = new CallbackEvent(aCallback);
   return event.forget();
 }
 
-} 
-} 
+}  
+}  

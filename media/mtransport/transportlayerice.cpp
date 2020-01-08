@@ -40,7 +40,6 @@
 
 
 
-
 #include <string>
 #include <vector>
 
@@ -84,9 +83,7 @@ namespace mozilla {
 
 MOZ_MTLOG_MODULE("mtransport")
 
-TransportLayerIce::TransportLayerIce()
-    : stream_(nullptr), component_(0)
-{
+TransportLayerIce::TransportLayerIce() : stream_(nullptr), component_(0) {
   
 }
 
@@ -123,26 +120,23 @@ void TransportLayerIce::PostSetup() {
   }
 }
 
-TransportResult TransportLayerIce::SendPacket(MediaPacket& packet) {
+TransportResult TransportLayerIce::SendPacket(MediaPacket &packet) {
   CheckThread();
   SignalPacketSending(this, packet);
-  nsresult res = stream_->SendPacket(component_,
-                                     packet.data(),
-                                     packet.len());
+  nsresult res = stream_->SendPacket(component_, packet.data(), packet.len());
 
   if (!NS_SUCCEEDED(res)) {
-    return (res == NS_BASE_STREAM_WOULD_BLOCK) ?
-        TE_WOULDBLOCK : TE_ERROR;
+    return (res == NS_BASE_STREAM_WOULD_BLOCK) ? TE_WOULDBLOCK : TE_ERROR;
   }
 
-  MOZ_MTLOG(ML_DEBUG, LAYER_INFO << " SendPacket(" << packet.len() << ") succeeded");
+  MOZ_MTLOG(ML_DEBUG,
+            LAYER_INFO << " SendPacket(" << packet.len() << ") succeeded");
 
   return packet.len();
 }
 
-
 void TransportLayerIce::IceCandidate(NrIceMediaStream *stream,
-                                     const std::string&) {
+                                     const std::string &) {
   
 }
 
@@ -153,7 +147,7 @@ void TransportLayerIce::IceReady(NrIceMediaStream *stream) {
     return;
   }
   MOZ_MTLOG(ML_INFO, LAYER_INFO << "ICE Ready(" << stream->name() << ","
-    << component_ << ")");
+                                << component_ << ")");
   TL_SET_STATE(TS_OPEN);
 }
 
@@ -164,20 +158,20 @@ void TransportLayerIce::IceFailed(NrIceMediaStream *stream) {
     return;
   }
   MOZ_MTLOG(ML_INFO, LAYER_INFO << "ICE Failed(" << stream->name() << ","
-    << component_ << ")");
+                                << component_ << ")");
   TL_SET_STATE(TS_ERROR);
 }
 
-void TransportLayerIce::IcePacketReceived(NrIceMediaStream *stream, int component,
-                       const unsigned char *data, int len) {
+void TransportLayerIce::IcePacketReceived(NrIceMediaStream *stream,
+                                          int component,
+                                          const unsigned char *data, int len) {
   CheckThread();
   
   
-  if (component_ != component)
-    return;
+  if (component_ != component) return;
 
   MOZ_MTLOG(ML_DEBUG, LAYER_INFO << "PacketReceived(" << stream->name() << ","
-    << component << "," << len << ")");
+                                 << component << "," << len << ")");
   
   
   

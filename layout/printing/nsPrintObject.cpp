@@ -7,7 +7,7 @@
 #include "nsPrintObject.h"
 
 #include "nsIContentViewer.h"
-#include "nsContentUtils.h" 
+#include "nsContentUtils.h"  
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsPresContext.h"
@@ -27,18 +27,22 @@ using mozilla::dom::Element;
 
 
 
-nsPrintObject::nsPrintObject() :
-  mContent(nullptr), mFrameType(eFrame), mParent(nullptr),
-  mHasBeenPrinted(false), mDontPrint(true), mPrintAsIs(false),
-  mInvisible(false), mPrintPreview(false), mDidCreateDocShell(false),
-  mShrinkRatio(1.0), mZoomRatio(1.0)
-{
+nsPrintObject::nsPrintObject()
+    : mContent(nullptr),
+      mFrameType(eFrame),
+      mParent(nullptr),
+      mHasBeenPrinted(false),
+      mDontPrint(true),
+      mPrintAsIs(false),
+      mInvisible(false),
+      mPrintPreview(false),
+      mDidCreateDocShell(false),
+      mShrinkRatio(1.0),
+      mZoomRatio(1.0) {
   MOZ_COUNT_CTOR(nsPrintObject);
 }
 
-
-nsPrintObject::~nsPrintObject()
-{
+nsPrintObject::~nsPrintObject() {
   MOZ_COUNT_DTOR(nsPrintObject);
 
   DestroyPresentation();
@@ -49,14 +53,12 @@ nsPrintObject::~nsPrintObject()
     }
   }
   mDocShell = nullptr;
-  mTreeOwner = nullptr; 
+  mTreeOwner = nullptr;  
 }
 
 
-nsresult
-nsPrintObject::Init(nsIDocShell* aDocShell, nsIDocument* aDoc,
-                    bool aPrintPreview)
-{
+nsresult nsPrintObject::Init(nsIDocShell* aDocShell, nsIDocument* aDoc,
+                             bool aPrintPreview) {
   NS_ENSURE_STATE(aDoc);
 
   mPrintPreview = aPrintPreview;
@@ -68,12 +70,11 @@ nsPrintObject::Init(nsIDocShell* aDocShell, nsIDocument* aDoc,
 
     
     RefPtr<BrowsingContext> bc = BrowsingContext::Create(
-       nullptr,
-       nullptr,
-      EmptyString(),
-      aDocShell->ItemType() == nsIDocShellTreeItem::typeContent
-        ? BrowsingContext::Type::Content
-        : BrowsingContext::Type::Chrome);
+         nullptr,
+         nullptr, EmptyString(),
+        aDocShell->ItemType() == nsIDocShellTreeItem::typeContent
+            ? BrowsingContext::Type::Content
+            : BrowsingContext::Type::Chrome);
 
     
     mDocShell = nsDocShell::Create(bc);
@@ -111,9 +112,7 @@ nsPrintObject::Init(nsIDocShell* aDocShell, nsIDocument* aDoc,
 
 
 
-void
-nsPrintObject::DestroyPresentation()
-{
+void nsPrintObject::DestroyPresentation() {
   if (mPresShell) {
     mPresShell->EndObservingDocument();
     nsAutoScriptBlocker scriptBlocker;

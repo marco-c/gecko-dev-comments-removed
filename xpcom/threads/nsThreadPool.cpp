@@ -44,35 +44,30 @@ NS_IMPL_QUERY_INTERFACE_CI(nsThreadPool, nsIThreadPool, nsIEventTarget,
 NS_IMPL_CI_INTERFACE_GETTER(nsThreadPool, nsIThreadPool, nsIEventTarget)
 
 nsThreadPool::nsThreadPool()
-  : mMutex("[nsThreadPool.mMutex]")
-  , mEventsAvailable(mMutex, "[nsThreadPool.mEventsAvailable]")
-  , mThreadLimit(DEFAULT_THREAD_LIMIT)
-  , mIdleThreadLimit(DEFAULT_IDLE_THREAD_LIMIT)
-  , mIdleThreadTimeout(DEFAULT_IDLE_THREAD_TIMEOUT)
-  , mIdleCount(0)
-  , mStackSize(nsIThreadManager::DEFAULT_STACK_SIZE)
-  , mShutdown(false)
-{
+    : mMutex("[nsThreadPool.mMutex]"),
+      mEventsAvailable(mMutex, "[nsThreadPool.mEventsAvailable]"),
+      mThreadLimit(DEFAULT_THREAD_LIMIT),
+      mIdleThreadLimit(DEFAULT_IDLE_THREAD_LIMIT),
+      mIdleThreadTimeout(DEFAULT_IDLE_THREAD_TIMEOUT),
+      mIdleCount(0),
+      mStackSize(nsIThreadManager::DEFAULT_STACK_SIZE),
+      mShutdown(false) {
   LOG(("THRD-P(%p) constructor!!!\n", this));
 }
 
-nsThreadPool::~nsThreadPool()
-{
+nsThreadPool::~nsThreadPool() {
   
   
   MOZ_ASSERT(mThreads.IsEmpty());
 }
 
-nsresult
-nsThreadPool::PutEvent(nsIRunnable* aEvent)
-{
+nsresult nsThreadPool::PutEvent(nsIRunnable* aEvent) {
   nsCOMPtr<nsIRunnable> event(aEvent);
   return PutEvent(event.forget(), 0);
 }
 
-nsresult
-nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
-{
+nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
+                                uint32_t aFlags) {
   
 
   bool spawnThread = false;
@@ -102,8 +97,8 @@ nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
   }
 
   auto delay = MakeScopeExit([&]() {
-      
-      DelayForChaosMode(ChaosFeature::TaskDispatching, 1000);
+    
+    DelayForChaosMode(ChaosFeature::TaskDispatching, 1000);
   });
 
   LOG(("THRD-P(%p) put [spawn=%d]\n", this, spawnThread));
@@ -139,9 +134,7 @@ nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
   return NS_OK;
 }
 
-void
-nsThreadPool::ShutdownThread(nsIThread* aThread)
-{
+void nsThreadPool::ShutdownThread(nsIThread* aThread) {
   LOG(("THRD-P(%p) shutdown async [%p]\n", this, aThread));
 
   
@@ -154,13 +147,13 @@ nsThreadPool::ShutdownThread(nsIThread* aThread)
   
   
   
-  SystemGroup::Dispatch(TaskCategory::Other, NewRunnableMethod(
-        "nsIThread::AsyncShutdown", aThread, &nsIThread::AsyncShutdown));
+  SystemGroup::Dispatch(TaskCategory::Other,
+                        NewRunnableMethod("nsIThread::AsyncShutdown", aThread,
+                                          &nsIThread::AsyncShutdown));
 }
 
 NS_IMETHODIMP
-nsThreadPool::Run()
-{
+nsThreadPool::Run() {
   LOG(("THRD-P(%p) enter %s\n", this, mName.BeginReading()));
 
   nsCOMPtr<nsIThread> current;
@@ -189,7 +182,8 @@ nsThreadPool::Run()
       event = mEvents.GetEvent(nullptr, lock);
       if (!event) {
         TimeStamp now = TimeStamp::Now();
-        TimeDuration timeout = TimeDuration::FromMilliseconds(mIdleThreadTimeout);
+        TimeDuration timeout =
+            TimeDuration::FromMilliseconds(mIdleThreadTimeout);
 
         
         if (mShutdown) {
@@ -198,7 +192,8 @@ nsThreadPool::Run()
           if (wasIdle) {
             
             if (mIdleCount > mIdleThreadLimit ||
-                (mIdleThreadTimeout != UINT32_MAX && (now - idleSince) >= timeout)) {
+                (mIdleThreadTimeout != UINT32_MAX &&
+                 (now - idleSince) >= timeout)) {
               exitThread = true;
             }
           } else {
@@ -236,7 +231,8 @@ nsThreadPool::Run()
       }
     }
     if (event) {
-      LOG(("THRD-P(%p) %s running [%p]\n", this, mName.BeginReading(), event.get()));
+      LOG(("THRD-P(%p) %s running [%p]\n", this, mName.BeginReading(),
+           event.get()));
 
       
       
@@ -259,15 +255,13 @@ nsThreadPool::Run()
 }
 
 NS_IMETHODIMP
-nsThreadPool::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags)
-{
+nsThreadPool::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags) {
   nsCOMPtr<nsIRunnable> event(aEvent);
   return Dispatch(event.forget(), aFlags);
 }
 
 NS_IMETHODIMP
-nsThreadPool::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
-{
+nsThreadPool::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags) {
   LOG(("THRD-P(%p) dispatch [%p %x]\n", this,  nullptr, aFlags));
 
   if (NS_WARN_IF(mShutdown)) {
@@ -282,29 +276,26 @@ nsThreadPool::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
     }
 
     RefPtr<nsThreadSyncDispatch> wrapper =
-      new nsThreadSyncDispatch(thread.forget(), std::move(aEvent));
+        new nsThreadSyncDispatch(thread.forget(), std::move(aEvent));
     PutEvent(wrapper);
 
-    SpinEventLoopUntil([&, wrapper]() -> bool {
-        return !wrapper->IsPending();
-      });
+    SpinEventLoopUntil(
+        [&, wrapper]() -> bool { return !wrapper->IsPending(); });
   } else {
-    NS_ASSERTION(aFlags == NS_DISPATCH_NORMAL ||
-                 aFlags == NS_DISPATCH_AT_END, "unexpected dispatch flags");
+    NS_ASSERTION(aFlags == NS_DISPATCH_NORMAL || aFlags == NS_DISPATCH_AT_END,
+                 "unexpected dispatch flags");
     PutEvent(std::move(aEvent), aFlags);
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t)
-{
+nsThreadPool::DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP_(bool)
-nsThreadPool::IsOnCurrentThreadInfallible()
-{
+nsThreadPool::IsOnCurrentThreadInfallible() {
   MutexAutoLock lock(mMutex);
 
   nsIThread* thread = NS_GetCurrentThread();
@@ -317,8 +308,7 @@ nsThreadPool::IsOnCurrentThreadInfallible()
 }
 
 NS_IMETHODIMP
-nsThreadPool::IsOnCurrentThread(bool* aResult)
-{
+nsThreadPool::IsOnCurrentThread(bool* aResult) {
   MutexAutoLock lock(mMutex);
   if (NS_WARN_IF(mShutdown)) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -336,8 +326,7 @@ nsThreadPool::IsOnCurrentThread(bool* aResult)
 }
 
 NS_IMETHODIMP
-nsThreadPool::Shutdown()
-{
+nsThreadPool::Shutdown() {
   nsCOMArray<nsIThread> threads;
   nsCOMPtr<nsIThreadPoolListener> listener;
   {
@@ -364,12 +353,9 @@ nsThreadPool::Shutdown()
   return NS_OK;
 }
 
-template<typename Pred>
-static void
-SpinMTEventLoopUntil(Pred&& aPredicate,
-                     nsIThread* aThread,
-                     TimeDuration aTimeout)
-{
+template <typename Pred>
+static void SpinMTEventLoopUntil(Pred&& aPredicate, nsIThread* aThread,
+                                 TimeDuration aTimeout) {
   MOZ_ASSERT(NS_IsMainThread(), "Must be run on the main thread");
 
   
@@ -387,8 +373,7 @@ SpinMTEventLoopUntil(Pred&& aPredicate,
 }
 
 NS_IMETHODIMP
-nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs)
-{
+nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
   if (!NS_IsMainThread()) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -419,23 +404,25 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs)
   for (int32_t i = 0; i < threads.Count(); ++i) {
     
     nsThreadShutdownContext* maybeContext =
-      static_cast<nsThread*>(threads[i])->ShutdownInternal(false);
+        static_cast<nsThread*>(threads[i])->ShutdownInternal(false);
     contexts.AppendElement(maybeContext);
   }
 
   NotNull<nsThread*> currentThread =
-    WrapNotNull(nsThreadManager::get().GetCurrentThread());
+      WrapNotNull(nsThreadManager::get().GetCurrentThread());
 
   
   
-  SpinMTEventLoopUntil([&]() {
-      for (nsIThread* thread : threads) {
-        if (static_cast<nsThread*>(thread)->mThread) {
-          return false;
+  SpinMTEventLoopUntil(
+      [&]() {
+        for (nsIThread* thread : threads) {
+          if (static_cast<nsThread*>(thread)->mThread) {
+            return false;
+          }
         }
-      }
-      return true;
-    }, currentThread, TimeDuration::FromMilliseconds(aTimeoutMs));
+        return true;
+      },
+      currentThread, TimeDuration::FromMilliseconds(aTimeoutMs));
 
   
   
@@ -445,7 +432,8 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs)
     
     
     if (thread->mThread && contexts[i]) {
-      auto index = currentThread->mRequestedShutdownContexts.IndexOf(contexts[i]);
+      auto index =
+          currentThread->mRequestedShutdownContexts.IndexOf(contexts[i]);
       if (index != nsThread::ShutdownContexts::NoIndex) {
         
         
@@ -459,15 +447,13 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs)
 }
 
 NS_IMETHODIMP
-nsThreadPool::GetThreadLimit(uint32_t* aValue)
-{
+nsThreadPool::GetThreadLimit(uint32_t* aValue) {
   *aValue = mThreadLimit;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::SetThreadLimit(uint32_t aValue)
-{
+nsThreadPool::SetThreadLimit(uint32_t aValue) {
   MutexAutoLock lock(mMutex);
   LOG(("THRD-P(%p) thread limit [%u]\n", this, aValue));
   mThreadLimit = aValue;
@@ -476,21 +462,20 @@ nsThreadPool::SetThreadLimit(uint32_t aValue)
   }
 
   if (static_cast<uint32_t>(mThreads.Count()) > mThreadLimit) {
-    mEventsAvailable.NotifyAll();  
+    mEventsAvailable
+        .NotifyAll();  
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::GetIdleThreadLimit(uint32_t* aValue)
-{
+nsThreadPool::GetIdleThreadLimit(uint32_t* aValue) {
   *aValue = mIdleThreadLimit;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::SetIdleThreadLimit(uint32_t aValue)
-{
+nsThreadPool::SetIdleThreadLimit(uint32_t aValue) {
   MutexAutoLock lock(mMutex);
   LOG(("THRD-P(%p) idle thread limit [%u]\n", this, aValue));
   mIdleThreadLimit = aValue;
@@ -500,59 +485,55 @@ nsThreadPool::SetIdleThreadLimit(uint32_t aValue)
 
   
   if (mIdleCount > mIdleThreadLimit) {
-    mEventsAvailable.NotifyAll();  
+    mEventsAvailable
+        .NotifyAll();  
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::GetIdleThreadTimeout(uint32_t* aValue)
-{
+nsThreadPool::GetIdleThreadTimeout(uint32_t* aValue) {
   *aValue = mIdleThreadTimeout;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::SetIdleThreadTimeout(uint32_t aValue)
-{
+nsThreadPool::SetIdleThreadTimeout(uint32_t aValue) {
   MutexAutoLock lock(mMutex);
   uint32_t oldTimeout = mIdleThreadTimeout;
   mIdleThreadTimeout = aValue;
 
   
   if (mIdleThreadTimeout < oldTimeout && mIdleCount > 0) {
-    mEventsAvailable.NotifyAll();  
+    mEventsAvailable
+        .NotifyAll();  
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::GetThreadStackSize(uint32_t* aValue)
-{
+nsThreadPool::GetThreadStackSize(uint32_t* aValue) {
   MutexAutoLock lock(mMutex);
   *aValue = mStackSize;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::SetThreadStackSize(uint32_t aValue)
-{
+nsThreadPool::SetThreadStackSize(uint32_t aValue) {
   MutexAutoLock lock(mMutex);
   mStackSize = aValue;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::GetListener(nsIThreadPoolListener** aListener)
-{
+nsThreadPool::GetListener(nsIThreadPoolListener** aListener) {
   MutexAutoLock lock(mMutex);
   NS_IF_ADDREF(*aListener = mListener);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsThreadPool::SetListener(nsIThreadPoolListener* aListener)
-{
+nsThreadPool::SetListener(nsIThreadPoolListener* aListener) {
   nsCOMPtr<nsIThreadPoolListener> swappedListener(aListener);
   {
     MutexAutoLock lock(mMutex);
@@ -562,8 +543,7 @@ nsThreadPool::SetListener(nsIThreadPoolListener* aListener)
 }
 
 NS_IMETHODIMP
-nsThreadPool::SetName(const nsACString& aName)
-{
+nsThreadPool::SetName(const nsACString& aName) {
   {
     MutexAutoLock lock(mMutex);
     if (mThreads.Count()) {

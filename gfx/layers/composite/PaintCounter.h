@@ -7,10 +7,10 @@
 #ifndef mozilla_layers_PaintCounter_h_
 #define mozilla_layers_PaintCounter_h_
 
-#include <map>                          
+#include <map>  
 #include "mozilla/Maybe.h"
-#include "mozilla/RefPtr.h"             
-#include "mozilla/TimeStamp.h"          
+#include "mozilla/RefPtr.h"     
+#include "mozilla/TimeStamp.h"  
 #include "skia/include/core/SkCanvas.h"
 
 namespace mozilla {
@@ -24,14 +24,15 @@ using namespace mozilla::gl;
 
 
 class PaintCounter {
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PaintCounter)
 
   PaintCounter();
-  void Draw(Compositor* aCompositor, TimeDuration aPaintTime, TimeDuration aCompositeTime);
+  void Draw(Compositor* aCompositor, TimeDuration aPaintTime,
+            TimeDuration aCompositeTime);
   static IntRect GetPaintRect() { return PaintCounter::mRect; }
 
-private:
+ private:
   virtual ~PaintCounter();
 
   SurfaceFormat mFormat;
@@ -46,7 +47,7 @@ private:
   static IntRect mRect;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

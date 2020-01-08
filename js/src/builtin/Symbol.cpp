@@ -17,267 +17,233 @@ using JS::Symbol;
 using namespace js;
 
 const Class SymbolObject::class_ = {
-    "Symbol",
-    JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS) | JSCLASS_HAS_CACHED_PROTO(JSProto_Symbol)
-};
+    "Symbol", JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS) |
+                  JSCLASS_HAS_CACHED_PROTO(JSProto_Symbol)};
 
-SymbolObject*
-SymbolObject::create(JSContext* cx, JS::HandleSymbol symbol)
-{
-    SymbolObject* obj = NewBuiltinClassInstance<SymbolObject>(cx);
-    if (!obj) {
-        return nullptr;
-    }
-    obj->setPrimitiveValue(symbol);
-    return obj;
+SymbolObject* SymbolObject::create(JSContext* cx, JS::HandleSymbol symbol) {
+  SymbolObject* obj = NewBuiltinClassInstance<SymbolObject>(cx);
+  if (!obj) {
+    return nullptr;
+  }
+  obj->setPrimitiveValue(symbol);
+  return obj;
 }
 
 const JSPropertySpec SymbolObject::properties[] = {
-    JS_PSG("description", descriptionGetter, 0),
-    JS_PS_END
-};
+    JS_PSG("description", descriptionGetter, 0), JS_PS_END};
 
 const JSFunctionSpec SymbolObject::methods[] = {
     JS_FN(js_toString_str, toString, 0, 0),
     JS_FN(js_valueOf_str, valueOf, 0, 0),
-    JS_SYM_FN(toPrimitive, toPrimitive, 1, JSPROP_READONLY),
-    JS_FS_END
-};
+    JS_SYM_FN(toPrimitive, toPrimitive, 1, JSPROP_READONLY), JS_FS_END};
 
 const JSFunctionSpec SymbolObject::staticMethods[] = {
-    JS_FN("for", for_, 1, 0),
-    JS_FN("keyFor", keyFor, 1, 0),
-    JS_FS_END
-};
+    JS_FN("for", for_, 1, 0), JS_FN("keyFor", keyFor, 1, 0), JS_FS_END};
 
-JSObject*
-SymbolObject::initClass(JSContext* cx, Handle<GlobalObject*> global, bool defineMembers)
-{
+JSObject* SymbolObject::initClass(JSContext* cx, Handle<GlobalObject*> global,
+                                  bool defineMembers) {
+  
+  
+  
+  RootedObject proto(
+      cx, GlobalObject::createBlankPrototype<PlainObject>(cx, global));
+  if (!proto) {
+    return nullptr;
+  }
+
+  RootedFunction ctor(cx, GlobalObject::createConstructor(
+                              cx, construct, ClassName(JSProto_Symbol, cx), 0));
+  if (!ctor) {
+    return nullptr;
+  }
+
+  if (defineMembers) {
     
-    
-    
-    RootedObject proto(cx, GlobalObject::createBlankPrototype<PlainObject>(cx, global));
-    if (!proto) {
+    ImmutablePropertyNamePtr* names = cx->names().wellKnownSymbolNames();
+    RootedValue value(cx);
+    unsigned attrs = JSPROP_READONLY | JSPROP_PERMANENT;
+    WellKnownSymbols* wks = cx->runtime()->wellKnownSymbols;
+    for (size_t i = 0; i < JS::WellKnownSymbolLimit; i++) {
+      value.setSymbol(wks->get(i));
+      if (!NativeDefineDataProperty(cx, ctor, names[i], value, attrs)) {
         return nullptr;
+      }
     }
+  }
 
-    RootedFunction ctor(cx, GlobalObject::createConstructor(cx, construct,
-                                                            ClassName(JSProto_Symbol, cx), 0));
-    if (!ctor) {
-        return nullptr;
-    }
+  if (!LinkConstructorAndPrototype(cx, ctor, proto)) {
+    return nullptr;
+  }
 
-    if (defineMembers) {
-        
-        ImmutablePropertyNamePtr* names = cx->names().wellKnownSymbolNames();
-        RootedValue value(cx);
-        unsigned attrs = JSPROP_READONLY | JSPROP_PERMANENT;
-        WellKnownSymbols* wks = cx->runtime()->wellKnownSymbols;
-        for (size_t i = 0; i < JS::WellKnownSymbolLimit; i++) {
-            value.setSymbol(wks->get(i));
-            if (!NativeDefineDataProperty(cx, ctor, names[i], value, attrs)) {
-                return nullptr;
-            }
-        }
+  if (defineMembers) {
+    if (!DefinePropertiesAndFunctions(cx, proto, properties, methods) ||
+        !DefineToStringTag(cx, proto, cx->names().Symbol) ||
+        !DefinePropertiesAndFunctions(cx, ctor, nullptr, staticMethods)) {
+      return nullptr;
     }
+  }
 
-    if (!LinkConstructorAndPrototype(cx, ctor, proto)) {
-        return nullptr;
-    }
-
-    if (defineMembers) {
-        if (!DefinePropertiesAndFunctions(cx, proto, properties, methods) ||
-            !DefineToStringTag(cx, proto, cx->names().Symbol) ||
-            !DefinePropertiesAndFunctions(cx, ctor, nullptr, staticMethods))
-        {
-            return nullptr;
-        }
-    }
-
-    if (!GlobalObject::initBuiltinConstructor(cx, global, JSProto_Symbol, ctor, proto)) {
-        return nullptr;
-    }
-    return proto;
+  if (!GlobalObject::initBuiltinConstructor(cx, global, JSProto_Symbol, ctor,
+                                            proto)) {
+    return nullptr;
+  }
+  return proto;
 }
 
 
-bool
-SymbolObject::construct(JSContext* cx, unsigned argc, Value* vp)
-{
-    
-    
-    
-    
-    CallArgs args = CallArgsFromVp(argc, vp);
-    if (args.isConstructing()) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_CONSTRUCTOR, "Symbol");
-        return false;
-    }
+bool SymbolObject::construct(JSContext* cx, unsigned argc, Value* vp) {
+  
+  
+  
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  if (args.isConstructing()) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_NOT_CONSTRUCTOR, "Symbol");
+    return false;
+  }
 
-    
-    RootedString desc(cx);
-    if (!args.get(0).isUndefined()) {
-        desc = ToString(cx, args.get(0));
-        if (!desc) {
-            return false;
-        }
+  
+  RootedString desc(cx);
+  if (!args.get(0).isUndefined()) {
+    desc = ToString(cx, args.get(0));
+    if (!desc) {
+      return false;
     }
+  }
 
-    
-    RootedSymbol symbol(cx, JS::Symbol::new_(cx, JS::SymbolCode::UniqueSymbol, desc));
-    if (!symbol) {
-        return false;
-    }
-    args.rval().setSymbol(symbol);
-    return true;
+  
+  RootedSymbol symbol(cx,
+                      JS::Symbol::new_(cx, JS::SymbolCode::UniqueSymbol, desc));
+  if (!symbol) {
+    return false;
+  }
+  args.rval().setSymbol(symbol);
+  return true;
 }
 
 
-bool
-SymbolObject::for_(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+bool SymbolObject::for_(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    
-    RootedString stringKey(cx, ToString(cx, args.get(0)));
-    if (!stringKey) {
-        return false;
-    }
+  
+  RootedString stringKey(cx, ToString(cx, args.get(0)));
+  if (!stringKey) {
+    return false;
+  }
 
-    
-    JS::Symbol* symbol = JS::Symbol::for_(cx, stringKey);
-    if (!symbol) {
-        return false;
-    }
-    args.rval().setSymbol(symbol);
-    return true;
+  
+  JS::Symbol* symbol = JS::Symbol::for_(cx, stringKey);
+  if (!symbol) {
+    return false;
+  }
+  args.rval().setSymbol(symbol);
+  return true;
 }
 
 
-bool
-SymbolObject::keyFor(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+bool SymbolObject::keyFor(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    
-    HandleValue arg = args.get(0);
-    if (!arg.isSymbol()) {
-        ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_SEARCH_STACK, arg, nullptr,
-                         "not a symbol");
-        return false;
-    }
+  
+  HandleValue arg = args.get(0);
+  if (!arg.isSymbol()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_SEARCH_STACK, arg,
+                     nullptr, "not a symbol");
+    return false;
+  }
 
-    
-    if (arg.toSymbol()->code() == JS::SymbolCode::InSymbolRegistry) {
+  
+  if (arg.toSymbol()->code() == JS::SymbolCode::InSymbolRegistry) {
 #ifdef DEBUG
-        RootedString desc(cx, arg.toSymbol()->description());
-        MOZ_ASSERT(Symbol::for_(cx, desc) == arg.toSymbol());
+    RootedString desc(cx, arg.toSymbol()->description());
+    MOZ_ASSERT(Symbol::for_(cx, desc) == arg.toSymbol());
 #endif
-        args.rval().setString(arg.toSymbol()->description());
-        return true;
-    }
+    args.rval().setString(arg.toSymbol()->description());
+    return true;
+  }
 
-    
-    
+  
+  
+  args.rval().setUndefined();
+  return true;
+}
+
+MOZ_ALWAYS_INLINE bool IsSymbol(HandleValue v) {
+  return v.isSymbol() || (v.isObject() && v.toObject().is<SymbolObject>());
+}
+
+
+bool SymbolObject::toString_impl(JSContext* cx, const CallArgs& args) {
+  
+  HandleValue thisv = args.thisv();
+  MOZ_ASSERT(IsSymbol(thisv));
+  Rooted<Symbol*> sym(cx, thisv.isSymbol()
+                              ? thisv.toSymbol()
+                              : thisv.toObject().as<SymbolObject>().unbox());
+
+  
+  return SymbolDescriptiveString(cx, sym, args.rval());
+}
+
+bool SymbolObject::toString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsSymbol, toString_impl>(cx, args);
+}
+
+
+bool SymbolObject::valueOf_impl(JSContext* cx, const CallArgs& args) {
+  
+  HandleValue thisv = args.thisv();
+  MOZ_ASSERT(IsSymbol(thisv));
+  if (thisv.isSymbol()) {
+    args.rval().set(thisv);
+  } else {
+    args.rval().setSymbol(thisv.toObject().as<SymbolObject>().unbox());
+  }
+  return true;
+}
+
+bool SymbolObject::valueOf(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsSymbol, valueOf_impl>(cx, args);
+}
+
+
+bool SymbolObject::toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  
+  return CallNonGenericMethod<IsSymbol, valueOf_impl>(cx, args);
+}
+
+bool SymbolObject::descriptionGetter_impl(JSContext* cx, const CallArgs& args) {
+  
+  HandleValue thisv = args.thisv();
+  MOZ_ASSERT(IsSymbol(thisv));
+  Rooted<Symbol*> sym(cx, thisv.isSymbol()
+                              ? thisv.toSymbol()
+                              : thisv.toObject().as<SymbolObject>().unbox());
+
+  
+  if (JSString* str = sym->description()) {
+    args.rval().setString(str);
+  } else {
     args.rval().setUndefined();
-    return true;
+  }
+  return true;
 }
 
-MOZ_ALWAYS_INLINE bool
-IsSymbol(HandleValue v)
-{
-    return v.isSymbol() || (v.isObject() && v.toObject().is<SymbolObject>());
+bool SymbolObject::descriptionGetter(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsSymbol, descriptionGetter_impl>(cx, args);
 }
 
-
-bool
-SymbolObject::toString_impl(JSContext* cx, const CallArgs& args)
-{
-    
-    HandleValue thisv = args.thisv();
-    MOZ_ASSERT(IsSymbol(thisv));
-    Rooted<Symbol*> sym(cx, thisv.isSymbol()
-                            ? thisv.toSymbol()
-                            : thisv.toObject().as<SymbolObject>().unbox());
-
-    
-    return SymbolDescriptiveString(cx, sym, args.rval());
+JSObject* js::InitSymbolClass(JSContext* cx, Handle<GlobalObject*> global) {
+  return SymbolObject::initClass(cx, global, true);
 }
 
-bool
-SymbolObject::toString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsSymbol, toString_impl>(cx, args);
-}
-
-
-bool
-SymbolObject::valueOf_impl(JSContext* cx, const CallArgs& args)
-{
-    
-    HandleValue thisv = args.thisv();
-    MOZ_ASSERT(IsSymbol(thisv));
-    if (thisv.isSymbol()) {
-        args.rval().set(thisv);
-    } else {
-        args.rval().setSymbol(thisv.toObject().as<SymbolObject>().unbox());
-    }
-    return true;
-}
-
-bool
-SymbolObject::valueOf(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsSymbol, valueOf_impl>(cx, args);
-}
-
-
-bool
-SymbolObject::toPrimitive(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    
-    return CallNonGenericMethod<IsSymbol, valueOf_impl>(cx, args);
-}
-
-bool
-SymbolObject::descriptionGetter_impl(JSContext* cx, const CallArgs& args)
-{
-    
-    HandleValue thisv = args.thisv();
-    MOZ_ASSERT(IsSymbol(thisv));
-    Rooted<Symbol*> sym(cx, thisv.isSymbol()
-                            ? thisv.toSymbol()
-                            : thisv.toObject().as<SymbolObject>().unbox());
-
-    
-    if (JSString* str = sym->description()) {
-        args.rval().setString(str);
-    } else {
-        args.rval().setUndefined();
-    }
-    return true;
-}
-
-bool
-SymbolObject::descriptionGetter(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsSymbol, descriptionGetter_impl>(cx, args);
-}
-
-JSObject*
-js::InitSymbolClass(JSContext* cx, Handle<GlobalObject*> global)
-{
-    return SymbolObject::initClass(cx, global, true);
-}
-
-JSObject*
-js::InitBareSymbolCtor(JSContext* cx, Handle<GlobalObject*> global)
-{
-    return SymbolObject::initClass(cx, global, false);
+JSObject* js::InitBareSymbolCtor(JSContext* cx, Handle<GlobalObject*> global) {
+  return SymbolObject::initClass(cx, global, false);
 }

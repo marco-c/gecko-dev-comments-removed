@@ -19,12 +19,12 @@ namespace mozilla {
 
 
 enum class SheetType : uint8_t {
-  Agent, 
-  User, 
+  Agent,  
+  User,   
   PresHint,
-  Doc, 
+  Doc,  
   StyleAttr,
-  Override, 
+  Override,  
   Animation,
   Transition,
 
@@ -34,9 +34,7 @@ enum class SheetType : uint8_t {
 
 
 
-inline bool
-IsCSSSheetType(SheetType aSheetType)
-{
+inline bool IsCSSSheetType(SheetType aSheetType) {
   switch (aSheetType) {
     case SheetType::Agent:
     case SheetType::User:
@@ -48,6 +46,6 @@ IsCSSSheetType(SheetType aSheetType)
   }
 }
 
-} 
+}  
 
-#endif 
+#endif  

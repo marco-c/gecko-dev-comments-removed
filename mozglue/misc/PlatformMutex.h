@@ -13,7 +13,7 @@
 #include "mozilla/RecordReplay.h"
 
 #if !defined(XP_WIN)
-# include <pthread.h>
+#include <pthread.h>
 #endif
 
 namespace mozilla {
@@ -22,19 +22,19 @@ namespace detail {
 
 class ConditionVariableImpl;
 
-class MutexImpl
-{
-public:
+class MutexImpl {
+ public:
   struct PlatformData;
 
-  explicit MFBT_API MutexImpl(recordreplay::Behavior aRecorded = recordreplay::Behavior::Preserve);
+  explicit MFBT_API MutexImpl(
+      recordreplay::Behavior aRecorded = recordreplay::Behavior::Preserve);
   MFBT_API ~MutexImpl();
 
-protected:
+ protected:
   MFBT_API void lock();
   MFBT_API void unlock();
 
-private:
+ private:
   MutexImpl(const MutexImpl&) = delete;
   void operator=(const MutexImpl&) = delete;
   MutexImpl(MutexImpl&&) = delete;
@@ -51,14 +51,15 @@ private:
 #if !defined(XP_WIN)
   void* platformData_[sizeof(pthread_mutex_t) / sizeof(void*)];
   static_assert(sizeof(pthread_mutex_t) / sizeof(void*) != 0 &&
-                sizeof(pthread_mutex_t) % sizeof(void*) == 0,
+                    sizeof(pthread_mutex_t) % sizeof(void*) == 0,
                 "pthread_mutex_t must have pointer alignment");
 #ifdef XP_DARWIN
   
   
   
   mozilla::Atomic<int32_t, mozilla::MemoryOrdering::Relaxed,
-                  recordreplay::Behavior::DontPreserve> averageSpins;
+                  recordreplay::Behavior::DontPreserve>
+      averageSpins;
 #endif
 #else
   void* platformData_[6];
@@ -67,8 +68,8 @@ private:
   friend class mozilla::detail::ConditionVariableImpl;
 };
 
-} 
+}  
 
-} 
+}  
 
-#endif 
+#endif  

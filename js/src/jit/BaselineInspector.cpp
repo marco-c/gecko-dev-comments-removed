@@ -22,1716 +22,1656 @@ using namespace js::jit;
 
 using mozilla::DebugOnly;
 
-bool
-SetElemICInspector::sawOOBDenseWrite() const
-{
-    if (!icEntry_) {
-        return false;
-    }
-
-    
-    ICStub* stub = icEntry_->fallbackStub();
-    if (stub->isSetElem_Fallback()) {
-        return stub->toSetElem_Fallback()->hasDenseAdd();
-    }
-
+bool SetElemICInspector::sawOOBDenseWrite() const {
+  if (!icEntry_) {
     return false;
+  }
+
+  
+  ICStub* stub = icEntry_->fallbackStub();
+  if (stub->isSetElem_Fallback()) {
+    return stub->toSetElem_Fallback()->hasDenseAdd();
+  }
+
+  return false;
 }
 
-bool
-SetElemICInspector::sawOOBTypedArrayWrite() const
-{
-    if (!icEntry_) {
-        return false;
-    }
-
-    ICStub* stub = icEntry_->fallbackStub();
-    if (stub->isSetElem_Fallback()) {
-        return stub->toSetElem_Fallback()->hasTypedArrayOOB();
-    }
-
+bool SetElemICInspector::sawOOBTypedArrayWrite() const {
+  if (!icEntry_) {
     return false;
+  }
+
+  ICStub* stub = icEntry_->fallbackStub();
+  if (stub->isSetElem_Fallback()) {
+    return stub->toSetElem_Fallback()->hasTypedArrayOOB();
+  }
+
+  return false;
 }
 
 template <typename S, typename T>
-static bool
-VectorAppendNoDuplicate(S& list, T value)
-{
-    for (size_t i = 0; i < list.length(); i++) {
-        if (list[i] == value) {
-            return true;
-        }
+static bool VectorAppendNoDuplicate(S& list, T value) {
+  for (size_t i = 0; i < list.length(); i++) {
+    if (list[i] == value) {
+      return true;
     }
-    return list.append(value);
+  }
+  return list.append(value);
 }
 
-static bool
-AddReceiver(const ReceiverGuard& receiver,
-            BaselineInspector::ReceiverVector& receivers,
-            BaselineInspector::ObjectGroupVector& convertUnboxedGroups)
-{
-    if (receiver.group) {
-        AutoSweepObjectGroup sweep(receiver.group);
-        if (auto* layout = receiver.group->maybeUnboxedLayout(sweep)) {
-            if (layout->nativeGroup()) {
-                return VectorAppendNoDuplicate(convertUnboxedGroups, receiver.group);
-            }
-        }
+static bool AddReceiver(
+    const ReceiverGuard& receiver, BaselineInspector::ReceiverVector& receivers,
+    BaselineInspector::ObjectGroupVector& convertUnboxedGroups) {
+  if (receiver.group) {
+    AutoSweepObjectGroup sweep(receiver.group);
+    if (auto* layout = receiver.group->maybeUnboxedLayout(sweep)) {
+      if (layout->nativeGroup()) {
+        return VectorAppendNoDuplicate(convertUnboxedGroups, receiver.group);
+      }
     }
-    return VectorAppendNoDuplicate(receivers, receiver);
+  }
+  return VectorAppendNoDuplicate(receivers, receiver);
 }
 
-static bool
-GetCacheIRReceiverForNativeReadSlot(ICCacheIR_Monitored* stub, ReceiverGuard* receiver)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+static bool GetCacheIRReceiverForNativeReadSlot(ICCacheIR_Monitored* stub,
+                                                ReceiverGuard* receiver) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    *receiver = ReceiverGuard();
-    CacheIRReader reader(stub->stubInfo());
+  *receiver = ReceiverGuard();
+  CacheIRReader reader(stub->stubInfo());
 
-    ObjOperandId objId = ObjOperandId(0);
-    if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
-        return false;
-    }
-
-    if (reader.matchOp(CacheOp::GuardGroup, objId)) {
-        receiver->group = stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
-
-        if (!reader.matchOp(CacheOp::GuardAndLoadUnboxedExpando, objId)) {
-            return false;
-        }
-        objId = reader.objOperandId();
-    }
-
-    if (reader.matchOp(CacheOp::GuardShape, objId)) {
-        receiver->shape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
-        return reader.matchOpEither(CacheOp::LoadFixedSlotResult, CacheOp::LoadDynamicSlotResult);
-    }
-
+  ObjOperandId objId = ObjOperandId(0);
+  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
     return false;
+  }
+
+  if (reader.matchOp(CacheOp::GuardGroup, objId)) {
+    receiver->group =
+        stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
+
+    if (!reader.matchOp(CacheOp::GuardAndLoadUnboxedExpando, objId)) {
+      return false;
+    }
+    objId = reader.objOperandId();
+  }
+
+  if (reader.matchOp(CacheOp::GuardShape, objId)) {
+    receiver->shape =
+        stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+    return reader.matchOpEither(CacheOp::LoadFixedSlotResult,
+                                CacheOp::LoadDynamicSlotResult);
+  }
+
+  return false;
 }
 
-static bool
-GetCacheIRReceiverForUnboxedProperty(ICCacheIR_Monitored* stub, ReceiverGuard* receiver)
-{
-    
-    
-    
-    
-    
+static bool GetCacheIRReceiverForUnboxedProperty(ICCacheIR_Monitored* stub,
+                                                 ReceiverGuard* receiver) {
+  
+  
+  
+  
+  
 
-    *receiver = ReceiverGuard();
-    CacheIRReader reader(stub->stubInfo());
+  *receiver = ReceiverGuard();
+  CacheIRReader reader(stub->stubInfo());
 
-    ObjOperandId objId = ObjOperandId(0);
-    if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
-        return false;
-    }
+  ObjOperandId objId = ObjOperandId(0);
+  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+    return false;
+  }
 
-    if (!reader.matchOp(CacheOp::GuardGroup, objId)) {
-        return false;
-    }
-    receiver->group = stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
+  if (!reader.matchOp(CacheOp::GuardGroup, objId)) {
+    return false;
+  }
+  receiver->group =
+      stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
 
-    return reader.matchOp(CacheOp::LoadUnboxedPropertyResult, objId);
+  return reader.matchOp(CacheOp::LoadUnboxedPropertyResult, objId);
 }
 
-static bool
-GetCacheIRReceiverForNativeSetSlot(ICCacheIR_Updated* stub, ReceiverGuard* receiver)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+static bool GetCacheIRReceiverForNativeSetSlot(ICCacheIR_Updated* stub,
+                                               ReceiverGuard* receiver) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    *receiver = ReceiverGuard();
-    CacheIRReader reader(stub->stubInfo());
+  *receiver = ReceiverGuard();
+  CacheIRReader reader(stub->stubInfo());
 
-    ObjOperandId objId = ObjOperandId(0);
-    if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
-        return false;
+  ObjOperandId objId = ObjOperandId(0);
+  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+    return false;
+  }
+
+  if (!reader.matchOp(CacheOp::GuardGroup, objId)) {
+    return false;
+  }
+  ObjectGroup* group =
+      stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
+
+  if (reader.matchOp(CacheOp::GuardAndLoadUnboxedExpando, objId)) {
+    objId = reader.objOperandId();
+  }
+
+  if (!reader.matchOp(CacheOp::GuardShape, objId)) {
+    return false;
+  }
+  Shape* shape =
+      stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+
+  if (!reader.matchOpEither(CacheOp::StoreFixedSlot,
+                            CacheOp::StoreDynamicSlot)) {
+    return false;
+  }
+
+  *receiver = ReceiverGuard(group, shape);
+  return true;
+}
+
+static bool GetCacheIRReceiverForUnboxedProperty(ICCacheIR_Updated* stub,
+                                                 ReceiverGuard* receiver) {
+  
+  
+  
+  
+  
+  
+
+  *receiver = ReceiverGuard();
+  CacheIRReader reader(stub->stubInfo());
+
+  ObjOperandId objId = ObjOperandId(0);
+  ValOperandId rhsId = ValOperandId(1);
+  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+    return false;
+  }
+
+  if (!reader.matchOp(CacheOp::GuardGroup, objId)) {
+    return false;
+  }
+  ObjectGroup* group =
+      stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
+
+  if (reader.matchOp(CacheOp::GuardType, rhsId)) {
+    reader.valueType();  
+  } else {
+    if (!reader.matchOp(CacheOp::GuardIsObjectOrNull, rhsId)) {
+      return false;
     }
+  }
 
-    if (!reader.matchOp(CacheOp::GuardGroup, objId)) {
-        return false;
-    }
-    ObjectGroup* group = stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
+  if (!reader.matchOp(CacheOp::StoreUnboxedProperty)) {
+    return false;
+  }
 
-    if (reader.matchOp(CacheOp::GuardAndLoadUnboxedExpando, objId)) {
-        objId = reader.objOperandId();
-    }
+  *receiver = ReceiverGuard(group, nullptr);
+  return true;
+}
 
-    if (!reader.matchOp(CacheOp::GuardShape, objId)) {
-        return false;
-    }
-    Shape* shape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+ICScript* BaselineInspector::icScript() const { return script->icScript(); }
 
-    if (!reader.matchOpEither(CacheOp::StoreFixedSlot, CacheOp::StoreDynamicSlot)) {
-        return false;
-    }
+ICEntry& BaselineInspector::icEntryFromPC(jsbytecode* pc) {
+  ICEntry* entry = maybeICEntryFromPC(pc);
+  MOZ_ASSERT(entry);
+  return *entry;
+}
 
-    *receiver = ReceiverGuard(group, shape);
+ICEntry* BaselineInspector::maybeICEntryFromPC(jsbytecode* pc) {
+  MOZ_ASSERT(hasICScript());
+  MOZ_ASSERT(isValidPC(pc));
+  ICEntry* ent = icScript()->maybeICEntryFromPCOffset(script->pcToOffset(pc),
+                                                      prevLookedUpEntry);
+  if (!ent) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(ent->isForOp());
+  prevLookedUpEntry = ent;
+  return ent;
+}
+
+bool BaselineInspector::maybeInfoForPropertyOp(
+    jsbytecode* pc, ReceiverVector& receivers,
+    ObjectGroupVector& convertUnboxedGroups) {
+  
+  
+  
+  
+  
+  MOZ_ASSERT(receivers.empty());
+  MOZ_ASSERT(convertUnboxedGroups.empty());
+
+  if (!hasICScript()) {
     return true;
-}
+  }
 
-static bool
-GetCacheIRReceiverForUnboxedProperty(ICCacheIR_Updated* stub, ReceiverGuard* receiver)
-{
-    
-    
-    
-    
-    
-    
+  MOZ_ASSERT(isValidPC(pc));
+  const ICEntry& entry = icEntryFromPC(pc);
 
-    *receiver = ReceiverGuard();
-    CacheIRReader reader(stub->stubInfo());
-
-    ObjOperandId objId = ObjOperandId(0);
-    ValOperandId rhsId = ValOperandId(1);
-    if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
-        return false;
-    }
-
-    if (!reader.matchOp(CacheOp::GuardGroup, objId)) {
-        return false;
-    }
-    ObjectGroup* group = stub->stubInfo()->getStubField<ObjectGroup*>(stub, reader.stubOffset());
-
-    if (reader.matchOp(CacheOp::GuardType, rhsId)) {
-        reader.valueType(); 
+  ICStub* stub = entry.firstStub();
+  while (stub->next()) {
+    ReceiverGuard receiver;
+    if (stub->isCacheIR_Monitored()) {
+      if (!GetCacheIRReceiverForNativeReadSlot(stub->toCacheIR_Monitored(),
+                                               &receiver) &&
+          !GetCacheIRReceiverForUnboxedProperty(stub->toCacheIR_Monitored(),
+                                                &receiver)) {
+        receivers.clear();
+        return true;
+      }
+    } else if (stub->isCacheIR_Updated()) {
+      if (!GetCacheIRReceiverForNativeSetSlot(stub->toCacheIR_Updated(),
+                                              &receiver) &&
+          !GetCacheIRReceiverForUnboxedProperty(stub->toCacheIR_Updated(),
+                                                &receiver)) {
+        receivers.clear();
+        return true;
+      }
     } else {
-        if (!reader.matchOp(CacheOp::GuardIsObjectOrNull, rhsId)) {
-            return false;
-        }
+      receivers.clear();
+      return true;
     }
 
-    if (!reader.matchOp(CacheOp::StoreUnboxedProperty)) {
-        return false;
+    if (!AddReceiver(receiver, receivers, convertUnboxedGroups)) {
+      return false;
     }
 
-    *receiver = ReceiverGuard(group, nullptr);
-    return true;
+    stub = stub->next();
+  }
+
+  if (stub->toFallbackStub()->state().hasFailures()) {
+    receivers.clear();
+  }
+
+  
+  if (receivers.length() > 5) {
+    receivers.clear();
+  }
+
+  return true;
 }
 
-ICScript*
-BaselineInspector::icScript() const
-{
-    return script->icScript();
+ICStub* BaselineInspector::monomorphicStub(jsbytecode* pc) {
+  if (!hasICScript()) {
+    return nullptr;
+  }
+
+  
+  
+  
+  const ICEntry* entry = maybeICEntryFromPC(pc);
+  if (!entry) {
+    return nullptr;
+  }
+
+  ICStub* stub = entry->firstStub();
+  ICStub* next = stub->next();
+
+  if (!next || !next->isFallback()) {
+    return nullptr;
+  }
+
+  return stub;
 }
 
-ICEntry&
-BaselineInspector::icEntryFromPC(jsbytecode* pc)
-{
-    ICEntry* entry = maybeICEntryFromPC(pc);
-    MOZ_ASSERT(entry);
-    return *entry;
-}
-
-ICEntry*
-BaselineInspector::maybeICEntryFromPC(jsbytecode* pc)
-{
-    MOZ_ASSERT(hasICScript());
-    MOZ_ASSERT(isValidPC(pc));
-    ICEntry* ent =
-        icScript()->maybeICEntryFromPCOffset(script->pcToOffset(pc), prevLookedUpEntry);
-    if (!ent) {
-        return nullptr;
-    }
-
-    MOZ_ASSERT(ent->isForOp());
-    prevLookedUpEntry = ent;
-    return ent;
-}
-
-bool
-BaselineInspector::maybeInfoForPropertyOp(jsbytecode* pc, ReceiverVector& receivers,
-                                          ObjectGroupVector& convertUnboxedGroups)
-{
-    
-    
-    
-    
-    
-    MOZ_ASSERT(receivers.empty());
-    MOZ_ASSERT(convertUnboxedGroups.empty());
-
-    if (!hasICScript()) {
-        return true;
-    }
-
-    MOZ_ASSERT(isValidPC(pc));
-    const ICEntry& entry = icEntryFromPC(pc);
-
-    ICStub* stub = entry.firstStub();
-    while (stub->next()) {
-        ReceiverGuard receiver;
-        if (stub->isCacheIR_Monitored()) {
-            if (!GetCacheIRReceiverForNativeReadSlot(stub->toCacheIR_Monitored(), &receiver) &&
-                !GetCacheIRReceiverForUnboxedProperty(stub->toCacheIR_Monitored(), &receiver))
-            {
-                receivers.clear();
-                return true;
-            }
-        } else if (stub->isCacheIR_Updated()) {
-            if (!GetCacheIRReceiverForNativeSetSlot(stub->toCacheIR_Updated(), &receiver) &&
-                !GetCacheIRReceiverForUnboxedProperty(stub->toCacheIR_Updated(), &receiver))
-            {
-                receivers.clear();
-                return true;
-            }
-        } else {
-            receivers.clear();
-            return true;
-        }
-
-        if (!AddReceiver(receiver, receivers, convertUnboxedGroups)) {
-            return false;
-        }
-
-        stub = stub->next();
-    }
-
-    if (stub->toFallbackStub()->state().hasFailures()) {
-        receivers.clear();
-    }
-
-    
-    if (receivers.length() > 5) {
-        receivers.clear();
-    }
-
-    return true;
-}
-
-ICStub*
-BaselineInspector::monomorphicStub(jsbytecode* pc)
-{
-    if (!hasICScript()) {
-        return nullptr;
-    }
-
-    
-    
-    
-    const ICEntry* entry = maybeICEntryFromPC(pc);
-    if (!entry) {
-        return nullptr;
-    }
-
-    ICStub* stub = entry->firstStub();
-    ICStub* next = stub->next();
-
-    if (!next || !next->isFallback()) {
-        return nullptr;
-    }
-
-    return stub;
-}
-
-bool
-BaselineInspector::dimorphicStub(jsbytecode* pc, ICStub** pfirst, ICStub** psecond)
-{
-    if (!hasICScript()) {
-        return false;
-    }
-
-    const ICEntry& entry = icEntryFromPC(pc);
-
-    ICStub* stub = entry.firstStub();
-    ICStub* next = stub->next();
-    ICStub* after = next ? next->next() : nullptr;
-
-    if (!after || !after->isFallback()) {
-        return false;
-    }
-
-    *pfirst = stub;
-    *psecond = next;
-    return true;
-}
-
-
-
-static void
-SkipBinaryGuards(CacheIRReader& reader)
-{
-    while (true) {
-        
-        if (reader.matchOp(CacheOp::GuardIsInt32) ||
-            reader.matchOp(CacheOp::GuardType) ||
-            reader.matchOp(CacheOp::TruncateDoubleToUInt32) ||
-            reader.matchOp(CacheOp::GuardIsBoolean))
-        {
-            reader.skip(); 
-            reader.skip(); 
-            continue;
-        }
-
-        
-        if (reader.matchOp(CacheOp::GuardIsNumber) ||
-            reader.matchOp(CacheOp::GuardIsString) ||
-            reader.matchOp(CacheOp::GuardIsObject))
-        {
-            reader.skip(); 
-            continue;
-        }
-        return;
-    }
-}
-
-static MIRType
-ParseCacheIRStub(ICStub* stub)
-{
-    ICCacheIR_Regular* cacheirStub = stub->toCacheIR_Regular();
-    CacheIRReader reader(cacheirStub->stubInfo());
-    SkipBinaryGuards(reader);
-    switch (reader.readOp()) {
-      case CacheOp::LoadUndefinedResult:
-        return MIRType::Undefined;
-      case CacheOp::LoadBooleanResult:
-        return MIRType::Boolean;
-      case CacheOp::LoadStringResult:
-      case CacheOp::CallStringConcatResult:
-      case CacheOp::CallStringObjectConcatResult:
-      case CacheOp::CallInt32ToString:
-      case CacheOp::CallNumberToString:
-        return MIRType::String;
-      case CacheOp::DoubleAddResult:
-      case CacheOp::DoubleSubResult:
-      case CacheOp::DoubleMulResult:
-      case CacheOp::DoubleDivResult:
-      case CacheOp::DoubleModResult:
-      case CacheOp::DoubleNegationResult:
-        return MIRType::Double;
-      case CacheOp::Int32AddResult:
-      case CacheOp::Int32SubResult:
-      case CacheOp::Int32MulResult:
-      case CacheOp::Int32DivResult:
-      case CacheOp::Int32ModResult:
-      case CacheOp::Int32BitOrResult:
-      case CacheOp::Int32BitXorResult:
-      case CacheOp::Int32BitAndResult:
-      case CacheOp::Int32LeftShiftResult:
-      case CacheOp::Int32RightShiftResult:
-      case CacheOp::Int32NotResult:
-      case CacheOp::Int32NegationResult:
-        return MIRType::Int32;
-      
-      
-      case CacheOp::Int32URightShiftResult:
-        reader.skip(); 
-        reader.skip(); 
-        return reader.readByte() == 0 ? MIRType::Int32 : MIRType::Double;
-      case CacheOp::LoadValueResult:
-        return MIRType::Value;
-      default:
-        MOZ_CRASH("Unknown op");
-        return MIRType::None;
-    }
-}
-
-MIRType
-BaselineInspector::expectedResultType(jsbytecode* pc)
-{
-    
-    
-    
-    
-
-    ICStub* stub = monomorphicStub(pc);
-    if (!stub) {
-        return MIRType::None;
-    }
-
-    switch (stub->kind()) {
-      case ICStub::CacheIR_Regular:
-        return ParseCacheIRStub(stub);
-      default:
-        return MIRType::None;
-    }
-}
-
-
-
-
-
-
-
-static bool
-GuardType(CacheIRReader& reader, mozilla::Array<MIRType,2>& guardType)
-{
-    CacheOp op = reader.readOp();
-    uint8_t guardOperand = reader.readByte();
-
-    
-    if (guardOperand > 1) {
-        return false;
-    }
-
-    
-    if (guardType[guardOperand] != MIRType::None) {
-        return false;
-    }
-
-    switch (op) {
-        
-        case CacheOp::GuardIsString:
-            guardType[guardOperand] = MIRType::String;
-            break;
-        case CacheOp::GuardIsSymbol:
-            guardType[guardOperand] = MIRType::Symbol;
-            break;
-        case CacheOp::GuardIsNumber:
-            guardType[guardOperand] = MIRType::Double;
-            break;
-        case CacheOp::GuardIsUndefined:
-            guardType[guardOperand] = MIRType::Undefined;
-            break;
-        
-        case CacheOp::GuardIsInt32:
-            guardType[guardOperand] = MIRType::Int32;
-            
-            reader.skip();
-            break;
-        case CacheOp::GuardIsBoolean:
-            guardType[guardOperand] = MIRType::Boolean;
-            
-            reader.skip();
-            break;
-        
-        default:
-            return false;
-    }
-    return true;
-}
-
-
-
-
-
-
-
-
-
-static MCompare::CompareType
-ParseCacheIRStubForCompareType(ICCacheIR_Regular* stub)
-{
-    CacheIRReader reader(stub->stubInfo());
-
-    
-    
-    mozilla::Array<MIRType, 2> guards = { MIRType::None, MIRType::None };
-
-    
-    if (!GuardType(reader, guards)) {
-        return MCompare::Compare_Unknown;
-    }
-    if (!GuardType(reader, guards)) {
-        return MCompare::Compare_Unknown;
-    }
-
-    
-    
-    MIRType lhs_guard = guards[0];
-    MIRType rhs_guard = guards[1];
-
-    if (lhs_guard == rhs_guard) {
-        if (lhs_guard == MIRType::Int32) {
-            return MCompare::Compare_Int32;
-        }
-        if (lhs_guard == MIRType::Double) {
-            return MCompare::Compare_Double;
-        }
-        return MCompare::Compare_Unknown;
-    }
-
-    if ((lhs_guard == MIRType::Int32 && rhs_guard == MIRType::Boolean) ||
-        (lhs_guard == MIRType::Boolean && rhs_guard == MIRType::Int32))
-    {
-        
-        if (rhs_guard == MIRType::Boolean) {
-            return MCompare::Compare_Int32MaybeCoerceRHS;
-        }
-
-        return MCompare::Compare_Int32MaybeCoerceLHS;
-    }
-
-    if ((lhs_guard == MIRType::Double && rhs_guard == MIRType::Undefined) ||
-        (lhs_guard == MIRType::Undefined && rhs_guard == MIRType::Double))
-    {
-        
-        if (rhs_guard == MIRType::Undefined) {
-            return MCompare::Compare_DoubleMaybeCoerceRHS;
-        }
-
-        return MCompare::Compare_DoubleMaybeCoerceLHS;
-    }
-
-    return MCompare::Compare_Unknown;
-}
-
-static bool
-CoercingCompare(MCompare::CompareType type)
-{
-    
-    if (type == MCompare::Compare_DoubleMaybeCoerceLHS ||
-        type == MCompare::Compare_DoubleMaybeCoerceRHS ||
-        type == MCompare::Compare_Int32MaybeCoerceLHS  ||
-        type == MCompare::Compare_Int32MaybeCoerceRHS)
-    {
-        return true;
-    }
+bool BaselineInspector::dimorphicStub(jsbytecode* pc, ICStub** pfirst,
+                                      ICStub** psecond) {
+  if (!hasICScript()) {
     return false;
+  }
+
+  const ICEntry& entry = icEntryFromPC(pc);
+
+  ICStub* stub = entry.firstStub();
+  ICStub* next = stub->next();
+  ICStub* after = next ? next->next() : nullptr;
+
+  if (!after || !after->isFallback()) {
+    return false;
+  }
+
+  *pfirst = stub;
+  *psecond = next;
+  return true;
 }
 
 
-static MCompare::CompareType
-CompatibleType(MCompare::CompareType first, MCompare::CompareType second)
-{
-    
-    MOZ_ASSERT(first != second);
 
+static void SkipBinaryGuards(CacheIRReader& reader) {
+  while (true) {
     
-    
-    if (CoercingCompare(first)) {
-        return first;
-    }
-
-    if (CoercingCompare(second)) {
-        return second;
+    if (reader.matchOp(CacheOp::GuardIsInt32) ||
+        reader.matchOp(CacheOp::GuardType) ||
+        reader.matchOp(CacheOp::TruncateDoubleToUInt32) ||
+        reader.matchOp(CacheOp::GuardIsBoolean)) {
+      reader.skip();  
+      reader.skip();  
+      continue;
     }
 
     
-    MOZ_ASSERT(first == MCompare::Compare_Int32 || first == MCompare::Compare_Double);
-    MOZ_ASSERT(second == MCompare::Compare_Int32 || second == MCompare::Compare_Double);
-    MOZ_ASSERT(first != second);
-
-    return MCompare::Compare_Double;
+    if (reader.matchOp(CacheOp::GuardIsNumber) ||
+        reader.matchOp(CacheOp::GuardIsString) ||
+        reader.matchOp(CacheOp::GuardIsObject)) {
+      reader.skip();  
+      continue;
+    }
+    return;
+  }
 }
 
-MCompare::CompareType
-BaselineInspector::expectedCompareType(jsbytecode* pc)
-{
-    ICStub* first = monomorphicStub(pc);
-    ICStub* second = nullptr;
-    if (!first && !dimorphicStub(pc, &first, &second)) {
-        return MCompare::Compare_Unknown;
-    }
-
-    if (ICStub* fallback = second ? second->next() : first->next()) {
-        MOZ_ASSERT(fallback->isFallback());
-        if (fallback->toFallbackStub()->state().hasFailures()) {
-            return MCompare::Compare_Unknown;
-        }
-    }
-
-    MCompare::CompareType first_type = ParseCacheIRStubForCompareType(first->toCacheIR_Regular());
-    if (!second) {
-        return first_type;
-    }
-
-    MCompare::CompareType second_type = ParseCacheIRStubForCompareType(second->toCacheIR_Regular());
-
-    if (first_type == MCompare::Compare_Unknown || second_type == MCompare::Compare_Unknown) {
-        return MCompare::Compare_Unknown;
-    }
-
-    if (first_type == second_type) {
-        return first_type;
-    }
-
-    return CompatibleType(first_type, second_type);
+static MIRType ParseCacheIRStub(ICStub* stub) {
+  ICCacheIR_Regular* cacheirStub = stub->toCacheIR_Regular();
+  CacheIRReader reader(cacheirStub->stubInfo());
+  SkipBinaryGuards(reader);
+  switch (reader.readOp()) {
+    case CacheOp::LoadUndefinedResult:
+      return MIRType::Undefined;
+    case CacheOp::LoadBooleanResult:
+      return MIRType::Boolean;
+    case CacheOp::LoadStringResult:
+    case CacheOp::CallStringConcatResult:
+    case CacheOp::CallStringObjectConcatResult:
+    case CacheOp::CallInt32ToString:
+    case CacheOp::CallNumberToString:
+      return MIRType::String;
+    case CacheOp::DoubleAddResult:
+    case CacheOp::DoubleSubResult:
+    case CacheOp::DoubleMulResult:
+    case CacheOp::DoubleDivResult:
+    case CacheOp::DoubleModResult:
+    case CacheOp::DoubleNegationResult:
+      return MIRType::Double;
+    case CacheOp::Int32AddResult:
+    case CacheOp::Int32SubResult:
+    case CacheOp::Int32MulResult:
+    case CacheOp::Int32DivResult:
+    case CacheOp::Int32ModResult:
+    case CacheOp::Int32BitOrResult:
+    case CacheOp::Int32BitXorResult:
+    case CacheOp::Int32BitAndResult:
+    case CacheOp::Int32LeftShiftResult:
+    case CacheOp::Int32RightShiftResult:
+    case CacheOp::Int32NotResult:
+    case CacheOp::Int32NegationResult:
+      return MIRType::Int32;
+    
+    
+    case CacheOp::Int32URightShiftResult:
+      reader.skip();  
+      reader.skip();  
+      return reader.readByte() == 0 ? MIRType::Int32 : MIRType::Double;
+    case CacheOp::LoadValueResult:
+      return MIRType::Value;
+    default:
+      MOZ_CRASH("Unknown op");
+      return MIRType::None;
+  }
 }
 
-static bool
-TryToSpecializeBinaryArithOp(ICStub** stubs,
-                             uint32_t nstubs,
-                             MIRType* result)
-{
-    DebugOnly<bool> sawInt32 = false;
-    bool sawDouble = false;
-    bool sawOther = false;
+MIRType BaselineInspector::expectedResultType(jsbytecode* pc) {
+  
+  
+  
+  
 
-    for (uint32_t i = 0; i < nstubs; i++) {
-        switch (stubs[i]->kind()) {
-          case ICStub::CacheIR_Regular:
-            switch (ParseCacheIRStub(stubs[i])) {
-              case MIRType::Double:
-                sawDouble = true;
-                break;
-              case MIRType::Int32:
-                sawInt32 = true;
-                break;
-              default:
-                sawOther = true;
-                break;
-            }
+  ICStub* stub = monomorphicStub(pc);
+  if (!stub) {
+    return MIRType::None;
+  }
+
+  switch (stub->kind()) {
+    case ICStub::CacheIR_Regular:
+      return ParseCacheIRStub(stub);
+    default:
+      return MIRType::None;
+  }
+}
+
+
+
+
+
+
+
+static bool GuardType(CacheIRReader& reader,
+                      mozilla::Array<MIRType, 2>& guardType) {
+  CacheOp op = reader.readOp();
+  uint8_t guardOperand = reader.readByte();
+
+  
+  if (guardOperand > 1) {
+    return false;
+  }
+
+  
+  if (guardType[guardOperand] != MIRType::None) {
+    return false;
+  }
+
+  switch (op) {
+    
+    case CacheOp::GuardIsString:
+      guardType[guardOperand] = MIRType::String;
+      break;
+    case CacheOp::GuardIsSymbol:
+      guardType[guardOperand] = MIRType::Symbol;
+      break;
+    case CacheOp::GuardIsNumber:
+      guardType[guardOperand] = MIRType::Double;
+      break;
+    case CacheOp::GuardIsUndefined:
+      guardType[guardOperand] = MIRType::Undefined;
+      break;
+    
+    case CacheOp::GuardIsInt32:
+      guardType[guardOperand] = MIRType::Int32;
+      
+      reader.skip();
+      break;
+    case CacheOp::GuardIsBoolean:
+      guardType[guardOperand] = MIRType::Boolean;
+      
+      reader.skip();
+      break;
+    
+    default:
+      return false;
+  }
+  return true;
+}
+
+
+
+
+
+
+
+
+
+static MCompare::CompareType ParseCacheIRStubForCompareType(
+    ICCacheIR_Regular* stub) {
+  CacheIRReader reader(stub->stubInfo());
+
+  
+  
+  mozilla::Array<MIRType, 2> guards = {MIRType::None, MIRType::None};
+
+  
+  if (!GuardType(reader, guards)) {
+    return MCompare::Compare_Unknown;
+  }
+  if (!GuardType(reader, guards)) {
+    return MCompare::Compare_Unknown;
+  }
+
+  
+  
+  MIRType lhs_guard = guards[0];
+  MIRType rhs_guard = guards[1];
+
+  if (lhs_guard == rhs_guard) {
+    if (lhs_guard == MIRType::Int32) {
+      return MCompare::Compare_Int32;
+    }
+    if (lhs_guard == MIRType::Double) {
+      return MCompare::Compare_Double;
+    }
+    return MCompare::Compare_Unknown;
+  }
+
+  if ((lhs_guard == MIRType::Int32 && rhs_guard == MIRType::Boolean) ||
+      (lhs_guard == MIRType::Boolean && rhs_guard == MIRType::Int32)) {
+    
+    if (rhs_guard == MIRType::Boolean) {
+      return MCompare::Compare_Int32MaybeCoerceRHS;
+    }
+
+    return MCompare::Compare_Int32MaybeCoerceLHS;
+  }
+
+  if ((lhs_guard == MIRType::Double && rhs_guard == MIRType::Undefined) ||
+      (lhs_guard == MIRType::Undefined && rhs_guard == MIRType::Double)) {
+    
+    if (rhs_guard == MIRType::Undefined) {
+      return MCompare::Compare_DoubleMaybeCoerceRHS;
+    }
+
+    return MCompare::Compare_DoubleMaybeCoerceLHS;
+  }
+
+  return MCompare::Compare_Unknown;
+}
+
+static bool CoercingCompare(MCompare::CompareType type) {
+  
+  if (type == MCompare::Compare_DoubleMaybeCoerceLHS ||
+      type == MCompare::Compare_DoubleMaybeCoerceRHS ||
+      type == MCompare::Compare_Int32MaybeCoerceLHS ||
+      type == MCompare::Compare_Int32MaybeCoerceRHS) {
+    return true;
+  }
+  return false;
+}
+
+static MCompare::CompareType CompatibleType(MCompare::CompareType first,
+                                            MCompare::CompareType second) {
+  
+  MOZ_ASSERT(first != second);
+
+  
+  
+  if (CoercingCompare(first)) {
+    return first;
+  }
+
+  if (CoercingCompare(second)) {
+    return second;
+  }
+
+  
+  MOZ_ASSERT(first == MCompare::Compare_Int32 ||
+             first == MCompare::Compare_Double);
+  MOZ_ASSERT(second == MCompare::Compare_Int32 ||
+             second == MCompare::Compare_Double);
+  MOZ_ASSERT(first != second);
+
+  return MCompare::Compare_Double;
+}
+
+MCompare::CompareType BaselineInspector::expectedCompareType(jsbytecode* pc) {
+  ICStub* first = monomorphicStub(pc);
+  ICStub* second = nullptr;
+  if (!first && !dimorphicStub(pc, &first, &second)) {
+    return MCompare::Compare_Unknown;
+  }
+
+  if (ICStub* fallback = second ? second->next() : first->next()) {
+    MOZ_ASSERT(fallback->isFallback());
+    if (fallback->toFallbackStub()->state().hasFailures()) {
+      return MCompare::Compare_Unknown;
+    }
+  }
+
+  MCompare::CompareType first_type =
+      ParseCacheIRStubForCompareType(first->toCacheIR_Regular());
+  if (!second) {
+    return first_type;
+  }
+
+  MCompare::CompareType second_type =
+      ParseCacheIRStubForCompareType(second->toCacheIR_Regular());
+
+  if (first_type == MCompare::Compare_Unknown ||
+      second_type == MCompare::Compare_Unknown) {
+    return MCompare::Compare_Unknown;
+  }
+
+  if (first_type == second_type) {
+    return first_type;
+  }
+
+  return CompatibleType(first_type, second_type);
+}
+
+static bool TryToSpecializeBinaryArithOp(ICStub** stubs, uint32_t nstubs,
+                                         MIRType* result) {
+  DebugOnly<bool> sawInt32 = false;
+  bool sawDouble = false;
+  bool sawOther = false;
+
+  for (uint32_t i = 0; i < nstubs; i++) {
+    switch (stubs[i]->kind()) {
+      case ICStub::CacheIR_Regular:
+        switch (ParseCacheIRStub(stubs[i])) {
+          case MIRType::Double:
+            sawDouble = true;
+            break;
+          case MIRType::Int32:
+            sawInt32 = true;
             break;
           default:
             sawOther = true;
             break;
         }
+        break;
+      default:
+        sawOther = true;
+        break;
     }
+  }
 
-    if (sawOther) {
-        return false;
-    }
+  if (sawOther) {
+    return false;
+  }
 
-    if (sawDouble) {
-        *result = MIRType::Double;
-        return true;
-    }
-
-    MOZ_ASSERT(sawInt32);
-    *result = MIRType::Int32;
+  if (sawDouble) {
+    *result = MIRType::Double;
     return true;
+  }
+
+  MOZ_ASSERT(sawInt32);
+  *result = MIRType::Int32;
+  return true;
 }
 
-MIRType
-BaselineInspector::expectedBinaryArithSpecialization(jsbytecode* pc)
-{
-    if (!hasICScript()) {
-        return MIRType::None;
-    }
-
-    MIRType result;
-    ICStub* stubs[2];
-
-    const ICEntry& entry = icEntryFromPC(pc);
-    ICFallbackStub* stub = entry.fallbackStub();
-    if (stub->state().hasFailures())
-    {
-        return MIRType::None;
-    }
-
-    stubs[0] = monomorphicStub(pc);
-    if (stubs[0]) {
-        if (TryToSpecializeBinaryArithOp(stubs, 1, &result)) {
-            return result;
-        }
-    }
-
-    if (dimorphicStub(pc, &stubs[0], &stubs[1])) {
-        if (TryToSpecializeBinaryArithOp(stubs, 2, &result)) {
-            return result;
-        }
-    }
-
+MIRType BaselineInspector::expectedBinaryArithSpecialization(jsbytecode* pc) {
+  if (!hasICScript()) {
     return MIRType::None;
+  }
+
+  MIRType result;
+  ICStub* stubs[2];
+
+  const ICEntry& entry = icEntryFromPC(pc);
+  ICFallbackStub* stub = entry.fallbackStub();
+  if (stub->state().hasFailures()) {
+    return MIRType::None;
+  }
+
+  stubs[0] = monomorphicStub(pc);
+  if (stubs[0]) {
+    if (TryToSpecializeBinaryArithOp(stubs, 1, &result)) {
+      return result;
+    }
+  }
+
+  if (dimorphicStub(pc, &stubs[0], &stubs[1])) {
+    if (TryToSpecializeBinaryArithOp(stubs, 2, &result)) {
+      return result;
+    }
+  }
+
+  return MIRType::None;
 }
 
-bool
-BaselineInspector::hasSeenNegativeIndexGetElement(jsbytecode* pc)
-{
-    if (!hasICScript()) {
-        return false;
-    }
-
-    const ICEntry& entry = icEntryFromPC(pc);
-    ICStub* stub = entry.fallbackStub();
-
-    if (stub->isGetElem_Fallback()) {
-        return stub->toGetElem_Fallback()->hasNegativeIndex();
-    }
+bool BaselineInspector::hasSeenNegativeIndexGetElement(jsbytecode* pc) {
+  if (!hasICScript()) {
     return false;
+  }
+
+  const ICEntry& entry = icEntryFromPC(pc);
+  ICStub* stub = entry.fallbackStub();
+
+  if (stub->isGetElem_Fallback()) {
+    return stub->toGetElem_Fallback()->hasNegativeIndex();
+  }
+  return false;
 }
 
-bool
-BaselineInspector::hasSeenAccessedGetter(jsbytecode* pc)
-{
-    if (!hasICScript()) {
-        return false;
-    }
-
-    const ICEntry& entry = icEntryFromPC(pc);
-    ICStub* stub = entry.fallbackStub();
-
-    if (stub->isGetProp_Fallback()) {
-        return stub->toGetProp_Fallback()->hasAccessedGetter();
-    }
+bool BaselineInspector::hasSeenAccessedGetter(jsbytecode* pc) {
+  if (!hasICScript()) {
     return false;
+  }
+
+  const ICEntry& entry = icEntryFromPC(pc);
+  ICStub* stub = entry.fallbackStub();
+
+  if (stub->isGetProp_Fallback()) {
+    return stub->toGetProp_Fallback()->hasAccessedGetter();
+  }
+  return false;
 }
 
-bool
-BaselineInspector::hasSeenNonStringIterMore(jsbytecode* pc)
-{
-    MOZ_ASSERT(JSOp(*pc) == JSOP_MOREITER);
+bool BaselineInspector::hasSeenNonStringIterMore(jsbytecode* pc) {
+  MOZ_ASSERT(JSOp(*pc) == JSOP_MOREITER);
 
-    if (!hasICScript()) {
-        return false;
-    }
+  if (!hasICScript()) {
+    return false;
+  }
 
-    const ICEntry& entry = icEntryFromPC(pc);
-    ICStub* stub = entry.fallbackStub();
+  const ICEntry& entry = icEntryFromPC(pc);
+  ICStub* stub = entry.fallbackStub();
 
-    return stub->toIteratorMore_Fallback()->hasNonStringResult();
+  return stub->toIteratorMore_Fallback()->hasNonStringResult();
 }
 
-bool
-BaselineInspector::hasSeenDoubleResult(jsbytecode* pc)
-{
-    if (!hasICScript()) {
-        return false;
-    }
+bool BaselineInspector::hasSeenDoubleResult(jsbytecode* pc) {
+  if (!hasICScript()) {
+    return false;
+  }
 
-    const ICEntry& entry = icEntryFromPC(pc);
-    ICStub* stub = entry.fallbackStub();
+  const ICEntry& entry = icEntryFromPC(pc);
+  ICStub* stub = entry.fallbackStub();
 
-    MOZ_ASSERT(stub->isUnaryArith_Fallback() || stub->isBinaryArith_Fallback());
+  MOZ_ASSERT(stub->isUnaryArith_Fallback() || stub->isBinaryArith_Fallback());
 
-    if (stub->isUnaryArith_Fallback()) {
-        return stub->toUnaryArith_Fallback()->sawDoubleResult();
-    }
+  if (stub->isUnaryArith_Fallback()) {
+    return stub->toUnaryArith_Fallback()->sawDoubleResult();
+  }
 
-    return stub->toBinaryArith_Fallback()->sawDoubleResult();
+  return stub->toBinaryArith_Fallback()->sawDoubleResult();
 }
 
-JSObject*
-BaselineInspector::getTemplateObject(jsbytecode* pc)
-{
-    if (!hasICScript()) {
-        return nullptr;
-    }
-
-    const ICEntry& entry = icEntryFromPC(pc);
-    for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
-        switch (stub->kind()) {
-          case ICStub::NewArray_Fallback:
-            return stub->toNewArray_Fallback()->templateObject();
-          case ICStub::NewObject_Fallback:
-            return stub->toNewObject_Fallback()->templateObject();
-          case ICStub::Rest_Fallback:
-            return stub->toRest_Fallback()->templateObject();
-          case ICStub::Call_Scripted:
-            if (JSObject* obj = stub->toCall_Scripted()->templateObject()) {
-                return obj;
-            }
-            break;
-          default:
-            break;
-        }
-    }
-
+JSObject* BaselineInspector::getTemplateObject(jsbytecode* pc) {
+  if (!hasICScript()) {
     return nullptr;
-}
+  }
 
-ObjectGroup*
-BaselineInspector::getTemplateObjectGroup(jsbytecode* pc)
-{
-    if (!hasICScript()) {
-        return nullptr;
-    }
-
-    const ICEntry& entry = icEntryFromPC(pc);
-    for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
-        switch (stub->kind()) {
-          case ICStub::NewArray_Fallback:
-            return stub->toNewArray_Fallback()->templateGroup();
-          default:
-            break;
+  const ICEntry& entry = icEntryFromPC(pc);
+  for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
+    switch (stub->kind()) {
+      case ICStub::NewArray_Fallback:
+        return stub->toNewArray_Fallback()->templateObject();
+      case ICStub::NewObject_Fallback:
+        return stub->toNewObject_Fallback()->templateObject();
+      case ICStub::Rest_Fallback:
+        return stub->toRest_Fallback()->templateObject();
+      case ICStub::Call_Scripted:
+        if (JSObject* obj = stub->toCall_Scripted()->templateObject()) {
+          return obj;
         }
+        break;
+      default:
+        break;
     }
+  }
 
+  return nullptr;
+}
+
+ObjectGroup* BaselineInspector::getTemplateObjectGroup(jsbytecode* pc) {
+  if (!hasICScript()) {
     return nullptr;
+  }
+
+  const ICEntry& entry = icEntryFromPC(pc);
+  for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
+    switch (stub->kind()) {
+      case ICStub::NewArray_Fallback:
+        return stub->toNewArray_Fallback()->templateGroup();
+      default:
+        break;
+    }
+  }
+
+  return nullptr;
 }
 
-JSFunction*
-BaselineInspector::getSingleCallee(jsbytecode* pc)
-{
-    MOZ_ASSERT(*pc == JSOP_NEW);
+JSFunction* BaselineInspector::getSingleCallee(jsbytecode* pc) {
+  MOZ_ASSERT(*pc == JSOP_NEW);
 
-    if (!hasICScript()) {
-        return nullptr;
-    }
-
-    const ICEntry& entry = icEntryFromPC(pc);
-    ICStub* stub = entry.firstStub();
-
-    if (entry.fallbackStub()->state().hasFailures()) {
-        return nullptr;
-    }
-
-    if (!stub->isCall_Scripted() || stub->next() != entry.fallbackStub()) {
-        return nullptr;
-    }
-
-    return stub->toCall_Scripted()->callee();
-}
-
-JSObject*
-BaselineInspector::getTemplateObjectForNative(jsbytecode* pc, Native native)
-{
-    if (!hasICScript()) {
-        return nullptr;
-    }
-
-    const ICEntry& entry = icEntryFromPC(pc);
-    for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
-        if (stub->isCall_Native() && stub->toCall_Native()->callee()->native() == native) {
-            return stub->toCall_Native()->templateObject();
-        }
-    }
-
+  if (!hasICScript()) {
     return nullptr;
-}
+  }
 
-bool
-BaselineInspector::isOptimizableConstStringSplit(jsbytecode* pc, JSString** strOut,
-                                                 JSString** sepOut, ArrayObject** objOut)
-{
-    if (!hasICScript()) {
-        return false;
-    }
+  const ICEntry& entry = icEntryFromPC(pc);
+  ICStub* stub = entry.firstStub();
 
-    const ICEntry& entry = icEntryFromPC(pc);
-
-    
-    if (entry.fallbackStub()->numOptimizedStubs() != 1) {
-        return false;
-    }
-
-    ICStub* stub = entry.firstStub();
-    if (stub->kind() != ICStub::Call_ConstStringSplit) {
-        return false;
-    }
-
-    *strOut = stub->toCall_ConstStringSplit()->expectedStr();
-    *sepOut = stub->toCall_ConstStringSplit()->expectedSep();
-    *objOut = stub->toCall_ConstStringSplit()->templateObject();
-    return true;
-}
-
-JSObject*
-BaselineInspector::getTemplateObjectForClassHook(jsbytecode* pc, const Class* clasp)
-{
-    if (!hasICScript()) {
-        return nullptr;
-    }
-
-    const ICEntry& entry = icEntryFromPC(pc);
-    for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
-        if (stub->isCall_ClassHook() && stub->toCall_ClassHook()->clasp() == clasp) {
-            return stub->toCall_ClassHook()->templateObject();
-        }
-    }
-
+  if (entry.fallbackStub()->state().hasFailures()) {
     return nullptr;
+  }
+
+  if (!stub->isCall_Scripted() || stub->next() != entry.fallbackStub()) {
+    return nullptr;
+  }
+
+  return stub->toCall_Scripted()->callee();
 }
 
-LexicalEnvironmentObject*
-BaselineInspector::templateNamedLambdaObject()
-{
-    if (!script->hasBaselineScript()) {
-        return nullptr;
-    }
+JSObject* BaselineInspector::getTemplateObjectForNative(jsbytecode* pc,
+                                                        Native native) {
+  if (!hasICScript()) {
+    return nullptr;
+  }
 
-    JSObject* res = script->baselineScript()->templateEnvironment();
-    if (script->bodyScope()->hasEnvironment()) {
-        res = res->enclosingEnvironment();
+  const ICEntry& entry = icEntryFromPC(pc);
+  for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
+    if (stub->isCall_Native() &&
+        stub->toCall_Native()->callee()->native() == native) {
+      return stub->toCall_Native()->templateObject();
     }
-    MOZ_ASSERT(res);
+  }
 
-    return &res->as<LexicalEnvironmentObject>();
+  return nullptr;
 }
 
-CallObject*
-BaselineInspector::templateCallObject()
-{
-    if (!script->hasBaselineScript()) {
-        return nullptr;
-    }
+bool BaselineInspector::isOptimizableConstStringSplit(jsbytecode* pc,
+                                                      JSString** strOut,
+                                                      JSString** sepOut,
+                                                      ArrayObject** objOut) {
+  if (!hasICScript()) {
+    return false;
+  }
 
-    JSObject* res = script->baselineScript()->templateEnvironment();
-    MOZ_ASSERT(res);
+  const ICEntry& entry = icEntryFromPC(pc);
 
-    return &res->as<CallObject>();
+  
+  if (entry.fallbackStub()->numOptimizedStubs() != 1) {
+    return false;
+  }
+
+  ICStub* stub = entry.firstStub();
+  if (stub->kind() != ICStub::Call_ConstStringSplit) {
+    return false;
+  }
+
+  *strOut = stub->toCall_ConstStringSplit()->expectedStr();
+  *sepOut = stub->toCall_ConstStringSplit()->expectedSep();
+  *objOut = stub->toCall_ConstStringSplit()->templateObject();
+  return true;
 }
 
-static bool
-MatchCacheIRReceiverGuard(CacheIRReader& reader, ICStub* stub, const CacheIRStubInfo* stubInfo,
-                          ObjOperandId objId, ReceiverGuard* receiver)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+JSObject* BaselineInspector::getTemplateObjectForClassHook(jsbytecode* pc,
+                                                           const Class* clasp) {
+  if (!hasICScript()) {
+    return nullptr;
+  }
 
-    *receiver = ReceiverGuard();
-
-    if (reader.matchOp(CacheOp::GuardShape, objId)) {
-        
-        receiver->shape = stubInfo->getStubField<Shape*>(stub, reader.stubOffset());
-        return true;
+  const ICEntry& entry = icEntryFromPC(pc);
+  for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
+    if (stub->isCall_ClassHook() &&
+        stub->toCall_ClassHook()->clasp() == clasp) {
+      return stub->toCall_ClassHook()->templateObject();
     }
+  }
 
-    if (!reader.matchOp(CacheOp::GuardGroup, objId)) {
-        return false;
-    }
-    receiver->group = stubInfo->getStubField<ObjectGroup*>(stub, reader.stubOffset());
+  return nullptr;
+}
 
-    if (!reader.matchOp(CacheOp::GuardAndLoadUnboxedExpando, objId)) {
-        
-        reader.matchOp(CacheOp::GuardNoUnboxedExpando, objId);
-        return true;
-    }
+LexicalEnvironmentObject* BaselineInspector::templateNamedLambdaObject() {
+  if (!script->hasBaselineScript()) {
+    return nullptr;
+  }
 
+  JSObject* res = script->baselineScript()->templateEnvironment();
+  if (script->bodyScope()->hasEnvironment()) {
+    res = res->enclosingEnvironment();
+  }
+  MOZ_ASSERT(res);
+
+  return &res->as<LexicalEnvironmentObject>();
+}
+
+CallObject* BaselineInspector::templateCallObject() {
+  if (!script->hasBaselineScript()) {
+    return nullptr;
+  }
+
+  JSObject* res = script->baselineScript()->templateEnvironment();
+  MOZ_ASSERT(res);
+
+  return &res->as<CallObject>();
+}
+
+static bool MatchCacheIRReceiverGuard(CacheIRReader& reader, ICStub* stub,
+                                      const CacheIRStubInfo* stubInfo,
+                                      ObjOperandId objId,
+                                      ReceiverGuard* receiver) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  *receiver = ReceiverGuard();
+
+  if (reader.matchOp(CacheOp::GuardShape, objId)) {
     
-    ObjOperandId expandoId = reader.objOperandId();
-    if (!reader.matchOp(CacheOp::GuardShape, expandoId)) {
-        return false;
-    }
-
     receiver->shape = stubInfo->getStubField<Shape*>(stub, reader.stubOffset());
     return true;
-}
+  }
 
-static bool
-AddCacheIRGlobalGetter(ICCacheIR_Monitored* stub, bool innerized,
-                       JSObject** holder_, Shape** holderShape_,
-                       JSFunction** commonGetter, Shape** globalShape_, bool* isOwnProperty,
-                       BaselineInspector::ReceiverVector& receivers,
-                       BaselineInspector::ObjectGroupVector& convertUnboxedGroups,
-                       JSScript* script)
-{
+  if (!reader.matchOp(CacheOp::GuardGroup, objId)) {
+    return false;
+  }
+  receiver->group =
+      stubInfo->getStubField<ObjectGroup*>(stub, reader.stubOffset());
+
+  if (!reader.matchOp(CacheOp::GuardAndLoadUnboxedExpando, objId)) {
     
-    
-    
-    
-    
-    
-    
-    
-
-    if (innerized) {
-        return false;
-    }
-
-    CacheIRReader reader(stub->stubInfo());
-
-    ObjOperandId objId = ObjOperandId(0);
-    if (!reader.matchOp(CacheOp::GuardShape, objId)) {
-        return false;
-    }
-    Shape* globalLexicalShape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
-
-    if (!reader.matchOp(CacheOp::LoadEnclosingEnvironment, objId)) {
-        return false;
-    }
-    ObjOperandId globalId = reader.objOperandId();
-
-    if (!reader.matchOp(CacheOp::GuardShape, globalId)) {
-        return false;
-    }
-    Shape* globalShape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
-    MOZ_ASSERT(globalShape->getObjectClass()->flags & JSCLASS_IS_GLOBAL);
-
-    JSObject* holder = &script->global();
-    Shape* holderShape = globalShape;
-    if (reader.matchOp(CacheOp::LoadObject)) {
-        ObjOperandId holderId = reader.objOperandId();
-        holder = stub->stubInfo()->getStubField<JSObject*>(stub, reader.stubOffset()).get();
-
-        if (!reader.matchOp(CacheOp::GuardShape, holderId)) {
-            return false;
-        }
-        holderShape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
-    }
-
-    
-    if (holder->as<NativeObject>().lastProperty() != holderShape) {
-        return true;
-    }
-
-    if (!reader.matchOp(CacheOp::CallNativeGetterResult, globalId)) {
-        return false;
-    }
-    size_t offset = reader.stubOffset();
-    JSFunction* getter =
-        &stub->stubInfo()->getStubField<JSObject*>(stub, offset)->as<JSFunction>();
-
-    ReceiverGuard receiver;
-    receiver.shape = globalLexicalShape;
-    if (!AddReceiver(receiver, receivers, convertUnboxedGroups)) {
-        return false;
-    }
-
-    if (!*commonGetter) {
-        *holder_ = holder;
-        *holderShape_ = holderShape;
-        *commonGetter = getter;
-        *globalShape_ = globalShape;
-
-        
-        *isOwnProperty = false;
-    } else if (*isOwnProperty || holderShape != *holderShape_ || globalShape != *globalShape_) {
-        return false;
-    } else {
-        MOZ_ASSERT(*commonGetter == getter);
-    }
-
+    reader.matchOp(CacheOp::GuardNoUnboxedExpando, objId);
     return true;
+  }
+
+  
+  ObjOperandId expandoId = reader.objOperandId();
+  if (!reader.matchOp(CacheOp::GuardShape, expandoId)) {
+    return false;
+  }
+
+  receiver->shape = stubInfo->getStubField<Shape*>(stub, reader.stubOffset());
+  return true;
 }
 
-static bool
-AddCacheIRGetPropFunction(ICCacheIR_Monitored* stub, bool innerized,
-                          JSObject** holder, Shape** holderShape,
-                          JSFunction** commonGetter, Shape** globalShape, bool* isOwnProperty,
-                          BaselineInspector::ReceiverVector& receivers,
-                          BaselineInspector::ObjectGroupVector& convertUnboxedGroups,
-                          JSScript* script)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+static bool AddCacheIRGlobalGetter(
+    ICCacheIR_Monitored* stub, bool innerized, JSObject** holder_,
+    Shape** holderShape_, JSFunction** commonGetter, Shape** globalShape_,
+    bool* isOwnProperty, BaselineInspector::ReceiverVector& receivers,
+    BaselineInspector::ObjectGroupVector& convertUnboxedGroups,
+    JSScript* script) {
+  
+  
+  
+  
+  
+  
+  
+  
 
-    CacheIRReader reader(stub->stubInfo());
+  if (innerized) {
+    return false;
+  }
 
-    ObjOperandId objId = ObjOperandId(0);
-    if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
-        return AddCacheIRGlobalGetter(stub, innerized, holder, holderShape, commonGetter,
-                                      globalShape, isOwnProperty, receivers, convertUnboxedGroups,
-                                      script);
-    }
+  CacheIRReader reader(stub->stubInfo());
 
-    if (innerized) {
-        if (!reader.matchOp(CacheOp::GuardClass, objId) ||
-            reader.guardClassKind() != GuardClassKind::WindowProxy)
-        {
-            return false;
-        }
-        if (!reader.matchOp(CacheOp::LoadObject)) {
-            return false;
-        }
-        objId = reader.objOperandId();
-        DebugOnly<JSObject*> obj =
-            stub->stubInfo()->getStubField<JSObject*>(stub, reader.stubOffset()).get();
-        MOZ_ASSERT(obj->is<GlobalObject>());
-    }
+  ObjOperandId objId = ObjOperandId(0);
+  if (!reader.matchOp(CacheOp::GuardShape, objId)) {
+    return false;
+  }
+  Shape* globalLexicalShape =
+      stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
 
-    ReceiverGuard receiver;
-    if (!MatchCacheIRReceiverGuard(reader, stub, stub->stubInfo(), objId, &receiver)) {
-        return false;
-    }
+  if (!reader.matchOp(CacheOp::LoadEnclosingEnvironment, objId)) {
+    return false;
+  }
+  ObjOperandId globalId = reader.objOperandId();
 
-    if (reader.matchOp(CacheOp::CallScriptedGetterResult, objId) ||
-        reader.matchOp(CacheOp::CallNativeGetterResult, objId))
-    {
-        
-        MOZ_ASSERT(receiver.shape);
-        MOZ_ASSERT(!receiver.group);
+  if (!reader.matchOp(CacheOp::GuardShape, globalId)) {
+    return false;
+  }
+  Shape* globalShape =
+      stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+  MOZ_ASSERT(globalShape->getObjectClass()->flags & JSCLASS_IS_GLOBAL);
 
-        size_t offset = reader.stubOffset();
-        JSFunction* getter =
-            &stub->stubInfo()->getStubField<JSObject*>(stub, offset)->as<JSFunction>();
-
-        if (*commonGetter && (!*isOwnProperty || *globalShape || *holderShape != receiver.shape)) {
-            return false;
-        }
-
-        MOZ_ASSERT_IF(*commonGetter, *commonGetter == getter);
-        *holder = nullptr;
-        *holderShape = receiver.shape;
-        *commonGetter = getter;
-        *isOwnProperty = true;
-        return true;
-    }
-
-    if (!reader.matchOp(CacheOp::LoadObject)) {
-        return false;
-    }
+  JSObject* holder = &script->global();
+  Shape* holderShape = globalShape;
+  if (reader.matchOp(CacheOp::LoadObject)) {
     ObjOperandId holderId = reader.objOperandId();
-    JSObject* obj = stub->stubInfo()->getStubField<JSObject*>(stub, reader.stubOffset());
+    holder = stub->stubInfo()
+                 ->getStubField<JSObject*>(stub, reader.stubOffset())
+                 .get();
 
     if (!reader.matchOp(CacheOp::GuardShape, holderId)) {
-        return false;
+      return false;
     }
-    Shape* objShape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+    holderShape =
+        stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+  }
 
-    if (!reader.matchOp(CacheOp::CallScriptedGetterResult, objId) &&
-        !reader.matchOp(CacheOp::CallNativeGetterResult, objId))
-    {
-        return false;
-    }
+  
+  if (holder->as<NativeObject>().lastProperty() != holderShape) {
+    return true;
+  }
+
+  if (!reader.matchOp(CacheOp::CallNativeGetterResult, globalId)) {
+    return false;
+  }
+  size_t offset = reader.stubOffset();
+  JSFunction* getter = &stub->stubInfo()
+                            ->getStubField<JSObject*>(stub, offset)
+                            ->as<JSFunction>();
+
+  ReceiverGuard receiver;
+  receiver.shape = globalLexicalShape;
+  if (!AddReceiver(receiver, receivers, convertUnboxedGroups)) {
+    return false;
+  }
+
+  if (!*commonGetter) {
+    *holder_ = holder;
+    *holderShape_ = holderShape;
+    *commonGetter = getter;
+    *globalShape_ = globalShape;
 
     
-    size_t offset = reader.stubOffset();
-    JSFunction* getter =
-        &stub->stubInfo()->getStubField<JSObject*>(stub, offset)->as<JSFunction>();
+    
+    *isOwnProperty = false;
+  } else if (*isOwnProperty || holderShape != *holderShape_ ||
+             globalShape != *globalShape_) {
+    return false;
+  } else {
+    MOZ_ASSERT(*commonGetter == getter);
+  }
 
-    Shape* thisGlobalShape = nullptr;
-    if (getter->isNative() && receiver.shape &&
-        (receiver.shape->getObjectClass()->flags & JSCLASS_IS_GLOBAL))
-    {
-        thisGlobalShape = receiver.shape;
+  return true;
+}
+
+static bool AddCacheIRGetPropFunction(
+    ICCacheIR_Monitored* stub, bool innerized, JSObject** holder,
+    Shape** holderShape, JSFunction** commonGetter, Shape** globalShape,
+    bool* isOwnProperty, BaselineInspector::ReceiverVector& receivers,
+    BaselineInspector::ObjectGroupVector& convertUnboxedGroups,
+    JSScript* script) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  CacheIRReader reader(stub->stubInfo());
+
+  ObjOperandId objId = ObjOperandId(0);
+  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+    return AddCacheIRGlobalGetter(stub, innerized, holder, holderShape,
+                                  commonGetter, globalShape, isOwnProperty,
+                                  receivers, convertUnboxedGroups, script);
+  }
+
+  if (innerized) {
+    if (!reader.matchOp(CacheOp::GuardClass, objId) ||
+        reader.guardClassKind() != GuardClassKind::WindowProxy) {
+      return false;
     }
+    if (!reader.matchOp(CacheOp::LoadObject)) {
+      return false;
+    }
+    objId = reader.objOperandId();
+    DebugOnly<JSObject*> obj =
+        stub->stubInfo()
+            ->getStubField<JSObject*>(stub, reader.stubOffset())
+            .get();
+    MOZ_ASSERT(obj->is<GlobalObject>());
+  }
+
+  ReceiverGuard receiver;
+  if (!MatchCacheIRReceiverGuard(reader, stub, stub->stubInfo(), objId,
+                                 &receiver)) {
+    return false;
+  }
+
+  if (reader.matchOp(CacheOp::CallScriptedGetterResult, objId) ||
+      reader.matchOp(CacheOp::CallNativeGetterResult, objId)) {
+    
+    MOZ_ASSERT(receiver.shape);
+    MOZ_ASSERT(!receiver.group);
+
+    size_t offset = reader.stubOffset();
+    JSFunction* getter = &stub->stubInfo()
+                              ->getStubField<JSObject*>(stub, offset)
+                              ->as<JSFunction>();
 
     if (*commonGetter &&
-        (*isOwnProperty || *globalShape != thisGlobalShape || *holderShape != objShape))
-    {
-        return false;
+        (!*isOwnProperty || *globalShape || *holderShape != receiver.shape)) {
+      return false;
     }
 
     MOZ_ASSERT_IF(*commonGetter, *commonGetter == getter);
-
-    if (obj->as<NativeObject>().lastProperty() != objShape) {
-        
-        return true;
-    }
-
-    if (!AddReceiver(receiver, receivers, convertUnboxedGroups)) {
-        return false;
-    }
-
-    *holder = obj;
-    *holderShape = objShape;
+    *holder = nullptr;
+    *holderShape = receiver.shape;
     *commonGetter = getter;
-    *isOwnProperty = false;
+    *isOwnProperty = true;
     return true;
-}
+  }
 
-bool
-BaselineInspector::commonGetPropFunction(jsbytecode* pc, bool innerized,
-                                         JSObject** holder, Shape** holderShape,
-                                         JSFunction** commonGetter, Shape** globalShape,
-                                         bool* isOwnProperty,
-                                         ReceiverVector& receivers,
-                                         ObjectGroupVector& convertUnboxedGroups)
-{
-    if (!hasICScript()) {
-        return false;
-    }
+  if (!reader.matchOp(CacheOp::LoadObject)) {
+    return false;
+  }
+  ObjOperandId holderId = reader.objOperandId();
+  JSObject* obj =
+      stub->stubInfo()->getStubField<JSObject*>(stub, reader.stubOffset());
 
-    MOZ_ASSERT(receivers.empty());
-    MOZ_ASSERT(convertUnboxedGroups.empty());
+  if (!reader.matchOp(CacheOp::GuardShape, holderId)) {
+    return false;
+  }
+  Shape* objShape =
+      stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
 
-    *globalShape = nullptr;
-    *commonGetter = nullptr;
-    const ICEntry& entry = icEntryFromPC(pc);
+  if (!reader.matchOp(CacheOp::CallScriptedGetterResult, objId) &&
+      !reader.matchOp(CacheOp::CallNativeGetterResult, objId)) {
+    return false;
+  }
 
-    for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
-        if (stub->isCacheIR_Monitored()) {
-            if (!AddCacheIRGetPropFunction(stub->toCacheIR_Monitored(), innerized,
-                                           holder, holderShape,
-                                           commonGetter, globalShape, isOwnProperty, receivers,
-                                           convertUnboxedGroups, script))
-            {
-                return false;
-            }
-        } else if (stub->isFallback()) {
-            
-            if (stub->toFallbackStub()->state().hasFailures()) {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
+  
+  size_t offset = reader.stubOffset();
+  JSFunction* getter = &stub->stubInfo()
+                            ->getStubField<JSObject*>(stub, offset)
+                            ->as<JSFunction>();
 
-    if (!*commonGetter) {
-        return false;
-    }
+  Shape* thisGlobalShape = nullptr;
+  if (getter->isNative() && receiver.shape &&
+      (receiver.shape->getObjectClass()->flags & JSCLASS_IS_GLOBAL)) {
+    thisGlobalShape = receiver.shape;
+  }
 
-    MOZ_ASSERT(*isOwnProperty == !*holder);
-    MOZ_ASSERT(*isOwnProperty == (receivers.empty() && convertUnboxedGroups.empty()));
+  if (*commonGetter && (*isOwnProperty || *globalShape != thisGlobalShape ||
+                        *holderShape != objShape)) {
+    return false;
+  }
+
+  MOZ_ASSERT_IF(*commonGetter, *commonGetter == getter);
+
+  if (obj->as<NativeObject>().lastProperty() != objShape) {
+    
     return true;
+  }
+
+  if (!AddReceiver(receiver, receivers, convertUnboxedGroups)) {
+    return false;
+  }
+
+  *holder = obj;
+  *holderShape = objShape;
+  *commonGetter = getter;
+  *isOwnProperty = false;
+  return true;
 }
 
-static JSFunction*
-GetMegamorphicGetterSetterFunction(ICStub* stub, const CacheIRStubInfo* stubInfo, bool isGetter)
-{
-    
-    
-    
-    
-    
-    
+bool BaselineInspector::commonGetPropFunction(
+    jsbytecode* pc, bool innerized, JSObject** holder, Shape** holderShape,
+    JSFunction** commonGetter, Shape** globalShape, bool* isOwnProperty,
+    ReceiverVector& receivers, ObjectGroupVector& convertUnboxedGroups) {
+  if (!hasICScript()) {
+    return false;
+  }
 
-    CacheIRReader reader(stubInfo);
+  MOZ_ASSERT(receivers.empty());
+  MOZ_ASSERT(convertUnboxedGroups.empty());
 
-    ObjOperandId objId = ObjOperandId(0);
-    if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
-        return nullptr;
+  *globalShape = nullptr;
+  *commonGetter = nullptr;
+  const ICEntry& entry = icEntryFromPC(pc);
+
+  for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
+    if (stub->isCacheIR_Monitored()) {
+      if (!AddCacheIRGetPropFunction(stub->toCacheIR_Monitored(), innerized,
+                                     holder, holderShape, commonGetter,
+                                     globalShape, isOwnProperty, receivers,
+                                     convertUnboxedGroups, script)) {
+        return false;
+      }
+    } else if (stub->isFallback()) {
+      
+      if (stub->toFallbackStub()->state().hasFailures()) {
+        return false;
+      }
+    } else {
+      return false;
     }
+  }
 
-    if (!reader.matchOp(CacheOp::GuardHasGetterSetter, objId)) {
-        return nullptr;
-    }
-    Shape* propShape = stubInfo->getStubField<Shape*>(stub, reader.stubOffset());
+  if (!*commonGetter) {
+    return false;
+  }
 
-    JSObject* obj = isGetter ? propShape->getterObject() : propShape->setterObject();
-    return &obj->as<JSFunction>();
+  MOZ_ASSERT(*isOwnProperty == !*holder);
+  MOZ_ASSERT(*isOwnProperty ==
+             (receivers.empty() && convertUnboxedGroups.empty()));
+  return true;
 }
 
-bool
-BaselineInspector::megamorphicGetterSetterFunction(jsbytecode* pc, bool isGetter,
-                                                   JSFunction** getterOrSetter)
-{
-    if (!hasICScript()) {
-        return false;
-    }
+static JSFunction* GetMegamorphicGetterSetterFunction(
+    ICStub* stub, const CacheIRStubInfo* stubInfo, bool isGetter) {
+  
+  
+  
+  
+  
+  
 
-    *getterOrSetter = nullptr;
-    const ICEntry& entry = icEntryFromPC(pc);
+  CacheIRReader reader(stubInfo);
 
-    for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
-        if (stub->isCacheIR_Monitored()) {
-            MOZ_ASSERT(isGetter);
-            JSFunction* getter =
-                GetMegamorphicGetterSetterFunction(stub,
-                                                   stub->toCacheIR_Monitored()->stubInfo(),
-                                                   isGetter);
-            if (!getter || (*getterOrSetter && *getterOrSetter != getter)) {
-                return false;
-            }
-            *getterOrSetter = getter;
-            continue;
-        }
-        if (stub->isCacheIR_Updated()) {
-            MOZ_ASSERT(!isGetter);
-            JSFunction* setter =
-                GetMegamorphicGetterSetterFunction(stub,
-                                                   stub->toCacheIR_Updated()->stubInfo(),
-                                                   isGetter);
-            if (!setter || (*getterOrSetter && *getterOrSetter != setter)) {
-                return false;
-            }
-            *getterOrSetter = setter;
-            continue;
-        }
-        if (stub->isFallback()) {
-            if (stub->toFallbackStub()->state().hasFailures()) {
-                return false;
-            }
-            if (stub->toFallbackStub()->state().mode() != ICState::Mode::Megamorphic) {
-                return false;
-            }
-            continue;
-        }
+  ObjOperandId objId = ObjOperandId(0);
+  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+    return nullptr;
+  }
 
-        return false;
-    }
+  if (!reader.matchOp(CacheOp::GuardHasGetterSetter, objId)) {
+    return nullptr;
+  }
+  Shape* propShape = stubInfo->getStubField<Shape*>(stub, reader.stubOffset());
 
-    if (!*getterOrSetter) {
-        return false;
-    }
-
-    return true;
+  JSObject* obj =
+      isGetter ? propShape->getterObject() : propShape->setterObject();
+  return &obj->as<JSFunction>();
 }
 
-static bool
-AddCacheIRSetPropFunction(ICCacheIR_Updated* stub, JSObject** holder, Shape** holderShape,
-                          JSFunction** commonSetter, bool* isOwnProperty,
-                          BaselineInspector::ReceiverVector& receivers,
-                          BaselineInspector::ObjectGroupVector& convertUnboxedGroups)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+bool BaselineInspector::megamorphicGetterSetterFunction(
+    jsbytecode* pc, bool isGetter, JSFunction** getterOrSetter) {
+  if (!hasICScript()) {
+    return false;
+  }
 
-    CacheIRReader reader(stub->stubInfo());
+  *getterOrSetter = nullptr;
+  const ICEntry& entry = icEntryFromPC(pc);
 
-    ObjOperandId objId = ObjOperandId(0);
-    if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+  for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
+    if (stub->isCacheIR_Monitored()) {
+      MOZ_ASSERT(isGetter);
+      JSFunction* getter = GetMegamorphicGetterSetterFunction(
+          stub, stub->toCacheIR_Monitored()->stubInfo(), isGetter);
+      if (!getter || (*getterOrSetter && *getterOrSetter != getter)) {
         return false;
+      }
+      *getterOrSetter = getter;
+      continue;
     }
-
-    ReceiverGuard receiver;
-    if (!MatchCacheIRReceiverGuard(reader, stub, stub->stubInfo(), objId, &receiver)) {
+    if (stub->isCacheIR_Updated()) {
+      MOZ_ASSERT(!isGetter);
+      JSFunction* setter = GetMegamorphicGetterSetterFunction(
+          stub, stub->toCacheIR_Updated()->stubInfo(), isGetter);
+      if (!setter || (*getterOrSetter && *getterOrSetter != setter)) {
         return false;
+      }
+      *getterOrSetter = setter;
+      continue;
     }
-
-    if (reader.matchOp(CacheOp::CallScriptedSetter, objId) ||
-        reader.matchOp(CacheOp::CallNativeSetter, objId))
-    {
-        
-        MOZ_ASSERT(receiver.shape);
-        MOZ_ASSERT(!receiver.group);
-
-        size_t offset = reader.stubOffset();
-        JSFunction* setter =
-            &stub->stubInfo()->getStubField<JSObject*>(stub, offset)->as<JSFunction>();
-
-        if (*commonSetter && (!*isOwnProperty || *holderShape != receiver.shape)) {
-            return false;
-        }
-
-        MOZ_ASSERT_IF(*commonSetter, *commonSetter == setter);
-        *holder = nullptr;
-        *holderShape = receiver.shape;
-        *commonSetter = setter;
-        *isOwnProperty = true;
-        return true;
-    }
-
-    if (!reader.matchOp(CacheOp::LoadObject)) {
+    if (stub->isFallback()) {
+      if (stub->toFallbackStub()->state().hasFailures()) {
         return false;
-    }
-    ObjOperandId holderId = reader.objOperandId();
-    JSObject* obj = stub->stubInfo()->getStubField<JSObject*>(stub, reader.stubOffset());
-
-    if (!reader.matchOp(CacheOp::GuardShape, holderId)) {
+      }
+      if (stub->toFallbackStub()->state().mode() !=
+          ICState::Mode::Megamorphic) {
         return false;
-    }
-    Shape* objShape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
-
-    if (!reader.matchOp(CacheOp::CallScriptedSetter, objId) &&
-        !reader.matchOp(CacheOp::CallNativeSetter, objId))
-    {
-        return false;
+      }
+      continue;
     }
 
+    return false;
+  }
+
+  if (!*getterOrSetter) {
+    return false;
+  }
+
+  return true;
+}
+
+static bool AddCacheIRSetPropFunction(
+    ICCacheIR_Updated* stub, JSObject** holder, Shape** holderShape,
+    JSFunction** commonSetter, bool* isOwnProperty,
+    BaselineInspector::ReceiverVector& receivers,
+    BaselineInspector::ObjectGroupVector& convertUnboxedGroups) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  CacheIRReader reader(stub->stubInfo());
+
+  ObjOperandId objId = ObjOperandId(0);
+  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+    return false;
+  }
+
+  ReceiverGuard receiver;
+  if (!MatchCacheIRReceiverGuard(reader, stub, stub->stubInfo(), objId,
+                                 &receiver)) {
+    return false;
+  }
+
+  if (reader.matchOp(CacheOp::CallScriptedSetter, objId) ||
+      reader.matchOp(CacheOp::CallNativeSetter, objId)) {
     
+    MOZ_ASSERT(receiver.shape);
+    MOZ_ASSERT(!receiver.group);
+
     size_t offset = reader.stubOffset();
-    JSFunction* setter =
-        &stub->stubInfo()->getStubField<JSObject*>(stub, offset)->as<JSFunction>();
+    JSFunction* setter = &stub->stubInfo()
+                              ->getStubField<JSObject*>(stub, offset)
+                              ->as<JSFunction>();
 
-    if (*commonSetter && (*isOwnProperty || *holderShape != objShape)) {
-        return false;
+    if (*commonSetter && (!*isOwnProperty || *holderShape != receiver.shape)) {
+      return false;
     }
 
     MOZ_ASSERT_IF(*commonSetter, *commonSetter == setter);
+    *holder = nullptr;
+    *holderShape = receiver.shape;
+    *commonSetter = setter;
+    *isOwnProperty = true;
+    return true;
+  }
 
-    if (obj->as<NativeObject>().lastProperty() != objShape) {
-        
+  if (!reader.matchOp(CacheOp::LoadObject)) {
+    return false;
+  }
+  ObjOperandId holderId = reader.objOperandId();
+  JSObject* obj =
+      stub->stubInfo()->getStubField<JSObject*>(stub, reader.stubOffset());
+
+  if (!reader.matchOp(CacheOp::GuardShape, holderId)) {
+    return false;
+  }
+  Shape* objShape =
+      stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+
+  if (!reader.matchOp(CacheOp::CallScriptedSetter, objId) &&
+      !reader.matchOp(CacheOp::CallNativeSetter, objId)) {
+    return false;
+  }
+
+  
+  size_t offset = reader.stubOffset();
+  JSFunction* setter = &stub->stubInfo()
+                            ->getStubField<JSObject*>(stub, offset)
+                            ->as<JSFunction>();
+
+  if (*commonSetter && (*isOwnProperty || *holderShape != objShape)) {
+    return false;
+  }
+
+  MOZ_ASSERT_IF(*commonSetter, *commonSetter == setter);
+
+  if (obj->as<NativeObject>().lastProperty() != objShape) {
+    
+    return true;
+  }
+
+  if (!AddReceiver(receiver, receivers, convertUnboxedGroups)) {
+    return false;
+  }
+
+  *holder = obj;
+  *holderShape = objShape;
+  *commonSetter = setter;
+  *isOwnProperty = false;
+  return true;
+}
+
+bool BaselineInspector::commonSetPropFunction(
+    jsbytecode* pc, JSObject** holder, Shape** holderShape,
+    JSFunction** commonSetter, bool* isOwnProperty, ReceiverVector& receivers,
+    ObjectGroupVector& convertUnboxedGroups) {
+  if (!hasICScript()) {
+    return false;
+  }
+
+  MOZ_ASSERT(receivers.empty());
+  MOZ_ASSERT(convertUnboxedGroups.empty());
+
+  *commonSetter = nullptr;
+  const ICEntry& entry = icEntryFromPC(pc);
+
+  for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
+    if (stub->isCacheIR_Updated()) {
+      if (!AddCacheIRSetPropFunction(stub->toCacheIR_Updated(), holder,
+                                     holderShape, commonSetter, isOwnProperty,
+                                     receivers, convertUnboxedGroups)) {
+        return false;
+      }
+    } else if (!stub->isFallback() ||
+               stub->toFallbackStub()->state().hasFailures()) {
+      
+      return false;
+    }
+  }
+
+  if (!*commonSetter) {
+    return false;
+  }
+
+  MOZ_ASSERT(*isOwnProperty == !*holder);
+  return true;
+}
+
+static bool GetCacheIRReceiverForProtoReadSlot(ICCacheIR_Monitored* stub,
+                                               ReceiverGuard* receiver,
+                                               JSObject** holderResult) {
+  
+  
+  
+  
+  
+  
+  
+
+  *receiver = ReceiverGuard();
+  CacheIRReader reader(stub->stubInfo());
+
+  ObjOperandId objId = ObjOperandId(0);
+  if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
+    return false;
+  }
+
+  if (!MatchCacheIRReceiverGuard(reader, stub, stub->stubInfo(), objId,
+                                 receiver)) {
+    return false;
+  }
+
+  if (!reader.matchOp(CacheOp::LoadObject)) {
+    return false;
+  }
+  ObjOperandId holderId = reader.objOperandId();
+  JSObject* holder = stub->stubInfo()
+                         ->getStubField<JSObject*>(stub, reader.stubOffset())
+                         .get();
+
+  if (!reader.matchOp(CacheOp::GuardShape, holderId)) {
+    return false;
+  }
+  Shape* holderShape =
+      stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+
+  if (!reader.matchOpEither(CacheOp::LoadFixedSlotResult,
+                            CacheOp::LoadDynamicSlotResult)) {
+    return false;
+  }
+  if (reader.objOperandId() != holderId) {
+    return false;
+  }
+
+  if (holder->maybeShape() != holderShape) {
+    return false;
+  }
+  if (*holderResult && *holderResult != holder) {
+    return false;
+  }
+
+  *holderResult = holder;
+  return true;
+}
+
+bool BaselineInspector::maybeInfoForProtoReadSlot(
+    jsbytecode* pc, ReceiverVector& receivers,
+    ObjectGroupVector& convertUnboxedGroups, JSObject** holder) {
+  
+  
+
+  MOZ_ASSERT(receivers.empty());
+  MOZ_ASSERT(convertUnboxedGroups.empty());
+  MOZ_ASSERT(!*holder);
+
+  if (!hasICScript()) {
+    return true;
+  }
+
+  MOZ_ASSERT(isValidPC(pc));
+  const ICEntry& entry = icEntryFromPC(pc);
+
+  ICStub* stub = entry.firstStub();
+  while (stub->next()) {
+    ReceiverGuard receiver;
+    if (stub->isCacheIR_Monitored()) {
+      if (!GetCacheIRReceiverForProtoReadSlot(stub->toCacheIR_Monitored(),
+                                              &receiver, holder)) {
+        receivers.clear();
         return true;
+      }
+    } else {
+      receivers.clear();
+      return true;
     }
 
     if (!AddReceiver(receiver, receivers, convertUnboxedGroups)) {
-        return false;
+      return false;
     }
 
-    *holder = obj;
-    *holderShape = objShape;
-    *commonSetter = setter;
-    *isOwnProperty = false;
-    return true;
+    stub = stub->next();
+  }
+
+  if (stub->toFallbackStub()->state().hasFailures()) {
+    receivers.clear();
+  }
+
+  
+  if (receivers.length() > 5) {
+    receivers.clear();
+  }
+
+  MOZ_ASSERT_IF(!receivers.empty(), *holder);
+  return true;
 }
 
-bool
-BaselineInspector::commonSetPropFunction(jsbytecode* pc, JSObject** holder, Shape** holderShape,
-                                         JSFunction** commonSetter, bool* isOwnProperty,
-                                         ReceiverVector& receivers,
-                                         ObjectGroupVector& convertUnboxedGroups)
-{
-    if (!hasICScript()) {
-        return false;
-    }
+static MIRType GetCacheIRExpectedInputType(ICCacheIR_Monitored* stub) {
+  CacheIRReader reader(stub->stubInfo());
 
-    MOZ_ASSERT(receivers.empty());
-    MOZ_ASSERT(convertUnboxedGroups.empty());
+  if (reader.matchOp(CacheOp::GuardIsObject, ValOperandId(0))) {
+    return MIRType::Object;
+  }
+  if (reader.matchOp(CacheOp::GuardIsString, ValOperandId(0))) {
+    return MIRType::String;
+  }
+  if (reader.matchOp(CacheOp::GuardType, ValOperandId(0))) {
+    JSValueType type = reader.valueType();
+    return MIRTypeFromValueType(type);
+  }
 
-    *commonSetter = nullptr;
-    const ICEntry& entry = icEntryFromPC(pc);
-
-    for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
-        if (stub->isCacheIR_Updated()) {
-            if (!AddCacheIRSetPropFunction(stub->toCacheIR_Updated(),
-                                           holder, holderShape,
-                                           commonSetter, isOwnProperty, receivers,
-                                           convertUnboxedGroups))
-            {
-                return false;
-            }
-        } else if (!stub->isFallback() ||
-                   stub->toFallbackStub()->state().hasFailures())
-        {
-            
-            return false;
-        }
-    }
-
-    if (!*commonSetter) {
-        return false;
-    }
-
-    MOZ_ASSERT(*isOwnProperty == !*holder);
-    return true;
+  MOZ_ASSERT_UNREACHABLE("Unexpected instruction");
+  return MIRType::Value;
 }
 
-static bool
-GetCacheIRReceiverForProtoReadSlot(ICCacheIR_Monitored* stub, ReceiverGuard* receiver,
-                                   JSObject** holderResult)
-{
-    
-    
-    
-    
-    
-    
-    
-
-    *receiver = ReceiverGuard();
-    CacheIRReader reader(stub->stubInfo());
-
-    ObjOperandId objId = ObjOperandId(0);
-    if (!reader.matchOp(CacheOp::GuardIsObject, objId)) {
-        return false;
-    }
-
-    if (!MatchCacheIRReceiverGuard(reader, stub, stub->stubInfo(), objId, receiver)) {
-        return false;
-    }
-
-    if (!reader.matchOp(CacheOp::LoadObject)) {
-        return false;
-    }
-    ObjOperandId holderId = reader.objOperandId();
-    JSObject* holder = stub->stubInfo()->getStubField<JSObject*>(stub, reader.stubOffset()).get();
-
-    if (!reader.matchOp(CacheOp::GuardShape, holderId)) {
-        return false;
-    }
-    Shape* holderShape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
-
-    if (!reader.matchOpEither(CacheOp::LoadFixedSlotResult, CacheOp::LoadDynamicSlotResult)) {
-        return false;
-    }
-    if (reader.objOperandId() != holderId) {
-        return false;
-    }
-
-    if (holder->maybeShape() != holderShape) {
-        return false;
-    }
-    if (*holderResult && *holderResult != holder) {
-        return false;
-    }
-
-    *holderResult = holder;
-    return true;
-}
-
-bool
-BaselineInspector::maybeInfoForProtoReadSlot(jsbytecode* pc, ReceiverVector& receivers,
-                                             ObjectGroupVector& convertUnboxedGroups,
-                                             JSObject** holder)
-{
-    
-    
-
-    MOZ_ASSERT(receivers.empty());
-    MOZ_ASSERT(convertUnboxedGroups.empty());
-    MOZ_ASSERT(!*holder);
-
-    if (!hasICScript()) {
-        return true;
-    }
-
-    MOZ_ASSERT(isValidPC(pc));
-    const ICEntry& entry = icEntryFromPC(pc);
-
-    ICStub* stub = entry.firstStub();
-    while (stub->next()) {
-        ReceiverGuard receiver;
-        if (stub->isCacheIR_Monitored()) {
-            if (!GetCacheIRReceiverForProtoReadSlot(stub->toCacheIR_Monitored(), &receiver,
-                                                    holder))
-            {
-                receivers.clear();
-                return true;
-            }
-        } else {
-            receivers.clear();
-            return true;
-        }
-
-        if (!AddReceiver(receiver, receivers, convertUnboxedGroups)) {
-            return false;
-        }
-
-        stub = stub->next();
-    }
-
-    if (stub->toFallbackStub()->state().hasFailures()) {
-        receivers.clear();
-    }
-
-    
-    if (receivers.length() > 5) {
-        receivers.clear();
-    }
-
-    MOZ_ASSERT_IF(!receivers.empty(), *holder);
-    return true;
-}
-
-static MIRType
-GetCacheIRExpectedInputType(ICCacheIR_Monitored* stub)
-{
-    CacheIRReader reader(stub->stubInfo());
-
-    if (reader.matchOp(CacheOp::GuardIsObject, ValOperandId(0))) {
-        return MIRType::Object;
-    }
-    if (reader.matchOp(CacheOp::GuardIsString, ValOperandId(0))) {
-        return MIRType::String;
-    }
-    if (reader.matchOp(CacheOp::GuardType, ValOperandId(0))) {
-        JSValueType type = reader.valueType();
-        return MIRTypeFromValueType(type);
-    }
-
-    MOZ_ASSERT_UNREACHABLE("Unexpected instruction");
+MIRType BaselineInspector::expectedPropertyAccessInputType(jsbytecode* pc) {
+  if (!hasICScript()) {
     return MIRType::Value;
-}
+  }
 
-MIRType
-BaselineInspector::expectedPropertyAccessInputType(jsbytecode* pc)
-{
-    if (!hasICScript()) {
+  const ICEntry& entry = icEntryFromPC(pc);
+  MIRType type = MIRType::None;
+
+  for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
+    MIRType stubType = MIRType::None;
+    if (stub->isCacheIR_Monitored()) {
+      stubType = GetCacheIRExpectedInputType(stub->toCacheIR_Monitored());
+      if (stubType == MIRType::Value) {
         return MIRType::Value;
+      }
+    } else if (stub->isGetElem_Fallback() || stub->isGetProp_Fallback()) {
+      
+      if (stub->toFallbackStub()->state().hasFailures()) {
+        return MIRType::Value;
+      }
+    } else {
+      MOZ_CRASH("Unexpected stub");
     }
 
-    const ICEntry& entry = icEntryFromPC(pc);
-    MIRType type = MIRType::None;
-
-    for (ICStub* stub = entry.firstStub(); stub; stub = stub->next()) {
-        MIRType stubType = MIRType::None;
-        if (stub->isCacheIR_Monitored()) {
-            stubType = GetCacheIRExpectedInputType(stub->toCacheIR_Monitored());
-            if (stubType == MIRType::Value) {
-                return MIRType::Value;
-            }
-        } else if (stub->isGetElem_Fallback() || stub->isGetProp_Fallback()) {
-            
-            if (stub->toFallbackStub()->state().hasFailures()) {
-                return MIRType::Value;
-            }
-        } else {
-            MOZ_CRASH("Unexpected stub");
-        }
-
-        if (type != MIRType::None) {
-            if (type != stubType) {
-                return MIRType::Value;
-            }
-        } else {
-            type = stubType;
-        }
+    if (type != MIRType::None) {
+      if (type != stubType) {
+        return MIRType::Value;
+      }
+    } else {
+      type = stubType;
     }
+  }
 
-    return (type == MIRType::None) ? MIRType::Value : type;
+  return (type == MIRType::None) ? MIRType::Value : type;
 }
 
-bool
-BaselineInspector::instanceOfData(jsbytecode* pc, Shape** shape, uint32_t* slot,
-                                  JSObject** prototypeObject)
-{
-    MOZ_ASSERT(*pc == JSOP_INSTANCEOF);
-    if (!hasICScript()) {
-        return false;
-    }
+bool BaselineInspector::instanceOfData(jsbytecode* pc, Shape** shape,
+                                       uint32_t* slot,
+                                       JSObject** prototypeObject) {
+  MOZ_ASSERT(*pc == JSOP_INSTANCEOF);
+  if (!hasICScript()) {
+    return false;
+  }
 
-    const ICEntry& entry = icEntryFromPC(pc);
-    ICStub* firstStub = entry.firstStub();
+  const ICEntry& entry = icEntryFromPC(pc);
+  ICStub* firstStub = entry.firstStub();
 
-    
-    if (!firstStub->next() ||
-        !firstStub->isCacheIR_Regular() ||
-        !firstStub->next()->isInstanceOf_Fallback() ||
-         firstStub->next()->toInstanceOf_Fallback()->state().hasFailures())
-         {
-             return false;
-         }
+  
+  if (!firstStub->next() || !firstStub->isCacheIR_Regular() ||
+      !firstStub->next()->isInstanceOf_Fallback() ||
+      firstStub->next()->toInstanceOf_Fallback()->state().hasFailures()) {
+    return false;
+  }
 
-    ICCacheIR_Regular* stub = entry.firstStub()->toCacheIR_Regular();
-    CacheIRReader reader(stub->stubInfo());
+  ICCacheIR_Regular* stub = entry.firstStub()->toCacheIR_Regular();
+  CacheIRReader reader(stub->stubInfo());
 
-    ObjOperandId rhsId = ObjOperandId(1);
-    ObjOperandId resId = ObjOperandId(2);
+  ObjOperandId rhsId = ObjOperandId(1);
+  ObjOperandId resId = ObjOperandId(2);
 
-    if (!reader.matchOp(CacheOp::GuardIsObject, rhsId)) {
-        return false;
-    }
+  if (!reader.matchOp(CacheOp::GuardIsObject, rhsId)) {
+    return false;
+  }
 
-    if (!reader.matchOp(CacheOp::GuardShape, rhsId)) {
-        return false;
-    }
+  if (!reader.matchOp(CacheOp::GuardShape, rhsId)) {
+    return false;
+  }
 
-    *shape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
+  *shape = stub->stubInfo()->getStubField<Shape*>(stub, reader.stubOffset());
 
-    if (!reader.matchOp(CacheOp::LoadObject, resId)) {
-        return false;
-    }
+  if (!reader.matchOp(CacheOp::LoadObject, resId)) {
+    return false;
+  }
 
-    *prototypeObject = stub->stubInfo()->getStubField<JSObject*>(stub, reader.stubOffset()).get();
+  *prototypeObject = stub->stubInfo()
+                         ->getStubField<JSObject*>(stub, reader.stubOffset())
+                         .get();
 
-    if (IsInsideNursery(*prototypeObject)) {
-        return false;
-    }
+  if (IsInsideNursery(*prototypeObject)) {
+    return false;
+  }
 
-    if (!reader.matchOp(CacheOp::GuardFunctionPrototype, rhsId)) {
-        return false;
-    }
+  if (!reader.matchOp(CacheOp::GuardFunctionPrototype, rhsId)) {
+    return false;
+  }
 
-    reader.skip(); 
+  reader.skip();  
 
-    *slot = stub->stubInfo()->getStubRawWord(stub, reader.stubOffset());
+  *slot = stub->stubInfo()->getStubRawWord(stub, reader.stubOffset());
 
-    return true;
+  return true;
 }

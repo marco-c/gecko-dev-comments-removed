@@ -5,23 +5,23 @@
 
 
 #include "ClientTiledPaintedLayer.h"
-#include "FrameMetrics.h"               
-#include "Units.h"                      
-#include "UnitTransforms.h"             
-#include "ClientLayerManager.h"         
-#include "gfxPlatform.h"                
-#include "gfxPrefs.h"                   
-#include "gfxRect.h"                    
-#include "mozilla/Assertions.h"         
-#include "mozilla/gfx/BaseSize.h"       
+#include "FrameMetrics.h"          
+#include "Units.h"                 
+#include "UnitTransforms.h"        
+#include "ClientLayerManager.h"    
+#include "gfxPlatform.h"           
+#include "gfxPrefs.h"              
+#include "gfxRect.h"               
+#include "mozilla/Assertions.h"    
+#include "mozilla/gfx/BaseSize.h"  
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/Rect.h"           
+#include "mozilla/gfx/Rect.h"  
 #include "mozilla/layers/CompositorBridgeChild.h"
-#include "mozilla/layers/LayerMetricsWrapper.h" 
+#include "mozilla/layers/LayerMetricsWrapper.h"  
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/PaintThread.h"
-#include "mozilla/mozalloc.h"           
-#include "nsISupportsImpl.h"            
+#include "mozilla/mozalloc.h"  
+#include "nsISupportsImpl.h"   
 #include "LayersLogging.h"
 #include "mozilla/layers/MultiTiledContentClient.h"
 #include "mozilla/layers/SingleTiledContentClient.h"
@@ -29,29 +29,26 @@
 namespace mozilla {
 namespace layers {
 
-using gfx::Rect;
 using gfx::IntRect;
 using gfx::IntSize;
+using gfx::Rect;
 
-ClientTiledPaintedLayer::ClientTiledPaintedLayer(ClientLayerManager* const aManager,
-                                               ClientLayerManager::PaintedLayerCreationHint aCreationHint)
-  : PaintedLayer(aManager, static_cast<ClientLayer*>(this), aCreationHint)
-  , mContentClient()
-  , mHaveSingleTiledContentClient(false)
-{
+ClientTiledPaintedLayer::ClientTiledPaintedLayer(
+    ClientLayerManager* const aManager,
+    ClientLayerManager::PaintedLayerCreationHint aCreationHint)
+    : PaintedLayer(aManager, static_cast<ClientLayer*>(this), aCreationHint),
+      mContentClient(),
+      mHaveSingleTiledContentClient(false) {
   MOZ_COUNT_CTOR(ClientTiledPaintedLayer);
   mPaintData.mLastScrollOffset = ParentLayerPoint(0, 0);
   mPaintData.mFirstPaint = true;
 }
 
-ClientTiledPaintedLayer::~ClientTiledPaintedLayer()
-{
+ClientTiledPaintedLayer::~ClientTiledPaintedLayer() {
   MOZ_COUNT_DTOR(ClientTiledPaintedLayer);
 }
 
-void
-ClientTiledPaintedLayer::ClearCachedResources()
-{
+void ClientTiledPaintedLayer::ClearCachedResources() {
   if (mContentClient) {
     mContentClient->ClearCachedResources();
   }
@@ -59,23 +56,19 @@ ClientTiledPaintedLayer::ClearCachedResources()
   mContentClient = nullptr;
 }
 
-void
-ClientTiledPaintedLayer::FillSpecificAttributes(SpecificLayerAttributes& aAttrs)
-{
+void ClientTiledPaintedLayer::FillSpecificAttributes(
+    SpecificLayerAttributes& aAttrs) {
   aAttrs = PaintedLayerAttributes(GetValidRegion());
 }
 
-static Maybe<LayerRect>
-ApplyParentLayerToLayerTransform(const ParentLayerToLayerMatrix4x4& aTransform,
-                                 const ParentLayerRect& aParentLayerRect,
-                                 const LayerRect& aClip)
-{
+static Maybe<LayerRect> ApplyParentLayerToLayerTransform(
+    const ParentLayerToLayerMatrix4x4& aTransform,
+    const ParentLayerRect& aParentLayerRect, const LayerRect& aClip) {
   return UntransformBy(aTransform, aParentLayerRect, aClip);
 }
 
-static LayerToParentLayerMatrix4x4
-GetTransformToAncestorsParentLayer(Layer* aStart, const LayerMetricsWrapper& aAncestor)
-{
+static LayerToParentLayerMatrix4x4 GetTransformToAncestorsParentLayer(
+    Layer* aStart, const LayerMetricsWrapper& aAncestor) {
   gfx::Matrix4x4 transform;
   const LayerMetricsWrapper& ancestorParent = aAncestor.GetParent();
   for (LayerMetricsWrapper iter(aStart, LayerMetricsWrapper::StartAt::BOTTOM);
@@ -101,18 +94,19 @@ GetTransformToAncestorsParentLayer(Layer* aStart, const LayerMetricsWrapper& aAn
   return ViewAs<LayerToParentLayerMatrix4x4>(transform);
 }
 
-void
-ClientTiledPaintedLayer::GetAncestorLayers(LayerMetricsWrapper* aOutScrollAncestor,
-                                           LayerMetricsWrapper* aOutDisplayPortAncestor,
-                                           bool* aOutHasTransformAnimation)
-{
+void ClientTiledPaintedLayer::GetAncestorLayers(
+    LayerMetricsWrapper* aOutScrollAncestor,
+    LayerMetricsWrapper* aOutDisplayPortAncestor,
+    bool* aOutHasTransformAnimation) {
   LayerMetricsWrapper scrollAncestor;
   LayerMetricsWrapper displayPortAncestor;
   bool hasTransformAnimation = false;
-  for (LayerMetricsWrapper ancestor(this, LayerMetricsWrapper::StartAt::BOTTOM); ancestor; ancestor = ancestor.GetParent()) {
+  for (LayerMetricsWrapper ancestor(this, LayerMetricsWrapper::StartAt::BOTTOM);
+       ancestor; ancestor = ancestor.GetParent()) {
     hasTransformAnimation |= ancestor.HasTransformAnimation();
     const FrameMetrics& metrics = ancestor.Metrics();
-    if (!scrollAncestor && metrics.GetScrollId() != ScrollableLayerGuid::NULL_SCROLL_ID) {
+    if (!scrollAncestor &&
+        metrics.GetScrollId() != ScrollableLayerGuid::NULL_SCROLL_ID) {
       scrollAncestor = ancestor;
     }
     if (!metrics.GetDisplayPort().IsEmpty()) {
@@ -133,9 +127,7 @@ ClientTiledPaintedLayer::GetAncestorLayers(LayerMetricsWrapper* aOutScrollAncest
   }
 }
 
-void
-ClientTiledPaintedLayer::BeginPaint()
-{
+void ClientTiledPaintedLayer::BeginPaint() {
   mPaintData.ResetPaintData();
 
   if (!GetBaseTransform().Is2D()) {
@@ -150,7 +142,8 @@ ClientTiledPaintedLayer::BeginPaint()
   LayerMetricsWrapper scrollAncestor;
   LayerMetricsWrapper displayPortAncestor;
   bool hasTransformAnimation;
-  GetAncestorLayers(&scrollAncestor, &displayPortAncestor, &hasTransformAnimation);
+  GetAncestorLayers(&scrollAncestor, &displayPortAncestor,
+                    &hasTransformAnimation);
 
   if (!displayPortAncestor || !scrollAncestor) {
     
@@ -162,8 +155,11 @@ ClientTiledPaintedLayer::BeginPaint()
     return;
   }
 
-  TILING_LOG("TILING %p: Found scrollAncestor %p, displayPortAncestor %p, transform %d\n", this,
-    scrollAncestor.GetLayer(), displayPortAncestor.GetLayer(), hasTransformAnimation);
+  TILING_LOG(
+      "TILING %p: Found scrollAncestor %p, displayPortAncestor %p, transform "
+      "%d\n",
+      this, scrollAncestor.GetLayer(), displayPortAncestor.GetLayer(),
+      hasTransformAnimation);
 
   const FrameMetrics& scrollMetrics = scrollAncestor.Metrics();
   const FrameMetrics& displayportMetrics = displayPortAncestor.Metrics();
@@ -171,7 +167,7 @@ ClientTiledPaintedLayer::BeginPaint()
   
   
   ParentLayerToLayerMatrix4x4 transformDisplayPortToLayer =
-    GetTransformToAncestorsParentLayer(this, displayPortAncestor).Inverse();
+      GetTransformToAncestorsParentLayer(this, displayPortAncestor).Inverse();
 
   LayerRect layerBounds(GetVisibleRegion().GetBounds());
 
@@ -184,46 +180,56 @@ ClientTiledPaintedLayer::BeginPaint()
   if (!mPaintData.mHasTransformAnimation &&
       mContentClient->GetLowPrecisionTiledBuffer()) {
     ParentLayerRect criticalDisplayPort =
-      (displayportMetrics.GetCriticalDisplayPort() * displayportMetrics.GetZoom())
-      + displayportMetrics.GetCompositionBounds().TopLeft();
+        (displayportMetrics.GetCriticalDisplayPort() *
+         displayportMetrics.GetZoom()) +
+        displayportMetrics.GetCompositionBounds().TopLeft();
     Maybe<LayerRect> criticalDisplayPortTransformed =
-      ApplyParentLayerToLayerTransform(transformDisplayPortToLayer, criticalDisplayPort, layerBounds);
+        ApplyParentLayerToLayerTransform(transformDisplayPortToLayer,
+                                         criticalDisplayPort, layerBounds);
     if (criticalDisplayPortTransformed) {
-      mPaintData.mCriticalDisplayPort = Some(RoundedToInt(*criticalDisplayPortTransformed));
+      mPaintData.mCriticalDisplayPort =
+          Some(RoundedToInt(*criticalDisplayPortTransformed));
     } else {
       mPaintData.mCriticalDisplayPort = Some(LayerIntRect(0, 0, 0, 0));
     }
   }
   TILING_LOG("TILING %p: Critical displayport %s\n", this,
-             mPaintData.mCriticalDisplayPort ?
-             Stringify(*mPaintData.mCriticalDisplayPort).c_str() : "not set");
+             mPaintData.mCriticalDisplayPort
+                 ? Stringify(*mPaintData.mCriticalDisplayPort).c_str()
+                 : "not set");
 
+  
   
   
   mPaintData.mResolution = displayportMetrics.GetZoom();
-  TILING_LOG("TILING %p: Resolution %s\n", this, Stringify(mPaintData.mResolution).c_str());
+  TILING_LOG("TILING %p: Resolution %s\n", this,
+             Stringify(mPaintData.mResolution).c_str());
 
   
   mPaintData.mTransformToCompBounds =
-    GetTransformToAncestorsParentLayer(this, scrollAncestor);
-  ParentLayerToLayerMatrix4x4 transformToBounds = mPaintData.mTransformToCompBounds.Inverse();
-  Maybe<LayerRect> compositionBoundsTransformed = ApplyParentLayerToLayerTransform(
-    transformToBounds, scrollMetrics.GetCompositionBounds(), layerBounds);
+      GetTransformToAncestorsParentLayer(this, scrollAncestor);
+  ParentLayerToLayerMatrix4x4 transformToBounds =
+      mPaintData.mTransformToCompBounds.Inverse();
+  Maybe<LayerRect> compositionBoundsTransformed =
+      ApplyParentLayerToLayerTransform(
+          transformToBounds, scrollMetrics.GetCompositionBounds(), layerBounds);
   if (compositionBoundsTransformed) {
     mPaintData.mCompositionBounds = *compositionBoundsTransformed;
   } else {
     mPaintData.mCompositionBounds.SetEmpty();
   }
-  TILING_LOG("TILING %p: Composition bounds %s\n", this, Stringify(mPaintData.mCompositionBounds).c_str());
+  TILING_LOG("TILING %p: Composition bounds %s\n", this,
+             Stringify(mPaintData.mCompositionBounds).c_str());
 
   
-  mPaintData.mScrollOffset = displayportMetrics.GetScrollOffset() * displayportMetrics.GetZoom();
-  TILING_LOG("TILING %p: Scroll offset %s\n", this, Stringify(mPaintData.mScrollOffset).c_str());
+  mPaintData.mScrollOffset =
+      displayportMetrics.GetScrollOffset() * displayportMetrics.GetZoom();
+  TILING_LOG("TILING %p: Scroll offset %s\n", this,
+             Stringify(mPaintData.mScrollOffset).c_str());
 }
 
-bool
-ClientTiledPaintedLayer::IsScrollingOnCompositor(const FrameMetrics& aParentMetrics)
-{
+bool ClientTiledPaintedLayer::IsScrollingOnCompositor(
+    const FrameMetrics& aParentMetrics) {
   CompositorBridgeChild* compositor = nullptr;
   if (Manager() && Manager()->AsClientLayerManager()) {
     compositor = Manager()->AsClientLayerManager()->GetCompositorBridgeChild();
@@ -251,8 +257,7 @@ ClientTiledPaintedLayer::IsScrollingOnCompositor(const FrameMetrics& aParentMetr
                               COORDINATE_EPSILON);
 }
 
-bool
-ClientTiledPaintedLayer::UseProgressiveDraw() {
+bool ClientTiledPaintedLayer::UseProgressiveDraw() {
   if (!gfxPrefs::ProgressivePaint()) {
     
     return false;
@@ -285,7 +290,8 @@ ClientTiledPaintedLayer::UseProgressiveDraw() {
   if (ClientManager()->AsyncPanZoomEnabled()) {
     LayerMetricsWrapper scrollAncestor;
     GetAncestorLayers(&scrollAncestor, nullptr, nullptr);
-    MOZ_ASSERT(scrollAncestor); 
+    MOZ_ASSERT(
+        scrollAncestor);  
     if (!scrollAncestor) {
       return false;
     }
@@ -298,12 +304,9 @@ ClientTiledPaintedLayer::UseProgressiveDraw() {
   return true;
 }
 
-bool
-ClientTiledPaintedLayer::RenderHighPrecision(const nsIntRegion& aInvalidRegion,
-                                            const nsIntRegion& aVisibleRegion,
-                                            LayerManager::DrawPaintedLayerCallback aCallback,
-                                            void* aCallbackData)
-{
+bool ClientTiledPaintedLayer::RenderHighPrecision(
+    const nsIntRegion& aInvalidRegion, const nsIntRegion& aVisibleRegion,
+    LayerManager::DrawPaintedLayerCallback aCallback, void* aCallbackData) {
   
   
   if (mPaintData.mLowPrecisionPaintCount != 0) {
@@ -312,24 +315,27 @@ ClientTiledPaintedLayer::RenderHighPrecision(const nsIntRegion& aInvalidRegion,
 
   
   
-  if (!aInvalidRegion.IsEmpty() &&
-      UseProgressiveDraw() &&
-      mContentClient->GetTiledBuffer()->GetFrameResolution() == mPaintData.mResolution) {
+  if (!aInvalidRegion.IsEmpty() && UseProgressiveDraw() &&
+      mContentClient->GetTiledBuffer()->GetFrameResolution() ==
+          mPaintData.mResolution) {
     
     
     
-    nsIntRegion oldValidRegion = mContentClient->GetTiledBuffer()->GetValidRegion();
+    nsIntRegion oldValidRegion =
+        mContentClient->GetTiledBuffer()->GetValidRegion();
     oldValidRegion.And(oldValidRegion, aVisibleRegion);
     if (mPaintData.mCriticalDisplayPort) {
-      oldValidRegion.And(oldValidRegion, mPaintData.mCriticalDisplayPort->ToUnknownRect());
+      oldValidRegion.And(oldValidRegion,
+                         mPaintData.mCriticalDisplayPort->ToUnknownRect());
     }
 
-    TILING_LOG("TILING %p: Progressive update with old valid region %s\n", this, Stringify(oldValidRegion).c_str());
+    TILING_LOG("TILING %p: Progressive update with old valid region %s\n", this,
+               Stringify(oldValidRegion).c_str());
 
     nsIntRegion drawnRegion;
-    bool updatedBuffer =
-      mContentClient->GetTiledBuffer()->ProgressiveUpdate(GetValidRegion(), aInvalidRegion,
-                      oldValidRegion, drawnRegion, &mPaintData, aCallback, aCallbackData);
+    bool updatedBuffer = mContentClient->GetTiledBuffer()->ProgressiveUpdate(
+        GetValidRegion(), aInvalidRegion, oldValidRegion, drawnRegion,
+        &mPaintData, aCallback, aCallbackData);
     AddToValidRegion(drawnRegion);
     return updatedBuffer;
   }
@@ -343,39 +349,41 @@ ClientTiledPaintedLayer::RenderHighPrecision(const nsIntRegion& aInvalidRegion,
   }
   SetValidRegion(validRegion);
 
-  TILING_LOG("TILING %p: Non-progressive paint invalid region %s\n", this, Stringify(aInvalidRegion).c_str());
-  TILING_LOG("TILING %p: Non-progressive paint new valid region %s\n", this, Stringify(GetValidRegion()).c_str());
+  TILING_LOG("TILING %p: Non-progressive paint invalid region %s\n", this,
+             Stringify(aInvalidRegion).c_str());
+  TILING_LOG("TILING %p: Non-progressive paint new valid region %s\n", this,
+             Stringify(GetValidRegion()).c_str());
 
-  TilePaintFlags flags = PaintThread::Get()
-    ? TilePaintFlags::Async
-    : TilePaintFlags::None;
+  TilePaintFlags flags =
+      PaintThread::Get() ? TilePaintFlags::Async : TilePaintFlags::None;
 
   mContentClient->GetTiledBuffer()->SetFrameResolution(mPaintData.mResolution);
-  mContentClient->GetTiledBuffer()->PaintThebes(GetValidRegion(), aInvalidRegion, aInvalidRegion,
-                                                aCallback, aCallbackData, flags);
+  mContentClient->GetTiledBuffer()->PaintThebes(
+      GetValidRegion(), aInvalidRegion, aInvalidRegion, aCallback,
+      aCallbackData, flags);
   mPaintData.mPaintFinished = true;
   return true;
 }
 
-bool
-ClientTiledPaintedLayer::RenderLowPrecision(const nsIntRegion& aInvalidRegion,
-                                           const nsIntRegion& aVisibleRegion,
-                                           LayerManager::DrawPaintedLayerCallback aCallback,
-                                           void* aCallbackData)
-{
+bool ClientTiledPaintedLayer::RenderLowPrecision(
+    const nsIntRegion& aInvalidRegion, const nsIntRegion& aVisibleRegion,
+    LayerManager::DrawPaintedLayerCallback aCallback, void* aCallbackData) {
   nsIntRegion invalidRegion = aInvalidRegion;
 
   
   
   if (!mPaintData.mCriticalDisplayPort ||
-      !nsIntRegion(mPaintData.mCriticalDisplayPort->ToUnknownRect()).Contains(aVisibleRegion)) {
-    nsIntRegion oldValidRegion = mContentClient->GetLowPrecisionTiledBuffer()->GetValidRegion();
+      !nsIntRegion(mPaintData.mCriticalDisplayPort->ToUnknownRect())
+           .Contains(aVisibleRegion)) {
+    nsIntRegion oldValidRegion =
+        mContentClient->GetLowPrecisionTiledBuffer()->GetValidRegion();
     oldValidRegion.And(oldValidRegion, aVisibleRegion);
 
     bool updatedBuffer = false;
 
     
-    if (mContentClient->GetLowPrecisionTiledBuffer()->GetFrameResolution() != mPaintData.mResolution ||
+    if (mContentClient->GetLowPrecisionTiledBuffer()->GetFrameResolution() !=
+            mPaintData.mResolution ||
         mContentClient->GetLowPrecisionTiledBuffer()->HasFormatChanged()) {
       if (!mLowPrecisionValidRegion.IsEmpty()) {
         updatedBuffer = true;
@@ -383,7 +391,8 @@ ClientTiledPaintedLayer::RenderLowPrecision(const nsIntRegion& aInvalidRegion,
       oldValidRegion.SetEmpty();
       mLowPrecisionValidRegion.SetEmpty();
       mContentClient->GetLowPrecisionTiledBuffer()->ResetPaintedAndValidState();
-      mContentClient->GetLowPrecisionTiledBuffer()->SetFrameResolution(mPaintData.mResolution);
+      mContentClient->GetLowPrecisionTiledBuffer()->SetFrameResolution(
+          mPaintData.mResolution);
       invalidRegion = aVisibleRegion;
     }
 
@@ -397,18 +406,25 @@ ClientTiledPaintedLayer::RenderLowPrecision(const nsIntRegion& aInvalidRegion,
     
     invalidRegion.SubOut(GetValidRegion());
 
-    TILING_LOG("TILING %p: Progressive paint: low-precision invalid region is %s\n", this, Stringify(invalidRegion).c_str());
-    TILING_LOG("TILING %p: Progressive paint: low-precision old valid region is %s\n", this, Stringify(oldValidRegion).c_str());
+    TILING_LOG(
+        "TILING %p: Progressive paint: low-precision invalid region is %s\n",
+        this, Stringify(invalidRegion).c_str());
+    TILING_LOG(
+        "TILING %p: Progressive paint: low-precision old valid region is %s\n",
+        this, Stringify(oldValidRegion).c_str());
 
     if (!invalidRegion.IsEmpty()) {
       nsIntRegion drawnRegion;
-      updatedBuffer = mContentClient->GetLowPrecisionTiledBuffer()->ProgressiveUpdate(
-                            mLowPrecisionValidRegion, invalidRegion, oldValidRegion,
-                            drawnRegion, &mPaintData, aCallback, aCallbackData);
+      updatedBuffer =
+          mContentClient->GetLowPrecisionTiledBuffer()->ProgressiveUpdate(
+              mLowPrecisionValidRegion, invalidRegion, oldValidRegion,
+              drawnRegion, &mPaintData, aCallback, aCallbackData);
       mLowPrecisionValidRegion.OrWith(drawnRegion);
     }
 
-    TILING_LOG("TILING %p: Progressive paint: low-precision new valid region is %s\n", this, Stringify(mLowPrecisionValidRegion).c_str());
+    TILING_LOG(
+        "TILING %p: Progressive paint: low-precision new valid region is %s\n",
+        this, Stringify(mLowPrecisionValidRegion).c_str());
     return updatedBuffer;
   }
   if (!mLowPrecisionValidRegion.IsEmpty()) {
@@ -424,38 +440,35 @@ ClientTiledPaintedLayer::RenderLowPrecision(const nsIntRegion& aInvalidRegion,
   return false;
 }
 
-void
-ClientTiledPaintedLayer::EndPaint()
-{
+void ClientTiledPaintedLayer::EndPaint() {
   mPaintData.mLastScrollOffset = mPaintData.mScrollOffset;
   mPaintData.mPaintFinished = true;
   mPaintData.mFirstPaint = false;
   TILING_LOG("TILING %p: Paint finished\n", this);
 }
 
-void
-ClientTiledPaintedLayer::RenderLayer()
-{
+void ClientTiledPaintedLayer::RenderLayer() {
   LayerManager::DrawPaintedLayerCallback callback =
-    ClientManager()->GetPaintedLayerCallback();
-  void *data = ClientManager()->GetPaintedLayerCallbackData();
+      ClientManager()->GetPaintedLayerCallback();
+  void* data = ClientManager()->GetPaintedLayerCallbackData();
 
   IntSize layerSize = mVisibleRegion.GetBounds().ToUnknownRect().Size();
   IntSize tileSize = gfx::gfxVars::TileSize();
   bool isHalfTileWidthOrHeight = layerSize.width <= tileSize.width / 2 ||
-    layerSize.height <= tileSize.height / 2;
+                                 layerSize.height <= tileSize.height / 2;
 
   
   
   
   bool wantSingleTiledContentClient =
-      (mCreationHint == LayerManager::NONE ||
-       layerSize <= tileSize ||
+      (mCreationHint == LayerManager::NONE || layerSize <= tileSize ||
        isHalfTileWidthOrHeight) &&
-      SingleTiledContentClient::ClientSupportsLayerSize(layerSize, ClientManager()) &&
+      SingleTiledContentClient::ClientSupportsLayerSize(layerSize,
+                                                        ClientManager()) &&
       gfxPrefs::LayersSingleTileEnabled();
 
-  if (mContentClient && mHaveSingleTiledContentClient && !wantSingleTiledContentClient) {
+  if (mContentClient && mHaveSingleTiledContentClient &&
+      !wantSingleTiledContentClient) {
     mContentClient = nullptr;
     ClearValidRegion();
   }
@@ -479,12 +492,16 @@ ClientTiledPaintedLayer::RenderLayer()
     mContentClient->GetTiledBuffer()->ResetPaintedAndValidState();
   }
 
-  TILING_LOG("TILING %p: Initial visible region %s\n", this, Stringify(mVisibleRegion).c_str());
-  TILING_LOG("TILING %p: Initial valid region %s\n", this, Stringify(GetValidRegion()).c_str());
-  TILING_LOG("TILING %p: Initial low-precision valid region %s\n", this, Stringify(mLowPrecisionValidRegion).c_str());
+  TILING_LOG("TILING %p: Initial visible region %s\n", this,
+             Stringify(mVisibleRegion).c_str());
+  TILING_LOG("TILING %p: Initial valid region %s\n", this,
+             Stringify(GetValidRegion()).c_str());
+  TILING_LOG("TILING %p: Initial low-precision valid region %s\n", this,
+             Stringify(mLowPrecisionValidRegion).c_str());
 
   nsIntRegion neededRegion = mVisibleRegion.ToUnknownRegion();
 #ifndef MOZ_IGNORE_PAINT_WILL_RESAMPLE
+  
   
   if (MayResample()) {
     
@@ -527,21 +544,27 @@ ClientTiledPaintedLayer::RenderLayer()
     
     
     
+    
     nsIntRegion validRegion;
     validRegion.And(GetValidRegion(), neededRegion);
     if (mPaintData.mCriticalDisplayPort) {
       validRegion.AndWith(mPaintData.mCriticalDisplayPort->ToUnknownRect());
-      invalidRegion.And(invalidRegion, mPaintData.mCriticalDisplayPort->ToUnknownRect());
+      invalidRegion.And(invalidRegion,
+                        mPaintData.mCriticalDisplayPort->ToUnknownRect());
     }
     SetValidRegion(validRegion);
 
-    TILING_LOG("TILING %p: First-transaction valid region %s\n", this, Stringify(validRegion).c_str());
-    TILING_LOG("TILING %p: First-transaction invalid region %s\n", this, Stringify(invalidRegion).c_str());
+    TILING_LOG("TILING %p: First-transaction valid region %s\n", this,
+               Stringify(validRegion).c_str());
+    TILING_LOG("TILING %p: First-transaction invalid region %s\n", this,
+               Stringify(invalidRegion).c_str());
   } else {
     if (mPaintData.mCriticalDisplayPort) {
-      invalidRegion.And(invalidRegion, mPaintData.mCriticalDisplayPort->ToUnknownRect());
+      invalidRegion.And(invalidRegion,
+                        mPaintData.mCriticalDisplayPort->ToUnknownRect());
     }
-    TILING_LOG("TILING %p: Repeat-transaction invalid region %s\n", this, Stringify(invalidRegion).c_str());
+    TILING_LOG("TILING %p: Repeat-transaction invalid region %s\n", this,
+               Stringify(invalidRegion).c_str());
   }
 
   nsIntRegion lowPrecisionInvalidRegion;
@@ -551,11 +574,11 @@ ClientTiledPaintedLayer::RenderLayer()
     lowPrecisionInvalidRegion.Sub(neededRegion, mLowPrecisionValidRegion);
     lowPrecisionInvalidRegion.Sub(lowPrecisionInvalidRegion, GetValidRegion());
   }
-  TILING_LOG("TILING %p: Low-precision invalid region %s\n", this, Stringify(lowPrecisionInvalidRegion).c_str());
+  TILING_LOG("TILING %p: Low-precision invalid region %s\n", this,
+             Stringify(lowPrecisionInvalidRegion).c_str());
 
-  bool updatedHighPrecision = RenderHighPrecision(invalidRegion,
-                                                  neededRegion,
-                                                  callback, data);
+  bool updatedHighPrecision =
+      RenderHighPrecision(invalidRegion, neededRegion, callback, data);
   if (updatedHighPrecision) {
     ClientManager()->Hold(this);
     mContentClient->UpdatedBuffer(TiledContentClient::TILED_BUFFER);
@@ -579,7 +602,9 @@ ClientTiledPaintedLayer::RenderLayer()
     
     
     
-    TILING_LOG("TILING %p: Scheduling repeat transaction for low-precision painting\n", this);
+    TILING_LOG(
+        "TILING %p: Scheduling repeat transaction for low-precision painting\n",
+        this);
     ClientManager()->SetRepeatTransaction();
     mPaintData.mLowPrecisionPaintCount = 1;
     mPaintData.mPaintFinished = false;
@@ -587,11 +612,11 @@ ClientTiledPaintedLayer::RenderLayer()
   }
 
   bool updatedLowPrecision = RenderLowPrecision(lowPrecisionInvalidRegion,
-                                                neededRegion,
-                                                callback, data);
+                                                neededRegion, callback, data);
   if (updatedLowPrecision) {
     ClientManager()->Hold(this);
-    mContentClient->UpdatedBuffer(TiledContentClient::LOW_PRECISION_TILED_BUFFER);
+    mContentClient->UpdatedBuffer(
+        TiledContentClient::LOW_PRECISION_TILED_BUFFER);
 
     if (!mPaintData.mPaintFinished) {
       
@@ -606,9 +631,8 @@ ClientTiledPaintedLayer::RenderLayer()
   EndPaint();
 }
 
-bool
-ClientTiledPaintedLayer::IsOptimizedFor(LayerManager::PaintedLayerCreationHint aHint)
-{
+bool ClientTiledPaintedLayer::IsOptimizedFor(
+    LayerManager::PaintedLayerCreationHint aHint) {
   
   
   
@@ -618,9 +642,8 @@ ClientTiledPaintedLayer::IsOptimizedFor(LayerManager::PaintedLayerCreationHint a
   return aHint == GetCreationHint();
 }
 
-void
-ClientTiledPaintedLayer::PrintInfo(std::stringstream& aStream, const char* aPrefix)
-{
+void ClientTiledPaintedLayer::PrintInfo(std::stringstream& aStream,
+                                        const char* aPrefix) {
   PaintedLayer::PrintInfo(aStream, aPrefix);
   if (mContentClient) {
     aStream << "\n";
@@ -630,5 +653,5 @@ ClientTiledPaintedLayer::PrintInfo(std::stringstream& aStream, const char* aPref
   }
 }
 
-} 
-} 
+}  
+}  

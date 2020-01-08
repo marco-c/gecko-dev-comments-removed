@@ -39,8 +39,7 @@ enum PlatformFileFlags {
 
 
 
-PlatformFile CreatePlatformFile(const std::wstring& name,
-                                int flags,
+PlatformFile CreatePlatformFile(const std::wstring& name, int flags,
                                 bool* created);
 
 }  

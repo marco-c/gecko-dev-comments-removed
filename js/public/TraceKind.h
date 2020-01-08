@@ -21,8 +21,8 @@ class Shape;
 class Scope;
 namespace jit {
 class JitCode;
-} 
-} 
+}  
+}  
 
 namespace JS {
 
@@ -35,35 +35,35 @@ namespace JS {
 
 
 
-enum class TraceKind
-{
-    
-    
-    
-    Object = 0x00,
-    String = 0x02,
-    Symbol = 0x03,
+enum class TraceKind {
+  
+  
+  
+  Object = 0x00,
+  String = 0x02,
+  Symbol = 0x03,
 
-    
-    Script = 0x01,
+  
+  Script = 0x01,
 
-    
-    Shape = 0x04,
+  
+  Shape = 0x04,
 
-    
-    ObjectGroup = 0x05,
+  
+  
+  ObjectGroup = 0x05,
 
-    
-    Null = 0x06,
+  
+  Null = 0x06,
 
-    
-    BaseShape = 0x0F,
-    JitCode = 0x1F,
-    LazyScript = 0x2F,
-    Scope = 0x3F,
-    RegExpShared = 0x4F,
+  
+  BaseShape = 0x0F,
+  JitCode = 0x1F,
+  LazyScript = 0x2F,
+  Scope = 0x3F,
+  RegExpShared = 0x4F,
 #ifdef ENABLE_BIGINT
-    BigInt = 0x5F
+  BigInt = 0x5F
 #endif
 };
 const static uintptr_t OutOfLineTraceKindMask = 0x07;
@@ -74,18 +74,16 @@ const static uintptr_t OutOfLineTraceKindMask = 0x07;
 
 
 
-inline constexpr bool IsCCTraceKind(JS::TraceKind aKind)
-{
-  return aKind == JS::TraceKind::Object ||
-         aKind == JS::TraceKind::Script ||
-         aKind == JS::TraceKind::LazyScript ||
-         aKind == JS::TraceKind::Scope ||
+inline constexpr bool IsCCTraceKind(JS::TraceKind aKind) {
+  return aKind == JS::TraceKind::Object || aKind == JS::TraceKind::Script ||
+         aKind == JS::TraceKind::LazyScript || aKind == JS::TraceKind::Scope ||
          aKind == JS::TraceKind::RegExpShared;
 }
 
-#define ASSERT_TRACE_KIND(tk) \
-    static_assert((uintptr_t(tk) & OutOfLineTraceKindMask) == OutOfLineTraceKindMask, \
-        "mask bits are set")
+#define ASSERT_TRACE_KIND(tk)                                             \
+  static_assert(                                                          \
+      (uintptr_t(tk) & OutOfLineTraceKindMask) == OutOfLineTraceKindMask, \
+      "mask bits are set")
 ASSERT_TRACE_KIND(JS::TraceKind::BaseShape);
 ASSERT_TRACE_KIND(JS::TraceKind::JitCode);
 ASSERT_TRACE_KIND(JS::TraceKind::LazyScript);
@@ -98,61 +96,62 @@ ASSERT_TRACE_KIND(JS::TraceKind::RegExpShared);
 
 template <typename T>
 struct MapTypeToTraceKind {
-    static const JS::TraceKind kind = T::TraceKind;
+  static const JS::TraceKind kind = T::TraceKind;
 };
 
 
 
 #define JS_FOR_EACH_TRACEKIND(D)
  \
-    D(BaseShape,     js::BaseShape,     true) \
-    D(JitCode,       js::jit::JitCode,  true) \
-    D(LazyScript,    js::LazyScript,    true) \
-    D(Scope,         js::Scope,         true) \
-    D(Object,        JSObject,          true) \
-    D(ObjectGroup,   js::ObjectGroup,   true) \
-    D(Script,        JSScript,          true) \
-    D(Shape,         js::Shape,         true) \
-    D(String,        JSString,          false) \
-    D(Symbol,        JS::Symbol,        false) \
-    IF_BIGINT(D(BigInt, JS::BigInt, false),) \
-    D(RegExpShared,  js::RegExpShared,  true)
+  D(BaseShape, js::BaseShape, true)                       \
+  D(JitCode, js::jit::JitCode, true)                      \
+  D(LazyScript, js::LazyScript, true)                     \
+  D(Scope, js::Scope, true)                               \
+  D(Object, JSObject, true)                               \
+  D(ObjectGroup, js::ObjectGroup, true)                   \
+  D(Script, JSScript, true)                               \
+  D(Shape, js::Shape, true)                               \
+  D(String, JSString, false)                              \
+  D(Symbol, JS::Symbol, false)                            \
+  IF_BIGINT(D(BigInt, JS::BigInt, false), )               \
+  D(RegExpShared, js::RegExpShared, true)
 
 
-#define JS_EXPAND_DEF(name, type, _) \
-    template <> struct MapTypeToTraceKind<type> { \
-        static const JS::TraceKind kind = JS::TraceKind::name; \
-    };
+#define JS_EXPAND_DEF(name, type, _)                       \
+  template <>                                              \
+  struct MapTypeToTraceKind<type> {                        \
+    static const JS::TraceKind kind = JS::TraceKind::name; \
+  };
 JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 #undef JS_EXPAND_DEF
 
 
 
 
-enum class RootKind : int8_t
-{
-    
-#define EXPAND_ROOT_KIND(name, _0, _1) \
-    name,
-JS_FOR_EACH_TRACEKIND(EXPAND_ROOT_KIND)
+enum class RootKind : int8_t {
+
+#define EXPAND_ROOT_KIND(name, _0, _1) name,
+  JS_FOR_EACH_TRACEKIND(EXPAND_ROOT_KIND)
 #undef EXPAND_ROOT_KIND
 
-    
-    Id,
-    Value,
+  
+  Id,
+  Value,
 
-    
-    Traceable,
+  
+  Traceable,
 
-    Limit
+  Limit
 };
 
 
-template <TraceKind traceKind> struct MapTraceKindToRootKind {};
-#define JS_EXPAND_DEF(name, _0, _1) \
-    template <> struct MapTraceKindToRootKind<JS::TraceKind::name> { \
-        static const JS::RootKind kind = JS::RootKind::name; \
-    };
+template <TraceKind traceKind>
+struct MapTraceKindToRootKind {};
+#define JS_EXPAND_DEF(name, _0, _1)                      \
+  template <>                                            \
+  struct MapTraceKindToRootKind<JS::TraceKind::name> {   \
+    static const JS::RootKind kind = JS::RootKind::name; \
+  };
 JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF)
 #undef JS_EXPAND_DEF
 
@@ -161,28 +160,32 @@ JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF)
 
 template <typename T>
 struct MapTypeToRootKind {
-    static const JS::RootKind kind = JS::RootKind::Traceable;
+  static const JS::RootKind kind = JS::RootKind::Traceable;
 };
 template <typename T>
 struct MapTypeToRootKind<T*> {
-    static const JS::RootKind kind =
-        JS::MapTraceKindToRootKind<JS::MapTypeToTraceKind<T>::kind>::kind;
+  static const JS::RootKind kind =
+      JS::MapTraceKindToRootKind<JS::MapTypeToTraceKind<T>::kind>::kind;
 };
-template <> struct MapTypeToRootKind<JS::Realm*> {
-    
-    static const JS::RootKind kind = JS::RootKind::Traceable;
+template <>
+struct MapTypeToRootKind<JS::Realm*> {
+  
+  static const JS::RootKind kind = JS::RootKind::Traceable;
 };
 template <typename T>
 struct MapTypeToRootKind<mozilla::UniquePtr<T>> {
-    static const JS::RootKind kind = JS::MapTypeToRootKind<T>::kind;
+  static const JS::RootKind kind = JS::MapTypeToRootKind<T>::kind;
 };
-template <> struct MapTypeToRootKind<JS::Value> {
-    static const JS::RootKind kind = JS::RootKind::Value;
+template <>
+struct MapTypeToRootKind<JS::Value> {
+  static const JS::RootKind kind = JS::RootKind::Value;
 };
-template <> struct MapTypeToRootKind<jsid> {
-    static const JS::RootKind kind = JS::RootKind::Id;
+template <>
+struct MapTypeToRootKind<jsid> {
+  static const JS::RootKind kind = JS::RootKind::Id;
 };
-template <> struct MapTypeToRootKind<JSFunction*> : public MapTypeToRootKind<JSObject*> {};
+template <>
+struct MapTypeToRootKind<JSFunction*> : public MapTypeToRootKind<JSObject*> {};
 
 
 
@@ -204,43 +207,43 @@ template <> struct MapTypeToRootKind<JSFunction*> : public MapTypeToRootKind<JSO
 
 
 #if (defined(_MSC_VER) && _MSC_VER < 1910) && !defined(__clang__)
-# define JS_DEPENDENT_TEMPLATE_HINT
+#define JS_DEPENDENT_TEMPLATE_HINT
 #else
-# define JS_DEPENDENT_TEMPLATE_HINT template
+#define JS_DEPENDENT_TEMPLATE_HINT template
 #endif
 template <typename F, typename... Args>
-auto
-DispatchTraceKindTyped(F f, JS::TraceKind traceKind, Args&&... args)
-  -> decltype(f. JS_DEPENDENT_TEMPLATE_HINT operator()<JSObject>(std::forward<Args>(args)...))
-{
-    switch (traceKind) {
-#define JS_EXPAND_DEF(name, type, _) \
-      case JS::TraceKind::name: \
-        return f. JS_DEPENDENT_TEMPLATE_HINT operator()<type>(std::forward<Args>(args)...);
-      JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
+auto DispatchTraceKindTyped(F f, JS::TraceKind traceKind, Args&&... args)
+    -> decltype(f.JS_DEPENDENT_TEMPLATE_HINT operator()<JSObject>(
+        std::forward<Args>(args)...)) {
+  switch (traceKind) {
+#define JS_EXPAND_DEF(name, type, _)                      \
+  case JS::TraceKind::name:                               \
+    return f.JS_DEPENDENT_TEMPLATE_HINT operator()<type>( \
+        std::forward<Args>(args)...);
+    JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 #undef JS_EXPAND_DEF
-      default:
-          MOZ_CRASH("Invalid trace kind in DispatchTraceKindTyped.");
-    }
+    default:
+      MOZ_CRASH("Invalid trace kind in DispatchTraceKindTyped.");
+  }
 }
 #undef JS_DEPENDENT_TEMPLATE_HINT
 
 template <typename F, typename... Args>
-auto
-DispatchTraceKindTyped(F f, void* thing, JS::TraceKind traceKind, Args&&... args)
-  -> decltype(f(static_cast<JSObject*>(nullptr), std::forward<Args>(args)...))
-{
-    switch (traceKind) {
+auto DispatchTraceKindTyped(F f, void* thing, JS::TraceKind traceKind,
+                            Args&&... args)
+    -> decltype(f(static_cast<JSObject*>(nullptr),
+                  std::forward<Args>(args)...)) {
+  switch (traceKind) {
 #define JS_EXPAND_DEF(name, type, _) \
-      case JS::TraceKind::name: \
-          return f(static_cast<type*>(thing), std::forward<Args>(args)...);
-      JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
+  case JS::TraceKind::name:          \
+    return f(static_cast<type*>(thing), std::forward<Args>(args)...);
+    JS_FOR_EACH_TRACEKIND(JS_EXPAND_DEF);
 #undef JS_EXPAND_DEF
-      default:
-          MOZ_CRASH("Invalid trace kind in DispatchTraceKindTyped.");
-    }
+    default:
+      MOZ_CRASH("Invalid trace kind in DispatchTraceKindTyped.");
+  }
 }
 
-} 
+}  
 
-#endif 
+#endif  

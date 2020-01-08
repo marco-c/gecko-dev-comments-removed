@@ -12,9 +12,8 @@
 namespace mozilla {
 namespace a11y {
 
-class DocAccessibleWrap : public DocAccessible
-{
-public:
+class DocAccessibleWrap : public DocAccessible {
+ public:
   DocAccessibleWrap(nsIDocument* aDocument, nsIPresShell* aPresShell);
   virtual ~DocAccessibleWrap();
 
@@ -24,12 +23,13 @@ public:
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_accParent(
-       IDispatch __RPC_FAR *__RPC_FAR *ppdispParent) override;
+       IDispatch __RPC_FAR* __RPC_FAR* ppdispParent)
+      override;
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_accValue(
        VARIANT varChild,
-       BSTR __RPC_FAR *pszValue) override;
+       BSTR __RPC_FAR* pszValue) override;
 
   
   virtual void Shutdown();
@@ -40,17 +40,19 @@ public:
   
 
 
-  void AddID(uint32_t aID, AccessibleWrap* aAcc)
-    { mIDToAccessibleMap.Put(aID, aAcc); }
+  void AddID(uint32_t aID, AccessibleWrap* aAcc) {
+    mIDToAccessibleMap.Put(aID, aAcc);
+  }
   void RemoveID(uint32_t aID) { mIDToAccessibleMap.Remove(aID); }
-  AccessibleWrap* GetAccessibleByID(uint32_t aID) const
-    { return mIDToAccessibleMap.Get(aID); }
+  AccessibleWrap* GetAccessibleByID(uint32_t aID) const {
+    return mIDToAccessibleMap.Get(aID);
+  }
 
-protected:
+ protected:
   
   virtual void DoInitialUpdate();
 
-protected:
+ protected:
   void* mHWND;
 
   
@@ -59,7 +61,7 @@ protected:
   nsDataHashtable<nsUint32HashKey, AccessibleWrap*> mIDToAccessibleMap;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

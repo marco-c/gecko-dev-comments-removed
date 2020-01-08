@@ -22,22 +22,18 @@ namespace dom {
 
 
 
-class ContentProcess : public mozilla::ipc::ProcessChild
-{
+class ContentProcess : public mozilla::ipc::ProcessChild {
   typedef mozilla::ipc::ProcessChild ProcessChild;
 
-public:
-  explicit ContentProcess(ProcessId aParentPid)
-    : ProcessChild(aParentPid)
-  { }
+ public:
+  explicit ContentProcess(ProcessId aParentPid) : ProcessChild(aParentPid) {}
 
-  ~ContentProcess()
-  { }
+  ~ContentProcess() {}
 
   virtual bool Init(int aArgc, char* aArgv[]) override;
   virtual void CleanUp() override;
 
-private:
+ private:
   ContentChild mContent;
   mozilla::ipc::ScopedXREEmbed mXREEmbed;
 
@@ -56,7 +52,7 @@ void SetPrefsFd(int aFd);
 void SetPrefMapFd(int aFd);
 #endif
 
-} 
-} 
+}  
+}  
 
 #endif  

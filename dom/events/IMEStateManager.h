@@ -26,7 +26,7 @@ class TextComposition;
 
 namespace dom {
 class Selection;
-} 
+}  
 
 
 
@@ -34,8 +34,7 @@ class Selection;
 
 
 
-class IMEStateManager
-{
+class IMEStateManager {
   typedef dom::TabParent TabParent;
   typedef widget::IMEMessage IMEMessage;
   typedef widget::IMENotification IMENotification;
@@ -43,7 +42,7 @@ class IMEStateManager
   typedef widget::InputContext InputContext;
   typedef widget::InputContextAction InputContextAction;
 
-public:
+ public:
   static void Init();
   static void Shutdown();
 
@@ -52,8 +51,7 @@ public:
 
 
 
-  static TabParent* GetActiveTabParent()
-  {
+  static TabParent* GetActiveTabParent() {
     
     if (sInstalledMenuKeyboardListener) {
       return nullptr;
@@ -69,8 +67,7 @@ public:
 
 
 
-  static bool DoesTabParentHaveIMEFocus(const TabParent* aTabParent)
-  {
+  static bool DoesTabParentHaveIMEFocus(const TabParent* aTabParent) {
     MOZ_ASSERT(aTabParent);
     return sFocusedIMETabParent == aTabParent;
   }
@@ -94,8 +91,7 @@ public:
 
 
 
-  static nsIWidget* GetWidgetForActiveInputContext()
-  {
+  static nsIWidget* GetWidgetForActiveInputContext() {
     return sActiveInputContextWidget;
   }
 
@@ -160,8 +156,7 @@ public:
   
   
   
-  static void UpdateIMEState(const IMEState &aNewIMEState,
-                             nsIContent* aContent,
+  static void UpdateIMEState(const IMEState& aNewIMEState, nsIContent* aContent,
                              EditorBase* aEditorBase);
 
   
@@ -176,8 +171,7 @@ public:
   
   
   
-  static void OnClickInEditor(nsPresContext* aPresContext,
-                              nsIContent* aContent,
+  static void OnClickInEditor(nsPresContext* aPresContext, nsIContent* aContent,
                               const WidgetMouseEvent* aMouseEvent);
 
   
@@ -185,8 +179,7 @@ public:
   
   
   
-  static void OnFocusInEditor(nsPresContext* aPresContext,
-                              nsIContent* aContent,
+  static void OnFocusInEditor(nsPresContext* aPresContext, nsIContent* aContent,
                               EditorBase& aEditorBase);
 
   
@@ -203,12 +196,9 @@ public:
 
 
   static void DispatchCompositionEvent(
-                nsINode* aEventTargetNode,
-                nsPresContext* aPresContext,
-                WidgetCompositionEvent* aCompositionEvent,
-                nsEventStatus* aStatus,
-                EventDispatchingCallback* aCallBack,
-                bool aIsSynthesized = false);
+      nsINode* aEventTargetNode, nsPresContext* aPresContext,
+      WidgetCompositionEvent* aCompositionEvent, nsEventStatus* aStatus,
+      EventDispatchingCallback* aCallBack, bool aIsSynthesized = false);
 
   
 
@@ -224,27 +214,27 @@ public:
 
 
   static void OnCompositionEventDiscarded(
-                WidgetCompositionEvent* aCompositionEvent);
+      WidgetCompositionEvent* aCompositionEvent);
 
   
 
 
-  static already_AddRefed<TextComposition>
-    GetTextCompositionFor(nsIWidget* aWidget);
+  static already_AddRefed<TextComposition> GetTextCompositionFor(
+      nsIWidget* aWidget);
 
   
 
 
-  static already_AddRefed<TextComposition>
-    GetTextCompositionFor(const WidgetCompositionEvent* aCompositionEvent);
+  static already_AddRefed<TextComposition> GetTextCompositionFor(
+      const WidgetCompositionEvent* aCompositionEvent);
 
   
 
 
 
 
-  static already_AddRefed<TextComposition>
-    GetTextCompositionFor(nsPresContext* aPresContext);
+  static already_AddRefed<TextComposition> GetTextCompositionFor(
+      nsPresContext* aPresContext);
 
   
 
@@ -253,11 +243,9 @@ public:
   static nsresult NotifyIME(const IMENotification& aNotification,
                             nsIWidget* aWidget,
                             TabParent* aTabParent = nullptr);
-  static nsresult NotifyIME(IMEMessage aMessage,
-                            nsIWidget* aWidget,
+  static nsresult NotifyIME(IMEMessage aMessage, nsIWidget* aWidget,
                             TabParent* aTabParent = nullptr);
-  static nsresult NotifyIME(IMEMessage aMessage,
-                            nsPresContext* aPresContext,
+  static nsresult NotifyIME(IMEMessage aMessage, nsPresContext* aPresContext,
                             TabParent* aTabParent = nullptr);
 
   static nsINode* GetRootEditableNode(nsPresContext* aPresContext,
@@ -269,14 +257,12 @@ public:
 
   static IMEContentObserver* GetActiveContentObserver();
 
-protected:
+ protected:
   static nsresult OnChangeFocusInternal(nsPresContext* aPresContext,
                                         nsIContent* aContent,
                                         InputContextAction aAction);
-  static void SetIMEState(const IMEState &aState,
-                          nsPresContext* aPresContext,
-                          nsIContent* aContent,
-                          nsIWidget* aWidget,
+  static void SetIMEState(const IMEState& aState, nsPresContext* aPresContext,
+                          nsIContent* aContent, nsIWidget* aWidget,
                           InputContextAction aAction,
                           InputContext::Origin aOrigin);
   static void SetInputContext(nsIWidget* aWidget,
@@ -366,23 +352,21 @@ protected:
   static bool sCheckForIMEUnawareWebApps;
   static bool sInputModeSupported;
 
-  class MOZ_STACK_CLASS GettingNewIMEStateBlocker final
-  {
-  public:
+  class MOZ_STACK_CLASS GettingNewIMEStateBlocker final {
+   public:
     GettingNewIMEStateBlocker()
-      : mOldValue(IMEStateManager::sIsGettingNewIMEState)
-    {
+        : mOldValue(IMEStateManager::sIsGettingNewIMEState) {
       IMEStateManager::sIsGettingNewIMEState = true;
     }
-    ~GettingNewIMEStateBlocker()
-    {
+    ~GettingNewIMEStateBlocker() {
       IMEStateManager::sIsGettingNewIMEState = mOldValue;
     }
-  private:
+
+   private:
     bool mOldValue;
   };
 };
 
-} 
+}  
 
-#endif 
+#endif  

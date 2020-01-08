@@ -16,8 +16,7 @@ namespace mozilla {
 namespace dom {
 
 class XULBroadcastManager final {
-
-public:
+ public:
   typedef mozilla::dom::Element Element;
 
   explicit XULBroadcastManager(nsIDocument* aDocument);
@@ -37,13 +36,9 @@ public:
   void AttributeChanged(Element* aElement, int32_t aNameSpaceID,
                         nsAtom* aAttribute);
   void MaybeBroadcast();
-  void DropDocumentReference(); 
-protected:
-
-   enum HookupAction {
-    eHookupAdd = 0,
-    eHookupRemove
-  };
+  void DropDocumentReference();  
+ protected:
+  enum HookupAction { eHookupAdd = 0, eHookupRemove };
 
   nsresult UpdateListenerHookup(Element* aElement, HookupAction aAction);
 
@@ -52,26 +47,18 @@ protected:
   void AddListenerFor(Element& aBroadcaster, Element& aListener,
                       const nsAString& aAttr, ErrorResult& aRv);
 
-  nsresult
-  ExecuteOnBroadcastHandlerFor(Element* aBroadcaster,
-                               Element* aListener,
-                               nsAtom* aAttr);
+  nsresult ExecuteOnBroadcastHandlerFor(Element* aBroadcaster,
+                                        Element* aListener, nsAtom* aAttr);
   
   
   
   
-  nsresult
-  FindBroadcaster(Element* aElement,
-                  Element** aListener,
-                  nsString& aBroadcasterID,
-                  nsString& aAttribute,
-                  Element** aBroadcaster);
+  nsresult FindBroadcaster(Element* aElement, Element** aListener,
+                           nsString& aBroadcasterID, nsString& aAttribute,
+                           Element** aBroadcaster);
 
-  void
-  SynchronizeBroadcastListener(Element *aBroadcaster,
-                               Element *aListener,
-                               const nsAString &aAttr);
-
+  void SynchronizeBroadcastListener(Element* aBroadcaster, Element* aListener,
+                                    const nsAString& aAttr);
 
   
   
@@ -82,59 +69,62 @@ protected:
 
   PLDHashTable* mBroadcasterMap;
 
-  class nsDelayedBroadcastUpdate
-  {
-  public:
-    nsDelayedBroadcastUpdate(Element* aBroadcaster,
-                             Element* aListener,
-                             const nsAString &aAttr)
-    : mBroadcaster(aBroadcaster), mListener(aListener), mAttr(aAttr),
-      mSetAttr(false), mNeedsAttrChange(false) {}
+  class nsDelayedBroadcastUpdate {
+   public:
+    nsDelayedBroadcastUpdate(Element* aBroadcaster, Element* aListener,
+                             const nsAString& aAttr)
+        : mBroadcaster(aBroadcaster),
+          mListener(aListener),
+          mAttr(aAttr),
+          mSetAttr(false),
+          mNeedsAttrChange(false) {}
 
-    nsDelayedBroadcastUpdate(Element* aBroadcaster,
-                             Element* aListener,
-                             nsAtom* aAttrName,
-                             const nsAString &aAttr,
-                             bool aSetAttr,
-                             bool aNeedsAttrChange)
-    : mBroadcaster(aBroadcaster), mListener(aListener), mAttr(aAttr),
-      mAttrName(aAttrName), mSetAttr(aSetAttr),
-      mNeedsAttrChange(aNeedsAttrChange) {}
+    nsDelayedBroadcastUpdate(Element* aBroadcaster, Element* aListener,
+                             nsAtom* aAttrName, const nsAString& aAttr,
+                             bool aSetAttr, bool aNeedsAttrChange)
+        : mBroadcaster(aBroadcaster),
+          mListener(aListener),
+          mAttr(aAttr),
+          mAttrName(aAttrName),
+          mSetAttr(aSetAttr),
+          mNeedsAttrChange(aNeedsAttrChange) {}
 
     nsDelayedBroadcastUpdate(const nsDelayedBroadcastUpdate& aOther)
-    : mBroadcaster(aOther.mBroadcaster), mListener(aOther.mListener),
-      mAttr(aOther.mAttr), mAttrName(aOther.mAttrName),
-      mSetAttr(aOther.mSetAttr), mNeedsAttrChange(aOther.mNeedsAttrChange) {}
+        : mBroadcaster(aOther.mBroadcaster),
+          mListener(aOther.mListener),
+          mAttr(aOther.mAttr),
+          mAttrName(aOther.mAttrName),
+          mSetAttr(aOther.mSetAttr),
+          mNeedsAttrChange(aOther.mNeedsAttrChange) {}
 
-    nsCOMPtr<Element>       mBroadcaster;
-    nsCOMPtr<Element>       mListener;
+    nsCOMPtr<Element> mBroadcaster;
+    nsCOMPtr<Element> mListener;
     
     
-    nsString                mAttr;
-    RefPtr<nsAtom>       mAttrName;
-    bool                    mSetAttr;
-    bool                    mNeedsAttrChange;
+    nsString mAttr;
+    RefPtr<nsAtom> mAttrName;
+    bool mSetAttr;
+    bool mNeedsAttrChange;
 
     class Comparator {
-      public:
-        static bool Equals(const nsDelayedBroadcastUpdate& a, const nsDelayedBroadcastUpdate& b) {
-          return a.mBroadcaster == b.mBroadcaster && a.mListener == b.mListener && a.mAttrName == b.mAttrName;
-        }
+     public:
+      static bool Equals(const nsDelayedBroadcastUpdate& a,
+                         const nsDelayedBroadcastUpdate& b) {
+        return a.mBroadcaster == b.mBroadcaster && a.mListener == b.mListener &&
+               a.mAttrName == b.mAttrName;
+      }
     };
   };
   nsTArray<nsDelayedBroadcastUpdate> mDelayedBroadcasters;
   nsTArray<nsDelayedBroadcastUpdate> mDelayedAttrChangeBroadcasts;
-  bool                               mHandlingDelayedAttrChange;
-  bool                               mHandlingDelayedBroadcasters;
+  bool mHandlingDelayedAttrChange;
+  bool mHandlingDelayedBroadcasters;
 
-private:
+ private:
   ~XULBroadcastManager();
-
-
 };
 
-} 
-} 
+}  
+}  
 
-
-#endif 
+#endif  

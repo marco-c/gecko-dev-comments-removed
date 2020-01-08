@@ -28,54 +28,52 @@ namespace wasm {
 
 
 
-class Realm
-{
-    JSRuntime* runtime_;
-    InstanceVector instances_;
+class Realm {
+  JSRuntime* runtime_;
+  InstanceVector instances_;
 
-  public:
-    explicit Realm(JSRuntime* rt);
-    ~Realm();
+ public:
+  explicit Realm(JSRuntime* rt);
+  ~Realm();
 
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
 
-    bool registerInstance(JSContext* cx, HandleWasmInstanceObject instanceObj);
-    void unregisterInstance(Instance& instance);
+  bool registerInstance(JSContext* cx, HandleWasmInstanceObject instanceObj);
+  void unregisterInstance(Instance& instance);
 
-    
-    
-    
-    
+  
+  
+  
+  
 
-    const InstanceVector& instances() const { return instances_; }
+  const InstanceVector& instances() const { return instances_; }
 
-    
+  
 
-    void ensureProfilingLabels(bool profilingEnabled);
+  void ensureProfilingLabels(bool profilingEnabled);
 
-    
+  
 
-    void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf, size_t* realmTables);
+  void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                              size_t* realmTables);
 };
 
 
 
 
-extern void
-InterruptRunningCode(JSContext* cx);
+extern void InterruptRunningCode(JSContext* cx);
 
 
 
 
 
-void
-ResetInterruptState(JSContext* cx);
+void ResetInterruptState(JSContext* cx);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

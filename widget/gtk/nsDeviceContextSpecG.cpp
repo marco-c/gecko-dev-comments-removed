@@ -45,7 +45,8 @@ using mozilla::gfx::PrintTargetPS;
 
 static LazyLogModule sDeviceContextSpecGTKLog("DeviceContextSpecGTK");
 
-#define DO_PR_DEBUG_LOG(x) MOZ_LOG(sDeviceContextSpecGTKLog, mozilla::LogLevel::Debug, x)
+#define DO_PR_DEBUG_LOG(x) \
+  MOZ_LOG(sDeviceContextSpecGTKLog, mozilla::LogLevel::Debug, x)
 
 
 
@@ -54,20 +55,23 @@ static LazyLogModule sDeviceContextSpecGTKLog("DeviceContextSpecGTK");
 
 
 class GlobalPrinters {
-public:
-  static GlobalPrinters* GetInstance()   { return &mGlobalPrinters; }
-  ~GlobalPrinters()                      { FreeGlobalPrinters(); }
+ public:
+  static GlobalPrinters* GetInstance() { return &mGlobalPrinters; }
+  ~GlobalPrinters() { FreeGlobalPrinters(); }
 
-  void      FreeGlobalPrinters();
-  nsresult  InitializeGlobalPrinters();
+  void FreeGlobalPrinters();
+  nsresult InitializeGlobalPrinters();
 
-  bool      PrintersAreAllocated()       { return mGlobalPrinterList != nullptr; }
-  uint32_t  GetNumPrinters()
-    { return mGlobalPrinterList ? mGlobalPrinterList->Length() : 0; }
-  nsString* GetStringAt(int32_t aInx)    { return &mGlobalPrinterList->ElementAt(aInx); }
-  void      GetDefaultPrinterName(nsAString& aDefaultPrinterName);
+  bool PrintersAreAllocated() { return mGlobalPrinterList != nullptr; }
+  uint32_t GetNumPrinters() {
+    return mGlobalPrinterList ? mGlobalPrinterList->Length() : 0;
+  }
+  nsString* GetStringAt(int32_t aInx) {
+    return &mGlobalPrinterList->ElementAt(aInx);
+  }
+  void GetDefaultPrinterName(nsAString& aDefaultPrinterName);
 
-protected:
+ protected:
   GlobalPrinters() {}
 
   static GlobalPrinters mGlobalPrinters;
@@ -81,14 +85,11 @@ nsTArray<nsString>* GlobalPrinters::mGlobalPrinterList = nullptr;
 
 
 nsDeviceContextSpecGTK::nsDeviceContextSpecGTK()
-  : mGtkPrintSettings(nullptr)
-  , mGtkPageSetup(nullptr)
-{
+    : mGtkPrintSettings(nullptr), mGtkPageSetup(nullptr) {
   DO_PR_DEBUG_LOG(("nsDeviceContextSpecGTK::nsDeviceContextSpecGTK()\n"));
 }
 
-nsDeviceContextSpecGTK::~nsDeviceContextSpecGTK()
-{
+nsDeviceContextSpecGTK::~nsDeviceContextSpecGTK() {
   DO_PR_DEBUG_LOG(("nsDeviceContextSpecGTK::~nsDeviceContextSpecGTK()\n"));
 
   if (mGtkPageSetup) {
@@ -100,19 +101,18 @@ nsDeviceContextSpecGTK::~nsDeviceContextSpecGTK()
   }
 }
 
-NS_IMPL_ISUPPORTS(nsDeviceContextSpecGTK,
-                  nsIDeviceContextSpec)
+NS_IMPL_ISUPPORTS(nsDeviceContextSpecGTK, nsIDeviceContextSpec)
 
-already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget()
-{
+already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget() {
   double width, height;
   mPrintSettings->GetEffectivePageSize(&width, &height);
 
   
-  width  /= TWIPS_PER_POINT_FLOAT;
+  width /= TWIPS_PER_POINT_FLOAT;
   height /= TWIPS_PER_POINT_FLOAT;
 
-  DO_PR_DEBUG_LOG(("Making PrintTarget: width = %f, height = %f\n", width, height));
+  DO_PR_DEBUG_LOG(
+      ("Making PrintTarget: width = %f, height = %f\n", width, height));
   nsresult rv;
 
   
@@ -121,10 +121,9 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget()
 
   
   
-  gchar *buf;
+  gchar* buf;
   gint fd = g_file_open_tmp("XXXXXX.tmp", &buf, nullptr);
-  if (-1 == fd)
-    return nullptr;
+  if (-1 == fd) return nullptr;
   close(fd);
 
   rv = NS_NewNativeLocalFile(nsDependentCString(buf), false,
@@ -139,10 +138,10 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget()
 
   mSpoolFile->SetPermissions(0600);
 
-  nsCOMPtr<nsIFileOutputStream> stream = do_CreateInstance("@mozilla.org/network/file-output-stream;1");
+  nsCOMPtr<nsIFileOutputStream> stream =
+      do_CreateInstance("@mozilla.org/network/file-output-stream;1");
   rv = stream->Init(mSpoolFile, -1, -1, 0);
-  if (NS_FAILED(rv))
-    return nullptr;
+  if (NS_FAILED(rv)) return nullptr;
 
   int16_t format;
   mPrintSettings->GetOutputFormat(&format);
@@ -165,11 +164,11 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget()
 
   int32_t orientation;
   mPrintSettings->GetOrientation(&orientation);
-  return PrintTargetPS::CreateOrNull(stream,
-                                     size,
-                                     orientation == nsIPrintSettings::kPortraitOrientation
-                                       ? PrintTargetPS::PORTRAIT
-                                       : PrintTargetPS::LANDSCAPE);
+  return PrintTargetPS::CreateOrNull(
+      stream, size,
+      orientation == nsIPrintSettings::kPortraitOrientation
+          ? PrintTargetPS::PORTRAIT
+          : PrintTargetPS::LANDSCAPE);
 }
 
 
@@ -177,10 +176,9 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecGTK::MakePrintTarget()
 
 
 
-NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget *aWidget,
+NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget* aWidget,
                                            nsIPrintSettings* aPS,
-                                           bool aIsPrintPreview)
-{
+                                           bool aIsPrintPreview) {
   DO_PR_DEBUG_LOG(("nsDeviceContextSpecGTK::Init(aPS=%p)\n", aPS));
 
   if (gtk_major_version < 2 ||
@@ -188,8 +186,7 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget *aWidget,
     return NS_ERROR_NOT_AVAILABLE;  
 
   mPrintSettings = do_QueryInterface(aPS);
-  if (!mPrintSettings)
-    return NS_ERROR_NO_INTERFACE;
+  if (!mPrintSettings) return NS_ERROR_NO_INTERFACE;
 
   mIsPPreview = aIsPrintPreview;
 
@@ -205,8 +202,11 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget *aWidget,
   
   
   
-  GtkPaperSize* geckosHackishPaperSize = gtk_page_setup_get_paper_size(mGtkPageSetup);
-  GtkPaperSize* standardGtkPaperSize = gtk_paper_size_new(gtk_paper_size_get_name(geckosHackishPaperSize));
+  
+  GtkPaperSize* geckosHackishPaperSize =
+      gtk_page_setup_get_paper_size(mGtkPageSetup);
+  GtkPaperSize* standardGtkPaperSize =
+      gtk_paper_size_new(gtk_paper_size_get_name(geckosHackishPaperSize));
 
   mGtkPageSetup = gtk_page_setup_copy(mGtkPageSetup);
   mGtkPrintSettings = gtk_print_settings_copy(mGtkPrintSettings);
@@ -218,7 +218,8 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget *aWidget,
     properPaperSize = geckosHackishPaperSize;
   }
   gtk_print_settings_set_paper_size(mGtkPrintSettings, properPaperSize);
-  gtk_page_setup_set_paper_size_and_default_margins(mGtkPageSetup, properPaperSize);
+  gtk_page_setup_set_paper_size_and_default_margins(mGtkPageSetup,
+                                                    properPaperSize);
   gtk_paper_size_free(standardGtkPaperSize);
 
   return NS_OK;
@@ -226,29 +227,27 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::Init(nsIWidget *aWidget,
 
 static void
 #ifdef MOZ_WIDGET_GTK
-print_callback(GtkPrintJob *aJob, gpointer aData, const GError *aError) {
+print_callback(GtkPrintJob* aJob, gpointer aData, const GError* aError) {
 #else
-print_callback(GtkPrintJob *aJob, gpointer aData, GError *aError) {
+print_callback(GtkPrintJob* aJob, gpointer aData, GError* aError) {
 #endif
   g_object_unref(aJob);
-  ((nsIFile*) aData)->Remove(false);
+  ((nsIFile*)aData)->Remove(false);
 }
 
-static void
-ns_release_macro(gpointer aData) {
-  nsIFile* spoolFile = (nsIFile*) aData;
+static void ns_release_macro(gpointer aData) {
+  nsIFile* spoolFile = (nsIFile*)aData;
   NS_RELEASE(spoolFile);
 }
 
 
-gboolean nsDeviceContextSpecGTK::PrinterEnumerator(GtkPrinter *aPrinter,
+gboolean nsDeviceContextSpecGTK::PrinterEnumerator(GtkPrinter* aPrinter,
                                                    gpointer aData) {
-  nsDeviceContextSpecGTK *spec = (nsDeviceContextSpecGTK*)aData;
+  nsDeviceContextSpecGTK* spec = (nsDeviceContextSpecGTK*)aData;
 
   
   nsString printerName;
-  nsresult rv =
-    spec->mPrintSettings->GetPrinterName(printerName);
+  nsresult rv = spec->mPrintSettings->GetPrinterName(printerName);
   if (NS_SUCCEEDED(rv) && !printerName.IsVoid()) {
     NS_ConvertUTF16toUTF8 requestedName(printerName);
     const char* currentName = gtk_printer_get_name(aPrinter);
@@ -261,9 +260,8 @@ gboolean nsDeviceContextSpecGTK::PrinterEnumerator(GtkPrinter *aPrinter,
       
       
       NS_DispatchToCurrentThread(
-        NewRunnableMethod("nsDeviceContextSpecGTK::StartPrintJob",
-                          spec,
-                          &nsDeviceContextSpecGTK::StartPrintJob));
+          NewRunnableMethod("nsDeviceContextSpecGTK::StartPrintJob", spec,
+                            &nsDeviceContextSpecGTK::StartPrintJob));
       return TRUE;
     }
   }
@@ -273,21 +271,17 @@ gboolean nsDeviceContextSpecGTK::PrinterEnumerator(GtkPrinter *aPrinter,
 }
 
 void nsDeviceContextSpecGTK::StartPrintJob() {
-  GtkPrintJob* job = gtk_print_job_new(mTitle.get(),
-                                       mPrintSettings->GetGtkPrinter(),
-                                       mGtkPrintSettings,
-                                       mGtkPageSetup);
+  GtkPrintJob* job =
+      gtk_print_job_new(mTitle.get(), mPrintSettings->GetGtkPrinter(),
+                        mGtkPrintSettings, mGtkPageSetup);
 
-  if (!gtk_print_job_set_source_file(job, mSpoolName.get(), nullptr))
-    return;
+  if (!gtk_print_job_set_source_file(job, mSpoolName.get(), nullptr)) return;
 
   NS_ADDREF(mSpoolFile.get());
   gtk_print_job_send(job, print_callback, mSpoolFile, ns_release_macro);
 }
 
-void
-nsDeviceContextSpecGTK::EnumeratePrinters()
-{
+void nsDeviceContextSpecGTK::EnumeratePrinters() {
   gtk_enumerate_printers(&nsDeviceContextSpecGTK::PrinterEnumerator, this,
                          nullptr, TRUE);
 }
@@ -295,11 +289,10 @@ nsDeviceContextSpecGTK::EnumeratePrinters()
 NS_IMETHODIMP
 nsDeviceContextSpecGTK::BeginDocument(const nsAString& aTitle,
                                       const nsAString& aPrintToFileName,
-                                      int32_t aStartPage, int32_t aEndPage)
-{
+                                      int32_t aStartPage, int32_t aEndPage) {
   
   
-  if (gtk_check_version(3,18,2) != nullptr) {
+  if (gtk_check_version(3, 18, 2) != nullptr) {
     PrintTarget::AdjustPrintJobNameForIPP(aTitle, mTitle);
   } else {
     CopyUTF16toUTF8(aTitle, mTitle);
@@ -308,8 +301,7 @@ nsDeviceContextSpecGTK::BeginDocument(const nsAString& aTitle,
   return NS_OK;
 }
 
-NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument()
-{
+NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument() {
   if (mToPrinter) {
     
     
@@ -328,9 +320,8 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument()
       
       
       NS_DispatchToCurrentThread(
-        NewRunnableMethod("nsDeviceContextSpecGTK::EnumeratePrinters",
-                          this,
-                          &nsDeviceContextSpecGTK::EnumeratePrinters));
+          NewRunnableMethod("nsDeviceContextSpecGTK::EnumeratePrinters", this,
+                            &nsDeviceContextSpecGTK::EnumeratePrinters));
     }
   } else {
     
@@ -357,19 +348,22 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument()
     umask(mask);
     
     
+    
     destFile->SetPermissions(0666 & ~(mask));
 
     
-    nsCOMPtr<nsIGIOService> giovfs =
-      do_GetService(NS_GIOSERVICE_CONTRACTID);
+    nsCOMPtr<nsIGIOService> giovfs = do_GetService(NS_GIOSERVICE_CONTRACTID);
     bool shouldUsePortal;
     if (giovfs) {
       giovfs->ShouldUseFlatpakPortal(&shouldUsePortal);
       if (shouldUsePortal) {
         
-        nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
         
-        os->NotifyObservers(nullptr, "print-to-file-finished", targetPath.get());
+        nsCOMPtr<nsIObserverService> os =
+            mozilla::services::GetObserverService();
+        
+        os->NotifyObservers(nullptr, "print-to-file-finished",
+                            targetPath.get());
       }
     }
   }
@@ -377,14 +371,12 @@ NS_IMETHODIMP nsDeviceContextSpecGTK::EndDocument()
 }
 
 
-nsPrinterEnumeratorGTK::nsPrinterEnumeratorGTK()
-{
-}
+nsPrinterEnumeratorGTK::nsPrinterEnumeratorGTK() {}
 
 NS_IMPL_ISUPPORTS(nsPrinterEnumeratorGTK, nsIPrinterEnumerator)
 
-NS_IMETHODIMP nsPrinterEnumeratorGTK::GetPrinterNameList(nsIStringEnumerator **aPrinterNameList)
-{
+NS_IMETHODIMP nsPrinterEnumeratorGTK::GetPrinterNameList(
+    nsIStringEnumerator** aPrinterNameList) {
   NS_ENSURE_ARG_POINTER(aPrinterNameList);
   *aPrinterNameList = nullptr;
 
@@ -394,36 +386,36 @@ NS_IMETHODIMP nsPrinterEnumeratorGTK::GetPrinterNameList(nsIStringEnumerator **a
   }
 
   uint32_t numPrinters = GlobalPrinters::GetInstance()->GetNumPrinters();
-  nsTArray<nsString> *printers = new nsTArray<nsString>(numPrinters);
+  nsTArray<nsString>* printers = new nsTArray<nsString>(numPrinters);
   if (!printers) {
     GlobalPrinters::GetInstance()->FreeGlobalPrinters();
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
   uint32_t count = 0;
-  while( count < numPrinters )
-  {
-    printers->AppendElement(*GlobalPrinters::GetInstance()->GetStringAt(count++));
+  while (count < numPrinters) {
+    printers->AppendElement(
+        *GlobalPrinters::GetInstance()->GetStringAt(count++));
   }
   GlobalPrinters::GetInstance()->FreeGlobalPrinters();
 
   return NS_NewAdoptingStringEnumerator(aPrinterNameList, printers);
 }
 
-NS_IMETHODIMP nsPrinterEnumeratorGTK::GetDefaultPrinterName(nsAString& aDefaultPrinterName)
-{
+NS_IMETHODIMP nsPrinterEnumeratorGTK::GetDefaultPrinterName(
+    nsAString& aDefaultPrinterName) {
   DO_PR_DEBUG_LOG(("nsPrinterEnumeratorGTK::GetDefaultPrinterName()\n"));
 
   GlobalPrinters::GetInstance()->GetDefaultPrinterName(aDefaultPrinterName);
 
-  DO_PR_DEBUG_LOG(("GetDefaultPrinterName(): default printer='%s'.\n", NS_ConvertUTF16toUTF8(aDefaultPrinterName).get()));
+  DO_PR_DEBUG_LOG(("GetDefaultPrinterName(): default printer='%s'.\n",
+                   NS_ConvertUTF16toUTF8(aDefaultPrinterName).get()));
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const nsAString& aPrinterName,
-                                                     nsIPrintSettings *aPrintSettings)
-{
+nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(
+    const nsAString& aPrinterName, nsIPrintSettings* aPrintSettings) {
   DO_PR_DEBUG_LOG(("nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter()"));
 
   NS_ENSURE_ARG_POINTER(aPrintSettings);
@@ -455,8 +447,7 @@ nsPrinterEnumeratorGTK::InitPrintSettingsFromPrinter(const nsAString& aPrinterNa
 }
 
 
-nsresult GlobalPrinters::InitializeGlobalPrinters ()
-{
+nsresult GlobalPrinters::InitializeGlobalPrinters() {
   if (PrintersAreAllocated()) {
     return NS_OK;
   }
@@ -471,15 +462,13 @@ nsresult GlobalPrinters::InitializeGlobalPrinters ()
     
     nsTArray<nsCString> printerList;
     psMgr.GetPrinterList(printerList);
-    for (uint32_t i = 0; i < printerList.Length(); i++)
-    {
+    for (uint32_t i = 0; i < printerList.Length(); i++) {
       mGlobalPrinterList->AppendElement(NS_ConvertUTF8toUTF16(printerList[i]));
     }
   }
 
   
-  if (!mGlobalPrinterList->Length())
-  {
+  if (!mGlobalPrinterList->Length()) {
     
     FreeGlobalPrinters();
 
@@ -490,17 +479,14 @@ nsresult GlobalPrinters::InitializeGlobalPrinters ()
 }
 
 
-void GlobalPrinters::FreeGlobalPrinters()
-{
+void GlobalPrinters::FreeGlobalPrinters() {
   if (mGlobalPrinterList) {
     delete mGlobalPrinterList;
     mGlobalPrinterList = nullptr;
   }
 }
 
-void
-GlobalPrinters::GetDefaultPrinterName(nsAString& aDefaultPrinterName)
-{
+void GlobalPrinters::GetDefaultPrinterName(nsAString& aDefaultPrinterName) {
   aDefaultPrinterName.Truncate();
 
   bool allocate = !GlobalPrinters::GetInstance()->PrintersAreAllocated();
@@ -511,10 +497,10 @@ GlobalPrinters::GetDefaultPrinterName(nsAString& aDefaultPrinterName)
       return;
     }
   }
-  NS_ASSERTION(GlobalPrinters::GetInstance()->PrintersAreAllocated(), "no GlobalPrinters");
+  NS_ASSERTION(GlobalPrinters::GetInstance()->PrintersAreAllocated(),
+               "no GlobalPrinters");
 
-  if (GlobalPrinters::GetInstance()->GetNumPrinters() == 0)
-    return;
+  if (GlobalPrinters::GetInstance()->GetNumPrinters() == 0) return;
 
   aDefaultPrinterName = *GlobalPrinters::GetInstance()->GetStringAt(0);
 
@@ -522,4 +508,3 @@ GlobalPrinters::GetDefaultPrinterName(nsAString& aDefaultPrinterName)
     GlobalPrinters::GetInstance()->FreeGlobalPrinters();
   }
 }
-

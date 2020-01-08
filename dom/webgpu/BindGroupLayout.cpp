@@ -15,5 +15,5 @@ BindGroupLayout::~BindGroupLayout() = default;
 
 WEBGPU_IMPL_GOOP_0(BindGroupLayout)
 
-} 
-} 
+}  
+}  

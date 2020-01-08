@@ -7,21 +7,21 @@
 #ifndef MOZILLA_GFX_COMPOSITOR_H
 #define MOZILLA_GFX_COMPOSITOR_H
 
-#include "Units.h"                      
-#include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/2D.h"             
-#include "mozilla/gfx/MatrixFwd.h"      
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Polygon.h"        
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/gfx/Types.h"          
-#include "mozilla/gfx/Triangle.h"       
+#include "Units.h"                           
+#include "mozilla/Assertions.h"              
+#include "mozilla/RefPtr.h"                  
+#include "mozilla/gfx/2D.h"                  
+#include "mozilla/gfx/MatrixFwd.h"           
+#include "mozilla/gfx/Point.h"               
+#include "mozilla/gfx/Polygon.h"             
+#include "mozilla/gfx/Rect.h"                
+#include "mozilla/gfx/Types.h"               
+#include "mozilla/gfx/Triangle.h"            
 #include "mozilla/layers/CompositorTypes.h"  
-#include "mozilla/layers/LayersTypes.h"  
+#include "mozilla/layers/LayersTypes.h"      
 #include "mozilla/layers/TextureSourceProvider.h"
 #include "mozilla/widget/CompositorWidget.h"
-#include "nsISupportsImpl.h"            
+#include "nsISupportsImpl.h"  
 #include "nsRegion.h"
 #include <vector>
 #include "mozilla/WidgetUtils.h"
@@ -117,7 +117,7 @@ namespace mozilla {
 namespace gfx {
 class DrawTarget;
 class DataSourceSurface;
-} 
+}  
 
 namespace layers {
 
@@ -137,11 +137,7 @@ class TextureReadLock;
 struct GPUStats;
 class AsyncReadbackBuffer;
 
-enum SurfaceInitMode
-{
-  INIT_MODE_NONE,
-  INIT_MODE_CLEAR
-};
+enum SurfaceInitMode { INIT_MODE_NONE, INIT_MODE_CLEAR };
 
 
 
@@ -181,12 +177,11 @@ enum SurfaceInitMode
 
 
 
-class Compositor : public TextureSourceProvider
-{
-protected:
+class Compositor : public TextureSourceProvider {
+ protected:
   virtual ~Compositor();
 
-public:
+ public:
   explicit Compositor(widget::CompositorWidget* aWidget,
                       CompositorBridgeParent* aParent = nullptr);
 
@@ -215,19 +210,12 @@ public:
 
 
 
-  void SetTargetContext(gfx::DrawTarget* aTarget, const gfx::IntRect& aRect)
-  {
+  void SetTargetContext(gfx::DrawTarget* aTarget, const gfx::IntRect& aRect) {
     mTarget = aTarget;
     mTargetBounds = aRect;
   }
-  gfx::DrawTarget* GetTargetContext() const
-  {
-    return mTarget;
-  }
-  void ClearTargetContext()
-  {
-    mTarget = nullptr;
-  }
+  gfx::DrawTarget* GetTargetContext() const { return mTarget; }
+  void ClearTargetContext() { mTarget = nullptr; }
 
   typedef uint32_t MakeCurrentFlags;
   static const MakeCurrentFlags ForceMakeCurrent = 0x1;
@@ -248,8 +236,8 @@ public:
 
 
 
-  virtual already_AddRefed<CompositingRenderTarget>
-  CreateRenderTarget(const gfx::IntRect& aRect, SurfaceInitMode aInit) = 0;
+  virtual already_AddRefed<CompositingRenderTarget> CreateRenderTarget(
+      const gfx::IntRect& aRect, SurfaceInitMode aInit) = 0;
 
   
 
@@ -270,25 +258,29 @@ public:
 
 
 
-  virtual bool
-  ReadbackRenderTarget(CompositingRenderTarget* aSource,
-                       AsyncReadbackBuffer* aDest) { return false; }
+  virtual bool ReadbackRenderTarget(CompositingRenderTarget* aSource,
+                                    AsyncReadbackBuffer* aDest) {
+    return false;
+  }
 
   
 
 
-  virtual already_AddRefed<AsyncReadbackBuffer>
-  CreateAsyncReadbackBuffer(const gfx::IntSize& aSize) { return nullptr; }
+  virtual already_AddRefed<AsyncReadbackBuffer> CreateAsyncReadbackBuffer(
+      const gfx::IntSize& aSize) {
+    return nullptr;
+  }
 
   
 
 
 
 
-  virtual bool
-  BlitRenderTarget(CompositingRenderTarget* aSource,
-                   const gfx::IntSize& aSourceSize,
-                   const gfx::IntSize& aDestSize) { return false; }
+  virtual bool BlitRenderTarget(CompositingRenderTarget* aSource,
+                                const gfx::IntSize& aSourceSize,
+                                const gfx::IntSize& aDestSize) {
+    return false;
+  }
 
   
 
@@ -308,7 +300,9 @@ public:
 
 
 
-  virtual CompositingRenderTarget* GetWindowRenderTarget() const { return nullptr; }
+  virtual CompositingRenderTarget* GetWindowRenderTarget() const {
+    return nullptr;
+  }
 
   
 
@@ -322,23 +316,18 @@ public:
 
   virtual void SetScreenRenderOffset(const ScreenPoint& aOffset) = 0;
 
-  void DrawGeometry(const gfx::Rect& aRect,
-                    const gfx::IntRect& aClipRect,
-                    const EffectChain &aEffectChain,
-                    gfx::Float aOpacity,
+  void DrawGeometry(const gfx::Rect& aRect, const gfx::IntRect& aClipRect,
+                    const EffectChain& aEffectChain, gfx::Float aOpacity,
                     const gfx::Matrix4x4& aTransform,
                     const gfx::Rect& aVisibleRect,
                     const Maybe<gfx::Polygon>& aGeometry);
 
-  void DrawGeometry(const gfx::Rect& aRect,
-                    const gfx::IntRect& aClipRect,
-                    const EffectChain &aEffectChain,
-                    gfx::Float aOpacity,
+  void DrawGeometry(const gfx::Rect& aRect, const gfx::IntRect& aClipRect,
+                    const EffectChain& aEffectChain, gfx::Float aOpacity,
                     const gfx::Matrix4x4& aTransform,
-                    const Maybe<gfx::Polygon>& aGeometry)
-  {
-    DrawGeometry(aRect, aClipRect, aEffectChain, aOpacity,
-                 aTransform, aRect, aGeometry);
+                    const Maybe<gfx::Polygon>& aGeometry) {
+    DrawGeometry(aRect, aClipRect, aEffectChain, aOpacity, aTransform, aRect,
+                 aGeometry);
   }
 
   
@@ -350,8 +339,8 @@ public:
 
 
   virtual void DrawQuad(const gfx::Rect& aRect, const gfx::IntRect& aClipRect,
-                        const EffectChain& aEffectChain,
-                        gfx::Float aOpacity, const gfx::Matrix4x4& aTransform,
+                        const EffectChain& aEffectChain, gfx::Float aOpacity,
+                        const gfx::Matrix4x4& aTransform,
                         const gfx::Rect& aVisibleRect) = 0;
 
   
@@ -360,9 +349,9 @@ public:
 
 
   void DrawQuad(const gfx::Rect& aRect, const gfx::IntRect& aClipRect,
-                        const EffectChain& aEffectChain,
-                        gfx::Float aOpacity, const gfx::Matrix4x4& aTransform) {
-      DrawQuad(aRect, aClipRect, aEffectChain, aOpacity, aTransform, aRect);
+                const EffectChain& aEffectChain, gfx::Float aOpacity,
+                const gfx::Matrix4x4& aTransform) {
+    DrawQuad(aRect, aClipRect, aEffectChain, aOpacity, aTransform, aRect);
   }
 
   virtual void DrawTriangle(const gfx::TexturedTriangle& aTriangle,
@@ -370,42 +359,36 @@ public:
                             const EffectChain& aEffectChain,
                             gfx::Float aOpacity,
                             const gfx::Matrix4x4& aTransform,
-                            const gfx::Rect& aVisibleRect)
-  {
-    MOZ_CRASH("Compositor::DrawTriangle is not implemented for the current platform!");
+                            const gfx::Rect& aVisibleRect) {
+    MOZ_CRASH(
+        "Compositor::DrawTriangle is not implemented for the current "
+        "platform!");
   }
 
-  virtual bool SupportsLayerGeometry() const
-  {
-    return false;
-  }
+  virtual bool SupportsLayerGeometry() const { return false; }
 
   
 
 
   void SlowDrawRect(const gfx::Rect& aRect, const gfx::Color& color,
-                const gfx::IntRect& aClipRect = gfx::IntRect(),
-                const gfx::Matrix4x4& aTransform = gfx::Matrix4x4(),
-                int aStrokeWidth = 1);
+                    const gfx::IntRect& aClipRect = gfx::IntRect(),
+                    const gfx::Matrix4x4& aTransform = gfx::Matrix4x4(),
+                    int aStrokeWidth = 1);
 
   
 
 
   void FillRect(const gfx::Rect& aRect, const gfx::Color& color,
-                    const gfx::IntRect& aClipRect = gfx::IntRect(),
-                    const gfx::Matrix4x4& aTransform = gfx::Matrix4x4());
+                const gfx::IntRect& aClipRect = gfx::IntRect(),
+                const gfx::Matrix4x4& aTransform = gfx::Matrix4x4());
 
-  void SetClearColor(const gfx::Color& aColor) {
-    mClearColor = aColor;
-  }
+  void SetClearColor(const gfx::Color& aColor) { mClearColor = aColor; }
 
   void SetDefaultClearColor(const gfx::Color& aColor) {
     mDefaultClearColor = aColor;
   }
 
-  void SetClearColorToDefault() {
-    mClearColor = mDefaultClearColor;
-  }
+  void SetClearColorToDefault() { mClearColor = mDefaultClearColor; }
 
   
 
@@ -461,31 +444,25 @@ public:
 
   virtual bool SupportsPartialTextureUpdate() = 0;
 
-  void SetDiagnosticTypes(DiagnosticTypes aDiagnostics)
-  {
+  void SetDiagnosticTypes(DiagnosticTypes aDiagnostics) {
     mDiagnosticTypes = aDiagnostics;
   }
 
-  DiagnosticTypes GetDiagnosticTypes() const
-  {
-    return mDiagnosticTypes;
-  }
+  DiagnosticTypes GetDiagnosticTypes() const { return mDiagnosticTypes; }
 
-  void DrawDiagnostics(DiagnosticFlags aFlags,
-                       const gfx::Rect& visibleRect,
+  void DrawDiagnostics(DiagnosticFlags aFlags, const gfx::Rect& visibleRect,
                        const gfx::IntRect& aClipRect,
                        const gfx::Matrix4x4& transform,
                        uint32_t aFlashCounter = DIAGNOSTIC_FLASH_COUNTER_MAX);
 
-  void DrawDiagnostics(DiagnosticFlags aFlags,
-                       const nsIntRegion& visibleRegion,
+  void DrawDiagnostics(DiagnosticFlags aFlags, const nsIntRegion& visibleRegion,
                        const gfx::IntRect& aClipRect,
                        const gfx::Matrix4x4& transform,
                        uint32_t aFlashCounter = DIAGNOSTIC_FLASH_COUNTER_MAX);
 
 #ifdef MOZ_DUMP_PAINTING
   virtual const char* Name() const = 0;
-#endif 
+#endif  
 
   virtual LayersBackend GetBackendType() const = 0;
 
@@ -493,9 +470,7 @@ public:
   virtual CompositorD3D11* AsCompositorD3D11() { return nullptr; }
   virtual BasicCompositor* AsBasicCompositor() { return nullptr; }
 
-  virtual Compositor* AsCompositor() override {
-    return this;
-  }
+  virtual Compositor* AsCompositor() override { return this; }
 
   TimeStamp GetLastCompositionEndTime() const override {
     return mLastCompositionEndTime;
@@ -523,7 +498,7 @@ public:
 
   virtual bool Ready() { return true; }
 
-  virtual void ForcePresent() { }
+  virtual void ForcePresent() {}
 
   virtual bool IsPendingComposite() { return false; }
 
@@ -534,9 +509,7 @@ public:
   
   virtual void GetFrameStats(GPUStats* aStats);
 
-  ScreenRotation GetScreenRotation() const {
-    return mScreenRotation;
-  }
+  ScreenRotation GetScreenRotation() const { return mScreenRotation; }
   void SetScreenRotation(ScreenRotation aRotation) {
     mScreenRotation = aRotation;
   }
@@ -545,11 +518,9 @@ public:
   
   void SetInvalid();
   virtual bool IsValid() const override;
-  CompositorBridgeParent* GetCompositorBridgeParent() const {
-    return mParent;
-  }
+  CompositorBridgeParent* GetCompositorBridgeParent() const { return mParent; }
 
-protected:
+ protected:
   void DrawDiagnosticsInternal(DiagnosticFlags aFlags,
                                const gfx::Rect& aVisibleRect,
                                const gfx::IntRect& aClipRect,
@@ -586,11 +557,9 @@ protected:
                              const gfx::Matrix4x4& aTransform,
                              const gfx::Rect& aVisibleRect);
 
-  virtual void DrawPolygon(const gfx::Polygon& aPolygon,
-                           const gfx::Rect& aRect,
+  virtual void DrawPolygon(const gfx::Polygon& aPolygon, const gfx::Rect& aRect,
                            const gfx::IntRect& aClipRect,
-                           const EffectChain& aEffectChain,
-                           gfx::Float aOpacity,
+                           const EffectChain& aEffectChain, gfx::Float aOpacity,
                            const gfx::Matrix4x4& aTransform,
                            const gfx::Rect& aVisibleRect);
 
@@ -622,9 +591,8 @@ protected:
   gfx::Color mClearColor;
   gfx::Color mDefaultClearColor;
 
-private:
+ private:
   static LayersBackend sBackend;
-
 };
 
 
@@ -634,57 +602,53 @@ size_t DecomposeIntoNoRepeatRects(const gfx::Rect& aRect,
                                   decomposedRectArrayT* aLayerRects,
                                   decomposedRectArrayT* aTextureRects);
 
-static inline bool
-BlendOpIsMixBlendMode(gfx::CompositionOp aOp)
-{
+static inline bool BlendOpIsMixBlendMode(gfx::CompositionOp aOp) {
   switch (aOp) {
-  case gfx::CompositionOp::OP_MULTIPLY:
-  case gfx::CompositionOp::OP_SCREEN:
-  case gfx::CompositionOp::OP_OVERLAY:
-  case gfx::CompositionOp::OP_DARKEN:
-  case gfx::CompositionOp::OP_LIGHTEN:
-  case gfx::CompositionOp::OP_COLOR_DODGE:
-  case gfx::CompositionOp::OP_COLOR_BURN:
-  case gfx::CompositionOp::OP_HARD_LIGHT:
-  case gfx::CompositionOp::OP_SOFT_LIGHT:
-  case gfx::CompositionOp::OP_DIFFERENCE:
-  case gfx::CompositionOp::OP_EXCLUSION:
-  case gfx::CompositionOp::OP_HUE:
-  case gfx::CompositionOp::OP_SATURATION:
-  case gfx::CompositionOp::OP_COLOR:
-  case gfx::CompositionOp::OP_LUMINOSITY:
-    return true;
-  default:
-    return false;
+    case gfx::CompositionOp::OP_MULTIPLY:
+    case gfx::CompositionOp::OP_SCREEN:
+    case gfx::CompositionOp::OP_OVERLAY:
+    case gfx::CompositionOp::OP_DARKEN:
+    case gfx::CompositionOp::OP_LIGHTEN:
+    case gfx::CompositionOp::OP_COLOR_DODGE:
+    case gfx::CompositionOp::OP_COLOR_BURN:
+    case gfx::CompositionOp::OP_HARD_LIGHT:
+    case gfx::CompositionOp::OP_SOFT_LIGHT:
+    case gfx::CompositionOp::OP_DIFFERENCE:
+    case gfx::CompositionOp::OP_EXCLUSION:
+    case gfx::CompositionOp::OP_HUE:
+    case gfx::CompositionOp::OP_SATURATION:
+    case gfx::CompositionOp::OP_COLOR:
+    case gfx::CompositionOp::OP_LUMINOSITY:
+      return true;
+    default:
+      return false;
   }
 }
 
-class AsyncReadbackBuffer
-{
-public:
+class AsyncReadbackBuffer {
+ public:
   NS_INLINE_DECL_REFCOUNTING(AsyncReadbackBuffer)
 
   gfx::IntSize GetSize() const { return mSize; }
   virtual bool MapAndCopyInto(gfx::DataSourceSurface* aSurface,
-                              const gfx::IntSize& aReadSize) const=0;
+                              const gfx::IntSize& aReadSize) const = 0;
 
-protected:
+ protected:
   explicit AsyncReadbackBuffer(const gfx::IntSize& aSize) : mSize(aSize) {}
   virtual ~AsyncReadbackBuffer() {}
 
   gfx::IntSize mSize;
 };
 
-struct TexturedVertex
-{
+struct TexturedVertex {
   float position[2];
   float texCoords[2];
 };
 
-nsTArray<TexturedVertex>
-TexturedTrianglesToVertexArray(const nsTArray<gfx::TexturedTriangle>& aTriangles);
+nsTArray<TexturedVertex> TexturedTrianglesToVertexArray(
+    const nsTArray<gfx::TexturedTriangle>& aTriangles);
 
-} 
-} 
+}  
+}  
 
 #endif 

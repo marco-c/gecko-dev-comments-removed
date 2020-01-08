@@ -18,10 +18,8 @@ namespace net {
 
 
 
-class FileChannelParent : public nsIParentChannel
-                        , public PFileChannelParent
-{
-public:
+class FileChannelParent : public nsIParentChannel, public PFileChannelParent {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPARENTCHANNEL
   NS_DECL_NSIREQUESTOBSERVER
@@ -29,13 +27,13 @@ public:
 
   MOZ_MUST_USE bool Init(const uint32_t& aArgs);
 
-private:
+ private:
   ~FileChannelParent() = default;
 
   virtual void ActorDestroy(ActorDestroyReason why) override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

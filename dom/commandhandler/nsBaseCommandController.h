@@ -15,13 +15,11 @@
 
 
 
-class nsBaseCommandController
-  : public nsIController
-  , public nsIControllerContext
-  , public nsIInterfaceRequestor
-  , public nsICommandController
-{
-public:
+class nsBaseCommandController : public nsIController,
+                                public nsIControllerContext,
+                                public nsIInterfaceRequestor,
+                                public nsICommandController {
+ public:
   nsBaseCommandController();
 
   NS_DECL_ISUPPORTS
@@ -36,10 +34,10 @@ public:
   static already_AddRefed<nsIController> CreateHTMLEditorController();
   static already_AddRefed<nsIController> CreateHTMLEditorDocStateController();
 
-protected:
+ protected:
   virtual ~nsBaseCommandController();
 
-private:
+ private:
   nsWeakPtr mCommandContextWeakPtr;
   nsISupports* mCommandContextRawPtr;
 

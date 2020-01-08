@@ -19,35 +19,30 @@ namespace gfx {
 
 
 
-class PrintTargetSkPDF final : public PrintTarget
-{
-public:
+class PrintTargetSkPDF final : public PrintTarget {
+ public:
   
   
   
-  static already_AddRefed<PrintTargetSkPDF>
-  CreateOrNull(UniquePtr<SkWStream> aStream,
-               const IntSize& aSizeInPoints);
+  static already_AddRefed<PrintTargetSkPDF> CreateOrNull(
+      UniquePtr<SkWStream> aStream, const IntSize& aSizeInPoints);
 
   virtual nsresult BeginPrinting(const nsAString& aTitle,
                                  const nsAString& aPrintToFileName,
-                                 int32_t aStartPage,
-                                 int32_t aEndPage) override;
+                                 int32_t aStartPage, int32_t aEndPage) override;
   virtual nsresult EndPrinting() override;
   virtual void Finish() override;
 
   virtual nsresult BeginPage() override;
   virtual nsresult EndPage() override;
 
-  already_AddRefed<DrawTarget>
-  MakeDrawTarget(const IntSize& aSize,
-                 DrawEventRecorder* aRecorder = nullptr) final;
+  already_AddRefed<DrawTarget> MakeDrawTarget(
+      const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr) final;
 
   already_AddRefed<DrawTarget> GetReferenceDrawTarget() final;
 
-private:
-  PrintTargetSkPDF(const IntSize& aSize,
-                   UniquePtr<SkWStream> aStream);
+ private:
+  PrintTargetSkPDF(const IntSize& aSize, UniquePtr<SkWStream> aStream);
   virtual ~PrintTargetSkPDF();
 
   
@@ -69,7 +64,7 @@ private:
   SkDynamicMemoryWStream mRefOStream;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

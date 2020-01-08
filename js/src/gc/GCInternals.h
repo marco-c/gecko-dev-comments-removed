@@ -22,142 +22,122 @@
 namespace js {
 namespace gc {
 
-class MOZ_RAII AutoCheckCanAccessAtomsDuringGC
-{
+class MOZ_RAII AutoCheckCanAccessAtomsDuringGC {
 #ifdef DEBUG
-    JSRuntime* runtime;
+  JSRuntime* runtime;
 
-  public:
-    explicit AutoCheckCanAccessAtomsDuringGC(JSRuntime* rt)
-      : runtime(rt)
-    {
-        
-        MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
+ public:
+  explicit AutoCheckCanAccessAtomsDuringGC(JSRuntime* rt) : runtime(rt) {
+    
+    MOZ_ASSERT(JS::RuntimeHeapIsMajorCollecting());
 
-        
-        MOZ_ASSERT(!rt->hasHelperThreadZones());
+    
+    MOZ_ASSERT(!rt->hasHelperThreadZones());
 
-        
-        runtime->setOffThreadParsingBlocked(true);
-    }
-    ~AutoCheckCanAccessAtomsDuringGC() {
-        runtime->setOffThreadParsingBlocked(false);
-    }
+    
+    runtime->setOffThreadParsingBlocked(true);
+  }
+  ~AutoCheckCanAccessAtomsDuringGC() {
+    runtime->setOffThreadParsingBlocked(false);
+  }
 #else
-  public:
-    explicit AutoCheckCanAccessAtomsDuringGC(JSRuntime* rt) {}
+ public:
+  explicit AutoCheckCanAccessAtomsDuringGC(JSRuntime* rt) {}
 #endif
 };
 
 
-class MOZ_RAII AutoHeapSession
-{
-  public:
-    ~AutoHeapSession();
+class MOZ_RAII AutoHeapSession {
+ public:
+  ~AutoHeapSession();
 
-  protected:
-    AutoHeapSession(JSRuntime* rt, JS::HeapState state);
+ protected:
+  AutoHeapSession(JSRuntime* rt, JS::HeapState state);
 
-  private:
-    AutoHeapSession(const AutoHeapSession&) = delete;
-    void operator=(const AutoHeapSession&) = delete;
+ private:
+  AutoHeapSession(const AutoHeapSession&) = delete;
+  void operator=(const AutoHeapSession&) = delete;
 
-    JSRuntime* runtime;
-    JS::HeapState prevState;
-    AutoGeckoProfilerEntry profilingStackFrame;
+  JSRuntime* runtime;
+  JS::HeapState prevState;
+  AutoGeckoProfilerEntry profilingStackFrame;
 };
 
-class MOZ_RAII AutoGCSession : public AutoHeapSession
-{
-  public:
-    explicit AutoGCSession(JSRuntime* rt, JS::HeapState state)
-      : AutoHeapSession(rt, state)
-    {}
+class MOZ_RAII AutoGCSession : public AutoHeapSession {
+ public:
+  explicit AutoGCSession(JSRuntime* rt, JS::HeapState state)
+      : AutoHeapSession(rt, state) {}
 
-    AutoCheckCanAccessAtomsDuringGC& checkAtomsAccess() {
-        return maybeCheckAtomsAccess.ref();
-    }
+  AutoCheckCanAccessAtomsDuringGC& checkAtomsAccess() {
+    return maybeCheckAtomsAccess.ref();
+  }
 
-    
-    
-    mozilla::Maybe<AutoCheckCanAccessAtomsDuringGC> maybeCheckAtomsAccess;
+  
+  
+  mozilla::Maybe<AutoCheckCanAccessAtomsDuringGC> maybeCheckAtomsAccess;
 };
 
 class MOZ_RAII AutoTraceSession : public AutoLockAllAtoms,
-                                  public AutoHeapSession
-{
-  public:
-    explicit AutoTraceSession(JSRuntime* rt)
-      : AutoLockAllAtoms(rt),
-        AutoHeapSession(rt, JS::HeapState::Tracing)
-    {}
+                                  public AutoHeapSession {
+ public:
+  explicit AutoTraceSession(JSRuntime* rt)
+      : AutoLockAllAtoms(rt), AutoHeapSession(rt, JS::HeapState::Tracing) {}
 };
 
-struct MOZ_RAII AutoFinishGC
-{
-    explicit AutoFinishGC(JSContext* cx) {
-        FinishGC(cx);
-    }
+struct MOZ_RAII AutoFinishGC {
+  explicit AutoFinishGC(JSContext* cx) { FinishGC(cx); }
 };
 
 
 
 class MOZ_RAII AutoPrepareForTracing : private AutoFinishGC,
-                                       public AutoTraceSession
-{
-  public:
-    explicit AutoPrepareForTracing(JSContext* cx)
-      : AutoFinishGC(cx),
-        AutoTraceSession(cx->runtime())
-    {}
+                                       public AutoTraceSession {
+ public:
+  explicit AutoPrepareForTracing(JSContext* cx)
+      : AutoFinishGC(cx), AutoTraceSession(cx->runtime()) {}
 };
 
-AbortReason
-IsIncrementalGCUnsafe(JSRuntime* rt);
+AbortReason IsIncrementalGCUnsafe(JSRuntime* rt);
 
 #ifdef JS_GC_ZEAL
 
-class MOZ_RAII AutoStopVerifyingBarriers
-{
-    GCRuntime* gc;
-    bool restartPreVerifier;
+class MOZ_RAII AutoStopVerifyingBarriers {
+  GCRuntime* gc;
+  bool restartPreVerifier;
 
-  public:
-    AutoStopVerifyingBarriers(JSRuntime* rt, bool isShutdown)
-      : gc(&rt->gc)
-    {
-        if (gc->isVerifyPreBarriersEnabled()) {
-            gc->endVerifyPreBarriers();
-            restartPreVerifier = !isShutdown;
-        } else {
-            restartPreVerifier = false;
-        }
+ public:
+  AutoStopVerifyingBarriers(JSRuntime* rt, bool isShutdown) : gc(&rt->gc) {
+    if (gc->isVerifyPreBarriersEnabled()) {
+      gc->endVerifyPreBarriers();
+      restartPreVerifier = !isShutdown;
+    } else {
+      restartPreVerifier = false;
+    }
+  }
+
+  ~AutoStopVerifyingBarriers() {
+    
+    
+    
+    
+    gcstats::PhaseKind outer = gc->stats().currentPhaseKind();
+    if (outer != gcstats::PhaseKind::NONE) {
+      gc->stats().endPhase(outer);
+    }
+    MOZ_ASSERT(gc->stats().currentPhaseKind() == gcstats::PhaseKind::NONE);
+
+    if (restartPreVerifier) {
+      gc->startVerifyPreBarriers();
     }
 
-    ~AutoStopVerifyingBarriers() {
-        
-        
-        
-        
-        gcstats::PhaseKind outer = gc->stats().currentPhaseKind();
-        if (outer != gcstats::PhaseKind::NONE) {
-            gc->stats().endPhase(outer);
-        }
-        MOZ_ASSERT(gc->stats().currentPhaseKind() == gcstats::PhaseKind::NONE);
-
-        if (restartPreVerifier) {
-            gc->startVerifyPreBarriers();
-        }
-
-        if (outer != gcstats::PhaseKind::NONE) {
-            gc->stats().beginPhase(outer);
-        }
+    if (outer != gcstats::PhaseKind::NONE) {
+      gc->stats().beginPhase(outer);
     }
+  }
 };
 #else
-struct MOZ_RAII AutoStopVerifyingBarriers
-{
-    AutoStopVerifyingBarriers(JSRuntime*, bool) {}
+struct MOZ_RAII AutoStopVerifyingBarriers {
+  AutoStopVerifyingBarriers(JSRuntime*, bool) {}
 };
 #endif 
 
@@ -166,97 +146,90 @@ void CheckHashTablesAfterMovingGC(JSRuntime* rt);
 void CheckHeapAfterGC(JSRuntime* rt);
 #endif
 
-struct MovingTracer : JS::CallbackTracer
-{
-    explicit MovingTracer(JSRuntime* rt) : CallbackTracer(rt, TraceWeakMapKeysValues) {}
+struct MovingTracer : JS::CallbackTracer {
+  explicit MovingTracer(JSRuntime* rt)
+      : CallbackTracer(rt, TraceWeakMapKeysValues) {}
 
-    void onObjectEdge(JSObject** objp) override;
-    void onShapeEdge(Shape** shapep) override;
-    void onStringEdge(JSString** stringp) override;
-    void onScriptEdge(JSScript** scriptp) override;
-    void onLazyScriptEdge(LazyScript** lazyp) override;
-    void onBaseShapeEdge(BaseShape** basep) override;
-    void onScopeEdge(Scope** basep) override;
-    void onRegExpSharedEdge(RegExpShared** sharedp) override;
-    void onChild(const JS::GCCellPtr& thing) override {
-        MOZ_ASSERT(!thing.asCell()->isForwarded());
-    }
+  void onObjectEdge(JSObject** objp) override;
+  void onShapeEdge(Shape** shapep) override;
+  void onStringEdge(JSString** stringp) override;
+  void onScriptEdge(JSScript** scriptp) override;
+  void onLazyScriptEdge(LazyScript** lazyp) override;
+  void onBaseShapeEdge(BaseShape** basep) override;
+  void onScopeEdge(Scope** basep) override;
+  void onRegExpSharedEdge(RegExpShared** sharedp) override;
+  void onChild(const JS::GCCellPtr& thing) override {
+    MOZ_ASSERT(!thing.asCell()->isForwarded());
+  }
 
 #ifdef DEBUG
-    TracerKind getTracerKind() const override { return TracerKind::Moving; }
+  TracerKind getTracerKind() const override { return TracerKind::Moving; }
 #endif
 
-  private:
-    template <typename T>
-    void updateEdge(T** thingp);
+ private:
+  template <typename T>
+  void updateEdge(T** thingp);
 };
 
 
 
-struct TenureCount
-{
-    ObjectGroup* group;
-    int count;
+struct TenureCount {
+  ObjectGroup* group;
+  int count;
 
-    
-    
-    
+  
+  
+  
 } JS_HAZ_NON_GC_POINTER;
 
 
 
 
-struct TenureCountCache
-{
-    static const size_t EntryShift = 4;
-    static const size_t EntryCount = 1 << EntryShift;
+struct TenureCountCache {
+  static const size_t EntryShift = 4;
+  static const size_t EntryCount = 1 << EntryShift;
 
-    TenureCount entries[EntryCount] = {}; 
+  TenureCount entries[EntryCount] = {};  
 
-    TenureCountCache() = default;
+  TenureCountCache() = default;
 
-    HashNumber hash(ObjectGroup* group) {
+  HashNumber hash(ObjectGroup* group) {
 #if JS_BITS_PER_WORD == 32
-        static const size_t ZeroBits = 3;
+    static const size_t ZeroBits = 3;
 #else
-        static const size_t ZeroBits = 4;
+    static const size_t ZeroBits = 4;
 #endif
 
-        uintptr_t word = uintptr_t(group);
-        MOZ_ASSERT((word & ((1 << ZeroBits) - 1)) == 0);
-        word >>= ZeroBits;
-        return HashNumber((word >> EntryShift) ^ word);
-    }
+    uintptr_t word = uintptr_t(group);
+    MOZ_ASSERT((word & ((1 << ZeroBits) - 1)) == 0);
+    word >>= ZeroBits;
+    return HashNumber((word >> EntryShift) ^ word);
+  }
 
-    TenureCount& findEntry(ObjectGroup* group) {
-        return entries[hash(group) % EntryCount];
-    }
+  TenureCount& findEntry(ObjectGroup* group) {
+    return entries[hash(group) % EntryCount];
+  }
 };
 
-struct MOZ_RAII AutoAssertNoNurseryAlloc
-{
+struct MOZ_RAII AutoAssertNoNurseryAlloc {
 #ifdef DEBUG
-    AutoAssertNoNurseryAlloc();
-    ~AutoAssertNoNurseryAlloc();
+  AutoAssertNoNurseryAlloc();
+  ~AutoAssertNoNurseryAlloc();
 #else
-    AutoAssertNoNurseryAlloc() {}
+  AutoAssertNoNurseryAlloc() {}
 #endif
 };
 
 
 
-class MOZ_RAII AutoSuppressNurseryCellAlloc
-{
-    JSContext* cx_;
+class MOZ_RAII AutoSuppressNurseryCellAlloc {
+  JSContext* cx_;
 
-  public:
-
-    explicit AutoSuppressNurseryCellAlloc(JSContext* cx) : cx_(cx) {
-        cx_->nurserySuppressions_++;
-    }
-    ~AutoSuppressNurseryCellAlloc() {
-        cx_->nurserySuppressions_--;
-    }
+ public:
+  explicit AutoSuppressNurseryCellAlloc(JSContext* cx) : cx_(cx) {
+    cx_->nurserySuppressions_++;
+  }
+  ~AutoSuppressNurseryCellAlloc() { cx_->nurserySuppressions_--; }
 };
 
 
@@ -272,29 +245,25 @@ class MOZ_RAII AutoSuppressNurseryCellAlloc
 
 
 
+class MOZ_RAII AutoAssertEmptyNursery {
+ protected:
+  JSContext* cx;
 
-class MOZ_RAII AutoAssertEmptyNursery
-{
-  protected:
-    JSContext* cx;
+  mozilla::Maybe<AutoAssertNoNurseryAlloc> noAlloc;
 
-    mozilla::Maybe<AutoAssertNoNurseryAlloc> noAlloc;
+  
+  void checkCondition(JSContext* cx);
 
-    
-    void checkCondition(JSContext* cx);
+  
+  AutoAssertEmptyNursery() : cx(nullptr) {}
 
-    
-    AutoAssertEmptyNursery() : cx(nullptr) {
-    }
+ public:
+  explicit AutoAssertEmptyNursery(JSContext* cx) : cx(nullptr) {
+    checkCondition(cx);
+  }
 
-  public:
-    explicit AutoAssertEmptyNursery(JSContext* cx) : cx(nullptr) {
-        checkCondition(cx);
-    }
-
-    AutoAssertEmptyNursery(const AutoAssertEmptyNursery& other) : AutoAssertEmptyNursery(other.cx)
-    {
-    }
+  AutoAssertEmptyNursery(const AutoAssertEmptyNursery& other)
+      : AutoAssertEmptyNursery(other.cx) {}
 };
 
 
@@ -306,24 +275,19 @@ class MOZ_RAII AutoAssertEmptyNursery
 
 
 
-class MOZ_RAII AutoEmptyNursery : public AutoAssertEmptyNursery
-{
-  public:
-    explicit AutoEmptyNursery(JSContext* cx);
+class MOZ_RAII AutoEmptyNursery : public AutoAssertEmptyNursery {
+ public:
+  explicit AutoEmptyNursery(JSContext* cx);
 };
 
-extern void
-DelayCrossCompartmentGrayMarking(JSObject* src);
+extern void DelayCrossCompartmentGrayMarking(JSObject* src);
 
-inline bool
-IsOOMReason(JS::gcreason::Reason reason)
-{
-    return reason == JS::gcreason::LAST_DITCH ||
-           reason == JS::gcreason::MEM_PRESSURE;
+inline bool IsOOMReason(JS::gcreason::Reason reason) {
+  return reason == JS::gcreason::LAST_DITCH ||
+         reason == JS::gcreason::MEM_PRESSURE;
 }
 
-TenuredCell*
-AllocateCellInGC(JS::Zone* zone, AllocKind thingKind);
+TenuredCell* AllocateCellInGC(JS::Zone* zone, AllocKind thingKind);
 
 } 
 } 

@@ -26,119 +26,95 @@ namespace ipc {
 
 class DoWorkRunnable;
 
-class MessagePump : public base::MessagePumpDefault
-{
+class MessagePump : public base::MessagePumpDefault {
   friend class DoWorkRunnable;
 
-public:
+ public:
   explicit MessagePump(nsIEventTarget* aEventTarget);
 
   
-  virtual void
-  Run(base::MessagePump::Delegate* aDelegate) override;
+  virtual void Run(base::MessagePump::Delegate* aDelegate) override;
 
   
-  virtual void
-  ScheduleWork() override;
+  virtual void ScheduleWork() override;
 
   
-  virtual void
-  ScheduleWorkForNestedLoop() override;
+  virtual void ScheduleWorkForNestedLoop() override;
 
   
-  virtual void
-  ScheduleDelayedWork(const base::TimeTicks& aDelayedWorkTime) override;
+  virtual void ScheduleDelayedWork(
+      const base::TimeTicks& aDelayedWorkTime) override;
 
-  virtual nsIEventTarget*
-  GetXPCOMThread() override;
+  virtual nsIEventTarget* GetXPCOMThread() override;
 
-protected:
+ protected:
   virtual ~MessagePump();
 
-private:
+ private:
   
   void DoDelayedWork(base::MessagePump::Delegate* aDelegate);
 
-protected:
+ protected:
   nsIEventTarget* mEventTarget;
 
   
   
   nsCOMPtr<nsITimer> mDelayedWorkTimer;
 
-private:
+ private:
   
   RefPtr<DoWorkRunnable> mDoWorkEvent;
 };
 
-class MessagePumpForChildProcess final: public MessagePump
-{
-public:
-  MessagePumpForChildProcess()
-    : MessagePump(nullptr),
-      mFirstRun(true)
-  { }
+class MessagePumpForChildProcess final : public MessagePump {
+ public:
+  MessagePumpForChildProcess() : MessagePump(nullptr), mFirstRun(true) {}
 
   virtual void Run(base::MessagePump::Delegate* aDelegate) override;
 
-private:
-  ~MessagePumpForChildProcess()
-  { }
+ private:
+  ~MessagePumpForChildProcess() {}
 
   bool mFirstRun;
 };
 
-class MessagePumpForNonMainThreads final : public MessagePump
-{
-public:
+class MessagePumpForNonMainThreads final : public MessagePump {
+ public:
   explicit MessagePumpForNonMainThreads(nsIEventTarget* aEventTarget)
-    : MessagePump(aEventTarget)
-  { }
+      : MessagePump(aEventTarget) {}
 
   virtual void Run(base::MessagePump::Delegate* aDelegate) override;
 
-private:
-  ~MessagePumpForNonMainThreads()
-  { }
+ private:
+  ~MessagePumpForNonMainThreads() {}
 };
 
 #if defined(XP_WIN)
 
 
-class MessagePumpForNonMainUIThreads final:
-  public base::MessagePumpForUI,
-  public nsIThreadObserver
-{
-public:
+class MessagePumpForNonMainUIThreads final : public base::MessagePumpForUI,
+                                             public nsIThreadObserver {
+ public:
   
   
-  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override {
-    return 2;
-  }
-  NS_IMETHOD_(MozExternalRefCountType) Release(void) override  {
-    return 1;
-  }
+  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override { return 2; }
+  NS_IMETHOD_(MozExternalRefCountType) Release(void) override { return 1; }
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
 
   NS_DECL_NSITHREADOBSERVER
 
-public:
-  explicit MessagePumpForNonMainUIThreads(nsIEventTarget* aEventTarget) :
-    mInWait(false),
-    mWaitLock("mInWait")
-  {
-  }
+ public:
+  explicit MessagePumpForNonMainUIThreads(nsIEventTarget* aEventTarget)
+      : mInWait(false), mWaitLock("mInWait") {}
 
   
   virtual void DoRunLoop() override;
 
-  virtual nsIEventTarget*
-  GetXPCOMThread() override
-  {
-    return nullptr; 
+  virtual nsIEventTarget* GetXPCOMThread() override {
+    return nullptr;  
   }
 
-protected:
+ protected:
   void SetInWait() {
     MutexAutoLock lock(mWaitLock);
     mInWait = true;
@@ -154,15 +130,13 @@ protected:
     return mInWait;
   }
 
-private:
-  ~MessagePumpForNonMainUIThreads()
-  {
-  }
+ private:
+  ~MessagePumpForNonMainUIThreads() {}
 
   bool mInWait;
   mozilla::Mutex mWaitLock;
 };
-#endif 
+#endif  
 
 #if defined(MOZ_WIDGET_ANDROID)
 
@@ -174,32 +148,25 @@ private:
 
 
 
-class MessagePumpForAndroidUI : public base::MessagePump {
 
-public:
+class MessagePumpForAndroidUI : public base::MessagePump {
+ public:
   explicit MessagePumpForAndroidUI(nsIEventTarget* aEventTarget)
-    : mEventTarget(aEventTarget)
-  { }
+      : mEventTarget(aEventTarget) {}
 
   virtual void Run(Delegate* delegate);
   virtual void Quit();
   virtual void ScheduleWork();
   virtual void ScheduleDelayedWork(const base::TimeTicks& delayed_work_time);
-  virtual nsIEventTarget* GetXPCOMThread()
-  {
-    return mEventTarget;
-  }
+  virtual nsIEventTarget* GetXPCOMThread() { return mEventTarget; }
 
-private:
-  ~MessagePumpForAndroidUI()
-  { }
-  MessagePumpForAndroidUI()
-  { }
+ private:
+  ~MessagePumpForAndroidUI() {}
+  MessagePumpForAndroidUI() {}
 
   nsIEventTarget* mEventTarget;
 };
-#endif 
-
+#endif  
 
 } 
 } 

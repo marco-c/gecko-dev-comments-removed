@@ -34,21 +34,18 @@ class DominatorTree;
 using UniqueTwoByteString = UniqueFreePtr<char16_t[]>;
 using UniqueOneByteString = UniqueFreePtr<char[]>;
 
-class HeapSnapshot final : public nsISupports
-                         , public nsWrapperCache
-{
+class HeapSnapshot final : public nsISupports, public nsWrapperCache {
   friend struct DeserializedNode;
   friend struct DeserializedEdge;
   friend struct DeserializedStackFrame;
   friend class JS::ubi::Concrete<JS::ubi::DeserializedNode>;
 
   explicit HeapSnapshot(JSContext* cx, nsISupports* aParent)
-    : timestamp(Nothing())
-    , rootId(0)
-    , nodes(cx)
-    , frames(cx)
-    , mParent(aParent)
-  {
+      : timestamp(Nothing()),
+        rootId(0),
+        nodes(cx),
+        frames(cx),
+        mParent(aParent) {
     MOZ_ASSERT(aParent);
   };
 
@@ -69,13 +66,13 @@ class HeapSnapshot final : public nsISupports
   bool saveStackFrame(const protobuf::StackFrame& frame,
                       StackFrameId& outFrameId);
 
-public:
+ public:
   
   
   
   static const size_t MAX_STACK_DEPTH = 60;
 
-private:
+ private:
   
   Maybe<uint64_t> timestamp;
 
@@ -87,8 +84,8 @@ private:
   NodeSet nodes;
 
   
-  using FrameSet = js::HashSet<DeserializedStackFrame,
-                               DeserializedStackFrame::HashPolicy>;
+  using FrameSet =
+      js::HashSet<DeserializedStackFrame, DeserializedStackFrame::HashPolicy>;
   FrameSet frames;
 
   Vector<UniqueTwoByteString> internedTwoByteStrings;
@@ -96,32 +93,29 @@ private:
 
   using StringOrRef = Variant<const std::string*, uint64_t>;
 
-  template<typename CharT,
-           typename InternedStringSet>
+  template <typename CharT, typename InternedStringSet>
   const CharT* getOrInternString(InternedStringSet& internedStrings,
                                  Maybe<StringOrRef>& maybeStrOrRef);
 
-protected:
+ protected:
   nsCOMPtr<nsISupports> mParent;
 
-  virtual ~HeapSnapshot() { }
+  virtual ~HeapSnapshot() {}
 
-public:
+ public:
   
   
   
   static already_AddRefed<HeapSnapshot> Create(JSContext* cx,
                                                dom::GlobalObject& global,
                                                const uint8_t* buffer,
-                                               uint32_t size,
-                                               ErrorResult& rv);
+                                               uint32_t size, ErrorResult& rv);
 
   
   
-  static already_AddRefed<nsIFile> CreateUniqueCoreDumpFile(ErrorResult& rv,
-                                                            const TimeStamp& now,
-                                                            nsAString& outFilePath,
-                                                            nsAString& outSnapshotId);
+  static already_AddRefed<nsIFile> CreateUniqueCoreDumpFile(
+      ErrorResult& rv, const TimeStamp& now, nsAString& outFilePath,
+      nsAString& outSnapshotId);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(HeapSnapshot)
@@ -145,8 +139,7 @@ public:
 
   Maybe<JS::ubi::Node> getNodeById(JS::ubi::Node::Id nodeId) {
     auto p = nodes.lookup(nodeId);
-    if (!p)
-      return Nothing();
+    if (!p) return Nothing();
     return Some(JS::ubi::Node(const_cast<DeserializedNode*>(&*p)));
   }
 
@@ -158,11 +151,10 @@ public:
 
   already_AddRefed<DominatorTree> ComputeDominatorTree(ErrorResult& rv);
 
-  void ComputeShortestPaths(JSContext*cx, uint64_t start,
+  void ComputeShortestPaths(JSContext* cx, uint64_t start,
                             const dom::Sequence<uint64_t>& targets,
                             uint64_t maxNumPaths,
-                            JS::MutableHandleObject results,
-                            ErrorResult& rv);
+                            JS::MutableHandleObject results, ErrorResult& rv);
 
   dom::Nullable<uint64_t> GetCreationTime() {
     static const uint64_t maxTime = uint64_t(1) << 53;
@@ -176,19 +168,15 @@ public:
 
 
 
-class CoreDumpWriter
-{
-public:
-  virtual ~CoreDumpWriter() { };
+class CoreDumpWriter {
+ public:
+  virtual ~CoreDumpWriter(){};
 
   
   
   virtual bool writeMetadata(uint64_t timestamp) = 0;
 
-  enum EdgePolicy : bool {
-    INCLUDE_EDGES = true,
-    EXCLUDE_EDGES = false
-  };
+  enum EdgePolicy : bool { INCLUDE_EDGES = true, EXCLUDE_EDGES = false };
 
   
   
@@ -201,23 +189,15 @@ public:
 
 
 
-bool
-WriteHeapGraph(JSContext* cx,
-               const JS::ubi::Node& node,
-               CoreDumpWriter& writer,
-               bool wantNames,
-               JS::CompartmentSet* compartments,
-               JS::AutoCheckCannotGC& noGC,
-               uint32_t& outNodeCount,
-               uint32_t& outEdgeCount);
-inline bool
-WriteHeapGraph(JSContext* cx,
-               const JS::ubi::Node& node,
-               CoreDumpWriter& writer,
-               bool wantNames,
-               JS::CompartmentSet* compartments,
-               JS::AutoCheckCannotGC& noGC)
-{
+bool WriteHeapGraph(JSContext* cx, const JS::ubi::Node& node,
+                    CoreDumpWriter& writer, bool wantNames,
+                    JS::CompartmentSet* compartments,
+                    JS::AutoCheckCannotGC& noGC, uint32_t& outNodeCount,
+                    uint32_t& outEdgeCount);
+inline bool WriteHeapGraph(JSContext* cx, const JS::ubi::Node& node,
+                           CoreDumpWriter& writer, bool wantNames,
+                           JS::CompartmentSet* compartments,
+                           JS::AutoCheckCannotGC& noGC) {
   uint32_t ignoreNodeCount;
   uint32_t ignoreEdgeCount;
   return WriteHeapGraph(cx, node, writer, wantNames, compartments, noGC,
@@ -227,7 +207,7 @@ WriteHeapGraph(JSContext* cx,
 
 MallocSizeOf GetCurrentThreadDebuggerMallocSizeOf();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

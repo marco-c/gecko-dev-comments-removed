@@ -28,11 +28,10 @@ class Connection;
 class StatementParamsHolder;
 class StatementRowHolder;
 
-class Statement final : public mozIStorageStatement
-                      , public mozIStorageValueArray
-                      , public StorageBaseStatementInternal
-{
-public:
+class Statement final : public mozIStorageStatement,
+                        public mozIStorageValueArray,
+                        public StorageBaseStatementInternal {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_MOZISTORAGESTATEMENT
   NS_DECL_MOZISTORAGEBASESTATEMENT
@@ -53,10 +52,8 @@ public:
 
 
 
-  nsresult initialize(Connection *aDBConnection,
-                      sqlite3* aNativeConnection,
+  nsresult initialize(Connection *aDBConnection, sqlite3 *aNativeConnection,
                       const nsACString &aSQLStatement);
-
 
   
 
@@ -67,38 +64,37 @@ public:
 
 
 
-  inline already_AddRefed<BindingParamsArray> bindingParamsArray()
-  {
+  inline already_AddRefed<BindingParamsArray> bindingParamsArray() {
     return mParamsArray.forget();
   }
 
-private:
-    ~Statement();
+ private:
+  ~Statement();
 
-    sqlite3_stmt *mDBStatement;
-    uint32_t mParamCount;
-    uint32_t mResultColumnCount;
-    nsTArray<nsCString> mColumnNames;
-    bool mExecuting;
+  sqlite3_stmt *mDBStatement;
+  uint32_t mParamCount;
+  uint32_t mResultColumnCount;
+  nsTArray<nsCString> mColumnNames;
+  bool mExecuting;
 
-    
-
-
-
-    mozIStorageBindingParams *getParams();
-
-    
+  
 
 
 
-    RefPtr<BindingParamsArray> mParamsArray;
+  mozIStorageBindingParams *getParams();
 
-    
+  
 
 
 
-    nsMainThreadPtrHandle<StatementParamsHolder> mStatementParamsHolder;
-    nsMainThreadPtrHandle<StatementRowHolder> mStatementRowHolder;
+  RefPtr<BindingParamsArray> mParamsArray;
+
+  
+
+
+
+  nsMainThreadPtrHandle<StatementParamsHolder> mStatementParamsHolder;
+  nsMainThreadPtrHandle<StatementRowHolder> mStatementRowHolder;
 
   
 
@@ -113,13 +109,11 @@ private:
   friend class StatementJSHelper;
 };
 
-inline nsISupports*
-ToSupports(Statement* p)
-{
-  return NS_ISUPPORTS_CAST(mozIStorageStatement*, p);
+inline nsISupports *ToSupports(Statement *p) {
+  return NS_ISUPPORTS_CAST(mozIStorageStatement *, p);
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

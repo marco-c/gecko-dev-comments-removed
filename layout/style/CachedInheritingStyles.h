@@ -23,15 +23,14 @@ class ComputedStyle;
 
 
 
-class CachedInheritingStyles
-{
-public:
+
+class CachedInheritingStyles {
+ public:
   void Insert(ComputedStyle* aStyle);
   ComputedStyle* Lookup(nsAtom* aPseudoTag) const;
 
   CachedInheritingStyles() : mBits(0) {}
-  ~CachedInheritingStyles()
-  {
+  ~CachedInheritingStyles() {
     if (IsIndirect()) {
       delete AsIndirect();
     } else if (!IsEmpty()) {
@@ -41,21 +40,19 @@ public:
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes, size_t* aCVsSize) const;
 
-private:
+ private:
   
   typedef AutoTArray<RefPtr<ComputedStyle>, 4> IndirectCache;
 
   bool IsEmpty() const { return !mBits; }
   bool IsIndirect() const { return (mBits & 1); }
 
-  ComputedStyle* AsDirect() const
-  {
+  ComputedStyle* AsDirect() const {
     MOZ_ASSERT(!IsIndirect());
     return reinterpret_cast<ComputedStyle*>(mBits);
   }
 
-  IndirectCache* AsIndirect() const
-  {
+  IndirectCache* AsIndirect() const {
     MOZ_ASSERT(IsIndirect());
     return reinterpret_cast<IndirectCache*>(mBits & ~1);
   }
@@ -63,6 +60,6 @@ private:
   uintptr_t mBits;
 };
 
-} 
+}  
 
-#endif 
+#endif  

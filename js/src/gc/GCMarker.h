@@ -25,29 +25,28 @@ namespace gc {
 struct Cell;
 
 struct WeakKeyTableHashPolicy {
-    typedef JS::GCCellPtr Lookup;
-    static HashNumber hash(const Lookup& v, const mozilla::HashCodeScrambler&) {
-        return mozilla::HashGeneric(v.asCell());
-    }
-    static bool match(const JS::GCCellPtr& k, const Lookup& l) { return k == l; }
-    static bool isEmpty(const JS::GCCellPtr& v) { return !v; }
-    static void makeEmpty(JS::GCCellPtr* vp) { *vp = nullptr; }
+  typedef JS::GCCellPtr Lookup;
+  static HashNumber hash(const Lookup& v, const mozilla::HashCodeScrambler&) {
+    return mozilla::HashGeneric(v.asCell());
+  }
+  static bool match(const JS::GCCellPtr& k, const Lookup& l) { return k == l; }
+  static bool isEmpty(const JS::GCCellPtr& v) { return !v; }
+  static void makeEmpty(JS::GCCellPtr* vp) { *vp = nullptr; }
 };
 
 struct WeakMarkable {
-    WeakMapBase* weakmap;
-    JS::GCCellPtr key;
+  WeakMapBase* weakmap;
+  JS::GCCellPtr key;
 
-    WeakMarkable(WeakMapBase* weakmapArg, JS::GCCellPtr keyArg)
+  WeakMarkable(WeakMapBase* weakmapArg, JS::GCCellPtr keyArg)
       : weakmap(weakmapArg), key(keyArg) {}
 };
 
 using WeakEntryVector = Vector<WeakMarkable, 2, js::SystemAllocPolicy>;
 
-using WeakKeyTable = OrderedHashMap<JS::GCCellPtr,
-                                    WeakEntryVector,
-                                    WeakKeyTableHashPolicy,
-                                    js::SystemAllocPolicy>;
+using WeakKeyTable =
+    OrderedHashMap<JS::GCCellPtr, WeakEntryVector, WeakKeyTableHashPolicy,
+                   js::SystemAllocPolicy>;
 
 
 
@@ -61,335 +60,334 @@ using WeakKeyTable = OrderedHashMap<JS::GCCellPtr,
 
 
 
-class MarkStack
-{
-  public:
-    
+class MarkStack {
+ public:
+  
 
 
 
 
-    enum Tag {
-        ValueArrayTag,
-        ObjectTag,
-        GroupTag,
-        SavedValueArrayTag,
-        JitCodeTag,
-        ScriptTag,
-        TempRopeTag,
+  enum Tag {
+    ValueArrayTag,
+    ObjectTag,
+    GroupTag,
+    SavedValueArrayTag,
+    JitCodeTag,
+    ScriptTag,
+    TempRopeTag,
 
-        LastTag = TempRopeTag
-    };
+    LastTag = TempRopeTag
+  };
 
-    static const uintptr_t TagMask = 7;
-    static_assert(TagMask >= uintptr_t(LastTag), "The tag mask must subsume the tags.");
-    static_assert(TagMask <= gc::CellAlignMask, "The tag mask must be embeddable in a Cell*.");
+  static const uintptr_t TagMask = 7;
+  static_assert(TagMask >= uintptr_t(LastTag),
+                "The tag mask must subsume the tags.");
+  static_assert(TagMask <= gc::CellAlignMask,
+                "The tag mask must be embeddable in a Cell*.");
 
-    class TaggedPtr
-    {
-        uintptr_t bits;
+  class TaggedPtr {
+    uintptr_t bits;
 
-        Cell* ptr() const;
+    Cell* ptr() const;
 
-      public:
-        TaggedPtr() {}
-        TaggedPtr(Tag tag, Cell* ptr);
-        Tag tag() const;
-        template <typename T> T* as() const;
-
-        JSObject* asValueArrayObject() const;
-        JSObject* asSavedValueArrayObject() const;
-        JSRope* asTempRope() const;
-
-        void assertValid() const;
-    };
-
-    struct ValueArray
-    {
-        ValueArray(JSObject* obj, HeapSlot* start, HeapSlot* end);
-        void assertValid() const;
-
-        HeapSlot* end;
-        HeapSlot* start;
-        TaggedPtr ptr;
-    };
-
-    struct SavedValueArray
-    {
-        SavedValueArray(JSObject* obj, size_t index, HeapSlot::Kind kind);
-        void assertValid() const;
-
-        uintptr_t kind;
-        uintptr_t index;
-        TaggedPtr ptr;
-    };
-
-    explicit MarkStack(size_t maxCapacity = DefaultCapacity);
-    ~MarkStack();
-
-    static const size_t DefaultCapacity = SIZE_MAX;
-
-    size_t capacity() { return stack().length(); }
-
-    size_t position() const {
-        return topIndex_;
-    }
-
-    MOZ_MUST_USE bool init(JSGCMode gcMode);
-
-    MOZ_MUST_USE bool setCapacityForMode(JSGCMode mode);
-
-    size_t maxCapacity() const { return maxCapacity_; }
-    void setMaxCapacity(size_t maxCapacity);
-
+   public:
+    TaggedPtr() {}
+    TaggedPtr(Tag tag, Cell* ptr);
+    Tag tag() const;
     template <typename T>
-    MOZ_MUST_USE bool push(T* ptr);
+    T* as() const;
 
-    MOZ_MUST_USE bool push(JSObject* obj, HeapSlot* start, HeapSlot* end);
-    MOZ_MUST_USE bool push(const ValueArray& array);
-    MOZ_MUST_USE bool push(const SavedValueArray& array);
+    JSObject* asValueArrayObject() const;
+    JSObject* asSavedValueArrayObject() const;
+    JSRope* asTempRope() const;
 
-    
-    
-    MOZ_MUST_USE bool pushTempRope(JSRope* ptr);
+    void assertValid() const;
+  };
 
-    bool isEmpty() const {
-        return topIndex_ == 0;
-    }
+  struct ValueArray {
+    ValueArray(JSObject* obj, HeapSlot* start, HeapSlot* end);
+    void assertValid() const;
 
-    Tag peekTag() const;
-    TaggedPtr popPtr();
-    ValueArray popValueArray();
-    SavedValueArray popSavedValueArray();
+    HeapSlot* end;
+    HeapSlot* start;
+    TaggedPtr ptr;
+  };
 
-    void clear() {
-        topIndex_ = 0;
-    }
+  struct SavedValueArray {
+    SavedValueArray(JSObject* obj, size_t index, HeapSlot::Kind kind);
+    void assertValid() const;
 
-    void setGCMode(JSGCMode gcMode);
+    uintptr_t kind;
+    uintptr_t index;
+    TaggedPtr ptr;
+  };
 
-    void poisonUnused();
+  explicit MarkStack(size_t maxCapacity = DefaultCapacity);
+  ~MarkStack();
 
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  static const size_t DefaultCapacity = SIZE_MAX;
 
-  private:
-    using StackVector = Vector<TaggedPtr, 0, SystemAllocPolicy>;
-    const StackVector& stack() const { return stack_.ref(); }
-    StackVector& stack() { return stack_.ref(); }
+  size_t capacity() { return stack().length(); }
 
-    MOZ_MUST_USE bool ensureSpace(size_t count);
+  size_t position() const { return topIndex_; }
 
-    
-    MOZ_MUST_USE bool enlarge(size_t count);
+  MOZ_MUST_USE bool init(JSGCMode gcMode);
 
-    MOZ_MUST_USE bool resize(size_t newCapacity);
+  MOZ_MUST_USE bool setCapacityForMode(JSGCMode mode);
 
-    TaggedPtr* topPtr();
+  size_t maxCapacity() const { return maxCapacity_; }
+  void setMaxCapacity(size_t maxCapacity);
 
-    const TaggedPtr& peekPtr() const;
-    MOZ_MUST_USE bool pushTaggedPtr(Tag tag, Cell* ptr);
+  template <typename T>
+  MOZ_MUST_USE bool push(T* ptr);
 
-    
-    MainThreadData<size_t> topIndex_;
+  MOZ_MUST_USE bool push(JSObject* obj, HeapSlot* start, HeapSlot* end);
+  MOZ_MUST_USE bool push(const ValueArray& array);
+  MOZ_MUST_USE bool push(const SavedValueArray& array);
 
-    
-    MainThreadData<size_t> maxCapacity_;
+  
+  
+  MOZ_MUST_USE bool pushTempRope(JSRope* ptr);
 
-    
-    MainThreadData<StackVector> stack_;
+  bool isEmpty() const { return topIndex_ == 0; }
+
+  Tag peekTag() const;
+  TaggedPtr popPtr();
+  ValueArray popValueArray();
+  SavedValueArray popSavedValueArray();
+
+  void clear() { topIndex_ = 0; }
+
+  void setGCMode(JSGCMode gcMode);
+
+  void poisonUnused();
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+
+ private:
+  using StackVector = Vector<TaggedPtr, 0, SystemAllocPolicy>;
+  const StackVector& stack() const { return stack_.ref(); }
+  StackVector& stack() { return stack_.ref(); }
+
+  MOZ_MUST_USE bool ensureSpace(size_t count);
+
+  
+  MOZ_MUST_USE bool enlarge(size_t count);
+
+  MOZ_MUST_USE bool resize(size_t newCapacity);
+
+  TaggedPtr* topPtr();
+
+  const TaggedPtr& peekPtr() const;
+  MOZ_MUST_USE bool pushTaggedPtr(Tag tag, Cell* ptr);
+
+  
+  MainThreadData<size_t> topIndex_;
+
+  
+  MainThreadData<size_t> maxCapacity_;
+
+  
+  MainThreadData<StackVector> stack_;
 
 #ifdef DEBUG
-    mutable size_t iteratorCount_;
+  mutable size_t iteratorCount_;
 #endif
 
-    friend class MarkStackIter;
+  friend class MarkStackIter;
 };
 
-class MarkStackIter
-{
-    MarkStack& stack_;
-    size_t pos_;
+class MarkStackIter {
+  MarkStack& stack_;
+  size_t pos_;
 
-  public:
-    explicit MarkStackIter(MarkStack& stack);
-    ~MarkStackIter();
+ public:
+  explicit MarkStackIter(MarkStack& stack);
+  ~MarkStackIter();
 
-    bool done() const;
-    MarkStack::Tag peekTag() const;
-    MarkStack::TaggedPtr peekPtr() const;
-    MarkStack::ValueArray peekValueArray() const;
-    void next();
-    void nextPtr();
-    void nextArray();
+  bool done() const;
+  MarkStack::Tag peekTag() const;
+  MarkStack::TaggedPtr peekPtr() const;
+  MarkStack::ValueArray peekValueArray() const;
+  void next();
+  void nextPtr();
+  void nextArray();
 
-    
-    void saveValueArray(const MarkStack::SavedValueArray& savedArray);
+  
+  void saveValueArray(const MarkStack::SavedValueArray& savedArray);
 
-  private:
-    size_t position() const;
+ private:
+  size_t position() const;
 };
 
 } 
 
-class GCMarker : public JSTracer
-{
-  public:
-    explicit GCMarker(JSRuntime* rt);
-    MOZ_MUST_USE bool init(JSGCMode gcMode);
+class GCMarker : public JSTracer {
+ public:
+  explicit GCMarker(JSRuntime* rt);
+  MOZ_MUST_USE bool init(JSGCMode gcMode);
 
-    void setMaxCapacity(size_t maxCap) { stack.setMaxCapacity(maxCap); }
-    size_t maxCapacity() const { return stack.maxCapacity(); }
+  void setMaxCapacity(size_t maxCap) { stack.setMaxCapacity(maxCap); }
+  size_t maxCapacity() const { return stack.maxCapacity(); }
 
-    void start();
-    void stop();
-    void reset();
+  void start();
+  void stop();
+  void reset();
 
-    
-    template <typename T> void traverse(T thing);
+  
+  template <typename T>
+  void traverse(T thing);
 
-    
-    template <typename S, typename T> void traverseEdge(S source, T* target);
-    template <typename S, typename T> void traverseEdge(S source, const T& target);
+  
+  template <typename S, typename T>
+  void traverseEdge(S source, T* target);
+  template <typename S, typename T>
+  void traverseEdge(S source, const T& target);
 
-    
-    
-    template <typename S> void traverseObjectEdge(S source, JSObject* target) {
-        traverseEdge(source, target);
-    }
-    template <typename S> void traverseStringEdge(S source, JSString* target) {
-        traverseEdge(source, target);
-    }
+  
+  
+  template <typename S>
+  void traverseObjectEdge(S source, JSObject* target) {
+    traverseEdge(source, target);
+  }
+  template <typename S>
+  void traverseStringEdge(S source, JSString* target) {
+    traverseEdge(source, target);
+  }
 
-    
-    template <typename T> void noteWeakEdge(T* edge);
+  
+  template <typename T>
+  void noteWeakEdge(T* edge);
 
-    
-
-
-
+  
 
 
 
-    void setMarkColorGray();
-    void setMarkColorBlack();
-    void setMarkColor(gc::MarkColor newColor);
-    gc::MarkColor markColor() const { return color; }
 
-    void enterWeakMarkingMode();
-    void leaveWeakMarkingMode();
-    void abortLinearWeakMarking() {
-        leaveWeakMarkingMode();
-        linearWeakMarkingDisabled_ = true;
-    }
 
-    void delayMarkingArena(gc::Arena* arena);
-    void delayMarkingChildren(const void* thing);
-    void markDelayedChildren(gc::Arena* arena);
-    MOZ_MUST_USE bool markDelayedChildren(SliceBudget& budget);
-    bool hasDelayedChildren() const {
-        return !!unmarkedArenaStackTop;
-    }
 
-    bool isDrained() {
-        return isMarkStackEmpty() && !unmarkedArenaStackTop;
-    }
+  void setMarkColorGray();
+  void setMarkColorBlack();
+  void setMarkColor(gc::MarkColor newColor);
+  gc::MarkColor markColor() const { return color; }
 
-    MOZ_MUST_USE bool markUntilBudgetExhaused(SliceBudget& budget);
+  void enterWeakMarkingMode();
+  void leaveWeakMarkingMode();
+  void abortLinearWeakMarking() {
+    leaveWeakMarkingMode();
+    linearWeakMarkingDisabled_ = true;
+  }
 
-    void setGCMode(JSGCMode mode) { stack.setGCMode(mode); }
+  void delayMarkingArena(gc::Arena* arena);
+  void delayMarkingChildren(const void* thing);
+  void markDelayedChildren(gc::Arena* arena);
+  MOZ_MUST_USE bool markDelayedChildren(SliceBudget& budget);
+  bool hasDelayedChildren() const { return !!unmarkedArenaStackTop; }
 
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  bool isDrained() { return isMarkStackEmpty() && !unmarkedArenaStackTop; }
+
+  MOZ_MUST_USE bool markUntilBudgetExhaused(SliceBudget& budget);
+
+  void setGCMode(JSGCMode mode) { stack.setGCMode(mode); }
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
 #ifdef DEBUG
-    bool shouldCheckCompartments() { return strictCompartmentChecking; }
+  bool shouldCheckCompartments() { return strictCompartmentChecking; }
 #endif
 
-    void markEphemeronValues(gc::Cell* markedCell, gc::WeakEntryVector& entry);
+  void markEphemeronValues(gc::Cell* markedCell, gc::WeakEntryVector& entry);
 
-    static GCMarker* fromTracer(JSTracer* trc) {
-        MOZ_ASSERT(trc->isMarkingTracer());
-        return static_cast<GCMarker*>(trc);
-    }
+  static GCMarker* fromTracer(JSTracer* trc) {
+    MOZ_ASSERT(trc->isMarkingTracer());
+    return static_cast<GCMarker*>(trc);
+  }
 
-  private:
+ private:
 #ifdef DEBUG
-    void checkZone(void* p);
+  void checkZone(void* p);
 #else
-    void checkZone(void* p) {}
+  void checkZone(void* p) {}
 #endif
 
-    
-    
-    inline void repush(JSObject* obj);
+  
+  
+  inline void repush(JSObject* obj);
 
-    template <typename T> void markAndTraceChildren(T* thing);
-    template <typename T> void markAndPush(T* thing);
-    template <typename T> void markAndScan(T* thing);
-    template <typename T> void markImplicitEdgesHelper(T oldThing);
-    template <typename T> void markImplicitEdges(T* oldThing);
-    void eagerlyMarkChildren(JSLinearString* str);
-    void eagerlyMarkChildren(JSRope* rope);
-    void eagerlyMarkChildren(JSString* str);
-    void eagerlyMarkChildren(LazyScript *thing);
-    void eagerlyMarkChildren(Shape* shape);
-    void eagerlyMarkChildren(Scope* scope);
-    void lazilyMarkChildren(ObjectGroup* group);
+  template <typename T>
+  void markAndTraceChildren(T* thing);
+  template <typename T>
+  void markAndPush(T* thing);
+  template <typename T>
+  void markAndScan(T* thing);
+  template <typename T>
+  void markImplicitEdgesHelper(T oldThing);
+  template <typename T>
+  void markImplicitEdges(T* oldThing);
+  void eagerlyMarkChildren(JSLinearString* str);
+  void eagerlyMarkChildren(JSRope* rope);
+  void eagerlyMarkChildren(JSString* str);
+  void eagerlyMarkChildren(LazyScript* thing);
+  void eagerlyMarkChildren(Shape* shape);
+  void eagerlyMarkChildren(Scope* scope);
+  void lazilyMarkChildren(ObjectGroup* group);
 
-    
-    template <typename T>
-    void dispatchToTraceChildren(T* thing);
+  
+  template <typename T>
+  void dispatchToTraceChildren(T* thing);
 
-    
-    
-    template <typename T>
-    MOZ_MUST_USE bool mark(T* thing);
+  
+  
+  template <typename T>
+  MOZ_MUST_USE bool mark(T* thing);
 
-    template <typename T>
-    inline void pushTaggedPtr(T* ptr);
+  template <typename T>
+  inline void pushTaggedPtr(T* ptr);
 
-    inline void pushValueArray(JSObject* obj, HeapSlot* start, HeapSlot* end);
+  inline void pushValueArray(JSObject* obj, HeapSlot* start, HeapSlot* end);
 
-    bool isMarkStackEmpty() {
-        return stack.isEmpty();
-    }
+  bool isMarkStackEmpty() { return stack.isEmpty(); }
 
-    MOZ_MUST_USE bool restoreValueArray(const gc::MarkStack::SavedValueArray& array,
-                                        HeapSlot** vpp, HeapSlot** endp);
-    gc::MarkStack::ValueArray restoreValueArray(const gc::MarkStack::SavedValueArray& savedArray);
+  MOZ_MUST_USE bool restoreValueArray(
+      const gc::MarkStack::SavedValueArray& array, HeapSlot** vpp,
+      HeapSlot** endp);
+  gc::MarkStack::ValueArray restoreValueArray(
+      const gc::MarkStack::SavedValueArray& savedArray);
 
-    void saveValueRanges();
-    gc::MarkStack::SavedValueArray saveValueRange(const gc::MarkStack::ValueArray& array);
+  void saveValueRanges();
+  gc::MarkStack::SavedValueArray saveValueRange(
+      const gc::MarkStack::ValueArray& array);
 
-    inline void processMarkStackTop(SliceBudget& budget);
+  inline void processMarkStackTop(SliceBudget& budget);
 
-    
-    gc::MarkStack stack;
+  
+  gc::MarkStack stack;
 
-    
-    MainThreadData<gc::MarkColor> color;
+  
+  MainThreadData<gc::MarkColor> color;
 
-    
-    MainThreadData<js::gc::Arena*> unmarkedArenaStackTop;
+  
+  MainThreadData<js::gc::Arena*> unmarkedArenaStackTop;
 
-    
+  
 
 
 
-    MainThreadData<bool> linearWeakMarkingDisabled_;
+  MainThreadData<bool> linearWeakMarkingDisabled_;
 
 #ifdef DEBUG
-    
-    MainThreadData<size_t> markLaterArenas;
+  
+  MainThreadData<size_t> markLaterArenas;
 
-    
-    MainThreadData<bool> started;
+  
+  MainThreadData<bool> started;
 
-    
+  
 
 
 
-    MainThreadData<bool> strictCompartmentChecking;
-#endif 
+  MainThreadData<bool> strictCompartmentChecking;
+#endif  
 };
 
 namespace gc {
@@ -400,22 +398,17 @@ namespace gc {
 
 
 
-class MOZ_RAII AutoSetMarkColor
-{
-    GCMarker& marker_;
-    MarkColor initialColor_;
+class MOZ_RAII AutoSetMarkColor {
+  GCMarker& marker_;
+  MarkColor initialColor_;
 
-  public:
-    AutoSetMarkColor(GCMarker& marker, MarkColor newColor)
-      : marker_(marker),
-        initialColor_(marker.markColor())
-    {
-        marker_.setMarkColor(newColor);
-    }
+ public:
+  AutoSetMarkColor(GCMarker& marker, MarkColor newColor)
+      : marker_(marker), initialColor_(marker.markColor()) {
+    marker_.setMarkColor(newColor);
+  }
 
-    ~AutoSetMarkColor() {
-        marker_.setMarkColor(initialColor_);
-    }
+  ~AutoSetMarkColor() { marker_.setMarkColor(initialColor_); }
 };
 
 } 
@@ -423,7 +416,9 @@ class MOZ_RAII AutoSetMarkColor
 } 
 
 
-inline bool ThingIsPermanentAtomOrWellKnownSymbol(js::gc::Cell* thing) { return false; }
+inline bool ThingIsPermanentAtomOrWellKnownSymbol(js::gc::Cell* thing) {
+  return false;
+}
 bool ThingIsPermanentAtomOrWellKnownSymbol(JSString*);
 bool ThingIsPermanentAtomOrWellKnownSymbol(JSFlatString*);
 bool ThingIsPermanentAtomOrWellKnownSymbol(JSLinearString*);

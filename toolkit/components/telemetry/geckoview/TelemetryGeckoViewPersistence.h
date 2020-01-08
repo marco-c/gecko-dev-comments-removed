@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef GeckoViewTelemetryPersistence_h__
 #define GeckoViewTelemetryPersistence_h__
 
@@ -32,6 +31,6 @@ void DeInitPersistence();
 
 void ClearPersistenceData();
 
-} 
+}  
 
-#endif 
+#endif  

@@ -67,9 +67,7 @@ class CommandLine {
     return current_process_commandline_;
   }
 
-  static bool IsInitialized() {
-    return !!current_process_commandline_;
-  }
+  static bool IsInitialized() { return !!current_process_commandline_; }
 
   
   
@@ -91,9 +89,7 @@ class CommandLine {
   }
 #elif defined(OS_POSIX)
   
-  const std::vector<std::string>& argv() const {
-    return argv_;
-  }
+  const std::vector<std::string>& argv() const { return argv_; }
 #endif
 
   
@@ -106,8 +102,7 @@ class CommandLine {
   
   
   static std::wstring PrefixedSwitchStringWithValue(
-                        const std::wstring& switch_string,
-                        const std::wstring& value_string);
+      const std::wstring& switch_string, const std::wstring& value_string);
 
   
   
@@ -129,8 +124,7 @@ class CommandLine {
 
   
   
-  void AppendArguments(const CommandLine& other,
-                       bool include_program);
+  void AppendArguments(const CommandLine& other, bool include_program);
 
   
   
@@ -178,8 +172,7 @@ class CommandLine {
   
   
   static bool IsSwitch(const StringType& parameter_string,
-                       std::string* switch_string,
-                       StringType* switch_value);
+                       std::string* switch_string, StringType* switch_value);
 
   
   std::map<std::string, StringType> switches_;

@@ -34,15 +34,13 @@ gfx::Matrix ComputeTransformForRotation(const nsIntRect& aBounds,
 gfx::Matrix ComputeTransformForUnRotation(const nsIntRect& aBounds,
                                           ScreenRotation aRotation);
 
-nsIntRect RotateRect(nsIntRect aRect,
-                     const nsIntRect& aBounds,
+nsIntRect RotateRect(nsIntRect aRect, const nsIntRect& aBounds,
                      ScreenRotation aRotation);
 
 namespace widget {
 
-class WidgetUtils
-{
-public:
+class WidgetUtils {
+ public:
   
 
 
@@ -54,7 +52,8 @@ public:
 
 
 
-  static already_AddRefed<nsIWidget> DOMWindowToWidget(nsPIDOMWindowOuter* aDOMWindow);
+  static already_AddRefed<nsIWidget> DOMWindowToWidget(
+      nsPIDOMWindowOuter* aDOMWindow);
 
   
 
@@ -77,8 +76,7 @@ public:
 
 
 
-  static void GetLatinCharCodeForKeyCode(uint32_t aKeyCode,
-                                         bool aIsCapsLock,
+  static void GetLatinCharCodeForKeyCode(uint32_t aKeyCode, bool aIsCapsLock,
                                          uint32_t* aUnshiftedCharCode,
                                          uint32_t* aShiftedCharCode);
 
@@ -96,10 +94,9 @@ public:
 
 
   static void GetBrandShortName(nsAString& aBrandName);
-
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

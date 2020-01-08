@@ -45,46 +45,48 @@ namespace WebCore {
 class ReverbConvolverStage;
 
 class ReverbConvolver {
-public:
-    
-    
-    
-    
-    ReverbConvolver(const float* impulseResponseData,
-                    size_t impulseResponseLength, size_t maxFFTSize,
-                    size_t convolverRenderPhase, bool useBackgroundThreads);
-    ~ReverbConvolver();
+ public:
+  
+  
+  
+  
+  
+  ReverbConvolver(const float* impulseResponseData,
+                  size_t impulseResponseLength, size_t maxFFTSize,
+                  size_t convolverRenderPhase, bool useBackgroundThreads);
+  ~ReverbConvolver();
 
-    void process(const float* sourceChannelData,
-                 float* destinationChannelData);
+  void process(const float* sourceChannelData, float* destinationChannelData);
 
-    size_t impulseResponseLength() const { return m_impulseResponseLength; }
+  size_t impulseResponseLength() const { return m_impulseResponseLength; }
 
-    ReverbInputBuffer* inputBuffer() { return &m_inputBuffer; }
+  ReverbInputBuffer* inputBuffer() { return &m_inputBuffer; }
 
-    bool useBackgroundThreads() const { return m_useBackgroundThreads; }
-    void backgroundThreadEntry();
+  bool useBackgroundThreads() const { return m_useBackgroundThreads; }
+  void backgroundThreadEntry();
 
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-private:
-    nsTArray<nsAutoPtr<ReverbConvolverStage> > m_stages;
-    nsTArray<nsAutoPtr<ReverbConvolverStage> > m_backgroundStages;
-    size_t m_impulseResponseLength;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-    ReverbAccumulationBuffer m_accumulationBuffer;
+ private:
+  nsTArray<nsAutoPtr<ReverbConvolverStage> > m_stages;
+  nsTArray<nsAutoPtr<ReverbConvolverStage> > m_backgroundStages;
+  size_t m_impulseResponseLength;
 
-    
-    ReverbInputBuffer m_inputBuffer;
+  ReverbAccumulationBuffer m_accumulationBuffer;
 
-    
-    base::Thread m_backgroundThread;
-    Lock m_backgroundThreadLock;
-    ConditionVariable m_backgroundThreadCondition;
-    bool m_useBackgroundThreads;
-    bool m_wantsToExit;
-    bool m_moreInputBuffered;
+  
+  
+  ReverbInputBuffer m_inputBuffer;
+
+  
+  base::Thread m_backgroundThread;
+  Lock m_backgroundThreadLock;
+  ConditionVariable m_backgroundThreadCondition;
+  bool m_useBackgroundThreads;
+  bool m_wantsToExit;
+  bool m_moreInputBuffered;
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -82,168 +82,158 @@ using mozilla::dom::AutoEntryScript;
 
 
 
-#if ! defined(PTHREAD_STACK_MIN)
+#if !defined(PTHREAD_STACK_MIN)
 #define PTHREAD_STACK_MIN 0
 #endif
-static constexpr size_t kWatchdogStackSize = PTHREAD_STACK_MIN < 32 * 1024 ? 32 * 1024 : PTHREAD_STACK_MIN;
+static constexpr size_t kWatchdogStackSize =
+    PTHREAD_STACK_MIN < 32 * 1024 ? 32 * 1024 : PTHREAD_STACK_MIN;
 
 static void WatchdogMain(void* arg);
 class Watchdog;
 class WatchdogManager;
-class MOZ_RAII AutoLockWatchdog final
-{
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
-    Watchdog* const mWatchdog;
+class MOZ_RAII AutoLockWatchdog final {
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+  Watchdog* const mWatchdog;
 
-  public:
-    explicit AutoLockWatchdog(Watchdog* aWatchdog MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    ~AutoLockWatchdog();
+ public:
+  explicit AutoLockWatchdog(
+      Watchdog* aWatchdog MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+  ~AutoLockWatchdog();
 };
 
-class Watchdog
-{
-  public:
-    explicit Watchdog(WatchdogManager* aManager)
-      : mManager(aManager)
-      , mLock(nullptr)
-      , mWakeup(nullptr)
-      , mThread(nullptr)
-      , mHibernating(false)
-      , mInitialized(false)
-      , mShuttingDown(false)
-      , mMinScriptRunTimeSeconds(1)
-    {}
-    ~Watchdog() { MOZ_ASSERT(!Initialized()); }
+class Watchdog {
+ public:
+  explicit Watchdog(WatchdogManager* aManager)
+      : mManager(aManager),
+        mLock(nullptr),
+        mWakeup(nullptr),
+        mThread(nullptr),
+        mHibernating(false),
+        mInitialized(false),
+        mShuttingDown(false),
+        mMinScriptRunTimeSeconds(1) {}
+  ~Watchdog() { MOZ_ASSERT(!Initialized()); }
 
-    WatchdogManager* Manager() { return mManager; }
-    bool Initialized() { return mInitialized; }
-    bool ShuttingDown() { return mShuttingDown; }
-    PRLock* GetLock() { return mLock; }
-    bool Hibernating() { return mHibernating; }
-    void WakeUp()
-    {
-        MOZ_ASSERT(Initialized());
-        MOZ_ASSERT(Hibernating());
-        mHibernating = false;
-        PR_NotifyCondVar(mWakeup);
+  WatchdogManager* Manager() { return mManager; }
+  bool Initialized() { return mInitialized; }
+  bool ShuttingDown() { return mShuttingDown; }
+  PRLock* GetLock() { return mLock; }
+  bool Hibernating() { return mHibernating; }
+  void WakeUp() {
+    MOZ_ASSERT(Initialized());
+    MOZ_ASSERT(Hibernating());
+    mHibernating = false;
+    PR_NotifyCondVar(mWakeup);
+  }
+
+  
+  
+  
+
+  void Init() {
+    MOZ_ASSERT(NS_IsMainThread());
+    mLock = PR_NewLock();
+    if (!mLock) {
+      MOZ_CRASH("PR_NewLock failed.");
     }
+
+    mWakeup = PR_NewCondVar(mLock);
+    if (!mWakeup) {
+      MOZ_CRASH("PR_NewCondVar failed.");
+    }
+
+    {
+      AutoLockWatchdog lock(this);
+
+      
+      
+      
+      mThread = PR_CreateThread(PR_USER_THREAD, WatchdogMain, this,
+                                PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
+                                PR_JOINABLE_THREAD, kWatchdogStackSize);
+      if (!mThread) {
+        MOZ_CRASH("PR_CreateThread failed!");
+      }
+
+      
+      
+      
+      mInitialized = true;
+    }
+  }
+
+  void Shutdown() {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(Initialized());
+    {  
+      AutoLockWatchdog lock(this);
+
+      
+      mShuttingDown = true;
+
+      
+      PR_NotifyCondVar(mWakeup);
+    }
+
+    PR_JoinThread(mThread);
 
     
-    
-    
-
-    void Init()
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        mLock = PR_NewLock();
-        if (!mLock) {
-            MOZ_CRASH("PR_NewLock failed.");
-        }
-
-        mWakeup = PR_NewCondVar(mLock);
-        if (!mWakeup) {
-            MOZ_CRASH("PR_NewCondVar failed.");
-        }
-
-        {
-            AutoLockWatchdog lock(this);
-
-            
-            
-            
-            mThread = PR_CreateThread(PR_USER_THREAD, WatchdogMain, this,
-                                      PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
-                                      PR_JOINABLE_THREAD, kWatchdogStackSize);
-            if (!mThread) {
-                MOZ_CRASH("PR_CreateThread failed!");
-            }
-
-            
-            
-            
-            mInitialized = true;
-        }
-    }
-
-    void Shutdown()
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        MOZ_ASSERT(Initialized());
-        {   
-            AutoLockWatchdog lock(this);
-
-            
-            mShuttingDown = true;
-
-            
-            PR_NotifyCondVar(mWakeup);
-        }
-
-        PR_JoinThread(mThread);
-
-        
-        MOZ_ASSERT(!mShuttingDown);
-
-        
-        mThread = nullptr;
-        PR_DestroyCondVar(mWakeup);
-        mWakeup = nullptr;
-        PR_DestroyLock(mLock);
-        mLock = nullptr;
-
-        
-        mInitialized = false;
-    }
-
-    void SetMinScriptRunTimeSeconds(int32_t seconds)
-    {
-        
-        
-        MOZ_ASSERT(seconds > 0);
-        mMinScriptRunTimeSeconds = seconds;
-    }
+    MOZ_ASSERT(!mShuttingDown);
 
     
+    mThread = nullptr;
+    PR_DestroyCondVar(mWakeup);
+    mWakeup = nullptr;
+    PR_DestroyLock(mLock);
+    mLock = nullptr;
+
+    
+    mInitialized = false;
+  }
+
+  void SetMinScriptRunTimeSeconds(int32_t seconds) {
     
     
+    MOZ_ASSERT(seconds > 0);
+    mMinScriptRunTimeSeconds = seconds;
+  }
 
-    void Hibernate()
-    {
-        MOZ_ASSERT(!NS_IsMainThread());
-        mHibernating = true;
-        Sleep(PR_INTERVAL_NO_TIMEOUT);
-    }
-    void Sleep(PRIntervalTime timeout)
-    {
-        MOZ_ASSERT(!NS_IsMainThread());
-        MOZ_ALWAYS_TRUE(PR_WaitCondVar(mWakeup, timeout) == PR_SUCCESS);
-    }
-    void Finished()
-    {
-        MOZ_ASSERT(!NS_IsMainThread());
-        mShuttingDown = false;
-    }
+  
+  
+  
 
-    int32_t MinScriptRunTimeSeconds()
-    {
-        return mMinScriptRunTimeSeconds;
-    }
+  void Hibernate() {
+    MOZ_ASSERT(!NS_IsMainThread());
+    mHibernating = true;
+    Sleep(PR_INTERVAL_NO_TIMEOUT);
+  }
+  void Sleep(PRIntervalTime timeout) {
+    MOZ_ASSERT(!NS_IsMainThread());
+    MOZ_ALWAYS_TRUE(PR_WaitCondVar(mWakeup, timeout) == PR_SUCCESS);
+  }
+  void Finished() {
+    MOZ_ASSERT(!NS_IsMainThread());
+    mShuttingDown = false;
+  }
 
-  private:
-    WatchdogManager* mManager;
+  int32_t MinScriptRunTimeSeconds() { return mMinScriptRunTimeSeconds; }
 
-    PRLock* mLock;
-    PRCondVar* mWakeup;
-    PRThread* mThread;
-    bool mHibernating;
-    bool mInitialized;
-    bool mShuttingDown;
-    mozilla::Atomic<int32_t> mMinScriptRunTimeSeconds;
+ private:
+  WatchdogManager* mManager;
+
+  PRLock* mLock;
+  PRCondVar* mWakeup;
+  PRThread* mThread;
+  bool mHibernating;
+  bool mInitialized;
+  bool mShuttingDown;
+  mozilla::Atomic<int32_t> mMinScriptRunTimeSeconds;
 };
 
 #define PREF_MAX_SCRIPT_RUN_TIME_CONTENT "dom.max_script_run_time"
 #define PREF_MAX_SCRIPT_RUN_TIME_CHROME "dom.max_chrome_script_run_time"
-#define PREF_MAX_SCRIPT_RUN_TIME_EXT_CONTENT "dom.max_ext_content_script_run_time"
+#define PREF_MAX_SCRIPT_RUN_TIME_EXT_CONTENT \
+  "dom.max_ext_content_script_run_time"
 
 static const char* gCallbackPrefs[] = {
     "dom.use_watchdog",
@@ -253,527 +243,500 @@ static const char* gCallbackPrefs[] = {
     nullptr,
 };
 
-class WatchdogManager
-{
-  public:
-    explicit WatchdogManager()
-    {
-        
-        PodArrayZero(mTimestamps);
+class WatchdogManager {
+ public:
+  explicit WatchdogManager() {
+    
+    PodArrayZero(mTimestamps);
 
-        
-        Preferences::RegisterCallbacks(PrefsChanged, gCallbackPrefs, this);
+    
+    Preferences::RegisterCallbacks(PrefsChanged, gCallbackPrefs, this);
+  }
+
+  virtual ~WatchdogManager() {
+    
+    
+    
+    MOZ_ASSERT(!mWatchdog);
+  }
+
+ private:
+  static void PrefsChanged(const char* aPref, WatchdogManager* aSelf) {
+    aSelf->RefreshWatchdog();
+  }
+
+ public:
+  void Shutdown() {
+    Preferences::UnregisterCallbacks(PrefsChanged, gCallbackPrefs, this);
+  }
+
+  void RegisterContext(XPCJSContext* aContext) {
+    MOZ_ASSERT(NS_IsMainThread());
+    AutoLockWatchdog lock(mWatchdog);
+
+    if (aContext->mActive == XPCJSContext::CONTEXT_ACTIVE) {
+      mActiveContexts.insertBack(aContext);
+    } else {
+      mInactiveContexts.insertBack(aContext);
     }
 
-    virtual ~WatchdogManager()
-    {
-        
-        
-        
-        MOZ_ASSERT(!mWatchdog);
-    }
+    
+    RefreshWatchdog();
+  }
 
-  private:
+  void UnregisterContext(XPCJSContext* aContext) {
+    MOZ_ASSERT(NS_IsMainThread());
+    AutoLockWatchdog lock(mWatchdog);
 
-    static void PrefsChanged(const char* aPref, WatchdogManager* aSelf)
-    {
-        aSelf->RefreshWatchdog();
-    }
-
-  public:
-
-    void Shutdown()
-    {
-        Preferences::UnregisterCallbacks(PrefsChanged, gCallbackPrefs, this);
-    }
-
-    void
-    RegisterContext(XPCJSContext* aContext)
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        AutoLockWatchdog lock(mWatchdog);
-
-        if (aContext->mActive == XPCJSContext::CONTEXT_ACTIVE) {
-            mActiveContexts.insertBack(aContext);
-        } else {
-            mInactiveContexts.insertBack(aContext);
-        }
-
-        
-        RefreshWatchdog();
-    }
-
-    void
-    UnregisterContext(XPCJSContext* aContext)
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        AutoLockWatchdog lock(mWatchdog);
-
-        
-        aContext->LinkedListElement<XPCJSContext>::remove();
+    
+    aContext->LinkedListElement<XPCJSContext>::remove();
 
 #ifdef DEBUG
-        
-        
-        if (mActiveContexts.isEmpty() && mInactiveContexts.isEmpty()) {
-            MOZ_ASSERT(!mWatchdog);
-        }
+    
+    
+    if (mActiveContexts.isEmpty() && mInactiveContexts.isEmpty()) {
+      MOZ_ASSERT(!mWatchdog);
+    }
 #endif
-    }
+  }
+
+  
+  
+  
+  void RecordContextActivity(XPCJSContext* aContext, bool active) {
+    
+    MOZ_ASSERT(NS_IsMainThread());
+    AutoLockWatchdog lock(mWatchdog);
+
+    
+    aContext->mLastStateChange = PR_Now();
+    aContext->mActive =
+        active ? XPCJSContext::CONTEXT_ACTIVE : XPCJSContext::CONTEXT_INACTIVE;
+    UpdateContextLists(aContext);
 
     
     
+    if (active && mWatchdog && mWatchdog->Hibernating()) {
+      mWatchdog->WakeUp();
+    }
+  }
+
+  bool IsAnyContextActive() { return !mActiveContexts.isEmpty(); }
+  PRTime TimeSinceLastActiveContext() {
     
-    void RecordContextActivity(XPCJSContext* aContext, bool active)
-    {
-        
-        MOZ_ASSERT(NS_IsMainThread());
-        AutoLockWatchdog lock(mWatchdog);
-
-        
-        aContext->mLastStateChange = PR_Now();
-        aContext->mActive = active ? XPCJSContext::CONTEXT_ACTIVE :
-            XPCJSContext::CONTEXT_INACTIVE;
-        UpdateContextLists(aContext);
-
-        
-        
-        if (active && mWatchdog && mWatchdog->Hibernating()) {
-            mWatchdog->WakeUp();
-        }
-    }
-
-    bool IsAnyContextActive()
-    {
-        return !mActiveContexts.isEmpty();
-    }
-    PRTime TimeSinceLastActiveContext()
-    {
-        
-        MOZ_ASSERT(!NS_IsMainThread());
-        PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mWatchdog->GetLock());
-        MOZ_ASSERT(mActiveContexts.isEmpty());
-        MOZ_ASSERT(!mInactiveContexts.isEmpty());
-
-        
-        
-        return PR_Now() - mInactiveContexts.getLast()->mLastStateChange;
-    }
-
-    void RecordTimestamp(WatchdogTimestampCategory aCategory)
-    {
-        
-        MOZ_ASSERT(!NS_IsMainThread());
-        PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mWatchdog->GetLock());
-        MOZ_ASSERT(aCategory != TimestampContextStateChange,
-                   "Use RecordContextActivity to update this");
-
-        mTimestamps[aCategory] = PR_Now();
-    }
-
-    PRTime GetContextTimestamp(XPCJSContext* aContext,
-                               const AutoLockWatchdog& aProofOfLock)
-    {
-        return aContext->mLastStateChange;
-    }
-
-    PRTime GetTimestamp(WatchdogTimestampCategory aCategory,
-                        const AutoLockWatchdog& aProofOfLock)
-    {
-        MOZ_ASSERT(aCategory != TimestampContextStateChange,
-                   "Use GetContextTimestamp to retrieve this");
-        return mTimestamps[aCategory];
-    }
-
-    Watchdog* GetWatchdog() { return mWatchdog; }
-
-    void RefreshWatchdog()
-    {
-        bool wantWatchdog = Preferences::GetBool("dom.use_watchdog", true);
-        if (wantWatchdog != !!mWatchdog) {
-            if (wantWatchdog) {
-                StartWatchdog();
-            } else {
-                StopWatchdog();
-            }
-        }
-
-        if (mWatchdog) {
-            int32_t contentTime = Preferences::GetInt(PREF_MAX_SCRIPT_RUN_TIME_CONTENT, 10);
-            if (contentTime <= 0) {
-                contentTime = INT32_MAX;
-            }
-            int32_t chromeTime = Preferences::GetInt(PREF_MAX_SCRIPT_RUN_TIME_CHROME, 20);
-            if (chromeTime <= 0) {
-                chromeTime = INT32_MAX;
-            }
-            int32_t extTime = Preferences::GetInt(PREF_MAX_SCRIPT_RUN_TIME_EXT_CONTENT, 5);
-            if (extTime <= 0) {
-                extTime = INT32_MAX;
-            }
-            mWatchdog->SetMinScriptRunTimeSeconds(std::min({contentTime, chromeTime, extTime}));
-        }
-    }
-
-    void StartWatchdog()
-    {
-        MOZ_ASSERT(!mWatchdog);
-        mWatchdog = new Watchdog(this);
-        mWatchdog->Init();
-    }
-
-    void StopWatchdog()
-    {
-        MOZ_ASSERT(mWatchdog);
-        mWatchdog->Shutdown();
-        mWatchdog = nullptr;
-    }
-
-    template<class Callback>
-    void ForAllActiveContexts(Callback&& aCallback)
-    {
-        
-        MOZ_ASSERT(!NS_IsMainThread());
-        PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mWatchdog->GetLock());
-
-        for (auto* context = mActiveContexts.getFirst(); context;
-             context = context->LinkedListElement<XPCJSContext>::getNext()) {
-            if (!aCallback(context)) {
-                return;
-            }
-        }
-    }
-
-  private:
-    void UpdateContextLists(XPCJSContext* aContext)
-    {
-        
-        
-        aContext->LinkedListElement<XPCJSContext>::remove();
-        auto& list = aContext->mActive == XPCJSContext::CONTEXT_ACTIVE ?
-            mActiveContexts : mInactiveContexts;
-
-        
-        
-        MOZ_ASSERT_IF(!list.isEmpty(),
-                      list.getLast()->mLastStateChange < aContext->mLastStateChange);
-        list.insertBack(aContext);
-    }
-
-    LinkedList<XPCJSContext> mActiveContexts;
-    LinkedList<XPCJSContext> mInactiveContexts;
-    nsAutoPtr<Watchdog> mWatchdog;
+    MOZ_ASSERT(!NS_IsMainThread());
+    PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mWatchdog->GetLock());
+    MOZ_ASSERT(mActiveContexts.isEmpty());
+    MOZ_ASSERT(!mInactiveContexts.isEmpty());
 
     
-    PRTime mTimestamps[kWatchdogTimestampCategoryCount - 1];
+    
+    return PR_Now() - mInactiveContexts.getLast()->mLastStateChange;
+  }
+
+  void RecordTimestamp(WatchdogTimestampCategory aCategory) {
+    
+    MOZ_ASSERT(!NS_IsMainThread());
+    PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mWatchdog->GetLock());
+    MOZ_ASSERT(aCategory != TimestampContextStateChange,
+               "Use RecordContextActivity to update this");
+
+    mTimestamps[aCategory] = PR_Now();
+  }
+
+  PRTime GetContextTimestamp(XPCJSContext* aContext,
+                             const AutoLockWatchdog& aProofOfLock) {
+    return aContext->mLastStateChange;
+  }
+
+  PRTime GetTimestamp(WatchdogTimestampCategory aCategory,
+                      const AutoLockWatchdog& aProofOfLock) {
+    MOZ_ASSERT(aCategory != TimestampContextStateChange,
+               "Use GetContextTimestamp to retrieve this");
+    return mTimestamps[aCategory];
+  }
+
+  Watchdog* GetWatchdog() { return mWatchdog; }
+
+  void RefreshWatchdog() {
+    bool wantWatchdog = Preferences::GetBool("dom.use_watchdog", true);
+    if (wantWatchdog != !!mWatchdog) {
+      if (wantWatchdog) {
+        StartWatchdog();
+      } else {
+        StopWatchdog();
+      }
+    }
+
+    if (mWatchdog) {
+      int32_t contentTime =
+          Preferences::GetInt(PREF_MAX_SCRIPT_RUN_TIME_CONTENT, 10);
+      if (contentTime <= 0) {
+        contentTime = INT32_MAX;
+      }
+      int32_t chromeTime =
+          Preferences::GetInt(PREF_MAX_SCRIPT_RUN_TIME_CHROME, 20);
+      if (chromeTime <= 0) {
+        chromeTime = INT32_MAX;
+      }
+      int32_t extTime =
+          Preferences::GetInt(PREF_MAX_SCRIPT_RUN_TIME_EXT_CONTENT, 5);
+      if (extTime <= 0) {
+        extTime = INT32_MAX;
+      }
+      mWatchdog->SetMinScriptRunTimeSeconds(
+          std::min({contentTime, chromeTime, extTime}));
+    }
+  }
+
+  void StartWatchdog() {
+    MOZ_ASSERT(!mWatchdog);
+    mWatchdog = new Watchdog(this);
+    mWatchdog->Init();
+  }
+
+  void StopWatchdog() {
+    MOZ_ASSERT(mWatchdog);
+    mWatchdog->Shutdown();
+    mWatchdog = nullptr;
+  }
+
+  template <class Callback>
+  void ForAllActiveContexts(Callback&& aCallback) {
+    
+    MOZ_ASSERT(!NS_IsMainThread());
+    PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mWatchdog->GetLock());
+
+    for (auto* context = mActiveContexts.getFirst(); context;
+         context = context->LinkedListElement<XPCJSContext>::getNext()) {
+      if (!aCallback(context)) {
+        return;
+      }
+    }
+  }
+
+ private:
+  void UpdateContextLists(XPCJSContext* aContext) {
+    
+    
+    aContext->LinkedListElement<XPCJSContext>::remove();
+    auto& list = aContext->mActive == XPCJSContext::CONTEXT_ACTIVE
+                     ? mActiveContexts
+                     : mInactiveContexts;
+
+    
+    
+    MOZ_ASSERT_IF(!list.isEmpty(), list.getLast()->mLastStateChange <
+                                       aContext->mLastStateChange);
+    list.insertBack(aContext);
+  }
+
+  LinkedList<XPCJSContext> mActiveContexts;
+  LinkedList<XPCJSContext> mInactiveContexts;
+  nsAutoPtr<Watchdog> mWatchdog;
+
+  
+  PRTime mTimestamps[kWatchdogTimestampCategoryCount - 1];
 };
 
-AutoLockWatchdog::AutoLockWatchdog(Watchdog* aWatchdog MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
-  : mWatchdog(aWatchdog)
-{
-    MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    if (mWatchdog) {
-        PR_Lock(mWatchdog->GetLock());
-    }
+AutoLockWatchdog::AutoLockWatchdog(
+    Watchdog* aWatchdog MOZ_GUARD_OBJECT_NOTIFIER_PARAM_IN_IMPL)
+    : mWatchdog(aWatchdog) {
+  MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+  if (mWatchdog) {
+    PR_Lock(mWatchdog->GetLock());
+  }
 }
 
-AutoLockWatchdog::~AutoLockWatchdog()
-{
-    if (mWatchdog) {
-        PR_Unlock(mWatchdog->GetLock());
-    }
+AutoLockWatchdog::~AutoLockWatchdog() {
+  if (mWatchdog) {
+    PR_Unlock(mWatchdog->GetLock());
+  }
 }
 
-static void
-WatchdogMain(void* arg)
-{
-    AUTO_PROFILER_REGISTER_THREAD("JS Watchdog");
+static void WatchdogMain(void* arg) {
+  AUTO_PROFILER_REGISTER_THREAD("JS Watchdog");
+  
+  
+  Unused << NS_GetCurrentThread();
+  NS_SetCurrentThreadName("JS Watchdog");
+
+  Watchdog* self = static_cast<Watchdog*>(arg);
+  WatchdogManager* manager = self->Manager();
+
+  
+  AutoLockWatchdog lock(self);
+
+  MOZ_ASSERT(self->Initialized());
+  while (!self->ShuttingDown()) {
     
-    Unused << NS_GetCurrentThread();
-    NS_SetCurrentThreadName("JS Watchdog");
-
-    Watchdog* self = static_cast<Watchdog*>(arg);
-    WatchdogManager* manager = self->Manager();
+    
+    if (manager->IsAnyContextActive() ||
+        manager->TimeSinceLastActiveContext() <= PRTime(2 * PR_USEC_PER_SEC)) {
+      self->Sleep(PR_TicksPerSecond());
+    } else {
+      manager->RecordTimestamp(TimestampWatchdogHibernateStart);
+      self->Hibernate();
+      manager->RecordTimestamp(TimestampWatchdogHibernateStop);
+    }
 
     
-    AutoLockWatchdog lock(self);
+    manager->RecordTimestamp(TimestampWatchdogWakeup);
 
-    MOZ_ASSERT(self->Initialized());
-    while (!self->ShuttingDown()) {
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!self->ShuttingDown() && manager->IsAnyContextActive()) {
+      bool debuggerAttached = false;
+      nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
+      if (dbg) {
+        dbg->GetIsDebuggerAttached(&debuggerAttached);
+      }
+      if (debuggerAttached) {
         
-        if (manager->IsAnyContextActive() ||
-            manager->TimeSinceLastActiveContext() <= PRTime(2*PR_USEC_PER_SEC))
-        {
-            self->Sleep(PR_TicksPerSecond());
-        } else {
-            manager->RecordTimestamp(TimestampWatchdogHibernateStart);
-            self->Hibernate();
-            manager->RecordTimestamp(TimestampWatchdogHibernateStop);
+        continue;
+      }
+
+      PRTime usecs = self->MinScriptRunTimeSeconds() * PR_USEC_PER_SEC / 2;
+      manager->ForAllActiveContexts([usecs, manager,
+                                     &lock](XPCJSContext* aContext) -> bool {
+        auto timediff = PR_Now() - manager->GetContextTimestamp(aContext, lock);
+        if (timediff > usecs) {
+          JS_RequestInterruptCallback(aContext->Context());
+          return true;
         }
-
-        
-        manager->RecordTimestamp(TimestampWatchdogWakeup);
-
-        
-        
-        
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (!self->ShuttingDown() && manager->IsAnyContextActive()) {
-            bool debuggerAttached = false;
-            nsCOMPtr<nsIDebug2> dbg = do_GetService("@mozilla.org/xpcom/debug;1");
-            if (dbg) {
-                dbg->GetIsDebuggerAttached(&debuggerAttached);
-            }
-            if (debuggerAttached) {
-                
-                continue;
-            }
-
-            PRTime usecs = self->MinScriptRunTimeSeconds() * PR_USEC_PER_SEC / 2;
-            manager->ForAllActiveContexts([usecs, manager, &lock](XPCJSContext* aContext) -> bool {
-                auto timediff = PR_Now() - manager->GetContextTimestamp(aContext, lock);
-                if (timediff > usecs) {
-                    JS_RequestInterruptCallback(aContext->Context());
-                    return true;
-                }
-                return false;
-            });
-        }
-    }
-
-    
-    self->Finished();
-}
-
-PRTime
-XPCJSContext::GetWatchdogTimestamp(WatchdogTimestampCategory aCategory)
-{
-    AutoLockWatchdog lock(mWatchdogManager->GetWatchdog());
-    return aCategory == TimestampContextStateChange ?
-        mWatchdogManager->GetContextTimestamp(this, lock) :
-        mWatchdogManager->GetTimestamp(aCategory, lock);
-}
-
-
-bool
-XPCJSContext::RecordScriptActivity(bool aActive)
-{
-    MOZ_ASSERT(NS_IsMainThread());
-
-    XPCJSContext* xpccx = XPCJSContext::Get();
-    if (!xpccx) {
-        
-        
-        MOZ_ASSERT(!aActive);
         return false;
+      });
     }
+  }
 
-    bool oldValue = xpccx->SetHasScriptActivity(aActive);
-    if (aActive == oldValue) {
-        
-        return oldValue;
-    }
+  
+  self->Finished();
+}
 
+PRTime XPCJSContext::GetWatchdogTimestamp(WatchdogTimestampCategory aCategory) {
+  AutoLockWatchdog lock(mWatchdogManager->GetWatchdog());
+  return aCategory == TimestampContextStateChange
+             ? mWatchdogManager->GetContextTimestamp(this, lock)
+             : mWatchdogManager->GetTimestamp(aCategory, lock);
+}
+
+
+bool XPCJSContext::RecordScriptActivity(bool aActive) {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  XPCJSContext* xpccx = XPCJSContext::Get();
+  if (!xpccx) {
     
     
-    if (recordreplay::IsRecordingOrReplaying()) {
-        return oldValue;
-    }
+    MOZ_ASSERT(!aActive);
+    return false;
+  }
 
-    if (!aActive) {
-        ProcessHangMonitor::ClearHang();
-    }
-    xpccx->mWatchdogManager->RecordContextActivity(xpccx, aActive);
-
+  bool oldValue = xpccx->SetHasScriptActivity(aActive);
+  if (aActive == oldValue) {
+    
     return oldValue;
+  }
+
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
+    return oldValue;
+  }
+
+  if (!aActive) {
+    ProcessHangMonitor::ClearHang();
+  }
+  xpccx->mWatchdogManager->RecordContextActivity(xpccx, aActive);
+
+  return oldValue;
 }
 
 AutoScriptActivity::AutoScriptActivity(bool aActive)
-  : mActive(aActive)
-  , mOldValue(XPCJSContext::RecordScriptActivity(aActive))
-{
-}
+    : mActive(aActive),
+      mOldValue(XPCJSContext::RecordScriptActivity(aActive)) {}
 
-AutoScriptActivity::~AutoScriptActivity()
-{
-    MOZ_ALWAYS_TRUE(mActive == XPCJSContext::RecordScriptActivity(mOldValue));
+AutoScriptActivity::~AutoScriptActivity() {
+  MOZ_ALWAYS_TRUE(mActive == XPCJSContext::RecordScriptActivity(mOldValue));
 }
 
 
-bool
-XPCJSContext::InterruptCallback(JSContext* cx)
-{
-    
-    
-    if (recordreplay::IsRecordingOrReplaying()) {
-        return true;
-    }
-
-    XPCJSContext* self = XPCJSContext::Get();
-
-    
-    PROFILER_JS_INTERRUPT_CALLBACK();
-
-    
-    
-    
-    if (self->mSlowScriptCheckpoint.IsNull()) {
-        self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
-        self->mSlowScriptSecondHalf = false;
-        self->mSlowScriptActualWait = mozilla::TimeDuration();
-        self->mTimeoutAccumulated = false;
-        return true;
-    }
-
-    
-    
-    if (!nsContentUtils::IsInitialized()) {
-        return true;
-    }
-
-    
-    
-    
-    TimeDuration duration = TimeStamp::NowLoRes() - self->mSlowScriptCheckpoint;
-    int32_t limit;
-
-    nsString addonId;
-    const char* prefName;
-
-    auto principal = BasePrincipal::Cast(nsContentUtils::SubjectPrincipal(cx));
-    bool chrome = principal->Is<SystemPrincipal>();
-    if (chrome) {
-        prefName = PREF_MAX_SCRIPT_RUN_TIME_CHROME;
-        limit = Preferences::GetInt(prefName, 20);
-    } else if (auto policy = principal->ContentScriptAddonPolicy()) {
-        policy->GetId(addonId);
-        prefName = PREF_MAX_SCRIPT_RUN_TIME_EXT_CONTENT;
-        limit = Preferences::GetInt(prefName, 5);
-    } else {
-        prefName = PREF_MAX_SCRIPT_RUN_TIME_CONTENT;
-        limit = Preferences::GetInt(prefName, 10);
-    }
-
-    
-    if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
-        return true;
-    }
-
-    self->mSlowScriptActualWait += duration;
-
-    
-    
-    
-    if (!self->mSlowScriptSecondHalf) {
-        self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
-        self->mSlowScriptSecondHalf = true;
-        return true;
-    }
-
-    
-    
-    
-
-    
-    
-    RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
-    RefPtr<nsGlobalWindowInner> win = WindowOrNull(global);
-    if (!win && IsSandbox(global)) {
-        
-        
-        
-        JS::Rooted<JSObject*> proto(cx);
-        if (!JS_GetPrototype(cx, global, &proto)) {
-            return false;
-        }
-        if (proto && xpc::IsSandboxPrototypeProxy(proto) &&
-            (proto = js::CheckedUnwrap(proto,  false)))
-        {
-            win = WindowGlobalOrNull(proto);
-        }
-    }
-
-    if (!win) {
-        NS_WARNING("No active window");
-        return true;
-    }
-
-    if (win->IsDying()) {
-        
-        
-        
-        
-        return false;
-    }
-
-    
-    if (!chrome && !self->mTimeoutAccumulated) {
-      uint32_t delay = uint32_t(self->mSlowScriptActualWait.ToMilliseconds() - (limit * 1000.0));
-      Telemetry::Accumulate(Telemetry::SLOW_SCRIPT_NOTIFY_DELAY, delay);
-      self->mTimeoutAccumulated = true;
-    }
-
-    
-    nsGlobalWindowInner::SlowScriptResponse response = win->ShowSlowScriptDialog(addonId);
-    if (response == nsGlobalWindowInner::KillSlowScript) {
-        if (Preferences::GetBool("dom.global_stop_script", true)) {
-            xpc::Scriptability::Get(global).Block();
-        }
-        return false;
-    }
-    if (response == nsGlobalWindowInner::KillScriptGlobal) {
-        nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-
-        if (!IsSandbox(global) || !obs) {
-            return false;
-        }
-
-        
-        nsIXPConnect* xpc = nsContentUtils::XPConnect();
-        JS::RootedObject wrapper(cx, JS_NewPlainObject(cx));
-        nsCOMPtr<nsISupports> supports;
-
-        
-        
-        if (!wrapper ||
-            !JS_DefineProperty(cx, wrapper, "wrappedJSObject", global, JSPROP_ENUMERATE) ||
-            NS_FAILED(xpc->WrapJS(cx, wrapper, NS_GET_IID(nsISupports), getter_AddRefs(supports)))) {
-            return false;
-        }
-
-        obs->NotifyObservers(supports, "kill-content-script-sandbox", nullptr);
-        return false;
-    }
-
-    
-    
-    if (response != nsGlobalWindowInner::ContinueSlowScriptAndKeepNotifying) {
-        self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
-    }
-
-    if (response == nsGlobalWindowInner::AlwaysContinueSlowScript) {
-        Preferences::SetInt(prefName, 0);
-    }
-
+bool XPCJSContext::InterruptCallback(JSContext* cx) {
+  
+  
+  if (recordreplay::IsRecordingOrReplaying()) {
     return true;
+  }
+
+  XPCJSContext* self = XPCJSContext::Get();
+
+  
+  PROFILER_JS_INTERRUPT_CALLBACK();
+
+  
+  
+  
+  if (self->mSlowScriptCheckpoint.IsNull()) {
+    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
+    self->mSlowScriptSecondHalf = false;
+    self->mSlowScriptActualWait = mozilla::TimeDuration();
+    self->mTimeoutAccumulated = false;
+    return true;
+  }
+
+  
+  
+  if (!nsContentUtils::IsInitialized()) {
+    return true;
+  }
+
+  
+  
+  
+  TimeDuration duration = TimeStamp::NowLoRes() - self->mSlowScriptCheckpoint;
+  int32_t limit;
+
+  nsString addonId;
+  const char* prefName;
+
+  auto principal = BasePrincipal::Cast(nsContentUtils::SubjectPrincipal(cx));
+  bool chrome = principal->Is<SystemPrincipal>();
+  if (chrome) {
+    prefName = PREF_MAX_SCRIPT_RUN_TIME_CHROME;
+    limit = Preferences::GetInt(prefName, 20);
+  } else if (auto policy = principal->ContentScriptAddonPolicy()) {
+    policy->GetId(addonId);
+    prefName = PREF_MAX_SCRIPT_RUN_TIME_EXT_CONTENT;
+    limit = Preferences::GetInt(prefName, 5);
+  } else {
+    prefName = PREF_MAX_SCRIPT_RUN_TIME_CONTENT;
+    limit = Preferences::GetInt(prefName, 10);
+  }
+
+  
+  if (limit == 0 || duration.ToSeconds() < limit / 2.0) {
+    return true;
+  }
+
+  self->mSlowScriptActualWait += duration;
+
+  
+  
+  
+  if (!self->mSlowScriptSecondHalf) {
+    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
+    self->mSlowScriptSecondHalf = true;
+    return true;
+  }
+
+  
+  
+  
+
+  
+  
+  RootedObject global(cx, JS::CurrentGlobalOrNull(cx));
+  RefPtr<nsGlobalWindowInner> win = WindowOrNull(global);
+  if (!win && IsSandbox(global)) {
+    
+    
+    
+    JS::Rooted<JSObject*> proto(cx);
+    if (!JS_GetPrototype(cx, global, &proto)) {
+      return false;
+    }
+    if (proto && xpc::IsSandboxPrototypeProxy(proto) &&
+        (proto = js::CheckedUnwrap(proto,  false))) {
+      win = WindowGlobalOrNull(proto);
+    }
+  }
+
+  if (!win) {
+    NS_WARNING("No active window");
+    return true;
+  }
+
+  if (win->IsDying()) {
+    
+    
+    
+    
+    return false;
+  }
+
+  
+  if (!chrome && !self->mTimeoutAccumulated) {
+    uint32_t delay = uint32_t(self->mSlowScriptActualWait.ToMilliseconds() -
+                              (limit * 1000.0));
+    Telemetry::Accumulate(Telemetry::SLOW_SCRIPT_NOTIFY_DELAY, delay);
+    self->mTimeoutAccumulated = true;
+  }
+
+  
+  nsGlobalWindowInner::SlowScriptResponse response =
+      win->ShowSlowScriptDialog(addonId);
+  if (response == nsGlobalWindowInner::KillSlowScript) {
+    if (Preferences::GetBool("dom.global_stop_script", true)) {
+      xpc::Scriptability::Get(global).Block();
+    }
+    return false;
+  }
+  if (response == nsGlobalWindowInner::KillScriptGlobal) {
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+
+    if (!IsSandbox(global) || !obs) {
+      return false;
+    }
+
+    
+    nsIXPConnect* xpc = nsContentUtils::XPConnect();
+    JS::RootedObject wrapper(cx, JS_NewPlainObject(cx));
+    nsCOMPtr<nsISupports> supports;
+
+    
+    
+    if (!wrapper ||
+        !JS_DefineProperty(cx, wrapper, "wrappedJSObject", global,
+                           JSPROP_ENUMERATE) ||
+        NS_FAILED(xpc->WrapJS(cx, wrapper, NS_GET_IID(nsISupports),
+                              getter_AddRefs(supports)))) {
+      return false;
+    }
+
+    obs->NotifyObservers(supports, "kill-content-script-sandbox", nullptr);
+    return false;
+  }
+
+  
+  
+  if (response != nsGlobalWindowInner::ContinueSlowScriptAndKeepNotifying) {
+    self->mSlowScriptCheckpoint = TimeStamp::NowLoRes();
+  }
+
+  if (response == nsGlobalWindowInner::AlwaysContinueSlowScript) {
+    Preferences::SetInt(prefName, 0);
+  }
+
+  return true;
 }
 
 #define JS_OPTIONS_DOT_STR "javascript.options."
 
 static mozilla::Atomic<bool> sDiscardSystemSource(false);
 
-bool
-xpc::ShouldDiscardSystemSource() { return sDiscardSystemSource; }
+bool xpc::ShouldDiscardSystemSource() { return sDiscardSystemSource; }
 
 #ifdef DEBUG
 static mozilla::Atomic<bool> sExtraWarningsForSystemJS(false);
@@ -788,527 +751,513 @@ static mozilla::Atomic<bool> sStreamsEnabled(false);
 static mozilla::Atomic<bool> sBigIntEnabled(false);
 #endif
 
-void
-xpc::SetPrefableRealmOptions(JS::RealmOptions &options)
-{
-    options.creationOptions().setSharedMemoryAndAtomicsEnabled(sSharedMemoryEnabled)
+void xpc::SetPrefableRealmOptions(JS::RealmOptions& options) {
+  options.creationOptions()
+      .setSharedMemoryAndAtomicsEnabled(sSharedMemoryEnabled)
 #ifdef ENABLE_BIGINT
-                             .setBigIntEnabled(sBigIntEnabled)
+      .setBigIntEnabled(sBigIntEnabled)
 #endif
-                             .setStreamsEnabled(sStreamsEnabled);
+      .setStreamsEnabled(sStreamsEnabled);
 }
 
-static void
-ReloadPrefsCallback(const char* pref, XPCJSContext* xpccx)
-{
-    JSContext* cx = xpccx->Context();
+static void ReloadPrefsCallback(const char* pref, XPCJSContext* xpccx) {
+  JSContext* cx = xpccx->Context();
 
-    bool useBaseline = Preferences::GetBool(JS_OPTIONS_DOT_STR "baselinejit");
-    bool useIon = Preferences::GetBool(JS_OPTIONS_DOT_STR "ion");
-    bool useAsmJS = Preferences::GetBool(JS_OPTIONS_DOT_STR "asmjs");
-    bool useWasm = Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm");
-    bool useWasmIon = Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_ionjit");
-    bool useWasmBaseline = Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_baselinejit");
+  bool useBaseline = Preferences::GetBool(JS_OPTIONS_DOT_STR "baselinejit");
+  bool useIon = Preferences::GetBool(JS_OPTIONS_DOT_STR "ion");
+  bool useAsmJS = Preferences::GetBool(JS_OPTIONS_DOT_STR "asmjs");
+  bool useWasm = Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm");
+  bool useWasmIon = Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_ionjit");
+  bool useWasmBaseline =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_baselinejit");
 #ifdef ENABLE_WASM_CRANELIFT
-    bool useWasmCranelift = Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_cranelift");
+  bool useWasmCranelift =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_cranelift");
 #endif
 #ifdef ENABLE_WASM_GC
-    bool useWasmGc = Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_gc");
+  bool useWasmGc = Preferences::GetBool(JS_OPTIONS_DOT_STR "wasm_gc");
 #endif
-    bool throwOnAsmJSValidationFailure = Preferences::GetBool(JS_OPTIONS_DOT_STR
-                                                              "throw_on_asmjs_validation_failure");
-    bool useNativeRegExp = Preferences::GetBool(JS_OPTIONS_DOT_STR "native_regexp");
+  bool throwOnAsmJSValidationFailure = Preferences::GetBool(
+      JS_OPTIONS_DOT_STR "throw_on_asmjs_validation_failure");
+  bool useNativeRegExp =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "native_regexp");
 
-    bool parallelParsing = Preferences::GetBool(JS_OPTIONS_DOT_STR "parallel_parsing");
-    bool offthreadIonCompilation = Preferences::GetBool(JS_OPTIONS_DOT_STR
-                                                       "ion.offthread_compilation");
-    bool useBaselineEager = Preferences::GetBool(JS_OPTIONS_DOT_STR
-                                                 "baselinejit.unsafe_eager_compilation");
-    bool useIonEager = Preferences::GetBool(JS_OPTIONS_DOT_STR "ion.unsafe_eager_compilation");
+  bool parallelParsing =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "parallel_parsing");
+  bool offthreadIonCompilation =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "ion.offthread_compilation");
+  bool useBaselineEager = Preferences::GetBool(
+      JS_OPTIONS_DOT_STR "baselinejit.unsafe_eager_compilation");
+  bool useIonEager =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "ion.unsafe_eager_compilation");
 #ifdef DEBUG
-    bool fullJitDebugChecks = Preferences::GetBool(JS_OPTIONS_DOT_STR "jit.full_debug_checks");
+  bool fullJitDebugChecks =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "jit.full_debug_checks");
 #endif
 
-    int32_t baselineThreshold = Preferences::GetInt(JS_OPTIONS_DOT_STR "baselinejit.threshold", -1);
-    int32_t ionThreshold = Preferences::GetInt(JS_OPTIONS_DOT_STR "ion.threshold", -1);
-    int32_t ionFrequentBailoutThreshold = Preferences::GetInt(JS_OPTIONS_DOT_STR "ion.frequent_bailout_threshold", -1);
+  int32_t baselineThreshold =
+      Preferences::GetInt(JS_OPTIONS_DOT_STR "baselinejit.threshold", -1);
+  int32_t ionThreshold =
+      Preferences::GetInt(JS_OPTIONS_DOT_STR "ion.threshold", -1);
+  int32_t ionFrequentBailoutThreshold = Preferences::GetInt(
+      JS_OPTIONS_DOT_STR "ion.frequent_bailout_threshold", -1);
 
-    sDiscardSystemSource = Preferences::GetBool(JS_OPTIONS_DOT_STR "discardSystemSource");
+  sDiscardSystemSource =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "discardSystemSource");
 
-    bool useAsyncStack = Preferences::GetBool(JS_OPTIONS_DOT_STR "asyncstack");
+  bool useAsyncStack = Preferences::GetBool(JS_OPTIONS_DOT_STR "asyncstack");
 
 #ifdef ENABLE_BIGINT
-    sBigIntEnabled = Preferences::GetBool(JS_OPTIONS_DOT_STR "bigint");
+  sBigIntEnabled = Preferences::GetBool(JS_OPTIONS_DOT_STR "bigint");
 #endif
 
-    bool throwOnDebuggeeWouldRun = Preferences::GetBool(JS_OPTIONS_DOT_STR
-                                                        "throw_on_debuggee_would_run");
+  bool throwOnDebuggeeWouldRun =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "throw_on_debuggee_would_run");
 
-    bool dumpStackOnDebuggeeWouldRun = Preferences::GetBool(JS_OPTIONS_DOT_STR
-                                                            "dump_stack_on_debuggee_would_run");
+  bool dumpStackOnDebuggeeWouldRun = Preferences::GetBool(
+      JS_OPTIONS_DOT_STR "dump_stack_on_debuggee_would_run");
 
-    bool werror = Preferences::GetBool(JS_OPTIONS_DOT_STR "werror");
+  bool werror = Preferences::GetBool(JS_OPTIONS_DOT_STR "werror");
 
-    bool extraWarnings = Preferences::GetBool(JS_OPTIONS_DOT_STR "strict");
+  bool extraWarnings = Preferences::GetBool(JS_OPTIONS_DOT_STR "strict");
 
-    bool spectreIndexMasking = Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.index_masking");
-    bool spectreObjectMitigationsBarriers =
-        Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.object_mitigations.barriers");
-    bool spectreObjectMitigationsMisc =
-        Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.object_mitigations.misc");
-    bool spectreStringMitigations =
-        Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.string_mitigations");
-    bool spectreValueMasking = Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.value_masking");
-    bool spectreJitToCxxCalls = Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.jit_to_C++_calls");
+  bool spectreIndexMasking =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.index_masking");
+  bool spectreObjectMitigationsBarriers = Preferences::GetBool(
+      JS_OPTIONS_DOT_STR "spectre.object_mitigations.barriers");
+  bool spectreObjectMitigationsMisc = Preferences::GetBool(
+      JS_OPTIONS_DOT_STR "spectre.object_mitigations.misc");
+  bool spectreStringMitigations =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.string_mitigations");
+  bool spectreValueMasking =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.value_masking");
+  bool spectreJitToCxxCalls =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "spectre.jit_to_C++_calls");
 
-    sSharedMemoryEnabled = Preferences::GetBool(JS_OPTIONS_DOT_STR "shared_memory");
-    sStreamsEnabled = Preferences::GetBool(JS_OPTIONS_DOT_STR "streams");
+  sSharedMemoryEnabled =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "shared_memory");
+  sStreamsEnabled = Preferences::GetBool(JS_OPTIONS_DOT_STR "streams");
 
 #ifdef DEBUG
-    sExtraWarningsForSystemJS = Preferences::GetBool(JS_OPTIONS_DOT_STR "strict.debug");
+  sExtraWarningsForSystemJS =
+      Preferences::GetBool(JS_OPTIONS_DOT_STR "strict.debug");
 #endif
 
 #ifdef JS_GC_ZEAL
-    int32_t zeal = Preferences::GetInt(JS_OPTIONS_DOT_STR "gczeal", -1);
-    int32_t zeal_frequency =
-        Preferences::GetInt(JS_OPTIONS_DOT_STR "gczeal.frequency",
-                            JS_DEFAULT_ZEAL_FREQ);
-    if (zeal >= 0) {
-        JS_SetGCZeal(cx, (uint8_t)zeal, zeal_frequency);
-    }
-#endif 
+  int32_t zeal = Preferences::GetInt(JS_OPTIONS_DOT_STR "gczeal", -1);
+  int32_t zeal_frequency = Preferences::GetInt(
+      JS_OPTIONS_DOT_STR "gczeal.frequency", JS_DEFAULT_ZEAL_FREQ);
+  if (zeal >= 0) {
+    JS_SetGCZeal(cx, (uint8_t)zeal, zeal_frequency);
+  }
+#endif  
 
 #ifdef FUZZING
-    bool fuzzingEnabled = StaticPrefs::fuzzing_enabled();
+  bool fuzzingEnabled = StaticPrefs::fuzzing_enabled();
 #endif
 
-    JS::ContextOptionsRef(cx).setBaseline(useBaseline)
-                             .setIon(useIon)
-                             .setAsmJS(useAsmJS)
-                             .setWasm(useWasm)
-                             .setWasmIon(useWasmIon)
-                             .setWasmBaseline(useWasmBaseline)
+  JS::ContextOptionsRef(cx)
+      .setBaseline(useBaseline)
+      .setIon(useIon)
+      .setAsmJS(useAsmJS)
+      .setWasm(useWasm)
+      .setWasmIon(useWasmIon)
+      .setWasmBaseline(useWasmBaseline)
 #ifdef ENABLE_WASM_CRANELIFT
-                             .setWasmForceCranelift(useWasmCranelift)
+      .setWasmForceCranelift(useWasmCranelift)
 #endif
 #ifdef ENABLE_WASM_GC
-                             .setWasmGc(useWasmGc)
+      .setWasmGc(useWasmGc)
 #endif
-                             .setThrowOnAsmJSValidationFailure(throwOnAsmJSValidationFailure)
-                             .setNativeRegExp(useNativeRegExp)
-                             .setAsyncStack(useAsyncStack)
-                             .setThrowOnDebuggeeWouldRun(throwOnDebuggeeWouldRun)
-                             .setDumpStackOnDebuggeeWouldRun(dumpStackOnDebuggeeWouldRun)
-                             .setWerror(werror)
+      .setThrowOnAsmJSValidationFailure(throwOnAsmJSValidationFailure)
+      .setNativeRegExp(useNativeRegExp)
+      .setAsyncStack(useAsyncStack)
+      .setThrowOnDebuggeeWouldRun(throwOnDebuggeeWouldRun)
+      .setDumpStackOnDebuggeeWouldRun(dumpStackOnDebuggeeWouldRun)
+      .setWerror(werror)
 #ifdef FUZZING
-                             .setFuzzing(fuzzingEnabled)
+      .setFuzzing(fuzzingEnabled)
 #endif
-                             .setExtraWarnings(extraWarnings);
+      .setExtraWarnings(extraWarnings);
 
-    nsCOMPtr<nsIXULRuntime> xr = do_GetService("@mozilla.org/xre/runtime;1");
-    if (xr) {
-        bool safeMode = false;
-        xr->GetInSafeMode(&safeMode);
-        if (safeMode) {
-            JS::ContextOptionsRef(cx).disableOptionsForSafeMode();
-        }
+  nsCOMPtr<nsIXULRuntime> xr = do_GetService("@mozilla.org/xre/runtime;1");
+  if (xr) {
+    bool safeMode = false;
+    xr->GetInSafeMode(&safeMode);
+    if (safeMode) {
+      JS::ContextOptionsRef(cx).disableOptionsForSafeMode();
     }
+  }
 
-    JS_SetParallelParsingEnabled(cx, parallelParsing);
-    JS_SetOffthreadIonCompilationEnabled(cx, offthreadIonCompilation);
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_BASELINE_WARMUP_TRIGGER,
-                                  useBaselineEager ? 0 : baselineThreshold);
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_ION_WARMUP_TRIGGER,
-                                  useIonEager ? 0 : ionThreshold);
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_ION_FREQUENT_BAILOUT_THRESHOLD,
-                                  ionFrequentBailoutThreshold);
+  JS_SetParallelParsingEnabled(cx, parallelParsing);
+  JS_SetOffthreadIonCompilationEnabled(cx, offthreadIonCompilation);
+  JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_BASELINE_WARMUP_TRIGGER,
+                                useBaselineEager ? 0 : baselineThreshold);
+  JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_ION_WARMUP_TRIGGER,
+                                useIonEager ? 0 : ionThreshold);
+  JS_SetGlobalJitCompilerOption(cx,
+                                JSJITCOMPILER_ION_FREQUENT_BAILOUT_THRESHOLD,
+                                ionFrequentBailoutThreshold);
 
 #ifdef DEBUG
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_FULL_DEBUG_CHECKS, fullJitDebugChecks);
+  JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_FULL_DEBUG_CHECKS,
+                                fullJitDebugChecks);
 #endif
 
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_INDEX_MASKING, spectreIndexMasking);
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_OBJECT_MITIGATIONS_BARRIERS,
-                                  spectreObjectMitigationsBarriers);
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_OBJECT_MITIGATIONS_MISC,
-                                  spectreObjectMitigationsMisc);
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_STRING_MITIGATIONS,
-                                  spectreStringMitigations);
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_VALUE_MASKING, spectreValueMasking);
-    JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_JIT_TO_CXX_CALLS,
-                                  spectreJitToCxxCalls);
+  JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_INDEX_MASKING,
+                                spectreIndexMasking);
+  JS_SetGlobalJitCompilerOption(
+      cx, JSJITCOMPILER_SPECTRE_OBJECT_MITIGATIONS_BARRIERS,
+      spectreObjectMitigationsBarriers);
+  JS_SetGlobalJitCompilerOption(cx,
+                                JSJITCOMPILER_SPECTRE_OBJECT_MITIGATIONS_MISC,
+                                spectreObjectMitigationsMisc);
+  JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_STRING_MITIGATIONS,
+                                spectreStringMitigations);
+  JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_VALUE_MASKING,
+                                spectreValueMasking);
+  JS_SetGlobalJitCompilerOption(cx, JSJITCOMPILER_SPECTRE_JIT_TO_CXX_CALLS,
+                                spectreJitToCxxCalls);
 }
 
-XPCJSContext::~XPCJSContext()
-{
-    MOZ_COUNT_DTOR_INHERITED(XPCJSContext, CycleCollectedJSContext);
-    
-    
-    MOZ_ASSERT(MaybeContext());
+XPCJSContext::~XPCJSContext() {
+  MOZ_COUNT_DTOR_INHERITED(XPCJSContext, CycleCollectedJSContext);
+  
+  
+  MOZ_ASSERT(MaybeContext());
 
-    Preferences::UnregisterPrefixCallback(ReloadPrefsCallback,
-                                          JS_OPTIONS_DOT_STR,
-                                          this);
-
-#ifdef FUZZING
-    Preferences::UnregisterCallback(ReloadPrefsCallback, "fuzzing.enabled", this);
-#endif
-
-    
-    
-    SetPendingException(nullptr);
-
-    
-    if (--sInstanceCount == 0) {
-        if (mWatchdogManager->GetWatchdog()) {
-            mWatchdogManager->StopWatchdog();
-        }
-
-        mWatchdogManager->UnregisterContext(this);
-        mWatchdogManager->Shutdown();
-        sWatchdogInstance = nullptr;
-    } else {
-        
-        mWatchdogManager->UnregisterContext(this);
-    }
-
-    if (mCallContext) {
-        mCallContext->SystemIsBeingShutDown();
-    }
-
-    PROFILER_CLEAR_JS_CONTEXT();
-
-    gTlsContext.set(nullptr);
-}
-
-XPCJSContext::XPCJSContext()
- : mCallContext(nullptr),
-   mAutoRoots(nullptr),
-   mResolveName(JSID_VOID),
-   mResolvingWrapper(nullptr),
-   mWatchdogManager(GetWatchdogManager()),
-   mSlowScriptSecondHalf(false),
-   mTimeoutAccumulated(false),
-   mHasScriptActivity(false),
-   mPendingResult(NS_OK),
-   mActive(CONTEXT_INACTIVE),
-   mLastStateChange(PR_Now())
-{
-    MOZ_COUNT_CTOR_INHERITED(XPCJSContext, CycleCollectedJSContext);
-    MOZ_RELEASE_ASSERT(!gTlsContext.get());
-    MOZ_ASSERT(mWatchdogManager);
-    ++sInstanceCount;
-    mWatchdogManager->RegisterContext(this);
-    gTlsContext.set(this);
-}
-
- XPCJSContext*
-XPCJSContext::Get()
-{
-    return gTlsContext.get();
-}
-
-#ifdef XP_WIN
-static size_t
-GetWindowsStackSize()
-{
-    
-    
-    const uint8_t* stackTop;
-#ifdef _WIN64
-    PNT_TIB64 pTib = reinterpret_cast<PNT_TIB64>(NtCurrentTeb());
-    stackTop = reinterpret_cast<const uint8_t*>(pTib->StackBase);
-#else
-    PNT_TIB pTib = reinterpret_cast<PNT_TIB>(NtCurrentTeb());
-    stackTop = reinterpret_cast<const uint8_t*>(pTib->StackBase);
-#endif
-
-    
-    
-    
-    MEMORY_BASIC_INFORMATION mbi;
-    if (!VirtualQuery(&mbi, &mbi, sizeof(mbi))) {
-        MOZ_CRASH("VirtualQuery failed");
-    }
-
-    const uint8_t* stackBottom = reinterpret_cast<const uint8_t*>(mbi.AllocationBase);
-
-    
-    size_t stackSize = size_t(stackTop - stackBottom);
-    MOZ_RELEASE_ASSERT(stackSize >= 1 * 1024 * 1024);
-    MOZ_RELEASE_ASSERT(stackSize <= 32 * 1024 * 1024);
-
-    
-    
-    return stackSize - 10 * sizeof(uintptr_t) * 1024;
-}
-#endif
-
-XPCJSRuntime*
-XPCJSContext::Runtime() const
-{
-    return static_cast<XPCJSRuntime*>(CycleCollectedJSContext::Runtime());
-}
-
-CycleCollectedJSRuntime*
-XPCJSContext::CreateRuntime(JSContext* aCx)
-{
-    return new XPCJSRuntime(aCx);
-}
-
-nsresult
-XPCJSContext::Initialize(XPCJSContext* aPrimaryContext)
-{
-    nsresult rv;
-    if (aPrimaryContext) {
-        rv = CycleCollectedJSContext::InitializeNonPrimary(aPrimaryContext);
-    } else {
-        rv = CycleCollectedJSContext::Initialize(nullptr,
-                                                 JS::DefaultHeapMaxBytes,
-                                                 JS::DefaultNurseryBytes);
-    }
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    MOZ_ASSERT(Context());
-    JSContext* cx = Context();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const size_t kSystemCodeBuffer = 10 * 1024;
-
-    
-    
-    
-    const size_t kDefaultStackQuota = 128 * sizeof(size_t) * 1024;
-
-    
-    
-    
-
-#if defined(XP_MACOSX) || defined(DARWIN)
-    
-    
-    const size_t kStackQuota = 7 * 1024 * 1024;
-    const size_t kTrustedScriptBuffer = 180 * 1024;
-#elif defined(XP_LINUX) && !defined(ANDROID)
-    
-    
-    const size_t kStackQuotaMax = 8 * 1024 * 1024;
-#  if defined(MOZ_ASAN) || defined(DEBUG)
-    
-    
-    
-    
-    const size_t kStackQuotaMin = 2 * kDefaultStackQuota;
-#  else
-    const size_t kStackQuotaMin = kDefaultStackQuota;
-#  endif
-    
-    const size_t kStackSafeMargin = 128 * 1024;
-
-    struct rlimit rlim;
-    const size_t kStackQuota =
-        getrlimit(RLIMIT_STACK, &rlim) == 0
-        ? std::max(std::min(size_t(rlim.rlim_cur - kStackSafeMargin),
-                            kStackQuotaMax - kStackSafeMargin),
-                   kStackQuotaMin)
-        : kStackQuotaMin;
-#  if defined(MOZ_ASAN)
-    
-    const size_t kTrustedScriptBuffer = 450 * 1024;
-#  else
-    const size_t kTrustedScriptBuffer = 180 * 1024;
-#  endif
-#elif defined(XP_WIN)
-    
-    
-    
-    const size_t kStackQuota = GetWindowsStackSize();
-#  if defined(MOZ_ASAN)
-    
-    const size_t kTrustedScriptBuffer = 450 * 1024;
-#  else
-    const size_t kTrustedScriptBuffer = (sizeof(size_t) == 8) ? 180 * 1024   
-                                                              : 120 * 1024;  
-#  endif
-#elif defined(MOZ_ASAN)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const size_t kStackQuota =  2 * kDefaultStackQuota;
-    const size_t kTrustedScriptBuffer = 450 * 1024;
-#elif defined(ANDROID)
-    
-    
-    
-    const size_t kStackQuota = kDefaultStackQuota + kDefaultStackQuota / 2;
-    const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
-#else
-    
-#  if defined(DEBUG)
-    const size_t kStackQuota = 2 * kDefaultStackQuota;
-#  else
-    const size_t kStackQuota = kDefaultStackQuota;
-#  endif
-    
-    
-    const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
-#endif
-
-    
-    
-    (void) kDefaultStackQuota;
-
-    JS_SetNativeStackQuota(cx,
-                           kStackQuota,
-                           kStackQuota - kSystemCodeBuffer,
-                           kStackQuota - kSystemCodeBuffer - kTrustedScriptBuffer);
-
-    PROFILER_SET_JS_CONTEXT(cx);
-
-    JS_AddInterruptCallback(cx, InterruptCallback);
-
-    if (!aPrimaryContext) {
-        Runtime()->Initialize(cx);
-    }
-
-    
-    ReloadPrefsCallback(nullptr, this);
-    Preferences::RegisterPrefixCallback(ReloadPrefsCallback,
-                                        JS_OPTIONS_DOT_STR,
+  Preferences::UnregisterPrefixCallback(ReloadPrefsCallback, JS_OPTIONS_DOT_STR,
                                         this);
 
 #ifdef FUZZING
-    Preferences::RegisterCallback(ReloadPrefsCallback, "fuzzing.enabled", this);
+  Preferences::UnregisterCallback(ReloadPrefsCallback, "fuzzing.enabled", this);
 #endif
 
-    return NS_OK;
+  
+  
+  SetPendingException(nullptr);
+
+  
+  if (--sInstanceCount == 0) {
+    if (mWatchdogManager->GetWatchdog()) {
+      mWatchdogManager->StopWatchdog();
+    }
+
+    mWatchdogManager->UnregisterContext(this);
+    mWatchdogManager->Shutdown();
+    sWatchdogInstance = nullptr;
+  } else {
+    
+    mWatchdogManager->UnregisterContext(this);
+  }
+
+  if (mCallContext) {
+    mCallContext->SystemIsBeingShutDown();
+  }
+
+  PROFILER_CLEAR_JS_CONTEXT();
+
+  gTlsContext.set(nullptr);
+}
+
+XPCJSContext::XPCJSContext()
+    : mCallContext(nullptr),
+      mAutoRoots(nullptr),
+      mResolveName(JSID_VOID),
+      mResolvingWrapper(nullptr),
+      mWatchdogManager(GetWatchdogManager()),
+      mSlowScriptSecondHalf(false),
+      mTimeoutAccumulated(false),
+      mHasScriptActivity(false),
+      mPendingResult(NS_OK),
+      mActive(CONTEXT_INACTIVE),
+      mLastStateChange(PR_Now()) {
+  MOZ_COUNT_CTOR_INHERITED(XPCJSContext, CycleCollectedJSContext);
+  MOZ_RELEASE_ASSERT(!gTlsContext.get());
+  MOZ_ASSERT(mWatchdogManager);
+  ++sInstanceCount;
+  mWatchdogManager->RegisterContext(this);
+  gTlsContext.set(this);
+}
+
+ XPCJSContext* XPCJSContext::Get() { return gTlsContext.get(); }
+
+#ifdef XP_WIN
+static size_t GetWindowsStackSize() {
+  
+  
+  const uint8_t* stackTop;
+#ifdef _WIN64
+  PNT_TIB64 pTib = reinterpret_cast<PNT_TIB64>(NtCurrentTeb());
+  stackTop = reinterpret_cast<const uint8_t*>(pTib->StackBase);
+#else
+  PNT_TIB pTib = reinterpret_cast<PNT_TIB>(NtCurrentTeb());
+  stackTop = reinterpret_cast<const uint8_t*>(pTib->StackBase);
+#endif
+
+  
+  
+  
+  MEMORY_BASIC_INFORMATION mbi;
+  if (!VirtualQuery(&mbi, &mbi, sizeof(mbi))) {
+    MOZ_CRASH("VirtualQuery failed");
+  }
+
+  const uint8_t* stackBottom =
+      reinterpret_cast<const uint8_t*>(mbi.AllocationBase);
+
+  
+  size_t stackSize = size_t(stackTop - stackBottom);
+  MOZ_RELEASE_ASSERT(stackSize >= 1 * 1024 * 1024);
+  MOZ_RELEASE_ASSERT(stackSize <= 32 * 1024 * 1024);
+
+  
+  
+  return stackSize - 10 * sizeof(uintptr_t) * 1024;
+}
+#endif
+
+XPCJSRuntime* XPCJSContext::Runtime() const {
+  return static_cast<XPCJSRuntime*>(CycleCollectedJSContext::Runtime());
+}
+
+CycleCollectedJSRuntime* XPCJSContext::CreateRuntime(JSContext* aCx) {
+  return new XPCJSRuntime(aCx);
+}
+
+nsresult XPCJSContext::Initialize(XPCJSContext* aPrimaryContext) {
+  nsresult rv;
+  if (aPrimaryContext) {
+    rv = CycleCollectedJSContext::InitializeNonPrimary(aPrimaryContext);
+  } else {
+    rv = CycleCollectedJSContext::Initialize(nullptr, JS::DefaultHeapMaxBytes,
+                                             JS::DefaultNurseryBytes);
+  }
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
+
+  MOZ_ASSERT(Context());
+  JSContext* cx = Context();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const size_t kSystemCodeBuffer = 10 * 1024;
+
+  
+  
+  
+  const size_t kDefaultStackQuota = 128 * sizeof(size_t) * 1024;
+
+  
+  
+  
+
+#if defined(XP_MACOSX) || defined(DARWIN)
+  
+  
+  const size_t kStackQuota = 7 * 1024 * 1024;
+  const size_t kTrustedScriptBuffer = 180 * 1024;
+#elif defined(XP_LINUX) && !defined(ANDROID)
+  
+  
+  const size_t kStackQuotaMax = 8 * 1024 * 1024;
+#if defined(MOZ_ASAN) || defined(DEBUG)
+  
+  
+  
+  
+  const size_t kStackQuotaMin = 2 * kDefaultStackQuota;
+#else
+  const size_t kStackQuotaMin = kDefaultStackQuota;
+#endif
+  
+  const size_t kStackSafeMargin = 128 * 1024;
+
+  struct rlimit rlim;
+  const size_t kStackQuota =
+      getrlimit(RLIMIT_STACK, &rlim) == 0
+          ? std::max(std::min(size_t(rlim.rlim_cur - kStackSafeMargin),
+                              kStackQuotaMax - kStackSafeMargin),
+                     kStackQuotaMin)
+          : kStackQuotaMin;
+#if defined(MOZ_ASAN)
+  
+  const size_t kTrustedScriptBuffer = 450 * 1024;
+#else
+  const size_t kTrustedScriptBuffer = 180 * 1024;
+#endif
+#elif defined(XP_WIN)
+  
+  
+  
+  const size_t kStackQuota = GetWindowsStackSize();
+#if defined(MOZ_ASAN)
+  
+  const size_t kTrustedScriptBuffer = 450 * 1024;
+#else
+  const size_t kTrustedScriptBuffer = (sizeof(size_t) == 8)
+                                          ? 180 * 1024   
+                                          : 120 * 1024;  
+#endif
+#elif defined(MOZ_ASAN)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const size_t kStackQuota = 2 * kDefaultStackQuota;
+  const size_t kTrustedScriptBuffer = 450 * 1024;
+#elif defined(ANDROID)
+  
+  
+  
+  const size_t kStackQuota = kDefaultStackQuota + kDefaultStackQuota / 2;
+  const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
+#else
+  
+#if defined(DEBUG)
+  const size_t kStackQuota = 2 * kDefaultStackQuota;
+#else
+  const size_t kStackQuota = kDefaultStackQuota;
+#endif
+  
+  
+  const size_t kTrustedScriptBuffer = sizeof(size_t) * 12800;
+#endif
+
+  
+  
+  (void)kDefaultStackQuota;
+
+  JS_SetNativeStackQuota(
+      cx, kStackQuota, kStackQuota - kSystemCodeBuffer,
+      kStackQuota - kSystemCodeBuffer - kTrustedScriptBuffer);
+
+  PROFILER_SET_JS_CONTEXT(cx);
+
+  JS_AddInterruptCallback(cx, InterruptCallback);
+
+  if (!aPrimaryContext) {
+    Runtime()->Initialize(cx);
+  }
+
+  
+  ReloadPrefsCallback(nullptr, this);
+  Preferences::RegisterPrefixCallback(ReloadPrefsCallback, JS_OPTIONS_DOT_STR,
+                                      this);
+
+#ifdef FUZZING
+  Preferences::RegisterCallback(ReloadPrefsCallback, "fuzzing.enabled", this);
+#endif
+
+  return NS_OK;
 }
 
 
-uint32_t
-XPCJSContext::sInstanceCount;
+uint32_t XPCJSContext::sInstanceCount;
 
 
-StaticAutoPtr<WatchdogManager>
-XPCJSContext::sWatchdogInstance;
+StaticAutoPtr<WatchdogManager> XPCJSContext::sWatchdogInstance;
 
 
-WatchdogManager*
-XPCJSContext::GetWatchdogManager()
-{
-    if (sWatchdogInstance) {
-        return sWatchdogInstance;
-    }
-
-    MOZ_ASSERT(sInstanceCount == 0);
-    sWatchdogInstance = new WatchdogManager();
+WatchdogManager* XPCJSContext::GetWatchdogManager() {
+  if (sWatchdogInstance) {
     return sWatchdogInstance;
+  }
+
+  MOZ_ASSERT(sInstanceCount == 0);
+  sWatchdogInstance = new WatchdogManager();
+  return sWatchdogInstance;
 }
 
 
-void
-XPCJSContext::InitTLS()
-{
-    MOZ_RELEASE_ASSERT(gTlsContext.init());
-}
+void XPCJSContext::InitTLS() { MOZ_RELEASE_ASSERT(gTlsContext.init()); }
 
 
-XPCJSContext*
-XPCJSContext::NewXPCJSContext(XPCJSContext* aPrimaryContext)
-{
-    XPCJSContext* self = new XPCJSContext();
-    nsresult rv = self->Initialize(aPrimaryContext);
-    if (NS_FAILED(rv)) {
-        MOZ_CRASH("new XPCJSContext failed to initialize.");
-    }
-
-    if (self->Context()) {
-        return self;
-    }
-
+XPCJSContext* XPCJSContext::NewXPCJSContext(XPCJSContext* aPrimaryContext) {
+  XPCJSContext* self = new XPCJSContext();
+  nsresult rv = self->Initialize(aPrimaryContext);
+  if (NS_FAILED(rv)) {
     MOZ_CRASH("new XPCJSContext failed to initialize.");
+  }
+
+  if (self->Context()) {
+    return self;
+  }
+
+  MOZ_CRASH("new XPCJSContext failed to initialize.");
 }
 
-void
-XPCJSContext::BeforeProcessTask(bool aMightBlock)
-{
-    MOZ_ASSERT(NS_IsMainThread());
+void XPCJSContext::BeforeProcessTask(bool aMightBlock) {
+  MOZ_ASSERT(NS_IsMainThread());
 
-    
-    mSlowScriptCheckpoint = mozilla::TimeStamp::NowLoRes();
-    mSlowScriptSecondHalf = false;
-    mSlowScriptActualWait = mozilla::TimeDuration();
-    mTimeoutAccumulated = false;
+  
+  mSlowScriptCheckpoint = mozilla::TimeStamp::NowLoRes();
+  mSlowScriptSecondHalf = false;
+  mSlowScriptActualWait = mozilla::TimeDuration();
+  mTimeoutAccumulated = false;
 
-    
-    
-    js::ResetPerformanceMonitoring(Context());
+  
+  
+  js::ResetPerformanceMonitoring(Context());
 
-    CycleCollectedJSContext::BeforeProcessTask(aMightBlock);
+  CycleCollectedJSContext::BeforeProcessTask(aMightBlock);
 }
 
-void
-XPCJSContext::AfterProcessTask(uint32_t aNewRecursionDepth)
-{
-    
-    mSlowScriptCheckpoint = mozilla::TimeStamp();
-    mSlowScriptSecondHalf = false;
+void XPCJSContext::AfterProcessTask(uint32_t aNewRecursionDepth) {
+  
+  mSlowScriptCheckpoint = mozilla::TimeStamp();
+  mSlowScriptSecondHalf = false;
 
-    
-    MOZ_ASSERT(NS_IsMainThread());
-    nsJSContext::MaybePokeCC();
+  
+  MOZ_ASSERT(NS_IsMainThread());
+  nsJSContext::MaybePokeCC();
 
-    CycleCollectedJSContext::AfterProcessTask(aNewRecursionDepth);
+  CycleCollectedJSContext::AfterProcessTask(aNewRecursionDepth);
 
-    
-    
-    js::FlushPerformanceMonitoring(Context());
+  
+  
+  js::FlushPerformanceMonitoring(Context());
 
-    mozilla::jsipc::AfterProcessTask();
+  mozilla::jsipc::AfterProcessTask();
 }
 
-bool
-XPCJSContext::IsSystemCaller() const
-{
-    return nsContentUtils::IsSystemCaller(Context());
+bool XPCJSContext::IsSystemCaller() const {
+  return nsContentUtils::IsSystemCaller(Context());
 }

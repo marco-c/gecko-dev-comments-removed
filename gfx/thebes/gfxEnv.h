@@ -17,15 +17,15 @@
 
 
 
-#define DECL_GFX_ENV(Env, Name)  \
-  static bool Name() {                \
-    static bool isSet = IsEnvSet(Env);\
-    return isSet;                     \
+
+#define DECL_GFX_ENV(Env, Name)        \
+  static bool Name() {                 \
+    static bool isSet = IsEnvSet(Env); \
+    return isSet;                      \
   }
 
-class gfxEnv final
-{
-public:
+class gfxEnv final {
+ public:
   
   
   
@@ -114,15 +114,15 @@ public:
   
   
 
-private:
+ private:
   
   static bool IsEnvSet(const char* aName) {
     const char* val = PR_GetEnv(aName);
     return (val != 0 && *val != '\0');
   }
 
-  gfxEnv() {};
-  ~gfxEnv() {};
+  gfxEnv(){};
+  ~gfxEnv(){};
   gfxEnv(const gfxEnv&) = delete;
   gfxEnv& operator=(const gfxEnv&) = delete;
 };

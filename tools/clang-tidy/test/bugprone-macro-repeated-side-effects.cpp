@@ -5,24 +5,22 @@
 
 static int g;
 
-int function_with_side_effects(int i)
-{
+int function_with_side_effects(int i) {
   g += i;
   return g;
 }
 
-void test()
-{
+void test() {
   int i;
-  i = MACRO_WITHOUT_REPEATED_ARG(1); 
-  i = MACRO_WITH_REPEATED_ARG(1); 
+  i = MACRO_WITHOUT_REPEATED_ARG(1);  
+  i = MACRO_WITH_REPEATED_ARG(1);     
 
-  i = MACRO_WITHOUT_REPEATED_ARG(i); 
-  i = MACRO_WITH_REPEATED_ARG(i); 
+  i = MACRO_WITHOUT_REPEATED_ARG(i);  
+  i = MACRO_WITH_REPEATED_ARG(i);     
 
-  i = MACRO_WITHOUT_REPEATED_ARG(function_with_side_effects(i)); 
-  i = MACRO_WITH_REPEATED_ARG(function_with_side_effects(i)); 
+  i = MACRO_WITHOUT_REPEATED_ARG(function_with_side_effects(i));  
+  i = MACRO_WITH_REPEATED_ARG(function_with_side_effects(i));     
 
-  i = MACRO_WITHOUT_REPEATED_ARG(i++); 
-  i = MACRO_WITH_REPEATED_ARG(i++); 
+  i = MACRO_WITHOUT_REPEATED_ARG(i++);  
+  i = MACRO_WITH_REPEATED_ARG(i++);     
 }

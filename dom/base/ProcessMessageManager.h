@@ -18,35 +18,32 @@ class ParentProcessMessageManager;
 
 
 
-class ProcessMessageManager final : public MessageSender
-{
-public:
-  ProcessMessageManager(ipc::MessageManagerCallback* aCallback,
-                        ParentProcessMessageManager* aParentManager,
-                        MessageManagerFlags aFlags=MessageManagerFlags::MM_NONE);
+class ProcessMessageManager final : public MessageSender {
+ public:
+  ProcessMessageManager(
+      ipc::MessageManagerCallback* aCallback,
+      ParentProcessMessageManager* aParentManager,
+      MessageManagerFlags aFlags = MessageManagerFlags::MM_NONE);
 
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
   void LoadProcessScript(const nsAString& aUrl, bool aAllowDelayedLoad,
-                         mozilla::ErrorResult& aError)
-  {
+                         mozilla::ErrorResult& aError) {
     LoadScript(aUrl, aAllowDelayedLoad, false, aError);
   }
-  void RemoveDelayedProcessScript(const nsAString& aURL)
-  {
+  void RemoveDelayedProcessScript(const nsAString& aURL) {
     RemoveDelayedScript(aURL);
   }
   void GetDelayedProcessScripts(JSContext* aCx,
                                 nsTArray<nsTArray<JS::Value>>& aScripts,
-                                mozilla::ErrorResult& aError)
-  {
+                                mozilla::ErrorResult& aError) {
     GetDelayedScripts(aCx, aScripts, aError);
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -31,62 +31,56 @@
 static nsresult GetExtensionFromWindowsMimeDatabase(const nsACString& aMimeType,
                                                     nsString& aFileExtension);
 
-nsOSHelperAppService::nsOSHelperAppService() : 
-  nsExternalHelperAppService()
-  , mAppAssoc(nullptr)
-{
+nsOSHelperAppService::nsOSHelperAppService()
+    : nsExternalHelperAppService(), mAppAssoc(nullptr) {
   CoInitialize(nullptr);
   CoCreateInstance(CLSID_ApplicationAssociationRegistration, nullptr,
                    CLSCTX_INPROC, IID_IApplicationAssociationRegistration,
                    (void**)&mAppAssoc);
 }
 
-nsOSHelperAppService::~nsOSHelperAppService()
-{
-  if (mAppAssoc)
-    mAppAssoc->Release();
+nsOSHelperAppService::~nsOSHelperAppService() {
+  if (mAppAssoc) mAppAssoc->Release();
   mAppAssoc = nullptr;
   CoUninitialize();
 }
 
 
 
+
 static nsresult GetExtensionFromWindowsMimeDatabase(const nsACString& aMimeType,
-                                                    nsString& aFileExtension)
-{
+                                                    nsString& aFileExtension) {
   nsAutoString mimeDatabaseKey;
   mimeDatabaseKey.AssignLiteral("MIME\\Database\\Content Type\\");
 
   AppendASCIItoUTF16(aMimeType, mimeDatabaseKey);
 
-  nsCOMPtr<nsIWindowsRegKey> regKey = 
-    do_CreateInstance("@mozilla.org/windows-registry-key;1");
-  if (!regKey) 
-    return NS_ERROR_NOT_AVAILABLE;
+  nsCOMPtr<nsIWindowsRegKey> regKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1");
+  if (!regKey) return NS_ERROR_NOT_AVAILABLE;
 
-  nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                             mimeDatabaseKey,
-                             nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  
+  nsresult rv =
+      regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT, mimeDatabaseKey,
+                   nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+
   if (NS_SUCCEEDED(rv))
-     regKey->ReadStringValue(NS_LITERAL_STRING("Extension"), aFileExtension);
+    regKey->ReadStringValue(NS_LITERAL_STRING("Extension"), aFileExtension);
 
   return NS_OK;
 }
 
-nsresult nsOSHelperAppService::OSProtocolHandlerExists(const char * aProtocolScheme, bool * aHandlerExists)
-{
+nsresult nsOSHelperAppService::OSProtocolHandlerExists(
+    const char* aProtocolScheme, bool* aHandlerExists) {
+  
   
   *aHandlerExists = false;
-  if (aProtocolScheme && *aProtocolScheme)
-  {
+  if (aProtocolScheme && *aProtocolScheme) {
     NS_ENSURE_TRUE(mAppAssoc, NS_ERROR_NOT_AVAILABLE);
-    wchar_t * pResult = nullptr;
+    wchar_t* pResult = nullptr;
     NS_ConvertASCIItoUTF16 scheme(aProtocolScheme);
     
-    HRESULT hr = mAppAssoc->QueryCurrentDefault(scheme.get(),
-      AT_URLPROTOCOL, AL_EFFECTIVE,
-      &pResult);
+    HRESULT hr = mAppAssoc->QueryCurrentDefault(scheme.get(), AT_URLPROTOCOL,
+                                                AL_EFFECTIVE, &pResult);
     if (SUCCEEDED(hr)) {
       CoTaskMemFree(pResult);
       *aHandlerExists = true;
@@ -96,12 +90,11 @@ nsresult nsOSHelperAppService::OSProtocolHandlerExists(const char * aProtocolSch
   return NS_OK;
 }
 
-NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(const nsACString& aScheme, nsAString& _retval)
-{
-  nsCOMPtr<nsIWindowsRegKey> regKey = 
-    do_CreateInstance("@mozilla.org/windows-registry-key;1");
-  if (!regKey) 
-    return NS_ERROR_NOT_AVAILABLE;
+NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(
+    const nsACString& aScheme, nsAString& _retval) {
+  nsCOMPtr<nsIWindowsRegKey> regKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1");
+  if (!regKey) return NS_ERROR_NOT_AVAILABLE;
 
   NS_ConvertASCIItoUTF16 buf(aScheme);
 
@@ -109,11 +102,8 @@ NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(const nsACString& 
     wchar_t result[1024];
     DWORD resultSize = 1024;
     HRESULT hr = AssocQueryString(0x1000 ,
-                                  ASSOCSTR_FRIENDLYAPPNAME,
-                                  buf.get(),
-                                  NULL,
-                                  result,
-                                  &resultSize);
+                                  ASSOCSTR_FRIENDLYAPPNAME, buf.get(), NULL,
+                                  result, &resultSize);
     if (SUCCEEDED(hr)) {
       _retval = result;
       return NS_OK;
@@ -121,11 +111,10 @@ NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(const nsACString& 
   }
 
   NS_ENSURE_TRUE(mAppAssoc, NS_ERROR_NOT_AVAILABLE);
-  wchar_t * pResult = nullptr;
+  wchar_t* pResult = nullptr;
   
-  HRESULT hr = mAppAssoc->QueryCurrentDefault(buf.get(),
-                                              AT_URLPROTOCOL, AL_EFFECTIVE,
-                                              &pResult);
+  HRESULT hr = mAppAssoc->QueryCurrentDefault(buf.get(), AT_URLPROTOCOL,
+                                              AL_EFFECTIVE, &pResult);
   if (SUCCEEDED(hr)) {
     nsCOMPtr<nsIFile> app;
     nsAutoString appInfo(pResult);
@@ -145,26 +134,24 @@ NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(const nsACString& 
 
 
 
-nsresult nsOSHelperAppService::GetMIMEInfoFromRegistry(const nsString& fileType, nsIMIMEInfo *pInfo)
-{
+
+nsresult nsOSHelperAppService::GetMIMEInfoFromRegistry(const nsString& fileType,
+                                                       nsIMIMEInfo* pInfo) {
   nsresult rv = NS_OK;
 
   NS_ENSURE_ARG(pInfo);
-  nsCOMPtr<nsIWindowsRegKey> regKey = 
-    do_CreateInstance("@mozilla.org/windows-registry-key;1");
-  if (!regKey) 
-    return NS_ERROR_NOT_AVAILABLE;
+  nsCOMPtr<nsIWindowsRegKey> regKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1");
+  if (!regKey) return NS_ERROR_NOT_AVAILABLE;
 
-  rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                    fileType, nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  if (NS_FAILED(rv))
-    return NS_ERROR_FAILURE;
- 
+  rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT, fileType,
+                    nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+  if (NS_FAILED(rv)) return NS_ERROR_FAILURE;
+
   
   nsAutoString description;
   rv = regKey->ReadStringValue(EmptyString(), description);
-  if (NS_SUCCEEDED(rv))
-    pInfo->SetDescription(description);
+  if (NS_SUCCEEDED(rv)) pInfo->SetDescription(description);
 
   return NS_OK;
 }
@@ -175,33 +162,27 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromRegistry(const nsString& fileType,
 
 
 
- bool
-nsOSHelperAppService::typeFromExtEquals(const char16_t* aExt, const char *aType)
-{
-  if (!aType)
-    return false;
+ bool nsOSHelperAppService::typeFromExtEquals(const char16_t* aExt,
+                                                          const char* aType) {
+  if (!aType) return false;
   nsAutoString fileExtToUse;
-  if (aExt[0] != char16_t('.'))
-    fileExtToUse = char16_t('.');
+  if (aExt[0] != char16_t('.')) fileExtToUse = char16_t('.');
 
   fileExtToUse.Append(aExt);
 
   bool eq = false;
-  nsCOMPtr<nsIWindowsRegKey> regKey = 
-    do_CreateInstance("@mozilla.org/windows-registry-key;1");
-  if (!regKey) 
-    return eq;
+  nsCOMPtr<nsIWindowsRegKey> regKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1");
+  if (!regKey) return eq;
 
-  nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                             fileExtToUse,
-                             nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  if (NS_FAILED(rv))
-      return eq;
-   
+  nsresult rv =
+      regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT, fileExtToUse,
+                   nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+  if (NS_FAILED(rv)) return eq;
+
   nsAutoString type;
   rv = regKey->ReadStringValue(NS_LITERAL_STRING("Content Type"), type);
-  if (NS_SUCCEEDED(rv))
-     eq = type.EqualsASCII(aType);
+  if (NS_SUCCEEDED(rv)) eq = type.EqualsASCII(aType);
 
   return eq;
 }
@@ -210,11 +191,9 @@ nsOSHelperAppService::typeFromExtEquals(const char16_t* aExt, const char *aType)
 
 
 
-nsresult
-nsOSHelperAppService::GetDefaultAppInfo(const nsAString& aAppInfo,
-                                        nsAString& aDefaultDescription, 
-                                        nsIFile** aDefaultApplication)
-{
+nsresult nsOSHelperAppService::GetDefaultAppInfo(
+    const nsAString& aAppInfo, nsAString& aDefaultDescription,
+    nsIFile** aDefaultApplication) {
   nsAutoString handlerCommand;
 
   
@@ -222,8 +201,7 @@ nsOSHelperAppService::GetDefaultAppInfo(const nsAString& aAppInfo,
   aDefaultDescription = aAppInfo;
   *aDefaultApplication = nullptr;
 
-  if (aAppInfo.IsEmpty())
-    return NS_ERROR_FAILURE;
+  if (aAppInfo.IsEmpty()) return NS_ERROR_FAILURE;
 
   
   
@@ -233,38 +211,34 @@ nsOSHelperAppService::GetDefaultAppInfo(const nsAString& aAppInfo,
 
   nsAutoString handlerKeyName(aAppInfo);
 
-  nsCOMPtr<nsIWindowsRegKey> chkKey = 
-    do_CreateInstance("@mozilla.org/windows-registry-key;1");
-  if (!chkKey) 
-    return NS_ERROR_FAILURE;
-      
-  nsresult rv = chkKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                             handlerKeyName, 
-                             nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+  nsCOMPtr<nsIWindowsRegKey> chkKey =
+      do_CreateInstance("@mozilla.org/windows-registry-key;1");
+  if (!chkKey) return NS_ERROR_FAILURE;
+
+  nsresult rv =
+      chkKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT, handlerKeyName,
+                   nsIWindowsRegKey::ACCESS_QUERY_VALUE);
   if (NS_FAILED(rv)) {
     
     handlerCommand.Assign(aAppInfo);
-  }
-  else {
+  } else {
     handlerKeyName.AppendLiteral("\\shell\\open\\command");
-    nsCOMPtr<nsIWindowsRegKey> regKey = 
-      do_CreateInstance("@mozilla.org/windows-registry-key;1");
-    if (!regKey) 
-      return NS_ERROR_FAILURE;
+    nsCOMPtr<nsIWindowsRegKey> regKey =
+        do_CreateInstance("@mozilla.org/windows-registry-key;1");
+    if (!regKey) return NS_ERROR_FAILURE;
 
-    nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                               handlerKeyName, 
-                               nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-    if (NS_FAILED(rv))
-      return NS_ERROR_FAILURE;
-     
+    nsresult rv =
+        regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT, handlerKeyName,
+                     nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+    if (NS_FAILED(rv)) return NS_ERROR_FAILURE;
+
     
     rv = regKey->ReadStringValue(EmptyString(), handlerCommand);
     if (NS_FAILED(rv)) {
-
       
       nsAutoString delegateExecute;
-      rv = regKey->ReadStringValue(NS_LITERAL_STRING("DelegateExecute"), delegateExecute);
+      rv = regKey->ReadStringValue(NS_LITERAL_STRING("DelegateExecute"),
+                                   delegateExecute);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
@@ -273,7 +247,7 @@ nsOSHelperAppService::GetDefaultAppInfo(const nsAString& aAppInfo,
       delegateExecuteRegPath.Append(delegateExecute);
       delegateExecuteRegPath.AppendLiteral("\\InProcServer32");
       rv = chkKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                        delegateExecuteRegPath, 
+                        delegateExecuteRegPath,
                         nsIWindowsRegKey::ACCESS_QUERY_VALUE);
       if (NS_SUCCEEDED(rv)) {
         rv = chkKey->ReadStringValue(EmptyString(), handlerCommand);
@@ -285,7 +259,7 @@ nsOSHelperAppService::GetDefaultAppInfo(const nsAString& aAppInfo,
         delegateExecuteRegPath.Append(delegateExecute);
         delegateExecuteRegPath.AppendLiteral("\\LocalServer32");
         rv = chkKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                          delegateExecuteRegPath, 
+                          delegateExecuteRegPath,
                           nsIWindowsRegKey::ACCESS_QUERY_VALUE);
         NS_ENSURE_SUCCESS(rv, rv);
         rv = chkKey->ReadStringValue(EmptyString(), handlerCommand);
@@ -310,16 +284,16 @@ nsOSHelperAppService::GetDefaultAppInfo(const nsAString& aAppInfo,
   return NS_OK;
 }
 
-already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(const nsString& aFileExt, const char *aTypeHint)
-{
-  if (aFileExt.IsEmpty())
-    return nullptr;
+already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(
+    const nsString& aFileExt, const char* aTypeHint) {
+  if (aFileExt.IsEmpty()) return nullptr;
 
   
   nsAutoCString typeToUse;
   if (aTypeHint && *aTypeHint) {
     typeToUse.Assign(aTypeHint);
-  } else if (!GetMIMETypeFromOSForExtension(NS_ConvertUTF16toUTF8(aFileExt), typeToUse)) {
+  } else if (!GetMIMETypeFromOSForExtension(NS_ConvertUTF16toUTF8(aFileExt),
+                                            typeToUse)) {
     return nullptr;
   }
 
@@ -328,8 +302,7 @@ already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(const nsStr
   
   
   nsAutoString fileExtToUse;
-  if (aFileExt.First() != char16_t('.'))
-    fileExtToUse = char16_t('.');
+  if (aFileExt.First() != char16_t('.')) fileExtToUse = char16_t('.');
 
   fileExtToUse.Append(aFileExt);
 
@@ -343,22 +316,19 @@ already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(const nsStr
   
   NS_ENSURE_TRUE(mAppAssoc, nullptr);
   nsString assocType(fileExtToUse);
-  wchar_t * pResult = nullptr;
-  HRESULT hr = mAppAssoc->QueryCurrentDefault(assocType.get(),
-                                              AT_FILEEXTENSION, AL_EFFECTIVE,
-                                              &pResult);
+  wchar_t* pResult = nullptr;
+  HRESULT hr = mAppAssoc->QueryCurrentDefault(assocType.get(), AT_FILEEXTENSION,
+                                              AL_EFFECTIVE, &pResult);
   if (SUCCEEDED(hr)) {
     found = true;
     appInfo.Assign(pResult);
     CoTaskMemFree(pResult);
-  } 
-  else {
+  } else {
     found = false;
   }
 
   
-  if (appInfo.EqualsLiteral("XPSViewer.Document"))
-    found = false;
+  if (appInfo.EqualsLiteral("XPSViewer.Document")) found = false;
 
   if (!found) {
     return nullptr;
@@ -367,7 +337,7 @@ already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(const nsStr
   
   nsAutoString defaultDescription;
   nsCOMPtr<nsIFile> defaultApplication;
-  
+
   if (NS_FAILED(GetDefaultAppInfo(appInfo, defaultDescription,
                                   getter_AddRefs(defaultApplication)))) {
     return nullptr;
@@ -382,8 +352,8 @@ already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(const nsStr
   return mimeInfo.forget();
 }
 
-already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType, const nsACString& aFileExt, bool *aFound)
-{
+already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(
+    const nsACString& aMIMEType, const nsACString& aFileExt, bool* aFound) {
   *aFound = true;
 
   const nsCString& flatType = PromiseFlatCString(aMIMEType);
@@ -401,6 +371,7 @@ already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(const nsAC
   if (!aMIMEType.IsEmpty() &&
       !aMIMEType.LowerCaseEqualsLiteral(APPLICATION_OCTET_STREAM)) {
     
+    
     GetExtensionFromWindowsMimeDatabase(aMIMEType, fileExtension);
     LOG(("Windows mime database: extension '%s'\n", fileExtension.get()));
   }
@@ -408,7 +379,8 @@ already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(const nsAC
   RefPtr<nsMIMEInfoWin> mi;
   if (!fileExtension.IsEmpty())
     mi = GetByExtension(fileExtension, flatType.get());
-  LOG(("Extension lookup on '%s' found: 0x%p\n", fileExtension.get(), mi.get()));
+  LOG(("Extension lookup on '%s' found: 0x%p\n", fileExtension.get(),
+       mi.get()));
 
   bool hasDefault = false;
   if (mi) {
@@ -418,21 +390,23 @@ already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(const nsAC
     
     
     
-    if (!aFileExt.IsEmpty() && typeFromExtEquals(NS_ConvertUTF8toUTF16(flatExt).get(), flatType.get())) {
-      LOG(("Appending extension '%s' to mimeinfo, because its mimetype is '%s'\n",
+    if (!aFileExt.IsEmpty() &&
+        typeFromExtEquals(NS_ConvertUTF8toUTF16(flatExt).get(),
+                          flatType.get())) {
+      LOG(
+          ("Appending extension '%s' to mimeinfo, because its mimetype is "
+           "'%s'\n",
            flatExt.get(), flatType.get()));
       bool extExist = false;
       mi->ExtensionExists(aFileExt, &extExist);
-      if (!extExist)
-        mi->AppendExtension(aFileExt);
+      if (!extExist) mi->AppendExtension(aFileExt);
     }
   }
   if (!mi || !hasDefault) {
     RefPtr<nsMIMEInfoWin> miByExt =
-      GetByExtension(NS_ConvertUTF8toUTF16(aFileExt), flatType.get());
+        GetByExtension(NS_ConvertUTF8toUTF16(aFileExt), flatType.get());
     LOG(("Ext. lookup for '%s' found 0x%p\n", flatExt.get(), miByExt.get()));
-    if (!miByExt && mi)
-      return mi.forget();
+    if (!miByExt && mi) return mi.forget();
     if (miByExt && !mi) {
       return miByExt.forget();
     }
@@ -442,7 +416,7 @@ already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(const nsAC
       if (!aFileExt.IsEmpty()) {
         mi->AppendExtension(aFileExt);
       }
-      
+
       return mi.forget();
     }
 
@@ -457,19 +431,17 @@ already_AddRefed<nsIMIMEInfo> nsOSHelperAppService::GetMIMEInfoFromOS(const nsAC
 }
 
 NS_IMETHODIMP
-nsOSHelperAppService::GetProtocolHandlerInfoFromOS(const nsACString &aScheme,
-                                                   bool *found,
-                                                   nsIHandlerInfo **_retval)
-{
+nsOSHelperAppService::GetProtocolHandlerInfoFromOS(const nsACString& aScheme,
+                                                   bool* found,
+                                                   nsIHandlerInfo** _retval) {
   NS_ASSERTION(!aScheme.IsEmpty(), "No scheme was specified!");
 
-  nsresult rv = OSProtocolHandlerExists(nsPromiseFlatCString(aScheme).get(),
-                                        found);
-  if (NS_FAILED(rv))
-    return rv;
+  nsresult rv =
+      OSProtocolHandlerExists(nsPromiseFlatCString(aScheme).get(), found);
+  if (NS_FAILED(rv)) return rv;
 
-  nsMIMEInfoWin *handlerInfo =
-    new nsMIMEInfoWin(aScheme, nsMIMEInfoBase::eProtocolInfo);
+  nsMIMEInfoWin* handlerInfo =
+      new nsMIMEInfoWin(aScheme, nsMIMEInfoBase::eProtocolInfo);
   NS_ENSURE_TRUE(handlerInfo, NS_ERROR_OUT_OF_MEMORY);
   NS_ADDREF(*_retval = handlerInfo);
 
@@ -486,36 +458,31 @@ nsOSHelperAppService::GetProtocolHandlerInfoFromOS(const nsACString &aScheme,
   return NS_OK;
 }
 
-bool
-nsOSHelperAppService::GetMIMETypeFromOSForExtension(const nsACString& aExtension,
-                                                    nsACString& aMIMEType)
-{
-  if (aExtension.IsEmpty())
-    return false;
+bool nsOSHelperAppService::GetMIMETypeFromOSForExtension(
+    const nsACString& aExtension, nsACString& aMIMEType) {
+  if (aExtension.IsEmpty()) return false;
 
   
   
   nsAutoString fileExtToUse;
-  if (aExtension.First() != '.')
-    fileExtToUse = char16_t('.');
+  if (aExtension.First() != '.') fileExtToUse = char16_t('.');
 
   AppendUTF8toUTF16(aExtension, fileExtToUse);
 
   
   nsCOMPtr<nsIWindowsRegKey> regKey =
-    do_CreateInstance("@mozilla.org/windows-registry-key;1");
-  if (!regKey)
-    return false;
+      do_CreateInstance("@mozilla.org/windows-registry-key;1");
+  if (!regKey) return false;
 
-  nsresult rv = regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT,
-                             fileExtToUse,
-                             nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  if (NS_FAILED(rv))
-    return false;
+  nsresult rv =
+      regKey->Open(nsIWindowsRegKey::ROOT_KEY_CLASSES_ROOT, fileExtToUse,
+                   nsIWindowsRegKey::ACCESS_QUERY_VALUE);
+  if (NS_FAILED(rv)) return false;
 
   nsAutoString mimeType;
   if (NS_FAILED(regKey->ReadStringValue(NS_LITERAL_STRING("Content Type"),
-                mimeType)) || mimeType.IsEmpty()) {
+                                        mimeType)) ||
+      mimeType.IsEmpty()) {
     return false;
   }
   

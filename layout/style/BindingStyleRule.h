@@ -25,35 +25,28 @@ namespace dom {
 class Element;
 }
 
-class BindingStyleRule : public css::Rule
-{
-protected:
-  BindingStyleRule(StyleSheet* aSheet,
-                   css::Rule* aParentRule,
-                   uint32_t aLineNumber,
-                   uint32_t aColumnNumber)
-    : css::Rule(aSheet, aParentRule, aLineNumber, aColumnNumber)
-  {
-  }
-  BindingStyleRule(const BindingStyleRule& aCopy)
-    : css::Rule(aCopy)
-  {
-  }
+class BindingStyleRule : public css::Rule {
+ protected:
+  BindingStyleRule(StyleSheet* aSheet, css::Rule* aParentRule,
+                   uint32_t aLineNumber, uint32_t aColumnNumber)
+      : css::Rule(aSheet, aParentRule, aLineNumber, aColumnNumber) {}
+  BindingStyleRule(const BindingStyleRule& aCopy) : css::Rule(aCopy) {}
   virtual ~BindingStyleRule() {}
 
-public:
+ public:
   
   
   
-  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
-    const override MOZ_MUST_OVERRIDE = 0;
+  virtual size_t SizeOfIncludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) const override MOZ_MUST_OVERRIDE = 0;
 
   
   
   virtual bool IsCCLeaf() const override MOZ_MUST_OVERRIDE = 0;
 
   virtual uint32_t GetSelectorCount() = 0;
-  virtual nsresult GetSelectorText(uint32_t aSelectorIndex, nsAString& aText) = 0;
+  virtual nsresult GetSelectorText(uint32_t aSelectorIndex,
+                                   nsAString& aText) = 0;
   virtual nsresult GetSpecificity(uint32_t aSelectorIndex,
                                   uint64_t* aSpecificity) = 0;
   virtual nsresult SelectorMatchesElement(dom::Element* aElement,
@@ -71,6 +64,6 @@ public:
                                JS::Handle<JSObject*> aGivenProto) override;
 };
 
-} 
+}  
 
-#endif 
+#endif  

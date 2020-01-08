@@ -7,14 +7,14 @@
 #ifndef GFX_CanvasLayerMLGPU_H
 #define GFX_CanvasLayerMLGPU_H
 
-#include "Layers.h"                     
+#include "Layers.h"  
 #include "TexturedLayerMLGPU.h"
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/Attributes.h"                
+#include "mozilla/RefPtr.h"                    
 #include "mozilla/layers/LayerManagerMLGPU.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "nsRect.h"                     
-#include "nscore.h"                     
+#include "mozilla/layers/LayersTypes.h"        
+#include "nsRect.h"                            
+#include "nscore.h"                            
 
 namespace mozilla {
 namespace layers {
@@ -22,16 +22,14 @@ namespace layers {
 class CompositableHost;
 class ImageHost;
 
-class CanvasLayerMLGPU final : public CanvasLayer,
-                               public TexturedLayerMLGPU
-{
-public:
+class CanvasLayerMLGPU final : public CanvasLayer, public TexturedLayerMLGPU {
+ public:
   explicit CanvasLayerMLGPU(LayerManagerMLGPU* aManager);
 
-protected:
+ protected:
   ~CanvasLayerMLGPU() override;
 
-public:
+ public:
   Layer* GetLayer() override;
   void Disconnect() override;
 
@@ -43,7 +41,7 @@ public:
 
   MOZ_LAYER_DECL_NAME("CanvasLayerMLGPU", TYPE_CANVAS)
 
-protected:
+ protected:
   CanvasRenderer* CreateCanvasRendererInternal() override {
     MOZ_CRASH("Incompatible surface type");
     return nullptr;
@@ -53,7 +51,7 @@ protected:
   void CleanupResources();
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

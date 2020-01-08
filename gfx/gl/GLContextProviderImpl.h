@@ -11,13 +11,12 @@
 #error GL_CONTEXT_PROVIDER_NAME not defined
 #endif
 #if defined(MOZ_WIDGET_ANDROID)
-#include "GLTypes.h" 
-#endif 
+#include "GLTypes.h"  
+#endif                
 
-class GL_CONTEXT_PROVIDER_NAME
-{
-public:
-    
+class GL_CONTEXT_PROVIDER_NAME {
+ public:
+  
 
 
 
@@ -40,10 +39,11 @@ public:
 
 
 
-    static already_AddRefed<GLContext>
-    CreateForCompositorWidget(mozilla::widget::CompositorWidget* aCompositorWidget, bool aForceAccelerated);
+  static already_AddRefed<GLContext> CreateForCompositorWidget(
+      mozilla::widget::CompositorWidget* aCompositorWidget,
+      bool aForceAccelerated);
 
-    
+  
 
 
 
@@ -66,10 +66,11 @@ public:
 
 
 
-    static already_AddRefed<GLContext>
-    CreateForWindow(nsIWidget* aWidget, bool aWebRender, bool aForceAccelerated);
+  static already_AddRefed<GLContext> CreateForWindow(nsIWidget* aWidget,
+                                                     bool aWebRender,
+                                                     bool aForceAccelerated);
 
-    
+  
 
 
 
@@ -91,17 +92,15 @@ public:
 
 
 
-    static already_AddRefed<GLContext>
-    CreateOffscreen(const mozilla::gfx::IntSize& size,
-                    const SurfaceCaps& minCaps,
-                    CreateContextFlags flags,
-                    nsACString* const out_failureId);
+  static already_AddRefed<GLContext> CreateOffscreen(
+      const mozilla::gfx::IntSize& size, const SurfaceCaps& minCaps,
+      CreateContextFlags flags, nsACString* const out_failureId);
 
-    
-    static already_AddRefed<GLContext>
-    CreateHeadless(CreateContextFlags flags, nsACString* const out_failureId);
+  
+  static already_AddRefed<GLContext> CreateHeadless(
+      CreateContextFlags flags, nsACString* const out_failureId);
 
-    
+  
 
 
 
@@ -109,23 +108,22 @@ public:
 
 
 
-    static already_AddRefed<GLContext>
-    CreateWrappingExisting(void* aContext, void* aSurface);
+  static already_AddRefed<GLContext> CreateWrappingExisting(void* aContext,
+                                                            void* aSurface);
 
 #if defined(MOZ_WIDGET_ANDROID)
-    static EGLSurface CreateEGLSurface(void* aWindow, EGLConfig aConfig = nullptr);
-    static void DestroyEGLSurface(EGLSurface surface);
-#endif 
+  static EGLSurface CreateEGLSurface(void* aWindow,
+                                     EGLConfig aConfig = nullptr);
+  static void DestroyEGLSurface(EGLSurface surface);
+#endif  
 
-    
-
-
-    static GLContext*
-    GetGlobalContext();
-
-    
+  
 
 
-    static void
-    Shutdown();
+  static GLContext* GetGlobalContext();
+
+  
+
+
+  static void Shutdown();
 };

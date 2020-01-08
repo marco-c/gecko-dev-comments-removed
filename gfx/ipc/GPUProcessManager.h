@@ -22,7 +22,6 @@
 #include "nsThreadUtils.h"
 class nsBaseWidget;
 
-
 namespace mozilla {
 class MemoryReportingProcess;
 namespace layers {
@@ -36,18 +35,18 @@ class PImageBridgeChild;
 class RemoteCompositorSession;
 class InProcessCompositorSession;
 class UiCompositorControllerChild;
-} 
+}  
 namespace widget {
 class CompositorWidget;
-} 
+}  
 namespace dom {
 class ContentParent;
 class TabParent;
 class PVideoDecoderManagerChild;
-} 
+}  
 namespace ipc {
 class GeckoChildProcessHost;
-} 
+}  
 namespace gfx {
 
 class GPUChild;
@@ -59,8 +58,7 @@ class VsyncIOThreadHolder;
 
 
 
-class GPUProcessManager final : public GPUProcessHost::Listener
-{
+class GPUProcessManager final : public GPUProcessHost::Listener {
   friend class layers::RemoteCompositorSession;
   friend class layers::InProcessCompositorSession;
 
@@ -77,7 +75,7 @@ class GPUProcessManager final : public GPUProcessHost::Listener
   typedef layers::InProcessCompositorSession InProcessCompositorSession;
   typedef layers::UiCompositorControllerChild UiCompositorControllerChild;
 
-public:
+ public:
   static void Initialize();
   static void Shutdown();
   static GPUProcessManager* Get();
@@ -93,21 +91,18 @@ public:
   bool EnsureGPUReady();
 
   already_AddRefed<CompositorSession> CreateTopLevelCompositor(
-    nsBaseWidget* aWidget,
-    LayerManager* aLayerManager,
-    CSSToLayoutDeviceScale aScale,
-    const CompositorOptions& aOptions,
-    bool aUseExternalSurfaceSize,
-    const gfx::IntSize& aSurfaceSize,
-    bool* aRetry);
+      nsBaseWidget* aWidget, LayerManager* aLayerManager,
+      CSSToLayoutDeviceScale aScale, const CompositorOptions& aOptions,
+      bool aUseExternalSurfaceSize, const gfx::IntSize& aSurfaceSize,
+      bool* aRetry);
 
   bool CreateContentBridges(
-    base::ProcessId aOtherProcess,
-    mozilla::ipc::Endpoint<PCompositorManagerChild>* aOutCompositor,
-    mozilla::ipc::Endpoint<PImageBridgeChild>* aOutImageBridge,
-    mozilla::ipc::Endpoint<PVRManagerChild>* aOutVRBridge,
-    mozilla::ipc::Endpoint<dom::PVideoDecoderManagerChild>* aOutVideoManager,
-    nsTArray<uint32_t>* aNamespaces);
+      base::ProcessId aOtherProcess,
+      mozilla::ipc::Endpoint<PCompositorManagerChild>* aOutCompositor,
+      mozilla::ipc::Endpoint<PImageBridgeChild>* aOutImageBridge,
+      mozilla::ipc::Endpoint<PVRManagerChild>* aOutVRBridge,
+      mozilla::ipc::Endpoint<dom::PVideoDecoderManagerChild>* aOutVideoManager,
+      nsTArray<uint32_t>* aNamespaces);
 
   
   
@@ -118,6 +113,7 @@ public:
   
   void UnmapLayerTreeId(LayersId aLayersId, base::ProcessId aOwningId);
 
+  
   
   bool IsLayerTreeIdMapped(LayersId aLayersId, base::ProcessId aRequestingId);
 
@@ -136,11 +132,10 @@ public:
   
   
   
-  bool AllocateAndConnectLayerTreeId(
-    PCompositorBridgeChild* aCompositorBridge,
-    base::ProcessId aOtherPid,
-    LayersId* aOutLayersId,
-    CompositorOptions* aOutCompositorOptions);
+  bool AllocateAndConnectLayerTreeId(PCompositorBridgeChild* aCompositorBridge,
+                                     base::ProcessId aOtherPid,
+                                     LayersId* aOutLayersId,
+                                     CompositorOptions* aOutCompositorOptions);
 
   
   void ResetCompositors();
@@ -176,27 +171,27 @@ public:
   RefPtr<MemoryReportingProcess> GetProcessMemoryReporter();
 
   
-  GPUChild* GetGPUChild() {
-    return mGPUChild;
-  }
+  GPUChild* GetGPUChild() { return mGPUChild; }
 
   
-  bool AttemptedGPUProcess() const {
-    return mNumProcessAttempts > 0;
-  }
+  bool AttemptedGPUProcess() const { return mNumProcessAttempts > 0; }
 
-private:
+ private:
   
   void OnXPCOMShutdown();
 
-  bool CreateContentCompositorManager(base::ProcessId aOtherProcess,
-                                      mozilla::ipc::Endpoint<PCompositorManagerChild>* aOutEndpoint);
-  bool CreateContentImageBridge(base::ProcessId aOtherProcess,
-                                mozilla::ipc::Endpoint<PImageBridgeChild>* aOutEndpoint);
-  bool CreateContentVRManager(base::ProcessId aOtherProcess,
-                              mozilla::ipc::Endpoint<PVRManagerChild>* aOutEndpoint);
-  void CreateContentVideoDecoderManager(base::ProcessId aOtherProcess,
-                                        mozilla::ipc::Endpoint<dom::PVideoDecoderManagerChild>* aOutEndPoint);
+  bool CreateContentCompositorManager(
+      base::ProcessId aOtherProcess,
+      mozilla::ipc::Endpoint<PCompositorManagerChild>* aOutEndpoint);
+  bool CreateContentImageBridge(
+      base::ProcessId aOtherProcess,
+      mozilla::ipc::Endpoint<PImageBridgeChild>* aOutEndpoint);
+  bool CreateContentVRManager(
+      base::ProcessId aOtherProcess,
+      mozilla::ipc::Endpoint<PVRManagerChild>* aOutEndpoint);
+  void CreateContentVideoDecoderManager(
+      base::ProcessId aOtherProcess,
+      mozilla::ipc::Endpoint<dom::PVideoDecoderManagerChild>* aOutEndPoint);
 
   
   
@@ -213,7 +208,7 @@ private:
 
   void FallbackToSoftware(const char* aMessage);
 
-private:
+ private:
   GPUProcessManager();
 
   
@@ -234,34 +229,32 @@ private:
   void EnsureVRManager();
 
 #if defined(MOZ_WIDGET_ANDROID)
-  already_AddRefed<UiCompositorControllerChild> CreateUiCompositorController(nsBaseWidget* aWidget, const LayersId aId);
-#endif 
+  already_AddRefed<UiCompositorControllerChild> CreateUiCompositorController(
+      nsBaseWidget* aWidget, const LayersId aId);
+#endif  
 
   RefPtr<CompositorSession> CreateRemoteSession(
-    nsBaseWidget* aWidget,
-    LayerManager* aLayerManager,
-    const LayersId& aRootLayerTreeId,
-    CSSToLayoutDeviceScale aScale,
-    const CompositorOptions& aOptions,
-    bool aUseExternalSurfaceSize,
-    const gfx::IntSize& aSurfaceSize);
+      nsBaseWidget* aWidget, LayerManager* aLayerManager,
+      const LayersId& aRootLayerTreeId, CSSToLayoutDeviceScale aScale,
+      const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
+      const gfx::IntSize& aSurfaceSize);
 
   DISALLOW_COPY_AND_ASSIGN(GPUProcessManager);
 
   class Observer final : public nsIObserver {
-  public:
+   public:
     NS_DECL_ISUPPORTS
     NS_DECL_NSIOBSERVER
     explicit Observer(GPUProcessManager* aManager);
 
-  protected:
+   protected:
     ~Observer() {}
 
     GPUProcessManager* mManager;
   };
   friend class Observer;
 
-private:
+ private:
   bool mDecodeVideoOnGpuProcess = true;
 
   RefPtr<Observer> mObserver;
@@ -286,7 +279,7 @@ private:
   RefPtr<VsyncBridgeChild> mVsyncBridge;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

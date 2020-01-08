@@ -19,12 +19,13 @@
 #include "js/TypeDecls.h"
 
 #if defined(JS_GC_ZEAL) || defined(DEBUG)
-# define JSGC_HASH_TABLE_CHECKS
+#define JSGC_HASH_TABLE_CHECKS
 #endif
 
 namespace JS {
 
-template <typename T> class AutoVector;
+template <typename T>
+class AutoVector;
 using AutoIdVector = AutoVector<jsid>;
 using AutoValueVector = AutoVector<Value>;
 using AutoObjectVector = AutoVector<JSObject*>;
@@ -33,30 +34,30 @@ class CallArgs;
 
 class JS_PUBLIC_API RealmOptions;
 
-} 
+}  
 
 
 enum JSType {
-    JSTYPE_UNDEFINED,           
-    JSTYPE_OBJECT,              
-    JSTYPE_FUNCTION,            
-    JSTYPE_STRING,              
-    JSTYPE_NUMBER,              
-    JSTYPE_BOOLEAN,             
-    JSTYPE_NULL,                
-    JSTYPE_SYMBOL,              
+  JSTYPE_UNDEFINED, 
+  JSTYPE_OBJECT,    
+  JSTYPE_FUNCTION,  
+  JSTYPE_STRING,    
+  JSTYPE_NUMBER,    
+  JSTYPE_BOOLEAN,   
+  JSTYPE_NULL,      
+  JSTYPE_SYMBOL,    
 #ifdef ENABLE_BIGINT
-    JSTYPE_BIGINT,              
+  JSTYPE_BIGINT, 
 #endif
-    JSTYPE_LIMIT
+  JSTYPE_LIMIT
 };
 
 
 enum JSProtoKey {
-#define PROTOKEY_AND_INITIALIZER(name,init,clasp) JSProto_##name,
-    JS_FOR_EACH_PROTOTYPE(PROTOKEY_AND_INITIALIZER)
+#define PROTOKEY_AND_INITIALIZER(name, init, clasp) JSProto_##name,
+  JS_FOR_EACH_PROTOTYPE(PROTOKEY_AND_INITIALIZER)
 #undef PROTOKEY_AND_INITIALIZER
-    JSProto_LIMIT
+      JSProto_LIMIT
 };
 
 
@@ -74,7 +75,8 @@ class JS_PUBLIC_API JSTracer;
 
 class JSFlatString;
 
-template<typename T> struct JSConstScalarSpec;
+template <typename T>
+struct JSConstScalarSpec;
 typedef JSConstScalarSpec<double> JSConstDoubleSpec;
 typedef JSConstScalarSpec<int32_t> JSConstIntegerSpec;
 
@@ -86,87 +88,71 @@ inline JS::Zone* GetContextZone(const JSContext* cx);
 
 
 
-JS_FRIEND_API bool
-CurrentThreadCanAccessRuntime(const JSRuntime* rt);
+JS_FRIEND_API bool CurrentThreadCanAccessRuntime(const JSRuntime* rt);
 
 #ifdef DEBUG
-JS_FRIEND_API bool
-CurrentThreadIsPerformingGC();
+JS_FRIEND_API bool CurrentThreadIsPerformingGC();
 #endif
 
-} 
+}  
 
 namespace JS {
 
 struct JS_PUBLIC_API PropertyDescriptor;
 
 enum class HeapState {
-    Idle,             
-    Tracing,          
-    MajorCollecting,  
-    MinorCollecting,  
-    CycleCollecting   
+  Idle,             
+  Tracing,          
+                    
+  MajorCollecting,  
+  MinorCollecting,  
+  CycleCollecting   
 };
 
-JS_PUBLIC_API HeapState
-RuntimeHeapState();
+JS_PUBLIC_API HeapState RuntimeHeapState();
 
-static inline bool
-RuntimeHeapIsBusy()
-{
-    return RuntimeHeapState() != HeapState::Idle;
+static inline bool RuntimeHeapIsBusy() {
+  return RuntimeHeapState() != HeapState::Idle;
 }
 
-static inline bool
-RuntimeHeapIsTracing()
-{
-    return RuntimeHeapState() == HeapState::Tracing;
+static inline bool RuntimeHeapIsTracing() {
+  return RuntimeHeapState() == HeapState::Tracing;
 }
 
-static inline bool
-RuntimeHeapIsMajorCollecting()
-{
-    return RuntimeHeapState() == HeapState::MajorCollecting;
+static inline bool RuntimeHeapIsMajorCollecting() {
+  return RuntimeHeapState() == HeapState::MajorCollecting;
 }
 
-static inline bool
-RuntimeHeapIsMinorCollecting()
-{
-    return RuntimeHeapState() == HeapState::MinorCollecting;
+static inline bool RuntimeHeapIsMinorCollecting() {
+  return RuntimeHeapState() == HeapState::MinorCollecting;
 }
 
-static inline bool
-RuntimeHeapIsCollecting(HeapState state)
-{
-    return state == HeapState::MajorCollecting || state == HeapState::MinorCollecting;
+static inline bool RuntimeHeapIsCollecting(HeapState state) {
+  return state == HeapState::MajorCollecting ||
+         state == HeapState::MinorCollecting;
 }
 
-static inline bool
-RuntimeHeapIsCollecting()
-{
-    return RuntimeHeapIsCollecting(RuntimeHeapState());
+static inline bool RuntimeHeapIsCollecting() {
+  return RuntimeHeapIsCollecting(RuntimeHeapState());
 }
 
-static inline bool
-RuntimeHeapIsCycleCollecting()
-{
-    return RuntimeHeapState() == HeapState::CycleCollecting;
+static inline bool RuntimeHeapIsCycleCollecting() {
+  return RuntimeHeapState() == HeapState::CycleCollecting;
 }
 
 
 
-class MOZ_STACK_CLASS JS_PUBLIC_API AutoEnterCycleCollection
-{
+class MOZ_STACK_CLASS JS_PUBLIC_API AutoEnterCycleCollection {
 #ifdef DEBUG
-    JSRuntime* runtime_;
+  JSRuntime* runtime_;
 
-  public:
-    explicit AutoEnterCycleCollection(JSRuntime* rt);
-    ~AutoEnterCycleCollection();
+ public:
+  explicit AutoEnterCycleCollection(JSRuntime* rt);
+  ~AutoEnterCycleCollection();
 #else
-  public:
-    explicit AutoEnterCycleCollection(JSRuntime* rt) {}
-    ~AutoEnterCycleCollection() {}
+ public:
+  explicit AutoEnterCycleCollection(JSRuntime* rt) {}
+  ~AutoEnterCycleCollection() {}
 #endif
 };
 
@@ -176,7 +162,6 @@ extern "C" {
 
 
 typedef struct PRFileDesc PRFileDesc;
-
 }
 
 #endif 

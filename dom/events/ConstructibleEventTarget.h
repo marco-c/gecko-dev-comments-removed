@@ -13,23 +13,20 @@
 namespace mozilla {
 namespace dom {
 
-class ConstructibleEventTarget : public DOMEventTargetHelper
-{
-public:
+class ConstructibleEventTarget : public DOMEventTargetHelper {
+ public:
   
   
   
 
   explicit ConstructibleEventTarget(nsIGlobalObject* aGlobalObject)
-    : DOMEventTargetHelper(aGlobalObject)
-  {
-  }
+      : DOMEventTargetHelper(aGlobalObject) {}
 
   virtual JSObject* WrapObject(JSContext* cx,
-			       JS::Handle<JSObject*> aGivenProto) override;
+                               JS::Handle<JSObject*> aGivenProto) override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

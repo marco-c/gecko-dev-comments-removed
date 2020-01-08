@@ -17,18 +17,13 @@ class CompositorOptions;
 
 
 
-class InProcessCompositorSession final : public CompositorSession
-{
-public:
+class InProcessCompositorSession final : public CompositorSession {
+ public:
   static RefPtr<InProcessCompositorSession> Create(
-    nsBaseWidget* baseWidget,
-    LayerManager* aLayerManager,
-    const LayersId& aRootLayerTreeId,
-    CSSToLayoutDeviceScale aScale,
-    const CompositorOptions& aOptions,
-    bool aUseExternalSurfaceSize,
-    const gfx::IntSize& aSurfaceSize,
-    uint32_t aNamespace);
+      nsBaseWidget* baseWidget, LayerManager* aLayerManager,
+      const LayersId& aRootLayerTreeId, CSSToLayoutDeviceScale aScale,
+      const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
+      const gfx::IntSize& aSurfaceSize, uint32_t aNamespace);
 
   CompositorBridgeParent* GetInProcessBridge() const override;
   void SetContentController(GeckoContentController* aController) override;
@@ -38,19 +33,19 @@ public:
 
   void NotifySessionLost();
 
-private:
+ private:
   InProcessCompositorSession(widget::CompositorWidget* aWidget,
                              nsBaseWidget* baseWidget,
                              CompositorBridgeChild* aChild,
                              CompositorBridgeParent* aParent);
 
-private:
+ private:
   nsBaseWidget* mWidget;
   RefPtr<CompositorBridgeParent> mCompositorBridgeParent;
   RefPtr<CompositorWidget> mCompositorWidget;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

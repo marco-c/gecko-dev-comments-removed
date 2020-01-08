@@ -46,26 +46,28 @@
 #include "nsProxyRelease.h"
 #include <algorithm>
 
-#define MIN_AVAILABLE_BYTES_PER_CHUNKED_GROWTH 524288000 // 500 MiB
+#define MIN_AVAILABLE_BYTES_PER_CHUNKED_GROWTH 524288000  // 500 MiB
 
 
-#define MAX_CACHE_SIZE_KIBIBYTES 2048 // 2 MiB
+#define MAX_CACHE_SIZE_KIBIBYTES 2048  // 2 MiB
 
 mozilla::LazyLogModule gStorageLog("mozStorage");
 
 
 
 #ifdef DEBUG
-#define CHECK_MAINTHREAD_ABUSE() \
-  do { \
-    nsCOMPtr<nsIThread> mainThread = do_GetMainThread(); \
-    NS_WARNING_ASSERTION( \
-      threadOpenedOn == mainThread || !NS_IsMainThread(), \
-      "Using Storage synchronous API on main-thread, but the connection was " \
-      "opened on another thread."); \
-  } while(0)
+#define CHECK_MAINTHREAD_ABUSE()                                              \
+  do {                                                                        \
+    nsCOMPtr<nsIThread> mainThread = do_GetMainThread();                      \
+    NS_WARNING_ASSERTION(threadOpenedOn == mainThread || !NS_IsMainThread(),  \
+                         "Using Storage synchronous API on main-thread, but " \
+                         "the connection was "                                \
+                         "opened on another thread.");                        \
+  } while (0)
 #else
-#define CHECK_MAINTHREAD_ABUSE() do { /* Nothing */ } while(0)
+#define CHECK_MAINTHREAD_ABUSE() \
+  do { /* Nothing */             \
+  } while (0)
 #endif
 
 namespace mozilla {
@@ -77,9 +79,7 @@ const char *GetVFSName();
 
 namespace {
 
-int
-nsresultToSQLiteResult(nsresult aXPCOMResultCode)
-{
+int nsresultToSQLiteResult(nsresult aXPCOMResultCode) {
   if (NS_SUCCEEDED(aXPCOMResultCode)) {
     return SQLITE_OK;
   }
@@ -117,64 +117,39 @@ nsresultToSQLiteResult(nsresult aXPCOMResultCode)
 
 
 
-int
-sqlite3_T_int(sqlite3_context *aCtx,
-              int aValue)
-{
+int sqlite3_T_int(sqlite3_context *aCtx, int aValue) {
   ::sqlite3_result_int(aCtx, aValue);
   return SQLITE_OK;
 }
 
-int
-sqlite3_T_int64(sqlite3_context *aCtx,
-                sqlite3_int64 aValue)
-{
+int sqlite3_T_int64(sqlite3_context *aCtx, sqlite3_int64 aValue) {
   ::sqlite3_result_int64(aCtx, aValue);
   return SQLITE_OK;
 }
 
-int
-sqlite3_T_double(sqlite3_context *aCtx,
-                 double aValue)
-{
+int sqlite3_T_double(sqlite3_context *aCtx, double aValue) {
   ::sqlite3_result_double(aCtx, aValue);
   return SQLITE_OK;
 }
 
-int
-sqlite3_T_text(sqlite3_context *aCtx,
-               const nsCString &aValue)
-{
-  ::sqlite3_result_text(aCtx,
-                        aValue.get(),
-                        aValue.Length(),
-                        SQLITE_TRANSIENT);
+int sqlite3_T_text(sqlite3_context *aCtx, const nsCString &aValue) {
+  ::sqlite3_result_text(aCtx, aValue.get(), aValue.Length(), SQLITE_TRANSIENT);
   return SQLITE_OK;
 }
 
-int
-sqlite3_T_text16(sqlite3_context *aCtx,
-                 const nsString &aValue)
-{
-  ::sqlite3_result_text16(aCtx,
-                          aValue.get(),
-                          aValue.Length() * 2, 
+int sqlite3_T_text16(sqlite3_context *aCtx, const nsString &aValue) {
+  ::sqlite3_result_text16(aCtx, aValue.get(),
+                          aValue.Length() * 2,  
                           SQLITE_TRANSIENT);
   return SQLITE_OK;
 }
 
-int
-sqlite3_T_null(sqlite3_context *aCtx)
-{
+int sqlite3_T_null(sqlite3_context *aCtx) {
   ::sqlite3_result_null(aCtx);
   return SQLITE_OK;
 }
 
-int
-sqlite3_T_blob(sqlite3_context *aCtx,
-               const void *aData,
-               int aSize)
-{
+int sqlite3_T_blob(sqlite3_context *aCtx, const void *aData, int aSize) {
   ::sqlite3_result_blob(aCtx, aData, aSize, free);
   return SQLITE_OK;
 }
@@ -184,36 +159,32 @@ sqlite3_T_blob(sqlite3_context *aCtx,
 
 
 
-struct Module
-{
-  const char* name;
-  int (*registerFunc)(sqlite3*, const char*);
+struct Module {
+  const char *name;
+  int (*registerFunc)(sqlite3 *, const char *);
 };
 
-Module gModules[] = {
-  { "filesystem", RegisterFileSystemModule }
-};
+Module gModules[] = {{"filesystem", RegisterFileSystemModule}};
 
 
 
 
-int tracefunc (unsigned aReason, void *aClosure, void *aP, void *aX)
-{
+int tracefunc(unsigned aReason, void *aClosure, void *aP, void *aX) {
   switch (aReason) {
     case SQLITE_TRACE_STMT: {
       
-      sqlite3_stmt* stmt = static_cast<sqlite3_stmt*>(aP);
+      sqlite3_stmt *stmt = static_cast<sqlite3_stmt *>(aP);
       
       
-      char* expanded = static_cast<char*>(aX);
+      char *expanded = static_cast<char *>(aX);
       
       if (!::strncmp(expanded, "--", 2)) {
         MOZ_LOG(gStorageLog, LogLevel::Debug,
-          ("TRACE_STMT on %p: '%s'", aClosure, expanded));
+                ("TRACE_STMT on %p: '%s'", aClosure, expanded));
       } else {
-        char* sql = ::sqlite3_expanded_sql(stmt);
+        char *sql = ::sqlite3_expanded_sql(stmt);
         MOZ_LOG(gStorageLog, LogLevel::Debug,
-          ("TRACE_STMT on %p: '%s'", aClosure, sql));
+                ("TRACE_STMT on %p: '%s'", aClosure, sql));
         ::sqlite3_free(sql);
       }
       break;
@@ -221,10 +192,10 @@ int tracefunc (unsigned aReason, void *aClosure, void *aP, void *aX)
     case SQLITE_TRACE_PROFILE: {
       
       
-      sqlite_int64 time = *(static_cast<sqlite_int64*>(aX)) / 1000000;
+      sqlite_int64 time = *(static_cast<sqlite_int64 *>(aX)) / 1000000;
       if (time > 0) {
         MOZ_LOG(gStorageLog, LogLevel::Debug,
-          ("TRACE_TIME on %p: %lldms", aClosure, time));
+                ("TRACE_TIME on %p: %lldms", aClosure, time));
       }
       break;
     }
@@ -232,18 +203,14 @@ int tracefunc (unsigned aReason, void *aClosure, void *aP, void *aX)
   return 0;
 }
 
-void
-basicFunctionHelper(sqlite3_context *aCtx,
-                    int aArgc,
-                    sqlite3_value **aArgv)
-{
+void basicFunctionHelper(sqlite3_context *aCtx, int aArgc,
+                         sqlite3_value **aArgv) {
   void *userData = ::sqlite3_user_data(aCtx);
 
   mozIStorageFunction *func = static_cast<mozIStorageFunction *>(userData);
 
   RefPtr<ArgValueArray> arguments(new ArgValueArray(aArgc, aArgv));
-  if (!arguments)
-      return;
+  if (!arguments) return;
 
   nsCOMPtr<nsIVariant> result;
   nsresult rv = func->OnFunctionCall(arguments, getter_AddRefs(result));
@@ -262,50 +229,41 @@ basicFunctionHelper(sqlite3_context *aCtx,
   int retcode = variantToSQLiteT(aCtx, result);
   if (retcode != SQLITE_OK) {
     NS_WARNING("User function returned invalid data type!");
-    ::sqlite3_result_error(aCtx,
-                           "User function returned invalid data type",
+    ::sqlite3_result_error(aCtx, "User function returned invalid data type",
                            -1);
   }
 }
 
-void
-aggregateFunctionStepHelper(sqlite3_context *aCtx,
-                            int aArgc,
-                            sqlite3_value **aArgv)
-{
+void aggregateFunctionStepHelper(sqlite3_context *aCtx, int aArgc,
+                                 sqlite3_value **aArgv) {
   void *userData = ::sqlite3_user_data(aCtx);
   mozIStorageAggregateFunction *func =
-    static_cast<mozIStorageAggregateFunction *>(userData);
+      static_cast<mozIStorageAggregateFunction *>(userData);
 
   RefPtr<ArgValueArray> arguments(new ArgValueArray(aArgc, aArgv));
-  if (!arguments)
-    return;
+  if (!arguments) return;
 
   if (NS_FAILED(func->OnStep(arguments)))
     NS_WARNING("User aggregate step function returned error code!");
 }
 
-void
-aggregateFunctionFinalHelper(sqlite3_context *aCtx)
-{
+void aggregateFunctionFinalHelper(sqlite3_context *aCtx) {
   void *userData = ::sqlite3_user_data(aCtx);
   mozIStorageAggregateFunction *func =
-    static_cast<mozIStorageAggregateFunction *>(userData);
+      static_cast<mozIStorageAggregateFunction *>(userData);
 
   RefPtr<nsIVariant> result;
   if (NS_FAILED(func->OnFinal(getter_AddRefs(result)))) {
     NS_WARNING("User aggregate final function returned error code!");
-    ::sqlite3_result_error(aCtx,
-                           "User aggregate final function returned error code",
-                           -1);
+    ::sqlite3_result_error(
+        aCtx, "User aggregate final function returned error code", -1);
     return;
   }
 
   if (variantToSQLiteT(aCtx, result) != SQLITE_OK) {
     NS_WARNING("User aggregate final function returned invalid data type!");
-    ::sqlite3_result_error(aCtx,
-                           "User aggregate final function returned invalid data type",
-                           -1);
+    ::sqlite3_result_error(
+        aCtx, "User aggregate final function returned invalid data type", -1);
   }
 }
 
@@ -313,54 +271,44 @@ aggregateFunctionFinalHelper(sqlite3_context *aCtx)
 
 
 
-class UnlockNotification
-{
-public:
+class UnlockNotification {
+ public:
   UnlockNotification()
-  : mMutex("UnlockNotification mMutex")
-  , mCondVar(mMutex, "UnlockNotification condVar")
-  , mSignaled(false)
-  {
-  }
+      : mMutex("UnlockNotification mMutex"),
+        mCondVar(mMutex, "UnlockNotification condVar"),
+        mSignaled(false) {}
 
-  void Wait()
-  {
+  void Wait() {
     MutexAutoLock lock(mMutex);
     while (!mSignaled) {
       (void)mCondVar.Wait();
     }
   }
 
-  void Signal()
-  {
+  void Signal() {
     MutexAutoLock lock(mMutex);
     mSignaled = true;
     (void)mCondVar.Notify();
   }
 
-private:
+ private:
   Mutex mMutex;
   CondVar mCondVar;
   bool mSignaled;
 };
 
-void
-UnlockNotifyCallback(void **aArgs,
-                     int aArgsSize)
-{
+void UnlockNotifyCallback(void **aArgs, int aArgsSize) {
   for (int i = 0; i < aArgsSize; i++) {
     UnlockNotification *notification =
-      static_cast<UnlockNotification *>(aArgs[i]);
+        static_cast<UnlockNotification *>(aArgs[i]);
     notification->Signal();
   }
 }
 
-int
-WaitForUnlockNotify(sqlite3* aDatabase)
-{
+int WaitForUnlockNotify(sqlite3 *aDatabase) {
   UnlockNotification notification;
-  int srv = ::sqlite3_unlock_notify(aDatabase, UnlockNotifyCallback,
-                                    &notification);
+  int srv =
+      ::sqlite3_unlock_notify(aDatabase, UnlockNotifyCallback, &notification);
   MOZ_ASSERT(srv == SQLITE_LOCKED || srv == SQLITE_OK);
   if (srv == SQLITE_OK) {
     notification.Wait();
@@ -372,27 +320,22 @@ WaitForUnlockNotify(sqlite3* aDatabase)
 
 
 
-class AsyncCloseConnection final: public Runnable
-{
-public:
-  AsyncCloseConnection(Connection *aConnection,
-                       sqlite3 *aNativeConnection,
+class AsyncCloseConnection final : public Runnable {
+ public:
+  AsyncCloseConnection(Connection *aConnection, sqlite3 *aNativeConnection,
                        nsIRunnable *aCallbackEvent)
-  : Runnable("storage::AsyncCloseConnection")
-  , mConnection(aConnection)
-  , mNativeConnection(aNativeConnection)
-  , mCallbackEvent(aCallbackEvent)
-  {
-  }
+      : Runnable("storage::AsyncCloseConnection"),
+        mConnection(aConnection),
+        mNativeConnection(aNativeConnection),
+        mCallbackEvent(aCallbackEvent) {}
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     
     MOZ_ASSERT(NS_GetCurrentThread() != mConnection->threadOpenedOn);
 
     nsCOMPtr<nsIRunnable> event =
-      NewRunnableMethod("storage::Connection::shutdownAsyncThread",
-                        mConnection, &Connection::shutdownAsyncThread);
+        NewRunnableMethod("storage::Connection::shutdownAsyncThread",
+                          mConnection, &Connection::shutdownAsyncThread);
     MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(event));
 
     
@@ -409,12 +352,13 @@ public:
   }
 
   ~AsyncCloseConnection() override {
-    NS_ReleaseOnMainThreadSystemGroup(
-      "AsyncCloseConnection::mConnection", mConnection.forget());
-    NS_ReleaseOnMainThreadSystemGroup(
-      "AsyncCloseConnection::mCallbackEvent", mCallbackEvent.forget());
+    NS_ReleaseOnMainThreadSystemGroup("AsyncCloseConnection::mConnection",
+                                      mConnection.forget());
+    NS_ReleaseOnMainThreadSystemGroup("AsyncCloseConnection::mCallbackEvent",
+                                      mCallbackEvent.forget());
   }
-private:
+
+ private:
   RefPtr<Connection> mConnection;
   sqlite3 *mNativeConnection;
   nsCOMPtr<nsIRunnable> mCallbackEvent;
@@ -425,9 +369,8 @@ private:
 
 
 
-class AsyncInitializeClone final: public Runnable
-{
-public:
+class AsyncInitializeClone final : public Runnable {
+ public:
   
 
 
@@ -436,16 +379,14 @@ public:
 
 
 
-  AsyncInitializeClone(Connection* aConnection,
-                       Connection* aClone,
+  AsyncInitializeClone(Connection *aConnection, Connection *aClone,
                        const bool aReadOnly,
-                       mozIStorageCompletionCallback* aCallback)
-    : Runnable("storage::AsyncInitializeClone")
-    , mConnection(aConnection)
-    , mClone(aClone)
-    , mReadOnly(aReadOnly)
-    , mCallback(aCallback)
-  {
+                       mozIStorageCompletionCallback *aCallback)
+      : Runnable("storage::AsyncInitializeClone"),
+        mConnection(aConnection),
+        mClone(aClone),
+        mReadOnly(aReadOnly),
+        mCallback(aCallback) {
     MOZ_ASSERT(NS_IsMainThread());
   }
 
@@ -456,14 +397,13 @@ public:
       return Dispatch(rv, nullptr);
     }
     return Dispatch(NS_OK,
-                    NS_ISUPPORTS_CAST(mozIStorageAsyncConnection*, mClone));
+                    NS_ISUPPORTS_CAST(mozIStorageAsyncConnection *, mClone));
   }
 
-private:
-  nsresult Dispatch(nsresult aResult, nsISupports* aValue) {
-    RefPtr<CallbackComplete> event = new CallbackComplete(aResult,
-                                                            aValue,
-                                                            mCallback.forget());
+ private:
+  nsresult Dispatch(nsresult aResult, nsISupports *aValue) {
+    RefPtr<CallbackComplete> event =
+        new CallbackComplete(aResult, aValue, mCallback.forget());
     return mClone->threadOpenedOn->Dispatch(event, NS_DISPATCH_NORMAL);
   }
 
@@ -473,16 +413,15 @@ private:
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     
-    NS_ProxyRelease(
-      "AsyncInitializeClone::mConnection", thread, mConnection.forget());
-    NS_ProxyRelease(
-        "AsyncInitializeClone::mClone", thread, mClone.forget());
+    NS_ProxyRelease("AsyncInitializeClone::mConnection", thread,
+                    mConnection.forget());
+    NS_ProxyRelease("AsyncInitializeClone::mClone", thread, mClone.forget());
 
     
     
     
-    NS_ProxyRelease(
-      "AsyncInitializeClone::mCallback", thread, mCallback.forget());
+    NS_ProxyRelease("AsyncInitializeClone::mCallback", thread,
+                    mCallback.forget());
   }
 
   RefPtr<Connection> mConnection;
@@ -494,60 +433,51 @@ private:
 
 
 
-class CloseListener final :  public mozIStorageCompletionCallback
-{
-public:
+class CloseListener final : public mozIStorageCompletionCallback {
+ public:
   NS_DECL_ISUPPORTS
-  CloseListener()
-    : mClosed(false)
-  {
-  }
+  CloseListener() : mClosed(false) {}
 
-  NS_IMETHOD Complete(nsresult, nsISupports*) override
-  {
+  NS_IMETHOD Complete(nsresult, nsISupports *) override {
     mClosed = true;
     return NS_OK;
   }
 
   bool mClosed;
 
-private:
+ private:
   ~CloseListener() = default;
 };
 
 NS_IMPL_ISUPPORTS(CloseListener, mozIStorageCompletionCallback)
 
-} 
+}  
 
 
 
 
-Connection::Connection(Service *aService,
-                       int aFlags,
-                       bool aAsyncOnly,
+Connection::Connection(Service *aService, int aFlags, bool aAsyncOnly,
                        bool aIgnoreLockingMode)
-: sharedAsyncExecutionMutex("Connection::sharedAsyncExecutionMutex")
-, sharedDBMutex("Connection::sharedDBMutex")
-, threadOpenedOn(do_GetCurrentThread())
-, mDBConn(nullptr)
-, mAsyncExecutionThreadShuttingDown(false)
-, mConnectionClosed(false)
-, mDefaultTransactionType(mozIStorageConnection::TRANSACTION_DEFERRED)
-, mTransactionInProgress(false)
-, mDestroying(false)
-, mProgressHandler(nullptr)
-, mFlags(aFlags)
-, mIgnoreLockingMode(aIgnoreLockingMode)
-, mStorageService(aService)
-, mAsyncOnly(aAsyncOnly)
-{
+    : sharedAsyncExecutionMutex("Connection::sharedAsyncExecutionMutex"),
+      sharedDBMutex("Connection::sharedDBMutex"),
+      threadOpenedOn(do_GetCurrentThread()),
+      mDBConn(nullptr),
+      mAsyncExecutionThreadShuttingDown(false),
+      mConnectionClosed(false),
+      mDefaultTransactionType(mozIStorageConnection::TRANSACTION_DEFERRED),
+      mTransactionInProgress(false),
+      mDestroying(false),
+      mProgressHandler(nullptr),
+      mFlags(aFlags),
+      mIgnoreLockingMode(aIgnoreLockingMode),
+      mStorageService(aService),
+      mAsyncOnly(aAsyncOnly) {
   MOZ_ASSERT(!mIgnoreLockingMode || mFlags & SQLITE_OPEN_READONLY,
              "Can't ignore locking for a non-readonly connection!");
   mStorageService->registerConnection(this);
 }
 
-Connection::~Connection()
-{
+Connection::~Connection() {
   
   
   
@@ -566,8 +496,7 @@ NS_INTERFACE_MAP_END
 
 
 
-NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void)
-{
+NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void) {
   MOZ_ASSERT(0 != mRefCnt, "dup release");
   nsrefcnt count = --mRefCnt;
   NS_LOG_RELEASE(this, count, "Connection");
@@ -600,11 +529,10 @@ NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void)
         
         Unused << Close();
       } else {
-        nsCOMPtr<nsIRunnable> event =
-          NewRunnableMethod("storage::Connection::Close",
-                            this, &Connection::Close);
-        if (NS_FAILED(threadOpenedOn->Dispatch(event.forget(),
-                                               NS_DISPATCH_NORMAL))) {
+        nsCOMPtr<nsIRunnable> event = NewRunnableMethod(
+            "storage::Connection::Close", this, &Connection::Close);
+        if (NS_FAILED(
+                threadOpenedOn->Dispatch(event.forget(), NS_DISPATCH_NORMAL))) {
           
           
           
@@ -620,7 +548,7 @@ NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void)
     }
   } else if (0 == count) {
     mRefCnt = 1; 
-#if 0 
+#if 0            
     NS_ASSERT_OWNINGTHREAD(Connection);
 #endif
     delete (this);
@@ -629,21 +557,18 @@ NS_IMETHODIMP_(MozExternalRefCountType) Connection::Release(void)
   return count;
 }
 
-int32_t
-Connection::getSqliteRuntimeStatus(int32_t aStatusOption, int32_t* aMaxValue)
-{
+int32_t Connection::getSqliteRuntimeStatus(int32_t aStatusOption,
+                                           int32_t *aMaxValue) {
   MOZ_ASSERT(mDBConn, "A connection must exist at this point");
   int curr = 0, max = 0;
-  DebugOnly<int> rc = ::sqlite3_db_status(mDBConn, aStatusOption, &curr, &max, 0);
+  DebugOnly<int> rc =
+      ::sqlite3_db_status(mDBConn, aStatusOption, &curr, &max, 0);
   MOZ_ASSERT(NS_SUCCEEDED(convertResultCode(rc)));
-  if (aMaxValue)
-    *aMaxValue = max;
+  if (aMaxValue) *aMaxValue = max;
   return curr;
 }
 
-nsIEventTarget *
-Connection::getAsyncExecutionTarget()
-{
+nsIEventTarget *Connection::getAsyncExecutionTarget() {
   NS_ENSURE_TRUE(threadOpenedOn == NS_GetCurrentThread(), nullptr);
 
   
@@ -665,10 +590,8 @@ Connection::getAsyncExecutionTarget()
   return mAsyncExecutionThread;
 }
 
-nsresult
-Connection::initialize()
-{
-  NS_ASSERTION (!mDBConn, "Initialize called on already opened database!");
+nsresult Connection::initialize() {
+  NS_ASSERTION(!mDBConn, "Initialize called on already opened database!");
   MOZ_ASSERT(!mIgnoreLockingMode, "Can't ignore locking on an in-memory db.");
   AUTO_PROFILER_LABEL("Connection::initialize", OTHER);
 
@@ -688,11 +611,9 @@ Connection::initialize()
   return NS_OK;
 }
 
-nsresult
-Connection::initialize(nsIFile *aDatabaseFile)
-{
-  NS_ASSERTION (aDatabaseFile, "Passed null file!");
-  NS_ASSERTION (!mDBConn, "Initialize called on already opened database!");
+nsresult Connection::initialize(nsIFile *aDatabaseFile) {
+  NS_ASSERTION(aDatabaseFile, "Passed null file!");
+  NS_ASSERTION(!mDBConn, "Initialize called on already opened database!");
   AUTO_PROFILER_LABEL("Connection::initialize", OTHER);
 
   mDatabaseFile = aDatabaseFile;
@@ -702,11 +623,11 @@ Connection::initialize(nsIFile *aDatabaseFile)
   NS_ENSURE_SUCCESS(rv, rv);
 
 #ifdef XP_WIN
-  static const char* sIgnoreLockingVFS = "win32-none";
+  static const char *sIgnoreLockingVFS = "win32-none";
 #else
-  static const char* sIgnoreLockingVFS = "unix-none";
+  static const char *sIgnoreLockingVFS = "unix-none";
 #endif
-  const char* vfs = mIgnoreLockingMode ? sIgnoreLockingVFS : GetVFSName();
+  const char *vfs = mIgnoreLockingMode ? sIgnoreLockingVFS : GetVFSName();
 
   int srv = ::sqlite3_open_v2(NS_ConvertUTF16toUTF8(path).get(), &mDBConn,
                               mFlags, vfs);
@@ -725,11 +646,9 @@ Connection::initialize(nsIFile *aDatabaseFile)
   return NS_OK;
 }
 
-nsresult
-Connection::initialize(nsIFileURL *aFileURL)
-{
-  NS_ASSERTION (aFileURL, "Passed null file URL!");
-  NS_ASSERTION (!mDBConn, "Initialize called on already opened database!");
+nsresult Connection::initialize(nsIFileURL *aFileURL) {
+  NS_ASSERTION(aFileURL, "Passed null file URL!");
+  NS_ASSERTION(!mDBConn, "Initialize called on already opened database!");
   AUTO_PROFILER_LABEL("Connection::initialize", OTHER);
 
   nsCOMPtr<nsIFile> databaseFile;
@@ -756,21 +675,17 @@ Connection::initialize(nsIFileURL *aFileURL)
   return NS_OK;
 }
 
-nsresult
-Connection::initializeInternal()
-{
+nsresult Connection::initializeInternal() {
   MOZ_ASSERT(mDBConn);
 
-  auto guard = MakeScopeExit([&]() {
-    initializeFailed();
-  });
+  auto guard = MakeScopeExit([&]() { initializeFailed(); });
 
   if (mFileURL) {
-    const char* dbPath = ::sqlite3_db_filename(mDBConn, "main");
+    const char *dbPath = ::sqlite3_db_filename(mDBConn, "main");
     MOZ_ASSERT(dbPath);
 
-    const char* telemetryFilename =
-      ::sqlite3_uri_parameter(dbPath, "telemetryFilename");
+    const char *telemetryFilename =
+        ::sqlite3_uri_parameter(dbPath, "telemetryFilename");
     if (telemetryFilename) {
       if (NS_WARN_IF(*telemetryFilename == '\0')) {
         return NS_ERROR_INVALID_ARG;
@@ -790,12 +705,12 @@ Connection::initializeInternal()
   
   
   if (MOZ_LOG_TEST(gStorageLog, LogLevel::Debug)) {
-    ::sqlite3_trace_v2(mDBConn,
-                       SQLITE_TRACE_STMT | SQLITE_TRACE_PROFILE,
+    ::sqlite3_trace_v2(mDBConn, SQLITE_TRACE_STMT | SQLITE_TRACE_PROFILE,
                        tracefunc, this);
 
-    MOZ_LOG(gStorageLog, LogLevel::Debug, ("Opening connection to '%s' (%p)",
-                                        mTelemetryFilename.get(), this));
+    MOZ_LOG(
+        gStorageLog, LogLevel::Debug,
+        ("Opening connection to '%s' (%p)", mTelemetryFilename.get(), this));
   }
 
   int64_t pageSize = Service::getDefaultPageSize();
@@ -841,17 +756,15 @@ Connection::initializeInternal()
   
   switch (Service::getSynchronousPref()) {
     case 2:
-      (void)ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-          "PRAGMA synchronous = FULL;"));
+      (void)ExecuteSimpleSQL(NS_LITERAL_CSTRING("PRAGMA synchronous = FULL;"));
       break;
     case 0:
-      (void)ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-          "PRAGMA synchronous = OFF;"));
+      (void)ExecuteSimpleSQL(NS_LITERAL_CSTRING("PRAGMA synchronous = OFF;"));
       break;
     case 1:
     default:
-      (void)ExecuteSimpleSQL(NS_LITERAL_CSTRING(
-          "PRAGMA synchronous = NORMAL;"));
+      (void)ExecuteSimpleSQL(
+          NS_LITERAL_CSTRING("PRAGMA synchronous = NORMAL;"));
       break;
   }
 
@@ -860,26 +773,22 @@ Connection::initializeInternal()
   return NS_OK;
 }
 
-nsresult
-Connection::initializeOnAsyncThread(nsIFile* aStorageFile) {
+nsresult Connection::initializeOnAsyncThread(nsIFile *aStorageFile) {
   MOZ_ASSERT(threadOpenedOn != NS_GetCurrentThread());
-  nsresult rv = aStorageFile ? initialize(aStorageFile)
-                             : initialize();
+  nsresult rv = aStorageFile ? initialize(aStorageFile) : initialize();
   if (NS_FAILED(rv)) {
     
     MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
     mAsyncExecutionThreadShuttingDown = true;
     nsCOMPtr<nsIRunnable> event =
-      NewRunnableMethod("Connection::shutdownAsyncThread",
-                        this, &Connection::shutdownAsyncThread);
+        NewRunnableMethod("Connection::shutdownAsyncThread", this,
+                          &Connection::shutdownAsyncThread);
     Unused << NS_DispatchToMainThread(event);
   }
   return rv;
 }
 
-void
-Connection::initializeFailed()
-{
+void Connection::initializeFailed() {
   {
     MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
     mConnectionClosed = true;
@@ -889,13 +798,12 @@ Connection::initializeFailed()
   sharedDBMutex.destroy();
 }
 
-nsresult
-Connection::databaseElementExists(enum DatabaseElementType aElementType,
-                                  const nsACString &aElementName,
-                                  bool *_exists)
-{
+nsresult Connection::databaseElementExists(
+    enum DatabaseElementType aElementType, const nsACString &aElementName,
+    bool *_exists) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
+  
   
   
   nsCString query("SELECT name FROM (SELECT * FROM ");
@@ -903,13 +811,14 @@ Connection::databaseElementExists(enum DatabaseElementType aElementType,
   int32_t ind = aElementName.FindChar('.');
   if (ind == kNotFound) {
     element.Assign(aElementName);
-  }
-  else {
+  } else {
     nsDependentCSubstring db(Substring(aElementName, 0, ind + 1));
     element.Assign(Substring(aElementName, ind + 1, aElementName.Length()));
     query.Append(db);
   }
-  query.AppendLiteral("sqlite_master UNION ALL SELECT * FROM sqlite_temp_master) WHERE type = '");
+  query.AppendLiteral(
+      "sqlite_master UNION ALL SELECT * FROM sqlite_temp_master) WHERE type = "
+      "'");
 
   switch (aElementType) {
     case INDEX:
@@ -925,8 +834,7 @@ Connection::databaseElementExists(enum DatabaseElementType aElementType,
 
   sqlite3_stmt *stmt;
   int srv = prepareStatement(mDBConn, query, &stmt);
-  if (srv != SQLITE_OK)
-    return convertResultCode(srv);
+  if (srv != SQLITE_OK) return convertResultCode(srv);
 
   srv = stepStatement(mDBConn, stmt);
   
@@ -944,9 +852,7 @@ Connection::databaseElementExists(enum DatabaseElementType aElementType,
   return convertResultCode(srv);
 }
 
-bool
-Connection::findFunctionByInstance(nsISupports *aInstance)
-{
+bool Connection::findFunctionByInstance(nsISupports *aInstance) {
   sharedDBMutex.assertCurrentThreadOwns();
 
   for (auto iter = mFunctions.Iter(); !iter.Done(); iter.Next()) {
@@ -957,29 +863,23 @@ Connection::findFunctionByInstance(nsISupports *aInstance)
   return false;
 }
 
- int
-Connection::sProgressHelper(void *aArg)
-{
+ int Connection::sProgressHelper(void *aArg) {
   Connection *_this = static_cast<Connection *>(aArg);
   return _this->progressHandler();
 }
 
-int
-Connection::progressHandler()
-{
+int Connection::progressHandler() {
   sharedDBMutex.assertCurrentThreadOwns();
   if (mProgressHandler) {
     bool result;
     nsresult rv = mProgressHandler->OnProgress(this, &result);
-    if (NS_FAILED(rv)) return 0; 
+    if (NS_FAILED(rv)) return 0;  
     return result ? 1 : 0;
   }
   return 0;
 }
 
-nsresult
-Connection::setClosedState()
-{
+nsresult Connection::setClosedState() {
   
   bool onOpenedThread;
   nsresult rv = threadOpenedOn->IsOnCurrentThread(&onOpenedThread);
@@ -998,57 +898,40 @@ Connection::setClosedState()
 
     
     
+    
     mDBConn = nullptr;
   }
   return NS_OK;
 }
 
-bool
-Connection::connectionReady()
-{
-  return mDBConn != nullptr;
-}
+bool Connection::connectionReady() { return mDBConn != nullptr; }
 
-bool
-Connection::isConnectionReadyOnThisThread()
-{
+bool Connection::isConnectionReadyOnThisThread() {
   MOZ_ASSERT_IF(mDBConn, !mConnectionClosed);
-  if (mAsyncExecutionThread &&
-      mAsyncExecutionThread->IsOnCurrentThread()) {
+  if (mAsyncExecutionThread && mAsyncExecutionThread->IsOnCurrentThread()) {
     return true;
   }
-  return  connectionReady();
+  return connectionReady();
 }
 
-bool
-Connection::isClosing()
-{
+bool Connection::isClosing() {
   MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
   return mAsyncExecutionThreadShuttingDown && !mConnectionClosed;
 }
 
-bool
-Connection::isClosed()
-{
+bool Connection::isClosed() {
   MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
   return mConnectionClosed;
 }
 
-bool
-Connection::isClosed(MutexAutoLock& lock)
-{
-  return mConnectionClosed;
-}
+bool Connection::isClosed(MutexAutoLock &lock) { return mConnectionClosed; }
 
-bool
-Connection::isAsyncExecutionThreadAvailable()
-{
+bool Connection::isAsyncExecutionThreadAvailable() {
   MOZ_ASSERT(threadOpenedOn == NS_GetCurrentThread());
   return mAsyncExecutionThread && !mAsyncExecutionThreadShuttingDown;
 }
 
-void
-Connection::shutdownAsyncThread() {
+void Connection::shutdownAsyncThread() {
   MOZ_ASSERT(threadOpenedOn == NS_GetCurrentThread());
   MOZ_ASSERT(mAsyncExecutionThread);
   MOZ_ASSERT(mAsyncExecutionThreadShuttingDown);
@@ -1057,24 +940,21 @@ Connection::shutdownAsyncThread() {
   mAsyncExecutionThread = nullptr;
 }
 
-nsresult
-Connection::internalClose(sqlite3 *aNativeConnection)
-{
+nsresult Connection::internalClose(sqlite3 *aNativeConnection) {
 #ifdef DEBUG
-  { 
+  {  
     MutexAutoLock lockedScope(sharedAsyncExecutionMutex);
     MOZ_ASSERT(mAsyncExecutionThreadShuttingDown,
                "Did not call setClosedState!");
     MOZ_ASSERT(!isClosed(lockedScope), "Unexpected closed state");
   }
-#endif 
+#endif  
 
   if (MOZ_LOG_TEST(gStorageLog, LogLevel::Debug)) {
     nsAutoCString leafName(":memory");
-    if (mDatabaseFile)
-        (void)mDatabaseFile->GetNativeLeafName(leafName);
-    MOZ_LOG(gStorageLog, LogLevel::Debug, ("Closing connection to '%s'",
-                                        leafName.get()));
+    if (mDatabaseFile) (void)mDatabaseFile->GetNativeLeafName(leafName);
+    MOZ_LOG(gStorageLog, LogLevel::Debug,
+            ("Closing connection to '%s'", leafName.get()));
   }
 
   
@@ -1089,8 +969,7 @@ Connection::internalClose(sqlite3 *aNativeConnection)
   }
 
   
-  if (!aNativeConnection)
-    return NS_OK;
+  if (!aNativeConnection) return NS_OK;
 
   int srv = ::sqlite3_close(aNativeConnection);
 
@@ -1103,26 +982,26 @@ Connection::internalClose(sqlite3 *aNativeConnection)
       sqlite3_stmt *stmt = nullptr;
       while ((stmt = ::sqlite3_next_stmt(aNativeConnection, stmt))) {
         MOZ_LOG(gStorageLog, LogLevel::Debug,
-              ("Auto-finalizing SQL statement '%s' (%p)",
-                ::sqlite3_sql(stmt),
-                stmt));
+                ("Auto-finalizing SQL statement '%s' (%p)", ::sqlite3_sql(stmt),
+                 stmt));
 
 #ifdef DEBUG
-        SmprintfPointer msg = ::mozilla::Smprintf("SQL statement '%s' (%p) should have been finalized before closing the connection",
-                                          ::sqlite3_sql(stmt),
-                                          stmt);
+        SmprintfPointer msg = ::mozilla::Smprintf(
+            "SQL statement '%s' (%p) should have been finalized before closing "
+            "the connection",
+            ::sqlite3_sql(stmt), stmt);
         NS_WARNING(msg.get());
-#endif 
+#endif  
 
         srv = ::sqlite3_finalize(stmt);
 
 #ifdef DEBUG
         if (srv != SQLITE_OK) {
-          SmprintfPointer msg = ::mozilla::Smprintf("Could not finalize SQL statement (%p)",
-                                              stmt);
+          SmprintfPointer msg = ::mozilla::Smprintf(
+              "Could not finalize SQL statement (%p)", stmt);
           NS_WARNING(msg.get());
         }
-#endif 
+#endif  
 
         
         
@@ -1137,22 +1016,23 @@ Connection::internalClose(sqlite3 *aNativeConnection)
     
     
     srv = ::sqlite3_close(aNativeConnection);
-    MOZ_ASSERT(false, "Had to forcibly close the database connection because not all the statements have been finalized.");
+    MOZ_ASSERT(false,
+               "Had to forcibly close the database connection because not all "
+               "the statements have been finalized.");
   }
 
   if (srv == SQLITE_OK) {
     sharedDBMutex.destroy();
   } else {
     MOZ_ASSERT(false,
-               "sqlite3_close failed. There are probably outstanding statements that are listed above!");
+               "sqlite3_close failed. There are probably outstanding "
+               "statements that are listed above!");
   }
 
   return convertResultCode(srv);
 }
 
-nsCString
-Connection::getFilename()
-{
+nsCString Connection::getFilename() {
   nsCString leafname(":memory:");
   if (mDatabaseFile) {
     (void)mDatabaseFile->GetNativeLeafName(leafname);
@@ -1160,9 +1040,8 @@ Connection::getFilename()
   return leafname;
 }
 
-int
-Connection::stepStatement(sqlite3 *aNativeConnection, sqlite3_stmt *aStatement)
-{
+int Connection::stepStatement(sqlite3 *aNativeConnection,
+                              sqlite3_stmt *aStatement) {
   MOZ_ASSERT(aStatement);
 
   AUTO_PROFILER_LABEL_DYNAMIC_CSTR("Connection::stepStatement", OTHER,
@@ -1176,8 +1055,7 @@ Connection::stepStatement(sqlite3 *aNativeConnection, sqlite3_stmt *aStatement)
   
   
   
-  if (!isConnectionReadyOnThisThread())
-    return SQLITE_MISUSE;
+  if (!isConnectionReadyOnThisThread()) return SQLITE_MISUSE;
 
   (void)::sqlite3_extended_result_codes(aNativeConnection, 1);
 
@@ -1201,9 +1079,9 @@ Connection::stepStatement(sqlite3 *aNativeConnection, sqlite3_stmt *aStatement)
 
   
   TimeDuration duration = TimeStamp::Now() - startTime;
-  const uint32_t threshold =
-    NS_IsMainThread() ? Telemetry::kSlowSQLThresholdForMainThread
-                      : Telemetry::kSlowSQLThresholdForHelperThreads;
+  const uint32_t threshold = NS_IsMainThread()
+                                 ? Telemetry::kSlowSQLThresholdForMainThread
+                                 : Telemetry::kSlowSQLThresholdForHelperThreads;
   if (duration.ToMilliseconds() >= threshold) {
     nsDependentCString statementString(::sqlite3_sql(aStatement));
     Telemetry::RecordSlowSQLStatement(statementString, mTelemetryFilename,
@@ -1215,25 +1093,19 @@ Connection::stepStatement(sqlite3 *aNativeConnection, sqlite3_stmt *aStatement)
   return srv & 0xFF;
 }
 
-int
-Connection::prepareStatement(sqlite3 *aNativeConnection, const nsCString &aSQL,
-                             sqlite3_stmt **_stmt)
-{
+int Connection::prepareStatement(sqlite3 *aNativeConnection,
+                                 const nsCString &aSQL, sqlite3_stmt **_stmt) {
   
   
-  if (!isConnectionReadyOnThisThread())
-    return SQLITE_MISUSE;
+  if (!isConnectionReadyOnThisThread()) return SQLITE_MISUSE;
 
   bool checkedMainThread = false;
 
   (void)::sqlite3_extended_result_codes(aNativeConnection, 1);
 
   int srv;
-  while((srv = ::sqlite3_prepare_v2(aNativeConnection,
-                                    aSQL.get(),
-                                    -1,
-                                    _stmt,
-                                    nullptr)) == SQLITE_LOCKED_SHAREDCACHE) {
+  while ((srv = ::sqlite3_prepare_v2(aNativeConnection, aSQL.get(), -1, _stmt,
+                                     nullptr)) == SQLITE_LOCKED_SHAREDCACHE) {
     if (!checkedMainThread) {
       checkedMainThread = true;
       if (::NS_IsMainThread()) {
@@ -1274,24 +1146,20 @@ Connection::prepareStatement(sqlite3 *aNativeConnection, const nsCString &aSQL,
   return rc;
 }
 
-
-int
-Connection::executeSql(sqlite3 *aNativeConnection, const char *aSqlString)
-{
-  if (!isConnectionReadyOnThisThread())
-    return SQLITE_MISUSE;
+int Connection::executeSql(sqlite3 *aNativeConnection, const char *aSqlString) {
+  if (!isConnectionReadyOnThisThread()) return SQLITE_MISUSE;
 
   AUTO_PROFILER_LABEL_DYNAMIC_CSTR("Connection::executeSql", OTHER, aSqlString);
 
   TimeStamp startTime = TimeStamp::Now();
-  int srv = ::sqlite3_exec(aNativeConnection, aSqlString, nullptr, nullptr,
-                           nullptr);
+  int srv =
+      ::sqlite3_exec(aNativeConnection, aSqlString, nullptr, nullptr, nullptr);
 
   
   TimeDuration duration = TimeStamp::Now() - startTime;
-  const uint32_t threshold =
-    NS_IsMainThread() ? Telemetry::kSlowSQLThresholdForMainThread
-                      : Telemetry::kSlowSQLThresholdForHelperThreads;
+  const uint32_t threshold = NS_IsMainThread()
+                                 ? Telemetry::kSlowSQLThresholdForMainThread
+                                 : Telemetry::kSlowSQLThresholdForHelperThreads;
   if (duration.ToMilliseconds() >= threshold) {
     nsDependentCString statementString(aSqlString);
     Telemetry::RecordSlowSQLStatement(statementString, mTelemetryFilename,
@@ -1305,9 +1173,7 @@ Connection::executeSql(sqlite3 *aNativeConnection, const char *aSqlString)
 
 
 NS_IMETHODIMP
-Connection::GetInterface(const nsIID &aIID,
-                         void **_result)
-{
+Connection::GetInterface(const nsIID &aIID, void **_result) {
   if (aIID.Equals(NS_GET_IID(nsIEventTarget))) {
     nsIEventTarget *background = getAsyncExecutionTarget();
     NS_IF_ADDREF(background);
@@ -1321,10 +1187,8 @@ Connection::GetInterface(const nsIID &aIID,
 
 
 NS_IMETHODIMP
-Connection::Close()
-{
-  if (!mDBConn)
-    return NS_ERROR_NOT_INITIALIZED;
+Connection::Close() {
+  if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
 #ifdef DEBUG
   
@@ -1333,7 +1197,7 @@ Connection::Close()
   bool onOpenerThread = false;
   (void)threadOpenedOn->IsOnCurrentThread(&onOpenerThread);
   MOZ_ASSERT(onOpenerThread);
-#endif 
+#endif  
 
   
   
@@ -1346,7 +1210,8 @@ Connection::Close()
     }
 #endif
     MOZ_ASSERT(false,
-               "Close() was invoked on a connection that executed asynchronous statements. "
+               "Close() was invoked on a connection that executed asynchronous "
+               "statements. "
                "Should have used asyncClose().");
     
     Unused << SpinningSynchronousClose();
@@ -1363,8 +1228,7 @@ Connection::Close()
 }
 
 NS_IMETHODIMP
-Connection::SpinningSynchronousClose()
-{
+Connection::SpinningSynchronousClose() {
   if (threadOpenedOn != NS_GetCurrentThread()) {
     return NS_ERROR_NOT_SAME_THREAD;
   }
@@ -1380,17 +1244,14 @@ Connection::SpinningSynchronousClose()
   RefPtr<CloseListener> listener = new CloseListener();
   nsresult rv = AsyncClose(listener);
   NS_ENSURE_SUCCESS(rv, rv);
-  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() {
-    return listener->mClosed;
-  }));
+  MOZ_ALWAYS_TRUE(SpinEventLoopUntil([&]() { return listener->mClosed; }));
   MOZ_ASSERT(isClosed(), "The connection should be closed at this point");
 
   return rv;
 }
 
 NS_IMETHODIMP
-Connection::AsyncClose(mozIStorageCompletionCallback *aCallback)
-{
+Connection::AsyncClose(mozIStorageCompletionCallback *aCallback) {
   NS_ENSURE_TRUE(NS_IsMainThread(), NS_ERROR_NOT_SAME_THREAD);
   
   if (!mDBConn) {
@@ -1480,9 +1341,8 @@ Connection::AsyncClose(mozIStorageCompletionCallback *aCallback)
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<nsIRunnable> closeEvent = new AsyncCloseConnection(this,
-                                                              nativeConn,
-                                                              completeEvent);
+  nsCOMPtr<nsIRunnable> closeEvent =
+      new AsyncCloseConnection(this, nativeConn, completeEvent);
   rv = asyncThread->Dispatch(closeEvent, NS_DISPATCH_NORMAL);
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1491,15 +1351,12 @@ Connection::AsyncClose(mozIStorageCompletionCallback *aCallback)
 
 NS_IMETHODIMP
 Connection::AsyncClone(bool aReadOnly,
-                       mozIStorageCompletionCallback *aCallback)
-{
+                       mozIStorageCompletionCallback *aCallback) {
   AUTO_PROFILER_LABEL("Connection::AsyncClone", OTHER);
 
   NS_ENSURE_TRUE(NS_IsMainThread(), NS_ERROR_NOT_SAME_THREAD);
-  if (!mDBConn)
-    return NS_ERROR_NOT_INITIALIZED;
-  if (!mDatabaseFile)
-    return NS_ERROR_UNEXPECTED;
+  if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
+  if (!mDatabaseFile) return NS_ERROR_UNEXPECTED;
 
   int flags = mFlags;
   if (aReadOnly) {
@@ -1513,7 +1370,7 @@ Connection::AsyncClone(bool aReadOnly,
   RefPtr<Connection> clone = new Connection(mStorageService, flags, true);
 
   RefPtr<AsyncInitializeClone> initEvent =
-    new AsyncInitializeClone(this, clone, aReadOnly, aCallback);
+      new AsyncInitializeClone(this, clone, aReadOnly, aCallback);
   
   
   
@@ -1524,18 +1381,14 @@ Connection::AsyncClone(bool aReadOnly,
   return target->Dispatch(initEvent, NS_DISPATCH_NORMAL);
 }
 
-nsresult
-Connection::initializeClone(Connection* aClone, bool aReadOnly)
-{
+nsresult Connection::initializeClone(Connection *aClone, bool aReadOnly) {
   nsresult rv = mFileURL ? aClone->initialize(mFileURL)
                          : aClone->initialize(mDatabaseFile);
   if (NS_FAILED(rv)) {
     return rv;
   }
 
-  auto guard = MakeScopeExit([&]() {
-    aClone->initializeFailed();
-  });
+  auto guard = MakeScopeExit([&]() { aClone->initializeFailed(); });
 
   rv = aClone->SetDefaultTransactionType(mDefaultTransactionType);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1551,20 +1404,21 @@ Connection::initializeClone(Connection* aClone, bool aReadOnly)
       nsAutoCString name;
       rv = stmt->GetUTF8String(1, name);
       if (NS_SUCCEEDED(rv) && !name.EqualsLiteral("main") &&
-                              !name.EqualsLiteral("temp")) {
+          !name.EqualsLiteral("temp")) {
         nsCString path;
         rv = stmt->GetUTF8String(2, path);
         if (NS_SUCCEEDED(rv) && !path.IsEmpty()) {
           nsCOMPtr<mozIStorageStatement> attachStmt;
           rv = aClone->CreateStatement(
-            NS_LITERAL_CSTRING("ATTACH DATABASE :path AS ") + name,
-            getter_AddRefs(attachStmt));
+              NS_LITERAL_CSTRING("ATTACH DATABASE :path AS ") + name,
+              getter_AddRefs(attachStmt));
           MOZ_ASSERT(NS_SUCCEEDED(rv));
           rv = attachStmt->BindUTF8StringByName(NS_LITERAL_CSTRING("path"),
                                                 path);
           MOZ_ASSERT(NS_SUCCEEDED(rv));
           rv = attachStmt->Execute();
-          MOZ_ASSERT(NS_SUCCEEDED(rv), "couldn't re-attach database to cloned connection");
+          MOZ_ASSERT(NS_SUCCEEDED(rv),
+                     "couldn't re-attach database to cloned connection");
         }
       }
     }
@@ -1574,19 +1428,13 @@ Connection::initializeClone(Connection* aClone, bool aReadOnly)
   
   
   
-  static const char * pragmas[] = {
-    "cache_size",
-    "temp_store",
-    "foreign_keys",
-    "journal_size_limit",
-    "synchronous",
-    "wal_autocheckpoint",
-    "busy_timeout"
-  };
-  for (auto& pragma : pragmas) {
+  static const char *pragmas[] = {
+      "cache_size",  "temp_store",         "foreign_keys", "journal_size_limit",
+      "synchronous", "wal_autocheckpoint", "busy_timeout"};
+  for (auto &pragma : pragmas) {
     
     if (aReadOnly && ::strcmp(pragma, "cache_size") != 0 &&
-                     ::strcmp(pragma, "temp_store") != 0) {
+        ::strcmp(pragma, "temp_store") != 0) {
       continue;
     }
 
@@ -1612,10 +1460,11 @@ Connection::initializeClone(Connection* aClone, bool aReadOnly)
     NS_ENSURE_SUCCESS(rv, rv);
 
     nsCOMPtr<mozIStorageStatement> stmt;
-    rv = CreateStatement(NS_LITERAL_CSTRING("SELECT sql FROM sqlite_temp_master "
-                                            "WHERE type IN ('table', 'view', "
-                                                           "'index', 'trigger')"),
-                         getter_AddRefs(stmt));
+    rv =
+        CreateStatement(NS_LITERAL_CSTRING("SELECT sql FROM sqlite_temp_master "
+                                           "WHERE type IN ('table', 'view', "
+                                           "'index', 'trigger')"),
+                        getter_AddRefs(stmt));
     
     
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1650,12 +1499,12 @@ Connection::initializeClone(Connection* aClone, bool aReadOnly)
     Connection::FunctionInfo data = iter.UserData();
 
     MOZ_ASSERT(data.type == Connection::FunctionInfo::SIMPLE ||
-               data.type == Connection::FunctionInfo::AGGREGATE,
+                   data.type == Connection::FunctionInfo::AGGREGATE,
                "Invalid function type!");
 
     if (data.type == Connection::FunctionInfo::SIMPLE) {
       mozIStorageFunction *function =
-        static_cast<mozIStorageFunction *>(data.function.get());
+          static_cast<mozIStorageFunction *>(data.function.get());
       rv = aClone->CreateFunction(key, data.numArgs, function);
       if (NS_FAILED(rv)) {
         NS_WARNING("Failed to copy function to cloned connection");
@@ -1663,7 +1512,7 @@ Connection::initializeClone(Connection* aClone, bool aReadOnly)
 
     } else {
       mozIStorageAggregateFunction *function =
-        static_cast<mozIStorageAggregateFunction *>(data.function.get());
+          static_cast<mozIStorageAggregateFunction *>(data.function.get());
       rv = aClone->CreateAggregateFunction(key, data.numArgs, function);
       if (NS_FAILED(rv)) {
         NS_WARNING("Failed to copy aggregate function to cloned connection");
@@ -1676,17 +1525,13 @@ Connection::initializeClone(Connection* aClone, bool aReadOnly)
 }
 
 NS_IMETHODIMP
-Connection::Clone(bool aReadOnly,
-                  mozIStorageConnection **_connection)
-{
+Connection::Clone(bool aReadOnly, mozIStorageConnection **_connection) {
   MOZ_ASSERT(threadOpenedOn == NS_GetCurrentThread());
 
   AUTO_PROFILER_LABEL("Connection::Clone", OTHER);
 
-  if (!mDBConn)
-    return NS_ERROR_NOT_INITIALIZED;
-  if (!mDatabaseFile)
-    return NS_ERROR_UNEXPECTED;
+  if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
+  if (!mDatabaseFile) return NS_ERROR_UNEXPECTED;
 
   int flags = mFlags;
   if (aReadOnly) {
@@ -1708,8 +1553,7 @@ Connection::Clone(bool aReadOnly,
 }
 
 NS_IMETHODIMP
-Connection::Interrupt()
-{
+Connection::Interrupt() {
   MOZ_ASSERT(threadOpenedOn == NS_GetCurrentThread());
   if (!mDBConn) {
     return NS_ERROR_NOT_INITIALIZED;
@@ -1722,23 +1566,20 @@ Connection::Interrupt()
 }
 
 NS_IMETHODIMP
-Connection::GetDefaultPageSize(int32_t *_defaultPageSize)
-{
+Connection::GetDefaultPageSize(int32_t *_defaultPageSize) {
   *_defaultPageSize = Service::getDefaultPageSize();
   return NS_OK;
 }
 
 NS_IMETHODIMP
-Connection::GetConnectionReady(bool *_ready)
-{
+Connection::GetConnectionReady(bool *_ready) {
   MOZ_ASSERT(threadOpenedOn == NS_GetCurrentThread());
   *_ready = connectionReady();
   return NS_OK;
 }
 
 NS_IMETHODIMP
-Connection::GetDatabaseFile(nsIFile **_dbFile)
-{
+Connection::GetDatabaseFile(nsIFile **_dbFile) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   NS_IF_ADDREF(*_dbFile = mDatabaseFile);
@@ -1747,8 +1588,7 @@ Connection::GetDatabaseFile(nsIFile **_dbFile)
 }
 
 NS_IMETHODIMP
-Connection::GetLastInsertRowID(int64_t *_id)
-{
+Connection::GetLastInsertRowID(int64_t *_id) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   sqlite_int64 id = ::sqlite3_last_insert_rowid(mDBConn);
@@ -1758,8 +1598,7 @@ Connection::GetLastInsertRowID(int64_t *_id)
 }
 
 NS_IMETHODIMP
-Connection::GetAffectedRows(int32_t *_rows)
-{
+Connection::GetAffectedRows(int32_t *_rows) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   *_rows = ::sqlite3_changes(mDBConn);
@@ -1768,8 +1607,7 @@ Connection::GetAffectedRows(int32_t *_rows)
 }
 
 NS_IMETHODIMP
-Connection::GetLastError(int32_t *_error)
-{
+Connection::GetLastError(int32_t *_error) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   *_error = ::sqlite3_errcode(mDBConn);
@@ -1778,8 +1616,7 @@ Connection::GetLastError(int32_t *_error)
 }
 
 NS_IMETHODIMP
-Connection::GetLastErrorString(nsACString &_errorString)
-{
+Connection::GetLastErrorString(nsACString &_errorString) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   const char *serr = ::sqlite3_errmsg(mDBConn);
@@ -1789,8 +1626,7 @@ Connection::GetLastErrorString(nsACString &_errorString)
 }
 
 NS_IMETHODIMP
-Connection::GetSchemaVersion(int32_t *_version)
-{
+Connection::GetSchemaVersion(int32_t *_version) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   nsCOMPtr<mozIStorageStatement> stmt;
@@ -1807,8 +1643,7 @@ Connection::GetSchemaVersion(int32_t *_version)
 }
 
 NS_IMETHODIMP
-Connection::SetSchemaVersion(int32_t aVersion)
-{
+Connection::SetSchemaVersion(int32_t aVersion) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   nsAutoCString stmt(NS_LITERAL_CSTRING("PRAGMA user_version = "));
@@ -1819,8 +1654,7 @@ Connection::SetSchemaVersion(int32_t aVersion)
 
 NS_IMETHODIMP
 Connection::CreateStatement(const nsACString &aSQLStatement,
-                            mozIStorageStatement **_stmt)
-{
+                            mozIStorageStatement **_stmt) {
   NS_ENSURE_ARG_POINTER(_stmt);
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
@@ -1838,8 +1672,7 @@ Connection::CreateStatement(const nsACString &aSQLStatement,
 
 NS_IMETHODIMP
 Connection::CreateAsyncStatement(const nsACString &aSQLStatement,
-                                 mozIStorageAsyncStatement **_stmt)
-{
+                                 mozIStorageAsyncStatement **_stmt) {
   NS_ENSURE_ARG_POINTER(_stmt);
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
@@ -1856,8 +1689,7 @@ Connection::CreateAsyncStatement(const nsACString &aSQLStatement,
 }
 
 NS_IMETHODIMP
-Connection::ExecuteSimpleSQL(const nsACString &aSQLStatement)
-{
+Connection::ExecuteSimpleSQL(const nsACString &aSQLStatement) {
   CHECK_MAINTHREAD_ABUSE();
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
@@ -1869,12 +1701,11 @@ NS_IMETHODIMP
 Connection::ExecuteAsync(mozIStorageBaseStatement **aStatements,
                          uint32_t aNumStatements,
                          mozIStorageStatementCallback *aCallback,
-                         mozIStoragePendingStatement **_handle)
-{
+                         mozIStoragePendingStatement **_handle) {
   nsTArray<StatementData> stmts(aNumStatements);
   for (uint32_t i = 0; i < aNumStatements; i++) {
     nsCOMPtr<StorageBaseStatementInternal> stmt =
-      do_QueryInterface(aStatements[i]);
+        do_QueryInterface(aStatements[i]);
 
     
     StatementData data;
@@ -1896,8 +1727,7 @@ Connection::ExecuteAsync(mozIStorageBaseStatement **aStatements,
 NS_IMETHODIMP
 Connection::ExecuteSimpleSQLAsync(const nsACString &aSQLStatement,
                                   mozIStorageStatementCallback *aCallback,
-                                  mozIStoragePendingStatement **_handle)
-{
+                                  mozIStoragePendingStatement **_handle) {
   NS_ENSURE_TRUE(NS_IsMainThread(), NS_ERROR_NOT_SAME_THREAD);
 
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
@@ -1917,22 +1747,17 @@ Connection::ExecuteSimpleSQLAsync(const nsACString &aSQLStatement,
 }
 
 NS_IMETHODIMP
-Connection::TableExists(const nsACString &aTableName,
-                        bool *_exists)
-{
-    return databaseElementExists(TABLE, aTableName, _exists);
+Connection::TableExists(const nsACString &aTableName, bool *_exists) {
+  return databaseElementExists(TABLE, aTableName, _exists);
 }
 
 NS_IMETHODIMP
-Connection::IndexExists(const nsACString &aIndexName,
-                        bool* _exists)
-{
-    return databaseElementExists(INDEX, aIndexName, _exists);
+Connection::IndexExists(const nsACString &aIndexName, bool *_exists) {
+  return databaseElementExists(INDEX, aIndexName, _exists);
 }
 
 NS_IMETHODIMP
-Connection::GetTransactionInProgress(bool *_inProgress)
-{
+Connection::GetTransactionInProgress(bool *_inProgress) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   SQLiteMutexAutoLock lockedScope(sharedDBMutex);
@@ -1941,35 +1766,29 @@ Connection::GetTransactionInProgress(bool *_inProgress)
 }
 
 NS_IMETHODIMP
-Connection::GetDefaultTransactionType(int32_t *_type)
-{
+Connection::GetDefaultTransactionType(int32_t *_type) {
   *_type = mDefaultTransactionType;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-Connection::SetDefaultTransactionType(int32_t aType)
-{
+Connection::SetDefaultTransactionType(int32_t aType) {
   NS_ENSURE_ARG_RANGE(aType, TRANSACTION_DEFERRED, TRANSACTION_EXCLUSIVE);
   mDefaultTransactionType = aType;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-Connection::BeginTransaction()
-{
+Connection::BeginTransaction() {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   return beginTransactionInternal(mDBConn, mDefaultTransactionType);
 }
 
-nsresult
-Connection::beginTransactionInternal(sqlite3 *aNativeConnection,
-                                     int32_t aTransactionType)
-{
+nsresult Connection::beginTransactionInternal(sqlite3 *aNativeConnection,
+                                              int32_t aTransactionType) {
   SQLiteMutexAutoLock lockedScope(sharedDBMutex);
-  if (mTransactionInProgress)
-    return NS_ERROR_FAILURE;
+  if (mTransactionInProgress) return NS_ERROR_FAILURE;
   nsresult rv;
   switch (aTransactionType) {
     case TRANSACTION_DEFERRED:
@@ -1984,65 +1803,50 @@ Connection::beginTransactionInternal(sqlite3 *aNativeConnection,
     default:
       return NS_ERROR_ILLEGAL_VALUE;
   }
-  if (NS_SUCCEEDED(rv))
-    mTransactionInProgress = true;
+  if (NS_SUCCEEDED(rv)) mTransactionInProgress = true;
   return rv;
 }
 
 NS_IMETHODIMP
-Connection::CommitTransaction()
-{
-  if (!mDBConn)
-    return NS_ERROR_NOT_INITIALIZED;
+Connection::CommitTransaction() {
+  if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   return commitTransactionInternal(mDBConn);
 }
 
-nsresult
-Connection::commitTransactionInternal(sqlite3 *aNativeConnection)
-{
+nsresult Connection::commitTransactionInternal(sqlite3 *aNativeConnection) {
   SQLiteMutexAutoLock lockedScope(sharedDBMutex);
-  if (!mTransactionInProgress)
-    return NS_ERROR_UNEXPECTED;
+  if (!mTransactionInProgress) return NS_ERROR_UNEXPECTED;
   nsresult rv =
-    convertResultCode(executeSql(aNativeConnection, "COMMIT TRANSACTION"));
-  if (NS_SUCCEEDED(rv))
-    mTransactionInProgress = false;
+      convertResultCode(executeSql(aNativeConnection, "COMMIT TRANSACTION"));
+  if (NS_SUCCEEDED(rv)) mTransactionInProgress = false;
   return rv;
 }
 
 NS_IMETHODIMP
-Connection::RollbackTransaction()
-{
-  if (!mDBConn)
-    return NS_ERROR_NOT_INITIALIZED;
+Connection::RollbackTransaction() {
+  if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   return rollbackTransactionInternal(mDBConn);
 }
 
-nsresult
-Connection::rollbackTransactionInternal(sqlite3 *aNativeConnection)
-{
+nsresult Connection::rollbackTransactionInternal(sqlite3 *aNativeConnection) {
   SQLiteMutexAutoLock lockedScope(sharedDBMutex);
-  if (!mTransactionInProgress)
-    return NS_ERROR_UNEXPECTED;
+  if (!mTransactionInProgress) return NS_ERROR_UNEXPECTED;
 
   nsresult rv =
-    convertResultCode(executeSql(aNativeConnection, "ROLLBACK TRANSACTION"));
-  if (NS_SUCCEEDED(rv))
-    mTransactionInProgress = false;
+      convertResultCode(executeSql(aNativeConnection, "ROLLBACK TRANSACTION"));
+  if (NS_SUCCEEDED(rv)) mTransactionInProgress = false;
   return rv;
 }
 
 NS_IMETHODIMP
-Connection::CreateTable(const char *aTableName,
-                        const char *aTableSchema)
-{
+Connection::CreateTable(const char *aTableName, const char *aTableSchema) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
-  SmprintfPointer buf = ::mozilla::Smprintf("CREATE TABLE %s (%s)", aTableName, aTableSchema);
-  if (!buf)
-    return NS_ERROR_OUT_OF_MEMORY;
+  SmprintfPointer buf =
+      ::mozilla::Smprintf("CREATE TABLE %s (%s)", aTableName, aTableSchema);
+  if (!buf) return NS_ERROR_OUT_OF_MEMORY;
 
   int srv = executeSql(mDBConn, buf.get());
 
@@ -2052,8 +1856,7 @@ Connection::CreateTable(const char *aTableName,
 NS_IMETHODIMP
 Connection::CreateFunction(const nsACString &aFunctionName,
                            int32_t aNumArguments,
-                           mozIStorageFunction *aFunction)
-{
+                           mozIStorageFunction *aFunction) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   
@@ -2061,20 +1864,13 @@ Connection::CreateFunction(const nsACString &aFunctionName,
   SQLiteMutexAutoLock lockedScope(sharedDBMutex);
   NS_ENSURE_FALSE(mFunctions.Get(aFunctionName, nullptr), NS_ERROR_FAILURE);
 
-  int srv = ::sqlite3_create_function(mDBConn,
-                                      nsPromiseFlatCString(aFunctionName).get(),
-                                      aNumArguments,
-                                      SQLITE_ANY,
-                                      aFunction,
-                                      basicFunctionHelper,
-                                      nullptr,
-                                      nullptr);
-  if (srv != SQLITE_OK)
-    return convertResultCode(srv);
+  int srv = ::sqlite3_create_function(
+      mDBConn, nsPromiseFlatCString(aFunctionName).get(), aNumArguments,
+      SQLITE_ANY, aFunction, basicFunctionHelper, nullptr, nullptr);
+  if (srv != SQLITE_OK) return convertResultCode(srv);
 
-  FunctionInfo info = { aFunction,
-                        Connection::FunctionInfo::SIMPLE,
-                        aNumArguments };
+  FunctionInfo info = {aFunction, Connection::FunctionInfo::SIMPLE,
+                       aNumArguments};
   mFunctions.Put(aFunctionName, info);
 
   return NS_OK;
@@ -2083,8 +1879,7 @@ Connection::CreateFunction(const nsACString &aFunctionName,
 NS_IMETHODIMP
 Connection::CreateAggregateFunction(const nsACString &aFunctionName,
                                     int32_t aNumArguments,
-                                    mozIStorageAggregateFunction *aFunction)
-{
+                                    mozIStorageAggregateFunction *aFunction) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   
@@ -2096,43 +1891,30 @@ Connection::CreateAggregateFunction(const nsACString &aFunctionName,
   
   NS_ENSURE_FALSE(findFunctionByInstance(aFunction), NS_ERROR_FAILURE);
 
-  int srv = ::sqlite3_create_function(mDBConn,
-                                      nsPromiseFlatCString(aFunctionName).get(),
-                                      aNumArguments,
-                                      SQLITE_ANY,
-                                      aFunction,
-                                      nullptr,
-                                      aggregateFunctionStepHelper,
-                                      aggregateFunctionFinalHelper);
-  if (srv != SQLITE_OK)
-    return convertResultCode(srv);
+  int srv = ::sqlite3_create_function(
+      mDBConn, nsPromiseFlatCString(aFunctionName).get(), aNumArguments,
+      SQLITE_ANY, aFunction, nullptr, aggregateFunctionStepHelper,
+      aggregateFunctionFinalHelper);
+  if (srv != SQLITE_OK) return convertResultCode(srv);
 
-  FunctionInfo info = { aFunction,
-                        Connection::FunctionInfo::AGGREGATE,
-                        aNumArguments };
+  FunctionInfo info = {aFunction, Connection::FunctionInfo::AGGREGATE,
+                       aNumArguments};
   mFunctions.Put(aFunctionName, info);
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-Connection::RemoveFunction(const nsACString &aFunctionName)
-{
+Connection::RemoveFunction(const nsACString &aFunctionName) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   SQLiteMutexAutoLock lockedScope(sharedDBMutex);
   NS_ENSURE_TRUE(mFunctions.Get(aFunctionName, nullptr), NS_ERROR_FAILURE);
 
-  int srv = ::sqlite3_create_function(mDBConn,
-                                      nsPromiseFlatCString(aFunctionName).get(),
-                                      0,
-                                      SQLITE_ANY,
-                                      nullptr,
-                                      nullptr,
-                                      nullptr,
-                                      nullptr);
-  if (srv != SQLITE_OK)
-    return convertResultCode(srv);
+  int srv = ::sqlite3_create_function(
+      mDBConn, nsPromiseFlatCString(aFunctionName).get(), 0, SQLITE_ANY,
+      nullptr, nullptr, nullptr, nullptr);
+  if (srv != SQLITE_OK) return convertResultCode(srv);
 
   mFunctions.Remove(aFunctionName);
 
@@ -2142,8 +1924,7 @@ Connection::RemoveFunction(const nsACString &aFunctionName)
 NS_IMETHODIMP
 Connection::SetProgressHandler(int32_t aGranularity,
                                mozIStorageProgressHandler *aHandler,
-                               mozIStorageProgressHandler **_oldHandler)
-{
+                               mozIStorageProgressHandler **_oldHandler) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   
@@ -2161,8 +1942,7 @@ Connection::SetProgressHandler(int32_t aGranularity,
 }
 
 NS_IMETHODIMP
-Connection::RemoveProgressHandler(mozIStorageProgressHandler **_oldHandler)
-{
+Connection::RemoveProgressHandler(mozIStorageProgressHandler **_oldHandler) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
   
@@ -2176,8 +1956,8 @@ Connection::RemoveProgressHandler(mozIStorageProgressHandler **_oldHandler)
 }
 
 NS_IMETHODIMP
-Connection::SetGrowthIncrement(int32_t aChunkSize, const nsACString &aDatabaseName)
-{
+Connection::SetGrowthIncrement(int32_t aChunkSize,
+                               const nsACString &aDatabaseName) {
   
   
   
@@ -2191,25 +1971,23 @@ Connection::SetGrowthIncrement(int32_t aChunkSize, const nsACString &aDatabaseNa
   }
 
   (void)::sqlite3_file_control(mDBConn,
-                               aDatabaseName.Length() ? nsPromiseFlatCString(aDatabaseName).get()
-                                                      : nullptr,
-                               SQLITE_FCNTL_CHUNK_SIZE,
-                               &aChunkSize);
+                               aDatabaseName.Length()
+                                   ? nsPromiseFlatCString(aDatabaseName).get()
+                                   : nullptr,
+                               SQLITE_FCNTL_CHUNK_SIZE, &aChunkSize);
 #endif
   return NS_OK;
 }
 
 NS_IMETHODIMP
-Connection::EnableModule(const nsACString& aModuleName)
-{
+Connection::EnableModule(const nsACString &aModuleName) {
   if (!mDBConn) return NS_ERROR_NOT_INITIALIZED;
 
-  for (auto& gModule : gModules) {
-    struct Module* m = &gModule;
+  for (auto &gModule : gModules) {
+    struct Module *m = &gModule;
     if (aModuleName.Equals(m->name)) {
       int srv = m->registerFunc(mDBConn, m->name);
-      if (srv != SQLITE_OK)
-        return convertResultCode(srv);
+      if (srv != SQLITE_OK) return convertResultCode(srv);
 
       return NS_OK;
     }
@@ -2219,13 +1997,11 @@ Connection::EnableModule(const nsACString& aModuleName)
 }
 
 
-already_AddRefed<QuotaObject>
-GetQuotaObjectForFile(sqlite3_file *pFile);
+already_AddRefed<QuotaObject> GetQuotaObjectForFile(sqlite3_file *pFile);
 
 NS_IMETHODIMP
-Connection::GetQuotaObjects(QuotaObject** aDatabaseQuotaObject,
-                            QuotaObject** aJournalQuotaObject)
-{
+Connection::GetQuotaObjects(QuotaObject **aDatabaseQuotaObject,
+                            QuotaObject **aJournalQuotaObject) {
   MOZ_ASSERT(aDatabaseQuotaObject);
   MOZ_ASSERT(aJournalQuotaObject);
 
@@ -2233,10 +2009,8 @@ Connection::GetQuotaObjects(QuotaObject** aDatabaseQuotaObject,
     return NS_ERROR_NOT_INITIALIZED;
   }
 
-  sqlite3_file* file;
-  int srv = ::sqlite3_file_control(mDBConn,
-                                   nullptr,
-                                   SQLITE_FCNTL_FILE_POINTER,
+  sqlite3_file *file;
+  int srv = ::sqlite3_file_control(mDBConn, nullptr, SQLITE_FCNTL_FILE_POINTER,
                                    &file);
   if (srv != SQLITE_OK) {
     return convertResultCode(srv);
@@ -2244,9 +2018,7 @@ Connection::GetQuotaObjects(QuotaObject** aDatabaseQuotaObject,
 
   RefPtr<QuotaObject> databaseQuotaObject = GetQuotaObjectForFile(file);
 
-  srv = ::sqlite3_file_control(mDBConn,
-                               nullptr,
-                               SQLITE_FCNTL_JOURNAL_POINTER,
+  srv = ::sqlite3_file_control(mDBConn, nullptr, SQLITE_FCNTL_JOURNAL_POINTER,
                                &file);
   if (srv != SQLITE_OK) {
     return convertResultCode(srv);
@@ -2259,5 +2031,5 @@ Connection::GetQuotaObjects(QuotaObject** aDatabaseQuotaObject,
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

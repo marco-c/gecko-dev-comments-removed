@@ -14,10 +14,8 @@
 namespace mozilla {
 namespace gfx {
 
-class SFNTData final
-{
-public:
-
+class SFNTData final {
+ public:
   
 
 
@@ -27,7 +25,7 @@ public:
 
 
 
-  static UniquePtr<SFNTData> Create(const uint8_t *aFontData,
+  static UniquePtr<SFNTData> Create(const uint8_t* aFontData,
                                     uint32_t aDataLength);
 
   
@@ -37,7 +35,7 @@ public:
 
 
 
-  static uint64_t GetUniqueKey(const uint8_t *aFontData, uint32_t aDataLength,
+  static uint64_t GetUniqueKey(const uint8_t* aFontData, uint32_t aDataLength,
                                uint32_t aVarDataSize, const void* aVarData);
 
   ~SFNTData();
@@ -74,14 +72,13 @@ public:
 
 
 
-  bool GetIndexForU16Name(const mozilla::u16string& aU16FullName, uint32_t* aIndex,
-                          size_t aTruncatedLen = 0);
+  bool GetIndexForU16Name(const mozilla::u16string& aU16FullName,
+                          uint32_t* aIndex, size_t aTruncatedLen = 0);
 
-private:
-
+ private:
   SFNTData() {}
 
-  bool AddFont(const uint8_t *aFontData, uint32_t aDataLength,
+  bool AddFont(const uint8_t* aFontData, uint32_t aDataLength,
                uint32_t aOffset);
 
   
@@ -90,7 +87,7 @@ private:
   Vector<Font*> mFonts;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

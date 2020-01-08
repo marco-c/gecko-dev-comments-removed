@@ -14,18 +14,17 @@
 #include "nsString.h"
 #include "pk11func.h"
 
-class nsPKCS11Slot : public nsIPKCS11Slot
-{
-public:
+class nsPKCS11Slot : public nsIPKCS11Slot {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPKCS11SLOT
 
   explicit nsPKCS11Slot(PK11SlotInfo* slot);
 
-protected:
+ protected:
   virtual ~nsPKCS11Slot() {}
 
-private:
+ private:
   mozilla::UniquePK11SlotInfo mSlot;
   
   bool mIsInternalCryptoSlot;
@@ -39,22 +38,21 @@ private:
 
   nsresult refreshSlotInfo();
   nsresult GetAttributeHelper(const nsACString& attribute,
-                       nsACString& xpcomOutParam);
+                               nsACString& xpcomOutParam);
 };
 
-class nsPKCS11Module : public nsIPKCS11Module
-{
-public:
+class nsPKCS11Module : public nsIPKCS11Module {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPKCS11MODULE
 
   explicit nsPKCS11Module(SECMODModule* module);
 
-protected:
+ protected:
   virtual ~nsPKCS11Module() {}
 
-private:
+ private:
   mozilla::UniqueSECMODModule mModule;
 };
 
-#endif 
+#endif  

@@ -25,10 +25,8 @@ class CacheStorage;
 class CacheWorkerHolder;
 class PCacheChild;
 
-class CacheStorageChild final : public PCacheStorageChild
-                              , public ActorChild
-{
-public:
+class CacheStorageChild final : public PCacheStorageChild, public ActorChild {
+ public:
   CacheStorageChild(CacheStorage* aListener, CacheWorkerHolder* aWorkerHolder);
   ~CacheStorageChild();
 
@@ -38,14 +36,13 @@ public:
   
   void ClearListener();
 
-  void
-  ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
-            nsISupports* aParent, const CacheOpArgs& aArgs);
+  void ExecuteOp(nsIGlobalObject* aGlobal, Promise* aPromise,
+                 nsISupports* aParent, const CacheOpArgs& aArgs);
 
   
   void StartDestroyFromListener();
 
-private:
+ private:
   
 
   
@@ -54,15 +51,13 @@ private:
   
   virtual void ActorDestroy(ActorDestroyReason aReason) override;
 
-  virtual PCacheOpChild*
-  AllocPCacheOpChild(const CacheOpArgs& aOpArgs) override;
+  virtual PCacheOpChild* AllocPCacheOpChild(
+      const CacheOpArgs& aOpArgs) override;
 
-  virtual bool
-  DeallocPCacheOpChild(PCacheOpChild* aActor) override;
+  virtual bool DeallocPCacheOpChild(PCacheOpChild* aActor) override;
 
   
-  void
-  NoteDeletedActor();
+  void NoteDeletedActor();
 
   
   
@@ -74,8 +69,8 @@ private:
   NS_DECL_OWNINGTHREAD
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

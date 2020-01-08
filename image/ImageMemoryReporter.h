@@ -19,9 +19,8 @@ namespace image {
 struct ImageMemoryCounter;
 struct SurfaceMemoryCounter;
 
-class ImageMemoryReporter final
-{
-public:
+class ImageMemoryReporter final {
+ public:
   
 
 
@@ -42,28 +41,29 @@ public:
 
 
 
-  static void ReportSharedSurfaces(nsIHandleReportCallback* aHandleReport,
-                                   nsISupports* aData,
-                                   const layers::SharedSurfacesMemoryReport& aSharedSurfaces);
+  static void ReportSharedSurfaces(
+      nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+      const layers::SharedSurfacesMemoryReport& aSharedSurfaces);
 
   
 
 
 
 
-  static void AppendSharedSurfacePrefix(nsACString& aPathPrefix,
-                                        const SurfaceMemoryCounter& aCounter,
-                                        layers::SharedSurfacesMemoryReport& aSharedSurfaces);
+  static void AppendSharedSurfacePrefix(
+      nsACString& aPathPrefix, const SurfaceMemoryCounter& aCounter,
+      layers::SharedSurfacesMemoryReport& aSharedSurfaces);
 
   
 
 
 
 
-  static void TrimSharedSurfaces(const ImageMemoryCounter& aCounter,
-                                 layers::SharedSurfacesMemoryReport& aSharedSurfaces);
+  static void TrimSharedSurfaces(
+      const ImageMemoryCounter& aCounter,
+      layers::SharedSurfacesMemoryReport& aSharedSurfaces);
 
-private:
+ private:
   
 
 
@@ -75,22 +75,21 @@ private:
 
 
 
-  static void ReportSharedSurfaces(nsIHandleReportCallback* aHandleReport,
-                                   nsISupports* aData,
-                                   bool aIsForCompositor,
-                                   const layers::SharedSurfacesMemoryReport& aSharedSurfaces);
+  static void ReportSharedSurfaces(
+      nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+      bool aIsForCompositor,
+      const layers::SharedSurfacesMemoryReport& aSharedSurfaces);
 
-  static void ReportSharedSurface(nsIHandleReportCallback* aHandleReport,
-                                  nsISupports* aData,
-                                  bool aIsForCompositor,
-                                  uint64_t aExternalId,
-                                  const layers::SharedSurfacesMemoryReport::SurfaceEntry& aEntry);
+  static void ReportSharedSurface(
+      nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+      bool aIsForCompositor, uint64_t aExternalId,
+      const layers::SharedSurfacesMemoryReport::SurfaceEntry& aEntry);
 
   class WebRenderReporter;
   static WebRenderReporter* sWrReporter;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

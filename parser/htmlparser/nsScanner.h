@@ -14,8 +14,6 @@
 
 
 
-
-
 #ifndef SCANNER
 #define SCANNER
 
@@ -27,43 +25,45 @@
 #include "mozilla/CheckedInt.h"
 
 class nsReadEndCondition {
-public:
-  const char16_t *mChars;
+ public:
+  const char16_t* mChars;
   char16_t mFilter;
   explicit nsReadEndCondition(const char16_t* aTerminateChars);
-private:
-  nsReadEndCondition(const nsReadEndCondition& aOther); 
-  void operator=(const nsReadEndCondition& aOther); 
+
+ private:
+  nsReadEndCondition(const nsReadEndCondition& aOther);  
+  void operator=(const nsReadEndCondition& aOther);      
 };
 
 class nsScanner final {
-      using Encoding = mozilla::Encoding;
-      template <typename T> using NotNull = mozilla::NotNull<T>;
-  public:
+  using Encoding = mozilla::Encoding;
+  template <typename T>
+  using NotNull = mozilla::NotNull<T>;
 
-      
+ public:
+  
 
 
-      explicit nsScanner(const nsAString& anHTMLString);
+  explicit nsScanner(const nsAString& anHTMLString);
 
-      
+  
 
 
 
-      nsScanner(nsString& aFilename, bool aCreateStream);
+  nsScanner(nsString& aFilename, bool aCreateStream);
 
-      ~nsScanner();
+  ~nsScanner();
 
-      
+  
 
 
 
 
 
 
-      nsresult GetChar(char16_t& ch);
+  nsresult GetChar(char16_t& ch);
 
-      
+  
 
 
 
@@ -72,9 +72,9 @@ class nsScanner final {
 
 
 
-      int32_t Mark(void);
+  int32_t Mark(void);
 
-      
+  
 
 
 
@@ -84,110 +84,107 @@ class nsScanner final {
 
 
 
-      void RewindToMark(void);
+  void RewindToMark(void);
 
+  
 
-      
 
 
 
 
 
+  bool UngetReadable(const nsAString& aBuffer);
 
-      bool UngetReadable(const nsAString& aBuffer);
+  
 
-      
 
 
 
 
 
+  nsresult Append(const nsAString& aBuffer);
 
-      nsresult Append(const nsAString& aBuffer);
+  
 
-      
 
 
 
 
 
+  nsresult Append(const char* aBuffer, uint32_t aLen);
 
-      nsresult Append(const char* aBuffer, uint32_t aLen);
+  
 
-      
 
 
 
 
 
 
+  bool CopyUnusedData(nsString& aCopyBuffer);
 
-      bool CopyUnusedData(nsString& aCopyBuffer);
+  
 
-      
 
 
 
 
 
 
+  nsString& GetFilename(void);
 
-      nsString& GetFilename(void);
+  static void SelfTest();
 
-      static void SelfTest();
+  
 
-      
 
 
 
 
 
 
+  nsresult SetDocumentCharset(NotNull<const Encoding*> aEncoding,
+                              int32_t aSource);
 
-      nsresult SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                  int32_t aSource);
+  void BindSubstring(nsScannerSubstring& aSubstring,
+                     const nsScannerIterator& aStart,
+                     const nsScannerIterator& aEnd);
+  void CurrentPosition(nsScannerIterator& aPosition);
+  void EndReading(nsScannerIterator& aPosition);
+  void SetPosition(nsScannerIterator& aPosition, bool aTruncate = false);
 
-      void BindSubstring(nsScannerSubstring& aSubstring, const nsScannerIterator& aStart, const nsScannerIterator& aEnd);
-      void CurrentPosition(nsScannerIterator& aPosition);
-      void EndReading(nsScannerIterator& aPosition);
-      void SetPosition(nsScannerIterator& aPosition,
-                       bool aTruncate = false);
+  
 
-      
 
 
 
 
+  bool IsIncremental(void) { return mIncremental; }
+  void SetIncremental(bool anIncrValue) { mIncremental = anIncrValue; }
 
-      bool      IsIncremental(void) {return mIncremental;}
-      void      SetIncremental(bool anIncrValue) {mIncremental=anIncrValue;}
+ protected:
+  bool AppendToBuffer(nsScannerString::Buffer* aBuffer);
+  bool AppendToBuffer(const nsAString& aStr) {
+    nsScannerString::Buffer* buf = nsScannerString::AllocBufferFromString(aStr);
+    if (!buf) return false;
+    AppendToBuffer(buf);
+    return true;
+  }
 
-  protected:
+  nsScannerString* mSlidingBuffer;
+  nsScannerIterator mCurrentPosition;  
+                                       
+  nsScannerIterator
+      mMarkPosition;  
+  nsScannerIterator mEndPosition;  
+  nsString mFilename;
+  bool mIncremental;
+  int32_t mCharsetSource;
+  nsCString mCharset;
+  mozilla::UniquePtr<mozilla::Decoder> mUnicodeDecoder;
 
-      bool AppendToBuffer(nsScannerString::Buffer* aBuffer);
-      bool AppendToBuffer(const nsAString& aStr)
-      {
-        nsScannerString::Buffer* buf = nsScannerString::AllocBufferFromString(aStr);
-        if (!buf)
-          return false;
-        AppendToBuffer(buf);
-        return true;
-      }
-
-      nsScannerString*             mSlidingBuffer;
-      nsScannerIterator            mCurrentPosition; 
-      nsScannerIterator            mMarkPosition;    
-      nsScannerIterator            mEndPosition;     
-      nsString        mFilename;
-      bool            mIncremental;
-      int32_t         mCharsetSource;
-      nsCString       mCharset;
-      mozilla::UniquePtr<mozilla::Decoder> mUnicodeDecoder;
-
-    private:
-      nsScanner &operator =(const nsScanner &); 
+ private:
+  nsScanner& operator=(const nsScanner&);  
 };
 
 #endif
-
-

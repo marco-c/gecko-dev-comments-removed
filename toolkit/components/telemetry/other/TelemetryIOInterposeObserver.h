@@ -9,7 +9,6 @@
 
 
 
-
 #ifndef TelemetryIOInterposeObserver_h__
 #define TelemetryIOInterposeObserver_h__
 
@@ -25,40 +24,31 @@
 namespace mozilla {
 namespace Telemetry {
 
-class TelemetryIOInterposeObserver : public IOInterposeObserver
-{
+class TelemetryIOInterposeObserver : public IOInterposeObserver {
   
   struct FileStats {
     FileStats()
-      : creates(0)
-      , reads(0)
-      , writes(0)
-      , fsyncs(0)
-      , stats(0)
-      , totalTime(0)
-    {}
-    uint32_t  creates;      
-    uint32_t  reads;        
-    uint32_t  writes;       
-    uint32_t  fsyncs;       
-    uint32_t  stats;        
-    double    totalTime;    
+        : creates(0), reads(0), writes(0), fsyncs(0), stats(0), totalTime(0) {}
+    uint32_t creates; 
+    uint32_t reads;   
+    uint32_t writes;  
+    uint32_t fsyncs;  
+    uint32_t stats;   
+    double totalTime; 
   };
 
   struct SafeDir {
     SafeDir(const nsAString& aPath, const nsAString& aSubstName)
-      : mPath(aPath)
-      , mSubstName(aSubstName)
-    {}
+        : mPath(aPath), mSubstName(aSubstName) {}
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
       return mPath.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +
              mSubstName.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
     }
-    nsString  mPath;        
-    nsString  mSubstName;   
+    nsString mPath;      
+    nsString mSubstName; 
   };
 
-public:
+ public:
   explicit TelemetryIOInterposeObserver(nsIFile* aXreDir);
 
   
@@ -70,7 +60,7 @@ public:
   
 
 
-  bool ReflectIntoJS(JSContext *cx, JS::Handle<JSObject*> rootObj);
+  bool ReflectIntoJS(JSContext* cx, JS::Handle<JSObject*> rootObj);
 
   
 
@@ -86,16 +76,9 @@ public:
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
-  enum Stage
-  {
-    STAGE_STARTUP = 0,
-    STAGE_NORMAL,
-    STAGE_SHUTDOWN,
-    NUM_STAGES
-  };
-  static inline Stage NextStage(Stage aStage)
-  {
+ private:
+  enum Stage { STAGE_STARTUP = 0, STAGE_NORMAL, STAGE_SHUTDOWN, NUM_STAGES };
+  static inline Stage NextStage(Stage aStage) {
     switch (aStage) {
       case STAGE_STARTUP:
         return STAGE_NORMAL;
@@ -108,8 +91,7 @@ private:
     }
   }
 
-  struct FileStatsByStage
-  {
+  struct FileStatsByStage {
     FileStats mStats[NUM_STAGES];
   };
   typedef nsBaseHashtableET<nsStringHashKey, FileStatsByStage> FileIOEntryType;
@@ -118,18 +100,18 @@ private:
   Common::AutoHashtable<FileIOEntryType> mFileStats;
   
   nsTArray<SafeDir> mSafeDirs;
-  Stage             mCurStage;
+  Stage mCurStage;
 
   
 
 
 
 
-  static bool ReflectFileStats(FileIOEntryType* entry, JSContext *cx,
+  static bool ReflectFileStats(FileIOEntryType* entry, JSContext* cx,
                                JS::Handle<JSObject*> obj);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

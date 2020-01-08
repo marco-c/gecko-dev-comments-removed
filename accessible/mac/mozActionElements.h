@@ -8,9 +8,8 @@
 
 
 
-@interface mozButtonAccessible : mozAccessible
- {
- }
+@interface mozButtonAccessible : mozAccessible {
+}
 - (BOOL)hasPopup;
 - (void)click;
 - (BOOL)isTab;
@@ -22,11 +21,10 @@
 @end
 
 
-@interface mozTabsAccessible : mozAccessible
-{
+@interface mozTabsAccessible : mozAccessible {
   NSMutableArray* mTabs;
 }
--(id)tabs;
+- (id)tabs;
 @end
 
 

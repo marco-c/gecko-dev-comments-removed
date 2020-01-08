@@ -36,9 +36,8 @@ namespace ipc {
 
 
 
-class FileDescriptor
-{
-public:
+class FileDescriptor {
+ public:
   typedef base::ProcessId ProcessId;
 
 #ifdef XP_WIN
@@ -49,28 +48,26 @@ public:
   typedef base::FileDescriptor PickleType;
 #endif
 
-  struct PlatformHandleHelper
-  {
+  struct PlatformHandleHelper {
     MOZ_IMPLICIT PlatformHandleHelper(PlatformHandleType aHandle);
     MOZ_IMPLICIT PlatformHandleHelper(std::nullptr_t);
-    bool operator != (std::nullptr_t) const;
-    operator PlatformHandleType () const;
+    bool operator!=(std::nullptr_t) const;
+    operator PlatformHandleType() const;
 #ifdef XP_WIN
-    operator std::intptr_t () const;
+    operator std::intptr_t() const;
 #endif
-  private:
+   private:
     PlatformHandleType mHandle;
   };
-  struct PlatformHandleDeleter
-  {
+  struct PlatformHandleDeleter {
     typedef PlatformHandleHelper pointer;
-    void operator () (PlatformHandleHelper aHelper);
+    void operator()(PlatformHandleHelper aHelper);
   };
-  typedef UniquePtr<PlatformHandleType, PlatformHandleDeleter> UniquePlatformHandle;
+  typedef UniquePtr<PlatformHandleType, PlatformHandleDeleter>
+      UniquePlatformHandle;
 
   
-  struct IPDLPrivate
-  {};
+  struct IPDLPrivate {};
 
   
   FileDescriptor();
@@ -90,62 +87,53 @@ public:
 
   ~FileDescriptor();
 
-  FileDescriptor&
-  operator=(const FileDescriptor& aOther);
+  FileDescriptor& operator=(const FileDescriptor& aOther);
 
-  FileDescriptor&
-  operator=(FileDescriptor&& aOther);
+  FileDescriptor& operator=(FileDescriptor&& aOther);
 
   
   
   
-  PickleType
-  ShareTo(const IPDLPrivate&, ProcessId aTargetPid) const;
+  PickleType ShareTo(const IPDLPrivate&, ProcessId aTargetPid) const;
 
   
   
-  bool
-  IsValid() const;
+  bool IsValid() const;
 
   
   
-  UniquePlatformHandle
-  ClonePlatformHandle() const;
+  UniquePlatformHandle ClonePlatformHandle() const;
 
   
-  bool
-  operator==(const FileDescriptor& aOther) const;
+  bool operator==(const FileDescriptor& aOther) const;
 
-private:
+ private:
   friend struct PlatformHandleTrait;
 
-  void
-  Assign(const FileDescriptor& aOther);
+  void Assign(const FileDescriptor& aOther);
 
-  void
-  Close();
+  void Close();
 
-  static bool
-  IsValid(PlatformHandleType aHandle);
+  static bool IsValid(PlatformHandleType aHandle);
 
-  static PlatformHandleType
-  Clone(PlatformHandleType aHandle);
+  static PlatformHandleType Clone(PlatformHandleType aHandle);
 
-  static void
-  Close(PlatformHandleType aHandle);
+  static void Close(PlatformHandleType aHandle);
 
   PlatformHandleType mHandle;
 };
 
-template<>
+template <>
 struct IPDLParamTraits<FileDescriptor> {
   typedef FileDescriptor paramType;
 
-  static void Write(IPC::Message* aMsg, IProtocol* aActor, const paramType& aParam);
-  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter, IProtocol* aActor, paramType* aResult);
+  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+                    const paramType& aParam);
+  static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
+                   IProtocol* aActor, paramType* aResult);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

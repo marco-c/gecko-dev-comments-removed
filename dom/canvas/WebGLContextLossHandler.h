@@ -15,30 +15,31 @@ class nsITimer;
 namespace mozilla {
 class WebGLContext;
 
-class WebGLContextLossHandler final : public SupportsWeakPtr<WebGLContextLossHandler>
-{
-    WebGLContext* const mWebGL;
-    const nsCOMPtr<nsITimer> mTimer; 
-    bool mTimerPending;              
-    bool mShouldRunTimerAgain;       
+class WebGLContextLossHandler final
+    : public SupportsWeakPtr<WebGLContextLossHandler> {
+  WebGLContext* const mWebGL;
+  const nsCOMPtr<nsITimer>
+      mTimer;          
+  bool mTimerPending;  
+  bool mShouldRunTimerAgain;  
 #ifdef DEBUG
-    nsISerialEventTarget* const mEventTarget;
+  nsISerialEventTarget* const mEventTarget;
 #endif
 
-    friend class WatchdogTimerEvent;
+  friend class WatchdogTimerEvent;
 
-public:
-    MOZ_DECLARE_WEAKREFERENCE_TYPENAME(WebGLContextLossHandler)
+ public:
+  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(WebGLContextLossHandler)
 
-    explicit WebGLContextLossHandler(WebGLContext* webgl);
-    ~WebGLContextLossHandler();
+  explicit WebGLContextLossHandler(WebGLContext* webgl);
+  ~WebGLContextLossHandler();
 
-    void RunTimer();
+  void RunTimer();
 
-private:
-    void TimerCallback();
+ private:
+  void TimerCallback();
 };
 
-} 
+}  
 
-#endif 
+#endif  

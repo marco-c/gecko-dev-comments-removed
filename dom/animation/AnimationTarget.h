@@ -7,7 +7,7 @@
 #ifndef mozilla_AnimationTarget_h
 #define mozilla_AnimationTarget_h
 
-#include "mozilla/Attributes.h"   
+#include "mozilla/Attributes.h"  
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "nsCSSPseudoElements.h"
@@ -16,20 +16,16 @@ namespace mozilla {
 
 namespace dom {
 class Element;
-} 
+}  
 
-struct OwningAnimationTarget
-{
+struct OwningAnimationTarget {
   OwningAnimationTarget(dom::Element* aElement, CSSPseudoElementType aType)
-    : mElement(aElement), mPseudoType(aType) { }
+      : mElement(aElement), mPseudoType(aType) {}
 
-  explicit OwningAnimationTarget(dom::Element* aElement)
-    : mElement(aElement) { }
+  explicit OwningAnimationTarget(dom::Element* aElement) : mElement(aElement) {}
 
-  bool operator==(const OwningAnimationTarget& aOther) const
-  {
-     return mElement == aOther.mElement &&
-            mPseudoType == aOther.mPseudoType;
+  bool operator==(const OwningAnimationTarget& aOther) const {
+    return mElement == aOther.mElement && mPseudoType == aOther.mPseudoType;
   }
 
   
@@ -38,20 +34,17 @@ struct OwningAnimationTarget
   CSSPseudoElementType mPseudoType = CSSPseudoElementType::NotPseudo;
 };
 
-struct NonOwningAnimationTarget
-{
+struct NonOwningAnimationTarget {
   NonOwningAnimationTarget() = default;
 
   NonOwningAnimationTarget(dom::Element* aElement, CSSPseudoElementType aType)
-    : mElement(aElement), mPseudoType(aType) { }
+      : mElement(aElement), mPseudoType(aType) {}
 
   explicit NonOwningAnimationTarget(const OwningAnimationTarget& aOther)
-    : mElement(aOther.mElement), mPseudoType(aOther.mPseudoType) { }
+      : mElement(aOther.mElement), mPseudoType(aOther.mPseudoType) {}
 
-  bool operator==(const NonOwningAnimationTarget& aOther) const
-  {
-    return mElement == aOther.mElement &&
-           mPseudoType == aOther.mPseudoType;
+  bool operator==(const NonOwningAnimationTarget& aOther) const {
+    return mElement == aOther.mElement && mPseudoType == aOther.mPseudoType;
   }
 
   
@@ -61,26 +54,21 @@ struct NonOwningAnimationTarget
 };
 
 
-
-inline void
-ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            Maybe<OwningAnimationTarget>& aTarget,
-                            const char* aName,
-                            uint32_t aFlags = 0)
-{
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    Maybe<OwningAnimationTarget>& aTarget, const char* aName,
+    uint32_t aFlags = 0) {
   if (aTarget) {
     ImplCycleCollectionTraverse(aCallback, aTarget->mElement, aName, aFlags);
   }
 }
 
-inline void
-ImplCycleCollectionUnlink(Maybe<OwningAnimationTarget>& aTarget)
-{
+inline void ImplCycleCollectionUnlink(Maybe<OwningAnimationTarget>& aTarget) {
   if (aTarget) {
     ImplCycleCollectionUnlink(aTarget->mElement);
   }
 }
 
-} 
+}  
 
-#endif 
+#endif  

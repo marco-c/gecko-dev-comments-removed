@@ -21,14 +21,13 @@ namespace {
 
 
 int GetTimeIntervalMilliseconds(const base::TimeTicks& from) {
-  if (from.is_null())
-    return -1;
+  if (from.is_null()) return -1;
 
   
   
   
-  int delay = static_cast<int>(
-      ceil((from - base::TimeTicks::Now()).InMillisecondsF()));
+  int delay =
+      static_cast<int>(ceil((from - base::TimeTicks::Now()).InMillisecondsF()));
 
   
   return delay < 0 ? 0 : delay;
@@ -87,8 +86,7 @@ struct WorkSource : public GSource {
   base::MessagePumpForUI* pump;
 };
 
-gboolean WorkSourcePrepare(GSource* source,
-                           gint* timeout_ms) {
+gboolean WorkSourcePrepare(GSource* source, gint* timeout_ms) {
   *timeout_ms = static_cast<WorkSource*>(source)->pump->HandlePrepare();
   
   
@@ -101,25 +99,18 @@ gboolean WorkSourceCheck(GSource* source) {
   return static_cast<WorkSource*>(source)->pump->HandleCheck();
 }
 
-gboolean WorkSourceDispatch(GSource* source,
-                            GSourceFunc unused_func,
+gboolean WorkSourceDispatch(GSource* source, GSourceFunc unused_func,
                             gpointer unused_data) {
-
   static_cast<WorkSource*>(source)->pump->HandleDispatch();
   
   return TRUE;
 }
 
 
-GSourceFuncs WorkSourceFuncs = {
-  WorkSourcePrepare,
-  WorkSourceCheck,
-  WorkSourceDispatch,
-  NULL
-};
+GSourceFuncs WorkSourceFuncs = {WorkSourcePrepare, WorkSourceCheck,
+                                WorkSourceDispatch, NULL};
 
 }  
-
 
 namespace base {
 
@@ -131,7 +122,7 @@ MessagePumpForUI::MessagePumpForUI()
   
   int fds[2];
   CHECK(pipe(fds) == 0);
-  wakeup_pipe_read_  = fds[0];
+  wakeup_pipe_read_ = fds[0];
   wakeup_pipe_write_ = fds[1];
   wakeup_gpollfd_->fd = wakeup_pipe_read_;
   wakeup_gpollfd_->events = G_IO_IN;
@@ -148,8 +139,8 @@ MessagePumpForUI::MessagePumpForUI()
 }
 
 MessagePumpForUI::~MessagePumpForUI() {
-  gdk_event_handler_set(reinterpret_cast<GdkEventFunc>(gtk_main_do_event),
-                        this, NULL);
+  gdk_event_handler_set(reinterpret_cast<GdkEventFunc>(gtk_main_do_event), this,
+                        NULL);
   g_source_destroy(work_source_);
   g_source_unref(work_source_);
   close(wakeup_pipe_read_);
@@ -162,9 +153,9 @@ void MessagePumpForUI::RunWithDispatcher(Delegate* delegate,
   
   
   static PlatformThreadId thread_id = PlatformThread::CurrentId();
-  DCHECK(thread_id == PlatformThread::CurrentId()) <<
-      "Running MessagePumpForUI on two different threads; "
-      "this is unsupported by GLib!";
+  DCHECK(thread_id == PlatformThread::CurrentId())
+      << "Running MessagePumpForUI on two different threads; "
+         "this is unsupported by GLib!";
 #endif
 
   RunState state;
@@ -193,24 +184,19 @@ void MessagePumpForUI::RunWithDispatcher(Delegate* delegate,
 
     
     more_work_is_plausible = g_main_context_iteration(context_, block);
-    if (state_->should_quit)
-      break;
+    if (state_->should_quit) break;
 
     more_work_is_plausible |= state_->delegate->DoWork();
-    if (state_->should_quit)
-      break;
+    if (state_->should_quit) break;
 
     more_work_is_plausible |=
         state_->delegate->DoDelayedWork(&delayed_work_time_);
-    if (state_->should_quit)
-      break;
+    if (state_->should_quit) break;
 
-    if (more_work_is_plausible)
-      continue;
+    if (more_work_is_plausible) continue;
 
     more_work_is_plausible = state_->delegate->DoIdleWork();
-    if (state_->should_quit)
-      break;
+    if (state_->should_quit) break;
   }
 
   state_ = previous_state;
@@ -249,8 +235,7 @@ bool MessagePumpForUI::HandleCheck() {
     state_->has_work = true;
   }
 
-  if (state_->has_work)
-    return true;
+  if (state_->has_work) return true;
 
   if (GetTimeIntervalMilliseconds(delayed_work_time_) == 0) {
     
@@ -271,8 +256,7 @@ void MessagePumpForUI::HandleDispatch() {
     state_->has_work = true;
   }
 
-  if (state_->should_quit)
-    return;
+  if (state_->should_quit) return;
 
   state_->delegate->DoDelayedWork(&delayed_work_time_);
 }

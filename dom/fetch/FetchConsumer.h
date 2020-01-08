@@ -21,55 +21,42 @@ namespace dom {
 class Promise;
 class ThreadSafeWorkerRef;
 
-template <class Derived> class FetchBody;
+template <class Derived>
+class FetchBody;
 
 
 
 
 template <class Derived>
-class FetchBodyConsumer final : public nsIObserver
-                              , public nsSupportsWeakReference
-                              , public AbortFollower
-{
-public:
+class FetchBodyConsumer final : public nsIObserver,
+                                public nsSupportsWeakReference,
+                                public AbortFollower {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-  static already_AddRefed<Promise>
-  Create(nsIGlobalObject* aGlobal,
-         nsIEventTarget* aMainThreadEventTarget,
-         FetchBody<Derived>* aBody,
-         nsIInputStream* aBodyStream,
-         AbortSignalImpl* aSignalImpl,
-         FetchConsumeType aType,
-         ErrorResult& aRv);
+  static already_AddRefed<Promise> Create(
+      nsIGlobalObject* aGlobal, nsIEventTarget* aMainThreadEventTarget,
+      FetchBody<Derived>* aBody, nsIInputStream* aBodyStream,
+      AbortSignalImpl* aSignalImpl, FetchConsumeType aType, ErrorResult& aRv);
 
-  void
-  ReleaseObject();
+  void ReleaseObject();
 
-  void
-  BeginConsumeBodyMainThread(ThreadSafeWorkerRef* aWorkerRef);
+  void BeginConsumeBodyMainThread(ThreadSafeWorkerRef* aWorkerRef);
 
-  void
-  OnBlobResult(Blob* aBlob, ThreadSafeWorkerRef* aWorkerRef = nullptr);
+  void OnBlobResult(Blob* aBlob, ThreadSafeWorkerRef* aWorkerRef = nullptr);
 
-  void
-  ContinueConsumeBody(nsresult aStatus, uint32_t aLength, uint8_t* aResult,
-                      bool aShuttingDown = false);
+  void ContinueConsumeBody(nsresult aStatus, uint32_t aLength, uint8_t* aResult,
+                           bool aShuttingDown = false);
 
-  void
-  ContinueConsumeBlobBody(BlobImpl* aBlobImpl, bool aShuttingDown = false);
+  void ContinueConsumeBlobBody(BlobImpl* aBlobImpl, bool aShuttingDown = false);
 
-  void
-  DispatchContinueConsumeBlobBody(BlobImpl* aBlobImpl,
-                                  ThreadSafeWorkerRef* aWorkerRef);
+  void DispatchContinueConsumeBlobBody(BlobImpl* aBlobImpl,
+                                       ThreadSafeWorkerRef* aWorkerRef);
 
-  void
-  ShutDownMainThreadConsuming();
+  void ShutDownMainThreadConsuming();
 
-  void
-  NullifyConsumeBodyPump()
-  {
+  void NullifyConsumeBodyPump() {
     mShuttingDown = true;
     mConsumeBodyPump = nullptr;
   }
@@ -77,21 +64,17 @@ public:
   
   void Abort() override;
 
-private:
+ private:
   FetchBodyConsumer(nsIEventTarget* aMainThreadEventTarget,
-                    nsIGlobalObject* aGlobalObject,
-                    FetchBody<Derived>* aBody,
-                    nsIInputStream* aBodyStream,
-                    Promise* aPromise,
+                    nsIGlobalObject* aGlobalObject, FetchBody<Derived>* aBody,
+                    nsIInputStream* aBodyStream, Promise* aPromise,
                     FetchConsumeType aType);
 
   ~FetchBodyConsumer();
 
-  nsresult
-  GetBodyLocalFile(nsIFile** aFile) const;
+  nsresult GetBodyLocalFile(nsIFile** aFile) const;
 
-  void
-  AssertIsOnTargetThread() const;
+  void AssertIsOnTargetThread() const;
 
   nsCOMPtr<nsIThread> mTargetThread;
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
@@ -126,7 +109,7 @@ private:
   bool mShuttingDown;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

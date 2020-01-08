@@ -50,34 +50,24 @@ namespace dom {
 
 
 class MOZ_STACK_CLASS DOMString {
-public:
-  DOMString()
-    : mStringBuffer(nullptr)
-    , mLength(0)
-    , mState(State::Empty)
-  {}
-  ~DOMString()
-  {
-    MOZ_ASSERT(!mString || !mStringBuffer,
-               "Shouldn't have both present!");
+ public:
+  DOMString() : mStringBuffer(nullptr), mLength(0), mState(State::Empty) {}
+  ~DOMString() {
+    MOZ_ASSERT(!mString || !mStringBuffer, "Shouldn't have both present!");
     if (mState == State::OwnedStringBuffer) {
       MOZ_ASSERT(mStringBuffer);
       mStringBuffer->Release();
     }
   }
 
-  operator nsString&()
-  {
-    return AsAString();
-  }
+  operator nsString&() { return AsAString(); }
 
   
   
   operator const nsString&() = delete;
   operator const nsAString&() = delete;
 
-  nsString& AsAString()
-  {
+  nsString& AsAString() {
     MOZ_ASSERT(mState == State::Empty || mState == State::String,
                "Moving from nonempty state to another nonempty state?");
     MOZ_ASSERT(!mStringBuffer, "We already have a stringbuffer?");
@@ -88,10 +78,8 @@ public:
     return *mString;
   }
 
-  bool HasStringBuffer() const
-  {
-    MOZ_ASSERT(!mString || !mStringBuffer,
-               "Shouldn't have both present!");
+  bool HasStringBuffer() const {
+    MOZ_ASSERT(!mString || !mStringBuffer, "Shouldn't have both present!");
     MOZ_ASSERT(mState > State::Null,
                "Caller should have checked IsNull() and IsEmpty() first");
     return mState >= State::OwnedStringBuffer;
@@ -101,28 +89,26 @@ public:
   
   
   
-  nsStringBuffer* StringBuffer() const
-  {
+  nsStringBuffer* StringBuffer() const {
     MOZ_ASSERT(HasStringBuffer(),
                "Don't ask for the stringbuffer if we don't have it");
-    MOZ_ASSERT(mStringBuffer,
-               "We better have a stringbuffer if we claim to");
+    MOZ_ASSERT(mStringBuffer, "We better have a stringbuffer if we claim to");
     return mStringBuffer;
   }
 
   
   
-  uint32_t StringBufferLength() const
-  {
-    MOZ_ASSERT(HasStringBuffer(), "Don't call this if there is no stringbuffer");
+  uint32_t StringBufferLength() const {
+    MOZ_ASSERT(HasStringBuffer(),
+               "Don't call this if there is no stringbuffer");
     return mLength;
   }
 
   
   
-  void RelinquishBufferOwnership()
-  {
-    MOZ_ASSERT(HasStringBuffer(), "Don't call this if there is no stringbuffer");
+  void RelinquishBufferOwnership() {
+    MOZ_ASSERT(HasStringBuffer(),
+               "Don't call this if there is no stringbuffer");
     if (mState == State::OwnedStringBuffer) {
       
       mState = State::UnownedStringBuffer;
@@ -132,10 +118,8 @@ public:
     }
   }
 
-  bool HasLiteral() const
-  {
-    MOZ_ASSERT(!mString || !mStringBuffer,
-               "Shouldn't have both present!");
+  bool HasLiteral() const {
+    MOZ_ASSERT(!mString || !mStringBuffer, "Shouldn't have both present!");
     MOZ_ASSERT(mState > State::Null,
                "Caller should have checked IsNull() and IsEmpty() first");
     return mState == State::Literal;
@@ -143,26 +127,20 @@ public:
 
   
   
-  const char16_t* Literal() const
-  {
-    MOZ_ASSERT(HasLiteral(),
-               "Don't ask for the literal if we don't have it");
-    MOZ_ASSERT(mLiteral,
-               "We better have a literal if we claim to");
+  const char16_t* Literal() const {
+    MOZ_ASSERT(HasLiteral(), "Don't ask for the literal if we don't have it");
+    MOZ_ASSERT(mLiteral, "We better have a literal if we claim to");
     return mLiteral;
   }
 
   
-  uint32_t LiteralLength() const
-  {
+  uint32_t LiteralLength() const {
     MOZ_ASSERT(HasLiteral(), "Don't call this if there is no literal");
     return mLength;
   }
 
-  bool HasAtom() const
-  {
-    MOZ_ASSERT(!mString || !mStringBuffer,
-               "Shouldn't have both present!");
+  bool HasAtom() const {
+    MOZ_ASSERT(!mString || !mStringBuffer, "Shouldn't have both present!");
     MOZ_ASSERT(mState > State::Null,
                "Caller should have checked IsNull() and IsEmpty() first");
     return mState == State::UnownedAtom;
@@ -170,20 +148,17 @@ public:
 
   
   
-  nsDynamicAtom* Atom() const
-  {
-    MOZ_ASSERT(HasAtom(),
-               "Don't ask for the atom if we don't have it");
-    MOZ_ASSERT(mAtom,
-               "We better have an atom if we claim to");
+  nsDynamicAtom* Atom() const {
+    MOZ_ASSERT(HasAtom(), "Don't ask for the atom if we don't have it");
+    MOZ_ASSERT(mAtom, "We better have an atom if we claim to");
     return mAtom;
   }
 
   
   
   
-  void SetKnownLiveStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
-  {
+  void SetKnownLiveStringBuffer(nsStringBuffer* aStringBuffer,
+                                uint32_t aLength) {
     MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
     if (aLength != 0) {
       SetStringBufferInternal(aStringBuffer, aLength);
@@ -193,8 +168,7 @@ public:
   }
 
   
-  void SetStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
-  {
+  void SetStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength) {
     MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
     if (aLength != 0) {
       SetStringBufferInternal(aStringBuffer, aLength);
@@ -204,8 +178,7 @@ public:
     
   }
 
-  void SetKnownLiveString(const nsAString& aString)
-  {
+  void SetKnownLiveString(const nsAString& aString) {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
     MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
     MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
@@ -223,15 +196,9 @@ public:
     }
   }
 
-  enum NullHandling
-  {
-    eTreatNullAsNull,
-    eTreatNullAsEmpty,
-    eNullNotExpected
-  };
+  enum NullHandling { eTreatNullAsNull, eTreatNullAsEmpty, eNullNotExpected };
 
-  void SetKnownLiveAtom(nsAtom* aAtom, NullHandling aNullHandling)
-  {
+  void SetKnownLiveAtom(nsAtom* aAtom, NullHandling aNullHandling) {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
     MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
     MOZ_ASSERT(!mAtom, "Setting atom twice?");
@@ -251,23 +218,20 @@ public:
     }
   }
 
-  void SetNull()
-  {
+  void SetNull() {
     MOZ_ASSERT(!mStringBuffer, "Should have no stringbuffer if null");
     MOZ_ASSERT(mString.isNothing(), "Should have no string if null");
     MOZ_ASSERT(mState == State::Empty, "Already set to a value?");
     mState = State::Null;
   }
 
-  bool IsNull() const
-  {
+  bool IsNull() const {
     MOZ_ASSERT(!mStringBuffer || mString.isNothing(),
                "How could we have a stringbuffer and a nonempty string?");
     return mState == State::Null || (mString && mString->IsVoid());
   }
 
-  bool IsEmpty() const
-  {
+  bool IsEmpty() const {
     MOZ_ASSERT(!mStringBuffer || mString.isNothing(),
                "How could we have a stringbuffer and a nonempty string?");
     
@@ -276,8 +240,7 @@ public:
     return mState == State::Empty;
   }
 
-  void ToString(nsAString& aString)
-  {
+  void ToString(nsAString& aString) {
     if (IsNull()) {
       SetDOMStringToNull(aString);
     } else if (IsEmpty()) {
@@ -304,9 +267,9 @@ public:
     }
   }
 
-private:
-  void SetStringBufferInternal(nsStringBuffer* aStringBuffer, uint32_t aLength)
-  {
+ private:
+  void SetStringBufferInternal(nsStringBuffer* aStringBuffer,
+                               uint32_t aLength) {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
     MOZ_ASSERT(mState == State::Empty, "We're already set to a value");
     MOZ_ASSERT(!mStringBuffer, "Setting stringbuffer twice?");
@@ -316,29 +279,27 @@ private:
     mLength = aLength;
   }
 
-  void SetLiteralInternal(const char16_t* aLiteral, uint32_t aLength)
-  {
+  void SetLiteralInternal(const char16_t* aLiteral, uint32_t aLength) {
     MOZ_ASSERT(!mLiteral, "What's going on here?");
     mLiteral = aLiteral;
     mLength = aLength;
     mState = State::Literal;
   }
 
-  enum class State : uint8_t
-  {
-    Empty, 
-    Null,  
+  enum class State : uint8_t {
+    Empty,  
+    Null,   
 
     
     
 
-    String, 
-    Literal, 
-    UnownedAtom, 
+    String,       
+    Literal,      
+    UnownedAtom,  
     
     
-    OwnedStringBuffer, 
-    UnownedStringBuffer, 
+    OwnedStringBuffer,    
+    UnownedStringBuffer,  
     
     
   };
@@ -346,18 +307,19 @@ private:
   
   Maybe<nsAutoString> mString;
 
-  union
-  {
+  union {
     
-    nsStringBuffer* MOZ_UNSAFE_REF("The ways in which this can be safe are "
-                                 "documented above and enforced through "
-                                 "assertions") mStringBuffer;
+    nsStringBuffer* MOZ_UNSAFE_REF(
+        "The ways in which this can be safe are "
+        "documented above and enforced through "
+        "assertions") mStringBuffer;
     
     const char16_t* mLiteral;
     
-    nsDynamicAtom* MOZ_UNSAFE_REF("The ways in which this can be safe are "
-                                  "documented above and enforced through "
-                                  "assertions") mAtom;
+    nsDynamicAtom* MOZ_UNSAFE_REF(
+        "The ways in which this can be safe are "
+        "documented above and enforced through "
+        "assertions") mAtom;
   };
 
   
@@ -366,7 +328,7 @@ private:
   State mState;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

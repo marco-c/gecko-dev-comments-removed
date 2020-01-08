@@ -28,7 +28,7 @@ namespace layers {
 class KnowsCompositor;
 class LayersIPCChannel;
 class SharedSurfaceTextureClient;
-} 
+}  
 
 namespace gl {
 
@@ -37,263 +37,238 @@ class SharedSurface;
 class ShSurfHandle;
 class SurfaceFactory;
 
-class DrawBuffer
-{
-public:
-    
-    
-    static bool Create(GLContext* const gl,
-                       const SurfaceCaps& caps,
-                       const GLFormats& formats,
-                       const gfx::IntSize& size,
-                       UniquePtr<DrawBuffer>* out_buffer);
+class DrawBuffer {
+ public:
+  
+  
+  static bool Create(GLContext* const gl, const SurfaceCaps& caps,
+                     const GLFormats& formats, const gfx::IntSize& size,
+                     UniquePtr<DrawBuffer>* out_buffer);
 
-protected:
-    GLContext* const mGL;
-public:
-    const gfx::IntSize mSize;
-    const GLsizei mSamples;
-    const GLuint mFB;
-protected:
-    const GLuint mColorMSRB;
-    const GLuint mDepthRB;
-    const GLuint mStencilRB;
+ protected:
+  GLContext* const mGL;
 
-    DrawBuffer(GLContext* gl,
-               const gfx::IntSize& size,
-               GLsizei samples,
-               GLuint fb,
-               GLuint colorMSRB,
-               GLuint depthRB,
-               GLuint stencilRB)
-        : mGL(gl)
-        , mSize(size)
-        , mSamples(samples)
-        , mFB(fb)
-        , mColorMSRB(colorMSRB)
-        , mDepthRB(depthRB)
-        , mStencilRB(stencilRB)
-    {}
+ public:
+  const gfx::IntSize mSize;
+  const GLsizei mSamples;
+  const GLuint mFB;
 
-public:
-    virtual ~DrawBuffer();
+ protected:
+  const GLuint mColorMSRB;
+  const GLuint mDepthRB;
+  const GLuint mStencilRB;
+
+  DrawBuffer(GLContext* gl, const gfx::IntSize& size, GLsizei samples,
+             GLuint fb, GLuint colorMSRB, GLuint depthRB, GLuint stencilRB)
+      : mGL(gl),
+        mSize(size),
+        mSamples(samples),
+        mFB(fb),
+        mColorMSRB(colorMSRB),
+        mDepthRB(depthRB),
+        mStencilRB(stencilRB) {}
+
+ public:
+  virtual ~DrawBuffer();
 };
 
-class ReadBuffer
-{
-public:
-    
-    static UniquePtr<ReadBuffer> Create(GLContext* gl,
-                                        const SurfaceCaps& caps,
-                                        const GLFormats& formats,
-                                        SharedSurface* surf);
+class ReadBuffer {
+ public:
+  
+  static UniquePtr<ReadBuffer> Create(GLContext* gl, const SurfaceCaps& caps,
+                                      const GLFormats& formats,
+                                      SharedSurface* surf);
 
-protected:
-    GLContext* const mGL;
-public:
-    const GLuint mFB;
-protected:
-    
-    const GLuint mDepthRB;
-    const GLuint mStencilRB;
-    
-    SharedSurface* mSurf;
+ protected:
+  GLContext* const mGL;
 
-    ReadBuffer(GLContext* gl,
-               GLuint fb,
-               GLuint depthRB,
-               GLuint stencilRB,
-               SharedSurface* surf)
-        : mGL(gl)
-        , mFB(fb)
-        , mDepthRB(depthRB)
-        , mStencilRB(stencilRB)
-        , mSurf(surf)
-    {}
+ public:
+  const GLuint mFB;
 
-public:
-    virtual ~ReadBuffer();
+ protected:
+  
+  const GLuint mDepthRB;
+  const GLuint mStencilRB;
+  
+  SharedSurface* mSurf;
 
-    
-    void Attach(SharedSurface* surf);
+  ReadBuffer(GLContext* gl, GLuint fb, GLuint depthRB, GLuint stencilRB,
+             SharedSurface* surf)
+      : mGL(gl),
+        mFB(fb),
+        mDepthRB(depthRB),
+        mStencilRB(stencilRB),
+        mSurf(surf) {}
 
-    const gfx::IntSize& Size() const;
+ public:
+  virtual ~ReadBuffer();
 
-    SharedSurface* SharedSurf() const {
-        return mSurf;
-    }
+  
+  void Attach(SharedSurface* surf);
 
-    void SetReadBuffer(GLenum mode) const;
+  const gfx::IntSize& Size() const;
+
+  SharedSurface* SharedSurf() const { return mSurf; }
+
+  void SetReadBuffer(GLenum mode) const;
 };
 
+class GLScreenBuffer {
+ public:
+  
+  static UniquePtr<GLScreenBuffer> Create(GLContext* gl,
+                                          const gfx::IntSize& size,
+                                          const SurfaceCaps& caps);
 
-class GLScreenBuffer
-{
-public:
-    
-    static UniquePtr<GLScreenBuffer> Create(GLContext* gl,
-                                            const gfx::IntSize& size,
-                                            const SurfaceCaps& caps);
+  static UniquePtr<SurfaceFactory> CreateFactory(
+      GLContext* gl, const SurfaceCaps& caps,
+      layers::KnowsCompositor* compositorConnection,
+      const layers::TextureFlags& flags);
 
-    static UniquePtr<SurfaceFactory>
-    CreateFactory(GLContext* gl,
-                  const SurfaceCaps& caps,
-                  layers::KnowsCompositor* compositorConnection,
-                  const layers::TextureFlags& flags);
+ protected:
+  GLContext* const mGL;  
+ public:
+  const SurfaceCaps mCaps;
 
-protected:
-    GLContext* const mGL; 
-public:
-    const SurfaceCaps mCaps;
-protected:
-    UniquePtr<SurfaceFactory> mFactory;
+ protected:
+  UniquePtr<SurfaceFactory> mFactory;
 
-    RefPtr<layers::SharedSurfaceTextureClient> mBack;
-    RefPtr<layers::SharedSurfaceTextureClient> mFront;
+  RefPtr<layers::SharedSurfaceTextureClient> mBack;
+  RefPtr<layers::SharedSurfaceTextureClient> mFront;
 
-    UniquePtr<DrawBuffer> mDraw;
-    UniquePtr<ReadBuffer> mRead;
+  UniquePtr<DrawBuffer> mDraw;
+  UniquePtr<ReadBuffer> mRead;
 
-    bool mNeedsBlit;
+  bool mNeedsBlit;
 
-    GLenum mUserReadBufferMode;
-    GLenum mUserDrawBufferMode;
+  GLenum mUserReadBufferMode;
+  GLenum mUserDrawBufferMode;
 
-    
-    GLuint mUserDrawFB;
-    GLuint mUserReadFB;
-    GLuint mInternalDrawFB;
-    GLuint mInternalReadFB;
+  
+  GLuint mUserDrawFB;
+  GLuint mUserReadFB;
+  GLuint mInternalDrawFB;
+  GLuint mInternalReadFB;
 
 #ifdef DEBUG
-    bool mInInternalMode_DrawFB;
-    bool mInInternalMode_ReadFB;
+  bool mInInternalMode_DrawFB;
+  bool mInInternalMode_ReadFB;
 #endif
 
-    GLScreenBuffer(GLContext* gl,
-                   const SurfaceCaps& caps,
-                   UniquePtr<SurfaceFactory> factory);
+  GLScreenBuffer(GLContext* gl, const SurfaceCaps& caps,
+                 UniquePtr<SurfaceFactory> factory);
 
-public:
-    virtual ~GLScreenBuffer();
+ public:
+  virtual ~GLScreenBuffer();
 
-    SurfaceFactory* Factory() const {
-        return mFactory.get();
-    }
+  SurfaceFactory* Factory() const { return mFactory.get(); }
 
-    const RefPtr<layers::SharedSurfaceTextureClient>& Front() const {
-        return mFront;
-    }
+  const RefPtr<layers::SharedSurfaceTextureClient>& Front() const {
+    return mFront;
+  }
 
-    SharedSurface* SharedSurf() const {
-        MOZ_ASSERT(mRead);
-        return mRead->SharedSurf();
-    }
+  SharedSurface* SharedSurf() const {
+    MOZ_ASSERT(mRead);
+    return mRead->SharedSurf();
+  }
 
-    bool ShouldPreserveBuffer() const {
-        return mCaps.preserve;
-    }
+  bool ShouldPreserveBuffer() const { return mCaps.preserve; }
 
-    GLuint DrawFB() const {
-        if (!mDraw)
-            return ReadFB();
+  GLuint DrawFB() const {
+    if (!mDraw) return ReadFB();
 
-        return mDraw->mFB;
-    }
+    return mDraw->mFB;
+  }
 
-    GLuint ReadFB() const {
-        return mRead->mFB;
-    }
+  GLuint ReadFB() const { return mRead->mFB; }
 
-    GLsizei Samples() const {
-        if (!mDraw)
-            return 0;
+  GLsizei Samples() const {
+    if (!mDraw) return 0;
 
-        return mDraw->mSamples;
-    }
+    return mDraw->mSamples;
+  }
 
-    uint32_t DepthBits() const;
+  uint32_t DepthBits() const;
 
-    void DeletingFB(GLuint fb);
+  void DeletingFB(GLuint fb);
 
-    const gfx::IntSize& Size() const {
-        MOZ_ASSERT(mRead);
-        MOZ_ASSERT(!mDraw || mDraw->mSize == mRead->Size());
-        return mRead->Size();
-    }
+  const gfx::IntSize& Size() const {
+    MOZ_ASSERT(mRead);
+    MOZ_ASSERT(!mDraw || mDraw->mSize == mRead->Size());
+    return mRead->Size();
+  }
 
-    bool IsReadBufferReady() const {
-        return mRead.get() != nullptr;
-    }
+  bool IsReadBufferReady() const { return mRead.get() != nullptr; }
 
-    void BindAsFramebuffer(GLContext* const gl, GLenum target) const;
+  void BindAsFramebuffer(GLContext* const gl, GLenum target) const;
 
-    void RequireBlit();
-    void AssureBlitted();
-    void AfterDrawCall();
-    void BeforeReadCall();
+  void RequireBlit();
+  void AssureBlitted();
+  void AfterDrawCall();
+  void BeforeReadCall();
 
-    bool CopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x,
-                        GLint y, GLsizei width, GLsizei height, GLint border);
+  bool CopyTexImage2D(GLenum target, GLint level, GLenum internalformat,
+                      GLint x, GLint y, GLsizei width, GLsizei height,
+                      GLint border);
 
-    void SetReadBuffer(GLenum userMode);
-    void SetDrawBuffer(GLenum userMode);
+  void SetReadBuffer(GLenum userMode);
+  void SetDrawBuffer(GLenum userMode);
 
-    GLenum GetReadBufferMode() const { return mUserReadBufferMode; }
-    GLenum GetDrawBufferMode() const { return mUserDrawBufferMode; }
+  GLenum GetReadBufferMode() const { return mUserReadBufferMode; }
+  GLenum GetDrawBufferMode() const { return mUserDrawBufferMode; }
 
-    
+  
 
 
 
 
 
 
-    bool ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
-                    GLenum format, GLenum type, GLvoid* pixels);
+  bool ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
+                  GLenum format, GLenum type, GLvoid* pixels);
 
-    
-    void Morph(UniquePtr<SurfaceFactory> newFactory);
+  
+  void Morph(UniquePtr<SurfaceFactory> newFactory);
 
-protected:
-    
-    bool Swap(const gfx::IntSize& size);
+ protected:
+  
+  bool Swap(const gfx::IntSize& size);
 
-public:
-    bool PublishFrame(const gfx::IntSize& size);
+ public:
+  bool PublishFrame(const gfx::IntSize& size);
 
-    bool Resize(const gfx::IntSize& size);
+  bool Resize(const gfx::IntSize& size);
 
-protected:
-    bool Attach(SharedSurface* surf, const gfx::IntSize& size);
+ protected:
+  bool Attach(SharedSurface* surf, const gfx::IntSize& size);
 
-    bool CreateDraw(const gfx::IntSize& size, UniquePtr<DrawBuffer>* out_buffer);
-    UniquePtr<ReadBuffer> CreateRead(SharedSurface* surf);
+  bool CreateDraw(const gfx::IntSize& size, UniquePtr<DrawBuffer>* out_buffer);
+  UniquePtr<ReadBuffer> CreateRead(SharedSurface* surf);
 
-public:
-    
-
-
+ public:
+  
 
 
-    void BindFB(GLuint fb);
-    void BindDrawFB(GLuint fb);
-    void BindReadFB(GLuint fb);
-    GLuint GetFB() const;
-    GLuint GetDrawFB() const;
-    GLuint GetReadFB() const;
 
-    
-    
-    void BindFB_Internal(GLuint fb);
-    void BindDrawFB_Internal(GLuint fb);
-    void BindReadFB_Internal(GLuint fb);
 
-    bool IsDrawFramebufferDefault() const;
-    bool IsReadFramebufferDefault() const;
+  void BindFB(GLuint fb);
+  void BindDrawFB(GLuint fb);
+  void BindReadFB(GLuint fb);
+  GLuint GetFB() const;
+  GLuint GetDrawFB() const;
+  GLuint GetReadFB() const;
+
+  
+  
+  void BindFB_Internal(GLuint fb);
+  void BindDrawFB_Internal(GLuint fb);
+  void BindReadFB_Internal(GLuint fb);
+
+  bool IsDrawFramebufferDefault() const;
+  bool IsReadFramebufferDefault() const;
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

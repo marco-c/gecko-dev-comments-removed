@@ -6,11 +6,11 @@
 #ifndef mozilla_CSSEditUtils_h
 #define mozilla_CSSEditUtils_h
 
-#include "mozilla/ChangeStyleTransaction.h" 
-#include "nsCOMPtr.h"               
+#include "mozilla/ChangeStyleTransaction.h"  
+#include "nsCOMPtr.h"                        
 #include "nsStringFwd.h"
-#include "nsTArray.h"               
-#include "nscore.h"                 
+#include "nsTArray.h"  
+#include "nscore.h"    
 
 class nsComputedDOMStyle;
 class nsAtom;
@@ -23,7 +23,7 @@ namespace mozilla {
 class HTMLEditor;
 namespace dom {
 class Element;
-} 
+}  
 
 typedef void (*nsProcessValueFunc)(const nsAString* aInputString,
                                    nsAString& aOutputString,
@@ -31,15 +31,13 @@ typedef void (*nsProcessValueFunc)(const nsAString* aInputString,
                                    const char* aPrependString,
                                    const char* aAppendString);
 
-class CSSEditUtils final
-{
-public:
+class CSSEditUtils final {
+ public:
   explicit CSSEditUtils(HTMLEditor* aEditor);
   ~CSSEditUtils();
 
-  enum nsCSSEditableProperty
-  {
-    eCSSEditableProperty_NONE=0,
+  enum nsCSSEditableProperty {
+    eCSSEditableProperty_NONE = 0,
     eCSSEditableProperty_background_color,
     eCSSEditableProperty_background_image,
     eCSSEditableProperty_border,
@@ -63,9 +61,7 @@ public:
 
   enum StyleType { eSpecified, eComputed };
 
-
-  struct CSSEquivTable
-  {
+  struct CSSEquivTable {
     nsCSSEditableProperty cssProperty;
     nsProcessValueFunc processValueFunctor;
     const char* defaultValue;
@@ -102,10 +98,9 @@ public:
 
   nsresult SetCSSProperty(dom::Element& aElement, nsAtom& aProperty,
                           const nsAString& aValue, bool aSuppressTxn = false);
-  nsresult SetCSSPropertyPixels(dom::Element& aElement,
-                                nsAtom& aProperty, int32_t aIntValue);
-  nsresult RemoveCSSProperty(dom::Element& aElement,
-                             nsAtom& aProperty,
+  nsresult SetCSSPropertyPixels(dom::Element& aElement, nsAtom& aProperty,
+                                int32_t aIntValue);
+  nsresult RemoveCSSProperty(dom::Element& aElement, nsAtom& aProperty,
                              const nsAString& aPropertyValue,
                              bool aSuppressTxn = false);
 
@@ -161,7 +156,7 @@ public:
 
 
 
-  static void GetDefaultLengthUnit(nsAString & aLengthUnit);
+  static void GetDefaultLengthUnit(nsAString& aLengthUnit);
 
   
 
@@ -230,10 +225,8 @@ public:
 
 
 
-  static bool HaveCSSEquivalentStyles(nsINode& aNode,
-                                      nsAtom* aProperty,
-                                      nsAtom* aAttribute,
-                                      StyleType aStyleType);
+  static bool HaveCSSEquivalentStyles(nsINode& aNode, nsAtom* aProperty,
+                                      nsAtom* aAttribute, StyleType aStyleType);
 
   
 
@@ -249,8 +242,7 @@ public:
 
 
 
-  int32_t SetCSSEquivalentToHTMLStyle(dom::Element* aElement,
-                                      nsAtom* aProperty,
+  int32_t SetCSSEquivalentToHTMLStyle(dom::Element* aElement, nsAtom* aProperty,
                                       nsAtom* aAttribute,
                                       const nsAString* aValue,
                                       bool aSuppressTransaction);
@@ -324,7 +316,7 @@ public:
                                   nsICSSDeclaration** aCssDecl,
                                   uint32_t* aLength);
 
-public:
+ public:
   
 
 
@@ -338,10 +330,10 @@ public:
   
 
 
-  static already_AddRefed<nsComputedDOMStyle>
-           GetComputedStyle(dom::Element* aElement);
+  static already_AddRefed<nsComputedDOMStyle> GetComputedStyle(
+      dom::Element* aElement);
 
-private:
+ private:
   
 
 
@@ -389,13 +381,9 @@ private:
 
 
   static void GenerateCSSDeclarationsFromHTMLStyle(
-                dom::Element* aNode,
-                nsAtom* aHTMLProperty,
-                nsAtom* aAttribute,
-                const nsAString* aValue,
-                nsTArray<nsAtom*>& aPropertyArray,
-                nsTArray<nsString>& aValueArray,
-                bool aGetOrRemoveRequest);
+      dom::Element* aNode, nsAtom* aHTMLProperty, nsAtom* aAttribute,
+      const nsAString* aValue, nsTArray<nsAtom*>& aPropertyArray,
+      nsTArray<nsString>& aValueArray, bool aGetOrRemoveRequest);
 
   
 
@@ -409,21 +397,21 @@ private:
                                            nsAString& aValue,
                                            StyleType aStyleType);
 
-private:
+ private:
   HTMLEditor* mHTMLEditor;
   bool mIsCSSPrefChecked;
 };
 
-#define NS_EDITOR_INDENT_INCREMENT_IN        0.4134f
-#define NS_EDITOR_INDENT_INCREMENT_CM        1.05f
-#define NS_EDITOR_INDENT_INCREMENT_MM        10.5f
-#define NS_EDITOR_INDENT_INCREMENT_PT        29.76f
-#define NS_EDITOR_INDENT_INCREMENT_PC        2.48f
-#define NS_EDITOR_INDENT_INCREMENT_EM        3
-#define NS_EDITOR_INDENT_INCREMENT_EX        6
-#define NS_EDITOR_INDENT_INCREMENT_PX        40
-#define NS_EDITOR_INDENT_INCREMENT_PERCENT   4
+#define NS_EDITOR_INDENT_INCREMENT_IN 0.4134f
+#define NS_EDITOR_INDENT_INCREMENT_CM 1.05f
+#define NS_EDITOR_INDENT_INCREMENT_MM 10.5f
+#define NS_EDITOR_INDENT_INCREMENT_PT 29.76f
+#define NS_EDITOR_INDENT_INCREMENT_PC 2.48f
+#define NS_EDITOR_INDENT_INCREMENT_EM 3
+#define NS_EDITOR_INDENT_INCREMENT_EX 6
+#define NS_EDITOR_INDENT_INCREMENT_PX 40
+#define NS_EDITOR_INDENT_INCREMENT_PERCENT 4
 
-} 
+}  
 
-#endif 
+#endif  

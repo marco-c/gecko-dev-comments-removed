@@ -19,10 +19,9 @@ namespace layers {
 
 
 
-template<typename Protocol>
-class ParentActor : public Protocol
-{
-public:
+template <typename Protocol>
+class ParentActor : public Protocol {
+ public:
   ParentActor() : mDestroyed(false) {}
 
   ~ParentActor() { MOZ_ASSERT(mDestroyed); }
@@ -32,8 +31,7 @@ public:
   
   virtual void Destroy() {}
 
-  virtual mozilla::ipc::IPCResult RecvDestroy() override
-  {
+  virtual mozilla::ipc::IPCResult RecvDestroy() override {
     DestroyIfNeeded();
     Unused << Protocol::Send__delete__(this);
     return IPC_OK();
@@ -41,11 +39,9 @@ public:
 
   typedef ipc::IProtocol::ActorDestroyReason Why;
 
-  virtual void ActorDestroy(Why) override {
-    DestroyIfNeeded();
-  }
+  virtual void ActorDestroy(Why) override { DestroyIfNeeded(); }
 
-protected:
+ protected:
   void DestroyIfNeeded() {
     if (!mDestroyed) {
       Destroy();
@@ -53,11 +49,11 @@ protected:
     }
   }
 
-private:
+ private:
   bool mDestroyed;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

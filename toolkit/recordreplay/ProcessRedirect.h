@@ -77,25 +77,24 @@ struct CallArguments;
 
 
 
-struct CallRegisterArguments
-{
-protected:
-  size_t arg0;      
-  size_t arg1;      
-  size_t arg2;      
-  size_t arg3;      
-  size_t arg4;      
-  size_t arg5;      
-  double floatarg0; 
-  double floatarg1; 
-  double floatarg2; 
-  size_t rval0;     
-  size_t rval1;     
-  double floatrval0; 
-  double floatrval1; 
-                     
+struct CallRegisterArguments {
+ protected:
+  size_t arg0;        
+  size_t arg1;        
+  size_t arg2;        
+  size_t arg3;        
+  size_t arg4;        
+  size_t arg5;        
+  double floatarg0;   
+  double floatarg1;   
+  double floatarg2;   
+  size_t rval0;       
+  size_t rval1;       
+  double floatrval0;  
+  double floatrval1;  
+                      
 
-public:
+ public:
   void CopyFrom(const CallRegisterArguments* aArguments);
   void CopyTo(CallRegisterArguments* aArguments) const;
   void CopyRvalFrom(const CallRegisterArguments* aArguments);
@@ -112,29 +111,35 @@ public:
 
 
 
-struct CallArguments : public CallRegisterArguments
-{
+struct CallArguments : public CallRegisterArguments {
   
   static const size_t NumStackArguments = 64;
 
-protected:
-  size_t stack[NumStackArguments]; 
-                                   
+ protected:
+  size_t stack[NumStackArguments];  
+                                    
 
-public:
+ public:
   template <typename T>
   T& Arg(size_t aIndex) {
     static_assert(sizeof(T) == sizeof(size_t), "Size must match");
     static_assert(IsFloatingPoint<T>::value == false, "FloatArg NYI");
     MOZ_RELEASE_ASSERT(aIndex < 70);
     switch (aIndex) {
-    case 0: return (T&)arg0;
-    case 1: return (T&)arg1;
-    case 2: return (T&)arg2;
-    case 3: return (T&)arg3;
-    case 4: return (T&)arg4;
-    case 5: return (T&)arg5;
-    default: return (T&)stack[aIndex - 6];
+      case 0:
+        return (T&)arg0;
+      case 1:
+        return (T&)arg1;
+      case 2:
+        return (T&)arg2;
+      case 3:
+        return (T&)arg3;
+      case 4:
+        return (T&)arg4;
+      case 5:
+        return (T&)arg5;
+      default:
+        return (T&)stack[aIndex - 6];
     }
   }
 
@@ -155,8 +160,10 @@ public:
     static_assert(IsFloatingPoint<T>::value == false, "Use FloatRval instead");
     static_assert(Index == 0 || Index == 1, "Bad index");
     switch (Index) {
-    case 0: return (T&)rval0;
-    case 1: return (T&)rval1;
+      case 0:
+        return (T&)rval0;
+      case 1:
+        return (T&)rval1;
     }
   }
 
@@ -164,27 +171,26 @@ public:
   double& FloatRval() {
     static_assert(Index == 0 || Index == 1, "Bad index");
     switch (Index) {
-    case 0: return floatrval0;
-    case 1: return floatrval1;
+      case 0:
+        return floatrval0;
+      case 1:
+        return floatrval1;
     }
   }
 };
 
-inline void
-CallRegisterArguments::CopyFrom(const CallRegisterArguments* aArguments)
-{
+inline void CallRegisterArguments::CopyFrom(
+    const CallRegisterArguments* aArguments) {
   memcpy(this, aArguments, sizeof(CallRegisterArguments));
 }
 
-inline void
-CallRegisterArguments::CopyTo(CallRegisterArguments* aArguments) const
-{
+inline void CallRegisterArguments::CopyTo(
+    CallRegisterArguments* aArguments) const {
   memcpy(aArguments, this, sizeof(CallRegisterArguments));
 }
 
-inline void
-CallRegisterArguments::CopyRvalFrom(const CallRegisterArguments* aArguments)
-{
+inline void CallRegisterArguments::CopyRvalFrom(
+    const CallRegisterArguments* aArguments) {
   rval0 = aArguments->rval0;
   rval1 = aArguments->rval1;
   floatrval0 = aArguments->floatrval0;
@@ -199,7 +205,8 @@ typedef ssize_t ErrorType;
 
 
 
-typedef void (*SaveOutputFn)(Stream& aEvents, CallArguments* aArguments, ErrorType* aError);
+typedef void (*SaveOutputFn)(Stream& aEvents, CallArguments* aArguments,
+                             ErrorType* aError);
 
 
 enum class PreambleResult {
@@ -223,8 +230,7 @@ struct MiddlemanCallContext;
 typedef void (*MiddlemanCallFn)(MiddlemanCallContext& aCx);
 
 
-struct Redirection
-{
+struct Redirection {
   
   const char* mName;
 
@@ -283,24 +289,19 @@ static inline void RestoreError(ErrorType aError) { errno = aError; }
 
 DefineAllCallFunctions(DEFAULTABI)
 
-
-static inline void*
-OriginalFunction(size_t aCallId)
-{
+    
+    static inline void* OriginalFunction(size_t aCallId) {
   return GetRedirection(aCallId).mOriginalFunction;
 }
 
 
 void* OriginalFunction(const char* aName);
 
-static inline ThreadEvent
-CallIdToThreadEvent(size_t aCallId)
-{
+static inline ThreadEvent CallIdToThreadEvent(size_t aCallId) {
   return (ThreadEvent)((uint32_t)ThreadEvent::CallStart + aCallId);
 }
 
-void
-RecordReplayInvokeCall(void* aFunction, CallArguments* aArguments);
+void RecordReplayInvokeCall(void* aFunction, CallArguments* aArguments);
 
 
 
@@ -319,30 +320,26 @@ RecordReplayInvokeCall(void* aFunction, CallArguments* aArguments);
 
 
 
-struct CallbackWrapperData
-{
+struct CallbackWrapperData {
   void* mFunction;
   void* mData;
 
   template <typename FunctionType>
   CallbackWrapperData(FunctionType aFunction, void* aData)
-    : mFunction(BitwiseCast<void*>(aFunction)), mData(aData)
-  {}
+      : mFunction(BitwiseCast<void*>(aFunction)), mData(aData) {}
 };
 
 
 template <typename FunctionType>
-struct AutoRecordReplayCallback
-{
+struct AutoRecordReplayCallback {
   FunctionType mFunction;
 
   AutoRecordReplayCallback(void** aDataArgument, size_t aCallbackId)
-    : mFunction(nullptr)
-  {
+      : mFunction(nullptr) {
     MOZ_ASSERT(IsRecordingOrReplaying());
     if (IsRecording()) {
-      CallbackWrapperData* wrapperData = (CallbackWrapperData*) *aDataArgument;
-      mFunction = (FunctionType) wrapperData->mFunction;
+      CallbackWrapperData* wrapperData = (CallbackWrapperData*)*aDataArgument;
+      mFunction = (FunctionType)wrapperData->mFunction;
       *aDataArgument = wrapperData->mData;
       BeginCallback(aCallbackId);
     }
@@ -358,38 +355,37 @@ struct AutoRecordReplayCallback
 };
 
 
-#define RecordReplayCallback(aFunctionType, aDataArgument)              \
-  AutoRecordReplayCallback<aFunctionType> rrc(aDataArgument, CallbackEvent_ ##aFunctionType)
+#define RecordReplayCallback(aFunctionType, aDataArgument)   \
+  AutoRecordReplayCallback<aFunctionType> rrc(aDataArgument, \
+                                              CallbackEvent_##aFunctionType)
 
 
 
 
 
-extern Atomic<size_t, SequentiallyConsistent, Behavior::DontPreserve> gMemoryLeakBytes;
+extern Atomic<size_t, SequentiallyConsistent, Behavior::DontPreserve>
+    gMemoryLeakBytes;
 
 
 
 
 
 template <typename T>
-static inline T*
-NewLeakyArray(size_t aSize)
-{
+static inline T* NewLeakyArray(size_t aSize) {
   gMemoryLeakBytes += aSize * sizeof(T);
   return new T[aSize];
 }
 
 
-static inline void
-RR_CStringRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_CStringRval(Stream& aEvents, CallArguments* aArguments,
+                                  ErrorType* aError) {
   auto& rval = aArguments->Rval<char*>();
   size_t len = (IsRecording() && rval) ? strlen(rval) + 1 : 0;
   aEvents.RecordOrReplayValue(&len);
   if (IsReplaying()) {
     
     
-    rval = len ? (char*) malloc(len) : nullptr;
+    rval = len ? (char*)malloc(len) : nullptr;
   }
   if (len) {
     aEvents.RecordOrReplayBytes(rval, len);
@@ -398,9 +394,8 @@ RR_CStringRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
 
 
 template <size_t Argument>
-static inline void
-RR_RvalIsArgument(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_RvalIsArgument(Stream& aEvents, CallArguments* aArguments,
+                                     ErrorType* aError) {
   auto& rval = aArguments->Rval<size_t>();
   auto& arg = aArguments->Arg<Argument, size_t>();
   if (IsRecording()) {
@@ -411,20 +406,14 @@ RR_RvalIsArgument(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
 }
 
 
-static inline void
-RR_NoOp(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
-}
+static inline void RR_NoOp(Stream& aEvents, CallArguments* aArguments,
+                           ErrorType* aError) {}
 
 
-template <SaveOutputFn Fn0,
-          SaveOutputFn Fn1,
-          SaveOutputFn Fn2 = RR_NoOp,
-          SaveOutputFn Fn3 = RR_NoOp,
-          SaveOutputFn Fn4 = RR_NoOp>
-static inline void
-RR_Compose(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+template <SaveOutputFn Fn0, SaveOutputFn Fn1, SaveOutputFn Fn2 = RR_NoOp,
+          SaveOutputFn Fn3 = RR_NoOp, SaveOutputFn Fn4 = RR_NoOp>
+static inline void RR_Compose(Stream& aEvents, CallArguments* aArguments,
+                              ErrorType* aError) {
   Fn0(aEvents, aArguments, aError);
   Fn1(aEvents, aArguments, aError);
   Fn2(aEvents, aArguments, aError);
@@ -436,9 +425,9 @@ RR_Compose(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
 
 
 template <SaveOutputFn SuccessFn = RR_NoOp>
-static inline void
-RR_SaveRvalHadErrorNegative(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_SaveRvalHadErrorNegative(Stream& aEvents,
+                                               CallArguments* aArguments,
+                                               ErrorType* aError) {
   auto& rval = aArguments->Rval<ssize_t>();
   aEvents.RecordOrReplayValue(&rval);
   if (rval < 0) {
@@ -451,9 +440,9 @@ RR_SaveRvalHadErrorNegative(Stream& aEvents, CallArguments* aArguments, ErrorTyp
 
 
 template <SaveOutputFn SuccessFn = RR_NoOp>
-static inline void
-RR_SaveRvalHadErrorZero(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_SaveRvalHadErrorZero(Stream& aEvents,
+                                           CallArguments* aArguments,
+                                           ErrorType* aError) {
   auto& rval = aArguments->Rval<ssize_t>();
   aEvents.RecordOrReplayValue(&rval);
   if (rval == 0) {
@@ -466,9 +455,8 @@ RR_SaveRvalHadErrorZero(Stream& aEvents, CallArguments* aArguments, ErrorType* a
 
 
 template <size_t BufferArg, size_t CountArg, typename ElemType = char>
-static inline void
-RR_WriteBuffer(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_WriteBuffer(Stream& aEvents, CallArguments* aArguments,
+                                  ErrorType* aError) {
   auto& buf = aArguments->Arg<BufferArg, ElemType*>();
   auto& count = aArguments->Arg<CountArg, size_t>();
   aEvents.CheckInput(count);
@@ -478,9 +466,9 @@ RR_WriteBuffer(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
 
 
 template <size_t BufferArg, size_t CountArg, typename ElemType = char>
-static inline void
-RR_WriteOptionalBuffer(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_WriteOptionalBuffer(Stream& aEvents,
+                                          CallArguments* aArguments,
+                                          ErrorType* aError) {
   auto& buf = aArguments->Arg<BufferArg, ElemType*>();
   auto& count = aArguments->Arg<CountArg, size_t>();
   aEvents.CheckInput(!!buf);
@@ -493,9 +481,9 @@ RR_WriteOptionalBuffer(Stream& aEvents, CallArguments* aArguments, ErrorType* aE
 
 
 template <size_t BufferArg, size_t ByteCount>
-static inline void
-RR_WriteBufferFixedSize(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_WriteBufferFixedSize(Stream& aEvents,
+                                           CallArguments* aArguments,
+                                           ErrorType* aError) {
   auto& buf = aArguments->Arg<BufferArg, void*>();
   aEvents.RecordOrReplayBytes(buf, ByteCount);
 }
@@ -503,9 +491,9 @@ RR_WriteBufferFixedSize(Stream& aEvents, CallArguments* aArguments, ErrorType* a
 
 
 template <size_t BufferArg, size_t ByteCount>
-static inline void
-RR_WriteOptionalBufferFixedSize(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_WriteOptionalBufferFixedSize(Stream& aEvents,
+                                                   CallArguments* aArguments,
+                                                   ErrorType* aError) {
   auto& buf = aArguments->Arg<BufferArg, void*>();
   aEvents.CheckInput(!!buf);
   if (buf) {
@@ -518,9 +506,9 @@ RR_WriteOptionalBufferFixedSize(Stream& aEvents, CallArguments* aArguments, Erro
 
 
 template <size_t BufferArg, size_t CountArg, size_t Offset = 0>
-static inline void
-RR_WriteBufferViaRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_WriteBufferViaRval(Stream& aEvents,
+                                         CallArguments* aArguments,
+                                         ErrorType* aError) {
   auto& buf = aArguments->Arg<BufferArg, void*>();
   auto& count = aArguments->Arg<CountArg, size_t>();
   aEvents.CheckInput(count);
@@ -531,31 +519,30 @@ RR_WriteBufferViaRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aEr
 }
 
 
-static inline void
-RR_ScalarRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_ScalarRval(Stream& aEvents, CallArguments* aArguments,
+                                 ErrorType* aError) {
   aEvents.RecordOrReplayValue(&aArguments->Rval<size_t>());
 }
 
 
-static inline void
-RR_ComplexScalarRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_ComplexScalarRval(Stream& aEvents,
+                                        CallArguments* aArguments,
+                                        ErrorType* aError) {
   aEvents.RecordOrReplayValue(&aArguments->Rval<size_t>());
   aEvents.RecordOrReplayValue(&aArguments->Rval<size_t, 1>());
 }
 
 
-static inline void
-RR_FloatRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_FloatRval(Stream& aEvents, CallArguments* aArguments,
+                                ErrorType* aError) {
   aEvents.RecordOrReplayValue(&aArguments->FloatRval());
 }
 
 
-static inline void
-RR_ComplexFloatRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+
+static inline void RR_ComplexFloatRval(Stream& aEvents,
+                                       CallArguments* aArguments,
+                                       ErrorType* aError) {
   aEvents.RecordOrReplayValue(&aArguments->FloatRval());
   aEvents.RecordOrReplayValue(&aArguments->FloatRval<1>());
 }
@@ -563,24 +550,20 @@ RR_ComplexFloatRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aErro
 
 
 template <size_t ByteCount>
-static inline void
-RR_OversizeRval(Stream& aEvents, CallArguments* aArguments, ErrorType* aError)
-{
+static inline void RR_OversizeRval(Stream& aEvents, CallArguments* aArguments,
+                                   ErrorType* aError) {
   RR_WriteBufferFixedSize<0, ByteCount>(aEvents, aArguments, aError);
 }
 
 template <size_t ReturnValue>
-static inline PreambleResult
-Preamble_Veto(CallArguments* aArguments)
-{
+static inline PreambleResult Preamble_Veto(CallArguments* aArguments) {
   aArguments->Rval<size_t>() = ReturnValue;
   return PreambleResult::Veto;
 }
 
 template <size_t ReturnValue>
-static inline PreambleResult
-Preamble_VetoIfNotPassedThrough(CallArguments* aArguments)
-{
+static inline PreambleResult Preamble_VetoIfNotPassedThrough(
+    CallArguments* aArguments) {
   if (AreThreadEventsPassedThrough()) {
     return PreambleResult::PassThrough;
   }
@@ -588,15 +571,11 @@ Preamble_VetoIfNotPassedThrough(CallArguments* aArguments)
   return PreambleResult::Veto;
 }
 
-static inline PreambleResult
-Preamble_PassThrough(CallArguments* aArguments)
-{
+static inline PreambleResult Preamble_PassThrough(CallArguments* aArguments) {
   return PreambleResult::PassThrough;
 }
 
-static inline PreambleResult
-Preamble_WaitForever(CallArguments* aArguments)
-{
+static inline PreambleResult Preamble_WaitForever(CallArguments* aArguments) {
   Thread::WaitForever();
   Unreachable();
   return PreambleResult::PassThrough;
@@ -619,11 +598,10 @@ Preamble_WaitForever(CallArguments* aArguments)
 
 
 
-void*
-BindFunctionArgument(void* aFunction, void* aArgument, size_t aArgumentPosition,
-                     Assembler& aAssembler);
+void* BindFunctionArgument(void* aFunction, void* aArgument,
+                           size_t aArgumentPosition, Assembler& aAssembler);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

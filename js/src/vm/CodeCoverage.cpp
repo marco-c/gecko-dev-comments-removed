@@ -12,10 +12,10 @@
 
 #include <stdio.h>
 #ifdef XP_WIN
-# include <process.h>
-# define getpid _getpid
+#include <process.h>
+#define getpid _getpid
 #else
-# include <unistd.h>
+#include <unistd.h>
 #endif
 
 #include "util/Text.h"
@@ -64,655 +64,618 @@ namespace js {
 namespace coverage {
 
 LCovSource::LCovSource(LifoAlloc* alloc, UniqueChars name)
-  : name_(std::move(name)),
-    outFN_(alloc),
-    outFNDA_(alloc),
-    numFunctionsFound_(0),
-    numFunctionsHit_(0),
-    outBRDA_(alloc),
-    numBranchesFound_(0),
-    numBranchesHit_(0),
-    numLinesInstrumented_(0),
-    numLinesHit_(0),
-    maxLineHit_(0),
-    hasTopLevelScript_(false)
-{
-}
+    : name_(std::move(name)),
+      outFN_(alloc),
+      outFNDA_(alloc),
+      numFunctionsFound_(0),
+      numFunctionsHit_(0),
+      outBRDA_(alloc),
+      numBranchesFound_(0),
+      numBranchesHit_(0),
+      numLinesInstrumented_(0),
+      numLinesHit_(0),
+      maxLineHit_(0),
+      hasTopLevelScript_(false) {}
 
 LCovSource::LCovSource(LCovSource&& src)
-  : name_(std::move(src.name_)),
-    outFN_(src.outFN_),
-    outFNDA_(src.outFNDA_),
-    numFunctionsFound_(src.numFunctionsFound_),
-    numFunctionsHit_(src.numFunctionsHit_),
-    outBRDA_(src.outBRDA_),
-    numBranchesFound_(src.numBranchesFound_),
-    numBranchesHit_(src.numBranchesHit_),
-    linesHit_(std::move(src.linesHit_)),
-    numLinesInstrumented_(src.numLinesInstrumented_),
-    numLinesHit_(src.numLinesHit_),
-    maxLineHit_(src.maxLineHit_),
-    hasTopLevelScript_(src.hasTopLevelScript_)
-{
+    : name_(std::move(src.name_)),
+      outFN_(src.outFN_),
+      outFNDA_(src.outFNDA_),
+      numFunctionsFound_(src.numFunctionsFound_),
+      numFunctionsHit_(src.numFunctionsHit_),
+      outBRDA_(src.outBRDA_),
+      numBranchesFound_(src.numBranchesFound_),
+      numBranchesHit_(src.numBranchesHit_),
+      linesHit_(std::move(src.linesHit_)),
+      numLinesInstrumented_(src.numLinesInstrumented_),
+      numLinesHit_(src.numLinesHit_),
+      maxLineHit_(src.maxLineHit_),
+      hasTopLevelScript_(src.hasTopLevelScript_) {}
+
+void LCovSource::exportInto(GenericPrinter& out) {
+  out.printf("SF:%s\n", name_.get());
+
+  outFN_.exportInto(out);
+  outFNDA_.exportInto(out);
+  out.printf("FNF:%zu\n", numFunctionsFound_);
+  out.printf("FNH:%zu\n", numFunctionsHit_);
+
+  outBRDA_.exportInto(out);
+  out.printf("BRF:%zu\n", numBranchesFound_);
+  out.printf("BRH:%zu\n", numBranchesHit_);
+
+  if (!linesHit_.empty()) {
+    for (size_t lineno = 1; lineno <= maxLineHit_; ++lineno) {
+      if (auto p = linesHit_.lookup(lineno)) {
+        out.printf("DA:%zu,%" PRIu64 "\n", lineno, p->value());
+      }
+    }
+  }
+
+  out.printf("LF:%zu\n", numLinesInstrumented_);
+  out.printf("LH:%zu\n", numLinesHit_);
+
+  out.put("end_of_record\n");
+
+  outFN_.clear();
+  outFNDA_.clear();
+  numFunctionsFound_ = 0;
+  numFunctionsHit_ = 0;
+  outBRDA_.clear();
+  numBranchesFound_ = 0;
+  numBranchesHit_ = 0;
+  linesHit_.clear();
+  numLinesInstrumented_ = 0;
+  numLinesHit_ = 0;
+  maxLineHit_ = 0;
 }
 
-void
-LCovSource::exportInto(GenericPrinter& out)
-{
-    out.printf("SF:%s\n", name_.get());
+bool LCovSource::writeScriptName(LSprinter& out, JSScript* script) {
+  JSFunction* fun = script->functionNonDelazifying();
+  if (fun && fun->displayAtom()) {
+    return EscapedStringPrinter(out, fun->displayAtom(), 0);
+  }
+  out.printf("top-level");
+  return true;
+}
 
-    outFN_.exportInto(out);
-    outFNDA_.exportInto(out);
-    out.printf("FNF:%zu\n", numFunctionsFound_);
-    out.printf("FNH:%zu\n", numFunctionsHit_);
+bool LCovSource::writeScript(JSScript* script) {
+  numFunctionsFound_++;
+  outFN_.printf("FN:%u,", script->lineno());
+  if (!writeScriptName(outFN_, script)) {
+    return false;
+  }
+  outFN_.put("\n", 1);
 
-    outBRDA_.exportInto(out);
-    out.printf("BRF:%zu\n", numBranchesFound_);
-    out.printf("BRH:%zu\n", numBranchesHit_);
+  uint64_t hits = 0;
+  ScriptCounts* sc = nullptr;
+  if (script->hasScriptCounts()) {
+    sc = &script->getScriptCounts();
+    numFunctionsHit_++;
+    const PCCounts* counts =
+        sc->maybeGetPCCounts(script->pcToOffset(script->main()));
+    outFNDA_.printf("FNDA:%" PRIu64 ",", counts->numExec());
+    if (!writeScriptName(outFNDA_, script)) {
+      return false;
+    }
+    outFNDA_.put("\n", 1);
 
-    if (!linesHit_.empty()) {
-        for (size_t lineno = 1; lineno <= maxLineHit_; ++lineno) {
-            if (auto p = linesHit_.lookup(lineno)) {
-                out.printf("DA:%zu,%" PRIu64 "\n", lineno, p->value());
-            }
+    
+    
+    hits = 1;
+  }
+
+  jsbytecode* snpc = script->code();
+  jssrcnote* sn = script->notes();
+  if (!SN_IS_TERMINATOR(sn)) {
+    snpc += SN_DELTA(sn);
+  }
+
+  size_t lineno = script->lineno();
+  jsbytecode* end = script->codeEnd();
+  size_t branchId = 0;
+  size_t tableswitchExitOffset = 0;
+  bool firstLineHasBeenWritten = false;
+  for (jsbytecode* pc = script->code(); pc != end; pc = GetNextPc(pc)) {
+    MOZ_ASSERT(script->code() <= pc && pc < end);
+    JSOp op = JSOp(*pc);
+    bool jump = IsJumpOpcode(op) || op == JSOP_TABLESWITCH;
+    bool fallsthrough = BytecodeFallsThrough(op) && op != JSOP_GOSUB;
+
+    
+    
+    if (sc) {
+      const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(pc));
+      if (counts) {
+        hits = counts->numExec();
+      }
+    }
+
+    
+    
+    if (snpc <= pc || !firstLineHasBeenWritten) {
+      size_t oldLine = lineno;
+      while (!SN_IS_TERMINATOR(sn) && snpc <= pc) {
+        SrcNoteType type = SN_TYPE(sn);
+        if (type == SRC_SETLINE) {
+          lineno = size_t(GetSrcNoteOffset(sn, SrcNote::SetLine::Line));
+        } else if (type == SRC_NEWLINE) {
+          lineno++;
+        } else if (type == SRC_TABLESWITCH) {
+          tableswitchExitOffset =
+              GetSrcNoteOffset(sn, SrcNote::TableSwitch::EndOffset);
         }
-    }
 
-    out.printf("LF:%zu\n", numLinesInstrumented_);
-    out.printf("LH:%zu\n", numLinesHit_);
-
-    out.put("end_of_record\n");
-
-    outFN_.clear();
-    outFNDA_.clear();
-    numFunctionsFound_ = 0;
-    numFunctionsHit_ = 0;
-    outBRDA_.clear();
-    numBranchesFound_ = 0;
-    numBranchesHit_ = 0;
-    linesHit_.clear();
-    numLinesInstrumented_ = 0;
-    numLinesHit_ = 0;
-    maxLineHit_ = 0;
-}
-
-bool
-LCovSource::writeScriptName(LSprinter& out, JSScript* script)
-{
-    JSFunction* fun = script->functionNonDelazifying();
-    if (fun && fun->displayAtom()) {
-        return EscapedStringPrinter(out, fun->displayAtom(), 0);
-    }
-    out.printf("top-level");
-    return true;
-}
-
-bool
-LCovSource::writeScript(JSScript* script)
-{
-    numFunctionsFound_++;
-    outFN_.printf("FN:%u,", script->lineno());
-    if (!writeScriptName(outFN_, script)) {
-        return false;
-    }
-    outFN_.put("\n", 1);
-
-    uint64_t hits = 0;
-    ScriptCounts* sc = nullptr;
-    if (script->hasScriptCounts()) {
-        sc = &script->getScriptCounts();
-        numFunctionsHit_++;
-        const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(script->main()));
-        outFNDA_.printf("FNDA:%" PRIu64 ",", counts->numExec());
-        if (!writeScriptName(outFNDA_, script)) {
-            return false;
-        }
-        outFNDA_.put("\n", 1);
-
-        
-        
-        hits = 1;
-    }
-
-    jsbytecode* snpc = script->code();
-    jssrcnote* sn = script->notes();
-    if (!SN_IS_TERMINATOR(sn)) {
+        sn = SN_NEXT(sn);
         snpc += SN_DELTA(sn);
-    }
+      }
 
-    size_t lineno = script->lineno();
-    jsbytecode* end = script->codeEnd();
-    size_t branchId = 0;
-    size_t tableswitchExitOffset = 0;
-    bool firstLineHasBeenWritten = false;
-    for (jsbytecode* pc = script->code(); pc != end; pc = GetNextPc(pc)) {
-        MOZ_ASSERT(script->code() <= pc && pc < end);
-        JSOp op = JSOp(*pc);
-        bool jump = IsJumpOpcode(op) || op == JSOP_TABLESWITCH;
-        bool fallsthrough = BytecodeFallsThrough(op) && op != JSOP_GOSUB;
-
-        
-        
-        if (sc) {
-            const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(pc));
-            if (counts) {
-                hits = counts->numExec();
-            }
+      if ((oldLine != lineno || !firstLineHasBeenWritten) &&
+          pc >= script->main() && fallsthrough) {
+        auto p = linesHit_.lookupForAdd(lineno);
+        if (!p) {
+          if (!linesHit_.add(p, lineno, hits)) {
+            return false;
+          }
+          numLinesInstrumented_++;
+          if (hits != 0) {
+            numLinesHit_++;
+          }
+          maxLineHit_ = std::max(lineno, maxLineHit_);
+        } else {
+          if (p->value() == 0 && hits != 0) {
+            numLinesHit_++;
+          }
+          p->value() += hits;
         }
 
-        
-        
-        if (snpc <= pc || !firstLineHasBeenWritten) {
-            size_t oldLine = lineno;
-            while (!SN_IS_TERMINATOR(sn) && snpc <= pc) {
-                SrcNoteType type = SN_TYPE(sn);
-                if (type == SRC_SETLINE) {
-                    lineno = size_t(GetSrcNoteOffset(sn, SrcNote::SetLine::Line));
-                } else if (type == SRC_NEWLINE) {
-                    lineno++;
-                } else if (type == SRC_TABLESWITCH) {
-                    tableswitchExitOffset = GetSrcNoteOffset(sn, SrcNote::TableSwitch::EndOffset);
-                }
-
-                sn = SN_NEXT(sn);
-                snpc += SN_DELTA(sn);
-            }
-
-            if ((oldLine != lineno || !firstLineHasBeenWritten) &&
-                pc >= script->main() &&
-                fallsthrough)
-            {
-                auto p = linesHit_.lookupForAdd(lineno);
-                if (!p) {
-                    if (!linesHit_.add(p, lineno, hits)) {
-                        return false;
-                    }
-                    numLinesInstrumented_++;
-                    if (hits != 0) {
-                        numLinesHit_++;
-                    }
-                    maxLineHit_ = std::max(lineno, maxLineHit_);
-                } else {
-                    if (p->value() == 0 && hits != 0) {
-                        numLinesHit_++;
-                    }
-                    p->value() += hits;
-                }
-
-                firstLineHasBeenWritten = true;
-            }
-        }
-
-        
-        
-        if (sc) {
-            const PCCounts* counts = sc->maybeGetThrowCounts(script->pcToOffset(pc));
-            if (counts) {
-                hits -= counts->numExec();
-            }
-        }
-
-        
-        
-        if (jump && fallsthrough) {
-            jsbytecode* fallthroughTarget = GetNextPc(pc);
-            uint64_t fallthroughHits = 0;
-            if (sc) {
-                const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(fallthroughTarget));
-                if (counts) {
-                    fallthroughHits = counts->numExec();
-                }
-            }
-
-            uint64_t taken = hits - fallthroughHits;
-            outBRDA_.printf("BRDA:%zu,%zu,0,", lineno, branchId);
-            if (hits) {
-                outBRDA_.printf("%" PRIu64 "\n", taken);
-            } else {
-                outBRDA_.put("-\n", 2);
-            }
-
-            outBRDA_.printf("BRDA:%zu,%zu,1,", lineno, branchId);
-            if (hits) {
-                outBRDA_.printf("%" PRIu64 "\n", fallthroughHits);
-            } else {
-                outBRDA_.put("-\n", 2);
-            }
-
-            
-            numBranchesFound_ += 2;
-            if (hits) {
-                numBranchesHit_ += !!taken + !!fallthroughHits;
-            }
-            branchId++;
-        }
-
-        
-        
-        if (jump && op == JSOP_TABLESWITCH) {
-            MOZ_ASSERT(tableswitchExitOffset != 0);
-
-            
-            jsbytecode* exitpc = pc + tableswitchExitOffset;
-            jsbytecode* defaultpc = pc + GET_JUMP_OFFSET(pc);
-            MOZ_ASSERT(script->code() <= exitpc && exitpc <= end);
-            MOZ_ASSERT(script->code() <= defaultpc && defaultpc < end);
-            MOZ_ASSERT(defaultpc > pc && defaultpc <= exitpc);
-
-            
-            int32_t low = GET_JUMP_OFFSET(pc + JUMP_OFFSET_LEN * 1);
-            int32_t high = GET_JUMP_OFFSET(pc + JUMP_OFFSET_LEN * 2);
-            MOZ_ASSERT(high - low + 1 >= 0);
-            size_t numCases = high - low + 1;
-
-            jsbytecode* firstcasepc = exitpc;
-            for (size_t j = 0; j < numCases; j++) {
-                jsbytecode* testpc = script->tableSwitchCasePC(pc, j);
-                MOZ_ASSERT(script->code() <= testpc && testpc < end);
-                if (testpc < firstcasepc) {
-                    firstcasepc = testpc;
-                }
-            }
-
-            
-            
-            uint64_t defaultHits = hits;
-
-            
-            uint64_t fallsThroughHits = 0;
-
-            
-            size_t caseId = 0;
-            bool tableJumpsToDefault = false;
-            for (size_t i = 0; i < numCases; i++) {
-                jsbytecode* casepc = script->tableSwitchCasePC(pc, i);
-                MOZ_ASSERT(script->code() <= casepc && casepc < end);
-                if (casepc == defaultpc) {
-                    tableJumpsToDefault = true;
-                }
-
-                
-                jsbytecode* lastcasepc = firstcasepc - 1;
-                bool foundLastCase = false;
-                for (size_t j = 0; j < numCases; j++) {
-                    jsbytecode* testpc = script->tableSwitchCasePC(pc, j);
-                    MOZ_ASSERT(script->code() <= testpc && testpc < end);
-                    if (lastcasepc < testpc && (testpc < casepc || (j < i && testpc == casepc))) {
-                        lastcasepc = testpc;
-                        foundLastCase = true;
-                    }
-                }
-
-                
-                
-                if (!foundLastCase || casepc != lastcasepc) {
-                    
-                    uint64_t caseHits = 0;
-                    if (sc) {
-                        const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(casepc));
-                        if (counts) {
-                            caseHits = counts->numExec();
-                        }
-
-                        
-                        fallsThroughHits = 0;
-                        if (foundLastCase) {
-                            
-                            
-                            MOZ_ASSERT(lastcasepc != firstcasepc - 1);
-                            jsbytecode* endpc = lastcasepc;
-                            while (GetNextPc(endpc) < casepc) {
-                                endpc = GetNextPc(endpc);
-                                MOZ_ASSERT(script->code() <= endpc && endpc < end);
-                            }
-
-                            if (BytecodeFallsThrough(JSOp(*endpc))) {
-                                fallsThroughHits = script->getHitCount(endpc);
-                            }
-                        }
-
-                        caseHits -= fallsThroughHits;
-                    }
-
-                    outBRDA_.printf("BRDA:%zu,%zu,%zu,",
-                                    lineno, branchId, caseId);
-                    if (hits) {
-                        outBRDA_.printf("%" PRIu64 "\n", caseHits);
-                    } else {
-                        outBRDA_.put("-\n", 2);
-                    }
-
-                    numBranchesFound_++;
-                    numBranchesHit_ += !!caseHits;
-                    defaultHits -= caseHits;
-                    caseId++;
-                }
-            }
-
-            
-            
-            bool defaultHasOwnClause = true;
-            if (tableJumpsToDefault) {
-                
-                
-                defaultHasOwnClause = false;
-            } else if (defaultpc != exitpc) {
-                defaultHits = 0;
-
-                
-                jsbytecode* lastcasepc = firstcasepc - 1;
-                bool foundLastCase = false;
-                for (size_t j = 0; j < numCases; j++) {
-                    jsbytecode* testpc = script->tableSwitchCasePC(pc, j);
-                    MOZ_ASSERT(script->code() <= testpc && testpc < end);
-                    if (lastcasepc < testpc && testpc < defaultpc) {
-                        lastcasepc = testpc;
-                        foundLastCase = true;
-                    }
-                }
-
-                
-                
-                
-                if (sc && foundLastCase) {
-                    
-                    
-                    MOZ_ASSERT(lastcasepc != firstcasepc - 1);
-                    jsbytecode* endpc = lastcasepc;
-                    while (GetNextPc(endpc) < defaultpc) {
-                        endpc = GetNextPc(endpc);
-                        MOZ_ASSERT(script->code() <= endpc && endpc < end);
-                    }
-
-                    if (BytecodeFallsThrough(JSOp(*endpc))) {
-                        fallsThroughHits = script->getHitCount(endpc);
-                    }
-                }
-
-                if (sc) {
-                    const PCCounts* counts = sc->maybeGetPCCounts(script->pcToOffset(defaultpc));
-                    if (counts) {
-                        defaultHits = counts->numExec();
-                    }
-                }
-                defaultHits -= fallsThroughHits;
-            }
-
-            if (defaultHasOwnClause) {
-                outBRDA_.printf("BRDA:%zu,%zu,%zu,",
-                                lineno, branchId, caseId);
-                if (hits) {
-                    outBRDA_.printf("%" PRIu64 "\n", defaultHits);
-                } else {
-                    outBRDA_.put("-\n", 2);
-                }
-                numBranchesFound_++;
-                numBranchesHit_ += !!defaultHits;
-            }
-
-            
-            branchId++;
-            tableswitchExitOffset = 0;
-        }
+        firstLineHasBeenWritten = true;
+      }
     }
 
     
-    if (outFN_.hadOutOfMemory() ||
-        outFNDA_.hadOutOfMemory() ||
-        outBRDA_.hadOutOfMemory())
+    
+    if (sc) {
+      const PCCounts* counts = sc->maybeGetThrowCounts(script->pcToOffset(pc));
+      if (counts) {
+        hits -= counts->numExec();
+      }
+    }
+
+    
+    
+    if (jump && fallsthrough) {
+      jsbytecode* fallthroughTarget = GetNextPc(pc);
+      uint64_t fallthroughHits = 0;
+      if (sc) {
+        const PCCounts* counts =
+            sc->maybeGetPCCounts(script->pcToOffset(fallthroughTarget));
+        if (counts) {
+          fallthroughHits = counts->numExec();
+        }
+      }
+
+      uint64_t taken = hits - fallthroughHits;
+      outBRDA_.printf("BRDA:%zu,%zu,0,", lineno, branchId);
+      if (hits) {
+        outBRDA_.printf("%" PRIu64 "\n", taken);
+      } else {
+        outBRDA_.put("-\n", 2);
+      }
+
+      outBRDA_.printf("BRDA:%zu,%zu,1,", lineno, branchId);
+      if (hits) {
+        outBRDA_.printf("%" PRIu64 "\n", fallthroughHits);
+      } else {
+        outBRDA_.put("-\n", 2);
+      }
+
+      
+      numBranchesFound_ += 2;
+      if (hits) {
+        numBranchesHit_ += !!taken + !!fallthroughHits;
+      }
+      branchId++;
+    }
+
+    
+    
+    if (jump && op == JSOP_TABLESWITCH) {
+      MOZ_ASSERT(tableswitchExitOffset != 0);
+
+      
+      jsbytecode* exitpc = pc + tableswitchExitOffset;
+      jsbytecode* defaultpc = pc + GET_JUMP_OFFSET(pc);
+      MOZ_ASSERT(script->code() <= exitpc && exitpc <= end);
+      MOZ_ASSERT(script->code() <= defaultpc && defaultpc < end);
+      MOZ_ASSERT(defaultpc > pc && defaultpc <= exitpc);
+
+      
+      int32_t low = GET_JUMP_OFFSET(pc + JUMP_OFFSET_LEN * 1);
+      int32_t high = GET_JUMP_OFFSET(pc + JUMP_OFFSET_LEN * 2);
+      MOZ_ASSERT(high - low + 1 >= 0);
+      size_t numCases = high - low + 1;
+
+      jsbytecode* firstcasepc = exitpc;
+      for (size_t j = 0; j < numCases; j++) {
+        jsbytecode* testpc = script->tableSwitchCasePC(pc, j);
+        MOZ_ASSERT(script->code() <= testpc && testpc < end);
+        if (testpc < firstcasepc) {
+          firstcasepc = testpc;
+        }
+      }
+
+      
+      
+      uint64_t defaultHits = hits;
+
+      
+      uint64_t fallsThroughHits = 0;
+
+      
+      size_t caseId = 0;
+      bool tableJumpsToDefault = false;
+      for (size_t i = 0; i < numCases; i++) {
+        jsbytecode* casepc = script->tableSwitchCasePC(pc, i);
+        MOZ_ASSERT(script->code() <= casepc && casepc < end);
+        if (casepc == defaultpc) {
+          tableJumpsToDefault = true;
+        }
+
+        
+        jsbytecode* lastcasepc = firstcasepc - 1;
+        bool foundLastCase = false;
+        for (size_t j = 0; j < numCases; j++) {
+          jsbytecode* testpc = script->tableSwitchCasePC(pc, j);
+          MOZ_ASSERT(script->code() <= testpc && testpc < end);
+          if (lastcasepc < testpc &&
+              (testpc < casepc || (j < i && testpc == casepc))) {
+            lastcasepc = testpc;
+            foundLastCase = true;
+          }
+        }
+
+        
+        
+        if (!foundLastCase || casepc != lastcasepc) {
+          
+          uint64_t caseHits = 0;
+          if (sc) {
+            const PCCounts* counts =
+                sc->maybeGetPCCounts(script->pcToOffset(casepc));
+            if (counts) {
+              caseHits = counts->numExec();
+            }
+
+            
+            fallsThroughHits = 0;
+            if (foundLastCase) {
+              
+              
+              MOZ_ASSERT(lastcasepc != firstcasepc - 1);
+              jsbytecode* endpc = lastcasepc;
+              while (GetNextPc(endpc) < casepc) {
+                endpc = GetNextPc(endpc);
+                MOZ_ASSERT(script->code() <= endpc && endpc < end);
+              }
+
+              if (BytecodeFallsThrough(JSOp(*endpc))) {
+                fallsThroughHits = script->getHitCount(endpc);
+              }
+            }
+
+            caseHits -= fallsThroughHits;
+          }
+
+          outBRDA_.printf("BRDA:%zu,%zu,%zu,", lineno, branchId, caseId);
+          if (hits) {
+            outBRDA_.printf("%" PRIu64 "\n", caseHits);
+          } else {
+            outBRDA_.put("-\n", 2);
+          }
+
+          numBranchesFound_++;
+          numBranchesHit_ += !!caseHits;
+          defaultHits -= caseHits;
+          caseId++;
+        }
+      }
+
+      
+      
+      bool defaultHasOwnClause = true;
+      if (tableJumpsToDefault) {
+        
+        
+        defaultHasOwnClause = false;
+      } else if (defaultpc != exitpc) {
+        defaultHits = 0;
+
+        
+        jsbytecode* lastcasepc = firstcasepc - 1;
+        bool foundLastCase = false;
+        for (size_t j = 0; j < numCases; j++) {
+          jsbytecode* testpc = script->tableSwitchCasePC(pc, j);
+          MOZ_ASSERT(script->code() <= testpc && testpc < end);
+          if (lastcasepc < testpc && testpc < defaultpc) {
+            lastcasepc = testpc;
+            foundLastCase = true;
+          }
+        }
+
+        
+        
+        
+        if (sc && foundLastCase) {
+          
+          
+          MOZ_ASSERT(lastcasepc != firstcasepc - 1);
+          jsbytecode* endpc = lastcasepc;
+          while (GetNextPc(endpc) < defaultpc) {
+            endpc = GetNextPc(endpc);
+            MOZ_ASSERT(script->code() <= endpc && endpc < end);
+          }
+
+          if (BytecodeFallsThrough(JSOp(*endpc))) {
+            fallsThroughHits = script->getHitCount(endpc);
+          }
+        }
+
+        if (sc) {
+          const PCCounts* counts =
+              sc->maybeGetPCCounts(script->pcToOffset(defaultpc));
+          if (counts) {
+            defaultHits = counts->numExec();
+          }
+        }
+        defaultHits -= fallsThroughHits;
+      }
+
+      if (defaultHasOwnClause) {
+        outBRDA_.printf("BRDA:%zu,%zu,%zu,", lineno, branchId, caseId);
+        if (hits) {
+          outBRDA_.printf("%" PRIu64 "\n", defaultHits);
+        } else {
+          outBRDA_.put("-\n", 2);
+        }
+        numBranchesFound_++;
+        numBranchesHit_ += !!defaultHits;
+      }
+
+      
+      branchId++;
+      tableswitchExitOffset = 0;
+    }
+  }
+
+  
+  if (outFN_.hadOutOfMemory() || outFNDA_.hadOutOfMemory() ||
+      outBRDA_.hadOutOfMemory()) {
+    return false;
+  }
+
+  
+  
+  
+  if (script->isTopLevel()) {
+    hasTopLevelScript_ = true;
+  }
+
+  return true;
+}
+
+LCovRealm::LCovRealm() : alloc_(4096), outTN_(&alloc_), sources_(nullptr) {
+  MOZ_ASSERT(alloc_.isEmpty());
+}
+
+LCovRealm::~LCovRealm() {
+  if (sources_) {
+    sources_->~LCovSourceVector();
+  }
+}
+
+void LCovRealm::collectCodeCoverageInfo(JS::Realm* realm, JSScript* script,
+                                        const char* name) {
+  
+  if (outTN_.hadOutOfMemory()) {
+    return;
+  }
+
+  if (!script->code()) {
+    return;
+  }
+
+  
+  LCovSource* source = lookupOrAdd(realm, name);
+  if (!source) {
+    return;
+  }
+
+  
+  if (!source->writeScript(script)) {
+    outTN_.reportOutOfMemory();
+    return;
+  }
+}
+
+LCovSource* LCovRealm::lookupOrAdd(JS::Realm* realm, const char* name) {
+  
+  
+  if (!sources_) {
+    if (!writeRealmName(realm)) {
+      return nullptr;
+    }
+
+    LCovSourceVector* raw = alloc_.pod_malloc<LCovSourceVector>();
+    if (!raw) {
+      outTN_.reportOutOfMemory();
+      return nullptr;
+    }
+
+    sources_ = new (raw) LCovSourceVector(alloc_);
+  } else {
+    
+    for (LCovSource& source : *sources_) {
+      if (source.match(name)) {
+        return &source;
+      }
+    }
+  }
+
+  UniqueChars source_name = DuplicateString(name);
+  if (!source_name) {
+    outTN_.reportOutOfMemory();
+    return nullptr;
+  }
+
+  
+  if (!sources_->emplaceBack(&alloc_, std::move(source_name))) {
+    outTN_.reportOutOfMemory();
+    return nullptr;
+  }
+
+  return &sources_->back();
+}
+
+void LCovRealm::exportInto(GenericPrinter& out, bool* isEmpty) const {
+  if (!sources_ || outTN_.hadOutOfMemory()) {
+    return;
+  }
+
+  
+  bool someComplete = false;
+  for (const LCovSource& sc : *sources_) {
+    if (sc.isComplete()) {
+      someComplete = true;
+      break;
+    };
+  }
+
+  if (!someComplete) {
+    return;
+  }
+
+  *isEmpty = false;
+  outTN_.exportInto(out);
+  for (LCovSource& sc : *sources_) {
+    
+    if (sc.isComplete()) {
+      sc.exportInto(out);
+    }
+  }
+}
+
+bool LCovRealm::writeRealmName(JS::Realm* realm) {
+  JSContext* cx = TlsContext.get();
+
+  
+  
+  
+  
+  
+  
+  outTN_.put("TN:");
+  if (cx->runtime()->realmNameCallback) {
+    char name[1024];
     {
-        return false;
+      
+      JS::AutoSuppressGCAnalysis nogc;
+      Rooted<Realm*> rootedRealm(cx, realm);
+      (*cx->runtime()->realmNameCallback)(cx, rootedRealm, name, sizeof(name));
     }
-
-    
-    
-    
-    if (script->isTopLevel()) {
-        hasTopLevelScript_ = true;
+    for (char* s = name; s < name + sizeof(name) && *s; s++) {
+      if (('a' <= *s && *s <= 'z') || ('A' <= *s && *s <= 'Z') ||
+          ('0' <= *s && *s <= '9')) {
+        outTN_.put(s, 1);
+        continue;
+      }
+      outTN_.printf("_%p", (void*)size_t(*s));
     }
+    outTN_.put("\n", 1);
+  } else {
+    outTN_.printf("Realm_%p%p\n", (void*)size_t('_'), realm);
+  }
 
-    return true;
+  return !outTN_.hadOutOfMemory();
 }
 
-LCovRealm::LCovRealm()
-  : alloc_(4096),
-    outTN_(&alloc_),
-    sources_(nullptr)
-{
-    MOZ_ASSERT(alloc_.isEmpty());
+LCovRuntime::LCovRuntime() : out_(), pid_(getpid()), isEmpty_(true) {}
+
+LCovRuntime::~LCovRuntime() {
+  if (out_.isInitialized()) {
+    finishFile();
+  }
 }
 
-LCovRealm::~LCovRealm()
-{
-    if (sources_) {
-        sources_->~LCovSourceVector();
-    }
+bool LCovRuntime::fillWithFilename(char* name, size_t length) {
+  const char* outDir = getenv("JS_CODE_COVERAGE_OUTPUT_DIR");
+  if (!outDir || *outDir == 0) {
+    return false;
+  }
+
+  int64_t timestamp = static_cast<double>(PRMJ_Now()) / PRMJ_USEC_PER_SEC;
+  static mozilla::Atomic<size_t> globalRuntimeId(0);
+  size_t rid = globalRuntimeId++;
+
+  int len = snprintf(name, length, "%s/%" PRId64 "-%" PRIu32 "-%zu.info",
+                     outDir, timestamp, pid_, rid);
+  if (len < 0 || size_t(len) >= length) {
+    fprintf(stderr, "Warning: LCovRuntime::init: Cannot serialize file name.");
+    return false;
+  }
+
+  return true;
 }
 
-void
-LCovRealm::collectCodeCoverageInfo(JS::Realm* realm, JSScript* script, const char* name)
-{
-    
-    if (outTN_.hadOutOfMemory()) {
-        return;
-    }
+void LCovRuntime::init() {
+  char name[1024];
+  if (!fillWithFilename(name, sizeof(name))) {
+    return;
+  }
 
-    if (!script->code()) {
-        return;
-    }
-
-    
-    LCovSource* source = lookupOrAdd(realm, name);
-    if (!source) {
-        return;
-    }
-
-    
-    if (!source->writeScript(script)) {
-        outTN_.reportOutOfMemory();
-        return;
-    }
+  
+  if (!out_.init(name)) {
+    fprintf(stderr, "Warning: LCovRuntime::init: Cannot open file named '%s'.",
+            name);
+  }
+  isEmpty_ = true;
 }
 
-LCovSource*
-LCovRealm::lookupOrAdd(JS::Realm* realm, const char* name)
-{
-    
-    
-    if (!sources_) {
-        if (!writeRealmName(realm)) {
-            return nullptr;
-        }
+void LCovRuntime::finishFile() {
+  MOZ_ASSERT(out_.isInitialized());
+  out_.finish();
 
-        LCovSourceVector* raw = alloc_.pod_malloc<LCovSourceVector>();
-        if (!raw) {
-            outTN_.reportOutOfMemory();
-            return nullptr;
-        }
-
-        sources_ = new(raw) LCovSourceVector(alloc_);
-    } else {
-        
-        for (LCovSource& source : *sources_) {
-            if (source.match(name)) {
-                return &source;
-            }
-        }
-    }
-
-    UniqueChars source_name = DuplicateString(name);
-    if (!source_name) {
-        outTN_.reportOutOfMemory();
-        return nullptr;
-    }
-
-    
-    if (!sources_->emplaceBack(&alloc_, std::move(source_name))) {
-        outTN_.reportOutOfMemory();
-        return nullptr;
-    }
-
-    return &sources_->back();
-}
-
-void
-LCovRealm::exportInto(GenericPrinter& out, bool* isEmpty) const
-{
-    if (!sources_ || outTN_.hadOutOfMemory()) {
-        return;
-    }
-
-    
-    bool someComplete = false;
-    for (const LCovSource& sc : *sources_) {
-        if (sc.isComplete()) {
-            someComplete = true;
-            break;
-        };
-    }
-
-    if (!someComplete) {
-        return;
-    }
-
-    *isEmpty = false;
-    outTN_.exportInto(out);
-    for (LCovSource& sc : *sources_) {
-        
-        if (sc.isComplete()) {
-            sc.exportInto(out);
-        }
-    }
-}
-
-bool
-LCovRealm::writeRealmName(JS::Realm* realm)
-{
-    JSContext* cx = TlsContext.get();
-
-    
-    
-    
-    
-    
-    
-    outTN_.put("TN:");
-    if (cx->runtime()->realmNameCallback) {
-        char name[1024];
-        {
-            
-            JS::AutoSuppressGCAnalysis nogc;
-            Rooted<Realm*> rootedRealm(cx, realm);
-            (*cx->runtime()->realmNameCallback)(cx, rootedRealm, name, sizeof(name));
-        }
-        for (char *s = name; s < name + sizeof(name) && *s; s++) {
-            if (('a' <= *s && *s <= 'z') ||
-                ('A' <= *s && *s <= 'Z') ||
-                ('0' <= *s && *s <= '9'))
-            {
-                outTN_.put(s, 1);
-                continue;
-            }
-            outTN_.printf("_%p", (void*) size_t(*s));
-        }
-        outTN_.put("\n", 1);
-    } else {
-        outTN_.printf("Realm_%p%p\n", (void*) size_t('_'), realm);
-    }
-
-    return !outTN_.hadOutOfMemory();
-}
-
-LCovRuntime::LCovRuntime()
-  : out_(),
-    pid_(getpid()),
-    isEmpty_(true)
-{
-}
-
-LCovRuntime::~LCovRuntime()
-{
-    if (out_.isInitialized()) {
-        finishFile();
-    }
-}
-
-bool
-LCovRuntime::fillWithFilename(char *name, size_t length)
-{
-    const char* outDir = getenv("JS_CODE_COVERAGE_OUTPUT_DIR");
-    if (!outDir || *outDir == 0) {
-        return false;
-    }
-
-    int64_t timestamp = static_cast<double>(PRMJ_Now()) / PRMJ_USEC_PER_SEC;
-    static mozilla::Atomic<size_t> globalRuntimeId(0);
-    size_t rid = globalRuntimeId++;
-
-    int len = snprintf(name, length, "%s/%" PRId64 "-%" PRIu32 "-%zu.info",
-                       outDir, timestamp, pid_, rid);
-    if (len < 0 || size_t(len) >= length) {
-        fprintf(stderr, "Warning: LCovRuntime::init: Cannot serialize file name.");
-        return false;
-    }
-
-    return true;
-}
-
-void
-LCovRuntime::init()
-{
+  if (isEmpty_) {
     char name[1024];
     if (!fillWithFilename(name, sizeof(name))) {
-        return;
+      return;
     }
-
-    
-    if (!out_.init(name)) {
-        fprintf(stderr, "Warning: LCovRuntime::init: Cannot open file named '%s'.", name);
-    }
-    isEmpty_ = true;
+    remove(name);
+  }
 }
 
-void
-LCovRuntime::finishFile()
-{
-    MOZ_ASSERT(out_.isInitialized());
-    out_.finish();
-
-    if (isEmpty_) {
-        char name[1024];
-        if (!fillWithFilename(name, sizeof(name))) {
-            return;
-        }
-        remove(name);
-    }
-}
-
-void
-LCovRuntime::writeLCovResult(LCovRealm& realm)
-{
+void LCovRuntime::writeLCovResult(LCovRealm& realm) {
+  if (!out_.isInitialized()) {
+    init();
     if (!out_.isInitialized()) {
-        init();
-        if (!out_.isInitialized()) {
-          return;
-        }
+      return;
     }
+  }
 
-    uint32_t p = getpid();
-    if (pid_ != p) {
-        pid_ = p;
-        finishFile();
-        init();
-        if (!out_.isInitialized()) {
-            return;
-        }
-    }
-
-    realm.exportInto(out_, &isEmpty_);
-    out_.flush();
+  uint32_t p = getpid();
+  if (pid_ != p) {
+    pid_ = p;
     finishFile();
+    init();
+    if (!out_.isInitialized()) {
+      return;
+    }
+  }
+
+  realm.exportInto(out_, &isEmpty_);
+  out_.flush();
+  finishFile();
 }
 
-} 
-} 
+}  
+}  

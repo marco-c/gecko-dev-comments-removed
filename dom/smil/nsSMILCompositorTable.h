@@ -20,4 +20,4 @@
 class nsSMILCompositor;
 typedef nsTHashtable<nsSMILCompositor> nsSMILCompositorTable;
 
-#endif 
+#endif  

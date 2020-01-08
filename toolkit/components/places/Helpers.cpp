@@ -28,27 +28,19 @@ namespace places {
 
 
 
-NS_IMPL_ISUPPORTS(
-  AsyncStatementCallback
-, mozIStorageStatementCallback
-)
+NS_IMPL_ISUPPORTS(AsyncStatementCallback, mozIStorageStatementCallback)
 
 NS_IMETHODIMP
-WeakAsyncStatementCallback::HandleResult(mozIStorageResultSet *aResultSet)
-{
+WeakAsyncStatementCallback::HandleResult(mozIStorageResultSet* aResultSet) {
   MOZ_ASSERT(false, "Was not expecting a resultset, but got it.");
   return NS_OK;
 }
 
 NS_IMETHODIMP
-WeakAsyncStatementCallback::HandleCompletion(uint16_t aReason)
-{
-  return NS_OK;
-}
+WeakAsyncStatementCallback::HandleCompletion(uint16_t aReason) { return NS_OK; }
 
 NS_IMETHODIMP
-WeakAsyncStatementCallback::HandleError(mozIStorageError *aError)
-{
+WeakAsyncStatementCallback::HandleError(mozIStorageError* aError) {
 #ifdef DEBUG
   int32_t result;
   nsresult rv = aError->GetResult(&result);
@@ -58,7 +50,8 @@ WeakAsyncStatementCallback::HandleError(mozIStorageError *aError)
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString warnMsg;
-  warnMsg.AppendLiteral("An error occurred while executing an async statement: ");
+  warnMsg.AppendLiteral(
+      "An error occurred while executing an async statement: ");
   warnMsg.AppendInt(result);
   warnMsg.Append(' ');
   warnMsg.Append(message);
@@ -68,18 +61,16 @@ WeakAsyncStatementCallback::HandleError(mozIStorageError *aError)
   return NS_OK;
 }
 
-#define URI_TO_URLCSTRING(uri, spec) \
-  nsAutoCString spec; \
+#define URI_TO_URLCSTRING(uri, spec)    \
+  nsAutoCString spec;                   \
   if (NS_FAILED(aURI->GetSpec(spec))) { \
-    return NS_ERROR_UNEXPECTED; \
+    return NS_ERROR_UNEXPECTED;         \
   }
 
 
-nsresult 
-URIBinder::Bind(mozIStorageStatement* aStatement,
-                int32_t aIndex,
-                nsIURI* aURI)
-{
+nsresult  
+URIBinder::Bind(mozIStorageStatement* aStatement, int32_t aIndex,
+                nsIURI* aURI) {
   NS_ASSERTION(aStatement, "Must have non-null statement");
   NS_ASSERTION(aURI, "Must have non-null uri");
 
@@ -88,23 +79,18 @@ URIBinder::Bind(mozIStorageStatement* aStatement,
 }
 
 
-nsresult 
-URIBinder::Bind(mozIStorageStatement* aStatement,
-                int32_t index,
-                const nsACString& aURLString)
-{
+nsresult  
+URIBinder::Bind(mozIStorageStatement* aStatement, int32_t index,
+                const nsACString& aURLString) {
   NS_ASSERTION(aStatement, "Must have non-null statement");
   return aStatement->BindUTF8StringByIndex(
-    index, StringHead(aURLString, URI_LENGTH_MAX)
-  );
+      index, StringHead(aURLString, URI_LENGTH_MAX));
 }
 
 
-nsresult 
-URIBinder::Bind(mozIStorageStatement* aStatement,
-                const nsACString& aName,
-                nsIURI* aURI)
-{
+nsresult  
+URIBinder::Bind(mozIStorageStatement* aStatement, const nsACString& aName,
+                nsIURI* aURI) {
   NS_ASSERTION(aStatement, "Must have non-null statement");
   NS_ASSERTION(aURI, "Must have non-null uri");
 
@@ -113,23 +99,18 @@ URIBinder::Bind(mozIStorageStatement* aStatement,
 }
 
 
-nsresult 
-URIBinder::Bind(mozIStorageStatement* aStatement,
-                const nsACString& aName,
-                const nsACString& aURLString)
-{
+nsresult  
+URIBinder::Bind(mozIStorageStatement* aStatement, const nsACString& aName,
+                const nsACString& aURLString) {
   NS_ASSERTION(aStatement, "Must have non-null statement");
   return aStatement->BindUTF8StringByName(
-    aName, StringHead(aURLString, URI_LENGTH_MAX)
-  );
+      aName, StringHead(aURLString, URI_LENGTH_MAX));
 }
 
 
-nsresult 
-URIBinder::Bind(mozIStorageBindingParams* aParams,
-                int32_t aIndex,
-                nsIURI* aURI)
-{
+nsresult  
+URIBinder::Bind(mozIStorageBindingParams* aParams, int32_t aIndex,
+                nsIURI* aURI) {
   NS_ASSERTION(aParams, "Must have non-null statement");
   NS_ASSERTION(aURI, "Must have non-null uri");
 
@@ -138,23 +119,18 @@ URIBinder::Bind(mozIStorageBindingParams* aParams,
 }
 
 
-nsresult 
-URIBinder::Bind(mozIStorageBindingParams* aParams,
-                int32_t index,
-                const nsACString& aURLString)
-{
+nsresult  
+URIBinder::Bind(mozIStorageBindingParams* aParams, int32_t index,
+                const nsACString& aURLString) {
   NS_ASSERTION(aParams, "Must have non-null statement");
-  return aParams->BindUTF8StringByIndex(
-    index, StringHead(aURLString, URI_LENGTH_MAX)
-  );
+  return aParams->BindUTF8StringByIndex(index,
+                                        StringHead(aURLString, URI_LENGTH_MAX));
 }
 
 
-nsresult 
-URIBinder::Bind(mozIStorageBindingParams* aParams,
-                const nsACString& aName,
-                nsIURI* aURI)
-{
+nsresult  
+URIBinder::Bind(mozIStorageBindingParams* aParams, const nsACString& aName,
+                nsIURI* aURI) {
   NS_ASSERTION(aParams, "Must have non-null params array");
   NS_ASSERTION(aURI, "Must have non-null uri");
 
@@ -163,57 +139,43 @@ URIBinder::Bind(mozIStorageBindingParams* aParams,
 }
 
 
-nsresult 
-URIBinder::Bind(mozIStorageBindingParams* aParams,
-                const nsACString& aName,
-                const nsACString& aURLString)
-{
+nsresult  
+URIBinder::Bind(mozIStorageBindingParams* aParams, const nsACString& aName,
+                const nsACString& aURLString) {
   NS_ASSERTION(aParams, "Must have non-null params array");
 
   nsresult rv = aParams->BindUTF8StringByName(
-    aName, StringHead(aURLString, URI_LENGTH_MAX)
-  );
+      aName, StringHead(aURLString, URI_LENGTH_MAX));
   NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
 }
 
 #undef URI_TO_URLCSTRING
 
-nsresult
-GetReversedHostname(nsIURI* aURI, nsString& aRevHost)
-{
+nsresult GetReversedHostname(nsIURI* aURI, nsString& aRevHost) {
   nsAutoCString forward8;
   nsresult rv = aURI->GetHost(forward8);
   
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
   
   GetReversedHostname(NS_ConvertUTF8toUTF16(forward8), aRevHost);
   return NS_OK;
 }
 
-void
-GetReversedHostname(const nsString& aForward, nsString& aRevHost)
-{
+void GetReversedHostname(const nsString& aForward, nsString& aRevHost) {
   ReverseString(aForward, aRevHost);
   aRevHost.Append(char16_t('.'));
 }
 
-void
-ReverseString(const nsString& aInput, nsString& aReversed)
-{
+void ReverseString(const nsString& aInput, nsString& aReversed) {
   aReversed.Truncate(0);
   for (int32_t i = aInput.Length() - 1; i >= 0; i--) {
     aReversed.Append(aInput[i]);
   }
 }
 
-static
-nsresult
-GenerateRandomBytes(uint32_t aSize,
-                    uint8_t* _buffer)
-{
+static nsresult GenerateRandomBytes(uint32_t aSize, uint8_t* _buffer) {
   
 #if defined(XP_WIN)
   const nsNavHistory* history = nsNavHistory::GetConstHistoryService();
@@ -239,15 +201,13 @@ GenerateRandomBytes(uint32_t aSize,
 #endif
 }
 
-nsresult
-GenerateGUID(nsACString& _guid)
-{
+nsresult GenerateGUID(nsACString& _guid) {
   _guid.Truncate();
 
   
   
   const uint32_t kRequiredBytesLength =
-    static_cast<uint32_t>(GUID_LENGTH / 4 * 3);
+      static_cast<uint32_t>(GUID_LENGTH / 4 * 3);
 
   uint8_t buffer[kRequiredBytesLength];
   nsresult rv = GenerateRandomBytes(kRequiredBytesLength, buffer);
@@ -261,20 +221,18 @@ GenerateGUID(nsACString& _guid)
   return NS_OK;
 }
 
-bool
-IsValidGUID(const nsACString& aGUID)
-{
+bool IsValidGUID(const nsACString& aGUID) {
   nsCString::size_type len = aGUID.Length();
   if (len != GUID_LENGTH) {
     return false;
   }
 
-  for (nsCString::size_type i = 0; i < len; i++ ) {
+  for (nsCString::size_type i = 0; i < len; i++) {
     char c = aGUID[i];
-    if ((c >= 'a' && c <= 'z') || 
-        (c >= 'A' && c <= 'Z') || 
-        (c >= '0' && c <= '9') || 
-        c == '-' || c == '_') { 
+    if ((c >= 'a' && c <= 'z') ||  
+        (c >= 'A' && c <= 'Z') ||  
+        (c >= '0' && c <= '9') ||  
+        c == '-' || c == '_') {    
       continue;
     }
     return false;
@@ -282,9 +240,7 @@ IsValidGUID(const nsACString& aGUID)
   return true;
 }
 
-void
-TruncateTitle(const nsACString& aTitle, nsACString& aTrimmed)
-{
+void TruncateTitle(const nsACString& aTitle, nsACString& aTrimmed) {
   if (aTitle.IsVoid()) {
     return;
   }
@@ -294,25 +250,20 @@ TruncateTitle(const nsACString& aTitle, nsACString& aTrimmed)
   }
 }
 
-PRTime
-RoundToMilliseconds(PRTime aTime) {
+PRTime RoundToMilliseconds(PRTime aTime) {
   return aTime - (aTime % PR_USEC_PER_MSEC);
 }
 
-PRTime
-RoundedPRNow() {
-  return RoundToMilliseconds(PR_Now());
-}
+PRTime RoundedPRNow() { return RoundToMilliseconds(PR_Now()); }
 
-nsresult
-HashURL(const nsACString& aSpec, const nsACString& aMode, uint64_t *_hash)
-{
+nsresult HashURL(const nsACString& aSpec, const nsACString& aMode,
+                 uint64_t* _hash) {
   NS_ENSURE_ARG_POINTER(_hash);
 
   
   
-  const uint32_t maxLenToHash = std::min(static_cast<uint32_t>(aSpec.Length()),
-                                         MAX_CHARS_TO_HASH);
+  const uint32_t maxLenToHash =
+      std::min(static_cast<uint32_t>(aSpec.Length()), MAX_CHARS_TO_HASH);
 
   if (aMode.IsEmpty()) {
     
@@ -330,7 +281,8 @@ HashURL(const nsACString& aSpec, const nsACString& aMode, uint64_t *_hash)
     uint32_t strHash = HashString(aSpec.BeginReading(), maxLenToHash);
     if (FindCharInReadable(':', tip, end)) {
       const nsDependentCSubstring& prefix = Substring(start, tip);
-      uint64_t prefixHash = static_cast<uint64_t>(HashString(prefix) & 0x0000FFFF);
+      uint64_t prefixHash =
+          static_cast<uint64_t>(HashString(prefix) & 0x0000FFFF);
       
       *_hash = (prefixHash << 32) + strHash;
     } else {
@@ -338,12 +290,16 @@ HashURL(const nsACString& aSpec, const nsACString& aMode, uint64_t *_hash)
     }
   } else if (aMode.EqualsLiteral("prefix_lo")) {
     
-    *_hash = static_cast<uint64_t>(HashString(aSpec.BeginReading(), maxLenToHash) & 0x0000FFFF) << 32;
+    *_hash = static_cast<uint64_t>(
+                 HashString(aSpec.BeginReading(), maxLenToHash) & 0x0000FFFF)
+             << 32;
   } else if (aMode.EqualsLiteral("prefix_hi")) {
     
-    *_hash = static_cast<uint64_t>(HashString(aSpec.BeginReading(), maxLenToHash) & 0x0000FFFF) << 32;
+    *_hash = static_cast<uint64_t>(
+                 HashString(aSpec.BeginReading(), maxLenToHash) & 0x0000FFFF)
+             << 32;
     
-    *_hash +=  0xFFFFFFFF;
+    *_hash += 0xFFFFFFFF;
   } else {
     return NS_ERROR_FAILURE;
   }
@@ -351,21 +307,16 @@ HashURL(const nsACString& aSpec, const nsACString& aMode, uint64_t *_hash)
   return NS_OK;
 }
 
-bool
-GetHiddenState(bool aIsRedirect,
-               uint32_t aTransitionType)
-{
+bool GetHiddenState(bool aIsRedirect, uint32_t aTransitionType) {
   return aTransitionType == nsINavHistoryService::TRANSITION_FRAMED_LINK ||
          aTransitionType == nsINavHistoryService::TRANSITION_EMBED ||
          aIsRedirect;
 }
 
-nsresult
-TokenizeQueryString(const nsACString& aQuery,
-                    nsTArray<QueryKeyValuePair>* aTokens)
-{
+nsresult TokenizeQueryString(const nsACString& aQuery,
+                             nsTArray<QueryKeyValuePair>* aTokens) {
   
-  const uint32_t prefixlen = 6; 
+  const uint32_t prefixlen = 6;  
   nsCString query;
   if (aQuery.Length() >= prefixlen &&
       Substring(aQuery, 0, prefixlen).EqualsLiteral("place:"))
@@ -375,12 +326,12 @@ TokenizeQueryString(const nsACString& aQuery,
 
   int32_t keyFirstIndex = 0;
   int32_t equalsIndex = 0;
-  for (uint32_t i = 0; i < query.Length(); i ++) {
+  for (uint32_t i = 0; i < query.Length(); i++) {
     if (query[i] == '&') {
       
       if (i - keyFirstIndex > 1) {
-        if (! aTokens->AppendElement(QueryKeyValuePair(query, keyFirstIndex,
-                                                       equalsIndex, i)))
+        if (!aTokens->AppendElement(
+                QueryKeyValuePair(query, keyFirstIndex, equalsIndex, i)))
           return NS_ERROR_OUT_OF_MEMORY;
       }
       keyFirstIndex = equalsIndex = i + 1;
@@ -391,17 +342,15 @@ TokenizeQueryString(const nsACString& aQuery,
 
   
   if (query.Length() - keyFirstIndex > 1) {
-    if (! aTokens->AppendElement(QueryKeyValuePair(query, keyFirstIndex,
-                                                   equalsIndex, query.Length())))
+    if (!aTokens->AppendElement(QueryKeyValuePair(query, keyFirstIndex,
+                                                  equalsIndex, query.Length())))
       return NS_ERROR_OUT_OF_MEMORY;
   }
   return NS_OK;
 }
 
-void
-TokensToQueryString(const nsTArray<QueryKeyValuePair> &aTokens,
-                    nsACString &aQuery)
-{
+void TokensToQueryString(const nsTArray<QueryKeyValuePair>& aTokens,
+                         nsACString& aQuery) {
   aQuery = NS_LITERAL_CSTRING("place:");
   for (uint32_t i = 0; i < aTokens.Length(); i++) {
     if (i > 0) {
@@ -417,8 +366,7 @@ TokensToQueryString(const nsTArray<QueryKeyValuePair> &aTokens,
 
 
 NS_IMETHODIMP
-AsyncStatementCallbackNotifier::HandleCompletion(uint16_t aReason)
-{
+AsyncStatementCallbackNotifier::HandleCompletion(uint16_t aReason) {
   if (aReason != mozIStorageStatementCallback::REASON_FINISHED)
     return NS_ERROR_UNEXPECTED;
 
@@ -434,13 +382,12 @@ AsyncStatementCallbackNotifier::HandleCompletion(uint16_t aReason)
 
 
 NS_IMETHODIMP
-AsyncStatementTelemetryTimer::HandleCompletion(uint16_t aReason)
-{
+AsyncStatementTelemetryTimer::HandleCompletion(uint16_t aReason) {
   if (aReason == mozIStorageStatementCallback::REASON_FINISHED) {
     Telemetry::AccumulateTimeDelta(mHistogramId, mStart);
   }
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

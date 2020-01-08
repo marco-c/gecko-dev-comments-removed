@@ -13,20 +13,16 @@ namespace mozilla {
 namespace interceptor {
 
 template <typename VMPolicy>
-class WindowsDllPatcherBase
-{
-protected:
+class WindowsDllPatcherBase {
+ protected:
   typedef typename VMPolicy::MMPolicyT MMPolicyT;
 
   template <typename... Args>
   explicit WindowsDllPatcherBase(Args... aArgs)
-    : mVMPolicy(std::forward<Args>(aArgs)...)
-  {
-  }
+      : mVMPolicy(std::forward<Args>(aArgs)...) {}
 
-  ReadOnlyTargetFunction<MMPolicyT>
-  ResolveRedirectedAddress(FARPROC aOriginalFunction)
-  {
+  ReadOnlyTargetFunction<MMPolicyT> ResolveRedirectedAddress(
+      FARPROC aOriginalFunction) {
     ReadOnlyTargetFunction<MMPolicyT> origFn(mVMPolicy, aOriginalFunction);
     
     
@@ -74,11 +70,9 @@ protected:
     return std::move(origFn);
   }
 
-private:
-  ReadOnlyTargetFunction<MMPolicyT>
-  EnsureTargetIsAccessible(ReadOnlyTargetFunction<MMPolicyT> aOrigFn,
-                           uintptr_t aRedirAddress)
-  {
+ private:
+  ReadOnlyTargetFunction<MMPolicyT> EnsureTargetIsAccessible(
+      ReadOnlyTargetFunction<MMPolicyT> aOrigFn, uintptr_t aRedirAddress) {
     if (!mVMPolicy.IsPageAccessible(reinterpret_cast<void*>(aRedirAddress))) {
       return std::move(aOrigFn);
     }
@@ -86,11 +80,11 @@ private:
     return ReadOnlyTargetFunction<MMPolicyT>(mVMPolicy, aRedirAddress);
   }
 
-protected:
-  VMPolicy  mVMPolicy;
+ protected:
+  VMPolicy mVMPolicy;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -86,27 +86,25 @@ class HTMLVideoElement;
 class InspectorFontFace;
 class OffscreenCanvas;
 class Selection;
-} 
+}  
 namespace gfx {
 struct RectCornerRadii;
 enum class ShapedTextFlags : uint16_t;
-} 
+}  
 namespace layers {
 struct FrameMetrics;
 struct ScrollMetadata;
 class Image;
 class StackingContextHelper;
 class Layer;
-} 
-} 
+}  
+}  
 
 namespace mozilla {
 
 struct DisplayPortPropertyData {
   DisplayPortPropertyData(const nsRect& aRect, uint32_t aPriority)
-    : mRect(aRect)
-    , mPriority(aPriority)
-  {}
+      : mRect(aRect), mPriority(aPriority) {}
   nsRect mRect;
   uint32_t mPriority;
 };
@@ -114,9 +112,7 @@ struct DisplayPortPropertyData {
 struct DisplayPortMarginsPropertyData {
   DisplayPortMarginsPropertyData(const ScreenMargin& aMargins,
                                  uint32_t aPriority)
-    : mMargins(aMargins)
-    , mPriority(aPriority)
-  {}
+      : mMargins(aMargins), mPriority(aPriority) {}
   ScreenMargin mMargins;
   uint32_t mPriority;
 };
@@ -126,25 +122,22 @@ struct MotionPathData {
   float mRotate;
 };
 
-} 
+}  
 
 
-enum class RelativeTo {
-  ScrollPort,
-  ScrollFrame
-};
+enum class RelativeTo { ScrollPort, ScrollFrame };
 
 
 enum class DrawStringFlags {
-  eDefault         = 0x0,
-  eForceHorizontal = 0x1 
+  eDefault = 0x0,
+  eForceHorizontal = 0x1  
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DrawStringFlags)
 
 enum class ReparentingDirection {
   Backwards,
   Forwards,
-  Variable 
+  Variable  
 };
 
 
@@ -152,8 +145,7 @@ enum class ReparentingDirection {
 
 
 
-class nsLayoutUtils
-{
+class nsLayoutUtils {
   typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::dom::DOMRectList DOMRectList;
   typedef mozilla::layers::Layer Layer;
@@ -176,7 +168,7 @@ class nsLayoutUtils
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
 
-public:
+ public:
   typedef mozilla::layers::FrameMetrics FrameMetrics;
   typedef mozilla::layers::ScrollMetadata ScrollMetadata;
   typedef mozilla::layers::ScrollableLayerGuid::ViewID ViewID;
@@ -222,8 +214,8 @@ public:
 
 
 
-  static bool GetDisplayPort(nsIContent* aContent, nsRect *aResult,
-    RelativeTo aRelativeTo = RelativeTo::ScrollPort);
+  static bool GetDisplayPort(nsIContent* aContent, nsRect* aResult,
+                             RelativeTo aRelativeTo = RelativeTo::ScrollPort);
 
   
 
@@ -236,7 +228,8 @@ public:
 
 
 
-  static bool FrameHasDisplayPort(nsIFrame* aFrame, const nsIFrame* aScrolledFrame = nullptr);
+  static bool FrameHasDisplayPort(nsIFrame* aFrame,
+                                  const nsIFrame* aScrolledFrame = nullptr);
 
   
 
@@ -261,23 +254,18 @@ public:
 
 
   static bool GetDisplayPortForVisibilityTesting(
-    nsIContent* aContent,
-    nsRect* aResult,
-    RelativeTo aRelativeTo = RelativeTo::ScrollPort);
+      nsIContent* aContent, nsRect* aResult,
+      RelativeTo aRelativeTo = RelativeTo::ScrollPort);
 
-  enum class RepaintMode : uint8_t {
-    Repaint,
-    DoNotRepaint
-  };
+  enum class RepaintMode : uint8_t { Repaint, DoNotRepaint };
 
   
 
 
-  static void InvalidateForDisplayPortChange(nsIContent* aContent,
-                                             bool aHadDisplayPort,
-                                             const nsRect& aOldDisplayPort,
-                                             const nsRect& aNewDisplayPort,
-                                             RepaintMode aRepaintMode = RepaintMode::Repaint);
+  static void InvalidateForDisplayPortChange(
+      nsIContent* aContent, bool aHadDisplayPort, const nsRect& aOldDisplayPort,
+      const nsRect& aNewDisplayPort,
+      RepaintMode aRepaintMode = RepaintMode::Repaint);
 
   
 
@@ -294,11 +282,10 @@ public:
 
 
 
-  static bool SetDisplayPortMargins(nsIContent* aContent,
-                                    nsIPresShell* aPresShell,
-                                    const ScreenMargin& aMargins,
-                                    uint32_t aPriority = 0,
-                                    RepaintMode aRepaintMode = RepaintMode::Repaint);
+  static bool SetDisplayPortMargins(
+      nsIContent* aContent, nsIPresShell* aPresShell,
+      const ScreenMargin& aMargins, uint32_t aPriority = 0,
+      RepaintMode aRepaintMode = RepaintMode::Repaint);
 
   
 
@@ -307,7 +294,8 @@ public:
 
 
   static void SetDisplayPortBase(nsIContent* aContent, const nsRect& aBase);
-  static void SetDisplayPortBaseIfNotSet(nsIContent* aContent, const nsRect& aBase);
+  static void SetDisplayPortBaseIfNotSet(nsIContent* aContent,
+                                         const nsRect& aBase);
 
   
 
@@ -323,7 +311,8 @@ public:
 
 
 
-  static bool GetHighResolutionDisplayPort(nsIContent* aContent, nsRect* aResult);
+  static bool GetHighResolutionDisplayPort(nsIContent* aContent,
+                                           nsRect* aResult);
 
   
 
@@ -334,7 +323,8 @@ public:
 
 
 
-  static mozilla::layout::FrameChildListID GetChildListNameFor(nsIFrame* aChildFrame);
+  static mozilla::layout::FrameChildListID GetChildListNameFor(
+      nsIFrame* aChildFrame);
 
   
 
@@ -414,7 +404,7 @@ public:
 #ifdef DEBUG
   
   static bool gPreventAssertInCompareTreePosition;
-#endif 
+#endif  
 
   
 
@@ -431,10 +421,9 @@ public:
 
 
 
-  static int32_t CompareTreePosition(nsIContent* aContent1,
-                                     nsIContent* aContent2,
-                                     const nsIContent* aCommonAncestor = nullptr)
-  {
+  static int32_t CompareTreePosition(
+      nsIContent* aContent1, nsIContent* aContent2,
+      const nsIContent* aCommonAncestor = nullptr) {
     return DoCompareTreePosition(aContent1, aContent2, -1, 1, aCommonAncestor);
   }
 
@@ -444,11 +433,9 @@ public:
 
 
 
-  static int32_t DoCompareTreePosition(nsIContent* aContent1,
-                                       nsIContent* aContent2,
-                                       int32_t aIf1Ancestor,
-                                       int32_t aIf2Ancestor,
-                                       const nsIContent* aCommonAncestor = nullptr);
+  static int32_t DoCompareTreePosition(
+      nsIContent* aContent1, nsIContent* aContent2, int32_t aIf1Ancestor,
+      int32_t aIf2Ancestor, const nsIContent* aCommonAncestor = nullptr);
 
   
 
@@ -469,20 +456,16 @@ public:
 
 
 
-  static int32_t CompareTreePosition(nsIFrame* aFrame1,
-                                     nsIFrame* aFrame2,
-                                     nsIFrame* aCommonAncestor = nullptr)
-  {
+  static int32_t CompareTreePosition(nsIFrame* aFrame1, nsIFrame* aFrame2,
+                                     nsIFrame* aCommonAncestor = nullptr) {
     return DoCompareTreePosition(aFrame1, aFrame2, -1, 1, aCommonAncestor);
   }
 
-  static int32_t CompareTreePosition(nsIFrame* aFrame1,
-                                     nsIFrame* aFrame2,
+  static int32_t CompareTreePosition(nsIFrame* aFrame1, nsIFrame* aFrame2,
                                      nsTArray<nsIFrame*>& aFrame2Ancestors,
-                                     nsIFrame* aCommonAncestor = nullptr)
-  {
-    return DoCompareTreePosition(aFrame1, aFrame2, aFrame2Ancestors,
-                                 -1, 1, aCommonAncestor);
+                                     nsIFrame* aCommonAncestor = nullptr) {
+    return DoCompareTreePosition(aFrame1, aFrame2, aFrame2Ancestors, -1, 1,
+                                 aCommonAncestor);
   }
 
   
@@ -491,18 +474,15 @@ public:
 
 
 
-  static int32_t DoCompareTreePosition(nsIFrame* aFrame1,
-                                       nsIFrame* aFrame2,
+  static int32_t DoCompareTreePosition(nsIFrame* aFrame1, nsIFrame* aFrame2,
                                        int32_t aIf1Ancestor,
                                        int32_t aIf2Ancestor,
                                        nsIFrame* aCommonAncestor = nullptr);
 
-  static nsIFrame* FillAncestors(nsIFrame* aFrame,
-                                 nsIFrame* aStopAtAncestor,
+  static nsIFrame* FillAncestors(nsIFrame* aFrame, nsIFrame* aStopAtAncestor,
                                  nsTArray<nsIFrame*>* aAncestors);
 
-  static int32_t DoCompareTreePosition(nsIFrame* aFrame1,
-                                       nsIFrame* aFrame2,
+  static int32_t DoCompareTreePosition(nsIFrame* aFrame1, nsIFrame* aFrame2,
                                        nsTArray<nsIFrame*>& aFrame2Ancestors,
                                        int32_t aIf1Ancestor,
                                        int32_t aIf2Ancestor,
@@ -550,7 +530,7 @@ public:
 
 
   static bool IsProperAncestorFrame(nsIFrame* aAncestorFrame, nsIFrame* aFrame,
-                                      nsIFrame* aCommonAncestor = nullptr);
+                                    nsIFrame* aCommonAncestor = nullptr);
 
   
 
@@ -558,21 +538,9 @@ public:
 
 
 
-  static bool IsProperAncestorFrameCrossDoc(nsIFrame* aAncestorFrame, nsIFrame* aFrame,
-                                              nsIFrame* aCommonAncestor = nullptr);
-
-  
-
-
-
-
-
-
-
-
-
-  static bool IsAncestorFrameCrossDoc(const nsIFrame* aAncestorFrame, const nsIFrame* aFrame,
-                                        const nsIFrame* aCommonAncestor = nullptr);
+  static bool IsProperAncestorFrameCrossDoc(
+      nsIFrame* aAncestorFrame, nsIFrame* aFrame,
+      nsIFrame* aCommonAncestor = nullptr);
 
   
 
@@ -584,11 +552,25 @@ public:
 
 
 
-  static void SetFixedPositionLayerData(Layer* aLayer, const nsIFrame* aViewportFrame,
-                                        const nsRect& aAnchorRect,
-                                        const nsIFrame* aFixedPosFrame,
-                                        nsPresContext* aPresContext,
-                                        const ContainerLayerParameters& aContainerParameters);
+  static bool IsAncestorFrameCrossDoc(
+      const nsIFrame* aAncestorFrame, const nsIFrame* aFrame,
+      const nsIFrame* aCommonAncestor = nullptr);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static void SetFixedPositionLayerData(
+      Layer* aLayer, const nsIFrame* aViewportFrame, const nsRect& aAnchorRect,
+      const nsIFrame* aFixedPosFrame, nsPresContext* aPresContext,
+      const ContainerLayerParameters& aContainerParameters);
 
   
 
@@ -612,7 +594,8 @@ public:
   
 
 
-  static nsIScrollableFrame* GetScrollableFrameFor(const nsIFrame *aScrolledFrame);
+  static nsIScrollableFrame* GetScrollableFrameFor(
+      const nsIFrame* aScrolledFrame);
 
   
 
@@ -627,8 +610,8 @@ public:
 
 
   enum Direction { eHorizontal, eVertical };
-  static nsIScrollableFrame* GetNearestScrollableFrameForDirection(nsIFrame* aFrame,
-                                                                   Direction aDirection);
+  static nsIScrollableFrame* GetNearestScrollableFrameForDirection(
+      nsIFrame* aFrame, Direction aDirection);
 
   enum {
     
@@ -710,8 +693,8 @@ public:
 
   
   
-  static mozilla::StyleClear CombineBreakType(mozilla::StyleClear aOrigBreakType,
-                                              mozilla::StyleClear aNewBreakType);
+  static mozilla::StyleClear CombineBreakType(
+      mozilla::StyleClear aOrigBreakType, mozilla::StyleClear aNewBreakType);
 
   
 
@@ -722,8 +705,8 @@ public:
 
 
 
-  static nsPoint GetDOMEventCoordinatesRelativeTo(mozilla::dom::Event* aDOMEvent,
-                                                  nsIFrame* aFrame);
+  static nsPoint GetDOMEventCoordinatesRelativeTo(
+      mozilla::dom::Event* aDOMEvent, nsIFrame* aFrame);
 
   
 
@@ -735,8 +718,7 @@ public:
 
 
   static nsPoint GetEventCoordinatesRelativeTo(
-                   const mozilla::WidgetEvent* aEvent,
-                   nsIFrame* aFrame);
+      const mozilla::WidgetEvent* aEvent, nsIFrame* aFrame);
 
   
 
@@ -749,9 +731,8 @@ public:
 
 
   static nsPoint GetEventCoordinatesRelativeTo(
-                   const mozilla::WidgetEvent* aEvent,
-                   const mozilla::LayoutDeviceIntPoint& aPoint,
-                   nsIFrame* aFrame);
+      const mozilla::WidgetEvent* aEvent,
+      const mozilla::LayoutDeviceIntPoint& aPoint, nsIFrame* aFrame);
 
   
 
@@ -763,9 +744,9 @@ public:
 
 
 
-  static nsPoint GetEventCoordinatesRelativeTo(nsIWidget* aWidget,
-                                               const mozilla::LayoutDeviceIntPoint& aPoint,
-                                               nsIFrame* aFrame);
+  static nsPoint GetEventCoordinatesRelativeTo(
+      nsIWidget* aWidget, const mozilla::LayoutDeviceIntPoint& aPoint,
+      nsIFrame* aFrame);
 
   
 
@@ -775,8 +756,7 @@ public:
 
 
   static nsIFrame* GetPopupFrameForEventCoordinates(
-                     nsPresContext* aPresContext,
-                     const mozilla::WidgetEvent* aEvent);
+      nsPresContext* aPresContext, const mozilla::WidgetEvent* aEvent);
 
   
 
@@ -815,13 +795,12 @@ public:
 
 
 
-  static mozilla::LayoutDeviceIntPoint
-    TranslateViewToWidget(nsPresContext* aPresContext,
-                          nsView* aView, nsPoint aPt,
-                          nsIWidget* aWidget);
+  static mozilla::LayoutDeviceIntPoint TranslateViewToWidget(
+      nsPresContext* aPresContext, nsView* aView, nsPoint aPt,
+      nsIWidget* aWidget);
 
-  static mozilla::LayoutDeviceIntPoint
-    WidgetToWidgetOffset(nsIWidget* aFromWidget, nsIWidget* aToWidget);
+  static mozilla::LayoutDeviceIntPoint WidgetToWidgetOffset(
+      nsIWidget* aFromWidget, nsIWidget* aToWidget);
 
   enum FrameForPointFlags {
     
@@ -863,7 +842,7 @@ public:
 
 
   static nsresult GetFramesForArea(nsIFrame* aFrame, const nsRect& aRect,
-                                   nsTArray<nsIFrame*> &aOutFrames,
+                                   nsTArray<nsIFrame*>& aOutFrames,
                                    uint32_t aFlags = 0);
 
   
@@ -882,25 +861,21 @@ public:
 
 
 
-
-  static nsRect TransformFrameRectToAncestor(const nsIFrame* aFrame,
-                                             const nsRect& aRect,
-                                             const nsIFrame* aAncestor,
-                                             bool* aPreservesAxisAlignedRectangles = nullptr,
-                                             mozilla::Maybe<Matrix4x4Flagged>* aMatrixCache = nullptr,
-                                             bool aStopAtStackingContextAndDisplayPortAndOOFFrame = false,
-                                             nsIFrame** aOutAncestor = nullptr);
-
+  static nsRect TransformFrameRectToAncestor(
+      const nsIFrame* aFrame, const nsRect& aRect, const nsIFrame* aAncestor,
+      bool* aPreservesAxisAlignedRectangles = nullptr,
+      mozilla::Maybe<Matrix4x4Flagged>* aMatrixCache = nullptr,
+      bool aStopAtStackingContextAndDisplayPortAndOOFFrame = false,
+      nsIFrame** aOutAncestor = nullptr);
 
   
 
 
 
 
-  static Matrix4x4Flagged GetTransformToAncestor(const nsIFrame *aFrame,
-                                          const nsIFrame *aAncestor,
-                                          uint32_t aFlags = 0,
-                                          nsIFrame** aOutAncestor = nullptr);
+  static Matrix4x4Flagged GetTransformToAncestor(
+      const nsIFrame* aFrame, const nsIFrame* aAncestor, uint32_t aFlags = 0,
+      nsIFrame** aOutAncestor = nullptr);
 
   
 
@@ -938,15 +913,17 @@ public:
     NO_COMMON_ANCESTOR,
     NONINVERTIBLE_TRANSFORM
   };
-  static TransformResult TransformPoints(nsIFrame* aFromFrame, nsIFrame* aToFrame,
-                                         uint32_t aPointCount, CSSPoint* aPoints);
+  static TransformResult TransformPoints(nsIFrame* aFromFrame,
+                                         nsIFrame* aToFrame,
+                                         uint32_t aPointCount,
+                                         CSSPoint* aPoints);
 
   
 
 
 
-  static TransformResult TransformPoint(nsIFrame* aFromFrame, nsIFrame* aToFrame,
-                                        nsPoint& aPoint);
+  static TransformResult TransformPoint(nsIFrame* aFromFrame,
+                                        nsIFrame* aToFrame, nsPoint& aPoint);
 
   
 
@@ -960,7 +937,8 @@ public:
 
 
 
-  static void PostTranslate(Matrix4x4& aTransform, const nsPoint& aOrigin, float aAppUnitsPerPixel, bool aRounded);
+  static void PostTranslate(Matrix4x4& aTransform, const nsPoint& aOrigin,
+                            float aAppUnitsPerPixel, bool aRounded);
 
   
 
@@ -980,8 +958,7 @@ public:
 
 
 
-  static nsRect ClampRectToScrollFrames(nsIFrame* aFrame,
-                                        const nsRect& aRect);
+  static nsRect ClampRectToScrollFrames(nsIFrame* aFrame, const nsRect& aRect);
 
   
 
@@ -1001,9 +978,9 @@ public:
 
 
 
+
   static nsPoint TransformRootPointToFrame(nsIFrame* aFrame,
-                                           const nsPoint &aPoint)
-  {
+                                           const nsPoint& aPoint) {
     return TransformAncestorPointToFrame(aFrame, aPoint, nullptr);
   }
 
@@ -1024,10 +1001,11 @@ public:
 
 
 
-  static nsRect MatrixTransformRect(const nsRect &aBounds,
-                                    const Matrix4x4 &aMatrix, float aFactor);
-  static nsRect MatrixTransformRect(const nsRect &aBounds,
-                                    const Matrix4x4Flagged &aMatrix, float aFactor);
+  static nsRect MatrixTransformRect(const nsRect& aBounds,
+                                    const Matrix4x4& aMatrix, float aFactor);
+  static nsRect MatrixTransformRect(const nsRect& aBounds,
+                                    const Matrix4x4Flagged& aMatrix,
+                                    float aFactor);
 
   
 
@@ -1038,8 +1016,8 @@ public:
 
 
 
-  static nsPoint MatrixTransformPoint(const nsPoint &aPoint,
-                                      const Matrix4x4 &aMatrix, float aFactor);
+  static nsPoint MatrixTransformPoint(const nsPoint& aPoint,
+                                      const Matrix4x4& aMatrix, float aFactor);
 
   
 
@@ -1049,7 +1027,7 @@ public:
 
 
 
-  static nsRect RoundGfxRectToAppRect(const Rect &aRect, float aFactor);
+  static nsRect RoundGfxRectToAppRect(const Rect& aRect, float aFactor);
 
   
 
@@ -1059,7 +1037,7 @@ public:
 
 
 
-  static nsRect RoundGfxRectToAppRect(const gfxRect &aRect, float aFactor);
+  static nsRect RoundGfxRectToAppRect(const gfxRect& aRect, float aFactor);
 
   
 
@@ -1069,9 +1047,9 @@ public:
   static nsRegion RoundedRectIntersectRect(const nsRect& aRoundedRect,
                                            const nscoord aRadii[8],
                                            const nsRect& aContainedRect);
-  static nsIntRegion RoundedRectIntersectIntRect(const nsIntRect& aRoundedRect,
-                                                 const RectCornerRadii& aCornerRadii,
-                                                 const nsIntRect& aContainedRect);
+  static nsIntRegion RoundedRectIntersectIntRect(
+      const nsIntRect& aRoundedRect, const RectCornerRadii& aCornerRadii,
+      const nsIntRect& aContainedRect);
 
   
 
@@ -1083,8 +1061,7 @@ public:
                                         const nsRect& aTestRect);
 
   static bool MaybeCreateDisplayPortInFirstScrollFrameEncountered(
-    nsIFrame* aFrame, nsDisplayListBuilder& aBuilder);
-
+      nsIFrame* aFrame, nsDisplayListBuilder& aBuilder);
 
   enum class PaintFrameFlags : uint32_t {
     PAINT_IN_TRANSFORM = 0x01,
@@ -1164,20 +1141,15 @@ public:
 
 
 
-  static bool
-  BinarySearchForPosition(DrawTarget* aDrawTarget,
-                          nsFontMetrics& aFontMetrics,
-                          const char16_t* aText,
-                          int32_t    aBaseWidth,
-                          int32_t    aBaseInx,
-                          int32_t    aStartInx,
-                          int32_t    aEndInx,
-                          int32_t    aCursorPos,
-                          int32_t&   aIndex,
-                          int32_t&   aTextWidth);
+  static bool BinarySearchForPosition(DrawTarget* aDrawTarget,
+                                      nsFontMetrics& aFontMetrics,
+                                      const char16_t* aText, int32_t aBaseWidth,
+                                      int32_t aBaseInx, int32_t aStartInx,
+                                      int32_t aEndInx, int32_t aCursorPos,
+                                      int32_t& aIndex, int32_t& aTextWidth);
 
   class BoxCallback {
-  public:
+   public:
     BoxCallback() : mIncludeCaptionBoxForTable(true) {}
     virtual void AddBox(nsIFrame* aFrame) = 0;
     bool mIncludeCaptionBoxForTable;
@@ -1203,7 +1175,7 @@ public:
   static nsIFrame* GetFirstNonAnonymousFrame(nsIFrame* aFrame);
 
   class RectCallback {
-  public:
+   public:
     virtual void AddRect(const nsRect& aRect) = 0;
   };
 
@@ -1232,8 +1204,8 @@ public:
     
     RECTS_USE_CONTENT_BOX = 0x02,
     RECTS_USE_PADDING_BOX = 0x04,
-    RECTS_USE_MARGIN_BOX = 0x06, 
-    RECTS_WHICH_BOX_MASK = 0x06 
+    RECTS_USE_MARGIN_BOX = 0x06,  
+    RECTS_WHICH_BOX_MASK = 0x06   
   };
   
 
@@ -1253,11 +1225,9 @@ public:
   static void GetAllInFlowRects(nsIFrame* aFrame, const nsIFrame* aRelativeTo,
                                 RectCallback* aCallback, uint32_t aFlags = 0);
 
-  static void GetAllInFlowRectsAndTexts(nsIFrame* aFrame,
-                                        const nsIFrame* aRelativeTo,
-                                        RectCallback* aCallback,
-                                        mozilla::dom::Sequence<nsString>* aTextList,
-                                        uint32_t aFlags = 0);
+  static void GetAllInFlowRectsAndTexts(
+      nsIFrame* aFrame, const nsIFrame* aRelativeTo, RectCallback* aCallback,
+      mozilla::dom::Sequence<nsString>* aTextList, uint32_t aFlags = 0);
 
   
 
@@ -1269,20 +1239,18 @@ public:
 
 
 
-  static nsRect GetAllInFlowRectsUnion(nsIFrame* aFrame, const nsIFrame* aRelativeTo,
+  static nsRect GetAllInFlowRectsUnion(nsIFrame* aFrame,
+                                       const nsIFrame* aRelativeTo,
                                        uint32_t aFlags = 0);
 
-  enum {
-    EXCLUDE_BLUR_SHADOWS = 0x01
-  };
+  enum { EXCLUDE_BLUR_SHADOWS = 0x01 };
   
 
 
 
 
   static nsRect GetTextShadowRectsUnion(const nsRect& aTextAndDecorationsRect,
-                                        nsIFrame* aFrame,
-                                        uint32_t aFlags = 0);
+                                        nsIFrame* aFrame, uint32_t aFlags = 0);
 
   
 
@@ -1320,11 +1288,10 @@ public:
 
 
   static already_AddRefed<nsFontMetrics> GetFontMetricsForFrame(
-    const nsIFrame* aFrame, float aSizeInflation);
+      const nsIFrame* aFrame, float aSizeInflation);
 
-  static already_AddRefed<nsFontMetrics>
-    GetInflatedFontMetricsForFrame(const nsIFrame* aFrame)
-  {
+  static already_AddRefed<nsFontMetrics> GetInflatedFontMetricsForFrame(
+      const nsIFrame* aFrame) {
     return GetFontMetricsForFrame(aFrame, FontSizeInflationFor(aFrame));
   }
 
@@ -1334,8 +1301,7 @@ public:
 
 
   static already_AddRefed<nsFontMetrics> GetFontMetricsForComputedStyle(
-      ComputedStyle* aComputedStyle,
-      nsPresContext* aPresContext,
+      ComputedStyle* aComputedStyle, nsPresContext* aPresContext,
       float aSizeInflation = 1.0f,
       uint8_t aVariantWidth = NS_FONT_VARIANT_WIDTH_NORMAL);
 
@@ -1347,12 +1313,9 @@ public:
 
 
   static already_AddRefed<nsFontMetrics> GetFontMetricsOfEmphasisMarks(
-      ComputedStyle* aComputedStyle,
-      nsPresContext* aPresContext,
-      float aInflation)
-  {
-    return GetFontMetricsForComputedStyle(aComputedStyle,
-                                          aPresContext,
+      ComputedStyle* aComputedStyle, nsPresContext* aPresContext,
+      float aInflation) {
+    return GetFontMetricsForComputedStyle(aComputedStyle, aPresContext,
                                           aInflation * 0.5f);
   }
 
@@ -1361,7 +1324,8 @@ public:
 
 
 
-  static nsIFrame* FindChildContainingDescendant(nsIFrame* aParent, nsIFrame* aDescendantFrame);
+  static nsIFrame* FindChildContainingDescendant(nsIFrame* aParent,
+                                                 nsIFrame* aDescendantFrame);
 
   
 
@@ -1401,28 +1365,25 @@ public:
 
 
 
-  static nsIFrame*
-  GetNextContinuationOrIBSplitSibling(nsIFrame *aFrame);
+  static nsIFrame* GetNextContinuationOrIBSplitSibling(nsIFrame* aFrame);
 
   
 
 
 
-  static nsIFrame*
-  FirstContinuationOrIBSplitSibling(const nsIFrame *aFrame);
+  static nsIFrame* FirstContinuationOrIBSplitSibling(const nsIFrame* aFrame);
 
   
 
 
 
-  static nsIFrame*
-  LastContinuationOrIBSplitSibling(const nsIFrame *aFrame);
+  static nsIFrame* LastContinuationOrIBSplitSibling(const nsIFrame* aFrame);
 
   
 
 
 
-  static bool IsFirstContinuationOrIBSplitSibling(const nsIFrame *aFrame);
+  static bool IsFirstContinuationOrIBSplitSibling(const nsIFrame* aFrame);
 
   
 
@@ -1453,24 +1414,21 @@ public:
   static const auto PREF_ISIZE = IntrinsicISizeType::PREF_ISIZE;
   enum {
     IGNORE_PADDING = 0x01,
-    BAIL_IF_REFLOW_NEEDED = 0x02, 
-    MIN_INTRINSIC_ISIZE = 0x04, 
+    BAIL_IF_REFLOW_NEEDED = 0x02,  
+    MIN_INTRINSIC_ISIZE = 0x04,  
   };
-  static nscoord
-  IntrinsicForAxis(mozilla::PhysicalAxis aAxis,
-                   gfxContext*           aRenderingContext,
-                   nsIFrame*             aFrame,
-                   IntrinsicISizeType    aType,
-                   const mozilla::Maybe<LogicalSize>& aPercentageBasis = mozilla::Nothing(),
-                   uint32_t              aFlags = 0,
-                   nscoord               aMarginBoxMinSizeClamp = NS_MAXSIZE);
+  static nscoord IntrinsicForAxis(
+      mozilla::PhysicalAxis aAxis, gfxContext* aRenderingContext,
+      nsIFrame* aFrame, IntrinsicISizeType aType,
+      const mozilla::Maybe<LogicalSize>& aPercentageBasis = mozilla::Nothing(),
+      uint32_t aFlags = 0, nscoord aMarginBoxMinSizeClamp = NS_MAXSIZE);
   
 
 
-  static nscoord IntrinsicForContainer(gfxContext*         aRenderingContext,
-                                       nsIFrame*           aFrame,
-                                       IntrinsicISizeType  aType,
-                                       uint32_t            aFlags = 0);
+  static nscoord IntrinsicForContainer(gfxContext* aRenderingContext,
+                                       nsIFrame* aFrame,
+                                       IntrinsicISizeType aType,
+                                       uint32_t aFlags = 0);
 
   
 
@@ -1491,13 +1449,11 @@ public:
 
 
 
-  static nscoord
-  MinSizeContributionForAxis(mozilla::PhysicalAxis aAxis,
-                            gfxContext*            aRC,
-                            nsIFrame*              aFrame,
-                            IntrinsicISizeType     aType,
-                            const LogicalSize&     aPercentageBasis,
-                            uint32_t               aFlags = 0);
+  static nscoord MinSizeContributionForAxis(mozilla::PhysicalAxis aAxis,
+                                            gfxContext* aRC, nsIFrame* aFrame,
+                                            IntrinsicISizeType aType,
+                                            const LogicalSize& aPercentageBasis,
+                                            uint32_t aFlags = 0);
 
   
 
@@ -1508,14 +1464,12 @@ public:
   static nscoord ComputeCBDependentValue(nscoord aPercentBasis,
                                          const nsStyleCoord& aCoord);
 
-  static nscoord ComputeBSizeDependentValue(
-                   nscoord              aContainingBlockBSize,
-                   const nsStyleCoord&  aCoord);
+  static nscoord ComputeBSizeDependentValue(nscoord aContainingBlockBSize,
+                                            const nsStyleCoord& aCoord);
 
   static nscoord ComputeBSizeValue(nscoord aContainingBlockBSize,
-                                    nscoord aContentEdgeToBoxSizingBoxEdge,
-                                    const nsStyleCoord& aCoord)
-  {
+                                   nscoord aContentEdgeToBoxSizingBoxEdge,
+                                   const nsStyleCoord& aCoord) {
     MOZ_ASSERT(aContainingBlockBSize != nscoord_MAX || !aCoord.HasPercent(),
                "caller must deal with %% of unconstrained block-size");
     MOZ_ASSERT(aCoord.IsCoordPercentCalcUnit());
@@ -1525,8 +1479,7 @@ public:
     return std::max(0, result - aContentEdgeToBoxSizingBoxEdge);
   }
 
-  static bool IsAutoBSize(const nsStyleCoord &aCoord, nscoord aCBBSize)
-  {
+  static bool IsAutoBSize(const nsStyleCoord& aCoord, nscoord aCBBSize) {
     nsStyleUnit unit = aCoord.GetUnit();
     return unit == eStyleUnit_Auto ||  
            unit == eStyleUnit_None ||  
@@ -1543,8 +1496,7 @@ public:
            (aCBBSize == nscoord_MAX && aCoord.HasPercent());
   }
 
-  static bool IsPaddingZero(const nsStyleCoord &aCoord)
-  {
+  static bool IsPaddingZero(const nsStyleCoord& aCoord) {
     return (aCoord.GetUnit() == eStyleUnit_Coord &&
             aCoord.GetCoordValue() == 0) ||
            (aCoord.GetUnit() == eStyleUnit_Percent &&
@@ -1555,8 +1507,7 @@ public:
             aCoord.ComputeCoordPercentCalc(0) <= 0);
   }
 
-  static bool IsMarginZero(const nsStyleCoord &aCoord)
-  {
+  static bool IsMarginZero(const nsStyleCoord& aCoord) {
     return (aCoord.GetUnit() == eStyleUnit_Coord &&
             aCoord.GetCoordValue() == 0) ||
            (aCoord.GetUnit() == eStyleUnit_Percent &&
@@ -1566,7 +1517,7 @@ public:
             aCoord.ComputeCoordPercentCalc(0) == 0);
   }
 
-  static void MarkDescendantsDirty(nsIFrame *aSubtreeRoot);
+  static void MarkDescendantsDirty(nsIFrame* aSubtreeRoot);
 
   static void MarkIntrinsicISizesDirtyIfDependentOnBSize(nsIFrame* aFrame);
 
@@ -1576,9 +1527,9 @@ public:
 
 
 
-  static nsSize ComputeAutoSizeWithIntrinsicDimensions(nscoord minWidth, nscoord minHeight,
-                                                       nscoord maxWidth, nscoord maxHeight,
-                                                       nscoord tentWidth, nscoord tentHeight);
+  static nsSize ComputeAutoSizeWithIntrinsicDimensions(
+      nscoord minWidth, nscoord minHeight, nscoord maxWidth, nscoord maxHeight,
+      nscoord tentWidth, nscoord tentHeight);
 
   
   static nscoord PrefISizeFromInline(nsIFrame* aFrame,
@@ -1595,8 +1546,8 @@ public:
   
   
   
-  template<typename Frame, typename T, typename S>
-  static nscolor GetColor(Frame* aFrame, T S::* aField) {
+  template <typename Frame, typename T, typename S>
+  static nscolor GetColor(Frame* aFrame, T S::*aField) {
     nscolor color = aFrame->GetVisitedDependentColor(aField);
     return DarkenColorIfNeeded(aFrame, color);
   }
@@ -1609,8 +1560,7 @@ public:
   static gfxFloat GetSnappedBaselineX(nsIFrame* aFrame, gfxContext* aContext,
                                       nscoord aX, nscoord aAscent);
 
-  static nscoord AppUnitWidthOfString(char16_t aC,
-                                      nsFontMetrics& aFontMetrics,
+  static nscoord AppUnitWidthOfString(char16_t aC, nsFontMetrics& aFontMetrics,
                                       DrawTarget* aDrawTarget) {
     return AppUnitWidthOfString(&aC, 1, aFontMetrics, aDrawTarget);
   }
@@ -1620,17 +1570,15 @@ public:
     return nsLayoutUtils::AppUnitWidthOfString(aString.get(), aString.Length(),
                                                aFontMetrics, aDrawTarget);
   }
-  static nscoord AppUnitWidthOfString(const char16_t *aString,
-                                      uint32_t aLength,
+  static nscoord AppUnitWidthOfString(const char16_t* aString, uint32_t aLength,
                                       nsFontMetrics& aFontMetrics,
                                       DrawTarget* aDrawTarget);
   static nscoord AppUnitWidthOfStringBidi(const nsString& aString,
                                           const nsIFrame* aFrame,
                                           nsFontMetrics& aFontMetrics,
                                           gfxContext& aContext) {
-    return nsLayoutUtils::AppUnitWidthOfStringBidi(aString.get(),
-                                                   aString.Length(), aFrame,
-                                                   aFontMetrics, aContext);
+    return nsLayoutUtils::AppUnitWidthOfStringBidi(
+        aString.get(), aString.Length(), aFrame, aFontMetrics, aContext);
   }
   static nscoord AppUnitWidthOfStringBidi(const char16_t* aString,
                                           uint32_t aLength,
@@ -1640,22 +1588,18 @@ public:
 
   static bool StringWidthIsGreaterThan(const nsString& aString,
                                        nsFontMetrics& aFontMetrics,
-                                       DrawTarget* aDrawTarget,
-                                       nscoord aWidth);
+                                       DrawTarget* aDrawTarget, nscoord aWidth);
 
   static nsBoundingMetrics AppUnitBoundsOfString(const char16_t* aString,
                                                  uint32_t aLength,
                                                  nsFontMetrics& aFontMetrics,
                                                  DrawTarget* aDrawTarget);
 
-  static void DrawString(const nsIFrame*         aFrame,
-                         nsFontMetrics&          aFontMetrics,
-                         gfxContext*             aContext,
-                         const char16_t*         aString,
-                         int32_t                 aLength,
-                         nsPoint                 aPoint,
+  static void DrawString(const nsIFrame* aFrame, nsFontMetrics& aFontMetrics,
+                         gfxContext* aContext, const char16_t* aString,
+                         int32_t aLength, nsPoint aPoint,
                          ComputedStyle* aComputedStyle = nullptr,
-                         DrawStringFlags         aFlags = DrawStringFlags::eDefault);
+                         DrawStringFlags aFlags = DrawStringFlags::eDefault);
 
   static nsPoint GetBackgroundFirstTilePos(const nsPoint& aDest,
                                            const nsPoint& aFill,
@@ -1664,8 +1608,7 @@ public:
   
 
 
-  static void DrawUniDirString(const char16_t* aString,
-                               uint32_t aLength,
+  static void DrawUniDirString(const char16_t* aString, uint32_t aLength,
                                const nsPoint& aPoint,
                                nsFontMetrics& aFontMetrics,
                                gfxContext& aContext);
@@ -1674,18 +1617,14 @@ public:
 
 
 
-  typedef void (* TextShadowCallback)(gfxContext* aCtx,
-                                      nsPoint aShadowOffset,
-                                      const nscolor& aShadowColor,
-                                      void* aData);
+  typedef void (*TextShadowCallback)(gfxContext* aCtx, nsPoint aShadowOffset,
+                                     const nscolor& aShadowColor, void* aData);
 
-  static void PaintTextShadow(const nsIFrame*     aFrame,
-                              gfxContext*         aContext,
-                              const nsRect&       aTextRect,
-                              const nsRect&       aDirtyRect,
-                              const nscolor&      aForegroundColor,
-                              TextShadowCallback  aCallback,
-                              void*               aCallbackData);
+  static void PaintTextShadow(const nsIFrame* aFrame, gfxContext* aContext,
+                              const nsRect& aTextRect, const nsRect& aDirtyRect,
+                              const nscolor& aForegroundColor,
+                              TextShadowCallback aCallback,
+                              void* aCallbackData);
 
   
 
@@ -1697,8 +1636,7 @@ public:
 
 
   static nscoord GetCenteredFontBaseline(nsFontMetrics* aFontMetrics,
-                                         nscoord        aLineHeight,
-                                         bool           aIsInverted);
+                                         nscoord aLineHeight, bool aIsInverted);
 
   
 
@@ -1732,7 +1670,6 @@ public:
   static bool GetFirstLinePosition(mozilla::WritingMode aWritingMode,
                                    const nsIFrame* aFrame,
                                    LinePosition* aResult);
-
 
   
 
@@ -1773,11 +1710,11 @@ public:
   static inline void InitDashPattern(StrokeOptions& aStrokeOptions,
                                      mozilla::StyleBorderStyle aBorderStyle) {
     if (aBorderStyle == mozilla::StyleBorderStyle::Dotted) {
-      static Float dot[] = { 1.f, 1.f };
+      static Float dot[] = {1.f, 1.f};
       aStrokeOptions.mDashLength = MOZ_ARRAY_LENGTH(dot);
       aStrokeOptions.mDashPattern = dot;
     } else if (aBorderStyle == mozilla::StyleBorderStyle::Dashed) {
-      static Float dash[] = { 5.f, 5.f };
+      static Float dash[] = {5.f, 5.f};
       aStrokeOptions.mDashLength = MOZ_ARRAY_LENGTH(dash);
       aStrokeOptions.mDashPattern = dash;
     } else {
@@ -1830,20 +1767,13 @@ public:
 
 
 
-  static ImgDrawResult DrawBackgroundImage(gfxContext&         aContext,
-                                        nsIFrame*           aForFrame,
-                                        nsPresContext*      aPresContext,
-                                        imgIContainer*      aImage,
-                                        const CSSIntSize&   aImageSize,
-                                        SamplingFilter      aSamplingFilter,
-                                        const nsRect&       aDest,
-                                        const nsRect&       aFill,
-                                        const nsSize&       aRepeatSize,
-                                        const nsPoint&      aAnchor,
-                                        const nsRect&       aDirty,
-                                        uint32_t            aImageFlags,
-                                        ExtendMode          aExtendMode,
-                                        float               aOpacity);
+
+  static ImgDrawResult DrawBackgroundImage(
+      gfxContext& aContext, nsIFrame* aForFrame, nsPresContext* aPresContext,
+      imgIContainer* aImage, const CSSIntSize& aImageSize,
+      SamplingFilter aSamplingFilter, const nsRect& aDest, const nsRect& aFill,
+      const nsSize& aRepeatSize, const nsPoint& aAnchor, const nsRect& aDirty,
+      uint32_t aImageFlags, ExtendMode aExtendMode, float aOpacity);
 
   
 
@@ -1863,17 +1793,14 @@ public:
 
 
 
-  static ImgDrawResult DrawImage(gfxContext&         aContext,
-                                 ComputedStyle*      aComputedStyle,
-                                 nsPresContext*      aPresContext,
-                                 imgIContainer*      aImage,
+  static ImgDrawResult DrawImage(gfxContext& aContext,
+                                 ComputedStyle* aComputedStyle,
+                                 nsPresContext* aPresContext,
+                                 imgIContainer* aImage,
                                  const SamplingFilter aSamplingFilter,
-                                 const nsRect&       aDest,
-                                 const nsRect&       aFill,
-                                 const nsPoint&      aAnchor,
-                                 const nsRect&       aDirty,
-                                 uint32_t            aImageFlags,
-                                 float               aOpacity = 1.0);
+                                 const nsRect& aDest, const nsRect& aFill,
+                                 const nsPoint& aAnchor, const nsRect& aDirty,
+                                 uint32_t aImageFlags, float aOpacity = 1.0);
 
   
 
@@ -1899,15 +1826,11 @@ public:
 
 
 
-  static ImgDrawResult DrawSingleUnscaledImage(gfxContext&          aContext,
-                                            nsPresContext*       aPresContext,
-                                            imgIContainer*       aImage,
-                                            const SamplingFilter aSamplingFilter,
-                                            const nsPoint&       aDest,
-                                            const nsRect*        aDirty,
-                                            const mozilla::Maybe<SVGImageContext>& aSVGContext,
-                                            uint32_t             aImageFlags,
-                                            const nsRect*        aSourceArea = nullptr);
+  static ImgDrawResult DrawSingleUnscaledImage(
+      gfxContext& aContext, nsPresContext* aPresContext, imgIContainer* aImage,
+      const SamplingFilter aSamplingFilter, const nsPoint& aDest,
+      const nsRect* aDirty, const mozilla::Maybe<SVGImageContext>& aSVGContext,
+      uint32_t aImageFlags, const nsRect* aSourceArea = nullptr);
 
   
 
@@ -1935,16 +1858,12 @@ public:
 
 
 
-  static ImgDrawResult DrawSingleImage(gfxContext&         aContext,
-                                    nsPresContext*      aPresContext,
-                                    imgIContainer*      aImage,
-                                    const SamplingFilter aSamplingFilter,
-                                    const nsRect&       aDest,
-                                    const nsRect&       aDirty,
-                                    const mozilla::Maybe<SVGImageContext>& aSVGContext,
-                                    uint32_t            aImageFlags,
-                                    const nsPoint*      aAnchorPoint = nullptr,
-                                    const nsRect*       aSourceArea = nullptr);
+  static ImgDrawResult DrawSingleImage(
+      gfxContext& aContext, nsPresContext* aPresContext, imgIContainer* aImage,
+      const SamplingFilter aSamplingFilter, const nsRect& aDest,
+      const nsRect& aDirty, const mozilla::Maybe<SVGImageContext>& aSVGContext,
+      uint32_t aImageFlags, const nsPoint* aAnchorPoint = nullptr,
+      const nsRect* aSourceArea = nullptr);
 
   
 
@@ -1963,10 +1882,9 @@ public:
 
 
   static void ComputeSizeForDrawing(imgIContainer* aImage,
-                                    CSSIntSize&    aImageSize,
-                                    nsSize&        aIntrinsicRatio,
-                                    bool&          aGotWidth,
-                                    bool&          aGotHeight);
+                                    CSSIntSize& aImageSize,
+                                    nsSize& aIntrinsicRatio, bool& aGotWidth,
+                                    bool& aGotHeight);
 
   
 
@@ -1976,21 +1894,17 @@ public:
 
 
 
-  static CSSIntSize
-  ComputeSizeForDrawingWithFallback(imgIContainer* aImage,
-                                    const nsSize&  aFallbackSize);
+  static CSSIntSize ComputeSizeForDrawingWithFallback(
+      imgIContainer* aImage, const nsSize& aFallbackSize);
 
   
 
 
 
-  static mozilla::gfx::IntSize
-  ComputeImageContainerDrawingParameters(imgIContainer*            aImage,
-                                         nsIFrame*                 aForFrame,
-                                         const LayoutDeviceRect&   aDestRect,
-                                         const StackingContextHelper& aSc,
-                                         uint32_t                  aFlags,
-                                         mozilla::Maybe<SVGImageContext>& aSVGContext);
+  static mozilla::gfx::IntSize ComputeImageContainerDrawingParameters(
+      imgIContainer* aImage, nsIFrame* aForFrame,
+      const LayoutDeviceRect& aDestRect, const StackingContextHelper& aSc,
+      uint32_t aFlags, mozilla::Maybe<SVGImageContext>& aSVGContext);
 
   
 
@@ -2011,9 +1925,9 @@ public:
 
 
 
-  static already_AddRefed<imgIContainer>
-  OrientImage(imgIContainer* aContainer,
-              const mozilla::StyleImageOrientation& aOrientation);
+  static already_AddRefed<imgIContainer> OrientImage(
+      imgIContainer* aContainer,
+      const mozilla::StyleImageOrientation& aOrientation);
 
   
 
@@ -2033,7 +1947,7 @@ public:
 
 
   static bool HasNonZeroCornerOnSide(const nsStyleCorners& aCorners,
-                                       mozilla::Side aSide);
+                                     mozilla::Side aSide);
 
   
 
@@ -2080,18 +1994,16 @@ public:
 
 
 
-  static mozilla::gfx::ShapedTextFlags
-  GetTextRunFlagsForStyle(ComputedStyle* aComputedStyle,
-                          nsPresContext* aPresContext,
-                          const nsStyleFont* aStyleFont,
-                          const nsStyleText* aStyleText,
-                          nscoord aLetterSpacing);
+  static mozilla::gfx::ShapedTextFlags GetTextRunFlagsForStyle(
+      ComputedStyle* aComputedStyle, nsPresContext* aPresContext,
+      const nsStyleFont* aStyleFont, const nsStyleText* aStyleText,
+      nscoord aLetterSpacing);
 
   
 
 
-  static mozilla::gfx::ShapedTextFlags
-  GetTextRunOrientFlagsForStyle(ComputedStyle* aComputedStyle);
+  static mozilla::gfx::ShapedTextFlags GetTextRunOrientFlagsForStyle(
+      ComputedStyle* aComputedStyle);
 
   
 
@@ -2107,8 +2019,8 @@ public:
 
 
 
-  static nsDeviceContext*
-  GetDeviceContextForScreenInfo(nsPIDOMWindowOuter* aWindow);
+  static nsDeviceContext* GetDeviceContextForScreenInfo(
+      nsPIDOMWindowOuter* aWindow);
 
   
 
@@ -2186,15 +2098,16 @@ public:
 
 
 
+
     
     RefPtr<mozilla::layers::Image> mLayersImage;
 
-protected:
+   protected:
     
 
     RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
 
-public:
+   public:
     
     DirectDrawInfo mDrawInfo;
 
@@ -2206,6 +2119,7 @@ public:
     
     nsCOMPtr<imgIRequest> mImageRequest;
     
+
     bool mIsWriteOnly;
     
 
@@ -2226,43 +2140,42 @@ public:
   };
 
   
-  static SurfaceFromElementResult
-  SurfaceFromOffscreenCanvas(mozilla::dom::OffscreenCanvas *aOffscreenCanvas,
-                             uint32_t aSurfaceFlags,
-                             RefPtr<DrawTarget>& aTarget);
-  static SurfaceFromElementResult
-  SurfaceFromOffscreenCanvas(mozilla::dom::OffscreenCanvas *aOffscreenCanvas,
-                             uint32_t aSurfaceFlags = 0) {
+  static SurfaceFromElementResult SurfaceFromOffscreenCanvas(
+      mozilla::dom::OffscreenCanvas* aOffscreenCanvas, uint32_t aSurfaceFlags,
+      RefPtr<DrawTarget>& aTarget);
+  static SurfaceFromElementResult SurfaceFromOffscreenCanvas(
+      mozilla::dom::OffscreenCanvas* aOffscreenCanvas,
+      uint32_t aSurfaceFlags = 0) {
     RefPtr<DrawTarget> target = nullptr;
     return SurfaceFromOffscreenCanvas(aOffscreenCanvas, aSurfaceFlags, target);
   }
 
-  static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::Element *aElement,
-                                                     uint32_t aSurfaceFlags,
-                                                     RefPtr<DrawTarget>& aTarget);
-  static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::Element *aElement,
-                                                     uint32_t aSurfaceFlags = 0) {
+  static SurfaceFromElementResult SurfaceFromElement(
+      mozilla::dom::Element* aElement, uint32_t aSurfaceFlags,
+      RefPtr<DrawTarget>& aTarget);
+  static SurfaceFromElementResult SurfaceFromElement(
+      mozilla::dom::Element* aElement, uint32_t aSurfaceFlags = 0) {
     RefPtr<DrawTarget> target = nullptr;
     return SurfaceFromElement(aElement, aSurfaceFlags, target);
   }
 
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  static SurfaceFromElementResult SurfaceFromElement(nsIImageLoadingContent *aElement,
-                                                     uint32_t aSurfaceFlags,
-                                                     RefPtr<DrawTarget>& aTarget);
+  static SurfaceFromElementResult SurfaceFromElement(
+      nsIImageLoadingContent* aElement, uint32_t aSurfaceFlags,
+      RefPtr<DrawTarget>& aTarget);
   
   
   
-  static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::HTMLImageElement *aElement,
-                                                     uint32_t aSurfaceFlags,
-                                                     RefPtr<DrawTarget>& aTarget);
-  static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::HTMLCanvasElement *aElement,
-                                                     uint32_t aSurfaceFlags,
-                                                     RefPtr<DrawTarget>& aTarget);
-  static SurfaceFromElementResult SurfaceFromElement(mozilla::dom::HTMLVideoElement *aElement,
-                                                     uint32_t aSurfaceFlags,
-                                                     RefPtr<DrawTarget>& aTarget);
+  static SurfaceFromElementResult SurfaceFromElement(
+      mozilla::dom::HTMLImageElement* aElement, uint32_t aSurfaceFlags,
+      RefPtr<DrawTarget>& aTarget);
+  static SurfaceFromElementResult SurfaceFromElement(
+      mozilla::dom::HTMLCanvasElement* aElement, uint32_t aSurfaceFlags,
+      RefPtr<DrawTarget>& aTarget);
+  static SurfaceFromElementResult SurfaceFromElement(
+      mozilla::dom::HTMLVideoElement* aElement, uint32_t aSurfaceFlags,
+      RefPtr<DrawTarget>& aTarget);
 
   
 
@@ -2284,12 +2197,11 @@ public:
 
 
 
-  static mozilla::dom::Element*
-  GetEditableRootContentByContentEditable(nsIDocument* aDocument);
+  static mozilla::dom::Element* GetEditableRootContentByContentEditable(
+      nsIDocument* aDocument);
 
   static void AddExtraBackgroundItems(nsDisplayListBuilder& aBuilder,
-                                      nsDisplayList& aList,
-                                      nsIFrame* aFrame,
+                                      nsDisplayList& aList, nsIFrame* aFrame,
                                       const nsRect& aCanvasArea,
                                       const nsRegion& aVisibleRegion,
                                       nscolor aBackstop);
@@ -2309,7 +2221,8 @@ public:
 
   typedef nsTArray<nsAutoPtr<mozilla::dom::InspectorFontFace>> UsedFontFaceList;
   typedef nsDataHashtable<nsPtrHashKey<gfxFontEntry>,
-                          mozilla::dom::InspectorFontFace*> UsedFontFaceTable;
+                          mozilla::dom::InspectorFontFace*>
+      UsedFontFaceTable;
 
   
 
@@ -2329,10 +2242,8 @@ public:
 
 
 
-  static void GetFontFacesForText(nsIFrame* aFrame,
-                                  int32_t aStartOffset,
-                                  int32_t aEndOffset,
-                                  bool aFollowContinuations,
+  static void GetFontFacesForText(nsIFrame* aFrame, int32_t aStartOffset,
+                                  int32_t aEndOffset, bool aFollowContinuations,
                                   UsedFontFaceList& aResult,
                                   UsedFontFaceTable& aFontFaces,
                                   uint32_t aMaxRanges,
@@ -2386,8 +2297,8 @@ public:
 
 
 
-  static nsCSSPropertyIDSet
-  GetAnimationPropertiesForCompositor(const nsIFrame* aFrame);
+  static nsCSSPropertyIDSet GetAnimationPropertiesForCompositor(
+      const nsIFrame* aFrame);
 
   
 
@@ -2407,7 +2318,6 @@ public:
   static bool DisplayRootHasRetainedDisplayListBuilder(nsIFrame* aFrame);
 
   
-
 
 
 
@@ -2442,8 +2352,7 @@ public:
 
   static bool IsContentSelectEnabled();
 
-  static bool InterruptibleReflowEnabled()
-  {
+  static bool InterruptibleReflowEnabled() {
     return sInterruptibleReflowEnabled;
   }
 
@@ -2452,32 +2361,17 @@ public:
 
 
 
-  static void UnionChildOverflow(nsIFrame* aFrame,
-                                 nsOverflowAreas& aOverflowAreas,
-                                 mozilla::layout::FrameChildListIDs aSkipChildLists =
-                                     mozilla::layout::FrameChildListIDs());
+  static void UnionChildOverflow(
+      nsIFrame* aFrame, nsOverflowAreas& aOverflowAreas,
+      mozilla::layout::FrameChildListIDs aSkipChildLists =
+          mozilla::layout::FrameChildListIDs());
 
   
 
 
 
 
-  static float FontSizeInflationFor(const nsIFrame *aFrame);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  static nscoord InflationMinFontSizeFor(const nsIFrame *aFrame);
+  static float FontSizeInflationFor(const nsIFrame* aFrame);
 
   
 
@@ -2486,10 +2380,25 @@ public:
 
 
 
-  static float FontSizeInflationInner(const nsIFrame *aFrame,
+
+
+
+
+
+
+  static nscoord InflationMinFontSizeFor(const nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+  static float FontSizeInflationInner(const nsIFrame* aFrame,
                                       nscoord aMinFontSize);
 
-  static bool FontSizeInflationEnabled(nsPresContext *aPresContext);
+  static bool FontSizeInflationEnabled(nsPresContext* aPresContext);
 
   
 
@@ -2535,25 +2444,15 @@ public:
 
 
 
-  static float SystemFontScale() {
-    return sSystemFontScale / 100.0f;
-  }
+  static float SystemFontScale() { return sSystemFontScale / 100.0f; }
 
-  static float MaxZoom() {
-    return sZoomMaxPercent / 100.0f;
-  }
+  static float MaxZoom() { return sZoomMaxPercent / 100.0f; }
 
-  static float MinZoom() {
-    return sZoomMinPercent / 100.0f;
-  }
+  static float MinZoom() { return sZoomMinPercent / 100.0f; }
 
-  static bool SVGTransformBoxEnabled() {
-    return sSVGTransformBoxEnabled;
-  }
+  static bool SVGTransformBoxEnabled() { return sSVGTransformBoxEnabled; }
 
-  static uint32_t IdlePeriodDeadlineLimit() {
-    return sIdlePeriodDeadlineLimit;
-  }
+  static uint32_t IdlePeriodDeadlineLimit() { return sIdlePeriodDeadlineLimit; }
 
   static uint32_t QuiescentFramesBeforeIdlePeriod() {
     return sQuiescentFramesBeforeIdlePeriod;
@@ -2573,7 +2472,8 @@ public:
 
 
   static bool InvalidationDebuggingIsEnabled() {
-    return sInvalidationDebuggingIsEnabled || getenv("MOZ_DUMP_INVALIDATION") != 0;
+    return sInvalidationDebuggingIsEnabled ||
+           getenv("MOZ_DUMP_INVALIDATION") != 0;
   }
 
   static void Initialize();
@@ -2657,7 +2557,7 @@ public:
 
 
 
-  template<typename PointType, typename RectType, typename CoordType>
+  template <typename PointType, typename RectType, typename CoordType>
   static bool PointIsCloserToRect(PointType aPoint, const RectType& aRect,
                                   CoordType& aClosestXDistance,
                                   CoordType& aClosestYDistance);
@@ -2668,7 +2568,8 @@ public:
 
 
 
-  static nsRect GetBoxShadowRectForFrame(nsIFrame* aFrame, const nsSize& aFrameSize);
+  static nsRect GetBoxShadowRectForFrame(nsIFrame* aFrame,
+                                         const nsSize& aFrameSize);
 
 #ifdef DEBUG
   
@@ -2676,23 +2577,20 @@ public:
 
 
 
-  static void
-  AssertNoDuplicateContinuations(nsIFrame* aContainer,
-                                 const nsFrameList& aFrameList);
+  static void AssertNoDuplicateContinuations(nsIFrame* aContainer,
+                                             const nsFrameList& aFrameList);
 
   
 
 
 
-  static void
-  AssertTreeOnlyEmptyNextInFlows(nsIFrame *aSubtreeRoot);
+  static void AssertTreeOnlyEmptyNextInFlows(nsIFrame* aSubtreeRoot);
 #endif
 
   
 
 
-  static uint32_t
-  GetTouchActionFromFrame(nsIFrame* aFrame);
+  static uint32_t GetTouchActionFromFrame(nsIFrame* aFrame);
 
   
 
@@ -2701,27 +2599,21 @@ public:
 
 
 
-  static void
-  TransformToAncestorAndCombineRegions(
-    const nsRegion& aRegion,
-    nsIFrame* aFrame,
-    const nsIFrame* aAncestorFrame,
-    nsRegion* aPreciseTargetDest,
-    nsRegion* aImpreciseTargetDest,
-    mozilla::Maybe<Matrix4x4Flagged>* aMatrixCache,
-    const mozilla::DisplayItemClip* aClip);
+  static void TransformToAncestorAndCombineRegions(
+      const nsRegion& aRegion, nsIFrame* aFrame, const nsIFrame* aAncestorFrame,
+      nsRegion* aPreciseTargetDest, nsRegion* aImpreciseTargetDest,
+      mozilla::Maybe<Matrix4x4Flagged>* aMatrixCache,
+      const mozilla::DisplayItemClip* aClip);
 
   
 
 
 
 
-  static bool
-  GetContentViewerSize(nsPresContext* aPresContext,
-                       LayoutDeviceIntSize& aOutSize);
+  static bool GetContentViewerSize(nsPresContext* aPresContext,
+                                   LayoutDeviceIntSize& aOutSize);
 
- 
-
+  
 
 
 
@@ -2729,11 +2621,11 @@ public:
 
 
 
-  static nsSize
-  CalculateCompositionSizeForFrame(nsIFrame* aFrame, bool aSubtractScrollbars = true);
 
- 
+  static nsSize CalculateCompositionSizeForFrame(
+      nsIFrame* aFrame, bool aSubtractScrollbars = true);
 
+  
 
 
 
@@ -2743,26 +2635,25 @@ public:
 
 
 
-  static CSSSize
-  CalculateRootCompositionSize(nsIFrame* aFrame,
-                               bool aIsRootContentDocRootScrollFrame,
-                               const FrameMetrics& aMetrics);
 
- 
+  static CSSSize CalculateRootCompositionSize(
+      nsIFrame* aFrame, bool aIsRootContentDocRootScrollFrame,
+      const FrameMetrics& aMetrics);
 
-
+  
 
 
 
-  static nsRect
-  CalculateScrollableRectForFrame(nsIScrollableFrame* aScrollableFrame, nsIFrame* aRootFrame);
-
- 
 
 
+  static nsRect CalculateScrollableRectForFrame(
+      nsIScrollableFrame* aScrollableFrame, nsIFrame* aRootFrame);
 
-  static nsRect
-  CalculateExpandedScrollableRect(nsIFrame* aFrame);
+  
+
+
+
+  static nsRect CalculateExpandedScrollableRect(nsIFrame* aFrame);
 
   
 
@@ -2799,8 +2690,7 @@ public:
 
 
   static void LogTestDataForPaint(mozilla::layers::LayerManager* aManager,
-                                  ViewID aScrollId,
-                                  const std::string& aKey,
+                                  ViewID aScrollId, const std::string& aKey,
                                   const std::string& aValue) {
     DoLogTestDataForPaint(aManager, aScrollId, aKey, aValue);
   }
@@ -2812,11 +2702,9 @@ public:
 
   template <typename Value>
   static void LogTestDataForPaint(mozilla::layers::LayerManager* aManager,
-                                  ViewID aScrollId,
-                                  const std::string& aKey,
+                                  ViewID aScrollId, const std::string& aKey,
                                   const Value& aValue) {
-    DoLogTestDataForPaint(aManager, aScrollId, aKey,
-                          mozilla::ToString(aValue));
+    DoLogTestDataForPaint(aManager, aScrollId, aKey, mozilla::ToString(aValue));
   }
 
   
@@ -2832,7 +2720,8 @@ public:
 
 
 
-  static FrameMetrics CalculateBasicFrameMetrics(nsIScrollableFrame* aScrollFrame);
+  static FrameMetrics CalculateBasicFrameMetrics(
+      nsIScrollableFrame* aScrollFrame);
 
   
 
@@ -2842,8 +2731,8 @@ public:
 
 
 
-  static bool CalculateAndSetDisplayPortMargins(nsIScrollableFrame* aScrollFrame,
-                                                RepaintMode aRepaintMode);
+  static bool CalculateAndSetDisplayPortMargins(
+      nsIScrollableFrame* aScrollFrame, RepaintMode aRepaintMode);
 
   
 
@@ -2866,8 +2755,8 @@ public:
 
 
 
-  static void SetZeroMarginDisplayPortOnAsyncScrollableAncestors(nsIFrame* aFrame,
-                                                                 RepaintMode aRepaintMode);
+  static void SetZeroMarginDisplayPortOnAsyncScrollableAncestors(
+      nsIFrame* aFrame, RepaintMode aRepaintMode);
   
 
 
@@ -2877,11 +2766,10 @@ public:
 
   static bool IsOutlineStyleAutoEnabled();
 
-  static void SetBSizeFromFontMetrics(const nsIFrame* aFrame,
-                                      mozilla::ReflowOutput& aMetrics,
-                                      const mozilla::LogicalMargin& aFramePadding,
-                                      mozilla::WritingMode aLineWM,
-                                      mozilla::WritingMode aFrameWM);
+  static void SetBSizeFromFontMetrics(
+      const nsIFrame* aFrame, mozilla::ReflowOutput& aMetrics,
+      const mozilla::LogicalMargin& aFramePadding, mozilla::WritingMode aLineWM,
+      mozilla::WritingMode aFrameWM);
 
   static bool HasDocumentLevelListenersForApzAwareEvents(nsIPresShell* aShell);
 
@@ -2890,8 +2778,7 @@ public:
 
 
 
-  static void SetVisualViewportSize(nsIPresShell* aPresShell,
-                                                      CSSSize aSize);
+  static void SetVisualViewportSize(nsIPresShell* aPresShell, CSSSize aSize);
 
   
 
@@ -2902,26 +2789,24 @@ public:
 
   static bool CanScrollOriginClobberApz(nsAtom* aScrollOrigin);
 
-  static ScrollMetadata ComputeScrollMetadata(nsIFrame* aForFrame,
-                                              nsIFrame* aScrollFrame,
-                                              nsIContent* aContent,
-                                              const nsIFrame* aReferenceFrame,
-                                              mozilla::layers::LayerManager* aLayerManager,
-                                              ViewID aScrollParentId,
-                                              const nsRect& aViewport,
-                                              const mozilla::Maybe<nsRect>& aClipRect,
-                                              bool aIsRoot,
-                                              const mozilla::Maybe<ContainerLayerParameters>& aContainerParameters);
+  static ScrollMetadata ComputeScrollMetadata(
+      nsIFrame* aForFrame, nsIFrame* aScrollFrame, nsIContent* aContent,
+      const nsIFrame* aReferenceFrame,
+      mozilla::layers::LayerManager* aLayerManager, ViewID aScrollParentId,
+      const nsRect& aViewport, const mozilla::Maybe<nsRect>& aClipRect,
+      bool aIsRoot,
+      const mozilla::Maybe<ContainerLayerParameters>& aContainerParameters);
 
   
 
 
 
 
-  static mozilla::Maybe<ScrollMetadata> GetRootMetadata(nsDisplayListBuilder* aBuilder,
-                                                        mozilla::layers::LayerManager* aLayerManager,
-                                                        const ContainerLayerParameters& aContainerParameters,
-                                                        const std::function<bool(ViewID& aScrollId)>& aCallback);
+  static mozilla::Maybe<ScrollMetadata> GetRootMetadata(
+      nsDisplayListBuilder* aBuilder,
+      mozilla::layers::LayerManager* aLayerManager,
+      const ContainerLayerParameters& aContainerParameters,
+      const std::function<bool(ViewID& aScrollId)>& aCallback);
 
   
 
@@ -2934,13 +2819,15 @@ public:
 
 
 
-  static nsMargin ScrollbarAreaToExcludeFromCompositionBoundsFor(nsIFrame* aScrollFrame);
+  static nsMargin ScrollbarAreaToExcludeFromCompositionBoundsFor(
+      nsIFrame* aScrollFrame);
 
   
 
 
 
-  static bool ContainsMetricsWithId(const Layer* aLayer, const ViewID& aScrollId);
+  static bool ContainsMetricsWithId(const Layer* aLayer,
+                                    const ViewID& aScrollId);
 
   static bool ShouldUseNoScriptSheet(nsIDocument* aDocument);
   static bool ShouldUseNoFramesSheet(nsIDocument* aDocument);
@@ -2979,8 +2866,8 @@ public:
 
 
 
-  static CSSRect GetBoundingContentRect(const nsIContent* aContent,
-                                        const nsIScrollableFrame* aRootScrollFrame);
+  static CSSRect GetBoundingContentRect(
+      const nsIContent* aContent, const nsIScrollableFrame* aRootScrollFrame);
 
   
 
@@ -3031,7 +2918,10 @@ public:
 
 
 
-  static bool IsInvisibleBreak(nsINode* aNode, nsIFrame** aNextLineFrame = nullptr);
+
+
+  static bool IsInvisibleBreak(nsINode* aNode,
+                               nsIFrame** aNextLineFrame = nullptr);
 
   static nsRect ComputeGeometryBox(nsIFrame* aFrame,
                                    StyleGeometryBox aGeometryBox);
@@ -3048,19 +2938,16 @@ public:
     No,
   };
 
-  static already_AddRefed<nsFontMetrics> GetMetricsFor(nsPresContext* aPresContext,
-                                                       bool aIsVertical,
-                                                       const nsStyleFont* aStyleFont,
-                                                       nscoord aFontSize,
-                                                       bool aUseUserFontSet,
-                                                       FlushUserFontSet aFlushUserFontSet);
+  static already_AddRefed<nsFontMetrics> GetMetricsFor(
+      nsPresContext* aPresContext, bool aIsVertical,
+      const nsStyleFont* aStyleFont, nscoord aFontSize, bool aUseUserFontSet,
+      FlushUserFontSet aFlushUserFontSet);
 
   
 
 
 
-  static void FixupNoneGeneric(nsFont* aFont,
-                               const nsPresContext* aPresContext,
+  static void FixupNoneGeneric(nsFont* aFont, const nsPresContext* aPresContext,
                                uint8_t aGenericFontID,
                                const nsFont* aDefaultVariableFont);
 
@@ -3080,8 +2967,9 @@ public:
   static void ComputeFontFeatures(const nsCSSValuePairList* aFeaturesList,
                                   nsTArray<gfxFontFeature>& aFeatureSettings);
 
-  static void ComputeFontVariations(const nsCSSValuePairList* aVariationsList,
-                                    nsTArray<gfxFontVariation>& aVariationSettings);
+  static void ComputeFontVariations(
+      const nsCSSValuePairList* aVariationsList,
+      nsTArray<gfxFontVariation>& aVariationSettings);
 
   static uint32_t ParseFontLanguageOverride(const nsAString& aLangTag);
 
@@ -3094,10 +2982,9 @@ public:
   
 
 
-  template<bool clampNegativeResultToZero>
+  template <bool clampNegativeResultToZero>
   static nscoord ResolveToLength(const nsStyleCoord& aCoord,
-                                 nscoord aPercentageBasis)
-  {
+                                 nscoord aPercentageBasis) {
     NS_WARNING_ASSERTION(aPercentageBasis >= nscoord(0), "nscoord overflow?");
 
     switch (aCoord.GetUnit()) {
@@ -3120,7 +3007,7 @@ public:
           result = calc->mLength;
         } else {
           result = calc->mLength +
-            NSToCoordFloorClamped(aPercentageBasis * calc->mPercent);
+                   NSToCoordFloorClamped(aPercentageBasis * calc->mPercent);
         }
         if (clampNegativeResultToZero && result < 0) {
           return nscoord(0);
@@ -3139,8 +3026,7 @@ public:
 
 
   static nscoord ResolveGapToLength(const nsStyleCoord& aGap,
-                                    nscoord aPercentageBasis)
-  {
+                                    nscoord aPercentageBasis) {
     if (aGap.GetUnit() == eStyleUnit_Normal) {
       return nscoord(0);
     }
@@ -3156,14 +3042,14 @@ public:
   
 
 
-  static mozilla::Maybe<mozilla::MotionPathData>
-  ResolveMotionPath(const nsIFrame* aFrame);
+  static mozilla::Maybe<mozilla::MotionPathData> ResolveMotionPath(
+      const nsIFrame* aFrame);
 
-private:
+ private:
   static uint32_t sFontSizeInflationEmPerLine;
   static uint32_t sFontSizeInflationMinTwips;
   static uint32_t sFontSizeInflationLineThreshold;
-  static int32_t  sFontSizeInflationMappingIntercept;
+  static int32_t sFontSizeInflationMappingIntercept;
   static uint32_t sFontSizeInflationMaxRatio;
   static bool sFontSizeInflationForceEnabled;
   static bool sFontSizeInflationDisabledInMasterProcess;
@@ -3180,8 +3066,7 @@ private:
 
 
   static void DoLogTestDataForPaint(mozilla::layers::LayerManager* aManager,
-                                    ViewID aScrollId,
-                                    const std::string& aKey,
+                                    ViewID aScrollId, const std::string& aKey,
                                     const std::string& aValue);
 
   static bool IsAPZTestLoggingEnabled();
@@ -3189,12 +3074,10 @@ private:
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsLayoutUtils::PaintFrameFlags)
 
-template<typename PointType, typename RectType, typename CoordType>
- bool
-nsLayoutUtils::PointIsCloserToRect(PointType aPoint, const RectType& aRect,
-                                   CoordType& aClosestXDistance,
-                                   CoordType& aClosestYDistance)
-{
+template <typename PointType, typename RectType, typename CoordType>
+ bool nsLayoutUtils::PointIsCloserToRect(
+    PointType aPoint, const RectType& aRect, CoordType& aClosestXDistance,
+    CoordType& aClosestYDistance) {
   CoordType fromLeft = aPoint.x - aRect.x;
   CoordType fromRight = aPoint.x - aRect.XMost();
 
@@ -3271,43 +3154,43 @@ gfx::Rect NSRectToSnappedRect(const nsRect& aRect, double aAppUnitsPerPixel,
 
 
 
-gfx::Rect NSRectToNonEmptySnappedRect(const nsRect& aRect, double aAppUnitsPerPixel,
+gfx::Rect NSRectToNonEmptySnappedRect(const nsRect& aRect,
+                                      double aAppUnitsPerPixel,
                                       const gfx::DrawTarget& aSnapDT);
 
-void StrokeLineWithSnapping(const nsPoint& aP1, const nsPoint& aP2,
-                            int32_t aAppUnitsPerDevPixel,
-                            gfx::DrawTarget& aDrawTarget,
-                            const gfx::Pattern& aPattern,
-                            const gfx::StrokeOptions& aStrokeOptions = gfx::StrokeOptions(),
-                            const gfx::DrawOptions& aDrawOptions = gfx::DrawOptions());
+void StrokeLineWithSnapping(
+    const nsPoint& aP1, const nsPoint& aP2, int32_t aAppUnitsPerDevPixel,
+    gfx::DrawTarget& aDrawTarget, const gfx::Pattern& aPattern,
+    const gfx::StrokeOptions& aStrokeOptions = gfx::StrokeOptions(),
+    const gfx::DrawOptions& aDrawOptions = gfx::DrawOptions());
 
-  namespace layout {
-
-    
+namespace layout {
 
 
 
 
 
-    class AutoMaybeDisableFontInflation {
-    public:
-      explicit AutoMaybeDisableFontInflation(nsIFrame *aFrame);
 
-      ~AutoMaybeDisableFontInflation();
-    private:
-      nsPresContext *mPresContext;
-      bool mOldValue;
-    };
 
-    void MaybeSetupTransactionIdAllocator(layers::LayerManager* aManager,
-                                          nsPresContext* aPresContext);
+class AutoMaybeDisableFontInflation {
+ public:
+  explicit AutoMaybeDisableFontInflation(nsIFrame* aFrame);
 
-  } 
-} 
+  ~AutoMaybeDisableFontInflation();
 
-class nsSetAttrRunnable : public mozilla::Runnable
-{
-public:
+ private:
+  nsPresContext* mPresContext;
+  bool mOldValue;
+};
+
+void MaybeSetupTransactionIdAllocator(layers::LayerManager* aManager,
+                                      nsPresContext* aPresContext);
+
+}  
+}  
+
+class nsSetAttrRunnable : public mozilla::Runnable {
+ public:
   nsSetAttrRunnable(mozilla::dom::Element* aElement, nsAtom* aAttrName,
                     const nsAString& aValue);
   nsSetAttrRunnable(mozilla::dom::Element* aElement, nsAtom* aAttrName,
@@ -3320,9 +3203,8 @@ public:
   nsAutoString mValue;
 };
 
-class nsUnsetAttrRunnable : public mozilla::Runnable
-{
-public:
+class nsUnsetAttrRunnable : public mozilla::Runnable {
+ public:
   nsUnsetAttrRunnable(mozilla::dom::Element* aElement, nsAtom* aAttrName);
 
   NS_DECL_NSIRUNNABLE
@@ -3333,19 +3215,17 @@ public:
 
 
 
-template<typename T>
-class MOZ_RAII SetAndNullOnExit
-{
-public:
-  SetAndNullOnExit(T* &aVariable, T* aValue) {
+template <typename T>
+class MOZ_RAII SetAndNullOnExit {
+ public:
+  SetAndNullOnExit(T*& aVariable, T* aValue) {
     aVariable = aValue;
     mVariable = &aVariable;
   }
-  ~SetAndNullOnExit() {
-    *mVariable = nullptr;
-  }
-private:
+  ~SetAndNullOnExit() { *mVariable = nullptr; }
+
+ private:
   T** mVariable;
 };
 
-#endif 
+#endif  

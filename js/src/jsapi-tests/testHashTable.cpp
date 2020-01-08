@@ -11,8 +11,12 @@
 
 
 
-typedef js::HashMap<uint32_t, uint32_t, js::DefaultHasher<uint32_t>, js::SystemAllocPolicy> IntMap;
-typedef js::HashSet<uint32_t, js::DefaultHasher<uint32_t>, js::SystemAllocPolicy> IntSet;
+typedef js::HashMap<uint32_t, uint32_t, js::DefaultHasher<uint32_t>,
+                    js::SystemAllocPolicy>
+    IntMap;
+typedef js::HashSet<uint32_t, js::DefaultHasher<uint32_t>,
+                    js::SystemAllocPolicy>
+    IntSet;
 
 
 
@@ -28,329 +32,312 @@ const size_t TestIterations = 10;
 
 JS_STATIC_ASSERT(TestSize <= 0x0000FFFF / 2);
 
-struct LowToHigh
-{
-    static uint32_t rekey(uint32_t initial) {
-        if (initial > uint32_t(0x0000FFFF)) {
-            return initial;
-        }
-        return initial << 16;
+struct LowToHigh {
+  static uint32_t rekey(uint32_t initial) {
+    if (initial > uint32_t(0x0000FFFF)) {
+      return initial;
     }
+    return initial << 16;
+  }
 
-    static bool shouldBeRemoved(uint32_t initial) {
+  static bool shouldBeRemoved(uint32_t initial) { return false; }
+};
+
+struct LowToHighWithRemoval {
+  static uint32_t rekey(uint32_t initial) {
+    if (initial > uint32_t(0x0000FFFF)) {
+      return initial;
+    }
+    return initial << 16;
+  }
+
+  static bool shouldBeRemoved(uint32_t initial) {
+    if (initial >= 0x00010000) {
+      return (initial >> 16) % 2 == 0;
+    }
+    return initial % 2 == 0;
+  }
+};
+
+static bool MapsAreEqual(IntMap& am, IntMap& bm) {
+  bool equal = true;
+  if (am.count() != bm.count()) {
+    equal = false;
+    fprintf(stderr, "A.count() == %u and B.count() == %u\n", am.count(),
+            bm.count());
+  }
+  for (auto iter = am.iter(); !iter.done(); iter.next()) {
+    if (!bm.has(iter.get().key())) {
+      equal = false;
+      fprintf(stderr, "B does not have %x which is in A\n", iter.get().key());
+    }
+  }
+  for (auto iter = bm.iter(); !iter.done(); iter.next()) {
+    if (!am.has(iter.get().key())) {
+      equal = false;
+      fprintf(stderr, "A does not have %x which is in B\n", iter.get().key());
+    }
+  }
+  return equal;
+}
+
+static bool SetsAreEqual(IntSet& am, IntSet& bm) {
+  bool equal = true;
+  if (am.count() != bm.count()) {
+    equal = false;
+    fprintf(stderr, "A.count() == %u and B.count() == %u\n", am.count(),
+            bm.count());
+  }
+  for (auto iter = am.iter(); !iter.done(); iter.next()) {
+    if (!bm.has(iter.get())) {
+      equal = false;
+      fprintf(stderr, "B does not have %x which is in A\n", iter.get());
+    }
+  }
+  for (auto iter = bm.iter(); !iter.done(); iter.next()) {
+    if (!am.has(iter.get())) {
+      equal = false;
+      fprintf(stderr, "A does not have %x which is in B\n", iter.get());
+    }
+  }
+  return equal;
+}
+
+static bool AddLowKeys(IntMap* am, IntMap* bm, int seed) {
+  size_t i = 0;
+  srand(seed);
+  while (i < TestSize) {
+    uint32_t n = rand() & 0x0000FFFF;
+    if (!am->has(n)) {
+      if (bm->has(n)) {
         return false;
-    }
-};
+      }
 
-struct LowToHighWithRemoval
-{
-    static uint32_t rekey(uint32_t initial) {
-        if (initial > uint32_t(0x0000FFFF)) {
-            return initial;
-        }
-        return initial << 16;
+      if (!am->putNew(n, n) || !bm->putNew(n, n)) {
+        return false;
+      }
+      i++;
     }
-
-    static bool shouldBeRemoved(uint32_t initial) {
-        if (initial >= 0x00010000) {
-            return (initial >> 16) % 2 == 0;
-        }
-        return initial % 2 == 0;
-    }
-};
-
-static bool
-MapsAreEqual(IntMap& am, IntMap& bm)
-{
-    bool equal = true;
-    if (am.count() != bm.count()) {
-        equal = false;
-        fprintf(stderr, "A.count() == %u and B.count() == %u\n", am.count(), bm.count());
-    }
-    for (auto iter = am.iter(); !iter.done(); iter.next()) {
-        if (!bm.has(iter.get().key())) {
-            equal = false;
-            fprintf(stderr, "B does not have %x which is in A\n", iter.get().key());
-        }
-    }
-    for (auto iter = bm.iter(); !iter.done(); iter.next()) {
-        if (!am.has(iter.get().key())) {
-            equal = false;
-            fprintf(stderr, "A does not have %x which is in B\n", iter.get().key());
-        }
-    }
-    return equal;
+  }
+  return true;
 }
 
-static bool
-SetsAreEqual(IntSet& am, IntSet& bm)
-{
-    bool equal = true;
-    if (am.count() != bm.count()) {
-        equal = false;
-        fprintf(stderr, "A.count() == %u and B.count() == %u\n", am.count(), bm.count());
+static bool AddLowKeys(IntSet* as, IntSet* bs, int seed) {
+  size_t i = 0;
+  srand(seed);
+  while (i < TestSize) {
+    uint32_t n = rand() & 0x0000FFFF;
+    if (!as->has(n)) {
+      if (bs->has(n)) {
+        return false;
+      }
+      if (!as->putNew(n) || !bs->putNew(n)) {
+        return false;
+      }
+      i++;
     }
-    for (auto iter = am.iter(); !iter.done(); iter.next()) {
-        if (!bm.has(iter.get())) {
-            equal = false;
-            fprintf(stderr, "B does not have %x which is in A\n", iter.get());
-        }
-    }
-    for (auto iter = bm.iter(); !iter.done(); iter.next()) {
-        if (!am.has(iter.get())) {
-            equal = false;
-            fprintf(stderr, "A does not have %x which is in B\n", iter.get());
-        }
-    }
-    return equal;
-}
-
-static bool
-AddLowKeys(IntMap* am, IntMap* bm, int seed)
-{
-    size_t i = 0;
-    srand(seed);
-    while (i < TestSize) {
-        uint32_t n = rand() & 0x0000FFFF;
-        if (!am->has(n)) {
-            if (bm->has(n)) {
-                return false;
-            }
-
-            if (!am->putNew(n, n) || !bm->putNew(n, n)) {
-                return false;
-            }
-            i++;
-        }
-    }
-    return true;
-}
-
-static bool
-AddLowKeys(IntSet* as, IntSet* bs, int seed)
-{
-    size_t i = 0;
-    srand(seed);
-    while (i < TestSize) {
-        uint32_t n = rand() & 0x0000FFFF;
-        if (!as->has(n)) {
-            if (bs->has(n)) {
-                return false;
-            }
-            if (!as->putNew(n) || !bs->putNew(n)) {
-                return false;
-            }
-            i++;
-        }
-    }
-    return true;
+  }
+  return true;
 }
 
 template <class NewKeyFunction>
-static bool
-SlowRekey(IntMap* m) {
-    IntMap tmp;
+static bool SlowRekey(IntMap* m) {
+  IntMap tmp;
 
-    for (auto iter = m->iter(); !iter.done(); iter.next()) {
-        if (NewKeyFunction::shouldBeRemoved(iter.get().key())) {
-            continue;
-        }
-        uint32_t hi = NewKeyFunction::rekey(iter.get().key());
-        if (tmp.has(hi)) {
-            return false;
-        }
-        if (!tmp.putNew(hi, iter.get().value())) {
-            return false;
-        }
+  for (auto iter = m->iter(); !iter.done(); iter.next()) {
+    if (NewKeyFunction::shouldBeRemoved(iter.get().key())) {
+      continue;
     }
-
-    m->clear();
-    for (auto iter = tmp.iter(); !iter.done(); iter.next()) {
-        if (!m->putNew(iter.get().key(), iter.get().value())) {
-            return false;
-        }
+    uint32_t hi = NewKeyFunction::rekey(iter.get().key());
+    if (tmp.has(hi)) {
+      return false;
     }
+    if (!tmp.putNew(hi, iter.get().value())) {
+      return false;
+    }
+  }
 
-    return true;
+  m->clear();
+  for (auto iter = tmp.iter(); !iter.done(); iter.next()) {
+    if (!m->putNew(iter.get().key(), iter.get().value())) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 template <class NewKeyFunction>
-static bool
-SlowRekey(IntSet* s) {
-    IntSet tmp;
+static bool SlowRekey(IntSet* s) {
+  IntSet tmp;
 
-    for (auto iter = s->iter(); !iter.done(); iter.next()) {
-        if (NewKeyFunction::shouldBeRemoved(iter.get())) {
-            continue;
-        }
-        uint32_t hi = NewKeyFunction::rekey(iter.get());
-        if (tmp.has(hi)) {
-            return false;
-        }
-        if (!tmp.putNew(hi)) {
-            return false;
-        }
+  for (auto iter = s->iter(); !iter.done(); iter.next()) {
+    if (NewKeyFunction::shouldBeRemoved(iter.get())) {
+      continue;
     }
-
-    s->clear();
-    for (auto iter = tmp.iter(); !iter.done(); iter.next()) {
-        if (!s->putNew(iter.get())) {
-            return false;
-        }
+    uint32_t hi = NewKeyFunction::rekey(iter.get());
+    if (tmp.has(hi)) {
+      return false;
     }
+    if (!tmp.putNew(hi)) {
+      return false;
+    }
+  }
 
-    return true;
+  s->clear();
+  for (auto iter = tmp.iter(); !iter.done(); iter.next()) {
+    if (!s->putNew(iter.get())) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
-BEGIN_TEST(testHashRekeyManual)
-{
-    IntMap am, bm;
-    for (size_t i = 0; i < TestIterations; ++i) {
+BEGIN_TEST(testHashRekeyManual) {
+  IntMap am, bm;
+  for (size_t i = 0; i < TestIterations; ++i) {
 #ifdef FUZZ
-        fprintf(stderr, "map1: %lu\n", i);
+    fprintf(stderr, "map1: %lu\n", i);
 #endif
-        CHECK(AddLowKeys(&am, &bm, i));
-        CHECK(MapsAreEqual(am, bm));
+    CHECK(AddLowKeys(&am, &bm, i));
+    CHECK(MapsAreEqual(am, bm));
 
-        for (auto iter = am.modIter(); !iter.done(); iter.next()) {
-            uint32_t tmp = LowToHigh::rekey(iter.get().key());
-            if (tmp != iter.get().key()) {
-                iter.rekey(tmp);
-            }
-        }
-        CHECK(SlowRekey<LowToHigh>(&bm));
-
-        CHECK(MapsAreEqual(am, bm));
-        am.clear();
-        bm.clear();
+    for (auto iter = am.modIter(); !iter.done(); iter.next()) {
+      uint32_t tmp = LowToHigh::rekey(iter.get().key());
+      if (tmp != iter.get().key()) {
+        iter.rekey(tmp);
+      }
     }
+    CHECK(SlowRekey<LowToHigh>(&bm));
 
-    IntSet as, bs;
-    for (size_t i = 0; i < TestIterations; ++i) {
+    CHECK(MapsAreEqual(am, bm));
+    am.clear();
+    bm.clear();
+  }
+
+  IntSet as, bs;
+  for (size_t i = 0; i < TestIterations; ++i) {
 #ifdef FUZZ
-        fprintf(stderr, "set1: %lu\n", i);
+    fprintf(stderr, "set1: %lu\n", i);
 #endif
-        CHECK(AddLowKeys(&as, &bs, i));
-        CHECK(SetsAreEqual(as, bs));
+    CHECK(AddLowKeys(&as, &bs, i));
+    CHECK(SetsAreEqual(as, bs));
 
-        for (auto iter = as.modIter(); !iter.done(); iter.next()) {
-            uint32_t tmp = LowToHigh::rekey(iter.get());
-            if (tmp != iter.get()) {
-                iter.rekey(tmp);
-            }
-        }
-        CHECK(SlowRekey<LowToHigh>(&bs));
-
-        CHECK(SetsAreEqual(as, bs));
-        as.clear();
-        bs.clear();
+    for (auto iter = as.modIter(); !iter.done(); iter.next()) {
+      uint32_t tmp = LowToHigh::rekey(iter.get());
+      if (tmp != iter.get()) {
+        iter.rekey(tmp);
+      }
     }
+    CHECK(SlowRekey<LowToHigh>(&bs));
 
-    return true;
+    CHECK(SetsAreEqual(as, bs));
+    as.clear();
+    bs.clear();
+  }
+
+  return true;
 }
 END_TEST(testHashRekeyManual)
 
-BEGIN_TEST(testHashRekeyManualRemoval)
-{
-    IntMap am, bm;
-    for (size_t i = 0; i < TestIterations; ++i) {
+BEGIN_TEST(testHashRekeyManualRemoval) {
+  IntMap am, bm;
+  for (size_t i = 0; i < TestIterations; ++i) {
 #ifdef FUZZ
-        fprintf(stderr, "map2: %lu\n", i);
+    fprintf(stderr, "map2: %lu\n", i);
 #endif
-        CHECK(AddLowKeys(&am, &bm, i));
-        CHECK(MapsAreEqual(am, bm));
+    CHECK(AddLowKeys(&am, &bm, i));
+    CHECK(MapsAreEqual(am, bm));
 
-        for (auto iter = am.modIter(); !iter.done(); iter.next()) {
-            if (LowToHighWithRemoval::shouldBeRemoved(iter.get().key())) {
-                iter.remove();
-            } else {
-                uint32_t tmp = LowToHighWithRemoval::rekey(iter.get().key());
-                if (tmp != iter.get().key()) {
-                    iter.rekey(tmp);
-                }
-            }
+    for (auto iter = am.modIter(); !iter.done(); iter.next()) {
+      if (LowToHighWithRemoval::shouldBeRemoved(iter.get().key())) {
+        iter.remove();
+      } else {
+        uint32_t tmp = LowToHighWithRemoval::rekey(iter.get().key());
+        if (tmp != iter.get().key()) {
+          iter.rekey(tmp);
         }
-        CHECK(SlowRekey<LowToHighWithRemoval>(&bm));
-
-        CHECK(MapsAreEqual(am, bm));
-        am.clear();
-        bm.clear();
+      }
     }
+    CHECK(SlowRekey<LowToHighWithRemoval>(&bm));
 
-    IntSet as, bs;
-    for (size_t i = 0; i < TestIterations; ++i) {
+    CHECK(MapsAreEqual(am, bm));
+    am.clear();
+    bm.clear();
+  }
+
+  IntSet as, bs;
+  for (size_t i = 0; i < TestIterations; ++i) {
 #ifdef FUZZ
-        fprintf(stderr, "set1: %lu\n", i);
+    fprintf(stderr, "set1: %lu\n", i);
 #endif
-        CHECK(AddLowKeys(&as, &bs, i));
-        CHECK(SetsAreEqual(as, bs));
+    CHECK(AddLowKeys(&as, &bs, i));
+    CHECK(SetsAreEqual(as, bs));
 
-        for (auto iter = as.modIter(); !iter.done(); iter.next()) {
-            if (LowToHighWithRemoval::shouldBeRemoved(iter.get())) {
-                iter.remove();
-            } else {
-                uint32_t tmp = LowToHighWithRemoval::rekey(iter.get());
-                if (tmp != iter.get()) {
-                    iter.rekey(tmp);
-                }
-            }
+    for (auto iter = as.modIter(); !iter.done(); iter.next()) {
+      if (LowToHighWithRemoval::shouldBeRemoved(iter.get())) {
+        iter.remove();
+      } else {
+        uint32_t tmp = LowToHighWithRemoval::rekey(iter.get());
+        if (tmp != iter.get()) {
+          iter.rekey(tmp);
         }
-        CHECK(SlowRekey<LowToHighWithRemoval>(&bs));
-
-        CHECK(SetsAreEqual(as, bs));
-        as.clear();
-        bs.clear();
+      }
     }
+    CHECK(SlowRekey<LowToHighWithRemoval>(&bs));
 
-    return true;
+    CHECK(SetsAreEqual(as, bs));
+    as.clear();
+    bs.clear();
+  }
+
+  return true;
 }
 END_TEST(testHashRekeyManualRemoval)
 
 
 struct MoveOnlyType {
-    uint32_t val;
+  uint32_t val;
 
-    explicit MoveOnlyType(uint32_t val) : val(val) { }
+  explicit MoveOnlyType(uint32_t val) : val(val) {}
 
-    MoveOnlyType(MoveOnlyType&& rhs) {
-        val = rhs.val;
+  MoveOnlyType(MoveOnlyType&& rhs) { val = rhs.val; }
+
+  MoveOnlyType& operator=(MoveOnlyType&& rhs) {
+    MOZ_ASSERT(&rhs != this);
+    this->~MoveOnlyType();
+    new (this) MoveOnlyType(std::move(rhs));
+    return *this;
+  }
+
+  struct HashPolicy {
+    typedef MoveOnlyType Lookup;
+
+    static js::HashNumber hash(const Lookup& lookup) { return lookup.val; }
+
+    static bool match(const MoveOnlyType& existing, const Lookup& lookup) {
+      return existing.val == lookup.val;
     }
+  };
 
-    MoveOnlyType& operator=(MoveOnlyType&& rhs) {
-        MOZ_ASSERT(&rhs != this);
-        this->~MoveOnlyType();
-        new(this) MoveOnlyType(std::move(rhs));
-        return *this;
-    }
-
-    struct HashPolicy {
-        typedef MoveOnlyType Lookup;
-
-        static js::HashNumber hash(const Lookup& lookup) {
-            return lookup.val;
-        }
-
-        static bool match(const MoveOnlyType& existing, const Lookup& lookup) {
-            return existing.val == lookup.val;
-        }
-    };
-
-  private:
-    MoveOnlyType(const MoveOnlyType&) = delete;
-    MoveOnlyType& operator=(const MoveOnlyType&) = delete;
+ private:
+  MoveOnlyType(const MoveOnlyType&) = delete;
+  MoveOnlyType& operator=(const MoveOnlyType&) = delete;
 };
 
-BEGIN_TEST(testHashSetOfMoveOnlyType)
-{
-    typedef js::HashSet<MoveOnlyType, MoveOnlyType::HashPolicy, js::SystemAllocPolicy> Set;
+BEGIN_TEST(testHashSetOfMoveOnlyType) {
+  typedef js::HashSet<MoveOnlyType, MoveOnlyType::HashPolicy,
+                      js::SystemAllocPolicy>
+      Set;
 
-    Set set;
+  Set set;
 
-    MoveOnlyType a(1);
+  MoveOnlyType a(1);
 
-    CHECK(set.put(std::move(a))); 
+  CHECK(set.put(std::move(a)));  
 
-    return true;
+  return true;
 }
 END_TEST(testHashSetOfMoveOnlyType)
 
@@ -358,192 +345,184 @@ END_TEST(testHashSetOfMoveOnlyType)
 
 
 
-static bool
-GrowUntilResize()
-{
-    IntMap m;
+static bool GrowUntilResize() {
+  IntMap m;
 
-    
-    size_t lastCapacity = m.capacity();
-    size_t resizes = 0;
-    uint32_t key = 0;
-    while (resizes < 4) {
-        auto p = m.lookupForAdd(key);
-        if (!p && !m.add(p, key, 0)) {
-            return false;   
-        }
-
-        size_t capacity = m.capacity();
-        if (capacity != lastCapacity) {
-            resizes++;
-            lastCapacity = capacity;
-        }
-        key++;
+  
+  size_t lastCapacity = m.capacity();
+  size_t resizes = 0;
+  uint32_t key = 0;
+  while (resizes < 4) {
+    auto p = m.lookupForAdd(key);
+    if (!p && !m.add(p, key, 0)) {
+      return false;  
     }
 
-    return true;
+    size_t capacity = m.capacity();
+    if (capacity != lastCapacity) {
+      resizes++;
+      lastCapacity = capacity;
+    }
+    key++;
+  }
+
+  return true;
 }
 
-BEGIN_TEST(testHashMapGrowOOM)
-{
-    uint32_t timeToFail;
-    for (timeToFail = 1; timeToFail < 1000; timeToFail++) {
-        js::oom::simulator.simulateFailureAfter(js::oom::FailureSimulator::Kind::OOM,
-						timeToFail, js::THREAD_TYPE_MAIN, false);
-        GrowUntilResize();
-    }
+BEGIN_TEST(testHashMapGrowOOM) {
+  uint32_t timeToFail;
+  for (timeToFail = 1; timeToFail < 1000; timeToFail++) {
+    js::oom::simulator.simulateFailureAfter(
+        js::oom::FailureSimulator::Kind::OOM, timeToFail, js::THREAD_TYPE_MAIN,
+        false);
+    GrowUntilResize();
+  }
 
-    js::oom::simulator.reset();
-    return true;
+  js::oom::simulator.reset();
+  return true;
 }
 
 END_TEST(testHashMapGrowOOM)
-#endif 
+#endif  
 
-BEGIN_TEST(testHashTableMovableModIterator)
-{
-    IntSet set;
+BEGIN_TEST(testHashTableMovableModIterator) {
+  IntSet set;
 
-    
+  
 
-    CHECK(set.put(1));
-    for (auto iter = setModIter(set); !iter.done(); iter.next()) {
-        iter.remove();
-    }
-    CHECK(set.count() == 0);
+  CHECK(set.put(1));
+  for (auto iter = setModIter(set); !iter.done(); iter.next()) {
+    iter.remove();
+  }
+  CHECK(set.count() == 0);
 
-    
+  
 
-    CHECK(set.put(1));
-    CHECK(set.put(2));
-    CHECK(set.put(3));
-    CHECK(set.count() == 3);
-    {
-        auto i1 = set.modIter();
-        CHECK(!i1.done());
-        i1.remove();
-        i1.next();
+  CHECK(set.put(1));
+  CHECK(set.put(2));
+  CHECK(set.put(3));
+  CHECK(set.count() == 3);
+  {
+    auto i1 = set.modIter();
+    CHECK(!i1.done());
+    i1.remove();
+    i1.next();
 
-        auto i2 = std::move(i1);
-        CHECK(!i2.done());
-        i2.remove();
-        i2.next();
-    }
+    auto i2 = std::move(i1);
+    CHECK(!i2.done());
+    i2.remove();
+    i2.next();
+  }
 
-    CHECK(set.count() == 1);
-    return true;
+  CHECK(set.count() == 1);
+  return true;
 }
 
-IntSet::ModIterator setModIter(IntSet& set)
-{
-    return set.modIter();
-}
+IntSet::ModIterator setModIter(IntSet& set) { return set.modIter(); }
 
 END_TEST(testHashTableMovableModIterator)
 
-BEGIN_TEST(testHashLazyStorage)
-{
-    
-    
-    uint32_t defaultCap = 32;
-    uint32_t minCap = 4;
+BEGIN_TEST(testHashLazyStorage) {
+  
+  
+  uint32_t defaultCap = 32;
+  uint32_t minCap = 4;
 
-    IntSet set;
-    CHECK(set.capacity() == 0);
+  IntSet set;
+  CHECK(set.capacity() == 0);
 
-    CHECK(set.put(1));
-    CHECK(set.capacity() == defaultCap);
+  CHECK(set.put(1));
+  CHECK(set.capacity() == defaultCap);
 
-    set.compact();                  
-    CHECK(set.capacity() == minCap);
+  set.compact();  
+  CHECK(set.capacity() == minCap);
 
-    set.clear();
-    CHECK(set.capacity() == minCap);
+  set.clear();
+  CHECK(set.capacity() == minCap);
 
-    set.compact();
-    CHECK(set.capacity() == 0);
+  set.compact();
+  CHECK(set.capacity() == 0);
 
-    CHECK(set.putNew(1));
-    CHECK(set.capacity() == minCap);
+  CHECK(set.putNew(1));
+  CHECK(set.capacity() == minCap);
 
-    set.clear();
-    set.compact();
-    CHECK(set.capacity() == 0);
+  set.clear();
+  set.compact();
+  CHECK(set.capacity() == 0);
 
-    auto p = set.lookupForAdd(1);
-    CHECK(set.capacity() == 0);
-    CHECK(set.add(p, 1));
-    CHECK(set.capacity() == minCap);
-    CHECK(set.has(1));
+  auto p = set.lookupForAdd(1);
+  CHECK(set.capacity() == 0);
+  CHECK(set.add(p, 1));
+  CHECK(set.capacity() == minCap);
+  CHECK(set.has(1));
 
-    set.clear();
-    set.compact();
-    CHECK(set.capacity() == 0);
+  set.clear();
+  set.compact();
+  CHECK(set.capacity() == 0);
 
-    p = set.lookupForAdd(1);
-    CHECK(set.putNew(2));
-    CHECK(set.capacity() == minCap);
-    CHECK(set.relookupOrAdd(p, 1, 1));
-    CHECK(set.capacity() == minCap);
-    CHECK(set.has(1));
+  p = set.lookupForAdd(1);
+  CHECK(set.putNew(2));
+  CHECK(set.capacity() == minCap);
+  CHECK(set.relookupOrAdd(p, 1, 1));
+  CHECK(set.capacity() == minCap);
+  CHECK(set.has(1));
 
-    set.clear();
-    set.compact();
-    CHECK(set.capacity() == 0);
+  set.clear();
+  set.compact();
+  CHECK(set.capacity() == 0);
 
-    CHECK(set.putNew(1));
-    p = set.lookupForAdd(1);
-    set.clear();
-    set.compact();
-    CHECK(set.count() == 0);
-    CHECK(set.relookupOrAdd(p, 1, 1));
-    CHECK(set.count() == 1);
-    CHECK(set.capacity() == minCap);
+  CHECK(set.putNew(1));
+  p = set.lookupForAdd(1);
+  set.clear();
+  set.compact();
+  CHECK(set.count() == 0);
+  CHECK(set.relookupOrAdd(p, 1, 1));
+  CHECK(set.count() == 1);
+  CHECK(set.capacity() == minCap);
 
-    set.clear();
-    set.compact();
-    CHECK(set.capacity() == 0);
+  set.clear();
+  set.compact();
+  CHECK(set.capacity() == 0);
 
-    CHECK(set.reserve(0));          
-    CHECK(set.capacity() == 0);
+  CHECK(set.reserve(0));  
+  CHECK(set.capacity() == 0);
 
-    CHECK(set.reserve(1));
-    CHECK(set.capacity() == minCap);
+  CHECK(set.reserve(1));
+  CHECK(set.capacity() == minCap);
 
-    CHECK(set.reserve(0));          
-    CHECK(set.capacity() == minCap);
+  CHECK(set.reserve(0));  
+  CHECK(set.capacity() == minCap);
 
-    CHECK(set.reserve(2));          
-    CHECK(set.capacity() == minCap);
+  CHECK(set.reserve(2));  
+  CHECK(set.capacity() == minCap);
 
-    
-    set.compact();
-    CHECK(set.capacity() == 0);
+  
+  set.compact();
+  CHECK(set.capacity() == 0);
 
-    CHECK(set.reserve(128));
-    CHECK(set.capacity() == 256);
-    CHECK(set.reserve(3));          
-    CHECK(set.capacity() == 256);
-    for (int i = 0; i < 8; i++) {
-      CHECK(set.putNew(i));
-    }
-    CHECK(set.count() == 8);
-    CHECK(set.capacity() == 256);
-    set.compact();
-    CHECK(set.capacity() == 16);
-    set.compact();                  
-    CHECK(set.capacity() == 16);
-    for (int i = 8; i < 16; i++) {
-      CHECK(set.putNew(i));
-    }
-    CHECK(set.count() == 16);
-    CHECK(set.capacity() == 32);
-    set.clear();
-    CHECK(set.capacity() == 32);
-    set.compact();
-    CHECK(set.capacity() == 0);
+  CHECK(set.reserve(128));
+  CHECK(set.capacity() == 256);
+  CHECK(set.reserve(3));  
+  CHECK(set.capacity() == 256);
+  for (int i = 0; i < 8; i++) {
+    CHECK(set.putNew(i));
+  }
+  CHECK(set.count() == 8);
+  CHECK(set.capacity() == 256);
+  set.compact();
+  CHECK(set.capacity() == 16);
+  set.compact();  
+  CHECK(set.capacity() == 16);
+  for (int i = 8; i < 16; i++) {
+    CHECK(set.putNew(i));
+  }
+  CHECK(set.count() == 16);
+  CHECK(set.capacity() == 32);
+  set.clear();
+  CHECK(set.capacity() == 32);
+  set.compact();
+  CHECK(set.capacity() == 0);
 
-    return true;
+  return true;
 }
 END_TEST(testHashLazyStorage)
-

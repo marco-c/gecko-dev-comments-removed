@@ -23,8 +23,7 @@ namespace mozilla {
 
 
 
-enum class ServoElementSnapshotFlags : uint8_t
-{
+enum class ServoElementSnapshotFlags : uint8_t {
   State = 1 << 0,
   Attributes = 1 << 1,
   Id = 1 << 2,
@@ -41,19 +40,17 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ServoElementSnapshotFlags)
 
 
 
-class ServoElementSnapshot
-{
+class ServoElementSnapshot {
   typedef dom::BorrowedAttrInfo BorrowedAttrInfo;
   typedef dom::Element Element;
   typedef EventStates::ServoType ServoStateType;
 
-public:
+ public:
   typedef ServoElementSnapshotFlags Flags;
 
   explicit ServoElementSnapshot(const Element&);
 
-  ~ServoElementSnapshot()
-  {
+  ~ServoElementSnapshot() {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_COUNT_DTOR(ServoElementSnapshot);
   }
@@ -62,16 +59,14 @@ public:
 
   bool HasState() const { return HasAny(Flags::State); }
 
-  bool HasOtherPseudoClassState() const
-  {
+  bool HasOtherPseudoClassState() const {
     return HasAny(Flags::OtherPseudoClassState);
   }
 
   
 
 
-  void AddState(EventStates aState)
-  {
+  void AddState(EventStates aState) {
     if (!HasAny(Flags::State)) {
       mState = aState.ServoValue();
       mContains |= Flags::State;
@@ -84,7 +79,8 @@ public:
 
 
 
-  inline void AddAttrs(const Element&, int32_t aNameSpaceID, nsAtom* aAttribute);
+  inline void AddAttrs(const Element&, int32_t aNameSpaceID,
+                       nsAtom* aAttribute);
 
   
 
@@ -95,8 +91,7 @@ public:
   
 
 
-  BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const
-  {
+  BorrowedAttrInfo GetAttrInfoAt(uint32_t aIndex) const {
     MOZ_ASSERT(HasAttrs());
     if (aIndex >= mAttrs.Length()) {
       return BorrowedAttrInfo(nullptr, nullptr);
@@ -104,14 +99,12 @@ public:
     return BorrowedAttrInfo(&mAttrs[aIndex].mName, &mAttrs[aIndex].mValue);
   }
 
-  const nsAttrValue* GetParsedAttr(nsAtom* aLocalName) const
-  {
+  const nsAttrValue* GetParsedAttr(nsAtom* aLocalName) const {
     return GetParsedAttr(aLocalName, kNameSpaceID_None);
   }
 
   const nsAttrValue* GetParsedAttr(nsAtom* aLocalName,
-                                   int32_t aNamespaceID) const
-  {
+                                   int32_t aNamespaceID) const {
     MOZ_ASSERT(HasAttrs());
     uint32_t i, len = mAttrs.Length();
     if (aNamespaceID == kNameSpaceID_None) {
@@ -139,19 +132,17 @@ public:
 
   bool HasAny(Flags aFlags) const { return bool(mContains & aFlags); }
 
-  bool IsTableBorderNonzero() const
-  {
+  bool IsTableBorderNonzero() const {
     MOZ_ASSERT(HasOtherPseudoClassState());
     return mIsTableBorderNonzero;
   }
 
-  bool IsMozBrowserFrame() const
-  {
+  bool IsMozBrowserFrame() const {
     MOZ_ASSERT(HasOtherPseudoClassState());
     return mIsMozBrowserFrame;
   }
 
-private:
+ private:
   
   
   
@@ -170,12 +161,9 @@ private:
   bool mOtherAttributeChanged : 1;
 };
 
-
-inline void
-ServoElementSnapshot::AddAttrs(const Element& aElement,
-                               int32_t aNameSpaceID,
-                               nsAtom* aAttribute)
-{
+inline void ServoElementSnapshot::AddAttrs(const Element& aElement,
+                                           int32_t aNameSpaceID,
+                                           nsAtom* aAttribute) {
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::_class) {
       mClassAttributeChanged = true;
@@ -197,7 +185,7 @@ ServoElementSnapshot::AddAttrs(const Element& aElement,
   for (uint32_t i = 0; i < attrCount; ++i) {
     const BorrowedAttrInfo info = aElement.GetAttrInfoAt(i);
     MOZ_ASSERT(info);
-    mAttrs.AppendElement(AttrArray::InternalAttr { *info.mName, *info.mValue });
+    mAttrs.AppendElement(AttrArray::InternalAttr{*info.mName, *info.mValue});
   }
 
   mContains |= Flags::Attributes;
@@ -214,6 +202,6 @@ ServoElementSnapshot::AddAttrs(const Element& aElement,
   }
 }
 
-} 
+}  
 
 #endif

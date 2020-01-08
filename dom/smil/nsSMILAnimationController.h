@@ -26,8 +26,8 @@ namespace mozilla {
 namespace dom {
 class Element;
 class SVGAnimationElement;
-} 
-} 
+}  
+}  
 
 
 
@@ -43,9 +43,8 @@ class SVGAnimationElement;
 
 
 class nsSMILAnimationController final : public nsSMILTimeContainer,
-                                        public nsARefreshObserver
-{
-public:
+                                        public nsARefreshObserver {
+ public:
   explicit nsSMILAnimationController(nsIDocument* aDoc);
 
   
@@ -63,8 +62,10 @@ public:
   virtual void WillRefresh(mozilla::TimeStamp aTime) override;
 
   
-  void RegisterAnimationElement(mozilla::dom::SVGAnimationElement* aAnimationElement);
-  void UnregisterAnimationElement(mozilla::dom::SVGAnimationElement* aAnimationElement);
+  void RegisterAnimationElement(
+      mozilla::dom::SVGAnimationElement* aAnimationElement);
+  void UnregisterAnimationElement(
+      mozilla::dom::SVGAnimationElement* aAnimationElement);
 
   
   
@@ -72,8 +73,7 @@ public:
   
   void Resample() { DoSample(false); }
 
-  void SetResampleNeeded()
-  {
+  void SetResampleNeeded() {
     if (!mRunningSample && !mResampleNeeded) {
       FlagDocumentNeedsFlush();
       mResampleNeeded = true;
@@ -81,10 +81,8 @@ public:
   }
 
   
-  void FlushResampleRequests()
-  {
-    if (!mResampleNeeded)
-      return;
+  void FlushResampleRequests() {
+    if (!mResampleNeeded) return;
 
     Resample();
   }
@@ -102,26 +100,25 @@ public:
   void NotifyRefreshDriverDestroying(nsRefreshDriver* aRefreshDriver);
 
   
-  bool HasRegisteredAnimations() const
-  {
+  bool HasRegisteredAnimations() const {
     return mAnimationElementTable.Count() != 0;
   }
 
-  bool MightHavePendingStyleUpdates() const
-  {
+  bool MightHavePendingStyleUpdates() const {
     return mMightHavePendingStyleUpdates;
   }
 
   bool PreTraverse();
   bool PreTraverseInSubtree(mozilla::dom::Element* aRoot);
 
-protected:
+ protected:
   ~nsSMILAnimationController();
 
   
   typedef nsPtrHashKey<nsSMILTimeContainer> TimeContainerPtrKey;
   typedef nsTHashtable<TimeContainerPtrKey> TimeContainerHashtable;
-  typedef nsPtrHashKey<mozilla::dom::SVGAnimationElement> AnimationElementPtrKey;
+  typedef nsPtrHashKey<mozilla::dom::SVGAnimationElement>
+      AnimationElementPtrKey;
   typedef nsTHashtable<AnimationElementPtrKey> AnimationElementHashtable;
 
   
@@ -147,15 +144,15 @@ protected:
 
   static void AddAnimationToCompositorTable(
       mozilla::dom::SVGAnimationElement* aElement,
-      nsSMILCompositorTable* aCompositorTable,
-      bool& aStyleFlushNeeded);
+      nsSMILCompositorTable* aCompositorTable, bool& aStyleFlushNeeded);
 
   static bool GetTargetIdentifierForAnimation(
-      mozilla::dom::SVGAnimationElement* aAnimElem, nsSMILTargetIdentifier& aResult);
+      mozilla::dom::SVGAnimationElement* aAnimElem,
+      nsSMILTargetIdentifier& aResult);
 
   
   virtual nsresult AddChild(nsSMILTimeContainer& aChild) override;
-  virtual void     RemoveChild(nsSMILTimeContainer& aChild) override;
+  virtual void RemoveChild(nsSMILTimeContainer& aChild) override;
 
   void FlagDocumentNeedsFlush();
 
@@ -163,10 +160,10 @@ protected:
   nsAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
 
-  AnimationElementHashtable  mAnimationElementTable;
-  TimeContainerHashtable     mChildContainerTable;
-  mozilla::TimeStamp         mCurrentSampleTime;
-  mozilla::TimeStamp         mStartTime;
+  AnimationElementHashtable mAnimationElementTable;
+  TimeContainerHashtable mChildContainerTable;
+  mozilla::TimeStamp mCurrentSampleTime;
+  mozilla::TimeStamp mStartTime;
 
   
   
@@ -184,20 +181,20 @@ protected:
   
   
   
-  nsSMILTime                 mAvgTimeBetweenSamples;
+  nsSMILTime mAvgTimeBetweenSamples;
 
-  bool                       mResampleNeeded;
+  bool mResampleNeeded;
   
   
   
-  bool                       mDeferredStartSampling;
-  bool                       mRunningSample;
-
-  
-  bool                       mRegisteredWithRefreshDriver;
+  bool mDeferredStartSampling;
+  bool mRunningSample;
 
   
-  bool                       mMightHavePendingStyleUpdates;
+  bool mRegisteredWithRefreshDriver;
+
+  
+  bool mMightHavePendingStyleUpdates;
 
   
   
@@ -210,4 +207,4 @@ protected:
   nsAutoPtr<nsSMILCompositorTable> mLastCompositorTable;
 };
 
-#endif 
+#endif  

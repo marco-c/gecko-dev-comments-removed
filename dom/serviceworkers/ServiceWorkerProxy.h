@@ -17,8 +17,7 @@ class ServiceWorkerCloneData;
 class ServiceWorkerInfo;
 class ServiceWorkerParent;
 
-class ServiceWorkerProxy final
-{
+class ServiceWorkerProxy final {
   
   ServiceWorkerParent* mActor;
 
@@ -32,40 +31,31 @@ class ServiceWorkerProxy final
   ~ServiceWorkerProxy();
 
   
-  void
-  MaybeShutdownOnBGThread();
+  void MaybeShutdownOnBGThread();
 
-  void
-  SetStateOnBGThread(ServiceWorkerState aState);
+  void SetStateOnBGThread(ServiceWorkerState aState);
 
   
-  void
-  InitOnMainThread();
+  void InitOnMainThread();
 
-  void
-  MaybeShutdownOnMainThread();
+  void MaybeShutdownOnMainThread();
 
-  void
-  StopListeningOnMainThread();
+  void StopListeningOnMainThread();
 
-public:
+ public:
   explicit ServiceWorkerProxy(const ServiceWorkerDescriptor& aDescriptor);
 
-  void
-  Init(ServiceWorkerParent* aActor);
+  void Init(ServiceWorkerParent* aActor);
 
-  void
-  RevokeActor(ServiceWorkerParent* aActor);
+  void RevokeActor(ServiceWorkerParent* aActor);
 
-  void
-  PostMessage(RefPtr<ServiceWorkerCloneData>&& aData,
-              const ClientInfo& aClientInfo,
-              const ClientState& aState);
+  void PostMessage(RefPtr<ServiceWorkerCloneData>&& aData,
+                   const ClientInfo& aClientInfo, const ClientState& aState);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ServiceWorkerProxy);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

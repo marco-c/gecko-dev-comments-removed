@@ -7,16 +7,16 @@
 #ifndef GFX_READBACKLAYER_H
 #define GFX_READBACKLAYER_H
 
-#include <stdint.h>                     
-#include "Layers.h"                     
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/mozalloc.h"           
-#include "nsAutoPtr.h"                  
-#include "nsCOMPtr.h"                   
-#include "nsDebug.h"                    
-#include "nsPoint.h"                    
-#include "nscore.h"                     
+#include <stdint.h>             
+#include "Layers.h"             
+#include "mozilla/gfx/Rect.h"   
+#include "mozilla/gfx/Point.h"  
+#include "mozilla/mozalloc.h"   
+#include "nsAutoPtr.h"          
+#include "nsCOMPtr.h"           
+#include "nsDebug.h"            
+#include "nsPoint.h"            
+#include "nscore.h"             
 
 class gfxContext;
 
@@ -27,7 +27,7 @@ class ReadbackProcessor;
 
 namespace layerscope {
 class LayersPacket;
-} 
+}  
 
 
 
@@ -35,7 +35,7 @@ class LayersPacket;
 
 
 class ReadbackSink {
-public:
+ public:
   ReadbackSink() {}
   virtual ~ReadbackSink() {}
 
@@ -59,8 +59,8 @@ public:
 
 
 
-  virtual already_AddRefed<gfx::DrawTarget>
-      BeginUpdate(const gfx::IntRect& aRect, uint64_t aSequenceNumber) = 0;
+  virtual already_AddRefed<gfx::DrawTarget> BeginUpdate(
+      const gfx::IntRect& aRect, uint64_t aSequenceNumber) = 0;
   
 
 
@@ -83,18 +83,18 @@ public:
 
 
 class ReadbackLayer : public Layer {
-public:
+ public:
   MOZ_LAYER_DECL_NAME("ReadbackLayer", TYPE_READBACK)
 
-  virtual void ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface) override
-  {
+  virtual void ComputeEffectiveTransforms(
+      const gfx::Matrix4x4& aTransformToSurface) override {
     
     
     
     
     mEffectiveTransform =
-        SnapTransform(GetLocalTransform(), gfxRect(0, 0, mSize.width, mSize.height),
-                      nullptr)*
+        SnapTransform(GetLocalTransform(),
+                      gfxRect(0, 0, mSize.width, mSize.height), nullptr) *
         SnapTransformTranslation(aTransformToSurface, nullptr);
   }
 
@@ -108,8 +108,7 @@ public:
 
 
 
-  void SetSink(ReadbackSink* aSink)
-  {
+  void SetSink(ReadbackSink* aSink) {
     SetUnknown();
     mSink = aSink;
   }
@@ -121,16 +120,14 @@ public:
 
 
 
-  void SetSize(const gfx::IntSize& aSize)
-  {
+  void SetSize(const gfx::IntSize& aSize) {
     NS_ASSERTION(!mSink, "Should have no sink while changing size!");
     mSize = aSize;
   }
   const gfx::IntSize& GetSize() { return mSize; }
   gfx::IntRect GetRect() { return gfx::IntRect(gfx::IntPoint(0, 0), mSize); }
 
-  bool IsBackgroundKnown()
-  {
+  bool IsBackgroundKnown() {
     return mBackgroundLayer || mBackgroundColor.a == 1.f;
   }
 
@@ -139,19 +136,19 @@ public:
     mSink = nullptr;
   }
 
-  void NotifyPaintedLayerRemoved(PaintedLayer* aLayer)
-  {
+  void NotifyPaintedLayerRemoved(PaintedLayer* aLayer) {
     if (mBackgroundLayer == aLayer) {
       mBackgroundLayer = nullptr;
     }
   }
 
-  const nsIntPoint& GetBackgroundLayerOffset() { return mBackgroundLayerOffset; }
+  const nsIntPoint& GetBackgroundLayerOffset() {
+    return mBackgroundLayerOffset;
+  }
 
   uint64_t AllocateSequenceNumber() { return ++mSequenceCounter; }
 
-  void SetUnknown()
-  {
+  void SetUnknown() {
     if (IsBackgroundKnown()) {
       if (mSink) {
         mSink->SetUnknown(AllocateSequenceNumber());
@@ -161,21 +158,22 @@ public:
     }
   }
 
-protected:
+ protected:
   friend class ReadbackProcessor;
 
-  ReadbackLayer(LayerManager* aManager, void* aImplData) :
-    Layer(aManager, aImplData),
-    mSequenceCounter(0),
-    mSize(0,0),
-    mBackgroundLayer(nullptr),
-    mBackgroundLayerOffset(0, 0),
-    mBackgroundColor(gfx::Color())
-  {}
+  ReadbackLayer(LayerManager* aManager, void* aImplData)
+      : Layer(aManager, aImplData),
+        mSequenceCounter(0),
+        mSize(0, 0),
+        mBackgroundLayer(nullptr),
+        mBackgroundLayerOffset(0, 0),
+        mBackgroundColor(gfx::Color()) {}
 
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+  virtual void PrintInfo(std::stringstream& aStream,
+                         const char* aPrefix) override;
 
-  virtual void DumpPacket(layerscope::LayersPacket* aPacket, const void* aParent) override;
+  virtual void DumpPacket(layerscope::LayersPacket* aPacket,
+                          const void* aParent) override;
 
   uint64_t mSequenceCounter;
   nsAutoPtr<ReadbackSink> mSink;
@@ -192,14 +190,14 @@ protected:
   
   
   
-  nsIntPoint   mBackgroundLayerOffset;
+  nsIntPoint mBackgroundLayerOffset;
   
   
   
-  gfx::Color   mBackgroundColor;
+  gfx::Color mBackgroundColor;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

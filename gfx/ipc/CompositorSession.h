@@ -12,7 +12,7 @@
 #include "nsISupportsImpl.h"
 #if defined(MOZ_WIDGET_ANDROID)
 #include "mozilla/layers/UiCompositorControllerChild.h"
-#endif 
+#endif  
 
 class nsIWidget;
 
@@ -20,11 +20,11 @@ namespace mozilla {
 namespace widget {
 class CompositorWidget;
 class CompositorWidgetDelegate;
-} 
+}  
 namespace gfx {
 class GPUProcessHost;
 class GPUProcessManager;
-} 
+}  
 namespace layers {
 
 class GeckoContentController;
@@ -35,20 +35,20 @@ class ClientLayerManager;
 
 
 
-class CompositorSession
-{
+class CompositorSession {
   friend class gfx::GPUProcessManager;
 
-protected:
+ protected:
   typedef gfx::GPUProcessHost GPUProcessHost;
   typedef widget::CompositorWidget CompositorWidget;
   typedef widget::CompositorWidgetDelegate CompositorWidgetDelegate;
 
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorSession)
 
   virtual void Shutdown() = 0;
 
+  
   
   virtual CompositorBridgeParent* GetInProcessBridge() const = 0;
 
@@ -67,39 +67,38 @@ public:
   }
 
   
-  LayersId RootLayerTreeId() const {
-    return mRootLayerTreeId;
-  }
+  LayersId RootLayerTreeId() const { return mRootLayerTreeId; }
 
 #if defined(MOZ_WIDGET_ANDROID)
   
   
-  void SetUiCompositorControllerChild(RefPtr<UiCompositorControllerChild> aUiController) {
+  void SetUiCompositorControllerChild(
+      RefPtr<UiCompositorControllerChild> aUiController) {
     mUiCompositorControllerChild = aUiController;
   }
 
   RefPtr<UiCompositorControllerChild> GetUiCompositorControllerChild() {
     return mUiCompositorControllerChild;
   }
-#endif 
-protected:
+#endif  
+ protected:
   CompositorSession(CompositorWidgetDelegate* aDelegate,
                     CompositorBridgeChild* aChild,
                     const LayersId& aRootLayerTreeId);
   virtual ~CompositorSession();
 
-protected:
+ protected:
   CompositorWidgetDelegate* mCompositorWidgetDelegate;
   RefPtr<CompositorBridgeChild> mCompositorBridgeChild;
   LayersId mRootLayerTreeId;
 #if defined(MOZ_WIDGET_ANDROID)
   RefPtr<UiCompositorControllerChild> mUiCompositorControllerChild;
-#endif 
-private:
+#endif  
+ private:
   DISALLOW_COPY_AND_ASSIGN(CompositorSession);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

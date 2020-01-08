@@ -24,15 +24,13 @@ class nsIDocument;
 
 
 
-class nsXBLResourceLoader : public nsICSSLoaderObserver
-{
-public:
+class nsXBLResourceLoader : public nsICSSLoaderObserver {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(nsXBLResourceLoader)
 
   
-  NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet,
-                              bool aWasAlternate,
+  NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet, bool aWasAlternate,
                               nsresult aStatus) override;
 
   bool LoadResources(nsIContent* aBoundElement);
@@ -46,29 +44,29 @@ public:
 
   nsresult Write(nsIObjectOutputStream* aStream);
 
+  
+  nsXBLPrototypeBinding* mBinding;      
+  nsXBLPrototypeResources* mResources;  
+                                        
+                                        
+                                        
 
-  nsXBLPrototypeBinding* mBinding; 
-  nsXBLPrototypeResources* mResources; 
-                                       
-                                       
-                                       
-
-  nsXBLResource* mResourceList; 
+  nsXBLResource* mResourceList;  
   nsXBLResource* mLastResource;
 
   bool mLoadingResources;
   
   
   bool mInLoadResourcesFunc;
-  int16_t mPendingSheets; 
+  int16_t mPendingSheets;  
 
   
   nsCOMArray<nsIContent> mBoundElements;
 
-protected:
+ protected:
   virtual ~nsXBLResourceLoader();
 
-private:
+ private:
   
   
   nsIDocument* MOZ_NON_OWNING_REF mBoundDocument;

@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_image_decoders_nsICODecoder_h
 #define mozilla_image_decoders_nsICODecoder_h
 
@@ -20,8 +19,7 @@ namespace image {
 
 class RasterImage;
 
-enum class ICOState
-{
+enum class ICOState {
   HEADER,
   DIR_ENTRY,
   FINISHED_DIR_ENTRY,
@@ -37,10 +35,9 @@ enum class ICOState
   FINISHED_RESOURCE
 };
 
-class nsICODecoder : public Decoder
-{
-public:
-  virtual ~nsICODecoder() { }
+class nsICODecoder : public Decoder {
+ public:
+  virtual ~nsICODecoder() {}
 
   
   size_t FirstResourceOffset() const;
@@ -51,7 +48,7 @@ public:
   nsresult FinishInternal() override;
   nsresult FinishWithErrorInternal() override;
 
-private:
+ private:
   friend class DecoderFactory;
 
   
@@ -83,23 +80,25 @@ private:
     gfx::IntSize mSize;
   };
 
-  StreamingLexer<ICOState, 32> mLexer; 
-  RefPtr<Decoder> mContainedDecoder; 
-  Maybe<SourceBufferIterator> mReturnIterator; 
-  UniquePtr<uint8_t[]> mMaskBuffer; 
-  nsTArray<IconDirEntryEx> mDirEntries; 
-  nsTArray<IconDirEntryEx> mUnsizedDirEntries; 
-  IconDirEntryEx* mDirEntry; 
-  uint16_t mNumIcons;     
-  uint16_t mCurrIcon;     
-  uint16_t mBPP;          
-  uint32_t mMaskRowSize;  
-  uint32_t mCurrMaskLine; 
-  bool mIsCursor;         
-  bool mHasMaskAlpha;     
+  StreamingLexer<ICOState, 32> mLexer;  
+  RefPtr<Decoder> mContainedDecoder;    
+  Maybe<SourceBufferIterator>
+      mReturnIterator;               
+  UniquePtr<uint8_t[]> mMaskBuffer;  
+  nsTArray<IconDirEntryEx> mDirEntries;  
+  nsTArray<IconDirEntryEx> mUnsizedDirEntries;  
+  IconDirEntryEx* mDirEntry;  
+  uint16_t mNumIcons;         
+  uint16_t mCurrIcon;  
+  uint16_t mBPP;       
+  uint32_t
+      mMaskRowSize;  
+  uint32_t mCurrMaskLine;  
+  bool mIsCursor;          
+  bool mHasMaskAlpha;      
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

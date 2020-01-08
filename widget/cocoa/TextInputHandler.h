@@ -27,22 +27,20 @@ namespace mozilla {
 namespace widget {
 
 
-enum
-{
-#if !defined(MAC_OS_X_VERSION_10_12) || \
-  MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
-  kVK_RightCommand    = 0x36, 
+enum {
+#if !defined(MAC_OS_X_VERSION_10_12) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_12
+  kVK_RightCommand = 0x36,  
 #endif
 
-  kVK_PC_PrintScreen     = kVK_F13,
-  kVK_PC_ScrollLock      = kVK_F14,
-  kVK_PC_Pause           = kVK_F15,
+  kVK_PC_PrintScreen = kVK_F13,
+  kVK_PC_ScrollLock = kVK_F14,
+  kVK_PC_Pause = kVK_F15,
 
-  kVK_PC_Insert          = kVK_Help,
-  kVK_PC_Backspace       = kVK_Delete,
-  kVK_PC_Delete          = kVK_ForwardDelete,
+  kVK_PC_Insert = kVK_Help,
+  kVK_PC_Backspace = kVK_Delete,
+  kVK_PC_Delete = kVK_ForwardDelete,
 
-  kVK_PC_ContextMenu     = 0x6E,
+  kVK_PC_ContextMenu = 0x6E,
 
   kVK_Powerbook_KeypadEnter = 0x34  
 };
@@ -55,9 +53,8 @@ enum
 
 
 
-class TISInputSourceWrapper
-{
-public:
+class TISInputSourceWrapper {
+ public:
   static TISInputSourceWrapper& CurrentInputSource();
   
 
@@ -65,45 +62,41 @@ public:
   static void Shutdown();
 
   TISInputSourceWrapper()
-    : mInputSource{nullptr}
-    , mKeyboardLayout{nullptr}
-    , mUCKeyboardLayout{nullptr}
-    , mIsRTL{0}
-    , mOverrideKeyboard{false}
-  {
+      : mInputSource{nullptr},
+        mKeyboardLayout{nullptr},
+        mUCKeyboardLayout{nullptr},
+        mIsRTL{0},
+        mOverrideKeyboard{false} {
     mInputSourceList = nullptr;
     Clear();
   }
 
   explicit TISInputSourceWrapper(const char* aID)
-    : mInputSource{nullptr}
-    , mKeyboardLayout{nullptr}
-    , mUCKeyboardLayout{nullptr}
-    , mIsRTL{0}
-    , mOverrideKeyboard{false}
-  {
+      : mInputSource{nullptr},
+        mKeyboardLayout{nullptr},
+        mUCKeyboardLayout{nullptr},
+        mIsRTL{0},
+        mOverrideKeyboard{false} {
     mInputSourceList = nullptr;
     InitByInputSourceID(aID);
   }
 
   explicit TISInputSourceWrapper(SInt32 aLayoutID)
-    : mInputSource{nullptr}
-    , mKeyboardLayout{nullptr}
-    , mUCKeyboardLayout{nullptr}
-    , mIsRTL{0}
-    , mOverrideKeyboard{false}
-  {
+      : mInputSource{nullptr},
+        mKeyboardLayout{nullptr},
+        mUCKeyboardLayout{nullptr},
+        mIsRTL{0},
+        mOverrideKeyboard{false} {
     mInputSourceList = nullptr;
     InitByLayoutID(aLayoutID);
   }
 
   explicit TISInputSourceWrapper(TISInputSourceRef aInputSource)
-    : mInputSource{nullptr}
-    , mKeyboardLayout{nullptr}
-    , mUCKeyboardLayout{nullptr}
-    , mIsRTL{0}
-    , mOverrideKeyboard{false}
-  {
+      : mInputSource{nullptr},
+        mKeyboardLayout{nullptr},
+        mUCKeyboardLayout{nullptr},
+        mIsRTL{0},
+        mOverrideKeyboard{false} {
     mInputSourceList = nullptr;
     InitByTISInputSourceRef(aInputSource);
   }
@@ -150,76 +143,63 @@ public:
 
 
 
-  TISInputSourceRef GetKeyboardLayoutInputSource() const
-  {
-    return mKeyboardLayout;
-  }
+  TISInputSourceRef GetKeyboardLayoutInputSource() const { return mKeyboardLayout; }
   const UCKeyboardLayout* GetUCKeyboardLayout();
 
   bool IsOpenedIMEMode();
   bool IsIMEMode();
   bool IsKeyboardLayout();
 
-  bool IsASCIICapable()
-  {
+  bool IsASCIICapable() {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetBoolProperty(kTISPropertyInputSourceIsASCIICapable);
   }
 
-  bool IsEnabled()
-  {
+  bool IsEnabled() {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetBoolProperty(kTISPropertyInputSourceIsEnabled);
   }
 
-  bool GetLanguageList(CFArrayRef &aLanguageList);
-  bool GetPrimaryLanguage(CFStringRef &aPrimaryLanguage);
-  bool GetPrimaryLanguage(nsAString &aPrimaryLanguage);
+  bool GetLanguageList(CFArrayRef& aLanguageList);
+  bool GetPrimaryLanguage(CFStringRef& aPrimaryLanguage);
+  bool GetPrimaryLanguage(nsAString& aPrimaryLanguage);
 
-  bool GetLocalizedName(CFStringRef &aName)
-  {
+  bool GetLocalizedName(CFStringRef& aName) {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetStringProperty(kTISPropertyLocalizedName, aName);
   }
 
-  bool GetLocalizedName(nsAString &aName)
-  {
+  bool GetLocalizedName(nsAString& aName) {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetStringProperty(kTISPropertyLocalizedName, aName);
   }
 
-  bool GetInputSourceID(CFStringRef &aID)
-  {
+  bool GetInputSourceID(CFStringRef& aID) {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetStringProperty(kTISPropertyInputSourceID, aID);
   }
 
-  bool GetInputSourceID(nsAString &aID)
-  {
+  bool GetInputSourceID(nsAString& aID) {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetStringProperty(kTISPropertyInputSourceID, aID);
   }
 
-  bool GetBundleID(CFStringRef &aBundleID)
-  {
+  bool GetBundleID(CFStringRef& aBundleID) {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetStringProperty(kTISPropertyBundleID, aBundleID);
   }
 
-  bool GetBundleID(nsAString &aBundleID)
-  {
+  bool GetBundleID(nsAString& aBundleID) {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetStringProperty(kTISPropertyBundleID, aBundleID);
   }
 
-  bool GetInputSourceType(CFStringRef &aType)
-  {
+  bool GetInputSourceType(CFStringRef& aType) {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetStringProperty(kTISPropertyInputSourceType, aType);
   }
 
-  bool GetInputSourceType(nsAString &aType)
-  {
+  bool GetInputSourceType(nsAString& aType) {
     NS_ENSURE_TRUE(mInputSource, false);
     return GetStringProperty(kTISPropertyInputSourceType, aType);
   }
@@ -255,9 +235,8 @@ public:
 
 
 
-  void InitKeyEvent(NSEvent *aNativeKeyEvent, WidgetKeyboardEvent& aKeyEvent,
-                    bool aIsProcessedByIME,
-                    const nsAString *aInsertString = nullptr);
+  void InitKeyEvent(NSEvent* aNativeKeyEvent, WidgetKeyboardEvent& aKeyEvent,
+                    bool aIsProcessedByIME, const nsAString* aInsertString = nullptr);
 
   
 
@@ -279,10 +258,8 @@ public:
 
 
 
-  void WillDispatchKeyboardEvent(NSEvent* aNativeKeyEvent,
-                                 const nsAString* aInsertString,
-                                 uint32_t aIndexOfKeypress,
-                                 WidgetKeyboardEvent& aKeyEvent);
+  void WillDispatchKeyboardEvent(NSEvent* aNativeKeyEvent, const nsAString* aInsertString,
+                                 uint32_t aIndexOfKeypress, WidgetKeyboardEvent& aKeyEvent);
 
   
 
@@ -294,8 +271,7 @@ public:
 
 
 
-  uint32_t ComputeGeckoKeyCode(UInt32 aNativeKeyCode, UInt32 aKbType,
-                               bool aCmdIsPressed);
+  uint32_t ComputeGeckoKeyCode(UInt32 aNativeKeyCode, UInt32 aKbType, bool aCmdIsPressed);
 
   
 
@@ -311,8 +287,7 @@ public:
 
 
 
-  static CodeNameIndex ComputeGeckoCodeNameIndex(UInt32 aNativeKeyCode,
-                                                 UInt32 aKbType);
+  static CodeNameIndex ComputeGeckoCodeNameIndex(UInt32 aNativeKeyCode, UInt32 aKbType);
 
   
 
@@ -323,7 +298,7 @@ public:
 
   bool IsDeadKey(NSEvent* aNativeKeyEvent);
 
-protected:
+ protected:
   
 
 
@@ -337,8 +312,7 @@ protected:
 
 
 
-  bool TranslateToString(UInt32 aKeyCode, UInt32 aModifiers,
-                           UInt32 aKbType, nsAString &aStr);
+  bool TranslateToString(UInt32 aKeyCode, UInt32 aModifiers, UInt32 aKbType, nsAString& aStr);
 
   
 
@@ -384,8 +358,7 @@ protected:
 
   void ComputeInsertStringForCharCode(NSEvent* aNativeKeyEvent,
                                       const WidgetKeyboardEvent& aKeyEvent,
-                                      const nsAString* aInsertString,
-                                      nsAString& aResult);
+                                      const nsAString* aInsertString, nsAString& aResult);
 
   
 
@@ -399,8 +372,8 @@ protected:
   UInt32 GetKbdType() const;
 
   bool GetBoolProperty(const CFStringRef aKey);
-  bool GetStringProperty(const CFStringRef aKey, CFStringRef &aStr);
-  bool GetStringProperty(const CFStringRef aKey, nsAString &aStr);
+  bool GetStringProperty(const CFStringRef aKey, CFStringRef& aStr);
+  bool GetStringProperty(const CFStringRef aKey, nsAString& aStr);
 
   TISInputSourceRef mInputSource;
   TISInputSourceRef mKeyboardLayout;
@@ -418,9 +391,8 @@ protected:
 
 
 
-class TextInputHandlerBase : public TextEventDispatcherListener
-{
-public:
+class TextInputHandlerBase : public TextEventDispatcherListener {
+ public:
   
 
 
@@ -463,19 +435,16 @@ public:
 
 
 
-  void InitKeyEvent(NSEvent *aNativeKeyEvent, WidgetKeyboardEvent& aKeyEvent,
-                    bool aIsProcessedByIME,
-                    const nsAString *aInsertString = nullptr);
+  void InitKeyEvent(NSEvent* aNativeKeyEvent, WidgetKeyboardEvent& aKeyEvent,
+                    bool aIsProcessedByIME, const nsAString* aInsertString = nullptr);
 
   
 
 
 
 
-  nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
-                                    int32_t aNativeKeyCode,
-                                    uint32_t aModifierFlags,
-                                    const nsAString& aCharacters,
+  nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
+                                    uint32_t aModifierFlags, const nsAString& aCharacters,
                                     const nsAString& aUnmodifiedCharacters);
 
   
@@ -504,7 +473,6 @@ public:
 
   static bool IsSpecialGeckoKey(UInt32 aNativeKeyCode);
 
-
   
 
 
@@ -528,8 +496,8 @@ public:
 
   static void EnsureSecureEventInputDisabled();
 
-public:
-   
+ public:
+  
 
 
 
@@ -541,18 +509,18 @@ public:
 
   virtual bool OnDestroyWidget(nsChildView* aDestroyingWidget);
 
-protected:
+ protected:
   
   
   
-  nsChildView* mWidget; 
+  nsChildView* mWidget;  
   RefPtr<TextEventDispatcher> mDispatcher;
 
   
   
-  NSView<mozView>* mView; 
+  NSView<mozView>* mView;  
 
-  TextInputHandlerBase(nsChildView* aWidget, NSView<mozView> *aNativeView);
+  TextInputHandlerBase(nsChildView* aWidget, NSView<mozView>* aNativeView);
   virtual ~TextInputHandlerBase();
 
   bool Destroyed() { return !mWidget; }
@@ -563,8 +531,7 @@ protected:
 
 
 
-  struct KeyEventState
-  {
+  struct KeyEventState {
     
     NSEvent* mKeyEvent;
     
@@ -591,38 +558,26 @@ protected:
     
     bool mCompositionDispatched;
 
-    KeyEventState()
-      : mKeyEvent(nullptr)
-      , mUniqueId(0)
-    {
-      Clear();
-    }
+    KeyEventState() : mKeyEvent(nullptr), mUniqueId(0) { Clear(); }
 
     explicit KeyEventState(NSEvent* aNativeKeyEvent, uint32_t aUniqueId = 0)
-      : mKeyEvent(nullptr)
-      , mUniqueId(0)
-    {
+        : mKeyEvent(nullptr), mUniqueId(0) {
       Clear();
       Set(aNativeKeyEvent, aUniqueId);
     }
 
-    KeyEventState(const KeyEventState &aOther) = delete;
+    KeyEventState(const KeyEventState& aOther) = delete;
 
-    ~KeyEventState()
-    {
-      Clear();
-    }
+    ~KeyEventState() { Clear(); }
 
-    void Set(NSEvent* aNativeKeyEvent, uint32_t aUniqueId = 0)
-    {
+    void Set(NSEvent* aNativeKeyEvent, uint32_t aUniqueId = 0) {
       MOZ_ASSERT(aNativeKeyEvent, "aNativeKeyEvent must not be NULL");
       Clear();
       mKeyEvent = [aNativeKeyEvent retain];
       mUniqueId = aUniqueId;
     }
 
-    void Clear()
-    {
+    void Clear() {
       if (mKeyEvent) {
         [mKeyEvent release];
         mKeyEvent = nullptr;
@@ -638,166 +593,116 @@ protected:
       mCompositionDispatched = false;
     }
 
-    bool IsDefaultPrevented() const
-    {
-      return mKeyDownHandled || mKeyPressHandled || mCausedOtherKeyEvents ||
-             mCompositionDispatched;
+    bool IsDefaultPrevented() const {
+      return mKeyDownHandled || mKeyPressHandled || mCausedOtherKeyEvents || mCompositionDispatched;
     }
 
-    bool CanDispatchKeyDownEvent() const
-    {
-      return !mKeyDownDispatched;
-    }
+    bool CanDispatchKeyDownEvent() const { return !mKeyDownDispatched; }
 
-    bool CanDispatchKeyPressEvent() const
-    {
-      return !mKeyPressDispatched && !IsDefaultPrevented();
-    }
+    bool CanDispatchKeyPressEvent() const { return !mKeyPressDispatched && !IsDefaultPrevented(); }
 
-    bool CanHandleCommand() const
-    {
-      return !mKeyDownHandled && !mKeyPressHandled;
-    }
+    bool CanHandleCommand() const { return !mKeyDownHandled && !mKeyPressHandled; }
 
-    bool IsProperKeyEvent(Command aCommand) const
-    {
+    bool IsProperKeyEvent(Command aCommand) const {
       if (NS_WARN_IF(!mKeyEvent)) {
         return false;
       }
       KeyNameIndex keyNameIndex =
-        TISInputSourceWrapper::ComputeGeckoKeyNameIndex([mKeyEvent keyCode]);
-      Modifiers modifiers =
-        nsCocoaUtils::ModifiersForEvent(mKeyEvent) & (MODIFIER_SHIFT |
-                                                      MODIFIER_CONTROL |
-                                                      MODIFIER_ALT |
-                                                      MODIFIER_META);
+          TISInputSourceWrapper::ComputeGeckoKeyNameIndex([mKeyEvent keyCode]);
+      Modifiers modifiers = nsCocoaUtils::ModifiersForEvent(mKeyEvent) &
+                            (MODIFIER_SHIFT | MODIFIER_CONTROL | MODIFIER_ALT | MODIFIER_META);
       switch (aCommand) {
         case CommandInsertLineBreak:
-          return keyNameIndex == KEY_NAME_INDEX_Enter &&
-                 modifiers == MODIFIER_CONTROL;
+          return keyNameIndex == KEY_NAME_INDEX_Enter && modifiers == MODIFIER_CONTROL;
         case CommandInsertParagraph:
-          return keyNameIndex == KEY_NAME_INDEX_Enter &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_Enter && modifiers == MODIFIER_NONE;
         case CommandDeleteCharBackward:
-          return keyNameIndex == KEY_NAME_INDEX_Backspace &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_Backspace && modifiers == MODIFIER_NONE;
         case CommandDeleteToBeginningOfLine:
-          return keyNameIndex == KEY_NAME_INDEX_Backspace &&
-                 modifiers == MODIFIER_META;
+          return keyNameIndex == KEY_NAME_INDEX_Backspace && modifiers == MODIFIER_META;
         case CommandDeleteWordBackward:
-          return keyNameIndex == KEY_NAME_INDEX_Backspace &&
-                 modifiers == MODIFIER_ALT;
+          return keyNameIndex == KEY_NAME_INDEX_Backspace && modifiers == MODIFIER_ALT;
         case CommandDeleteCharForward:
-          return keyNameIndex == KEY_NAME_INDEX_Delete &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_Delete && modifiers == MODIFIER_NONE;
         case CommandDeleteWordForward:
-          return keyNameIndex == KEY_NAME_INDEX_Delete &&
-                 modifiers == MODIFIER_ALT;
+          return keyNameIndex == KEY_NAME_INDEX_Delete && modifiers == MODIFIER_ALT;
         case CommandInsertTab:
-          return keyNameIndex == KEY_NAME_INDEX_Tab &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_Tab && modifiers == MODIFIER_NONE;
         case CommandInsertBacktab:
-          return keyNameIndex == KEY_NAME_INDEX_Tab &&
-                 modifiers == MODIFIER_SHIFT;
+          return keyNameIndex == KEY_NAME_INDEX_Tab && modifiers == MODIFIER_SHIFT;
         case CommandCharNext:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowRight &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowRight && modifiers == MODIFIER_NONE;
         case CommandSelectCharNext:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowRight &&
-                 modifiers == MODIFIER_SHIFT;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowRight && modifiers == MODIFIER_SHIFT;
         case CommandWordNext:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowRight &&
-                 modifiers == MODIFIER_ALT;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowRight && modifiers == MODIFIER_ALT;
         case CommandSelectWordNext:
           return keyNameIndex == KEY_NAME_INDEX_ArrowRight &&
                  modifiers == (MODIFIER_ALT | MODIFIER_SHIFT);
         case CommandEndLine:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowRight &&
-                 modifiers == MODIFIER_META;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowRight && modifiers == MODIFIER_META;
         case CommandSelectEndLine:
           return keyNameIndex == KEY_NAME_INDEX_ArrowRight &&
                  modifiers == (MODIFIER_META | MODIFIER_SHIFT);
         case CommandCharPrevious:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowLeft &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowLeft && modifiers == MODIFIER_NONE;
         case CommandSelectCharPrevious:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowLeft &&
-                 modifiers == MODIFIER_SHIFT;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowLeft && modifiers == MODIFIER_SHIFT;
         case CommandWordPrevious:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowLeft &&
-                 modifiers == MODIFIER_ALT;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowLeft && modifiers == MODIFIER_ALT;
         case CommandSelectWordPrevious:
           return keyNameIndex == KEY_NAME_INDEX_ArrowLeft &&
                  modifiers == (MODIFIER_ALT | MODIFIER_SHIFT);
         case CommandBeginLine:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowLeft &&
-                 modifiers == MODIFIER_META;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowLeft && modifiers == MODIFIER_META;
         case CommandSelectBeginLine:
           return keyNameIndex == KEY_NAME_INDEX_ArrowLeft &&
                  modifiers == (MODIFIER_META | MODIFIER_SHIFT);
         case CommandLinePrevious:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowUp &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowUp && modifiers == MODIFIER_NONE;
         case CommandSelectLinePrevious:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowUp &&
-                 modifiers == MODIFIER_SHIFT;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowUp && modifiers == MODIFIER_SHIFT;
         case CommandMoveTop:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowUp &&
-                 modifiers == MODIFIER_META;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowUp && modifiers == MODIFIER_META;
         case CommandSelectTop:
           return (keyNameIndex == KEY_NAME_INDEX_ArrowUp &&
                   modifiers == (MODIFIER_META | MODIFIER_SHIFT)) ||
-                 (keyNameIndex == KEY_NAME_INDEX_Home &&
-                  modifiers == MODIFIER_SHIFT);
+                 (keyNameIndex == KEY_NAME_INDEX_Home && modifiers == MODIFIER_SHIFT);
         case CommandLineNext:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowDown &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowDown && modifiers == MODIFIER_NONE;
         case CommandSelectLineNext:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowDown &&
-                 modifiers == MODIFIER_SHIFT;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowDown && modifiers == MODIFIER_SHIFT;
         case CommandMoveBottom:
-          return keyNameIndex == KEY_NAME_INDEX_ArrowDown &&
-                 modifiers == MODIFIER_META;
+          return keyNameIndex == KEY_NAME_INDEX_ArrowDown && modifiers == MODIFIER_META;
         case CommandSelectBottom:
           return (keyNameIndex == KEY_NAME_INDEX_ArrowDown &&
                   modifiers == (MODIFIER_META | MODIFIER_SHIFT)) ||
-                 (keyNameIndex == KEY_NAME_INDEX_End &&
-                  modifiers == MODIFIER_SHIFT);
+                 (keyNameIndex == KEY_NAME_INDEX_End && modifiers == MODIFIER_SHIFT);
         case CommandScrollPageUp:
-          return keyNameIndex == KEY_NAME_INDEX_PageUp &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_PageUp && modifiers == MODIFIER_NONE;
         case CommandSelectPageUp:
-          return keyNameIndex == KEY_NAME_INDEX_PageUp &&
-                 modifiers == MODIFIER_SHIFT;
+          return keyNameIndex == KEY_NAME_INDEX_PageUp && modifiers == MODIFIER_SHIFT;
         case CommandScrollPageDown:
-          return keyNameIndex == KEY_NAME_INDEX_PageDown &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_PageDown && modifiers == MODIFIER_NONE;
         case CommandSelectPageDown:
-          return keyNameIndex == KEY_NAME_INDEX_PageDown &&
-                 modifiers == MODIFIER_SHIFT;
+          return keyNameIndex == KEY_NAME_INDEX_PageDown && modifiers == MODIFIER_SHIFT;
         case CommandScrollBottom:
-          return keyNameIndex == KEY_NAME_INDEX_End &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_End && modifiers == MODIFIER_NONE;
         case CommandScrollTop:
-          return keyNameIndex == KEY_NAME_INDEX_Home &&
-                 modifiers == MODIFIER_NONE;
+          return keyNameIndex == KEY_NAME_INDEX_Home && modifiers == MODIFIER_NONE;
         case CommandCancelOperation:
           return (keyNameIndex == KEY_NAME_INDEX_Escape &&
-                  (modifiers == MODIFIER_NONE ||
-                   modifiers == MODIFIER_SHIFT)) ||
-                 ([mKeyEvent keyCode] == kVK_ANSI_Period &&
-                  modifiers == MODIFIER_META);
+                  (modifiers == MODIFIER_NONE || modifiers == MODIFIER_SHIFT)) ||
+                 ([mKeyEvent keyCode] == kVK_ANSI_Period && modifiers == MODIFIER_META);
         case CommandComplete:
           return keyNameIndex == KEY_NAME_INDEX_Escape &&
-                 (modifiers == MODIFIER_ALT ||
-                  modifiers == (MODIFIER_ALT | MODIFIER_SHIFT));
+                 (modifiers == MODIFIER_ALT || modifiers == (MODIFIER_ALT | MODIFIER_SHIFT));
         default:
           return false;
       }
     }
 
-    void InitKeyEvent(TextInputHandlerBase* aHandler,
-                      WidgetKeyboardEvent& aKeyEvent,
+    void InitKeyEvent(TextInputHandlerBase* aHandler, WidgetKeyboardEvent& aKeyEvent,
                       bool aIsProcessedByIME);
 
     
@@ -814,32 +719,22 @@ protected:
   
 
 
-  class AutoKeyEventStateCleaner
-  {
-  public:
-    explicit AutoKeyEventStateCleaner(TextInputHandlerBase* aHandler) :
-      mHandler(aHandler)
-    {
-    }
+  class AutoKeyEventStateCleaner {
+   public:
+    explicit AutoKeyEventStateCleaner(TextInputHandlerBase* aHandler) : mHandler(aHandler) {}
 
-    ~AutoKeyEventStateCleaner()
-    {
-      mHandler->RemoveCurrentKeyEvent();
-    }
-  private:
+    ~AutoKeyEventStateCleaner() { mHandler->RemoveCurrentKeyEvent(); }
+
+   private:
     RefPtr<TextInputHandlerBase> mHandler;
   };
 
-  class MOZ_STACK_CLASS AutoInsertStringClearer
-  {
-  public:
-    explicit AutoInsertStringClearer(KeyEventState* aState)
-      : mState(aState)
-    {
-    }
+  class MOZ_STACK_CLASS AutoInsertStringClearer {
+   public:
+    explicit AutoInsertStringClearer(KeyEventState* aState) : mState(aState) {}
     ~AutoInsertStringClearer();
 
-  private:
+   private:
     KeyEventState* mState;
   };
 
@@ -859,8 +754,7 @@ protected:
   
 
 
-  KeyEventState* PushKeyEvent(NSEvent* aNativeKeyEvent, uint32_t aUniqueId = 0)
-  {
+  KeyEventState* PushKeyEvent(NSEvent* aNativeKeyEvent, uint32_t aUniqueId = 0) {
     uint32_t nestCount = mCurrentKeyEvents.Length();
     for (uint32_t i = 0; i < nestCount; i++) {
       
@@ -882,10 +776,8 @@ protected:
 
 
 
-  void RemoveCurrentKeyEvent()
-  {
-    NS_ASSERTION(mCurrentKeyEvents.Length() > 0,
-                 "RemoveCurrentKeyEvent() is called unexpectedly");
+  void RemoveCurrentKeyEvent() {
+    NS_ASSERTION(mCurrentKeyEvents.Length() > 0, "RemoveCurrentKeyEvent() is called unexpectedly");
     KeyEventState* keyEvent = mCurrentKeyEvents.PopLastElement();
     if (keyEvent == &mFirstKeyEvent) {
       keyEvent->Clear();
@@ -897,29 +789,21 @@ protected:
   
 
 
-  KeyEventState* GetCurrentKeyEvent()
-  {
+  KeyEventState* GetCurrentKeyEvent() {
     if (mCurrentKeyEvents.Length() == 0) {
       return nullptr;
     }
     return mCurrentKeyEvents[mCurrentKeyEvents.Length() - 1];
   }
 
-  struct KeyboardLayoutOverride final
-  {
+  struct KeyboardLayoutOverride final {
     int32_t mKeyboardLayout;
     bool mOverrideEnabled;
 
-    KeyboardLayoutOverride() :
-      mKeyboardLayout(0), mOverrideEnabled(false)
-    {
-    }
+    KeyboardLayoutOverride() : mKeyboardLayout(0), mOverrideEnabled(false) {}
   };
 
-  const KeyboardLayoutOverride& KeyboardLayoutOverrideRef() const
-  {
-    return mKeyboardOverride;
-  }
+  const KeyboardLayoutOverride& KeyboardLayoutOverrideRef() const { return mKeyboardOverride; }
 
   
 
@@ -952,7 +836,7 @@ protected:
 
   static bool IsModifierKey(UInt32 aNativeKeyCode);
 
-private:
+ private:
   KeyboardLayoutOverride mKeyboardOverride;
 
   static int32_t sSecureEventInputCount;
@@ -971,22 +855,19 @@ private:
 
 
 
-class IMEInputHandler : public TextInputHandlerBase
-{
-public:
+class IMEInputHandler : public TextInputHandlerBase {
+ public:
   
   NS_IMETHOD NotifyIME(TextEventDispatcher* aTextEventDispatcher,
                        const IMENotification& aNotification) override;
   NS_IMETHOD_(IMENotificationRequests) GetIMENotificationRequests() override;
-  NS_IMETHOD_(void) OnRemovedFrom(
-                      TextEventDispatcher* aTextEventDispatcher) override;
-  NS_IMETHOD_(void) WillDispatchKeyboardEvent(
-                      TextEventDispatcher* aTextEventDispatcher,
-                      WidgetKeyboardEvent& aKeyboardEvent,
-                      uint32_t aIndexOfKeypress,
-                      void* aData) override;
+  NS_IMETHOD_(void) OnRemovedFrom(TextEventDispatcher* aTextEventDispatcher) override;
+  NS_IMETHOD_(void)
+  WillDispatchKeyboardEvent(TextEventDispatcher* aTextEventDispatcher,
+                            WidgetKeyboardEvent& aKeyboardEvent, uint32_t aIndexOfKeypress,
+                            void* aData) override;
 
-public:
+ public:
   virtual bool OnDestroyWidget(nsChildView* aDestroyingWidget) override;
 
   virtual void OnFocusChangeInGecko(bool aFocus);
@@ -1012,8 +893,7 @@ public:
 
 
 
-  void SetMarkedText(NSAttributedString* aAttrString,
-                     NSRange& aSelectedRange,
+  void SetMarkedText(NSAttributedString* aAttrString, NSRange& aSelectedRange,
                      NSRange* aReplacementRange = nullptr);
 
   
@@ -1027,9 +907,8 @@ public:
 
 
 
-  NSAttributedString* GetAttributedSubstringFromRange(
-                        NSRange& aRange,
-                        NSRange* aActualRange = nullptr);
+  NSAttributedString* GetAttributedSubstringFromRange(NSRange& aRange,
+                                                      NSRange* aActualRange = nullptr);
 
   
 
@@ -1066,8 +945,7 @@ public:
 
 
 
-  NSRect FirstRectForCharacterRange(NSRange& aRange,
-                                    NSRange* aActualRange = nullptr);
+  NSRect FirstRectForCharacterRange(NSRange& aRange, NSRange* aActualRange = nullptr);
 
   
 
@@ -1095,10 +973,7 @@ public:
   bool IsIMEOpened();
   bool IsIMEEnabled() { return mIsIMEEnabled; }
   bool IsASCIICapableOnly() { return mIsASCIICapableOnly; }
-  bool IsEditableContent() const
-  {
-    return mIsIMEEnabled || mIsASCIICapableOnly;
-  }
+  bool IsEditableContent() const { return mIsIMEEnabled || mIsASCIICapableOnly; }
   bool IgnoreIMECommit() { return mIgnoreIMECommit; }
 
   void CommitIMEComposition();
@@ -1120,18 +995,15 @@ public:
   
   static TSMDocumentID GetCurrentTSMDocumentID();
 
-protected:
+ protected:
   
   
   
   nsCOMPtr<nsITimer> mTimer;
-  enum {
-    kNotifyIMEOfFocusChangeInGecko = 1,
-    kSyncASCIICapableOnly          = 2
-  };
+  enum { kNotifyIMEOfFocusChangeInGecko = 1, kSyncASCIICapableOnly = 2 };
   uint32_t mPendingMethods;
 
-  IMEInputHandler(nsChildView* aWidget, NSView<mozView> *aNativeView);
+  IMEInputHandler(nsChildView* aWidget, NSView<mozView>* aNativeView);
   virtual ~IMEInputHandler();
 
   void ResetTimer();
@@ -1162,7 +1034,7 @@ protected:
 
   bool MaybeDispatchCurrentKeydownEvent(bool aIsProcessedByIME);
 
-private:
+ private:
   
   NSString* mIMECompositionString;
   
@@ -1171,7 +1043,7 @@ private:
   NSRange mMarkedRange;
   NSRange mSelectedRange;
 
-  NSRange mRangeForWritingMode; 
+  NSRange mRangeForWritingMode;  
   mozilla::WritingMode mWritingMode;
 
   bool mIsIMEComposing;
@@ -1184,7 +1056,7 @@ private:
   bool mIMEHasFocus;
 
   void KillIMEComposition();
-  void SendCommittedText(NSString *aString);
+  void SendCommittedText(NSString* aString);
   void OpenSystemPreferredLanguageIME();
 
   
@@ -1194,10 +1066,8 @@ private:
   static bool sStaticMembersInitialized;
   static CFStringRef sLatestIMEOpenedModeInputSourceID;
   static void InitStaticMembers();
-  static void OnCurrentTextInputSourceChange(CFNotificationCenterRef aCenter,
-                                             void* aObserver,
-                                             CFStringRef aName,
-                                             const void* aObject,
+  static void OnCurrentTextInputSourceChange(CFNotificationCenterRef aCenter, void* aObserver,
+                                             CFStringRef aName, const void* aObject,
                                              CFDictionaryRef aUserInfo);
 
   static void FlushPendingMethods(nsITimer* aTimer, void* aClosure);
@@ -1211,8 +1081,7 @@ private:
 
 
 
-  TextRangeType ConvertToTextRangeType(uint32_t aUnderlineStyle,
-                                       NSRange& aSelectedRange);
+  TextRangeType ConvertToTextRangeType(uint32_t aUnderlineStyle, NSRange& aSelectedRange);
 
   
 
@@ -1223,7 +1092,7 @@ private:
 
 
 
-  uint32_t GetRangeCount(NSAttributedString *aString);
+  uint32_t GetRangeCount(NSAttributedString* aString);
 
   
 
@@ -1235,9 +1104,8 @@ private:
 
 
 
-  already_AddRefed<mozilla::TextRangeArray>
-    CreateTextRangeArray(NSAttributedString *aAttrString,
-                         NSRange& aSelectedRange);
+  already_AddRefed<mozilla::TextRangeArray> CreateTextRangeArray(NSAttributedString* aAttrString,
+                                                                 NSRange& aSelectedRange);
 
   
 
@@ -1262,8 +1130,7 @@ private:
 
 
 
-  bool DispatchCompositionChangeEvent(const nsString& aText,
-                                      NSAttributedString* aAttrString,
+  bool DispatchCompositionChangeEvent(const nsString& aText, NSAttributedString* aAttrString,
                                       NSRange& aSelectedRange);
 
   
@@ -1291,15 +1158,14 @@ private:
 
 
 
-class TextInputHandler : public IMEInputHandler
-{
-public:
+class TextInputHandler : public IMEInputHandler {
+ public:
   static NSUInteger sLastModifierState;
 
   static CFArrayRef CreateAllKeyboardLayoutList();
   static void DebugPrintAllKeyboardLayouts();
 
-  TextInputHandler(nsChildView* aWidget, NSView<mozView> *aNativeView);
+  TextInputHandler(nsChildView* aWidget, NSView<mozView>* aNativeView);
   virtual ~TextInputHandler();
 
   
@@ -1336,8 +1202,7 @@ public:
 
 
 
-  void InsertText(NSAttributedString *aAttrString,
-                  NSRange* aReplacementRange = nullptr);
+  void InsertText(NSAttributedString* aAttrString, NSRange* aReplacementRange = nullptr);
 
   
 
@@ -1365,33 +1230,26 @@ public:
 
 
 
-  bool KeyPressWasHandled()
-  {
+  bool KeyPressWasHandled() {
     KeyEventState* currentKeyEvent = GetCurrentKeyEvent();
     return currentKeyEvent && currentKeyEvent->mKeyPressHandled;
   }
 
-protected:
+ protected:
   
   
   
-  struct ModifierKey
-  {
+  struct ModifierKey {
     NSUInteger flags;
     unsigned short keyCode;
 
-    ModifierKey(NSUInteger aFlags, unsigned short aKeyCode) :
-      flags(aFlags), keyCode(aKeyCode)
-    {
-    }
+    ModifierKey(NSUInteger aFlags, unsigned short aKeyCode) : flags(aFlags), keyCode(aKeyCode) {}
 
-    NSUInteger GetDeviceDependentFlags() const
-    {
+    NSUInteger GetDeviceDependentFlags() const {
       return (flags & ~NSDeviceIndependentModifierFlagsMask);
     }
 
-    NSUInteger GetDeviceIndependentFlags() const
-    {
+    NSUInteger GetDeviceIndependentFlags() const {
       return (flags & NSDeviceIndependentModifierFlagsMask);
     }
   };
@@ -1402,15 +1260,13 @@ protected:
 
 
 
-  const ModifierKey*
-    GetModifierKeyForNativeKeyCode(unsigned short aKeyCode) const;
+  const ModifierKey* GetModifierKeyForNativeKeyCode(unsigned short aKeyCode) const;
 
   
 
 
 
-  const ModifierKey*
-    GetModifierKeyForDeviceDependentFlags(NSUInteger aFlags) const;
+  const ModifierKey* GetModifierKeyForDeviceDependentFlags(NSUInteger aFlags) const;
 
   
 
@@ -1422,11 +1278,10 @@ protected:
 
 
 
-  void DispatchKeyEventForFlagsChanged(NSEvent* aNativeEvent,
-                                       bool aDispatchKeyDown);
+  void DispatchKeyEventForFlagsChanged(NSEvent* aNativeEvent, bool aDispatchKeyDown);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

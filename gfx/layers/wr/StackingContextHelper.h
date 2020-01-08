@@ -25,25 +25,22 @@ namespace layers {
 
 
 
-class MOZ_RAII StackingContextHelper
-{
-public:
-  StackingContextHelper(const StackingContextHelper& aParentSC,
-                        const ActiveScrolledRoot* aAsr,
-                        wr::DisplayListBuilder& aBuilder,
-                        const nsTArray<wr::WrFilterOp>& aFilters = nsTArray<wr::WrFilterOp>(),
-                        const LayoutDeviceRect& aBounds = LayoutDeviceRect(),
-                        const gfx::Matrix4x4* aBoundTransform = nullptr,
-                        const wr::WrAnimationProperty* aAnimation = nullptr,
-                        const float* aOpacityPtr = nullptr,
-                        const gfx::Matrix4x4* aTransformPtr = nullptr,
-                        const gfx::Matrix4x4* aPerspectivePtr = nullptr,
-                        const gfx::CompositionOp& aMixBlendMode = gfx::CompositionOp::OP_OVER,
-                        bool aBackfaceVisible = true,
-                        bool aIsPreserve3D = false,
-                        const Maybe<nsDisplayTransform*>& aDeferredTransformItem = Nothing(),
-                        const wr::WrClipId* aClipNodeId = nullptr,
-                        bool aAnimated = false);
+class MOZ_RAII StackingContextHelper {
+ public:
+  StackingContextHelper(
+      const StackingContextHelper& aParentSC, const ActiveScrolledRoot* aAsr,
+      wr::DisplayListBuilder& aBuilder,
+      const nsTArray<wr::WrFilterOp>& aFilters = nsTArray<wr::WrFilterOp>(),
+      const LayoutDeviceRect& aBounds = LayoutDeviceRect(),
+      const gfx::Matrix4x4* aBoundTransform = nullptr,
+      const wr::WrAnimationProperty* aAnimation = nullptr,
+      const float* aOpacityPtr = nullptr,
+      const gfx::Matrix4x4* aTransformPtr = nullptr,
+      const gfx::Matrix4x4* aPerspectivePtr = nullptr,
+      const gfx::CompositionOp& aMixBlendMode = gfx::CompositionOp::OP_OVER,
+      bool aBackfaceVisible = true, bool aIsPreserve3D = false,
+      const Maybe<nsDisplayTransform*>& aDeferredTransformItem = Nothing(),
+      const wr::WrClipId* aClipNodeId = nullptr, bool aAnimated = false);
   
   
   
@@ -56,13 +53,11 @@ public:
   
   gfx::Size GetInheritedScale() const { return mScale; }
 
-  const gfx::Matrix& GetInheritedTransform() const
-  {
+  const gfx::Matrix& GetInheritedTransform() const {
     return mInheritedTransform;
   }
 
-  const gfx::Matrix& GetSnappingSurfaceTransform() const
-  {
+  const gfx::Matrix& GetSnappingSurfaceTransform() const {
     return mSnappingSurfaceTransform;
   }
 
@@ -72,11 +67,12 @@ public:
   bool AffectsClipPositioning() const { return mAffectsClipPositioning; }
   Maybe<wr::WrClipId> ReferenceFrameId() const { return mReferenceFrameId; }
 
-private:
+ private:
   wr::DisplayListBuilder* mBuilder;
   gfx::Size mScale;
   gfx::Matrix mInheritedTransform;
 
+  
   
   
   
@@ -123,6 +119,7 @@ private:
   
   
   
+  
   Maybe<nsDisplayTransform*> mDeferredTransformItem;
   Maybe<gfx::Matrix4x4> mDeferredAncestorTransform;
 
@@ -130,7 +127,7 @@ private:
   bool mRasterizeLocally;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

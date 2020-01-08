@@ -11,12 +11,11 @@
 namespace mozilla {
 namespace embedding {
 class PrintData;
-} 
-} 
+}  
+}  
 
-class nsPrintSettingsServiceX final : public nsPrintSettingsService
-{
-public:
+class nsPrintSettingsServiceX final : public nsPrintSettingsService {
+ public:
   nsPrintSettingsServiceX() {}
 
   
@@ -26,25 +25,24 @@ public:
 
 
 
-  NS_IMETHODIMP SerializeToPrintData(nsIPrintSettings* aSettings,
-                                     nsIWebBrowserPrint* aWBP,
-                                     mozilla::embedding::PrintData* data) override;
+  NS_IMETHODIMP SerializeToPrintData(
+      nsIPrintSettings* aSettings, nsIWebBrowserPrint* aWBP,
+      mozilla::embedding::PrintData* data) override;
 
-  NS_IMETHODIMP DeserializeToPrintSettings(const mozilla::embedding::PrintData& data,
-                                           nsIPrintSettings* settings) override;
+  NS_IMETHODIMP DeserializeToPrintSettings(
+      const mozilla::embedding::PrintData& data,
+      nsIPrintSettings* settings) override;
 
-protected:
-  nsresult ReadPrefs(nsIPrintSettings* aPS,
-                     const nsAString& aPrinterName,
+ protected:
+  nsresult ReadPrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
                      uint32_t aFlags) override;
 
-  nsresult WritePrefs(nsIPrintSettings* aPS,
-                      const nsAString& aPrinterName,
+  nsresult WritePrefs(nsIPrintSettings* aPS, const nsAString& aPrinterName,
                       uint32_t aFlags) override;
 
   nsresult _CreatePrintSettings(nsIPrintSettings** _retval) override;
 
-private:
+ private:
   
   nsresult SerializeToPrintDataChild(nsIPrintSettings* aSettings,
                                      nsIWebBrowserPrint* aWBP,
@@ -56,4 +54,4 @@ private:
                                       mozilla::embedding::PrintData* data);
 };
 
-#endif 
+#endif  

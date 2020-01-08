@@ -26,23 +26,22 @@
 
 #if !defined(STATE_SYSTEM_NORMAL)
 #define STATE_SYSTEM_NORMAL (0)
-#endif 
+#endif  
 
 namespace mozilla {
 namespace a11y {
 
-static const wchar_t kLazyInstantiatorProp[] = L"mozilla::a11y::LazyInstantiator";
+static const wchar_t kLazyInstantiatorProp[] =
+    L"mozilla::a11y::LazyInstantiator";
 
 
-already_AddRefed<IAccessible>
-LazyInstantiator::GetRootAccessible(HWND aHwnd)
-{
+already_AddRefed<IAccessible> LazyInstantiator::GetRootAccessible(HWND aHwnd) {
   
   
   
   
-  LazyInstantiator* existingInstantiator =
-    reinterpret_cast<LazyInstantiator*>(::GetProp(aHwnd, kLazyInstantiatorProp));
+  LazyInstantiator *existingInstantiator = reinterpret_cast<LazyInstantiator *>(
+      ::GetProp(aHwnd, kLazyInstantiatorProp));
 
   RefPtr<IAccessible> result;
   if (existingInstantiator) {
@@ -64,7 +63,7 @@ LazyInstantiator::GetRootAccessible(HWND aHwnd)
   }
 
   
-  a11y::Accessible* rootAcc = widget::WinUtils::GetRootAccessibleForHWND(aHwnd);
+  a11y::Accessible *rootAcc = widget::WinUtils::GetRootAccessibleForHWND(aHwnd);
   if (!rootAcc) {
     return nullptr;
   }
@@ -81,8 +80,8 @@ LazyInstantiator::GetRootAccessible(HWND aHwnd)
   
   
   
-  a11y::RootAccessibleWrap* rootWrap =
-    static_cast<a11y::RootAccessibleWrap*>(rootAcc);
+  a11y::RootAccessibleWrap *rootWrap =
+      static_cast<a11y::RootAccessibleWrap *>(rootAcc);
   RefPtr<IUnknown> punk(rootWrap->GetInternalUnknown());
 
   MOZ_ASSERT(punk);
@@ -103,11 +102,9 @@ LazyInstantiator::GetRootAccessible(HWND aHwnd)
 
 
 
-void
-LazyInstantiator::EnableBlindAggregation(HWND aHwnd)
-{
-  LazyInstantiator* existingInstantiator =
-    reinterpret_cast<LazyInstantiator*>(::GetProp(aHwnd, kLazyInstantiatorProp));
+void LazyInstantiator::EnableBlindAggregation(HWND aHwnd) {
+  LazyInstantiator *existingInstantiator = reinterpret_cast<LazyInstantiator *>(
+      ::GetProp(aHwnd, kLazyInstantiatorProp));
 
   if (!existingInstantiator) {
     return;
@@ -117,21 +114,19 @@ LazyInstantiator::EnableBlindAggregation(HWND aHwnd)
 }
 
 LazyInstantiator::LazyInstantiator(HWND aHwnd)
-  : mHwnd(aHwnd)
-  , mAllowBlindAggregation(false)
-  , mWeakRootAccWrap(nullptr)
-  , mWeakAccessible(nullptr)
-  , mWeakDispatch(nullptr)
-{
+    : mHwnd(aHwnd),
+      mAllowBlindAggregation(false),
+      mWeakRootAccWrap(nullptr),
+      mWeakAccessible(nullptr),
+      mWeakDispatch(nullptr) {
   MOZ_ASSERT(aHwnd);
   
-  DebugOnly<BOOL> setPropOk = ::SetProp(aHwnd, kLazyInstantiatorProp,
-                                        reinterpret_cast<HANDLE>(this));
+  DebugOnly<BOOL> setPropOk =
+      ::SetProp(aHwnd, kLazyInstantiatorProp, reinterpret_cast<HANDLE>(this));
   MOZ_ASSERT(setPropOk);
 }
 
-LazyInstantiator::~LazyInstantiator()
-{
+LazyInstantiator::~LazyInstantiator() {
   if (mRealRootUnk) {
     
     RefPtr<IUnknown> dummy(mWeakRootAccWrap->Aggregate(nullptr));
@@ -140,23 +135,20 @@ LazyInstantiator::~LazyInstantiator()
   ClearProp();
 }
 
-void
-LazyInstantiator::ClearProp()
-{
+void LazyInstantiator::ClearProp() {
   
   DebugOnly<HANDLE> removedProp = ::RemoveProp(mHwnd, kLazyInstantiatorProp);
   MOZ_ASSERT(!removedProp ||
-             reinterpret_cast<LazyInstantiator*>(removedProp.value) == this);
+             reinterpret_cast<LazyInstantiator *>(removedProp.value) == this);
 }
 
 
 
 
 DWORD
-LazyInstantiator::GetClientPid(const DWORD aClientTid)
-{
-  nsAutoHandle callingThread(::OpenThread(THREAD_QUERY_LIMITED_INFORMATION,
-                                          FALSE, aClientTid));
+LazyInstantiator::GetClientPid(const DWORD aClientTid) {
+  nsAutoHandle callingThread(
+      ::OpenThread(THREAD_QUERY_LIMITED_INFORMATION, FALSE, aClientTid));
   if (!callingThread) {
     return 0;
   }
@@ -164,11 +156,11 @@ LazyInstantiator::GetClientPid(const DWORD aClientTid)
   return ::GetProcessIdOfThread(callingThread);
 }
 
-#define ALL_VERSIONS   ((unsigned long long)-1LL)
+#define ALL_VERSIONS ((unsigned long long)-1LL)
 
 struct DllBlockInfo {
   
-  const wchar_t* mName;
+  const wchar_t *mName;
 
   
   
@@ -184,28 +176,25 @@ struct DllBlockInfo {
 
 
 static const DllBlockInfo gBlockedInprocDlls[] = {
-  
-  
-  {L"dtvhooks.dll", MAKE_FILE_VERSION(18, 1, 11, 0)},
-  {L"dtvhooks64.dll", MAKE_FILE_VERSION(18, 1, 11, 0)}
+    
+    
+    {L"dtvhooks.dll", MAKE_FILE_VERSION(18, 1, 11, 0)},
+    {L"dtvhooks64.dll", MAKE_FILE_VERSION(18, 1, 11, 0)}};
+
+
+
+
+static const char *gBlockedRemoteClients[] = {
+    "tbnotifier.exe"  
 };
 
 
 
 
-static const char* gBlockedRemoteClients[] = {
-  "tbnotifier.exe" 
-};
 
 
 
-
-
-
-
-bool
-LazyInstantiator::IsBlockedInjection()
-{
+bool LazyInstantiator::IsBlockedInjection() {
   
   if (PR_GetEnv("MOZ_DISABLE_ACCESSIBLE_BLOCKLIST")) {
     return false;
@@ -218,7 +207,7 @@ LazyInstantiator::IsBlockedInjection()
 
   for (size_t index = 0, len = ArrayLength(gBlockedInprocDlls); index < len;
        ++index) {
-    const DllBlockInfo& blockedDll = gBlockedInprocDlls[index];
+    const DllBlockInfo &blockedDll = gBlockedInprocDlls[index];
     HMODULE module = ::GetModuleHandleW(blockedDll.mName);
     if (!module) {
       
@@ -241,9 +230,7 @@ LazyInstantiator::IsBlockedInjection()
 
 
 
-bool
-LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
-{
+bool LazyInstantiator::ShouldInstantiate(const DWORD aClientTid) {
   if (!aClientTid) {
     
     
@@ -265,7 +252,8 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
     nsAutoString leafName;
     rv = clientExe->GetLeafName(leafName);
     if (NS_SUCCEEDED(rv)) {
-      for (size_t i = 0, len = ArrayLength(gBlockedRemoteClients); i < len; ++i) {
+      for (size_t i = 0, len = ArrayLength(gBlockedRemoteClients); i < len;
+           ++i) {
         if (leafName.EqualsIgnoreCase(gBlockedRemoteClients[i])) {
           
           return false;
@@ -277,15 +265,13 @@ LazyInstantiator::ShouldInstantiate(const DWORD aClientTid)
   return true;
 }
 
-RootAccessibleWrap*
-LazyInstantiator::ResolveRootAccWrap()
-{
-  Accessible* acc = widget::WinUtils::GetRootAccessibleForHWND(mHwnd);
+RootAccessibleWrap *LazyInstantiator::ResolveRootAccWrap() {
+  Accessible *acc = widget::WinUtils::GetRootAccessibleForHWND(mHwnd);
   if (!acc || !acc->IsRoot()) {
     return nullptr;
   }
 
-  return static_cast<RootAccessibleWrap*>(acc);
+  return static_cast<RootAccessibleWrap *>(acc);
 }
 
 
@@ -309,9 +295,7 @@ LazyInstantiator::ResolveRootAccWrap()
 
 
 
-void
-LazyInstantiator::TransplantRefCnt()
-{
+void LazyInstantiator::TransplantRefCnt() {
   MOZ_ASSERT(mRefCnt > 0);
   MOZ_ASSERT(mRealRootUnk);
 
@@ -322,8 +306,7 @@ LazyInstantiator::TransplantRefCnt()
 }
 
 HRESULT
-LazyInstantiator::MaybeResolveRoot()
-{
+LazyInstantiator::MaybeResolveRoot() {
   MOZ_ASSERT(NS_IsMainThread());
   if (mWeakAccessible) {
     return S_OK;
@@ -337,7 +320,8 @@ LazyInstantiator::MaybeResolveRoot()
     }
 
     
-    mRealRootUnk = mWeakRootAccWrap->Aggregate(static_cast<IAccessible*>(this));
+    mRealRootUnk =
+        mWeakRootAccWrap->Aggregate(static_cast<IAccessible *>(this));
     if (!mRealRootUnk) {
       return E_FAIL;
     }
@@ -349,7 +333,7 @@ LazyInstantiator::MaybeResolveRoot()
     
     
     HRESULT hr = mRealRootUnk->QueryInterface(IID_IAccessible,
-                                              (void**) &mWeakAccessible);
+                                              (void **)&mWeakAccessible);
     if (FAILED(hr)) {
       return hr;
     }
@@ -382,8 +366,7 @@ LazyInstantiator::MaybeResolveRoot()
     return E_NOTIMPL;
   }
 
-  hr = mRealRootUnk->QueryInterface(IID_IAccessible,
-                                    (void**) &mWeakAccessible);
+  hr = mRealRootUnk->QueryInterface(IID_IAccessible, (void **)&mWeakAccessible);
   if (FAILED(hr)) {
     return hr;
   }
@@ -394,12 +377,12 @@ LazyInstantiator::MaybeResolveRoot()
   return S_OK;
 }
 
-#define RESOLVE_ROOT \
-  { \
+#define RESOLVE_ROOT                 \
+  {                                  \
     HRESULT hr = MaybeResolveRoot(); \
-    if (FAILED(hr)) { \
-      return hr; \
-    } \
+    if (FAILED(hr)) {                \
+      return hr;                     \
+    }                                \
   }
 
 IMPL_IUNKNOWN_QUERY_HEAD(LazyInstantiator)
@@ -407,10 +390,10 @@ IMPL_IUNKNOWN_QUERY_IFACE_AMBIGIOUS(IUnknown, IAccessible)
 IMPL_IUNKNOWN_QUERY_IFACE(IAccessible)
 IMPL_IUNKNOWN_QUERY_IFACE(IDispatch)
 IMPL_IUNKNOWN_QUERY_IFACE(IServiceProvider)
-  
-  if (!mAllowBlindAggregation) {
-    return E_NOINTERFACE;
-  }
+
+if (!mAllowBlindAggregation) {
+  return E_NOINTERFACE;
+}
 
 
 
@@ -418,8 +401,7 @@ RESOLVE_ROOT
 IMPL_IUNKNOWN_QUERY_TAIL_AGGREGATED(mRealRootUnk)
 
 ULONG
-LazyInstantiator::AddRef()
-{
+LazyInstantiator::AddRef() {
   
   if (mRealRootUnk) {
     return mRealRootUnk.get()->AddRef();
@@ -429,8 +411,7 @@ LazyInstantiator::AddRef()
 }
 
 ULONG
-LazyInstantiator::Release()
-{
+LazyInstantiator::Release() {
   ULONG result;
 
   
@@ -458,36 +439,35 @@ LazyInstantiator::Release()
 
 
 HRESULT
-LazyInstantiator::ResolveDispatch()
-{
+LazyInstantiator::ResolveDispatch() {
   if (mWeakDispatch) {
     return S_OK;
   }
 
   
-  auto typelib = mscom::RegisterTypelib(L"oleacc.dll",
-                                        mscom::RegistrationFlags::eUseSystemDirectory);
+  auto typelib = mscom::RegisterTypelib(
+      L"oleacc.dll", mscom::RegistrationFlags::eUseSystemDirectory);
   if (!typelib) {
     return E_UNEXPECTED;
   }
 
   
   RefPtr<ITypeInfo> accTypeInfo;
-  HRESULT hr = typelib->GetTypeInfoForGuid(IID_IAccessible,
-                                           getter_AddRefs(accTypeInfo));
+  HRESULT hr =
+      typelib->GetTypeInfoForGuid(IID_IAccessible, getter_AddRefs(accTypeInfo));
   if (FAILED(hr)) {
     return hr;
   }
 
   
-  hr = ::CreateStdDispatch(static_cast<IAccessible*>(this),
-                           static_cast<IAccessible*>(this),
-                           accTypeInfo, getter_AddRefs(mStdDispatch));
+  hr = ::CreateStdDispatch(static_cast<IAccessible *>(this),
+                           static_cast<IAccessible *>(this), accTypeInfo,
+                           getter_AddRefs(mStdDispatch));
   if (FAILED(hr)) {
     return hr;
   }
 
-  hr = mStdDispatch->QueryInterface(IID_IDispatch, (void**)&mWeakDispatch);
+  hr = mStdDispatch->QueryInterface(IID_IDispatch, (void **)&mWeakDispatch);
   if (FAILED(hr)) {
     return hr;
   }
@@ -497,12 +477,12 @@ LazyInstantiator::ResolveDispatch()
   return S_OK;
 }
 
-#define RESOLVE_IDISPATCH \
-  { \
+#define RESOLVE_IDISPATCH           \
+  {                                 \
     HRESULT hr = ResolveDispatch(); \
-    if (FAILED(hr)) { \
-      return hr; \
-    } \
+    if (FAILED(hr)) {               \
+      return hr;                    \
+    }                               \
   }
 
 
@@ -511,48 +491,42 @@ LazyInstantiator::ResolveDispatch()
 
 
 HRESULT
-LazyInstantiator::GetTypeInfoCount(UINT* pctinfo)
-{
+LazyInstantiator::GetTypeInfoCount(UINT *pctinfo) {
   RESOLVE_IDISPATCH;
   return mWeakDispatch->GetTypeInfoCount(pctinfo);
 }
 
 HRESULT
-LazyInstantiator::GetTypeInfo(UINT iTInfo, LCID lcid, ITypeInfo **ppTInfo)
-{
+LazyInstantiator::GetTypeInfo(UINT iTInfo, LCID lcid, ITypeInfo **ppTInfo) {
   RESOLVE_IDISPATCH;
   return mWeakDispatch->GetTypeInfo(iTInfo, lcid, ppTInfo);
 }
 
 HRESULT
 LazyInstantiator::GetIDsOfNames(REFIID riid, LPOLESTR *rgszNames, UINT cNames,
-                                LCID lcid, DISPID* rgDispId)
-{
+                                LCID lcid, DISPID *rgDispId) {
   RESOLVE_IDISPATCH;
   return mWeakDispatch->GetIDsOfNames(riid, rgszNames, cNames, lcid, rgDispId);
 }
 
 HRESULT
 LazyInstantiator::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid,
-                         WORD wFlags, DISPPARAMS* pDispParams,
-                         VARIANT* pVarResult, EXCEPINFO* pExcepInfo,
-                         UINT* puArgErr)
-{
+                         WORD wFlags, DISPPARAMS *pDispParams,
+                         VARIANT *pVarResult, EXCEPINFO *pExcepInfo,
+                         UINT *puArgErr) {
   RESOLVE_IDISPATCH;
   return mWeakDispatch->Invoke(dispIdMember, riid, lcid, wFlags, pDispParams,
                                pVarResult, pExcepInfo, puArgErr);
 }
 
 HRESULT
-LazyInstantiator::get_accParent(IDispatch **ppdispParent)
-{
+LazyInstantiator::get_accParent(IDispatch **ppdispParent) {
   RESOLVE_ROOT;
   return mWeakAccessible->get_accParent(ppdispParent);
 }
 
 HRESULT
-LazyInstantiator::get_accChildCount(long *pcountChildren)
-{
+LazyInstantiator::get_accChildCount(long *pcountChildren) {
   if (!pcountChildren) {
     return E_INVALIDARG;
   }
@@ -562,8 +536,7 @@ LazyInstantiator::get_accChildCount(long *pcountChildren)
 }
 
 HRESULT
-LazyInstantiator::get_accChild(VARIANT varChild, IDispatch **ppdispChild)
-{
+LazyInstantiator::get_accChild(VARIANT varChild, IDispatch **ppdispChild) {
   if (!ppdispChild) {
     return E_INVALIDARG;
   }
@@ -573,8 +546,7 @@ LazyInstantiator::get_accChild(VARIANT varChild, IDispatch **ppdispChild)
 }
 
 HRESULT
-LazyInstantiator::get_accName(VARIANT varChild, BSTR *pszName)
-{
+LazyInstantiator::get_accName(VARIANT varChild, BSTR *pszName) {
   if (!pszName) {
     return E_INVALIDARG;
   }
@@ -584,8 +556,7 @@ LazyInstantiator::get_accName(VARIANT varChild, BSTR *pszName)
 }
 
 HRESULT
-LazyInstantiator::get_accValue(VARIANT varChild, BSTR *pszValue)
-{
+LazyInstantiator::get_accValue(VARIANT varChild, BSTR *pszValue) {
   if (!pszValue) {
     return E_INVALIDARG;
   }
@@ -595,8 +566,7 @@ LazyInstantiator::get_accValue(VARIANT varChild, BSTR *pszValue)
 }
 
 HRESULT
-LazyInstantiator::get_accDescription(VARIANT varChild, BSTR *pszDescription)
-{
+LazyInstantiator::get_accDescription(VARIANT varChild, BSTR *pszDescription) {
   if (!pszDescription) {
     return E_INVALIDARG;
   }
@@ -606,8 +576,7 @@ LazyInstantiator::get_accDescription(VARIANT varChild, BSTR *pszDescription)
 }
 
 HRESULT
-LazyInstantiator::get_accRole(VARIANT varChild, VARIANT *pvarRole)
-{
+LazyInstantiator::get_accRole(VARIANT varChild, VARIANT *pvarRole) {
   if (!pvarRole) {
     return E_INVALIDARG;
   }
@@ -617,8 +586,7 @@ LazyInstantiator::get_accRole(VARIANT varChild, VARIANT *pvarRole)
 }
 
 HRESULT
-LazyInstantiator::get_accState(VARIANT varChild, VARIANT *pvarState)
-{
+LazyInstantiator::get_accState(VARIANT varChild, VARIANT *pvarState) {
   if (!pvarState) {
     return E_INVALIDARG;
   }
@@ -628,33 +596,30 @@ LazyInstantiator::get_accState(VARIANT varChild, VARIANT *pvarState)
 }
 
 HRESULT
-LazyInstantiator::get_accHelp(VARIANT varChild, BSTR *pszHelp)
-{
+LazyInstantiator::get_accHelp(VARIANT varChild, BSTR *pszHelp) {
   return E_NOTIMPL;
 }
 
 HRESULT
 LazyInstantiator::get_accHelpTopic(BSTR *pszHelpFile, VARIANT varChild,
-                                   long *pidTopic)
-{
+                                   long *pidTopic) {
   return E_NOTIMPL;
 }
 
 HRESULT
 LazyInstantiator::get_accKeyboardShortcut(VARIANT varChild,
-                                          BSTR *pszKeyboardShortcut)
-{
+                                          BSTR *pszKeyboardShortcut) {
   if (!pszKeyboardShortcut) {
     return E_INVALIDARG;
   }
 
   RESOLVE_ROOT;
-  return mWeakAccessible->get_accKeyboardShortcut(varChild, pszKeyboardShortcut);
+  return mWeakAccessible->get_accKeyboardShortcut(varChild,
+                                                  pszKeyboardShortcut);
 }
 
 HRESULT
-LazyInstantiator::get_accFocus(VARIANT *pvarChild)
-{
+LazyInstantiator::get_accFocus(VARIANT *pvarChild) {
   if (!pvarChild) {
     return E_INVALIDARG;
   }
@@ -664,8 +629,7 @@ LazyInstantiator::get_accFocus(VARIANT *pvarChild)
 }
 
 HRESULT
-LazyInstantiator::get_accSelection(VARIANT *pvarChildren)
-{
+LazyInstantiator::get_accSelection(VARIANT *pvarChildren) {
   if (!pvarChildren) {
     return E_INVALIDARG;
   }
@@ -675,8 +639,8 @@ LazyInstantiator::get_accSelection(VARIANT *pvarChildren)
 }
 
 HRESULT
-LazyInstantiator::get_accDefaultAction(VARIANT varChild, BSTR *pszDefaultAction)
-{
+LazyInstantiator::get_accDefaultAction(VARIANT varChild,
+                                       BSTR *pszDefaultAction) {
   if (!pszDefaultAction) {
     return E_INVALIDARG;
   }
@@ -686,24 +650,22 @@ LazyInstantiator::get_accDefaultAction(VARIANT varChild, BSTR *pszDefaultAction)
 }
 
 HRESULT
-LazyInstantiator::accSelect(long flagsSelect, VARIANT varChild)
-{
+LazyInstantiator::accSelect(long flagsSelect, VARIANT varChild) {
   RESOLVE_ROOT;
   return mWeakAccessible->accSelect(flagsSelect, varChild);
 }
 
 HRESULT
 LazyInstantiator::accLocation(long *pxLeft, long *pyTop, long *pcxWidth,
-                              long *pcyHeight, VARIANT varChild)
-{
+                              long *pcyHeight, VARIANT varChild) {
   RESOLVE_ROOT;
-  return mWeakAccessible->accLocation(pxLeft, pyTop, pcxWidth, pcyHeight, varChild);
+  return mWeakAccessible->accLocation(pxLeft, pyTop, pcxWidth, pcyHeight,
+                                      varChild);
 }
 
 HRESULT
 LazyInstantiator::accNavigate(long navDir, VARIANT varStart,
-                              VARIANT *pvarEndUpAt)
-{
+                              VARIANT *pvarEndUpAt) {
   if (!pvarEndUpAt) {
     return E_INVALIDARG;
   }
@@ -713,8 +675,7 @@ LazyInstantiator::accNavigate(long navDir, VARIANT varStart,
 }
 
 HRESULT
-LazyInstantiator::accHitTest(long xLeft, long yTop, VARIANT *pvarChild)
-{
+LazyInstantiator::accHitTest(long xLeft, long yTop, VARIANT *pvarChild) {
   if (!pvarChild) {
     return E_INVALIDARG;
   }
@@ -724,28 +685,24 @@ LazyInstantiator::accHitTest(long xLeft, long yTop, VARIANT *pvarChild)
 }
 
 HRESULT
-LazyInstantiator::accDoDefaultAction(VARIANT varChild)
-{
+LazyInstantiator::accDoDefaultAction(VARIANT varChild) {
   RESOLVE_ROOT;
   return mWeakAccessible->accDoDefaultAction(varChild);
 }
 
 HRESULT
-LazyInstantiator::put_accName(VARIANT varChild, BSTR szName)
-{
+LazyInstantiator::put_accName(VARIANT varChild, BSTR szName) {
   return E_NOTIMPL;
 }
 
 HRESULT
-LazyInstantiator::put_accValue(VARIANT varChild, BSTR szValue)
-{
+LazyInstantiator::put_accValue(VARIANT varChild, BSTR szValue) {
   return E_NOTIMPL;
 }
 
 HRESULT
 LazyInstantiator::QueryService(REFGUID aServiceId, REFIID aServiceIid,
-                               void** aOutInterface)
-{
+                               void **aOutInterface) {
   if (!aOutInterface) {
     return E_INVALIDARG;
   }
@@ -764,5 +721,5 @@ LazyInstantiator::QueryService(REFGUID aServiceId, REFIID aServiceIid,
   return servProv->QueryService(aServiceId, aServiceIid, aOutInterface);
 }
 
-} 
-} 
+}  
+}  

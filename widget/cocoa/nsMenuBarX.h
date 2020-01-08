@@ -28,77 +28,74 @@ class Element;
 }
 
 
-@interface ApplicationMenuDelegate : NSObject<NSMenuDelegate>
-{
-  nsMenuBarX* mApplicationMenu; 
+@interface ApplicationMenuDelegate : NSObject <NSMenuDelegate> {
+  nsMenuBarX* mApplicationMenu;  
 }
 - (id)initWithApplicationMenu:(nsMenuBarX*)aApplicationMenu;
 @end
 
 
-class nsNativeMenuServiceX : public nsINativeMenuService
-{
-public:
+class nsNativeMenuServiceX : public nsINativeMenuService {
+ public:
   NS_DECL_ISUPPORTS
 
   nsNativeMenuServiceX() {}
 
-  NS_IMETHOD CreateNativeMenuBar(nsIWidget* aParent,
-                                 mozilla::dom::Element* aMenuBarNode) override;
+  NS_IMETHOD CreateNativeMenuBar(nsIWidget* aParent, mozilla::dom::Element* aMenuBarNode) override;
 
-protected:
+ protected:
   virtual ~nsNativeMenuServiceX() {}
 };
 
 
 
-@interface GeckoNSMenu : NSMenu
-{
+@interface GeckoNSMenu : NSMenu {
 }
 - (BOOL)performSuperKeyEquivalent:(NSEvent*)theEvent;
 @end
 
 
-@interface NativeMenuItemTarget : NSObject
-{
+@interface NativeMenuItemTarget : NSObject {
 }
--(IBAction)menuItemHit:(id)sender;
+- (IBAction)menuItemHit:(id)sender;
 @end
 
 
 
 
-@interface GeckoServicesNSMenuItem : NSMenuItem
-{
+@interface GeckoServicesNSMenuItem : NSMenuItem {
 }
-- (id) target;
-- (SEL) action;
-- (void) _doNothing:(id)sender;
+- (id)target;
+- (SEL)action;
+- (void)_doNothing:(id)sender;
 @end
 
 
 
 
-@interface GeckoServicesNSMenu : NSMenu
-{
+@interface GeckoServicesNSMenu : NSMenu {
 }
-- (void)addItem:(NSMenuItem *)newItem;
-- (NSMenuItem *)addItemWithTitle:(NSString *)aString action:(SEL)aSelector keyEquivalent:(NSString *)keyEquiv;
-- (void)insertItem:(NSMenuItem *)newItem atIndex:(NSInteger)index;
-- (NSMenuItem *)insertItemWithTitle:(NSString *)aString action:(SEL)aSelector  keyEquivalent:(NSString *)keyEquiv atIndex:(NSInteger)index;
-- (void) _overrideClassOfMenuItem:(NSMenuItem *)menuItem;
+- (void)addItem:(NSMenuItem*)newItem;
+- (NSMenuItem*)addItemWithTitle:(NSString*)aString
+                         action:(SEL)aSelector
+                  keyEquivalent:(NSString*)keyEquiv;
+- (void)insertItem:(NSMenuItem*)newItem atIndex:(NSInteger)index;
+- (NSMenuItem*)insertItemWithTitle:(NSString*)aString
+                            action:(SEL)aSelector
+                     keyEquivalent:(NSString*)keyEquiv
+                           atIndex:(NSInteger)index;
+- (void)_overrideClassOfMenuItem:(NSMenuItem*)menuItem;
 @end
 
 
 
-class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver
-{
-public:
+class nsMenuBarX : public nsMenuGroupOwnerX, public nsChangeObserver {
+ public:
   nsMenuBarX();
   virtual ~nsMenuBarX();
 
   static NativeMenuItemTarget* sNativeEventTarget;
-  static nsMenuBarX*           sLastGeckoMenuBarPainted;
+  static nsMenuBarX* sLastGeckoMenuBarPainted;
 
   
   
@@ -110,42 +107,42 @@ public:
   NS_DECL_CHANGEOBSERVER
 
   
-  void*             NativeData() override {return (void*)mNativeMenu;}
-  nsMenuObjectTypeX MenuObjectType() override {return eMenuBarObjectType;}
+  void* NativeData() override { return (void*)mNativeMenu; }
+  nsMenuObjectTypeX MenuObjectType() override { return eMenuBarObjectType; }
 
   
-  nsresult          Create(nsIWidget* aParent, mozilla::dom::Element* aElement);
-  void              SetParent(nsIWidget* aParent);
-  uint32_t          GetMenuCount();
-  bool              MenuContainsAppMenu();
-  nsMenuX*          GetMenuAt(uint32_t aIndex);
-  nsMenuX*          GetXULHelpMenu();
-  void              SetSystemHelpMenu();
-  nsresult          Paint();
-  void              ForceUpdateNativeMenuAt(const nsAString& indexString);
-  void              ForceNativeMenuReload(); 
-  static char       GetLocalizedAccelKey(const char *shortcutID);
-  static void       ResetNativeApplicationMenu();
-  void              SetNeedsRebuild();
-  void              ApplicationMenuOpened();
-  bool              PerformKeyEquivalent(NSEvent* theEvent);
+  nsresult Create(nsIWidget* aParent, mozilla::dom::Element* aElement);
+  void SetParent(nsIWidget* aParent);
+  uint32_t GetMenuCount();
+  bool MenuContainsAppMenu();
+  nsMenuX* GetMenuAt(uint32_t aIndex);
+  nsMenuX* GetXULHelpMenu();
+  void SetSystemHelpMenu();
+  nsresult Paint();
+  void ForceUpdateNativeMenuAt(const nsAString& indexString);
+  void ForceNativeMenuReload();  
+  static char GetLocalizedAccelKey(const char* shortcutID);
+  static void ResetNativeApplicationMenu();
+  void SetNeedsRebuild();
+  void ApplicationMenuOpened();
+  bool PerformKeyEquivalent(NSEvent* theEvent);
 
-protected:
-  void              ConstructNativeMenus();
-  void              ConstructFallbackNativeMenus();
-  nsresult          InsertMenuAtIndex(nsMenuX* aMenu, uint32_t aIndex);
-  void              RemoveMenuAtIndex(uint32_t aIndex);
-  void              HideItem(nsIDocument* inDoc, const nsAString & inID, nsIContent** outHiddenNode);
-  void              AquifyMenuBar();
-  NSMenuItem*       CreateNativeAppMenuItem(nsMenuX* inMenu, const nsAString& nodeID, SEL action,
-                                            int tag, NativeMenuItemTarget* target);
-  nsresult          CreateApplicationMenu(nsMenuX* inMenu);
+ protected:
+  void ConstructNativeMenus();
+  void ConstructFallbackNativeMenus();
+  nsresult InsertMenuAtIndex(nsMenuX* aMenu, uint32_t aIndex);
+  void RemoveMenuAtIndex(uint32_t aIndex);
+  void HideItem(nsIDocument* inDoc, const nsAString& inID, nsIContent** outHiddenNode);
+  void AquifyMenuBar();
+  NSMenuItem* CreateNativeAppMenuItem(nsMenuX* inMenu, const nsAString& nodeID, SEL action, int tag,
+                                      NativeMenuItemTarget* target);
+  nsresult CreateApplicationMenu(nsMenuX* inMenu);
 
   nsTArray<mozilla::UniquePtr<nsMenuX>> mMenuArray;
-  nsIWidget*         mParentWindow;        
-  GeckoNSMenu*       mNativeMenu;            
-  bool               mNeedsRebuild;
+  nsIWidget* mParentWindow;  
+  GeckoNSMenu* mNativeMenu;  
+  bool mNeedsRebuild;
   ApplicationMenuDelegate* mApplicationMenuDelegate;
 };
 
-#endif 
+#endif  

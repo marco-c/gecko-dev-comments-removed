@@ -17,9 +17,8 @@
 
 
 
-@interface nsCursorManager : NSObject
-{
-  @private
+@interface nsCursorManager : NSObject {
+ @private
   NSMutableDictionary *mCursors;
   nsMacCursor *mCurrentMacCursor;
 }
@@ -30,7 +29,7 @@
 
 
 
-- (nsresult) setCursor: (nsCursor) aCursor;
+- (nsresult)setCursor:(nsCursor)aCursor;
 
 
 
@@ -41,27 +40,29 @@
 
 
 
-- (nsresult) setCursorWithImage: (imgIContainer*) aCursorImage hotSpotX: (uint32_t) aHotspotX hotSpotY: (uint32_t) aHotspotY scaleFactor: (CGFloat) scaleFactor;
+- (nsresult)setCursorWithImage:(imgIContainer *)aCursorImage
+                      hotSpotX:(uint32_t)aHotspotX
+                      hotSpotY:(uint32_t)aHotspotY
+                   scaleFactor:(CGFloat)scaleFactor;
 
 
 
 
 
 
-
-+ (nsCursorManager *) sharedInstance;
-
++ (nsCursorManager *)sharedInstance;
 
 
 
 
-+ (void) dispose;
+
++ (void)dispose;
 @end
 
 @interface NSCursor (Undocumented)
 
 
-+ (NSCursor*)busyButClickableCursor;
++ (NSCursor *)busyButClickableCursor;
 @end
 
-#endif 
+#endif  

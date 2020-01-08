@@ -18,11 +18,9 @@ namespace mozilla {
 
 
 
-class IOInterposeObserver
-{
-public:
-  enum Operation
-  {
+class IOInterposeObserver {
+ public:
+  enum Operation {
     OpNone = 0,
     OpCreateOrOpen = (1 << 0),
     OpRead = (1 << 1),
@@ -30,16 +28,16 @@ public:
     OpFSync = (1 << 3),
     OpStat = (1 << 4),
     OpClose = (1 << 5),
-    OpNextStage = (1 << 6), 
+    OpNextStage =
+        (1 << 6),  
     OpWriteFSync = (OpWrite | OpFSync),
     OpAll = (OpCreateOrOpen | OpRead | OpWrite | OpFSync | OpStat | OpClose),
     OpAllWithStaging = (OpAll | OpNextStage)
   };
 
   
-  class Observation
-  {
-  protected:
+  class Observation {
+   protected:
     
 
 
@@ -52,7 +50,7 @@ public:
     Observation(Operation aOperation, const char* aReference,
                 bool aShouldReport = true);
 
-  public:
+   public:
     
 
 
@@ -100,15 +98,14 @@ public:
 
     virtual ~Observation() {}
 
-  protected:
-    void
-    Report();
+   protected:
+    void Report();
 
-    Operation   mOperation;
-    TimeStamp   mStart;
-    TimeStamp   mEnd;
-    const char* mReference;     
-    bool        mShouldReport;  
+    Operation mOperation;
+    TimeStamp mStart;
+    TimeStamp mEnd;
+    const char* mReference;  
+    bool mShouldReport;      
   };
 
   
@@ -125,7 +122,7 @@ public:
 
   virtual ~IOInterposeObserver() {}
 
-protected:
+ protected:
   
 
 
@@ -254,43 +251,35 @@ void UnregisterCurrentThread();
 
 void EnteringNextStage();
 
-} 
+}  
 
-class IOInterposerInit
-{
-public:
-  IOInterposerInit()
-  {
+class IOInterposerInit {
+ public:
+  IOInterposerInit() {
 #if !defined(RELEASE_OR_BETA)
     IOInterposer::Init();
 #endif
   }
 
-  ~IOInterposerInit()
-  {
+  ~IOInterposerInit() {
 #if !defined(RELEASE_OR_BETA)
     IOInterposer::Clear();
 #endif
   }
 };
 
-class MOZ_RAII AutoIOInterposerDisable final
-{
-public:
-  explicit AutoIOInterposerDisable(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM)
-  {
+class MOZ_RAII AutoIOInterposerDisable final {
+ public:
+  explicit AutoIOInterposerDisable(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     IOInterposer::Disable();
   }
-  ~AutoIOInterposerDisable()
-  {
-    IOInterposer::Enable();
-  }
+  ~AutoIOInterposerDisable() { IOInterposer::Enable(); }
 
-private:
+ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-} 
+}  
 
-#endif 
+#endif  

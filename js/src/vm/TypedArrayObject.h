@@ -17,16 +17,11 @@
 #include "vm/JSObject.h"
 #include "vm/SharedArrayObject.h"
 
-#define JS_FOR_EACH_TYPED_ARRAY(macro) \
-    macro(int8_t, Int8) \
-    macro(uint8_t, Uint8) \
-    macro(int16_t, Int16) \
-    macro(uint16_t, Uint16) \
-    macro(int32_t, Int32) \
-    macro(uint32_t, Uint32) \
-    macro(float, Float32) \
-    macro(double, Float64) \
-    macro(uint8_clamped, Uint8Clamped)
+#define JS_FOR_EACH_TYPED_ARRAY(macro)                                      \
+  macro(int8_t, Int8) macro(uint8_t, Uint8) macro(int16_t, Int16)           \
+      macro(uint16_t, Uint16) macro(int32_t, Int32) macro(uint32_t, Uint32) \
+          macro(float, Float32) macro(double, Float64)                      \
+              macro(uint8_clamped, Uint8Clamped)
 
 namespace js {
 
@@ -38,272 +33,248 @@ namespace js {
 
 
 
-class TypedArrayObject : public ArrayBufferViewObject
-{
-  public:
-    static int lengthOffset();
-    static int dataOffset();
+class TypedArrayObject : public ArrayBufferViewObject {
+ public:
+  static int lengthOffset();
+  static int dataOffset();
 
-    static_assert(js::detail::TypedArrayLengthSlot == LENGTH_SLOT,
-                  "bad inlined constant in jsfriendapi.h");
+  static_assert(js::detail::TypedArrayLengthSlot == LENGTH_SLOT,
+                "bad inlined constant in jsfriendapi.h");
 
-    static bool sameBuffer(Handle<TypedArrayObject*> a, Handle<TypedArrayObject*> b) {
-        
-        if (!a->hasBuffer() || !b->hasBuffer()) {
-            return a.get() == b.get();
-        }
-
-        
-        if (a->isSharedMemory() && b->isSharedMemory()) {
-            return a->bufferShared()->globalID() == b->bufferShared()->globalID();
-        }
-
-        return a->bufferEither() == b->bufferEither();
+  static bool sameBuffer(Handle<TypedArrayObject*> a,
+                         Handle<TypedArrayObject*> b) {
+    
+    if (!a->hasBuffer() || !b->hasBuffer()) {
+      return a.get() == b.get();
     }
-
-    static const Class classes[Scalar::MaxTypedArrayViewType];
-    static const Class protoClasses[Scalar::MaxTypedArrayViewType];
-    static const Class sharedTypedArrayPrototypeClass;
-
-    static const Class* classForType(Scalar::Type type) {
-        MOZ_ASSERT(type < Scalar::MaxTypedArrayViewType);
-        return &classes[type];
-    }
-
-    static const Class* protoClassForType(Scalar::Type type) {
-        MOZ_ASSERT(type < Scalar::MaxTypedArrayViewType);
-        return &protoClasses[type];
-    }
-
-    static const size_t FIXED_DATA_START = DATA_SLOT + 1;
 
     
-    
-    static const uint32_t INLINE_BUFFER_LIMIT =
-        (NativeObject::MAX_FIXED_SLOTS - FIXED_DATA_START) * sizeof(Value);
-
-    static inline gc::AllocKind AllocKindForLazyBuffer(size_t nbytes);
-
-    inline Scalar::Type type() const;
-    inline size_t bytesPerElement() const;
-
-    static Value byteOffsetValue(const TypedArrayObject* tarr) {
-        Value v = tarr->getFixedSlot(BYTEOFFSET_SLOT);
-        MOZ_ASSERT(v.toInt32() >= 0);
-        return v;
-    }
-    static Value byteLengthValue(const TypedArrayObject* tarr) {
-        return Int32Value(tarr->getFixedSlot(LENGTH_SLOT).toInt32() * tarr->bytesPerElement());
-    }
-    static Value lengthValue(const TypedArrayObject* tarr) {
-        return tarr->getFixedSlot(LENGTH_SLOT);
+    if (a->isSharedMemory() && b->isSharedMemory()) {
+      return a->bufferShared()->globalID() == b->bufferShared()->globalID();
     }
 
-    static bool
-    ensureHasBuffer(JSContext* cx, Handle<TypedArrayObject*> tarray);
+    return a->bufferEither() == b->bufferEither();
+  }
 
-    uint32_t byteOffset() const {
-        return byteOffsetValue(this).toInt32();
-    }
-    uint32_t byteLength() const {
-        return byteLengthValue(this).toInt32();
-    }
-    uint32_t length() const {
-        return lengthValue(this).toInt32();
-    }
+  static const Class classes[Scalar::MaxTypedArrayViewType];
+  static const Class protoClasses[Scalar::MaxTypedArrayViewType];
+  static const Class sharedTypedArrayPrototypeClass;
 
-    bool hasInlineElements() const;
-    void setInlineElements();
-    uint8_t* elementsRaw() const {
-        return *(uint8_t **)((((char *)this) + js::TypedArrayObject::dataOffset()));
-    }
-    uint8_t* elements() const {
-        assertZeroLengthArrayData();
-        return elementsRaw();
-    }
+  static const Class* classForType(Scalar::Type type) {
+    MOZ_ASSERT(type < Scalar::MaxTypedArrayViewType);
+    return &classes[type];
+  }
+
+  static const Class* protoClassForType(Scalar::Type type) {
+    MOZ_ASSERT(type < Scalar::MaxTypedArrayViewType);
+    return &protoClasses[type];
+  }
+
+  static const size_t FIXED_DATA_START = DATA_SLOT + 1;
+
+  
+  
+  static const uint32_t INLINE_BUFFER_LIMIT =
+      (NativeObject::MAX_FIXED_SLOTS - FIXED_DATA_START) * sizeof(Value);
+
+  static inline gc::AllocKind AllocKindForLazyBuffer(size_t nbytes);
+
+  inline Scalar::Type type() const;
+  inline size_t bytesPerElement() const;
+
+  static Value byteOffsetValue(const TypedArrayObject* tarr) {
+    Value v = tarr->getFixedSlot(BYTEOFFSET_SLOT);
+    MOZ_ASSERT(v.toInt32() >= 0);
+    return v;
+  }
+  static Value byteLengthValue(const TypedArrayObject* tarr) {
+    return Int32Value(tarr->getFixedSlot(LENGTH_SLOT).toInt32() *
+                      tarr->bytesPerElement());
+  }
+  static Value lengthValue(const TypedArrayObject* tarr) {
+    return tarr->getFixedSlot(LENGTH_SLOT);
+  }
+
+  static bool ensureHasBuffer(JSContext* cx, Handle<TypedArrayObject*> tarray);
+
+  uint32_t byteOffset() const { return byteOffsetValue(this).toInt32(); }
+  uint32_t byteLength() const { return byteLengthValue(this).toInt32(); }
+  uint32_t length() const { return lengthValue(this).toInt32(); }
+
+  bool hasInlineElements() const;
+  void setInlineElements();
+  uint8_t* elementsRaw() const {
+    return *(uint8_t**)((((char*)this) + js::TypedArrayObject::dataOffset()));
+  }
+  uint8_t* elements() const {
+    assertZeroLengthArrayData();
+    return elementsRaw();
+  }
 
 #ifdef DEBUG
-    void assertZeroLengthArrayData() const;
+  void assertZeroLengthArrayData() const;
 #else
-    void assertZeroLengthArrayData() const {};
+  void assertZeroLengthArrayData() const {};
 #endif
 
-    Value getElement(uint32_t index);
-    static void setElement(TypedArrayObject& obj, uint32_t index, double d);
+  Value getElement(uint32_t index);
+  static void setElement(TypedArrayObject& obj, uint32_t index, double d);
 
-    
-
-
-
-    void getElements(Value* vp);
-
-    static bool
-    GetTemplateObjectForNative(JSContext* cx, Native native, uint32_t len,
-                               MutableHandleObject res);
-
-    
+  
 
 
 
+  void getElements(Value* vp);
 
-    static const uint32_t SINGLETON_BYTE_LENGTH = 1024 * 1024 * 10;
+  static bool GetTemplateObjectForNative(JSContext* cx, Native native,
+                                         uint32_t len, MutableHandleObject res);
 
-    static bool isOriginalLengthGetter(Native native);
+  
 
-    static void finalize(FreeOp* fop, JSObject* obj);
-    static size_t objectMoved(JSObject* obj, JSObject* old);
 
-    
 
-    template<Value ValueGetter(const TypedArrayObject* tarr)>
-    static bool
-    GetterImpl(JSContext* cx, const CallArgs& args)
-    {
-        MOZ_ASSERT(is(args.thisv()));
-        args.rval().set(ValueGetter(&args.thisv().toObject().as<TypedArrayObject>()));
-        return true;
-    }
 
-    
-    
-    
-    template<Value ValueGetter(const TypedArrayObject* tarr)>
-    static bool
-    Getter(JSContext* cx, unsigned argc, Value* vp)
-    {
-        CallArgs args = CallArgsFromVp(argc, vp);
-        return CallNonGenericMethod<is, GetterImpl<ValueGetter>>(cx, args);
-    }
+  static const uint32_t SINGLETON_BYTE_LENGTH = 1024 * 1024 * 10;
 
-    static const JSFunctionSpec protoFunctions[];
-    static const JSPropertySpec protoAccessors[];
-    static const JSFunctionSpec staticFunctions[];
-    static const JSPropertySpec staticProperties[];
+  static bool isOriginalLengthGetter(Native native);
 
-    
+  static void finalize(FreeOp* fop, JSObject* obj);
+  static size_t objectMoved(JSObject* obj, JSObject* old);
 
-    static bool is(HandleValue v);
+  
 
-    static bool set(JSContext* cx, unsigned argc, Value* vp);
+  template <Value ValueGetter(const TypedArrayObject* tarr)>
+  static bool GetterImpl(JSContext* cx, const CallArgs& args) {
+    MOZ_ASSERT(is(args.thisv()));
+    args.rval().set(
+        ValueGetter(&args.thisv().toObject().as<TypedArrayObject>()));
+    return true;
+  }
 
-  private:
-    static bool set_impl(JSContext* cx, const CallArgs& args);
+  
+  
+  
+  template <Value ValueGetter(const TypedArrayObject* tarr)>
+  static bool Getter(JSContext* cx, unsigned argc, Value* vp) {
+    CallArgs args = CallArgsFromVp(argc, vp);
+    return CallNonGenericMethod<is, GetterImpl<ValueGetter>>(cx, args);
+  }
+
+  static const JSFunctionSpec protoFunctions[];
+  static const JSPropertySpec protoAccessors[];
+  static const JSFunctionSpec staticFunctions[];
+  static const JSPropertySpec staticProperties[];
+
+  
+
+  static bool is(HandleValue v);
+
+  static bool set(JSContext* cx, unsigned argc, Value* vp);
+
+ private:
+  static bool set_impl(JSContext* cx, const CallArgs& args);
 };
 
-MOZ_MUST_USE bool TypedArray_bufferGetter(JSContext* cx, unsigned argc, Value* vp);
+MOZ_MUST_USE bool TypedArray_bufferGetter(JSContext* cx, unsigned argc,
+                                          Value* vp);
 
-extern TypedArrayObject*
-TypedArrayCreateWithTemplate(JSContext* cx, HandleObject templateObj, int32_t len);
+extern TypedArrayObject* TypedArrayCreateWithTemplate(JSContext* cx,
+                                                      HandleObject templateObj,
+                                                      int32_t len);
 
-inline bool
-IsTypedArrayClass(const Class* clasp)
-{
-    return &TypedArrayObject::classes[0] <= clasp &&
-           clasp < &TypedArrayObject::classes[Scalar::MaxTypedArrayViewType];
+inline bool IsTypedArrayClass(const Class* clasp) {
+  return &TypedArrayObject::classes[0] <= clasp &&
+         clasp < &TypedArrayObject::classes[Scalar::MaxTypedArrayViewType];
 }
 
-inline Scalar::Type
-GetTypedArrayClassType(const Class* clasp)
-{
-    MOZ_ASSERT(IsTypedArrayClass(clasp));
-    return static_cast<Scalar::Type>(clasp - &TypedArrayObject::classes[0]);
+inline Scalar::Type GetTypedArrayClassType(const Class* clasp) {
+  MOZ_ASSERT(IsTypedArrayClass(clasp));
+  return static_cast<Scalar::Type>(clasp - &TypedArrayObject::classes[0]);
 }
 
-bool
-IsTypedArrayConstructor(HandleValue v, uint32_t type);
+bool IsTypedArrayConstructor(HandleValue v, uint32_t type);
 
 
 
-bool
-IsBufferSource(JSObject* object, SharedMem<uint8_t*>* dataPointer, size_t* byteLength);
+bool IsBufferSource(JSObject* object, SharedMem<uint8_t*>* dataPointer,
+                    size_t* byteLength);
 
-inline Scalar::Type
-TypedArrayObject::type() const
-{
-    return GetTypedArrayClassType(getClass());
+inline Scalar::Type TypedArrayObject::type() const {
+  return GetTypedArrayClassType(getClass());
 }
 
-inline size_t
-TypedArrayObject::bytesPerElement() const
-{
-    return Scalar::byteSize(type());
+inline size_t TypedArrayObject::bytesPerElement() const {
+  return Scalar::byteSize(type());
 }
 
 
 
 
 template <typename CharT>
-bool
-StringIsTypedArrayIndex(const CharT* s, size_t length, uint64_t* indexp);
+bool StringIsTypedArrayIndex(const CharT* s, size_t length, uint64_t* indexp);
 
-inline bool
-IsTypedArrayIndex(jsid id, uint64_t* indexp)
-{
-    if (JSID_IS_INT(id)) {
-        int32_t i = JSID_TO_INT(id);
-        MOZ_ASSERT(i >= 0);
-        *indexp = static_cast<uint64_t>(i);
-        return true;
-    }
+inline bool IsTypedArrayIndex(jsid id, uint64_t* indexp) {
+  if (JSID_IS_INT(id)) {
+    int32_t i = JSID_TO_INT(id);
+    MOZ_ASSERT(i >= 0);
+    *indexp = static_cast<uint64_t>(i);
+    return true;
+  }
 
-    if (MOZ_UNLIKELY(!JSID_IS_STRING(id))) {
-        return false;
-    }
+  if (MOZ_UNLIKELY(!JSID_IS_STRING(id))) {
+    return false;
+  }
 
-    JS::AutoCheckCannotGC nogc;
-    JSAtom* atom = JSID_TO_ATOM(id);
-    size_t length = atom->length();
+  JS::AutoCheckCannotGC nogc;
+  JSAtom* atom = JSID_TO_ATOM(id);
+  size_t length = atom->length();
 
-    if (atom->hasLatin1Chars()) {
-        const Latin1Char* s = atom->latin1Chars(nogc);
-        if (!mozilla::IsAsciiDigit(*s) && *s != '-') {
-            return false;
-        }
-        return StringIsTypedArrayIndex(s, length, indexp);
-    }
-
-    const char16_t* s = atom->twoByteChars(nogc);
+  if (atom->hasLatin1Chars()) {
+    const Latin1Char* s = atom->latin1Chars(nogc);
     if (!mozilla::IsAsciiDigit(*s) && *s != '-') {
-        return false;
+      return false;
     }
     return StringIsTypedArrayIndex(s, length, indexp);
+  }
+
+  const char16_t* s = atom->twoByteChars(nogc);
+  if (!mozilla::IsAsciiDigit(*s) && *s != '-') {
+    return false;
+  }
+  return StringIsTypedArrayIndex(s, length, indexp);
 }
 
 
 
 
 
-bool
-DefineTypedArrayElement(JSContext* cx, HandleObject arr, uint64_t index,
-                        Handle<PropertyDescriptor> desc, ObjectOpResult& result);
+bool DefineTypedArrayElement(JSContext* cx, HandleObject arr, uint64_t index,
+                             Handle<PropertyDescriptor> desc,
+                             ObjectOpResult& result);
 
-static inline unsigned
-TypedArrayShift(Scalar::Type viewType)
-{
-    switch (viewType) {
-      case Scalar::Int8:
-      case Scalar::Uint8:
-      case Scalar::Uint8Clamped:
-        return 0;
-      case Scalar::Int16:
-      case Scalar::Uint16:
-        return 1;
-      case Scalar::Int32:
-      case Scalar::Uint32:
-      case Scalar::Float32:
-        return 2;
-      case Scalar::Int64:
-      case Scalar::Float64:
-        return 3;
-      default:;
-    }
-    MOZ_CRASH("Unexpected array type");
+static inline unsigned TypedArrayShift(Scalar::Type viewType) {
+  switch (viewType) {
+    case Scalar::Int8:
+    case Scalar::Uint8:
+    case Scalar::Uint8Clamped:
+      return 0;
+    case Scalar::Int16:
+    case Scalar::Uint16:
+      return 1;
+    case Scalar::Int32:
+    case Scalar::Uint32:
+    case Scalar::Float32:
+      return 2;
+    case Scalar::Int64:
+    case Scalar::Float64:
+      return 3;
+    default:;
+  }
+  MOZ_CRASH("Unexpected array type");
 }
 
-static inline unsigned
-TypedArrayElemSize(Scalar::Type viewType)
-{
-    return 1u << TypedArrayShift(viewType);
+static inline unsigned TypedArrayElemSize(Scalar::Type viewType) {
+  return 1u << TypedArrayShift(viewType);
 }
 
 
@@ -315,17 +286,15 @@ TypedArrayElemSize(Scalar::Type viewType)
 
 
 
-extern void
-SetDisjointTypedElements(TypedArrayObject* target, uint32_t targetOffset,
-                         TypedArrayObject* unsafeSrcCrossCompartment);
+extern void SetDisjointTypedElements(
+    TypedArrayObject* target, uint32_t targetOffset,
+    TypedArrayObject* unsafeSrcCrossCompartment);
 
-} 
+}  
 
 template <>
-inline bool
-JSObject::is<js::TypedArrayObject>() const
-{
-    return js::IsTypedArrayClass(getClass());
+inline bool JSObject::is<js::TypedArrayObject>() const {
+  return js::IsTypedArrayClass(getClass());
 }
 
 #endif 

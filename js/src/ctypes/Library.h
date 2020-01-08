@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef ctypes_Library_h
 #define ctypes_Library_h
 
@@ -16,24 +17,21 @@ struct PRLibrary;
 namespace js {
 namespace ctypes {
 
-enum LibrarySlot {
-  SLOT_LIBRARY = 0,
-  LIBRARY_SLOTS
-};
+enum LibrarySlot { SLOT_LIBRARY = 0, LIBRARY_SLOTS };
 
-namespace Library
-{
-  MOZ_MUST_USE bool Name(JSContext* cx, unsigned argc, JS::Value* vp);
+namespace Library {
+MOZ_MUST_USE bool Name(JSContext* cx, unsigned argc, JS::Value* vp);
 
-  JSObject* Create(JSContext* cx, JS::HandleValue path, const JSCTypesCallbacks* callbacks);
+JSObject* Create(JSContext* cx, JS::HandleValue path,
+                 const JSCTypesCallbacks* callbacks);
 
-  bool IsLibrary(JSObject* obj);
-  PRLibrary* GetLibrary(JSObject* obj);
+bool IsLibrary(JSObject* obj);
+PRLibrary* GetLibrary(JSObject* obj);
 
-  MOZ_MUST_USE bool Open(JSContext* cx, unsigned argc, JS::Value* vp);
-} 
+MOZ_MUST_USE bool Open(JSContext* cx, unsigned argc, JS::Value* vp);
+}  
 
-} 
-} 
+}  
+}  
 
 #endif 

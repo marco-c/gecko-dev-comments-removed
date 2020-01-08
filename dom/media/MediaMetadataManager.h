@@ -26,11 +26,10 @@ typedef MediaEventSourceExc<TimedMetadata> TimedMetadataEventSource;
 class TimedMetadata : public LinkedListElement<TimedMetadata> {
  public:
   TimedMetadata(const media::TimeUnit& aPublishTime,
-                UniquePtr<MetadataTags>&& aTags,
-                nsAutoPtr<MediaInfo>&& aInfo)
-    : mPublishTime(aPublishTime)
-    , mTags(std::move(aTags))
-    , mInfo(std::move(aInfo)) {}
+                UniquePtr<MetadataTags>&& aTags, nsAutoPtr<MediaInfo>&& aInfo)
+      : mPublishTime(aPublishTime),
+        mTags(std::move(aTags)),
+        mInfo(std::move(aInfo)) {}
 
   
   

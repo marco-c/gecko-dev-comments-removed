@@ -12,8 +12,8 @@
 
 namespace mozilla {
 
-struct ScrollAnimationBezierPhysicsSettings
-{
+struct ScrollAnimationBezierPhysicsSettings {
+  
   
   
   
@@ -25,14 +25,13 @@ struct ScrollAnimationBezierPhysicsSettings
 
 
 
-class ScrollAnimationBezierPhysics final : public ScrollAnimationPhysics
-{
-public:
-  explicit ScrollAnimationBezierPhysics(const nsPoint& aStartPos,
-                                        const ScrollAnimationBezierPhysicsSettings& aSettings);
+class ScrollAnimationBezierPhysics final : public ScrollAnimationPhysics {
+ public:
+  explicit ScrollAnimationBezierPhysics(
+      const nsPoint& aStartPos,
+      const ScrollAnimationBezierPhysicsSettings& aSettings);
 
-  void Update(const TimeStamp& aTime,
-              const nsPoint& aDestination,
+  void Update(const TimeStamp& aTime, const nsPoint& aDestination,
               const nsSize& aCurrentVelocity) override;
 
   void ApplyContentShift(const CSSPoint& aShiftDelta) override;
@@ -48,7 +47,7 @@ public:
     return aTime > mStartTime + mDuration;
   }
 
-protected:
+ protected:
   double ProgressAt(const TimeStamp& aTime) const {
     return clamped((aTime - mStartTime) / mDuration, 0.0, 1.0);
   }
@@ -64,9 +63,8 @@ protected:
 
   
   
-  void InitTimingFunction(nsSMILKeySpline& aTimingFunction,
-                          nscoord aCurrentPos, nscoord aCurrentVelocity,
-                          nscoord aDestination);
+  void InitTimingFunction(nsSMILKeySpline& aTimingFunction, nscoord aCurrentPos,
+                          nscoord aCurrentVelocity, nscoord aDestination);
 
   
   void InitializeHistory(const TimeStamp& aTime);
@@ -91,6 +89,6 @@ protected:
   bool mIsFirstIteration;
 };
 
-} 
+}  
 
-#endif 
+#endif  

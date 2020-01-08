@@ -14,12 +14,10 @@ namespace mozilla {
 namespace a11y {
 class TableCellAccessible;
 
-class ia2AccessibleTableCell : public IAccessibleTableCell
-{
-public:
-
+class ia2AccessibleTableCell : public IAccessibleTableCell {
+ public:
   
-  STDMETHODIMP QueryInterface(REFIID, void**);
+  STDMETHODIMP QueryInterface(REFIID, void **);
 
   
 
@@ -56,14 +54,14 @@ public:
   virtual  HRESULT STDMETHODCALLTYPE get_isSelected(
        boolean *isSelected);
 
-protected:
-  ia2AccessibleTableCell(TableCellAccessible* aTableCell) :
-    mTableCell(aTableCell) {}
+ protected:
+  ia2AccessibleTableCell(TableCellAccessible *aTableCell)
+      : mTableCell(aTableCell) {}
 
-  TableCellAccessible* mTableCell;
+  TableCellAccessible *mTableCell;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

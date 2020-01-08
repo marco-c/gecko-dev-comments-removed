@@ -22,14 +22,12 @@
 namespace mozilla {
 namespace dom {
 
-class SimpleGlobalObject : public nsIGlobalObject,
-                           public nsWrapperCache
-{
-public:
+class SimpleGlobalObject : public nsIGlobalObject, public nsWrapperCache {
+ public:
   enum class GlobalType {
-    BindingDetail, 
+    BindingDetail,  
     WorkerDebuggerSandbox,
-    NotSimpleGlobal 
+    NotSimpleGlobal  
   };
 
   
@@ -48,52 +46,39 @@ public:
   
   
   
-  static JSObject* Create(GlobalType globalType,
-                          JS::Handle<JS::Value> proto =
-                            JS::UndefinedHandleValue);
+  static JSObject* Create(GlobalType globalType, JS::Handle<JS::Value> proto =
+                                                     JS::UndefinedHandleValue);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(SimpleGlobalObject,
                                                          nsIGlobalObject)
 
   
-  GlobalType Type() const
-  {
-    return mType;
-  }
+  GlobalType Type() const { return mType; }
 
   
   
   
   static GlobalType SimpleGlobalType(JSObject* obj);
 
-  virtual JSObject *GetGlobalJSObject() override
-  {
-    return GetWrapper();
-  }
+  virtual JSObject* GetGlobalJSObject() override { return GetWrapper(); }
 
   virtual JSObject* WrapObject(JSContext* cx,
-                               JS::Handle<JSObject*> aGivenProto) override
-  {
+                               JS::Handle<JSObject*> aGivenProto) override {
     MOZ_CRASH("SimpleGlobalObject doesn't use DOM bindings!");
   }
 
-private:
-  SimpleGlobalObject(JSObject *global, GlobalType type)
-    : mType(type)
-  {
+ private:
+  SimpleGlobalObject(JSObject* global, GlobalType type) : mType(type) {
     SetWrapper(global);
   }
 
-  virtual ~SimpleGlobalObject()
-  {
-    MOZ_ASSERT(!GetWrapperMaybeDead());
-  }
+  virtual ~SimpleGlobalObject() { MOZ_ASSERT(!GetWrapperMaybeDead()); }
 
   const GlobalType mType;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

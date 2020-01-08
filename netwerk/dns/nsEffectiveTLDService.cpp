@@ -27,7 +27,7 @@ namespace etld_dafsa {
 
 #include "etld_data.inc"
 
-} 
+}  
 
 using namespace mozilla;
 
@@ -39,14 +39,9 @@ NS_IMPL_ISUPPORTS(nsEffectiveTLDService, nsIEffectiveTLDService,
 static nsEffectiveTLDService *gService = nullptr;
 
 nsEffectiveTLDService::nsEffectiveTLDService()
-  : mIDNService()
-  , mGraph(etld_dafsa::kDafsa)
-{
-}
+    : mIDNService(), mGraph(etld_dafsa::kDafsa) {}
 
-nsresult
-nsEffectiveTLDService::Init()
-{
+nsresult nsEffectiveTLDService::Init() {
   nsresult rv;
   mIDNService = do_GetService(NS_IDNSERVICE_CONTRACTID, &rv);
   if (NS_FAILED(rv)) return rv;
@@ -58,8 +53,7 @@ nsEffectiveTLDService::Init()
   return NS_OK;
 }
 
-nsEffectiveTLDService::~nsEffectiveTLDService()
-{
+nsEffectiveTLDService::~nsEffectiveTLDService() {
   UnregisterWeakMemoryReporter(this);
   gService = nullptr;
 }
@@ -71,20 +65,18 @@ MOZ_DEFINE_MALLOC_SIZE_OF(EffectiveTLDServiceMallocSizeOf)
 
 
 NS_IMETHODIMP
-nsEffectiveTLDService::CollectReports(nsIHandleReportCallback* aHandleReport,
-                                      nsISupports* aData, bool aAnonymize)
-{
-  MOZ_COLLECT_REPORT(
-    "explicit/network/effective-TLD-service", KIND_HEAP, UNITS_BYTES,
-    SizeOfIncludingThis(EffectiveTLDServiceMallocSizeOf),
-    "Memory used by the effective TLD service.");
+nsEffectiveTLDService::CollectReports(nsIHandleReportCallback *aHandleReport,
+                                      nsISupports *aData, bool aAnonymize) {
+  MOZ_COLLECT_REPORT("explicit/network/effective-TLD-service", KIND_HEAP,
+                     UNITS_BYTES,
+                     SizeOfIncludingThis(EffectiveTLDServiceMallocSizeOf),
+                     "Memory used by the effective TLD service.");
 
   return NS_OK;
 }
 
-size_t
-nsEffectiveTLDService::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
-{
+size_t nsEffectiveTLDService::SizeOfIncludingThis(
+    mozilla::MallocSizeOf aMallocSizeOf) {
   size_t n = aMallocSizeOf(this);
 
   
@@ -98,9 +90,8 @@ nsEffectiveTLDService::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
 
 
 NS_IMETHODIMP
-nsEffectiveTLDService::GetPublicSuffix(nsIURI     *aURI,
-                                       nsACString &aPublicSuffix)
-{
+nsEffectiveTLDService::GetPublicSuffix(nsIURI *aURI,
+                                       nsACString &aPublicSuffix) {
   NS_ENSURE_ARG_POINTER(aURI);
 
   nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(aURI);
@@ -117,12 +108,10 @@ nsEffectiveTLDService::GetPublicSuffix(nsIURI     *aURI,
 
 
 NS_IMETHODIMP
-nsEffectiveTLDService::GetBaseDomain(nsIURI     *aURI,
-                                     uint32_t    aAdditionalParts,
-                                     nsACString &aBaseDomain)
-{
+nsEffectiveTLDService::GetBaseDomain(nsIURI *aURI, uint32_t aAdditionalParts,
+                                     nsACString &aBaseDomain) {
   NS_ENSURE_ARG_POINTER(aURI);
-  NS_ENSURE_TRUE( ((int32_t)aAdditionalParts) >= 0, NS_ERROR_INVALID_ARG);
+  NS_ENSURE_TRUE(((int32_t)aAdditionalParts) >= 0, NS_ERROR_INVALID_ARG);
 
   nsCOMPtr<nsIURI> innerURI = NS_GetInnermostURI(aURI);
   NS_ENSURE_ARG_POINTER(innerURI);
@@ -138,8 +127,7 @@ nsEffectiveTLDService::GetBaseDomain(nsIURI     *aURI,
 
 NS_IMETHODIMP
 nsEffectiveTLDService::GetPublicSuffixFromHost(const nsACString &aHostname,
-                                               nsACString       &aPublicSuffix)
-{
+                                               nsACString &aPublicSuffix) {
   
   
   nsAutoCString normHostname(aHostname);
@@ -154,10 +142,9 @@ nsEffectiveTLDService::GetPublicSuffixFromHost(const nsACString &aHostname,
 
 NS_IMETHODIMP
 nsEffectiveTLDService::GetBaseDomainFromHost(const nsACString &aHostname,
-                                             uint32_t          aAdditionalParts,
-                                             nsACString       &aBaseDomain)
-{
-  NS_ENSURE_TRUE( ((int32_t)aAdditionalParts) >= 0, NS_ERROR_INVALID_ARG);
+                                             uint32_t aAdditionalParts,
+                                             nsACString &aBaseDomain) {
+  NS_ENSURE_TRUE(((int32_t)aAdditionalParts) >= 0, NS_ERROR_INVALID_ARG);
 
   
   
@@ -169,9 +156,8 @@ nsEffectiveTLDService::GetBaseDomainFromHost(const nsACString &aHostname,
 }
 
 NS_IMETHODIMP
-nsEffectiveTLDService::GetNextSubDomain(const nsACString& aHostname,
-                                        nsACString&       aBaseDomain)
-{
+nsEffectiveTLDService::GetNextSubDomain(const nsACString &aHostname,
+                                        nsACString &aBaseDomain) {
   
   
   nsAutoCString normHostname(aHostname);
@@ -186,21 +172,17 @@ nsEffectiveTLDService::GetNextSubDomain(const nsACString& aHostname,
 
 
 
-nsresult
-nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
-                                             int32_t    aAdditionalParts,
-                                             nsACString &aBaseDomain)
-{
+nsresult nsEffectiveTLDService::GetBaseDomainInternal(nsCString &aHostname,
+                                                      int32_t aAdditionalParts,
+                                                      nsACString &aBaseDomain) {
   const int kExceptionRule = 1;
   const int kWildcardRule = 2;
 
-  if (aHostname.IsEmpty())
-    return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
+  if (aHostname.IsEmpty()) return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
 
   
   bool trailingDot = aHostname.Last() == '.';
-  if (trailingDot)
-    aHostname.Truncate(aHostname.Length() - 1);
+  if (trailingDot) aHostname.Truncate(aHostname.Length() - 1);
 
   
   
@@ -210,8 +192,7 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
   
   PRNetAddr addr;
   PRStatus result = PR_StringToNetAddr(aHostname.get(), &addr);
-  if (result == PR_SUCCESS)
-    return NS_ERROR_HOST_IS_IP_ADDRESS;
+  if (result == PR_SUCCESS) return NS_ERROR_HOST_IS_IP_ADDRESS;
 
   
   
@@ -244,8 +225,7 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
     
     
     
-    if (*currDomain == '.')
-      return NS_ERROR_INVALID_ARG;
+    if (*currDomain == '.') return NS_ERROR_INVALID_ARG;
 
     
     const int result = mGraph.Lookup(Substring(currDomain, end));
@@ -282,7 +262,8 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
     NS_ASSERTION(aAdditionalParts == -1,
                  "aAdditionalParts can't be negative and different from -1");
 
-    for (iter = aHostname.get(); iter != eTLD && *iter != '.'; iter++);
+    for (iter = aHostname.get(); iter != eTLD && *iter != '.'; iter++)
+      ;
 
     if (iter != eTLD) {
       iter++;
@@ -296,8 +277,7 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
     iter = eTLD;
 
     while (true) {
-      if (iter == begin)
-        break;
+      if (iter == begin) break;
 
       if (*(--iter) == '.' && aAdditionalParts-- == 0) {
         ++iter;
@@ -307,8 +287,7 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
     }
   }
 
-  if (aAdditionalParts != 0)
-    return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
+  if (aAdditionalParts != 0) return NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS;
 
   aBaseDomain = Substring(iter, end);
 
@@ -318,8 +297,7 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
   }
 
   
-  if (trailingDot)
-    aBaseDomain.Append('.');
+  if (trailingDot) aBaseDomain.Append('.');
 
   return NS_OK;
 }
@@ -327,13 +305,10 @@ nsEffectiveTLDService::GetBaseDomainInternal(nsCString  &aHostname,
 
 
 
-nsresult
-nsEffectiveTLDService::NormalizeHostname(nsCString &aHostname)
-{
+nsresult nsEffectiveTLDService::NormalizeHostname(nsCString &aHostname) {
   if (!IsASCII(aHostname)) {
     nsresult rv = mIDNService->ConvertUTF8toACE(aHostname, aHostname);
-    if (NS_FAILED(rv))
-      return rv;
+    if (NS_FAILED(rv)) return rv;
   }
 
   ToLowerCase(aHostname);
@@ -341,10 +316,8 @@ nsEffectiveTLDService::NormalizeHostname(nsCString &aHostname)
 }
 
 NS_IMETHODIMP
-nsEffectiveTLDService::HasRootDomain(const nsACString& aInput,
-                                     const nsACString& aHost,
-                                     bool* aResult)
-{
+nsEffectiveTLDService::HasRootDomain(const nsACString &aInput,
+                                     const nsACString &aHost, bool *aResult) {
   if (NS_WARN_IF(!aResult)) {
     return NS_ERROR_FAILURE;
   }
@@ -366,8 +339,7 @@ nsEffectiveTLDService::HasRootDomain(const nsACString& aInput,
   
   
   
-  *aResult = index > 0 &&
-             (uint32_t)index == aInput.Length() - aHost.Length() &&
+  *aResult = index > 0 && (uint32_t)index == aInput.Length() - aHost.Length() &&
              (aInput[index - 1] == '.' || aInput[index - 1] == '/');
   return NS_OK;
 }

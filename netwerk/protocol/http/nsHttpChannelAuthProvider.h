@@ -21,171 +21,167 @@ class nsIHttpAuthenticableChannel;
 class nsIHttpAuthenticator;
 class nsIURI;
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
 class nsHttpHandler;
 
-class nsHttpChannelAuthProvider final
-  : public nsIHttpChannelAuthProvider
-  , public nsIAuthPromptCallback
-  , public nsIHttpAuthenticatorCallback
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSICANCELABLE
-    NS_DECL_NSIHTTPCHANNELAUTHPROVIDER
-    NS_DECL_NSIAUTHPROMPTCALLBACK
-    NS_DECL_NSIHTTPAUTHENTICATORCALLBACK
+class nsHttpChannelAuthProvider final : public nsIHttpChannelAuthProvider,
+                                        public nsIAuthPromptCallback,
+                                        public nsIHttpAuthenticatorCallback {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSICANCELABLE
+  NS_DECL_NSIHTTPCHANNELAUTHPROVIDER
+  NS_DECL_NSIAUTHPROMPTCALLBACK
+  NS_DECL_NSIHTTPAUTHENTICATORCALLBACK
 
-    nsHttpChannelAuthProvider();
-private:
-    virtual ~nsHttpChannelAuthProvider();
+  nsHttpChannelAuthProvider();
 
-    const char *ProxyHost() const
-    { return mProxyInfo ? mProxyInfo->Host().get() : nullptr; }
+ private:
+  virtual ~nsHttpChannelAuthProvider();
 
-    int32_t     ProxyPort() const
-    { return mProxyInfo ? mProxyInfo->Port() : -1; }
+  const char *ProxyHost() const {
+    return mProxyInfo ? mProxyInfo->Host().get() : nullptr;
+  }
 
-    const char *Host() const      { return mHost.get(); }
-    int32_t     Port() const      { return mPort; }
-    bool        UsingSSL() const  { return mUsingSSL; }
+  int32_t ProxyPort() const { return mProxyInfo ? mProxyInfo->Port() : -1; }
 
-    bool        UsingHttpProxy() const
-    { return mProxyInfo && (mProxyInfo->IsHTTP() || mProxyInfo->IsHTTPS()); }
+  const char *Host() const { return mHost.get(); }
+  int32_t Port() const { return mPort; }
+  bool UsingSSL() const { return mUsingSSL; }
 
-    MOZ_MUST_USE nsresult PrepareForAuthentication(bool proxyAuth);
-    MOZ_MUST_USE nsresult
-    GenCredsAndSetEntry(nsIHttpAuthenticator *, bool proxyAuth,
-                        const char *scheme, const char *host, int32_t port,
-                        const char *dir, const char *realm,
-                        const char *challenge, const nsHttpAuthIdentity &ident,
-                        nsCOMPtr<nsISupports> &session, char **result);
-    MOZ_MUST_USE nsresult GetAuthenticator(const char *challenge,
-                                           nsCString &scheme,
-                                           nsIHttpAuthenticator **auth);
-    void     ParseRealm(const char *challenge, nsACString &realm);
-    void     GetIdentityFromURI(uint32_t authFlags, nsHttpAuthIdentity&);
+  bool UsingHttpProxy() const {
+    return mProxyInfo && (mProxyInfo->IsHTTP() || mProxyInfo->IsHTTPS());
+  }
 
-    
+  MOZ_MUST_USE nsresult PrepareForAuthentication(bool proxyAuth);
+  MOZ_MUST_USE nsresult GenCredsAndSetEntry(
+      nsIHttpAuthenticator *, bool proxyAuth, const char *scheme,
+      const char *host, int32_t port, const char *dir, const char *realm,
+      const char *challenge, const nsHttpAuthIdentity &ident,
+      nsCOMPtr<nsISupports> &session, char **result);
+  MOZ_MUST_USE nsresult GetAuthenticator(const char *challenge,
+                                         nsCString &scheme,
+                                         nsIHttpAuthenticator **auth);
+  void ParseRealm(const char *challenge, nsACString &realm);
+  void GetIdentityFromURI(uint32_t authFlags, nsHttpAuthIdentity &);
 
-
-
-
-
-    MOZ_MUST_USE nsresult GetCredentials(const char *challenges, bool proxyAuth,
-                                         nsCString& creds);
-    MOZ_MUST_USE nsresult
-    GetCredentialsForChallenge(const char *challenge, const char *scheme,
-                               bool proxyAuth, nsIHttpAuthenticator *auth,
-                               nsCString& creds);
-    MOZ_MUST_USE nsresult PromptForIdentity(uint32_t level, bool proxyAuth,
-                                            const char *realm,
-                                            const char *authType,
-                                            uint32_t authFlags,
-                                            nsHttpAuthIdentity &);
-
-    bool     ConfirmAuth(const char* bundleKey, bool doYesNoPrompt);
-    void     SetAuthorizationHeader(nsHttpAuthCache *, nsHttpAtom header,
-                                    const char *scheme, const char *host,
-                                    int32_t port, const char *path,
-                                    nsHttpAuthIdentity &ident);
-    MOZ_MUST_USE nsresult GetCurrentPath(nsACString &);
-    
-
-
-
-
-    MOZ_MUST_USE nsresult
-    GetAuthorizationMembers(bool proxyAuth, nsACString& scheme,
-                            const char*& host, int32_t& port,
-                            nsACString& path, nsHttpAuthIdentity*& ident,
-                            nsISupports**& continuationState);
-    
-
-
-
-
-    MOZ_MUST_USE nsresult ContinueOnAuthAvailable(const nsACString& creds);
-
-    MOZ_MUST_USE nsresult DoRedirectChannelToHttps();
-
-    
+  
 
 
 
 
 
-    MOZ_MUST_USE nsresult ProcessSTSHeader();
+  MOZ_MUST_USE nsresult GetCredentials(const char *challenges, bool proxyAuth,
+                                       nsCString &creds);
+  MOZ_MUST_USE nsresult GetCredentialsForChallenge(const char *challenge,
+                                                   const char *scheme,
+                                                   bool proxyAuth,
+                                                   nsIHttpAuthenticator *auth,
+                                                   nsCString &creds);
+  MOZ_MUST_USE nsresult PromptForIdentity(uint32_t level, bool proxyAuth,
+                                          const char *realm,
+                                          const char *authType,
+                                          uint32_t authFlags,
+                                          nsHttpAuthIdentity &);
 
-    
-    
-    
-    
-    bool BlockPrompt(bool proxyAuth);
+  bool ConfirmAuth(const char *bundleKey, bool doYesNoPrompt);
+  void SetAuthorizationHeader(nsHttpAuthCache *, nsHttpAtom header,
+                              const char *scheme, const char *host,
+                              int32_t port, const char *path,
+                              nsHttpAuthIdentity &ident);
+  MOZ_MUST_USE nsresult GetCurrentPath(nsACString &);
+  
 
-    
-    MOZ_MUST_USE nsresult UpdateCache(nsIHttpAuthenticator *aAuth,
-                                      const char           *aScheme,
-                                      const char           *aHost,
-                                      int32_t               aPort,
-                                      const char           *aDirectory,
-                                      const char           *aRealm,
-                                      const char           *aChallenge,
-                                      const nsHttpAuthIdentity &aIdent,
-                                      const char           *aCreds,
-                                      uint32_t              aGenerateFlags,
-                                      nsISupports          *aSessionState);
 
-private:
-    nsIHttpAuthenticableChannel      *mAuthChannel;  
 
-    nsCOMPtr<nsIURI>                  mURI;
-    nsCOMPtr<nsProxyInfo>             mProxyInfo;
-    nsCString                         mHost;
-    int32_t                           mPort;
-    bool                              mUsingSSL;
-    bool                              mProxyUsingSSL;
-    bool                              mIsPrivate;
 
-    nsISupports                      *mProxyAuthContinuationState;
-    nsCString                         mProxyAuthType;
-    nsISupports                      *mAuthContinuationState;
-    nsCString                         mAuthType;
-    nsHttpAuthIdentity                mIdent;
-    nsHttpAuthIdentity                mProxyIdent;
+  MOZ_MUST_USE nsresult GetAuthorizationMembers(
+      bool proxyAuth, nsACString &scheme, const char *&host, int32_t &port,
+      nsACString &path, nsHttpAuthIdentity *&ident,
+      nsISupports **&continuationState);
+  
 
-    
-    
-    
-    nsCOMPtr<nsICancelable>           mAsyncPromptAuthCancelable;
-    
-    
-    
-    nsCString                         mCurrentChallenge;
-    
-    
-    
-    nsCString                         mRemainingChallenges;
 
-    
-    
-    uint32_t                          mProxyAuth                : 1;
-    uint32_t                          mTriedProxyAuth           : 1;
-    uint32_t                          mTriedHostAuth            : 1;
-    uint32_t                          mSuppressDefensiveAuth    : 1;
 
-    
-    
-    uint32_t                          mCrossOrigin : 1;
-    uint32_t                          mConnectionBased : 1;
 
-    RefPtr<nsHttpHandler>           mHttpHandler;  
+  MOZ_MUST_USE nsresult ContinueOnAuthAvailable(const nsACString &creds);
 
-    nsCOMPtr<nsICancelable>           mGenerateCredentialsCancelable;
+  MOZ_MUST_USE nsresult DoRedirectChannelToHttps();
+
+  
+
+
+
+
+
+  MOZ_MUST_USE nsresult ProcessSTSHeader();
+
+  
+  
+  
+  
+  bool BlockPrompt(bool proxyAuth);
+
+  
+  MOZ_MUST_USE nsresult UpdateCache(nsIHttpAuthenticator *aAuth,
+                                    const char *aScheme, const char *aHost,
+                                    int32_t aPort, const char *aDirectory,
+                                    const char *aRealm, const char *aChallenge,
+                                    const nsHttpAuthIdentity &aIdent,
+                                    const char *aCreds, uint32_t aGenerateFlags,
+                                    nsISupports *aSessionState);
+
+ private:
+  nsIHttpAuthenticableChannel *mAuthChannel;  
+
+  nsCOMPtr<nsIURI> mURI;
+  nsCOMPtr<nsProxyInfo> mProxyInfo;
+  nsCString mHost;
+  int32_t mPort;
+  bool mUsingSSL;
+  bool mProxyUsingSSL;
+  bool mIsPrivate;
+
+  nsISupports *mProxyAuthContinuationState;
+  nsCString mProxyAuthType;
+  nsISupports *mAuthContinuationState;
+  nsCString mAuthType;
+  nsHttpAuthIdentity mIdent;
+  nsHttpAuthIdentity mProxyIdent;
+
+  
+  
+  
+  nsCOMPtr<nsICancelable> mAsyncPromptAuthCancelable;
+  
+  
+  
+  nsCString mCurrentChallenge;
+  
+  
+  
+  nsCString mRemainingChallenges;
+
+  
+  
+  uint32_t mProxyAuth : 1;
+  uint32_t mTriedProxyAuth : 1;
+  uint32_t mTriedHostAuth : 1;
+  uint32_t mSuppressDefensiveAuth : 1;
+
+  
+  
+  uint32_t mCrossOrigin : 1;
+  uint32_t mConnectionBased : 1;
+
+  RefPtr<nsHttpHandler> mHttpHandler;  
+
+  nsCOMPtr<nsICancelable> mGenerateCredentialsCancelable;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

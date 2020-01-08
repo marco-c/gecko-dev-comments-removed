@@ -8,6 +8,7 @@
 
 
 
+
 #ifndef nsSyncLoadService_h__
 #define nsSyncLoadService_h__
 
@@ -22,10 +23,9 @@ class nsIPrincipal;
 class nsIDocument;
 class nsIChannel;
 
-class nsSyncLoadService
-{
-public:
-    
+class nsSyncLoadService {
+ public:
+  
 
 
 
@@ -39,17 +39,15 @@ public:
 
 
 
-    static nsresult LoadDocument(nsIURI *aURI,
-                                 nsContentPolicyType aContentPolicyType,
-                                 nsIPrincipal *aLoaderPrincipal,
-                                 nsSecurityFlags aSecurityFlags,
-                                 nsILoadGroup *aLoadGroup,
-                                 bool aForceToXML,
-                                 mozilla::net::ReferrerPolicy aReferrerPolicy,
-                                 nsIDocument** aResult);
+  static nsresult LoadDocument(nsIURI* aURI,
+                               nsContentPolicyType aContentPolicyType,
+                               nsIPrincipal* aLoaderPrincipal,
+                               nsSecurityFlags aSecurityFlags,
+                               nsILoadGroup* aLoadGroup, bool aForceToXML,
+                               mozilla::net::ReferrerPolicy aReferrerPolicy,
+                               nsIDocument** aResult);
 
-    
-
+  
 
 
 
@@ -57,9 +55,10 @@ public:
 
 
 
-    static nsresult PushSyncStreamToListener(already_AddRefed<nsIInputStream> aIn,
-                                             nsIStreamListener* aListener,
-                                             nsIChannel* aChannel);
+
+  static nsresult PushSyncStreamToListener(already_AddRefed<nsIInputStream> aIn,
+                                           nsIStreamListener* aListener,
+                                           nsIChannel* aChannel);
 };
 
-#endif 
+#endif  

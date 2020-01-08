@@ -9,35 +9,32 @@
 #include "mozilla/Attributes.h"
 #include "nsBlockFrame.h"
 
-class nsSelectsAreaFrame final : public nsBlockFrame
-{
-public:
+class nsSelectsAreaFrame final : public nsBlockFrame {
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsSelectsAreaFrame)
 
   friend nsContainerFrame* NS_NewSelectsAreaFrame(nsIPresShell* aShell,
                                                   ComputedStyle* aStyle,
                                                   nsFrameState aFlags);
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
-  void BuildDisplayListInternal(nsDisplayListBuilder*   aBuilder,
+  void BuildDisplayListInternal(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists);
 
-  virtual void Reflow(nsPresContext*           aCX,
-                      ReflowOutput&     aDesiredSize,
+  virtual void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus) override;
+                      nsReflowStatus& aStatus) override;
 
   nscoord BSizeOfARow() const { return mBSizeOfARow; }
 
-protected:
-  explicit nsSelectsAreaFrame(ComputedStyle* aStyle) :
-    nsBlockFrame(aStyle, kClassID),
-    
-    
-    mBSizeOfARow(nscoord_MIN)
-  {}
+ protected:
+  explicit nsSelectsAreaFrame(ComputedStyle* aStyle)
+      : nsBlockFrame(aStyle, kClassID),
+        
+        
+        mBSizeOfARow(nscoord_MIN) {}
 
   
   

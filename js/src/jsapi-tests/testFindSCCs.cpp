@@ -13,234 +13,219 @@
 
 static const unsigned MaxVertices = 10;
 
-using js::gc::GraphNodeBase;
 using js::gc::ComponentFinder;
+using js::gc::GraphNodeBase;
 
 struct TestComponentFinder;
 
-struct TestNode : public GraphNodeBase<TestNode>
-{
-    unsigned   index;
-    bool       hasEdge[MaxVertices];
+struct TestNode : public GraphNodeBase<TestNode> {
+  unsigned index;
+  bool hasEdge[MaxVertices];
 
-    void findOutgoingEdges(TestComponentFinder& finder);
+  void findOutgoingEdges(TestComponentFinder& finder);
 };
 
-struct TestComponentFinder : public ComponentFinder<TestNode, TestComponentFinder>
-{
-    explicit TestComponentFinder(uintptr_t sl)
-      : ComponentFinder<TestNode, TestComponentFinder>(sl)
-    {}
+struct TestComponentFinder
+    : public ComponentFinder<TestNode, TestComponentFinder> {
+  explicit TestComponentFinder(uintptr_t sl)
+      : ComponentFinder<TestNode, TestComponentFinder>(sl) {}
 };
 
 static TestNode Vertex[MaxVertices];
 
-void
-TestNode::findOutgoingEdges(TestComponentFinder& finder)
-{
-    for (unsigned i = 0; i < MaxVertices; ++i) {
-        if (hasEdge[i]) {
-            finder.addEdgeTo(&Vertex[i]);
-        }
+void TestNode::findOutgoingEdges(TestComponentFinder& finder) {
+  for (unsigned i = 0; i < MaxVertices; ++i) {
+    if (hasEdge[i]) {
+      finder.addEdgeTo(&Vertex[i]);
     }
+  }
 }
 
-BEGIN_TEST(testFindSCCs)
-{
-    
+BEGIN_TEST(testFindSCCs) {
+  
 
-    setup(0);
-    run();
-    CHECK(end());
+  setup(0);
+  run();
+  CHECK(end());
 
-    
+  
 
-    setup(1);
-    run();
-    CHECK(group(0, -1));
-    CHECK(end());
+  setup(1);
+  run();
+  CHECK(group(0, -1));
+  CHECK(end());
 
-    setup(3);
-    run();
-    CHECK(group(2, -1));
-    CHECK(group(1, -1));
-    CHECK(group(0, -1));
-    CHECK(end());
+  setup(3);
+  run();
+  CHECK(group(2, -1));
+  CHECK(group(1, -1));
+  CHECK(group(0, -1));
+  CHECK(end());
 
-    
+  
 
-    setup(3);
-    edge(0, 1);
-    edge(1, 2);
-    run();
-    CHECK(group(0, -1));
-    CHECK(group(1, -1));
-    CHECK(group(2, -1));
-    CHECK(end());
+  setup(3);
+  edge(0, 1);
+  edge(1, 2);
+  run();
+  CHECK(group(0, -1));
+  CHECK(group(1, -1));
+  CHECK(group(2, -1));
+  CHECK(end());
 
-    
+  
 
-    setup(3);
-    edge(0, 1);
-    edge(0, 2);
-    run();
-    CHECK(group(0, -1));
-    CHECK(group(2, -1));
-    CHECK(group(1, -1));
-    CHECK(end());
+  setup(3);
+  edge(0, 1);
+  edge(0, 2);
+  run();
+  CHECK(group(0, -1));
+  CHECK(group(2, -1));
+  CHECK(group(1, -1));
+  CHECK(end());
 
-    
+  
 
-    setup(3);
-    edge(0, 1);
-    edge(1, 2);
-    edge(2, 0);
-    run();
-    CHECK(group(0, 1, 2, -1));
-    CHECK(end());
+  setup(3);
+  edge(0, 1);
+  edge(1, 2);
+  edge(2, 0);
+  run();
+  CHECK(group(0, 1, 2, -1));
+  CHECK(end());
 
-    setup(4);
-    edge(0, 1);
-    edge(1, 2);
-    edge(2, 1);
-    edge(2, 3);
-    run();
-    CHECK(group(0, -1));
-    CHECK(group(1, 2, -1));
-    CHECK(group(3, -1));
-    CHECK(end());
+  setup(4);
+  edge(0, 1);
+  edge(1, 2);
+  edge(2, 1);
+  edge(2, 3);
+  run();
+  CHECK(group(0, -1));
+  CHECK(group(1, 2, -1));
+  CHECK(group(3, -1));
+  CHECK(end());
 
-    
+  
 
-    setup(2);
-    edge(0, 1);
-    run();
-    CHECK(remaining(0, 1, -1));
-    CHECK(end());
+  setup(2);
+  edge(0, 1);
+  run();
+  CHECK(remaining(0, 1, -1));
+  CHECK(end());
 
-    setup(2);
-    edge(0, 1);
-    run();
-    CHECK(group(0, -1));
-    CHECK(remaining(1, -1));
-    CHECK(end());
+  setup(2);
+  edge(0, 1);
+  run();
+  CHECK(group(0, -1));
+  CHECK(remaining(1, -1));
+  CHECK(end());
 
-    setup(2);
-    edge(0, 1);
-    run();
-    CHECK(group(0, -1));
-    CHECK(group(1, -1));
-    CHECK(remaining(-1));
-    CHECK(end());
+  setup(2);
+  edge(0, 1);
+  run();
+  CHECK(group(0, -1));
+  CHECK(group(1, -1));
+  CHECK(remaining(-1));
+  CHECK(end());
 
-    return true;
+  return true;
 }
 
 unsigned vertex_count;
 TestComponentFinder* finder;
 TestNode* resultsList;
 
-void setup(unsigned count)
-{
-    vertex_count = count;
-    for (unsigned i = 0; i < MaxVertices; ++i) {
-        TestNode& v = Vertex[i];
-        v.gcNextGraphNode = nullptr;
-        v.index = i;
-        memset(&v.hasEdge, 0, sizeof(v.hasEdge));
-    }
+void setup(unsigned count) {
+  vertex_count = count;
+  for (unsigned i = 0; i < MaxVertices; ++i) {
+    TestNode& v = Vertex[i];
+    v.gcNextGraphNode = nullptr;
+    v.index = i;
+    memset(&v.hasEdge, 0, sizeof(v.hasEdge));
+  }
 }
 
-void edge(unsigned src_index, unsigned dest_index)
-{
-    Vertex[src_index].hasEdge[dest_index] = true;
+void edge(unsigned src_index, unsigned dest_index) {
+  Vertex[src_index].hasEdge[dest_index] = true;
 }
 
-void run()
-{
-    finder = new TestComponentFinder(cx->nativeStackLimit[JS::StackForSystemCode]);
-    for (unsigned i = 0; i < vertex_count; ++i) {
-        finder->addNode(&Vertex[i]);
-    }
-    resultsList = finder->getResultsList();
+void run() {
+  finder =
+      new TestComponentFinder(cx->nativeStackLimit[JS::StackForSystemCode]);
+  for (unsigned i = 0; i < vertex_count; ++i) {
+    finder->addNode(&Vertex[i]);
+  }
+  resultsList = finder->getResultsList();
 }
 
-bool group(int vertex, ...)
-{
-    TestNode* v = resultsList;
+bool group(int vertex, ...) {
+  TestNode* v = resultsList;
 
-    va_list ap;
-    va_start(ap, vertex);
-    while (vertex != -1) {
-        CHECK(v != nullptr);
-        CHECK(v->index == unsigned(vertex));
-        v = v->nextNodeInGroup();
-        vertex = va_arg(ap, int);
-    }
-    va_end(ap);
+  va_list ap;
+  va_start(ap, vertex);
+  while (vertex != -1) {
+    CHECK(v != nullptr);
+    CHECK(v->index == unsigned(vertex));
+    v = v->nextNodeInGroup();
+    vertex = va_arg(ap, int);
+  }
+  va_end(ap);
 
-    CHECK(v == nullptr);
-    resultsList = resultsList->nextGroup();
-    return true;
+  CHECK(v == nullptr);
+  resultsList = resultsList->nextGroup();
+  return true;
 }
 
-bool remaining(int vertex, ...)
-{
-    TestNode* v = resultsList;
+bool remaining(int vertex, ...) {
+  TestNode* v = resultsList;
 
-    va_list ap;
-    va_start(ap, vertex);
-    while (vertex != -1) {
-        CHECK(v != nullptr);
-        CHECK(v->index == unsigned(vertex));
-        v = (TestNode*)v->gcNextGraphNode;
-        vertex = va_arg(ap, int);
-    }
-    va_end(ap);
+  va_list ap;
+  va_start(ap, vertex);
+  while (vertex != -1) {
+    CHECK(v != nullptr);
+    CHECK(v->index == unsigned(vertex));
+    v = (TestNode*)v->gcNextGraphNode;
+    vertex = va_arg(ap, int);
+  }
+  va_end(ap);
 
-    CHECK(v == nullptr);
-    resultsList = nullptr;
-    return true;
+  CHECK(v == nullptr);
+  resultsList = nullptr;
+  return true;
 }
 
-bool end()
-{
-    CHECK(resultsList == nullptr);
+bool end() {
+  CHECK(resultsList == nullptr);
 
-    delete finder;
-    finder = nullptr;
-    return true;
+  delete finder;
+  finder = nullptr;
+  return true;
 }
 END_TEST(testFindSCCs)
 
 struct TestComponentFinder2;
 
-struct TestNode2 : public GraphNodeBase<TestNode2>
-{
-    TestNode2* edge;
+struct TestNode2 : public GraphNodeBase<TestNode2> {
+  TestNode2* edge;
 
-    TestNode2() : edge(nullptr) {}
-    void findOutgoingEdges(TestComponentFinder2& finder);
+  TestNode2() : edge(nullptr) {}
+  void findOutgoingEdges(TestComponentFinder2& finder);
 };
 
-struct TestComponentFinder2 : public ComponentFinder<TestNode2, TestComponentFinder2>
-{
-    explicit TestComponentFinder2(uintptr_t sl)
-      : ComponentFinder<TestNode2, TestComponentFinder2>(sl)
-    {}
+struct TestComponentFinder2
+    : public ComponentFinder<TestNode2, TestComponentFinder2> {
+  explicit TestComponentFinder2(uintptr_t sl)
+      : ComponentFinder<TestNode2, TestComponentFinder2>(sl) {}
 };
 
-void
-TestNode2::findOutgoingEdges(TestComponentFinder2& finder)
-{
-    if (edge) {
-        finder.addEdgeTo(edge);
-    }
+void TestNode2::findOutgoingEdges(TestComponentFinder2& finder) {
+  if (edge) {
+    finder.addEdgeTo(edge);
+  }
 }
 
-BEGIN_TEST(testFindSCCsStackLimit)
-{
-    
+BEGIN_TEST(testFindSCCsStackLimit) {
+  
 
 
 
@@ -252,39 +237,39 @@ BEGIN_TEST(testFindSCCsStackLimit)
 
 
 
-    const unsigned max = 1000000;
-    const unsigned initial = 10;
+  const unsigned max = 1000000;
+  const unsigned initial = 10;
 
-    TestNode2* vertices = new TestNode2[max]();
-    for (unsigned i = initial; i < (max - 10); ++i) {
-        vertices[i].edge = &vertices[i + 1];
-    }
+  TestNode2* vertices = new TestNode2[max]();
+  for (unsigned i = initial; i < (max - 10); ++i) {
+    vertices[i].edge = &vertices[i + 1];
+  }
 
-    TestComponentFinder2 finder(cx->nativeStackLimit[JS::StackForSystemCode]);
-    for (unsigned i = 0; i < max; ++i) {
-        finder.addNode(&vertices[i]);
-    }
+  TestComponentFinder2 finder(cx->nativeStackLimit[JS::StackForSystemCode]);
+  for (unsigned i = 0; i < max; ++i) {
+    finder.addNode(&vertices[i]);
+  }
 
-    TestNode2* r = finder.getResultsList();
-    CHECK(r);
-    TestNode2* v = r;
+  TestNode2* r = finder.getResultsList();
+  CHECK(r);
+  TestNode2* v = r;
 
-    unsigned count = 0;
-    while (v) {
-        ++count;
-        v = v->nextNodeInGroup();
-    }
-    CHECK(count == max - initial);
+  unsigned count = 0;
+  while (v) {
+    ++count;
+    v = v->nextNodeInGroup();
+  }
+  CHECK(count == max - initial);
 
-    count = 0;
-    v = r->nextGroup();
-    while (v) {
-        ++count;
-        CHECK(!v->nextNodeInGroup());
-        v = v->nextGroup();
-    }
+  count = 0;
+  v = r->nextGroup();
+  while (v) {
+    ++count;
+    CHECK(!v->nextNodeInGroup());
+    v = v->nextGroup();
+  }
 
-    delete [] vertices;
-    return true;
+  delete[] vertices;
+  return true;
 }
 END_TEST(testFindSCCsStackLimit)

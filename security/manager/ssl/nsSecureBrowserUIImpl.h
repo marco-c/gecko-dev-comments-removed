@@ -14,23 +14,27 @@
 class nsITransportSecurityInfo;
 class nsIChannel;
 
-#define NS_SECURE_BROWSER_UI_CID \
-{ 0xcc75499a, 0x1dd1, 0x11b2, {0x8a, 0x82, 0xca, 0x41, 0x0a, 0xc9, 0x07, 0xb8}}
+#define NS_SECURE_BROWSER_UI_CID                     \
+  {                                                  \
+    0xcc75499a, 0x1dd1, 0x11b2, {                    \
+      0x8a, 0x82, 0xca, 0x41, 0x0a, 0xc9, 0x07, 0xb8 \
+    }                                                \
+  }
 
-class nsSecureBrowserUIImpl : public nsISecureBrowserUI
-                            , public nsIWebProgressListener
-                            , public nsSupportsWeakReference
-{
-public:
+class nsSecureBrowserUIImpl : public nsISecureBrowserUI,
+                              public nsIWebProgressListener,
+                              public nsSupportsWeakReference {
+ public:
   nsSecureBrowserUIImpl();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIWEBPROGRESSLISTENER
   NS_DECL_NSISECUREBROWSERUI
 
-protected:
-  virtual ~nsSecureBrowserUIImpl() {};
+ protected:
+  virtual ~nsSecureBrowserUIImpl(){};
 
+  
   
   void CheckForBlockedContent();
   
@@ -44,4 +48,4 @@ protected:
   nsCOMPtr<nsITransportSecurityInfo> mTopLevelSecurityInfo;
 };
 
-#endif 
+#endif  

@@ -20,31 +20,27 @@ namespace CacheFileUtils {
 
 extern const char *kAltDataKey;
 
-already_AddRefed<nsILoadContextInfo>
-ParseKey(const nsACString& aKey,
-         nsACString* aIdEnhance = nullptr,
-         nsACString* aURISpec = nullptr);
+already_AddRefed<nsILoadContextInfo> ParseKey(const nsACString &aKey,
+                                              nsACString *aIdEnhance = nullptr,
+                                              nsACString *aURISpec = nullptr);
 
-void
-AppendKeyPrefix(nsILoadContextInfo *aInfo, nsACString &_retval);
+void AppendKeyPrefix(nsILoadContextInfo *aInfo, nsACString &_retval);
 
-void
-AppendTagWithValue(nsACString& aTarget, char const aTag, const nsACString& aValue);
+void AppendTagWithValue(nsACString &aTarget, char const aTag,
+                        const nsACString &aValue);
 
-nsresult
-KeyMatchesLoadContextInfo(const nsACString &aKey,
-                          nsILoadContextInfo *aInfo,
-                          bool *_retval);
+nsresult KeyMatchesLoadContextInfo(const nsACString &aKey,
+                                   nsILoadContextInfo *aInfo, bool *_retval);
 
 class ValidityPair {
-public:
+ public:
   ValidityPair(uint32_t aOffset, uint32_t aLen);
 
-  ValidityPair& operator=(const ValidityPair& aOther) = default;
+  ValidityPair &operator=(const ValidityPair &aOther) = default;
 
   
   
-  bool CanBeMerged(const ValidityPair& aOther) const;
+  bool CanBeMerged(const ValidityPair &aOther) const;
 
   
   
@@ -53,21 +49,21 @@ public:
   
   
   
-  bool LessThan(const ValidityPair& aOther) const;
+  bool LessThan(const ValidityPair &aOther) const;
 
   
-  void Merge(const ValidityPair& aOther);
+  void Merge(const ValidityPair &aOther);
 
   uint32_t Offset() const { return mOffset; }
-  uint32_t Len() const    { return mLen; }
+  uint32_t Len() const { return mLen; }
 
-private:
+ private:
   uint32_t mOffset;
   uint32_t mLen;
 };
 
 class ValidityMap {
-public:
+ public:
   
   void Log() const;
 
@@ -83,35 +79,31 @@ public:
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
-  ValidityPair& operator[](uint32_t aIdx);
+  ValidityPair &operator[](uint32_t aIdx);
 
-private:
+ private:
   nsTArray<ValidityPair> mMap;
 };
 
-
 class DetailedCacheHitTelemetry {
-public:
-  enum ERecType {
-    HIT  = 0,
-    MISS = 1
-  };
+ public:
+  enum ERecType { HIT = 0, MISS = 1 };
 
   static void AddRecord(ERecType aType, TimeStamp aLoadStart);
 
-private:
+ private:
   class HitRate {
-  public:
+   public:
     HitRate();
 
-    void     AddRecord(ERecType aType);
+    void AddRecord(ERecType aType);
     
     
     uint32_t GetHitRateBucket(uint32_t aNumOfBuckets) const;
     uint32_t Count();
-    void     Reset();
+    void Reset();
 
-  private:
+   private:
     uint32_t mHitCnt;
     uint32_t mMissCnt;
   };
@@ -148,25 +140,24 @@ private:
 };
 
 class CachePerfStats {
-public:
+ public:
   
   
   enum EDataType {
-    IO_OPEN    = 0,
-    IO_READ    = 1,
-    IO_WRITE   = 2,
+    IO_OPEN = 0,
+    IO_READ = 1,
+    IO_WRITE = 2,
     ENTRY_OPEN = 3,
-    LAST       = 4
+    LAST = 4
   };
 
-  static void     AddValue(EDataType aType, uint32_t aValue, bool aShortOnly);
+  static void AddValue(EDataType aType, uint32_t aValue, bool aShortOnly);
   static uint32_t GetAverage(EDataType aType, bool aFiltered);
   static uint32_t GetStdDev(EDataType aType, bool aFiltered);
-  static bool     IsCacheSlow();
-  static void     GetSlowStats(uint32_t *aSlow, uint32_t *aNotSlow);
+  static bool IsCacheSlow();
+  static void GetSlowStats(uint32_t *aSlow, uint32_t *aNotSlow);
 
-private:
-
+ private:
   
   
   
@@ -179,30 +170,30 @@ private:
   
   
   class MMA {
-  public:
+   public:
     MMA(uint32_t aTotalWeight, bool aFilter);
 
-    void     AddValue(uint32_t aValue);
+    void AddValue(uint32_t aValue);
     uint32_t GetAverage();
     uint32_t GetStdDev();
 
-  private:
+   private:
     uint64_t mSum;
     uint64_t mSumSq;
     uint32_t mCnt;
     uint32_t mWeight;
-    bool     mFilter;
+    bool mFilter;
   };
 
   class PerfData {
-  public:
+   public:
     PerfData();
 
-    void     AddValue(uint32_t aValue, bool aShortOnly);
+    void AddValue(uint32_t aValue, bool aShortOnly);
     uint32_t GetAverage(bool aFiltered);
     uint32_t GetStdDev(bool aFiltered);
 
-  private:
+   private:
     
     
     MMA mFilteredAvg;
@@ -218,17 +209,16 @@ private:
   static uint32_t sCacheNotSlowCnt;
 };
 
-void
-FreeBuffer(void *aBuf);
+void FreeBuffer(void *aBuf);
 
-nsresult
-ParseAlternativeDataInfo(const char *aInfo, int64_t *_offset, nsACString *_type);
+nsresult ParseAlternativeDataInfo(const char *aInfo, int64_t *_offset,
+                                  nsACString *_type);
 
-void
-BuildAlternativeDataInfo(const char *aInfo, int64_t aOffset, nsACString &_retval);
+void BuildAlternativeDataInfo(const char *aInfo, int64_t aOffset,
+                              nsACString &_retval);
 
-} 
-} 
-} 
+}  
+}  
+}  
 
 #endif

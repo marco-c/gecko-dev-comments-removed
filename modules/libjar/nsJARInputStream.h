@@ -21,71 +21,69 @@ struct BrotliDecoderStateStruct;
 
 
 
-class nsJARInputStream final : public nsIInputStream
-{
-  public:
-    nsJARInputStream()
-    : mOutSize(0)
-    , mInCrc(0)
-    , mOutCrc(0)
+class nsJARInputStream final : public nsIInputStream {
+ public:
+  nsJARInputStream()
+      : mOutSize(0),
+        mInCrc(0),
+        mOutCrc(0)
 #ifdef MOZ_JAR_BROTLI
-    , mBrotliState(nullptr)
+        ,
+        mBrotliState(nullptr)
 #endif
-    , mNameLen(0)
-    , mCurPos(0)
-    , mArrPos(0)
-    , mMode(MODE_NOTINITED)
-    {
-      memset(&mZs, 0, sizeof(z_stream));
-    }
+        ,
+        mNameLen(0),
+        mCurPos(0),
+        mArrPos(0),
+        mMode(MODE_NOTINITED) {
+    memset(&mZs, 0, sizeof(z_stream));
+  }
 
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIINPUTSTREAM
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIINPUTSTREAM
 
-    
-    nsresult InitFile(nsJAR *aJar, nsZipItem *item);
+  
+  nsresult InitFile(nsJAR* aJar, nsZipItem* item);
 
-    nsresult InitDirectory(nsJAR *aJar,
-                           const nsACString& aJarDirSpec,
-                           const char* aDir);
+  nsresult InitDirectory(nsJAR* aJar, const nsACString& aJarDirSpec,
+                         const char* aDir);
 
-  private:
-    ~nsJARInputStream() { Close(); }
+ private:
+  ~nsJARInputStream() { Close(); }
 
-    RefPtr<nsZipHandle>  mFd;         
-    uint32_t               mOutSize;    
-    uint32_t               mInCrc;      
-    uint32_t               mOutCrc;     
-    z_stream               mZs;         
+  RefPtr<nsZipHandle> mFd;  
+  uint32_t mOutSize;        
+  uint32_t mInCrc;          
+  uint32_t mOutCrc;         
+  z_stream mZs;             
 #ifdef MOZ_JAR_BROTLI
-    BrotliDecoderStateStruct* mBrotliState; 
+  BrotliDecoderStateStruct* mBrotliState;  
 #endif
 
-    
-    RefPtr<nsJAR>          mJar;        
-    uint32_t               mNameLen;    
-    nsCString              mBuffer;     
-    uint32_t               mCurPos;     
-    uint32_t               mArrPos;     
-    nsTArray<nsCString>    mArray;      
+  
+  RefPtr<nsJAR> mJar;          
+  uint32_t mNameLen;           
+  nsCString mBuffer;           
+  uint32_t mCurPos;            
+  uint32_t mArrPos;            
+  nsTArray<nsCString> mArray;  
 
-	typedef enum {
-        MODE_NOTINITED,
-        MODE_CLOSED,
-        MODE_DIRECTORY,
-        MODE_INFLATE,
+  typedef enum {
+    MODE_NOTINITED,
+    MODE_CLOSED,
+    MODE_DIRECTORY,
+    MODE_INFLATE,
 #ifdef MOZ_JAR_BROTLI
-        MODE_BROTLI,
+    MODE_BROTLI,
 #endif
-        MODE_COPY
-    } JISMode;
+    MODE_COPY
+  } JISMode;
 
-    JISMode                mMode;		
+  JISMode mMode;  
 
-    nsresult ContinueInflate(char* aBuf, uint32_t aCount, uint32_t* aBytesRead);
-    nsresult ReadDirectory(char* aBuf, uint32_t aCount, uint32_t* aBytesRead);
-    uint32_t CopyDataToBuffer(char* &aBuffer, uint32_t &aCount);
+  nsresult ContinueInflate(char* aBuf, uint32_t aCount, uint32_t* aBytesRead);
+  nsresult ReadDirectory(char* aBuf, uint32_t aCount, uint32_t* aBytesRead);
+  uint32_t CopyDataToBuffer(char*& aBuffer, uint32_t& aCount);
 };
 
 #endif 
-

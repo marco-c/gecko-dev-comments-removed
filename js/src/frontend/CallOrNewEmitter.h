@@ -25,13 +25,12 @@ namespace frontend {
 
 struct BytecodeEmitter;
 
-class MOZ_RAII AutoEmittingRunOnceLambda
-{
-    BytecodeEmitter* bce_;
+class MOZ_RAII AutoEmittingRunOnceLambda {
+  BytecodeEmitter* bce_;
 
-  public:
-    explicit AutoEmittingRunOnceLambda(BytecodeEmitter* bce);
-    ~AutoEmittingRunOnceLambda();
+ public:
+  explicit AutoEmittingRunOnceLambda(BytecodeEmitter* bce);
+  ~AutoEmittingRunOnceLambda();
 };
 
 
@@ -140,42 +139,10 @@ class MOZ_RAII AutoEmittingRunOnceLambda
 
 
 
-class MOZ_STACK_CLASS CallOrNewEmitter
-{
-  public:
-    enum class ArgumentsKind {
-        Other,
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        SingleSpreadRest
-    };
-
-  private:
-    BytecodeEmitter* bce_;
-
-    
-    JSOp op_;
-
-    
-    
-    ArgumentsKind argumentsKind_;
-
-    
-    mozilla::Maybe<InternalIfEmitter> ifNotOptimizable_;
-
-    mozilla::Maybe<AutoEmittingRunOnceLambda> autoEmittingRunOnceLambda_;
-
-    mozilla::Maybe<PropOpEmitter> poe_;
-    mozilla::Maybe<ElemOpEmitter> eoe_;
+class MOZ_STACK_CLASS CallOrNewEmitter {
+ public:
+  enum class ArgumentsKind {
+    Other,
 
     
     
@@ -187,147 +154,171 @@ class MOZ_STACK_CLASS CallOrNewEmitter
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    enum class State {
-        
-        Start,
+    SingleSpreadRest
+  };
 
-        
-        NameCallee,
+ private:
+  BytecodeEmitter* bce_;
 
-        
-        PropCallee,
+  
+  JSOp op_;
 
-        
-        ElemCallee,
+  
+  
+  ArgumentsKind argumentsKind_;
 
-        
-        FunctionCallee,
+  
+  mozilla::Maybe<InternalIfEmitter> ifNotOptimizable_;
 
-        
-        SuperCallee,
+  mozilla::Maybe<AutoEmittingRunOnceLambda> autoEmittingRunOnceLambda_;
 
-        
-        OtherCallee,
+  mozilla::Maybe<PropOpEmitter> poe_;
+  mozilla::Maybe<ElemOpEmitter> eoe_;
 
-        
-        This,
-
-        
-        WantSpreadOperand,
-
-        
-        Arguments,
-
-        
-        End
-    };
-    State state_ = State::Start;
-
-  public:
-    CallOrNewEmitter(BytecodeEmitter* bce, JSOp op,
-                     ArgumentsKind argumentsKind,
-                     ValueUsage valueUsage);
-
-  private:
-    MOZ_MUST_USE bool isCall() const {
-        return op_ == JSOP_CALL || op_ == JSOP_CALL_IGNORES_RV ||
-               op_ == JSOP_SPREADCALL ||
-               isEval() || isFunApply() || isFunCall();
-    }
-
-    MOZ_MUST_USE bool isNew() const {
-        return op_ == JSOP_NEW || op_ == JSOP_SPREADNEW;
-    }
-
-    MOZ_MUST_USE bool isSuperCall() const {
-        return op_ == JSOP_SUPERCALL || op_ == JSOP_SPREADSUPERCALL;
-    }
-
-    MOZ_MUST_USE bool isEval() const {
-        return op_ == JSOP_EVAL || op_ == JSOP_STRICTEVAL ||
-               op_ == JSOP_SPREADEVAL || op_ == JSOP_STRICTSPREADEVAL;
-    }
-
-    MOZ_MUST_USE bool isFunApply() const {
-        return op_ == JSOP_FUNAPPLY;
-    }
-
-    MOZ_MUST_USE bool isFunCall() const {
-        return op_ == JSOP_FUNCALL;
-    }
-
-    MOZ_MUST_USE bool isSpread() const {
-        return JOF_OPTYPE(op_) == JOF_BYTE;
-    }
-
-    MOZ_MUST_USE bool isSingleSpreadRest() const {
-        return argumentsKind_ == ArgumentsKind::SingleSpreadRest;
-    }
-
-  public:
-    MOZ_MUST_USE bool emitNameCallee(JSAtom* name);
-    MOZ_MUST_USE PropOpEmitter& prepareForPropCallee(bool isSuperProp);
-    MOZ_MUST_USE ElemOpEmitter& prepareForElemCallee(bool isSuperElem);
-    MOZ_MUST_USE bool prepareForFunctionCallee();
-    MOZ_MUST_USE bool emitSuperCallee();
-    MOZ_MUST_USE bool prepareForOtherCallee();
-
-    MOZ_MUST_USE bool emitThis();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
+    
+    Start,
 
     
-    
-    void reset();
-
-    MOZ_MUST_USE bool prepareForNonSpreadArguments();
+    NameCallee,
 
     
-    MOZ_MUST_USE bool wantSpreadOperand();
-    MOZ_MUST_USE bool emitSpreadArgumentsTest();
+    PropCallee,
 
     
+    ElemCallee,
+
     
+    FunctionCallee,
+
     
+    SuperCallee,
+
     
+    OtherCallee,
+
     
+    This,
+
     
+    WantSpreadOperand,
+
     
+    Arguments,
+
     
-    MOZ_MUST_USE bool emitEnd(uint32_t argc, const mozilla::Maybe<uint32_t>& beginPos);
+    End
+  };
+  State state_ = State::Start;
+
+ public:
+  CallOrNewEmitter(BytecodeEmitter* bce, JSOp op, ArgumentsKind argumentsKind,
+                   ValueUsage valueUsage);
+
+ private:
+  MOZ_MUST_USE bool isCall() const {
+    return op_ == JSOP_CALL || op_ == JSOP_CALL_IGNORES_RV ||
+           op_ == JSOP_SPREADCALL || isEval() || isFunApply() || isFunCall();
+  }
+
+  MOZ_MUST_USE bool isNew() const {
+    return op_ == JSOP_NEW || op_ == JSOP_SPREADNEW;
+  }
+
+  MOZ_MUST_USE bool isSuperCall() const {
+    return op_ == JSOP_SUPERCALL || op_ == JSOP_SPREADSUPERCALL;
+  }
+
+  MOZ_MUST_USE bool isEval() const {
+    return op_ == JSOP_EVAL || op_ == JSOP_STRICTEVAL ||
+           op_ == JSOP_SPREADEVAL || op_ == JSOP_STRICTSPREADEVAL;
+  }
+
+  MOZ_MUST_USE bool isFunApply() const { return op_ == JSOP_FUNAPPLY; }
+
+  MOZ_MUST_USE bool isFunCall() const { return op_ == JSOP_FUNCALL; }
+
+  MOZ_MUST_USE bool isSpread() const { return JOF_OPTYPE(op_) == JOF_BYTE; }
+
+  MOZ_MUST_USE bool isSingleSpreadRest() const {
+    return argumentsKind_ == ArgumentsKind::SingleSpreadRest;
+  }
+
+ public:
+  MOZ_MUST_USE bool emitNameCallee(JSAtom* name);
+  MOZ_MUST_USE PropOpEmitter& prepareForPropCallee(bool isSuperProp);
+  MOZ_MUST_USE ElemOpEmitter& prepareForElemCallee(bool isSuperElem);
+  MOZ_MUST_USE bool prepareForFunctionCallee();
+  MOZ_MUST_USE bool emitSuperCallee();
+  MOZ_MUST_USE bool prepareForOtherCallee();
+
+  MOZ_MUST_USE bool emitThis();
+
+  
+  
+  void reset();
+
+  MOZ_MUST_USE bool prepareForNonSpreadArguments();
+
+  
+  MOZ_MUST_USE bool wantSpreadOperand();
+  MOZ_MUST_USE bool emitSpreadArgumentsTest();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool emitEnd(uint32_t argc,
+                            const mozilla::Maybe<uint32_t>& beginPos);
 };
 
 } 

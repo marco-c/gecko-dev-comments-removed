@@ -5,46 +5,37 @@
 
 
 #include "ClientCanvasLayer.h"
-#include "GeckoProfiler.h"              
-#include "ClientLayerManager.h"         
-#include "nsCOMPtr.h"                   
+#include "GeckoProfiler.h"       
+#include "ClientLayerManager.h"  
+#include "nsCOMPtr.h"            
 
 namespace mozilla {
 namespace layers {
 
-ClientCanvasLayer::~ClientCanvasLayer()
-{
-  MOZ_COUNT_DTOR(ClientCanvasLayer);
-}
+ClientCanvasLayer::~ClientCanvasLayer() { MOZ_COUNT_DTOR(ClientCanvasLayer); }
 
-void
-ClientCanvasLayer::RenderLayer()
-{
+void ClientCanvasLayer::RenderLayer() {
   AUTO_PROFILER_LABEL("ClientCanvasLayer::RenderLayer", GRAPHICS);
 
   RenderMaskLayers(this);
 
-  ClientCanvasRenderer* canvasRenderer = mCanvasRenderer->AsClientCanvasRenderer();
+  ClientCanvasRenderer* canvasRenderer =
+      mCanvasRenderer->AsClientCanvasRenderer();
   MOZ_ASSERT(canvasRenderer);
   canvasRenderer->UpdateCompositableClient();
   ClientManager()->Hold(this);
 }
 
-CanvasRenderer*
-ClientCanvasLayer::CreateCanvasRendererInternal()
-{
+CanvasRenderer* ClientCanvasLayer::CreateCanvasRendererInternal() {
   return new ClientCanvasRenderer(this);
 }
 
-already_AddRefed<CanvasLayer>
-ClientLayerManager::CreateCanvasLayer()
-{
+already_AddRefed<CanvasLayer> ClientLayerManager::CreateCanvasLayer() {
   NS_ASSERTION(InConstruction(), "Only allowed in construction phase");
-  RefPtr<ClientCanvasLayer> layer =
-    new ClientCanvasLayer(this);
+  RefPtr<ClientCanvasLayer> layer = new ClientCanvasLayer(this);
   CREATE_SHADOW(Canvas);
   return layer.forget();
 }
 
-} 
-} 
+}  
+}  

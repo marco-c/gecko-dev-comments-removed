@@ -15,8 +15,7 @@ class nsIRunnable;
 
 namespace mozilla {
 
-enum class EventPriority
-{
+enum class EventPriority {
   High,
   Input,
   Normal,
@@ -40,9 +39,8 @@ enum class EventPriority
 
 
 
-class AbstractEventQueue
-{
-public:
+class AbstractEventQueue {
+ public:
   
   
   
@@ -55,8 +53,8 @@ public:
   
   
   
-  virtual already_AddRefed<nsIRunnable> GetEvent(EventPriority* aPriority,
-                                                 const MutexAutoLock& aProofOfLock) = 0;
+  virtual already_AddRefed<nsIRunnable> GetEvent(
+      EventPriority* aPriority, const MutexAutoLock& aProofOfLock) = 0;
 
   
   virtual bool IsEmpty(const MutexAutoLock& aProofOfLock) = 0;
@@ -69,21 +67,25 @@ public:
   
   virtual size_t Count(const MutexAutoLock& aProofOfLock) const = 0;
 
-  virtual void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) = 0;
-  virtual void FlushInputEventPrioritization(const MutexAutoLock& aProofOfLock) = 0;
-  virtual void SuspendInputEventPrioritization(const MutexAutoLock& aProofOfLock) = 0;
-  virtual void ResumeInputEventPrioritization(const MutexAutoLock& aProofOfLock) = 0;
+  virtual void EnableInputEventPrioritization(
+      const MutexAutoLock& aProofOfLock) = 0;
+  virtual void FlushInputEventPrioritization(
+      const MutexAutoLock& aProofOfLock) = 0;
+  virtual void SuspendInputEventPrioritization(
+      const MutexAutoLock& aProofOfLock) = 0;
+  virtual void ResumeInputEventPrioritization(
+      const MutexAutoLock& aProofOfLock) = 0;
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-  {
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
 
-  virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const = 0;
+  virtual size_t SizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) const = 0;
 
   virtual ~AbstractEventQueue() {}
 };
 
-} 
+}  
 
-#endif 
+#endif  

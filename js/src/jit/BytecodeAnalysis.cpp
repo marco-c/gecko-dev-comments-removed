@@ -16,222 +16,221 @@ using namespace js;
 using namespace js::jit;
 
 BytecodeAnalysis::BytecodeAnalysis(TempAllocator& alloc, JSScript* script)
-  : script_(script),
-    infos_(alloc),
-    usesEnvironmentChain_(false),
-    hasTryFinally_(false)
-{
-}
+    : script_(script),
+      infos_(alloc),
+      usesEnvironmentChain_(false),
+      hasTryFinally_(false) {}
 
 
-struct CatchFinallyRange
-{
-    uint32_t start; 
-    uint32_t end;   
+struct CatchFinallyRange {
+  uint32_t start;  
+  uint32_t end;    
 
-    CatchFinallyRange(uint32_t start, uint32_t end)
-      : start(start), end(end)
-    {
-        MOZ_ASSERT(end > start);
-    }
+  CatchFinallyRange(uint32_t start, uint32_t end) : start(start), end(end) {
+    MOZ_ASSERT(end > start);
+  }
 
-    bool contains(uint32_t offset) const {
-        return start <= offset && offset < end;
-    }
+  bool contains(uint32_t offset) const {
+    return start <= offset && offset < end;
+  }
 };
 
-bool
-BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn)
-{
-    if (!infos_.growByUninitialized(script_->length())) {
-        return false;
+bool BytecodeAnalysis::init(TempAllocator& alloc, GSNCache& gsn) {
+  if (!infos_.growByUninitialized(script_->length())) {
+    return false;
+  }
+
+  
+  
+  
+  usesEnvironmentChain_ =
+      script_->module() || script_->initialEnvironmentShape() ||
+      (script_->functionDelazifying() &&
+       script_->functionDelazifying()->needsSomeEnvironmentObject());
+
+  jsbytecode* end = script_->codeEnd();
+
+  
+  mozilla::PodZero(infos_.begin(), infos_.length());
+  infos_[0].init(0);
+
+  Vector<CatchFinallyRange, 0, JitAllocPolicy> catchFinallyRanges(alloc);
+
+  jsbytecode* nextpc;
+  for (jsbytecode* pc = script_->code(); pc < end; pc = nextpc) {
+    JSOp op = JSOp(*pc);
+    nextpc = pc + GetBytecodeLength(pc);
+    unsigned offset = script_->pcToOffset(pc);
+
+    JitSpew(JitSpew_BaselineOp, "Analyzing op @ %d (end=%d): %s",
+            int(script_->pcToOffset(pc)), int(script_->length()), CodeName[op]);
+
+    
+    if (!infos_[offset].initialized) {
+      continue;
     }
 
-    
-    
-    
-    usesEnvironmentChain_ = script_->module() || script_->initialEnvironmentShape() ||
-                            (script_->functionDelazifying() &&
-                             script_->functionDelazifying()->needsSomeEnvironmentObject());
-
-    jsbytecode* end = script_->codeEnd();
-
-    
-    mozilla::PodZero(infos_.begin(), infos_.length());
-    infos_[0].init(0);
-
-    Vector<CatchFinallyRange, 0, JitAllocPolicy> catchFinallyRanges(alloc);
-
-    jsbytecode* nextpc;
-    for (jsbytecode* pc = script_->code(); pc < end; pc = nextpc) {
-        JSOp op = JSOp(*pc);
-        nextpc = pc + GetBytecodeLength(pc);
-        unsigned offset = script_->pcToOffset(pc);
-
-        JitSpew(JitSpew_BaselineOp, "Analyzing op @ %d (end=%d): %s",
-                int(script_->pcToOffset(pc)), int(script_->length()), CodeName[op]);
-
-        
-        if (!infos_[offset].initialized) {
-            continue;
-        }
-
-        unsigned stackDepth = infos_[offset].stackDepth;
+    unsigned stackDepth = infos_[offset].stackDepth;
 #ifdef DEBUG
-        for (jsbytecode* chkpc = pc + 1; chkpc < (pc + GetBytecodeLength(pc)); chkpc++) {
-            MOZ_ASSERT(!infos_[script_->pcToOffset(chkpc)].initialized);
-        }
+    for (jsbytecode* chkpc = pc + 1; chkpc < (pc + GetBytecodeLength(pc));
+         chkpc++) {
+      MOZ_ASSERT(!infos_[script_->pcToOffset(chkpc)].initialized);
+    }
 #endif
 
-        unsigned nuses = GetUseCount(pc);
-        unsigned ndefs = GetDefCount(pc);
+    unsigned nuses = GetUseCount(pc);
+    unsigned ndefs = GetDefCount(pc);
 
-        MOZ_ASSERT(stackDepth >= nuses);
-        stackDepth -= nuses;
-        stackDepth += ndefs;
+    MOZ_ASSERT(stackDepth >= nuses);
+    stackDepth -= nuses;
+    stackDepth += ndefs;
 
-        
-        MOZ_ASSERT(stackDepth <= BytecodeInfo::MAX_STACK_DEPTH);
+    
+    MOZ_ASSERT(stackDepth <= BytecodeInfo::MAX_STACK_DEPTH);
 
-        switch (op) {
-          case JSOP_TABLESWITCH: {
-            unsigned defaultOffset = offset + GET_JUMP_OFFSET(pc);
-            jsbytecode* pc2 = pc + JUMP_OFFSET_LEN;
-            int32_t low = GET_JUMP_OFFSET(pc2);
-            pc2 += JUMP_OFFSET_LEN;
-            int32_t high = GET_JUMP_OFFSET(pc2);
-            pc2 += JUMP_OFFSET_LEN;
+    switch (op) {
+      case JSOP_TABLESWITCH: {
+        unsigned defaultOffset = offset + GET_JUMP_OFFSET(pc);
+        jsbytecode* pc2 = pc + JUMP_OFFSET_LEN;
+        int32_t low = GET_JUMP_OFFSET(pc2);
+        pc2 += JUMP_OFFSET_LEN;
+        int32_t high = GET_JUMP_OFFSET(pc2);
+        pc2 += JUMP_OFFSET_LEN;
 
-            infos_[defaultOffset].init(stackDepth);
-            infos_[defaultOffset].jumpTarget = true;
+        infos_[defaultOffset].init(stackDepth);
+        infos_[defaultOffset].jumpTarget = true;
 
-            uint32_t ncases = high - low + 1;
+        uint32_t ncases = high - low + 1;
 
-            for (uint32_t i = 0; i < ncases; i++) {
-                unsigned targetOffset = script_->tableSwitchCaseOffset(pc, i);
-                if (targetOffset != defaultOffset) {
-                    infos_[targetOffset].init(stackDepth);
-                    infos_[targetOffset].jumpTarget = true;
-                }
-            }
-            break;
-          }
-
-          case JSOP_TRY: {
-            for (const JSTryNote& tn : script_->trynotes()) {
-                if (tn.start == offset + 1) {
-                    unsigned catchOffset = tn.start + tn.length;
-
-                    if (tn.kind != JSTRY_FOR_IN) {
-                        infos_[catchOffset].init(stackDepth);
-                        infos_[catchOffset].jumpTarget = true;
-                    }
-                }
-            }
-
-            
-            
-            jssrcnote* sn = GetSrcNote(gsn, script_, pc);
-            MOZ_ASSERT(SN_TYPE(sn) == SRC_TRY);
-
-            jsbytecode* endOfTry = pc + GetSrcNoteOffset(sn, SrcNote::Try::EndOfTryJumpOffset);
-            MOZ_ASSERT(JSOp(*endOfTry) == JSOP_GOTO);
-
-            jsbytecode* afterTry = endOfTry + GET_JUMP_OFFSET(endOfTry);
-            MOZ_ASSERT(afterTry > endOfTry);
-
-            
-            
-            uint32_t afterTryOffset = script_->pcToOffset(afterTry);
-            infos_[afterTryOffset].init(stackDepth);
-            infos_[afterTryOffset].jumpTarget = true;
-
-            
-            while (!catchFinallyRanges.empty() && catchFinallyRanges.back().end <= offset) {
-                catchFinallyRanges.popBack();
-            }
-
-            CatchFinallyRange range(script_->pcToOffset(endOfTry), script_->pcToOffset(afterTry));
-            if (!catchFinallyRanges.append(range)) {
-                return false;
-            }
-            break;
-          }
-
-          case JSOP_LOOPENTRY:
-            for (size_t i = 0; i < catchFinallyRanges.length(); i++) {
-                if (catchFinallyRanges[i].contains(offset)) {
-                    infos_[offset].loopEntryInCatchOrFinally = true;
-                }
-            }
-            break;
-
-          case JSOP_GETNAME:
-          case JSOP_BINDNAME:
-          case JSOP_BINDVAR:
-          case JSOP_SETNAME:
-          case JSOP_STRICTSETNAME:
-          case JSOP_DELNAME:
-          case JSOP_GETALIASEDVAR:
-          case JSOP_SETALIASEDVAR:
-          case JSOP_LAMBDA:
-          case JSOP_LAMBDA_ARROW:
-          case JSOP_DEFFUN:
-          case JSOP_DEFVAR:
-          case JSOP_PUSHLEXICALENV:
-          case JSOP_POPLEXICALENV:
-          case JSOP_IMPLICITTHIS:
-            usesEnvironmentChain_ = true;
-            break;
-
-          case JSOP_GETGNAME:
-          case JSOP_SETGNAME:
-          case JSOP_STRICTSETGNAME:
-          case JSOP_GIMPLICITTHIS:
-            if (script_->hasNonSyntacticScope()) {
-                usesEnvironmentChain_ = true;
-            }
-            break;
-
-          default:
-            break;
-        }
-
-        bool jump = IsJumpOpcode(op);
-        if (jump) {
-            
-            unsigned newStackDepth = stackDepth;
-            if (op == JSOP_CASE) {
-                newStackDepth--;
-            }
-
-            unsigned targetOffset = offset + GET_JUMP_OFFSET(pc);
-
-            
-            bool jumpBack = (targetOffset < offset) && !infos_[targetOffset].initialized;
-
-            infos_[targetOffset].init(newStackDepth);
+        for (uint32_t i = 0; i < ncases; i++) {
+          unsigned targetOffset = script_->tableSwitchCaseOffset(pc, i);
+          if (targetOffset != defaultOffset) {
+            infos_[targetOffset].init(stackDepth);
             infos_[targetOffset].jumpTarget = true;
+          }
+        }
+        break;
+      }
 
-            if (jumpBack) {
-                nextpc = script_->offsetToPC(targetOffset);
+      case JSOP_TRY: {
+        for (const JSTryNote& tn : script_->trynotes()) {
+          if (tn.start == offset + 1) {
+            unsigned catchOffset = tn.start + tn.length;
+
+            if (tn.kind != JSTRY_FOR_IN) {
+              infos_[catchOffset].init(stackDepth);
+              infos_[catchOffset].jumpTarget = true;
             }
+          }
         }
 
         
-        if (BytecodeFallsThrough(op)) {
-            jsbytecode* fallthrough = pc + GetBytecodeLength(pc);
-            MOZ_ASSERT(fallthrough < end);
-            unsigned fallthroughOffset = script_->pcToOffset(fallthrough);
+        
+        jssrcnote* sn = GetSrcNote(gsn, script_, pc);
+        MOZ_ASSERT(SN_TYPE(sn) == SRC_TRY);
 
-            infos_[fallthroughOffset].init(stackDepth);
+        jsbytecode* endOfTry =
+            pc + GetSrcNoteOffset(sn, SrcNote::Try::EndOfTryJumpOffset);
+        MOZ_ASSERT(JSOp(*endOfTry) == JSOP_GOTO);
 
-            
-            if (jump) {
-                infos_[fallthroughOffset].jumpTarget = true;
-            }
+        jsbytecode* afterTry = endOfTry + GET_JUMP_OFFSET(endOfTry);
+        MOZ_ASSERT(afterTry > endOfTry);
+
+        
+        
+        uint32_t afterTryOffset = script_->pcToOffset(afterTry);
+        infos_[afterTryOffset].init(stackDepth);
+        infos_[afterTryOffset].jumpTarget = true;
+
+        
+        while (!catchFinallyRanges.empty() &&
+               catchFinallyRanges.back().end <= offset) {
+          catchFinallyRanges.popBack();
         }
+
+        CatchFinallyRange range(script_->pcToOffset(endOfTry),
+                                script_->pcToOffset(afterTry));
+        if (!catchFinallyRanges.append(range)) {
+          return false;
+        }
+        break;
+      }
+
+      case JSOP_LOOPENTRY:
+        for (size_t i = 0; i < catchFinallyRanges.length(); i++) {
+          if (catchFinallyRanges[i].contains(offset)) {
+            infos_[offset].loopEntryInCatchOrFinally = true;
+          }
+        }
+        break;
+
+      case JSOP_GETNAME:
+      case JSOP_BINDNAME:
+      case JSOP_BINDVAR:
+      case JSOP_SETNAME:
+      case JSOP_STRICTSETNAME:
+      case JSOP_DELNAME:
+      case JSOP_GETALIASEDVAR:
+      case JSOP_SETALIASEDVAR:
+      case JSOP_LAMBDA:
+      case JSOP_LAMBDA_ARROW:
+      case JSOP_DEFFUN:
+      case JSOP_DEFVAR:
+      case JSOP_PUSHLEXICALENV:
+      case JSOP_POPLEXICALENV:
+      case JSOP_IMPLICITTHIS:
+        usesEnvironmentChain_ = true;
+        break;
+
+      case JSOP_GETGNAME:
+      case JSOP_SETGNAME:
+      case JSOP_STRICTSETGNAME:
+      case JSOP_GIMPLICITTHIS:
+        if (script_->hasNonSyntacticScope()) {
+          usesEnvironmentChain_ = true;
+        }
+        break;
+
+      default:
+        break;
     }
 
-    return true;
+    bool jump = IsJumpOpcode(op);
+    if (jump) {
+      
+      unsigned newStackDepth = stackDepth;
+      if (op == JSOP_CASE) {
+        newStackDepth--;
+      }
+
+      unsigned targetOffset = offset + GET_JUMP_OFFSET(pc);
+
+      
+      bool jumpBack =
+          (targetOffset < offset) && !infos_[targetOffset].initialized;
+
+      infos_[targetOffset].init(newStackDepth);
+      infos_[targetOffset].jumpTarget = true;
+
+      if (jumpBack) {
+        nextpc = script_->offsetToPC(targetOffset);
+      }
+    }
+
+    
+    if (BytecodeFallsThrough(op)) {
+      jsbytecode* fallthrough = pc + GetBytecodeLength(pc);
+      MOZ_ASSERT(fallthrough < end);
+      unsigned fallthroughOffset = script_->pcToOffset(fallthrough);
+
+      infos_[fallthroughOffset].init(stackDepth);
+
+      
+      if (jump) {
+        infos_[fallthroughOffset].jumpTarget = true;
+      }
+    }
+  }
+
+  return true;
 }

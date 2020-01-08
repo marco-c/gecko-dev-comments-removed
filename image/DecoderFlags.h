@@ -18,12 +18,11 @@ namespace image {
 
 
 
-enum class DecoderFlags : uint8_t
-{
-  FIRST_FRAME_ONLY               = 1 << 0,
-  IS_REDECODE                    = 1 << 1,
-  IMAGE_IS_TRANSIENT             = 1 << 2,
-  ASYNC_NOTIFY                   = 1 << 3,
+enum class DecoderFlags : uint8_t {
+  FIRST_FRAME_ONLY = 1 << 0,
+  IS_REDECODE = 1 << 1,
+  IMAGE_IS_TRANSIENT = 1 << 2,
+  ASYNC_NOTIFY = 1 << 3,
 
   
 
@@ -31,7 +30,7 @@ enum class DecoderFlags : uint8_t
 
 
 
-  CANNOT_SUBSTITUTE              = 1 << 4,
+  CANNOT_SUBSTITUTE = 1 << 4,
 
   
 
@@ -39,20 +38,16 @@ enum class DecoderFlags : uint8_t
 
 
 
-  BLEND_ANIMATION                = 1 << 5
+  BLEND_ANIMATION = 1 << 5
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(DecoderFlags)
 
 
 
 
-inline DecoderFlags
-DefaultDecoderFlags()
-{
-  return DecoderFlags();
-}
+inline DecoderFlags DefaultDecoderFlags() { return DecoderFlags(); }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

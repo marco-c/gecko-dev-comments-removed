@@ -5,21 +5,21 @@
 
 
 #include "SharedRGBImage.h"
-#include "ImageTypes.h"                 
-#include "Shmem.h"                      
-#include "gfx2DGlue.h"                  
-#include "gfxPlatform.h"                
-#include "mozilla/gfx/Point.h"          
+#include "ImageTypes.h"         
+#include "Shmem.h"              
+#include "gfx2DGlue.h"          
+#include "gfxPlatform.h"        
+#include "mozilla/gfx/Point.h"  
 #include "mozilla/layers/BufferTexture.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
-#include "mozilla/layers/ImageClient.h"  
-#include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/layers/TextureClient.h"  
-#include "mozilla/layers/ImageBridgeChild.h"  
-#include "mozilla/mozalloc.h"           
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
-#include "nsRect.h"                     
+#include "mozilla/layers/ImageClient.h"        
+#include "mozilla/layers/LayersSurfaces.h"     
+#include "mozilla/layers/TextureClient.h"      
+#include "mozilla/layers/ImageBridgeChild.h"   
+#include "mozilla/mozalloc.h"                  
+#include "nsDebug.h"                           
+#include "nsISupportsImpl.h"                   
+#include "nsRect.h"                            
 
 
 #define MAX_FRAME_SIZE (16 * 1024 * 1024)
@@ -27,14 +27,12 @@
 namespace mozilla {
 namespace layers {
 
-already_AddRefed<Image>
-CreateSharedRGBImage(ImageContainer *aImageContainer,
-                     gfx::IntSize aSize,
-                     gfxImageFormat aImageFormat)
-{
+already_AddRefed<Image> CreateSharedRGBImage(ImageContainer* aImageContainer,
+                                             gfx::IntSize aSize,
+                                             gfxImageFormat aImageFormat) {
   NS_ASSERTION(aImageFormat == gfx::SurfaceFormat::A8R8G8B8_UINT32 ||
-               aImageFormat == gfx::SurfaceFormat::X8R8G8B8_UINT32 ||
-               aImageFormat == gfx::SurfaceFormat::R5G6B5_UINT16,
+                   aImageFormat == gfx::SurfaceFormat::X8R8G8B8_UINT32 ||
+                   aImageFormat == gfx::SurfaceFormat::R5G6B5_UINT16,
                "RGB formats supported only");
 
   if (!aImageContainer) {
@@ -47,7 +45,8 @@ CreateSharedRGBImage(ImageContainer *aImageContainer,
     NS_WARNING("Failed to create SharedRGBImage");
     return nullptr;
   }
-  if (!rgbImage->Allocate(aSize, gfx::ImageFormatToSurfaceFormat(aImageFormat))) {
+  if (!rgbImage->Allocate(aSize,
+                          gfx::ImageFormatToSurfaceFormat(aImageFormat))) {
     NS_WARNING("Failed to allocate a shared image");
     return nullptr;
   }
@@ -55,30 +54,20 @@ CreateSharedRGBImage(ImageContainer *aImageContainer,
 }
 
 SharedRGBImage::SharedRGBImage(ImageClient* aCompositable)
-: Image(nullptr, ImageFormat::SHARED_RGB)
-, mCompositable(aCompositable)
-{
+    : Image(nullptr, ImageFormat::SHARED_RGB), mCompositable(aCompositable) {
   MOZ_COUNT_CTOR(SharedRGBImage);
 }
 
-SharedRGBImage::~SharedRGBImage()
-{
-  MOZ_COUNT_DTOR(SharedRGBImage);
-}
+SharedRGBImage::~SharedRGBImage() { MOZ_COUNT_DTOR(SharedRGBImage); }
 
-bool
-SharedRGBImage::Allocate(gfx::IntSize aSize, gfx::SurfaceFormat aFormat)
-{
+bool SharedRGBImage::Allocate(gfx::IntSize aSize, gfx::SurfaceFormat aFormat) {
   mSize = aSize;
-  mTextureClient = mCompositable->CreateBufferTextureClient(aFormat, aSize,
-                                                            gfx::BackendType::NONE,
-                                                            TextureFlags::DEFAULT);
+  mTextureClient = mCompositable->CreateBufferTextureClient(
+      aFormat, aSize, gfx::BackendType::NONE, TextureFlags::DEFAULT);
   return !!mTextureClient;
 }
 
-uint8_t*
-SharedRGBImage::GetBuffer() const
-{
+uint8_t* SharedRGBImage::GetBuffer() const {
   MappedTextureData mapped;
   if (mTextureClient && mTextureClient->BorrowMappedData(mapped)) {
     return mapped.data;
@@ -86,29 +75,19 @@ SharedRGBImage::GetBuffer() const
   return 0;
 }
 
-gfx::IntSize
-SharedRGBImage::GetSize() const
-{
-  return mSize;
-}
+gfx::IntSize SharedRGBImage::GetSize() const { return mSize; }
 
-TextureClient*
-SharedRGBImage::GetTextureClient(KnowsCompositor* aForwarder)
-{
+TextureClient* SharedRGBImage::GetTextureClient(KnowsCompositor* aForwarder) {
   return mTextureClient.get();
 }
 
-static void
-ReleaseTextureClient(void* aData)
-{
+static void ReleaseTextureClient(void* aData) {
   RELEASE_MANUALLY(static_cast<TextureClient*>(aData));
 }
 
 static gfx::UserDataKey sTextureClientKey;
 
-already_AddRefed<gfx::SourceSurface>
-SharedRGBImage::GetAsSourceSurface()
-{
+already_AddRefed<gfx::SourceSurface> SharedRGBImage::GetAsSourceSurface() {
   NS_ASSERTION(NS_IsMainThread(), "Must be main thread");
 
   if (mSourceSurface) {
@@ -123,7 +102,7 @@ SharedRGBImage::GetAsSourceSurface()
     
     
     BufferTextureData* decoded_buffer =
-      mTextureClient->GetInternalData()->AsBufferTextureData();
+        mTextureClient->GetInternalData()->AsBufferTextureData();
     RefPtr<gfx::DrawTarget> drawTarget = decoded_buffer->BorrowDrawTarget();
 
     if (!drawTarget) {
@@ -139,8 +118,10 @@ SharedRGBImage::GetAsSourceSurface()
     
     
     
+    
     if (!surface->GetUserData(&sTextureClientKey)) {
-      surface->AddUserData(&sTextureClientKey, mTextureClient, ReleaseTextureClient);
+      surface->AddUserData(&sTextureClientKey, mTextureClient,
+                           ReleaseTextureClient);
       ADDREF_MANUALLY(mTextureClient);
     }
   }
@@ -149,5 +130,5 @@ SharedRGBImage::GetAsSourceSurface()
   return surface.forget();
 }
 
-} 
-} 
+}  
+}  

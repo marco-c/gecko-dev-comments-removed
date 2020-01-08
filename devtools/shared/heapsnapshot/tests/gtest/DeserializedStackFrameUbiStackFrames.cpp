@@ -16,82 +16,81 @@ using testing::Field;
 using testing::ReturnRef;
 
 
-struct MockDeserializedStackFrame : public DeserializedStackFrame
-{
-  MockDeserializedStackFrame() : DeserializedStackFrame() { }
+struct MockDeserializedStackFrame : public DeserializedStackFrame {
+  MockDeserializedStackFrame() : DeserializedStackFrame() {}
 };
 
 DEF_TEST(DeserializedStackFrameUbiStackFrames, {
-    StackFrameId id = uint64_t(1) << 42;
-    uint32_t line = 1337;
-    uint32_t column = 9; 
-    const char16_t* source = u"my-javascript-file.js";
-    const char16_t* functionDisplayName = u"myFunctionName";
+  StackFrameId id = uint64_t(1) << 42;
+  uint32_t line = 1337;
+  uint32_t column = 9;  
+  const char16_t* source = u"my-javascript-file.js";
+  const char16_t* functionDisplayName = u"myFunctionName";
 
-    MockDeserializedStackFrame mocked;
-    mocked.id = id;
-    mocked.line = line;
-    mocked.column = column;
-    mocked.source = source;
-    mocked.functionDisplayName = functionDisplayName;
+  MockDeserializedStackFrame mocked;
+  mocked.id = id;
+  mocked.line = line;
+  mocked.column = column;
+  mocked.source = source;
+  mocked.functionDisplayName = functionDisplayName;
 
-    DeserializedStackFrame& deserialized = mocked;
-    JS::ubi::StackFrame ubiFrame(&deserialized);
+  DeserializedStackFrame& deserialized = mocked;
+  JS::ubi::StackFrame ubiFrame(&deserialized);
 
-    
+  
 
-    EXPECT_EQ(id, ubiFrame.identifier());
-    EXPECT_EQ(JS::ubi::StackFrame(), ubiFrame.parent());
-    EXPECT_EQ(line, ubiFrame.line());
-    EXPECT_EQ(column, ubiFrame.column());
-    EXPECT_EQ(JS::ubi::AtomOrTwoByteChars(source), ubiFrame.source());
-    EXPECT_EQ(JS::ubi::AtomOrTwoByteChars(functionDisplayName),
-              ubiFrame.functionDisplayName());
-    EXPECT_FALSE(ubiFrame.isSelfHosted(cx));
-    EXPECT_FALSE(ubiFrame.isSystem());
+  EXPECT_EQ(id, ubiFrame.identifier());
+  EXPECT_EQ(JS::ubi::StackFrame(), ubiFrame.parent());
+  EXPECT_EQ(line, ubiFrame.line());
+  EXPECT_EQ(column, ubiFrame.column());
+  EXPECT_EQ(JS::ubi::AtomOrTwoByteChars(source), ubiFrame.source());
+  EXPECT_EQ(JS::ubi::AtomOrTwoByteChars(functionDisplayName),
+            ubiFrame.functionDisplayName());
+  EXPECT_FALSE(ubiFrame.isSelfHosted(cx));
+  EXPECT_FALSE(ubiFrame.isSystem());
 
-    JS::RootedObject savedFrame(cx);
-    EXPECT_TRUE(ubiFrame.constructSavedFrameStack(cx, &savedFrame));
+  JS::RootedObject savedFrame(cx);
+  EXPECT_TRUE(ubiFrame.constructSavedFrameStack(cx, &savedFrame));
 
-    JSPrincipals* principals = JS::GetRealmPrincipals(js::GetContextRealm(cx));
+  JSPrincipals* principals = JS::GetRealmPrincipals(js::GetContextRealm(cx));
 
-    uint32_t frameLine;
-    ASSERT_EQ(JS::SavedFrameResult::Ok,
-              JS::GetSavedFrameLine(cx, principals, savedFrame, &frameLine));
-    EXPECT_EQ(line, frameLine);
+  uint32_t frameLine;
+  ASSERT_EQ(JS::SavedFrameResult::Ok,
+            JS::GetSavedFrameLine(cx, principals, savedFrame, &frameLine));
+  EXPECT_EQ(line, frameLine);
 
-    uint32_t frameColumn;
-    ASSERT_EQ(JS::SavedFrameResult::Ok,
-              JS::GetSavedFrameColumn(cx, principals, savedFrame, &frameColumn));
-    EXPECT_EQ(column, frameColumn);
+  uint32_t frameColumn;
+  ASSERT_EQ(JS::SavedFrameResult::Ok,
+            JS::GetSavedFrameColumn(cx, principals, savedFrame, &frameColumn));
+  EXPECT_EQ(column, frameColumn);
 
-    JS::RootedObject parent(cx);
-    ASSERT_EQ(JS::SavedFrameResult::Ok,
-              JS::GetSavedFrameParent(cx, principals, savedFrame, &parent));
-    EXPECT_EQ(nullptr, parent);
+  JS::RootedObject parent(cx);
+  ASSERT_EQ(JS::SavedFrameResult::Ok,
+            JS::GetSavedFrameParent(cx, principals, savedFrame, &parent));
+  EXPECT_EQ(nullptr, parent);
 
-    ASSERT_EQ(NS_strlen(source), 21U);
-    char16_t sourceBuf[21] = {};
+  ASSERT_EQ(NS_strlen(source), 21U);
+  char16_t sourceBuf[21] = {};
 
-    
-    auto written = ubiFrame.source(RangedPtr<char16_t>(sourceBuf), 3);
-    EXPECT_EQ(written, 3U);
-    for (size_t i = 0; i < 3; i++) {
-      EXPECT_EQ(sourceBuf[i], source[i]);
-    }
+  
+  auto written = ubiFrame.source(RangedPtr<char16_t>(sourceBuf), 3);
+  EXPECT_EQ(written, 3U);
+  for (size_t i = 0; i < 3; i++) {
+    EXPECT_EQ(sourceBuf[i], source[i]);
+  }
 
-    written = ubiFrame.source(RangedPtr<char16_t>(sourceBuf), 21);
-    EXPECT_EQ(written, 21U);
-    for (size_t i = 0; i < 21; i++) {
-      EXPECT_EQ(sourceBuf[i], source[i]);
-    }
+  written = ubiFrame.source(RangedPtr<char16_t>(sourceBuf), 21);
+  EXPECT_EQ(written, 21U);
+  for (size_t i = 0; i < 21; i++) {
+    EXPECT_EQ(sourceBuf[i], source[i]);
+  }
 
-    ASSERT_EQ(NS_strlen(functionDisplayName), 14U);
-    char16_t nameBuf[14] = {};
+  ASSERT_EQ(NS_strlen(functionDisplayName), 14U);
+  char16_t nameBuf[14] = {};
 
-    written = ubiFrame.functionDisplayName(RangedPtr<char16_t>(nameBuf), 14);
-    EXPECT_EQ(written, 14U);
-    for (size_t i = 0; i < 14; i++) {
-      EXPECT_EQ(nameBuf[i], functionDisplayName[i]);
-    }
+  written = ubiFrame.functionDisplayName(RangedPtr<char16_t>(nameBuf), 14);
+  EXPECT_EQ(written, 14U);
+  for (size_t i = 0; i < 14; i++) {
+    EXPECT_EQ(nameBuf[i], functionDisplayName[i]);
+  }
 });

@@ -16,8 +16,8 @@ class nsIContent;
 namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
-} 
-} 
+}  
+}  
 
 
 
@@ -28,9 +28,8 @@ class SVGAnimationElement;
 
 
 
-class nsISMILAttr
-{
-public:
+class nsISMILAttr {
+ public:
   
 
 
@@ -50,10 +49,10 @@ public:
 
 
 
-  virtual nsresult ValueFromString(const nsAString& aStr,
-                                   const mozilla::dom::SVGAnimationElement* aSrcElement,
-                                   nsSMILValue& aValue,
-                                   bool& aPreventCachingOfSandwich) const = 0;
+  virtual nsresult ValueFromString(
+      const nsAString& aStr,
+      const mozilla::dom::SVGAnimationElement* aSrcElement, nsSMILValue& aValue,
+      bool& aPreventCachingOfSandwich) const = 0;
 
   
 
@@ -95,4 +94,4 @@ public:
   virtual ~nsISMILAttr() {}
 };
 
-#endif 
+#endif  

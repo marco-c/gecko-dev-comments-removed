@@ -17,19 +17,18 @@ namespace dom {
 
 class WorkerPrivate;
 
-class CSPEvalChecker final
-{
-public:
-  static nsresult
-  CheckForWindow(JSContext* aCx, nsGlobalWindowInner* aWindow,
-                 const nsAString& aExpression, bool* aAllowEval);
+class CSPEvalChecker final {
+ public:
+  static nsresult CheckForWindow(JSContext* aCx, nsGlobalWindowInner* aWindow,
+                                 const nsAString& aExpression,
+                                 bool* aAllowEval);
 
-  static nsresult
-  CheckForWorker(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-                 const nsAString& aExpression, bool* aAllowEval);
+  static nsresult CheckForWorker(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
+                                 const nsAString& aExpression,
+                                 bool* aAllowEval);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

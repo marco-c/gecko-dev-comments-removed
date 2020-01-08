@@ -1,64 +1,66 @@
 #define ANNOTATE(property) __attribute__((annotate(property)))
 
-struct Cell { int f; } ANNOTATE("GC Thing");
+struct Cell {
+  int f;
+} ANNOTATE("GC Thing");
 
 class AutoSuppressGC_Base {
-  public:
-    AutoSuppressGC_Base() {}
-    ~AutoSuppressGC_Base() {}
+ public:
+  AutoSuppressGC_Base() {}
+  ~AutoSuppressGC_Base() {}
 } ANNOTATE("Suppress GC");
 
 class AutoSuppressGC_Child : public AutoSuppressGC_Base {
-  public:
-    AutoSuppressGC_Child() : AutoSuppressGC_Base() {}
+ public:
+  AutoSuppressGC_Child() : AutoSuppressGC_Base() {}
 };
 
 class AutoSuppressGC {
-    AutoSuppressGC_Child helpImBeingSuppressed;
+  AutoSuppressGC_Child helpImBeingSuppressed;
 
-  public:
-    AutoSuppressGC() {}
+ public:
+  AutoSuppressGC() {}
 };
 
 extern void GC() ANNOTATE("GC Call");
 
-void GC()
-{
-    
-    asm("");
+void GC() {
+  
+  
+  asm("");
 }
 
 extern void foo(Cell*);
 
 void suppressedFunction() {
-    GC(); 
+  GC();  
 }
 
 void halfSuppressedFunction() {
-    GC(); 
+  GC();  
 }
 
 void unsuppressedFunction() {
-    GC(); 
+  GC();  
 }
 
 void f() {
-    Cell* cell1 = nullptr;
-    Cell* cell2 = nullptr;
-    Cell* cell3 = nullptr;
-    {
-        AutoSuppressGC nogc;
-        suppressedFunction();
-        halfSuppressedFunction();
-    }
-    foo(cell1);
+  Cell* cell1 = nullptr;
+  Cell* cell2 = nullptr;
+  Cell* cell3 = nullptr;
+  {
+    AutoSuppressGC nogc;
+    suppressedFunction();
     halfSuppressedFunction();
-    foo(cell2);
-    unsuppressedFunction();
-    {
-        
-        
-        AutoSuppressGC nogc;
-    }
-    foo(cell3);
+  }
+  foo(cell1);
+  halfSuppressedFunction();
+  foo(cell2);
+  unsuppressedFunction();
+  {
+    
+    
+    AutoSuppressGC nogc;
+  }
+  foo(cell3);
 }

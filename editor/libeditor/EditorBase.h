@@ -6,36 +6,36 @@
 #ifndef mozilla_EditorBase_h
 #define mozilla_EditorBase_h
 
-#include "mozilla/Assertions.h"         
-#include "mozilla/EditAction.h"         
-#include "mozilla/EditorDOMPoint.h"     
-#include "mozilla/Maybe.h"              
-#include "mozilla/OwningNonNull.h"      
-#include "mozilla/PresShell.h"          
-#include "mozilla/RangeBoundary.h"      
-#include "mozilla/SelectionState.h"     
-#include "mozilla/StyleSheet.h"         
-#include "mozilla/TransactionManager.h" 
-#include "mozilla/WeakPtr.h"            
+#include "mozilla/Assertions.h"          
+#include "mozilla/EditAction.h"          
+#include "mozilla/EditorDOMPoint.h"      
+#include "mozilla/Maybe.h"               
+#include "mozilla/OwningNonNull.h"       
+#include "mozilla/PresShell.h"           
+#include "mozilla/RangeBoundary.h"       
+#include "mozilla/SelectionState.h"      
+#include "mozilla/StyleSheet.h"          
+#include "mozilla/TransactionManager.h"  
+#include "mozilla/WeakPtr.h"             
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Text.h"
-#include "nsCOMPtr.h"                   
+#include "nsCOMPtr.h"  
 #include "nsCycleCollectionParticipant.h"
 #include "nsGkAtoms.h"
-#include "nsIDocument.h"                
-#include "nsIContentInlines.h"          
-#include "nsIEditor.h"                  
-#include "nsIObserver.h"                
-#include "nsIPlaintextEditor.h"         
-#include "nsISelectionController.h"     
-#include "nsISelectionListener.h"       
-#include "nsISupportsImpl.h"            
-#include "nsIWeakReferenceUtils.h"      
-#include "nsLiteralString.h"            
-#include "nsString.h"                   
-#include "nsTArray.h"                   
-#include "nsWeakReference.h"            
-#include "nscore.h"                     
+#include "nsIDocument.h"             
+#include "nsIContentInlines.h"       
+#include "nsIEditor.h"               
+#include "nsIObserver.h"             
+#include "nsIPlaintextEditor.h"      
+#include "nsISelectionController.h"  
+#include "nsISelectionListener.h"    
+#include "nsISupportsImpl.h"         
+#include "nsIWeakReferenceUtils.h"   
+#include "nsLiteralString.h"         
+#include "nsString.h"                
+#include "nsTArray.h"                
+#include "nsWeakReference.h"         
+#include "nscore.h"                  
 
 class mozInlineSpellChecker;
 class nsAtom;
@@ -91,11 +91,11 @@ class DragEvent;
 class Element;
 class EventTarget;
 class Text;
-} 
+}  
 
 namespace widget {
 struct IMEState;
-} 
+}  
 
 
 
@@ -104,45 +104,35 @@ struct IMEState;
 
 
 
-template<class T, class Base = nsISupports>
-class CachedWeakPtr final
-{
-public:
-  CachedWeakPtr<T, Base>()
-    : mCache(nullptr)
-  {
-  }
-  explicit CachedWeakPtr<T, Base>(T* aObject)
-  {
+template <class T, class Base = nsISupports>
+class CachedWeakPtr final {
+ public:
+  CachedWeakPtr<T, Base>() : mCache(nullptr) {}
+  explicit CachedWeakPtr<T, Base>(T* aObject) {
     mWeakPtr = do_GetWeakReference(static_cast<Base*>(aObject));
     mCache = aObject;
   }
-  explicit CachedWeakPtr<T, Base>(const nsCOMPtr<T>& aOther)
-  {
+  explicit CachedWeakPtr<T, Base>(const nsCOMPtr<T>& aOther) {
     mWeakPtr = do_GetWeakReference(static_cast<Base*>(aOther.get()));
     mCache = aOther;
   }
-  explicit CachedWeakPtr<T, Base>(already_AddRefed<T>& aOther)
-  {
+  explicit CachedWeakPtr<T, Base>(already_AddRefed<T>& aOther) {
     RefPtr<T> other = aOther;
     mWeakPtr = do_GetWeakReference(static_cast<Base*>(other.get()));
     mCache = other;
   }
 
-  CachedWeakPtr<T, Base>& operator=(T* aObject)
-  {
+  CachedWeakPtr<T, Base>& operator=(T* aObject) {
     mWeakPtr = do_GetWeakReference(static_cast<Base*>(aObject));
     mCache = aObject;
     return *this;
   }
-  CachedWeakPtr<T, Base>& operator=(const nsCOMPtr<T>& aOther)
-  {
+  CachedWeakPtr<T, Base>& operator=(const nsCOMPtr<T>& aOther) {
     mWeakPtr = do_GetWeakReference(static_cast<Base*>(aOther.get()));
     mCache = aOther;
     return *this;
   }
-  CachedWeakPtr<T, Base>& operator=(already_AddRefed<T>& aOther)
-  {
+  CachedWeakPtr<T, Base>& operator=(already_AddRefed<T>& aOther) {
     RefPtr<T> other = aOther;
     mWeakPtr = do_GetWeakReference(static_cast<Base*>(other.get()));
     mCache = other;
@@ -153,15 +143,14 @@ public:
 
   explicit operator bool() const { return mWeakPtr; }
   operator T*() const { return get(); }
-  T* get() const
-  {
+  T* get() const {
     if (mCache && !mWeakPtr->IsAlive()) {
       const_cast<CachedWeakPtr<T, Base>*>(this)->mCache = nullptr;
     }
     return mCache;
   }
 
-private:
+ private:
   nsWeakPtr mWeakPtr;
   T* MOZ_NON_OWNING_REF mCache;
 };
@@ -173,8 +162,7 @@ private:
 
 
 
-enum class SplitAtEdges
-{
+enum class SplitAtEdges {
   
   
   
@@ -193,11 +181,10 @@ enum class SplitAtEdges
 
 
 
-class EditorBase : public nsIEditor
-                 , public nsISelectionListener
-                 , public nsSupportsWeakReference
-{
-public:
+class EditorBase : public nsIEditor,
+                   public nsISelectionListener,
+                   public nsSupportsWeakReference {
+ public:
   
 
 
@@ -238,10 +225,8 @@ public:
 
 
 
-  virtual nsresult Init(nsIDocument& doc,
-                        Element* aRoot,
-                        nsISelectionController* aSelCon,
-                        uint32_t aFlags,
+  virtual nsresult Init(nsIDocument& doc, Element* aRoot,
+                        nsISelectionController* aSelCon, uint32_t aFlags,
                         const nsAString& aInitialValue);
 
   
@@ -264,20 +249,17 @@ public:
 
   nsIDocument* GetDocument() const { return mDocument; }
 
-  nsIPresShell* GetPresShell() const
-  {
+  nsIPresShell* GetPresShell() const {
     return mDocument ? mDocument->GetShell() : nullptr;
   }
-  nsPresContext* GetPresContext() const
-  {
+  nsPresContext* GetPresContext() const {
     nsIPresShell* presShell = GetPresShell();
     return presShell ? presShell->GetPresContext() : nullptr;
   }
 
   already_AddRefed<nsIWidget> GetWidget();
 
-  nsISelectionController* GetSelectionController() const
-  {
+  nsISelectionController* GetSelectionController() const {
     if (mSelectionController) {
       return mSelectionController;
     }
@@ -295,9 +277,8 @@ public:
   nsresult GetSelection(SelectionType aSelectionType,
                         Selection** aSelection) const;
 
-  Selection* GetSelection(SelectionType aSelectionType =
-                                          SelectionType::eNormal) const
-  {
+  Selection* GetSelection(
+      SelectionType aSelectionType = SelectionType::eNormal) const {
     if (aSelectionType == SelectionType::eNormal &&
         IsEditActionDataAvailable()) {
       return SelectionRefPtr().get();
@@ -361,8 +342,7 @@ public:
 
 
 
-  enum class TextDirection
-  {
+  enum class TextDirection {
     eLTR,
     eRTL,
   };
@@ -385,29 +365,26 @@ public:
   
 
 
-  size_t NumberOfUndoItems() const
-  {
+  size_t NumberOfUndoItems() const {
     return mTransactionManager ? mTransactionManager->NumberOfUndoItems() : 0;
   }
-  size_t NumberOfRedoItems() const
-  {
+  size_t NumberOfRedoItems() const {
     return mTransactionManager ? mTransactionManager->NumberOfRedoItems() : 0;
   }
 
   
 
 
-  int32_t NumberOfMaximumTransactions() const
-  {
-    return mTransactionManager ?
-             mTransactionManager->NumberOfMaximumTransactions() : 0;
+  int32_t NumberOfMaximumTransactions() const {
+    return mTransactionManager
+               ? mTransactionManager->NumberOfMaximumTransactions()
+               : 0;
   }
 
   
 
 
-  bool IsUndoRedoEnabled() const
-  {
+  bool IsUndoRedoEnabled() const {
     return mTransactionManager &&
            mTransactionManager->NumberOfMaximumTransactions();
   }
@@ -415,12 +392,10 @@ public:
   
 
 
-  bool CanUndo() const
-  {
+  bool CanUndo() const {
     return IsUndoRedoEnabled() && NumberOfUndoItems() > 0;
   }
-  bool CanRedo() const
-  {
+  bool CanRedo() const {
     return IsUndoRedoEnabled() && NumberOfRedoItems() > 0;
   }
 
@@ -428,22 +403,19 @@ public:
 
 
 
-  bool EnableUndoRedo(int32_t aMaxTransactionCount = -1)
-  {
+  bool EnableUndoRedo(int32_t aMaxTransactionCount = -1) {
     if (!mTransactionManager) {
       mTransactionManager = new TransactionManager();
     }
     return mTransactionManager->EnableUndoRedo(aMaxTransactionCount);
   }
-  bool DisableUndoRedo()
-  {
+  bool DisableUndoRedo() {
     if (!mTransactionManager) {
       return true;
     }
     return mTransactionManager->DisableUndoRedo();
   }
-  bool ClearUndoRedo()
-  {
+  bool ClearUndoRedo() {
     if (!mTransactionManager) {
       return true;
     }
@@ -456,15 +428,13 @@ public:
 
 
 
-  bool AddTransactionListener(nsITransactionListener& aListener)
-  {
+  bool AddTransactionListener(nsITransactionListener& aListener) {
     if (!mTransactionManager) {
       return false;
     }
     return mTransactionManager->AddTransactionListener(aListener);
   }
-  bool RemoveTransactionListener(nsITransactionListener& aListener)
-  {
+  bool RemoveTransactionListener(nsITransactionListener& aListener) {
     if (!mTransactionManager) {
       return false;
     }
@@ -480,26 +450,23 @@ public:
 
   uint32_t Flags() const { return mFlags; }
 
-  nsresult AddFlags(uint32_t aFlags)
-  {
+  nsresult AddFlags(uint32_t aFlags) {
     const uint32_t kOldFlags = Flags();
     const uint32_t kNewFlags = (kOldFlags | aFlags);
     if (kNewFlags == kOldFlags) {
       return NS_OK;
     }
-    return SetFlags(kNewFlags); 
+    return SetFlags(kNewFlags);  
   }
-  nsresult RemoveFlags(uint32_t aFlags)
-  {
+  nsresult RemoveFlags(uint32_t aFlags) {
     const uint32_t kOldFlags = Flags();
     const uint32_t kNewFlags = (kOldFlags & ~aFlags);
     if (kNewFlags == kOldFlags) {
       return NS_OK;
     }
-    return SetFlags(kNewFlags); 
+    return SetFlags(kNewFlags);  
   }
-  nsresult AddAndRemoveFlags(uint32_t aAddingFlags, uint32_t aRemovingFlags)
-  {
+  nsresult AddAndRemoveFlags(uint32_t aAddingFlags, uint32_t aRemovingFlags) {
     MOZ_ASSERT(!(aAddingFlags & aRemovingFlags),
                "Same flags are specified both adding and removing");
     const uint32_t kOldFlags = Flags();
@@ -507,100 +474,78 @@ public:
     if (kNewFlags == kOldFlags) {
       return NS_OK;
     }
-    return SetFlags(kNewFlags); 
+    return SetFlags(kNewFlags);  
   }
 
-  bool IsPlaintextEditor() const
-  {
+  bool IsPlaintextEditor() const {
     return (mFlags & nsIPlaintextEditor::eEditorPlaintextMask) != 0;
   }
 
-  bool IsSingleLineEditor() const
-  {
+  bool IsSingleLineEditor() const {
     return (mFlags & nsIPlaintextEditor::eEditorSingleLineMask) != 0;
   }
 
-  bool IsPasswordEditor() const
-  {
+  bool IsPasswordEditor() const {
     return (mFlags & nsIPlaintextEditor::eEditorPasswordMask) != 0;
   }
 
   
   
-  bool IsRightToLeft() const
-  {
+  bool IsRightToLeft() const {
     return (mFlags & nsIPlaintextEditor::eEditorRightToLeft) != 0;
   }
-  bool IsLeftToRight() const
-  {
+  bool IsLeftToRight() const {
     return (mFlags & nsIPlaintextEditor::eEditorLeftToRight) != 0;
   }
 
-  bool IsReadonly() const
-  {
+  bool IsReadonly() const {
     return (mFlags & nsIPlaintextEditor::eEditorReadonlyMask) != 0;
   }
 
-  bool IsDisabled() const
-  {
+  bool IsDisabled() const {
     return (mFlags & nsIPlaintextEditor::eEditorDisabledMask) != 0;
   }
 
-  bool IsInputFiltered() const
-  {
+  bool IsInputFiltered() const {
     return (mFlags & nsIPlaintextEditor::eEditorFilterInputMask) != 0;
   }
 
-  bool IsMailEditor() const
-  {
+  bool IsMailEditor() const {
     return (mFlags & nsIPlaintextEditor::eEditorMailMask) != 0;
   }
 
-  bool IsWrapHackEnabled() const
-  {
+  bool IsWrapHackEnabled() const {
     return (mFlags & nsIPlaintextEditor::eEditorEnableWrapHackMask) != 0;
   }
 
-  bool IsFormWidget() const
-  {
+  bool IsFormWidget() const {
     return (mFlags & nsIPlaintextEditor::eEditorWidgetMask) != 0;
   }
 
-  bool NoCSS() const
-  {
+  bool NoCSS() const {
     return (mFlags & nsIPlaintextEditor::eEditorNoCSSMask) != 0;
   }
 
-  bool IsInteractionAllowed() const
-  {
+  bool IsInteractionAllowed() const {
     return (mFlags & nsIPlaintextEditor::eEditorAllowInteraction) != 0;
   }
 
-  bool DontEchoPassword() const
-  {
+  bool DontEchoPassword() const {
     return (mFlags & nsIPlaintextEditor::eEditorDontEchoPassword) != 0;
   }
 
-  bool ShouldSkipSpellCheck() const
-  {
+  bool ShouldSkipSpellCheck() const {
     return (mFlags & nsIPlaintextEditor::eEditorSkipSpellCheck) != 0;
   }
 
-  bool IsTabbable() const
-  {
+  bool IsTabbable() const {
     return IsSingleLineEditor() || IsPasswordEditor() || IsFormWidget() ||
            IsInteractionAllowed();
   }
 
-  bool HasIndependentSelection() const
-  {
-    return !!mSelectionController;
-  }
+  bool HasIndependentSelection() const { return !!mSelectionController; }
 
-  bool IsModifiable() const
-  {
-    return !IsReadonly();
-  }
+  bool IsModifiable() const { return !IsReadonly(); }
 
   
 
@@ -612,8 +557,7 @@ public:
 
 
 
-  void SuppressDispatchingInputEvent(bool aSuppress)
-  {
+  void SuppressDispatchingInputEvent(bool aSuppress) {
     mDispatchInputEvent = !aSuppress;
   }
 
@@ -621,8 +565,7 @@ public:
 
 
 
-  bool IsSuppressingDispatchingInputEvent() const
-  {
+  bool IsSuppressingDispatchingInputEvent() const {
     return !mDispatchInputEvent;
   }
 
@@ -630,8 +573,7 @@ public:
 
 
 
-  bool OutputsMozDirty() const
-  {
+  bool OutputsMozDirty() const {
     
     
     return !IsInteractionAllowed() || IsMailEditor();
@@ -678,44 +620,36 @@ public:
 
   void SyncRealTimeSpell();
 
- 
-
-
-
-
-
- void ReinitializeSelection(Element& aElement);
-
-protected: 
   
 
 
 
 
 
-  class MOZ_STACK_CLASS AutoEditActionDataSetter final
-  {
-  public:
+  void ReinitializeSelection(Element& aElement);
+
+ protected:  
+  
+
+
+
+
+
+  class MOZ_STACK_CLASS AutoEditActionDataSetter final {
+   public:
     AutoEditActionDataSetter(const EditorBase& aEditorBase,
                              EditAction aEditAction);
     ~AutoEditActionDataSetter();
 
-    void UpdateEditAction(EditAction aEditAction)
-    {
-      mEditAction = aEditAction;
-    }
+    void UpdateEditAction(EditAction aEditAction) { mEditAction = aEditAction; }
 
-    bool CanHandle() const
-    {
-      return mSelection && mEditorBase.IsInitialized();
-    }
+    bool CanHandle() const { return mSelection && mEditorBase.IsInitialized(); }
 
     const RefPtr<Selection>& SelectionRefPtr() const { return mSelection; }
     EditAction GetEditAction() const { return mEditAction; }
 
     void SetTopLevelEditSubAction(EditSubAction aEditSubAction,
-                                  EDirection aDirection = eNone)
-    {
+                                  EDirection aDirection = eNone) {
       mTopLevelEditSubAction = aEditSubAction;
       switch (mTopLevelEditSubAction) {
         case EditSubAction::eInsertNode:
@@ -775,35 +709,29 @@ protected:
           break;
       }
     }
-    EditSubAction GetTopLevelEditSubAction() const
-    {
+    EditSubAction GetTopLevelEditSubAction() const {
       MOZ_ASSERT(CanHandle());
       return mTopLevelEditSubAction;
     }
-    EDirection GetDirectionOfTopLevelEditSubAction() const
-    {
+    EDirection GetDirectionOfTopLevelEditSubAction() const {
       return mDirectionOfTopLevelEditSubAction;
     }
 
-    SelectionState& SavedSelectionRef()
-    {
+    SelectionState& SavedSelectionRef() {
       return mParentData ? mParentData->SavedSelectionRef() : mSavedSelection;
     }
-    const SelectionState& SavedSelectionRef() const
-    {
+    const SelectionState& SavedSelectionRef() const {
       return mParentData ? mParentData->SavedSelectionRef() : mSavedSelection;
     }
 
-    RangeUpdater& RangeUpdaterRef()
-    {
+    RangeUpdater& RangeUpdaterRef() {
       return mParentData ? mParentData->RangeUpdaterRef() : mRangeUpdater;
     }
-    const RangeUpdater& RangeUpdaterRef() const
-    {
+    const RangeUpdater& RangeUpdaterRef() const {
       return mParentData ? mParentData->RangeUpdaterRef() : mRangeUpdater;
     }
 
-  private:
+   private:
     EditorBase& mEditorBase;
     RefPtr<Selection> mSelection;
     
@@ -825,7 +753,7 @@ protected:
     AutoEditActionDataSetter(const AutoEditActionDataSetter& aOther) = delete;
   };
 
-protected: 
+ protected:  
   
 
 
@@ -835,8 +763,7 @@ protected:
 
 
 
-  bool IsEditActionDataAvailable() const
-  {
+  bool IsEditActionDataAvailable() const {
     return mEditActionData && mEditActionData->CanHandle();
   }
 
@@ -848,8 +775,7 @@ protected:
 
 
 
-  const RefPtr<Selection>& SelectionRefPtr() const
-  {
+  const RefPtr<Selection>& SelectionRefPtr() const {
     MOZ_ASSERT(mEditActionData);
     return mEditActionData->SelectionRefPtr();
   }
@@ -858,10 +784,9 @@ protected:
 
 
 
-  EditAction GetEditAction() const
-  {
-    return mEditActionData ? mEditActionData->GetEditAction() :
-                             EditAction::eNone;
+  EditAction GetEditAction() const {
+    return mEditActionData ? mEditActionData->GetEditAction()
+                           : EditAction::eNone;
   }
 
   
@@ -875,44 +800,39 @@ protected:
 
 
 
-  EditSubAction GetTopLevelEditSubAction() const
-  {
-    return mEditActionData ? mEditActionData->GetTopLevelEditSubAction() :
-                             EditSubAction::eNone;
+  EditSubAction GetTopLevelEditSubAction() const {
+    return mEditActionData ? mEditActionData->GetTopLevelEditSubAction()
+                           : EditSubAction::eNone;
   }
 
   
 
 
 
-  EDirection GetDirectionOfTopLevelEditSubAction() const
-  {
-    return mEditActionData ?
-       mEditActionData->GetDirectionOfTopLevelEditSubAction() : eNone;
+  EDirection GetDirectionOfTopLevelEditSubAction() const {
+    return mEditActionData
+               ? mEditActionData->GetDirectionOfTopLevelEditSubAction()
+               : eNone;
   }
 
   
 
 
 
-  SelectionState& SavedSelectionRef()
-  {
+  SelectionState& SavedSelectionRef() {
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->SavedSelectionRef();
   }
-  const SelectionState& SavedSelectionRef() const
-  {
+  const SelectionState& SavedSelectionRef() const {
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->SavedSelectionRef();
   }
 
-  RangeUpdater& RangeUpdaterRef()
-  {
+  RangeUpdater& RangeUpdaterRef() {
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->RangeUpdaterRef();
   }
-  const RangeUpdater& RangeUpdaterRef() const
-  {
+  const RangeUpdater& RangeUpdaterRef() const {
     MOZ_ASSERT(IsEditActionDataAvailable());
     return mEditActionData->RangeUpdaterRef();
   }
@@ -937,12 +857,10 @@ protected:
 
 
 
-  virtual nsresult
-  InsertTextWithTransaction(nsIDocument& aDocument,
-                            const nsAString& aStringToInsert,
-                            const EditorRawDOMPoint& aPointToInsert,
-                            EditorRawDOMPoint* aPointAfterInsertedString =
-                              nullptr);
+  virtual nsresult InsertTextWithTransaction(
+      nsIDocument& aDocument, const nsAString& aStringToInsert,
+      const EditorRawDOMPoint& aPointToInsert,
+      EditorRawDOMPoint* aPointAfterInsertedString = nullptr);
 
   
 
@@ -955,13 +873,11 @@ protected:
 
 
 
-  nsresult
-  InsertTextIntoTextNodeWithTransaction(const nsAString& aStringToInsert,
-                                        Text& aTextNode, int32_t aOffset,
-                                        bool aSuppressIME = false);
+  nsresult InsertTextIntoTextNodeWithTransaction(
+      const nsAString& aStringToInsert, Text& aTextNode, int32_t aOffset,
+      bool aSuppressIME = false);
 
-  nsresult SetTextImpl(const nsAString& aString,
-                       Text& aTextNode);
+  nsresult SetTextImpl(const nsAString& aString, Text& aTextNode);
 
   
 
@@ -981,10 +897,10 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  nsresult
-  InsertNodeWithTransaction(nsIContent& aContentToInsert,
-                            const EditorDOMPointBase<PT, CT>& aPointToInsert);
+  template <typename PT, typename CT>
+  nsresult InsertNodeWithTransaction(
+      nsIContent& aContentToInsert,
+      const EditorDOMPointBase<PT, CT>& aPointToInsert);
 
   
 
@@ -995,13 +911,10 @@ protected:
 
 
 
-  already_AddRefed<Element>
-  ReplaceContainerWithTransaction(Element& aOldContainer,
-                                  nsAtom& aTagName)
-  {
-    return ReplaceContainerWithTransactionInternal(aOldContainer, aTagName,
-                                                   *nsGkAtoms::_empty,
-                                                   EmptyString(), false);
+  already_AddRefed<Element> ReplaceContainerWithTransaction(
+      Element& aOldContainer, nsAtom& aTagName) {
+    return ReplaceContainerWithTransactionInternal(
+        aOldContainer, aTagName, *nsGkAtoms::_empty, EmptyString(), false);
   }
 
   
@@ -1014,13 +927,10 @@ protected:
 
 
 
-  already_AddRefed<Element>
-  ReplaceContainerAndCloneAttributesWithTransaction(Element& aOldContainer,
-                                                    nsAtom& aTagName)
-  {
-    return ReplaceContainerWithTransactionInternal(aOldContainer, aTagName,
-                                                   *nsGkAtoms::_empty,
-                                                   EmptyString(), true);
+  already_AddRefed<Element> ReplaceContainerAndCloneAttributesWithTransaction(
+      Element& aOldContainer, nsAtom& aTagName) {
+    return ReplaceContainerWithTransactionInternal(
+        aOldContainer, aTagName, *nsGkAtoms::_empty, EmptyString(), true);
   }
 
   
@@ -1035,15 +945,11 @@ protected:
 
 
 
-  already_AddRefed<Element>
-  ReplaceContainerWithTransaction(Element& aOldContainer,
-                                  nsAtom& aTagName,
-                                  nsAtom& aAttribute,
-                                  const nsAString& aAttributeValue)
-  {
-    return ReplaceContainerWithTransactionInternal(aOldContainer, aTagName,
-                                                   aAttribute,
-                                                   aAttributeValue, false);
+  already_AddRefed<Element> ReplaceContainerWithTransaction(
+      Element& aOldContainer, nsAtom& aTagName, nsAtom& aAttribute,
+      const nsAString& aAttributeValue) {
+    return ReplaceContainerWithTransactionInternal(
+        aOldContainer, aTagName, aAttribute, aAttributeValue, false);
   }
 
   
@@ -1076,12 +982,10 @@ protected:
 
 
 
-  already_AddRefed<Element>
-  InsertContainerWithTransaction(nsIContent& aContent, nsAtom& aTagName)
-  {
-    return InsertContainerWithTransactionInternal(aContent, aTagName,
-                                                  *nsGkAtoms::_empty,
-                                                  EmptyString());
+  already_AddRefed<Element> InsertContainerWithTransaction(nsIContent& aContent,
+                                                           nsAtom& aTagName) {
+    return InsertContainerWithTransactionInternal(
+        aContent, aTagName, *nsGkAtoms::_empty, EmptyString());
   }
 
   
@@ -1101,11 +1005,9 @@ protected:
 
 
 
-  already_AddRefed<Element>
-  InsertContainerWithTransaction(nsIContent& aContent, nsAtom& aTagName,
-                                 nsAtom& aAttribute,
-                                 const nsAString& aAttributeValue)
-  {
+  already_AddRefed<Element> InsertContainerWithTransaction(
+      nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
+      const nsAString& aAttributeValue) {
     return InsertContainerWithTransactionInternal(aContent, aTagName,
                                                   aAttribute, aAttributeValue);
   }
@@ -1123,10 +1025,10 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  already_AddRefed<nsIContent>
-  SplitNodeWithTransaction(const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
-                           ErrorResult& aResult);
+  template <typename PT, typename CT>
+  already_AddRefed<nsIContent> SplitNodeWithTransaction(
+      const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
+      ErrorResult& aResult);
 
   
 
@@ -1144,10 +1046,9 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  nsresult
-  MoveNodeWithTransaction(nsIContent& aContent,
-                          const EditorDOMPointBase<PT, CT>& aPointToInsert);
+  template <typename PT, typename CT>
+  nsresult MoveNodeWithTransaction(
+      nsIContent& aContent, const EditorDOMPointBase<PT, CT>& aPointToInsert);
 
   
 
@@ -1156,10 +1057,8 @@ protected:
 
 
 
-  nsresult
-  MoveNodeToEndWithTransaction(nsIContent& aContent,
-                               nsINode& aNewContainer)
-  {
+  nsresult MoveNodeToEndWithTransaction(nsIContent& aContent,
+                                        nsINode& aNewContainer) {
     EditorRawDOMPoint pointToInsert;
     pointToInsert.SetToEndOf(&aNewContainer);
     return MoveNodeWithTransaction(aContent, pointToInsert);
@@ -1216,8 +1115,7 @@ protected:
 
 
 
-  void MoveChildren(nsIContent& aFirstChild,
-                    nsIContent& aLastChild,
+  void MoveChildren(nsIContent& aFirstChild, nsIContent& aLastChild,
                     const EditorRawDOMPoint& aPointToInsert,
                     ErrorResult& aError);
 
@@ -1256,8 +1154,7 @@ protected:
 
 
 
-  nsresult SetAttributeWithTransaction(Element& aElement,
-                                       nsAtom& aAttribute,
+  nsresult SetAttributeWithTransaction(Element& aElement, nsAtom& aAttribute,
                                        const nsAString& aValue);
 
   virtual nsresult SetAttributeOrEquivalent(Element* aElement,
@@ -1293,10 +1190,9 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  already_AddRefed<Element>
-  CreateNodeWithTransaction(nsAtom& aTag,
-                            const EditorDOMPointBase<PT, CT>& aPointToInsert);
+  template <typename PT, typename CT>
+  already_AddRefed<Element> CreateNodeWithTransaction(
+      nsAtom& aTag, const EditorDOMPointBase<PT, CT>& aPointToInsert);
 
   
 
@@ -1312,11 +1208,8 @@ protected:
 
 
 
-  already_AddRefed<EditAggregateTransaction>
-    CreateTxnForDeleteSelection(EDirection aAction,
-                                nsINode** aNode,
-                                int32_t* aOffset,
-                                int32_t* aLength);
+  already_AddRefed<EditAggregateTransaction> CreateTxnForDeleteSelection(
+      EDirection aAction, nsINode** aNode, int32_t* aOffset, int32_t* aLength);
 
   
 
@@ -1330,12 +1223,9 @@ protected:
 
 
 
-  already_AddRefed<EditTransactionBase>
-    CreateTxnForDeleteRange(nsRange* aRangeToDelete,
-                            EDirection aAction,
-                            nsINode** aRemovingNode,
-                            int32_t* aOffset,
-                            int32_t* aLength);
+  already_AddRefed<EditTransactionBase> CreateTxnForDeleteRange(
+      nsRange* aRangeToDelete, EDirection aAction, nsINode** aRemovingNode,
+      int32_t* aOffset, int32_t* aLength);
 
   
 
@@ -1363,12 +1253,9 @@ protected:
 
 
 
-  already_AddRefed<Element>
-  ReplaceContainerWithTransactionInternal(Element& aElement,
-                                          nsAtom& aTagName,
-                                          nsAtom& aAttribute,
-                                          const nsAString& aAttributeValue,
-                                          bool aCloneAllAttributes);
+  already_AddRefed<Element> ReplaceContainerWithTransactionInternal(
+      Element& aElement, nsAtom& aTagName, nsAtom& aAttribute,
+      const nsAString& aAttributeValue, bool aCloneAllAttributes);
 
   
 
@@ -1388,11 +1275,9 @@ protected:
 
 
 
-  already_AddRefed<Element>
-  InsertContainerWithTransactionInternal(nsIContent& aContent,
-                                         nsAtom& aTagName,
-                                         nsAtom& aAttribute,
-                                         const nsAString& aAttributeValue);
+  already_AddRefed<Element> InsertContainerWithTransactionInternal(
+      nsIContent& aContent, nsAtom& aTagName, nsAtom& aAttribute,
+      const nsAString& aAttributeValue);
 
   
 
@@ -1414,8 +1299,7 @@ protected:
 
 
   void DoSplitNode(const EditorDOMPoint& aStartOfRightNode,
-                   nsIContent& aNewLeftNode,
-                   ErrorResult& aError);
+                   nsIContent& aNewLeftNode, ErrorResult& aError);
 
   
 
@@ -1429,8 +1313,7 @@ protected:
 
 
 
-  nsresult DoJoinNodes(nsINode* aNodeToKeep,
-                       nsINode* aNodeToJoin,
+  nsresult DoJoinNodes(nsINode* aNodeToKeep, nsINode* aNodeToJoin,
                        nsINode* aParent);
 
   
@@ -1450,12 +1333,11 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  SplitNodeResult
-  SplitNodeDeepWithTransaction(
-    nsIContent& aMostAncestorToSplit,
-    const EditorDOMPointBase<PT, CT>& aDeepestStartOfRightNode,
-    SplitAtEdges aSplitAtEdges);
+  template <typename PT, typename CT>
+  SplitNodeResult SplitNodeDeepWithTransaction(
+      nsIContent& aMostAncestorToSplit,
+      const EditorDOMPointBase<PT, CT>& aDeepestStartOfRightNode,
+      SplitAtEdges aSplitAtEdges);
 
   
 
@@ -1485,53 +1367,40 @@ protected:
   
 
 
-  nsIContent* GetPreviousNode(const EditorRawDOMPoint& aPoint)
-  {
+  nsIContent* GetPreviousNode(const EditorRawDOMPoint& aPoint) {
     return GetPreviousNodeInternal(aPoint, false, true, false);
   }
-  nsIContent* GetPreviousElementOrText(const EditorRawDOMPoint& aPoint)
-  {
+  nsIContent* GetPreviousElementOrText(const EditorRawDOMPoint& aPoint) {
     return GetPreviousNodeInternal(aPoint, false, false, false);
   }
-  nsIContent* GetPreviousEditableNode(const EditorRawDOMPoint& aPoint)
-  {
+  nsIContent* GetPreviousEditableNode(const EditorRawDOMPoint& aPoint) {
     return GetPreviousNodeInternal(aPoint, true, true, false);
   }
-  nsIContent* GetPreviousNodeInBlock(const EditorRawDOMPoint& aPoint)
-  {
+  nsIContent* GetPreviousNodeInBlock(const EditorRawDOMPoint& aPoint) {
     return GetPreviousNodeInternal(aPoint, false, true, true);
   }
-  nsIContent* GetPreviousElementOrTextInBlock(const EditorRawDOMPoint& aPoint)
-  {
+  nsIContent* GetPreviousElementOrTextInBlock(const EditorRawDOMPoint& aPoint) {
     return GetPreviousNodeInternal(aPoint, false, false, true);
   }
-  nsIContent* GetPreviousEditableNodeInBlock(
-                const EditorRawDOMPoint& aPoint)
-  {
+  nsIContent* GetPreviousEditableNodeInBlock(const EditorRawDOMPoint& aPoint) {
     return GetPreviousNodeInternal(aPoint, true, true, true);
   }
-  nsIContent* GetPreviousNode(nsINode& aNode)
-  {
+  nsIContent* GetPreviousNode(nsINode& aNode) {
     return GetPreviousNodeInternal(aNode, false, true, false);
   }
-  nsIContent* GetPreviousElementOrText(nsINode& aNode)
-  {
+  nsIContent* GetPreviousElementOrText(nsINode& aNode) {
     return GetPreviousNodeInternal(aNode, false, false, false);
   }
-  nsIContent* GetPreviousEditableNode(nsINode& aNode)
-  {
+  nsIContent* GetPreviousEditableNode(nsINode& aNode) {
     return GetPreviousNodeInternal(aNode, true, true, false);
   }
-  nsIContent* GetPreviousNodeInBlock(nsINode& aNode)
-  {
+  nsIContent* GetPreviousNodeInBlock(nsINode& aNode) {
     return GetPreviousNodeInternal(aNode, false, true, true);
   }
-  nsIContent* GetPreviousElementOrTextInBlock(nsINode& aNode)
-  {
+  nsIContent* GetPreviousElementOrTextInBlock(nsINode& aNode) {
     return GetPreviousNodeInternal(aNode, false, false, true);
   }
-  nsIContent* GetPreviousEditableNodeInBlock(nsINode& aNode)
-  {
+  nsIContent* GetPreviousEditableNodeInBlock(nsINode& aNode) {
     return GetPreviousNodeInternal(aNode, true, true, true);
   }
 
@@ -1561,60 +1430,48 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  nsIContent* GetNextNode(const EditorDOMPointBase<PT, CT>& aPoint)
-  {
+  template <typename PT, typename CT>
+  nsIContent* GetNextNode(const EditorDOMPointBase<PT, CT>& aPoint) {
     return GetNextNodeInternal(aPoint, false, true, false);
   }
-  template<typename PT, typename CT>
-  nsIContent* GetNextElementOrText(const EditorDOMPointBase<PT, CT>& aPoint)
-  {
+  template <typename PT, typename CT>
+  nsIContent* GetNextElementOrText(const EditorDOMPointBase<PT, CT>& aPoint) {
     return GetNextNodeInternal(aPoint, false, false, false);
   }
-  template<typename PT, typename CT>
-  nsIContent* GetNextEditableNode(const EditorDOMPointBase<PT, CT>& aPoint)
-  {
+  template <typename PT, typename CT>
+  nsIContent* GetNextEditableNode(const EditorDOMPointBase<PT, CT>& aPoint) {
     return GetNextNodeInternal(aPoint, true, true, false);
   }
-  template<typename PT, typename CT>
-  nsIContent* GetNextNodeInBlock(const EditorDOMPointBase<PT, CT>& aPoint)
-  {
+  template <typename PT, typename CT>
+  nsIContent* GetNextNodeInBlock(const EditorDOMPointBase<PT, CT>& aPoint) {
     return GetNextNodeInternal(aPoint, false, true, true);
   }
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   nsIContent* GetNextElementOrTextInBlock(
-                const EditorDOMPointBase<PT, CT>& aPoint)
-  {
+      const EditorDOMPointBase<PT, CT>& aPoint) {
     return GetNextNodeInternal(aPoint, false, false, true);
   }
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   nsIContent* GetNextEditableNodeInBlock(
-                const EditorDOMPointBase<PT, CT>& aPoint)
-  {
+      const EditorDOMPointBase<PT, CT>& aPoint) {
     return GetNextNodeInternal(aPoint, true, true, true);
   }
-  nsIContent* GetNextNode(nsINode& aNode)
-  {
+  nsIContent* GetNextNode(nsINode& aNode) {
     return GetNextNodeInternal(aNode, false, true, false);
   }
-  nsIContent* GetNextElementOrText(nsINode& aNode)
-  {
+  nsIContent* GetNextElementOrText(nsINode& aNode) {
     return GetNextNodeInternal(aNode, false, false, false);
   }
-  nsIContent* GetNextEditableNode(nsINode& aNode)
-  {
+  nsIContent* GetNextEditableNode(nsINode& aNode) {
     return GetNextNodeInternal(aNode, true, true, false);
   }
-  nsIContent* GetNextNodeInBlock(nsINode& aNode)
-  {
+  nsIContent* GetNextNodeInBlock(nsINode& aNode) {
     return GetNextNodeInternal(aNode, false, true, true);
   }
-  nsIContent* GetNextElementOrTextInBlock(nsINode& aNode)
-  {
+  nsIContent* GetNextElementOrTextInBlock(nsINode& aNode) {
     return GetNextNodeInternal(aNode, false, false, true);
   }
-  nsIContent* GetNextEditableNodeInBlock(nsINode& aNode)
-  {
+  nsIContent* GetNextEditableNodeInBlock(nsINode& aNode) {
     return GetNextNodeInternal(aNode, true, true, true);
   }
 
@@ -1629,7 +1486,7 @@ protected:
 
 
 
-  nsIContent* GetLeftmostChild(nsINode *aCurrentNode,
+  nsIContent* GetLeftmostChild(nsINode* aCurrentNode,
                                bool bNoBlockCrossing = false);
 
   
@@ -1660,8 +1517,7 @@ protected:
   
 
 
-  bool IsEditable(nsINode* aNode)
-  {
+  bool IsEditable(nsINode* aNode) {
     if (NS_WARN_IF(!aNode)) {
       return false;
     }
@@ -1689,8 +1545,7 @@ protected:
 
 
 
-  bool IsElementOrText(const nsINode& aNode) const
-  {
+  bool IsElementOrText(const nsINode& aNode) const {
     if (!aNode.IsContent() || IsMozEditorBogusNode(&aNode)) {
       return false;
     }
@@ -1701,12 +1556,11 @@ protected:
   
 
 
-  bool IsMozEditorBogusNode(const nsINode* aNode) const
-  {
+  bool IsMozEditorBogusNode(const nsINode* aNode) const {
     return aNode && aNode->IsElement() &&
-           aNode->AsElement()->AttrValueIs(kNameSpaceID_None,
-               kMOZEditorBogusNodeAttrAtom, kMOZEditorBogusNodeValue,
-               eCaseMatters);
+           aNode->AsElement()->AttrValueIs(
+               kNameSpaceID_None, kMOZEditorBogusNodeAttrAtom,
+               kMOZEditorBogusNodeValue, eCaseMatters);
   }
 
   
@@ -1732,8 +1586,7 @@ protected:
 
   bool AreNodesSameType(nsIContent& aNode1, nsIContent& aNode2) const;
 
-  static bool IsTextNode(nsINode* aNode)
-  {
+  static bool IsTextNode(nsINode* aNode) {
     return aNode->NodeType() == nsINode::TEXT_NODE;
   }
 
@@ -1748,8 +1601,7 @@ protected:
 
 
   static nsIContent* GetNodeAtRangeOffsetPoint(nsINode* aContainer,
-                                               int32_t aOffset)
-  {
+                                               int32_t aOffset) {
     return GetNodeAtRangeOffsetPoint(RawRangeBoundary(aContainer, aOffset));
   }
   static nsIContent* GetNodeAtRangeOffsetPoint(const RawRangeBoundary& aPoint);
@@ -1780,8 +1632,7 @@ protected:
 
 
 
-  inline bool AllowsTransactionsToChangeSelection() const
-  {
+  inline bool AllowsTransactionsToChangeSelection() const {
     return mAllowsTransactionsToChangeSelection;
   }
 
@@ -1790,8 +1641,7 @@ protected:
 
 
 
-  inline void MakeThisAllowTransactionsToChangeSelection(bool aAllow)
-  {
+  inline void MakeThisAllowTransactionsToChangeSelection(bool aAllow) {
     mAllowsTransactionsToChangeSelection = aAllow;
   }
 
@@ -1799,8 +1649,7 @@ protected:
                                   nsINode* previousSelectedNode,
                                   uint32_t previousSelectedOffset,
                                   nsINode* aStartContainer,
-                                  uint32_t aStartOffset,
-                                  nsINode* aEndContainer,
+                                  uint32_t aStartOffset, nsINode* aEndContainer,
                                   uint32_t aEndOffset);
 
   
@@ -1845,8 +1694,7 @@ protected:
 
   void HideCaret(bool aHide);
 
-protected: 
-
+ protected:  
   
 
 
@@ -1856,9 +1704,8 @@ protected:
 
 
 
-  virtual void
-  OnStartToHandleTopLevelEditSubAction(EditSubAction aEditSubAction,
-                                       nsIEditor::EDirection aDirection);
+  virtual void OnStartToHandleTopLevelEditSubAction(
+      EditSubAction aEditSubAction, nsIEditor::EDirection aDirection);
 
   
 
@@ -1902,7 +1749,7 @@ protected:
   void BeginTransactionInternal();
   void EndTransactionInternal();
 
-protected: 
+ protected:  
   
 
 
@@ -1929,7 +1776,7 @@ protected:
   
 
 
-  void DoAfterDoTransaction(nsITransaction *aTxn);
+  void DoAfterDoTransaction(nsITransaction* aTxn);
 
   
 
@@ -1945,14 +1792,13 @@ protected:
   
 
 
-  enum TDocumentListenerNotification
-  {
+  enum TDocumentListenerNotification {
     eDocumentCreated,
     eDocumentToBeDestroyed,
     eDocumentStateChanged
   };
   nsresult NotifyDocumentListeners(
-             TDocumentListenerNotification aNotificationType);
+      TDocumentListenerNotification aNotificationType);
 
   
 
@@ -1975,13 +1821,10 @@ protected:
   
 
 
-  nsIContent* FindNextLeafNode(nsINode* aCurrentNode,
-                               bool aGoForward,
+  nsIContent* FindNextLeafNode(nsINode* aCurrentNode, bool aGoForward,
                                bool bNoBlockCrossing);
-  nsIContent* FindNode(nsINode* aCurrentNode,
-                       bool aGoForward,
-                       bool aEditableNode,
-                       bool aFindAnyDataNode,
+  nsIContent* FindNode(nsINode* aCurrentNode, bool aGoForward,
+                       bool aEditableNode, bool aFindAnyDataNode,
                        bool bNoBlockCrossing);
 
   
@@ -1997,8 +1840,7 @@ protected:
 
 
 
-  nsIContent* GetPreviousNodeInternal(nsINode& aNode,
-                                      bool aFindEditableNode,
+  nsIContent* GetPreviousNodeInternal(nsINode& aNode, bool aFindEditableNode,
                                       bool aFindAnyDataNode,
                                       bool aNoBlockCrossing);
 
@@ -2023,19 +1865,15 @@ protected:
 
 
 
-  nsIContent* GetNextNodeInternal(nsINode& aNode,
-                                  bool aFindEditableNode,
-                                  bool aFindAnyDataNode,
-                                  bool bNoBlockCrossing);
+  nsIContent* GetNextNodeInternal(nsINode& aNode, bool aFindEditableNode,
+                                  bool aFindAnyDataNode, bool bNoBlockCrossing);
 
   
 
 
   nsIContent* GetNextNodeInternal(const EditorRawDOMPoint& aPoint,
-                                  bool aFindEditableNode,
-                                  bool aFindAnyDataNode,
+                                  bool aFindEditableNode, bool aFindAnyDataNode,
                                   bool aNoBlockCrossing);
-
 
   virtual nsresult InstallEventListeners();
   virtual void CreateEventListeners();
@@ -2051,8 +1889,7 @@ protected:
 
   bool GetDesiredSpellCheckState();
 
-  bool CanEnableSpellCheck()
-  {
+  bool CanEnableSpellCheck() {
     
     
     
@@ -2078,8 +1915,7 @@ protected:
 
 
 
-  static int32_t GetChildOffset(nsINode* aChild,
-                                nsINode* aParent);
+  static int32_t GetChildOffset(nsINode* aChild, nsINode* aParent);
 
   
 
@@ -2100,8 +1936,7 @@ protected:
 
   nsresult InitializeSelection(dom::EventTarget* aFocusEventTarget);
 
-  enum NotificationForEditorObservers
-  {
+  enum NotificationForEditorObservers {
     eNotifyEditorObserversOfEnd,
     eNotifyEditorObserversOfBefore,
     eNotifyEditorObserversOfCancel
@@ -2109,12 +1944,11 @@ protected:
   MOZ_CAN_RUN_SCRIPT
   void NotifyEditorObservers(NotificationForEditorObservers aNotification);
 
-private:
+ private:
   nsCOMPtr<nsISelectionController> mSelectionController;
   nsCOMPtr<nsIDocument> mDocument;
 
   AutoEditActionDataSetter* mEditActionData;
-
 
   
 
@@ -2123,27 +1957,22 @@ private:
 
   nsresult SetTextDirectionTo(TextDirection aTextDirection);
 
-protected: 
+ protected:  
   
 
 
-  class MOZ_RAII AutoTransactionBatch final
-  {
-  public:
-    explicit AutoTransactionBatch(EditorBase& aEditorBase
-                                  MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mEditorBase(aEditorBase)
-    {
+  class MOZ_RAII AutoTransactionBatch final {
+   public:
+    explicit AutoTransactionBatch(
+        EditorBase& aEditorBase MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+        : mEditorBase(aEditorBase) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
       mEditorBase->BeginTransactionInternal();
     }
 
-    ~AutoTransactionBatch()
-    {
-      mEditorBase->EndTransactionInternal();
-    }
+    ~AutoTransactionBatch() { mEditorBase->EndTransactionInternal(); }
 
-  protected:
+   protected:
     OwningNonNull<EditorBase> mEditorBase;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   };
@@ -2152,32 +1981,26 @@ protected:
 
 
 
-  class MOZ_RAII AutoPlaceholderBatch final
-  {
-  public:
-    explicit AutoPlaceholderBatch(EditorBase& aEditorBase
-                                  MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mEditorBase(aEditorBase)
-    {
+  class MOZ_RAII AutoPlaceholderBatch final {
+   public:
+    explicit AutoPlaceholderBatch(
+        EditorBase& aEditorBase MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+        : mEditorBase(aEditorBase) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
       mEditorBase->BeginPlaceholderTransaction(nullptr);
     }
 
     AutoPlaceholderBatch(EditorBase& aEditorBase,
                          nsAtom& aTransactionName
-                         MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mEditorBase(aEditorBase)
-    {
+                             MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+        : mEditorBase(aEditorBase) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
       mEditorBase->BeginPlaceholderTransaction(&aTransactionName);
     }
 
-    ~AutoPlaceholderBatch()
-    {
-      mEditorBase->EndPlaceholderTransaction();
-    }
+    ~AutoPlaceholderBatch() { mEditorBase->EndPlaceholderTransaction(); }
 
-  protected:
+   protected:
     OwningNonNull<EditorBase> mEditorBase;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   };
@@ -2186,15 +2009,14 @@ protected:
 
 
 
-  class MOZ_RAII AutoSelectionRestorer final
-  {
-  public:
+  class MOZ_RAII AutoSelectionRestorer final {
+   public:
     
 
 
 
-    explicit AutoSelectionRestorer(EditorBase& aEditorBase
-                                   MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    explicit AutoSelectionRestorer(
+        EditorBase& aEditorBase MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
 
     
 
@@ -2206,7 +2028,7 @@ protected:
 
     void Abort();
 
-  protected:
+   protected:
     EditorBase* mEditorBase;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   };
@@ -2215,16 +2037,12 @@ protected:
 
 
 
-  class MOZ_RAII AutoTopLevelEditSubActionNotifier final
-  {
-  public:
-    AutoTopLevelEditSubActionNotifier(EditorBase& aEditorBase,
-                                      EditSubAction aEditSubAction,
-                                      nsIEditor::EDirection aDirection
-                                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mEditorBase(aEditorBase)
-      , mDoNothing(false)
-    {
+  class MOZ_RAII AutoTopLevelEditSubActionNotifier final {
+   public:
+    AutoTopLevelEditSubActionNotifier(
+        EditorBase& aEditorBase, EditSubAction aEditSubAction,
+        nsIEditor::EDirection aDirection MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+        : mEditorBase(aEditorBase), mDoNothing(false) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
       
       
@@ -2234,18 +2052,17 @@ protected:
         mEditorBase.OnStartToHandleTopLevelEditSubAction(aEditSubAction,
                                                          aDirection);
       } else {
-        mDoNothing = true; 
+        mDoNothing = true;  
       }
     }
 
-    ~AutoTopLevelEditSubActionNotifier()
-    {
+    ~AutoTopLevelEditSubActionNotifier() {
       if (!mDoNothing) {
         mEditorBase.OnEndHandlingTopLevelEditSubAction();
       }
     }
 
-  protected:
+   protected:
     EditorBase& mEditorBase;
     bool mDoNothing;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -2255,26 +2072,23 @@ protected:
 
 
 
-  class MOZ_RAII AutoTransactionsConserveSelection final
-  {
-  public:
-    explicit AutoTransactionsConserveSelection(EditorBase& aEditorBase
-                                               MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mEditorBase(aEditorBase)
-      , mAllowedTransactionsToChangeSelection(
-          aEditorBase.AllowsTransactionsToChangeSelection())
-    {
+  class MOZ_RAII AutoTransactionsConserveSelection final {
+   public:
+    explicit AutoTransactionsConserveSelection(
+        EditorBase& aEditorBase MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+        : mEditorBase(aEditorBase),
+          mAllowedTransactionsToChangeSelection(
+              aEditorBase.AllowsTransactionsToChangeSelection()) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
       mEditorBase.MakeThisAllowTransactionsToChangeSelection(false);
     }
 
-    ~AutoTransactionsConserveSelection()
-    {
+    ~AutoTransactionsConserveSelection() {
       mEditorBase.MakeThisAllowTransactionsToChangeSelection(
-                    mAllowedTransactionsToChangeSelection);
+          mAllowedTransactionsToChangeSelection);
     }
 
-  protected:
+   protected:
     EditorBase& mEditorBase;
     bool mAllowedTransactionsToChangeSelection;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -2283,34 +2097,24 @@ protected:
   
 
 
-  class MOZ_RAII AutoUpdateViewBatch final
-  {
-  public:
-    explicit AutoUpdateViewBatch(EditorBase& aEditorBase
-                                 MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mEditorBase(aEditorBase)
-    {
+  class MOZ_RAII AutoUpdateViewBatch final {
+   public:
+    explicit AutoUpdateViewBatch(
+        EditorBase& aEditorBase MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+        : mEditorBase(aEditorBase) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
       mEditorBase.BeginUpdateViewBatch();
     }
 
-    ~AutoUpdateViewBatch()
-    {
-      mEditorBase.EndUpdateViewBatch();
-    }
+    ~AutoUpdateViewBatch() { mEditorBase.EndUpdateViewBatch(); }
 
-  protected:
+   protected:
     EditorBase& mEditorBase;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   };
 
-protected:
-  enum Tristate
-  {
-    eTriUnset,
-    eTriFalse,
-    eTriTrue
-  };
+ protected:
+  enum Tristate { eTriUnset, eTriFalse, eTriTrue };
 
   
   nsCString mContentMIMEType;
@@ -2345,20 +2149,20 @@ protected:
   
   
   typedef AutoTArray<OwningNonNull<nsIEditActionListener>, 2>
-            AutoActionListenerArray;
+      AutoActionListenerArray;
   AutoActionListenerArray mActionListeners;
   
   
   
   typedef AutoTArray<OwningNonNull<nsIEditorObserver>, 0>
-            AutoEditorObserverArray;
+      AutoEditorObserverArray;
   AutoEditorObserverArray mEditorObservers;
   
   
   
   
   typedef AutoTArray<OwningNonNull<nsIDocumentStateListener>, 1>
-            AutoDocumentStateListenerArray;
+      AutoDocumentStateListenerArray;
   AutoDocumentStateListenerArray mDocStateListeners;
 
   
@@ -2411,18 +2215,14 @@ protected:
   friend class nsIEditor;
 };
 
-} 
+}  
 
-mozilla::EditorBase*
-nsIEditor::AsEditorBase()
-{
+mozilla::EditorBase* nsIEditor::AsEditorBase() {
   return static_cast<mozilla::EditorBase*>(this);
 }
 
-const mozilla::EditorBase*
-nsIEditor::AsEditorBase() const
-{
+const mozilla::EditorBase* nsIEditor::AsEditorBase() const {
   return static_cast<const mozilla::EditorBase*>(this);
 }
 
-#endif 
+#endif  

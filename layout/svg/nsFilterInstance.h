@@ -30,8 +30,8 @@ class nsSVGFilterPaintCallback;
 namespace mozilla {
 namespace dom {
 class UserSpaceMetrics;
-} 
-} 
+}  
+}  
 
 
 
@@ -49,8 +49,7 @@ class UserSpaceMetrics;
 
 
 
-class nsFilterInstance
-{
+class nsFilterInstance {
   typedef mozilla::gfx::IntRect IntRect;
   typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -58,7 +57,8 @@ class nsFilterInstance
   typedef mozilla::gfx::FilterDescription FilterDescription;
   typedef mozilla::dom::UserSpaceMetrics UserSpaceMetrics;
   typedef mozilla::image::imgDrawingParams imgDrawingParams;
-public:
+
+ public:
   
 
 
@@ -72,12 +72,11 @@ public:
 
 
 
-  static FilterDescription GetFilterDescription(nsIContent* aFilteredElement,
-                                                const nsTArray<nsStyleFilter>& aFilterChain,
-                                                bool aFilterInputIsTainted,
-                                                const UserSpaceMetrics& aMetrics,
-                                                const gfxRect& aBBox,
-                                                nsTArray<RefPtr<SourceSurface>>& aOutAdditionalImages);
+  static FilterDescription GetFilterDescription(
+      nsIContent* aFilteredElement, const nsTArray<nsStyleFilter>& aFilterChain,
+      bool aFilterInputIsTainted, const UserSpaceMetrics& aMetrics,
+      const gfxRect& aBBox,
+      nsTArray<RefPtr<SourceSurface>>& aOutAdditionalImages);
 
   
 
@@ -85,9 +84,8 @@ public:
 
 
 
-  static void PaintFilteredFrame(nsIFrame *aFilteredFrame,
-                                 gfxContext* aCtx,
-                                 nsSVGFilterPaintCallback *aPaintCallback,
+  static void PaintFilteredFrame(nsIFrame* aFilteredFrame, gfxContext* aCtx,
+                                 nsSVGFilterPaintCallback* aPaintCallback,
                                  const nsRegion* aDirtyArea,
                                  imgDrawingParams& aImgParams,
                                  float aOpacity = 1.0f);
@@ -98,7 +96,7 @@ public:
 
 
 
-  static nsRegion GetPostFilterDirtyArea(nsIFrame *aFilteredFrame,
+  static nsRegion GetPostFilterDirtyArea(nsIFrame* aFilteredFrame,
                                          const nsRegion& aPreFilterDirtyRegion);
 
   
@@ -107,8 +105,8 @@ public:
 
 
 
-  static nsRegion GetPreFilterNeededArea(nsIFrame *aFilteredFrame,
-                                         const nsRegion& aPostFilterDirtyRegion);
+  static nsRegion GetPreFilterNeededArea(
+      nsIFrame* aFilteredFrame, const nsRegion& aPostFilterDirtyRegion);
 
   
 
@@ -118,20 +116,21 @@ public:
 
 
 
-  static nsRect GetPostFilterBounds(nsIFrame *aFilteredFrame,
-                                    const gfxRect *aOverrideBBox = nullptr,
-                                    const nsRect *aPreFilterBounds = nullptr);
+  static nsRect GetPostFilterBounds(nsIFrame* aFilteredFrame,
+                                    const gfxRect* aOverrideBBox = nullptr,
+                                    const nsRect* aPreFilterBounds = nullptr);
 
   
 
 
-  static bool
-  BuildWebRenderFilters(nsIFrame* aFilteredFrame,
-                        const mozilla::LayoutDeviceIntRect& aPreFilterBounds,
-                        nsTArray<mozilla::wr::WrFilterOp>& aWrFilters,
-                        mozilla::LayoutDeviceIntRect& aPostFilterBounds);
 
-private:
+  static bool BuildWebRenderFilters(
+      nsIFrame* aFilteredFrame,
+      const mozilla::LayoutDeviceIntRect& aPreFilterBounds,
+      nsTArray<mozilla::wr::WrFilterOp>& aWrFilters,
+      mozilla::LayoutDeviceIntRect& aPostFilterBounds);
+
+ private:
   
 
 
@@ -156,17 +155,16 @@ private:
 
 
 
-  nsFilterInstance(nsIFrame *aTargetFrame,
-                   nsIContent* aTargetContent,
+  nsFilterInstance(nsIFrame* aTargetFrame, nsIContent* aTargetContent,
                    const UserSpaceMetrics& aMetrics,
                    const nsTArray<nsStyleFilter>& aFilterChain,
                    bool aFilterInputIsTainted,
-                   nsSVGFilterPaintCallback *aPaintCallback,
+                   nsSVGFilterPaintCallback* aPaintCallback,
                    const gfxMatrix& aPaintTransform,
-                   const nsRegion *aPostFilterDirtyRegion = nullptr,
-                   const nsRegion *aPreFilterDirtyRegion = nullptr,
-                   const nsRect *aOverridePreFilterVisualOverflowRect = nullptr,
-                   const gfxRect *aOverrideBBox = nullptr);
+                   const nsRegion* aPostFilterDirtyRegion = nullptr,
+                   const nsRegion* aPreFilterDirtyRegion = nullptr,
+                   const nsRect* aOverridePreFilterVisualOverflowRect = nullptr,
+                   const gfxRect* aOverrideBBox = nullptr);
 
   
 
@@ -179,10 +177,11 @@ private:
 
 
 
-  void Render(gfxContext* aCtx, imgDrawingParams& aImgParams, float aOpacity = 1.0f);
+  void Render(gfxContext* aCtx, imgDrawingParams& aImgParams,
+              float aOpacity = 1.0f);
 
-  const FilterDescription& ExtractDescriptionAndAdditionalImages(nsTArray<RefPtr<SourceSurface>>& aOutAdditionalImages)
-  {
+  const FilterDescription& ExtractDescriptionAndAdditionalImages(
+      nsTArray<RefPtr<SourceSurface>>& aOutAdditionalImages) {
     mInputImages.SwapElements(aOutAdditionalImages);
     return mFilterDescription;
   }
@@ -232,7 +231,7 @@ private:
 
 
 
-  void BuildSourcePaint(SourceInfo *aPrimitive, imgDrawingParams& aImgParams);
+  void BuildSourcePaint(SourceInfo* aPrimitive, imgDrawingParams& aImgParams);
 
   
 
@@ -245,7 +244,7 @@ private:
 
 
 
-  void BuildSourceImage(DrawTarget *aDest, imgDrawingParams& aImgParams);
+  void BuildSourceImage(DrawTarget* aDest, imgDrawingParams& aImgParams);
 
   
 
@@ -254,8 +253,7 @@ private:
 
 
   nsresult BuildPrimitives(const nsTArray<nsStyleFilter>& aFilterChain,
-                           nsIFrame* aTargetFrame,
-                           bool aFilterInputIsTainted);
+                           nsIFrame* aTargetFrame, bool aFilterInputIsTainted);
 
   
 
@@ -263,10 +261,10 @@ private:
 
 
 
-  nsresult BuildPrimitivesForFilter(const nsStyleFilter& aFilter,
-                                    nsIFrame* aTargetFrame,
-                                    bool aInputIsTainted,
-                                    nsTArray<FilterPrimitiveDescription>& aPrimitiveDescriptions);
+  nsresult BuildPrimitivesForFilter(
+      const nsStyleFilter& aFilter, nsIFrame* aTargetFrame,
+      bool aInputIsTainted,
+      nsTArray<FilterPrimitiveDescription>& aPrimitiveDescriptions);
 
   
 
@@ -380,7 +378,7 @@ private:
   
 
 
-  gfxMatrix               mPaintTransform;
+  gfxMatrix mPaintTransform;
 
   nsTArray<RefPtr<SourceSurface>> mInputImages;
   FilterDescription mFilterDescription;

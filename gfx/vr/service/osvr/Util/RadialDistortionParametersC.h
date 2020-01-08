@@ -49,12 +49,12 @@ OSVR_EXTERN_C_BEGIN
 
 
 typedef struct OSVR_RadialDistortionParameters {
-    
-    OSVR_Vec3 k1;
-    
+  
+  OSVR_Vec3 k1;
+  
 
 
-    OSVR_Vec2 centerOfProjection;
+  OSVR_Vec2 centerOfProjection;
 } OSVR_RadialDistortionParameters;
 
 OSVR_EXTERN_C_END

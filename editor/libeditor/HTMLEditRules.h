@@ -7,7 +7,7 @@
 #define HTMLEditRules_h
 
 #include "TypeInState.h"
-#include "mozilla/EditorDOMPoint.h" 
+#include "mozilla/EditorDOMPoint.h"  
 #include "mozilla/SelectionState.h"
 #include "mozilla/TextEditRules.h"
 #include "nsCOMPtr.h"
@@ -33,40 +33,24 @@ enum class EditSubAction : int32_t;
 namespace dom {
 class Element;
 class Selection;
-} 
+}  
 
-struct StyleCache final : public PropItem
-{
+struct StyleCache final : public PropItem {
   bool mPresent;
 
-  StyleCache()
-    : PropItem()
-    , mPresent(false)
-  {
+  StyleCache() : PropItem(), mPresent(false) { MOZ_COUNT_CTOR(StyleCache); }
+
+  StyleCache(nsAtom* aTag, nsAtom* aAttr, const nsAString& aValue)
+      : PropItem(aTag, aAttr, aValue), mPresent(false) {
     MOZ_COUNT_CTOR(StyleCache);
   }
 
-  StyleCache(nsAtom* aTag,
-             nsAtom* aAttr,
-             const nsAString& aValue)
-    : PropItem(aTag, aAttr, aValue)
-    , mPresent(false)
-  {
+  StyleCache(nsAtom* aTag, nsAtom* aAttr)
+      : PropItem(aTag, aAttr, EmptyString()), mPresent(false) {
     MOZ_COUNT_CTOR(StyleCache);
   }
 
-  StyleCache(nsAtom* aTag,
-             nsAtom* aAttr)
-    : PropItem(aTag, aAttr, EmptyString())
-    , mPresent(false)
-  {
-    MOZ_COUNT_CTOR(StyleCache);
-  }
-
-  ~StyleCache()
-  {
-    MOZ_COUNT_DTOR(StyleCache);
-  }
+  ~StyleCache() { MOZ_COUNT_DTOR(StyleCache); }
 };
 
 
@@ -85,9 +69,8 @@ struct StyleCache final : public PropItem
 
 #define SIZE_STYLE_TABLE 19
 
-class HTMLEditRules : public TextEditRules
-{
-public:
+class HTMLEditRules : public TextEditRules {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLEditRules, TextEditRules)
 
@@ -101,8 +84,7 @@ public:
   virtual nsresult AfterEdit(EditSubAction aEditSubAction,
                              nsIEditor::EDirection aDirection) override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual nsresult WillDoAction(EditSubActionInfo& aInfo,
-                                bool* aCancel,
+  virtual nsresult WillDoAction(EditSubActionInfo& aInfo, bool* aCancel,
                                 bool* aHandled) override;
   virtual nsresult DidDoAction(EditSubActionInfo& aInfo,
                                nsresult aResult) override;
@@ -132,8 +114,7 @@ public:
   void DidCreateNode(Element& aNewElement);
   void DidInsertNode(nsIContent& aNode);
   void WillDeleteNode(nsINode& aChild);
-  void DidSplitNode(nsINode& aExistingRightNode,
-                    nsINode& aNewLeftNode);
+  void DidSplitNode(nsINode& aExistingRightNode, nsINode& aNewLeftNode);
   void WillJoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
   void DidJoinNodes(nsINode& aLeftNode, nsINode& aRightNode);
   void DidInsertText(nsINode& aTextNode, int32_t aOffset,
@@ -151,29 +132,20 @@ public:
 
   MOZ_CAN_RUN_SCRIPT void OnModifyDocument();
 
-protected:
+ protected:
   virtual ~HTMLEditRules();
 
-  HTMLEditor& HTMLEditorRef() const
-  {
+  HTMLEditor& HTMLEditorRef() const {
     MOZ_ASSERT(mData);
     return mData->HTMLEditorRef();
   }
 
-  static bool IsBlockNode(const nsINode& aNode)
-  {
+  static bool IsBlockNode(const nsINode& aNode) {
     return HTMLEditor::NodeIsBlockStatic(&aNode);
   }
-  static bool IsInlineNode(const nsINode& aNode)
-  {
-    return !IsBlockNode(aNode);
-  }
+  static bool IsInlineNode(const nsINode& aNode) { return !IsBlockNode(aNode); }
 
-  enum RulesEndpoint
-  {
-    kStart,
-    kEnd
-  };
+  enum RulesEndpoint { kStart, kEnd };
 
   void InitFields();
 
@@ -201,10 +173,11 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  WillInsertText(EditSubAction aEditSubAction, bool* aCancel, bool* aHandled,
-                 const nsAString* inString, nsAString* outString,
-                 int32_t aMaxLength);
+  MOZ_MUST_USE nsresult WillInsertText(EditSubAction aEditSubAction,
+                                       bool* aCancel, bool* aHandled,
+                                       const nsAString* inString,
+                                       nsAString* outString,
+                                       int32_t aMaxLength);
 
   
 
@@ -256,10 +229,9 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  WillDeleteSelection(nsIEditor::EDirection aAction,
-                      nsIEditor::EStripWrappers aStripWrappers,
-                      bool* aCancel, bool* aHandled);
+  MOZ_MUST_USE nsresult WillDeleteSelection(
+      nsIEditor::EDirection aAction, nsIEditor::EStripWrappers aStripWrappers,
+      bool* aCancel, bool* aHandled);
 
   
 
@@ -285,8 +257,7 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult InsertBRIfNeeded(nsINode& aNode)
-  {
+  MOZ_MUST_USE nsresult InsertBRIfNeeded(nsINode& aNode) {
     return InsertBRIfNeededInternal(aNode, false);
   }
 
@@ -294,8 +265,7 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult InsertMozBRIfNeeded(nsINode& aNode)
-  {
+  MOZ_MUST_USE nsresult InsertMozBRIfNeeded(nsINode& aNode) {
     return InsertBRIfNeededInternal(aNode, true);
   }
 
@@ -309,8 +279,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  InsertBRIfNeededInternal(nsINode& aNode, bool aInsertMozBR);
+  MOZ_MUST_USE nsresult InsertBRIfNeededInternal(nsINode& aNode,
+                                                 bool aInsertMozBR);
 
   
 
@@ -344,8 +314,7 @@ protected:
 
 
   MOZ_MUST_USE EditActionResult
-  TryToJoinBlocksWithTransaction(nsIContent& aLeftNode,
-                                 nsIContent& aRightNode);
+  TryToJoinBlocksWithTransaction(nsIContent& aLeftNode, nsIContent& aRightNode);
 
   
 
@@ -356,9 +325,10 @@ protected:
 
 
 
-  MOZ_MUST_USE EditActionResult
-  MoveBlock(Element& aLeftBlock, Element& aRightBlock,
-            int32_t aLeftOffset, int32_t aRightOffset);
+  MOZ_MUST_USE EditActionResult MoveBlock(Element& aLeftBlock,
+                                          Element& aRightBlock,
+                                          int32_t aLeftOffset,
+                                          int32_t aRightOffset);
 
   
 
@@ -369,9 +339,9 @@ protected:
 
 
 
-  MOZ_MUST_USE EditActionResult
-  MoveNodeSmart(nsIContent& aNode, Element& aDestElement,
-                int32_t* aInOutDestOffset);
+  MOZ_MUST_USE EditActionResult MoveNodeSmart(nsIContent& aNode,
+                                              Element& aDestElement,
+                                              int32_t* aInOutDestOffset);
 
   
 
@@ -382,9 +352,9 @@ protected:
 
 
 
-  MOZ_MUST_USE EditActionResult
-  MoveContents(Element& aElement, Element& aDestElement,
-               int32_t* aInOutDestOffset);
+  MOZ_MUST_USE EditActionResult MoveContents(Element& aElement,
+                                             Element& aDestElement,
+                                             int32_t* aInOutDestOffset);
 
   
 
@@ -403,11 +373,11 @@ protected:
   
 
 
-  MOZ_MUST_USE nsresult
-  WillMakeList(const nsAString* aListType, bool aEntireList,
-               const nsAString* aBulletType,
-               bool* aCancel, bool* aHandled,
-               const nsAString* aItemType = nullptr);
+  MOZ_MUST_USE nsresult WillMakeList(const nsAString* aListType,
+                                     bool aEntireList,
+                                     const nsAString* aBulletType,
+                                     bool* aCancel, bool* aHandled,
+                                     const nsAString* aItemType = nullptr);
 
   
 
@@ -464,8 +434,8 @@ protected:
 
 
 
-  nsresult WillAlign(const nsAString& aAlignType,
-                     bool* aCancel, bool* aHandled);
+  nsresult WillAlign(const nsAString& aAlignType, bool* aCancel,
+                     bool* aHandled);
 
   
 
@@ -476,21 +446,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  WillRemoveAbsolutePosition(bool* aCancel, bool* aHandled);
-
-  
-
-
-
-
-
-
-
-
-
-  MOZ_MUST_USE nsresult
-  WillRelativeChangeZIndex(int32_t aChange, bool* aCancel, bool* aHandled);
+  MOZ_MUST_USE nsresult WillRemoveAbsolutePosition(bool* aCancel,
+                                                   bool* aHandled);
 
   
 
@@ -502,9 +459,22 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  WillMakeDefListItem(const nsAString* aBlockType, bool aEntireList,
-                      bool* aCancel, bool* aHandled);
+  MOZ_MUST_USE nsresult WillRelativeChangeZIndex(int32_t aChange, bool* aCancel,
+                                                 bool* aHandled);
+
+  
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE nsresult WillMakeDefListItem(const nsAString* aBlockType,
+                                            bool aEntireList, bool* aCancel,
+                                            bool* aHandled);
 
   
 
@@ -561,9 +531,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  PrepareToMakeElementAbsolutePosition(bool* aHandled,
-                                       RefPtr<Element>* aTargetElement);
+  MOZ_MUST_USE nsresult PrepareToMakeElementAbsolutePosition(
+      bool* aHandled, RefPtr<Element>* aTargetElement);
 
   
 
@@ -582,8 +551,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  AlignInnerBlocks(nsINode& aNode, const nsAString& aAlignType);
+  MOZ_MUST_USE nsresult AlignInnerBlocks(nsINode& aNode,
+                                         const nsAString& aAlignType);
 
   
 
@@ -596,8 +565,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  AlignBlockContents(nsINode& aNode, const nsAString& aAlignType);
+  MOZ_MUST_USE nsresult AlignBlockContents(nsINode& aNode,
+                                           const nsAString& aAlignType);
 
   
 
@@ -610,12 +579,11 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  AlignContentsAtSelection(const nsAString& aAlignType);
+  MOZ_MUST_USE nsresult AlignContentsAtSelection(const nsAString& aAlignType);
 
   nsresult AppendInnerFormatNodes(nsTArray<OwningNonNull<nsINode>>& aArray,
                                   nsINode* aNode);
-  nsresult GetFormatString(nsINode* aNode, nsAString &outFormat);
+  nsresult GetFormatString(nsINode* aNode, nsAString& outFormat);
 
   
 
@@ -653,8 +621,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  ReturnInHeader(Element& aHeader, nsINode& aNode, int32_t aOffset);
+  MOZ_MUST_USE nsresult ReturnInHeader(Element& aHeader, nsINode& aNode,
+                                       int32_t aOffset);
 
   
 
@@ -681,11 +649,10 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  MOZ_MUST_USE nsresult
-  SplitParagraph(Element& aParentDivOrP,
-                 const EditorDOMPointBase<PT, CT>& aStartOfRightNode,
-                 nsIContent* aBRNode);
+  template <typename PT, typename CT>
+  MOZ_MUST_USE nsresult SplitParagraph(
+      Element& aParentDivOrP,
+      const EditorDOMPointBase<PT, CT>& aStartOfRightNode, nsIContent* aBRNode);
 
   
 
@@ -697,16 +664,15 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  ReturnInListItem(Element& aListItem, nsINode& aNode, int32_t aOffset);
+  MOZ_MUST_USE nsresult ReturnInListItem(Element& aListItem, nsINode& aNode,
+                                         int32_t aOffset);
 
   
 
 
 
-  MOZ_MUST_USE nsresult
-  AfterEditInner(EditSubAction aEditSubAction,
-                 nsIEditor::EDirection aDirection);
+  MOZ_MUST_USE nsresult AfterEditInner(EditSubAction aEditSubAction,
+                                       nsIEditor::EDirection aDirection);
 
   
 
@@ -770,10 +736,9 @@ protected:
 
 
 
-  MOZ_MUST_USE SplitRangeOffFromNodeResult
-  SplitRangeOffFromBlock(Element& aBlockElement,
-                         nsIContent& aStartOfMiddleElement,
-                         nsIContent& aEndOfMiddleElement);
+  MOZ_MUST_USE SplitRangeOffFromNodeResult SplitRangeOffFromBlock(
+      Element& aBlockElement, nsIContent& aStartOfMiddleElement,
+      nsIContent& aEndOfMiddleElement);
 
   
 
@@ -799,9 +764,8 @@ protected:
 
 
   MOZ_MUST_USE SplitRangeOffFromNodeResult
-  OutdentPartOfBlock(Element& aBlockElement,
-                     nsIContent& aStartOfOutdent, nsIContent& aEndOutdent,
-                     bool aIsBlockIndentedWithCSS);
+  OutdentPartOfBlock(Element& aBlockElement, nsIContent& aStartOfOutdent,
+                     nsIContent& aEndOutdent, bool aIsBlockIndentedWithCSS);
 
   
 
@@ -809,9 +773,9 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  MakeList(nsAtom& aListType, bool aEntireList, const nsAString* aBulletType,
-           bool* aCancel, nsAtom& aItemType);
+  MOZ_MUST_USE nsresult MakeList(nsAtom& aListType, bool aEntireList,
+                                 const nsAString* aBulletType, bool* aCancel,
+                                 nsAtom& aItemType);
 
   
 
@@ -827,8 +791,9 @@ protected:
 
 
 
-  MOZ_MUST_USE CreateElementResult
-  ConvertListType(Element& aListElement, nsAtom& aListType, nsAtom& aItemType);
+  MOZ_MUST_USE CreateElementResult ConvertListType(Element& aListElement,
+                                                   nsAtom& aListType,
+                                                   nsAtom& aItemType);
 
   
 
@@ -842,13 +807,8 @@ protected:
 
 
 
-  enum class IgnoreSingleBR
-  {
-    eYes,
-    eNo
-  };
-  bool IsEmptyBlockElement(Element& aElement,
-                           IgnoreSingleBR aIgnoreSingleBR);
+  enum class IgnoreSingleBR { eYes, eNo };
+  bool IsEmptyBlockElement(Element& aElement, IgnoreSingleBR aIgnoreSingleBR);
 
   
 
@@ -873,11 +833,9 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  MaybeDeleteTopMostEmptyAncestor(nsINode& aStartNode,
-                                  Element& aEditingHostElement,
-                                  nsIEditor::EDirection aAction,
-                                  bool* aHandled);
+  MOZ_MUST_USE nsresult MaybeDeleteTopMostEmptyAncestor(
+      nsINode& aStartNode, Element& aEditingHostElement,
+      nsIEditor::EDirection aAction, bool* aHandled);
 
   enum class BRLocation { beforeBlock, blockEnd };
   Element* CheckForInvisibleBR(Element& aBlock, BRLocation aWhere,
@@ -903,9 +861,9 @@ protected:
 
 
 
-  EditorDOMPoint
-  GetPromotedPoint(RulesEndpoint aWhere, nsINode& aNode, int32_t aOffset,
-                   EditSubAction aEditSubAction);
+  EditorDOMPoint GetPromotedPoint(RulesEndpoint aWhere, nsINode& aNode,
+                                  int32_t aOffset,
+                                  EditSubAction aEditSubAction);
 
   
 
@@ -928,15 +886,13 @@ protected:
 
 
   enum class TouchContent { no, yes };
-  MOZ_MUST_USE nsresult
-  GetNodesForOperation(nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
-                       nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
-                       EditSubAction aEditSubAction,
-                       TouchContent aTouchContent);
+  MOZ_MUST_USE nsresult GetNodesForOperation(
+      nsTArray<RefPtr<nsRange>>& aArrayOfRanges,
+      nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
+      EditSubAction aEditSubAction, TouchContent aTouchContent);
 
   void GetChildNodesForOperation(
-         nsINode& aNode,
-         nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
+      nsINode& aNode, nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
 
   
 
@@ -961,8 +917,8 @@ protected:
   GetListActionNodes(nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes,
                      EntireList aEntireList, TouchContent aTouchContent);
   void GetDefinitionListItemTypes(Element* aElement, bool* aDT, bool* aDD);
-  nsresult
-  GetParagraphFormatNodes(nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
+  nsresult GetParagraphFormatNodes(
+      nsTArray<OwningNonNull<nsINode>>& outArrayOfNodes);
   void LookInsideDivBQandList(nsTArray<OwningNonNull<nsINode>>& aNodeArray);
 
   
@@ -988,9 +944,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  BustUpInlinesAtBRs(nsIContent& aNode,
-                     nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
+  MOZ_MUST_USE nsresult BustUpInlinesAtBRs(
+      nsIContent& aNode, nsTArray<OwningNonNull<nsINode>>& aOutArrayOfNodes);
 
   
 
@@ -1033,9 +988,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  ApplyBlockStyle(nsTArray<OwningNonNull<nsINode>>& aNodeArray,
-                  nsAtom& aBlockTag);
+  MOZ_MUST_USE nsresult ApplyBlockStyle(
+      nsTArray<OwningNonNull<nsINode>>& aNodeArray, nsAtom& aBlockTag);
 
   
 
@@ -1066,10 +1020,9 @@ protected:
 
 
 
-  template<typename PT, typename CT>
-  MOZ_MUST_USE SplitNodeResult
-  MaybeSplitAncestorsForInsertWithTransaction(
-    nsAtom& aTag, const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode);
+  template <typename PT, typename CT>
+  MOZ_MUST_USE SplitNodeResult MaybeSplitAncestorsForInsertWithTransaction(
+      nsAtom& aTag, const EditorDOMPointBase<PT, CT>& aStartOfDeepestRightNode);
 
   
 
@@ -1092,10 +1045,9 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  JoinNearestEditableNodesWithTransaction(
-    nsIContent& aLeftNode, nsIContent& aRightNode,
-    EditorDOMPoint* aNewFirstChildOfRightNode);
+  MOZ_MUST_USE nsresult JoinNearestEditableNodesWithTransaction(
+      nsIContent& aLeftNode, nsIContent& aRightNode,
+      EditorDOMPoint* aNewFirstChildOfRightNode);
 
   Element* GetTopEnclosingMailCite(nsINode& aNode);
 
@@ -1114,8 +1066,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  PopListItem(nsIContent& aListItem, bool* aOutOfList = nullptr);
+  MOZ_MUST_USE nsresult PopListItem(nsIContent& aListItem,
+                                    bool* aOutOfList = nullptr);
 
   
 
@@ -1190,7 +1142,7 @@ protected:
 
 
 
-  template<typename PT, typename CT>
+  template <typename PT, typename CT>
   nsIContent* FindNearEditableNode(const EditorDOMPointBase<PT, CT>& aPoint,
                                    nsIEditor::EDirection aDirection);
   
@@ -1249,9 +1201,9 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  RemoveAlignment(nsINode& aNode, const nsAString& aAlignType,
-                  bool aDescendantsOnly);
+  MOZ_MUST_USE nsresult RemoveAlignment(nsINode& aNode,
+                                        const nsAString& aAlignType,
+                                        bool aDescendantsOnly);
 
   
 
@@ -1264,8 +1216,8 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult
-  MakeSureElemStartsOrEndsOnCR(nsINode& aNode, bool aStarts);
+  MOZ_MUST_USE nsresult MakeSureElemStartsOrEndsOnCR(nsINode& aNode,
+                                                     bool aStarts);
 
   
 
@@ -1278,9 +1230,9 @@ protected:
 
 
   enum class ResetAlignOf { ElementAndDescendants, OnlyDescendants };
-  MOZ_MUST_USE nsresult
-  AlignBlock(Element& aElement, const nsAString& aAlignType,
-             ResetAlignOf aResetAlignOf);
+  MOZ_MUST_USE nsresult AlignBlock(Element& aElement,
+                                   const nsAString& aAlignType,
+                                   ResetAlignOf aResetAlignOf);
 
   
 
@@ -1289,8 +1241,7 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult IncreaseMarginToIndent(Element& aElement)
-  {
+  MOZ_MUST_USE nsresult IncreaseMarginToIndent(Element& aElement) {
     return ChangeMarginStart(aElement, true);
   }
 
@@ -1301,8 +1252,7 @@ protected:
 
 
 
-  MOZ_MUST_USE nsresult DecreaseMarginToOutdent(Element& aElement)
-  {
+  MOZ_MUST_USE nsresult DecreaseMarginToOutdent(Element& aElement) {
     return ChangeMarginStart(aElement, false);
   }
 
@@ -1338,7 +1288,7 @@ protected:
   MOZ_MUST_USE nsresult
   GetInlineStyles(nsINode* aNode, StyleCache aStyleCache[SIZE_STYLE_TABLE]);
 
-protected:
+ protected:
   HTMLEditor* mHTMLEditor;
   RefPtr<nsRange> mDocChangeRange;
   bool mListenerEnabled;
@@ -1359,7 +1309,6 @@ protected:
   StyleCache mCachedStyles[SIZE_STYLE_TABLE];
 };
 
-} 
+}  
 
-#endif 
-
+#endif  

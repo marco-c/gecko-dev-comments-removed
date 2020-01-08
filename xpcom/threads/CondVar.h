@@ -13,7 +13,7 @@
 
 #ifdef MOZILLA_INTERNAL_API
 #include "GeckoProfiler.h"
-#endif 
+#endif  
 
 namespace mozilla {
 
@@ -23,9 +23,8 @@ namespace mozilla {
 
 
 
-class OffTheBooksCondVar : BlockingResourceBase
-{
-public:
+class OffTheBooksCondVar : BlockingResourceBase {
+ public:
   
 
 
@@ -38,37 +37,30 @@ public:
 
 
   OffTheBooksCondVar(OffTheBooksMutex& aLock, const char* aName)
-    : BlockingResourceBase(aName, eCondVar)
-    , mLock(&aLock)
-  {
-  }
+      : BlockingResourceBase(aName, eCondVar), mLock(&aLock) {}
 
   
 
 
 
-  ~OffTheBooksCondVar()
-  {
-  }
+  ~OffTheBooksCondVar() {}
 
   
 
 
 
 #ifndef DEBUG
-  void Wait()
-  {
+  void Wait() {
 #ifdef MOZILLA_INTERNAL_API
     AUTO_PROFILER_THREAD_SLEEP;
-#endif 
+#endif  
     mImpl.wait(*mLock);
   }
 
-  CVStatus Wait(TimeDuration aDuration)
-  {
+  CVStatus Wait(TimeDuration aDuration) {
 #ifdef MOZILLA_INTERNAL_API
     AUTO_PROFILER_THREAD_SLEEP;
-#endif 
+#endif  
     return mImpl.wait_for(*mLock, aDuration);
   }
 #else
@@ -81,8 +73,7 @@ public:
 
 
 
-  nsresult Notify()
-  {
+  nsresult Notify() {
     mImpl.notify_one();
     return NS_OK;
   }
@@ -91,8 +82,7 @@ public:
 
 
 
-  nsresult NotifyAll()
-  {
+  nsresult NotifyAll() {
     mImpl.notify_all();
     return NS_OK;
   }
@@ -102,17 +92,13 @@ public:
 
 
 
-  void AssertCurrentThreadOwnsMutex()
-  {
-    mLock->AssertCurrentThreadOwns();
-  }
+  void AssertCurrentThreadOwnsMutex() { mLock->AssertCurrentThreadOwns(); }
 
   
 
 
 
-  void AssertNotCurrentThreadOwnsMutex()
-  {
+  void AssertNotCurrentThreadOwnsMutex() {
     mLock->AssertNotCurrentThreadOwns();
   }
 
@@ -122,7 +108,7 @@ public:
 
 #endif  
 
-private:
+ private:
   OffTheBooksCondVar();
   OffTheBooksCondVar(const OffTheBooksCondVar&) = delete;
   OffTheBooksCondVar& operator=(const OffTheBooksCondVar&) = delete;
@@ -136,27 +122,21 @@ private:
 
 
 
-class CondVar : public OffTheBooksCondVar
-{
-public:
+class CondVar : public OffTheBooksCondVar {
+ public:
   CondVar(OffTheBooksMutex& aLock, const char* aName)
-    : OffTheBooksCondVar(aLock, aName)
-  {
+      : OffTheBooksCondVar(aLock, aName) {
     MOZ_COUNT_CTOR(CondVar);
   }
 
-  ~CondVar()
-  {
-    MOZ_COUNT_DTOR(CondVar);
-  }
+  ~CondVar() { MOZ_COUNT_DTOR(CondVar); }
 
-private:
+ private:
   CondVar();
   CondVar(const CondVar&);
   CondVar& operator=(const CondVar&);
 };
 
-} 
-
+}  
 
 #endif  

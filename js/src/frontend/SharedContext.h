@@ -23,72 +23,62 @@ namespace frontend {
 class ParseContext;
 class ParseNode;
 
-enum class StatementKind : uint8_t
-{
-    Label,
-    Block,
-    If,
-    Switch,
-    With,
-    Catch,
-    Try,
-    Finally,
-    ForLoopLexicalHead,
-    ForLoop,
-    ForInLoop,
-    ForOfLoop,
-    DoLoop,
-    WhileLoop,
-    Class,
+enum class StatementKind : uint8_t {
+  Label,
+  Block,
+  If,
+  Switch,
+  With,
+  Catch,
+  Try,
+  Finally,
+  ForLoopLexicalHead,
+  ForLoop,
+  ForInLoop,
+  ForOfLoop,
+  DoLoop,
+  WhileLoop,
+  Class,
 
-    
-    Spread
+  
+  Spread
 };
 
-static inline bool
-StatementKindIsLoop(StatementKind kind)
-{
-    return kind == StatementKind::ForLoop ||
-           kind == StatementKind::ForInLoop ||
-           kind == StatementKind::ForOfLoop ||
-           kind == StatementKind::DoLoop ||
-           kind == StatementKind::WhileLoop ||
-           kind == StatementKind::Spread;
+static inline bool StatementKindIsLoop(StatementKind kind) {
+  return kind == StatementKind::ForLoop || kind == StatementKind::ForInLoop ||
+         kind == StatementKind::ForOfLoop || kind == StatementKind::DoLoop ||
+         kind == StatementKind::WhileLoop || kind == StatementKind::Spread;
 }
 
-static inline bool
-StatementKindIsUnlabeledBreakTarget(StatementKind kind)
-{
-    return StatementKindIsLoop(kind) || kind == StatementKind::Switch;
+static inline bool StatementKindIsUnlabeledBreakTarget(StatementKind kind) {
+  return StatementKindIsLoop(kind) || kind == StatementKind::Switch;
 }
 
 
-class Directives
-{
-    bool strict_;
-    bool asmJS_;
 
-  public:
-    explicit Directives(bool strict) : strict_(strict), asmJS_(false) {}
-    explicit Directives(ParseContext* parent);
+class Directives {
+  bool strict_;
+  bool asmJS_;
 
-    void setStrict() { strict_ = true; }
-    bool strict() const { return strict_; }
+ public:
+  explicit Directives(bool strict) : strict_(strict), asmJS_(false) {}
+  explicit Directives(ParseContext* parent);
 
-    void setAsmJS() { asmJS_ = true; }
-    bool asmJS() const { return asmJS_; }
+  void setStrict() { strict_ = true; }
+  bool strict() const { return strict_; }
 
-    Directives& operator=(Directives rhs) {
-        strict_ = rhs.strict_;
-        asmJS_ = rhs.asmJS_;
-        return *this;
-    }
-    bool operator==(const Directives& rhs) const {
-        return strict_ == rhs.strict_ && asmJS_ == rhs.asmJS_;
-    }
-    bool operator!=(const Directives& rhs) const {
-        return !(*this == rhs);
-    }
+  void setAsmJS() { asmJS_ = true; }
+  bool asmJS() const { return asmJS_; }
+
+  Directives& operator=(Directives rhs) {
+    strict_ = rhs.strict_;
+    asmJS_ = rhs.asmJS_;
+    return *this;
+  }
+  bool operator==(const Directives& rhs) const {
+    return strict_ == rhs.strict_ && asmJS_ == rhs.asmJS_;
+  }
+  bool operator!=(const Directives& rhs) const { return !(*this == rhs); }
 };
 
 
@@ -105,71 +95,66 @@ class ModuleSharedContext;
 
 
 
-class SharedContext
-{
-  public:
-    JSContext* const context;
+class SharedContext {
+ public:
+  JSContext* const context;
 
-  protected:
-    enum class Kind : uint8_t {
-        FunctionBox,
-        Global,
-        Eval,
-        Module
-    };
+ protected:
+  enum class Kind : uint8_t { FunctionBox, Global, Eval, Module };
 
-    Kind kind_;
+  Kind kind_;
 
-    ThisBinding thisBinding_;
+  ThisBinding thisBinding_;
 
-  public:
-    bool strictScript:1;
-    bool localStrict:1;
-    bool extraWarnings:1;
+ public:
+  bool strictScript : 1;
+  bool localStrict : 1;
+  bool extraWarnings : 1;
 
-  protected:
-    bool allowNewTarget_:1;
-    bool allowSuperProperty_:1;
-    bool allowSuperCall_:1;
-    bool inWith_:1;
-    bool needsThisTDZChecks_:1;
+ protected:
+  bool allowNewTarget_ : 1;
+  bool allowSuperProperty_ : 1;
+  bool allowSuperCall_ : 1;
+  bool inWith_ : 1;
+  bool needsThisTDZChecks_ : 1;
 
-    
-    bool hasExplicitUseStrict_:1;
+  
+  bool hasExplicitUseStrict_ : 1;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool bindingsAccessedDynamically_:1;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool bindingsAccessedDynamically_ : 1;
 
-    
-    
-    
-    bool hasDebuggerStatement_:1;
+  
+  
+  
+  bool hasDebuggerStatement_ : 1;
 
-    
-    bool hasDirectEval_:1;
+  
+  bool hasDirectEval_ : 1;
 
-    void computeAllowSyntax(Scope* scope);
-    void computeInWith(Scope* scope);
-    void computeThisBinding(Scope* scope);
+  void computeAllowSyntax(Scope* scope);
+  void computeInWith(Scope* scope);
+  void computeThisBinding(Scope* scope);
 
-  public:
-    SharedContext(JSContext* cx, Kind kind, Directives directives, bool extraWarnings)
+ public:
+  SharedContext(JSContext* cx, Kind kind, Directives directives,
+                bool extraWarnings)
       : context(cx),
         kind_(kind),
         thisBinding_(ThisBinding::Global),
@@ -184,404 +169,389 @@ class SharedContext
         hasExplicitUseStrict_(false),
         bindingsAccessedDynamically_(false),
         hasDebuggerStatement_(false),
-        hasDirectEval_(false)
-    { }
+        hasDirectEval_(false) {}
 
-    
-    
-    virtual Scope* compilationEnclosingScope() const = 0;
+  
+  
+  virtual Scope* compilationEnclosingScope() const = 0;
 
-    bool isFunctionBox() const { return kind_ == Kind::FunctionBox; }
-    inline FunctionBox* asFunctionBox();
-    bool isModuleContext() const { return kind_ == Kind::Module; }
-    inline ModuleSharedContext* asModuleContext();
-    bool isGlobalContext() const { return kind_ == Kind::Global; }
-    inline GlobalSharedContext* asGlobalContext();
-    bool isEvalContext() const { return kind_ == Kind::Eval; }
-    inline EvalSharedContext* asEvalContext();
+  bool isFunctionBox() const { return kind_ == Kind::FunctionBox; }
+  inline FunctionBox* asFunctionBox();
+  bool isModuleContext() const { return kind_ == Kind::Module; }
+  inline ModuleSharedContext* asModuleContext();
+  bool isGlobalContext() const { return kind_ == Kind::Global; }
+  inline GlobalSharedContext* asGlobalContext();
+  bool isEvalContext() const { return kind_ == Kind::Eval; }
+  inline EvalSharedContext* asEvalContext();
 
-    ThisBinding thisBinding()          const { return thisBinding_; }
+  ThisBinding thisBinding() const { return thisBinding_; }
 
-    bool allowNewTarget()              const { return allowNewTarget_; }
-    bool allowSuperProperty()          const { return allowSuperProperty_; }
-    bool allowSuperCall()              const { return allowSuperCall_; }
-    bool inWith()                      const { return inWith_; }
-    bool needsThisTDZChecks()          const { return needsThisTDZChecks_; }
+  bool allowNewTarget() const { return allowNewTarget_; }
+  bool allowSuperProperty() const { return allowSuperProperty_; }
+  bool allowSuperCall() const { return allowSuperCall_; }
+  bool inWith() const { return inWith_; }
+  bool needsThisTDZChecks() const { return needsThisTDZChecks_; }
 
-    bool hasExplicitUseStrict()        const { return hasExplicitUseStrict_; }
-    bool bindingsAccessedDynamically() const { return bindingsAccessedDynamically_; }
-    bool hasDebuggerStatement()        const { return hasDebuggerStatement_; }
-    bool hasDirectEval()               const { return hasDirectEval_; }
+  bool hasExplicitUseStrict() const { return hasExplicitUseStrict_; }
+  bool bindingsAccessedDynamically() const {
+    return bindingsAccessedDynamically_;
+  }
+  bool hasDebuggerStatement() const { return hasDebuggerStatement_; }
+  bool hasDirectEval() const { return hasDirectEval_; }
 
-    void setExplicitUseStrict()           { hasExplicitUseStrict_        = true; }
-    void setBindingsAccessedDynamically() { bindingsAccessedDynamically_ = true; }
-    void setHasDebuggerStatement()        { hasDebuggerStatement_        = true; }
-    void setHasDirectEval()               { hasDirectEval_               = true; }
+  void setExplicitUseStrict() { hasExplicitUseStrict_ = true; }
+  void setBindingsAccessedDynamically() { bindingsAccessedDynamically_ = true; }
+  void setHasDebuggerStatement() { hasDebuggerStatement_ = true; }
+  void setHasDirectEval() { hasDirectEval_ = true; }
 
-    inline bool allBindingsClosedOver();
+  inline bool allBindingsClosedOver();
 
-    bool strict() const {
-        return strictScript || localStrict;
-    }
-    bool setLocalStrictMode(bool strict) {
-        bool retVal = localStrict;
-        localStrict = strict;
-        return retVal;
-    }
+  bool strict() const { return strictScript || localStrict; }
+  bool setLocalStrictMode(bool strict) {
+    bool retVal = localStrict;
+    localStrict = strict;
+    return retVal;
+  }
 
-    
-    bool needStrictChecks() const {
-        return strict() || extraWarnings;
-    }
+  
+  bool needStrictChecks() const { return strict() || extraWarnings; }
 };
 
-class MOZ_STACK_CLASS GlobalSharedContext : public SharedContext
-{
-    ScopeKind scopeKind_;
+class MOZ_STACK_CLASS GlobalSharedContext : public SharedContext {
+  ScopeKind scopeKind_;
 
-  public:
-    Rooted<GlobalScope::Data*> bindings;
+ public:
+  Rooted<GlobalScope::Data*> bindings;
 
-    GlobalSharedContext(JSContext* cx, ScopeKind scopeKind, Directives directives,
-                        bool extraWarnings)
+  GlobalSharedContext(JSContext* cx, ScopeKind scopeKind, Directives directives,
+                      bool extraWarnings)
       : SharedContext(cx, Kind::Global, directives, extraWarnings),
         scopeKind_(scopeKind),
-        bindings(cx)
-    {
-        MOZ_ASSERT(scopeKind == ScopeKind::Global || scopeKind == ScopeKind::NonSyntactic);
-        thisBinding_ = ThisBinding::Global;
-    }
+        bindings(cx) {
+    MOZ_ASSERT(scopeKind == ScopeKind::Global ||
+               scopeKind == ScopeKind::NonSyntactic);
+    thisBinding_ = ThisBinding::Global;
+  }
 
-    Scope* compilationEnclosingScope() const override {
-        return nullptr;
-    }
+  Scope* compilationEnclosingScope() const override { return nullptr; }
 
-    ScopeKind scopeKind() const {
-        return scopeKind_;
-    }
+  ScopeKind scopeKind() const { return scopeKind_; }
 };
 
-inline GlobalSharedContext*
-SharedContext::asGlobalContext()
-{
-    MOZ_ASSERT(isGlobalContext());
-    return static_cast<GlobalSharedContext*>(this);
+inline GlobalSharedContext* SharedContext::asGlobalContext() {
+  MOZ_ASSERT(isGlobalContext());
+  return static_cast<GlobalSharedContext*>(this);
 }
 
-class MOZ_STACK_CLASS EvalSharedContext : public SharedContext
-{
-    RootedScope enclosingScope_;
+class MOZ_STACK_CLASS EvalSharedContext : public SharedContext {
+  RootedScope enclosingScope_;
 
-  public:
-    Rooted<EvalScope::Data*> bindings;
+ public:
+  Rooted<EvalScope::Data*> bindings;
 
-    EvalSharedContext(JSContext* cx, JSObject* enclosingEnv, Scope* enclosingScope,
-                      Directives directives, bool extraWarnings);
+  EvalSharedContext(JSContext* cx, JSObject* enclosingEnv,
+                    Scope* enclosingScope, Directives directives,
+                    bool extraWarnings);
 
-    Scope* compilationEnclosingScope() const override {
-        return enclosingScope_;
-    }
+  Scope* compilationEnclosingScope() const override { return enclosingScope_; }
 };
 
-inline EvalSharedContext*
-SharedContext::asEvalContext()
-{
-    MOZ_ASSERT(isEvalContext());
-    return static_cast<EvalSharedContext*>(this);
+inline EvalSharedContext* SharedContext::asEvalContext() {
+  MOZ_ASSERT(isEvalContext());
+  return static_cast<EvalSharedContext*>(this);
 }
 
-class FunctionBox : public ObjectBox, public SharedContext
-{
-    
-    
+class FunctionBox : public ObjectBox, public SharedContext {
+  
+  
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    Scope* enclosingScope_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Scope* enclosingScope_;
 
-    
-    LexicalScope::Data* namedLambdaBindings_;
+  
+  LexicalScope::Data* namedLambdaBindings_;
 
-    
-    FunctionScope::Data* functionScopeBindings_;
+  
+  FunctionScope::Data* functionScopeBindings_;
 
-    
-    
-    VarScope::Data* extraVarScopeBindings_;
+  
+  
+  VarScope::Data* extraVarScopeBindings_;
 
-    void initWithEnclosingScope(Scope* enclosingScope);
+  void initWithEnclosingScope(Scope* enclosingScope);
 
-  public:
-    CodeNode*      functionNode;            
-    uint32_t        bufStart;
-    uint32_t        bufEnd;
-    uint32_t        startLine;
-    uint32_t        startColumn;
-    uint32_t        toStringStart;
-    uint32_t        toStringEnd;
-    uint16_t        length;
+ public:
+  CodeNode* functionNode; 
+  uint32_t bufStart;
+  uint32_t bufEnd;
+  uint32_t startLine;
+  uint32_t startColumn;
+  uint32_t toStringStart;
+  uint32_t toStringEnd;
+  uint16_t length;
 
-    bool            isGenerator_:1;         
-    bool            isAsync_:1;             
-    bool            hasDestructuringArgs:1; 
-    bool            hasParameterExprs:1;    
-    bool            hasDirectEvalInParameterExpr:1; 
-    bool            hasDuplicateParameters:1; 
-    bool            useAsm:1;               
-    bool            isAnnexB:1;             
-    bool            wasEmitted:1;           
+  bool isGenerator_ : 1;         
+  bool isAsync_ : 1;             
+  bool hasDestructuringArgs : 1; 
 
-    
-    bool            declaredArguments:1;    
-    bool            usesArguments:1;        
-    bool            usesApply:1;            
-    bool            usesThis:1;             
-    bool            usesReturn:1;           
-    bool            hasRest_:1;             
-    bool            hasExprBody_:1;         
+  bool hasParameterExprs : 1;    
+  bool hasDirectEvalInParameterExpr : 1; 
+
+  bool hasDuplicateParameters : 1; 
+  bool useAsm : 1;                 
+  bool isAnnexB : 1;   
+  bool wasEmitted : 1; 
+
+  
+  bool declaredArguments : 1; 
+  bool usesArguments : 1;     
+  bool usesApply : 1;         
+  bool usesThis : 1;          
+  bool usesReturn : 1;        
+  bool hasRest_ : 1;          
+  bool hasExprBody_ : 1;      
 
 
 
-    
-    
-    
-    
-    
-    
-    
-    bool hasExtensibleScope_:1;
+  
+  
+  
+  
+  
+  
+  
+  bool hasExtensibleScope_ : 1;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool argumentsHasLocalBinding_:1;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool argumentsHasLocalBinding_ : 1;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool definitelyNeedsArgsObj_:1;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool definitelyNeedsArgsObj_ : 1;
 
-    bool needsHomeObject_:1;
-    bool isDerivedClassConstructor_:1;
+  bool needsHomeObject_ : 1;
+  bool isDerivedClassConstructor_ : 1;
 
-    
-    
-    bool hasThisBinding_:1;
+  
+  
+  bool hasThisBinding_ : 1;
 
-    
-    bool hasInnerFunctions_:1;
+  
+  bool hasInnerFunctions_ : 1;
 
-    FunctionBox(JSContext* cx, TraceListNode* traceListHead, JSFunction* fun,
-                uint32_t toStringStart, Directives directives, bool extraWarnings,
-                GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
+  FunctionBox(JSContext* cx, TraceListNode* traceListHead, JSFunction* fun,
+              uint32_t toStringStart, Directives directives, bool extraWarnings,
+              GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
 
 #ifdef DEBUG
-    bool atomsAreKept();
+  bool atomsAreKept();
 #endif
 
-    MutableHandle<LexicalScope::Data*> namedLambdaBindings() {
-        MOZ_ASSERT(atomsAreKept());
-        return MutableHandle<LexicalScope::Data*>::fromMarkedLocation(&namedLambdaBindings_);
-    }
+  MutableHandle<LexicalScope::Data*> namedLambdaBindings() {
+    MOZ_ASSERT(atomsAreKept());
+    return MutableHandle<LexicalScope::Data*>::fromMarkedLocation(
+        &namedLambdaBindings_);
+  }
 
-    MutableHandle<FunctionScope::Data*> functionScopeBindings() {
-        MOZ_ASSERT(atomsAreKept());
-        return MutableHandle<FunctionScope::Data*>::fromMarkedLocation(&functionScopeBindings_);
-    }
+  MutableHandle<FunctionScope::Data*> functionScopeBindings() {
+    MOZ_ASSERT(atomsAreKept());
+    return MutableHandle<FunctionScope::Data*>::fromMarkedLocation(
+        &functionScopeBindings_);
+  }
 
-    MutableHandle<VarScope::Data*> extraVarScopeBindings() {
-        MOZ_ASSERT(atomsAreKept());
-        return MutableHandle<VarScope::Data*>::fromMarkedLocation(&extraVarScopeBindings_);
-    }
+  MutableHandle<VarScope::Data*> extraVarScopeBindings() {
+    MOZ_ASSERT(atomsAreKept());
+    return MutableHandle<VarScope::Data*>::fromMarkedLocation(
+        &extraVarScopeBindings_);
+  }
 
-    void initFromLazyFunction();
-    void initStandaloneFunction(Scope* enclosingScope);
-    void initWithEnclosingParseContext(ParseContext* enclosing, FunctionSyntaxKind kind);
+  void initFromLazyFunction();
+  void initStandaloneFunction(Scope* enclosingScope);
+  void initWithEnclosingParseContext(ParseContext* enclosing,
+                                     FunctionSyntaxKind kind);
 
-    inline bool isLazyFunctionWithoutEnclosingScope() const {
-        return function()->isInterpretedLazy() &&
-               !function()->lazyScript()->hasEnclosingScope();
-    }
-    void setEnclosingScopeForInnerLazyFunction(Scope* enclosingScope);
-    void finish();
+  inline bool isLazyFunctionWithoutEnclosingScope() const {
+    return function()->isInterpretedLazy() &&
+           !function()->lazyScript()->hasEnclosingScope();
+  }
+  void setEnclosingScopeForInnerLazyFunction(Scope* enclosingScope);
+  void finish();
 
-    JSFunction* function() const { return &object()->as<JSFunction>(); }
-    void clobberFunction(JSFunction* function) { gcThing = function; }
+  JSFunction* function() const { return &object()->as<JSFunction>(); }
+  void clobberFunction(JSFunction* function) { gcThing = function; }
 
-    Scope* compilationEnclosingScope() const override {
-        
-        
-        
-
-        
-        
-        
-        
-        MOZ_ASSERT_IF(function()->isInterpretedLazy() &&
-                      function()->lazyScript()->hasEnclosingScope(),
-                      enclosingScope_ == function()->lazyScript()->enclosingScope());
-
-        
-        
-        
-        if (isLazyFunctionWithoutEnclosingScope()) {
-            return nullptr;
-        }
-
-        return enclosingScope_;
-    }
-
-    bool needsCallObjectRegardlessOfBindings() const {
-        return hasExtensibleScope() ||
-               needsHomeObject() ||
-               isDerivedClassConstructor() ||
-               isGenerator() ||
-               isAsync();
-    }
-
-    bool hasExtraBodyVarScope() const {
-        return hasParameterExprs &&
-               (extraVarScopeBindings_ ||
-                needsExtraBodyVarEnvironmentRegardlessOfBindings());
-    }
-
-    bool needsExtraBodyVarEnvironmentRegardlessOfBindings() const {
-        MOZ_ASSERT(hasParameterExprs);
-        return hasExtensibleScope() || needsDotGeneratorName();
-    }
-
-    bool isLikelyConstructorWrapper() const {
-        return usesArguments && usesApply && usesThis && !usesReturn;
-    }
-
-    bool isGenerator() const { return isGenerator_; }
-    GeneratorKind generatorKind() const {
-        return isGenerator() ? GeneratorKind::Generator : GeneratorKind::NotGenerator;
-    }
-
-    bool isAsync() const { return isAsync_; }
-    FunctionAsyncKind asyncKind() const {
-        return isAsync() ? FunctionAsyncKind::AsyncFunction : FunctionAsyncKind::SyncFunction;
-    }
-
-    bool needsFinalYield() const {
-        return isGenerator() || isAsync();
-    }
-    bool needsDotGeneratorName() const {
-        return isGenerator() || isAsync();
-    }
-    bool needsIteratorResult() const {
-        return isGenerator();
-    }
-
-    bool isArrow() const { return function()->isArrow(); }
-
-    bool hasRest() const { return hasRest_; }
-    void setHasRest() {
-        hasRest_ = true;
-    }
-
-    bool hasExprBody() const { return hasExprBody_; }
-    void setHasExprBody() {
-        MOZ_ASSERT(isArrow());
-        hasExprBody_ = true;
-    }
-
-    bool hasExtensibleScope()        const { return hasExtensibleScope_; }
-    bool hasThisBinding()            const { return hasThisBinding_; }
-    bool argumentsHasLocalBinding()  const { return argumentsHasLocalBinding_; }
-    bool definitelyNeedsArgsObj()    const { return definitelyNeedsArgsObj_; }
-    bool needsHomeObject()           const { return needsHomeObject_; }
-    bool isDerivedClassConstructor() const { return isDerivedClassConstructor_; }
-    bool hasInnerFunctions()         const { return hasInnerFunctions_; }
-
-    void setHasExtensibleScope()           { hasExtensibleScope_       = true; }
-    void setHasThisBinding()               { hasThisBinding_           = true; }
-    void setArgumentsHasLocalBinding()     { argumentsHasLocalBinding_ = true; }
-    void setDefinitelyNeedsArgsObj()       { MOZ_ASSERT(argumentsHasLocalBinding_);
-                                             definitelyNeedsArgsObj_   = true; }
-    void setNeedsHomeObject()              { MOZ_ASSERT(function()->allowSuperProperty());
-                                             needsHomeObject_          = true; }
-    void setDerivedClassConstructor()      { MOZ_ASSERT(function()->isClassConstructor());
-                                             isDerivedClassConstructor_ = true; }
-    void setHasInnerFunctions()            { hasInnerFunctions_         = true; }
-
-    bool hasSimpleParameterList() const {
-        return !hasRest() && !hasParameterExprs && !hasDestructuringArgs;
-    }
-
-    bool hasMappedArgsObj() const {
-        return !strict() && hasSimpleParameterList();
-    }
+  Scope* compilationEnclosingScope() const override {
+    
+    
+    
 
     
     
     
     
+    MOZ_ASSERT_IF(
+        function()->isInterpretedLazy() &&
+            function()->lazyScript()->hasEnclosingScope(),
+        enclosingScope_ == function()->lazyScript()->enclosingScope());
+
     
-    bool useAsmOrInsideUseAsm() const {
-        return useAsm;
+    
+    
+    if (isLazyFunctionWithoutEnclosingScope()) {
+      return nullptr;
     }
 
-    void setStart(const TokenStreamAnyChars& anyChars) {
-        uint32_t offset = anyChars.currentToken().pos.begin;
-        setStart(anyChars, offset);
-    }
+    return enclosingScope_;
+  }
 
-    void setStart(const TokenStreamAnyChars& anyChars, uint32_t offset) {
-        bufStart = offset;
-        anyChars.srcCoords.lineNumAndColumnIndex(offset, &startLine, &startColumn);
-    }
+  bool needsCallObjectRegardlessOfBindings() const {
+    return hasExtensibleScope() || needsHomeObject() ||
+           isDerivedClassConstructor() || isGenerator() || isAsync();
+  }
 
-    void setEnd(const TokenStreamAnyChars& anyChars) {
-        
-        
-        
-        uint32_t offset = anyChars.currentToken().pos.end;
-        bufEnd = offset;
-        toStringEnd = offset;
-    }
+  bool hasExtraBodyVarScope() const {
+    return hasParameterExprs &&
+           (extraVarScopeBindings_ ||
+            needsExtraBodyVarEnvironmentRegardlessOfBindings());
+  }
 
-    void trace(JSTracer* trc) override;
+  bool needsExtraBodyVarEnvironmentRegardlessOfBindings() const {
+    MOZ_ASSERT(hasParameterExprs);
+    return hasExtensibleScope() || needsDotGeneratorName();
+  }
+
+  bool isLikelyConstructorWrapper() const {
+    return usesArguments && usesApply && usesThis && !usesReturn;
+  }
+
+  bool isGenerator() const { return isGenerator_; }
+  GeneratorKind generatorKind() const {
+    return isGenerator() ? GeneratorKind::Generator
+                         : GeneratorKind::NotGenerator;
+  }
+
+  bool isAsync() const { return isAsync_; }
+  FunctionAsyncKind asyncKind() const {
+    return isAsync() ? FunctionAsyncKind::AsyncFunction
+                     : FunctionAsyncKind::SyncFunction;
+  }
+
+  bool needsFinalYield() const { return isGenerator() || isAsync(); }
+  bool needsDotGeneratorName() const { return isGenerator() || isAsync(); }
+  bool needsIteratorResult() const { return isGenerator(); }
+
+  bool isArrow() const { return function()->isArrow(); }
+
+  bool hasRest() const { return hasRest_; }
+  void setHasRest() { hasRest_ = true; }
+
+  bool hasExprBody() const { return hasExprBody_; }
+  void setHasExprBody() {
+    MOZ_ASSERT(isArrow());
+    hasExprBody_ = true;
+  }
+
+  bool hasExtensibleScope() const { return hasExtensibleScope_; }
+  bool hasThisBinding() const { return hasThisBinding_; }
+  bool argumentsHasLocalBinding() const { return argumentsHasLocalBinding_; }
+  bool definitelyNeedsArgsObj() const { return definitelyNeedsArgsObj_; }
+  bool needsHomeObject() const { return needsHomeObject_; }
+  bool isDerivedClassConstructor() const { return isDerivedClassConstructor_; }
+  bool hasInnerFunctions() const { return hasInnerFunctions_; }
+
+  void setHasExtensibleScope() { hasExtensibleScope_ = true; }
+  void setHasThisBinding() { hasThisBinding_ = true; }
+  void setArgumentsHasLocalBinding() { argumentsHasLocalBinding_ = true; }
+  void setDefinitelyNeedsArgsObj() {
+    MOZ_ASSERT(argumentsHasLocalBinding_);
+    definitelyNeedsArgsObj_ = true;
+  }
+  void setNeedsHomeObject() {
+    MOZ_ASSERT(function()->allowSuperProperty());
+    needsHomeObject_ = true;
+  }
+  void setDerivedClassConstructor() {
+    MOZ_ASSERT(function()->isClassConstructor());
+    isDerivedClassConstructor_ = true;
+  }
+  void setHasInnerFunctions() { hasInnerFunctions_ = true; }
+
+  bool hasSimpleParameterList() const {
+    return !hasRest() && !hasParameterExprs && !hasDestructuringArgs;
+  }
+
+  bool hasMappedArgsObj() const {
+    return !strict() && hasSimpleParameterList();
+  }
+
+  
+  
+  
+  
+  
+  bool useAsmOrInsideUseAsm() const { return useAsm; }
+
+  void setStart(const TokenStreamAnyChars& anyChars) {
+    uint32_t offset = anyChars.currentToken().pos.begin;
+    setStart(anyChars, offset);
+  }
+
+  void setStart(const TokenStreamAnyChars& anyChars, uint32_t offset) {
+    bufStart = offset;
+    anyChars.srcCoords.lineNumAndColumnIndex(offset, &startLine, &startColumn);
+  }
+
+  void setEnd(const TokenStreamAnyChars& anyChars) {
+    
+    
+    
+    uint32_t offset = anyChars.currentToken().pos.end;
+    bufEnd = offset;
+    toStringEnd = offset;
+  }
+
+  void trace(JSTracer* trc) override;
 };
 
-inline FunctionBox*
-SharedContext::asFunctionBox()
-{
-    MOZ_ASSERT(isFunctionBox());
-    return static_cast<FunctionBox*>(this);
+inline FunctionBox* SharedContext::asFunctionBox() {
+  MOZ_ASSERT(isFunctionBox());
+  return static_cast<FunctionBox*>(this);
 }
 
 
@@ -590,16 +560,13 @@ SharedContext::asFunctionBox()
 
 
 
-inline bool
-SharedContext::allBindingsClosedOver()
-{
-    return bindingsAccessedDynamically() ||
-           (isFunctionBox() &&
-            (asFunctionBox()->isGenerator() ||
-             asFunctionBox()->isAsync()));
+inline bool SharedContext::allBindingsClosedOver() {
+  return bindingsAccessedDynamically() ||
+         (isFunctionBox() &&
+          (asFunctionBox()->isGenerator() || asFunctionBox()->isAsync()));
 }
 
-} 
-} 
+}  
+}  
 
 #endif 

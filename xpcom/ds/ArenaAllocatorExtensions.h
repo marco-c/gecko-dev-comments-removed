@@ -18,11 +18,11 @@ namespace mozilla {
 
 namespace detail {
 
-template<typename T, size_t ArenaSize, size_t Alignment>
+template <typename T, size_t ArenaSize, size_t Alignment>
 T* DuplicateString(const T* aSrc, const CheckedInt<size_t>& aLen,
                    ArenaAllocator<ArenaSize, Alignment>& aArena);
 
-} 
+}  
 
 
 
@@ -32,10 +32,8 @@ T* DuplicateString(const T* aSrc, const CheckedInt<size_t>& aLen,
 
 
 
-template<typename T, size_t ArenaSize, size_t Alignment>
-T* ArenaStrdup(const T* aStr,
-               ArenaAllocator<ArenaSize, Alignment>& aArena)
-{
+template <typename T, size_t ArenaSize, size_t Alignment>
+T* ArenaStrdup(const T* aStr, ArenaAllocator<ArenaSize, Alignment>& aArena) {
   return detail::DuplicateString(aStr, nsCharTraits<T>::length(aStr), aArena);
 }
 
@@ -46,10 +44,9 @@ T* ArenaStrdup(const T* aStr,
 
 
 
-template<typename T, size_t ArenaSize, size_t Alignment>
+template <typename T, size_t ArenaSize, size_t Alignment>
 T* ArenaStrdup(const detail::nsTStringRepr<T>& aStr,
-               ArenaAllocator<ArenaSize, Alignment>& aArena)
-{
+               ArenaAllocator<ArenaSize, Alignment>& aArena) {
   return detail::DuplicateString(aStr.BeginReading(), aStr.Length(), aArena);
 }
 
@@ -57,10 +54,9 @@ T* ArenaStrdup(const detail::nsTStringRepr<T>& aStr,
 
 
 
-template<typename T, size_t ArenaSize, size_t Alignment>
+template <typename T, size_t ArenaSize, size_t Alignment>
 T* detail::DuplicateString(const T* aSrc, const CheckedInt<size_t>& aLen,
-                           ArenaAllocator<ArenaSize, Alignment>& aArena)
-{
+                           ArenaAllocator<ArenaSize, Alignment>& aArena) {
   const auto byteLen = (aLen + 1) * sizeof(T);
   if (!byteLen.isValid()) {
     return nullptr;
@@ -75,6 +71,6 @@ T* detail::DuplicateString(const T* aSrc, const CheckedInt<size_t>& aLen,
   return p;
 }
 
-} 
+}  
 
-#endif 
+#endif  

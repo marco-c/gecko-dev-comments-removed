@@ -11,26 +11,23 @@
 
 namespace mozilla {
 
-static nscoord
-SpaceToFill(WritingMode aWM, const LogicalSize& aSize, nscoord aMargin,
-            LogicalAxis aAxis, nscoord aCBSize)
-{
+static nscoord SpaceToFill(WritingMode aWM, const LogicalSize& aSize,
+                           nscoord aMargin, LogicalAxis aAxis,
+                           nscoord aCBSize) {
   nscoord size = aSize.Size(aAxis, aWM);
   return aCBSize - (size + aMargin);
 }
 
-nscoord
-CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
-                                AlignJustifyFlags aFlags,
-                                nscoord aBaselineAdjust, nscoord aCBSize,
-                                const ReflowInput& aRI,
-                                const LogicalSize& aChildSize)
-{
+nscoord CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
+                                        AlignJustifyFlags aFlags,
+                                        nscoord aBaselineAdjust,
+                                        nscoord aCBSize, const ReflowInput& aRI,
+                                        const LogicalSize& aChildSize) {
   MOZ_ASSERT(aAlignment != NS_STYLE_ALIGN_AUTO,
              "auto values should have resolved already");
-  MOZ_ASSERT(aAlignment != NS_STYLE_ALIGN_LEFT &&
-             aAlignment != NS_STYLE_ALIGN_RIGHT,
-             "caller should map that to the corresponding START/END");
+  MOZ_ASSERT(
+      aAlignment != NS_STYLE_ALIGN_LEFT && aAlignment != NS_STYLE_ALIGN_RIGHT,
+      "caller should map that to the corresponding START/END");
 
   
   const bool isOverflowSafe = !!(aFlags & AlignJustifyFlags::eOverflowSafe);
@@ -38,13 +35,13 @@ CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
 
   
   switch (aAlignment) {
-    case NS_STYLE_ALIGN_SELF_START: 
-      aAlignment = MOZ_LIKELY(isSameSide) ? NS_STYLE_ALIGN_START
-                                          : NS_STYLE_ALIGN_END;
+    case NS_STYLE_ALIGN_SELF_START:  
+      aAlignment =
+          MOZ_LIKELY(isSameSide) ? NS_STYLE_ALIGN_START : NS_STYLE_ALIGN_END;
       break;
-    case NS_STYLE_ALIGN_SELF_END: 
-      aAlignment = MOZ_LIKELY(isSameSide) ? NS_STYLE_ALIGN_END
-                                          : NS_STYLE_ALIGN_START;
+    case NS_STYLE_ALIGN_SELF_END:  
+      aAlignment =
+          MOZ_LIKELY(isSameSide) ? NS_STYLE_ALIGN_END : NS_STYLE_ALIGN_START;
       break;
     
     
@@ -102,8 +99,8 @@ CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
   
   if ((MOZ_UNLIKELY(isOverflowSafe) && aAlignment != NS_STYLE_ALIGN_START) ||
       hasAutoMarginStart || hasAutoMarginEnd) {
-    nscoord space = SpaceToFill(wm, aChildSize, marginStart + marginEnd,
-                                aAxis, aCBSize);
+    nscoord space =
+        SpaceToFill(wm, aChildSize, marginStart + marginEnd, aAxis, aCBSize);
     
     
     if (space < 0) {
@@ -133,7 +130,7 @@ CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
       }
       break;
     case NS_STYLE_ALIGN_STRETCH:
-      MOZ_FALLTHROUGH; 
+      MOZ_FALLTHROUGH;  
     case NS_STYLE_ALIGN_START:
       offset = marginStart;
       break;
@@ -154,4 +151,4 @@ CSSAlignUtils::AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
   return offset;
 }
 
-} 
+}  

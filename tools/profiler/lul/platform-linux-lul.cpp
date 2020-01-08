@@ -21,12 +21,10 @@
 
 
 
-void
-read_procmaps(lul::LUL* aLUL)
-{
+void read_procmaps(lul::LUL* aLUL) {
   MOZ_ASSERT(aLUL->CountMappings() == 0);
 
-# if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_linux) || defined(GP_OS_android)
   SharedLibraryInfo info = SharedLibraryInfo::GetInfoForSelf();
 
   for (size_t i = 0; i < info.GetSize(); i++) {
@@ -34,21 +32,21 @@ read_procmaps(lul::LUL* aLUL)
 
     std::string nativePath = lib.GetNativeDebugPath();
 
-#   if defined(GP_OS_android)
+#if defined(GP_OS_android)
     
     AutoObjectMapperFaultyLib mapper(aLUL->mLog);
-#   else
+#else
     
     AutoObjectMapperPOSIX mapper(aLUL->mLog);
-#   endif
+#endif
 
     
     
-    void*  image = nullptr;
-    size_t size  = 0;
+    void* image = nullptr;
+    size_t size = 0;
     bool ok = mapper.Map(&image, &size, nativePath);
     if (ok && image && size > 0) {
-      aLUL->NotifyAfterMap(lib.GetStart(), lib.GetEnd()-lib.GetStart(),
+      aLUL->NotifyAfterMap(lib.GetStart(), lib.GetEnd() - lib.GetStart(),
                            nativePath.c_str(), image);
     } else if (!ok && lib.GetDebugName().IsEmpty()) {
       
@@ -57,22 +55,20 @@ read_procmaps(lul::LUL* aLUL)
       
       
       
-      aLUL->NotifyExecutableArea(lib.GetStart(), lib.GetEnd()-lib.GetStart());
+      aLUL->NotifyExecutableArea(lib.GetStart(), lib.GetEnd() - lib.GetStart());
     }
 
     
     
   }
 
-# else
-#  error "Unknown platform"
-# endif
+#else
+#error "Unknown platform"
+#endif
 }
 
 
-void
-logging_sink_for_LUL(const char* str)
-{
+void logging_sink_for_LUL(const char* str) {
   
   
   

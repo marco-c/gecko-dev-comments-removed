@@ -29,8 +29,16 @@
 
 
 
-enum { base = 36, tmin = 1, tmax = 26, skew = 38, damp = 700,
-       initial_bias = 72, initial_n = 0x80, delimiter = 0x2D };
+enum {
+  base = 36,
+  tmin = 1,
+  tmax = 26,
+  skew = 38,
+  damp = 700,
+  initial_bias = 72,
+  initial_n = 0x80,
+  delimiter = 0x2D
+};
 
 
 #define basic(cp) ((punycode_uint)(cp) < 0x80)
@@ -42,10 +50,9 @@ enum { base = 36, tmin = 1, tmax = 26, skew = 38, damp = 700,
 
 
 
-static punycode_uint decode_digit(punycode_uint cp)
-{
-  return  cp - 48 < 10 ? cp - 22 :  cp - 65 < 26 ? cp - 65 :
-          cp - 97 < 26 ? cp - 97 :  base;
+static punycode_uint decode_digit(punycode_uint cp) {
+  return cp - 48 < 10 ? cp - 22
+                      : cp - 65 < 26 ? cp - 65 : cp - 97 < 26 ? cp - 97 : base;
 }
 
 
@@ -54,8 +61,7 @@ static punycode_uint decode_digit(punycode_uint cp)
 
 
 
-static char encode_digit(punycode_uint d, int flag)
-{
+static char encode_digit(punycode_uint d, int flag) {
   return d + 22 + 75 * (d < 26) - ((flag != 0) << 5);
   
   
@@ -65,7 +71,7 @@ static char encode_digit(punycode_uint d, int flag)
 
 
 
-#define flagged(bcp) ((punycode_uint)(bcp) - 65 < 26)
+#define flagged(bcp) ((punycode_uint)(bcp)-65 < 26)
 
 
 
@@ -73,8 +79,7 @@ static char encode_digit(punycode_uint d, int flag)
 
 
 
-static char encode_basic(punycode_uint bcp, int flag)
-{
+static char encode_basic(punycode_uint bcp, int flag) {
   bcp -= (bcp - 97 < 26) << 5;
   return bcp + ((!flag && (bcp - 65 < 26)) << 5);
 }
@@ -82,21 +87,20 @@ static char encode_basic(punycode_uint bcp, int flag)
 
 
 
-static const punycode_uint maxint = (punycode_uint) -1;
+static const punycode_uint maxint = (punycode_uint)-1;
 
 
 
 
-static punycode_uint adapt(
-  punycode_uint delta, punycode_uint numpoints, int firsttime )
-{
+static punycode_uint adapt(punycode_uint delta, punycode_uint numpoints,
+                           int firsttime) {
   punycode_uint k;
 
   delta = firsttime ? delta / damp : delta >> 1;
   
   delta += delta / numpoints;
 
-  for (k = 0;  delta > ((base - tmin) * tmax) / 2;  k += base) {
+  for (k = 0; delta > ((base - tmin) * tmax) / 2; k += base) {
     delta /= base - tmin;
   }
 
@@ -105,13 +109,11 @@ static punycode_uint adapt(
 
 
 
-enum punycode_status punycode_encode(
-  punycode_uint input_length,
-  const punycode_uint input[],
-  const unsigned char case_flags[],
-  punycode_uint *output_length,
-  char output[] )
-{
+enum punycode_status punycode_encode(punycode_uint input_length,
+                                     const punycode_uint input[],
+                                     const unsigned char case_flags[],
+                                     punycode_uint *output_length,
+                                     char output[]) {
   punycode_uint n, delta, h, b, out, max_out, bias, j, m, q, k, t;
 
   
@@ -123,11 +125,11 @@ enum punycode_status punycode_encode(
 
   
 
-  for (j = 0;  j < input_length;  ++j) {
+  for (j = 0; j < input_length; ++j) {
     if (basic(input[j])) {
       if (max_out - out < 2) return punycode_big_output;
       output[out++] =
-        case_flags ? encode_basic(input[j], case_flags[j]) : (char)input[j];
+          case_flags ? encode_basic(input[j], case_flags[j]) : (char)input[j];
     }
     
     
@@ -147,7 +149,7 @@ enum punycode_status punycode_encode(
     
     
 
-    for (m = maxint, j = 0;  j < input_length;  ++j) {
+    for (m = maxint, j = 0; j < input_length; ++j) {
       
       
       if (input[j] >= n && input[j] < m) m = input[j];
@@ -160,19 +162,19 @@ enum punycode_status punycode_encode(
     delta += (m - n) * (h + 1);
     n = m;
 
-    for (j = 0;  j < input_length;  ++j) {
+    for (j = 0; j < input_length; ++j) {
       
-      if (input[j] < n  ) {
+      if (input[j] < n ) {
         if (++delta == 0) return punycode_overflow;
       }
 
       if (input[j] == n) {
         
 
-        for (q = delta, k = base;  ;  k += base) {
+        for (q = delta, k = base;; k += base) {
           if (out >= max_out) return punycode_big_output;
-          t = k <= bias  ? tmin :     
-              k >= bias + tmax ? tmax : k - bias;
+          t = k <= bias  ? tmin : 
+                  k >= bias + tmax ? tmax : k - bias;
           if (q < t) break;
           output[out++] = encode_digit(t + (q - t) % (base - t), 0);
           q = (q - t) / (base - t);
@@ -194,15 +196,12 @@ enum punycode_status punycode_encode(
 
 
 
-enum punycode_status punycode_decode(
-  punycode_uint input_length,
-  const char input[],
-  punycode_uint *output_length,
-  punycode_uint output[],
-  unsigned char case_flags[] )
-{
-  punycode_uint n, out, i, max_out, bias,
-                 b, j, in, oldi, w, k, digit, t;
+enum punycode_status punycode_decode(punycode_uint input_length,
+                                     const char input[],
+                                     punycode_uint *output_length,
+                                     punycode_uint output[],
+                                     unsigned char case_flags[]) {
+  punycode_uint n, out, i, max_out, bias, b, j, in, oldi, w, k, digit, t;
 
   if (!input_length) {
     return punycode_bad_input;
@@ -219,7 +218,7 @@ enum punycode_status punycode_decode(
   
   
 
-  for (b = 0, j = input_length - 1 ;  j > 0;  --j) {
+  for (b = 0, j = input_length - 1; j > 0; --j) {
     if (delim(input[j])) {
       b = j;
       break;
@@ -227,7 +226,7 @@ enum punycode_status punycode_decode(
   }
   if (b > max_out) return punycode_big_output;
 
-  for (j = 0;  j < b;  ++j) {
+  for (j = 0; j < b; ++j) {
     if (case_flags) case_flags[out] = flagged(input[j]);
     if (!basic(input[j])) return punycode_bad_input;
     output[out++] = input[j];
@@ -236,8 +235,7 @@ enum punycode_status punycode_decode(
   
   
 
-  for (in = b > 0 ? b + 1 : 0;  in < input_length;  ++out) {
-
+  for (in = b > 0 ? b + 1 : 0; in < input_length; ++out) {
     
     
 
@@ -246,14 +244,14 @@ enum punycode_status punycode_decode(
     
     
 
-    for (oldi = i, w = 1, k = base;  ;  k += base) {
+    for (oldi = i, w = 1, k = base;; k += base) {
       if (in >= input_length) return punycode_bad_input;
       digit = decode_digit(input[in++]);
       if (digit >= base) return punycode_bad_input;
       if (digit > (maxint - i) / w) return punycode_overflow;
       i += digit * w;
-      t = k <= bias  ? tmin :     
-          k >= bias + tmax ? tmax : k - bias;
+      t = k <= bias  ? tmin : 
+              k >= bias + tmax ? tmax : k - bias;
       if (digit < t) break;
       if (w > maxint / (base - t)) return punycode_overflow;
       w *= (base - t);

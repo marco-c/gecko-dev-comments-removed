@@ -27,53 +27,47 @@ namespace dom {
 class Element;
 class NodeInfo;
 struct CustomElementDefinition;
-} 
-} 
+}  
+}  
 
-nsresult
-NS_NewElement(mozilla::dom::Element** aResult,
-              already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-              mozilla::dom::FromParser aFromParser,
-              const nsAString* aIs = nullptr);
+nsresult NS_NewElement(mozilla::dom::Element** aResult,
+                       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                       mozilla::dom::FromParser aFromParser,
+                       const nsAString* aIs = nullptr);
 
-nsresult
-NS_NewXMLElement(mozilla::dom::Element** aResult,
-                 already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+nsresult NS_NewXMLElement(mozilla::dom::Element** aResult,
+                          already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
-nsresult
-NS_NewHTMLElement(mozilla::dom::Element** aResult,
-                  already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-                  mozilla::dom::FromParser aFromParser,
-                  nsAtom* aIsAtom = nullptr,
-                  mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
+nsresult NS_NewHTMLElement(
+    mozilla::dom::Element** aResult,
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom = nullptr,
+    mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
 
 
 
-already_AddRefed<nsGenericHTMLElement>
-CreateHTMLElement(uint32_t aNodeType,
-                  already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-                  mozilla::dom::FromParser aFromParser);
+already_AddRefed<nsGenericHTMLElement> CreateHTMLElement(
+    uint32_t aNodeType, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    mozilla::dom::FromParser aFromParser);
 
-nsresult
-NS_NewMathMLElement(mozilla::dom::Element** aResult,
-                    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+nsresult NS_NewMathMLElement(
+    mozilla::dom::Element** aResult,
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
 #ifdef MOZ_XUL
-nsresult
-NS_NewXULElement(mozilla::dom::Element** aResult,
-                 already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-                 mozilla::dom::FromParser aFromParser,
-                 nsAtom* aIsAtom = nullptr,
-                 mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
+nsresult NS_NewXULElement(
+    mozilla::dom::Element** aResult,
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    mozilla::dom::FromParser aFromParser, nsAtom* aIsAtom = nullptr,
+    mozilla::dom::CustomElementDefinition* aDefinition = nullptr);
 
-void
-NS_TrustedNewXULElement(mozilla::dom::Element** aResult,
-                        already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+void NS_TrustedNewXULElement(
+    mozilla::dom::Element** aResult,
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 #endif
 
-nsresult
-NS_NewSVGElement(mozilla::dom::Element** aResult,
-                 already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-                 mozilla::dom::FromParser aFromParser);
+nsresult NS_NewSVGElement(mozilla::dom::Element** aResult,
+                          already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                          mozilla::dom::FromParser aFromParser);
 
-#endif 
+#endif  

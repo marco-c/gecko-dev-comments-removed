@@ -26,29 +26,23 @@
 namespace mozilla {
 namespace plugins {
 
-class LaunchCompleteTask : public Runnable
-{
-public:
+class LaunchCompleteTask : public Runnable {
+ public:
   LaunchCompleteTask()
-    : Runnable("plugins::LaunchCompleteTask")
-    , mLaunchSucceeded(false)
-  {
-    }
+      : Runnable("plugins::LaunchCompleteTask"), mLaunchSucceeded(false) {}
 
-    void SetLaunchSucceeded() { mLaunchSucceeded = true; }
+  void SetLaunchSucceeded() { mLaunchSucceeded = true; }
 
-protected:
-    bool mLaunchSucceeded;
+ protected:
+  bool mLaunchSucceeded;
 };
 
-class PluginProcessParent : public mozilla::ipc::GeckoChildProcessHost
-{
-public:
-    explicit PluginProcessParent(const std::string& aPluginFilePath);
-    ~PluginProcessParent();
+class PluginProcessParent : public mozilla::ipc::GeckoChildProcessHost {
+ public:
+  explicit PluginProcessParent(const std::string& aPluginFilePath);
+  ~PluginProcessParent();
 
-    
-
+  
 
 
 
@@ -58,49 +52,46 @@ public:
 
 
 
-    bool Launch(UniquePtr<LaunchCompleteTask> aLaunchCompleteTask = UniquePtr<LaunchCompleteTask>(),
-                int32_t aSandboxLevel = 0,
-                bool aIsSandboxLoggingEnabled = false);
 
-    void Delete();
+  bool Launch(UniquePtr<LaunchCompleteTask> aLaunchCompleteTask =
+                  UniquePtr<LaunchCompleteTask>(),
+              int32_t aSandboxLevel = 0, bool aIsSandboxLoggingEnabled = false);
 
-    virtual bool CanShutdown() override
-    {
-        return true;
-    }
+  void Delete();
 
-    const std::string& GetPluginFilePath() { return mPluginFilePath; }
+  virtual bool CanShutdown() override { return true; }
 
-    using mozilla::ipc::GeckoChildProcessHost::GetChannel;
+  const std::string& GetPluginFilePath() { return mPluginFilePath; }
 
-    virtual bool WaitUntilConnected(int32_t aTimeoutMs = 0) override;
+  using mozilla::ipc::GeckoChildProcessHost::GetChannel;
 
-    virtual void OnChannelConnected(int32_t peer_pid) override;
-    virtual void OnChannelError() override;
+  virtual bool WaitUntilConnected(int32_t aTimeoutMs = 0) override;
 
-    bool IsConnected();
+  virtual void OnChannelConnected(int32_t peer_pid) override;
+  virtual void OnChannelError() override;
 
-    static bool IsPluginProcessId(base::ProcessId procId);
+  bool IsConnected();
 
-private:
-    void RunLaunchCompleteTask();
+  static bool IsPluginProcessId(base::ProcessId procId);
 
-    std::string mPluginFilePath;
-    ipc::TaskFactory<PluginProcessParent> mTaskFactory;
-    UniquePtr<LaunchCompleteTask> mLaunchCompleteTask;
-    MessageLoop* mMainMsgLoop;
+ private:
+  void RunLaunchCompleteTask();
+
+  std::string mPluginFilePath;
+  ipc::TaskFactory<PluginProcessParent> mTaskFactory;
+  UniquePtr<LaunchCompleteTask> mLaunchCompleteTask;
+  MessageLoop* mMainMsgLoop;
 #ifdef XP_WIN
-    typedef nsTHashtable<nsUint32HashKey> PidSet;
-    
-    static PidSet* sPidSet;
-    uint32_t mChildPid;
+  typedef nsTHashtable<nsUint32HashKey> PidSet;
+  
+  static PidSet* sPidSet;
+  uint32_t mChildPid;
 #endif
 
-    DISALLOW_EVIL_CONSTRUCTORS(PluginProcessParent);
+  DISALLOW_EVIL_CONSTRUCTORS(PluginProcessParent);
 };
 
+}  
+}  
 
-} 
-} 
-
-#endif 
+#endif  

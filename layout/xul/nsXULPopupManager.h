@@ -61,15 +61,15 @@ namespace mozilla {
 namespace dom {
 class Event;
 class KeyboardEvent;
-} 
-} 
+}  
+}  
 
 
 
 enum CloseMenuMode {
-  CloseMenuMode_Auto, 
-  CloseMenuMode_None, 
-  CloseMenuMode_Single 
+  CloseMenuMode_Auto,   
+  CloseMenuMode_None,   
+  CloseMenuMode_Single  
 };
 
 
@@ -113,12 +113,12 @@ enum nsIgnoreKeys {
   eIgnoreKeys_Shortcuts,
 };
 
-#define NS_DIRECTION_IS_INLINE(dir) (dir == eNavigationDirection_Start ||     \
-                                     dir == eNavigationDirection_End)
-#define NS_DIRECTION_IS_BLOCK(dir) (dir == eNavigationDirection_Before || \
-                                    dir == eNavigationDirection_After)
-#define NS_DIRECTION_IS_BLOCK_TO_EDGE(dir) (dir == eNavigationDirection_First ||    \
-                                            dir == eNavigationDirection_Last)
+#define NS_DIRECTION_IS_INLINE(dir) \
+  (dir == eNavigationDirection_Start || dir == eNavigationDirection_End)
+#define NS_DIRECTION_IS_BLOCK(dir) \
+  (dir == eNavigationDirection_Before || dir == eNavigationDirection_After)
+#define NS_DIRECTION_IS_BLOCK_TO_EDGE(dir) \
+  (dir == eNavigationDirection_First || dir == eNavigationDirection_Last)
 
 static_assert(NS_STYLE_DIRECTION_LTR == 0 && NS_STYLE_DIRECTION_RTL == 1,
               "Left to Right should be 0 and Right to Left should be 1");
@@ -130,22 +130,22 @@ static_assert(NS_STYLE_DIRECTION_LTR == 0 && NS_STYLE_DIRECTION_RTL == 1,
 
 extern const nsNavigationDirection DirectionFromKeyCodeTable[2][6];
 
-#define NS_DIRECTION_FROM_KEY_CODE(frame, keycode)                                      \
-  (DirectionFromKeyCodeTable[frame->StyleVisibility()->mDirection]                      \
-                            [keycode - mozilla::dom::KeyboardEvent_Binding::DOM_VK_END])
+#define NS_DIRECTION_FROM_KEY_CODE(frame, keycode)                 \
+  (DirectionFromKeyCodeTable[frame->StyleVisibility()->mDirection] \
+                            [keycode -                             \
+                             mozilla::dom::KeyboardEvent_Binding::DOM_VK_END])
 
 
 
 
-class nsMenuChainItem
-{
-private:
-  nsMenuPopupFrame* mFrame; 
-  nsPopupType mPopupType; 
-  bool mNoAutoHide; 
-  bool mIsContext; 
-  bool mOnMenuBar; 
-  nsIgnoreKeys mIgnoreKeys; 
+class nsMenuChainItem {
+ private:
+  nsMenuPopupFrame* mFrame;  
+  nsPopupType mPopupType;    
+  bool mNoAutoHide;          
+  bool mIsContext;           
+  bool mOnMenuBar;           
+  nsIgnoreKeys mIgnoreKeys;  
 
   
   
@@ -157,27 +157,23 @@ private:
   nsMenuChainItem* mParent;
   nsMenuChainItem* mChild;
 
-public:
+ public:
   nsMenuChainItem(nsMenuPopupFrame* aFrame, bool aNoAutoHide, bool aIsContext,
                   nsPopupType aPopupType)
-    : mFrame(aFrame),
-      mPopupType(aPopupType),
-      mNoAutoHide(aNoAutoHide),
-      mIsContext(aIsContext),
-      mOnMenuBar(false),
-      mIgnoreKeys(eIgnoreKeys_False),
-      mFollowAnchor(false),
-      mParent(nullptr),
-      mChild(nullptr)
-  {
+      : mFrame(aFrame),
+        mPopupType(aPopupType),
+        mNoAutoHide(aNoAutoHide),
+        mIsContext(aIsContext),
+        mOnMenuBar(false),
+        mIgnoreKeys(eIgnoreKeys_False),
+        mFollowAnchor(false),
+        mParent(nullptr),
+        mChild(nullptr) {
     NS_ASSERTION(aFrame, "null frame passed to nsMenuChainItem constructor");
     MOZ_COUNT_CTOR(nsMenuChainItem);
   }
 
-  ~nsMenuChainItem()
-  {
-    MOZ_COUNT_DTOR(nsMenuChainItem);
-  }
+  ~nsMenuChainItem() { MOZ_COUNT_DTOR(nsMenuChainItem); }
 
   nsIContent* Content();
   nsMenuPopupFrame* Frame() { return mFrame; }
@@ -208,53 +204,47 @@ public:
 };
 
 
-class nsXULPopupShowingEvent : public mozilla::Runnable
-{
-public:
-  nsXULPopupShowingEvent(nsIContent* aPopup,
-                         bool aIsContextMenu,
+class nsXULPopupShowingEvent : public mozilla::Runnable {
+ public:
+  nsXULPopupShowingEvent(nsIContent* aPopup, bool aIsContextMenu,
                          bool aSelectFirstItem)
-    : mozilla::Runnable("nsXULPopupShowingEvent")
-    , mPopup(aPopup)
-    , mIsContextMenu(aIsContextMenu)
-    , mSelectFirstItem(aSelectFirstItem)
-  {
-    NS_ASSERTION(aPopup, "null popup supplied to nsXULPopupShowingEvent constructor");
+      : mozilla::Runnable("nsXULPopupShowingEvent"),
+        mPopup(aPopup),
+        mIsContextMenu(aIsContextMenu),
+        mSelectFirstItem(aSelectFirstItem) {
+    NS_ASSERTION(aPopup,
+                 "null popup supplied to nsXULPopupShowingEvent constructor");
   }
 
   NS_IMETHOD Run() override;
 
-private:
+ private:
   nsCOMPtr<nsIContent> mPopup;
   bool mIsContextMenu;
   bool mSelectFirstItem;
 };
 
 
-class nsXULPopupHidingEvent : public mozilla::Runnable
-{
-public:
-  nsXULPopupHidingEvent(nsIContent* aPopup,
-                        nsIContent* aNextPopup,
-                        nsIContent* aLastPopup,
-                        nsPopupType aPopupType,
-                        bool aDeselectMenu,
-                        bool aIsCancel)
-    : mozilla::Runnable("nsXULPopupHidingEvent")
-    , mPopup(aPopup)
-    , mNextPopup(aNextPopup)
-    , mLastPopup(aLastPopup)
-    , mPopupType(aPopupType)
-    , mDeselectMenu(aDeselectMenu)
-    , mIsRollup(aIsCancel)
-  {
-    NS_ASSERTION(aPopup, "null popup supplied to nsXULPopupHidingEvent constructor");
+class nsXULPopupHidingEvent : public mozilla::Runnable {
+ public:
+  nsXULPopupHidingEvent(nsIContent* aPopup, nsIContent* aNextPopup,
+                        nsIContent* aLastPopup, nsPopupType aPopupType,
+                        bool aDeselectMenu, bool aIsCancel)
+      : mozilla::Runnable("nsXULPopupHidingEvent"),
+        mPopup(aPopup),
+        mNextPopup(aNextPopup),
+        mLastPopup(aLastPopup),
+        mPopupType(aPopupType),
+        mDeselectMenu(aDeselectMenu),
+        mIsRollup(aIsCancel) {
+    NS_ASSERTION(aPopup,
+                 "null popup supplied to nsXULPopupHidingEvent constructor");
     
   }
 
   NS_IMETHOD Run() override;
 
-private:
+ private:
   nsCOMPtr<nsIContent> mPopup;
   nsCOMPtr<nsIContent> mNextPopup;
   nsCOMPtr<nsIContent> mLastPopup;
@@ -264,65 +254,58 @@ private:
 };
 
 
-class nsXULPopupPositionedEvent : public mozilla::Runnable
-{
-public:
-  explicit nsXULPopupPositionedEvent(nsIContent* aPopup,
-                                     bool aIsContextMenu,
+class nsXULPopupPositionedEvent : public mozilla::Runnable {
+ public:
+  explicit nsXULPopupPositionedEvent(nsIContent* aPopup, bool aIsContextMenu,
                                      bool aSelectFirstItem)
-    : mozilla::Runnable("nsXULPopupPositionedEvent")
-    , mPopup(aPopup)
-    , mIsContextMenu(aIsContextMenu)
-    , mSelectFirstItem(aSelectFirstItem)
-  {
-    NS_ASSERTION(aPopup, "null popup supplied to nsXULPopupShowingEvent constructor");
+      : mozilla::Runnable("nsXULPopupPositionedEvent"),
+        mPopup(aPopup),
+        mIsContextMenu(aIsContextMenu),
+        mSelectFirstItem(aSelectFirstItem) {
+    NS_ASSERTION(aPopup,
+                 "null popup supplied to nsXULPopupShowingEvent constructor");
   }
 
   NS_IMETHOD Run() override;
 
   
   
-  static bool DispatchIfNeeded(nsIContent *aPopup,
-                               bool aIsContextMenu,
+  static bool DispatchIfNeeded(nsIContent* aPopup, bool aIsContextMenu,
                                bool aSelectFirstItem);
 
-private:
+ private:
   nsCOMPtr<nsIContent> mPopup;
   bool mIsContextMenu;
   bool mSelectFirstItem;
 };
 
 
-class nsXULMenuCommandEvent : public mozilla::Runnable
-{
-public:
-  nsXULMenuCommandEvent(mozilla::dom::Element* aMenu,
-                        bool aIsTrusted,
-                        bool aShift,
-                        bool aControl,
-                        bool aAlt,
-                        bool aMeta,
-                        bool aUserInput,
-                        bool aFlipChecked)
-    : mozilla::Runnable("nsXULMenuCommandEvent")
-    , mMenu(aMenu)
-    , mIsTrusted(aIsTrusted)
-    , mShift(aShift)
-    , mControl(aControl)
-    , mAlt(aAlt)
-    , mMeta(aMeta)
-    , mUserInput(aUserInput)
-    , mFlipChecked(aFlipChecked)
-    , mCloseMenuMode(CloseMenuMode_Auto)
-  {
-    NS_ASSERTION(aMenu, "null menu supplied to nsXULMenuCommandEvent constructor");
+class nsXULMenuCommandEvent : public mozilla::Runnable {
+ public:
+  nsXULMenuCommandEvent(mozilla::dom::Element* aMenu, bool aIsTrusted,
+                        bool aShift, bool aControl, bool aAlt, bool aMeta,
+                        bool aUserInput, bool aFlipChecked)
+      : mozilla::Runnable("nsXULMenuCommandEvent"),
+        mMenu(aMenu),
+        mIsTrusted(aIsTrusted),
+        mShift(aShift),
+        mControl(aControl),
+        mAlt(aAlt),
+        mMeta(aMeta),
+        mUserInput(aUserInput),
+        mFlipChecked(aFlipChecked),
+        mCloseMenuMode(CloseMenuMode_Auto) {
+    NS_ASSERTION(aMenu,
+                 "null menu supplied to nsXULMenuCommandEvent constructor");
   }
 
   NS_IMETHOD Run() override;
 
-  void SetCloseMenuMode(CloseMenuMode aCloseMenuMode) { mCloseMenuMode = aCloseMenuMode; }
+  void SetCloseMenuMode(CloseMenuMode aCloseMenuMode) {
+    mCloseMenuMode = aCloseMenuMode;
+  }
 
-private:
+ private:
   RefPtr<mozilla::dom::Element> mMenu;
   bool mIsTrusted;
   bool mShift;
@@ -336,10 +319,8 @@ private:
 
 class nsXULPopupManager final : public nsIDOMEventListener,
                                 public nsIRollupListener,
-                                public nsIObserver
-{
-
-public:
+                                public nsIObserver {
+ public:
   friend class nsXULPopupShowingEvent;
   friend class nsXULPopupHidingEvent;
   friend class nsXULPopupPositionedEvent;
@@ -351,12 +332,13 @@ public:
   NS_DECL_NSIDOMEVENTLISTENER
 
   
-  virtual bool Rollup(uint32_t aCount, bool aFlush,
-                      const nsIntPoint* pos, nsIContent** aLastRolledUp) override;
+  virtual bool Rollup(uint32_t aCount, bool aFlush, const nsIntPoint* pos,
+                      nsIContent** aLastRolledUp) override;
   virtual bool ShouldRollupOnMouseWheelEvent() override;
   virtual bool ShouldConsumeOnMouseWheelEvent() override;
   virtual bool ShouldRollupOnMouseActivate() override;
-  virtual uint32_t GetSubmenuWidgetChain(nsTArray<nsIWidget*> *aWidgetChain) override;
+  virtual uint32_t GetSubmenuWidgetChain(
+      nsTArray<nsIWidget*>* aWidgetChain) override;
   virtual void NotifyGeometryChange() override {}
   virtual nsIWidget* GetRollupWidget() override;
 
@@ -403,13 +385,12 @@ public:
   
   
   
+  
   static nsMenuFrame* GetPreviousMenuItem(nsContainerFrame* aParent,
-                                          nsMenuFrame* aStart,
-                                          bool aIsPopup,
+                                          nsMenuFrame* aStart, bool aIsPopup,
                                           bool aWrap);
   static nsMenuFrame* GetNextMenuItem(nsContainerFrame* aParent,
-                                      nsMenuFrame* aStart,
-                                      bool aIsPopup,
+                                      nsMenuFrame* aStart, bool aIsPopup,
                                       bool aWrap);
 
   
@@ -440,7 +421,7 @@ public:
 
 
 
-  void ShowMenu(nsIContent *aMenu, bool aSelectFirstItem, bool aAsynchronous);
+  void ShowMenu(nsIContent* aMenu, bool aSelectFirstItem, bool aAsynchronous);
 
   
 
@@ -453,14 +434,10 @@ public:
 
 
 
-  void ShowPopup(nsIContent* aPopup,
-                 nsIContent* aAnchorContent,
-                 const nsAString& aPosition,
-                 int32_t aXPos, int32_t aYPos,
-                 bool aIsContextMenu,
-                 bool aAttributesOverride,
-                 bool aSelectFirstItem,
-                 mozilla::dom::Event* aTriggerEvent);
+  void ShowPopup(nsIContent* aPopup, nsIContent* aAnchorContent,
+                 const nsAString& aPosition, int32_t aXPos, int32_t aYPos,
+                 bool aIsContextMenu, bool aAttributesOverride,
+                 bool aSelectFirstItem, mozilla::dom::Event* aTriggerEvent);
 
   
 
@@ -472,18 +449,15 @@ public:
 
 
 
-  void ShowPopupAtScreen(nsIContent* aPopup,
-                         int32_t aXPos, int32_t aYPos,
+  void ShowPopupAtScreen(nsIContent* aPopup, int32_t aXPos, int32_t aYPos,
                          bool aIsContextMenu,
                          mozilla::dom::Event* aTriggerEvent);
 
   
 
 
-  void ShowPopupAtScreenRect(nsIContent* aPopup,
-                             const nsAString& aPosition,
-                             const nsIntRect& aRect,
-                             bool aIsContextMenu,
+  void ShowPopupAtScreenRect(nsIContent* aPopup, const nsAString& aPosition,
+                             const nsIntRect& aRect, bool aIsContextMenu,
                              bool aAttributesOverride,
                              mozilla::dom::Event* aTriggerEvent);
 
@@ -493,8 +467,7 @@ public:
 
 
 
-  void ShowTooltipAtScreen(nsIContent* aPopup,
-                           nsIContent* aTriggerContent,
+  void ShowTooltipAtScreen(nsIContent* aPopup, nsIContent* aTriggerContent,
                            int32_t aXPos, int32_t aYPos);
 
   
@@ -513,11 +486,8 @@ public:
 
 
 
-  void HidePopup(nsIContent* aPopup,
-                 bool aHideChain,
-                 bool aDeselectMenu,
-                 bool aAsynchronous,
-                 bool aIsCancel,
+  void HidePopup(nsIContent* aPopup, bool aHideChain, bool aDeselectMenu,
+                 bool aAsynchronous, bool aIsCancel,
                  nsIContent* aLastPopup = nullptr);
 
   
@@ -584,20 +554,18 @@ public:
 
 
 
-  void GetVisiblePopups(nsTArray<nsIFrame *>& aPopups);
+  void GetVisiblePopups(nsTArray<nsIFrame*>& aPopups);
 
   
 
 
 
 
-  already_AddRefed<nsINode> GetLastTriggerPopupNode(nsIDocument* aDocument)
-  {
+  already_AddRefed<nsINode> GetLastTriggerPopupNode(nsIDocument* aDocument) {
     return GetLastTriggerNode(aDocument, false);
   }
 
-  already_AddRefed<nsINode> GetLastTriggerTooltipNode(nsIDocument* aDocument)
-  {
+  already_AddRefed<nsINode> GetLastTriggerTooltipNode(nsIDocument* aDocument) {
     return GetLastTriggerNode(aDocument, true);
   }
 
@@ -679,8 +647,7 @@ public:
 
 
   bool HandleKeyboardNavigationInPopup(nsMenuPopupFrame* aFrame,
-                                         nsNavigationDirection aDir)
-  {
+                                       nsNavigationDirection aDir) {
     return HandleKeyboardNavigationInPopup(nullptr, aFrame, aDir);
   }
 
@@ -698,36 +665,33 @@ public:
   nsresult KeyDown(mozilla::dom::KeyboardEvent* aKeyEvent);
   nsresult KeyPress(mozilla::dom::KeyboardEvent* aKeyEvent);
 
-protected:
+ protected:
   nsXULPopupManager();
   ~nsXULPopupManager();
 
   
-  nsMenuPopupFrame* GetPopupFrameForContent(nsIContent* aContent, bool aShouldFlush);
+  nsMenuPopupFrame* GetPopupFrameForContent(nsIContent* aContent,
+                                            bool aShouldFlush);
 
   
   nsMenuChainItem* GetTopVisibleMenu();
 
   
   
-  void HidePopupsInList(const nsTArray<nsMenuPopupFrame *> &aFrames);
+  void HidePopupsInList(const nsTArray<nsMenuPopupFrame*>& aFrames);
 
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void InitTriggerEvent(mozilla::dom::Event* aEvent, nsIContent* aPopup, nsIContent** aTriggerContent);
+  void InitTriggerEvent(mozilla::dom::Event* aEvent, nsIContent* aPopup,
+                        nsIContent** aTriggerContent);
 
   
-  void ShowPopupCallback(nsIContent* aPopup,
-                         nsMenuPopupFrame* aPopupFrame,
-                         bool aIsContextMenu,
-                         bool aSelectFirstItem);
-  void HidePopupCallback(nsIContent* aPopup,
-                         nsMenuPopupFrame* aPopupFrame,
-                         nsIContent* aNextPopup,
-                         nsIContent* aLastPopup,
-                         nsPopupType aPopupType,
-                         bool aDeselectMenu);
+  void ShowPopupCallback(nsIContent* aPopup, nsMenuPopupFrame* aPopupFrame,
+                         bool aIsContextMenu, bool aSelectFirstItem);
+  void HidePopupCallback(nsIContent* aPopup, nsMenuPopupFrame* aPopupFrame,
+                         nsIContent* aNextPopup, nsIContent* aLastPopup,
+                         nsPopupType aPopupType, bool aDeselectMenu);
 
   
 
@@ -739,8 +703,7 @@ protected:
 
 
 
-  void FirePopupShowingEvent(nsIContent* aPopup,
-                             bool aIsContextMenu,
+  void FirePopupShowingEvent(nsIContent* aPopup, bool aIsContextMenu,
                              bool aSelectFirstItem,
                              mozilla::dom::Event* aTriggerEvent);
 
@@ -763,24 +726,21 @@ protected:
 
 
 
-  void FirePopupHidingEvent(nsIContent* aPopup,
-                            nsIContent* aNextPopup,
-                            nsIContent* aLastPopup,
-                            nsPresContext *aPresContext,
-                            nsPopupType aPopupType,
-                            bool aDeselectMenu,
+
+  void FirePopupHidingEvent(nsIContent* aPopup, nsIContent* aNextPopup,
+                            nsIContent* aLastPopup, nsPresContext* aPresContext,
+                            nsPopupType aPopupType, bool aDeselectMenu,
                             bool aIsCancel);
 
   
 
 
   bool HandleKeyboardNavigationInPopup(nsMenuChainItem* aItem,
-                                         nsNavigationDirection aDir)
-  {
+                                       nsNavigationDirection aDir) {
     return HandleKeyboardNavigationInPopup(aItem, aItem->Frame(), aDir);
   }
 
-private:
+ private:
   
 
 
@@ -789,19 +749,19 @@ private:
 
 
   bool HandleKeyboardNavigationInPopup(nsMenuChainItem* aItem,
-                                         nsMenuPopupFrame* aFrame,
-                                         nsNavigationDirection aDir);
+                                       nsMenuPopupFrame* aFrame,
+                                       nsNavigationDirection aDir);
 
-protected:
-
-  already_AddRefed<nsINode> GetLastTriggerNode(nsIDocument* aDocument, bool aIsTooltip);
+ protected:
+  already_AddRefed<nsINode> GetLastTriggerNode(nsIDocument* aDocument,
+                                               bool aIsTooltip);
 
   
 
 
 
 
-  void SetCaptureState(nsIContent *aOldPopup);
+  void SetCaptureState(nsIContent* aOldPopup);
 
   
 

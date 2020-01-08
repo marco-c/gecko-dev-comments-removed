@@ -27,7 +27,8 @@ TEST_F(APZCTreeManagerTester, WheelInterruptedByMouseDrag) {
   EXPECT_EQ(dragBlockId, tmpBlockId);
 
   
-  SmoothWheel(apzc, ScreenIntPoint(6, 6), ScreenPoint(0, 1), mcc->Time(), &wheelBlockId);
+  SmoothWheel(apzc, ScreenIntPoint(6, 6), ScreenPoint(0, 1), mcc->Time(),
+              &wheelBlockId);
   EXPECT_NE(dragBlockId, wheelBlockId);
 
   
@@ -38,7 +39,8 @@ TEST_F(APZCTreeManagerTester, WheelInterruptedByMouseDrag) {
   apzc->AdvanceAnimationsUntilEnd();
 
   
-  ParentLayerPoint scroll = apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting);
+  ParentLayerPoint scroll =
+      apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting);
   EXPECT_EQ(scroll.x, 0);
-  EXPECT_EQ(scroll.y, 10); 
+  EXPECT_EQ(scroll.y, 10);  
 }

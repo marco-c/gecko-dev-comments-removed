@@ -20,24 +20,21 @@ namespace js {
 
 
 
-inline const UnboxedLayout&
-UnboxedPlainObject::layout() const
-{
-    AutoSweepObjectGroup sweep(group());
-    return group()->unboxedLayout(sweep);
+inline const UnboxedLayout& UnboxedPlainObject::layout() const {
+  AutoSweepObjectGroup sweep(group());
+  return group()->unboxedLayout(sweep);
 }
 
 
 
 
 
-gc::AllocKind
-js::UnboxedLayout::getAllocKind() const
-{
-    MOZ_ASSERT(size());
-    return gc::GetGCObjectKindForBytes(UnboxedPlainObject::offsetOfData() + size());
+gc::AllocKind js::UnboxedLayout::getAllocKind() const {
+  MOZ_ASSERT(size());
+  return gc::GetGCObjectKindForBytes(UnboxedPlainObject::offsetOfData() +
+                                     size());
 }
 
-} 
+}  
 
-#endif 
+#endif  

@@ -18,7 +18,7 @@
 
 
 
-#define CSS_PSEUDO_ELEMENT_IS_CSS2                     (1<<0)
+#define CSS_PSEUDO_ELEMENT_IS_CSS2 (1 << 0)
 
 
 
@@ -27,21 +27,21 @@
 
 
 
-#define CSS_PSEUDO_ELEMENT_CONTAINS_ELEMENTS           (1<<1)
+#define CSS_PSEUDO_ELEMENT_CONTAINS_ELEMENTS (1 << 1)
 
 
-#define CSS_PSEUDO_ELEMENT_SUPPORTS_STYLE_ATTRIBUTE    (1<<2)
+#define CSS_PSEUDO_ELEMENT_SUPPORTS_STYLE_ATTRIBUTE (1 << 2)
 
 
 
 
 
-#define CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE  (1<<3)
+#define CSS_PSEUDO_ELEMENT_SUPPORTS_USER_ACTION_STATE (1 << 3)
 
-#define CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS (1<<4)
+#define CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS (1 << 4)
 
 
-#define CSS_PSEUDO_ELEMENT_ENABLED_IN_CHROME (1<<5)
+#define CSS_PSEUDO_ELEMENT_ENABLED_IN_CHROME (1 << 5)
 
 #define CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME \
   (CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS |               \
@@ -50,10 +50,10 @@
 
 
 
-#define CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC           (1<<6)
+#define CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC (1 << 6)
 
 
-#define CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM        (1<<7)
+#define CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM (1 << 7)
 
 namespace mozilla {
 
@@ -61,16 +61,15 @@ namespace mozilla {
 
 typedef uint8_t CSSPseudoElementTypeBase;
 enum class CSSPseudoElementType : CSSPseudoElementTypeBase {
-  
-  
-#define CSS_PSEUDO_ELEMENT(_name, _value, _flags) \
-  _name,
+
+
+#define CSS_PSEUDO_ELEMENT(_name, _value, _flags) _name,
 #include "nsCSSPseudoElementList.h"
 #undef CSS_PSEUDO_ELEMENT
   Count,
-  InheritingAnonBox = Count, 
-                             
-  NonInheritingAnonBox, 
+  InheritingAnonBox = Count,  
+                              
+  NonInheritingAnonBox,  
 #ifdef MOZ_XUL
   XULTree,
 #endif
@@ -78,41 +77,38 @@ enum class CSSPseudoElementType : CSSPseudoElementTypeBase {
   MAX
 };
 
-} 
+}  
 
-class nsCSSPseudoElements
-{
+class nsCSSPseudoElements {
   typedef mozilla::CSSPseudoElementType Type;
   typedef mozilla::CSSEnabledState EnabledState;
 
-public:
-  static bool IsPseudoElement(nsAtom *aAtom);
+ public:
+  static bool IsPseudoElement(nsAtom* aAtom);
 
-  static bool IsCSS2PseudoElement(nsAtom *aAtom);
+  static bool IsCSS2PseudoElement(nsAtom* aAtom);
 
   
   static const size_t kEagerPseudoCount = 4;
 
-  static bool IsEagerlyCascadedInServo(const Type aType)
-  {
+  static bool IsEagerlyCascadedInServo(const Type aType) {
     return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_IS_CSS2);
   }
 
-public:
+ public:
 #ifdef DEBUG
   static void AssertAtoms();
 #endif
 
-  
-  #define CSS_PSEUDO_ELEMENT(name_, value_, flags_)       \
-    static nsCSSPseudoElementStaticAtom* name_()          \
-    {                                                     \
-      return const_cast<nsCSSPseudoElementStaticAtom*>(   \
+
+#define CSS_PSEUDO_ELEMENT(name_, value_, flags_)         \
+  static nsCSSPseudoElementStaticAtom* name_() {          \
+    return const_cast<nsCSSPseudoElementStaticAtom*>(     \
         static_cast<const nsCSSPseudoElementStaticAtom*>( \
-          nsGkAtoms::PseudoElement_##name_));             \
-    }
-  #include "nsCSSPseudoElementList.h"
-  #undef CSS_PSEUDO_ELEMENT
+            nsGkAtoms::PseudoElement_##name_));           \
+  }
+#include "nsCSSPseudoElementList.h"
+#undef CSS_PSEUDO_ELEMENT
 
   static Type GetPseudoType(nsAtom* aAtom, EnabledState aEnabledState);
 
@@ -122,7 +118,8 @@ public:
 
   
   
-  static already_AddRefed<nsAtom> GetPseudoAtom(const nsAString& aPseudoElement);
+  static already_AddRefed<nsAtom> GetPseudoAtom(
+      const nsAString& aPseudoElement);
 
   static bool PseudoElementContainsElements(const Type aType) {
     return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_CONTAINS_ELEMENTS);
@@ -136,21 +133,18 @@ public:
 
   static bool PseudoElementSupportsUserActionState(const Type aType);
 
-  static bool PseudoElementIsJSCreatedNAC(Type aType)
-  {
+  static bool PseudoElementIsJSCreatedNAC(Type aType) {
     return PseudoElementHasFlags(aType, CSS_PSEUDO_ELEMENT_IS_JS_CREATED_NAC);
   }
 
-  static bool PseudoElementIsFlexOrGridItem(const Type aType)
-  {
+  static bool PseudoElementIsFlexOrGridItem(const Type aType) {
     return PseudoElementHasFlags(aType,
                                  CSS_PSEUDO_ELEMENT_IS_FLEX_OR_GRID_ITEM);
   }
 
-  static bool IsEnabled(Type aType, EnabledState aEnabledState)
-  {
+  static bool IsEnabled(Type aType, EnabledState aEnabledState) {
     if (!PseudoElementHasAnyFlag(
-      aType, CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME)) {
+            aType, CSS_PSEUDO_ELEMENT_ENABLED_IN_UA_SHEETS_AND_CHROME)) {
       return true;
     }
 
@@ -169,16 +163,14 @@ public:
 
   static nsString PseudoTypeAsString(Type aPseudoType);
 
-private:
+ private:
   
-  static bool PseudoElementHasFlags(const Type aType, uint32_t aFlags)
-  {
+  static bool PseudoElementHasFlags(const Type aType, uint32_t aFlags) {
     MOZ_ASSERT(aType < Type::Count);
     return (kPseudoElementFlags[size_t(aType)] & aFlags) == aFlags;
   }
 
-  static bool PseudoElementHasAnyFlag(const Type aType, uint32_t aFlags)
-  {
+  static bool PseudoElementHasAnyFlag(const Type aType, uint32_t aFlags) {
     MOZ_ASSERT(aType < Type::Count);
     return (kPseudoElementFlags[size_t(aType)] & aFlags) != 0;
   }

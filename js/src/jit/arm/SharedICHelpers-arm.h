@@ -16,110 +16,96 @@ namespace js {
 namespace jit {
 
 
+
 static const size_t ICStackValueOffset = 0;
 
-inline void
-EmitRestoreTailCallReg(MacroAssembler& masm)
-{
-    
+inline void EmitRestoreTailCallReg(MacroAssembler& masm) {
+  
 }
 
-inline void
-EmitRepushTailCallReg(MacroAssembler& masm)
-{
-    
+inline void EmitRepushTailCallReg(MacroAssembler& masm) {
+  
 }
 
-inline void
-EmitCallIC(MacroAssembler& masm, const ICEntry* entry, CodeOffset* callOffset)
-{
-    
-    masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
-                 ICStubReg);
+inline void EmitCallIC(MacroAssembler& masm, const ICEntry* entry,
+                       CodeOffset* callOffset) {
+  
+  masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
+               ICStubReg);
 
-    
-    
-    MOZ_ASSERT(R2 == ValueOperand(r1, r0));
-    masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
+  
+  
+  MOZ_ASSERT(R2 == ValueOperand(r1, r0));
+  masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
 
-    
-    masm.ma_blx(r0);
-    *callOffset = CodeOffset(masm.currentOffset());
+  
+  masm.ma_blx(r0);
+  *callOffset = CodeOffset(masm.currentOffset());
 }
 
-inline void
-EmitEnterTypeMonitorIC(MacroAssembler& masm,
-                       size_t monitorStubOffset = ICMonitoredStub::offsetOfFirstMonitorStub())
-{
-    
-    
-    masm.loadPtr(Address(ICStubReg, (uint32_t) monitorStubOffset), ICStubReg);
+inline void EmitEnterTypeMonitorIC(
+    MacroAssembler& masm,
+    size_t monitorStubOffset = ICMonitoredStub::offsetOfFirstMonitorStub()) {
+  
+  
+  masm.loadPtr(Address(ICStubReg, (uint32_t)monitorStubOffset), ICStubReg);
 
-    
-    
-    MOZ_ASSERT(R2 == ValueOperand(r1, r0));
-    masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
+  
+  
+  MOZ_ASSERT(R2 == ValueOperand(r1, r0));
+  masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
 
-    
-    masm.branch(r0);
+  
+  masm.branch(r0);
 }
 
-inline void
-EmitReturnFromIC(MacroAssembler& masm)
-{
-    masm.ma_mov(lr, pc);
-}
+inline void EmitReturnFromIC(MacroAssembler& masm) { masm.ma_mov(lr, pc); }
 
-inline void
-EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
-{
-    ScratchRegisterScope scratch(masm);
+inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm,
+                                       bool calledIntoIon = false) {
+  ScratchRegisterScope scratch(masm);
 
-    
-    
-    
-    
-    if (calledIntoIon) {
-        masm.Pop(scratch);
-        masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), scratch);
-        masm.add32(scratch, BaselineStackReg);
-    } else {
-        masm.mov(BaselineFrameReg, BaselineStackReg);
-    }
-
-    masm.Pop(BaselineFrameReg);
-    masm.Pop(ICStubReg);
-
-    
-    masm.Pop(ICTailCallReg);
-
-    
+  
+  
+  
+  
+  if (calledIntoIon) {
     masm.Pop(scratch);
+    masm.rshiftPtr(Imm32(FRAMESIZE_SHIFT), scratch);
+    masm.add32(scratch, BaselineStackReg);
+  } else {
+    masm.mov(BaselineFrameReg, BaselineStackReg);
+  }
+
+  masm.Pop(BaselineFrameReg);
+  masm.Pop(ICStubReg);
+
+  
+  masm.Pop(ICTailCallReg);
+
+  
+  masm.Pop(scratch);
 }
 
 template <typename AddrType>
-inline void
-EmitPreBarrier(MacroAssembler& masm, const AddrType& addr, MIRType type)
-{
-    
-    masm.push(lr);
-    masm.guardedCallPreBarrier(addr, type);
-    masm.pop(lr);
+inline void EmitPreBarrier(MacroAssembler& masm, const AddrType& addr,
+                           MIRType type) {
+  
+  masm.push(lr);
+  masm.guardedCallPreBarrier(addr, type);
+  masm.pop(lr);
 }
 
-inline void
-EmitStubGuardFailure(MacroAssembler& masm)
-{
-    
-    masm.loadPtr(Address(ICStubReg, ICStub::offsetOfNext()), ICStubReg);
+inline void EmitStubGuardFailure(MacroAssembler& masm) {
+  
+  masm.loadPtr(Address(ICStubReg, ICStub::offsetOfNext()), ICStubReg);
 
-    
-    MOZ_ASSERT(ICTailCallReg == lr);
-    masm.jump(Address(ICStubReg, ICStub::offsetOfStubCode()));
+  
+  MOZ_ASSERT(ICTailCallReg == lr);
+  masm.jump(Address(ICStubReg, ICStub::offsetOfStubCode()));
 }
 
-
-} 
-} 
+}  
+}  
 
 #endif 

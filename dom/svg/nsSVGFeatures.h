@@ -9,17 +9,15 @@
 
 #include "nsString.h"
 
-class nsSVGFeatures
-{
-public:
+class nsSVGFeatures {
+ public:
   
 
 
 
 
 
-  static bool
-  HasExtension(const nsAString& aExtension, const bool aIsInChrome);
+  static bool HasExtension(const nsAString& aExtension, const bool aIsInChrome);
 };
 
-#endif 
+#endif  

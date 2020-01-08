@@ -39,13 +39,15 @@ class PromiseJobRunnable;
 
 namespace dom {
 
-#define DOM_CALLBACKOBJECT_IID \
-{ 0xbe74c190, 0x6d76, 0x4991, \
- { 0x84, 0xb9, 0x65, 0x06, 0x99, 0xe6, 0x93, 0x2b } }
+#define DOM_CALLBACKOBJECT_IID                       \
+  {                                                  \
+    0xbe74c190, 0x6d76, 0x4991, {                    \
+      0x84, 0xb9, 0x65, 0x06, 0x99, 0xe6, 0x93, 0x2b \
+    }                                                \
+  }
 
-class CallbackObject : public nsISupports
-{
-public:
+class CallbackObject : public nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(DOM_CALLBACKOBJECT_IID)
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -60,8 +62,7 @@ public:
   
   explicit CallbackObject(JSContext* aCx, JS::Handle<JSObject*> aCallback,
                           JS::Handle<JSObject*> aCallbackGlobal,
-                          nsIGlobalObject* aIncumbentGlobal)
-  {
+                          nsIGlobalObject* aIncumbentGlobal) {
     if (aCx && JS::ContextOptionsRef(aCx).asyncStack()) {
       JS::RootedObject stack(aCx);
       if (!JS::CaptureCurrentStack(aCx, &stack)) {
@@ -76,11 +77,9 @@ public:
   
   
   
-  explicit CallbackObject(JSObject* aCallback,
-                          JSObject* aCallbackGlobal,
+  explicit CallbackObject(JSObject* aCallback, JSObject* aCallbackGlobal,
                           JSObject* aAsyncStack,
-                          nsIGlobalObject* aIncumbentGlobal)
-  {
+                          nsIGlobalObject* aIncumbentGlobal) {
     Init(aCallback, aCallbackGlobal, aAsyncStack, aIncumbentGlobal);
   }
 
@@ -93,14 +92,12 @@ public:
   
   
   
-  JS::Handle<JSObject*> CallbackOrNull() const
-  {
+  JS::Handle<JSObject*> CallbackOrNull() const {
     mCallback.exposeToActiveJS();
     return CallbackPreserveColor();
   }
 
-  JSObject* CallbackGlobalOrNull() const
-  {
+  JSObject* CallbackGlobalOrNull() const {
     mCallbackGlobal.exposeToActiveJS();
     return mCallbackGlobal;
   }
@@ -109,13 +106,9 @@ public:
   
   JSObject* Callback(JSContext* aCx);
 
-  JSObject* GetCreationStack() const
-  {
-    return mCreationStack;
-  }
+  JSObject* GetCreationStack() const { return mCreationStack; }
 
-  void MarkForCC()
-  {
+  void MarkForCC() {
     mCallback.exposeToActiveJS();
     mCallbackGlobal.exposeToActiveJS();
     mCreationStack.exposeToActiveJS();
@@ -129,8 +122,7 @@ public:
 
 
 
-  JS::Handle<JSObject*> CallbackPreserveColor() const
-  {
+  JS::Handle<JSObject*> CallbackPreserveColor() const {
     
     
     return JS::Handle<JSObject*>::fromMarkedLocation(mCallback.address());
@@ -141,16 +133,12 @@ public:
 
 
 
-  JS::Handle<JSObject*> CallbackKnownNotGray() const
-  {
+  JS::Handle<JSObject*> CallbackKnownNotGray() const {
     MOZ_ASSERT(JS::ObjectIsNotGray(mCallback));
     return CallbackPreserveColor();
   }
 
-  nsIGlobalObject* IncumbentGlobalOrNull() const
-  {
-    return mIncumbentGlobal;
-  }
+  nsIGlobalObject* IncumbentGlobalOrNull() const { return mIncumbentGlobal; }
 
   enum ExceptionHandling {
     
@@ -165,26 +153,19 @@ public:
     eRethrowExceptions
   };
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-  {
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this);
   }
 
-protected:
-  virtual ~CallbackObject()
-  {
-    mozilla::DropJSObjects(this);
-  }
+ protected:
+  virtual ~CallbackObject() { mozilla::DropJSObjects(this); }
 
-  explicit CallbackObject(CallbackObject* aCallbackObject)
-  {
+  explicit CallbackObject(CallbackObject* aCallbackObject) {
     Init(aCallbackObject->mCallback, aCallbackObject->mCallbackGlobal,
-         aCallbackObject->mCreationStack,
-         aCallbackObject->mIncumbentGlobal);
+         aCallbackObject->mCreationStack, aCallbackObject->mIncumbentGlobal);
   }
 
-  bool operator==(const CallbackObject& aOther) const
-  {
+  bool operator==(const CallbackObject& aOther) const {
     JSObject* wrappedThis = CallbackPreserveColor();
     JSObject* wrappedOther = aOther.CallbackPreserveColor();
     if (!wrappedThis || !wrappedOther) {
@@ -196,27 +177,20 @@ protected:
     return thisObj == otherObj;
   }
 
-  class JSObjectsDropper final
-  {
-  public:
-    explicit JSObjectsDropper(CallbackObject* aHolder)
-      : mHolder(aHolder)
-    {}
+  class JSObjectsDropper final {
+   public:
+    explicit JSObjectsDropper(CallbackObject* aHolder) : mHolder(aHolder) {}
 
-    ~JSObjectsDropper()
-    {
-      mHolder->ClearJSObjects();
-    }
+    ~JSObjectsDropper() { mHolder->ClearJSObjects(); }
 
-  private:
+   private:
     RefPtr<CallbackObject> mHolder;
   };
 
-private:
+ private:
   inline void InitNoHold(JSObject* aCallback, JSObject* aCallbackGlobal,
                          JSObject* aCreationStack,
-                         nsIGlobalObject* aIncumbentGlobal)
-  {
+                         nsIGlobalObject* aIncumbentGlobal) {
     MOZ_ASSERT(aCallback && !mCallback);
     MOZ_ASSERT(aCallbackGlobal);
     MOZ_DIAGNOSTIC_ASSERT(js::GetObjectCompartment(aCallback) ==
@@ -233,8 +207,7 @@ private:
 
   inline void Init(JSObject* aCallback, JSObject* aCallbackGlobal,
                    JSObject* aCreationStack,
-                   nsIGlobalObject* aIncumbentGlobal)
-  {
+                   nsIGlobalObject* aIncumbentGlobal) {
     
     
     InitNoHold(aCallback, aCallbackGlobal, aCreationStack, aIncumbentGlobal);
@@ -245,14 +218,10 @@ private:
   
   
   
-  void Reset()
-  {
-    ClearJSReferences();
-  }
+  void Reset() { ClearJSReferences(); }
   friend class mozilla::PromiseJobRunnable;
 
-  inline void ClearJSReferences()
-  {
+  inline void ClearJSReferences() {
     mCallback = nullptr;
     mCallbackGlobal = nullptr;
     mCreationStack = nullptr;
@@ -260,11 +229,10 @@ private:
   }
 
   CallbackObject(const CallbackObject&) = delete;
-  CallbackObject& operator =(const CallbackObject&) = delete;
+  CallbackObject& operator=(const CallbackObject&) = delete;
 
-protected:
-  void ClearJSObjects()
-  {
+ protected:
+  void ClearJSObjects() {
     MOZ_ASSERT_IF(mIncumbentJSGlobal, mCallback);
     if (mCallback) {
       ClearJSReferences();
@@ -286,18 +254,15 @@ protected:
   
   
   
-  struct FastCallbackConstructor {
-  };
+  struct FastCallbackConstructor {};
 
   
   
   
   
   
-  CallbackObject(JSObject* aCallback,
-                 JSObject* aCallbackGlobal,
-                 const FastCallbackConstructor&)
-  {
+  CallbackObject(JSObject* aCallback, JSObject* aCallbackGlobal,
+                 const FastCallbackConstructor&) {
     InitNoHold(aCallback, aCallbackGlobal, nullptr, nullptr);
   }
 
@@ -323,15 +288,14 @@ protected:
   nsCOMPtr<nsIGlobalObject> mIncumbentGlobal;
   JS::TenuredHeap<JSObject*> mIncumbentJSGlobal;
 
-  class MOZ_STACK_CLASS CallSetup
-  {
+  class MOZ_STACK_CLASS CallSetup {
     
 
 
 
 
 
-  public:
+   public:
     
     
     
@@ -341,17 +305,13 @@ protected:
     
     CallSetup(CallbackObject* aCallback, ErrorResult& aRv,
               const char* aExecutionReason,
-              ExceptionHandling aExceptionHandling,
-              JS::Realm* aRealm = nullptr,
+              ExceptionHandling aExceptionHandling, JS::Realm* aRealm = nullptr,
               bool aIsJSImplementedWebIDL = false);
     ~CallSetup();
 
-    JSContext* GetContext() const
-    {
-      return mCx;
-    }
+    JSContext* GetContext() const { return mCx; }
 
-  private:
+   private:
     
     CallSetup(const CallSetup&) = delete;
 
@@ -390,23 +350,21 @@ protected:
   };
 };
 
-template<class WebIDLCallbackT, class XPCOMCallbackT>
+template <class WebIDLCallbackT, class XPCOMCallbackT>
 class CallbackObjectHolder;
 
-template<class T, class U>
+template <class T, class U>
 void ImplCycleCollectionUnlink(CallbackObjectHolder<T, U>& aField);
 
-class CallbackObjectHolderBase
-{
-protected:
+class CallbackObjectHolderBase {
+ protected:
   
   already_AddRefed<nsISupports> ToXPCOMCallback(CallbackObject* aCallback,
                                                 const nsIID& aIID) const;
 };
 
-template<class WebIDLCallbackT, class XPCOMCallbackT>
-class CallbackObjectHolder : CallbackObjectHolderBase
-{
+template <class WebIDLCallbackT, class XPCOMCallbackT>
+class CallbackObjectHolder : CallbackObjectHolderBase {
   
 
 
@@ -416,22 +374,19 @@ class CallbackObjectHolder : CallbackObjectHolderBase
 
 
 
-public:
+ public:
   explicit CallbackObjectHolder(WebIDLCallbackT* aCallback)
-    : mPtrBits(reinterpret_cast<uintptr_t>(aCallback))
-  {
+      : mPtrBits(reinterpret_cast<uintptr_t>(aCallback)) {
     NS_IF_ADDREF(aCallback);
   }
 
   explicit CallbackObjectHolder(XPCOMCallbackT* aCallback)
-    : mPtrBits(reinterpret_cast<uintptr_t>(aCallback) | XPCOMCallbackFlag)
-  {
+      : mPtrBits(reinterpret_cast<uintptr_t>(aCallback) | XPCOMCallbackFlag) {
     NS_IF_ADDREF(aCallback);
   }
 
   CallbackObjectHolder(CallbackObjectHolder&& aOther)
-    : mPtrBits(aOther.mPtrBits)
-  {
+      : mPtrBits(aOther.mPtrBits) {
     aOther.mPtrBits = 0;
     static_assert(sizeof(CallbackObjectHolder) == sizeof(void*),
                   "This object is expected to be as small as a pointer, and it "
@@ -441,31 +396,23 @@ public:
 
   CallbackObjectHolder(const CallbackObjectHolder& aOther) = delete;
 
-  CallbackObjectHolder()
-    : mPtrBits(0)
-  {}
+  CallbackObjectHolder() : mPtrBits(0) {}
 
-  ~CallbackObjectHolder()
-  {
-    UnlinkSelf();
-  }
+  ~CallbackObjectHolder() { UnlinkSelf(); }
 
-  void operator=(WebIDLCallbackT* aCallback)
-  {
+  void operator=(WebIDLCallbackT* aCallback) {
     UnlinkSelf();
     mPtrBits = reinterpret_cast<uintptr_t>(aCallback);
     NS_IF_ADDREF(aCallback);
   }
 
-  void operator=(XPCOMCallbackT* aCallback)
-  {
+  void operator=(XPCOMCallbackT* aCallback) {
     UnlinkSelf();
     mPtrBits = reinterpret_cast<uintptr_t>(aCallback) | XPCOMCallbackFlag;
     NS_IF_ADDREF(aCallback);
   }
 
-  void operator=(CallbackObjectHolder&& aOther)
-  {
+  void operator=(CallbackObjectHolder&& aOther) {
     UnlinkSelf();
     mPtrBits = aOther.mPtrBits;
     aOther.mPtrBits = 0;
@@ -473,18 +420,13 @@ public:
 
   void operator=(const CallbackObjectHolder& aOther) = delete;
 
-  void Reset()
-  {
-    UnlinkSelf();
-  }
+  void Reset() { UnlinkSelf(); }
 
-  nsISupports* GetISupports() const
-  {
+  nsISupports* GetISupports() const {
     return reinterpret_cast<nsISupports*>(mPtrBits & ~XPCOMCallbackFlag);
   }
 
-  already_AddRefed<nsISupports> Forget()
-  {
+  already_AddRefed<nsISupports> Forget() {
     
     
     nsISupports* supp = GetISupports();
@@ -493,13 +435,9 @@ public:
   }
 
   
-  explicit operator bool() const
-  {
-    return GetISupports();
-  }
+  explicit operator bool() const { return GetISupports(); }
 
-  CallbackObjectHolder Clone() const
-  {
+  CallbackObjectHolder Clone() const {
     CallbackObjectHolder result;
     result.mPtrBits = mPtrBits;
     NS_IF_ADDREF(GetISupports());
@@ -508,25 +446,19 @@ public:
 
   
   
-  bool HasWebIDLCallback() const
-  {
-    return !(mPtrBits & XPCOMCallbackFlag);
-  }
+  bool HasWebIDLCallback() const { return !(mPtrBits & XPCOMCallbackFlag); }
 
-  WebIDLCallbackT* GetWebIDLCallback() const
-  {
+  WebIDLCallbackT* GetWebIDLCallback() const {
     MOZ_ASSERT(HasWebIDLCallback());
     return reinterpret_cast<WebIDLCallbackT*>(mPtrBits);
   }
 
-  XPCOMCallbackT* GetXPCOMCallback() const
-  {
+  XPCOMCallbackT* GetXPCOMCallback() const {
     MOZ_ASSERT(!HasWebIDLCallback());
     return reinterpret_cast<XPCOMCallbackT*>(mPtrBits & ~XPCOMCallbackFlag);
   }
 
-  bool operator==(WebIDLCallbackT* aOtherCallback) const
-  {
+  bool operator==(WebIDLCallbackT* aOtherCallback) const {
     if (!aOtherCallback) {
       
       return !GetISupports();
@@ -541,14 +473,12 @@ public:
     return *GetWebIDLCallback() == *aOtherCallback;
   }
 
-  bool operator==(XPCOMCallbackT* aOtherCallback) const
-  {
+  bool operator==(XPCOMCallbackT* aOtherCallback) const {
     return (!aOtherCallback && !GetISupports()) ||
-      (!HasWebIDLCallback() && GetXPCOMCallback() == aOtherCallback);
+           (!HasWebIDLCallback() && GetXPCOMCallback() == aOtherCallback);
   }
 
-  bool operator==(const CallbackObjectHolder& aOtherCallback) const
-  {
+  bool operator==(const CallbackObjectHolder& aOtherCallback) const {
     if (aOtherCallback.HasWebIDLCallback()) {
       return *this == aOtherCallback.GetWebIDLCallback();
     }
@@ -557,16 +487,14 @@ public:
   }
 
   
-  already_AddRefed<XPCOMCallbackT> ToXPCOMCallback() const
-  {
+  already_AddRefed<XPCOMCallbackT> ToXPCOMCallback() const {
     if (!HasWebIDLCallback()) {
       RefPtr<XPCOMCallbackT> callback = GetXPCOMCallback();
       return callback.forget();
     }
 
-    nsCOMPtr<nsISupports> supp =
-      CallbackObjectHolderBase::ToXPCOMCallback(GetWebIDLCallback(),
-                                                NS_GET_TEMPLATE_IID(XPCOMCallbackT));
+    nsCOMPtr<nsISupports> supp = CallbackObjectHolderBase::ToXPCOMCallback(
+        GetWebIDLCallback(), NS_GET_TEMPLATE_IID(XPCOMCallbackT));
     if (supp) {
       
       return supp.forget().downcast<XPCOMCallbackT>();
@@ -575,8 +503,7 @@ public:
   }
 
   
-  already_AddRefed<WebIDLCallbackT> ToWebIDLCallback() const
-  {
+  already_AddRefed<WebIDLCallbackT> ToWebIDLCallback() const {
     if (HasWebIDLCallback()) {
       RefPtr<WebIDLCallbackT> callback = GetWebIDLCallback();
       return callback.forget();
@@ -584,15 +511,13 @@ public:
     return nullptr;
   }
 
-private:
+ private:
   static const uintptr_t XPCOMCallbackFlag = 1u;
 
-  friend void
-  ImplCycleCollectionUnlink<WebIDLCallbackT,
-                            XPCOMCallbackT>(CallbackObjectHolder& aField);
+  friend void ImplCycleCollectionUnlink<WebIDLCallbackT, XPCOMCallbackT>(
+      CallbackObjectHolder& aField);
 
-  void UnlinkSelf()
-  {
+  void UnlinkSelf() {
     
     nsISupports* ptr = GetISupports();
     NS_IF_RELEASE(ptr);
@@ -604,22 +529,18 @@ private:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(CallbackObject, DOM_CALLBACKOBJECT_IID)
 
-template<class T, class U>
-inline void
-ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            CallbackObjectHolder<T, U>& aField,
-                            const char* aName,
-                            uint32_t aFlags = 0)
-{
+template <class T, class U>
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    CallbackObjectHolder<T, U>& aField, const char* aName,
+    uint32_t aFlags = 0) {
   if (aField) {
     CycleCollectionNoteChild(aCallback, aField.GetISupports(), aName, aFlags);
   }
 }
 
-template<class T, class U>
-void
-ImplCycleCollectionUnlink(CallbackObjectHolder<T, U>& aField)
-{
+template <class T, class U>
+void ImplCycleCollectionUnlink(CallbackObjectHolder<T, U>& aField) {
   aField.UnlinkSelf();
 }
 
@@ -627,43 +548,32 @@ ImplCycleCollectionUnlink(CallbackObjectHolder<T, U>& aField)
 
 
 
-template<typename T>
-class MOZ_RAII RootedCallback : public JS::Rooted<T>
-{
-public:
-  explicit RootedCallback(JSContext* cx)
-    : JS::Rooted<T>(cx)
-    , mCx(cx)
-  {}
+template <typename T>
+class MOZ_RAII RootedCallback : public JS::Rooted<T> {
+ public:
+  explicit RootedCallback(JSContext* cx) : JS::Rooted<T>(cx), mCx(cx) {}
 
   
   
-  template<typename S>
-  void operator=(S* arg)
-  {
+  template <typename S>
+  void operator=(S* arg) {
     this->get().operator=(arg);
   }
 
   
   
-  void operator=(decltype(nullptr) arg)
-  {
-    this->get().operator=(arg);
-  }
+  void operator=(decltype(nullptr) arg) { this->get().operator=(arg); }
 
   
-  JS::Handle<JSObject*> CallbackOrNull() const
-  {
+  JS::Handle<JSObject*> CallbackOrNull() const {
     return this->get()->CallbackOrNull();
   }
 
-  JSObject* Callback(JSContext* aCx) const
-  {
+  JSObject* Callback(JSContext* aCx) const {
     return this->get()->Callback(aCx);
   }
 
-  ~RootedCallback()
-  {
+  ~RootedCallback() {
     
     
     
@@ -673,26 +583,24 @@ public:
     }
   }
 
-private:
-  template<typename U>
-  static bool IsInitialized(U& aArg); 
+ private:
+  template <typename U>
+  static bool IsInitialized(U& aArg);  
 
-  template<typename U>
-  static bool IsInitialized(RefPtr<U>& aRefPtr)
-  {
+  template <typename U>
+  static bool IsInitialized(RefPtr<U>& aRefPtr) {
     return aRefPtr;
   }
 
-  template<typename U>
-  static bool IsInitialized(OwningNonNull<U>& aOwningNonNull)
-  {
+  template <typename U>
+  static bool IsInitialized(OwningNonNull<U>& aOwningNonNull) {
     return aOwningNonNull.isInitialized();
   }
 
   JSContext* mCx;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

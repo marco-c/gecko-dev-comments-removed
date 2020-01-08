@@ -16,10 +16,9 @@ class Accessible;
 
 
 
-class EmbeddedObjCollector final
-{
-public:
-  ~EmbeddedObjCollector() { }
+class EmbeddedObjCollector final {
+ public:
+  ~EmbeddedObjCollector() {}
 
   
 
@@ -36,7 +35,7 @@ public:
 
   Accessible* GetAccessibleAt(uint32_t aIndex);
 
-protected:
+ protected:
   
 
 
@@ -48,8 +47,8 @@ protected:
   int32_t EnsureNGetIndex(Accessible* aAccessible);
 
   
-  explicit EmbeddedObjCollector(Accessible* aRoot) :
-    mRoot(aRoot), mRootChildIdx(0) {}
+  explicit EmbeddedObjCollector(Accessible* aRoot)
+      : mRoot(aRoot), mRootChildIdx(0) {}
 
   
 
@@ -63,7 +62,7 @@ protected:
   nsTArray<Accessible*> mObjects;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

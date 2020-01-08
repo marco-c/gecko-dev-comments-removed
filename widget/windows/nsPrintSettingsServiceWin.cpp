@@ -15,16 +15,17 @@
 #include "nsWindowsHelpers.h"
 #include "ipc/IPCMessageUtils.h"
 
-const char kPrinterEnumeratorContractID[] = "@mozilla.org/gfx/printerenumerator;1";
+const char kPrinterEnumeratorContractID[] =
+    "@mozilla.org/gfx/printerenumerator;1";
 
 using namespace mozilla::embedding;
 
 NS_IMETHODIMP
 nsPrintSettingsServiceWin::SerializeToPrintData(nsIPrintSettings* aSettings,
                                                 nsIWebBrowserPrint* aWBP,
-                                                PrintData* data)
-{
-  nsresult rv = nsPrintSettingsService::SerializeToPrintData(aSettings, aWBP, data);
+                                                PrintData* data) {
+  nsresult rv =
+      nsPrintSettingsService::SerializeToPrintData(aSettings, aWBP, data);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
@@ -58,11 +59,11 @@ nsPrintSettingsServiceWin::SerializeToPrintData(nsIPrintSettings* aSettings,
     
     
     LPDEVMODEW devModeRaw;
-    psWin->GetDevMode(&devModeRaw); 
-                                    
-                                    
-                                    
-                                    
+    psWin->GetDevMode(&devModeRaw);  
+                                     
+                                     
+                                     
+                                     
     if (devModeRaw) {
       nsAutoDevMode devMode(devModeRaw);
       devModeRaw = nullptr;
@@ -87,10 +88,10 @@ nsPrintSettingsServiceWin::SerializeToPrintData(nsIPrintSettings* aSettings,
 }
 
 NS_IMETHODIMP
-nsPrintSettingsServiceWin::DeserializeToPrintSettings(const PrintData& data,
-                                                      nsIPrintSettings* settings)
-{
-  nsresult rv = nsPrintSettingsService::DeserializeToPrintSettings(data, settings);
+nsPrintSettingsServiceWin::DeserializeToPrintSettings(
+    const PrintData& data, nsIPrintSettings* settings) {
+  nsresult rv =
+      nsPrintSettingsService::DeserializeToPrintSettings(data, settings);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIPrintSettingsWin> psWin = do_QueryInterface(settings);
@@ -116,7 +117,7 @@ nsPrintSettingsServiceWin::DeserializeToPrintSettings(const PrintData& data,
       }
 
       DEVMODEW* devMode = reinterpret_cast<DEVMODEW*>(
-        const_cast<uint8_t*>(data.devModeData().Elements()));
+          const_cast<uint8_t*>(data.devModeData().Elements()));
 
       
       if ((devMode->dmSize + devMode->dmDriverExtra) != devModeDataLength) {
@@ -124,21 +125,21 @@ nsPrintSettingsServiceWin::DeserializeToPrintSettings(const PrintData& data,
         return NS_ERROR_FAILURE;
       }
 
-      psWin->SetDevMode(devMode); 
+      psWin->SetDevMode(devMode);  
     }
   }
 
   return NS_OK;
 }
 
-nsresult nsPrintSettingsServiceWin::_CreatePrintSettings(nsIPrintSettings** _retval)
-{
+nsresult nsPrintSettingsServiceWin::_CreatePrintSettings(
+    nsIPrintSettings** _retval) {
   *_retval = nullptr;
-  nsPrintSettingsWin* printSettings = new nsPrintSettingsWin(); 
+  nsPrintSettingsWin* printSettings =
+      new nsPrintSettingsWin();  
   NS_ENSURE_TRUE(printSettings, NS_ERROR_OUT_OF_MEMORY);
 
-  NS_ADDREF(*_retval = printSettings); 
+  NS_ADDREF(*_retval = printSettings);  
 
   return NS_OK;
 }
-

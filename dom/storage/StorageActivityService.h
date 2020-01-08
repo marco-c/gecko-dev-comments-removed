@@ -16,55 +16,45 @@ namespace mozilla {
 
 namespace ipc {
 class PrincipalInfo;
-} 
+}  
 
 namespace dom {
 
-class StorageActivityService final : public nsIStorageActivityService
-                                   , public nsIObserver
-                                   , public nsITimerCallback
-                                   , public nsSupportsWeakReference
-{
-public:
+class StorageActivityService final : public nsIStorageActivityService,
+                                     public nsIObserver,
+                                     public nsITimerCallback,
+                                     public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSISTORAGEACTIVITYSERVICE
   NS_DECL_NSIOBSERVER
   NS_DECL_NSITIMERCALLBACK
 
   
-  static void
-  SendActivity(nsIPrincipal* aPrincipal);
+  static void SendActivity(nsIPrincipal* aPrincipal);
 
   
-  static void
-  SendActivity(const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+  static void SendActivity(const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
   
-  static void
-  SendActivity(const nsACString& aOrigin);
+  static void SendActivity(const nsACString& aOrigin);
 
   
-  static already_AddRefed<StorageActivityService>
-  GetOrCreate();
+  static already_AddRefed<StorageActivityService> GetOrCreate();
 
-private:
+ private:
   StorageActivityService();
   ~StorageActivityService();
 
-  void
-  SendActivityInternal(nsIPrincipal* aPrincipal);
+  void SendActivityInternal(nsIPrincipal* aPrincipal);
 
-  void
-  SendActivityInternal(const nsACString& aOrigin);
+  void SendActivityInternal(const nsACString& aOrigin);
 
-  void
-  SendActivityToParent(nsIPrincipal* aPrincipal);
+  void SendActivityToParent(nsIPrincipal* aPrincipal);
 
-  void
-  MaybeStartTimer();
+  void MaybeStartTimer();
 
-  void
-  MaybeStopTimer();
+  void MaybeStopTimer();
 
   
   nsDataHashtable<nsCStringHashKey, PRTime> mActivities;
@@ -72,7 +62,7 @@ private:
   nsCOMPtr<nsITimer> mTimer;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

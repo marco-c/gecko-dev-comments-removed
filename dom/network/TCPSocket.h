@@ -37,50 +37,45 @@ class TCPSocketChild;
 class TCPSocketParent;
 
 
-class LegacyMozTCPSocket : public nsISupports
-{
-public:
+
+class LegacyMozTCPSocket : public nsISupports {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(LegacyMozTCPSocket)
 
   explicit LegacyMozTCPSocket(nsPIDOMWindowInner* aWindow);
 
-  already_AddRefed<TCPServerSocket>
-  Listen(uint16_t aPort,
-         const ServerSocketOptions& aOptions,
-         uint16_t aBacklog,
-         ErrorResult& aRv);
+  already_AddRefed<TCPServerSocket> Listen(uint16_t aPort,
+                                           const ServerSocketOptions& aOptions,
+                                           uint16_t aBacklog, ErrorResult& aRv);
 
-  already_AddRefed<TCPSocket>
-  Open(const nsAString& aHost,
-       uint16_t aPort,
-       const SocketOptions& aOptions,
-       ErrorResult& aRv);
+  already_AddRefed<TCPSocket> Open(const nsAString& aHost, uint16_t aPort,
+                                   const SocketOptions& aOptions,
+                                   ErrorResult& aRv);
 
-  bool WrapObject(JSContext* aCx,
-                  JS::Handle<JSObject*> aGivenProto,
+  bool WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
                   JS::MutableHandle<JSObject*> aReflector);
 
-private:
+ private:
   virtual ~LegacyMozTCPSocket();
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
 };
 
-class TCPSocket final : public DOMEventTargetHelper
-                      , public nsIStreamListener
-                      , public nsITransportEventSink
-                      , public nsIInputStreamCallback
-                      , public nsIObserver
-                      , public nsSupportsWeakReference
-                      , public nsITCPSocketCallback
-{
-public:
+class TCPSocket final : public DOMEventTargetHelper,
+                        public nsIStreamListener,
+                        public nsITransportEventSink,
+                        public nsIInputStreamCallback,
+                        public nsIObserver,
+                        public nsSupportsWeakReference,
+                        public nsITCPSocketCallback {
+ public:
   TCPSocket(nsIGlobalObject* aGlobal, const nsAString& aHost, uint16_t aPort,
             bool aSsl, bool aUseArrayBuffers);
 
   NS_DECL_ISUPPORTS_INHERITED
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(TCPSocket, DOMEventTargetHelper)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(TCPSocket,
+                                                         DOMEventTargetHelper)
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSITRANSPORTEVENTSINK
@@ -88,7 +83,8 @@ public:
   NS_DECL_NSIOBSERVER
   NS_DECL_NSITCPSOCKETCALLBACK
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   static bool ShouldTCPSocketExist(JSContext* aCx, JSObject* aGlobal);
 
@@ -101,41 +97,40 @@ public:
   void Close();
   void CloseImmediately();
   bool Send(JSContext* aCx, const nsACString& aData, ErrorResult& aRv);
-  bool Send(JSContext* aCx,
-            const ArrayBuffer& aData,
-            uint32_t aByteOffset,
-            const Optional<uint32_t>& aByteLength,
-            ErrorResult& aRv);
+  bool Send(JSContext* aCx, const ArrayBuffer& aData, uint32_t aByteOffset,
+            const Optional<uint32_t>& aByteLength, ErrorResult& aRv);
   TCPReadyState ReadyState();
   TCPSocketBinaryType BinaryType();
   void UpgradeToSecure(ErrorResult& aRv);
 
-  static already_AddRefed<TCPSocket>
-  Constructor(const GlobalObject& aGlobal,
-              const nsAString& aHost,
-              uint16_t aPort,
-              const SocketOptions& aOptions,
-              ErrorResult& aRv);
+  static already_AddRefed<TCPSocket> Constructor(const GlobalObject& aGlobal,
+                                                 const nsAString& aHost,
+                                                 uint16_t aPort,
+                                                 const SocketOptions& aOptions,
+                                                 ErrorResult& aRv);
 
   
   
   void SendWithTrackingNumber(const nsACString& aData,
                               const uint32_t& aTrackingNumber,
                               ErrorResult& aRv);
-  void SendWithTrackingNumber(JSContext* aCx,
-                              const ArrayBuffer& aData,
+  void SendWithTrackingNumber(JSContext* aCx, const ArrayBuffer& aData,
                               uint32_t aByteOffset,
                               const Optional<uint32_t>& aByteLength,
                               const uint32_t& aTrackingNumber,
                               ErrorResult& aRv);
   
   
-  static already_AddRefed<TCPSocket>
-  CreateAcceptedSocket(nsIGlobalObject* aGlobal, nsISocketTransport* aTransport, bool aUseArrayBuffers);
+  
+  static already_AddRefed<TCPSocket> CreateAcceptedSocket(
+      nsIGlobalObject* aGlobal, nsISocketTransport* aTransport,
+      bool aUseArrayBuffers);
   
   
-  static already_AddRefed<TCPSocket>
-  CreateAcceptedSocket(nsIGlobalObject* aGlobal, TCPSocketChild* aSocketBridge, bool aUseArrayBuffers);
+  
+  static already_AddRefed<TCPSocket> CreateAcceptedSocket(
+      nsIGlobalObject* aGlobal, TCPSocketChild* aSocketBridge,
+      bool aUseArrayBuffers);
 
   
   void SetSocketBridgeParent(TCPSocketParent* aBridgeParent);
@@ -157,7 +152,7 @@ public:
   
   nsresult InitWithUnconnectedTransport(nsISocketTransport* aTransport);
 
-private:
+ private:
   ~TCPSocket();
 
   
@@ -216,16 +211,20 @@ private:
   uint64_t mInnerWindowID;
 
   
+  
   uint64_t mBufferedAmount;
 
+  
   
   uint32_t mSuspendCount;
 
   
   
   
+  
   uint32_t mTrackingNumber;
 
+  
   
   
   bool mWaitingForStartTLS;
@@ -238,7 +237,7 @@ private:
   bool mObserversActive;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

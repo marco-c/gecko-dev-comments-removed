@@ -30,12 +30,9 @@ namespace recordreplay {
 
 
 
-class ValueIndex
-{
-public:
-  ValueIndex()
-    : mIndexCount(0)
-  {}
+class ValueIndex {
+ public:
+  ValueIndex() : mIndexCount(0) {}
 
   typedef std::unordered_map<const void*, size_t> ValueToIndexMap;
 
@@ -64,7 +61,7 @@ public:
   
   const ValueToIndexMap& GetValueToIndexMap();
 
-private:
+ private:
   typedef std::unordered_map<size_t, const void*> IndexToValueMap;
 
   
@@ -77,7 +74,7 @@ private:
   size_t mIndexCount;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

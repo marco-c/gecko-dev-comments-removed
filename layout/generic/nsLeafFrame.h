@@ -20,11 +20,11 @@
 
 
 class nsLeafFrame : public nsFrame {
-public:
+ public:
   NS_DECL_ABSTRACT_FRAME(nsLeafFrame)
 
   
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override {
     DO_GLOBAL_REFLOW_COUNT_DSP("nsLeafFrame");
     DisplayBorderBackgroundOutline(aBuilder, aLists);
@@ -34,41 +34,33 @@ public:
 
 
 
-  virtual nscoord GetMinISize(gfxContext *aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext *aRenderingContext) override;
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
   
 
 
-  virtual mozilla::LogicalSize
-  ComputeAutoSize(gfxContext*                 aRenderingContext,
-                  mozilla::WritingMode        aWM,
-                  const mozilla::LogicalSize& aCBSize,
-                  nscoord                     aAvailableISize,
-                  const mozilla::LogicalSize& aMargin,
-                  const mozilla::LogicalSize& aBorder,
-                  const mozilla::LogicalSize& aPadding,
-                  ComputeSizeFlags            aFlags) override;
+  virtual mozilla::LogicalSize ComputeAutoSize(
+      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
+      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
+      const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
+      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags) override;
 
   
 
 
-  virtual void Reflow(nsPresContext*      aPresContext,
-                      ReflowOutput&       aDesiredSize,
-                      const ReflowInput&  aReflowInput,
-                      nsReflowStatus&     aStatus) override = 0;
+  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
+                      const ReflowInput& aReflowInput,
+                      nsReflowStatus& aStatus) override = 0;
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
     
     
     return nsFrame::IsFrameOfType(aFlags & ~(nsIFrame::eReplacedContainsBlock));
   }
 
-protected:
-  nsLeafFrame(ComputedStyle* aStyle, ClassID aID)
-    : nsFrame(aStyle, aID)
-  {}
+ protected:
+  nsLeafFrame(ComputedStyle* aStyle, ClassID aID) : nsFrame(aStyle, aID) {}
 
   virtual ~nsLeafFrame();
 

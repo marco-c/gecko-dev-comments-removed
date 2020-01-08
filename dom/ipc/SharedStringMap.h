@@ -31,11 +31,10 @@ class SharedStringMapBuilder;
 
 
 
-class SharedStringMap
-{
+class SharedStringMap {
   using FileDescriptor = mozilla::ipc::FileDescriptor;
 
-public:
+ public:
   
 
 
@@ -83,6 +82,7 @@ public:
     
     StringTableEntry mKey;
     
+    
     StringTableEntry mValue;
   };
 
@@ -108,14 +108,14 @@ public:
 
   bool Get(const nsCString& aKey, nsAString& aValue);
 
-private:
+ private:
   
 
 
 
   bool Find(const nsCString& aKey, size_t* aIndex);
 
-public:
+ public:
   
 
 
@@ -130,8 +130,7 @@ public:
 
 
 
-  nsCString GetKeyAt(uint32_t aIndex) const
-  {
+  nsCString GetKeyAt(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < Count());
     return KeyTable().Get(Entries()[aIndex].mKey);
   }
@@ -144,8 +143,7 @@ public:
 
 
 
-  nsString GetValueAt(uint32_t aIndex) const
-  {
+  nsString GetValueAt(uint32_t aIndex) const {
     MOZ_ASSERT(aIndex < Count());
     return ValueTable().Get(Entries()[aIndex].mValue);
   }
@@ -160,42 +158,30 @@ public:
 
   size_t MapSize() const { return mMap.size(); }
 
-protected:
+ protected:
   ~SharedStringMap() = default;
 
-private:
-
+ private:
   
-  const Header& GetHeader() const
-  {
-    return mMap.get<Header>()[0];
+  const Header& GetHeader() const { return mMap.get<Header>()[0]; }
+
+  RangedPtr<const Entry> Entries() const {
+    return {reinterpret_cast<const Entry*>(&GetHeader() + 1), EntryCount()};
   }
 
-  RangedPtr<const Entry> Entries() const
-  {
-    return { reinterpret_cast<const Entry*>(&GetHeader() + 1),
-             EntryCount() };
-  }
+  uint32_t EntryCount() const { return GetHeader().mEntryCount; }
 
-  uint32_t EntryCount() const
-  {
-    return GetHeader().mEntryCount;
-  }
-
-  StringTable<nsCString> KeyTable() const
-  {
+  StringTable<nsCString> KeyTable() const {
     auto& header = GetHeader();
-    return { { &mMap.get<uint8_t>()[header.mKeyStringsOffset],
-               header.mKeyStringsSize } };
+    return {{&mMap.get<uint8_t>()[header.mKeyStringsOffset],
+             header.mKeyStringsSize}};
   }
 
-  StringTable<nsString> ValueTable() const
-  {
+  StringTable<nsString> ValueTable() const {
     auto& header = GetHeader();
-    return { { &mMap.get<uint8_t>()[header.mValueStringsOffset],
-               header.mValueStringsSize } };
+    return {{&mMap.get<uint8_t>()[header.mValueStringsOffset],
+             header.mValueStringsSize}};
   }
-
 
   loader::AutoMemMap mMap;
 };
@@ -205,9 +191,8 @@ private:
 
 
 
-class MOZ_RAII SharedStringMapBuilder
-{
-public:
+class MOZ_RAII SharedStringMapBuilder {
+ public:
   SharedStringMapBuilder() = default;
 
   
@@ -222,7 +207,7 @@ public:
 
   Result<Ok, nsresult> Finalize(loader::AutoMemMap& aMap);
 
-private:
+ private:
   using Entry = SharedStringMap::Entry;
 
   StringTableBuilder<nsCStringHashKey, nsCString> mKeyTable;
@@ -231,9 +216,8 @@ private:
   nsDataHashtable<nsCStringHashKey, Entry> mEntries;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
-
+#endif  

@@ -40,4 +40,4 @@ extern mozilla::LazyLogModule gWyciwygLog;
 
 #define WYCIWYG_TYPE "text/html"
 
-#endif 
+#endif  

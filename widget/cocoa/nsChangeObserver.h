@@ -11,11 +11,14 @@ class nsIContent;
 class nsIDocument;
 class nsAtom;
 
-#define NS_DECL_CHANGEOBSERVER \
-void ObserveAttributeChanged(nsIDocument* aDocument, nsIContent* aContent, nsAtom* aAttribute) override; \
-void ObserveContentRemoved(nsIDocument* aDocument, nsIContent* aContainer, \
-                           nsIContent* aChild, nsIContent* aPreviousChild) override; \
-void ObserveContentInserted(nsIDocument* aDocument, nsIContent* aContainer, nsIContent* aChild) override;
+#define NS_DECL_CHANGEOBSERVER                                                \
+  void ObserveAttributeChanged(nsIDocument* aDocument, nsIContent* aContent,  \
+                               nsAtom* aAttribute) override;                  \
+  void ObserveContentRemoved(nsIDocument* aDocument, nsIContent* aContainer,  \
+                             nsIContent* aChild, nsIContent* aPreviousChild)  \
+      override;                                                               \
+  void ObserveContentInserted(nsIDocument* aDocument, nsIContent* aContainer, \
+                              nsIContent* aChild) override;
 
 
 
@@ -25,22 +28,20 @@ void ObserveContentInserted(nsIDocument* aDocument, nsIContent* aContainer, nsIC
 
 
 
-class nsChangeObserver
-{
-public:
+class nsChangeObserver {
+ public:
   
   virtual void ObserveAttributeChanged(nsIDocument* aDocument,
                                        nsIContent* aContent,
-                                       nsAtom* aAttribute)=0;
+                                       nsAtom* aAttribute) = 0;
 
   virtual void ObserveContentRemoved(nsIDocument* aDocument,
-                                     nsIContent* aContainer,
-                                     nsIContent* aChild,
-                                     nsIContent* aPreviousSibling)=0;
+                                     nsIContent* aContainer, nsIContent* aChild,
+                                     nsIContent* aPreviousSibling) = 0;
 
   virtual void ObserveContentInserted(nsIDocument* aDocument,
                                       nsIContent* aContainer,
-                                      nsIContent* aChild)=0;
+                                      nsIContent* aChild) = 0;
 };
 
-#endif 
+#endif  

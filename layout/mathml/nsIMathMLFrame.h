@@ -16,7 +16,7 @@ class gfxContext;
 class nsIFrame;
 namespace mozilla {
 class ReflowOutput;
-} 
+}  
 
 
 
@@ -33,18 +33,17 @@ enum eMathMLFrameType {
 };
 
 
-class nsIMathMLFrame
-{
-public:
+class nsIMathMLFrame {
+ public:
   NS_DECL_QUERYFRAME_TARGET(nsIMathMLFrame)
 
   
   virtual bool IsSpaceLike() = 0;
 
- 
- 
+  
+  
 
- 
+  
 
 
 
@@ -63,10 +62,10 @@ public:
 
   virtual eMathMLFrameType GetMathMLFrameType() = 0;
 
- 
- 
+  
+  
 
- 
+  
 
 
 
@@ -85,25 +84,28 @@ public:
 
   NS_IMETHOD
   Stretch(mozilla::gfx::DrawTarget* aDrawTarget,
-          nsStretchDirection   aStretchDirection,
-          nsBoundingMetrics&   aContainerSize,
+          nsStretchDirection aStretchDirection,
+          nsBoundingMetrics& aContainerSize,
           mozilla::ReflowOutput& aDesiredStretchSize) = 0;
 
- 
+  
 
   NS_IMETHOD
   GetEmbellishData(nsEmbellishData& aEmbellishData) = 0;
 
+  
+  
 
- 
- 
-
- 
+  
 
   NS_IMETHOD
   GetPresentationData(nsPresentationData& aPresentationData) = 0;
 
   
+
+
+
+
 
 
 
@@ -146,7 +148,7 @@ public:
   NS_IMETHOD
   TransmitAutomaticData() = 0;
 
- 
+  
 
 
 
@@ -167,10 +169,9 @@ public:
 
 
   NS_IMETHOD
-  UpdatePresentationData(uint32_t        aFlagsValues,
-                         uint32_t        aWhichFlags) = 0;
+  UpdatePresentationData(uint32_t aFlagsValues, uint32_t aWhichFlags) = 0;
 
- 
+  
 
 
 
@@ -192,24 +193,21 @@ public:
 
 
   NS_IMETHOD
-  UpdatePresentationDataFromChildAt(int32_t         aFirstIndex,
-                                    int32_t         aLastIndex,
-                                    uint32_t        aFlagsValues,
-                                    uint32_t        aWhichFlags) = 0;
+  UpdatePresentationDataFromChildAt(int32_t aFirstIndex, int32_t aLastIndex,
+                                    uint32_t aFlagsValues,
+                                    uint32_t aWhichFlags) = 0;
 
   
   
   
   
-  virtual uint8_t
-  ScriptIncrement(nsIFrame* aFrame) = 0;
+  virtual uint8_t ScriptIncrement(nsIFrame* aFrame) = 0;
 
   
   
   
   
-  virtual bool
-  IsMrowLike() = 0;
+  virtual bool IsMrowLike() = 0;
 };
 
 
@@ -272,117 +270,122 @@ struct nsPresentationData {
 
 
 
-#define NS_MATHML_COMPRESSED                          0x00000002U
+#define NS_MATHML_COMPRESSED 0x00000002U
 
 
 
 
 
-#define NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY     0x00000004U
+#define NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY 0x00000004U
 
 
 
 
 
-#define NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY   0x00000008U
+#define NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY 0x00000008U
 
 
-#define NS_MATHML_SPACE_LIKE                          0x00000040U
-
-
-
-#define NS_MATHML_DTLS                                0x00000080U
+#define NS_MATHML_SPACE_LIKE 0x00000040U
 
 
 
-
-#define NS_MATHML_ERROR                               0x80000000U
-
-
-#define NS_MATHML_STRETCH_DONE                        0x20000000U
+#define NS_MATHML_DTLS 0x00000080U
 
 
 
 
+#define NS_MATHML_ERROR 0x80000000U
 
-#define NS_MATHML_SHOW_BOUNDING_METRICS               0x10000000U
+
+#define NS_MATHML_STRETCH_DONE 0x20000000U
+
+
+
+
+
+#define NS_MATHML_SHOW_BOUNDING_METRICS 0x10000000U
 
 
 
 #define NS_MATHML_IS_COMPRESSED(_flags) \
-  (NS_MATHML_COMPRESSED == ((_flags) & NS_MATHML_COMPRESSED))
+  (NS_MATHML_COMPRESSED == ((_flags)&NS_MATHML_COMPRESSED))
 
 #define NS_MATHML_WILL_STRETCH_ALL_CHILDREN_VERTICALLY(_flags) \
-  (NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY == ((_flags) & NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY))
+  (NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY ==                \
+   ((_flags)&NS_MATHML_STRETCH_ALL_CHILDREN_VERTICALLY))
 
 #define NS_MATHML_WILL_STRETCH_ALL_CHILDREN_HORIZONTALLY(_flags) \
-  (NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY == ((_flags) & NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY))
+  (NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY ==                \
+   ((_flags)&NS_MATHML_STRETCH_ALL_CHILDREN_HORIZONTALLY))
 
 #define NS_MATHML_IS_SPACE_LIKE(_flags) \
-  (NS_MATHML_SPACE_LIKE == ((_flags) & NS_MATHML_SPACE_LIKE))
+  (NS_MATHML_SPACE_LIKE == ((_flags)&NS_MATHML_SPACE_LIKE))
 
 #define NS_MATHML_IS_DTLS_SET(_flags) \
-  (NS_MATHML_DTLS == ((_flags) & NS_MATHML_DTLS))
+  (NS_MATHML_DTLS == ((_flags)&NS_MATHML_DTLS))
 
 #define NS_MATHML_HAS_ERROR(_flags) \
-  (NS_MATHML_ERROR == ((_flags) & NS_MATHML_ERROR))
+  (NS_MATHML_ERROR == ((_flags)&NS_MATHML_ERROR))
 
 #define NS_MATHML_STRETCH_WAS_DONE(_flags) \
-  (NS_MATHML_STRETCH_DONE == ((_flags) & NS_MATHML_STRETCH_DONE))
+  (NS_MATHML_STRETCH_DONE == ((_flags)&NS_MATHML_STRETCH_DONE))
 
 #define NS_MATHML_PAINT_BOUNDING_METRICS(_flags) \
-  (NS_MATHML_SHOW_BOUNDING_METRICS == ((_flags) & NS_MATHML_SHOW_BOUNDING_METRICS))
+  (NS_MATHML_SHOW_BOUNDING_METRICS ==            \
+   ((_flags)&NS_MATHML_SHOW_BOUNDING_METRICS))
 
 
 
 
 
 
-#define NS_MATHML_EMBELLISH_OPERATOR                0x00000001
+#define NS_MATHML_EMBELLISH_OPERATOR 0x00000001
 
 
 
-#define NS_MATHML_EMBELLISH_MOVABLELIMITS           0x00000002
+#define NS_MATHML_EMBELLISH_MOVABLELIMITS 0x00000002
 
 
 
-#define NS_MATHML_EMBELLISH_ACCENT                  0x00000004
+#define NS_MATHML_EMBELLISH_ACCENT 0x00000004
 
 
 
-#define NS_MATHML_EMBELLISH_ACCENTOVER              0x00000008
+#define NS_MATHML_EMBELLISH_ACCENTOVER 0x00000008
 
 
 
-#define NS_MATHML_EMBELLISH_ACCENTUNDER             0x00000010
+#define NS_MATHML_EMBELLISH_ACCENTUNDER 0x00000010
 
 
-#define NS_MATHML_EMBELLISH_FENCE                   0x00000020
+#define NS_MATHML_EMBELLISH_FENCE 0x00000020
 
 
-#define NS_MATHML_EMBELLISH_SEPARATOR               0x00000040
+#define NS_MATHML_EMBELLISH_SEPARATOR 0x00000040
 
 
 
 #define NS_MATHML_IS_EMBELLISH_OPERATOR(_flags) \
-  (NS_MATHML_EMBELLISH_OPERATOR == ((_flags) & NS_MATHML_EMBELLISH_OPERATOR))
+  (NS_MATHML_EMBELLISH_OPERATOR == ((_flags)&NS_MATHML_EMBELLISH_OPERATOR))
 
 #define NS_MATHML_EMBELLISH_IS_MOVABLELIMITS(_flags) \
-  (NS_MATHML_EMBELLISH_MOVABLELIMITS == ((_flags) & NS_MATHML_EMBELLISH_MOVABLELIMITS))
+  (NS_MATHML_EMBELLISH_MOVABLELIMITS ==              \
+   ((_flags)&NS_MATHML_EMBELLISH_MOVABLELIMITS))
 
 #define NS_MATHML_EMBELLISH_IS_ACCENT(_flags) \
-  (NS_MATHML_EMBELLISH_ACCENT == ((_flags) & NS_MATHML_EMBELLISH_ACCENT))
+  (NS_MATHML_EMBELLISH_ACCENT == ((_flags)&NS_MATHML_EMBELLISH_ACCENT))
 
 #define NS_MATHML_EMBELLISH_IS_ACCENTOVER(_flags) \
-  (NS_MATHML_EMBELLISH_ACCENTOVER == ((_flags) & NS_MATHML_EMBELLISH_ACCENTOVER))
+  (NS_MATHML_EMBELLISH_ACCENTOVER == ((_flags)&NS_MATHML_EMBELLISH_ACCENTOVER))
 
 #define NS_MATHML_EMBELLISH_IS_ACCENTUNDER(_flags) \
-  (NS_MATHML_EMBELLISH_ACCENTUNDER == ((_flags) & NS_MATHML_EMBELLISH_ACCENTUNDER))
+  (NS_MATHML_EMBELLISH_ACCENTUNDER ==              \
+   ((_flags)&NS_MATHML_EMBELLISH_ACCENTUNDER))
 
 #define NS_MATHML_EMBELLISH_IS_FENCE(_flags) \
-  (NS_MATHML_EMBELLISH_FENCE == ((_flags) & NS_MATHML_EMBELLISH_FENCE))
+  (NS_MATHML_EMBELLISH_FENCE == ((_flags)&NS_MATHML_EMBELLISH_FENCE))
 
 #define NS_MATHML_EMBELLISH_IS_SEPARATOR(_flags) \
-  (NS_MATHML_EMBELLISH_SEPARATOR == ((_flags) & NS_MATHML_EMBELLISH_SEPARATOR))
+  (NS_MATHML_EMBELLISH_SEPARATOR == ((_flags)&NS_MATHML_EMBELLISH_SEPARATOR))
 
 #endif 

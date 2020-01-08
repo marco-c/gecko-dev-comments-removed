@@ -22,10 +22,8 @@
 namespace mozilla {
 namespace net {
 
-class TCPFastOpen
-{
-public:
-
+class TCPFastOpen {
+ public:
   
   
   virtual bool FastOpenEnabled() = 0;
@@ -41,7 +39,7 @@ public:
   virtual void SetFastOpenStatus(uint8_t tfoStatus) = 0;
 };
 
-}
-}
+}  
+}  
 
-#endif 
+#endif  

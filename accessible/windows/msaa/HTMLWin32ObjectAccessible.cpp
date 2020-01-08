@@ -14,11 +14,9 @@ using namespace mozilla::a11y;
 
 
 
-HTMLWin32ObjectOwnerAccessible::
-  HTMLWin32ObjectOwnerAccessible(nsIContent* aContent,
-                                 DocAccessible* aDoc, void* aHwnd) :
-  AccessibleWrap(aContent, aDoc), mHwnd(aHwnd)
-{
+HTMLWin32ObjectOwnerAccessible::HTMLWin32ObjectOwnerAccessible(
+    nsIContent* aContent, DocAccessible* aDoc, void* aHwnd)
+    : AccessibleWrap(aContent, aDoc), mHwnd(aHwnd) {
   mStateFlags |= eNoKidsFromDOM;
 
   
@@ -31,22 +29,16 @@ HTMLWin32ObjectOwnerAccessible::
 
 
 
-void
-HTMLWin32ObjectOwnerAccessible::Shutdown()
-{
+void HTMLWin32ObjectOwnerAccessible::Shutdown() {
   AccessibleWrap::Shutdown();
   mNativeAccessible = nullptr;
 }
 
-role
-HTMLWin32ObjectOwnerAccessible::NativeRole() const
-{
+role HTMLWin32ObjectOwnerAccessible::NativeRole() const {
   return roles::EMBEDDED_OBJECT;
 }
 
-bool
-HTMLWin32ObjectOwnerAccessible::NativelyUnavailable() const
-{
+bool HTMLWin32ObjectOwnerAccessible::NativelyUnavailable() const {
   
   
   return !mHwnd;
@@ -57,9 +49,8 @@ HTMLWin32ObjectOwnerAccessible::NativelyUnavailable() const
 
 
 HTMLWin32ObjectAccessible::HTMLWin32ObjectAccessible(void* aHwnd,
-                                                     DocAccessible* aDoc) :
-  DummyAccessible(aDoc)
-{
+                                                     DocAccessible* aDoc)
+    : DummyAccessible(aDoc) {
   mHwnd = aHwnd;
   if (mHwnd) {
 #if defined(MOZ_CONTENT_SANDBOX)
@@ -89,9 +80,7 @@ HTMLWin32ObjectAccessible::HTMLWin32ObjectAccessible(void* aHwnd,
   }
 }
 
-void
-HTMLWin32ObjectAccessible::GetNativeInterface(void** aNativeAccessible)
-{
+void HTMLWin32ObjectAccessible::GetNativeInterface(void** aNativeAccessible) {
 #if defined(MOZ_CONTENT_SANDBOX)
   if (XRE_IsContentProcess()) {
     RefPtr<IAccessible> addRefed = mCOMProxy.get();
@@ -101,9 +90,7 @@ HTMLWin32ObjectAccessible::GetNativeInterface(void** aNativeAccessible)
 #endif
 
   if (mHwnd) {
-    ::AccessibleObjectFromWindow(static_cast<HWND>(mHwnd),
-                                 OBJID_WINDOW, IID_IAccessible,
-                                 aNativeAccessible);
+    ::AccessibleObjectFromWindow(static_cast<HWND>(mHwnd), OBJID_WINDOW,
+                                 IID_IAccessible, aNativeAccessible);
   }
 }
-

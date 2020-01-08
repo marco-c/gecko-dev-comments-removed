@@ -18,15 +18,15 @@
 
 
 
-#define NPN_LOG_NAME    "PluginNPN"
-#define NPP_LOG_NAME    "PluginNPP"
+#define NPN_LOG_NAME "PluginNPN"
+#define NPP_LOG_NAME "PluginNPP"
 #define PLUGIN_LOG_NAME "Plugin"
 
 
 #define PLUGIN_LOG_ALWAYS mozilla::LogLevel::Error
-#define PLUGIN_LOG_BASIC  mozilla::LogLevel::Info
+#define PLUGIN_LOG_BASIC mozilla::LogLevel::Info
 #define PLUGIN_LOG_NORMAL mozilla::LogLevel::Debug
-#define PLUGIN_LOG_NOISY  mozilla::LogLevel::Verbose
+#define PLUGIN_LOG_NOISY mozilla::LogLevel::Verbose
 
 
 
@@ -39,12 +39,10 @@
 
 
 
-
-class nsPluginLogging
-{
-public:
-  static mozilla::LazyLogModule gNPNLog;  
-  static mozilla::LazyLogModule gNPPLog;  
+class nsPluginLogging {
+ public:
+  static mozilla::LazyLogModule gNPNLog;     
+  static mozilla::LazyLogModule gNPPLog;     
   static mozilla::LazyLogModule gPluginLog;  
 };
 
@@ -53,5 +51,4 @@ public:
 #define NPP_PLUGIN_LOG(a, b) MOZ_LOG(nsPluginLogging::gNPPLog, a, b)
 #define PLUGIN_LOG(a, b) MOZ_LOG(nsPluginLogging::gPluginLog, a, b)
 
-#endif   
-
+#endif  

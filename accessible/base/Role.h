@@ -364,6 +364,7 @@ enum Role {
 
 
 
+
   EQUATION = 55,
 
   
@@ -418,7 +419,7 @@ enum Role {
   
 
 
-  ARROW  = 65,
+  ARROW = 65,
 
   
 
@@ -434,7 +435,7 @@ enum Role {
   
 
 
-  COLOR_CHOOSER  = 68,
+  COLOR_CHOOSER = 68,
 
   
 
@@ -1047,11 +1048,11 @@ enum Role {
   LAST_ROLE = FORM_LANDMARK
 };
 
-} 
+}  
 
 typedef enum mozilla::a11y::roles::Role role;
 
-} 
-} 
+}  
+}  
 
 #endif

@@ -34,7 +34,7 @@ typedef struct {
   guint8 backdrop;
   gint32 curpos; 
   gint32 maxpos;
-  gint32 scale;  
+  gint32 scale; 
 } GtkWidgetState;
 
 
@@ -44,29 +44,24 @@ struct MozGtkSize {
   gint width;
   gint height;
 
-  MozGtkSize& operator+=(const GtkBorder& aBorder)
-  {
+  MozGtkSize& operator+=(const GtkBorder& aBorder) {
     width += aBorder.left + aBorder.right;
     height += aBorder.top + aBorder.bottom;
     return *this;
   }
-  MozGtkSize operator+(const GtkBorder& aBorder) const
-  {
+  MozGtkSize operator+(const GtkBorder& aBorder) const {
     MozGtkSize result = *this;
     return result += aBorder;
   }
-  bool operator<(const MozGtkSize &aOther) const
-  {
+  bool operator<(const MozGtkSize& aOther) const {
     return (width < aOther.width && height <= aOther.height) ||
            (width <= aOther.width && height < aOther.height);
   }
-  void Include(MozGtkSize aOther)
-  {
+  void Include(MozGtkSize aOther) {
     width = std::max(width, aOther.width);
     height = std::max(height, aOther.height);
   }
-  void Rotate()
-  {
+  void Rotate() {
     gint tmp = width;
     width = height;
     height = tmp;
@@ -97,7 +92,7 @@ typedef struct {
 
 typedef struct {
   MozGtkSize minSizeWithBorderMargin;
-  GtkBorder  buttonMargin;
+  GtkBorder buttonMargin;
   gint iconXPosition;
   gint iconYPosition;
   bool visible;
@@ -112,23 +107,21 @@ typedef struct {
 } ToolbarGTKMetrics;
 
 typedef enum {
-  MOZ_GTK_STEPPER_DOWN        = 1 << 0,
-  MOZ_GTK_STEPPER_BOTTOM      = 1 << 1,
-  MOZ_GTK_STEPPER_VERTICAL    = 1 << 2
+  MOZ_GTK_STEPPER_DOWN = 1 << 0,
+  MOZ_GTK_STEPPER_BOTTOM = 1 << 1,
+  MOZ_GTK_STEPPER_VERTICAL = 1 << 2
 } GtkScrollbarButtonFlags;
 
-typedef enum {
-  MOZ_GTK_TRACK_OPAQUE        = 1 << 0
-} GtkScrollbarTrackFlags;
+typedef enum { MOZ_GTK_TRACK_OPAQUE = 1 << 0 } GtkScrollbarTrackFlags;
 
 
 typedef enum {
   
-  MOZ_GTK_TAB_MARGIN_MASK     = 0xFF,
+  MOZ_GTK_TAB_MARGIN_MASK = 0xFF,
   
-  MOZ_GTK_TAB_FIRST           = 1 << 9,
+  MOZ_GTK_TAB_FIRST = 1 << 9,
   
-  MOZ_GTK_TAB_SELECTED        = 1 << 10
+  MOZ_GTK_TAB_SELECTED = 1 << 10
 } GtkTabFlags;
 
 
@@ -248,6 +241,7 @@ typedef enum {
   
   MOZ_GTK_NOTEBOOK,
   
+
   MOZ_GTK_NOTEBOOK_HEADER,
   
   MOZ_GTK_TAB_TOP,
@@ -382,12 +376,9 @@ gint moz_gtk_shutdown();
 
 
 
-gint
-moz_gtk_widget_paint(WidgetNodeType widget, cairo_t *cr,
-                     GdkRectangle* rect,
-                     GtkWidgetState* state, gint flags,
-                     GtkTextDirection direction);
-
+gint moz_gtk_widget_paint(WidgetNodeType widget, cairo_t* cr,
+                          GdkRectangle* rect, GtkWidgetState* state, gint flags,
+                          GtkTextDirection direction);
 
 
 
@@ -401,7 +392,8 @@ moz_gtk_widget_paint(WidgetNodeType widget, cairo_t *cr,
 
 
 gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
-                               gint* right, gint* bottom, GtkTextDirection direction);
+                               gint* right, gint* bottom,
+                               GtkTextDirection direction);
 
 
 
@@ -413,10 +405,9 @@ gint moz_gtk_get_widget_border(WidgetNodeType widget, gint* left, gint* top,
 
 
 
-gint
-moz_gtk_get_tab_border(gint* left, gint* top, gint* right, gint* bottom,
-                       GtkTextDirection direction, GtkTabFlags flags,
-                       WidgetNodeType widget);
+gint moz_gtk_get_tab_border(gint* left, gint* top, gint* right, gint* bottom,
+                            GtkTextDirection direction, GtkTabFlags flags,
+                            WidgetNodeType widget);
 
 
 
@@ -426,16 +417,15 @@ moz_gtk_get_tab_border(gint* left, gint* top, gint* right, gint* bottom,
 
 
 
-gint
-moz_gtk_checkbox_get_metrics(gint* indicator_size, gint* indicator_spacing);
+gint moz_gtk_checkbox_get_metrics(gint* indicator_size,
+                                  gint* indicator_spacing);
 
 
 
 
 
 
-const ToggleGTKMetrics*
-GetToggleMetrics(bool isRadio);
+const ToggleGTKMetrics* GetToggleMetrics(bool isRadio);
 
 
 
@@ -445,8 +435,7 @@ GetToggleMetrics(bool isRadio);
 
 
 
-gint
-moz_gtk_radio_get_metrics(gint* indicator_size, gint* indicator_spacing);
+gint moz_gtk_radio_get_metrics(gint* indicator_size, gint* indicator_spacing);
 
 
 
@@ -455,20 +444,17 @@ moz_gtk_radio_get_metrics(gint* indicator_size, gint* indicator_spacing);
 
 
 
-gint
-moz_gtk_get_focus_outline_size(gint* focus_h_width, gint* focus_v_width);
+gint moz_gtk_get_focus_outline_size(gint* focus_h_width, gint* focus_v_width);
 
 
 
 
 
 
-gint
-moz_gtk_menuitem_get_horizontal_padding(gint* horizontal_padding);
 
-gint
-moz_gtk_checkmenuitem_get_horizontal_padding(gint* horizontal_padding);
+gint moz_gtk_menuitem_get_horizontal_padding(gint* horizontal_padding);
 
+gint moz_gtk_checkmenuitem_get_horizontal_padding(gint* horizontal_padding);
 
 
 
@@ -480,20 +466,19 @@ moz_gtk_checkmenuitem_get_horizontal_padding(gint* horizontal_padding);
 
 
 
-gint
-moz_gtk_button_get_default_overflow(gint* border_top, gint* border_left,
-                                    gint* border_bottom, gint* border_right);
 
+gint moz_gtk_button_get_default_overflow(gint* border_top, gint* border_left,
+                                         gint* border_bottom,
+                                         gint* border_right);
 
 
 
 
 
 
-void
-moz_gtk_get_scale_metrics(GtkOrientation orient, gint* scale_width,
-                          gint* scale_height);
 
+void moz_gtk_get_scale_metrics(GtkOrientation orient, gint* scale_width,
+                               gint* scale_height);
 
 
 
@@ -502,23 +487,23 @@ moz_gtk_get_scale_metrics(GtkOrientation orient, gint* scale_width,
 
 
 
-gint
-moz_gtk_get_scalethumb_metrics(GtkOrientation orient, gint* thumb_length, gint* thumb_height);
 
+gint moz_gtk_get_scalethumb_metrics(GtkOrientation orient, gint* thumb_length,
+                                    gint* thumb_height);
 
 
 
 
-const ScrollbarGTKMetrics*
-GetScrollbarMetrics(GtkOrientation aOrientation);
 
+const ScrollbarGTKMetrics* GetScrollbarMetrics(GtkOrientation aOrientation);
 
 
 
 
 
-const ScrollbarGTKMetrics*
-GetActiveScrollbarMetrics(GtkOrientation aOrientation);
+
+const ScrollbarGTKMetrics* GetActiveScrollbarMetrics(
+    GtkOrientation aOrientation);
 
 
 
@@ -545,9 +530,8 @@ gint moz_gtk_get_tab_scroll_arrow_size(gint* width, gint* height);
 
 
 
-void
-moz_gtk_get_arrow_size(WidgetNodeType widgetType,
-                       gint* width, gint* height);
+void moz_gtk_get_arrow_size(WidgetNodeType widgetType, gint* width,
+                            gint* height);
 
 
 
@@ -600,28 +584,13 @@ gint moz_gtk_splitter_get_metrics(gint orientation, gint* size);
 
 
 
-gint
-moz_gtk_get_tab_thickness(WidgetNodeType aNodeType);
+gint moz_gtk_get_tab_thickness(WidgetNodeType aNodeType);
 
 
 
 
-
-const ToolbarButtonGTKMetrics*
-GetToolbarButtonMetrics(WidgetNodeType aAppearance);
-
-
-
-
-
-
-
-
-
-
-
-int
-GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout, int aMaxButtonNums);
+const ToolbarButtonGTKMetrics* GetToolbarButtonMetrics(
+    WidgetNodeType aAppearance);
 
 
 
@@ -633,7 +602,19 @@ GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout, int aMaxButtonNums);
 
 
 
-bool
-GetCSDDecorationSize(GtkWindow *aGtkWindow, GtkBorder* aDecorationSize);
+int GetGtkHeaderBarButtonLayout(WidgetNodeType* aButtonLayout,
+                                int aMaxButtonNums);
+
+
+
+
+
+
+
+
+
+
+
+bool GetCSDDecorationSize(GtkWindow* aGtkWindow, GtkBorder* aDecorationSize);
 
 #endif

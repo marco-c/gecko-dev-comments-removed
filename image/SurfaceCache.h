@@ -11,18 +11,18 @@
 #ifndef mozilla_image_SurfaceCache_h
 #define mozilla_image_SurfaceCache_h
 
-#include "mozilla/Maybe.h"           
+#include "mozilla/Maybe.h"  
 #include "mozilla/NotNull.h"
-#include "mozilla/MemoryReporting.h" 
-#include "mozilla/HashFunctions.h"   
+#include "mozilla/MemoryReporting.h"  
+#include "mozilla/HashFunctions.h"    
 #include "gfx2DGlue.h"
-#include "gfxPoint.h"                
-#include "nsCOMPtr.h"                
-#include "mozilla/gfx/Point.h"       
-#include "mozilla/gfx/2D.h"          
+#include "gfxPoint.h"           
+#include "nsCOMPtr.h"           
+#include "mozilla/gfx/Point.h"  
+#include "mozilla/gfx/2D.h"     
 #include "PlaybackType.h"
 #include "SurfaceFlags.h"
-#include "SVGImageContext.h"         
+#include "SVGImageContext.h"  
 
 namespace mozilla {
 namespace image {
@@ -47,29 +47,23 @@ typedef Image* ImageKey;
 
 
 
-class SurfaceKey
-{
+class SurfaceKey {
   typedef gfx::IntSize IntSize;
 
-public:
-  bool operator==(const SurfaceKey& aOther) const
-  {
-    return aOther.mSize == mSize &&
-           aOther.mSVGContext == mSVGContext &&
-           aOther.mPlayback == mPlayback &&
-           aOther.mFlags == mFlags;
+ public:
+  bool operator==(const SurfaceKey& aOther) const {
+    return aOther.mSize == mSize && aOther.mSVGContext == mSVGContext &&
+           aOther.mPlayback == mPlayback && aOther.mFlags == mFlags;
   }
 
-  PLDHashNumber Hash() const
-  {
+  PLDHashNumber Hash() const {
     PLDHashNumber hash = HashGeneric(mSize.width, mSize.height);
     hash = AddToHash(hash, mSVGContext.map(HashSIC).valueOr(0));
     hash = AddToHash(hash, uint8_t(mPlayback), uint32_t(mFlags));
     return hash;
   }
 
-  SurfaceKey CloneWithSize(const IntSize& aSize) const
-  {
+  SurfaceKey CloneWithSize(const IntSize& aSize) const {
     return SurfaceKey(aSize, mSVGContext, mPlayback, mFlags);
   }
 
@@ -78,43 +72,37 @@ public:
   PlaybackType Playback() const { return mPlayback; }
   SurfaceFlags Flags() const { return mFlags; }
 
-private:
-  SurfaceKey(const IntSize& aSize,
-             const Maybe<SVGImageContext>& aSVGContext,
-             PlaybackType aPlayback,
-             SurfaceFlags aFlags)
-    : mSize(aSize)
-    , mSVGContext(aSVGContext)
-    , mPlayback(aPlayback)
-    , mFlags(aFlags)
-  { }
+ private:
+  SurfaceKey(const IntSize& aSize, const Maybe<SVGImageContext>& aSVGContext,
+             PlaybackType aPlayback, SurfaceFlags aFlags)
+      : mSize(aSize),
+        mSVGContext(aSVGContext),
+        mPlayback(aPlayback),
+        mFlags(aFlags) {}
 
   static PLDHashNumber HashSIC(const SVGImageContext& aSIC) {
     return aSIC.Hash();
   }
 
-  friend SurfaceKey RasterSurfaceKey(const IntSize&, SurfaceFlags, PlaybackType);
+  friend SurfaceKey RasterSurfaceKey(const IntSize&, SurfaceFlags,
+                                     PlaybackType);
   friend SurfaceKey VectorSurfaceKey(const IntSize&,
                                      const Maybe<SVGImageContext>&);
 
-  IntSize                mSize;
+  IntSize mSize;
   Maybe<SVGImageContext> mSVGContext;
-  PlaybackType           mPlayback;
-  SurfaceFlags           mFlags;
+  PlaybackType mPlayback;
+  SurfaceFlags mFlags;
 };
 
-inline SurfaceKey
-RasterSurfaceKey(const gfx::IntSize& aSize,
-                 SurfaceFlags aFlags,
-                 PlaybackType aPlayback)
-{
+inline SurfaceKey RasterSurfaceKey(const gfx::IntSize& aSize,
+                                   SurfaceFlags aFlags,
+                                   PlaybackType aPlayback) {
   return SurfaceKey(aSize, Nothing(), aPlayback, aFlags);
 }
 
-inline SurfaceKey
-VectorSurfaceKey(const gfx::IntSize& aSize,
-                 const Maybe<SVGImageContext>& aSVGContext)
-{
+inline SurfaceKey VectorSurfaceKey(const gfx::IntSize& aSize,
+                                   const Maybe<SVGImageContext>& aSVGContext) {
   
   
   
@@ -138,12 +126,12 @@ VectorSurfaceKey(const gfx::IntSize& aSize,
 
 
 
-
-class AvailabilityState
-{
-public:
+class AvailabilityState {
+ public:
   static AvailabilityState StartAvailable() { return AvailabilityState(true); }
-  static AvailabilityState StartAsPlaceholder() { return AvailabilityState(false); }
+  static AvailabilityState StartAsPlaceholder() {
+    return AvailabilityState(false);
+  }
 
   bool IsAvailable() const { return mIsAvailable; }
   bool IsPlaceholder() const { return !mIsAvailable; }
@@ -151,13 +139,11 @@ public:
 
   void SetCannotSubstitute() { mCannotSubstitute = true; }
 
-private:
+ private:
   friend class SurfaceCacheImpl;
 
   explicit AvailabilityState(bool aIsAvailable)
-    : mIsAvailable(aIsAvailable)
-    , mCannotSubstitute(false)
-  { }
+      : mIsAvailable(aIsAvailable), mCannotSubstitute(false) {}
 
   void SetAvailable() { mIsAvailable = true; }
 
@@ -195,8 +181,7 @@ enum class InsertOutcome : uint8_t {
 
 
 
-struct SurfaceCache
-{
+struct SurfaceCache {
   typedef gfx::IntSize IntSize;
 
   
@@ -231,9 +216,8 @@ struct SurfaceCache
 
 
 
-  static LookupResult Lookup(const ImageKey    aImageKey,
-                             const SurfaceKey& aSurfaceKey,
-                             bool aMarkUsed);
+  static LookupResult Lookup(const ImageKey aImageKey,
+                             const SurfaceKey& aSurfaceKey, bool aMarkUsed);
 
   
 
@@ -251,7 +235,7 @@ struct SurfaceCache
 
 
 
-  static LookupResult LookupBestMatch(const ImageKey    aImageKey,
+  static LookupResult LookupBestMatch(const ImageKey aImageKey,
                                       const SurfaceKey& aSurfaceKey,
                                       bool aMarkUsed);
 
@@ -435,9 +419,9 @@ struct SurfaceCache
 
 
 
-  static void CollectSizeOfSurfaces(const ImageKey    aImageKey,
+  static void CollectSizeOfSurfaces(const ImageKey aImageKey,
                                     nsTArray<SurfaceMemoryCounter>& aCounters,
-                                    MallocSizeOf      aMallocSizeOf);
+                                    MallocSizeOf aMallocSizeOf);
 
   
 
@@ -450,11 +434,11 @@ struct SurfaceCache
 
   static bool IsLegalSize(const IntSize& aSize);
 
-private:
+ private:
   virtual ~SurfaceCache() = 0;  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

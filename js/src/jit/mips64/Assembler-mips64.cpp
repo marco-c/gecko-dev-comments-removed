@@ -14,462 +14,423 @@ using namespace js;
 using namespace js::jit;
 
 ABIArgGenerator::ABIArgGenerator()
-  : usedArgSlots_(0),
-    firstArgFloat(false),
-    current_()
-{}
+    : usedArgSlots_(0), firstArgFloat(false), current_() {}
 
-ABIArg
-ABIArgGenerator::next(MIRType type)
-{
-    switch (type) {
-      case MIRType::Int32:
-      case MIRType::Int64:
-      case MIRType::Pointer: {
-        Register destReg;
-        if (GetIntArgReg(usedArgSlots_, &destReg)) {
-            current_ = ABIArg(destReg);
-        } else {
-            current_ = ABIArg(GetArgStackDisp(usedArgSlots_));
-        }
-        usedArgSlots_++;
-        break;
+ABIArg ABIArgGenerator::next(MIRType type) {
+  switch (type) {
+    case MIRType::Int32:
+    case MIRType::Int64:
+    case MIRType::Pointer: {
+      Register destReg;
+      if (GetIntArgReg(usedArgSlots_, &destReg)) {
+        current_ = ABIArg(destReg);
+      } else {
+        current_ = ABIArg(GetArgStackDisp(usedArgSlots_));
       }
-      case MIRType::Float32:
-      case MIRType::Double: {
-        FloatRegister destFReg;
-        FloatRegister::ContentType contentType;
-        if (!usedArgSlots_) {
-            firstArgFloat = true;
-        }
-        contentType = (type == MIRType::Double) ?
-            FloatRegisters::Double : FloatRegisters::Single;
-        if (GetFloatArgReg(usedArgSlots_, &destFReg)) {
-            current_ = ABIArg(FloatRegister(destFReg.id(), contentType));
-        } else {
-            current_ = ABIArg(GetArgStackDisp(usedArgSlots_));
-        }
-        usedArgSlots_++;
-        break;
-      }
-      default:
-        MOZ_CRASH("Unexpected argument type");
+      usedArgSlots_++;
+      break;
     }
-    return current_;
+    case MIRType::Float32:
+    case MIRType::Double: {
+      FloatRegister destFReg;
+      FloatRegister::ContentType contentType;
+      if (!usedArgSlots_) {
+        firstArgFloat = true;
+      }
+      contentType = (type == MIRType::Double) ? FloatRegisters::Double
+                                              : FloatRegisters::Single;
+      if (GetFloatArgReg(usedArgSlots_, &destFReg)) {
+        current_ = ABIArg(FloatRegister(destFReg.id(), contentType));
+      } else {
+        current_ = ABIArg(GetArgStackDisp(usedArgSlots_));
+      }
+      usedArgSlots_++;
+      break;
+    }
+    default:
+      MOZ_CRASH("Unexpected argument type");
+  }
+  return current_;
 }
 
-uint32_t
-js::jit::RT(FloatRegister r)
-{
-    MOZ_ASSERT(r.id() < FloatRegisters::TotalPhys);
-    return r.id() << RTShift;
+uint32_t js::jit::RT(FloatRegister r) {
+  MOZ_ASSERT(r.id() < FloatRegisters::TotalPhys);
+  return r.id() << RTShift;
 }
 
-uint32_t
-js::jit::RD(FloatRegister r)
-{
-    MOZ_ASSERT(r.id() < FloatRegisters::TotalPhys);
-    return r.id() << RDShift;
+uint32_t js::jit::RD(FloatRegister r) {
+  MOZ_ASSERT(r.id() < FloatRegisters::TotalPhys);
+  return r.id() << RDShift;
 }
 
-uint32_t
-js::jit::RZ(FloatRegister r)
-{
-    MOZ_ASSERT(r.id() < FloatRegisters::TotalPhys);
-    return r.id() << RZShift;
+uint32_t js::jit::RZ(FloatRegister r) {
+  MOZ_ASSERT(r.id() < FloatRegisters::TotalPhys);
+  return r.id() << RZShift;
 }
 
-uint32_t
-js::jit::SA(FloatRegister r)
-{
-    MOZ_ASSERT(r.id() < FloatRegisters::TotalPhys);
-    return r.id() << SAShift;
+uint32_t js::jit::SA(FloatRegister r) {
+  MOZ_ASSERT(r.id() < FloatRegisters::TotalPhys);
+  return r.id() << SAShift;
 }
 
 
-void
-jit::PatchJump(CodeLocationJump& jump_, CodeLocationLabel label)
-{
-    Instruction* inst = (Instruction*)jump_.raw();
+void jit::PatchJump(CodeLocationJump& jump_, CodeLocationLabel label) {
+  Instruction* inst = (Instruction*)jump_.raw();
 
-    Assembler::UpdateLoad64Value(inst, (uint64_t)label.raw());
+  Assembler::UpdateLoad64Value(inst, (uint64_t)label.raw());
 
+  
+  AutoFlushICache::flush(uintptr_t(inst), 6 * sizeof(uint32_t));
+}
+
+void Assembler::executableCopy(uint8_t* buffer, bool flushICache) {
+  MOZ_ASSERT(isFinished);
+  m_buffer.executableCopy(buffer);
+
+  if (flushICache) {
+    AutoFlushICache::setRange(uintptr_t(buffer), m_buffer.size());
+  }
+}
+
+uintptr_t Assembler::GetPointer(uint8_t* instPtr) {
+  Instruction* inst = (Instruction*)instPtr;
+  return Assembler::ExtractLoad64Value(inst);
+}
+
+static JitCode* CodeFromJump(Instruction* jump) {
+  uint8_t* target = (uint8_t*)Assembler::ExtractLoad64Value(jump);
+  return JitCode::FromExecutable(target);
+}
+
+void Assembler::TraceJumpRelocations(JSTracer* trc, JitCode* code,
+                                     CompactBufferReader& reader) {
+  while (reader.more()) {
+    JitCode* child =
+        CodeFromJump((Instruction*)(code->raw() + reader.readUnsigned()));
+    TraceManuallyBarrieredEdge(trc, &child, "rel32");
+  }
+}
+
+static void TraceOneDataRelocation(JSTracer* trc, Instruction* inst) {
+  void* ptr = (void*)Assembler::ExtractLoad64Value(inst);
+  void* prior = ptr;
+
+  
+  
+  uintptr_t word = reinterpret_cast<uintptr_t>(ptr);
+  if (word >> JSVAL_TAG_SHIFT) {
+    Value v = Value::fromRawBits(word);
+    TraceManuallyBarrieredEdge(trc, &v, "ion-masm-value");
+    ptr = (void*)v.bitsAsPunboxPointer();
+  } else {
     
+    TraceManuallyBarrieredGenericPointerEdge(
+        trc, reinterpret_cast<gc::Cell**>(&ptr), "ion-masm-ptr");
+  }
+
+  if (ptr != prior) {
+    Assembler::UpdateLoad64Value(inst, uint64_t(ptr));
     AutoFlushICache::flush(uintptr_t(inst), 6 * sizeof(uint32_t));
+  }
 }
 
-void
-Assembler::executableCopy(uint8_t* buffer, bool flushICache)
-{
-    MOZ_ASSERT(isFinished);
-    m_buffer.executableCopy(buffer);
-
-    if (flushICache) {
-        AutoFlushICache::setRange(uintptr_t(buffer), m_buffer.size());
-    }
+ void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
+                                                  CompactBufferReader& reader) {
+  while (reader.more()) {
+    size_t offset = reader.readUnsigned();
+    Instruction* inst = (Instruction*)(code->raw() + offset);
+    TraceOneDataRelocation(trc, inst);
+  }
 }
 
-uintptr_t
-Assembler::GetPointer(uint8_t* instPtr)
-{
-    Instruction* inst = (Instruction*)instPtr;
-    return Assembler::ExtractLoad64Value(inst);
-}
+void Assembler::Bind(uint8_t* rawCode, const CodeLabel& label) {
+  if (label.patchAt().bound()) {
+    auto mode = label.linkMode();
+    intptr_t offset = label.patchAt().offset();
+    intptr_t target = label.target().offset();
 
-static JitCode *
-CodeFromJump(Instruction* jump)
-{
-    uint8_t* target = (uint8_t*)Assembler::ExtractLoad64Value(jump);
-    return JitCode::FromExecutable(target);
-}
-
-void
-Assembler::TraceJumpRelocations(JSTracer* trc, JitCode* code, CompactBufferReader& reader)
-{
-    while (reader.more()) {
-        JitCode* child = CodeFromJump((Instruction*)(code->raw() + reader.readUnsigned()));
-        TraceManuallyBarrieredEdge(trc, &child, "rel32");
-    }
-}
-
-static void
-TraceOneDataRelocation(JSTracer* trc, Instruction* inst)
-{
-    void* ptr = (void*)Assembler::ExtractLoad64Value(inst);
-    void* prior = ptr;
-
-    
-    
-    uintptr_t word = reinterpret_cast<uintptr_t>(ptr);
-    if (word >> JSVAL_TAG_SHIFT) {
-        Value v = Value::fromRawBits(word);
-        TraceManuallyBarrieredEdge(trc, &v, "ion-masm-value");
-        ptr = (void*)v.bitsAsPunboxPointer();
+    if (mode == CodeLabel::RawPointer) {
+      *reinterpret_cast<const void**>(rawCode + offset) = rawCode + target;
     } else {
-        
-        TraceManuallyBarrieredGenericPointerEdge(trc, reinterpret_cast<gc::Cell**>(&ptr),
-                                                     "ion-masm-ptr");
+      MOZ_ASSERT(mode == CodeLabel::MoveImmediate ||
+                 mode == CodeLabel::JumpImmediate);
+      Instruction* inst = (Instruction*)(rawCode + offset);
+      Assembler::UpdateLoad64Value(inst, (uint64_t)(rawCode + target));
     }
-
-    if (ptr != prior) {
-        Assembler::UpdateLoad64Value(inst, uint64_t(ptr));
-        AutoFlushICache::flush(uintptr_t(inst), 6 * sizeof(uint32_t));
-    }
+  }
 }
 
- void
-Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code, CompactBufferReader& reader)
-{
-    while (reader.more()) {
-        size_t offset = reader.readUnsigned();
-        Instruction* inst = (Instruction*)(code->raw() + offset);
-        TraceOneDataRelocation(trc, inst);
+void Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target) {
+  int64_t offset = target - branch;
+  InstImm inst_bgezal = InstImm(op_regimm, zero, rt_bgezal, BOffImm16(0));
+  InstImm inst_beq = InstImm(op_beq, zero, zero, BOffImm16(0));
+
+  
+  if (BOffImm16(inst[0]).decode() == 4) {
+    MOZ_ASSERT(BOffImm16::IsInRange(offset));
+    inst[0].setBOffImm16(BOffImm16(offset));
+    inst[1].makeNop();
+    return;
+  }
+
+  
+  
+  if (inst[0].encode() == inst_bgezal.encode()) {
+    addLongJump(BufferOffset(branch), BufferOffset(target));
+    Assembler::WriteLoad64Instructions(inst, ScratchRegister,
+                                       LabelBase::INVALID_OFFSET);
+    inst[4] = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr).encode();
+    
+    return;
+  }
+
+  if (BOffImm16::IsInRange(offset)) {
+    
+    
+    bool skipNops =
+        !isLoongson() && (inst[0].encode() != inst_bgezal.encode() &&
+                          inst[0].encode() != inst_beq.encode());
+
+    inst[0].setBOffImm16(BOffImm16(offset));
+    inst[1].makeNop();
+
+    if (skipNops) {
+      inst[2] =
+          InstImm(op_regimm, zero, rt_bgez, BOffImm16(5 * sizeof(uint32_t)))
+              .encode();
+      
     }
+    return;
+  }
+
+  if (inst[0].encode() == inst_beq.encode()) {
+    
+    addLongJump(BufferOffset(branch), BufferOffset(target));
+    Assembler::WriteLoad64Instructions(inst, ScratchRegister,
+                                       LabelBase::INVALID_OFFSET);
+    inst[4] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
+    
+  } else {
+    
+    inst[0] = invertBranch(inst[0], BOffImm16(7 * sizeof(uint32_t)));
+    
+    addLongJump(BufferOffset(branch + sizeof(uint32_t)), BufferOffset(target));
+    Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister,
+                                       LabelBase::INVALID_OFFSET);
+    inst[5] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
+    
+  }
 }
 
-void
-Assembler::Bind(uint8_t* rawCode, const CodeLabel& label)
-{
-    if (label.patchAt().bound()) {
-
-        auto mode = label.linkMode();
-        intptr_t offset = label.patchAt().offset();
-        intptr_t target = label.target().offset();
-
-        if (mode == CodeLabel::RawPointer) {
-            *reinterpret_cast<const void**>(rawCode + offset) = rawCode + target;
-        } else {
-            MOZ_ASSERT(mode == CodeLabel::MoveImmediate || mode == CodeLabel::JumpImmediate);
-            Instruction* inst = (Instruction*) (rawCode + offset);
-            Assembler::UpdateLoad64Value(inst, (uint64_t)(rawCode + target));
-        }
-    }
-}
-
-void
-Assembler::bind(InstImm* inst, uintptr_t branch, uintptr_t target)
-{
-    int64_t offset = target - branch;
-    InstImm inst_bgezal = InstImm(op_regimm, zero, rt_bgezal, BOffImm16(0));
+void Assembler::bind(RepatchLabel* label) {
+  BufferOffset dest = nextOffset();
+  if (label->used() && !oom()) {
+    
+    
+    BufferOffset b(label->offset());
+    InstImm* inst = (InstImm*)editSrc(b);
     InstImm inst_beq = InstImm(op_beq, zero, zero, BOffImm16(0));
-
-    
-    if (BOffImm16(inst[0]).decode() == 4) {
-        MOZ_ASSERT(BOffImm16::IsInRange(offset));
-        inst[0].setBOffImm16(BOffImm16(offset));
-        inst[1].makeNop();
-        return;
-    }
+    uint64_t offset = dest.getOffset() - label->offset();
 
     
     
-    if (inst[0].encode() == inst_bgezal.encode()) {
-        addLongJump(BufferOffset(branch), BufferOffset(target));
-        Assembler::WriteLoad64Instructions(inst, ScratchRegister, LabelBase::INVALID_OFFSET);
-        inst[4] = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr).encode();
-        
-        return;
-    }
-
-    if (BOffImm16::IsInRange(offset)) {
-        
-        
-        bool skipNops = !isLoongson() && (inst[0].encode() != inst_bgezal.encode() &&
-                                          inst[0].encode() != inst_beq.encode());
-
-        inst[0].setBOffImm16(BOffImm16(offset));
-        inst[1].makeNop();
-
-        if (skipNops) {
-            inst[2] = InstImm(op_regimm, zero, rt_bgez, BOffImm16(5 * sizeof(uint32_t))).encode();
-            
-        }
-        return;
-    }
-
-    if (inst[0].encode() == inst_beq.encode()) {
-        
-        addLongJump(BufferOffset(branch), BufferOffset(target));
-        Assembler::WriteLoad64Instructions(inst, ScratchRegister, LabelBase::INVALID_OFFSET);
-        inst[4] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
-        
+    if (inst[0].extractOpcode() == (uint32_t(op_lui) >> OpcodeShift)) {
+      
+      
+      
+      addLongJump(BufferOffset(label->offset()), dest);
+    } else if (inst[1].extractOpcode() == (uint32_t(op_lui) >> OpcodeShift) ||
+               BOffImm16::IsInRange(offset)) {
+      
+      
+      
+      MOZ_ASSERT(BOffImm16::IsInRange(offset));
+      MOZ_ASSERT(
+          inst[0].extractOpcode() == (uint32_t(op_beq) >> OpcodeShift) ||
+          inst[0].extractOpcode() == (uint32_t(op_bne) >> OpcodeShift) ||
+          inst[0].extractOpcode() == (uint32_t(op_blez) >> OpcodeShift) ||
+          inst[0].extractOpcode() == (uint32_t(op_bgtz) >> OpcodeShift) ||
+          (inst[0].extractOpcode() == (uint32_t(op_regimm) >> OpcodeShift) &&
+           inst[0].extractRT() == (uint32_t(rt_bltz) >> RTShift)));
+      inst[0].setBOffImm16(BOffImm16(offset));
+    } else if (inst[0].encode() == inst_beq.encode()) {
+      
+      
+      
+      
+      MOZ_ASSERT(inst[1].encode() == NopInst);
+      MOZ_ASSERT(inst[2].encode() == NopInst);
+      MOZ_ASSERT(inst[3].encode() == NopInst);
+      MOZ_ASSERT(inst[4].encode() == NopInst);
+      MOZ_ASSERT(inst[5].encode() == NopInst);
+      addLongJump(BufferOffset(label->offset()), dest);
+      Assembler::WriteLoad64Instructions(inst, ScratchRegister,
+                                         LabelBase::INVALID_OFFSET);
+      inst[4] =
+          InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
     } else {
-        
-        inst[0] = invertBranch(inst[0], BOffImm16(7 * sizeof(uint32_t)));
-        
-        addLongJump(BufferOffset(branch + sizeof(uint32_t)), BufferOffset(target));
-        Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister, LabelBase::INVALID_OFFSET);
-        inst[5] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
-        
+      
+      
+      inst[0] = invertBranch(inst[0], BOffImm16(7 * sizeof(uint32_t)));
+      
+      
+      
+      MOZ_ASSERT(inst[1].encode() == NopInst);
+      MOZ_ASSERT(inst[2].encode() == NopInst);
+      MOZ_ASSERT(inst[3].encode() == NopInst);
+      MOZ_ASSERT(inst[4].encode() == NopInst);
+      MOZ_ASSERT(inst[5].encode() == NopInst);
+      MOZ_ASSERT(inst[6].encode() == NopInst);
+      addLongJump(BufferOffset(label->offset() + sizeof(uint32_t)), dest);
+      Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister,
+                                         LabelBase::INVALID_OFFSET);
+      inst[5] =
+          InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
     }
+  }
+  label->bind(dest.getOffset());
 }
 
-void
-Assembler::bind(RepatchLabel* label)
-{
-    BufferOffset dest = nextOffset();
-    if (label->used() && !oom()) {
-        
-        
-        BufferOffset b(label->offset());
-        InstImm* inst = (InstImm*)editSrc(b);
-        InstImm inst_beq = InstImm(op_beq, zero, zero, BOffImm16(0));
-        uint64_t offset = dest.getOffset() - label->offset();
-
-        
-        
-        if (inst[0].extractOpcode() == (uint32_t(op_lui) >> OpcodeShift)) {
-            
-            
-            
-            addLongJump(BufferOffset(label->offset()), dest);
-        } else if (inst[1].extractOpcode() == (uint32_t(op_lui) >> OpcodeShift) ||
-                   BOffImm16::IsInRange(offset))
-        {
-            
-            
-            
-            MOZ_ASSERT(BOffImm16::IsInRange(offset));
-            MOZ_ASSERT(inst[0].extractOpcode() == (uint32_t(op_beq) >> OpcodeShift) ||
-                       inst[0].extractOpcode() == (uint32_t(op_bne) >> OpcodeShift) ||
-                       inst[0].extractOpcode() == (uint32_t(op_blez) >> OpcodeShift) ||
-                       inst[0].extractOpcode() == (uint32_t(op_bgtz) >> OpcodeShift) ||
-                       (inst[0].extractOpcode() == (uint32_t(op_regimm) >> OpcodeShift) &&
-                       inst[0].extractRT() == (uint32_t(rt_bltz) >> RTShift)));
-            inst[0].setBOffImm16(BOffImm16(offset));
-        } else if (inst[0].encode() == inst_beq.encode()) {
-            
-            
-            
-            
-            MOZ_ASSERT(inst[1].encode() == NopInst);
-            MOZ_ASSERT(inst[2].encode() == NopInst);
-            MOZ_ASSERT(inst[3].encode() == NopInst);
-            MOZ_ASSERT(inst[4].encode() == NopInst);
-            MOZ_ASSERT(inst[5].encode() == NopInst);
-            addLongJump(BufferOffset(label->offset()), dest);
-            Assembler::WriteLoad64Instructions(inst, ScratchRegister, LabelBase::INVALID_OFFSET);
-            inst[4] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
-        } else {
-            
-            
-            inst[0] = invertBranch(inst[0], BOffImm16(7 * sizeof(uint32_t)));
-            
-            
-            
-            MOZ_ASSERT(inst[1].encode() == NopInst);
-            MOZ_ASSERT(inst[2].encode() == NopInst);
-            MOZ_ASSERT(inst[3].encode() == NopInst);
-            MOZ_ASSERT(inst[4].encode() == NopInst);
-            MOZ_ASSERT(inst[5].encode() == NopInst);
-            MOZ_ASSERT(inst[6].encode() == NopInst);
-            addLongJump(BufferOffset(label->offset() + sizeof(uint32_t)), dest);
-            Assembler::WriteLoad64Instructions(&inst[1], ScratchRegister, LabelBase::INVALID_OFFSET);
-            inst[5] = InstReg(op_special, ScratchRegister, zero, zero, ff_jr).encode();
-        }
-    }
-    label->bind(dest.getOffset());
+void Assembler::processCodeLabels(uint8_t* rawCode) {
+  for (const CodeLabel& label : codeLabels_) {
+    Bind(rawCode, label);
+  }
 }
 
-void
-Assembler::processCodeLabels(uint8_t* rawCode)
-{
-    for (const CodeLabel& label : codeLabels_) {
-        Bind(rawCode, label);
-    }
+uint32_t Assembler::PatchWrite_NearCallSize() {
+  
+  return (4 + 2) * sizeof(uint32_t);
 }
 
-uint32_t
-Assembler::PatchWrite_NearCallSize()
-{
-    
-    return (4 + 2) * sizeof(uint32_t);
+void Assembler::PatchWrite_NearCall(CodeLocationLabel start,
+                                    CodeLocationLabel toCall) {
+  Instruction* inst = (Instruction*)start.raw();
+  uint8_t* dest = toCall.raw();
+
+  
+  
+  
+  
+  
+  Assembler::WriteLoad64Instructions(inst, ScratchRegister, (uint64_t)dest);
+  inst[4] = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr);
+  inst[5] = InstNOP();
+
+  
+  AutoFlushICache::flush(uintptr_t(inst), PatchWrite_NearCallSize());
 }
 
-void
-Assembler::PatchWrite_NearCall(CodeLocationLabel start, CodeLocationLabel toCall)
-{
-    Instruction* inst = (Instruction*) start.raw();
-    uint8_t* dest = toCall.raw();
+uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
+  InstImm* i0 = (InstImm*)inst0;
+  InstImm* i1 = (InstImm*)i0->next();
+  InstReg* i2 = (InstReg*)i1->next();
+  InstImm* i3 = (InstImm*)i2->next();
+  InstImm* i5 = (InstImm*)i3->next()->next();
 
-    
-    
-    
-    
-    
-    Assembler::WriteLoad64Instructions(inst, ScratchRegister, (uint64_t)dest);
-    inst[4] = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr);
-    inst[5] = InstNOP();
+  MOZ_ASSERT(i0->extractOpcode() == ((uint32_t)op_lui >> OpcodeShift));
+  MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
+  MOZ_ASSERT(i3->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
 
-    
-    AutoFlushICache::flush(uintptr_t(inst), PatchWrite_NearCallSize());
+  if ((i2->extractOpcode() == ((uint32_t)op_special >> OpcodeShift)) &&
+      (i2->extractFunctionField() == ff_dsrl32)) {
+    uint64_t value = (uint64_t(i0->extractImm16Value()) << 32) |
+                     (uint64_t(i1->extractImm16Value()) << 16) |
+                     uint64_t(i3->extractImm16Value());
+    return uint64_t((int64_t(value) << 16) >> 16);
+  }
+
+  MOZ_ASSERT(i5->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
+  uint64_t value = (uint64_t(i0->extractImm16Value()) << 48) |
+                   (uint64_t(i1->extractImm16Value()) << 32) |
+                   (uint64_t(i3->extractImm16Value()) << 16) |
+                   uint64_t(i5->extractImm16Value());
+  return value;
 }
 
-uint64_t
-Assembler::ExtractLoad64Value(Instruction* inst0)
-{
-    InstImm* i0 = (InstImm*) inst0;
-    InstImm* i1 = (InstImm*) i0->next();
-    InstReg* i2 = (InstReg*) i1->next();
-    InstImm* i3 = (InstImm*) i2->next();
-    InstImm* i5 = (InstImm*) i3->next()->next();
+void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
+  InstImm* i0 = (InstImm*)inst0;
+  InstImm* i1 = (InstImm*)i0->next();
+  InstReg* i2 = (InstReg*)i1->next();
+  InstImm* i3 = (InstImm*)i2->next();
+  InstImm* i5 = (InstImm*)i3->next()->next();
 
-    MOZ_ASSERT(i0->extractOpcode() == ((uint32_t)op_lui >> OpcodeShift));
-    MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
-    MOZ_ASSERT(i3->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
+  MOZ_ASSERT(i0->extractOpcode() == ((uint32_t)op_lui >> OpcodeShift));
+  MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
+  MOZ_ASSERT(i3->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
 
-    if ((i2->extractOpcode() == ((uint32_t)op_special >> OpcodeShift)) &&
-        (i2->extractFunctionField() == ff_dsrl32))
-    {
-        uint64_t value = (uint64_t(i0->extractImm16Value()) << 32) |
-                         (uint64_t(i1->extractImm16Value()) << 16) |
-                         uint64_t(i3->extractImm16Value());
-        return uint64_t((int64_t(value) <<16) >> 16);
-    }
+  if ((i2->extractOpcode() == ((uint32_t)op_special >> OpcodeShift)) &&
+      (i2->extractFunctionField() == ff_dsrl32)) {
+    i0->setImm16(Imm16::Lower(Imm32(value >> 32)));
+    i1->setImm16(Imm16::Upper(Imm32(value)));
+    i3->setImm16(Imm16::Lower(Imm32(value)));
+    return;
+  }
 
-    MOZ_ASSERT(i5->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
-    uint64_t value = (uint64_t(i0->extractImm16Value()) << 48) |
-                     (uint64_t(i1->extractImm16Value()) << 32) |
-                     (uint64_t(i3->extractImm16Value()) << 16) |
-                     uint64_t(i5->extractImm16Value());
-    return value;
+  MOZ_ASSERT(i5->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
+
+  i0->setImm16(Imm16::Upper(Imm32(value >> 32)));
+  i1->setImm16(Imm16::Lower(Imm32(value >> 32)));
+  i3->setImm16(Imm16::Upper(Imm32(value)));
+  i5->setImm16(Imm16::Lower(Imm32(value)));
 }
 
-void
-Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value)
-{
-    InstImm* i0 = (InstImm*) inst0;
-    InstImm* i1 = (InstImm*) i0->next();
-    InstReg* i2 = (InstReg*) i1->next();
-    InstImm* i3 = (InstImm*) i2->next();
-    InstImm* i5 = (InstImm*) i3->next()->next();
+void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
+                                        uint64_t value) {
+  Instruction* inst1 = inst0->next();
+  Instruction* inst2 = inst1->next();
+  Instruction* inst3 = inst2->next();
 
-    MOZ_ASSERT(i0->extractOpcode() == ((uint32_t)op_lui >> OpcodeShift));
-    MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
-    MOZ_ASSERT(i3->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
-
-    if ((i2->extractOpcode() == ((uint32_t)op_special >> OpcodeShift)) &&
-        (i2->extractFunctionField() == ff_dsrl32))
-    {
-        i0->setImm16(Imm16::Lower(Imm32(value >> 32)));
-        i1->setImm16(Imm16::Upper(Imm32(value)));
-        i3->setImm16(Imm16::Lower(Imm32(value)));
-        return;
-    }
-
-    MOZ_ASSERT(i5->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
-
-    i0->setImm16(Imm16::Upper(Imm32(value >> 32)));
-    i1->setImm16(Imm16::Lower(Imm32(value >> 32)));
-    i3->setImm16(Imm16::Upper(Imm32(value)));
-    i5->setImm16(Imm16::Lower(Imm32(value)));
+  *inst0 = InstImm(op_lui, zero, reg, Imm16::Lower(Imm32(value >> 32)));
+  *inst1 = InstImm(op_ori, reg, reg, Imm16::Upper(Imm32(value)));
+  *inst2 = InstReg(op_special, rs_one, reg, reg, 48 - 32, ff_dsrl32);
+  *inst3 = InstImm(op_ori, reg, reg, Imm16::Lower(Imm32(value)));
 }
 
-void
-Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg, uint64_t value)
-{
-    Instruction* inst1 = inst0->next();
-    Instruction* inst2 = inst1->next();
-    Instruction* inst3 = inst2->next();
-
-    *inst0 = InstImm(op_lui, zero, reg, Imm16::Lower(Imm32(value >> 32)));
-    *inst1 = InstImm(op_ori, reg, reg, Imm16::Upper(Imm32(value)));
-    *inst2 = InstReg(op_special, rs_one, reg, reg, 48 - 32, ff_dsrl32);
-    *inst3 = InstImm(op_ori, reg, reg, Imm16::Lower(Imm32(value)));
+void Assembler::PatchDataWithValueCheck(CodeLocationLabel label,
+                                        ImmPtr newValue, ImmPtr expectedValue) {
+  PatchDataWithValueCheck(label, PatchedImmPtr(newValue.value),
+                          PatchedImmPtr(expectedValue.value));
 }
 
-void
-Assembler::PatchDataWithValueCheck(CodeLocationLabel label, ImmPtr newValue,
-                                   ImmPtr expectedValue)
-{
-    PatchDataWithValueCheck(label, PatchedImmPtr(newValue.value),
-                            PatchedImmPtr(expectedValue.value));
+void Assembler::PatchDataWithValueCheck(CodeLocationLabel label,
+                                        PatchedImmPtr newValue,
+                                        PatchedImmPtr expectedValue) {
+  Instruction* inst = (Instruction*)label.raw();
+
+  
+  DebugOnly<uint64_t> value = Assembler::ExtractLoad64Value(inst);
+  MOZ_ASSERT(value == uint64_t(expectedValue.value));
+
+  
+  Assembler::UpdateLoad64Value(inst, uint64_t(newValue.value));
+
+  AutoFlushICache::flush(uintptr_t(inst), 6 * sizeof(uint32_t));
 }
 
-void
-Assembler::PatchDataWithValueCheck(CodeLocationLabel label, PatchedImmPtr newValue,
-                                   PatchedImmPtr expectedValue)
-{
-    Instruction* inst = (Instruction*) label.raw();
-
-    
-    DebugOnly<uint64_t> value = Assembler::ExtractLoad64Value(inst);
-    MOZ_ASSERT(value == uint64_t(expectedValue.value));
-
-    
-    Assembler::UpdateLoad64Value(inst, uint64_t(newValue.value));
-
-    AutoFlushICache::flush(uintptr_t(inst), 6 * sizeof(uint32_t));
+uint64_t Assembler::ExtractInstructionImmediate(uint8_t* code) {
+  InstImm* inst = (InstImm*)code;
+  return Assembler::ExtractLoad64Value(inst);
 }
 
-uint64_t
-Assembler::ExtractInstructionImmediate(uint8_t* code)
-{
-    InstImm* inst = (InstImm*)code;
-    return Assembler::ExtractLoad64Value(inst);
-}
+void Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled) {
+  Instruction* inst = (Instruction*)inst_.raw();
+  InstImm* i0 = (InstImm*)inst;
+  InstImm* i1 = (InstImm*)i0->next();
+  InstImm* i3 = (InstImm*)i1->next()->next();
+  Instruction* i4 = (Instruction*)i3->next();
 
-void
-Assembler::ToggleCall(CodeLocationLabel inst_, bool enabled)
-{
-    Instruction* inst = (Instruction*)inst_.raw();
-    InstImm* i0 = (InstImm*) inst;
-    InstImm* i1 = (InstImm*) i0->next();
-    InstImm* i3 = (InstImm*) i1->next()->next();
-    Instruction* i4 = (Instruction*) i3->next();
+  MOZ_ASSERT(i0->extractOpcode() == ((uint32_t)op_lui >> OpcodeShift));
+  MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
+  MOZ_ASSERT(i3->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
 
-    MOZ_ASSERT(i0->extractOpcode() == ((uint32_t)op_lui >> OpcodeShift));
-    MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
-    MOZ_ASSERT(i3->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
+  if (enabled) {
+    MOZ_ASSERT(i4->extractOpcode() != ((uint32_t)op_lui >> OpcodeShift));
+    InstReg jalr = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr);
+    *i4 = jalr;
+  } else {
+    InstNOP nop;
+    *i4 = nop;
+  }
 
-    if (enabled) {
-        MOZ_ASSERT(i4->extractOpcode() != ((uint32_t)op_lui >> OpcodeShift));
-        InstReg jalr = InstReg(op_special, ScratchRegister, zero, ra, ff_jalr);
-        *i4 = jalr;
-    } else {
-        InstNOP nop;
-        *i4 = nop;
-    }
-
-    AutoFlushICache::flush(uintptr_t(i4), sizeof(uint32_t));
+  AutoFlushICache::flush(uintptr_t(i4), sizeof(uint32_t));
 }

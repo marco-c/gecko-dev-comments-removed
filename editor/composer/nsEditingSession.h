@@ -6,21 +6,21 @@
 #ifndef nsEditingSession_h__
 #define nsEditingSession_h__
 
-#include "nsCOMPtr.h"                   
-#include "nsISupportsImpl.h"            
-#include "nsIWeakReferenceUtils.h"      
-#include "nsWeakReference.h"            
-#include "nscore.h"                     
+#include "nsCOMPtr.h"               
+#include "nsISupportsImpl.h"        
+#include "nsIWeakReferenceUtils.h"  
+#include "nsWeakReference.h"        
+#include "nscore.h"                 
 
 #ifndef __gen_nsIWebProgressListener_h__
 #include "nsIWebProgressListener.h"
 #endif
 
 #ifndef __gen_nsIEditingSession_h__
-#include "nsIEditingSession.h"          
+#include "nsIEditingSession.h"  
 #endif
 
-#include "nsString.h"                   
+#include "nsString.h"  
 
 class mozIDOMWindowProxy;
 class nsIDOMWindow;
@@ -35,14 +35,12 @@ class nsIWebProgress;
 namespace mozilla {
 class ComposerCommandsUpdater;
 class HTMLEditor;
-} 
+}  
 
 class nsEditingSession final : public nsIEditingSession,
                                public nsIWebProgressListener,
-                               public nsSupportsWeakReference
-{
-public:
-
+                               public nsSupportsWeakReference {
+ public:
   nsEditingSession();
 
   
@@ -54,91 +52,84 @@ public:
   
   NS_DECL_NSIEDITINGSESSION
 
-protected:
-  virtual         ~nsEditingSession();
+ protected:
+  virtual ~nsEditingSession();
 
   typedef already_AddRefed<nsIController> (*ControllerCreatorFn)();
 
-  nsresult        SetupEditorCommandController(ControllerCreatorFn aControllerCreatorFn,
-                                               mozIDOMWindowProxy* aWindow,
-                                               nsISupports* aContext,
-                                               uint32_t* aControllerId);
+  nsresult SetupEditorCommandController(
+      ControllerCreatorFn aControllerCreatorFn, mozIDOMWindowProxy* aWindow,
+      nsISupports* aContext, uint32_t* aControllerId);
 
-  nsresult        SetContextOnControllerById(nsIControllers* aControllers,
-                                            nsISupports* aContext,
-                                            uint32_t aID);
+  nsresult SetContextOnControllerById(nsIControllers* aControllers,
+                                      nsISupports* aContext, uint32_t aID);
 
-  nsresult        PrepareForEditing(nsPIDOMWindowOuter* aWindow);
+  nsresult PrepareForEditing(nsPIDOMWindowOuter* aWindow);
 
-  static void     TimerCallback(nsITimer *aTimer, void *aClosure);
-  nsCOMPtr<nsITimer>  mLoadBlankDocTimer;
+  static void TimerCallback(nsITimer* aTimer, void* aClosure);
+  nsCOMPtr<nsITimer> mLoadBlankDocTimer;
 
   
-  nsresult        StartDocumentLoad(nsIWebProgress *aWebProgress,
-                                    bool isToBeMadeEditable);
-  nsresult        EndDocumentLoad(nsIWebProgress *aWebProgress,
-                                  nsIChannel* aChannel, nsresult aStatus,
-                                  bool isToBeMadeEditable);
-  nsresult        StartPageLoad(nsIChannel *aChannel);
-  nsresult        EndPageLoad(nsIWebProgress *aWebProgress,
-                              nsIChannel* aChannel, nsresult aStatus);
+  nsresult StartDocumentLoad(nsIWebProgress* aWebProgress,
+                             bool isToBeMadeEditable);
+  nsresult EndDocumentLoad(nsIWebProgress* aWebProgress, nsIChannel* aChannel,
+                           nsresult aStatus, bool isToBeMadeEditable);
+  nsresult StartPageLoad(nsIChannel* aChannel);
+  nsresult EndPageLoad(nsIWebProgress* aWebProgress, nsIChannel* aChannel,
+                       nsresult aStatus);
 
-  bool            IsProgressForTargetDocument(nsIWebProgress *aWebProgress);
+  bool IsProgressForTargetDocument(nsIWebProgress* aWebProgress);
 
-  void            RemoveEditorControllers(nsPIDOMWindowOuter* aWindow);
-  void            RemoveWebProgressListener(nsPIDOMWindowOuter* aWindow);
-  void            RestoreAnimationMode(nsPIDOMWindowOuter* aWindow);
-  void            RemoveListenersAndControllers(
-                    nsPIDOMWindowOuter* aWindow,
-                    mozilla::HTMLEditor* aHTMLEditor);
+  void RemoveEditorControllers(nsPIDOMWindowOuter* aWindow);
+  void RemoveWebProgressListener(nsPIDOMWindowOuter* aWindow);
+  void RestoreAnimationMode(nsPIDOMWindowOuter* aWindow);
+  void RemoveListenersAndControllers(nsPIDOMWindowOuter* aWindow,
+                                     mozilla::HTMLEditor* aHTMLEditor);
 
-protected:
-
-  bool            mDoneSetup;    
+ protected:
+  bool mDoneSetup;  
 
   
   
   
   
-  bool            mCanCreateEditor;
+  bool mCanCreateEditor;
 
-  bool            mInteractive;
-  bool            mMakeWholeDocumentEditable;
+  bool mInteractive;
+  bool mMakeWholeDocumentEditable;
 
-  bool            mDisabledJSAndPlugins;
-
-  
-  
-  bool            mScriptsEnabled;
+  bool mDisabledJSAndPlugins;
 
   
   
-  bool            mPluginsEnabled;
-
-  bool            mProgressListenerRegistered;
+  bool mScriptsEnabled;
 
   
-  uint16_t        mImageAnimationMode;
+  
+  bool mPluginsEnabled;
+
+  bool mProgressListenerRegistered;
+
+  
+  uint16_t mImageAnimationMode;
 
   
   
   RefPtr<mozilla::ComposerCommandsUpdater> mComposerCommandsUpdater;
 
   
-  nsCString       mEditorType;
-  uint32_t        mEditorFlags;
-  uint32_t        mEditorStatus;
-  uint32_t        mBaseCommandControllerId;
-  uint32_t        mDocStateControllerId;
-  uint32_t        mHTMLCommandControllerId;
+  nsCString mEditorType;
+  uint32_t mEditorFlags;
+  uint32_t mEditorStatus;
+  uint32_t mBaseCommandControllerId;
+  uint32_t mDocStateControllerId;
+  uint32_t mHTMLCommandControllerId;
 
   
-  nsWeakPtr       mDocShell;
+  nsWeakPtr mDocShell;
 
   
-  nsWeakPtr       mExistingEditor;
+  nsWeakPtr mExistingEditor;
 };
 
-
-
-#endif 
+#endif  

@@ -29,18 +29,13 @@ class nsRange;
 
 
 
-struct SelectionDetails
-{
+struct SelectionDetails {
   SelectionDetails()
-    : mStart()
-    , mEnd()
-    , mSelectionType(mozilla::SelectionType::eInvalid) {
+      : mStart(), mEnd(), mSelectionType(mozilla::SelectionType::eInvalid) {
     MOZ_COUNT_CTOR(SelectionDetails);
   }
 #ifdef NS_BUILD_REFCNT_LOGGING
-  ~SelectionDetails() {
-    MOZ_COUNT_DTOR(SelectionDetails);
-  }
+  ~SelectionDetails() { MOZ_COUNT_DTOR(SelectionDetails); }
 #endif
   int32_t mStart;
   int32_t mEnd;
@@ -49,17 +44,10 @@ struct SelectionDetails
   mozilla::UniquePtr<SelectionDetails> mNext;
 };
 
-struct SelectionCustomColors
-{
+struct SelectionCustomColors {
 #ifdef NS_BUILD_REFCNT_LOGGING
-  SelectionCustomColors()
-  {
-    MOZ_COUNT_CTOR(SelectionCustomColors);
-  }
-  ~SelectionCustomColors()
-  {
-    MOZ_COUNT_DTOR(SelectionCustomColors);
-  }
+  SelectionCustomColors() { MOZ_COUNT_CTOR(SelectionCustomColors); }
+  ~SelectionCustomColors() { MOZ_COUNT_DTOR(SelectionCustomColors); }
 #endif
   mozilla::Maybe<nscolor> mForegroundColor;
   mozilla::Maybe<nscolor> mBackgroundColor;
@@ -73,25 +61,18 @@ class nsIPresShell;
 
 
 
-struct MOZ_STACK_CLASS nsPeekOffsetStruct
-{
-  enum class ForceEditableRegion
-  {
+struct MOZ_STACK_CLASS nsPeekOffsetStruct {
+  enum class ForceEditableRegion {
     No,
     Yes,
   };
 
-  nsPeekOffsetStruct(nsSelectionAmount aAmount,
-                     nsDirection aDirection,
-                     int32_t aStartOffset,
-                     nsPoint aDesiredPos,
-                     bool aJumpLines,
-                     bool aScrollViewStop,
-                     bool aIsKeyboardSelect,
-                     bool aVisual,
-                     bool aExtend,
-                     ForceEditableRegion = ForceEditableRegion::No,
-                     mozilla::EWordMovementType aWordMovementType = mozilla::eDefaultBehavior);
+  nsPeekOffsetStruct(
+      nsSelectionAmount aAmount, nsDirection aDirection, int32_t aStartOffset,
+      nsPoint aDesiredPos, bool aJumpLines, bool aScrollViewStop,
+      bool aIsKeyboardSelect, bool aVisual, bool aExtend,
+      ForceEditableRegion = ForceEditableRegion::No,
+      mozilla::EWordMovementType aWordMovementType = mozilla::eDefaultBehavior);
 
   
   
@@ -117,6 +98,7 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct
 
   
   
+  
   int32_t mStartOffset;
 
   
@@ -124,6 +106,7 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct
   
   nsPoint mDesiredPos;
 
+  
   
   
   
@@ -140,8 +123,10 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct
 
   
   
+  
   bool mIsKeyboardSelect;
 
+  
   
   
   bool mVisual;
@@ -170,16 +155,13 @@ struct MOZ_STACK_CLASS nsPeekOffsetStruct
   
   
   
+  
   mozilla::CaretAssociationHint mAttach;
 };
 
-struct nsPrevNextBidiLevels
-{
-  void SetData(nsIFrame* aFrameBefore,
-               nsIFrame* aFrameAfter,
-               nsBidiLevel aLevelBefore,
-               nsBidiLevel aLevelAfter)
-  {
+struct nsPrevNextBidiLevels {
+  void SetData(nsIFrame* aFrameBefore, nsIFrame* aFrameAfter,
+               nsBidiLevel aLevelBefore, nsBidiLevel aLevelAfter) {
     mFrameBefore = aFrameBefore;
     mFrameAfter = aFrameAfter;
     mLevelBefore = aLevelBefore;
@@ -195,22 +177,22 @@ namespace mozilla {
 class SelectionChangeEventDispatcher;
 namespace dom {
 class Selection;
-} 
+}  
 
 
 
 
 
 enum class TableSelection : uint32_t {
-  None, 
-  Cell, 
-  Row,  
-  Column, 
-  Table, 
+  None,     
+  Cell,     
+  Row,      
+  Column,   
+  Table,    
   AllCells, 
 };
 
-} 
+}  
 class nsIScrollableFrame;
 
 
@@ -218,9 +200,8 @@ class nsIScrollableFrame;
 
 
 
-class nsFrameSelection final
-{
-public:
+class nsFrameSelection final {
+ public:
   typedef mozilla::CaretAssociationHint CaretAssociateHint;
 
   
@@ -234,7 +215,9 @@ public:
 
 
 
-  void Init(nsIPresShell *aShell, nsIContent *aLimiter,
+
+
+  void Init(nsIPresShell* aShell, nsIContent* aLimiter,
             bool aAccessibleCaretEnabled);
 
   
@@ -250,15 +233,17 @@ public:
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult HandleClick(nsIContent *aNewFocus,
-                       uint32_t aContentOffset,
-                       uint32_t aContentEndOffset,
-                       bool aContinueSelection,
-                       bool aMultipleSelection,
-                       CaretAssociateHint aHint);
+  nsresult HandleClick(nsIContent* aNewFocus, uint32_t aContentOffset,
+                       uint32_t aContentEndOffset, bool aContinueSelection,
+                       bool aMultipleSelection, CaretAssociateHint aHint);
 
   
+
+
 
 
 
@@ -278,9 +263,11 @@ public:
 
 
 
+
+
+
   
-  nsresult HandleTableSelection(nsINode* aParentContent,
-                                int32_t aContentOffset,
+  nsresult HandleTableSelection(nsINode* aParentContent, int32_t aContentOffset,
                                 mozilla::TableSelection aTarget,
                                 mozilla::WidgetMouseEvent* aMouseEvent);
 
@@ -289,7 +276,7 @@ public:
 
 
 
-  nsresult SelectCellElement(nsIContent *aCell);
+  nsresult SelectCellElement(nsIContent* aCell);
 
   
 
@@ -300,10 +287,8 @@ public:
 
 
 
-  nsresult AddCellsToSelection(nsIContent* aTable,
-                               int32_t aStartRowIndex,
-                               int32_t aStartColumnIndex,
-                               int32_t aEndRowIndex,
+  nsresult AddCellsToSelection(nsIContent* aTable, int32_t aStartRowIndex,
+                               int32_t aStartColumnIndex, int32_t aEndRowIndex,
                                int32_t aEndColumnIndex);
 
   
@@ -315,8 +300,7 @@ public:
 
 
 
-  nsresult RemoveCellsFromSelection(nsIContent* aTable,
-                                    int32_t aStartRowIndex,
+  nsresult RemoveCellsFromSelection(nsIContent* aTable, int32_t aStartRowIndex,
                                     int32_t aStartColumnIndex,
                                     int32_t aEndRowIndex,
                                     int32_t aEndColumnIndex);
@@ -330,8 +314,7 @@ public:
 
 
 
-  nsresult RestrictCellsToSelection(nsIContent* aTable,
-                                    int32_t aStartRowIndex,
+  nsresult RestrictCellsToSelection(nsIContent* aTable, int32_t aStartRowIndex,
                                     int32_t aStartColumnIndex,
                                     int32_t aEndRowIndex,
                                     int32_t aEndColumnIndex);
@@ -347,8 +330,7 @@ public:
 
 
   
-  nsresult StartAutoScrollTimer(nsIFrame* aFrame,
-                                const nsPoint& aPoint,
+  nsresult StartAutoScrollTimer(nsIFrame* aFrame, const nsPoint& aPoint,
                                 uint32_t aDelay);
 
   
@@ -362,7 +344,8 @@ public:
 
 
 
-  mozilla::UniquePtr<SelectionDetails> LookUpSelection(nsIContent *aContent,
+
+  mozilla::UniquePtr<SelectionDetails> LookUpSelection(nsIContent* aContent,
                                                        int32_t aContentOffset,
                                                        int32_t aContentLength,
                                                        bool aSlowCheck) const;
@@ -383,12 +366,10 @@ public:
   
 
 
-  bool GetTableCellSelection() const
-  {
+  bool GetTableCellSelection() const {
     return mSelectingTableCellMode != mozilla::TableSelection::None;
   }
-  void ClearTableCellSelection()
-  {
+  void ClearTableCellSelection() {
     mSelectingTableCellMode = mozilla::TableSelection::None;
   }
 
@@ -396,8 +377,8 @@ public:
 
 
 
-  mozilla::dom::Selection*
-    GetSelection(mozilla::SelectionType aSelectionType) const;
+  mozilla::dom::Selection* GetSelection(
+      mozilla::SelectionType aSelectionType) const;
 
   
 
@@ -430,10 +411,9 @@ public:
 
 
 
-  nsIFrame* GetFrameForNodeOffset(nsIContent*        aNode,
-                                  int32_t            aOffset,
+  nsIFrame* GetFrameForNodeOffset(nsIContent* aNode, int32_t aOffset,
                                   CaretAssociateHint aHint,
-                                  int32_t*           aReturnOffset) const;
+                                  int32_t* aReturnOffset) const;
 
   
 
@@ -458,9 +438,7 @@ public:
 
 
   MOZ_CAN_RUN_SCRIPT
-  void CommonPageMove(bool aForward,
-                      bool aExtend,
-                      nsIFrame* aFrame);
+  void CommonPageMove(bool aForward, bool aExtend, nsIFrame* aFrame);
 
   void SetHint(CaretAssociateHint aHintRight) { mHint = aHintRight; }
   CaretAssociateHint GetHint() const { return mHint; }
@@ -496,6 +474,7 @@ public:
 
 
 
+
   
   nsresult CharacterMove(bool aForward, bool aExtend);
 
@@ -516,6 +495,7 @@ public:
 
 
 
+
   
   nsresult WordMove(bool aForward, bool aExtend);
 
@@ -531,10 +511,12 @@ public:
 
 
 
+
   
   nsresult LineMove(bool aForward, bool aExtend);
 
   
+
 
 
 
@@ -567,21 +549,17 @@ public:
 
 
   bool HasDelayedCaretData() { return mDelayedMouseEventValid; }
-  bool IsShiftDownInDelayedCaretData()
-  {
+  bool IsShiftDownInDelayedCaretData() {
     NS_ASSERTION(mDelayedMouseEventValid, "No valid delayed caret data");
     return mDelayedMouseEventIsShift;
   }
-  uint32_t GetClickCountInDelayedCaretData()
-  {
+  uint32_t GetClickCountInDelayedCaretData() {
     NS_ASSERTION(mDelayedMouseEventValid, "No valid delayed caret data");
     return mDelayedMouseEventClickCount;
   }
 
-  bool MouseDownRecorded()
-  {
-    return !GetDragState() &&
-           HasDelayedCaretData() &&
+  bool MouseDownRecorded() {
+    return !GetDragState() && HasDelayedCaretData() &&
            GetClickCountInDelayedCaretData() < 2;
   }
 
@@ -599,7 +577,9 @@ public:
 
 
 
-  void SetMouseDoubleDown(bool aDoubleDown) { mMouseDoubleDownState = aDoubleDown; }
+  void SetMouseDoubleDown(bool aDoubleDown) {
+    mMouseDoubleDownState = aDoubleDown;
+  }
 
   
 
@@ -607,6 +587,8 @@ public:
   bool GetMouseDoubleDown() const { return mMouseDoubleDownState; }
 
   
+
+
 
 
 
@@ -634,10 +616,9 @@ public:
 
 
 
-  nsresult GetFrameFromLevel(nsIFrame *aFrameIn,
-                             nsDirection aDirection,
+  nsresult GetFrameFromLevel(nsIFrame* aFrameIn, nsDirection aDirection,
                              nsBidiLevel aBidiLevel,
-                             nsIFrame **aFrameOut) const;
+                             nsIFrame** aFrameOut) const;
 
   
 
@@ -664,50 +645,42 @@ public:
   
   nsresult DeleteFromDocument();
 
-  nsIPresShell *GetShell()const  { return mShell; }
+  nsIPresShell* GetShell() const { return mShell; }
 
   void DisconnectFromPresShell();
   nsresult ClearNormalSelection();
 
-private:
+ private:
   ~nsFrameSelection();
 
   MOZ_CAN_RUN_SCRIPT
-  nsresult TakeFocus(nsIContent *aNewFocus,
-                     uint32_t aContentOffset,
-                     uint32_t aContentEndOffset,
-                     CaretAssociateHint aHint,
-                     bool aContinueSelection,
-                     bool aMultipleSelection);
+  nsresult TakeFocus(nsIContent* aNewFocus, uint32_t aContentOffset,
+                     uint32_t aContentEndOffset, CaretAssociateHint aHint,
+                     bool aContinueSelection, bool aMultipleSelection);
 
-  void BidiLevelFromMove(nsIPresShell* aPresShell,
-                         nsIContent *aNode,
-                         uint32_t aContentOffset,
-                         nsSelectionAmount aAmount,
+  void BidiLevelFromMove(nsIPresShell* aPresShell, nsIContent* aNode,
+                         uint32_t aContentOffset, nsSelectionAmount aAmount,
                          CaretAssociateHint aHint);
-  void BidiLevelFromClick(nsIContent *aNewFocus, uint32_t aContentOffset);
-  nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent *aNode,
+  void BidiLevelFromClick(nsIContent* aNewFocus, uint32_t aContentOffset);
+  nsPrevNextBidiLevels GetPrevNextBidiLevels(nsIContent* aNode,
                                              uint32_t aContentOffset,
                                              CaretAssociateHint aHint,
                                              bool aJumpLines) const;
 
-  bool AdjustForMaintainedSelection(nsIContent *aContent, int32_t aOffset);
+  bool AdjustForMaintainedSelection(nsIContent* aContent, int32_t aOffset);
 
-
-  void    PostReason(int16_t aReason) { mSelectionChangeReason = aReason; }
-  int16_t PopReason()
-  {
+  
+  void PostReason(int16_t aReason) { mSelectionChangeReason = aReason; }
+  int16_t PopReason() {
     int16_t retval = mSelectionChangeReason;
     mSelectionChangeReason = nsISelectionListener::NO_REASON;
     return retval;
   }
-  bool IsUserSelectionReason() const
-  {
-    return (mSelectionChangeReason &
-            (nsISelectionListener::DRAG_REASON |
-             nsISelectionListener::MOUSEDOWN_REASON |
-             nsISelectionListener::MOUSEUP_REASON |
-             nsISelectionListener::KEYPRESS_REASON)) !=
+  bool IsUserSelectionReason() const {
+    return (mSelectionChangeReason & (nsISelectionListener::DRAG_REASON |
+                                      nsISelectionListener::MOUSEDOWN_REASON |
+                                      nsISelectionListener::MOUSEUP_REASON |
+                                      nsISelectionListener::KEYPRESS_REASON)) !=
            nsISelectionListener::NO_REASON;
   }
 
@@ -715,53 +688,55 @@ private:
   friend class mozilla::SelectionChangeEventDispatcher;
   friend struct mozilla::AutoPrepareFocusRange;
 #ifdef DEBUG
-  void printSelection();       
-#endif 
+  void printSelection();  
+#endif                    
 
   void ResizeBuffer(uint32_t aNewBufSize);
 
-
   
   
-  enum CaretMovementStyle {
-    eLogical,
-    eVisual,
-    eUsePrefStyle
-  };
+  
+  enum CaretMovementStyle { eLogical, eVisual, eUsePrefStyle };
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult     MoveCaret(nsDirection aDirection, bool aContinueSelection,
-                         nsSelectionAmount aAmount,
-                         CaretMovementStyle aMovementStyle);
+  nsresult MoveCaret(nsDirection aDirection, bool aContinueSelection,
+                     nsSelectionAmount aAmount,
+                     CaretMovementStyle aMovementStyle);
 
-  nsresult     FetchDesiredPos(nsPoint &aDesiredPos); 
-  void         InvalidateDesiredPos(); 
-  void         SetDesiredPos(nsPoint aPos); 
+  nsresult FetchDesiredPos(
+      nsPoint& aDesiredPos);  
+                              
+  void
+  InvalidateDesiredPos();  
+  void SetDesiredPos(nsPoint aPos);  
 
-  uint32_t     GetBatching() const {return mBatching; }
-  bool         GetNotifyFrames() const { return mNotifyFrames; }
-  void         SetDirty(bool aDirty=true){if (mBatching) mChangesDuringBatching = aDirty;}
+  uint32_t GetBatching() const { return mBatching; }
+  bool GetNotifyFrames() const { return mNotifyFrames; }
+  void SetDirty(bool aDirty = true) {
+    if (mBatching) mChangesDuringBatching = aDirty;
+  }
 
   
   
   MOZ_CAN_RUN_SCRIPT
-  nsresult     NotifySelectionListeners(mozilla::SelectionType aSelectionType);
+  nsresult NotifySelectionListeners(mozilla::SelectionType aSelectionType);
   
   
-  nsresult     UpdateSelectionCacheOnRepaintSelection(mozilla::dom::
-                                                      Selection* aSel);
+  nsresult UpdateSelectionCacheOnRepaintSelection(
+      mozilla::dom::Selection* aSel);
 
   
-  nsITableCellLayout* GetCellLayout(nsIContent *aCellContent) const;
+  nsITableCellLayout* GetCellLayout(nsIContent* aCellContent) const;
 
-  nsresult SelectBlockOfCells(nsIContent *aStartNode, nsIContent *aEndNode);
-  nsresult SelectRowOrColumn(nsIContent *aCellContent,
+  nsresult SelectBlockOfCells(nsIContent* aStartNode, nsIContent* aEndNode);
+  nsresult SelectRowOrColumn(nsIContent* aCellContent,
                              mozilla::TableSelection aTarget);
-  nsresult UnselectCells(nsIContent *aTable,
-                         int32_t aStartRowIndex, int32_t aStartColumnIndex,
-                         int32_t aEndRowIndex, int32_t aEndColumnIndex,
+  nsresult UnselectCells(nsIContent* aTable, int32_t aStartRowIndex,
+                         int32_t aStartColumnIndex, int32_t aEndRowIndex,
+                         int32_t aEndColumnIndex,
                          bool aRemoveOutsideOfCellRange);
 
-  nsresult GetCellIndexes(nsIContent *aCell, int32_t &aRowIndex, int32_t &aColIndex);
+  nsresult GetCellIndexes(nsIContent* aCell, int32_t& aRowIndex,
+                          int32_t& aColIndex);
 
   
   
@@ -771,26 +746,27 @@ private:
   
   
   nsRange* GetNextCellRange();
-  nsIContent* GetFirstCellNodeInRange(nsRange *aRange) const;
+  nsIContent* GetFirstCellNodeInRange(nsRange* aRange) const;
   
-  nsIContent* IsInSameTable(nsIContent *aContent1, nsIContent *aContent2) const;
+  nsIContent* IsInSameTable(nsIContent* aContent1, nsIContent* aContent2) const;
   
-  nsIContent* GetParentTable(nsIContent *aCellNode) const;
+  nsIContent* GetParentTable(nsIContent* aCellNode) const;
   nsresult CreateAndAddRange(nsINode* aContainer, int32_t aOffset);
 
   
 
   RefPtr<mozilla::dom::Selection>
-    mDomSelections[
-      sizeof(mozilla::kPresentSelectionTypes) / sizeof(mozilla::SelectionType)];
+      mDomSelections[sizeof(mozilla::kPresentSelectionTypes) /
+                     sizeof(mozilla::SelectionType)];
 
-  nsCOMPtr<nsINode> mCellParent; 
+  nsCOMPtr<nsINode> mCellParent;  
   nsCOMPtr<nsIContent> mStartSelectedCell;
   nsCOMPtr<nsIContent> mEndSelectedCell;
   nsCOMPtr<nsIContent> mAppendStartSelectedCell;
   nsCOMPtr<nsIContent> mUnselectCellOnMouseUp;
-  mozilla::TableSelection mSelectingTableCellMode = mozilla::TableSelection::None;
-  int32_t  mSelectedCellIndex = 0;
+  mozilla::TableSelection mSelectingTableCellMode =
+      mozilla::TableSelection::None;
+  int32_t mSelectedCellIndex = 0;
 
   
   RefPtr<nsRange> mMaintainRange;
@@ -811,6 +787,7 @@ private:
   int16_t mDisplaySelection = nsISelectionController::SELECTION_OFF;
 
   
+  
   CaretAssociateHint mHint = mozilla::CARET_ASSOCIATE_BEFORE;
   nsBidiLevel mCaretBidiLevel = BIDI_LEVEL_UNDEFINED;
   nsBidiLevel mKbdBidiLevel = NSBIDI_LTR;
@@ -826,8 +803,8 @@ private:
   bool mChangesDuringBatching = false;
   bool mNotifyFrames = true;
   bool mDragSelectingCells = false;
-  bool mDragState = false;   
-  bool mMouseDoubleDownState = false; 
+  bool mDragState = false;             
+  bool mMouseDoubleDownState = false;  
   bool mDesiredPosSet = false;
   bool mAccessibleCaretEnabled = false;
 

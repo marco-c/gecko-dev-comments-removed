@@ -8,7 +8,7 @@
 #define MOZILLA_GFX_TYPES_H_
 
 #include "mozilla/EndianUtils.h"
-#include "mozilla/MacroArgs.h" 
+#include "mozilla/MacroArgs.h"  
 
 #include <stddef.h>
 #include <stdint.h>
@@ -20,21 +20,21 @@ typedef float Float;
 typedef double Double;
 
 enum class SurfaceType : int8_t {
-  DATA, 
-  D2D1_BITMAP, 
-  D2D1_DRAWTARGET, 
-  CAIRO, 
-  CAIRO_IMAGE, 
-  COREGRAPHICS_IMAGE, 
+  DATA,                   
+  D2D1_BITMAP,            
+  D2D1_DRAWTARGET,        
+  CAIRO,                  
+  CAIRO_IMAGE,            
+  COREGRAPHICS_IMAGE,     
   COREGRAPHICS_CGCONTEXT, 
-  SKIA, 
-  DUAL_DT, 
-  D2D1_1_IMAGE, 
-  RECORDING, 
-  TILED, 
-  DATA_SHARED, 
-  CAPTURE, 
-  DATA_RECYCLING_SHARED 
+  SKIA,                   
+  DUAL_DT,                
+  D2D1_1_IMAGE,           
+  RECORDING,              
+  TILED,                  
+  DATA_SHARED,            
+  CAPTURE,                
+  DATA_RECYCLING_SHARED   
 };
 
 enum class SurfaceFormat : int8_t {
@@ -42,12 +42,12 @@ enum class SurfaceFormat : int8_t {
   
   
   
-  B8G8R8A8,     
-  B8G8R8X8,     
-  R8G8B8A8,     
-  R8G8B8X8,     
-  A8R8G8B8,     
-  X8R8G8B8,     
+  B8G8R8A8,  
+  B8G8R8X8,  
+  R8G8B8A8,  
+  R8G8B8X8,  
+  A8R8G8B8,  
+  X8R8G8B8,  
 
   R8G8B8,
   B8G8R8,
@@ -55,7 +55,7 @@ enum class SurfaceFormat : int8_t {
   
   
   
-  R5G6B5_UINT16,                    
+  R5G6B5_UINT16,  
 
   
   A8,
@@ -65,13 +65,13 @@ enum class SurfaceFormat : int8_t {
 
   
   YUV,
-  NV12,         
-                
-                
-  P016,         
-  P010,         
-                
-                
+  NV12,  
+         
+         
+  P016,  
+  P010,  
+         
+         
   YUV422,
   HSV,
   Lab,
@@ -80,63 +80,60 @@ enum class SurfaceFormat : int8_t {
   
   UNKNOWN,
 
-  
-  
-  
+
+
+
 #if MOZ_LITTLE_ENDIAN
-  A8R8G8B8_UINT32 = B8G8R8A8,       
-  X8R8G8B8_UINT32 = B8G8R8X8        
+  A8R8G8B8_UINT32 = B8G8R8A8,  
+  X8R8G8B8_UINT32 = B8G8R8X8   
 #elif MOZ_BIG_ENDIAN
-  A8R8G8B8_UINT32 = A8R8G8B8,       
-  X8R8G8B8_UINT32 = X8R8G8B8        
+  A8R8G8B8_UINT32 = A8R8G8B8,  
+  X8R8G8B8_UINT32 = X8R8G8B8   
 #else
-# error "bad endianness"
+#error "bad endianness"
 #endif
 };
 
-static inline int
-BytesPerPixel(SurfaceFormat aFormat)
-{
+static inline int BytesPerPixel(SurfaceFormat aFormat) {
   switch (aFormat) {
-  case SurfaceFormat::A8:
-    return 1;
-  case SurfaceFormat::R5G6B5_UINT16:
-  case SurfaceFormat::A16:
-    return 2;
-  case SurfaceFormat::R8G8B8:
-  case SurfaceFormat::B8G8R8:
-    return 3;
-  case SurfaceFormat::HSV:
-  case SurfaceFormat::Lab:
-    return 3 * sizeof(float);
-  case SurfaceFormat::Depth:
-    return sizeof(uint16_t);
-  default:
-    return 4;
+    case SurfaceFormat::A8:
+      return 1;
+    case SurfaceFormat::R5G6B5_UINT16:
+    case SurfaceFormat::A16:
+      return 2;
+    case SurfaceFormat::R8G8B8:
+    case SurfaceFormat::B8G8R8:
+      return 3;
+    case SurfaceFormat::HSV:
+    case SurfaceFormat::Lab:
+      return 3 * sizeof(float);
+    case SurfaceFormat::Depth:
+      return sizeof(uint16_t);
+    default:
+      return 4;
   }
 }
 
-inline bool IsOpaque(SurfaceFormat aFormat)
-{
+inline bool IsOpaque(SurfaceFormat aFormat) {
   switch (aFormat) {
-  case SurfaceFormat::B8G8R8X8:
-  case SurfaceFormat::R8G8B8X8:
-  case SurfaceFormat::X8R8G8B8:
-  case SurfaceFormat::R5G6B5_UINT16:
-  case SurfaceFormat::R8G8B8:
-  case SurfaceFormat::B8G8R8:
-  case SurfaceFormat::R8G8:
-  case SurfaceFormat::HSV:
-  case SurfaceFormat::Lab:
-  case SurfaceFormat::Depth:
-  case SurfaceFormat::YUV:
-  case SurfaceFormat::NV12:
-  case SurfaceFormat::P010:
-  case SurfaceFormat::P016:
-  case SurfaceFormat::YUV422:
-    return true;
-  default:
-    return false;
+    case SurfaceFormat::B8G8R8X8:
+    case SurfaceFormat::R8G8B8X8:
+    case SurfaceFormat::X8R8G8B8:
+    case SurfaceFormat::R5G6B5_UINT16:
+    case SurfaceFormat::R8G8B8:
+    case SurfaceFormat::B8G8R8:
+    case SurfaceFormat::R8G8:
+    case SurfaceFormat::HSV:
+    case SurfaceFormat::Lab:
+    case SurfaceFormat::Depth:
+    case SurfaceFormat::YUV:
+    case SurfaceFormat::NV12:
+    case SurfaceFormat::P010:
+    case SurfaceFormat::P016:
+    case SurfaceFormat::YUV422:
+      return true;
+    default:
+      return false;
   }
 }
 
@@ -148,9 +145,7 @@ enum class ColorDepth : uint8_t {
   UNKNOWN
 };
 
-static inline SurfaceFormat
-SurfaceFormatForColorDepth(ColorDepth aColorDepth)
-{
+static inline SurfaceFormat SurfaceFormatForColorDepth(ColorDepth aColorDepth) {
   SurfaceFormat format = SurfaceFormat::A8;
   switch (aColorDepth) {
     case ColorDepth::COLOR_8:
@@ -166,9 +161,7 @@ SurfaceFormatForColorDepth(ColorDepth aColorDepth)
   return format;
 }
 
-static inline uint32_t
-BitDepthForColorDepth(ColorDepth aColorDepth)
-{
+static inline uint32_t BitDepthForColorDepth(ColorDepth aColorDepth) {
   uint32_t depth = 8;
   switch (aColorDepth) {
     case ColorDepth::COLOR_8:
@@ -188,9 +181,7 @@ BitDepthForColorDepth(ColorDepth aColorDepth)
   return depth;
 }
 
-static inline ColorDepth
-ColorDepthForBitDepth(uint8_t aBitDepth)
-{
+static inline ColorDepth ColorDepthForBitDepth(uint8_t aBitDepth) {
   ColorDepth depth = ColorDepth::COLOR_8;
   switch (aBitDepth) {
     case 8:
@@ -212,9 +203,7 @@ ColorDepthForBitDepth(uint8_t aBitDepth)
 
 
 
-static inline uint32_t
-RescalingFactorForColorDepth(ColorDepth aColorDepth)
-{
+static inline uint32_t RescalingFactorForColorDepth(ColorDepth aColorDepth) {
   uint32_t factor = 1;
   switch (aColorDepth) {
     case ColorDepth::COLOR_8:
@@ -271,7 +260,7 @@ enum class DrawTargetType : int8_t {
 
 enum class BackendType : int8_t {
   NONE = 0,
-  DIRECT2D, 
+  DIRECT2D,  
   CAIRO,
   SKIA,
   RECORDING,
@@ -305,19 +294,9 @@ enum class NativeFontType : int8_t {
   FONTCONFIG_PATTERN,
 };
 
-enum class FontStyle : int8_t {
-  NORMAL,
-  ITALIC,
-  BOLD,
-  BOLD_ITALIC
-};
+enum class FontStyle : int8_t { NORMAL, ITALIC, BOLD, BOLD_ITALIC };
 
-enum class FontHinting : int8_t {
-  NONE,
-  LIGHT,
-  NORMAL,
-  FULL
-};
+enum class FontHinting : int8_t { NONE, LIGHT, NORMAL, FULL };
 
 enum class CompositionOp : int8_t {
   OP_OVER,
@@ -349,31 +328,19 @@ enum class CompositionOp : int8_t {
   OP_COUNT
 };
 
-enum class Axis : int8_t {
-  X_AXIS,
-  Y_AXIS,
-  BOTH
-};
+enum class Axis : int8_t { X_AXIS, Y_AXIS, BOTH };
 
 enum class ExtendMode : int8_t {
-  CLAMP,    
-  REPEAT,   
-  REPEAT_X, 
-  REPEAT_Y, 
-  REFLECT   
+  CLAMP,     
+  REPEAT,    
+  REPEAT_X,  
+  REPEAT_Y,  
+  REFLECT    
 };
 
-enum class FillRule : int8_t {
-  FILL_WINDING,
-  FILL_EVEN_ODD
-};
+enum class FillRule : int8_t { FILL_WINDING, FILL_EVEN_ODD };
 
-enum class AntialiasMode : int8_t {
-  NONE,
-  GRAY,
-  SUBPIXEL,
-  DEFAULT
-};
+enum class AntialiasMode : int8_t { NONE, GRAY, SUBPIXEL, DEFAULT };
 
 
 enum class SamplingFilter : int8_t {
@@ -393,22 +360,15 @@ enum class PatternType : int8_t {
 enum class JoinStyle : int8_t {
   BEVEL,
   ROUND,
-  MITER, 
-         
-         
-  MITER_OR_BEVEL 
+  MITER,  
+          
+          
+  MITER_OR_BEVEL  
 };
 
-enum class CapStyle : int8_t {
-  BUTT,
-  ROUND,
-  SQUARE
-};
+enum class CapStyle : int8_t { BUTT, ROUND, SQUARE };
 
-enum class SamplingBounds : int8_t {
-  UNBOUNDED,
-  BOUNDED
-};
+enum class SamplingBounds : int8_t { UNBOUNDED, BOUNDED };
 
 
 enum class LuminanceType : int8_t {
@@ -417,21 +377,13 @@ enum class LuminanceType : int8_t {
 };
 
 
-struct Color
-{
-public:
-  Color()
-    : r(0.0f), g(0.0f), b(0.0f), a(0.0f)
-  {}
-  Color(Float aR, Float aG, Float aB, Float aA)
-    : r(aR), g(aG), b(aB), a(aA)
-  {}
-  Color(Float aR, Float aG, Float aB)
-    : r(aR), g(aG), b(aB), a(1.0f)
-  {}
+struct Color {
+ public:
+  Color() : r(0.0f), g(0.0f), b(0.0f), a(0.0f) {}
+  Color(Float aR, Float aG, Float aB, Float aA) : r(aR), g(aG), b(aB), a(aA) {}
+  Color(Float aR, Float aG, Float aB) : r(aR), g(aG), b(aB), a(1.0f) {}
 
-  static Color FromABGR(uint32_t aColor)
-  {
+  static Color FromABGR(uint32_t aColor) {
     Color newColor(((aColor >> 0) & 0xff) * (1.0f / 255.0f),
                    ((aColor >> 8) & 0xff) * (1.0f / 255.0f),
                    ((aColor >> 16) & 0xff) * (1.0f / 255.0f),
@@ -442,8 +394,7 @@ public:
 
   
   
-  static Color UnusualFromARGB(uint32_t aColor)
-  {
+  static Color UnusualFromARGB(uint32_t aColor) {
     Color newColor(((aColor >> 16) & 0xff) * (1.0f / 255.0f),
                    ((aColor >> 8) & 0xff) * (1.0f / 255.0f),
                    ((aColor >> 0) & 0xff) * (1.0f / 255.0f),
@@ -452,16 +403,14 @@ public:
     return newColor;
   }
 
-  uint32_t ToABGR() const
-  {
+  uint32_t ToABGR() const {
     return uint32_t(r * 255.0f) | uint32_t(g * 255.0f) << 8 |
            uint32_t(b * 255.0f) << 16 | uint32_t(a * 255.0f) << 24;
   }
 
   
   
-  uint32_t UnusualToARGB() const
-  {
+  uint32_t UnusualToARGB() const {
     return uint32_t(b * 255.0f) | uint32_t(g * 255.0f) << 8 |
            uint32_t(r * 255.0f) << 16 | uint32_t(a * 255.0f) << 24;
   }
@@ -470,15 +419,12 @@ public:
     return r == aColor.r && g == aColor.g && b == aColor.b && a == aColor.a;
   }
 
-  bool operator!=(const Color& aColor) const {
-    return !(*this == aColor);
-  }
+  bool operator!=(const Color& aColor) const { return !(*this == aColor); }
 
   Float r, g, b, a;
 };
 
-struct GradientStop
-{
+struct GradientStop {
   bool operator<(const GradientStop& aOther) const {
     return offset < aOther.offset;
   }
@@ -487,15 +433,10 @@ struct GradientStop
   Color color;
 };
 
-enum class JobStatus {
-    Complete,
-    Wait,
-    Yield,
-    Error
-};
+enum class JobStatus { Complete, Wait, Yield, Error };
 
-} 
-} 
+}  
+}  
 
 
 typedef mozilla::gfx::SurfaceFormat gfxImageFormat;
@@ -516,12 +457,12 @@ namespace mozilla {
 enum Side { eSideTop, eSideRight, eSideBottom, eSideLeft };
 
 enum SideBits {
-  eSideBitsNone   = 0,
-  eSideBitsTop    = 1 << eSideTop,
-  eSideBitsRight  = 1 << eSideRight,
+  eSideBitsNone = 0,
+  eSideBitsTop = 1 << eSideTop,
+  eSideBitsRight = 1 << eSideRight,
   eSideBitsBottom = 1 << eSideBottom,
-  eSideBitsLeft   = 1 << eSideLeft,
-  eSideBitsTopBottom = eSideBitsTop  | eSideBitsBottom,
+  eSideBitsLeft = 1 << eSideLeft,
+  eSideBitsTopBottom = eSideBitsTop | eSideBitsBottom,
   eSideBitsLeftRight = eSideBitsLeft | eSideBitsRight,
   eSideBitsAll = eSideBitsTopBottom | eSideBitsLeftRight
 };
@@ -530,16 +471,16 @@ enum SideBits {
 
 
 
-#define NS_FOR_CSS_SIDES(var_)                                           \
-  int32_t MOZ_CONCAT(var_,__LINE__) = mozilla::eSideTop;                 \
-  for (mozilla::Side var_;                                               \
-       MOZ_CONCAT(var_,__LINE__) <= mozilla::eSideLeft &&                \
-         (static_cast<void>(var_ = mozilla::Side(MOZ_CONCAT(var_,__LINE__))), true); \
-       ++MOZ_CONCAT(var_,__LINE__))
+#define NS_FOR_CSS_SIDES(var_)                                               \
+  int32_t MOZ_CONCAT(var_, __LINE__) = mozilla::eSideTop;                    \
+  for (mozilla::Side var_;                                                   \
+       MOZ_CONCAT(var_, __LINE__) <= mozilla::eSideLeft &&                   \
+       (static_cast<void>(var_ = mozilla::Side(MOZ_CONCAT(var_, __LINE__))), \
+        true);                                                               \
+       ++MOZ_CONCAT(var_, __LINE__))
 
 static inline Side& operator++(Side& side) {
-  MOZ_ASSERT(side >= eSideTop && side <= eSideLeft,
-             "Out of range side");
+  MOZ_ASSERT(side >= eSideTop && side <= eSideLeft, "Out of range side");
   side = Side(side + 1);
   return side;
 }
@@ -559,12 +500,13 @@ constexpr int eCornerCount = 4;
 
 
 
-#define NS_FOR_CSS_FULL_CORNERS(var_)                                   \
-  int32_t MOZ_CONCAT(var_,__LINE__) = mozilla::eCornerTopLeft;          \
-  for (mozilla::Corner var_;                                            \
-       MOZ_CONCAT(var_,__LINE__) <= mozilla::eCornerBottomLeft &&       \
-         (static_cast<void>(var_ = mozilla::Corner(MOZ_CONCAT(var_,__LINE__))), true); \
-       ++MOZ_CONCAT(var_,__LINE__))
+#define NS_FOR_CSS_FULL_CORNERS(var_)                                          \
+  int32_t MOZ_CONCAT(var_, __LINE__) = mozilla::eCornerTopLeft;                \
+  for (mozilla::Corner var_;                                                   \
+       MOZ_CONCAT(var_, __LINE__) <= mozilla::eCornerBottomLeft &&             \
+       (static_cast<void>(var_ = mozilla::Corner(MOZ_CONCAT(var_, __LINE__))), \
+        true);                                                                 \
+       ++MOZ_CONCAT(var_, __LINE__))
 
 static inline Corner operator++(Corner& aCorner) {
   MOZ_ASSERT(aCorner >= eCornerTopLeft && aCorner <= eCornerBottomLeft,
@@ -588,16 +530,19 @@ enum HalfCorner {
 
 
 
-#define NS_FOR_CSS_HALF_CORNERS(var_)                                   \
-  int32_t MOZ_CONCAT(var_,__LINE__) = mozilla::eCornerTopLeftX;         \
-  for (mozilla::HalfCorner var_;                                        \
-       MOZ_CONCAT(var_,__LINE__) <= mozilla::eCornerBottomLeftY &&      \
-         (static_cast<void>(var_ = mozilla::HalfCorner(MOZ_CONCAT(var_,__LINE__))), true); \
-       ++MOZ_CONCAT(var_,__LINE__))
+#define NS_FOR_CSS_HALF_CORNERS(var_)                                \
+  int32_t MOZ_CONCAT(var_, __LINE__) = mozilla::eCornerTopLeftX;     \
+  for (mozilla::HalfCorner var_;                                     \
+       MOZ_CONCAT(var_, __LINE__) <= mozilla::eCornerBottomLeftY &&  \
+       (static_cast<void>(                                           \
+            var_ = mozilla::HalfCorner(MOZ_CONCAT(var_, __LINE__))), \
+        true);                                                       \
+       ++MOZ_CONCAT(var_, __LINE__))
 
 static inline HalfCorner operator++(HalfCorner& aHalfCorner) {
-  MOZ_ASSERT(aHalfCorner >= eCornerTopLeftX && aHalfCorner <= eCornerBottomLeftY,
-             "Out of range half corner!");
+  MOZ_ASSERT(
+      aHalfCorner >= eCornerTopLeftX && aHalfCorner <= eCornerBottomLeftY,
+      "Out of range half corner!");
   aHalfCorner = HalfCorner(aHalfCorner + 1);
   return aHalfCorner;
 }
@@ -605,32 +550,25 @@ static inline HalfCorner operator++(HalfCorner& aHalfCorner) {
 
 
 
-constexpr bool HalfCornerIsX(HalfCorner aHalfCorner)
-{
+constexpr bool HalfCornerIsX(HalfCorner aHalfCorner) {
   return !(aHalfCorner % 2);
 }
 
-constexpr Corner HalfToFullCorner(HalfCorner aHalfCorner)
-{
+constexpr Corner HalfToFullCorner(HalfCorner aHalfCorner) {
   return Corner(aHalfCorner / 2);
 }
 
-constexpr HalfCorner FullToHalfCorner(Corner aCorner, bool aIsVertical)
-{
+constexpr HalfCorner FullToHalfCorner(Corner aCorner, bool aIsVertical) {
   return HalfCorner(aCorner * 2 + aIsVertical);
 }
 
-constexpr bool SideIsVertical(Side aSide)
-{
-  return aSide % 2;
-}
+constexpr bool SideIsVertical(Side aSide) { return aSide % 2; }
 
 
 
 
 
-constexpr Corner SideToFullCorner(Side aSide, bool aIsSecond)
-{
+constexpr Corner SideToFullCorner(Side aSide, bool aIsSecond) {
   return Corner((aSide + aIsSecond) % 4);
 }
 
@@ -642,11 +580,10 @@ constexpr Corner SideToFullCorner(Side aSide, bool aIsSecond)
 
 
 constexpr HalfCorner SideToHalfCorner(Side aSide, bool aIsSecond,
-                                      bool aIsParallel)
-{
+                                      bool aIsParallel) {
   return HalfCorner(((aSide + aIsSecond) * 2 + (aSide + !aIsParallel) % 2) % 8);
 }
 
-} 
+}  
 
 #endif 

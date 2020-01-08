@@ -17,9 +17,9 @@
 #include <stdint.h>
 #include <algorithm>
 
-nsNPAPIStreamWrapper::nsNPAPIStreamWrapper(nsIOutputStream *outputStream,
-                                           nsNPAPIPluginStreamListener *streamListener)
-{
+nsNPAPIStreamWrapper::nsNPAPIStreamWrapper(
+    nsIOutputStream* outputStream,
+    nsNPAPIPluginStreamListener* streamListener) {
   mOutputStream = outputStream;
   mStreamListener = streamListener;
 
@@ -27,45 +27,42 @@ nsNPAPIStreamWrapper::nsNPAPIStreamWrapper(nsIOutputStream *outputStream,
   mNPStream.ndata = static_cast<void*>(this);
 }
 
-nsNPAPIStreamWrapper::~nsNPAPIStreamWrapper()
-{
+nsNPAPIStreamWrapper::~nsNPAPIStreamWrapper() {
   if (mOutputStream) {
     mOutputStream->Close();
   }
 }
 
 
-NS_IMPL_ISUPPORTS(nsNPAPIPluginStreamListener,
-                  nsITimerCallback, nsIHTTPHeaderListener, nsINamed)
+NS_IMPL_ISUPPORTS(nsNPAPIPluginStreamListener, nsITimerCallback,
+                  nsIHTTPHeaderListener, nsINamed)
 
-nsNPAPIPluginStreamListener::nsNPAPIPluginStreamListener(nsNPAPIPluginInstance* inst,
-                                                         void* notifyData,
-                                                         const char* aURL)
-  : mStreamBuffer(nullptr)
-  , mNotifyURL(aURL ? PL_strdup(aURL) : nullptr)
-  , mInst(inst)
-  , mStreamBufferSize(0)
-  , mStreamBufferByteCount(0)
-  , mStreamState(eStreamStopped)
-  , mStreamCleanedUp(false)
-  , mCallNotify(notifyData ? true : false)
-  , mIsSuspended(false)
-  , mIsPluginInitJSStream(mInst->mInPluginInitCall &&
-                          aURL && strncmp(aURL, "javascript:",
-                                          sizeof("javascript:") - 1) == 0)
-  , mRedirectDenied(false)
-  , mResponseHeaderBuf(nullptr)
-  , mStreamStopMode(eNormalStop)
-  , mPendingStopBindingStatus(NS_OK)
-{
+nsNPAPIPluginStreamListener::nsNPAPIPluginStreamListener(
+    nsNPAPIPluginInstance* inst, void* notifyData, const char* aURL)
+    : mStreamBuffer(nullptr),
+      mNotifyURL(aURL ? PL_strdup(aURL) : nullptr),
+      mInst(inst),
+      mStreamBufferSize(0),
+      mStreamBufferByteCount(0),
+      mStreamState(eStreamStopped),
+      mStreamCleanedUp(false),
+      mCallNotify(notifyData ? true : false),
+      mIsSuspended(false),
+      mIsPluginInitJSStream(
+          mInst->mInPluginInitCall && aURL &&
+          strncmp(aURL, "javascript:", sizeof("javascript:") - 1) == 0),
+      mRedirectDenied(false),
+      mResponseHeaderBuf(nullptr),
+      mStreamStopMode(eNormalStop),
+      mPendingStopBindingStatus(NS_OK) {
   mNPStreamWrapper = new nsNPAPIStreamWrapper(nullptr, this);
   mNPStreamWrapper->mNPStream.notifyData = notifyData;
 }
 
-nsNPAPIPluginStreamListener::~nsNPAPIPluginStreamListener()
-{
+nsNPAPIPluginStreamListener::~nsNPAPIPluginStreamListener() {
   
-  nsTArray<nsNPAPIPluginStreamListener*> *streamListeners = mInst->StreamListeners();
+  nsTArray<nsNPAPIPluginStreamListener*>* streamListeners =
+      mInst->StreamListeners();
   streamListeners->RemoveElement(this);
 
   
@@ -77,23 +74,19 @@ nsNPAPIPluginStreamListener::~nsNPAPIPluginStreamListener()
   
   if (mStreamBuffer) {
     free(mStreamBuffer);
-    mStreamBuffer=nullptr;
+    mStreamBuffer = nullptr;
   }
 
-  if (mNotifyURL)
-    PL_strfree(mNotifyURL);
+  if (mNotifyURL) PL_strfree(mNotifyURL);
 
-  if (mResponseHeaderBuf)
-    PL_strfree(mResponseHeaderBuf);
+  if (mResponseHeaderBuf) PL_strfree(mResponseHeaderBuf);
 
   if (mNPStreamWrapper) {
     delete mNPStreamWrapper;
   }
 }
 
-nsresult
-nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason)
-{
+nsresult nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason) {
   nsresult rv = NS_ERROR_FAILURE;
 
   
@@ -101,8 +94,7 @@ nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason)
   
   RefPtr<nsNPAPIPluginStreamListener> kungFuDeathGrip(this);
 
-  if (mStreamCleanedUp)
-    return NS_OK;
+  if (mStreamCleanedUp) return NS_OK;
 
   mStreamCleanedUp = true;
 
@@ -119,14 +111,12 @@ nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason)
     mStreamListenerPeer = nullptr;
   }
 
-  if (!mInst || !mInst->CanFireNotifications())
-    return rv;
+  if (!mInst || !mInst->CanFireNotifications()) return rv;
 
   PluginDestructionGuard guard(mInst);
 
   nsNPAPIPlugin* plugin = mInst->GetPlugin();
-  if (!plugin || !plugin->GetLibrary())
-    return rv;
+  if (!plugin || !plugin->GetLibrary()) return rv;
 
   NPPluginFuncs* pluginFunctions = plugin->PluginFuncs();
 
@@ -137,15 +127,17 @@ nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason)
     NPPAutoPusher nppPusher(npp);
 
     NPError error;
-    NS_TRY_SAFE_CALL_RETURN(error, (*pluginFunctions->destroystream)(npp, &mNPStreamWrapper->mNPStream, reason), mInst,
-                            NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
+    NS_TRY_SAFE_CALL_RETURN(error,
+                            (*pluginFunctions->destroystream)(
+                                npp, &mNPStreamWrapper->mNPStream, reason),
+                            mInst, NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
 
     NPP_PLUGIN_LOG(PLUGIN_LOG_NORMAL,
-                   ("NPP DestroyStream called: this=%p, npp=%p, reason=%d, return=%d, url=%s\n",
+                   ("NPP DestroyStream called: this=%p, npp=%p, reason=%d, "
+                    "return=%d, url=%s\n",
                     this, npp, reason, error, mNPStreamWrapper->mNPStream.url));
 
-    if (error == NPERR_NO_ERROR)
-      rv = NS_OK;
+    if (error == NPERR_NO_ERROR) rv = NS_OK;
   }
 
   mStreamState = eStreamStopped;
@@ -156,19 +148,15 @@ nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason)
   return rv;
 }
 
-void
-nsNPAPIPluginStreamListener::CallURLNotify(NPReason reason)
-{
-  if (!mCallNotify || !mInst || !mInst->CanFireNotifications())
-    return;
+void nsNPAPIPluginStreamListener::CallURLNotify(NPReason reason) {
+  if (!mCallNotify || !mInst || !mInst->CanFireNotifications()) return;
 
   PluginDestructionGuard guard(mInst);
 
-  mCallNotify = false; 
+  mCallNotify = false;  
 
   nsNPAPIPlugin* plugin = mInst->GetPlugin();
-  if (!plugin || !plugin->GetLibrary())
-    return;
+  if (!plugin || !plugin->GetLibrary()) return;
 
   NPPluginFuncs* pluginFunctions = plugin->PluginFuncs();
 
@@ -176,18 +164,21 @@ nsNPAPIPluginStreamListener::CallURLNotify(NPReason reason)
     NPP npp;
     mInst->GetNPP(&npp);
 
-    NS_TRY_SAFE_CALL_VOID((*pluginFunctions->urlnotify)(npp, mNotifyURL, reason, mNPStreamWrapper->mNPStream.notifyData), mInst,
-                          NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
+    NS_TRY_SAFE_CALL_VOID(
+        (*pluginFunctions->urlnotify)(npp, mNotifyURL, reason,
+                                      mNPStreamWrapper->mNPStream.notifyData),
+        mInst, NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
 
     NPP_PLUGIN_LOG(PLUGIN_LOG_NORMAL,
-                   ("NPP URLNotify called: this=%p, npp=%p, notify=%p, reason=%d, url=%s\n",
-                    this, npp, mNPStreamWrapper->mNPStream.notifyData, reason, mNotifyURL));
+                   ("NPP URLNotify called: this=%p, npp=%p, notify=%p, "
+                    "reason=%d, url=%s\n",
+                    this, npp, mNPStreamWrapper->mNPStream.notifyData, reason,
+                    mNotifyURL));
   }
 }
 
-nsresult
-nsNPAPIPluginStreamListener::OnStartBinding(nsPluginStreamListenerPeer* streamPeer)
-{
+nsresult nsNPAPIPluginStreamListener::OnStartBinding(
+    nsPluginStreamListenerPeer* streamPeer) {
   AUTO_PROFILER_LABEL("nsNPAPIPluginStreamListener::OnStartBinding", OTHER);
   if (!mInst || !mInst->CanFireNotifications() || mStreamCleanedUp)
     return NS_ERROR_FAILURE;
@@ -195,13 +186,11 @@ nsNPAPIPluginStreamListener::OnStartBinding(nsPluginStreamListenerPeer* streamPe
   PluginDestructionGuard guard(mInst);
 
   nsNPAPIPlugin* plugin = mInst->GetPlugin();
-  if (!plugin || !plugin->GetLibrary())
-    return NS_ERROR_FAILURE;
+  if (!plugin || !plugin->GetLibrary()) return NS_ERROR_FAILURE;
 
   NPPluginFuncs* pluginFunctions = plugin->PluginFuncs();
 
-  if (!pluginFunctions->newstream)
-    return NS_ERROR_FAILURE;
+  if (!pluginFunctions->newstream) return NS_ERROR_FAILURE;
 
   NPP npp;
   mInst->GetNPP(&npp);
@@ -212,7 +201,8 @@ nsNPAPIPluginStreamListener::OnStartBinding(nsPluginStreamListenerPeer* streamPe
 
   streamPeer->GetURL(&mNPStreamWrapper->mNPStream.url);
   streamPeer->GetLength((uint32_t*)&(mNPStreamWrapper->mNPStream.end));
-  streamPeer->GetLastModified((uint32_t*)&(mNPStreamWrapper->mNPStream.lastmodified));
+  streamPeer->GetLastModified(
+      (uint32_t*)&(mNPStreamWrapper->mNPStream.lastmodified));
   streamPeer->GetContentType(&contentType);
 
   if (!mResponseHeaders.IsEmpty()) {
@@ -224,15 +214,19 @@ nsNPAPIPluginStreamListener::OnStartBinding(nsPluginStreamListenerPeer* streamPe
 
   NPPAutoPusher nppPusher(npp);
 
-  NS_TRY_SAFE_CALL_RETURN(error, (*pluginFunctions->newstream)(npp, (char*)contentType, &mNPStreamWrapper->mNPStream, false, &streamType), mInst,
-                          NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
+  NS_TRY_SAFE_CALL_RETURN(error,
+                          (*pluginFunctions->newstream)(
+                              npp, (char*)contentType,
+                              &mNPStreamWrapper->mNPStream, false, &streamType),
+                          mInst, NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
 
   NPP_PLUGIN_LOG(PLUGIN_LOG_NORMAL,
-                 ("NPP NewStream called: this=%p, npp=%p, mime=%s, seek=%d, type=%d, return=%d, url=%s\n",
-                  this, npp, (char *)contentType, false, streamType, error, mNPStreamWrapper->mNPStream.url));
+                 ("NPP NewStream called: this=%p, npp=%p, mime=%s, seek=%d, "
+                  "type=%d, return=%d, url=%s\n",
+                  this, npp, (char*)contentType, false, streamType, error,
+                  mNPStreamWrapper->mNPStream.url));
 
-  if (error != NPERR_NO_ERROR)
-    return NS_ERROR_FAILURE;
+  if (error != NPERR_NO_ERROR) return NS_ERROR_FAILURE;
 
   mStreamState = eNewStreamCalled;
 
@@ -243,15 +237,11 @@ nsNPAPIPluginStreamListener::OnStartBinding(nsPluginStreamListenerPeer* streamPe
   return NS_OK;
 }
 
-void
-nsNPAPIPluginStreamListener::SuspendRequest()
-{
-  NS_ASSERTION(!mIsSuspended,
-               "Suspending a request that's already suspended!");
+void nsNPAPIPluginStreamListener::SuspendRequest() {
+  NS_ASSERTION(!mIsSuspended, "Suspending a request that's already suspended!");
 
   nsresult rv = StartDataPump();
-  if (NS_FAILED(rv))
-    return;
+  if (NS_FAILED(rv)) return;
 
   mIsSuspended = true;
 
@@ -260,27 +250,21 @@ nsNPAPIPluginStreamListener::SuspendRequest()
   }
 }
 
-void
-nsNPAPIPluginStreamListener::ResumeRequest()
-{
+void nsNPAPIPluginStreamListener::ResumeRequest() {
   if (mStreamListenerPeer) {
     mStreamListenerPeer->ResumeRequests();
   }
   mIsSuspended = false;
 }
 
-nsresult
-nsNPAPIPluginStreamListener::StartDataPump()
-{
+nsresult nsNPAPIPluginStreamListener::StartDataPump() {
   
   
-  return NS_NewTimerWithCallback(getter_AddRefs(mDataPumpTimer),
-                                 this, 100, nsITimer::TYPE_REPEATING_SLACK);
+  return NS_NewTimerWithCallback(getter_AddRefs(mDataPumpTimer), this, 100,
+                                 nsITimer::TYPE_REPEATING_SLACK);
 }
 
-void
-nsNPAPIPluginStreamListener::StopDataPump()
-{
+void nsNPAPIPluginStreamListener::StopDataPump() {
   if (mDataPumpTimer) {
     mDataPumpTimer->Cancel();
     mDataPumpTimer = nullptr;
@@ -289,13 +273,11 @@ nsNPAPIPluginStreamListener::StopDataPump()
 
 
 
-bool
-nsNPAPIPluginStreamListener::PluginInitJSLoadInProgress()
-{
-  if (!mInst)
-    return false;
+bool nsNPAPIPluginStreamListener::PluginInitJSLoadInProgress() {
+  if (!mInst) return false;
 
-  nsTArray<nsNPAPIPluginStreamListener*> *streamListeners = mInst->StreamListeners();
+  nsTArray<nsNPAPIPluginStreamListener*>* streamListeners =
+      mInst->StreamListeners();
   for (unsigned int i = 0; i < streamListeners->Length(); i++) {
     if (streamListeners->ElementAt(i)->mIsPluginInitJSStream) {
       return true;
@@ -312,11 +294,9 @@ nsNPAPIPluginStreamListener::PluginInitJSLoadInProgress()
 
 
 
-nsresult
-nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamPeer,
-                                             nsIInputStream* input,
-                                             uint32_t length)
-{
+nsresult nsNPAPIPluginStreamListener::OnDataAvailable(
+    nsPluginStreamListenerPeer* streamPeer, nsIInputStream* input,
+    uint32_t length) {
   if (!length || !mInst || !mInst->CanFireNotifications())
     return NS_ERROR_FAILURE;
 
@@ -326,14 +306,13 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
   mStreamListenerPeer = streamPeer;
 
   nsNPAPIPlugin* plugin = mInst->GetPlugin();
-  if (!plugin || !plugin->GetLibrary())
-    return NS_ERROR_FAILURE;
+  if (!plugin || !plugin->GetLibrary()) return NS_ERROR_FAILURE;
 
   NPPluginFuncs* pluginFunctions = plugin->PluginFuncs();
 
   
   if (!pluginFunctions->write)
-    return NS_ERROR_FAILURE; 
+    return NS_ERROR_FAILURE;  
 
   if (!mStreamBuffer) {
     
@@ -350,12 +329,11 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
     
     
     
-    mStreamBufferSize = std::min(mStreamBufferSize,
-                               uint32_t(MAX_PLUGIN_NECKO_BUFFER));
+    mStreamBufferSize =
+        std::min(mStreamBufferSize, uint32_t(MAX_PLUGIN_NECKO_BUFFER));
 
-    mStreamBuffer = (char*) malloc(mStreamBufferSize);
-    if (!mStreamBuffer)
-      return NS_ERROR_OUT_OF_MEMORY;
+    mStreamBuffer = (char*)malloc(mStreamBufferSize);
+    if (!mStreamBuffer) return NS_ERROR_OUT_OF_MEMORY;
   }
 
   
@@ -399,15 +377,14 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
         
         
         mStreamBufferSize = mStreamBufferByteCount + length;
-        char* buf = (char*) realloc(mStreamBuffer, mStreamBufferSize);
-        if (!buf)
-          return NS_ERROR_OUT_OF_MEMORY;
+        char* buf = (char*)realloc(mStreamBuffer, mStreamBufferSize);
+        if (!buf) return NS_ERROR_OUT_OF_MEMORY;
 
         mStreamBuffer = buf;
       }
 
       uint32_t bytesToRead =
-      std::min(length, mStreamBufferSize - mStreamBufferByteCount);
+          std::min(length, mStreamBufferSize - mStreamBufferByteCount);
       MOZ_ASSERT(bytesToRead > 0);
 
       uint32_t amountRead = 0;
@@ -416,8 +393,9 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
       NS_ENSURE_SUCCESS(rv, rv);
 
       if (amountRead == 0) {
-        MOZ_ASSERT_UNREACHABLE("input->Read() returns no data, it's almost "
-                               "impossible to get here");
+        MOZ_ASSERT_UNREACHABLE(
+            "input->Read() returns no data, it's almost "
+            "impossible to get here");
 
         break;
       }
@@ -433,7 +411,7 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
 
     
     
-    char *ptrStreamBuffer = mStreamBuffer;
+    char* ptrStreamBuffer = mStreamBuffer;
 
     
     
@@ -448,12 +426,15 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
       if (pluginFunctions->writeready) {
         NPPAutoPusher nppPusher(npp);
 
-        NS_TRY_SAFE_CALL_RETURN(numtowrite, (*pluginFunctions->writeready)(npp, &mNPStreamWrapper->mNPStream), mInst,
-                                NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
-        NPP_PLUGIN_LOG(PLUGIN_LOG_NOISY,
-                       ("NPP WriteReady called: this=%p, npp=%p, "
-                        "return(towrite)=%d, url=%s\n",
-                        this, npp, numtowrite, mNPStreamWrapper->mNPStream.url));
+        NS_TRY_SAFE_CALL_RETURN(
+            numtowrite,
+            (*pluginFunctions->writeready)(npp, &mNPStreamWrapper->mNPStream),
+            mInst, NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
+        NPP_PLUGIN_LOG(
+            PLUGIN_LOG_NOISY,
+            ("NPP WriteReady called: this=%p, npp=%p, "
+             "return(towrite)=%d, url=%s\n",
+             this, npp, numtowrite, mNPStreamWrapper->mNPStream.url));
 
         if (mStreamState == eStreamStopped) {
           
@@ -497,15 +478,19 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
 
       NPPAutoPusher nppPusher(npp);
 
-      int32_t writeCount = 0; 
-      NS_TRY_SAFE_CALL_RETURN(writeCount, (*pluginFunctions->write)(npp, &mNPStreamWrapper->mNPStream, streamPosition, numtowrite, ptrStreamBuffer), mInst,
-                              NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
+      int32_t writeCount = 0;  
+      NS_TRY_SAFE_CALL_RETURN(writeCount,
+                              (*pluginFunctions->write)(
+                                  npp, &mNPStreamWrapper->mNPStream,
+                                  streamPosition, numtowrite, ptrStreamBuffer),
+                              mInst, NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
 
-      NPP_PLUGIN_LOG(PLUGIN_LOG_NOISY,
-                     ("NPP Write called: this=%p, npp=%p, pos=%d, len=%d, "
-                      "buf=%.*s, return(written)=%d,  url=%s\n",
-                      this, npp, streamPosition, numtowrite,
-                      numtowrite, ptrStreamBuffer, writeCount, mNPStreamWrapper->mNPStream.url));
+      NPP_PLUGIN_LOG(
+          PLUGIN_LOG_NOISY,
+          ("NPP Write called: this=%p, npp=%p, pos=%d, len=%d, "
+           "buf=%.*s, return(written)=%d,  url=%s\n",
+           this, npp, streamPosition, numtowrite, numtowrite, ptrStreamBuffer,
+           writeCount, mNPStreamWrapper->mNPStream.url));
 
       if (mStreamState == eStreamStopped) {
         
@@ -561,7 +546,7 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
 
         break;
       }
-    } 
+    }  
 
     if (mStreamBufferByteCount && mStreamBuffer != ptrStreamBuffer) {
       memmove(mStreamBuffer, ptrStreamBuffer, mStreamBufferByteCount);
@@ -586,29 +571,25 @@ nsNPAPIPluginStreamListener::OnDataAvailable(nsPluginStreamListenerPeer* streamP
   return rv;
 }
 
-nsresult
-nsNPAPIPluginStreamListener::OnFileAvailable(nsPluginStreamListenerPeer* streamPeer,
-                                             const char* fileName)
-{
-  if (!mInst || !mInst->CanFireNotifications())
-    return NS_ERROR_FAILURE;
+nsresult nsNPAPIPluginStreamListener::OnFileAvailable(
+    nsPluginStreamListenerPeer* streamPeer, const char* fileName) {
+  if (!mInst || !mInst->CanFireNotifications()) return NS_ERROR_FAILURE;
 
   PluginDestructionGuard guard(mInst);
 
   nsNPAPIPlugin* plugin = mInst->GetPlugin();
-  if (!plugin || !plugin->GetLibrary())
-    return NS_ERROR_FAILURE;
+  if (!plugin || !plugin->GetLibrary()) return NS_ERROR_FAILURE;
 
   NPPluginFuncs* pluginFunctions = plugin->PluginFuncs();
 
-  if (!pluginFunctions->asfile)
-    return NS_ERROR_FAILURE;
+  if (!pluginFunctions->asfile) return NS_ERROR_FAILURE;
 
   NPP npp;
   mInst->GetNPP(&npp);
 
-  NS_TRY_SAFE_CALL_VOID((*pluginFunctions->asfile)(npp, &mNPStreamWrapper->mNPStream, fileName), mInst,
-                        NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
+  NS_TRY_SAFE_CALL_VOID(
+      (*pluginFunctions->asfile)(npp, &mNPStreamWrapper->mNPStream, fileName),
+      mInst, NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
 
   NPP_PLUGIN_LOG(PLUGIN_LOG_NORMAL,
                  ("NPP StreamAsFile called: this=%p, npp=%p, url=%s, file=%s\n",
@@ -617,10 +598,8 @@ nsNPAPIPluginStreamListener::OnFileAvailable(nsPluginStreamListenerPeer* streamP
   return NS_OK;
 }
 
-nsresult
-nsNPAPIPluginStreamListener::OnStopBinding(nsPluginStreamListenerPeer* streamPeer,
-                                           nsresult status)
-{
+nsresult nsNPAPIPluginStreamListener::OnStopBinding(
+    nsPluginStreamListenerPeer* streamPeer, nsresult status) {
   if (NS_FAILED(status)) {
     
     
@@ -657,9 +636,7 @@ nsNPAPIPluginStreamListener::OnStopBinding(nsPluginStreamListenerPeer* streamPee
   return CleanUpStream(reason);
 }
 
-bool
-nsNPAPIPluginStreamListener::MaybeRunStopBinding()
-{
+bool nsNPAPIPluginStreamListener::MaybeRunStopBinding() {
   if (mIsSuspended || mStreamStopMode != eStopPending) {
     return false;
   }
@@ -669,13 +646,13 @@ nsNPAPIPluginStreamListener::MaybeRunStopBinding()
 }
 
 NS_IMETHODIMP
-nsNPAPIPluginStreamListener::Notify(nsITimer *aTimer)
-{
+nsNPAPIPluginStreamListener::Notify(nsITimer* aTimer) {
   NS_ASSERTION(aTimer == mDataPumpTimer, "Uh, wrong timer?");
 
   int32_t oldStreamBufferByteCount = mStreamBufferByteCount;
 
-  nsresult rv = OnDataAvailable(mStreamListenerPeer, nullptr, mStreamBufferByteCount);
+  nsresult rv =
+      OnDataAvailable(mStreamListenerPeer, nullptr, mStreamBufferByteCount);
 
   if (NS_FAILED(rv)) {
     
@@ -687,29 +664,27 @@ nsNPAPIPluginStreamListener::Notify(nsITimer *aTimer)
   if (mStreamBufferByteCount != oldStreamBufferByteCount &&
       ((mStreamState == eStreamTypeSet && mStreamBufferByteCount < 1024) ||
        mStreamBufferByteCount == 0)) {
-        
-        
-        
-        
-        ResumeRequest();
-        
-        StopDataPump();
-      }
+    
+    
+    
+    
+    ResumeRequest();
+    
+    StopDataPump();
+  }
 
   MaybeRunStopBinding();
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsNPAPIPluginStreamListener::GetName(nsACString& aName)
-{
+nsNPAPIPluginStreamListener::GetName(nsACString& aName) {
   aName.AssignLiteral("nsNPAPIPluginStreamListener");
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsNPAPIPluginStreamListener::StatusLine(const char* line)
-{
+nsNPAPIPluginStreamListener::StatusLine(const char* line) {
   mResponseHeaders.Append(line);
   mResponseHeaders.Append('\n');
   return NS_OK;
@@ -717,8 +692,7 @@ nsNPAPIPluginStreamListener::StatusLine(const char* line)
 
 NS_IMETHODIMP
 nsNPAPIPluginStreamListener::NewResponseHeader(const char* headerName,
-                                               const char* headerValue)
-{
+                                               const char* headerValue) {
   mResponseHeaders.Append(headerName);
   mResponseHeaders.AppendLiteral(": ");
   mResponseHeaders.Append(headerValue);
@@ -726,10 +700,9 @@ nsNPAPIPluginStreamListener::NewResponseHeader(const char* headerName,
   return NS_OK;
 }
 
-bool
-nsNPAPIPluginStreamListener::HandleRedirectNotification(nsIChannel *oldChannel, nsIChannel *newChannel,
-                                                        nsIAsyncVerifyRedirectCallback* callback)
-{
+bool nsNPAPIPluginStreamListener::HandleRedirectNotification(
+    nsIChannel* oldChannel, nsIChannel* newChannel,
+    nsIAsyncVerifyRedirectCallback* callback) {
   nsCOMPtr<nsIHttpChannel> oldHttpChannel = do_QueryInterface(oldChannel);
   nsCOMPtr<nsIHttpChannel> newHttpChannel = do_QueryInterface(newChannel);
   if (!oldHttpChannel || !newHttpChannel) {
@@ -765,10 +738,15 @@ nsNPAPIPluginStreamListener::HandleRedirectNotification(nsIChannel *oldChannel, 
           NPP npp;
           mInst->GetNPP(&npp);
 #if defined(XP_WIN)
-          NS_TRY_SAFE_CALL_VOID((*pluginFunctions->urlredirectnotify)(npp, spec.get(), static_cast<int32_t>(status), mNPStreamWrapper->mNPStream.notifyData), mInst,
-                                NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
+          NS_TRY_SAFE_CALL_VOID(
+              (*pluginFunctions->urlredirectnotify)(
+                  npp, spec.get(), static_cast<int32_t>(status),
+                  mNPStreamWrapper->mNPStream.notifyData),
+              mInst, NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
 #else
-          (*pluginFunctions->urlredirectnotify)(npp, spec.get(), static_cast<int32_t>(status), mNPStreamWrapper->mNPStream.notifyData);
+          (*pluginFunctions->urlredirectnotify)(
+              npp, spec.get(), static_cast<int32_t>(status),
+              mNPStreamWrapper->mNPStream.notifyData);
 #endif
           return true;
         }
@@ -780,19 +758,16 @@ nsNPAPIPluginStreamListener::HandleRedirectNotification(nsIChannel *oldChannel, 
   return true;
 }
 
-void
-nsNPAPIPluginStreamListener::URLRedirectResponse(NPBool allow)
-{
+void nsNPAPIPluginStreamListener::URLRedirectResponse(NPBool allow) {
   if (mHTTPRedirectCallback) {
-    mHTTPRedirectCallback->OnRedirectVerifyCallback(allow ? NS_OK : NS_ERROR_FAILURE);
+    mHTTPRedirectCallback->OnRedirectVerifyCallback(allow ? NS_OK
+                                                          : NS_ERROR_FAILURE);
     mRedirectDenied = allow ? false : true;
     mHTTPRedirectCallback = nullptr;
   }
 }
 
-void*
-nsNPAPIPluginStreamListener::GetNotifyData()
-{
+void* nsNPAPIPluginStreamListener::GetNotifyData() {
   if (mNPStreamWrapper) {
     return mNPStreamWrapper->mNPStream.notifyData;
   }

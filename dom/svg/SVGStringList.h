@@ -9,7 +9,7 @@
 
 #include "nsDebug.h"
 #include "nsTArray.h"
-#include "nsString.h" 
+#include "nsString.h"  
 
 namespace mozilla {
 
@@ -17,14 +17,12 @@ namespace mozilla {
 
 
 
-class SVGStringList
-{
+class SVGStringList {
   friend class DOMSVGStringList;
 
-public:
-
+ public:
   SVGStringList() : mIsSet(false), mIsCommaSeparated(false) {}
-  ~SVGStringList(){}
+  ~SVGStringList() {}
 
   void SetIsCommaSeparated(bool aIsCommaSeparated) {
     mIsCommaSeparated = aIsCommaSeparated;
@@ -39,13 +37,9 @@ public:
   
   void GetValue(nsAString& aValue) const;
 
-  bool IsEmpty() const {
-    return mStrings.IsEmpty();
-  }
+  bool IsEmpty() const { return mStrings.IsEmpty(); }
 
-  uint32_t Length() const {
-    return mStrings.Length();
-  }
+  uint32_t Length() const { return mStrings.Length(); }
 
   const nsAString& operator[](uint32_t aIndex) const {
     return mStrings[aIndex];
@@ -59,14 +53,11 @@ public:
     return mStrings.SetCapacity(size, fallible);
   }
 
-  void Compact() {
-    mStrings.Compact();
-  }
+  void Compact() { mStrings.Compact(); }
 
   
   
-  bool IsExplicitlySet() const
-    { return mIsSet; }
+  bool IsExplicitlySet() const { return mIsSet; }
 
   
   
@@ -75,17 +66,14 @@ public:
   
   
 
-protected:
-
+ protected:
   
 
 
 
   nsresult CopyFrom(const SVGStringList& rhs);
 
-  nsAString& operator[](uint32_t aIndex) {
-    return mStrings[aIndex];
-  }
+  nsAString& operator[](uint32_t aIndex) { return mStrings[aIndex]; }
 
   
 
@@ -95,13 +83,12 @@ protected:
     return mStrings.SetLength(aStringOfItems, fallible);
   }
 
-private:
-
+ private:
   
   
   
 
-  bool InsertItem(uint32_t aIndex, const nsAString &aString) {
+  bool InsertItem(uint32_t aIndex, const nsAString& aString) {
     if (aIndex >= mStrings.Length()) {
       aIndex = mStrings.Length();
     }
@@ -112,7 +99,7 @@ private:
     return false;
   }
 
-  void ReplaceItem(uint32_t aIndex, const nsAString &aString) {
+  void ReplaceItem(uint32_t aIndex, const nsAString& aString) {
     MOZ_ASSERT(aIndex < mStrings.Length(),
                "DOM wrapper caller should have raised INDEX_SIZE_ERR");
     mStrings[aIndex] = aString;
@@ -124,7 +111,7 @@ private:
     mStrings.RemoveElementAt(aIndex);
   }
 
-  bool AppendItem(const nsAString &aString) {
+  bool AppendItem(const nsAString& aString) {
     if (mStrings.AppendElement(aString, fallible)) {
       mIsSet = true;
       return true;
@@ -132,8 +119,7 @@ private:
     return false;
   }
 
-protected:
-
+ protected:
   
 
 
@@ -142,6 +128,6 @@ protected:
   bool mIsCommaSeparated;
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -59,18 +59,15 @@
 
 
 
-template<class Type>
-class nsTWeakRef
-{
-public:
-  ~nsTWeakRef()
-  {}
+template <class Type>
+class nsTWeakRef {
+ public:
+  ~nsTWeakRef() {}
 
   
 
 
-  explicit nsTWeakRef(Type* aObj = nullptr)
-  {
+  explicit nsTWeakRef(Type* aObj = nullptr) {
     if (aObj) {
       mRef = new Inner(aObj);
     } else {
@@ -81,14 +78,12 @@ public:
   
 
 
-  explicit nsTWeakRef(const nsTWeakRef<Type>& aOther) : mRef(aOther.mRef)
-  {}
+  explicit nsTWeakRef(const nsTWeakRef<Type>& aOther) : mRef(aOther.mRef) {}
 
   
 
 
-  nsTWeakRef<Type>& operator=(Type* aObj)
-  {
+  nsTWeakRef<Type>& operator=(Type* aObj) {
     if (aObj) {
       mRef = new Inner(aObj);
     } else {
@@ -100,8 +95,7 @@ public:
   
 
 
-  nsTWeakRef<Type>& operator=(const nsTWeakRef<Type>& aOther)
-  {
+  nsTWeakRef<Type>& operator=(const nsTWeakRef<Type>& aOther) {
     mRef = aOther.mRef;
     return *this;
   }
@@ -117,8 +111,7 @@ public:
 
 
 
-  Type* forget()
-  {
+  Type* forget() {
     Type* obj;
     if (mRef) {
       obj = mRef->mObj;
@@ -139,31 +132,21 @@ public:
 
 
 
-  Type* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN
-  {
-    NS_ASSERTION(mRef && mRef->mObj,
-                 "You can't dereference a null weak reference with operator->().");
+  Type* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN {
+    NS_ASSERTION(
+        mRef && mRef->mObj,
+        "You can't dereference a null weak reference with operator->().");
     return get();
   }
 
-private:
+ private:
+  struct Inner {
+    int mCnt;
+    Type* mObj;
 
-  struct Inner
-  {
-    int     mCnt;
-    Type*   mObj;
-
-    explicit Inner(Type* aObj)
-      : mCnt(1)
-      , mObj(aObj)
-    {
-    }
-    void AddRef()
-    {
-      ++mCnt;
-    }
-    void Release()
-    {
+    explicit Inner(Type* aObj) : mCnt(1), mObj(aObj) {}
+    void AddRef() { ++mCnt; }
+    void Release() {
       if (--mCnt == 0) {
         delete this;
       }

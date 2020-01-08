@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef nsRegionFwd_h__
 #define nsRegionFwd_h__
 
@@ -20,8 +19,8 @@ class IntRegionTyped;
 
 typedef IntRegionTyped<UnknownUnits> IntRegion;
 
-} 
-} 
+}  
+}  
 
 typedef mozilla::gfx::IntRegion nsIntRegion;
 

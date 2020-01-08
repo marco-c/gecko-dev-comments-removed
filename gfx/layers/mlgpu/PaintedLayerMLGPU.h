@@ -18,11 +18,8 @@ namespace layers {
 
 class TiledLayerBufferComposite;
 
-class PaintedLayerMLGPU final
-  : public PaintedLayer,
-    public LayerMLGPU
-{
-public:
+class PaintedLayerMLGPU final : public PaintedLayer, public LayerMLGPU {
+ public:
   explicit PaintedLayerMLGPU(LayerManagerMLGPU* aManager);
   ~PaintedLayerMLGPU() override;
 
@@ -36,16 +33,12 @@ public:
   bool IsContentOpaque() override;
 
   
-  void InvalidateRegion(const nsIntRegion& aRegion) override { 
+  void InvalidateRegion(const nsIntRegion& aRegion) override {
     MOZ_CRASH("PaintedLayerMLGPU can't fill invalidated regions");
   }
 
-  bool HasComponentAlpha() const {
-    return !!mTextureOnWhite;
-  }
-  TextureSource* GetTexture() const {
-    return mTexture;
-  }
+  bool HasComponentAlpha() const { return !!mTextureOnWhite; }
+  TextureSource* GetTexture() const { return mTexture; }
   TextureSource* GetTextureOnWhite() const {
     MOZ_ASSERT(HasComponentAlpha());
     return mTextureOnWhite;
@@ -56,9 +49,7 @@ public:
     
     
     
-    return MayResample()
-           ? SamplerMode::LinearClamp
-           : SamplerMode::LinearRepeat;
+    return MayResample() ? SamplerMode::LinearClamp : SamplerMode::LinearRepeat;
   }
 
   void SetRenderRegion(LayerIntRegion&& aRegion) override;
@@ -72,30 +63,27 @@ public:
 
   void CleanupCachedResources();
 
-protected:
+ protected:
   void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
   bool OnPrepareToRender(FrameBuilder* aBuilder) override;
 
   
-  void AssignToView(FrameBuilder* aBuilder,
-                    RenderViewMLGPU* aView,
+  void AssignToView(FrameBuilder* aBuilder, RenderViewMLGPU* aView,
                     Maybe<gfx::Polygon>&& aGeometry) override;
 
-  void AssignHighResTilesToView(FrameBuilder* aBuilder,
-                                RenderViewMLGPU* aView,
+  void AssignHighResTilesToView(FrameBuilder* aBuilder, RenderViewMLGPU* aView,
                                 TiledContentHost* aTileHost,
                                 const Maybe<gfx::Polygon>& aGeometry);
 
   
-  void AssignTileBufferToView(FrameBuilder* aBuilder,
-                              RenderViewMLGPU* aView,
+  void AssignTileBufferToView(FrameBuilder* aBuilder, RenderViewMLGPU* aView,
                               TiledLayerBufferComposite& aTiles,
                               const LayerIntRegion& aCompositeRegion,
                               const Maybe<gfx::Polygon>& aGeometry);
 
   void CleanupResources();
 
-private:
+ private:
   RefPtr<ContentHost> mHost;
   RefPtr<TextureSource> mTexture;
   RefPtr<TextureSource> mTextureOnWhite;
@@ -105,7 +93,7 @@ private:
   gfx::IntPoint mDestOrigin;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

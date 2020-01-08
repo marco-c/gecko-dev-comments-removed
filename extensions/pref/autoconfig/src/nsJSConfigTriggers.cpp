@@ -34,142 +34,132 @@ static JS::PersistentRooted<JSObject *> autoconfigSystemSb;
 static JS::PersistentRooted<JSObject *> autoconfigSb;
 static bool sandboxEnabled;
 
-nsresult CentralizedAdminPrefManagerInit(bool aSandboxEnabled)
-{
-    
-    if (autoconfigSb.initialized())
-        return NS_OK;
+nsresult CentralizedAdminPrefManagerInit(bool aSandboxEnabled) {
+  
+  if (autoconfigSb.initialized()) return NS_OK;
 
-    sandboxEnabled = aSandboxEnabled;
+  sandboxEnabled = aSandboxEnabled;
 
-    
-    nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
+  
+  nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
 
-    
-    nsCOMPtr<nsIPrincipal> principal;
-    nsContentUtils::GetSecurityManager()->GetSystemPrincipal(getter_AddRefs(principal));
+  
+  nsCOMPtr<nsIPrincipal> principal;
+  nsContentUtils::GetSecurityManager()->GetSystemPrincipal(
+      getter_AddRefs(principal));
 
+  
+  AutoSafeJSContext cx;
+  JS::Rooted<JSObject *> sandbox(cx);
+  nsresult rv = xpc->CreateSandbox(cx, principal, sandbox.address());
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    AutoSafeJSContext cx;
-    JS::Rooted<JSObject*> sandbox(cx);
-    nsresult rv = xpc->CreateSandbox(cx, principal, sandbox.address());
-    NS_ENSURE_SUCCESS(rv, rv);
+  
+  NS_ENSURE_STATE(sandbox);
+  autoconfigSystemSb.init(cx, js::UncheckedUnwrap(sandbox));
 
-    
-    NS_ENSURE_STATE(sandbox);
-    autoconfigSystemSb.init(cx, js::UncheckedUnwrap(sandbox));
+  
+  principal = NullPrincipal::CreateWithoutOriginAttributes();
+  rv = xpc->CreateSandbox(cx, principal, sandbox.address());
+  NS_ENSURE_SUCCESS(rv, rv);
 
+  autoconfigSb.init(cx, js::UncheckedUnwrap(sandbox));
 
-    
-    principal = NullPrincipal::CreateWithoutOriginAttributes();
-    rv = xpc->CreateSandbox(cx, principal, sandbox.address());
-    NS_ENSURE_SUCCESS(rv, rv);
+  
+  JSAutoRealm ar(cx, autoconfigSystemSb);
 
-    autoconfigSb.init(cx, js::UncheckedUnwrap(sandbox));
+  JS::Rooted<JS::Value> value(cx, JS::ObjectValue(*sandbox));
 
+  if (!JS_WrapValue(cx, &value) ||
+      !JS_DefineProperty(cx, autoconfigSystemSb, "gSandbox", value,
+                         JSPROP_ENUMERATE)) {
+    return NS_ERROR_FAILURE;
+  }
 
-    
-    JSAutoRealm ar(cx, autoconfigSystemSb);
-
-    JS::Rooted<JS::Value> value(cx, JS::ObjectValue(*sandbox));
-
-    if (!JS_WrapValue(cx, &value) ||
-        !JS_DefineProperty(cx, autoconfigSystemSb, "gSandbox", value, JSPROP_ENUMERATE)) {
-      return NS_ERROR_FAILURE;
-    }
-
-    return NS_OK;
+  return NS_OK;
 }
 
-nsresult CentralizedAdminPrefManagerFinish()
-{
-    if (autoconfigSb.initialized()) {
-        AutoSafeJSContext cx;
-        autoconfigSb.reset();
-        autoconfigSystemSb.reset();
-        JS_MaybeGC(cx);
-    }
-    return NS_OK;
+nsresult CentralizedAdminPrefManagerFinish() {
+  if (autoconfigSb.initialized()) {
+    AutoSafeJSContext cx;
+    autoconfigSb.reset();
+    autoconfigSystemSb.reset();
+    JS_MaybeGC(cx);
+  }
+  return NS_OK;
 }
 
 nsresult EvaluateAdminConfigScript(const char *js_buffer, size_t length,
                                    const char *filename, bool globalContext,
                                    bool callbacks, bool skipFirstLine,
-                                   bool isPrivileged)
-{
-    if (!sandboxEnabled) {
-        isPrivileged = true;
-    }
-    return EvaluateAdminConfigScript(isPrivileged ? autoconfigSystemSb : autoconfigSb,
-                                     js_buffer, length, filename,
-                                     globalContext, callbacks, skipFirstLine);
-
+                                   bool isPrivileged) {
+  if (!sandboxEnabled) {
+    isPrivileged = true;
+  }
+  return EvaluateAdminConfigScript(
+      isPrivileged ? autoconfigSystemSb : autoconfigSb, js_buffer, length,
+      filename, globalContext, callbacks, skipFirstLine);
 }
 
 nsresult EvaluateAdminConfigScript(JS::HandleObject sandbox,
                                    const char *js_buffer, size_t length,
                                    const char *filename, bool globalContext,
-                                   bool callbacks, bool skipFirstLine)
-{
-    if (skipFirstLine) {
-        
-
-
-
-
-        unsigned int i = 0;
-        while (i < length) {
-            char c = js_buffer[i++];
-            if (c == '\r') {
-                if (js_buffer[i] == '\n')
-                    i++;
-                break;
-            }
-            if (c == '\n')
-                break;
-        }
-
-        length -= i;
-        js_buffer += i;
-    }
-
+                                   bool callbacks, bool skipFirstLine) {
+  if (skipFirstLine) {
     
-    nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
 
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(sandbox)) {
-        return NS_ERROR_UNEXPECTED;
+
+
+
+    unsigned int i = 0;
+    while (i < length) {
+      char c = js_buffer[i++];
+      if (c == '\r') {
+        if (js_buffer[i] == '\n') i++;
+        break;
+      }
+      if (c == '\n') break;
     }
-    JSContext* cx = jsapi.cx();
 
-    nsAutoCString script(js_buffer, length);
-    JS::RootedValue v(cx);
+    length -= i;
+    js_buffer += i;
+  }
 
-    nsString convertedScript;
-    bool isUTF8 = IsUTF8(script);
-    if (isUTF8) {
-        convertedScript = NS_ConvertUTF8toUTF16(script);
-    } else {
-        nsContentUtils::ReportToConsoleNonLocalized(
-            NS_LITERAL_STRING("Your AutoConfig file is ASCII. Please convert it to UTF-8."),
-            nsIScriptError::warningFlag,
-            NS_LITERAL_CSTRING("autoconfig"),
-            nullptr);
-        
-        convertedScript = NS_ConvertASCIItoUTF16(script);
+  
+  nsCOMPtr<nsIXPConnect> xpc = nsIXPConnect::XPConnect();
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(sandbox)) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  JSContext *cx = jsapi.cx();
+
+  nsAutoCString script(js_buffer, length);
+  JS::RootedValue v(cx);
+
+  nsString convertedScript;
+  bool isUTF8 = IsUTF8(script);
+  if (isUTF8) {
+    convertedScript = NS_ConvertUTF8toUTF16(script);
+  } else {
+    nsContentUtils::ReportToConsoleNonLocalized(
+        NS_LITERAL_STRING(
+            "Your AutoConfig file is ASCII. Please convert it to UTF-8."),
+        nsIScriptError::warningFlag, NS_LITERAL_CSTRING("autoconfig"), nullptr);
+    
+    convertedScript = NS_ConvertASCIItoUTF16(script);
+  }
+  {
+    JSAutoRealm ar(cx, autoconfigSystemSb);
+    JS::Rooted<JS::Value> value(cx, JS::BooleanValue(isUTF8));
+    if (!JS_DefineProperty(cx, autoconfigSystemSb, "gIsUTF8", value,
+                           JSPROP_ENUMERATE)) {
+      return NS_ERROR_UNEXPECTED;
     }
-    {
-        JSAutoRealm ar(cx, autoconfigSystemSb);
-        JS::Rooted<JS::Value> value(cx, JS::BooleanValue(isUTF8));
-        if (!JS_DefineProperty(cx, autoconfigSystemSb, "gIsUTF8", value, JSPROP_ENUMERATE)) {
-            return NS_ERROR_UNEXPECTED;
-        }
-    }
-    nsresult rv = xpc->EvalInSandboxObject(convertedScript, filename, cx,
-                                           sandbox, &v);
-    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  nsresult rv =
+      xpc->EvalInSandboxObject(convertedScript, filename, cx, sandbox, &v);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    return NS_OK;
+  return NS_OK;
 }
-

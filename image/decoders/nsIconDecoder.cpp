@@ -16,42 +16,39 @@ namespace image {
 static const uint32_t ICON_HEADER_SIZE = 2;
 
 nsIconDecoder::nsIconDecoder(RasterImage* aImage)
- : Decoder(aImage)
- , mLexer(Transition::To(State::HEADER, ICON_HEADER_SIZE),
-          Transition::TerminateSuccess())
- , mBytesPerRow()   
+    : Decoder(aImage),
+      mLexer(Transition::To(State::HEADER, ICON_HEADER_SIZE),
+             Transition::TerminateSuccess()),
+      mBytesPerRow()  
 {
   
 }
 
-nsIconDecoder::~nsIconDecoder()
-{ }
+nsIconDecoder::~nsIconDecoder() {}
 
-LexerResult
-nsIconDecoder::DoDecode(SourceBufferIterator& aIterator, IResumable* aOnResume)
-{
+LexerResult nsIconDecoder::DoDecode(SourceBufferIterator& aIterator,
+                                    IResumable* aOnResume) {
   MOZ_ASSERT(!HasError(), "Shouldn't call DoDecode after error!");
 
   return mLexer.Lex(aIterator, aOnResume,
                     [=](State aState, const char* aData, size_t aLength) {
-    switch (aState) {
-      case State::HEADER:
-        return ReadHeader(aData);
-      case State::ROW_OF_PIXELS:
-        return ReadRowOfPixels(aData, aLength);
-      case State::FINISH:
-        return Finish();
-      default:
-        MOZ_CRASH("Unknown State");
-    }
-  });
+                      switch (aState) {
+                        case State::HEADER:
+                          return ReadHeader(aData);
+                        case State::ROW_OF_PIXELS:
+                          return ReadRowOfPixels(aData, aLength);
+                        case State::FINISH:
+                          return Finish();
+                        default:
+                          MOZ_CRASH("Unknown State");
+                      }
+                    });
 }
 
-LexerTransition<nsIconDecoder::State>
-nsIconDecoder::ReadHeader(const char* aData)
-{
+LexerTransition<nsIconDecoder::State> nsIconDecoder::ReadHeader(
+    const char* aData) {
   
-  uint8_t width  = uint8_t(aData[0]);
+  uint8_t width = uint8_t(aData[0]);
   uint8_t height = uint8_t(aData[1]);
 
   
@@ -69,11 +66,9 @@ nsIconDecoder::ReadHeader(const char* aData)
   }
 
   MOZ_ASSERT(!mImageData, "Already have a buffer allocated?");
-  Maybe<SurfacePipe> pipe =
-    SurfacePipeFactory::CreateSurfacePipe(this, Size(), OutputSize(),
-                                          FullFrame(), SurfaceFormat::B8G8R8A8,
-                                           Nothing(),
-                                          SurfacePipeFlags());
+  Maybe<SurfacePipe> pipe = SurfacePipeFactory::CreateSurfacePipe(
+      this, Size(), OutputSize(), FullFrame(), SurfaceFormat::B8G8R8A8,
+       Nothing(), SurfacePipeFlags());
   if (!pipe) {
     return Transition::TerminateFailure();
   }
@@ -85,9 +80,8 @@ nsIconDecoder::ReadHeader(const char* aData)
   return Transition::To(State::ROW_OF_PIXELS, mBytesPerRow);
 }
 
-LexerTransition<nsIconDecoder::State>
-nsIconDecoder::ReadRowOfPixels(const char* aData, size_t aLength)
-{
+LexerTransition<nsIconDecoder::State> nsIconDecoder::ReadRowOfPixels(
+    const char* aData, size_t aLength) {
   MOZ_ASSERT(aLength % 4 == 0, "Rows should contain a multiple of four bytes");
 
   auto result = mPipe.WritePixels<uint32_t>([&]() -> NextPixel<uint32_t> {
@@ -112,18 +106,16 @@ nsIconDecoder::ReadRowOfPixels(const char* aData, size_t aLength)
   }
 
   return result == WriteState::FINISHED
-       ? Transition::To(State::FINISH, 0)
-       : Transition::To(State::ROW_OF_PIXELS, mBytesPerRow);
+             ? Transition::To(State::FINISH, 0)
+             : Transition::To(State::ROW_OF_PIXELS, mBytesPerRow);
 }
 
-LexerTransition<nsIconDecoder::State>
-nsIconDecoder::Finish()
-{
+LexerTransition<nsIconDecoder::State> nsIconDecoder::Finish() {
   PostFrameStop();
   PostDecodeDone();
 
   return Transition::TerminateSuccess();
 }
 
-} 
-} 
+}  
+}  

@@ -21,14 +21,14 @@ namespace mozilla {
 
 
 
-class AndroidDirectTexture
-{
-public:
-  AndroidDirectTexture(uint32_t width, uint32_t height, uint32_t usage, gfxImageFormat format);
+class AndroidDirectTexture {
+ public:
+  AndroidDirectTexture(uint32_t width, uint32_t height, uint32_t usage,
+                       gfxImageFormat format);
   virtual ~AndroidDirectTexture();
 
-  bool Lock(uint32_t usage, unsigned char **bits);
-  bool Lock(uint32_t usage, const nsIntRect& rect, unsigned char **bits);
+  bool Lock(uint32_t usage, unsigned char** bits);
+  bool Lock(uint32_t usage, const nsIntRect& rect, unsigned char** bits);
   bool Unlock(bool aFlip = true);
 
   bool Reallocate(uint32_t aWidth, uint32_t aHeight);
@@ -39,7 +39,7 @@ public:
 
   bool Bind();
 
-private:
+ private:
   mozilla::Mutex mLock;
   bool mNeedFlip;
 
@@ -54,5 +54,5 @@ private:
   void ReallocPendingBuffer();
 };
 
-} 
+}  
 #endif 

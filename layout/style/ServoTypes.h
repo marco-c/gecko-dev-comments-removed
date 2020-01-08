@@ -17,12 +17,11 @@
 struct RawServoFontFaceRule;
 
 namespace mozilla {
-  struct LangGroupFontPrefs;
+struct LangGroupFontPrefs;
 }
 
 
-struct nsFontFaceRuleContainer
-{
+struct nsFontFaceRuleContainer {
   RefPtr<RawServoFontFaceRule> mRule;
   mozilla::SheetType mSheetType;
 };
@@ -77,10 +76,10 @@ enum class StyleRuleInclusion {
 
 
 enum class UpdateAnimationsTasks : uint8_t {
-  CSSAnimations          = 1 << 0,
-  CSSTransitions         = 1 << 1,
-  EffectProperties       = 1 << 2,
-  CascadeResults         = 1 << 3,
+  CSSAnimations = 1 << 0,
+  CSSTransitions = 1 << 1,
+  EffectProperties = 1 << 2,
+  CascadeResults = 1 << 3,
   DisplayChangedFromNone = 1 << 4,
 };
 
@@ -127,44 +126,39 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(PointerCapabilities)
 
 
 
-class ServoStyleSetSizes
-{
-public:
-  size_t mRuleTree;                
-  size_t mPrecomputedPseudos;      
-  size_t mElementAndPseudosMaps;   
-  size_t mInvalidationMap;         
-  size_t mRevalidationSelectors;   
-  size_t mOther;                   
+class ServoStyleSetSizes {
+ public:
+  size_t mRuleTree;               
+  size_t mPrecomputedPseudos;     
+  size_t mElementAndPseudosMaps;  
+  size_t mInvalidationMap;        
+  size_t mRevalidationSelectors;  
+  size_t mOther;                  
 
   ServoStyleSetSizes()
-    : mRuleTree(0)
-    , mPrecomputedPseudos(0)
-    , mElementAndPseudosMaps(0)
-    , mInvalidationMap(0)
-    , mRevalidationSelectors(0)
-    , mOther(0)
-  {}
+      : mRuleTree(0),
+        mPrecomputedPseudos(0),
+        mElementAndPseudosMaps(0),
+        mInvalidationMap(0),
+        mRevalidationSelectors(0),
+        mOther(0) {}
 };
 
 
 
-struct DeclarationBlockMutationClosure
-{
+struct DeclarationBlockMutationClosure {
   
   void (*function)(void*) = nullptr;
   void* data = nullptr;
 };
 
-struct MediumFeaturesChangedResult
-{
+struct MediumFeaturesChangedResult {
   bool mAffectsDocumentRules;
   bool mAffectsNonDocumentRules;
   bool mUsesViewportUnits;
 };
 
-struct FontSizePrefs
-{
+struct FontSizePrefs {
   void CopyFrom(const mozilla::LangGroupFontPrefs&);
   nscoord mDefaultVariableSize;
   nscoord mDefaultFixedSize;
@@ -175,6 +169,6 @@ struct FontSizePrefs
   nscoord mDefaultFantasySize;
 };
 
-} 
+}  
 
-#endif 
+#endif  

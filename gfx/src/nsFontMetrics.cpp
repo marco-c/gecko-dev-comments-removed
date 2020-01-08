@@ -4,23 +4,23 @@
 
 
 #include "nsFontMetrics.h"
-#include <math.h>                       
-#include <algorithm>                    
-#include "gfxContext.h"                 
-#include "gfxFontConstants.h"           
-#include "gfxPlatform.h"                
-#include "gfxPoint.h"                   
-#include "gfxRect.h"                    
-#include "gfxTypes.h"                   
-#include "nsBoundingMetrics.h"          
-#include "nsDebug.h"                    
-#include "nsDeviceContext.h"            
-#include "nsAtom.h"                    
-#include "nsMathUtils.h"                
-#include "nsString.h"                   
-#include "nsStyleConsts.h"              
-#include "mozilla/Assertions.h"         
-#include "mozilla/UniquePtr.h"          
+#include <math.h>                
+#include <algorithm>             
+#include "gfxContext.h"          
+#include "gfxFontConstants.h"    
+#include "gfxPlatform.h"         
+#include "gfxPoint.h"            
+#include "gfxRect.h"             
+#include "gfxTypes.h"            
+#include "nsBoundingMetrics.h"   
+#include "nsDebug.h"             
+#include "nsDeviceContext.h"     
+#include "nsAtom.h"              
+#include "nsMathUtils.h"         
+#include "nsString.h"            
+#include "nsStyleConsts.h"       
+#include "mozilla/Assertions.h"  
+#include "mozilla/UniquePtr.h"   
 
 class gfxUserFontSet;
 using namespace mozilla;
@@ -28,185 +28,154 @@ using namespace mozilla;
 namespace {
 
 class AutoTextRun {
-public:
-    typedef mozilla::gfx::DrawTarget DrawTarget;
+ public:
+  typedef mozilla::gfx::DrawTarget DrawTarget;
 
-    AutoTextRun(nsFontMetrics* aMetrics, DrawTarget* aDrawTarget,
-                const char* aString, int32_t aLength)
-    {
-        mTextRun = aMetrics->GetThebesFontGroup()->MakeTextRun(
-            reinterpret_cast<const uint8_t*>(aString), aLength,
-            aDrawTarget,
-            aMetrics->AppUnitsPerDevPixel(),
-            ComputeFlags(aMetrics), nsTextFrameUtils::Flags(),
-            nullptr);
+  AutoTextRun(nsFontMetrics* aMetrics, DrawTarget* aDrawTarget,
+              const char* aString, int32_t aLength) {
+    mTextRun = aMetrics->GetThebesFontGroup()->MakeTextRun(
+        reinterpret_cast<const uint8_t*>(aString), aLength, aDrawTarget,
+        aMetrics->AppUnitsPerDevPixel(), ComputeFlags(aMetrics),
+        nsTextFrameUtils::Flags(), nullptr);
+  }
+
+  AutoTextRun(nsFontMetrics* aMetrics, DrawTarget* aDrawTarget,
+              const char16_t* aString, int32_t aLength) {
+    mTextRun = aMetrics->GetThebesFontGroup()->MakeTextRun(
+        aString, aLength, aDrawTarget, aMetrics->AppUnitsPerDevPixel(),
+        ComputeFlags(aMetrics), nsTextFrameUtils::Flags(), nullptr);
+  }
+
+  gfxTextRun* get() { return mTextRun.get(); }
+  gfxTextRun* operator->() { return mTextRun.get(); }
+
+ private:
+  static gfx::ShapedTextFlags ComputeFlags(nsFontMetrics* aMetrics) {
+    gfx::ShapedTextFlags flags = gfx::ShapedTextFlags();
+    if (aMetrics->GetTextRunRTL()) {
+      flags |= gfx::ShapedTextFlags::TEXT_IS_RTL;
     }
-
-    AutoTextRun(nsFontMetrics* aMetrics, DrawTarget* aDrawTarget,
-                const char16_t* aString, int32_t aLength)
-    {
-        mTextRun = aMetrics->GetThebesFontGroup()->MakeTextRun(
-            aString, aLength,
-            aDrawTarget,
-            aMetrics->AppUnitsPerDevPixel(),
-            ComputeFlags(aMetrics), nsTextFrameUtils::Flags(),
-            nullptr);
+    if (aMetrics->GetVertical()) {
+      switch (aMetrics->GetTextOrientation()) {
+        case NS_STYLE_TEXT_ORIENTATION_MIXED:
+          flags |= gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED;
+          break;
+        case NS_STYLE_TEXT_ORIENTATION_UPRIGHT:
+          flags |= gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT;
+          break;
+        case NS_STYLE_TEXT_ORIENTATION_SIDEWAYS:
+          flags |= gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
+          break;
+      }
     }
+    return flags;
+  }
 
-    gfxTextRun *get() { return mTextRun.get(); }
-    gfxTextRun *operator->() { return mTextRun.get(); }
-
-private:
-    static gfx::ShapedTextFlags ComputeFlags(nsFontMetrics* aMetrics) {
-        gfx::ShapedTextFlags flags = gfx::ShapedTextFlags();
-        if (aMetrics->GetTextRunRTL()) {
-            flags |= gfx::ShapedTextFlags::TEXT_IS_RTL;
-        }
-        if (aMetrics->GetVertical()) {
-            switch (aMetrics->GetTextOrientation()) {
-            case NS_STYLE_TEXT_ORIENTATION_MIXED:
-                flags |= gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED;
-                break;
-            case NS_STYLE_TEXT_ORIENTATION_UPRIGHT:
-                flags |= gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT;
-                break;
-            case NS_STYLE_TEXT_ORIENTATION_SIDEWAYS:
-                flags |= gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT;
-                break;
-            }
-        }
-        return flags;
-    }
-
-    RefPtr<gfxTextRun> mTextRun;
+  RefPtr<gfxTextRun> mTextRun;
 };
 
 class StubPropertyProvider final : public gfxTextRun::PropertyProvider {
-public:
-    void GetHyphenationBreaks(gfxTextRun::Range aRange,
-                              gfxTextRun::HyphenType* aBreakBefore) const override {
-        NS_ERROR("This shouldn't be called because we never call BreakAndMeasureText");
-    }
-    mozilla::StyleHyphens GetHyphensOption() const override {
-        NS_ERROR("This shouldn't be called because we never call BreakAndMeasureText");
-        return mozilla::StyleHyphens::None;
-    }
-    gfxFloat GetHyphenWidth() const override {
-        NS_ERROR("This shouldn't be called because we never enable hyphens");
-        return 0;
-    }
-    already_AddRefed<mozilla::gfx::DrawTarget> GetDrawTarget() const override {
-        NS_ERROR("This shouldn't be called because we never enable hyphens");
-        return nullptr;
-    }
-    uint32_t GetAppUnitsPerDevUnit() const override {
-        NS_ERROR("This shouldn't be called because we never enable hyphens");
-        return 60;
-    }
-    void GetSpacing(gfxTextRun::Range aRange, Spacing* aSpacing) const override {
-        NS_ERROR("This shouldn't be called because we never enable spacing");
-    }
+ public:
+  void GetHyphenationBreaks(
+      gfxTextRun::Range aRange,
+      gfxTextRun::HyphenType* aBreakBefore) const override {
+    NS_ERROR(
+        "This shouldn't be called because we never call BreakAndMeasureText");
+  }
+  mozilla::StyleHyphens GetHyphensOption() const override {
+    NS_ERROR(
+        "This shouldn't be called because we never call BreakAndMeasureText");
+    return mozilla::StyleHyphens::None;
+  }
+  gfxFloat GetHyphenWidth() const override {
+    NS_ERROR("This shouldn't be called because we never enable hyphens");
+    return 0;
+  }
+  already_AddRefed<mozilla::gfx::DrawTarget> GetDrawTarget() const override {
+    NS_ERROR("This shouldn't be called because we never enable hyphens");
+    return nullptr;
+  }
+  uint32_t GetAppUnitsPerDevUnit() const override {
+    NS_ERROR("This shouldn't be called because we never enable hyphens");
+    return 60;
+  }
+  void GetSpacing(gfxTextRun::Range aRange, Spacing* aSpacing) const override {
+    NS_ERROR("This shouldn't be called because we never enable spacing");
+  }
 };
 
-} 
+}  
 
 nsFontMetrics::nsFontMetrics(const nsFont& aFont, const Params& aParams,
-                             nsDeviceContext *aContext)
-    : mFont(aFont)
-    , mLanguage(aParams.language)
-    , mDeviceContext(aContext)
-    , mP2A(aContext->AppUnitsPerDevPixel())
-    , mOrientation(aParams.orientation)
-    , mTextRunRTL(false)
-    , mVertical(false)
-    , mTextOrientation(0)
-{
-    gfxFontStyle style(aFont.style,
-                       aFont.weight,
-                       aFont.stretch,
-                       gfxFloat(aFont.size) / mP2A,
-                       aParams.language,
-                       aParams.explicitLanguage,
-                       aFont.sizeAdjust,
-                       aFont.systemFont,
-                       mDeviceContext->IsPrinterContext(),
-                       aFont.synthesis & NS_FONT_SYNTHESIS_WEIGHT,
-                       aFont.synthesis & NS_FONT_SYNTHESIS_STYLE,
-                       aFont.languageOverride);
+                             nsDeviceContext* aContext)
+    : mFont(aFont),
+      mLanguage(aParams.language),
+      mDeviceContext(aContext),
+      mP2A(aContext->AppUnitsPerDevPixel()),
+      mOrientation(aParams.orientation),
+      mTextRunRTL(false),
+      mVertical(false),
+      mTextOrientation(0) {
+  gfxFontStyle style(
+      aFont.style, aFont.weight, aFont.stretch, gfxFloat(aFont.size) / mP2A,
+      aParams.language, aParams.explicitLanguage, aFont.sizeAdjust,
+      aFont.systemFont, mDeviceContext->IsPrinterContext(),
+      aFont.synthesis & NS_FONT_SYNTHESIS_WEIGHT,
+      aFont.synthesis & NS_FONT_SYNTHESIS_STYLE, aFont.languageOverride);
 
-    aFont.AddFontFeaturesToStyle(&style, mOrientation == gfxFont::eVertical);
-    aFont.AddFontVariationsToStyle(&style);
+  aFont.AddFontFeaturesToStyle(&style, mOrientation == gfxFont::eVertical);
+  aFont.AddFontVariationsToStyle(&style);
 
-    gfxFloat devToCssSize = gfxFloat(mP2A) /
-        gfxFloat(AppUnitsPerCSSPixel());
-    mFontGroup = gfxPlatform::GetPlatform()->
-        CreateFontGroup(aFont.fontlist, &style, aParams.textPerf,
-                        aParams.userFontSet, devToCssSize);
+  gfxFloat devToCssSize = gfxFloat(mP2A) / gfxFloat(AppUnitsPerCSSPixel());
+  mFontGroup = gfxPlatform::GetPlatform()->CreateFontGroup(
+      aFont.fontlist, &style, aParams.textPerf, aParams.userFontSet,
+      devToCssSize);
 }
 
-nsFontMetrics::~nsFontMetrics()
-{
-    
-    MOZ_ASSERT(NS_IsMainThread());
-    if (mDeviceContext) {
-        mDeviceContext->FontMetricsDeleted(this);
-    }
+nsFontMetrics::~nsFontMetrics() {
+  
+  MOZ_ASSERT(NS_IsMainThread());
+  if (mDeviceContext) {
+    mDeviceContext->FontMetricsDeleted(this);
+  }
 }
 
-void
-nsFontMetrics::Destroy()
-{
-    mDeviceContext = nullptr;
+void nsFontMetrics::Destroy() { mDeviceContext = nullptr; }
+
+
+#define ROUND_TO_TWIPS(x) (nscoord) floor(((x)*mP2A) + 0.5)
+#define CEIL_TO_TWIPS(x) (nscoord) ceil((x)*mP2A)
+
+const gfxFont::Metrics& nsFontMetrics::GetMetrics(
+    gfxFont::Orientation aOrientation) const {
+  return mFontGroup->GetFirstValidFont()->GetMetrics(aOrientation);
 }
 
-
-#define ROUND_TO_TWIPS(x) (nscoord)floor(((x) * mP2A) + 0.5)
-#define CEIL_TO_TWIPS(x) (nscoord)ceil((x) * mP2A)
-
-const gfxFont::Metrics&
-nsFontMetrics::GetMetrics(gfxFont::Orientation aOrientation) const
-{
-    return mFontGroup->GetFirstValidFont()->GetMetrics(aOrientation);
+nscoord nsFontMetrics::XHeight() {
+  return ROUND_TO_TWIPS(GetMetrics().xHeight);
 }
 
-nscoord
-nsFontMetrics::XHeight()
-{
-    return ROUND_TO_TWIPS(GetMetrics().xHeight);
+nscoord nsFontMetrics::CapHeight() {
+  return ROUND_TO_TWIPS(GetMetrics().capHeight);
 }
 
-nscoord
-nsFontMetrics::CapHeight()
-{
-    return ROUND_TO_TWIPS(GetMetrics().capHeight);
+nscoord nsFontMetrics::SuperscriptOffset() {
+  return ROUND_TO_TWIPS(GetMetrics().emHeight *
+                        NS_FONT_SUPERSCRIPT_OFFSET_RATIO);
 }
 
-nscoord
-nsFontMetrics::SuperscriptOffset()
-{
-    return ROUND_TO_TWIPS(GetMetrics().emHeight *
-                          NS_FONT_SUPERSCRIPT_OFFSET_RATIO);
+nscoord nsFontMetrics::SubscriptOffset() {
+  return ROUND_TO_TWIPS(GetMetrics().emHeight * NS_FONT_SUBSCRIPT_OFFSET_RATIO);
 }
 
-nscoord
-nsFontMetrics::SubscriptOffset()
-{
-    return ROUND_TO_TWIPS(GetMetrics().emHeight *
-                          NS_FONT_SUBSCRIPT_OFFSET_RATIO);
+void nsFontMetrics::GetStrikeout(nscoord& aOffset, nscoord& aSize) {
+  aOffset = ROUND_TO_TWIPS(GetMetrics().strikeoutOffset);
+  aSize = ROUND_TO_TWIPS(GetMetrics().strikeoutSize);
 }
 
-void
-nsFontMetrics::GetStrikeout(nscoord& aOffset, nscoord& aSize)
-{
-    aOffset = ROUND_TO_TWIPS(GetMetrics().strikeoutOffset);
-    aSize = ROUND_TO_TWIPS(GetMetrics().strikeoutSize);
-}
-
-void
-nsFontMetrics::GetUnderline(nscoord& aOffset, nscoord& aSize)
-{
-    aOffset = ROUND_TO_TWIPS(mFontGroup->GetUnderlineOffset());
-    aSize = ROUND_TO_TWIPS(GetMetrics().underlineSize);
+void nsFontMetrics::GetUnderline(nscoord& aOffset, nscoord& aSize) {
+  aOffset = ROUND_TO_TWIPS(mFontGroup->GetUnderlineOffset());
+  aSize = ROUND_TO_TWIPS(GetMetrics().underlineSize);
 }
 
 
@@ -215,233 +184,186 @@ nsFontMetrics::GetUnderline(nscoord& aOffset, nscoord& aSize)
 
 
 static gfxFloat ComputeMaxDescent(const gfxFont::Metrics& aMetrics,
-                                  gfxFontGroup* aFontGroup)
-{
-    gfxFloat offset = floor(-aFontGroup->GetUnderlineOffset() + 0.5);
-    gfxFloat size = NS_round(aMetrics.underlineSize);
-    gfxFloat minDescent = offset + size;
-    return floor(std::max(minDescent, aMetrics.maxDescent) + 0.5);
+                                  gfxFontGroup* aFontGroup) {
+  gfxFloat offset = floor(-aFontGroup->GetUnderlineOffset() + 0.5);
+  gfxFloat size = NS_round(aMetrics.underlineSize);
+  gfxFloat minDescent = offset + size;
+  return floor(std::max(minDescent, aMetrics.maxDescent) + 0.5);
 }
 
-static gfxFloat ComputeMaxAscent(const gfxFont::Metrics& aMetrics)
-{
-    return floor(aMetrics.maxAscent + 0.5);
+static gfxFloat ComputeMaxAscent(const gfxFont::Metrics& aMetrics) {
+  return floor(aMetrics.maxAscent + 0.5);
 }
 
-nscoord
-nsFontMetrics::InternalLeading()
-{
-    return ROUND_TO_TWIPS(GetMetrics().internalLeading);
+nscoord nsFontMetrics::InternalLeading() {
+  return ROUND_TO_TWIPS(GetMetrics().internalLeading);
 }
 
-nscoord
-nsFontMetrics::ExternalLeading()
-{
-    return ROUND_TO_TWIPS(GetMetrics().externalLeading);
+nscoord nsFontMetrics::ExternalLeading() {
+  return ROUND_TO_TWIPS(GetMetrics().externalLeading);
 }
 
-nscoord
-nsFontMetrics::EmHeight()
-{
-    return ROUND_TO_TWIPS(GetMetrics().emHeight);
+nscoord nsFontMetrics::EmHeight() {
+  return ROUND_TO_TWIPS(GetMetrics().emHeight);
 }
 
-nscoord
-nsFontMetrics::EmAscent()
-{
-    return ROUND_TO_TWIPS(GetMetrics().emAscent);
+nscoord nsFontMetrics::EmAscent() {
+  return ROUND_TO_TWIPS(GetMetrics().emAscent);
 }
 
-nscoord
-nsFontMetrics::EmDescent()
-{
-    return ROUND_TO_TWIPS(GetMetrics().emDescent);
+nscoord nsFontMetrics::EmDescent() {
+  return ROUND_TO_TWIPS(GetMetrics().emDescent);
 }
 
-nscoord
-nsFontMetrics::MaxHeight()
-{
-    return CEIL_TO_TWIPS(ComputeMaxAscent(GetMetrics())) +
-        CEIL_TO_TWIPS(ComputeMaxDescent(GetMetrics(), mFontGroup));
+nscoord nsFontMetrics::MaxHeight() {
+  return CEIL_TO_TWIPS(ComputeMaxAscent(GetMetrics())) +
+         CEIL_TO_TWIPS(ComputeMaxDescent(GetMetrics(), mFontGroup));
 }
 
-nscoord
-nsFontMetrics::MaxAscent()
-{
-    return CEIL_TO_TWIPS(ComputeMaxAscent(GetMetrics()));
+nscoord nsFontMetrics::MaxAscent() {
+  return CEIL_TO_TWIPS(ComputeMaxAscent(GetMetrics()));
 }
 
-nscoord
-nsFontMetrics::MaxDescent()
-{
-    return CEIL_TO_TWIPS(ComputeMaxDescent(GetMetrics(), mFontGroup));
+nscoord nsFontMetrics::MaxDescent() {
+  return CEIL_TO_TWIPS(ComputeMaxDescent(GetMetrics(), mFontGroup));
 }
 
-nscoord
-nsFontMetrics::MaxAdvance()
-{
-    return CEIL_TO_TWIPS(GetMetrics().maxAdvance);
+nscoord nsFontMetrics::MaxAdvance() {
+  return CEIL_TO_TWIPS(GetMetrics().maxAdvance);
 }
 
-nscoord
-nsFontMetrics::AveCharWidth()
-{
-    
-    return CEIL_TO_TWIPS(GetMetrics().aveCharWidth);
+nscoord nsFontMetrics::AveCharWidth() {
+  
+  return CEIL_TO_TWIPS(GetMetrics().aveCharWidth);
 }
 
-nscoord
-nsFontMetrics::SpaceWidth()
-{
-    
-    
-    
-    return CEIL_TO_TWIPS(
-        GetMetrics(mVertical &&
-                   mTextOrientation == NS_STYLE_TEXT_ORIENTATION_UPRIGHT
-                       ? gfxFont::eVertical
-                       : gfxFont::eHorizontal).spaceWidth);
+nscoord nsFontMetrics::SpaceWidth() {
+  
+  
+  
+  return CEIL_TO_TWIPS(
+      GetMetrics(mVertical &&
+                         mTextOrientation == NS_STYLE_TEXT_ORIENTATION_UPRIGHT
+                     ? gfxFont::eVertical
+                     : gfxFont::eHorizontal)
+          .spaceWidth);
 }
 
-int32_t
-nsFontMetrics::GetMaxStringLength()
-{
-    const gfxFont::Metrics& m = GetMetrics();
-    const double x = 32767.0 / std::max(1.0, m.maxAdvance);
-    int32_t len = (int32_t)floor(x);
-    return std::max(1, len);
+int32_t nsFontMetrics::GetMaxStringLength() {
+  const gfxFont::Metrics& m = GetMetrics();
+  const double x = 32767.0 / std::max(1.0, m.maxAdvance);
+  int32_t len = (int32_t)floor(x);
+  return std::max(1, len);
 }
 
-nscoord
-nsFontMetrics::GetWidth(const char* aString, uint32_t aLength,
-                        DrawTarget* aDrawTarget)
-{
-    if (aLength == 0)
-        return 0;
+nscoord nsFontMetrics::GetWidth(const char* aString, uint32_t aLength,
+                                DrawTarget* aDrawTarget) {
+  if (aLength == 0) return 0;
 
-    if (aLength == 1 && aString[0] == ' ')
-        return SpaceWidth();
+  if (aLength == 1 && aString[0] == ' ') return SpaceWidth();
 
-    StubPropertyProvider provider;
-    AutoTextRun textRun(this, aDrawTarget, aString, aLength);
-    if (textRun.get()) {
-      return NSToCoordRound(
-          textRun->GetAdvanceWidth(Range(0, aLength), &provider));
+  StubPropertyProvider provider;
+  AutoTextRun textRun(this, aDrawTarget, aString, aLength);
+  if (textRun.get()) {
+    return NSToCoordRound(
+        textRun->GetAdvanceWidth(Range(0, aLength), &provider));
+  }
+  return 0;
+}
+
+nscoord nsFontMetrics::GetWidth(const char16_t* aString, uint32_t aLength,
+                                DrawTarget* aDrawTarget) {
+  if (aLength == 0) return 0;
+
+  if (aLength == 1 && aString[0] == ' ') return SpaceWidth();
+
+  StubPropertyProvider provider;
+  AutoTextRun textRun(this, aDrawTarget, aString, aLength);
+  if (textRun.get()) {
+    return NSToCoordRound(
+        textRun->GetAdvanceWidth(Range(0, aLength), &provider));
+  }
+  return 0;
+}
+
+
+void nsFontMetrics::DrawString(const char* aString, uint32_t aLength,
+                               nscoord aX, nscoord aY, gfxContext* aContext) {
+  if (aLength == 0) return;
+
+  StubPropertyProvider provider;
+  AutoTextRun textRun(this, aContext->GetDrawTarget(), aString, aLength);
+  if (!textRun.get()) {
+    return;
+  }
+  gfx::Point pt(aX, aY);
+  Range range(0, aLength);
+  if (mTextRunRTL) {
+    if (mVertical) {
+      pt.y += textRun->GetAdvanceWidth(range, &provider);
+    } else {
+      pt.x += textRun->GetAdvanceWidth(range, &provider);
     }
-    return 0;
+  }
+  gfxTextRun::DrawParams params(aContext);
+  params.provider = &provider;
+  textRun->Draw(range, pt, params);
 }
 
-nscoord
-nsFontMetrics::GetWidth(const char16_t* aString, uint32_t aLength,
-                        DrawTarget* aDrawTarget)
-{
-    if (aLength == 0)
-        return 0;
+void nsFontMetrics::DrawString(const char16_t* aString, uint32_t aLength,
+                               nscoord aX, nscoord aY, gfxContext* aContext,
+                               DrawTarget* aTextRunConstructionDrawTarget) {
+  if (aLength == 0) return;
 
-    if (aLength == 1 && aString[0] == ' ')
-        return SpaceWidth();
-
-    StubPropertyProvider provider;
-    AutoTextRun textRun(this, aDrawTarget, aString, aLength);
-    if (textRun.get()) {
-      return NSToCoordRound(
-          textRun->GetAdvanceWidth(Range(0, aLength), &provider));
+  StubPropertyProvider provider;
+  AutoTextRun textRun(this, aTextRunConstructionDrawTarget, aString, aLength);
+  if (!textRun.get()) {
+    return;
+  }
+  gfx::Point pt(aX, aY);
+  Range range(0, aLength);
+  if (mTextRunRTL) {
+    if (mVertical) {
+      pt.y += textRun->GetAdvanceWidth(range, &provider);
+    } else {
+      pt.x += textRun->GetAdvanceWidth(range, &provider);
     }
-    return 0;
+  }
+  gfxTextRun::DrawParams params(aContext);
+  params.provider = &provider;
+  textRun->Draw(range, pt, params);
 }
 
+static nsBoundingMetrics GetTextBoundingMetrics(
+    nsFontMetrics* aMetrics, const char16_t* aString, uint32_t aLength,
+    mozilla::gfx::DrawTarget* aDrawTarget, gfxFont::BoundingBoxType aType) {
+  if (aLength == 0) return nsBoundingMetrics();
 
-void
-nsFontMetrics::DrawString(const char *aString, uint32_t aLength,
-                          nscoord aX, nscoord aY,
-                          gfxContext *aContext)
-{
-    if (aLength == 0)
-        return;
+  StubPropertyProvider provider;
+  AutoTextRun textRun(aMetrics, aDrawTarget, aString, aLength);
+  nsBoundingMetrics m;
+  if (textRun.get()) {
+    gfxTextRun::Metrics theMetrics = textRun->MeasureText(
+        gfxTextRun::Range(0, aLength), aType, aDrawTarget, &provider);
 
-    StubPropertyProvider provider;
-    AutoTextRun textRun(this, aContext->GetDrawTarget(), aString, aLength);
-    if (!textRun.get()) {
-        return;
-    }
-    gfx::Point pt(aX, aY);
-    Range range(0, aLength);
-    if (mTextRunRTL) {
-        if (mVertical) {
-            pt.y += textRun->GetAdvanceWidth(range, &provider);
-        } else {
-            pt.x += textRun->GetAdvanceWidth(range, &provider);
-        }
-    }
-    gfxTextRun::DrawParams params(aContext);
-    params.provider = &provider;
-    textRun->Draw(range, pt, params);
+    m.leftBearing = NSToCoordFloor(theMetrics.mBoundingBox.X());
+    m.rightBearing = NSToCoordCeil(theMetrics.mBoundingBox.XMost());
+    m.ascent = NSToCoordCeil(-theMetrics.mBoundingBox.Y());
+    m.descent = NSToCoordCeil(theMetrics.mBoundingBox.YMost());
+    m.width = NSToCoordRound(theMetrics.mAdvanceWidth);
+  }
+  return m;
 }
 
-void
-nsFontMetrics::DrawString(const char16_t* aString, uint32_t aLength,
-                          nscoord aX, nscoord aY,
-                          gfxContext *aContext,
-                          DrawTarget* aTextRunConstructionDrawTarget)
-{
-    if (aLength == 0)
-        return;
-
-    StubPropertyProvider provider;
-    AutoTextRun textRun(this, aTextRunConstructionDrawTarget, aString, aLength);
-    if (!textRun.get()) {
-        return;
-    }
-    gfx::Point pt(aX, aY);
-    Range range(0, aLength);
-    if (mTextRunRTL) {
-        if (mVertical) {
-            pt.y += textRun->GetAdvanceWidth(range, &provider);
-        } else {
-            pt.x += textRun->GetAdvanceWidth(range, &provider);
-        }
-    }
-    gfxTextRun::DrawParams params(aContext);
-    params.provider = &provider;
-    textRun->Draw(range, pt, params);
-}
-
-static nsBoundingMetrics
-GetTextBoundingMetrics(nsFontMetrics* aMetrics, const char16_t* aString,
-                       uint32_t aLength, mozilla::gfx::DrawTarget* aDrawTarget,
-                       gfxFont::BoundingBoxType aType)
-{
-    if (aLength == 0)
-        return nsBoundingMetrics();
-
-    StubPropertyProvider provider;
-    AutoTextRun textRun(aMetrics, aDrawTarget, aString, aLength);
-    nsBoundingMetrics m;
-    if (textRun.get()) {
-        gfxTextRun::Metrics theMetrics = textRun->MeasureText(
-            gfxTextRun::Range(0, aLength), aType, aDrawTarget, &provider);
-
-        m.leftBearing  = NSToCoordFloor( theMetrics.mBoundingBox.X());
-        m.rightBearing = NSToCoordCeil(  theMetrics.mBoundingBox.XMost());
-        m.ascent       = NSToCoordCeil( -theMetrics.mBoundingBox.Y());
-        m.descent      = NSToCoordCeil(  theMetrics.mBoundingBox.YMost());
-        m.width        = NSToCoordRound( theMetrics.mAdvanceWidth);
-    }
-    return m;
-}
-
-nsBoundingMetrics
-nsFontMetrics::GetBoundingMetrics(const char16_t *aString, uint32_t aLength,
-                                  DrawTarget* aDrawTarget)
-{
+nsBoundingMetrics nsFontMetrics::GetBoundingMetrics(const char16_t* aString,
+                                                    uint32_t aLength,
+                                                    DrawTarget* aDrawTarget) {
   return GetTextBoundingMetrics(this, aString, aLength, aDrawTarget,
                                 gfxFont::TIGHT_HINTED_OUTLINE_EXTENTS);
 }
 
-nsBoundingMetrics
-nsFontMetrics::GetInkBoundsForVisualOverflow(const char16_t *aString, uint32_t aLength,
-                                             DrawTarget* aDrawTarget)
-{
+nsBoundingMetrics nsFontMetrics::GetInkBoundsForVisualOverflow(
+    const char16_t* aString, uint32_t aLength, DrawTarget* aDrawTarget) {
   return GetTextBoundingMetrics(this, aString, aLength, aDrawTarget,
                                 gfxFont::LOOSE_INK_EXTENTS);
 }

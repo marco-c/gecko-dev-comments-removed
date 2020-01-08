@@ -10,27 +10,31 @@
 
 #include "nsString.h"
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
-#define NS_PKCS11MODULEDB_CID \
-{ 0xff9fbcd7, 0x9517, 0x4334, \
-  { 0xb9, 0x7a, 0xce, 0xed, 0x78, 0x90, 0x99, 0x74 }}
+#define NS_PKCS11MODULEDB_CID                        \
+  {                                                  \
+    0xff9fbcd7, 0x9517, 0x4334, {                    \
+      0xb9, 0x7a, 0xce, 0xed, 0x78, 0x90, 0x99, 0x74 \
+    }                                                \
+  }
 
-class PKCS11ModuleDB : public nsIPKCS11ModuleDB
-{
-public:
+class PKCS11ModuleDB : public nsIPKCS11ModuleDB {
+ public:
   PKCS11ModuleDB() {}
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPKCS11MODULEDB
 
-protected:
+ protected:
   virtual ~PKCS11ModuleDB() {}
 };
 
 void GetModuleNameForTelemetry( const SECMODModule* module,
-                               nsString& result);
+                                nsString& result);
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

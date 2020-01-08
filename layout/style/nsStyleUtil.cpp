@@ -29,16 +29,14 @@ using namespace mozilla;
 
 
 bool nsStyleUtil::DashMatchCompare(const nsAString& aAttributeValue,
-                                     const nsAString& aSelectorValue,
-                                     const nsStringComparator& aComparator)
-{
+                                   const nsAString& aSelectorValue,
+                                   const nsStringComparator& aComparator) {
   bool result;
   uint32_t selectorLen = aSelectorValue.Length();
   uint32_t attributeLen = aAttributeValue.Length();
   if (selectorLen > attributeLen) {
     result = false;
-  }
-  else {
+  } else {
     nsAString::const_iterator iter;
     if (selectorLen != attributeLen &&
         *aAttributeValue.BeginReading(iter).advance(selectorLen) !=
@@ -47,48 +45,42 @@ bool nsStyleUtil::DashMatchCompare(const nsAString& aAttributeValue,
       
       
       result = false;
-    }
-    else {
+    } else {
       result = StringBeginsWith(aAttributeValue, aSelectorValue, aComparator);
     }
   }
   return result;
 }
 
-bool
-nsStyleUtil::ValueIncludes(const nsAString& aValueList,
-                           const nsAString& aValue,
-                           const nsStringComparator& aComparator)
-{
+bool nsStyleUtil::ValueIncludes(const nsAString& aValueList,
+                                const nsAString& aValue,
+                                const nsStringComparator& aComparator) {
   const char16_t *p = aValueList.BeginReading(),
-              *p_end = aValueList.EndReading();
+                 *p_end = aValueList.EndReading();
 
   while (p < p_end) {
     
-    while (p != p_end && nsContentUtils::IsHTMLWhitespace(*p))
-      ++p;
+    while (p != p_end && nsContentUtils::IsHTMLWhitespace(*p)) ++p;
 
-    const char16_t *val_start = p;
+    const char16_t* val_start = p;
 
     
-    while (p != p_end && !nsContentUtils::IsHTMLWhitespace(*p))
-      ++p;
+    while (p != p_end && !nsContentUtils::IsHTMLWhitespace(*p)) ++p;
 
-    const char16_t *val_end = p;
+    const char16_t* val_end = p;
 
     if (val_start < val_end &&
         aValue.Equals(Substring(val_start, val_end), aComparator))
       return true;
 
-    ++p; 
+    ++p;  
   }
   return false;
 }
 
 void nsStyleUtil::AppendEscapedCSSString(const nsAString& aString,
                                          nsAString& aReturn,
-                                         char16_t quoteChar)
-{
+                                         char16_t quoteChar) {
   MOZ_ASSERT(quoteChar == '\'' || quoteChar == '"',
              "CSS strings must be quoted with ' or \"");
 
@@ -115,9 +107,8 @@ void nsStyleUtil::AppendEscapedCSSString(const nsAString& aString,
   aReturn.Append(quoteChar);
 }
 
- void
-nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
-{
+ void nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent,
+                                                     nsAString& aReturn) {
   
   
   
@@ -133,8 +124,7 @@ nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
   const char16_t* in = aIdent.BeginReading();
   const char16_t* const end = aIdent.EndReading();
 
-  if (in == end)
-    return;
+  if (in == end) return;
 
   
   
@@ -167,11 +157,8 @@ nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
     } else {
       
       
-      if (ch < 0x7F &&
-          ch != '_' && ch != '-' &&
-          (ch < '0' || '9' < ch) &&
-          (ch < 'A' || 'Z' < ch) &&
-          (ch < 'a' || 'z' < ch)) {
+      if (ch < 0x7F && ch != '_' && ch != '-' && (ch < '0' || '9' < ch) &&
+          (ch < 'A' || 'Z' < ch) && (ch < 'a' || 'z' < ch)) {
         aReturn.Append(char16_t('\\'));
       }
       aReturn.Append(ch);
@@ -179,18 +166,14 @@ nsStyleUtil::AppendEscapedCSSIdent(const nsAString& aIdent, nsAString& aReturn)
   }
 }
 
- void
-nsStyleUtil::AppendBitmaskCSSValue(const nsCSSKTableEntry aTable[],
-                                   int32_t aMaskedValue,
-                                   int32_t aFirstMask,
-                                   int32_t aLastMask,
-                                   nsAString& aResult)
-{
+ void nsStyleUtil::AppendBitmaskCSSValue(
+    const nsCSSKTableEntry aTable[], int32_t aMaskedValue, int32_t aFirstMask,
+    int32_t aLastMask, nsAString& aResult) {
   for (int32_t mask = aFirstMask; mask <= aLastMask; mask <<= 1) {
     if (mask & aMaskedValue) {
       AppendASCIItoUTF16(nsCSSProps::ValueToKeyword(mask, aTable), aResult);
       aMaskedValue &= ~mask;
-      if (aMaskedValue) { 
+      if (aMaskedValue) {  
         aResult.Append(char16_t(' '));
       }
     }
@@ -198,9 +181,8 @@ nsStyleUtil::AppendBitmaskCSSValue(const nsCSSKTableEntry aTable[],
   MOZ_ASSERT(aMaskedValue == 0, "unexpected bit remaining in bitfield");
 }
 
- void
-nsStyleUtil::AppendAngleValue(const nsStyleCoord& aAngle, nsAString& aResult)
-{
+ void nsStyleUtil::AppendAngleValue(const nsStyleCoord& aAngle,
+                                                nsAString& aResult) {
   MOZ_ASSERT(aAngle.IsAngleValue(), "Should have angle value");
 
   
@@ -208,18 +190,19 @@ nsStyleUtil::AppendAngleValue(const nsStyleCoord& aAngle, nsAString& aResult)
 
   
   switch (aAngle.GetUnit()) {
-    case eStyleUnit_Degree: aResult.AppendLiteral("deg");  break;
-    default: MOZ_ASSERT_UNREACHABLE("unrecognized angle unit");
+    case eStyleUnit_Degree:
+      aResult.AppendLiteral("deg");
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("unrecognized angle unit");
   }
 }
 
- void
-nsStyleUtil::AppendPaintOrderValue(uint8_t aValue,
-                                   nsAString& aResult)
-{
-  static_assert
-    (NS_STYLE_PAINT_ORDER_BITWIDTH * NS_STYLE_PAINT_ORDER_LAST_VALUE <= 8,
-     "SVGStyleStruct::mPaintOrder and local variables not big enough");
+ void nsStyleUtil::AppendPaintOrderValue(uint8_t aValue,
+                                                     nsAString& aResult) {
+  static_assert(
+      NS_STYLE_PAINT_ORDER_BITWIDTH * NS_STYLE_PAINT_ORDER_LAST_VALUE <= 8,
+      "SVGStyleStruct::mPaintOrder and local variables not big enough");
 
   if (aValue == NS_STYLE_PAINT_ORDER_NORMAL) {
     aResult.AppendLiteral("normal");
@@ -236,13 +219,12 @@ nsStyleUtil::AppendPaintOrderValue(uint8_t aValue,
   const uint8_t MASK = (1 << NS_STYLE_PAINT_ORDER_BITWIDTH) - 1;
 
   uint32_t lastPositionToSerialize = 0;
-  for (uint32_t position = NS_STYLE_PAINT_ORDER_LAST_VALUE - 1;
-       position > 0;
+  for (uint32_t position = NS_STYLE_PAINT_ORDER_LAST_VALUE - 1; position > 0;
        position--) {
     uint8_t component =
-      (aValue >> (position * NS_STYLE_PAINT_ORDER_BITWIDTH)) & MASK;
+        (aValue >> (position * NS_STYLE_PAINT_ORDER_BITWIDTH)) & MASK;
     uint8_t earlierComponent =
-      (aValue >> ((position - 1) * NS_STYLE_PAINT_ORDER_BITWIDTH)) & MASK;
+        (aValue >> ((position - 1) * NS_STYLE_PAINT_ORDER_BITWIDTH)) & MASK;
     if (component < earlierComponent) {
       lastPositionToSerialize = position - 1;
       break;
@@ -274,9 +256,7 @@ nsStyleUtil::AppendPaintOrderValue(uint8_t aValue,
   }
 }
 
- float
-nsStyleUtil::ColorComponentToFloat(uint8_t aAlpha)
-{
+ float nsStyleUtil::ColorComponentToFloat(uint8_t aAlpha) {
   
   
   
@@ -289,10 +269,8 @@ nsStyleUtil::ColorComponentToFloat(uint8_t aAlpha)
   return rounded;
 }
 
- bool
-nsStyleUtil::IsSignificantChild(nsIContent* aChild,
-                                bool aWhitespaceIsSignificant)
-{
+ bool nsStyleUtil::IsSignificantChild(
+    nsIContent* aChild, bool aWhitespaceIsSignificant) {
   bool isText = aChild->IsText();
 
   if (!isText && !aChild->IsComment() && !aChild->IsProcessingInstruction()) {
@@ -300,14 +278,11 @@ nsStyleUtil::IsSignificantChild(nsIContent* aChild,
   }
 
   return isText && aChild->TextLength() != 0 &&
-         (aWhitespaceIsSignificant ||
-          !aChild->TextIsOnlyWhitespace());
+         (aWhitespaceIsSignificant || !aChild->TextIsOnlyWhitespace());
 }
 
- bool
-nsStyleUtil::ThreadSafeIsSignificantChild(const nsIContent* aChild,
-                                          bool aWhitespaceIsSignificant)
-{
+ bool nsStyleUtil::ThreadSafeIsSignificantChild(
+    const nsIContent* aChild, bool aWhitespaceIsSignificant) {
   bool isText = aChild->IsText();
 
   if (!isText && !aChild->IsComment() && !aChild->IsProcessingInstruction()) {
@@ -322,9 +297,8 @@ nsStyleUtil::ThreadSafeIsSignificantChild(const nsIContent* aChild,
 
 
 
-static bool
-ObjectPositionCoordMightCauseOverflow(const Position::Coord& aCoord)
-{
+static bool ObjectPositionCoordMightCauseOverflow(
+    const Position::Coord& aCoord) {
   
   
   
@@ -342,10 +316,8 @@ ObjectPositionCoordMightCauseOverflow(const Position::Coord& aCoord)
   return false;
 }
 
-
- bool
-nsStyleUtil::ObjectPropsMightCauseOverflow(const nsStylePosition* aStylePos)
-{
+ bool nsStyleUtil::ObjectPropsMightCauseOverflow(
+    const nsStylePosition* aStylePos) {
   auto objectFit = aStylePos->mObjectFit;
 
   
@@ -368,17 +340,11 @@ nsStyleUtil::ObjectPropsMightCauseOverflow(const nsStylePosition* aStylePos)
   return false;
 }
 
-
- bool
-nsStyleUtil::CSPAllowsInlineStyle(Element* aElement,
-                                  nsIPrincipal* aPrincipal,
-                                  nsIPrincipal* aTriggeringPrincipal,
-                                  nsIURI* aSourceURI,
-                                  uint32_t aLineNumber,
-                                  uint32_t aColumnNumber,
-                                  const nsAString& aStyleText,
-                                  nsresult* aRv)
-{
+ bool nsStyleUtil::CSPAllowsInlineStyle(
+    Element* aElement, nsIPrincipal* aPrincipal,
+    nsIPrincipal* aTriggeringPrincipal, nsIURI* aSourceURI,
+    uint32_t aLineNumber, uint32_t aColumnNumber, const nsAString& aStyleText,
+    nsresult* aRv) {
   nsresult rv;
 
   if (aRv) {
@@ -395,8 +361,7 @@ nsStyleUtil::CSPAllowsInlineStyle(Element* aElement,
   rv = principal->GetCsp(getter_AddRefs(csp));
 
   if (NS_FAILED(rv)) {
-    if (aRv)
-      *aRv = rv;
+    if (aRv) *aRv = rv;
     return false;
   }
 
@@ -412,10 +377,9 @@ nsStyleUtil::CSPAllowsInlineStyle(Element* aElement,
   }
 
   bool allowInlineStyle = true;
-  rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_STYLESHEET,
-                            nonce,
-                            false, 
-                            aElement, nullptr, 
+  rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_STYLESHEET, nonce,
+                            false,  
+                            aElement, nullptr,  
                             aStyleText, aLineNumber, aColumnNumber,
                             &allowInlineStyle);
   NS_ENSURE_SUCCESS(rv, false);
@@ -423,9 +387,8 @@ nsStyleUtil::CSPAllowsInlineStyle(Element* aElement,
   return allowInlineStyle;
 }
 
-void
-nsStyleUtil::AppendFontSlantStyle(const FontSlantStyle& aStyle, nsAString& aOut)
-{
+void nsStyleUtil::AppendFontSlantStyle(const FontSlantStyle& aStyle,
+                                       nsAString& aOut) {
   if (aStyle.IsNormal()) {
     aOut.AppendLiteral("normal");
   } else if (aStyle.IsItalic()) {

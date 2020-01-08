@@ -20,22 +20,19 @@ namespace recordreplay {
 
 
 template <typename T>
-class ChunkAllocator
-{
+class ChunkAllocator {
   struct Chunk;
-  typedef Atomic<Chunk*, SequentiallyConsistent, Behavior::DontPreserve> ChunkPointer;
+  typedef Atomic<Chunk*, SequentiallyConsistent, Behavior::DontPreserve>
+      ChunkPointer;
 
   
   
-  struct Chunk
-  {
+  struct Chunk {
     uint8_t mStorage[PageSize - sizeof(Chunk*)];
     ChunkPointer mNext;
     Chunk() : mStorage{}, mNext(nullptr) {}
 
-    static size_t MaxThings() {
-      return sizeof(mStorage) / sizeof(T);
-    }
+    static size_t MaxThings() { return sizeof(mStorage) / sizeof(T); }
 
     T* GetThing(size_t i) {
       MOZ_RELEASE_ASSERT(i < MaxThings());
@@ -57,7 +54,7 @@ class ChunkAllocator
   ChunkAllocator(const ChunkAllocator&) = delete;
   ChunkAllocator& operator=(const ChunkAllocator&) = delete;
 
-public:
+ public:
   
   
   ChunkAllocator() = default;
@@ -84,7 +81,7 @@ public:
   inline T* Create(size_t aId) {
     if (aId < mCapacity) {
       T* res = Get(aId);
-      return new(res) T();
+      return new (res) T();
     }
 
     AutoSpinLock lock(mLock);
@@ -98,11 +95,11 @@ public:
     EnsureChunk(pchunk);
     Chunk* chunk = *pchunk;
     T* res = chunk->GetThing(aId);
-    return new(res) T();
+    return new (res) T();
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

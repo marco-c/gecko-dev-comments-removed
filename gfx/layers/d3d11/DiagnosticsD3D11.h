@@ -16,9 +16,8 @@ namespace layers {
 
 struct GPUStats;
 
-class DiagnosticsD3D11
-{
-public:
+class DiagnosticsD3D11 {
+ public:
   DiagnosticsD3D11(ID3D11Device* aDevice, ID3D11DeviceContext* aContext);
 
   void Start(uint32_t aPixelsPerFrame);
@@ -27,15 +26,14 @@ public:
 
   void Query(GPUStats* aStats);
 
-private:
+ private:
   RefPtr<ID3D11Device> mDevice;
   RefPtr<ID3D11DeviceContext> mContext;
 
   
   
   struct FrameQueries {
-    FrameQueries() : pixelsPerFrame(0)
-    {}
+    FrameQueries() : pixelsPerFrame(0) {}
 
     RefPtr<ID3D11Query> stats;
     RefPtr<ID3D11Query> timing;
@@ -47,7 +45,7 @@ private:
   FrameQueries mCurrentFrame;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

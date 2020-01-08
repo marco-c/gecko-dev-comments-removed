@@ -17,7 +17,7 @@
 
 
 class nsIReflowCallback {
-public:
+ public:
   
 
 

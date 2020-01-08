@@ -14,9 +14,8 @@ namespace mozilla {
 
 class TextEditor;
 
-class TextEditUtils final
-{
-public:
+class TextEditUtils final {
+ public:
   
   static bool IsBody(nsINode* aNode);
   static bool IsBreak(nsINode* aNode);
@@ -28,17 +27,16 @@ public:
 
 
 
-class AutoEditInitRulesTrigger final
-{
-private:
+class AutoEditInitRulesTrigger final {
+ private:
   TextEditor* mTextEditor;
   nsresult& mResult;
 
-public:
+ public:
   AutoEditInitRulesTrigger(TextEditor* aTextEditor, nsresult& aResult);
   ~AutoEditInitRulesTrigger();
 };
 
-} 
+}  
 
-#endif 
+#endif  

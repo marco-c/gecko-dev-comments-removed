@@ -28,25 +28,27 @@ class AbstractThread;
 namespace dom {
 class DocGroup;
 class TabGroup;
-}
+}  
 
-#define NS_SCHEDULERGROUPRUNNABLE_IID \
-{ 0xd31b7420, 0x872b, 0x4cfb, \
-  { 0xa9, 0xc6, 0xae, 0x4c, 0x0f, 0x06, 0x36, 0x74 } }
-
-
-
-
-
+#define NS_SCHEDULERGROUPRUNNABLE_IID                \
+  {                                                  \
+    0xd31b7420, 0x872b, 0x4cfb, {                    \
+      0xa9, 0xc6, 0xae, 0x4c, 0x0f, 0x06, 0x36, 0x74 \
+    }                                                \
+  }
 
 
 
 
 
 
-class SchedulerGroup : public LinkedListElement<SchedulerGroup>
-{
-public:
+
+
+
+
+
+class SchedulerGroup : public LinkedListElement<SchedulerGroup> {
+ public:
   SchedulerGroup();
 
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
@@ -59,27 +61,17 @@ public:
   
   
   
-  bool IsSafeToRun() const
-  {
-    return !sTlsValidatingAccess.get() || mIsRunning;
-  }
+  bool IsSafeToRun() const { return !sTlsValidatingAccess.get() || mIsRunning; }
 
   
   
   
-  static bool IsSafeToRunUnlabeled()
-  {
-    return !sTlsValidatingAccess.get();
-  }
+  static bool IsSafeToRunUnlabeled() { return !sTlsValidatingAccess.get(); }
 
   
-  void ValidateAccess() const
-  {
-    MOZ_ASSERT(IsSafeToRun());
-  }
+  void ValidateAccess() const { MOZ_ASSERT(IsSafeToRun()); }
 
-  enum EnqueueStatus
-  {
+  enum EnqueueStatus {
     NewlyQueued,
     AlreadyQueued,
   };
@@ -87,14 +79,12 @@ public:
   
   
   
-  EnqueueStatus EnqueueEvent()
-  {
+  EnqueueStatus EnqueueEvent() {
     mEventCount++;
     return mEventCount == 1 ? NewlyQueued : AlreadyQueued;
   }
 
-  enum DequeueStatus
-  {
+  enum DequeueStatus {
     StillQueued,
     NoLongerQueued,
   };
@@ -102,19 +92,16 @@ public:
   
   
   
-  DequeueStatus DequeueEvent()
-  {
+  DequeueStatus DequeueEvent() {
     mEventCount--;
     return mEventCount == 0 ? NoLongerQueued : StillQueued;
   }
 
-  class Runnable final : public mozilla::Runnable
-                       , public nsIRunnablePriority
-                       , public nsILabelableRunnable
-  {
-  public:
-    Runnable(already_AddRefed<nsIRunnable>&& aRunnable,
-             SchedulerGroup* aGroup,
+  class Runnable final : public mozilla::Runnable,
+                         public nsIRunnablePriority,
+                         public nsILabelableRunnable {
+   public:
+    Runnable(already_AddRefed<nsIRunnable>&& aRunnable, SchedulerGroup* aGroup,
              dom::DocGroup* aDocGroup);
 
     bool GetAffectedSchedulerGroups(SchedulerGroupSet& aGroups) override;
@@ -134,7 +121,7 @@ public:
 
     NS_DECLARE_STATIC_IID_ACCESSOR(NS_SCHEDULERGROUPRUNNABLE_IID);
 
- private:
+   private:
     friend class SchedulerGroup;
 
     ~Runnable() = default;
@@ -176,40 +163,36 @@ public:
   };
   static void SetValidatingAccess(ValidationType aType);
 
-  struct EpochQueueEntry
-  {
+  struct EpochQueueEntry {
     nsCOMPtr<nsIRunnable> mRunnable;
     uintptr_t mEpochNumber;
 
     EpochQueueEntry(already_AddRefed<nsIRunnable> aRunnable, uintptr_t aEpoch)
-      : mRunnable(aRunnable)
-      , mEpochNumber(aEpoch)
-    {
-    }
+        : mRunnable(aRunnable), mEpochNumber(aEpoch) {}
   };
 
   using RunnableEpochQueue = Queue<EpochQueueEntry, 32>;
 
-  RunnableEpochQueue& GetQueue(mozilla::EventPriority aPriority)
-  {
+  RunnableEpochQueue& GetQueue(mozilla::EventPriority aPriority) {
     return mEventQueues[size_t(aPriority)];
   }
 
-protected:
+ protected:
   nsresult DispatchWithDocGroup(TaskCategory aCategory,
                                 already_AddRefed<nsIRunnable>&& aRunnable,
                                 dom::DocGroup* aDocGroup);
 
-  static nsresult InternalUnlabeledDispatch(TaskCategory aCategory,
-                                            already_AddRefed<Runnable>&& aRunnable);
+  static nsresult InternalUnlabeledDispatch(
+      TaskCategory aCategory, already_AddRefed<Runnable>&& aRunnable);
 
   
   
   virtual AbstractThread* AbstractMainThreadForImpl(TaskCategory aCategory);
 
   
-  virtual already_AddRefed<nsISerialEventTarget>
-  CreateEventTargetFor(TaskCategory aCategory);
+  
+  virtual already_AddRefed<nsISerialEventTarget> CreateEventTargetFor(
+      TaskCategory aCategory);
 
   
   
@@ -238,8 +221,9 @@ protected:
   RunnableEpochQueue mEventQueues[size_t(mozilla::EventPriority::Count)];
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(SchedulerGroup::Runnable, NS_SCHEDULERGROUPRUNNABLE_IID);
+NS_DEFINE_STATIC_IID_ACCESSOR(SchedulerGroup::Runnable,
+                              NS_SCHEDULERGROUPRUNNABLE_IID);
 
-} 
+}  
 
-#endif 
+#endif  

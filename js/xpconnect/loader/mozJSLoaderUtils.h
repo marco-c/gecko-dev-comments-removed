@@ -12,15 +12,14 @@
 namespace mozilla {
 namespace scache {
 class StartupCache;
-} 
-} 
+}  
+}  
 
-nsresult
-ReadCachedScript(mozilla::scache::StartupCache* cache, nsACString& uri,
-                 JSContext* cx, JS::MutableHandleScript scriptp);
+nsresult ReadCachedScript(mozilla::scache::StartupCache* cache, nsACString& uri,
+                          JSContext* cx, JS::MutableHandleScript scriptp);
 
-nsresult
-WriteCachedScript(mozilla::scache::StartupCache* cache, nsACString& uri,
-                  JSContext* cx, JS::HandleScript script);
+nsresult WriteCachedScript(mozilla::scache::StartupCache* cache,
+                           nsACString& uri, JSContext* cx,
+                           JS::HandleScript script);
 
 #endif 

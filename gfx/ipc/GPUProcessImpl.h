@@ -10,7 +10,7 @@
 #include "GPUParent.h"
 
 #if defined(XP_WIN)
-# include "mozilla/mscom/MainThreadRuntime.h"
+#include "mozilla/mscom/MainThreadRuntime.h"
 #endif
 
 namespace mozilla {
@@ -18,16 +18,15 @@ namespace gfx {
 
 
 
-class GPUProcessImpl final : public ipc::ProcessChild
-{
-public:
+class GPUProcessImpl final : public ipc::ProcessChild {
+ public:
   explicit GPUProcessImpl(ProcessId aParentPid);
   ~GPUProcessImpl();
 
   bool Init(int aArgc, char* aArgv[]) override;
   void CleanUp() override;
 
-private:
+ private:
   DISALLOW_COPY_AND_ASSIGN(GPUProcessImpl);
 
   GPUParent mGPU;
@@ -38,7 +37,7 @@ private:
 #endif
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

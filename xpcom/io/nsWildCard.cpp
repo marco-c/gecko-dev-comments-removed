@@ -25,59 +25,48 @@
 
 typedef int static_assert_character_code_arrangement['a' > 'A' ? 1 : -1];
 
-template<class T>
-static int
-alpha(T aChar)
-{
-  return ('a' <= aChar && aChar <= 'z') ||
-         ('A' <= aChar && aChar <= 'Z');
+template <class T>
+static int alpha(T aChar) {
+  return ('a' <= aChar && aChar <= 'z') || ('A' <= aChar && aChar <= 'Z');
 }
 
-template<class T>
-static int
-alphanumeric(T aChar)
-{
+template <class T>
+static int alphanumeric(T aChar) {
   return ('0' <= aChar && aChar <= '9') || ::alpha(aChar);
 }
 
-template<class T>
-static int
-lower(T aChar)
-{
+template <class T>
+static int lower(T aChar) {
   return ('A' <= aChar && aChar <= 'Z') ? aChar + ('a' - 'A') : aChar;
 }
 
-template<class T>
-static int
-upper(T aChar)
-{
+template <class T>
+static int upper(T aChar) {
   return ('a' <= aChar && aChar <= 'z') ? aChar - ('a' - 'A') : aChar;
 }
 
 
 
-template<class T>
-static int
-_valid_subexp(const T* aExpr, T aStop1, T aStop2)
-{
+template <class T>
+static int _valid_subexp(const T* aExpr, T aStop1, T aStop2) {
   int x;
-  int nsc = 0;     
-  int np;          
-  int tld = 0;     
+  int nsc = 0; 
+  int np;      
+  int tld = 0; 
 
   for (x = 0; aExpr[x] && (aExpr[x] != aStop1) && (aExpr[x] != aStop2); ++x) {
     switch (aExpr[x]) {
       case '~':
-        if (tld) {              
+        if (tld) { 
           return INVALID_SXP;
         }
-        if (aStop1) {           
+        if (aStop1) { 
           return INVALID_SXP;
         }
-        if (!aExpr[x + 1]) {    
+        if (!aExpr[x + 1]) { 
           return INVALID_SXP;
         }
-        if (!x) {               
+        if (!x) { 
           return INVALID_SXP;
         }
         ++tld;
@@ -103,7 +92,7 @@ _valid_subexp(const T* aExpr, T aStop1, T aStop2)
         break;
       case '(':
         ++nsc;
-        if (aStop1) {           
+        if (aStop1) { 
           return INVALID_SXP;
         }
         np = -1;
@@ -142,27 +131,15 @@ _valid_subexp(const T* aExpr, T aStop1, T aStop2)
   return ((aExpr[x] == aStop1 || aExpr[x] == aStop2) ? x : INVALID_SXP);
 }
 
-
-template<class T>
-int
-NS_WildCardValid_(const T* aExpr)
-{
+template <class T>
+int NS_WildCardValid_(const T* aExpr) {
   int x = ::_valid_subexp(aExpr, T('\0'), T('\0'));
   return (x < 0 ? x : VALID_SXP);
 }
 
-int
-NS_WildCardValid(const char* aExpr)
-{
-  return NS_WildCardValid_(aExpr);
-}
+int NS_WildCardValid(const char* aExpr) { return NS_WildCardValid_(aExpr); }
 
-int
-NS_WildCardValid(const char16_t* aExpr)
-{
-  return NS_WildCardValid_(aExpr);
-}
-
+int NS_WildCardValid(const char16_t* aExpr) { return NS_WildCardValid_(aExpr); }
 
 
 
@@ -170,10 +147,9 @@ NS_WildCardValid(const char16_t* aExpr)
 #define NOMATCH 1
 #define ABORTED -1
 
-template<class T>
-static int
-_shexp_match(const T* aStr, const T* aExpr, bool aCaseInsensitive,
-             unsigned int aLevel);
+template <class T>
+static int _shexp_match(const T* aStr, const T* aExpr, bool aCaseInsensitive,
+                        unsigned int aLevel);
 
 
 
@@ -184,17 +160,15 @@ _shexp_match(const T* aStr, const T* aExpr, bool aCaseInsensitive,
 
 
 
-template<class T>
-static int
-_scan_and_copy(const T* aExpr, T aStop1, T aStop2, T* aDest)
-{
-  int sx;     
+template <class T>
+static int _scan_and_copy(const T* aExpr, T aStop1, T aStop2, T* aDest) {
+  int sx; 
   T cc;
 
   for (sx = 0; (cc = aExpr[sx]) && cc != aStop1 && cc != aStop2; ++sx) {
     if (cc == '\\') {
       if (!aExpr[++sx]) {
-        return ABORTED;  
+        return ABORTED; 
       }
     } else if (cc == '[') {
       while ((cc = aExpr[++sx]) && cc != ']') {
@@ -203,7 +177,7 @@ _scan_and_copy(const T* aExpr, T aStop1, T aStop2, T* aDest)
         }
       }
       if (!cc) {
-        return ABORTED;  
+        return ABORTED; 
       }
     }
   }
@@ -223,15 +197,13 @@ _scan_and_copy(const T* aExpr, T aStop1, T aStop2, T* aDest)
 
 
 
-template<class T>
-static int
-_handle_union(const T* aStr, const T* aExpr, bool aCaseInsensitive,
-              unsigned int aLevel)
-{
-  int sx;              
-  int cp;              
+template <class T>
+static int _handle_union(const T* aStr, const T* aExpr, bool aCaseInsensitive,
+                         unsigned int aLevel) {
+  int sx; 
+  int cp; 
   int count;
-  int ret   = NOMATCH;
+  int ret = NOMATCH;
   T* e2;
 
   
@@ -239,9 +211,9 @@ _handle_union(const T* aStr, const T* aExpr, bool aCaseInsensitive,
   if (cp == ABORTED || cp < 4) { 
     return ABORTED;
   }
-  ++cp;                
+  ++cp; 
   e2 = (T*)moz_xmalloc((1 + nsCharTraits<T>::length(aExpr)) * sizeof(T));
-  for (sx = 1; ; ++sx) {
+  for (sx = 1;; ++sx) {
     
     
     count = ::_scan_and_copy(aExpr + sx, T(')'), T('|'), e2);
@@ -266,9 +238,8 @@ _handle_union(const T* aStr, const T* aExpr, bool aCaseInsensitive,
 }
 
 
-static int
-_is_char_in_range(unsigned char aStart, unsigned char aEnd, unsigned char aVal)
-{
+static int _is_char_in_range(unsigned char aStart, unsigned char aEnd,
+                             unsigned char aVal) {
   char map[256];
   memset(map, 0, sizeof(map));
   while (aStart <= aEnd) {
@@ -277,16 +248,14 @@ _is_char_in_range(unsigned char aStart, unsigned char aEnd, unsigned char aVal)
   return map[lower(aVal)];
 }
 
-template<class T>
-static int
-_shexp_match(const T* aStr, const T* aExpr, bool aCaseInsensitive,
-             unsigned int aLevel)
-{
-  int x;   
-  int y;   
+template <class T>
+static int _shexp_match(const T* aStr, const T* aExpr, bool aCaseInsensitive,
+                        unsigned int aLevel) {
+  int x; 
+  int y; 
   int ret, neg;
 
-  if (aLevel > 20) {    
+  if (aLevel > 20) { 
     return ABORTED;
   }
   for (x = 0, y = 0; aExpr[y]; ++y, ++x) {
@@ -298,7 +267,7 @@ _shexp_match(const T* aStr, const T* aExpr, bool aCaseInsensitive,
         if (aStr[x]) {
           return NOMATCH;
         }
-        --x;                 
+        --x; 
         break;
       case '*':
         while (aExpr[++y] == '*') {
@@ -351,8 +320,7 @@ _shexp_match(const T* aStr, const T* aExpr, bool aCaseInsensitive,
             start = tmp;
           }
           if (aCaseInsensitive && ::alpha(val)) {
-            val = ::_is_char_in_range((unsigned char)start,
-                                      (unsigned char)end,
+            val = ::_is_char_in_range((unsigned char)start, (unsigned char)end,
                                       (unsigned char)val);
             if (neg == val) {
               return NOMATCH;
@@ -378,8 +346,7 @@ _shexp_match(const T* aStr, const T* aExpr, bool aCaseInsensitive,
             return NOMATCH;
           }
         }
-      }
-      break;
+      } break;
       case '(':
         if (!aExpr[y + 1]) {
           return ABORTED;
@@ -411,10 +378,9 @@ _shexp_match(const T* aStr, const T* aExpr, bool aCaseInsensitive,
   return (aStr[x] ? NOMATCH : MATCH);
 }
 
-template<class T>
-static int
-ns_WildCardMatch(const T* aStr, const T* aXp, bool aCaseInsensitive)
-{
+template <class T>
+static int ns_WildCardMatch(const T* aStr, const T* aXp,
+                            bool aCaseInsensitive) {
   T* expr = nullptr;
   int ret = MATCH;
 
@@ -448,10 +414,8 @@ ns_WildCardMatch(const T* aStr, const T* aXp, bool aCaseInsensitive)
   return ret;
 }
 
-template<class T>
-int
-NS_WildCardMatch_(const T* aStr, const T* aExpr, bool aCaseInsensitive)
-{
+template <class T>
+int NS_WildCardMatch_(const T* aStr, const T* aExpr, bool aCaseInsensitive) {
   int is_valid = NS_WildCardValid(aExpr);
   switch (is_valid) {
     case INVALID_SXP:
@@ -461,15 +425,11 @@ NS_WildCardMatch_(const T* aStr, const T* aExpr, bool aCaseInsensitive)
   }
 }
 
-int
-NS_WildCardMatch(const char* aStr, const char* aXp, bool aCaseInsensitive)
-{
+int NS_WildCardMatch(const char* aStr, const char* aXp, bool aCaseInsensitive) {
   return NS_WildCardMatch_(aStr, aXp, aCaseInsensitive);
 }
 
-int
-NS_WildCardMatch(const char16_t* aStr, const char16_t* aXp,
-                 bool aCaseInsensitive)
-{
+int NS_WildCardMatch(const char16_t* aStr, const char16_t* aXp,
+                     bool aCaseInsensitive) {
   return NS_WildCardMatch_(aStr, aXp, aCaseInsensitive);
 }

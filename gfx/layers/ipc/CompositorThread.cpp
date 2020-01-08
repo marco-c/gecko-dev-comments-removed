@@ -16,69 +16,59 @@ namespace mozilla {
 namespace gfx {
 
 void ReleaseVRManagerParentSingleton();
-} 
+}  
 
 namespace layers {
 
 static StaticRefPtr<CompositorThreadHolder> sCompositorThreadHolder;
 static bool sFinishedCompositorShutDown = false;
 
-CompositorThreadHolder* GetCompositorThreadHolder()
-{
+CompositorThreadHolder* GetCompositorThreadHolder() {
   return sCompositorThreadHolder;
 }
 
-base::Thread*
-CompositorThread()
-{
+base::Thread* CompositorThread() {
   return sCompositorThreadHolder
-         ? sCompositorThreadHolder->GetCompositorThread()
-         : nullptr;
+             ? sCompositorThreadHolder->GetCompositorThread()
+             : nullptr;
 }
 
- MessageLoop*
-CompositorThreadHolder::Loop()
-{
+ MessageLoop* CompositorThreadHolder::Loop() {
   return CompositorThread() ? CompositorThread()->message_loop() : nullptr;
 }
 
-CompositorThreadHolder*
-CompositorThreadHolder::GetSingleton()
-{
+CompositorThreadHolder* CompositorThreadHolder::GetSingleton() {
   return sCompositorThreadHolder;
 }
 
 CompositorThreadHolder::CompositorThreadHolder()
-  : mCompositorThread(CreateCompositorThread())
-{
+    : mCompositorThread(CreateCompositorThread()) {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
-CompositorThreadHolder::~CompositorThreadHolder()
-{
+CompositorThreadHolder::~CompositorThreadHolder() {
   MOZ_ASSERT(NS_IsMainThread());
   if (mCompositorThread) {
     DestroyCompositorThread(mCompositorThread);
   }
 }
 
- void
-CompositorThreadHolder::DestroyCompositorThread(base::Thread* aCompositorThread)
-{
+ void CompositorThreadHolder::DestroyCompositorThread(
+    base::Thread* aCompositorThread) {
   MOZ_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(!sCompositorThreadHolder, "We shouldn't be destroying the compositor thread yet.");
+  MOZ_ASSERT(!sCompositorThreadHolder,
+             "We shouldn't be destroying the compositor thread yet.");
 
   delete aCompositorThread;
   sFinishedCompositorShutDown = true;
 }
 
- base::Thread*
-CompositorThreadHolder::CreateCompositorThread()
-{
+ base::Thread* CompositorThreadHolder::CreateCompositorThread() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  MOZ_ASSERT(!sCompositorThreadHolder, "The compositor thread has already been started!");
+  MOZ_ASSERT(!sCompositorThreadHolder,
+             "The compositor thread has already been started!");
 
   base::Thread* compositorThread = new base::Thread("Compositor");
 
@@ -86,13 +76,14 @@ CompositorThreadHolder::CreateCompositorThread()
   
 
 
-  options.transient_hang_timeout = 128; 
+  options.transient_hang_timeout = 128;  
   
 
 
-  options.permanent_hang_timeout = 2048; 
+  options.permanent_hang_timeout = 2048;  
 #if defined(_WIN32)
   
+
 
 
   options.message_loop_type = MessageLoop::TYPE_UI;
@@ -109,11 +100,10 @@ CompositorThreadHolder::CreateCompositorThread()
   return compositorThread;
 }
 
-void
-CompositorThreadHolder::Start()
-{
+void CompositorThreadHolder::Start() {
   MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
-  MOZ_ASSERT(!sCompositorThreadHolder, "The compositor thread has already been started!");
+  MOZ_ASSERT(!sCompositorThreadHolder,
+             "The compositor thread has already been started!");
 
   
   
@@ -122,14 +112,13 @@ CompositorThreadHolder::Start()
   
   sCompositorThreadHolder = new CompositorThreadHolder();
   if (!sCompositorThreadHolder->GetCompositorThread()) {
-    gfxCriticalNote << "Compositor thread not started (" << XRE_IsParentProcess() << ")";
+    gfxCriticalNote << "Compositor thread not started ("
+                    << XRE_IsParentProcess() << ")";
     sCompositorThreadHolder = nullptr;
   }
 }
 
-void
-CompositorThreadHolder::Shutdown()
-{
+void CompositorThreadHolder::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread(), "Should be on the main Thread!");
   if (!sCompositorThreadHolder) {
     
@@ -150,18 +139,14 @@ CompositorThreadHolder::Shutdown()
   CompositorBridgeParent::FinishShutdown();
 }
 
- bool
-CompositorThreadHolder::IsInCompositorThread()
-{
+ bool CompositorThreadHolder::IsInCompositorThread() {
   return CompositorThread() &&
          CompositorThread()->thread_id() == PlatformThread::CurrentId();
 }
 
-} 
-} 
+}  
+}  
 
-bool
-NS_IsInCompositorThread()
-{
+bool NS_IsInCompositorThread() {
   return mozilla::layers::CompositorThreadHolder::IsInCompositorThread();
 }

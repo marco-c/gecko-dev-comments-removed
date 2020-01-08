@@ -16,6 +16,6 @@ void PrintToDebugger(const char* aStr);
 
 #endif
 
-} 
+}  
 
-#endif 
+#endif  

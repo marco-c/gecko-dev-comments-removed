@@ -27,32 +27,24 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(Storage)
 NS_INTERFACE_MAP_END
 
 Storage::Storage(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal)
-  : mWindow(aWindow)
-  , mPrincipal(aPrincipal)
-  , mIsSessionOnly(false)
-{
+    : mWindow(aWindow), mPrincipal(aPrincipal), mIsSessionOnly(false) {
   MOZ_ASSERT(aPrincipal);
 }
 
-Storage::~Storage()
-{}
+Storage::~Storage() {}
 
- bool
-Storage::StoragePrefIsEnabled()
-{
+ bool Storage::StoragePrefIsEnabled() {
   return mozilla::Preferences::GetBool(kStorageEnabled);
 }
 
-bool
-Storage::CanUseStorage(nsIPrincipal& aSubjectPrincipal)
-{
+bool Storage::CanUseStorage(nsIPrincipal& aSubjectPrincipal) {
   
   if (!StoragePrefIsEnabled()) {
     return false;
   }
 
   nsContentUtils::StorageAccess access =
-    nsContentUtils::StorageAllowedForPrincipal(Principal());
+      nsContentUtils::StorageAllowedForPrincipal(Principal());
 
   if (access <= nsContentUtils::StorageAccess::eDeny) {
     return false;
@@ -63,56 +55,49 @@ Storage::CanUseStorage(nsIPrincipal& aSubjectPrincipal)
   return aSubjectPrincipal.Subsumes(mPrincipal);
 }
 
- JSObject*
-Storage::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
+ JSObject* Storage::WrapObject(JSContext* aCx,
+                                            JS::Handle<JSObject*> aGivenProto) {
   return Storage_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 namespace {
 
-class StorageNotifierRunnable : public Runnable
-{
-public:
-  StorageNotifierRunnable(nsISupports* aSubject, const char16_t *aStorageType,
+class StorageNotifierRunnable : public Runnable {
+ public:
+  StorageNotifierRunnable(nsISupports* aSubject, const char16_t* aStorageType,
                           bool aPrivateBrowsing)
-    : Runnable("StorageNotifierRunnable")
-    , mSubject(aSubject)
-    , mStorageType(aStorageType)
-    , mPrivateBrowsing(aPrivateBrowsing)
-  {}
+      : Runnable("StorageNotifierRunnable"),
+        mSubject(aSubject),
+        mStorageType(aStorageType),
+        mPrivateBrowsing(aPrivateBrowsing) {}
 
   NS_IMETHOD
-  Run() override
-  {
+  Run() override {
     nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
+        mozilla::services::GetObserverService();
     if (observerService) {
       observerService->NotifyObservers(mSubject,
                                        mPrivateBrowsing
-                                         ? "dom-private-storage2-changed"
-                                         : "dom-storage2-changed",
+                                           ? "dom-private-storage2-changed"
+                                           : "dom-storage2-changed",
                                        mStorageType);
     }
     return NS_OK;
   }
 
-private:
+ private:
   nsCOMPtr<nsISupports> mSubject;
   const char16_t* mStorageType;
   const bool mPrivateBrowsing;
 };
 
-} 
+}  
 
- void
-Storage::NotifyChange(Storage* aStorage, nsIPrincipal* aPrincipal,
-                      const nsAString& aKey,
-                      const nsAString& aOldValue, const nsAString& aNewValue,
-                      const char16_t* aStorageType,
-                      const nsAString& aDocumentURI, bool aIsPrivate,
-                      bool aImmediateDispatch)
-{
+ void Storage::NotifyChange(
+    Storage* aStorage, nsIPrincipal* aPrincipal, const nsAString& aKey,
+    const nsAString& aOldValue, const nsAString& aNewValue,
+    const char16_t* aStorageType, const nsAString& aDocumentURI,
+    bool aIsPrivate, bool aImmediateDispatch) {
   StorageEventInit dict;
   dict.mBubbles = false;
   dict.mCancelable = false;
@@ -125,7 +110,7 @@ Storage::NotifyChange(Storage* aStorage, nsIPrincipal* aPrincipal,
   
   
   RefPtr<StorageEvent> event =
-    StorageEvent::Constructor(nullptr, NS_LITERAL_STRING("storage"), dict);
+      StorageEvent::Constructor(nullptr, NS_LITERAL_STRING("storage"), dict);
 
   event->SetPrincipal(aPrincipal);
 
@@ -137,7 +122,7 @@ Storage::NotifyChange(Storage* aStorage, nsIPrincipal* aPrincipal,
   
 
   RefPtr<StorageNotifierRunnable> r =
-    new StorageNotifierRunnable(event, aStorageType, aIsPrivate);
+      new StorageNotifierRunnable(event, aStorageType, aIsPrivate);
 
   if (aImmediateDispatch) {
     Unused << r->Run();
@@ -146,5 +131,5 @@ Storage::NotifyChange(Storage* aStorage, nsIPrincipal* aPrincipal,
   }
 }
 
-} 
-} 
+}  
+}  

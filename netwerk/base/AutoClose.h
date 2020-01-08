@@ -10,45 +10,34 @@
 #include "nsCOMPtr.h"
 #include "mozilla/Mutex.h"
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
 
 
 
 template <typename T>
-class AutoClose
-{
-public:
-  AutoClose() : mMutex("net::AutoClose.mMutex") { }
-  ~AutoClose(){
-    CloseAndRelease();
-  }
+class AutoClose {
+ public:
+  AutoClose() : mMutex("net::AutoClose.mMutex") {}
+  ~AutoClose() { CloseAndRelease(); }
 
-  explicit operator bool()
-  {
+  explicit operator bool() {
     MutexAutoLock lock(mMutex);
     return mPtr;
   }
 
-  already_AddRefed<T> forget()
-  {
+  already_AddRefed<T> forget() {
     MutexAutoLock lock(mMutex);
     return mPtr.forget();
   }
 
-  void takeOver(nsCOMPtr<T> & rhs)
-  {
-    TakeOverInternal(rhs.forget());
-  }
+  void takeOver(nsCOMPtr<T> &rhs) { TakeOverInternal(rhs.forget()); }
 
-  void CloseAndRelease()
-  {
-    TakeOverInternal(nullptr);
-  }
+  void CloseAndRelease() { TakeOverInternal(nullptr); }
 
-private:
-  void TakeOverInternal(already_AddRefed<T>&& aOther)
-  {
+ private:
+  void TakeOverInternal(already_AddRefed<T> &&aOther) {
     nsCOMPtr<T> ptr(std::move(aOther));
     {
       MutexAutoLock lock(mMutex);
@@ -67,7 +56,7 @@ private:
   Mutex mMutex;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

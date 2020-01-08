@@ -19,9 +19,8 @@ class MLGBuffer;
 class MLGDevice;
 
 
-class BufferCache
-{
-public:
+class BufferCache {
+ public:
   explicit BufferCache(MLGDevice* aDevice);
   ~BufferCache();
 
@@ -32,7 +31,7 @@ public:
   
   void EndFrame();
 
-private:
+ private:
   
   MLGDevice* mDevice;
 
@@ -51,26 +50,21 @@ private:
   
   
   struct CacheEntry {
-    CacheEntry() : mLastUsedFrame(0)
-    {}
+    CacheEntry() : mLastUsedFrame(0) {}
     CacheEntry(const CacheEntry& aEntry)
-     : mLastUsedFrame(aEntry.mLastUsedFrame),
-       mBuffer(aEntry.mBuffer)
-    {}
+        : mLastUsedFrame(aEntry.mLastUsedFrame), mBuffer(aEntry.mBuffer) {}
     CacheEntry(CacheEntry&& aEntry)
-     : mLastUsedFrame(aEntry.mLastUsedFrame),
-       mBuffer(std::move(aEntry.mBuffer))
-    {}
+        : mLastUsedFrame(aEntry.mLastUsedFrame),
+          mBuffer(std::move(aEntry.mBuffer)) {}
     CacheEntry(size_t aLastUsedFrame, MLGBuffer* aBuffer)
-     : mLastUsedFrame(aLastUsedFrame),
-       mBuffer(aBuffer)
-    {}
+        : mLastUsedFrame(aLastUsedFrame), mBuffer(aBuffer) {}
 
     uint64_t mLastUsedFrame;
     RefPtr<MLGBuffer> mBuffer;
   };
   typedef std::deque<CacheEntry> CachePool;
 
+  
   
   uint64_t mFrameNumber;
 
@@ -83,7 +77,7 @@ private:
   std::vector<CachePool> mCaches;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

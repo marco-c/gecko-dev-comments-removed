@@ -14,9 +14,8 @@
 namespace mozilla {
 namespace image {
 
-class SurfaceCacheUtils
-{
-public:
+class SurfaceCacheUtils {
+ public:
   
 
 
@@ -24,11 +23,11 @@ public:
 
   static void DiscardAll();
 
-private:
+ private:
   virtual ~SurfaceCacheUtils() = 0;  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

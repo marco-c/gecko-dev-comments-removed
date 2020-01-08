@@ -107,9 +107,8 @@ namespace mozilla {
 
 
 
-class JSONWriteFunc
-{
-public:
+class JSONWriteFunc {
+ public:
   virtual void Write(const char* aStr) = 0;
   virtual ~JSONWriteFunc() {}
 };
@@ -118,10 +117,9 @@ public:
 
 namespace detail {
 extern MFBT_DATA const char gTwoCharEscapes[256];
-} 
+}  
 
-class JSONWriter
-{
+class JSONWriter {
   
   
   
@@ -135,8 +133,7 @@ class JSONWriter
   
   
   
-  class EscapedString
-  {
+  class EscapedString {
     
     
     
@@ -144,30 +141,26 @@ class JSONWriter
     const char* mUnownedStr;
     UniquePtr<char[]> mOwnedStr;
 
-    void SanityCheck() const
-    {
-      MOZ_ASSERT_IF( mIsOwned,  mOwnedStr.get() && !mUnownedStr);
-      MOZ_ASSERT_IF(!mIsOwned, !mOwnedStr.get() &&  mUnownedStr);
+    void SanityCheck() const {
+      MOZ_ASSERT_IF(mIsOwned, mOwnedStr.get() && !mUnownedStr);
+      MOZ_ASSERT_IF(!mIsOwned, !mOwnedStr.get() && mUnownedStr);
     }
 
-    static char hexDigitToAsciiChar(uint8_t u)
-    {
+    static char hexDigitToAsciiChar(uint8_t u) {
       u = u & 0xf;
       return u < 10 ? '0' + u : 'a' + (u - 10);
     }
 
-  public:
+   public:
     explicit EscapedString(const char* aStr)
-      : mUnownedStr(nullptr)
-      , mOwnedStr(nullptr)
-    {
+        : mUnownedStr(nullptr), mOwnedStr(nullptr) {
       const char* p;
 
       
       size_t nExtra = 0;
       p = aStr;
       while (true) {
-        uint8_t u = *p;   
+        uint8_t u = *p;  
         if (u == 0) {
           break;
         }
@@ -195,7 +188,7 @@ class JSONWriter
       size_t i = 0;
 
       while (true) {
-        uint8_t u = *p;   
+        uint8_t u = *p;  
         if (u == 0) {
           mOwnedStr[i] = 0;
           break;
@@ -217,37 +210,32 @@ class JSONWriter
       }
     }
 
-    ~EscapedString()
-    {
-      SanityCheck();
-    }
+    ~EscapedString() { SanityCheck(); }
 
-    const char* get() const
-    {
+    const char* get() const {
       SanityCheck();
       return mIsOwned ? mOwnedStr.get() : mUnownedStr;
     }
   };
 
-public:
+ public:
   
   
   
   
   
   enum CollectionStyle {
-    MultiLineStyle,   
+    MultiLineStyle,  
     SingleLineStyle
   };
 
-protected:
+ protected:
   const UniquePtr<JSONWriteFunc> mWriter;
   Vector<bool, 8> mNeedComma;     
   Vector<bool, 8> mNeedNewlines;  
   size_t mDepth;                  
 
-  void Indent()
-  {
+  void Indent() {
     for (size_t i = 0; i < mDepth; i++) {
       mWriter->Write(" ");
     }
@@ -256,8 +244,7 @@ protected:
   
   
   
-  void Separator()
-  {
+  void Separator() {
     if (mNeedComma[mDepth]) {
       mWriter->Write(",");
     }
@@ -269,16 +256,14 @@ protected:
     }
   }
 
-  void PropertyNameAndColon(const char* aName)
-  {
+  void PropertyNameAndColon(const char* aName) {
     EscapedString escapedName(aName);
     mWriter->Write("\"");
     mWriter->Write(escapedName.get());
     mWriter->Write("\": ");
   }
 
-  void Scalar(const char* aMaybePropertyName, const char* aStringValue)
-  {
+  void Scalar(const char* aMaybePropertyName, const char* aStringValue) {
     Separator();
     if (aMaybePropertyName) {
       PropertyNameAndColon(aMaybePropertyName);
@@ -287,8 +272,7 @@ protected:
     mNeedComma[mDepth] = true;
   }
 
-  void QuotedScalar(const char* aMaybePropertyName, const char* aStringValue)
-  {
+  void QuotedScalar(const char* aMaybePropertyName, const char* aStringValue) {
     Separator();
     if (aMaybePropertyName) {
       PropertyNameAndColon(aMaybePropertyName);
@@ -299,8 +283,7 @@ protected:
     mNeedComma[mDepth] = true;
   }
 
-  void NewVectorEntries()
-  {
+  void NewVectorEntries() {
     
     
     MOZ_RELEASE_ASSERT(mNeedComma.resizeUninitialized(mDepth + 1));
@@ -310,8 +293,7 @@ protected:
   }
 
   void StartCollection(const char* aMaybePropertyName, const char* aStartChar,
-                       CollectionStyle aStyle = MultiLineStyle)
-  {
+                       CollectionStyle aStyle = MultiLineStyle) {
     Separator();
     if (aMaybePropertyName) {
       PropertyNameAndColon(aMaybePropertyName);
@@ -321,12 +303,11 @@ protected:
     mDepth++;
     NewVectorEntries();
     mNeedNewlines[mDepth] =
-      mNeedNewlines[mDepth - 1] && aStyle == MultiLineStyle;
+        mNeedNewlines[mDepth - 1] && aStyle == MultiLineStyle;
   }
 
   
-  void EndCollection(const char* aEndChar)
-  {
+  void EndCollection(const char* aEndChar) {
     MOZ_ASSERT(mDepth > 0);
     if (mNeedNewlines[mDepth]) {
       mWriter->Write("\n");
@@ -338,13 +319,9 @@ protected:
     mWriter->Write(aEndChar);
   }
 
-public:
+ public:
   explicit JSONWriter(UniquePtr<JSONWriteFunc> aWriter)
-    : mWriter(std::move(aWriter))
-    , mNeedComma()
-    , mNeedNewlines()
-    , mDepth(0)
-  {
+      : mWriter(std::move(aWriter)), mNeedComma(), mNeedNewlines(), mDepth(0) {
     NewVectorEntries();
   }
 
@@ -359,8 +336,7 @@ public:
   
 
   
-  void Start(CollectionStyle aStyle = MultiLineStyle)
-  {
+  void Start(CollectionStyle aStyle = MultiLineStyle) {
     StartCollection(nullptr, "{", aStyle);
   }
 
@@ -368,17 +344,13 @@ public:
   void End() { EndCollection("}\n"); }
 
   
-  void NullProperty(const char* aName)
-  {
-    Scalar(aName, "null");
-  }
+  void NullProperty(const char* aName) { Scalar(aName, "null"); }
 
   
   void NullElement() { NullProperty(nullptr); }
 
   
-  void BoolProperty(const char* aName, bool aBool)
-  {
+  void BoolProperty(const char* aName, bool aBool) {
     Scalar(aName, aBool ? "true" : "false");
   }
 
@@ -386,8 +358,7 @@ public:
   void BoolElement(bool aBool) { BoolProperty(nullptr, aBool); }
 
   
-  void IntProperty(const char* aName, int64_t aInt)
-  {
+  void IntProperty(const char* aName, int64_t aInt) {
     char buf[64];
     SprintfLiteral(buf, "%" PRId64, aInt);
     Scalar(aName, buf);
@@ -397,12 +368,11 @@ public:
   void IntElement(int64_t aInt) { IntProperty(nullptr, aInt); }
 
   
-  void DoubleProperty(const char* aName, double aDouble)
-  {
+  void DoubleProperty(const char* aName, double aDouble) {
     static const size_t buflen = 64;
     char buf[buflen];
-    const double_conversion::DoubleToStringConverter &converter =
-      double_conversion::DoubleToStringConverter::EcmaScriptConverter();
+    const double_conversion::DoubleToStringConverter& converter =
+        double_conversion::DoubleToStringConverter::EcmaScriptConverter();
     double_conversion::StringBuilder builder(buf, buflen);
     converter.ToShortest(aDouble, &builder);
     Scalar(aName, builder.Finalize());
@@ -412,8 +382,7 @@ public:
   void DoubleElement(double aDouble) { DoubleProperty(nullptr, aDouble); }
 
   
-  void StringProperty(const char* aName, const char* aStr)
-  {
+  void StringProperty(const char* aName, const char* aStr) {
     EscapedString escapedStr(aStr);
     QuotedScalar(aName, escapedStr.get());
   }
@@ -423,14 +392,12 @@ public:
 
   
   void StartArrayProperty(const char* aName,
-                          CollectionStyle aStyle = MultiLineStyle)
-  {
+                          CollectionStyle aStyle = MultiLineStyle) {
     StartCollection(aName, "[", aStyle);
   }
 
   
-  void StartArrayElement(CollectionStyle aStyle = MultiLineStyle)
-  {
+  void StartArrayElement(CollectionStyle aStyle = MultiLineStyle) {
     StartArrayProperty(nullptr, aStyle);
   }
 
@@ -439,14 +406,12 @@ public:
 
   
   void StartObjectProperty(const char* aName,
-                           CollectionStyle aStyle = MultiLineStyle)
-  {
+                           CollectionStyle aStyle = MultiLineStyle) {
     StartCollection(aName, "{", aStyle);
   }
 
   
-  void StartObjectElement(CollectionStyle aStyle = MultiLineStyle)
-  {
+  void StartObjectElement(CollectionStyle aStyle = MultiLineStyle) {
     StartObjectProperty(nullptr, aStyle);
   }
 
@@ -454,7 +419,6 @@ public:
   void EndObject() { EndCollection("}"); }
 };
 
-} 
+}  
 
 #endif 
-

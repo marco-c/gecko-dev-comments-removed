@@ -17,7 +17,7 @@ namespace mozilla {
 
 namespace wr {
 struct ByteBuffer;
-} 
+}  
 
 namespace ipc {
 
@@ -27,31 +27,23 @@ class PParentToChildStreamChild;
 
 
 
-class IPCStreamDestination
-{
-public:
-  static IPCStreamDestination*
-  Cast(PChildToParentStreamParent* aActor);
+class IPCStreamDestination {
+ public:
+  static IPCStreamDestination* Cast(PChildToParentStreamParent* aActor);
 
-  static IPCStreamDestination*
-  Cast(PParentToChildStreamChild* aActor);
+  static IPCStreamDestination* Cast(PParentToChildStreamChild* aActor);
 
-  void
-  SetDelayedStart(bool aDelayedStart);
+  void SetDelayedStart(bool aDelayedStart);
 
-  void
-  SetLength(int64_t aLength);
+  void SetLength(int64_t aLength);
 
-  already_AddRefed<nsIInputStream>
-  TakeReader();
+  already_AddRefed<nsIInputStream> TakeReader();
 
-  bool
-  IsOnOwningThread() const;
+  bool IsOnOwningThread() const;
 
-  void
-  DispatchRunnable(already_AddRefed<nsIRunnable>&& aRunnable);
+  void DispatchRunnable(already_AddRefed<nsIRunnable>&& aRunnable);
 
-protected:
+ protected:
   IPCStreamDestination();
   virtual ~IPCStreamDestination();
 
@@ -59,35 +51,25 @@ protected:
 
   
 
-  void
-  ActorDestroyed();
+  void ActorDestroyed();
 
-  void
-  BufferReceived(const wr::ByteBuffer& aBuffer);
+  void BufferReceived(const wr::ByteBuffer& aBuffer);
 
-  void
-  CloseReceived(nsresult aRv);
+  void CloseReceived(nsresult aRv);
 
 #ifdef DEBUG
-  bool
-  HasDelayedStart() const
-  {
-    return mDelayedStart;
-  }
+  bool HasDelayedStart() const { return mDelayedStart; }
 #endif
 
   
 
-  virtual void
-  StartReading() = 0;
+  virtual void StartReading() = 0;
 
-  virtual void
-  RequestClose(nsresult aRv) = 0;
+  virtual void RequestClose(nsresult aRv) = 0;
 
-  virtual void
-  TerminateDestination() = 0;
+  virtual void TerminateDestination() = 0;
 
-private:
+ private:
   nsCOMPtr<nsIAsyncInputStream> mReader;
   nsCOMPtr<nsIAsyncOutputStream> mWriter;
 
@@ -105,7 +87,7 @@ private:
 #endif
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

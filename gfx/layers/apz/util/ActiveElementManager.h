@@ -17,7 +17,7 @@ class CancelableRunnable;
 namespace dom {
 class Element;
 class EventTarget;
-} 
+}  
 
 namespace layers {
 
@@ -27,7 +27,8 @@ namespace layers {
 
 class ActiveElementManager {
   ~ActiveElementManager();
-public:
+
+ public:
   NS_INLINE_DECL_REFCOUNTING(ActiveElementManager)
 
   ActiveElementManager();
@@ -60,7 +61,8 @@ public:
 
 
   void HandleTouchEnd();
-private:
+
+ private:
   
 
 
@@ -89,7 +91,7 @@ private:
   void CancelTask();
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

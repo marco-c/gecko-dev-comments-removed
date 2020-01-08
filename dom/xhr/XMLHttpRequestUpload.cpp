@@ -16,11 +16,10 @@ NS_INTERFACE_MAP_END_INHERITING(XMLHttpRequestEventTarget)
 NS_IMPL_ADDREF_INHERITED(XMLHttpRequestUpload, XMLHttpRequestEventTarget)
 NS_IMPL_RELEASE_INHERITED(XMLHttpRequestUpload, XMLHttpRequestEventTarget)
 
- JSObject*
-XMLHttpRequestUpload::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
+ JSObject* XMLHttpRequestUpload::WrapObject(
+    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return XMLHttpRequestUpload_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-} 
-} 
+}  
+}  

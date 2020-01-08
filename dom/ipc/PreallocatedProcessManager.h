@@ -13,7 +13,7 @@
 namespace mozilla {
 namespace dom {
 class ContentParent;
-} 
+}  
 
 
 
@@ -28,12 +28,10 @@ class ContentParent;
 
 
 
-class PreallocatedProcessManager final
-{
+class PreallocatedProcessManager final {
   typedef mozilla::dom::ContentParent ContentParent;
 
-public:
-
+ public:
   
 
 
@@ -57,11 +55,11 @@ public:
 
   static bool Provide(ContentParent* aParent);
 
-private:
+ private:
   PreallocatedProcessManager();
   DISALLOW_EVIL_CONSTRUCTORS(PreallocatedProcessManager);
 };
 
-} 
+}  
 
-#endif 
+#endif  

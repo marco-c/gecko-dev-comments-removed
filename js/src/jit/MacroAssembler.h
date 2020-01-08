@@ -14,21 +14,21 @@
 #include "vm/Realm.h"
 
 #if defined(JS_CODEGEN_X86)
-# include "jit/x86/MacroAssembler-x86.h"
+#include "jit/x86/MacroAssembler-x86.h"
 #elif defined(JS_CODEGEN_X64)
-# include "jit/x64/MacroAssembler-x64.h"
+#include "jit/x64/MacroAssembler-x64.h"
 #elif defined(JS_CODEGEN_ARM)
-# include "jit/arm/MacroAssembler-arm.h"
+#include "jit/arm/MacroAssembler-arm.h"
 #elif defined(JS_CODEGEN_ARM64)
-# include "jit/arm64/MacroAssembler-arm64.h"
+#include "jit/arm64/MacroAssembler-arm64.h"
 #elif defined(JS_CODEGEN_MIPS32)
-# include "jit/mips32/MacroAssembler-mips32.h"
+#include "jit/mips32/MacroAssembler-mips32.h"
 #elif defined(JS_CODEGEN_MIPS64)
-# include "jit/mips64/MacroAssembler-mips64.h"
+#include "jit/mips64/MacroAssembler-mips64.h"
 #elif defined(JS_CODEGEN_NONE)
-# include "jit/none/MacroAssembler-none.h"
+#include "jit/none/MacroAssembler-none.h"
 #else
-# error "Unknown architecture!"
+#error "Unknown architecture!"
 #endif
 #include "jit/AtomicOp.h"
 #include "jit/IonInstrumentation.h"
@@ -89,10 +89,8 @@
 
 
 
-
-# define ALL_ARCH mips32, mips64, arm, arm64, x86, x64
-# define ALL_SHARED_ARCH arm, arm64, x86_shared, mips_shared
-
+#define ALL_ARCH mips32, mips64, arm, arm64, x86, x64
+#define ALL_SHARED_ARCH arm, arm64, x86_shared, mips_shared
 
 
 
@@ -129,78 +127,78 @@
 
 
 
-# define DEFINED_ON_x86
-# define DEFINED_ON_x64
-# define DEFINED_ON_x86_shared
-# define DEFINED_ON_arm
-# define DEFINED_ON_arm64
-# define DEFINED_ON_mips32
-# define DEFINED_ON_mips64
-# define DEFINED_ON_mips_shared
-# define DEFINED_ON_none
+
+#define DEFINED_ON_x86
+#define DEFINED_ON_x64
+#define DEFINED_ON_x86_shared
+#define DEFINED_ON_arm
+#define DEFINED_ON_arm64
+#define DEFINED_ON_mips32
+#define DEFINED_ON_mips64
+#define DEFINED_ON_mips_shared
+#define DEFINED_ON_none
 
 
 #if defined(JS_CODEGEN_X86)
-# undef DEFINED_ON_x86
-# define DEFINED_ON_x86 define
-# undef DEFINED_ON_x86_shared
-# define DEFINED_ON_x86_shared define
+#undef DEFINED_ON_x86
+#define DEFINED_ON_x86 define
+#undef DEFINED_ON_x86_shared
+#define DEFINED_ON_x86_shared define
 #elif defined(JS_CODEGEN_X64)
-# undef DEFINED_ON_x64
-# define DEFINED_ON_x64 define
-# undef DEFINED_ON_x86_shared
-# define DEFINED_ON_x86_shared define
+#undef DEFINED_ON_x64
+#define DEFINED_ON_x64 define
+#undef DEFINED_ON_x86_shared
+#define DEFINED_ON_x86_shared define
 #elif defined(JS_CODEGEN_ARM)
-# undef DEFINED_ON_arm
-# define DEFINED_ON_arm define
+#undef DEFINED_ON_arm
+#define DEFINED_ON_arm define
 #elif defined(JS_CODEGEN_ARM64)
-# undef DEFINED_ON_arm64
-# define DEFINED_ON_arm64 define
+#undef DEFINED_ON_arm64
+#define DEFINED_ON_arm64 define
 #elif defined(JS_CODEGEN_MIPS32)
-# undef DEFINED_ON_mips32
-# define DEFINED_ON_mips32 define
-# undef DEFINED_ON_mips_shared
-# define DEFINED_ON_mips_shared define
+#undef DEFINED_ON_mips32
+#define DEFINED_ON_mips32 define
+#undef DEFINED_ON_mips_shared
+#define DEFINED_ON_mips_shared define
 #elif defined(JS_CODEGEN_MIPS64)
-# undef DEFINED_ON_mips64
-# define DEFINED_ON_mips64 define
-# undef DEFINED_ON_mips_shared
-# define DEFINED_ON_mips_shared define
+#undef DEFINED_ON_mips64
+#define DEFINED_ON_mips64 define
+#undef DEFINED_ON_mips_shared
+#define DEFINED_ON_mips_shared define
 #elif defined(JS_CODEGEN_NONE)
-# undef DEFINED_ON_none
-# define DEFINED_ON_none crash
+#undef DEFINED_ON_none
+#define DEFINED_ON_none crash
 #else
-# error "Unknown architecture!"
+#error "Unknown architecture!"
 #endif
 
-# define DEFINED_ON_RESULT_crash   { MOZ_CRASH(); }
-# define DEFINED_ON_RESULT_define
-# define DEFINED_ON_RESULT_        = delete
+#define DEFINED_ON_RESULT_crash \
+  { MOZ_CRASH(); }
+#define DEFINED_ON_RESULT_define
+#define DEFINED_ON_RESULT_ = delete
 
-# define DEFINED_ON_DISPATCH_RESULT_2(Macro, Result) \
-    Macro ## Result
-# define DEFINED_ON_DISPATCH_RESULT(...)     \
-    DEFINED_ON_DISPATCH_RESULT_2(DEFINED_ON_RESULT_, __VA_ARGS__)
+#define DEFINED_ON_DISPATCH_RESULT_2(Macro, Result) Macro##Result
+#define DEFINED_ON_DISPATCH_RESULT(...) \
+  DEFINED_ON_DISPATCH_RESULT_2(DEFINED_ON_RESULT_, __VA_ARGS__)
 
 
-# define DEFINED_ON_EXPAND_ARCH_RESULTS_3(ParenResult)  \
-    DEFINED_ON_DISPATCH_RESULT ParenResult
-# define DEFINED_ON_EXPAND_ARCH_RESULTS_2(ParenResult)  \
-    DEFINED_ON_EXPAND_ARCH_RESULTS_3 (ParenResult)
-# define DEFINED_ON_EXPAND_ARCH_RESULTS(ParenResult)    \
-    DEFINED_ON_EXPAND_ARCH_RESULTS_2 (ParenResult)
+#define DEFINED_ON_EXPAND_ARCH_RESULTS_3(ParenResult) \
+  DEFINED_ON_DISPATCH_RESULT ParenResult
+#define DEFINED_ON_EXPAND_ARCH_RESULTS_2(ParenResult) \
+  DEFINED_ON_EXPAND_ARCH_RESULTS_3(ParenResult)
+#define DEFINED_ON_EXPAND_ARCH_RESULTS(ParenResult) \
+  DEFINED_ON_EXPAND_ARCH_RESULTS_2(ParenResult)
 
-# define DEFINED_ON_FWDARCH(Arch) DEFINED_ON_ ## Arch
-# define DEFINED_ON_MAP_ON_ARCHS(ArchList)              \
-    DEFINED_ON_EXPAND_ARCH_RESULTS(                     \
+#define DEFINED_ON_FWDARCH(Arch) DEFINED_ON_##Arch
+#define DEFINED_ON_MAP_ON_ARCHS(ArchList) \
+  DEFINED_ON_EXPAND_ARCH_RESULTS(         \
       (MOZ_FOR_EACH(DEFINED_ON_FWDARCH, (), ArchList)))
 
-# define DEFINED_ON(...)                                \
-    DEFINED_ON_MAP_ON_ARCHS((none, __VA_ARGS__))
+#define DEFINED_ON(...) DEFINED_ON_MAP_ON_ARCHS((none, __VA_ARGS__))
 
-# define PER_ARCH DEFINED_ON(ALL_ARCH)
-# define PER_SHARED_ARCH DEFINED_ON(ALL_SHARED_ARCH)
-# define OOL_IN_HEADER
+#define PER_ARCH DEFINED_ON(ALL_ARCH)
+#define PER_SHARED_ARCH DEFINED_ON(ALL_SHARED_ARCH)
+#define OOL_IN_HEADER
 
 #if MOZ_LITTLE_ENDIAN
 #define IMM32_16ADJ(X) (X) << 16
@@ -217,17 +215,17 @@ enum class ExitFrameType : uint8_t;
 class AutoSaveLiveRegisters;
 
 enum class CheckUnsafeCallWithABI {
-    
-    Check,
+  
+  Check,
 
-    
-    
-    DontCheckHasExitFrame,
+  
+  
+  DontCheckHasExitFrame,
 
-    
-    
-    
-    DontCheckOther,
+  
+  
+  
+  DontCheckOther,
 };
 
 enum class CharEncoding { Latin1, TwoByte };
@@ -235,2819 +233,3062 @@ enum class CharEncoding { Latin1, TwoByte };
 
 
 
-class MacroAssembler : public MacroAssemblerSpecific
-{
-    MacroAssembler* thisFromCtor() {
-        return this;
-    }
+class MacroAssembler : public MacroAssemblerSpecific {
+  MacroAssembler* thisFromCtor() { return this; }
 
-  public:
-    
+ public:
+  
 
 
-    class Branch
-    {
-        bool init_;
-        Condition cond_;
-        Label* jump_;
-        Register reg_;
+  class Branch {
+    bool init_;
+    Condition cond_;
+    Label* jump_;
+    Register reg_;
 
-      public:
-        Branch()
-          : init_(false),
-            cond_(Equal),
-            jump_(nullptr),
-            reg_(Register::FromCode(0))      
-        { }
+   public:
+    Branch()
+        : init_(false),
+          cond_(Equal),
+          jump_(nullptr),
+          reg_(Register::FromCode(0))  
+    {}
 
-        Branch(Condition cond, Register reg, Label* jump)
-          : init_(true),
-            cond_(cond),
-            jump_(jump),
-            reg_(reg)
-        { }
+    Branch(Condition cond, Register reg, Label* jump)
+        : init_(true), cond_(cond), jump_(jump), reg_(reg) {}
 
-        bool isInitialized() const {
-            return init_;
-        }
+    bool isInitialized() const { return init_; }
 
-        Condition cond() const {
-            return cond_;
-        }
+    Condition cond() const { return cond_; }
 
-        Label* jump() const {
-            return jump_;
-        }
+    Label* jump() const { return jump_; }
 
-        Register reg() const {
-            return reg_;
-        }
+    Register reg() const { return reg_; }
 
-        void invertCondition() {
-            cond_ = InvertCondition(cond_);
-        }
+    void invertCondition() { cond_ = InvertCondition(cond_); }
 
-        void relink(Label* jump) {
-            jump_ = jump;
-        }
-    };
+    void relink(Label* jump) { jump_ = jump; }
+  };
 
-    
+  
 
 
-    class BranchGCPtr : public Branch
-    {
-        ImmGCPtr ptr_;
+  class BranchGCPtr : public Branch {
+    ImmGCPtr ptr_;
 
-      public:
-        BranchGCPtr()
-          : Branch(),
-            ptr_(ImmGCPtr(nullptr))
-        { }
+   public:
+    BranchGCPtr() : Branch(), ptr_(ImmGCPtr(nullptr)) {}
 
-        BranchGCPtr(Condition cond, Register reg, ImmGCPtr ptr, Label* jump)
-          : Branch(cond, reg, jump),
-            ptr_(ptr)
-        { }
+    BranchGCPtr(Condition cond, Register reg, ImmGCPtr ptr, Label* jump)
+        : Branch(cond, reg, jump), ptr_(ptr) {}
 
-        void emit(MacroAssembler& masm);
-    };
+    void emit(MacroAssembler& masm);
+  };
 
-    mozilla::Maybe<JitContext> jitContext_;
-    mozilla::Maybe<AutoJitContextAlloc> alloc_;
+  mozilla::Maybe<JitContext> jitContext_;
+  mozilla::Maybe<AutoJitContextAlloc> alloc_;
 
-  private:
-    
-    NonAssertingLabel failureLabel_;
+ private:
+  
+  NonAssertingLabel failureLabel_;
 
-  protected:
-    
-    MacroAssembler();
+ protected:
+  
+  MacroAssembler();
 
+  
+  
+  explicit MacroAssembler(JSContext* cx);
+
+  
+  struct WasmToken {};
+  explicit MacroAssembler(WasmToken, TempAllocator& alloc);
+
+ public:
+  MoveResolver& moveResolver() {
     
     
-    explicit MacroAssembler(JSContext* cx);
-
     
-    struct WasmToken {};
-    explicit MacroAssembler(WasmToken, TempAllocator& alloc);
+    
+    MOZ_ASSERT(moveResolver_.hasNoPendingMoves());
+    return moveResolver_;
+  }
 
-  public:
-    MoveResolver& moveResolver() {
-        
-        
-        
-        
-        MOZ_ASSERT(moveResolver_.hasNoPendingMoves());
-        return moveResolver_;
-    }
-
-    size_t instructionsSize() const {
-        return size();
-    }
+  size_t instructionsSize() const { return size(); }
 
 #ifdef JS_HAS_HIDDEN_SP
-    void Push(RegisterOrSP reg);
+  void Push(RegisterOrSP reg);
 #endif
 
-    
-  public:
-    
-    
+  
+ public:
+  
+  
 
-    
-    void flush() PER_SHARED_ARCH;
+  
+  void flush() PER_SHARED_ARCH;
 
-    
-    void comment(const char* msg) PER_SHARED_ARCH;
+  
+  void comment(const char* msg) PER_SHARED_ARCH;
 
-    
-    
+  
+  
 
-    inline uint32_t framePushed() const OOL_IN_HEADER;
-    inline void setFramePushed(uint32_t framePushed) OOL_IN_HEADER;
-    inline void adjustFrame(int32_t value) OOL_IN_HEADER;
+  inline uint32_t framePushed() const OOL_IN_HEADER;
+  inline void setFramePushed(uint32_t framePushed) OOL_IN_HEADER;
+  inline void adjustFrame(int32_t value) OOL_IN_HEADER;
 
-    
-    
-    
-    inline void implicitPop(uint32_t bytes) OOL_IN_HEADER;
+  
+  
+  
+  inline void implicitPop(uint32_t bytes) OOL_IN_HEADER;
 
-  private:
-    
-    
-    
-    
-    uint32_t framePushed_;
+ private:
+  
+  
+  
+  
+  uint32_t framePushed_;
 
-  public:
-    
-    
+ public:
+  
+  
 
-    void PushRegsInMask(LiveRegisterSet set)
-                            DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-    void PushRegsInMask(LiveGeneralRegisterSet set);
+  void PushRegsInMask(LiveRegisterSet set)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+  void PushRegsInMask(LiveGeneralRegisterSet set);
 
-    
-    
-    
-    void storeRegsInMask(LiveRegisterSet set, Address dest, Register scratch)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+  
+  
+  
+  void storeRegsInMask(LiveRegisterSet set, Address dest, Register scratch)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    void PopRegsInMask(LiveRegisterSet set);
-    void PopRegsInMask(LiveGeneralRegisterSet set);
-    void PopRegsInMaskIgnore(LiveRegisterSet set, LiveRegisterSet ignore)
-                                 DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+  void PopRegsInMask(LiveRegisterSet set);
+  void PopRegsInMask(LiveGeneralRegisterSet set);
+  void PopRegsInMaskIgnore(LiveRegisterSet set, LiveRegisterSet ignore)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    void Push(const Operand op) DEFINED_ON(x86_shared);
-    void Push(Register reg) PER_SHARED_ARCH;
-    void Push(Register reg1, Register reg2, Register reg3, Register reg4) DEFINED_ON(arm64);
-    void Push(const Imm32 imm) PER_SHARED_ARCH;
-    void Push(const ImmWord imm) PER_SHARED_ARCH;
-    void Push(const ImmPtr imm) PER_SHARED_ARCH;
-    void Push(const ImmGCPtr ptr) PER_SHARED_ARCH;
-    void Push(FloatRegister reg) PER_SHARED_ARCH;
-    void PushFlags() DEFINED_ON(x86_shared);
-    void Push(jsid id, Register scratchReg);
-    void Push(TypedOrValueRegister v);
-    void Push(const ConstantOrRegister& v);
-    void Push(const ValueOperand& val);
-    void Push(const Value& val);
-    void Push(JSValueType type, Register reg);
-    void PushValue(const Address& addr);
-    void PushEmptyRooted(VMFunction::RootType rootType);
-    inline CodeOffset PushWithPatch(ImmWord word);
-    inline CodeOffset PushWithPatch(ImmPtr imm);
+  void Push(const Operand op) DEFINED_ON(x86_shared);
+  void Push(Register reg) PER_SHARED_ARCH;
+  void Push(Register reg1, Register reg2, Register reg3, Register reg4)
+      DEFINED_ON(arm64);
+  void Push(const Imm32 imm) PER_SHARED_ARCH;
+  void Push(const ImmWord imm) PER_SHARED_ARCH;
+  void Push(const ImmPtr imm) PER_SHARED_ARCH;
+  void Push(const ImmGCPtr ptr) PER_SHARED_ARCH;
+  void Push(FloatRegister reg) PER_SHARED_ARCH;
+  void PushFlags() DEFINED_ON(x86_shared);
+  void Push(jsid id, Register scratchReg);
+  void Push(TypedOrValueRegister v);
+  void Push(const ConstantOrRegister& v);
+  void Push(const ValueOperand& val);
+  void Push(const Value& val);
+  void Push(JSValueType type, Register reg);
+  void PushValue(const Address& addr);
+  void PushEmptyRooted(VMFunction::RootType rootType);
+  inline CodeOffset PushWithPatch(ImmWord word);
+  inline CodeOffset PushWithPatch(ImmPtr imm);
 
-    void Pop(const Operand op) DEFINED_ON(x86_shared);
-    void Pop(Register reg) PER_SHARED_ARCH;
-    void Pop(FloatRegister t) PER_SHARED_ARCH;
-    void Pop(const ValueOperand& val) PER_SHARED_ARCH;
-    void PopFlags() DEFINED_ON(x86_shared);
-    void PopStackPtr() DEFINED_ON(arm, mips_shared, x86_shared);
-    void popRooted(VMFunction::RootType rootType, Register cellReg, const ValueOperand& valueReg);
+  void Pop(const Operand op) DEFINED_ON(x86_shared);
+  void Pop(Register reg) PER_SHARED_ARCH;
+  void Pop(FloatRegister t) PER_SHARED_ARCH;
+  void Pop(const ValueOperand& val) PER_SHARED_ARCH;
+  void PopFlags() DEFINED_ON(x86_shared);
+  void PopStackPtr() DEFINED_ON(arm, mips_shared, x86_shared);
+  void popRooted(VMFunction::RootType rootType, Register cellReg,
+                 const ValueOperand& valueReg);
 
-    
-    void adjustStack(int amount);
-    void freeStack(uint32_t amount);
+  
+  void adjustStack(int amount);
+  void freeStack(uint32_t amount);
 
-    
-    void freeStack(Register amount);
+  
+  void freeStack(Register amount);
 
-  private:
-    
-    
+ private:
+  
+  
 #ifdef DEBUG
-    friend AutoRegisterScope;
-    friend AutoFloatRegisterScope;
-    
-    
-    AllocatableRegisterSet debugTrackedRegisters_;
-#endif 
+  friend AutoRegisterScope;
+  friend AutoFloatRegisterScope;
+  
+  
+  AllocatableRegisterSet debugTrackedRegisters_;
+#endif  
 
-  public:
-    
-    
+ public:
+  
+  
 
-    CodeOffset call(Register reg) PER_SHARED_ARCH;
-    CodeOffset call(Label* label) PER_SHARED_ARCH;
-    void call(const Address& addr) PER_SHARED_ARCH;
-    void call(ImmWord imm) PER_SHARED_ARCH;
-    
-    void call(ImmPtr imm) PER_SHARED_ARCH;
-    void call(wasm::SymbolicAddress imm) PER_SHARED_ARCH;
-    inline void call(const wasm::CallSiteDesc& desc, wasm::SymbolicAddress imm);
+  CodeOffset call(Register reg) PER_SHARED_ARCH;
+  CodeOffset call(Label* label) PER_SHARED_ARCH;
+  void call(const Address& addr) PER_SHARED_ARCH;
+  void call(ImmWord imm) PER_SHARED_ARCH;
+  
+  void call(ImmPtr imm) PER_SHARED_ARCH;
+  void call(wasm::SymbolicAddress imm) PER_SHARED_ARCH;
+  inline void call(const wasm::CallSiteDesc& desc, wasm::SymbolicAddress imm);
 
-    
-    void call(JitCode* c) PER_SHARED_ARCH;
+  
+  void call(JitCode* c) PER_SHARED_ARCH;
 
-    inline void call(TrampolinePtr code);
+  inline void call(TrampolinePtr code);
 
-    inline void call(const wasm::CallSiteDesc& desc, const Register reg);
-    inline void call(const wasm::CallSiteDesc& desc, uint32_t funcDefIndex);
-    inline void call(const wasm::CallSiteDesc& desc, wasm::Trap trap);
+  inline void call(const wasm::CallSiteDesc& desc, const Register reg);
+  inline void call(const wasm::CallSiteDesc& desc, uint32_t funcDefIndex);
+  inline void call(const wasm::CallSiteDesc& desc, wasm::Trap trap);
 
-    CodeOffset callWithPatch() PER_SHARED_ARCH;
-    void patchCall(uint32_t callerOffset, uint32_t calleeOffset) PER_SHARED_ARCH;
+  CodeOffset callWithPatch() PER_SHARED_ARCH;
+  void patchCall(uint32_t callerOffset, uint32_t calleeOffset) PER_SHARED_ARCH;
 
-    
-    
-    
-    void callAndPushReturnAddress(Register reg) DEFINED_ON(x86_shared);
-    void callAndPushReturnAddress(Label* label) DEFINED_ON(x86_shared);
+  
+  
+  
+  void callAndPushReturnAddress(Register reg) DEFINED_ON(x86_shared);
+  void callAndPushReturnAddress(Label* label) DEFINED_ON(x86_shared);
 
-    
-    void pushReturnAddress() DEFINED_ON(mips_shared, arm, arm64);
-    void popReturnAddress() DEFINED_ON(mips_shared, arm, arm64);
+  
+  void pushReturnAddress() DEFINED_ON(mips_shared, arm, arm64);
+  void popReturnAddress() DEFINED_ON(mips_shared, arm, arm64);
 
-  public:
-    
-    
+ public:
+  
+  
 
-    
-    
-    
-    CodeOffset farJumpWithPatch() PER_SHARED_ARCH;
-    void patchFarJump(CodeOffset farJump, uint32_t targetOffset) PER_SHARED_ARCH;
+  
+  
+  
+  CodeOffset farJumpWithPatch() PER_SHARED_ARCH;
+  void patchFarJump(CodeOffset farJump, uint32_t targetOffset) PER_SHARED_ARCH;
 
-    
-    
-    CodeOffset nopPatchableToCall(const wasm::CallSiteDesc& desc) PER_SHARED_ARCH;
-    static void patchNopToCall(uint8_t* callsite, uint8_t* target) PER_SHARED_ARCH;
-    static void patchCallToNop(uint8_t* callsite) PER_SHARED_ARCH;
+  
+  
+  CodeOffset nopPatchableToCall(const wasm::CallSiteDesc& desc) PER_SHARED_ARCH;
+  static void patchNopToCall(uint8_t* callsite,
+                             uint8_t* target) PER_SHARED_ARCH;
+  static void patchCallToNop(uint8_t* callsite) PER_SHARED_ARCH;
 
-  public:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    
-    
-    
-    void setupAlignedABICall(); 
+  
+  
+  
+  void setupAlignedABICall();  
 
-    
-    
-    
-    void setupWasmABICall(); 
+  
+  
+  
+  void setupWasmABICall();  
 
-    
-    
-    void setupUnalignedABICall(Register scratch) PER_ARCH;
+  
+  
+  void setupUnalignedABICall(Register scratch) PER_ARCH;
 
-    
-    
-    
-    
-    
-    
-    void passABIArg(const MoveOperand& from, MoveOp::Type type);
-    inline void passABIArg(Register reg);
-    inline void passABIArg(FloatRegister reg, MoveOp::Type type);
+  
+  
+  
+  
+  
+  
+  void passABIArg(const MoveOperand& from, MoveOp::Type type);
+  inline void passABIArg(Register reg);
+  inline void passABIArg(FloatRegister reg, MoveOp::Type type);
 
-    inline void callWithABI(void* fun, MoveOp::Type result = MoveOp::GENERAL,
-                            CheckUnsafeCallWithABI check = CheckUnsafeCallWithABI::Check);
-    inline void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
-    inline void callWithABI(const Address& fun, MoveOp::Type result = MoveOp::GENERAL);
+  inline void callWithABI(
+      void* fun, MoveOp::Type result = MoveOp::GENERAL,
+      CheckUnsafeCallWithABI check = CheckUnsafeCallWithABI::Check);
+  inline void callWithABI(Register fun, MoveOp::Type result = MoveOp::GENERAL);
+  inline void callWithABI(const Address& fun,
+                          MoveOp::Type result = MoveOp::GENERAL);
 
-    void callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
-                     MoveOp::Type result = MoveOp::GENERAL);
+  void callWithABI(wasm::BytecodeOffset offset, wasm::SymbolicAddress fun,
+                   MoveOp::Type result = MoveOp::GENERAL);
 
-  private:
-    
-    
-    void setupABICall();
+ private:
+  
+  
+  void setupABICall();
 
-    
-    void callWithABIPre(uint32_t* stackAdjust, bool callFromWasm = false) PER_ARCH;
+  
+  void callWithABIPre(uint32_t* stackAdjust,
+                      bool callFromWasm = false) PER_ARCH;
 
-    
-    void callWithABINoProfiler(void* fun, MoveOp::Type result, CheckUnsafeCallWithABI check);
-    void callWithABINoProfiler(Register fun, MoveOp::Type result) PER_ARCH;
-    void callWithABINoProfiler(const Address& fun, MoveOp::Type result) PER_ARCH;
+  
+  void callWithABINoProfiler(void* fun, MoveOp::Type result,
+                             CheckUnsafeCallWithABI check);
+  void callWithABINoProfiler(Register fun, MoveOp::Type result) PER_ARCH;
+  void callWithABINoProfiler(const Address& fun, MoveOp::Type result) PER_ARCH;
 
-    
-    void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result, bool callFromWasm = false) PER_ARCH;
+  
+  void callWithABIPost(uint32_t stackAdjust, MoveOp::Type result,
+                       bool callFromWasm = false) PER_ARCH;
 
-    
-    
-    inline void appendSignatureType(MoveOp::Type type);
-    inline ABIFunctionType signature() const;
+  
+  
+  inline void appendSignatureType(MoveOp::Type type);
+  inline ABIFunctionType signature() const;
 
-    
-    
-    
-    MoveResolver moveResolver_;
+  
+  
+  
+  MoveResolver moveResolver_;
 
-    
-    
-    ABIArgGenerator abiArgs_;
+  
+  
+  ABIArgGenerator abiArgs_;
 
 #ifdef DEBUG
-    
-    bool inCall_;
+  
+  bool inCall_;
 #endif
 
-    
-    
-    bool dynamicAlignment_;
+  
+  
+  bool dynamicAlignment_;
 
 #ifdef JS_SIMULATOR
-    
-    
-    
-    uint32_t signature_;
+  
+  
+  
+  uint32_t signature_;
 #endif
 
-  public:
-    
-    
-    
-    
-    
-    
-    
-
-    
-    
-    
-    
-    
-    
-    inline uint32_t callJitNoProfiler(Register callee);
-    inline uint32_t callJit(Register callee);
-    inline uint32_t callJit(JitCode* code);
-    inline uint32_t callJit(TrampolinePtr code);
-    inline uint32_t callJit(ImmPtr callee);
-
-    
-    
-    inline void makeFrameDescriptor(Register frameSizeReg, FrameType type, uint32_t headerSize);
-
-    
-    inline void pushStaticFrameDescriptor(FrameType type, uint32_t headerSize);
-
-    
-    
-    
-    
-    inline void PushCalleeToken(Register callee, bool constructing);
-
-    
-    
-    inline void loadFunctionFromCalleeToken(Address token, Register dest);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    inline uint32_t buildFakeExitFrame(Register scratch);
-
-  private:
-    
-    
-    
-    
-    uint32_t pushFakeReturnAddress(Register scratch) PER_SHARED_ARCH;
-
-  public:
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    inline void enterExitFrame(Register cxreg, Register scratch, const VMFunction* f);
-
-    
-    
-    inline void enterFakeExitFrame(Register cxreg, Register scratch, ExitFrameType type);
-
-    
-    inline void enterFakeExitFrameForNative(Register cxreg, Register scratch, bool isConstructing);
-
-    
-    inline void leaveExitFrame(size_t extraFrame = 0);
-
-  private:
-    
-    
-    void linkExitFrame(Register cxreg, Register scratch);
-
-  public:
-    
-    
-
-    inline void move64(Imm64 imm, Register64 dest) PER_ARCH;
-    inline void move64(Register64 src, Register64 dest) PER_ARCH;
-
-    inline void moveFloat32ToGPR(FloatRegister src, Register dest) PER_SHARED_ARCH;
-    inline void moveGPRToFloat32(Register src, FloatRegister dest) PER_SHARED_ARCH;
-
-    inline void moveDoubleToGPR64(FloatRegister src, Register64 dest) PER_ARCH;
-    inline void moveGPR64ToDouble(Register64 src, FloatRegister dest) PER_ARCH;
-
-    inline void move8SignExtend(Register src, Register dest) PER_SHARED_ARCH;
-    inline void move16SignExtend(Register src, Register dest) PER_SHARED_ARCH;
-
-    
-    inline void move64To32(Register64 src, Register dest) PER_ARCH;
-
-    inline void move32To64ZeroExtend(Register src, Register64 dest) PER_ARCH;
-
-    
-    inline void move8To64SignExtend(Register src, Register64 dest) PER_ARCH;
-    inline void move16To64SignExtend(Register src, Register64 dest) PER_ARCH;
-    inline void move32To64SignExtend(Register src, Register64 dest) PER_ARCH;
-
-    
-    
-    inline void moveValue(const ConstantOrRegister& src, const ValueOperand& dest);
-    void moveValue(const TypedOrValueRegister& src, const ValueOperand& dest) PER_ARCH;
-    void moveValue(const ValueOperand& src, const ValueOperand& dest) PER_ARCH;
-    void moveValue(const Value& src, const ValueOperand& dest) PER_ARCH;
-
-  public:
-    
-    
-
-    inline void not32(Register reg) PER_SHARED_ARCH;
-
-    inline void and32(Register src, Register dest) PER_SHARED_ARCH;
-    inline void and32(Imm32 imm, Register dest) PER_SHARED_ARCH;
-    inline void and32(Imm32 imm, Register src, Register dest) DEFINED_ON(arm64);
-    inline void and32(Imm32 imm, const Address& dest) PER_SHARED_ARCH;
-    inline void and32(const Address& src, Register dest) PER_SHARED_ARCH;
-
-    inline void andPtr(Register src, Register dest) PER_ARCH;
-    inline void andPtr(Imm32 imm, Register dest) PER_ARCH;
-
-    inline void and64(Imm64 imm, Register64 dest) PER_ARCH;
-    inline void or64(Imm64 imm, Register64 dest) PER_ARCH;
-    inline void xor64(Imm64 imm, Register64 dest) PER_ARCH;
-
-    inline void or32(Register src, Register dest) PER_SHARED_ARCH;
-    inline void or32(Imm32 imm, Register dest) PER_SHARED_ARCH;
-    inline void or32(Imm32 imm, const Address& dest) PER_SHARED_ARCH;
-
-    inline void orPtr(Register src, Register dest) PER_ARCH;
-    inline void orPtr(Imm32 imm, Register dest) PER_ARCH;
-
-    inline void and64(Register64 src, Register64 dest) PER_ARCH;
-    inline void or64(Register64 src, Register64 dest) PER_ARCH;
-    inline void xor64(Register64 src, Register64 dest) PER_ARCH;
-
-    inline void xor32(Register src, Register dest) PER_SHARED_ARCH;
-    inline void xor32(Imm32 imm, Register dest) PER_SHARED_ARCH;
-
-    inline void xorPtr(Register src, Register dest) PER_ARCH;
-    inline void xorPtr(Imm32 imm, Register dest) PER_ARCH;
-
-    inline void and64(const Operand& src, Register64 dest) DEFINED_ON(x64, mips64);
-    inline void or64(const Operand& src, Register64 dest) DEFINED_ON(x64, mips64);
-    inline void xor64(const Operand& src, Register64 dest) DEFINED_ON(x64, mips64);
-
-    
-    
-
-    inline void add32(Register src, Register dest) PER_SHARED_ARCH;
-    inline void add32(Imm32 imm, Register dest) PER_SHARED_ARCH;
-    inline void add32(Imm32 imm, const Address& dest) PER_SHARED_ARCH;
-    inline void add32(Imm32 imm, const AbsoluteAddress& dest) DEFINED_ON(x86_shared);
-
-    inline void addPtr(Register src, Register dest) PER_ARCH;
-    inline void addPtr(Register src1, Register src2, Register dest) DEFINED_ON(arm64);
-    inline void addPtr(Imm32 imm, Register dest) PER_ARCH;
-    inline void addPtr(Imm32 imm, Register src, Register dest) DEFINED_ON(arm64);
-    inline void addPtr(ImmWord imm, Register dest) PER_ARCH;
-    inline void addPtr(ImmPtr imm, Register dest);
-    inline void addPtr(Imm32 imm, const Address& dest) DEFINED_ON(mips_shared, arm, arm64, x86, x64);
-    inline void addPtr(Imm32 imm, const AbsoluteAddress& dest) DEFINED_ON(x86, x64);
-    inline void addPtr(const Address& src, Register dest) DEFINED_ON(mips_shared, arm, arm64, x86, x64);
-
-    inline void add64(Register64 src, Register64 dest) PER_ARCH;
-    inline void add64(Imm32 imm, Register64 dest) PER_ARCH;
-    inline void add64(Imm64 imm, Register64 dest) PER_ARCH;
-    inline void add64(const Operand& src, Register64 dest) DEFINED_ON(x64, mips64);
-
-    inline void addFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-
-    
-    
-    
-    inline CodeOffset sub32FromStackPtrWithPatch(Register dest) PER_ARCH;
-    inline void patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) PER_ARCH;
-
-    inline void addDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-    inline void addConstantDouble(double d, FloatRegister dest) DEFINED_ON(x86);
-
-    inline void sub32(const Address& src, Register dest) PER_SHARED_ARCH;
-    inline void sub32(Register src, Register dest) PER_SHARED_ARCH;
-    inline void sub32(Imm32 imm, Register dest) PER_SHARED_ARCH;
-
-    inline void subPtr(Register src, Register dest) PER_ARCH;
-    inline void subPtr(Register src, const Address& dest) DEFINED_ON(mips_shared, arm, arm64, x86, x64);
-    inline void subPtr(Imm32 imm, Register dest) PER_ARCH;
-    inline void subPtr(ImmWord imm, Register dest) DEFINED_ON(x64);
-    inline void subPtr(const Address& addr, Register dest) DEFINED_ON(mips_shared, arm, arm64, x86, x64);
-
-    inline void sub64(Register64 src, Register64 dest) PER_ARCH;
-    inline void sub64(Imm64 imm, Register64 dest) PER_ARCH;
-    inline void sub64(const Operand& src, Register64 dest) DEFINED_ON(x64, mips64);
-
-    inline void subFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-
-    inline void subDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-
-    
-    inline void mul32(Register rhs, Register srcDest) PER_SHARED_ARCH;
-
-    inline void mul32(Register src1, Register src2, Register dest, Label* onOver, Label* onZero) DEFINED_ON(arm64);
-
-    inline void mul64(const Operand& src, const Register64& dest) DEFINED_ON(x64);
-    inline void mul64(const Operand& src, const Register64& dest, const Register temp)
-        DEFINED_ON(x64, mips64);
-    inline void mul64(Imm64 imm, const Register64& dest) PER_ARCH;
-    inline void mul64(Imm64 imm, const Register64& dest, const Register temp)
-        DEFINED_ON(x86, x64, arm, mips32, mips64);
-    inline void mul64(const Register64& src, const Register64& dest, const Register temp)
-        PER_ARCH;
-
-    inline void mulBy3(Register src, Register dest) PER_ARCH;
-
-    inline void mulFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-    inline void mulDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-
-    inline void mulDoublePtr(ImmPtr imm, Register temp, FloatRegister dest) DEFINED_ON(mips_shared, arm, arm64, x86, x64);
-
-    
-    
-    
-    
-    
-    inline void quotient32(Register rhs, Register srcDest, bool isUnsigned) PER_SHARED_ARCH;
-
-    
-    
-    
-    
-    
-    inline void remainder32(Register rhs, Register srcDest, bool isUnsigned) PER_SHARED_ARCH;
-
-    
-    
-    
-    
-    
-    
-    
-    void flexibleRemainder32(Register rhs, Register srcDest, bool isUnsigned,
-                             const LiveRegisterSet& volatileLiveRegs)
-                             DEFINED_ON(mips_shared, arm, arm64, x86_shared);
-
-    
-    
-    
-    
-    
-    
-    
-    void flexibleQuotient32(Register rhs, Register srcDest, bool isUnsigned,
-                            const LiveRegisterSet& volatileLiveRegs)
-                            DEFINED_ON(mips_shared, arm, arm64, x86_shared);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    void flexibleDivMod32(Register rhs, Register srcDest, Register remOutput,
-                          bool isUnsigned, const LiveRegisterSet& volatileLiveRegs)
-                          DEFINED_ON(mips_shared, arm, arm64, x86_shared);
-
-    inline void divFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-    inline void divDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-
-    inline void inc64(AbsoluteAddress dest) PER_ARCH;
-
-    inline void neg32(Register reg) PER_SHARED_ARCH;
-    inline void neg64(Register64 reg) DEFINED_ON(x86, x64, arm, mips32, mips64);
-
-    inline void negateFloat(FloatRegister reg) PER_SHARED_ARCH;
-
-    inline void negateDouble(FloatRegister reg) PER_SHARED_ARCH;
-
-    inline void absFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-    inline void absDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-
-    inline void sqrtFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-    inline void sqrtDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
-
-    
-    
-
-    inline void minFloat32(FloatRegister other, FloatRegister srcDest, bool handleNaN) PER_SHARED_ARCH;
-    inline void minDouble(FloatRegister other, FloatRegister srcDest, bool handleNaN) PER_SHARED_ARCH;
-
-    inline void maxFloat32(FloatRegister other, FloatRegister srcDest, bool handleNaN) PER_SHARED_ARCH;
-    inline void maxDouble(FloatRegister other, FloatRegister srcDest, bool handleNaN) PER_SHARED_ARCH;
-
-    
-    
-
-    
-    
-    
-    
-    
-    
-    
-
-    inline void lshift32(Imm32 shift, Register srcDest) PER_SHARED_ARCH;
-    inline void rshift32(Imm32 shift, Register srcDest) PER_SHARED_ARCH;
-    inline void rshift32Arithmetic(Imm32 shift, Register srcDest) PER_SHARED_ARCH;
-
-    inline void lshiftPtr(Imm32 imm, Register dest) PER_ARCH;
-    inline void rshiftPtr(Imm32 imm, Register dest) PER_ARCH;
-    inline void rshiftPtr(Imm32 imm, Register src, Register dest) DEFINED_ON(arm64);
-    inline void rshiftPtrArithmetic(Imm32 imm, Register dest) PER_ARCH;
-
-    inline void lshift64(Imm32 imm, Register64 dest) PER_ARCH;
-    inline void rshift64(Imm32 imm, Register64 dest) PER_ARCH;
-    inline void rshift64Arithmetic(Imm32 imm, Register64 dest) PER_ARCH;
-
-    
-    inline void lshift32(Register shift, Register srcDest) PER_SHARED_ARCH;
-    inline void rshift32(Register shift, Register srcDest) PER_SHARED_ARCH;
-    inline void rshift32Arithmetic(Register shift, Register srcDest) PER_SHARED_ARCH;
-
-    
-    inline void flexibleLshift32(Register shift, Register srcDest) PER_SHARED_ARCH;
-    inline void flexibleRshift32(Register shift, Register srcDest) PER_SHARED_ARCH;
-    inline void flexibleRshift32Arithmetic(Register shift, Register srcDest) PER_SHARED_ARCH;
-
-    inline void lshift64(Register shift, Register64 srcDest) PER_ARCH;
-    inline void rshift64(Register shift, Register64 srcDest) PER_ARCH;
-    inline void rshift64Arithmetic(Register shift, Register64 srcDest) PER_ARCH;
-
-    
-    
-    
-    
-
-    inline void rotateLeft(Imm32 count, Register input, Register dest) PER_SHARED_ARCH;
-    inline void rotateLeft(Register count, Register input, Register dest) PER_SHARED_ARCH;
-    inline void rotateLeft64(Imm32 count, Register64 input, Register64 dest) DEFINED_ON(x64);
-    inline void rotateLeft64(Register count, Register64 input, Register64 dest) DEFINED_ON(x64);
-    inline void rotateLeft64(Imm32 count, Register64 input, Register64 dest, Register temp)
-        PER_ARCH;
-    inline void rotateLeft64(Register count, Register64 input, Register64 dest, Register temp)
-        PER_ARCH;
-
-    inline void rotateRight(Imm32 count, Register input, Register dest) PER_SHARED_ARCH;
-    inline void rotateRight(Register count, Register input, Register dest) PER_SHARED_ARCH;
-    inline void rotateRight64(Imm32 count, Register64 input, Register64 dest) DEFINED_ON(x64);
-    inline void rotateRight64(Register count, Register64 input, Register64 dest) DEFINED_ON(x64);
-    inline void rotateRight64(Imm32 count, Register64 input, Register64 dest, Register temp)
-        PER_ARCH;
-    inline void rotateRight64(Register count, Register64 input, Register64 dest, Register temp)
-        PER_ARCH;
-
-    
-    
-
-    
-    inline void clz32(Register src, Register dest, bool knownNotZero) PER_SHARED_ARCH;
-    inline void ctz32(Register src, Register dest, bool knownNotZero) PER_SHARED_ARCH;
-
-    inline void clz64(Register64 src, Register dest) PER_ARCH;
-    inline void ctz64(Register64 src, Register dest) PER_ARCH;
-
-    
-    
-    inline void popcnt32(Register src, Register dest, Register temp) PER_SHARED_ARCH;
-
-    
-    inline void popcnt64(Register64 src, Register64 dest, Register temp) PER_ARCH;
-
-    
-    
-
-    template <typename T1, typename T2>
-    inline void cmp32Set(Condition cond, T1 lhs, T2 rhs, Register dest)
-        DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
-
-    template <typename T1, typename T2>
-    inline void cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest)
-        PER_ARCH;
-
-    
-    
-
-    template <class L>
-    inline void branch32(Condition cond, Register lhs, Register rhs, L label) PER_SHARED_ARCH;
-    template <class L>
-    inline void branch32(Condition cond, Register lhs, Imm32 rhs, L label) PER_SHARED_ARCH;
-
-    inline void branch32(Condition cond, const Address& lhs, Register rhs, Label* label) PER_SHARED_ARCH;
-    inline void branch32(Condition cond, const Address& lhs, Imm32 rhs, Label* label) PER_SHARED_ARCH;
-
-    inline void branch32(Condition cond, const AbsoluteAddress& lhs, Register rhs, Label* label)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-    inline void branch32(Condition cond, const AbsoluteAddress& lhs, Imm32 rhs, Label* label)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-
-    inline void branch32(Condition cond, const BaseIndex& lhs, Register rhs, Label* label)
-        DEFINED_ON(x86_shared);
-    inline void branch32(Condition cond, const BaseIndex& lhs, Imm32 rhs, Label* label) PER_SHARED_ARCH;
-
-    inline void branch32(Condition cond, const Operand& lhs, Register rhs, Label* label) DEFINED_ON(x86_shared);
-    inline void branch32(Condition cond, const Operand& lhs, Imm32 rhs, Label* label) DEFINED_ON(x86_shared);
-
-    inline void branch32(Condition cond, wasm::SymbolicAddress lhs, Imm32 rhs, Label* label)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-
-    
-    
-    
-    
-    inline void branch64(Condition cond, Register64 lhs, Imm64 val, Label* success,
-                         Label* fail = nullptr) PER_ARCH;
-    inline void branch64(Condition cond, Register64 lhs, Register64 rhs, Label* success,
-                         Label* fail = nullptr) PER_ARCH;
-    
-    
-    inline void branch64(Condition cond, const Address& lhs, Imm64 val, Label* label) PER_ARCH;
-
-    
-    
-    inline void branch64(Condition cond, const Address& lhs, const Address& rhs, Register scratch,
-                         Label* label) PER_ARCH;
-
-    template <class L>
-    inline void branchPtr(Condition cond, Register lhs, Register rhs, L label) PER_SHARED_ARCH;
-    inline void branchPtr(Condition cond, Register lhs, Imm32 rhs, Label* label) PER_SHARED_ARCH;
-    inline void branchPtr(Condition cond, Register lhs, ImmPtr rhs, Label* label) PER_SHARED_ARCH;
-    inline void branchPtr(Condition cond, Register lhs, ImmGCPtr rhs, Label* label) PER_SHARED_ARCH;
-    inline void branchPtr(Condition cond, Register lhs, ImmWord rhs, Label* label) PER_SHARED_ARCH;
-
-    template <class L>
-    inline void branchPtr(Condition cond, const Address& lhs, Register rhs, L label) PER_SHARED_ARCH;
-    inline void branchPtr(Condition cond, const Address& lhs, ImmPtr rhs, Label* label) PER_SHARED_ARCH;
-    inline void branchPtr(Condition cond, const Address& lhs, ImmGCPtr rhs, Label* label) PER_SHARED_ARCH;
-    inline void branchPtr(Condition cond, const Address& lhs, ImmWord rhs, Label* label) PER_SHARED_ARCH;
-
-    inline void branchPtr(Condition cond, const BaseIndex& lhs, ImmWord rhs, Label* label) PER_SHARED_ARCH;
-
-    inline void branchPtr(Condition cond, const AbsoluteAddress& lhs, Register rhs, Label* label)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-    inline void branchPtr(Condition cond, const AbsoluteAddress& lhs, ImmWord rhs, Label* label)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-
-    inline void branchPtr(Condition cond, wasm::SymbolicAddress lhs, Register rhs, Label* label)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-
-    
-    
-    void loadStoreBuffer(Register ptr, Register buffer) PER_ARCH;
-
-    void branchPtrInNurseryChunk(Condition cond, Register ptr, Register temp, Label* label)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-    void branchPtrInNurseryChunk(Condition cond, const Address& address, Register temp, Label* label)
-        DEFINED_ON(x86);
-    void branchValueIsNurseryObject(Condition cond, ValueOperand value, Register temp, Label* label) PER_ARCH;
-    void branchValueIsNurseryCell(Condition cond, const Address& address, Register temp, Label* label) PER_ARCH;
-    void branchValueIsNurseryCell(Condition cond, ValueOperand value, Register temp, Label* label) PER_ARCH;
-
-    
-    
-    inline void branchPrivatePtr(Condition cond, const Address& lhs, Register rhs, Label* label) PER_ARCH;
-
-    inline void branchFloat(DoubleCondition cond, FloatRegister lhs, FloatRegister rhs,
+ public:
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  inline uint32_t callJitNoProfiler(Register callee);
+  inline uint32_t callJit(Register callee);
+  inline uint32_t callJit(JitCode* code);
+  inline uint32_t callJit(TrampolinePtr code);
+  inline uint32_t callJit(ImmPtr callee);
+
+  
+  
+  inline void makeFrameDescriptor(Register frameSizeReg, FrameType type,
+                                  uint32_t headerSize);
+
+  
+  inline void pushStaticFrameDescriptor(FrameType type, uint32_t headerSize);
+
+  
+  
+  
+  
+  inline void PushCalleeToken(Register callee, bool constructing);
+
+  
+  
+  inline void loadFunctionFromCalleeToken(Address token, Register dest);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  inline uint32_t buildFakeExitFrame(Register scratch);
+
+ private:
+  
+  
+  
+  
+  uint32_t pushFakeReturnAddress(Register scratch) PER_SHARED_ARCH;
+
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  inline void enterExitFrame(Register cxreg, Register scratch,
+                             const VMFunction* f);
+
+  
+  
+  inline void enterFakeExitFrame(Register cxreg, Register scratch,
+                                 ExitFrameType type);
+
+  
+  inline void enterFakeExitFrameForNative(Register cxreg, Register scratch,
+                                          bool isConstructing);
+
+  
+  inline void leaveExitFrame(size_t extraFrame = 0);
+
+ private:
+  
+  
+  void linkExitFrame(Register cxreg, Register scratch);
+
+ public:
+  
+  
+
+  inline void move64(Imm64 imm, Register64 dest) PER_ARCH;
+  inline void move64(Register64 src, Register64 dest) PER_ARCH;
+
+  inline void moveFloat32ToGPR(FloatRegister src,
+                               Register dest) PER_SHARED_ARCH;
+  inline void moveGPRToFloat32(Register src,
+                               FloatRegister dest) PER_SHARED_ARCH;
+
+  inline void moveDoubleToGPR64(FloatRegister src, Register64 dest) PER_ARCH;
+  inline void moveGPR64ToDouble(Register64 src, FloatRegister dest) PER_ARCH;
+
+  inline void move8SignExtend(Register src, Register dest) PER_SHARED_ARCH;
+  inline void move16SignExtend(Register src, Register dest) PER_SHARED_ARCH;
+
+  
+  inline void move64To32(Register64 src, Register dest) PER_ARCH;
+
+  inline void move32To64ZeroExtend(Register src, Register64 dest) PER_ARCH;
+
+  
+  inline void move8To64SignExtend(Register src, Register64 dest) PER_ARCH;
+  inline void move16To64SignExtend(Register src, Register64 dest) PER_ARCH;
+  inline void move32To64SignExtend(Register src, Register64 dest) PER_ARCH;
+
+  
+  
+  inline void moveValue(const ConstantOrRegister& src,
+                        const ValueOperand& dest);
+  void moveValue(const TypedOrValueRegister& src,
+                 const ValueOperand& dest) PER_ARCH;
+  void moveValue(const ValueOperand& src, const ValueOperand& dest) PER_ARCH;
+  void moveValue(const Value& src, const ValueOperand& dest) PER_ARCH;
+
+ public:
+  
+  
+
+  inline void not32(Register reg) PER_SHARED_ARCH;
+
+  inline void and32(Register src, Register dest) PER_SHARED_ARCH;
+  inline void and32(Imm32 imm, Register dest) PER_SHARED_ARCH;
+  inline void and32(Imm32 imm, Register src, Register dest) DEFINED_ON(arm64);
+  inline void and32(Imm32 imm, const Address& dest) PER_SHARED_ARCH;
+  inline void and32(const Address& src, Register dest) PER_SHARED_ARCH;
+
+  inline void andPtr(Register src, Register dest) PER_ARCH;
+  inline void andPtr(Imm32 imm, Register dest) PER_ARCH;
+
+  inline void and64(Imm64 imm, Register64 dest) PER_ARCH;
+  inline void or64(Imm64 imm, Register64 dest) PER_ARCH;
+  inline void xor64(Imm64 imm, Register64 dest) PER_ARCH;
+
+  inline void or32(Register src, Register dest) PER_SHARED_ARCH;
+  inline void or32(Imm32 imm, Register dest) PER_SHARED_ARCH;
+  inline void or32(Imm32 imm, const Address& dest) PER_SHARED_ARCH;
+
+  inline void orPtr(Register src, Register dest) PER_ARCH;
+  inline void orPtr(Imm32 imm, Register dest) PER_ARCH;
+
+  inline void and64(Register64 src, Register64 dest) PER_ARCH;
+  inline void or64(Register64 src, Register64 dest) PER_ARCH;
+  inline void xor64(Register64 src, Register64 dest) PER_ARCH;
+
+  inline void xor32(Register src, Register dest) PER_SHARED_ARCH;
+  inline void xor32(Imm32 imm, Register dest) PER_SHARED_ARCH;
+
+  inline void xorPtr(Register src, Register dest) PER_ARCH;
+  inline void xorPtr(Imm32 imm, Register dest) PER_ARCH;
+
+  inline void and64(const Operand& src, Register64 dest)
+      DEFINED_ON(x64, mips64);
+  inline void or64(const Operand& src, Register64 dest) DEFINED_ON(x64, mips64);
+  inline void xor64(const Operand& src, Register64 dest)
+      DEFINED_ON(x64, mips64);
+
+  
+  
+
+  inline void add32(Register src, Register dest) PER_SHARED_ARCH;
+  inline void add32(Imm32 imm, Register dest) PER_SHARED_ARCH;
+  inline void add32(Imm32 imm, const Address& dest) PER_SHARED_ARCH;
+  inline void add32(Imm32 imm, const AbsoluteAddress& dest)
+      DEFINED_ON(x86_shared);
+
+  inline void addPtr(Register src, Register dest) PER_ARCH;
+  inline void addPtr(Register src1, Register src2, Register dest)
+      DEFINED_ON(arm64);
+  inline void addPtr(Imm32 imm, Register dest) PER_ARCH;
+  inline void addPtr(Imm32 imm, Register src, Register dest) DEFINED_ON(arm64);
+  inline void addPtr(ImmWord imm, Register dest) PER_ARCH;
+  inline void addPtr(ImmPtr imm, Register dest);
+  inline void addPtr(Imm32 imm, const Address& dest)
+      DEFINED_ON(mips_shared, arm, arm64, x86, x64);
+  inline void addPtr(Imm32 imm, const AbsoluteAddress& dest)
+      DEFINED_ON(x86, x64);
+  inline void addPtr(const Address& src, Register dest)
+      DEFINED_ON(mips_shared, arm, arm64, x86, x64);
+
+  inline void add64(Register64 src, Register64 dest) PER_ARCH;
+  inline void add64(Imm32 imm, Register64 dest) PER_ARCH;
+  inline void add64(Imm64 imm, Register64 dest) PER_ARCH;
+  inline void add64(const Operand& src, Register64 dest)
+      DEFINED_ON(x64, mips64);
+
+  inline void addFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+
+  
+  
+  
+  inline CodeOffset sub32FromStackPtrWithPatch(Register dest) PER_ARCH;
+  inline void patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) PER_ARCH;
+
+  inline void addDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+  inline void addConstantDouble(double d, FloatRegister dest) DEFINED_ON(x86);
+
+  inline void sub32(const Address& src, Register dest) PER_SHARED_ARCH;
+  inline void sub32(Register src, Register dest) PER_SHARED_ARCH;
+  inline void sub32(Imm32 imm, Register dest) PER_SHARED_ARCH;
+
+  inline void subPtr(Register src, Register dest) PER_ARCH;
+  inline void subPtr(Register src, const Address& dest)
+      DEFINED_ON(mips_shared, arm, arm64, x86, x64);
+  inline void subPtr(Imm32 imm, Register dest) PER_ARCH;
+  inline void subPtr(ImmWord imm, Register dest) DEFINED_ON(x64);
+  inline void subPtr(const Address& addr, Register dest)
+      DEFINED_ON(mips_shared, arm, arm64, x86, x64);
+
+  inline void sub64(Register64 src, Register64 dest) PER_ARCH;
+  inline void sub64(Imm64 imm, Register64 dest) PER_ARCH;
+  inline void sub64(const Operand& src, Register64 dest)
+      DEFINED_ON(x64, mips64);
+
+  inline void subFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+
+  inline void subDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+
+  
+  inline void mul32(Register rhs, Register srcDest) PER_SHARED_ARCH;
+
+  inline void mul32(Register src1, Register src2, Register dest, Label* onOver,
+                    Label* onZero) DEFINED_ON(arm64);
+
+  inline void mul64(const Operand& src, const Register64& dest) DEFINED_ON(x64);
+  inline void mul64(const Operand& src, const Register64& dest,
+                    const Register temp) DEFINED_ON(x64, mips64);
+  inline void mul64(Imm64 imm, const Register64& dest) PER_ARCH;
+  inline void mul64(Imm64 imm, const Register64& dest, const Register temp)
+      DEFINED_ON(x86, x64, arm, mips32, mips64);
+  inline void mul64(const Register64& src, const Register64& dest,
+                    const Register temp) PER_ARCH;
+
+  inline void mulBy3(Register src, Register dest) PER_ARCH;
+
+  inline void mulFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+  inline void mulDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+
+  inline void mulDoublePtr(ImmPtr imm, Register temp, FloatRegister dest)
+      DEFINED_ON(mips_shared, arm, arm64, x86, x64);
+
+  
+  
+  
+  
+  
+  inline void quotient32(Register rhs, Register srcDest,
+                         bool isUnsigned) PER_SHARED_ARCH;
+
+  
+  
+  
+  
+  
+  inline void remainder32(Register rhs, Register srcDest,
+                          bool isUnsigned) PER_SHARED_ARCH;
+
+  
+  
+  
+  
+  
+  
+  
+  void flexibleRemainder32(Register rhs, Register srcDest, bool isUnsigned,
+                           const LiveRegisterSet& volatileLiveRegs)
+      DEFINED_ON(mips_shared, arm, arm64, x86_shared);
+
+  
+  
+  
+  
+  
+  
+  
+  void flexibleQuotient32(Register rhs, Register srcDest, bool isUnsigned,
+                          const LiveRegisterSet& volatileLiveRegs)
+      DEFINED_ON(mips_shared, arm, arm64, x86_shared);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  void flexibleDivMod32(Register rhs, Register srcDest, Register remOutput,
+                        bool isUnsigned,
+                        const LiveRegisterSet& volatileLiveRegs)
+      DEFINED_ON(mips_shared, arm, arm64, x86_shared);
+
+  inline void divFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+  inline void divDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+
+  inline void inc64(AbsoluteAddress dest) PER_ARCH;
+
+  inline void neg32(Register reg) PER_SHARED_ARCH;
+  inline void neg64(Register64 reg) DEFINED_ON(x86, x64, arm, mips32, mips64);
+
+  inline void negateFloat(FloatRegister reg) PER_SHARED_ARCH;
+
+  inline void negateDouble(FloatRegister reg) PER_SHARED_ARCH;
+
+  inline void absFloat32(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+  inline void absDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+
+  inline void sqrtFloat32(FloatRegister src,
+                          FloatRegister dest) PER_SHARED_ARCH;
+  inline void sqrtDouble(FloatRegister src, FloatRegister dest) PER_SHARED_ARCH;
+
+  
+  
+
+  inline void minFloat32(FloatRegister other, FloatRegister srcDest,
+                         bool handleNaN) PER_SHARED_ARCH;
+  inline void minDouble(FloatRegister other, FloatRegister srcDest,
+                        bool handleNaN) PER_SHARED_ARCH;
+
+  inline void maxFloat32(FloatRegister other, FloatRegister srcDest,
+                         bool handleNaN) PER_SHARED_ARCH;
+  inline void maxDouble(FloatRegister other, FloatRegister srcDest,
+                        bool handleNaN) PER_SHARED_ARCH;
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+
+  inline void lshift32(Imm32 shift, Register srcDest) PER_SHARED_ARCH;
+  inline void rshift32(Imm32 shift, Register srcDest) PER_SHARED_ARCH;
+  inline void rshift32Arithmetic(Imm32 shift, Register srcDest) PER_SHARED_ARCH;
+
+  inline void lshiftPtr(Imm32 imm, Register dest) PER_ARCH;
+  inline void rshiftPtr(Imm32 imm, Register dest) PER_ARCH;
+  inline void rshiftPtr(Imm32 imm, Register src, Register dest)
+      DEFINED_ON(arm64);
+  inline void rshiftPtrArithmetic(Imm32 imm, Register dest) PER_ARCH;
+
+  inline void lshift64(Imm32 imm, Register64 dest) PER_ARCH;
+  inline void rshift64(Imm32 imm, Register64 dest) PER_ARCH;
+  inline void rshift64Arithmetic(Imm32 imm, Register64 dest) PER_ARCH;
+
+  
+  inline void lshift32(Register shift, Register srcDest) PER_SHARED_ARCH;
+  inline void rshift32(Register shift, Register srcDest) PER_SHARED_ARCH;
+  inline void rshift32Arithmetic(Register shift,
+                                 Register srcDest) PER_SHARED_ARCH;
+
+  
+  inline void flexibleLshift32(Register shift,
+                               Register srcDest) PER_SHARED_ARCH;
+  inline void flexibleRshift32(Register shift,
+                               Register srcDest) PER_SHARED_ARCH;
+  inline void flexibleRshift32Arithmetic(Register shift,
+                                         Register srcDest) PER_SHARED_ARCH;
+
+  inline void lshift64(Register shift, Register64 srcDest) PER_ARCH;
+  inline void rshift64(Register shift, Register64 srcDest) PER_ARCH;
+  inline void rshift64Arithmetic(Register shift, Register64 srcDest) PER_ARCH;
+
+  
+  
+  
+  
+
+  inline void rotateLeft(Imm32 count, Register input,
+                         Register dest) PER_SHARED_ARCH;
+  inline void rotateLeft(Register count, Register input,
+                         Register dest) PER_SHARED_ARCH;
+  inline void rotateLeft64(Imm32 count, Register64 input, Register64 dest)
+      DEFINED_ON(x64);
+  inline void rotateLeft64(Register count, Register64 input, Register64 dest)
+      DEFINED_ON(x64);
+  inline void rotateLeft64(Imm32 count, Register64 input, Register64 dest,
+                           Register temp) PER_ARCH;
+  inline void rotateLeft64(Register count, Register64 input, Register64 dest,
+                           Register temp) PER_ARCH;
+
+  inline void rotateRight(Imm32 count, Register input,
+                          Register dest) PER_SHARED_ARCH;
+  inline void rotateRight(Register count, Register input,
+                          Register dest) PER_SHARED_ARCH;
+  inline void rotateRight64(Imm32 count, Register64 input, Register64 dest)
+      DEFINED_ON(x64);
+  inline void rotateRight64(Register count, Register64 input, Register64 dest)
+      DEFINED_ON(x64);
+  inline void rotateRight64(Imm32 count, Register64 input, Register64 dest,
+                            Register temp) PER_ARCH;
+  inline void rotateRight64(Register count, Register64 input, Register64 dest,
+                            Register temp) PER_ARCH;
+
+  
+  
+
+  
+  inline void clz32(Register src, Register dest,
+                    bool knownNotZero) PER_SHARED_ARCH;
+  inline void ctz32(Register src, Register dest,
+                    bool knownNotZero) PER_SHARED_ARCH;
+
+  inline void clz64(Register64 src, Register dest) PER_ARCH;
+  inline void ctz64(Register64 src, Register dest) PER_ARCH;
+
+  
+  
+  inline void popcnt32(Register src, Register dest,
+                       Register temp) PER_SHARED_ARCH;
+
+  
+  inline void popcnt64(Register64 src, Register64 dest, Register temp) PER_ARCH;
+
+  
+  
+
+  template <typename T1, typename T2>
+  inline void cmp32Set(Condition cond, T1 lhs, T2 rhs, Register dest)
+      DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
+
+  template <typename T1, typename T2>
+  inline void cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest) PER_ARCH;
+
+  
+  
+
+  template <class L>
+  inline void branch32(Condition cond, Register lhs, Register rhs,
+                       L label) PER_SHARED_ARCH;
+  template <class L>
+  inline void branch32(Condition cond, Register lhs, Imm32 rhs,
+                       L label) PER_SHARED_ARCH;
+
+  inline void branch32(Condition cond, const Address& lhs, Register rhs,
+                       Label* label) PER_SHARED_ARCH;
+  inline void branch32(Condition cond, const Address& lhs, Imm32 rhs,
+                       Label* label) PER_SHARED_ARCH;
+
+  inline void branch32(Condition cond, const AbsoluteAddress& lhs, Register rhs,
+                       Label* label)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  inline void branch32(Condition cond, const AbsoluteAddress& lhs, Imm32 rhs,
+                       Label* label)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+
+  inline void branch32(Condition cond, const BaseIndex& lhs, Register rhs,
+                       Label* label) DEFINED_ON(x86_shared);
+  inline void branch32(Condition cond, const BaseIndex& lhs, Imm32 rhs,
+                       Label* label) PER_SHARED_ARCH;
+
+  inline void branch32(Condition cond, const Operand& lhs, Register rhs,
+                       Label* label) DEFINED_ON(x86_shared);
+  inline void branch32(Condition cond, const Operand& lhs, Imm32 rhs,
+                       Label* label) DEFINED_ON(x86_shared);
+
+  inline void branch32(Condition cond, wasm::SymbolicAddress lhs, Imm32 rhs,
+                       Label* label)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+
+  
+  
+  
+  
+  inline void branch64(Condition cond, Register64 lhs, Imm64 val,
+                       Label* success, Label* fail = nullptr) PER_ARCH;
+  inline void branch64(Condition cond, Register64 lhs, Register64 rhs,
+                       Label* success, Label* fail = nullptr) PER_ARCH;
+  
+  
+  inline void branch64(Condition cond, const Address& lhs, Imm64 val,
+                       Label* label) PER_ARCH;
+
+  
+  
+  inline void branch64(Condition cond, const Address& lhs, const Address& rhs,
+                       Register scratch, Label* label) PER_ARCH;
+
+  template <class L>
+  inline void branchPtr(Condition cond, Register lhs, Register rhs,
+                        L label) PER_SHARED_ARCH;
+  inline void branchPtr(Condition cond, Register lhs, Imm32 rhs,
+                        Label* label) PER_SHARED_ARCH;
+  inline void branchPtr(Condition cond, Register lhs, ImmPtr rhs,
+                        Label* label) PER_SHARED_ARCH;
+  inline void branchPtr(Condition cond, Register lhs, ImmGCPtr rhs,
+                        Label* label) PER_SHARED_ARCH;
+  inline void branchPtr(Condition cond, Register lhs, ImmWord rhs,
+                        Label* label) PER_SHARED_ARCH;
+
+  template <class L>
+  inline void branchPtr(Condition cond, const Address& lhs, Register rhs,
+                        L label) PER_SHARED_ARCH;
+  inline void branchPtr(Condition cond, const Address& lhs, ImmPtr rhs,
+                        Label* label) PER_SHARED_ARCH;
+  inline void branchPtr(Condition cond, const Address& lhs, ImmGCPtr rhs,
+                        Label* label) PER_SHARED_ARCH;
+  inline void branchPtr(Condition cond, const Address& lhs, ImmWord rhs,
+                        Label* label) PER_SHARED_ARCH;
+
+  inline void branchPtr(Condition cond, const BaseIndex& lhs, ImmWord rhs,
+                        Label* label) PER_SHARED_ARCH;
+
+  inline void branchPtr(Condition cond, const AbsoluteAddress& lhs,
+                        Register rhs, Label* label)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  inline void branchPtr(Condition cond, const AbsoluteAddress& lhs, ImmWord rhs,
+                        Label* label)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+
+  inline void branchPtr(Condition cond, wasm::SymbolicAddress lhs, Register rhs,
+                        Label* label)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+
+  
+  
+  void loadStoreBuffer(Register ptr, Register buffer) PER_ARCH;
+
+  void branchPtrInNurseryChunk(Condition cond, Register ptr, Register temp,
+                               Label* label)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  void branchPtrInNurseryChunk(Condition cond, const Address& address,
+                               Register temp, Label* label) DEFINED_ON(x86);
+  void branchValueIsNurseryObject(Condition cond, ValueOperand value,
+                                  Register temp, Label* label) PER_ARCH;
+  void branchValueIsNurseryCell(Condition cond, const Address& address,
+                                Register temp, Label* label) PER_ARCH;
+  void branchValueIsNurseryCell(Condition cond, ValueOperand value,
+                                Register temp, Label* label) PER_ARCH;
+
+  
+  
+  inline void branchPrivatePtr(Condition cond, const Address& lhs, Register rhs,
+                               Label* label) PER_ARCH;
+
+  inline void branchFloat(DoubleCondition cond, FloatRegister lhs,
+                          FloatRegister rhs, Label* label) PER_SHARED_ARCH;
+
+  
+  
+  
+  
+  inline void branchTruncateFloat32MaybeModUint32(FloatRegister src,
+                                                  Register dest, Label* fail)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  inline void branchTruncateDoubleMaybeModUint32(FloatRegister src,
+                                                 Register dest, Label* fail)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+
+  
+  
+  inline void branchTruncateFloat32ToPtr(FloatRegister src, Register dest,
+                                         Label* fail) DEFINED_ON(x86, x64);
+  inline void branchTruncateDoubleToPtr(FloatRegister src, Register dest,
+                                        Label* fail) DEFINED_ON(x86, x64);
+
+  
+  
+  inline void branchTruncateFloat32ToInt32(FloatRegister src, Register dest,
+                                           Label* fail)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  inline void branchTruncateDoubleToInt32(FloatRegister src, Register dest,
+                                          Label* fail)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+
+  inline void branchDouble(DoubleCondition cond, FloatRegister lhs,
+                           FloatRegister rhs, Label* label) PER_SHARED_ARCH;
+
+  inline void branchDoubleNotInInt64Range(Address src, Register temp,
+                                          Label* fail);
+  inline void branchDoubleNotInUInt64Range(Address src, Register temp,
+                                           Label* fail);
+  inline void branchFloat32NotInInt64Range(Address src, Register temp,
+                                           Label* fail);
+  inline void branchFloat32NotInUInt64Range(Address src, Register temp,
+                                            Label* fail);
+
+  template <typename T>
+  inline void branchAdd32(Condition cond, T src, Register dest,
+                          Label* label) PER_SHARED_ARCH;
+  template <typename T>
+  inline void branchSub32(Condition cond, T src, Register dest,
+                          Label* label) PER_SHARED_ARCH;
+  template <typename T>
+  inline void branchMul32(Condition cond, T src, Register dest,
+                          Label* label) PER_SHARED_ARCH;
+
+  inline void decBranchPtr(Condition cond, Register lhs, Imm32 rhs,
+                           Label* label) PER_SHARED_ARCH;
+
+  template <class L>
+  inline void branchTest32(Condition cond, Register lhs, Register rhs,
+                           L label) PER_SHARED_ARCH;
+  template <class L>
+  inline void branchTest32(Condition cond, Register lhs, Imm32 rhs,
+                           L label) PER_SHARED_ARCH;
+  inline void branchTest32(Condition cond, const Address& lhs, Imm32 rhh,
+                           Label* label) PER_SHARED_ARCH;
+  inline void branchTest32(Condition cond, const AbsoluteAddress& lhs,
+                           Imm32 rhs, Label* label)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+
+  template <class L>
+  inline void branchTestPtr(Condition cond, Register lhs, Register rhs,
+                            L label) PER_SHARED_ARCH;
+  inline void branchTestPtr(Condition cond, Register lhs, Imm32 rhs,
+                            Label* label) PER_SHARED_ARCH;
+  inline void branchTestPtr(Condition cond, const Address& lhs, Imm32 rhs,
                             Label* label) PER_SHARED_ARCH;
 
-    
-    
-    
-    
-    inline void branchTruncateFloat32MaybeModUint32(FloatRegister src, Register dest, Label* fail)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-    inline void branchTruncateDoubleMaybeModUint32(FloatRegister src, Register dest, Label* fail)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  template <class L>
+  inline void branchTest64(Condition cond, Register64 lhs, Register64 rhs,
+                           Register temp, L label) PER_ARCH;
 
-    
-    inline void branchTruncateFloat32ToPtr(FloatRegister src, Register dest, Label* fail)
-        DEFINED_ON(x86, x64);
-    inline void branchTruncateDoubleToPtr(FloatRegister src, Register dest, Label* fail)
-        DEFINED_ON(x86, x64);
+  
+  template <class L>
+  inline void branchIfFalseBool(Register reg, L label);
 
-    
-    inline void branchTruncateFloat32ToInt32(FloatRegister src, Register dest, Label* fail)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-    inline void branchTruncateDoubleToInt32(FloatRegister src, Register dest, Label* fail)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  
+  inline void branchIfTrueBool(Register reg, Label* label);
 
-    inline void branchDouble(DoubleCondition cond, FloatRegister lhs, FloatRegister rhs,
-                             Label* label) PER_SHARED_ARCH;
+  inline void branchIfRope(Register str, Label* label);
+  inline void branchIfRopeOrExternal(Register str, Register temp, Label* label);
 
-    inline void branchDoubleNotInInt64Range(Address src, Register temp, Label* fail);
-    inline void branchDoubleNotInUInt64Range(Address src, Register temp, Label* fail);
-    inline void branchFloat32NotInInt64Range(Address src, Register temp, Label* fail);
-    inline void branchFloat32NotInUInt64Range(Address src, Register temp, Label* fail);
+  inline void branchIfNotRope(Register str, Label* label);
 
-    template <typename T>
-    inline void branchAdd32(Condition cond, T src, Register dest, Label* label) PER_SHARED_ARCH;
-    template <typename T>
-    inline void branchSub32(Condition cond, T src, Register dest, Label* label) PER_SHARED_ARCH;
-    template <typename T>
-    inline void branchMul32(Condition cond, T src, Register dest, Label* label) PER_SHARED_ARCH;
+  inline void branchLatin1String(Register string, Label* label);
+  inline void branchTwoByteString(Register string, Label* label);
 
-    inline void decBranchPtr(Condition cond, Register lhs, Imm32 rhs, Label* label) PER_SHARED_ARCH;
+  inline void branchIfFunctionHasNoJitEntry(Register fun, bool isConstructing,
+                                            Label* label);
+  inline void branchIfInterpreted(Register fun, Label* label);
 
-    template <class L>
-    inline void branchTest32(Condition cond, Register lhs, Register rhs, L label) PER_SHARED_ARCH;
-    template <class L>
-    inline void branchTest32(Condition cond, Register lhs, Imm32 rhs, L label) PER_SHARED_ARCH;
-    inline void branchTest32(Condition cond, const Address& lhs, Imm32 rhh, Label* label) PER_SHARED_ARCH;
-    inline void branchTest32(Condition cond, const AbsoluteAddress& lhs, Imm32 rhs, Label* label)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  inline void branchFunctionKind(Condition cond, JSFunction::FunctionKind kind,
+                                 Register fun, Register scratch, Label* label);
 
-    template <class L>
-    inline void branchTestPtr(Condition cond, Register lhs, Register rhs, L label) PER_SHARED_ARCH;
-    inline void branchTestPtr(Condition cond, Register lhs, Imm32 rhs, Label* label) PER_SHARED_ARCH;
-    inline void branchTestPtr(Condition cond, const Address& lhs, Imm32 rhs, Label* label) PER_SHARED_ARCH;
-
-    template <class L>
-    inline void branchTest64(Condition cond, Register64 lhs, Register64 rhs, Register temp,
-                             L label) PER_ARCH;
-
-    
-    template <class L>
-    inline void branchIfFalseBool(Register reg, L label);
-
-    
-    inline void branchIfTrueBool(Register reg, Label* label);
-
-    inline void branchIfRope(Register str, Label* label);
-    inline void branchIfRopeOrExternal(Register str, Register temp, Label* label);
-
-    inline void branchIfNotRope(Register str, Label* label);
-
-    inline void branchLatin1String(Register string, Label* label);
-    inline void branchTwoByteString(Register string, Label* label);
-
-    inline void branchIfFunctionHasNoJitEntry(Register fun, bool isConstructing, Label* label);
-    inline void branchIfInterpreted(Register fun, Label* label);
-
-    inline void branchFunctionKind(Condition cond, JSFunction::FunctionKind kind, Register fun,
-                                   Register scratch, Label* label);
-
-    void branchIfNotInterpretedConstructor(Register fun, Register scratch, Label* label);
-
-    inline void branchIfObjectEmulatesUndefined(Register objReg, Register scratch, Label* slowCheck,
-                                                Label* label);
-
-    
-    
-    
-    
-
-    inline void branchTestObjClass(Condition cond, Register obj, const js::Class* clasp,
-                                   Register scratch, Register spectreRegToZero, Label* label);
-    inline void branchTestObjClassNoSpectreMitigations(Condition cond, Register obj,
-                                                       const js::Class* clasp, Register scratch,
-                                                       Label* label);
-
-    inline void branchTestObjClass(Condition cond, Register obj, const Address& clasp,
-                                   Register scratch, Register spectreRegToZero, Label* label);
-    inline void branchTestObjClassNoSpectreMitigations(Condition cond, Register obj,
-                                                       const Address& clasp, Register scratch,
-                                                       Label* label);
-
-    inline void branchTestObjShape(Condition cond, Register obj, const Shape* shape,
-                                   Register scratch, Register spectreRegToZero, Label* label);
-    inline void branchTestObjShapeNoSpectreMitigations(Condition cond, Register obj,
-                                                       const Shape* shape, Label* label);
-
-    inline void branchTestObjShape(Condition cond, Register obj, Register shape, Register scratch,
-                                   Register spectreRegToZero, Label* label);
-    inline void branchTestObjShapeNoSpectreMitigations(Condition cond, Register obj,
-                                                       Register shape, Label* label);
-
-    inline void branchTestObjGroup(Condition cond, Register obj, const ObjectGroup* group,
-                                   Register scratch, Register spectreRegToZero, Label* label);
-    inline void branchTestObjGroupNoSpectreMitigations(Condition cond, Register obj,
-                                                       const ObjectGroup* group, Label* label);
-
-    inline void branchTestObjGroup(Condition cond, Register obj, Register group, Register scratch,
-                                   Register spectreRegToZero, Label* label);
-    inline void branchTestObjGroupNoSpectreMitigations(Condition cond, Register obj,
-                                                       Register group, Label* label);
-
-    void branchTestObjGroup(Condition cond, Register obj, const Address& group, Register scratch,
-                            Register spectreRegToZero, Label* label);
-    void branchTestObjGroupNoSpectreMitigations(Condition cond, Register obj, const Address& group,
-                                                Register scratch, Label* label);
-
-    
-    inline void branchTestObjShapeUnsafe(Condition cond, Register obj, Register shape, Label* label);
-    inline void branchTestObjGroupUnsafe(Condition cond, Register obj, const ObjectGroup* group,
+  void branchIfNotInterpretedConstructor(Register fun, Register scratch,
                                          Label* label);
 
-    void branchTestObjCompartment(Condition cond, Register obj, const Address& compartment,
-                                  Register scratch, Label* label);
-    void branchTestObjCompartment(Condition cond, Register obj, const JS::Compartment* compartment,
-                                  Register scratch, Label* label);
-    void branchIfObjGroupHasNoAddendum(Register obj, Register scratch, Label* label);
-    void branchIfPretenuredGroup(Register group, Label* label);
-    void branchIfPretenuredGroup(const ObjectGroup* group, Register scratch, Label* label);
+  inline void branchIfObjectEmulatesUndefined(Register objReg, Register scratch,
+                                              Label* slowCheck, Label* label);
 
-    void branchIfNonNativeObj(Register obj, Register scratch, Label* label);
+  
+  
+  
+  
 
-    void branchIfInlineTypedObject(Register obj, Register scratch, Label* label);
+  inline void branchTestObjClass(Condition cond, Register obj,
+                                 const js::Class* clasp, Register scratch,
+                                 Register spectreRegToZero, Label* label);
+  inline void branchTestObjClassNoSpectreMitigations(Condition cond,
+                                                     Register obj,
+                                                     const js::Class* clasp,
+                                                     Register scratch,
+                                                     Label* label);
 
-    inline void branchTestClassIsProxy(bool proxy, Register clasp, Label* label);
+  inline void branchTestObjClass(Condition cond, Register obj,
+                                 const Address& clasp, Register scratch,
+                                 Register spectreRegToZero, Label* label);
+  inline void branchTestObjClassNoSpectreMitigations(Condition cond,
+                                                     Register obj,
+                                                     const Address& clasp,
+                                                     Register scratch,
+                                                     Label* label);
 
-    inline void branchTestObjectIsProxy(bool proxy, Register object, Register scratch, Label* label);
+  inline void branchTestObjShape(Condition cond, Register obj,
+                                 const Shape* shape, Register scratch,
+                                 Register spectreRegToZero, Label* label);
+  inline void branchTestObjShapeNoSpectreMitigations(Condition cond,
+                                                     Register obj,
+                                                     const Shape* shape,
+                                                     Label* label);
 
-    inline void branchTestProxyHandlerFamily(Condition cond, Register proxy, Register scratch,
-                                             const void* handlerp, Label* label);
+  inline void branchTestObjShape(Condition cond, Register obj, Register shape,
+                                 Register scratch, Register spectreRegToZero,
+                                 Label* label);
+  inline void branchTestObjShapeNoSpectreMitigations(Condition cond,
+                                                     Register obj,
+                                                     Register shape,
+                                                     Label* label);
 
-    void copyObjGroupNoPreBarrier(Register sourceObj, Register destObj, Register scratch);
+  inline void branchTestObjGroup(Condition cond, Register obj,
+                                 const ObjectGroup* group, Register scratch,
+                                 Register spectreRegToZero, Label* label);
+  inline void branchTestObjGroupNoSpectreMitigations(Condition cond,
+                                                     Register obj,
+                                                     const ObjectGroup* group,
+                                                     Label* label);
 
-    void loadTypedObjectDescr(Register obj, Register dest);
-    void loadTypedObjectLength(Register obj, Register dest);
+  inline void branchTestObjGroup(Condition cond, Register obj, Register group,
+                                 Register scratch, Register spectreRegToZero,
+                                 Label* label);
+  inline void branchTestObjGroupNoSpectreMitigations(Condition cond,
+                                                     Register obj,
+                                                     Register group,
+                                                     Label* label);
 
-    
-    
-    void maybeBranchTestType(MIRType type, MDefinition* maybeDef, Register tag, Label* label);
+  void branchTestObjGroup(Condition cond, Register obj, const Address& group,
+                          Register scratch, Register spectreRegToZero,
+                          Label* label);
+  void branchTestObjGroupNoSpectreMitigations(Condition cond, Register obj,
+                                              const Address& group,
+                                              Register scratch, Label* label);
 
-    inline void branchTestNeedsIncrementalBarrier(Condition cond, Label* label);
+  
+  inline void branchTestObjShapeUnsafe(Condition cond, Register obj,
+                                       Register shape, Label* label);
+  inline void branchTestObjGroupUnsafe(Condition cond, Register obj,
+                                       const ObjectGroup* group, Label* label);
 
-    
-    
-    inline void branchTestUndefined(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-    inline void branchTestInt32(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-    inline void branchTestDouble(Condition cond, Register tag, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-    inline void branchTestNumber(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-    inline void branchTestBoolean(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-    inline void branchTestString(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-    inline void branchTestSymbol(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-    inline void branchTestNull(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-    inline void branchTestObject(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-    inline void branchTestPrimitive(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-    inline void branchTestMagic(Condition cond, Register tag, Label* label) PER_SHARED_ARCH;
-
-    
-    
-    
-    
-    inline void branchTestUndefined(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestUndefined(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestUndefined(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestInt32(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestInt32(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestInt32(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestDouble(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestDouble(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestDouble(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestNumber(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestBoolean(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestBoolean(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestBoolean(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestString(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestString(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestString(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestSymbol(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestSymbol(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestNull(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestNull(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestNull(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    
-    inline void branchTestObject(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestObject(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestObject(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestGCThing(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestGCThing(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-
-    inline void branchTestPrimitive(Condition cond, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestMagic(Condition cond, const Address& address, Label* label) PER_SHARED_ARCH;
-    inline void branchTestMagic(Condition cond, const BaseIndex& address, Label* label) PER_SHARED_ARCH;
-    template <class L>
-    inline void branchTestMagic(Condition cond, const ValueOperand& value, L label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-
-    inline void branchTestMagic(Condition cond, const Address& valaddr, JSWhyMagic why, Label* label) PER_ARCH;
-
-    inline void branchTestMagicValue(Condition cond, const ValueOperand& val, JSWhyMagic why,
+  void branchTestObjCompartment(Condition cond, Register obj,
+                                const Address& compartment, Register scratch,
+                                Label* label);
+  void branchTestObjCompartment(Condition cond, Register obj,
+                                const JS::Compartment* compartment,
+                                Register scratch, Label* label);
+  void branchIfObjGroupHasNoAddendum(Register obj, Register scratch,
                                      Label* label);
+  void branchIfPretenuredGroup(Register group, Label* label);
+  void branchIfPretenuredGroup(const ObjectGroup* group, Register scratch,
+                               Label* label);
 
-    void branchTestValue(Condition cond, const ValueOperand& lhs,
-                         const Value& rhs, Label* label) PER_ARCH;
+  void branchIfNonNativeObj(Register obj, Register scratch, Label* label);
 
-    
-    
-    inline void branchTestInt32Truthy(bool truthy, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
-    inline void branchTestDoubleTruthy(bool truthy, FloatRegister reg, Label* label) PER_SHARED_ARCH;
-    inline void branchTestBooleanTruthy(bool truthy, const ValueOperand& value, Label* label) PER_ARCH;
-    inline void branchTestStringTruthy(bool truthy, const ValueOperand& value, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+  void branchIfInlineTypedObject(Register obj, Register scratch, Label* label);
 
-    
-    inline void branchToComputedAddress(const BaseIndex& address) PER_ARCH;
+  inline void branchTestClassIsProxy(bool proxy, Register clasp, Label* label);
 
-  private:
+  inline void branchTestObjectIsProxy(bool proxy, Register object,
+                                      Register scratch, Label* label);
 
-    template <typename T, typename S, typename L>
-    inline void branchPtrImpl(Condition cond, const T& lhs, const S& rhs, L label)
-        DEFINED_ON(x86_shared);
+  inline void branchTestProxyHandlerFamily(Condition cond, Register proxy,
+                                           Register scratch,
+                                           const void* handlerp, Label* label);
 
-    void branchPtrInNurseryChunkImpl(Condition cond, Register ptr, Label* label)
-        DEFINED_ON(x86);
-    template <typename T>
-    void branchValueIsNurseryCellImpl(Condition cond, const T& value, Register temp, Label* label)
-        DEFINED_ON(arm64, x64);
+  void copyObjGroupNoPreBarrier(Register sourceObj, Register destObj,
+                                Register scratch);
 
-    template <typename T>
-    inline void branchTestUndefinedImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestInt32Impl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestDoubleImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestNumberImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestBooleanImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestStringImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestSymbolImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestNullImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestObjectImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestGCThingImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T>
-    inline void branchTestPrimitiveImpl(Condition cond, const T& t, Label* label)
-        DEFINED_ON(arm, arm64, x86_shared);
-    template <typename T, class L>
-    inline void branchTestMagicImpl(Condition cond, const T& t, L label)
-        DEFINED_ON(arm, arm64, x86_shared);
+  void loadTypedObjectDescr(Register obj, Register dest);
+  void loadTypedObjectLength(Register obj, Register dest);
 
-  public:
+  
+  
+  void maybeBranchTestType(MIRType type, MDefinition* maybeDef, Register tag,
+                           Label* label);
 
-    inline void cmp32Move32(Condition cond, Register lhs, Register rhs, Register src,
-                            Register dest)
-        DEFINED_ON(arm, arm64, mips_shared, x86_shared);
+  inline void branchTestNeedsIncrementalBarrier(Condition cond, Label* label);
 
-    inline void cmp32Move32(Condition cond, Register lhs, const Address& rhs, Register src,
-                            Register dest)
-        DEFINED_ON(arm, arm64, mips_shared, x86_shared);
+  
+  
+  inline void branchTestUndefined(Condition cond, Register tag,
+                                  Label* label) PER_SHARED_ARCH;
+  inline void branchTestInt32(Condition cond, Register tag,
+                              Label* label) PER_SHARED_ARCH;
+  inline void branchTestDouble(Condition cond, Register tag, Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+  inline void branchTestNumber(Condition cond, Register tag,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestBoolean(Condition cond, Register tag,
+                                Label* label) PER_SHARED_ARCH;
+  inline void branchTestString(Condition cond, Register tag,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestSymbol(Condition cond, Register tag,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestNull(Condition cond, Register tag,
+                             Label* label) PER_SHARED_ARCH;
+  inline void branchTestObject(Condition cond, Register tag,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestPrimitive(Condition cond, Register tag,
+                                  Label* label) PER_SHARED_ARCH;
+  inline void branchTestMagic(Condition cond, Register tag,
+                              Label* label) PER_SHARED_ARCH;
 
-    inline void cmp32MovePtr(Condition cond, Register lhs, Imm32 rhs, Register src,
-                             Register dest)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  
+  
+  
+  
+  inline void branchTestUndefined(Condition cond, const Address& address,
+                                  Label* label) PER_SHARED_ARCH;
+  inline void branchTestUndefined(Condition cond, const BaseIndex& address,
+                                  Label* label) PER_SHARED_ARCH;
+  inline void branchTestUndefined(Condition cond, const ValueOperand& value,
+                                  Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    inline void test32LoadPtr(Condition cond, const Address& addr, Imm32 mask, const Address& src,
-                              Register dest)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  inline void branchTestInt32(Condition cond, const Address& address,
+                              Label* label) PER_SHARED_ARCH;
+  inline void branchTestInt32(Condition cond, const BaseIndex& address,
+                              Label* label) PER_SHARED_ARCH;
+  inline void branchTestInt32(Condition cond, const ValueOperand& value,
+                              Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    inline void test32MovePtr(Condition cond, const Address& addr, Imm32 mask, Register src,
-                              Register dest)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  inline void branchTestDouble(Condition cond, const Address& address,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestDouble(Condition cond, const BaseIndex& address,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestDouble(Condition cond, const ValueOperand& value,
+                               Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    
-    inline void spectreMovePtr(Condition cond, Register src, Register dest)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  inline void branchTestNumber(Condition cond, const ValueOperand& value,
+                               Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    
-    inline void spectreZeroRegister(Condition cond, Register scratch, Register dest)
-        DEFINED_ON(arm, arm64, mips_shared, x86_shared);
+  inline void branchTestBoolean(Condition cond, const Address& address,
+                                Label* label) PER_SHARED_ARCH;
+  inline void branchTestBoolean(Condition cond, const BaseIndex& address,
+                                Label* label) PER_SHARED_ARCH;
+  inline void branchTestBoolean(Condition cond, const ValueOperand& value,
+                                Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    
-    
-  private:
+  inline void branchTestString(Condition cond, const Address& address,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestString(Condition cond, const BaseIndex& address,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestString(Condition cond, const ValueOperand& value,
+                               Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    inline void spectreBoundsCheck32(Register index, const Operand& length, Register maybeScratch,
-                                     Label* failure)
-        DEFINED_ON(x86);
+  inline void branchTestSymbol(Condition cond, const BaseIndex& address,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestSymbol(Condition cond, const ValueOperand& value,
+                               Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-  public:
+  inline void branchTestNull(Condition cond, const Address& address,
+                             Label* label) PER_SHARED_ARCH;
+  inline void branchTestNull(Condition cond, const BaseIndex& address,
+                             Label* label) PER_SHARED_ARCH;
+  inline void branchTestNull(Condition cond, const ValueOperand& value,
+                             Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    inline void spectreBoundsCheck32(Register index, Register length, Register maybeScratch,
-                                     Label* failure)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
-    inline void spectreBoundsCheck32(Register index, const Address& length, Register maybeScratch,
-                                     Label* failure)
-        DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  
+  inline void branchTestObject(Condition cond, const Address& address,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestObject(Condition cond, const BaseIndex& address,
+                               Label* label) PER_SHARED_ARCH;
+  inline void branchTestObject(Condition cond, const ValueOperand& value,
+                               Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    
-    
-    inline void canonicalizeDouble(FloatRegister reg);
-    inline void canonicalizeDoubleIfDeterministic(FloatRegister reg);
+  inline void branchTestGCThing(Condition cond, const Address& address,
+                                Label* label) PER_SHARED_ARCH;
+  inline void branchTestGCThing(Condition cond, const BaseIndex& address,
+                                Label* label) PER_SHARED_ARCH;
 
-    inline void canonicalizeFloat(FloatRegister reg);
-    inline void canonicalizeFloatIfDeterministic(FloatRegister reg);
+  inline void branchTestPrimitive(Condition cond, const ValueOperand& value,
+                                  Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-  public:
-    
-    
-    inline void storeUncanonicalizedDouble(FloatRegister src, const Address& dest)
-        DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
-    inline void storeUncanonicalizedDouble(FloatRegister src, const BaseIndex& dest)
-        DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
-    inline void storeUncanonicalizedDouble(FloatRegister src, const Operand& dest)
-        DEFINED_ON(x86_shared);
+  inline void branchTestMagic(Condition cond, const Address& address,
+                              Label* label) PER_SHARED_ARCH;
+  inline void branchTestMagic(Condition cond, const BaseIndex& address,
+                              Label* label) PER_SHARED_ARCH;
+  template <class L>
+  inline void branchTestMagic(Condition cond, const ValueOperand& value,
+                              L label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    template<class T>
-    inline void storeDouble(FloatRegister src, const T& dest);
+  inline void branchTestMagic(Condition cond, const Address& valaddr,
+                              JSWhyMagic why, Label* label) PER_ARCH;
 
-    inline void boxDouble(FloatRegister src, const Address& dest);
-    using MacroAssemblerSpecific::boxDouble;
+  inline void branchTestMagicValue(Condition cond, const ValueOperand& val,
+                                   JSWhyMagic why, Label* label);
 
-    inline void storeUncanonicalizedFloat32(FloatRegister src, const Address& dest)
-        DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
-    inline void storeUncanonicalizedFloat32(FloatRegister src, const BaseIndex& dest)
-        DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
-    inline void storeUncanonicalizedFloat32(FloatRegister src, const Operand& dest)
-        DEFINED_ON(x86_shared);
+  void branchTestValue(Condition cond, const ValueOperand& lhs,
+                       const Value& rhs, Label* label) PER_ARCH;
 
-    template<class T>
-    inline void storeFloat32(FloatRegister src, const T& dest);
+  
+  
+  inline void branchTestInt32Truthy(bool truthy, const ValueOperand& value,
+                                    Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+  inline void branchTestDoubleTruthy(bool truthy, FloatRegister reg,
+                                     Label* label) PER_SHARED_ARCH;
+  inline void branchTestBooleanTruthy(bool truthy, const ValueOperand& value,
+                                      Label* label) PER_ARCH;
+  inline void branchTestStringTruthy(bool truthy, const ValueOperand& value,
+                                     Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
 
-    inline void storeFloat32x3(FloatRegister src, const Address& dest) PER_SHARED_ARCH;
-    inline void storeFloat32x3(FloatRegister src, const BaseIndex& dest) PER_SHARED_ARCH;
+  
+  inline void branchToComputedAddress(const BaseIndex& address) PER_ARCH;
 
-    template <typename T>
-    void storeUnboxedValue(const ConstantOrRegister& value, MIRType valueType, const T& dest,
-                           MIRType slotType) PER_ARCH;
+ private:
+  template <typename T, typename S, typename L>
+  inline void branchPtrImpl(Condition cond, const T& lhs, const S& rhs, L label)
+      DEFINED_ON(x86_shared);
 
-    inline void memoryBarrier(MemoryBarrierBits barrier) PER_SHARED_ARCH;
+  void branchPtrInNurseryChunkImpl(Condition cond, Register ptr, Label* label)
+      DEFINED_ON(x86);
+  template <typename T>
+  void branchValueIsNurseryCellImpl(Condition cond, const T& value,
+                                    Register temp, Label* label)
+      DEFINED_ON(arm64, x64);
 
-  public:
-    
-    
+  template <typename T>
+  inline void branchTestUndefinedImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestInt32Impl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestDoubleImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestNumberImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestBooleanImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestStringImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestSymbolImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestNullImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestObjectImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestGCThingImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T>
+  inline void branchTestPrimitiveImpl(Condition cond, const T& t, Label* label)
+      DEFINED_ON(arm, arm64, x86_shared);
+  template <typename T, class L>
+  inline void branchTestMagicImpl(Condition cond, const T& t, L label)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    
-    
-    inline void truncateFloat32ToInt64(Address src, Address dest, Register temp)
-        DEFINED_ON(x86_shared);
-    inline void truncateFloat32ToUInt64(Address src, Address dest, Register temp,
-                                        FloatRegister floatTemp)
-        DEFINED_ON(x86, x64);
-    inline void truncateDoubleToInt64(Address src, Address dest, Register temp)
-        DEFINED_ON(x86_shared);
-    inline void truncateDoubleToUInt64(Address src, Address dest, Register temp,
-                                       FloatRegister floatTemp)
-        DEFINED_ON(x86, x64);
+ public:
+  inline void cmp32Move32(Condition cond, Register lhs, Register rhs,
+                          Register src, Register dest)
+      DEFINED_ON(arm, arm64, mips_shared, x86_shared);
 
-  public:
-    
-    
+  inline void cmp32Move32(Condition cond, Register lhs, const Address& rhs,
+                          Register src, Register dest)
+      DEFINED_ON(arm, arm64, mips_shared, x86_shared);
 
-    
-    void convertUInt64ToFloat32(Register64 src, FloatRegister dest, Register temp)
-        DEFINED_ON(arm64, mips64, x64, x86);
+  inline void cmp32MovePtr(Condition cond, Register lhs, Imm32 rhs,
+                           Register src, Register dest)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
 
-    void convertInt64ToFloat32(Register64 src, FloatRegister dest)
-        DEFINED_ON(arm64, mips64, x64, x86);
+  inline void test32LoadPtr(Condition cond, const Address& addr, Imm32 mask,
+                            const Address& src, Register dest)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
 
-    bool convertUInt64ToDoubleNeedsTemp() PER_ARCH;
+  inline void test32MovePtr(Condition cond, const Address& addr, Imm32 mask,
+                            Register src, Register dest)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
 
-    
-    void convertUInt64ToDouble(Register64 src, FloatRegister dest, Register temp) PER_ARCH;
+  
+  inline void spectreMovePtr(Condition cond, Register src, Register dest)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
 
-    void convertInt64ToDouble(Register64 src, FloatRegister dest)
-        DEFINED_ON(arm64, mips64, x64, x86);
+  
+  inline void spectreZeroRegister(Condition cond, Register scratch,
+                                  Register dest)
+      DEFINED_ON(arm, arm64, mips_shared, x86_shared);
 
-  public:
-    
-    
+  
+  
+ private:
+  inline void spectreBoundsCheck32(Register index, const Operand& length,
+                                   Register maybeScratch, Label* failure)
+      DEFINED_ON(x86);
 
-    CodeOffset wasmTrapInstruction() PER_SHARED_ARCH;
+ public:
+  inline void spectreBoundsCheck32(Register index, Register length,
+                                   Register maybeScratch, Label* failure)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
+  inline void spectreBoundsCheck32(Register index, const Address& length,
+                                   Register maybeScratch, Label* failure)
+      DEFINED_ON(arm, arm64, mips_shared, x86, x64);
 
-    void wasmTrap(wasm::Trap trap, wasm::BytecodeOffset bytecodeOffset);
-    void wasmInterruptCheck(Register tls, wasm::BytecodeOffset bytecodeOffset);
-    void wasmReserveStackChecked(uint32_t amount, wasm::BytecodeOffset trapOffset);
+  
+  
+  inline void canonicalizeDouble(FloatRegister reg);
+  inline void canonicalizeDoubleIfDeterministic(FloatRegister reg);
 
-    
-    
-    
-    void wasmBoundsCheck(Condition cond, Register index, Register boundsCheckLimit, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+  inline void canonicalizeFloat(FloatRegister reg);
+  inline void canonicalizeFloatIfDeterministic(FloatRegister reg);
 
-    void wasmBoundsCheck(Condition cond, Register index, Address boundsCheckLimit, Label* label)
-        DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+ public:
+  
+  
+  inline void storeUncanonicalizedDouble(FloatRegister src, const Address& dest)
+      DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
+  inline void storeUncanonicalizedDouble(FloatRegister src,
+                                         const BaseIndex& dest)
+      DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
+  inline void storeUncanonicalizedDouble(FloatRegister src, const Operand& dest)
+      DEFINED_ON(x86_shared);
 
-    
-    void wasmLoad(const wasm::MemoryAccessDesc& access, Operand srcAddr, AnyRegister out) DEFINED_ON(x86, x64);
-    void wasmLoadI64(const wasm::MemoryAccessDesc& access, Operand srcAddr, Register64 out) DEFINED_ON(x86, x64);
-    void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value, Operand dstAddr) DEFINED_ON(x86, x64);
-    void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value, Operand dstAddr) DEFINED_ON(x86);
+  template <class T>
+  inline void storeDouble(FloatRegister src, const T& dest);
 
-    
-    
-    
+  inline void boxDouble(FloatRegister src, const Address& dest);
+  using MacroAssemblerSpecific::boxDouble;
 
-    
-    void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
-                  Register ptrScratch, AnyRegister output)
-        DEFINED_ON(arm, arm64, mips_shared);
-    void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
-                     Register ptrScratch, Register64 output)
-        DEFINED_ON(arm, arm64, mips32, mips64);
-    void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value, Register memoryBase,
-                   Register ptr, Register ptrScratch)
-        DEFINED_ON(arm, arm64, mips_shared);
-    void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value, Register memoryBase,
-                      Register ptr, Register ptrScratch)
-        DEFINED_ON(arm, arm64, mips32, mips64);
+  inline void storeUncanonicalizedFloat32(FloatRegister src,
+                                          const Address& dest)
+      DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
+  inline void storeUncanonicalizedFloat32(FloatRegister src,
+                                          const BaseIndex& dest)
+      DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
+  inline void storeUncanonicalizedFloat32(FloatRegister src,
+                                          const Operand& dest)
+      DEFINED_ON(x86_shared);
 
-    
-    void wasmUnalignedLoad(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
-                           Register ptrScratch, Register output, Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+  template <class T>
+  inline void storeFloat32(FloatRegister src, const T& dest);
 
-    
-    
-    
-    
-    void wasmUnalignedLoadFP(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
-                             Register ptrScratch, FloatRegister output, Register tmp1, Register tmp2,
-                             Register tmp3)
-        DEFINED_ON(arm, mips32, mips64);
+  inline void storeFloat32x3(FloatRegister src,
+                             const Address& dest) PER_SHARED_ARCH;
+  inline void storeFloat32x3(FloatRegister src,
+                             const BaseIndex& dest) PER_SHARED_ARCH;
 
-    
-    void wasmUnalignedLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase, Register ptr,
-                              Register ptrScratch, Register64 output, Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+  template <typename T>
+  void storeUnboxedValue(const ConstantOrRegister& value, MIRType valueType,
+                         const T& dest, MIRType slotType) PER_ARCH;
 
-    
-    
-    void wasmUnalignedStore(const wasm::MemoryAccessDesc& access, Register value, Register memoryBase,
+  inline void memoryBarrier(MemoryBarrierBits barrier) PER_SHARED_ARCH;
+
+ public:
+  
+  
+
+  
+  
+  inline void truncateFloat32ToInt64(Address src, Address dest, Register temp)
+      DEFINED_ON(x86_shared);
+  inline void truncateFloat32ToUInt64(Address src, Address dest, Register temp,
+                                      FloatRegister floatTemp)
+      DEFINED_ON(x86, x64);
+  inline void truncateDoubleToInt64(Address src, Address dest, Register temp)
+      DEFINED_ON(x86_shared);
+  inline void truncateDoubleToUInt64(Address src, Address dest, Register temp,
+                                     FloatRegister floatTemp)
+      DEFINED_ON(x86, x64);
+
+ public:
+  
+  
+
+  
+  void convertUInt64ToFloat32(Register64 src, FloatRegister dest, Register temp)
+      DEFINED_ON(arm64, mips64, x64, x86);
+
+  void convertInt64ToFloat32(Register64 src, FloatRegister dest)
+      DEFINED_ON(arm64, mips64, x64, x86);
+
+  bool convertUInt64ToDoubleNeedsTemp() PER_ARCH;
+
+  
+  void convertUInt64ToDouble(Register64 src, FloatRegister dest,
+                             Register temp) PER_ARCH;
+
+  void convertInt64ToDouble(Register64 src, FloatRegister dest)
+      DEFINED_ON(arm64, mips64, x64, x86);
+
+ public:
+  
+  
+
+  CodeOffset wasmTrapInstruction() PER_SHARED_ARCH;
+
+  void wasmTrap(wasm::Trap trap, wasm::BytecodeOffset bytecodeOffset);
+  void wasmInterruptCheck(Register tls, wasm::BytecodeOffset bytecodeOffset);
+  void wasmReserveStackChecked(uint32_t amount,
+                               wasm::BytecodeOffset trapOffset);
+
+  
+  
+  
+  void wasmBoundsCheck(Condition cond, Register index,
+                       Register boundsCheckLimit, Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+
+  void wasmBoundsCheck(Condition cond, Register index, Address boundsCheckLimit,
+                       Label* label)
+      DEFINED_ON(arm, arm64, mips32, mips64, x86_shared);
+
+  
+  void wasmLoad(const wasm::MemoryAccessDesc& access, Operand srcAddr,
+                AnyRegister out) DEFINED_ON(x86, x64);
+  void wasmLoadI64(const wasm::MemoryAccessDesc& access, Operand srcAddr,
+                   Register64 out) DEFINED_ON(x86, x64);
+  void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
+                 Operand dstAddr) DEFINED_ON(x86, x64);
+  void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
+                    Operand dstAddr) DEFINED_ON(x86);
+
+  
+  
+  
+
+  
+  
+  void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
+                Register ptr, Register ptrScratch, AnyRegister output)
+      DEFINED_ON(arm, arm64, mips_shared);
+  void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
+                   Register ptr, Register ptrScratch, Register64 output)
+      DEFINED_ON(arm, arm64, mips32, mips64);
+  void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
+                 Register memoryBase, Register ptr, Register ptrScratch)
+      DEFINED_ON(arm, arm64, mips_shared);
+  void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
+                    Register memoryBase, Register ptr, Register ptrScratch)
+      DEFINED_ON(arm, arm64, mips32, mips64);
+
+  
+  void wasmUnalignedLoad(const wasm::MemoryAccessDesc& access,
+                         Register memoryBase, Register ptr, Register ptrScratch,
+                         Register output, Register tmp)
+      DEFINED_ON(arm, mips32, mips64);
+
+  
+  
+  
+  
+  void wasmUnalignedLoadFP(const wasm::MemoryAccessDesc& access,
+                           Register memoryBase, Register ptr,
+                           Register ptrScratch, FloatRegister output,
+                           Register tmp1, Register tmp2, Register tmp3)
+      DEFINED_ON(arm, mips32, mips64);
+
+  
+  void wasmUnalignedLoadI64(const wasm::MemoryAccessDesc& access,
+                            Register memoryBase, Register ptr,
+                            Register ptrScratch, Register64 output,
+                            Register tmp) DEFINED_ON(arm, mips32, mips64);
+
+  
+  
+  void wasmUnalignedStore(const wasm::MemoryAccessDesc& access, Register value,
+                          Register memoryBase, Register ptr,
+                          Register ptrScratch, Register tmp)
+      DEFINED_ON(arm, mips32, mips64);
+
+  
+  void wasmUnalignedStoreFP(const wasm::MemoryAccessDesc& access,
+                            FloatRegister floatValue, Register memoryBase,
                             Register ptr, Register ptrScratch, Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+      DEFINED_ON(arm, mips32, mips64);
 
-    
-    void wasmUnalignedStoreFP(const wasm::MemoryAccessDesc& access, FloatRegister floatValue,
-                              Register memoryBase, Register ptr, Register ptrScratch, Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+  
+  void wasmUnalignedStoreI64(const wasm::MemoryAccessDesc& access,
+                             Register64 value, Register memoryBase,
+                             Register ptr, Register ptrScratch, Register tmp)
+      DEFINED_ON(arm, mips32, mips64);
 
-    
-    void wasmUnalignedStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
-                               Register memoryBase, Register ptr, Register ptrScratch,
-                               Register tmp)
-        DEFINED_ON(arm, mips32, mips64);
+  
 
-    
+  
+  
+  void wasmTruncateDoubleToUInt32(FloatRegister input, Register output,
+                                  bool isSaturating, Label* oolEntry) PER_ARCH;
+  void wasmTruncateDoubleToInt32(FloatRegister input, Register output,
+                                 bool isSaturating,
+                                 Label* oolEntry) PER_SHARED_ARCH;
+  void oolWasmTruncateCheckF64ToI32(FloatRegister input, Register output,
+                                    TruncFlags flags, wasm::BytecodeOffset off,
+                                    Label* rejoin)
+      DEFINED_ON(arm, arm64, x86_shared, mips_shared);
 
-    
-    
-    void wasmTruncateDoubleToUInt32(FloatRegister input, Register output, bool isSaturating,
-                                    Label* oolEntry) PER_ARCH;
-    void wasmTruncateDoubleToInt32(FloatRegister input, Register output, bool isSaturating,
-                                   Label* oolEntry) PER_SHARED_ARCH;
-    void oolWasmTruncateCheckF64ToI32(FloatRegister input, Register output, TruncFlags flags,
-                                      wasm::BytecodeOffset off, Label* rejoin)
-        DEFINED_ON(arm, arm64, x86_shared, mips_shared);
+  void wasmTruncateFloat32ToUInt32(FloatRegister input, Register output,
+                                   bool isSaturating, Label* oolEntry) PER_ARCH;
+  void wasmTruncateFloat32ToInt32(FloatRegister input, Register output,
+                                  bool isSaturating,
+                                  Label* oolEntry) PER_SHARED_ARCH;
+  void oolWasmTruncateCheckF32ToI32(FloatRegister input, Register output,
+                                    TruncFlags flags, wasm::BytecodeOffset off,
+                                    Label* rejoin)
+      DEFINED_ON(arm, arm64, x86_shared, mips_shared);
 
-    void wasmTruncateFloat32ToUInt32(FloatRegister input, Register output, bool isSaturating,
-                                     Label* oolEntry) PER_ARCH;
-    void wasmTruncateFloat32ToInt32(FloatRegister input, Register output, bool isSaturating,
-                                    Label* oolEntry) PER_SHARED_ARCH;
-    void oolWasmTruncateCheckF32ToI32(FloatRegister input, Register output, TruncFlags flags,
-                                      wasm::BytecodeOffset off, Label* rejoin)
-        DEFINED_ON(arm, arm64, x86_shared, mips_shared);
+  
+  
+  void wasmTruncateDoubleToInt64(FloatRegister input, Register64 output,
+                                 bool isSaturating, Label* oolEntry,
+                                 Label* oolRejoin, FloatRegister tempDouble)
+      DEFINED_ON(arm64, x86, x64, mips64);
+  void wasmTruncateDoubleToUInt64(FloatRegister input, Register64 output,
+                                  bool isSaturating, Label* oolEntry,
+                                  Label* oolRejoin, FloatRegister tempDouble)
+      DEFINED_ON(arm64, x86, x64, mips64);
+  void oolWasmTruncateCheckF64ToI64(FloatRegister input, Register64 output,
+                                    TruncFlags flags, wasm::BytecodeOffset off,
+                                    Label* rejoin)
+      DEFINED_ON(arm, arm64, x86_shared, mips_shared);
 
-    
-    
-    void wasmTruncateDoubleToInt64(FloatRegister input, Register64 output, bool isSaturating,
-                                   Label* oolEntry, Label* oolRejoin, FloatRegister tempDouble)
-        DEFINED_ON(arm64, x86, x64, mips64);
-    void wasmTruncateDoubleToUInt64(FloatRegister input, Register64 output, bool isSaturating,
-                                    Label* oolEntry, Label* oolRejoin, FloatRegister tempDouble)
-        DEFINED_ON(arm64, x86, x64, mips64);
-    void oolWasmTruncateCheckF64ToI64(FloatRegister input, Register64 output, TruncFlags flags,
-                                      wasm::BytecodeOffset off, Label* rejoin)
-        DEFINED_ON(arm, arm64, x86_shared, mips_shared);
+  void wasmTruncateFloat32ToInt64(FloatRegister input, Register64 output,
+                                  bool isSaturating, Label* oolEntry,
+                                  Label* oolRejoin, FloatRegister tempDouble)
+      DEFINED_ON(arm64, x86, x64, mips64);
+  void wasmTruncateFloat32ToUInt64(FloatRegister input, Register64 output,
+                                   bool isSaturating, Label* oolEntry,
+                                   Label* oolRejoin, FloatRegister tempDouble)
+      DEFINED_ON(arm64, x86, x64, mips64);
+  void oolWasmTruncateCheckF32ToI64(FloatRegister input, Register64 output,
+                                    TruncFlags flags, wasm::BytecodeOffset off,
+                                    Label* rejoin)
+      DEFINED_ON(arm, arm64, x86_shared, mips_shared);
 
-    void wasmTruncateFloat32ToInt64(FloatRegister input, Register64 output, bool isSaturating,
-                                    Label* oolEntry, Label* oolRejoin, FloatRegister tempDouble)
-        DEFINED_ON(arm64, x86, x64, mips64);
-    void wasmTruncateFloat32ToUInt64(FloatRegister input, Register64 output, bool isSaturating,
-                                     Label* oolEntry, Label* oolRejoin, FloatRegister tempDouble)
-        DEFINED_ON(arm64, x86, x64, mips64);
-    void oolWasmTruncateCheckF32ToI64(FloatRegister input, Register64 output, TruncFlags flags,
-                                      wasm::BytecodeOffset off, Label* rejoin)
-        DEFINED_ON(arm, arm64, x86_shared, mips_shared);
+  
+  
+  void wasmCallImport(const wasm::CallSiteDesc& desc,
+                      const wasm::CalleeDesc& callee);
 
-    
-    
-    void wasmCallImport(const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee);
+  
+  void wasmCallIndirect(const wasm::CallSiteDesc& desc,
+                        const wasm::CalleeDesc& callee, bool needsBoundsCheck);
 
-    
-    void wasmCallIndirect(const wasm::CallSiteDesc& desc, const wasm::CalleeDesc& callee,
-                          bool needsBoundsCheck);
+  
+  
+  
+  void wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc,
+                                     const ABIArg& instanceArg,
+                                     wasm::SymbolicAddress builtin);
 
-    
-    
-    
-    void wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc, const ABIArg& instanceArg,
-                                       wasm::SymbolicAddress builtin);
+  
+  
+  void enterFakeExitFrameForWasm(Register cxreg, Register scratch,
+                                 ExitFrameType type) PER_SHARED_ARCH;
 
-    
-    
-    void enterFakeExitFrameForWasm(Register cxreg, Register scratch, ExitFrameType type)
-        PER_SHARED_ARCH;
+ public:
+  
+  
 
-  public:
-    
-    
+  void emitPreBarrierFastPath(JSRuntime* rt, MIRType type, Register temp1,
+                              Register temp2, Register temp3, Label* noBarrier);
 
-    void emitPreBarrierFastPath(JSRuntime* rt, MIRType type, Register temp1, Register temp2,
-                                Register temp3, Label* noBarrier);
+ public:
+  
+  
 
-  public:
-    
-    
+  inline void clampIntToUint8(Register reg) PER_SHARED_ARCH;
 
-    inline void clampIntToUint8(Register reg) PER_SHARED_ARCH;
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  public:
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
 
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
 
-    
-    
-    
-    
-    
-    
+  void compareExchange(Scalar::Type type, const Synchronization& sync,
+                       const Address& mem, Register expected,
+                       Register replacement, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void compareExchange(Scalar::Type type, const Synchronization& sync, const Address& mem,
-                         Register expected, Register replacement, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
+  void compareExchange(Scalar::Type type, const Synchronization& sync,
+                       const BaseIndex& mem, Register expected,
+                       Register replacement, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void compareExchange(Scalar::Type type, const Synchronization& sync, const BaseIndex& mem,
-                         Register expected, Register replacement, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void compareExchange(Scalar::Type type, const Synchronization& sync, const Address& mem,
-                         Register expected, Register replacement, Register valueTemp,
-                         Register offsetTemp, Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
-
-    void compareExchange(Scalar::Type type, const Synchronization& sync, const BaseIndex& mem,
-                         Register expected, Register replacement, Register valueTemp,
-                         Register offsetTemp, Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
-
-    
-    
-    
-
-    void atomicExchange(Scalar::Type type, const Synchronization& sync, const Address& mem,
-                        Register value, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void atomicExchange(Scalar::Type type, const Synchronization& sync, const BaseIndex& mem,
-                        Register value, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void atomicExchange(Scalar::Type type, const Synchronization& sync, const Address& mem,
-                        Register value, Register valueTemp, Register offsetTemp, Register maskTemp,
-                        Register output)
-        DEFINED_ON(mips_shared);
-
-    void atomicExchange(Scalar::Type type, const Synchronization& sync, const BaseIndex& mem,
-                        Register value, Register valueTemp, Register offsetTemp, Register maskTemp,
-                        Register output)
-        DEFINED_ON(mips_shared);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    void atomicFetchOp(Scalar::Type type, const Synchronization& sync, AtomicOp op,
-                       Register value, const Address& mem, Register temp, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void atomicFetchOp(Scalar::Type type, const Synchronization& sync, AtomicOp op,
-                       Imm32 value, const Address& mem, Register temp, Register output)
-        DEFINED_ON(x86_shared);
-
-    void atomicFetchOp(Scalar::Type type, const Synchronization& sync, AtomicOp op,
-                       Register value, const BaseIndex& mem, Register temp, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void atomicFetchOp(Scalar::Type type, const Synchronization& sync, AtomicOp op,
-                       Imm32 value, const BaseIndex& mem, Register temp, Register output)
-        DEFINED_ON(x86_shared);
-
-    void atomicFetchOp(Scalar::Type type, const Synchronization& sync, AtomicOp op,
-                       Register value, const Address& mem, Register valueTemp,
+  void compareExchange(Scalar::Type type, const Synchronization& sync,
+                       const Address& mem, Register expected,
+                       Register replacement, Register valueTemp,
                        Register offsetTemp, Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
+      DEFINED_ON(mips_shared);
 
-    void atomicFetchOp(Scalar::Type type, const Synchronization& sync, AtomicOp op,
-                       Register value, const BaseIndex& mem, Register valueTemp,
+  void compareExchange(Scalar::Type type, const Synchronization& sync,
+                       const BaseIndex& mem, Register expected,
+                       Register replacement, Register valueTemp,
                        Register offsetTemp, Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
+      DEFINED_ON(mips_shared);
 
-    
-    
-    
-    
+  
+  
+  
 
-    void wasmCompareExchange(const wasm::MemoryAccessDesc& access, const Address& mem,
-                             Register expected, Register replacement, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
+  void atomicExchange(Scalar::Type type, const Synchronization& sync,
+                      const Address& mem, Register value, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void wasmCompareExchange(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
-                             Register expected, Register replacement, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
+  void atomicExchange(Scalar::Type type, const Synchronization& sync,
+                      const BaseIndex& mem, Register value, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void wasmCompareExchange(const wasm::MemoryAccessDesc& access, const Address& mem,
-                             Register expected, Register replacement, Register valueTemp,
-                             Register offsetTemp, Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
+  void atomicExchange(Scalar::Type type, const Synchronization& sync,
+                      const Address& mem, Register value, Register valueTemp,
+                      Register offsetTemp, Register maskTemp, Register output)
+      DEFINED_ON(mips_shared);
 
-    void wasmCompareExchange(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
-                             Register expected, Register replacement, Register valueTemp,
-                             Register offsetTemp, Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
+  void atomicExchange(Scalar::Type type, const Synchronization& sync,
+                      const BaseIndex& mem, Register value, Register valueTemp,
+                      Register offsetTemp, Register maskTemp, Register output)
+      DEFINED_ON(mips_shared);
 
-    void wasmAtomicExchange(const wasm::MemoryAccessDesc& access, const Address& mem,
-                            Register value, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    void wasmAtomicExchange(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
-                            Register value, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
+  void atomicFetchOp(Scalar::Type type, const Synchronization& sync,
+                     AtomicOp op, Register value, const Address& mem,
+                     Register temp, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void wasmAtomicExchange(const wasm::MemoryAccessDesc& access, const Address& mem,
-                            Register value, Register valueTemp, Register offsetTemp,
-                            Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
+  void atomicFetchOp(Scalar::Type type, const Synchronization& sync,
+                     AtomicOp op, Imm32 value, const Address& mem,
+                     Register temp, Register output) DEFINED_ON(x86_shared);
 
-    void wasmAtomicExchange(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
-                            Register value, Register valueTemp, Register offsetTemp,
-                            Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
+  void atomicFetchOp(Scalar::Type type, const Synchronization& sync,
+                     AtomicOp op, Register value, const BaseIndex& mem,
+                     Register temp, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
-                           const Address& mem, Register temp, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
+  void atomicFetchOp(Scalar::Type type, const Synchronization& sync,
+                     AtomicOp op, Imm32 value, const BaseIndex& mem,
+                     Register temp, Register output) DEFINED_ON(x86_shared);
 
-    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
-                           const Address& mem, Register temp, Register output)
-        DEFINED_ON(x86_shared);
+  void atomicFetchOp(Scalar::Type type, const Synchronization& sync,
+                     AtomicOp op, Register value, const Address& mem,
+                     Register valueTemp, Register offsetTemp, Register maskTemp,
+                     Register output) DEFINED_ON(mips_shared);
 
-    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
-                           const BaseIndex& mem, Register temp, Register output)
-        DEFINED_ON(arm, arm64, x86_shared);
+  void atomicFetchOp(Scalar::Type type, const Synchronization& sync,
+                     AtomicOp op, Register value, const BaseIndex& mem,
+                     Register valueTemp, Register offsetTemp, Register maskTemp,
+                     Register output) DEFINED_ON(mips_shared);
 
-    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
-                           const BaseIndex& mem, Register temp, Register output)
-        DEFINED_ON(x86_shared);
+  
+  
+  
+  
+  
 
-    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                           Register value, const Address& mem, Register valueTemp,
-                           Register offsetTemp, Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
+  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                           const Address& mem, Register expected,
+                           Register replacement, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                           Register value, const BaseIndex& mem, Register valueTemp,
-                           Register offsetTemp, Register maskTemp, Register output)
-        DEFINED_ON(mips_shared);
+  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                           const BaseIndex& mem, Register expected,
+                           Register replacement, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    
-    
-    
-    
+  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                           const Address& mem, Register expected,
+                           Register replacement, Register valueTemp,
+                           Register offsetTemp, Register maskTemp,
+                           Register output) DEFINED_ON(mips_shared);
 
-    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
-                            const Address& mem, Register temp)
-        DEFINED_ON(arm, arm64, x86_shared);
+  void wasmCompareExchange(const wasm::MemoryAccessDesc& access,
+                           const BaseIndex& mem, Register expected,
+                           Register replacement, Register valueTemp,
+                           Register offsetTemp, Register maskTemp,
+                           Register output) DEFINED_ON(mips_shared);
 
-    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
-                            const Address& mem, Register temp)
-        DEFINED_ON(x86_shared);
+  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                          const Address& mem, Register value, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
-                            const BaseIndex& mem, Register temp)
-        DEFINED_ON(arm, arm64, x86_shared);
+  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                          const BaseIndex& mem, Register value, Register output)
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Imm32 value,
-                            const BaseIndex& mem, Register temp)
-        DEFINED_ON(x86_shared);
+  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                          const Address& mem, Register value,
+                          Register valueTemp, Register offsetTemp,
+                          Register maskTemp, Register output)
+      DEFINED_ON(mips_shared);
 
-    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
-                            const Address& mem, Register valueTemp, Register offsetTemp,
-                            Register maskTemp)
-        DEFINED_ON(mips_shared);
+  void wasmAtomicExchange(const wasm::MemoryAccessDesc& access,
+                          const BaseIndex& mem, Register value,
+                          Register valueTemp, Register offsetTemp,
+                          Register maskTemp, Register output)
+      DEFINED_ON(mips_shared);
 
-    void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op, Register value,
-                            const BaseIndex& mem, Register valueTemp, Register offsetTemp,
-                            Register maskTemp)
-        DEFINED_ON(mips_shared);
+  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                         Register value, const Address& mem, Register temp,
+                         Register output) DEFINED_ON(arm, arm64, x86_shared);
 
-    
+  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                         Imm32 value, const Address& mem, Register temp,
+                         Register output) DEFINED_ON(x86_shared);
 
-    
-    
-    
-    
-    
-    
+  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                         Register value, const BaseIndex& mem, Register temp,
+                         Register output) DEFINED_ON(arm, arm64, x86_shared);
 
-    void wasmAtomicLoad64(const wasm::MemoryAccessDesc& access, const Address& mem,
-                          Register64 temp, Register64 output)
-        DEFINED_ON(arm, mips32, x86);
+  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                         Imm32 value, const BaseIndex& mem, Register temp,
+                         Register output) DEFINED_ON(x86_shared);
 
-    void wasmAtomicLoad64(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
-                          Register64 temp, Register64 output)
-        DEFINED_ON(arm, mips32, x86);
-
-    
-    
-    
-    
-    
-
-    void wasmCompareExchange64(const wasm::MemoryAccessDesc& access, const Address& mem,
-                               Register64 expected, Register64 replacement, Register64 output)
-        PER_ARCH;
-
-    void wasmCompareExchange64(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
-                               Register64 expected, Register64 replacement, Register64 output)
-        PER_ARCH;
-
-    
-    
-    
-
-    void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access, const Address& mem,
-                              Register64 value, Register64 output)
-        PER_ARCH;
-
-    void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access, const BaseIndex& mem,
-                              Register64 value, Register64 output)
-        PER_ARCH;
-
-    
-    
-    
-    
-    
-
-    void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op, Register64 value,
-                             const Address& mem, Register64 temp, Register64 output)
-        DEFINED_ON(arm, arm64, mips32, mips64, x64);
-
-    void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op, Register64 value,
-                             const BaseIndex& mem, Register64 temp, Register64 output)
-        DEFINED_ON(arm, arm64, mips32, mips64, x64);
-
-    void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                             const Address& value, const Address& mem, Register64 temp,
-                             Register64 output)
-        DEFINED_ON(x86);
-
-    void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                             const Address& value, const BaseIndex& mem, Register64 temp,
-                             Register64 output)
-        DEFINED_ON(x86);
-
-    
-
-    void wasmAtomicEffectOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
-                              Register64 value, const BaseIndex& mem)
-        DEFINED_ON(x64);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    void compareExchangeJS(Scalar::Type arrayType, const Synchronization& sync, const Address& mem,
-                           Register expected, Register replacement, Register temp,
-                           AnyRegister output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void compareExchangeJS(Scalar::Type arrayType, const Synchronization& sync,
-                           const BaseIndex& mem, Register expected, Register replacement,
-                           Register temp, AnyRegister output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void compareExchangeJS(Scalar::Type arrayType, const Synchronization& sync, const Address& mem,
-                           Register expected, Register replacement, Register valueTemp,
-                           Register offsetTemp, Register maskTemp, Register temp,
-                           AnyRegister output)
-        DEFINED_ON(mips_shared);
-
-    void compareExchangeJS(Scalar::Type arrayType, const Synchronization& sync, const BaseIndex& mem,
-                           Register expected, Register replacement, Register valueTemp,
-                           Register offsetTemp, Register maskTemp, Register temp,
-                           AnyRegister output)
-        DEFINED_ON(mips_shared);
-
-    void atomicExchangeJS(Scalar::Type arrayType, const Synchronization& sync, const Address& mem,
-                          Register value, Register temp, AnyRegister output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void atomicExchangeJS(Scalar::Type arrayType, const Synchronization& sync, const BaseIndex& mem,
-                          Register value, Register temp,  AnyRegister output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void atomicExchangeJS(Scalar::Type arrayType, const Synchronization& sync, const Address& mem,
-                          Register value, Register valueTemp, Register offsetTemp,
-                          Register maskTemp, Register temp, AnyRegister output)
-        DEFINED_ON(mips_shared);
-
-    void atomicExchangeJS(Scalar::Type arrayType, const Synchronization& sync, const BaseIndex& mem,
-                          Register value, Register valueTemp, Register offsetTemp,
-                          Register maskTemp, Register temp, AnyRegister output)
-        DEFINED_ON(mips_shared);
-
-
-    void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
-                         Register value, const Address& mem, Register temp1, Register temp2,
-                         AnyRegister output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
-                         Register value, const BaseIndex& mem, Register temp1, Register temp2,
-                         AnyRegister output)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
-                         Imm32 value, const Address& mem, Register temp1, Register temp2,
-                         AnyRegister output)
-        DEFINED_ON(x86_shared);
-
-    void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
-                         Imm32 value, const BaseIndex& mem, Register temp1, Register temp2,
-                         AnyRegister output)
-        DEFINED_ON(x86_shared);
-
-    void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
+  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
                          Register value, const Address& mem, Register valueTemp,
-                         Register offsetTemp, Register maskTemp, Register temp,
-                         AnyRegister output)
-        DEFINED_ON(mips_shared);
+                         Register offsetTemp, Register maskTemp,
+                         Register output) DEFINED_ON(mips_shared);
 
-    void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
-                         Register value, const BaseIndex& mem, Register valueTemp,
-                         Register offsetTemp, Register maskTemp, Register temp,
-                         AnyRegister output)
-        DEFINED_ON(mips_shared);
+  void wasmAtomicFetchOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                         Register value, const BaseIndex& mem,
+                         Register valueTemp, Register offsetTemp,
+                         Register maskTemp, Register output)
+      DEFINED_ON(mips_shared);
 
-    void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
+  
+  
+  
+  
+
+  void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
                           Register value, const Address& mem, Register temp)
-        DEFINED_ON(arm, arm64, x86_shared);
+      DEFINED_ON(arm, arm64, x86_shared);
 
-    void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
-                          Register value, const BaseIndex& mem, Register temp)
-        DEFINED_ON(arm, arm64, x86_shared);
-
-    void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
+  void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
                           Imm32 value, const Address& mem, Register temp)
-        DEFINED_ON(x86_shared);
+      DEFINED_ON(x86_shared);
 
-    void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
+  void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                          Register value, const BaseIndex& mem, Register temp)
+      DEFINED_ON(arm, arm64, x86_shared);
+
+  void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
                           Imm32 value, const BaseIndex& mem, Register temp)
-        DEFINED_ON(x86_shared);
+      DEFINED_ON(x86_shared);
 
-    void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
-                          Register value, const Address& mem, Register valueTemp,
-                          Register offsetTemp, Register maskTemp)
-        DEFINED_ON(mips_shared);
+  void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                          Register value, const Address& mem,
+                          Register valueTemp, Register offsetTemp,
+                          Register maskTemp) DEFINED_ON(mips_shared);
 
-    void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync, AtomicOp op,
-                          Register value, const BaseIndex& mem, Register valueTemp,
-                          Register offsetTemp, Register maskTemp)
-        DEFINED_ON(mips_shared);
+  void wasmAtomicEffectOp(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                          Register value, const BaseIndex& mem,
+                          Register valueTemp, Register offsetTemp,
+                          Register maskTemp) DEFINED_ON(mips_shared);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
 
-    void spectreMaskIndex(Register index, Register length, Register output);
-    void spectreMaskIndex(Register index, const Address& length, Register output);
+  
+  
+  
+  
+  
+  
 
-    
-    
-    void boundsCheck32PowerOfTwo(Register index, uint32_t length, Label* failure);
+  void wasmAtomicLoad64(const wasm::MemoryAccessDesc& access,
+                        const Address& mem, Register64 temp, Register64 output)
+      DEFINED_ON(arm, mips32, x86);
 
-    void speculationBarrier() PER_SHARED_ARCH;
+  void wasmAtomicLoad64(const wasm::MemoryAccessDesc& access,
+                        const BaseIndex& mem, Register64 temp,
+                        Register64 output) DEFINED_ON(arm, mips32, x86);
 
-    
-  public:
+  
+  
+  
+  
+  
 
-    
-    
-    template <typename Source>
-    void guardTypeSet(const Source& address, const TypeSet* types, BarrierKind kind,
-                      Register unboxScratch, Register objScratch, Register spectreRegToZero,
-                      Label* miss);
+  void wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
+                             const Address& mem, Register64 expected,
+                             Register64 replacement,
+                             Register64 output) PER_ARCH;
 
-    void guardObjectType(Register obj, const TypeSet* types, Register scratch,
-                         Register spectreRegToZero, Label* miss);
+  void wasmCompareExchange64(const wasm::MemoryAccessDesc& access,
+                             const BaseIndex& mem, Register64 expected,
+                             Register64 replacement,
+                             Register64 output) PER_ARCH;
+
+  
+  
+  
+
+  void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
+                            const Address& mem, Register64 value,
+                            Register64 output) PER_ARCH;
+
+  void wasmAtomicExchange64(const wasm::MemoryAccessDesc& access,
+                            const BaseIndex& mem, Register64 value,
+                            Register64 output) PER_ARCH;
+
+  
+  
+  
+  
+
+  void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                           Register64 value, const Address& mem,
+                           Register64 temp, Register64 output)
+      DEFINED_ON(arm, arm64, mips32, mips64, x64);
+
+  void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                           Register64 value, const BaseIndex& mem,
+                           Register64 temp, Register64 output)
+      DEFINED_ON(arm, arm64, mips32, mips64, x64);
+
+  void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                           const Address& value, const Address& mem,
+                           Register64 temp, Register64 output) DEFINED_ON(x86);
+
+  void wasmAtomicFetchOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                           const Address& value, const BaseIndex& mem,
+                           Register64 temp, Register64 output) DEFINED_ON(x86);
+
+  
+
+  void wasmAtomicEffectOp64(const wasm::MemoryAccessDesc& access, AtomicOp op,
+                            Register64 value, const BaseIndex& mem)
+      DEFINED_ON(x64);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  void compareExchangeJS(Scalar::Type arrayType, const Synchronization& sync,
+                         const Address& mem, Register expected,
+                         Register replacement, Register temp,
+                         AnyRegister output) DEFINED_ON(arm, arm64, x86_shared);
+
+  void compareExchangeJS(Scalar::Type arrayType, const Synchronization& sync,
+                         const BaseIndex& mem, Register expected,
+                         Register replacement, Register temp,
+                         AnyRegister output) DEFINED_ON(arm, arm64, x86_shared);
+
+  void compareExchangeJS(Scalar::Type arrayType, const Synchronization& sync,
+                         const Address& mem, Register expected,
+                         Register replacement, Register valueTemp,
+                         Register offsetTemp, Register maskTemp, Register temp,
+                         AnyRegister output) DEFINED_ON(mips_shared);
+
+  void compareExchangeJS(Scalar::Type arrayType, const Synchronization& sync,
+                         const BaseIndex& mem, Register expected,
+                         Register replacement, Register valueTemp,
+                         Register offsetTemp, Register maskTemp, Register temp,
+                         AnyRegister output) DEFINED_ON(mips_shared);
+
+  void atomicExchangeJS(Scalar::Type arrayType, const Synchronization& sync,
+                        const Address& mem, Register value, Register temp,
+                        AnyRegister output) DEFINED_ON(arm, arm64, x86_shared);
+
+  void atomicExchangeJS(Scalar::Type arrayType, const Synchronization& sync,
+                        const BaseIndex& mem, Register value, Register temp,
+                        AnyRegister output) DEFINED_ON(arm, arm64, x86_shared);
+
+  void atomicExchangeJS(Scalar::Type arrayType, const Synchronization& sync,
+                        const Address& mem, Register value, Register valueTemp,
+                        Register offsetTemp, Register maskTemp, Register temp,
+                        AnyRegister output) DEFINED_ON(mips_shared);
+
+  void atomicExchangeJS(Scalar::Type arrayType, const Synchronization& sync,
+                        const BaseIndex& mem, Register value,
+                        Register valueTemp, Register offsetTemp,
+                        Register maskTemp, Register temp, AnyRegister output)
+      DEFINED_ON(mips_shared);
+
+  void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                       AtomicOp op, Register value, const Address& mem,
+                       Register temp1, Register temp2, AnyRegister output)
+      DEFINED_ON(arm, arm64, x86_shared);
+
+  void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                       AtomicOp op, Register value, const BaseIndex& mem,
+                       Register temp1, Register temp2, AnyRegister output)
+      DEFINED_ON(arm, arm64, x86_shared);
+
+  void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                       AtomicOp op, Imm32 value, const Address& mem,
+                       Register temp1, Register temp2, AnyRegister output)
+      DEFINED_ON(x86_shared);
+
+  void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                       AtomicOp op, Imm32 value, const BaseIndex& mem,
+                       Register temp1, Register temp2, AnyRegister output)
+      DEFINED_ON(x86_shared);
+
+  void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                       AtomicOp op, Register value, const Address& mem,
+                       Register valueTemp, Register offsetTemp,
+                       Register maskTemp, Register temp, AnyRegister output)
+      DEFINED_ON(mips_shared);
+
+  void atomicFetchOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                       AtomicOp op, Register value, const BaseIndex& mem,
+                       Register valueTemp, Register offsetTemp,
+                       Register maskTemp, Register temp, AnyRegister output)
+      DEFINED_ON(mips_shared);
+
+  void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                        AtomicOp op, Register value, const Address& mem,
+                        Register temp) DEFINED_ON(arm, arm64, x86_shared);
+
+  void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                        AtomicOp op, Register value, const BaseIndex& mem,
+                        Register temp) DEFINED_ON(arm, arm64, x86_shared);
+
+  void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                        AtomicOp op, Imm32 value, const Address& mem,
+                        Register temp) DEFINED_ON(x86_shared);
+
+  void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                        AtomicOp op, Imm32 value, const BaseIndex& mem,
+                        Register temp) DEFINED_ON(x86_shared);
+
+  void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                        AtomicOp op, Register value, const Address& mem,
+                        Register valueTemp, Register offsetTemp,
+                        Register maskTemp) DEFINED_ON(mips_shared);
+
+  void atomicEffectOpJS(Scalar::Type arrayType, const Synchronization& sync,
+                        AtomicOp op, Register value, const BaseIndex& mem,
+                        Register valueTemp, Register offsetTemp,
+                        Register maskTemp) DEFINED_ON(mips_shared);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  void spectreMaskIndex(Register index, Register length, Register output);
+  void spectreMaskIndex(Register index, const Address& length, Register output);
+
+  
+  
+  void boundsCheck32PowerOfTwo(Register index, uint32_t length, Label* failure);
+
+  void speculationBarrier() PER_SHARED_ARCH;
+
+  
+ public:
+  
+  
+  template <typename Source>
+  void guardTypeSet(const Source& address, const TypeSet* types,
+                    BarrierKind kind, Register unboxScratch,
+                    Register objScratch, Register spectreRegToZero,
+                    Label* miss);
+
+  void guardObjectType(Register obj, const TypeSet* types, Register scratch,
+                       Register spectreRegToZero, Label* miss);
 
 #ifdef DEBUG
-    void guardTypeSetMightBeIncomplete(const TypeSet* types, Register obj, Register scratch,
-                                       Label* label);
+  void guardTypeSetMightBeIncomplete(const TypeSet* types, Register obj,
+                                     Register scratch, Label* label);
 #endif
 
-    
-    
-    void loadObjGroupUnsafe(Register obj, Register dest) {
-        loadPtr(Address(obj, JSObject::offsetOfGroup()), dest);
+  
+  
+  void loadObjGroupUnsafe(Register obj, Register dest) {
+    loadPtr(Address(obj, JSObject::offsetOfGroup()), dest);
+  }
+  void loadObjClassUnsafe(Register obj, Register dest) {
+    loadPtr(Address(obj, JSObject::offsetOfGroup()), dest);
+    loadPtr(Address(dest, ObjectGroup::offsetOfClasp()), dest);
+  }
+
+  template <typename EmitPreBarrier>
+  inline void storeObjGroup(Register group, Register obj,
+                            EmitPreBarrier emitPreBarrier);
+  template <typename EmitPreBarrier>
+  inline void storeObjGroup(ObjectGroup* group, Register obj,
+                            EmitPreBarrier emitPreBarrier);
+  template <typename EmitPreBarrier>
+  inline void storeObjShape(Register shape, Register obj,
+                            EmitPreBarrier emitPreBarrier);
+  template <typename EmitPreBarrier>
+  inline void storeObjShape(Shape* shape, Register obj,
+                            EmitPreBarrier emitPreBarrier);
+
+  void loadObjPrivate(Register obj, uint32_t nfixed, Register dest) {
+    loadPtr(Address(obj, NativeObject::getPrivateDataOffset(nfixed)), dest);
+  }
+
+  void loadObjProto(Register obj, Register dest) {
+    loadPtr(Address(obj, JSObject::offsetOfGroup()), dest);
+    loadPtr(Address(dest, ObjectGroup::offsetOfProto()), dest);
+  }
+
+  void loadStringLength(Register str, Register dest) {
+    load32(Address(str, JSString::offsetOfLength()), dest);
+  }
+
+  void loadStringChars(Register str, Register dest, CharEncoding encoding);
+
+  void loadNonInlineStringChars(Register str, Register dest,
+                                CharEncoding encoding);
+  void loadNonInlineStringCharsForStore(Register str, Register dest);
+  void storeNonInlineStringChars(Register chars, Register str);
+
+  void loadInlineStringChars(Register str, Register dest,
+                             CharEncoding encoding);
+  void loadInlineStringCharsForStore(Register str, Register dest);
+
+  void loadStringChar(Register str, Register index, Register output,
+                      Register scratch, Label* fail);
+
+  void loadRopeLeftChild(Register str, Register dest);
+  void storeRopeChildren(Register left, Register right, Register str);
+
+  void loadDependentStringBase(Register str, Register dest);
+  void storeDependentStringBase(Register base, Register str);
+
+  void loadStringIndexValue(Register str, Register dest, Label* fail);
+
+  
+
+
+  template <typename T>
+  void storeChar(const T& src, Address dest, CharEncoding encoding) {
+    if (encoding == CharEncoding::Latin1) {
+      store8(src, dest);
+    } else {
+      store16(src, dest);
     }
-    void loadObjClassUnsafe(Register obj, Register dest) {
-        loadPtr(Address(obj, JSObject::offsetOfGroup()), dest);
-        loadPtr(Address(dest, ObjectGroup::offsetOfClasp()), dest);
+  }
+
+  
+
+
+  template <typename T>
+  void loadChar(const T& src, Register dest, CharEncoding encoding) {
+    if (encoding == CharEncoding::Latin1) {
+      load8ZeroExtend(src, dest);
+    } else {
+      load16ZeroExtend(src, dest);
     }
+  }
 
-    template <typename EmitPreBarrier>
-    inline void storeObjGroup(Register group, Register obj, EmitPreBarrier emitPreBarrier);
-    template <typename EmitPreBarrier>
-    inline void storeObjGroup(ObjectGroup* group, Register obj, EmitPreBarrier emitPreBarrier);
-    template <typename EmitPreBarrier>
-    inline void storeObjShape(Register shape, Register obj, EmitPreBarrier emitPreBarrier);
-    template <typename EmitPreBarrier>
-    inline void storeObjShape(Shape* shape, Register obj, EmitPreBarrier emitPreBarrier);
+  
 
-    void loadObjPrivate(Register obj, uint32_t nfixed, Register dest) {
-        loadPtr(Address(obj, NativeObject::getPrivateDataOffset(nfixed)), dest);
+
+
+  void loadChar(Register chars, Register index, Register dest,
+                CharEncoding encoding, int32_t offset = 0);
+
+  
+
+
+  void addToCharPtr(Register chars, Register index, CharEncoding encoding);
+
+  void loadJSContext(Register dest);
+
+  void switchToRealm(Register realm);
+  void switchToRealm(const void* realm, Register scratch);
+  void switchToObjectRealm(Register obj, Register scratch);
+  void switchToBaselineFrameRealm(Register scratch);
+  void switchToWasmTlsRealm(Register scratch1, Register scratch2);
+  void debugAssertContextRealm(const void* realm, Register scratch);
+
+  void loadJitActivation(Register dest) {
+    loadJSContext(dest);
+    loadPtr(Address(dest, offsetof(JSContext, activation_)), dest);
+  }
+
+  void guardGroupHasUnanalyzedNewScript(Register group, Register scratch,
+                                        Label* fail);
+
+  void loadWasmTlsRegFromFrame(Register dest = WasmTlsReg);
+
+  template <typename T>
+  void loadTypedOrValue(const T& src, TypedOrValueRegister dest) {
+    if (dest.hasValue()) {
+      loadValue(src, dest.valueReg());
+    } else {
+      loadUnboxedValue(src, dest.type(), dest.typedReg());
     }
+  }
 
-    void loadObjProto(Register obj, Register dest) {
-        loadPtr(Address(obj, JSObject::offsetOfGroup()), dest);
-        loadPtr(Address(dest, ObjectGroup::offsetOfProto()), dest);
+  template <typename T>
+  void loadElementTypedOrValue(const T& src, TypedOrValueRegister dest,
+                               bool holeCheck, Label* hole) {
+    if (dest.hasValue()) {
+      loadValue(src, dest.valueReg());
+      if (holeCheck) {
+        branchTestMagic(Assembler::Equal, dest.valueReg(), hole);
+      }
+    } else {
+      if (holeCheck) {
+        branchTestMagic(Assembler::Equal, src, hole);
+      }
+      loadUnboxedValue(src, dest.type(), dest.typedReg());
     }
+  }
 
-    void loadStringLength(Register str, Register dest) {
-        load32(Address(str, JSString::offsetOfLength()), dest);
+  template <typename T>
+  void storeTypedOrValue(TypedOrValueRegister src, const T& dest) {
+    if (src.hasValue()) {
+      storeValue(src.valueReg(), dest);
+    } else if (IsFloatingPointType(src.type())) {
+      FloatRegister reg = src.typedReg().fpu();
+      if (src.type() == MIRType::Float32) {
+        convertFloat32ToDouble(reg, ScratchDoubleReg);
+        reg = ScratchDoubleReg;
+      }
+      storeDouble(reg, dest);
+    } else {
+      storeValue(ValueTypeFromMIRType(src.type()), src.typedReg().gpr(), dest);
     }
+  }
 
-    void loadStringChars(Register str, Register dest, CharEncoding encoding);
+  template <typename T>
+  inline void storeObjectOrNull(Register src, const T& dest);
 
-    void loadNonInlineStringChars(Register str, Register dest, CharEncoding encoding);
-    void loadNonInlineStringCharsForStore(Register str, Register dest);
-    void storeNonInlineStringChars(Register chars, Register str);
-
-    void loadInlineStringChars(Register str, Register dest, CharEncoding encoding);
-    void loadInlineStringCharsForStore(Register str, Register dest);
-
-    void loadStringChar(Register str, Register index, Register output, Register scratch,
-                        Label* fail);
-
-    void loadRopeLeftChild(Register str, Register dest);
-    void storeRopeChildren(Register left, Register right, Register str);
-
-    void loadDependentStringBase(Register str, Register dest);
-    void storeDependentStringBase(Register base, Register str);
-
-    void loadStringIndexValue(Register str, Register dest, Label* fail);
-
-    
-
-
-    template <typename T>
-    void storeChar(const T& src, Address dest, CharEncoding encoding) {
-        if (encoding == CharEncoding::Latin1) {
-            store8(src, dest);
-        } else {
-            store16(src, dest);
-        }
+  template <typename T>
+  void storeConstantOrRegister(const ConstantOrRegister& src, const T& dest) {
+    if (src.constant()) {
+      storeValue(src.value(), dest);
+    } else {
+      storeTypedOrValue(src.reg(), dest);
     }
+  }
 
-    
-
-
-    template <typename T>
-    void loadChar(const T& src, Register dest, CharEncoding encoding) {
-        if (encoding == CharEncoding::Latin1) {
-            load8ZeroExtend(src, dest);
-        } else {
-            load16ZeroExtend(src, dest);
-        }
+  void storeCallPointerResult(Register reg) {
+    if (reg != ReturnReg) {
+      mov(ReturnReg, reg);
     }
+  }
 
-    
+  inline void storeCallBoolResult(Register reg);
+  inline void storeCallInt32Result(Register reg);
 
-
-
-    void loadChar(Register chars, Register index, Register dest, CharEncoding encoding,
-                  int32_t offset = 0);
-
-    
-
-
-    void addToCharPtr(Register chars, Register index, CharEncoding encoding);
-
-    void loadJSContext(Register dest);
-
-    void switchToRealm(Register realm);
-    void switchToRealm(const void* realm, Register scratch);
-    void switchToObjectRealm(Register obj, Register scratch);
-    void switchToBaselineFrameRealm(Register scratch);
-    void switchToWasmTlsRealm(Register scratch1, Register scratch2);
-    void debugAssertContextRealm(const void* realm, Register scratch);
-
-    void loadJitActivation(Register dest) {
-        loadJSContext(dest);
-        loadPtr(Address(dest, offsetof(JSContext, activation_)), dest);
+  void storeCallFloatResult(FloatRegister reg) {
+    if (reg != ReturnDoubleReg) {
+      moveDouble(ReturnDoubleReg, reg);
     }
+  }
 
-    void guardGroupHasUnanalyzedNewScript(Register group, Register scratch, Label* fail);
+  inline void storeCallResultValue(AnyRegister dest, JSValueType type);
 
-    void loadWasmTlsRegFromFrame(Register dest = WasmTlsReg);
-
-    template<typename T>
-    void loadTypedOrValue(const T& src, TypedOrValueRegister dest) {
-        if (dest.hasValue()) {
-            loadValue(src, dest.valueReg());
-        } else {
-            loadUnboxedValue(src, dest.type(), dest.typedReg());
-        }
-    }
-
-    template<typename T>
-    void loadElementTypedOrValue(const T& src, TypedOrValueRegister dest, bool holeCheck,
-                                 Label* hole) {
-        if (dest.hasValue()) {
-            loadValue(src, dest.valueReg());
-            if (holeCheck) {
-                branchTestMagic(Assembler::Equal, dest.valueReg(), hole);
-            }
-        } else {
-            if (holeCheck) {
-                branchTestMagic(Assembler::Equal, src, hole);
-            }
-            loadUnboxedValue(src, dest.type(), dest.typedReg());
-        }
-    }
-
-    template <typename T>
-    void storeTypedOrValue(TypedOrValueRegister src, const T& dest) {
-        if (src.hasValue()) {
-            storeValue(src.valueReg(), dest);
-        } else if (IsFloatingPointType(src.type())) {
-            FloatRegister reg = src.typedReg().fpu();
-            if (src.type() == MIRType::Float32) {
-                convertFloat32ToDouble(reg, ScratchDoubleReg);
-                reg = ScratchDoubleReg;
-            }
-            storeDouble(reg, dest);
-        } else {
-            storeValue(ValueTypeFromMIRType(src.type()), src.typedReg().gpr(), dest);
-        }
-    }
-
-    template <typename T>
-    inline void storeObjectOrNull(Register src, const T& dest);
-
-    template <typename T>
-    void storeConstantOrRegister(const ConstantOrRegister& src, const T& dest) {
-        if (src.constant()) {
-            storeValue(src.value(), dest);
-        } else {
-            storeTypedOrValue(src.reg(), dest);
-        }
-    }
-
-    void storeCallPointerResult(Register reg) {
-        if (reg != ReturnReg) {
-            mov(ReturnReg, reg);
-        }
-    }
-
-    inline void storeCallBoolResult(Register reg);
-    inline void storeCallInt32Result(Register reg);
-
-    void storeCallFloatResult(FloatRegister reg) {
-        if (reg != ReturnDoubleReg) {
-            moveDouble(ReturnDoubleReg, reg);
-        }
-    }
-
-    inline void storeCallResultValue(AnyRegister dest, JSValueType type);
-
-    void storeCallResultValue(ValueOperand dest) {
+  void storeCallResultValue(ValueOperand dest) {
 #if defined(JS_NUNBOX32)
+    
+    
+    
+    
+    
+    if (dest.typeReg() == JSReturnReg_Data) {
+      if (dest.payloadReg() == JSReturnReg_Type) {
         
-        
-        
-        
-        
-        if (dest.typeReg() == JSReturnReg_Data) {
-            if (dest.payloadReg() == JSReturnReg_Type) {
-                
-                mov(JSReturnReg_Type, ReturnReg);
-                mov(JSReturnReg_Data, JSReturnReg_Type);
-                mov(ReturnReg, JSReturnReg_Data);
-            } else {
-                mov(JSReturnReg_Data, dest.payloadReg());
-                mov(JSReturnReg_Type, dest.typeReg());
-            }
-        } else {
-            mov(JSReturnReg_Type, dest.typeReg());
-            mov(JSReturnReg_Data, dest.payloadReg());
-        }
+        mov(JSReturnReg_Type, ReturnReg);
+        mov(JSReturnReg_Data, JSReturnReg_Type);
+        mov(ReturnReg, JSReturnReg_Data);
+      } else {
+        mov(JSReturnReg_Data, dest.payloadReg());
+        mov(JSReturnReg_Type, dest.typeReg());
+      }
+    } else {
+      mov(JSReturnReg_Type, dest.typeReg());
+      mov(JSReturnReg_Data, dest.payloadReg());
+    }
 #elif defined(JS_PUNBOX64)
-        if (dest.valueReg() != JSReturnReg) {
-            mov(JSReturnReg, dest.valueReg());
-        }
+    if (dest.valueReg() != JSReturnReg) {
+      mov(JSReturnReg, dest.valueReg());
+    }
 #else
 #error "Bad architecture"
 #endif
+  }
+
+  inline void storeCallResultValue(TypedOrValueRegister dest);
+
+  template <typename T>
+  void guardedCallPreBarrier(const T& address, MIRType type) {
+    Label done;
+
+    branchTestNeedsIncrementalBarrier(Assembler::Zero, &done);
+
+    if (type == MIRType::Value) {
+      branchTestGCThing(Assembler::NotEqual, address, &done);
+    } else if (type == MIRType::Object || type == MIRType::String) {
+      branchPtr(Assembler::Equal, address, ImmWord(0), &done);
     }
 
-    inline void storeCallResultValue(TypedOrValueRegister dest);
+    Push(PreBarrierReg);
+    computeEffectiveAddress(address, PreBarrierReg);
 
-    template <typename T>
-    void guardedCallPreBarrier(const T& address, MIRType type) {
-        Label done;
+    const JitRuntime* rt = GetJitContext()->runtime->jitRuntime();
+    TrampolinePtr preBarrier = rt->preBarrier(type);
 
-        branchTestNeedsIncrementalBarrier(Assembler::Zero, &done);
+    call(preBarrier);
+    Pop(PreBarrierReg);
 
-        if (type == MIRType::Value) {
-            branchTestGCThing(Assembler::NotEqual, address, &done);
-        } else if (type == MIRType::Object || type == MIRType::String) {
-            branchPtr(Assembler::Equal, address, ImmWord(0), &done);
-        }
+    bind(&done);
+  }
 
-        Push(PreBarrierReg);
-        computeEffectiveAddress(address, PreBarrierReg);
+  template <typename T>
+  void loadFromTypedArray(Scalar::Type arrayType, const T& src,
+                          AnyRegister dest, Register temp, Label* fail,
+                          bool canonicalizeDoubles = true);
 
-        const JitRuntime* rt = GetJitContext()->runtime->jitRuntime();
-        TrampolinePtr preBarrier = rt->preBarrier(type);
+  template <typename T>
+  void loadFromTypedArray(Scalar::Type arrayType, const T& src,
+                          const ValueOperand& dest, bool allowDouble,
+                          Register temp, Label* fail);
 
-        call(preBarrier);
-        Pop(PreBarrierReg);
-
-        bind(&done);
+  template <typename S, typename T>
+  void storeToTypedIntArray(Scalar::Type arrayType, const S& value,
+                            const T& dest) {
+    switch (arrayType) {
+      case Scalar::Int8:
+      case Scalar::Uint8:
+      case Scalar::Uint8Clamped:
+        store8(value, dest);
+        break;
+      case Scalar::Int16:
+      case Scalar::Uint16:
+        store16(value, dest);
+        break;
+      case Scalar::Int32:
+      case Scalar::Uint32:
+        store32(value, dest);
+        break;
+      default:
+        MOZ_CRASH("Invalid typed array type");
     }
+  }
 
-    template<typename T>
-    void loadFromTypedArray(Scalar::Type arrayType, const T& src, AnyRegister dest, Register temp, Label* fail,
-                            bool canonicalizeDoubles = true);
+  void storeToTypedFloatArray(Scalar::Type arrayType, FloatRegister value,
+                              const BaseIndex& dest);
+  void storeToTypedFloatArray(Scalar::Type arrayType, FloatRegister value,
+                              const Address& dest);
 
-    template<typename T>
-    void loadFromTypedArray(Scalar::Type arrayType, const T& src, const ValueOperand& dest, bool allowDouble,
-                            Register temp, Label* fail);
+  void memoryBarrierBefore(const Synchronization& sync);
+  void memoryBarrierAfter(const Synchronization& sync);
 
-    template<typename S, typename T>
-    void storeToTypedIntArray(Scalar::Type arrayType, const S& value, const T& dest) {
-        switch (arrayType) {
-          case Scalar::Int8:
-          case Scalar::Uint8:
-          case Scalar::Uint8Clamped:
-            store8(value, dest);
-            break;
-          case Scalar::Int16:
-          case Scalar::Uint16:
-            store16(value, dest);
-            break;
-          case Scalar::Int32:
-          case Scalar::Uint32:
-            store32(value, dest);
-            break;
-          default:
-            MOZ_CRASH("Invalid typed array type");
-        }
+  
+  template <typename T>
+  void loadUnboxedProperty(T address, JSValueType type,
+                           TypedOrValueRegister output);
+
+  
+  
+  
+  template <typename T>
+  void storeUnboxedProperty(T address, JSValueType type,
+                            const ConstantOrRegister& value, Label* failure);
+
+  void debugAssertIsObject(const ValueOperand& val);
+  void debugAssertObjHasFixedSlots(Register obj, Register scratch);
+
+  void branchIfNativeIteratorNotReusable(Register ni, Label* notReusable);
+
+  using MacroAssemblerSpecific::extractTag;
+  MOZ_MUST_USE Register extractTag(const TypedOrValueRegister& reg,
+                                   Register scratch) {
+    if (reg.hasValue()) {
+      return extractTag(reg.valueReg(), scratch);
     }
+    mov(ImmWord(MIRTypeToTag(reg.type())), scratch);
+    return scratch;
+  }
 
-    void storeToTypedFloatArray(Scalar::Type arrayType, FloatRegister value, const BaseIndex& dest);
-    void storeToTypedFloatArray(Scalar::Type arrayType, FloatRegister value, const Address& dest);
-
-    void memoryBarrierBefore(const Synchronization& sync);
-    void memoryBarrierAfter(const Synchronization& sync);
-
-    
-    template <typename T>
-    void loadUnboxedProperty(T address, JSValueType type, TypedOrValueRegister output);
-
-    
-    
-    
-    template <typename T>
-    void storeUnboxedProperty(T address, JSValueType type,
-                              const ConstantOrRegister& value, Label* failure);
-
-    void debugAssertIsObject(const ValueOperand& val);
-    void debugAssertObjHasFixedSlots(Register obj, Register scratch);
-
-    void branchIfNativeIteratorNotReusable(Register ni, Label* notReusable);
-
-    using MacroAssemblerSpecific::extractTag;
-    MOZ_MUST_USE Register extractTag(const TypedOrValueRegister& reg, Register scratch) {
-        if (reg.hasValue()) {
-            return extractTag(reg.valueReg(), scratch);
-        }
-        mov(ImmWord(MIRTypeToTag(reg.type())), scratch);
-        return scratch;
+  using MacroAssemblerSpecific::extractObject;
+  MOZ_MUST_USE Register extractObject(const TypedOrValueRegister& reg,
+                                      Register scratch) {
+    if (reg.hasValue()) {
+      return extractObject(reg.valueReg(), scratch);
     }
+    MOZ_ASSERT(reg.type() == MIRType::Object);
+    return reg.typedReg().gpr();
+  }
 
-    using MacroAssemblerSpecific::extractObject;
-    MOZ_MUST_USE Register extractObject(const TypedOrValueRegister& reg, Register scratch) {
-        if (reg.hasValue()) {
-            return extractObject(reg.valueReg(), scratch);
-        }
-        MOZ_ASSERT(reg.type() == MIRType::Object);
-        return reg.typedReg().gpr();
-    }
+  
+  
+  void clampDoubleToUint8(FloatRegister input, Register output) PER_ARCH;
 
-    
-    
-    void clampDoubleToUint8(FloatRegister input, Register output) PER_ARCH;
+  using MacroAssemblerSpecific::ensureDouble;
 
-    using MacroAssemblerSpecific::ensureDouble;
+  template <typename S>
+  void ensureDouble(const S& source, FloatRegister dest, Label* failure) {
+    Label isDouble, done;
+    branchTestDouble(Assembler::Equal, source, &isDouble);
+    branchTestInt32(Assembler::NotEqual, source, failure);
 
-    template <typename S>
-    void ensureDouble(const S& source, FloatRegister dest, Label* failure) {
-        Label isDouble, done;
-        branchTestDouble(Assembler::Equal, source, &isDouble);
-        branchTestInt32(Assembler::NotEqual, source, failure);
+    convertInt32ToDouble(source, dest);
+    jump(&done);
 
-        convertInt32ToDouble(source, dest);
-        jump(&done);
+    bind(&isDouble);
+    unboxDouble(source, dest);
 
-        bind(&isDouble);
-        unboxDouble(source, dest);
+    bind(&done);
+  }
 
-        bind(&done);
-    }
+  
+ private:
+  void checkAllocatorState(Label* fail);
+  bool shouldNurseryAllocate(gc::AllocKind allocKind,
+                             gc::InitialHeap initialHeap);
+  void nurseryAllocateObject(Register result, Register temp,
+                             gc::AllocKind allocKind, size_t nDynamicSlots,
+                             Label* fail);
+  void bumpPointerAllocate(Register result, Register temp, Label* fail,
+                           void* posAddr, const void* curEddAddr,
+                           uint32_t totalSize, uint32_t size);
 
-    
-  private:
-    void checkAllocatorState(Label* fail);
-    bool shouldNurseryAllocate(gc::AllocKind allocKind, gc::InitialHeap initialHeap);
-    void nurseryAllocateObject(Register result, Register temp, gc::AllocKind allocKind,
-                               size_t nDynamicSlots, Label* fail);
-    void bumpPointerAllocate(Register result, Register temp, Label* fail,
-        void* posAddr, const void* curEddAddr,
-        uint32_t totalSize, uint32_t size);
-
-    void freeListAllocate(Register result, Register temp, gc::AllocKind allocKind, Label* fail);
-    void allocateObject(Register result, Register temp, gc::AllocKind allocKind,
-                        uint32_t nDynamicSlots, gc::InitialHeap initialHeap, Label* fail);
-    void nurseryAllocateString(Register result, Register temp, gc::AllocKind allocKind,
-                               Label* fail);
-    void allocateString(Register result, Register temp, gc::AllocKind allocKind,
-                        gc::InitialHeap initialHeap, Label* fail);
-    void allocateNonObject(Register result, Register temp, gc::AllocKind allocKind, Label* fail);
-    void copySlotsFromTemplate(Register obj, const NativeTemplateObject& templateObj,
-                               uint32_t start, uint32_t end);
-    void fillSlotsWithConstantValue(Address addr, Register temp, uint32_t start, uint32_t end,
-                                    const Value& v);
-    void fillSlotsWithUndefined(Address addr, Register temp, uint32_t start, uint32_t end);
-    void fillSlotsWithUninitialized(Address addr, Register temp, uint32_t start, uint32_t end);
-
-    void initGCSlots(Register obj, Register temp, const NativeTemplateObject& templateObj,
-                     bool initContents);
-
-  public:
-    void callMallocStub(size_t nbytes, Register result, Label* fail);
-    void callFreeStub(Register slots);
-    void createGCObject(Register result, Register temp, const TemplateObject& templateObj,
-                        gc::InitialHeap initialHeap, Label* fail, bool initContents = true);
-
-    void initGCThing(Register obj, Register temp, const TemplateObject& templateObj,
-                     bool initContents = true);
-
-    enum class TypedArrayLength { Fixed, Dynamic };
-
-    void initTypedArraySlots(Register obj, Register temp, Register lengthReg,
-                             LiveRegisterSet liveRegs, Label* fail,
-                             TypedArrayObject* templateObj, TypedArrayLength lengthKind);
-
-    void initUnboxedObjectContents(Register object, const UnboxedLayout& layout);
-
-    void newGCString(Register result, Register temp, Label* fail, bool attemptNursery);
-    void newGCFatInlineString(Register result, Register temp, Label* fail, bool attemptNursery);
-
-    
-    
-    void compareStrings(JSOp op, Register left, Register right, Register result,
+  void freeListAllocate(Register result, Register temp, gc::AllocKind allocKind,
                         Label* fail);
+  void allocateObject(Register result, Register temp, gc::AllocKind allocKind,
+                      uint32_t nDynamicSlots, gc::InitialHeap initialHeap,
+                      Label* fail);
+  void nurseryAllocateString(Register result, Register temp,
+                             gc::AllocKind allocKind, Label* fail);
+  void allocateString(Register result, Register temp, gc::AllocKind allocKind,
+                      gc::InitialHeap initialHeap, Label* fail);
+  void allocateNonObject(Register result, Register temp,
+                         gc::AllocKind allocKind, Label* fail);
+  void copySlotsFromTemplate(Register obj,
+                             const NativeTemplateObject& templateObj,
+                             uint32_t start, uint32_t end);
+  void fillSlotsWithConstantValue(Address addr, Register temp, uint32_t start,
+                                  uint32_t end, const Value& v);
+  void fillSlotsWithUndefined(Address addr, Register temp, uint32_t start,
+                              uint32_t end);
+  void fillSlotsWithUninitialized(Address addr, Register temp, uint32_t start,
+                                  uint32_t end);
 
-    
-    void typeOfObject(Register objReg, Register scratch, Label* slow,
-                      Label* isObject, Label* isCallable, Label* isUndefined);
+  void initGCSlots(Register obj, Register temp,
+                   const NativeTemplateObject& templateObj, bool initContents);
 
-  public:
-    
-    void generateBailoutTail(Register scratch, Register bailoutInfo);
+ public:
+  void callMallocStub(size_t nbytes, Register result, Label* fail);
+  void callFreeStub(Register slots);
+  void createGCObject(Register result, Register temp,
+                      const TemplateObject& templateObj,
+                      gc::InitialHeap initialHeap, Label* fail,
+                      bool initContents = true);
 
-    void assertRectifierFrameParentType(Register frameType);
+  void initGCThing(Register obj, Register temp,
+                   const TemplateObject& templateObj, bool initContents = true);
 
-  public:
+  enum class TypedArrayLength { Fixed, Dynamic };
+
+  void initTypedArraySlots(Register obj, Register temp, Register lengthReg,
+                           LiveRegisterSet liveRegs, Label* fail,
+                           TypedArrayObject* templateObj,
+                           TypedArrayLength lengthKind);
+
+  void initUnboxedObjectContents(Register object, const UnboxedLayout& layout);
+
+  void newGCString(Register result, Register temp, Label* fail,
+                   bool attemptNursery);
+  void newGCFatInlineString(Register result, Register temp, Label* fail,
+                            bool attemptNursery);
+
+  
+  
+  
+  void compareStrings(JSOp op, Register left, Register right, Register result,
+                      Label* fail);
+
+  
+  void typeOfObject(Register objReg, Register scratch, Label* slow,
+                    Label* isObject, Label* isCallable, Label* isUndefined);
+
+ public:
+  
+  void generateBailoutTail(Register scratch, Register bailoutInfo);
+
+  void assertRectifierFrameParentType(Register frameType);
+
+ public:
 #ifndef JS_CODEGEN_ARM64
-    
-    
-    
-    template <typename T> inline void addToStackPtr(T t);
-    template <typename T> inline void addStackPtrTo(T t);
+  
+  
+  
+  template <typename T>
+  inline void addToStackPtr(T t);
+  template <typename T>
+  inline void addStackPtrTo(T t);
 
-    void subFromStackPtr(Imm32 imm32) DEFINED_ON(mips32, mips64, arm, x86, x64);
-    void subFromStackPtr(Register reg);
+  void subFromStackPtr(Imm32 imm32) DEFINED_ON(mips32, mips64, arm, x86, x64);
+  void subFromStackPtr(Register reg);
 
-    template <typename T>
-    void subStackPtrFrom(T t) { subPtr(getStackPointer(), t); }
+  template <typename T>
+  void subStackPtrFrom(T t) {
+    subPtr(getStackPointer(), t);
+  }
 
-    template <typename T>
-    void andToStackPtr(T t) { andPtr(t, getStackPointer()); }
-    template <typename T>
-    void andStackPtrTo(T t) { andPtr(getStackPointer(), t); }
+  template <typename T>
+  void andToStackPtr(T t) {
+    andPtr(t, getStackPointer());
+  }
+  template <typename T>
+  void andStackPtrTo(T t) {
+    andPtr(getStackPointer(), t);
+  }
 
-    template <typename T>
-    void moveToStackPtr(T t) { movePtr(t, getStackPointer()); }
-    template <typename T>
-    void moveStackPtrTo(T t) { movePtr(getStackPointer(), t); }
+  template <typename T>
+  void moveToStackPtr(T t) {
+    movePtr(t, getStackPointer());
+  }
+  template <typename T>
+  void moveStackPtrTo(T t) {
+    movePtr(getStackPointer(), t);
+  }
 
-    template <typename T>
-    void loadStackPtr(T t) { loadPtr(t, getStackPointer()); }
-    template <typename T>
-    void storeStackPtr(T t) { storePtr(getStackPointer(), t); }
+  template <typename T>
+  void loadStackPtr(T t) {
+    loadPtr(t, getStackPointer());
+  }
+  template <typename T>
+  void storeStackPtr(T t) {
+    storePtr(getStackPointer(), t);
+  }
 
-    
-    
-    
-    template <typename T>
-    inline void branchTestStackPtr(Condition cond, T t, Label* label);
-    template <typename T>
-    inline void branchStackPtr(Condition cond, T rhs, Label* label);
-    template <typename T>
-    inline void branchStackPtrRhs(Condition cond, T lhs, Label* label);
+  
+  
+  
+  template <typename T>
+  inline void branchTestStackPtr(Condition cond, T t, Label* label);
+  template <typename T>
+  inline void branchStackPtr(Condition cond, T rhs, Label* label);
+  template <typename T>
+  inline void branchStackPtrRhs(Condition cond, T lhs, Label* label);
 
-    
-    inline void reserveStack(uint32_t amount);
-#else 
-    void reserveStack(uint32_t amount);
+  
+  inline void reserveStack(uint32_t amount);
+#else  
+  void reserveStack(uint32_t amount);
 #endif
 
-  public:
-    void enableProfilingInstrumentation() {
-        emitProfilingInstrumentation_ = true;
-    }
+ public:
+  void enableProfilingInstrumentation() {
+    emitProfilingInstrumentation_ = true;
+  }
 
-  private:
+ private:
+  
+  
+  
+  class AutoProfilerCallInstrumentation {
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
+
+   public:
+    explicit AutoProfilerCallInstrumentation(
+        MacroAssembler& masm MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    ~AutoProfilerCallInstrumentation() {}
+  };
+  friend class AutoProfilerCallInstrumentation;
+
+  void appendProfilerCallSite(CodeOffset label) {
+    propagateOOM(profilerCallSites_.append(label));
+  }
+
+  
+  
+  void linkProfilerCallSites(JitCode* code);
+
+  
+  
+  
+  bool emitProfilingInstrumentation_;
+
+  
+  Vector<CodeOffset, 0, SystemAllocPolicy> profilerCallSites_;
+
+ public:
+  void loadJitCodeRaw(Register callee, Register dest);
+  void loadJitCodeNoArgCheck(Register callee, Register dest);
+
+  void loadBaselineFramePtr(Register framePtr, Register dest);
+
+  void pushBaselineFramePtr(Register framePtr, Register scratch) {
+    loadBaselineFramePtr(framePtr, scratch);
+    push(scratch);
+  }
+
+  void PushBaselineFramePtr(Register framePtr, Register scratch) {
+    loadBaselineFramePtr(framePtr, scratch);
+    Push(scratch);
+  }
+
+  using MacroAssemblerSpecific::movePtr;
+
+  void movePtr(TrampolinePtr ptr, Register dest) {
+    movePtr(ImmPtr(ptr.value), dest);
+  }
+
+ private:
+  void handleFailure();
+
+ public:
+  Label* exceptionLabel() {
     
-    
-    
-    class AutoProfilerCallInstrumentation {
-        MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
+    return &failureLabel_;
+  }
 
-      public:
-        explicit AutoProfilerCallInstrumentation(MacroAssembler& masm
-                                                 MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-        ~AutoProfilerCallInstrumentation() {}
-    };
-    friend class AutoProfilerCallInstrumentation;
+  Label* failureLabel() { return &failureLabel_; }
 
-    void appendProfilerCallSite(CodeOffset label) {
-        propagateOOM(profilerCallSites_.append(label));
-    }
+  void finish();
+  void link(JitCode* code);
 
-    
-    
-    void linkProfilerCallSites(JitCode* code);
+  void assumeUnreachable(const char* output);
 
-    
-    
-    
-    bool emitProfilingInstrumentation_;
+  template <typename T>
+  void assertTestInt32(Condition cond, const T& value, const char* output);
 
-    
-    Vector<CodeOffset, 0, SystemAllocPolicy> profilerCallSites_;
-
-  public:
-    void loadJitCodeRaw(Register callee, Register dest);
-    void loadJitCodeNoArgCheck(Register callee, Register dest);
-
-    void loadBaselineFramePtr(Register framePtr, Register dest);
-
-    void pushBaselineFramePtr(Register framePtr, Register scratch) {
-        loadBaselineFramePtr(framePtr, scratch);
-        push(scratch);
-    }
-
-    void PushBaselineFramePtr(Register framePtr, Register scratch) {
-        loadBaselineFramePtr(framePtr, scratch);
-        Push(scratch);
-    }
-
-    using MacroAssemblerSpecific::movePtr;
-
-    void movePtr(TrampolinePtr ptr, Register dest) {
-        movePtr(ImmPtr(ptr.value), dest);
-    }
-
-  private:
-    void handleFailure();
-
-  public:
-    Label* exceptionLabel() {
-        
-        return &failureLabel_;
-    }
-
-    Label* failureLabel() {
-        return &failureLabel_;
-    }
-
-    void finish();
-    void link(JitCode* code);
-
-    void assumeUnreachable(const char* output);
-
-    template<typename T>
-    void assertTestInt32(Condition cond, const T& value, const char* output);
-
-    void printf(const char* output);
-    void printf(const char* output, Register value);
+  void printf(const char* output);
+  void printf(const char* output, Register value);
 
 #ifdef JS_TRACE_LOGGING
-    void loadTraceLogger(Register logger) {
-        loadJSContext(logger);
-        loadPtr(Address(logger, offsetof(JSContext, traceLogger)), logger);
-    }
-    void tracelogStartId(Register logger, uint32_t textId, bool force = false);
-    void tracelogStartId(Register logger, Register textId);
-    void tracelogStartEvent(Register logger, Register event);
-    void tracelogStopId(Register logger, uint32_t textId, bool force = false);
-    void tracelogStopId(Register logger, Register textId);
+  void loadTraceLogger(Register logger) {
+    loadJSContext(logger);
+    loadPtr(Address(logger, offsetof(JSContext, traceLogger)), logger);
+  }
+  void tracelogStartId(Register logger, uint32_t textId, bool force = false);
+  void tracelogStartId(Register logger, Register textId);
+  void tracelogStartEvent(Register logger, Register event);
+  void tracelogStopId(Register logger, uint32_t textId, bool force = false);
+  void tracelogStopId(Register logger, Register textId);
 #endif
 
-#define DISPATCH_FLOATING_POINT_OP(method, type, arg1d, arg1f, arg2)    \
-    MOZ_ASSERT(IsFloatingPointType(type));                              \
-    if (type == MIRType::Double)                                        \
-        method##Double(arg1d, arg2);                                    \
-    else                                                                \
-        method##Float32(arg1f, arg2);                                   \
+#define DISPATCH_FLOATING_POINT_OP(method, type, arg1d, arg1f, arg2) \
+  MOZ_ASSERT(IsFloatingPointType(type));                             \
+  if (type == MIRType::Double)                                       \
+    method##Double(arg1d, arg2);                                     \
+  else                                                               \
+    method##Float32(arg1f, arg2);
 
-    void loadConstantFloatingPoint(double d, float f, FloatRegister dest, MIRType destType) {
-        DISPATCH_FLOATING_POINT_OP(loadConstant, destType, d, f, dest);
-    }
-    void boolValueToFloatingPoint(ValueOperand value, FloatRegister dest, MIRType destType) {
-        DISPATCH_FLOATING_POINT_OP(boolValueTo, destType, value, value, dest);
-    }
-    void int32ValueToFloatingPoint(ValueOperand value, FloatRegister dest, MIRType destType) {
-        DISPATCH_FLOATING_POINT_OP(int32ValueTo, destType, value, value, dest);
-    }
-    void convertInt32ToFloatingPoint(Register src, FloatRegister dest, MIRType destType) {
-        DISPATCH_FLOATING_POINT_OP(convertInt32To, destType, src, src, dest);
-    }
+  void loadConstantFloatingPoint(double d, float f, FloatRegister dest,
+                                 MIRType destType) {
+    DISPATCH_FLOATING_POINT_OP(loadConstant, destType, d, f, dest);
+  }
+  void boolValueToFloatingPoint(ValueOperand value, FloatRegister dest,
+                                MIRType destType) {
+    DISPATCH_FLOATING_POINT_OP(boolValueTo, destType, value, value, dest);
+  }
+  void int32ValueToFloatingPoint(ValueOperand value, FloatRegister dest,
+                                 MIRType destType) {
+    DISPATCH_FLOATING_POINT_OP(int32ValueTo, destType, value, value, dest);
+  }
+  void convertInt32ToFloatingPoint(Register src, FloatRegister dest,
+                                   MIRType destType) {
+    DISPATCH_FLOATING_POINT_OP(convertInt32To, destType, src, src, dest);
+  }
 
 #undef DISPATCH_FLOATING_POINT_OP
 
-    void convertValueToFloatingPoint(ValueOperand value, FloatRegister output, Label* fail,
-                                     MIRType outputType);
-    MOZ_MUST_USE bool convertValueToFloatingPoint(JSContext* cx, const Value& v,
-                                                  FloatRegister output, Label* fail,
-                                                  MIRType outputType);
-    MOZ_MUST_USE bool convertConstantOrRegisterToFloatingPoint(JSContext* cx,
-                                                               const ConstantOrRegister& src,
-                                                               FloatRegister output, Label* fail,
-                                                               MIRType outputType);
-    void convertTypedOrValueToFloatingPoint(TypedOrValueRegister src, FloatRegister output,
-                                            Label* fail, MIRType outputType);
+  void convertValueToFloatingPoint(ValueOperand value, FloatRegister output,
+                                   Label* fail, MIRType outputType);
+  MOZ_MUST_USE bool convertValueToFloatingPoint(JSContext* cx, const Value& v,
+                                                FloatRegister output,
+                                                Label* fail,
+                                                MIRType outputType);
+  MOZ_MUST_USE bool convertConstantOrRegisterToFloatingPoint(
+      JSContext* cx, const ConstantOrRegister& src, FloatRegister output,
+      Label* fail, MIRType outputType);
+  void convertTypedOrValueToFloatingPoint(TypedOrValueRegister src,
+                                          FloatRegister output, Label* fail,
+                                          MIRType outputType);
 
-    void outOfLineTruncateSlow(FloatRegister src, Register dest, bool widenFloatToDouble,
-                               bool compilingWasm, wasm::BytecodeOffset callOffset);
+  void outOfLineTruncateSlow(FloatRegister src, Register dest,
+                             bool widenFloatToDouble, bool compilingWasm,
+                             wasm::BytecodeOffset callOffset);
 
-    void convertInt32ValueToDouble(const Address& address, Register scratch, Label* done);
-    void convertInt32ValueToDouble(ValueOperand val);
+  void convertInt32ValueToDouble(const Address& address, Register scratch,
+                                 Label* done);
+  void convertInt32ValueToDouble(ValueOperand val);
 
-    void convertValueToDouble(ValueOperand value, FloatRegister output, Label* fail) {
-        convertValueToFloatingPoint(value, output, fail, MIRType::Double);
-    }
-    MOZ_MUST_USE bool convertValueToDouble(JSContext* cx, const Value& v, FloatRegister output,
-                                           Label* fail) {
-        return convertValueToFloatingPoint(cx, v, output, fail, MIRType::Double);
-    }
-    MOZ_MUST_USE bool convertConstantOrRegisterToDouble(JSContext* cx,
-                                                        const ConstantOrRegister& src,
-                                                        FloatRegister output, Label* fail)
-    {
-        return convertConstantOrRegisterToFloatingPoint(cx, src, output, fail, MIRType::Double);
-    }
-    void convertTypedOrValueToDouble(TypedOrValueRegister src, FloatRegister output, Label* fail) {
-        convertTypedOrValueToFloatingPoint(src, output, fail, MIRType::Double);
-    }
+  void convertValueToDouble(ValueOperand value, FloatRegister output,
+                            Label* fail) {
+    convertValueToFloatingPoint(value, output, fail, MIRType::Double);
+  }
+  MOZ_MUST_USE bool convertValueToDouble(JSContext* cx, const Value& v,
+                                         FloatRegister output, Label* fail) {
+    return convertValueToFloatingPoint(cx, v, output, fail, MIRType::Double);
+  }
+  MOZ_MUST_USE bool convertConstantOrRegisterToDouble(
+      JSContext* cx, const ConstantOrRegister& src, FloatRegister output,
+      Label* fail) {
+    return convertConstantOrRegisterToFloatingPoint(cx, src, output, fail,
+                                                    MIRType::Double);
+  }
+  void convertTypedOrValueToDouble(TypedOrValueRegister src,
+                                   FloatRegister output, Label* fail) {
+    convertTypedOrValueToFloatingPoint(src, output, fail, MIRType::Double);
+  }
 
-    void convertValueToFloat(ValueOperand value, FloatRegister output, Label* fail) {
-        convertValueToFloatingPoint(value, output, fail, MIRType::Float32);
-    }
-    MOZ_MUST_USE bool convertValueToFloat(JSContext* cx, const Value& v, FloatRegister output,
-                                          Label* fail) {
-        return convertValueToFloatingPoint(cx, v, output, fail, MIRType::Float32);
-    }
-    MOZ_MUST_USE bool convertConstantOrRegisterToFloat(JSContext* cx,
-                                                       const ConstantOrRegister& src,
-                                                       FloatRegister output, Label* fail)
-    {
-        return convertConstantOrRegisterToFloatingPoint(cx, src, output, fail, MIRType::Float32);
-    }
-    void convertTypedOrValueToFloat(TypedOrValueRegister src, FloatRegister output, Label* fail) {
-        convertTypedOrValueToFloatingPoint(src, output, fail, MIRType::Float32);
-    }
-    
-    
-    
-    void convertDoubleToInt(FloatRegister src, Register output, FloatRegister temp,
-                            Label* truncateFail, Label* fail, IntConversionBehavior behavior);
+  void convertValueToFloat(ValueOperand value, FloatRegister output,
+                           Label* fail) {
+    convertValueToFloatingPoint(value, output, fail, MIRType::Float32);
+  }
+  MOZ_MUST_USE bool convertValueToFloat(JSContext* cx, const Value& v,
+                                        FloatRegister output, Label* fail) {
+    return convertValueToFloatingPoint(cx, v, output, fail, MIRType::Float32);
+  }
+  MOZ_MUST_USE bool convertConstantOrRegisterToFloat(
+      JSContext* cx, const ConstantOrRegister& src, FloatRegister output,
+      Label* fail) {
+    return convertConstantOrRegisterToFloatingPoint(cx, src, output, fail,
+                                                    MIRType::Float32);
+  }
+  void convertTypedOrValueToFloat(TypedOrValueRegister src,
+                                  FloatRegister output, Label* fail) {
+    convertTypedOrValueToFloatingPoint(src, output, fail, MIRType::Float32);
+  }
+  
+  
+  
+  void convertDoubleToInt(FloatRegister src, Register output,
+                          FloatRegister temp, Label* truncateFail, Label* fail,
+                          IntConversionBehavior behavior);
 
-    
-    
-    
-    
-    void convertValueToInt(ValueOperand value, MDefinition* input,
-                           Label* handleStringEntry, Label* handleStringRejoin,
-                           Label* truncateDoubleSlow,
-                           Register stringReg, FloatRegister temp, Register output,
-                           Label* fail, IntConversionBehavior behavior,
-                           IntConversionInputKind conversion = IntConversionInputKind::Any);
-    void convertValueToInt(ValueOperand value, FloatRegister temp, Register output, Label* fail,
-                           IntConversionBehavior behavior)
-    {
-        convertValueToInt(value, nullptr, nullptr, nullptr, nullptr, InvalidReg, temp, output,
-                          fail, behavior);
-    }
-    MOZ_MUST_USE bool convertValueToInt(JSContext* cx, const Value& v, Register output, Label* fail,
-                                        IntConversionBehavior behavior);
-    MOZ_MUST_USE bool convertConstantOrRegisterToInt(JSContext* cx,
-                                                     const ConstantOrRegister& src,
-                                                     FloatRegister temp, Register output,
-                                                     Label* fail, IntConversionBehavior behavior);
-    void convertTypedOrValueToInt(TypedOrValueRegister src, FloatRegister temp, Register output,
-                                  Label* fail, IntConversionBehavior behavior);
+  
+  
+  
+  
+  void convertValueToInt(
+      ValueOperand value, MDefinition* input, Label* handleStringEntry,
+      Label* handleStringRejoin, Label* truncateDoubleSlow, Register stringReg,
+      FloatRegister temp, Register output, Label* fail,
+      IntConversionBehavior behavior,
+      IntConversionInputKind conversion = IntConversionInputKind::Any);
+  void convertValueToInt(ValueOperand value, FloatRegister temp,
+                         Register output, Label* fail,
+                         IntConversionBehavior behavior) {
+    convertValueToInt(value, nullptr, nullptr, nullptr, nullptr, InvalidReg,
+                      temp, output, fail, behavior);
+  }
+  MOZ_MUST_USE bool convertValueToInt(JSContext* cx, const Value& v,
+                                      Register output, Label* fail,
+                                      IntConversionBehavior behavior);
+  MOZ_MUST_USE bool convertConstantOrRegisterToInt(
+      JSContext* cx, const ConstantOrRegister& src, FloatRegister temp,
+      Register output, Label* fail, IntConversionBehavior behavior);
+  void convertTypedOrValueToInt(TypedOrValueRegister src, FloatRegister temp,
+                                Register output, Label* fail,
+                                IntConversionBehavior behavior);
 
-    
-    
-    void convertValueToInt32(ValueOperand value, MDefinition* input,
-                             FloatRegister temp, Register output, Label* fail,
-                             bool negativeZeroCheck,
-                             IntConversionInputKind conversion = IntConversionInputKind::Any)
-    {
-        convertValueToInt(value, input, nullptr, nullptr, nullptr, InvalidReg, temp, output, fail,
-                          negativeZeroCheck
-                          ? IntConversionBehavior::NegativeZeroCheck
+  
+  
+  void convertValueToInt32(
+      ValueOperand value, MDefinition* input, FloatRegister temp,
+      Register output, Label* fail, bool negativeZeroCheck,
+      IntConversionInputKind conversion = IntConversionInputKind::Any) {
+    convertValueToInt(
+        value, input, nullptr, nullptr, nullptr, InvalidReg, temp, output, fail,
+        negativeZeroCheck ? IntConversionBehavior::NegativeZeroCheck
                           : IntConversionBehavior::Normal,
-                          conversion);
-    }
+        conversion);
+  }
 
-    
-    
-    void truncateValueToInt32(ValueOperand value, MDefinition* input,
-                              Label* handleStringEntry, Label* handleStringRejoin,
-                              Label* truncateDoubleSlow,
-                              Register stringReg, FloatRegister temp, Register output, Label* fail)
-    {
-        convertValueToInt(value, input, handleStringEntry, handleStringRejoin, truncateDoubleSlow,
-                          stringReg, temp, output, fail, IntConversionBehavior::Truncate);
-    }
+  
+  
+  void truncateValueToInt32(ValueOperand value, MDefinition* input,
+                            Label* handleStringEntry, Label* handleStringRejoin,
+                            Label* truncateDoubleSlow, Register stringReg,
+                            FloatRegister temp, Register output, Label* fail) {
+    convertValueToInt(value, input, handleStringEntry, handleStringRejoin,
+                      truncateDoubleSlow, stringReg, temp, output, fail,
+                      IntConversionBehavior::Truncate);
+  }
 
-    void truncateValueToInt32(ValueOperand value, FloatRegister temp, Register output, Label* fail)
-    {
-        truncateValueToInt32(value, nullptr, nullptr, nullptr, nullptr, InvalidReg, temp, output,
-                             fail);
-    }
+  void truncateValueToInt32(ValueOperand value, FloatRegister temp,
+                            Register output, Label* fail) {
+    truncateValueToInt32(value, nullptr, nullptr, nullptr, nullptr, InvalidReg,
+                         temp, output, fail);
+  }
 
-    MOZ_MUST_USE bool truncateConstantOrRegisterToInt32(JSContext* cx,
-                                                        const ConstantOrRegister& src,
-                                                        FloatRegister temp, Register output,
-                                                        Label* fail)
-    {
-        return convertConstantOrRegisterToInt(cx, src, temp, output, fail, IntConversionBehavior::Truncate);
-    }
+  MOZ_MUST_USE bool truncateConstantOrRegisterToInt32(
+      JSContext* cx, const ConstantOrRegister& src, FloatRegister temp,
+      Register output, Label* fail) {
+    return convertConstantOrRegisterToInt(cx, src, temp, output, fail,
+                                          IntConversionBehavior::Truncate);
+  }
 
-    
-    void clampValueToUint8(ValueOperand value, MDefinition* input,
-                           Label* handleStringEntry, Label* handleStringRejoin,
-                           Register stringReg, FloatRegister temp, Register output, Label* fail)
-    {
-        convertValueToInt(value, input, handleStringEntry, handleStringRejoin, nullptr,
-                          stringReg, temp, output, fail, IntConversionBehavior::ClampToUint8);
-    }
+  
+  void clampValueToUint8(ValueOperand value, MDefinition* input,
+                         Label* handleStringEntry, Label* handleStringRejoin,
+                         Register stringReg, FloatRegister temp,
+                         Register output, Label* fail) {
+    convertValueToInt(value, input, handleStringEntry, handleStringRejoin,
+                      nullptr, stringReg, temp, output, fail,
+                      IntConversionBehavior::ClampToUint8);
+  }
 
-    MOZ_MUST_USE bool clampConstantOrRegisterToUint8(JSContext* cx,
-                                                     const ConstantOrRegister& src,
-                                                     FloatRegister temp, Register output,
-                                                     Label* fail)
-    {
-        return convertConstantOrRegisterToInt(cx, src, temp, output, fail,
-                                              IntConversionBehavior::ClampToUint8);
-    }
+  MOZ_MUST_USE bool clampConstantOrRegisterToUint8(
+      JSContext* cx, const ConstantOrRegister& src, FloatRegister temp,
+      Register output, Label* fail) {
+    return convertConstantOrRegisterToInt(cx, src, temp, output, fail,
+                                          IntConversionBehavior::ClampToUint8);
+  }
 
-    MOZ_MUST_USE bool icBuildOOLFakeExitFrame(void* fakeReturnAddr, AutoSaveLiveRegisters& save);
+  MOZ_MUST_USE bool icBuildOOLFakeExitFrame(void* fakeReturnAddr,
+                                            AutoSaveLiveRegisters& save);
 
-    
-    
-    
-    void alignJitStackBasedOnNArgs(Register nargs);
-    void alignJitStackBasedOnNArgs(uint32_t nargs);
+  
+  
+  
+  void alignJitStackBasedOnNArgs(Register nargs);
+  void alignJitStackBasedOnNArgs(uint32_t nargs);
 
-    inline void assertStackAlignment(uint32_t alignment, int32_t offset = 0);
+  inline void assertStackAlignment(uint32_t alignment, int32_t offset = 0);
 
-    void performPendingReadBarriers();
+  void performPendingReadBarriers();
 
-    void touchFrameValues(Register numStackValues, Register scratch1, Register scratch2);
+  void touchFrameValues(Register numStackValues, Register scratch1,
+                        Register scratch2);
 
-  private:
-    
-    
-    
-    JSObject* getSingletonAndDelayBarrier(const TypeSet* types, size_t i);
-    ObjectGroup* getGroupAndDelayBarrier(const TypeSet* types, size_t i);
+ private:
+  
+  
+  
+  JSObject* getSingletonAndDelayBarrier(const TypeSet* types, size_t i);
+  ObjectGroup* getGroupAndDelayBarrier(const TypeSet* types, size_t i);
 
-    Vector<JSObject*, 0, SystemAllocPolicy> pendingObjectReadBarriers_;
-    Vector<ObjectGroup*, 0, SystemAllocPolicy> pendingObjectGroupReadBarriers_;
+  Vector<JSObject*, 0, SystemAllocPolicy> pendingObjectReadBarriers_;
+  Vector<ObjectGroup*, 0, SystemAllocPolicy> pendingObjectGroupReadBarriers_;
 };
 
 
-class MOZ_RAII StackMacroAssembler : public MacroAssembler
-{
-    JS::AutoCheckCannotGC nogc;
+class MOZ_RAII StackMacroAssembler : public MacroAssembler {
+  JS::AutoCheckCannotGC nogc;
 
-  public:
-    StackMacroAssembler()
-      : MacroAssembler()
-    {}
-    explicit StackMacroAssembler(JSContext* cx)
-      : MacroAssembler(cx)
-    {}
+ public:
+  StackMacroAssembler() : MacroAssembler() {}
+  explicit StackMacroAssembler(JSContext* cx) : MacroAssembler(cx) {}
 };
 
 
 
-class MOZ_RAII WasmMacroAssembler : public MacroAssembler
-{
-  public:
-    explicit WasmMacroAssembler(TempAllocator& alloc)
-      : MacroAssembler(WasmToken(), alloc)
-    {}
-    ~WasmMacroAssembler() {
-        assertNoGCThings();
-    }
+class MOZ_RAII WasmMacroAssembler : public MacroAssembler {
+ public:
+  explicit WasmMacroAssembler(TempAllocator& alloc)
+      : MacroAssembler(WasmToken(), alloc) {}
+  ~WasmMacroAssembler() { assertNoGCThings(); }
 };
 
 
 
-class IonHeapMacroAssembler : public MacroAssembler
-{
-  public:
-    IonHeapMacroAssembler()
-      : MacroAssembler()
-    {
-        MOZ_ASSERT(CurrentThreadIsIonCompiling());
-    }
+class IonHeapMacroAssembler : public MacroAssembler {
+ public:
+  IonHeapMacroAssembler() : MacroAssembler() {
+    MOZ_ASSERT(CurrentThreadIsIonCompiling());
+  }
 };
 
 
-inline uint32_t
-MacroAssembler::framePushed() const
-{
-    return framePushed_;
+inline uint32_t MacroAssembler::framePushed() const { return framePushed_; }
+
+inline void MacroAssembler::setFramePushed(uint32_t framePushed) {
+  framePushed_ = framePushed;
 }
 
-inline void
-MacroAssembler::setFramePushed(uint32_t framePushed)
-{
-    framePushed_ = framePushed;
+inline void MacroAssembler::adjustFrame(int32_t value) {
+  MOZ_ASSERT_IF(value < 0, framePushed_ >= uint32_t(-value));
+  setFramePushed(framePushed_ + value);
 }
 
-inline void
-MacroAssembler::adjustFrame(int32_t value)
-{
-    MOZ_ASSERT_IF(value < 0, framePushed_ >= uint32_t(-value));
-    setFramePushed(framePushed_ + value);
-}
-
-inline void
-MacroAssembler::implicitPop(uint32_t bytes)
-{
-    MOZ_ASSERT(bytes % sizeof(intptr_t) == 0);
-    MOZ_ASSERT(bytes <= INT32_MAX);
-    adjustFrame(-int32_t(bytes));
+inline void MacroAssembler::implicitPop(uint32_t bytes) {
+  MOZ_ASSERT(bytes % sizeof(intptr_t) == 0);
+  MOZ_ASSERT(bytes <= INT32_MAX);
+  adjustFrame(-int32_t(bytes));
 }
 
 
-static inline Assembler::DoubleCondition
-JSOpToDoubleCondition(JSOp op)
-{
+static inline Assembler::DoubleCondition JSOpToDoubleCondition(JSOp op) {
+  switch (op) {
+    case JSOP_EQ:
+    case JSOP_STRICTEQ:
+      return Assembler::DoubleEqual;
+    case JSOP_NE:
+    case JSOP_STRICTNE:
+      return Assembler::DoubleNotEqualOrUnordered;
+    case JSOP_LT:
+      return Assembler::DoubleLessThan;
+    case JSOP_LE:
+      return Assembler::DoubleLessThanOrEqual;
+    case JSOP_GT:
+      return Assembler::DoubleGreaterThan;
+    case JSOP_GE:
+      return Assembler::DoubleGreaterThanOrEqual;
+    default:
+      MOZ_CRASH("Unexpected comparison operation");
+  }
+}
+
+
+
+
+static inline Assembler::Condition JSOpToCondition(JSOp op, bool isSigned) {
+  if (isSigned) {
     switch (op) {
       case JSOP_EQ:
       case JSOP_STRICTEQ:
-        return Assembler::DoubleEqual;
+        return Assembler::Equal;
       case JSOP_NE:
       case JSOP_STRICTNE:
-        return Assembler::DoubleNotEqualOrUnordered;
+        return Assembler::NotEqual;
       case JSOP_LT:
-        return Assembler::DoubleLessThan;
+        return Assembler::LessThan;
       case JSOP_LE:
-        return Assembler::DoubleLessThanOrEqual;
+        return Assembler::LessThanOrEqual;
       case JSOP_GT:
-        return Assembler::DoubleGreaterThan;
+        return Assembler::GreaterThan;
       case JSOP_GE:
-        return Assembler::DoubleGreaterThanOrEqual;
+        return Assembler::GreaterThanOrEqual;
       default:
-        MOZ_CRASH("Unexpected comparison operation");
+        MOZ_CRASH("Unrecognized comparison operation");
     }
-}
-
-
-
-
-static inline Assembler::Condition
-JSOpToCondition(JSOp op, bool isSigned)
-{
-    if (isSigned) {
-        switch (op) {
-          case JSOP_EQ:
-          case JSOP_STRICTEQ:
-            return Assembler::Equal;
-          case JSOP_NE:
-          case JSOP_STRICTNE:
-            return Assembler::NotEqual;
-          case JSOP_LT:
-            return Assembler::LessThan;
-          case JSOP_LE:
-            return Assembler::LessThanOrEqual;
-          case JSOP_GT:
-            return Assembler::GreaterThan;
-          case JSOP_GE:
-            return Assembler::GreaterThanOrEqual;
-          default:
-            MOZ_CRASH("Unrecognized comparison operation");
-        }
-    } else {
-        switch (op) {
-          case JSOP_EQ:
-          case JSOP_STRICTEQ:
-            return Assembler::Equal;
-          case JSOP_NE:
-          case JSOP_STRICTNE:
-            return Assembler::NotEqual;
-          case JSOP_LT:
-            return Assembler::Below;
-          case JSOP_LE:
-            return Assembler::BelowOrEqual;
-          case JSOP_GT:
-            return Assembler::Above;
-          case JSOP_GE:
-            return Assembler::AboveOrEqual;
-          default:
-            MOZ_CRASH("Unrecognized comparison operation");
-        }
+  } else {
+    switch (op) {
+      case JSOP_EQ:
+      case JSOP_STRICTEQ:
+        return Assembler::Equal;
+      case JSOP_NE:
+      case JSOP_STRICTNE:
+        return Assembler::NotEqual;
+      case JSOP_LT:
+        return Assembler::Below;
+      case JSOP_LE:
+        return Assembler::BelowOrEqual;
+      case JSOP_GT:
+        return Assembler::Above;
+      case JSOP_GE:
+        return Assembler::AboveOrEqual;
+      default:
+        MOZ_CRASH("Unrecognized comparison operation");
     }
+  }
 }
 
-static inline size_t
-StackDecrementForCall(uint32_t alignment, size_t bytesAlreadyPushed, size_t bytesToPush)
-{
-    return bytesToPush +
-           ComputeByteAlignment(bytesAlreadyPushed + bytesToPush, alignment);
+static inline size_t StackDecrementForCall(uint32_t alignment,
+                                           size_t bytesAlreadyPushed,
+                                           size_t bytesToPush) {
+  return bytesToPush +
+         ComputeByteAlignment(bytesAlreadyPushed + bytesToPush, alignment);
 }
 
-static inline MIRType
-ToMIRType(MIRType t)
-{
-    return t;
-}
+static inline MIRType ToMIRType(MIRType t) { return t; }
 
-static inline MIRType
-ToMIRType(ABIArgType argType)
-{
-    switch (argType) {
-      case ArgType_General: return MIRType::Int32;
-      case ArgType_Double:  return MIRType::Double;
-      case ArgType_Float32: return MIRType::Float32;
-      case ArgType_Int64:   return MIRType::Int64;
-      default: break;
-    }
-    MOZ_CRASH("unexpected argType");
+static inline MIRType ToMIRType(ABIArgType argType) {
+  switch (argType) {
+    case ArgType_General:
+      return MIRType::Int32;
+    case ArgType_Double:
+      return MIRType::Double;
+    case ArgType_Float32:
+      return MIRType::Float32;
+    case ArgType_Int64:
+      return MIRType::Int64;
+    default:
+      break;
+  }
+  MOZ_CRASH("unexpected argType");
 }
 
 template <class VecT>
-class ABIArgIter
-{
-    ABIArgGenerator gen_;
-    const VecT& types_;
-    unsigned i_;
+class ABIArgIter {
+  ABIArgGenerator gen_;
+  const VecT& types_;
+  unsigned i_;
 
-    void settle() { if (!done()) gen_.next(ToMIRType(types_[i_])); }
+  void settle() {
+    if (!done()) gen_.next(ToMIRType(types_[i_]));
+  }
 
-  public:
-    explicit ABIArgIter(const VecT& types) : types_(types), i_(0) { settle(); }
-    void operator++(int) { MOZ_ASSERT(!done()); i_++; settle(); }
-    bool done() const { return i_ == types_.length(); }
+ public:
+  explicit ABIArgIter(const VecT& types) : types_(types), i_(0) { settle(); }
+  void operator++(int) {
+    MOZ_ASSERT(!done());
+    i_++;
+    settle();
+  }
+  bool done() const { return i_ == types_.length(); }
 
-    ABIArg* operator->() { MOZ_ASSERT(!done()); return &gen_.current(); }
-    ABIArg& operator*() { MOZ_ASSERT(!done()); return gen_.current(); }
+  ABIArg* operator->() {
+    MOZ_ASSERT(!done());
+    return &gen_.current();
+  }
+  ABIArg& operator*() {
+    MOZ_ASSERT(!done());
+    return gen_.current();
+  }
 
-    unsigned index() const { MOZ_ASSERT(!done()); return i_; }
-    MIRType mirType() const { MOZ_ASSERT(!done()); return ToMIRType(types_[i_]); }
-    uint32_t stackBytesConsumedSoFar() const { return gen_.stackBytesConsumedSoFar(); }
+  unsigned index() const {
+    MOZ_ASSERT(!done());
+    return i_;
+  }
+  MIRType mirType() const {
+    MOZ_ASSERT(!done());
+    return ToMIRType(types_[i_]);
+  }
+  uint32_t stackBytesConsumedSoFar() const {
+    return gen_.stackBytesConsumedSoFar();
+  }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

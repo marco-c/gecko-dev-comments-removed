@@ -35,7 +35,6 @@
 
 
 
-
 #include "base/time.h"
 
 #ifndef __MINGW32__
@@ -67,7 +66,7 @@ int64_t FileTimeToMicroseconds(const FILETIME& ft) {
 
 void MicrosecondsToFileTime(int64_t us, FILETIME* ft) {
   DCHECK(us >= 0) << "Time is less than 0, negative values are not "
-      "representable in FILETIME";
+                     "representable in FILETIME";
 
   
   
@@ -104,8 +103,7 @@ const int64_t Time::kTimeTToMicrosecondsOffset = GG_INT64_C(11644473600000000);
 
 
 Time Time::Now() {
-  if (initial_time == 0)
-    InitializeClock();
+  if (initial_time == 0) InitializeClock();
 
   
   
@@ -117,7 +115,7 @@ Time Time::Now() {
   
   
   
-  while(true) {
+  while (true) {
     TimeTicks ticks = TimeTicks::Now();
 
     
@@ -218,10 +216,7 @@ namespace {
 
 
 
-DWORD timeGetTimeWrapper() {
-  return timeGetTime();
-}
-
+DWORD timeGetTimeWrapper() { return timeGetTime(); }
 
 DWORD (*tick_function)(void) = &timeGetTimeWrapper;
 
@@ -232,10 +227,7 @@ DWORD (*tick_function)(void) = &timeGetTimeWrapper;
 
 class NowSingleton {
  public:
-  NowSingleton()
-    : rollover_(TimeDelta::FromMilliseconds(0)),
-      last_seen_(0) {
-  }
+  NowSingleton() : rollover_(TimeDelta::FromMilliseconds(0)), last_seen_(0) {}
 
   TimeDelta Now() {
     AutoLock locked(lock_);
@@ -243,7 +235,8 @@ class NowSingleton {
     
     DWORD now = tick_function();
     if (now < last_seen_)
-      rollover_ += TimeDelta::FromMilliseconds(GG_LONGLONG(0x100000000));  
+      rollover_ +=
+          TimeDelta::FromMilliseconds(GG_LONGLONG(0x100000000));  
     last_seen_ = now;
     return TimeDelta::FromMilliseconds(now) + rollover_;
   }
@@ -254,7 +247,7 @@ class NowSingleton {
   }
 
  private:
-  Lock lock_;  
+  Lock lock_;           
   TimeDelta rollover_;  
   DWORD last_seen_;  
 

@@ -14,11 +14,8 @@ namespace mozilla {
 
 
 
-enum CaretAssociationHint {
-  CARET_ASSOCIATE_BEFORE,
-  CARET_ASSOCIATE_AFTER
-};
+enum CaretAssociationHint { CARET_ASSOCIATE_BEFORE, CARET_ASSOCIATE_AFTER };
 
-} 
+}  
 
 #endif

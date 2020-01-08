@@ -18,28 +18,21 @@ namespace mozilla {
 
 
 template <void (*H)(int, siginfo_t*, void*)>
-__attribute__((naked)) void
-SignalTrampoline(int aSignal, siginfo_t* aInfo, void* aContext)
-{
-  asm volatile (
-    "nop; nop; nop; nop"
-    : : : "memory");
+__attribute__((naked)) void SignalTrampoline(int aSignal, siginfo_t* aInfo,
+                                             void* aContext) {
+  asm volatile("nop; nop; nop; nop" : : : "memory");
 
-  asm volatile (
-    "b %0"
-    :
-    : "X"(H)
-    : "memory");
+  asm volatile("b %0" : : "X"(H) : "memory");
 }
 
-# define MOZ_SIGNAL_TRAMPOLINE(h) (mozilla::SignalTrampoline<h>)
+#define MOZ_SIGNAL_TRAMPOLINE(h) (mozilla::SignalTrampoline<h>)
 
-#else 
+#else  
 
-# define MOZ_SIGNAL_TRAMPOLINE(h) (h)
+#define MOZ_SIGNAL_TRAMPOLINE(h) (h)
 
-#endif 
+#endif  
 
-} 
+}  
 
-#endif 
+#endif  

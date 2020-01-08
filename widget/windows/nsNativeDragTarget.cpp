@@ -33,13 +33,14 @@ bool nsNativeDragTarget::gDragImageChanged = false;
 
 
 
-nsNativeDragTarget::nsNativeDragTarget(nsIWidget * aWidget)
-  : m_cRef(0), 
-    mEffectsAllowed(DROPEFFECT_MOVE | DROPEFFECT_COPY | DROPEFFECT_LINK),
-    mEffectsPreferred(DROPEFFECT_NONE),
-    mTookOwnRef(false), mWidget(aWidget), mDropTargetHelper(nullptr)
-{
-  static NS_DEFINE_IID(kCDragServiceCID,  NS_DRAGSERVICE_CID);
+nsNativeDragTarget::nsNativeDragTarget(nsIWidget* aWidget)
+    : m_cRef(0),
+      mEffectsAllowed(DROPEFFECT_MOVE | DROPEFFECT_COPY | DROPEFFECT_LINK),
+      mEffectsPreferred(DROPEFFECT_NONE),
+      mTookOwnRef(false),
+      mWidget(aWidget),
+      mDropTargetHelper(nullptr) {
+  static NS_DEFINE_IID(kCDragServiceCID, NS_DRAGSERVICE_CID);
 
   mHWnd = (HWND)mWidget->GetNativeData(NS_NATIVE_WINDOW);
 
@@ -49,8 +50,7 @@ nsNativeDragTarget::nsNativeDragTarget(nsIWidget * aWidget)
   CallGetService(kCDragServiceCID, &mDragService);
 }
 
-nsNativeDragTarget::~nsNativeDragTarget()
-{
+nsNativeDragTarget::~nsNativeDragTarget() {
   NS_RELEASE(mDragService);
 
   if (mDropTargetHelper) {
@@ -61,14 +61,12 @@ nsNativeDragTarget::~nsNativeDragTarget()
 
 
 STDMETHODIMP
-nsNativeDragTarget::QueryInterface(REFIID riid, void** ppv)
-{
-  *ppv=nullptr;
+nsNativeDragTarget::QueryInterface(REFIID riid, void** ppv) {
+  *ppv = nullptr;
 
-  if (IID_IUnknown == riid || IID_IDropTarget == riid)
-    *ppv=this;
+  if (IID_IUnknown == riid || IID_IDropTarget == riid) *ppv = this;
 
-  if (nullptr!=*ppv) {
+  if (nullptr != *ppv) {
     ((LPUNKNOWN)*ppv)->AddRef();
     return S_OK;
   }
@@ -77,28 +75,24 @@ nsNativeDragTarget::QueryInterface(REFIID riid, void** ppv)
 }
 
 STDMETHODIMP_(ULONG)
-nsNativeDragTarget::AddRef(void)
-{
+nsNativeDragTarget::AddRef(void) {
   ++m_cRef;
   NS_LOG_ADDREF(this, m_cRef, "nsNativeDragTarget", sizeof(*this));
   return m_cRef;
 }
 
-STDMETHODIMP_(ULONG) nsNativeDragTarget::Release(void)
-{
+STDMETHODIMP_(ULONG) nsNativeDragTarget::Release(void) {
   --m_cRef;
   NS_LOG_RELEASE(this, m_cRef, "nsNativeDragTarget");
-  if (0 != m_cRef)
-    return m_cRef;
+  if (0 != m_cRef) return m_cRef;
 
   delete this;
   return 0;
 }
 
-void
-nsNativeDragTarget::GetGeckoDragAction(DWORD grfKeyState, LPDWORD pdwEffect,
-                                       uint32_t * aGeckoAction)
-{
+void nsNativeDragTarget::GetGeckoDragAction(DWORD grfKeyState,
+                                            LPDWORD pdwEffect,
+                                            uint32_t* aGeckoAction) {
   
   
   if (!mWidget->IsEnabled()) {
@@ -143,24 +137,17 @@ nsNativeDragTarget::GetGeckoDragAction(DWORD grfKeyState, LPDWORD pdwEffect,
   } else {
     *pdwEffect = DROPEFFECT_NONE;
     *aGeckoAction = nsIDragService::DRAGDROP_ACTION_NONE;
-  } 
+  }
 }
 
-inline
-bool
-IsKeyDown(char key)
-{
-  return GetKeyState(key) < 0;
-}
+inline bool IsKeyDown(char key) { return GetKeyState(key) < 0; }
 
-void
-nsNativeDragTarget::DispatchDragDropEvent(EventMessage aEventMessage,
-                                          const POINTL& aPT)
-{
+void nsNativeDragTarget::DispatchDragDropEvent(EventMessage aEventMessage,
+                                               const POINTL& aPT) {
   nsEventStatus status;
   WidgetDragEvent event(true, aEventMessage, mWidget);
 
-  nsWindow * win = static_cast<nsWindow *>(mWidget);
+  nsWindow* win = static_cast<nsWindow*>(mWidget);
   win->InitEvent(event);
   POINT cpos;
 
@@ -177,17 +164,15 @@ nsNativeDragTarget::DispatchDragDropEvent(EventMessage aEventMessage,
   ModifierKeyState modifierKeyState;
   modifierKeyState.InitInputEvent(event);
 
-  event.inputSource = static_cast<nsBaseDragService*>(mDragService)->GetInputSource();
+  event.inputSource =
+      static_cast<nsBaseDragService*>(mDragService)->GetInputSource();
 
   mWidget->DispatchEvent(&event, status);
 }
 
-void
-nsNativeDragTarget::ProcessDrag(EventMessage aEventMessage,
-                                DWORD        grfKeyState,
-                                POINTL       ptl,
-                                DWORD*       pdwEffect)
-{
+void nsNativeDragTarget::ProcessDrag(EventMessage aEventMessage,
+                                     DWORD grfKeyState, POINTL ptl,
+                                     DWORD* pdwEffect) {
   
   uint32_t geckoAction;
   GetGeckoDragAction(grfKeyState, pdwEffect, &geckoAction);
@@ -208,7 +193,7 @@ nsNativeDragTarget::ProcessDrag(EventMessage aEventMessage,
   
   
   
-  nsDragService* dragService = static_cast<nsDragService *>(mDragService);
+  nsDragService* dragService = static_cast<nsDragService*>(mDragService);
   currSession->GetDragAction(&geckoAction);
 
   int32_t childDragAction = dragService->TakeChildProcessDragAction();
@@ -218,14 +203,11 @@ nsNativeDragTarget::ProcessDrag(EventMessage aEventMessage,
 
   if (nsIDragService::DRAGDROP_ACTION_LINK & geckoAction) {
     *pdwEffect = DROPEFFECT_LINK;
-  }
-  else if (nsIDragService::DRAGDROP_ACTION_COPY & geckoAction) {
+  } else if (nsIDragService::DRAGDROP_ACTION_COPY & geckoAction) {
     *pdwEffect = DROPEFFECT_COPY;
-  }
-  else if (nsIDragService::DRAGDROP_ACTION_MOVE & geckoAction) {
+  } else if (nsIDragService::DRAGDROP_ACTION_MOVE & geckoAction) {
     *pdwEffect = DROPEFFECT_MOVE;
-  }
-  else {
+  } else {
     *pdwEffect = DROPEFFECT_NONE;
   }
 
@@ -246,11 +228,8 @@ nsNativeDragTarget::ProcessDrag(EventMessage aEventMessage,
 
 
 STDMETHODIMP
-nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource,
-                              DWORD        grfKeyState,
-                              POINTL       ptl,
-                              DWORD*       pdwEffect)
-{
+nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource, DWORD grfKeyState,
+                              POINTL ptl, DWORD* pdwEffect) {
   if (!mDragService) {
     return E_FAIL;
   }
@@ -260,7 +239,7 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource,
 
   
   if (GetDropTargetHelper()) {
-    POINT pt = { ptl.x, ptl.y };
+    POINT pt = {ptl.x, ptl.y};
     GetDropTargetHelper()->DragEnter(mHWnd, pIDataSource, &pt, *pdwEffect);
   }
 
@@ -276,7 +255,8 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource,
   void* tempOutData = nullptr;
   uint32_t tempDataLen = 0;
   nsresult loadResult = nsClipboard::GetNativeDataOffClipboard(
-      pIDataSource, 0, ::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT), nullptr, &tempOutData, &tempDataLen);
+      pIDataSource, 0, ::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT),
+      nullptr, &tempOutData, &tempDataLen);
   if (NS_SUCCEEDED(loadResult) && tempOutData) {
     mEffectsPreferred = *((DWORD*)tempOutData);
     free(tempOutData);
@@ -290,8 +270,7 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource,
   
   
   
-  nsDragService * winDragService =
-    static_cast<nsDragService *>(mDragService);
+  nsDragService* winDragService = static_cast<nsDragService*>(mDragService);
   winDragService->SetIDataObject(pIDataSource);
 
   
@@ -300,9 +279,8 @@ nsNativeDragTarget::DragEnter(LPDATAOBJECT pIDataSource,
   return S_OK;
 }
 
-void 
-nsNativeDragTarget::AddLinkSupportIfCanBeGenerated(LPDATAOBJECT aIDataSource) 
-{
+void nsNativeDragTarget::AddLinkSupportIfCanBeGenerated(
+    LPDATAOBJECT aIDataSource) {
   
   
   if (!(mEffectsAllowed & DROPEFFECT_LINK) && aIDataSource) {
@@ -313,10 +291,7 @@ nsNativeDragTarget::AddLinkSupportIfCanBeGenerated(LPDATAOBJECT aIDataSource)
 }
 
 STDMETHODIMP
-nsNativeDragTarget::DragOver(DWORD   grfKeyState,
-                             POINTL  ptl,
-                             LPDWORD pdwEffect)
-{
+nsNativeDragTarget::DragOver(DWORD grfKeyState, POINTL ptl, LPDWORD pdwEffect) {
   if (!mDragService) {
     return E_FAIL;
   }
@@ -342,12 +317,12 @@ nsNativeDragTarget::DragOver(DWORD   grfKeyState,
     if (dragImageChanged) {
       
       
-      POINT pt = { ptl.x, ptl.y };
-      nsDragService* dragService = static_cast<nsDragService *>(mDragService);
-      GetDropTargetHelper()->DragEnter(mHWnd, dragService->GetDataObject(), &pt, *pdwEffect);
-
+      POINT pt = {ptl.x, ptl.y};
+      nsDragService* dragService = static_cast<nsDragService*>(mDragService);
+      GetDropTargetHelper()->DragEnter(mHWnd, dragService->GetDataObject(), &pt,
+                                       *pdwEffect);
     }
-    POINT pt = { ptl.x, ptl.y };
+    POINT pt = {ptl.x, ptl.y};
     GetDropTargetHelper()->DragOver(&pt, *pdwEffect);
   }
 
@@ -362,8 +337,7 @@ nsNativeDragTarget::DragOver(DWORD   grfKeyState,
 }
 
 STDMETHODIMP
-nsNativeDragTarget::DragLeave()
-{
+nsNativeDragTarget::DragLeave() {
   if (!mDragService) {
     return E_FAIL;
   }
@@ -403,9 +377,7 @@ nsNativeDragTarget::DragLeave()
   return S_OK;
 }
 
-void
-nsNativeDragTarget::DragCancel()
-{
+void nsNativeDragTarget::DragCancel() {
   
   if (mTookOwnRef) {
     if (GetDropTargetHelper()) {
@@ -415,17 +387,14 @@ nsNativeDragTarget::DragCancel()
       ModifierKeyState modifierKeyState;
       mDragService->EndDragSession(false, modifierKeyState.GetModifiers());
     }
-    this->Release(); 
+    this->Release();  
     mTookOwnRef = false;
   }
 }
 
 STDMETHODIMP
-nsNativeDragTarget::Drop(LPDATAOBJECT pData,
-                         DWORD        grfKeyState,
-                         POINTL       aPT,
-                         LPDWORD      pdwEffect)
-{
+nsNativeDragTarget::Drop(LPDATAOBJECT pData, DWORD grfKeyState, POINTL aPT,
+                         LPDWORD pdwEffect) {
   if (!mDragService) {
     return E_FAIL;
   }
@@ -435,7 +404,7 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData,
 
   
   if (GetDropTargetHelper()) {
-    POINT pt = { aPT.x, aPT.y };
+    POINT pt = {aPT.x, aPT.y};
     GetDropTargetHelper()->Drop(pData, &pt, *pdwEffect);
   }
 
@@ -491,10 +460,8 @@ nsNativeDragTarget::Drop(LPDATAOBJECT pData,
 
 
 
-IDropTargetHelper*
-nsNativeDragTarget::GetDropTargetHelper()
-{
-  if (!mDropTargetHelper) { 
+IDropTargetHelper* nsNativeDragTarget::GetDropTargetHelper() {
+  if (!mDropTargetHelper) {
     CoCreateInstance(CLSID_DragDropHelper, nullptr, CLSCTX_INPROC_SERVER,
                      IID_IDropTargetHelper, (LPVOID*)&mDropTargetHelper);
   }

@@ -13,32 +13,22 @@ namespace mozilla {
 namespace gfx {
 
 
-class AutoDC
-{
-public:
-  AutoDC() {
-    mDC = ::GetDC(nullptr);
-  }
+class AutoDC {
+ public:
+  AutoDC() { mDC = ::GetDC(nullptr); }
 
-  ~AutoDC() {
-    ::ReleaseDC(nullptr, mDC);
-  }
+  ~AutoDC() { ::ReleaseDC(nullptr, mDC); }
 
-  HDC GetDC() {
-    return mDC;
-  }
+  HDC GetDC() { return mDC; }
 
-private:
+ private:
   HDC mDC;
 };
 
 
-class AutoSelectFont
-{
-public:
-  AutoSelectFont(HDC aDC, LOGFONTW *aLogFont)
-    : mOwnsFont(false)
-  {
+class AutoSelectFont {
+ public:
+  AutoSelectFont(HDC aDC, LOGFONTW *aLogFont) : mOwnsFont(false) {
     mFont = ::CreateFontIndirectW(aLogFont);
     if (mFont) {
       mOwnsFont = true;
@@ -49,9 +39,7 @@ public:
     }
   }
 
-  AutoSelectFont(HDC aDC, HFONT aFont)
-    : mOwnsFont(false)
-  {
+  AutoSelectFont(HDC aDC, HFONT aFont) : mOwnsFont(false) {
     mDC = aDC;
     mFont = aFont;
     mOldFont = (HFONT)::SelectObject(aDC, aFont);
@@ -66,22 +54,18 @@ public:
     }
   }
 
-  bool IsValid() const {
-    return mFont != nullptr;
-  }
+  bool IsValid() const { return mFont != nullptr; }
 
-  HFONT GetFont() const {
-    return mFont;
-  }
+  HFONT GetFont() const { return mFont; }
 
-private:
+ private:
   HDC mDC;
   HFONT mFont;
   HFONT mOldFont;
   bool mOwnsFont;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

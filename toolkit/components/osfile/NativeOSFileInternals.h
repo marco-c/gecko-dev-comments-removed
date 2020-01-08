@@ -12,16 +12,17 @@
 
 namespace mozilla {
 
-class NativeOSFileInternalsService final : public nsINativeOSFileInternalsService {
-public:
+class NativeOSFileInternalsService final
+    : public nsINativeOSFileInternalsService {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSINATIVEOSFILEINTERNALSSERVICE
-private:
+ private:
   ~NativeOSFileInternalsService() {}
   
   void operator=(const NativeOSFileInternalsService& other) = delete;
 };
 
-} 
+}  
 
-#endif 
+#endif  

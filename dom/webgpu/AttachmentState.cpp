@@ -15,5 +15,5 @@ AttachmentState::~AttachmentState() = default;
 
 WEBGPU_IMPL_GOOP_0(AttachmentState)
 
-} 
-} 
+}  
+}  

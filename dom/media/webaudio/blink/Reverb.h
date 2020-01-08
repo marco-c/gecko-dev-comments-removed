@@ -39,38 +39,40 @@ namespace WebCore {
 
 
 
+
 class Reverb {
-public:
-    enum { MaxFrameSize = 256 };
+ public:
+  enum { MaxFrameSize = 256 };
 
-    
-    
-    
-    
-    Reverb(const mozilla::AudioChunk& impulseResponseBuffer, size_t maxFFTSize,
-           bool useBackgroundThreads, bool normalize, float sampleRate,
-           bool* aAllocationFailure);
+  
+  
+  
+  
+  
+  Reverb(const mozilla::AudioChunk& impulseResponseBuffer, size_t maxFFTSize,
+         bool useBackgroundThreads, bool normalize, float sampleRate,
+         bool* aAllocationFailure);
 
-    void process(const mozilla::AudioBlock* sourceBus,
-                 mozilla::AudioBlock* destinationBus);
+  void process(const mozilla::AudioBlock* sourceBus,
+               mozilla::AudioBlock* destinationBus);
 
-    size_t impulseResponseLength() const { return m_impulseResponseLength; }
+  size_t impulseResponseLength() const { return m_impulseResponseLength; }
 
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
-    void initialize(const nsTArray<const float*>& impulseResponseBuffer,
-                    size_t impulseResponseBufferLength, size_t maxFFTSize,
-                    bool useBackgroundThreads);
+ private:
+  void initialize(const nsTArray<const float*>& impulseResponseBuffer,
+                  size_t impulseResponseBufferLength, size_t maxFFTSize,
+                  bool useBackgroundThreads);
 
-    size_t m_impulseResponseLength;
+  size_t m_impulseResponseLength;
 
-    nsTArray<nsAutoPtr<ReverbConvolver> > m_convolvers;
+  nsTArray<nsAutoPtr<ReverbConvolver> > m_convolvers;
 
-    
-    mozilla::AudioBlock m_tempBuffer;
+  
+  mozilla::AudioBlock m_tempBuffer;
 };
 
-} 
+}  
 
-#endif 
+#endif  

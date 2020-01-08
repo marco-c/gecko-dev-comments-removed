@@ -15,26 +15,21 @@ using namespace mozilla;
 NS_IMPL_FRAMEARENA_HELPERS(nsBackdropFrame)
 
 #ifdef DEBUG_FRAME_DUMP
-nsresult
-nsBackdropFrame::GetFrameName(nsAString& aResult) const
-{
+nsresult nsBackdropFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(NS_LITERAL_STRING("Backdrop"), aResult);
 }
 #endif
 
- ComputedStyle*
-nsBackdropFrame::GetParentComputedStyle(nsIFrame** aProviderFrame) const
-{
+ ComputedStyle* nsBackdropFrame::GetParentComputedStyle(
+    nsIFrame** aProviderFrame) const {
   
   
   *aProviderFrame = nullptr;
   return nullptr;
 }
 
- void
-nsBackdropFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                                  const nsDisplayListSet& aLists)
-{
+ void nsBackdropFrame::BuildDisplayList(
+    nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) {
   DO_GLOBAL_REFLOW_COUNT_DSP("nsBackdropFrame");
   
   
@@ -48,16 +43,11 @@ nsBackdropFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
   DisplayBorderBackgroundOutline(aBuilder, aLists);
 }
 
- LogicalSize
-nsBackdropFrame::ComputeAutoSize(gfxContext*         aRenderingContext,
-                                 WritingMode         aWM,
-                                 const LogicalSize&  aCBSize,
-                                 nscoord             aAvailableISize,
-                                 const LogicalSize&  aMargin,
-                                 const LogicalSize&  aBorder,
-                                 const LogicalSize&  aPadding,
-                                 ComputeSizeFlags    aFlags)
-{
+ LogicalSize nsBackdropFrame::ComputeAutoSize(
+    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
+    nscoord aAvailableISize, const LogicalSize& aMargin,
+    const LogicalSize& aBorder, const LogicalSize& aPadding,
+    ComputeSizeFlags aFlags) {
   
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
   if (aFlags & ComputeSizeFlags::eShrinkWrap) {
@@ -69,12 +59,10 @@ nsBackdropFrame::ComputeAutoSize(gfxContext*         aRenderingContext,
   return result;
 }
 
- void
-nsBackdropFrame::Reflow(nsPresContext* aPresContext,
-                        ReflowOutput& aDesiredSize,
-                        const ReflowInput& aReflowInput,
-                        nsReflowStatus& aStatus)
-{
+ void nsBackdropFrame::Reflow(nsPresContext* aPresContext,
+                                           ReflowOutput& aDesiredSize,
+                                           const ReflowInput& aReflowInput,
+                                           nsReflowStatus& aStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsBackdropFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);

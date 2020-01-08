@@ -56,80 +56,80 @@ OSVR_EXTERN_C_BEGIN
 
 
 typedef void (*OSVR_PoseCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_PoseReport *report);
+                                  const struct OSVR_TimeValue *timestamp,
+                                  const struct OSVR_PoseReport *report);
 
 typedef void (*OSVR_PositionCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_PositionReport *report);
+                                      const struct OSVR_TimeValue *timestamp,
+                                      const struct OSVR_PositionReport *report);
 
-typedef void (*OSVR_OrientationCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_OrientationReport *report);
+typedef void (*OSVR_OrientationCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_OrientationReport *report);
 
 typedef void (*OSVR_VelocityCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_VelocityReport *report);
+                                      const struct OSVR_TimeValue *timestamp,
+                                      const struct OSVR_VelocityReport *report);
 
-typedef void (*OSVR_LinearVelocityCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_LinearVelocityReport *report);
+typedef void (*OSVR_LinearVelocityCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_LinearVelocityReport *report);
 
-typedef void (*OSVR_AngularVelocityCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_AngularVelocityReport *report);
+typedef void (*OSVR_AngularVelocityCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_AngularVelocityReport *report);
 
-typedef void (*OSVR_AccelerationCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_AccelerationReport *report);
+typedef void (*OSVR_AccelerationCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_AccelerationReport *report);
 
-typedef void (*OSVR_LinearAccelerationCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_LinearAccelerationReport *report);
+typedef void (*OSVR_LinearAccelerationCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_LinearAccelerationReport *report);
 
-typedef void (*OSVR_AngularAccelerationCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_AngularAccelerationReport *report);
+typedef void (*OSVR_AngularAccelerationCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_AngularAccelerationReport *report);
 
 typedef void (*OSVR_ButtonCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_ButtonReport *report);
+                                    const struct OSVR_TimeValue *timestamp,
+                                    const struct OSVR_ButtonReport *report);
 
 typedef void (*OSVR_AnalogCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_AnalogReport *report);
+                                    const struct OSVR_TimeValue *timestamp,
+                                    const struct OSVR_AnalogReport *report);
 
 typedef void (*OSVR_ImagingCallback)(void *userdata,
                                      const struct OSVR_TimeValue *timestamp,
                                      const struct OSVR_ImagingReport *report);
 
-typedef void (*OSVR_Location2DCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_Location2DReport *report);
+typedef void (*OSVR_Location2DCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_Location2DReport *report);
 
-typedef void (*OSVR_DirectionCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_DirectionReport *report);
+typedef void (*OSVR_DirectionCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_DirectionReport *report);
 
-typedef void (*OSVR_EyeTracker2DCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_EyeTracker2DReport *report);
+typedef void (*OSVR_EyeTracker2DCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_EyeTracker2DReport *report);
 
-typedef void (*OSVR_EyeTracker3DCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_EyeTracker3DReport *report);
+typedef void (*OSVR_EyeTracker3DCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_EyeTracker3DReport *report);
 
-typedef void (*OSVR_EyeTrackerBlinkCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_EyeTrackerBlinkReport *report);
+typedef void (*OSVR_EyeTrackerBlinkCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_EyeTrackerBlinkReport *report);
 
-typedef void (*OSVR_NaviVelocityCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_NaviVelocityReport *report);
+typedef void (*OSVR_NaviVelocityCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_NaviVelocityReport *report);
 
-typedef void (*OSVR_NaviPositionCallback)(void *userdata,
-                                     const struct OSVR_TimeValue *timestamp,
-                                     const struct OSVR_NaviPositionReport *report);
+typedef void (*OSVR_NaviPositionCallback)(
+    void *userdata, const struct OSVR_TimeValue *timestamp,
+    const struct OSVR_NaviPositionReport *report);
 
 
 

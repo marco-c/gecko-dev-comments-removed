@@ -14,87 +14,80 @@
 
 
 
-
 struct nsDiskCacheEntry {
-    uint32_t        mHeaderVersion; 
-    uint32_t        mMetaLocation;  
-    int32_t         mFetchCount;
-    uint32_t        mLastFetched;
-    uint32_t        mLastModified;
-    uint32_t        mExpirationTime;
-    uint32_t        mDataSize;
-    uint32_t        mKeySize;       
-    uint32_t        mMetaDataSize;  
-    
-    
+  uint32_t mHeaderVersion;  
+  uint32_t mMetaLocation;   
+  int32_t mFetchCount;
+  uint32_t mLastFetched;
+  uint32_t mLastModified;
+  uint32_t mExpirationTime;
+  uint32_t mDataSize;
+  uint32_t mKeySize;       
+  uint32_t mMetaDataSize;  
+  
+  
 
-    uint32_t        Size()    { return sizeof(nsDiskCacheEntry) +
-                                    mKeySize + mMetaDataSize;
-                              }
+  uint32_t Size() {
+    return sizeof(nsDiskCacheEntry) + mKeySize + mMetaDataSize;
+  }
 
-    char*           Key()     { return reinterpret_cast<char*>(this) +
-                                    sizeof(nsDiskCacheEntry);
-                              }
+  char* Key() {
+    return reinterpret_cast<char*>(this) + sizeof(nsDiskCacheEntry);
+  }
 
-    char*           MetaData()
-                              { return Key() + mKeySize; }
+  char* MetaData() { return Key() + mKeySize; }
 
-    nsCacheEntry *  CreateCacheEntry(nsCacheDevice *  device);
+  nsCacheEntry* CreateCacheEntry(nsCacheDevice* device);
 
-    void Swap()         
-    {
+  void Swap()  
+  {
 #if defined(IS_LITTLE_ENDIAN)
-        mHeaderVersion      = htonl(mHeaderVersion);
-        mMetaLocation       = htonl(mMetaLocation);
-        mFetchCount         = htonl(mFetchCount);
-        mLastFetched        = htonl(mLastFetched);
-        mLastModified       = htonl(mLastModified);
-        mExpirationTime     = htonl(mExpirationTime);
-        mDataSize           = htonl(mDataSize);
-        mKeySize            = htonl(mKeySize);
-        mMetaDataSize       = htonl(mMetaDataSize);
+    mHeaderVersion = htonl(mHeaderVersion);
+    mMetaLocation = htonl(mMetaLocation);
+    mFetchCount = htonl(mFetchCount);
+    mLastFetched = htonl(mLastFetched);
+    mLastModified = htonl(mLastModified);
+    mExpirationTime = htonl(mExpirationTime);
+    mDataSize = htonl(mDataSize);
+    mKeySize = htonl(mKeySize);
+    mMetaDataSize = htonl(mMetaDataSize);
 #endif
-    }
+  }
 
-    void Unswap()       
-    {
+  void Unswap()  
+  {
 #if defined(IS_LITTLE_ENDIAN)
-        mHeaderVersion      = ntohl(mHeaderVersion);
-        mMetaLocation       = ntohl(mMetaLocation);
-        mFetchCount         = ntohl(mFetchCount);
-        mLastFetched        = ntohl(mLastFetched);
-        mLastModified       = ntohl(mLastModified);
-        mExpirationTime     = ntohl(mExpirationTime);
-        mDataSize           = ntohl(mDataSize);
-        mKeySize            = ntohl(mKeySize);
-        mMetaDataSize       = ntohl(mMetaDataSize);
+    mHeaderVersion = ntohl(mHeaderVersion);
+    mMetaLocation = ntohl(mMetaLocation);
+    mFetchCount = ntohl(mFetchCount);
+    mLastFetched = ntohl(mLastFetched);
+    mLastModified = ntohl(mLastModified);
+    mExpirationTime = ntohl(mExpirationTime);
+    mDataSize = ntohl(mDataSize);
+    mKeySize = ntohl(mKeySize);
+    mMetaDataSize = ntohl(mMetaDataSize);
 #endif
-    }
+  }
 };
-
 
 
 
 
 class nsDiskCacheEntryInfo : public nsICacheEntryInfo {
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSICACHEENTRYINFO
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSICACHEENTRYINFO
 
-    nsDiskCacheEntryInfo(const char * deviceID, nsDiskCacheEntry * diskEntry)
-        : mDeviceID(deviceID)
-        , mDiskEntry(diskEntry)
-    {
-    }
+  nsDiskCacheEntryInfo(const char* deviceID, nsDiskCacheEntry* diskEntry)
+      : mDeviceID(deviceID), mDiskEntry(diskEntry) {}
 
-    const char* Key() { return mDiskEntry->Key(); }
+  const char* Key() { return mDiskEntry->Key(); }
 
-private:
-    virtual ~nsDiskCacheEntryInfo() = default;
+ private:
+  virtual ~nsDiskCacheEntryInfo() = default;
 
-    const char *        mDeviceID;
-    nsDiskCacheEntry *  mDiskEntry;
+  const char* mDeviceID;
+  nsDiskCacheEntry* mDiskEntry;
 };
-
 
 #endif 

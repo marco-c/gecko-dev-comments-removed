@@ -13,25 +13,23 @@ class nsIPrincipal;
 namespace mozilla {
 namespace net {
 
-class nsRedirectHistoryEntry final : public nsIRedirectHistoryEntry
-{
-public:
+class nsRedirectHistoryEntry final : public nsIRedirectHistoryEntry {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIREDIRECTHISTORYENTRY
 
   nsRedirectHistoryEntry(nsIPrincipal* aPrincipal, nsIURI* aReferrer,
                          const nsACString& aRemoteAddress);
 
-private:
+ private:
   ~nsRedirectHistoryEntry() = default;
 
   nsCOMPtr<nsIPrincipal> mPrincipal;
   nsCOMPtr<nsIURI> mReferrer;
   nsCString mRemoteAddress;
-
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -13,28 +13,25 @@ namespace mozilla {
 namespace dom {
 
 
-class PerformanceMark final : public PerformanceEntry
-{
-public:
-  PerformanceMark(nsISupports* aParent,
-                  const nsAString& aName,
+class PerformanceMark final : public PerformanceEntry {
+ public:
+  PerformanceMark(nsISupports* aParent, const nsAString& aName,
                   DOMHighResTimeStamp aStartTime);
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-  virtual DOMHighResTimeStamp StartTime() const override
-  {
-    return mStartTime;
-  }
+  virtual DOMHighResTimeStamp StartTime() const override { return mStartTime; }
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override;
+  size_t SizeOfIncludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) const override;
 
-protected:
+ protected:
   virtual ~PerformanceMark();
   DOMHighResTimeStamp mStartTime;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

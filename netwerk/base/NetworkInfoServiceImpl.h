@@ -14,5 +14,5 @@ typedef nsDataHashtable<nsCStringHashKey, nsCString> AddrMapType;
 
 nsresult DoListAddresses(AddrMapType& aAddrMap);
 
-} 
-} 
+}  
+}  

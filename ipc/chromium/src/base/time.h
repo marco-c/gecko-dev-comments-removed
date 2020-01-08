@@ -46,8 +46,7 @@ class PageLoadTrackerUnitTest;
 
 class TimeDelta {
  public:
-  TimeDelta() : delta_(0) {
-  }
+  TimeDelta() : delta_(0) {}
 
   
   static TimeDelta FromDays(int64_t days);
@@ -60,9 +59,7 @@ class TimeDelta {
   
   
   
-  int64_t ToInternalValue() const {
-    return delta_;
-  }
+  int64_t ToInternalValue() const { return delta_; }
 
   
   
@@ -96,18 +93,12 @@ class TimeDelta {
     delta_ -= other.delta_;
     return *this;
   }
-  TimeDelta operator-() const {
-    return TimeDelta(-delta_);
-  }
+  TimeDelta operator-() const { return TimeDelta(-delta_); }
 
   
   
-  TimeDelta operator*(int64_t a) const {
-    return TimeDelta(delta_ * a);
-  }
-  TimeDelta operator/(int64_t a) const {
-    return TimeDelta(delta_ / a);
-  }
+  TimeDelta operator*(int64_t a) const { return TimeDelta(delta_ * a); }
+  TimeDelta operator/(int64_t a) const { return TimeDelta(delta_ / a); }
   TimeDelta& operator*=(int64_t a) {
     delta_ *= a;
     return *this;
@@ -116,33 +107,19 @@ class TimeDelta {
     delta_ /= a;
     return *this;
   }
-  int64_t operator/(TimeDelta a) const {
-    return delta_ / a.delta_;
-  }
+  int64_t operator/(TimeDelta a) const { return delta_ / a.delta_; }
 
   
   Time operator+(Time t) const;
   TimeTicks operator+(TimeTicks t) const;
 
   
-  bool operator==(TimeDelta other) const {
-    return delta_ == other.delta_;
-  }
-  bool operator!=(TimeDelta other) const {
-    return delta_ != other.delta_;
-  }
-  bool operator<(TimeDelta other) const {
-    return delta_ < other.delta_;
-  }
-  bool operator<=(TimeDelta other) const {
-    return delta_ <= other.delta_;
-  }
-  bool operator>(TimeDelta other) const {
-    return delta_ > other.delta_;
-  }
-  bool operator>=(TimeDelta other) const {
-    return delta_ >= other.delta_;
-  }
+  bool operator==(TimeDelta other) const { return delta_ == other.delta_; }
+  bool operator!=(TimeDelta other) const { return delta_ != other.delta_; }
+  bool operator<(TimeDelta other) const { return delta_ < other.delta_; }
+  bool operator<=(TimeDelta other) const { return delta_ <= other.delta_; }
+  bool operator>(TimeDelta other) const { return delta_ > other.delta_; }
+  bool operator>=(TimeDelta other) const { return delta_ >= other.delta_; }
 
  private:
   friend class Time;
@@ -152,8 +129,7 @@ class TimeDelta {
   
   
   
-  explicit TimeDelta(int64_t delta_us) : delta_(delta_us) {
-  }
+  explicit TimeDelta(int64_t delta_us) : delta_(delta_us) {}
 
   
   int64_t delta_;
@@ -170,39 +146,36 @@ class Time {
  public:
   static const int64_t kMillisecondsPerSecond = 1000;
   static const int64_t kMicrosecondsPerMillisecond = 1000;
-  static const int64_t kMicrosecondsPerSecond = kMicrosecondsPerMillisecond *
-                                              kMillisecondsPerSecond;
+  static const int64_t kMicrosecondsPerSecond =
+      kMicrosecondsPerMillisecond * kMillisecondsPerSecond;
   static const int64_t kMicrosecondsPerMinute = kMicrosecondsPerSecond * 60;
   static const int64_t kMicrosecondsPerHour = kMicrosecondsPerMinute * 60;
   static const int64_t kMicrosecondsPerDay = kMicrosecondsPerHour * 24;
   static const int64_t kMicrosecondsPerWeek = kMicrosecondsPerDay * 7;
   static const int64_t kNanosecondsPerMicrosecond = 1000;
-  static const int64_t kNanosecondsPerSecond = kNanosecondsPerMicrosecond *
-                                             kMicrosecondsPerSecond;
+  static const int64_t kNanosecondsPerSecond =
+      kNanosecondsPerMicrosecond * kMicrosecondsPerSecond;
 
   
   
   
   struct Exploded {
-    int year;                 
-    signed char month;        
-    signed char day_of_week;  
-    signed char day_of_month; 
-    signed char hour;         
-    signed char minute;       
-    signed char second;       
-                              
-    int millisecond;          
+    int year;                  
+    signed char month;         
+    signed char day_of_week;   
+    signed char day_of_month;  
+    signed char hour;          
+    signed char minute;        
+    signed char second;        
+                               
+    int millisecond;           
   };
 
   
-  explicit Time() : us_(0) {
-  }
+  explicit Time() : us_(0) {}
 
   
-  bool is_null() const {
-    return us_ == 0;
-  }
+  bool is_null() const { return us_ == 0; }
 
   
   
@@ -226,7 +199,6 @@ class Time {
   static Time FromDoubleT(double dt);
   double ToDoubleT() const;
 
-
 #if defined(OS_WIN)
   static Time FromFileTime(FILETIME ft);
   FILETIME ToFileTime() const;
@@ -245,9 +217,7 @@ class Time {
   
   
   
-  static Time FromInternalValue(int64_t us) {
-    return Time(us);
-  }
+  static Time FromInternalValue(int64_t us) { return Time(us); }
 
   
   
@@ -260,15 +230,11 @@ class Time {
   
   
   
-  int64_t ToInternalValue() const {
-    return us_;
-  }
+  int64_t ToInternalValue() const { return us_; }
 
   
   
-  void UTCExplode(Exploded* exploded) const {
-    return Explode(false, exploded);
-  }
+  void UTCExplode(Exploded* exploded) const { return Explode(false, exploded); }
   void LocalExplode(Exploded* exploded) const {
     return Explode(true, exploded);
   }
@@ -283,9 +249,7 @@ class Time {
   }
 
   
-  TimeDelta operator-(Time other) const {
-    return TimeDelta(us_ - other.us_);
-  }
+  TimeDelta operator-(Time other) const { return TimeDelta(us_ - other.us_); }
 
   
   Time& operator+=(TimeDelta delta) {
@@ -298,32 +262,16 @@ class Time {
   }
 
   
-  Time operator+(TimeDelta delta) const {
-    return Time(us_ + delta.delta_);
-  }
-  Time operator-(TimeDelta delta) const {
-    return Time(us_ - delta.delta_);
-  }
+  Time operator+(TimeDelta delta) const { return Time(us_ + delta.delta_); }
+  Time operator-(TimeDelta delta) const { return Time(us_ - delta.delta_); }
 
   
-  bool operator==(Time other) const {
-    return us_ == other.us_;
-  }
-  bool operator!=(Time other) const {
-    return us_ != other.us_;
-  }
-  bool operator<(Time other) const {
-    return us_ < other.us_;
-  }
-  bool operator<=(Time other) const {
-    return us_ <= other.us_;
-  }
-  bool operator>(Time other) const {
-    return us_ > other.us_;
-  }
-  bool operator>=(Time other) const {
-    return us_ >= other.us_;
-  }
+  bool operator==(Time other) const { return us_ == other.us_; }
+  bool operator!=(Time other) const { return us_ != other.us_; }
+  bool operator<(Time other) const { return us_ < other.us_; }
+  bool operator<=(Time other) const { return us_ <= other.us_; }
+  bool operator>(Time other) const { return us_ > other.us_; }
+  bool operator>=(Time other) const { return us_ >= other.us_; }
 
  private:
   friend class TimeDelta;
@@ -336,8 +284,7 @@ class Time {
   
   static Time FromExploded(bool is_local, const Exploded& exploded);
 
-  explicit Time(int64_t us) : us_(us) {
-  }
+  explicit Time(int64_t us) : us_(us) {}
 
   
   
@@ -347,9 +294,7 @@ class Time {
   int64_t us_;
 };
 
-inline Time TimeDelta::operator+(Time t) const {
-  return Time(t.us_ + delta_);
-}
+inline Time TimeDelta::operator+(Time t) const { return Time(t.us_ + delta_); }
 
 
 
@@ -387,8 +332,7 @@ inline TimeDelta TimeDelta::FromMicroseconds(int64_t us) {
 
 class TimeTicks {
  public:
-  TimeTicks() : ticks_(0) {
-  }
+  TimeTicks() : ticks_(0) {}
 
   
   
@@ -396,14 +340,10 @@ class TimeTicks {
   static TimeTicks Now();
 
   
-  bool is_null() const {
-    return ticks_ == 0;
-  }
+  bool is_null() const { return ticks_ == 0; }
 
   
-  int64_t ToInternalValue() const {
-    return ticks_;
-  }
+  int64_t ToInternalValue() const { return ticks_; }
 
   TimeTicks& operator=(TimeTicks other) {
     ticks_ = other.ticks_;
@@ -434,24 +374,12 @@ class TimeTicks {
   }
 
   
-  bool operator==(TimeTicks other) const {
-    return ticks_ == other.ticks_;
-  }
-  bool operator!=(TimeTicks other) const {
-    return ticks_ != other.ticks_;
-  }
-  bool operator<(TimeTicks other) const {
-    return ticks_ < other.ticks_;
-  }
-  bool operator<=(TimeTicks other) const {
-    return ticks_ <= other.ticks_;
-  }
-  bool operator>(TimeTicks other) const {
-    return ticks_ > other.ticks_;
-  }
-  bool operator>=(TimeTicks other) const {
-    return ticks_ >= other.ticks_;
-  }
+  bool operator==(TimeTicks other) const { return ticks_ == other.ticks_; }
+  bool operator!=(TimeTicks other) const { return ticks_ != other.ticks_; }
+  bool operator<(TimeTicks other) const { return ticks_ < other.ticks_; }
+  bool operator<=(TimeTicks other) const { return ticks_ <= other.ticks_; }
+  bool operator>(TimeTicks other) const { return ticks_ > other.ticks_; }
+  bool operator>=(TimeTicks other) const { return ticks_ >= other.ticks_; }
 
  protected:
   friend class TimeDelta;
@@ -459,8 +387,7 @@ class TimeTicks {
 
   
   
-  explicit TimeTicks(int64_t ticks) : ticks_(ticks) {
-  }
+  explicit TimeTicks(int64_t ticks) : ticks_(ticks) {}
 
   
   int64_t ticks_;

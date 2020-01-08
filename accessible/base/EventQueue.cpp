@@ -26,15 +26,12 @@ const unsigned int kSelChangeCountToPack = 5;
 
 
 
-bool
-EventQueue::PushEvent(AccEvent* aEvent)
-{
+bool EventQueue::PushEvent(AccEvent* aEvent) {
   NS_ASSERTION((aEvent->mAccessible && aEvent->mAccessible->IsApplication()) ||
-               aEvent->Document() == mDocument,
+                   aEvent->Document() == mDocument,
                "Queued event belongs to another document!");
 
-  if (!mEvents.AppendElement(aEvent))
-    return false;
+  if (!mEvents.AppendElement(aEvent)) return false;
 
   
   CoalesceEvents();
@@ -48,9 +45,7 @@ EventQueue::PushEvent(AccEvent* aEvent)
   return true;
 }
 
-bool
-EventQueue::PushNameChange(Accessible* aTarget)
-{
+bool EventQueue::PushNameChange(Accessible* aTarget) {
   
   
   
@@ -67,7 +62,7 @@ EventQueue::PushNameChange(Accessible* aTarget)
         
         if (nameFlag == eNameFromSubtree) {
           RefPtr<AccEvent> nameChangeEvent =
-            new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
+              new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
           return PushEvent(nameChangeEvent);
         }
         break;
@@ -81,60 +76,55 @@ EventQueue::PushNameChange(Accessible* aTarget)
 
 
 
-void
-EventQueue::CoalesceEvents()
-{
+void EventQueue::CoalesceEvents() {
   NS_ASSERTION(mEvents.Length(), "There should be at least one pending event!");
   uint32_t tail = mEvents.Length() - 1;
   AccEvent* tailEvent = mEvents[tail];
 
-  switch(tailEvent->mEventRule) {
-    case AccEvent::eCoalesceReorder:
-    {
+  switch (tailEvent->mEventRule) {
+    case AccEvent::eCoalesceReorder: {
       DebugOnly<Accessible*> target = tailEvent->mAccessible.get();
-      MOZ_ASSERT(target->IsApplication() ||
-                 target->IsOuterDoc() ||
-                 target->IsXULTree(),
-                 "Only app or outerdoc accessible reorder events are in the queue");
-      MOZ_ASSERT(tailEvent->GetEventType() == nsIAccessibleEvent::EVENT_REORDER, "only reorder events should be queued");
-      break; 
+      MOZ_ASSERT(
+          target->IsApplication() || target->IsOuterDoc() ||
+              target->IsXULTree(),
+          "Only app or outerdoc accessible reorder events are in the queue");
+      MOZ_ASSERT(tailEvent->GetEventType() == nsIAccessibleEvent::EVENT_REORDER,
+                 "only reorder events should be queued");
+      break;  
     }
 
-    case AccEvent::eCoalesceOfSameType:
-    {
+    case AccEvent::eCoalesceOfSameType: {
       
       for (uint32_t index = tail - 1; index < tail; index--) {
         AccEvent* accEvent = mEvents[index];
         if (accEvent->mEventType == tailEvent->mEventType &&
-          accEvent->mEventRule == tailEvent->mEventRule) {
+            accEvent->mEventRule == tailEvent->mEventRule) {
           accEvent->mEventRule = AccEvent::eDoNotEmit;
           return;
         }
       }
-      break; 
+      break;  
     }
 
-    case AccEvent::eCoalesceSelectionChange:
-    {
+    case AccEvent::eCoalesceSelectionChange: {
       AccSelChangeEvent* tailSelChangeEvent = downcast_accEvent(tailEvent);
       for (uint32_t index = tail - 1; index < tail; index--) {
         AccEvent* thisEvent = mEvents[index];
         if (thisEvent->mEventRule == tailEvent->mEventRule) {
-          AccSelChangeEvent* thisSelChangeEvent =
-            downcast_accEvent(thisEvent);
+          AccSelChangeEvent* thisSelChangeEvent = downcast_accEvent(thisEvent);
 
           
           if (tailSelChangeEvent->mWidget == thisSelChangeEvent->mWidget) {
-            CoalesceSelChangeEvents(tailSelChangeEvent, thisSelChangeEvent, index);
+            CoalesceSelChangeEvents(tailSelChangeEvent, thisSelChangeEvent,
+                                    index);
             return;
           }
         }
       }
-      break; 
+      break;  
     }
 
-    case AccEvent::eCoalesceStateChange:
-    {
+    case AccEvent::eCoalesceStateChange: {
       
       
       
@@ -152,11 +142,10 @@ EventQueue::CoalesceEvents()
           }
         }
       }
-      break; 
+      break;  
     }
 
-    case AccEvent::eCoalesceTextSelChange:
-    {
+    case AccEvent::eCoalesceTextSelChange: {
       
       
       
@@ -171,37 +160,33 @@ EventQueue::CoalesceEvents()
               thisEvent->mAccessible == tailEvent->mAccessible)
             thisEvent->mEventRule = AccEvent::eDoNotEmit;
         }
-
       }
-      break; 
+      break;  
     }
 
-    case AccEvent::eRemoveDupes:
-    {
+    case AccEvent::eRemoveDupes: {
       
       
       for (uint32_t index = tail - 1; index < tail; index--) {
         AccEvent* accEvent = mEvents[index];
         if (accEvent->mEventType == tailEvent->mEventType &&
-          accEvent->mEventRule == tailEvent->mEventRule &&
-          accEvent->mAccessible == tailEvent->mAccessible) {
+            accEvent->mEventRule == tailEvent->mEventRule &&
+            accEvent->mAccessible == tailEvent->mAccessible) {
           tailEvent->mEventRule = AccEvent::eDoNotEmit;
           return;
         }
       }
-      break; 
+      break;  
     }
 
     default:
-      break; 
-  } 
+      break;  
+  }           
 }
 
-void
-EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
-                                    AccSelChangeEvent* aThisEvent,
-                                    uint32_t aThisIndex)
-{
+void EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
+                                         AccSelChangeEvent* aThisEvent,
+                                         uint32_t aThisIndex) {
   aTailEvent->mPreceedingCount = aThisEvent->mPreceedingCount + 1;
 
   
@@ -217,8 +202,7 @@ EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
       for (uint32_t jdx = aThisIndex - 1; jdx < aThisIndex; jdx--) {
         AccEvent* prevEvent = mEvents[jdx];
         if (prevEvent->mEventRule == aTailEvent->mEventRule) {
-          AccSelChangeEvent* prevSelChangeEvent =
-            downcast_accEvent(prevEvent);
+          AccSelChangeEvent* prevSelChangeEvent = downcast_accEvent(prevEvent);
           if (prevSelChangeEvent->mWidget == aTailEvent->mWidget)
             prevSelChangeEvent->mEventRule = AccEvent::eDoNotEmit;
         }
@@ -253,20 +237,20 @@ EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
   if (aThisEvent->mEventType == nsIAccessibleEvent::EVENT_SELECTION) {
     if (aThisEvent->mPackedEvent) {
       aThisEvent->mPackedEvent->mEventType =
-        aThisEvent->mPackedEvent->mSelChangeType == AccSelChangeEvent::eSelectionAdd ?
-          nsIAccessibleEvent::EVENT_SELECTION_ADD :
-          nsIAccessibleEvent::EVENT_SELECTION_REMOVE;
+          aThisEvent->mPackedEvent->mSelChangeType ==
+                  AccSelChangeEvent::eSelectionAdd
+              ? nsIAccessibleEvent::EVENT_SELECTION_ADD
+              : nsIAccessibleEvent::EVENT_SELECTION_REMOVE;
 
-      aThisEvent->mPackedEvent->mEventRule =
-        AccEvent::eCoalesceSelectionChange;
+      aThisEvent->mPackedEvent->mEventRule = AccEvent::eCoalesceSelectionChange;
 
       aThisEvent->mPackedEvent = nullptr;
     }
 
     aThisEvent->mEventType =
-      aThisEvent->mSelChangeType == AccSelChangeEvent::eSelectionAdd ?
-        nsIAccessibleEvent::EVENT_SELECTION_ADD :
-        nsIAccessibleEvent::EVENT_SELECTION_REMOVE;
+        aThisEvent->mSelChangeType == AccSelChangeEvent::eSelectionAdd
+            ? nsIAccessibleEvent::EVENT_SELECTION_ADD
+            : nsIAccessibleEvent::EVENT_SELECTION_REMOVE;
 
     return;
   }
@@ -280,9 +264,7 @@ EventQueue::CoalesceSelChangeEvents(AccSelChangeEvent* aTailEvent,
 
 
 
-void
-EventQueue::ProcessEventQueue()
-{
+void EventQueue::ProcessEventQueue() {
   
   nsTArray<RefPtr<AccEvent> > events;
   events.SwapElements(mEvents);
@@ -300,8 +282,7 @@ EventQueue::ProcessEventQueue()
     AccEvent* event = events[idx];
     if (event->mEventRule != AccEvent::eDoNotEmit) {
       Accessible* target = event->GetAccessible();
-      if (!target || target->IsDefunct())
-        continue;
+      if (!target || target->IsDefunct()) continue;
 
       
       if (event->mEventType == nsIAccessibleEvent::EVENT_FOCUS) {
@@ -310,38 +291,41 @@ EventQueue::ProcessEventQueue()
       }
 
       
-      if (event->mEventType == nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED) {
+      if (event->mEventType ==
+          nsIAccessibleEvent::EVENT_TEXT_SELECTION_CHANGED) {
         SelectionMgr()->ProcessTextSelChangeEvent(event);
         continue;
       }
 
       
       if (event->mEventType == nsIAccessibleEvent::EVENT_SELECTION_ADD) {
-        nsEventShell::FireEvent(event->mAccessible, states::SELECTED,
-                                true, event->mIsFromUserInput);
+        nsEventShell::FireEvent(event->mAccessible, states::SELECTED, true,
+                                event->mIsFromUserInput);
 
-      } else if (event->mEventType == nsIAccessibleEvent::EVENT_SELECTION_REMOVE) {
-        nsEventShell::FireEvent(event->mAccessible, states::SELECTED,
-                                false, event->mIsFromUserInput);
+      } else if (event->mEventType ==
+                 nsIAccessibleEvent::EVENT_SELECTION_REMOVE) {
+        nsEventShell::FireEvent(event->mAccessible, states::SELECTED, false,
+                                event->mIsFromUserInput);
 
       } else if (event->mEventType == nsIAccessibleEvent::EVENT_SELECTION) {
         AccSelChangeEvent* selChangeEvent = downcast_accEvent(event);
         nsEventShell::FireEvent(event->mAccessible, states::SELECTED,
-                                (selChangeEvent->mSelChangeType == AccSelChangeEvent::eSelectionAdd),
+                                (selChangeEvent->mSelChangeType ==
+                                 AccSelChangeEvent::eSelectionAdd),
                                 event->mIsFromUserInput);
 
         if (selChangeEvent->mPackedEvent) {
-          nsEventShell::FireEvent(selChangeEvent->mPackedEvent->mAccessible,
-                                  states::SELECTED,
-                                  (selChangeEvent->mPackedEvent->mSelChangeType == AccSelChangeEvent::eSelectionAdd),
-                                  selChangeEvent->mPackedEvent->mIsFromUserInput);
+          nsEventShell::FireEvent(
+              selChangeEvent->mPackedEvent->mAccessible, states::SELECTED,
+              (selChangeEvent->mPackedEvent->mSelChangeType ==
+               AccSelChangeEvent::eSelectionAdd),
+              selChangeEvent->mPackedEvent->mIsFromUserInput);
         }
       }
 
       nsEventShell::FireEvent(event);
     }
 
-    if (!mDocument)
-      return;
+    if (!mDocument) return;
   }
 }

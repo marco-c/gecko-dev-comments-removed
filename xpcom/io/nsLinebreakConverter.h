@@ -12,29 +12,25 @@
 
 
 
-class nsLinebreakConverter
-{
-public:
-
+class nsLinebreakConverter {
+ public:
   
   typedef enum {
-    eLinebreakAny,          
+    eLinebreakAny,  
 
-    eLinebreakPlatform,     
-    eLinebreakContent,      
-    eLinebreakNet,          
+    eLinebreakPlatform,  
+    eLinebreakContent,   
+    eLinebreakNet,       
 
-    eLinebreakMac,          
-    eLinebreakUnix,         
-    eLinebreakWindows,      
+    eLinebreakMac,      
+    eLinebreakUnix,     
+    eLinebreakWindows,  
 
-    eLinebreakSpace         
+    eLinebreakSpace  
 
   } ELinebreakType;
 
-  enum {
-    kIgnoreLen = -1
-  };
+  enum { kIgnoreLen = -1 };
 
   
 
@@ -51,10 +47,10 @@ public:
 
 
 
-  static char* ConvertLineBreaks(const char* aSrc,
-                                 ELinebreakType aSrcBreaks, ELinebreakType aDestBreaks,
-                                 int32_t aSrcLen = kIgnoreLen, int32_t* aOutLen = nullptr);
-
+  static char* ConvertLineBreaks(const char* aSrc, ELinebreakType aSrcBreaks,
+                                 ELinebreakType aDestBreaks,
+                                 int32_t aSrcLen = kIgnoreLen,
+                                 int32_t* aOutLen = nullptr);
 
   
 
@@ -72,11 +68,13 @@ public:
 
 
   static char16_t* ConvertUnicharLineBreaks(const char16_t* aSrc,
-                                            ELinebreakType aSrcBreaks, ELinebreakType aDestBreaks,
-                                            int32_t aSrcLen = kIgnoreLen, int32_t* aOutLen = nullptr);
-
+                                            ELinebreakType aSrcBreaks,
+                                            ELinebreakType aDestBreaks,
+                                            int32_t aSrcLen = kIgnoreLen,
+                                            int32_t* aOutLen = nullptr);
 
   
+
 
 
 
@@ -89,7 +87,6 @@ public:
   static nsresult ConvertStringLineBreaks(nsString& aIoString,
                                           ELinebreakType aSrcBreaks,
                                           ELinebreakType aDestBreaks);
-
 
   
 
@@ -116,7 +113,6 @@ public:
                                           int32_t aSrcLen = kIgnoreLen,
                                           int32_t* aOutLen = nullptr);
 
-
   
 
 
@@ -140,7 +136,6 @@ public:
                                                  ELinebreakType aDestBreaks,
                                                  int32_t aSrcLen = kIgnoreLen,
                                                  int32_t* aOutLen = nullptr);
-
 };
 
-#endif 
+#endif  

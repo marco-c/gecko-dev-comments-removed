@@ -18,10 +18,8 @@ typedef nsCOMPtr<nsIWeakReference> nsWeakPtr;
 
 
 
-template<class T, class DestinationType>
-inline nsresult
-CallQueryReferent(T* aSource, DestinationType** aDestination)
-{
+template <class T, class DestinationType>
+inline nsresult CallQueryReferent(T* aSource, DestinationType** aDestination) {
   MOZ_ASSERT(aSource, "null parameter");
   MOZ_ASSERT(aDestination, "null parameter");
 
@@ -29,13 +27,10 @@ CallQueryReferent(T* aSource, DestinationType** aDestination)
                                 reinterpret_cast<void**>(aDestination));
 }
 
-
-inline const nsQueryReferent
-do_QueryReferent(nsIWeakReference* aRawPtr, nsresult* aError = 0)
-{
+inline const nsQueryReferent do_QueryReferent(nsIWeakReference* aRawPtr,
+                                              nsresult* aError = 0) {
   return nsQueryReferent(aRawPtr, aError);
 }
-
 
 
 
@@ -52,39 +47,35 @@ extern nsIWeakReference* NS_GetWeakReference(nsISupportsWeakReference*,
 
 
 
-inline already_AddRefed<nsIWeakReference>
-do_GetWeakReference(nsISupports* aRawPtr, nsresult* aError = 0)
-{
+
+inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
+    nsISupports* aRawPtr, nsresult* aError = 0) {
   return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
 }
 
-inline already_AddRefed<nsIWeakReference>
-do_GetWeakReference(nsISupportsWeakReference* aRawPtr, nsresult* aError = 0)
-{
+inline already_AddRefed<nsIWeakReference> do_GetWeakReference(
+    nsISupportsWeakReference* aRawPtr, nsresult* aError = 0) {
   return dont_AddRef(NS_GetWeakReference(aRawPtr, aError));
 }
 
-inline void
-do_GetWeakReference(nsIWeakReference* aRawPtr, nsresult* aError = 0)
-{
+inline void do_GetWeakReference(nsIWeakReference* aRawPtr,
+                                nsresult* aError = 0) {
   
   
   
 }
 
-template<class T>
-inline void
-do_GetWeakReference(already_AddRefed<T>&)
-{
+template <class T>
+inline void do_GetWeakReference(already_AddRefed<T>&) {
+  
   
   
   
 }
 
-template<class T>
-inline void
-do_GetWeakReference(already_AddRefed<T>&, nsresult*)
-{
+template <class T>
+inline void do_GetWeakReference(already_AddRefed<T>&, nsresult*) {
+  
   
   
   

@@ -9,7 +9,6 @@
 #include "mozilla/Logging.h"
 #include "nsString.h"
 
-
 #define MOZ_WORKING_BUFFER_SIZE_NETWORK_ADAPTERS 15000
 #define MOZ_WORKING_BUFFER_SIZE_DHCP_PARAMS 1000
 #define MOZ_MAX_TRIES 3
@@ -28,18 +27,15 @@ mozilla::LazyLogModule gDhcpUtilsLog("dhcpUtils");
 #undef LOG
 #define LOG(args) MOZ_LOG(gDhcpUtilsLog, LogLevel::Debug, args)
 
-bool
-IsCurrentAndHasDHCP(PIP_ADAPTER_ADDRESSES aAddresses)
-{
+bool IsCurrentAndHasDHCP(PIP_ADAPTER_ADDRESSES aAddresses) {
   return aAddresses->OperStatus == 1 &&
-      (aAddresses->Dhcpv4Server.iSockaddrLength ||
-      aAddresses->Dhcpv6Server.iSockaddrLength);
+         (aAddresses->Dhcpv4Server.iSockaddrLength ||
+          aAddresses->Dhcpv6Server.iSockaddrLength);
 }
 
-nsresult
-GetActiveDHCPNetworkAdapterName(nsACString& aNetworkAdapterName,
-    WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper)
-{
+nsresult GetActiveDHCPNetworkAdapterName(
+    nsACString& aNetworkAdapterName,
+    WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper) {
   
 
   uint32_t dwRetVal = 0;
@@ -85,12 +81,16 @@ GetActiveDHCPNetworkAdapterName(nsACString& aNetworkAdapterName,
   std::vector<IP_ADAPTER_ADDRESSES> pAddresses;
   do {
     
-    outBufLen = ((outBufLen + sizeof(IP_ADAPTER_ADDRESSES) - 1) / sizeof(IP_ADAPTER_ADDRESSES)) * sizeof(IP_ADAPTER_ADDRESSES);
-    pAddresses.resize(outBufLen/sizeof(IP_ADAPTER_ADDRESSES));
-    LOG(("Trying GetAdaptersAddresses with pAddresses sized to %d and buffer length of %d", pAddresses.size(), outBufLen));
+    outBufLen = ((outBufLen + sizeof(IP_ADAPTER_ADDRESSES) - 1) /
+                 sizeof(IP_ADAPTER_ADDRESSES)) *
+                sizeof(IP_ADAPTER_ADDRESSES);
+    pAddresses.resize(outBufLen / sizeof(IP_ADAPTER_ADDRESSES));
+    LOG(
+        ("Trying GetAdaptersAddresses with pAddresses sized to %d and buffer "
+         "length of %d",
+         pAddresses.size(), outBufLen));
 
-    dwRetVal =
-      aWindowsNetworkFunctionsWrapper->GetAdaptersAddressesWrapped(
+    dwRetVal = aWindowsNetworkFunctionsWrapper->GetAdaptersAddressesWrapped(
         family, flags, nullptr, pAddresses.data(), (PULONG)&outBufLen);
 
     if (dwRetVal == ERROR_BUFFER_OVERFLOW) {
@@ -98,22 +98,20 @@ GetActiveDHCPNetworkAdapterName(nsACString& aNetworkAdapterName,
     }
   } while (dwRetVal == ERROR_BUFFER_OVERFLOW && iterations < MOZ_MAX_TRIES);
 
-  switch(dwRetVal) {
-    case NO_ERROR:
-      {
-        
-        rv = NS_ERROR_NOT_AVAILABLE;
-        PIP_ADAPTER_ADDRESSES pCurrAddresses = pAddresses.data();
-        while (pCurrAddresses) {
-          if (IsCurrentAndHasDHCP(pCurrAddresses)) {
-            rv = NS_OK;
-            aNetworkAdapterName.Assign(pCurrAddresses->AdapterName);
-            break;
-          }
-          pCurrAddresses = pCurrAddresses->Next;
+  switch (dwRetVal) {
+    case NO_ERROR: {
+      
+      rv = NS_ERROR_NOT_AVAILABLE;
+      PIP_ADAPTER_ADDRESSES pCurrAddresses = pAddresses.data();
+      while (pCurrAddresses) {
+        if (IsCurrentAndHasDHCP(pCurrAddresses)) {
+          rv = NS_OK;
+          aNetworkAdapterName.Assign(pCurrAddresses->AdapterName);
+          break;
         }
+        pCurrAddresses = pCurrAddresses->Next;
       }
-      break;
+    } break;
     case ERROR_NO_DATA:
       rv = NS_ERROR_NOT_AVAILABLE;
       break;
@@ -128,27 +126,20 @@ GetActiveDHCPNetworkAdapterName(nsACString& aNetworkAdapterName,
 
 DWORD
 IterateDHCPInformRequestsUntilBufferLargeEnough(
-    DHCPCAPI_PARAMS&     aDhcpRequestedOptionParams,
-     wchar_t*            aWideNetworkAdapterName,
-     std::vector<char>&  aBuffer,
-     WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper)
-{
+    DHCPCAPI_PARAMS& aDhcpRequestedOptionParams,
+    wchar_t* aWideNetworkAdapterName, std::vector<char>& aBuffer,
+    WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper) {
   uint32_t iterations = 0;
   uint32_t outBufLen = MOZ_WORKING_BUFFER_SIZE_DHCP_PARAMS;
 
-  DHCPCAPI_PARAMS_ARRAY RequestParams = {
-    1,  
-    &aDhcpRequestedOptionParams
-  };
+  DHCPCAPI_PARAMS_ARRAY RequestParams = {1,  
+                                         &aDhcpRequestedOptionParams};
 
   
   
   
   
-  DHCPCAPI_PARAMS_ARRAY SendParams = {
-    0,
-    nullptr
-  };
+  DHCPCAPI_PARAMS_ARRAY SendParams = {0, nullptr};
 
   DWORD winAPIResponse;
   
@@ -170,15 +161,15 @@ IterateDHCPInformRequestsUntilBufferLargeEnough(
     aBuffer.resize(outBufLen);
 
     winAPIResponse = aWindowsNetworkFunctionsWrapper->DhcpRequestParamsWrapped(
-      DHCPCAPI_REQUEST_SYNCHRONOUS, 
-      nullptr,                         
-      aWideNetworkAdapterName,               
-      nullptr,                         
-      SendParams,                         
-      RequestParams,                
-      (PBYTE)aBuffer.data(),            
-      (PULONG)&outBufLen,                      
-      nullptr                          
+        DHCPCAPI_REQUEST_SYNCHRONOUS,  
+        nullptr,                       
+        aWideNetworkAdapterName,       
+        nullptr,                       
+        SendParams,                    
+        RequestParams,                 
+        (PBYTE)aBuffer.data(),         
+        (PULONG)&outBufLen,            
+        nullptr  
     );
 
     if (winAPIResponse == ERROR_MORE_DATA) {
@@ -188,71 +179,69 @@ IterateDHCPInformRequestsUntilBufferLargeEnough(
   return winAPIResponse;
 }
 
-nsresult
-RetrieveOption(
-  const nsACString&   aAdapterName,
-  uint8_t            aOption,
-  std::vector<char>& aOptionValueBuf,
-  uint32_t*          aOptionSize,
-  WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper)
-{
-
+nsresult RetrieveOption(
+    const nsACString& aAdapterName, uint8_t aOption,
+    std::vector<char>& aOptionValueBuf, uint32_t* aOptionSize,
+    WindowsNetworkFunctionsWrapper* aWindowsNetworkFunctionsWrapper) {
   nsresult rv;
   nsAutoString wideNetworkAdapterName = NS_ConvertUTF8toUTF16(aAdapterName);
 
   DHCPCAPI_PARAMS DhcpRequestedOptionParams = {
-    0,                
-    aOption, 
-    false,            
-    nullptr,             
-    0                
+      0,        
+      aOption,  
+      false,    
+      nullptr,  
+      0         
   };
 
-  std::vector<char> tmpBuffer(MOZ_WORKING_BUFFER_SIZE_DHCP_PARAMS);  
-  DWORD winAPIResponse = IterateDHCPInformRequestsUntilBufferLargeEnough(DhcpRequestedOptionParams,
-     wideNetworkAdapterName.get(),
-     tmpBuffer,
-     aWindowsNetworkFunctionsWrapper);
+  std::vector<char> tmpBuffer(
+      MOZ_WORKING_BUFFER_SIZE_DHCP_PARAMS);  
+                                             
+  DWORD winAPIResponse = IterateDHCPInformRequestsUntilBufferLargeEnough(
+      DhcpRequestedOptionParams, wideNetworkAdapterName.get(), tmpBuffer,
+      aWindowsNetworkFunctionsWrapper);
 
-  switch (winAPIResponse){
-    case NO_ERROR:
-      {
-        if (DhcpRequestedOptionParams.nBytesData == 0) {
-          *aOptionSize = 0;
-          rv = NS_ERROR_NOT_AVAILABLE;
-          break;
-        }
-
-        if (*aOptionSize >= DhcpRequestedOptionParams.nBytesData) {
-          rv = NS_OK;
-        } else {
-          rv = NS_ERROR_LOSS_OF_SIGNIFICANT_DATA;
-        }
-
-        uint32_t actualSizeReturned =
-              *aOptionSize > DhcpRequestedOptionParams.nBytesData?
-              DhcpRequestedOptionParams.nBytesData: *aOptionSize;
-
-        memcpy(aOptionValueBuf.data(),
-              DhcpRequestedOptionParams.Data, actualSizeReturned);
-        *aOptionSize = DhcpRequestedOptionParams.nBytesData;
+  switch (winAPIResponse) {
+    case NO_ERROR: {
+      if (DhcpRequestedOptionParams.nBytesData == 0) {
+        *aOptionSize = 0;
+        rv = NS_ERROR_NOT_AVAILABLE;
         break;
       }
+
+      if (*aOptionSize >= DhcpRequestedOptionParams.nBytesData) {
+        rv = NS_OK;
+      } else {
+        rv = NS_ERROR_LOSS_OF_SIGNIFICANT_DATA;
+      }
+
+      uint32_t actualSizeReturned =
+          *aOptionSize > DhcpRequestedOptionParams.nBytesData
+              ? DhcpRequestedOptionParams.nBytesData
+              : *aOptionSize;
+
+      memcpy(aOptionValueBuf.data(), DhcpRequestedOptionParams.Data,
+             actualSizeReturned);
+      *aOptionSize = DhcpRequestedOptionParams.nBytesData;
+      break;
+    }
     case ERROR_INVALID_PARAMETER:
       MOZ_LOG(gDhcpUtilsLog, mozilla::LogLevel::Warning,
-          ("RetrieveOption returned %d (ERROR_INVALID_PARAMETER) when option %d requested",
-           winAPIResponse, aOption));
+              ("RetrieveOption returned %d (ERROR_INVALID_PARAMETER) when "
+               "option %d requested",
+               winAPIResponse, aOption));
       rv = NS_ERROR_INVALID_ARG;
       break;
     default:
       MOZ_LOG(gDhcpUtilsLog, mozilla::LogLevel::Warning,
-          ("RetrieveOption returned %d when option %d requested", winAPIResponse, aOption));
+              ("RetrieveOption returned %d when option %d requested",
+               winAPIResponse, aOption));
       rv = NS_ERROR_FAILURE;
   }
   return rv;
 }
 
-} 
-} 
-} 
-} 
+}  
+}  
+}  
+}  

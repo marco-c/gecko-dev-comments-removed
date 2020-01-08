@@ -9,9 +9,8 @@
 
 #include "nsIAboutModule.h"
 
-class nsAboutRedirector : public nsIAboutModule
-{
-public:
+class nsAboutRedirector : public nsIAboutModule {
+ public:
   NS_DECL_ISUPPORTS
 
   NS_DECL_NSIABOUTMODULE
@@ -20,13 +19,16 @@ public:
 
   static nsresult Create(nsISupports* aOuter, REFNSIID aIID, void** aResult);
 
-protected:
+ protected:
   virtual ~nsAboutRedirector() {}
 };
 
 
-#define NS_ABOUT_REDIRECTOR_MODULE_CID \
-{ 0x56ebedd4, 0x6ccf, 0x48e8, \
-  { 0xbd, 0xae, 0xad, 0xc7, 0x7f, 0x04, 0x45, 0x67 } }
+#define NS_ABOUT_REDIRECTOR_MODULE_CID               \
+  {                                                  \
+    0x56ebedd4, 0x6ccf, 0x48e8, {                    \
+      0xbd, 0xae, 0xad, 0xc7, 0x7f, 0x04, 0x45, 0x67 \
+    }                                                \
+  }
 
-#endif 
+#endif  

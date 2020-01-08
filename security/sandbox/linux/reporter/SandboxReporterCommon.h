@@ -54,10 +54,10 @@ struct SandboxReport {
   ULong mSyscall;
   ULong mArgs[kSandboxSyscallArguments];
 
-  SandboxReport() : mPid(0) { }
+  SandboxReport() : mPid(0) {}
   bool IsValid() const { return mPid > 0; }
 };
 
-} 
+}  
 
-#endif 
+#endif  

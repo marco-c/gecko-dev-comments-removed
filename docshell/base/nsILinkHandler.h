@@ -14,16 +14,18 @@ class nsIDocShell;
 class nsIInputStream;
 class nsIRequest;
 
-#define NS_ILINKHANDLER_IID \
-  { 0xceb9aade, 0x43da, 0x4f1a, \
-    { 0xac, 0x8a, 0xc7, 0x09, 0xfb, 0x22, 0x46, 0x64 } }
+#define NS_ILINKHANDLER_IID                          \
+  {                                                  \
+    0xceb9aade, 0x43da, 0x4f1a, {                    \
+      0xac, 0x8a, 0xc7, 0x09, 0xfb, 0x22, 0x46, 0x64 \
+    }                                                \
+  }
 
 
 
 
-class nsILinkHandler : public nsISupports
-{
-public:
+class nsILinkHandler : public nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ILINKHANDLER_IID)
 
   
@@ -40,14 +42,13 @@ public:
 
 
 
-  NS_IMETHOD OnLinkClick(nsIContent* aContent,
-                         nsIURI* aURI,
+
+  NS_IMETHOD OnLinkClick(nsIContent* aContent, nsIURI* aURI,
                          const nsAString& aTargetSpec,
                          const nsAString& aFileName,
                          nsIInputStream* aPostDataStream,
                          nsIInputStream* aHeadersDataStream,
-                         bool aIsUserTriggered,
-                         bool aIsTrusted,
+                         bool aIsUserTriggered, bool aIsTrusted,
                          nsIPrincipal* aTriggeringPrincipal) = 0;
 
   
@@ -69,17 +70,14 @@ public:
 
 
 
-  NS_IMETHOD OnLinkClickSync(nsIContent* aContent,
-                             nsIURI* aURI,
-                             const nsAString& aTargetSpec,
-                             const nsAString& aFileName,
-                             nsIInputStream* aPostDataStream = 0,
-                             nsIInputStream* aHeadersDataStream = 0,
-                             bool aNoOpenerImplied = false,
-                             nsIDocShell** aDocShell = 0,
-                             nsIRequest** aRequest = 0,
-                             bool aIsUserTriggered = false,
-                             nsIPrincipal* aTriggeringPrincipal = nullptr) = 0;
+
+  NS_IMETHOD OnLinkClickSync(
+      nsIContent* aContent, nsIURI* aURI, const nsAString& aTargetSpec,
+      const nsAString& aFileName, nsIInputStream* aPostDataStream = 0,
+      nsIInputStream* aHeadersDataStream = 0, bool aNoOpenerImplied = false,
+      nsIDocShell** aDocShell = 0, nsIRequest** aRequest = 0,
+      bool aIsUserTriggered = false,
+      nsIPrincipal* aTriggeringPrincipal = nullptr) = 0;
 
   
 
@@ -89,8 +87,7 @@ public:
 
 
 
-  NS_IMETHOD OnOverLink(nsIContent* aContent,
-                        nsIURI* aURLSpec,
+  NS_IMETHOD OnOverLink(nsIContent* aContent, nsIURI* aURLSpec,
                         const nsAString& aTargetSpec) = 0;
 
   

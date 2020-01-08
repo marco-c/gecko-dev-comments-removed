@@ -15,9 +15,8 @@ namespace dom {
 
 class WorkerPrivate;
 
-class WorkerEventTarget final : public nsISerialEventTarget
-{
-public:
+class WorkerEventTarget final : public nsISerialEventTarget {
+ public:
   
   
   
@@ -27,30 +26,26 @@ public:
   
   
   
-  enum class Behavior : uint8_t {
-    Hybrid,
-    ControlOnly
-  };
+  enum class Behavior : uint8_t { Hybrid, ControlOnly };
 
-private:
+ private:
   mozilla::Mutex mMutex;
   WorkerPrivate* mWorkerPrivate;
   const Behavior mBehavior;
 
   ~WorkerEventTarget() = default;
 
-public:
+ public:
   WorkerEventTarget(WorkerPrivate* aWorkerPrivate, Behavior aBehavior);
 
-  void
-  ForgetWorkerPrivate(WorkerPrivate* aWorkerPrivate);
+  void ForgetWorkerPrivate(WorkerPrivate* aWorkerPrivate);
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET
   NS_DECL_NSISERIALEVENTTARGET
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

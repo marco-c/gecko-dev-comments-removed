@@ -16,19 +16,16 @@
 #include "nsString.h"
 
 #define NS_UNKNOWNDECODER_CID                        \
-{ /* 7d7008a0-c49a-11d3-9b22-0080c7cb1080 */         \
-    0x7d7008a0,                                      \
-    0xc49a,                                          \
-    0x11d3,                                          \
-    {0x9b, 0x22, 0x00, 0x80, 0xc7, 0xcb, 0x10, 0x80}       \
-}
+  { /* 7d7008a0-c49a-11d3-9b22-0080c7cb1080 */       \
+    0x7d7008a0, 0xc49a, 0x11d3, {                    \
+      0x9b, 0x22, 0x00, 0x80, 0xc7, 0xcb, 0x10, 0x80 \
+    }                                                \
+  }
 
-
-class nsUnknownDecoder : public nsIStreamConverter
-                       , public nsIContentSniffer
-                       , public nsIThreadRetargetableStreamListener
-{
-public:
+class nsUnknownDecoder : public nsIStreamConverter,
+                         public nsIContentSniffer,
+                         public nsIThreadRetargetableStreamListener {
+ public:
   
   NS_DECL_ISUPPORTS
 
@@ -49,33 +46,30 @@ public:
 
   nsUnknownDecoder();
 
-protected:
+ protected:
   virtual ~nsUnknownDecoder();
 
   virtual void DetermineContentType(nsIRequest* aRequest);
-  nsresult FireListenerNotifications(nsIRequest* request, nsISupports *aCtxt);
+  nsresult FireListenerNotifications(nsIRequest* request, nsISupports* aCtxt);
 
-  class ConvertedStreamListener: public nsIStreamListener
-  {
-  public:
-    explicit ConvertedStreamListener(nsUnknownDecoder *aDecoder);
+  class ConvertedStreamListener : public nsIStreamListener {
+   public:
+    explicit ConvertedStreamListener(nsUnknownDecoder* aDecoder);
 
     NS_DECL_ISUPPORTS
     NS_DECL_NSIREQUESTOBSERVER
     NS_DECL_NSISTREAMLISTENER
 
-  private:
+   private:
     virtual ~ConvertedStreamListener() = default;
     static nsresult AppendDataToString(nsIInputStream* inputStream,
-                                       void* closure,
-                                       const char* rawSegment,
-                                       uint32_t toOffset,
-                                       uint32_t count,
+                                       void* closure, const char* rawSegment,
+                                       uint32_t toOffset, uint32_t count,
                                        uint32_t* writeCount);
-    nsUnknownDecoder *mDecoder;
+    nsUnknownDecoder* mDecoder;
   };
 
-protected:
+ protected:
   nsCOMPtr<nsIStreamListener> mNextListener;
 
   
@@ -130,7 +124,7 @@ protected:
 
   
   
-  mozilla::Atomic<char *>mBuffer;
+  mozilla::Atomic<char*> mBuffer;
   mozilla::Atomic<uint32_t> mBufferLen;
   mozilla::Atomic<bool> mRequireHTMLsuffix;
 
@@ -139,19 +133,18 @@ protected:
   
   mutable mozilla::Mutex mMutex;
 
-protected:
+ protected:
   nsresult ConvertEncodedData(nsIRequest* request, const char* data,
                               uint32_t length);
-  nsCString mDecodedData; 
+  nsCString mDecodedData;  
 };
 
 #define NS_BINARYDETECTOR_CID                        \
-{ /* a2027ec6-ba0d-4c72-805d-148233f5f33c */         \
-    0xa2027ec6,                                      \
-    0xba0d,                                          \
-    0x4c72,                                          \
-    {0x80, 0x5d, 0x14, 0x82, 0x33, 0xf5, 0xf3, 0x3c} \
-}
+  { /* a2027ec6-ba0d-4c72-805d-148233f5f33c */       \
+    0xa2027ec6, 0xba0d, 0x4c72, {                    \
+      0x80, 0x5d, 0x14, 0x82, 0x33, 0xf5, 0xf3, 0x3c \
+    }                                                \
+  }
 
 
 
@@ -159,13 +152,15 @@ protected:
 
 
 
-class nsBinaryDetector : public nsUnknownDecoder
-{
-protected:
+class nsBinaryDetector : public nsUnknownDecoder {
+ protected:
   virtual void DetermineContentType(nsIRequest* aRequest) override;
 };
 
-#define NS_BINARYDETECTOR_CATEGORYENTRY \
-  { NS_CONTENT_SNIFFER_CATEGORY, "Binary Detector", NS_BINARYDETECTOR_CONTRACTID }
+#define NS_BINARYDETECTOR_CATEGORYENTRY             \
+  {                                                 \
+    NS_CONTENT_SNIFFER_CATEGORY, "Binary Detector", \
+        NS_BINARYDETECTOR_CONTRACTID                \
+  }
 
 #endif 

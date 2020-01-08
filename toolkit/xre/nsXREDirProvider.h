@@ -16,16 +16,18 @@
 #include "mozilla/Attributes.h"
 
 
-#define NS_XREDIRPROVIDER_CID \
-  { 0x5573967d, 0xf6cf, 0x4c63, \
-    { 0x8e, 0x0e, 0x9a, 0xc0, 0x6e, 0x04, 0xd6, 0x2b } }
+#define NS_XREDIRPROVIDER_CID                        \
+  {                                                  \
+    0x5573967d, 0xf6cf, 0x4c63, {                    \
+      0x8e, 0x0e, 0x9a, 0xc0, 0x6e, 0x04, 0xd6, 0x2b \
+    }                                                \
+  }
 #define NS_XREDIRPROVIDER_CONTRACTID "@mozilla.org/xre/directory-provider;1"
 
 class nsXREDirProvider final : public nsIDirectoryServiceProvider2,
                                public nsIXREDirProvider,
-                               public nsIProfileStartup
-{
-public:
+                               public nsIProfileStartup {
+ public:
   
   NS_IMETHOD QueryInterface(REFNSIID aIID, void** aInstancePtr) override;
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override;
@@ -39,8 +41,7 @@ public:
   nsXREDirProvider();
 
   
-  nsresult Initialize(nsIFile *aXULAppDir,
-                      nsIFile *aGREDir,
+  nsresult Initialize(nsIFile* aXULAppDir, nsIFile* aGREDir,
                       nsIDirectoryServiceProvider* aAppProvider = nullptr);
   ~nsXREDirProvider();
 
@@ -59,10 +60,10 @@ public:
 
   void DoShutdown();
 
-  static nsresult GetUserAppDataDirectory(nsIFile* *aFile) {
+  static nsresult GetUserAppDataDirectory(nsIFile** aFile) {
     return GetUserDataDirectory(aFile, false);
   }
-  static nsresult GetUserLocalDataDirectory(nsIFile* *aFile) {
+  static nsresult GetUserLocalDataDirectory(nsIFile** aFile) {
     return GetUserDataDirectory(aFile, true);
   }
 
@@ -73,8 +74,7 @@ public:
   nsIFile* GetGREDir() { return mGREDir; }
   nsIFile* GetGREBinDir() { return mGREBinDir; }
   nsIFile* GetAppDir() {
-    if (mXULAppDir)
-      return mXULAppDir;
+    if (mXULAppDir) return mXULAppDir;
     return mGREDir;
   }
 
@@ -97,20 +97,21 @@ public:
 
 
 
-  nsresult GetProfileStartupDir(nsIFile* *aResult);
+  nsresult GetProfileStartupDir(nsIFile** aResult);
 
   
 
 
 
 
-  nsresult GetProfileDir(nsIFile* *aResult);
+  nsresult GetProfileDir(nsIFile** aResult);
 
-protected:
-  nsresult GetFilesInternal(const char* aProperty, nsISimpleEnumerator** aResult);
-  static nsresult GetUserDataDirectoryHome(nsIFile* *aFile, bool aLocal);
-  static nsresult GetSysUserExtensionsDirectory(nsIFile* *aFile);
-  static nsresult GetSysUserExtensionsDevDirectory(nsIFile* *aFile);
+ protected:
+  nsresult GetFilesInternal(const char* aProperty,
+                            nsISimpleEnumerator** aResult);
+  static nsresult GetUserDataDirectoryHome(nsIFile** aFile, bool aLocal);
+  static nsresult GetSysUserExtensionsDirectory(nsIFile** aFile);
+  static nsresult GetSysUserExtensionsDevDirectory(nsIFile** aFile);
 #if defined(XP_UNIX) || defined(XP_MACOSX)
   static nsresult GetSystemExtensionsDirectory(nsIFile** aFile);
 #endif
@@ -139,24 +140,24 @@ protected:
 
   nsCOMPtr<nsIDirectoryServiceProvider> mAppProvider;
   
-  nsCOMPtr<nsIFile>      mGREDir;
+  nsCOMPtr<nsIFile> mGREDir;
   
-  nsCOMPtr<nsIFile>      mGREBinDir;
+  nsCOMPtr<nsIFile> mGREBinDir;
   
-  nsCOMPtr<nsIFile>      mXULAppDir;
-  nsCOMPtr<nsIFile>      mProfileDir;
-  nsCOMPtr<nsIFile>      mProfileLocalDir;
-  bool                   mProfileNotified;
-  bool                   mPrefsInitialized = false;
+  nsCOMPtr<nsIFile> mXULAppDir;
+  nsCOMPtr<nsIFile> mProfileDir;
+  nsCOMPtr<nsIFile> mProfileLocalDir;
+  bool mProfileNotified;
+  bool mPrefsInitialized = false;
 #if defined(MOZ_CONTENT_SANDBOX)
-  nsCOMPtr<nsIFile>      mContentTempDir;
-  nsCOMPtr<nsIFile>      mContentProcessSandboxTempDir;
+  nsCOMPtr<nsIFile> mContentTempDir;
+  nsCOMPtr<nsIFile> mContentProcessSandboxTempDir;
 #endif
 #if defined(MOZ_SANDBOX)
-  nsCOMPtr<nsIFile>      mPluginTempDir;
-  nsCOMPtr<nsIFile>      mPluginProcessSandboxTempDir;
+  nsCOMPtr<nsIFile> mPluginTempDir;
+  nsCOMPtr<nsIFile> mPluginProcessSandboxTempDir;
 #endif
-  nsCOMArray<nsIFile>    mAppBundleDirectories;
+  nsCOMArray<nsIFile> mAppBundleDirectories;
 };
 
 #endif

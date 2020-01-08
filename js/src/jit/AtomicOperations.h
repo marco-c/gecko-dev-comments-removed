@@ -83,235 +83,239 @@ namespace jit {
 
 
 
-class AtomicOperations
-{
-    
-    
+class AtomicOperations {
+  
+  
 
-    
-    template<typename T>
-    static inline T loadSeqCst(T* addr);
+  
+  template <typename T>
+  static inline T loadSeqCst(T* addr);
 
-    
-    template<typename T>
-    static inline void storeSeqCst(T* addr, T val);
+  
+  template <typename T>
+  static inline void storeSeqCst(T* addr, T val);
 
-    
-    template<typename T>
-    static inline T exchangeSeqCst(T* addr, T val);
+  
+  template <typename T>
+  static inline T exchangeSeqCst(T* addr, T val);
 
-    
-    
-    template<typename T>
-    static inline T compareExchangeSeqCst(T* addr, T oldval, T newval);
+  
+  
+  template <typename T>
+  static inline T compareExchangeSeqCst(T* addr, T oldval, T newval);
 
-    
-    
-    template<typename T>
-    static inline T fetchAddSeqCst(T* addr, T val);
+  
+  
+  template <typename T>
+  static inline T fetchAddSeqCst(T* addr, T val);
 
-    template<typename T>
-    static inline T fetchSubSeqCst(T* addr, T val);
+  template <typename T>
+  static inline T fetchSubSeqCst(T* addr, T val);
 
-    template<typename T>
-    static inline T fetchAndSeqCst(T* addr, T val);
+  template <typename T>
+  static inline T fetchAndSeqCst(T* addr, T val);
 
-    template<typename T>
-    static inline T fetchOrSeqCst(T* addr, T val);
+  template <typename T>
+  static inline T fetchOrSeqCst(T* addr, T val);
 
-    template<typename T>
-    static inline T fetchXorSeqCst(T* addr, T val);
+  template <typename T>
+  static inline T fetchXorSeqCst(T* addr, T val);
 
-    
-    
-    
-    
+  
+  
+  
+  
 
-    
-    
-    
-    template<typename T>
-    static inline T loadSafeWhenRacy(T* addr);
+  
+  
+  
+  template <typename T>
+  static inline T loadSafeWhenRacy(T* addr);
 
-    
-    
-    
-    template<typename T>
-    static inline void storeSafeWhenRacy(T* addr, T val);
+  
+  
+  
+  template <typename T>
+  static inline void storeSafeWhenRacy(T* addr, T val);
 
-    
-    static inline void memcpySafeWhenRacy(void* dest, const void* src, size_t nbytes);
+  
+  static inline void memcpySafeWhenRacy(void* dest, const void* src,
+                                        size_t nbytes);
 
-    
-    static inline void memmoveSafeWhenRacy(void* dest, const void* src, size_t nbytes);
+  
+  static inline void memmoveSafeWhenRacy(void* dest, const void* src,
+                                         size_t nbytes);
 
-  public:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static inline bool isLockfreeJS(int32_t n);
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static inline bool isLockfreeJS(int32_t n);
 
-    
-    
-    
-    
-    static inline bool hasAtomic8();
+  
+  
+  
+  
+  static inline bool hasAtomic8();
 
-    
-    
-    
-    static inline bool isLockfree8();
+  
+  
+  
+  static inline bool isLockfree8();
 
-    
-    static inline void fenceSeqCst();
+  
+  static inline void fenceSeqCst();
 
-    
-    
+  
+  
 
-    template<typename T>
-    static T loadSeqCst(SharedMem<T*> addr) {
-        return loadSeqCst(addr.unwrap());
-    }
+  template <typename T>
+  static T loadSeqCst(SharedMem<T*> addr) {
+    return loadSeqCst(addr.unwrap());
+  }
 
-    template<typename T>
-    static void storeSeqCst(SharedMem<T*> addr, T val) {
-        return storeSeqCst(addr.unwrap(), val);
-    }
+  template <typename T>
+  static void storeSeqCst(SharedMem<T*> addr, T val) {
+    return storeSeqCst(addr.unwrap(), val);
+  }
 
-    template<typename T>
-    static T exchangeSeqCst(SharedMem<T*> addr, T val) {
-        return exchangeSeqCst(addr.unwrap(), val);
-    }
+  template <typename T>
+  static T exchangeSeqCst(SharedMem<T*> addr, T val) {
+    return exchangeSeqCst(addr.unwrap(), val);
+  }
 
-    template<typename T>
-    static T compareExchangeSeqCst(SharedMem<T*> addr, T oldval, T newval) {
-        return compareExchangeSeqCst(addr.unwrap(), oldval, newval);
-    }
+  template <typename T>
+  static T compareExchangeSeqCst(SharedMem<T*> addr, T oldval, T newval) {
+    return compareExchangeSeqCst(addr.unwrap(), oldval, newval);
+  }
 
-    template<typename T>
-    static T fetchAddSeqCst(SharedMem<T*> addr, T val) {
-        return fetchAddSeqCst(addr.unwrap(), val);
-    }
+  template <typename T>
+  static T fetchAddSeqCst(SharedMem<T*> addr, T val) {
+    return fetchAddSeqCst(addr.unwrap(), val);
+  }
 
-    template<typename T>
-    static T fetchSubSeqCst(SharedMem<T*> addr, T val) {
-        return fetchSubSeqCst(addr.unwrap(), val);
-    }
+  template <typename T>
+  static T fetchSubSeqCst(SharedMem<T*> addr, T val) {
+    return fetchSubSeqCst(addr.unwrap(), val);
+  }
 
-    template<typename T>
-    static T fetchAndSeqCst(SharedMem<T*> addr, T val) {
-        return fetchAndSeqCst(addr.unwrap(), val);
-    }
+  template <typename T>
+  static T fetchAndSeqCst(SharedMem<T*> addr, T val) {
+    return fetchAndSeqCst(addr.unwrap(), val);
+  }
 
-    template<typename T>
-    static T fetchOrSeqCst(SharedMem<T*> addr, T val) {
-        return fetchOrSeqCst(addr.unwrap(), val);
-    }
+  template <typename T>
+  static T fetchOrSeqCst(SharedMem<T*> addr, T val) {
+    return fetchOrSeqCst(addr.unwrap(), val);
+  }
 
-    template<typename T>
-    static T fetchXorSeqCst(SharedMem<T*> addr, T val) {
-        return fetchXorSeqCst(addr.unwrap(), val);
-    }
+  template <typename T>
+  static T fetchXorSeqCst(SharedMem<T*> addr, T val) {
+    return fetchXorSeqCst(addr.unwrap(), val);
+  }
 
-    template<typename T>
-    static T loadSafeWhenRacy(SharedMem<T*> addr) {
-        return loadSafeWhenRacy(addr.unwrap());
-    }
+  template <typename T>
+  static T loadSafeWhenRacy(SharedMem<T*> addr) {
+    return loadSafeWhenRacy(addr.unwrap());
+  }
 
-    template<typename T>
-    static void storeSafeWhenRacy(SharedMem<T*> addr, T val) {
-        return storeSafeWhenRacy(addr.unwrap(), val);
-    }
+  template <typename T>
+  static void storeSafeWhenRacy(SharedMem<T*> addr, T val) {
+    return storeSafeWhenRacy(addr.unwrap(), val);
+  }
 
-    template<typename T>
-    static void memcpySafeWhenRacy(SharedMem<T*> dest, SharedMem<T*> src, size_t nbytes) {
-        memcpySafeWhenRacy(dest.template cast<void*>().unwrap(),
-                           src.template cast<void*>().unwrap(), nbytes);
-    }
+  template <typename T>
+  static void memcpySafeWhenRacy(SharedMem<T*> dest, SharedMem<T*> src,
+                                 size_t nbytes) {
+    memcpySafeWhenRacy(dest.template cast<void*>().unwrap(),
+                       src.template cast<void*>().unwrap(), nbytes);
+  }
 
-    template<typename T>
-    static void memcpySafeWhenRacy(SharedMem<T*> dest, T* src, size_t nbytes) {
-        memcpySafeWhenRacy(dest.template cast<void*>().unwrap(), static_cast<void*>(src), nbytes);
-    }
+  template <typename T>
+  static void memcpySafeWhenRacy(SharedMem<T*> dest, T* src, size_t nbytes) {
+    memcpySafeWhenRacy(dest.template cast<void*>().unwrap(),
+                       static_cast<void*>(src), nbytes);
+  }
 
-    template<typename T>
-    static void memcpySafeWhenRacy(T* dest, SharedMem<T*> src, size_t nbytes) {
-        memcpySafeWhenRacy(static_cast<void*>(dest), src.template cast<void*>().unwrap(), nbytes);
-    }
+  template <typename T>
+  static void memcpySafeWhenRacy(T* dest, SharedMem<T*> src, size_t nbytes) {
+    memcpySafeWhenRacy(static_cast<void*>(dest),
+                       src.template cast<void*>().unwrap(), nbytes);
+  }
 
-    template<typename T>
-    static void memmoveSafeWhenRacy(SharedMem<T*> dest, SharedMem<T*> src, size_t nbytes) {
-        memmoveSafeWhenRacy(dest.template cast<void*>().unwrap(),
-                            src.template cast<void*>().unwrap(), nbytes);
-    }
+  template <typename T>
+  static void memmoveSafeWhenRacy(SharedMem<T*> dest, SharedMem<T*> src,
+                                  size_t nbytes) {
+    memmoveSafeWhenRacy(dest.template cast<void*>().unwrap(),
+                        src.template cast<void*>().unwrap(), nbytes);
+  }
 
-    template<typename T>
-    static void podCopySafeWhenRacy(SharedMem<T*> dest, SharedMem<T*> src, size_t nelem) {
-        memcpySafeWhenRacy(dest, src, nelem * sizeof(T));
-    }
+  template <typename T>
+  static void podCopySafeWhenRacy(SharedMem<T*> dest, SharedMem<T*> src,
+                                  size_t nelem) {
+    memcpySafeWhenRacy(dest, src, nelem * sizeof(T));
+  }
 
-    template<typename T>
-    static void podMoveSafeWhenRacy(SharedMem<T*> dest, SharedMem<T*> src, size_t nelem) {
-        memmoveSafeWhenRacy(dest, src, nelem * sizeof(T));
-    }
+  template <typename T>
+  static void podMoveSafeWhenRacy(SharedMem<T*> dest, SharedMem<T*> src,
+                                  size_t nelem) {
+    memmoveSafeWhenRacy(dest, src, nelem * sizeof(T));
+  }
 
 #ifdef DEBUG
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
 
-    template<typename T>
-    static bool
-    tier1Constraints(const T* addr) {
-        static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
-        return (sizeof(T) < 8 || (hasAtomic8() && isLockfree8())) &&
-               !(uintptr_t(addr) & (sizeof(T) - 1));
-    }
+  template <typename T>
+  static bool tier1Constraints(const T* addr) {
+    static_assert(sizeof(T) <= 8, "atomics supported up to 8 bytes only");
+    return (sizeof(T) < 8 || (hasAtomic8() && isLockfree8())) &&
+           !(uintptr_t(addr) & (sizeof(T) - 1));
+  }
 #endif
 };
 
-inline bool
-AtomicOperations::isLockfreeJS(int32_t size)
-{
-    
+inline bool AtomicOperations::isLockfreeJS(int32_t size) {
+  
 
-    switch (size) {
-      case 1:
-        return true;
-      case 2:
-        return true;
-      case 4:
-        
-        return true;
-      case 8:
-        
-        
-        
-        
-        return false;
-      default:
-        return false;
-    }
+  switch (size) {
+    case 1:
+      return true;
+    case 2:
+      return true;
+    case 4:
+      
+      return true;
+    case 8:
+      
+      
+      
+      
+      return false;
+    default:
+      return false;
+  }
 }
 
-} 
-} 
+}  
+}  
 
 
 
@@ -344,55 +348,57 @@ AtomicOperations::isLockfreeJS(int32_t size)
 
 
 #if defined(JS_SIMULATOR_MIPS32)
-# if defined(__clang__) || defined(__GNUC__)
-#  include "jit/mips-shared/AtomicOperations-mips-shared.h"
-# else
-#  error "No AtomicOperations support for this platform+compiler combination"
-# endif
-#elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || defined(_M_IX86)
-# if defined(__clang__) || defined(__GNUC__)
-#  include "jit/x86-shared/AtomicOperations-x86-shared-gcc.h"
-# elif defined(_MSC_VER)
-#  include "jit/x86-shared/AtomicOperations-x86-shared-msvc.h"
-# else
-#  error "No AtomicOperations support for this platform+compiler combination"
-# endif
-#elif defined(__arm__)
-# if defined(__clang__) || defined(__GNUC__)
-#  include "jit/arm/AtomicOperations-arm.h"
-# else
-#  error "No AtomicOperations support for this platform+compiler combination"
-# endif
-#elif defined(__aarch64__) || defined(_M_ARM64)
-# if defined(__clang__) || defined(__GNUC__)
-#  include "jit/arm64/AtomicOperations-arm64-gcc.h"
-# elif defined(_MSC_VER)
-#  include "jit/arm64/AtomicOperations-arm64-msvc.h"
-# else
-#  error "No AtomicOperations support for this platform+compiler combination"
-# endif
-#elif defined(__mips__)
-# if defined(__clang__) || defined(__GNUC__)
-#  include "jit/mips-shared/AtomicOperations-mips-shared.h"
-# else
-#  error "No AtomicOperations support for this platform+compiler combination"
-# endif
-#elif defined(__ppc__) || defined(__PPC__)
-# include "jit/none/AtomicOperations-feeling-lucky.h"
-#elif defined(__sparc__)
-# include "jit/none/AtomicOperations-feeling-lucky.h"
-#elif defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)
-# include "jit/none/AtomicOperations-feeling-lucky.h"
-#elif defined(__alpha__)
-# include "jit/none/AtomicOperations-feeling-lucky.h"
-#elif defined(__hppa__)
-# include "jit/none/AtomicOperations-feeling-lucky.h"
-#elif defined(__sh__)
-# include "jit/none/AtomicOperations-feeling-lucky.h"
-#elif defined(__s390__) || defined(__s390x__)
-# include "jit/none/AtomicOperations-feeling-lucky.h"
+#if defined(__clang__) || defined(__GNUC__)
+#include "jit/mips-shared/AtomicOperations-mips-shared.h"
 #else
-# error "No AtomicOperations support provided for this platform"
+#error "No AtomicOperations support for this platform+compiler combination"
+#endif
+#elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
+    defined(_M_IX86)
+#if defined(__clang__) || defined(__GNUC__)
+#include "jit/x86-shared/AtomicOperations-x86-shared-gcc.h"
+#elif defined(_MSC_VER)
+#include "jit/x86-shared/AtomicOperations-x86-shared-msvc.h"
+#else
+#error "No AtomicOperations support for this platform+compiler combination"
+#endif
+#elif defined(__arm__)
+#if defined(__clang__) || defined(__GNUC__)
+#include "jit/arm/AtomicOperations-arm.h"
+#else
+#error "No AtomicOperations support for this platform+compiler combination"
+#endif
+#elif defined(__aarch64__) || defined(_M_ARM64)
+#if defined(__clang__) || defined(__GNUC__)
+#include "jit/arm64/AtomicOperations-arm64-gcc.h"
+#elif defined(_MSC_VER)
+#include "jit/arm64/AtomicOperations-arm64-msvc.h"
+#else
+#error "No AtomicOperations support for this platform+compiler combination"
+#endif
+#elif defined(__mips__)
+#if defined(__clang__) || defined(__GNUC__)
+#include "jit/mips-shared/AtomicOperations-mips-shared.h"
+#else
+#error "No AtomicOperations support for this platform+compiler combination"
+#endif
+#elif defined(__ppc__) || defined(__PPC__)
+#include "jit/none/AtomicOperations-feeling-lucky.h"
+#elif defined(__sparc__)
+#include "jit/none/AtomicOperations-feeling-lucky.h"
+#elif defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || \
+    defined(__PPC64LE__)
+#include "jit/none/AtomicOperations-feeling-lucky.h"
+#elif defined(__alpha__)
+#include "jit/none/AtomicOperations-feeling-lucky.h"
+#elif defined(__hppa__)
+#include "jit/none/AtomicOperations-feeling-lucky.h"
+#elif defined(__sh__)
+#include "jit/none/AtomicOperations-feeling-lucky.h"
+#elif defined(__s390__) || defined(__s390x__)
+#include "jit/none/AtomicOperations-feeling-lucky.h"
+#else
+#error "No AtomicOperations support provided for this platform"
 #endif
 
-#endif 
+#endif  

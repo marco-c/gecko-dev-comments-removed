@@ -22,250 +22,196 @@ namespace jit {
 
 
 
-class RematerializedFrame
-{
-    
-    bool prevUpToDate_;
+class RematerializedFrame {
+  
+  bool prevUpToDate_;
 
-    
-    bool isDebuggee_;
+  
+  bool isDebuggee_;
 
-    
-    
-    
-    bool hasInitialEnv_;
+  
+  
+  
+  bool hasInitialEnv_;
 
-    
-    bool isConstructing_;
+  
+  bool isConstructing_;
 
-    
-    
-    
-    bool hasCachedSavedFrame_;
+  
+  
+  
+  bool hasCachedSavedFrame_;
 
-    
-    uint8_t* top_;
+  
+  uint8_t* top_;
 
-    
-    jsbytecode* pc_;
+  
+  jsbytecode* pc_;
 
-    size_t frameNo_;
-    unsigned numActualArgs_;
+  size_t frameNo_;
+  unsigned numActualArgs_;
 
-    JSScript* script_;
-    JSObject* envChain_;
-    JSFunction* callee_;
-    ArgumentsObject* argsObj_;
+  JSScript* script_;
+  JSObject* envChain_;
+  JSFunction* callee_;
+  ArgumentsObject* argsObj_;
 
-    Value returnValue_;
-    Value thisArgument_;
-    Value newTarget_;
-    Value slots_[1];
+  Value returnValue_;
+  Value thisArgument_;
+  Value newTarget_;
+  Value slots_[1];
 
-    RematerializedFrame(JSContext* cx, uint8_t* top, unsigned numActualArgs,
-                        InlineFrameIterator& iter, MaybeReadFallback& fallback);
+  RematerializedFrame(JSContext* cx, uint8_t* top, unsigned numActualArgs,
+                      InlineFrameIterator& iter, MaybeReadFallback& fallback);
 
-  public:
-    static RematerializedFrame* New(JSContext* cx, uint8_t* top, InlineFrameIterator& iter,
-                                    MaybeReadFallback& fallback);
+ public:
+  static RematerializedFrame* New(JSContext* cx, uint8_t* top,
+                                  InlineFrameIterator& iter,
+                                  MaybeReadFallback& fallback);
 
-    
-    
-    static MOZ_MUST_USE bool RematerializeInlineFrames(JSContext* cx, uint8_t* top,
-                                                       InlineFrameIterator& iter,
-                                                       MaybeReadFallback& fallback,
-                                                       GCVector<RematerializedFrame*>& frames);
+  
+  
+  static MOZ_MUST_USE bool RematerializeInlineFrames(
+      JSContext* cx, uint8_t* top, InlineFrameIterator& iter,
+      MaybeReadFallback& fallback, GCVector<RematerializedFrame*>& frames);
 
-    
-    
-    static void FreeInVector(GCVector<RematerializedFrame*>& frames);
+  
+  
+  static void FreeInVector(GCVector<RematerializedFrame*>& frames);
 
-    bool prevUpToDate() const {
-        return prevUpToDate_;
-    }
-    void setPrevUpToDate() {
-        prevUpToDate_ = true;
-    }
-    void unsetPrevUpToDate() {
-        prevUpToDate_ = false;
-    }
+  bool prevUpToDate() const { return prevUpToDate_; }
+  void setPrevUpToDate() { prevUpToDate_ = true; }
+  void unsetPrevUpToDate() { prevUpToDate_ = false; }
 
-    bool isDebuggee() const {
-        return isDebuggee_;
-    }
-    void setIsDebuggee() {
-        isDebuggee_ = true;
-    }
-    void unsetIsDebuggee() {
-        MOZ_ASSERT(!script()->isDebuggee());
-        isDebuggee_ = false;
-    }
+  bool isDebuggee() const { return isDebuggee_; }
+  void setIsDebuggee() { isDebuggee_ = true; }
+  void unsetIsDebuggee() {
+    MOZ_ASSERT(!script()->isDebuggee());
+    isDebuggee_ = false;
+  }
 
-    uint8_t* top() const {
-        return top_;
-    }
-    JSScript* outerScript() const {
-        JitFrameLayout* jsFrame = (JitFrameLayout*)top_;
-        return ScriptFromCalleeToken(jsFrame->calleeToken());
-    }
-    jsbytecode* pc() const {
-        return pc_;
-    }
-    size_t frameNo() const {
-        return frameNo_;
-    }
-    bool inlined() const {
-        return frameNo_ > 0;
-    }
+  uint8_t* top() const { return top_; }
+  JSScript* outerScript() const {
+    JitFrameLayout* jsFrame = (JitFrameLayout*)top_;
+    return ScriptFromCalleeToken(jsFrame->calleeToken());
+  }
+  jsbytecode* pc() const { return pc_; }
+  size_t frameNo() const { return frameNo_; }
+  bool inlined() const { return frameNo_ > 0; }
 
-    JSObject* environmentChain() const {
-        return envChain_;
-    }
+  JSObject* environmentChain() const { return envChain_; }
 
-    template <typename SpecificEnvironment>
-    void pushOnEnvironmentChain(SpecificEnvironment& env) {
-        MOZ_ASSERT(*environmentChain() == env.enclosingEnvironment());
-        envChain_ = &env;
-        if (IsFrameInitialEnvironment(this, env)) {
-            hasInitialEnv_ = true;
-        }
+  template <typename SpecificEnvironment>
+  void pushOnEnvironmentChain(SpecificEnvironment& env) {
+    MOZ_ASSERT(*environmentChain() == env.enclosingEnvironment());
+    envChain_ = &env;
+    if (IsFrameInitialEnvironment(this, env)) {
+      hasInitialEnv_ = true;
     }
+  }
 
-    template <typename SpecificEnvironment>
-    void popOffEnvironmentChain() {
-        MOZ_ASSERT(envChain_->is<SpecificEnvironment>());
-        envChain_ = &envChain_->as<SpecificEnvironment>().enclosingEnvironment();
-    }
+  template <typename SpecificEnvironment>
+  void popOffEnvironmentChain() {
+    MOZ_ASSERT(envChain_->is<SpecificEnvironment>());
+    envChain_ = &envChain_->as<SpecificEnvironment>().enclosingEnvironment();
+  }
 
-    MOZ_MUST_USE bool initFunctionEnvironmentObjects(JSContext* cx);
-    MOZ_MUST_USE bool pushVarEnvironment(JSContext* cx, HandleScope scope);
+  MOZ_MUST_USE bool initFunctionEnvironmentObjects(JSContext* cx);
+  MOZ_MUST_USE bool pushVarEnvironment(JSContext* cx, HandleScope scope);
 
-    bool hasInitialEnvironment() const {
-        return hasInitialEnv_;
-    }
-    CallObject& callObj() const;
+  bool hasInitialEnvironment() const { return hasInitialEnv_; }
+  CallObject& callObj() const;
 
-    bool hasArgsObj() const {
-        return !!argsObj_;
-    }
-    ArgumentsObject& argsObj() const {
-        MOZ_ASSERT(hasArgsObj());
-        MOZ_ASSERT(script()->needsArgsObj());
-        return *argsObj_;
-    }
+  bool hasArgsObj() const { return !!argsObj_; }
+  ArgumentsObject& argsObj() const {
+    MOZ_ASSERT(hasArgsObj());
+    MOZ_ASSERT(script()->needsArgsObj());
+    return *argsObj_;
+  }
 
-    bool isFunctionFrame() const {
-        return !!script_->functionNonDelazifying();
-    }
-    bool isGlobalFrame() const {
-        return script_->isGlobalCode();
-    }
-    bool isModuleFrame() const {
-        return script_->module();
-    }
+  bool isFunctionFrame() const { return !!script_->functionNonDelazifying(); }
+  bool isGlobalFrame() const { return script_->isGlobalCode(); }
+  bool isModuleFrame() const { return script_->module(); }
 
-    JSScript* script() const {
-        return script_;
-    }
-    JSFunction* callee() const {
-        MOZ_ASSERT(isFunctionFrame());
-        MOZ_ASSERT(callee_);
-        return callee_;
-    }
-    Value calleev() const {
-        return ObjectValue(*callee());
-    }
-    Value& thisArgument() {
-        return thisArgument_;
-    }
+  JSScript* script() const { return script_; }
+  JSFunction* callee() const {
+    MOZ_ASSERT(isFunctionFrame());
+    MOZ_ASSERT(callee_);
+    return callee_;
+  }
+  Value calleev() const { return ObjectValue(*callee()); }
+  Value& thisArgument() { return thisArgument_; }
 
-    bool isConstructing() const {
-        return isConstructing_;
-    }
+  bool isConstructing() const { return isConstructing_; }
 
-    bool hasCachedSavedFrame() const {
-        return hasCachedSavedFrame_;
-    }
+  bool hasCachedSavedFrame() const { return hasCachedSavedFrame_; }
 
-    void setHasCachedSavedFrame() {
-        hasCachedSavedFrame_ = true;
-    }
+  void setHasCachedSavedFrame() { hasCachedSavedFrame_ = true; }
 
-    void clearHasCachedSavedFrame() {
-        hasCachedSavedFrame_ = false;
-    }
+  void clearHasCachedSavedFrame() { hasCachedSavedFrame_ = false; }
 
-    unsigned numFormalArgs() const {
-        return isFunctionFrame() ? callee()->nargs() : 0;
-    }
-    unsigned numActualArgs() const {
-        return numActualArgs_;
-    }
-    unsigned numArgSlots() const {
-        return (std::max)(numFormalArgs(), numActualArgs());
-    }
+  unsigned numFormalArgs() const {
+    return isFunctionFrame() ? callee()->nargs() : 0;
+  }
+  unsigned numActualArgs() const { return numActualArgs_; }
+  unsigned numArgSlots() const {
+    return (std::max)(numFormalArgs(), numActualArgs());
+  }
 
-    Value* argv() {
-        return slots_;
-    }
-    Value* locals() {
-        return slots_ + numArgSlots();
-    }
+  Value* argv() { return slots_; }
+  Value* locals() { return slots_ + numArgSlots(); }
 
-    Value& unaliasedLocal(unsigned i) {
-        MOZ_ASSERT(i < script()->nfixed());
-        return locals()[i];
-    }
-    Value& unaliasedFormal(unsigned i, MaybeCheckAliasing checkAliasing = CHECK_ALIASING) {
-        MOZ_ASSERT(i < numFormalArgs());
-        MOZ_ASSERT_IF(checkAliasing, !script()->argsObjAliasesFormals() &&
+  Value& unaliasedLocal(unsigned i) {
+    MOZ_ASSERT(i < script()->nfixed());
+    return locals()[i];
+  }
+  Value& unaliasedFormal(unsigned i,
+                         MaybeCheckAliasing checkAliasing = CHECK_ALIASING) {
+    MOZ_ASSERT(i < numFormalArgs());
+    MOZ_ASSERT_IF(checkAliasing, !script()->argsObjAliasesFormals() &&
                                      !script()->formalIsAliased(i));
-        return argv()[i];
-    }
-    Value& unaliasedActual(unsigned i, MaybeCheckAliasing checkAliasing = CHECK_ALIASING) {
-        MOZ_ASSERT(i < numActualArgs());
-        MOZ_ASSERT_IF(checkAliasing, !script()->argsObjAliasesFormals());
-        MOZ_ASSERT_IF(checkAliasing && i < numFormalArgs(), !script()->formalIsAliased(i));
-        return argv()[i];
-    }
+    return argv()[i];
+  }
+  Value& unaliasedActual(unsigned i,
+                         MaybeCheckAliasing checkAliasing = CHECK_ALIASING) {
+    MOZ_ASSERT(i < numActualArgs());
+    MOZ_ASSERT_IF(checkAliasing, !script()->argsObjAliasesFormals());
+    MOZ_ASSERT_IF(checkAliasing && i < numFormalArgs(),
+                  !script()->formalIsAliased(i));
+    return argv()[i];
+  }
 
-    Value newTarget() {
-        MOZ_ASSERT(isFunctionFrame());
-        if (callee()->isArrow()) {
-            return callee()->getExtendedSlot(FunctionExtended::ARROW_NEWTARGET_SLOT);
-        }
-        MOZ_ASSERT_IF(!isConstructing(), newTarget_.isUndefined());
-        return newTarget_;
+  Value newTarget() {
+    MOZ_ASSERT(isFunctionFrame());
+    if (callee()->isArrow()) {
+      return callee()->getExtendedSlot(FunctionExtended::ARROW_NEWTARGET_SLOT);
     }
+    MOZ_ASSERT_IF(!isConstructing(), newTarget_.isUndefined());
+    return newTarget_;
+  }
 
-    void setReturnValue(const Value& value) {
-        returnValue_ = value;
-    }
+  void setReturnValue(const Value& value) { returnValue_ = value; }
 
-    Value& returnValue() {
-        return returnValue_;
-    }
+  Value& returnValue() { return returnValue_; }
 
-    void trace(JSTracer* trc);
-    void dump();
+  void trace(JSTracer* trc);
+  void dump();
 };
 
-} 
-} 
+}  
+}  
 
 namespace JS {
 
 template <>
-struct MapTypeToRootKind<js::jit::RematerializedFrame*>
-{
-    static const RootKind kind = RootKind::Traceable;
+struct MapTypeToRootKind<js::jit::RematerializedFrame*> {
+  static const RootKind kind = RootKind::Traceable;
 };
 
 template <>
 struct GCPolicy<js::jit::RematerializedFrame*>
-  : public NonGCPointerPolicy<js::jit::RematerializedFrame*>
-{};
+    : public NonGCPointerPolicy<js::jit::RematerializedFrame*> {};
 
-} 
+}  
 
-#endif 
+#endif  

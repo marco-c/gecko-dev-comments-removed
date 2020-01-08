@@ -12,7 +12,7 @@
 #include "nsRegion.h"
 #include "nsCRT.h"
 #include "nsCOMPtr.h"
-#include "nsWidgetInitData.h" 
+#include "nsWidgetInitData.h"  
 #include "nsIWidgetListener.h"
 #include "Units.h"
 #include "mozilla/EventForwards.h"
@@ -33,13 +33,10 @@ enum nsViewVisibility {
 
 
 
-#define NS_VIEW_FLAG_AUTO_ZINDEX          0x0004
+#define NS_VIEW_FLAG_AUTO_ZINDEX 0x0004
 
 
-#define NS_VIEW_FLAG_FLOATING             0x0008
-
-
-
+#define NS_VIEW_FLAG_FLOATING 0x0008
 
 
 
@@ -53,17 +50,17 @@ enum nsViewVisibility {
 
 
 
-class nsView final : public nsIWidgetListener
-{
-public:
+
+
+
+class nsView final : public nsIWidgetListener {
+ public:
   friend class nsViewManager;
 
   typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
   typedef mozilla::LayoutDeviceIntRegion LayoutDeviceIntRegion;
 
-  void operator delete(void* ptr) {
-    ::operator delete(ptr);
-  }
+  void operator delete(void* ptr) { ::operator delete(ptr); }
 
   
 
@@ -121,7 +118,9 @@ public:
 
 
   nsRect GetDimensions() const {
-    nsRect r = mDimBounds; r.MoveBy(-mPosX, -mPosY); return r;
+    nsRect r = mDimBounds;
+    r.MoveBy(-mPosX, -mPosY);
+    return r;
   }
 
   
@@ -225,7 +224,7 @@ public:
 
 
 
-  nsresult CreateWidget(nsWidgetInitData *aWidgetInitData = nullptr,
+  nsresult CreateWidget(nsWidgetInitData* aWidgetInitData = nullptr,
                         bool aEnableDragDrop = true,
                         bool aResetVisibility = true);
 
@@ -235,7 +234,7 @@ public:
 
 
   nsresult CreateWidgetForParent(nsIWidget* aParentWidget,
-                                 nsWidgetInitData *aWidgetInitData = nullptr,
+                                 nsWidgetInitData* aWidgetInitData = nullptr,
                                  bool aEnableDragDrop = true,
                                  bool aResetVisibility = true);
 
@@ -246,7 +245,7 @@ public:
 
 
 
-  nsresult CreateWidgetForPopup(nsWidgetInitData *aWidgetInitData,
+  nsresult CreateWidgetForPopup(nsWidgetInitData* aWidgetInitData,
                                 nsIWidget* aParentWidget = nullptr,
                                 bool aEnableDragDrop = true,
                                 bool aResetVisibility = true);
@@ -300,9 +299,7 @@ public:
 
   bool HasWidget() const { return mWindow != nullptr; }
 
-  void SetForcedRepaint(bool aForceRepaint) {
-    mForcedRepaint = aForceRepaint;
-  }
+  void SetForcedRepaint(bool aForceRepaint) { mForcedRepaint = aForceRepaint; }
 
   void SetNeedsWindowPropertiesSync();
 
@@ -324,8 +321,9 @@ public:
 
 
 
+
   virtual void List(FILE* out, int32_t aIndent = 0) const;
-#endif 
+#endif  
 
   
 
@@ -358,12 +356,13 @@ public:
 
 
   void SetZIndex(bool aAuto, int32_t aZIndex);
-  bool GetZIndexIsAuto() const { return (mVFlags & NS_VIEW_FLAG_AUTO_ZINDEX) != 0; }
+  bool GetZIndexIsAuto() const {
+    return (mVFlags & NS_VIEW_FLAG_AUTO_ZINDEX) != 0;
+  }
   int32_t GetZIndex() const { return mZIndex; }
 
-  void SetParent(nsView *aParent) { mParent = aParent; }
-  void SetNextSibling(nsView *aSibling)
-  {
+  void SetParent(nsView* aParent) { mParent = aParent; }
+  void SetNextSibling(nsView* aSibling) {
     NS_ASSERTION(aSibling != this, "Can't be our own sibling!");
     mNextSibling = aSibling;
   }
@@ -382,15 +381,17 @@ public:
   virtual nsIPresShell* GetPresShell() override;
   virtual nsView* GetView() override { return this; }
   virtual bool WindowMoved(nsIWidget* aWidget, int32_t x, int32_t y) override;
-  virtual bool WindowResized(nsIWidget* aWidget, int32_t aWidth, int32_t aHeight) override;
+  virtual bool WindowResized(nsIWidget* aWidget, int32_t aWidth,
+                             int32_t aHeight) override;
   virtual bool RequestWindowClose(nsIWidget* aWidget) override;
   virtual void WillPaintWindow(nsIWidget* aWidget) override;
   virtual bool PaintWindow(nsIWidget* aWidget,
                            LayoutDeviceIntRegion aRegion) override;
   virtual void DidPaintWindow() override;
-  virtual void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
-                                  const mozilla::TimeStamp& aCompositeStart,
-                                  const mozilla::TimeStamp& aCompositeEnd) override;
+  virtual void DidCompositeWindow(
+      mozilla::layers::TransactionId aTransactionId,
+      const mozilla::TimeStamp& aCompositeStart,
+      const mozilla::TimeStamp& aCompositeEnd) override;
   virtual void RequestRepaint() override;
   virtual nsEventStatus HandleEvent(mozilla::WidgetGUIEvent* aEvent,
                                     bool aUseAttachedEvents) override;
@@ -402,7 +403,7 @@ public:
 
   bool IsPrimaryFramePaintSuppressed();
 
-private:
+ private:
   explicit nsView(nsViewManager* aViewManager = nullptr,
                   nsViewVisibility aVisibility = nsViewVisibility_kShow);
 
@@ -421,7 +422,7 @@ private:
 
 
 
-  void SetDimensions(const nsRect &aRect, bool aPaint = true,
+  void SetDimensions(const nsRect& aRect, bool aPaint = true,
                      bool aResizeWidget = true);
 
   
@@ -452,8 +453,8 @@ private:
     return mDirtyRegion && !mDirtyRegion->IsEmpty();
   }
 
-  void InsertChild(nsView *aChild, nsView *aSibling);
-  void RemoveChild(nsView *aChild);
+  void InsertChild(nsView* aChild, nsView* aSibling);
+  void RemoveChild(nsView* aChild);
 
   void ResetWidgetBounds(bool aRecurse, bool aForceSync);
   void AssertNoWindow();
@@ -463,26 +464,26 @@ private:
   
   void InvalidateHierarchy();
 
-  nsViewManager    *mViewManager;
-  nsView           *mParent;
+  nsViewManager* mViewManager;
+  nsView* mParent;
   nsCOMPtr<nsIWidget> mWindow;
   nsCOMPtr<nsIWidget> mPreviousWindow;
-  nsView           *mNextSibling;
-  nsView           *mFirstChild;
-  nsIFrame         *mFrame;
-  nsRegion         *mDirtyRegion;
-  int32_t           mZIndex;
-  nsViewVisibility  mVis;
+  nsView* mNextSibling;
+  nsView* mFirstChild;
+  nsIFrame* mFrame;
+  nsRegion* mDirtyRegion;
+  int32_t mZIndex;
+  nsViewVisibility mVis;
   
-  nscoord           mPosX, mPosY;
+  nscoord mPosX, mPosY;
   
-  nsRect            mDimBounds;
+  nsRect mDimBounds;
   
-  nsPoint           mViewToWidgetOffset;
-  uint32_t          mVFlags;
-  bool              mWidgetIsTopLevel;
-  bool              mForcedRepaint;
-  bool              mNeedsWindowPropertiesSync;
+  nsPoint mViewToWidgetOffset;
+  uint32_t mVFlags;
+  bool mWidgetIsTopLevel;
+  bool mForcedRepaint;
+  bool mNeedsWindowPropertiesSync;
 };
 
 #endif

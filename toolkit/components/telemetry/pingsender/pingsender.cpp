@@ -29,21 +29,18 @@ const uint32_t kConnectionTimeoutMs = 30 * 1000;
 
 
 
-std::string
-GenerateDateHeader()
-{
+std::string GenerateDateHeader() {
   char buffer[128];
   std::time_t t = std::time(nullptr);
-  strftime(buffer, sizeof(buffer), "Date: %a, %d %b %Y %H:%M:%S GMT", std::gmtime(&t));
+  strftime(buffer, sizeof(buffer), "Date: %a, %d %b %Y %H:%M:%S GMT",
+           std::gmtime(&t));
   return string(buffer);
 }
 
 
 
 
-static std::string
-ReadPing(const string& aPingPath)
-{
+static std::string ReadPing(const string& aPingPath) {
   string ping;
   ifstream file;
 
@@ -70,9 +67,7 @@ ReadPing(const string& aPingPath)
   return ping;
 }
 
-std::string
-GzipCompress(const std::string& rawData)
-{
+std::string GzipCompress(const std::string& rawData) {
   z_stream deflater = {};
 
   
@@ -93,7 +88,8 @@ GzipCompress(const std::string& rawData)
 
   
   deflater.avail_in = rawData.size();
-  deflater.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(rawData.c_str()));
+  deflater.next_in =
+      reinterpret_cast<Bytef*>(const_cast<char*>(rawData.c_str()));
 
   
   std::string gzipData;
@@ -138,12 +134,11 @@ GzipCompress(const std::string& rawData)
   return gzipData;
 }
 
-} 
+}  
 
 using namespace PingSender;
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
   string url;
   string pingPath;
 
@@ -151,10 +146,11 @@ int main(int argc, char* argv[])
     url = argv[1];
     pingPath = argv[2];
   } else {
-    PINGSENDER_LOG("Usage: pingsender URL PATH\n"
-                   "Send the payload stored in PATH to the specified URL using "
-                   "an HTTP POST message\n"
-                   "then delete the file after a successful send.\n");
+    PINGSENDER_LOG(
+        "Usage: pingsender URL PATH\n"
+        "Send the payload stored in PATH to the specified URL using "
+        "an HTTP POST message\n"
+        "then delete the file after a successful send.\n");
     return EXIT_FAILURE;
   }
 

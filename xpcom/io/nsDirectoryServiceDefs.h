@@ -25,73 +25,73 @@
 
 
 
-#define NS_OS_HOME_DIR                          "Home"
+#define NS_OS_HOME_DIR "Home"
 
-#define NS_OS_TEMP_DIR                          "TmpD"
-#define NS_OS_CURRENT_WORKING_DIR               "CurWorkD"
-
-
-
-#define NS_OS_DESKTOP_DIR                       "Desk"
+#define NS_OS_TEMP_DIR "TmpD"
+#define NS_OS_CURRENT_WORKING_DIR "CurWorkD"
 
 
 
-#define NS_OS_CURRENT_PROCESS_DIR               "CurProcD"
+#define NS_OS_DESKTOP_DIR "Desk"
 
 
 
-
-
-#define NS_XPCOM_CURRENT_PROCESS_DIR            "XCurProcD"
-
-
-
-#define NS_XPCOM_LIBRARY_FILE                   "XpcomLib"
+#define NS_OS_CURRENT_PROCESS_DIR "CurProcD"
 
 
 
 
 
+#define NS_XPCOM_CURRENT_PROCESS_DIR "XCurProcD"
 
-#define NS_GRE_DIR                              "GreD"
+
+
+#define NS_XPCOM_LIBRARY_FILE "XpcomLib"
 
 
 
 
 
 
-
-#define NS_GRE_BIN_DIR                          "GreBinD"
-
+#define NS_GRE_DIR "GreD"
 
 
-#if !defined (XP_UNIX) || defined(MOZ_WIDGET_COCOA)
-    #define NS_OS_SYSTEM_DIR                    "SysD"
+
+
+
+
+
+#define NS_GRE_BIN_DIR "GreBinD"
+
+
+
+#if !defined(XP_UNIX) || defined(MOZ_WIDGET_COCOA)
+#define NS_OS_SYSTEM_DIR "SysD"
 #endif
 
-#if defined (MOZ_WIDGET_COCOA)
-  #define NS_MAC_USER_LIB_DIR                 "ULibDir"
-  #define NS_OSX_DEFAULT_DOWNLOAD_DIR         "DfltDwnld"
-  #define NS_OSX_LOCAL_APPLICATIONS_DIR       "LocApp"
-  #define NS_OSX_USER_PREFERENCES_DIR         "UsrPrfs"
-  #define NS_OSX_PICTURE_DOCUMENTS_DIR        "Pct"
-#elif defined (XP_WIN)
-  #define NS_WIN_WINDOWS_DIR                  "WinD"
-  #define NS_WIN_PROGRAM_FILES_DIR            "ProgF"
-  #define NS_WIN_HOME_DIR                     NS_OS_HOME_DIR
-  #define NS_WIN_PROGRAMS_DIR                 "Progs" // User start menu programs directory!
-  #define NS_WIN_FAVORITES_DIR                "Favs"
-  #define NS_WIN_APPDATA_DIR                  "AppData"
-  #define NS_WIN_LOCAL_APPDATA_DIR            "LocalAppData"
+#if defined(MOZ_WIDGET_COCOA)
+#define NS_MAC_USER_LIB_DIR "ULibDir"
+#define NS_OSX_DEFAULT_DOWNLOAD_DIR "DfltDwnld"
+#define NS_OSX_LOCAL_APPLICATIONS_DIR "LocApp"
+#define NS_OSX_USER_PREFERENCES_DIR "UsrPrfs"
+#define NS_OSX_PICTURE_DOCUMENTS_DIR "Pct"
+#elif defined(XP_WIN)
+#define NS_WIN_WINDOWS_DIR "WinD"
+#define NS_WIN_PROGRAM_FILES_DIR "ProgF"
+#define NS_WIN_HOME_DIR NS_OS_HOME_DIR
+#define NS_WIN_PROGRAMS_DIR "Progs"  // User start menu programs directory!
+#define NS_WIN_FAVORITES_DIR "Favs"
+#define NS_WIN_APPDATA_DIR "AppData"
+#define NS_WIN_LOCAL_APPDATA_DIR "LocalAppData"
 #if defined(MOZ_SANDBOX)
-  #define NS_WIN_LOCAL_APPDATA_LOW_DIR        "LocalAppDataLow"
-  #define NS_WIN_LOW_INTEGRITY_TEMP_BASE      "LowTmpDBase"
+#define NS_WIN_LOCAL_APPDATA_LOW_DIR "LocalAppDataLow"
+#define NS_WIN_LOW_INTEGRITY_TEMP_BASE "LowTmpDBase"
 #endif
-  #define NS_WIN_COOKIES_DIR                  "CookD"
-  #define NS_WIN_DEFAULT_DOWNLOAD_DIR         "DfltDwnld"
-#elif defined (XP_UNIX)
-  #define NS_UNIX_HOME_DIR                    NS_OS_HOME_DIR
-  #define NS_UNIX_DEFAULT_DOWNLOAD_DIR        "DfltDwnld"
+#define NS_WIN_COOKIES_DIR "CookD"
+#define NS_WIN_DEFAULT_DOWNLOAD_DIR "DfltDwnld"
+#elif defined(XP_UNIX)
+#define NS_UNIX_HOME_DIR NS_OS_HOME_DIR
+#define NS_UNIX_DEFAULT_DOWNLOAD_DIR "DfltDwnld"
 #endif
 
 #endif

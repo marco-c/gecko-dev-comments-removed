@@ -15,19 +15,18 @@ namespace jit {
 
 class MacroAssembler;
 
-typedef GeckoProfilerInstrumentation<MacroAssembler, Register> BaseInstrumentation;
+typedef GeckoProfilerInstrumentation<MacroAssembler, Register>
+    BaseInstrumentation;
 
-class IonInstrumentation : public BaseInstrumentation
-{
-  public:
-    IonInstrumentation(GeckoProfilerRuntime* profiler, jsbytecode** pc)
-      : BaseInstrumentation(profiler)
-    {
-        MOZ_ASSERT(pc != nullptr);
-    }
+class IonInstrumentation : public BaseInstrumentation {
+ public:
+  IonInstrumentation(GeckoProfilerRuntime* profiler, jsbytecode** pc)
+      : BaseInstrumentation(profiler) {
+    MOZ_ASSERT(pc != nullptr);
+  }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -13,13 +13,12 @@
 #include "nsGkAtoms.h"
 
 class nsCSSAnonBoxes {
-public:
-  static bool IsAnonBox(nsAtom *aAtom);
+ public:
+  static bool IsAnonBox(nsAtom* aAtom);
 #ifdef MOZ_XUL
   static bool IsTreePseudoElement(nsAtom* aPseudo);
 #endif
-  static bool IsNonElement(nsAtom* aPseudo)
-  {
+  static bool IsNonElement(nsAtom* aPseudo) {
     return aPseudo == nsCSSAnonBoxes::mozText() ||
            aPseudo == nsCSSAnonBoxes::oofPlaceholder() ||
            aPseudo == nsCSSAnonBoxes::firstLetterContinuation();
@@ -40,16 +39,15 @@ public:
   
   
   
-  static bool IsNonInheritingAnonBox(nsAtom* aPseudo)
-  {
+  static bool IsNonInheritingAnonBox(nsAtom* aPseudo) {
     return
 #define CSS_ANON_BOX(_name, _value)
 #define CSS_NON_INHERITING_ANON_BOX(_name, _value) \
-      nsGkAtoms::AnonBox_##_name == aPseudo ||
+  nsGkAtoms::AnonBox_##_name == aPseudo ||
 #include "nsCSSAnonBoxList.h"
 #undef CSS_NON_INHERITING_ANON_BOX
 #undef CSS_ANON_BOX
-      false;
+        false;
   }
 
 #ifdef DEBUG
@@ -57,33 +55,32 @@ public:
   
   
   
-  static bool IsInheritingAnonBox(nsAtom* aPseudo)
-  {
+  static bool IsInheritingAnonBox(nsAtom* aPseudo) {
     return
 #define CSS_ANON_BOX(_name, _value) nsGkAtoms::AnonBox_##_name == aPseudo ||
 #define CSS_NON_INHERITING_ANON_BOX(_name, _value)
 #include "nsCSSAnonBoxList.h"
 #undef CSS_NON_INHERITING_ANON_BOX
 #undef CSS_ANON_BOX
-      false;
+        false;
   }
-#endif 
+#endif  
 
   
   
   static bool IsWrapperAnonBox(nsAtom* aPseudo) {
     
     
-    return aPseudo &&
-      (
+    return aPseudo && (
 #define CSS_ANON_BOX(_name, _value) 
-#define CSS_WRAPPER_ANON_BOX(_name, _value) nsGkAtoms::AnonBox_##_name == aPseudo ||
+#define CSS_WRAPPER_ANON_BOX(_name, _value) \
+  nsGkAtoms::AnonBox_##_name == aPseudo ||
 #define CSS_NON_INHERITING_ANON_BOX(_name, _value) 
 #include "nsCSSAnonBoxList.h"
 #undef CSS_NON_INHERITING_ANON_BOX
 #undef CSS_WRAPPER_ANON_BOX
 #undef CSS_ANON_BOX
-       false);
+                          false);
   }
 
   
@@ -94,16 +91,15 @@ public:
   static void AssertAtoms();
 #endif
 
-  
-  #define CSS_ANON_BOX(name_, value_)                     \
-    static nsCSSAnonBoxPseudoStaticAtom* name_()          \
-    {                                                     \
-      return const_cast<nsCSSAnonBoxPseudoStaticAtom*>(   \
+
+#define CSS_ANON_BOX(name_, value_)                       \
+  static nsCSSAnonBoxPseudoStaticAtom* name_() {          \
+    return const_cast<nsCSSAnonBoxPseudoStaticAtom*>(     \
         static_cast<const nsCSSAnonBoxPseudoStaticAtom*>( \
-          nsGkAtoms::AnonBox_##name_));                   \
-    }
-  #include "nsCSSAnonBoxList.h"
-  #undef CSS_ANON_BOX
+            nsGkAtoms::AnonBox_##name_));                 \
+  }
+#include "nsCSSAnonBoxList.h"
+#undef CSS_ANON_BOX
 };
 
 #endif 

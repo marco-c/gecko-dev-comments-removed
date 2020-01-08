@@ -17,7 +17,7 @@ class VsyncObserver;
 
 namespace ipc {
 class BackgroundChildImpl;
-} 
+}  
 
 namespace layout {
 
@@ -25,13 +25,12 @@ namespace layout {
 
 
 
-class VsyncChild final : public PVsyncChild
-{
+class VsyncChild final : public PVsyncChild {
   NS_INLINE_DECL_REFCOUNTING(VsyncChild)
 
   friend class mozilla::ipc::BackgroundChildImpl;
 
-public:
+ public:
   
   
   bool SendObserve();
@@ -49,12 +48,14 @@ public:
   
   TimeDuration VsyncRate();
 
-private:
+ private:
   VsyncChild();
   virtual ~VsyncChild();
 
-  virtual mozilla::ipc::IPCResult RecvNotify(const TimeStamp& aVsyncTimestamp) override;
-  virtual mozilla::ipc::IPCResult RecvVsyncRate(const float& aVsyncRate) override;
+  virtual mozilla::ipc::IPCResult RecvNotify(
+      const TimeStamp& aVsyncTimestamp) override;
+  virtual mozilla::ipc::IPCResult RecvVsyncRate(
+      const float& aVsyncRate) override;
   virtual void ActorDestroy(ActorDestroyReason aActorDestroyReason) override;
 
   bool mObservingVsync;
@@ -65,7 +66,7 @@ private:
   TimeDuration mVsyncRate;
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

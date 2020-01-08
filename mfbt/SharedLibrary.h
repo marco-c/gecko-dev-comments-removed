@@ -40,7 +40,7 @@ LoadLibraryWithFlags(const char* aPath, PRUint32 aFlags = 0)
   return PR_LoadLibraryWithFlags(libSpec, aFlags);
 }
 
-}  
+} 
 
 #endif 
 

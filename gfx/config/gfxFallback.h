@@ -13,18 +13,18 @@ namespace mozilla {
 namespace gfx {
 
 #define GFX_FALLBACK_MAP(_)
-                                                                      \
-  _(NO_CONSTANT_BUFFER_OFFSETTING)                                                \
+                       \
+  _(NO_CONSTANT_BUFFER_OFFSETTING) \
   /* Add new entries above this comment */
 
 enum class Fallback : uint32_t {
 #define MAKE_ENUM(name) name,
   GFX_FALLBACK_MAP(MAKE_ENUM)
 #undef MAKE_ENUM
-  NumValues
+      NumValues
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -14,23 +14,24 @@
 namespace mozilla {
 namespace widget {
 
-class TaskbarTabPreview : public nsITaskbarTabPreview,
-                          public TaskbarPreview
-{
+class TaskbarTabPreview : public nsITaskbarTabPreview, public TaskbarPreview {
   virtual ~TaskbarTabPreview();
 
-public:
-  TaskbarTabPreview(ITaskbarList4 *aTaskbar, nsITaskbarPreviewController *aController, HWND aHWND, nsIDocShell *aShell);
+ public:
+  TaskbarTabPreview(ITaskbarList4 *aTaskbar,
+                    nsITaskbarPreviewController *aController, HWND aHWND,
+                    nsIDocShell *aShell);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSITASKBARTABPREVIEW
   NS_FORWARD_NSITASKBARPREVIEW(TaskbarPreview::)
 
-private:
+ private:
   virtual nsresult ShowActive(bool active);
   virtual HWND &PreviewWindow();
   virtual LRESULT WndProc(UINT nMsg, WPARAM wParam, LPARAM lParam);
-  static LRESULT CALLBACK GlobalWndProc(HWND hWnd, UINT nMsg, WPARAM wParam, LPARAM lParam);
+  static LRESULT CALLBACK GlobalWndProc(HWND hWnd, UINT nMsg, WPARAM wParam,
+                                        LPARAM lParam);
 
   virtual nsresult UpdateTaskbarProperties();
   virtual nsresult Enable();
@@ -38,10 +39,8 @@ private:
   virtual void DetachFromNSWindow();
 
   
-  static bool MainWindowHook(void *aContext,
-                               HWND hWnd, UINT nMsg,
-                               WPARAM wParam, LPARAM lParam,
-                               LRESULT *aResult);
+  static bool MainWindowHook(void *aContext, HWND hWnd, UINT nMsg,
+                             WPARAM wParam, LPARAM lParam, LRESULT *aResult);
 
   
   
@@ -53,18 +52,18 @@ private:
   nsresult UpdateNext();
 
   
-  HWND                    mProxyWindow;
-  nsString                mTitle;
+  HWND mProxyWindow;
+  nsString mTitle;
   nsCOMPtr<imgIContainer> mIconImage;
   
-  HICON                   mIcon;
+  HICON mIcon;
   
   nsCOMPtr<nsITaskbarTabPreview> mNext;
   
-  bool                    mRegistered;
+  bool mRegistered;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

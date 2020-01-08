@@ -20,36 +20,31 @@
 class nsIFrame;
 class nsIContent;
 
-struct nsStyleChangeData
-{
-  nsIFrame* mFrame; 
+struct nsStyleChangeData {
+  nsIFrame* mFrame;  
   nsCOMPtr<nsIContent> mContent;
   nsChangeHint mHint;
 };
 
-class nsStyleChangeList : private AutoTArray<nsStyleChangeData, 10>
-{
+class nsStyleChangeList : private AutoTArray<nsStyleChangeData, 10> {
   typedef AutoTArray<nsStyleChangeData, 10> base_type;
   nsStyleChangeList(const nsStyleChangeList&) = delete;
 
-public:
+ public:
   using base_type::begin;
+  using base_type::Clear;
   using base_type::end;
   using base_type::IsEmpty;
-  using base_type::Clear;
   using base_type::Length;
   using base_type::operator[];
 
-  nsStyleChangeList() {
-    MOZ_COUNT_CTOR(nsStyleChangeList);
-  }
+  nsStyleChangeList() { MOZ_COUNT_CTOR(nsStyleChangeList); }
   ~nsStyleChangeList() { MOZ_COUNT_DTOR(nsStyleChangeList); }
   void AppendChange(nsIFrame* aFrame, nsIContent* aContent, nsChangeHint aHint);
 
   
   
-  void PopChangesForContent(nsIContent* aContent)
-  {
+  void PopChangesForContent(nsIContent* aContent) {
     while (!IsEmpty() && LastElement().mContent == aContent) {
       RemoveLastElement();
     }

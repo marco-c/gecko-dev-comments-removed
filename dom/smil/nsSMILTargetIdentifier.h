@@ -22,22 +22,21 @@
 
 
 
-struct nsSMILTargetIdentifier
-{
+struct nsSMILTargetIdentifier {
   nsSMILTargetIdentifier()
-    : mElement(nullptr), mAttributeName(nullptr),
-      mAttributeNamespaceID(kNameSpaceID_Unknown) {}
+      : mElement(nullptr),
+        mAttributeName(nullptr),
+        mAttributeNamespaceID(kNameSpaceID_Unknown) {}
 
-  inline bool Equals(const nsSMILTargetIdentifier& aOther) const
-  {
-    return (aOther.mElement              == mElement &&
-            aOther.mAttributeName        == mAttributeName &&
+  inline bool Equals(const nsSMILTargetIdentifier& aOther) const {
+    return (aOther.mElement == mElement &&
+            aOther.mAttributeName == mAttributeName &&
             aOther.mAttributeNamespaceID == mAttributeNamespaceID);
   }
 
   RefPtr<mozilla::dom::Element> mElement;
-  RefPtr<nsAtom>               mAttributeName;
-  int32_t                       mAttributeNamespaceID;
+  RefPtr<nsAtom> mAttributeName;
+  int32_t mAttributeNamespaceID;
 };
 
 
@@ -50,32 +49,27 @@ struct nsSMILTargetIdentifier
 
 
 
-class nsSMILWeakTargetIdentifier
-{
-public:
+class nsSMILWeakTargetIdentifier {
+ public:
   
-  nsSMILWeakTargetIdentifier()
-    : mElement(nullptr), mAttributeName(nullptr) {}
+  nsSMILWeakTargetIdentifier() : mElement(nullptr), mAttributeName(nullptr) {}
 
   
-  nsSMILWeakTargetIdentifier&
-    operator=(const nsSMILTargetIdentifier& aOther)
-  {
+  nsSMILWeakTargetIdentifier& operator=(const nsSMILTargetIdentifier& aOther) {
     mElement = aOther.mElement;
     mAttributeName = aOther.mAttributeName;
     return *this;
   }
 
   
-  inline bool Equals(const nsSMILTargetIdentifier& aOther) const
-  {
-    return (aOther.mElement       == mElement &&
+  inline bool Equals(const nsSMILTargetIdentifier& aOther) const {
+    return (aOther.mElement == mElement &&
             aOther.mAttributeName == mAttributeName);
   }
 
-private:
+ private:
   const nsIContent* mElement;
-  const nsAtom*    mAttributeName;
+  const nsAtom* mAttributeName;
 };
 
-#endif 
+#endif  

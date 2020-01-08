@@ -14,16 +14,15 @@ namespace mozilla {
 class EventStateManager;
 namespace dom {
 class Element;
-} 
-} 
+}  
+}  
 
-class inLayoutUtils
-{
-public:
+class inLayoutUtils {
+ public:
   static mozilla::EventStateManager* GetEventStateManagerFor(
       mozilla::dom::Element& aElement);
   static nsIDocument* GetSubDocumentFor(nsINode* aNode);
   static nsINode* GetContainerFor(const nsIDocument& aDoc);
 };
 
-#endif 
+#endif  

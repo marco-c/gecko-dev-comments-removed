@@ -16,25 +16,24 @@
 namespace mozilla {
 
 class TransportLayerLogging : public TransportLayer {
-public:
+ public:
   TransportLayerLogging() {}
 
   
   TransportResult SendPacket(MediaPacket& packet) override;
 
   
-  void StateChange(TransportLayer *layer, State state);
+  void StateChange(TransportLayer* layer, State state);
   void PacketReceived(TransportLayer* layer, MediaPacket& packet);
 
   TRANSPORT_LAYER_ID("log")
 
-protected:
+ protected:
   void WasInserted() override;
 
-private:
+ private:
   DISALLOW_COPY_ASSIGN(TransportLayerLogging);
 };
-
 
 }  
 #endif

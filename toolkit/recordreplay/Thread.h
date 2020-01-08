@@ -68,18 +68,18 @@ static const size_t MaxRecordedThreadId = 70;
 
 static const size_t MaxNumNonRecordedThreads = 12;
 
-static const size_t MaxThreadId = MaxRecordedThreadId + MaxNumNonRecordedThreads;
+static const size_t MaxThreadId =
+    MaxRecordedThreadId + MaxNumNonRecordedThreads;
 
 typedef pthread_t NativeThreadId;
 
 
-class Thread
-{
-public:
+class Thread {
+ public:
   
   typedef void (*Callback)(void*);
 
-private:
+ private:
   
   
   static Monitor* gMonitor;
@@ -101,7 +101,8 @@ private:
 
   
   
-  Atomic<bool, SequentiallyConsistent, Behavior::DontPreserve> mShouldDivergeFromRecording;
+  Atomic<bool, SequentiallyConsistent, Behavior::DontPreserve>
+      mShouldDivergeFromRecording;
 
   
   
@@ -143,10 +144,10 @@ private:
   
   Maybe<size_t> mAtomicLockId;
 
-public:
-
-
-
+ public:
+  
+  
+  
 
   
   size_t Id() { return mId; }
@@ -157,38 +158,30 @@ public:
 
   inline bool IsMainThread() const { return mId == MainThreadId; }
   inline bool IsRecordedThread() const { return mId <= MaxRecordedThreadId; }
-  inline bool IsNonMainRecordedThread() const { return IsRecordedThread() && !IsMainThread(); }
+  inline bool IsNonMainRecordedThread() const {
+    return IsRecordedThread() && !IsMainThread();
+  }
 
   
   void SetPassThrough(bool aPassThrough) {
     MOZ_RELEASE_ASSERT(mPassThroughEvents == !aPassThrough);
     mPassThroughEvents = aPassThrough;
   }
-  bool PassThroughEvents() const {
-    return mPassThroughEvents;
-  }
+  bool PassThroughEvents() const { return mPassThroughEvents; }
 
   
-  void BeginDisallowEvents() {
-    mDisallowEvents++;
-  }
+  void BeginDisallowEvents() { mDisallowEvents++; }
   void EndDisallowEvents() {
     MOZ_RELEASE_ASSERT(mDisallowEvents);
     mDisallowEvents--;
   }
-  bool AreEventsDisallowed() const {
-    return mDisallowEvents != 0;
-  }
+  bool AreEventsDisallowed() const { return mDisallowEvents != 0; }
 
   
   
   
-  void DivergeFromRecording() {
-    mDivergedFromRecording = true;
-  }
-  bool HasDivergedFromRecording() const {
-    return mDivergedFromRecording;
-  }
+  void DivergeFromRecording() { mDivergedFromRecording = true; }
+  bool HasDivergedFromRecording() const { return mDivergedFromRecording; }
 
   
   
@@ -208,7 +201,8 @@ public:
 
   
   bool CanAccessRecording() const {
-    return !PassThroughEvents() && !AreEventsDisallowed() && !HasDivergedFromRecording();
+    return !PassThroughEvents() && !AreEventsDisallowed() &&
+           !HasDivergedFromRecording();
   }
 
   
@@ -248,7 +242,8 @@ public:
   
   
   
-  static NativeThreadId StartThread(Callback aStart, void* aArgument, bool aNeedsJoin);
+  static NativeThreadId StartThread(Callback aStart, void* aArgument,
+                                    bool aNeedsJoin);
 
   
   void Join();
@@ -256,9 +251,9 @@ public:
   
   Maybe<size_t>& AtomicLockId() { return mAtomicLockId; }
 
-
-
-
+  
+  
+  
 
   
   
@@ -297,7 +292,8 @@ public:
   
   
   void NotifyUnrecordedWait(const std::function<void()>& aNotifyCallback);
-  bool MaybeWaitForCheckpointSave(const std::function<void()>& aReleaseCallback);
+  bool MaybeWaitForCheckpointSave(
+      const std::function<void()>& aReleaseCallback);
 
   
   
@@ -317,23 +313,20 @@ public:
 
 
 
-class AutoEnsurePassThroughThreadEventsUseStackPointer
-{
+class AutoEnsurePassThroughThreadEventsUseStackPointer {
   Thread* mThread;
   bool mPassedThrough;
 
-public:
+ public:
   AutoEnsurePassThroughThreadEventsUseStackPointer()
-    : mThread(Thread::GetByStackPointer(this))
-    , mPassedThrough(!mThread || mThread->PassThroughEvents())
-  {
+      : mThread(Thread::GetByStackPointer(this)),
+        mPassedThrough(!mThread || mThread->PassThroughEvents()) {
     if (!mPassedThrough) {
       mThread->SetPassThrough(true);
     }
   }
 
-  ~AutoEnsurePassThroughThreadEventsUseStackPointer()
-  {
+  ~AutoEnsurePassThroughThreadEventsUseStackPointer() {
     if (!mPassedThrough) {
       mThread->SetPassThrough(false);
     }
@@ -353,14 +346,11 @@ public:
 
 
 
-class MOZ_RAII RecordingEventSection
-{
+class MOZ_RAII RecordingEventSection {
   Thread* mThread;
 
-public:
-  explicit RecordingEventSection(Thread* aThread)
-    : mThread(aThread)
-  {
+ public:
+  explicit RecordingEventSection(Thread* aThread) : mThread(aThread) {
     if (!aThread || !aThread->CanAccessRecording()) {
       return;
     }
@@ -369,7 +359,8 @@ public:
       aThread->Events().mFile->mStreamLock.ReadLock();
       aThread->Events().mInRecordingEventSection = true;
     } else {
-      while (!aThread->MaybeDivergeFromRecording() && aThread->Events().AtEnd()) {
+      while (!aThread->MaybeDivergeFromRecording() &&
+             aThread->Events().AtEnd()) {
         HitEndOfRecording();
       }
     }
@@ -386,7 +377,8 @@ public:
   }
 
   bool CanAccessEvents() {
-    if (!mThread || mThread->PassThroughEvents() || mThread->HasDivergedFromRecording()) {
+    if (!mThread || mThread->PassThroughEvents() ||
+        mThread->HasDivergedFromRecording()) {
       return false;
     }
     MOZ_RELEASE_ASSERT(mThread->CanAccessRecording());
@@ -394,7 +386,7 @@ public:
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -9,7 +9,8 @@
 
 #include "mozpkix/pkixtypes.h"
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
 
 
@@ -30,9 +31,8 @@ namespace mozilla { namespace psm {
 
 
 
-class BRNameMatchingPolicy : public mozilla::pkix::NameMatchingPolicy
-{
-public:
+class BRNameMatchingPolicy : public mozilla::pkix::NameMatchingPolicy {
+ public:
   enum class Mode {
     DoNotEnforce = 0,
     EnforceAfter23August2016 = 1,
@@ -40,20 +40,18 @@ public:
     Enforce = 3,
   };
 
-  explicit BRNameMatchingPolicy(Mode mode)
-    : mMode(mode)
-  {
-  }
+  explicit BRNameMatchingPolicy(Mode mode) : mMode(mode) {}
 
   virtual mozilla::pkix::Result FallBackToCommonName(
-    mozilla::pkix::Time notBefore,
-     mozilla::pkix::FallBackToSearchWithinSubject& fallBacktoCommonName)
-    override;
+      mozilla::pkix::Time notBefore,
+       mozilla::pkix::FallBackToSearchWithinSubject&
+          fallBacktoCommonName) override;
 
-private:
+ private:
   Mode mMode;
 };
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

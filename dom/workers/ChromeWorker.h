@@ -12,26 +12,24 @@
 namespace mozilla {
 namespace dom {
 
-class ChromeWorker final : public Worker
-{
-public:
-  static already_AddRefed<ChromeWorker>
-  Constructor(const GlobalObject& aGlobal, const nsAString& aScriptURL,
-              ErrorResult& aRv);
+class ChromeWorker final : public Worker {
+ public:
+  static already_AddRefed<ChromeWorker> Constructor(const GlobalObject& aGlobal,
+                                                    const nsAString& aScriptURL,
+                                                    ErrorResult& aRv);
 
-  static bool
-  WorkerAvailable(JSContext* aCx, JSObject* );
+  static bool WorkerAvailable(JSContext* aCx, JSObject* );
 
-  JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
-private:
+ private:
   ChromeWorker(nsIGlobalObject* aGlobalObject,
                already_AddRefed<WorkerPrivate> aWorkerPrivate);
   ~ChromeWorker();
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

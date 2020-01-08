@@ -9,11 +9,9 @@ nsHtml5UTF16Buffer(char16_t* aBuffer, int32_t aEnd);
 
 
 
-void
-DeleteBuffer();
+void DeleteBuffer();
 
 
 
 
-void
-Swap(nsHtml5UTF16Buffer* aOther);
+void Swap(nsHtml5UTF16Buffer* aOther);

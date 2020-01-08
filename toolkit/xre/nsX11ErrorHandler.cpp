@@ -13,11 +13,10 @@
 #include "mozilla/X11Util.h"
 #include <X11/Xlib.h>
 
-#define BUFSIZE 2048 // What Xlib uses with XGetErrorDatabaseText
+#define BUFSIZE 2048  // What Xlib uses with XGetErrorDatabaseText
 
 extern "C" {
-int
-X11Error(Display *display, XErrorEvent *event) {
+int X11Error(Display *display, XErrorEvent *event) {
   
   
   unsigned long age = NextRequest(display) - event->serial;
@@ -39,14 +38,14 @@ X11Error(Display *display, XErrorEvent *event) {
     Display *tmpDisplay = XOpenDisplay(nullptr);
     if (tmpDisplay) {
       int nExts;
-      char** extNames = XListExtensions(tmpDisplay, &nExts);
+      char **extNames = XListExtensions(tmpDisplay, &nExts);
       int first_error;
       if (extNames) {
         for (int i = 0; i < nExts; ++i) {
           int major_opcode, first_event;
-          if (XQueryExtension(tmpDisplay, extNames[i],
-                              &major_opcode, &first_event, &first_error)
-              && major_opcode == event->request_code) {
+          if (XQueryExtension(tmpDisplay, extNames[i], &major_opcode,
+                              &first_event, &first_error) &&
+              major_opcode == event->request_code) {
             message.Append(extNames[i]);
             message.Append('.');
             message.AppendInt(event->minor_code);
@@ -64,8 +63,8 @@ X11Error(Display *display, XErrorEvent *event) {
   if (message.IsEmpty()) {
     buffer[0] = '\0';
   } else {
-    XGetErrorDatabaseText(display, "XRequest", message.get(), "",
-                          buffer, sizeof(buffer));
+    XGetErrorDatabaseText(display, "XRequest", message.get(), "", buffer,
+                          sizeof(buffer));
   }
 
   nsAutoCString notes;
@@ -107,13 +106,12 @@ X11Error(Display *display, XErrorEvent *event) {
   }
 
   switch (XRE_GetProcessType()) {
-  case GeckoProcessType_Default:
-  case GeckoProcessType_Plugin:
-  case GeckoProcessType_Content:
-    CrashReporter::AppendAppNotesToCrashReport(notes);
-    break;
-  default:
-    ; 
+    case GeckoProcessType_Default:
+    case GeckoProcessType_Plugin:
+    case GeckoProcessType_Content:
+      CrashReporter::AppendAppNotesToCrashReport(notes);
+      break;
+    default:;  
   }
 
 #ifdef DEBUG
@@ -126,7 +124,9 @@ X11Error(Display *display, XErrorEvent *event) {
   
   
   if (!PR_GetEnv("MOZ_X_SYNC")) {
-    notes.AppendLiteral("\nRe-running with MOZ_X_SYNC=1 in the environment may give a more helpful backtrace.");
+    notes.AppendLiteral(
+        "\nRe-running with MOZ_X_SYNC=1 in the environment may give a more "
+        "helpful backtrace.");
   }
 #endif
 #endif
@@ -135,9 +135,7 @@ X11Error(Display *display, XErrorEvent *event) {
 }
 }
 
-void
-InstallX11ErrorHandler()
-{
+void InstallX11ErrorHandler() {
   XSetErrorHandler(X11Error);
 
   Display *display = mozilla::DefaultXDisplay();

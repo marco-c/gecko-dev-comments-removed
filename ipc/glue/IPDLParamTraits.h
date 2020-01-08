@@ -20,26 +20,26 @@ class IProtocol;
 
 
 
-template<typename P>
-struct IPDLParamTraits
-{
+template <typename P>
+struct IPDLParamTraits {
   
   
   
-  template<typename R>
-  static inline void Write(IPC::Message* aMsg, IProtocol*, R&& aParam)
-  {
-    static_assert(IsSame<P, typename IPC::ParamTraitsSelector<R>::Type>::value,
-                  "IPDLParamTraits::Write only forwards calls which work via WriteParam");
+  template <typename R>
+  static inline void Write(IPC::Message* aMsg, IProtocol*, R&& aParam) {
+    static_assert(
+        IsSame<P, typename IPC::ParamTraitsSelector<R>::Type>::value,
+        "IPDLParamTraits::Write only forwards calls which work via WriteParam");
 
     IPC::ParamTraits<P>::Write(aMsg, std::forward<R>(aParam));
   }
 
-  template<typename R>
+  template <typename R>
   static inline bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                           IProtocol*, R* aResult) {
-    static_assert(IsSame<P, typename IPC::ParamTraitsSelector<R>::Type>::value,
-                  "IPDLParamTraits::Read only forwards calls which work via ReadParam");
+    static_assert(
+        IsSame<P, typename IPC::ParamTraitsSelector<R>::Type>::value,
+        "IPDLParamTraits::Read only forwards calls which work via ReadParam");
 
     return IPC::ParamTraits<P>::Read(aMsg, aIter, aResult);
   }
@@ -55,31 +55,24 @@ struct IPDLParamTraits
 
 
 
-template<typename P>
-static MOZ_NEVER_INLINE void
-WriteIPDLParam(IPC::Message* aMsg,
-               IProtocol* aActor,
-               P&& aParam)
-{
-  IPDLParamTraits<typename IPC::ParamTraitsSelector<P>::Type>
-    ::Write(aMsg, aActor, std::forward<P>(aParam));
+template <typename P>
+static MOZ_NEVER_INLINE void WriteIPDLParam(IPC::Message* aMsg,
+                                            IProtocol* aActor, P&& aParam) {
+  IPDLParamTraits<typename IPC::ParamTraitsSelector<P>::Type>::Write(
+      aMsg, aActor, std::forward<P>(aParam));
 }
 
-template<typename P>
-static MOZ_NEVER_INLINE bool
-ReadIPDLParam(const IPC::Message* aMsg,
-              PickleIterator* aIter,
-              IProtocol* aActor,
-              P* aResult)
-{
-  return IPDLParamTraits<typename IPC::ParamTraitsSelector<P>::Type>
-    ::Read(aMsg, aIter, aActor, aResult);
+template <typename P>
+static MOZ_NEVER_INLINE bool ReadIPDLParam(const IPC::Message* aMsg,
+                                           PickleIterator* aIter,
+                                           IProtocol* aActor, P* aResult) {
+  return IPDLParamTraits<typename IPC::ParamTraitsSelector<P>::Type>::Read(
+      aMsg, aIter, aActor, aResult);
 }
 
 
-template<typename T>
-struct IPDLParamTraits<nsTArray<T>>
-{
+template <typename T>
+struct IPDLParamTraits<nsTArray<T>> {
   static inline void Write(IPC::Message* aMsg, IProtocol* aActor,
                            const nsTArray<T>& aParam) {
     WriteInternal(aMsg, aActor, aParam);
@@ -99,8 +92,7 @@ struct IPDLParamTraits<nsTArray<T>>
   
   
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
-                   IProtocol* aActor, nsTArray<T>* aResult)
-  {
+                   IProtocol* aActor, nsTArray<T>* aResult) {
     uint32_t length;
     if (!ReadIPDLParam(aMsg, aIter, aActor, &length)) {
       return false;
@@ -108,7 +100,8 @@ struct IPDLParamTraits<nsTArray<T>>
 
     if (sUseWriteBytes) {
       auto pickledLength = CheckedInt<int>(length) * sizeof(T);
-      if (!pickledLength.isValid() || !aMsg->HasBytesAvailable(aIter, pickledLength.value())) {
+      if (!pickledLength.isValid() ||
+          !aMsg->HasBytesAvailable(aIter, pickledLength.value())) {
         return false;
       }
 
@@ -136,10 +129,10 @@ struct IPDLParamTraits<nsTArray<T>>
     return true;
   }
 
-private:
-  template<typename U>
-  static inline void
-  WriteInternal(IPC::Message* aMsg, IProtocol* aActor, U&& aParam) {
+ private:
+  template <typename U>
+  static inline void WriteInternal(IPC::Message* aMsg, IProtocol* aActor,
+                                   U&& aParam) {
     uint32_t length = aParam.Length();
     WriteIPDLParam(aMsg, aActor, length);
 
@@ -159,19 +152,18 @@ private:
   
   
   
-  static const bool sUseWriteBytes = (mozilla::IsIntegral<T>::value ||
-                                      mozilla::IsFloatingPoint<T>::value);
+  static const bool sUseWriteBytes =
+      (mozilla::IsIntegral<T>::value || mozilla::IsFloatingPoint<T>::value);
 };
 
-template<typename T>
-struct IPDLParamTraits<mozilla::UniquePtr<T>>
-{
+template <typename T>
+struct IPDLParamTraits<mozilla::UniquePtr<T>> {
   typedef mozilla::UniquePtr<T> paramType;
 
   
-  template<typename ParamTypeRef>
-  static void Write(IPC::Message* aMsg, IProtocol* aActor, ParamTypeRef&& aParam)
-  {
+  template <typename ParamTypeRef>
+  static void Write(IPC::Message* aMsg, IProtocol* aActor,
+                    ParamTypeRef&& aParam) {
     
     WriteParam(aMsg, aParam == nullptr);
     if (aParam) {
@@ -181,8 +173,7 @@ struct IPDLParamTraits<mozilla::UniquePtr<T>>
   }
 
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
-                   IProtocol* aActor, paramType* aResult)
-  {
+                   IProtocol* aActor, paramType* aResult) {
     MOZ_ASSERT(aResult);
     bool isNull;
     *aResult = nullptr;
@@ -202,7 +193,7 @@ struct IPDLParamTraits<mozilla::UniquePtr<T>>
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -25,16 +25,16 @@
 #endif
 class Pickle;
 class PickleIterator {
-public:
+ public:
   explicit PickleIterator(const Pickle& pickle);
 
-private:
+ private:
   friend class Pickle;
 
   mozilla::BufferList<InfallibleAllocPolicy>::IterImpl iter_;
   mozilla::TimeStamp start_;
 
-  template<typename T>
+  template <typename T>
   void CopyInto(T* dest);
 };
 
@@ -98,7 +98,8 @@ class Pickle {
   MOZ_MUST_USE bool ReadShort(PickleIterator* iter, short* result) const;
   MOZ_MUST_USE bool ReadInt(PickleIterator* iter, int* result) const;
   MOZ_MUST_USE bool ReadLong(PickleIterator* iter, long* result) const;
-  MOZ_MUST_USE bool ReadULong(PickleIterator* iter, unsigned long* result) const;
+  MOZ_MUST_USE bool ReadULong(PickleIterator* iter,
+                              unsigned long* result) const;
   MOZ_MUST_USE bool ReadSize(PickleIterator* iter, size_t* result) const;
   MOZ_MUST_USE bool ReadInt32(PickleIterator* iter, int32_t* result) const;
   MOZ_MUST_USE bool ReadUInt32(PickleIterator* iter, uint32_t* result) const;
@@ -106,12 +107,16 @@ class Pickle {
   MOZ_MUST_USE bool ReadUInt64(PickleIterator* iter, uint64_t* result) const;
   MOZ_MUST_USE bool ReadDouble(PickleIterator* iter, double* result) const;
   MOZ_MUST_USE bool ReadIntPtr(PickleIterator* iter, intptr_t* result) const;
-  MOZ_MUST_USE bool ReadUnsignedChar(PickleIterator* iter, unsigned char* result) const;
+  MOZ_MUST_USE bool ReadUnsignedChar(PickleIterator* iter,
+                                     unsigned char* result) const;
   MOZ_MUST_USE bool ReadString(PickleIterator* iter, std::string* result) const;
-  MOZ_MUST_USE bool ReadWString(PickleIterator* iter, std::wstring* result) const;
-  MOZ_MUST_USE bool ReadBytesInto(PickleIterator* iter, void* data, uint32_t length) const;
-  MOZ_MUST_USE bool ExtractBuffers(PickleIterator* iter, size_t length, BufferList* buffers,
-                                   uint32_t alignment = sizeof(memberAlignmentType)) const;
+  MOZ_MUST_USE bool ReadWString(PickleIterator* iter,
+                                std::wstring* result) const;
+  MOZ_MUST_USE bool ReadBytesInto(PickleIterator* iter, void* data,
+                                  uint32_t length) const;
+  MOZ_MUST_USE bool ExtractBuffers(
+      PickleIterator* iter, size_t length, BufferList* buffers,
+      uint32_t alignment = sizeof(memberAlignmentType)) const;
 
   
   
@@ -119,7 +124,7 @@ class Pickle {
 
   MOZ_MUST_USE bool ReadSentinel(PickleIterator* iter, uint32_t sentinel) const
 #ifdef MOZ_PICKLE_SENTINEL_CHECKING
-    ;
+      ;
 #else
   {
     return true;
@@ -128,7 +133,7 @@ class Pickle {
 
   bool IgnoreSentinel(PickleIterator* iter) const
 #ifdef MOZ_PICKLE_SENTINEL_CHECKING
-    ;
+      ;
 #else
   {
     return true;
@@ -146,7 +151,6 @@ class Pickle {
   
   
   bool HasBytesAvailable(const PickleIterator* iter, uint32_t len) const;
-
 
   
   
@@ -176,7 +180,7 @@ class Pickle {
 
   bool WriteSentinel(uint32_t sentinel)
 #ifdef MOZ_PICKLE_SENTINEL_CHECKING
-    ;
+      ;
 #else
   {
     return true;
@@ -224,7 +228,8 @@ class Pickle {
 
   
   
-  template<uint32_t alignment> struct ConstantAligner {
+  template <uint32_t alignment>
+  struct ConstantAligner {
     static uint32_t align(int bytes) {
       static_assert((alignment & (alignment - 1)) == 0,
                     "alignment must be a power of two");
@@ -253,8 +258,7 @@ class Pickle {
   
   
   
-  static uint32_t MessageSize(uint32_t header_size,
-                              const char* range_start,
+  static uint32_t MessageSize(uint32_t header_size, const char* range_start,
                               const char* range_end);
 
   

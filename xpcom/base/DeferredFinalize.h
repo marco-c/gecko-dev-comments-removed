@@ -23,8 +23,7 @@ typedef void* (*DeferredFinalizeAppendFunction)(void* aPointers, void* aThing);
 typedef bool (*DeferredFinalizeFunction)(uint32_t aSlice, void* aData);
 
 void DeferredFinalize(DeferredFinalizeAppendFunction aAppendFunc,
-                      DeferredFinalizeFunction aFunc,
-                      void* aThing);
+                      DeferredFinalizeFunction aFunc, void* aThing);
 
 void DeferredFinalize(nsISupports* aSupports);
 
@@ -38,10 +37,10 @@ void DeferredFinalize(nsISupports* aSupports);
 
 
 
-void RecordReplayRegisterDeferredFinalizeThing(DeferredFinalizeAppendFunction aAppendFunc,
-                                               DeferredFinalizeFunction aFunc,
-                                               void* aThing);
+void RecordReplayRegisterDeferredFinalizeThing(
+    DeferredFinalizeAppendFunction aAppendFunc, DeferredFinalizeFunction aFunc,
+    void* aThing);
 
-} 
+}  
 
-#endif 
+#endif  

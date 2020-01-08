@@ -36,30 +36,29 @@ class EventHandlerNonNull;
 class GlobalObject;
 
 
-#define NS_EVENTTARGET_IID \
-{ 0xde651c36, 0x0053, 0x4c67, \
-  { 0xb1, 0x3d, 0x67, 0xb9, 0x40, 0xfc, 0x82, 0xe4 } }
+#define NS_EVENTTARGET_IID                           \
+  {                                                  \
+    0xde651c36, 0x0053, 0x4c67, {                    \
+      0xb1, 0x3d, 0x67, 0xb9, 0x40, 0xfc, 0x82, 0xe4 \
+    }                                                \
+  }
 
-class EventTarget : public nsISupports,
-                    public nsWrapperCache
-{
-public:
+class EventTarget : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_EVENTTARGET_IID)
 
   
   static already_AddRefed<EventTarget> Constructor(const GlobalObject& aGlobal,
                                                    ErrorResult& aRv);
-  void AddEventListener(const nsAString& aType,
-                        EventListener* aCallback,
+  void AddEventListener(const nsAString& aType, EventListener* aCallback,
                         const AddEventListenerOptionsOrBoolean& aOptions,
                         const Nullable<bool>& aWantsUntrusted,
                         ErrorResult& aRv);
-  void RemoveEventListener(const nsAString& aType,
-                           EventListener* aCallback,
+  void RemoveEventListener(const nsAString& aType, EventListener* aCallback,
                            const EventListenerOptionsOrBoolean& aOptions,
                            ErrorResult& aRv);
 
-protected:
+ protected:
   
 
 
@@ -67,26 +66,21 @@ protected:
 
 
   nsresult AddEventListener(const nsAString& aType,
-                            nsIDOMEventListener* aListener,
-                            bool aUseCapture,
+                            nsIDOMEventListener* aListener, bool aUseCapture,
                             const Nullable<bool>& aWantsUntrusted);
 
-public:
+ public:
   
 
 
 
   nsresult AddEventListener(const nsAString& aType,
-                            nsIDOMEventListener* aListener,
-                            bool aUseCapture)
-  {
+                            nsIDOMEventListener* aListener, bool aUseCapture) {
     return AddEventListener(aType, aListener, aUseCapture, Nullable<bool>());
   }
   nsresult AddEventListener(const nsAString& aType,
-                            nsIDOMEventListener* aListener,
-                            bool aUseCapture,
-                            bool aWantsUntrusted)
-  {
+                            nsIDOMEventListener* aListener, bool aUseCapture,
+                            bool aWantsUntrusted) {
     return AddEventListener(aType, aListener, aUseCapture,
                             Nullable<bool>(aWantsUntrusted));
   }
@@ -97,8 +91,7 @@ public:
 
 
   void RemoveEventListener(const nsAString& aType,
-                           nsIDOMEventListener* aListener,
-                           bool aUseCapture);
+                           nsIDOMEventListener* aListener, bool aUseCapture);
   
 
 
@@ -112,9 +105,9 @@ public:
 
   nsresult AddSystemEventListener(const nsAString& aType,
                                   nsIDOMEventListener* aListener,
-                                  bool aUseCapture)
-  {
-    return AddSystemEventListener(aType, aListener, aUseCapture, Nullable<bool>());
+                                  bool aUseCapture) {
+    return AddSystemEventListener(aType, aListener, aUseCapture,
+                                  Nullable<bool>());
   }
 
   
@@ -122,9 +115,7 @@ public:
 
   nsresult AddSystemEventListener(const nsAString& aType,
                                   nsIDOMEventListener* aListener,
-                                  bool aUseCapture,
-                                  bool aWantsUntrusted)
-  {
+                                  bool aUseCapture, bool aWantsUntrusted) {
     return AddSystemEventListener(aType, aListener, aUseCapture,
                                   Nullable<bool>(aWantsUntrusted));
   }
@@ -135,10 +126,7 @@ public:
 
 
 
-  virtual EventTarget* GetTargetForDOMEvent()
-  {
-    return this;
-  };
+  virtual EventTarget* GetTargetForDOMEvent() { return this; };
 
   
 
@@ -146,10 +134,7 @@ public:
 
 
 
-  virtual EventTarget* GetTargetForEventTargetChain()
-  {
-    return this;
-  }
+  virtual EventTarget* GetTargetForEventTargetChain() { return this; }
 
   
 
@@ -169,14 +154,10 @@ public:
 
   void DispatchEvent(Event& aEvent, ErrorResult& aRv);
 
-  nsIGlobalObject* GetParentObject() const
-  {
-    return GetOwnerGlobal();
-  }
+  nsIGlobalObject* GetParentObject() const { return GetOwnerGlobal(); }
 
   
-  EventHandlerNonNull* GetEventHandler(const nsAString& aType)
-  {
+  EventHandlerNonNull* GetEventHandler(const nsAString& aType) {
     RefPtr<nsAtom> type = NS_Atomize(aType);
     return GetEventHandler(type);
   }
@@ -247,18 +228,13 @@ public:
 
 
 
-  virtual nsresult PreHandleEvent(EventChainVisitor& aVisitor)
-  {
-    return NS_OK;
-  }
+  virtual nsresult PreHandleEvent(EventChainVisitor& aVisitor) { return NS_OK; }
 
   
 
 
 
-  virtual void WillHandleEvent(EventChainPostVisitor& aVisitor)
-  {
-  }
+  virtual void WillHandleEvent(EventChainPostVisitor& aVisitor) {}
 
   
 
@@ -270,7 +246,7 @@ public:
 
   virtual nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) = 0;
 
-protected:
+ protected:
   EventHandlerNonNull* GetEventHandler(nsAtom* aType);
   void SetEventHandler(nsAtom* aType, EventHandlerNonNull* aHandler);
 
@@ -321,7 +297,7 @@ protected:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(EventTarget, NS_EVENTTARGET_IID)
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

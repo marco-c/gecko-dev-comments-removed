@@ -40,19 +40,18 @@
 #include "ImageContainer.h"
 #include "PlaybackType.h"
 #ifdef DEBUG
-  #include "imgIContainerDebug.h"
+#include "imgIContainerDebug.h"
 #endif
 
 class nsIInputStream;
 class nsIRequest;
 
-#define NS_RASTERIMAGE_CID \
-{ /* 376ff2c1-9bf6-418a-b143-3340c00112f7 */         \
-     0x376ff2c1,                                     \
-     0x9bf6,                                         \
-     0x418a,                                         \
-    {0xb1, 0x43, 0x33, 0x40, 0xc0, 0x01, 0x12, 0xf7} \
-}
+#define NS_RASTERIMAGE_CID                           \
+  { /* 376ff2c1-9bf6-418a-b143-3340c00112f7 */       \
+    0x376ff2c1, 0x9bf6, 0x418a, {                    \
+      0xb1, 0x43, 0x33, 0x40, 0xc0, 0x01, 0x12, 0xf7 \
+    }                                                \
+  }
 
 
 
@@ -130,7 +129,7 @@ namespace layers {
 class ImageContainer;
 class Image;
 class LayersManager;
-} 
+}  
 
 namespace image {
 
@@ -140,17 +139,18 @@ struct DecoderTelemetry;
 class ImageMetadata;
 class SourceBuffer;
 
-class RasterImage final : public ImageResource
-                        , public nsIProperties
-                        , public SupportsWeakPtr<RasterImage>
+class RasterImage final : public ImageResource,
+                          public nsIProperties,
+                          public SupportsWeakPtr<RasterImage>
 #ifdef DEBUG
-                        , public imgIContainerDebug
+    ,
+                          public imgIContainerDebug
 #endif
 {
   
   virtual ~RasterImage();
 
-public:
+ public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(RasterImage)
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIPROPERTIES
@@ -167,14 +167,13 @@ public:
   
   virtual void OnSurfaceDiscarded(const SurfaceKey& aSurfaceKey) override;
 
-  virtual size_t SizeOfSourceWithComputedFallback(SizeOfState& aState)
-    const override;
+  virtual size_t SizeOfSourceWithComputedFallback(
+      SizeOfState& aState) const override;
   virtual void CollectSizeOfSurfaces(nsTArray<SurfaceMemoryCounter>& aCounters,
                                      MallocSizeOf aMallocSizeOf) const override;
 
   
   void Discard();
-
 
   
   
@@ -222,19 +221,14 @@ public:
 
 
 
-
-  void NotifyDecodeComplete(const DecoderFinalStatus& aStatus,
-                            const ImageMetadata& aMetadata,
-                            const DecoderTelemetry& aTelemetry,
-                            Progress aProgress,
-                            const gfx::IntRect& aInvalidRect,
-                            const Maybe<uint32_t>& aFrameCount,
-                            DecoderFlags aDecoderFlags,
-                            SurfaceFlags aSurfaceFlags);
+  void NotifyDecodeComplete(
+      const DecoderFinalStatus& aStatus, const ImageMetadata& aMetadata,
+      const DecoderTelemetry& aTelemetry, Progress aProgress,
+      const gfx::IntRect& aInvalidRect, const Maybe<uint32_t>& aFrameCount,
+      DecoderFlags aDecoderFlags, SurfaceFlags aSurfaceFlags);
 
   
   void ReportDecoderError();
-
 
   
   
@@ -246,8 +240,7 @@ public:
                                         uint64_t aSourceOffset,
                                         uint32_t aCount) override;
   virtual nsresult OnImageDataComplete(nsIRequest* aRequest,
-                                       nsISupports* aContext,
-                                       nsresult aStatus,
+                                       nsISupports* aContext, nsresult aStatus,
                                        bool aLastPart) override;
 
   void NotifyForLoadEvent(Progress aProgress);
@@ -265,7 +258,7 @@ public:
 
   nsresult SetSourceSizeHint(uint32_t aSizeHint);
 
- nsCString GetURIString() {
+  nsCString GetURIString() {
     nsCString spec;
     if (GetURI()) {
       GetURI()->GetSpec(spec);
@@ -273,7 +266,7 @@ public:
     return spec;
   }
 
-private:
+ private:
   nsresult Init(const char* aMimeType, uint32_t aFlags);
 
   
@@ -290,35 +283,26 @@ private:
 
 
 
-  LookupResult LookupFrame(const gfx::IntSize& aSize,
-                           uint32_t aFlags,
-                           PlaybackType aPlaybackType,
-                           bool aMarkUsed);
+  LookupResult LookupFrame(const gfx::IntSize& aSize, uint32_t aFlags,
+                           PlaybackType aPlaybackType, bool aMarkUsed);
 
   
-  LookupResult LookupFrameInternal(const gfx::IntSize& aSize,
-                                   uint32_t aFlags,
-                                   PlaybackType aPlaybackType,
-                                   bool aMarkUsed);
+  LookupResult LookupFrameInternal(const gfx::IntSize& aSize, uint32_t aFlags,
+                                   PlaybackType aPlaybackType, bool aMarkUsed);
 
-  ImgDrawResult DrawInternal(DrawableSurface&& aFrameRef,
-                          gfxContext* aContext,
-                          const nsIntSize& aSize,
-                          const ImageRegion& aRegion,
-                          gfx::SamplingFilter aSamplingFilter,
-                          uint32_t aFlags,
-                          float aOpacity);
+  ImgDrawResult DrawInternal(DrawableSurface&& aFrameRef, gfxContext* aContext,
+                             const nsIntSize& aSize, const ImageRegion& aRegion,
+                             gfx::SamplingFilter aSamplingFilter,
+                             uint32_t aFlags, float aOpacity);
 
   Tuple<ImgDrawResult, gfx::IntSize, RefPtr<gfx::SourceSurface>>
-    GetFrameInternal(const gfx::IntSize& aSize,
-                     const Maybe<SVGImageContext>& aSVGContext,
-                     uint32_t aWhichFrame,
-                     uint32_t aFlags) override;
+  GetFrameInternal(const gfx::IntSize& aSize,
+                   const Maybe<SVGImageContext>& aSVGContext,
+                   uint32_t aWhichFrame, uint32_t aFlags) override;
 
-  Tuple<ImgDrawResult, gfx::IntSize>
-    GetImageContainerSize(layers::LayerManager* aManager,
-                          const gfx::IntSize& aSize,
-                          uint32_t aFlags) override;
+  Tuple<ImgDrawResult, gfx::IntSize> GetImageContainerSize(
+      layers::LayerManager* aManager, const gfx::IntSize& aSize,
+      uint32_t aFlags) override;
 
   
   
@@ -336,8 +320,7 @@ private:
 
 
 
-  bool Decode(const gfx::IntSize& aSize,
-              uint32_t aFlags,
+  bool Decode(const gfx::IntSize& aSize, uint32_t aFlags,
               PlaybackType aPlaybackType);
 
   
@@ -377,15 +360,15 @@ private:
 
   void OnSurfaceDiscardedInternal(bool aAnimatedFramesDiscarded);
 
-private: 
-  nsIntSize                  mSize;
-  nsTArray<nsIntSize>        mNativeSizes;
-  Orientation                mOrientation;
+ private:  
+  nsIntSize mSize;
+  nsTArray<nsIntSize> mNativeSizes;
+  Orientation mOrientation;
 
   
-  Maybe<Progress>            mLoadProgress;
+  Maybe<Progress> mLoadProgress;
 
-  nsCOMPtr<nsIProperties>   mProperties;
+  nsCOMPtr<nsIProperties> mProperties;
 
   
   UniquePtr<FrameAnimator> mFrameAnimator;
@@ -394,46 +377,46 @@ private:
   Maybe<AnimationState> mAnimationState;
 
   
-  uint32_t                   mLockCount;
-
-  
-  DecoderType                mDecoderType;
+  uint32_t mLockCount;
 
   
   
-  int32_t                        mDecodeCount;
+  DecoderType mDecoderType;
+
+  
+  
+  int32_t mDecodeCount;
 
 #ifdef DEBUG
-  uint32_t                       mFramesNotified;
+  uint32_t mFramesNotified;
 #endif
 
   
-  NotNull<RefPtr<SourceBuffer>>  mSourceBuffer;
+  NotNull<RefPtr<SourceBuffer>> mSourceBuffer;
 
   
-  bool                       mHasSize:1;        
-  bool                       mTransient:1;      
-  bool                       mSyncLoad:1;       
-  bool                       mDiscardable:1;    
-  bool                       mSomeSourceData:1; 
-  bool                       mAllSourceData:1;  
-  bool                       mHasBeenDecoded:1; 
-
-  
-  
-  
-  bool                       mPendingAnimation:1;
+  bool mHasSize : 1;         
+  bool mTransient : 1;       
+  bool mSyncLoad : 1;        
+  bool mDiscardable : 1;     
+  bool mSomeSourceData : 1;  
+  bool mAllSourceData : 1;   
+  bool mHasBeenDecoded : 1;  
 
   
   
-  bool                       mAnimationFinished:1;
+  
+  bool mPendingAnimation : 1;
 
   
   
-  bool                       mWantFullDecode:1;
+  bool mAnimationFinished : 1;
+
+  
+  
+  bool mWantFullDecode : 1;
 
   TimeStamp mDrawStartTime;
-
 
   
   
@@ -443,13 +426,11 @@ private:
   
   bool CanDownscaleDuringDecode(const nsIntSize& aSize, uint32_t aFlags);
 
-
   
   void DoError();
 
-  class HandleErrorWorker : public Runnable
-  {
-  public:
+  class HandleErrorWorker : public Runnable {
+   public:
     
 
 
@@ -459,7 +440,7 @@ private:
 
     NS_IMETHOD Run() override;
 
-  private:
+   private:
     explicit HandleErrorWorker(RasterImage* aImage);
 
     RefPtr<RasterImage> mImage;
@@ -470,9 +451,10 @@ private:
 
   bool IsOpaque();
 
-  DrawableSurface RequestDecodeForSizeInternal(const gfx::IntSize& aSize, uint32_t aFlags);
+  DrawableSurface RequestDecodeForSizeInternal(const gfx::IntSize& aSize,
+                                               uint32_t aFlags);
 
-protected:
+ protected:
   explicit RasterImage(nsIURI* aURI = nullptr);
 
   bool ShouldAnimate() override;
@@ -480,20 +462,17 @@ protected:
   friend class ImageFactory;
 };
 
-inline NS_IMETHODIMP
-RasterImage::GetAnimationMode(uint16_t* aAnimationMode) {
+inline NS_IMETHODIMP RasterImage::GetAnimationMode(uint16_t* aAnimationMode) {
   return GetAnimationModeInternal(aAnimationMode);
 }
 
-} 
-} 
+}  
+}  
 
 
 
 
-inline nsISupports*
-ToSupports(mozilla::image::RasterImage* p)
-{
+inline nsISupports* ToSupports(mozilla::image::RasterImage* p) {
   return NS_ISUPPORTS_CAST(mozilla::image::ImageResource*, p);
 }
 

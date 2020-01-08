@@ -12,20 +12,16 @@
 #include "nsXPCOM.h"
 #include "nsISupportsPrimitives.h"
 
-#include "nsITransferable.h" 
+#include "nsITransferable.h"  
 
 
 #include "nsPrimitiveHelpers.h"
 #include "nsIDocumentEncoder.h"
 #include "nsContentUtils.h"
 
-nsHTMLFormatConverter::nsHTMLFormatConverter()
-{
-}
+nsHTMLFormatConverter::nsHTMLFormatConverter() {}
 
-nsHTMLFormatConverter::~nsHTMLFormatConverter()
-{
-}
+nsHTMLFormatConverter::~nsHTMLFormatConverter() {}
 
 NS_IMPL_ISUPPORTS(nsHTMLFormatConverter, nsIFormatConverter)
 
@@ -36,8 +32,7 @@ NS_IMPL_ISUPPORTS(nsHTMLFormatConverter, nsIFormatConverter)
 
 
 NS_IMETHODIMP
-nsHTMLFormatConverter::GetInputDataFlavors(nsTArray<nsCString>& aFlavors)
-{
+nsHTMLFormatConverter::GetInputDataFlavors(nsTArray<nsCString> &aFlavors) {
   aFlavors.AppendElement(NS_LITERAL_CSTRING(kHTMLMime));
   return NS_OK;
 }
@@ -49,10 +44,8 @@ nsHTMLFormatConverter::GetInputDataFlavors(nsTArray<nsCString>& aFlavors)
 
 
 
-
 NS_IMETHODIMP
-nsHTMLFormatConverter::GetOutputDataFlavors(nsTArray<nsCString>& aFlavors)
-{
+nsHTMLFormatConverter::GetOutputDataFlavors(nsTArray<nsCString> &aFlavors) {
   aFlavors.AppendElement(NS_LITERAL_CSTRING(kHTMLMime));
   aFlavors.AppendElement(NS_LITERAL_CSTRING(kUnicodeMime));
   return NS_OK;
@@ -65,28 +58,29 @@ nsHTMLFormatConverter::GetOutputDataFlavors(nsTArray<nsCString>& aFlavors)
 
 
 NS_IMETHODIMP
-nsHTMLFormatConverter::CanConvert(const char *aFromDataFlavor, const char *aToDataFlavor, bool *_retval)
-{
-  if ( !_retval )
-    return NS_ERROR_INVALID_ARG;
+nsHTMLFormatConverter::CanConvert(const char *aFromDataFlavor,
+                                  const char *aToDataFlavor, bool *_retval) {
+  if (!_retval) return NS_ERROR_INVALID_ARG;
 
   *_retval = false;
-  if ( !nsCRT::strcmp(aFromDataFlavor, kHTMLMime) ) {
-    if ( !nsCRT::strcmp(aToDataFlavor, kHTMLMime) )
+  if (!nsCRT::strcmp(aFromDataFlavor, kHTMLMime)) {
+    if (!nsCRT::strcmp(aToDataFlavor, kHTMLMime))
       *_retval = true;
-    else if ( !nsCRT::strcmp(aToDataFlavor, kUnicodeMime) )
+    else if (!nsCRT::strcmp(aToDataFlavor, kUnicodeMime))
       *_retval = true;
 #if NOT_NOW
-
-
-
-    else if ( toFlavor.Equals(kAOLMailMime) )
+    
+    
+    
+    else if (toFlavor.Equals(kAOLMailMime))
       *_retval = true;
 #endif
   }
   return NS_OK;
 
-} 
+}  
+
+
 
 
 
@@ -102,62 +96,65 @@ nsHTMLFormatConverter::CanConvert(const char *aFromDataFlavor, const char *aToDa
 
 
 NS_IMETHODIMP
-nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromData,
-                               const char *aToDataFlavor, nsISupports **aToData)
-{
-  if ( !aToData )
-    return NS_ERROR_INVALID_ARG;
+nsHTMLFormatConverter::Convert(const char *aFromDataFlavor,
+                               nsISupports *aFromData,
+                               const char *aToDataFlavor,
+                               nsISupports **aToData) {
+  if (!aToData) return NS_ERROR_INVALID_ARG;
 
   nsresult rv = NS_OK;
   *aToData = nullptr;
 
-  if ( !nsCRT::strcmp(aFromDataFlavor, kHTMLMime) ) {
-    nsAutoCString toFlavor ( aToDataFlavor );
+  if (!nsCRT::strcmp(aFromDataFlavor, kHTMLMime)) {
+    nsAutoCString toFlavor(aToDataFlavor);
 
     
     
     
-    nsCOMPtr<nsISupportsString> dataWrapper0 ( do_QueryInterface(aFromData) );
+    
+    nsCOMPtr<nsISupportsString> dataWrapper0(do_QueryInterface(aFromData));
     if (!dataWrapper0) {
       return NS_ERROR_INVALID_ARG;
     }
 
     nsAutoString dataStr;
-    dataWrapper0->GetData ( dataStr );  
+    dataWrapper0->GetData(dataStr);  
     
     
-    if ( toFlavor.Equals(kHTMLMime) || toFlavor.Equals(kUnicodeMime) ) {
+    if (toFlavor.Equals(kHTMLMime) || toFlavor.Equals(kUnicodeMime)) {
       nsresult res;
       if (toFlavor.Equals(kHTMLMime)) {
         int32_t dataLen = dataStr.Length() * 2;
-        nsPrimitiveHelpers::CreatePrimitiveForData ( toFlavor, dataStr.get(), dataLen, aToData );
+        nsPrimitiveHelpers::CreatePrimitiveForData(toFlavor, dataStr.get(),
+                                                   dataLen, aToData);
       } else {
         nsAutoString outStr;
         res = ConvertFromHTMLToUnicode(dataStr, outStr);
         if (NS_SUCCEEDED(res)) {
           int32_t dataLen = outStr.Length() * 2;
-          nsPrimitiveHelpers::CreatePrimitiveForData ( toFlavor, outStr.get(), dataLen, aToData );
+          nsPrimitiveHelpers::CreatePrimitiveForData(toFlavor, outStr.get(),
+                                                     dataLen, aToData);
         }
       }
-    } 
-    else if ( toFlavor.Equals(kAOLMailMime) ) {
+    }  
+    else if (toFlavor.Equals(kAOLMailMime)) {
       nsAutoString outStr;
-      if ( NS_SUCCEEDED(ConvertFromHTMLToAOLMail(dataStr, outStr)) ) {
+      if (NS_SUCCEEDED(ConvertFromHTMLToAOLMail(dataStr, outStr))) {
         int32_t dataLen = outStr.Length() * 2;
-        nsPrimitiveHelpers::CreatePrimitiveForData ( toFlavor, outStr.get(), dataLen, aToData );
+        nsPrimitiveHelpers::CreatePrimitiveForData(toFlavor, outStr.get(),
+                                                   dataLen, aToData);
       }
-    } 
+    }  
     else {
       rv = NS_ERROR_FAILURE;
     }
-  } 
+  }  
   else
     rv = NS_ERROR_FAILURE;
 
   return rv;
 
-} 
-
+}  
 
 
 
@@ -165,26 +162,23 @@ nsHTMLFormatConverter::Convert(const char *aFromDataFlavor, nsISupports *aFromDa
 
 
 NS_IMETHODIMP
-nsHTMLFormatConverter::ConvertFromHTMLToUnicode(const nsAutoString & aFromStr, nsAutoString & aToStr)
-{
-  return nsContentUtils::ConvertToPlainText(aFromStr,
-    aToStr,
-    nsIDocumentEncoder::OutputSelectionOnly |
-    nsIDocumentEncoder::OutputAbsoluteLinks |
-    nsIDocumentEncoder::OutputNoScriptContent |
-    nsIDocumentEncoder::OutputNoFramesContent,
-    0);
-} 
-
+nsHTMLFormatConverter::ConvertFromHTMLToUnicode(const nsAutoString &aFromStr,
+                                                nsAutoString &aToStr) {
+  return nsContentUtils::ConvertToPlainText(
+      aFromStr, aToStr,
+      nsIDocumentEncoder::OutputSelectionOnly |
+          nsIDocumentEncoder::OutputAbsoluteLinks |
+          nsIDocumentEncoder::OutputNoScriptContent |
+          nsIDocumentEncoder::OutputNoFramesContent,
+      0);
+}  
 
 NS_IMETHODIMP
-nsHTMLFormatConverter::ConvertFromHTMLToAOLMail(const nsAutoString & aFromStr,
-                                                nsAutoString & aToStr)
-{
+nsHTMLFormatConverter::ConvertFromHTMLToAOLMail(const nsAutoString &aFromStr,
+                                                nsAutoString &aToStr) {
   aToStr.AssignLiteral("<HTML>");
   aToStr.Append(aFromStr);
   aToStr.AppendLiteral("</HTML>");
 
   return NS_OK;
 }
-

@@ -19,7 +19,7 @@ namespace AvailableMemoryTracker {
 
 void Init();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

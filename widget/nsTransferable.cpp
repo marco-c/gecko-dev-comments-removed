@@ -42,16 +42,14 @@ using namespace mozilla;
 NS_IMPL_ISUPPORTS(nsTransferable, nsITransferable)
 
 DataStruct::DataStruct(DataStruct&& aRHS)
-  : mData(aRHS.mData.forget())
-  , mCacheFD(aRHS.mCacheFD)
-  , mFlavor(aRHS.mFlavor)
-{
+    : mData(aRHS.mData.forget()),
+      mCacheFD(aRHS.mCacheFD),
+      mFlavor(aRHS.mFlavor) {
   aRHS.mCacheFD = nullptr;
 }
 
 
-DataStruct::~DataStruct()
-{
+DataStruct::~DataStruct() {
   if (mCacheFD) {
     PR_Close(mCacheFD);
   }
@@ -59,16 +57,15 @@ DataStruct::~DataStruct()
 
 
 
-void
-DataStruct::SetData(nsISupports* aData, bool aIsPrivateData)
-{
+void DataStruct::SetData(nsISupports* aData, bool aIsPrivateData) {
   
   
   
   if (!aIsPrivateData && XRE_IsParentProcess()) {
     void* data = nullptr;
     uint32_t dataLen = 0;
-    nsPrimitiveHelpers::CreateDataFromPrimitive(mFlavor, aData, &data, &dataLen);
+    nsPrimitiveHelpers::CreateDataFromPrimitive(mFlavor, aData, &data,
+                                                &dataLen);
 
     if (dataLen > kLargeDatasetSize) {
       
@@ -95,9 +92,7 @@ DataStruct::SetData(nsISupports* aData, bool aIsPrivateData)
 }
 
 
-void
-DataStruct::GetData(nsISupports** aData)
-{
+void DataStruct::GetData(nsISupports** aData) {
   
   if (mCacheFD) {
     
@@ -119,9 +114,7 @@ DataStruct::GetData(nsISupports** aData)
 }
 
 
-nsresult
-DataStruct::WriteCache(void* aData, uint32_t aDataLen)
-{
+nsresult DataStruct::WriteCache(void* aData, uint32_t aDataLen) {
   MOZ_ASSERT(aData && aDataLen);
   MOZ_ASSERT(aDataLen <= uint32_t(std::numeric_limits<int32_t>::max()),
              "too large size for PR_Write");
@@ -148,9 +141,7 @@ DataStruct::WriteCache(void* aData, uint32_t aDataLen)
 }
 
 
-nsresult
-DataStruct::ReadCache(nsISupports** aData)
-{
+nsresult DataStruct::ReadCache(nsISupports** aData) {
   if (!mCacheFD) {
     return NS_ERROR_FAILURE;
   }
@@ -174,8 +165,8 @@ DataStruct::ReadCache(nsISupports** aData)
     return NS_ERROR_FAILURE;
   }
 
-  nsPrimitiveHelpers::CreatePrimitiveForData(
-    mFlavor, data.get(), fileSize, aData);
+  nsPrimitiveHelpers::CreatePrimitiveForData(mFlavor, data.get(), fileSize,
+                                             aData);
   return NS_OK;
 }
 
@@ -185,10 +176,11 @@ DataStruct::ReadCache(nsISupports** aData)
 
 
 nsTransferable::nsTransferable()
-  : mPrivateData(false)
-  , mContentPolicyType(nsIContentPolicy::TYPE_OTHER)
+    : mPrivateData(false),
+      mContentPolicyType(nsIContentPolicy::TYPE_OTHER)
 #ifdef DEBUG
-  , mInitialized(false)
+      ,
+      mInitialized(false)
 #endif
 {
 }
@@ -201,8 +193,7 @@ nsTransferable::nsTransferable()
 nsTransferable::~nsTransferable() {}
 
 NS_IMETHODIMP
-nsTransferable::Init(nsILoadContext* aContext)
-{
+nsTransferable::Init(nsILoadContext* aContext) {
   MOZ_ASSERT(!mInitialized);
 
   if (aContext) {
@@ -220,9 +211,7 @@ nsTransferable::Init(nsILoadContext* aContext)
 
 
 
-void
-nsTransferable::GetTransferDataFlavors(nsTArray<nsCString>& aFlavors)
-{
+void nsTransferable::GetTransferDataFlavors(nsTArray<nsCString>& aFlavors) {
   MOZ_ASSERT(mInitialized);
 
   for (size_t i = 0; i < mDataArray.Length(); ++i) {
@@ -231,9 +220,7 @@ nsTransferable::GetTransferDataFlavors(nsTArray<nsCString>& aFlavors)
   }
 }
 
-Maybe<size_t>
-nsTransferable::FindDataFlavor(const char* aFlavor)
-{
+Maybe<size_t> nsTransferable::FindDataFlavor(const char* aFlavor) {
   nsDependentCString flavor(aFlavor);
 
   for (size_t i = 0; i < mDataArray.Length(); ++i) {
@@ -252,11 +239,8 @@ nsTransferable::FindDataFlavor(const char* aFlavor)
 
 
 
-
 NS_IMETHODIMP
-nsTransferable::GetTransferData(const char* aFlavor,
-                                nsISupports** aData)
-{
+nsTransferable::GetTransferData(const char* aFlavor, nsISupports** aData) {
   MOZ_ASSERT(mInitialized);
 
   *aData = nullptr;
@@ -270,9 +254,9 @@ nsTransferable::GetTransferData(const char* aFlavor,
 
     
     if (nsCOMPtr<nsIFlavorDataProvider> dataProvider =
-          do_QueryInterface(dataBytes)) {
-      rv = dataProvider->GetFlavorData(this, aFlavor,
-                                       getter_AddRefs(dataBytes));
+            do_QueryInterface(dataBytes)) {
+      rv =
+          dataProvider->GetFlavorData(this, aFlavor, getter_AddRefs(dataBytes));
       if (NS_FAILED(rv)) {
         dataBytes = nullptr;
         
@@ -299,7 +283,7 @@ nsTransferable::GetTransferData(const char* aFlavor,
 
         
         if (nsCOMPtr<nsIFlavorDataProvider> dataProvider =
-              do_QueryInterface(dataBytes)) {
+                do_QueryInterface(dataBytes)) {
           rv = dataProvider->GetFlavorData(this, aFlavor,
                                            getter_AddRefs(dataBytes));
           if (NS_FAILED(rv)) {
@@ -324,9 +308,7 @@ nsTransferable::GetTransferData(const char* aFlavor,
 
 
 NS_IMETHODIMP
-nsTransferable::GetAnyTransferData(nsACString& aFlavor,
-                                   nsISupports** aData)
-{
+nsTransferable::GetAnyTransferData(nsACString& aFlavor, nsISupports** aData) {
   MOZ_ASSERT(mInitialized);
 
   for (size_t i = 0; i < mDataArray.Length(); ++i) {
@@ -347,9 +329,7 @@ nsTransferable::GetAnyTransferData(nsACString& aFlavor,
 
 
 NS_IMETHODIMP
-nsTransferable::SetTransferData(const char* aFlavor,
-                                nsISupports* aData)
-{
+nsTransferable::SetTransferData(const char* aFlavor, nsISupports* aData) {
   MOZ_ASSERT(mInitialized);
 
   
@@ -368,9 +348,7 @@ nsTransferable::SetTransferData(const char* aFlavor,
 
       if (canConvert) {
         nsCOMPtr<nsISupports> ConvertedData;
-        mFormatConv->Convert(aFlavor,
-                             aData,
-                             data.GetFlavor().get(),
+        mFormatConv->Convert(aFlavor, aData, data.GetFlavor().get(),
                              getter_AddRefs(ConvertedData));
         data.SetData(ConvertedData, mPrivateData);
         return NS_OK;
@@ -393,8 +371,7 @@ nsTransferable::SetTransferData(const char* aFlavor,
 
 
 NS_IMETHODIMP
-nsTransferable::AddDataFlavor(const char* aDataFlavor)
-{
+nsTransferable::AddDataFlavor(const char* aDataFlavor) {
   MOZ_ASSERT(mInitialized);
 
   if (FindDataFlavor(aDataFlavor).isSome()) {
@@ -413,8 +390,7 @@ nsTransferable::AddDataFlavor(const char* aDataFlavor)
 
 
 NS_IMETHODIMP
-nsTransferable::RemoveDataFlavor(const char* aDataFlavor)
-{
+nsTransferable::RemoveDataFlavor(const char* aDataFlavor) {
   MOZ_ASSERT(mInitialized);
 
   if (Maybe<size_t> index = FindDataFlavor(aDataFlavor)) {
@@ -426,8 +402,7 @@ nsTransferable::RemoveDataFlavor(const char* aDataFlavor)
 }
 
 NS_IMETHODIMP
-nsTransferable::SetConverter(nsIFormatConverter* aConverter)
-{
+nsTransferable::SetConverter(nsIFormatConverter* aConverter) {
   MOZ_ASSERT(mInitialized);
 
   mFormatConv = aConverter;
@@ -435,8 +410,7 @@ nsTransferable::SetConverter(nsIFormatConverter* aConverter)
 }
 
 NS_IMETHODIMP
-nsTransferable::GetConverter(nsIFormatConverter** aConverter)
-{
+nsTransferable::GetConverter(nsIFormatConverter** aConverter) {
   MOZ_ASSERT(mInitialized);
 
   nsCOMPtr<nsIFormatConverter> converter = mFormatConv;
@@ -451,8 +425,7 @@ nsTransferable::GetConverter(nsIFormatConverter** aConverter)
 
 
 NS_IMETHODIMP
-nsTransferable::FlavorsTransferableCanImport(nsTArray<nsCString>& aFlavors)
-{
+nsTransferable::FlavorsTransferableCanImport(nsTArray<nsCString>& aFlavors) {
   MOZ_ASSERT(mInitialized);
 
   
@@ -484,8 +457,7 @@ nsTransferable::FlavorsTransferableCanImport(nsTArray<nsCString>& aFlavors)
 
 
 NS_IMETHODIMP
-nsTransferable::FlavorsTransferableCanExport(nsTArray<nsCString>& aFlavors)
-{
+nsTransferable::FlavorsTransferableCanExport(nsTArray<nsCString>& aFlavors) {
   MOZ_ASSERT(mInitialized);
 
   
@@ -510,49 +482,39 @@ nsTransferable::FlavorsTransferableCanExport(nsTArray<nsCString>& aFlavors)
   return NS_OK;
 }
 
-bool
-nsTransferable::GetIsPrivateData()
-{
+bool nsTransferable::GetIsPrivateData() {
   MOZ_ASSERT(mInitialized);
 
   return mPrivateData;
 }
 
-void
-nsTransferable::SetIsPrivateData(bool aIsPrivateData)
-{
+void nsTransferable::SetIsPrivateData(bool aIsPrivateData) {
   MOZ_ASSERT(mInitialized);
 
   mPrivateData = aIsPrivateData;
 }
 
-nsIPrincipal*
-nsTransferable::GetRequestingPrincipal()
-{
+nsIPrincipal* nsTransferable::GetRequestingPrincipal() {
   MOZ_ASSERT(mInitialized);
 
   return mRequestingPrincipal;
 }
 
-void
-nsTransferable::SetRequestingPrincipal(nsIPrincipal* aRequestingPrincipal)
-{
+void nsTransferable::SetRequestingPrincipal(
+    nsIPrincipal* aRequestingPrincipal) {
   MOZ_ASSERT(mInitialized);
 
   mRequestingPrincipal = aRequestingPrincipal;
 }
 
-nsContentPolicyType
-nsTransferable::GetContentPolicyType()
-{
+nsContentPolicyType nsTransferable::GetContentPolicyType() {
   MOZ_ASSERT(mInitialized);
 
   return mContentPolicyType;
 }
 
-void
-nsTransferable::SetContentPolicyType(nsContentPolicyType aContentPolicyType)
-{
+void nsTransferable::SetContentPolicyType(
+    nsContentPolicyType aContentPolicyType) {
   MOZ_ASSERT(mInitialized);
 
   mContentPolicyType = aContentPolicyType;

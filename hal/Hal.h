@@ -31,8 +31,8 @@
 class nsPIDOMWindowInner;
 
 #ifndef MOZ_HAL_NAMESPACE
-# define MOZ_HAL_NAMESPACE hal
-# define MOZ_DEFINED_HAL_NAMESPACE 1
+#define MOZ_HAL_NAMESPACE hal
+#define MOZ_DEFINED_HAL_NAMESPACE 1
 #endif
 
 namespace mozilla {
@@ -41,7 +41,7 @@ namespace hal {
 
 class WindowIdentifier;
 
-} 
+}  
 
 namespace MOZ_HAL_NAMESPACE {
 
@@ -71,10 +71,9 @@ void Shutdown();
 
 
 
+void Vibrate(const nsTArray<uint32_t>& pattern, nsPIDOMWindowInner* aWindow);
 void Vibrate(const nsTArray<uint32_t>& pattern,
-             nsPIDOMWindowInner* aWindow);
-void Vibrate(const nsTArray<uint32_t>& pattern,
-             const hal::WindowIdentifier &id);
+             const hal::WindowIdentifier& id);
 
 
 
@@ -89,19 +88,19 @@ void Vibrate(const nsTArray<uint32_t>& pattern,
 
 
 void CancelVibrate(nsPIDOMWindowInner* aWindow);
-void CancelVibrate(const hal::WindowIdentifier &id);
+void CancelVibrate(const hal::WindowIdentifier& id);
 
 #define MOZ_DEFINE_HAL_OBSERVER(name_)
 
 
 
-                                                                 \
-void Register##name_##Observer(hal::name_##Observer* aObserver);    \
-/**                                                                 \
- * Inform the backend a |name_| observer unregistered.              \
- * @param aObserver The observer that should be removed.            \
- */                                                                 \
-void Unregister##name_##Observer(hal::name_##Observer* aObserver);
+                                                              \
+  void Register##name_##Observer(hal::name_##Observer* aObserver); \
+  /**                                                              \
+   * Inform the backend a |name_| observer unregistered.           \
+   * @param aObserver The observer that should be removed.         \
+   */                                                              \
+  void Unregister##name_##Observer(hal::name_##Observer* aObserver);
 
 MOZ_DEFINE_HAL_OBSERVER(Battery);
 
@@ -123,20 +122,20 @@ void NotifyBatteryChange(const hal::BatteryInformation& aBatteryInfo);
 
 
 void RegisterSensorObserver(hal::SensorType aSensor,
-                            hal::ISensorObserver *aObserver);
+                            hal::ISensorObserver* aObserver);
 
 
 
 
 void UnregisterSensorObserver(hal::SensorType aSensor,
-                              hal::ISensorObserver *aObserver);
+                              hal::ISensorObserver* aObserver);
 
 
 
 
 
 
-void NotifySensorChange(const hal::SensorData &aSensorData);
+void NotifySensorChange(const hal::SensorData& aSensorData);
 
 
 
@@ -153,7 +152,6 @@ void EnableSensorNotifications(hal::SensorType aSensor);
 
 
 void DisableSensorNotifications(hal::SensorType aSensor);
-
 
 MOZ_DEFINE_HAL_OBSERVER(Network);
 
@@ -200,8 +198,7 @@ MOZ_DEFINE_HAL_OBSERVER(WakeLock);
 
 
 
-void ModifyWakeLock(const nsAString &aTopic,
-                    hal::WakeLockControl aLockAdjust,
+void ModifyWakeLock(const nsAString& aTopic, hal::WakeLockControl aLockAdjust,
                     hal::WakeLockControl aHiddenAdjust,
                     uint64_t aProcessID = hal::CONTENT_PROCESS_ID_UNKNOWN);
 
@@ -210,7 +207,8 @@ void ModifyWakeLock(const nsAString &aTopic,
 
 
 
-void GetWakeLockInfo(const nsAString &aTopic, hal::WakeLockInformation *aWakeLockInfo);
+void GetWakeLockInfo(const nsAString& aTopic,
+                     hal::WakeLockInformation* aWakeLockInfo);
 
 
 
@@ -223,19 +221,22 @@ MOZ_DEFINE_HAL_OBSERVER(ScreenConfiguration);
 
 
 
-void GetCurrentScreenConfiguration(hal::ScreenConfiguration* aScreenConfiguration);
+void GetCurrentScreenConfiguration(
+    hal::ScreenConfiguration* aScreenConfiguration);
 
 
 
 
 
-void NotifyScreenConfigurationChange(const hal::ScreenConfiguration& aScreenConfiguration);
+void NotifyScreenConfigurationChange(
+    const hal::ScreenConfiguration& aScreenConfiguration);
 
 
 
 
 
-MOZ_MUST_USE bool LockScreenOrientation(const hal::ScreenOrientation& aOrientation);
+MOZ_MUST_USE bool LockScreenOrientation(
+    const hal::ScreenOrientation& aOrientation);
 
 
 
@@ -257,12 +258,12 @@ bool SetProcessPrioritySupported();
 
 void SetProcessPriority(int aPid, hal::ProcessPriority aPriority);
 
-} 
-} 
+}  
+}  
 
 #ifdef MOZ_DEFINED_HAL_NAMESPACE
-# undef MOZ_DEFINED_HAL_NAMESPACE
-# undef MOZ_HAL_NAMESPACE
+#undef MOZ_DEFINED_HAL_NAMESPACE
+#undef MOZ_HAL_NAMESPACE
 #endif
 
 #endif  

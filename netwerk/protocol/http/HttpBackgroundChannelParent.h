@@ -21,9 +21,8 @@ namespace net {
 
 class HttpChannelParent;
 
-class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent
-{
-public:
+class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
+ public:
   explicit HttpBackgroundChannelParent();
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(HttpBackgroundChannelParent)
@@ -46,8 +45,7 @@ public:
   
   bool OnTransportAndData(const nsresult& aChannelStatus,
                           const nsresult& aTransportStatus,
-                          const uint64_t& aOffset,
-                          const uint32_t& aCount,
+                          const uint64_t& aOffset, const uint32_t& aCount,
                           const nsCString& aData);
 
   
@@ -56,8 +54,7 @@ public:
                      const nsHttpHeaderArray& aResponseTrailers);
 
   
-  bool OnProgress(const int64_t& aProgress,
-                  const int64_t& aProgressMax);
+  bool OnProgress(const int64_t& aProgress, const int64_t& aProgressMax);
 
   
   bool OnStatus(const nsresult& aStatus);
@@ -83,10 +80,10 @@ public:
                                   const nsACString& aProvider,
                                   const nsACString& aFullHash);
 
-protected:
+ protected:
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
-private:
+ private:
   virtual ~HttpBackgroundChannelParent();
 
   Atomic<bool> mIPCOpened;
@@ -100,7 +97,7 @@ private:
   RefPtr<HttpChannelParent> mChannelParent;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

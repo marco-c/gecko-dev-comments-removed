@@ -29,61 +29,58 @@
 namespace js {
 
 
-class MOZ_RAII AutoLockAllAtoms
-{
-    JSRuntime* runtime;
+class MOZ_RAII AutoLockAllAtoms {
+  JSRuntime* runtime;
 
-  public:
-    explicit AutoLockAllAtoms(JSRuntime* rt);
-    ~AutoLockAllAtoms();
+ public:
+  explicit AutoLockAllAtoms(JSRuntime* rt);
+  ~AutoLockAllAtoms();
 };
 
-class AtomStateEntry
-{
-    uintptr_t bits;
+class AtomStateEntry {
+  uintptr_t bits;
 
-    static const uintptr_t NO_TAG_MASK = uintptr_t(-1) - 1;
+  static const uintptr_t NO_TAG_MASK = uintptr_t(-1) - 1;
 
-  public:
-    AtomStateEntry() : bits(0) {}
-    AtomStateEntry(const AtomStateEntry& other) : bits(other.bits) {}
-    AtomStateEntry(JSAtom* ptr, bool tagged)
-      : bits(uintptr_t(ptr) | uintptr_t(tagged))
-    {
-        MOZ_ASSERT((uintptr_t(ptr) & 0x1) == 0);
-    }
+ public:
+  AtomStateEntry() : bits(0) {}
+  AtomStateEntry(const AtomStateEntry& other) : bits(other.bits) {}
+  AtomStateEntry(JSAtom* ptr, bool tagged)
+      : bits(uintptr_t(ptr) | uintptr_t(tagged)) {
+    MOZ_ASSERT((uintptr_t(ptr) & 0x1) == 0);
+  }
 
-    bool isPinned() const {
-        return bits & 0x1;
-    }
+  bool isPinned() const { return bits & 0x1; }
 
-    
+  
 
 
 
-    void setPinned(bool pinned) const {
-        const_cast<AtomStateEntry*>(this)->bits |= uintptr_t(pinned);
-    }
+  void setPinned(bool pinned) const {
+    const_cast<AtomStateEntry*>(this)->bits |= uintptr_t(pinned);
+  }
 
-    JSAtom* asPtrUnbarriered() const {
-        MOZ_ASSERT(bits);
-        return reinterpret_cast<JSAtom*>(bits & NO_TAG_MASK);
-    }
+  JSAtom* asPtrUnbarriered() const {
+    MOZ_ASSERT(bits);
+    return reinterpret_cast<JSAtom*>(bits & NO_TAG_MASK);
+  }
 
-    JSAtom* asPtr(JSContext* cx) const;
+  JSAtom* asPtr(JSContext* cx) const;
 
-    bool needsSweep() {
-        JSAtom* atom = asPtrUnbarriered();
-        return gc::IsAboutToBeFinalizedUnbarriered(&atom);
-    }
+  bool needsSweep() {
+    JSAtom* atom = asPtrUnbarriered();
+    return gc::IsAboutToBeFinalizedUnbarriered(&atom);
+  }
 };
 
-struct AtomHasher
-{
-    struct Lookup;
-    static inline HashNumber hash(const Lookup& l);
-    static MOZ_ALWAYS_INLINE bool match(const AtomStateEntry& entry, const Lookup& lookup);
-    static void rekey(AtomStateEntry& k, const AtomStateEntry& newKey) { k = newKey; }
+struct AtomHasher {
+  struct Lookup;
+  static inline HashNumber hash(const Lookup& l);
+  static MOZ_ALWAYS_INLINE bool match(const AtomStateEntry& entry,
+                                      const Lookup& lookup);
+  static void rekey(AtomStateEntry& k, const AtomStateEntry& newKey) {
+    k = newKey;
+  }
 };
 
 using AtomSet = JS::GCHashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy>;
@@ -91,122 +88,116 @@ using AtomSet = JS::GCHashSet<AtomStateEntry, AtomHasher, SystemAllocPolicy>;
 
 
 
-class FrozenAtomSet
-{
-    AtomSet* mSet;
+class FrozenAtomSet {
+  AtomSet* mSet;
 
-  public:
-    
-    explicit FrozenAtomSet(AtomSet* set) { mSet = set; }
+ public:
+  
+  explicit FrozenAtomSet(AtomSet* set) { mSet = set; }
 
-    ~FrozenAtomSet() { js_delete(mSet); }
+  ~FrozenAtomSet() { js_delete(mSet); }
 
-    MOZ_ALWAYS_INLINE AtomSet::Ptr readonlyThreadsafeLookup(const AtomSet::Lookup& l) const;
+  MOZ_ALWAYS_INLINE AtomSet::Ptr readonlyThreadsafeLookup(
+      const AtomSet::Lookup& l) const;
 
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return mSet->shallowSizeOfIncludingThis(mallocSizeOf);
-    }
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mSet->shallowSizeOfIncludingThis(mallocSizeOf);
+  }
 
-    typedef AtomSet::Range Range;
+  typedef AtomSet::Range Range;
 
-    AtomSet::Range all() const { return mSet->all(); }
+  AtomSet::Range all() const { return mSet->all(); }
 };
 
-class AtomsTable
-{
-    static const size_t PartitionShift = 5;
-    static const size_t PartitionCount = 1 << PartitionShift;
+class AtomsTable {
+  static const size_t PartitionShift = 5;
+  static const size_t PartitionCount = 1 << PartitionShift;
+
+  
+  
+  static const size_t InitialTableSize = 16;
+
+  
+  struct Partition {
+    explicit Partition(uint32_t index);
+    ~Partition();
 
     
-    
-    static const size_t InitialTableSize = 16;
+    Mutex lock;
 
     
-    struct Partition
-    {
-        explicit Partition(uint32_t index);
-        ~Partition();
+    AtomSet atoms;
 
-        
-        Mutex lock;
+    
+    AtomSet* atomsAddedWhileSweeping;
+  };
 
-        
-        AtomSet atoms;
-
-        
-        AtomSet* atomsAddedWhileSweeping;
-    };
-
-    Partition* partitions[PartitionCount];
+  Partition* partitions[PartitionCount];
 
 #ifdef DEBUG
-    bool allPartitionsLocked = false;
+  bool allPartitionsLocked = false;
 #endif
 
-  public:
-    class AutoLock;
+ public:
+  class AutoLock;
 
-    
-    class SweepIterator
-    {
-        AtomsTable& atoms;
-        size_t partitionIndex;
-        mozilla::Maybe<AtomSet::Enum> atomsIter;
+  
+  class SweepIterator {
+    AtomsTable& atoms;
+    size_t partitionIndex;
+    mozilla::Maybe<AtomSet::Enum> atomsIter;
 
-        void settle();
-        void startSweepingPartition();
-        void finishSweepingPartition();
+    void settle();
+    void startSweepingPartition();
+    void finishSweepingPartition();
 
-      public:
-        explicit SweepIterator(AtomsTable& atoms);
-        bool empty() const;
-        JSAtom* front() const;
-        void removeFront();
-        void popFront();
-    };
+   public:
+    explicit SweepIterator(AtomsTable& atoms);
+    bool empty() const;
+    JSAtom* front() const;
+    void removeFront();
+    void popFront();
+  };
 
-    ~AtomsTable();
-    bool init();
+  ~AtomsTable();
+  bool init();
 
-    template <typename CharT>
-    MOZ_ALWAYS_INLINE JSAtom* atomizeAndCopyChars(JSContext* cx,
-                                                  const CharT* tbchars, size_t length,
-                                                  PinningBehavior pin,
-                                                  const mozilla::Maybe<uint32_t>& indexValue,
-                                                  const AtomHasher::Lookup& lookup);
+  template <typename CharT>
+  MOZ_ALWAYS_INLINE JSAtom* atomizeAndCopyChars(
+      JSContext* cx, const CharT* tbchars, size_t length, PinningBehavior pin,
+      const mozilla::Maybe<uint32_t>& indexValue,
+      const AtomHasher::Lookup& lookup);
 
-    void pinExistingAtom(JSContext* cx, JSAtom* atom);
+  void pinExistingAtom(JSContext* cx, JSAtom* atom);
 
-    void tracePinnedAtoms(JSTracer* trc, const AutoAccessAtomsZone& access);
+  void tracePinnedAtoms(JSTracer* trc, const AutoAccessAtomsZone& access);
 
-    
-    void sweepAll(JSRuntime* rt);
+  
+  void sweepAll(JSRuntime* rt);
 
-    bool startIncrementalSweep();
+  bool startIncrementalSweep();
 
-    
-    bool sweepIncrementally(SweepIterator& atomsToSweep, SliceBudget& budget);
+  
+  bool sweepIncrementally(SweepIterator& atomsToSweep, SliceBudget& budget);
 
 #ifdef DEBUG
-    bool mainThreadHasAllLocks() const {
-        return allPartitionsLocked;
-    }
+  bool mainThreadHasAllLocks() const { return allPartitionsLocked; }
 #endif
 
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
-  private:
-    
-    MOZ_ALWAYS_INLINE size_t getPartitionIndex(const AtomHasher::Lookup& lookup);
+ private:
+  
+  MOZ_ALWAYS_INLINE size_t getPartitionIndex(const AtomHasher::Lookup& lookup);
 
-    void tracePinnedAtomsInSet(JSTracer* trc, AtomSet& atoms);
-    void mergeAtomsAddedWhileSweeping(Partition& partition);
+  void tracePinnedAtomsInSet(JSTracer* trc, AtomSet& atoms);
+  void mergeAtomsAddedWhileSweeping(Partition& partition);
 
-    friend class AutoLockAllAtoms;
-    void lockAll();
-    void unlockAll();
+  friend class AutoLockAllAtoms;
+  void lockAll();
+  void unlockAll();
 };
 
-} 
+}  
 
 #endif 

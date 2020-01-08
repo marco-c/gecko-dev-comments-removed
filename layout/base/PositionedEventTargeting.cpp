@@ -75,10 +75,9 @@ namespace mozilla {
 
 
 
-struct EventRadiusPrefs
-{
-  uint32_t mVisitedWeight; 
-  uint32_t mSideRadii[4]; 
+struct EventRadiusPrefs {
+  uint32_t mVisitedWeight;  
+  uint32_t mSideRadii[4];   
   bool mEnabled;
   bool mRegistered;
   bool mTouchOnly;
@@ -92,9 +91,7 @@ struct EventRadiusPrefs
 static EventRadiusPrefs sMouseEventRadiusPrefs;
 static EventRadiusPrefs sTouchEventRadiusPrefs;
 
-static const EventRadiusPrefs*
-GetPrefsFor(EventClassID aEventClassID)
-{
+static const EventRadiusPrefs* GetPrefsFor(EventClassID aEventClassID) {
   EventRadiusPrefs* prefs = nullptr;
   const char* prefBranch = nullptr;
   if (aEventClassID == eTouchEventClass) {
@@ -115,24 +112,26 @@ GetPrefsFor(EventClassID aEventClassID)
     Preferences::AddBoolVarCache(&prefs->mEnabled, enabledPref, false);
 
     nsPrintfCString visitedWeightPref("ui.%s.radius.visitedWeight", prefBranch);
-    Preferences::AddUintVarCache(&prefs->mVisitedWeight, visitedWeightPref, 100);
+    Preferences::AddUintVarCache(&prefs->mVisitedWeight, visitedWeightPref,
+                                 100);
 
-    static const char prefNames[4][9] =
-      { "topmm", "rightmm", "bottommm", "leftmm" };
+    static const char prefNames[4][9] = {"topmm", "rightmm", "bottommm",
+                                         "leftmm"};
     for (int32_t i = 0; i < 4; ++i) {
       nsPrintfCString radiusPref("ui.%s.radius.%s", prefBranch, prefNames[i]);
       Preferences::AddUintVarCache(&prefs->mSideRadii[i], radiusPref, 0);
     }
 
     if (aEventClassID == eMouseEventClass) {
-      Preferences::AddBoolVarCache(&prefs->mTouchOnly,
-          "ui.mouse.radius.inputSource.touchOnly", true);
+      Preferences::AddBoolVarCache(
+          &prefs->mTouchOnly, "ui.mouse.radius.inputSource.touchOnly", true);
     } else {
       prefs->mTouchOnly = false;
     }
 
     nsPrintfCString repositionPref("ui.%s.radius.reposition", prefBranch);
-    Preferences::AddBoolVarCache(&prefs->mRepositionEventCoords, repositionPref, false);
+    Preferences::AddBoolVarCache(&prefs->mRepositionEventCoords, repositionPref,
+                                 false);
 
     
     prefs->mTouchClusterDetectionEnabled = false;
@@ -144,9 +143,7 @@ GetPrefsFor(EventClassID aEventClassID)
   return prefs;
 }
 
-static bool
-HasMouseListener(nsIContent* aContent)
-{
+static bool HasMouseListener(nsIContent* aContent) {
   if (EventListenerManager* elm = aContent->GetExistingListenerManager()) {
     return elm->HasListenersFor(nsGkAtoms::onclick) ||
            elm->HasListenersFor(nsGkAtoms::onmousedown) ||
@@ -159,9 +156,7 @@ HasMouseListener(nsIContent* aContent)
 static bool gTouchEventsRegistered = false;
 static int32_t gTouchEventsEnabled = 0;
 
-static bool
-HasTouchListener(nsIContent* aContent)
-{
+static bool HasTouchListener(nsIContent* aContent) {
   EventListenerManager* elm = aContent->GetExistingListenerManager();
   if (!elm) {
     return false;
@@ -169,7 +164,8 @@ HasTouchListener(nsIContent* aContent)
 
   if (!gTouchEventsRegistered) {
     Preferences::AddIntVarCache(&gTouchEventsEnabled,
-      "dom.w3c_touch_events.enabled", gTouchEventsEnabled);
+                                "dom.w3c_touch_events.enabled",
+                                gTouchEventsEnabled);
     gTouchEventsRegistered = true;
   }
 
@@ -181,9 +177,8 @@ HasTouchListener(nsIContent* aContent)
          elm->HasListenersFor(nsGkAtoms::ontouchend);
 }
 
-static bool
-IsDescendant(nsIFrame* aFrame, nsIContent* aAncestor, nsAutoString* aLabelTargetId)
-{
+static bool IsDescendant(nsIFrame* aFrame, nsIContent* aAncestor,
+                         nsAutoString* aLabelTargetId) {
   for (nsIContent* content = aFrame->GetContent(); content;
        content = content->GetFlattenedTreeParent()) {
     if (aLabelTargetId && content->IsHTMLElement(nsGkAtoms::label)) {
@@ -197,9 +192,9 @@ IsDescendant(nsIFrame* aFrame, nsIContent* aAncestor, nsAutoString* aLabelTarget
   return false;
 }
 
-static nsIContent*
-GetClickableAncestor(nsIFrame* aFrame, nsAtom* stopAt = nullptr, nsAutoString* aLabelTargetId = nullptr)
-{
+static nsIContent* GetClickableAncestor(
+    nsIFrame* aFrame, nsAtom* stopAt = nullptr,
+    nsAutoString* aLabelTargetId = nullptr) {
   
   
   for (nsIContent* content = aFrame->GetContent(); content;
@@ -210,10 +205,8 @@ GetClickableAncestor(nsIFrame* aFrame, nsAtom* stopAt = nullptr, nsAutoString* a
     if (HasTouchListener(content) || HasMouseListener(content)) {
       return content;
     }
-    if (content->IsAnyOfHTMLElements(nsGkAtoms::button,
-                                     nsGkAtoms::input,
-                                     nsGkAtoms::select,
-                                     nsGkAtoms::textarea)) {
+    if (content->IsAnyOfHTMLElements(nsGkAtoms::button, nsGkAtoms::input,
+                                     nsGkAtoms::select, nsGkAtoms::textarea)) {
       return content;
     }
     if (content->IsHTMLElement(nsGkAtoms::label)) {
@@ -228,7 +221,8 @@ GetClickableAncestor(nsIFrame* aFrame, nsAtom* stopAt = nullptr, nsAutoString* a
     
     
     if (content->IsHTMLElement(nsGkAtoms::iframe) &&
-        content->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::mozbrowser,
+        content->AsElement()->AttrValueIs(kNameSpaceID_None,
+                                          nsGkAtoms::mozbrowser,
                                           nsGkAtoms::_true, eIgnoreCase) &&
         content->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::remote,
                                           nsGkAtoms::_true, eIgnoreCase)) {
@@ -237,22 +231,18 @@ GetClickableAncestor(nsIFrame* aFrame, nsAtom* stopAt = nullptr, nsAutoString* a
 
     
     
-    if (content->IsAnyOfXULElements(nsGkAtoms::button,
-                                    nsGkAtoms::checkbox,
-                                    nsGkAtoms::radio,
-                                    nsGkAtoms::menu,
-                                    nsGkAtoms::menuitem,
-                                    nsGkAtoms::menulist,
-                                    nsGkAtoms::scrollbarbutton,
-                                    nsGkAtoms::resizer)) {
+    if (content->IsAnyOfXULElements(
+            nsGkAtoms::button, nsGkAtoms::checkbox, nsGkAtoms::radio,
+            nsGkAtoms::menu, nsGkAtoms::menuitem, nsGkAtoms::menulist,
+            nsGkAtoms::scrollbarbutton, nsGkAtoms::resizer)) {
       return content;
     }
 
-    static Element::AttrValuesArray clickableRoles[] =
-      { nsGkAtoms::button, nsGkAtoms::key, nullptr };
-    if (content->IsElement() &&
-        content->AsElement()->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::role,
-                                              clickableRoles, eIgnoreCase) >= 0) {
+    static Element::AttrValuesArray clickableRoles[] = {
+        nsGkAtoms::button, nsGkAtoms::key, nullptr};
+    if (content->IsElement() && content->AsElement()->FindAttrValueIn(
+                                    kNameSpaceID_None, nsGkAtoms::role,
+                                    clickableRoles, eIgnoreCase) >= 0) {
       return content;
     }
     if (content->IsEditable()) {
@@ -266,13 +256,11 @@ GetClickableAncestor(nsIFrame* aFrame, nsAtom* stopAt = nullptr, nsAutoString* a
   return nullptr;
 }
 
-static nscoord
-AppUnitsFromMM(nsIFrame* aFrame, uint32_t aMM)
-{
+static nscoord AppUnitsFromMM(nsIFrame* aFrame, uint32_t aMM) {
   nsPresContext* pc = aFrame->PresContext();
   nsIPresShell* presShell = pc->PresShell();
-  float result = float(aMM) *
-    (pc->DeviceContext()->AppUnitsPerPhysicalInch() / MM_PER_INCH_FLOAT);
+  float result = float(aMM) * (pc->DeviceContext()->AppUnitsPerPhysicalInch() /
+                               MM_PER_INCH_FLOAT);
   if (presShell->ScaleToResolution()) {
     result = result / presShell->GetResolution();
   }
@@ -283,25 +271,23 @@ AppUnitsFromMM(nsIFrame* aFrame, uint32_t aMM)
 
 
 
-static nsRect
-ClipToFrame(nsIFrame* aRootFrame, nsIFrame* aFrame, nsRect& aRect)
-{
+static nsRect ClipToFrame(nsIFrame* aRootFrame, nsIFrame* aFrame,
+                          nsRect& aRect) {
   nsRect bound = nsLayoutUtils::TransformFrameRectToAncestor(
-    aFrame, nsRect(nsPoint(0, 0), aFrame->GetSize()), aRootFrame);
+      aFrame, nsRect(nsPoint(0, 0), aFrame->GetSize()), aRootFrame);
   nsRect result = bound.Intersect(aRect);
   return result;
 }
 
-static nsRect
-GetTargetRect(nsIFrame* aRootFrame, const nsPoint& aPointRelativeToRootFrame,
-              nsIFrame* aRestrictToDescendants, const EventRadiusPrefs* aPrefs,
-              uint32_t aFlags)
-{
+static nsRect GetTargetRect(nsIFrame* aRootFrame,
+                            const nsPoint& aPointRelativeToRootFrame,
+                            nsIFrame* aRestrictToDescendants,
+                            const EventRadiusPrefs* aPrefs, uint32_t aFlags) {
   nsMargin m(AppUnitsFromMM(aRootFrame, aPrefs->mSideRadii[0]),
              AppUnitsFromMM(aRootFrame, aPrefs->mSideRadii[1]),
              AppUnitsFromMM(aRootFrame, aPrefs->mSideRadii[2]),
              AppUnitsFromMM(aRootFrame, aPrefs->mSideRadii[3]));
-  nsRect r(aPointRelativeToRootFrame, nsSize(0,0));
+  nsRect r(aPointRelativeToRootFrame, nsSize(0, 0));
   r.Inflate(m);
   if (!(aFlags & INPUT_IGNORE_ROOT_SCROLL_FRAME)) {
     
@@ -312,18 +298,19 @@ GetTargetRect(nsIFrame* aRootFrame, const nsPoint& aPointRelativeToRootFrame,
   return r;
 }
 
-static float
-ComputeDistanceFromRect(const nsPoint& aPoint, const nsRect& aRect)
-{
-  nscoord dx = std::max(0, std::max(aRect.x - aPoint.x, aPoint.x - aRect.XMost()));
-  nscoord dy = std::max(0, std::max(aRect.y - aPoint.y, aPoint.y - aRect.YMost()));
+static float ComputeDistanceFromRect(const nsPoint& aPoint,
+                                     const nsRect& aRect) {
+  nscoord dx =
+      std::max(0, std::max(aRect.x - aPoint.x, aPoint.x - aRect.XMost()));
+  nscoord dy =
+      std::max(0, std::max(aRect.y - aPoint.y, aPoint.y - aRect.YMost()));
   return float(NS_hypot(dx, dy));
 }
 
-static float
-ComputeDistanceFromRegion(const nsPoint& aPoint, const nsRegion& aRegion)
-{
-  MOZ_ASSERT(!aRegion.IsEmpty(), "can't compute distance between point and empty region");
+static float ComputeDistanceFromRegion(const nsPoint& aPoint,
+                                       const nsRegion& aRegion) {
+  MOZ_ASSERT(!aRegion.IsEmpty(),
+             "can't compute distance between point and empty region");
   float minDist = -1;
   for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
     float dist = ComputeDistanceFromRect(aPoint, iter.Get());
@@ -336,31 +323,30 @@ ComputeDistanceFromRegion(const nsPoint& aPoint, const nsRegion& aRegion)
 
 
 
-static void
-SubtractFromExposedRegion(nsRegion* aExposedRegion, const nsRegion& aRegion)
-{
-  if (aRegion.IsEmpty())
-    return;
+static void SubtractFromExposedRegion(nsRegion* aExposedRegion,
+                                      const nsRegion& aRegion) {
+  if (aRegion.IsEmpty()) return;
 
   nsRegion tmp;
   tmp.Sub(*aExposedRegion, aRegion);
   
   
   
-  if (tmp.GetNumRects() <= 15 || tmp.Area() <= aExposedRegion->Area()/2) {
+  if (tmp.GetNumRects() <= 15 || tmp.Area() <= aExposedRegion->Area() / 2) {
     *aExposedRegion = tmp;
   }
 }
 
 
 
-static bool IsElementPresent(nsTArray<nsIFrame*>& aCandidates, const nsAutoString& aLabelTargetId)
-{
+static bool IsElementPresent(nsTArray<nsIFrame*>& aCandidates,
+                             const nsAutoString& aLabelTargetId) {
   for (uint32_t i = 0; i < aCandidates.Length(); ++i) {
     nsIFrame* f = aCandidates[i];
     nsIContent* aContent = f->GetContent();
     if (aContent && aContent->IsElement()) {
-      if (aContent->GetID() && aLabelTargetId == nsAtomString(aContent->GetID())) {
+      if (aContent->GetID() &&
+          aLabelTargetId == nsAtomString(aContent->GetID())) {
         return true;
       }
     }
@@ -368,28 +354,28 @@ static bool IsElementPresent(nsTArray<nsIFrame*>& aCandidates, const nsAutoStrin
   return false;
 }
 
-static bool
-IsLargeElement(nsIFrame* aFrame, const EventRadiusPrefs* aPrefs)
-{
+static bool IsLargeElement(nsIFrame* aFrame, const EventRadiusPrefs* aPrefs) {
   uint32_t keepLimitSizeForCluster = aPrefs->mKeepLimitSizeForCluster;
   nsSize frameSize = aFrame->GetSize();
   nsPresContext* pc = aFrame->PresContext();
   nsIPresShell* presShell = pc->PresShell();
   float cumulativeResolution = presShell->GetCumulativeResolution();
-  if ((pc->AppUnitsToGfxUnits(frameSize.height) * cumulativeResolution) > keepLimitSizeForCluster &&
-      (pc->AppUnitsToGfxUnits(frameSize.width) * cumulativeResolution) > keepLimitSizeForCluster) {
+  if ((pc->AppUnitsToGfxUnits(frameSize.height) * cumulativeResolution) >
+          keepLimitSizeForCluster &&
+      (pc->AppUnitsToGfxUnits(frameSize.width) * cumulativeResolution) >
+          keepLimitSizeForCluster) {
     return true;
   }
   return false;
 }
 
-static nsIFrame*
-GetClosest(nsIFrame* aRoot, const nsPoint& aPointRelativeToRootFrame,
-           const nsRect& aTargetRect, const EventRadiusPrefs* aPrefs,
-           nsIFrame* aRestrictToDescendants, nsIContent* aClickableAncestor,
-           nsTArray<nsIFrame*>& aCandidates, int32_t* aElementsInCluster)
-{
+static nsIFrame* GetClosest(
+    nsIFrame* aRoot, const nsPoint& aPointRelativeToRootFrame,
+    const nsRect& aTargetRect, const EventRadiusPrefs* aPrefs,
+    nsIFrame* aRestrictToDescendants, nsIContent* aClickableAncestor,
+    nsTArray<nsIFrame*>& aCandidates, int32_t* aElementsInCluster) {
   std::vector<nsIContent*> mContentsInCluster;  
+                                                
   nsIFrame* bestTarget = nullptr;
   
   float bestDistance = 1e6f;
@@ -399,8 +385,9 @@ GetClosest(nsIFrame* aRoot, const nsPoint& aPointRelativeToRootFrame,
     PET_LOG("Checking candidate %p\n", f);
 
     bool preservesAxisAlignedRectangles = false;
-    nsRect borderBox = nsLayoutUtils::TransformFrameRectToAncestor(f,
-        nsRect(nsPoint(0, 0), f->GetSize()), aRoot, &preservesAxisAlignedRectangles);
+    nsRect borderBox = nsLayoutUtils::TransformFrameRectToAncestor(
+        f, nsRect(nsPoint(0, 0), f->GetSize()), aRoot,
+        &preservesAxisAlignedRectangles);
     nsRegion region;
     region.And(exposedRegion, borderBox);
     if (region.IsEmpty()) {
@@ -415,24 +402,29 @@ GetClosest(nsIFrame* aRoot, const nsPoint& aPointRelativeToRootFrame,
     }
 
     nsAutoString labelTargetId;
-    if (aClickableAncestor && !IsDescendant(f, aClickableAncestor, &labelTargetId)) {
+    if (aClickableAncestor &&
+        !IsDescendant(f, aClickableAncestor, &labelTargetId)) {
       PET_LOG("  candidate %p is not a descendant of required ancestor\n", f);
       continue;
     }
 
-    nsIContent* clickableContent = GetClickableAncestor(f, nsGkAtoms::body, &labelTargetId);
+    nsIContent* clickableContent =
+        GetClickableAncestor(f, nsGkAtoms::body, &labelTargetId);
     if (!aClickableAncestor && !clickableContent) {
       PET_LOG("  candidate %p was not clickable\n", f);
       continue;
     }
     
     
-    if (bestTarget && nsLayoutUtils::IsProperAncestorFrameCrossDoc(f, bestTarget, aRoot)) {
+    if (bestTarget &&
+        nsLayoutUtils::IsProperAncestorFrameCrossDoc(f, bestTarget, aRoot)) {
       PET_LOG("  candidate %p was ancestor for bestTarget %p\n", f, bestTarget);
       continue;
     }
-    if (!aClickableAncestor && !nsLayoutUtils::IsAncestorFrameCrossDoc(aRestrictToDescendants, f, aRoot)) {
-      PET_LOG("  candidate %p was not descendant of restrictroot %p\n", f, aRestrictToDescendants);
+    if (!aClickableAncestor && !nsLayoutUtils::IsAncestorFrameCrossDoc(
+                                   aRestrictToDescendants, f, aRoot)) {
+      PET_LOG("  candidate %p was not descendant of restrictroot %p\n", f,
+              aRestrictToDescendants);
       continue;
     }
 
@@ -440,19 +432,22 @@ GetClosest(nsIFrame* aRoot, const nsPoint& aPointRelativeToRootFrame,
     
     
     
-    if ((labelTargetId.IsEmpty() || !IsElementPresent(aCandidates, labelTargetId)) &&
+    if ((labelTargetId.IsEmpty() ||
+         !IsElementPresent(aCandidates, labelTargetId)) &&
         !IsLargeElement(f, aPrefs)) {
-      if (std::find(mContentsInCluster.begin(), mContentsInCluster.end(), clickableContent) == mContentsInCluster.end()) {
+      if (std::find(mContentsInCluster.begin(), mContentsInCluster.end(),
+                    clickableContent) == mContentsInCluster.end()) {
         mContentsInCluster.push_back(clickableContent);
       }
     }
 
     
-    float distance = ComputeDistanceFromRegion(aPointRelativeToRootFrame, region);
+    float distance =
+        ComputeDistanceFromRegion(aPointRelativeToRootFrame, region);
     nsIContent* content = f->GetContent();
     if (content && content->IsElement() &&
         content->AsElement()->State().HasState(
-                                        EventStates(NS_EVENT_STATE_VISITED))) {
+            EventStates(NS_EVENT_STATE_VISITED))) {
       distance *= aPrefs->mVisitedWeight / 100.0f;
     }
     if (distance < bestDistance) {
@@ -476,9 +471,9 @@ GetClosest(nsIFrame* aRoot, const nsPoint& aPointRelativeToRootFrame,
 
 
 
-static bool
-IsElementClickableAndReadable(nsIFrame* aFrame, WidgetGUIEvent* aEvent, const EventRadiusPrefs* aPrefs)
-{
+static bool IsElementClickableAndReadable(nsIFrame* aFrame,
+                                          WidgetGUIEvent* aEvent,
+                                          const EventRadiusPrefs* aPrefs) {
   if (!aPrefs->mTouchClusterDetectionEnabled) {
     return true;
   }
@@ -496,8 +491,10 @@ IsElementClickableAndReadable(nsIFrame* aFrame, WidgetGUIEvent* aEvent, const Ev
   nsPresContext* pc = aFrame->PresContext();
   nsIPresShell* presShell = pc->PresShell();
   float cumulativeResolution = presShell->GetCumulativeResolution();
-  if ((pc->AppUnitsToGfxUnits(frameSize.height) * cumulativeResolution) < limitReadableSize ||
-      (pc->AppUnitsToGfxUnits(frameSize.width) * cumulativeResolution) < limitReadableSize) {
+  if ((pc->AppUnitsToGfxUnits(frameSize.height) * cumulativeResolution) <
+          limitReadableSize ||
+      (pc->AppUnitsToGfxUnits(frameSize.width) * cumulativeResolution) <
+          limitReadableSize) {
     return false;
   }
   
@@ -505,16 +502,18 @@ IsElementClickableAndReadable(nsIFrame* aFrame, WidgetGUIEvent* aEvent, const Ev
   
   
   
-  nsIContent *content = aFrame->GetContent();
+  nsIContent* content = aFrame->GetContent();
   bool testFontSize = false;
   if (content) {
     nsINodeList* childNodes = content->ChildNodes();
     uint32_t childNodeCount = childNodes->Length();
     if ((content->IsText()) ||
-      
+        
+        
 
-      (childNodeCount == 1 && childNodes->Item(0) &&
-        childNodes->Item(0)->IsText())) {
+        (childNodeCount == 1 && childNodes->Item(0) &&
+         childNodes->Item(0)->IsText())) {
+      
       
       
       
@@ -528,9 +527,10 @@ IsElementClickableAndReadable(nsIFrame* aFrame, WidgetGUIEvent* aEvent, const Ev
 
   if (testFontSize) {
     RefPtr<nsFontMetrics> fm =
-      nsLayoutUtils::GetInflatedFontMetricsForFrame(aFrame);
-    if (fm && fm->EmHeight() > 0 && 
-        (pc->AppUnitsToGfxUnits(fm->EmHeight()) * cumulativeResolution) < limitReadableSize) {
+        nsLayoutUtils::GetInflatedFontMetricsForFrame(aFrame);
+    if (fm && fm->EmHeight() > 0 &&  
+        (pc->AppUnitsToGfxUnits(fm->EmHeight()) * cumulativeResolution) <
+            limitReadableSize) {
       return false;
     }
   }
@@ -538,20 +538,23 @@ IsElementClickableAndReadable(nsIFrame* aFrame, WidgetGUIEvent* aEvent, const Ev
   return true;
 }
 
-nsIFrame*
-FindFrameTargetedByInputEvent(WidgetGUIEvent* aEvent,
-                              nsIFrame* aRootFrame,
-                              const nsPoint& aPointRelativeToRootFrame,
-                              uint32_t aFlags)
-{
-  uint32_t flags = (aFlags & INPUT_IGNORE_ROOT_SCROLL_FRAME) ?
-     nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME : 0;
-  nsIFrame* target =
-    nsLayoutUtils::GetFrameForPoint(aRootFrame, aPointRelativeToRootFrame, flags);
-  PET_LOG("Found initial target %p for event class %s point %s relative to root frame %p\n",
-    target, (aEvent->mClass == eMouseEventClass ? "mouse" :
-             (aEvent->mClass == eTouchEventClass ? "touch" : "other")),
-    mozilla::layers::Stringify(aPointRelativeToRootFrame).c_str(), aRootFrame);
+nsIFrame* FindFrameTargetedByInputEvent(
+    WidgetGUIEvent* aEvent, nsIFrame* aRootFrame,
+    const nsPoint& aPointRelativeToRootFrame, uint32_t aFlags) {
+  uint32_t flags = (aFlags & INPUT_IGNORE_ROOT_SCROLL_FRAME)
+                       ? nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME
+                       : 0;
+  nsIFrame* target = nsLayoutUtils::GetFrameForPoint(
+      aRootFrame, aPointRelativeToRootFrame, flags);
+  PET_LOG(
+      "Found initial target %p for event class %s point %s relative to root "
+      "frame %p\n",
+      target,
+      (aEvent->mClass == eMouseEventClass
+           ? "mouse"
+           : (aEvent->mClass == eTouchEventClass ? "touch" : "other")),
+      mozilla::layers::Stringify(aPointRelativeToRootFrame).c_str(),
+      aRootFrame);
 
   const EventRadiusPrefs* prefs = GetPrefsFor(aEvent->mClass);
   if (!prefs || !prefs->mEnabled) {
@@ -576,10 +579,9 @@ FindFrameTargetedByInputEvent(WidgetGUIEvent* aEvent,
 
   
   
-  if (aEvent->mClass == eMouseEventClass &&
-      prefs->mTouchOnly &&
+  if (aEvent->mClass == eMouseEventClass && prefs->mTouchOnly &&
       aEvent->AsMouseEvent()->inputSource !=
-        MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+          MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
     PET_LOG("Mouse input event is not from a touch source\n");
     return target;
   }
@@ -589,25 +591,25 @@ FindFrameTargetedByInputEvent(WidgetGUIEvent* aEvent,
   
   
   
-  nsIFrame* restrictToDescendants = target ?
-    target->PresShell()->GetRootFrame() : aRootFrame;
+  nsIFrame* restrictToDescendants =
+      target ? target->PresShell()->GetRootFrame() : aRootFrame;
 
   nsRect targetRect = GetTargetRect(aRootFrame, aPointRelativeToRootFrame,
                                     restrictToDescendants, prefs, aFlags);
   PET_LOG("Expanded point to target rect %s\n",
-    mozilla::layers::Stringify(targetRect).c_str());
-  AutoTArray<nsIFrame*,8> candidates;
-  nsresult rv = nsLayoutUtils::GetFramesForArea(aRootFrame, targetRect, candidates, flags);
+          mozilla::layers::Stringify(targetRect).c_str());
+  AutoTArray<nsIFrame*, 8> candidates;
+  nsresult rv = nsLayoutUtils::GetFramesForArea(aRootFrame, targetRect,
+                                                candidates, flags);
   if (NS_FAILED(rv)) {
     return target;
   }
 
   int32_t elementsInCluster = 0;
 
-  nsIFrame* closestClickable =
-    GetClosest(aRootFrame, aPointRelativeToRootFrame, targetRect, prefs,
-               restrictToDescendants, clickableAncestor, candidates,
-               &elementsInCluster);
+  nsIFrame* closestClickable = GetClosest(
+      aRootFrame, aPointRelativeToRootFrame, targetRect, prefs,
+      restrictToDescendants, clickableAncestor, candidates, &elementsInCluster);
   if (closestClickable) {
     if ((prefs->mTouchClusterDetectionEnabled && elementsInCluster > 1) ||
         (!IsElementClickableAndReadable(closestClickable, aEvent, prefs))) {
@@ -633,11 +635,13 @@ FindFrameTargetedByInputEvent(WidgetGUIEvent* aEvent,
   
   
   nsPoint point = aPointRelativeToRootFrame;
-  if (nsLayoutUtils::TRANSFORM_SUCCEEDED != nsLayoutUtils::TransformPoint(aRootFrame, target, point)) {
+  if (nsLayoutUtils::TRANSFORM_SUCCEEDED !=
+      nsLayoutUtils::TransformPoint(aRootFrame, target, point)) {
     return target;
   }
   point = target->GetRectRelativeToSelf().ClampPoint(point);
-  if (nsLayoutUtils::TRANSFORM_SUCCEEDED != nsLayoutUtils::TransformPoint(target, aRootFrame, point)) {
+  if (nsLayoutUtils::TRANSFORM_SUCCEEDED !=
+      nsLayoutUtils::TransformPoint(target, aRootFrame, point)) {
     return target;
   }
   
@@ -647,7 +651,7 @@ FindFrameTargetedByInputEvent(WidgetGUIEvent* aEvent,
     return target;
   }
   LayoutDeviceIntPoint widgetPoint = nsLayoutUtils::TranslateViewToWidget(
-        aRootFrame->PresContext(), view, point, aEvent->mWidget);
+      aRootFrame->PresContext(), view, point, aEvent->mWidget);
   if (widgetPoint.x != NS_UNCONSTRAINEDSIZE) {
     
     aEvent->mRefPoint = widgetPoint;
@@ -655,4 +659,4 @@ FindFrameTargetedByInputEvent(WidgetGUIEvent* aEvent,
   return target;
 }
 
-} 
+}  

@@ -17,10 +17,10 @@
 namespace mozilla {
 namespace dom {
 
-class HTMLMeterElement final : public nsGenericHTMLElement
-{
-public:
-  explicit HTMLMeterElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+class HTMLMeterElement final : public nsGenericHTMLElement {
+ public:
+  explicit HTMLMeterElement(
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   virtual EventStates IntrinsicState() const override;
 
@@ -35,53 +35,47 @@ public:
 
   
   double Value() const;
-  void SetValue(double aValue, ErrorResult& aRv)
-  {
+  void SetValue(double aValue, ErrorResult& aRv) {
     SetDoubleAttr(nsGkAtoms::value, aValue, aRv);
   }
 
   
   double Min() const;
-  void SetMin(double aValue, ErrorResult& aRv)
-  {
+  void SetMin(double aValue, ErrorResult& aRv) {
     SetDoubleAttr(nsGkAtoms::min, aValue, aRv);
   }
 
   
   double Max() const;
-  void SetMax(double aValue, ErrorResult& aRv)
-  {
+  void SetMax(double aValue, ErrorResult& aRv) {
     SetDoubleAttr(nsGkAtoms::max, aValue, aRv);
   }
 
   
   double Low() const;
-  void SetLow(double aValue, ErrorResult& aRv)
-  {
+  void SetLow(double aValue, ErrorResult& aRv) {
     SetDoubleAttr(nsGkAtoms::low, aValue, aRv);
   }
 
   
   double High() const;
-  void SetHigh(double aValue, ErrorResult& aRv)
-  {
+  void SetHigh(double aValue, ErrorResult& aRv) {
     SetDoubleAttr(nsGkAtoms::high, aValue, aRv);
   }
 
   
   double Optimum() const;
-  void SetOptimum(double aValue, ErrorResult& aRv)
-  {
+  void SetOptimum(double aValue, ErrorResult& aRv) {
     SetDoubleAttr(nsGkAtoms::optimum, aValue, aRv);
   }
 
-protected:
+ protected:
   virtual ~HTMLMeterElement();
 
-  virtual JSObject* WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapNode(JSContext* aCx,
+                             JS::Handle<JSObject*> aGivenProto) override;
 
-private:
-
+ private:
   static const double kDefaultValue;
   static const double kDefaultMin;
   static const double kDefaultMax;
@@ -99,7 +93,7 @@ private:
   EventStates GetOptimumState() const;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

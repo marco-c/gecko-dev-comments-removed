@@ -9,7 +9,7 @@
 #ifndef BASE_STRING_UTIL_H_
 #define BASE_STRING_UTIL_H_
 
-#include <stdarg.h>   
+#include <stdarg.h>  
 #include <ctype.h>
 
 #include <string>
@@ -47,8 +47,8 @@ int vsnprintf(char* buffer, size_t size, const char* format, va_list arguments);
 
 
 
-int vswprintf(wchar_t* buffer, size_t size,
-              const wchar_t* format, va_list arguments);
+int vswprintf(wchar_t* buffer, size_t size, const wchar_t* format,
+              va_list arguments);
 
 
 
@@ -120,22 +120,19 @@ bool IsWprintfFormatPortable(const wchar_t* format);
 
 
 enum TrimPositions {
-  TRIM_NONE     = 0,
-  TRIM_LEADING  = 1 << 0,
+  TRIM_NONE = 0,
+  TRIM_LEADING = 1 << 0,
   TRIM_TRAILING = 1 << 1,
-  TRIM_ALL      = TRIM_LEADING | TRIM_TRAILING
+  TRIM_ALL = TRIM_LEADING | TRIM_TRAILING
 };
-TrimPositions TrimWhitespace(const std::wstring& input,
-                             TrimPositions positions,
+TrimPositions TrimWhitespace(const std::wstring& input, TrimPositions positions,
                              std::wstring* output);
 TrimPositions TrimWhitespaceASCII(const std::string& input,
-                                  TrimPositions positions,
-                                  std::string* output);
+                                  TrimPositions positions, std::string* output);
 
 
 
-TrimPositions TrimWhitespace(const std::string& input,
-                             TrimPositions positions,
+TrimPositions TrimWhitespace(const std::string& input, TrimPositions positions,
                              std::string* output);
 
 
@@ -213,8 +210,8 @@ std::wstring StringPrintf(const wchar_t* format, ...);
 
 
 const std::string& SStringPrintf(std::string* dst, const char* format, ...);
-const std::wstring& SStringPrintf(std::wstring* dst,
-                                  const wchar_t* format, ...);
+const std::wstring& SStringPrintf(std::wstring* dst, const wchar_t* format,
+                                  ...);
 
 
 void StringAppendF(std::string* dst, const char* format, ...);
@@ -227,11 +224,8 @@ void StringAppendF(std::wstring* dst, const wchar_t* format, ...);
 
 
 
-void SplitString(const std::wstring& str,
-                 wchar_t s,
+void SplitString(const std::wstring& str, wchar_t s,
                  std::vector<std::wstring>* r);
-void SplitString(const std::string& str,
-                 char s,
-                 std::vector<std::string>* r);
+void SplitString(const std::string& str, char s, std::vector<std::string>* r);
 
 #endif  

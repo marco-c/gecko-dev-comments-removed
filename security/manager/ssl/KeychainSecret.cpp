@@ -21,9 +21,7 @@ KeychainSecret::KeychainSecret() {}
 
 KeychainSecret::~KeychainSecret() {}
 
-nsresult
-KeychainSecret::Lock()
-{
+nsresult KeychainSecret::Lock() {
   
   
   OSStatus rv = SecKeychainLock(nullptr);
@@ -35,9 +33,7 @@ KeychainSecret::Lock()
   return NS_OK;
 }
 
-nsresult
-KeychainSecret::Unlock()
-{
+nsresult KeychainSecret::Unlock() {
   
   
   
@@ -51,21 +47,16 @@ KeychainSecret::Unlock()
   return NS_OK;
 }
 
-ScopedCFType<CFStringRef>
-MozillaStringToCFString(const nsACString& stringIn)
-{
+ScopedCFType<CFStringRef> MozillaStringToCFString(const nsACString& stringIn) {
   
-  ScopedCFType<CFStringRef> stringOut(
-    CFStringCreateWithBytes(
+  ScopedCFType<CFStringRef> stringOut(CFStringCreateWithBytes(
       nullptr, reinterpret_cast<const UInt8*>(stringIn.BeginReading()),
       stringIn.Length(), kCFStringEncodingUTF8, false));
   return stringOut;
 }
 
-nsresult
-KeychainSecret::StoreSecret(const nsACString& aSecret,
-                            const nsACString& aLabel)
-{
+nsresult KeychainSecret::StoreSecret(const nsACString& aSecret,
+                                     const nsACString& aLabel) {
   
   
   
@@ -78,32 +69,26 @@ KeychainSecret::StoreSecret(const nsACString& aSecret,
   
   
   
-  const CFStringRef keys[] = { kSecClass,
-                               kSecAttrAccount,
-                               kSecValueData };
+  const CFStringRef keys[] = {kSecClass, kSecAttrAccount, kSecValueData};
   ScopedCFType<CFStringRef> label(MozillaStringToCFString(aLabel));
   if (!label) {
     MOZ_LOG(gKeychainSecretLog, LogLevel::Debug,
             ("MozillaStringToCFString failed"));
     return NS_ERROR_FAILURE;
   }
-  ScopedCFType<CFDataRef> secret(
-    CFDataCreate(
+  ScopedCFType<CFDataRef> secret(CFDataCreate(
       nullptr, reinterpret_cast<const UInt8*>(aSecret.BeginReading()),
       aSecret.Length()));
   if (!secret) {
     MOZ_LOG(gKeychainSecretLog, LogLevel::Debug, ("CFDataCreate failed"));
     return NS_ERROR_FAILURE;
   }
-  const void* values[] = { kSecClassGenericPassword,
-                           label.get(),
-                           secret.get() };
+  const void* values[] = {kSecClassGenericPassword, label.get(), secret.get()};
   static_assert(ArrayLength(keys) == ArrayLength(values),
                 "mismatched SecItemAdd key/value array sizes");
-  ScopedCFType<CFDictionaryRef> addDictionary(
-    CFDictionaryCreate(nullptr, (const void**)&keys, (const void**)&values,
-                       ArrayLength(keys), &kCFTypeDictionaryKeyCallBacks,
-                       &kCFTypeDictionaryValueCallBacks));
+  ScopedCFType<CFDictionaryRef> addDictionary(CFDictionaryCreate(
+      nullptr, (const void**)&keys, (const void**)&values, ArrayLength(keys),
+      &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks));
   
   
   
@@ -118,27 +103,24 @@ KeychainSecret::StoreSecret(const nsACString& aSecret,
   return NS_OK;
 }
 
-nsresult
-KeychainSecret::DeleteSecret(const nsACString& aLabel)
-{
+nsresult KeychainSecret::DeleteSecret(const nsACString& aLabel) {
   
   
   
   
-  const CFStringRef keys[] = { kSecClass, kSecAttrAccount };
+  const CFStringRef keys[] = {kSecClass, kSecAttrAccount};
   ScopedCFType<CFStringRef> label(MozillaStringToCFString(aLabel));
   if (!label) {
     MOZ_LOG(gKeychainSecretLog, LogLevel::Debug,
             ("MozillaStringToCFString failed"));
     return NS_ERROR_FAILURE;
   }
-  const void* values[] = { kSecClassGenericPassword, label.get() };
+  const void* values[] = {kSecClassGenericPassword, label.get()};
   static_assert(ArrayLength(keys) == ArrayLength(values),
                 "mismatched SecItemDelete key/value array sizes");
-  ScopedCFType<CFDictionaryRef> deleteDictionary(
-    CFDictionaryCreate(nullptr, (const void**)&keys, (const void**)&values,
-                       ArrayLength(keys), &kCFTypeDictionaryKeyCallBacks,
-                       &kCFTypeDictionaryValueCallBacks));
+  ScopedCFType<CFDictionaryRef> deleteDictionary(CFDictionaryCreate(
+      nullptr, (const void**)&keys, (const void**)&values, ArrayLength(keys),
+      &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks));
   
   OSStatus rv = SecItemDelete(deleteDictionary.get());
   if (rv != errSecSuccess && rv != errSecItemNotFound) {
@@ -149,10 +131,8 @@ KeychainSecret::DeleteSecret(const nsACString& aLabel)
   return NS_OK;
 }
 
-nsresult
-KeychainSecret::RetrieveSecret(const nsACString& aLabel,
-                           nsACString& aSecret)
-{
+nsresult KeychainSecret::RetrieveSecret(const nsACString& aLabel,
+                                         nsACString& aSecret) {
   
   
   
@@ -162,28 +142,21 @@ KeychainSecret::RetrieveSecret(const nsACString& aLabel,
   
   
   
-  const CFStringRef keys[] = { kSecClass,
-                               kSecAttrAccount,
-                               kSecMatchLimit,
-                               kSecReturnAttributes,
-                               kSecReturnData };
+  const CFStringRef keys[] = {kSecClass, kSecAttrAccount, kSecMatchLimit,
+                              kSecReturnAttributes, kSecReturnData};
   ScopedCFType<CFStringRef> label(MozillaStringToCFString(aLabel));
   if (!label) {
     MOZ_LOG(gKeychainSecretLog, LogLevel::Debug,
             ("MozillaStringToCFString failed"));
     return NS_ERROR_FAILURE;
   }
-  const void* values[] = { kSecClassGenericPassword,
-                           label.get(),
-                           kSecMatchLimitOne,
-                           kCFBooleanTrue,
-                           kCFBooleanTrue };
+  const void* values[] = {kSecClassGenericPassword, label.get(),
+                          kSecMatchLimitOne, kCFBooleanTrue, kCFBooleanTrue};
   static_assert(ArrayLength(keys) == ArrayLength(values),
                 "mismatched SecItemCopyMatching key/value array sizes");
-  ScopedCFType<CFDictionaryRef> searchDictionary(
-    CFDictionaryCreate(nullptr, (const void**)&keys, (const void**)&values,
-                       ArrayLength(keys), &kCFTypeDictionaryKeyCallBacks,
-                       &kCFTypeDictionaryValueCallBacks));
+  ScopedCFType<CFDictionaryRef> searchDictionary(CFDictionaryCreate(
+      nullptr, (const void**)&keys, (const void**)&values, ArrayLength(keys),
+      &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks));
   CFTypeRef item;
   
   OSStatus rv = SecItemCopyMatching(searchDictionary.get(), &item);
@@ -193,9 +166,9 @@ KeychainSecret::RetrieveSecret(const nsACString& aLabel,
     return NS_ERROR_FAILURE;
   }
   ScopedCFType<CFDictionaryRef> dictionary(
-    reinterpret_cast<CFDictionaryRef>(item));
+      reinterpret_cast<CFDictionaryRef>(item));
   CFDataRef secret = reinterpret_cast<CFDataRef>(
-    CFDictionaryGetValue(dictionary.get(), kSecValueData));
+      CFDictionaryGetValue(dictionary.get(), kSecValueData));
   if (!secret) {
     MOZ_LOG(gKeychainSecretLog, LogLevel::Debug,
             ("CFDictionaryGetValue failed"));

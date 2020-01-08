@@ -14,8 +14,7 @@ namespace ipc {
 
 void SetThisProcessName(const char *aName);
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

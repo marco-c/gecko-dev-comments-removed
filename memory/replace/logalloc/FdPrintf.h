@@ -17,11 +17,10 @@
 
 
 
-extern void
-FdPrintf(intptr_t aFd, const char* aFormat, ...)
+extern void FdPrintf(intptr_t aFd, const char* aFormat, ...)
 #ifdef __GNUC__
-  __attribute__((format(printf, 2, 3)))
+    __attribute__((format(printf, 2, 3)))
 #endif
-  ;
+    ;
 
 #endif 

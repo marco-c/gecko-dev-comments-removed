@@ -25,14 +25,13 @@ namespace mscom {
 
 class StructToStream;
 
-} 
+}  
 
 namespace a11y {
 
-class HandlerProvider final : public IGeckoBackChannel
-                            , public mscom::IHandlerProvider
-{
-public:
+class HandlerProvider final : public IGeckoBackChannel,
+                              public mscom::IHandlerProvider {
+ public:
   HandlerProvider(REFIID aIid, mscom::InterceptorTargetPtr<IUnknown> aTarget);
 
   
@@ -48,30 +47,28 @@ public:
                                    NotNull<IStream*> aStream) override;
   STDMETHODIMP_(REFIID) MarshalAs(REFIID aIid) override;
   STDMETHODIMP DisconnectHandlerRemotes() override;
-  STDMETHODIMP_(REFIID) GetEffectiveOutParamIid(REFIID aCallIid,
-                                                ULONG aCallMethod) override;
-  STDMETHODIMP NewInstance(REFIID aIid,
-                           mscom::InterceptorTargetPtr<IUnknown> aTarget,
-                           NotNull<mscom::IHandlerProvider**> aOutNewPayload) override;
+  STDMETHODIMP_(REFIID)
+  GetEffectiveOutParamIid(REFIID aCallIid, ULONG aCallMethod) override;
+  STDMETHODIMP NewInstance(
+      REFIID aIid, mscom::InterceptorTargetPtr<IUnknown> aTarget,
+      NotNull<mscom::IHandlerProvider**> aOutNewPayload) override;
 
   
   STDMETHODIMP put_HandlerControl(long aPid, IHandlerControl* aCtrl) override;
   STDMETHODIMP Refresh(DynamicIA2Data* aOutData) override;
-  STDMETHODIMP get_AllTextInfo(BSTR* aText,
-                               IAccessibleHyperlink*** aHyperlinks,
-                               long* aNHyperlinks,
-                               IA2TextSegment** aAttribRuns,
+  STDMETHODIMP get_AllTextInfo(BSTR* aText, IAccessibleHyperlink*** aHyperlinks,
+                               long* aNHyperlinks, IA2TextSegment** aAttribRuns,
                                long* aNAttribRuns) override;
   STDMETHODIMP get_RelationsInfo(IARelationData** aRelations,
                                  long* aNRelations) override;
   STDMETHODIMP get_AllChildren(AccChildData** aChildren,
                                ULONG* aNChildren) override;
 
-private:
+ private:
   ~HandlerProvider() = default;
 
-  void SetHandlerControlOnMainThread(DWORD aPid,
-                                     mscom::ProxyUniquePtr<IHandlerControl> aCtrl);
+  void SetHandlerControlOnMainThread(
+      DWORD aPid, mscom::ProxyUniquePtr<IHandlerControl> aCtrl);
   void GetAndSerializePayload(const MutexAutoLock&,
                               NotNull<mscom::IInterceptor*> aInterceptor);
   void BuildStaticIA2Data(NotNull<mscom::IInterceptor*> aInterceptor,
@@ -87,28 +84,28 @@ private:
   
   
   
-  template<typename Interface> HRESULT ToWrappedObject(Interface** aObj);
+  template <typename Interface>
+  HRESULT ToWrappedObject(Interface** aObj);
   void GetAllTextInfoMainThread(BSTR* aText,
                                 IAccessibleHyperlink*** aHyperlinks,
                                 long* aNHyperlinks,
                                 IA2TextSegment** aAttribRuns,
-                                long* aNAttribRuns,
-                                HRESULT* result);
+                                long* aNAttribRuns, HRESULT* result);
   void GetRelationsInfoMainThread(IARelationData** aRelations,
-                                  long* aNRelations,
-                                  HRESULT* result);
+                                  long* aNRelations, HRESULT* result);
   void GetAllChildrenMainThread(AccChildData** aChildren, ULONG* aNChildren,
                                 HRESULT* result);
 
-  Atomic<uint32_t>                  mRefCnt;
-  Mutex                             mMutex; 
-  const IID                         mTargetUnkIid;
-  mscom::InterceptorTargetPtr<IUnknown> mTargetUnk; 
-  UniquePtr<mscom::StructToStream>  mSerializer;
-  RefPtr<IUnknown>                  mFastMarshalUnk;
+  Atomic<uint32_t> mRefCnt;
+  Mutex mMutex;  
+  const IID mTargetUnkIid;
+  mscom::InterceptorTargetPtr<IUnknown>
+      mTargetUnk;  
+  UniquePtr<mscom::StructToStream> mSerializer;
+  RefPtr<IUnknown> mFastMarshalUnk;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

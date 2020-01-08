@@ -26,16 +26,14 @@ namespace mozilla {
 
 
 
-class SVGNumberList
-{
+class SVGNumberList {
   friend class SVGAnimatedNumberList;
   friend class DOMSVGNumberList;
   friend class DOMSVGNumber;
 
-public:
-
-  SVGNumberList(){}
-  ~SVGNumberList(){}
+ public:
+  SVGNumberList() {}
+  ~SVGNumberList() {}
 
   
   
@@ -43,17 +41,11 @@ public:
   
   void GetValueAsString(nsAString& aValue) const;
 
-  bool IsEmpty() const {
-    return mNumbers.IsEmpty();
-  }
+  bool IsEmpty() const { return mNumbers.IsEmpty(); }
 
-  uint32_t Length() const {
-    return mNumbers.Length();
-  }
+  uint32_t Length() const { return mNumbers.Length(); }
 
-  const float& operator[](uint32_t aIndex) const {
-    return mNumbers[aIndex];
-  }
+  const float& operator[](uint32_t aIndex) const { return mNumbers[aIndex]; }
 
   bool operator==(const SVGNumberList& rhs) const {
     return mNumbers == rhs.mNumbers;
@@ -63,9 +55,7 @@ public:
     return mNumbers.SetCapacity(size, fallible);
   }
 
-  void Compact() {
-    mNumbers.Compact();
-  }
+  void Compact() { mNumbers.Compact(); }
 
   
   
@@ -74,17 +64,14 @@ public:
   
   
 
-protected:
-
+ protected:
   
 
 
 
   nsresult CopyFrom(const SVGNumberList& rhs);
 
-  float& operator[](uint32_t aIndex) {
-    return mNumbers[aIndex];
-  }
+  float& operator[](uint32_t aIndex) { return mNumbers[aIndex]; }
 
   
 
@@ -94,26 +81,23 @@ protected:
     return mNumbers.SetLength(aNumberOfItems, fallible);
   }
 
-private:
-
+ private:
   
   
   
 
   nsresult SetValueFromString(const nsAString& aValue);
 
-  void Clear() {
-    mNumbers.Clear();
-  }
+  void Clear() { mNumbers.Clear(); }
 
-  bool InsertItem(uint32_t aIndex, const float &aNumber) {
+  bool InsertItem(uint32_t aIndex, const float& aNumber) {
     if (aIndex >= mNumbers.Length()) {
       aIndex = mNumbers.Length();
     }
     return !!mNumbers.InsertElementAt(aIndex, aNumber, fallible);
   }
 
-  void ReplaceItem(uint32_t aIndex, const float &aNumber) {
+  void ReplaceItem(uint32_t aIndex, const float& aNumber) {
     MOZ_ASSERT(aIndex < mNumbers.Length(),
                "DOM wrapper caller should have raised INDEX_SIZE_ERR");
     mNumbers[aIndex] = aNumber;
@@ -129,8 +113,7 @@ private:
     return !!mNumbers.AppendElement(aNumber, fallible);
   }
 
-protected:
-
+ protected:
   
 
 
@@ -144,20 +127,14 @@ protected:
 
 
 
+class SVGNumberListAndInfo : public SVGNumberList {
+ public:
+  SVGNumberListAndInfo() : mElement(nullptr) {}
 
-class SVGNumberListAndInfo : public SVGNumberList
-{
-public:
+  explicit SVGNumberListAndInfo(nsSVGElement* aElement)
+      : mElement(do_GetWeakReference(static_cast<nsINode*>(aElement))) {}
 
-  SVGNumberListAndInfo()
-    : mElement(nullptr)
-  {}
-
-  explicit SVGNumberListAndInfo(nsSVGElement *aElement)
-    : mElement(do_GetWeakReference(static_cast<nsINode*>(aElement)))
-  {}
-
-  void SetInfo(nsSVGElement *aElement) {
+  void SetInfo(nsSVGElement* aElement) {
     mElement = do_GetWeakReference(static_cast<nsINode*>(aElement));
   }
 
@@ -193,7 +170,7 @@ public:
     return SVGNumberList::SetLength(aNumberOfItems);
   }
 
-private:
+ private:
   
   
   
@@ -201,6 +178,6 @@ private:
   nsWeakPtr mElement;
 };
 
-} 
+}  
 
-#endif 
+#endif  

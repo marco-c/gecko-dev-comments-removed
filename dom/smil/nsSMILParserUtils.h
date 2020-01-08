@@ -20,20 +20,19 @@ class nsSMILTimeValueSpecParams;
 namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
-} 
-} 
+}  
+}  
 
 
 
 
 
 
-class nsSMILParserUtils
-{
-public:
+class nsSMILParserUtils {
+ public:
   
   class MOZ_STACK_CLASS GenericValueParser {
-  public:
+   public:
     virtual bool Parse(const nsAString& aValueStr) = 0;
   };
 
@@ -43,9 +42,9 @@ public:
                               FallibleTArray<nsSMILKeySpline>& aKeySplines);
 
   
-  static bool ParseSemicolonDelimitedProgressList(const nsAString& aSpec,
-                                                  bool aNonDecreasing,
-                                                  FallibleTArray<double>& aArray);
+  static bool ParseSemicolonDelimitedProgressList(
+      const nsAString& aSpec, bool aNonDecreasing,
+      FallibleTArray<double>& aArray);
 
   static bool ParseValues(const nsAString& aSpec,
                           const mozilla::dom::SVGAnimationElement* aSrcElement,
@@ -73,8 +72,7 @@ public:
 
 
 
-  static bool ParseClockValue(const nsAString& aSpec,
-                              nsSMILTimeValue* aResult);
+  static bool ParseClockValue(const nsAString& aSpec, nsSMILTimeValue* aResult);
 
   
 
@@ -86,4 +84,4 @@ public:
   static int32_t CheckForNegativeNumber(const nsAString& aStr);
 };
 
-#endif 
+#endif  

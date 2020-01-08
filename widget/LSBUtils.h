@@ -15,14 +15,11 @@ namespace lsb {
 
 
 
-bool GetLSBRelease(nsACString& aDistributor,
-                   nsACString& aDescription,
-                   nsACString& aRelease,
-                   nsACString& aCodename);
-
+bool GetLSBRelease(nsACString& aDistributor, nsACString& aDescription,
+                   nsACString& aRelease, nsACString& aCodename);
 
 }  
 }  
 }  
 
-#endif 
+#endif  

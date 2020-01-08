@@ -26,11 +26,10 @@ namespace net {
 
 #ifndef USEPIPE
 static PRDescIdentity sPollableEventLayerIdentity;
-static PRIOMethods    sPollableEventLayerMethods;
-static PRIOMethods   *sPollableEventLayerMethodsPtr = nullptr;
+static PRIOMethods sPollableEventLayerMethods;
+static PRIOMethods *sPollableEventLayerMethodsPtr = nullptr;
 
-static void LazyInitSocket()
-{
+static void LazyInitSocket() {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   if (sPollableEventLayerMethodsPtr) {
     return;
@@ -40,14 +39,14 @@ static void LazyInitSocket()
   sPollableEventLayerMethodsPtr = &sPollableEventLayerMethods;
 }
 
-static bool NewTCPSocketPair(PRFileDesc *fd[], bool aSetRecvBuff)
-{
+static bool NewTCPSocketPair(PRFileDesc *fd[], bool aSetRecvBuff) {
   
   
   
   
 
-  SOCKET_LOG(("NewTCPSocketPair %s a recv buffer tuning\n", aSetRecvBuff ? "with" : "without"));
+  SOCKET_LOG(("NewTCPSocketPair %s a recv buffer tuning\n",
+              aSetRecvBuff ? "with" : "without"));
 
   PRFileDesc *listener = nullptr;
   PRFileDesc *writer = nullptr;
@@ -78,7 +77,8 @@ static bool NewTCPSocketPair(PRFileDesc *fd[], bool aSetRecvBuff)
   memset(&listenAddr, 0, sizeof(listenAddr));
   if ((PR_InitializeNetAddr(PR_IpAddrLoopback, 0, &listenAddr) == PR_FAILURE) ||
       (PR_Bind(listener, &listenAddr) == PR_FAILURE) ||
-      (PR_GetSockName(listener, &listenAddr) == PR_FAILURE) || 
+      (PR_GetSockName(listener, &listenAddr) ==
+       PR_FAILURE) ||  
       (PR_Listen(listener, 5) == PR_FAILURE)) {
     goto failed;
   }
@@ -93,7 +93,8 @@ static bool NewTCPSocketPair(PRFileDesc *fd[], bool aSetRecvBuff)
   PR_SetSocketOption(writer, &nodelayOpt);
   PR_SetSocketOption(writer, &noblockOpt);
   PRNetAddr writerAddr;
-  if (PR_InitializeNetAddr(PR_IpAddrLoopback, ntohs(listenAddr.inet.port), &writerAddr) == PR_FAILURE) {
+  if (PR_InitializeNetAddr(PR_IpAddrLoopback, ntohs(listenAddr.inet.port),
+                           &writerAddr) == PR_FAILURE) {
     goto failed;
   }
 
@@ -137,12 +138,11 @@ failed:
 #endif
 
 PollableEvent::PollableEvent()
-  : mWriteFD(nullptr)
-  , mReadFD(nullptr)
-  , mSignaled(false)
-  , mWriteFailed(false)
-  , mSignalTimestampAdjusted(false)
-{
+    : mWriteFD(nullptr),
+      mReadFD(nullptr),
+      mSignaled(false),
+      mWriteFailed(false),
+      mSignalTimestampAdjusted(false) {
   MOZ_COUNT_CTOR(PollableEvent);
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   
@@ -173,11 +173,11 @@ PollableEvent::PollableEvent()
   if (NewTCPSocketPair(fd, true)) {
     mReadFD = fd[0];
     mWriteFD = fd[1];
-  
+    
   } else if (NewTCPSocketPair(fd, false)) {
     mReadFD = fd[0];
     mWriteFD = fd[1];
-  
+    
   } else if (PR_NewTCPSocketPair(fd) == PR_SUCCESS) {
     mReadFD = fd[0];
     mWriteFD = fd[1];
@@ -199,9 +199,9 @@ PollableEvent::PollableEvent()
   if (mReadFD && mWriteFD) {
     
     
-    PRFileDesc *topLayer =
-      PR_CreateIOLayerStub(sPollableEventLayerIdentity,
-                           sPollableEventLayerMethodsPtr);
+    
+    PRFileDesc *topLayer = PR_CreateIOLayerStub(sPollableEventLayerIdentity,
+                                                sPollableEventLayerMethodsPtr);
     if (topLayer) {
       if (PR_PushIOLayer(fd[0], PR_TOP_IO_LAYER, topLayer) == PR_FAILURE) {
         topLayer->dtor(topLayer);
@@ -225,8 +225,7 @@ PollableEvent::PollableEvent()
   }
 }
 
-PollableEvent::~PollableEvent()
-{
+PollableEvent::~PollableEvent() {
   MOZ_COUNT_DTOR(PollableEvent);
   if (mWriteFD) {
 #if defined(XP_WIN)
@@ -247,9 +246,7 @@ PollableEvent::~PollableEvent()
 
 
 
-bool
-PollableEvent::Signal()
-{
+bool PollableEvent::Signal() {
   SOCKET_LOG(("PollableEvent::Signal\n"));
 
   if (!mWriteFD) {
@@ -295,9 +292,7 @@ PollableEvent::Signal()
   return (status == 1);
 }
 
-bool
-PollableEvent::Clear()
-{
+bool PollableEvent::Clear() {
   
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
 
@@ -305,7 +300,8 @@ PollableEvent::Clear()
 
   if (!mFirstSignalAfterClear.IsNull()) {
     SOCKET_LOG(("PollableEvent::Clear time to signal %ums",
-                (uint32_t)(TimeStamp::NowLoRes() - mFirstSignalAfterClear).ToMilliseconds()));
+                (uint32_t)(TimeStamp::NowLoRes() - mFirstSignalAfterClear)
+                    .ToMilliseconds()));
   }
 
   mFirstSignalAfterClear = TimeStamp();
@@ -362,22 +358,17 @@ PollableEvent::Clear()
   }
   SOCKET_LOG(("PollableEvent::Clear unexpected error %d\n", code));
   return false;
-#endif 
-
+#endif  
 }
 
-void
-PollableEvent::MarkFirstSignalTimestamp()
-{
+void PollableEvent::MarkFirstSignalTimestamp() {
   if (mFirstSignalAfterClear.IsNull()) {
     SOCKET_LOG(("PollableEvent::MarkFirstSignalTimestamp"));
     mFirstSignalAfterClear = TimeStamp::NowLoRes();
   }
 }
 
-void
-PollableEvent::AdjustFirstSignalTimestamp()
-{
+void PollableEvent::AdjustFirstSignalTimestamp() {
   if (!mSignalTimestampAdjusted && !mFirstSignalAfterClear.IsNull()) {
     SOCKET_LOG(("PollableEvent::AdjustFirstSignalTimestamp"));
     mFirstSignalAfterClear = TimeStamp::NowLoRes();
@@ -385,9 +376,7 @@ PollableEvent::AdjustFirstSignalTimestamp()
   }
 }
 
-bool
-PollableEvent::IsSignallingAlive(TimeDuration const& timeout)
-{
+bool PollableEvent::IsSignallingAlive(TimeDuration const &timeout) {
   if (mWriteFailed) {
     return false;
   }
@@ -396,7 +385,8 @@ PollableEvent::IsSignallingAlive(TimeDuration const& timeout)
   
   return true;
 #else
-  if (!mSignaled || mFirstSignalAfterClear.IsNull() || timeout == TimeDuration()) {
+  if (!mSignaled || mFirstSignalAfterClear.IsNull() ||
+      timeout == TimeDuration()) {
     return true;
   }
 
@@ -404,8 +394,8 @@ PollableEvent::IsSignallingAlive(TimeDuration const& timeout)
   bool timedOut = delay > timeout;
 
   return !timedOut;
-#endif 
+#endif  
 }
 
-} 
-} 
+}  
+}  

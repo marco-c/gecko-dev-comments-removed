@@ -11,28 +11,25 @@
 
 namespace mozilla {
 
-WebGLExtensionShaderTextureLod::WebGLExtensionShaderTextureLod(WebGLContext* webgl)
-    : WebGLExtensionBase(webgl)
-{
-    MOZ_ASSERT(IsSupported(webgl), "Don't construct extension if unsupported.");
+WebGLExtensionShaderTextureLod::WebGLExtensionShaderTextureLod(
+    WebGLContext* webgl)
+    : WebGLExtensionBase(webgl) {
+  MOZ_ASSERT(IsSupported(webgl), "Don't construct extension if unsupported.");
 }
 
-WebGLExtensionShaderTextureLod::~WebGLExtensionShaderTextureLod()
-{
+WebGLExtensionShaderTextureLod::~WebGLExtensionShaderTextureLod() {}
+
+bool WebGLExtensionShaderTextureLod::IsSupported(const WebGLContext* webgl) {
+  gl::GLContext* gl = webgl->GL();
+  if (gl->IsGLES() && gl->Version() >= 300) {
+    
+    
+    return false;
+  }
+  return gl->IsSupported(gl::GLFeature::shader_texture_lod);
 }
 
-bool
-WebGLExtensionShaderTextureLod::IsSupported(const WebGLContext* webgl)
-{
-    gl::GLContext* gl = webgl->GL();
-    if (gl->IsGLES() && gl->Version() >= 300) {
-        
-        
-        return false;
-    }
-    return gl->IsSupported(gl::GLFeature::shader_texture_lod);
-}
+IMPL_WEBGL_EXTENSION_GOOP(WebGLExtensionShaderTextureLod,
+                          EXT_shader_texture_lod)
 
-IMPL_WEBGL_EXTENSION_GOOP(WebGLExtensionShaderTextureLod, EXT_shader_texture_lod)
-
-} 
+}  

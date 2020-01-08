@@ -16,8 +16,7 @@
 namespace mozilla {
 
 
-struct AnimationPerformanceWarning
-{
+struct AnimationPerformanceWarning {
   enum class Type : uint8_t {
     None,
     ContentTooLarge,
@@ -32,22 +31,19 @@ struct AnimationPerformanceWarning
     HasRenderingObserver,
   };
 
-  explicit AnimationPerformanceWarning(Type aType)
-    : mType(aType)
-  {
+  explicit AnimationPerformanceWarning(Type aType) : mType(aType) {
     MOZ_ASSERT(mType != Type::None);
   }
 
   AnimationPerformanceWarning(Type aType,
                               std::initializer_list<int32_t> aParams)
-    : mType(aType)
-  {
+      : mType(aType) {
     MOZ_ASSERT(mType != Type::None);
     
     
     MOZ_ASSERT(aParams.size() <= kMaxParamsForLocalization,
-      "The length of parameters should be less than "
-      "kMaxParamsForLocalization");
+               "The length of parameters should be less than "
+               "kMaxParamsForLocalization");
     mParams.emplace(aParams);
   }
 
@@ -67,21 +63,18 @@ struct AnimationPerformanceWarning
   Maybe<nsTArray<int32_t>> mParams;
 
   bool ToLocalizedString(nsAString& aLocalizedString) const;
-  template<uint32_t N>
-  nsresult ToLocalizedStringWithIntParams(
-    const char* aKey, nsAString& aLocalizedString) const;
+  template <uint32_t N>
+  nsresult ToLocalizedStringWithIntParams(const char* aKey,
+                                          nsAString& aLocalizedString) const;
 
-  bool operator==(const AnimationPerformanceWarning& aOther) const
-  {
-    return mType == aOther.mType &&
-           mParams == aOther.mParams;
+  bool operator==(const AnimationPerformanceWarning& aOther) const {
+    return mType == aOther.mType && mParams == aOther.mParams;
   }
-  bool operator!=(const AnimationPerformanceWarning& aOther) const
-  {
+  bool operator!=(const AnimationPerformanceWarning& aOther) const {
     return !(*this == aOther);
   }
 };
 
-} 
+}  
 
-#endif 
+#endif  

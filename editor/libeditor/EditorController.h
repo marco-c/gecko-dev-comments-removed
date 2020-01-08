@@ -15,15 +15,15 @@ namespace mozilla {
 
 
 
-class EditorController final
-{
-public:
+
+class EditorController final {
+ public:
   static nsresult RegisterEditorCommands(
-                    nsIControllerCommandTable* aCommandTable);
+      nsIControllerCommandTable* aCommandTable);
   static nsresult RegisterEditingCommands(
-                    nsIControllerCommandTable* aCommandTable);
+      nsIControllerCommandTable* aCommandTable);
 };
 
-} 
+}  
 
-#endif 
+#endif  

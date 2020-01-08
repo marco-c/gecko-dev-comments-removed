@@ -17,7 +17,7 @@ namespace mozilla {
 
 struct unused_t;
 
-} 
+}  
 
 
 
@@ -36,9 +36,8 @@ struct unused_t;
 
 
 
-template<class T>
-struct MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
-{
+template <class T>
+struct MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed {
   already_AddRefed() : mRawPtr(nullptr) {}
 
   
@@ -47,6 +46,7 @@ struct MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
   MOZ_IMPLICIT already_AddRefed(decltype(nullptr)) : mRawPtr(nullptr) {}
   explicit already_AddRefed(T* aRawPtr) : mRawPtr(aRawPtr) {}
 
+  
   
   already_AddRefed(const already_AddRefed<T>& aOther) = delete;
   already_AddRefed<T>& operator=(const already_AddRefed<T>& aOther) = delete;
@@ -90,13 +90,13 @@ struct MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
 
   already_AddRefed(already_AddRefed<T>&& aOther)
 #ifdef DEBUG
-    : mRawPtr(aOther.take()) {}
+      : mRawPtr(aOther.take()) {
+  }
 #else
-    = default;
+      = default;
 #endif
 
-  already_AddRefed<T>& operator=(already_AddRefed<T>&& aOther)
-  {
+  already_AddRefed<T>& operator=(already_AddRefed<T>&& aOther) {
     mRawPtr = aOther.take();
     return *this;
   }
@@ -119,13 +119,16 @@ struct MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
 
 
   template <typename U>
-  MOZ_IMPLICIT already_AddRefed(already_AddRefed<U>&& aOther) : mRawPtr(aOther.take()) {}
+  MOZ_IMPLICIT already_AddRefed(already_AddRefed<U>&& aOther)
+      : mRawPtr(aOther.take()) {}
 
   ~already_AddRefed()
 #ifdef DEBUG
-     { MOZ_ASSERT(!mRawPtr); }
+  {
+    MOZ_ASSERT(!mRawPtr);
+  }
 #else
-     = default;
+      = default;
 #endif
 
   
@@ -133,14 +136,12 @@ struct MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
   
   
   friend void operator<<(const mozilla::unused_t& aUnused,
-                         const already_AddRefed<T>& aRhs)
-  {
+                         const already_AddRefed<T>& aRhs) {
     auto mutableAlreadyAddRefed = const_cast<already_AddRefed<T>*>(&aRhs);
     aUnused << mutableAlreadyAddRefed->take();
   }
 
-  MOZ_MUST_USE T* take()
-  {
+  MOZ_MUST_USE T* take() {
     T* rawPtr = mRawPtr;
     mRawPtr = nullptr;
     return rawPtr;
@@ -160,16 +161,15 @@ struct MOZ_MUST_USE_TYPE MOZ_NON_AUTOABLE already_AddRefed
 
 
 
-  template<class U>
-  already_AddRefed<U> downcast()
-  {
+  template <class U>
+  already_AddRefed<U> downcast() {
     U* tmp = static_cast<U*>(mRawPtr);
     mRawPtr = nullptr;
     return already_AddRefed<U>(tmp);
   }
 
-private:
+ private:
   T* MOZ_OWNING_REF mRawPtr;
 };
 
-#endif 
+#endif  

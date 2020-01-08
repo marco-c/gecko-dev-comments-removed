@@ -25,20 +25,17 @@ class nsIPrincipal;
 namespace mozilla {
 namespace dom {
 class EventTarget;
-} 
-} 
+}  
+}  
 
-class nsXBLService final : public nsSupportsWeakReference
-{
+class nsXBLService final : public nsSupportsWeakReference {
   NS_DECL_ISUPPORTS
 
   static nsXBLService* gInstance;
 
   static void Init();
 
-  static void Shutdown() {
-    NS_IF_RELEASE(gInstance);
-  }
+  static void Shutdown() { NS_IF_RELEASE(gInstance); }
 
   static nsXBLService* GetInstance() { return gInstance; }
 
@@ -47,11 +44,12 @@ class nsXBLService final : public nsSupportsWeakReference
   
   
   nsresult LoadBindings(mozilla::dom::Element* aElement, nsIURI* aURL,
-                        nsIPrincipal* aOriginPrincipal,
-                        nsXBLBinding** aBinding, bool* aResolveStyle);
+                        nsIPrincipal* aOriginPrincipal, nsXBLBinding** aBinding,
+                        bool* aResolveStyle);
 
   
-  nsresult BindingReady(nsIContent* aBoundElement, nsIURI* aURI, bool* aIsReady);
+  nsresult BindingReady(nsIContent* aBoundElement, nsIURI* aURI,
+                        bool* aIsReady);
 
   
   
@@ -67,26 +65,27 @@ class nsXBLService final : public nsSupportsWeakReference
   static nsresult AttachGlobalKeyHandler(mozilla::dom::EventTarget* aTarget);
   static nsresult DetachGlobalKeyHandler(mozilla::dom::EventTarget* aTarget);
 
-private:
+ private:
   nsXBLService();
   virtual ~nsXBLService();
 
-protected:
+ protected:
   
   void FlushStyleBindings(mozilla::dom::Element*);
 
   
-  nsresult FetchBindingDocument(nsIContent* aBoundElement, nsIDocument* aBoundDocument,
+  nsresult FetchBindingDocument(nsIContent* aBoundElement,
+                                nsIDocument* aBoundDocument,
                                 nsIURI* aDocumentURI, nsIURI* aBindingURI,
-                                nsIPrincipal* aOriginPrincipal, bool aForceSyncLoad,
-                                nsIDocument** aResult);
+                                nsIPrincipal* aOriginPrincipal,
+                                bool aForceSyncLoad, nsIDocument** aResult);
 
   
 
 
-  nsresult GetBinding(nsIContent* aBoundElement, nsIURI* aURI,
-                      bool aPeekFlag, nsIPrincipal* aOriginPrincipal,
-                      bool* aIsReady, nsXBLBinding** aResult);
+  nsresult GetBinding(nsIContent* aBoundElement, nsIURI* aURI, bool aPeekFlag,
+                      nsIPrincipal* aOriginPrincipal, bool* aIsReady,
+                      nsXBLBinding** aResult);
 
   
 
@@ -105,17 +104,17 @@ protected:
 
 
 
-  nsresult GetBinding(nsIContent* aBoundElement, nsIURI* aURI,
-                      bool aPeekFlag, nsIPrincipal* aOriginPrincipal,
-                      bool* aIsReady, nsXBLBinding** aResult,
+  nsresult GetBinding(nsIContent* aBoundElement, nsIURI* aURI, bool aPeekFlag,
+                      nsIPrincipal* aOriginPrincipal, bool* aIsReady,
+                      nsXBLBinding** aResult,
                       nsTArray<nsCOMPtr<nsIURI>>& aDontExtendURIs);
 
-
-public:
+  
+ public:
   static bool gDisableChromeCache;
-  static bool     gAllowDataURIs;            
-                                             
-                                             
+  static bool gAllowDataURIs;  
+                               
+                               
 };
 
 #endif

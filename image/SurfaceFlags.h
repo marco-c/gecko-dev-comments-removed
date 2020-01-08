@@ -17,9 +17,8 @@ namespace image {
 
 
 
-enum class SurfaceFlags : uint8_t
-{
-  NO_PREMULTIPLY_ALPHA     = 1 << 0,
+enum class SurfaceFlags : uint8_t {
+  NO_PREMULTIPLY_ALPHA = 1 << 0,
   NO_COLORSPACE_CONVERSION = 1 << 1
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SurfaceFlags)
@@ -27,19 +26,13 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SurfaceFlags)
 
 
 
-inline SurfaceFlags
-DefaultSurfaceFlags()
-{
-  return SurfaceFlags();
-}
+inline SurfaceFlags DefaultSurfaceFlags() { return SurfaceFlags(); }
 
 
 
 
 
-inline SurfaceFlags
-ToSurfaceFlags(uint32_t aFlags)
-{
+inline SurfaceFlags ToSurfaceFlags(uint32_t aFlags) {
   SurfaceFlags flags = DefaultSurfaceFlags();
   if (aFlags & imgIContainer::FLAG_DECODE_NO_PREMULTIPLY_ALPHA) {
     flags |= SurfaceFlags::NO_PREMULTIPLY_ALPHA;
@@ -54,9 +47,7 @@ ToSurfaceFlags(uint32_t aFlags)
 
 
 
-inline uint32_t
-FromSurfaceFlags(SurfaceFlags aFlags)
-{
+inline uint32_t FromSurfaceFlags(SurfaceFlags aFlags) {
   uint32_t flags = imgIContainer::DECODE_FLAGS_DEFAULT;
   if (aFlags & SurfaceFlags::NO_PREMULTIPLY_ALPHA) {
     flags |= imgIContainer::FLAG_DECODE_NO_PREMULTIPLY_ALPHA;
@@ -67,7 +58,7 @@ FromSurfaceFlags(SurfaceFlags aFlags)
   return flags;
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

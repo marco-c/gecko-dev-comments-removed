@@ -22,19 +22,17 @@ namespace mozilla {
 
 
 
-class EditAggregateTransaction : public EditTransactionBase
-{
-protected:
+class EditAggregateTransaction : public EditTransactionBase {
+ protected:
   EditAggregateTransaction();
 
-public:
+ public:
   
 
 
-  static already_AddRefed<EditAggregateTransaction> Create()
-  {
+  static already_AddRefed<EditAggregateTransaction> Create() {
     RefPtr<EditAggregateTransaction> transaction =
-      new EditAggregateTransaction();
+        new EditAggregateTransaction();
     return transaction.forget();
   }
 
@@ -57,13 +55,13 @@ public:
 
   NS_IMETHOD GetName(nsAtom** aName);
 
-protected:
+ protected:
   virtual ~EditAggregateTransaction();
 
   nsTArray<RefPtr<EditTransactionBase>> mChildren;
   RefPtr<nsAtom> mName;
 };
 
-} 
+}  
 
-#endif 
+#endif  

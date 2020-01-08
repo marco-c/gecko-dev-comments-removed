@@ -17,8 +17,7 @@
 
 namespace mozilla {
 
-class SystemGroup
-{
+class SystemGroup {
  public:
   
   static nsresult Dispatch(TaskCategory aCategory,
@@ -38,7 +37,6 @@ class SystemGroup
   static bool Initialized();
 };
 
-} 
+}  
 
-#endif 
-
+#endif  

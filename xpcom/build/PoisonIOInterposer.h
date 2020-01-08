@@ -17,6 +17,7 @@ MOZ_BEGIN_EXTERN_C
 
 
 
+
 void MozillaRegisterDebugHandle(intptr_t aHandle);
 
 
@@ -70,7 +71,7 @@ void OnlyReportDirtyWrites();
 
 void ClearPoisonIOInterposer();
 
-} 
+}  
 #endif 
 
 #else 
@@ -83,9 +84,9 @@ inline void ClearPoisonIOInterposer() {}
 #ifdef XP_MACOSX
 inline void OnlyReportDirtyWrites() {}
 #endif 
-} 
+}  
 #endif 
 
 #endif 
 
-#endif 
+#endif  

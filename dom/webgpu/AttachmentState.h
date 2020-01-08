@@ -14,18 +14,16 @@ namespace webgpu {
 
 class Device;
 
-class AttachmentState final
-    : public ChildOf<Device>
-{
-public:
-    WEBGPU_DECL_GOOP(AttachmentState)
+class AttachmentState final : public ChildOf<Device> {
+ public:
+  WEBGPU_DECL_GOOP(AttachmentState)
 
-private:
-    AttachmentState() = delete;
-    virtual ~AttachmentState();
+ private:
+  AttachmentState() = delete;
+  virtual ~AttachmentState();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

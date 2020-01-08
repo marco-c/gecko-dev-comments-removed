@@ -22,48 +22,45 @@ namespace ubi {
 
 
 
-struct JS_PUBLIC_API BackEdge
-{
-  private:
-    Node predecessor_;
-    EdgeName name_;
+struct JS_PUBLIC_API BackEdge {
+ private:
+  Node predecessor_;
+  EdgeName name_;
 
-  public:
-    using Ptr = js::UniquePtr<BackEdge>;
+ public:
+  using Ptr = js::UniquePtr<BackEdge>;
 
-    BackEdge() : predecessor_(), name_(nullptr) { }
+  BackEdge() : predecessor_(), name_(nullptr) {}
 
-    MOZ_MUST_USE bool init(const Node& predecessor, Edge& edge) {
-        MOZ_ASSERT(!predecessor_);
-        MOZ_ASSERT(!name_);
+  MOZ_MUST_USE bool init(const Node& predecessor, Edge& edge) {
+    MOZ_ASSERT(!predecessor_);
+    MOZ_ASSERT(!name_);
 
-        predecessor_ = predecessor;
-        name_ = std::move(edge.name);
-        return true;
-    }
+    predecessor_ = predecessor;
+    name_ = std::move(edge.name);
+    return true;
+  }
 
-    BackEdge(const BackEdge&) = delete;
-    BackEdge& operator=(const BackEdge&) = delete;
+  BackEdge(const BackEdge&) = delete;
+  BackEdge& operator=(const BackEdge&) = delete;
 
-    BackEdge(BackEdge&& rhs)
-      : predecessor_(rhs.predecessor_)
-      , name_(std::move(rhs.name_))
-    {
-        MOZ_ASSERT(&rhs != this);
-    }
+  BackEdge(BackEdge&& rhs)
+      : predecessor_(rhs.predecessor_), name_(std::move(rhs.name_)) {
+    MOZ_ASSERT(&rhs != this);
+  }
 
-    BackEdge& operator=(BackEdge&& rhs) {
-        this->~BackEdge();
-        new(this) BackEdge(std::move(rhs));
-        return *this;
-    }
+  BackEdge& operator=(BackEdge&& rhs) {
+    this->~BackEdge();
+    new (this) BackEdge(std::move(rhs));
+    return *this;
+  }
 
-    Ptr clone() const;
+  Ptr clone() const;
 
-    const EdgeName& name() const { return name_; }
-    EdgeName& name() { return name_; }
+  const EdgeName& name() const { return name_; }
+  EdgeName& name() { return name_; }
 
-    const JS::ubi::Node& predecessor() const { return predecessor_; }
+  const JS::ubi::Node& predecessor() const { return predecessor_; }
 };
 
 
@@ -76,258 +73,255 @@ using Path = JS::ubi::Vector<BackEdge*>;
 
 
 
-struct JS_PUBLIC_API ShortestPaths
-{
-  private:
-    
+struct JS_PUBLIC_API ShortestPaths {
+ private:
+  
 
-    using BackEdgeVector = JS::ubi::Vector<BackEdge::Ptr>;
-    using NodeToBackEdgeVectorMap = js::HashMap<Node, BackEdgeVector, js::DefaultHasher<Node>,
-                                                js::SystemAllocPolicy>;
+  using BackEdgeVector = JS::ubi::Vector<BackEdge::Ptr>;
+  using NodeToBackEdgeVectorMap =
+      js::HashMap<Node, BackEdgeVector, js::DefaultHasher<Node>,
+                  js::SystemAllocPolicy>;
 
-    struct Handler;
-    using Traversal = BreadthFirst<Handler>;
+  struct Handler;
+  using Traversal = BreadthFirst<Handler>;
 
-    
+  
 
 
 
 
-    struct Handler
-    {
-        using NodeData = BackEdge;
+  struct Handler {
+    using NodeData = BackEdge;
 
-        ShortestPaths& shortestPaths;
-        size_t totalMaxPathsToRecord;
-        size_t totalPathsRecorded;
+    ShortestPaths& shortestPaths;
+    size_t totalMaxPathsToRecord;
+    size_t totalPathsRecorded;
 
-        explicit Handler(ShortestPaths& shortestPaths)
-          : shortestPaths(shortestPaths)
-          , totalMaxPathsToRecord(shortestPaths.targets_.count() * shortestPaths.maxNumPaths_)
-          , totalPathsRecorded(0)
-        {
-        }
+    explicit Handler(ShortestPaths& shortestPaths)
+        : shortestPaths(shortestPaths),
+          totalMaxPathsToRecord(shortestPaths.targets_.count() *
+                                shortestPaths.maxNumPaths_),
+          totalPathsRecorded(0) {}
 
-        bool
-        operator()(Traversal& traversal, const JS::ubi::Node& origin, JS::ubi::Edge& edge,
-                   BackEdge* back, bool first)
-        {
-            MOZ_ASSERT(back);
-            MOZ_ASSERT(origin == shortestPaths.root_ || traversal.visited.has(origin));
-            MOZ_ASSERT(totalPathsRecorded < totalMaxPathsToRecord);
+    bool operator()(Traversal& traversal, const JS::ubi::Node& origin,
+                    JS::ubi::Edge& edge, BackEdge* back, bool first) {
+      MOZ_ASSERT(back);
+      MOZ_ASSERT(origin == shortestPaths.root_ ||
+                 traversal.visited.has(origin));
+      MOZ_ASSERT(totalPathsRecorded < totalMaxPathsToRecord);
 
-            if (first && !back->init(origin, edge)) {
-                return false;
-            }
+      if (first && !back->init(origin, edge)) {
+        return false;
+      }
 
-            if (!shortestPaths.targets_.has(edge.referent)) {
-                return true;
-            }
-
-            
-            
-            
-            
-            
-            
-
-            if (first) {
-                BackEdgeVector paths;
-                if (!paths.reserve(shortestPaths.maxNumPaths_)) {
-                    return false;
-                }
-                auto cloned = back->clone();
-                if (!cloned) {
-                    return false;
-                }
-                paths.infallibleAppend(std::move(cloned));
-                if (!shortestPaths.paths_.putNew(edge.referent, std::move(paths))) {
-                    return false;
-                }
-                totalPathsRecorded++;
-            } else {
-                auto ptr = shortestPaths.paths_.lookup(edge.referent);
-                MOZ_ASSERT(ptr,
-                           "This isn't the first time we have seen the target node `edge.referent`. "
-                           "We should have inserted it into shortestPaths.paths_ the first time we "
-                           "saw it.");
-
-                if (ptr->value().length() < shortestPaths.maxNumPaths_) {
-                    auto thisBackEdge = js::MakeUnique<BackEdge>();
-                    if (!thisBackEdge || !thisBackEdge->init(origin, edge)) {
-                        return false;
-                    }
-                    ptr->value().infallibleAppend(std::move(thisBackEdge));
-                    totalPathsRecorded++;
-                }
-            }
-
-            MOZ_ASSERT(totalPathsRecorded <= totalMaxPathsToRecord);
-            if (totalPathsRecorded == totalMaxPathsToRecord) {
-                traversal.stop();
-            }
-
-            return true;
-        }
-
-    };
-
-    
-    uint32_t maxNumPaths_;
-
-    
-    Node root_;
-
-    
-    NodeSet targets_;
-
-    
-    NodeToBackEdgeVectorMap paths_;
-
-    
-    
-    Traversal::NodeMap backEdges_;
-
-  private:
-    
-
-    ShortestPaths(uint32_t maxNumPaths, const Node& root, NodeSet&& targets)
-      : maxNumPaths_(maxNumPaths)
-      , root_(root)
-      , targets_(std::move(targets))
-      , paths_(targets_.count())
-      , backEdges_()
-    {
-        MOZ_ASSERT(maxNumPaths_ > 0);
-        MOZ_ASSERT(root_);
-    }
-
-  public:
-    
-
-    ShortestPaths(ShortestPaths&& rhs)
-      : maxNumPaths_(rhs.maxNumPaths_)
-      , root_(rhs.root_)
-      , targets_(std::move(rhs.targets_))
-      , paths_(std::move(rhs.paths_))
-      , backEdges_(std::move(rhs.backEdges_))
-    {
-        MOZ_ASSERT(this != &rhs, "self-move is not allowed");
-    }
-
-    ShortestPaths& operator=(ShortestPaths&& rhs) {
-        this->~ShortestPaths();
-        new (this) ShortestPaths(std::move(rhs));
-        return *this;
-    }
-
-    ShortestPaths(const ShortestPaths&) = delete;
-    ShortestPaths& operator=(const ShortestPaths&) = delete;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static mozilla::Maybe<ShortestPaths>
-    Create(JSContext* cx, AutoCheckCannotGC& noGC, uint32_t maxNumPaths, const Node& root, NodeSet&& targets) {
-        MOZ_ASSERT(targets.count() > 0);
-        MOZ_ASSERT(maxNumPaths > 0);
-
-        ShortestPaths paths(maxNumPaths, root, std::move(targets));
-
-        Handler handler(paths);
-        Traversal traversal(cx, handler, noGC);
-        traversal.wantNames = true;
-        if (!traversal.addStart(root) || !traversal.traverse()) {
-            return mozilla::Nothing();
-        }
-
-        
-        
-        
-        paths.backEdges_ = std::move(traversal.visited);
-
-        return mozilla::Some(std::move(paths));
-    }
-
-    
-
-
-
-
-    NodeSet::Iterator targetIter() const {
-        return targets_.iter();
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    template <class Func>
-    MOZ_MUST_USE bool forEachPath(const Node& target, Func func) {
-        MOZ_ASSERT(targets_.has(target));
-
-        auto ptr = paths_.lookup(target);
-
-        
-        if (!ptr) {
-            return true;
-        }
-
-        MOZ_ASSERT(ptr->value().length() <= maxNumPaths_);
-
-        Path path;
-        for (const auto& backEdge : ptr->value()) {
-            path.clear();
-
-            if (!path.append(backEdge.get())) {
-                return false;
-            }
-
-            Node here = backEdge->predecessor();
-            MOZ_ASSERT(here);
-
-            while (here != root_) {
-                auto p = backEdges_.lookup(here);
-                MOZ_ASSERT(p);
-                if (!path.append(&p->value())) {
-                    return false;
-                }
-                here = p->value().predecessor();
-                MOZ_ASSERT(here);
-            }
-
-            path.reverse();
-
-            if (!func(path)) {
-                return false;
-            }
-        }
-
+      if (!shortestPaths.targets_.has(edge.referent)) {
         return true;
+      }
+
+      
+      
+      
+      
+      
+      
+
+      if (first) {
+        BackEdgeVector paths;
+        if (!paths.reserve(shortestPaths.maxNumPaths_)) {
+          return false;
+        }
+        auto cloned = back->clone();
+        if (!cloned) {
+          return false;
+        }
+        paths.infallibleAppend(std::move(cloned));
+        if (!shortestPaths.paths_.putNew(edge.referent, std::move(paths))) {
+          return false;
+        }
+        totalPathsRecorded++;
+      } else {
+        auto ptr = shortestPaths.paths_.lookup(edge.referent);
+        MOZ_ASSERT(ptr,
+                   "This isn't the first time we have seen the target node "
+                   "`edge.referent`. "
+                   "We should have inserted it into shortestPaths.paths_ the "
+                   "first time we "
+                   "saw it.");
+
+        if (ptr->value().length() < shortestPaths.maxNumPaths_) {
+          auto thisBackEdge = js::MakeUnique<BackEdge>();
+          if (!thisBackEdge || !thisBackEdge->init(origin, edge)) {
+            return false;
+          }
+          ptr->value().infallibleAppend(std::move(thisBackEdge));
+          totalPathsRecorded++;
+        }
+      }
+
+      MOZ_ASSERT(totalPathsRecorded <= totalMaxPathsToRecord);
+      if (totalPathsRecorded == totalMaxPathsToRecord) {
+        traversal.stop();
+      }
+
+      return true;
     }
+  };
+
+  
+  uint32_t maxNumPaths_;
+
+  
+  Node root_;
+
+  
+  NodeSet targets_;
+
+  
+  NodeToBackEdgeVectorMap paths_;
+
+  
+  
+  Traversal::NodeMap backEdges_;
+
+ private:
+  
+
+  ShortestPaths(uint32_t maxNumPaths, const Node& root, NodeSet&& targets)
+      : maxNumPaths_(maxNumPaths),
+        root_(root),
+        targets_(std::move(targets)),
+        paths_(targets_.count()),
+        backEdges_() {
+    MOZ_ASSERT(maxNumPaths_ > 0);
+    MOZ_ASSERT(root_);
+  }
+
+ public:
+  
+
+  ShortestPaths(ShortestPaths&& rhs)
+      : maxNumPaths_(rhs.maxNumPaths_),
+        root_(rhs.root_),
+        targets_(std::move(rhs.targets_)),
+        paths_(std::move(rhs.paths_)),
+        backEdges_(std::move(rhs.backEdges_)) {
+    MOZ_ASSERT(this != &rhs, "self-move is not allowed");
+  }
+
+  ShortestPaths& operator=(ShortestPaths&& rhs) {
+    this->~ShortestPaths();
+    new (this) ShortestPaths(std::move(rhs));
+    return *this;
+  }
+
+  ShortestPaths(const ShortestPaths&) = delete;
+  ShortestPaths& operator=(const ShortestPaths&) = delete;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static mozilla::Maybe<ShortestPaths> Create(JSContext* cx,
+                                              AutoCheckCannotGC& noGC,
+                                              uint32_t maxNumPaths,
+                                              const Node& root,
+                                              NodeSet&& targets) {
+    MOZ_ASSERT(targets.count() > 0);
+    MOZ_ASSERT(maxNumPaths > 0);
+
+    ShortestPaths paths(maxNumPaths, root, std::move(targets));
+
+    Handler handler(paths);
+    Traversal traversal(cx, handler, noGC);
+    traversal.wantNames = true;
+    if (!traversal.addStart(root) || !traversal.traverse()) {
+      return mozilla::Nothing();
+    }
+
+    
+    
+    
+    paths.backEdges_ = std::move(traversal.visited);
+
+    return mozilla::Some(std::move(paths));
+  }
+
+  
+
+
+
+
+  NodeSet::Iterator targetIter() const { return targets_.iter(); }
+
+  
+
+
+
+
+
+
+
+
+
+  template <class Func>
+  MOZ_MUST_USE bool forEachPath(const Node& target, Func func) {
+    MOZ_ASSERT(targets_.has(target));
+
+    auto ptr = paths_.lookup(target);
+
+    
+    if (!ptr) {
+      return true;
+    }
+
+    MOZ_ASSERT(ptr->value().length() <= maxNumPaths_);
+
+    Path path;
+    for (const auto& backEdge : ptr->value()) {
+      path.clear();
+
+      if (!path.append(backEdge.get())) {
+        return false;
+      }
+
+      Node here = backEdge->predecessor();
+      MOZ_ASSERT(here);
+
+      while (here != root_) {
+        auto p = backEdges_.lookup(here);
+        MOZ_ASSERT(p);
+        if (!path.append(&p->value())) {
+          return false;
+        }
+        here = p->value().predecessor();
+        MOZ_ASSERT(here);
+      }
+
+      path.reverse();
+
+      if (!func(path)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
 };
 
 #ifdef DEBUG
@@ -339,11 +333,11 @@ struct JS_PUBLIC_API ShortestPaths
 
 
 
-JS_PUBLIC_API void
-dumpPaths(JSRuntime* rt, Node node, uint32_t maxNumPaths = 10);
+JS_PUBLIC_API void dumpPaths(JSRuntime* rt, Node node,
+                             uint32_t maxNumPaths = 10);
 #endif
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

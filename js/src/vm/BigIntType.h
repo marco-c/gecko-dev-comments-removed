@@ -29,151 +29,167 @@ template <typename CharT>
 static bool StringToBigIntImpl(const mozilla::Range<const CharT>& chars,
                                uint8_t radix, Handle<JS::BigInt*> res);
 
-template<XDRMode mode>
+template <XDRMode mode>
 XDRResult XDRBigInt(XDRState<mode>* xdr, MutableHandleBigInt bi);
 
-} 
+}  
 
 namespace JS {
 
-class BigInt final : public js::gc::TenuredCell
-{
-    
-    template <typename CharT>
-    friend bool js::StringToBigIntImpl(const mozilla::Range<const CharT>& chars,
-                                       uint8_t radix, Handle<BigInt*> res);
-    template <js::XDRMode mode>
-    friend js::XDRResult js::XDRBigInt(js::XDRState<mode>* xdr, MutableHandleBigInt bi);
+class BigInt final : public js::gc::TenuredCell {
+  
+  template <typename CharT>
+  friend bool js::StringToBigIntImpl(const mozilla::Range<const CharT>& chars,
+                                     uint8_t radix, Handle<BigInt*> res);
+  template <js::XDRMode mode>
+  friend js::XDRResult js::XDRBigInt(js::XDRState<mode>* xdr,
+                                     MutableHandleBigInt bi);
 
-  protected:
-    
-    
-    uintptr_t reserved_;
+ protected:
+  
+  
+  uintptr_t reserved_;
 
-  private:
-    mpz_t num_;
+ private:
+  mpz_t num_;
 
-  protected:
-    BigInt() : reserved_(0) { }
+ protected:
+  BigInt() : reserved_(0) {}
 
-  public:
-    
-    static BigInt* create(JSContext* cx);
+ public:
+  
+  static BigInt* create(JSContext* cx);
 
-    static BigInt* createFromDouble(JSContext* cx, double d);
+  static BigInt* createFromDouble(JSContext* cx, double d);
 
-    static BigInt* createFromBoolean(JSContext* cx, bool b);
+  static BigInt* createFromBoolean(JSContext* cx, bool b);
 
-    
-    static BigInt* createFromBytes(JSContext* cx, int sign, void* bytes, size_t nbytes);
+  
+  static BigInt* createFromBytes(JSContext* cx, int sign, void* bytes,
+                                 size_t nbytes);
 
-    static BigInt* createFromInt64(JSContext* cx, int64_t n);
-    static BigInt* createFromUint64(JSContext* cx, uint64_t n);
+  static BigInt* createFromInt64(JSContext* cx, int64_t n);
+  static BigInt* createFromUint64(JSContext* cx, uint64_t n);
 
-    static const JS::TraceKind TraceKind = JS::TraceKind::BigInt;
+  static const JS::TraceKind TraceKind = JS::TraceKind::BigInt;
 
-    void traceChildren(JSTracer* trc);
+  void traceChildren(JSTracer* trc);
 
-    void finalize(js::FreeOp* fop);
+  void finalize(js::FreeOp* fop);
 
-    js::HashNumber hash();
+  js::HashNumber hash();
 
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
-    bool toBoolean();
-    int8_t sign();
+  bool toBoolean();
+  int8_t sign();
 
-    static void init();
+  static void init();
 
-    static BigInt* copy(JSContext* cx, Handle<BigInt*> x);
-    static BigInt* add(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* sub(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* mul(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* div(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* mod(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* pow(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* neg(JSContext* cx, Handle<BigInt*> x);
-    static BigInt* lsh(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* rsh(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* bitAnd(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* bitXor(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* bitOr(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
-    static BigInt* bitNot(JSContext* cx, Handle<BigInt*> x);
+  static BigInt* copy(JSContext* cx, Handle<BigInt*> x);
+  static BigInt* add(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* sub(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* mul(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* div(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* mod(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* pow(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* neg(JSContext* cx, Handle<BigInt*> x);
+  static BigInt* lsh(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* rsh(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* bitAnd(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* bitXor(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* bitOr(JSContext* cx, Handle<BigInt*> x, Handle<BigInt*> y);
+  static BigInt* bitNot(JSContext* cx, Handle<BigInt*> x);
 
-    static int64_t toInt64(BigInt* x);
-    static uint64_t toUint64(BigInt* x);
+  static int64_t toInt64(BigInt* x);
+  static uint64_t toUint64(BigInt* x);
 
-    static BigInt* asIntN(JSContext* cx, HandleBigInt x, uint64_t bits);
-    static BigInt* asUintN(JSContext* cx, HandleBigInt x, uint64_t bits);
+  static BigInt* asIntN(JSContext* cx, HandleBigInt x, uint64_t bits);
+  static BigInt* asUintN(JSContext* cx, HandleBigInt x, uint64_t bits);
 
-    
-    
-    
-    
-    static bool add(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool sub(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool mul(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool div(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool mod(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool pow(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool neg(JSContext* cx, Handle<Value> operand, MutableHandle<Value> res);
-    static bool lsh(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool rsh(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool bitAnd(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool bitXor(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool bitOr(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs, MutableHandle<Value> res);
-    static bool bitNot(JSContext* cx, Handle<Value> operand, MutableHandle<Value> res);
+  
+  
+  
+  
+  static bool add(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                  MutableHandle<Value> res);
+  static bool sub(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                  MutableHandle<Value> res);
+  static bool mul(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                  MutableHandle<Value> res);
+  static bool div(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                  MutableHandle<Value> res);
+  static bool mod(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                  MutableHandle<Value> res);
+  static bool pow(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                  MutableHandle<Value> res);
+  static bool neg(JSContext* cx, Handle<Value> operand,
+                  MutableHandle<Value> res);
+  static bool lsh(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                  MutableHandle<Value> res);
+  static bool rsh(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                  MutableHandle<Value> res);
+  static bool bitAnd(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                     MutableHandle<Value> res);
+  static bool bitXor(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                     MutableHandle<Value> res);
+  static bool bitOr(JSContext* cx, Handle<Value> lhs, Handle<Value> rhs,
+                    MutableHandle<Value> res);
+  static bool bitNot(JSContext* cx, Handle<Value> operand,
+                     MutableHandle<Value> res);
 
-    static double numberValue(BigInt* x);
-    static JSLinearString* toString(JSContext* cx, BigInt* x, uint8_t radix);
+  static double numberValue(BigInt* x);
+  static JSLinearString* toString(JSContext* cx, BigInt* x, uint8_t radix);
 
-    static bool equal(BigInt* lhs, BigInt* rhs);
-    static bool equal(BigInt* lhs, double rhs);
-    static JS::Result<bool> looselyEqual(JSContext* cx, HandleBigInt lhs, HandleValue rhs);
+  static bool equal(BigInt* lhs, BigInt* rhs);
+  static bool equal(BigInt* lhs, double rhs);
+  static JS::Result<bool> looselyEqual(JSContext* cx, HandleBigInt lhs,
+                                       HandleValue rhs);
 
-    static bool lessThan(BigInt* x, BigInt* y);
+  static bool lessThan(BigInt* x, BigInt* y);
 
-    
-    
-    static mozilla::Maybe<bool> lessThan(BigInt* lhs, double rhs);
-    static mozilla::Maybe<bool> lessThan(double lhs, BigInt* rhs);
-    static bool lessThan(JSContext* cx, HandleBigInt lhs, HandleString rhs, mozilla::Maybe<bool>& res);
-    static bool lessThan(JSContext* cx, HandleString lhs, HandleBigInt rhs, mozilla::Maybe<bool>& res);
-    static bool lessThan(JSContext* cx, HandleValue lhs, HandleValue rhs, mozilla::Maybe<bool>& res);
+  
+  
+  static mozilla::Maybe<bool> lessThan(BigInt* lhs, double rhs);
+  static mozilla::Maybe<bool> lessThan(double lhs, BigInt* rhs);
+  static bool lessThan(JSContext* cx, HandleBigInt lhs, HandleString rhs,
+                       mozilla::Maybe<bool>& res);
+  static bool lessThan(JSContext* cx, HandleString lhs, HandleBigInt rhs,
+                       mozilla::Maybe<bool>& res);
+  static bool lessThan(JSContext* cx, HandleValue lhs, HandleValue rhs,
+                       mozilla::Maybe<bool>& res);
 
-    
-    
-    static size_t byteLength(BigInt* x);
+  
+  
+  static size_t byteLength(BigInt* x);
 
-    
-    
-    static void writeBytes(BigInt* x, mozilla::RangedPtr<uint8_t> buffer);
+  
+  
+  static void writeBytes(BigInt* x, mozilla::RangedPtr<uint8_t> buffer);
 };
 
-static_assert(sizeof(BigInt) >= js::gc::MinCellSize,
-              "sizeof(BigInt) must be greater than the minimum allocation size");
+static_assert(
+    sizeof(BigInt) >= js::gc::MinCellSize,
+    "sizeof(BigInt) must be greater than the minimum allocation size");
 
-} 
+}  
 
 namespace js {
 
-extern JSAtom*
-BigIntToAtom(JSContext* cx, JS::BigInt* bi);
+extern JSAtom* BigIntToAtom(JSContext* cx, JS::BigInt* bi);
 
-extern JS::BigInt*
-NumberToBigInt(JSContext* cx, double d);
+extern JS::BigInt* NumberToBigInt(JSContext* cx, double d);
 
 
-extern JS::Result<JS::BigInt*, JS::OOM&>
-StringToBigInt(JSContext* cx, JS::Handle<JSString*> str, uint8_t radix);
+extern JS::Result<JS::BigInt*, JS::OOM&> StringToBigInt(
+    JSContext* cx, JS::Handle<JSString*> str, uint8_t radix);
 
 
-extern JS::BigInt*
-StringToBigInt(JSContext* cx, const mozilla::Range<const char16_t>& chars);
+extern JS::BigInt* StringToBigInt(JSContext* cx,
+                                  const mozilla::Range<const char16_t>& chars);
 
-extern JS::BigInt*
-ToBigInt(JSContext* cx, JS::Handle<JS::Value> v);
+extern JS::BigInt* ToBigInt(JSContext* cx, JS::Handle<JS::Value> v);
 
-} 
+}  
 
 #endif

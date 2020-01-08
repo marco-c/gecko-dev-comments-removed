@@ -14,8 +14,7 @@ namespace mozilla {
 
 
 template <class Iter, class Pred>
-constexpr bool AllOf(Iter aFirst, Iter aLast, Pred aPred)
-{
+constexpr bool AllOf(Iter aFirst, Iter aLast, Pred aPred) {
   for (; aFirst != aLast; ++aFirst) {
     if (!aPred(*aFirst)) {
       return false;
@@ -24,6 +23,6 @@ constexpr bool AllOf(Iter aFirst, Iter aLast, Pred aPred)
   return true;
 }
 
-} 
+}  
 
-#endif 
+#endif  

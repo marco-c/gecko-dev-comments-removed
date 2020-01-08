@@ -12,19 +12,17 @@ NS_IMPL_NS_NEW_NAMESPACED_SVG_ELEMENT(AnimateMotion)
 namespace mozilla {
 namespace dom {
 
-JSObject*
-SVGAnimateMotionElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
-{
+JSObject* SVGAnimateMotionElement::WrapNode(JSContext* aCx,
+                                            JS::Handle<JSObject*> aGivenProto) {
   return SVGAnimateMotionElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 
 
 
-SVGAnimateMotionElement::SVGAnimateMotionElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-  : SVGAnimationElement(std::move(aNodeInfo))
-{
-}
+SVGAnimateMotionElement::SVGAnimateMotionElement(
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    : SVGAnimationElement(std::move(aNodeInfo)) {}
 
 
 
@@ -33,16 +31,12 @@ NS_IMPL_ELEMENT_CLONE_WITH_INIT(SVGAnimateMotionElement)
 
 
 
-nsSMILAnimationFunction&
-SVGAnimateMotionElement::AnimationFunction()
-{
+nsSMILAnimationFunction& SVGAnimateMotionElement::AnimationFunction() {
   return mAnimationFunction;
 }
 
-bool
-SVGAnimateMotionElement::GetTargetAttributeName(int32_t *aNamespaceID,
-                                                nsAtom **aLocalName) const
-{
+bool SVGAnimateMotionElement::GetTargetAttributeName(
+    int32_t* aNamespaceID, nsAtom** aLocalName) const {
   
   
   
@@ -51,6 +45,5 @@ SVGAnimateMotionElement::GetTargetAttributeName(int32_t *aNamespaceID,
   return true;
 }
 
-} 
-} 
-
+}  
+}  

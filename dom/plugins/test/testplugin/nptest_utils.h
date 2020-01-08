@@ -42,4 +42,4 @@ NPIdentifier doubleVariantToIdentifier(NPVariant variant);
 
 uint32_t parseHexColor(const char* color, int len);
 
-#endif 
+#endif  

@@ -12,22 +12,21 @@
 
 namespace IPC {
 
-template<>
+template <>
 struct ParamTraits<mozilla::a11y::role>
-  : public ContiguousEnumSerializerInclusive<mozilla::a11y::role,
-                                             mozilla::a11y::role::NOTHING,
-                                             mozilla::a11y::role::LAST_ROLE>
-{
+    : public ContiguousEnumSerializerInclusive<mozilla::a11y::role,
+                                               mozilla::a11y::role::NOTHING,
+                                               mozilla::a11y::role::LAST_ROLE> {
 };
 
-} 
+}  
 #else
 namespace mozilla {
 namespace a11y {
 typedef uint32_t role;
-} 
-} 
-#endif 
+}  
+}  
+#endif  
 
 
 
@@ -39,13 +38,13 @@ typedef uint32_t role;
 
 #if !defined(COM_NO_WINDOWS_H)
 #define COM_NO_WINDOWS_H
-#endif 
+#endif  
 
 
 
 #if !defined(__XMLDocument_FWD_DEFINED__)
 #define __XMLDocument_FWD_DEFINED__
-#endif 
+#endif  
 
 #include <combaseapi.h>
 
@@ -55,7 +54,7 @@ typedef uint32_t role;
 
 #if defined(small)
 #undef small
-#endif 
+#endif  
 
 #else
 
@@ -66,10 +65,9 @@ typedef uint32_t IAccessibleHolder;
 typedef uint32_t IDispatchHolder;
 typedef uint32_t IHandlerControlHolder;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  
 
-#endif 
-
+#endif  

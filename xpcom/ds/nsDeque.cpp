@@ -10,18 +10,17 @@
 
 #include "mozilla/CheckedInt.h"
 
-#define modulus(x,y) ((x)%(y))
+#define modulus(x, y) ((x) % (y))
 
 
 
 
 
-nsDeque::nsDeque(nsDequeFunctor* aDeallocator)
-{
+nsDeque::nsDeque(nsDequeFunctor* aDeallocator) {
   MOZ_COUNT_CTOR(nsDeque);
   mDeallocator = aDeallocator;
   mOrigin = mSize = 0;
-  mData = mBuffer; 
+  mData = mBuffer;  
   mCapacity = sizeof(mBuffer) / sizeof(mBuffer[0]);
   memset(mData, 0, mCapacity * sizeof(mBuffer[0]));
 }
@@ -29,8 +28,7 @@ nsDeque::nsDeque(nsDequeFunctor* aDeallocator)
 
 
 
-nsDeque::~nsDeque()
-{
+nsDeque::~nsDeque() {
   MOZ_COUNT_DTOR(nsDeque);
 
   Erase();
@@ -41,9 +39,7 @@ nsDeque::~nsDeque()
   SetDeallocator(0);
 }
 
-size_t
-nsDeque::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-{
+size_t nsDeque::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
   size_t size = 0;
   if (mData != mBuffer) {
     size += aMallocSizeOf(mData);
@@ -56,9 +52,7 @@ nsDeque::SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
   return size;
 }
 
-size_t
-nsDeque::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-{
+size_t nsDeque::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
   return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
 }
 
@@ -68,9 +62,7 @@ nsDeque::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
 
 
 
-void
-nsDeque::SetDeallocator(nsDequeFunctor* aDeallocator)
-{
+void nsDeque::SetDeallocator(nsDequeFunctor* aDeallocator) {
   delete mDeallocator;
   mDeallocator = aDeallocator;
 }
@@ -78,9 +70,7 @@ nsDeque::SetDeallocator(nsDequeFunctor* aDeallocator)
 
 
 
-void
-nsDeque::Empty()
-{
+void nsDeque::Empty() {
   if (mSize && mData) {
     memset(mData, 0, mCapacity * sizeof(*mData));
   }
@@ -91,9 +81,7 @@ nsDeque::Empty()
 
 
 
-void
-nsDeque::Erase()
-{
+void nsDeque::Erase() {
   if (mDeallocator && mSize) {
     ForEach(*mDeallocator);
   }
@@ -107,9 +95,7 @@ nsDeque::Erase()
 
 
 
-bool
-nsDeque::GrowCapacity()
-{
+bool nsDeque::GrowCapacity() {
   mozilla::CheckedInt<size_t> newCapacity = mCapacity;
   newCapacity *= 4;
 
@@ -145,7 +131,7 @@ nsDeque::GrowCapacity()
   }
 
   mCapacity = newCapacity.value();
-  mOrigin = 0; 
+  mOrigin = 0;  
   mData = temp;
 
   return true;
@@ -158,9 +144,7 @@ nsDeque::GrowCapacity()
 
 
 
-bool
-nsDeque::Push(void* aItem, const fallible_t&)
-{
+bool nsDeque::Push(void* aItem, const fallible_t&) {
   if (mSize == mCapacity && !GrowCapacity()) {
     return false;
   }
@@ -201,10 +185,7 @@ nsDeque::Push(void* aItem, const fallible_t&)
 
 
 
-bool
-nsDeque::PushFront(void* aItem, const fallible_t&)
-{
-
+bool nsDeque::PushFront(void* aItem, const fallible_t&) {
   if (mOrigin == 0) {
     mOrigin = mCapacity - 1;
   } else {
@@ -228,9 +209,7 @@ nsDeque::PushFront(void* aItem, const fallible_t&)
 
 
 
-void*
-nsDeque::Pop()
-{
+void* nsDeque::Pop() {
   void* result = 0;
   if (mSize > 0) {
     --mSize;
@@ -250,14 +229,12 @@ nsDeque::Pop()
 
 
 
-void*
-nsDeque::PopFront()
-{
+void* nsDeque::PopFront() {
   void* result = 0;
   if (mSize > 0) {
     NS_ASSERTION(mOrigin < mCapacity, "Error: Bad origin");
     result = mData[mOrigin];
-    mData[mOrigin++] = 0;   
+    mData[mOrigin++] = 0;  
     mSize--;
     
     
@@ -274,9 +251,7 @@ nsDeque::PopFront()
 
 
 
-void*
-nsDeque::Peek() const
-{
+void* nsDeque::Peek() const {
   void* result = 0;
   if (mSize > 0) {
     result = mData[modulus(mSize - 1 + mOrigin, mCapacity)];
@@ -290,9 +265,7 @@ nsDeque::Peek() const
 
 
 
-void*
-nsDeque::PeekFront() const
-{
+void* nsDeque::PeekFront() const {
   void* result = 0;
   if (mSize > 0) {
     result = mData[mOrigin];
@@ -309,9 +282,7 @@ nsDeque::PeekFront() const
 
 
 
-void*
-nsDeque::ObjectAt(size_t aIndex) const
-{
+void* nsDeque::ObjectAt(size_t aIndex) const {
   void* result = 0;
   if (aIndex < mSize) {
     result = mData[modulus(mOrigin + aIndex, mCapacity)];
@@ -327,9 +298,7 @@ nsDeque::ObjectAt(size_t aIndex) const
 
 
 
-void
-nsDeque::ForEach(nsDequeFunctor& aFunctor) const
-{
+void nsDeque::ForEach(nsDequeFunctor& aFunctor) const {
   for (size_t i = 0; i < mSize; ++i) {
     aFunctor(ObjectAt(i));
   }

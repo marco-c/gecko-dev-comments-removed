@@ -35,121 +35,114 @@
 
 
 
-const uint32_t kMinMaxVertexAttribs          =   8; 
-const uint32_t kMinMaxVertexUniformVectors   = 128; 
-const uint32_t kMinMaxFragmentUniformVectors =  16; 
-const uint32_t kMinMaxVaryingVectors         =   8; 
+const uint32_t kMinMaxVertexAttribs = 8;            
+const uint32_t kMinMaxVertexUniformVectors = 128;   
+const uint32_t kMinMaxFragmentUniformVectors = 16;  
+const uint32_t kMinMaxVaryingVectors = 8;           
 
-const uint32_t kMinMaxVertexTextureImageUnits   = 0; 
-const uint32_t kMinMaxFragmentTextureImageUnits = 8; 
-const uint32_t kMinMaxCombinedTextureImageUnits = 8; 
+const uint32_t kMinMaxVertexTextureImageUnits = 0;    
+const uint32_t kMinMaxFragmentTextureImageUnits = 8;  
+const uint32_t kMinMaxCombinedTextureImageUnits = 8;  
 
 const uint32_t kMinMaxColorAttachments = 4;
-const uint32_t kMinMaxDrawBuffers      = 4;
+const uint32_t kMinMaxDrawBuffers = 4;
 
 
-const uint32_t kMinMaxTextureSize        = 1024; 
-const uint32_t kMinMaxCubeMapTextureSize =  512; 
-const uint32_t kMinMaxRenderbufferSize   = 1024; 
+
+const uint32_t kMinMaxTextureSize = 1024;        
+const uint32_t kMinMaxCubeMapTextureSize = 512;  
+const uint32_t kMinMaxRenderbufferSize = 1024;   
 
 
-const uint32_t kMinMax3DTextureSize      = 256;
+const uint32_t kMinMax3DTextureSize = 256;
 const uint32_t kMinMaxArrayTextureLayers = 256;
 
 
 
-const uint32_t kCommonMaxTextureSize        = 2048;
+const uint32_t kCommonMaxTextureSize = 2048;
 const uint32_t kCommonMaxCubeMapTextureSize = 2048;
-const uint32_t kCommonMaxRenderbufferSize   = 2048;
+const uint32_t kCommonMaxRenderbufferSize = 2048;
 
-const uint32_t kCommonMaxVertexTextureImageUnits   =  8;
-const uint32_t kCommonMaxFragmentTextureImageUnits =  8;
+const uint32_t kCommonMaxVertexTextureImageUnits = 8;
+const uint32_t kCommonMaxFragmentTextureImageUnits = 8;
 const uint32_t kCommonMaxCombinedTextureImageUnits = 16;
 
-const uint32_t kCommonMaxVertexAttribs          =  16;
-const uint32_t kCommonMaxVertexUniformVectors   = 256;
+const uint32_t kCommonMaxVertexAttribs = 16;
+const uint32_t kCommonMaxVertexUniformVectors = 256;
 const uint32_t kCommonMaxFragmentUniformVectors = 224;
-const uint32_t kCommonMaxVaryingVectors         =   8;
+const uint32_t kCommonMaxVaryingVectors = 8;
 
 const uint32_t kCommonMaxViewportDims = 4096;
 
 
-const float kCommonAliasedPointSizeRangeMin =  1;
+const float kCommonAliasedPointSizeRangeMin = 1;
 const float kCommonAliasedPointSizeRangeMax = 63;
-const float kCommonAliasedLineWidthRangeMin =  1;
-const float kCommonAliasedLineWidthRangeMax =  1;
+const float kCommonAliasedLineWidthRangeMin = 1;
+const float kCommonAliasedLineWidthRangeMax = 1;
 
-template<class T>
-static bool
-RestrictCap(T* const cap, const T restrictedVal)
-{
-    if (*cap < restrictedVal) {
-        return false; 
-    }
+template <class T>
+static bool RestrictCap(T* const cap, const T restrictedVal) {
+  if (*cap < restrictedVal) {
+    return false;  
+  }
 
-    *cap = restrictedVal;
-    return true;
+  *cap = restrictedVal;
+  return true;
 }
 
 
 
 namespace mozilla {
 
-bool
-WebGLContext::ValidateBlendEquationEnum(GLenum mode, const char* info)
-{
-    switch (mode) {
+bool WebGLContext::ValidateBlendEquationEnum(GLenum mode, const char* info) {
+  switch (mode) {
     case LOCAL_GL_FUNC_ADD:
     case LOCAL_GL_FUNC_SUBTRACT:
     case LOCAL_GL_FUNC_REVERSE_SUBTRACT:
-        return true;
+      return true;
 
     case LOCAL_GL_MIN:
     case LOCAL_GL_MAX:
-        if (IsWebGL2() ||
-            IsExtensionEnabled(WebGLExtensionID::EXT_blend_minmax))
-        {
-            return true;
-        }
+      if (IsWebGL2() ||
+          IsExtensionEnabled(WebGLExtensionID::EXT_blend_minmax)) {
+        return true;
+      }
 
-        break;
+      break;
 
     default:
-        break;
-    }
+      break;
+  }
 
-    ErrorInvalidEnumInfo(info, mode);
+  ErrorInvalidEnumInfo(info, mode);
+  return false;
+}
+
+bool WebGLContext::ValidateBlendFuncEnumsCompatibility(GLenum sfactor,
+                                                       GLenum dfactor,
+                                                       const char* info) {
+  bool sfactorIsConstantColor = sfactor == LOCAL_GL_CONSTANT_COLOR ||
+                                sfactor == LOCAL_GL_ONE_MINUS_CONSTANT_COLOR;
+  bool sfactorIsConstantAlpha = sfactor == LOCAL_GL_CONSTANT_ALPHA ||
+                                sfactor == LOCAL_GL_ONE_MINUS_CONSTANT_ALPHA;
+  bool dfactorIsConstantColor = dfactor == LOCAL_GL_CONSTANT_COLOR ||
+                                dfactor == LOCAL_GL_ONE_MINUS_CONSTANT_COLOR;
+  bool dfactorIsConstantAlpha = dfactor == LOCAL_GL_CONSTANT_ALPHA ||
+                                dfactor == LOCAL_GL_ONE_MINUS_CONSTANT_ALPHA;
+  if ((sfactorIsConstantColor && dfactorIsConstantAlpha) ||
+      (dfactorIsConstantColor && sfactorIsConstantAlpha)) {
+    ErrorInvalidOperation(
+        "%s are mutually incompatible, see section 6.8 in"
+        " the WebGL 1.0 spec",
+        info);
     return false;
+  }
+
+  return true;
 }
 
-bool
-WebGLContext::ValidateBlendFuncEnumsCompatibility(GLenum sfactor,
-                                                  GLenum dfactor,
-                                                  const char* info)
-{
-    bool sfactorIsConstantColor = sfactor == LOCAL_GL_CONSTANT_COLOR ||
-                                  sfactor == LOCAL_GL_ONE_MINUS_CONSTANT_COLOR;
-    bool sfactorIsConstantAlpha = sfactor == LOCAL_GL_CONSTANT_ALPHA ||
-                                  sfactor == LOCAL_GL_ONE_MINUS_CONSTANT_ALPHA;
-    bool dfactorIsConstantColor = dfactor == LOCAL_GL_CONSTANT_COLOR ||
-                                  dfactor == LOCAL_GL_ONE_MINUS_CONSTANT_COLOR;
-    bool dfactorIsConstantAlpha = dfactor == LOCAL_GL_CONSTANT_ALPHA ||
-                                  dfactor == LOCAL_GL_ONE_MINUS_CONSTANT_ALPHA;
-    if ( (sfactorIsConstantColor && dfactorIsConstantAlpha) ||
-         (dfactorIsConstantColor && sfactorIsConstantAlpha) )
-    {
-        ErrorInvalidOperation("%s are mutually incompatible, see section 6.8 in"
-                              " the WebGL 1.0 spec", info);
-        return false;
-    }
-
-    return true;
-}
-
-bool
-WebGLContext::ValidateStencilOpEnum(GLenum action, const char* info)
-{
-    switch (action) {
+bool WebGLContext::ValidateStencilOpEnum(GLenum action, const char* info) {
+  switch (action) {
     case LOCAL_GL_KEEP:
     case LOCAL_GL_ZERO:
     case LOCAL_GL_REPLACE:
@@ -158,192 +151,297 @@ WebGLContext::ValidateStencilOpEnum(GLenum action, const char* info)
     case LOCAL_GL_DECR:
     case LOCAL_GL_DECR_WRAP:
     case LOCAL_GL_INVERT:
-        return true;
+      return true;
 
     default:
-        ErrorInvalidEnumInfo(info, action);
-        return false;
-    }
+      ErrorInvalidEnumInfo(info, action);
+      return false;
+  }
 }
 
-bool
-WebGLContext::ValidateFaceEnum(const GLenum face)
-{
-    switch (face) {
+bool WebGLContext::ValidateFaceEnum(const GLenum face) {
+  switch (face) {
     case LOCAL_GL_FRONT:
     case LOCAL_GL_BACK:
     case LOCAL_GL_FRONT_AND_BACK:
-        return true;
+      return true;
 
     default:
-        ErrorInvalidEnumInfo("face", face);
-        return false;
-    }
+      ErrorInvalidEnumInfo("face", face);
+      return false;
+  }
 }
 
-bool
-WebGLContext::ValidateUniformLocation(const WebGLUniformLocation* const loc)
-{
-    
+bool WebGLContext::ValidateUniformLocation(
+    const WebGLUniformLocation* const loc) {
+  
 
 
 
 
-    if (!loc)
-        return false;
+  if (!loc) return false;
 
-    if (!ValidateObjectAllowDeleted("loc", *loc))
-        return false;
+  if (!ValidateObjectAllowDeleted("loc", *loc)) return false;
 
-    if (!mCurrentProgram) {
-        ErrorInvalidOperation("No program is currently bound.");
-        return false;
-    }
+  if (!mCurrentProgram) {
+    ErrorInvalidOperation("No program is currently bound.");
+    return false;
+  }
 
-    return loc->ValidateForProgram(mCurrentProgram);
+  return loc->ValidateForProgram(mCurrentProgram);
 }
 
-bool
-WebGLContext::ValidateAttribArraySetter(uint32_t setterElemSize, uint32_t arrayLength)
-{
-    if (IsContextLost())
-        return false;
+bool WebGLContext::ValidateAttribArraySetter(uint32_t setterElemSize,
+                                             uint32_t arrayLength) {
+  if (IsContextLost()) return false;
 
-    if (arrayLength < setterElemSize) {
-        ErrorInvalidValue("Array must have >= %d elements.", setterElemSize);
-        return false;
-    }
+  if (arrayLength < setterElemSize) {
+    ErrorInvalidValue("Array must have >= %d elements.", setterElemSize);
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
-bool
-WebGLContext::ValidateUniformSetter(const WebGLUniformLocation* const loc,
-                                    const uint8_t setterElemSize,
-                                    const webgl::AttribBaseType setterType)
-{
-    if (IsContextLost())
-        return false;
+bool WebGLContext::ValidateUniformSetter(
+    const WebGLUniformLocation* const loc, const uint8_t setterElemSize,
+    const webgl::AttribBaseType setterType) {
+  if (IsContextLost()) return false;
 
-    if (!ValidateUniformLocation(loc))
-        return false;
+  if (!ValidateUniformLocation(loc)) return false;
 
-    if (!loc->ValidateSizeAndType(setterElemSize, setterType))
-        return false;
+  if (!loc->ValidateSizeAndType(setterElemSize, setterType)) return false;
 
-    return true;
+  return true;
 }
 
-bool
-WebGLContext::ValidateUniformArraySetter(const WebGLUniformLocation* const loc,
-                                         const uint8_t setterElemSize,
-                                         const webgl::AttribBaseType setterType,
-                                         const uint32_t setterArraySize,
-                                         uint32_t* const out_numElementsToUpload)
-{
-    if (IsContextLost())
-        return false;
+bool WebGLContext::ValidateUniformArraySetter(
+    const WebGLUniformLocation* const loc, const uint8_t setterElemSize,
+    const webgl::AttribBaseType setterType, const uint32_t setterArraySize,
+    uint32_t* const out_numElementsToUpload) {
+  if (IsContextLost()) return false;
 
-    if (!ValidateUniformLocation(loc))
-        return false;
+  if (!ValidateUniformLocation(loc)) return false;
 
-    if (!loc->ValidateSizeAndType(setterElemSize, setterType))
-        return false;
+  if (!loc->ValidateSizeAndType(setterElemSize, setterType)) return false;
 
-    if (!loc->ValidateArrayLength(setterElemSize, setterArraySize))
-        return false;
+  if (!loc->ValidateArrayLength(setterElemSize, setterArraySize)) return false;
 
-    const auto& elemCount = loc->mInfo->mActiveInfo->mElemCount;
-    MOZ_ASSERT(elemCount > loc->mArrayIndex);
-    const uint32_t uniformElemCount = elemCount - loc->mArrayIndex;
+  const auto& elemCount = loc->mInfo->mActiveInfo->mElemCount;
+  MOZ_ASSERT(elemCount > loc->mArrayIndex);
+  const uint32_t uniformElemCount = elemCount - loc->mArrayIndex;
 
-    *out_numElementsToUpload = std::min(uniformElemCount,
-                                        setterArraySize / setterElemSize);
-    return true;
+  *out_numElementsToUpload =
+      std::min(uniformElemCount, setterArraySize / setterElemSize);
+  return true;
 }
 
-bool
-WebGLContext::ValidateUniformMatrixArraySetter(const WebGLUniformLocation* const loc,
-                                               const uint8_t setterCols,
-                                               const uint8_t setterRows,
-                                               const webgl::AttribBaseType setterType,
-                                               const uint32_t setterArraySize,
-                                               const bool setterTranspose,
-                                               uint32_t* const out_numElementsToUpload)
-{
-    const uint8_t setterElemSize = setterCols * setterRows;
+bool WebGLContext::ValidateUniformMatrixArraySetter(
+    const WebGLUniformLocation* const loc, const uint8_t setterCols,
+    const uint8_t setterRows, const webgl::AttribBaseType setterType,
+    const uint32_t setterArraySize, const bool setterTranspose,
+    uint32_t* const out_numElementsToUpload) {
+  const uint8_t setterElemSize = setterCols * setterRows;
 
-    if (IsContextLost())
-        return false;
+  if (IsContextLost()) return false;
 
-    if (!ValidateUniformLocation(loc))
-        return false;
+  if (!ValidateUniformLocation(loc)) return false;
 
-    if (!loc->ValidateSizeAndType(setterElemSize, setterType))
-        return false;
+  if (!loc->ValidateSizeAndType(setterElemSize, setterType)) return false;
 
-    if (!loc->ValidateArrayLength(setterElemSize, setterArraySize))
-        return false;
+  if (!loc->ValidateArrayLength(setterElemSize, setterArraySize)) return false;
 
-    if (setterTranspose && !IsWebGL2()) {
-        ErrorInvalidValue("`transpose` must be false.");
-        return false;
-    }
+  if (setterTranspose && !IsWebGL2()) {
+    ErrorInvalidValue("`transpose` must be false.");
+    return false;
+  }
 
-    const auto& elemCount = loc->mInfo->mActiveInfo->mElemCount;
-    MOZ_ASSERT(elemCount > loc->mArrayIndex);
-    const uint32_t uniformElemCount = elemCount - loc->mArrayIndex;
+  const auto& elemCount = loc->mInfo->mActiveInfo->mElemCount;
+  MOZ_ASSERT(elemCount > loc->mArrayIndex);
+  const uint32_t uniformElemCount = elemCount - loc->mArrayIndex;
 
-    *out_numElementsToUpload = std::min(uniformElemCount,
-                                        setterArraySize / setterElemSize);
-    return true;
+  *out_numElementsToUpload =
+      std::min(uniformElemCount, setterArraySize / setterElemSize);
+  return true;
 }
 
-bool
-WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
-{
-    MOZ_RELEASE_ASSERT(gl, "GFX: GL not initialized");
+bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
+  MOZ_RELEASE_ASSERT(gl, "GFX: GL not initialized");
+
+  
+  
+  
+  mFormatUsage = CreateFormatUsage(gl);
+  if (!mFormatUsage) {
+    *out_failReason = {"FEATURE_FAILURE_WEBGL_FORMAT",
+                       "Failed to create mFormatUsage."};
+    return false;
+  }
+
+  GLenum error = gl->fGetError();
+  if (error != LOCAL_GL_NO_ERROR) {
+    const nsPrintfCString reason(
+        "GL error 0x%x occurred during OpenGL context"
+        " initialization, before WebGL initialization!",
+        error);
+    *out_failReason = {"FEATURE_FAILURE_WEBGL_GLERR_1", reason};
+    return false;
+  }
+
+  mDisableExtensions = gfxPrefs::WebGLDisableExtensions();
+  mLoseContextOnMemoryPressure = gfxPrefs::WebGLLoseContextOnMemoryPressure();
+  mCanLoseContextInForeground = gfxPrefs::WebGLCanLoseContextInForeground();
+
+  
+  
+  mColorWriteMask = 0x0f;
+  mDriverColorMask = mColorWriteMask;
+  mColorClearValue[0] = 0.f;
+  mColorClearValue[1] = 0.f;
+  mColorClearValue[2] = 0.f;
+  mColorClearValue[3] = 0.f;
+  mDepthWriteMask = true;
+  mDepthClearValue = 1.f;
+  mStencilClearValue = 0;
+  mStencilRefFront = 0;
+  mStencilRefBack = 0;
+
+  mLineWidth = 1.0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  gl->GetUIntegerv(LOCAL_GL_STENCIL_VALUE_MASK, &mStencilValueMaskFront);
+  gl->GetUIntegerv(LOCAL_GL_STENCIL_BACK_VALUE_MASK, &mStencilValueMaskBack);
+  gl->GetUIntegerv(LOCAL_GL_STENCIL_WRITEMASK, &mStencilWriteMaskFront);
+  gl->GetUIntegerv(LOCAL_GL_STENCIL_BACK_WRITEMASK, &mStencilWriteMaskBack);
+
+  AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_VALUE_MASK,
+                         mStencilValueMaskFront);
+  AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_BACK_VALUE_MASK,
+                         mStencilValueMaskBack);
+  AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_WRITEMASK,
+                         mStencilWriteMaskFront);
+  AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_BACK_WRITEMASK,
+                         mStencilWriteMaskBack);
+
+  mDitherEnabled = true;
+  mRasterizerDiscardEnabled = false;
+  mScissorTestEnabled = false;
+
+  mDepthTestEnabled = 0;
+  mDriverDepthTest = false;
+  mStencilTestEnabled = 0;
+  mDriverStencilTest = false;
+
+  mGenerateMipmapHint = LOCAL_GL_DONT_CARE;
+
+  
+  mActiveTexture = 0;
+  mDefaultFB_DrawBuffer0 = LOCAL_GL_BACK;
+  mDefaultFB_ReadBuffer = LOCAL_GL_BACK;
+
+  mWebGLError = LOCAL_GL_NO_ERROR;
+
+  mBound2DTextures.Clear();
+  mBoundCubeMapTextures.Clear();
+  mBound3DTextures.Clear();
+  mBound2DArrayTextures.Clear();
+  mBoundSamplers.Clear();
+
+  mBoundArrayBuffer = nullptr;
+  mCurrentProgram = nullptr;
+
+  mBoundDrawFramebuffer = nullptr;
+  mBoundReadFramebuffer = nullptr;
+  mBoundRenderbuffer = nullptr;
+
+  gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_ATTRIBS, &mGLMaxVertexAttribs);
+
+  if (mGLMaxVertexAttribs < 8) {
+    const nsPrintfCString reason("GL_MAX_VERTEX_ATTRIBS: %d is < 8!",
+                                 mGLMaxVertexAttribs);
+    *out_failReason = {"FEATURE_FAILURE_WEBGL_V_ATRB", reason};
+    return false;
+  }
+
+  
+  
+  
+  mGLMaxCombinedTextureImageUnits =
+      gl->GetIntAs<GLuint>(LOCAL_GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
+  mGLMaxTextureUnits = mGLMaxCombinedTextureImageUnits;
+
+  if (mGLMaxCombinedTextureImageUnits < 8) {
+    const nsPrintfCString reason(
+        "GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: %u is < 8!", mGLMaxTextureUnits);
+    *out_failReason = {"FEATURE_FAILURE_WEBGL_T_UNIT", reason};
+    return false;
+  }
+
+  mBound2DTextures.SetLength(mGLMaxTextureUnits);
+  mBoundCubeMapTextures.SetLength(mGLMaxTextureUnits);
+  mBound3DTextures.SetLength(mGLMaxTextureUnits);
+  mBound2DArrayTextures.SetLength(mGLMaxTextureUnits);
+  mBoundSamplers.SetLength(mGLMaxTextureUnits);
+
+  gl->fGetIntegerv(LOCAL_GL_MAX_VIEWPORT_DIMS, (GLint*)mGLMaxViewportDims);
+
+  
+
+  gl->fGetIntegerv(LOCAL_GL_MAX_TEXTURE_SIZE, (GLint*)&mGLMaxTextureSize);
+  gl->fGetIntegerv(LOCAL_GL_MAX_CUBE_MAP_TEXTURE_SIZE,
+                   (GLint*)&mGLMaxCubeMapTextureSize);
+  gl->fGetIntegerv(LOCAL_GL_MAX_RENDERBUFFER_SIZE,
+                   (GLint*)&mGLMaxRenderbufferSize);
+
+  if (!gl->GetPotentialInteger(LOCAL_GL_MAX_3D_TEXTURE_SIZE,
+                               (GLint*)&mGLMax3DTextureSize))
+    mGLMax3DTextureSize = 0;
+  if (!gl->GetPotentialInteger(LOCAL_GL_MAX_ARRAY_TEXTURE_LAYERS,
+                               (GLint*)&mGLMaxArrayTextureLayers))
+    mGLMaxArrayTextureLayers = 0;
+
+  gl->GetUIntegerv(LOCAL_GL_MAX_TEXTURE_IMAGE_UNITS,
+                   &mGLMaxFragmentTextureImageUnits);
+  gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS,
+                   &mGLMaxVertexTextureImageUnits);
+
+  
+
+  mGLMaxColorAttachments = 1;
+  mGLMaxDrawBuffers = 1;
+
+  if (IsWebGL2()) {
+    UpdateMaxDrawBuffers();
+  }
+
+  
+
+  if (gl->IsSupported(gl::GLFeature::ES2_compatibility)) {
+    gl->GetUIntegerv(LOCAL_GL_MAX_FRAGMENT_UNIFORM_VECTORS,
+                     &mGLMaxFragmentUniformVectors);
+    gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_UNIFORM_VECTORS,
+                     &mGLMaxVertexUniformVectors);
+    gl->GetUIntegerv(LOCAL_GL_MAX_VARYING_VECTORS, &mGLMaxVaryingVectors);
+  } else {
+    gl->GetUIntegerv(LOCAL_GL_MAX_FRAGMENT_UNIFORM_COMPONENTS,
+                     &mGLMaxFragmentUniformVectors);
+    mGLMaxFragmentUniformVectors /= 4;
+    gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_UNIFORM_COMPONENTS,
+                     &mGLMaxVertexUniformVectors);
+    mGLMaxVertexUniformVectors /= 4;
 
     
-    
-    
-    mFormatUsage = CreateFormatUsage(gl);
-    if (!mFormatUsage) {
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_FORMAT",
-                            "Failed to create mFormatUsage." };
-        return false;
-    }
-
-    GLenum error = gl->fGetError();
-    if (error != LOCAL_GL_NO_ERROR) {
-        const nsPrintfCString reason("GL error 0x%x occurred during OpenGL context"
-                                     " initialization, before WebGL initialization!",
-                                     error);
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_GLERR_1", reason };
-        return false;
-    }
-
-    mDisableExtensions = gfxPrefs::WebGLDisableExtensions();
-    mLoseContextOnMemoryPressure = gfxPrefs::WebGLLoseContextOnMemoryPressure();
-    mCanLoseContextInForeground = gfxPrefs::WebGLCanLoseContextInForeground();
-
-    
-    
-    mColorWriteMask = 0x0f;
-    mDriverColorMask = mColorWriteMask;
-    mColorClearValue[0] = 0.f;
-    mColorClearValue[1] = 0.f;
-    mColorClearValue[2] = 0.f;
-    mColorClearValue[3] = 0.f;
-    mDepthWriteMask = true;
-    mDepthClearValue = 1.f;
-    mStencilClearValue = 0;
-    mStencilRefFront = 0;
-    mStencilRefBack = 0;
-
-    mLineWidth = 1.0;
-
-    
 
 
 
@@ -353,356 +451,249 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
 
 
 
-
-
-    gl->GetUIntegerv(LOCAL_GL_STENCIL_VALUE_MASK,      &mStencilValueMaskFront);
-    gl->GetUIntegerv(LOCAL_GL_STENCIL_BACK_VALUE_MASK, &mStencilValueMaskBack);
-    gl->GetUIntegerv(LOCAL_GL_STENCIL_WRITEMASK,       &mStencilWriteMaskFront);
-    gl->GetUIntegerv(LOCAL_GL_STENCIL_BACK_WRITEMASK,  &mStencilWriteMaskBack);
-
-    AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_VALUE_MASK,      mStencilValueMaskFront);
-    AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_BACK_VALUE_MASK, mStencilValueMaskBack);
-    AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_WRITEMASK,       mStencilWriteMaskFront);
-    AssertUintParamCorrect(gl, LOCAL_GL_STENCIL_BACK_WRITEMASK,  mStencilWriteMaskBack);
-
-    mDitherEnabled = true;
-    mRasterizerDiscardEnabled = false;
-    mScissorTestEnabled = false;
-
-    mDepthTestEnabled = 0;
-    mDriverDepthTest = false;
-    mStencilTestEnabled = 0;
-    mDriverStencilTest = false;
-
-    mGenerateMipmapHint = LOCAL_GL_DONT_CARE;
-
-    
-    mActiveTexture = 0;
-    mDefaultFB_DrawBuffer0 = LOCAL_GL_BACK;
-    mDefaultFB_ReadBuffer = LOCAL_GL_BACK;
-
-    mWebGLError = LOCAL_GL_NO_ERROR;
-
-    mBound2DTextures.Clear();
-    mBoundCubeMapTextures.Clear();
-    mBound3DTextures.Clear();
-    mBound2DArrayTextures.Clear();
-    mBoundSamplers.Clear();
-
-    mBoundArrayBuffer = nullptr;
-    mCurrentProgram = nullptr;
-
-    mBoundDrawFramebuffer = nullptr;
-    mBoundReadFramebuffer = nullptr;
-    mBoundRenderbuffer = nullptr;
-
-    gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_ATTRIBS, &mGLMaxVertexAttribs);
-
-    if (mGLMaxVertexAttribs < 8) {
-        const nsPrintfCString reason("GL_MAX_VERTEX_ATTRIBS: %d is < 8!",
-                                     mGLMaxVertexAttribs);
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_V_ATRB", reason };
-        return false;
-    }
-
-    
-    
-    
-    mGLMaxCombinedTextureImageUnits = gl->GetIntAs<GLuint>(LOCAL_GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
-    mGLMaxTextureUnits = mGLMaxCombinedTextureImageUnits;
-
-    if (mGLMaxCombinedTextureImageUnits < 8) {
-        const nsPrintfCString reason("GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS: %u is < 8!",
-                                     mGLMaxTextureUnits);
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_T_UNIT", reason };
-        return false;
-    }
-
-    mBound2DTextures.SetLength(mGLMaxTextureUnits);
-    mBoundCubeMapTextures.SetLength(mGLMaxTextureUnits);
-    mBound3DTextures.SetLength(mGLMaxTextureUnits);
-    mBound2DArrayTextures.SetLength(mGLMaxTextureUnits);
-    mBoundSamplers.SetLength(mGLMaxTextureUnits);
-
-    gl->fGetIntegerv(LOCAL_GL_MAX_VIEWPORT_DIMS, (GLint*)mGLMaxViewportDims);
-
-    
-
-    gl->fGetIntegerv(LOCAL_GL_MAX_TEXTURE_SIZE, (GLint*)&mGLMaxTextureSize);
-    gl->fGetIntegerv(LOCAL_GL_MAX_CUBE_MAP_TEXTURE_SIZE, (GLint*)&mGLMaxCubeMapTextureSize);
-    gl->fGetIntegerv(LOCAL_GL_MAX_RENDERBUFFER_SIZE, (GLint*)&mGLMaxRenderbufferSize);
-
-    if (!gl->GetPotentialInteger(LOCAL_GL_MAX_3D_TEXTURE_SIZE, (GLint*)&mGLMax3DTextureSize))
-        mGLMax3DTextureSize = 0;
-    if (!gl->GetPotentialInteger(LOCAL_GL_MAX_ARRAY_TEXTURE_LAYERS, (GLint*)&mGLMaxArrayTextureLayers))
-        mGLMaxArrayTextureLayers = 0;
-
-    gl->GetUIntegerv(LOCAL_GL_MAX_TEXTURE_IMAGE_UNITS, &mGLMaxFragmentTextureImageUnits);
-    gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &mGLMaxVertexTextureImageUnits);
-
-    
-
-    mGLMaxColorAttachments = 1;
-    mGLMaxDrawBuffers = 1;
-
-    if (IsWebGL2()) {
-        UpdateMaxDrawBuffers();
-    }
-
-    
-
-    if (gl->IsSupported(gl::GLFeature::ES2_compatibility)) {
-        gl->GetUIntegerv(LOCAL_GL_MAX_FRAGMENT_UNIFORM_VECTORS, &mGLMaxFragmentUniformVectors);
-        gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_UNIFORM_VECTORS, &mGLMaxVertexUniformVectors);
-        gl->GetUIntegerv(LOCAL_GL_MAX_VARYING_VECTORS, &mGLMaxVaryingVectors);
+    uint32_t maxVertexOutputComponents = 0;
+    uint32_t maxFragmentInputComponents = 0;
+    bool ok = true;
+    ok &= gl->GetPotentialInteger(LOCAL_GL_MAX_VERTEX_OUTPUT_COMPONENTS,
+                                  (GLint*)&maxVertexOutputComponents);
+    ok &= gl->GetPotentialInteger(LOCAL_GL_MAX_FRAGMENT_INPUT_COMPONENTS,
+                                  (GLint*)&maxFragmentInputComponents);
+    if (ok) {
+      mGLMaxVaryingVectors =
+          std::min(maxVertexOutputComponents, maxFragmentInputComponents) / 4;
     } else {
-        gl->GetUIntegerv(LOCAL_GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &mGLMaxFragmentUniformVectors);
-        mGLMaxFragmentUniformVectors /= 4;
-        gl->GetUIntegerv(LOCAL_GL_MAX_VERTEX_UNIFORM_COMPONENTS, &mGLMaxVertexUniformVectors);
-        mGLMaxVertexUniformVectors /= 4;
+      mGLMaxVaryingVectors = 16;
+      
+      
+    }
+  }
 
-        
+  
 
+  gl->fGetFloatv(LOCAL_GL_ALIASED_LINE_WIDTH_RANGE, mGLAliasedLineWidthRange);
 
+  const GLenum driverPName = gl->IsCoreProfile()
+                                 ? LOCAL_GL_POINT_SIZE_RANGE
+                                 : LOCAL_GL_ALIASED_POINT_SIZE_RANGE;
+  gl->fGetFloatv(driverPName, mGLAliasedPointSizeRange);
 
+  
 
+  if (gfxPrefs::WebGLMinCapabilityMode()) {
+    bool ok = true;
 
+    ok &= RestrictCap(&mGLMaxVertexTextureImageUnits,
+                      kMinMaxVertexTextureImageUnits);
+    ok &= RestrictCap(&mGLMaxFragmentTextureImageUnits,
+                      kMinMaxFragmentTextureImageUnits);
+    ok &= RestrictCap(&mGLMaxCombinedTextureImageUnits,
+                      kMinMaxCombinedTextureImageUnits);
 
+    ok &= RestrictCap(&mGLMaxVertexAttribs, kMinMaxVertexAttribs);
+    ok &= RestrictCap(&mGLMaxVertexUniformVectors, kMinMaxVertexUniformVectors);
+    ok &= RestrictCap(&mGLMaxFragmentUniformVectors,
+                      kMinMaxFragmentUniformVectors);
+    ok &= RestrictCap(&mGLMaxVaryingVectors, kMinMaxVaryingVectors);
 
+    ok &= RestrictCap(&mGLMaxColorAttachments, kMinMaxColorAttachments);
+    ok &= RestrictCap(&mGLMaxDrawBuffers, kMinMaxDrawBuffers);
 
+    ok &= RestrictCap(&mGLMaxTextureSize, kMinMaxTextureSize);
+    ok &= RestrictCap(&mGLMaxCubeMapTextureSize, kMinMaxCubeMapTextureSize);
+    ok &= RestrictCap(&mGLMax3DTextureSize, kMinMax3DTextureSize);
 
-        uint32_t maxVertexOutputComponents = 0;
-        uint32_t maxFragmentInputComponents = 0;
-        bool ok = true;
-        ok &= gl->GetPotentialInteger(LOCAL_GL_MAX_VERTEX_OUTPUT_COMPONENTS,
-                                      (GLint*)&maxVertexOutputComponents);
-        ok &= gl->GetPotentialInteger(LOCAL_GL_MAX_FRAGMENT_INPUT_COMPONENTS,
-                                      (GLint*)&maxFragmentInputComponents);
-        if (ok) {
-            mGLMaxVaryingVectors = std::min(maxVertexOutputComponents,
-                                            maxFragmentInputComponents) / 4;
-        } else {
-            mGLMaxVaryingVectors = 16;
-            
-            
-        }
+    ok &= RestrictCap(&mGLMaxArrayTextureLayers, kMinMaxArrayTextureLayers);
+    ok &= RestrictCap(&mGLMaxRenderbufferSize, kMinMaxRenderbufferSize);
+
+    if (!ok) {
+      GenerateWarning("Unable to restrict WebGL limits to minimums.");
+      return false;
     }
 
-    
+    mDisableFragHighP = true;
+  } else if (nsContentUtils::ShouldResistFingerprinting()) {
+    bool ok = true;
 
-    gl->fGetFloatv(LOCAL_GL_ALIASED_LINE_WIDTH_RANGE, mGLAliasedLineWidthRange);
+    ok &= RestrictCap(&mGLMaxTextureSize, kCommonMaxTextureSize);
+    ok &= RestrictCap(&mGLMaxCubeMapTextureSize, kCommonMaxCubeMapTextureSize);
+    ok &= RestrictCap(&mGLMaxRenderbufferSize, kCommonMaxRenderbufferSize);
 
-    const GLenum driverPName = gl->IsCoreProfile() ? LOCAL_GL_POINT_SIZE_RANGE
-                                                   : LOCAL_GL_ALIASED_POINT_SIZE_RANGE;
-    gl->fGetFloatv(driverPName, mGLAliasedPointSizeRange);
+    ok &= RestrictCap(&mGLMaxVertexTextureImageUnits,
+                      kCommonMaxVertexTextureImageUnits);
+    ok &= RestrictCap(&mGLMaxFragmentTextureImageUnits,
+                      kCommonMaxFragmentTextureImageUnits);
+    ok &= RestrictCap(&mGLMaxCombinedTextureImageUnits,
+                      kCommonMaxCombinedTextureImageUnits);
 
-    
+    ok &= RestrictCap(&mGLMaxVertexAttribs, kCommonMaxVertexAttribs);
+    ok &= RestrictCap(&mGLMaxVertexUniformVectors,
+                      kCommonMaxVertexUniformVectors);
+    ok &= RestrictCap(&mGLMaxFragmentUniformVectors,
+                      kCommonMaxFragmentUniformVectors);
+    ok &= RestrictCap(&mGLMaxVaryingVectors, kCommonMaxVaryingVectors);
 
-    if (gfxPrefs::WebGLMinCapabilityMode()) {
-        bool ok = true;
+    ok &= RestrictCap(&mGLAliasedLineWidthRange[0],
+                      kCommonAliasedLineWidthRangeMin);
+    ok &= RestrictCap(&mGLAliasedLineWidthRange[1],
+                      kCommonAliasedLineWidthRangeMax);
+    ok &= RestrictCap(&mGLAliasedPointSizeRange[0],
+                      kCommonAliasedPointSizeRangeMin);
+    ok &= RestrictCap(&mGLAliasedPointSizeRange[1],
+                      kCommonAliasedPointSizeRangeMax);
 
-        ok &= RestrictCap(&mGLMaxVertexTextureImageUnits  , kMinMaxVertexTextureImageUnits);
-        ok &= RestrictCap(&mGLMaxFragmentTextureImageUnits, kMinMaxFragmentTextureImageUnits);
-        ok &= RestrictCap(&mGLMaxCombinedTextureImageUnits, kMinMaxCombinedTextureImageUnits);
+    ok &= RestrictCap(&mGLMaxViewportDims[0], kCommonMaxViewportDims);
+    ok &= RestrictCap(&mGLMaxViewportDims[1], kCommonMaxViewportDims);
 
-        ok &= RestrictCap(&mGLMaxVertexAttribs         , kMinMaxVertexAttribs);
-        ok &= RestrictCap(&mGLMaxVertexUniformVectors  , kMinMaxVertexUniformVectors);
-        ok &= RestrictCap(&mGLMaxFragmentUniformVectors, kMinMaxFragmentUniformVectors);
-        ok &= RestrictCap(&mGLMaxVaryingVectors        , kMinMaxVaryingVectors);
-
-        ok &= RestrictCap(&mGLMaxColorAttachments, kMinMaxColorAttachments);
-        ok &= RestrictCap(&mGLMaxDrawBuffers     , kMinMaxDrawBuffers);
-
-        ok &= RestrictCap(&mGLMaxTextureSize       , kMinMaxTextureSize);
-        ok &= RestrictCap(&mGLMaxCubeMapTextureSize, kMinMaxCubeMapTextureSize);
-        ok &= RestrictCap(&mGLMax3DTextureSize     , kMinMax3DTextureSize);
-
-        ok &= RestrictCap(&mGLMaxArrayTextureLayers, kMinMaxArrayTextureLayers);
-        ok &= RestrictCap(&mGLMaxRenderbufferSize  , kMinMaxRenderbufferSize);
-
-        if (!ok) {
-            GenerateWarning("Unable to restrict WebGL limits to minimums.");
-            return false;
-        }
-
-        mDisableFragHighP = true;
-    } else if (nsContentUtils::ShouldResistFingerprinting()) {
-        bool ok = true;
-
-        ok &= RestrictCap(&mGLMaxTextureSize       , kCommonMaxTextureSize);
-        ok &= RestrictCap(&mGLMaxCubeMapTextureSize, kCommonMaxCubeMapTextureSize);
-        ok &= RestrictCap(&mGLMaxRenderbufferSize  , kCommonMaxRenderbufferSize);
-
-        ok &= RestrictCap(&mGLMaxVertexTextureImageUnits  , kCommonMaxVertexTextureImageUnits);
-        ok &= RestrictCap(&mGLMaxFragmentTextureImageUnits, kCommonMaxFragmentTextureImageUnits);
-        ok &= RestrictCap(&mGLMaxCombinedTextureImageUnits, kCommonMaxCombinedTextureImageUnits);
-
-        ok &= RestrictCap(&mGLMaxVertexAttribs         , kCommonMaxVertexAttribs);
-        ok &= RestrictCap(&mGLMaxVertexUniformVectors  , kCommonMaxVertexUniformVectors);
-        ok &= RestrictCap(&mGLMaxFragmentUniformVectors, kCommonMaxFragmentUniformVectors);
-        ok &= RestrictCap(&mGLMaxVaryingVectors        , kCommonMaxVaryingVectors);
-
-        ok &= RestrictCap(&mGLAliasedLineWidthRange[0], kCommonAliasedLineWidthRangeMin);
-        ok &= RestrictCap(&mGLAliasedLineWidthRange[1], kCommonAliasedLineWidthRangeMax);
-        ok &= RestrictCap(&mGLAliasedPointSizeRange[0], kCommonAliasedPointSizeRangeMin);
-        ok &= RestrictCap(&mGLAliasedPointSizeRange[1], kCommonAliasedPointSizeRangeMax);
-
-        ok &= RestrictCap(&mGLMaxViewportDims[0], kCommonMaxViewportDims);
-        ok &= RestrictCap(&mGLMaxViewportDims[1], kCommonMaxViewportDims);
-
-        if (!ok) {
-            GenerateWarning("Unable to restrict WebGL limits in order to resist fingerprinting");
-            return false;
-        }
+    if (!ok) {
+      GenerateWarning(
+          "Unable to restrict WebGL limits in order to resist fingerprinting");
+      return false;
     }
+  }
 
-    
+  
 
-    if (gl->IsCompatibilityProfile()) {
-        gl->fEnable(LOCAL_GL_POINT_SPRITE);
-    }
+  if (gl->IsCompatibilityProfile()) {
+    gl->fEnable(LOCAL_GL_POINT_SPRITE);
+  }
 
-    if (!gl->IsGLES()) {
-        gl->fEnable(LOCAL_GL_PROGRAM_POINT_SIZE);
-    }
+  if (!gl->IsGLES()) {
+    gl->fEnable(LOCAL_GL_PROGRAM_POINT_SIZE);
+  }
 
 #ifdef XP_MACOSX
-    if (gl->WorkAroundDriverBugs() &&
-        gl->Vendor() == gl::GLVendor::ATI &&
-        !nsCocoaFeatures::IsAtLeastVersion(10,9))
-    {
-        
-        
-        gl->fPointParameterf(LOCAL_GL_POINT_SPRITE_COORD_ORIGIN,
-                             LOCAL_GL_LOWER_LEFT);
-    }
+  if (gl->WorkAroundDriverBugs() && gl->Vendor() == gl::GLVendor::ATI &&
+      !nsCocoaFeatures::IsAtLeastVersion(10, 9)) {
+    
+    
+    gl->fPointParameterf(LOCAL_GL_POINT_SPRITE_COORD_ORIGIN,
+                         LOCAL_GL_LOWER_LEFT);
+  }
 #endif
 
-    if (gl->IsSupported(gl::GLFeature::seamless_cube_map_opt_in)) {
-        gl->fEnable(LOCAL_GL_TEXTURE_CUBE_MAP_SEAMLESS);
-    }
+  if (gl->IsSupported(gl::GLFeature::seamless_cube_map_opt_in)) {
+    gl->fEnable(LOCAL_GL_TEXTURE_CUBE_MAP_SEAMLESS);
+  }
 
-    
-    mBypassShaderValidation = gfxPrefs::WebGLBypassShaderValidator();
+  
+  mBypassShaderValidation = gfxPrefs::WebGLBypassShaderValidator();
 
-    
-    if (!sh::Initialize()) {
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_GLSL",
-                            "GLSL translator initialization failed!" };
-        return false;
-    }
+  
+  if (!sh::Initialize()) {
+    *out_failReason = {"FEATURE_FAILURE_WEBGL_GLSL",
+                       "GLSL translator initialization failed!"};
+    return false;
+  }
 
-    
-    
-    const char* versionStr = (const char*)(gl->fGetString(LOCAL_GL_VERSION));
-    mIsMesa = strstr(versionStr, "Mesa");
+  
+  
+  const char* versionStr = (const char*)(gl->fGetString(LOCAL_GL_VERSION));
+  mIsMesa = strstr(versionStr, "Mesa");
 
-    
-    
-    
-    error = gl->fGetError();
-    if (error != LOCAL_GL_NO_ERROR) {
-        const nsPrintfCString reason("GL error 0x%x occurred during WebGL context"
-                                     " initialization!",
-                                     error);
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_GLERR_2", reason };
-        return false;
-    }
+  
+  
+  
+  error = gl->fGetError();
+  if (error != LOCAL_GL_NO_ERROR) {
+    const nsPrintfCString reason(
+        "GL error 0x%x occurred during WebGL context"
+        " initialization!",
+        error);
+    *out_failReason = {"FEATURE_FAILURE_WEBGL_GLERR_2", reason};
+    return false;
+  }
 
-    if (IsWebGL2() &&
-        !InitWebGL2(out_failReason))
-    {
-        
-        return false;
-    }
-
-    if (!gl->IsSupported(GLFeature::vertex_array_object)) {
-        *out_failReason = { "FEATURE_FAILURE_WEBGL_VAOS",
-                            "Requires vertex_array_object." };
-        return false;
-    }
-
+  if (IsWebGL2() && !InitWebGL2(out_failReason)) {
     
-    
-    
-    
-    
-    
-    
-    
-    mDefaultVertexArray = WebGLVertexArray::Create(this);
-    mDefaultVertexArray->BindVertexArray();
-    mDefaultVertexArray->mAttribs.SetLength(mGLMaxVertexAttribs);
+    return false;
+  }
 
-    mPixelStore_FlipY = false;
-    mPixelStore_PremultiplyAlpha = false;
-    mPixelStore_ColorspaceConversion = BROWSER_DEFAULT_WEBGL;
-    mPixelStore_RequireFastPath = false;
+  if (!gl->IsSupported(GLFeature::vertex_array_object)) {
+    *out_failReason = {"FEATURE_FAILURE_WEBGL_VAOS",
+                       "Requires vertex_array_object."};
+    return false;
+  }
 
-    
-    mPixelStore_UnpackImageHeight = 0;
-    mPixelStore_UnpackSkipImages = 0;
-    mPixelStore_UnpackRowLength = 0;
-    mPixelStore_UnpackSkipRows = 0;
-    mPixelStore_UnpackSkipPixels = 0;
-    mPixelStore_UnpackAlignment = 4;
-    mPixelStore_PackRowLength = 0;
-    mPixelStore_PackSkipRows = 0;
-    mPixelStore_PackSkipPixels = 0;
-    mPixelStore_PackAlignment = 4;
+  
+  
+  
+  
+  
+  
+  
+  
+  mDefaultVertexArray = WebGLVertexArray::Create(this);
+  mDefaultVertexArray->BindVertexArray();
+  mDefaultVertexArray->mAttribs.SetLength(mGLMaxVertexAttribs);
 
-    mPrimRestartTypeBytes = 0;
+  mPixelStore_FlipY = false;
+  mPixelStore_PremultiplyAlpha = false;
+  mPixelStore_ColorspaceConversion = BROWSER_DEFAULT_WEBGL;
+  mPixelStore_RequireFastPath = false;
 
-    mGenericVertexAttribTypes.assign(mGLMaxVertexAttribs,
-                                     webgl::AttribBaseType::Float);
-    mGenericVertexAttribTypeInvalidator.InvalidateCaches();
+  
+  mPixelStore_UnpackImageHeight = 0;
+  mPixelStore_UnpackSkipImages = 0;
+  mPixelStore_UnpackRowLength = 0;
+  mPixelStore_UnpackSkipRows = 0;
+  mPixelStore_UnpackSkipPixels = 0;
+  mPixelStore_UnpackAlignment = 4;
+  mPixelStore_PackRowLength = 0;
+  mPixelStore_PackSkipRows = 0;
+  mPixelStore_PackSkipPixels = 0;
+  mPixelStore_PackAlignment = 4;
 
-    static const float kDefaultGenericVertexAttribData[4] = { 0, 0, 0, 1 };
-    memcpy(mGenericVertexAttrib0Data, kDefaultGenericVertexAttribData,
-           sizeof(mGenericVertexAttrib0Data));
+  mPrimRestartTypeBytes = 0;
 
-    mFakeVertexAttrib0BufferObject = 0;
+  mGenericVertexAttribTypes.assign(mGLMaxVertexAttribs,
+                                   webgl::AttribBaseType::Float);
+  mGenericVertexAttribTypeInvalidator.InvalidateCaches();
 
-    mNeedsIndexValidation = !gl->IsSupported(gl::GLFeature::robust_buffer_access_behavior);
-    switch (gfxPrefs::WebGLForceIndexValidation()) {
+  static const float kDefaultGenericVertexAttribData[4] = {0, 0, 0, 1};
+  memcpy(mGenericVertexAttrib0Data, kDefaultGenericVertexAttribData,
+         sizeof(mGenericVertexAttrib0Data));
+
+  mFakeVertexAttrib0BufferObject = 0;
+
+  mNeedsIndexValidation =
+      !gl->IsSupported(gl::GLFeature::robust_buffer_access_behavior);
+  switch (gfxPrefs::WebGLForceIndexValidation()) {
     case -1:
-        mNeedsIndexValidation = false;
-        break;
+      mNeedsIndexValidation = false;
+      break;
     case 1:
-        mNeedsIndexValidation = true;
-        break;
+      mNeedsIndexValidation = true;
+      break;
     default:
-        MOZ_ASSERT(gfxPrefs::WebGLForceIndexValidation() == 0);
-        break;
-    }
+      MOZ_ASSERT(gfxPrefs::WebGLForceIndexValidation() == 0);
+      break;
+  }
 
-    return true;
+  return true;
 }
 
-bool
-WebGLContext::ValidateFramebufferTarget(GLenum target)
-{
-    bool isValid = true;
-    switch (target) {
+bool WebGLContext::ValidateFramebufferTarget(GLenum target) {
+  bool isValid = true;
+  switch (target) {
     case LOCAL_GL_FRAMEBUFFER:
-        break;
+      break;
 
     case LOCAL_GL_DRAW_FRAMEBUFFER:
     case LOCAL_GL_READ_FRAMEBUFFER:
-        isValid = IsWebGL2();
-        break;
+      isValid = IsWebGL2();
+      break;
 
     default:
-        isValid = false;
-        break;
-    }
+      isValid = false;
+      break;
+  }
 
-    if (MOZ_LIKELY(isValid)) {
-        return true;
-    }
+  if (MOZ_LIKELY(isValid)) {
+    return true;
+  }
 
-    ErrorInvalidEnumArg("target", target);
-    return false;
+  ErrorInvalidEnumArg("target", target);
+  return false;
 }
 
-} 
+}  

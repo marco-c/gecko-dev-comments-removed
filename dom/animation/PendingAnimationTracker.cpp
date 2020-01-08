@@ -10,24 +10,20 @@
 #include "mozilla/dom/Nullable.h"
 #include "nsIFrame.h"
 #include "nsIPresShell.h"
-#include "nsTransitionManager.h" 
+#include "nsTransitionManager.h"  
 
 using mozilla::dom::Nullable;
 
 namespace mozilla {
 
-NS_IMPL_CYCLE_COLLECTION(PendingAnimationTracker,
-                         mPlayPendingSet,
-                         mPausePendingSet,
-                         mDocument)
+NS_IMPL_CYCLE_COLLECTION(PendingAnimationTracker, mPlayPendingSet,
+                         mPausePendingSet, mDocument)
 
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(PendingAnimationTracker, AddRef)
 NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(PendingAnimationTracker, Release)
 
-void
-PendingAnimationTracker::AddPending(dom::Animation& aAnimation,
-                                    AnimationSet& aSet)
-{
+void PendingAnimationTracker::AddPending(dom::Animation& aAnimation,
+                                         AnimationSet& aSet) {
   aSet.PutEntry(&aAnimation);
 
   
@@ -36,26 +32,20 @@ PendingAnimationTracker::AddPending(dom::Animation& aAnimation,
   EnsurePaintIsScheduled();
 }
 
-void
-PendingAnimationTracker::RemovePending(dom::Animation& aAnimation,
-                                       AnimationSet& aSet)
-{
+void PendingAnimationTracker::RemovePending(dom::Animation& aAnimation,
+                                            AnimationSet& aSet) {
   aSet.RemoveEntry(&aAnimation);
 }
 
-bool
-PendingAnimationTracker::IsWaiting(const dom::Animation& aAnimation,
-                                   const AnimationSet& aSet) const
-{
+bool PendingAnimationTracker::IsWaiting(const dom::Animation& aAnimation,
+                                        const AnimationSet& aSet) const {
   return aSet.Contains(const_cast<dom::Animation*>(&aAnimation));
 }
 
-void
-PendingAnimationTracker::TriggerPendingAnimationsOnNextTick(const TimeStamp&
-                                                        aReadyTime)
-{
-  auto triggerAnimationsAtReadyTime = [aReadyTime](AnimationSet& aAnimationSet)
-  {
+void PendingAnimationTracker::TriggerPendingAnimationsOnNextTick(
+    const TimeStamp& aReadyTime) {
+  auto triggerAnimationsAtReadyTime = [aReadyTime](
+                                          AnimationSet& aAnimationSet) {
     for (auto iter = aAnimationSet.Iter(); !iter.Done(); iter.Next()) {
       dom::Animation* animation = iter.Get()->GetKey();
       dom::AnimationTimeline* timeline = animation->GetTimeline();
@@ -88,14 +78,11 @@ PendingAnimationTracker::TriggerPendingAnimationsOnNextTick(const TimeStamp&
   triggerAnimationsAtReadyTime(mPlayPendingSet);
   triggerAnimationsAtReadyTime(mPausePendingSet);
 
-  mHasPlayPendingGeometricAnimations = mPlayPendingSet.Count()
-                                       ? CheckState::Indeterminate
-                                       : CheckState::Absent;
+  mHasPlayPendingGeometricAnimations =
+      mPlayPendingSet.Count() ? CheckState::Indeterminate : CheckState::Absent;
 }
 
-void
-PendingAnimationTracker::TriggerPendingAnimationsNow()
-{
+void PendingAnimationTracker::TriggerPendingAnimationsNow() {
   auto triggerAndClearAnimations = [](AnimationSet& aAnimationSet) {
     for (auto iter = aAnimationSet.Iter(); !iter.Done(); iter.Next()) {
       iter.Get()->GetKey()->TriggerNow();
@@ -109,15 +96,12 @@ PendingAnimationTracker::TriggerPendingAnimationsNow()
   mHasPlayPendingGeometricAnimations = CheckState::Absent;
 }
 
-static bool
-IsTransition(const Animation& aAnimation) {
+static bool IsTransition(const Animation& aAnimation) {
   const dom::CSSTransition* transition = aAnimation.AsCSSTransition();
   return transition && transition->IsTiedToMarkup();
 }
 
-void
-PendingAnimationTracker::MarkAnimationsThatMightNeedSynchronization()
-{
+void PendingAnimationTracker::MarkAnimationsThatMightNeedSynchronization() {
   
   
   
@@ -156,8 +140,8 @@ PendingAnimationTracker::MarkAnimationsThatMightNeedSynchronization()
     if (animation->GetEffect() && animation->GetEffect()->AffectsGeometry()) {
       mHasPlayPendingGeometricAnimations &= ~CheckState::Absent;
       mHasPlayPendingGeometricAnimations |= IsTransition(*animation)
-                                            ? CheckState::TransitionsPresent
-                                            : CheckState::AnimationsPresent;
+                                                ? CheckState::TransitionsPresent
+                                                : CheckState::AnimationsPresent;
 
       
       
@@ -184,9 +168,7 @@ PendingAnimationTracker::MarkAnimationsThatMightNeedSynchronization()
   }
 }
 
-void
-PendingAnimationTracker::EnsurePaintIsScheduled()
-{
+void PendingAnimationTracker::EnsurePaintIsScheduled() {
   if (!mDocument) {
     return;
   }
@@ -204,4 +186,4 @@ PendingAnimationTracker::EnsurePaintIsScheduled()
   rootFrame->SchedulePaintWithoutInvalidatingObservers();
 }
 
-} 
+}  

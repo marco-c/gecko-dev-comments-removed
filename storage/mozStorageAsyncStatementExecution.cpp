@@ -43,17 +43,13 @@ namespace storage {
 
 
 
-nsresult
-AsyncExecuteStatements::execute(StatementDataArray &aStatements,
-                                Connection *aConnection,
-                                sqlite3 *aNativeConnection,
-                                mozIStorageStatementCallback *aCallback,
-                                mozIStoragePendingStatement **_stmt)
-{
+nsresult AsyncExecuteStatements::execute(
+    StatementDataArray &aStatements, Connection *aConnection,
+    sqlite3 *aNativeConnection, mozIStorageStatementCallback *aCallback,
+    mozIStoragePendingStatement **_stmt) {
   
-  RefPtr<AsyncExecuteStatements> event =
-    new AsyncExecuteStatements(aStatements, aConnection, aNativeConnection,
-                               aCallback);
+  RefPtr<AsyncExecuteStatements> event = new AsyncExecuteStatements(
+      aStatements, aConnection, aNativeConnection, aCallback);
   NS_ENSURE_TRUE(event, NS_ERROR_OUT_OF_MEMORY);
 
   
@@ -77,29 +73,27 @@ AsyncExecuteStatements::execute(StatementDataArray &aStatements,
   return NS_OK;
 }
 
-AsyncExecuteStatements::AsyncExecuteStatements(StatementDataArray &aStatements,
-                                               Connection *aConnection,
-                                               sqlite3 *aNativeConnection,
-                                               mozIStorageStatementCallback *aCallback)
-: mConnection(aConnection)
-, mNativeConnection(aNativeConnection)
-, mHasTransaction(false)
-, mCallback(aCallback)
-, mCallingThread(::do_GetCurrentThread())
-, mMaxWait(TimeDuration::FromMilliseconds(MAX_MILLISECONDS_BETWEEN_RESULTS))
-, mIntervalStart(TimeStamp::Now())
-, mState(PENDING)
-, mCancelRequested(false)
-, mMutex(aConnection->sharedAsyncExecutionMutex)
-, mDBMutex(aConnection->sharedDBMutex)
-, mRequestStartDate(TimeStamp::Now())
-{
+AsyncExecuteStatements::AsyncExecuteStatements(
+    StatementDataArray &aStatements, Connection *aConnection,
+    sqlite3 *aNativeConnection, mozIStorageStatementCallback *aCallback)
+    : mConnection(aConnection),
+      mNativeConnection(aNativeConnection),
+      mHasTransaction(false),
+      mCallback(aCallback),
+      mCallingThread(::do_GetCurrentThread()),
+      mMaxWait(
+          TimeDuration::FromMilliseconds(MAX_MILLISECONDS_BETWEEN_RESULTS)),
+      mIntervalStart(TimeStamp::Now()),
+      mState(PENDING),
+      mCancelRequested(false),
+      mMutex(aConnection->sharedAsyncExecutionMutex),
+      mDBMutex(aConnection->sharedDBMutex),
+      mRequestStartDate(TimeStamp::Now()) {
   (void)mStatements.SwapElements(aStatements);
   NS_ASSERTION(mStatements.Length(), "We weren't given any statements!");
 }
 
-AsyncExecuteStatements::~AsyncExecuteStatements()
-{
+AsyncExecuteStatements::~AsyncExecuteStatements() {
   MOZ_ASSERT(!mCallback, "Never called the Completion callback!");
   MOZ_ASSERT(!mHasTransaction, "There should be no transaction at this point");
   if (mCallback) {
@@ -108,9 +102,7 @@ AsyncExecuteStatements::~AsyncExecuteStatements()
   }
 }
 
-bool
-AsyncExecuteStatements::shouldNotify()
-{
+bool AsyncExecuteStatements::shouldNotify() {
 #ifdef DEBUG
   mMutex.AssertNotCurrentThreadOwns();
 
@@ -125,10 +117,8 @@ AsyncExecuteStatements::shouldNotify()
   return !mCancelRequested;
 }
 
-bool
-AsyncExecuteStatements::bindExecuteAndProcessStatement(StatementData &aData,
-                                                       bool aLastStatement)
-{
+bool AsyncExecuteStatements::bindExecuteAndProcessStatement(
+    StatementData &aData, bool aLastStatement) {
   mMutex.AssertNotCurrentThreadOwns();
 
   sqlite3_stmt *aStatement = nullptr;
@@ -144,7 +134,7 @@ AsyncExecuteStatements::bindExecuteAndProcessStatement(StatementData &aData,
   while (itr != end && continueProcessing) {
     
     nsCOMPtr<IStorageBindingParamsInternal> bindingInternal =
-      do_QueryInterface(*itr);
+        do_QueryInterface(*itr);
     nsCOMPtr<mozIStorageError> error = bindingInternal->bind(aStatement);
     if (error) {
       
@@ -167,10 +157,8 @@ AsyncExecuteStatements::bindExecuteAndProcessStatement(StatementData &aData,
   return continueProcessing;
 }
 
-bool
-AsyncExecuteStatements::executeAndProcessStatement(sqlite3_stmt *aStatement,
-                                                   bool aLastStatement)
-{
+bool AsyncExecuteStatements::executeAndProcessStatement(
+    sqlite3_stmt *aStatement, bool aLastStatement) {
   mMutex.AssertNotCurrentThreadOwns();
 
   
@@ -179,8 +167,7 @@ AsyncExecuteStatements::executeAndProcessStatement(sqlite3_stmt *aStatement,
     hasResults = executeStatement(aStatement);
 
     
-    if (mState == ERROR || mState == CANCELED)
-      return false;
+    if (mState == ERROR || mState == CANCELED) return false;
 
     
     {
@@ -217,33 +204,31 @@ AsyncExecuteStatements::executeAndProcessStatement(sqlite3_stmt *aStatement,
   
   
   
-  if (aLastStatement)
-    mState = COMPLETED;
+  if (aLastStatement) mState = COMPLETED;
 
   return true;
 }
 
-bool
-AsyncExecuteStatements::executeStatement(sqlite3_stmt *aStatement)
-{
+bool AsyncExecuteStatements::executeStatement(sqlite3_stmt *aStatement) {
   mMutex.AssertNotCurrentThreadOwns();
-  Telemetry::AutoTimer<Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_MS> finallySendExecutionDuration(mRequestStartDate);
+  Telemetry::AutoTimer<Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_MS>
+      finallySendExecutionDuration(mRequestStartDate);
   while (true) {
     
     SQLiteMutexAutoLock lockedScope(mDBMutex);
 
     int rc = mConnection->stepStatement(mNativeConnection, aStatement);
     
-    if (rc == SQLITE_DONE)
-    {
-      Telemetry::Accumulate(Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_SUCCESS, true);
+    if (rc == SQLITE_DONE) {
+      Telemetry::Accumulate(Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_SUCCESS,
+                            true);
       return false;
     }
 
     
-    if (rc == SQLITE_ROW)
-    {
-      Telemetry::Accumulate(Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_SUCCESS, true);
+    if (rc == SQLITE_ROW) {
+      Telemetry::Accumulate(Telemetry::MOZ_STORAGE_ASYNC_REQUESTS_SUCCESS,
+                            true);
       return true;
     }
 
@@ -271,8 +256,7 @@ AsyncExecuteStatements::executeStatement(sqlite3_stmt *aStatement)
     
     
     nsCOMPtr<mozIStorageError> errorObj(
-      new Error(rc, ::sqlite3_errmsg(mNativeConnection))
-    );
+        new Error(rc, ::sqlite3_errmsg(mNativeConnection)));
     
     SQLiteMutexAutoUnlock unlockedScope(mDBMutex);
     (void)notifyError(errorObj);
@@ -282,15 +266,13 @@ AsyncExecuteStatements::executeStatement(sqlite3_stmt *aStatement)
   }
 }
 
-nsresult
-AsyncExecuteStatements::buildAndNotifyResults(sqlite3_stmt *aStatement)
-{
+nsresult AsyncExecuteStatements::buildAndNotifyResults(
+    sqlite3_stmt *aStatement) {
   NS_ASSERTION(mCallback, "Trying to dispatch results without a callback!");
   mMutex.AssertNotCurrentThreadOwns();
 
   
-  if (!mResultSet)
-    mResultSet = new ResultSet();
+  if (!mResultSet) mResultSet = new ResultSet();
   NS_ENSURE_TRUE(mResultSet, NS_ERROR_OUT_OF_MEMORY);
 
   RefPtr<Row> row(new Row());
@@ -310,8 +292,7 @@ AsyncExecuteStatements::buildAndNotifyResults(sqlite3_stmt *aStatement)
   if (mResultSet->rows() >= MAX_ROWS_PER_RESULT || delta > mMaxWait) {
     
     rv = notifyResults();
-    if (NS_FAILED(rv))
-      return NS_OK; 
+    if (NS_FAILED(rv)) return NS_OK;  
 
     
     mIntervalStart = now;
@@ -320,9 +301,7 @@ AsyncExecuteStatements::buildAndNotifyResults(sqlite3_stmt *aStatement)
   return NS_OK;
 }
 
-nsresult
-AsyncExecuteStatements::notifyComplete()
-{
+nsresult AsyncExecuteStatements::notifyComplete() {
   mMutex.AssertNotCurrentThreadOwns();
   NS_ASSERTION(mState != PENDING,
                "Still in a pending state when calling Complete!");
@@ -330,8 +309,7 @@ AsyncExecuteStatements::notifyComplete()
   
   
   
-  for (uint32_t i = 0; i < mStatements.Length(); i++)
-    mStatements[i].reset();
+  for (uint32_t i = 0; i < mStatements.Length(); i++) mStatements[i].reset();
 
   
   
@@ -348,10 +326,9 @@ AsyncExecuteStatements::notifyComplete()
         (void)notifyError(mozIStorageError::ERROR,
                           "Transaction failed to commit");
       }
-    }
-    else {
+    } else {
       DebugOnly<nsresult> rv =
-        mConnection->rollbackTransactionInternal(mNativeConnection);
+          mConnection->rollbackTransactionInternal(mNativeConnection);
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Transaction failed to rollback");
     }
     mHasTransaction = false;
@@ -360,16 +337,17 @@ AsyncExecuteStatements::notifyComplete()
   
   
   Unused << mCallingThread->Dispatch(
-    NewRunnableMethod("AsyncExecuteStatements::notifyCompleteOnCallingThread",
-                      this, &AsyncExecuteStatements::notifyCompleteOnCallingThread),
-    NS_DISPATCH_NORMAL);
+      NewRunnableMethod("AsyncExecuteStatements::notifyCompleteOnCallingThread",
+                        this,
+                        &AsyncExecuteStatements::notifyCompleteOnCallingThread),
+      NS_DISPATCH_NORMAL);
 
   return NS_OK;
 }
 
-nsresult
-AsyncExecuteStatements::notifyCompleteOnCallingThread() {
+nsresult AsyncExecuteStatements::notifyCompleteOnCallingThread() {
   MOZ_ASSERT(mCallingThread->IsOnCurrentThread());
+  
   
   
   
@@ -381,15 +359,12 @@ AsyncExecuteStatements::notifyCompleteOnCallingThread() {
   return NS_OK;
 }
 
-nsresult
-AsyncExecuteStatements::notifyError(int32_t aErrorCode,
-                                    const char *aMessage)
-{
+nsresult AsyncExecuteStatements::notifyError(int32_t aErrorCode,
+                                             const char *aMessage) {
   mMutex.AssertNotCurrentThreadOwns();
   mDBMutex.assertNotCurrentThreadOwns();
 
-  if (!mCallback)
-    return NS_OK;
+  if (!mCallback) return NS_OK;
 
   nsCOMPtr<mozIStorageError> errorObj(new Error(aErrorCode, aMessage));
   NS_ENSURE_TRUE(errorObj, NS_ERROR_OUT_OF_MEMORY);
@@ -397,25 +372,23 @@ AsyncExecuteStatements::notifyError(int32_t aErrorCode,
   return notifyError(errorObj);
 }
 
-nsresult
-AsyncExecuteStatements::notifyError(mozIStorageError *aError)
-{
+nsresult AsyncExecuteStatements::notifyError(mozIStorageError *aError) {
   mMutex.AssertNotCurrentThreadOwns();
   mDBMutex.assertNotCurrentThreadOwns();
 
-  if (!mCallback)
-    return NS_OK;
+  if (!mCallback) return NS_OK;
 
   Unused << mCallingThread->Dispatch(
-    NewRunnableMethod<nsCOMPtr<mozIStorageError>>("AsyncExecuteStatements::notifyErrorOnCallingThread",
-                                                  this, &AsyncExecuteStatements::notifyErrorOnCallingThread, aError),
-    NS_DISPATCH_NORMAL);
+      NewRunnableMethod<nsCOMPtr<mozIStorageError>>(
+          "AsyncExecuteStatements::notifyErrorOnCallingThread", this,
+          &AsyncExecuteStatements::notifyErrorOnCallingThread, aError),
+      NS_DISPATCH_NORMAL);
 
   return NS_OK;
 }
 
-nsresult
-AsyncExecuteStatements::notifyErrorOnCallingThread(mozIStorageError *aError) {
+nsresult AsyncExecuteStatements::notifyErrorOnCallingThread(
+    mozIStorageError *aError) {
   MOZ_ASSERT(mCallingThread->IsOnCurrentThread());
   
   
@@ -428,25 +401,24 @@ AsyncExecuteStatements::notifyErrorOnCallingThread(mozIStorageError *aError) {
   return NS_OK;
 }
 
-nsresult
-AsyncExecuteStatements::notifyResults()
-{
+nsresult AsyncExecuteStatements::notifyResults() {
   mMutex.AssertNotCurrentThreadOwns();
   MOZ_ASSERT(mCallback, "notifyResults called without a callback!");
 
   
   
   Unused << mCallingThread->Dispatch(
-    NewRunnableMethod<RefPtr<ResultSet>>("AsyncExecuteStatements::notifyResultsOnCallingThread",
-                                         this, &AsyncExecuteStatements::notifyResultsOnCallingThread, mResultSet.forget()),
-    NS_DISPATCH_NORMAL);
+      NewRunnableMethod<RefPtr<ResultSet>>(
+          "AsyncExecuteStatements::notifyResultsOnCallingThread", this,
+          &AsyncExecuteStatements::notifyResultsOnCallingThread,
+          mResultSet.forget()),
+      NS_DISPATCH_NORMAL);
 
   return NS_OK;
 }
 
-nsresult
-AsyncExecuteStatements::notifyResultsOnCallingThread(ResultSet *aResultSet)
-{
+nsresult AsyncExecuteStatements::notifyResultsOnCallingThread(
+    ResultSet *aResultSet) {
   MOZ_ASSERT(mCallingThread->IsOnCurrentThread());
   
   
@@ -459,15 +431,10 @@ AsyncExecuteStatements::notifyResultsOnCallingThread(ResultSet *aResultSet)
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(
-  AsyncExecuteStatements,
-  nsIRunnable,
-  mozIStoragePendingStatement
-)
+NS_IMPL_ISUPPORTS(AsyncExecuteStatements, nsIRunnable,
+                  mozIStoragePendingStatement)
 
-bool
-AsyncExecuteStatements::statementsNeedTransaction()
-{
+bool AsyncExecuteStatements::statementsNeedTransaction() {
   
   
   
@@ -484,8 +451,7 @@ AsyncExecuteStatements::statementsNeedTransaction()
 
 
 NS_IMETHODIMP
-AsyncExecuteStatements::Cancel()
-{
+AsyncExecuteStatements::Cancel() {
 #ifdef DEBUG
   bool onCallingThread = false;
   (void)mCallingThread->IsOnCurrentThread(&onCallingThread);
@@ -510,22 +476,19 @@ AsyncExecuteStatements::Cancel()
 
 
 NS_IMETHODIMP
-AsyncExecuteStatements::Run()
-{
+AsyncExecuteStatements::Run() {
   MOZ_ASSERT(mConnection->isConnectionReadyOnThisThread());
 
   
   {
     MutexAutoLock lockedScope(mMutex);
-    if (mCancelRequested)
-      mState = CANCELED;
+    if (mCancelRequested) mState = CANCELED;
   }
-  if (mState == CANCELED)
-    return notifyComplete();
+  if (mState == CANCELED) return notifyComplete();
 
   if (statementsNeedTransaction() && mConnection->getAutocommit()) {
-    if (NS_SUCCEEDED(mConnection->beginTransactionInternal(mNativeConnection,
-                                                           mozIStorageConnection::TRANSACTION_IMMEDIATE))) {
+    if (NS_SUCCEEDED(mConnection->beginTransactionInternal(
+            mNativeConnection, mozIStorageConnection::TRANSACTION_IMMEDIATE))) {
       mHasTransaction = true;
     }
 #ifdef DEBUG
@@ -540,7 +503,7 @@ AsyncExecuteStatements::Run()
     bool finished = (i == (mStatements.Length() - 1));
 
     sqlite3_stmt *stmt;
-    { 
+    {  
       SQLiteMutexAutoLock lockedScope(mDBMutex);
 
       int rc = mStatements[i].getSqliteStatement(&stmt);
@@ -550,8 +513,7 @@ AsyncExecuteStatements::Run()
 
         
         nsCOMPtr<mozIStorageError> errorObj(
-          new Error(rc, ::sqlite3_errmsg(mNativeConnection))
-        );
+            new Error(rc, ::sqlite3_errmsg(mNativeConnection)));
         {
           
           SQLiteMutexAutoUnlock unlockedScope(mDBMutex);
@@ -563,8 +525,7 @@ AsyncExecuteStatements::Run()
 
     
     if (mStatements[i].hasParametersToBeBound()) {
-      if (!bindExecuteAndProcessStatement(mStatements[i], finished))
-        break;
+      if (!bindExecuteAndProcessStatement(mStatements[i], finished)) break;
     }
     
     else if (!executeAndProcessStatement(stmt, finished)) {
@@ -574,12 +535,11 @@ AsyncExecuteStatements::Run()
 
   
   
-  if (mResultSet)
-    (void)notifyResults();
+  if (mResultSet) (void)notifyResults();
 
   
   return notifyComplete();
 }
 
-} 
-} 
+}  
+}  

@@ -26,227 +26,196 @@ namespace frontend {
 struct BytecodeEmitter;
 class EmitterScope;
 
-class NestableControl : public Nestable<NestableControl>
-{
-    StatementKind kind_;
+class NestableControl : public Nestable<NestableControl> {
+  StatementKind kind_;
 
-    
-    EmitterScope* emitterScope_;
+  
+  EmitterScope* emitterScope_;
 
-  protected:
-    NestableControl(BytecodeEmitter* bce, StatementKind kind);
+ protected:
+  NestableControl(BytecodeEmitter* bce, StatementKind kind);
 
-  public:
-    using Nestable<NestableControl>::enclosing;
-    using Nestable<NestableControl>::findNearest;
+ public:
+  using Nestable<NestableControl>::enclosing;
+  using Nestable<NestableControl>::findNearest;
 
-    StatementKind kind() const {
-        return kind_;
-    }
+  StatementKind kind() const { return kind_; }
 
-    EmitterScope* emitterScope() const {
-        return emitterScope_;
-    }
+  EmitterScope* emitterScope() const { return emitterScope_; }
 
-    template <typename T> bool is() const;
+  template <typename T>
+  bool is() const;
 
-    template <typename T> T& as() {
-        MOZ_ASSERT(this->is<T>());
-        return static_cast<T&>(*this);
-    }
+  template <typename T>
+  T& as() {
+    MOZ_ASSERT(this->is<T>());
+    return static_cast<T&>(*this);
+  }
 };
 
-class BreakableControl : public NestableControl
-{
-  public:
-    
-    JumpList breaks;
+class BreakableControl : public NestableControl {
+ public:
+  
+  JumpList breaks;
 
-    BreakableControl(BytecodeEmitter* bce, StatementKind kind);
+  BreakableControl(BytecodeEmitter* bce, StatementKind kind);
 
-    MOZ_MUST_USE bool patchBreaks(BytecodeEmitter* bce);
+  MOZ_MUST_USE bool patchBreaks(BytecodeEmitter* bce);
 };
 template <>
-inline bool
-NestableControl::is<BreakableControl>() const
-{
-    return StatementKindIsUnlabeledBreakTarget(kind_) || kind_ == StatementKind::Label;
+inline bool NestableControl::is<BreakableControl>() const {
+  return StatementKindIsUnlabeledBreakTarget(kind_) ||
+         kind_ == StatementKind::Label;
 }
 
-class LabelControl : public BreakableControl
-{
-    RootedAtom label_;
+class LabelControl : public BreakableControl {
+  RootedAtom label_;
 
-    
-    ptrdiff_t startOffset_;
+  
+  ptrdiff_t startOffset_;
 
-  public:
-    LabelControl(BytecodeEmitter* bce, JSAtom* label, ptrdiff_t startOffset);
+ public:
+  LabelControl(BytecodeEmitter* bce, JSAtom* label, ptrdiff_t startOffset);
 
-    HandleAtom label() const {
-        return label_;
-    }
+  HandleAtom label() const { return label_; }
 
-    ptrdiff_t startOffset() const {
-        return startOffset_;
-    }
+  ptrdiff_t startOffset() const { return startOffset_; }
 };
 template <>
-inline bool
-NestableControl::is<LabelControl>() const
-{
-    return kind_ == StatementKind::Label;
+inline bool NestableControl::is<LabelControl>() const {
+  return kind_ == StatementKind::Label;
 }
 
-class LoopControl : public BreakableControl
-{
-    
-    
-    TDZCheckCache tdzCache_;
+class LoopControl : public BreakableControl {
+  
+  
+  TDZCheckCache tdzCache_;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    
-    ptrdiff_t loopEndOffset_ = -1;
+  
+  ptrdiff_t loopEndOffset_ = -1;
 
-    
-    JumpList entryJump_;
+  
+  JumpList entryJump_;
 
-    
-    JumpTarget head_ = { -1 };
+  
+  JumpTarget head_ = {-1};
 
-    
-    JumpTarget breakTarget_ = { -1 };
+  
+  JumpTarget breakTarget_ = {-1};
 
-    
-    
-    JumpTarget continueTarget_ = { -1 };
+  
+  
+  JumpTarget continueTarget_ = {-1};
 
-    
-    int32_t stackDepth_;
+  
+  int32_t stackDepth_;
 
-    
-    uint32_t loopDepth_;
+  
+  uint32_t loopDepth_;
 
-    
-    bool canIonOsr_;
+  
+  
+  bool canIonOsr_;
 
-  public:
-    
-    JumpList continues;
+ public:
+  
+  JumpList continues;
 
-    LoopControl(BytecodeEmitter* bce, StatementKind loopKind);
+  LoopControl(BytecodeEmitter* bce, StatementKind loopKind);
 
-    ptrdiff_t headOffset() const {
-        return head_.offset;
-    }
-    ptrdiff_t loopEndOffset() const {
-        return loopEndOffset_;
-    }
-    ptrdiff_t breakTargetOffset() const {
-        return breakTarget_.offset;
-    }
-    ptrdiff_t continueTargetOffset() const {
-        return continueTarget_.offset;
-    }
+  ptrdiff_t headOffset() const { return head_.offset; }
+  ptrdiff_t loopEndOffset() const { return loopEndOffset_; }
+  ptrdiff_t breakTargetOffset() const { return breakTarget_.offset; }
+  ptrdiff_t continueTargetOffset() const { return continueTarget_.offset; }
 
-    
-    
-    ptrdiff_t loopEndOffsetFromEntryJump() const {
-        return loopEndOffset_ - entryJump_.offset;
-    }
+  
+  
+  ptrdiff_t loopEndOffsetFromEntryJump() const {
+    return loopEndOffset_ - entryJump_.offset;
+  }
 
-    
-    
-    ptrdiff_t loopEndOffsetFromLoopHead() const {
-        return loopEndOffset_ - head_.offset;
-    }
+  
+  
+  ptrdiff_t loopEndOffsetFromLoopHead() const {
+    return loopEndOffset_ - head_.offset;
+  }
 
-    
-    
-    ptrdiff_t continueTargetOffsetFromLoopHead() const {
-        return continueTarget_.offset - head_.offset;
-    }
+  
+  
+  ptrdiff_t continueTargetOffsetFromLoopHead() const {
+    return continueTarget_.offset - head_.offset;
+  }
 
-    
-    
-    
-    
-    void setContinueTarget(ptrdiff_t offset) {
-        continueTarget_.offset = offset;
-    }
-    MOZ_MUST_USE bool emitContinueTarget(BytecodeEmitter* bce);
+  
+  
+  
+  
+  void setContinueTarget(ptrdiff_t offset) { continueTarget_.offset = offset; }
+  MOZ_MUST_USE bool emitContinueTarget(BytecodeEmitter* bce);
 
-    
-    MOZ_MUST_USE bool emitSpecialBreakForDone(BytecodeEmitter* bce);
+  
+  MOZ_MUST_USE bool emitSpecialBreakForDone(BytecodeEmitter* bce);
 
-    MOZ_MUST_USE bool emitEntryJump(BytecodeEmitter* bce);
+  MOZ_MUST_USE bool emitEntryJump(BytecodeEmitter* bce);
 
-    
-    
-    
-    MOZ_MUST_USE bool emitLoopHead(BytecodeEmitter* bce,
-                                   const mozilla::Maybe<uint32_t>& nextPos);
+  
+  
+  
+  MOZ_MUST_USE bool emitLoopHead(BytecodeEmitter* bce,
+                                 const mozilla::Maybe<uint32_t>& nextPos);
 
-    
-    
-    
-    MOZ_MUST_USE bool emitLoopEntry(BytecodeEmitter* bce,
-                                    const mozilla::Maybe<uint32_t>& nextPos);
+  
+  
+  
+  MOZ_MUST_USE bool emitLoopEntry(BytecodeEmitter* bce,
+                                  const mozilla::Maybe<uint32_t>& nextPos);
 
-    MOZ_MUST_USE bool emitLoopEnd(BytecodeEmitter* bce, JSOp op);
-    MOZ_MUST_USE bool patchBreaksAndContinues(BytecodeEmitter* bce);
+  MOZ_MUST_USE bool emitLoopEnd(BytecodeEmitter* bce, JSOp op);
+  MOZ_MUST_USE bool patchBreaksAndContinues(BytecodeEmitter* bce);
 };
 template <>
-inline bool
-NestableControl::is<LoopControl>() const
-{
-    return StatementKindIsLoop(kind_);
+inline bool NestableControl::is<LoopControl>() const {
+  return StatementKindIsLoop(kind_);
 }
 
-class TryFinallyControl : public NestableControl
-{
-    bool emittingSubroutine_;
+class TryFinallyControl : public NestableControl {
+  bool emittingSubroutine_;
 
-  public:
-    
-    JumpList gosubs;
+ public:
+  
+  JumpList gosubs;
 
-    TryFinallyControl(BytecodeEmitter* bce, StatementKind kind);
+  TryFinallyControl(BytecodeEmitter* bce, StatementKind kind);
 
-    void setEmittingSubroutine() {
-        emittingSubroutine_ = true;
-    }
+  void setEmittingSubroutine() { emittingSubroutine_ = true; }
 
-    bool emittingSubroutine() const {
-        return emittingSubroutine_;
-    }
+  bool emittingSubroutine() const { return emittingSubroutine_; }
 };
 template <>
-inline bool
-NestableControl::is<TryFinallyControl>() const
-{
-    return kind_ == StatementKind::Try || kind_ == StatementKind::Finally;
+inline bool NestableControl::is<TryFinallyControl>() const {
+  return kind_ == StatementKind::Try || kind_ == StatementKind::Finally;
 }
 
 } 

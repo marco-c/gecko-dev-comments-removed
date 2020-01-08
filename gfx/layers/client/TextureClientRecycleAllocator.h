@@ -21,35 +21,34 @@ namespace layers {
 class TextureClientHolder;
 struct PlanarYCbCrData;
 
-class ITextureClientRecycleAllocator
-{
-protected:
+class ITextureClientRecycleAllocator {
+ protected:
   virtual ~ITextureClientRecycleAllocator() {}
 
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ITextureClientRecycleAllocator)
 
-protected:
+ protected:
   friend class TextureClient;
   virtual void RecycleTextureClient(TextureClient* aClient) = 0;
 };
 
-class ITextureClientAllocationHelper
-{
-public:
-  ITextureClientAllocationHelper(gfx::SurfaceFormat aFormat,
-                                 gfx::IntSize aSize,
+class ITextureClientAllocationHelper {
+ public:
+  ITextureClientAllocationHelper(gfx::SurfaceFormat aFormat, gfx::IntSize aSize,
                                  BackendSelector aSelector,
                                  TextureFlags aTextureFlags,
                                  TextureAllocationFlags aAllocationFlags)
-    : mFormat(aFormat)
-    , mSize(aSize)
-    , mSelector(aSelector)
-    , mTextureFlags(aTextureFlags | TextureFlags::RECYCLE) 
-    , mAllocationFlags(aAllocationFlags)
-  {}
+      : mFormat(aFormat),
+        mSize(aSize),
+        mSelector(aSelector),
+        mTextureFlags(aTextureFlags |
+                      TextureFlags::RECYCLE)  
+        ,
+        mAllocationFlags(aAllocationFlags) {}
 
-  virtual already_AddRefed<TextureClient> Allocate(KnowsCompositor* aAllocator) = 0;
+  virtual already_AddRefed<TextureClient> Allocate(
+      KnowsCompositor* aAllocator) = 0;
   virtual bool IsCompatible(TextureClient* aTextureClient) = 0;
 
   const gfx::SurfaceFormat mFormat;
@@ -59,17 +58,18 @@ public:
   const TextureAllocationFlags mAllocationFlags;
 };
 
-class YCbCrTextureClientAllocationHelper : public ITextureClientAllocationHelper
-{
-public:
+class YCbCrTextureClientAllocationHelper
+    : public ITextureClientAllocationHelper {
+ public:
   YCbCrTextureClientAllocationHelper(const PlanarYCbCrData& aData,
                                      TextureFlags aTextureFlags);
 
   bool IsCompatible(TextureClient* aTextureClient) override;
 
-  already_AddRefed<TextureClient> Allocate(KnowsCompositor* aAllocator) override;
+  already_AddRefed<TextureClient> Allocate(
+      KnowsCompositor* aAllocator) override;
 
-protected:
+ protected:
   const PlanarYCbCrData& mData;
 };
 
@@ -83,38 +83,31 @@ protected:
 
 
 
-class TextureClientRecycleAllocator : public ITextureClientRecycleAllocator
-{
-protected:
+class TextureClientRecycleAllocator : public ITextureClientRecycleAllocator {
+ protected:
   virtual ~TextureClientRecycleAllocator();
 
-public:
+ public:
   explicit TextureClientRecycleAllocator(KnowsCompositor* aAllocator);
 
   void SetMaxPoolSize(uint32_t aMax);
 
   
-  already_AddRefed<TextureClient>
-  CreateOrRecycle(gfx::SurfaceFormat aFormat,
-                  gfx::IntSize aSize,
-                  BackendSelector aSelector,
-                  TextureFlags aTextureFlags,
-                  TextureAllocationFlags flags = ALLOC_DEFAULT);
+  already_AddRefed<TextureClient> CreateOrRecycle(
+      gfx::SurfaceFormat aFormat, gfx::IntSize aSize, BackendSelector aSelector,
+      TextureFlags aTextureFlags, TextureAllocationFlags flags = ALLOC_DEFAULT);
 
-  already_AddRefed<TextureClient>
-  CreateOrRecycle(ITextureClientAllocationHelper& aHelper);
+  already_AddRefed<TextureClient> CreateOrRecycle(
+      ITextureClientAllocationHelper& aHelper);
 
   void ShrinkToMinimumSize();
 
   void Destroy();
 
-protected:
-  virtual already_AddRefed<TextureClient>
-  Allocate(gfx::SurfaceFormat aFormat,
-           gfx::IntSize aSize,
-           BackendSelector aSelector,
-           TextureFlags aTextureFlags,
-           TextureAllocationFlags aAllocFlags);
+ protected:
+  virtual already_AddRefed<TextureClient> Allocate(
+      gfx::SurfaceFormat aFormat, gfx::IntSize aSize, BackendSelector aSelector,
+      TextureFlags aTextureFlags, TextureAllocationFlags aAllocFlags);
 
   RefPtr<KnowsCompositor> mSurfaceAllocator;
 
@@ -132,7 +125,7 @@ protected:
   bool mIsDestroyed;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

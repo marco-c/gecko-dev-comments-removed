@@ -17,13 +17,11 @@ class nsIPrefBranch;
 namespace mozilla {
 namespace net {
 
-class TRRService
-  : public nsIObserver
-  , public nsITimerCallback
-  , public nsSupportsWeakReference
-  , public AHostResolver
-{
-public:
+class TRRService : public nsIObserver,
+                   public nsITimerCallback,
+                   public nsSupportsWeakReference,
+                   public AHostResolver {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSITIMERCALLBACK
@@ -43,47 +41,51 @@ public:
   nsresult GetCredentials(nsCString &result);
   uint32_t GetRequestTimeout() { return mTRRTimeout; }
 
-  LookupStatus CompleteLookup(nsHostRecord *, nsresult, mozilla::net::AddrInfo *, bool pb,
+  LookupStatus CompleteLookup(nsHostRecord *, nsresult,
+                              mozilla::net::AddrInfo *, bool pb,
                               const nsACString &aOriginSuffix) override;
-  LookupStatus CompleteLookupByType(nsHostRecord *, nsresult, const nsTArray<nsCString> *, uint32_t, bool pb) override;
+  LookupStatus CompleteLookupByType(nsHostRecord *, nsresult,
+                                    const nsTArray<nsCString> *, uint32_t,
+                                    bool pb) override;
   void TRRBlacklist(const nsACString &host, const nsACString &originSuffix,
                     bool privateBrowsing, bool aParentsToo);
-  bool IsTRRBlacklisted(const nsACString &aHost, const nsACString &aOriginSuffix,
-                        bool aPrivateBrowsing, bool aParentsToo);
+  bool IsTRRBlacklisted(const nsACString &aHost,
+                        const nsACString &aOriginSuffix, bool aPrivateBrowsing,
+                        bool aParentsToo);
 
   bool MaybeBootstrap(const nsACString &possible, nsACString &result);
-  enum TrrOkay {
-    OKAY_NORMAL = 0,
-    OKAY_TIMEOUT = 1,
-    OKAY_BAD = 2
-  };
+  enum TrrOkay { OKAY_NORMAL = 0, OKAY_TIMEOUT = 1, OKAY_BAD = 2 };
   void TRRIsOkay(enum TrrOkay aReason);
 
-private:
-  virtual  ~TRRService();
+ private:
+  virtual ~TRRService();
   nsresult ReadPrefs(const char *name);
   void GetPrefBranch(nsIPrefBranch **result);
   void MaybeConfirm();
 
-  bool                      mInitialized;
+  bool mInitialized;
   Atomic<uint32_t, Relaxed> mMode;
   Atomic<uint32_t, Relaxed> mTRRBlacklistExpireTime;
   Atomic<uint32_t, Relaxed> mTRRTimeout;
 
-  Mutex mLock; 
-  nsCString mPrivateURI; 
-  nsCString mPrivateCred; 
+  Mutex mLock;             
+  nsCString mPrivateURI;   
+  nsCString mPrivateCred;  
   nsCString mConfirmationNS;
   nsCString mBootstrapAddr;
 
-  Atomic<bool, Relaxed> mWaitForCaptive; 
-  Atomic<bool, Relaxed> mRfc1918; 
-  Atomic<bool, Relaxed> mCaptiveIsPassed; 
-  Atomic<bool, Relaxed> mUseGET; 
-  Atomic<bool, Relaxed> mEarlyAAAA; 
-  Atomic<bool, Relaxed> mDisableIPv6; 
-  Atomic<bool, Relaxed> mDisableECS;  
-  Atomic<uint32_t, Relaxed> mDisableAfterFails;  
+  Atomic<bool, Relaxed> mWaitForCaptive;  
+                                          
+  Atomic<bool, Relaxed>
+      mRfc1918;  
+  Atomic<bool, Relaxed>
+      mCaptiveIsPassed;           
+  Atomic<bool, Relaxed> mUseGET;  
+  Atomic<bool, Relaxed> mEarlyAAAA;  
+  Atomic<bool, Relaxed> mDisableIPv6;  
+  Atomic<bool, Relaxed> mDisableECS;   
+  Atomic<uint32_t, Relaxed>
+      mDisableAfterFails;  
 
   
   RefPtr<DataStorage> mTRRBLStorage;
@@ -95,16 +97,16 @@ private:
     CONFIRM_OK = 2,
     CONFIRM_FAILED = 3
   };
-  Atomic<ConfirmationState, Relaxed>  mConfirmationState;
+  Atomic<ConfirmationState, Relaxed> mConfirmationState;
   RefPtr<TRR> mConfirmer;
   nsCOMPtr<nsITimer> mRetryConfirmTimer;
-  uint32_t mRetryConfirmInterval; 
+  uint32_t mRetryConfirmInterval;  
   Atomic<uint32_t, Relaxed> mTRRFailures;
 };
 
 extern TRRService *gTRRService;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

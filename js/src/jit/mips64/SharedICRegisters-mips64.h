@@ -41,7 +41,7 @@ static constexpr Register BaselineSecondScratchReg = SecondScratchReg;
 static constexpr FloatRegister FloatReg0 = f0;
 static constexpr FloatRegister FloatReg1 = f2;
 
-} 
-} 
+}  
+}  
 
 #endif 

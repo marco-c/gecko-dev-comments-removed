@@ -10,44 +10,36 @@
 
 namespace mozilla {
 
-class WebGLShaderPrecisionFormat final
-    : public WebGLContextBoundObject
-{
-public:
-    WebGLShaderPrecisionFormat(WebGLContext* context, GLint rangeMin,
-                               GLint rangeMax, GLint precision)
-        : WebGLContextBoundObject(context)
-        , mRangeMin(rangeMin)
-        , mRangeMax(rangeMax)
-        , mPrecision(precision)
-    { }
+class WebGLShaderPrecisionFormat final : public WebGLContextBoundObject {
+ public:
+  WebGLShaderPrecisionFormat(WebGLContext* context, GLint rangeMin,
+                             GLint rangeMax, GLint precision)
+      : WebGLContextBoundObject(context),
+        mRangeMin(rangeMin),
+        mRangeMax(rangeMax),
+        mPrecision(precision) {}
 
-    bool WrapObject(JSContext* cx, JS::Handle<JSObject*> givenProto, JS::MutableHandle<JSObject*> reflector);
+  bool WrapObject(JSContext* cx, JS::Handle<JSObject*> givenProto,
+                  JS::MutableHandle<JSObject*> reflector);
 
-    
-    GLint RangeMin() const {
-        return mRangeMin;
-    }
+  
+  GLint RangeMin() const { return mRangeMin; }
 
-    GLint RangeMax() const {
-        return mRangeMax;
-    }
+  GLint RangeMax() const { return mRangeMax; }
 
-    GLint Precision() const {
-        return mPrecision;
-    }
+  GLint Precision() const { return mPrecision; }
 
-    NS_INLINE_DECL_REFCOUNTING(WebGLShaderPrecisionFormat)
+  NS_INLINE_DECL_REFCOUNTING(WebGLShaderPrecisionFormat)
 
-private:
-    
-    ~WebGLShaderPrecisionFormat() { }
+ private:
+  
+  ~WebGLShaderPrecisionFormat() {}
 
-    GLint mRangeMin;
-    GLint mRangeMax;
-    GLint mPrecision;
+  GLint mRangeMin;
+  GLint mRangeMax;
+  GLint mPrecision;
 };
 
-} 
+}  
 
-#endif 
+#endif  

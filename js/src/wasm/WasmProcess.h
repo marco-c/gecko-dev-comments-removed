@@ -32,16 +32,14 @@ class CodeSegment;
 
 
 
-const CodeSegment*
-LookupCodeSegment(const void* pc, const CodeRange** codeRange = nullptr);
+const CodeSegment* LookupCodeSegment(const void* pc,
+                                     const CodeRange** codeRange = nullptr);
 
-const Code*
-LookupCode(const void* pc, const CodeRange** codeRange = nullptr);
-
+const Code* LookupCode(const void* pc, const CodeRange** codeRange = nullptr);
 
 
-bool
-InCompiledCode(void* pc);
+
+bool InCompiledCode(void* pc);
 
 
 
@@ -51,22 +49,18 @@ extern mozilla::Atomic<bool> CodeExists;
 
 
 
-bool
-RegisterCodeSegment(const CodeSegment* cs);
+bool RegisterCodeSegment(const CodeSegment* cs);
 
-void
-UnregisterCodeSegment(const CodeSegment* cs);
+void UnregisterCodeSegment(const CodeSegment* cs);
 
 
 
 
-bool
-Init();
+bool Init();
 
-void
-ShutDown();
+void ShutDown();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

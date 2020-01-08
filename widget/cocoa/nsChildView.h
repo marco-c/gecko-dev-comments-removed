@@ -39,7 +39,7 @@ class nsCocoaWindow;
 
 namespace {
 class GLPresenter;
-} 
+}  
 
 namespace mozilla {
 class InputData;
@@ -50,12 +50,12 @@ class VibrancyManager;
 namespace layers {
 class GLManager;
 class IAPZCTreeManager;
-} 
+}  
 namespace widget {
 class RectTextureImage;
 class WidgetRenderingContext;
-} 
-} 
+}  
+}  
 
 @interface NSEvent (Undocumented)
 
@@ -65,7 +65,7 @@ class WidgetRenderingContext;
 - (EventRef)_eventRef;
 
 
-@property (readonly) NSInteger stage;
+@property(readonly) NSInteger stage;
 
 @end
 
@@ -103,25 +103,26 @@ class WidgetRenderingContext;
 
 
 
-- (NSView *)titlebarView; 
-- (NSView *)titlebarContainerView; 
-- (BOOL)transparent; 
-- (void)setTransparent:(BOOL)transparent; 
-                                          
+- (NSView*)titlebarView;                   
+- (NSView*)titlebarContainerView;          
+- (BOOL)transparent;                       
+- (void)setTransparent:(BOOL)transparent;  
+                                           
 
 
 - (void)viewDidChangeBackingProperties;
 @end
 
-@interface ChildView : NSView<
+@interface ChildView : NSView <
 #ifdef ACCESSIBILITY
-                              mozAccessible,
+                           mozAccessible,
 #endif
-                              mozView, NSTextInputClient,
-                              NSDraggingSource, NSDraggingDestination,
-                              NSPasteboardItemDataProvider>
-{
-@private
+                           mozView,
+                           NSTextInputClient,
+                           NSDraggingSource,
+                           NSDraggingDestination,
+                           NSPasteboardItemDataProvider> {
+ @private
   
   
   nsChildView* mGeckoChild;
@@ -163,7 +164,7 @@ class WidgetRenderingContext;
   
   nsIDragService* mDragService;
 
-  NSOpenGLContext *mGLContext;
+  NSOpenGLContext* mGLContext;
 
   
   
@@ -225,8 +226,8 @@ class WidgetRenderingContext;
 - (void)updateGLContext;
 - (void)_surfaceNeedsUpdate:(NSNotification*)notification;
 
-- (bool)preRender:(NSOpenGLContext *)aGLContext;
-- (void)postRender:(NSOpenGLContext *)aGLContext;
+- (bool)preRender:(NSOpenGLContext*)aGLContext;
+- (void)postRender:(NSOpenGLContext*)aGLContext;
 
 - (BOOL)isCoveringTitlebar;
 
@@ -244,14 +245,14 @@ class WidgetRenderingContext;
 
 
 
-- (void)swipeWithEvent:(NSEvent *)anEvent;
-- (void)beginGestureWithEvent:(NSEvent *)anEvent;
-- (void)magnifyWithEvent:(NSEvent *)anEvent;
-- (void)smartMagnifyWithEvent:(NSEvent *)anEvent;
-- (void)rotateWithEvent:(NSEvent *)anEvent;
-- (void)endGestureWithEvent:(NSEvent *)anEvent;
+- (void)swipeWithEvent:(NSEvent*)anEvent;
+- (void)beginGestureWithEvent:(NSEvent*)anEvent;
+- (void)magnifyWithEvent:(NSEvent*)anEvent;
+- (void)smartMagnifyWithEvent:(NSEvent*)anEvent;
+- (void)rotateWithEvent:(NSEvent*)anEvent;
+- (void)endGestureWithEvent:(NSEvent*)anEvent;
 
-- (void)scrollWheel:(NSEvent *)anEvent;
+- (void)scrollWheel:(NSEvent*)anEvent;
 
 - (void)setUsingOMTCompositor:(BOOL)aUseOMTC;
 
@@ -263,15 +264,13 @@ class WidgetRenderingContext;
 @end
 
 class ChildViewMouseTracker {
-
-public:
-
+ public:
   static void MouseMoved(NSEvent* aEvent);
   static void MouseScrolled(NSEvent* aEvent);
   static void OnDestroyView(ChildView* aView);
   static void OnDestroyWindow(NSWindow* aWindow);
-  static BOOL WindowAcceptsEvent(NSWindow* aWindow, NSEvent* aEvent,
-                                 ChildView* aView, BOOL isClickThrough = NO);
+  static BOOL WindowAcceptsEvent(NSWindow* aWindow, NSEvent* aEvent, ChildView* aView,
+                                 BOOL isClickThrough = NO);
   static void MouseExitedWindow(NSEvent* aEvent);
   static void MouseEnteredWindow(NSEvent* aEvent);
   static void ReEvaluateMouseEnterState(NSEvent* aEvent = nil, ChildView* aOldView = nil);
@@ -290,39 +289,35 @@ public:
 
 
 
-class nsChildView final : public nsBaseWidget
-{
-private:
+class nsChildView final : public nsBaseWidget {
+ private:
   typedef nsBaseWidget Inherited;
   typedef mozilla::layers::IAPZCTreeManager IAPZCTreeManager;
 
-public:
+ public:
   nsChildView();
 
   
-  virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent,
-                                       nsNativeWidget aNativeParent,
+  virtual MOZ_MUST_USE nsresult Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
                                        const LayoutDeviceIntRect& aRect,
-                                       nsWidgetInitData* aInitData = nullptr)
-                                       override;
+                                       nsWidgetInitData* aInitData = nullptr) override;
 
-  virtual void            Destroy() override;
+  virtual void Destroy() override;
 
-  virtual void            Show(bool aState) override;
-  virtual bool            IsVisible() const override;
+  virtual void Show(bool aState) override;
+  virtual bool IsVisible() const override;
 
-  virtual void            SetParent(nsIWidget* aNewParent) override;
-  virtual nsIWidget*      GetParent(void) override;
-  virtual float           GetDPI() override;
+  virtual void SetParent(nsIWidget* aNewParent) override;
+  virtual nsIWidget* GetParent(void) override;
+  virtual float GetDPI() override;
 
-  virtual void            Move(double aX, double aY) override;
-  virtual void            Resize(double aWidth, double aHeight, bool aRepaint) override;
-  virtual void            Resize(double aX, double aY,
-                                 double aWidth, double aHeight, bool aRepaint) override;
+  virtual void Move(double aX, double aY) override;
+  virtual void Resize(double aWidth, double aHeight, bool aRepaint) override;
+  virtual void Resize(double aX, double aY, double aWidth, double aHeight, bool aRepaint) override;
 
-  virtual void            Enable(bool aState) override;
-  virtual bool            IsEnabled() const override;
-  virtual nsresult        SetFocus(bool aRaise) override;
+  virtual void Enable(bool aState) override;
+  virtual bool IsEnabled() const override;
+  virtual nsresult SetFocus(bool aRaise) override;
   virtual LayoutDeviceIntRect GetBounds() override;
   virtual LayoutDeviceIntRect GetClientBounds() override;
   virtual LayoutDeviceIntRect GetScreenBounds() override;
@@ -340,7 +335,7 @@ public:
   
   
   
-  CGFloat                 BackingScaleFactor() const;
+  CGFloat BackingScaleFactor() const;
 
   mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale() final {
     return mozilla::DesktopToLayoutDeviceScale(BackingScaleFactor());
@@ -348,97 +343,86 @@ public:
 
   
   
-  void                    BackingScaleFactorChanged();
+  void BackingScaleFactorChanged();
 
-  virtual double          GetDefaultScaleInternal() override;
+  virtual double GetDefaultScaleInternal() override;
 
-  virtual int32_t         RoundsWidgetCoordinatesTo() override;
+  virtual int32_t RoundsWidgetCoordinatesTo() override;
 
-  virtual void            Invalidate(const LayoutDeviceIntRect &aRect) override;
+  virtual void Invalidate(const LayoutDeviceIntRect& aRect) override;
 
-  virtual void*           GetNativeData(uint32_t aDataType) override;
-  virtual nsresult        ConfigureChildren(const nsTArray<Configuration>& aConfigurations) override;
+  virtual void* GetNativeData(uint32_t aDataType) override;
+  virtual nsresult ConfigureChildren(const nsTArray<Configuration>& aConfigurations) override;
   virtual LayoutDeviceIntPoint WidgetToScreenOffset() override;
-  virtual bool            ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) override;
+  virtual bool ShowsResizeIndicator(LayoutDeviceIntRect* aResizerRect) override;
 
-  static  bool            ConvertStatus(nsEventStatus aStatus)
-                          { return aStatus == nsEventStatus_eConsumeNoDefault; }
-  virtual nsresult        DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
-                                        nsEventStatus& aStatus) override;
+  static bool ConvertStatus(nsEventStatus aStatus) {
+    return aStatus == nsEventStatus_eConsumeNoDefault;
+  }
+  virtual nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent, nsEventStatus& aStatus) override;
 
-  virtual bool            WidgetTypeSupportsAcceleration() override;
-  virtual bool            ShouldUseOffMainThreadCompositing() override;
+  virtual bool WidgetTypeSupportsAcceleration() override;
+  virtual bool ShouldUseOffMainThreadCompositing() override;
 
-  virtual void      SetCursor(nsCursor aCursor) override;
-  virtual nsresult  SetCursor(imgIContainer* aCursor,
-                              uint32_t aHotspotX, uint32_t aHotspotY) override;
+  virtual void SetCursor(nsCursor aCursor) override;
+  virtual nsresult SetCursor(imgIContainer* aCursor, uint32_t aHotspotX,
+                             uint32_t aHotspotY) override;
 
-  virtual nsresult  SetTitle(const nsAString& title) override;
+  virtual nsresult SetTitle(const nsAString& title) override;
 
-  virtual MOZ_MUST_USE nsresult
-                    GetAttention(int32_t aCycleCount) override;
+  virtual MOZ_MUST_USE nsresult GetAttention(int32_t aCycleCount) override;
 
   virtual bool HasPendingInputEvent() override;
 
-  bool              SendEventToNativeMenuSystem(NSEvent* aEvent);
-  virtual void      PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) override;
-  virtual nsresult  ActivateNativeMenuItemAt(const nsAString& indexString) override;
-  virtual nsresult  ForceUpdateNativeMenuAt(const nsAString& indexString) override;
-  virtual MOZ_MUST_USE nsresult
-                    GetSelectionAsPlaintext(nsAString& aResult) override;
+  bool SendEventToNativeMenuSystem(NSEvent* aEvent);
+  virtual void PostHandleKeyEvent(mozilla::WidgetKeyboardEvent* aEvent) override;
+  virtual nsresult ActivateNativeMenuItemAt(const nsAString& indexString) override;
+  virtual nsresult ForceUpdateNativeMenuAt(const nsAString& indexString) override;
+  virtual MOZ_MUST_USE nsresult GetSelectionAsPlaintext(nsAString& aResult) override;
 
   virtual void SetInputContext(const InputContext& aContext,
                                const InputContextAction& aAction) override;
   virtual InputContext GetInputContext() override;
-  virtual TextEventDispatcherListener*
-    GetNativeTextEventDispatcherListener() override;
+  virtual TextEventDispatcherListener* GetNativeTextEventDispatcherListener() override;
   virtual MOZ_MUST_USE nsresult AttachNativeKeyEvent(mozilla::WidgetKeyboardEvent& aEvent) override;
-  virtual void GetEditCommands(
-                 NativeKeyBindingsType aType,
-                 const mozilla::WidgetKeyboardEvent& aEvent,
-                 nsTArray<mozilla::CommandInt>& aCommands) override;
+  virtual void GetEditCommands(NativeKeyBindingsType aType,
+                               const mozilla::WidgetKeyboardEvent& aEvent,
+                               nsTArray<mozilla::CommandInt>& aCommands) override;
   void GetEditCommandsRemapped(NativeKeyBindingsType aType,
                                const mozilla::WidgetKeyboardEvent& aEvent,
-                               nsTArray<mozilla::CommandInt>& aCommands,
-                               uint32_t aGeckoKeyCode,
+                               nsTArray<mozilla::CommandInt>& aCommands, uint32_t aGeckoKeyCode,
                                uint32_t aCocoaKeyCode);
 
   virtual nsTransparencyMode GetTransparencyMode() override;
-  virtual void                SetTransparencyMode(nsTransparencyMode aMode) override;
+  virtual void SetTransparencyMode(nsTransparencyMode aMode) override;
 
-  virtual nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
-                                            int32_t aNativeKeyCode,
-                                            uint32_t aModifierFlags,
-                                            const nsAString& aCharacters,
+  virtual nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
+                                            uint32_t aModifierFlags, const nsAString& aCharacters,
                                             const nsAString& aUnmodifiedCharacters,
                                             nsIObserver* aObserver) override;
 
-  virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint,
-                                              uint32_t aNativeMessage,
+  virtual nsresult SynthesizeNativeMouseEvent(LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage,
                                               uint32_t aModifierFlags,
                                               nsIObserver* aObserver) override;
 
   virtual nsresult SynthesizeNativeMouseMove(LayoutDeviceIntPoint aPoint,
-                                             nsIObserver* aObserver) override
-  { return SynthesizeNativeMouseEvent(aPoint, NSMouseMoved, 0, aObserver); }
+                                             nsIObserver* aObserver) override {
+    return SynthesizeNativeMouseEvent(aPoint, NSMouseMoved, 0, aObserver);
+  }
   virtual nsresult SynthesizeNativeMouseScrollEvent(LayoutDeviceIntPoint aPoint,
-                                                    uint32_t aNativeMessage,
-                                                    double aDeltaX,
-                                                    double aDeltaY,
-                                                    double aDeltaZ,
+                                                    uint32_t aNativeMessage, double aDeltaX,
+                                                    double aDeltaY, double aDeltaZ,
                                                     uint32_t aModifierFlags,
                                                     uint32_t aAdditionalFlags,
                                                     nsIObserver* aObserver) override;
-  virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId,
-                                              TouchPointerState aPointerState,
-                                              LayoutDeviceIntPoint aPoint,
-                                              double aPointerPressure,
+  virtual nsresult SynthesizeNativeTouchPoint(uint32_t aPointerId, TouchPointerState aPointerState,
+                                              LayoutDeviceIntPoint aPoint, double aPointerPressure,
                                               uint32_t aPointerOrientation,
                                               nsIObserver* aObserver) override;
 
   
 
-  virtual bool      DispatchWindowEvent(mozilla::WidgetGUIEvent& event);
+  virtual bool DispatchWindowEvent(mozilla::WidgetGUIEvent& event);
 
   void WillPaintWindow();
   bool PaintWindow(LayoutDeviceIntRegion aRegion);
@@ -453,9 +437,9 @@ public:
   virtual void PrepareWindowEffects() override;
   virtual void CleanupWindowEffects() override;
 
-  virtual void AddWindowOverlayWebRenderCommands(mozilla::layers::WebRenderBridgeChild* aWrBridge,
-                                                 mozilla::wr::DisplayListBuilder& aBuilder,
-                                                 mozilla::wr::IpcResourceUpdateQueue& aResourceUpdates) override;
+  virtual void AddWindowOverlayWebRenderCommands(
+      mozilla::layers::WebRenderBridgeChild* aWrBridge, mozilla::wr::DisplayListBuilder& aBuilder,
+      mozilla::wr::IpcResourceUpdateQueue& aResourceUpdates) override;
 
   virtual bool PreRender(mozilla::widget::WidgetRenderingContext* aContext) override;
   virtual void PostRender(mozilla::widget::WidgetRenderingContext* aContext) override;
@@ -469,13 +453,12 @@ public:
 
   virtual void ReportSwipeStarted(uint64_t aInputBlockId, bool aStartSwipe) override;
 
-  virtual void LookUpDictionary(
-                 const nsAString& aText,
-                 const nsTArray<mozilla::FontRange>& aFontRangeArray,
-                 const bool aIsVertical,
-                 const LayoutDeviceIntPoint& aPoint) override;
+  virtual void LookUpDictionary(const nsAString& aText,
+                                const nsTArray<mozilla::FontRange>& aFontRangeArray,
+                                const bool aIsVertical,
+                                const LayoutDeviceIntPoint& aPoint) override;
 
-  void              ResetParent();
+  void ResetParent();
 
   static bool DoHasPendingInputEvent();
   static uint32_t GetCurrentInputEventCount();
@@ -483,21 +466,19 @@ public:
 
   NSView<mozView>* GetEditorView();
 
-  nsCocoaWindow*    GetXULWindowWidget() const;
+  nsCocoaWindow* GetXULWindowWidget() const;
 
-  virtual void      ReparentNativeWidget(nsIWidget* aNewParent) override;
+  virtual void ReparentNativeWidget(nsIWidget* aNewParent) override;
 
-  mozilla::widget::TextInputHandler* GetTextInputHandler()
-  {
-    return mTextInputHandler;
-  }
+  mozilla::widget::TextInputHandler* GetTextInputHandler() { return mTextInputHandler; }
 
-  void              ClearVibrantAreas();
-  NSColor*          VibrancyFillColorForThemeGeometryType(nsITheme::ThemeGeometryType aThemeGeometryType);
-  NSColor*          VibrancyFontSmoothingBackgroundColorForThemeGeometryType(nsITheme::ThemeGeometryType aThemeGeometryType);
+  void ClearVibrantAreas();
+  NSColor* VibrancyFillColorForThemeGeometryType(nsITheme::ThemeGeometryType aThemeGeometryType);
+  NSColor* VibrancyFontSmoothingBackgroundColorForThemeGeometryType(
+      nsITheme::ThemeGeometryType aThemeGeometryType);
 
   
-  int32_t           CocoaPointsToDevPixels(CGFloat aPts) const {
+  int32_t CocoaPointsToDevPixels(CGFloat aPts) const {
     return nsCocoaUtils::CocoaPointsToDevPixels(aPts, BackingScaleFactor());
   }
   LayoutDeviceIntPoint CocoaPointsToDevPixels(const NSPoint& aPt) const {
@@ -509,24 +490,22 @@ public:
   LayoutDeviceIntRect CocoaPointsToDevPixels(const NSRect& aRect) const {
     return nsCocoaUtils::CocoaPointsToDevPixels(aRect, BackingScaleFactor());
   }
-  CGFloat           DevPixelsToCocoaPoints(int32_t aPixels) const {
+  CGFloat DevPixelsToCocoaPoints(int32_t aPixels) const {
     return nsCocoaUtils::DevPixelsToCocoaPoints(aPixels, BackingScaleFactor());
   }
-  NSRect            DevPixelsToCocoaPoints(const LayoutDeviceIntRect& aRect) const {
+  NSRect DevPixelsToCocoaPoints(const LayoutDeviceIntRect& aRect) const {
     return nsCocoaUtils::DevPixelsToCocoaPoints(aRect, BackingScaleFactor());
   }
 
-  already_AddRefed<mozilla::gfx::DrawTarget>
-    StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
-                               mozilla::layers::BufferMode* aBufferMode) override;
+  already_AddRefed<mozilla::gfx::DrawTarget> StartRemoteDrawingInRegion(
+      LayoutDeviceIntRegion& aInvalidRegion, mozilla::layers::BufferMode* aBufferMode) override;
   void EndRemoteDrawing() override;
   void CleanupRemoteDrawing() override;
   bool InitCompositor(mozilla::layers::Compositor* aCompositor) override;
 
-  virtual MOZ_MUST_USE nsresult
-  StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
-                 int32_t aPanelX, int32_t aPanelY,
-                 nsString& aCommitted) override;
+  virtual MOZ_MUST_USE nsresult StartPluginIME(const mozilla::WidgetKeyboardEvent& aKeyboardEvent,
+                                               int32_t aPanelX, int32_t aPanelY,
+                                               nsString& aCommitted) override;
 
   virtual void SetPluginFocused(bool& aFocused) override;
 
@@ -542,20 +521,18 @@ public:
   nsresult SetPrefersReducedMotionOverrideForTest(bool aValue) override;
   nsresult ResetPrefersReducedMotionOverrideForTest() override;
 
-protected:
+ protected:
   virtual ~nsChildView();
 
-  void              ReportMoveEvent();
-  void              ReportSizeEvent();
+  void ReportMoveEvent();
+  void ReportSizeEvent();
 
   
   
-  virtual NSView*   CreateCocoaView(NSRect inFrame);
-  void              TearDownView();
+  virtual NSView* CreateCocoaView(NSRect inFrame);
+  void TearDownView();
 
-  virtual already_AddRefed<nsIWidget>
-  AllocateChildPopupWidget() override
-  {
+  virtual already_AddRefed<nsIWidget> AllocateChildPopupWidget() override {
     return nsIWidget::CreateTopLevelWindow();
   }
 
@@ -567,7 +544,8 @@ protected:
   
   void DrawWindowOverlay(mozilla::layers::GLManager* aManager, LayoutDeviceIntRect aRect);
   void MaybeDrawResizeIndicator(mozilla::layers::GLManager* aManager);
-  void MaybeDrawRoundedCorners(mozilla::layers::GLManager* aManager, const LayoutDeviceIntRect& aRect);
+  void MaybeDrawRoundedCorners(mozilla::layers::GLManager* aManager,
+                               const LayoutDeviceIntRect& aRect);
   void MaybeDrawTitlebar(mozilla::layers::GLManager* aManager);
 
   
@@ -589,19 +567,18 @@ protected:
   void TrackScrollEventAsSwipe(const mozilla::PanGestureInput& aSwipeStartEvent,
                                uint32_t aAllowedDirections);
 
-protected:
-
-  NSView<mozView>*      mView;      
+ protected:
+  NSView<mozView>* mView;  
   RefPtr<mozilla::widget::TextInputHandler> mTextInputHandler;
-  InputContext          mInputContext;
+  InputContext mInputContext;
 
-  NSView<mozView>*      mParentView;
-  nsIWidget*            mParentWidget;
+  NSView<mozView>* mParentView;
+  nsIWidget* mParentWidget;
 
 #ifdef ACCESSIBILITY
   
   
-  nsWeakPtr             mAccessible;
+  nsWeakPtr mAccessible;
 #endif
 
   
@@ -638,19 +615,19 @@ protected:
 
   
   
-  nsIntRegion           mDirtyTitlebarRegion;
+  nsIntRegion mDirtyTitlebarRegion;
 
-  mozilla::ViewRegion   mNonDraggableRegion;
+  mozilla::ViewRegion mNonDraggableRegion;
 
   
   
   
   
-  mutable CGFloat       mBackingScaleFactor;
+  mutable CGFloat mBackingScaleFactor;
 
-  bool                  mVisible;
-  bool                  mDrawing;
-  bool                  mIsDispatchPaint; 
+  bool mVisible;
+  bool mDrawing;
+  bool mIsDispatchPaint;  
 
   bool mPluginFocused;
 
@@ -682,4 +659,4 @@ protected:
   mozilla::UniquePtr<mozilla::MultiTouchInput> mSynthesizedTouchInput;
 };
 
-#endif 
+#endif  

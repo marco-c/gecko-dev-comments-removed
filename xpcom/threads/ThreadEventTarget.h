@@ -9,30 +9,30 @@
 
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/SynchronizedEventQueue.h" 
+#include "mozilla/SynchronizedEventQueue.h"  
 #include "nsISerialEventTarget.h"
 
 namespace mozilla {
 
 
 
-class ThreadEventTarget final : public nsISerialEventTarget
-{
-public:
-  ThreadEventTarget(ThreadTargetSink* aSink,
-                    bool aIsMainThread);
+class ThreadEventTarget final : public nsISerialEventTarget {
+ public:
+  ThreadEventTarget(ThreadTargetSink* aSink, bool aIsMainThread);
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIEVENTTARGET_FULL
 
   
-  void Disconnect(const MutexAutoLock& aProofOfLock) { mSink->Disconnect(aProofOfLock); }
+  void Disconnect(const MutexAutoLock& aProofOfLock) {
+    mSink->Disconnect(aProofOfLock);
+  }
 
+  
   
   void SetCurrentThread();
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-  {
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     size_t n = 0;
     if (mSink) {
       n += mSink->SizeOfIncludingThis(aMallocSizeOf);
@@ -40,13 +40,13 @@ public:
     return aMallocSizeOf(this) + n;
   }
 
-private:
+ private:
   ~ThreadEventTarget() {}
 
   RefPtr<ThreadTargetSink> mSink;
   bool mIsMainThread;
 };
 
-} 
+}  
 
-#endif 
+#endif  

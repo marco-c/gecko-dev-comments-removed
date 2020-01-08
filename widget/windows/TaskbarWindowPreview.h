@@ -22,12 +22,13 @@ class TaskbarWindowPreview : public TaskbarPreview,
                              public nsITaskbarWindowPreview,
                              public nsITaskbarProgress,
                              public nsITaskbarOverlayIconController,
-                             public nsSupportsWeakReference
-{
+                             public nsSupportsWeakReference {
   virtual ~TaskbarWindowPreview();
 
-public:
-  TaskbarWindowPreview(ITaskbarList4 *aTaskbar, nsITaskbarPreviewController *aController, HWND aHWND, nsIDocShell *aShell);
+ public:
+  TaskbarWindowPreview(ITaskbarList4 *aTaskbar,
+                       nsITaskbarPreviewController *aController, HWND aHWND,
+                       nsIDocShell *aShell);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSITASKBARWINDOWPREVIEW
@@ -36,7 +37,8 @@ public:
   NS_FORWARD_NSITASKBARPREVIEW(TaskbarPreview::)
 
   virtual LRESULT WndProc(UINT nMsg, WPARAM wParam, LPARAM lParam) override;
-private:
+
+ private:
   virtual nsresult ShowActive(bool active) override;
   virtual HWND &PreviewWindow() override;
 
@@ -48,38 +50,35 @@ private:
   nsresult UpdateButtons();
 
   
-  bool                    mCustomDrawing;
+  bool mCustomDrawing;
   
-  bool                    mHaveButtons;
+  bool mHaveButtons;
   
-  THUMBBUTTON             mThumbButtons[nsITaskbarWindowPreview::NUM_TOOLBAR_BUTTONS];
+  THUMBBUTTON mThumbButtons[nsITaskbarWindowPreview::NUM_TOOLBAR_BUTTONS];
   
-  nsWeakPtr               mWeakButtons[nsITaskbarWindowPreview::NUM_TOOLBAR_BUTTONS];
+  nsWeakPtr mWeakButtons[nsITaskbarWindowPreview::NUM_TOOLBAR_BUTTONS];
 
   
   nsresult UpdateTaskbarProgress();
   nsresult UpdateOverlayIcon();
 
   
-  TBPFLAG                 mState;
-  ULONGLONG               mCurrentValue;
-  ULONGLONG               mMaxValue;
+  TBPFLAG mState;
+  ULONGLONG mCurrentValue;
+  ULONGLONG mMaxValue;
 
   
-  HICON                   mOverlayIcon;
-  nsString                mIconDescription;
+  HICON mOverlayIcon;
+  nsString mIconDescription;
 
   
-  static bool TaskbarWindowHook(void *aContext,
-                                  HWND hWnd, UINT nMsg,
-                                  WPARAM wParam, LPARAM lParam,
-                                  LRESULT *aResult);
+  static bool TaskbarWindowHook(void *aContext, HWND hWnd, UINT nMsg,
+                                WPARAM wParam, LPARAM lParam, LRESULT *aResult);
 
   friend class TaskbarPreviewButton;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 
-

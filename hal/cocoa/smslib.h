@@ -56,15 +56,15 @@
 
 
 typedef struct sms_acceleration {
-	float x;		
-	float y;		
-	float z;		
+  float x;  
+  float y;  
+  float z;  
 } sms_acceleration;
 
 
 typedef struct sms_calibration {
-	float zeros[3];	
-	float onegs[3];	
+  float zeros[3];  
+  float onegs[3];  
 } sms_calibration;
 
 #pragma mark Return value definitions
@@ -74,24 +74,24 @@ typedef struct sms_calibration {
 
 
 
-#define SMS_FAIL_MODEL			(-7)
+#define SMS_FAIL_MODEL (-7)
 
-#define SMS_FAIL_DICTIONARY		(-6)
+#define SMS_FAIL_DICTIONARY (-6)
 
-#define SMS_FAIL_LIST_SERVICES	(-5)
-
-
-#define SMS_FAIL_NO_SERVICES	(-4)
-
-#define SMS_FAIL_OPENING		(-3)
-
-#define SMS_FAIL_CONNECTION		(-2)
+#define SMS_FAIL_LIST_SERVICES (-5)
 
 
+#define SMS_FAIL_NO_SERVICES (-4)
 
-#define SMS_FAIL_ACCESS			(-1)
+#define SMS_FAIL_OPENING (-3)
 
-#define SMS_SUCCESS				(0)
+#define SMS_FAIL_CONNECTION (-2)
+
+
+
+#define SMS_FAIL_ACCESS (-1)
+
+#define SMS_SUCCESS (0)
 
 #pragma mark Function declarations
 
@@ -156,4 +156,3 @@ NSString *smsGetCalibrationDescription(void);
 
 
 void smsShutdown(void);
-

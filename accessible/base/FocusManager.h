@@ -21,9 +21,8 @@ class DocAccessible;
 
 
 
-class FocusManager
-{
-public:
+class FocusManager {
+ public:
   virtual ~FocusManager();
 
   
@@ -40,8 +39,9 @@ public:
 
 
 
-  inline bool IsActiveItem(const Accessible* aAccessible)
-    { return aAccessible == mActiveItem; }
+  inline bool IsActiveItem(const Accessible* aAccessible) {
+    return aAccessible == mActiveItem;
+  }
 
   
 
@@ -51,8 +51,9 @@ public:
   
 
 
-  inline bool HasDOMFocus(const nsINode* aNode) const
-    { return aNode == FocusedDOMNode(); }
+  inline bool HasDOMFocus(const nsINode* aNode) const {
+    return aNode == FocusedDOMNode();
+  }
 
   
 
@@ -63,12 +64,7 @@ public:
 
 
 
-  enum FocusDisposition {
-    eNone,
-    eFocused,
-    eContainsFocus,
-    eContainedByFocus
-  };
+  enum FocusDisposition { eNone, eFocused, eContainsFocus, eContainedByFocus };
   FocusDisposition IsInOrContainsFocus(const Accessible* aAccessible) const;
 
   
@@ -111,24 +107,24 @@ public:
 
   void ProcessFocusEvent(AccEvent* aEvent);
 
-protected:
+ protected:
   FocusManager();
 
-private:
+ private:
   FocusManager(const FocusManager&);
-  FocusManager& operator =(const FocusManager&);
+  FocusManager& operator=(const FocusManager&);
 
   
 
 
   nsIDocument* FocusedDOMDocument() const;
 
-private:
+ private:
   RefPtr<Accessible> mActiveItem;
   RefPtr<Accessible> mActiveARIAMenubar;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

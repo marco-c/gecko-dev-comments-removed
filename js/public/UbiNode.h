@@ -170,8 +170,8 @@ class Edge;
 class EdgeRange;
 class StackFrame;
 
-} 
-} 
+}  
+}  
 
 namespace JS {
 namespace ubi {
@@ -190,111 +190,112 @@ using Vector = mozilla::Vector<T, 0, js::SystemAllocPolicy>;
 
 
 
-class JS_PUBLIC_API AtomOrTwoByteChars : public Variant<JSAtom*, const char16_t*> {
-    using Base = Variant<JSAtom*, const char16_t*>;
+class JS_PUBLIC_API AtomOrTwoByteChars
+    : public Variant<JSAtom*, const char16_t*> {
+  using Base = Variant<JSAtom*, const char16_t*>;
 
-  public:
-    template<typename T>
-    MOZ_IMPLICIT AtomOrTwoByteChars(T&& rhs) : Base(std::forward<T>(rhs)) { }
+ public:
+  template <typename T>
+  MOZ_IMPLICIT AtomOrTwoByteChars(T&& rhs) : Base(std::forward<T>(rhs)) {}
 
-    template<typename T>
-    AtomOrTwoByteChars& operator=(T&& rhs) {
-        MOZ_ASSERT(this != &rhs, "self-move disallowed");
-        this->~AtomOrTwoByteChars();
-        new (this) AtomOrTwoByteChars(std::forward<T>(rhs));
-        return *this;
-    }
+  template <typename T>
+  AtomOrTwoByteChars& operator=(T&& rhs) {
+    MOZ_ASSERT(this != &rhs, "self-move disallowed");
+    this->~AtomOrTwoByteChars();
+    new (this) AtomOrTwoByteChars(std::forward<T>(rhs));
+    return *this;
+  }
 
-    
-    size_t length();
+  
+  size_t length();
 
-    
-    
-    
-    size_t copyToBuffer(RangedPtr<char16_t> destination, size_t length);
+  
+  
+  
+  size_t copyToBuffer(RangedPtr<char16_t> destination, size_t length);
 };
 
 
 
 class BaseStackFrame {
-    friend class StackFrame;
+  friend class StackFrame;
 
-    BaseStackFrame(const StackFrame&) = delete;
-    BaseStackFrame& operator=(const StackFrame&) = delete;
+  BaseStackFrame(const StackFrame&) = delete;
+  BaseStackFrame& operator=(const StackFrame&) = delete;
 
-  protected:
-    void* ptr;
-    explicit BaseStackFrame(void* ptr) : ptr(ptr) { }
+ protected:
+  void* ptr;
+  explicit BaseStackFrame(void* ptr) : ptr(ptr) {}
 
-  public:
-    
-    
+ public:
+  
+  
 
-    
-    
-    virtual uint64_t identifier() const { return uint64_t(uintptr_t(ptr)); }
+  
+  
+  virtual uint64_t identifier() const { return uint64_t(uintptr_t(ptr)); }
 
-    
-    virtual StackFrame parent() const = 0;
+  
+  virtual StackFrame parent() const = 0;
 
-    
-    virtual uint32_t line() const = 0;
+  
+  virtual uint32_t line() const = 0;
 
-    
-    virtual uint32_t column() const = 0;
+  
+  virtual uint32_t column() const = 0;
 
-    
-    virtual AtomOrTwoByteChars source() const = 0;
+  
+  virtual AtomOrTwoByteChars source() const = 0;
 
-    
-    
-    virtual AtomOrTwoByteChars functionDisplayName() const = 0;
+  
+  
+  virtual AtomOrTwoByteChars functionDisplayName() const = 0;
 
-    
-    
-    virtual bool isSystem() const = 0;
+  
+  
+  virtual bool isSystem() const = 0;
 
-    
-    
-    virtual bool isSelfHosted(JSContext* cx) const = 0;
+  
+  
+  virtual bool isSelfHosted(JSContext* cx) const = 0;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    virtual MOZ_MUST_USE bool constructSavedFrameStack(JSContext* cx,
-                                                       MutableHandleObject outSavedFrameStack)
-        const = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual MOZ_MUST_USE bool constructSavedFrameStack(
+      JSContext* cx, MutableHandleObject outSavedFrameStack) const = 0;
 
-    
-    virtual void trace(JSTracer* trc) = 0;
+  
+  virtual void trace(JSTracer* trc) = 0;
 };
 
 
 
 
-template<typename T> class ConcreteStackFrame;
+template <typename T>
+class ConcreteStackFrame;
 
 
 
@@ -310,163 +311,172 @@ template<typename T> class ConcreteStackFrame;
 
 
 class StackFrame {
-    
-    mozilla::AlignedStorage2<BaseStackFrame> storage;
+  
+  mozilla::AlignedStorage2<BaseStackFrame> storage;
 
-    BaseStackFrame* base() { return storage.addr(); }
-    const BaseStackFrame* base() const { return storage.addr(); }
+  BaseStackFrame* base() { return storage.addr(); }
+  const BaseStackFrame* base() const { return storage.addr(); }
 
-    template<typename T>
-    void construct(T* ptr) {
-        static_assert(mozilla::IsBaseOf<BaseStackFrame, ConcreteStackFrame<T>>::value,
-                      "ConcreteStackFrame<T> must inherit from BaseStackFrame");
-        static_assert(sizeof(ConcreteStackFrame<T>) == sizeof(*base()),
-                      "ubi::ConcreteStackFrame<T> specializations must be the same size as "
-                      "ubi::BaseStackFrame");
-        ConcreteStackFrame<T>::construct(base(), ptr);
+  template <typename T>
+  void construct(T* ptr) {
+    static_assert(
+        mozilla::IsBaseOf<BaseStackFrame, ConcreteStackFrame<T>>::value,
+        "ConcreteStackFrame<T> must inherit from BaseStackFrame");
+    static_assert(
+        sizeof(ConcreteStackFrame<T>) == sizeof(*base()),
+        "ubi::ConcreteStackFrame<T> specializations must be the same size as "
+        "ubi::BaseStackFrame");
+    ConcreteStackFrame<T>::construct(base(), ptr);
+  }
+  struct ConstructFunctor;
+
+ public:
+  StackFrame() { construct<void>(nullptr); }
+
+  template <typename T>
+  MOZ_IMPLICIT StackFrame(T* ptr) {
+    construct(ptr);
+  }
+
+  template <typename T>
+  StackFrame& operator=(T* ptr) {
+    construct(ptr);
+    return *this;
+  }
+
+  
+
+  template <typename T>
+  explicit StackFrame(const JS::Handle<T*>& handle) {
+    construct(handle.get());
+  }
+
+  template <typename T>
+  StackFrame& operator=(const JS::Handle<T*>& handle) {
+    construct(handle.get());
+    return *this;
+  }
+
+  template <typename T>
+  explicit StackFrame(const JS::Rooted<T*>& root) {
+    construct(root.get());
+  }
+
+  template <typename T>
+  StackFrame& operator=(const JS::Rooted<T*>& root) {
+    construct(root.get());
+    return *this;
+  }
+
+  
+  
+  
+  
+  StackFrame(const StackFrame& rhs) {
+    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+  }
+
+  StackFrame& operator=(const StackFrame& rhs) {
+    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    return *this;
+  }
+
+  bool operator==(const StackFrame& rhs) const {
+    return base()->ptr == rhs.base()->ptr;
+  }
+  bool operator!=(const StackFrame& rhs) const { return !(*this == rhs); }
+
+  explicit operator bool() const { return base()->ptr != nullptr; }
+
+  
+  
+  
+  size_t source(RangedPtr<char16_t> destination, size_t length) const;
+
+  
+  
+  
+  size_t functionDisplayName(RangedPtr<char16_t> destination,
+                             size_t length) const;
+
+  
+  size_t sourceLength();
+  size_t functionDisplayNameLength();
+
+  
+
+  void trace(JSTracer* trc) { base()->trace(trc); }
+  uint64_t identifier() const {
+    auto id = base()->identifier();
+    MOZ_ASSERT(JS::Value::isNumberRepresentable(id));
+    return id;
+  }
+  uint32_t line() const { return base()->line(); }
+  uint32_t column() const { return base()->column(); }
+  AtomOrTwoByteChars source() const { return base()->source(); }
+  AtomOrTwoByteChars functionDisplayName() const {
+    return base()->functionDisplayName();
+  }
+  StackFrame parent() const { return base()->parent(); }
+  bool isSystem() const { return base()->isSystem(); }
+  bool isSelfHosted(JSContext* cx) const { return base()->isSelfHosted(cx); }
+  MOZ_MUST_USE bool constructSavedFrameStack(
+      JSContext* cx, MutableHandleObject outSavedFrameStack) const {
+    return base()->constructSavedFrameStack(cx, outSavedFrameStack);
+  }
+
+  struct HashPolicy {
+    using Lookup = JS::ubi::StackFrame;
+
+    static js::HashNumber hash(const Lookup& lookup) {
+      return mozilla::HashGeneric(lookup.identifier());
     }
-    struct ConstructFunctor;
 
-  public:
-    StackFrame() { construct<void>(nullptr); }
-
-    template<typename T>
-    MOZ_IMPLICIT StackFrame(T* ptr) {
-        construct(ptr);
+    static bool match(const StackFrame& key, const Lookup& lookup) {
+      return key == lookup;
     }
 
-    template<typename T>
-    StackFrame& operator=(T* ptr) {
-        construct(ptr);
-        return *this;
-    }
-
-    
-
-    template<typename T>
-    explicit StackFrame(const JS::Handle<T*>& handle) {
-        construct(handle.get());
-    }
-
-    template<typename T>
-    StackFrame& operator=(const JS::Handle<T*>& handle) {
-        construct(handle.get());
-        return *this;
-    }
-
-    template<typename T>
-    explicit StackFrame(const JS::Rooted<T*>& root) {
-        construct(root.get());
-    }
-
-    template<typename T>
-    StackFrame& operator=(const JS::Rooted<T*>& root) {
-        construct(root.get());
-        return *this;
-    }
-
-    
-    
-    
-    
-    StackFrame(const StackFrame& rhs) {
-        memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
-    }
-
-    StackFrame& operator=(const StackFrame& rhs) {
-        memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
-        return *this;
-    }
-
-    bool operator==(const StackFrame& rhs) const { return base()->ptr == rhs.base()->ptr; }
-    bool operator!=(const StackFrame& rhs) const { return !(*this == rhs); }
-
-    explicit operator bool() const {
-        return base()->ptr != nullptr;
-    }
-
-    
-    
-    
-    size_t source(RangedPtr<char16_t> destination, size_t length) const;
-
-    
-    
-    
-    size_t functionDisplayName(RangedPtr<char16_t> destination, size_t length) const;
-
-    
-    size_t sourceLength();
-    size_t functionDisplayNameLength();
-
-    
-
-    void trace(JSTracer* trc) { base()->trace(trc); }
-    uint64_t identifier() const {
-        auto id = base()->identifier();
-        MOZ_ASSERT(JS::Value::isNumberRepresentable(id));
-        return id;
-    }
-    uint32_t line() const { return base()->line(); }
-    uint32_t column() const { return base()->column(); }
-    AtomOrTwoByteChars source() const { return base()->source(); }
-    AtomOrTwoByteChars functionDisplayName() const { return base()->functionDisplayName(); }
-    StackFrame parent() const { return base()->parent(); }
-    bool isSystem() const { return base()->isSystem(); }
-    bool isSelfHosted(JSContext* cx) const { return base()->isSelfHosted(cx); }
-    MOZ_MUST_USE bool constructSavedFrameStack(JSContext* cx,
-                                               MutableHandleObject outSavedFrameStack) const {
-        return base()->constructSavedFrameStack(cx, outSavedFrameStack);
-    }
-
-    struct HashPolicy {
-        using Lookup = JS::ubi::StackFrame;
-
-        static js::HashNumber hash(const Lookup& lookup) {
-            return mozilla::HashGeneric(lookup.identifier());
-        }
-
-        static bool match(const StackFrame& key, const Lookup& lookup) {
-            return key == lookup;
-        }
-
-        static void rekey(StackFrame& k, const StackFrame& newKey) {
-            k = newKey;
-        }
-    };
+    static void rekey(StackFrame& k, const StackFrame& newKey) { k = newKey; }
+  };
 };
 
 
 
-template<>
+template <>
 class ConcreteStackFrame<void> : public BaseStackFrame {
-    explicit ConcreteStackFrame(void* ptr) : BaseStackFrame(ptr) { }
+  explicit ConcreteStackFrame(void* ptr) : BaseStackFrame(ptr) {}
 
-  public:
-    static void construct(void* storage, void*) { new (storage) ConcreteStackFrame(nullptr); }
+ public:
+  static void construct(void* storage, void*) {
+    new (storage) ConcreteStackFrame(nullptr);
+  }
 
-    uint64_t identifier() const override { return 0; }
-    void trace(JSTracer* trc) override { }
-    MOZ_MUST_USE bool constructSavedFrameStack(JSContext* cx, MutableHandleObject out)
-        const override
-    {
-        out.set(nullptr);
-        return true;
-    }
+  uint64_t identifier() const override { return 0; }
+  void trace(JSTracer* trc) override {}
+  MOZ_MUST_USE bool constructSavedFrameStack(
+      JSContext* cx, MutableHandleObject out) const override {
+    out.set(nullptr);
+    return true;
+  }
 
-    uint32_t line() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
-    uint32_t column() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
-    AtomOrTwoByteChars source() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
-    AtomOrTwoByteChars functionDisplayName() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
-    StackFrame parent() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
-    bool isSystem() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
-    bool isSelfHosted(JSContext* cx) const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+  uint32_t line() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+  uint32_t column() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+  AtomOrTwoByteChars source() const override {
+    MOZ_CRASH("null JS::ubi::StackFrame");
+  }
+  AtomOrTwoByteChars functionDisplayName() const override {
+    MOZ_CRASH("null JS::ubi::StackFrame");
+  }
+  StackFrame parent() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+  bool isSystem() const override { MOZ_CRASH("null JS::ubi::StackFrame"); }
+  bool isSelfHosted(JSContext* cx) const override {
+    MOZ_CRASH("null JS::ubi::StackFrame");
+  }
 };
 
-MOZ_MUST_USE JS_PUBLIC_API bool
-ConstructSavedFrameStackSlow(JSContext* cx,
-                             JS::ubi::StackFrame& frame,
-                             MutableHandleObject outSavedFrameStack);
+MOZ_MUST_USE JS_PUBLIC_API bool ConstructSavedFrameStackSlow(
+    JSContext* cx, JS::ubi::StackFrame& frame,
+    MutableHandleObject outSavedFrameStack);
 
 
 
@@ -483,180 +493,175 @@ ConstructSavedFrameStackSlow(JSContext* cx,
 
 
 
-enum class CoarseType: uint32_t {
-    Other   = 0,
-    Object  = 1,
-    Script  = 2,
-    String  = 3,
-    DOMNode = 4,
+enum class CoarseType : uint32_t {
+  Other = 0,
+  Object = 1,
+  Script = 2,
+  String = 3,
+  DOMNode = 4,
 
-    FIRST   = Other,
-    LAST    = DOMNode
+  FIRST = Other,
+  LAST = DOMNode
 };
 
-inline uint32_t
-CoarseTypeToUint32(CoarseType type)
-{
-    return static_cast<uint32_t>(type);
+inline uint32_t CoarseTypeToUint32(CoarseType type) {
+  return static_cast<uint32_t>(type);
 }
 
-inline bool
-Uint32IsValidCoarseType(uint32_t n)
-{
-    auto first = static_cast<uint32_t>(CoarseType::FIRST);
-    auto last = static_cast<uint32_t>(CoarseType::LAST);
-    MOZ_ASSERT(first < last);
-    return first <= n && n <= last;
+inline bool Uint32IsValidCoarseType(uint32_t n) {
+  auto first = static_cast<uint32_t>(CoarseType::FIRST);
+  auto last = static_cast<uint32_t>(CoarseType::LAST);
+  MOZ_ASSERT(first < last);
+  return first <= n && n <= last;
 }
 
-inline CoarseType
-Uint32ToCoarseType(uint32_t n)
-{
-    MOZ_ASSERT(Uint32IsValidCoarseType(n));
-    return static_cast<CoarseType>(n);
+inline CoarseType Uint32ToCoarseType(uint32_t n) {
+  MOZ_ASSERT(Uint32IsValidCoarseType(n));
+  return static_cast<CoarseType>(n);
 }
 
 
 
 class JS_PUBLIC_API Base {
-    friend class Node;
+  friend class Node;
 
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
 
-  protected:
-    
-    
-    void* ptr;
+ protected:
+  
+  
+  void* ptr;
 
-    explicit Base(void* ptr) : ptr(ptr) { }
+  explicit Base(void* ptr) : ptr(ptr) {}
 
-  public:
-    bool operator==(const Base& rhs) const {
-        
-        
-        
-        
-        return ptr == rhs.ptr;
-    }
-    bool operator!=(const Base& rhs) const { return !(*this == rhs); }
+ public:
+  bool operator==(const Base& rhs) const {
+    
+    
+    
+    
+    return ptr == rhs.ptr;
+  }
+  bool operator!=(const Base& rhs) const { return !(*this == rhs); }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    using Id = uint64_t;
-    virtual Id identifier() const { return Id(uintptr_t(ptr)); }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using Id = uint64_t;
+  virtual Id identifier() const { return Id(uintptr_t(ptr)); }
 
-    
-    
-    
-    virtual bool isLive() const { return true; };
+  
+  
+  
+  virtual bool isLive() const { return true; };
 
-    
-    virtual CoarseType coarseType() const { return CoarseType::Other; }
+  
+  virtual CoarseType coarseType() const { return CoarseType::Other; }
 
-    
-    
-    
-    
-    
-    virtual const char16_t* typeName() const = 0;
+  
+  
+  
+  
+  
+  virtual const char16_t* typeName() const = 0;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    using Size = uint64_t;
-    virtual Size size(mozilla::MallocSizeOf mallocSizeof) const { return 1; }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using Size = uint64_t;
+  virtual Size size(mozilla::MallocSizeOf mallocSizeof) const { return 1; }
 
-    
-    
-    
-    
-    
-    virtual js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const = 0;
+  
+  
+  
+  
+  
+  virtual js::UniquePtr<EdgeRange> edges(JSContext* cx,
+                                         bool wantNames) const = 0;
 
-    
-    
-    virtual JS::Zone* zone() const { return nullptr; }
+  
+  
+  virtual JS::Zone* zone() const { return nullptr; }
 
-    
-    
-    
-    
-    virtual JS::Compartment* compartment() const { return nullptr; }
+  
+  
+  
+  
+  virtual JS::Compartment* compartment() const { return nullptr; }
 
-    
-    
-    
-    
-    
-    virtual JS::Realm* realm() const { return nullptr; }
+  
+  
+  
+  
+  
+  virtual JS::Realm* realm() const { return nullptr; }
 
-    
-    virtual bool hasAllocationStack() const { return false; }
+  
+  virtual bool hasAllocationStack() const { return false; }
 
-    
-    
-    virtual StackFrame allocationStack() const {
-        MOZ_CRASH("Concrete classes that have an allocation stack must override both "
-                  "hasAllocationStack and allocationStack.");
-    }
+  
+  
+  virtual StackFrame allocationStack() const {
+    MOZ_CRASH(
+        "Concrete classes that have an allocation stack must override both "
+        "hasAllocationStack and allocationStack.");
+  }
 
-    
-    
-    
-    
-    
-    virtual const char16_t* descriptiveTypeName() const { return nullptr; }
+  
+  
+  
+  
+  
+  virtual const char16_t* descriptiveTypeName() const { return nullptr; }
 
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
 
-    
-    virtual const char* jsObjectClassName() const { return nullptr; }
+  
+  virtual const char* jsObjectClassName() const { return nullptr; }
 
-    
-    
-    
-    
-    
-    virtual MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName)
-        const
-    {
-        outName.reset(nullptr);
-        return true;
-    }
+  
+  
+  
+  
+  
+  virtual MOZ_MUST_USE bool jsObjectConstructorName(
+      JSContext* cx, UniqueTwoByteChars& outName) const {
+    outName.reset(nullptr);
+    return true;
+  }
 
-    
+  
 
-    
-    
-    virtual const char* scriptFilename() const { return nullptr; }
+  
+  
+  virtual const char* scriptFilename() const { return nullptr; }
 
-  private:
-    Base(const Base& rhs) = delete;
-    Base& operator=(const Base& rhs) = delete;
+ private:
+  Base(const Base& rhs) = delete;
+  Base& operator=(const Base& rhs) = delete;
 };
 
 
@@ -680,166 +685,172 @@ class JS_PUBLIC_API Base {
 
 
 
-template<typename Referent>
+template <typename Referent>
 class Concrete;
 
 
 
 class Node {
-    
-    mozilla::AlignedStorage2<Base> storage;
-    Base* base() { return storage.addr(); }
-    const Base* base() const { return storage.addr(); }
+  
+  mozilla::AlignedStorage2<Base> storage;
+  Base* base() { return storage.addr(); }
+  const Base* base() const { return storage.addr(); }
 
-    template<typename T>
-    void construct(T* ptr) {
-        static_assert(sizeof(Concrete<T>) == sizeof(*base()),
-                      "ubi::Base specializations must be the same size as ubi::Base");
-        static_assert(mozilla::IsBaseOf<Base, Concrete<T>>::value,
-                      "ubi::Concrete<T> must inherit from ubi::Base");
-        Concrete<T>::construct(base(), ptr);
+  template <typename T>
+  void construct(T* ptr) {
+    static_assert(
+        sizeof(Concrete<T>) == sizeof(*base()),
+        "ubi::Base specializations must be the same size as ubi::Base");
+    static_assert(mozilla::IsBaseOf<Base, Concrete<T>>::value,
+                  "ubi::Concrete<T> must inherit from ubi::Base");
+    Concrete<T>::construct(base(), ptr);
+  }
+  struct ConstructFunctor;
+
+ public:
+  Node() { construct<void>(nullptr); }
+
+  template <typename T>
+  MOZ_IMPLICIT Node(T* ptr) {
+    construct(ptr);
+  }
+  template <typename T>
+  Node& operator=(T* ptr) {
+    construct(ptr);
+    return *this;
+  }
+
+  
+  template <typename T>
+  MOZ_IMPLICIT Node(const Rooted<T*>& root) {
+    construct(root.get());
+  }
+  template <typename T>
+  Node& operator=(const Rooted<T*>& root) {
+    construct(root.get());
+    return *this;
+  }
+
+  
+  
+  
+  
+  MOZ_IMPLICIT Node(JS::HandleValue value);
+  explicit Node(const JS::GCCellPtr& thing);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  Node(const Node& rhs) {
+    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+  }
+
+  Node& operator=(const Node& rhs) {
+    memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
+    return *this;
+  }
+
+  bool operator==(const Node& rhs) const { return *base() == *rhs.base(); }
+  bool operator!=(const Node& rhs) const { return *base() != *rhs.base(); }
+
+  explicit operator bool() const { return base()->ptr != nullptr; }
+
+  bool isLive() const { return base()->isLive(); }
+
+  
+  template <typename T>
+  static const char16_t* canonicalTypeName() {
+    return Concrete<T>::concreteTypeName;
+  }
+
+  template <typename T>
+  bool is() const {
+    return base()->typeName() == canonicalTypeName<T>();
+  }
+
+  template <typename T>
+  T* as() const {
+    MOZ_ASSERT(isLive());
+    MOZ_ASSERT(this->is<T>());
+    return static_cast<T*>(base()->ptr);
+  }
+
+  template <typename T>
+  T* asOrNull() const {
+    MOZ_ASSERT(isLive());
+    return this->is<T>() ? static_cast<T*>(base()->ptr) : nullptr;
+  }
+
+  
+  
+  
+  
+  JS::Value exposeToJS() const;
+
+  CoarseType coarseType() const { return base()->coarseType(); }
+  const char16_t* typeName() const { return base()->typeName(); }
+  JS::Zone* zone() const { return base()->zone(); }
+  JS::Compartment* compartment() const { return base()->compartment(); }
+  JS::Realm* realm() const { return base()->realm(); }
+  const char* jsObjectClassName() const { return base()->jsObjectClassName(); }
+  const char16_t* descriptiveTypeName() const {
+    return base()->descriptiveTypeName();
+  }
+  MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx,
+                                            UniqueTwoByteChars& outName) const {
+    return base()->jsObjectConstructorName(cx, outName);
+  }
+
+  const char* scriptFilename() const { return base()->scriptFilename(); }
+
+  using Size = Base::Size;
+  Size size(mozilla::MallocSizeOf mallocSizeof) const {
+    auto size = base()->size(mallocSizeof);
+    MOZ_ASSERT(
+        size > 0,
+        "C++ does not have zero-sized types! Choose 1 if you just need a "
+        "conservative default.");
+    return size;
+  }
+
+  js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames = true) const {
+    return base()->edges(cx, wantNames);
+  }
+
+  bool hasAllocationStack() const { return base()->hasAllocationStack(); }
+  StackFrame allocationStack() const { return base()->allocationStack(); }
+
+  using Id = Base::Id;
+  Id identifier() const {
+    auto id = base()->identifier();
+    MOZ_ASSERT(JS::Value::isNumberRepresentable(id));
+    return id;
+  }
+
+  
+  
+  
+  class HashPolicy {
+    typedef js::PointerHasher<void*> PtrHash;
+
+   public:
+    typedef Node Lookup;
+
+    static js::HashNumber hash(const Lookup& l) {
+      return PtrHash::hash(l.base()->ptr);
     }
-    struct ConstructFunctor;
-
-  public:
-    Node() { construct<void>(nullptr); }
-
-    template<typename T>
-    MOZ_IMPLICIT Node(T* ptr) {
-        construct(ptr);
-    }
-    template<typename T>
-    Node& operator=(T* ptr) {
-        construct(ptr);
-        return *this;
-    }
-
-    
-    template<typename T>
-    MOZ_IMPLICIT Node(const Rooted<T*>& root) {
-        construct(root.get());
-    }
-    template<typename T>
-    Node& operator=(const Rooted<T*>& root) {
-        construct(root.get());
-        return *this;
-    }
-
-    
-    
-    
-    
-    MOZ_IMPLICIT Node(JS::HandleValue value);
-    explicit Node(const JS::GCCellPtr& thing);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    Node(const Node& rhs) {
-        memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
-    }
-
-    Node& operator=(const Node& rhs) {
-        memcpy(storage.u.mBytes, rhs.storage.u.mBytes, sizeof(storage.u));
-        return *this;
-    }
-
-    bool operator==(const Node& rhs) const { return *base() == *rhs.base(); }
-    bool operator!=(const Node& rhs) const { return *base() != *rhs.base(); }
-
-    explicit operator bool() const {
-        return base()->ptr != nullptr;
-    }
-
-    bool isLive() const { return base()->isLive(); }
-
-    
-    template<typename T>
-    static const char16_t* canonicalTypeName() { return Concrete<T>::concreteTypeName; }
-
-    template<typename T>
-    bool is() const {
-        return base()->typeName() == canonicalTypeName<T>();
-    }
-
-    template<typename T>
-    T* as() const {
-        MOZ_ASSERT(isLive());
-        MOZ_ASSERT(this->is<T>());
-        return static_cast<T*>(base()->ptr);
-    }
-
-    template<typename T>
-    T* asOrNull() const {
-        MOZ_ASSERT(isLive());
-        return this->is<T>() ? static_cast<T*>(base()->ptr) : nullptr;
-    }
-
-    
-    
-    
-    
-    JS::Value exposeToJS() const;
-
-    CoarseType coarseType()               const { return base()->coarseType(); }
-    const char16_t* typeName()            const { return base()->typeName(); }
-    JS::Zone* zone()                      const { return base()->zone(); }
-    JS::Compartment* compartment()        const { return base()->compartment(); }
-    JS::Realm* realm()                    const { return base()->realm(); }
-    const char* jsObjectClassName()       const { return base()->jsObjectClassName(); }
-    const char16_t* descriptiveTypeName() const { return base()->descriptiveTypeName(); }
-    MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName) const {
-        return base()->jsObjectConstructorName(cx, outName);
-    }
-
-    const char* scriptFilename() const { return base()->scriptFilename(); }
-
-    using Size = Base::Size;
-    Size size(mozilla::MallocSizeOf mallocSizeof) const {
-        auto size =  base()->size(mallocSizeof);
-        MOZ_ASSERT(size > 0,
-                   "C++ does not have zero-sized types! Choose 1 if you just need a "
-                   "conservative default.");
-        return size;
-    }
-
-    js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames = true) const {
-        return base()->edges(cx, wantNames);
-    }
-
-    bool hasAllocationStack() const { return base()->hasAllocationStack(); }
-    StackFrame allocationStack() const {
-        return base()->allocationStack();
-    }
-
-    using Id = Base::Id;
-    Id identifier() const {
-        auto id = base()->identifier();
-        MOZ_ASSERT(JS::Value::isNumberRepresentable(id));
-        return id;
-    }
-
-    
-    
-    
-    class HashPolicy {
-        typedef js::PointerHasher<void*> PtrHash;
-
-      public:
-        typedef Node Lookup;
-
-        static js::HashNumber hash(const Lookup& l) { return PtrHash::hash(l.base()->ptr); }
-        static bool match(const Node& k, const Lookup& l) { return k == l; }
-        static void rekey(Node& k, const Node& newKey) { k = newKey; }
-    };
+    static bool match(const Node& k, const Lookup& l) { return k == l; }
+    static void rekey(Node& k, const Node& newKey) { k = newKey; }
+  };
 };
 
-using NodeSet = js::HashSet<Node, js::DefaultHasher<Node>, js::SystemAllocPolicy>;
+using NodeSet =
+    js::HashSet<Node, js::DefaultHasher<Node>, js::SystemAllocPolicy>;
 using NodeSetPtr = mozilla::UniquePtr<NodeSet, JS::DeletePolicy<NodeSet>>;
 
 
@@ -848,45 +859,39 @@ using EdgeName = UniqueTwoByteChars;
 
 
 class Edge {
-  public:
-    Edge() : name(nullptr), referent() { }
+ public:
+  Edge() : name(nullptr), referent() {}
 
-    
-    Edge(char16_t* name, const Node& referent)
-        : name(name)
-        , referent(referent)
-    { }
+  
+  Edge(char16_t* name, const Node& referent) : name(name), referent(referent) {}
 
-    
-    Edge(Edge&& rhs)
-        : name(std::move(rhs.name))
-        , referent(rhs.referent)
-    { }
+  
+  Edge(Edge&& rhs) : name(std::move(rhs.name)), referent(rhs.referent) {}
 
-    Edge& operator=(Edge&& rhs) {
-        MOZ_ASSERT(&rhs != this);
-        this->~Edge();
-        new (this) Edge(std::move(rhs));
-        return *this;
-    }
+  Edge& operator=(Edge&& rhs) {
+    MOZ_ASSERT(&rhs != this);
+    this->~Edge();
+    new (this) Edge(std::move(rhs));
+    return *this;
+  }
 
-    Edge(const Edge&) = delete;
-    Edge& operator=(const Edge&) = delete;
+  Edge(const Edge&) = delete;
+  Edge& operator=(const Edge&) = delete;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    EdgeName name;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  EdgeName name;
 
-    
-    Node referent;
+  
+  Node referent;
 };
 
 
@@ -898,33 +903,32 @@ class Edge {
 
 
 class EdgeRange {
-  protected:
-    
-    Edge* front_;
+ protected:
+  
+  Edge* front_;
 
-    EdgeRange() : front_(nullptr) { }
+  EdgeRange() : front_(nullptr) {}
 
-  public:
-    virtual ~EdgeRange() { }
+ public:
+  virtual ~EdgeRange() {}
 
-    
-    bool empty() const { return !front_; }
+  
+  bool empty() const { return !front_; }
 
-    
-    
-    
-    const Edge& front() const { return *front_; }
-    Edge& front() { return *front_; }
+  
+  
+  
+  const Edge& front() const { return *front_; }
+  Edge& front() { return *front_; }
 
-    
-    
-    virtual void popFront() = 0;
+  
+  
+  virtual void popFront() = 0;
 
-  private:
-    EdgeRange(const EdgeRange&) = delete;
-    EdgeRange& operator=(const EdgeRange&) = delete;
+ private:
+  EdgeRange(const EdgeRange&) = delete;
+  EdgeRange& operator=(const EdgeRange&) = delete;
 };
-
 
 typedef mozilla::Vector<Edge, 8, js::SystemAllocPolicy> EdgeVector;
 
@@ -933,26 +937,21 @@ typedef mozilla::Vector<Edge, 8, js::SystemAllocPolicy> EdgeVector;
 
 
 class PreComputedEdgeRange : public EdgeRange {
-    EdgeVector& edges;
-    size_t      i;
+  EdgeVector& edges;
+  size_t i;
 
-    void settle() {
-        front_ = i < edges.length() ? &edges[i] : nullptr;
-    }
+  void settle() { front_ = i < edges.length() ? &edges[i] : nullptr; }
 
-  public:
-    explicit PreComputedEdgeRange(EdgeVector& edges)
-      : edges(edges),
-        i(0)
-    {
-        settle();
-    }
+ public:
+  explicit PreComputedEdgeRange(EdgeVector& edges) : edges(edges), i(0) {
+    settle();
+  }
 
-    void popFront() override {
-        MOZ_ASSERT(!empty());
-        i++;
-        settle();
-    }
+  void popFront() override {
+    MOZ_ASSERT(!empty());
+    i++;
+    settle();
+  }
 };
 
 
@@ -987,190 +986,199 @@ class PreComputedEdgeRange : public EdgeRange {
 
 
 class MOZ_STACK_CLASS JS_PUBLIC_API RootList {
-    Maybe<AutoCheckCannotGC>& noGC;
+  Maybe<AutoCheckCannotGC>& noGC;
 
-  public:
-    JSContext* cx;
-    EdgeVector edges;
-    bool       wantNames;
+ public:
+  JSContext* cx;
+  EdgeVector edges;
+  bool wantNames;
 
-    RootList(JSContext* cx, Maybe<AutoCheckCannotGC>& noGC, bool wantNames = false);
+  RootList(JSContext* cx, Maybe<AutoCheckCannotGC>& noGC,
+           bool wantNames = false);
 
-    
-    MOZ_MUST_USE bool init();
-    
-    
-    
-    
-    MOZ_MUST_USE bool init(CompartmentSet& debuggees);
-    
-    
-    MOZ_MUST_USE bool init(HandleObject debuggees);
+  
+  MOZ_MUST_USE bool init();
+  
+  
+  
+  
+  MOZ_MUST_USE bool init(CompartmentSet& debuggees);
+  
+  
+  MOZ_MUST_USE bool init(HandleObject debuggees);
 
-    
-    
-    bool initialized() { return noGC.isSome(); }
+  
+  
+  bool initialized() { return noGC.isSome(); }
 
-    
-    
-    
-    MOZ_MUST_USE bool addRoot(Node node, const char16_t* edgeName = nullptr);
+  
+  
+  
+  MOZ_MUST_USE bool addRoot(Node node, const char16_t* edgeName = nullptr);
 };
 
 
 
-
-template<>
+template <>
 class JS_PUBLIC_API Concrete<RootList> : public Base {
-  protected:
-    explicit Concrete(RootList* ptr) : Base(ptr) { }
-    RootList& get() const { return *static_cast<RootList*>(ptr); }
+ protected:
+  explicit Concrete(RootList* ptr) : Base(ptr) {}
+  RootList& get() const { return *static_cast<RootList*>(ptr); }
 
-  public:
-    static void construct(void* storage, RootList* ptr) { new (storage) Concrete(ptr); }
+ public:
+  static void construct(void* storage, RootList* ptr) {
+    new (storage) Concrete(ptr);
+  }
 
-    js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
+  js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
 
-    const char16_t* typeName() const override { return concreteTypeName; }
-    static const char16_t concreteTypeName[];
+  const char16_t* typeName() const override { return concreteTypeName; }
+  static const char16_t concreteTypeName[];
 };
 
 
 
-template<typename Referent>
+template <typename Referent>
 class JS_PUBLIC_API TracerConcrete : public Base {
-    JS::Zone* zone() const override;
+  JS::Zone* zone() const override;
 
-  public:
-    js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
+ public:
+  js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
 
-  protected:
-    explicit TracerConcrete(Referent* ptr) : Base(ptr) { }
-    Referent& get() const { return *static_cast<Referent*>(ptr); }
+ protected:
+  explicit TracerConcrete(Referent* ptr) : Base(ptr) {}
+  Referent& get() const { return *static_cast<Referent*>(ptr); }
 };
 
 
 
-template<typename Referent>
+template <typename Referent>
 class JS_PUBLIC_API TracerConcreteWithRealm : public TracerConcrete<Referent> {
-    typedef TracerConcrete<Referent> TracerBase;
-    JS::Compartment* compartment() const override;
-    JS::Realm* realm() const override;
+  typedef TracerConcrete<Referent> TracerBase;
+  JS::Compartment* compartment() const override;
+  JS::Realm* realm() const override;
 
-  protected:
-    explicit TracerConcreteWithRealm(Referent* ptr) : TracerBase(ptr) { }
+ protected:
+  explicit TracerConcreteWithRealm(Referent* ptr) : TracerBase(ptr) {}
 };
 
 
 
-template<>
+template <>
 class JS_PUBLIC_API Concrete<JS::Symbol> : TracerConcrete<JS::Symbol> {
-  protected:
-    explicit Concrete(JS::Symbol* ptr) : TracerConcrete(ptr) { }
+ protected:
+  explicit Concrete(JS::Symbol* ptr) : TracerConcrete(ptr) {}
 
-  public:
-    static void construct(void* storage, JS::Symbol* ptr) {
-        new (storage) Concrete(ptr);
-    }
+ public:
+  static void construct(void* storage, JS::Symbol* ptr) {
+    new (storage) Concrete(ptr);
+  }
 
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+  Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
 
-    const char16_t* typeName() const override { return concreteTypeName; }
-    static const char16_t concreteTypeName[];
+  const char16_t* typeName() const override { return concreteTypeName; }
+  static const char16_t concreteTypeName[];
 };
 
 #ifdef ENABLE_BIGINT
-template<>
+template <>
 class JS_PUBLIC_API Concrete<JS::BigInt> : TracerConcrete<JS::BigInt> {
-  protected:
-    explicit Concrete(JS::BigInt* ptr) : TracerConcrete(ptr) {}
+ protected:
+  explicit Concrete(JS::BigInt* ptr) : TracerConcrete(ptr) {}
 
-  public:
-    static void construct(void* storage, JS::BigInt* ptr) {
-        new (storage) Concrete(ptr);
-    }
+ public:
+  static void construct(void* storage, JS::BigInt* ptr) {
+    new (storage) Concrete(ptr);
+  }
 
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+  Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
 
-    const char16_t* typeName() const override { return concreteTypeName; }
-    static const char16_t concreteTypeName[];
+  const char16_t* typeName() const override { return concreteTypeName; }
+  static const char16_t concreteTypeName[];
 };
 #endif
 
-template<>
+template <>
 class JS_PUBLIC_API Concrete<JSScript> : TracerConcreteWithRealm<JSScript> {
-  protected:
-    explicit Concrete(JSScript *ptr) : TracerConcreteWithRealm<JSScript>(ptr) { }
+ protected:
+  explicit Concrete(JSScript* ptr) : TracerConcreteWithRealm<JSScript>(ptr) {}
 
-  public:
-    static void construct(void *storage, JSScript *ptr) { new (storage) Concrete(ptr); }
+ public:
+  static void construct(void* storage, JSScript* ptr) {
+    new (storage) Concrete(ptr);
+  }
 
-    CoarseType coarseType() const final { return CoarseType::Script; }
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
-    const char* scriptFilename() const final;
+  CoarseType coarseType() const final { return CoarseType::Script; }
+  Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+  const char* scriptFilename() const final;
 
-    const char16_t* typeName() const override { return concreteTypeName; }
-    static const char16_t concreteTypeName[];
+  const char16_t* typeName() const override { return concreteTypeName; }
+  static const char16_t concreteTypeName[];
 };
 
 
-template<>
+template <>
 class JS_PUBLIC_API Concrete<JSObject> : public TracerConcrete<JSObject> {
-  protected:
-    explicit Concrete(JSObject* ptr) : TracerConcrete<JSObject>(ptr) { }
+ protected:
+  explicit Concrete(JSObject* ptr) : TracerConcrete<JSObject>(ptr) {}
 
-  public:
-    static void construct(void* storage, JSObject* ptr);
+ public:
+  static void construct(void* storage, JSObject* ptr);
 
-    JS::Compartment* compartment() const override;
-    JS::Realm* realm() const override;
+  JS::Compartment* compartment() const override;
+  JS::Realm* realm() const override;
 
-    const char* jsObjectClassName() const override;
-    MOZ_MUST_USE bool jsObjectConstructorName(JSContext* cx, UniqueTwoByteChars& outName)
-        const override;
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+  const char* jsObjectClassName() const override;
+  MOZ_MUST_USE bool jsObjectConstructorName(
+      JSContext* cx, UniqueTwoByteChars& outName) const override;
+  Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
 
-    bool hasAllocationStack() const override;
-    StackFrame allocationStack() const override;
+  bool hasAllocationStack() const override;
+  StackFrame allocationStack() const override;
 
-    CoarseType coarseType() const final { return CoarseType::Object; }
+  CoarseType coarseType() const final { return CoarseType::Object; }
 
-    const char16_t* typeName() const override { return concreteTypeName; }
-    static const char16_t concreteTypeName[];
+  const char16_t* typeName() const override { return concreteTypeName; }
+  static const char16_t concreteTypeName[];
 };
 
 
-template<>
+template <>
 class JS_PUBLIC_API Concrete<JSString> : TracerConcrete<JSString> {
-  protected:
-    explicit Concrete(JSString *ptr) : TracerConcrete<JSString>(ptr) { }
+ protected:
+  explicit Concrete(JSString* ptr) : TracerConcrete<JSString>(ptr) {}
 
-  public:
-    static void construct(void *storage, JSString *ptr) { new (storage) Concrete(ptr); }
+ public:
+  static void construct(void* storage, JSString* ptr) {
+    new (storage) Concrete(ptr);
+  }
 
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+  Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
 
-    CoarseType coarseType() const final { return CoarseType::String; }
+  CoarseType coarseType() const final { return CoarseType::String; }
 
-    const char16_t* typeName() const override { return concreteTypeName; }
-    static const char16_t concreteTypeName[];
+  const char16_t* typeName() const override { return concreteTypeName; }
+  static const char16_t concreteTypeName[];
 };
 
 
-template<>
+
+template <>
 class JS_PUBLIC_API Concrete<void> : public Base {
-    const char16_t* typeName() const override;
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
-    js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
-    JS::Zone* zone() const override;
-    JS::Compartment* compartment() const override;
-    JS::Realm* realm() const override;
-    CoarseType coarseType() const final;
+  const char16_t* typeName() const override;
+  Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+  js::UniquePtr<EdgeRange> edges(JSContext* cx, bool wantNames) const override;
+  JS::Zone* zone() const override;
+  JS::Compartment* compartment() const override;
+  JS::Realm* realm() const override;
+  CoarseType coarseType() const final;
 
-    explicit Concrete(void* ptr) : Base(ptr) { }
+  explicit Concrete(void* ptr) : Base(ptr) {}
 
-  public:
-    static void construct(void* storage, void* ptr) { new (storage) Concrete(ptr); }
+ public:
+  static void construct(void* storage, void* ptr) {
+    new (storage) Concrete(ptr);
+  }
 };
 
 
@@ -1181,17 +1189,22 @@ class JS_PUBLIC_API Concrete<void> : public Base {
 
 
 
-void SetConstructUbiNodeForDOMObjectCallback(JSContext* cx, void (*callback)(void*, JSObject*));
 
-} 
-} 
+void SetConstructUbiNodeForDOMObjectCallback(JSContext* cx,
+                                             void (*callback)(void*,
+                                                              JSObject*));
+
+}  
+}  
 
 namespace mozilla {
 
 
-template<> struct DefaultHasher<JS::ubi::Node> : JS::ubi::Node::HashPolicy { };
-template<> struct DefaultHasher<JS::ubi::StackFrame> : JS::ubi::StackFrame::HashPolicy { };
+template <>
+struct DefaultHasher<JS::ubi::Node> : JS::ubi::Node::HashPolicy {};
+template <>
+struct DefaultHasher<JS::ubi::StackFrame> : JS::ubi::StackFrame::HashPolicy {};
 
-} 
+}  
 
-#endif 
+#endif  

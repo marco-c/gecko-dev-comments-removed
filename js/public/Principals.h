@@ -19,96 +19,67 @@ struct JSStructuredCloneReader;
 struct JSStructuredCloneWriter;
 
 namespace js {
-    struct JS_PUBLIC_API PerformanceGroup;
-} 
+struct JS_PUBLIC_API PerformanceGroup;
+}  
 
 struct JSPrincipals {
-    
-    mozilla::Atomic<int32_t,
-                    mozilla::SequentiallyConsistent,
-                    mozilla::recordreplay::Behavior::DontPreserve> refcount;
+  
+  mozilla::Atomic<int32_t, mozilla::SequentiallyConsistent,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      refcount;
 
 #ifdef JS_DEBUG
-    
-    uint32_t    debugToken;
+  
+  uint32_t debugToken;
 #endif
 
-    JSPrincipals() : refcount(0) {}
+  JSPrincipals() : refcount(0) {}
 
-    void setDebugToken(uint32_t token) {
-# ifdef JS_DEBUG
-        debugToken = token;
-# endif
-    }
+  void setDebugToken(uint32_t token) {
+#ifdef JS_DEBUG
+    debugToken = token;
+#endif
+  }
 
-    
-
-
-
-    virtual bool write(JSContext* cx, JSStructuredCloneWriter* writer) = 0;
-
-    
+  
 
 
 
-    JS_PUBLIC_API void dump();
+  virtual bool write(JSContext* cx, JSStructuredCloneWriter* writer) = 0;
+
+  
+
+
+
+  JS_PUBLIC_API void dump();
 };
 
-extern JS_PUBLIC_API void
-JS_HoldPrincipals(JSPrincipals* principals);
+extern JS_PUBLIC_API void JS_HoldPrincipals(JSPrincipals* principals);
 
-extern JS_PUBLIC_API void
-JS_DropPrincipals(JSContext* cx, JSPrincipals* principals);
-
+extern JS_PUBLIC_API void JS_DropPrincipals(JSContext* cx,
+                                            JSPrincipals* principals);
 
 
 
-typedef bool
-(* JSSubsumesOp)(JSPrincipals* first, JSPrincipals* second);
+
+typedef bool (*JSSubsumesOp)(JSPrincipals* first, JSPrincipals* second);
 
 
 
 
 
-typedef bool
-(* JSCSPEvalChecker)(JSContext* cx, JS::HandleValue value);
+typedef bool (*JSCSPEvalChecker)(JSContext* cx, JS::HandleValue value);
 
 struct JSSecurityCallbacks {
-    JSCSPEvalChecker           contentSecurityPolicyAllows;
-    JSSubsumesOp               subsumes;
+  JSCSPEvalChecker contentSecurityPolicyAllows;
+  JSSubsumesOp subsumes;
 };
 
-extern JS_PUBLIC_API void
-JS_SetSecurityCallbacks(JSContext* cx, const JSSecurityCallbacks* callbacks);
+extern JS_PUBLIC_API void JS_SetSecurityCallbacks(
+    JSContext* cx, const JSSecurityCallbacks* callbacks);
 
-extern JS_PUBLIC_API const JSSecurityCallbacks*
-JS_GetSecurityCallbacks(JSContext* cx);
-
-
-
-
-
-
-
-
-
-
-
-
-
-extern JS_PUBLIC_API void
-JS_SetTrustedPrincipals(JSContext* cx, JSPrincipals* prin);
-
-typedef void
-(* JSDestroyPrincipalsOp)(JSPrincipals* principals);
-
-
-
-
-
-
-extern JS_PUBLIC_API void
-JS_InitDestroyPrincipalsCallback(JSContext* cx, JSDestroyPrincipalsOp destroyPrincipals);
+extern JS_PUBLIC_API const JSSecurityCallbacks* JS_GetSecurityCallbacks(
+    JSContext* cx);
 
 
 
@@ -121,15 +92,40 @@ JS_InitDestroyPrincipalsCallback(JSContext* cx, JSDestroyPrincipalsOp destroyPri
 
 
 
-using JSReadPrincipalsOp = bool (*)(JSContext* cx, JSStructuredCloneReader* reader,
+
+extern JS_PUBLIC_API void JS_SetTrustedPrincipals(JSContext* cx,
+                                                  JSPrincipals* prin);
+
+typedef void (*JSDestroyPrincipalsOp)(JSPrincipals* principals);
+
+
+
+
+
+
+extern JS_PUBLIC_API void JS_InitDestroyPrincipalsCallback(
+    JSContext* cx, JSDestroyPrincipalsOp destroyPrincipals);
+
+
+
+
+
+
+
+
+
+
+
+
+using JSReadPrincipalsOp = bool (*)(JSContext* cx,
+                                    JSStructuredCloneReader* reader,
                                     JSPrincipals** outPrincipals);
 
 
 
 
 
-extern JS_PUBLIC_API void
-JS_InitReadPrincipalsCallback(JSContext* cx, JSReadPrincipalsOp read);
+extern JS_PUBLIC_API void JS_InitReadPrincipalsCallback(
+    JSContext* cx, JSReadPrincipalsOp read);
 
-
-#endif  
+#endif 

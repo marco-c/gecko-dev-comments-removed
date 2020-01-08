@@ -16,7 +16,7 @@ namespace mozilla {
 
 namespace ipc {
 class PrincipalInfo;
-} 
+}  
 
 namespace dom {
 
@@ -27,88 +27,70 @@ enum class ServiceWorkerState : uint8_t;
 
 
 
-class ServiceWorkerDescriptor final
-{
+class ServiceWorkerDescriptor final {
   
   
   
   UniquePtr<IPCServiceWorkerDescriptor> mData;
 
-public:
-  ServiceWorkerDescriptor(uint64_t aId,
-                          uint64_t aRegistrationId,
+ public:
+  ServiceWorkerDescriptor(uint64_t aId, uint64_t aRegistrationId,
                           uint64_t aRegistrationVersion,
-                          nsIPrincipal* aPrincipal,
-                          const nsACString& aScope,
+                          nsIPrincipal* aPrincipal, const nsACString& aScope,
                           const nsACString& aScriptURL,
                           ServiceWorkerState aState);
 
-  ServiceWorkerDescriptor(uint64_t aId,
-                          uint64_t aRegistrationId,
+  ServiceWorkerDescriptor(uint64_t aId, uint64_t aRegistrationId,
                           uint64_t aRegistrationVersion,
                           const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
                           const nsACString& aScope,
                           const nsACString& aScriptURL,
                           ServiceWorkerState aState);
 
-  explicit ServiceWorkerDescriptor(const IPCServiceWorkerDescriptor& aDescriptor);
+  explicit ServiceWorkerDescriptor(
+      const IPCServiceWorkerDescriptor& aDescriptor);
 
   ServiceWorkerDescriptor(const ServiceWorkerDescriptor& aRight);
 
-  ServiceWorkerDescriptor&
-  operator=(const ServiceWorkerDescriptor& aRight);
+  ServiceWorkerDescriptor& operator=(const ServiceWorkerDescriptor& aRight);
 
   ServiceWorkerDescriptor(ServiceWorkerDescriptor&& aRight);
 
-  ServiceWorkerDescriptor&
-  operator=(ServiceWorkerDescriptor&& aRight);
+  ServiceWorkerDescriptor& operator=(ServiceWorkerDescriptor&& aRight);
 
   ~ServiceWorkerDescriptor();
 
-  bool
-  operator==(const ServiceWorkerDescriptor& aRight) const;
+  bool operator==(const ServiceWorkerDescriptor& aRight) const;
 
-  uint64_t
-  Id() const;
+  uint64_t Id() const;
 
-  uint64_t
-  RegistrationId() const;
+  uint64_t RegistrationId() const;
 
-  uint64_t
-  RegistrationVersion() const;
+  uint64_t RegistrationVersion() const;
 
-  const mozilla::ipc::PrincipalInfo&
-  PrincipalInfo() const;
+  const mozilla::ipc::PrincipalInfo& PrincipalInfo() const;
 
-  nsCOMPtr<nsIPrincipal>
-  GetPrincipal() const;
+  nsCOMPtr<nsIPrincipal> GetPrincipal() const;
 
-  const nsCString&
-  Scope() const;
+  const nsCString& Scope() const;
 
-  const nsCString&
-  ScriptURL() const;
+  const nsCString& ScriptURL() const;
 
-  ServiceWorkerState
-  State() const;
+  ServiceWorkerState State() const;
 
-  void
-  SetState(ServiceWorkerState aState);
+  void SetState(ServiceWorkerState aState);
 
-  void
-  SetRegistrationVersion(uint64_t aVersion);
+  void SetRegistrationVersion(uint64_t aVersion);
 
   
   
-  bool
-  Matches(const ServiceWorkerDescriptor& aDescriptor) const;
+  bool Matches(const ServiceWorkerDescriptor& aDescriptor) const;
 
   
-  const IPCServiceWorkerDescriptor&
-  ToIPC() const;
+  const IPCServiceWorkerDescriptor& ToIPC() const;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

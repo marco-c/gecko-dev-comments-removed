@@ -15,11 +15,9 @@ namespace mozilla {
 namespace net {
 
 
-class AltDataOutputStreamParent
-  : public PAltDataOutputStreamParent
-  , public nsISupports
-{
-public:
+class AltDataOutputStreamParent : public PAltDataOutputStreamParent,
+                                  public nsISupports {
+ public:
   NS_DECL_ISUPPORTS
 
   
@@ -39,16 +37,16 @@ public:
   void SetError(nsresult status) { mStatus = status; }
   virtual mozilla::ipc::IPCResult RecvDeleteSelf() override;
 
-private:
+ private:
   virtual ~AltDataOutputStreamParent();
   nsCOMPtr<nsIOutputStream> mOutputStream;
   
   
   nsresult mStatus;
-  bool     mIPCOpen;
+  bool mIPCOpen;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

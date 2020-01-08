@@ -25,9 +25,7 @@ namespace mozilla {
 
 
 
-static Vector<uintptr_t, 0, InfallibleAllocPolicy>
-GetProcessModuleBases()
-{
+static Vector<uintptr_t, 0, InfallibleAllocPolicy> GetProcessModuleBases() {
   Vector<uintptr_t, 0, InfallibleAllocPolicy> ret;
   
   
@@ -56,8 +54,7 @@ GetProcessModuleBases()
 
 
 
-class UntrustedModulesManager
-{
+class UntrustedModulesManager {
   
   
   
@@ -95,10 +92,8 @@ class UntrustedModulesManager
   Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy> mProcessedEvents;
   Telemetry::CombinedStacks mProcessedStacks;
 
-public:
-  UntrustedModulesManager()
-    : mMutex("UntrustedModulesManager::mMutex")
-  {
+ public:
+  UntrustedModulesManager() : mMutex("UntrustedModulesManager::mMutex") {
     
     MOZ_ASSERT(NS_IsMainThread());
     widget::WinUtils::GetWhitelistedPaths();
@@ -109,8 +104,7 @@ public:
   
   
   void OnNewEvents(
-      const Vector<glue::ModuleLoadEvent, 0, InfallibleAllocPolicy>& aEvents)
-  {
+      const Vector<glue::ModuleLoadEvent, 0, InfallibleAllocPolicy>& aEvents) {
     
     
     RefPtr<DllServices> dllSvcRef(DllServices::Get());
@@ -146,8 +140,7 @@ public:
 
 
 
-  void ProcessQueuedEvents(bool& aHasProcessedStartupModules)
-  {
+  void ProcessQueuedEvents(bool& aHasProcessedStartupModules) {
     MOZ_ASSERT(!NS_IsMainThread());
 
     
@@ -162,7 +155,7 @@ public:
     Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy> queuedEvents;
     aHasProcessedStartupModules = false;
 
-    { 
+    {  
       
       
       
@@ -181,10 +174,11 @@ public:
     for (auto& e : queuedEvents) {
       
       
-      ModuleLoadEvent eventCopy(e, ModuleLoadEvent::CopyOption::CopyWithoutModules);
+      ModuleLoadEvent eventCopy(
+          e, ModuleLoadEvent::CopyOption::CopyWithoutModules);
       for (auto& m : e.mModules) {
-        Maybe<bool> ret = mEvaluator.IsModuleTrusted(m, eventCopy,
-                                                     dllSvcRef.get());
+        Maybe<bool> ret =
+            mEvaluator.IsModuleTrusted(m, eventCopy, dllSvcRef.get());
         if (ret.isNothing()) {
           
           
@@ -220,7 +214,7 @@ public:
           stackProcessor.GetStackAndModules(stdCopy));
     }
 
-    { 
+    {  
       
       
       
@@ -256,8 +250,7 @@ public:
 
 
 
-  bool ProcessStartupModules(bool aHasProcessedStartupModules)
-  {
+  bool ProcessStartupModules(bool aHasProcessedStartupModules) {
     MOZ_ASSERT(!NS_IsMainThread());
 
     
@@ -278,7 +271,7 @@ public:
 
     Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy> startupEvents;
 
-    { 
+    {  
       
       
       
@@ -330,8 +323,7 @@ public:
       MOZ_ASSERT(e.mModules.length() == 1);
       ModuleLoadEvent::ModuleInfo& mi(e.mModules[0]);
       widget::WinUtils::GetModuleFullPath((HMODULE)mi.mBase, mi.mLdrName);
-      Unused << NS_NewLocalFile(mi.mLdrName,
-                                false, getter_AddRefs(mi.mFile));
+      Unused << NS_NewLocalFile(mi.mLdrName, false, getter_AddRefs(mi.mFile));
     }
 
     
@@ -343,8 +335,7 @@ public:
     return true;
   }
 
-  bool GetTelemetryData(UntrustedModuleLoadTelemetryData& aOut)
-  {
+  bool GetTelemetryData(UntrustedModuleLoadTelemetryData& aOut) {
     MOZ_ASSERT(!NS_IsMainThread());
 
     
@@ -378,7 +369,8 @@ public:
 };
 
 const char* DllServices::kTopicDllLoadedMainThread = "dll-loaded-main-thread";
-const char* DllServices::kTopicDllLoadedNonMainThread = "dll-loaded-non-main-thread";
+const char* DllServices::kTopicDllLoadedNonMainThread =
+    "dll-loaded-non-main-thread";
 
 
 
@@ -386,9 +378,7 @@ const char* DllServices::kTopicDllLoadedNonMainThread = "dll-loaded-non-main-thr
 static Atomic<bool> sDllServicesHasBeenSet;
 static StaticRefPtr<DllServices> sInstance;
 
-DllServices*
-DllServices::Get()
-{
+DllServices* DllServices::Get() {
   if (sDllServicesHasBeenSet) {
     return sInstance;
   }
@@ -405,20 +395,15 @@ DllServices::Get()
 }
 
 DllServices::DllServices()
-  : mUntrustedModulesManager(new UntrustedModulesManager())
-{
-}
+    : mUntrustedModulesManager(new UntrustedModulesManager()) {}
 
-bool
-DllServices::GetUntrustedModuleTelemetryData(
-    UntrustedModuleLoadTelemetryData& aOut)
-{
+bool DllServices::GetUntrustedModuleTelemetryData(
+    UntrustedModuleLoadTelemetryData& aOut) {
   return mUntrustedModulesManager->GetTelemetryData(aOut);
 }
 
-void
-DllServices::NotifyDllLoad(const bool aIsMainThread, const nsString& aDllName)
-{
+void DllServices::NotifyDllLoad(const bool aIsMainThread,
+                                const nsString& aDllName) {
   const char* topic;
 
   if (aIsMainThread) {
@@ -431,11 +416,9 @@ DllServices::NotifyDllLoad(const bool aIsMainThread, const nsString& aDllName)
   obsServ->NotifyObservers(nullptr, topic, aDllName.get());
 }
 
-void
-DllServices::NotifyUntrustedModuleLoads(
-    const Vector<glue::ModuleLoadEvent, 0, InfallibleAllocPolicy>& aEvents)
-{
+void DllServices::NotifyUntrustedModuleLoads(
+    const Vector<glue::ModuleLoadEvent, 0, InfallibleAllocPolicy>& aEvents) {
   mUntrustedModulesManager->OnNewEvents(aEvents);
 }
 
-}
+}  

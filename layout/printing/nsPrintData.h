@@ -38,8 +38,8 @@ class nsIWebProgressListener;
 
 
 class nsPrintData {
-public:
-  typedef enum {eIsPrinting, eIsPrintPreview } ePrintDataType;
+ public:
+  typedef enum { eIsPrinting, eIsPrintPreview } ePrintDataType;
 
   explicit nsPrintData(ePrintDataType aType);
 
@@ -48,52 +48,49 @@ public:
   
   void OnEndPrinting();
   void OnStartPrinting();
-  void DoOnProgressChange(int32_t      aProgress,
-                          int32_t      aMaxProgress,
-                          bool         aDoStartStop,
-                          int32_t      aFlag);
+  void DoOnProgressChange(int32_t aProgress, int32_t aMaxProgress,
+                          bool aDoStartStop, int32_t aFlag);
 
   void DoOnStatusChange(nsresult aStatus);
 
-
-  ePrintDataType               mType;            
-  RefPtr<nsDeviceContext>   mPrintDC;
+  ePrintDataType mType;  
+  RefPtr<nsDeviceContext> mPrintDC;
 
   mozilla::UniquePtr<nsPrintObject> mPrintObject;
 
   nsCOMArray<nsIWebProgressListener> mPrintProgressListeners;
   nsCOMPtr<nsIPrintProgressParams> mPrintProgressParams;
 
-  nsCOMPtr<nsPIDOMWindowOuter> mCurrentFocusWin; 
+  nsCOMPtr<nsPIDOMWindowOuter>
+      mCurrentFocusWin;  
 
   
   
   
-  nsTArray<nsPrintObject*>    mPrintDocList;
+  nsTArray<nsPrintObject*> mPrintDocList;
 
-  bool                        mIsIFrameSelected;
-  bool                        mIsParentAFrameSet;
-  bool                        mOnStartSent;
-  bool                        mIsAborted;           
-  bool                        mPreparingForPrint;   
-  bool                        mDocWasToBeDestroyed; 
-  bool                        mShrinkToFit;
-  int16_t                     mPrintFrameType;
-  int32_t                     mNumPrintablePages;
-  int32_t                     mNumPagesPrinted;
-  float                       mShrinkRatio;
+  bool mIsIFrameSelected;
+  bool mIsParentAFrameSet;
+  bool mOnStartSent;
+  bool mIsAborted;            
+  bool mPreparingForPrint;    
+  bool mDocWasToBeDestroyed;  
+  bool mShrinkToFit;
+  int16_t mPrintFrameType;
+  int32_t mNumPrintablePages;
+  int32_t mNumPagesPrinted;
+  float mShrinkRatio;
 
-  nsCOMPtr<nsIPrintSettings>  mPrintSettings;
-  nsPrintPreviewListener*     mPPEventListeners;
+  nsCOMPtr<nsIPrintSettings> mPrintSettings;
+  nsPrintPreviewListener* mPPEventListeners;
 
-  nsString                    mBrandName; 
+  nsString mBrandName;  
 
-private:
+ private:
   nsPrintData() = delete;
   nsPrintData& operator=(const nsPrintData& aOther) = delete;
 
-  ~nsPrintData(); 
+  ~nsPrintData();  
 };
 
 #endif 
-

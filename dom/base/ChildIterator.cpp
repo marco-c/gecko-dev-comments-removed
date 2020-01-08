@@ -19,18 +19,15 @@ namespace dom {
 
 ExplicitChildIterator::ExplicitChildIterator(const nsIContent* aParent,
                                              bool aStartAtBeginning)
-  : mParent(aParent),
-    mChild(nullptr),
-    mDefaultChild(nullptr),
-    mIsFirst(aStartAtBeginning),
-    mIndexInInserted(0)
-{
+    : mParent(aParent),
+      mChild(nullptr),
+      mDefaultChild(nullptr),
+      mIsFirst(aStartAtBeginning),
+      mIndexInInserted(0) {
   mParentAsSlot = HTMLSlotElement::FromNode(mParent);
 }
 
-nsIContent*
-ExplicitChildIterator::GetNextChild()
-{
+nsIContent* ExplicitChildIterator::GetNextChild() {
   
   if (mIndexInInserted) {
     MOZ_ASSERT(mChild);
@@ -38,16 +35,16 @@ ExplicitChildIterator::GetNextChild()
 
     if (mParentAsSlot) {
       const nsTArray<RefPtr<nsINode>>& assignedNodes =
-        mParentAsSlot->AssignedNodes();
+          mParentAsSlot->AssignedNodes();
 
-      mChild = (mIndexInInserted < assignedNodes.Length()) ?
-        assignedNodes[mIndexInInserted++]->AsContent() : nullptr;
+      mChild = (mIndexInInserted < assignedNodes.Length())
+                   ? assignedNodes[mIndexInInserted++]->AsContent()
+                   : nullptr;
       return mChild;
     }
 
     MOZ_ASSERT(mChild->IsActiveChildrenElement());
-    auto* childrenElement =
-      static_cast<XBLChildrenElement*>(mChild);
+    auto* childrenElement = static_cast<XBLChildrenElement*>(mChild);
     if (mIndexInInserted < childrenElement->InsertedChildrenLength()) {
       return childrenElement->InsertedChild(mIndexInInserted++);
     }
@@ -69,7 +66,7 @@ ExplicitChildIterator::GetNextChild()
     
     if (mParentAsSlot) {
       const nsTArray<RefPtr<nsINode>>& assignedNodes =
-        mParentAsSlot->AssignedNodes();
+          mParentAsSlot->AssignedNodes();
       if (!assignedNodes.IsEmpty()) {
         mIndexInInserted = 1;
         mChild = assignedNodes[0]->AsContent();
@@ -80,7 +77,7 @@ ExplicitChildIterator::GetNextChild()
 
     mChild = mParent->GetFirstChild();
     mIsFirst = false;
-  } else if (mChild) { 
+  } else if (mChild) {  
     mChild = mChild->GetNextSibling();
   }
 
@@ -91,8 +88,7 @@ ExplicitChildIterator::GetNextChild()
       
       
       
-      auto* childrenElement =
-        static_cast<XBLChildrenElement*>(mChild);
+      auto* childrenElement = static_cast<XBLChildrenElement*>(mChild);
       if (childrenElement->HasInsertedChildren()) {
         
         mIndexInInserted = 1;
@@ -119,9 +115,7 @@ ExplicitChildIterator::GetNextChild()
   return mChild;
 }
 
-void
-FlattenedChildIterator::Init(bool aIgnoreXBL)
-{
+void FlattenedChildIterator::Init(bool aIgnoreXBL) {
   if (aIgnoreXBL) {
     mXBLInvolved = Some(false);
     return;
@@ -138,7 +132,7 @@ FlattenedChildIterator::Init(bool aIgnoreXBL)
   }
 
   nsXBLBinding* binding =
-    mParent->OwnerDoc()->BindingManager()->GetBindingWithContent(mParent);
+      mParent->OwnerDoc()->BindingManager()->GetBindingWithContent(mParent);
 
   if (binding) {
     MOZ_ASSERT(binding->GetAnonymousContent());
@@ -147,9 +141,7 @@ FlattenedChildIterator::Init(bool aIgnoreXBL)
   }
 }
 
-bool
-FlattenedChildIterator::ComputeWhetherXBLIsInvolved() const
-{
+bool FlattenedChildIterator::ComputeWhetherXBLIsInvolved() const {
   MOZ_ASSERT(mXBLInvolved.isNothing());
   
   
@@ -163,8 +155,7 @@ FlattenedChildIterator::ComputeWhetherXBLIsInvolved() const
     return true;
   }
 
-  for (nsIContent* child = mParent->GetFirstChild();
-       child;
+  for (nsIContent* child = mParent->GetFirstChild(); child;
        child = child->GetNextSibling()) {
     if (child->NodeInfo()->Equals(nsGkAtoms::children, kNameSpaceID_XBL)) {
       MOZ_ASSERT(child->GetBindingParent());
@@ -175,9 +166,7 @@ FlattenedChildIterator::ComputeWhetherXBLIsInvolved() const
   return false;
 }
 
-bool
-ExplicitChildIterator::Seek(const nsIContent* aChildToFind)
-{
+bool ExplicitChildIterator::Seek(const nsIContent* aChildToFind) {
   if (aChildToFind->GetParent() == mParent &&
       !aChildToFind->IsRootOfAnonymousSubtree()) {
     
@@ -197,9 +186,7 @@ ExplicitChildIterator::Seek(const nsIContent* aChildToFind)
   return Seek(aChildToFind, nullptr);
 }
 
-nsIContent*
-ExplicitChildIterator::Get() const
-{
+nsIContent* ExplicitChildIterator::Get() const {
   MOZ_ASSERT(!mIsFirst);
 
   
@@ -217,18 +204,16 @@ ExplicitChildIterator::Get() const
   return mDefaultChild ? mDefaultChild : mChild;
 }
 
-nsIContent*
-ExplicitChildIterator::GetPreviousChild()
-{
+nsIContent* ExplicitChildIterator::GetPreviousChild() {
   
   if (mIndexInInserted) {
-
     if (mParentAsSlot) {
       const nsTArray<RefPtr<nsINode>>& assignedNodes =
-        mParentAsSlot->AssignedNodes();
+          mParentAsSlot->AssignedNodes();
 
-      mChild = (--mIndexInInserted) ?
-        assignedNodes[mIndexInInserted - 1]->AsContent() : nullptr;
+      mChild = (--mIndexInInserted)
+                   ? assignedNodes[mIndexInInserted - 1]->AsContent()
+                   : nullptr;
 
       if (!mChild) {
         mIsFirst = true;
@@ -252,16 +237,16 @@ ExplicitChildIterator::GetPreviousChild()
     }
 
     mChild = mChild->GetPreviousSibling();
-  } else if (mIsFirst) { 
+  } else if (mIsFirst) {  
     return nullptr;
-  } else if (mChild) { 
+  } else if (mChild) {  
     mChild = mChild->GetPreviousSibling();
-  } else { 
+  } else {  
     
     
     if (mParentAsSlot) {
       const nsTArray<RefPtr<nsINode>>& assignedNodes =
-        mParentAsSlot->AssignedNodes();
+          mParentAsSlot->AssignedNodes();
       if (!assignedNodes.IsEmpty()) {
         mIndexInInserted = assignedNodes.Length();
         mChild = assignedNodes[mIndexInInserted - 1]->AsContent();
@@ -305,9 +290,7 @@ ExplicitChildIterator::GetPreviousChild()
   return mChild;
 }
 
-nsIContent*
-AllChildrenIterator::Get() const
-{
+nsIContent* AllChildrenIterator::Get() const {
   switch (mPhase) {
     case eAtBeforeKid: {
       Element* before = nsLayoutUtils::GetBeforePseudo(mOriginalContent);
@@ -332,10 +315,7 @@ AllChildrenIterator::Get() const
   }
 }
 
-
-bool
-AllChildrenIterator::Seek(const nsIContent* aChildToFind)
-{
+bool AllChildrenIterator::Seek(const nsIContent* aChildToFind) {
   if (mPhase == eAtBegin || mPhase == eAtBeforeKid) {
     mPhase = eAtExplicitKids;
     Element* beforePseudo = nsLayoutUtils::GetBeforePseudo(mOriginalContent);
@@ -360,16 +340,12 @@ AllChildrenIterator::Seek(const nsIContent* aChildToFind)
   return child == aChildToFind;
 }
 
-void
-AllChildrenIterator::AppendNativeAnonymousChildren()
-{
-  nsContentUtils::AppendNativeAnonymousChildren(
-      mOriginalContent, mAnonKids, mFlags);
+void AllChildrenIterator::AppendNativeAnonymousChildren() {
+  nsContentUtils::AppendNativeAnonymousChildren(mOriginalContent, mAnonKids,
+                                                mFlags);
 }
 
-nsIContent*
-AllChildrenIterator::GetNextChild()
-{
+nsIContent* AllChildrenIterator::GetNextChild() {
   if (mPhase == eAtBegin) {
     mPhase = eAtExplicitKids;
     Element* beforeContent = nsLayoutUtils::GetBeforePseudo(mOriginalContent);
@@ -397,12 +373,10 @@ AllChildrenIterator::GetNextChild()
       MOZ_ASSERT(mAnonKidsIdx == UINT32_MAX);
       AppendNativeAnonymousChildren();
       mAnonKidsIdx = 0;
-    }
-    else {
+    } else {
       if (mAnonKidsIdx == UINT32_MAX) {
         mAnonKidsIdx = 0;
-      }
-      else {
+      } else {
         mAnonKidsIdx++;
       }
     }
@@ -422,9 +396,7 @@ AllChildrenIterator::GetNextChild()
   return nullptr;
 }
 
-nsIContent*
-AllChildrenIterator::GetPreviousChild()
-{
+nsIContent* AllChildrenIterator::GetPreviousChild() {
   if (mPhase == eAtEnd) {
     MOZ_ASSERT(mAnonKidsIdx == mAnonKids.Length());
     mPhase = eAtAnonKids;
@@ -471,5 +443,5 @@ AllChildrenIterator::GetPreviousChild()
   return nullptr;
 }
 
-} 
-} 
+}  
+}  

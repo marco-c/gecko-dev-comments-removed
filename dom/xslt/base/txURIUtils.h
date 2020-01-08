@@ -17,21 +17,20 @@ class nsINode;
 
 
 class URIUtils {
-public:
+ public:
+  
 
-    
 
+  static void ResetWithSource(nsIDocument* aNewDoc, nsINode* aSourceNode);
 
-    static void ResetWithSource(nsIDocument *aNewDoc, nsINode *aSourceNode);
-
-    
-
+  
 
 
 
-    static void resolveHref(const nsAString& href, const nsAString& base,
-                            nsAString& dest);
-}; 
+
+  static void resolveHref(const nsAString& href, const nsAString& base,
+                          nsAString& dest);
+};  
 
 
 #endif

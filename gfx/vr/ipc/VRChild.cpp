@@ -15,23 +15,18 @@
 namespace mozilla {
 namespace gfx {
 
-VRChild::VRChild(VRProcessParent* aHost)
- : mHost(aHost)
-{
+VRChild::VRChild(VRProcessParent* aHost) : mHost(aHost) {
   MOZ_ASSERT(XRE_IsParentProcess());
 }
 
-void
-VRChild::ActorDestroy(ActorDestroyReason aWhy)
-{
+void VRChild::ActorDestroy(ActorDestroyReason aWhy) {
   gfxVars::RemoveReceiver(this);
   mHost->OnChannelClosed();
   XRE_ShutdownChildProcess();
 }
 
-void
-VRChild::Init()
-{
+void VRChild::Init() {
+  
   
   
   
@@ -52,8 +47,10 @@ VRChild::Init()
 
   DevicePrefs devicePrefs;
   devicePrefs.hwCompositing() = gfxConfig::GetValue(Feature::HW_COMPOSITING);
-  devicePrefs.d3d11Compositing() = gfxConfig::GetValue(Feature::D3D11_COMPOSITING);
-  devicePrefs.oglCompositing() = gfxConfig::GetValue(Feature::OPENGL_COMPOSITING);
+  devicePrefs.d3d11Compositing() =
+      gfxConfig::GetValue(Feature::D3D11_COMPOSITING);
+  devicePrefs.oglCompositing() =
+      gfxConfig::GetValue(Feature::OPENGL_COMPOSITING);
   devicePrefs.advancedLayers() = gfxConfig::GetValue(Feature::ADVANCED_LAYERS);
   devicePrefs.useD2D1() = gfxConfig::GetValue(Feature::DIRECT2D);
 
@@ -61,34 +58,22 @@ VRChild::Init()
   gfxVars::AddReceiver(this);
 }
 
-void
-VRChild::OnVarChanged(const GfxVarUpdate& aVar)
-{
-  SendUpdateVar(aVar);
-}
+void VRChild::OnVarChanged(const GfxVarUpdate& aVar) { SendUpdateVar(aVar); }
 
-class DeferredDeleteVRChild : public Runnable
-{
-public:
+class DeferredDeleteVRChild : public Runnable {
+ public:
   explicit DeferredDeleteVRChild(UniquePtr<VRChild>&& aChild)
-    : Runnable("gfx::DeferredDeleteVRChild")
-    , mChild(std::move(aChild))
-  {
-  }
+      : Runnable("gfx::DeferredDeleteVRChild"), mChild(std::move(aChild)) {}
 
-  NS_IMETHODIMP Run() override {
-    return NS_OK;
-  }
+  NS_IMETHODIMP Run() override { return NS_OK; }
 
-private:
+ private:
   UniquePtr<VRChild> mChild;
 };
 
- void
-VRChild::Destroy(UniquePtr<VRChild>&& aChild)
-{
+ void VRChild::Destroy(UniquePtr<VRChild>&& aChild) {
   NS_DispatchToMainThread(new DeferredDeleteVRChild(std::move(aChild)));
 }
 
-} 
-} 
+}  
+}  

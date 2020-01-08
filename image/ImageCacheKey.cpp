@@ -24,9 +24,7 @@ using namespace dom;
 
 namespace image {
 
-static Maybe<uint64_t>
-BlobSerial(nsIURI* aURI)
-{
+static Maybe<uint64_t> BlobSerial(nsIURI* aURI) {
   nsAutoCString spec;
   aURI->GetSpec(spec);
 
@@ -39,16 +37,13 @@ BlobSerial(nsIURI* aURI)
   return Nothing();
 }
 
-ImageCacheKey::ImageCacheKey(nsIURI* aURI,
-                             const OriginAttributes& aAttrs,
-                             nsIDocument* aDocument,
-                             nsresult& aRv)
-  : mURI(aURI)
-  , mOriginAttributes(aAttrs)
-  , mControlledDocument(GetSpecialCaseDocumentToken(aDocument, aURI))
-  , mHash(0)
-  , mIsChrome(false)
-{
+ImageCacheKey::ImageCacheKey(nsIURI* aURI, const OriginAttributes& aAttrs,
+                             nsIDocument* aDocument, nsresult& aRv)
+    : mURI(aURI),
+      mOriginAttributes(aAttrs),
+      mControlledDocument(GetSpecialCaseDocumentToken(aDocument, aURI)),
+      mHash(0),
+      mIsChrome(false) {
   if (SchemeIs("blob")) {
     mBlobSerial = BlobSerial(mURI);
   } else if (SchemeIs("chrome")) {
@@ -77,28 +72,25 @@ ImageCacheKey::ImageCacheKey(nsIURI* aURI,
 }
 
 ImageCacheKey::ImageCacheKey(const ImageCacheKey& aOther)
-  : mURI(aOther.mURI)
-  , mBlobSerial(aOther.mBlobSerial)
-  , mBlobRef(aOther.mBlobRef)
-  , mOriginAttributes(aOther.mOriginAttributes)
-  , mControlledDocument(aOther.mControlledDocument)
-  , mHash(aOther.mHash)
-  , mIsChrome(aOther.mIsChrome)
-{ }
+    : mURI(aOther.mURI),
+      mBlobSerial(aOther.mBlobSerial),
+      mBlobRef(aOther.mBlobRef),
+      mOriginAttributes(aOther.mOriginAttributes),
+      mControlledDocument(aOther.mControlledDocument),
+      mHash(aOther.mHash),
+      mIsChrome(aOther.mIsChrome) {}
 
 ImageCacheKey::ImageCacheKey(ImageCacheKey&& aOther)
-  : mURI(std::move(aOther.mURI))
-  , mBlobSerial(std::move(aOther.mBlobSerial))
-  , mBlobRef(std::move(aOther.mBlobRef))
-  , mOriginAttributes(aOther.mOriginAttributes)
-  , mControlledDocument(aOther.mControlledDocument)
-  , mHash(aOther.mHash)
-  , mIsChrome(aOther.mIsChrome)
-{ }
+    : mURI(std::move(aOther.mURI)),
+      mBlobSerial(std::move(aOther.mBlobSerial)),
+      mBlobRef(std::move(aOther.mBlobRef)),
+      mOriginAttributes(aOther.mOriginAttributes),
+      mControlledDocument(aOther.mControlledDocument),
+      mHash(aOther.mHash),
+      mIsChrome(aOther.mIsChrome) {}
 
-bool
-ImageCacheKey::operator==(const ImageCacheKey& aOther) const
-{
+bool ImageCacheKey::operator==(const ImageCacheKey& aOther) const {
+  
   
   if (mControlledDocument != aOther.mControlledDocument) {
     return false;
@@ -110,8 +102,7 @@ ImageCacheKey::operator==(const ImageCacheKey& aOther) const
   if (mBlobSerial || aOther.mBlobSerial) {
     
     
-    return mBlobSerial == aOther.mBlobSerial &&
-           mBlobRef == aOther.mBlobRef;
+    return mBlobSerial == aOther.mBlobSerial && mBlobRef == aOther.mBlobRef;
   }
 
   
@@ -120,16 +111,13 @@ ImageCacheKey::operator==(const ImageCacheKey& aOther) const
   return NS_SUCCEEDED(rv) && equals;
 }
 
-bool
-ImageCacheKey::SchemeIs(const char* aScheme)
-{
+bool ImageCacheKey::SchemeIs(const char* aScheme) {
   bool matches = false;
   return NS_SUCCEEDED(mURI->SchemeIs(aScheme, &matches)) && matches;
 }
 
- void*
-ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
-{
+ void* ImageCacheKey::GetSpecialCaseDocumentToken(
+    nsIDocument* aDocument, nsIURI* aURI) {
   
   
   
@@ -147,8 +135,9 @@ ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
   
   
   if (nsContentUtils::IsTrackingResourceWindow(aDocument->GetInnerWindow())) {
-    return nsContentUtils::StorageDisabledByAntiTracking(aDocument, aURI) ?
-             aDocument : nullptr;
+    return nsContentUtils::StorageDisabledByAntiTracking(aDocument, aURI)
+               ? aDocument
+               : nullptr;
   }
 
   
@@ -157,13 +146,13 @@ ImageCacheKey::GetSpecialCaseDocumentToken(nsIDocument* aDocument, nsIURI* aURI)
   
   
   
-  if (!AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(aDocument->GetInnerWindow(),
-                                                                    aURI)) {
+  if (!AntiTrackingCommon::MaybeIsFirstPartyStorageAccessGrantedFor(
+          aDocument->GetInnerWindow(), aURI)) {
     return aDocument;
   }
 
   return nullptr;
 }
 
-} 
-} 
+}  
+}  

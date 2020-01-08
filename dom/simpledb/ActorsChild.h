@@ -15,16 +15,14 @@ namespace ipc {
 
 class BackgroundChildImpl;
 
-} 
+}  
 
 namespace dom {
 
 class SDBConnection;
 class SDBRequest;
 
-class SDBConnectionChild final
-  : public PBackgroundSDBConnectionChild
-{
+class SDBConnectionChild final : public PBackgroundSDBConnectionChild {
   friend class mozilla::ipc::BackgroundChildImpl;
   friend class SDBConnection;
 
@@ -32,84 +30,71 @@ class SDBConnectionChild final
 
   NS_DECL_OWNINGTHREAD
 
-public:
-  void
-  AssertIsOnOwningThread() const
-  {
+ public:
+  void AssertIsOnOwningThread() const {
     NS_ASSERT_OWNINGTHREAD(SDBConnectionChild);
   }
 
-private:
+ private:
   
   explicit SDBConnectionChild(SDBConnection* aConnection);
 
   
   ~SDBConnectionChild();
 
-  void
-  SendDeleteMeInternal();
+  void SendDeleteMeInternal();
 
   
-  virtual void
-  ActorDestroy(ActorDestroyReason aWhy) override;
+  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  virtual PBackgroundSDBRequestChild*
-  AllocPBackgroundSDBRequestChild(const SDBRequestParams& aParams) override;
+  virtual PBackgroundSDBRequestChild* AllocPBackgroundSDBRequestChild(
+      const SDBRequestParams& aParams) override;
 
-  virtual bool
-  DeallocPBackgroundSDBRequestChild(PBackgroundSDBRequestChild* aActor)
-                                    override;
+  virtual bool DeallocPBackgroundSDBRequestChild(
+      PBackgroundSDBRequestChild* aActor) override;
 
-  virtual mozilla::ipc::IPCResult
-  RecvAllowToClose() override;
+  virtual mozilla::ipc::IPCResult RecvAllowToClose() override;
 
-  virtual mozilla::ipc::IPCResult
-  RecvClosed() override;
+  virtual mozilla::ipc::IPCResult RecvClosed() override;
 };
 
-class SDBRequestChild final
-  : public PBackgroundSDBRequestChild
-{
+class SDBRequestChild final : public PBackgroundSDBRequestChild {
   friend class SDBConnectionChild;
   friend class SDBConnection;
 
   RefPtr<SDBConnection> mConnection;
   RefPtr<SDBRequest> mRequest;
 
-public:
-  void
-  AssertIsOnOwningThread() const
+ public:
+  void AssertIsOnOwningThread() const
 #ifdef DEBUG
-  ;
+      ;
 #else
-  { }
+  {
+  }
 #endif
 
-private:
+ private:
   
   explicit SDBRequestChild(SDBRequest* aRequest);
 
   
   ~SDBRequestChild();
 
-  void
-  HandleResponse(nsresult aResponse);
+  void HandleResponse(nsresult aResponse);
 
-  void
-  HandleResponse();
+  void HandleResponse();
 
-  void
-  HandleResponse(const nsCString& aResponse);
+  void HandleResponse(const nsCString& aResponse);
 
   
-  virtual void
-  ActorDestroy(ActorDestroyReason aWhy) override;
+  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  virtual mozilla::ipc::IPCResult
-  Recv__delete__(const SDBRequestResponse& aResponse) override;
+  virtual mozilla::ipc::IPCResult Recv__delete__(
+      const SDBRequestResponse& aResponse) override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

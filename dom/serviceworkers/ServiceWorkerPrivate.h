@@ -30,16 +30,14 @@ class ServiceWorkerRegistrationInfo;
 
 namespace ipc {
 class StructuredCloneData;
-} 
+}  
 
-class LifeCycleEventCallback : public Runnable
-{
-public:
+class LifeCycleEventCallback : public Runnable {
+ public:
   LifeCycleEventCallback() : Runnable("dom::LifeCycleEventCallback") {}
 
   
-  virtual void
-  SetResult(bool aResult) = 0;
+  virtual void SetResult(bool aResult) = 0;
 };
 
 
@@ -72,104 +70,80 @@ public:
 
 
 
-class ServiceWorkerPrivate final
-{
+
+class ServiceWorkerPrivate final {
   friend class KeepAliveToken;
 
-public:
+ public:
   NS_IMETHOD_(MozExternalRefCountType) AddRef();
   NS_IMETHOD_(MozExternalRefCountType) Release();
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ServiceWorkerPrivate)
 
   typedef mozilla::FalseType HasThreadSafeRefCnt;
 
-protected:
+ protected:
   nsCycleCollectingAutoRefCnt mRefCnt;
   NS_DECL_OWNINGTHREAD
 
-public:
+ public:
   explicit ServiceWorkerPrivate(ServiceWorkerInfo* aInfo);
 
-  nsresult
-  SendMessageEvent(RefPtr<ServiceWorkerCloneData>&& aData,
-                   const ClientInfoAndState& aClientInfoAndState);
+  nsresult SendMessageEvent(RefPtr<ServiceWorkerCloneData>&& aData,
+                            const ClientInfoAndState& aClientInfoAndState);
 
   
   
-  nsresult
-  CheckScriptEvaluation(LifeCycleEventCallback* aCallback);
+  nsresult CheckScriptEvaluation(LifeCycleEventCallback* aCallback);
 
-  nsresult
-  SendLifeCycleEvent(const nsAString& aEventType,
-                     LifeCycleEventCallback* aCallback);
+  nsresult SendLifeCycleEvent(const nsAString& aEventType,
+                              LifeCycleEventCallback* aCallback);
 
-  nsresult
-  SendPushEvent(const nsAString& aMessageId,
-                const Maybe<nsTArray<uint8_t>>& aData,
-                ServiceWorkerRegistrationInfo* aRegistration);
+  nsresult SendPushEvent(const nsAString& aMessageId,
+                         const Maybe<nsTArray<uint8_t>>& aData,
+                         ServiceWorkerRegistrationInfo* aRegistration);
 
-  nsresult
-  SendPushSubscriptionChangeEvent();
+  nsresult SendPushSubscriptionChangeEvent();
 
-  nsresult
-  SendNotificationEvent(const nsAString& aEventName,
-                        const nsAString& aID,
-                        const nsAString& aTitle,
-                        const nsAString& aDir,
-                        const nsAString& aLang,
-                        const nsAString& aBody,
-                        const nsAString& aTag,
-                        const nsAString& aIcon,
-                        const nsAString& aData,
-                        const nsAString& aBehavior,
-                        const nsAString& aScope);
+  nsresult SendNotificationEvent(const nsAString& aEventName,
+                                 const nsAString& aID, const nsAString& aTitle,
+                                 const nsAString& aDir, const nsAString& aLang,
+                                 const nsAString& aBody, const nsAString& aTag,
+                                 const nsAString& aIcon, const nsAString& aData,
+                                 const nsAString& aBehavior,
+                                 const nsAString& aScope);
 
-  nsresult
-  SendFetchEvent(nsIInterceptedChannel* aChannel,
-                 nsILoadGroup* aLoadGroup,
-                 const nsAString& aClientId,
-                 const nsAString& aResultingClientId,
-                 bool aIsReload);
+  nsresult SendFetchEvent(nsIInterceptedChannel* aChannel,
+                          nsILoadGroup* aLoadGroup, const nsAString& aClientId,
+                          const nsAString& aResultingClientId, bool aIsReload);
 
-  bool
-  MaybeStoreISupports(nsISupports* aSupports);
+  bool MaybeStoreISupports(nsISupports* aSupports);
 
-  void
-  RemoveISupports(nsISupports* aSupports);
+  void RemoveISupports(nsISupports* aSupports);
 
   
   
   
   
   
-  void
-  TerminateWorker();
+  void TerminateWorker();
 
-  void
-  NoteDeadServiceWorkerInfo();
+  void NoteDeadServiceWorkerInfo();
 
-  void
-  NoteStoppedControllingDocuments();
+  void NoteStoppedControllingDocuments();
 
-  void
-  UpdateState(ServiceWorkerState aState);
+  void UpdateState(ServiceWorkerState aState);
 
-  nsresult
-  GetDebugger(nsIWorkerDebugger** aResult);
+  nsresult GetDebugger(nsIWorkerDebugger** aResult);
 
-  nsresult
-  AttachDebugger();
+  nsresult AttachDebugger();
 
-  nsresult
-  DetachDebugger();
+  nsresult DetachDebugger();
 
-  bool
-  IsIdle() const;
+  bool IsIdle() const;
 
-  void
-  SetHandlesFetch(bool aValue);
+  void SetHandlesFetch(bool aValue);
 
-private:
+ private:
   enum WakeUpReason {
     FetchEvent = 0,
     PushEvent,
@@ -182,33 +156,25 @@ private:
   };
 
   
-  void
-  NoteIdleWorkerCallback(nsITimer* aTimer);
+  void NoteIdleWorkerCallback(nsITimer* aTimer);
 
-  void
-  TerminateWorkerCallback(nsITimer* aTimer);
+  void TerminateWorkerCallback(nsITimer* aTimer);
 
-  void
-  RenewKeepAliveToken(WakeUpReason aWhy);
+  void RenewKeepAliveToken(WakeUpReason aWhy);
 
-  void
-  ResetIdleTimeout();
+  void ResetIdleTimeout();
 
-  void
-  AddToken();
+  void AddToken();
 
-  void
-  ReleaseToken();
+  void ReleaseToken();
 
-  nsresult
-  SpawnWorkerIfNeeded(WakeUpReason aWhy,
-                      bool* aNewWorkerCreated = nullptr,
-                      nsILoadGroup* aLoadGroup = nullptr);
+  nsresult SpawnWorkerIfNeeded(WakeUpReason aWhy,
+                               bool* aNewWorkerCreated = nullptr,
+                               nsILoadGroup* aLoadGroup = nullptr);
 
   ~ServiceWorkerPrivate();
 
-  already_AddRefed<KeepAliveToken>
-  CreateEventKeepAliveToken();
+  already_AddRefed<KeepAliveToken> CreateEventKeepAliveToken();
 
   
   
@@ -241,7 +207,7 @@ private:
   nsTArray<RefPtr<WorkerRunnable>> mPendingFunctionalEvents;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

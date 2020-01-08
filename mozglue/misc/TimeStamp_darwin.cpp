@@ -16,6 +16,7 @@
 
 
 
+
 #include <mach/mach_time.h>
 #include <sys/time.h>
 #include <sys/sysctl.h>
@@ -28,17 +29,15 @@
 static uint64_t sResolution;
 static uint64_t sResolutionSigDigs;
 
-static const uint64_t kNsPerMs   =    1000000;
-static const uint64_t kUsPerSec  =    1000000;
-static const double kNsPerMsd    =    1000000.0;
-static const double kNsPerSecd   = 1000000000.0;
+static const uint64_t kNsPerMs = 1000000;
+static const uint64_t kUsPerSec = 1000000;
+static const double kNsPerMsd = 1000000.0;
+static const double kNsPerSecd = 1000000000.0;
 
 static bool gInitialized = false;
 static double sNsPerTick;
 
-static uint64_t
-ClockTime()
-{
+static uint64_t ClockTime() {
   
   
   
@@ -49,9 +48,7 @@ ClockTime()
   return mach_absolute_time();
 }
 
-static uint64_t
-ClockResolutionNs()
-{
+static uint64_t ClockResolutionNs() {
   uint64_t start = ClockTime();
   uint64_t end = ClockTime();
   uint64_t minres = (end - start);
@@ -80,16 +77,12 @@ ClockResolutionNs()
 
 namespace mozilla {
 
-double
-BaseTimeDurationPlatformUtils::ToSeconds(int64_t aTicks)
-{
+double BaseTimeDurationPlatformUtils::ToSeconds(int64_t aTicks) {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
   return (aTicks * sNsPerTick) / kNsPerSecd;
 }
 
-double
-BaseTimeDurationPlatformUtils::ToSecondsSigDigits(int64_t aTicks)
-{
+double BaseTimeDurationPlatformUtils::ToSecondsSigDigits(int64_t aTicks) {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
   
   int64_t valueSigDigs = sResolution * (aTicks / sResolution);
@@ -98,9 +91,8 @@ BaseTimeDurationPlatformUtils::ToSecondsSigDigits(int64_t aTicks)
   return (valueSigDigs * sNsPerTick) / kNsPerSecd;
 }
 
-int64_t
-BaseTimeDurationPlatformUtils::TicksFromMilliseconds(double aMilliseconds)
-{
+int64_t BaseTimeDurationPlatformUtils::TicksFromMilliseconds(
+    double aMilliseconds) {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
   double result = (aMilliseconds * kNsPerMsd) / sNsPerTick;
   if (result > INT64_MAX) {
@@ -112,16 +104,12 @@ BaseTimeDurationPlatformUtils::TicksFromMilliseconds(double aMilliseconds)
   return result;
 }
 
-int64_t
-BaseTimeDurationPlatformUtils::ResolutionInTicks()
-{
+int64_t BaseTimeDurationPlatformUtils::ResolutionInTicks() {
   MOZ_ASSERT(gInitialized, "calling TimeDuration too early");
   return static_cast<int64_t>(sResolution);
 }
 
-void
-TimeStamp::Startup()
-{
+void TimeStamp::Startup() {
   if (gInitialized) {
     return;
   }
@@ -141,38 +129,29 @@ TimeStamp::Startup()
 
   
   
-  for (sResolutionSigDigs = 1;
-       !(sResolutionSigDigs == sResolution ||
-         10 * sResolutionSigDigs > sResolution);
-       sResolutionSigDigs *= 10);
+  for (sResolutionSigDigs = 1; !(sResolutionSigDigs == sResolution ||
+                                 10 * sResolutionSigDigs > sResolution);
+       sResolutionSigDigs *= 10)
+    ;
 
   gInitialized = true;
 
   return;
 }
 
-void
-TimeStamp::Shutdown()
-{
-}
+void TimeStamp::Shutdown() {}
 
-TimeStamp
-TimeStamp::Now(bool aHighResolution)
-{
+TimeStamp TimeStamp::Now(bool aHighResolution) {
   return TimeStamp::NowFuzzy(TimeStampValue(false, ClockTime()));
 }
 
-TimeStamp
-TimeStamp::NowUnfuzzed(bool aHighResolution)
-{
+TimeStamp TimeStamp::NowUnfuzzed(bool aHighResolution) {
   return TimeStamp(TimeStampValue(false, ClockTime()));
 }
 
 
 
-uint64_t
-TimeStamp::ComputeProcessUptime()
-{
+uint64_t TimeStamp::ComputeProcessUptime() {
   struct timeval tv;
   int rv = gettimeofday(&tv, nullptr);
 
@@ -181,10 +160,10 @@ TimeStamp::ComputeProcessUptime()
   }
 
   int mib[] = {
-    CTL_KERN,
-    KERN_PROC,
-    KERN_PROC_PID,
-    getpid(),
+      CTL_KERN,
+      KERN_PROC,
+      KERN_PROC_PID,
+      getpid(),
   };
   u_int mibLen = sizeof(mib) / sizeof(mib[0]);
 
@@ -197,8 +176,8 @@ TimeStamp::ComputeProcessUptime()
   }
 
   uint64_t startTime =
-    ((uint64_t)proc.kp_proc.p_un.__p_starttime.tv_sec * kUsPerSec) +
-    proc.kp_proc.p_un.__p_starttime.tv_usec;
+      ((uint64_t)proc.kp_proc.p_un.__p_starttime.tv_sec * kUsPerSec) +
+      proc.kp_proc.p_un.__p_starttime.tv_usec;
   uint64_t now = (tv.tv_sec * kUsPerSec) + tv.tv_usec;
 
   if (startTime > now) {
@@ -208,4 +187,4 @@ TimeStamp::ComputeProcessUptime()
   return now - startTime;
 }
 
-} 
+}  

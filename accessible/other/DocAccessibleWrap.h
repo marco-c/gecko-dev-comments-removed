@@ -17,7 +17,7 @@ namespace a11y {
 
 typedef DocAccessible DocAccessibleWrap;
 
-} 
-} 
+}  
+}  
 
 #endif

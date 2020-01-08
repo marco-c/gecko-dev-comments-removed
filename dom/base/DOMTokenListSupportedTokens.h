@@ -25,7 +25,7 @@ typedef const char* const DOMTokenListSupportedToken;
 
 typedef DOMTokenListSupportedToken* DOMTokenListSupportedTokenArray;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

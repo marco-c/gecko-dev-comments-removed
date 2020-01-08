@@ -17,65 +17,58 @@
 
 class nsTableFrame;
 
-class BasicTableLayoutStrategy : public nsITableLayoutStrategy
-{
-public:
-    explicit BasicTableLayoutStrategy(nsTableFrame *aTableFrame);
-    virtual ~BasicTableLayoutStrategy();
+class BasicTableLayoutStrategy : public nsITableLayoutStrategy {
+ public:
+  explicit BasicTableLayoutStrategy(nsTableFrame* aTableFrame);
+  virtual ~BasicTableLayoutStrategy();
 
-    
-    virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
-    virtual nscoord GetPrefISize(gfxContext* aRenderingContext,
-                                 bool aComputingSize) override;
-    virtual void MarkIntrinsicISizesDirty() override;
-    virtual void ComputeColumnISizes(const ReflowInput& aReflowInput) override;
+  
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext,
+                               bool aComputingSize) override;
+  virtual void MarkIntrinsicISizesDirty() override;
+  virtual void ComputeColumnISizes(const ReflowInput& aReflowInput) override;
 
-private:
-    
-    
-    enum BtlsISizeType { BTLS_MIN_ISIZE,
-                         BTLS_PREF_ISIZE,
-                         BTLS_FINAL_ISIZE };
+ private:
+  
+  
+  enum BtlsISizeType { BTLS_MIN_ISIZE, BTLS_PREF_ISIZE, BTLS_FINAL_ISIZE };
 
-    
-    void ComputeColumnIntrinsicISizes(gfxContext* aRenderingContext);
+  
+  void ComputeColumnIntrinsicISizes(gfxContext* aRenderingContext);
 
-    
-    void DistributePctISizeToColumns(float aSpanPrefPct,
-                                     int32_t aFirstCol,
-                                     int32_t aColCount);
+  
+  void DistributePctISizeToColumns(float aSpanPrefPct, int32_t aFirstCol,
+                                   int32_t aColCount);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    void DistributeISizeToColumns(nscoord aISize,
-                                  int32_t aFirstCol,
-                                  int32_t aColCount,
-                                  BtlsISizeType aISizeType,
-                                  bool aSpanHasSpecifiedISize);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void DistributeISizeToColumns(nscoord aISize, int32_t aFirstCol,
+                                int32_t aColCount, BtlsISizeType aISizeType,
+                                bool aSpanHasSpecifiedISize);
 
+  
+  
+  void ComputeIntrinsicISizes(gfxContext* aRenderingContext);
 
-    
-    
-    void ComputeIntrinsicISizes(gfxContext* aRenderingContext);
-
-    nsTableFrame *mTableFrame;
-    nscoord mMinISize;
-    nscoord mPrefISize;
-    nscoord mPrefISizePctExpand;
-    nscoord mLastCalcISize;
+  nsTableFrame* mTableFrame;
+  nscoord mMinISize;
+  nscoord mPrefISize;
+  nscoord mPrefISizePctExpand;
+  nscoord mLastCalcISize;
 };
 
 #endif 

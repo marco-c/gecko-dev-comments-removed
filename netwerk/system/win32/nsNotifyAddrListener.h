@@ -18,85 +18,84 @@
 
 class nsNotifyAddrListener : public nsINetworkLinkService,
                              public nsIRunnable,
-                             public nsIObserver
-{
-    virtual ~nsNotifyAddrListener();
+                             public nsIObserver {
+  virtual ~nsNotifyAddrListener();
 
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSINETWORKLINKSERVICE
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSINETWORKLINKSERVICE
+  NS_DECL_NSIRUNNABLE
+  NS_DECL_NSIOBSERVER
+
+  nsNotifyAddrListener();
+
+  nsresult Init(void);
+  void CheckLinkStatus(void);
+
+ protected:
+  class ChangeEvent : public mozilla::Runnable {
+   public:
     NS_DECL_NSIRUNNABLE
-    NS_DECL_NSIOBSERVER
+    ChangeEvent(nsINetworkLinkService *aService, const char *aEventID)
+        : Runnable("nsNotifyAddrListener::ChangeEvent"),
+          mService(aService),
+          mEventID(aEventID) {}
 
-    nsNotifyAddrListener();
+   private:
+    nsCOMPtr<nsINetworkLinkService> mService;
+    const char *mEventID;
+  };
 
-    nsresult Init(void);
-    void CheckLinkStatus(void);
+  bool mLinkUp;
+  bool mStatusKnown;
+  bool mCheckAttempted;
 
-protected:
-    class ChangeEvent : public mozilla::Runnable {
-    public:
-        NS_DECL_NSIRUNNABLE
-        ChangeEvent(nsINetworkLinkService *aService, const char *aEventID)
-            : Runnable("nsNotifyAddrListener::ChangeEvent")
-            , mService(aService)
-            , mEventID(aEventID)
-        {}
-    private:
-        nsCOMPtr<nsINetworkLinkService> mService;
-        const char *mEventID;
-    };
+  nsresult Shutdown(void);
+  nsresult SendEvent(const char *aEventID);
 
-    bool mLinkUp;
-    bool mStatusKnown;
-    bool mCheckAttempted;
+  DWORD CheckAdaptersAddresses(void);
 
-    nsresult Shutdown(void);
-    nsresult SendEvent(const char *aEventID);
+  
+  bool CheckICSGateway(PIP_ADAPTER_ADDRESSES aAdapter);
+  bool CheckICSStatus(PWCHAR aAdapterName);
 
-    DWORD CheckAdaptersAddresses(void);
+  nsCOMPtr<nsIThread> mThread;
 
-    
-    bool  CheckICSGateway(PIP_ADAPTER_ADDRESSES aAdapter);
-    bool  CheckICSStatus(PWCHAR aAdapterName);
+ private:
+  
+  DWORD nextCoalesceWaitTime();
 
-    nsCOMPtr<nsIThread> mThread;
+  
+  nsresult NetworkChanged();
 
-private:
-    
-    DWORD nextCoalesceWaitTime();
+  
+  void calculateNetworkId(void);
+  bool findMac(char *gateway);
+  nsCString mNetworkId;
 
-    
-    nsresult NetworkChanged();
+  HANDLE mCheckEvent;
 
-    
-    void calculateNetworkId(void);
-    bool findMac(char *gateway);
-    nsCString mNetworkId;
+  
+  bool mShutdown;
 
-    HANDLE mCheckEvent;
+  
+  
+  ULONG mIPInterfaceChecksum;
 
-    
-    bool mShutdown;
+  
+  mozilla::TimeStamp mStartTime;
 
-    
-    
-    ULONG mIPInterfaceChecksum;
+  
+  bool mAllowChangedEvent;
 
-    
-    mozilla::TimeStamp mStartTime;
+  
+  bool mIPv6Changes;
 
-    
-    bool mAllowChangedEvent;
+  
+  bool mCoalescingActive;
 
-    
-    bool mIPv6Changes;
-
-    
-    bool mCoalescingActive;
-
-    
-    mozilla::TimeStamp mChangeTime;
+  
+  mozilla::TimeStamp mChangeTime;
 };
 
 #endif 

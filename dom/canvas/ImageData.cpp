@@ -36,12 +36,10 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ImageData)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 
-already_AddRefed<ImageData>
-ImageData::Constructor(const GlobalObject& aGlobal,
-                       const uint32_t aWidth,
-                       const uint32_t aHeight,
-                       ErrorResult& aRv)
-{
+already_AddRefed<ImageData> ImageData::Constructor(const GlobalObject& aGlobal,
+                                                   const uint32_t aWidth,
+                                                   const uint32_t aHeight,
+                                                   ErrorResult& aRv) {
   if (aWidth == 0 || aHeight == 0) {
     aRv.Throw(NS_ERROR_DOM_INDEX_SIZE_ERR);
     return nullptr;
@@ -52,8 +50,7 @@ ImageData::Constructor(const GlobalObject& aGlobal,
     return nullptr;
   }
   js::AssertSameCompartment(aGlobal.Context(), aGlobal.Get());
-  JSObject* data = Uint8ClampedArray::Create(aGlobal.Context(),
-                                             length.value());
+  JSObject* data = Uint8ClampedArray::Create(aGlobal.Context(), length.value());
   if (!data) {
     aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
     return nullptr;
@@ -63,13 +60,10 @@ ImageData::Constructor(const GlobalObject& aGlobal,
 }
 
 
-already_AddRefed<ImageData>
-ImageData::Constructor(const GlobalObject& aGlobal,
-                       const Uint8ClampedArray& aData,
-                       const uint32_t aWidth,
-                       const Optional<uint32_t>& aHeight,
-                       ErrorResult& aRv)
-{
+already_AddRefed<ImageData> ImageData::Constructor(
+    const GlobalObject& aGlobal, const Uint8ClampedArray& aData,
+    const uint32_t aWidth, const Optional<uint32_t>& aHeight,
+    ErrorResult& aRv) {
   aData.ComputeLengthAndData();
 
   uint32_t length = aData.Length();
@@ -90,33 +84,27 @@ ImageData::Constructor(const GlobalObject& aGlobal,
   }
   if (JS_GetTypedArraySharedness(aData.Obj())) {
     
-    aRv.ThrowTypeError<MSG_TYPEDARRAY_IS_SHARED>(NS_LITERAL_STRING("Argument of ImageData constructor"));
+    aRv.ThrowTypeError<MSG_TYPEDARRAY_IS_SHARED>(
+        NS_LITERAL_STRING("Argument of ImageData constructor"));
     return nullptr;
   }
   RefPtr<ImageData> imageData = new ImageData(aWidth, height, *aData.Obj());
   return imageData.forget();
 }
 
-void
-ImageData::HoldData()
-{
-  mozilla::HoldJSObjects(this);
-}
+void ImageData::HoldData() { mozilla::HoldJSObjects(this); }
 
-void
-ImageData::DropData()
-{
+void ImageData::DropData() {
   if (mData) {
     mData = nullptr;
     mozilla::DropJSObjects(this);
   }
 }
 
-bool
-ImageData::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto, JS::MutableHandle<JSObject*> aReflector)
-{
+bool ImageData::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
+                           JS::MutableHandle<JSObject*> aReflector) {
   return ImageData_Binding::Wrap(aCx, this, aGivenProto, aReflector);
 }
 
-} 
-} 
+}  
+}  

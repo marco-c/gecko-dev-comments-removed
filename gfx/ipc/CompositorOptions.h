@@ -7,8 +7,9 @@
 #define _include_mozilla_gfx_ipc_CompositorOptions_h_
 
 namespace IPC {
-template <typename> struct ParamTraits;
-} 
+template <typename>
+struct ParamTraits;
+}  
 
 namespace mozilla {
 namespace layers {
@@ -25,26 +26,20 @@ namespace layers {
 
 
 
-class CompositorOptions
-{
-public:
+class CompositorOptions {
+ public:
   
   CompositorOptions()
-    : mUseAPZ(false)
-    , mUseWebRender(false)
-    , mUseAdvancedLayers(false)
-    , mInitiallyPaused(false)
-  {
-  }
+      : mUseAPZ(false),
+        mUseWebRender(false),
+        mUseAdvancedLayers(false),
+        mInitiallyPaused(false) {}
 
-  explicit CompositorOptions(bool aUseAPZ,
-                             bool aUseWebRender)
-    : mUseAPZ(aUseAPZ)
-    , mUseWebRender(aUseWebRender)
-    , mUseAdvancedLayers(false)
-    , mInitiallyPaused(false)
-  {
-  }
+  explicit CompositorOptions(bool aUseAPZ, bool aUseWebRender)
+      : mUseAPZ(aUseAPZ),
+        mUseWebRender(aUseWebRender),
+        mUseAdvancedLayers(false),
+        mInitiallyPaused(false) {}
 
   bool UseAPZ() const { return mUseAPZ; }
   bool UseWebRender() const { return mUseWebRender; }
@@ -60,14 +55,13 @@ public:
   }
 
   bool operator==(const CompositorOptions& aOther) const {
-    return mUseAPZ == aOther.mUseAPZ &&
-           mUseWebRender == aOther.mUseWebRender &&
+    return mUseAPZ == aOther.mUseAPZ && mUseWebRender == aOther.mUseWebRender &&
            mUseAdvancedLayers == aOther.mUseAdvancedLayers;
   }
 
   friend struct IPC::ParamTraits<CompositorOptions>;
 
-private:
+ private:
   bool mUseAPZ;
   bool mUseWebRender;
   bool mUseAdvancedLayers;
@@ -77,7 +71,7 @@ private:
   
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -43,17 +43,11 @@ class ContentParent;
 
 
 
-class BrowsingContext
-  : public nsWrapperCache
-  , public SupportsWeakPtr<BrowsingContext>
-  , public LinkedListElement<RefPtr<BrowsingContext>>
-{
-public:
-  enum class Type
-  {
-    Chrome,
-    Content
-  };
+class BrowsingContext : public nsWrapperCache,
+                        public SupportsWeakPtr<BrowsingContext>,
+                        public LinkedListElement<RefPtr<BrowsingContext>> {
+ public:
+  enum class Type { Chrome, Content };
 
   static void Init();
   static LogModule* GetLog();
@@ -70,11 +64,8 @@ public:
 
   
   static already_AddRefed<BrowsingContext> CreateFromIPC(
-    BrowsingContext* aParent,
-    BrowsingContext* aOpener,
-    const nsAString& aName,
-    uint64_t aId,
-    ContentParent* aOriginProcess);
+      BrowsingContext* aParent, BrowsingContext* aOpener,
+      const nsAString& aName, uint64_t aId, ContentParent* aOriginProcess);
 
   
   
@@ -113,15 +104,12 @@ public:
 
   void GetChildren(nsTArray<RefPtr<BrowsingContext>>& aChildren);
 
-  BrowsingContext* GetOpener()
-  {
-    return mOpener;
-  }
+  BrowsingContext* GetOpener() { return mOpener; }
 
   void SetOpener(BrowsingContext* aOpener);
 
   static void GetRootBrowsingContexts(
-    nsTArray<RefPtr<BrowsingContext>>& aBrowsingContexts);
+      nsTArray<RefPtr<BrowsingContext>>& aBrowsingContexts);
 
   nsISupports* GetParentObject() const;
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -133,21 +121,18 @@ public:
 
   using Children = AutoCleanLinkedList<RefPtr<BrowsingContext>>;
 
-protected:
+ protected:
   virtual ~BrowsingContext();
-  BrowsingContext(BrowsingContext* aParent,
-                  BrowsingContext* aOpener,
-                  const nsAString& aName,
-                  uint64_t aBrowsingContextId,
+  BrowsingContext(BrowsingContext* aParent, BrowsingContext* aOpener,
+                  const nsAString& aName, uint64_t aBrowsingContextId,
                   Type aType);
 
-private:
+ private:
   
   const Type mType;
 
   
   const uint64_t mBrowsingContextId;
-
 
   WeakPtr<BrowsingContext> mParent;
   Children mChildren;
@@ -156,6 +141,6 @@ private:
   nsString mName;
 };
 
-} 
-} 
+}  
+}  
 #endif

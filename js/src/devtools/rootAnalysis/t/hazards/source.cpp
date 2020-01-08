@@ -1,214 +1,209 @@
 #define ANNOTATE(property) __attribute__((annotate(property)))
 
-struct Cell { int f; } ANNOTATE("GC Thing");
+struct Cell {
+  int f;
+} ANNOTATE("GC Thing");
 
-template<typename T, typename U>
+template <typename T, typename U>
 struct UntypedContainer {
-    char data[sizeof(T) + sizeof(U)];
+  char data[sizeof(T) + sizeof(U)];
 } ANNOTATE("moz_inherit_type_annotations_from_template_args");
 
-struct RootedCell { RootedCell(Cell*) {} } ANNOTATE("Rooted Pointer");
+struct RootedCell {
+  RootedCell(Cell*) {}
+} ANNOTATE("Rooted Pointer");
 
 class AutoSuppressGC_Base {
-  public:
-    AutoSuppressGC_Base() {}
-    ~AutoSuppressGC_Base() {}
+ public:
+  AutoSuppressGC_Base() {}
+  ~AutoSuppressGC_Base() {}
 } ANNOTATE("Suppress GC");
 
 class AutoSuppressGC_Child : public AutoSuppressGC_Base {
-  public:
-    AutoSuppressGC_Child() : AutoSuppressGC_Base() {}
+ public:
+  AutoSuppressGC_Child() : AutoSuppressGC_Base() {}
 };
 
 class AutoSuppressGC {
-    AutoSuppressGC_Child helpImBeingSuppressed;
+  AutoSuppressGC_Child helpImBeingSuppressed;
 
-  public:
-    AutoSuppressGC() {}
+ public:
+  AutoSuppressGC() {}
 };
 
 extern void GC() ANNOTATE("GC Call");
 extern void invisible();
 
-void GC()
-{
-    
-    asm("");
-    invisible();
+void GC() {
+  
+  
+  asm("");
+  invisible();
 }
 
 extern void usecell(Cell*);
 
 void suppressedFunction() {
-    GC(); 
+  GC();  
 }
 
 void halfSuppressedFunction() {
-    GC(); 
+  GC();  
 }
 
 void unsuppressedFunction() {
-    GC(); 
+  GC();  
 }
 
 volatile static int x = 3;
 volatile static int* xp = &x;
 struct GCInDestructor {
-    ~GCInDestructor() {
-        invisible();
-        asm("");
-        *xp = 4;
-        GC();
-    }
+  ~GCInDestructor() {
+    invisible();
+    asm("");
+    *xp = 4;
+    GC();
+  }
 };
 
 template <typename T>
-void
-usecontainer(T* value) {
-    if (value) asm("");
+void usecontainer(T* value) {
+  if (value) asm("");
 }
 
-Cell*
-f()
-{
-    GCInDestructor kaboom;
+Cell* f() {
+  GCInDestructor kaboom;
 
-    Cell cell;
-    Cell* cell1 = &cell;
-    Cell* cell2 = &cell;
-    Cell* cell3 = &cell;
-    Cell* cell4 = &cell;
-    {
-        AutoSuppressGC nogc;
-        suppressedFunction();
-        halfSuppressedFunction();
-    }
-    usecell(cell1);
+  Cell cell;
+  Cell* cell1 = &cell;
+  Cell* cell2 = &cell;
+  Cell* cell3 = &cell;
+  Cell* cell4 = &cell;
+  {
+    AutoSuppressGC nogc;
+    suppressedFunction();
     halfSuppressedFunction();
-    usecell(cell2);
-    unsuppressedFunction();
-    {
-        
-        
-        AutoSuppressGC nogc;
-    }
-    usecell(cell3);
-    Cell* cell5 = &cell;
-    usecell(cell5);
-
-    {
-        
-        
-        UntypedContainer<int, Cell*> container1;
-        usecontainer(&container1);
-        GC();
-        usecontainer(&container1);
-    }
-
-    {
-        
-        UntypedContainer<int, double> container2;
-        usecontainer(&container2);
-        GC();
-        usecontainer(&container2);
-    }
-
+  }
+  usecell(cell1);
+  halfSuppressedFunction();
+  usecell(cell2);
+  unsuppressedFunction();
+  {
     
-    Cell* cell6 = &cell;
-    return cell6;
-}
+    
+    AutoSuppressGC nogc;
+  }
+  usecell(cell3);
+  Cell* cell5 = &cell;
+  usecell(cell5);
 
-Cell* copy_and_gc(Cell* src)
-{
+  {
+    
+    
+    UntypedContainer<int, Cell*> container1;
+    usecontainer(&container1);
     GC();
-    return reinterpret_cast<Cell*>(88);
+    usecontainer(&container1);
+  }
+
+  {
+    
+    UntypedContainer<int, double> container2;
+    usecontainer(&container2);
+    GC();
+    usecontainer(&container2);
+  }
+
+  
+  Cell* cell6 = &cell;
+  return cell6;
 }
 
-void use(Cell* cell)
-{
-    static int x = 0;
-    if (cell)
-        x++;
+Cell* copy_and_gc(Cell* src) {
+  GC();
+  return reinterpret_cast<Cell*>(88);
+}
+
+void use(Cell* cell) {
+  static int x = 0;
+  if (cell) x++;
 }
 
 struct CellContainer {
-    Cell* cell;
-    CellContainer() {
-        asm("");
-    }
+  Cell* cell;
+  CellContainer() { asm(""); }
 };
 
-void loopy()
-{
-    Cell cell;
+void loopy() {
+  Cell cell;
 
-    
-    Cell* haz1;
-    for (int i = 0; i < 10; i++) {
-        haz1 = copy_and_gc(haz1);
-    }
+  
+  Cell* haz1;
+  for (int i = 0; i < 10; i++) {
+    haz1 = copy_and_gc(haz1);
+  }
 
-    
-    
-    Cell* haz2 = &cell;
-    for (int j = 0; j < 10; j++) {
-        use(haz2);
-        GC();
-        haz2 = &cell;
-    }
-
-    
-    
-    Cell* haz3;
-    for (int k = 0; k < 10; k++) {
-        GC();
-        use(haz3);
-        haz3 = &cell;
-    }
-
-    
-    Cell* haz4 = &cell;
-    for (int i2 = 0; i2 < 10; i2++) {
-        GC();
-    }
-    use(haz4);
-
-    
-    Cell* haz5;
-    for (int i3 = 0; i3 < 10; i3++) {
-        haz5 = &cell;
-    }
+  
+  
+  Cell* haz2 = &cell;
+  for (int j = 0; j < 10; j++) {
+    use(haz2);
     GC();
-    use(haz5);
+    haz2 = &cell;
+  }
 
-    
-    
-    Cell* haz6;
-    for (int i4 = 0; i4 < 10; i4++) {
-        GC();
-        haz6 = &cell;
-    }
+  
+  
+  Cell* haz3;
+  for (int k = 0; k < 10; k++) {
+    GC();
+    use(haz3);
+    haz3 = &cell;
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    for (int i5 = 0; i5 < 10; i5++) {
-        GC();
-        CellContainer haz7;
-        use(haz7.cell);
-        haz7.cell = &cell;
-    }
+  
+  Cell* haz4 = &cell;
+  for (int i2 = 0; i2 < 10; i2++) {
+    GC();
+  }
+  use(haz4);
 
-    
-    
-    CellContainer haz8;
-    for (int i6 = 0; i6 < 10; i6++) {
-        GC();
-        use(haz8.cell);
-        haz8.cell = &cell;
-    }
+  
+  Cell* haz5;
+  for (int i3 = 0; i3 < 10; i3++) {
+    haz5 = &cell;
+  }
+  GC();
+  use(haz5);
+
+  
+  
+  Cell* haz6;
+  for (int i4 = 0; i4 < 10; i4++) {
+    GC();
+    haz6 = &cell;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  for (int i5 = 0; i5 < 10; i5++) {
+    GC();
+    CellContainer haz7;
+    use(haz7.cell);
+    haz7.cell = &cell;
+  }
+
+  
+  
+  CellContainer haz8;
+  for (int i6 = 0; i6 < 10; i6++) {
+    GC();
+    use(haz8.cell);
+    haz8.cell = &cell;
+  }
 }

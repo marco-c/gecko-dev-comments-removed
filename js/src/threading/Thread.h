@@ -23,33 +23,31 @@
 #include "vm/MutexIDs.h"
 
 #ifdef XP_WIN
-# define THREAD_RETURN_TYPE unsigned int
-# define THREAD_CALL_API __stdcall
+#define THREAD_RETURN_TYPE unsigned int
+#define THREAD_CALL_API __stdcall
 #else
-# define THREAD_RETURN_TYPE void*
-# define THREAD_CALL_API
+#define THREAD_RETURN_TYPE void*
+#define THREAD_CALL_API
 #endif
 
 namespace js {
 namespace detail {
 template <typename F, typename... Args>
 class ThreadTrampoline;
-} 
+}  
 
 
 
-class Thread
-{
-public:
+class Thread {
+ public:
   struct Hasher;
 
-  class Id
-  {
+  class Id {
     friend struct Hasher;
     class PlatformData;
     void* platformData_[2];
 
-  public:
+   public:
     Id();
 
     Id(const Id&) = default;
@@ -65,20 +63,21 @@ public:
   };
 
   
-  class Options
-  {
+  class Options {
     size_t stackSize_;
 
-  public:
+   public:
     Options() : stackSize_(0) {}
 
-    Options& setStackSize(size_t sz) { stackSize_ = sz; return *this; }
+    Options& setStackSize(size_t sz) {
+      stackSize_ = sz;
+      return *this;
+    }
     size_t stackSize() const { return stackSize_; }
   };
 
   
-  struct Hasher
-  {
+  struct Hasher {
     typedef Id Lookup;
 
     static HashNumber hash(const Lookup& l);
@@ -91,18 +90,18 @@ public:
   
   
   
-  template <typename O = Options,
-            
-            
-            typename NonConstO = typename mozilla::RemoveConst<O>::Type,
-            typename DerefO = typename mozilla::RemoveReference<NonConstO>::Type,
-            typename = typename mozilla::EnableIf<mozilla::IsSame<DerefO, Options>::value,
-                                                  void*>::Type>
+  template <
+      typename O = Options,
+      
+      
+      typename NonConstO = typename mozilla::RemoveConst<O>::Type,
+      typename DerefO = typename mozilla::RemoveReference<NonConstO>::Type,
+      typename = typename mozilla::EnableIf<
+          mozilla::IsSame<DerefO, Options>::value, void*>::Type>
   explicit Thread(O&& options = Options())
-    : idMutex_(mutexid::ThreadId)
-    , id_(Id())
-    , options_(std::forward<O>(options))
-  {
+      : idMutex_(mutexid::ThreadId),
+        id_(Id()),
+        options_(std::forward<O>(options)) {
     MOZ_ASSERT(js::IsInitialized());
   }
 
@@ -117,8 +116,8 @@ public:
     MOZ_RELEASE_ASSERT(id_ == Id());
     using Trampoline = detail::ThreadTrampoline<F, Args...>;
     AutoEnterOOMUnsafeRegion oom;
-    auto trampoline = js_new<Trampoline>(std::forward<F>(f),
-                                         std::forward<Args>(args)...);
+    auto trampoline =
+        js_new<Trampoline>(std::forward<F>(f), std::forward<Args>(args)...);
     if (!trampoline) {
       oom.crash("js::Thread::init");
     }
@@ -156,7 +155,7 @@ public:
   Thread(Thread&& aOther);
   Thread& operator=(Thread&& aOther);
 
-private:
+ private:
   
   Thread(const Thread&) = delete;
   void operator=(const Thread&) = delete;
@@ -173,7 +172,8 @@ private:
   Options options_;
 
   
-  MOZ_MUST_USE bool create(THREAD_RETURN_TYPE (THREAD_CALL_API *aMain)(void*), void* aArg);
+  MOZ_MUST_USE bool create(THREAD_RETURN_TYPE(THREAD_CALL_API* aMain)(void*),
+                           void* aArg);
 };
 
 namespace ThisThread {
@@ -192,7 +192,7 @@ void SetName(const char* name);
 
 void GetName(char* nameBuffer, size_t len);
 
-} 
+}  
 
 namespace detail {
 
@@ -200,8 +200,7 @@ namespace detail {
 
 
 template <typename F, typename... Args>
-class ThreadTrampoline
-{
+class ThreadTrampoline {
   
   F f;
 
@@ -219,17 +218,14 @@ class ThreadTrampoline
   
   mozilla::Tuple<typename mozilla::Decay<Args>::Type...> args;
 
-public:
+ public:
   
   
   
   
   template <typename G, typename... ArgsT>
   explicit ThreadTrampoline(G&& aG, ArgsT&&... aArgsT)
-    : f(std::forward<F>(aG)),
-      args(std::forward<Args>(aArgsT)...)
-  {
-  }
+      : f(std::forward<F>(aG)), args(std::forward<Args>(aArgsT)...) {}
 
   static THREAD_RETURN_TYPE THREAD_CALL_API Start(void* aPack) {
     auto* pack = static_cast<ThreadTrampoline<F, Args...>*>(aPack);
@@ -238,15 +234,15 @@ public:
     return 0;
   }
 
-  template<size_t ...Indices>
+  template <size_t... Indices>
   void callMain(std::index_sequence<Indices...>) {
     f(mozilla::Get<Indices>(args)...);
   }
 };
 
-} 
-} 
+}  
+}  
 
 #undef THREAD_RETURN_TYPE
 
-#endif 
+#endif  

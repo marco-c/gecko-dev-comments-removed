@@ -7,10 +7,10 @@
 #ifndef GFX_BASICIMPLDATA_H
 #define GFX_BASICIMPLDATA_H
 
-#include "Layers.h"                     
-#include "gfxContext.h"                 
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
+#include "Layers.h"           
+#include "gfxContext.h"       
+#include "nsDebug.h"          
+#include "nsISupportsImpl.h"  
 #include "mozilla/gfx/Types.h"
 
 namespace mozilla {
@@ -41,18 +41,15 @@ class ReadbackProcessor;
 
 
 class BasicImplData {
-public:
-  BasicImplData() : mHidden(false),
-    mClipToVisibleRegion(false),
-    mDrawAtomically(false),
-    mOperator(gfx::CompositionOp::OP_OVER)
-  {
+ public:
+  BasicImplData()
+      : mHidden(false),
+        mClipToVisibleRegion(false),
+        mDrawAtomically(false),
+        mOperator(gfx::CompositionOp::OP_OVER) {
     MOZ_COUNT_CTOR(BasicImplData);
   }
-  virtual ~BasicImplData()
-  {
-    MOZ_COUNT_DTOR(BasicImplData);
-  }
+  virtual ~BasicImplData() { MOZ_COUNT_DTOR(BasicImplData); }
 
   
 
@@ -60,8 +57,7 @@ public:
 
 
 
-  virtual void Paint(gfx::DrawTarget* aDT,
-                     const gfx::Point& aDeviceOffset,
+  virtual void Paint(gfx::DrawTarget* aDT, const gfx::Point& aDeviceOffset,
                      Layer* aMaskLayer) {}
 
   
@@ -70,14 +66,12 @@ public:
 
 
 
-  virtual void PaintThebes(gfxContext* aContext,
-                           Layer* aMasklayer,
+  virtual void PaintThebes(gfxContext* aContext, Layer* aMasklayer,
                            LayerManager::DrawPaintedLayerCallback aCallback,
                            void* aCallbackData) {}
 
   virtual void Validate(LayerManager::DrawPaintedLayerCallback aCallback,
-                        void* aCallbackData,
-                        ReadbackProcessor* aReadback) {}
+                        void* aCallbackData, ReadbackProcessor* aReadback) {}
 
   
 
@@ -97,10 +91,9 @@ public:
 
 
 
-  void SetOperator(gfx::CompositionOp aOperator)
-  {
+  void SetOperator(gfx::CompositionOp aOperator) {
     NS_ASSERTION(aOperator == gfx::CompositionOp::OP_OVER ||
-                 aOperator == gfx::CompositionOp::OP_SOURCE,
+                     aOperator == gfx::CompositionOp::OP_SOURCE,
                  "Bad composition operator");
     mOperator = aOperator;
   }
@@ -114,21 +107,25 @@ public:
 
 
 
-  virtual already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() { return nullptr; }
+  virtual already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() {
+    return nullptr;
+  }
 
   bool GetClipToVisibleRegion() { return mClipToVisibleRegion; }
   void SetClipToVisibleRegion(bool aClip) { mClipToVisibleRegion = aClip; }
 
-  void SetDrawAtomically(bool aDrawAtomically) { mDrawAtomically = aDrawAtomically; }
+  void SetDrawAtomically(bool aDrawAtomically) {
+    mDrawAtomically = aDrawAtomically;
+  }
 
-protected:
+ protected:
   bool mHidden;
   bool mClipToVisibleRegion;
   bool mDrawAtomically;
   gfx::CompositionOp mOperator;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

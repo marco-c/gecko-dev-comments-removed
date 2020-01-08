@@ -6,7 +6,7 @@
 #ifndef nsPrintSettingsX_h_
 #define nsPrintSettingsX_h_
 
-#include "nsPrintSettingsImpl.h"  
+#include "nsPrintSettingsImpl.h"
 #import <Cocoa/Cocoa.h>
 
 
@@ -15,31 +15,33 @@
 
 
 #ifdef __MAC_10_9
-#define NS_PAPER_ORIENTATION_PORTRAIT   (NSPaperOrientationPortrait)
-#define NS_PAPER_ORIENTATION_LANDSCAPE  (NSPaperOrientationLandscape)
+#define NS_PAPER_ORIENTATION_PORTRAIT (NSPaperOrientationPortrait)
+#define NS_PAPER_ORIENTATION_LANDSCAPE (NSPaperOrientationLandscape)
 #else
-#define NS_PAPER_ORIENTATION_PORTRAIT   (NSPortraitOrientation)
-#define NS_PAPER_ORIENTATION_LANDSCAPE  (NSLandscapeOrientation)
+#define NS_PAPER_ORIENTATION_PORTRAIT (NSPortraitOrientation)
+#define NS_PAPER_ORIENTATION_LANDSCAPE (NSLandscapeOrientation)
 #endif
 
-#define NS_PRINTSETTINGSX_IID \
-{ 0x0DF2FDBD, 0x906D, 0x4726, \
-  { 0x9E, 0x4D, 0xCF, 0xE0, 0x87, 0x8D, 0x70, 0x7C } }
+#define NS_PRINTSETTINGSX_IID                        \
+  {                                                  \
+    0x0DF2FDBD, 0x906D, 0x4726, {                    \
+      0x9E, 0x4D, 0xCF, 0xE0, 0x87, 0x8D, 0x70, 0x7C \
+    }                                                \
+  }
 
-class nsPrintSettingsX : public nsPrintSettings
-{
-public:
+class nsPrintSettingsX : public nsPrintSettings {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PRINTSETTINGSX_IID)
   NS_DECL_ISUPPORTS_INHERITED
 
   nsPrintSettingsX();
   nsresult Init();
-  NSPrintInfo* GetCocoaPrintInfo() { return mPrintInfo; }
-  void SetCocoaPrintInfo(NSPrintInfo* aPrintInfo);
+  NSPrintInfo *GetCocoaPrintInfo() { return mPrintInfo; }
+  void SetCocoaPrintInfo(NSPrintInfo *aPrintInfo);
   virtual nsresult ReadPageFormatFromPrefs();
   virtual nsresult WritePageFormatToPrefs();
   virtual nsresult GetEffectivePageSize(double *aWidth,
-      double *aHeight) override;
+                                        double *aHeight) override;
   void GetFilePageSize(double *aWidth, double *aHeight);
 
   
@@ -68,25 +70,26 @@ public:
   NS_IMETHOD SetScaling(double aScaling) override;
   NS_IMETHOD GetScaling(double *aScaling) override;
 
-  NS_IMETHOD SetToFileName(const nsAString& aToFileName) override;
+  NS_IMETHOD SetToFileName(const nsAString &aToFileName) override;
 
   NS_IMETHOD GetOrientation(int32_t *aOrientation) override;
   NS_IMETHOD SetOrientation(int32_t aOrientation) override;
 
   NS_IMETHOD SetUnwriteableMarginTop(double aUnwriteableMarginTop) override;
   NS_IMETHOD SetUnwriteableMarginLeft(double aUnwriteableMarginLeft) override;
-  NS_IMETHOD SetUnwriteableMarginBottom(double aUnwriteableMarginBottom) override;
+  NS_IMETHOD SetUnwriteableMarginBottom(
+      double aUnwriteableMarginBottom) override;
   NS_IMETHOD SetUnwriteableMarginRight(double aUnwriteableMarginRight) override;
 
   void SetAdjustedPaperSize(double aWidth, double aHeight);
   void GetAdjustedPaperSize(double *aWidth, double *aHeight);
   nsresult SetCocoaPaperSize(double aWidth, double aHeight);
 
-protected:
+ protected:
   virtual ~nsPrintSettingsX();
 
-  nsPrintSettingsX(const nsPrintSettingsX& src);
-  nsPrintSettingsX& operator=(const nsPrintSettingsX& rhs);
+  nsPrintSettingsX(const nsPrintSettingsX &src);
+  nsPrintSettingsX &operator=(const nsPrintSettingsX &rhs);
 
   nsresult _Clone(nsIPrintSettings **_retval) override;
   nsresult _Assign(nsIPrintSettings *aPS) override;
@@ -94,10 +97,13 @@ protected:
   int GetCocoaUnit(int16_t aGeckoUnit);
 
   
-  OSStatus CreateDefaultPageFormat(PMPrintSession aSession, PMPageFormat& outFormat);
-  OSStatus CreateDefaultPrintSettings(PMPrintSession aSession, PMPrintSettings& outSettings);
+  
+  OSStatus CreateDefaultPageFormat(PMPrintSession aSession,
+                                   PMPageFormat &outFormat);
+  OSStatus CreateDefaultPrintSettings(PMPrintSession aSession,
+                                      PMPrintSettings &outSettings);
 
-  NSPrintInfo* mPrintInfo;
+  NSPrintInfo *mPrintInfo;
 
   
   
@@ -109,4 +115,4 @@ protected:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPrintSettingsX, NS_PRINTSETTINGSX_IID)
 
-#endif 
+#endif  

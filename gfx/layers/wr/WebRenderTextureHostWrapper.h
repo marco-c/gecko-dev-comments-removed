@@ -15,26 +15,24 @@ namespace layers {
 class WebRenderTextureHost;
 class AsyncImagePipelineManager;
 
-class WebRenderTextureHostWrapper
-{
+class WebRenderTextureHostWrapper {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebRenderTextureHostWrapper)
 
-public:
+ public:
   explicit WebRenderTextureHostWrapper(AsyncImagePipelineManager* aManager);
 
   void UpdateWebRenderTextureHost(WebRenderTextureHost* aTextureHost);
 
   wr::ExternalImageId GetExternalImageKey() { return mExternalImageId; }
 
-protected:
+ protected:
   virtual ~WebRenderTextureHostWrapper();
 
   RefPtr<WebRenderTextureHost> mWrTextureHost;
   wr::ExternalImageId mExternalImageId;
 };
 
+}  
+}  
 
-} 
-} 
-
-#endif 
+#endif  

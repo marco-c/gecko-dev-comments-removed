@@ -16,7 +16,7 @@
 #ifdef MOZ_WAYLAND
 #include <gdk/gdkwayland.h>
 #endif
-#include <X11/Xlib.h> 
+#include <X11/Xlib.h>  
 #include "X11UndefineNone.h"
 
 class nsWindow;
@@ -29,9 +29,8 @@ namespace widget {
 
 
 
-class WindowSurfaceProvider final
-{
-public:
+class WindowSurfaceProvider final {
+ public:
   WindowSurfaceProvider();
 
   
@@ -40,15 +39,11 @@ public:
 
 
 
-  void Initialize(
-      Display* aDisplay,
-      Window aWindow,
-      Visual* aVisual,
-      int aDepth,
-      bool aIsShaped);
+  void Initialize(Display* aDisplay, Window aWindow, Visual* aVisual,
+                  int aDepth, bool aIsShaped);
 
 #ifdef MOZ_WAYLAND
-   void Initialize(nsWindow *aWidget);
+  void Initialize(nsWindow* aWidget);
 #endif
 
   
@@ -58,29 +53,28 @@ public:
 
   void CleanupResources();
 
-  already_AddRefed<gfx::DrawTarget>
-  StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
-                             layers::BufferMode* aBufferMode);
+  already_AddRefed<gfx::DrawTarget> StartRemoteDrawingInRegion(
+      LayoutDeviceIntRegion& aInvalidRegion, layers::BufferMode* aBufferMode);
   void EndRemoteDrawingInRegion(gfx::DrawTarget* aDrawTarget,
                                 LayoutDeviceIntRegion& aInvalidRegion);
 
-private:
+ private:
   UniquePtr<WindowSurface> CreateWindowSurface();
 
   
-  bool        mIsX11Display;
-  Display*    mXDisplay;
-  Window      mXWindow;
-  Visual*     mXVisual;
-  int         mXDepth;
+  bool mIsX11Display;
+  Display* mXDisplay;
+  Window mXWindow;
+  Visual* mXVisual;
+  int mXDepth;
   UniquePtr<WindowSurface> mWindowSurface;
 #ifdef MOZ_WAYLAND
-  nsWindow*   mWidget;
+  nsWindow* mWidget;
 #endif
-  bool        mIsShaped;
+  bool mIsShaped;
 };
 
 }  
 }  
 
-#endif 
+#endif  

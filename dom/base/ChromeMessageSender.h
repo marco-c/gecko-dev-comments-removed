@@ -14,12 +14,10 @@ namespace dom {
 
 class MessageBroadcaster;
 
-class ChromeMessageSender final : public MessageSender
-{
-public:
+class ChromeMessageSender final : public MessageSender {
+ public:
   explicit ChromeMessageSender(MessageBroadcaster* aParentManager)
-    : MessageSender(nullptr, aParentManager, MessageManagerFlags::MM_CHROME)
-  {
+      : MessageSender(nullptr, aParentManager, MessageManagerFlags::MM_CHROME) {
     
     
   }
@@ -29,23 +27,20 @@ public:
 
   
   void LoadFrameScript(const nsAString& aUrl, bool aAllowDelayedLoad,
-                       bool aRunInGlobalScope, mozilla::ErrorResult& aError)
-  {
+                       bool aRunInGlobalScope, mozilla::ErrorResult& aError) {
     LoadScript(aUrl, aAllowDelayedLoad, aRunInGlobalScope, aError);
   }
-  void RemoveDelayedFrameScript(const nsAString& aURL)
-  {
+  void RemoveDelayedFrameScript(const nsAString& aURL) {
     RemoveDelayedScript(aURL);
   }
   void GetDelayedFrameScripts(JSContext* aCx,
                               nsTArray<nsTArray<JS::Value>>& aScripts,
-                              mozilla::ErrorResult& aError)
-  {
+                              mozilla::ErrorResult& aError) {
     GetDelayedScripts(aCx, aScripts, aError);
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

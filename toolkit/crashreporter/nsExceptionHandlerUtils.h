@@ -9,4 +9,4 @@
 
 bool SimpleNoCLibDtoA(double aValue, char* aBuffer, int aBufferLength);
 
-#endif 
+#endif  

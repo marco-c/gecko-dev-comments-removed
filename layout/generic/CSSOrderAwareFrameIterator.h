@@ -54,28 +54,28 @@ namespace mozilla {
 
 
 
-template<typename Iterator>
-class CSSOrderAwareFrameIteratorT
-{
-public:
+template <typename Iterator>
+class CSSOrderAwareFrameIteratorT {
+ public:
   enum OrderState { eUnknownOrder, eKnownOrdered, eKnownUnordered };
   enum ChildFilter { eSkipPlaceholders, eIncludeAll };
   enum OrderingProperty {
-    eUseOrder,          
-    eUseBoxOrdinalGroup 
+    eUseOrder,           
+    eUseBoxOrdinalGroup  
   };
   CSSOrderAwareFrameIteratorT(nsIFrame* aContainer,
                               nsIFrame::ChildListID aListID,
                               ChildFilter aFilter = eSkipPlaceholders,
                               OrderState aState = eUnknownOrder,
                               OrderingProperty aOrderProp = eUseOrder)
-    : mChildren(aContainer->GetChildList(aListID))
-    , mArrayIndex(0)
-    , mItemIndex(0)
-    , mSkipPlaceholders(aFilter == eSkipPlaceholders)
+      : mChildren(aContainer->GetChildList(aListID)),
+        mArrayIndex(0),
+        mItemIndex(0),
+        mSkipPlaceholders(aFilter == eSkipPlaceholders)
 #ifdef DEBUG
-    , mContainer(aContainer)
-    , mListID(aListID)
+        ,
+        mContainer(aContainer),
+        mListID(aListID)
 #endif
   {
     MOZ_ASSERT(aContainer->IsFlexOrGridContainer(),
@@ -96,9 +96,8 @@ public:
           
           
           
-          uint32_t clampedBoxOrdinal =
-            std::min(child->StyleXUL()->mBoxOrdinal,
-                     static_cast<uint32_t>(INT32_MAX));
+          uint32_t clampedBoxOrdinal = std::min(
+              child->StyleXUL()->mBoxOrdinal, static_cast<uint32_t>(INT32_MAX));
           order = static_cast<int32_t>(clampedBoxOrdinal);
         } else {
           order = child->StylePosition()->mOrder;
@@ -115,14 +114,14 @@ public:
       mIter.emplace(begin(mChildren));
       mIterEnd.emplace(end(mChildren));
     } else {
-      count *= 2; 
+      count *= 2;  
       mArray.emplace(count);
       for (Iterator i(begin(mChildren)), iEnd(end(mChildren)); i != iEnd; ++i) {
         mArray->AppendElement(*i);
       }
       auto comparator = (aOrderProp == eUseBoxOrdinalGroup)
-        ? CSSBoxOrdinalGroupComparator
-        : CSSOrderComparator;
+                            ? CSSBoxOrdinalGroupComparator
+                            : CSSOrderComparator;
 
       
       std::stable_sort(mArray->begin(), mArray->end(), comparator);
@@ -132,8 +131,7 @@ public:
       SkipPlaceholders();
     }
   }
-  ~CSSOrderAwareFrameIteratorT()
-  {
+  ~CSSOrderAwareFrameIteratorT() {
     MOZ_ASSERT(IsForward() == mItemCount.isNothing());
   }
 
@@ -141,8 +139,7 @@ public:
   Iterator begin(const nsFrameList& aList);
   Iterator end(const nsFrameList& aList);
 
-  nsIFrame* operator*() const
-  {
+  nsIFrame* operator*() const {
     MOZ_ASSERT(!AtEnd());
     if (mIter.isSome()) {
       return **mIter;
@@ -154,8 +151,7 @@ public:
 
 
 
-  size_t ItemIndex() const
-  {
+  size_t ItemIndex() const {
     MOZ_ASSERT(!AtEnd());
     MOZ_ASSERT(!(**this)->IsPlaceholderFrame(),
                "MUST not call this when at a placeholder");
@@ -164,8 +160,7 @@ public:
     return mItemIndex;
   }
 
-  void SetItemCount(size_t aItemCount)
-  {
+  void SetItemCount(size_t aItemCount) {
 #ifndef CLANG_CRASH_BUG
     MOZ_ASSERT(mIter.isSome() || aItemCount <= mArray->Length(),
                "item count mismatch");
@@ -179,8 +174,7 @@ public:
   
 
 
-  void SkipPlaceholders()
-  {
+  void SkipPlaceholders() {
     if (mIter.isSome()) {
       for (; *mIter != *mIterEnd; ++*mIter) {
         nsIFrame* child = **mIter;
@@ -198,8 +192,7 @@ public:
     }
   }
 
-  bool AtEnd() const
-  {
+  bool AtEnd() const {
 #ifndef CLANG_CRASH_BUG
     
     MOZ_ASSERT(mIter.isSome() || mArrayIndex <= mArray->Length());
@@ -207,13 +200,12 @@ public:
     return mIter ? (*mIter == *mIterEnd) : mArrayIndex >= mArray->Length();
   }
 
-  void Next()
-  {
+  void Next() {
 #ifdef DEBUG
     MOZ_ASSERT(!AtEnd());
     nsFrameList list = mContainer->GetChildList(mListID);
     MOZ_ASSERT(list.FirstChild() == mChildren.FirstChild() &&
-               list.LastChild() == mChildren.LastChild(),
+                   list.LastChild() == mChildren.LastChild(),
                "the list of child frames must not change while iterating!");
 #endif
     if (mSkipPlaceholders || !(**this)->IsPlaceholderFrame()) {
@@ -229,8 +221,7 @@ public:
     }
   }
 
-  void Reset(ChildFilter aFilter = eSkipPlaceholders)
-  {
+  void Reset(ChildFilter aFilter = eSkipPlaceholders) {
     if (mIter.isSome()) {
       mIter.reset();
       mIter.emplace(begin(mChildren));
@@ -248,8 +239,7 @@ public:
 
   bool IsValid() const { return mIter.isSome() || mArray.isSome(); }
 
-  void Invalidate()
-  {
+  void Invalidate() {
     mIter.reset();
     mArray.reset();
     mozWritePoison(&mChildren, sizeof(mChildren));
@@ -258,8 +248,10 @@ public:
   bool ItemsAreAlreadyInOrder() const { return mIter.isSome(); }
 
   static bool CSSOrderComparator(nsIFrame* const& a, nsIFrame* const& b);
-  static bool CSSBoxOrdinalGroupComparator(nsIFrame* const& a, nsIFrame* const& b);
-private:
+  static bool CSSBoxOrdinalGroupComparator(nsIFrame* const& a,
+                                           nsIFrame* const& b);
+
+ private:
   nsFrameList mChildren;
   
   Maybe<Iterator> mIter;
@@ -282,10 +274,10 @@ private:
 };
 
 typedef CSSOrderAwareFrameIteratorT<nsFrameList::iterator>
-  CSSOrderAwareFrameIterator;
+    CSSOrderAwareFrameIterator;
 typedef CSSOrderAwareFrameIteratorT<nsFrameList::reverse_iterator>
-  ReverseCSSOrderAwareFrameIterator;
+    ReverseCSSOrderAwareFrameIterator;
 
-} 
+}  
 
-#endif 
+#endif  

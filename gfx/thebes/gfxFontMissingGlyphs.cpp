@@ -20,11 +20,16 @@ using namespace mozilla::gfx;
 
 #define X 255
 static const uint8_t gMiniFontData[] = {
-    0,X,0, 0,X,0, X,X,X, X,X,X, X,0,X, X,X,X, X,X,X, X,X,X, X,X,X, X,X,X, X,X,X, X,X,0, 0,X,X, X,X,0, X,X,X, X,X,X,
-    X,0,X, 0,X,0, 0,0,X, 0,0,X, X,0,X, X,0,0, X,0,0, 0,0,X, X,0,X, X,0,X, X,0,X, X,0,X, X,0,0, X,0,X, X,0,0, X,0,0,
-    X,0,X, 0,X,0, X,X,X, X,X,X, X,X,X, X,X,X, X,X,X, 0,0,X, X,X,X, X,X,X, X,X,X, X,X,0, X,0,0, X,0,X, X,X,X, X,X,X,
-    X,0,X, 0,X,0, X,0,0, 0,0,X, 0,0,X, 0,0,X, X,0,X, 0,0,X, X,0,X, 0,0,X, X,0,X, X,0,X, X,0,0, X,0,X, X,0,0, X,0,0,
-    0,X,0, 0,X,0, X,X,X, X,X,X, 0,0,X, X,X,X, X,X,X, 0,0,X, X,X,X, 0,0,X, X,0,X, X,X,0, 0,X,X, X,X,0, X,X,X, X,0,0,
+    0, X, 0, 0, X, 0, X, X, X, X, X, X, X, 0, X, X, X, X, X, X, X, X, X, X,
+    X, X, X, X, X, X, X, X, X, X, X, 0, 0, X, X, X, X, 0, X, X, X, X, X, X,
+    X, 0, X, 0, X, 0, 0, 0, X, 0, 0, X, X, 0, X, X, 0, 0, X, 0, 0, 0, 0, X,
+    X, 0, X, X, 0, X, X, 0, X, X, 0, X, X, 0, 0, X, 0, X, X, 0, 0, X, 0, 0,
+    X, 0, X, 0, X, 0, X, X, X, X, X, X, X, X, X, X, X, X, X, X, X, 0, 0, X,
+    X, X, X, X, X, X, X, X, X, X, X, 0, X, 0, 0, X, 0, X, X, X, X, X, X, X,
+    X, 0, X, 0, X, 0, X, 0, 0, 0, 0, X, 0, 0, X, 0, 0, X, X, 0, X, 0, 0, X,
+    X, 0, X, 0, 0, X, X, 0, X, X, 0, X, X, 0, 0, X, 0, X, X, 0, 0, X, 0, 0,
+    0, X, 0, 0, X, 0, X, X, X, X, X, X, 0, 0, X, X, X, X, X, X, X, 0, 0, X,
+    X, X, X, 0, 0, X, X, 0, X, X, X, 0, 0, X, X, X, X, 0, X, X, X, X, 0, 0,
 };
 #undef X
 
@@ -83,86 +88,80 @@ static Color gGlyphColor;
 
 
 
-static bool
-MakeGlyphAtlas(const Color& aColor)
-{
-    gGlyphAtlas = nullptr;
+static bool MakeGlyphAtlas(const Color& aColor) {
+  gGlyphAtlas = nullptr;
+  if (!gGlyphDrawTarget) {
+    gGlyphDrawTarget =
+        gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
+            IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT),
+            SurfaceFormat::B8G8R8A8);
     if (!gGlyphDrawTarget) {
-        gGlyphDrawTarget = gfxPlatform::GetPlatform()->CreateOffscreenContentDrawTarget(
-            IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT), SurfaceFormat::B8G8R8A8);
-        if (!gGlyphDrawTarget) {
-            return false;
-        }
+      return false;
     }
+  }
+  if (!gGlyphMask) {
+    gGlyphMask = gGlyphDrawTarget->CreateSourceSurfaceFromData(
+        const_cast<uint8_t*>(gMiniFontData),
+        IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT), MINIFONT_WIDTH * 16,
+        SurfaceFormat::A8);
     if (!gGlyphMask) {
-        gGlyphMask = gGlyphDrawTarget->CreateSourceSurfaceFromData(
-            const_cast<uint8_t*>(gMiniFontData), IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT),
-            MINIFONT_WIDTH * 16, SurfaceFormat::A8);
-        if (!gGlyphMask) {
-            return false;
-        }
+      return false;
     }
-    gGlyphDrawTarget->MaskSurface(ColorPattern(aColor), gGlyphMask, Point(0, 0),
-                                  DrawOptions(1.0f, CompositionOp::OP_SOURCE));
-    gGlyphAtlas = gGlyphDrawTarget->Snapshot();
-    if (!gGlyphAtlas) {
-        return false;
-    }
-    gGlyphColor = aColor;
-    return true;
+  }
+  gGlyphDrawTarget->MaskSurface(ColorPattern(aColor), gGlyphMask, Point(0, 0),
+                                DrawOptions(1.0f, CompositionOp::OP_SOURCE));
+  gGlyphAtlas = gGlyphDrawTarget->Snapshot();
+  if (!gGlyphAtlas) {
+    return false;
+  }
+  gGlyphColor = aColor;
+  return true;
 }
 
 
 
 
-static inline already_AddRefed<SourceSurface>
-GetGlyphAtlas(const Color& aColor)
-{
-    
-    Color color(aColor.r, aColor.g, aColor.b);
-    if ((gGlyphAtlas && gGlyphColor == color) || MakeGlyphAtlas(color)) {
-        return do_AddRef(gGlyphAtlas);
-    }
-    return nullptr;
+
+static inline already_AddRefed<SourceSurface> GetGlyphAtlas(
+    const Color& aColor) {
+  
+  
+  Color color(aColor.r, aColor.g, aColor.b);
+  if ((gGlyphAtlas && gGlyphColor == color) || MakeGlyphAtlas(color)) {
+    return do_AddRef(gGlyphAtlas);
+  }
+  return nullptr;
 }
 
 
 
 
-static void
-PurgeGlyphAtlas()
-{
-    gGlyphAtlas = nullptr;
-    gGlyphDrawTarget = nullptr;
-    gGlyphMask = nullptr;
+static void PurgeGlyphAtlas() {
+  gGlyphAtlas = nullptr;
+  gGlyphDrawTarget = nullptr;
+  gGlyphMask = nullptr;
 }
 
 
 
-class WRUserData : public layers::LayerUserData, public LinkedListElement<WRUserData>
-{
-public:
-    explicit WRUserData(layers::WebRenderLayerManager* aManager);
+class WRUserData : public layers::LayerUserData,
+                   public LinkedListElement<WRUserData> {
+ public:
+  explicit WRUserData(layers::WebRenderLayerManager* aManager);
 
-    ~WRUserData();
+  ~WRUserData();
 
-    static void
-    Assign(layers::WebRenderLayerManager* aManager)
-    {
-        if (!aManager->HasUserData(&sWRUserDataKey)) {
-            aManager->SetUserData(&sWRUserDataKey, new WRUserData(aManager));
-        }
+  static void Assign(layers::WebRenderLayerManager* aManager) {
+    if (!aManager->HasUserData(&sWRUserDataKey)) {
+      aManager->SetUserData(&sWRUserDataKey, new WRUserData(aManager));
     }
+  }
 
-    void
-    Remove()
-    {
-        mManager->RemoveUserData(&sWRUserDataKey);
-    }
+  void Remove() { mManager->RemoveUserData(&sWRUserDataKey); }
 
-    layers::WebRenderLayerManager* mManager;
+  layers::WebRenderLayerManager* mManager;
 
-    static UserDataKey sWRUserDataKey;
+  static UserDataKey sWRUserDataKey;
 };
 
 static RefPtr<SourceSurface> gWRGlyphAtlas[8];
@@ -172,345 +171,327 @@ UserDataKey WRUserData::sWRUserDataKey;
 
 
 
-static already_AddRefed<SourceSurface>
-MakeWRGlyphAtlas(const Matrix* aMat)
-{
-    IntSize size(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT);
+static already_AddRefed<SourceSurface> MakeWRGlyphAtlas(const Matrix* aMat) {
+  IntSize size(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT);
+  
+  if (aMat && aMat->_11 == 0) {
+    std::swap(size.width, size.height);
+  }
+  RefPtr<DrawTarget> ref =
+      gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
+  RefPtr<DrawTarget> dt =
+      gfxPlatform::GetPlatform()->CreateSimilarSoftwareDrawTarget(
+          ref, size, SurfaceFormat::B8G8R8A8);
+  if (!dt) {
+    return nullptr;
+  }
+  if (aMat) {
     
-    if (aMat && aMat->_11 == 0) {
-        std::swap(size.width, size.height);
-    }
-    RefPtr<DrawTarget> ref = gfxPlatform::GetPlatform()->ScreenReferenceDrawTarget();
-    RefPtr<DrawTarget> dt = gfxPlatform::GetPlatform()->CreateSimilarSoftwareDrawTarget(
-            ref, size, SurfaceFormat::B8G8R8A8);
-    if (!dt) {
-        return nullptr;
-    }
-    if (aMat) {
-        
-        
-        dt->SetTransform(aMat->_11 == 0 ?
-            Matrix(0.0f, copysign(1.0f, aMat->_12),
-                   copysign(1.0f, aMat->_21), 0.0f,
-                   aMat->_21 < 0 ? MINIFONT_HEIGHT : 0.0f,
-                   aMat->_12 < 0 ? MINIFONT_WIDTH * 16 : 0.0f) :
-            Matrix(copysign(1.0f, aMat->_11), 0.0f,
-                   0.0f, copysign(1.0f, aMat->_22),
-                   aMat->_11 < 0 ? MINIFONT_WIDTH * 16 : 0.0f,
-                   aMat->_22 < 0 ? MINIFONT_HEIGHT : 0.0f));
-    }
-    RefPtr<SourceSurface> mask = dt->CreateSourceSurfaceFromData(
-        const_cast<uint8_t*>(gMiniFontData), IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT),
-        MINIFONT_WIDTH * 16, SurfaceFormat::A8);
-    if (!mask) {
-        return nullptr;
-    }
-    dt->MaskSurface(ColorPattern(Color(1.0f, 1.0f, 1.0f)), mask, Point(0, 0));
-    return dt->Snapshot();
+    
+    dt->SetTransform(aMat->_11 == 0
+                         ? Matrix(0.0f, copysign(1.0f, aMat->_12),
+                                  copysign(1.0f, aMat->_21), 0.0f,
+                                  aMat->_21 < 0 ? MINIFONT_HEIGHT : 0.0f,
+                                  aMat->_12 < 0 ? MINIFONT_WIDTH * 16 : 0.0f)
+                         : Matrix(copysign(1.0f, aMat->_11), 0.0f, 0.0f,
+                                  copysign(1.0f, aMat->_22),
+                                  aMat->_11 < 0 ? MINIFONT_WIDTH * 16 : 0.0f,
+                                  aMat->_22 < 0 ? MINIFONT_HEIGHT : 0.0f));
+  }
+  RefPtr<SourceSurface> mask = dt->CreateSourceSurfaceFromData(
+      const_cast<uint8_t*>(gMiniFontData),
+      IntSize(MINIFONT_WIDTH * 16, MINIFONT_HEIGHT), MINIFONT_WIDTH * 16,
+      SurfaceFormat::A8);
+  if (!mask) {
+    return nullptr;
+  }
+  dt->MaskSurface(ColorPattern(Color(1.0f, 1.0f, 1.0f)), mask, Point(0, 0));
+  return dt->Snapshot();
 }
 
 
 
 
-static void
-PurgeWRGlyphAtlas()
-{
-    
-    
-    
-    for (WRUserData* user : gWRUsers) {
-        auto* manager = user->mManager;
-        for (size_t i = 0; i < 8; i++) {
-            if (gWRGlyphAtlas[i]) {
-                uint32_t handle =
-                    (uint32_t)(uintptr_t)gWRGlyphAtlas[i]->GetUserData(
-                        reinterpret_cast<UserDataKey*>(manager));
-                if (handle) {
-                    manager->AddImageKeyForDiscard(
-                        wr::ImageKey{manager->WrBridge()->GetNamespace(), handle});
-                }
-            }
-        }
-    }
-    
-    
-    while (!gWRUsers.isEmpty()) {
-        gWRUsers.popFirst()->Remove();
-    }
-    
+static void PurgeWRGlyphAtlas() {
+  
+  
+  
+  for (WRUserData* user : gWRUsers) {
+    auto* manager = user->mManager;
     for (size_t i = 0; i < 8; i++) {
-        gWRGlyphAtlas[i] = nullptr;
+      if (gWRGlyphAtlas[i]) {
+        uint32_t handle = (uint32_t)(uintptr_t)gWRGlyphAtlas[i]->GetUserData(
+            reinterpret_cast<UserDataKey*>(manager));
+        if (handle) {
+          manager->AddImageKeyForDiscard(
+              wr::ImageKey{manager->WrBridge()->GetNamespace(), handle});
+        }
+      }
     }
+  }
+  
+  
+  while (!gWRUsers.isEmpty()) {
+    gWRUsers.popFirst()->Remove();
+  }
+  
+  for (size_t i = 0; i < 8; i++) {
+    gWRGlyphAtlas[i] = nullptr;
+  }
 }
 
 WRUserData::WRUserData(layers::WebRenderLayerManager* aManager)
-    : mManager(aManager)
-{
-    gWRUsers.insertFront(this);
+    : mManager(aManager) {
+  gWRUsers.insertFront(this);
 }
 
-WRUserData::~WRUserData()
-{
-    
-    
-    if (isInList()) {
-        for (size_t i = 0; i < 8; i++) {
-            if (gWRGlyphAtlas[i]) {
-                gWRGlyphAtlas[i]->RemoveUserData(reinterpret_cast<UserDataKey*>(mManager));
-            }
-        }
+WRUserData::~WRUserData() {
+  
+  
+  if (isInList()) {
+    for (size_t i = 0; i < 8; i++) {
+      if (gWRGlyphAtlas[i]) {
+        gWRGlyphAtlas[i]->RemoveUserData(
+            reinterpret_cast<UserDataKey*>(mManager));
+      }
     }
+  }
 }
 
-static already_AddRefed<SourceSurface>
-GetWRGlyphAtlas(DrawTarget& aDrawTarget, const Matrix* aMat)
-{
-    uint32_t key = 0;
+static already_AddRefed<SourceSurface> GetWRGlyphAtlas(DrawTarget& aDrawTarget,
+                                                       const Matrix* aMat) {
+  uint32_t key = 0;
+  
+  if (aMat) {
+    if (aMat->_11 == 0) {
+      key |= 4 | (aMat->_12 < 0 ? 1 : 0) | (aMat->_21 < 0 ? 2 : 0);
+    } else {
+      key |= (aMat->_11 < 0 ? 1 : 0) | (aMat->_22 < 0 ? 2 : 0);
+    }
+  }
+  
+  RefPtr<SourceSurface> atlas = gWRGlyphAtlas[key];
+  if (!atlas) {
+    atlas = MakeWRGlyphAtlas(aMat);
+    gWRGlyphAtlas[key] = atlas;
+  }
+  
+  
+  auto* tdt = static_cast<layout::TextDrawTarget*>(&aDrawTarget);
+  auto* manager = tdt->WrLayerManager();
+  if (!atlas->GetUserData(reinterpret_cast<UserDataKey*>(manager))) {
     
-    if (aMat) {
-        if (aMat->_11 == 0) {
-            key |= 4 | (aMat->_12 < 0 ? 1 : 0) | (aMat->_21 < 0 ? 2 : 0);
-        } else {
-            key |= (aMat->_11 < 0 ? 1 : 0) | (aMat->_22 < 0 ? 2 : 0);
-        }
+    RefPtr<DataSourceSurface> dataSurface = atlas->GetDataSurface();
+    if (!dataSurface) {
+      return nullptr;
+    }
+    DataSourceSurface::ScopedMap map(dataSurface, DataSourceSurface::READ);
+    if (!map.IsMapped()) {
+      return nullptr;
     }
     
-    RefPtr<SourceSurface> atlas = gWRGlyphAtlas[key];
-    if (!atlas) {
-        atlas = MakeWRGlyphAtlas(aMat);
-        gWRGlyphAtlas[key] = atlas;
+    Maybe<wr::ImageKey> result = tdt->DefineImage(
+        atlas->GetSize(), map.GetStride(), atlas->GetFormat(), map.GetData());
+    if (!result.isSome()) {
+      return nullptr;
     }
+    
+    atlas->AddUserData(reinterpret_cast<UserDataKey*>(manager),
+                       (void*)(uintptr_t)result.value().mHandle, nullptr);
+    
+    
+    WRUserData::Assign(manager);
+  }
+  return atlas.forget();
+}
+
+static void DrawHexChar(uint32_t aDigit, Float aLeft, Float aTop,
+                        DrawTarget& aDrawTarget, SourceSurface* aAtlas,
+                        const Color& aColor, const Matrix* aMat = nullptr) {
+  Rect dest(aLeft, aTop, MINIFONT_WIDTH, MINIFONT_HEIGHT);
+  if (aDrawTarget.GetBackendType() == BackendType::WEBRENDER_TEXT) {
     
     
     auto* tdt = static_cast<layout::TextDrawTarget*>(&aDrawTarget);
     auto* manager = tdt->WrLayerManager();
-    if (!atlas->GetUserData(reinterpret_cast<UserDataKey*>(manager))) {
-        
-        RefPtr<DataSourceSurface> dataSurface = atlas->GetDataSurface();
-        if (!dataSurface) {
-            return nullptr;
-        }
-        DataSourceSurface::ScopedMap map(dataSurface, DataSourceSurface::READ);
-        if (!map.IsMapped()) {
-            return nullptr;
-        }
-        
-        Maybe<wr::ImageKey> result =
-            tdt->DefineImage(atlas->GetSize(),
-                             map.GetStride(),
-                             atlas->GetFormat(),
-                             map.GetData());
-        if (!result.isSome()) {
-            return nullptr;
-        }
-        
-        atlas->AddUserData(reinterpret_cast<UserDataKey*>(manager),
-                           (void*)(uintptr_t)result.value().mHandle,
-                           nullptr);
-        
-        
-        WRUserData::Assign(manager);
-    }
-    return atlas.forget();
-}
-
-static void
-DrawHexChar(uint32_t aDigit, Float aLeft, Float aTop, DrawTarget& aDrawTarget,
-            SourceSurface* aAtlas, const Color& aColor,
-            const Matrix* aMat = nullptr)
-{
-    Rect dest(aLeft, aTop, MINIFONT_WIDTH, MINIFONT_HEIGHT);
-    if (aDrawTarget.GetBackendType() == BackendType::WEBRENDER_TEXT) {
-        
-        
-        auto* tdt = static_cast<layout::TextDrawTarget*>(&aDrawTarget);
-        auto* manager = tdt->WrLayerManager();
-        wr::ImageKey key = {
-            manager->WrBridge()->GetNamespace(),
-            (uint32_t)(uintptr_t)aAtlas->GetUserData(reinterpret_cast<UserDataKey*>(manager))
-        };
-        
-        
-        Rect bounds(aLeft - aDigit * MINIFONT_WIDTH, aTop, MINIFONT_WIDTH * 16, MINIFONT_HEIGHT);
-        if (aMat) {
-            
-            
-            bounds = aMat->TransformRect(bounds);
-            bounds.x += std::min(bounds.width, 0.0f);
-            bounds.y += std::min(bounds.height, 0.0f);
-            bounds.width = fabs(bounds.width);
-            bounds.height = fabs(bounds.height);
-            dest = aMat->TransformRect(dest);
-            dest.x += std::min(dest.width, 0.0f);
-            dest.y += std::min(dest.height, 0.0f);
-            dest.width = fabs(dest.width);
-            dest.height = fabs(dest.height);
-        }
-        
-        tdt->PushImage(key,
-                       wr::ToLayoutRect(bounds),
-                       wr::ToLayoutRect(dest),
-                       wr::ImageRendering::Pixelated,
-                       wr::ToColorF(aColor));
-    } else {
-        
-        
-        
-        aDrawTarget.DrawSurface(aAtlas,
-                                dest,
-                                Rect(aDigit * MINIFONT_WIDTH, 0, MINIFONT_WIDTH, MINIFONT_HEIGHT),
-                                DrawSurfaceOptions(SamplingFilter::POINT),
-                                DrawOptions(aColor.a, CompositionOp::OP_OVER, AntialiasMode::NONE));
-    }
-}
-
-void
-gfxFontMissingGlyphs::Purge()
-{
-    PurgeGlyphAtlas();
-    PurgeWRGlyphAtlas();
-}
-
-#else 
-
-void
-gfxFontMissingGlyphs::Purge()
-{
-}
-
-#endif
-
-void
-gfxFontMissingGlyphs::Shutdown()
-{
-    Purge();
-}
-
-void
-gfxFontMissingGlyphs::DrawMissingGlyph(uint32_t aChar,
-                                       const Rect& aRect,
-                                       DrawTarget& aDrawTarget,
-                                       const Pattern& aPattern,
-                                       uint32_t aAppUnitsPerDevPixel,
-                                       const Matrix* aMat)
-{
-    Rect rect(aRect);
+    wr::ImageKey key = {manager->WrBridge()->GetNamespace(),
+                        (uint32_t)(uintptr_t)aAtlas->GetUserData(
+                            reinterpret_cast<UserDataKey*>(manager))};
     
+    
+    
+    Rect bounds(aLeft - aDigit * MINIFONT_WIDTH, aTop, MINIFONT_WIDTH * 16,
+                MINIFONT_HEIGHT);
     if (aMat) {
-        rect.MoveBy(-aRect.BottomLeft());
-        rect = aMat->TransformBounds(rect);
-        rect.MoveBy(aRect.BottomLeft());
+      
+      
+      bounds = aMat->TransformRect(bounds);
+      bounds.x += std::min(bounds.width, 0.0f);
+      bounds.y += std::min(bounds.height, 0.0f);
+      bounds.width = fabs(bounds.width);
+      bounds.height = fabs(bounds.height);
+      dest = aMat->TransformRect(dest);
+      dest.x += std::min(dest.width, 0.0f);
+      dest.y += std::min(dest.height, 0.0f);
+      dest.width = fabs(dest.width);
+      dest.height = fabs(dest.height);
     }
+    
+    tdt->PushImage(key, wr::ToLayoutRect(bounds), wr::ToLayoutRect(dest),
+                   wr::ImageRendering::Pixelated, wr::ToColorF(aColor));
+  } else {
+    
+    
+    
+    aDrawTarget.DrawSurface(
+        aAtlas, dest,
+        Rect(aDigit * MINIFONT_WIDTH, 0, MINIFONT_WIDTH, MINIFONT_HEIGHT),
+        DrawSurfaceOptions(SamplingFilter::POINT),
+        DrawOptions(aColor.a, CompositionOp::OP_OVER, AntialiasMode::NONE));
+  }
+}
 
-    
-    
-    Color color = aPattern.GetType() == PatternType::COLOR ?
-        static_cast<const ColorPattern&>(aPattern).mColor :
-        ToDeviceColor(Color(0.f, 0.f, 0.f, 1.f));
+void gfxFontMissingGlyphs::Purge() {
+  PurgeGlyphAtlas();
+  PurgeWRGlyphAtlas();
+}
 
-    
-    
-    
-    Float halfBorderWidth = BOX_BORDER_WIDTH / 2.0;
-    Float borderLeft = rect.X() + BOX_HORIZONTAL_INSET + halfBorderWidth;
-    Float borderRight = rect.XMost() - BOX_HORIZONTAL_INSET - halfBorderWidth;
-    Rect borderStrokeRect(borderLeft, rect.Y() + halfBorderWidth,
-                          borderRight - borderLeft,
-                          rect.Height() - 2.0 * halfBorderWidth);
-    if (!borderStrokeRect.IsEmpty()) {
-        ColorPattern adjustedColor(color);
-        adjustedColor.mColor.a *= BOX_BORDER_OPACITY;
-#ifdef MOZ_GFX_OPTIMIZE_MOBILE
-        aDrawTarget.FillRect(borderStrokeRect, adjustedColor);
-#else
-        StrokeOptions strokeOptions(BOX_BORDER_WIDTH);
-        aDrawTarget.StrokeRect(borderStrokeRect, adjustedColor, strokeOptions);
+#else  
+
+void gfxFontMissingGlyphs::Purge() {}
+
 #endif
-    }
+
+void gfxFontMissingGlyphs::Shutdown() { Purge(); }
+
+void gfxFontMissingGlyphs::DrawMissingGlyph(uint32_t aChar, const Rect& aRect,
+                                            DrawTarget& aDrawTarget,
+                                            const Pattern& aPattern,
+                                            uint32_t aAppUnitsPerDevPixel,
+                                            const Matrix* aMat) {
+  Rect rect(aRect);
+  
+  if (aMat) {
+    rect.MoveBy(-aRect.BottomLeft());
+    rect = aMat->TransformBounds(rect);
+    rect.MoveBy(aRect.BottomLeft());
+  }
+
+  
+  
+  Color color = aPattern.GetType() == PatternType::COLOR
+                    ? static_cast<const ColorPattern&>(aPattern).mColor
+                    : ToDeviceColor(Color(0.f, 0.f, 0.f, 1.f));
+
+  
+  
+  
+  Float halfBorderWidth = BOX_BORDER_WIDTH / 2.0;
+  Float borderLeft = rect.X() + BOX_HORIZONTAL_INSET + halfBorderWidth;
+  Float borderRight = rect.XMost() - BOX_HORIZONTAL_INSET - halfBorderWidth;
+  Rect borderStrokeRect(borderLeft, rect.Y() + halfBorderWidth,
+                        borderRight - borderLeft,
+                        rect.Height() - 2.0 * halfBorderWidth);
+  if (!borderStrokeRect.IsEmpty()) {
+    ColorPattern adjustedColor(color);
+    adjustedColor.mColor.a *= BOX_BORDER_OPACITY;
+#ifdef MOZ_GFX_OPTIMIZE_MOBILE
+    aDrawTarget.FillRect(borderStrokeRect, adjustedColor);
+#else
+    StrokeOptions strokeOptions(BOX_BORDER_WIDTH);
+    aDrawTarget.StrokeRect(borderStrokeRect, adjustedColor, strokeOptions);
+#endif
+  }
 
 #ifndef MOZ_GFX_OPTIMIZE_MOBILE
-    RefPtr<SourceSurface> atlas =
-        aDrawTarget.GetBackendType() == BackendType::WEBRENDER_TEXT ?
-            GetWRGlyphAtlas(aDrawTarget, aMat) :
-            GetGlyphAtlas(color);
-    if (!atlas) {
-        return;
-    }
+  RefPtr<SourceSurface> atlas =
+      aDrawTarget.GetBackendType() == BackendType::WEBRENDER_TEXT
+          ? GetWRGlyphAtlas(aDrawTarget, aMat)
+          : GetGlyphAtlas(color);
+  if (!atlas) {
+    return;
+  }
 
-    Point center = rect.Center();
-    Float halfGap = HEX_CHAR_GAP / 2.f;
-    Float top = -(MINIFONT_HEIGHT + halfGap);
+  Point center = rect.Center();
+  Float halfGap = HEX_CHAR_GAP / 2.f;
+  Float top = -(MINIFONT_HEIGHT + halfGap);
+  
+  
+  int32_t devPixelsPerCSSPx =
+      std::max<int32_t>(1, AppUnitsPerCSSPixel() / aAppUnitsPerDevPixel);
+
+  Matrix tempMat;
+  if (aMat) {
     
     
-    int32_t devPixelsPerCSSPx =
-        std::max<int32_t>(1, AppUnitsPerCSSPixel() /
-                             aAppUnitsPerDevPixel);
+    
+    tempMat = Matrix(*aMat)
+                  .PostScale(devPixelsPerCSSPx, devPixelsPerCSSPx)
+                  .PostTranslate(center);
+    aMat = &tempMat;
+  } else {
+    
+    
+    tempMat = aDrawTarget.GetTransform();
+    aDrawTarget.SetTransform(Matrix(tempMat).PreTranslate(center).PreScale(
+        devPixelsPerCSSPx, devPixelsPerCSSPx));
+  }
 
-    Matrix tempMat;
-    if (aMat) {
-        
-        
-        
-        tempMat = Matrix(*aMat).PostScale(devPixelsPerCSSPx, devPixelsPerCSSPx)
-                               .PostTranslate(center);
-        aMat = &tempMat;
-    } else {
-        
-        
-        tempMat = aDrawTarget.GetTransform();
-        aDrawTarget.SetTransform(
-            Matrix(tempMat).PreTranslate(center)
-                           .PreScale(devPixelsPerCSSPx, devPixelsPerCSSPx));
+  if (aChar < 0x10000) {
+    if (rect.Width() >= 2 * (MINIFONT_WIDTH + HEX_CHAR_GAP) &&
+        rect.Height() >= 2 * MINIFONT_HEIGHT + HEX_CHAR_GAP) {
+      
+      Float left = -(MINIFONT_WIDTH + halfGap);
+      DrawHexChar((aChar >> 12) & 0xF, left, top, aDrawTarget, atlas, color,
+                  aMat);
+      DrawHexChar((aChar >> 8) & 0xF, halfGap, top, aDrawTarget, atlas, color,
+                  aMat);
+      DrawHexChar((aChar >> 4) & 0xF, left, halfGap, aDrawTarget, atlas, color,
+                  aMat);
+      DrawHexChar(aChar & 0xF, halfGap, halfGap, aDrawTarget, atlas, color,
+                  aMat);
     }
+  } else {
+    if (rect.Width() >= 3 * (MINIFONT_WIDTH + HEX_CHAR_GAP) &&
+        rect.Height() >= 2 * MINIFONT_HEIGHT + HEX_CHAR_GAP) {
+      
+      Float first = -(MINIFONT_WIDTH * 1.5 + HEX_CHAR_GAP);
+      Float second = -(MINIFONT_WIDTH / 2.0);
+      Float third = (MINIFONT_WIDTH / 2.0 + HEX_CHAR_GAP);
+      DrawHexChar((aChar >> 20) & 0xF, first, top, aDrawTarget, atlas, color,
+                  aMat);
+      DrawHexChar((aChar >> 16) & 0xF, second, top, aDrawTarget, atlas, color,
+                  aMat);
+      DrawHexChar((aChar >> 12) & 0xF, third, top, aDrawTarget, atlas, color,
+                  aMat);
+      DrawHexChar((aChar >> 8) & 0xF, first, halfGap, aDrawTarget, atlas, color,
+                  aMat);
+      DrawHexChar((aChar >> 4) & 0xF, second, halfGap, aDrawTarget, atlas,
+                  color, aMat);
+      DrawHexChar(aChar & 0xF, third, halfGap, aDrawTarget, atlas, color, aMat);
+    }
+  }
 
-    if (aChar < 0x10000) {
-        if (rect.Width() >= 2 * (MINIFONT_WIDTH + HEX_CHAR_GAP) &&
-            rect.Height() >= 2 * MINIFONT_HEIGHT + HEX_CHAR_GAP) {
-            
-            Float left = -(MINIFONT_WIDTH + halfGap);
-            DrawHexChar((aChar >> 12) & 0xF, left, top, aDrawTarget, atlas, color, aMat);
-            DrawHexChar((aChar >> 8) & 0xF, halfGap, top, aDrawTarget, atlas, color, aMat);
-            DrawHexChar((aChar >> 4) & 0xF, left, halfGap, aDrawTarget, atlas, color, aMat);
-            DrawHexChar(aChar & 0xF, halfGap, halfGap, aDrawTarget, atlas, color, aMat);
-        }
-    } else {
-        if (rect.Width() >= 3 * (MINIFONT_WIDTH + HEX_CHAR_GAP) &&
-            rect.Height() >= 2 * MINIFONT_HEIGHT + HEX_CHAR_GAP) {
-            
-            Float first = -(MINIFONT_WIDTH * 1.5 + HEX_CHAR_GAP);
-            Float second = -(MINIFONT_WIDTH / 2.0);
-            Float third = (MINIFONT_WIDTH / 2.0 + HEX_CHAR_GAP);
-            DrawHexChar((aChar >> 20) & 0xF, first, top, aDrawTarget, atlas, color, aMat);
-            DrawHexChar((aChar >> 16) & 0xF, second, top, aDrawTarget, atlas, color, aMat);
-            DrawHexChar((aChar >> 12) & 0xF, third, top, aDrawTarget, atlas, color, aMat);
-            DrawHexChar((aChar >> 8) & 0xF, first, halfGap, aDrawTarget, atlas, color, aMat);
-            DrawHexChar((aChar >> 4) & 0xF, second, halfGap, aDrawTarget, atlas, color, aMat);
-            DrawHexChar(aChar & 0xF, third, halfGap, aDrawTarget, atlas, color, aMat);
-        }
-    }
-
-    if (!aMat) {
-        
-        
-        aDrawTarget.SetTransform(tempMat);
-    }
+  if (!aMat) {
+    
+    
+    aDrawTarget.SetTransform(tempMat);
+  }
 #endif
 }
 
-Float
-gfxFontMissingGlyphs::GetDesiredMinWidth(uint32_t aChar,
-                                         uint32_t aAppUnitsPerDevPixel)
-{
+Float gfxFontMissingGlyphs::GetDesiredMinWidth(uint32_t aChar,
+                                               uint32_t aAppUnitsPerDevPixel) {
+  
 
 
 
-
-    Float width = BOX_HORIZONTAL_INSET + BOX_BORDER_WIDTH + HEX_CHAR_GAP +
-        MINIFONT_WIDTH + HEX_CHAR_GAP + MINIFONT_WIDTH +
-         ((aChar < 0x10000) ? 0 : HEX_CHAR_GAP + MINIFONT_WIDTH) +
-        HEX_CHAR_GAP + BOX_BORDER_WIDTH + BOX_HORIZONTAL_INSET;
-    
-    
-    width *= Float(AppUnitsPerCSSPixel()) / aAppUnitsPerDevPixel;
-    return width;
+  Float width = BOX_HORIZONTAL_INSET + BOX_BORDER_WIDTH + HEX_CHAR_GAP +
+                MINIFONT_WIDTH + HEX_CHAR_GAP + MINIFONT_WIDTH +
+                ((aChar < 0x10000) ? 0 : HEX_CHAR_GAP + MINIFONT_WIDTH) +
+                HEX_CHAR_GAP + BOX_BORDER_WIDTH + BOX_HORIZONTAL_INSET;
+  
+  
+  width *= Float(AppUnitsPerCSSPixel()) / aAppUnitsPerDevPixel;
+  return width;
 }

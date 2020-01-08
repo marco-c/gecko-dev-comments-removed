@@ -28,12 +28,13 @@ static const size_t MaxCodeBytesPerProcess = 1 * 1024 * 1024 * 1024;
 static const size_t ExecutableCodePageSize = 64 * 1024;
 
 enum class ProtectionSetting {
-    Protected, 
-    Writable,
-    Executable,
+  Protected,  
+  Writable,
+  Executable,
 };
 
-extern MOZ_MUST_USE bool ReprotectRegion(void* start, size_t size, ProtectionSetting protection);
+extern MOZ_MUST_USE bool ReprotectRegion(void* start, size_t size,
+                                         ProtectionSetting protection);
 
 
 
@@ -41,7 +42,8 @@ extern MOZ_MUST_USE bool InitProcessExecutableMemory();
 extern void ReleaseProcessExecutableMemory();
 
 
-extern void* AllocateExecutableMemory(size_t bytes, ProtectionSetting protection,
+extern void* AllocateExecutableMemory(size_t bytes,
+                                      ProtectionSetting protection,
                                       MemCheckKind checkKind);
 extern void DeallocateExecutableMemory(void* addr, size_t bytes);
 
@@ -58,7 +60,7 @@ extern bool CanLikelyAllocateMoreExecutableMemory();
 
 extern size_t LikelyAvailableExecutableMemory();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

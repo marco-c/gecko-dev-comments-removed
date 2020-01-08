@@ -23,15 +23,14 @@ namespace mozilla {
 namespace dom {
 class EventTarget;
 class KeyboardEvent;
-} 
-} 
+}  
+}  
 
 
 
 
-class nsMenuBarListener final : public nsIDOMEventListener
-{
-public:
+class nsMenuBarListener final : public nsIDOMEventListener {
+ public:
   explicit nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
                              nsIContent* aMenuBarContent);
 
@@ -61,7 +60,7 @@ public:
 
   static bool IsAccessKeyPressed(mozilla::dom::KeyboardEvent* aEvent);
 
-protected:
+ protected:
   virtual ~nsMenuBarListener();
 
   nsresult KeyUp(mozilla::dom::Event* aMouseEvent);
@@ -74,15 +73,16 @@ protected:
 
   static void InitAccessKey();
 
-  static mozilla::Modifiers
-    GetModifiersForAccessKey(mozilla::dom::KeyboardEvent* event);
+  static mozilla::Modifiers GetModifiersForAccessKey(
+      mozilla::dom::KeyboardEvent* event);
 
   
 
 
 
 
-  nsMenuFrame* GetMenuForKeyEvent(mozilla::dom::KeyboardEvent* aKeyEvent, bool aPeek);
+  nsMenuFrame* GetMenuForKeyEvent(mozilla::dom::KeyboardEvent* aKeyEvent,
+                                  bool aPeek);
 
   
 
@@ -117,4 +117,4 @@ protected:
   static mozilla::Modifiers mAccessKeyMask;
 };
 
-#endif 
+#endif  

@@ -13,8 +13,7 @@ class nsIDocument;
 
 namespace mozilla {
 
-enum class FullscreenEventType
-{
+enum class FullscreenEventType {
   Change,
   Error,
 };
@@ -23,24 +22,18 @@ enum class FullscreenEventType
 
 
 
-class PendingFullscreenEvent
-{
-public:
-  PendingFullscreenEvent(FullscreenEventType aType,
-                         nsIDocument* aDocument,
+class PendingFullscreenEvent {
+ public:
+  PendingFullscreenEvent(FullscreenEventType aType, nsIDocument* aDocument,
                          nsINode* aTarget)
-    : mDocument(aDocument)
-    , mTarget(aTarget)
-    , mType(aType)
-  {
+      : mDocument(aDocument), mTarget(aTarget), mType(aType) {
     MOZ_ASSERT(aDocument);
     MOZ_ASSERT(aTarget);
   }
 
   nsIDocument* Document() const { return mDocument; }
 
-  void Dispatch()
-  {
+  void Dispatch() {
 #ifdef DEBUG
     MOZ_ASSERT(!mDispatched);
     mDispatched = true;
@@ -54,14 +47,14 @@ public:
         name = NS_LITERAL_STRING("fullscreenerror");
         break;
     }
-    nsINode* target = mTarget->GetComposedDoc() == mDocument
-      ? mTarget.get() : mDocument.get();
+    nsINode* target = mTarget->GetComposedDoc() == mDocument ? mTarget.get()
+                                                             : mDocument.get();
     Unused << nsContentUtils::DispatchTrustedEvent(
-      mDocument, target, name,
-      CanBubble::eYes, Cancelable::eNo, Composed::eYes);
+        mDocument, target, name, CanBubble::eYes, Cancelable::eNo,
+        Composed::eYes);
   }
 
-private:
+ private:
   nsCOMPtr<nsIDocument> mDocument;
   nsCOMPtr<nsINode> mTarget;
   FullscreenEventType mType;
@@ -70,6 +63,6 @@ private:
 #endif
 };
 
-} 
+}  
 
-#endif 
+#endif  

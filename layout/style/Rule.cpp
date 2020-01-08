@@ -30,15 +30,9 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE_0(Rule)
 
-bool
-Rule::IsCCLeaf() const
-{
-  return !PreservingWrapper();
-}
+bool Rule::IsCCLeaf() const { return !PreservingWrapper(); }
 
-bool
-Rule::IsKnownLive() const
-{
+bool Rule::IsKnownLive() const {
   if (HasKnownLiveWrapper()) {
     return true;
   }
@@ -53,7 +47,7 @@ Rule::IsKnownLive() const
   }
 
   return nsCCUncollectableMarker::InGeneration(
-    GetComposedDoc()->GetMarkedCCGeneration());
+      GetComposedDoc()->GetMarkedCCGeneration());
 }
 
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(Rule)
@@ -64,32 +58,21 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_IN_CC_BEGIN(Rule)
   
   
   
-  return tmp->IsCCLeaf() ||
-    (tmp->IsKnownLive() && tmp->HasNothingToTrace(tmp));
+  return tmp->IsCCLeaf() || (tmp->IsKnownLive() && tmp->HasNothingToTrace(tmp));
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_IN_CC_END
 
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_BEGIN(Rule)
   return tmp->IsCCLeaf() || tmp->IsKnownLive();
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_THIS_END
 
- void
-Rule::DropSheetReference()
-{
-  mSheet = nullptr;
-}
+ void Rule::DropSheetReference() { mSheet = nullptr; }
 
-void
-Rule::SetCssText(const nsAString& aCssText)
-{
+void Rule::SetCssText(const nsAString& aCssText) {
   
   
 }
 
-Rule*
-Rule::GetParentRule() const
-{
-  return mParentRule;
-}
+Rule* Rule::GetParentRule() const { return mParentRule; }
 
-} 
-} 
+}  
+}  

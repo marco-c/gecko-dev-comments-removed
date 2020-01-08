@@ -28,25 +28,18 @@ namespace gfx {
 
 
 
-class BorrowedCairoContext
-{
-public:
-  BorrowedCairoContext()
-    : mCairo(nullptr)
-    , mDT(nullptr)
-  { }
+class BorrowedCairoContext {
+ public:
+  BorrowedCairoContext() : mCairo(nullptr), mDT(nullptr) {}
 
-  explicit BorrowedCairoContext(DrawTarget *aDT)
-    : mDT(aDT)
-  {
+  explicit BorrowedCairoContext(DrawTarget *aDT) : mDT(aDT) {
     mCairo = BorrowCairoContextFromDrawTarget(aDT);
   }
 
   
   
   
-  cairo_t *Init(DrawTarget *aDT)
-  {
+  cairo_t *Init(DrawTarget *aDT) {
     MOZ_ASSERT(!mDT, "Can't initialize twice!");
     mDT = aDT;
     return mCairo = BorrowCairoContextFromDrawTarget(aDT);
@@ -57,21 +50,19 @@ public:
   
   
   
-  void Finish()
-  {
+  void Finish() {
     if (mCairo) {
       ReturnCairoContextToDrawTarget(mDT, mCairo);
       mCairo = nullptr;
     }
   }
 
-  ~BorrowedCairoContext() {
-    MOZ_ASSERT(!mCairo);
-  }
+  ~BorrowedCairoContext() { MOZ_ASSERT(!mCairo); }
 
   cairo_t *mCairo;
-private:
-  static cairo_t* BorrowCairoContextFromDrawTarget(DrawTarget *aDT);
+
+ private:
+  static cairo_t *BorrowCairoContextFromDrawTarget(DrawTarget *aDT);
   static void ReturnCairoContextToDrawTarget(DrawTarget *aDT, cairo_t *aCairo);
   DrawTarget *mDT;
 };
@@ -83,26 +74,23 @@ private:
 
 
 
-class BorrowedXlibDrawable
-{
-public:
+class BorrowedXlibDrawable {
+ public:
   BorrowedXlibDrawable()
-    : mDT(nullptr),
-      mDisplay(nullptr),
-      mDrawable(X11None),
-      mScreen(nullptr),
-      mVisual(nullptr),
-      mXRenderFormat(nullptr)
-  {}
+      : mDT(nullptr),
+        mDisplay(nullptr),
+        mDrawable(X11None),
+        mScreen(nullptr),
+        mVisual(nullptr),
+        mXRenderFormat(nullptr) {}
 
   explicit BorrowedXlibDrawable(DrawTarget *aDT)
-    : mDT(nullptr),
-      mDisplay(nullptr),
-      mDrawable(X11None),
-      mScreen(nullptr),
-      mVisual(nullptr),
-      mXRenderFormat(nullptr)
-  {
+      : mDT(nullptr),
+        mDisplay(nullptr),
+        mDrawable(X11None),
+        mScreen(nullptr),
+        mVisual(nullptr),
+        mXRenderFormat(nullptr) {
     Init(aDT);
   }
 
@@ -118,9 +106,7 @@ public:
   
   void Finish();
 
-  ~BorrowedXlibDrawable() {
-    MOZ_ASSERT(!mDrawable);
-  }
+  ~BorrowedXlibDrawable() { MOZ_ASSERT(!mDrawable); }
 
   Display *GetDisplay() const { return mDisplay; }
   Drawable GetDrawable() const { return mDrawable; }
@@ -129,9 +115,9 @@ public:
   IntSize GetSize() const { return mSize; }
   Point GetOffset() const { return mOffset; }
 
-  XRenderPictFormat* GetXRenderFormat() const { return mXRenderFormat; }
+  XRenderPictFormat *GetXRenderFormat() const { return mXRenderFormat; }
 
-private:
+ private:
   DrawTarget *mDT;
   Display *mDisplay;
   Drawable mDrawable;
@@ -150,17 +136,11 @@ private:
 
 
 
-class BorrowedCGContext
-{
-public:
-  BorrowedCGContext()
-    : cg(nullptr)
-    , mDT(nullptr)
-  { }
+class BorrowedCGContext {
+ public:
+  BorrowedCGContext() : cg(nullptr), mDT(nullptr) {}
 
-  explicit BorrowedCGContext(DrawTarget *aDT)
-    : mDT(aDT)
-  {
+  explicit BorrowedCGContext(DrawTarget *aDT) : mDT(aDT) {
     MOZ_ASSERT(aDT, "Caller should check for nullptr");
     cg = BorrowCGContextFromDrawTarget(aDT);
   }
@@ -168,8 +148,7 @@ public:
   
   
   
-  CGContextRef Init(DrawTarget *aDT)
-  {
+  CGContextRef Init(DrawTarget *aDT) {
     MOZ_ASSERT(aDT, "Caller should check for nullptr");
     MOZ_ASSERT(!mDT, "Can't initialize twice!");
     mDT = aDT;
@@ -182,20 +161,18 @@ public:
   
   
   
-  void Finish()
-  {
+  void Finish() {
     if (cg) {
       ReturnCGContextToDrawTarget(mDT, cg);
       cg = nullptr;
     }
   }
 
-  ~BorrowedCGContext() {
-    MOZ_ASSERT(!cg);
-  }
+  ~BorrowedCGContext() { MOZ_ASSERT(!cg); }
 
   CGContextRef cg;
-private:
+
+ private:
 #ifdef USE_SKIA
   static CGContextRef BorrowCGContextFromDrawTarget(DrawTarget *aDT);
   static void ReturnCGContextToDrawTarget(DrawTarget *aDT, CGContextRef cg);
@@ -212,7 +189,7 @@ private:
 };
 #endif
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

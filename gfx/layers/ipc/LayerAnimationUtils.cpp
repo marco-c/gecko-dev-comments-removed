@@ -5,8 +5,8 @@
 
 
 #include "LayerAnimationUtils.h"
-#include "mozilla/ComputedTimingFunction.h" 
-#include "mozilla/layers/LayersMessages.h" 
+#include "mozilla/ComputedTimingFunction.h"  
+#include "mozilla/layers/LayersMessages.h"   
 #include "nsTimingFunction.h"
 
 namespace mozilla {
@@ -14,8 +14,7 @@ namespace layers {
 
  Maybe<ComputedTimingFunction>
 AnimationUtils::TimingFunctionToComputedTimingFunction(
-  const TimingFunction& aTimingFunction)
-{
+    const TimingFunction& aTimingFunction) {
   switch (aTimingFunction.type()) {
     case TimingFunction::Tnull_t:
       return Nothing();
@@ -30,12 +29,11 @@ AnimationUtils::TimingFunctionToComputedTimingFunction(
       return Some(ComputedTimingFunction::Steps(sf.steps(), pos));
     }
     default:
-      MOZ_ASSERT_UNREACHABLE(
-        "Function must be null, bezier, step or frames");
+      MOZ_ASSERT_UNREACHABLE("Function must be null, bezier, step or frames");
       break;
   }
   return Nothing();
 }
 
-} 
-} 
+}  
+}  

@@ -39,7 +39,6 @@
 
 
 
-
 #include "LulCommonExt.h"
 
 #include <stdlib.h>
@@ -48,7 +47,6 @@
 #include <string>
 #include <map>
 
-
 namespace lul {
 
 using std::string;
@@ -56,16 +54,11 @@ using std::string;
 
 
 
-Module::Module(const string &name, const string &os,
-               const string &architecture, const string &id) :
-    name_(name),
-    os_(os),
-    architecture_(architecture),
-    id_(id) { }
+Module::Module(const string& name, const string& os, const string& architecture,
+               const string& id)
+    : name_(name), os_(os), architecture_(architecture), id_(id) {}
 
-Module::~Module() {
-}
-
+Module::~Module() {}
 
 
 
@@ -77,30 +70,23 @@ class UniqueString {
   const char* str_;
 };
 
-const char* FromUniqueString(const UniqueString* ustr)
-{
-  return ustr->str_;
-}
+const char* FromUniqueString(const UniqueString* ustr) { return ustr->str_; }
 
-bool IsEmptyUniqueString(const UniqueString* ustr)
-{
+bool IsEmptyUniqueString(const UniqueString* ustr) {
   return (ustr->str_)[0] == '\0';
 }
 
 
 
 
-
-UniqueStringUniverse::~UniqueStringUniverse()
-{
+UniqueStringUniverse::~UniqueStringUniverse() {
   for (std::map<string, UniqueString*>::iterator it = map_.begin();
        it != map_.end(); it++) {
     delete it->second;
   }
 }
 
-const UniqueString* UniqueStringUniverse::ToUniqueString(string str)
-{
+const UniqueString* UniqueStringUniverse::ToUniqueString(string str) {
   std::map<string, UniqueString*>::iterator it = map_.find(str);
   if (it == map_.end()) {
     UniqueString* ustr = new UniqueString(str);

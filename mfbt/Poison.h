@@ -25,10 +25,7 @@ extern MFBT_DATA uintptr_t gMozillaPoisonValue;
 
 
 
-inline uintptr_t mozPoisonValue()
-{
-  return gMozillaPoisonValue;
-}
+inline uintptr_t mozPoisonValue() { return gMozillaPoisonValue; }
 
 
 
@@ -36,8 +33,7 @@ inline uintptr_t mozPoisonValue()
 
 
 
-inline void mozWritePoison(void* aPtr, size_t aSize)
-{
+inline void mozWritePoison(void* aPtr, size_t aSize) {
   const uintptr_t POISON = mozPoisonValue();
   char* p = (char*)aPtr;
   char* limit = p + (aSize & ~(sizeof(uintptr_t) - 1));
@@ -68,11 +64,8 @@ namespace mozilla {
 
 
 class CorruptionCanaryForStatics {
-public:
-  constexpr CorruptionCanaryForStatics()
-    : mValue(kCanarySet)
-  {
-  }
+ public:
+  constexpr CorruptionCanaryForStatics() : mValue(kCanarySet) {}
 
   
   ~CorruptionCanaryForStatics() = default;
@@ -83,10 +76,10 @@ public:
     }
   }
 
-protected:
+ protected:
   uintptr_t mValue;
 
-private:
+ private:
   static const uintptr_t kCanarySet = 0x0f0b0f0b;
 };
 
@@ -106,9 +99,8 @@ private:
 
 
 
-
 class CorruptionCanary : public CorruptionCanaryForStatics {
-public:
+ public:
   constexpr CorruptionCanary() = default;
 
   ~CorruptionCanary() {
@@ -117,7 +109,7 @@ public:
   }
 };
 
-} 
+}  
 
 #endif
 

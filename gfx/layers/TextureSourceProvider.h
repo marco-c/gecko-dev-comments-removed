@@ -17,10 +17,10 @@ struct ID3D11Device;
 namespace mozilla {
 namespace gfx {
 class DataSourceSurface;
-} 
+}  
 namespace gl {
 class GLContext;
-} 
+}  
 namespace layers {
 
 class TextureHost;
@@ -29,16 +29,15 @@ class Compositor;
 
 
 
-class TextureSourceProvider
-{
-public:
+class TextureSourceProvider {
+ public:
   NS_INLINE_DECL_REFCOUNTING(TextureSourceProvider)
 
-  virtual already_AddRefed<DataTextureSource>
-  CreateDataTextureSource(TextureFlags aFlags = TextureFlags::NO_FLAGS) = 0;
+  virtual already_AddRefed<DataTextureSource> CreateDataTextureSource(
+      TextureFlags aFlags = TextureFlags::NO_FLAGS) = 0;
 
-  virtual already_AddRefed<DataTextureSource>
-  CreateDataTextureSourceAround(gfx::DataSourceSurface* aSurface) {
+  virtual already_AddRefed<DataTextureSource> CreateDataTextureSourceAround(
+      gfx::DataSourceSurface* aSurface) {
     return nullptr;
   }
 
@@ -84,21 +83,15 @@ public:
 
   
   
-  virtual Compositor* AsCompositor() {
-    return nullptr;
-  }
+  virtual Compositor* AsCompositor() { return nullptr; }
 
 #ifdef XP_WIN
   
-  virtual ID3D11Device* GetD3D11Device() const {
-    return nullptr;
-  }
+  virtual ID3D11Device* GetD3D11Device() const { return nullptr; }
 #endif
 
   
-  virtual gl::GLContext* GetGLContext() const {
-    return nullptr;
-  }
+  virtual gl::GLContext* GetGLContext() const { return nullptr; }
 
   virtual int32_t GetMaxTextureSize() const = 0;
 
@@ -106,36 +99,33 @@ public:
   
   virtual bool IsValid() const = 0;
 
-public:
-  class MOZ_STACK_CLASS AutoReadUnlockTextures
-  {
-  public:
+ public:
+  class MOZ_STACK_CLASS AutoReadUnlockTextures {
+   public:
     explicit AutoReadUnlockTextures(TextureSourceProvider* aProvider)
-     : mProvider(aProvider)
-    {}
-    ~AutoReadUnlockTextures() {
-      mProvider->ReadUnlockTextures();
-    }
+        : mProvider(aProvider) {}
+    ~AutoReadUnlockTextures() { mProvider->ReadUnlockTextures(); }
 
-  private:
+   private:
     RefPtr<TextureSourceProvider> mProvider;
   };
 
-protected:
+ protected:
   
   void ReadUnlockTextures();
 
   virtual ~TextureSourceProvider();
 
-private:
+ private:
   
   nsTArray<RefPtr<TextureHost>> mUnlockAfterComposition;
 
   
+  
   nsTArray<RefPtr<TextureHost>> mNotifyNotUsedAfterComposition;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -66,7 +66,7 @@ class LinearHistogram;
 class Histogram {
  public:
   typedef int Sample;  
-  typedef int Count;  
+  typedef int Count;   
   static const Sample kSampleType_MAX = INT_MAX;
   
   static const size_t kBucketCount_MAX;
@@ -86,11 +86,7 @@ class Histogram {
     NOT_VALID_IN_RENDERER
   };
 
-  enum BucketLayout {
-    EXPONENTIAL,
-    LINEAR,
-    CUSTOM
-  };
+  enum BucketLayout { EXPONENTIAL, LINEAR, CUSTOM };
 
   enum Flags {
     kNoFlags = 0,
@@ -142,19 +138,11 @@ class Histogram {
 
     size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-    Count counts(size_t i) const {
-       return counts_[i];
-    }
+    Count counts(size_t i) const { return counts_[i]; }
     Count TotalCount() const;
-    int64_t sum() const {
-       return sum_;
-    }
-    int64_t redundant_count() const {
-       return redundant_count_;
-    }
-    size_t size() const {
-       return counts_.Length();
-    }
+    int64_t sum() const { return sum_; }
+    int64_t redundant_count() const { return redundant_count_; }
+    size_t size() const { return counts_.Length(); }
 
    protected:
     
@@ -163,7 +151,7 @@ class Histogram {
 
     
     
-    int64_t sum_;         
+    int64_t sum_;  
 
     
     
@@ -178,10 +166,8 @@ class Histogram {
   
   
   
-  static Histogram* FactoryGet(Sample minimum,
-                               Sample maximum,
-                               size_t bucket_count,
-                               Flags flags,
+  static Histogram* FactoryGet(Sample minimum, Sample maximum,
+                               size_t bucket_count, Flags flags,
                                const int* buckets);
 
   virtual ~Histogram();
@@ -193,9 +179,7 @@ class Histogram {
   virtual void AddBoolean(bool value);
 
   
-  void AddTime(TimeDelta time) {
-    Add(static_cast<int>(time.InMilliseconds()));
-  }
+  void AddTime(TimeDelta time) { Add(static_cast<int>(time.InMilliseconds())); }
 
   virtual void AddSampleSet(const SampleSet& sample);
 
@@ -207,7 +191,7 @@ class Histogram {
   
   
   
-  void SetFlags(Flags flags) { flags_ = static_cast<Flags> (flags_ | flags); }
+  void SetFlags(Flags flags) { flags_ = static_cast<Flags>(flags_ | flags); }
   void ClearFlags(Flags flags) { flags_ = static_cast<Flags>(flags_ & ~flags); }
   int flags() const { return flags_; }
 
@@ -334,10 +318,8 @@ class LinearHistogram : public Histogram {
 
   
 
-  static Histogram* FactoryGet(Sample minimum,
-                               Sample maximum,
-                               size_t bucket_count,
-                               Flags flags,
+  static Histogram* FactoryGet(Sample minimum, Sample maximum,
+                               size_t bucket_count, Flags flags,
                                const int* buckets);
 
   
@@ -347,7 +329,8 @@ class LinearHistogram : public Histogram {
 
   
   
-  virtual void SetRangeDescriptions(const DescriptionPair descriptions[]) override;
+  virtual void SetRangeDescriptions(
+      const DescriptionPair descriptions[]) override;
 
  protected:
   LinearHistogram(Sample minimum, Sample maximum, size_t bucket_count);
@@ -379,8 +362,7 @@ class LinearHistogram : public Histogram {
 
 class BooleanHistogram : public LinearHistogram {
  public:
-  static Histogram* FactoryGet(Flags flags,
-                               const int* buckets);
+  static Histogram* FactoryGet(Flags flags, const int* buckets);
 
   virtual ClassType histogram_type() const override;
 
@@ -397,11 +379,10 @@ class BooleanHistogram : public LinearHistogram {
 
 
 
-class FlagHistogram : public BooleanHistogram
-{
-public:
-  static Histogram *FactoryGet(Flags flags,
-                               const int* buckets);
+
+class FlagHistogram : public BooleanHistogram {
+ public:
+  static Histogram* FactoryGet(Flags flags, const int* buckets);
 
   virtual ClassType histogram_type() const override;
 
@@ -411,7 +392,7 @@ public:
 
   virtual void Clear() override;
 
-private:
+ private:
   explicit FlagHistogram();
   bool mSwitched;
 
@@ -419,11 +400,9 @@ private:
 };
 
 
-class CountHistogram : public LinearHistogram
-{
-public:
-  static Histogram *FactoryGet(Flags flags,
-                               const int* buckets);
+class CountHistogram : public LinearHistogram {
+ public:
+  static Histogram* FactoryGet(Flags flags, const int* buckets);
 
   virtual ClassType histogram_type() const override;
 
@@ -431,7 +410,7 @@ public:
 
   virtual void AddSampleSet(const SampleSet& sample) override;
 
-private:
+ private:
   explicit CountHistogram();
 
   DISALLOW_COPY_AND_ASSIGN(CountHistogram);

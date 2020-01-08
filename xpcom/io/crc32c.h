@@ -13,11 +13,10 @@ extern "C" {
 
 
 
-uint32_t
-ComputeCrc32c(uint32_t aCrc, const void *aBuf, size_t aSize);
+uint32_t ComputeCrc32c(uint32_t aCrc, const void *aBuf, size_t aSize);
 
 #ifdef __cplusplus
-} 
+}  
 #endif
 
-#endif 
+#endif  

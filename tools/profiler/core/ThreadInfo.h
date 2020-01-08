@@ -15,18 +15,17 @@
 
 
 
-class ThreadInfo final
-{
-public:
+class ThreadInfo final {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ThreadInfo)
 
-  ThreadInfo(const char* aName, int aThreadId, bool aIsMainThread,
-             const mozilla::TimeStamp& aRegisterTime = mozilla::TimeStamp::Now())
-    : mName(aName)
-    , mRegisterTime(aRegisterTime)
-    , mThreadId(aThreadId)
-    , mIsMainThread(aIsMainThread)
-  {
+  ThreadInfo(
+      const char* aName, int aThreadId, bool aIsMainThread,
+      const mozilla::TimeStamp& aRegisterTime = mozilla::TimeStamp::Now())
+      : mName(aName),
+        mRegisterTime(aRegisterTime),
+        mThreadId(aThreadId),
+        mIsMainThread(aIsMainThread) {
     
     MOZ_ASSERT(aThreadId >= 0, "native thread ID is < 0");
     MOZ_ASSERT(aThreadId <= INT32_MAX, "native thread ID is > INT32_MAX");
@@ -37,7 +36,7 @@ public:
   int ThreadId() const { return mThreadId; }
   bool IsMainThread() const { return mIsMainThread; }
 
-private:
+ private:
   ~ThreadInfo() {}
 
   const nsCString mName;

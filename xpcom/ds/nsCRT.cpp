@@ -18,8 +18,6 @@
 
 
 
-
-
 #include "nsCRT.h"
 #include "nsDebug.h"
 
@@ -28,14 +26,11 @@
 
 
 
+#define IS_DELIM(m, c) ((m)[(c) >> 3] & (1 << ((c)&7)))
+#define SET_DELIM(m, c) ((m)[(c) >> 3] |= (1 << ((c)&7)))
+#define DELIM_TABLE_SIZE 32
 
-#define IS_DELIM(m, c)          ((m)[(c) >> 3] & (1 << ((c) & 7)))
-#define SET_DELIM(m, c)         ((m)[(c) >> 3] |= (1 << ((c) & 7)))
-#define DELIM_TABLE_SIZE        32
-
-char*
-nsCRT::strtok(char* aString, const char* aDelims, char** aNewStr)
-{
+char* nsCRT::strtok(char* aString, const char* aDelims, char** aNewStr) {
   NS_ASSERTION(aString,
                "Unlike regular strtok, the first argument cannot be null.");
 
@@ -83,9 +78,7 @@ nsCRT::strtok(char* aString, const char* aDelims, char** aNewStr)
 
 
 
-int32_t
-nsCRT::strcmp(const char16_t* aStr1, const char16_t* aStr2)
-{
+int32_t nsCRT::strcmp(const char16_t* aStr1, const char16_t* aStr2) {
   if (aStr1 && aStr2) {
     for (;;) {
       char16_t c1 = *aStr1++;
@@ -113,9 +106,7 @@ nsCRT::strcmp(const char16_t* aStr1, const char16_t* aStr2)
 
 
 
-int64_t
-nsCRT::atoll(const char* aStr)
-{
+int64_t nsCRT::atoll(const char* aStr) {
   if (!aStr) {
     return 0;
   }
@@ -130,4 +121,3 @@ nsCRT::atoll(const char* aStr)
 
   return ll;
 }
-

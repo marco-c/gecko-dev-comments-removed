@@ -31,19 +31,16 @@ class Promise;
 
 
 
-class MIDIAccessManager final
-{
-public:
+class MIDIAccessManager final {
+ public:
   NS_INLINE_DECL_REFCOUNTING(MIDIAccessManager);
   
   
-  already_AddRefed<Promise>
-  RequestMIDIAccess(nsPIDOMWindowInner* aWindow,
-                    const MIDIOptions& aOptions,
-                    ErrorResult& aRv);
+  already_AddRefed<Promise> RequestMIDIAccess(nsPIDOMWindowInner* aWindow,
+                                              const MIDIOptions& aOptions,
+                                              ErrorResult& aRv);
   
-  void CreateMIDIAccess(nsPIDOMWindowInner* aWindow,
-                        bool aNeedsSysex,
+  void CreateMIDIAccess(nsPIDOMWindowInner* aWindow, bool aNeedsSysex,
                         Promise* aPromise);
   
   static MIDIAccessManager* Get();
@@ -56,7 +53,7 @@ public:
   
   void RemoveObserver(Observer<MIDIPortList>* aObserver);
 
-private:
+ private:
   MIDIAccessManager();
   ~MIDIAccessManager();
   
@@ -73,7 +70,7 @@ private:
   RefPtr<MIDIManagerChild> mChild;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

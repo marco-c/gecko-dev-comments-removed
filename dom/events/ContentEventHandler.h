@@ -21,11 +21,7 @@ struct nsRect;
 
 namespace mozilla {
 
-enum LineBreakType
-{
-  LINE_BREAK_TYPE_NATIVE,
-  LINE_BREAK_TYPE_XP
-};
+enum LineBreakType { LINE_BREAK_TYPE_NATIVE, LINE_BREAK_TYPE_XP };
 
 
 
@@ -35,34 +31,25 @@ enum LineBreakType
 
 
 
-class MOZ_STACK_CLASS ContentEventHandler
-{
-private:
+class MOZ_STACK_CLASS ContentEventHandler {
+ private:
   
 
 
 
 
-  class MOZ_STACK_CLASS RawRange final
-  {
-  public:
+  class MOZ_STACK_CLASS RawRange final {
+   public:
     RawRange() {}
 
-    void Clear()
-    {
+    void Clear() {
       mRoot = nullptr;
       mStart = RangeBoundary();
       mEnd = RangeBoundary();
     }
 
-    bool IsPositioned() const
-    {
-      return mStart.IsSet() && mEnd.IsSet();
-    }
-    bool Collapsed() const
-    {
-      return mStart == mEnd && IsPositioned();
-    }
+    bool IsPositioned() const { return mStart.IsSet() && mEnd.IsSet(); }
+    bool Collapsed() const { return mStart == mEnd && IsPositioned(); }
     nsINode* GetStartContainer() const { return mStart.Container(); }
     nsINode* GetEndContainer() const { return mEnd.Container(); }
     uint32_t StartOffset() const { return mStart.Offset(); }
@@ -74,8 +61,7 @@ private:
     const RangeBoundary& End() const { return mEnd; }
 
     
-    nsresult CollapseTo(const RawRangeBoundary& aBoundary)
-    {
+    nsresult CollapseTo(const RawRangeBoundary& aBoundary) {
       return SetStartAndEnd(aBoundary, aBoundary);
     }
     nsresult SetStart(const RawRangeBoundary& aStart);
@@ -97,7 +83,7 @@ private:
 
     nsresult SelectNodeContents(nsINode* aNodeToSelectContents);
 
-  private:
+   private:
     nsINode* IsValidBoundary(nsINode* aNode) const;
     inline void AssertStartIsBeforeOrEqualToEnd();
 
@@ -107,7 +93,7 @@ private:
     RangeBoundary mEnd;
   };
 
-public:
+ public:
   typedef dom::Selection Selection;
 
   explicit ContentEventHandler(nsPresContext* aPresContext);
@@ -139,7 +125,7 @@ public:
   
   nsresult OnSelectionEvent(WidgetSelectionEvent* aEvent);
 
-protected:
+ protected:
   nsCOMPtr<nsIDocument> mDocument;
   
   
@@ -164,7 +150,7 @@ protected:
 
   nsresult InitRootContent(Selection* aNormalSelection);
 
-public:
+ public:
   
   
 
@@ -174,69 +160,47 @@ public:
   
   
   
-  struct MOZ_STACK_CLASS NodePosition : public RangeBoundary
-  {
+  struct MOZ_STACK_CLASS NodePosition : public RangeBoundary {
     
     
     bool mAfterOpenTag = true;
 
-    NodePosition()
-      : RangeBoundary()
-    {
-    }
+    NodePosition() : RangeBoundary() {}
 
     NodePosition(nsINode* aContainer, int32_t aOffset)
-      : RangeBoundary(aContainer, aOffset)
-    {
-    }
+        : RangeBoundary(aContainer, aOffset) {}
 
     NodePosition(nsINode* aContainer, nsIContent* aRef)
-      : RangeBoundary(aContainer, aRef)
-    {
-    }
+        : RangeBoundary(aContainer, aRef) {}
 
     explicit NodePosition(const nsIFrame::ContentOffsets& aContentOffsets)
-      : RangeBoundary(aContentOffsets.content, aContentOffsets.offset)
-    {
-    }
+        : RangeBoundary(aContentOffsets.content, aContentOffsets.offset) {}
 
-  public:
-    bool operator==(const NodePosition& aOther) const
-    {
+   public:
+    bool operator==(const NodePosition& aOther) const {
       return RangeBoundary::operator==(aOther) &&
-        mAfterOpenTag == aOther.mAfterOpenTag;
+             mAfterOpenTag == aOther.mAfterOpenTag;
     }
 
-    bool IsBeforeOpenTag() const
-    {
-      return IsSet() &&
-        Container()->IsElement() &&
-        !Ref() &&
-        !mAfterOpenTag;
+    bool IsBeforeOpenTag() const {
+      return IsSet() && Container()->IsElement() && !Ref() && !mAfterOpenTag;
     }
-    bool IsImmediatelyAfterOpenTag() const
-    {
-      return IsSet() &&
-        Container()->IsElement() &&
-        !Ref() &&
-        mAfterOpenTag;
+    bool IsImmediatelyAfterOpenTag() const {
+      return IsSet() && Container()->IsElement() && !Ref() && mAfterOpenTag;
     }
   };
 
   
   
   
-  struct NodePositionBefore final : public NodePosition
-  {
+  struct NodePositionBefore final : public NodePosition {
     NodePositionBefore(nsINode* aContainer, int32_t aOffset)
-      : NodePosition(aContainer, aOffset)
-    {
+        : NodePosition(aContainer, aOffset) {
       mAfterOpenTag = false;
     }
 
     NodePositionBefore(nsINode* aContainer, nsIContent* aRef)
-      : NodePosition(aContainer, aRef)
-    {
+        : NodePosition(aContainer, aRef) {
       mAfterOpenTag = false;
     }
   };
@@ -278,7 +242,7 @@ public:
   static uint32_t GetNativeTextLengthBefore(nsIContent* aContent,
                                             nsINode* aRootNode);
 
-protected:
+ protected:
   
   static uint32_t GetTextLength(nsIContent* aContent,
                                 LineBreakType aLineBreakType,
@@ -294,24 +258,20 @@ protected:
   
   
   
-  nsresult GenerateFlatTextContent(nsIContent* aContent,
-                                   nsString& aString,
+  nsresult GenerateFlatTextContent(nsIContent* aContent, nsString& aString,
                                    LineBreakType aLineBreakType);
   
-  nsresult GenerateFlatTextContent(const RawRange& aRawRange,
-                                   nsString& aString,
+  nsresult GenerateFlatTextContent(const RawRange& aRawRange, nsString& aString,
                                    LineBreakType aLineBreakType);
   
   
   
-  nsresult GetStartOffset(const RawRange& aRawRange,
-                          uint32_t* aOffset,
+  nsresult GetStartOffset(const RawRange& aRawRange, uint32_t* aOffset,
                           LineBreakType aLineBreakType);
   
   
   
-  static bool ShouldBreakLineBefore(nsIContent* aContent,
-                                    nsINode* aRootNode);
+  static bool ShouldBreakLineBefore(nsIContent* aContent, nsINode* aRootNode);
   
   static inline uint32_t GetBRLength(LineBreakType aLineBreakType);
   static LineBreakType GetLineBreakType(WidgetQueryContentEvent* aEvent);
@@ -327,8 +287,7 @@ protected:
   
   
   
-  nsresult SetRawRangeFromFlatTextOffset(RawRange* aRawRange,
-                                         uint32_t aOffset,
+  nsresult SetRawRangeFromFlatTextOffset(RawRange* aRawRange, uint32_t aOffset,
                                          uint32_t aLength,
                                          LineBreakType aLineBreakType,
                                          bool aExpandToClusterBoundaries,
@@ -339,8 +298,7 @@ protected:
   nsresult AdjustCollapsedRangeMaybeIntoTextNode(RawRange& aCollapsedRawRange);
   
   
-  nsresult ConvertToRootRelativeOffset(nsIFrame* aFrame,
-                                       nsRect& aRect);
+  nsresult ConvertToRootRelativeOffset(nsIFrame* aFrame, nsRect& aRect);
   
   
   nsresult ExpandToClusterBoundary(nsIContent* aContent, bool aForward,
@@ -348,10 +306,8 @@ protected:
 
   typedef nsTArray<mozilla::FontRange> FontRangeArray;
   static void AppendFontRanges(FontRangeArray& aFontRanges,
-                               nsIContent* aContent,
-                               uint32_t aBaseOffset,
-                               uint32_t aXPStartOffset,
-                               uint32_t aXPEndOffset,
+                               nsIContent* aContent, uint32_t aBaseOffset,
+                               uint32_t aXPStartOffset, uint32_t aXPEndOffset,
                                LineBreakType aLineBreakType);
   nsresult GenerateFlatFontRanges(const RawRange& aRawRange,
                                   FontRangeArray& aFontRanges,
@@ -361,8 +317,7 @@ protected:
                                 LayoutDeviceIntRect& aRect,
                                 WritingMode& aWritingMode);
 
-  struct MOZ_STACK_CLASS FrameAndNodeOffset final
-  {
+  struct MOZ_STACK_CLASS FrameAndNodeOffset final {
     
     
     
@@ -372,17 +327,10 @@ protected:
     
     int32_t mOffsetInNode;
 
-    FrameAndNodeOffset()
-      : mFrame(nullptr)
-      , mOffsetInNode(-1)
-    {
-    }
+    FrameAndNodeOffset() : mFrame(nullptr), mOffsetInNode(-1) {}
 
     FrameAndNodeOffset(nsIFrame* aFrame, int32_t aStartOffsetInNode)
-      : mFrame(aFrame)
-      , mOffsetInNode(aStartOffsetInNode)
-    {
-    }
+        : mFrame(aFrame), mOffsetInNode(aStartOffsetInNode) {}
 
     nsIFrame* operator->() { return mFrame; }
     const nsIFrame* operator->() const { return mFrame; }
@@ -402,27 +350,17 @@ protected:
   
   FrameAndNodeOffset GetLastFrameInRangeForTextRect(const RawRange& aRawRange);
 
-  struct MOZ_STACK_CLASS FrameRelativeRect final
-  {
+  struct MOZ_STACK_CLASS FrameRelativeRect final {
     
     nsRect mRect;
     nsIFrame* mBaseFrame;
 
-    FrameRelativeRect()
-      : mBaseFrame(nullptr)
-    {
-    }
+    FrameRelativeRect() : mBaseFrame(nullptr) {}
 
-    explicit FrameRelativeRect(nsIFrame* aBaseFrame)
-      : mBaseFrame(aBaseFrame)
-    {
-    }
+    explicit FrameRelativeRect(nsIFrame* aBaseFrame) : mBaseFrame(aBaseFrame) {}
 
     FrameRelativeRect(const nsRect& aRect, nsIFrame* aBaseFrame)
-      : mRect(aRect)
-      , mBaseFrame(aBaseFrame)
-    {
-    }
+        : mRect(aRect), mBaseFrame(aBaseFrame) {}
 
     bool IsValid() const { return mBaseFrame != nullptr; }
 
@@ -468,6 +406,6 @@ protected:
   void EnsureNonEmptyRect(LayoutDeviceIntRect& aRect) const;
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -19,28 +19,27 @@ class RasterImage;
 
 
 
-class nsGIFDecoder2 : public Decoder
-{
-public:
+class nsGIFDecoder2 : public Decoder {
+ public:
   ~nsGIFDecoder2();
 
   DecoderType GetType() const override { return DecoderType::GIF; }
 
-protected:
+ protected:
   LexerResult DoDecode(SourceBufferIterator& aIterator,
                        IResumable* aOnResume) override;
   nsresult FinishInternal() override;
 
   Maybe<Telemetry::HistogramID> SpeedHistogram() const override;
 
-private:
+ private:
   friend class DecoderFactory;
 
   
   explicit nsGIFDecoder2(RasterImage* aImage);
 
   
-  void      BeginGIF();
+  void BeginGIF();
 
   
 
@@ -50,27 +49,26 @@ private:
 
 
 
-  nsresult  BeginImageFrame(const gfx::IntRect& aFrameRect,
-                            uint16_t aDepth,
-                            bool aIsInterlaced);
+  nsresult BeginImageFrame(const gfx::IntRect& aFrameRect, uint16_t aDepth,
+                           bool aIsInterlaced);
 
   
-  void      EndImageFrame();
+  void EndImageFrame();
 
   
-  void      FlushImageData();
+  void FlushImageData();
 
   
-  template <typename PixelSize> PixelSize
-  ColormapIndexToPixel(uint8_t aIndex);
+  template <typename PixelSize>
+  PixelSize ColormapIndexToPixel(uint8_t aIndex);
 
   
-  template <typename PixelSize> Tuple<int32_t, Maybe<WriteState>>
-  YieldPixels(const uint8_t* aData,
-              size_t aLength,
-              size_t* aBytesReadOut,
-              PixelSize* aPixelBlock,
-              int32_t aBlockSize);
+  template <typename PixelSize>
+  Tuple<int32_t, Maybe<WriteState>> YieldPixels(const uint8_t* aData,
+                                                size_t aLength,
+                                                size_t* aBytesReadOut,
+                                                PixelSize* aPixelBlock,
+                                                int32_t aBlockSize);
 
   
   
@@ -82,8 +80,7 @@ private:
     return 1 << mGIFStruct.datasize;
   }
 
-  enum class State
-  {
+  enum class State {
     FAILURE,
     SUCCESS,
     GIF_HEADER,
@@ -112,7 +109,8 @@ private:
 
   LexerTransition<State> ReadGIFHeader(const char* aData);
   LexerTransition<State> ReadScreenDescriptor(const char* aData);
-  LexerTransition<State> ReadGlobalColorTable(const char* aData, size_t aLength);
+  LexerTransition<State> ReadGlobalColorTable(const char* aData,
+                                              size_t aLength);
   LexerTransition<State> FinishedGlobalColorTable();
   LexerTransition<State> ReadBlockHeader(const char* aData);
   LexerTransition<State> ReadExtensionHeader(const char* aData);
@@ -135,7 +133,7 @@ private:
   
   StreamingLexer<State, 16> mLexer;
 
-  uint32_t mOldColor;        
+  uint32_t mOldColor;  
 
   
   
@@ -146,7 +144,7 @@ private:
   
   size_t mColorTablePos;
 
-  uint8_t mColorMask;        
+  uint8_t mColorMask;  
   bool mGIFOpen;
   bool mSawTransparency;
 
@@ -155,7 +153,7 @@ private:
   SurfacePipe mPipe;  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

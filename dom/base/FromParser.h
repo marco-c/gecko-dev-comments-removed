@@ -21,7 +21,7 @@ enum FromParser {
   FROM_PARSER_XSLT = 1 << 3
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -28,10 +28,8 @@ FRAGMENT(jsid, simple) {
   use(empty_id);
 }
 
-void
-jsid_handles(JS::Handle<jsid> jsid_handle,
-             JS::MutableHandle<jsid> mutable_jsid_handle)
-{
+void jsid_handles(JS::Handle<jsid> jsid_handle,
+                  JS::MutableHandle<jsid> mutable_jsid_handle) {
   
   
   fprintf(stderr, "Called " __FILE__ ":jsid_handles\n");

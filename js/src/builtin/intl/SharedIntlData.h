@@ -29,32 +29,135 @@ namespace intl {
 
 
 
-class SharedIntlData
-{
-    struct LinearStringLookup
-    {
-        union {
-            const JS::Latin1Char* latin1Chars;
-            const char16_t* twoByteChars;
-        };
-        bool isLatin1;
-        size_t length;
-        JS::AutoCheckCannotGC nogc;
-        HashNumber hash = 0;
+class SharedIntlData {
+  struct LinearStringLookup {
+    union {
+      const JS::Latin1Char* latin1Chars;
+      const char16_t* twoByteChars;
+    };
+    bool isLatin1;
+    size_t length;
+    JS::AutoCheckCannotGC nogc;
+    HashNumber hash = 0;
 
-        explicit LinearStringLookup(JSLinearString* string)
-          : isLatin1(string->hasLatin1Chars()), length(string->length())
-        {
-            if (isLatin1) {
-                latin1Chars = string->latin1Chars(nogc);
-            } else {
-                twoByteChars = string->twoByteChars(nogc);
-            }
-        }
+    explicit LinearStringLookup(JSLinearString* string)
+        : isLatin1(string->hasLatin1Chars()), length(string->length()) {
+      if (isLatin1) {
+        latin1Chars = string->latin1Chars(nogc);
+      } else {
+        twoByteChars = string->twoByteChars(nogc);
+      }
+    }
+  };
+
+ private:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  using TimeZoneName = JSAtom*;
+
+  struct TimeZoneHasher {
+    struct Lookup : LinearStringLookup {
+      explicit Lookup(JSLinearString* timeZone);
     };
 
-  private:
-    
+    static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
+    static bool match(TimeZoneName key, const Lookup& lookup);
+  };
+
+  using TimeZoneSet =
+      GCHashSet<TimeZoneName, TimeZoneHasher, SystemAllocPolicy>;
+  using TimeZoneMap =
+      GCHashMap<TimeZoneName, TimeZoneName, TimeZoneHasher, SystemAllocPolicy>;
+
+  
+
+
+
+
+
+
+
+  TimeZoneSet availableTimeZones;
+
+  
+
+
+
+
+
+
+
+
+
+
+  TimeZoneSet ianaZonesTreatedAsLinksByICU;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  TimeZoneMap ianaLinksCanonicalizedDifferentlyByICU;
+
+  bool timeZoneDataInitialized = false;
+
+  
+
+
+
+  bool ensureTimeZones(JSContext* cx);
+
+ public:
+  
+
+
+
+  bool validateTimeZoneName(JSContext* cx, JS::Handle<JSString*> timeZone,
+                            JS::MutableHandle<JSAtom*> result);
+
+  
+
+
+
+
+
+
+  bool tryCanonicalizeTimeZoneConsistentWithIANA(
+      JSContext* cx, JS::Handle<JSString*> timeZone,
+      JS::MutableHandle<JSAtom*> result);
+
+ private:
+  
 
 
 
@@ -70,152 +173,46 @@ class SharedIntlData
 
 
 
+  using Locale = JSAtom*;
 
-
-
-
-
-
-
-
-
-    using TimeZoneName = JSAtom*;
-
-    struct TimeZoneHasher
-    {
-        struct Lookup : LinearStringLookup
-        {
-            explicit Lookup(JSLinearString* timeZone);
-        };
-
-        static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
-        static bool match(TimeZoneName key, const Lookup& lookup);
+  struct LocaleHasher {
+    struct Lookup : LinearStringLookup {
+      explicit Lookup(JSLinearString* locale);
     };
 
-    using TimeZoneSet = GCHashSet<TimeZoneName, TimeZoneHasher, SystemAllocPolicy>;
-    using TimeZoneMap = GCHashMap<TimeZoneName, TimeZoneName, TimeZoneHasher, SystemAllocPolicy>;
+    static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
+    static bool match(Locale key, const Lookup& lookup);
+  };
 
-    
+  using LocaleSet = GCHashSet<Locale, LocaleHasher, SystemAllocPolicy>;
 
+  LocaleSet upperCaseFirstLocales;
 
+  bool upperCaseFirstInitialized = false;
 
+  
 
 
+  bool ensureUpperCaseFirstLocales(JSContext* cx);
 
+ public:
+  
 
-    TimeZoneSet availableTimeZones;
 
-    
 
+  bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSString*> locale,
+                        bool* isUpperFirst);
 
+ public:
+  void destroyInstance();
 
+  void trace(JSTracer* trc);
 
-
-
-
-
-
-
-    TimeZoneSet ianaZonesTreatedAsLinksByICU;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    TimeZoneMap ianaLinksCanonicalizedDifferentlyByICU;
-
-    bool timeZoneDataInitialized = false;
-
-    
-
-
-
-    bool ensureTimeZones(JSContext* cx);
-
-  public:
-    
-
-
-
-    bool validateTimeZoneName(JSContext* cx, JS::Handle<JSString*> timeZone,
-                              JS::MutableHandle<JSAtom*> result);
-
-    
-
-
-
-
-
-
-    bool tryCanonicalizeTimeZoneConsistentWithIANA(JSContext* cx, JS::Handle<JSString*> timeZone,
-                                                   JS::MutableHandle<JSAtom*> result);
-
-  private:
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    using Locale = JSAtom*;
-
-    struct LocaleHasher
-    {
-        struct Lookup : LinearStringLookup
-        {
-            explicit Lookup(JSLinearString* locale);
-        };
-
-        static js::HashNumber hash(const Lookup& lookup) { return lookup.hash; }
-        static bool match(Locale key, const Lookup& lookup);
-    };
-
-    using LocaleSet = GCHashSet<Locale, LocaleHasher, SystemAllocPolicy>;
-
-    LocaleSet upperCaseFirstLocales;
-
-    bool upperCaseFirstInitialized = false;
-
-    
-
-
-    bool ensureUpperCaseFirstLocales(JSContext* cx);
-
-  public:
-    
-
-
-
-    bool isUpperCaseFirst(JSContext* cx, JS::Handle<JSString*> locale, bool* isUpperFirst);
-
-  public:
-    void destroyInstance();
-
-    void trace(JSTracer* trc);
-
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
-} 
+}  
 
-} 
+}  
 
 #endif 

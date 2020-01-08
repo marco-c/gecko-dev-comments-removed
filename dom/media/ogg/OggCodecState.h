@@ -242,10 +242,9 @@ class OggCodecState {
   
   
   static bool AddVorbisComment(UniquePtr<MetadataTags>& aTags,
-                               const char* aComment,
-                               uint32_t aLength);
+                               const char* aComment, uint32_t aLength);
 
-protected:
+ protected:
   
   
   

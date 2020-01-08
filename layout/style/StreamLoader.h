@@ -16,27 +16,22 @@ class nsIInputStream;
 namespace mozilla {
 namespace css {
 
-class StreamLoader : public nsIStreamListener
-{
-public:
+class StreamLoader : public nsIStreamListener {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
 
   explicit StreamLoader(mozilla::css::SheetLoadData* aSheetLoadData);
 
-private:
+ private:
   virtual ~StreamLoader();
 
   
 
 
-  static nsresult WriteSegmentFun(nsIInputStream*,
-                                  void*,
-                                  const char*,
-                                  uint32_t,
-                                  uint32_t,
-                                  uint32_t*);
+  static nsresult WriteSegmentFun(nsIInputStream*, void*, const char*, uint32_t,
+                                  uint32_t, uint32_t*);
 
   void HandleBOM();
 
@@ -51,7 +46,7 @@ private:
   nsAutoCStringN<3> mBOMBytes;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

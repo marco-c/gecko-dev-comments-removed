@@ -17,7 +17,7 @@ namespace mozilla {
 namespace dom {
 class Element;
 class Selection;
-}
+}  
 
 namespace a11y {
 
@@ -43,9 +43,8 @@ class HyperTextAccessible;
 
 struct SelData;
 
-class SelectionManager : public nsISelectionListener
-{
-public:
+class SelectionManager : public nsISelectionListener {
+ public:
   
   
 
@@ -89,10 +88,8 @@ public:
 
 
 
-  inline HyperTextAccessible* AccessibleWithCaret(int32_t* aCaret)
-  {
-    if (aCaret)
-      *aCaret = mCaretOffset;
+  inline HyperTextAccessible* AccessibleWithCaret(int32_t* aCaret) {
+    if (aCaret) *aCaret = mCaretOffset;
 
     return mAccWithCaret;
   }
@@ -100,20 +97,17 @@ public:
   
 
 
-  inline void UpdateCaretOffset(HyperTextAccessible* aItem, int32_t aOffset)
-  {
+  inline void UpdateCaretOffset(HyperTextAccessible* aItem, int32_t aOffset) {
     mAccWithCaret = aItem;
     mCaretOffset = aOffset;
   }
 
-  inline void ResetCaretOffset()
-  {
+  inline void ResetCaretOffset() {
     mCaretOffset = -1;
     mAccWithCaret = nullptr;
   }
 
-protected:
-
+ protected:
   SelectionManager();
 
   
@@ -121,7 +115,7 @@ protected:
 
   void ProcessSelectionChanged(SelData* aSelData);
 
-private:
+ private:
   
   int32_t mCaretOffset;
   HyperTextAccessible* mAccWithCaret;
@@ -129,7 +123,7 @@ private:
   WeakPtr<dom::Selection> mCurrCtrlSpellSel;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

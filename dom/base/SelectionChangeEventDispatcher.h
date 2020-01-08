@@ -22,26 +22,23 @@ namespace dom {
 class Selection;
 }
 
-class SelectionChangeEventDispatcher final
-{
-public:
+class SelectionChangeEventDispatcher final {
+ public:
   
   
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(
-    SelectionChangeEventDispatcher)
+      SelectionChangeEventDispatcher)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(SelectionChangeEventDispatcher)
 
   MOZ_CAN_RUN_SCRIPT
-  void OnSelectionChange(nsIDocument* aDocument,
-                         dom::Selection* aSelection,
+  void OnSelectionChange(nsIDocument* aDocument, dom::Selection* aSelection,
                          int16_t aReason);
 
   
   
   
   
-  struct RawRangeData
-  {
+  struct RawRangeData {
     
     
     
@@ -59,12 +56,12 @@ public:
     bool Equals(const nsRange* aRange);
   };
 
-private:
+ private:
   nsTArray<RawRangeData> mOldRanges;
 
   ~SelectionChangeEventDispatcher() {}
 };
 
-} 
+}  
 
-#endif 
+#endif  

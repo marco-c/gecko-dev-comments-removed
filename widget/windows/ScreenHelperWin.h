@@ -12,16 +12,15 @@
 namespace mozilla {
 namespace widget {
 
-class ScreenHelperWin final : public ScreenManager::Helper
-{
-public:
-  ScreenHelperWin() {};
+class ScreenHelperWin final : public ScreenManager::Helper {
+ public:
+  ScreenHelperWin(){};
   ~ScreenHelperWin() override {}
 
   static void RefreshScreens();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

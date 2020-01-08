@@ -18,7 +18,6 @@ class ChildThread;
 
 
 
-
 class ChildProcess {
  public:
   

@@ -11,32 +11,33 @@
 #include "mozilla/dom/SVGAnimationElement.h"
 #include "SVGMotionSMILAnimationFunction.h"
 
-nsresult NS_NewSVGAnimateMotionElement(nsIContent **aResult,
-                                       already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+nsresult NS_NewSVGAnimateMotionElement(
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
 namespace mozilla {
 namespace dom {
 
-class SVGAnimateMotionElement final : public SVGAnimationElement
-{
-protected:
-  explicit SVGAnimateMotionElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+class SVGAnimateMotionElement final : public SVGAnimationElement {
+ protected:
+  explicit SVGAnimateMotionElement(
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   SVGMotionSMILAnimationFunction mAnimationFunction;
-  friend nsresult
-    (::NS_NewSVGAnimateMotionElement(nsIContent **aResult,
-                                     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+  friend nsresult(::NS_NewSVGAnimateMotionElement(
+      nsIContent** aResult,
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
 
-  virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapNode(JSContext* aCx,
+                             JS::Handle<JSObject*> aGivenProto) override;
 
-public:
+ public:
   
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
   
   virtual nsSMILAnimationFunction& AnimationFunction() override;
-  virtual bool GetTargetAttributeName(int32_t *aNamespaceID,
-                                      nsAtom **aLocalName) const override;
+  virtual bool GetTargetAttributeName(int32_t* aNamespaceID,
+                                      nsAtom** aLocalName) const override;
 
   
   virtual nsStaticAtom* GetPathDataAttrName() const override {
@@ -48,7 +49,7 @@ public:
   void MpathChanged() { mAnimationFunction.MpathChanged(); }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

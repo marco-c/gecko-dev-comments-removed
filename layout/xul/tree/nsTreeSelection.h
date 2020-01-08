@@ -16,9 +16,8 @@ class nsITreeBoxObject;
 class nsTreeColumn;
 struct nsTreeRange;
 
-class nsTreeSelection final : public nsINativeTreeSelection
-{
-public:
+class nsTreeSelection final : public nsINativeTreeSelection {
+ public:
   explicit nsTreeSelection(nsITreeBoxObject* aTree);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -30,29 +29,32 @@ public:
 
   friend struct nsTreeRange;
 
-protected:
+ protected:
   ~nsTreeSelection();
 
   nsresult FireOnSelectHandler();
-  static void SelectCallback(nsITimer *aTimer, void *aClosure);
+  static void SelectCallback(nsITimer* aTimer, void* aClosure);
 
-protected:
+ protected:
   
   already_AddRefed<nsIContent> GetContent();
 
   
-  nsCOMPtr<nsITreeBoxObject> mTree; 
+  nsCOMPtr<nsITreeBoxObject> mTree;  
+                                     
 
-  bool mSuppressed; 
-  int32_t mCurrentIndex; 
-  int32_t mShiftSelectPivot; 
+  bool mSuppressed;       
+  int32_t mCurrentIndex;  
+                          
+  int32_t mShiftSelectPivot;  
+                              
 
-  nsTreeRange* mFirstRange; 
+  nsTreeRange* mFirstRange;  
 
   nsCOMPtr<nsITimer> mSelectTimer;
 };
 
-nsresult
-NS_NewTreeSelection(nsITreeBoxObject* aTree, nsITreeSelection** aResult);
+nsresult NS_NewTreeSelection(nsITreeBoxObject* aTree,
+                             nsITreeSelection** aResult);
 
 #endif

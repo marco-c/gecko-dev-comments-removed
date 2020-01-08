@@ -23,15 +23,15 @@ class BasicCompositor;
 
 
 
-class MacIOSurfaceTextureSourceBasic
-  : public TextureSourceBasic,
-    public TextureSource
-{
-public:
+class MacIOSurfaceTextureSourceBasic : public TextureSourceBasic,
+                                       public TextureSource {
+ public:
   explicit MacIOSurfaceTextureSourceBasic(MacIOSurface* aSurface);
   virtual ~MacIOSurfaceTextureSourceBasic();
 
-  virtual const char* Name() const override { return "MacIOSurfaceTextureSourceBasic"; }
+  virtual const char* Name() const override {
+    return "MacIOSurfaceTextureSourceBasic";
+  }
 
   virtual TextureSourceBasic* AsSourceBasic() override { return this; }
 
@@ -39,9 +39,9 @@ public:
   virtual gfx::SurfaceFormat GetFormat() const override;
   virtual gfx::SourceSurface* GetSurface(gfx::DrawTarget* aTarget) override;
 
-  virtual void DeallocateDeviceData() override { }
+  virtual void DeallocateDeviceData() override {}
 
-protected:
+ protected:
   RefPtr<MacIOSurface> mSurface;
   RefPtr<gfx::SourceSurface> mSourceSurface;
 };
@@ -51,27 +51,26 @@ protected:
 
 
 
-class MacIOSurfaceTextureHostBasic : public TextureHost
-{
-public:
-  MacIOSurfaceTextureHostBasic(TextureFlags aFlags,
-                               const SurfaceDescriptorMacIOSurface& aDescriptor);
+class MacIOSurfaceTextureHostBasic : public TextureHost {
+ public:
+  MacIOSurfaceTextureHostBasic(
+      TextureFlags aFlags, const SurfaceDescriptorMacIOSurface& aDescriptor);
 
-  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
+  virtual void SetTextureSourceProvider(
+      TextureSourceProvider* aProvider) override;
 
   virtual bool Lock() override;
 
   virtual gfx::SurfaceFormat GetFormat() const override;
 
-  virtual bool BindTextureSource(CompositableTextureSourceRef& aTexture) override
-  {
+  virtual bool BindTextureSource(
+      CompositableTextureSourceRef& aTexture) override {
     aTexture = mTextureSource;
     return !!aTexture;
   }
 
-  virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override
-  {
-    return nullptr; 
+  virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override {
+    return nullptr;  
   }
 
   virtual gfx::IntSize GetSize() const override;
@@ -81,12 +80,12 @@ public:
   virtual const char* Name() override { return "MacIOSurfaceTextureHostBasic"; }
 #endif
 
-protected:
+ protected:
   RefPtr<MacIOSurfaceTextureSourceBasic> mTextureSource;
   RefPtr<MacIOSurface> mSurface;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

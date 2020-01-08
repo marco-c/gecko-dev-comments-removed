@@ -23,42 +23,34 @@ class txXPathNode;
 
 
 
-class txIParseContext
-{
-public:
-    virtual ~txIParseContext()
-    {
-    }
+class txIParseContext {
+ public:
+  virtual ~txIParseContext() {}
 
-    
+  
 
 
-    virtual nsresult resolveNamespacePrefix(nsAtom* aPrefix, int32_t& aID) = 0;
+  virtual nsresult resolveNamespacePrefix(nsAtom* aPrefix, int32_t& aID) = 0;
 
-    
+  
 
 
 
-    virtual nsresult resolveFunctionCall(nsAtom* aName, int32_t aID,
-                                         FunctionCall** aFunction) = 0;
+  virtual nsresult resolveFunctionCall(nsAtom* aName, int32_t aID,
+                                       FunctionCall** aFunction) = 0;
 
-    
-
-
-    virtual bool caseInsensitiveNameTests() = 0;
-
-    
+  
 
 
-    virtual void SetErrorOffset(uint32_t aOffset) = 0;
+  virtual bool caseInsensitiveNameTests() = 0;
 
-    enum Allowed {
-        KEY_FUNCTION = 1 << 0
-    };
-    virtual bool allowed(Allowed aAllowed)
-    {
-        return true;
-    }
+  
+
+
+  virtual void SetErrorOffset(uint32_t aOffset) = 0;
+
+  enum Allowed { KEY_FUNCTION = 1 << 0 };
+  virtual bool allowed(Allowed aAllowed) { return true; }
 };
 
 
@@ -70,73 +62,69 @@ public:
 
 
 
-class txIMatchContext
-{
-public:
-    virtual ~txIMatchContext()
-    {
-    }
+class txIMatchContext {
+ public:
+  virtual ~txIMatchContext() {}
 
-    
+  
 
 
 
-    virtual nsresult getVariable(int32_t aNamespace, nsAtom* aLName,
-                                 txAExprResult*& aResult) = 0;
+  virtual nsresult getVariable(int32_t aNamespace, nsAtom* aLName,
+                               txAExprResult*& aResult) = 0;
 
-    
-
-
-
-    virtual nsresult isStripSpaceAllowed(const txXPathNode& aNode,
-                                         bool& aAllowed) = 0;
-
-    
+  
 
 
-    virtual void* getPrivateContext() = 0;
 
-    virtual txResultRecycler* recycler() = 0;
+  virtual nsresult isStripSpaceAllowed(const txXPathNode& aNode,
+                                       bool& aAllowed) = 0;
 
-    
+  
 
 
-    virtual void receiveError(const nsAString& aMsg, nsresult aRes) = 0;
+  virtual void* getPrivateContext() = 0;
+
+  virtual txResultRecycler* recycler() = 0;
+
+  
+
+
+  virtual void receiveError(const nsAString& aMsg, nsresult aRes) = 0;
 };
 
-#define TX_DECL_MATCH_CONTEXT \
-    nsresult getVariable(int32_t aNamespace, nsAtom* aLName, \
-                         txAExprResult*& aResult) override; \
-    nsresult isStripSpaceAllowed(const txXPathNode& aNode, \
-                                 bool& aAllowed) override; \
-    void* getPrivateContext() override; \
-    txResultRecycler* recycler() override; \
-    void receiveError(const nsAString& aMsg, nsresult aRes) override
+#define TX_DECL_MATCH_CONTEXT                                            \
+  nsresult getVariable(int32_t aNamespace, nsAtom* aLName,               \
+                       txAExprResult*& aResult) override;                \
+  nsresult isStripSpaceAllowed(const txXPathNode& aNode, bool& aAllowed) \
+      override;                                                          \
+  void* getPrivateContext() override;                                    \
+  txResultRecycler* recycler() override;                                 \
+  void receiveError(const nsAString& aMsg, nsresult aRes) override
 
-class txIEvalContext : public txIMatchContext
-{
-public:
-    
-
-
-    virtual const txXPathNode& getContextNode() = 0;
-
-    
+class txIEvalContext : public txIMatchContext {
+ public:
+  
 
 
-    virtual uint32_t size() = 0;
+  virtual const txXPathNode& getContextNode() = 0;
 
-    
+  
+
+
+  virtual uint32_t size() = 0;
+
+  
 
 
 
-    virtual uint32_t position() = 0;
+  virtual uint32_t position() = 0;
 };
 
-#define TX_DECL_EVAL_CONTEXT \
-    TX_DECL_MATCH_CONTEXT; \
-    const txXPathNode& getContextNode() override; \
-    uint32_t size() override; \
-    uint32_t position() override
+#define TX_DECL_EVAL_CONTEXT                    \
+  TX_DECL_MATCH_CONTEXT;                        \
+  const txXPathNode& getContextNode() override; \
+  uint32_t size() override;                     \
+  uint32_t position() override
 
-#endif 
+#endif  

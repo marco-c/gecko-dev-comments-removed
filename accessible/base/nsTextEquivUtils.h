@@ -16,8 +16,7 @@ class nsIContent;
 
 
 
-enum ETextEquivRule
-{
+enum ETextEquivRule {
   
   eNoNameRule = 0x00,
 
@@ -38,9 +37,8 @@ enum ETextEquivRule
 
 
 
-class nsTextEquivUtils
-{
-public:
+class nsTextEquivUtils {
+ public:
   typedef mozilla::a11y::Accessible Accessible;
 
   
@@ -50,8 +48,8 @@ public:
 
 
 
-  static inline bool HasNameRule(Accessible* aAccessible, ETextEquivRule aRule)
-  {
+  static inline bool HasNameRule(Accessible *aAccessible,
+                                 ETextEquivRule aRule) {
     return (GetRoleRule(aAccessible->Role()) & aRule) == aRule;
   }
 
@@ -61,16 +59,15 @@ public:
 
 
 
-  static nsresult GetNameFromSubtree(const Accessible* aAccessible,
-                                     nsAString& aName);
+  static nsresult GetNameFromSubtree(const Accessible *aAccessible,
+                                     nsAString &aName);
 
   
 
 
 
-  static void GetTextEquivFromSubtree(const Accessible* aAccessible,
-                                      nsString& aTextEquiv)
-  {
+  static void GetTextEquivFromSubtree(const Accessible *aAccessible,
+                                      nsString &aTextEquiv) {
     aTextEquiv.Truncate();
 
     AppendFromAccessibleChildren(aAccessible, &aTextEquiv);
@@ -85,9 +82,9 @@ public:
 
 
 
-  static nsresult GetTextEquivFromIDRefs(const Accessible* aAccessible,
+  static nsresult GetTextEquivFromIDRefs(const Accessible *aAccessible,
                                          nsAtom *aIDRefsAttr,
-                                         nsAString& aTextEquiv);
+                                         nsAString &aTextEquiv);
 
   
 
@@ -100,7 +97,7 @@ public:
 
 
 
-  static nsresult AppendTextEquivFromContent(const Accessible* aInitiatorAcc,
+  static nsresult AppendTextEquivFromContent(const Accessible *aInitiatorAcc,
                                              nsIContent *aContent,
                                              nsAString *aString);
 
@@ -114,26 +111,25 @@ public:
   static nsresult AppendTextEquivFromTextContent(nsIContent *aContent,
                                                  nsAString *aString);
 
-private:
+ private:
   
 
 
 
-  static nsresult AppendFromAccessibleChildren(const Accessible* aAccessible,
+  static nsresult AppendFromAccessibleChildren(const Accessible *aAccessible,
                                                nsAString *aString);
 
   
 
 
 
-  static nsresult AppendFromAccessible(Accessible* aAccessible,
+  static nsresult AppendFromAccessible(Accessible *aAccessible,
                                        nsAString *aString);
 
   
 
 
-  static nsresult AppendFromValue(Accessible* aAccessible,
-                                  nsAString *aString);
+  static nsresult AppendFromValue(Accessible *aAccessible, nsAString *aString);
   
 
 
@@ -151,7 +147,7 @@ private:
 
 
   static bool AppendString(nsAString *aString,
-                             const nsAString& aTextEquivalent);
+                           const nsAString &aTextEquivalent);
 
   
 

@@ -23,13 +23,8 @@ namespace dom {
 
 
 
-struct BorrowedAttrInfo
-{
-  BorrowedAttrInfo()
-    : mName(nullptr)
-    , mValue(nullptr)
-  {
-  }
+struct BorrowedAttrInfo {
+  BorrowedAttrInfo() : mName(nullptr), mValue(nullptr) {}
 
   BorrowedAttrInfo(const nsAttrName* aName, const nsAttrValue* aValue);
 
@@ -41,6 +36,6 @@ struct BorrowedAttrInfo
   explicit operator bool() const { return mName != nullptr; }
 };
 
-} 
-} 
+}  
+}  
 #endif

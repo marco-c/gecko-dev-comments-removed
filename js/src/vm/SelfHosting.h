@@ -18,21 +18,16 @@ namespace js {
 
 
 
-bool
-IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name);
+bool IsSelfHostedFunctionWithName(JSFunction* fun, JSAtom* name);
 
-JSAtom*
-GetSelfHostedFunctionName(JSFunction* fun);
+JSAtom* GetSelfHostedFunctionName(JSFunction* fun);
 
-bool
-IsCallSelfHostedNonGenericMethod(NativeImpl impl);
+bool IsCallSelfHostedNonGenericMethod(NativeImpl impl);
 
-bool
-ReportIncompatibleSelfHostedMethod(JSContext* cx, const CallArgs& args);
+bool ReportIncompatibleSelfHostedMethod(JSContext* cx, const CallArgs& args);
 
 
-void
-FillSelfHostingCompileOptions(JS::CompileOptions& options);
+void FillSelfHostingCompileOptions(JS::CompileOptions& options);
 
 #ifdef DEBUG
 
@@ -41,29 +36,25 @@ FillSelfHostingCompileOptions(JS::CompileOptions& options);
 
 
 
-bool
-CallSelfHostedFunction(JSContext* cx, char const* name, HandleValue thisv,
-                       const AnyInvokeArgs& args, MutableHandleValue rval);
+bool CallSelfHostedFunction(JSContext* cx, char const* name, HandleValue thisv,
+                            const AnyInvokeArgs& args, MutableHandleValue rval);
 #endif
 
 
 
 
-bool
-CallSelfHostedFunction(JSContext* cx, HandlePropertyName name, HandleValue thisv,
-                       const AnyInvokeArgs& args, MutableHandleValue rval);
+bool CallSelfHostedFunction(JSContext* cx, HandlePropertyName name,
+                            HandleValue thisv, const AnyInvokeArgs& args,
+                            MutableHandleValue rval);
 
-bool
-intrinsic_StringSplitString(JSContext* cx, unsigned argc, JS::Value* vp);
+bool intrinsic_StringSplitString(JSContext* cx, unsigned argc, JS::Value* vp);
 
-bool
-intrinsic_NewArrayIterator(JSContext* cx, unsigned argc, JS::Value* vp);
+bool intrinsic_NewArrayIterator(JSContext* cx, unsigned argc, JS::Value* vp);
 
-bool
-intrinsic_NewStringIterator(JSContext* cx, unsigned argc, JS::Value* vp);
+bool intrinsic_NewStringIterator(JSContext* cx, unsigned argc, JS::Value* vp);
 
-bool
-intrinsic_IsSuspendedGenerator(JSContext* cx, unsigned argc, JS::Value* vp);
+bool intrinsic_IsSuspendedGenerator(JSContext* cx, unsigned argc,
+                                    JS::Value* vp);
 
 } 
 

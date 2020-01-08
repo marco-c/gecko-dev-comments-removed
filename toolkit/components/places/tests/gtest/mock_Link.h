@@ -14,17 +14,15 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/Link.h"
 
-class mock_Link : public mozilla::dom::Link
-{
-public:
+class mock_Link : public mozilla::dom::Link {
+ public:
   NS_DECL_ISUPPORTS
 
   explicit mock_Link(void (*aHandlerFunction)(nsLinkState),
                      bool aRunNextTest = true)
-  : mozilla::dom::Link()
-  , mHandler(aHandlerFunction)
-  , mRunNextTest(aRunNextTest)
-  {
+      : mozilla::dom::Link(),
+        mHandler(aHandlerFunction),
+        mRunNextTest(aRunNextTest) {
     
     
     
@@ -33,8 +31,7 @@ public:
     mDeathGrip = this;
   }
 
-  virtual void SetLinkState(nsLinkState aState) override
-  {
+  virtual void SetLinkState(nsLinkState aState) override {
     
     mHandler(aState);
 
@@ -42,15 +39,14 @@ public:
     mDeathGrip = nullptr;
   }
 
-  virtual size_t SizeOfExcludingThis(mozilla::SizeOfState& aState)
-    const override
-  {
-    return 0;   
+  virtual size_t SizeOfExcludingThis(
+      mozilla::SizeOfState& aState) const override {
+    return 0;  
   }
 
   void NodeInfoChanged(nsIDocument* aOldDoc) final {}
 
-protected:
+ protected:
   ~mock_Link() {
     
     if (mRunNextTest) {
@@ -58,15 +54,12 @@ protected:
     }
   }
 
-private:
+ private:
   void (*mHandler)(nsLinkState);
   bool mRunNextTest;
   RefPtr<Link> mDeathGrip;
 };
 
-NS_IMPL_ISUPPORTS(
-  mock_Link,
-  mozilla::dom::Link
-)
+NS_IMPL_ISUPPORTS(mock_Link, mozilla::dom::Link)
 
-#endif 
+#endif  

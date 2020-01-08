@@ -30,11 +30,11 @@ namespace jit {
 
 
 
-static const uint32_t ION_FRAME_SLACK_SIZE   = 20;
+static const uint32_t ION_FRAME_SLACK_SIZE = 20;
 
 
 
-static const int32_t NUNBOX32_TYPE_OFFSET    = 4;
+static const int32_t NUNBOX32_TYPE_OFFSET = 4;
 static const int32_t NUNBOX32_PAYLOAD_OFFSET = 0;
 
 static const uint32_t ShadowStackSpace = 0;
@@ -51,239 +51,228 @@ static const uint32_t JumpImmediateRange = 20 * 1024 * 1024;
 
 
 
-static const uint32_t BAILOUT_TABLE_ENTRY_SIZE    = 4;
+static const uint32_t BAILOUT_TABLE_ENTRY_SIZE = 4;
 
-class Registers
-{
-  public:
-    enum RegisterID {
-        r0 = 0,
-        r1,
-        r2,
-        r3,
-        S0 = r3,
-        r4,
-        r5,
-        r6,
-        r7,
-        r8,
-        S1 = r8,
-        r9,
-        r10,
-        r11,
-        r12,
-        ip = r12,
-        r13,
-        sp = r13,
-        r14,
-        lr = r14,
-        r15,
-        pc = r15,
-        invalid_reg
-    };
-    typedef uint8_t Code;
-    typedef RegisterID Encoding;
+class Registers {
+ public:
+  enum RegisterID {
+    r0 = 0,
+    r1,
+    r2,
+    r3,
+    S0 = r3,
+    r4,
+    r5,
+    r6,
+    r7,
+    r8,
+    S1 = r8,
+    r9,
+    r10,
+    r11,
+    r12,
+    ip = r12,
+    r13,
+    sp = r13,
+    r14,
+    lr = r14,
+    r15,
+    pc = r15,
+    invalid_reg
+  };
+  typedef uint8_t Code;
+  typedef RegisterID Encoding;
 
-    
-    union RegisterContent {
-        uintptr_t r;
-    };
+  
+  union RegisterContent {
+    uintptr_t r;
+  };
 
-    static const char* GetName(Code code) {
-        MOZ_ASSERT(code < Total);
-        static const char * const Names[] = { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
-                                              "r8", "r9", "r10", "r11", "r12", "sp", "r14", "pc"};
-        return Names[code];
-    }
-    static const char* GetName(Encoding i) {
-        return GetName(Code(i));
-    }
+  static const char* GetName(Code code) {
+    MOZ_ASSERT(code < Total);
+    static const char* const Names[] = {"r0",  "r1", "r2",  "r3", "r4",  "r5",
+                                        "r6",  "r7", "r8",  "r9", "r10", "r11",
+                                        "r12", "sp", "r14", "pc"};
+    return Names[code];
+  }
+  static const char* GetName(Encoding i) { return GetName(Code(i)); }
 
-    static Code FromName(const char* name);
+  static Code FromName(const char* name);
 
-    static const Encoding StackPointer = sp;
-    static const Encoding Invalid = invalid_reg;
+  static const Encoding StackPointer = sp;
+  static const Encoding Invalid = invalid_reg;
 
-    static const uint32_t Total = 16;
-    static const uint32_t Allocatable = 13;
+  static const uint32_t Total = 16;
+  static const uint32_t Allocatable = 13;
 
-    typedef uint32_t SetType;
+  typedef uint32_t SetType;
 
-    static const SetType AllMask = (1 << Total) - 1;
-    static const SetType ArgRegMask = (1 << r0) | (1 << r1) | (1 << r2) | (1 << r3);
+  static const SetType AllMask = (1 << Total) - 1;
+  static const SetType ArgRegMask =
+      (1 << r0) | (1 << r1) | (1 << r2) | (1 << r3);
 
-    static const SetType VolatileMask =
-        (1 << r0) |
-        (1 << r1) |
-        (1 << Registers::r2) |
-        (1 << Registers::r3)
+  static const SetType VolatileMask =
+      (1 << r0) | (1 << r1) | (1 << Registers::r2) |
+      (1 << Registers::r3)
 #if defined(XP_IOS)
-        
-        | (1 << Registers::r9)
+      
+      
+      | (1 << Registers::r9)
 #endif
-              ;
+      ;
 
-    static const SetType NonVolatileMask =
-        (1 << Registers::r4) |
-        (1 << Registers::r5) |
-        (1 << Registers::r6) |
-        (1 << Registers::r7) |
-        (1 << Registers::r8) |
+  static const SetType NonVolatileMask =
+      (1 << Registers::r4) | (1 << Registers::r5) | (1 << Registers::r6) |
+      (1 << Registers::r7) | (1 << Registers::r8) |
 #if !defined(XP_IOS)
-        (1 << Registers::r9) |
+      (1 << Registers::r9) |
 #endif
-        (1 << Registers::r10) |
-        (1 << Registers::r11) |
-        (1 << Registers::r12) |
-        (1 << Registers::r14);
+      (1 << Registers::r10) | (1 << Registers::r11) | (1 << Registers::r12) |
+      (1 << Registers::r14);
 
-    static const SetType WrapperMask =
-        VolatileMask |         
-        (1 << Registers::r4) | 
-        (1 << Registers::r5);  
+  static const SetType WrapperMask = VolatileMask |          
+                                     (1 << Registers::r4) |  
+                                     (1 << Registers::r5);   
 
-    static const SetType SingleByteRegs =
-        VolatileMask | NonVolatileMask;
+  static const SetType SingleByteRegs = VolatileMask | NonVolatileMask;
 
-    static const SetType NonAllocatableMask =
-        (1 << Registers::sp) |
-        (1 << Registers::r12) | 
-        (1 << Registers::lr) |
-        (1 << Registers::pc);
+  static const SetType NonAllocatableMask =
+      (1 << Registers::sp) | (1 << Registers::r12) |  
+      (1 << Registers::lr) | (1 << Registers::pc);
 
-    
-    static const SetType JSCallMask =
-        (1 << Registers::r2) |
-        (1 << Registers::r3);
+  
+  static const SetType JSCallMask = (1 << Registers::r2) | (1 << Registers::r3);
 
-    
-    static const SetType CallMask =
-        (1 << Registers::r0) |
-        (1 << Registers::r1);  
+  
+  static const SetType CallMask =
+      (1 << Registers::r0) |
+      (1 << Registers::r1);  
 
-    static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
+  static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 
-    static uint32_t SetSize(SetType x) {
-        static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
-        return mozilla::CountPopulation32(x);
-    }
-    static uint32_t FirstBit(SetType x) {
-        return mozilla::CountTrailingZeroes32(x);
-    }
-    static uint32_t LastBit(SetType x) {
-        return 31 - mozilla::CountLeadingZeroes32(x);
-    }
+  static uint32_t SetSize(SetType x) {
+    static_assert(sizeof(SetType) == 4, "SetType must be 32 bits");
+    return mozilla::CountPopulation32(x);
+  }
+  static uint32_t FirstBit(SetType x) {
+    return mozilla::CountTrailingZeroes32(x);
+  }
+  static uint32_t LastBit(SetType x) {
+    return 31 - mozilla::CountLeadingZeroes32(x);
+  }
 };
 
 
 typedef uint16_t PackedRegisterMask;
 typedef uint16_t PackedRegisterMask;
 
-class FloatRegisters
-{
-  public:
-    enum FPRegisterID {
-        s0,
-        s1,
-        s2,
-        s3,
-        s4,
-        s5,
-        s6,
-        s7,
-        s8,
-        s9,
-        s10,
-        s11,
-        s12,
-        s13,
-        s14,
-        s15,
-        s16,
-        s17,
-        s18,
-        s19,
-        s20,
-        s21,
-        s22,
-        s23,
-        s24,
-        s25,
-        s26,
-        s27,
-        s28,
-        s29,
-        s30,
-        s31,
-        d0,
-        d1,
-        d2,
-        d3,
-        d4,
-        d5,
-        d6,
-        d7,
-        d8,
-        d9,
-        d10,
-        d11,
-        d12,
-        d13,
-        d14,
-        d15,
-        d16,
-        d17,
-        d18,
-        d19,
-        d20,
-        d21,
-        d22,
-        d23,
-        d24,
-        d25,
-        d26,
-        d27,
-        d28,
-        d29,
-        d30,
-        d31,
-        invalid_freg
-    };
+class FloatRegisters {
+ public:
+  enum FPRegisterID {
+    s0,
+    s1,
+    s2,
+    s3,
+    s4,
+    s5,
+    s6,
+    s7,
+    s8,
+    s9,
+    s10,
+    s11,
+    s12,
+    s13,
+    s14,
+    s15,
+    s16,
+    s17,
+    s18,
+    s19,
+    s20,
+    s21,
+    s22,
+    s23,
+    s24,
+    s25,
+    s26,
+    s27,
+    s28,
+    s29,
+    s30,
+    s31,
+    d0,
+    d1,
+    d2,
+    d3,
+    d4,
+    d5,
+    d6,
+    d7,
+    d8,
+    d9,
+    d10,
+    d11,
+    d12,
+    d13,
+    d14,
+    d15,
+    d16,
+    d17,
+    d18,
+    d19,
+    d20,
+    d21,
+    d22,
+    d23,
+    d24,
+    d25,
+    d26,
+    d27,
+    d28,
+    d29,
+    d30,
+    d31,
+    invalid_freg
+  };
 
-    typedef uint32_t Code;
-    typedef FPRegisterID Encoding;
+  typedef uint32_t Code;
+  typedef FPRegisterID Encoding;
 
-    
-    union RegisterContent {
-        double d;
-    };
+  
+  union RegisterContent {
+    double d;
+  };
 
-    static const char* GetDoubleName(Encoding code) {
-        static const char * const Names[] = { "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
-                                              "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15",
-                                              "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23",
-                                              "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31"};
-        return Names[code];
-    }
-    static const char* GetSingleName(Encoding code) {
-        static const char * const Names[] = { "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7",
-                                              "s8", "s9", "s10", "s11", "s12", "s13", "s14", "s15",
-                                              "s16", "s17", "s18", "s19", "s20", "s21", "s22", "s23",
-                                              "s24", "s25", "s26", "s27", "s28", "s29", "s30", "s31"};
-        return Names[code];
-    }
+  static const char* GetDoubleName(Encoding code) {
+    static const char* const Names[] = {
+        "d0",  "d1",  "d2",  "d3",  "d4",  "d5",  "d6",  "d7",
+        "d8",  "d9",  "d10", "d11", "d12", "d13", "d14", "d15",
+        "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23",
+        "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31"};
+    return Names[code];
+  }
+  static const char* GetSingleName(Encoding code) {
+    static const char* const Names[] = {
+        "s0",  "s1",  "s2",  "s3",  "s4",  "s5",  "s6",  "s7",
+        "s8",  "s9",  "s10", "s11", "s12", "s13", "s14", "s15",
+        "s16", "s17", "s18", "s19", "s20", "s21", "s22", "s23",
+        "s24", "s25", "s26", "s27", "s28", "s29", "s30", "s31"};
+    return Names[code];
+  }
 
-    static Code FromName(const char* name);
+  static Code FromName(const char* name);
 
-    static const Encoding Invalid = invalid_freg;
-    static const uint32_t Total = 48;
-    static const uint32_t TotalDouble = 16;
-    static const uint32_t TotalSingle = 32;
-    static const uint32_t Allocatable = 45;
-    
-    static const uint32_t TotalPhys = 32;
-    static uint32_t ActualTotalPhys();
+  static const Encoding Invalid = invalid_freg;
+  static const uint32_t Total = 48;
+  static const uint32_t TotalDouble = 16;
+  static const uint32_t TotalSingle = 32;
+  static const uint32_t Allocatable = 45;
+  
+  static const uint32_t TotalPhys = 32;
+  static uint32_t ActualTotalPhys();
 
+  
     
     
     
@@ -315,329 +304,300 @@ class FloatRegisters
     
     
     
-    
-    
-    typedef uint64_t SetType;
-    static const SetType AllSingleMask = (1ull << TotalSingle) - 1;
-    static const SetType AllDoubleMask = ((1ull << TotalDouble) - 1) << TotalSingle;
-    static const SetType AllMask = AllDoubleMask | AllSingleMask;
+  
+  typedef uint64_t SetType;
+  static const SetType AllSingleMask = (1ull << TotalSingle) - 1;
+  static const SetType AllDoubleMask = ((1ull << TotalDouble) - 1)
+                                       << TotalSingle;
+  static const SetType AllMask = AllDoubleMask | AllSingleMask;
 
-    
-    static const SetType NonVolatileDoubleMask =
-         ((1ULL << d8) |
-          (1ULL << d9) |
-          (1ULL << d10) |
-          (1ULL << d11) |
-          (1ULL << d12) |
-          (1ULL << d13) |
-          (1ULL << d14));
-    
-    static const SetType NonVolatileMask =
-        (NonVolatileDoubleMask |
-         ((1 << s16) |
-          (1 << s17) |
-          (1 << s18) |
-          (1 << s19) |
-          (1 << s20) |
-          (1 << s21) |
-          (1 << s22) |
-          (1 << s23) |
-          (1 << s24) |
-          (1 << s25) |
-          (1 << s26) |
-          (1 << s27) |
-          (1 << s28) |
-          (1 << s29) |
-          (1 << s30)));
+  
+  static const SetType NonVolatileDoubleMask =
+      ((1ULL << d8) | (1ULL << d9) | (1ULL << d10) | (1ULL << d11) |
+       (1ULL << d12) | (1ULL << d13) | (1ULL << d14));
+  
+  static const SetType NonVolatileMask =
+      (NonVolatileDoubleMask |
+       ((1 << s16) | (1 << s17) | (1 << s18) | (1 << s19) | (1 << s20) |
+        (1 << s21) | (1 << s22) | (1 << s23) | (1 << s24) | (1 << s25) |
+        (1 << s26) | (1 << s27) | (1 << s28) | (1 << s29) | (1 << s30)));
 
-    static const SetType VolatileMask = AllMask & ~NonVolatileMask;
-    static const SetType VolatileDoubleMask = AllDoubleMask & ~NonVolatileDoubleMask;
+  static const SetType VolatileMask = AllMask & ~NonVolatileMask;
+  static const SetType VolatileDoubleMask =
+      AllDoubleMask & ~NonVolatileDoubleMask;
 
-    static const SetType WrapperMask = VolatileMask;
+  static const SetType WrapperMask = VolatileMask;
 
-    
-    
-    static const SetType NonAllocatableMask = ((1ULL << d15)) |
-                                               (1ULL << s30) |
-                                               (1ULL << s31);
+  
+  
+  static const SetType NonAllocatableMask =
+      ((1ULL << d15)) | (1ULL << s30) | (1ULL << s31);
 
-    static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
+  static const SetType AllocatableMask = AllMask & ~NonAllocatableMask;
 };
 
 template <typename T>
 class TypedRegisterSet;
 
-class VFPRegister
-{
-  public:
+class VFPRegister {
+ public:
+  
+  
+  
+  enum RegType : uint8_t { Single = 0x0, Double = 0x1, UInt = 0x2, Int = 0x3 };
+
+  typedef FloatRegisters Codes;
+  typedef Codes::Code Code;
+  typedef Codes::Encoding Encoding;
+
+  
+ public:
+  
+  
+  uint32_t code_ : 5;
+
+ protected:
+  uint32_t kind : 2;
+  uint32_t _isInvalid : 1;
+  uint32_t _isMissing : 1;
+
+ public:
+  constexpr VFPRegister(uint32_t r, RegType k)
+      : code_(Code(r)), kind(k), _isInvalid(false), _isMissing(false) {}
+  constexpr VFPRegister()
+      : code_(Code(0)), kind(Double), _isInvalid(true), _isMissing(false) {}
+
+  constexpr VFPRegister(RegType k, uint32_t id, bool invalid, bool missing)
+      : code_(Code(id)), kind(k), _isInvalid(invalid), _isMissing(missing) {}
+
+  explicit constexpr VFPRegister(Code id)
+      : code_(id), kind(Double), _isInvalid(false), _isMissing(false) {}
+  bool operator==(const VFPRegister& other) const {
+    return kind == other.kind && code_ == other.code_ &&
+           isInvalid() == other.isInvalid();
+  }
+  bool operator!=(const VFPRegister& other) const { return !operator==(other); }
+
+  bool isSingle() const { return kind == Single; }
+  bool isDouble() const { return kind == Double; }
+  bool isSimd128() const { return false; }
+  bool isFloat() const { return (kind == Double) || (kind == Single); }
+  bool isInt() const { return (kind == UInt) || (kind == Int); }
+  bool isSInt() const { return kind == Int; }
+  bool isUInt() const { return kind == UInt; }
+  bool equiv(const VFPRegister& other) const { return other.kind == kind; }
+  size_t size() const { return (kind == Double) ? 8 : 4; }
+  bool isInvalid() const;
+  bool isMissing() const;
+
+  VFPRegister doubleOverlay(unsigned int which = 0) const;
+  VFPRegister singleOverlay(unsigned int which = 0) const;
+  VFPRegister sintOverlay(unsigned int which = 0) const;
+  VFPRegister uintOverlay(unsigned int which = 0) const;
+
+  VFPRegister asSingle() const { return singleOverlay(); }
+  VFPRegister asDouble() const { return doubleOverlay(); }
+  VFPRegister asSimd128() const { MOZ_CRASH("NYI"); }
+
+  struct VFPRegIndexSplit;
+  VFPRegIndexSplit encode();
+
+  
+  struct VFPRegIndexSplit {
+    const uint32_t block : 4;
+    const uint32_t bit : 1;
+
+   private:
+    friend VFPRegIndexSplit js::jit::VFPRegister::encode();
+
+    VFPRegIndexSplit(uint32_t block_, uint32_t bit_)
+        : block(block_), bit(bit_) {
+      MOZ_ASSERT(block == block_);
+      MOZ_ASSERT(bit == bit_);
+    }
+  };
+
+  Code code() const {
+    MOZ_ASSERT(!_isInvalid && !_isMissing);
     
     
-    
-    enum RegType : uint8_t {
-        Single = 0x0,
-        Double = 0x1,
-        UInt   = 0x2,
-        Int    = 0x3
-    };
-
-    typedef FloatRegisters Codes;
-    typedef Codes::Code Code;
-    typedef Codes::Encoding Encoding;
-
-    
-  public:
-    
-    
-    uint32_t code_ : 5;
-  protected:
-    uint32_t kind : 2;
-    uint32_t _isInvalid : 1;
-    uint32_t _isMissing : 1;
-
-  public:
-    constexpr VFPRegister(uint32_t r, RegType k)
-      : code_(Code(r)), kind(k), _isInvalid(false), _isMissing(false)
-    { }
-    constexpr VFPRegister()
-      : code_(Code(0)), kind(Double), _isInvalid(true), _isMissing(false)
-    { }
-
-    constexpr VFPRegister(RegType k, uint32_t id, bool invalid, bool missing) :
-        code_(Code(id)), kind(k), _isInvalid(invalid), _isMissing(missing) {
+    MOZ_ASSERT(isFloat());
+    return Code(code_ | (kind << 5));
+  }
+  Encoding encoding() const {
+    MOZ_ASSERT(!_isInvalid && !_isMissing);
+    return Encoding(code_);
+  }
+  uint32_t id() const { return code_; }
+  static VFPRegister FromCode(uint32_t i) {
+    uint32_t code = i & 31;
+    uint32_t kind = i >> 5;
+    return VFPRegister(code, RegType(kind));
+  }
+  bool volatile_() const {
+    if (isDouble()) {
+      return !!((1ULL << (code_ >> 1)) & FloatRegisters::VolatileMask);
     }
-
-    explicit constexpr VFPRegister(Code id)
-      : code_(id), kind(Double), _isInvalid(false), _isMissing(false)
-    { }
-    bool operator==(const VFPRegister& other) const {
-        return kind == other.kind && code_ == other.code_ && isInvalid() == other.isInvalid();
+    return !!((1ULL << code_) & FloatRegisters::VolatileMask);
+  }
+  const char* name() const {
+    if (isDouble()) {
+      return FloatRegisters::GetDoubleName(Encoding(code_));
     }
-    bool operator!=(const VFPRegister& other) const {
-        return !operator==(other);
+    return FloatRegisters::GetSingleName(Encoding(code_));
+  }
+  bool aliases(const VFPRegister& other) {
+    if (kind == other.kind) {
+      return code_ == other.code_;
     }
-
-    bool isSingle() const { return kind == Single; }
-    bool isDouble() const { return kind == Double; }
-    bool isSimd128() const { return false; }
-    bool isFloat() const { return (kind == Double) || (kind == Single); }
-    bool isInt() const { return (kind == UInt) || (kind == Int); }
-    bool isSInt() const { return kind == Int; }
-    bool isUInt() const { return kind == UInt; }
-    bool equiv(const VFPRegister& other) const { return other.kind == kind; }
-    size_t size() const { return (kind == Double) ? 8 : 4; }
-    bool isInvalid() const;
-    bool isMissing() const;
-
-    VFPRegister doubleOverlay(unsigned int which = 0) const;
-    VFPRegister singleOverlay(unsigned int which = 0) const;
-    VFPRegister sintOverlay(unsigned int which = 0) const;
-    VFPRegister uintOverlay(unsigned int which = 0) const;
-
-    VFPRegister asSingle() const { return singleOverlay(); }
-    VFPRegister asDouble() const { return doubleOverlay(); }
-    VFPRegister asSimd128() const { MOZ_CRASH("NYI"); }
-
-    struct VFPRegIndexSplit;
-    VFPRegIndexSplit encode();
-
-    
-    struct VFPRegIndexSplit {
-        const uint32_t block : 4;
-        const uint32_t bit : 1;
-
-      private:
-        friend VFPRegIndexSplit js::jit::VFPRegister::encode();
-
-        VFPRegIndexSplit(uint32_t block_, uint32_t bit_)
-          : block(block_), bit(bit_)
-        {
-            MOZ_ASSERT(block == block_);
-            MOZ_ASSERT(bit == bit_);
-        }
-    };
-
-    Code code() const {
-        MOZ_ASSERT(!_isInvalid && !_isMissing);
-        
-        
-        MOZ_ASSERT(isFloat());
-        return Code(code_ | (kind << 5));
+    return doubleOverlay() == other.doubleOverlay();
+  }
+  static const int NumAliasedDoubles = 16;
+  uint32_t numAliased() const {
+    if (isDouble()) {
+      if (code_ < NumAliasedDoubles) {
+        return 3;
+      }
+      return 1;
     }
-    Encoding encoding() const {
-        MOZ_ASSERT(!_isInvalid && !_isMissing);
-        return Encoding(code_);
+    return 2;
+  }
+
+  VFPRegister aliased(uint32_t aliasIdx) {
+    if (aliasIdx == 0) {
+      return *this;
     }
-    uint32_t id() const {
-        return code_;
+    if (isDouble()) {
+      MOZ_ASSERT(code_ < NumAliasedDoubles);
+      MOZ_ASSERT(aliasIdx <= 2);
+      return singleOverlay(aliasIdx - 1);
     }
-    static VFPRegister FromCode(uint32_t i) {
-        uint32_t code = i & 31;
-        uint32_t kind = i >> 5;
-        return VFPRegister(code, RegType(kind));
-    }
-    bool volatile_() const {
-        if (isDouble()) {
-            return !!((1ULL << (code_ >> 1)) & FloatRegisters::VolatileMask);
-        }
-        return !!((1ULL << code_) & FloatRegisters::VolatileMask);
-    }
-    const char* name() const {
-        if (isDouble()) {
-            return FloatRegisters::GetDoubleName(Encoding(code_));
-        }
-        return FloatRegisters::GetSingleName(Encoding(code_));
-    }
-    bool aliases(const VFPRegister& other) {
-        if (kind == other.kind) {
-            return code_ == other.code_;
-        }
-        return doubleOverlay() == other.doubleOverlay();
-    }
-    static const int NumAliasedDoubles = 16;
-    uint32_t numAliased() const {
-        if (isDouble()) {
-            if (code_ < NumAliasedDoubles) {
-                return 3;
-            }
-            return 1;
-        }
+    MOZ_ASSERT(aliasIdx == 1);
+    return doubleOverlay(aliasIdx - 1);
+  }
+  uint32_t numAlignedAliased() const {
+    if (isDouble()) {
+      if (code_ < NumAliasedDoubles) {
         return 2;
+      }
+      return 1;
+    }
+    
+    
+    return 2 - (code_ & 1);
+  }
+  
+  
+  
+  
+  
+  VFPRegister alignedAliased(uint32_t aliasIdx) {
+    if (aliasIdx == 0) {
+      return *this;
+    }
+    MOZ_ASSERT(aliasIdx == 1);
+    if (isDouble()) {
+      MOZ_ASSERT(code_ < NumAliasedDoubles);
+      return singleOverlay(aliasIdx - 1);
+    }
+    MOZ_ASSERT((code_ & 1) == 0);
+    return doubleOverlay(aliasIdx - 1);
+  }
+
+  typedef FloatRegisters::SetType SetType;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SetType alignedOrDominatedAliasedSet() const {
+    if (isSingle()) {
+      if (code_ % 2 != 0) {
+        return SetType(1) << code_;
+      }
+      return (SetType(1) << code_) | (SetType(1) << (32 + code_ / 2));
     }
 
-    VFPRegister aliased(uint32_t aliasIdx) {
-        if (aliasIdx == 0) {
-            return *this;
-        }
-        if (isDouble()) {
-            MOZ_ASSERT(code_ < NumAliasedDoubles);
-            MOZ_ASSERT(aliasIdx <= 2);
-            return singleOverlay(aliasIdx - 1);
-        }
-        MOZ_ASSERT(aliasIdx == 1);
-        return doubleOverlay(aliasIdx - 1);
-    }
-    uint32_t numAlignedAliased() const {
-        if (isDouble()) {
-            if (code_ < NumAliasedDoubles) {
-                return 2;
-            }
-            return 1;
-        }
-        
-        
-        return 2 - (code_ & 1);
-    }
-    
-    
-    
-    
-    
-    VFPRegister alignedAliased(uint32_t aliasIdx) {
-        if (aliasIdx == 0) {
-            return *this;
-        }
-        MOZ_ASSERT(aliasIdx == 1);
-        if (isDouble()) {
-            MOZ_ASSERT(code_ < NumAliasedDoubles);
-            return singleOverlay(aliasIdx - 1);
-        }
-        MOZ_ASSERT((code_ & 1) == 0);
-        return doubleOverlay(aliasIdx - 1);
-    }
+    MOZ_ASSERT(isDouble());
+    return (SetType(0b11) << (code_ * 2)) | (SetType(1) << (32 + code_));
+  }
 
-    typedef FloatRegisters::SetType SetType;
+  static constexpr RegTypeName DefaultType = RegTypeName::Float64;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SetType alignedOrDominatedAliasedSet() const {
-        if (isSingle()) {
-            if (code_ % 2 != 0) {
-                return SetType(1) << code_;
-            }
-            return (SetType(1) << code_) | (SetType(1) << (32 + code_ / 2));
-        }
+  template <RegTypeName = DefaultType>
+  static SetType LiveAsIndexableSet(SetType s) {
+    return SetType(0);
+  }
 
-        MOZ_ASSERT(isDouble());
-        return (SetType(0b11) << (code_ * 2)) | (SetType(1) << (32 + code_));
-    }
+  template <RegTypeName Name = DefaultType>
+  static SetType AllocatableAsIndexableSet(SetType s) {
+    static_assert(Name != RegTypeName::Any, "Allocatable set are not iterable");
+    return SetType(0);
+  }
 
-    static constexpr RegTypeName DefaultType = RegTypeName::Float64;
-
-    template <RegTypeName = DefaultType>
-    static SetType LiveAsIndexableSet(SetType s) {
-        return SetType(0);
-    }
-
-    template <RegTypeName Name = DefaultType>
-    static SetType AllocatableAsIndexableSet(SetType s) {
-        static_assert(Name != RegTypeName::Any, "Allocatable set are not iterable");
-        return SetType(0);
-    }
-
-    static uint32_t SetSize(SetType x) {
-        static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
-        return mozilla::CountPopulation32(x);
-    }
-    static Code FromName(const char* name) {
-        return FloatRegisters::FromName(name);
-    }
-    static TypedRegisterSet<VFPRegister> ReduceSetForPush(const TypedRegisterSet<VFPRegister>& s);
-    static uint32_t GetPushSizeInBytes(const TypedRegisterSet<VFPRegister>& s);
-    uint32_t getRegisterDumpOffsetInBytes();
-    static uint32_t FirstBit(SetType x) {
-        return mozilla::CountTrailingZeroes64(x);
-    }
-    static uint32_t LastBit(SetType x) {
-        return 63 - mozilla::CountLeadingZeroes64(x);
-    }
-
+  static uint32_t SetSize(SetType x) {
+    static_assert(sizeof(SetType) == 8, "SetType must be 64 bits");
+    return mozilla::CountPopulation32(x);
+  }
+  static Code FromName(const char* name) {
+    return FloatRegisters::FromName(name);
+  }
+  static TypedRegisterSet<VFPRegister> ReduceSetForPush(
+      const TypedRegisterSet<VFPRegister>& s);
+  static uint32_t GetPushSizeInBytes(const TypedRegisterSet<VFPRegister>& s);
+  uint32_t getRegisterDumpOffsetInBytes();
+  static uint32_t FirstBit(SetType x) {
+    return mozilla::CountTrailingZeroes64(x);
+  }
+  static uint32_t LastBit(SetType x) {
+    return 63 - mozilla::CountLeadingZeroes64(x);
+  }
 };
 
-template <> inline VFPRegister::SetType
-VFPRegister::LiveAsIndexableSet<RegTypeName::Float32>(SetType set)
-{
-    return set & FloatRegisters::AllSingleMask;
+template <>
+inline VFPRegister::SetType
+VFPRegister::LiveAsIndexableSet<RegTypeName::Float32>(SetType set) {
+  return set & FloatRegisters::AllSingleMask;
 }
 
-template <> inline VFPRegister::SetType
-VFPRegister::LiveAsIndexableSet<RegTypeName::Float64>(SetType set)
-{
-    return set & FloatRegisters::AllDoubleMask;
+template <>
+inline VFPRegister::SetType
+VFPRegister::LiveAsIndexableSet<RegTypeName::Float64>(SetType set) {
+  return set & FloatRegisters::AllDoubleMask;
 }
 
-template <> inline VFPRegister::SetType
-VFPRegister::LiveAsIndexableSet<RegTypeName::Any>(SetType set)
-{
-    return set;
+template <>
+inline VFPRegister::SetType VFPRegister::LiveAsIndexableSet<RegTypeName::Any>(
+    SetType set) {
+  return set;
 }
 
-template <> inline VFPRegister::SetType
-VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float32>(SetType set)
-{
-    
-    
-    
-    return set & FloatRegisters::AllSingleMask;
+template <>
+inline VFPRegister::SetType
+VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float32>(SetType set) {
+  
+  
+  
+  return set & FloatRegisters::AllSingleMask;
 }
 
-template <> inline VFPRegister::SetType
-VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float64>(SetType set)
-{
+template <>
+inline VFPRegister::SetType
+VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float64>(SetType set) {
+  
     
     
     
@@ -658,29 +618,28 @@ VFPRegister::AllocatableAsIndexableSet<RegTypeName::Float64>(SetType set)
     
     
     
-    
-    
+  
 
-    
-    SetType s2d = AllocatableAsIndexableSet<RegTypeName::Float32>(set);
-    static_assert(FloatRegisters::TotalSingle == 32, "Wrong mask");
-    s2d = (0xaaaaaaaa & s2d) >> 1; 
-    
-    
-    s2d = ((s2d >> 1) | s2d) & 0x33333333; 
-    s2d = ((s2d >> 2) | s2d) & 0x0f0f0f0f; 
-    s2d = ((s2d >> 4) | s2d) & 0x00ff00ff;
-    s2d = ((s2d >> 8) | s2d) & 0x0000ffff;
-    
-    s2d = s2d << FloatRegisters::TotalSingle;
+  
+  SetType s2d = AllocatableAsIndexableSet<RegTypeName::Float32>(set);
+  static_assert(FloatRegisters::TotalSingle == 32, "Wrong mask");
+  s2d = (0xaaaaaaaa & s2d) >> 1;  
+  
+  
+  s2d = ((s2d >> 1) | s2d) & 0x33333333;  
+  s2d = ((s2d >> 2) | s2d) & 0x0f0f0f0f;  
+  s2d = ((s2d >> 4) | s2d) & 0x00ff00ff;
+  s2d = ((s2d >> 8) | s2d) & 0x0000ffff;
+  
+  s2d = s2d << FloatRegisters::TotalSingle;
 
-    
-    static_assert(FloatRegisters::TotalDouble == 16,
-        "d16-d31 do not have a single register mapping");
+  
+  static_assert(FloatRegisters::TotalDouble == 16,
+                "d16-d31 do not have a single register mapping");
 
-    
-    
-    return set & s2d;
+  
+  
+  return set & s2d;
 }
 
 
@@ -689,8 +648,8 @@ typedef VFPRegister FloatRegister;
 uint32_t GetARMFlags();
 bool HasARMv7();
 bool HasMOVWT();
-bool HasLDSTREXBHD();           
-bool HasDMBDSBISB();            
+bool HasLDSTREXBHD();  
+bool HasDMBDSBISB();   
 bool HasVFPv3();
 bool HasVFP();
 bool Has32DP();
@@ -703,6 +662,7 @@ extern volatile uint32_t armHwCapFlags;
 
 
 #define HWCAP_FIXUP_FAULT (1 << 24)
+
 
 
 #define HWCAP_UNINITIALIZED (1 << 25)
@@ -720,37 +680,27 @@ extern volatile uint32_t armHwCapFlags;
 
 
 
-inline bool HasAlignmentFault()
-{
-    MOZ_ASSERT(armHwCapFlags != HWCAP_UNINITIALIZED);
-    return armHwCapFlags & HWCAP_ALIGNMENT_FAULT;
+inline bool HasAlignmentFault() {
+  MOZ_ASSERT(armHwCapFlags != HWCAP_UNINITIALIZED);
+  return armHwCapFlags & HWCAP_ALIGNMENT_FAULT;
 }
 
 #ifdef JS_SIMULATOR_ARM
 
 
-inline bool FixupFault()
-{
-    MOZ_ASSERT(armHwCapFlags != HWCAP_UNINITIALIZED);
-    return armHwCapFlags & HWCAP_FIXUP_FAULT;
+inline bool FixupFault() {
+  MOZ_ASSERT(armHwCapFlags != HWCAP_UNINITIALIZED);
+  return armHwCapFlags & HWCAP_FIXUP_FAULT;
 }
 #endif
 
 
 
-inline bool
-hasUnaliasedDouble()
-{
-    return Has32DP();
-}
+inline bool hasUnaliasedDouble() { return Has32DP(); }
 
 
 
-inline bool
-hasMultiAlias()
-{
-    return true;
-}
+inline bool hasMultiAlias() { return true; }
 
 bool ParseARMHwCapFlags(const char* armHwCap);
 void InitARMFlags();
@@ -762,12 +712,11 @@ uint32_t GetARMFlags();
 #ifdef JS_SIMULATOR_ARM
 bool UseHardFpABI();
 #else
-static inline bool UseHardFpABI()
-{
+static inline bool UseHardFpABI() {
 #if defined(JS_CODEGEN_ARM_HARDFP)
-    return true;
+  return true;
 #else
-    return false;
+  return false;
 #endif
 }
 #endif
@@ -778,7 +727,7 @@ bool ForceDoubleCacheFlush();
 
 #define JS_CODEGEN_REGISTER_PAIR 1
 
-} 
-} 
+}  
+}  
 
 #endif 

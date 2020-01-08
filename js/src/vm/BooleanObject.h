@@ -15,37 +15,34 @@ namespace js {
 
 class GlobalObject;
 
-class BooleanObject : public NativeObject
-{
-    
-    static const unsigned PRIMITIVE_VALUE_SLOT = 0;
+class BooleanObject : public NativeObject {
+  
+  static const unsigned PRIMITIVE_VALUE_SLOT = 0;
 
-  public:
-    static const unsigned RESERVED_SLOTS = 1;
+ public:
+  static const unsigned RESERVED_SLOTS = 1;
 
-    static const Class class_;
+  static const Class class_;
 
-    
-
+  
 
 
-    static inline BooleanObject* create(JSContext* cx, bool b,
-                                        HandleObject proto = nullptr);
 
-    bool unbox() const {
-        return getFixedSlot(PRIMITIVE_VALUE_SLOT).toBoolean();
-    }
+  static inline BooleanObject* create(JSContext* cx, bool b,
+                                      HandleObject proto = nullptr);
 
-  private:
-    inline void setPrimitiveValue(bool b) {
-        setFixedSlot(PRIMITIVE_VALUE_SLOT, BooleanValue(b));
-    }
+  bool unbox() const { return getFixedSlot(PRIMITIVE_VALUE_SLOT).toBoolean(); }
 
-    
-    friend JSObject*
-    js::InitBooleanClass(JSContext* cx, js::Handle<GlobalObject*> global);
+ private:
+  inline void setPrimitiveValue(bool b) {
+    setFixedSlot(PRIMITIVE_VALUE_SLOT, BooleanValue(b));
+  }
+
+  
+  friend JSObject* js::InitBooleanClass(JSContext* cx,
+                                        js::Handle<GlobalObject*> global);
 };
 
-} 
+}  
 
 #endif 

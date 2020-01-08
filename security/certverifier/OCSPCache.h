@@ -37,11 +37,14 @@ namespace mozilla {
 class OriginAttributes;
 }
 
-namespace mozilla { namespace pkix {
+namespace mozilla {
+namespace pkix {
 struct CertID;
-} } 
+}
+}  
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
 
 typedef uint8_t SHA384Buffer[SHA384_LENGTH];
@@ -52,9 +55,8 @@ typedef uint8_t SHA384Buffer[SHA384_LENGTH];
 
 
 
-class OCSPCache
-{
-public:
+class OCSPCache {
+ public:
   OCSPCache();
   ~OCSPCache();
 
@@ -91,18 +93,14 @@ public:
   
   void Clear();
 
-private:
-  class Entry
-  {
-  public:
-    Entry(mozilla::pkix::Result aResult,
-          mozilla::pkix::Time aThisUpdate,
+ private:
+  class Entry {
+   public:
+    Entry(mozilla::pkix::Result aResult, mozilla::pkix::Time aThisUpdate,
           mozilla::pkix::Time aValidThrough)
-      : mResult(aResult)
-      , mThisUpdate(aThisUpdate)
-      , mValidThrough(aValidThrough)
-    {
-    }
+        : mResult(aResult),
+          mThisUpdate(aThisUpdate),
+          mValidThrough(aValidThrough) {}
     mozilla::pkix::Result Init(const mozilla::pkix::CertID& aCertID,
                                const OriginAttributes& aOriginAttributes);
 
@@ -119,8 +117,7 @@ private:
 
   bool FindInternal(const mozilla::pkix::CertID& aCertID,
                     const OriginAttributes& aOriginAttributes,
-                     size_t& index,
-                    const MutexAutoLock& aProofOfLock);
+                     size_t& index, const MutexAutoLock& aProofOfLock);
   void MakeMostRecentlyUsed(size_t aIndex, const MutexAutoLock& aProofOfLock);
 
   Mutex mMutex;
@@ -133,6 +130,7 @@ private:
   Vector<Entry*, 256> mEntries;
 };
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

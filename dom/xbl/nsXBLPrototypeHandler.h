@@ -36,31 +36,30 @@ class EventTarget;
 class KeyboardEvent;
 class MouseEvent;
 class UIEvent;
-} 
+}  
 
 namespace layers {
 class KeyboardShortcut;
-} 
+}  
 
-} 
+}  
 
-#define NS_HANDLER_TYPE_XBL_JS              (1 << 0)
-#define NS_HANDLER_TYPE_XBL_COMMAND         (1 << 1)
-#define NS_HANDLER_TYPE_XUL                 (1 << 2)
+#define NS_HANDLER_TYPE_XBL_JS (1 << 0)
+#define NS_HANDLER_TYPE_XBL_COMMAND (1 << 1)
+#define NS_HANDLER_TYPE_XUL (1 << 2)
 #define NS_HANDLER_HAS_ALLOW_UNTRUSTED_ATTR (1 << 4)
-#define NS_HANDLER_ALLOW_UNTRUSTED          (1 << 5)
-#define NS_HANDLER_TYPE_SYSTEM              (1 << 6)
-#define NS_HANDLER_TYPE_PREVENTDEFAULT      (1 << 7)
+#define NS_HANDLER_ALLOW_UNTRUSTED (1 << 5)
+#define NS_HANDLER_TYPE_SYSTEM (1 << 6)
+#define NS_HANDLER_TYPE_PREVENTDEFAULT (1 << 7)
 
 
-#define NS_PHASE_CAPTURING          1
-#define NS_PHASE_TARGET             2
-#define NS_PHASE_BUBBLING           3
+#define NS_PHASE_CAPTURING 1
+#define NS_PHASE_TARGET 2
+#define NS_PHASE_BUBBLING 3
 
 
 
-enum XBLReservedKey : uint8_t
-{
+enum XBLReservedKey : uint8_t {
   XBLReservedKey_False = 0,
   XBLReservedKey_True = 1,
   XBLReservedKey_Unset = 2,
@@ -70,16 +69,16 @@ namespace mozilla {
 namespace dom {
 class Element;
 class Event;
-}
-}
+}  
+}  
 
-class nsXBLPrototypeHandler
-{
+class nsXBLPrototypeHandler {
   typedef mozilla::IgnoreModifierState IgnoreModifierState;
   typedef mozilla::layers::KeyboardShortcut KeyboardShortcut;
   typedef mozilla::Modifiers Modifiers;
 
-public:
+ public:
+  
   
   nsXBLPrototypeHandler(const char16_t* aEvent, const char16_t* aPhase,
                         const char16_t* aAction, const char16_t* aCommand,
@@ -88,11 +87,11 @@ public:
                         const char16_t* aClickCount, const char16_t* aGroup,
                         const char16_t* aPreventDefault,
                         const char16_t* aAllowUntrusted,
-                        nsXBLPrototypeBinding* aBinding,
-                        uint32_t aLineNumber);
+                        nsXBLPrototypeBinding* aBinding, uint32_t aLineNumber);
 
   
-  explicit nsXBLPrototypeHandler(mozilla::dom::Element* aKeyElement, XBLReservedKey aReserved);
+  explicit nsXBLPrototypeHandler(mozilla::dom::Element* aKeyElement,
+                                 XBLReservedKey aReserved);
 
   
   
@@ -111,11 +110,9 @@ public:
 
 
 
-  bool TryConvertToKeyboardShortcut(
-          KeyboardShortcut* aOut) const;
+  bool TryConvertToKeyboardShortcut(KeyboardShortcut* aOut) const;
 
-  bool EventTypeEquals(nsAtom* aEventType) const
-  {
+  bool EventTypeEquals(nsAtom* aEventType) const {
     return mEventName == aEventType;
   }
 
@@ -135,7 +132,9 @@ public:
   XBLReservedKey GetIsReserved() { return mReserved; }
 
   nsXBLPrototypeHandler* GetNextHandler() { return mNextHandler; }
-  void SetNextHandler(nsXBLPrototypeHandler* aHandler) { mNextHandler = aHandler; }
+  void SetNextHandler(nsXBLPrototypeHandler* aHandler) {
+    mNextHandler = aHandler;
+  }
 
   nsresult ExecuteHandler(mozilla::dom::EventTarget* aTarget,
                           mozilla::dom::Event* aEvent);
@@ -143,8 +142,7 @@ public:
   already_AddRefed<nsAtom> GetEventName();
   void SetEventName(nsAtom* aName) { mEventName = aName; }
 
-  nsXBLEventHandler* GetEventHandler()
-  {
+  nsXBLEventHandler* GetEventHandler() {
     if (!mHandler) {
       mHandler = NS_NewXBLEventHandler(this, mEventName);
     }
@@ -152,20 +150,15 @@ public:
     return mHandler;
   }
 
-  nsXBLEventHandler* GetCachedEventHandler()
-  {
-    return mHandler;
-  }
+  nsXBLEventHandler* GetCachedEventHandler() { return mHandler; }
 
-  bool HasAllowUntrustedAttr()
-  {
+  bool HasAllowUntrustedAttr() {
     return (mType & NS_HANDLER_HAS_ALLOW_UNTRUSTED_ATTR) != 0;
   }
 
   
   
-  bool AllowUntrustedEvents()
-  {
+  bool AllowUntrustedEvents() {
     return (mType & NS_HANDLER_ALLOW_UNTRUSTED) != 0;
   }
 
@@ -174,10 +167,10 @@ public:
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-public:
+ public:
   static uint32_t gRefCnt;
 
-protected:
+ protected:
   void Init() {
     ++gRefCnt;
     if (gRefCnt == 1)
@@ -185,19 +178,23 @@ protected:
       InitAccessKeys();
   }
 
-  already_AddRefed<nsIController> GetController(mozilla::dom::EventTarget* aTarget);
+  already_AddRefed<nsIController> GetController(
+      mozilla::dom::EventTarget* aTarget);
 
   inline int32_t GetMatchingKeyCode(const nsAString& aKeyName);
-  void ConstructPrototype(mozilla::dom::Element* aKeyElement,
-                          const char16_t* aEvent=nullptr, const char16_t* aPhase=nullptr,
-                          const char16_t* aAction=nullptr, const char16_t* aCommand=nullptr,
-                          const char16_t* aKeyCode=nullptr, const char16_t* aCharCode=nullptr,
-                          const char16_t* aModifiers=nullptr, const char16_t* aButton=nullptr,
-                          const char16_t* aClickCount=nullptr, const char16_t* aGroup=nullptr,
-                          const char16_t* aPreventDefault=nullptr,
-                          const char16_t* aAllowUntrusted=nullptr);
+  void ConstructPrototype(
+      mozilla::dom::Element* aKeyElement, const char16_t* aEvent = nullptr,
+      const char16_t* aPhase = nullptr, const char16_t* aAction = nullptr,
+      const char16_t* aCommand = nullptr, const char16_t* aKeyCode = nullptr,
+      const char16_t* aCharCode = nullptr, const char16_t* aModifiers = nullptr,
+      const char16_t* aButton = nullptr, const char16_t* aClickCount = nullptr,
+      const char16_t* aGroup = nullptr,
+      const char16_t* aPreventDefault = nullptr,
+      const char16_t* aAllowUntrusted = nullptr);
 
-  void ReportKeyConflict(const char16_t* aKey, const char16_t* aModifiers, mozilla::dom::Element* aElement, const char *aMessageName);
+  void ReportKeyConflict(const char16_t* aKey, const char16_t* aModifiers,
+                         mozilla::dom::Element* aElement,
+                         const char* aMessageName);
   void GetEventType(nsAString& type);
   bool ModifiersMatchMask(mozilla::dom::UIEvent* aEvent,
                           const IgnoreModifierState& aIgnoreModifierState);
@@ -230,41 +227,43 @@ protected:
 
   static const int32_t cAllModifiers;
 
-protected:
+ protected:
   union {
-    nsIWeakReference* mHandlerElement;  
-    char16_t*        mHandlerText;     
-                                        
-                                        
-                                        
+    nsIWeakReference*
+        mHandlerElement;     
+    char16_t* mHandlerText;  
+                             
+                             
+                             
   };
 
   uint32_t mLineNumber;  
 
   
-  uint8_t mPhase;            
-  uint8_t mType;             
-                             
-                             
-                             
-  uint8_t mMisc;             
-                             
-                             
+  uint8_t mPhase;  
+  uint8_t mType;   
+                  
+                  
+                  
+  uint8_t mMisc;  
+                  
+                  
 
-  XBLReservedKey mReserved;  
+  XBLReservedKey
+      mReserved;  
 
-  int32_t mKeyMask;          
-                             
+  int32_t mKeyMask;  
+                     
 
   
-  int32_t mDetail;           
-                             
+  int32_t mDetail;  
+                    
 
   
   nsXBLPrototypeHandler* mNextHandler;
-  RefPtr<nsAtom> mEventName; 
+  RefPtr<nsAtom> mEventName;  
   RefPtr<nsXBLEventHandler> mHandler;
-  nsXBLPrototypeBinding* mPrototypeBinding; 
+  nsXBLPrototypeBinding* mPrototypeBinding;  
 };
 
 #endif

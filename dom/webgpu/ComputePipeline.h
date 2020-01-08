@@ -14,18 +14,16 @@ namespace webgpu {
 
 class Device;
 
-class ComputePipeline final
-    : public ChildOf<Device>
-{
-public:
-    WEBGPU_DECL_GOOP(ComputePipeline)
+class ComputePipeline final : public ChildOf<Device> {
+ public:
+  WEBGPU_DECL_GOOP(ComputePipeline)
 
-private:
-    ComputePipeline() = delete;
-    virtual ~ComputePipeline();
+ private:
+  ComputePipeline() = delete;
+  virtual ~ComputePipeline();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

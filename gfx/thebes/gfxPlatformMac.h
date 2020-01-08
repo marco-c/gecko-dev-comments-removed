@@ -14,87 +14,82 @@ namespace mozilla {
 namespace gfx {
 class DrawTarget;
 class VsyncSource;
-} 
-} 
+}  
+}  
 
 class gfxPlatformMac : public gfxPlatform {
-public:
-    gfxPlatformMac();
-    virtual ~gfxPlatformMac();
+ public:
+  gfxPlatformMac();
+  virtual ~gfxPlatformMac();
 
-    static gfxPlatformMac *GetPlatform() {
-        return (gfxPlatformMac*) gfxPlatform::GetPlatform();
-    }
+  static gfxPlatformMac* GetPlatform() {
+    return (gfxPlatformMac*)gfxPlatform::GetPlatform();
+  }
 
-    bool UsesTiling() const override;
-    bool ContentUsesTiling() const override;
+  bool UsesTiling() const override;
+  bool ContentUsesTiling() const override;
 
-    virtual already_AddRefed<gfxASurface>
-      CreateOffscreenSurface(const IntSize& aSize,
-                             gfxImageFormat aFormat) override;
+  virtual already_AddRefed<gfxASurface> CreateOffscreenSurface(
+      const IntSize& aSize, gfxImageFormat aFormat) override;
 
-    gfxFontGroup*
-    CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
-                    const gfxFontStyle *aStyle,
-                    gfxTextPerfMetrics* aTextPerf,
-                    gfxUserFontSet *aUserFontSet,
-                    gfxFloat aDevToCssSize) override;
+  gfxFontGroup* CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
+                                const gfxFontStyle* aStyle,
+                                gfxTextPerfMetrics* aTextPerf,
+                                gfxUserFontSet* aUserFontSet,
+                                gfxFloat aDevToCssSize) override;
 
-    virtual gfxPlatformFontList* CreatePlatformFontList() override;
+  virtual gfxPlatformFontList* CreatePlatformFontList() override;
 
-    void
-    ReadSystemFontList(InfallibleTArray<mozilla::dom::SystemFontListEntry>*
-                       aFontList) override;
+  void ReadSystemFontList(
+      InfallibleTArray<mozilla::dom::SystemFontListEntry>* aFontList) override;
 
-    bool IsFontFormatSupported(uint32_t aFormatFlags) override;
+  bool IsFontFormatSupported(uint32_t aFormatFlags) override;
 
-    virtual void GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
-                                        Script aRunScript,
-                                        nsTArray<const char*>& aFontList) override;
+  virtual void GetCommonFallbackFonts(
+      uint32_t aCh, uint32_t aNextCh, Script aRunScript,
+      nsTArray<const char*>& aFontList) override;
 
+  
+  
+  static void LookupSystemFont(mozilla::LookAndFeel::FontID aSystemFontID,
+                               nsACString& aSystemFontName,
+                               gfxFontStyle& aFontStyle,
+                               float aDevPixPerCSSPixel);
+
+  virtual bool SupportsApzWheelInput() const override { return true; }
+
+  bool RespectsFontStyleSmoothing() const override {
+    
+    return true;
+  }
+
+  bool RequiresAcceleratedGLContextForCompositorOGL() const override {
     
     
-    static void
-    LookupSystemFont(mozilla::LookAndFeel::FontID aSystemFontID,
-                     nsACString& aSystemFontName,
-                     gfxFontStyle &aFontStyle,
-                     float aDevPixPerCSSPixel);
-
-    virtual bool SupportsApzWheelInput() const override {
-      return true;
-    }
-
-    bool RespectsFontStyleSmoothing() const override {
-      
-      return true;
-    }
-
-    bool RequiresAcceleratedGLContextForCompositorOGL() const override {
-      
-      
-      
-      return true;
-    }
-
-    virtual already_AddRefed<mozilla::gfx::VsyncSource> CreateHardwareVsyncSource() override;
-
     
-    uint32_t GetAntiAliasingThreshold() { return mFontAntiAliasingThreshold; }
+    return true;
+  }
 
-protected:
-    bool AccelerateLayersByDefault() override;
+  virtual already_AddRefed<mozilla::gfx::VsyncSource>
+  CreateHardwareVsyncSource() override;
 
-    BackendPrefsData GetBackendPrefs() const override;
+  
+  uint32_t GetAntiAliasingThreshold() { return mFontAntiAliasingThreshold; }
 
-    bool CheckVariationFontSupport() override;
+ protected:
+  bool AccelerateLayersByDefault() override;
 
-private:
-    virtual void GetPlatformCMSOutputProfile(void* &mem, size_t &size) override;
+  BackendPrefsData GetBackendPrefs() const override;
 
-    
-    static uint32_t ReadAntiAliasingThreshold();
+  bool CheckVariationFontSupport() override;
 
-    uint32_t mFontAntiAliasingThreshold;
+ private:
+  virtual void GetPlatformCMSOutputProfile(void*& mem, size_t& size) override;
+
+  
+  static uint32_t ReadAntiAliasingThreshold();
+
+  uint32_t mFontAntiAliasingThreshold;
 };
 
 #endif 

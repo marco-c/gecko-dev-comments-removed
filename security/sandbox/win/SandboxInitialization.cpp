@@ -14,40 +14,30 @@
 namespace mozilla {
 namespace sandboxing {
 
-typedef BOOL(WINAPI* CloseHandle_func) (HANDLE hObject);
+typedef BOOL(WINAPI* CloseHandle_func)(HANDLE hObject);
 static WindowsDllInterceptor::FuncHookType<CloseHandle_func> stub_CloseHandle;
 
-typedef BOOL(WINAPI* DuplicateHandle_func)(HANDLE hSourceProcessHandle,
-                                           HANDLE hSourceHandle,
-                                           HANDLE hTargetProcessHandle,
-                                           LPHANDLE lpTargetHandle,
-                                           DWORD dwDesiredAccess,
-                                           BOOL bInheritHandle,
-                                           DWORD dwOptions);
+typedef BOOL(WINAPI* DuplicateHandle_func)(
+    HANDLE hSourceProcessHandle, HANDLE hSourceHandle,
+    HANDLE hTargetProcessHandle, LPHANDLE lpTargetHandle, DWORD dwDesiredAccess,
+    BOOL bInheritHandle, DWORD dwOptions);
 static WindowsDllInterceptor::FuncHookType<DuplicateHandle_func>
-  stub_DuplicateHandle;
+    stub_DuplicateHandle;
 
-static BOOL WINAPI
-patched_CloseHandle(HANDLE hObject)
-{
+static BOOL WINAPI patched_CloseHandle(HANDLE hObject) {
   
   base::win::OnHandleBeingClosed(hObject);
   return stub_CloseHandle(hObject);
 }
 
-static BOOL WINAPI
-patched_DuplicateHandle(HANDLE hSourceProcessHandle,
-                        HANDLE hSourceHandle,
-                        HANDLE hTargetProcessHandle,
-                        LPHANDLE lpTargetHandle,
-                        DWORD dwDesiredAccess,
-                        BOOL bInheritHandle,
-                        DWORD dwOptions)
-{
+static BOOL WINAPI patched_DuplicateHandle(
+    HANDLE hSourceProcessHandle, HANDLE hSourceHandle,
+    HANDLE hTargetProcessHandle, LPHANDLE lpTargetHandle, DWORD dwDesiredAccess,
+    BOOL bInheritHandle, DWORD dwOptions) {
   
   
   if ((dwOptions & DUPLICATE_CLOSE_SOURCE) &&
-    (GetProcessId(hSourceProcessHandle) == ::GetCurrentProcessId())) {
+      (GetProcessId(hSourceProcessHandle) == ::GetCurrentProcessId())) {
     base::win::OnHandleBeingClosed(hSourceHandle);
   }
 
@@ -58,19 +48,16 @@ patched_DuplicateHandle(HANDLE hSourceProcessHandle,
 
 static WindowsDllInterceptor Kernel32Intercept;
 
-static bool
-EnableHandleCloseMonitoring()
-{
+static bool EnableHandleCloseMonitoring() {
   Kernel32Intercept.Init("kernel32.dll");
-  bool hooked =
-    stub_CloseHandle.Set(Kernel32Intercept, "CloseHandle", &patched_CloseHandle);
+  bool hooked = stub_CloseHandle.Set(Kernel32Intercept, "CloseHandle",
+                                     &patched_CloseHandle);
   if (!hooked) {
     return false;
   }
 
-  hooked =
-    stub_DuplicateHandle.Set(Kernel32Intercept, "DuplicateHandle",
-                             &patched_DuplicateHandle);
+  hooked = stub_DuplicateHandle.Set(Kernel32Intercept, "DuplicateHandle",
+                                    &patched_DuplicateHandle);
   if (!hooked) {
     return false;
   }
@@ -78,9 +65,7 @@ EnableHandleCloseMonitoring()
   return true;
 }
 
-static bool
-ShouldDisableHandleVerifier()
-{
+static bool ShouldDisableHandleVerifier() {
 #if defined(_X86_) && (defined(EARLY_BETA_OR_EARLIER) || defined(DEBUG))
   
   
@@ -91,9 +76,7 @@ ShouldDisableHandleVerifier()
 #endif
 }
 
-static void
-InitializeHandleVerifier()
-{
+static void InitializeHandleVerifier() {
   
   
   if (ShouldDisableHandleVerifier() || !EnableHandleCloseMonitoring()) {
@@ -101,14 +84,12 @@ InitializeHandleVerifier()
   }
 }
 
-static sandbox::TargetServices*
-InitializeTargetServices()
-{
+static sandbox::TargetServices* InitializeTargetServices() {
   
   InitializeHandleVerifier();
 
   sandbox::TargetServices* targetServices =
-    sandbox::SandboxFactory::GetTargetServices();
+      sandbox::SandboxFactory::GetTargetServices();
   if (!targetServices) {
     return nullptr;
   }
@@ -120,29 +101,21 @@ InitializeTargetServices()
   return targetServices;
 }
 
-sandbox::TargetServices*
-GetInitializedTargetServices()
-{
+sandbox::TargetServices* GetInitializedTargetServices() {
   static sandbox::TargetServices* sInitializedTargetServices =
-    InitializeTargetServices();
+      InitializeTargetServices();
 
   return sInitializedTargetServices;
 }
 
-void
-LowerSandbox()
-{
-  GetInitializedTargetServices()->LowerToken();
-}
+void LowerSandbox() { GetInitializedTargetServices()->LowerToken(); }
 
-static sandbox::BrokerServices*
-InitializeBrokerServices()
-{
+static sandbox::BrokerServices* InitializeBrokerServices() {
   
   InitializeHandleVerifier();
 
   sandbox::BrokerServices* brokerServices =
-    sandbox::SandboxFactory::GetBrokerServices();
+      sandbox::SandboxFactory::GetBrokerServices();
   if (!brokerServices) {
     return nullptr;
   }
@@ -163,19 +136,16 @@ InitializeBrokerServices()
   return brokerServices;
 }
 
-sandbox::BrokerServices*
-GetInitializedBrokerServices()
-{
+sandbox::BrokerServices* GetInitializedBrokerServices() {
   static sandbox::BrokerServices* sInitializedBrokerServices =
-    InitializeBrokerServices();
+      InitializeBrokerServices();
 
   return sInitializedBrokerServices;
 }
 
-PermissionsService* GetPermissionsService()
-{
+PermissionsService* GetPermissionsService() {
   return PermissionsService::GetInstance();
 }
 
-} 
-} 
+}  
+}  

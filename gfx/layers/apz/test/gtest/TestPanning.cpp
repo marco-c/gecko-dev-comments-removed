@@ -9,9 +9,9 @@
 #include "InputUtils.h"
 
 class APZCPanningTester : public APZCBasicTester {
-protected:
-  void DoPanTest(bool aShouldTriggerScroll, bool aShouldBeConsumed, uint32_t aBehavior)
-  {
+ protected:
+  void DoPanTest(bool aShouldTriggerScroll, bool aShouldBeConsumed,
+                 uint32_t aBehavior) {
     if (aShouldTriggerScroll) {
       
       EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(2);
@@ -28,11 +28,12 @@ protected:
     allowedTouchBehaviors.AppendElement(aBehavior);
 
     
-    PanAndCheckStatus(apzc, touchStart, touchEnd, aShouldBeConsumed, &allowedTouchBehaviors);
+    PanAndCheckStatus(apzc, touchStart, touchEnd, aShouldBeConsumed,
+                      &allowedTouchBehaviors);
     apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
 
     if (aShouldTriggerScroll) {
-      EXPECT_EQ(ParentLayerPoint(0, -(touchEnd-touchStart)), pointOut);
+      EXPECT_EQ(ParentLayerPoint(0, -(touchEnd - touchStart)), pointOut);
       EXPECT_NE(AsyncTransform(), viewTransformOut);
     } else {
       EXPECT_EQ(ParentLayerPoint(), pointOut);
@@ -44,15 +45,15 @@ protected:
     apzc->CancelAnimation();
 
     
-    PanAndCheckStatus(apzc, touchEnd, touchStart, aShouldBeConsumed, &allowedTouchBehaviors);
+    PanAndCheckStatus(apzc, touchEnd, touchStart, aShouldBeConsumed,
+                      &allowedTouchBehaviors);
     apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
 
     EXPECT_EQ(ParentLayerPoint(), pointOut);
     EXPECT_EQ(AsyncTransform(), viewTransformOut);
   }
 
-  void DoPanWithPreventDefaultTest()
-  {
+  void DoPanWithPreventDefaultTest() {
     MakeApzcWaitForMainThread();
 
     int touchStart = 50;
@@ -63,8 +64,10 @@ protected:
 
     
     nsTArray<uint32_t> allowedTouchBehaviors;
-    allowedTouchBehaviors.AppendElement(mozilla::layers::AllowedTouchBehavior::VERTICAL_PAN);
-    PanAndCheckStatus(apzc, touchStart, touchEnd, true, &allowedTouchBehaviors, &blockId);
+    allowedTouchBehaviors.AppendElement(
+        mozilla::layers::AllowedTouchBehavior::VERTICAL_PAN);
+    PanAndCheckStatus(apzc, touchStart, touchEnd, true, &allowedTouchBehaviors,
+                      &blockId);
 
     
     
@@ -80,7 +83,8 @@ protected:
 
 TEST_F(APZCPanningTester, Pan) {
   SCOPED_GFX_PREF(TouchActionEnabled, bool, false);
-  SCOPED_GFX_PREF(APZVelocityBias, float, 0.0); 
+  SCOPED_GFX_PREF(APZVelocityBias, float,
+                  0.0);  
   DoPanTest(true, true, mozilla::layers::AllowedTouchBehavior::NONE);
 }
 
@@ -94,26 +98,32 @@ TEST_F(APZCPanningTester, Pan) {
 
 TEST_F(APZCPanningTester, PanWithTouchActionAuto) {
   SCOPED_GFX_PREF(TouchActionEnabled, bool, true);
-  SCOPED_GFX_PREF(APZVelocityBias, float, 0.0); 
-  DoPanTest(true, true, mozilla::layers::AllowedTouchBehavior::HORIZONTAL_PAN
-                      | mozilla::layers::AllowedTouchBehavior::VERTICAL_PAN);
+  SCOPED_GFX_PREF(APZVelocityBias, float,
+                  0.0);  
+  DoPanTest(true, true,
+            mozilla::layers::AllowedTouchBehavior::HORIZONTAL_PAN |
+                mozilla::layers::AllowedTouchBehavior::VERTICAL_PAN);
 }
 
 TEST_F(APZCPanningTester, PanWithTouchActionNone) {
   SCOPED_GFX_PREF(TouchActionEnabled, bool, true);
-  SCOPED_GFX_PREF(APZVelocityBias, float, 0.0); 
+  SCOPED_GFX_PREF(APZVelocityBias, float,
+                  0.0);  
   DoPanTest(false, false, 0);
 }
 
 TEST_F(APZCPanningTester, PanWithTouchActionPanX) {
   SCOPED_GFX_PREF(TouchActionEnabled, bool, true);
-  SCOPED_GFX_PREF(APZVelocityBias, float, 0.0); 
-  DoPanTest(false, false, mozilla::layers::AllowedTouchBehavior::HORIZONTAL_PAN);
+  SCOPED_GFX_PREF(APZVelocityBias, float,
+                  0.0);  
+  DoPanTest(false, false,
+            mozilla::layers::AllowedTouchBehavior::HORIZONTAL_PAN);
 }
 
 TEST_F(APZCPanningTester, PanWithTouchActionPanY) {
   SCOPED_GFX_PREF(TouchActionEnabled, bool, true);
-  SCOPED_GFX_PREF(APZVelocityBias, float, 0.0); 
+  SCOPED_GFX_PREF(APZVelocityBias, float,
+                  0.0);  
   DoPanTest(true, true, mozilla::layers::AllowedTouchBehavior::VERTICAL_PAN);
 }
 

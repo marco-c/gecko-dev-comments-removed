@@ -32,23 +32,20 @@ class nsIImageLoadingContent;
 namespace mozilla {
 namespace gfx {
 class SourceSurface;
-} 
+}  
 
 namespace dom {
 class DataTransfer;
 class Selection;
-} 
-} 
+}  
+}  
 
 
 
 
 
-class nsBaseDragService : public nsIDragService,
-                          public nsIDragSession
-{
-
-public:
+class nsBaseDragService : public nsIDragService, public nsIDragSession {
+ public:
   typedef mozilla::gfx::SourceSurface SourceSurface;
 
   nsBaseDragService();
@@ -60,12 +57,11 @@ public:
   NS_DECL_NSIDRAGSERVICE
   NS_DECL_NSIDRAGSESSION
 
-  void SetDragEndPoint(nsIntPoint aEndDragPoint)
-  {
-    mEndDragPoint = mozilla::LayoutDeviceIntPoint::FromUnknownPoint(aEndDragPoint);
+  void SetDragEndPoint(nsIntPoint aEndDragPoint) {
+    mEndDragPoint =
+        mozilla::LayoutDeviceIntPoint::FromUnknownPoint(aEndDragPoint);
   }
-  void SetDragEndPoint(mozilla::LayoutDeviceIntPoint aEndDragPoint)
-  {
+  void SetDragEndPoint(mozilla::LayoutDeviceIntPoint aEndDragPoint) {
     mEndDragPoint = aEndDragPoint;
   }
 
@@ -73,7 +69,7 @@ public:
 
   int32_t TakeChildProcessDragAction();
 
-protected:
+ protected:
   virtual ~nsBaseDragService();
 
   
@@ -81,9 +77,10 @@ protected:
 
 
 
-  virtual nsresult InvokeDragSessionImpl(nsIArray* aTransferableArray,
-                                         const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-                                         uint32_t aActionType) = 0;
+  virtual nsresult InvokeDragSessionImpl(
+      nsIArray* aTransferableArray,
+      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      uint32_t aActionType) = 0;
 
   
 
@@ -112,13 +109,13 @@ protected:
                     mozilla::CSSIntPoint aScreenPosition,
                     mozilla::LayoutDeviceIntRect* aScreenDragRect,
                     RefPtr<SourceSurface>* aSurface,
-                    nsPresContext **aPresContext);
+                    nsPresContext** aPresContext);
 
   
 
 
 
-  nsresult DrawDragForImage(nsPresContext *aPresContext,
+  nsresult DrawDragForImage(nsPresContext* aPresContext,
                             nsIImageLoadingContent* aImageLoader,
                             mozilla::dom::HTMLCanvasElement* aCanvas,
                             mozilla::LayoutDeviceIntRect* aScreenDragRect,
@@ -127,9 +124,8 @@ protected:
   
 
 
-  mozilla::LayoutDeviceIntPoint
-  ConvertToUnscaledDevPixels(nsPresContext* aPresContext,
-                             mozilla::CSSIntPoint aScreenPosition);
+  mozilla::LayoutDeviceIntPoint ConvertToUnscaledDevPixels(
+      nsPresContext* aPresContext, mozilla::CSSIntPoint aScreenPosition);
 
   
 
@@ -143,8 +139,7 @@ protected:
 
   
   
-  bool TakeDragEventDispatchedToChildProcess()
-  {
+  bool TakeDragEventDispatchedToChildProcess() {
     bool retval = mDragEventDispatchedToChildProcess;
     mDragEventDispatchedToChildProcess = false;
     return retval;
@@ -165,10 +160,12 @@ protected:
 
   nsCOMPtr<nsINode> mSourceNode;
   nsCString mTriggeringPrincipalURISpec;
-  nsCOMPtr<nsIDocument> mSourceDocument;          
-                                                  
-  nsContentPolicyType mContentPolicyType;         
-                                                  
+  nsCOMPtr<nsIDocument>
+      mSourceDocument;  
+                        
+  nsContentPolicyType
+      mContentPolicyType;  
+                           
   RefPtr<mozilla::dom::DataTransfer> mDataTransfer;
 
   
@@ -201,4 +198,4 @@ protected:
   mozilla::Maybe<mozilla::CSSIntRegion> mRegion;
 };
 
-#endif 
+#endif  

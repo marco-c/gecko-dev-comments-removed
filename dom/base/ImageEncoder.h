@@ -23,26 +23,23 @@ namespace mozilla {
 namespace layers {
 class AsyncCanvasRenderer;
 class Image;
-} 
+}  
 
 namespace dom {
 
 class EncodeCompleteCallback;
 class EncodingRunnable;
 
-class ImageEncoder
-{
-public:
+class ImageEncoder {
+ public:
   
   
   
   
   
   
-  static nsresult ExtractData(nsAString& aType,
-                              const nsAString& aOptions,
-                              const nsIntSize aSize,
-                              bool aUsePlaceholder,
+  static nsresult ExtractData(nsAString& aType, const nsAString& aOptions,
+                              const nsIntSize aSize, bool aUsePlaceholder,
                               nsICanvasRenderingContextInternal* aContext,
                               layers::AsyncCanvasRenderer* aRenderer,
                               nsIInputStream** aStream);
@@ -58,12 +55,10 @@ public:
   
   
   
-  static nsresult ExtractDataAsync(nsAString& aType,
-                                   const nsAString& aOptions,
+  static nsresult ExtractDataAsync(nsAString& aType, const nsAString& aOptions,
                                    bool aUsingCustomOptions,
                                    UniquePtr<uint8_t[]> aImageBuffer,
-                                   int32_t aFormat,
-                                   const nsIntSize aSize,
+                                   int32_t aFormat, const nsIntSize aSize,
                                    bool aUsePlaceholder,
                                    EncodeCompleteCallback* aEncodeCallback);
 
@@ -72,38 +67,28 @@ public:
   
   
   
-  static nsresult ExtractDataFromLayersImageAsync(nsAString& aType,
-                                                  const nsAString& aOptions,
-                                                  bool aUsingCustomOptions,
-                                                  layers::Image* aImage,
-                                                  bool aUsePlaceholder,
-                                                  EncodeCompleteCallback* aEncodeCallback);
+  static nsresult ExtractDataFromLayersImageAsync(
+      nsAString& aType, const nsAString& aOptions, bool aUsingCustomOptions,
+      layers::Image* aImage, bool aUsePlaceholder,
+      EncodeCompleteCallback* aEncodeCallback);
 
   
   
   
-  static nsresult GetInputStream(int32_t aWidth,
-                                 int32_t aHeight,
-                                 uint8_t* aImageBuffer,
-                                 int32_t aFormat,
+  static nsresult GetInputStream(int32_t aWidth, int32_t aHeight,
+                                 uint8_t* aImageBuffer, int32_t aFormat,
                                  imgIEncoder* aEncoder,
                                  const char16_t* aEncoderOptions,
                                  nsIInputStream** aStream);
 
-private:
+ private:
   
-  static nsresult
-  ExtractDataInternal(const nsAString& aType,
-                      const nsAString& aOptions,
-                      uint8_t* aImageBuffer,
-                      int32_t aFormat,
-                      const nsIntSize aSize,
-                      bool aUsePlaceholder,
-                      layers::Image* aImage,
-                      nsICanvasRenderingContextInternal* aContext,
-                      layers::AsyncCanvasRenderer* aRenderer,
-                      nsIInputStream** aStream,
-                      imgIEncoder* aEncoder);
+  static nsresult ExtractDataInternal(
+      const nsAString& aType, const nsAString& aOptions, uint8_t* aImageBuffer,
+      int32_t aFormat, const nsIntSize aSize, bool aUsePlaceholder,
+      layers::Image* aImage, nsICanvasRenderingContextInternal* aContext,
+      layers::AsyncCanvasRenderer* aRenderer, nsIInputStream** aStream,
+      imgIEncoder* aEncoder);
 
   
   
@@ -125,18 +110,18 @@ private:
 
 
 
-class EncodeCompleteCallback
-{
-public:
+
+class EncodeCompleteCallback {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(EncodeCompleteCallback)
 
   virtual nsresult ReceiveBlob(already_AddRefed<Blob> aBlob) = 0;
 
-protected:
+ protected:
   virtual ~EncodeCompleteCallback() {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

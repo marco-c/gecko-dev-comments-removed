@@ -22,15 +22,14 @@ class nsPIDOMWindowInner;
 
 namespace mozilla {
 
-class AntiTrackingCommon final
-{
-public:
+class AntiTrackingCommon final {
+ public:
   
   
   
   
   typedef std::function<void(const bool&)>
-    FirstPartyStorageAccessGrantedForOriginResolver;
+      FirstPartyStorageAccessGrantedForOriginResolver;
 
   
   
@@ -43,10 +42,9 @@ public:
   
   
   
-  static bool
-  IsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* a3rdPartyTrackingWindow,
-                                      nsIURI* aURI,
-                                      uint32_t* aRejectedReason);
+  static bool IsFirstPartyStorageAccessGrantedFor(
+      nsPIDOMWindowInner* a3rdPartyTrackingWindow, nsIURI* aURI,
+      uint32_t* aRejectedReason);
 
   
   
@@ -54,35 +52,27 @@ public:
   
   
   
-  static bool
-  MaybeIsFirstPartyStorageAccessGrantedFor(nsPIDOMWindowInner* aFirstPartyWindow,
-                                           nsIURI* aURI);
+  static bool MaybeIsFirstPartyStorageAccessGrantedFor(
+      nsPIDOMWindowInner* aFirstPartyWindow, nsIURI* aURI);
 
   
   
   
   
-  static bool
-  IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel, nsIURI* aURI,
-                                      uint32_t* aRejectedReason);
+  static bool IsFirstPartyStorageAccessGrantedFor(nsIHttpChannel* aChannel,
+                                                  nsIURI* aURI,
+                                                  uint32_t* aRejectedReason);
 
   
   
-  static bool
-  IsFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal);
+  static bool IsFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal);
 
-  enum StorageAccessGrantedReason
-  {
+  enum StorageAccessGrantedReason {
     eStorageAccessAPI,
     eOpenerAfterUserInteraction,
     eOpener
   };
-  enum StorageAccessPromptChoices
-  {
-    eAllow,
-    eAllowAutoGrant,
-    eAllowOnAnySite
-  };
+  enum StorageAccessPromptChoices { eAllow, eAllowAutoGrant, eAllowOnAnySite };
 
   
   
@@ -100,33 +90,31 @@ public:
   
   
   typedef MozPromise<int, bool, true> StorageAccessFinalCheckPromise;
-  typedef std::function<RefPtr<StorageAccessFinalCheckPromise>()> PerformFinalChecks;
+  typedef std::function<RefPtr<StorageAccessFinalCheckPromise>()>
+      PerformFinalChecks;
   typedef MozPromise<int, bool, true> StorageAccessGrantPromise;
   static MOZ_MUST_USE RefPtr<StorageAccessGrantPromise>
-  AddFirstPartyStorageAccessGrantedFor(nsIPrincipal* aPrincipal,
-                                       nsPIDOMWindowInner* aParentWindow,
-                                       StorageAccessGrantedReason aReason,
-                                       const PerformFinalChecks& aPerformFinalChecks = nullptr);
+  AddFirstPartyStorageAccessGrantedFor(
+      nsIPrincipal* aPrincipal, nsPIDOMWindowInner* aParentWindow,
+      StorageAccessGrantedReason aReason,
+      const PerformFinalChecks& aPerformFinalChecks = nullptr);
 
   
   
-  static bool
-  IsStorageAccessPermission(nsIPermission* aPermission, nsIPrincipal* aPrincipal);
+  static bool IsStorageAccessPermission(nsIPermission* aPermission,
+                                        nsIPrincipal* aPrincipal);
 
-  static void
-  StoreUserInteractionFor(nsIPrincipal* aPrincipal);
+  static void StoreUserInteractionFor(nsIPrincipal* aPrincipal);
 
-  static bool
-  HasUserInteraction(nsIPrincipal* aPrincipal);
+  static bool HasUserInteraction(nsIPrincipal* aPrincipal);
 
   
   typedef MozPromise<nsresult, bool, true> FirstPartyStorageAccessGrantPromise;
   static RefPtr<FirstPartyStorageAccessGrantPromise>
-  SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(nsIPrincipal* aPrincipal,
-                                                             nsIPrincipal* aTrackingPrinciapl,
-                                                             const nsCString& aParentOrigin,
-                                                             const nsCString& aGrantedOrigin,
-                                                             int aAllowMode);
+  SaveFirstPartyStorageAccessGrantedForOriginOnParentProcess(
+      nsIPrincipal* aPrincipal, nsIPrincipal* aTrackingPrinciapl,
+      const nsCString& aParentOrigin, const nsCString& aGrantedOrigin,
+      int aAllowMode);
 
   enum ContentBlockingAllowListPurpose {
     eStorageChecks,
@@ -135,11 +123,9 @@ public:
   };
 
   
-  static nsresult
-  IsOnContentBlockingAllowList(nsIURI* aTopWinURI,
-                               bool aIsPrivateBrowsing,
-                               ContentBlockingAllowListPurpose aPurpose,
-                               bool& aIsAllowListed);
+  static nsresult IsOnContentBlockingAllowList(
+      nsIURI* aTopWinURI, bool aIsPrivateBrowsing,
+      ContentBlockingAllowListPurpose aPurpose, bool& aIsAllowListed);
 
   enum class BlockingDecision {
     eBlock,
@@ -158,15 +144,15 @@ public:
   
   
   
-  static void
-  NotifyBlockingDecision(nsIChannel* aChannel, BlockingDecision aDecision,
-                         uint32_t aRejectedReason);
+  static void NotifyBlockingDecision(nsIChannel* aChannel,
+                                     BlockingDecision aDecision,
+                                     uint32_t aRejectedReason);
 
-  static void
-  NotifyBlockingDecision(nsPIDOMWindowInner* aWindow, BlockingDecision aDecision,
-                         uint32_t aRejectedReason);
+  static void NotifyBlockingDecision(nsPIDOMWindowInner* aWindow,
+                                     BlockingDecision aDecision,
+                                     uint32_t aRejectedReason);
 };
 
-} 
+}  
 
-#endif 
+#endif  

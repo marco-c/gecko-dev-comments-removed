@@ -16,15 +16,13 @@ using namespace std;
 namespace mozilla {
 namespace gfx {
 
-std::ostream&
-operator<<(std::ostream& aStream, const Quaternion& aQuat)
-{
-  return aStream << "< " << aQuat.x << " "  << aQuat.y << " " << aQuat.z << " " << aQuat.w << ">";
+std::ostream& operator<<(std::ostream& aStream, const Quaternion& aQuat) {
+  return aStream << "< " << aQuat.x << " " << aQuat.y << " " << aQuat.z << " "
+                 << aQuat.w << ">";
 }
 
-void
-Quaternion::SetFromRotationMatrix(const Matrix4x4& m)
-{
+void Quaternion::SetFromRotationMatrix(const Matrix4x4& m) {
+  
   
   const Float trace = m._11 + m._22 + m._33;
   if (trace > 0.0) {
@@ -54,5 +52,5 @@ Quaternion::SetFromRotationMatrix(const Matrix4x4& m)
   }
 }
 
-} 
-} 
+}  
+}  

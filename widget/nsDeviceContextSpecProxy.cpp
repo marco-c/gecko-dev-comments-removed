@@ -31,11 +31,10 @@ NS_IMPL_ISUPPORTS(nsDeviceContextSpecProxy, nsIDeviceContextSpec)
 NS_IMETHODIMP
 nsDeviceContextSpecProxy::Init(nsIWidget* aWidget,
                                nsIPrintSettings* aPrintSettings,
-                               bool aIsPrintPreview)
-{
+                               bool aIsPrintPreview) {
   nsresult rv;
   mRealDeviceContextSpec =
-    do_CreateInstance("@mozilla.org/gfx/devicecontextspec;1", &rv);
+      do_CreateInstance("@mozilla.org/gfx/devicecontextspec;1", &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -69,9 +68,7 @@ nsDeviceContextSpecProxy::Init(nsIWidget* aWidget,
   return NS_OK;
 }
 
-already_AddRefed<PrintTarget>
-nsDeviceContextSpecProxy::MakePrintTarget()
-{
+already_AddRefed<PrintTarget> nsDeviceContextSpecProxy::MakePrintTarget() {
   MOZ_ASSERT(mRealDeviceContextSpec);
 
   double width, height;
@@ -84,9 +81,10 @@ nsDeviceContextSpecProxy::MakePrintTarget()
   width /= TWIPS_PER_POINT_FLOAT;
   height /= TWIPS_PER_POINT_FLOAT;
 
-  RefPtr<gfxASurface> surface = gfxPlatform::GetPlatform()->
-    CreateOffscreenSurface(mozilla::gfx::IntSize::Truncate(width, height),
-                           mozilla::gfx::SurfaceFormat::A8R8G8B8_UINT32);
+  RefPtr<gfxASurface> surface =
+      gfxPlatform::GetPlatform()->CreateOffscreenSurface(
+          mozilla::gfx::IntSize::Truncate(width, height),
+          mozilla::gfx::SurfaceFormat::A8R8G8B8_UINT32);
   if (!surface) {
     return nullptr;
   }
@@ -109,33 +107,27 @@ nsDeviceContextSpecProxy::MakePrintTarget()
 }
 
 NS_IMETHODIMP
-nsDeviceContextSpecProxy::GetDrawEventRecorder(mozilla::gfx::DrawEventRecorder** aDrawEventRecorder)
-{
+nsDeviceContextSpecProxy::GetDrawEventRecorder(
+    mozilla::gfx::DrawEventRecorder** aDrawEventRecorder) {
   MOZ_ASSERT(aDrawEventRecorder);
   RefPtr<mozilla::gfx::DrawEventRecorder> result = mRecorder;
   result.forget(aDrawEventRecorder);
   return NS_OK;
 }
 
-float
-nsDeviceContextSpecProxy::GetDPI()
-{
+float nsDeviceContextSpecProxy::GetDPI() {
   MOZ_ASSERT(mRealDeviceContextSpec);
 
   return mRealDeviceContextSpec->GetDPI();
 }
 
-float
-nsDeviceContextSpecProxy::GetPrintingScale()
-{
+float nsDeviceContextSpecProxy::GetPrintingScale() {
   MOZ_ASSERT(mRealDeviceContextSpec);
 
   return mRealDeviceContextSpec->GetPrintingScale();
 }
 
-gfxPoint
-nsDeviceContextSpecProxy::GetPrintingTranslate()
-{
+gfxPoint nsDeviceContextSpecProxy::GetPrintingTranslate() {
   MOZ_ASSERT(mRealDeviceContextSpec);
 
   return mRealDeviceContextSpec->GetPrintingTranslate();
@@ -144,12 +136,10 @@ nsDeviceContextSpecProxy::GetPrintingTranslate()
 NS_IMETHODIMP
 nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
                                         const nsAString& aPrintToFileName,
-                                        int32_t aStartPage, int32_t aEndPage)
-{
+                                        int32_t aStartPage, int32_t aEndPage) {
   mRecorder = new mozilla::layout::DrawEventRecorderPRFileDesc();
-  nsresult rv = mRemotePrintJob->InitializePrint(nsString(aTitle),
-                                                 nsString(aPrintToFileName),
-                                                 aStartPage, aEndPage);
+  nsresult rv = mRemotePrintJob->InitializePrint(
+      nsString(aTitle), nsString(aPrintToFileName), aStartPage, aEndPage);
   if (NS_FAILED(rv)) {
     
     
@@ -161,8 +151,7 @@ nsDeviceContextSpecProxy::BeginDocument(const nsAString& aTitle,
 }
 
 NS_IMETHODIMP
-nsDeviceContextSpecProxy::EndDocument()
-{
+nsDeviceContextSpecProxy::EndDocument() {
   if (mRemotePrintJob) {
     Unused << mRemotePrintJob->SendFinalizePrint();
   }
@@ -170,8 +159,7 @@ nsDeviceContextSpecProxy::EndDocument()
 }
 
 NS_IMETHODIMP
-nsDeviceContextSpecProxy::AbortDocument()
-{
+nsDeviceContextSpecProxy::AbortDocument() {
   if (mRemotePrintJob) {
     Unused << mRemotePrintJob->SendAbortPrint(NS_OK);
   }
@@ -179,16 +167,14 @@ nsDeviceContextSpecProxy::AbortDocument()
 }
 
 NS_IMETHODIMP
-nsDeviceContextSpecProxy::BeginPage()
-{
+nsDeviceContextSpecProxy::BeginPage() {
   mRecorder->OpenFD(mRemotePrintJob->GetNextPageFD());
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-nsDeviceContextSpecProxy::EndPage()
-{
+nsDeviceContextSpecProxy::EndPage() {
   
   mRecorder->Close();
   mRemotePrintJob->ProcessPage();

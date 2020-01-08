@@ -22,21 +22,15 @@ using namespace mozilla::dom;
 
 
 
-void
-expect_visit(nsLinkState aState)
-{
+void expect_visit(nsLinkState aState) {
   do_check_true(aState == eLinkState_Visited);
 }
 
-void
-expect_no_visit(nsLinkState aState)
-{
+void expect_no_visit(nsLinkState aState) {
   do_check_true(aState == eLinkState_Unvisited);
 }
 
-already_AddRefed<nsIURI>
-new_test_uri()
-{
+already_AddRefed<nsIURI> new_test_uri() {
   
   static int32_t specNumber = 0;
   nsCString spec = NS_LITERAL_CSTRING("http://mozilla.org/");
@@ -49,63 +43,51 @@ new_test_uri()
   return testURI.forget();
 }
 
-class VisitURIObserver final : public nsIObserver
-{
+class VisitURIObserver final : public nsIObserver {
   ~VisitURIObserver() = default;
 
-public:
+ public:
   NS_DECL_ISUPPORTS
 
-  explicit VisitURIObserver(int aExpectedVisits = 1) :
-    mVisits(0),
-    mExpectedVisits(aExpectedVisits)
-  {
+  explicit VisitURIObserver(int aExpectedVisits = 1)
+      : mVisits(0), mExpectedVisits(aExpectedVisits) {
     nsCOMPtr<nsIObserverService> observerService =
-      do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
+        do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
     do_check_true(observerService);
-    (void)observerService->AddObserver(this,
-                                       "uri-visit-saved",
-                                       false);
+    (void)observerService->AddObserver(this, "uri-visit-saved", false);
   }
 
-  void WaitForNotification()
-  {
+  void WaitForNotification() {
     SpinEventLoopUntil([&]() { return mVisits >= mExpectedVisits; });
   }
 
-  NS_IMETHOD Observe(nsISupports* aSubject,
-                     const char* aTopic,
-                     const char16_t* aData) override
-  {
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
     mVisits++;
 
     if (mVisits == mExpectedVisits) {
       nsCOMPtr<nsIObserverService> observerService =
-        do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
+          do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
       (void)observerService->RemoveObserver(this, "uri-visit-saved");
     }
 
     return NS_OK;
   }
-private:
+
+ private:
   int mVisits;
   int mExpectedVisits;
 };
-NS_IMPL_ISUPPORTS(
-  VisitURIObserver,
-  nsIObserver
-)
+NS_IMPL_ISUPPORTS(VisitURIObserver, nsIObserver)
 
 
 
 
-void
-test_set_places_enabled()
-{
+void test_set_places_enabled() {
   
   nsresult rv;
   nsCOMPtr<nsIPrefBranch> prefBranch =
-    do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
+      do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
   do_check_success(rv);
 
   rv = prefBranch->SetBoolPref("places.history.enabled", true);
@@ -115,10 +97,7 @@ test_set_places_enabled()
   run_next_test();
 }
 
-
-void
-test_wait_checkpoint()
-{
+void test_wait_checkpoint() {
   
   
   
@@ -127,7 +106,7 @@ test_wait_checkpoint()
   db->CreateAsyncStatement(NS_LITERAL_CSTRING("SELECT 1"),
                            getter_AddRefs(stmt));
   RefPtr<PlacesAsyncStatementSpinner> spinner =
-    new PlacesAsyncStatementSpinner();
+      new PlacesAsyncStatementSpinner();
   nsCOMPtr<mozIStoragePendingStatement> pending;
   (void)stmt->ExecuteAsync(spinner, getter_AddRefs(pending));
   spinner->SpinUntilCompleted();
@@ -139,12 +118,10 @@ test_wait_checkpoint()
 
 
 namespace test_unvisited_does_not_notify {
-  nsCOMPtr<nsIURI> testURI;
-  RefPtr<Link> testLink;
-} 
-void
-test_unvisited_does_not_notify_part1()
-{
+nsCOMPtr<nsIURI> testURI;
+RefPtr<Link> testLink;
+}  
+void test_unvisited_does_not_notify_part1() {
   using namespace test_unvisited_does_not_notify;
 
   
@@ -168,9 +145,7 @@ test_unvisited_does_not_notify_part1()
   run_next_test();
 }
 
-void
-test_visited_notifies()
-{
+void test_visited_notifies() {
   
   nsCOMPtr<nsIURI> testURI = new_test_uri();
   addURI(testURI);
@@ -187,9 +162,7 @@ test_visited_notifies()
   
 }
 
-void
-test_unvisited_does_not_notify_part2()
-{
+void test_unvisited_does_not_notify_part2() {
   using namespace test_unvisited_does_not_notify;
 
   
@@ -206,9 +179,7 @@ test_unvisited_does_not_notify_part2()
   run_next_test();
 }
 
-void
-test_same_uri_notifies_both()
-{
+void test_same_uri_notifies_both() {
   
   nsCOMPtr<nsIURI> testURI = new_test_uri();
   addURI(testURI);
@@ -229,9 +200,7 @@ test_same_uri_notifies_both()
   
 }
 
-void
-test_unregistered_visited_does_not_notify()
-{
+void test_unregistered_visited_does_not_notify() {
   
   
   
@@ -260,9 +229,7 @@ test_unregistered_visited_does_not_notify()
   run_next_test();
 }
 
-void
-test_new_visit_notifies_waiting_Link()
-{
+void test_new_visit_notifies_waiting_Link() {
   
   
   RefPtr<Link> link = new mock_Link(expect_visit);
@@ -279,9 +246,7 @@ test_new_visit_notifies_waiting_Link()
   
 }
 
-void
-test_RegisterVisitedCallback_returns_before_notifying()
-{
+void test_RegisterVisitedCallback_returns_before_notifying() {
   
   nsCOMPtr<nsIURI> testURI = new_test_uri();
   addURI(testURI);
@@ -303,80 +268,66 @@ test_RegisterVisitedCallback_returns_before_notifying()
 }
 
 namespace test_observer_topic_dispatched_helpers {
-  #define URI_VISITED "visited"
-  #define URI_NOT_VISITED "not visited"
-  #define URI_VISITED_RESOLUTION_TOPIC "visited-status-resolution"
-  class statusObserver final : public nsIObserver
-  {
-    ~statusObserver() = default;
+#define URI_VISITED "visited"
+#define URI_NOT_VISITED "not visited"
+#define URI_VISITED_RESOLUTION_TOPIC "visited-status-resolution"
+class statusObserver final : public nsIObserver {
+  ~statusObserver() = default;
 
-  public:
-    NS_DECL_ISUPPORTS
+ public:
+  NS_DECL_ISUPPORTS
 
-    statusObserver(nsIURI* aURI,
-                   const bool aExpectVisit,
-                   bool& _notified)
-    : mURI(aURI)
-    , mExpectVisit(aExpectVisit)
-    , mNotified(_notified)
-    {
-      nsCOMPtr<nsIObserverService> observerService =
+  statusObserver(nsIURI* aURI, const bool aExpectVisit, bool& _notified)
+      : mURI(aURI), mExpectVisit(aExpectVisit), mNotified(_notified) {
+    nsCOMPtr<nsIObserverService> observerService =
         do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
-      do_check_true(observerService);
-      (void)observerService->AddObserver(this,
-                                         URI_VISITED_RESOLUTION_TOPIC,
-                                         false);
-    }
+    do_check_true(observerService);
+    (void)observerService->AddObserver(this, URI_VISITED_RESOLUTION_TOPIC,
+                                       false);
+  }
 
-    NS_IMETHOD Observe(nsISupports* aSubject,
-                       const char* aTopic,
-                       const char16_t* aData) override
-    {
-      
-      do_check_false(strcmp(aTopic, URI_VISITED_RESOLUTION_TOPIC));
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override {
+    
+    do_check_false(strcmp(aTopic, URI_VISITED_RESOLUTION_TOPIC));
 
-      
-      nsCOMPtr<nsIURI> notifiedURI = do_QueryInterface(aSubject);
-      do_check_true(notifiedURI);
+    
+    nsCOMPtr<nsIURI> notifiedURI = do_QueryInterface(aSubject);
+    do_check_true(notifiedURI);
 
-      bool isOurURI;
-      nsresult rv = notifiedURI->Equals(mURI, &isOurURI);
-      do_check_success(rv);
-      if (!isOurURI) {
-        return NS_OK;
-      }
-
-      
-      bool visited = !!NS_LITERAL_STRING(URI_VISITED).Equals(aData);
-      bool notVisited = !!NS_LITERAL_STRING(URI_NOT_VISITED).Equals(aData);
-      do_check_true(visited || notVisited);
-
-      
-      do_check_eq(visited, mExpectVisit);
-
-      
-      mNotified = true;
-
-      
-      nsCOMPtr<nsIObserverService> observerService =
-        do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
-      (void)observerService->RemoveObserver(this,
-                                            URI_VISITED_RESOLUTION_TOPIC);
+    bool isOurURI;
+    nsresult rv = notifiedURI->Equals(mURI, &isOurURI);
+    do_check_success(rv);
+    if (!isOurURI) {
       return NS_OK;
     }
-  private:
-    nsCOMPtr<nsIURI> mURI;
-    const bool mExpectVisit;
-    bool& mNotified;
-  };
-  NS_IMPL_ISUPPORTS(
-    statusObserver,
-    nsIObserver
-  )
-} 
-void
-test_observer_topic_dispatched()
-{
+
+    
+    bool visited = !!NS_LITERAL_STRING(URI_VISITED).Equals(aData);
+    bool notVisited = !!NS_LITERAL_STRING(URI_NOT_VISITED).Equals(aData);
+    do_check_true(visited || notVisited);
+
+    
+    do_check_eq(visited, mExpectVisit);
+
+    
+    mNotified = true;
+
+    
+    nsCOMPtr<nsIObserverService> observerService =
+        do_GetService(NS_OBSERVERSERVICE_CONTRACTID);
+    (void)observerService->RemoveObserver(this, URI_VISITED_RESOLUTION_TOPIC);
+    return NS_OK;
+  }
+
+ private:
+  nsCOMPtr<nsIURI> mURI;
+  const bool mExpectVisit;
+  bool& mNotified;
+};
+NS_IMPL_ISUPPORTS(statusObserver, nsIObserver)
+}  
+void test_observer_topic_dispatched() {
   using namespace test_observer_topic_dispatched_helpers;
 
   
@@ -396,10 +347,10 @@ test_observer_topic_dispatched()
   
   bool visitedNotified = false;
   nsCOMPtr<nsIObserver> visitedObs =
-    new statusObserver(visitedURI, true, visitedNotified);
+      new statusObserver(visitedURI, true, visitedNotified);
   bool notVisitedNotified = false;
   nsCOMPtr<nsIObserver> unvisitedObs =
-    new statusObserver(notVisitedURI, false, notVisitedNotified);
+      new statusObserver(notVisitedURI, false, notVisitedNotified);
 
   
   nsCOMPtr<IHistory> history = do_get_IHistory();
@@ -409,9 +360,7 @@ test_observer_topic_dispatched()
   do_check_success(rv);
 
   
-  SpinEventLoopUntil([&]() {
-      return visitedNotified && notVisitedNotified;
-    });
+  SpinEventLoopUntil([&]() { return visitedNotified && notVisitedNotified; });
 
   
   rv = history->UnregisterVisitedCallback(notVisitedURI, notVisitedLink);
@@ -420,9 +369,7 @@ test_observer_topic_dispatched()
   run_next_test();
 }
 
-void
-test_visituri_inserts()
-{
+void test_visituri_inserts() {
   nsCOMPtr<IHistory> history = do_get_IHistory();
   nsCOMPtr<nsIURI> lastURI = new_test_uri();
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
@@ -443,9 +390,7 @@ test_visituri_inserts()
   run_next_test();
 }
 
-void
-test_visituri_updates()
-{
+void test_visituri_updates() {
   nsCOMPtr<IHistory> history = do_get_IHistory();
   nsCOMPtr<nsIURI> lastURI = new_test_uri();
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
@@ -467,9 +412,7 @@ test_visituri_updates()
   run_next_test();
 }
 
-void
-test_visituri_preserves_shown_and_typed()
-{
+void test_visituri_preserves_shown_and_typed() {
   nsCOMPtr<IHistory> history = do_get_IHistory();
   nsCOMPtr<nsIURI> lastURI = new_test_uri();
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
@@ -489,9 +432,7 @@ test_visituri_preserves_shown_and_typed()
   run_next_test();
 }
 
-void
-test_visituri_creates_visit()
-{
+void test_visituri_creates_visit() {
   nsCOMPtr<IHistory> history = do_get_IHistory();
   nsCOMPtr<nsIURI> lastURI = new_test_uri();
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
@@ -512,9 +453,7 @@ test_visituri_creates_visit()
   run_next_test();
 }
 
-void
-test_visituri_transition_typed()
-{
+void test_visituri_transition_typed() {
   nsCOMPtr<nsINavHistoryService> navHistory = do_get_NavHistory();
   nsCOMPtr<IHistory> history = do_get_IHistory();
   nsCOMPtr<nsIURI> lastURI = new_test_uri();
@@ -535,9 +474,7 @@ test_visituri_transition_typed()
   run_next_test();
 }
 
-void
-test_visituri_transition_embed()
-{
+void test_visituri_transition_embed() {
   nsCOMPtr<IHistory> history = do_get_IHistory();
   nsCOMPtr<nsIURI> lastURI = new_test_uri();
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
@@ -557,9 +494,7 @@ test_visituri_transition_embed()
   run_next_test();
 }
 
-void
-test_new_visit_adds_place_guid()
-{
+void test_new_visit_adds_place_guid() {
   
   nsCOMPtr<nsIURI> visitedURI = new_test_uri();
   nsCOMPtr<IHistory> history = do_get_IHistory();
@@ -581,9 +516,7 @@ test_new_visit_adds_place_guid()
 
 
 
-void
-test_two_null_links_same_uri()
-{
+void test_two_null_links_same_uri() {
   
   
   
@@ -612,26 +545,26 @@ test_two_null_links_same_uri()
 
 
 Test gTests[] = {
-  PTEST(test_set_places_enabled), 
-  PTEST(test_wait_checkpoint), 
-  PTEST(test_unvisited_does_not_notify_part1), 
-  PTEST(test_visited_notifies),
-  PTEST(test_unvisited_does_not_notify_part2), 
-  PTEST(test_same_uri_notifies_both),
-  PTEST(test_unregistered_visited_does_not_notify), 
-  PTEST(test_new_visit_notifies_waiting_Link),
-  PTEST(test_RegisterVisitedCallback_returns_before_notifying),
-  PTEST(test_observer_topic_dispatched),
-  PTEST(test_visituri_inserts),
-  PTEST(test_visituri_updates),
-  PTEST(test_visituri_preserves_shown_and_typed),
-  PTEST(test_visituri_creates_visit),
-  PTEST(test_visituri_transition_typed),
-  PTEST(test_visituri_transition_embed),
-  PTEST(test_new_visit_adds_place_guid),
+    PTEST(test_set_places_enabled),               
+    PTEST(test_wait_checkpoint),                  
+    PTEST(test_unvisited_does_not_notify_part1),  
+    PTEST(test_visited_notifies),
+    PTEST(test_unvisited_does_not_notify_part2),  
+    PTEST(test_same_uri_notifies_both),
+    PTEST(test_unregistered_visited_does_not_notify),  
+    PTEST(test_new_visit_notifies_waiting_Link),
+    PTEST(test_RegisterVisitedCallback_returns_before_notifying),
+    PTEST(test_observer_topic_dispatched),
+    PTEST(test_visituri_inserts),
+    PTEST(test_visituri_updates),
+    PTEST(test_visituri_preserves_shown_and_typed),
+    PTEST(test_visituri_creates_visit),
+    PTEST(test_visituri_transition_typed),
+    PTEST(test_visituri_transition_embed),
+    PTEST(test_new_visit_adds_place_guid),
 
-  
-  PTEST(test_two_null_links_same_uri),
+    
+    PTEST(test_two_null_links_same_uri),
 };
 
 #define TEST_NAME "IHistory"

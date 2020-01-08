@@ -22,7 +22,7 @@ class ErrorResult;
 namespace ipc {
 class PBackgroundParent;
 class AutoIPCStream;
-} 
+}  
 
 namespace dom {
 
@@ -44,9 +44,8 @@ class StreamList;
 
 
 
-class MOZ_STACK_CLASS AutoChildOpArgs final
-{
-public:
+class MOZ_STACK_CLASS AutoChildOpArgs final {
+ public:
   typedef TypeUtils::BodyAction BodyAction;
   typedef TypeUtils::SchemeAction SchemeAction;
 
@@ -61,19 +60,17 @@ public:
 
   const CacheOpArgs& SendAsOpArgs();
 
-private:
+ private:
   TypeUtils* mTypeUtils;
   CacheOpArgs mOpArgs;
   nsTArray<UniquePtr<mozilla::ipc::AutoIPCStream>> mStreamCleanupList;
   bool mSent;
 };
 
-class MOZ_STACK_CLASS AutoParentOpResult final
-{
-public:
+class MOZ_STACK_CLASS AutoParentOpResult final {
+ public:
   AutoParentOpResult(mozilla::ipc::PBackgroundParent* aManager,
-                     const CacheOpResult& aOpResult,
-                     uint32_t aEntryCount);
+                     const CacheOpResult& aOpResult, uint32_t aEntryCount);
   ~AutoParentOpResult();
 
   void Add(CacheId aOpenedCacheId, Manager* aManager);
@@ -82,7 +79,7 @@ public:
 
   const CacheOpResult& SendAsOpResult();
 
-private:
+ private:
   void SerializeResponseBody(const SavedResponse& aSavedResponse,
                              StreamList* aStreamList,
                              CacheResponse* aResponseOut);
@@ -97,8 +94,8 @@ private:
   bool mSent;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

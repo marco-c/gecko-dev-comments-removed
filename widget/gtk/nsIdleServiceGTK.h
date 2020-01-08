@@ -14,39 +14,37 @@
 #include <gdk/gdkx.h>
 
 typedef struct {
-    Window window;              
-    int state;                  
-    int kind;                   
-    unsigned long til_or_since; 
-    unsigned long idle;         
-    unsigned long event_mask;   
+  Window window;               
+  int state;                   
+  int kind;                    
+  unsigned long til_or_since;  
+  unsigned long idle;          
+  unsigned long event_mask;    
 } XScreenSaverInfo;
 
-class nsIdleServiceGTK : public nsIdleService
-{
-public:
-    NS_INLINE_DECL_REFCOUNTING_INHERITED(nsIdleServiceGTK, nsIdleService)
+class nsIdleServiceGTK : public nsIdleService {
+ public:
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(nsIdleServiceGTK, nsIdleService)
 
-    virtual bool PollIdleTime(uint32_t* aIdleTime) override;
+  virtual bool PollIdleTime(uint32_t* aIdleTime) override;
 
-    static already_AddRefed<nsIdleServiceGTK> GetInstance()
-    {
-        RefPtr<nsIdleServiceGTK> idleService =
-            nsIdleService::GetInstance().downcast<nsIdleServiceGTK>();
-        if (!idleService) {
-            idleService = new nsIdleServiceGTK();
-        }
-
-        return idleService.forget();
+  static already_AddRefed<nsIdleServiceGTK> GetInstance() {
+    RefPtr<nsIdleServiceGTK> idleService =
+        nsIdleService::GetInstance().downcast<nsIdleServiceGTK>();
+    if (!idleService) {
+      idleService = new nsIdleServiceGTK();
     }
 
-private:
-    ~nsIdleServiceGTK();
-    XScreenSaverInfo* mXssInfo;
+    return idleService.forget();
+  }
 
-protected:
-    nsIdleServiceGTK();
-    virtual bool UsePollMode() override;
+ private:
+  ~nsIdleServiceGTK();
+  XScreenSaverInfo* mXssInfo;
+
+ protected:
+  nsIdleServiceGTK();
+  virtual bool UsePollMode() override;
 };
 
-#endif 
+#endif  

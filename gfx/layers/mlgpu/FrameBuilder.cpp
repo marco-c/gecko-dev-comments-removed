@@ -6,11 +6,11 @@
 
 #include "FrameBuilder.h"
 #include "ContainerLayerMLGPU.h"
-#include "GeckoProfiler.h"              
+#include "GeckoProfiler.h"  
 #include "LayerMLGPU.h"
 #include "LayerManagerMLGPU.h"
 #include "MaskOperation.h"
-#include "MLGDevice.h"                  
+#include "MLGDevice.h"  
 #include "RenderPassMLGPU.h"
 #include "RenderViewMLGPU.h"
 #include "mozilla/gfx/Logging.h"
@@ -23,23 +23,19 @@ namespace layers {
 
 using namespace mlg;
 
-FrameBuilder::FrameBuilder(LayerManagerMLGPU* aManager, MLGSwapChain* aSwapChain)
- : mManager(aManager),
-   mDevice(aManager->GetDevice()),
-   mSwapChain(aSwapChain)
-{
+FrameBuilder::FrameBuilder(LayerManagerMLGPU* aManager,
+                           MLGSwapChain* aSwapChain)
+    : mManager(aManager),
+      mDevice(aManager->GetDevice()),
+      mSwapChain(aSwapChain) {
   
   
   mRoot = mManager->GetRoot()->AsHostLayer()->AsLayerMLGPU();
 }
 
-FrameBuilder::~FrameBuilder()
-{
-}
+FrameBuilder::~FrameBuilder() {}
 
-bool
-FrameBuilder::Build()
-{
+bool FrameBuilder::Build() {
   AUTO_PROFILER_LABEL("FrameBuilder::Build", GRAPHICS);
 
   
@@ -67,22 +63,27 @@ FrameBuilder::Build()
   mWidgetRenderView = new RenderViewMLGPU(this, target, region);
 
   
-  if (ContainerLayerMLGPU* root = mRoot->AsLayerMLGPU()->AsContainerLayerMLGPU()) {
+  
+  if (ContainerLayerMLGPU* root =
+          mRoot->AsLayerMLGPU()->AsContainerLayerMLGPU()) {
     root->ComputeIntermediateSurfaceBounds();
   }
 
   
   {
     Maybe<gfx::Polygon> geometry;
-    RenderTargetIntRect clip(0, 0, target->GetSize().width, target->GetSize().height);
+    RenderTargetIntRect clip(0, 0, target->GetSize().width,
+                             target->GetSize().height);
 
-    AssignLayer(mRoot->GetLayer(), mWidgetRenderView, clip, std::move(geometry));
+    AssignLayer(mRoot->GetLayer(), mWidgetRenderView, clip,
+                std::move(geometry));
   }
 
   
   {
     MaskInformation defaultMaskInfo(1.0f, false);
-    if (!mDevice->GetSharedPSBuffer()->Allocate(&mDefaultMaskInfo, defaultMaskInfo)) {
+    if (!mDevice->GetSharedPSBuffer()->Allocate(&mDefaultMaskInfo,
+                                                defaultMaskInfo)) {
       return false;
     }
   }
@@ -101,9 +102,7 @@ FrameBuilder::Build()
   return true;
 }
 
-void
-FrameBuilder::Render()
-{
+void FrameBuilder::Render() {
   AUTO_PROFILER_LABEL("FrameBuilder::Render", GRAPHICS);
 
   
@@ -115,12 +114,9 @@ FrameBuilder::Render()
   mWidgetRenderView->Render();
 }
 
-void
-FrameBuilder::AssignLayer(Layer* aLayer,
-                          RenderViewMLGPU* aView,
-                          const RenderTargetIntRect& aClipRect,
-                          Maybe<gfx::Polygon>&& aGeometry)
-{
+void FrameBuilder::AssignLayer(Layer* aLayer, RenderViewMLGPU* aView,
+                               const RenderTargetIntRect& aClipRect,
+                               Maybe<gfx::Polygon>&& aGeometry) {
   LayerMLGPU* layer = aLayer->AsHostLayer()->AsLayerMLGPU();
 
   if (ContainerLayer* container = aLayer->AsContainerLayer()) {
@@ -147,18 +143,16 @@ FrameBuilder::AssignLayer(Layer* aLayer,
   layer->AssignToView(this, aView, std::move(aGeometry));
 }
 
-bool
-FrameBuilder::ProcessContainerLayer(ContainerLayer* aContainer,
-                                    RenderViewMLGPU* aView,
-                                    const RenderTargetIntRect& aClipRect,
-                                    Maybe<gfx::Polygon>& aGeometry)
-{
+bool FrameBuilder::ProcessContainerLayer(ContainerLayer* aContainer,
+                                         RenderViewMLGPU* aView,
+                                         const RenderTargetIntRect& aClipRect,
+                                         Maybe<gfx::Polygon>& aGeometry) {
   LayerMLGPU* layer = aContainer->AsHostLayer()->AsLayerMLGPU();
 
   
   if (!layer) {
-    gfxDevCrash(gfx::LogReason::InvalidLayerType) <<
-      "Layer type is invalid: " << aContainer->Name();
+    gfxDevCrash(gfx::LogReason::InvalidLayerType)
+        << "Layer type is invalid: " << aContainer->Name();
     return false;
   }
 
@@ -186,28 +180,27 @@ FrameBuilder::ProcessContainerLayer(ContainerLayer* aContainer,
   
   ContainerLayerMLGPU* viewContainer = layer->AsContainerLayerMLGPU();
   if (!viewContainer) {
-    gfxDevCrash(gfx::LogReason::InvalidLayerType) <<
-      "Container layer type is invalid: " << aContainer->Name();
+    gfxDevCrash(gfx::LogReason::InvalidLayerType)
+        << "Container layer type is invalid: " << aContainer->Name();
     return false;
   }
 
   if (isFirstVisit && !viewContainer->GetInvalidRect().IsEmpty()) {
     
-    RefPtr<RenderViewMLGPU> view = new RenderViewMLGPU(this, viewContainer, aView);
+    RefPtr<RenderViewMLGPU> view =
+        new RenderViewMLGPU(this, viewContainer, aView);
     ProcessChildList(aContainer, view, aClipRect, Nothing());
     view->FinishBuilding();
   }
   return true;
 }
 
-void
-FrameBuilder::ProcessChildList(ContainerLayer* aContainer,
-                               RenderViewMLGPU* aView,
-                               const RenderTargetIntRect& aParentClipRect,
-                               const Maybe<gfx::Polygon>& aParentGeometry)
-{
-  nsTArray<LayerPolygon> polygons =
-    aContainer->SortChildrenBy3DZOrder(ContainerLayer::SortMode::WITH_GEOMETRY);
+void FrameBuilder::ProcessChildList(
+    ContainerLayer* aContainer, RenderViewMLGPU* aView,
+    const RenderTargetIntRect& aParentClipRect,
+    const Maybe<gfx::Polygon>& aParentGeometry) {
+  nsTArray<LayerPolygon> polygons = aContainer->SortChildrenBy3DZOrder(
+      ContainerLayer::SortMode::WITH_GEOMETRY);
 
   
   for (auto iter = polygons.rbegin(); iter != polygons.rend(); iter++) {
@@ -236,9 +229,7 @@ FrameBuilder::ProcessChildList(ContainerLayer* aContainer,
   }
 }
 
-bool
-FrameBuilder::AddLayerToConstantBuffer(ItemInfo& aItem)
-{
+bool FrameBuilder::AddLayerToConstantBuffer(ItemInfo& aItem) {
   LayerMLGPU* layer = aItem.layer;
 
   
@@ -273,16 +264,13 @@ FrameBuilder::AddLayerToConstantBuffer(ItemInfo& aItem)
   return true;
 }
 
-MaskOperation*
-FrameBuilder::AddMaskOperation(LayerMLGPU* aLayer)
-{
+MaskOperation* FrameBuilder::AddMaskOperation(LayerMLGPU* aLayer) {
   Layer* layer = aLayer->GetLayer();
   MOZ_ASSERT(layer->HasMaskLayers());
 
   
   if ((layer->GetMaskLayer() && layer->GetAncestorMaskLayerCount()) ||
-      layer->GetAncestorMaskLayerCount() > 1)
-  {
+      layer->GetAncestorMaskLayerCount() > 1) {
     
     
     MaskTextureList textures;
@@ -305,9 +293,8 @@ FrameBuilder::AddMaskOperation(LayerMLGPU* aLayer)
     return op;
   }
 
-  Layer* maskLayer = layer->GetMaskLayer()
-                     ? layer->GetMaskLayer()
-                     : layer->GetAncestorMaskLayerAt(0);
+  Layer* maskLayer = layer->GetMaskLayer() ? layer->GetMaskLayer()
+                                           : layer->GetAncestorMaskLayerAt(0);
   RefPtr<TextureSource> texture = GetMaskLayerTexture(maskLayer);
   if (!texture) {
     return nullptr;
@@ -326,21 +313,16 @@ FrameBuilder::AddMaskOperation(LayerMLGPU* aLayer)
   return op;
 }
 
-void
-FrameBuilder::RetainTemporaryLayer(LayerMLGPU* aLayer)
-{
+void FrameBuilder::RetainTemporaryLayer(LayerMLGPU* aLayer) {
   
   
   MOZ_ASSERT(!aLayer->GetLayer()->GetParent());
   mTemporaryLayers.push_back(aLayer->GetLayer());
 }
 
-LayerConstants*
-FrameBuilder::AllocateLayerInfo(ItemInfo& aItem)
-{
+LayerConstants* FrameBuilder::AllocateLayerInfo(ItemInfo& aItem) {
   if (((mCurrentLayerBuffer.Length() + 1) * sizeof(LayerConstants)) >
-      mDevice->GetMaxConstantBufferBindSize())
-  {
+      mDevice->GetMaxConstantBufferBindSize()) {
     FinishCurrentLayerBuffer();
     mLayerBufferMap.Clear();
     mCurrentLayerBuffer.ClearAndRetainStorage();
@@ -355,9 +337,7 @@ FrameBuilder::AllocateLayerInfo(ItemInfo& aItem)
   return info;
 }
 
-void
-FrameBuilder::FinishCurrentLayerBuffer()
-{
+void FrameBuilder::FinishCurrentLayerBuffer() {
   if (mCurrentLayerBuffer.IsEmpty()) {
     return;
   }
@@ -366,35 +346,26 @@ FrameBuilder::FinishCurrentLayerBuffer()
   
   ConstantBufferSection section;
   mDevice->GetSharedVSBuffer()->Allocate(
-    &section,
-    mCurrentLayerBuffer.Elements(),
-    mCurrentLayerBuffer.Length());
+      &section, mCurrentLayerBuffer.Elements(), mCurrentLayerBuffer.Length());
   mLayerBuffers.AppendElement(section);
 }
 
-size_t
-FrameBuilder::CurrentLayerBufferIndex() const
-{
+size_t FrameBuilder::CurrentLayerBufferIndex() const {
   
   
   return mLayerBuffers.Length();
 }
 
-ConstantBufferSection
-FrameBuilder::GetLayerBufferByIndex(size_t aIndex) const
-{
+ConstantBufferSection FrameBuilder::GetLayerBufferByIndex(size_t aIndex) const {
   if (aIndex >= mLayerBuffers.Length()) {
     return ConstantBufferSection();
   }
   return mLayerBuffers[aIndex];
 }
 
-bool
-FrameBuilder::AddMaskRect(const gfx::Rect& aRect, uint32_t* aOutIndex)
-{
+bool FrameBuilder::AddMaskRect(const gfx::Rect& aRect, uint32_t* aOutIndex) {
   if (((mCurrentMaskRectList.Length() + 1) * sizeof(gfx::Rect)) >
-      mDevice->GetMaxConstantBufferBindSize())
-  {
+      mDevice->GetMaxConstantBufferBindSize()) {
     FinishCurrentMaskRectBuffer();
     mCurrentMaskRectList.ClearAndRetainStorage();
   }
@@ -406,9 +377,7 @@ FrameBuilder::AddMaskRect(const gfx::Rect& aRect, uint32_t* aOutIndex)
   return true;
 }
 
-void
-FrameBuilder::FinishCurrentMaskRectBuffer()
-{
+void FrameBuilder::FinishCurrentMaskRectBuffer() {
   if (mCurrentMaskRectList.IsEmpty()) {
     return;
   }
@@ -417,28 +386,23 @@ FrameBuilder::FinishCurrentMaskRectBuffer()
   
   ConstantBufferSection section;
   mDevice->GetSharedVSBuffer()->Allocate(
-    &section,
-    mCurrentMaskRectList.Elements(),
-    mCurrentMaskRectList.Length());
+      &section, mCurrentMaskRectList.Elements(), mCurrentMaskRectList.Length());
   mMaskRectBuffers.AppendElement(section);
 }
 
-size_t
-FrameBuilder::CurrentMaskRectBufferIndex() const
-{
+size_t FrameBuilder::CurrentMaskRectBufferIndex() const {
   
   
   return mMaskRectBuffers.Length();
 }
 
-ConstantBufferSection
-FrameBuilder::GetMaskRectBufferByIndex(size_t aIndex) const
-{
+ConstantBufferSection FrameBuilder::GetMaskRectBufferByIndex(
+    size_t aIndex) const {
   if (aIndex >= mMaskRectBuffers.Length()) {
     return ConstantBufferSection();
   }
   return mMaskRectBuffers[aIndex];
 }
 
-} 
-} 
+}  
+}  

@@ -24,37 +24,33 @@ using namespace mozilla::widget;
 
 extern mozilla::LazyLogModule gWindowsLog;
 
-
 static bool gEnableSingleFingerPanEvents = false;
 
-nsWinGesture::nsWinGesture() :
-  mPanActive(false),
-  mFeedbackActive(false),
-  mXAxisFeedback(false),
-  mYAxisFeedback(false),
-  mPanInertiaActive(false)
-{
+nsWinGesture::nsWinGesture()
+    : mPanActive(false),
+      mFeedbackActive(false),
+      mXAxisFeedback(false),
+      mYAxisFeedback(false),
+      mPanInertiaActive(false) {
   (void)InitLibrary();
   mPixelScrollOverflow = 0;
 }
 
 
 
-bool nsWinGesture::InitLibrary()
-{
+bool nsWinGesture::InitLibrary() {
   
   
   gEnableSingleFingerPanEvents =
-    Preferences::GetBool("gestures.enable_single_finger_input", false);
+      Preferences::GetBool("gestures.enable_single_finger_input", false);
 
   return true;
 }
 
 #define GCOUNT 5
 
-bool nsWinGesture::SetWinGestureSupport(HWND hWnd,
-                     WidgetGestureNotifyEvent::PanDirection aDirection)
-{
+bool nsWinGesture::SetWinGestureSupport(
+    HWND hWnd, WidgetGestureNotifyEvent::PanDirection aDirection) {
   GESTURECONFIG config[GCOUNT];
 
   memset(&config, 0, sizeof(config));
@@ -68,27 +64,22 @@ bool nsWinGesture::SetWinGestureSupport(HWND hWnd,
   config[1].dwBlock = 0;
 
   config[2].dwID = GID_PAN;
-  config[2].dwWant  = GC_PAN|GC_PAN_WITH_INERTIA|
-                      GC_PAN_WITH_GUTTER;
-  config[2].dwBlock = GC_PAN_WITH_SINGLE_FINGER_VERTICALLY|
+  config[2].dwWant = GC_PAN | GC_PAN_WITH_INERTIA | GC_PAN_WITH_GUTTER;
+  config[2].dwBlock = GC_PAN_WITH_SINGLE_FINGER_VERTICALLY |
                       GC_PAN_WITH_SINGLE_FINGER_HORIZONTALLY;
 
   if (gEnableSingleFingerPanEvents) {
-
     if (aDirection == WidgetGestureNotifyEvent::ePanVertical ||
-        aDirection == WidgetGestureNotifyEvent::ePanBoth)
-    {
-      config[2].dwWant  |= GC_PAN_WITH_SINGLE_FINGER_VERTICALLY;
+        aDirection == WidgetGestureNotifyEvent::ePanBoth) {
+      config[2].dwWant |= GC_PAN_WITH_SINGLE_FINGER_VERTICALLY;
       config[2].dwBlock -= GC_PAN_WITH_SINGLE_FINGER_VERTICALLY;
     }
 
     if (aDirection == WidgetGestureNotifyEvent::ePanHorizontal ||
-        aDirection == WidgetGestureNotifyEvent::ePanBoth)
-    {
-      config[2].dwWant  |= GC_PAN_WITH_SINGLE_FINGER_HORIZONTALLY;
+        aDirection == WidgetGestureNotifyEvent::ePanBoth) {
+      config[2].dwWant |= GC_PAN_WITH_SINGLE_FINGER_HORIZONTALLY;
       config[2].dwBlock -= GC_PAN_WITH_SINGLE_FINGER_HORIZONTALLY;
     }
-
   }
 
   config[3].dwWant = GC_TWOFINGERTAP;
@@ -105,37 +96,32 @@ bool nsWinGesture::SetWinGestureSupport(HWND hWnd,
 
 
 
-bool nsWinGesture::IsPanEvent(LPARAM lParam)
-{
+bool nsWinGesture::IsPanEvent(LPARAM lParam) {
   GESTUREINFO gi;
 
-  ZeroMemory(&gi,sizeof(GESTUREINFO));
+  ZeroMemory(&gi, sizeof(GESTUREINFO));
   gi.cbSize = sizeof(GESTUREINFO);
 
   BOOL result = GetGestureInfo((HGESTUREINFO)lParam, &gi);
-  if (!result)
-    return false;
+  if (!result) return false;
 
-  if (gi.dwID == GID_PAN)
-    return true;
+  if (gi.dwID == GID_PAN) return true;
 
   return false;
 }
 
 
 
-bool
-nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
-                                    WidgetSimpleGestureEvent& evt)
-{
+bool nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam,
+                                         LPARAM lParam,
+                                         WidgetSimpleGestureEvent& evt) {
   GESTUREINFO gi;
 
-  ZeroMemory(&gi,sizeof(GESTUREINFO));
+  ZeroMemory(&gi, sizeof(GESTUREINFO));
   gi.cbSize = sizeof(GESTUREINFO);
 
   BOOL result = GetGestureInfo((HGESTUREINFO)lParam, &gi);
-  if (!result)
-    return false;
+  if (!result) return false;
 
   
   nsPointWin coord;
@@ -146,16 +132,14 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
 
   
   
-  switch(gi.dwID)
-  {
+  switch (gi.dwID) {
     case GID_BEGIN:
     case GID_END:
       
       return false;
       break;
 
-    case GID_ZOOM:
-    {
+    case GID_ZOOM: {
       if (gi.dwFlags & GF_BEGIN) {
         
 
@@ -164,16 +148,14 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
 
         evt.mMessage = eMagnifyGestureStart;
         evt.mDelta = 0.0;
-      }
-      else if (gi.dwFlags & GF_END) {
+      } else if (gi.dwFlags & GF_END) {
         
         
         evt.mMessage = eMagnifyGesture;
         
         evt.mDelta = -1.0 * (mZoomIntermediate - (float)gi.ullArguments);
         mZoomIntermediate = (float)gi.ullArguments;
-      }
-      else {
+      } else {
         
         
         evt.mMessage = eMagnifyGestureUpdate;
@@ -181,11 +163,9 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
         evt.mDelta = -1.0 * (mZoomIntermediate - (float)gi.ullArguments);
         mZoomIntermediate = (float)gi.ullArguments;
       }
-    }
-    break;
+    } break;
 
-    case GID_ROTATE:
-    {
+    case GID_ROTATE: {
       
       double radians = 0.0;
 
@@ -195,12 +175,12 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
       if (gi.ullArguments != 0)
         radians = GID_ROTATE_ANGLE_FROM_ARGUMENT(gi.ullArguments);
 
-      double degrees = -1 * radians * (180/M_PI);
+      double degrees = -1 * radians * (180 / M_PI);
 
       if (gi.dwFlags & GF_BEGIN) {
-          
-          
-          degrees = mRotateIntermediate = 0.0;
+        
+        
+        degrees = mRotateIntermediate = 0.0;
       }
 
       evt.mDirection = 0;
@@ -209,9 +189,8 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
 
       if (evt.mDelta > 0) {
         evt.mDirection =
-          dom::SimpleGestureEvent_Binding::ROTATION_COUNTERCLOCKWISE;
-      }
-      else if (evt.mDelta < 0) {
+            dom::SimpleGestureEvent_Binding::ROTATION_COUNTERCLOCKWISE;
+      } else if (evt.mDelta < 0) {
         evt.mDirection = dom::SimpleGestureEvent_Binding::ROTATION_CLOCKWISE;
       }
 
@@ -222,8 +201,7 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
       } else {
         evt.mMessage = eRotateGestureUpdate;
       }
-    }
-    break;
+    } break;
 
     case GID_TWOFINGERTAP:
       
@@ -242,27 +220,24 @@ nsWinGesture::ProcessGestureMessage(HWND hWnd, WPARAM wParam, LPARAM lParam,
   return true;
 }
 
-bool
-nsWinGesture::ProcessPanMessage(HWND hWnd, WPARAM wParam, LPARAM lParam)
-{
+bool nsWinGesture::ProcessPanMessage(HWND hWnd, WPARAM wParam, LPARAM lParam) {
   GESTUREINFO gi;
 
-  ZeroMemory(&gi,sizeof(GESTUREINFO));
+  ZeroMemory(&gi, sizeof(GESTUREINFO));
   gi.cbSize = sizeof(GESTUREINFO);
 
   BOOL result = GetGestureInfo((HGESTUREINFO)lParam, &gi);
-  if (!result)
-    return false;
+  if (!result) return false;
 
   
   nsPointWin coord;
   coord = mPanRefPoint = gi.ptsLocation;
   
   
+  
   mPanRefPoint.ScreenToClient(hWnd);
 
-  switch(gi.dwID)
-  {
+  switch (gi.dwID) {
     case GID_BEGIN:
     case GID_END:
       
@@ -270,30 +245,26 @@ nsWinGesture::ProcessPanMessage(HWND hWnd, WPARAM wParam, LPARAM lParam)
       break;
 
     
-    case GID_PAN:
-    {
+    case GID_PAN: {
       if (gi.dwFlags & GF_BEGIN) {
         mPanIntermediate = coord;
         mPixelScrollDelta = 0;
         mPanActive = true;
         mPanInertiaActive = false;
-      }
-      else {
-
+      } else {
 #ifdef DBG_jimm
         int32_t deltaX = mPanIntermediate.x - coord.x;
         int32_t deltaY = mPanIntermediate.y - coord.y;
-        MOZ_LOG(gWindowsLog, LogLevel::Info, 
-               ("coordX=%d coordY=%d deltaX=%d deltaY=%d x:%d y:%d\n", coord.x,
-                coord.y, deltaX, deltaY, mXAxisFeedback, mYAxisFeedback));
+        MOZ_LOG(gWindowsLog, LogLevel::Info,
+                ("coordX=%d coordY=%d deltaX=%d deltaY=%d x:%d y:%d\n", coord.x,
+                 coord.y, deltaX, deltaY, mXAxisFeedback, mYAxisFeedback));
 #endif
 
         mPixelScrollDelta.x = mPanIntermediate.x - coord.x;
         mPixelScrollDelta.y = mPanIntermediate.y - coord.y;
         mPanIntermediate = coord;
 
-        if (gi.dwFlags & GF_INERTIA)
-          mPanInertiaActive = true;
+        if (gi.dwFlags & GF_INERTIA) mPanInertiaActive = true;
 
         if (gi.dwFlags & GF_END) {
           mPanActive = false;
@@ -301,14 +272,13 @@ nsWinGesture::ProcessPanMessage(HWND hWnd, WPARAM wParam, LPARAM lParam)
           PanFeedbackFinalize(hWnd, true);
         }
       }
-    }
-    break;
+    } break;
   }
   return true;
 }
 
-inline bool TestTransition(int32_t a, int32_t b)
-{
+inline bool TestTransition(int32_t a, int32_t b) {
+  
   
   
   if (a == 0 || b == 0) return true;
@@ -316,27 +286,28 @@ inline bool TestTransition(int32_t a, int32_t b)
   return (a < 0) == (b < 0);
 }
 
-void
-nsWinGesture::UpdatePanFeedbackX(HWND hWnd, int32_t scrollOverflow, bool& endFeedback)
-{
+void nsWinGesture::UpdatePanFeedbackX(HWND hWnd, int32_t scrollOverflow,
+                                      bool& endFeedback) {
   
   
   if (scrollOverflow != 0) {
     if (!mFeedbackActive) {
       BeginPanningFeedback(hWnd);
       mFeedbackActive = true;
-    }      
+    }
     endFeedback = false;
     mXAxisFeedback = true;
     return;
   }
-  
+
   if (mXAxisFeedback) {
     int32_t newOverflow = mPixelScrollOverflow.x - mPixelScrollDelta.x;
 
     
     
-    if (!TestTransition(newOverflow, mPixelScrollOverflow.x) || newOverflow == 0)
+    
+    if (!TestTransition(newOverflow, mPixelScrollOverflow.x) ||
+        newOverflow == 0)
       return;
 
     
@@ -345,9 +316,8 @@ nsWinGesture::UpdatePanFeedbackX(HWND hWnd, int32_t scrollOverflow, bool& endFee
   }
 }
 
-void
-nsWinGesture::UpdatePanFeedbackY(HWND hWnd, int32_t scrollOverflow, bool& endFeedback)
-{
+void nsWinGesture::UpdatePanFeedbackY(HWND hWnd, int32_t scrollOverflow,
+                                      bool& endFeedback) {
   
   
   if (scrollOverflow != 0) {
@@ -359,13 +329,15 @@ nsWinGesture::UpdatePanFeedbackY(HWND hWnd, int32_t scrollOverflow, bool& endFee
     mYAxisFeedback = true;
     return;
   }
-  
+
   if (mYAxisFeedback) {
     int32_t newOverflow = mPixelScrollOverflow.y - mPixelScrollDelta.y;
 
     
     
-    if (!TestTransition(newOverflow, mPixelScrollOverflow.y) || newOverflow == 0)
+    
+    if (!TestTransition(newOverflow, mPixelScrollOverflow.y) ||
+        newOverflow == 0)
       return;
 
     
@@ -374,11 +346,8 @@ nsWinGesture::UpdatePanFeedbackY(HWND hWnd, int32_t scrollOverflow, bool& endFee
   }
 }
 
-void
-nsWinGesture::PanFeedbackFinalize(HWND hWnd, bool endFeedback)
-{
-  if (!mFeedbackActive)
-    return;
+void nsWinGesture::PanFeedbackFinalize(HWND hWnd, bool endFeedback) {
+  if (!mFeedbackActive) return;
 
   if (endFeedback) {
     mFeedbackActive = false;
@@ -389,12 +358,11 @@ nsWinGesture::PanFeedbackFinalize(HWND hWnd, bool endFeedback)
     return;
   }
 
-  UpdatePanningFeedback(hWnd, mPixelScrollOverflow.x, mPixelScrollOverflow.y, mPanInertiaActive);
+  UpdatePanningFeedback(hWnd, mPixelScrollOverflow.x, mPixelScrollOverflow.y,
+                        mPanInertiaActive);
 }
 
-bool
-nsWinGesture::PanDeltaToPixelScroll(WidgetWheelEvent& aWheelEvent)
-{
+bool nsWinGesture::PanDeltaToPixelScroll(WidgetWheelEvent& aWheelEvent) {
   aWheelEvent.mDeltaX = aWheelEvent.mDeltaY = aWheelEvent.mDeltaZ = 0.0;
   aWheelEvent.mLineOrPageDeltaX = aWheelEvent.mLineOrPageDeltaY = 0;
 

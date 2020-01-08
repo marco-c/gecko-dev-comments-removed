@@ -26,7 +26,6 @@
 
 
 
-
 nsresult NS_CopyNativeToUnicode(const nsACString& aInput, nsAString& aOutput);
 nsresult NS_CopyUnicodeToNative(const nsAString& aInput, nsACString& aOutput);
 
@@ -39,9 +38,7 @@ nsresult NS_CopyUnicodeToNative(const nsAString& aInput, nsACString& aOutput);
 
 
 
-inline constexpr bool
-NS_IsNativeUTF8()
-{
+inline constexpr bool NS_IsNativeUTF8() {
 #ifdef XP_WIN
   return false;
 #else
@@ -49,4 +46,4 @@ NS_IsNativeUTF8()
 #endif
 }
 
-#endif 
+#endif  

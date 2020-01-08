@@ -22,8 +22,7 @@ class StyleBasicShape;
 
 
 
-struct ShapeUtils final
-{
+struct ShapeUtils final {
   
   
   
@@ -69,8 +68,7 @@ struct ShapeUtils final
   
   
   
-  static nsRect ComputeInsetRect(const StyleBasicShape&,
-                                 const nsRect& aRefBox);
+  static nsRect ComputeInsetRect(const StyleBasicShape&, const nsRect& aRefBox);
 
   
   
@@ -78,8 +76,7 @@ struct ShapeUtils final
   
   
   static bool ComputeInsetRadii(const StyleBasicShape&,
-                                const nsRect& aInsetRect,
-                                const nsRect& aRefBox,
+                                const nsRect& aInsetRect, const nsRect& aRefBox,
                                 nscoord aRadii[8]);
 
   
@@ -90,6 +87,6 @@ struct ShapeUtils final
                                                   const nsRect& aRefBox);
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -14,11 +14,8 @@
 
 
 
-
-static void
-BinaryDataToHexString(const BYTE *hash, DWORD &hashSize,
-                      LPWSTR hexString)
-{
+static void BinaryDataToHexString(const BYTE *hash, DWORD &hashSize,
+                                  LPWSTR hexString) {
   WCHAR *p = hexString;
   for (DWORD i = 0; i < hashSize; ++i) {
     wsprintfW(p, L"%.2x", hash[i]);
@@ -35,10 +32,8 @@ BinaryDataToHexString(const BYTE *hash, DWORD &hashSize,
 
 
 
-static BOOL
-CalculateMD5(const char *data, DWORD dataSize,
-             BYTE **hash, DWORD &hashSize)
-{
+static BOOL CalculateMD5(const char *data, DWORD dataSize, BYTE **hash,
+                         DWORD &hashSize) {
   HCRYPTPROV hProv = 0;
   HCRYPTHASH hHash = 0;
 
@@ -59,14 +54,13 @@ CalculateMD5(const char *data, DWORD dataSize,
     return FALSE;
   }
 
-  if (!CryptHashData(hHash, reinterpret_cast<const BYTE*>(data),
-                    dataSize, 0)) {
+  if (!CryptHashData(hHash, reinterpret_cast<const BYTE *>(data), dataSize,
+                     0)) {
     return FALSE;
   }
 
   DWORD dwCount = sizeof(DWORD);
-  if (!CryptGetHashParam(hHash, HP_HASHSIZE, (BYTE *)&hashSize,
-                        &dwCount, 0)) {
+  if (!CryptGetHashParam(hHash, HP_HASHSIZE, (BYTE *)&hashSize, &dwCount, 0)) {
     return FALSE;
   }
 
@@ -81,7 +75,7 @@ CalculateMD5(const char *data, DWORD dataSize,
   }
 
   if (hProv) {
-    CryptReleaseContext(hProv,0);
+    CryptReleaseContext(hProv, 0);
   }
 
   return TRUE;
@@ -95,18 +89,15 @@ CalculateMD5(const char *data, DWORD dataSize,
 
 
 
-BOOL
-CalculateRegistryPathFromFilePath(const LPCWSTR filePath,
-                                  LPWSTR registryPath)
-{
+BOOL CalculateRegistryPathFromFilePath(const LPCWSTR filePath,
+                                       LPWSTR registryPath) {
   size_t filePathLen = wcslen(filePath);
   if (!filePathLen) {
     return FALSE;
   }
 
   
-  if (filePath[filePathLen -1] == L'\\' ||
-      filePath[filePathLen - 1] == L'/') {
+  if (filePath[filePathLen - 1] == L'\\' || filePath[filePathLen - 1] == L'/') {
     filePathLen--;
   }
 
@@ -121,19 +112,18 @@ CalculateRegistryPathFromFilePath(const LPCWSTR filePath,
 
   BYTE *hash;
   DWORD hashSize = 0;
-  if (!CalculateMD5(reinterpret_cast<const char*>(lowercasePath),
-                    filePathLen * 2,
-                    &hash, hashSize)) {
+  if (!CalculateMD5(reinterpret_cast<const char *>(lowercasePath),
+                    filePathLen * 2, &hash, hashSize)) {
     delete[] lowercasePath;
     return FALSE;
   }
   delete[] lowercasePath;
 
-  LPCWSTR baseRegPath = L"SOFTWARE\\Mozilla\\"
-    L"MaintenanceService\\";
+  LPCWSTR baseRegPath =
+      L"SOFTWARE\\Mozilla\\"
+      L"MaintenanceService\\";
   wcsncpy(registryPath, baseRegPath, MAX_PATH);
-  BinaryDataToHexString(hash, hashSize,
-                        registryPath + wcslen(baseRegPath));
+  BinaryDataToHexString(hash, hashSize, registryPath + wcslen(baseRegPath));
   delete[] hash;
   return TRUE;
 }

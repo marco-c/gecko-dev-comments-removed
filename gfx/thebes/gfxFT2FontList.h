@@ -11,10 +11,10 @@
 #include "mozilla/gfx/UnscaledFontFreeType.h"
 
 namespace mozilla {
-    namespace dom {
-        class FontListEntry;
-    };
+namespace dom {
+class FontListEntry;
 };
+};  
 using mozilla::dom::FontListEntry;
 
 class FontNameCache;
@@ -22,187 +22,169 @@ typedef struct FT_FaceRec_* FT_Face;
 class nsZipArchive;
 class WillShutdownObserver;
 
-class FT2FontEntry : public gfxFontEntry
-{
-public:
-    explicit FT2FontEntry(const nsACString& aFaceName) :
-        gfxFontEntry(aFaceName),
+class FT2FontEntry : public gfxFontEntry {
+ public:
+  explicit FT2FontEntry(const nsACString& aFaceName)
+      : gfxFontEntry(aFaceName),
         mFTFace(nullptr),
         mFontFace(nullptr),
-        mFTFontIndex(0)
-    {
-    }
+        mFTFontIndex(0) {}
 
-    ~FT2FontEntry();
+  ~FT2FontEntry();
 
-    gfxFontEntry* Clone() const override;
+  gfxFontEntry* Clone() const override;
 
-    const nsCString& GetName() const {
-        return Name();
-    }
+  const nsCString& GetName() const { return Name(); }
 
-    
-    static FT2FontEntry* 
-    CreateFontEntry(const nsACString& aFontName,
-                    WeightRange aWeight,
-                    StretchRange aStretch,
-                    SlantStyleRange aStyle,
-                    const uint8_t* aFontData,
-                    uint32_t aLength);
+  
+  static FT2FontEntry* CreateFontEntry(
+      const nsACString& aFontName, WeightRange aWeight, StretchRange aStretch,
+      SlantStyleRange aStyle, const uint8_t* aFontData, uint32_t aLength);
 
-    
-    
-    
-    static FT2FontEntry*
-    CreateFontEntry(const FontListEntry& aFLE);
+  
+  
+  
+  static FT2FontEntry* CreateFontEntry(const FontListEntry& aFLE);
 
-    
-    
-    
-    
-    
-    static FT2FontEntry* 
-    CreateFontEntry(FT_Face aFace,
-                    const char *aFilename, uint8_t aIndex,
-                    const nsACString& aName,
-                    const uint8_t* aFontData = nullptr,
-                    uint32_t aLength = 0);
+  
+  
+  
+  
+  
+  static FT2FontEntry* CreateFontEntry(FT_Face aFace, const char* aFilename,
+                                       uint8_t aIndex, const nsACString& aName,
+                                       const uint8_t* aFontData = nullptr,
+                                       uint32_t aLength = 0);
 
-    gfxFont *CreateFontInstance(const gfxFontStyle *aFontStyle) override;
+  gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
-    
-    
-    
-    
-    cairo_font_face_t *CairoFontFace(const gfxFontStyle *aStyle = nullptr);
+  
+  
+  
+  
+  cairo_font_face_t* CairoFontFace(const gfxFontStyle* aStyle = nullptr);
 
-    
-    
-    cairo_scaled_font_t *CreateScaledFont(const gfxFontStyle *aStyle);
+  
+  
+  cairo_scaled_font_t* CreateScaledFont(const gfxFontStyle* aStyle);
 
-    nsresult ReadCMAP(FontInfoData *aFontInfoData = nullptr) override;
+  nsresult ReadCMAP(FontInfoData* aFontInfoData = nullptr) override;
 
-    virtual hb_blob_t* GetFontTable(uint32_t aTableTag) override;
+  virtual hb_blob_t* GetFontTable(uint32_t aTableTag) override;
 
-    virtual nsresult CopyFontTable(uint32_t aTableTag,
-                                   nsTArray<uint8_t>& aBuffer) override;
+  virtual nsresult CopyFontTable(uint32_t aTableTag,
+                                 nsTArray<uint8_t>& aBuffer) override;
 
-    bool HasVariations() override;
-    void GetVariationAxes(nsTArray<gfxFontVariationAxis>& aVariationAxes) override;
-    void GetVariationInstances(nsTArray<gfxFontVariationInstance>& aInstances) override;
+  bool HasVariations() override;
+  void GetVariationAxes(
+      nsTArray<gfxFontVariationAxis>& aVariationAxes) override;
+  void GetVariationInstances(
+      nsTArray<gfxFontVariationInstance>& aInstances) override;
 
-    
-    
-    void CheckForBrokenFont(gfxFontFamily *aFamily);
+  
+  
+  void CheckForBrokenFont(gfxFontFamily* aFamily);
 
-    FT_MM_Var* GetMMVar() override;
+  FT_MM_Var* GetMMVar() override;
 
-    virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                        FontListSizes* aSizes) const override;
-    virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                        FontListSizes* aSizes) const override;
+  virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                      FontListSizes* aSizes) const override;
+  virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                      FontListSizes* aSizes) const override;
 
-    FT_Face mFTFace;
-    cairo_font_face_t *mFontFace;
+  FT_Face mFTFace;
+  cairo_font_face_t* mFontFace;
 
-    FT_MM_Var* mMMVar = nullptr;
+  FT_MM_Var* mMMVar = nullptr;
 
-    nsCString mFilename;
-    uint8_t   mFTFontIndex;
+  nsCString mFilename;
+  uint8_t mFTFontIndex;
 
-    mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontFreeType> mUnscaledFont;
+  mozilla::ThreadSafeWeakPtr<mozilla::gfx::UnscaledFontFreeType> mUnscaledFont;
 
-    bool mHasVariations = false;
-    bool mHasVariationsInitialized = false;
-    bool mMMVarInitialized = false;
+  bool mHasVariations = false;
+  bool mHasVariationsInitialized = false;
+  bool mMMVarInitialized = false;
 };
 
-class FT2FontFamily : public gfxFontFamily
-{
-public:
-    explicit FT2FontFamily(const nsACString& aName) :
-        gfxFontFamily(aName) { }
+class FT2FontFamily : public gfxFontFamily {
+ public:
+  explicit FT2FontFamily(const nsACString& aName) : gfxFontFamily(aName) {}
 
-    
-    void AddFacesToFontList(InfallibleTArray<FontListEntry>* aFontList);
+  
+  void AddFacesToFontList(InfallibleTArray<FontListEntry>* aFontList);
 };
 
-class gfxFT2FontList : public gfxPlatformFontList
-{
-public:
-    gfxFT2FontList();
-    virtual ~gfxFT2FontList();
+class gfxFT2FontList : public gfxPlatformFontList {
+ public:
+  gfxFT2FontList();
+  virtual ~gfxFT2FontList();
 
-    virtual gfxFontEntry* LookupLocalFont(const nsACString& aFontName,
-                                          WeightRange aWeightForEntry,
-                                          StretchRange aStretchForEntry,
-                                          SlantStyleRange aStyleForEntry) override;
+  virtual gfxFontEntry* LookupLocalFont(
+      const nsACString& aFontName, WeightRange aWeightForEntry,
+      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) override;
 
-    virtual gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
-                                           WeightRange aWeightForEntry,
-                                           StretchRange aStretchForEntry,
-                                           SlantStyleRange aStyleForEntry,
-                                           const uint8_t* aFontData,
-                                           uint32_t aLength) override;
+  virtual gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
+                                         WeightRange aWeightForEntry,
+                                         StretchRange aStretchForEntry,
+                                         SlantStyleRange aStyleForEntry,
+                                         const uint8_t* aFontData,
+                                         uint32_t aLength) override;
 
-    void GetSystemFontList(InfallibleTArray<FontListEntry>* retValue);
+  void GetSystemFontList(InfallibleTArray<FontListEntry>* retValue);
 
-    static gfxFT2FontList* PlatformFontList() {
-        return static_cast<gfxFT2FontList*>(gfxPlatformFontList::PlatformFontList());
-    }
+  static gfxFT2FontList* PlatformFontList() {
+    return static_cast<gfxFT2FontList*>(
+        gfxPlatformFontList::PlatformFontList());
+  }
 
-    virtual void GetFontFamilyList(nsTArray<RefPtr<gfxFontFamily> >& aFamilyArray) override;
+  virtual void GetFontFamilyList(
+      nsTArray<RefPtr<gfxFontFamily> >& aFamilyArray) override;
 
-    gfxFontFamily* CreateFontFamily(const nsACString& aName) const override;
+  gfxFontFamily* CreateFontFamily(const nsACString& aName) const override;
 
-    void WillShutdown();
+  void WillShutdown();
 
-protected:
-    typedef enum {
-        kUnknown,
-        kStandard
-    } StandardFile;
+ protected:
+  typedef enum { kUnknown, kStandard } StandardFile;
 
-    
-    virtual nsresult InitFontListForPlatform() override;
+  
+  virtual nsresult InitFontListForPlatform() override;
 
-    void AppendFaceFromFontListEntry(const FontListEntry& aFLE,
-                                     StandardFile aStdFile);
+  void AppendFaceFromFontListEntry(const FontListEntry& aFLE,
+                                   StandardFile aStdFile);
 
-    void AppendFacesFromFontFile(const nsCString& aFileName,
-                                 FontNameCache *aCache,
-                                 StandardFile aStdFile);
+  void AppendFacesFromFontFile(const nsCString& aFileName,
+                               FontNameCache* aCache, StandardFile aStdFile);
 
-    void AppendFacesFromOmnijarEntry(nsZipArchive *aReader,
-                                     const nsCString& aEntryName,
-                                     FontNameCache *aCache,
-                                     bool aJarChanged);
+  void AppendFacesFromOmnijarEntry(nsZipArchive* aReader,
+                                   const nsCString& aEntryName,
+                                   FontNameCache* aCache, bool aJarChanged);
 
-    
-    void AppendFacesFromCachedFaceList(const nsCString& aFileName,
-                                       const nsCString& aFaceList,
-                                       StandardFile aStdFile = kStandard);
+  
+  void AppendFacesFromCachedFaceList(const nsCString& aFileName,
+                                     const nsCString& aFaceList,
+                                     StandardFile aStdFile = kStandard);
 
-    void AddFaceToList(const nsCString& aEntryName, uint32_t aIndex,
-                       StandardFile aStdFile,
-                       FT_Face aFace, nsCString& aFaceList);
+  void AddFaceToList(const nsCString& aEntryName, uint32_t aIndex,
+                     StandardFile aStdFile, FT_Face aFace,
+                     nsCString& aFaceList);
 
-    void FindFonts();
+  void FindFonts();
 
-    void FindFontsInOmnijar(FontNameCache *aCache);
+  void FindFontsInOmnijar(FontNameCache* aCache);
 
-    void FindFontsInDir(const nsCString& aDir, FontNameCache* aFNC);
+  void FindFontsInDir(const nsCString& aDir, FontNameCache* aFNC);
 
-    virtual gfxFontFamily*
-    GetDefaultFontForPlatform(const gfxFontStyle* aStyle) override;
+  virtual gfxFontFamily* GetDefaultFontForPlatform(
+      const gfxFontStyle* aStyle) override;
 
-    nsTHashtable<nsCStringHashKey> mSkipSpaceLookupCheckFamilies;
+  nsTHashtable<nsCStringHashKey> mSkipSpaceLookupCheckFamilies;
 
-private:
-    mozilla::UniquePtr<FontNameCache> mFontNameCache;
-    int64_t mJarModifiedTime;
-    RefPtr<WillShutdownObserver> mObserver;
-
+ private:
+  mozilla::UniquePtr<FontNameCache> mFontNameCache;
+  int64_t mJarModifiedTime;
+  RefPtr<WillShutdownObserver> mObserver;
 };
 
 #endif 

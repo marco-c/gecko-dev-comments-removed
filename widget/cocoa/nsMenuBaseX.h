@@ -23,13 +23,12 @@ enum nsMenuObjectTypeX {
 
 
 
-class nsMenuObjectX
-{
-public:
-  virtual ~nsMenuObjectX() { }
-  virtual nsMenuObjectTypeX MenuObjectType()=0;
-  virtual void*             NativeData()=0;
-  nsIContent*               Content() { return mContent; }
+class nsMenuObjectX {
+ public:
+  virtual ~nsMenuObjectX() {}
+  virtual nsMenuObjectTypeX MenuObjectType() = 0;
+  virtual void *NativeData() = 0;
+  nsIContent *Content() { return mContent; }
 
   
 
@@ -38,7 +37,7 @@ public:
 
   virtual void IconUpdated() {}
 
-protected:
+ protected:
   nsCOMPtr<nsIContent> mContent;
 };
 
@@ -46,17 +45,15 @@ protected:
 
 
 
-
 class nsMenuGroupOwnerX;
 
-@interface MenuItemInfo : NSObject
-{
-  nsMenuGroupOwnerX * mMenuGroupOwner;
+@interface MenuItemInfo : NSObject {
+  nsMenuGroupOwnerX *mMenuGroupOwner;
 }
 
-- (id) initWithMenuGroupOwner:(nsMenuGroupOwnerX *)aMenuGroupOwner;
-- (nsMenuGroupOwnerX *) menuGroupOwner;
-- (void) setMenuGroupOwner:(nsMenuGroupOwnerX *)aMenuGroupOwner;
+- (id)initWithMenuGroupOwner:(nsMenuGroupOwnerX *)aMenuGroupOwner;
+- (nsMenuGroupOwnerX *)menuGroupOwner;
+- (void)setMenuGroupOwner:(nsMenuGroupOwnerX *)aMenuGroupOwner;
 
 @end
 
@@ -64,16 +61,15 @@ class nsMenuGroupOwnerX;
 
 
 
-
 enum {
-  eCommand_ID_About      = 1,
-  eCommand_ID_Prefs      = 2,
-  eCommand_ID_Quit       = 3,
-  eCommand_ID_HideApp    = 4,
+  eCommand_ID_About = 1,
+  eCommand_ID_Prefs = 2,
+  eCommand_ID_Quit = 3,
+  eCommand_ID_HideApp = 4,
   eCommand_ID_HideOthers = 5,
-  eCommand_ID_ShowAll    = 6,
-  eCommand_ID_Update     = 7,
-  eCommand_ID_Last       = 8
+  eCommand_ID_ShowAll = 6,
+  eCommand_ID_Update = 7,
+  eCommand_ID_Last = 8
 };
 
-#endif 
+#endif  

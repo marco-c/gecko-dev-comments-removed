@@ -22,70 +22,61 @@ namespace mozilla {
 namespace jni {
 
 
-enum class ExceptionMode
-{
-    
-    ABORT,
-    
-    IGNORE,
-    
-    NSRESULT,
+enum class ExceptionMode {
+  
+  ABORT,
+  
+  IGNORE,
+  
+  NSRESULT,
 };
 
 
-enum class CallingThread
-{
-    
-    ANY,
-    
-    GECKO,
-    
-    UI,
+enum class CallingThread {
+  
+  ANY,
+  
+  GECKO,
+  
+  UI,
 };
 
 
-enum class DispatchTarget
-{
-    
-    CURRENT,
-    
-    
-    
-    PROXY,
-    
-    
-    GECKO,
-    
-    
-    
-    
-    GECKO_PRIORITY,
+enum class DispatchTarget {
+  
+  CURRENT,
+  
+  
+  
+  PROXY,
+  
+  
+  GECKO,
+  
+  
+  
+  
+  GECKO_PRIORITY,
 };
-
 
 extern JavaVM* sJavaVM;
 extern JNIEnv* sGeckoThreadEnv;
 
-inline bool IsAvailable()
-{
-    return !!sGeckoThreadEnv;
+inline bool IsAvailable() { return !!sGeckoThreadEnv; }
+
+inline JavaVM* GetVM() {
+#ifdef MOZ_CHECK_JNI
+  MOZ_ASSERT(sJavaVM);
+#endif
+  return sJavaVM;
 }
 
-inline JavaVM* GetVM()
-{
+inline JNIEnv* GetGeckoThreadEnv() {
 #ifdef MOZ_CHECK_JNI
-    MOZ_ASSERT(sJavaVM);
+  MOZ_RELEASE_ASSERT(NS_IsMainThread(), "Must be on Gecko thread");
+  MOZ_RELEASE_ASSERT(sGeckoThreadEnv, "Must have a JNIEnv");
 #endif
-    return sJavaVM;
-}
-
-inline JNIEnv* GetGeckoThreadEnv()
-{
-#ifdef MOZ_CHECK_JNI
-    MOZ_RELEASE_ASSERT(NS_IsMainThread(), "Must be on Gecko thread");
-    MOZ_RELEASE_ASSERT(sGeckoThreadEnv, "Must have a JNIEnv");
-#endif
-    return sGeckoThreadEnv;
+  return sGeckoThreadEnv;
 }
 
 void SetGeckoThreadEnv(JNIEnv* aEnv);
@@ -93,48 +84,45 @@ void SetGeckoThreadEnv(JNIEnv* aEnv);
 JNIEnv* GetEnvForThread();
 
 #ifdef MOZ_CHECK_JNI
-#define MOZ_ASSERT_JNI_THREAD(thread) \
-    do { \
-        if ((thread) == mozilla::jni::CallingThread::GECKO) { \
-            MOZ_RELEASE_ASSERT(::NS_IsMainThread()); \
-        } else if ((thread) == mozilla::jni::CallingThread::UI) { \
-            const bool isOnUiThread = (GetUIThreadId() == ::gettid()); \
-            MOZ_RELEASE_ASSERT(isOnUiThread); \
-        } \
-    } while (0)
+#define MOZ_ASSERT_JNI_THREAD(thread)                            \
+  do {                                                           \
+    if ((thread) == mozilla::jni::CallingThread::GECKO) {        \
+      MOZ_RELEASE_ASSERT(::NS_IsMainThread());                   \
+    } else if ((thread) == mozilla::jni::CallingThread::UI) {    \
+      const bool isOnUiThread = (GetUIThreadId() == ::gettid()); \
+      MOZ_RELEASE_ASSERT(isOnUiThread);                          \
+    }                                                            \
+  } while (0)
 #else
-#define MOZ_ASSERT_JNI_THREAD(thread) do {} while (0)
+#define MOZ_ASSERT_JNI_THREAD(thread) \
+  do {                                \
+  } while (0)
 #endif
 
-bool ThrowException(JNIEnv *aEnv, const char *aClass,
-                    const char *aMessage);
+bool ThrowException(JNIEnv* aEnv, const char* aClass, const char* aMessage);
 
-inline bool ThrowException(JNIEnv *aEnv, const char *aMessage)
-{
-    return ThrowException(aEnv, "java/lang/Exception", aMessage);
+inline bool ThrowException(JNIEnv* aEnv, const char* aMessage) {
+  return ThrowException(aEnv, "java/lang/Exception", aMessage);
 }
 
-inline bool ThrowException(const char *aClass, const char *aMessage)
-{
-    return ThrowException(GetEnvForThread(), aClass, aMessage);
+inline bool ThrowException(const char* aClass, const char* aMessage) {
+  return ThrowException(GetEnvForThread(), aClass, aMessage);
 }
 
-inline bool ThrowException(const char *aMessage)
-{
-    return ThrowException(GetEnvForThread(), aMessage);
+inline bool ThrowException(const char* aMessage) {
+  return ThrowException(GetEnvForThread(), aMessage);
 }
 
 bool HandleUncaughtException(JNIEnv* aEnv);
 
 bool ReportException(JNIEnv* aEnv, jthrowable aExc, jstring aStack);
 
-#define MOZ_CATCH_JNI_EXCEPTION(env) \
-    do { \
-        if (mozilla::jni::HandleUncaughtException((env))) { \
-            MOZ_CRASH("JNI exception"); \
-        } \
-    } while (0)
-
+#define MOZ_CATCH_JNI_EXCEPTION(env)                    \
+  do {                                                  \
+    if (mozilla::jni::HandleUncaughtException((env))) { \
+      MOZ_CRASH("JNI exception");                       \
+    }                                                   \
+  } while (0)
 
 uintptr_t GetNativeHandle(JNIEnv* env, jobject instance);
 
@@ -154,7 +142,7 @@ int GetAPIVersion();
 
 pid_t GetUIThreadId();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

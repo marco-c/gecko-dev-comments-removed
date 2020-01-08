@@ -12,40 +12,35 @@ namespace dom {
 using mozilla::ipc::ContentPrincipalInfo;
 using mozilla::ipc::PrincipalInfo;
 
-bool
-ClientMatchPrincipalInfo(const PrincipalInfo& aLeft, const PrincipalInfo& aRight)
-{
+bool ClientMatchPrincipalInfo(const PrincipalInfo& aLeft,
+                              const PrincipalInfo& aRight) {
   if (aLeft.type() != aRight.type()) {
     return false;
   }
 
   switch (aLeft.type()) {
-    case PrincipalInfo::TContentPrincipalInfo:
-    {
-      const ContentPrincipalInfo& leftContent = aLeft.get_ContentPrincipalInfo();
-      const ContentPrincipalInfo& rightContent = aRight.get_ContentPrincipalInfo();
+    case PrincipalInfo::TContentPrincipalInfo: {
+      const ContentPrincipalInfo& leftContent =
+          aLeft.get_ContentPrincipalInfo();
+      const ContentPrincipalInfo& rightContent =
+          aRight.get_ContentPrincipalInfo();
       return leftContent.attrs() == rightContent.attrs() &&
              leftContent.originNoSuffix() == rightContent.originNoSuffix();
     }
-    case PrincipalInfo::TSystemPrincipalInfo:
-    {
+    case PrincipalInfo::TSystemPrincipalInfo: {
       
       return true;
     }
-    case PrincipalInfo::TNullPrincipalInfo:
-    {
+    case PrincipalInfo::TNullPrincipalInfo: {
       
       return false;
     }
-    default:
-    {
-      break;
-    }
+    default: { break; }
   }
 
   
   MOZ_CRASH("unexpected principal type!");
 }
 
-} 
-} 
+}  
+}  

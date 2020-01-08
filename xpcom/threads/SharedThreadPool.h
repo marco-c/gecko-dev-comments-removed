@@ -35,14 +35,13 @@ namespace mozilla {
 
 
 
-class SharedThreadPool : public nsIThreadPool
-{
-public:
 
+class SharedThreadPool : public nsIThreadPool {
+ public:
   
   
   static already_AddRefed<SharedThreadPool> Get(const nsCString& aName,
-                                            uint32_t aThreadLimit = 4);
+                                                uint32_t aThreadLimit = 4);
 
   
   
@@ -58,26 +57,34 @@ public:
   
   
   
-  nsresult DispatchFromEndOfTaskInThisPool(nsIRunnable *event)
-  {
+  nsresult DispatchFromEndOfTaskInThisPool(nsIRunnable* event) {
     return Dispatch(event, NS_DISPATCH_AT_END);
   }
 
-  NS_IMETHOD DispatchFromScript(nsIRunnable *event, uint32_t flags) override {
-      return Dispatch(event, flags);
+  NS_IMETHOD DispatchFromScript(nsIRunnable* event, uint32_t flags) override {
+    return Dispatch(event, flags);
   }
 
-  NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable> event, uint32_t flags = NS_DISPATCH_NORMAL) override
-    { return !mEventTarget ? NS_ERROR_NULL_POINTER : mEventTarget->Dispatch(std::move(event), flags); }
+  NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable> event,
+                      uint32_t flags = NS_DISPATCH_NORMAL) override {
+    return !mEventTarget ? NS_ERROR_NULL_POINTER
+                         : mEventTarget->Dispatch(std::move(event), flags);
+  }
 
-  NS_IMETHOD DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) override
-    { return NS_ERROR_NOT_IMPLEMENTED; }
+  NS_IMETHOD DelayedDispatch(already_AddRefed<nsIRunnable>, uint32_t) override {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
 
   using nsIEventTarget::Dispatch;
 
-  NS_IMETHOD IsOnCurrentThread(bool *_retval) override { return !mEventTarget ? NS_ERROR_NULL_POINTER : mEventTarget->IsOnCurrentThread(_retval); }
+  NS_IMETHOD IsOnCurrentThread(bool* _retval) override {
+    return !mEventTarget ? NS_ERROR_NULL_POINTER
+                         : mEventTarget->IsOnCurrentThread(_retval);
+  }
 
-  NS_IMETHOD_(bool) IsOnCurrentThreadInfallible() override { return mEventTarget && mEventTarget->IsOnCurrentThread(); }
+  NS_IMETHOD_(bool) IsOnCurrentThreadInfallible() override {
+    return mEventTarget && mEventTarget->IsOnCurrentThread();
+  }
 
   
   static void InitStatics();
@@ -86,16 +93,14 @@ public:
   
   static void SpinUntilEmpty();
 
-private:
-
+ private:
   
   static bool IsEmpty();
 
   
   
   
-  SharedThreadPool(const nsCString& aName,
-                   nsIThreadPool* aPool);
+  SharedThreadPool(const nsCString& aName, nsIThreadPool* aPool);
   virtual ~SharedThreadPool();
 
   nsresult EnsureThreadLimitIsAtLeast(uint32_t aThreadLimit);
@@ -115,6 +120,6 @@ private:
   nsCOMPtr<nsIEventTarget> mEventTarget;
 };
 
-} 
+}  
 
-#endif 
+#endif  

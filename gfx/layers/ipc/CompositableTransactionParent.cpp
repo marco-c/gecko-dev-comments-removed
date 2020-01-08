@@ -5,27 +5,27 @@
 
 
 #include "CompositableTransactionParent.h"
-#include "CompositableHost.h"           
-#include "CompositorBridgeParent.h"     
-#include "GLContext.h"                  
-#include "Layers.h"                     
-#include "RenderTrace.h"                
-#include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
+#include "CompositableHost.h"        
+#include "CompositorBridgeParent.h"  
+#include "GLContext.h"               
+#include "Layers.h"                  
+#include "RenderTrace.h"             
+#include "mozilla/Assertions.h"      
+#include "mozilla/RefPtr.h"          
 #include "mozilla/layers/CompositorTypes.h"
-#include "mozilla/layers/ContentHost.h"  
-#include "mozilla/layers/ImageBridgeParent.h" 
+#include "mozilla/layers/ContentHost.h"        
+#include "mozilla/layers/ImageBridgeParent.h"  
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "mozilla/layers/TextureHost.h"  
+#include "mozilla/layers/LayersTypes.h"     
+#include "mozilla/layers/TextureHost.h"     
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/TiledContentHost.h"
 #include "mozilla/layers/PaintedLayerComposite.h"
-#include "mozilla/mozalloc.h"           
+#include "mozilla/mozalloc.h"  
 #include "mozilla/Unused.h"
-#include "nsDebug.h"                    
-#include "nsRegion.h"                   
+#include "nsDebug.h"   
+#include "nsRegion.h"  
 
 namespace mozilla {
 namespace layers {
@@ -44,14 +44,13 @@ class Compositor;
 
 
 
-static bool
-ScheduleComposition(CompositableHost* aCompositable)
-{
+static bool ScheduleComposition(CompositableHost* aCompositable) {
   uint64_t id = aCompositable->GetCompositorBridgeID();
   if (!id) {
     return false;
   }
-  CompositorBridgeParent* cp = CompositorBridgeParent::GetCompositorBridgeParent(id);
+  CompositorBridgeParent* cp =
+      CompositorBridgeParent::GetCompositorBridgeParent(id);
   if (!cp) {
     return false;
   }
@@ -59,24 +58,23 @@ ScheduleComposition(CompositableHost* aCompositable)
   return true;
 }
 
-bool
-CompositableParentManager::ReceiveCompositableUpdate(const CompositableOperation& aEdit)
-{
+bool CompositableParentManager::ReceiveCompositableUpdate(
+    const CompositableOperation& aEdit) {
   
   
-  RefPtr<CompositableHost> compositable = FindCompositable(aEdit.compositable());
+  RefPtr<CompositableHost> compositable =
+      FindCompositable(aEdit.compositable());
   if (!compositable) {
     return false;
   }
   return ReceiveCompositableUpdate(aEdit.detail(), WrapNotNull(compositable));
 }
 
-bool
-CompositableParentManager::ReceiveCompositableUpdate(
-  const CompositableOperationDetail& aDetail,
-  NotNull<CompositableHost*> aCompositable)
-{
-  if (TextureSourceProvider* provider = aCompositable->GetTextureSourceProvider()) {
+bool CompositableParentManager::ReceiveCompositableUpdate(
+    const CompositableOperationDetail& aDetail,
+    NotNull<CompositableHost*> aCompositable) {
+  if (TextureSourceProvider* provider =
+          aCompositable->GetTextureSourceProvider()) {
     if (!provider->IsValid()) {
       return false;
     }
@@ -91,14 +89,15 @@ CompositableParentManager::ReceiveCompositableUpdate(
       if (!layer || layer->GetType() != Layer::TYPE_PAINTED) {
         return false;
       }
-      PaintedLayerComposite* thebes = static_cast<PaintedLayerComposite*>(layer);
+      PaintedLayerComposite* thebes =
+          static_cast<PaintedLayerComposite*>(layer);
 
       const ThebesBufferData& bufferData = op.bufferData();
 
-      RenderTraceInvalidateStart(thebes, "FF00FF", op.updatedRegion().GetBounds());
+      RenderTraceInvalidateStart(thebes, "FF00FF",
+                                 op.updatedRegion().GetBounds());
 
-      if (!aCompositable->UpdateThebes(bufferData,
-                                       op.updatedRegion(),
+      if (!aCompositable->UpdateThebes(bufferData, op.updatedRegion(),
                                        thebes->GetValidRegion())) {
         return false;
       }
@@ -117,22 +116,27 @@ CompositableParentManager::ReceiveCompositableUpdate(
 
       bool success = tiledHost->UseTiledLayerBuffer(this, tileDesc);
 
-      const InfallibleTArray<TileDescriptor>& tileDescriptors = tileDesc.tiles();
+      const InfallibleTArray<TileDescriptor>& tileDescriptors =
+          tileDesc.tiles();
       for (size_t i = 0; i < tileDescriptors.Length(); i++) {
         const TileDescriptor& tileDesc = tileDescriptors[i];
         if (tileDesc.type() != TileDescriptor::TTexturedTileDescriptor) {
           continue;
         }
-        const TexturedTileDescriptor& texturedDesc = tileDesc.get_TexturedTileDescriptor();
-        RefPtr<TextureHost> texture = TextureHost::AsTextureHost(texturedDesc.textureParent());
+        const TexturedTileDescriptor& texturedDesc =
+            tileDesc.get_TexturedTileDescriptor();
+        RefPtr<TextureHost> texture =
+            TextureHost::AsTextureHost(texturedDesc.textureParent());
         if (texture) {
           texture->SetLastFwdTransactionId(mFwdTransactionId);
           
           
           MOZ_ASSERT(texture->NumCompositableRefs() > 0);
         }
-        if (texturedDesc.textureOnWhite().type() == MaybeTexture::TPTextureParent) {
-          texture = TextureHost::AsTextureHost(texturedDesc.textureOnWhite().get_PTextureParent());
+        if (texturedDesc.textureOnWhite().type() ==
+            MaybeTexture::TPTextureParent) {
+          texture = TextureHost::AsTextureHost(
+              texturedDesc.textureOnWhite().get_PTextureParent());
           if (texture) {
             texture->SetLastFwdTransactionId(mFwdTransactionId);
             
@@ -158,11 +162,10 @@ CompositableParentManager::ReceiveCompositableUpdate(
     case CompositableOperationDetail::TOpUseTexture: {
       const OpUseTexture& op = aDetail.get_OpUseTexture();
 
-      AutoTArray<CompositableHost::TimedTexture,4> textures;
+      AutoTArray<CompositableHost::TimedTexture, 4> textures;
       for (auto& timedTexture : op.textures()) {
         CompositableHost::TimedTexture* t = textures.AppendElement();
-        t->mTexture =
-            TextureHost::AsTextureHost(timedTexture.textureParent());
+        t->mTexture = TextureHost::AsTextureHost(timedTexture.textureParent());
         MOZ_ASSERT(t->mTexture);
         t->mTimeStamp = timedTexture.timeStamp();
         t->mPictureRect = timedTexture.picture();
@@ -176,7 +179,8 @@ CompositableParentManager::ReceiveCompositableUpdate(
         aCompositable->UseTextureHost(textures);
 
         for (auto& timedTexture : op.textures()) {
-          RefPtr<TextureHost> texture = TextureHost::AsTextureHost(timedTexture.textureParent());
+          RefPtr<TextureHost> texture =
+              TextureHost::AsTextureHost(timedTexture.textureParent());
           if (texture) {
             texture->SetLastFwdTransactionId(mFwdTransactionId);
             
@@ -192,9 +196,12 @@ CompositableParentManager::ReceiveCompositableUpdate(
       break;
     }
     case CompositableOperationDetail::TOpUseComponentAlphaTextures: {
-      const OpUseComponentAlphaTextures& op = aDetail.get_OpUseComponentAlphaTextures();
-      RefPtr<TextureHost> texOnBlack = TextureHost::AsTextureHost(op.textureOnBlackParent());
-      RefPtr<TextureHost> texOnWhite = TextureHost::AsTextureHost(op.textureOnWhiteParent());
+      const OpUseComponentAlphaTextures& op =
+          aDetail.get_OpUseComponentAlphaTextures();
+      RefPtr<TextureHost> texOnBlack =
+          TextureHost::AsTextureHost(op.textureOnBlackParent());
+      RefPtr<TextureHost> texOnWhite =
+          TextureHost::AsTextureHost(op.textureOnWhiteParent());
       if (op.readLockedBlack()) {
         texOnBlack->SetReadLocked();
       }
@@ -224,17 +231,13 @@ CompositableParentManager::ReceiveCompositableUpdate(
       }
       break;
     }
-    default: {
-      MOZ_ASSERT(false, "bad type");
-    }
+    default: { MOZ_ASSERT(false, "bad type"); }
   }
 
   return true;
 }
 
-void
-CompositableParentManager::DestroyActor(const OpDestroy& aOp)
-{
+void CompositableParentManager::DestroyActor(const OpDestroy& aOp) {
   switch (aOp.type()) {
     case OpDestroy::TPTextureParent: {
       auto actor = aOp.get_PTextureParent();
@@ -245,17 +248,13 @@ CompositableParentManager::DestroyActor(const OpDestroy& aOp)
       ReleaseCompositable(aOp.get_CompositableHandle());
       break;
     }
-    default: {
-      MOZ_ASSERT(false, "unsupported type");
-    }
+    default: { MOZ_ASSERT(false, "unsupported type"); }
   }
 }
 
-RefPtr<CompositableHost>
-CompositableParentManager::AddCompositable(const CompositableHandle& aHandle,
-				           const TextureInfo& aInfo,
-                                           bool aUseWebRender)
-{
+RefPtr<CompositableHost> CompositableParentManager::AddCompositable(
+    const CompositableHandle& aHandle, const TextureInfo& aInfo,
+    bool aUseWebRender) {
   if (mCompositables.find(aHandle.Value()) != mCompositables.end()) {
     NS_ERROR("Client should not allocate duplicate handles");
     return nullptr;
@@ -265,7 +264,8 @@ CompositableParentManager::AddCompositable(const CompositableHandle& aHandle,
     return nullptr;
   }
 
-  RefPtr<CompositableHost> host = CompositableHost::Create(aInfo, aUseWebRender);
+  RefPtr<CompositableHost> host =
+      CompositableHost::Create(aInfo, aUseWebRender);
   if (!host) {
     return nullptr;
   }
@@ -274,9 +274,8 @@ CompositableParentManager::AddCompositable(const CompositableHandle& aHandle,
   return host;
 }
 
-RefPtr<CompositableHost>
-CompositableParentManager::FindCompositable(const CompositableHandle& aHandle)
-{
+RefPtr<CompositableHost> CompositableParentManager::FindCompositable(
+    const CompositableHandle& aHandle) {
   auto iter = mCompositables.find(aHandle.Value());
   if (iter == mCompositables.end()) {
     return nullptr;
@@ -284,9 +283,8 @@ CompositableParentManager::FindCompositable(const CompositableHandle& aHandle)
   return iter->second;
 }
 
-void
-CompositableParentManager::ReleaseCompositable(const CompositableHandle& aHandle)
-{
+void CompositableParentManager::ReleaseCompositable(
+    const CompositableHandle& aHandle) {
   auto iter = mCompositables.find(aHandle.Value());
   if (iter == mCompositables.end()) {
     return;
@@ -298,6 +296,5 @@ CompositableParentManager::ReleaseCompositable(const CompositableHandle& aHandle
   host->Detach(nullptr, CompositableHost::FORCE_DETACH);
 }
 
-} 
-} 
-
+}  
+}  

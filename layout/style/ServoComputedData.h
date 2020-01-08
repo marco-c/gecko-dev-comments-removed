@@ -19,41 +19,35 @@ class nsWindowSizes;
 
 namespace mozilla {
 
-template<typename T>
-struct ServoRawOffsetArc
-{
+template <typename T>
+struct ServoRawOffsetArc {
   
   
   T* mPtr;
 };
 
-struct ServoWritingMode
-{
+struct ServoWritingMode {
   uint8_t mBits;
 };
 
-struct ServoCustomPropertiesMap
-{
+struct ServoCustomPropertiesMap {
   uintptr_t mPtr;
 };
 
-struct ServoRuleNode
-{
+struct ServoRuleNode {
   uintptr_t mPtr;
 };
 
 class ComputedStyle;
 
-struct ServoVisitedStyle
-{
+struct ServoVisitedStyle {
   
   
   
   ComputedStyle* mPtr;
 };
 
-struct ServoComputedValueFlags
-{
+struct ServoComputedValueFlags {
   uint16_t mFlags;
 };
 
@@ -61,15 +55,15 @@ struct ServoComputedValueFlags
 #include "nsStyleStructList.h"
 #undef STYLE_STRUCT
 
-} 
+}  
 
 class ServoComputedData;
 
-struct ServoComputedDataForgotten
-{
+struct ServoComputedDataForgotten {
   
   
-  explicit ServoComputedDataForgotten(const ServoComputedData* aValue) : mPtr(aValue) {}
+  explicit ServoComputedDataForgotten(const ServoComputedData* aValue)
+      : mPtr(aValue) {}
   const ServoComputedData* mPtr;
 };
 
@@ -78,11 +72,10 @@ struct ServoComputedDataForgotten
 
 
 
-class ServoComputedData
-{
+class ServoComputedData {
   friend class mozilla::ComputedStyle;
 
-public:
+ public:
   
   explicit ServoComputedData(const ServoComputedDataForgotten aValue);
 
@@ -94,7 +87,7 @@ public:
 
   void AddSizeOfExcludingThis(nsWindowSizes& aSizes) const;
 
-private:
+ private:
   mozilla::ServoCustomPropertiesMap custom_properties;
   mozilla::ServoWritingMode writing_mode;
   mozilla::ServoComputedValueFlags flags;
@@ -120,4 +113,4 @@ private:
   ServoComputedData(const ServoComputedData&&) = delete;
 };
 
-#endif 
+#endif  

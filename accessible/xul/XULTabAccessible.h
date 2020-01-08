@@ -17,9 +17,8 @@ namespace a11y {
 
 
 
-class XULTabAccessible : public HyperTextAccessibleWrap
-{
-public:
+class XULTabAccessible : public HyperTextAccessibleWrap {
+ public:
   enum { eAction_Switch = 0 };
 
   XULTabAccessible(nsIContent* aContent, DocAccessible* aDoc);
@@ -40,10 +39,8 @@ public:
 
 
 
-
-class XULTabsAccessible : public XULSelectControlAccessible
-{
-public:
+class XULTabsAccessible : public XULSelectControlAccessible {
+ public:
   XULTabsAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -60,7 +57,7 @@ public:
   virtual Accessible* GetSelectedItem(uint32_t aIndex) override;
   virtual bool IsItemSelected(uint32_t aIndex) override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
@@ -68,13 +65,12 @@ protected:
 
 
 
-
-class XULTabpanelsAccessible : public AccessibleWrap
-{
-public:
-  XULTabpanelsAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-    AccessibleWrap(aContent, aDoc)
-    { mType = eXULTabpanelsType; }
+class XULTabpanelsAccessible : public AccessibleWrap {
+ public:
+  XULTabpanelsAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : AccessibleWrap(aContent, aDoc) {
+    mType = eXULTabpanelsType;
+  }
 
   
   virtual a11y::role NativeRole() const override;
@@ -87,10 +83,8 @@ public:
 
 
 
-
-class XULTabpanelAccessible : public AccessibleWrap
-{
-public:
+class XULTabpanelAccessible : public AccessibleWrap {
+ public:
   XULTabpanelAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -98,8 +92,7 @@ public:
   virtual Relation RelationByType(RelationType aType) const override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif
-

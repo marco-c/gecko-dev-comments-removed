@@ -7,9 +7,10 @@
 
 #include "nsQueryFrame.h"
 
-#define MAX_ROWSPAN 65534 // the cellmap can not handle more.
-#define MAX_COLSPAN 1000 // limit as IE and opera do.  If this ever changes,
-                         
+#define MAX_ROWSPAN 65534  // the cellmap can not handle more.
+#define MAX_COLSPAN \
+  1000  // limit as IE and opera do.  If this ever changes,
+        
 
 
 
@@ -18,17 +19,13 @@
 
 
 
-class nsITableCellLayout
-{
-public:
-
+class nsITableCellLayout {
+ public:
   NS_DECL_QUERYFRAME_TARGET(nsITableCellLayout)
 
   
-  NS_IMETHOD GetCellIndexes(int32_t &aRowIndex, int32_t &aColIndex)=0;
+
+  NS_IMETHOD GetCellIndexes(int32_t &aRowIndex, int32_t &aColIndex) = 0;
 };
 
 #endif
-
-
-

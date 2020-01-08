@@ -115,6 +115,7 @@ enum class RelationType {
   
 
 
+
   CONTAINING_TAB_PANE = 0x12,
 
   
@@ -126,7 +127,6 @@ enum class RelationType {
 
 
   CONTAINING_APPLICATION = 0x14,
-
 
   
 
@@ -157,7 +157,7 @@ enum class RelationType {
   LAST = ERRORMSG_FOR
 };
 
-} 
-} 
+}  
+}  
 
 #endif

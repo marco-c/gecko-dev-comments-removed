@@ -58,10 +58,10 @@ typedef uint16_t OSVR_MatrixConventions;
 
 
 typedef enum OSVR_MatrixMasks {
-    OSVR_MATRIX_MASK_ROWMAJOR = 0x1,
-    OSVR_MATRIX_MASK_ROWVECTORS = 0x2,
-    OSVR_MATRIX_MASK_LHINPUT = 0x4,
-    OSVR_MATRIX_MASK_UNSIGNEDZ = 0x8
+  OSVR_MATRIX_MASK_ROWMAJOR = 0x1,
+  OSVR_MATRIX_MASK_ROWVECTORS = 0x2,
+  OSVR_MATRIX_MASK_LHINPUT = 0x4,
+  OSVR_MATRIX_MASK_UNSIGNEDZ = 0x8
 } OSVR_MatrixMasks;
 #endif
 
@@ -79,10 +79,10 @@ typedef enum OSVR_MatrixMasks {
 
 
 typedef enum OSVR_MatrixOrderingFlags {
-    
-    OSVR_MATRIX_COLMAJOR = 0x0,
-    
-    OSVR_MATRIX_ROWMAJOR = OSVR_MATRIX_MASK_ROWMAJOR
+  
+  OSVR_MATRIX_COLMAJOR = 0x0,
+  
+  OSVR_MATRIX_ROWMAJOR = OSVR_MATRIX_MASK_ROWMAJOR
 } OSVR_MatrixOrderingFlags;
 
 
@@ -92,39 +92,39 @@ typedef enum OSVR_MatrixOrderingFlags {
 
 
 typedef enum OSVR_MatrixVectorFlags {
-    
-    OSVR_MATRIX_COLVECTORS = 0x0,
-    
-    OSVR_MATRIX_ROWVECTORS = OSVR_MATRIX_MASK_ROWVECTORS
+  
+  OSVR_MATRIX_COLVECTORS = 0x0,
+  
+  OSVR_MATRIX_ROWVECTORS = OSVR_MATRIX_MASK_ROWVECTORS
 } OSVR_MatrixVectorFlags;
 
 
 typedef enum OSVR_ProjectionMatrixInputFlags {
-    
+  
 
-    OSVR_MATRIX_RHINPUT = 0x0,
-    
-    OSVR_MATRIX_LHINPUT = OSVR_MATRIX_MASK_LHINPUT
+  OSVR_MATRIX_RHINPUT = 0x0,
+  
+  OSVR_MATRIX_LHINPUT = OSVR_MATRIX_MASK_LHINPUT
 
 } OSVR_ProjectionMatrixInputFlags;
 
 
 
 typedef enum OSVR_ProjectionMatrixZFlags {
-    
+  
 
-    OSVR_MATRIX_SIGNEDZ = 0x0,
-    
+  OSVR_MATRIX_SIGNEDZ = 0x0,
+  
 
-    OSVR_MATRIX_UNSIGNEDZ = OSVR_MATRIX_MASK_UNSIGNEDZ
+  OSVR_MATRIX_UNSIGNEDZ = OSVR_MATRIX_MASK_UNSIGNEDZ
 } OSVR_ProjectionMatrixZFlags;
  
 
 enum {
-    
+  
 
 
-    OSVR_MATRIX_SIZE = 16
+  OSVR_MATRIX_SIZE = 16
 };
 
 
@@ -155,7 +155,7 @@ OSVR_EXTERN_C_END
 inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const *pose,
                                          OSVR_MatrixConventions flags,
                                          double *mat) {
-    return osvrPose3ToMatrixd(pose, flags, mat);
+  return osvrPose3ToMatrixd(pose, flags, mat);
 }
 
 
@@ -163,7 +163,7 @@ inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const *pose,
 inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const *pose,
                                          OSVR_MatrixConventions flags,
                                          float *mat) {
-    return osvrPose3ToMatrixf(pose, flags, mat);
+  return osvrPose3ToMatrixf(pose, flags, mat);
 }
 
 
@@ -172,7 +172,7 @@ template <typename Scalar>
 inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const *pose,
                                          OSVR_MatrixConventions flags,
                                          Scalar mat[OSVR_MATRIX_SIZE]) {
-    return osvrPose3ToMatrix(pose, flags, &(mat[0]));
+  return osvrPose3ToMatrix(pose, flags, &(mat[0]));
 }
 
 
@@ -180,7 +180,7 @@ template <typename Scalar>
 inline OSVR_ReturnCode osvrPose3ToMatrix(OSVR_Pose3 const &pose,
                                          OSVR_MatrixConventions flags,
                                          Scalar mat[OSVR_MATRIX_SIZE]) {
-    return osvrPose3ToMatrix(&pose, flags, &(mat[0]));
+  return osvrPose3ToMatrix(&pose, flags, &(mat[0]));
 }
 
 #endif

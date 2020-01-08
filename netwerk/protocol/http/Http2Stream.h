@@ -18,7 +18,7 @@
 class nsIInputStream;
 class nsIOutputStream;
 
-namespace mozilla{
+namespace mozilla {
 class OriginAttributes;
 }
 
@@ -29,12 +29,10 @@ class nsStandardURL;
 class Http2Session;
 class Http2Decompressor;
 
-class Http2Stream
-  : public nsAHttpSegmentReader
-  , public nsAHttpSegmentWriter
-  , public SupportsWeakPtr<Http2Stream>
-{
-public:
+class Http2Stream : public nsAHttpSegmentReader,
+                    public nsAHttpSegmentWriter,
+                    public SupportsWeakPtr<Http2Stream> {
+ public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(Http2Stream)
   NS_DECL_NSAHTTPSEGMENTREADER
   NS_DECL_NSAHTTPSEGMENTWRITER
@@ -49,8 +47,10 @@ public:
   };
 
   const static int32_t kNormalPriority = 0x1000;
-  const static int32_t kWorstPriority = kNormalPriority + nsISupportsPriority::PRIORITY_LOWEST;
-  const static int32_t kBestPriority = kNormalPriority + nsISupportsPriority::PRIORITY_HIGHEST;
+  const static int32_t kWorstPriority =
+      kNormalPriority + nsISupportsPriority::PRIORITY_LOWEST;
+  const static int32_t kBestPriority =
+      kNormalPriority + nsISupportsPriority::PRIORITY_HIGHEST;
 
   Http2Stream(nsAHttpTransaction *, Http2Session *, int32_t, uint64_t);
 
@@ -61,30 +61,28 @@ public:
   stateType HTTPState() { return mState; }
   void SetHTTPState(stateType val) { mState = val; }
 
-  virtual MOZ_MUST_USE nsresult ReadSegments(nsAHttpSegmentReader *,
-                                             uint32_t, uint32_t *);
-  virtual MOZ_MUST_USE nsresult WriteSegments(nsAHttpSegmentWriter *,
-                                              uint32_t, uint32_t *);
+  virtual MOZ_MUST_USE nsresult ReadSegments(nsAHttpSegmentReader *, uint32_t,
+                                             uint32_t *);
+  virtual MOZ_MUST_USE nsresult WriteSegments(nsAHttpSegmentWriter *, uint32_t,
+                                              uint32_t *);
   virtual bool DeferCleanup(nsresult status);
 
   
   
   virtual Http2Stream *GetConsumerStream() { return nullptr; };
 
-  const nsCString& Origin() const { return mOrigin; }
-  const nsCString& Host() const { return mHeaderHost; }
-  const nsCString& Path() const { return mHeaderPath; }
+  const nsCString &Origin() const { return mOrigin; }
+  const nsCString &Host() const { return mHeaderHost; }
+  const nsCString &Path() const { return mHeaderPath; }
 
-  bool RequestBlockedOnRead()
-  {
+  bool RequestBlockedOnRead() {
     return static_cast<bool>(mRequestBlockedOnRead);
   }
 
   bool HasRegisteredID() { return mStreamID != 0; }
 
   nsAHttpTransaction *Transaction() { return mTransaction; }
-  virtual nsIRequestContext *RequestContext()
-  {
+  virtual nsIRequestContext *RequestContext() {
     return mTransaction ? mTransaction->RequestContext() : nullptr;
   }
 
@@ -121,8 +119,8 @@ public:
 
   
   MOZ_MUST_USE nsresult ConvertResponseHeaders(Http2Decompressor *,
-                                               nsACString &,
-                                               nsACString &, int32_t &);
+                                               nsACString &, nsACString &,
+                                               int32_t &);
   MOZ_MUST_USE nsresult ConvertPushHeaders(Http2Decompressor *, nsACString &,
                                            nsACString &);
   MOZ_MUST_USE nsresult ConvertResponseTrailers(Http2Decompressor *,
@@ -143,9 +141,9 @@ public:
   }
 
   uint64_t LocalUnAcked();
-  int64_t  ClientReceiveWindow()  { return mClientReceiveWindow; }
+  int64_t ClientReceiveWindow() { return mClientReceiveWindow; }
 
-  bool     BlockedOnRwin() { return mBlockedOnRwin; }
+  bool BlockedOnRwin() { return mBlockedOnRwin; }
 
   uint32_t Priority() { return mPriority; }
   uint32_t PriorityDependency() { return mPriorityDependency; }
@@ -161,7 +159,7 @@ public:
   virtual bool HasSink() { return true; }
 
   
-  virtual void SetPushComplete() { };
+  virtual void SetPushComplete(){};
 
   virtual ~Http2Stream();
 
@@ -181,16 +179,14 @@ public:
   nsresult GetOriginAttributes(mozilla::OriginAttributes *oa);
 
   virtual void TopLevelOuterContentWindowIdChanged(uint64_t windowId);
-  void TopLevelOuterContentWindowIdChangedInternal(uint64_t windowId); 
+  void TopLevelOuterContentWindowIdChangedInternal(
+      uint64_t windowId);  
 
-protected:
-  static void CreatePushHashKey(const nsCString &scheme,
-                                const nsCString &hostHeader,
-                                const mozilla::OriginAttributes &originAttributes,
-                                uint64_t serial,
-                                const nsACString& pathInfo,
-                                nsCString &outOrigin,
-                                nsCString &outKey);
+ protected:
+  static void CreatePushHashKey(
+      const nsCString &scheme, const nsCString &hostHeader,
+      const mozilla::OriginAttributes &originAttributes, uint64_t serial,
+      const nsACString &pathInfo, nsCString &outOrigin, nsCString &outKey);
 
   
   enum upstreamStateType {
@@ -209,13 +205,13 @@ protected:
   
   
   
-  nsAHttpSegmentReader        *mSegmentReader;
-  nsAHttpSegmentWriter        *mSegmentWriter;
+  nsAHttpSegmentReader *mSegmentReader;
+  nsAHttpSegmentWriter *mSegmentWriter;
 
-  nsCString     mOrigin;
-  nsCString     mHeaderHost;
-  nsCString     mHeaderScheme;
-  nsCString     mHeaderPath;
+  nsCString mOrigin;
+  nsCString mHeaderHost;
+  nsCString mHeaderScheme;
+  nsCString mHeaderPath;
 
   
   
@@ -226,41 +222,43 @@ protected:
   enum stateType mState;
 
   
-  uint32_t                     mRequestHeadersDone   : 1;
+  uint32_t mRequestHeadersDone : 1;
 
   
-  uint32_t                     mOpenGenerated        : 1;
+  uint32_t mOpenGenerated : 1;
 
   
-  uint32_t                     mAllHeadersReceived   : 1;
+  uint32_t mAllHeadersReceived : 1;
 
   
   
-  uint32_t                     mQueued               : 1;
+  uint32_t mQueued : 1;
 
-  void     ChangeState(enum upstreamStateType);
+  void ChangeState(enum upstreamStateType);
 
   virtual void AdjustInitialWindow();
-  MOZ_MUST_USE nsresult TransmitFrame(const char *, uint32_t *, bool forceCommitment);
+  MOZ_MUST_USE nsresult TransmitFrame(const char *, uint32_t *,
+                                      bool forceCommitment);
 
   
-  nsISocketTransport         *mSocketTransport;
+  nsISocketTransport *mSocketTransport;
 
-  uint8_t mPriorityWeight; 
-  uint32_t mPriorityDependency; 
+  uint8_t mPriorityWeight;       
+  uint32_t mPriorityDependency;  
   uint64_t mCurrentForegroundTabOuterContentWindowId;
   uint64_t mTransactionTabId;
 
-private:
+ private:
   friend class nsAutoPtr<Http2Stream>;
 
-  MOZ_MUST_USE nsresult ParseHttpRequestHeaders(const char *, uint32_t, uint32_t *);
+  MOZ_MUST_USE nsresult ParseHttpRequestHeaders(const char *, uint32_t,
+                                                uint32_t *);
   MOZ_MUST_USE nsresult GenerateOpen();
 
-  void     AdjustPushedPriority();
-  void     GenerateDataFrameHeader(uint32_t, bool);
+  void AdjustPushedPriority();
+  void GenerateDataFrameHeader(uint32_t, bool);
 
-  MOZ_MUST_USE nsresult BufferInput(uint32_t , uint32_t *);
+  MOZ_MUST_USE nsresult BufferInput(uint32_t, uint32_t *);
 
   
   
@@ -269,90 +267,92 @@ private:
   RefPtr<nsAHttpTransaction> mTransaction;
 
   
-  uint32_t                    mChunkSize;
+  uint32_t mChunkSize;
 
   
   
-  uint32_t                     mRequestBlockedOnRead : 1;
+  uint32_t mRequestBlockedOnRead : 1;
 
   
   
-  uint32_t                     mRecvdFin             : 1;
+  uint32_t mRecvdFin : 1;
 
   
-  uint32_t                     mReceivedData         : 1;
+  uint32_t mReceivedData : 1;
 
   
-  uint32_t                     mRecvdReset           : 1;
+  uint32_t mRecvdReset : 1;
 
   
-  uint32_t                     mSentReset            : 1;
-
-  
-  uint32_t                     mCountAsActive        : 1;
+  uint32_t mSentReset : 1;
 
   
   
-  uint32_t                     mSentFin              : 1;
-
-  
-  uint32_t                     mSentWaitingFor       : 1;
-
-  
-  uint32_t                     mSetTCPSocketBuffer   : 1;
+  uint32_t mCountAsActive : 1;
 
   
   
-  uint32_t                     mBypassInputBuffer   : 1;
+  uint32_t mSentFin : 1;
+
+  
+  uint32_t mSentWaitingFor : 1;
+
+  
+  uint32_t mSetTCPSocketBuffer : 1;
 
   
   
-  UniquePtr<uint8_t[]>         mTxInlineFrame;
-  uint32_t                     mTxInlineFrameSize;
-  uint32_t                     mTxInlineFrameUsed;
+  uint32_t mBypassInputBuffer : 1;
 
   
   
-  
-  uint32_t                     mTxStreamFrameSize;
-
-  
-  nsCString                    mFlatHttpRequestHeaders;
+  UniquePtr<uint8_t[]> mTxInlineFrame;
+  uint32_t mTxInlineFrameSize;
+  uint32_t mTxInlineFrameUsed;
 
   
   
   
-  
-  
-  
-  int64_t                      mRequestBodyLenRemaining;
+  uint32_t mTxStreamFrameSize;
 
-  uint32_t                     mPriority; 
+  
+  nsCString mFlatHttpRequestHeaders;
 
   
   
   
+  
+  
+  
+  int64_t mRequestBodyLenRemaining;
+
+  uint32_t mPriority;  
 
   
   
-  int64_t                      mClientReceiveWindow;
-
   
-  
-  int64_t                      mServerReceiveWindow;
 
   
   
   
-  uint64_t                     mLocalUnacked;
+  int64_t mClientReceiveWindow;
 
   
   
-  bool                         mBlockedOnRwin;
+  int64_t mServerReceiveWindow;
 
   
-  uint64_t                     mTotalSent;
-  uint64_t                     mTotalRead;
+  
+  
+  uint64_t mLocalUnacked;
+
+  
+  
+  bool mBlockedOnRwin;
+
+  
+  uint64_t mTotalSent;
+  uint64_t mTotalRead;
 
   
   Http2PushedStream *mPushSource;
@@ -363,10 +363,11 @@ private:
 
   bool mAttempting0RTT;
 
-
-public:
+  
+ public:
   bool IsTunnel() { return mIsTunnel; }
-private:
+
+ private:
   void ClearTransactionsBlockedOnTunnel();
   void MapStreamToPlainText();
   void MapStreamToHttpConnection();
@@ -374,14 +375,15 @@ private:
   bool mIsTunnel;
   bool mPlainTextTunnel;
 
-
-public:
+  
+ public:
   bool IsWebsocket() { return mIsWebsocket; }
-private:
+
+ private:
   bool mIsWebsocket;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

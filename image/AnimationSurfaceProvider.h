@@ -26,28 +26,26 @@ namespace image {
 
 
 
-class AnimationSurfaceProvider final
-  : public ISurfaceProvider
-  , public IDecodingTask
-  , public IDecoderFrameRecycler
-{
-public:
+class AnimationSurfaceProvider final : public ISurfaceProvider,
+                                       public IDecodingTask,
+                                       public IDecoderFrameRecycler {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AnimationSurfaceProvider, override)
 
   AnimationSurfaceProvider(NotNull<RasterImage*> aImage,
                            const SurfaceKey& aSurfaceKey,
-                           NotNull<Decoder*> aDecoder,
-                           size_t aCurrentFrame);
-
+                           NotNull<Decoder*> aDecoder, size_t aCurrentFrame);
 
   
   
   
 
-public:
+ public:
   
   
-  DrawableSurface Surface() override { return DrawableSurface(WrapNotNull(this)); }
+  DrawableSurface Surface() override {
+    return DrawableSurface(WrapNotNull(this));
+  }
 
   bool IsFinished() const override;
   bool IsFullyDecoded() const override;
@@ -57,7 +55,7 @@ public:
   void Reset() override;
   void Advance(size_t aFrame) override;
 
-protected:
+ protected:
   DrawableFrameRef DrawableRef(size_t aFrame) override;
   already_AddRefed<imgFrame> GetFrame(size_t aFrame) override;
 
@@ -67,14 +65,13 @@ protected:
   
   
   bool IsLocked() const override { return true; }
-  void SetLocked(bool) override { }
-
+  void SetLocked(bool) override {}
 
   
   
   
 
-public:
+ public:
   void Run() override;
   bool ShouldPreferSyncRun() const override;
 
@@ -86,10 +83,10 @@ public:
   
   
 
-public:
+ public:
   RawAccessFrameRef RecycleFrame(gfx::IntRect& aRecycleRect) override;
 
-private:
+ private:
   virtual ~AnimationSurfaceProvider();
 
   void DropImageReference();
@@ -119,7 +116,7 @@ private:
   UniquePtr<AnimationFrameBuffer> mFrames;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

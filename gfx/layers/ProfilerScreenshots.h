@@ -33,9 +33,8 @@ namespace layers {
 
 
 
-class ProfilerScreenshots final
-{
-public:
+class ProfilerScreenshots final {
+ public:
   ProfilerScreenshots();
   ~ProfilerScreenshots();
 
@@ -70,11 +69,12 @@ public:
 
 
 
-  void SubmitScreenshot(uintptr_t aWindowIdentifier, const gfx::IntSize& aOriginalSize,
-                        const gfx::IntSize& aScaledSize, const TimeStamp& aTimeStamp,
-                        const std::function<bool(gfx::DataSourceSurface*)>& aPopulateSurface);
+  void SubmitScreenshot(
+      uintptr_t aWindowIdentifier, const gfx::IntSize& aOriginalSize,
+      const gfx::IntSize& aScaledSize, const TimeStamp& aTimeStamp,
+      const std::function<bool(gfx::DataSourceSurface*)>& aPopulateSurface);
 
-private:
+ private:
   
 
 
@@ -102,7 +102,7 @@ private:
   uint32_t mLiveSurfaceCount;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -14,7 +14,7 @@ namespace a11y {
 
 typedef class TextLeafAccessible TextLeafAccessibleWrap;
 
-} 
-} 
+}  
+}  
 
 #endif

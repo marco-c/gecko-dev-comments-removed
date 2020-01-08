@@ -19,10 +19,8 @@ class TableAccessible;
 
 
 
-class TableCellAccessible
-{
-public:
-
+class TableCellAccessible {
+ public:
   
 
 
@@ -64,7 +62,7 @@ public:
   virtual bool Selected() = 0;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

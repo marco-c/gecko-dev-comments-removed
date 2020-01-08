@@ -15,32 +15,21 @@ using namespace mozilla::a11y;
 
 
 
-XULAlertAccessible::
-  XULAlertAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-  AccessibleWrap(aContent, aDoc)
-{
+XULAlertAccessible::XULAlertAccessible(nsIContent* aContent,
+                                       DocAccessible* aDoc)
+    : AccessibleWrap(aContent, aDoc) {
   mGenericTypes |= eAlert;
 }
 
-XULAlertAccessible::~XULAlertAccessible()
-{
-}
+XULAlertAccessible::~XULAlertAccessible() {}
 
-role
-XULAlertAccessible::NativeRole() const
-{
-  return roles::ALERT;
-}
+role XULAlertAccessible::NativeRole() const { return roles::ALERT; }
 
-uint64_t
-XULAlertAccessible::NativeState() const
-{
+uint64_t XULAlertAccessible::NativeState() const {
   return Accessible::NativeState() | states::ALERT;
 }
 
-ENameValueFlag
-XULAlertAccessible::Name(nsString& aName) const
-{
+ENameValueFlag XULAlertAccessible::Name(nsString& aName) const {
   
   
   aName.Truncate();
@@ -50,14 +39,6 @@ XULAlertAccessible::Name(nsString& aName) const
 
 
 
-bool
-XULAlertAccessible::IsWidget() const
-{
-  return true;
-}
+bool XULAlertAccessible::IsWidget() const { return true; }
 
-Accessible*
-XULAlertAccessible::ContainerWidget() const
-{
-  return nullptr;
-}
+Accessible* XULAlertAccessible::ContainerWidget() const { return nullptr; }

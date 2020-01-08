@@ -18,115 +18,106 @@
 #include FT_MULTIPLE_MASTERS_H
 
 #ifndef FT_FACE_FLAG_COLOR
-#define FT_FACE_FLAG_COLOR ( 1L << 14 )
+#define FT_FACE_FLAG_COLOR (1L << 14)
 #endif
 
 using namespace mozilla::gfx;
 
-gfxFT2FontBase::gfxFT2FontBase(const RefPtr<UnscaledFontFreeType>& aUnscaledFont,
-                               cairo_scaled_font_t *aScaledFont,
-                               gfxFontEntry *aFontEntry,
-                               const gfxFontStyle *aFontStyle)
-    : gfxFont(aUnscaledFont, aFontEntry, aFontStyle, kAntialiasDefault, aScaledFont)
-    , mSpaceGlyph(0)
-{
-    mEmbolden = aFontStyle->NeedsSyntheticBold(aFontEntry);
+gfxFT2FontBase::gfxFT2FontBase(
+    const RefPtr<UnscaledFontFreeType>& aUnscaledFont,
+    cairo_scaled_font_t* aScaledFont, gfxFontEntry* aFontEntry,
+    const gfxFontStyle* aFontStyle)
+    : gfxFont(aUnscaledFont, aFontEntry, aFontStyle, kAntialiasDefault,
+              aScaledFont),
+      mSpaceGlyph(0) {
+  mEmbolden = aFontStyle->NeedsSyntheticBold(aFontEntry);
 
-    cairo_scaled_font_reference(mScaledFont);
+  cairo_scaled_font_reference(mScaledFont);
 
-    InitMetrics();
+  InitMetrics();
 }
 
-gfxFT2FontBase::~gfxFT2FontBase()
-{
-    cairo_scaled_font_destroy(mScaledFont);
-}
+gfxFT2FontBase::~gfxFT2FontBase() { cairo_scaled_font_destroy(mScaledFont); }
 
-uint32_t
-gfxFT2FontBase::GetGlyph(uint32_t aCharCode)
-{
+uint32_t gfxFT2FontBase::GetGlyph(uint32_t aCharCode) {
+  
+  
+  
+
+  cairo_font_face_t* face =
+      cairo_scaled_font_get_font_face(GetCairoScaledFont());
+
+  if (cairo_font_face_status(face) != CAIRO_STATUS_SUCCESS) return 0;
+
+  
+  
+  
+  
+  
+
+  struct CmapCacheSlot {
+    uint32_t mCharCode;
+    uint32_t mGlyphIndex;
+  };
+  const uint32_t kNumSlots = 256;
+  static cairo_user_data_key_t sCmapCacheKey;
+
+  CmapCacheSlot* slots = static_cast<CmapCacheSlot*>(
+      cairo_font_face_get_user_data(face, &sCmapCacheKey));
+
+  if (!slots) {
     
     
     
-
-    cairo_font_face_t *face =
-        cairo_scaled_font_get_font_face(GetCairoScaledFont());
-
-    if (cairo_font_face_status(face) != CAIRO_STATUS_SUCCESS)
-        return 0;
-
     
-    
-    
-    
-    
+    slots =
+        static_cast<CmapCacheSlot*>(calloc(kNumSlots, sizeof(CmapCacheSlot)));
+    if (!slots) return 0;
 
-    struct CmapCacheSlot {
-        uint32_t mCharCode;
-        uint32_t mGlyphIndex;
-    };
-    const uint32_t kNumSlots = 256;
-    static cairo_user_data_key_t sCmapCacheKey;
-
-    CmapCacheSlot *slots = static_cast<CmapCacheSlot*>
-        (cairo_font_face_get_user_data(face, &sCmapCacheKey));
-
-    if (!slots) {
-        
-        
-        
-        
-        slots = static_cast<CmapCacheSlot*>
-            (calloc(kNumSlots, sizeof(CmapCacheSlot)));
-        if (!slots)
-            return 0;
-
-        cairo_status_t status =
-            cairo_font_face_set_user_data(face, &sCmapCacheKey, slots, free);
-        if (status != CAIRO_STATUS_SUCCESS) { 
-            free(slots);
-            return 0;
-        }
-
-        
-        
-        
-        
-        slots[0].mCharCode = 1;
+    cairo_status_t status =
+        cairo_font_face_set_user_data(face, &sCmapCacheKey, slots, free);
+    if (status != CAIRO_STATUS_SUCCESS) {  
+      free(slots);
+      return 0;
     }
 
-    CmapCacheSlot *slot = &slots[aCharCode % kNumSlots];
-    if (slot->mCharCode != aCharCode) {
-        slot->mCharCode = aCharCode;
-        slot->mGlyphIndex = gfxFT2LockedFace(this).GetGlyph(aCharCode);
-    }
+    
+    
+    
+    
+    slots[0].mCharCode = 1;
+  }
 
-    return slot->mGlyphIndex;
+  CmapCacheSlot* slot = &slots[aCharCode % kNumSlots];
+  if (slot->mCharCode != aCharCode) {
+    slot->mCharCode = aCharCode;
+    slot->mGlyphIndex = gfxFT2LockedFace(this).GetGlyph(aCharCode);
+  }
+
+  return slot->mGlyphIndex;
 }
 
-void
-gfxFT2FontBase::GetGlyphExtents(uint32_t aGlyph, cairo_text_extents_t* aExtents)
-{
-    MOZ_ASSERT(aExtents != nullptr, "aExtents must not be NULL");
+void gfxFT2FontBase::GetGlyphExtents(uint32_t aGlyph,
+                                     cairo_text_extents_t* aExtents) {
+  MOZ_ASSERT(aExtents != nullptr, "aExtents must not be NULL");
 
-    cairo_glyph_t glyphs[1];
-    glyphs[0].index = aGlyph;
-    glyphs[0].x = 0.0;
-    glyphs[0].y = 0.0;
-    
-    
-    
-    
-    
-    cairo_scaled_font_glyph_extents(GetCairoScaledFont(), glyphs, 1, aExtents);
+  cairo_glyph_t glyphs[1];
+  glyphs[0].index = aGlyph;
+  glyphs[0].x = 0.0;
+  glyphs[0].y = 0.0;
+  
+  
+  
+  
+  
+  cairo_scaled_font_glyph_extents(GetCairoScaledFont(), glyphs, 1, aExtents);
 }
 
 
-static inline FT_Long
-ScaleRoundDesignUnits(FT_Short aDesignMetric, FT_Fixed aScale)
-{
-    FT_Long fixed26dot6 = FT_MulFix(aDesignMetric, aScale);
-    return ROUND_26_6_TO_INT(fixed26dot6);
+static inline FT_Long ScaleRoundDesignUnits(FT_Short aDesignMetric,
+                                            FT_Fixed aScale) {
+  FT_Long fixed26dot6 = FT_MulFix(aDesignMetric, aScale);
+  return ROUND_26_6_TO_INT(fixed26dot6);
 }
 
 
@@ -137,15 +128,13 @@ ScaleRoundDesignUnits(FT_Short aDesignMetric, FT_Fixed aScale)
 
 
 
-static void
-SnapLineToPixels(gfxFloat& aOffset, gfxFloat& aSize)
-{
-    gfxFloat snappedSize = std::max(floor(aSize + 0.5), 1.0);
-    
-    gfxFloat offset = aOffset - 0.5 * (aSize - snappedSize);
-    
-    aOffset = floor(offset + 0.5);
-    aSize = snappedSize;
+static void SnapLineToPixels(gfxFloat& aOffset, gfxFloat& aSize) {
+  gfxFloat snappedSize = std::max(floor(aSize + 0.5), 1.0);
+  
+  gfxFloat offset = aOffset - 0.5 * (aSize - snappedSize);
+  
+  aOffset = floor(offset + 0.5);
+  aSize = snappedSize;
 }
 
 
@@ -153,14 +142,13 @@ SnapLineToPixels(gfxFloat& aOffset, gfxFloat& aSize)
 
 
 
-uint32_t
-gfxFT2FontBase::GetCharExtents(char aChar, cairo_text_extents_t* aExtents)
-{
-    FT_UInt gid = GetGlyph(aChar);
-    if (gid) {
-        GetGlyphExtents(gid, aExtents);
-    }
-    return gid;
+uint32_t gfxFT2FontBase::GetCharExtents(char aChar,
+                                        cairo_text_extents_t* aExtents) {
+  FT_UInt gid = GetGlyph(aChar);
+  if (gid) {
+    GetGlyphExtents(gid, aExtents);
+  }
+  return gid;
 }
 
 
@@ -169,307 +157,300 @@ gfxFT2FontBase::GetCharExtents(char aChar, cairo_text_extents_t* aExtents)
 
 
 
-uint32_t
-gfxFT2FontBase::GetCharWidth(char aChar, gfxFloat* aWidth)
-{
-    FT_UInt gid = GetGlyph(aChar);
-    if (gid) {
-        int32_t width;
-        if (!GetFTGlyphAdvance(gid, &width)) {
-            cairo_text_extents_t extents;
-            GetGlyphExtents(gid, &extents);
-            width = NS_lround(0x10000 * extents.x_advance);
-        }
-        *aWidth = FLOAT_FROM_16_16(width);
+uint32_t gfxFT2FontBase::GetCharWidth(char aChar, gfxFloat* aWidth) {
+  FT_UInt gid = GetGlyph(aChar);
+  if (gid) {
+    int32_t width;
+    if (!GetFTGlyphAdvance(gid, &width)) {
+      cairo_text_extents_t extents;
+      GetGlyphExtents(gid, &extents);
+      width = NS_lround(0x10000 * extents.x_advance);
     }
-    return gid;
+    *aWidth = FLOAT_FROM_16_16(width);
+  }
+  return gid;
 }
 
-void
-gfxFT2FontBase::InitMetrics()
-{
-    mFUnitsConvFactor = 0.0;
+void gfxFT2FontBase::InitMetrics() {
+  mFUnitsConvFactor = 0.0;
 
-    if (MOZ_UNLIKELY(GetStyle()->size <= 0.0) ||
-        MOZ_UNLIKELY(GetStyle()->sizeAdjust == 0.0)) {
-        memset(&mMetrics, 0, sizeof(mMetrics)); 
-        mSpaceGlyph = GetGlyph(' ');
-        return;
-    }
+  if (MOZ_UNLIKELY(GetStyle()->size <= 0.0) ||
+      MOZ_UNLIKELY(GetStyle()->sizeAdjust == 0.0)) {
+    memset(&mMetrics, 0, sizeof(mMetrics));  
+    mSpaceGlyph = GetGlyph(' ');
+    return;
+  }
 
-    
-    
-    FT_Face face = cairo_ft_scaled_font_lock_face(GetCairoScaledFont());
+  
+  
+  FT_Face face = cairo_ft_scaled_font_lock_face(GetCairoScaledFont());
 
-    if (MOZ_UNLIKELY(!face)) {
-        
-        
-        const gfxFloat emHeight = GetAdjustedSize();
-        mMetrics.emHeight = emHeight;
-        mMetrics.maxAscent = mMetrics.emAscent = 0.8 * emHeight;
-        mMetrics.maxDescent = mMetrics.emDescent = 0.2 * emHeight;
-        mMetrics.maxHeight = emHeight;
-        mMetrics.internalLeading = 0.0;
-        mMetrics.externalLeading = 0.2 * emHeight;
-        const gfxFloat spaceWidth = 0.5 * emHeight;
-        mMetrics.spaceWidth = spaceWidth;
-        mMetrics.maxAdvance = spaceWidth;
-        mMetrics.aveCharWidth = spaceWidth;
-        mMetrics.zeroOrAveCharWidth = spaceWidth;
-        const gfxFloat xHeight = 0.5 * emHeight;
-        mMetrics.xHeight = xHeight;
-        mMetrics.capHeight = mMetrics.maxAscent;
-        const gfxFloat underlineSize = emHeight / 14.0;
-        mMetrics.underlineSize = underlineSize;
-        mMetrics.underlineOffset = -underlineSize;
-        mMetrics.strikeoutOffset = 0.25 * emHeight;
-        mMetrics.strikeoutSize = underlineSize;
-
-        SanitizeMetrics(&mMetrics, false);
-        return;
-    }
-
-    if (face->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
-        
-        AutoTArray<gfxFontVariation,8> settings;
-        mFontEntry->GetVariationsForStyle(settings, mStyle);
-        SetupVarCoords(mFontEntry->GetMMVar(), settings, &mCoords);
-        if (!mCoords.IsEmpty()) {
-#if MOZ_TREE_FREETYPE
-            FT_Set_Var_Design_Coordinates(face, mCoords.Length(), mCoords.Elements());
-#else
-            typedef FT_Error (*SetCoordsFunc)(FT_Face, FT_UInt, FT_Fixed*);
-            static SetCoordsFunc setCoords;
-            static bool firstTime = true;
-            if (firstTime) {
-                firstTime = false;
-                setCoords = (SetCoordsFunc)
-                    dlsym(RTLD_DEFAULT, "FT_Set_Var_Design_Coordinates");
-            }
-            if (setCoords) {
-                (*setCoords)(face, mCoords.Length(), mCoords.Elements());
-            }
-#endif
-        }
-    }
-
-    const FT_Size_Metrics& ftMetrics = face->size->metrics;
-
-    mMetrics.maxAscent = FLOAT_FROM_26_6(ftMetrics.ascender);
-    mMetrics.maxDescent = -FLOAT_FROM_26_6(ftMetrics.descender);
-    mMetrics.maxAdvance = FLOAT_FROM_26_6(ftMetrics.max_advance);
-    gfxFloat lineHeight = FLOAT_FROM_26_6(ftMetrics.height);
-
-    gfxFloat emHeight;
+  if (MOZ_UNLIKELY(!face)) {
     
     
-    gfxFloat yScale = 0.0;
-    if (FT_IS_SCALABLE(face)) {
-        
-        
-        
-        
-        
-        
-        
-        mFUnitsConvFactor = FLOAT_FROM_26_6(FLOAT_FROM_16_16(ftMetrics.x_scale));
-        yScale = FLOAT_FROM_26_6(FLOAT_FROM_16_16(ftMetrics.y_scale));
-        emHeight = face->units_per_EM * yScale;
-    } else { 
-        emHeight = ftMetrics.y_ppem;
-        
-        
-        
-        
-        
-        const TT_Header* head =
-            static_cast<TT_Header*>(FT_Get_Sfnt_Table(face, ft_sfnt_head));
-        if (head) {
-            
-            
-            
-            
-            
-            if (face->face_flags & FT_FACE_FLAG_COLOR) {
-                emHeight = GetAdjustedSize();
-                gfxFloat adjustScale = emHeight / ftMetrics.y_ppem;
-                mMetrics.maxAscent *= adjustScale;
-                mMetrics.maxDescent *= adjustScale;
-                mMetrics.maxAdvance *= adjustScale;
-                lineHeight *= adjustScale;
-            }
-            gfxFloat emUnit = head->Units_Per_EM;
-            mFUnitsConvFactor = ftMetrics.x_ppem / emUnit;
-            yScale = emHeight / emUnit;
-        }
-    }
-
-    TT_OS2 *os2 =
-        static_cast<TT_OS2*>(FT_Get_Sfnt_Table(face, ft_sfnt_os2));
-
-    if (os2 && os2->sTypoAscender && yScale > 0.0) {
-        mMetrics.emAscent = os2->sTypoAscender * yScale;
-        mMetrics.emDescent = -os2->sTypoDescender * yScale;
-        FT_Short typoHeight =
-            os2->sTypoAscender - os2->sTypoDescender + os2->sTypoLineGap;
-        lineHeight = typoHeight * yScale;
-
-        
-        
-        const uint16_t kUseTypoMetricsMask = 1 << 7;
-        if ((os2->fsSelection & kUseTypoMetricsMask) ||
-            
-            
-	    (mMetrics.maxAscent == 0.0 && mMetrics.maxDescent == 0.0)) {
-            
-            
-            mMetrics.maxAscent = NS_round(mMetrics.emAscent);
-            mMetrics.maxDescent = NS_round(mMetrics.emDescent);
-        }
-    } else {
-        mMetrics.emAscent = mMetrics.maxAscent;
-        mMetrics.emDescent = mMetrics.maxDescent;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (face->underline_position && face->underline_thickness && yScale > 0.0) {
-        mMetrics.underlineSize = face->underline_thickness * yScale;
-        TT_Postscript *post = static_cast<TT_Postscript*>
-            (FT_Get_Sfnt_Table(face, ft_sfnt_post));
-        if (post && post->underlinePosition) {
-            mMetrics.underlineOffset = post->underlinePosition * yScale;
-        } else {
-            mMetrics.underlineOffset = face->underline_position * yScale
-                + 0.5 * mMetrics.underlineSize;
-        }
-    } else { 
-        
-        mMetrics.underlineSize = emHeight / 14.0;
-        mMetrics.underlineOffset = -mMetrics.underlineSize;
-    }
-
-    if (os2 && os2->yStrikeoutSize && os2->yStrikeoutPosition && yScale > 0.0) {
-        mMetrics.strikeoutSize = os2->yStrikeoutSize * yScale;
-        mMetrics.strikeoutOffset = os2->yStrikeoutPosition * yScale;
-    } else { 
-        mMetrics.strikeoutSize = mMetrics.underlineSize;
-        
-        mMetrics.strikeoutOffset = emHeight * 409.0 / 2048.0
-            + 0.5 * mMetrics.strikeoutSize;
-    }
-    SnapLineToPixels(mMetrics.strikeoutOffset, mMetrics.strikeoutSize);
-
-    if (os2 && os2->sxHeight && yScale > 0.0) {
-        mMetrics.xHeight = os2->sxHeight * yScale;
-    } else {
-        
-        
-        
-        mMetrics.xHeight = 0.5 * emHeight;
-    }
-
-    
-    
-    if (os2 && os2->xAvgCharWidth) {
-        
-        
-        mMetrics.aveCharWidth =
-            ScaleRoundDesignUnits(os2->xAvgCharWidth, ftMetrics.x_scale);
-    } else {
-        mMetrics.aveCharWidth = 0.0; 
-    }
-
-    if (os2 && os2->sCapHeight && yScale > 0.0) {
-        mMetrics.capHeight = os2->sCapHeight * yScale;
-    } else {
-        mMetrics.capHeight = mMetrics.maxAscent;
-    }
-
-    
-    
-    cairo_ft_scaled_font_unlock_face(GetCairoScaledFont());
-
-    gfxFloat width;
-    mSpaceGlyph = GetCharWidth(' ', &width);
-    if (mSpaceGlyph) {
-        mMetrics.spaceWidth = width;
-    } else {
-        mMetrics.spaceWidth = mMetrics.maxAdvance; 
-    }
-
-    if (GetCharWidth('0', &width)) {
-        mMetrics.zeroOrAveCharWidth = width;
-    } else {
-        mMetrics.zeroOrAveCharWidth = 0.0;
-    }
-
-    
-    
-    
-    
-    cairo_text_extents_t extents;
-    if (GetCharExtents('x', &extents) && extents.y_bearing < 0.0) {
-        mMetrics.xHeight = -extents.y_bearing;
-        mMetrics.aveCharWidth =
-            std::max(mMetrics.aveCharWidth, extents.x_advance);
-    }
-
-    if (GetCharExtents('H', &extents) && extents.y_bearing < 0.0) {
-        mMetrics.capHeight = -extents.y_bearing;
-    }
-
-    mMetrics.aveCharWidth =
-        std::max(mMetrics.aveCharWidth, mMetrics.zeroOrAveCharWidth);
-    if (mMetrics.aveCharWidth == 0.0) {
-        mMetrics.aveCharWidth = mMetrics.spaceWidth;
-    }
-    if (mMetrics.zeroOrAveCharWidth == 0.0) {
-        mMetrics.zeroOrAveCharWidth = mMetrics.aveCharWidth;
-    }
-    
-    mMetrics.maxAdvance =
-        std::max(mMetrics.maxAdvance, mMetrics.aveCharWidth);
-
-    mMetrics.maxHeight = mMetrics.maxAscent + mMetrics.maxDescent;
-
-    
-    
-    
-    
-    
-    
-    mMetrics.emHeight = floor(emHeight + 0.5);
-
-    
-    
-    mMetrics.internalLeading =
-        floor(mMetrics.maxHeight - mMetrics.emHeight + 0.5);
-
-    
-    
-    lineHeight = floor(std::max(lineHeight, mMetrics.maxHeight) + 0.5);
-    mMetrics.externalLeading =
-        lineHeight - mMetrics.internalLeading - mMetrics.emHeight;
-
-    
-    gfxFloat sum = mMetrics.emAscent + mMetrics.emDescent;
-    mMetrics.emAscent = sum > 0.0 ?
-        mMetrics.emAscent * mMetrics.emHeight / sum : 0.0;
-    mMetrics.emDescent = mMetrics.emHeight - mMetrics.emAscent;
+    const gfxFloat emHeight = GetAdjustedSize();
+    mMetrics.emHeight = emHeight;
+    mMetrics.maxAscent = mMetrics.emAscent = 0.8 * emHeight;
+    mMetrics.maxDescent = mMetrics.emDescent = 0.2 * emHeight;
+    mMetrics.maxHeight = emHeight;
+    mMetrics.internalLeading = 0.0;
+    mMetrics.externalLeading = 0.2 * emHeight;
+    const gfxFloat spaceWidth = 0.5 * emHeight;
+    mMetrics.spaceWidth = spaceWidth;
+    mMetrics.maxAdvance = spaceWidth;
+    mMetrics.aveCharWidth = spaceWidth;
+    mMetrics.zeroOrAveCharWidth = spaceWidth;
+    const gfxFloat xHeight = 0.5 * emHeight;
+    mMetrics.xHeight = xHeight;
+    mMetrics.capHeight = mMetrics.maxAscent;
+    const gfxFloat underlineSize = emHeight / 14.0;
+    mMetrics.underlineSize = underlineSize;
+    mMetrics.underlineOffset = -underlineSize;
+    mMetrics.strikeoutOffset = 0.25 * emHeight;
+    mMetrics.strikeoutSize = underlineSize;
 
     SanitizeMetrics(&mMetrics, false);
+    return;
+  }
+
+  if (face->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS) {
+    
+    AutoTArray<gfxFontVariation, 8> settings;
+    mFontEntry->GetVariationsForStyle(settings, mStyle);
+    SetupVarCoords(mFontEntry->GetMMVar(), settings, &mCoords);
+    if (!mCoords.IsEmpty()) {
+#if MOZ_TREE_FREETYPE
+      FT_Set_Var_Design_Coordinates(face, mCoords.Length(), mCoords.Elements());
+#else
+      typedef FT_Error (*SetCoordsFunc)(FT_Face, FT_UInt, FT_Fixed*);
+      static SetCoordsFunc setCoords;
+      static bool firstTime = true;
+      if (firstTime) {
+        firstTime = false;
+        setCoords =
+            (SetCoordsFunc)dlsym(RTLD_DEFAULT, "FT_Set_Var_Design_Coordinates");
+      }
+      if (setCoords) {
+        (*setCoords)(face, mCoords.Length(), mCoords.Elements());
+      }
+#endif
+    }
+  }
+
+  const FT_Size_Metrics& ftMetrics = face->size->metrics;
+
+  mMetrics.maxAscent = FLOAT_FROM_26_6(ftMetrics.ascender);
+  mMetrics.maxDescent = -FLOAT_FROM_26_6(ftMetrics.descender);
+  mMetrics.maxAdvance = FLOAT_FROM_26_6(ftMetrics.max_advance);
+  gfxFloat lineHeight = FLOAT_FROM_26_6(ftMetrics.height);
+
+  gfxFloat emHeight;
+  
+  
+  gfxFloat yScale = 0.0;
+  if (FT_IS_SCALABLE(face)) {
+    
+    
+    
+    
+    
+    
+    
+    mFUnitsConvFactor = FLOAT_FROM_26_6(FLOAT_FROM_16_16(ftMetrics.x_scale));
+    yScale = FLOAT_FROM_26_6(FLOAT_FROM_16_16(ftMetrics.y_scale));
+    emHeight = face->units_per_EM * yScale;
+  } else {  
+    emHeight = ftMetrics.y_ppem;
+    
+    
+    
+    
+    
+    const TT_Header* head =
+        static_cast<TT_Header*>(FT_Get_Sfnt_Table(face, ft_sfnt_head));
+    if (head) {
+      
+      
+      
+      
+      
+      if (face->face_flags & FT_FACE_FLAG_COLOR) {
+        emHeight = GetAdjustedSize();
+        gfxFloat adjustScale = emHeight / ftMetrics.y_ppem;
+        mMetrics.maxAscent *= adjustScale;
+        mMetrics.maxDescent *= adjustScale;
+        mMetrics.maxAdvance *= adjustScale;
+        lineHeight *= adjustScale;
+      }
+      gfxFloat emUnit = head->Units_Per_EM;
+      mFUnitsConvFactor = ftMetrics.x_ppem / emUnit;
+      yScale = emHeight / emUnit;
+    }
+  }
+
+  TT_OS2* os2 = static_cast<TT_OS2*>(FT_Get_Sfnt_Table(face, ft_sfnt_os2));
+
+  if (os2 && os2->sTypoAscender && yScale > 0.0) {
+    mMetrics.emAscent = os2->sTypoAscender * yScale;
+    mMetrics.emDescent = -os2->sTypoDescender * yScale;
+    FT_Short typoHeight =
+        os2->sTypoAscender - os2->sTypoDescender + os2->sTypoLineGap;
+    lineHeight = typoHeight * yScale;
+
+    
+    
+    const uint16_t kUseTypoMetricsMask = 1 << 7;
+    if ((os2->fsSelection & kUseTypoMetricsMask) ||
+        
+        
+        (mMetrics.maxAscent == 0.0 && mMetrics.maxDescent == 0.0)) {
+      
+      
+      mMetrics.maxAscent = NS_round(mMetrics.emAscent);
+      mMetrics.maxDescent = NS_round(mMetrics.emDescent);
+    }
+  } else {
+    mMetrics.emAscent = mMetrics.maxAscent;
+    mMetrics.emDescent = mMetrics.maxDescent;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (face->underline_position && face->underline_thickness && yScale > 0.0) {
+    mMetrics.underlineSize = face->underline_thickness * yScale;
+    TT_Postscript* post =
+        static_cast<TT_Postscript*>(FT_Get_Sfnt_Table(face, ft_sfnt_post));
+    if (post && post->underlinePosition) {
+      mMetrics.underlineOffset = post->underlinePosition * yScale;
+    } else {
+      mMetrics.underlineOffset =
+          face->underline_position * yScale + 0.5 * mMetrics.underlineSize;
+    }
+  } else {  
+    
+    mMetrics.underlineSize = emHeight / 14.0;
+    mMetrics.underlineOffset = -mMetrics.underlineSize;
+  }
+
+  if (os2 && os2->yStrikeoutSize && os2->yStrikeoutPosition && yScale > 0.0) {
+    mMetrics.strikeoutSize = os2->yStrikeoutSize * yScale;
+    mMetrics.strikeoutOffset = os2->yStrikeoutPosition * yScale;
+  } else {  
+    mMetrics.strikeoutSize = mMetrics.underlineSize;
+    
+    mMetrics.strikeoutOffset =
+        emHeight * 409.0 / 2048.0 + 0.5 * mMetrics.strikeoutSize;
+  }
+  SnapLineToPixels(mMetrics.strikeoutOffset, mMetrics.strikeoutSize);
+
+  if (os2 && os2->sxHeight && yScale > 0.0) {
+    mMetrics.xHeight = os2->sxHeight * yScale;
+  } else {
+    
+    
+    
+    mMetrics.xHeight = 0.5 * emHeight;
+  }
+
+  
+  
+  if (os2 && os2->xAvgCharWidth) {
+    
+    
+    mMetrics.aveCharWidth =
+        ScaleRoundDesignUnits(os2->xAvgCharWidth, ftMetrics.x_scale);
+  } else {
+    mMetrics.aveCharWidth = 0.0;  
+  }
+
+  if (os2 && os2->sCapHeight && yScale > 0.0) {
+    mMetrics.capHeight = os2->sCapHeight * yScale;
+  } else {
+    mMetrics.capHeight = mMetrics.maxAscent;
+  }
+
+  
+  
+  cairo_ft_scaled_font_unlock_face(GetCairoScaledFont());
+
+  gfxFloat width;
+  mSpaceGlyph = GetCharWidth(' ', &width);
+  if (mSpaceGlyph) {
+    mMetrics.spaceWidth = width;
+  } else {
+    mMetrics.spaceWidth = mMetrics.maxAdvance;  
+  }
+
+  if (GetCharWidth('0', &width)) {
+    mMetrics.zeroOrAveCharWidth = width;
+  } else {
+    mMetrics.zeroOrAveCharWidth = 0.0;
+  }
+
+  
+  
+  
+  
+  cairo_text_extents_t extents;
+  if (GetCharExtents('x', &extents) && extents.y_bearing < 0.0) {
+    mMetrics.xHeight = -extents.y_bearing;
+    mMetrics.aveCharWidth = std::max(mMetrics.aveCharWidth, extents.x_advance);
+  }
+
+  if (GetCharExtents('H', &extents) && extents.y_bearing < 0.0) {
+    mMetrics.capHeight = -extents.y_bearing;
+  }
+
+  mMetrics.aveCharWidth =
+      std::max(mMetrics.aveCharWidth, mMetrics.zeroOrAveCharWidth);
+  if (mMetrics.aveCharWidth == 0.0) {
+    mMetrics.aveCharWidth = mMetrics.spaceWidth;
+  }
+  if (mMetrics.zeroOrAveCharWidth == 0.0) {
+    mMetrics.zeroOrAveCharWidth = mMetrics.aveCharWidth;
+  }
+  
+  mMetrics.maxAdvance = std::max(mMetrics.maxAdvance, mMetrics.aveCharWidth);
+
+  mMetrics.maxHeight = mMetrics.maxAscent + mMetrics.maxDescent;
+
+  
+  
+  
+  
+  
+  
+  mMetrics.emHeight = floor(emHeight + 0.5);
+
+  
+  
+  mMetrics.internalLeading =
+      floor(mMetrics.maxHeight - mMetrics.emHeight + 0.5);
+
+  
+  
+  lineHeight = floor(std::max(lineHeight, mMetrics.maxHeight) + 0.5);
+  mMetrics.externalLeading =
+      lineHeight - mMetrics.internalLeading - mMetrics.emHeight;
+
+  
+  gfxFloat sum = mMetrics.emAscent + mMetrics.emDescent;
+  mMetrics.emAscent =
+      sum > 0.0 ? mMetrics.emAscent * mMetrics.emHeight / sum : 0.0;
+  mMetrics.emDescent = mMetrics.emHeight - mMetrics.emAscent;
+
+  SanitizeMetrics(&mMetrics, false);
 
 #if 0
     
@@ -484,179 +465,165 @@ gfxFT2FontBase::InitMetrics()
 #endif
 }
 
-const gfxFont::Metrics&
-gfxFT2FontBase::GetHorizontalMetrics()
-{
-    return mMetrics;
+const gfxFont::Metrics& gfxFT2FontBase::GetHorizontalMetrics() {
+  return mMetrics;
 }
 
 
-uint32_t
-gfxFT2FontBase::GetSpaceGlyph()
-{
-    return mSpaceGlyph;
+uint32_t gfxFT2FontBase::GetSpaceGlyph() { return mSpaceGlyph; }
+
+uint32_t gfxFT2FontBase::GetGlyph(uint32_t unicode,
+                                  uint32_t variation_selector) {
+  if (variation_selector) {
+    uint32_t id =
+        gfxFT2LockedFace(this).GetUVSGlyph(unicode, variation_selector);
+    if (id) {
+      return id;
+    }
+    unicode = gfxFontUtils::GetUVSFallback(unicode, variation_selector);
+    if (unicode) {
+      return GetGlyph(unicode);
+    }
+    return 0;
+  }
+
+  return GetGlyph(unicode);
 }
 
-uint32_t
-gfxFT2FontBase::GetGlyph(uint32_t unicode, uint32_t variation_selector)
-{
-    if (variation_selector) {
-        uint32_t id =
-            gfxFT2LockedFace(this).GetUVSGlyph(unicode, variation_selector);
-        if (id) {
-            return id;
-        }
-        unicode = gfxFontUtils::GetUVSFallback(unicode, variation_selector);
-        if (unicode) {
-            return GetGlyph(unicode);
-        }
-        return 0;
-    }
+bool gfxFT2FontBase::GetFTGlyphAdvance(uint16_t aGID, int32_t* aAdvance) {
+  gfxFT2LockedFace face(this);
+  MOZ_ASSERT(face.get());
+  if (!face.get()) {
+    
+    NS_WARNING("failed to get FT_Face!");
+    return false;
+  }
 
-    return GetGlyph(unicode);
+  
+  
+  
+  
+  if (!(face.get()->face_flags & FT_FACE_FLAG_SCALABLE) ||
+      !(face.get()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS)) {
+    return false;
+  }
+
+  bool hinting = gfxPlatform::GetPlatform()->FontHintingEnabled();
+  int32_t flags =
+      hinting ? FT_LOAD_ADVANCE_ONLY
+              : FT_LOAD_ADVANCE_ONLY | FT_LOAD_NO_AUTOHINT | FT_LOAD_NO_HINTING;
+  FT_Error ftError = Factory::LoadFTGlyph(face.get(), aGID, flags);
+  if (ftError != FT_Err_Ok) {
+    
+    
+    NS_WARNING("failed to load glyph!");
+    return false;
+  }
+
+  
+  
+  
+  FT_Fixed advance = face.get()->glyph->linearHoriAdvance;
+
+  
+  
+  if (mEmbolden && advance > 0) {
+    
+    
+    FT_Fixed strength =
+        1024 *
+        FT_MulFix(face.get()->units_per_EM, face.get()->size->metrics.y_scale) /
+        24;
+    advance += strength;
+  }
+
+  
+  
+  *aAdvance = (advance + 0x8000) & 0xffff0000u;
+
+  return true;
 }
 
-bool
-gfxFT2FontBase::GetFTGlyphAdvance(uint16_t aGID, int32_t* aAdvance)
-{
-    gfxFT2LockedFace face(this);
-    MOZ_ASSERT(face.get());
-    if (!face.get()) {
-        
-        NS_WARNING("failed to get FT_Face!");
-        return false;
-    }
+int32_t gfxFT2FontBase::GetGlyphWidth(DrawTarget& aDrawTarget, uint16_t aGID) {
+  if (!mGlyphWidths) {
+    mGlyphWidths =
+        mozilla::MakeUnique<nsDataHashtable<nsUint32HashKey, int32_t>>(128);
+  }
 
-    
-    
-    
-    
-    if (!(face.get()->face_flags & FT_FACE_FLAG_SCALABLE) ||
-        !(face.get()->face_flags & FT_FACE_FLAG_MULTIPLE_MASTERS)) {
-        return false;
-    }
-
-    bool hinting = gfxPlatform::GetPlatform()->FontHintingEnabled();
-    int32_t flags =
-        hinting ? FT_LOAD_ADVANCE_ONLY
-                : FT_LOAD_ADVANCE_ONLY | FT_LOAD_NO_AUTOHINT | FT_LOAD_NO_HINTING;
-    FT_Error ftError = Factory::LoadFTGlyph(face.get(), aGID, flags);
-    if (ftError != FT_Err_Ok) {
-        
-        
-        NS_WARNING("failed to load glyph!");
-        return false;
-    }
-
-    
-    
-    
-    FT_Fixed advance = face.get()->glyph->linearHoriAdvance;
-
-    
-    
-    if (mEmbolden && advance > 0) {
-        
-        
-        FT_Fixed strength = 1024 *
-            FT_MulFix(face.get()->units_per_EM,
-                      face.get()->size->metrics.y_scale) / 24;
-        advance += strength;
-    }
-
-    
-    
-    *aAdvance = (advance + 0x8000) & 0xffff0000u;
-
-    return true;
-}
-
-int32_t
-gfxFT2FontBase::GetGlyphWidth(DrawTarget& aDrawTarget, uint16_t aGID)
-{
-    if (!mGlyphWidths) {
-        mGlyphWidths =
-            mozilla::MakeUnique<nsDataHashtable<nsUint32HashKey,int32_t>>(128);
-    }
-
-    int32_t width;
-    if (mGlyphWidths->Get(aGID, &width)) {
-        return width;
-    }
-
-    if (!GetFTGlyphAdvance(aGID, &width)) {
-        cairo_text_extents_t extents;
-        GetGlyphExtents(aGID, &extents);
-        width = NS_lround(0x10000 * extents.x_advance);
-    }
-    mGlyphWidths->Put(aGID, width);
-
+  int32_t width;
+  if (mGlyphWidths->Get(aGID, &width)) {
     return width;
+  }
+
+  if (!GetFTGlyphAdvance(aGID, &width)) {
+    cairo_text_extents_t extents;
+    GetGlyphExtents(aGID, &extents);
+    width = NS_lround(0x10000 * extents.x_advance);
+  }
+  mGlyphWidths->Put(aGID, width);
+
+  return width;
 }
 
-bool
-gfxFT2FontBase::SetupCairoFont(DrawTarget* aDrawTarget)
-{
-    
-    
-    
-    
-    
-    
-    cairo_scaled_font_t *cairoFont = GetCairoScaledFont();
+bool gfxFT2FontBase::SetupCairoFont(DrawTarget* aDrawTarget) {
+  
+  
+  
+  
+  
+  
+  cairo_scaled_font_t* cairoFont = GetCairoScaledFont();
 
-    if (cairo_scaled_font_status(cairoFont) != CAIRO_STATUS_SUCCESS) {
-        
-        
-        return false;
-    }
+  if (cairo_scaled_font_status(cairoFont) != CAIRO_STATUS_SUCCESS) {
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    cairo_set_scaled_font(gfxFont::RefCairo(aDrawTarget), cairoFont);
-    return true;
+    return false;
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  cairo_set_scaled_font(gfxFont::RefCairo(aDrawTarget), cairoFont);
+  return true;
 }
 
 
 
 
 
-void
-gfxFT2FontBase::SetupVarCoords(FT_MM_Var* aMMVar,
-                               const nsTArray<gfxFontVariation>& aVariations,
-                               nsTArray<FT_Fixed>* aCoords)
-{
-    aCoords->TruncateLength(0);
-    if (!aMMVar) {
-        return;
-    }
+void gfxFT2FontBase::SetupVarCoords(
+    FT_MM_Var* aMMVar, const nsTArray<gfxFontVariation>& aVariations,
+    nsTArray<FT_Fixed>* aCoords) {
+  aCoords->TruncateLength(0);
+  if (!aMMVar) {
+    return;
+  }
 
-    for (unsigned i = 0; i < aMMVar->num_axis; ++i) {
-        aCoords->AppendElement(aMMVar->axis[i].def);
-        for (const auto& v : aVariations) {
-            if (aMMVar->axis[i].tag == v.mTag) {
-                FT_Fixed val = v.mValue * 0x10000;
-                val = std::min(val, aMMVar->axis[i].maximum);
-                val = std::max(val, aMMVar->axis[i].minimum);
-                (*aCoords)[i] = val;
-                break;
-            }
-        }
+  for (unsigned i = 0; i < aMMVar->num_axis; ++i) {
+    aCoords->AppendElement(aMMVar->axis[i].def);
+    for (const auto& v : aVariations) {
+      if (aMMVar->axis[i].tag == v.mTag) {
+        FT_Fixed val = v.mValue * 0x10000;
+        val = std::min(val, aMMVar->axis[i].maximum);
+        val = std::max(val, aMMVar->axis[i].minimum);
+        (*aCoords)[i] = val;
+        break;
+      }
     }
+  }
 }

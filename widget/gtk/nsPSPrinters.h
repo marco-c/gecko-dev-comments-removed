@@ -11,19 +11,17 @@
 #include "nsTArray.h"
 
 class nsPSPrinterList {
-    public:
-        nsPSPrinterList();
+ public:
+  nsPSPrinterList();
 
-        
-
-
+  
 
 
-        bool Enabled();
-
-        
 
 
+  bool Enabled();
+
+  
 
 
 
@@ -33,21 +31,23 @@ class nsPSPrinterList {
 
 
 
-        void GetPrinterList(nsTArray<nsCString>& aList);
-
-        enum PrinterType {
-            kTypeUnknown,         
-            kTypePS,              
-            kTypeCUPS             
-        };
-
-        
 
 
+  void GetPrinterList(nsTArray<nsCString>& aList);
+
+  enum PrinterType {
+    kTypeUnknown,  
+    kTypePS,       
+    kTypeCUPS      
+  };
+
+  
 
 
 
-        static PrinterType GetPrinterType(const nsACString& aName);
+
+
+  static PrinterType GetPrinterType(const nsACString& aName);
 };
 
 #endif 

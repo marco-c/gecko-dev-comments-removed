@@ -19,53 +19,39 @@ class nsINode;
 
 namespace mozilla {
 class TextEditor;
-} 
+}  
 
-struct NodeOffset
-{
+struct NodeOffset {
   nsINode* mNode;
-  int32_t  mOffset;
+  int32_t mOffset;
 
-  NodeOffset(): mNode(nullptr), mOffset(0) {}
+  NodeOffset() : mNode(nullptr), mOffset(0) {}
   NodeOffset(nsINode* aNode, int32_t aOffset)
-    : mNode(aNode), mOffset(aOffset) {}
+      : mNode(aNode), mOffset(aOffset) {}
 
-  bool operator==(const NodeOffset& aOther) const
-  {
+  bool operator==(const NodeOffset& aOther) const {
     return mNode == aOther.mNode && mOffset == aOther.mOffset;
   }
 
-  bool operator!=(const NodeOffset& aOther) const
-  {
-    return !(*this == aOther);
-  }
+  bool operator!=(const NodeOffset& aOther) const { return !(*this == aOther); }
 };
 
-class NodeOffsetRange
-{
-private:
+class NodeOffsetRange {
+ private:
   NodeOffset mBegin;
   NodeOffset mEnd;
   bool mEmpty;
-public:
+
+ public:
   NodeOffsetRange() : mEmpty(true) {}
   NodeOffsetRange(NodeOffset b, NodeOffset e)
-    : mBegin(b), mEnd(e), mEmpty(false) {}
+      : mBegin(b), mEnd(e), mEmpty(false) {}
 
-  NodeOffset Begin()
-  {
-    return mBegin;
-  }
+  NodeOffset Begin() { return mBegin; }
 
-  NodeOffset End()
-  {
-    return mEnd;
-  }
+  NodeOffset End() { return mEnd; }
 
-  bool Empty()
-  {
-    return mEmpty;
-  }
+  bool Empty() { return mEmpty; }
 };
 
 
@@ -87,13 +73,15 @@ public:
 
 
 
-class MOZ_STACK_CLASS mozInlineSpellWordUtil
-{
-public:
+class MOZ_STACK_CLASS mozInlineSpellWordUtil {
+ public:
   mozInlineSpellWordUtil()
-    : mIsContentEditableOrDesignMode(false), mRootNode(nullptr),
-      mSoftBegin(nullptr, 0), mSoftEnd(nullptr, 0),
-      mNextWordIndex(-1), mSoftTextValid(false) {}
+      : mIsContentEditableOrDesignMode(false),
+        mRootNode(nullptr),
+        mSoftBegin(nullptr, 0),
+        mSoftEnd(nullptr, 0),
+        mNextWordIndex(-1),
+        mSoftTextValid(false) {}
 
   nsresult Init(mozilla::TextEditor* aTextEditor);
 
@@ -121,8 +109,7 @@ public:
   
   
   
-  nsresult GetNextWord(nsAString& aText,
-                       NodeOffsetRange* aNodeOffsetRange,
+  nsresult GetNextWord(nsAString& aText, NodeOffsetRange* aNodeOffsetRange,
                        bool* aSkipChecking);
 
   
@@ -132,16 +119,15 @@ public:
   nsIDocument* GetDocument() const { return mDocument; }
   nsINode* GetRootNode() { return mRootNode; }
 
-private:
-
+ private:
   
-  nsCOMPtr<nsIDocument>         mDocument;
+  nsCOMPtr<nsIDocument> mDocument;
   bool mIsContentEditableOrDesignMode;
 
   
-  nsINode*    mRootNode;
-  NodeOffset  mSoftBegin;
-  NodeOffset  mSoftEnd;
+  nsINode* mRootNode;
+  NodeOffset mSoftBegin;
+  NodeOffset mSoftEnd;
 
   
   nsString mSoftText;
@@ -149,32 +135,37 @@ private:
   
   struct DOMTextMapping {
     NodeOffset mNodeOffset;
-    int32_t    mSoftTextOffset;
-    int32_t    mLength;
+    int32_t mSoftTextOffset;
+    int32_t mLength;
 
-    DOMTextMapping(NodeOffset aNodeOffset, int32_t aSoftTextOffset, int32_t aLength)
-      : mNodeOffset(aNodeOffset), mSoftTextOffset(aSoftTextOffset),
-        mLength(aLength) {}
+    DOMTextMapping(NodeOffset aNodeOffset, int32_t aSoftTextOffset,
+                   int32_t aLength)
+        : mNodeOffset(aNodeOffset),
+          mSoftTextOffset(aSoftTextOffset),
+          mLength(aLength) {}
   };
   nsTArray<DOMTextMapping> mSoftTextDOMMapping;
 
   
   struct RealWord {
-    int32_t      mSoftTextOffset;
-    uint32_t      mLength : 31;
+    int32_t mSoftTextOffset;
+    uint32_t mLength : 31;
     uint32_t mCheckableWord : 1;
 
     RealWord(int32_t aOffset, uint32_t aLength, bool aCheckable)
-      : mSoftTextOffset(aOffset), mLength(aLength), mCheckableWord(aCheckable)
-    {
-      static_assert(sizeof(RealWord) == 8, "RealWord should be limited to 8 bytes");
-      MOZ_ASSERT(aLength < INT32_MAX, "Word length is too large to fit in the bitfield");
+        : mSoftTextOffset(aOffset),
+          mLength(aLength),
+          mCheckableWord(aCheckable) {
+      static_assert(sizeof(RealWord) == 8,
+                    "RealWord should be limited to 8 bytes");
+      MOZ_ASSERT(aLength < INT32_MAX,
+                 "Word length is too large to fit in the bitfield");
     }
 
     int32_t EndOffset() const { return mSoftTextOffset + mLength; }
   };
   nsTArray<RealWord> mRealWords;
-  int32_t            mNextWordIndex;
+  int32_t mNextWordIndex;
 
   bool mSoftTextValid;
 
@@ -191,6 +182,7 @@ private:
   enum DOMMapHint { HINT_BEGIN, HINT_END };
   NodeOffset MapSoftTextOffsetToDOMPosition(int32_t aSoftTextOffset,
                                             DOMMapHint aHint);
+  
   
   
   

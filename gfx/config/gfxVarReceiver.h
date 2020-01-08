@@ -13,13 +13,12 @@ class GfxVarUpdate;
 
 
 
-class gfxVarReceiver
-{
-public:
+class gfxVarReceiver {
+ public:
   virtual void OnVarChanged(const GfxVarUpdate& aVar) = 0;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

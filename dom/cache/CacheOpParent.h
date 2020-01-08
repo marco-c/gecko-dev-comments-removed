@@ -15,53 +15,47 @@
 namespace mozilla {
 namespace ipc {
 class PBackgroundParent;
-} 
+}  
 namespace dom {
 namespace cache {
 
-class CacheOpParent final : public PCacheOpParent
-                          , public PrincipalVerifier::Listener
-                          , public Manager::Listener
-{
+class CacheOpParent final : public PCacheOpParent,
+                            public PrincipalVerifier::Listener,
+                            public Manager::Listener {
   
   using Manager::Listener::OnOpComplete;
 
-public:
+ public:
   CacheOpParent(mozilla::ipc::PBackgroundParent* aIpcManager, CacheId aCacheId,
                 const CacheOpArgs& aOpArgs);
   CacheOpParent(mozilla::ipc::PBackgroundParent* aIpcManager,
                 Namespace aNamespace, const CacheOpArgs& aOpArgs);
   ~CacheOpParent();
 
-  void
-  Execute(ManagerId* aManagerId);
+  void Execute(ManagerId* aManagerId);
 
-  void
-  Execute(cache::Manager* aManager);
+  void Execute(cache::Manager* aManager);
 
-  void
-  WaitForVerification(PrincipalVerifier* aVerifier);
+  void WaitForVerification(PrincipalVerifier* aVerifier);
 
-private:
+ private:
   
-  virtual void
-  ActorDestroy(ActorDestroyReason aReason) override;
+  virtual void ActorDestroy(ActorDestroyReason aReason) override;
 
   
-  virtual void
-  OnPrincipalVerified(nsresult aRv, ManagerId* aManagerId) override;
+  virtual void OnPrincipalVerified(nsresult aRv,
+                                   ManagerId* aManagerId) override;
 
   
-  virtual void
-  OnOpComplete(ErrorResult&& aRv, const CacheOpResult& aResult,
-               CacheId aOpenedCacheId,
-               const nsTArray<SavedResponse>& aSavedResponseList,
-               const nsTArray<SavedRequest>& aSavedRequestList,
-               StreamList* aStreamList) override;
+  virtual void OnOpComplete(ErrorResult&& aRv, const CacheOpResult& aResult,
+                            CacheId aOpenedCacheId,
+                            const nsTArray<SavedResponse>& aSavedResponseList,
+                            const nsTArray<SavedRequest>& aSavedRequestList,
+                            StreamList* aStreamList) override;
 
   
-  already_AddRefed<nsIInputStream>
-  DeserializeCacheStream(const CacheReadStreamOrVoid& aStreamOrVoid);
+  already_AddRefed<nsIInputStream> DeserializeCacheStream(
+      const CacheReadStreamOrVoid& aStreamOrVoid);
 
   mozilla::ipc::PBackgroundParent* mIpcManager;
   const CacheId mCacheId;
@@ -73,8 +67,8 @@ private:
   NS_DECL_OWNINGTHREAD
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

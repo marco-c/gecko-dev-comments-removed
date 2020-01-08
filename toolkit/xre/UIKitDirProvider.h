@@ -10,4 +10,4 @@
 
 bool GetUIKitDirectory(bool aLocal, nsACString& aUserDir);
 
-#endif 
+#endif  

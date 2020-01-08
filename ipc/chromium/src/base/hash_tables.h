@@ -29,21 +29,21 @@
 
 
 #ifdef __GNUC__
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wshadow"
-#  if MOZ_GCC_VERSION_AT_LEAST(4, 9, 0)
-#    pragma GCC diagnostic ignored "-Wshadow-local"
-#  endif
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#if MOZ_GCC_VERSION_AT_LEAST(4, 9, 0)
+#pragma GCC diagnostic ignored "-Wshadow-local"
+#endif
 #endif
 
 #include <hash_map>
 #include <hash_set>
 
 #ifdef __GNUC__
-#  if MOZ_GCC_VERSION_AT_LEAST(4, 9, 0)
-#    pragma GCC diagnostic pop // -Wshadow-local
-#  endif
-#  pragma GCC diagnostic pop // -Wshadow
+#if MOZ_GCC_VERSION_AT_LEAST(4, 9, 0)
+#pragma GCC diagnostic pop  // -Wshadow-local
+#endif
+#pragma GCC diagnostic pop  // -Wshadow
 #endif
 
 #ifdef COMPILER_MSVC
@@ -57,7 +57,7 @@ using _STLP_STD_NAME::hash_set;
 using stdext::hash_map;
 using stdext::hash_set;
 #endif
-}
+}  
 #elif defined(COMPILER_GCC)
 
 
@@ -88,13 +88,13 @@ namespace __gnu_cxx {
 
 
 
-#define DEFINE_TRIVIAL_HASH(integral_type) \
-    template<> \
-    struct hash<integral_type> { \
-      std::size_t operator()(integral_type value) const { \
-        return static_cast<std::size_t>(value); \
-      } \
-    }
+#define DEFINE_TRIVIAL_HASH(integral_type)              \
+  template <>                                           \
+  struct hash<integral_type> {                          \
+    std::size_t operator()(integral_type value) const { \
+      return static_cast<std::size_t>(value);           \
+    }                                                   \
+  }
 
 DEFINE_TRIVIAL_HASH(long long);
 DEFINE_TRIVIAL_HASH(unsigned long long);
@@ -107,16 +107,16 @@ DEFINE_TRIVIAL_HASH(unsigned long long);
 
 
 
-#define DEFINE_STRING_HASH(string_type) \
-    template<> \
-    struct hash<string_type> { \
-      std::size_t operator()(const string_type& s) const { \
-        std::size_t result = 0; \
-        for (string_type::const_iterator i = s.begin(); i != s.end(); ++i) \
-          result = (result * 131) + *i; \
-        return result; \
-      } \
-    }
+#define DEFINE_STRING_HASH(string_type)                                  \
+  template <>                                                            \
+  struct hash<string_type> {                                             \
+    std::size_t operator()(const string_type& s) const {                 \
+      std::size_t result = 0;                                            \
+      for (string_type::const_iterator i = s.begin(); i != s.end(); ++i) \
+        result = (result * 131) + *i;                                    \
+      return result;                                                     \
+    }                                                                    \
+  }
 
 DEFINE_STRING_HASH(std::string);
 DEFINE_STRING_HASH(std::wstring);

@@ -24,6 +24,6 @@ uint32_t ParseMessages(const nsTArray<uint8_t>& aByteBuffer,
                        nsTArray<MIDIMessage>& aMsgArray);
 
 bool IsSysexMessage(const MIDIMessage& a);
-}
-} 
-} 
+}  
+}  
+}  

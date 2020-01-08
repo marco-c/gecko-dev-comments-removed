@@ -14,67 +14,63 @@
 #include <gtk/gtk.h>
 
 class nsRetrievalContext {
-public:
-    
-    
-    virtual const char* GetClipboardData(const char* aMimeType,
-                                         int32_t aWhichClipboard,
-                                         uint32_t* aContentLength) = 0;
-    virtual const char* GetClipboardText(int32_t aWhichClipboard) = 0;
-    virtual void ReleaseClipboardData(const char* aClipboardData) = 0;
+ public:
+  
+  
+  virtual const char* GetClipboardData(const char* aMimeType,
+                                       int32_t aWhichClipboard,
+                                       uint32_t* aContentLength) = 0;
+  virtual const char* GetClipboardText(int32_t aWhichClipboard) = 0;
+  virtual void ReleaseClipboardData(const char* aClipboardData) = 0;
 
-    
-    
-    virtual GdkAtom* GetTargets(int32_t aWhichClipboard,
-                                int* aTargetNum) = 0;
+  
+  
+  virtual GdkAtom* GetTargets(int32_t aWhichClipboard, int* aTargetNum) = 0;
 
-    virtual bool HasSelectionSupport(void) = 0;
+  virtual bool HasSelectionSupport(void) = 0;
 
-    virtual ~nsRetrievalContext() {};
+  virtual ~nsRetrievalContext(){};
 };
 
-class nsClipboard : public nsIClipboard,
-                    public nsIObserver
-{
-public:
-    nsClipboard();
+class nsClipboard : public nsIClipboard, public nsIObserver {
+ public:
+  nsClipboard();
 
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIOBSERVER
-    NS_DECL_NSICLIPBOARD
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSICLIPBOARD
 
-    
-    
-    nsresult  Init              (void);
+  
+  
+  nsresult Init(void);
 
-    
-    void   SelectionGetEvent    (GtkClipboard     *aGtkClipboard,
-                                 GtkSelectionData *aSelectionData);
-    void   SelectionClearEvent  (GtkClipboard     *aGtkClipboard);
+  
+  void SelectionGetEvent(GtkClipboard* aGtkClipboard,
+                         GtkSelectionData* aSelectionData);
+  void SelectionClearEvent(GtkClipboard* aGtkClipboard);
 
-private:
-    virtual ~nsClipboard();
+ private:
+  virtual ~nsClipboard();
 
-    
-    nsresult         Store            (void);
+  
+  nsresult Store(void);
 
-    
-    
-    nsITransferable *GetTransferable  (int32_t aWhichClipboard);
+  
+  
+  nsITransferable* GetTransferable(int32_t aWhichClipboard);
 
-    
-    void             SetTransferableData(nsITransferable* aTransferable,
-                                         nsCString& aFlavor,
-                                         const char* aClipboardData,
-                                         uint32_t aClipboardDataLength);
+  
+  void SetTransferableData(nsITransferable* aTransferable, nsCString& aFlavor,
+                           const char* aClipboardData,
+                           uint32_t aClipboardDataLength);
 
-    
-    
-    nsCOMPtr<nsIClipboardOwner>    mSelectionOwner;
-    nsCOMPtr<nsIClipboardOwner>    mGlobalOwner;
-    nsCOMPtr<nsITransferable>      mSelectionTransferable;
-    nsCOMPtr<nsITransferable>      mGlobalTransferable;
-    nsAutoPtr<nsRetrievalContext>  mContext;
+  
+  
+  nsCOMPtr<nsIClipboardOwner> mSelectionOwner;
+  nsCOMPtr<nsIClipboardOwner> mGlobalOwner;
+  nsCOMPtr<nsITransferable> mSelectionTransferable;
+  nsCOMPtr<nsITransferable> mGlobalTransferable;
+  nsAutoPtr<nsRetrievalContext> mContext;
 };
 
 extern const int kClipboardTimeout;

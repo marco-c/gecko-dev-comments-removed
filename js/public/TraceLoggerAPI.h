@@ -17,18 +17,16 @@ namespace JS {
 
 
 
-extern JS_PUBLIC_API void
-StartTraceLogger(JSContext *cx, mozilla::TimeStamp profilerStart);
+extern JS_PUBLIC_API void StartTraceLogger(JSContext *cx,
+                                           mozilla::TimeStamp profilerStart);
 
 
 
 
-extern JS_PUBLIC_API void
-StopTraceLogger(JSContext *cx);
+extern JS_PUBLIC_API void StopTraceLogger(JSContext *cx);
 
 
-extern JS_PUBLIC_API void
-ResetTraceLogger(void);
+extern JS_PUBLIC_API void ResetTraceLogger(void);
 
 #else
 
@@ -38,6 +36,6 @@ inline void StartTraceLogger(JSContext *cx, mozilla::TimeStamp profilerStart) {}
 inline void StopTraceLogger(JSContext *cx) {}
 inline void ResetTraceLogger(void) {}
 #endif
-};
+};  
 
 #endif 

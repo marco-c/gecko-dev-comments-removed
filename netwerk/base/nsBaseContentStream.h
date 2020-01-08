@@ -33,17 +33,14 @@
 
 
 
-class nsBaseContentStream : public nsIAsyncInputStream
-{
-public:
+class nsBaseContentStream : public nsIAsyncInputStream {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAM
   NS_DECL_NSIASYNCINPUTSTREAM
 
   explicit nsBaseContentStream(bool nonBlocking)
-    : mStatus(NS_OK)
-    , mNonBlocking(nonBlocking) {
-  }
+      : mStatus(NS_OK), mNonBlocking(nonBlocking) {}
 
   nsresult Status() { return mStatus; }
   bool IsNonBlocking() { return mNonBlocking; }
@@ -64,19 +61,19 @@ public:
   
   void DispatchCallbackSync() { DispatchCallback(false); }
 
-protected:
+ protected:
   virtual ~nsBaseContentStream() = default;
 
-private:
+ private:
   
   
   virtual void OnCallbackPending() {}
 
-private:
+ private:
   nsCOMPtr<nsIInputStreamCallback> mCallback;
-  nsCOMPtr<nsIEventTarget>         mCallbackTarget;
-  nsresult                         mStatus;
-  bool                             mNonBlocking;
+  nsCOMPtr<nsIEventTarget> mCallbackTarget;
+  nsresult mStatus;
+  bool mNonBlocking;
 };
 
-#endif 
+#endif  

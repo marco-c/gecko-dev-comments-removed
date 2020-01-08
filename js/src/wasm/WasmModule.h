@@ -53,76 +53,72 @@ typedef RefPtr<JS::OptimizedEncodingListener> Tier2Listener;
 
 
 
-class Module : public JS::WasmModule
-{
-    const SharedCode          code_;
-    const ImportVector        imports_;
-    const ExportVector        exports_;
-    const DataSegmentVector   dataSegments_;
-    const ElemSegmentVector   elemSegments_;
-    const CustomSectionVector customSections_;
+class Module : public JS::WasmModule {
+  const SharedCode code_;
+  const ImportVector imports_;
+  const ExportVector exports_;
+  const DataSegmentVector dataSegments_;
+  const ElemSegmentVector elemSegments_;
+  const CustomSectionVector customSections_;
 
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
 
-    mutable Atomic<bool>    debugCodeClaimed_;
-    const UniqueConstBytes  debugUnlinkedCode_;
-    const UniqueLinkData    debugLinkData_;
-    const SharedBytes       debugBytecode_;
+  mutable Atomic<bool> debugCodeClaimed_;
+  const UniqueConstBytes debugUnlinkedCode_;
+  const UniqueLinkData debugLinkData_;
+  const SharedBytes debugBytecode_;
 
-    
-    
-    
+  
+  
+  
 
-    mutable Tier2Listener   tier2Listener_;
+  mutable Tier2Listener tier2Listener_;
 
-    
-    
+  
+  
 
-    mutable Atomic<bool>    testingTier2Active_;
+  mutable Atomic<bool> testingTier2Active_;
 
-    bool instantiateFunctions(JSContext* cx, Handle<FunctionVector> funcImports) const;
-    bool instantiateMemory(JSContext* cx, MutableHandleWasmMemoryObject memory) const;
-    bool instantiateImportedTable(JSContext* cx,
-                                  const TableDesc& td,
-                                  Handle<WasmTableObject*> table,
-                                  WasmTableObjectVector* tableObjs,
-                                  SharedTableVector* tables) const;
-    bool instantiateLocalTable(JSContext* cx,
-                               const TableDesc& td,
-                               WasmTableObjectVector* tableObjs,
-                               SharedTableVector* tables) const;
-    bool instantiateTables(JSContext* cx, WasmTableObjectVector& tableImports,
-                           MutableHandle<WasmTableObjectVector> tableObjs,
-                           SharedTableVector* tables) const;
-    bool instantiateGlobals(JSContext* cx, HandleValVector globalImportValues,
-                            WasmGlobalObjectVector& globalObjs) const;
-    bool initSegments(JSContext* cx,
-                      HandleWasmInstanceObject instance,
-                      Handle<FunctionVector> funcImports,
-                      HandleWasmMemoryObject memory,
-                      HandleValVector globalImportValues) const;
-    SharedCode getDebugEnabledCode() const;
-    bool makeStructTypeDescrs(JSContext* cx,
-                              MutableHandle<StructTypeDescrVector> structTypeDescrs) const;
+  bool instantiateFunctions(JSContext* cx,
+                            Handle<FunctionVector> funcImports) const;
+  bool instantiateMemory(JSContext* cx,
+                         MutableHandleWasmMemoryObject memory) const;
+  bool instantiateImportedTable(JSContext* cx, const TableDesc& td,
+                                Handle<WasmTableObject*> table,
+                                WasmTableObjectVector* tableObjs,
+                                SharedTableVector* tables) const;
+  bool instantiateLocalTable(JSContext* cx, const TableDesc& td,
+                             WasmTableObjectVector* tableObjs,
+                             SharedTableVector* tables) const;
+  bool instantiateTables(JSContext* cx, WasmTableObjectVector& tableImports,
+                         MutableHandle<WasmTableObjectVector> tableObjs,
+                         SharedTableVector* tables) const;
+  bool instantiateGlobals(JSContext* cx, HandleValVector globalImportValues,
+                          WasmGlobalObjectVector& globalObjs) const;
+  bool initSegments(JSContext* cx, HandleWasmInstanceObject instance,
+                    Handle<FunctionVector> funcImports,
+                    HandleWasmMemoryObject memory,
+                    HandleValVector globalImportValues) const;
+  SharedCode getDebugEnabledCode() const;
+  bool makeStructTypeDescrs(
+      JSContext* cx,
+      MutableHandle<StructTypeDescrVector> structTypeDescrs) const;
 
-    class Tier2GeneratorTaskImpl;
+  class Tier2GeneratorTaskImpl;
 
-  public:
-    Module(const Code& code,
-           ImportVector&& imports,
-           ExportVector&& exports,
-           DataSegmentVector&& dataSegments,
-           ElemSegmentVector&& elemSegments,
-           CustomSectionVector&& customSections,
-           UniqueConstBytes debugUnlinkedCode = nullptr,
-           UniqueLinkData debugLinkData = nullptr,
-           const ShareableBytes* debugBytecode = nullptr)
+ public:
+  Module(const Code& code, ImportVector&& imports, ExportVector&& exports,
+         DataSegmentVector&& dataSegments, ElemSegmentVector&& elemSegments,
+         CustomSectionVector&& customSections,
+         UniqueConstBytes debugUnlinkedCode = nullptr,
+         UniqueLinkData debugLinkData = nullptr,
+         const ShareableBytes* debugBytecode = nullptr)
       : code_(&code),
         imports_(std::move(imports)),
         exports_(std::move(exports)),
@@ -133,70 +129,67 @@ class Module : public JS::WasmModule
         debugUnlinkedCode_(std::move(debugUnlinkedCode)),
         debugLinkData_(std::move(debugLinkData)),
         debugBytecode_(debugBytecode),
-        testingTier2Active_(false)
-    {
-        MOZ_ASSERT_IF(metadata().debugEnabled, debugUnlinkedCode_ && debugLinkData_);
-    }
-    ~Module() override;
+        testingTier2Active_(false) {
+    MOZ_ASSERT_IF(metadata().debugEnabled,
+                  debugUnlinkedCode_ && debugLinkData_);
+  }
+  ~Module() override;
 
-    const Code& code() const { return *code_; }
-    const ModuleSegment& moduleSegment(Tier t) const { return code_->segment(t); }
-    const Metadata& metadata() const { return code_->metadata(); }
-    const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
-    const ImportVector& imports() const { return imports_; }
-    const ExportVector& exports() const { return exports_; }
-    const CustomSectionVector& customSections() const { return customSections_; }
-    const Bytes& debugBytecode() const { return debugBytecode_->bytes; }
-    uint32_t codeLength(Tier t) const { return code_->segment(t).length(); }
-    const StructTypeVector& structTypes() const { return code_->structTypes(); }
+  const Code& code() const { return *code_; }
+  const ModuleSegment& moduleSegment(Tier t) const { return code_->segment(t); }
+  const Metadata& metadata() const { return code_->metadata(); }
+  const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
+  const ImportVector& imports() const { return imports_; }
+  const ExportVector& exports() const { return exports_; }
+  const CustomSectionVector& customSections() const { return customSections_; }
+  const Bytes& debugBytecode() const { return debugBytecode_->bytes; }
+  uint32_t codeLength(Tier t) const { return code_->segment(t).length(); }
+  const StructTypeVector& structTypes() const { return code_->structTypes(); }
 
-    
+  
 
-    bool instantiate(JSContext* cx,
-                     Handle<FunctionVector> funcImports,
-                     WasmTableObjectVector& tableImport,
-                     HandleWasmMemoryObject memoryImport,
-                     HandleValVector globalImportValues,
-                     WasmGlobalObjectVector& globalObjs,
-                     HandleObject instanceProto,
-                     MutableHandleWasmInstanceObject instanceObj) const;
+  bool instantiate(JSContext* cx, Handle<FunctionVector> funcImports,
+                   WasmTableObjectVector& tableImport,
+                   HandleWasmMemoryObject memoryImport,
+                   HandleValVector globalImportValues,
+                   WasmGlobalObjectVector& globalObjs,
+                   HandleObject instanceProto,
+                   MutableHandleWasmInstanceObject instanceObj) const;
 
-    
-    
-    
-    
+  
+  
+  
+  
 
-    void startTier2(const CompileArgs& args,
-                    const ShareableBytes& bytecode,
-                    JS::OptimizedEncodingListener* listener);
-    bool finishTier2(const LinkData& linkData2, UniqueCodeTier code2) const;
+  void startTier2(const CompileArgs& args, const ShareableBytes& bytecode,
+                  JS::OptimizedEncodingListener* listener);
+  bool finishTier2(const LinkData& linkData2, UniqueCodeTier code2) const;
 
-    void testingBlockOnTier2Complete() const;
-    bool testingTier2Active() const { return testingTier2Active_; }
+  void testingBlockOnTier2Complete() const;
+  bool testingTier2Active() const { return testingTier2Active_; }
 
-    
+  
 
-    size_t serializedSize(const LinkData& linkData) const;
-    void serialize(const LinkData& linkData, uint8_t* begin, size_t size) const;
-    void serialize(const LinkData& linkData, JS::OptimizedEncodingListener& listener) const;
-    static RefPtr<Module> deserialize(const uint8_t* begin, size_t size,
-                                      Metadata* maybeMetadata = nullptr);
+  size_t serializedSize(const LinkData& linkData) const;
+  void serialize(const LinkData& linkData, uint8_t* begin, size_t size) const;
+  void serialize(const LinkData& linkData,
+                 JS::OptimizedEncodingListener& listener) const;
+  static RefPtr<Module> deserialize(const uint8_t* begin, size_t size,
+                                    Metadata* maybeMetadata = nullptr);
 
-    
+  
 
-    JSObject* createObject(JSContext* cx) override;
+  JSObject* createObject(JSContext* cx) override;
 
-    
+  
 
-    void addSizeOfMisc(MallocSizeOf mallocSizeOf,
-                       Metadata::SeenSet* seenMetadata,
-                       ShareableBytes::SeenSet* seenBytes,
-                       Code::SeenSet* seenCode,
-                       size_t* code, size_t* data) const;
+  void addSizeOfMisc(MallocSizeOf mallocSizeOf, Metadata::SeenSet* seenMetadata,
+                     ShareableBytes::SeenSet* seenBytes,
+                     Code::SeenSet* seenCode, size_t* code, size_t* data) const;
 
-    
+  
 
-    bool extractCode(JSContext* cx, Tier tier, MutableHandleValue vp) const;
+  bool extractCode(JSContext* cx, Tier tier, MutableHandleValue vp) const;
 };
 
 typedef RefPtr<Module> MutableModule;
@@ -204,13 +197,12 @@ typedef RefPtr<const Module> SharedModule;
 
 
 
-MOZ_MUST_USE bool
-GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId);
+MOZ_MUST_USE bool GetOptimizedEncodingBuildId(JS::BuildIdCharVector* buildId);
 
-RefPtr<JS::WasmModule>
-DeserializeModule(PRFileDesc* bytecode, UniqueChars filename, unsigned line);
+RefPtr<JS::WasmModule> DeserializeModule(PRFileDesc* bytecode,
+                                         UniqueChars filename, unsigned line);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -16,8 +16,7 @@ class BrokerServices;
 
 
 
-struct XREShellData
-{
+struct XREShellData {
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
   
 
@@ -26,4 +25,4 @@ struct XREShellData
 #endif
 };
 
-#endif 
+#endif  

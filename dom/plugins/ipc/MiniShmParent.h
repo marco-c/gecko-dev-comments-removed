@@ -23,9 +23,8 @@ namespace plugins {
 
 
 
-class MiniShmParent : public MiniShmBase
-{
-public:
+class MiniShmParent : public MiniShmBase {
+ public:
   MiniShmParent();
   virtual ~MiniShmParent();
 
@@ -40,16 +39,14 @@ public:
 
 
 
-  nsresult
-  Init(MiniShmObserver* aObserver, const DWORD aTimeout,
-       const unsigned int aSectionSize = kDefaultMiniShmSectionSize);
+  nsresult Init(MiniShmObserver* aObserver, const DWORD aTimeout,
+                const unsigned int aSectionSize = kDefaultMiniShmSectionSize);
 
   
 
 
 
-  void
-  CleanUp();
+  void CleanUp();
 
   
 
@@ -58,22 +55,17 @@ public:
 
 
 
-  nsresult
-  GetCookie(std::wstring& aCookie);
+  nsresult GetCookie(std::wstring& aCookie);
 
-  virtual nsresult
-  Send() override;
+  virtual nsresult Send() override;
 
-  bool
-  IsConnected() const;
+  bool IsConnected() const;
 
-protected:
-  void
-  OnEvent() override;
+ protected:
+  void OnEvent() override;
 
-private:
-  void
-  FinalizeConnection();
+ private:
+  void FinalizeConnection();
 
   unsigned int mSectionSize;
   HANDLE mParentEvent;
@@ -83,14 +75,13 @@ private:
   HANDLE mRegWait;
   HANDLE mFileMapping;
   LPVOID mView;
-  bool   mIsConnected;
-  DWORD  mTimeout;
+  bool mIsConnected;
+  DWORD mTimeout;
 
   DISALLOW_COPY_AND_ASSIGN(MiniShmParent);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

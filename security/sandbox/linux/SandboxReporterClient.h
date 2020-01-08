@@ -15,7 +15,7 @@ namespace mozilla {
 
 
 class SandboxReporterClient {
-public:
+ public:
   
   
   
@@ -36,11 +36,12 @@ public:
     SendReport(report);
     return report;
   }
-private:
+
+ private:
   SandboxReport::ProcType mProcType;
   int mFd;
 };
 
-} 
+}  
 
-#endif 
+#endif  

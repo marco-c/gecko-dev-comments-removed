@@ -2,14 +2,14 @@
 
 
 
-
 #ifndef TimingStruct_h_
 #define TimingStruct_h_
 
 #include "mozilla/TimeStamp.h"
 #include "nsString.h"
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
 struct TimingStruct {
   TimeStamp domainLookupStart;
@@ -38,7 +38,7 @@ struct ResourceTimingStruct : TimingStruct {
   TimeStamp cacheReadEnd;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

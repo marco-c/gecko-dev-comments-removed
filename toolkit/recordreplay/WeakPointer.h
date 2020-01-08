@@ -15,7 +15,7 @@ namespace recordreplay {
 
 void InitializeWeakPointers();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -38,9 +38,8 @@ typedef nsTArray<ChannelPixelLayout> ImagePixelLayout;
 
 
 
-class ImageUtils
-{
-public:
+class ImageUtils {
+ public:
   class Impl;
   ImageUtils() = delete;
   ImageUtils(const ImageUtils&) = delete;
@@ -55,11 +54,11 @@ public:
 
   uint32_t GetBufferLength() const;
 
-protected:
+ protected:
   Impl* mImpl;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -21,7 +21,7 @@
 
 #include "gc/Memory.h"
 #ifdef JS_CODEGEN_ARM64
-# include "jit/arm64/vixl/Cpu-vixl.h"
+#include "jit/arm64/vixl/Cpu-vixl.h"
 #endif
 #include "threading/LockGuard.h"
 #include "threading/Mutex.h"
@@ -29,15 +29,15 @@
 #include "vm/MutexIDs.h"
 
 #ifdef XP_WIN
-# include "mozilla/StackWalk_windows.h"
-# include "mozilla/WindowsVersion.h"
+#include "mozilla/StackWalk_windows.h"
+#include "mozilla/WindowsVersion.h"
 #else
-# include <sys/mman.h>
-# include <unistd.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #endif
 
 #ifdef MOZ_VALGRIND
-# include <valgrind/valgrind.h>
+#include <valgrind/valgrind.h>
 #endif
 
 using namespace js;
@@ -45,14 +45,12 @@ using namespace js::jit;
 
 #ifdef XP_WIN
 
-# if defined(HAVE_64BIT_BUILD) && defined(_M_X64)
-#  define NEED_JIT_UNWIND_HANDLING
-# endif
+#if defined(HAVE_64BIT_BUILD) && defined(_M_X64)
+#define NEED_JIT_UNWIND_HANDLING
+#endif
 
-static void*
-ComputeRandomAllocationAddress()
-{
-    
+static void* ComputeRandomAllocationAddress() {
+  
 
 
 
@@ -63,50 +61,46 @@ ComputeRandomAllocationAddress()
 
 
 
-# ifdef HAVE_64BIT_BUILD
-    static const uintptr_t base = 0x0000000080000000;
-    static const uintptr_t mask = 0x000003ffffff0000;
-# elif defined(_M_IX86) || defined(__i386__)
-    static const uintptr_t base = 0x04000000;
-    static const uintptr_t mask = 0x3fff0000;
-# else
-#  error "Unsupported architecture"
-# endif
+#ifdef HAVE_64BIT_BUILD
+  static const uintptr_t base = 0x0000000080000000;
+  static const uintptr_t mask = 0x000003ffffff0000;
+#elif defined(_M_IX86) || defined(__i386__)
+  static const uintptr_t base = 0x04000000;
+  static const uintptr_t mask = 0x3fff0000;
+#else
+#error "Unsupported architecture"
+#endif
 
-    uint64_t rand = js::GenerateRandomSeed();
-    return (void*) (base | (rand & mask));
+  uint64_t rand = js::GenerateRandomSeed();
+  return (void*)(base | (rand & mask));
 }
 
-# ifdef NEED_JIT_UNWIND_HANDLING
+#ifdef NEED_JIT_UNWIND_HANDLING
 static js::JitExceptionHandler sJitExceptionHandler;
 
-JS_FRIEND_API void
-js::SetJitExceptionHandler(JitExceptionHandler handler)
-{
-    MOZ_ASSERT(!sJitExceptionHandler);
-    sJitExceptionHandler = handler;
+JS_FRIEND_API void js::SetJitExceptionHandler(JitExceptionHandler handler) {
+  MOZ_ASSERT(!sJitExceptionHandler);
+  sJitExceptionHandler = handler;
 }
 
 
 
-struct UnwindInfo
-{
-    uint8_t version : 3;
-    uint8_t flags : 5;
-    uint8_t sizeOfPrologue;
-    uint8_t countOfUnwindCodes;
-    uint8_t frameRegister : 4;
-    uint8_t frameOffset : 4;
-    ULONG exceptionHandler;
+struct UnwindInfo {
+  uint8_t version : 3;
+  uint8_t flags : 5;
+  uint8_t sizeOfPrologue;
+  uint8_t countOfUnwindCodes;
+  uint8_t frameRegister : 4;
+  uint8_t frameOffset : 4;
+  ULONG exceptionHandler;
 };
 
 static const unsigned ThunkLength = 12;
 
-struct ExceptionHandlerRecord
-{
-    RUNTIME_FUNCTION runtimeFunction;
-    UnwindInfo unwindInfo;
-    uint8_t thunk[ThunkLength];
+struct ExceptionHandlerRecord {
+  RUNTIME_FUNCTION runtimeFunction;
+  UnwindInfo unwindInfo;
+  uint8_t thunk[ThunkLength];
 };
 
 
@@ -114,315 +108,299 @@ struct ExceptionHandlerRecord
 
 
 
-static DWORD
-ExceptionHandler(PEXCEPTION_RECORD exceptionRecord, _EXCEPTION_REGISTRATION_RECORD*,
-                 PCONTEXT context, _EXCEPTION_REGISTRATION_RECORD**)
-{
-    return sJitExceptionHandler(exceptionRecord, context);
+static DWORD ExceptionHandler(PEXCEPTION_RECORD exceptionRecord,
+                              _EXCEPTION_REGISTRATION_RECORD*, PCONTEXT context,
+                              _EXCEPTION_REGISTRATION_RECORD**) {
+  return sJitExceptionHandler(exceptionRecord, context);
 }
 
 
 
-static bool
-RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
-{
-    if (!VirtualAlloc(p, pageSize, MEM_COMMIT, PAGE_READWRITE)) {
-        MOZ_CRASH();
-    }
-
-    ExceptionHandlerRecord* r = reinterpret_cast<ExceptionHandlerRecord*>(p);
-
-    
-    
-    
-    
-    
-    
-    
-
-    r->runtimeFunction.BeginAddress = pageSize;
-    r->runtimeFunction.EndAddress = (DWORD)bytes;
-    r->runtimeFunction.UnwindData = offsetof(ExceptionHandlerRecord, unwindInfo);
-
-    r->unwindInfo.version = 1;
-    r->unwindInfo.flags = UNW_FLAG_EHANDLER;
-    r->unwindInfo.sizeOfPrologue = 0;
-    r->unwindInfo.countOfUnwindCodes = 0;
-    r->unwindInfo.frameRegister = 0;
-    r->unwindInfo.frameOffset = 0;
-    r->unwindInfo.exceptionHandler = offsetof(ExceptionHandlerRecord, thunk);
-
-    
-    r->thunk[0]  = 0x48;
-    r->thunk[1]  = 0xb8;
-    void* handler = JS_FUNC_TO_DATA_PTR(void*, ExceptionHandler);
-    memcpy(&r->thunk[2], &handler, 8);
-
-    
-    r->thunk[10] = 0xff;
-    r->thunk[11] = 0xe0;
-
-    DWORD oldProtect;
-    if (!VirtualProtect(p, pageSize, PAGE_EXECUTE_READ, &oldProtect)) {
-        MOZ_CRASH();
-    }
-
-    
-    
-    
-    AutoSuppressStackWalking suppress;
-    return RtlAddFunctionTable(&r->runtimeFunction, 1, reinterpret_cast<DWORD64>(p));
-}
-
-static void
-UnregisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
-{
-    ExceptionHandlerRecord* r = reinterpret_cast<ExceptionHandlerRecord*>(p);
-
-    
-    
-    
-    AutoSuppressStackWalking suppress;
-    RtlDeleteFunctionTable(&r->runtimeFunction);
-}
-# endif
-
-static void*
-ReserveProcessExecutableMemory(size_t bytes)
-{
-# ifdef NEED_JIT_UNWIND_HANDLING
-    size_t pageSize = gc::SystemPageSize();
-    if (sJitExceptionHandler) {
-        bytes += pageSize;
-    }
-# endif
-
-    void* p = nullptr;
-    for (size_t i = 0; i < 10; i++) {
-        void* randomAddr = ComputeRandomAllocationAddress();
-        p = VirtualAlloc(randomAddr, bytes, MEM_RESERVE, PAGE_NOACCESS);
-        if (p) {
-            break;
-        }
-    }
-
-    if (!p) {
-        
-        p = VirtualAlloc(nullptr, bytes, MEM_RESERVE, PAGE_NOACCESS);
-        if (!p) {
-            return nullptr;
-        }
-    }
-
-# ifdef NEED_JIT_UNWIND_HANDLING
-    if (sJitExceptionHandler) {
-        if (!RegisterExecutableMemory(p, bytes, pageSize)) {
-            VirtualFree(p, 0, MEM_RELEASE);
-            return nullptr;
-        }
-
-        p = (uint8_t*)p + pageSize;
-        bytes -= pageSize;
-    }
-
-    RegisterJitCodeRegion((uint8_t*)p, bytes);
-# endif
-
-    return p;
-}
-
-static void
-DeallocateProcessExecutableMemory(void* addr, size_t bytes)
-{
-# ifdef NEED_JIT_UNWIND_HANDLING
-    UnregisterJitCodeRegion((uint8_t*)addr, bytes);
-
-    if (sJitExceptionHandler) {
-        size_t pageSize = gc::SystemPageSize();
-        addr = (uint8_t*)addr - pageSize;
-        UnregisterExecutableMemory(addr, bytes, pageSize);
-    }
-# endif
-
-    VirtualFree(addr, 0, MEM_RELEASE);
-}
-
-static DWORD
-ProtectionSettingToFlags(ProtectionSetting protection)
-{
-    switch (protection) {
-      case ProtectionSetting::Protected:  return PAGE_NOACCESS;
-      case ProtectionSetting::Writable:   return PAGE_READWRITE;
-      case ProtectionSetting::Executable: return PAGE_EXECUTE_READ;
-    }
+static bool RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
+  if (!VirtualAlloc(p, pageSize, MEM_COMMIT, PAGE_READWRITE)) {
     MOZ_CRASH();
+  }
+
+  ExceptionHandlerRecord* r = reinterpret_cast<ExceptionHandlerRecord*>(p);
+
+  
+  
+  
+  
+  
+  
+  
+
+  r->runtimeFunction.BeginAddress = pageSize;
+  r->runtimeFunction.EndAddress = (DWORD)bytes;
+  r->runtimeFunction.UnwindData = offsetof(ExceptionHandlerRecord, unwindInfo);
+
+  r->unwindInfo.version = 1;
+  r->unwindInfo.flags = UNW_FLAG_EHANDLER;
+  r->unwindInfo.sizeOfPrologue = 0;
+  r->unwindInfo.countOfUnwindCodes = 0;
+  r->unwindInfo.frameRegister = 0;
+  r->unwindInfo.frameOffset = 0;
+  r->unwindInfo.exceptionHandler = offsetof(ExceptionHandlerRecord, thunk);
+
+  
+  r->thunk[0] = 0x48;
+  r->thunk[1] = 0xb8;
+  void* handler = JS_FUNC_TO_DATA_PTR(void*, ExceptionHandler);
+  memcpy(&r->thunk[2], &handler, 8);
+
+  
+  r->thunk[10] = 0xff;
+  r->thunk[11] = 0xe0;
+
+  DWORD oldProtect;
+  if (!VirtualProtect(p, pageSize, PAGE_EXECUTE_READ, &oldProtect)) {
+    MOZ_CRASH();
+  }
+
+  
+  
+  
+  AutoSuppressStackWalking suppress;
+  return RtlAddFunctionTable(&r->runtimeFunction, 1,
+                             reinterpret_cast<DWORD64>(p));
 }
 
-static MOZ_MUST_USE bool
-CommitPages(void* addr, size_t bytes, ProtectionSetting protection)
-{
-    void* p = VirtualAlloc(addr, bytes, MEM_COMMIT, ProtectionSettingToFlags(protection));
-    if (!p) {
-        return false;
-    }
-    MOZ_RELEASE_ASSERT(p == addr);
-    return true;
+static void UnregisterExecutableMemory(void* p, size_t bytes, size_t pageSize) {
+  ExceptionHandlerRecord* r = reinterpret_cast<ExceptionHandlerRecord*>(p);
+
+  
+  
+  
+  AutoSuppressStackWalking suppress;
+  RtlDeleteFunctionTable(&r->runtimeFunction);
 }
-
-static void
-DecommitPages(void* addr, size_t bytes)
-{
-    if (!VirtualFree(addr, bytes, MEM_DECOMMIT)) {
-        MOZ_CRASH("DecommitPages failed");
-    }
-}
-#else 
-static void*
-ComputeRandomAllocationAddress()
-{
-    uint64_t rand = js::GenerateRandomSeed();
-
-# ifdef HAVE_64BIT_BUILD
-    
-    
-    
-    rand >>= 18;
-# else
-    
-    
-    
-    
-    rand >>= 34;
-    rand += 512 * 1024 * 1024;
-# endif
-
-    
-    uintptr_t mask = ~uintptr_t(gc::SystemPageSize() - 1);
-    return (void*) uintptr_t(rand & mask);
-}
-
-static void*
-ReserveProcessExecutableMemory(size_t bytes)
-{
-    
-    
-    void* randomAddr = ComputeRandomAllocationAddress();
-    void* p = MozTaggedAnonymousMmap(randomAddr, bytes, PROT_NONE, MAP_PRIVATE | MAP_ANON,
-                                     -1, 0, "js-executable-memory");
-    if (p == MAP_FAILED) {
-        return nullptr;
-    }
-    return p;
-}
-
-static void
-DeallocateProcessExecutableMemory(void* addr, size_t bytes)
-{
-    mozilla::DebugOnly<int> result = munmap(addr, bytes);
-    MOZ_ASSERT(!result || errno == ENOMEM);
-}
-
-static unsigned
-ProtectionSettingToFlags(ProtectionSetting protection)
-{
-#ifdef MOZ_VALGRIND
-    
-    
-    
-    
-    if (RUNNING_ON_VALGRIND) {
-      switch (protection) {
-        case ProtectionSetting::Protected:  return PROT_NONE;
-        case ProtectionSetting::Writable:   return PROT_READ | PROT_WRITE | PROT_EXEC;
-        case ProtectionSetting::Executable: return PROT_READ | PROT_EXEC;
-      }
-      MOZ_CRASH();
-    }
-    
-    
 #endif
+
+static void* ReserveProcessExecutableMemory(size_t bytes) {
+#ifdef NEED_JIT_UNWIND_HANDLING
+  size_t pageSize = gc::SystemPageSize();
+  if (sJitExceptionHandler) {
+    bytes += pageSize;
+  }
+#endif
+
+  void* p = nullptr;
+  for (size_t i = 0; i < 10; i++) {
+    void* randomAddr = ComputeRandomAllocationAddress();
+    p = VirtualAlloc(randomAddr, bytes, MEM_RESERVE, PAGE_NOACCESS);
+    if (p) {
+      break;
+    }
+  }
+
+  if (!p) {
+    
+    p = VirtualAlloc(nullptr, bytes, MEM_RESERVE, PAGE_NOACCESS);
+    if (!p) {
+      return nullptr;
+    }
+  }
+
+#ifdef NEED_JIT_UNWIND_HANDLING
+  if (sJitExceptionHandler) {
+    if (!RegisterExecutableMemory(p, bytes, pageSize)) {
+      VirtualFree(p, 0, MEM_RELEASE);
+      return nullptr;
+    }
+
+    p = (uint8_t*)p + pageSize;
+    bytes -= pageSize;
+  }
+
+  RegisterJitCodeRegion((uint8_t*)p, bytes);
+#endif
+
+  return p;
+}
+
+static void DeallocateProcessExecutableMemory(void* addr, size_t bytes) {
+#ifdef NEED_JIT_UNWIND_HANDLING
+  UnregisterJitCodeRegion((uint8_t*)addr, bytes);
+
+  if (sJitExceptionHandler) {
+    size_t pageSize = gc::SystemPageSize();
+    addr = (uint8_t*)addr - pageSize;
+    UnregisterExecutableMemory(addr, bytes, pageSize);
+  }
+#endif
+
+  VirtualFree(addr, 0, MEM_RELEASE);
+}
+
+static DWORD ProtectionSettingToFlags(ProtectionSetting protection) {
+  switch (protection) {
+    case ProtectionSetting::Protected:
+      return PAGE_NOACCESS;
+    case ProtectionSetting::Writable:
+      return PAGE_READWRITE;
+    case ProtectionSetting::Executable:
+      return PAGE_EXECUTE_READ;
+  }
+  MOZ_CRASH();
+}
+
+static MOZ_MUST_USE bool CommitPages(void* addr, size_t bytes,
+                                     ProtectionSetting protection) {
+  void* p = VirtualAlloc(addr, bytes, MEM_COMMIT,
+                         ProtectionSettingToFlags(protection));
+  if (!p) {
+    return false;
+  }
+  MOZ_RELEASE_ASSERT(p == addr);
+  return true;
+}
+
+static void DecommitPages(void* addr, size_t bytes) {
+  if (!VirtualFree(addr, bytes, MEM_DECOMMIT)) {
+    MOZ_CRASH("DecommitPages failed");
+  }
+}
+#else  
+static void* ComputeRandomAllocationAddress() {
+  uint64_t rand = js::GenerateRandomSeed();
+
+#ifdef HAVE_64BIT_BUILD
+  
+  
+  
+  rand >>= 18;
+#else
+  
+  
+  
+  
+  rand >>= 34;
+  rand += 512 * 1024 * 1024;
+#endif
+
+  
+  uintptr_t mask = ~uintptr_t(gc::SystemPageSize() - 1);
+  return (void*)uintptr_t(rand & mask);
+}
+
+static void* ReserveProcessExecutableMemory(size_t bytes) {
+  
+  
+  void* randomAddr = ComputeRandomAllocationAddress();
+  void* p = MozTaggedAnonymousMmap(randomAddr, bytes, PROT_NONE,
+                                   MAP_PRIVATE | MAP_ANON, -1, 0,
+                                   "js-executable-memory");
+  if (p == MAP_FAILED) {
+    return nullptr;
+  }
+  return p;
+}
+
+static void DeallocateProcessExecutableMemory(void* addr, size_t bytes) {
+  mozilla::DebugOnly<int> result = munmap(addr, bytes);
+  MOZ_ASSERT(!result || errno == ENOMEM);
+}
+
+static unsigned ProtectionSettingToFlags(ProtectionSetting protection) {
+#ifdef MOZ_VALGRIND
+  
+  
+  
+  
+  if (RUNNING_ON_VALGRIND) {
     switch (protection) {
-      case ProtectionSetting::Protected:  return PROT_NONE;
-      case ProtectionSetting::Writable:   return PROT_READ | PROT_WRITE;
-      case ProtectionSetting::Executable: return PROT_READ | PROT_EXEC;
+      case ProtectionSetting::Protected:
+        return PROT_NONE;
+      case ProtectionSetting::Writable:
+        return PROT_READ | PROT_WRITE | PROT_EXEC;
+      case ProtectionSetting::Executable:
+        return PROT_READ | PROT_EXEC;
     }
     MOZ_CRASH();
+  }
+  
+  
+#endif
+  switch (protection) {
+    case ProtectionSetting::Protected:
+      return PROT_NONE;
+    case ProtectionSetting::Writable:
+      return PROT_READ | PROT_WRITE;
+    case ProtectionSetting::Executable:
+      return PROT_READ | PROT_EXEC;
+  }
+  MOZ_CRASH();
 }
 
-static MOZ_MUST_USE bool
-CommitPages(void* addr, size_t bytes, ProtectionSetting protection)
-{
-    void* p = MozTaggedAnonymousMmap(addr, bytes, ProtectionSettingToFlags(protection),
-                                     MAP_FIXED | MAP_PRIVATE | MAP_ANON,
-                                     -1, 0, "js-executable-memory");
-    if (p == MAP_FAILED) {
-        return false;
-    }
-    MOZ_RELEASE_ASSERT(p == addr);
-    return true;
+static MOZ_MUST_USE bool CommitPages(void* addr, size_t bytes,
+                                     ProtectionSetting protection) {
+  void* p = MozTaggedAnonymousMmap(
+      addr, bytes, ProtectionSettingToFlags(protection),
+      MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0, "js-executable-memory");
+  if (p == MAP_FAILED) {
+    return false;
+  }
+  MOZ_RELEASE_ASSERT(p == addr);
+  return true;
 }
 
-static void
-DecommitPages(void* addr, size_t bytes)
-{
-    
-    
-    void* p = MozTaggedAnonymousMmap(addr, bytes, PROT_NONE,
-                                     MAP_FIXED | MAP_PRIVATE | MAP_ANON,
-                                     -1, 0, "js-executable-memory");
-    MOZ_RELEASE_ASSERT(addr == p);
+static void DecommitPages(void* addr, size_t bytes) {
+  
+  
+  void* p = MozTaggedAnonymousMmap(addr, bytes, PROT_NONE,
+                                   MAP_FIXED | MAP_PRIVATE | MAP_ANON, -1, 0,
+                                   "js-executable-memory");
+  MOZ_RELEASE_ASSERT(addr == p);
 }
 #endif
 
 template <size_t NumBits>
-class PageBitSet
-{
-    using WordType = uint32_t;
-    static const size_t BitsPerWord = sizeof(WordType) * 8;
+class PageBitSet {
+  using WordType = uint32_t;
+  static const size_t BitsPerWord = sizeof(WordType) * 8;
 
-    static_assert((NumBits % BitsPerWord) == 0,
-                  "NumBits must be a multiple of BitsPerWord");
-    static const size_t NumWords = NumBits / BitsPerWord;
+  static_assert((NumBits % BitsPerWord) == 0,
+                "NumBits must be a multiple of BitsPerWord");
+  static const size_t NumWords = NumBits / BitsPerWord;
 
-    mozilla::Array<WordType, NumWords> words_;
+  mozilla::Array<WordType, NumWords> words_;
 
-    uint32_t indexToWord(uint32_t index) const {
-        MOZ_ASSERT(index < NumBits);
-        return index / BitsPerWord;
-    }
-    WordType indexToBit(uint32_t index) const {
-        MOZ_ASSERT(index < NumBits);
-        return WordType(1) << (index % BitsPerWord);
-    }
+  uint32_t indexToWord(uint32_t index) const {
+    MOZ_ASSERT(index < NumBits);
+    return index / BitsPerWord;
+  }
+  WordType indexToBit(uint32_t index) const {
+    MOZ_ASSERT(index < NumBits);
+    return WordType(1) << (index % BitsPerWord);
+  }
 
-  public:
-    void init() {
-        mozilla::PodArrayZero(words_);
-    }
-    bool contains(size_t index) const {
-        uint32_t word = indexToWord(index);
-        return words_[word] & indexToBit(index);
-    }
-    void insert(size_t index) {
-        MOZ_ASSERT(!contains(index));
-        uint32_t word = indexToWord(index);
-        words_[word] |= indexToBit(index);
-    }
-    void remove(size_t index) {
-        MOZ_ASSERT(contains(index));
-        uint32_t word = indexToWord(index);
-        words_[word] &= ~indexToBit(index);
-    }
+ public:
+  void init() { mozilla::PodArrayZero(words_); }
+  bool contains(size_t index) const {
+    uint32_t word = indexToWord(index);
+    return words_[word] & indexToBit(index);
+  }
+  void insert(size_t index) {
+    MOZ_ASSERT(!contains(index));
+    uint32_t word = indexToWord(index);
+    words_[word] |= indexToBit(index);
+  }
+  void remove(size_t index) {
+    MOZ_ASSERT(contains(index));
+    uint32_t word = indexToWord(index);
+    words_[word] &= ~indexToBit(index);
+  }
 
 #ifdef DEBUG
-    bool empty() const {
-        for (size_t i = 0; i < NumWords; i++) {
-            if (words_[i] != 0) {
-                return false;
-            }
-        }
-        return true;
+  bool empty() const {
+    for (size_t i = 0; i < NumWords; i++) {
+      if (words_[i] != 0) {
+        return false;
+      }
     }
+    return true;
+  }
 #endif
 };
 
@@ -441,281 +419,269 @@ class PageBitSet
 
 
 
-class ProcessExecutableMemory
-{
-    static_assert((MaxCodeBytesPerProcess % ExecutableCodePageSize) == 0,
-                  "MaxCodeBytesPerProcess must be a multiple of ExecutableCodePageSize");
-    static const size_t MaxCodePages = MaxCodeBytesPerProcess / ExecutableCodePageSize;
+class ProcessExecutableMemory {
+  static_assert(
+      (MaxCodeBytesPerProcess % ExecutableCodePageSize) == 0,
+      "MaxCodeBytesPerProcess must be a multiple of ExecutableCodePageSize");
+  static const size_t MaxCodePages =
+      MaxCodeBytesPerProcess / ExecutableCodePageSize;
 
-    
-    
-    
-    uint8_t* base_;
+  
+  
+  
+  uint8_t* base_;
 
-    
-    Mutex lock_;
+  
+  Mutex lock_;
 
-    
-    
-    mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
-                    mozilla::recordreplay::Behavior::DontPreserve> pagesAllocated_;
+  
+  
+  mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      pagesAllocated_;
 
-    
-    size_t cursor_;
+  
+  size_t cursor_;
 
-    mozilla::Maybe<mozilla::non_crypto::XorShift128PlusRNG> rng_;
-    PageBitSet<MaxCodePages> pages_;
+  mozilla::Maybe<mozilla::non_crypto::XorShift128PlusRNG> rng_;
+  PageBitSet<MaxCodePages> pages_;
 
-  public:
-    ProcessExecutableMemory()
+ public:
+  ProcessExecutableMemory()
       : base_(nullptr),
         lock_(mutexid::ProcessExecutableRegion),
         pagesAllocated_(0),
         cursor_(0),
         rng_(),
-        pages_()
-    {}
+        pages_() {}
 
-    MOZ_MUST_USE bool init() {
-        pages_.init();
+  MOZ_MUST_USE bool init() {
+    pages_.init();
 
-        MOZ_RELEASE_ASSERT(!initialized());
-        MOZ_RELEASE_ASSERT(gc::SystemPageSize() <= ExecutableCodePageSize);
+    MOZ_RELEASE_ASSERT(!initialized());
+    MOZ_RELEASE_ASSERT(gc::SystemPageSize() <= ExecutableCodePageSize);
 
-        void* p = ReserveProcessExecutableMemory(MaxCodeBytesPerProcess);
-        if (!p) {
-            return false;
-        }
-
-        base_ = static_cast<uint8_t*>(p);
-
-        mozilla::Array<uint64_t, 2> seed;
-        GenerateXorShift128PlusSeed(seed);
-        rng_.emplace(seed[0], seed[1]);
-        return true;
+    void* p = ReserveProcessExecutableMemory(MaxCodeBytesPerProcess);
+    if (!p) {
+      return false;
     }
 
-    bool initialized() const {
-        return base_ != nullptr;
-    }
+    base_ = static_cast<uint8_t*>(p);
 
-    size_t bytesAllocated() const {
-        MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
-        return pagesAllocated_ * ExecutableCodePageSize;
-    }
+    mozilla::Array<uint64_t, 2> seed;
+    GenerateXorShift128PlusSeed(seed);
+    rng_.emplace(seed[0], seed[1]);
+    return true;
+  }
 
-    void release() {
-        MOZ_ASSERT(initialized());
-        MOZ_ASSERT(pages_.empty());
-        MOZ_ASSERT(pagesAllocated_ == 0);
-        DeallocateProcessExecutableMemory(base_, MaxCodeBytesPerProcess);
-        base_ = nullptr;
-        rng_.reset();
-        MOZ_ASSERT(!initialized());
-    }
+  bool initialized() const { return base_ != nullptr; }
 
-    void assertValidAddress(void* p, size_t bytes) const {
-        MOZ_RELEASE_ASSERT(p >= base_ &&
-                           uintptr_t(p) + bytes <= uintptr_t(base_) + MaxCodeBytesPerProcess);
-    }
+  size_t bytesAllocated() const {
+    MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
+    return pagesAllocated_ * ExecutableCodePageSize;
+  }
 
-    void* allocate(size_t bytes, ProtectionSetting protection, MemCheckKind checkKind);
-    void deallocate(void* addr, size_t bytes, bool decommit);
+  void release() {
+    MOZ_ASSERT(initialized());
+    MOZ_ASSERT(pages_.empty());
+    MOZ_ASSERT(pagesAllocated_ == 0);
+    DeallocateProcessExecutableMemory(base_, MaxCodeBytesPerProcess);
+    base_ = nullptr;
+    rng_.reset();
+    MOZ_ASSERT(!initialized());
+  }
+
+  void assertValidAddress(void* p, size_t bytes) const {
+    MOZ_RELEASE_ASSERT(p >= base_ &&
+                       uintptr_t(p) + bytes <=
+                           uintptr_t(base_) + MaxCodeBytesPerProcess);
+  }
+
+  void* allocate(size_t bytes, ProtectionSetting protection,
+                 MemCheckKind checkKind);
+  void deallocate(void* addr, size_t bytes, bool decommit);
 };
 
-void*
-ProcessExecutableMemory::allocate(size_t bytes, ProtectionSetting protection,
-                                  MemCheckKind checkKind)
-{
-    MOZ_ASSERT(initialized());
-    MOZ_ASSERT(bytes > 0);
-    MOZ_ASSERT((bytes % ExecutableCodePageSize) == 0);
+void* ProcessExecutableMemory::allocate(size_t bytes,
+                                        ProtectionSetting protection,
+                                        MemCheckKind checkKind) {
+  MOZ_ASSERT(initialized());
+  MOZ_ASSERT(bytes > 0);
+  MOZ_ASSERT((bytes % ExecutableCodePageSize) == 0);
 
-    size_t numPages = bytes / ExecutableCodePageSize;
+  size_t numPages = bytes / ExecutableCodePageSize;
 
-    
-    void* p = nullptr;
-    {
-        LockGuard<Mutex> guard(lock_);
-        MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
-
-        
-        if (pagesAllocated_ + numPages >= MaxCodePages) {
-            return nullptr;
-        }
-
-        MOZ_ASSERT(bytes <= MaxCodeBytesPerProcess);
-
-        
-        size_t page = cursor_ + (rng_.ref().next() % 2);
-
-        for (size_t i = 0; i < MaxCodePages; i++) {
-            
-            if (page + numPages > MaxCodePages) {
-                page = 0;
-            }
-
-            bool available = true;
-            for (size_t j = 0; j < numPages; j++) {
-                if (pages_.contains(page + j)) {
-                    available = false;
-                    break;
-                }
-            }
-            if (!available) {
-                page++;
-                continue;
-            }
-
-            
-            for (size_t j = 0; j < numPages; j++) {
-                pages_.insert(page + j);
-            }
-
-            pagesAllocated_ += numPages;
-            MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
-
-            
-            
-            
-            if (numPages <= 2) {
-                cursor_ = page + numPages;
-            }
-
-            p = base_ + page * ExecutableCodePageSize;
-            break;
-        }
-        if (!p) {
-            return nullptr;
-        }
-    }
+  
+  void* p = nullptr;
+  {
+    LockGuard<Mutex> guard(lock_);
+    MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
 
     
-    if (!CommitPages(p, bytes, protection)) {
-        deallocate(p, bytes,  false);
-        return nullptr;
+    if (pagesAllocated_ + numPages >= MaxCodePages) {
+      return nullptr;
     }
 
-    SetMemCheckKind(p, bytes, checkKind);
+    MOZ_ASSERT(bytes <= MaxCodeBytesPerProcess);
 
-    return p;
+    
+    size_t page = cursor_ + (rng_.ref().next() % 2);
+
+    for (size_t i = 0; i < MaxCodePages; i++) {
+      
+      if (page + numPages > MaxCodePages) {
+        page = 0;
+      }
+
+      bool available = true;
+      for (size_t j = 0; j < numPages; j++) {
+        if (pages_.contains(page + j)) {
+          available = false;
+          break;
+        }
+      }
+      if (!available) {
+        page++;
+        continue;
+      }
+
+      
+      for (size_t j = 0; j < numPages; j++) {
+        pages_.insert(page + j);
+      }
+
+      pagesAllocated_ += numPages;
+      MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
+
+      
+      
+      
+      if (numPages <= 2) {
+        cursor_ = page + numPages;
+      }
+
+      p = base_ + page * ExecutableCodePageSize;
+      break;
+    }
+    if (!p) {
+      return nullptr;
+    }
+  }
+
+  
+  if (!CommitPages(p, bytes, protection)) {
+    deallocate(p, bytes,  false);
+    return nullptr;
+  }
+
+  SetMemCheckKind(p, bytes, checkKind);
+
+  return p;
 }
 
-void
-ProcessExecutableMemory::deallocate(void* addr, size_t bytes, bool decommit)
-{
-    MOZ_ASSERT(initialized());
-    MOZ_ASSERT(addr);
-    MOZ_ASSERT((uintptr_t(addr) % gc::SystemPageSize()) == 0);
-    MOZ_ASSERT(bytes > 0);
-    MOZ_ASSERT((bytes % ExecutableCodePageSize) == 0);
+void ProcessExecutableMemory::deallocate(void* addr, size_t bytes,
+                                         bool decommit) {
+  MOZ_ASSERT(initialized());
+  MOZ_ASSERT(addr);
+  MOZ_ASSERT((uintptr_t(addr) % gc::SystemPageSize()) == 0);
+  MOZ_ASSERT(bytes > 0);
+  MOZ_ASSERT((bytes % ExecutableCodePageSize) == 0);
 
-    assertValidAddress(addr, bytes);
+  assertValidAddress(addr, bytes);
 
-    size_t firstPage = (static_cast<uint8_t*>(addr) - base_) / ExecutableCodePageSize;
-    size_t numPages = bytes / ExecutableCodePageSize;
+  size_t firstPage =
+      (static_cast<uint8_t*>(addr) - base_) / ExecutableCodePageSize;
+  size_t numPages = bytes / ExecutableCodePageSize;
 
-    
-    MOZ_MAKE_MEM_NOACCESS(addr, bytes);
-    if (decommit) {
-        DecommitPages(addr, bytes);
-    }
+  
+  MOZ_MAKE_MEM_NOACCESS(addr, bytes);
+  if (decommit) {
+    DecommitPages(addr, bytes);
+  }
 
-    LockGuard<Mutex> guard(lock_);
-    MOZ_ASSERT(numPages <= pagesAllocated_);
-    pagesAllocated_ -= numPages;
+  LockGuard<Mutex> guard(lock_);
+  MOZ_ASSERT(numPages <= pagesAllocated_);
+  pagesAllocated_ -= numPages;
 
-    for (size_t i = 0; i < numPages; i++) {
-        pages_.remove(firstPage + i);
-    }
+  for (size_t i = 0; i < numPages; i++) {
+    pages_.remove(firstPage + i);
+  }
 
-    
-    
-    if (firstPage < cursor_) {
-        cursor_ = firstPage;
-    }
+  
+  
+  if (firstPage < cursor_) {
+    cursor_ = firstPage;
+  }
 }
 
 static ProcessExecutableMemory execMemory;
 
-void*
-js::jit::AllocateExecutableMemory(size_t bytes, ProtectionSetting protection, MemCheckKind checkKind)
-{
-    return execMemory.allocate(bytes, protection, checkKind);
+void* js::jit::AllocateExecutableMemory(size_t bytes,
+                                        ProtectionSetting protection,
+                                        MemCheckKind checkKind) {
+  return execMemory.allocate(bytes, protection, checkKind);
 }
 
-void
-js::jit::DeallocateExecutableMemory(void* addr, size_t bytes)
-{
-    execMemory.deallocate(addr, bytes,  true);
+void js::jit::DeallocateExecutableMemory(void* addr, size_t bytes) {
+  execMemory.deallocate(addr, bytes,  true);
 }
 
-bool
-js::jit::InitProcessExecutableMemory()
-{
+bool js::jit::InitProcessExecutableMemory() {
 #ifdef JS_CODEGEN_ARM64
-    
-    vixl::CPU::SetUp();
+  
+  vixl::CPU::SetUp();
 #endif
-    return execMemory.init();
+  return execMemory.init();
 }
 
-void
-js::jit::ReleaseProcessExecutableMemory()
-{
-    execMemory.release();
+void js::jit::ReleaseProcessExecutableMemory() { execMemory.release(); }
+
+size_t js::jit::LikelyAvailableExecutableMemory() {
+  
+  return MaxCodeBytesPerProcess -
+         AlignBytes(execMemory.bytesAllocated(), 0x100000U);
 }
 
-size_t
-js::jit::LikelyAvailableExecutableMemory()
-{
-    
-    return MaxCodeBytesPerProcess - AlignBytes(execMemory.bytesAllocated(), 0x100000U);
+bool js::jit::CanLikelyAllocateMoreExecutableMemory() {
+  
+  static const size_t BufferSize = 8 * 1024 * 1024;
+
+  MOZ_ASSERT(execMemory.bytesAllocated() <= MaxCodeBytesPerProcess);
+
+  return execMemory.bytesAllocated() + BufferSize <= MaxCodeBytesPerProcess;
 }
 
-bool
-js::jit::CanLikelyAllocateMoreExecutableMemory()
-{
-    
-    static const size_t BufferSize = 8 * 1024 * 1024;
+bool js::jit::ReprotectRegion(void* start, size_t size,
+                              ProtectionSetting protection) {
+  
+  
+  size_t pageSize = gc::SystemPageSize();
+  intptr_t startPtr = reinterpret_cast<intptr_t>(start);
+  intptr_t pageStartPtr = startPtr & ~(pageSize - 1);
+  void* pageStart = reinterpret_cast<void*>(pageStartPtr);
+  size += (startPtr - pageStartPtr);
 
-    MOZ_ASSERT(execMemory.bytesAllocated() <= MaxCodeBytesPerProcess);
+  
+  size += (pageSize - 1);
+  size &= ~(pageSize - 1);
 
-    return execMemory.bytesAllocated() + BufferSize <= MaxCodeBytesPerProcess;
-}
+  MOZ_ASSERT((uintptr_t(pageStart) % pageSize) == 0);
 
-bool
-js::jit::ReprotectRegion(void* start, size_t size, ProtectionSetting protection)
-{
-    
-    
-    size_t pageSize = gc::SystemPageSize();
-    intptr_t startPtr = reinterpret_cast<intptr_t>(start);
-    intptr_t pageStartPtr = startPtr & ~(pageSize - 1);
-    void* pageStart = reinterpret_cast<void*>(pageStartPtr);
-    size += (startPtr - pageStartPtr);
-
-    
-    size += (pageSize - 1);
-    size &= ~(pageSize - 1);
-
-    MOZ_ASSERT((uintptr_t(pageStart) % pageSize) == 0);
-
-    execMemory.assertValidAddress(pageStart, size);
+  execMemory.assertValidAddress(pageStart, size);
 
 #ifdef XP_WIN
-    DWORD oldProtect;
-    DWORD flags = ProtectionSettingToFlags(protection);
-    if (!VirtualProtect(pageStart, size, flags, &oldProtect)) {
-        return false;
-    }
+  DWORD oldProtect;
+  DWORD flags = ProtectionSettingToFlags(protection);
+  if (!VirtualProtect(pageStart, size, flags, &oldProtect)) {
+    return false;
+  }
 #else
-    unsigned flags = ProtectionSettingToFlags(protection);
-    if (mprotect(pageStart, size, flags)) {
-        return false;
-    }
+  unsigned flags = ProtectionSettingToFlags(protection);
+  if (mprotect(pageStart, size, flags)) {
+    return false;
+  }
 #endif
 
-    execMemory.assertValidAddress(pageStart, size);
-    return true;
+  execMemory.assertValidAddress(pageStart, size);
+  return true;
 }

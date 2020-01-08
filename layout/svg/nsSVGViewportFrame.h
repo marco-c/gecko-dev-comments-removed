@@ -16,39 +16,33 @@ class gfxContext;
 
 
 
-class nsSVGViewportFrame
-  : public nsSVGDisplayContainerFrame
-  , public nsISVGSVGFrame
-{
-protected:
+class nsSVGViewportFrame : public nsSVGDisplayContainerFrame,
+                           public nsISVGSVGFrame {
+ protected:
   nsSVGViewportFrame(ComputedStyle* aStyle, nsIFrame::ClassID aID)
-    : nsSVGDisplayContainerFrame(aStyle, aID)
-  {
-  }
-public:
+      : nsSVGDisplayContainerFrame(aStyle, aID) {}
+
+ public:
   NS_DECL_ABSTRACT_FRAME(nsSVGViewportFrame)
 
-  virtual nsresult  AttributeChanged(int32_t         aNameSpaceID,
-                                     nsAtom*        aAttribute,
-                                     int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
   
-  virtual void PaintSVG(gfxContext& aContext,
-                        const gfxMatrix& aTransform,
+  virtual void PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                         imgDrawingParams& aImgParams,
                         const nsIntRect* aDirtyRect = nullptr) override;
   virtual void ReflowSVG() override;
   virtual void NotifySVGChanged(uint32_t aFlags) override;
-  SVGBBox GetBBoxContribution(const Matrix &aToBBoxUserspace,
+  SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
                               uint32_t aFlags) override;
   virtual nsIFrame* GetFrameForPoint(const gfxPoint& aPoint) override;
 
   
-  virtual bool HasChildrenOnlyTransform(Matrix *aTransform) const override;
+  virtual bool HasChildrenOnlyTransform(Matrix* aTransform) const override;
 
   
   virtual void NotifyViewportOrTransformChanged(uint32_t aFlags) override;
 };
 
-#endif 
-
+#endif  

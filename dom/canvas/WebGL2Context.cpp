@@ -17,40 +17,30 @@
 
 namespace mozilla {
 
-WebGL2Context::WebGL2Context()
-    : WebGLContext()
-{
-    MOZ_ASSERT(IsSupported(), "not supposed to create a WebGL2Context"
-                              "context when not supported");
+WebGL2Context::WebGL2Context() : WebGLContext() {
+  MOZ_ASSERT(IsSupported(),
+             "not supposed to create a WebGL2Context"
+             "context when not supported");
 }
 
-WebGL2Context::~WebGL2Context()
-{
+WebGL2Context::~WebGL2Context() {}
 
+UniquePtr<webgl::FormatUsageAuthority> WebGL2Context::CreateFormatUsage(
+    gl::GLContext* gl) const {
+  return webgl::FormatUsageAuthority::CreateForWebGL2(gl);
 }
 
-UniquePtr<webgl::FormatUsageAuthority>
-WebGL2Context::CreateFormatUsage(gl::GLContext* gl) const
-{
-    return webgl::FormatUsageAuthority::CreateForWebGL2(gl);
+ bool WebGL2Context::IsSupported() {
+  return gfxPrefs::WebGL2Enabled();
 }
 
- bool
-WebGL2Context::IsSupported()
-{
-    return gfxPrefs::WebGL2Enabled();
+ WebGL2Context* WebGL2Context::Create() {
+  return new WebGL2Context();
 }
 
- WebGL2Context*
-WebGL2Context::Create()
-{
-    return new WebGL2Context();
-}
-
-JSObject*
-WebGL2Context::WrapObject(JSContext* cx, JS::Handle<JSObject*> givenProto)
-{
-    return dom::WebGL2RenderingContext_Binding::Wrap(cx, this, givenProto);
+JSObject* WebGL2Context::WrapObject(JSContext* cx,
+                                    JS::Handle<JSObject*> givenProto) {
+  return dom::WebGL2RenderingContext_Binding::Wrap(cx, this, givenProto);
 }
 
 
@@ -72,7 +62,7 @@ static const gl::GLFeature kRequiredFeatures[] = {
     gl::GLFeature::gpu_shader4,
     gl::GLFeature::instanced_arrays,
     gl::GLFeature::instanced_non_arrays,
-    gl::GLFeature::map_buffer_range, 
+    gl::GLFeature::map_buffer_range,  
     gl::GLFeature::occlusion_query2,
     gl::GLFeature::packed_depth_stencil,
     gl::GLFeature::query_objects,
@@ -92,95 +82,93 @@ static const gl::GLFeature kRequiredFeatures[] = {
     gl::GLFeature::transform_feedback2,
     gl::GLFeature::uniform_buffer_object,
     gl::GLFeature::uniform_matrix_nonsquare,
-    gl::GLFeature::vertex_array_object
-};
+    gl::GLFeature::vertex_array_object};
 
-bool
-WebGLContext::InitWebGL2(FailureReason* const out_failReason)
-{
-    MOZ_ASSERT(IsWebGL2(), "WebGLContext is not a WebGL 2 context!");
+bool WebGLContext::InitWebGL2(FailureReason* const out_failReason) {
+  MOZ_ASSERT(IsWebGL2(), "WebGLContext is not a WebGL 2 context!");
 
-    std::vector<gl::GLFeature> missingList;
+  std::vector<gl::GLFeature> missingList;
 
-    const auto fnGatherMissing = [&](gl::GLFeature cur) {
-        if (!gl->IsSupported(cur)) {
-            missingList.push_back(cur);
-        }
-    };
-
-    const auto fnGatherMissing2 = [&](gl::GLFeature main, gl::GLFeature alt) {
-        if (!gl->IsSupported(main) && !gl->IsSupported(alt)) {
-            missingList.push_back(main);
-        }
-    };
-
-    
-
-    for (const auto& cur : kRequiredFeatures) {
-        fnGatherMissing(cur);
+  const auto fnGatherMissing = [&](gl::GLFeature cur) {
+    if (!gl->IsSupported(cur)) {
+      missingList.push_back(cur);
     }
+  };
 
-    
-    
-    fnGatherMissing2(gl::GLFeature::occlusion_query_boolean,
-                     gl::GLFeature::occlusion_query);
+  const auto fnGatherMissing2 = [&](gl::GLFeature main, gl::GLFeature alt) {
+    if (!gl->IsSupported(main) && !gl->IsSupported(alt)) {
+      missingList.push_back(main);
+    }
+  };
+
+  
+
+  for (const auto& cur : kRequiredFeatures) {
+    fnGatherMissing(cur);
+  }
+
+  
+  
+  fnGatherMissing2(gl::GLFeature::occlusion_query_boolean,
+                   gl::GLFeature::occlusion_query);
 
 #ifdef XP_MACOSX
-    
-    
-    
-    fnGatherMissing(gl::GLFeature::texture_swizzle);
+  
+  
+  
+  fnGatherMissing(gl::GLFeature::texture_swizzle);
 #endif
 
-    fnGatherMissing2(gl::GLFeature::prim_restart_fixed,
-                     gl::GLFeature::prim_restart);
+  fnGatherMissing2(gl::GLFeature::prim_restart_fixed,
+                   gl::GLFeature::prim_restart);
 
-    
+  
 
-    if (!missingList.empty()) {
-        nsAutoCString exts;
-        for (auto itr = missingList.begin(); itr != missingList.end(); ++itr) {
-            exts.AppendLiteral("\n  ");
-            exts.Append(gl::GLContext::GetFeatureName(*itr));
-        }
-
-        const nsPrintfCString reason("WebGL 2 requires support for the following"
-                                     " features: %s",
-                                     exts.BeginReading());
-        *out_failReason = FailureReason("FEATURE_FAILURE_WEBGL2_OCCL", reason);
-        return false;
+  if (!missingList.empty()) {
+    nsAutoCString exts;
+    for (auto itr = missingList.begin(); itr != missingList.end(); ++itr) {
+      exts.AppendLiteral("\n  ");
+      exts.Append(gl::GLContext::GetFeatureName(*itr));
     }
 
+    const nsPrintfCString reason(
+        "WebGL 2 requires support for the following"
+        " features: %s",
+        exts.BeginReading());
+    *out_failReason = FailureReason("FEATURE_FAILURE_WEBGL2_OCCL", reason);
+    return false;
+  }
+
+  
+  gl->GetUIntegerv(LOCAL_GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS,
+                   &mGLMaxTransformFeedbackSeparateAttribs);
+  gl->GetUIntegerv(LOCAL_GL_MAX_UNIFORM_BUFFER_BINDINGS,
+                   &mGLMaxUniformBufferBindings);
+
+  mIndexedUniformBufferBindings.resize(mGLMaxUniformBufferBindings);
+
+  mDefaultTransformFeedback = new WebGLTransformFeedback(this, 0);
+  mBoundTransformFeedback = mDefaultTransformFeedback;
+
+  gl->fGenTransformFeedbacks(1, &mEmptyTFO);
+
+  
+
+  if (!gl->IsGLES()) {
     
-    gl->GetUIntegerv(LOCAL_GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS,
-                     &mGLMaxTransformFeedbackSeparateAttribs);
-    gl->GetUIntegerv(LOCAL_GL_MAX_UNIFORM_BUFFER_BINDINGS,
-                     &mGLMaxUniformBufferBindings);
-
-    mIndexedUniformBufferBindings.resize(mGLMaxUniformBufferBindings);
-
-    mDefaultTransformFeedback = new WebGLTransformFeedback(this, 0);
-    mBoundTransformFeedback = mDefaultTransformFeedback;
-
-    gl->fGenTransformFeedbacks(1, &mEmptyTFO);
-
     
+    gl->fEnable(LOCAL_GL_FRAMEBUFFER_SRGB_EXT);
+  }
 
-    if (!gl->IsGLES()) {
-        
-        
-        gl->fEnable(LOCAL_GL_FRAMEBUFFER_SRGB_EXT);
-    }
+  if (gl->IsSupported(gl::GLFeature::prim_restart_fixed)) {
+    gl->fEnable(LOCAL_GL_PRIMITIVE_RESTART_FIXED_INDEX);
+  } else {
+    MOZ_ASSERT(gl->IsSupported(gl::GLFeature::prim_restart));
+  }
 
-    if (gl->IsSupported(gl::GLFeature::prim_restart_fixed)) {
-        gl->fEnable(LOCAL_GL_PRIMITIVE_RESTART_FIXED_INDEX);
-    } else {
-        MOZ_ASSERT(gl->IsSupported(gl::GLFeature::prim_restart));
-    }
+  
 
-    
-
-    return true;
+  return true;
 }
 
-} 
+}  

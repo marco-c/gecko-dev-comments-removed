@@ -6,6 +6,7 @@
 
 
 
+
 #ifndef nsAtomicContainerFrame_h___
 #define nsAtomicContainerFrame_h___
 
@@ -17,29 +18,26 @@
 
 
 
-class nsAtomicContainerFrame : public nsContainerFrame
-{
-public:
+class nsAtomicContainerFrame : public nsContainerFrame {
+ public:
   NS_DECL_ABSTRACT_FRAME(nsAtomicContainerFrame)
 
   
   
-  FrameSearchResult PeekOffsetNoAmount(bool aForward, int32_t* aOffset) override
-  {
+  FrameSearchResult PeekOffsetNoAmount(bool aForward,
+                                       int32_t* aOffset) override {
     return nsFrame::PeekOffsetNoAmount(aForward, aOffset);
   }
-  FrameSearchResult
-  PeekOffsetCharacter(bool aForward, int32_t* aOffset,
-                      PeekOffsetCharacterOptions aOptions =
-                        PeekOffsetCharacterOptions()) override
-  {
+  FrameSearchResult PeekOffsetCharacter(
+      bool aForward, int32_t* aOffset,
+      PeekOffsetCharacterOptions aOptions =
+          PeekOffsetCharacterOptions()) override {
     return nsFrame::PeekOffsetCharacter(aForward, aOffset, aOptions);
   }
 
-protected:
+ protected:
   nsAtomicContainerFrame(ComputedStyle* aStyle, ClassID aID)
-    : nsContainerFrame(aStyle, aID)
-  {}
+      : nsContainerFrame(aStyle, aID) {}
 };
 
-#endif 
+#endif  

@@ -1,23 +1,21 @@
 #include "gdb-tests.h"
-#include "jsapi.h" 
+#include "jsapi.h"  
 
-#include "jit/JitOptions.h" 
-#include "js/CallArgs.h" 
-#include "js/CompilationAndEvaluation.h" 
-#include "js/CompileOptions.h" 
-#include "js/RootingAPI.h" 
-#include "js/Value.h" 
+#include "jit/JitOptions.h"               
+#include "js/CallArgs.h"                  
+#include "js/CompilationAndEvaluation.h"  
+#include "js/CompileOptions.h"            
+#include "js/RootingAPI.h"                
+#include "js/Value.h"                     
 
-#include <stdint.h> 
-#include <string.h> 
+#include <stdint.h>  
+#include <string.h>  
 
-static bool
-Something(JSContext* cx, unsigned argc, JS::Value* vp)
-{
-    JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
-    args.rval().setInt32(23);
-    breakpoint();
-    return true;
+static bool Something(JSContext* cx, unsigned argc, JS::Value* vp) {
+  JS::CallArgs args = JS::CallArgsFromVp(argc, vp);
+  args.rval().setInt32(23);
+  breakpoint();
+  return true;
 }
 
 
@@ -30,34 +28,35 @@ static const JSFunctionSpecWithHelp unwind_functions[] = {
 
 
 FRAGMENT(unwind, simple) {
-    using namespace JS;
+  using namespace JS;
 
-    JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
-    if (!JS_DefineFunctionsWithHelp(cx, global, unwind_functions)) {
-        return;
-    }
+  JS::Rooted<JSObject*> global(cx, JS::CurrentGlobalOrNull(cx));
+  if (!JS_DefineFunctionsWithHelp(cx, global, unwind_functions)) {
+    return;
+  }
 
-    
-    uint32_t saveThreshold = js::jit::JitOptions.baselineWarmUpThreshold;
-    js::jit::JitOptions.baselineWarmUpThreshold = 0;
+  
+  uint32_t saveThreshold = js::jit::JitOptions.baselineWarmUpThreshold;
+  js::jit::JitOptions.baselineWarmUpThreshold = 0;
 
-    int line0 = __LINE__;
-    const char* bytes = "\n"
-        "function unwindFunctionInner() {\n"
-        "    return something();\n"
-        "}\n"
-        "\n"
-        "function unwindFunctionOuter() {\n"
-        "    return unwindFunctionInner();\n"
-        "}\n"
-        "\n"
-        "unwindFunctionOuter();\n";
+  int line0 = __LINE__;
+  const char* bytes =
+      "\n"
+      "function unwindFunctionInner() {\n"
+      "    return something();\n"
+      "}\n"
+      "\n"
+      "function unwindFunctionOuter() {\n"
+      "    return unwindFunctionInner();\n"
+      "}\n"
+      "\n"
+      "unwindFunctionOuter();\n";
 
-    JS::CompileOptions opts(cx);
-    opts.setFileAndLine(__FILE__, line0 + 1);
+  JS::CompileOptions opts(cx);
+  opts.setFileAndLine(__FILE__, line0 + 1);
 
-    JS::Rooted<JS::Value> rval(cx);
-    JS::EvaluateUtf8(cx, opts, bytes, strlen(bytes), &rval);
+  JS::Rooted<JS::Value> rval(cx);
+  JS::EvaluateUtf8(cx, opts, bytes, strlen(bytes), &rval);
 
-    js::jit::JitOptions.baselineWarmUpThreshold = saveThreshold;
+  js::jit::JitOptions.baselineWarmUpThreshold = saveThreshold;
 }

@@ -15,8 +15,7 @@ namespace a11y {
 
 typedef class ImageAccessible ImageAccessibleWrap;
 
-} 
-} 
+}  
+}  
 
 #endif
-

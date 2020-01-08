@@ -11,7 +11,9 @@
 
 namespace js {
 
-namespace jit { class CacheIRCompiler; }
+namespace jit {
+class CacheIRCompiler;
+}
 
 
 
@@ -20,55 +22,52 @@ namespace jit { class CacheIRCompiler; }
 
 
 
-class ShapedObject : public JSObject
-{
-  protected:
-    
-    
-    
-    MOZ_ALWAYS_INLINE const GCPtrShape& shapeRef() const {
-        return *reinterpret_cast<const GCPtrShape*>(&(this->shapeOrExpando_));
-    }
-    MOZ_ALWAYS_INLINE GCPtrShape& shapeRef() {
-        return *reinterpret_cast<GCPtrShape*>(&(this->shapeOrExpando_));
-    }
+class ShapedObject : public JSObject {
+ protected:
+  
+  
+  
+  MOZ_ALWAYS_INLINE const GCPtrShape& shapeRef() const {
+    return *reinterpret_cast<const GCPtrShape*>(&(this->shapeOrExpando_));
+  }
+  MOZ_ALWAYS_INLINE GCPtrShape& shapeRef() {
+    return *reinterpret_cast<GCPtrShape*>(&(this->shapeOrExpando_));
+  }
 
-    
-    MOZ_ALWAYS_INLINE GCPtrShape* shapePtr() {
-        return reinterpret_cast<GCPtrShape*>(&(this->shapeOrExpando_));
-    }
+  
+  MOZ_ALWAYS_INLINE GCPtrShape* shapePtr() {
+    return reinterpret_cast<GCPtrShape*>(&(this->shapeOrExpando_));
+  }
 
-  public:
-    
-    
-    
-    
-    void initShape(Shape* shape) { shapeRef().init(shape); }
+ public:
+  
+  
+  
+  
+  void initShape(Shape* shape) { shapeRef().init(shape); }
 
-    void setShape(Shape* shape) { shapeRef() = shape; }
-    Shape* shape() const { return shapeRef(); }
+  void setShape(Shape* shape) { shapeRef() = shape; }
+  Shape* shape() const { return shapeRef(); }
 
-    void traceShape(JSTracer* trc) {
-        TraceEdge(trc, shapePtr(), "shape");
-    }
+  void traceShape(JSTracer* trc) { TraceEdge(trc, shapePtr(), "shape"); }
 
-    static JSObject* fromShapeFieldPointer(uintptr_t p) {
-        return reinterpret_cast<JSObject*>(p - ShapedObject::offsetOfShape());
-    }
+  static JSObject* fromShapeFieldPointer(uintptr_t p) {
+    return reinterpret_cast<JSObject*>(p - ShapedObject::offsetOfShape());
+  }
 
-  private:
-    
-    friend class js::jit::MacroAssembler;
+ private:
+  
+  friend class js::jit::MacroAssembler;
 
-    friend class js::jit::CacheIRCompiler;
+  friend class js::jit::CacheIRCompiler;
 
-    static constexpr size_t offsetOfShape() {
-        static_assert(offsetOfShapeOrExpando() == offsetof(shadow::Object, shape),
-                      "shadow shape must match actual shape");
-        return offsetOfShapeOrExpando();
-    }
+  static constexpr size_t offsetOfShape() {
+    static_assert(offsetOfShapeOrExpando() == offsetof(shadow::Object, shape),
+                  "shadow shape must match actual shape");
+    return offsetOfShapeOrExpando();
+  }
 };
 
-} 
+}  
 
 #endif 

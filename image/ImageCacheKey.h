@@ -29,9 +29,8 @@ namespace image {
 
 
 
-class ImageCacheKey final
-{
-public:
+class ImageCacheKey final {
+ public:
   ImageCacheKey(nsIURI* aURI, const OriginAttributes& aAttrs,
                 nsIDocument* aDocument, nsresult& aRv);
 
@@ -44,7 +43,9 @@ public:
   
   nsIURI* URI() const { return mURI; }
 
-  const OriginAttributes& OriginAttributesRef() const { return mOriginAttributes; }
+  const OriginAttributes& OriginAttributesRef() const {
+    return mOriginAttributes;
+  }
 
   
   bool IsChrome() const { return mIsChrome; }
@@ -53,7 +54,7 @@ public:
   
   void* ControlledDocument() const { return mControlledDocument; }
 
-private:
+ private:
   bool SchemeIs(const char* aScheme);
 
   
@@ -70,7 +71,7 @@ private:
   bool mIsChrome;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -22,7 +22,7 @@
 #include "mozilla/webrender/WebRenderAPI.h"
 
 #ifdef XP_WIN
-#include <windows.h> 
+#include <windows.h>  
 
 #undef GetMessage
 #undef CreateEvent
@@ -45,17 +45,15 @@ namespace layers {
 class ImageContainer;
 class Layer;
 class LayerManager;
-} 
-} 
+}  
+}  
 
 class PluginFrameDidCompositeObserver;
 
-class nsPluginFrame final
-  : public nsFrame
-  , public nsIObjectFrame
-  , public nsIReflowCallback
-{
-public:
+class nsPluginFrame final : public nsFrame,
+                            public nsIObjectFrame,
+                            public nsIReflowCallback {
+ public:
   typedef mozilla::LayerState LayerState;
   typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
   typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
@@ -71,37 +69,36 @@ public:
   NS_DECL_FRAMEARENA_HELPERS(nsPluginFrame)
   NS_DECL_QUERYFRAME
 
-  friend nsIFrame* NS_NewObjectFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle);
+  friend nsIFrame* NS_NewObjectFrame(nsIPresShell* aPresShell,
+                                     ComputedStyle* aStyle);
 
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
-  virtual nscoord GetMinISize(gfxContext *aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext *aRenderingContext) override;
-  virtual void Reflow(nsPresContext* aPresContext,
-                      ReflowOutput& aDesiredSize,
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
+  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
                       nsReflowStatus& aStatus) override;
   virtual void DidReflow(nsPresContext* aPresContext,
                          const ReflowInput* aReflowInput) override;
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
-  virtual nsresult  HandleEvent(nsPresContext* aPresContext,
-                                mozilla::WidgetGUIEvent* aEvent,
-                                nsEventStatus* aEventStatus) override;
+  virtual nsresult HandleEvent(nsPresContext* aPresContext,
+                               mozilla::WidgetGUIEvent* aEvent,
+                               nsEventStatus* aEventStatus) override;
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
-    return nsFrame::IsFrameOfType(aFlags &
-      ~(nsIFrame::eReplaced | nsIFrame::eReplacedSizing));
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
+    return nsFrame::IsFrameOfType(
+        aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedSizing));
   }
 
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
 
   virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
@@ -122,15 +119,15 @@ public:
 
 
 
-  void SetEmptyWidgetConfiguration()
-  {
-    mNextConfigurationBounds = LayoutDeviceIntRect(0,0,0,0);
+  void SetEmptyWidgetConfiguration() {
+    mNextConfigurationBounds = LayoutDeviceIntRect(0, 0, 0, 0);
     mNextConfigurationClipRegion.Clear();
   }
   
 
 
-  void GetWidgetConfiguration(nsTArray<nsIWidget::Configuration>* aConfigurations);
+  void GetWidgetConfiguration(
+      nsTArray<nsIWidget::Configuration>* aConfigurations);
 
   LayoutDeviceIntRect GetWidgetlessClipRect() {
     return RegionFromArray(mNextConfigurationClipRegion).GetBounds();
@@ -146,12 +143,12 @@ public:
 #ifdef ACCESSIBILITY
   virtual mozilla::a11y::AccType AccessibleType() override;
 #ifdef XP_WIN
-  NS_IMETHOD GetPluginPort(HWND *aPort);
+  NS_IMETHOD GetPluginPort(HWND* aPort);
 #endif
 #endif
 
   
-  nsresult PrepForDrawing(nsIWidget *aWidget);
+  nsresult PrepForDrawing(nsIWidget* aWidget);
 
   
   static nsIObjectFrame* GetNextObjectFrame(nsPresContext* aPresContext,
@@ -165,10 +162,10 @@ public:
 
 
 
-  already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
-                                     LayerManager* aManager,
-                                     nsDisplayItem* aItem,
-                                     const ContainerLayerParameters& aContainerParameters);
+  already_AddRefed<Layer> BuildLayer(
+      nsDisplayListBuilder* aBuilder, LayerManager* aManager,
+      nsDisplayItem* aItem,
+      const ContainerLayerParameters& aContainerParameters);
 
   LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
                            LayerManager* aManager);
@@ -232,7 +229,8 @@ public:
                                const StackingContextHelper& aSc,
                                mozilla::layers::WebRenderLayerManager* aManager,
                                nsDisplayListBuilder* aDisplayListBuilder);
-protected:
+
+ protected:
   explicit nsPluginFrame(ComputedStyle* aStyle);
   virtual ~nsPluginFrame();
 
@@ -242,7 +240,7 @@ protected:
                       const ReflowInput& aReflowInput,
                       ReflowOutput& aDesiredSize);
 
-  bool IsFocusable(int32_t *aTabIndex = nullptr,
+  bool IsFocusable(int32_t* aTabIndex = nullptr,
                    bool aWithMouse = false) override;
 
   
@@ -261,14 +259,12 @@ protected:
 
   LayoutDeviceIntPoint GetRemoteTabChromeOffset();
 
-  static void PaintPrintPlugin(nsIFrame* aFrame,
-                               gfxContext* aRenderingContext,
+  static void PaintPrintPlugin(nsIFrame* aFrame, gfxContext* aRenderingContext,
                                const nsRect& aDirtyRect, nsPoint aPt);
-  void PrintPlugin(gfxContext& aRenderingContext,
-                   const nsRect& aDirtyRect);
+  void PrintPlugin(gfxContext& aRenderingContext, const nsRect& aDirtyRect);
   void PaintPlugin(nsDisplayListBuilder* aBuilder,
-                   gfxContext& aRenderingContext,
-                   const nsRect& aDirtyRect, const nsRect& aPluginRect);
+                   gfxContext& aRenderingContext, const nsRect& aDirtyRect,
+                   const nsRect& aPluginRect);
 
   void NotifyPluginReflowObservers();
 
@@ -278,9 +274,10 @@ protected:
 
   nsView* GetViewInternal() const override { return mOuterView; }
   void SetViewInternal(nsView* aView) override { mOuterView = aView; }
-  bool GetBounds(nsDisplayItem* aItem, mozilla::gfx::IntSize& aSize, gfxRect& aRect);
+  bool GetBounds(nsDisplayItem* aItem, mozilla::gfx::IntSize& aSize,
+                 gfxRect& aRect);
 
-private:
+ private:
   
   
   
@@ -291,9 +288,8 @@ private:
   
   void UnregisterPluginForGeometryUpdates();
 
-  static const LayoutDeviceIntRegion
-  RegionFromArray(const nsTArray<LayoutDeviceIntRect>& aRects)
-  {
+  static const LayoutDeviceIntRegion RegionFromArray(
+      const nsTArray<LayoutDeviceIntRect>& aRects) {
     LayoutDeviceIntRegion region;
     for (uint32_t i = 0; i < aRects.Length(); ++i) {
       region.Or(region, aRects[i]);
@@ -302,40 +298,39 @@ private:
   }
 
   class PluginEventNotifier : public mozilla::Runnable {
-  public:
+   public:
     explicit PluginEventNotifier(const nsString& aEventType)
-      : mozilla::Runnable("nsPluginFrame::PluginEventNotifier")
-      , mEventType(aEventType)
-    {
-    }
+        : mozilla::Runnable("nsPluginFrame::PluginEventNotifier"),
+          mEventType(aEventType) {}
 
     NS_IMETHOD Run() override;
-  private:
+
+   private:
     nsString mEventType;
   };
 
-  nsPluginInstanceOwner*          mInstanceOwner; 
-  nsView*                         mOuterView;
-  nsView*                         mInnerView;
-  nsCOMPtr<nsIWidget>             mWidget;
-  nsIntRect                       mWindowlessRect;
+  nsPluginInstanceOwner* mInstanceOwner;  
+  nsView* mOuterView;
+  nsView* mInnerView;
+  nsCOMPtr<nsIWidget> mWidget;
+  nsIntRect mWindowlessRect;
   
 
 
 
-  PluginBackgroundSink*           mBackgroundSink;
+  PluginBackgroundSink* mBackgroundSink;
 
   
 
 
 
 
-  LayoutDeviceIntRect             mNextConfigurationBounds;
+  LayoutDeviceIntRect mNextConfigurationBounds;
   
 
 
 
-  nsTArray<LayoutDeviceIntRect>   mNextConfigurationClipRegion;
+  nsTArray<LayoutDeviceIntRect> mNextConfigurationClipRegion;
 
   bool mReflowCallbackPosted;
 
@@ -348,75 +343,62 @@ private:
   mozilla::UniquePtr<PluginFrameDidCompositeObserver> mDidCompositeObserver;
 };
 
-class nsDisplayPluginGeometry : public nsDisplayItemGenericGeometry
-{
-public:
-  nsDisplayPluginGeometry(nsDisplayItem *aItem, nsDisplayListBuilder* aBuilder)
-    : nsDisplayItemGenericGeometry(aItem, aBuilder)
-  {}
+class nsDisplayPluginGeometry : public nsDisplayItemGenericGeometry {
+ public:
+  nsDisplayPluginGeometry(nsDisplayItem* aItem, nsDisplayListBuilder* aBuilder)
+      : nsDisplayItemGenericGeometry(aItem, aBuilder) {}
 
   
   
-  virtual bool InvalidateForSyncDecodeImages() const override
-  {
-    return true;
-  }
+  virtual bool InvalidateForSyncDecodeImages() const override { return true; }
 };
 
-class nsDisplayPlugin final : public nsDisplayItem
-{
-public:
+class nsDisplayPlugin final : public nsDisplayItem {
+ public:
   nsDisplayPlugin(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
-    : nsDisplayItem(aBuilder, aFrame)
-  {
+      : nsDisplayItem(aBuilder, aFrame) {
     MOZ_COUNT_CTOR(nsDisplayPlugin);
     aBuilder->SetContainsPluginItem();
   }
 #ifdef NS_BUILD_REFCNT_LOGGING
-  virtual ~nsDisplayPlugin() {
-    MOZ_COUNT_DTOR(nsDisplayPlugin);
-  }
+  virtual ~nsDisplayPlugin() { MOZ_COUNT_DTOR(nsDisplayPlugin); }
 #endif
 
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder,
                            bool* aSnap) const override;
   virtual nsRegion GetOpaqueRegion(nsDisplayListBuilder* aBuilder,
                                    bool* aSnap) const override;
-  virtual void Paint(nsDisplayListBuilder* aBuilder,
-                     gfxContext* aCtx) override;
+  virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
   virtual bool ComputeVisibility(nsDisplayListBuilder* aBuilder,
                                  nsRegion* aVisibleRegion) override;
 
   NS_DISPLAY_DECL_NAME("Plugin", TYPE_PLUGIN)
 
-  virtual already_AddRefed<Layer> BuildLayer(nsDisplayListBuilder* aBuilder,
-                                             LayerManager* aManager,
-                                             const ContainerLayerParameters& aContainerParameters) override
-  {
-    return static_cast<nsPluginFrame*>(mFrame)->BuildLayer(aBuilder,
-                                                           aManager,
-                                                           this,
-                                                           aContainerParameters);
+  virtual already_AddRefed<Layer> BuildLayer(
+      nsDisplayListBuilder* aBuilder, LayerManager* aManager,
+      const ContainerLayerParameters& aContainerParameters) override {
+    return static_cast<nsPluginFrame*>(mFrame)->BuildLayer(
+        aBuilder, aManager, this, aContainerParameters);
   }
 
-  virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
-                                   LayerManager* aManager,
-                                   const ContainerLayerParameters& aParameters) override
-  {
+  virtual LayerState GetLayerState(
+      nsDisplayListBuilder* aBuilder, LayerManager* aManager,
+      const ContainerLayerParameters& aParameters) override {
     return static_cast<nsPluginFrame*>(mFrame)->GetLayerState(aBuilder,
                                                               aManager);
   }
 
-  virtual nsDisplayItemGeometry* AllocateGeometry(nsDisplayListBuilder* aBuilder) override
-  {
+  virtual nsDisplayItemGeometry* AllocateGeometry(
+      nsDisplayListBuilder* aBuilder) override {
     return new nsDisplayPluginGeometry(this, aBuilder);
   }
 
-  virtual bool CreateWebRenderCommands(mozilla::wr::DisplayListBuilder& aBuilder,
-                                       mozilla::wr::IpcResourceUpdateQueue& aResources,
-                                       const StackingContextHelper& aSc,
-                                       mozilla::layers::WebRenderLayerManager* aManager,
-                                       nsDisplayListBuilder* aDisplayListBuilder) override;
+  virtual bool CreateWebRenderCommands(
+      mozilla::wr::DisplayListBuilder& aBuilder,
+      mozilla::wr::IpcResourceUpdateQueue& aResources,
+      const StackingContextHelper& aSc,
+      mozilla::layers::WebRenderLayerManager* aManager,
+      nsDisplayListBuilder* aDisplayListBuilder) override;
 };
 
 #endif 

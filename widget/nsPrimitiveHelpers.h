@@ -13,44 +13,42 @@
 
 class nsISupports;
 
+class nsPrimitiveHelpers {
+ public:
+  
+  
+  
+  static void CreatePrimitiveForData(const nsACString& aFlavor,
+                                     const void* aDataBuff, uint32_t aDataLen,
+                                     nsISupports** aPrimitive);
 
-class nsPrimitiveHelpers
-{
-public:
+  
+  
+  static void CreatePrimitiveForCFHTML(const void* aDataBuff,
+                                       uint32_t* aDataLen,
+                                       nsISupports** aPrimitive);
 
-    
-    
-    
-  static void CreatePrimitiveForData ( const nsACString& aFlavor, const void* aDataBuff,
-                                         uint32_t aDataLen, nsISupports** aPrimitive ) ;
+  
+  
+  
+  static void CreateDataFromPrimitive(const nsACString& aFlavor,
+                                      nsISupports* aPrimitive, void** aDataBuff,
+                                      uint32_t* aDataLen);
 
-    
-  static void CreatePrimitiveForCFHTML ( const void* aDataBuff,
-                                         uint32_t* aDataLen, nsISupports** aPrimitive ) ;
+};  
 
-    
-    
-    
-  static void CreateDataFromPrimitive(const nsACString& aFlavor, nsISupports* aPrimitive,
-                                      void** aDataBuff, uint32_t* aDataLen);
+class nsLinebreakHelpers {
+ public:
+  
+  
+  
+  
+  
+  
+  static nsresult ConvertPlatformToDOMLinebreaks(const nsACString& inFlavor,
+                                                 void** ioData,
+                                                 int32_t* ioLengthInBytes);
 
-}; 
+};  
 
-
-
-class nsLinebreakHelpers
-{
-public:
-
-    
-    
-    
-    
-    
-    
-  static nsresult ConvertPlatformToDOMLinebreaks ( const nsACString& inFlavor, void** ioData, int32_t* ioLengthInBytes ) ;
-
-}; 
-
-
-#endif 
+#endif  

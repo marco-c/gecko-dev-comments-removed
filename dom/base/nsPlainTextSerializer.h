@@ -31,45 +31,40 @@ namespace mozilla {
 namespace dom {
 class DocumentType;
 class Element;
-} 
-} 
+}  
+}  
 
-class nsPlainTextSerializer final : public nsIContentSerializer
-{
-public:
+class nsPlainTextSerializer final : public nsIContentSerializer {
+ public:
   nsPlainTextSerializer();
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(nsPlainTextSerializer)
 
   
-  NS_IMETHOD Init(uint32_t flags,
-                  uint32_t aWrapColumn,
-                  const mozilla::Encoding* aEncoding,
-                  bool aIsCopying,
+  NS_IMETHOD Init(uint32_t flags, uint32_t aWrapColumn,
+                  const mozilla::Encoding* aEncoding, bool aIsCopying,
                   bool aIsWholeDocument,
                   bool* aNeedsPreformatScanning) override;
 
   NS_IMETHOD AppendText(nsIContent* aText, int32_t aStartOffset,
                         int32_t aEndOffset, nsAString& aStr) override;
-  NS_IMETHOD AppendCDATASection(nsIContent* aCDATASection,
-                                int32_t aStartOffset, int32_t aEndOffset,
-                                nsAString& aStr) override;
-  NS_IMETHOD AppendProcessingInstruction(mozilla::dom::ProcessingInstruction* aPI,
-                                         int32_t aStartOffset,
-                                         int32_t aEndOffset,
-                                         nsAString& aStr) override
-  {
+  NS_IMETHOD AppendCDATASection(nsIContent* aCDATASection, int32_t aStartOffset,
+                                int32_t aEndOffset, nsAString& aStr) override;
+  NS_IMETHOD AppendProcessingInstruction(
+      mozilla::dom::ProcessingInstruction* aPI, int32_t aStartOffset,
+      int32_t aEndOffset, nsAString& aStr) override {
     return NS_OK;
   }
   NS_IMETHOD AppendComment(mozilla::dom::Comment* aComment,
-                           int32_t aStartOffset,
-                           int32_t aEndOffset, nsAString& aStr) override
-  {
+                           int32_t aStartOffset, int32_t aEndOffset,
+                           nsAString& aStr) override {
     return NS_OK;
   }
   NS_IMETHOD AppendDoctype(mozilla::dom::DocumentType* aDoctype,
-                           nsAString& aStr) override  { return NS_OK; }
+                           nsAString& aStr) override {
+    return NS_OK;
+  }
   NS_IMETHOD AppendElementStart(mozilla::dom::Element* aElement,
                                 mozilla::dom::Element* aOriginalElement,
                                 nsAString& aStr) override;
@@ -77,13 +72,14 @@ public:
                               nsAString& aStr) override;
   NS_IMETHOD Flush(nsAString& aStr) override;
 
-  NS_IMETHOD AppendDocumentStart(nsIDocument *aDocument,
+  NS_IMETHOD AppendDocumentStart(nsIDocument* aDocument,
                                  nsAString& aStr) override;
 
   NS_IMETHOD ScanElementForPreformat(mozilla::dom::Element* aElement) override;
-  NS_IMETHOD ForgetElementForPreformat(mozilla::dom::Element* aElement) override;
+  NS_IMETHOD ForgetElementForPreformat(
+      mozilla::dom::Element* aElement) override;
 
-private:
+ private:
   ~nsPlainTextSerializer();
 
   nsresult GetAttributeValue(nsAtom* aName, nsString& aValueRet);
@@ -91,7 +87,7 @@ private:
   void EndLine(bool softlinebreak, bool aBreakBySpace = false);
   void EnsureVerticalSpace(int32_t noOfRows);
   void FlushLine();
-  void OutputQuotesAndIndent(bool stripTrailingSpaces=false);
+  void OutputQuotesAndIndent(bool stripTrailingSpaces = false);
   void Output(nsString& aString);
   void Write(const nsAString& aString);
   bool IsInPre();
@@ -110,24 +106,17 @@ private:
   void DoAddText(bool aIsWhitespace, const nsAString& aText);
 
   
-  inline bool MayWrap()
-  {
-    return mWrapColumn &&
-      ((mFlags & nsIDocumentEncoder::OutputFormatted) ||
-       (mFlags & nsIDocumentEncoder::OutputWrap));
+  inline bool MayWrap() {
+    return mWrapColumn && ((mFlags & nsIDocumentEncoder::OutputFormatted) ||
+                           (mFlags & nsIDocumentEncoder::OutputWrap));
   }
-  inline bool MayBreakLines()
-  {
+  inline bool MayBreakLines() {
     return !(mFlags & nsIDocumentEncoder::OutputDisallowLineBreaking);
   }
 
-  inline bool DoOutput()
-  {
-    return mHeadLevel == 0;
-  }
+  inline bool DoOutput() { return mHeadLevel == 0; }
 
-  inline bool IsQuotedLine(const nsAString& aLine)
-  {
+  inline bool IsQuotedLine(const nsAString& aLine) {
     return !aLine.IsEmpty() && aLine.First() == char16_t('>');
   }
 
@@ -143,65 +132,65 @@ private:
   bool IsElementPreformatted(mozilla::dom::Element* aElement);
   bool IsElementBlock(mozilla::dom::Element* aElement);
 
-private:
-  nsString         mCurrentLine;
-  uint32_t         mHeadLevel;
-  bool             mAtFirstColumn;
+ private:
+  nsString mCurrentLine;
+  uint32_t mHeadLevel;
+  bool mAtFirstColumn;
 
-  bool             mStructs;            
-
-  
-  
-  
-  bool             mHasWrittenCiteBlockquote;
-
-  int32_t          mIndent;
-  
-  
-  nsString         mInIndentString;
-  int32_t          mCiteQuoteLevel;
-  int32_t          mFlags;
-  int32_t          mFloatingLines; 
+  bool mStructs;  
 
   
   
   
-  uint32_t         mWrapColumn;
+  bool mHasWrittenCiteBlockquote;
 
-  
-  uint32_t         mCurrentLineWidth;
-
+  int32_t mIndent;
   
   
-  int32_t          mSpanLevel;
-
-
-  int32_t          mEmptyLines; 
-                                
-                                
-
-  bool             mInWhitespace;
-  bool             mPreFormattedMail; 
-                                      
-  bool             mStartedOutput; 
+  nsString mInIndentString;
+  int32_t mCiteQuoteLevel;
+  int32_t mFlags;
+  int32_t mFloatingLines;  
 
   
   
   
-  bool             mLineBreakDue;
-
-  bool             mPreformattedBlockBoundary;
+  uint32_t mWrapColumn;
 
   
-  bool             mWithRubyAnnotation;
+  uint32_t mCurrentLineWidth;
 
-  nsString         mURL;
-  int32_t          mHeaderStrategy;    
+  
+  
+  int32_t mSpanLevel;
+
+  int32_t mEmptyLines;  
+                        
+                        
+
+  bool mInWhitespace;
+  bool mPreFormattedMail;  
+                           
+  bool mStartedOutput;     
+
+  
+  
+  
+  
+  bool mLineBreakDue;
+
+  bool mPreformattedBlockBoundary;
+
+  
+  bool mWithRubyAnnotation;
+
+  nsString mURL;
+  int32_t mHeaderStrategy;   
 
 
 
 
-  int32_t          mHeaderCounter[7];  
+  int32_t mHeaderCounter[7]; 
 
 
 
@@ -216,13 +205,13 @@ private:
   AutoTArray<bool, 8> mIsInCiteBlockquote;
 
   
-  nsAString*            mOutputString;
+  nsAString* mOutputString;
 
   
   
   
-  nsAtom**        mTagStack;
-  uint32_t         mTagStackIndex;
+  nsAtom** mTagStack;
+  uint32_t mTagStackIndex;
 
   
   
@@ -230,20 +219,20 @@ private:
   std::stack<bool> mPreformatStack;
 
   
-  uint32_t          mIgnoreAboveIndex;
+  uint32_t mIgnoreAboveIndex;
 
   
-  int32_t         *mOLStack;
-  uint32_t         mOLStackIndex;
+  int32_t* mOLStack;
+  uint32_t mOLStackIndex;
 
-  uint32_t         mULCount;
+  uint32_t mULCount;
 
-  nsString                     mLineBreak;
+  nsString mLineBreak;
   RefPtr<mozilla::intl::LineBreaker> mLineBreaker;
 
   
   
-  const nsString          kSpace;
+  const nsString kSpace;
 
   
   
@@ -255,7 +244,6 @@ private:
   uint32_t mIgnoredChildNodeLevel;
 };
 
-nsresult
-NS_NewPlainTextSerializer(nsIContentSerializer** aSerializer);
+nsresult NS_NewPlainTextSerializer(nsIContentSerializer** aSerializer);
 
 #endif

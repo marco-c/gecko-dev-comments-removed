@@ -16,8 +16,8 @@ class Element;
 class HTMLFieldSetElement;
 class HTMLFormSubmission;
 class HTMLFormElement;
-} 
-} 
+}  
+}  
 
 enum FormControlsTypes {
   NS_FORM_FIELDSET = 1,
@@ -33,8 +33,8 @@ enum FormControlsTypes {
   
   
   
-  NS_FORM_BUTTON_ELEMENT = 0x40, 
-  NS_FORM_INPUT_ELEMENT  = 0x80  
+  NS_FORM_BUTTON_ELEMENT = 0x40,  
+  NS_FORM_INPUT_ELEMENT = 0x80    
 };
 
 enum ButtonElementTypes : uint8_t {
@@ -71,30 +71,29 @@ enum InputElementTypes : uint8_t {
 };
 
 static_assert(static_cast<uint32_t>(eFormControlsWithoutSubTypesMax) <
-              static_cast<uint32_t>(NS_FORM_BUTTON_ELEMENT),
+                  static_cast<uint32_t>(NS_FORM_BUTTON_ELEMENT),
               "Too many FormControlsTypes without sub-types");
 static_assert(static_cast<uint32_t>(eButtonElementTypesMax) <
-              static_cast<uint32_t>(NS_FORM_INPUT_ELEMENT),
+                  static_cast<uint32_t>(NS_FORM_INPUT_ELEMENT),
               "Too many ButtonElementTypes");
-static_assert(static_cast<uint32_t>(eInputElementTypesMax) < 1<<8,
+static_assert(static_cast<uint32_t>(eInputElementTypesMax) < 1 << 8,
               "Too many form control types");
 
-#define NS_IFORMCONTROL_IID   \
-{ 0x4b89980c, 0x4dcd, 0x428f, \
-  { 0xb7, 0xad, 0x43, 0x5b, 0x93, 0x29, 0x79, 0xec } }
-
-
-
-
-
-
-class nsIFormControl : public nsISupports
-{
-public:
-  nsIFormControl(uint8_t aType)
-  : mType(aType)
-  {
+#define NS_IFORMCONTROL_IID                          \
+  {                                                  \
+    0x4b89980c, 0x4dcd, 0x428f, {                    \
+      0xb7, 0xad, 0x43, 0x5b, 0x93, 0x29, 0x79, 0xec \
+    }                                                \
   }
+
+
+
+
+
+
+class nsIFormControl : public nsISupports {
+ public:
+  nsIFormControl(uint8_t aType) : mType(aType) {}
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IFORMCONTROL_IID)
 
@@ -102,13 +101,13 @@ public:
 
 
 
-  virtual mozilla::dom::HTMLFieldSetElement *GetFieldSet() = 0;
+  virtual mozilla::dom::HTMLFieldSetElement* GetFieldSet() = 0;
 
   
 
 
 
-  virtual mozilla::dom::Element *GetFormElement() = 0;
+  virtual mozilla::dom::Element* GetFormElement() = 0;
 
   
 
@@ -219,19 +218,19 @@ public:
 
   inline bool AllowDraggableChildren() const;
 
-  virtual bool IsDisabledForEvents(mozilla::WidgetEvent* aEvent)
-  {
+  virtual bool IsDisabledForEvents(mozilla::WidgetEvent* aEvent) {
     return false;
   }
-protected:
 
+ protected:
   
 
 
 
 
 
-  inline static bool IsSingleLineTextControl(bool aExcludePassword, uint32_t aType);
+  inline static bool IsSingleLineTextControl(bool aExcludePassword,
+                                             uint32_t aType);
 
   
 
@@ -239,91 +238,67 @@ protected:
 
   inline bool IsAutofocusable() const;
 
-  uint8_t                  mType;
+  uint8_t mType;
 };
 
-bool
-nsIFormControl::IsSubmitControl() const
-{
+bool nsIFormControl::IsSubmitControl() const {
   uint32_t type = ControlType();
-  return type == NS_FORM_INPUT_SUBMIT ||
-         type == NS_FORM_INPUT_IMAGE ||
+  return type == NS_FORM_INPUT_SUBMIT || type == NS_FORM_INPUT_IMAGE ||
          type == NS_FORM_BUTTON_SUBMIT;
 }
 
-bool
-nsIFormControl::IsTextControl(bool aExcludePassword) const
-{
+bool nsIFormControl::IsTextControl(bool aExcludePassword) const {
   uint32_t type = ControlType();
   return type == NS_FORM_TEXTAREA ||
          IsSingleLineTextControl(aExcludePassword, type);
 }
 
-bool
-nsIFormControl::IsTextOrNumberControl(bool aExcludePassword) const
-{
-  return IsTextControl(aExcludePassword) || ControlType() == NS_FORM_INPUT_NUMBER;
+bool nsIFormControl::IsTextOrNumberControl(bool aExcludePassword) const {
+  return IsTextControl(aExcludePassword) ||
+         ControlType() == NS_FORM_INPUT_NUMBER;
 }
 
-bool
-nsIFormControl::IsSingleLineTextControl(bool aExcludePassword) const
-{
+bool nsIFormControl::IsSingleLineTextControl(bool aExcludePassword) const {
   return IsSingleLineTextControl(aExcludePassword, ControlType());
 }
 
-bool
-nsIFormControl::IsSingleLineTextOrNumberControl(bool aExcludePassword) const
-{
+bool nsIFormControl::IsSingleLineTextOrNumberControl(
+    bool aExcludePassword) const {
   return IsSingleLineTextControl(aExcludePassword) ||
          ControlType() == NS_FORM_INPUT_NUMBER;
 }
 
 
-bool
-nsIFormControl::IsSingleLineTextControl(bool aExcludePassword, uint32_t aType)
-{
-  return aType == NS_FORM_INPUT_TEXT ||
-         aType == NS_FORM_INPUT_EMAIL ||
-         aType == NS_FORM_INPUT_SEARCH ||
-         aType == NS_FORM_INPUT_TEL ||
+bool nsIFormControl::IsSingleLineTextControl(bool aExcludePassword,
+                                             uint32_t aType) {
+  return aType == NS_FORM_INPUT_TEXT || aType == NS_FORM_INPUT_EMAIL ||
+         aType == NS_FORM_INPUT_SEARCH || aType == NS_FORM_INPUT_TEL ||
          aType == NS_FORM_INPUT_URL ||
          
-         aType == NS_FORM_INPUT_MONTH ||
-         aType == NS_FORM_INPUT_WEEK ||
+         aType == NS_FORM_INPUT_MONTH || aType == NS_FORM_INPUT_WEEK ||
          aType == NS_FORM_INPUT_DATETIME_LOCAL ||
          (!aExcludePassword && aType == NS_FORM_INPUT_PASSWORD);
 }
 
-bool
-nsIFormControl::IsSubmittableControl() const
-{
+bool nsIFormControl::IsSubmittableControl() const {
   
   uint32_t type = ControlType();
-  return type == NS_FORM_OBJECT ||
-         type == NS_FORM_TEXTAREA ||
+  return type == NS_FORM_OBJECT || type == NS_FORM_TEXTAREA ||
          type == NS_FORM_SELECT ||
          
-         type & NS_FORM_BUTTON_ELEMENT ||
-         type & NS_FORM_INPUT_ELEMENT;
+         type & NS_FORM_BUTTON_ELEMENT || type & NS_FORM_INPUT_ELEMENT;
 }
 
-bool
-nsIFormControl::AllowDraggableChildren() const
-{
+bool nsIFormControl::AllowDraggableChildren() const {
   uint32_t type = ControlType();
-  return type == NS_FORM_OBJECT ||
-         type == NS_FORM_FIELDSET ||
+  return type == NS_FORM_OBJECT || type == NS_FORM_FIELDSET ||
          type == NS_FORM_OUTPUT;
 }
 
-bool
-nsIFormControl::IsAutofocusable() const
-{
+bool nsIFormControl::IsAutofocusable() const {
   uint32_t type = ControlType();
-  return type & NS_FORM_INPUT_ELEMENT ||
-         type & NS_FORM_BUTTON_ELEMENT ||
-         type == NS_FORM_TEXTAREA ||
-         type == NS_FORM_SELECT;
+  return type & NS_FORM_INPUT_ELEMENT || type & NS_FORM_BUTTON_ELEMENT ||
+         type == NS_FORM_TEXTAREA || type == NS_FORM_SELECT;
 }
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIFormControl, NS_IFORMCONTROL_IID)

@@ -14,12 +14,11 @@
 namespace mozilla {
 namespace widget {
 class PluginWidgetProxy;
-} 
+}  
 namespace plugins {
 
-class PluginWidgetChild : public PPluginWidgetChild
-{
-public:
+class PluginWidgetChild : public PPluginWidgetChild {
+ public:
   PluginWidgetChild();
   virtual ~PluginWidgetChild();
 
@@ -30,14 +29,13 @@ public:
   }
   void ProxyShutdown();
 
-private:
+ private:
   void KillWidget();
 
   mozilla::widget::PluginWidgetProxy* mWidget;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

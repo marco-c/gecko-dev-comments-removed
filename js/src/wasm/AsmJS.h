@@ -28,10 +28,11 @@ namespace frontend {
 class ParseContext;
 class ParseNode;
 
-template <class ParseHandler, typename CharT> class Parser;
+template <class ParseHandler, typename CharT>
+class Parser;
 class FullParseHandler;
 
-}
+}  
 
 using AsmJSParser = frontend::Parser<frontend::FullParseHandler, char16_t>;
 
@@ -42,54 +43,45 @@ using AsmJSParser = frontend::Parser<frontend::FullParseHandler, char16_t>;
 
 
 
-extern MOZ_MUST_USE bool
-CompileAsmJS(JSContext* cx, AsmJSParser& parser, frontend::ParseNode* stmtList,
-             bool* validated);
+extern MOZ_MUST_USE bool CompileAsmJS(JSContext* cx, AsmJSParser& parser,
+                                      frontend::ParseNode* stmtList,
+                                      bool* validated);
 
 
 
-extern bool
-IsAsmJSModuleNative(JSNative native);
+extern bool IsAsmJSModuleNative(JSNative native);
 
-extern bool
-IsAsmJSModule(JSFunction* fun);
+extern bool IsAsmJSModule(JSFunction* fun);
 
-extern bool
-IsAsmJSFunction(JSFunction* fun);
+extern bool IsAsmJSFunction(JSFunction* fun);
 
-extern bool
-IsAsmJSStrictModeModuleOrFunction(JSFunction* fun);
+extern bool IsAsmJSStrictModeModuleOrFunction(JSFunction* fun);
 
-extern bool
-InstantiateAsmJS(JSContext* cx, unsigned argc, JS::Value* vp);
+extern bool InstantiateAsmJS(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
-extern bool
-IsAsmJSCompilationAvailable(JSContext* cx, unsigned argc, JS::Value* vp);
+extern bool IsAsmJSCompilationAvailable(JSContext* cx, unsigned argc,
+                                        JS::Value* vp);
 
-extern bool
-IsAsmJSModule(JSContext* cx, unsigned argc, JS::Value* vp);
+extern bool IsAsmJSModule(JSContext* cx, unsigned argc, JS::Value* vp);
 
-extern bool
-IsAsmJSModuleLoadedFromCache(JSContext* cx, unsigned argc, Value* vp);
+extern bool IsAsmJSModuleLoadedFromCache(JSContext* cx, unsigned argc,
+                                         Value* vp);
 
-extern bool
-IsAsmJSFunction(JSContext* cx, unsigned argc, JS::Value* vp);
+extern bool IsAsmJSFunction(JSContext* cx, unsigned argc, JS::Value* vp);
 
 
 
-extern JSString*
-AsmJSFunctionToString(JSContext* cx, HandleFunction fun);
+extern JSString* AsmJSFunctionToString(JSContext* cx, HandleFunction fun);
 
-extern JSString*
-AsmJSModuleToString(JSContext* cx, HandleFunction fun, bool isToSource);
-
+extern JSString* AsmJSModuleToString(JSContext* cx, HandleFunction fun,
+                                     bool isToSource);
 
 
-extern bool
-IsValidAsmJSHeapLength(uint32_t length);
 
-} 
+extern bool IsValidAsmJSHeapLength(uint32_t length);
 
-#endif 
+}  
+
+#endif  

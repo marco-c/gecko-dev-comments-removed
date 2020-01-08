@@ -17,9 +17,12 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/NotNull.h"
 
-#define NS_ICANVASRENDERINGCONTEXTINTERNAL_IID \
-{ 0xb84f2fed, 0x9d4b, 0x430b, \
-  { 0xbd, 0xfb, 0x85, 0x57, 0x8a, 0xc2, 0xb4, 0x4b } }
+#define NS_ICANVASRENDERINGCONTEXTINTERNAL_IID       \
+  {                                                  \
+    0xb84f2fed, 0x9d4b, 0x430b, {                    \
+      0xbd, 0xfb, 0x85, 0x57, 0x8a, 0xc2, 0xb4, 0x4b \
+    }                                                \
+  }
 
 class nsDisplayListBuilder;
 
@@ -30,17 +33,15 @@ class CanvasRenderer;
 class Layer;
 class LayerManager;
 class WebRenderCanvasData;
-} 
+}  
 namespace gfx {
 class SourceSurface;
-} 
-} 
+}  
+}  
 
-class nsICanvasRenderingContextInternal :
-  public nsISupports,
-  public nsAPostRefreshObserver
-{
-public:
+class nsICanvasRenderingContextInternal : public nsISupports,
+                                          public nsAPostRefreshObserver {
+ public:
   typedef mozilla::layers::CanvasLayer CanvasLayer;
   typedef mozilla::layers::CanvasRenderer CanvasRenderer;
   typedef mozilla::layers::Layer Layer;
@@ -49,32 +50,28 @@ public:
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ICANVASRENDERINGCONTEXTINTERNAL_IID)
 
-  void SetCanvasElement(mozilla::dom::HTMLCanvasElement* parentCanvas)
-  {
+  void SetCanvasElement(mozilla::dom::HTMLCanvasElement* parentCanvas) {
     RemovePostRefreshObserver();
     mCanvasElement = parentCanvas;
     AddPostRefreshObserverIfNecessary();
   }
 
-  virtual nsIPresShell *GetPresShell() {
+  virtual nsIPresShell* GetPresShell() {
     if (mCanvasElement) {
       return mCanvasElement->OwnerDoc()->GetShell();
     }
     return nullptr;
   }
 
-  void RemovePostRefreshObserver()
-  {
+  void RemovePostRefreshObserver() {
     if (mRefreshDriver) {
       mRefreshDriver->RemovePostRefreshObserver(this);
       mRefreshDriver = nullptr;
     }
   }
 
-  void AddPostRefreshObserverIfNecessary()
-  {
-    if (!GetPresShell() ||
-        !GetPresShell()->GetPresContext() ||
+  void AddPostRefreshObserverIfNecessary() {
+    if (!GetPresShell() || !GetPresShell()->GetPresContext() ||
         !GetPresShell()->GetPresContext()->RefreshDriver()) {
       return;
     }
@@ -82,13 +79,11 @@ public:
     mRefreshDriver->AddPostRefreshObserver(this);
   }
 
-  mozilla::dom::HTMLCanvasElement* GetParentObject() const
-  {
+  mozilla::dom::HTMLCanvasElement* GetParentObject() const {
     return mCanvasElement;
   }
 
-  void SetOffscreenCanvas(mozilla::dom::OffscreenCanvas* aOffscreenCanvas)
-  {
+  void SetOffscreenCanvas(mozilla::dom::OffscreenCanvas* aOffscreenCanvas) {
     mOffscreenCanvas = aOffscreenCanvas;
   }
 
@@ -102,8 +97,9 @@ public:
 
   
   
-  NS_IMETHOD InitializeWithDrawTarget(nsIDocShell *aDocShell,
-                                      mozilla::NotNull<mozilla::gfx::DrawTarget*> aTarget) = 0;
+  NS_IMETHOD InitializeWithDrawTarget(
+      nsIDocShell* aDocShell,
+      mozilla::NotNull<mozilla::gfx::DrawTarget*> aTarget) = 0;
 
   
   virtual mozilla::UniquePtr<uint8_t[]> GetImageBuffer(int32_t* format) = 0;
@@ -114,17 +110,17 @@ public:
   
   
   
-  NS_IMETHOD GetInputStream(const char *mimeType,
-                            const char16_t *encoderOptions,
-                            nsIInputStream **stream) = 0;
+  NS_IMETHOD GetInputStream(const char* mimeType,
+                            const char16_t* encoderOptions,
+                            nsIInputStream** stream) = 0;
 
   
   
   
   
   
-  virtual already_AddRefed<mozilla::gfx::SourceSurface>
-  GetSurfaceSnapshot(gfxAlphaType* out_alphaType = nullptr) = 0;
+  virtual already_AddRefed<mozilla::gfx::SourceSurface> GetSurfaceSnapshot(
+      gfxAlphaType* out_alphaType = nullptr) = 0;
 
   
   
@@ -145,17 +141,21 @@ public:
   
   
   virtual already_AddRefed<Layer> GetCanvasLayer(nsDisplayListBuilder* builder,
-                                                 Layer *oldLayer,
-                                                 LayerManager *manager) = 0;
+                                                 Layer* oldLayer,
+                                                 LayerManager* manager) = 0;
   virtual bool UpdateWebRenderCanvasData(nsDisplayListBuilder* aBuilder,
-                                         WebRenderCanvasData* aCanvasData) { return false; }
+                                         WebRenderCanvasData* aCanvasData) {
+    return false;
+  }
   virtual bool InitializeCanvasRenderer(nsDisplayListBuilder* aBuilder,
-                                        CanvasRenderer* aRenderer) { return true; }
+                                        CanvasRenderer* aRenderer) {
+    return true;
+  }
 
   
   
   
-  virtual bool ShouldForceInactiveLayer(LayerManager *manager) { return false; }
+  virtual bool ShouldForceInactiveLayer(LayerManager* manager) { return false; }
 
   virtual void MarkContextClean() = 0;
 
@@ -167,19 +167,24 @@ public:
   virtual bool IsContextCleanForFrameCapture() = 0;
 
   
-  NS_IMETHOD Redraw(const gfxRect &dirty) = 0;
+  NS_IMETHOD Redraw(const gfxRect& dirty) = 0;
 
   NS_IMETHOD SetContextOptions(JSContext* cx, JS::Handle<JS::Value> options,
-                               mozilla::ErrorResult& aRvForDictionaryInit)
-  {
+                               mozilla::ErrorResult& aRvForDictionaryInit) {
     return NS_OK;
   }
 
   
-  virtual bool GetHitRegionRect(mozilla::dom::Element* element, nsRect& rect) { return false; }
+  
+  virtual bool GetHitRegionRect(mozilla::dom::Element* element, nsRect& rect) {
+    return false;
+  }
 
   
-  virtual nsString GetHitRegion(const mozilla::gfx::Point& point) { return nsString(); }
+  
+  virtual nsString GetHitRegion(const mozilla::gfx::Point& point) {
+    return nsString();
+  }
 
   virtual void OnVisibilityChange() {}
 
@@ -195,7 +200,7 @@ public:
   
   NS_IMETHOD SetIsIPC(bool isIPC) = 0;
 
-protected:
+ protected:
   RefPtr<mozilla::dom::HTMLCanvasElement> mCanvasElement;
   RefPtr<mozilla::dom::OffscreenCanvas> mOffscreenCanvas;
   RefPtr<nsRefreshDriver> mRefreshDriver;

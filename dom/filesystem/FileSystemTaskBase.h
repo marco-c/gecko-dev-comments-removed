@@ -98,48 +98,41 @@ class FileSystemParams;
 
 
 
-class FileSystemTaskChildBase : public PFileSystemRequestChild
-{
-public:
+class FileSystemTaskChildBase : public PFileSystemRequestChild {
+ public:
   NS_INLINE_DECL_REFCOUNTING(FileSystemTaskChildBase)
 
   
 
 
 
-  void
-  Start();
+  void Start();
 
   
 
 
 
-  void
-  SetError(const nsresult& aErrorCode);
+  void SetError(const nsresult& aErrorCode);
 
-  FileSystemBase*
-  GetFileSystem() const;
+  FileSystemBase* GetFileSystem() const;
 
   
 
 
 
 
-  virtual void
-  HandlerCallback() = 0;
+  virtual void HandlerCallback() = 0;
 
-  bool
-  HasError() const { return NS_FAILED(mErrorValue); }
+  bool HasError() const { return NS_FAILED(mErrorValue); }
 
-protected:
+ protected:
   
 
 
   FileSystemTaskChildBase(nsIGlobalObject* aGlobalObject,
                           FileSystemBase* aFileSystem);
 
-  virtual
-  ~FileSystemTaskChildBase();
+  virtual ~FileSystemTaskChildBase();
 
   
 
@@ -147,9 +140,8 @@ protected:
 
 
 
-  virtual FileSystemParams
-  GetRequestParams(const nsString& aSerializedDOMPath,
-                   ErrorResult& aRv) const = 0;
+  virtual FileSystemParams GetRequestParams(const nsString& aSerializedDOMPath,
+                                            ErrorResult& aRv) const = 0;
 
   
 
@@ -157,60 +149,52 @@ protected:
 
 
 
-  virtual void
-  SetSuccessRequestResult(const FileSystemResponseValue& aValue,
-                          ErrorResult& aRv) = 0;
+  virtual void SetSuccessRequestResult(const FileSystemResponseValue& aValue,
+                                       ErrorResult& aRv) = 0;
 
   
-  virtual mozilla::ipc::IPCResult
-  Recv__delete__(const FileSystemResponseValue& value) override;
+  virtual mozilla::ipc::IPCResult Recv__delete__(
+      const FileSystemResponseValue& value) override;
 
   nsresult mErrorValue;
   RefPtr<FileSystemBase> mFileSystem;
   nsCOMPtr<nsIGlobalObject> mGlobalObject;
 
-private:
-
+ private:
   
 
 
 
 
 
-  void
-  SetRequestResult(const FileSystemResponseValue& aValue);
+  void SetRequestResult(const FileSystemResponseValue& aValue);
 };
 
 
 
-class FileSystemTaskParentBase : public Runnable
-{
-public:
+class FileSystemTaskParentBase : public Runnable {
+ public:
   FileSystemTaskParentBase()
-    : Runnable("FileSystemTaskParentBase")
-    , mErrorValue(NS_ERROR_NOT_INITIALIZED)
-  {}
+      : Runnable("FileSystemTaskParentBase"),
+        mErrorValue(NS_ERROR_NOT_INITIALIZED) {}
 
   
 
 
-  void
-  Start();
-
-  
-
-
-
-  void
-  SetError(const nsresult& aErrorCode);
+  void Start();
 
   
 
 
 
+  void SetError(const nsresult& aErrorCode);
 
-  virtual nsresult
-  IOWork() = 0;
+  
+
+
+
+
+  virtual nsresult IOWork() = 0;
 
   
 
@@ -218,37 +202,33 @@ public:
 
 
 
-  virtual FileSystemResponseValue
-  GetSuccessRequestResult(ErrorResult& aRv) const = 0;
+  virtual FileSystemResponseValue GetSuccessRequestResult(
+      ErrorResult& aRv) const = 0;
 
   
 
 
 
 
-  void
-  HandleResult();
+  void HandleResult();
 
-  bool
-  HasError() const { return NS_FAILED(mErrorValue); }
+  bool HasError() const { return NS_FAILED(mErrorValue); }
 
   NS_IMETHOD
   Run() override;
 
-  virtual nsresult
-  GetTargetPath(nsAString& aPath) const = 0;
+  virtual nsresult GetTargetPath(nsAString& aPath) const = 0;
 
-private:
+ private:
   
 
 
 
 
 
-  FileSystemResponseValue
-  GetRequestResult() const;
+  FileSystemResponseValue GetRequestResult() const;
 
-protected:
+ protected:
   
 
 
@@ -257,8 +237,7 @@ protected:
                            const FileSystemParams& aParam,
                            FileSystemRequestParent* aParent);
 
-  virtual
-  ~FileSystemTaskParentBase();
+  virtual ~FileSystemTaskParentBase();
 
   nsresult mErrorValue;
   RefPtr<FileSystemBase> mFileSystem;
@@ -266,7 +245,7 @@ protected:
   nsCOMPtr<nsIEventTarget> mBackgroundEventTarget;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

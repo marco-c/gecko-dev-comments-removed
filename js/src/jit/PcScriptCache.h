@@ -13,79 +13,75 @@
 
 
 
+
 namespace js {
 namespace jit {
 
-struct PcScriptCacheEntry
-{
-    uint8_t* returnAddress; 
-    jsbytecode* pc;         
-    JSScript* script;       
+struct PcScriptCacheEntry {
+  uint8_t* returnAddress;  
+  jsbytecode* pc;          
+  JSScript* script;        
 };
 
-struct PcScriptCache
-{
-  private:
-    static const uint32_t Length = 73;
+struct PcScriptCache {
+ private:
+  static const uint32_t Length = 73;
 
-    
-    
-    
-    uint64_t gcNumber;
+  
+  
+  
+  uint64_t gcNumber;
 
-    
-    mozilla::Array<PcScriptCacheEntry, Length> entries;
+  
+  mozilla::Array<PcScriptCacheEntry, Length> entries;
 
-  public:
-    explicit PcScriptCache(uint64_t gcNumber) {
-        clear(gcNumber);
+ public:
+  explicit PcScriptCache(uint64_t gcNumber) { clear(gcNumber); }
+
+  void clear(uint64_t gcNumber) {
+    for (uint32_t i = 0; i < Length; i++) {
+      entries[i].returnAddress = nullptr;
+    }
+    this->gcNumber = gcNumber;
+  }
+
+  
+  MOZ_MUST_USE bool get(JSRuntime* rt, uint32_t hash, uint8_t* addr,
+                        JSScript** scriptRes, jsbytecode** pcRes) {
+    
+    if (gcNumber != rt->gc.gcNumber()) {
+      clear(rt->gc.gcNumber());
+      return false;
     }
 
-    void clear(uint64_t gcNumber) {
-        for (uint32_t i = 0; i < Length; i++) {
-            entries[i].returnAddress = nullptr;
-        }
-        this->gcNumber = gcNumber;
+    if (entries[hash].returnAddress != addr) {
+      return false;
     }
 
-    
-    MOZ_MUST_USE bool get(JSRuntime* rt, uint32_t hash, uint8_t* addr,
-                          JSScript** scriptRes, jsbytecode** pcRes)
-    {
-        
-        if (gcNumber != rt->gc.gcNumber()) {
-            clear(rt->gc.gcNumber());
-            return false;
-        }
-
-        if (entries[hash].returnAddress != addr) {
-            return false;
-        }
-
-        *scriptRes = entries[hash].script;
-        if (pcRes) {
-            *pcRes = entries[hash].pc;
-        }
-
-        return true;
+    *scriptRes = entries[hash].script;
+    if (pcRes) {
+      *pcRes = entries[hash].pc;
     }
 
-    void add(uint32_t hash, uint8_t* addr, jsbytecode* pc, JSScript* script) {
-        MOZ_ASSERT(addr);
-        MOZ_ASSERT(pc);
-        MOZ_ASSERT(script);
-        entries[hash].returnAddress = addr;
-        entries[hash].pc = pc;
-        entries[hash].script = script;
-    }
+    return true;
+  }
 
-    static uint32_t Hash(uint8_t* addr) {
-        uint32_t key = (uint32_t)((uintptr_t)addr);
-        return ((key >> 3) * 2654435761u) % Length;
-    }
+  void add(uint32_t hash, uint8_t* addr, jsbytecode* pc, JSScript* script) {
+    MOZ_ASSERT(addr);
+    MOZ_ASSERT(pc);
+    MOZ_ASSERT(script);
+    entries[hash].returnAddress = addr;
+    entries[hash].pc = pc;
+    entries[hash].script = script;
+  }
+
+  static uint32_t Hash(uint8_t* addr) {
+    uint32_t key = (uint32_t)((uintptr_t)addr);
+    return ((key >> 3) * 2654435761u) % Length;
+  }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

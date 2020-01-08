@@ -20,110 +20,100 @@
 
 
 
-class txAExprResult
-{
-public:
-    friend class txResultRecycler;
+class txAExprResult {
+ public:
+  friend class txResultRecycler;
 
-    
-    
-    enum ResultType {
-        NODESET = 0,
-        BOOLEAN,
-        NUMBER,
-        STRING,
-        RESULT_TREE_FRAGMENT
-    };
+  
+  
+  enum ResultType {
+    NODESET = 0,
+    BOOLEAN,
+    NUMBER,
+    STRING,
+    RESULT_TREE_FRAGMENT
+  };
 
-    explicit txAExprResult(txResultRecycler* aRecycler) : mRecycler(aRecycler)
-    {
-    }
-    virtual ~txAExprResult()
-    {
-    }
+  explicit txAExprResult(txResultRecycler* aRecycler) : mRecycler(aRecycler) {}
+  virtual ~txAExprResult() {}
 
-    void AddRef()
-    {
-        ++mRefCnt;
-        NS_LOG_ADDREF(this, mRefCnt, "txAExprResult", sizeof(*this));
-    }
+  void AddRef() {
+    ++mRefCnt;
+    NS_LOG_ADDREF(this, mRefCnt, "txAExprResult", sizeof(*this));
+  }
 
-    void Release(); 
+  void Release();  
 
-    
+  
 
 
 
-    virtual short getResultType()      = 0;
+  virtual short getResultType() = 0;
 
-    
+  
 
 
 
 
-    virtual void stringValue(nsString& aResult) = 0;
+  virtual void stringValue(nsString& aResult) = 0;
 
-    
-
-
-
-    virtual const nsString* stringValuePointer() = 0;
-
-    
+  
 
 
 
-    virtual bool booleanValue()          = 0;
+  virtual const nsString* stringValuePointer() = 0;
 
-    
+  
 
 
 
-    virtual double numberValue()          = 0;
+  virtual bool booleanValue() = 0;
 
-private:
-    nsAutoRefCnt mRefCnt;
-    RefPtr<txResultRecycler> mRecycler;
+  
+
+
+
+  virtual double numberValue() = 0;
+
+ private:
+  nsAutoRefCnt mRefCnt;
+  RefPtr<txResultRecycler> mRecycler;
 };
 
-#define TX_DECL_EXPRRESULT                                        \
-    virtual short getResultType() override;                       \
-    virtual void stringValue(nsString& aString) override;         \
-    virtual const nsString* stringValuePointer() override;        \
-    virtual bool booleanValue() override;                         \
-    virtual double numberValue() override;
+#define TX_DECL_EXPRRESULT                               \
+  virtual short getResultType() override;                \
+  virtual void stringValue(nsString& aString) override;  \
+  virtual const nsString* stringValuePointer() override; \
+  virtual bool booleanValue() override;                  \
+  virtual double numberValue() override;
 
 class BooleanResult : public txAExprResult {
+ public:
+  explicit BooleanResult(bool aValue);
 
-public:
-    explicit BooleanResult(bool aValue);
+  TX_DECL_EXPRRESULT
 
-    TX_DECL_EXPRRESULT
-
-private:
-    bool value;
+ private:
+  bool value;
 };
 
 class NumberResult : public txAExprResult {
+ public:
+  NumberResult(double aValue, txResultRecycler* aRecycler);
 
-public:
-    NumberResult(double aValue, txResultRecycler* aRecycler);
+  TX_DECL_EXPRRESULT
 
-    TX_DECL_EXPRRESULT
-
-    double value;
-
+  double value;
 };
 
-
 class StringResult : public txAExprResult {
-public:
-    explicit StringResult(txResultRecycler* aRecycler);
-    StringResult(const nsAString& aValue, txResultRecycler* aRecycler);
+ public:
+  explicit StringResult(txResultRecycler* aRecycler);
+  StringResult(const nsAString& aValue, txResultRecycler* aRecycler);
 
-    TX_DECL_EXPRRESULT
+  TX_DECL_EXPRRESULT
 
-    nsString mValue;
+  nsString mValue;
 };
 
 #endif

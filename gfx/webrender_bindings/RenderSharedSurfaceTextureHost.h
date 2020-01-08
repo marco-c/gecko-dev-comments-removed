@@ -21,17 +21,16 @@ namespace wr {
 
 
 
-class RenderSharedSurfaceTextureHost final : public RenderTextureHost
-{
-public:
-  explicit RenderSharedSurfaceTextureHost(gfx::SourceSurfaceSharedDataWrapper* aSurface);
+class RenderSharedSurfaceTextureHost final : public RenderTextureHost {
+ public:
+  explicit RenderSharedSurfaceTextureHost(
+      gfx::SourceSurfaceSharedDataWrapper* aSurface);
 
-  wr::WrExternalImage Lock(uint8_t aChannelIndex,
-                           gl::GLContext* aGL,
+  wr::WrExternalImage Lock(uint8_t aChannelIndex, gl::GLContext* aGL,
                            wr::ImageRendering aRendering) override;
   void Unlock() override;
 
-private:
+ private:
   ~RenderSharedSurfaceTextureHost() override;
 
   RefPtr<gfx::SourceSurfaceSharedDataWrapper> mSurface;
@@ -39,7 +38,7 @@ private:
   bool mLocked;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -14,34 +14,30 @@
 
 
 
-class nsContentPolicy : public nsIContentPolicy
-{
+class nsContentPolicy : public nsIContentPolicy {
  public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSICONTENTPOLICY
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSICONTENTPOLICY
 
-    nsContentPolicy();
+  nsContentPolicy();
 
  protected:
-    virtual ~nsContentPolicy();
+  virtual ~nsContentPolicy();
 
  private:
-    
-    nsCategoryCache<nsIContentPolicy> mPolicies;
+  
+  nsCategoryCache<nsIContentPolicy> mPolicies;
 
-    
-    typedef decltype(&nsIContentPolicy::ShouldProcess) CPMethod;
+  
+  typedef decltype(&nsIContentPolicy::ShouldProcess) CPMethod;
 
-    
-    
-    nsresult CheckPolicy(CPMethod policyMethod,
-                         nsIURI *aURI,
-                         nsILoadInfo *aLoadInfo,
-                         const nsACString &mimeGuess,
-                         int16_t *decision);
+  
+  
+  nsresult CheckPolicy(CPMethod policyMethod, nsIURI *aURI,
+                       nsILoadInfo *aLoadInfo, const nsACString &mimeGuess,
+                       int16_t *decision);
 };
 
-nsresult
-NS_NewContentPolicy(nsIContentPolicy **aResult);
+nsresult NS_NewContentPolicy(nsIContentPolicy **aResult);
 
 #endif 

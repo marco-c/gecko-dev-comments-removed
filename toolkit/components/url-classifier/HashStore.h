@@ -24,11 +24,8 @@ namespace safebrowsing {
 
 
 class TableUpdate {
-public:
-  TableUpdate(const nsACString& aTable)
-    : mTable(aTable)
-  {
-  }
+ public:
+  TableUpdate(const nsACString& aTable) : mTable(aTable) {}
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TableUpdate);
 
@@ -38,19 +35,20 @@ public:
   
   const nsCString& TableName() const { return mTable; }
 
-  template<typename T>
+  template <typename T>
   static T* Cast(TableUpdate* aThat) {
     return (T::TAG == aThat->Tag() ? reinterpret_cast<T*>(aThat) : nullptr);
   }
-  template<typename T>
+  template <typename T>
   static const T* Cast(const TableUpdate* aThat) {
-    return (T::TAG == aThat->Tag() ? reinterpret_cast<const T*>(aThat) : nullptr);
+    return (T::TAG == aThat->Tag() ? reinterpret_cast<const T*>(aThat)
+                                   : nullptr);
   }
 
-protected:
+ protected:
   virtual ~TableUpdate() {}
 
-private:
+ private:
   virtual int Tag() const = 0;
 
   const nsCString mTable;
@@ -63,20 +61,15 @@ typedef nsTArray<RefPtr<const TableUpdate>> ConstTableUpdateArray;
 
 
 class TableUpdateV2 : public TableUpdate {
-public:
-  explicit TableUpdateV2(const nsACString& aTable)
-    : TableUpdate(aTable) {}
+ public:
+  explicit TableUpdateV2(const nsACString& aTable) : TableUpdate(aTable) {}
 
   bool Empty() const override {
-    return mAddChunks.Length() == 0 &&
-      mSubChunks.Length() == 0 &&
-      mAddExpirations.Length() == 0 &&
-      mSubExpirations.Length() == 0 &&
-      mAddPrefixes.Length() == 0 &&
-      mSubPrefixes.Length() == 0 &&
-      mAddCompletes.Length() == 0 &&
-      mSubCompletes.Length() == 0 &&
-      mMissPrefixes.Length() == 0;
+    return mAddChunks.Length() == 0 && mSubChunks.Length() == 0 &&
+           mAddExpirations.Length() == 0 && mSubExpirations.Length() == 0 &&
+           mAddPrefixes.Length() == 0 && mSubPrefixes.Length() == 0 &&
+           mAddCompletes.Length() == 0 && mSubCompletes.Length() == 0 &&
+           mMissPrefixes.Length() == 0;
   }
 
   
@@ -94,8 +87,7 @@ public:
     return mSubExpirations.Set(aChunk);
   };
   MOZ_MUST_USE nsresult NewAddPrefix(uint32_t aAddChunk, const Prefix& aPrefix);
-  MOZ_MUST_USE nsresult NewSubPrefix(uint32_t aAddChunk,
-                                     const Prefix& aPrefix,
+  MOZ_MUST_USE nsresult NewSubPrefix(uint32_t aAddChunk, const Prefix& aPrefix,
                                      uint32_t aSubChunk);
   MOZ_MUST_USE nsresult NewAddComplete(uint32_t aChunk,
                                        const Completion& aCompletion);
@@ -124,8 +116,7 @@ public:
   
   static const int TAG = 2;
 
-private:
-
+ private:
   
   ChunkSet mAddChunks;
   ChunkSet mSubChunks;
@@ -133,8 +124,8 @@ private:
   ChunkSet mSubExpirations;
 
   
-  AddPrefixArray  mAddPrefixes;
-  SubPrefixArray  mSubPrefixes;
+  AddPrefixArray mAddPrefixes;
+  SubPrefixArray mSubPrefixes;
 
   
   MissPrefixArray mMissPrefixes;
@@ -150,29 +141,28 @@ private:
 
 
 class TableUpdateV4 : public TableUpdate {
-public:
+ public:
   typedef nsTArray<int32_t> RemovalIndiceArray;
 
-public:
+ public:
   explicit TableUpdateV4(const nsACString& aTable)
-    : TableUpdate(aTable)
-    , mFullUpdate(false)
-  {
-  }
+      : TableUpdate(aTable), mFullUpdate(false) {}
 
-  bool Empty() const override
-  {
-    return mPrefixesMap.IsEmpty() &&
-           mRemovalIndiceArray.IsEmpty() &&
+  bool Empty() const override {
+    return mPrefixesMap.IsEmpty() && mRemovalIndiceArray.IsEmpty() &&
            mFullHashResponseMap.IsEmpty();
   }
 
   bool IsFullUpdate() const { return mFullUpdate; }
   const PrefixStringMap& Prefixes() const { return mPrefixesMap; }
-  const RemovalIndiceArray& RemovalIndices() const { return mRemovalIndiceArray; }
+  const RemovalIndiceArray& RemovalIndices() const {
+    return mRemovalIndiceArray;
+  }
   const nsACString& ClientState() const { return mClientState; }
   const nsACString& Checksum() const { return mChecksum; }
-  const FullHashResponseMap& FullHashResponse() const { return mFullHashResponseMap; }
+  const FullHashResponseMap& FullHashResponse() const {
+    return mFullHashResponseMap;
+  }
 
   
   static const int TAG = 4;
@@ -186,7 +176,7 @@ public:
   nsresult NewFullHashResponse(const Prefix& aPrefix,
                                const CachedFullHashResponse& aResponse);
 
-private:
+ private:
   virtual int Tag() const override { return TAG; }
 
   bool mFullUpdate;
@@ -201,9 +191,8 @@ private:
 
 
 class HashStore {
-public:
-  HashStore(const nsACString& aTableName,
-            const nsACString& aProvider,
+ public:
+  HashStore(const nsACString& aTableName, const nsACString& aProvider,
             nsIFile* aRootStoreFile);
   ~HashStore();
 
@@ -247,7 +236,7 @@ public:
   
   void ClearCompletes();
 
-private:
+ private:
   nsresult Reset();
 
   nsresult ReadHeader();
@@ -274,8 +263,8 @@ private:
   bool AlreadyReadChunkNumbers() const;
   bool AlreadyReadCompletions() const;
 
- 
- 
+  
+  
   struct Header {
     uint32_t magic;
     uint32_t version;
@@ -320,7 +309,7 @@ private:
   friend class PerProviderDirectoryTestUtils;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

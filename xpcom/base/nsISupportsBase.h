@@ -24,21 +24,21 @@
 
 
 
-
-#define NS_ISUPPORTS_IID                                                      \
-  { 0x00000000, 0x0000, 0x0000,                                               \
-    {0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46} }
-
-
-
-
+#define NS_ISUPPORTS_IID                             \
+  {                                                  \
+    0x00000000, 0x0000, 0x0000, {                    \
+      0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 \
+    }                                                \
+  }
 
 
 
-class NS_NO_VTABLE nsISupports
-{
-public:
 
+
+
+
+class NS_NO_VTABLE nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ISUPPORTS_IID)
 
   

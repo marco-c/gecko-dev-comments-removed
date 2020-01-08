@@ -23,10 +23,12 @@ typedef bool (*NativeImpl)(JSContext* cx, const CallArgs& args);
 namespace detail {
 
 
-extern JS_PUBLIC_API bool
-CallMethodIfWrapped(JSContext* cx, IsAcceptableThis test, NativeImpl impl, const CallArgs& args);
+extern JS_PUBLIC_API bool CallMethodIfWrapped(JSContext* cx,
+                                              IsAcceptableThis test,
+                                              NativeImpl impl,
+                                              const CallArgs& args);
 
-} 
+}  
 
 
 
@@ -93,29 +95,29 @@ CallMethodIfWrapped(JSContext* cx, IsAcceptableThis test, NativeImpl impl, const
 
 
 
-template<IsAcceptableThis Test, NativeImpl Impl>
-MOZ_ALWAYS_INLINE bool
-CallNonGenericMethod(JSContext* cx, const CallArgs& args)
-{
-    HandleValue thisv = args.thisv();
-    if (Test(thisv)) {
-        return Impl(cx, args);
-    }
+template <IsAcceptableThis Test, NativeImpl Impl>
+MOZ_ALWAYS_INLINE bool CallNonGenericMethod(JSContext* cx,
+                                            const CallArgs& args) {
+  HandleValue thisv = args.thisv();
+  if (Test(thisv)) {
+    return Impl(cx, args);
+  }
 
-    return detail::CallMethodIfWrapped(cx, Test, Impl, args);
+  return detail::CallMethodIfWrapped(cx, Test, Impl, args);
 }
 
-MOZ_ALWAYS_INLINE bool
-CallNonGenericMethod(JSContext* cx, IsAcceptableThis Test, NativeImpl Impl, const CallArgs& args)
-{
-    HandleValue thisv = args.thisv();
-    if (Test(thisv)) {
-        return Impl(cx, args);
-    }
+MOZ_ALWAYS_INLINE bool CallNonGenericMethod(JSContext* cx,
+                                            IsAcceptableThis Test,
+                                            NativeImpl Impl,
+                                            const CallArgs& args) {
+  HandleValue thisv = args.thisv();
+  if (Test(thisv)) {
+    return Impl(cx, args);
+  }
 
-    return detail::CallMethodIfWrapped(cx, Test, Impl, args);
+  return detail::CallMethodIfWrapped(cx, Test, Impl, args);
 }
 
-} 
+}  
 
 #endif 

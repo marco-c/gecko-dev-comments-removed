@@ -14,12 +14,11 @@ namespace mozilla {
 namespace dom {
 namespace cache {
 
-class Connection final : public mozIStorageConnection
-{
-public:
+class Connection final : public mozIStorageConnection {
+ public:
   explicit Connection(mozIStorageConnection* aBase);
 
-private:
+ private:
   ~Connection();
 
   nsCOMPtr<mozIStorageConnection> mBase;
@@ -30,8 +29,8 @@ private:
   NS_DECL_MOZISTORAGECONNECTION
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

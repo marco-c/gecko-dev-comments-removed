@@ -15,37 +15,31 @@ namespace mozilla {
 namespace interceptor {
 
 template <typename VMPolicy>
-class WindowsDllNopSpacePatcher final : public WindowsDllPatcherBase<VMPolicy>
-{
+class WindowsDllNopSpacePatcher final : public WindowsDllPatcherBase<VMPolicy> {
   typedef typename VMPolicy::MMPolicyT MMPolicyT;
 
   
   mozilla::Vector<void*> mPatchedFns;
 
-public:
+ public:
   template <typename... Args>
   explicit WindowsDllNopSpacePatcher(Args... aArgs)
-    : WindowsDllPatcherBase<VMPolicy>(std::forward<Args>(aArgs)...)
-  {}
+      : WindowsDllPatcherBase<VMPolicy>(std::forward<Args>(aArgs)...) {}
 
-  ~WindowsDllNopSpacePatcher()
-  {
-    Clear();
-  }
+  ~WindowsDllNopSpacePatcher() { Clear(); }
 
   WindowsDllNopSpacePatcher(const WindowsDllNopSpacePatcher&) = delete;
   WindowsDllNopSpacePatcher(WindowsDllNopSpacePatcher&&) = delete;
-  WindowsDllNopSpacePatcher& operator=(const WindowsDllNopSpacePatcher&) = delete;
+  WindowsDllNopSpacePatcher& operator=(const WindowsDllNopSpacePatcher&) =
+      delete;
   WindowsDllNopSpacePatcher& operator=(WindowsDllNopSpacePatcher&&) = delete;
 
-  void Clear()
-  {
+  void Clear() {
     
 
     for (auto&& ptr : mPatchedFns) {
-      WritableTargetFunction<MMPolicyT> fn(this->mVMPolicy,
-                                           reinterpret_cast<uintptr_t>(ptr),
-                                           sizeof(uint16_t));
+      WritableTargetFunction<MMPolicyT> fn(
+          this->mVMPolicy, reinterpret_cast<uintptr_t>(ptr), sizeof(uint16_t));
       if (!fn) {
         continue;
       }
@@ -66,15 +60,10 @@ public:
 
 
 
-  static bool IsCompatible()
-  {
+  static bool IsCompatible() {
     
-    const wchar_t* kIncompatibleDLLs[] = {
-      L"detoured.dll",
-      L"_etoured.dll",
-      L"nvd3d9wrap.dll",
-      L"nvdxgiwrap.dll"
-    };
+    const wchar_t* kIncompatibleDLLs[] = {L"detoured.dll", L"_etoured.dll",
+                                          L"nvd3d9wrap.dll", L"nvdxgiwrap.dll"};
     
     for (unsigned int i = 0; i < mozilla::ArrayLength(kIncompatibleDLLs); ++i) {
       if (GetModuleHandleW(kIncompatibleDLLs[i])) {
@@ -89,21 +78,22 @@ public:
     
     
     HKEY hkey = NULL;
-    if (!RegOpenKeyExW(HKEY_LOCAL_MACHINE,
-          L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows",
-          0, KEY_QUERY_VALUE, &hkey)) {
+    if (!RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Windows", 0,
+            KEY_QUERY_VALUE, &hkey)) {
       nsAutoRegKey key(hkey);
       DWORD numBytes = 0;
       const wchar_t kAppInitDLLs[] = L"AppInit_DLLs";
       
-      LONG status = RegQueryValueExW(hkey, kAppInitDLLs, nullptr,
-                                     nullptr, nullptr, &numBytes);
+      LONG status = RegQueryValueExW(hkey, kAppInitDLLs, nullptr, nullptr,
+                                     nullptr, &numBytes);
       mozilla::UniquePtr<wchar_t[]> data;
       if (!status) {
         
         data = mozilla::MakeUnique<wchar_t[]>((numBytes + 1) / sizeof(wchar_t));
-        status = RegQueryValueExW(hkey, kAppInitDLLs, nullptr,
-                                  nullptr, (LPBYTE)data.get(), &numBytes);
+        status = RegQueryValueExW(hkey, kAppInitDLLs, nullptr, nullptr,
+                                  (LPBYTE)data.get(), &numBytes);
       }
       if (!status) {
         
@@ -113,9 +103,8 @@ public:
         wchar_t* token = wcstok_s(data.get(), kDelimiters, &tokenContext);
         while (token) {
           wchar_t fname[_MAX_FNAME] = {0};
-          if (!_wsplitpath_s(token, nullptr, 0, nullptr, 0,
-                             fname, mozilla::ArrayLength(fname),
-                             nullptr, 0)) {
+          if (!_wsplitpath_s(token, nullptr, 0, nullptr, 0, fname,
+                             mozilla::ArrayLength(fname), nullptr, 0)) {
             
             
             const wchar_t kNvInitName[] = L"nvinit";
@@ -131,8 +120,7 @@ public:
     return true;
   }
 
-  bool AddHook(FARPROC aTargetFn, intptr_t aHookDest, void** aOrigFunc)
-  {
+  bool AddHook(FARPROC aTargetFn, intptr_t aHookDest, void** aOrigFunc) {
     if (!IsCompatible()) {
 #if defined(MOZILLA_INTERNAL_API)
       NS_WARNING("NOP space patching is unavailable for compatibility reasons");
@@ -146,19 +134,18 @@ public:
     }
 
     ReadOnlyTargetFunction<MMPolicyT> readOnlyTargetFn(
-      this->ResolveRedirectedAddress(aTargetFn));
+        this->ResolveRedirectedAddress(aTargetFn));
 
     if (!WriteHook(readOnlyTargetFn, aHookDest, aOrigFunc)) {
       return false;
     }
 
     return mPatchedFns.append(
-      reinterpret_cast<void*>(readOnlyTargetFn.GetBaseAddress()));
+        reinterpret_cast<void*>(readOnlyTargetFn.GetBaseAddress()));
   }
 
   bool WriteHook(const ReadOnlyTargetFunction<MMPolicyT>& aFn,
-                 intptr_t aHookDest, void** aOrigFunc)
-  {
+                 intptr_t aHookDest, void** aOrigFunc) {
     
     
     
@@ -168,7 +155,7 @@ public:
     }
 
     
-    const uint8_t nopOrBp[] = { 0x90, 0xCC };
+    const uint8_t nopOrBp[] = {0x90, 0xCC};
     if (!writableFn.template VerifyValuesAreOneOf<uint8_t, 5>(nopOrBp)) {
       return false;
     }
@@ -183,19 +170,19 @@ public:
     
 
     
-    const uint16_t possibleEncodings[] = { 0xFF8B, 0xFF89 };
+    const uint16_t possibleEncodings[] = {0xFF8B, 0xFF89};
     if (!writableFn.template VerifyValuesAreOneOf<uint16_t, 1>(
             possibleEncodings, 5)) {
       return false;
     }
 
     
-    writableFn.WriteByte(0xe9); 
+    writableFn.WriteByte(0xe9);  
     if (!writableFn) {
       return false;
     }
 
-    writableFn.WriteDisp32(aHookDest); 
+    writableFn.WriteDisp32(aHookDest);  
     if (!writableFn) {
       return false;
     }
@@ -206,13 +193,13 @@ public:
                                          sizeof(uint16_t));
 
     
-    return writableFn.CommitAndWriteShort(0xF9EB); 
+    return writableFn.CommitAndWriteShort(0xF9EB);  
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  
 
-#endif 
+#endif  

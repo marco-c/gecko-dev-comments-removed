@@ -13,12 +13,11 @@ class nsIMemory;
 
 #define NS_MEMORY_CONTRACTID "@mozilla.org/xpcom/memory-service;1"
 #define NS_MEMORY_CID                                \
-{ /* 30a04e40-38e7-11d4-8cf5-0060b0fc14a3 */         \
-    0x30a04e40,                                      \
-    0x38e7,                                          \
-    0x11d4,                                          \
-    {0x8c, 0xf5, 0x00, 0x60, 0xb0, 0xfc, 0x14, 0xa3} \
-}
+  { /* 30a04e40-38e7-11d4-8cf5-0060b0fc14a3 */       \
+    0x30a04e40, 0x38e7, 0x11d4, {                    \
+      0x8c, 0xf5, 0x00, 0x60, 0xb0, 0xfc, 0x14, 0xa3 \
+    }                                                \
+  }
 
 
 
@@ -29,12 +28,10 @@ class nsIMemory;
 
 
 
-
-class nsMemory
-{
-public:
-  static nsresult   HeapMinimize(bool aImmediate);
-  static nsIMemory* GetGlobalMemoryService();       
+class nsMemory {
+ public:
+  static nsresult HeapMinimize(bool aImmediate);
+  static nsIMemory* GetGlobalMemoryService();  
 };
 
 
@@ -64,13 +61,12 @@ public:
 
 
 
-#define NS_FREE_XPCOM_POINTER_ARRAY(size, array, freeFunc)                    \
-    do {                                                                      \
-        int32_t iter_ = int32_t(size);                                        \
-        while (--iter_ >= 0)                                                  \
-            freeFunc((array)[iter_]);                                         \
-        free((array));                                                     \
-    } while(0)
+#define NS_FREE_XPCOM_POINTER_ARRAY(size, array, freeFunc) \
+  do {                                                     \
+    int32_t iter_ = int32_t(size);                         \
+    while (--iter_ >= 0) freeFunc((array)[iter_]);         \
+    free((array));                                         \
+  } while (0)
 
 
 
@@ -84,8 +80,8 @@ public:
 
 
 
-#define NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(size, array)                    \
-    NS_FREE_XPCOM_POINTER_ARRAY((size), (array), free)
+#define NS_FREE_XPCOM_ALLOCATED_POINTER_ARRAY(size, array) \
+  NS_FREE_XPCOM_POINTER_ARRAY((size), (array), free)
 
 
 
@@ -102,18 +98,16 @@ public:
 
 
 
-#define NS_FREE_XPCOM_ISUPPORTS_POINTER_ARRAY(size, array)                    \
-    NS_FREE_XPCOM_POINTER_ARRAY((size), (array), NS_IF_RELEASE)
+#define NS_FREE_XPCOM_ISUPPORTS_POINTER_ARRAY(size, array) \
+  NS_FREE_XPCOM_POINTER_ARRAY((size), (array), NS_IF_RELEASE)
 
 
 
 
-enum nsAssignmentType
-{
-  NS_ASSIGNMENT_COPY,   
-  NS_ASSIGNMENT_DEPEND, 
-  NS_ASSIGNMENT_ADOPT   
+enum nsAssignmentType {
+  NS_ASSIGNMENT_COPY,    
+  NS_ASSIGNMENT_DEPEND,  
+  NS_ASSIGNMENT_ADOPT    
 };
 
-#endif 
-
+#endif  

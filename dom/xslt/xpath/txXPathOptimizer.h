@@ -10,22 +10,21 @@
 
 class Expr;
 
-class txXPathOptimizer
-{
-public:
-    
+class txXPathOptimizer {
+ public:
+  
 
 
 
 
 
-    nsresult optimize(Expr* aInExpr, Expr** aOutExpr);
+  nsresult optimize(Expr* aInExpr, Expr** aOutExpr);
 
-private:
-    
-    nsresult optimizeStep(Expr* aInExpr, Expr** aOutExpr);
-    nsresult optimizePath(Expr* aInExpr, Expr** aOutExpr);
-    nsresult optimizeUnion(Expr* aInExpr, Expr** aOutExpr);
+ private:
+  
+  nsresult optimizeStep(Expr* aInExpr, Expr** aOutExpr);
+  nsresult optimizePath(Expr* aInExpr, Expr** aOutExpr);
+  nsresult optimizeUnion(Expr* aInExpr, Expr** aOutExpr);
 };
 
 #endif

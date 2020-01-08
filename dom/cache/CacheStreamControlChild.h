@@ -15,17 +15,16 @@
 namespace mozilla {
 namespace ipc {
 class AutoIPCStream;
-} 
+}  
 namespace dom {
 namespace cache {
 
 class ReadStream;
 
-class CacheStreamControlChild final : public PCacheStreamControlChild
-                                    , public StreamControl
-                                    , public ActorChild
-{
-public:
+class CacheStreamControlChild final : public PCacheStreamControlChild,
+                                      public StreamControl,
+                                      public ActorChild {
+ public:
   CacheStreamControlChild();
   ~CacheStreamControlChild();
 
@@ -33,23 +32,21 @@ public:
   virtual void StartDestroy() override;
 
   
-  virtual void
-  SerializeControl(CacheReadStream* aReadStreamOut) override;
+  virtual void SerializeControl(CacheReadStream* aReadStreamOut) override;
 
-  virtual void
-  SerializeStream(CacheReadStream* aReadStreamOut, nsIInputStream* aStream,
-                  nsTArray<UniquePtr<mozilla::ipc::AutoIPCStream>>& aStreamCleanupList) override;
+  virtual void SerializeStream(CacheReadStream* aReadStreamOut,
+                               nsIInputStream* aStream,
+                               nsTArray<UniquePtr<mozilla::ipc::AutoIPCStream>>&
+                                   aStreamCleanupList) override;
 
-  virtual void
-  OpenStream(const nsID& aId, InputStreamResolver&& aResolver) override;
+  virtual void OpenStream(const nsID& aId,
+                          InputStreamResolver&& aResolver) override;
 
-private:
-  virtual void
-  NoteClosedAfterForget(const nsID& aId) override;
+ private:
+  virtual void NoteClosedAfterForget(const nsID& aId) override;
 
 #ifdef DEBUG
-  virtual void
-  AssertOwningThread() override;
+  virtual void AssertOwningThread() override;
 #endif
 
   
@@ -63,8 +60,8 @@ private:
   NS_DECL_OWNINGTHREAD
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

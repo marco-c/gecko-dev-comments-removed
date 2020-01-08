@@ -36,101 +36,80 @@ namespace mozilla {
 
 
 
-template<typename T>
+template <typename T>
 struct FunctionTypeTraits;
 
 
-template<typename T>
-struct FunctionTypeTraits<T&> : public FunctionTypeTraits<T>
-{
-};
-template<typename T>
-struct FunctionTypeTraits<T&&> : public FunctionTypeTraits<T>
-{
-};
-template<typename T>
-struct FunctionTypeTraits<T*> : public FunctionTypeTraits<T>
-{
-};
+template <typename T>
+struct FunctionTypeTraits<T&> : public FunctionTypeTraits<T> {};
+template <typename T>
+struct FunctionTypeTraits<T&&> : public FunctionTypeTraits<T> {};
+template <typename T>
+struct FunctionTypeTraits<T*> : public FunctionTypeTraits<T> {};
 
 
-template<typename T>
-struct FunctionTypeTraits : public FunctionTypeTraits<decltype(&T::operator())>
-{
-};
+template <typename T>
+struct FunctionTypeTraits
+    : public FunctionTypeTraits<decltype(&T::operator())> {};
 
 namespace detail {
 
 
 
-template<bool safe, size_t N, typename... As>
+template <bool safe, size_t N, typename... As>
 struct TupleElementSafe;
-template<size_t N, typename... As>
-struct TupleElementSafe<true, N, As...>
-{
+template <size_t N, typename... As>
+struct TupleElementSafe<true, N, As...> {
   using Type = typename std::tuple_element<N, std::tuple<As...>>::type;
 };
-template<size_t N, typename... As>
-struct TupleElementSafe<false, N, As...>
-{
+template <size_t N, typename... As>
+struct TupleElementSafe<false, N, As...> {
   using Type = void;
 };
 
-template<typename R, typename... As>
-struct FunctionTypeTraitsHelper
-{
+template <typename R, typename... As>
+struct FunctionTypeTraitsHelper {
   using ReturnType = R;
   static constexpr size_t arity = sizeof...(As);
-  template<size_t N>
+  template <size_t N>
   using ParameterType =
-    typename TupleElementSafe<(N < sizeof...(As)), N, As...>::Type;
+      typename TupleElementSafe<(N < sizeof...(As)), N, As...>::Type;
 };
 
-} 
+}  
 
 
-template<typename R, typename... As>
-struct FunctionTypeTraits<R(As...)> : detail::FunctionTypeTraitsHelper<R, As...>
-{
-};
+template <typename R, typename... As>
+struct FunctionTypeTraits<R(As...)>
+    : detail::FunctionTypeTraitsHelper<R, As...> {};
 
 
-template<typename C, typename R, typename... As>
+template <typename C, typename R, typename... As>
 struct FunctionTypeTraits<R (C::*)(As...)>
-  : detail::FunctionTypeTraitsHelper<R, As...>
-{
-};
+    : detail::FunctionTypeTraitsHelper<R, As...> {};
 
 
-template<typename C, typename R, typename... As>
+template <typename C, typename R, typename... As>
 struct FunctionTypeTraits<R (C::*)(As...) const>
-  : detail::FunctionTypeTraitsHelper<R, As...>
-{
-};
+    : detail::FunctionTypeTraitsHelper<R, As...> {};
 
 #ifdef NS_HAVE_STDCALL
 
-template<typename R, typename... As>
+template <typename R, typename... As>
 struct FunctionTypeTraits<R NS_STDCALL(As...)>
-  : detail::FunctionTypeTraitsHelper<R, As...>
-{
-};
+    : detail::FunctionTypeTraitsHelper<R, As...> {};
 
 
-template<typename C, typename R, typename... As>
+template <typename C, typename R, typename... As>
 struct FunctionTypeTraits<R (NS_STDCALL C::*)(As...)>
-  : detail::FunctionTypeTraitsHelper<R, As...>
-{
-};
+    : detail::FunctionTypeTraitsHelper<R, As...> {};
 
 
-template<typename C, typename R, typename... As>
+template <typename C, typename R, typename... As>
 struct FunctionTypeTraits<R (NS_STDCALL C::*)(As...) const>
-  : detail::FunctionTypeTraitsHelper<R, As...>
-{
-};
-#endif 
+    : detail::FunctionTypeTraitsHelper<R, As...> {};
+#endif  
 
-} 
+}  
 
-#endif 
+#endif  

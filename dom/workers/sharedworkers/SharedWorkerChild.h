@@ -15,52 +15,39 @@ namespace dom {
 
 class SharedWorker;
 
-class SharedWorkerChild final : public mozilla::dom::PSharedWorkerChild
-{
-public:
+class SharedWorkerChild final : public mozilla::dom::PSharedWorkerChild {
+ public:
   NS_INLINE_DECL_REFCOUNTING(SharedWorkerChild)
 
   SharedWorkerChild();
 
-  void
-  SetParent(SharedWorker* aSharedWorker)
-  {
-    mParent = aSharedWorker;
-  }
+  void SetParent(SharedWorker* aSharedWorker) { mParent = aSharedWorker; }
 
-  void
-  SendClose();
+  void SendClose();
 
-  void
-  SendSuspend();
+  void SendSuspend();
 
-  void
-  SendResume();
+  void SendResume();
 
-  void
-  SendFreeze();
+  void SendFreeze();
 
-  void
-  SendThaw();
+  void SendThaw();
 
-private:
+ private:
   ~SharedWorkerChild();
 
-  mozilla::ipc::IPCResult
-  RecvError(const ErrorValue& aValue) override;
+  mozilla::ipc::IPCResult RecvError(const ErrorValue& aValue) override;
 
-  mozilla::ipc::IPCResult
-  RecvTerminate() override;
+  mozilla::ipc::IPCResult RecvTerminate() override;
 
-  void
-  ActorDestroy(ActorDestroyReason aWhy) override;
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 
   
   SharedWorker* MOZ_NON_OWNING_REF mParent;
   bool mActive;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

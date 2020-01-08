@@ -25,9 +25,8 @@ struct ProfileTimelineMarker;
 
 
 
-class ObservedDocShell : public MarkersStorage
-{
-private:
+class ObservedDocShell : public MarkersStorage {
+ private:
   RefPtr<nsIDocShell> mDocShell;
 
   
@@ -37,16 +36,17 @@ private:
   
   nsTArray<UniquePtr<AbstractTimelineMarker>> mOffTheMainThreadTimelineMarkers;
 
-public:
+ public:
   explicit ObservedDocShell(nsIDocShell* aDocShell);
   nsIDocShell* operator*() const { return mDocShell.get(); }
 
   void AddMarker(UniquePtr<AbstractTimelineMarker>&& aMarker) override;
   void AddOTMTMarker(UniquePtr<AbstractTimelineMarker>&& aMarker) override;
   void ClearMarkers() override;
-  void PopMarkers(JSContext* aCx, nsTArray<dom::ProfileTimelineMarker>& aStore) override;
+  void PopMarkers(JSContext* aCx,
+                  nsTArray<dom::ProfileTimelineMarker>& aStore) override;
 };
 
-} 
+}  
 
 #endif 

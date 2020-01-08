@@ -10,7 +10,7 @@
 namespace sandbox {
 class BrokerServices;
 class TargetServices;
-}
+}  
 
 
 
@@ -45,7 +45,7 @@ sandbox::BrokerServices* GetInitializedBrokerServices();
 
 PermissionsService* GetPermissionsService();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

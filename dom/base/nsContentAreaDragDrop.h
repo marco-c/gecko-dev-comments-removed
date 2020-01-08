@@ -4,10 +4,8 @@
 
 
 
-
 #ifndef nsContentAreaDragDrop_h__
 #define nsContentAreaDragDrop_h__
-
 
 #include "nsCOMPtr.h"
 
@@ -23,16 +21,14 @@ namespace mozilla {
 namespace dom {
 class DataTransfer;
 class Selection;
-} 
-} 
+}  
+}  
 
 
 
 
-class nsContentAreaDragDrop
-{
-public:
-
+class nsContentAreaDragDrop {
+ public:
   
 
 
@@ -54,8 +50,7 @@ public:
 
 
 
-  static nsresult GetDragData(nsPIDOMWindowOuter* aWindow,
-                              nsIContent* aTarget,
+  static nsresult GetDragData(nsPIDOMWindowOuter* aWindow, nsIContent* aTarget,
                               nsIContent* aSelectionTargetNode,
                               bool aIsAltKeyPressed,
                               mozilla::dom::DataTransfer* aDataTransfer,
@@ -68,11 +63,10 @@ public:
 
 
 
-class nsContentAreaDragDropDataProvider : public nsIFlavorDataProvider
-{
+class nsContentAreaDragDropDataProvider : public nsIFlavorDataProvider {
   virtual ~nsContentAreaDragDropDataProvider() {}
 
-public:
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIFLAVORDATAPROVIDER
 
@@ -81,6 +75,4 @@ public:
                          nsIFile* inDestFile, bool isPrivate);
 };
 
-
 #endif 
-

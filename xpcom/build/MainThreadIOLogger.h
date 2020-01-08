@@ -12,8 +12,7 @@ namespace MainThreadIOLogger {
 
 bool Init();
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

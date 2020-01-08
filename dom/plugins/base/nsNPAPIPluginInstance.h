@@ -25,8 +25,8 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/WeakPtr.h"
 
-class nsPluginStreamListenerPeer; 
-class nsNPAPIPluginStreamListener; 
+class nsPluginStreamListenerPeer;   
+class nsNPAPIPluginStreamListener;  
 class nsIPluginInstanceOwner;
 class nsIOutputStream;
 class nsPluginInstanceOwner;
@@ -34,8 +34,8 @@ class nsPluginInstanceOwner;
 namespace mozilla {
 namespace dom {
 class Element;
-} 
-} 
+}  
+}  
 
 #if defined(OS_WIN)
 const NPDrawingModel kDefaultDrawingModel = NPDrawingModelSyncWin;
@@ -43,7 +43,8 @@ const NPDrawingModel kDefaultDrawingModel = NPDrawingModelSyncWin;
 const NPDrawingModel kDefaultDrawingModel = NPDrawingModelSyncX;
 #elif defined(XP_MACOSX)
 #ifndef NP_NO_QUICKDRAW
-const NPDrawingModel kDefaultDrawingModel = NPDrawingModelQuickDraw; 
+const NPDrawingModel kDefaultDrawingModel =
+    NPDrawingModelQuickDraw;  
 #else
 const NPDrawingModel kDefaultDrawingModel = NPDrawingModelCoreGraphics;
 #endif
@@ -63,9 +64,8 @@ enum NSPluginCallReentry {
   NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO
 };
 
-class nsNPAPITimer
-{
-public:
+class nsNPAPITimer {
+ public:
   NPP npp;
   uint32_t id;
   nsCOMPtr<nsITimer> timer;
@@ -74,37 +74,40 @@ public:
   bool needUnschedule;
 };
 
-class nsNPAPIPluginInstance final : public nsIAudioChannelAgentCallback
-                                  , public mozilla::SupportsWeakPtr<nsNPAPIPluginInstance>
-{
-private:
+class nsNPAPIPluginInstance final
+    : public nsIAudioChannelAgentCallback,
+      public mozilla::SupportsWeakPtr<nsNPAPIPluginInstance> {
+ private:
   typedef mozilla::PluginLibrary PluginLibrary;
 
-public:
+ public:
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsNPAPIPluginInstance)
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIAUDIOCHANNELAGENTCALLBACK
 
-  nsresult Initialize(nsNPAPIPlugin *aPlugin, nsPluginInstanceOwner* aOwner, const nsACString& aMIMEType);
+  nsresult Initialize(nsNPAPIPlugin* aPlugin, nsPluginInstanceOwner* aOwner,
+                      const nsACString& aMIMEType);
   nsresult Start();
   nsresult Stop();
   nsresult SetWindow(NPWindow* window);
-  nsresult NewStreamFromPlugin(const char* type, const char* target, nsIOutputStream* *result);
+  nsresult NewStreamFromPlugin(const char* type, const char* target,
+                               nsIOutputStream** result);
   nsresult Print(NPPrint* platformPrint);
   nsresult HandleEvent(void* event, int16_t* result,
-                       NSPluginCallReentry aSafeToReenterGecko = NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
+                       NSPluginCallReentry aSafeToReenterGecko =
+                           NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO);
   nsresult GetValueFromPlugin(NPPVariable variable, void* value);
   nsresult GetDrawingModel(int32_t* aModel);
   nsresult IsRemoteDrawingCoreAnimation(bool* aDrawing);
   nsresult ContentsScaleFactorChanged(double aContentsScaleFactor);
   nsresult CSSZoomFactorChanged(float aCSSZoomFactor);
-  nsresult GetJSObject(JSContext *cx, JSObject** outObject);
+  nsresult GetJSObject(JSContext* cx, JSObject** outObject);
   bool ShouldCache();
   nsresult IsWindowless(bool* isWindowless);
   nsresult AsyncSetWindow(NPWindow* window);
-  nsresult GetImageContainer(mozilla::layers::ImageContainer **aContainer);
+  nsresult GetImageContainer(mozilla::layers::ImageContainer** aContainer);
   nsresult GetImageSize(nsIntSize* aSize);
   nsresult NotifyPainted(void);
   nsresult GetIsOOP(bool* aIsOOP);
@@ -116,23 +119,20 @@ public:
   nsresult PushPopupsEnabledState(bool aEnabled);
   nsresult PopPopupsEnabledState();
   nsresult GetPluginAPIVersion(uint16_t* version);
-  nsresult InvalidateRect(NPRect *invalidRect);
+  nsresult InvalidateRect(NPRect* invalidRect);
   nsresult InvalidateRegion(NPRegion invalidRegion);
-  nsresult GetMIMEType(const char* *result);
+  nsresult GetMIMEType(const char** result);
 #if defined(XP_WIN)
-  nsresult GetScrollCaptureContainer(mozilla::layers::ImageContainer **aContainer);
+  nsresult GetScrollCaptureContainer(
+      mozilla::layers::ImageContainer** aContainer);
 #endif
   nsresult HandledWindowedPluginKeyEvent(
-             const mozilla::NativeEventData& aKeyEventData,
-             bool aIsConsumed);
+      const mozilla::NativeEventData& aKeyEventData, bool aIsConsumed);
   nsPluginInstanceOwner* GetOwner();
-  void SetOwner(nsPluginInstanceOwner *aOwner);
+  void SetOwner(nsPluginInstanceOwner* aOwner);
   void DidComposite();
 
-  bool HasAudioChannelAgent() const
-  {
-    return !!mAudioChannelAgent;
-  }
+  bool HasAudioChannelAgent() const { return !!mAudioChannelAgent; }
 
   void NotifyStartedPlaying();
   void NotifyStoppedPlaying();
@@ -141,7 +141,7 @@ public:
 
   nsNPAPIPlugin* GetPlugin();
 
-  nsresult GetNPP(NPP * aNPP);
+  nsresult GetNPP(NPP* aNPP);
 
   NPError SetWindowless(bool aWindowless);
 
@@ -157,9 +157,7 @@ public:
 #ifdef XP_MACOSX
   void SetEventModel(NPEventModel aModel);
 
-  void* GetCurrentEvent() {
-    return mCurrentPluginEvent;
-  }
+  void* GetCurrentEvent() { return mCurrentPluginEvent; }
 #endif
 
   nsresult NewStreamListener(const char* aURL, void* notifyData,
@@ -172,12 +170,8 @@ public:
   void Destroy();
 
   
-  bool IsRunning() {
-    return RUNNING == mRunning;
-  }
-  bool HasStartedDestroying() {
-    return mRunning >= DESTROYING;
-  }
+  bool IsRunning() { return RUNNING == mRunning; }
+  bool HasStartedDestroying() { return mRunning >= DESTROYING; }
 
   
   bool CanFireNotifications() {
@@ -194,28 +188,30 @@ public:
 
   nsresult PrivateModeStateChanged(bool aEnabled);
 
-  nsresult IsPrivateBrowsing(bool *aEnabled);
+  nsresult IsPrivateBrowsing(bool* aEnabled);
 
-  nsresult GetDOMElement(mozilla::dom::Element* *result);
+  nsresult GetDOMElement(mozilla::dom::Element** result);
 
   nsNPAPITimer* TimerWithID(uint32_t id, uint32_t* index);
-  uint32_t      ScheduleTimer(uint32_t interval, NPBool repeat, void (*timerFunc)(NPP npp, uint32_t timerID));
-  void          UnscheduleTimer(uint32_t timerID);
-  NPBool        ConvertPoint(double sourceX, double sourceY, NPCoordinateSpace sourceSpace, double *destX, double *destY, NPCoordinateSpace destSpace);
+  uint32_t ScheduleTimer(uint32_t interval, NPBool repeat,
+                         void (*timerFunc)(NPP npp, uint32_t timerID));
+  void UnscheduleTimer(uint32_t timerID);
+  NPBool ConvertPoint(double sourceX, double sourceY,
+                      NPCoordinateSpace sourceSpace, double* destX,
+                      double* destY, NPCoordinateSpace destSpace);
 
+  nsTArray<nsNPAPIPluginStreamListener*>* StreamListeners();
 
-  nsTArray<nsNPAPIPluginStreamListener*> *StreamListeners();
-
-  nsTArray<nsPluginStreamListenerPeer*> *FileCachedStreamListeners();
+  nsTArray<nsPluginStreamListenerPeer*>* FileCachedStreamListeners();
 
   nsresult AsyncSetWindow(NPWindow& window);
 
   void URLRedirectResponse(void* notifyData, NPBool allow);
 
-  NPError InitAsyncSurface(NPSize *size, NPImageFormat format,
-                           void *initData, NPAsyncSurface *surface);
-  NPError FinalizeAsyncSurface(NPAsyncSurface *surface);
-  void SetCurrentAsyncSurface(NPAsyncSurface *surface, NPRect *changed);
+  NPError InitAsyncSurface(NPSize* size, NPImageFormat format, void* initData,
+                           NPAsyncSurface* surface);
+  NPError FinalizeAsyncSurface(NPAsyncSurface* surface);
+  void SetCurrentAsyncSurface(NPAsyncSurface* surface, NPRect* changed);
 
   
   double GetContentsScaleFactor();
@@ -223,28 +219,27 @@ public:
   
   float GetCSSZoomFactor();
 
-  nsresult GetRunID(uint32_t *aRunID);
+  nsresult GetRunID(uint32_t* aRunID);
 
-  static bool InPluginCallUnsafeForReentry() { return gInUnsafePluginCalls > 0; }
-  static void BeginPluginCall(NSPluginCallReentry aReentryState)
-  {
+  static bool InPluginCallUnsafeForReentry() {
+    return gInUnsafePluginCalls > 0;
+  }
+  static void BeginPluginCall(NSPluginCallReentry aReentryState) {
     if (aReentryState == NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO) {
       ++gInUnsafePluginCalls;
     }
   }
-  static void EndPluginCall(NSPluginCallReentry aReentryState)
-  {
+  static void EndPluginCall(NSPluginCallReentry aReentryState) {
     if (aReentryState == NS_PLUGIN_CALL_UNSAFE_TO_REENTER_GECKO) {
       NS_ASSERTION(gInUnsafePluginCalls > 0, "Must be in plugin call");
       --gInUnsafePluginCalls;
     }
   }
 
-protected:
-
+ protected:
   virtual ~nsNPAPIPluginInstance();
 
-  nsresult GetTagType(nsPluginTagType *result);
+  nsresult GetTagType(nsPluginTagType* result);
 
   nsresult CreateAudioChannelAgentIfNeeded();
 
@@ -254,12 +249,7 @@ protected:
 
   NPDrawingModel mDrawingModel;
 
-  enum {
-    NOT_STARTED,
-    RUNNING,
-    DESTROYING,
-    DESTROYED
-  } mRunning;
+  enum { NOT_STARTED, RUNNING, DESTROYING, DESTROYED } mRunning;
 
   
   
@@ -268,11 +258,11 @@ protected:
   bool mCached;
   bool mUsesDOMForCursor;
 
-public:
+ public:
   
   bool mInPluginInitCall;
 
-private:
+ private:
   RefPtr<nsNPAPIPlugin> mPlugin;
 
   nsTArray<nsNPAPIPluginStreamListener*> mStreamListeners;
@@ -285,7 +275,7 @@ private:
 
   
   
-  nsPluginInstanceOwner *mOwner;
+  nsPluginInstanceOwner* mOwner;
 
   nsTArray<nsNPAPITimer*> mTimers;
 
@@ -303,8 +293,8 @@ private:
   
   
   uint32_t mCachedParamLength;
-  char **mCachedParamNames;
-  char **mCachedParamValues;
+  char** mCachedParamNames;
+  char** mCachedParamValues;
 
   nsCOMPtr<nsIAudioChannelAgent> mAudioChannelAgent;
   bool mMuted;
@@ -314,17 +304,17 @@ void NS_NotifyBeginPluginCall(NSPluginCallReentry aReentryState);
 void NS_NotifyPluginCall(NSPluginCallReentry aReentryState);
 
 #define NS_TRY_SAFE_CALL_RETURN(ret, fun, pluginInst, pluginCallReentry) \
-PR_BEGIN_MACRO                                     \
-  NS_NotifyBeginPluginCall(pluginCallReentry); \
-  ret = fun;                                       \
-  NS_NotifyPluginCall(pluginCallReentry); \
-PR_END_MACRO
+  PR_BEGIN_MACRO                                                         \
+  NS_NotifyBeginPluginCall(pluginCallReentry);                           \
+  ret = fun;                                                             \
+  NS_NotifyPluginCall(pluginCallReentry);                                \
+  PR_END_MACRO
 
 #define NS_TRY_SAFE_CALL_VOID(fun, pluginInst, pluginCallReentry) \
-PR_BEGIN_MACRO                                     \
-  NS_NotifyBeginPluginCall(pluginCallReentry); \
-  fun;                                             \
-  NS_NotifyPluginCall(pluginCallReentry); \
-PR_END_MACRO
+  PR_BEGIN_MACRO                                                  \
+  NS_NotifyBeginPluginCall(pluginCallReentry);                    \
+  fun;                                                            \
+  NS_NotifyPluginCall(pluginCallReentry);                         \
+  PR_END_MACRO
 
-#endif 
+#endif  

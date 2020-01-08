@@ -46,37 +46,28 @@ typedef Observer<void_t> MIDIAccessDestructionObserver;
 
 
 class MIDIAccess final : public DOMEventTargetHelper,
-                         public Observer<MIDIPortList>
-{
+                         public Observer<MIDIPortList> {
   
   
   friend class MIDIPermissionRequest;
   friend class MIDIAccessManager;
-public:
+
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(MIDIAccess,
                                                          DOMEventTargetHelper)
-public:
+ public:
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
-  MIDIInputMap* Inputs() const
-  {
-    return mInputMap;
-  }
+  MIDIInputMap* Inputs() const { return mInputMap; }
 
   
-  MIDIOutputMap* Outputs() const
-  {
-    return mOutputMap;
-  }
+  MIDIOutputMap* Outputs() const { return mOutputMap; }
 
   
-  bool SysexEnabled() const
-  {
-    return mSysexEnabled;
-  }
+  bool SysexEnabled() const { return mSysexEnabled; }
 
   
   void Notify(const MIDIPortList& aEvent) override;
@@ -94,7 +85,8 @@ public:
   
   void Shutdown();
   IMPL_EVENT_HANDLER(statechange);
-private:
+
+ private:
   MIDIAccess(nsPIDOMWindowInner* aWindow, bool aSysexEnabled,
              Promise* aAccessPromise);
   ~MIDIAccess();
@@ -118,7 +110,7 @@ private:
   bool mHasShutdown;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

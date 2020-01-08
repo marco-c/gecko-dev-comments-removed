@@ -18,25 +18,19 @@ namespace mozilla {
 
 
 
-class OSFileConstantsService final : public nsIOSFileConstantsService
-                                   , public nsIObserver
-{
-public:
+class OSFileConstantsService final : public nsIOSFileConstantsService,
+                                     public nsIObserver {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOSFILECONSTANTSSERVICE
   NS_DECL_NSIOBSERVER
 
-  static already_AddRefed<OSFileConstantsService>
-  GetOrCreate();
+  static already_AddRefed<OSFileConstantsService> GetOrCreate();
 
-  bool
-  DefineOSFileConstants(JSContext* aCx,
-                        JS::Handle<JSObject*> aGlobal);
+  bool DefineOSFileConstants(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
 
-private:
-
-  nsresult
-  InitOSFileConstants();
+ private:
+  nsresult InitOSFileConstants();
 
   OSFileConstantsService();
   ~OSFileConstantsService();
@@ -54,6 +48,6 @@ private:
   uint32_t mUserUmask;
 };
 
-} 
+}  
 
-#endif 
+#endif  

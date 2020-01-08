@@ -26,19 +26,19 @@ namespace js {
 
 class GenericPrinter;
 
-extern bool
-RuntimeFromMainThreadIsHeapMajorCollecting(JS::shadow::Zone* shadowZone);
+extern bool RuntimeFromMainThreadIsHeapMajorCollecting(
+    JS::shadow::Zone* shadowZone);
 
 #ifdef DEBUG
 
 
 
-extern bool
-CurrentThreadIsIonCompiling();
+extern bool CurrentThreadIsIonCompiling();
 #endif
 
-extern void
-TraceManuallyBarrieredGenericPointerEdge(JSTracer* trc, gc::Cell** thingp, const char* name);
+extern void TraceManuallyBarrieredGenericPointerEdge(JSTracer* trc,
+                                                     gc::Cell** thingp,
+                                                     const char* name);
 
 namespace gc {
 
@@ -61,453 +61,388 @@ class TenuredCell;
 
 
 
-struct alignas(gc::CellAlignBytes) Cell
-{
-  public:
+struct alignas(gc::CellAlignBytes) Cell {
+ public:
+  
+  static constexpr int ReservedBits = 2;
+  static constexpr uintptr_t RESERVED_MASK = JS_BITMASK(ReservedBits);
+
+  
+  static constexpr uintptr_t FORWARD_BIT = JS_BIT(0);
+
+  
+  
+  
+  
+  static constexpr uintptr_t JSSTRING_BIT = JS_BIT(1);
+
+  MOZ_ALWAYS_INLINE bool isTenured() const { return !IsInsideNursery(this); }
+  MOZ_ALWAYS_INLINE const TenuredCell& asTenured() const;
+  MOZ_ALWAYS_INLINE TenuredCell& asTenured();
+
+  MOZ_ALWAYS_INLINE bool isMarkedAny() const;
+  MOZ_ALWAYS_INLINE bool isMarkedBlack() const;
+  MOZ_ALWAYS_INLINE bool isMarkedGray() const;
+
+  inline JSRuntime* runtimeFromMainThread() const;
+
+  
+  
+  inline JSRuntime* runtimeFromAnyThread() const;
+
+  
+  inline JS::Compartment* maybeCompartment() const { return nullptr; }
+
+  
+  
+  inline StoreBuffer* storeBuffer() const;
+
+  inline JS::TraceKind getTraceKind() const;
+
+  static MOZ_ALWAYS_INLINE bool needWriteBarrierPre(JS::Zone* zone);
+
+  inline bool isForwarded() const {
+    uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
+    return firstWord & FORWARD_BIT;
+  }
+
+  inline bool nurseryCellIsString() const {
+    MOZ_ASSERT(!isTenured());
+    uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
+    return firstWord & JSSTRING_BIT;
+  }
+
+  template <class T>
+  inline bool is() const {
+    return getTraceKind() == JS::MapTypeToTraceKind<T>::kind;
+  }
+
+  template <class T>
+  inline T* as() {
     
-    static constexpr int ReservedBits = 2;
-    static constexpr uintptr_t RESERVED_MASK = JS_BITMASK(ReservedBits);
-
     
-    static constexpr uintptr_t FORWARD_BIT = JS_BIT(0);
+    MOZ_ASSERT(this->is<T>());
+    return static_cast<T*>(this);
+  }
 
-    
-    
-    
-    
-    static constexpr uintptr_t JSSTRING_BIT = JS_BIT(1);
-
-    MOZ_ALWAYS_INLINE bool isTenured() const { return !IsInsideNursery(this); }
-    MOZ_ALWAYS_INLINE const TenuredCell& asTenured() const;
-    MOZ_ALWAYS_INLINE TenuredCell& asTenured();
-
-    MOZ_ALWAYS_INLINE bool isMarkedAny() const;
-    MOZ_ALWAYS_INLINE bool isMarkedBlack() const;
-    MOZ_ALWAYS_INLINE bool isMarkedGray() const;
-
-    inline JSRuntime* runtimeFromMainThread() const;
-
+  template <class T>
+  inline const T* as() const {
     
     
-    inline JSRuntime* runtimeFromAnyThread() const;
-
-    
-    inline JS::Compartment* maybeCompartment() const { return nullptr; }
-
-    
-    
-    inline StoreBuffer* storeBuffer() const;
-
-    inline JS::TraceKind getTraceKind() const;
-
-    static MOZ_ALWAYS_INLINE bool needWriteBarrierPre(JS::Zone* zone);
-
-    inline bool isForwarded() const {
-        uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
-        return firstWord & FORWARD_BIT;
-    }
-
-    inline bool nurseryCellIsString() const {
-        MOZ_ASSERT(!isTenured());
-        uintptr_t firstWord = *reinterpret_cast<const uintptr_t*>(this);
-        return firstWord & JSSTRING_BIT;
-    }
-
-    template <class T>
-    inline bool is() const {
-        return getTraceKind() == JS::MapTypeToTraceKind<T>::kind;
-    }
-
-    template<class T>
-    inline T* as() {
-        
-        
-        MOZ_ASSERT(this->is<T>());
-        return static_cast<T*>(this);
-    }
-
-    template <class T>
-    inline const T* as() const {
-        
-        
-        MOZ_ASSERT(this->is<T>());
-        return static_cast<const T*>(this);
-    }
+    MOZ_ASSERT(this->is<T>());
+    return static_cast<const T*>(this);
+  }
 
 #ifdef DEBUG
-    static inline bool thingIsNotGray(Cell* cell);
-    inline bool isAligned() const;
-    void dump(GenericPrinter& out) const;
-    void dump() const;
+  static inline bool thingIsNotGray(Cell* cell);
+  inline bool isAligned() const;
+  void dump(GenericPrinter& out) const;
+  void dump() const;
 #endif
 
-  protected:
-    uintptr_t address() const;
-    inline Chunk* chunk() const;
+ protected:
+  uintptr_t address() const;
+  inline Chunk* chunk() const;
 } JS_HAZ_GC_THING;
 
 
 
-class TenuredCell : public Cell
-{
-  public:
+class TenuredCell : public Cell {
+ public:
+  
+  static MOZ_ALWAYS_INLINE TenuredCell* fromPointer(void* ptr);
+  static MOZ_ALWAYS_INLINE const TenuredCell* fromPointer(const void* ptr);
+
+  
+  MOZ_ALWAYS_INLINE bool isMarkedAny() const;
+  MOZ_ALWAYS_INLINE bool isMarkedBlack() const;
+  MOZ_ALWAYS_INLINE bool isMarkedGray() const;
+
+  
+  MOZ_ALWAYS_INLINE bool markIfUnmarked(
+      MarkColor color = MarkColor::Black) const;
+  MOZ_ALWAYS_INLINE void markBlack() const;
+  MOZ_ALWAYS_INLINE void copyMarkBitsFrom(const TenuredCell* src);
+  MOZ_ALWAYS_INLINE void unmark();
+
+  
+  inline Arena* arena() const;
+  inline AllocKind getAllocKind() const;
+  inline JS::TraceKind getTraceKind() const;
+  inline JS::Zone* zone() const;
+  inline JS::Zone* zoneFromAnyThread() const;
+  inline bool isInsideZone(JS::Zone* zone) const;
+
+  MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZone() const {
+    return JS::shadow::Zone::asShadowZone(zone());
+  }
+  MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZoneFromAnyThread() const {
+    return JS::shadow::Zone::asShadowZone(zoneFromAnyThread());
+  }
+
+  template <class T>
+  inline bool is() const {
+    return getTraceKind() == JS::MapTypeToTraceKind<T>::kind;
+  }
+
+  template <class T>
+  inline T* as() {
     
-    static MOZ_ALWAYS_INLINE TenuredCell* fromPointer(void* ptr);
-    static MOZ_ALWAYS_INLINE const TenuredCell* fromPointer(const void* ptr);
-
     
-    MOZ_ALWAYS_INLINE bool isMarkedAny() const;
-    MOZ_ALWAYS_INLINE bool isMarkedBlack() const;
-    MOZ_ALWAYS_INLINE bool isMarkedGray() const;
+    MOZ_ASSERT(this->is<T>());
+    return static_cast<T*>(this);
+  }
 
+  template <class T>
+  inline const T* as() const {
     
-    MOZ_ALWAYS_INLINE bool markIfUnmarked(MarkColor color = MarkColor::Black) const;
-    MOZ_ALWAYS_INLINE void markBlack() const;
-    MOZ_ALWAYS_INLINE void copyMarkBitsFrom(const TenuredCell* src);
-    MOZ_ALWAYS_INLINE void unmark();
-
     
-    inline Arena* arena() const;
-    inline AllocKind getAllocKind() const;
-    inline JS::TraceKind getTraceKind() const;
-    inline JS::Zone* zone() const;
-    inline JS::Zone* zoneFromAnyThread() const;
-    inline bool isInsideZone(JS::Zone* zone) const;
+    MOZ_ASSERT(this->is<T>());
+    return static_cast<const T*>(this);
+  }
 
-    MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZone() const {
-        return JS::shadow::Zone::asShadowZone(zone());
-    }
-    MOZ_ALWAYS_INLINE JS::shadow::Zone* shadowZoneFromAnyThread() const {
-        return JS::shadow::Zone::asShadowZone(zoneFromAnyThread());
-    }
+  static MOZ_ALWAYS_INLINE void readBarrier(TenuredCell* thing);
+  static MOZ_ALWAYS_INLINE void writeBarrierPre(TenuredCell* thing);
 
-    template <class T>
-    inline bool is() const {
-        return getTraceKind() == JS::MapTypeToTraceKind<T>::kind;
-    }
+  static void MOZ_ALWAYS_INLINE writeBarrierPost(void* cellp,
+                                                 TenuredCell* prior,
+                                                 TenuredCell* next);
 
-    template<class T>
-    inline T* as() {
-        
-        
-        MOZ_ASSERT(this->is<T>());
-        return static_cast<T*>(this);
-    }
-
-    template <class T>
-    inline const T* as() const {
-        
-        
-        MOZ_ASSERT(this->is<T>());
-        return static_cast<const T*>(this);
-    }
-
-    static MOZ_ALWAYS_INLINE void readBarrier(TenuredCell* thing);
-    static MOZ_ALWAYS_INLINE void writeBarrierPre(TenuredCell* thing);
-
-    static void MOZ_ALWAYS_INLINE writeBarrierPost(void* cellp, TenuredCell* prior,
-                                                   TenuredCell* next);
-
-    
-    void fixupAfterMovingGC() {}
+  
+  void fixupAfterMovingGC() {}
 
 #ifdef DEBUG
-    inline bool isAligned() const;
+  inline bool isAligned() const;
 #endif
 };
 
-MOZ_ALWAYS_INLINE const TenuredCell&
-Cell::asTenured() const
-{
-    MOZ_ASSERT(isTenured());
-    return *static_cast<const TenuredCell*>(this);
+MOZ_ALWAYS_INLINE const TenuredCell& Cell::asTenured() const {
+  MOZ_ASSERT(isTenured());
+  return *static_cast<const TenuredCell*>(this);
 }
 
-MOZ_ALWAYS_INLINE TenuredCell&
-Cell::asTenured()
-{
-    MOZ_ASSERT(isTenured());
-    return *static_cast<TenuredCell*>(this);
+MOZ_ALWAYS_INLINE TenuredCell& Cell::asTenured() {
+  MOZ_ASSERT(isTenured());
+  return *static_cast<TenuredCell*>(this);
 }
 
-MOZ_ALWAYS_INLINE bool
-Cell::isMarkedAny() const
-{
-    return !isTenured() || asTenured().isMarkedAny();
+MOZ_ALWAYS_INLINE bool Cell::isMarkedAny() const {
+  return !isTenured() || asTenured().isMarkedAny();
 }
 
-MOZ_ALWAYS_INLINE bool
-Cell::isMarkedBlack() const
-{
-    return !isTenured() || asTenured().isMarkedBlack();
+MOZ_ALWAYS_INLINE bool Cell::isMarkedBlack() const {
+  return !isTenured() || asTenured().isMarkedBlack();
 }
 
-MOZ_ALWAYS_INLINE bool
-Cell::isMarkedGray() const
-{
-    return isTenured() && asTenured().isMarkedGray();
+MOZ_ALWAYS_INLINE bool Cell::isMarkedGray() const {
+  return isTenured() && asTenured().isMarkedGray();
 }
 
-inline JSRuntime*
-Cell::runtimeFromMainThread() const
-{
-    JSRuntime* rt = chunk()->trailer.runtime;
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
-    return rt;
+inline JSRuntime* Cell::runtimeFromMainThread() const {
+  JSRuntime* rt = chunk()->trailer.runtime;
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(rt));
+  return rt;
 }
 
-inline JSRuntime*
-Cell::runtimeFromAnyThread() const
-{
-    return chunk()->trailer.runtime;
+inline JSRuntime* Cell::runtimeFromAnyThread() const {
+  return chunk()->trailer.runtime;
 }
 
-inline uintptr_t
-Cell::address() const
-{
-    uintptr_t addr = uintptr_t(this);
-    MOZ_ASSERT(addr % CellAlignBytes == 0);
-    MOZ_ASSERT(Chunk::withinValidRange(addr));
-    return addr;
+inline uintptr_t Cell::address() const {
+  uintptr_t addr = uintptr_t(this);
+  MOZ_ASSERT(addr % CellAlignBytes == 0);
+  MOZ_ASSERT(Chunk::withinValidRange(addr));
+  return addr;
 }
 
-Chunk*
-Cell::chunk() const
-{
-    uintptr_t addr = uintptr_t(this);
-    MOZ_ASSERT(addr % CellAlignBytes == 0);
-    addr &= ~ChunkMask;
-    return reinterpret_cast<Chunk*>(addr);
+Chunk* Cell::chunk() const {
+  uintptr_t addr = uintptr_t(this);
+  MOZ_ASSERT(addr % CellAlignBytes == 0);
+  addr &= ~ChunkMask;
+  return reinterpret_cast<Chunk*>(addr);
 }
 
-inline StoreBuffer*
-Cell::storeBuffer() const
-{
-    return chunk()->trailer.storeBuffer;
+inline StoreBuffer* Cell::storeBuffer() const {
+  return chunk()->trailer.storeBuffer;
 }
 
-inline JS::TraceKind
-Cell::getTraceKind() const
-{
-    if (isTenured()) {
-        return asTenured().getTraceKind();
+inline JS::TraceKind Cell::getTraceKind() const {
+  if (isTenured()) {
+    return asTenured().getTraceKind();
+  }
+  if (nurseryCellIsString()) {
+    return JS::TraceKind::String;
+  }
+  return JS::TraceKind::Object;
+}
+
+ MOZ_ALWAYS_INLINE bool Cell::needWriteBarrierPre(JS::Zone* zone) {
+  return JS::shadow::Zone::asShadowZone(zone)->needsIncrementalBarrier();
+}
+
+ MOZ_ALWAYS_INLINE TenuredCell* TenuredCell::fromPointer(
+    void* ptr) {
+  MOZ_ASSERT(static_cast<TenuredCell*>(ptr)->isTenured());
+  return static_cast<TenuredCell*>(ptr);
+}
+
+ MOZ_ALWAYS_INLINE const TenuredCell* TenuredCell::fromPointer(
+    const void* ptr) {
+  MOZ_ASSERT(static_cast<const TenuredCell*>(ptr)->isTenured());
+  return static_cast<const TenuredCell*>(ptr);
+}
+
+bool TenuredCell::isMarkedAny() const {
+  MOZ_ASSERT(arena()->allocated());
+  return chunk()->bitmap.isMarkedAny(this);
+}
+
+bool TenuredCell::isMarkedBlack() const {
+  MOZ_ASSERT(arena()->allocated());
+  return chunk()->bitmap.isMarkedBlack(this);
+}
+
+bool TenuredCell::isMarkedGray() const {
+  MOZ_ASSERT(arena()->allocated());
+  return chunk()->bitmap.isMarkedGray(this);
+}
+
+bool TenuredCell::markIfUnmarked(MarkColor color ) const {
+  return chunk()->bitmap.markIfUnmarked(this, color);
+}
+
+void TenuredCell::markBlack() const { chunk()->bitmap.markBlack(this); }
+
+void TenuredCell::copyMarkBitsFrom(const TenuredCell* src) {
+  ChunkBitmap& bitmap = chunk()->bitmap;
+  bitmap.copyMarkBit(this, src, ColorBit::BlackBit);
+  bitmap.copyMarkBit(this, src, ColorBit::GrayOrBlackBit);
+}
+
+void TenuredCell::unmark() { chunk()->bitmap.unmark(this); }
+
+inline Arena* TenuredCell::arena() const {
+  MOZ_ASSERT(isTenured());
+  uintptr_t addr = address();
+  addr &= ~ArenaMask;
+  return reinterpret_cast<Arena*>(addr);
+}
+
+AllocKind TenuredCell::getAllocKind() const { return arena()->getAllocKind(); }
+
+JS::TraceKind TenuredCell::getTraceKind() const {
+  return MapAllocToTraceKind(getAllocKind());
+}
+
+JS::Zone* TenuredCell::zone() const {
+  JS::Zone* zone = arena()->zone;
+  MOZ_ASSERT(CurrentThreadCanAccessZone(zone));
+  return zone;
+}
+
+JS::Zone* TenuredCell::zoneFromAnyThread() const { return arena()->zone; }
+
+bool TenuredCell::isInsideZone(JS::Zone* zone) const {
+  return zone == arena()->zone;
+}
+
+ MOZ_ALWAYS_INLINE void TenuredCell::readBarrier(
+    TenuredCell* thing) {
+  MOZ_ASSERT(!CurrentThreadIsIonCompiling());
+  MOZ_ASSERT(thing);
+  MOZ_ASSERT(CurrentThreadCanAccessZone(thing->zoneFromAnyThread()));
+
+  
+  
+  
+  
+  
+  
+
+  JS::shadow::Zone* shadowZone = thing->shadowZoneFromAnyThread();
+  if (shadowZone->needsIncrementalBarrier()) {
+    
+    
+    MOZ_ASSERT(!RuntimeFromMainThreadIsHeapMajorCollecting(shadowZone));
+    Cell* tmp = thing;
+    TraceManuallyBarrieredGenericPointerEdge(shadowZone->barrierTracer(), &tmp,
+                                             "read barrier");
+    MOZ_ASSERT(tmp == thing);
+  }
+
+  if (thing->isMarkedGray()) {
+    
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread()));
+    if (!JS::RuntimeHeapIsCollecting()) {
+      JS::UnmarkGrayGCThingRecursively(
+          JS::GCCellPtr(thing, thing->getTraceKind()));
     }
-    if (nurseryCellIsString()) {
-        return JS::TraceKind::String;
-    }
-    return JS::TraceKind::Object;
+  }
 }
 
- MOZ_ALWAYS_INLINE bool
-Cell::needWriteBarrierPre(JS::Zone* zone) {
-    return JS::shadow::Zone::asShadowZone(zone)->needsIncrementalBarrier();
-}
+void AssertSafeToSkipBarrier(TenuredCell* thing);
 
- MOZ_ALWAYS_INLINE TenuredCell*
-TenuredCell::fromPointer(void* ptr)
-{
-    MOZ_ASSERT(static_cast<TenuredCell*>(ptr)->isTenured());
-    return static_cast<TenuredCell*>(ptr);
-}
-
- MOZ_ALWAYS_INLINE const TenuredCell*
-TenuredCell::fromPointer(const void* ptr)
-{
-    MOZ_ASSERT(static_cast<const TenuredCell*>(ptr)->isTenured());
-    return static_cast<const TenuredCell*>(ptr);
-}
-
-bool
-TenuredCell::isMarkedAny() const
-{
-    MOZ_ASSERT(arena()->allocated());
-    return chunk()->bitmap.isMarkedAny(this);
-}
-
-bool
-TenuredCell::isMarkedBlack() const
-{
-    MOZ_ASSERT(arena()->allocated());
-    return chunk()->bitmap.isMarkedBlack(this);
-}
-
-bool
-TenuredCell::isMarkedGray() const
-{
-    MOZ_ASSERT(arena()->allocated());
-    return chunk()->bitmap.isMarkedGray(this);
-}
-
-bool
-TenuredCell::markIfUnmarked(MarkColor color ) const
-{
-    return chunk()->bitmap.markIfUnmarked(this, color);
-}
-
-void
-TenuredCell::markBlack() const
-{
-    chunk()->bitmap.markBlack(this);
-}
-
-void
-TenuredCell::copyMarkBitsFrom(const TenuredCell* src)
-{
-    ChunkBitmap& bitmap = chunk()->bitmap;
-    bitmap.copyMarkBit(this, src, ColorBit::BlackBit);
-    bitmap.copyMarkBit(this, src, ColorBit::GrayOrBlackBit);
-}
-
-void
-TenuredCell::unmark()
-{
-    chunk()->bitmap.unmark(this);
-}
-
-inline Arena*
-TenuredCell::arena() const
-{
-    MOZ_ASSERT(isTenured());
-    uintptr_t addr = address();
-    addr &= ~ArenaMask;
-    return reinterpret_cast<Arena*>(addr);
-}
-
-AllocKind
-TenuredCell::getAllocKind() const
-{
-    return arena()->getAllocKind();
-}
-
-JS::TraceKind
-TenuredCell::getTraceKind() const
-{
-    return MapAllocToTraceKind(getAllocKind());
-}
-
-JS::Zone*
-TenuredCell::zone() const
-{
-    JS::Zone* zone = arena()->zone;
-    MOZ_ASSERT(CurrentThreadCanAccessZone(zone));
-    return zone;
-}
-
-JS::Zone*
-TenuredCell::zoneFromAnyThread() const
-{
-    return arena()->zone;
-}
-
-bool
-TenuredCell::isInsideZone(JS::Zone* zone) const
-{
-    return zone == arena()->zone;
-}
-
- MOZ_ALWAYS_INLINE void
-TenuredCell::readBarrier(TenuredCell* thing)
-{
-    MOZ_ASSERT(!CurrentThreadIsIonCompiling());
-    MOZ_ASSERT(thing);
-    MOZ_ASSERT(CurrentThreadCanAccessZone(thing->zoneFromAnyThread()));
-
-    
-    
-    
-    
-    
-    
-
-    JS::shadow::Zone* shadowZone = thing->shadowZoneFromAnyThread();
-    if (shadowZone->needsIncrementalBarrier()) {
-        
-        MOZ_ASSERT(!RuntimeFromMainThreadIsHeapMajorCollecting(shadowZone));
-        Cell* tmp = thing;
-        TraceManuallyBarrieredGenericPointerEdge(shadowZone->barrierTracer(), &tmp, "read barrier");
-        MOZ_ASSERT(tmp == thing);
-    }
-
-    if (thing->isMarkedGray()) {
-        
-        MOZ_ASSERT(CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread()));
-        if (!JS::RuntimeHeapIsCollecting()) {
-            JS::UnmarkGrayGCThingRecursively(JS::GCCellPtr(thing, thing->getTraceKind()));
-        }
-    }
-}
-
-void
-AssertSafeToSkipBarrier(TenuredCell* thing);
-
- MOZ_ALWAYS_INLINE void
-TenuredCell::writeBarrierPre(TenuredCell* thing)
-{
-    MOZ_ASSERT(!CurrentThreadIsIonCompiling());
-    if (!thing) {
-        return;
-    }
+ MOZ_ALWAYS_INLINE void TenuredCell::writeBarrierPre(
+    TenuredCell* thing) {
+  MOZ_ASSERT(!CurrentThreadIsIonCompiling());
+  if (!thing) {
+    return;
+  }
 
 #ifdef JS_GC_ZEAL
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread())) {
-        AssertSafeToSkipBarrier(thing);
-        return;
-    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!CurrentThreadCanAccessRuntime(thing->runtimeFromAnyThread())) {
+    AssertSafeToSkipBarrier(thing);
+    return;
+  }
 #endif
 
-    JS::shadow::Zone* shadowZone = thing->shadowZoneFromAnyThread();
-    if (shadowZone->needsIncrementalBarrier()) {
-        MOZ_ASSERT(!RuntimeFromMainThreadIsHeapMajorCollecting(shadowZone));
-        Cell* tmp = thing;
-        TraceManuallyBarrieredGenericPointerEdge(shadowZone->barrierTracer(), &tmp, "pre barrier");
-        MOZ_ASSERT(tmp == thing);
-    }
+  JS::shadow::Zone* shadowZone = thing->shadowZoneFromAnyThread();
+  if (shadowZone->needsIncrementalBarrier()) {
+    MOZ_ASSERT(!RuntimeFromMainThreadIsHeapMajorCollecting(shadowZone));
+    Cell* tmp = thing;
+    TraceManuallyBarrieredGenericPointerEdge(shadowZone->barrierTracer(), &tmp,
+                                             "pre barrier");
+    MOZ_ASSERT(tmp == thing);
+  }
 }
 
-static MOZ_ALWAYS_INLINE void
-AssertValidToSkipBarrier(TenuredCell* thing)
-{
-    MOZ_ASSERT(!IsInsideNursery(thing));
-    MOZ_ASSERT_IF(thing, MapAllocToTraceKind(thing->getAllocKind()) != JS::TraceKind::Object &&
-                         MapAllocToTraceKind(thing->getAllocKind()) != JS::TraceKind::String);
+static MOZ_ALWAYS_INLINE void AssertValidToSkipBarrier(TenuredCell* thing) {
+  MOZ_ASSERT(!IsInsideNursery(thing));
+  MOZ_ASSERT_IF(
+      thing,
+      MapAllocToTraceKind(thing->getAllocKind()) != JS::TraceKind::Object &&
+          MapAllocToTraceKind(thing->getAllocKind()) != JS::TraceKind::String);
 }
 
- MOZ_ALWAYS_INLINE void
-TenuredCell::writeBarrierPost(void* cellp, TenuredCell* prior, TenuredCell* next)
-{
-    AssertValidToSkipBarrier(next);
+ MOZ_ALWAYS_INLINE void TenuredCell::writeBarrierPost(
+    void* cellp, TenuredCell* prior, TenuredCell* next) {
+  AssertValidToSkipBarrier(next);
 }
 
 #ifdef DEBUG
 
- bool
-Cell::thingIsNotGray(Cell* cell)
-{
-    return JS::CellIsNotGray(cell);
+ bool Cell::thingIsNotGray(Cell* cell) {
+  return JS::CellIsNotGray(cell);
 }
 
-bool
-Cell::isAligned() const
-{
-    if (!isTenured()) {
-        return true;
-    }
-    return asTenured().isAligned();
+bool Cell::isAligned() const {
+  if (!isTenured()) {
+    return true;
+  }
+  return asTenured().isAligned();
 }
 
-bool
-TenuredCell::isAligned() const
-{
-    return Arena::isAligned(address(), arena()->getThingSize());
+bool TenuredCell::isAligned() const {
+  return Arena::isAligned(address(), arena()->getThingSize());
 }
 
 #endif

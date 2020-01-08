@@ -19,8 +19,8 @@ extern mozilla::Atomic<size_t> sConstantBufferUsage;
 extern mozilla::Atomic<size_t> sVertexBufferUsage;
 extern mozilla::Atomic<size_t> sRenderTargetUsage;
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

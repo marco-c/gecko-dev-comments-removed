@@ -18,21 +18,19 @@ namespace dom {
 
 
 
-class PromiseNativeHandler : public nsISupports
-{
-protected:
-  virtual ~PromiseNativeHandler()
-  { }
+class PromiseNativeHandler : public nsISupports {
+ protected:
+  virtual ~PromiseNativeHandler() {}
 
-public:
-  virtual void
-  ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) = 0;
+ public:
+  virtual void ResolvedCallback(JSContext* aCx,
+                                JS::Handle<JS::Value> aValue) = 0;
 
-  virtual void
-  RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue) = 0;
+  virtual void RejectedCallback(JSContext* aCx,
+                                JS::Handle<JS::Value> aValue) = 0;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

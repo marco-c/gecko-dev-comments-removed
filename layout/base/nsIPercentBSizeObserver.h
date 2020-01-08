@@ -11,16 +11,15 @@
 
 namespace mozilla {
 struct ReflowInput;
-} 
+}  
 
 
 
 
 
 
-class nsIPercentBSizeObserver
-{
-public:
+class nsIPercentBSizeObserver {
+ public:
   NS_DECL_QUERYFRAME_TARGET(nsIPercentBSizeObserver)
 
   
@@ -31,4 +30,4 @@ public:
   virtual bool NeedsToObserve(const mozilla::ReflowInput& aReflowInput) = 0;
 };
 
-#endif 
+#endif  

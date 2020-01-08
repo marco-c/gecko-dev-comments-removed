@@ -33,54 +33,52 @@ struct BytecodeEmitter;
 
 
 
-class MOZ_STACK_CLASS ExpressionStatementEmitter
-{
-    BytecodeEmitter* bce_;
+class MOZ_STACK_CLASS ExpressionStatementEmitter {
+  BytecodeEmitter* bce_;
 
 #ifdef DEBUG
-    
-    int32_t depth_;
+  
+  int32_t depth_;
 #endif
 
-    
-    ValueUsage valueUsage_;
+  
+  ValueUsage valueUsage_;
 
 #ifdef DEBUG
+  
+  
+  
+  
+  
+  enum class State {
     
-    
-    
-    
-    
-    enum class State
-    {
-        
-        Start,
+    Start,
 
-        
-        Expr,
+    
+    Expr,
 
-        
-        End
-    };
-    State state_ = State::Start;
+    
+    End
+  };
+  State state_ = State::Start;
 #endif
 
-  public:
-    ExpressionStatementEmitter(BytecodeEmitter* bce, ValueUsage valueUsage);
+ public:
+  ExpressionStatementEmitter(BytecodeEmitter* bce, ValueUsage valueUsage);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE bool prepareForExpr(const mozilla::Maybe<uint32_t>& beginPos);
-    MOZ_MUST_USE bool emitEnd();
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool prepareForExpr(const mozilla::Maybe<uint32_t>& beginPos);
+  MOZ_MUST_USE bool emitEnd();
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

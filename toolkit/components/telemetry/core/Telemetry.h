@@ -71,7 +71,8 @@ void Accumulate(HistogramID id, const nsCString& key, uint32_t sample = 1);
 
 
 
-void Accumulate(HistogramID id, const nsCString& key, const nsTArray<uint32_t>& samples);
+void Accumulate(HistogramID id, const nsCString& key,
+                const nsTArray<uint32_t>& samples);
 
 
 
@@ -94,7 +95,7 @@ void Accumulate(const char* name, uint32_t sample);
 
 
 
-void Accumulate(const char *name, const nsCString& key, uint32_t sample = 1);
+void Accumulate(const char* name, const nsCString& key, uint32_t sample = 1);
 
 
 
@@ -103,7 +104,7 @@ void Accumulate(const char *name, const nsCString& key, uint32_t sample = 1);
 
 
 
-template<class E>
+template <class E>
 void AccumulateCategorical(E enumValue) {
   static_assert(IsCategoricalLabelEnum<E>::value,
                 "Only categorical label enum types are supported.");
@@ -118,19 +119,19 @@ void AccumulateCategorical(E enumValue) {
 
 
 
-template<class E>
-void
-AccumulateCategorical(const nsTArray<E>& enumValues)
-{
+
+template <class E>
+void AccumulateCategorical(const nsTArray<E>& enumValues) {
   static_assert(IsCategoricalLabelEnum<E>::value,
                 "Only categorical label enum types are supported.");
   nsTArray<uint32_t> intSamples(enumValues.Length());
 
-  for (E aValue: enumValues){
+  for (E aValue : enumValues) {
     intSamples.AppendElement(static_cast<uint32_t>(aValue));
   }
 
-  HistogramID categoricalId = static_cast<HistogramID>(CategoricalLabelId<E>::value);
+  HistogramID categoricalId =
+      static_cast<HistogramID>(CategoricalLabelId<E>::value);
 
   Accumulate(categoricalId, intSamples);
 }
@@ -143,12 +144,12 @@ AccumulateCategorical(const nsTArray<E>& enumValues)
 
 
 
-template<class E>
+
+template <class E>
 void AccumulateCategoricalKeyed(const nsCString& key, E enumValue) {
   static_assert(IsCategoricalLabelEnum<E>::value,
                 "Only categorical label enum types are supported.");
-  Accumulate(static_cast<HistogramID>(CategoricalLabelId<E>::value),
-             key,
+  Accumulate(static_cast<HistogramID>(CategoricalLabelId<E>::value), key,
              static_cast<uint32_t>(enumValue));
 };
 
@@ -160,19 +161,20 @@ void AccumulateCategoricalKeyed(const nsCString& key, E enumValue) {
 
 
 
-template<class E>
-void AccumulateCategoricalKeyed(const nsCString& key, const nsTArray<E>& enumValues) {
-    static_assert(IsCategoricalLabelEnum<E>::value,
-                  "Only categorical label enum types are supported.");
-    nsTArray<uint32_t> intSamples(enumValues.Length());
 
-    for (E aValue: enumValues){
-      intSamples.AppendElement(static_cast<uint32_t>(aValue));
-    }
+template <class E>
+void AccumulateCategoricalKeyed(const nsCString& key,
+                                const nsTArray<E>& enumValues) {
+  static_assert(IsCategoricalLabelEnum<E>::value,
+                "Only categorical label enum types are supported.");
+  nsTArray<uint32_t> intSamples(enumValues.Length());
 
-    Accumulate(static_cast<HistogramID>(CategoricalLabelId<E>::value),
-               key,
-               intSamples);
+  for (E aValue : enumValues) {
+    intSamples.AppendElement(static_cast<uint32_t>(aValue));
+  }
+
+  Accumulate(static_cast<HistogramID>(CategoricalLabelId<E>::value), key,
+             intSamples);
 };
 
 
@@ -193,6 +195,7 @@ void AccumulateCategorical(HistogramID id, const nsCString& label);
 
 
 
+
 void AccumulateCategorical(HistogramID id, const nsTArray<nsCString>& labels);
 
 
@@ -202,7 +205,9 @@ void AccumulateCategorical(HistogramID id, const nsTArray<nsCString>& labels);
 
 
 
-void AccumulateTimeDelta(HistogramID id, TimeStamp start, TimeStamp end = TimeStamp::Now());
+
+void AccumulateTimeDelta(HistogramID id, TimeStamp start,
+                         TimeStamp end = TimeStamp::Now());
 
 
 
@@ -213,11 +218,8 @@ void AccumulateTimeDelta(HistogramID id, TimeStamp start, TimeStamp end = TimeSt
 
 
 
-void
-AccumulateTimeDelta(HistogramID id,
-                    const nsCString& key,
-                    TimeStamp start,
-                    TimeStamp end = TimeStamp::Now());
+void AccumulateTimeDelta(HistogramID id, const nsCString& key, TimeStamp start,
+                         TimeStamp end = TimeStamp::Now());
 
 
 
@@ -231,31 +233,23 @@ void SetHistogramRecordingEnabled(HistogramID id, bool enabled);
 
 const char* GetHistogramName(HistogramID id);
 
-class MOZ_RAII RuntimeAutoTimer
-{
-public:
+class MOZ_RAII RuntimeAutoTimer {
+ public:
   explicit RuntimeAutoTimer(Telemetry::HistogramID aId,
                             TimeStamp aStart = TimeStamp::Now()
-                            MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : id(aId)
-    , start(aStart)
-  {
+                                MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : id(aId), start(aStart) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
-  explicit RuntimeAutoTimer(Telemetry::HistogramID aId,
-                            const nsCString& aKey,
+  explicit RuntimeAutoTimer(Telemetry::HistogramID aId, const nsCString& aKey,
                             TimeStamp aStart = TimeStamp::Now()
-                            MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : id(aId)
-    , key(aKey)
-    , start(aStart)
-  {
+                                MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : id(aId), key(aKey), start(aStart) {
     MOZ_ASSERT(!aKey.IsEmpty(), "The key must not be empty.");
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
 
-  ~RuntimeAutoTimer()
-  {
+  ~RuntimeAutoTimer() {
     if (key.IsEmpty()) {
       AccumulateTimeDelta(id, start);
     } else {
@@ -263,27 +257,25 @@ public:
     }
   }
 
-private:
+ private:
   Telemetry::HistogramID id;
   const nsCString key;
   const TimeStamp start;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-template<HistogramID id>
-class MOZ_RAII AutoTimer
-{
-public:
-  explicit AutoTimer(TimeStamp aStart = TimeStamp::Now() MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-     : start(aStart)
-  {
+template <HistogramID id>
+class MOZ_RAII AutoTimer {
+ public:
+  explicit AutoTimer(TimeStamp aStart = TimeStamp::Now()
+                         MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : start(aStart) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
 
-  explicit AutoTimer(const nsCString& aKey, TimeStamp aStart = TimeStamp::Now() MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : start(aStart)
-    , key(aKey)
-  {
+  explicit AutoTimer(const nsCString& aKey, TimeStamp aStart = TimeStamp::Now()
+                                                MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : start(aStart), key(aKey) {
     MOZ_ASSERT(!aKey.IsEmpty(), "The key must not be empty.");
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
@@ -296,32 +288,25 @@ public:
     }
   }
 
-private:
+ private:
   const TimeStamp start;
   const nsCString key;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-class MOZ_RAII RuntimeAutoCounter
-{
-public:
+class MOZ_RAII RuntimeAutoCounter {
+ public:
   explicit RuntimeAutoCounter(
-    HistogramID aId,
-    uint32_t counterStart = 0 MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : id(aId)
-    , counter(counterStart)
-  {
+      HistogramID aId,
+      uint32_t counterStart = 0 MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : id(aId), counter(counterStart) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
 
-  ~RuntimeAutoCounter()
-  {
-    Accumulate(id, counter);
-  }
+  ~RuntimeAutoCounter() { Accumulate(id, counter); }
 
   
-  void operator++()
-  {
+  void operator++() {
     if (NS_WARN_IF(counter == std::numeric_limits<uint32_t>::max())) {
       return;
     }
@@ -329,11 +314,10 @@ public:
   }
 
   
-  void operator+=(int increment)
-  {
+  void operator+=(int increment) {
     if (NS_WARN_IF(increment > 0 &&
                    static_cast<uint32_t>(increment) >
-                     (std::numeric_limits<uint32_t>::max() - counter))) {
+                       (std::numeric_limits<uint32_t>::max() - counter))) {
       counter = std::numeric_limits<uint32_t>::max();
       return;
     }
@@ -345,28 +329,25 @@ public:
     counter += increment;
   }
 
-private:
+ private:
   HistogramID id;
   uint32_t counter;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-template<HistogramID id>
+template <HistogramID id>
 class MOZ_RAII AutoCounter {
-public:
-  explicit AutoCounter(uint32_t counterStart = 0 MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : counter(counterStart)
-  {
+ public:
+  explicit AutoCounter(
+      uint32_t counterStart = 0 MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : counter(counterStart) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
   }
 
-  ~AutoCounter() {
-    Accumulate(id, counter);
-  }
+  ~AutoCounter() { Accumulate(id, counter); }
 
   
-  void operator++()
-  {
+  void operator++() {
     if (NS_WARN_IF(counter == std::numeric_limits<uint32_t>::max())) {
       return;
     }
@@ -374,11 +355,10 @@ public:
   }
 
   
-  void operator+=(int increment)
-  {
+  void operator+=(int increment) {
     if (NS_WARN_IF(increment > 0 &&
                    static_cast<uint32_t>(increment) >
-                     (std::numeric_limits<uint32_t>::max() - counter))) {
+                       (std::numeric_limits<uint32_t>::max() - counter))) {
       counter = std::numeric_limits<uint32_t>::max();
       return;
     }
@@ -390,10 +370,11 @@ public:
     counter += increment;
   }
 
-private:
+ private:
   uint32_t counter;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
+
 
 
 
@@ -404,7 +385,9 @@ bool CanRecordBase();
 
 
 
+
 bool CanRecordExtended();
+
 
 
 
@@ -428,9 +411,8 @@ bool CanRecordPrereleaseData();
 
 
 
-void RecordSlowSQLStatement(const nsACString &statement,
-                            const nsACString &dbName,
-                            uint32_t delay);
+void RecordSlowSQLStatement(const nsACString& statement,
+                            const nsACString& dbName, uint32_t delay);
 
 
 
@@ -439,9 +421,8 @@ void RecordSlowSQLStatement(const nsACString &statement,
 
 
 
-void
-RecordWebrtcIceCandidates(const uint32_t iceCandidateBitmask,
-                          const bool success);
+void RecordWebrtcIceCandidates(const uint32_t iceCandidateBitmask,
+                               const bool success);
 
 
 
@@ -553,7 +534,8 @@ void ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, uint32_t aValue);
 
 
 
-void ScalarAdd(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, uint32_t aValue);
+void ScalarAdd(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
+               uint32_t aValue);
 
 
 
@@ -562,7 +544,8 @@ void ScalarAdd(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, uint32_t
 
 
 
-void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, uint32_t aValue);
+void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
+               uint32_t aValue);
 
 
 
@@ -571,7 +554,8 @@ void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, uint32_t
 
 
 
-void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, bool aValue);
+void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
+               bool aValue);
 
 
 
@@ -581,9 +565,10 @@ void ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, bool aVa
 
 
 
-void ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, uint32_t aValue);
+void ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, const nsAString& aKey,
+                      uint32_t aValue);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

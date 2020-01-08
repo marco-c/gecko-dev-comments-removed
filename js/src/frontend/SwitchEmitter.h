@@ -170,312 +170,300 @@ struct BytecodeEmitter;
 
 
 
-class MOZ_STACK_CLASS SwitchEmitter
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+class MOZ_STACK_CLASS SwitchEmitter {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-  public:
-    enum class Kind {
-        Table,
-        Cond
-    };
+ public:
+  enum class Kind { Table, Cond };
 
-    
-    class MOZ_STACK_CLASS TableGenerator
-    {
-        BytecodeEmitter* bce_;
-
-        
-        mozilla::Maybe<js::Vector<size_t, 128, SystemAllocPolicy>> intmap_;
-
-        
-        int32_t intmapBitLength_ = 0;
-
-        
-        uint32_t tableLength_ = 0;
-
-        
-        int32_t low_ = JSVAL_INT_MAX, high_ = JSVAL_INT_MIN;
-
-        
-        bool valid_= true;
-
-#ifdef DEBUG
-        bool finished_ = false;
-#endif
-
-      public:
-        explicit TableGenerator(BytecodeEmitter* bce)
-          : bce_(bce)
-        {}
-
-        void setInvalid() {
-            valid_ = false;
-        }
-        MOZ_MUST_USE bool isValid() const {
-            return valid_;
-        }
-        MOZ_MUST_USE bool isInvalid() const {
-            return !valid_;
-        }
-
-        
-        
-        MOZ_MUST_USE bool addNumber(int32_t caseValue);
-
-        
-        
-        
-        void finish(uint32_t caseCount);
-
-      private:
-        friend SwitchEmitter;
-
-        
-
-        
-        int32_t low() const {
-            MOZ_ASSERT(finished_);
-            return low_;
-        }
-
-        
-        int32_t high() const {
-            MOZ_ASSERT(finished_);
-            return high_;
-        }
-
-        
-        uint32_t toCaseIndex(int32_t caseValue) const;
-
-        
-        
-        uint32_t tableLength() const;
-    };
-
-  private:
+  
+  class MOZ_STACK_CLASS TableGenerator {
     BytecodeEmitter* bce_;
 
     
-    Kind kind_ = Kind::Cond;
+    mozilla::Maybe<js::Vector<size_t, 128, SystemAllocPolicy>> intmap_;
 
     
-    bool hasDefault_ = false;
+    int32_t intmapBitLength_ = 0;
 
     
-    unsigned noteIndex_ = 0;
+    uint32_t tableLength_ = 0;
 
     
-    unsigned caseNoteIndex_ = 0;
+    int32_t low_ = JSVAL_INT_MAX, high_ = JSVAL_INT_MIN;
 
     
-    uint32_t caseCount_ = 0;
+    bool valid_ = true;
+
+#ifdef DEBUG
+    bool finished_ = false;
+#endif
+
+   public:
+    explicit TableGenerator(BytecodeEmitter* bce) : bce_(bce) {}
+
+    void setInvalid() { valid_ = false; }
+    MOZ_MUST_USE bool isValid() const { return valid_; }
+    MOZ_MUST_USE bool isInvalid() const { return !valid_; }
 
     
-    uint32_t caseIndex_ = 0;
-
     
-    ptrdiff_t top_ = 0;
-
-    
-    ptrdiff_t lastCaseOffset_ = 0;
-
-    
-    JumpTarget defaultJumpTargetOffset_ = { -1 };
-
-    
-    JumpList condSwitchDefaultOffset_;
-
-    
-    mozilla::Maybe<TDZCheckCache> tdzCacheLexical_;
-    mozilla::Maybe<EmitterScope> emitterScope_;
-
-    
-    mozilla::Maybe<TDZCheckCache> tdzCacheCaseAndBody_;
-
-    
-    mozilla::Maybe<BreakableControl> controlInfo_;
-
-    mozilla::Maybe<uint32_t> switchPos_;
+    MOZ_MUST_USE bool addNumber(int32_t caseValue);
 
     
     
     
+    void finish(uint32_t caseCount);
+
+   private:
+    friend SwitchEmitter;
+
     
-    js::Vector<ptrdiff_t, 32, SystemAllocPolicy> caseOffsets_;
+
+    
+    int32_t low() const {
+      MOZ_ASSERT(finished_);
+      return low_;
+    }
+
+    
+    int32_t high() const {
+      MOZ_ASSERT(finished_);
+      return high_;
+    }
+
+    
+    uint32_t toCaseIndex(int32_t caseValue) const;
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    enum class State {
-        
-        Start,
+    uint32_t tableLength() const;
+  };
 
-        
-        Discriminant,
+ private:
+  BytecodeEmitter* bce_;
 
-        
-        CaseCount,
+  
+  Kind kind_ = Kind::Cond;
 
-        
-        Lexical,
+  
+  bool hasDefault_ = false;
 
-        
-        Cond,
+  
+  unsigned noteIndex_ = 0;
 
-        
-        Table,
+  
+  unsigned caseNoteIndex_ = 0;
 
-        
-        CaseValue,
+  
+  uint32_t caseCount_ = 0;
 
-        
-        Case,
+  
+  uint32_t caseIndex_ = 0;
 
-        
-        CaseBody,
+  
+  ptrdiff_t top_ = 0;
 
-        
-        DefaultBody,
+  
+  ptrdiff_t lastCaseOffset_ = 0;
 
-        
-        End
-    };
-    State state_ = State::Start;
+  
+  JumpTarget defaultJumpTargetOffset_ = {-1};
 
-  public:
-    explicit SwitchEmitter(BytecodeEmitter* bce);
+  
+  JumpList condSwitchDefaultOffset_;
+
+  
+  mozilla::Maybe<TDZCheckCache> tdzCacheLexical_;
+  mozilla::Maybe<EmitterScope> emitterScope_;
+
+  
+  mozilla::Maybe<TDZCheckCache> tdzCacheCaseAndBody_;
+
+  
+  mozilla::Maybe<BreakableControl> controlInfo_;
+
+  mozilla::Maybe<uint32_t> switchPos_;
+
+  
+  
+  
+  
+  js::Vector<ptrdiff_t, 32, SystemAllocPolicy> caseOffsets_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
+    
+    Start,
 
     
-    
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE bool emitDiscriminant(const mozilla::Maybe<uint32_t>& switchPos);
+    Discriminant,
 
     
-    
-    MOZ_MUST_USE bool validateCaseCount(uint32_t caseCount);
+    CaseCount,
 
     
+    Lexical,
+
     
-    MOZ_MUST_USE bool emitLexical(Handle<LexicalScope::Data*> bindings);
+    Cond,
 
-    MOZ_MUST_USE bool emitCond();
-    MOZ_MUST_USE bool emitTable(const TableGenerator& tableGen);
+    
+    Table,
 
-    MOZ_MUST_USE bool prepareForCaseValue();
-    MOZ_MUST_USE bool emitCaseJump();
+    
+    CaseValue,
 
-    MOZ_MUST_USE bool emitCaseBody();
-    MOZ_MUST_USE bool emitCaseBody(int32_t caseValue, const TableGenerator& tableGen);
-    MOZ_MUST_USE bool emitDefaultBody();
-    MOZ_MUST_USE bool emitEnd();
+    
+    Case,
 
-  private:
-    MOZ_MUST_USE bool emitCaseOrDefaultJump(uint32_t caseIndex, bool isDefault);
-    MOZ_MUST_USE bool emitImplicitDefault();
+    
+    CaseBody,
+
+    
+    DefaultBody,
+
+    
+    End
+  };
+  State state_ = State::Start;
+
+ public:
+  explicit SwitchEmitter(BytecodeEmitter* bce);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool emitDiscriminant(const mozilla::Maybe<uint32_t>& switchPos);
+
+  
+  
+  MOZ_MUST_USE bool validateCaseCount(uint32_t caseCount);
+
+  
+  
+  MOZ_MUST_USE bool emitLexical(Handle<LexicalScope::Data*> bindings);
+
+  MOZ_MUST_USE bool emitCond();
+  MOZ_MUST_USE bool emitTable(const TableGenerator& tableGen);
+
+  MOZ_MUST_USE bool prepareForCaseValue();
+  MOZ_MUST_USE bool emitCaseJump();
+
+  MOZ_MUST_USE bool emitCaseBody();
+  MOZ_MUST_USE bool emitCaseBody(int32_t caseValue,
+                                 const TableGenerator& tableGen);
+  MOZ_MUST_USE bool emitDefaultBody();
+  MOZ_MUST_USE bool emitEnd();
+
+ private:
+  MOZ_MUST_USE bool emitCaseOrDefaultJump(uint32_t caseIndex, bool isDefault);
+  MOZ_MUST_USE bool emitImplicitDefault();
 };
 
 } 

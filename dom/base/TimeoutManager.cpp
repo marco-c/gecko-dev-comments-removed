@@ -28,41 +28,38 @@ using namespace mozilla::dom;
 
 static LazyLogModule gLog("Timeout");
 
-static int32_t              gRunningTimeoutDepth       = 0;
+static int32_t gRunningTimeoutDepth = 0;
 
 
-#define DEFAULT_MIN_CLAMP_TIMEOUT_VALUE 4 // 4ms
-#define DEFAULT_MIN_BACKGROUND_TIMEOUT_VALUE 1000 // 1000ms
-#define DEFAULT_MIN_TRACKING_TIMEOUT_VALUE 4 // 4ms
-#define DEFAULT_MIN_TRACKING_BACKGROUND_TIMEOUT_VALUE 1000 // 1000ms
+#define DEFAULT_MIN_CLAMP_TIMEOUT_VALUE 4                   // 4ms
+#define DEFAULT_MIN_BACKGROUND_TIMEOUT_VALUE 1000           // 1000ms
+#define DEFAULT_MIN_TRACKING_TIMEOUT_VALUE 4                // 4ms
+#define DEFAULT_MIN_TRACKING_BACKGROUND_TIMEOUT_VALUE 1000  // 1000ms
 static int32_t gMinClampTimeoutValue = 0;
 static int32_t gMinBackgroundTimeoutValue = 0;
 static int32_t gMinTrackingTimeoutValue = 0;
 static int32_t gMinTrackingBackgroundTimeoutValue = 0;
 static int32_t gTimeoutThrottlingDelay = 0;
-static bool    gAnnotateTrackingChannels = false;
+static bool gAnnotateTrackingChannels = false;
 
-#define DEFAULT_BACKGROUND_BUDGET_REGENERATION_FACTOR 100 // 1ms per 100ms
-#define DEFAULT_FOREGROUND_BUDGET_REGENERATION_FACTOR 1 // 1ms per 1ms
-#define DEFAULT_BACKGROUND_THROTTLING_MAX_BUDGET 50 // 50ms
-#define DEFAULT_FOREGROUND_THROTTLING_MAX_BUDGET -1 // infinite
-#define DEFAULT_BUDGET_THROTTLING_MAX_DELAY 15000 // 15s
+#define DEFAULT_BACKGROUND_BUDGET_REGENERATION_FACTOR 100  // 1ms per 100ms
+#define DEFAULT_FOREGROUND_BUDGET_REGENERATION_FACTOR 1    // 1ms per 1ms
+#define DEFAULT_BACKGROUND_THROTTLING_MAX_BUDGET 50        // 50ms
+#define DEFAULT_FOREGROUND_THROTTLING_MAX_BUDGET -1        // infinite
+#define DEFAULT_BUDGET_THROTTLING_MAX_DELAY 15000          // 15s
 #define DEFAULT_ENABLE_BUDGET_TIMEOUT_THROTTLING false
 static int32_t gBackgroundBudgetRegenerationFactor = 0;
 static int32_t gForegroundBudgetRegenerationFactor = 0;
 static int32_t gBackgroundThrottlingMaxBudget = 0;
 static int32_t gForegroundThrottlingMaxBudget = 0;
 static int32_t gBudgetThrottlingMaxDelay = 0;
-static bool    gEnableBudgetTimeoutThrottling = false;
+static bool gEnableBudgetTimeoutThrottling = false;
 
 
 const uint32_t TimeoutManager::InvalidFiringId = 0;
 
-namespace
-{
-double
-GetRegenerationFactor(bool aIsBackground)
-{
+namespace {
+double GetRegenerationFactor(bool aIsBackground) {
   
   
 
@@ -72,15 +69,13 @@ GetRegenerationFactor(bool aIsBackground)
   
   
   double denominator =
-    std::max(aIsBackground ? gBackgroundBudgetRegenerationFactor
-                           : gForegroundBudgetRegenerationFactor,
-             1);
+      std::max(aIsBackground ? gBackgroundBudgetRegenerationFactor
+                             : gForegroundBudgetRegenerationFactor,
+               1);
   return 1.0 / denominator;
 }
 
-TimeDuration
-GetMaxBudget(bool aIsBackground)
-{
+TimeDuration GetMaxBudget(bool aIsBackground) {
   
   
 
@@ -93,32 +88,26 @@ GetMaxBudget(bool aIsBackground)
                        : TimeDuration::Forever();
 }
 
-TimeDuration
-GetMinBudget(bool aIsBackground)
-{
+TimeDuration GetMinBudget(bool aIsBackground) {
   
   
   
   
   return TimeDuration::FromMilliseconds(
-    - gBudgetThrottlingMaxDelay /
-    std::max(aIsBackground ? gBackgroundBudgetRegenerationFactor
-                           : gForegroundBudgetRegenerationFactor,
-             1));
+      -gBudgetThrottlingMaxDelay /
+      std::max(aIsBackground ? gBackgroundBudgetRegenerationFactor
+                             : gForegroundBudgetRegenerationFactor,
+               1));
 }
-} 
+}  
 
 
 
-bool
-TimeoutManager::IsBackground() const
-{
+bool TimeoutManager::IsBackground() const {
   return !IsActive() && mWindow.IsBackgroundInternal();
 }
 
-bool
-TimeoutManager::IsActive() const
-{
+bool TimeoutManager::IsActive() const {
   
   
   
@@ -138,10 +127,7 @@ TimeoutManager::IsActive() const
   return false;
 }
 
-
-uint32_t
-TimeoutManager::CreateFiringId()
-{
+uint32_t TimeoutManager::CreateFiringId() {
   uint32_t id = mNextFiringId;
   mNextFiringId += 1;
   if (mNextFiringId == InvalidFiringId) {
@@ -153,23 +139,17 @@ TimeoutManager::CreateFiringId()
   return id;
 }
 
-void
-TimeoutManager::DestroyFiringId(uint32_t aFiringId)
-{
+void TimeoutManager::DestroyFiringId(uint32_t aFiringId) {
   MOZ_DIAGNOSTIC_ASSERT(!mFiringIdStack.IsEmpty());
   MOZ_DIAGNOSTIC_ASSERT(mFiringIdStack.LastElement() == aFiringId);
   mFiringIdStack.RemoveLastElement();
 }
 
-bool
-TimeoutManager::IsValidFiringId(uint32_t aFiringId) const
-{
+bool TimeoutManager::IsValidFiringId(uint32_t aFiringId) const {
   return !IsInvalidFiringId(aFiringId);
 }
 
-TimeDuration
-TimeoutManager::MinSchedulingDelay() const
-{
+TimeDuration TimeoutManager::MinSchedulingDelay() const {
   if (IsActive()) {
     return TimeDuration();
   }
@@ -216,8 +196,8 @@ TimeoutManager::MinSchedulingDelay() const
   
   
   TimeDuration unthrottled =
-    isBackground ? TimeDuration::FromMilliseconds(gMinBackgroundTimeoutValue)
-                 : TimeDuration();
+      isBackground ? TimeDuration::FromMilliseconds(gMinBackgroundTimeoutValue)
+                   : TimeDuration();
   if (BudgetThrottlingEnabled(isBackground) &&
       mExecutionBudget < TimeDuration()) {
     
@@ -228,9 +208,8 @@ TimeoutManager::MinSchedulingDelay() const
   return unthrottled;
 }
 
-nsresult
-TimeoutManager::MaybeSchedule(const TimeStamp& aWhen, const TimeStamp& aNow)
-{
+nsresult TimeoutManager::MaybeSchedule(const TimeStamp& aWhen,
+                                       const TimeStamp& aNow) {
   MOZ_DIAGNOSTIC_ASSERT(mExecutor);
 
   
@@ -239,13 +218,10 @@ TimeoutManager::MaybeSchedule(const TimeStamp& aWhen, const TimeStamp& aNow)
   return mExecutor->MaybeSchedule(aWhen, MinSchedulingDelay());
 }
 
-bool
-TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const
-{
+bool TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const {
   
   
-  if (aFiringId == InvalidFiringId ||
-      mFiringIdStack.IsEmpty()) {
+  if (aFiringId == InvalidFiringId || mFiringIdStack.IsEmpty()) {
     return true;
   }
 
@@ -282,22 +258,19 @@ TimeoutManager::IsInvalidFiringId(uint32_t aFiringId) const
 
 #define DOM_CLAMP_TIMEOUT_NESTING_LEVEL 5u
 
-TimeDuration
-TimeoutManager::CalculateDelay(Timeout* aTimeout) const {
+TimeDuration TimeoutManager::CalculateDelay(Timeout* aTimeout) const {
   MOZ_DIAGNOSTIC_ASSERT(aTimeout);
   TimeDuration result = aTimeout->mInterval;
 
   if (aTimeout->mNestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL) {
     result = TimeDuration::Max(
-      result, TimeDuration::FromMilliseconds(gMinClampTimeoutValue));
+        result, TimeDuration::FromMilliseconds(gMinClampTimeoutValue));
   }
 
   return result;
 }
 
-PerformanceCounter*
-TimeoutManager::GetPerformanceCounter()
-{
+PerformanceCounter* TimeoutManager::GetPerformanceCounter() {
   if (!StaticPrefs::dom_performance_enable_scheduler_timing()) {
     return nullptr;
   }
@@ -311,10 +284,8 @@ TimeoutManager::GetPerformanceCounter()
   return nullptr;
 }
 
-void
-TimeoutManager::RecordExecution(Timeout* aRunningTimeout,
-                                Timeout* aTimeout)
-{
+void TimeoutManager::RecordExecution(Timeout* aRunningTimeout,
+                                     Timeout* aTimeout) {
   if (!StaticPrefs::dom_performance_enable_scheduler_timing() &&
       mWindow.IsChromeWindow()) {
     return;
@@ -351,9 +322,8 @@ TimeoutManager::RecordExecution(Timeout* aRunningTimeout,
   }
 }
 
-void
-TimeoutManager::UpdateBudget(const TimeStamp& aNow, const TimeDuration& aDuration)
-{
+void TimeoutManager::UpdateBudget(const TimeStamp& aNow,
+                                  const TimeDuration& aDuration) {
   if (mWindow.IsChromeWindow()) {
     return;
   }
@@ -371,9 +341,9 @@ TimeoutManager::UpdateBudget(const TimeStamp& aNow, const TimeDuration& aDuratio
     TimeDuration regenerated = (aNow - mLastBudgetUpdate).MultDouble(factor);
     
     mExecutionBudget = TimeDuration::Max(
-      GetMinBudget(isBackground),
-      TimeDuration::Min(GetMaxBudget(isBackground),
-                        mExecutionBudget - aDuration + regenerated));
+        GetMinBudget(isBackground),
+        TimeDuration::Min(GetMaxBudget(isBackground),
+                          mExecutionBudget - aDuration + regenerated));
   } else {
     
     
@@ -388,13 +358,14 @@ TimeoutManager::UpdateBudget(const TimeStamp& aNow, const TimeDuration& aDuratio
   mLastBudgetUpdate = aNow;
 }
 
-#define DEFAULT_TIMEOUT_THROTTLING_DELAY           -1  // Only positive integers cause us to introduce a delay for
-                                                       
+#define DEFAULT_TIMEOUT_THROTTLING_DELAY \
+  -1  // Only positive integers cause us to introduce a delay for
+      
 
 
 
 
-#define DOM_MAX_TIMEOUT_VALUE    DELAY_INTERVAL_LIMIT
+#define DOM_MAX_TIMEOUT_VALUE DELAY_INTERVAL_LIMIT
 
 uint32_t TimeoutManager::sNestingLevel = 0;
 
@@ -410,44 +381,38 @@ uint32_t gMaxConsecutiveCallbacksMilliseconds;
 #define DEFAULT_DISABLE_OPEN_CLICK_DELAY 0
 int32_t gDisableOpenClickDelay;
 
-} 
+}  
 
 TimeoutManager::TimeoutManager(nsGlobalWindowInner& aWindow)
-  : mWindow(aWindow),
-    mExecutor(new TimeoutExecutor(this)),
-    mTimeouts(*this),
-    mTimeoutIdCounter(1),
-    mNextFiringId(InvalidFiringId + 1),
-    mRunningTimeout(nullptr),
-    mIdleCallbackTimeoutCounter(1),
-    mLastBudgetUpdate(TimeStamp::Now()),
-    mExecutionBudget(GetMaxBudget(mWindow.IsBackgroundInternal())),
-    mThrottleTimeouts(false),
-    mThrottleTrackingTimeouts(false),
-    mBudgetThrottleTimeouts(false)
-{
+    : mWindow(aWindow),
+      mExecutor(new TimeoutExecutor(this)),
+      mTimeouts(*this),
+      mTimeoutIdCounter(1),
+      mNextFiringId(InvalidFiringId + 1),
+      mRunningTimeout(nullptr),
+      mIdleCallbackTimeoutCounter(1),
+      mLastBudgetUpdate(TimeStamp::Now()),
+      mExecutionBudget(GetMaxBudget(mWindow.IsBackgroundInternal())),
+      mThrottleTimeouts(false),
+      mThrottleTrackingTimeouts(false),
+      mBudgetThrottleTimeouts(false) {
   MOZ_LOG(gLog, LogLevel::Debug,
-          ("TimeoutManager %p created, tracking bucketing %s\n",
-           this, gAnnotateTrackingChannels ? "enabled" : "disabled"));
+          ("TimeoutManager %p created, tracking bucketing %s\n", this,
+           gAnnotateTrackingChannels ? "enabled" : "disabled"));
 }
 
-TimeoutManager::~TimeoutManager()
-{
+TimeoutManager::~TimeoutManager() {
   MOZ_DIAGNOSTIC_ASSERT(mWindow.IsDying());
   MOZ_DIAGNOSTIC_ASSERT(!mThrottleTimeoutsTimer);
 
   mExecutor->Shutdown();
 
-  MOZ_LOG(gLog, LogLevel::Debug,
-          ("TimeoutManager %p destroyed\n", this));
+  MOZ_LOG(gLog, LogLevel::Debug, ("TimeoutManager %p destroyed\n", this));
 }
 
 
-void
-TimeoutManager::Initialize()
-{
-  Preferences::AddIntVarCache(&gMinClampTimeoutValue,
-                              "dom.min_timeout_value",
+void TimeoutManager::Initialize() {
+  Preferences::AddIntVarCache(&gMinClampTimeoutValue, "dom.min_timeout_value",
                               DEFAULT_MIN_CLAMP_TIMEOUT_VALUE);
   Preferences::AddIntVarCache(&gMinBackgroundTimeoutValue,
                               "dom.min_background_timeout_value",
@@ -493,9 +458,7 @@ TimeoutManager::Initialize()
                                DEFAULT_ENABLE_BUDGET_TIMEOUT_THROTTLING);
 }
 
-uint32_t
-TimeoutManager::GetTimeoutId(Timeout::Reason aReason)
-{
+uint32_t TimeoutManager::GetTimeoutId(Timeout::Reason aReason) {
   switch (aReason) {
     case Timeout::Reason::eIdleCallbackTimeout:
       return ++mIdleCallbackTimeoutCounter;
@@ -505,17 +468,11 @@ TimeoutManager::GetTimeoutId(Timeout::Reason aReason)
   }
 }
 
-bool
-TimeoutManager::IsRunningTimeout() const
-{
-  return mRunningTimeout;
-}
+bool TimeoutManager::IsRunningTimeout() const { return mRunningTimeout; }
 
-nsresult
-TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
-                           int32_t interval, bool aIsInterval,
-                           Timeout::Reason aReason, int32_t* aReturn)
-{
+nsresult TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
+                                    int32_t interval, bool aIsInterval,
+                                    Timeout::Reason aReason, int32_t* aReturn) {
   
   
   nsCOMPtr<nsIDocument> doc = mWindow.GetExtantDoc();
@@ -545,7 +502,8 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   timeout->mPopupState = openAbused;
 
   timeout->mNestingLevel = sNestingLevel < DOM_CLAMP_TIMEOUT_NESTING_LEVEL
-                         ? sNestingLevel + 1 : sNestingLevel;
+                               ? sNestingLevel + 1
+                               : sNestingLevel;
 
   
   TimeDuration realInterval = CalculateDelay(timeout);
@@ -582,29 +540,23 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
   timeout->mTimeoutId = GetTimeoutId(aReason);
   *aReturn = timeout->mTimeoutId;
 
-  MOZ_LOG(gLog,
-          LogLevel::Debug,
-          ("Set%s(TimeoutManager=%p, timeout=%p, delay=%i, "
-           "minimum=%f, throttling=%s, state=%s(%s), realInterval=%f) "
-           "returned timeout ID %u, budget=%d\n",
-           aIsInterval ? "Interval" : "Timeout",
-           this, timeout.get(), interval,
-           (CalculateDelay(timeout) - timeout->mInterval).ToMilliseconds(),
-           mThrottleTimeouts
-             ? "yes"
-             : (mThrottleTimeoutsTimer ? "pending" : "no"),
-           IsActive() ? "active" : "inactive",
-           mWindow.IsBackgroundInternal() ? "background" : "foreground",
-           realInterval.ToMilliseconds(),
-           timeout->mTimeoutId,
-           int(mExecutionBudget.ToMilliseconds())));
+  MOZ_LOG(
+      gLog, LogLevel::Debug,
+      ("Set%s(TimeoutManager=%p, timeout=%p, delay=%i, "
+       "minimum=%f, throttling=%s, state=%s(%s), realInterval=%f) "
+       "returned timeout ID %u, budget=%d\n",
+       aIsInterval ? "Interval" : "Timeout", this, timeout.get(), interval,
+       (CalculateDelay(timeout) - timeout->mInterval).ToMilliseconds(),
+       mThrottleTimeouts ? "yes" : (mThrottleTimeoutsTimer ? "pending" : "no"),
+       IsActive() ? "active" : "inactive",
+       mWindow.IsBackgroundInternal() ? "background" : "foreground",
+       realInterval.ToMilliseconds(), timeout->mTimeoutId,
+       int(mExecutionBudget.ToMilliseconds())));
 
   return NS_OK;
 }
 
-void
-TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
-{
+void TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason) {
   uint32_t timerId = (uint32_t)aTimerId;
 
   bool firstTimeout = true;
@@ -612,8 +564,9 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
 
   mTimeouts.ForEachAbortable([&](Timeout* aTimeout) {
     MOZ_LOG(gLog, LogLevel::Debug,
-            ("Clear%s(TimeoutManager=%p, timeout=%p, aTimerId=%u, ID=%u)\n", aTimeout->mIsInterval ? "Interval" : "Timeout",
-             this, aTimeout, timerId, aTimeout->mTimeoutId));
+            ("Clear%s(TimeoutManager=%p, timeout=%p, aTimerId=%u, ID=%u)\n",
+             aTimeout->mIsInterval ? "Interval" : "Timeout", this, aTimeout,
+             timerId, aTimeout->mTimeoutId));
 
     if (aTimeout->mTimeoutId == timerId && aTimeout->mReason == aReason) {
       if (aTimeout->mRunning) {
@@ -622,12 +575,11 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
 
         aTimeout->mIsInterval = false;
         deferredDeletion = true;
-      }
-      else {
+      } else {
         
         aTimeout->remove();
       }
-      return true; 
+      return true;  
     }
 
     firstTimeout = false;
@@ -656,9 +608,8 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
   }
 }
 
-void
-TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadline)
-{
+void TimeoutManager::RunTimeout(const TimeStamp& aNow,
+                                const TimeStamp& aTargetDeadline) {
   MOZ_DIAGNOSTIC_ASSERT(!aNow.IsNull());
   MOZ_DIAGNOSTIC_ASSERT(!aTargetDeadline.IsNull());
 
@@ -668,15 +619,16 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
   }
 
   
-  uint32_t totalTimeLimitMS = std::max(1u, gMaxConsecutiveCallbacksMilliseconds);
+  uint32_t totalTimeLimitMS =
+      std::max(1u, gMaxConsecutiveCallbacksMilliseconds);
   const TimeDuration totalTimeLimit =
-    TimeDuration::Min(TimeDuration::FromMilliseconds(totalTimeLimitMS),
-                      TimeDuration::Max(TimeDuration(), mExecutionBudget));
+      TimeDuration::Min(TimeDuration::FromMilliseconds(totalTimeLimitMS),
+                        TimeDuration::Max(TimeDuration(), mExecutionBudget));
 
   
   
   const TimeDuration initialTimeLimit =
-    TimeDuration::FromMilliseconds(totalTimeLimit.ToMilliseconds() / 4);
+      TimeDuration::FromMilliseconds(totalTimeLimit.ToMilliseconds() / 4);
 
   
   
@@ -688,9 +640,7 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
   TimeStamp start = now;
 
   uint32_t firingId = CreateFiringId();
-  auto guard = MakeScopeExit([&] {
-    DestroyFiringId(firingId);
-  });
+  auto guard = MakeScopeExit([&] { DestroyFiringId(firingId); });
 
   
   
@@ -724,8 +674,7 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
   
   
   
-  for (Timeout* timeout = mTimeouts.GetFirst();
-       timeout != nullptr;
+  for (Timeout* timeout = mTimeouts.GetFirst(); timeout != nullptr;
        timeout = timeout->getNext()) {
     if (totalTimeLimit.IsZero() || timeout->When() > deadline) {
       nextDeadline = timeout->When();
@@ -790,8 +739,7 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
     
     RefPtr<Timeout> next;
 
-    for (RefPtr<Timeout> timeout = mTimeouts.GetFirst();
-         timeout != nullptr;
+    for (RefPtr<Timeout> timeout = mTimeouts.GetFirst(); timeout != nullptr;
          timeout = next) {
       next = timeout->getNext();
       
@@ -837,14 +785,10 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
       
       bool timeout_was_cleared = mWindow.RunTimeoutHandler(timeout, scx);
 
-      MOZ_LOG(
-        gLog,
-        LogLevel::Debug,
-        ("Run%s(TimeoutManager=%p, timeout=%p) returned %d\n",
-         timeout->mIsInterval ? "Interval" : "Timeout",
-         this,
-         timeout.get(),
-         !!timeout_was_cleared));
+      MOZ_LOG(gLog, LogLevel::Debug,
+              ("Run%s(TimeoutManager=%p, timeout=%p) returned %d\n",
+               timeout->mIsInterval ? "Interval" : "Timeout", this,
+               timeout.get(), !!timeout_was_cleared));
 
       if (timeout_was_cleared) {
         
@@ -876,9 +820,9 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
       if (needsReinsertion) {
         
         
-        mTimeouts.Insert(timeout,
-                         mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
-                                            : Timeouts::SortBy::TimeWhen);
+        mTimeouts.Insert(timeout, mWindow.IsFrozen()
+                                      ? Timeouts::SortBy::TimeRemaining
+                                      : Timeouts::SortBy::TimeWhen);
       }
 
       
@@ -908,11 +852,9 @@ TimeoutManager::RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadli
   }
 }
 
-bool
-TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
-                                  const TimeStamp& aLastCallbackTime,
-                                  const TimeStamp& aCurrentNow)
-{
+bool TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
+                                       const TimeStamp& aLastCallbackTime,
+                                       const TimeStamp& aCurrentNow) {
   MOZ_DIAGNOSTIC_ASSERT(aLastCallbackTime <= aCurrentNow);
 
   if (!aTimeout->mIsInterval) {
@@ -951,9 +893,7 @@ TimeoutManager::RescheduleTimeout(Timeout* aTimeout,
   return true;
 }
 
-void
-TimeoutManager::ClearAllTimeouts()
-{
+void TimeoutManager::ClearAllTimeouts() {
   bool seenRunningTimeout = false;
 
   MOZ_LOG(gLog, LogLevel::Debug,
@@ -985,24 +925,21 @@ TimeoutManager::ClearAllTimeouts()
   mTimeouts.Clear();
 }
 
-void
-TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy)
-{
-
+void TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy) {
   
   
   
   Timeout* prevSibling;
   for (prevSibling = GetLast();
        prevSibling &&
-         
-         
-         (aSortBy == SortBy::TimeRemaining ?
-          prevSibling->TimeRemaining() > aTimeout->TimeRemaining() :
-          prevSibling->When() > aTimeout->When()) &&
-         
-         
-         mManager.IsInvalidFiringId(prevSibling->mFiringId);
+       
+       
+       (aSortBy == SortBy::TimeRemaining
+            ? prevSibling->TimeRemaining() > aTimeout->TimeRemaining()
+            : prevSibling->When() > aTimeout->When()) &&
+       
+       
+       mManager.IsInvalidFiringId(prevSibling->mFiringId);
        prevSibling = prevSibling->getPrevious()) {
     
   }
@@ -1017,9 +954,7 @@ TimeoutManager::Timeouts::Insert(Timeout* aTimeout, SortBy aSortBy)
   aTimeout->mFiringId = InvalidFiringId;
 }
 
-Timeout*
-TimeoutManager::BeginRunningTimeout(Timeout* aTimeout)
-{
+Timeout* TimeoutManager::BeginRunningTimeout(Timeout* aTimeout) {
   Timeout* currentTimeout = mRunningTimeout;
   mRunningTimeout = aTimeout;
   ++gRunningTimeoutDepth;
@@ -1028,18 +963,14 @@ TimeoutManager::BeginRunningTimeout(Timeout* aTimeout)
   return currentTimeout;
 }
 
-void
-TimeoutManager::EndRunningTimeout(Timeout* aTimeout)
-{
+void TimeoutManager::EndRunningTimeout(Timeout* aTimeout) {
   --gRunningTimeoutDepth;
 
   RecordExecution(mRunningTimeout, aTimeout);
   mRunningTimeout = aTimeout;
 }
 
-void
-TimeoutManager::UnmarkGrayTimers()
-{
+void TimeoutManager::UnmarkGrayTimers() {
   ForEachUnorderedTimeout([](Timeout* aTimeout) {
     if (aTimeout->mScriptHandler) {
       aTimeout->mScriptHandler->MarkForCC();
@@ -1047,11 +978,8 @@ TimeoutManager::UnmarkGrayTimers()
   });
 }
 
-void
-TimeoutManager::Suspend()
-{
-  MOZ_LOG(gLog, LogLevel::Debug,
-          ("Suspend(TimeoutManager=%p)\n", this));
+void TimeoutManager::Suspend() {
+  MOZ_LOG(gLog, LogLevel::Debug, ("Suspend(TimeoutManager=%p)\n", this));
 
   if (mThrottleTimeoutsTimer) {
     mThrottleTimeoutsTimer->Cancel();
@@ -1061,11 +989,8 @@ TimeoutManager::Suspend()
   mExecutor->Cancel();
 }
 
-void
-TimeoutManager::Resume()
-{
-  MOZ_LOG(gLog, LogLevel::Debug,
-          ("Resume(TimeoutManager=%p)\n", this));
+void TimeoutManager::Resume() {
+  MOZ_LOG(gLog, LogLevel::Debug, ("Resume(TimeoutManager=%p)\n", this));
 
   
   
@@ -1080,11 +1005,8 @@ TimeoutManager::Resume()
   }
 }
 
-void
-TimeoutManager::Freeze()
-{
-  MOZ_LOG(gLog, LogLevel::Debug,
-          ("Freeze(TimeoutManager=%p)\n", this));
+void TimeoutManager::Freeze() {
+  MOZ_LOG(gLog, LogLevel::Debug, ("Freeze(TimeoutManager=%p)\n", this));
 
   TimeStamp now = TimeStamp::Now();
   ForEachUnorderedTimeout([&](Timeout* aTimeout) {
@@ -1101,11 +1023,8 @@ TimeoutManager::Freeze()
   });
 }
 
-void
-TimeoutManager::Thaw()
-{
-  MOZ_LOG(gLog, LogLevel::Debug,
-          ("Thaw(TimeoutManager=%p)\n", this));
+void TimeoutManager::Thaw() {
+  MOZ_LOG(gLog, LogLevel::Debug, ("Thaw(TimeoutManager=%p)\n", this));
 
   TimeStamp now = TimeStamp::Now();
 
@@ -1116,9 +1035,7 @@ TimeoutManager::Thaw()
   });
 }
 
-void
-TimeoutManager::UpdateBackgroundState()
-{
+void TimeoutManager::UpdateBackgroundState() {
   mExecutionBudget = GetMaxBudget(mWindow.IsBackgroundInternal());
 
   
@@ -1136,28 +1053,24 @@ TimeoutManager::UpdateBackgroundState()
 
 namespace {
 
-class ThrottleTimeoutsCallback final : public nsITimerCallback
-                                     , public nsINamed
-{
-public:
+class ThrottleTimeoutsCallback final : public nsITimerCallback,
+                                       public nsINamed {
+ public:
   explicit ThrottleTimeoutsCallback(nsGlobalWindowInner* aWindow)
-    : mWindow(aWindow)
-  {
-  }
+      : mWindow(aWindow) {}
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSITIMERCALLBACK
 
-  NS_IMETHOD GetName(nsACString& aName) override
-  {
+  NS_IMETHOD GetName(nsACString& aName) override {
     aName.AssignLiteral("ThrottleTimeoutsCallback");
     return NS_OK;
   }
 
-private:
+ private:
   ~ThrottleTimeoutsCallback() {}
 
-private:
+ private:
   
   
   RefPtr<nsGlobalWindowInner> mWindow;
@@ -1166,18 +1079,15 @@ private:
 NS_IMPL_ISUPPORTS(ThrottleTimeoutsCallback, nsITimerCallback, nsINamed)
 
 NS_IMETHODIMP
-ThrottleTimeoutsCallback::Notify(nsITimer* aTimer)
-{
+ThrottleTimeoutsCallback::Notify(nsITimer* aTimer) {
   mWindow->AsInner()->TimeoutManager().StartThrottlingTimeouts();
   mWindow = nullptr;
   return NS_OK;
 }
 
-}
+}  
 
-bool
-TimeoutManager::BudgetThrottlingEnabled(bool aIsBackground) const
-{
+bool TimeoutManager::BudgetThrottlingEnabled(bool aIsBackground) const {
   
   
   
@@ -1188,7 +1098,7 @@ TimeoutManager::BudgetThrottlingEnabled(bool aIsBackground) const
   
   
   if ((aIsBackground ? gBackgroundThrottlingMaxBudget
-       : gForegroundThrottlingMaxBudget) < 0) {
+                     : gForegroundThrottlingMaxBudget) < 0) {
     return false;
   }
 
@@ -1213,9 +1123,7 @@ TimeoutManager::BudgetThrottlingEnabled(bool aIsBackground) const
   return true;
 }
 
-void
-TimeoutManager::StartThrottlingTimeouts()
-{
+void TimeoutManager::StartThrottlingTimeouts() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(mThrottleTimeoutsTimer);
 
@@ -1229,9 +1137,7 @@ TimeoutManager::StartThrottlingTimeouts()
   mThrottleTimeoutsTimer = nullptr;
 }
 
-void
-TimeoutManager::OnDocumentLoaded()
-{
+void TimeoutManager::OnDocumentLoaded() {
   
   
   
@@ -1240,11 +1146,9 @@ TimeoutManager::OnDocumentLoaded()
   }
 }
 
-void
-TimeoutManager::MaybeStartThrottleTimeout()
-{
-  if (gTimeoutThrottlingDelay <= 0 ||
-      mWindow.IsDying() || mWindow.IsSuspended()) {
+void TimeoutManager::MaybeStartThrottleTimeout() {
+  if (gTimeoutThrottlingDelay <= 0 || mWindow.IsDying() ||
+      mWindow.IsSuspended()) {
     return;
   }
 
@@ -1254,17 +1158,14 @@ TimeoutManager::MaybeStartThrottleTimeout()
           ("TimeoutManager %p delaying tracking timeout throttling by %dms\n",
            this, gTimeoutThrottlingDelay));
 
-  nsCOMPtr<nsITimerCallback> callback =
-    new ThrottleTimeoutsCallback(&mWindow);
+  nsCOMPtr<nsITimerCallback> callback = new ThrottleTimeoutsCallback(&mWindow);
 
-  NS_NewTimerWithCallback(getter_AddRefs(mThrottleTimeoutsTimer),
-                          callback, gTimeoutThrottlingDelay, nsITimer::TYPE_ONE_SHOT,
+  NS_NewTimerWithCallback(getter_AddRefs(mThrottleTimeoutsTimer), callback,
+                          gTimeoutThrottlingDelay, nsITimer::TYPE_ONE_SHOT,
                           EventTarget());
 }
 
-void
-TimeoutManager::BeginSyncOperation()
-{
+void TimeoutManager::BeginSyncOperation() {
   
   
   
@@ -1274,15 +1175,11 @@ TimeoutManager::BeginSyncOperation()
   RecordExecution(mRunningTimeout, nullptr);
 }
 
-void
-TimeoutManager::EndSyncOperation()
-{
+void TimeoutManager::EndSyncOperation() {
   
   RecordExecution(nullptr, mRunningTimeout);
 }
 
-nsIEventTarget*
-TimeoutManager::EventTarget()
-{
+nsIEventTarget* TimeoutManager::EventTarget() {
   return mWindow.EventTargetFor(TaskCategory::Timer);
 }

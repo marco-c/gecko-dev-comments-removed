@@ -12,80 +12,64 @@
 namespace mozilla {
 namespace layers {
 
-InProcessCompositorSession::InProcessCompositorSession(widget::CompositorWidget* aWidget,
-                                                       nsBaseWidget* baseWidget,
-                                                       CompositorBridgeChild* aChild,
-                                                       CompositorBridgeParent* aParent)
- : CompositorSession(aWidget->AsDelegate(), aChild, aParent->RootLayerTreeId()),
-   mWidget(baseWidget),
-   mCompositorBridgeParent(aParent),
-   mCompositorWidget(aWidget)
-{
+InProcessCompositorSession::InProcessCompositorSession(
+    widget::CompositorWidget* aWidget, nsBaseWidget* baseWidget,
+    CompositorBridgeChild* aChild, CompositorBridgeParent* aParent)
+    : CompositorSession(aWidget->AsDelegate(), aChild,
+                        aParent->RootLayerTreeId()),
+      mWidget(baseWidget),
+      mCompositorBridgeParent(aParent),
+      mCompositorWidget(aWidget) {
   GPUProcessManager::Get()->RegisterInProcessSession(this);
 }
 
  RefPtr<InProcessCompositorSession>
-InProcessCompositorSession::Create(nsBaseWidget* aWidget,
-                                   LayerManager* aLayerManager,
-                                   const LayersId& aRootLayerTreeId,
-                                   CSSToLayoutDeviceScale aScale,
-                                   const CompositorOptions& aOptions,
-                                   bool aUseExternalSurfaceSize,
-                                   const gfx::IntSize& aSurfaceSize,
-                                   uint32_t aNamespace)
-{
+InProcessCompositorSession::Create(
+    nsBaseWidget* aWidget, LayerManager* aLayerManager,
+    const LayersId& aRootLayerTreeId, CSSToLayoutDeviceScale aScale,
+    const CompositorOptions& aOptions, bool aUseExternalSurfaceSize,
+    const gfx::IntSize& aSurfaceSize, uint32_t aNamespace) {
   CompositorWidgetInitData initData;
   aWidget->GetCompositorWidgetInitData(&initData);
 
-  RefPtr<CompositorWidget> widget = CompositorWidget::CreateLocal(initData, aOptions, aWidget);
+  RefPtr<CompositorWidget> widget =
+      CompositorWidget::CreateLocal(initData, aOptions, aWidget);
   RefPtr<CompositorBridgeParent> parent =
-    CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(aScale, aOptions,
-                                                                     aUseExternalSurfaceSize,
-                                                                     aSurfaceSize);
+      CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(
+          aScale, aOptions, aUseExternalSurfaceSize, aSurfaceSize);
   MOZ_ASSERT(parent);
   parent->InitSameProcess(widget, aRootLayerTreeId);
 
   RefPtr<CompositorBridgeChild> child =
-    CompositorManagerChild::CreateSameProcessWidgetCompositorBridge(aLayerManager,
-                                                                    aNamespace);
+      CompositorManagerChild::CreateSameProcessWidgetCompositorBridge(
+          aLayerManager, aNamespace);
   MOZ_ASSERT(child);
 
   return new InProcessCompositorSession(widget, aWidget, child, parent);
 }
 
-void
-InProcessCompositorSession::NotifySessionLost()
-{
+void InProcessCompositorSession::NotifySessionLost() {
   mWidget->NotifyCompositorSessionLost(this);
 }
 
-CompositorBridgeParent*
-InProcessCompositorSession::GetInProcessBridge() const
-{
+CompositorBridgeParent* InProcessCompositorSession::GetInProcessBridge() const {
   return mCompositorBridgeParent;
 }
 
-void
-InProcessCompositorSession::SetContentController(GeckoContentController* aController)
-{
-  mCompositorBridgeParent->SetControllerForLayerTree(mRootLayerTreeId, aController);
+void InProcessCompositorSession::SetContentController(
+    GeckoContentController* aController) {
+  mCompositorBridgeParent->SetControllerForLayerTree(mRootLayerTreeId,
+                                                     aController);
 }
 
-RefPtr<IAPZCTreeManager>
-InProcessCompositorSession::GetAPZCTreeManager() const
-{
+RefPtr<IAPZCTreeManager> InProcessCompositorSession::GetAPZCTreeManager()
+    const {
   return mCompositorBridgeParent->GetAPZCTreeManager(mRootLayerTreeId);
 }
 
-nsIWidget*
-InProcessCompositorSession::GetWidget() const
-{
-  return mWidget;
-}
+nsIWidget* InProcessCompositorSession::GetWidget() const { return mWidget; }
 
-void
-InProcessCompositorSession::Shutdown()
-{
+void InProcessCompositorSession::Shutdown() {
   
   
   
@@ -95,7 +79,7 @@ InProcessCompositorSession::Shutdown()
     mUiCompositorControllerChild->Destroy();
     mUiCompositorControllerChild = nullptr;
   }
-#endif 
+#endif  
   mCompositorBridgeChild->Destroy();
   mCompositorBridgeChild = nullptr;
   mCompositorBridgeParent = nullptr;
@@ -103,5 +87,5 @@ InProcessCompositorSession::Shutdown()
   GPUProcessManager::Get()->UnregisterInProcessSession(this);
 }
 
-} 
-} 
+}  
+}  

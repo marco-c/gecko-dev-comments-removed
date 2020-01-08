@@ -58,19 +58,17 @@
 
 
 
-class mozStorageTransaction
-{
-public:
-  mozStorageTransaction(mozIStorageConnection* aConnection,
-                        bool aCommitOnComplete,
-                        int32_t aType = mozIStorageConnection::TRANSACTION_DEFAULT,
-                        bool aAsyncCommit = false)
-    : mConnection(aConnection),
-      mHasTransaction(false),
-      mCommitOnComplete(aCommitOnComplete),
-      mCompleted(false),
-      mAsyncCommit(aAsyncCommit)
-  {
+class mozStorageTransaction {
+ public:
+  mozStorageTransaction(
+      mozIStorageConnection* aConnection, bool aCommitOnComplete,
+      int32_t aType = mozIStorageConnection::TRANSACTION_DEFAULT,
+      bool aAsyncCommit = false)
+      : mConnection(aConnection),
+        mHasTransaction(false),
+        mCommitOnComplete(aCommitOnComplete),
+        mCompleted(false),
+        mAsyncCommit(aAsyncCommit) {
     if (mConnection) {
       nsAutoCString query("BEGIN");
       int32_t type = aType;
@@ -96,15 +94,13 @@ public:
     }
   }
 
-  ~mozStorageTransaction()
-  {
+  ~mozStorageTransaction() {
     if (mConnection && mHasTransaction && !mCompleted) {
       if (mCommitOnComplete) {
         mozilla::DebugOnly<nsresult> rv = Commit();
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                              "A transaction didn't commit correctly");
-      }
-      else {
+      } else {
         mozilla::DebugOnly<nsresult> rv = Rollback();
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                              "A transaction didn't rollback correctly");
@@ -117,10 +113,8 @@ public:
 
 
 
-  nsresult Commit()
-  {
-    if (!mConnection || mCompleted || !mHasTransaction)
-      return NS_OK;
+  nsresult Commit() {
+    if (!mConnection || mCompleted || !mHasTransaction) return NS_OK;
     mCompleted = true;
 
     
@@ -130,13 +124,11 @@ public:
       nsCOMPtr<mozIStoragePendingStatement> ps;
       rv = mConnection->ExecuteSimpleSQLAsync(NS_LITERAL_CSTRING("COMMIT"),
                                               nullptr, getter_AddRefs(ps));
-    }
-    else {
+    } else {
       rv = mConnection->ExecuteSimpleSQL(NS_LITERAL_CSTRING("COMMIT"));
     }
 
-    if (NS_SUCCEEDED(rv))
-      mHasTransaction = false;
+    if (NS_SUCCEEDED(rv)) mHasTransaction = false;
 
     return rv;
   }
@@ -146,10 +138,8 @@ public:
 
 
 
-  nsresult Rollback()
-  {
-    if (!mConnection || mCompleted || !mHasTransaction)
-      return NS_OK;
+  nsresult Rollback() {
+    if (!mConnection || mCompleted || !mHasTransaction) return NS_OK;
     mCompleted = true;
 
     
@@ -157,17 +147,15 @@ public:
     nsresult rv;
     do {
       rv = mConnection->ExecuteSimpleSQL(NS_LITERAL_CSTRING("ROLLBACK"));
-      if (rv == NS_ERROR_STORAGE_BUSY)
-        (void)PR_Sleep(PR_INTERVAL_NO_WAIT);
+      if (rv == NS_ERROR_STORAGE_BUSY) (void)PR_Sleep(PR_INTERVAL_NO_WAIT);
     } while (rv == NS_ERROR_STORAGE_BUSY);
 
-    if (NS_SUCCEEDED(rv))
-      mHasTransaction = false;
+    if (NS_SUCCEEDED(rv)) mHasTransaction = false;
 
     return rv;
   }
 
-protected:
+ protected:
   nsCOMPtr<mozIStorageConnection> mConnection;
   bool mHasTransaction;
   bool mCommitOnComplete;
@@ -182,29 +170,21 @@ protected:
 
 
 
-class MOZ_STACK_CLASS mozStorageStatementScoper
-{
-public:
+class MOZ_STACK_CLASS mozStorageStatementScoper {
+ public:
   explicit mozStorageStatementScoper(mozIStorageStatement* aStatement)
-      : mStatement(aStatement)
-  {
-  }
-  ~mozStorageStatementScoper()
-  {
-    if (mStatement)
-      mStatement->Reset();
+      : mStatement(aStatement) {}
+  ~mozStorageStatementScoper() {
+    if (mStatement) mStatement->Reset();
   }
 
   
 
 
 
-  void Abandon()
-  {
-    mStatement = nullptr;
-  }
+  void Abandon() { mStatement = nullptr; }
 
-protected:
+ protected:
   nsCOMPtr<mozIStorageStatement> mStatement;
 };
 

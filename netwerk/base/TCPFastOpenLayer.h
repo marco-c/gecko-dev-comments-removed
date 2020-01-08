@@ -20,33 +20,33 @@ namespace net {
 
 
 typedef enum {
-  TFO_NOT_SET, 
-               
-               
-               
-               
-  TFO_UNKNOWN, 
-               
-  TFO_DISABLED, 
-                
-                
-                
-                
-  TFO_DISABLED_CONNECT, 
-                        
-  
-  TFO_NOT_TRIED, 
-                 
-  TFO_TRIED, 
-  TFO_DATA_SENT, 
+  TFO_NOT_SET,   
                  
                  
                  
+                 
+  TFO_UNKNOWN,   
+                 
+  TFO_DISABLED,  
+                 
+                 
+                 
+                 
+  TFO_DISABLED_CONNECT,  
+                         
+  
+  TFO_NOT_TRIED,  
+                  
+  TFO_TRIED,      
+  TFO_DATA_SENT,  
+                  
+                  
+                  
   
   
   
-  TFO_DATA_COOKIE_NOT_ACCEPTED, 
-                                
+  TFO_DATA_COOKIE_NOT_ACCEPTED,  
+                                 
   
   
   TFO_FAILED_CONNECTION_REFUSED,
@@ -63,18 +63,19 @@ typedef enum {
   TFO_FAILED_NET_TIMEOUT_NO_TFO_FAILED_TOO,
   TFO_FAILED_UNKNOW_ERROR_NO_TFO_FAILED_TOO,
   TFO_FAILED_BACKUP_CONNECTION_NO_TFO_FAILED_TOO,
-  TFO_BACKUP_CONN, 
-                   
-  TFO_INIT_FAILED, 
-  TFO_UNKNOWN_RESOLVING, 
-                         
-                         
-                         
+  TFO_BACKUP_CONN,  
+                    
+  TFO_INIT_FAILED,  
+  TFO_UNKNOWN_RESOLVING,  
+                          
+                          
+                          
+                          
   TFO_UNKNOWN_RESOLVED,
   TFO_UNKNOWN_CONNECTING,
   TFO_UNKNOWN_CONNECTED,
   TFO_FAILED,
-  TFO_HTTP 
+  TFO_HTTP  
 } TFOResult;
 
 nsresult AttachTCPFastOpenIOLayer(PRFileDesc *fd);
@@ -87,7 +88,7 @@ int32_t TCPFastOpenGetBufferSizeLeft(PRFileDesc *fd);
 
 bool TCPFastOpenGetCurrentBufferSize(PRFileDesc *fd);
 bool TCPFastOpenFlushBuffer(PRFileDesc *fd);
-}
-}
+}  
+}  
 
-#endif 
+#endif  

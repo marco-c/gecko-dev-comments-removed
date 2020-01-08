@@ -11,10 +11,9 @@
 
 namespace lul {
 
-class Summariser
-{
-public:
-  Summariser(SecMap* aSecMap, uintptr_t aTextBias, void(*aLog)(const char*));
+class Summariser {
+ public:
+  Summariser(SecMap* aSecMap, uintptr_t aTextBias, void (*aLog)(const char*));
 
   virtual void Entry(uintptr_t aAddress, uintptr_t aLength);
   virtual void End();
@@ -25,15 +24,15 @@ public:
   
   
   
-  virtual void Rule(uintptr_t aAddress, int aNewReg,
-                    LExprHow how, int16_t oldReg, int64_t offset);
+  virtual void Rule(uintptr_t aAddress, int aNewReg, LExprHow how,
+                    int16_t oldReg, int64_t offset);
 
   virtual uint32_t AddPfxInstr(PfxInstr pfxi);
 
   
   virtual void Log(const char* str) { mLog(str); }
 
-private:
+ private:
   
   
   SecMap* mSecMap;
@@ -60,6 +59,6 @@ private:
   void (*mLog)(const char* aFmt);
 };
 
-} 
+}  
 
-#endif 
+#endif  

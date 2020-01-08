@@ -21,13 +21,12 @@
 #include "imgRequest.h"
 #include "IProgressObserver.h"
 
-#define NS_IMGREQUESTPROXY_CID \
-{ /* 20557898-1dd2-11b2-8f65-9c462ee2bc95 */         \
-     0x20557898,                                     \
-     0x1dd2,                                         \
-     0x11b2,                                         \
-    {0x8f, 0x65, 0x9c, 0x46, 0x2e, 0xe2, 0xbc, 0x95} \
-}
+#define NS_IMGREQUESTPROXY_CID                       \
+  { /* 20557898-1dd2-11b2-8f65-9c462ee2bc95 */       \
+    0x20557898, 0x1dd2, 0x11b2, {                    \
+      0x8f, 0x65, 0x9c, 0x46, 0x2e, 0xe2, 0xbc, 0x95 \
+    }                                                \
+  }
 
 class imgCacheValidator;
 class imgINotificationObserver;
@@ -42,18 +41,17 @@ class TabGroup;
 namespace image {
 class Image;
 class ProgressTracker;
-} 
-} 
+}  
+}  
 
 class imgRequestProxy : public imgIRequest,
                         public mozilla::image::IProgressObserver,
                         public nsISupportsPriority,
-                        public nsITimedChannel
-{
-protected:
+                        public nsITimedChannel {
+ protected:
   virtual ~imgRequestProxy();
 
-public:
+ public:
   typedef mozilla::image::Image Image;
   typedef mozilla::image::ProgressTracker ProgressTracker;
 
@@ -68,24 +66,20 @@ public:
 
   
   
-  nsresult Init(imgRequest* aOwner,
-                nsILoadGroup* aLoadGroup,
-                nsIDocument* aLoadingDocument,
-                nsIURI* aURI,
+  nsresult Init(imgRequest* aOwner, nsILoadGroup* aLoadGroup,
+                nsIDocument* aLoadingDocument, nsIURI* aURI,
                 imgINotificationObserver* aObserver);
 
-  nsresult ChangeOwner(imgRequest* aNewOwner); 
-                                               
-                                               
-                                               
+  nsresult ChangeOwner(imgRequest* aNewOwner);  
+                                                
+                                                
+                                                
 
   
   
   void AddToLoadGroup();
 
-  inline bool HasObserver() const {
-    return mListener != nullptr;
-  }
+  inline bool HasObserver() const { return mListener != nullptr; }
 
   
   
@@ -108,22 +102,12 @@ public:
 
   
   
-  virtual bool NotificationsDeferred() const override
-  {
+  virtual bool NotificationsDeferred() const override {
     return IsValidating() || mPendingNotify;
   }
-  virtual void MarkPendingNotify() override
-  {
-    mPendingNotify = true;
-  }
-  virtual void ClearPendingNotify() override
-  {
-    mPendingNotify = false;
-  }
-  bool IsValidating() const
-  {
-    return mValidating;
-  }
+  virtual void MarkPendingNotify() override { mPendingNotify = true; }
+  virtual void ClearPendingNotify() override { mPendingNotify = false; }
+  bool IsValidating() const { return mValidating; }
   void MarkValidating();
   void ClearValidating();
 
@@ -137,36 +121,32 @@ public:
   void ClearAnimationConsumers();
 
   nsresult SyncClone(imgINotificationObserver* aObserver,
-                     nsIDocument* aLoadingDocument,
-                     imgRequestProxy** aClone);
+                     nsIDocument* aLoadingDocument, imgRequestProxy** aClone);
   nsresult Clone(imgINotificationObserver* aObserver,
-                 nsIDocument* aLoadingDocument,
-                 imgRequestProxy** aClone);
+                 nsIDocument* aLoadingDocument, imgRequestProxy** aClone);
   nsresult GetStaticRequest(nsIDocument* aLoadingDocument,
                             imgRequestProxy** aReturn);
 
-protected:
+ protected:
   friend class mozilla::image::ProgressTracker;
   friend class imgStatusNotifyRunnable;
 
   class imgCancelRunnable;
   friend class imgCancelRunnable;
 
-  class imgCancelRunnable : public mozilla::Runnable
-  {
-    public:
-      imgCancelRunnable(imgRequestProxy* owner, nsresult status)
-        : Runnable("imgCancelRunnable"), mOwner(owner), mStatus(status)
-      { }
+  class imgCancelRunnable : public mozilla::Runnable {
+   public:
+    imgCancelRunnable(imgRequestProxy* owner, nsresult status)
+        : Runnable("imgCancelRunnable"), mOwner(owner), mStatus(status) {}
 
-      NS_IMETHOD Run() override {
-        mOwner->DoCancel(mStatus);
-        return NS_OK;
-      }
+    NS_IMETHOD Run() override {
+      mOwner->DoCancel(mStatus);
+      return NS_OK;
+    }
 
-    private:
-      RefPtr<imgRequestProxy> mOwner;
-      nsresult mStatus;
+   private:
+    RefPtr<imgRequestProxy> mOwner;
+    nsresult mStatus;
   };
 
   
@@ -187,8 +167,7 @@ protected:
   
   already_AddRefed<ProgressTracker> GetProgressTracker() const;
 
-  nsITimedChannel* TimedChannel()
-  {
+  nsITimedChannel* TimedChannel() {
     if (!GetOwner()) {
       return nullptr;
     }
@@ -201,19 +180,18 @@ protected:
   imgCacheValidator* GetValidator() const;
 
   nsresult PerformClone(imgINotificationObserver* aObserver,
-                        nsIDocument* aLoadingDocument,
-                        bool aSyncNotify,
+                        nsIDocument* aLoadingDocument, bool aSyncNotify,
                         imgRequestProxy** aClone);
 
   virtual imgRequestProxy* NewClonedProxy();
 
-public:
+ public:
   NS_FORWARD_SAFE_NSITIMEDCHANNEL(TimedChannel())
 
-protected:
+ protected:
   mozilla::UniquePtr<ProxyBehaviour> mBehaviour;
 
-private:
+ private:
   friend class imgCacheValidator;
 
   void AddToOwner(nsIDocument* aLoadingDocument);
@@ -228,17 +206,18 @@ private:
   
   
   
-  imgINotificationObserver* MOZ_UNSAFE_REF("Observers must call Cancel() or "
-                                           "CancelAndForgetObserver() before "
-                                           "they are destroyed") mListener;
+  imgINotificationObserver* MOZ_UNSAFE_REF(
+      "Observers must call Cancel() or "
+      "CancelAndForgetObserver() before "
+      "they are destroyed") mListener;
 
   nsCOMPtr<nsILoadGroup> mLoadGroup;
   RefPtr<mozilla::dom::TabGroup> mTabGroup;
   nsCOMPtr<nsIEventTarget> mEventTarget;
 
   nsLoadFlags mLoadFlags;
-  uint32_t    mLockCount;
-  uint32_t    mAnimationConsumers;
+  uint32_t mLockCount;
+  uint32_t mAnimationConsumers;
   bool mCanceled : 1;
   bool mIsInLoadGroup : 1;
   bool mForceDispatchLoadGroup : 1;
@@ -255,15 +234,13 @@ private:
 
 
 
-class imgRequestProxyStatic : public imgRequestProxy
-{
-
-public:
+class imgRequestProxyStatic : public imgRequestProxy {
+ public:
   imgRequestProxyStatic(Image* aImage, nsIPrincipal* aPrincipal);
 
   NS_IMETHOD GetImagePrincipal(nsIPrincipal** aPrincipal) override;
 
-protected:
+ protected:
   imgRequestProxy* NewClonedProxy() override;
 
   
@@ -271,4 +248,4 @@ protected:
   nsCOMPtr<nsIPrincipal> mPrincipal;
 };
 
-#endif 
+#endif  

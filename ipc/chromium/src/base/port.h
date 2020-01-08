@@ -24,15 +24,15 @@
 
 
 
-#define GG_INT8_C(x)    (x)
-#define GG_INT16_C(x)   (x)
-#define GG_INT32_C(x)   (x)
-#define GG_INT64_C(x)   GG_LONGLONG(x)
+#define GG_INT8_C(x) (x)
+#define GG_INT16_C(x) (x)
+#define GG_INT32_C(x) (x)
+#define GG_INT64_C(x) GG_LONGLONG(x)
 
-#define GG_UINT8_C(x)   (x ## U)
-#define GG_UINT16_C(x)  (x ## U)
-#define GG_UINT32_C(x)  (x ## U)
-#define GG_UINT64_C(x)  GG_ULONGLONG(x)
+#define GG_UINT8_C(x) (x##U)
+#define GG_UINT16_C(x) (x##U)
+#define GG_UINT32_C(x) (x##U)
+#define GG_UINT64_C(x) GG_ULONGLONG(x)
 
 namespace base {
 
@@ -45,13 +45,13 @@ namespace base {
 
 
 
-#  if defined(COMPILER_GCC)
-#    define base_va_copy(_a, _b) ::va_copy(_a, _b)
-#  elif defined(COMPILER_MSVC)
-#    define base_va_copy(_a, _b) (_a = _b)
-#  else
-#    error No va_copy for your compiler
-#  endif
+#if defined(COMPILER_GCC)
+#define base_va_copy(_a, _b) ::va_copy(_a, _b)
+#elif defined(COMPILER_MSVC)
+#define base_va_copy(_a, _b) (_a = _b)
+#else
+#error No va_copy for your compiler
+#endif
 
 }  
 

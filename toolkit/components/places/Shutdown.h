@@ -53,10 +53,9 @@ class Database;
 
 
 
-class PlacesShutdownBlocker : public nsIAsyncShutdownBlocker
-                            , public nsIAsyncShutdownCompletionCallback
-{
-public:
+class PlacesShutdownBlocker : public nsIAsyncShutdownBlocker,
+                              public nsIAsyncShutdownCompletionCallback {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
   NS_DECL_NSIASYNCSHUTDOWNCOMPLETIONCALLBACK
@@ -69,9 +68,7 @@ public:
 
 
 
-  static bool IsStarted() {
-    return sIsStarted;
-  }
+  static bool IsStarted() { return sIsStarted; }
 
   
   
@@ -98,11 +95,9 @@ public:
     
     NOTIFIED_OBSERVERS_PLACES_CONNECTION_CLOSED,
   };
-  States State() {
-    return mState;
-  }
+  States State() { return mState; }
 
-protected:
+ protected:
   
   nsString mName;
   
@@ -125,26 +120,25 @@ protected:
 
 
 
-class ClientsShutdownBlocker final : public PlacesShutdownBlocker
-{
-public:
+class ClientsShutdownBlocker final : public PlacesShutdownBlocker {
+ public:
   NS_INLINE_DECL_REFCOUNTING_INHERITED(ClientsShutdownBlocker,
-				       PlacesShutdownBlocker)
+                                       PlacesShutdownBlocker)
 
   explicit ClientsShutdownBlocker();
 
   NS_IMETHOD Done() override;
-private:
+
+ private:
   ~ClientsShutdownBlocker() {}
 };
 
 
 
 
-class ConnectionShutdownBlocker final : public PlacesShutdownBlocker
-                                      , public mozIStorageCompletionCallback
-{
-public:
+class ConnectionShutdownBlocker final : public PlacesShutdownBlocker,
+                                        public mozIStorageCompletionCallback {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_MOZISTORAGECOMPLETIONCALLBACK
 
@@ -152,7 +146,7 @@ public:
 
   NS_IMETHOD Done() override;
 
-private:
+ private:
   ~ConnectionShutdownBlocker() {}
 
   
@@ -161,7 +155,7 @@ private:
   RefPtr<mozilla::places::Database> mDatabase;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

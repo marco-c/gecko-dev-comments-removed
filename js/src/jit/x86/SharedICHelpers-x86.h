@@ -16,94 +16,81 @@ namespace js {
 namespace jit {
 
 
+
 static const size_t ICStackValueOffset = sizeof(void*);
 
-inline void
-EmitRestoreTailCallReg(MacroAssembler& masm)
-{
-    masm.Pop(ICTailCallReg);
+inline void EmitRestoreTailCallReg(MacroAssembler& masm) {
+  masm.Pop(ICTailCallReg);
 }
 
-inline void
-EmitRepushTailCallReg(MacroAssembler& masm)
-{
-    masm.Push(ICTailCallReg);
+inline void EmitRepushTailCallReg(MacroAssembler& masm) {
+  masm.Push(ICTailCallReg);
 }
 
-inline void
-EmitCallIC(MacroAssembler& masm, const ICEntry* entry, CodeOffset* callOffset)
-{
-    
-    masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
-                 ICStubReg);
+inline void EmitCallIC(MacroAssembler& masm, const ICEntry* entry,
+                       CodeOffset* callOffset) {
+  
+  masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
+               ICStubReg);
 
-    
-    masm.call(Address(ICStubReg, ICStub::offsetOfStubCode()));
-    *callOffset = CodeOffset(masm.currentOffset());
+  
+  masm.call(Address(ICStubReg, ICStub::offsetOfStubCode()));
+  *callOffset = CodeOffset(masm.currentOffset());
 }
 
-inline void
-EmitEnterTypeMonitorIC(MacroAssembler& masm,
-                       size_t monitorStubOffset = ICMonitoredStub::offsetOfFirstMonitorStub())
-{
-    
-    
-    masm.loadPtr(Address(ICStubReg, (int32_t) monitorStubOffset), ICStubReg);
+inline void EmitEnterTypeMonitorIC(
+    MacroAssembler& masm,
+    size_t monitorStubOffset = ICMonitoredStub::offsetOfFirstMonitorStub()) {
+  
+  
+  masm.loadPtr(Address(ICStubReg, (int32_t)monitorStubOffset), ICStubReg);
 
-    
-    masm.jmp(Operand(ICStubReg, (int32_t) ICStub::offsetOfStubCode()));
+  
+  masm.jmp(Operand(ICStubReg, (int32_t)ICStub::offsetOfStubCode()));
 }
 
-inline void
-EmitReturnFromIC(MacroAssembler& masm)
-{
-    masm.ret();
-}
+inline void EmitReturnFromIC(MacroAssembler& masm) { masm.ret(); }
 
-inline void
-EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
-{
-    
-    
-    
-    
-    if (calledIntoIon) {
-        Register scratch = ICStubReg;
-        masm.Pop(scratch);
-        masm.shrl(Imm32(FRAMESIZE_SHIFT), scratch);
-        masm.addl(scratch, BaselineStackReg);
-    } else {
-        masm.mov(BaselineFrameReg, BaselineStackReg);
-    }
+inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm,
+                                       bool calledIntoIon = false) {
+  
+  
+  
+  
+  if (calledIntoIon) {
+    Register scratch = ICStubReg;
+    masm.Pop(scratch);
+    masm.shrl(Imm32(FRAMESIZE_SHIFT), scratch);
+    masm.addl(scratch, BaselineStackReg);
+  } else {
+    masm.mov(BaselineFrameReg, BaselineStackReg);
+  }
 
-    masm.Pop(BaselineFrameReg);
-    masm.Pop(ICStubReg);
+  masm.Pop(BaselineFrameReg);
+  masm.Pop(ICStubReg);
 
-    
-    
-    
-    
-    masm.Pop(Operand(BaselineStackReg, 0));
+  
+  
+  
+  
+  masm.Pop(Operand(BaselineStackReg, 0));
 }
 
 template <typename AddrType>
-inline void
-EmitPreBarrier(MacroAssembler& masm, const AddrType& addr, MIRType type)
-{
-    masm.guardedCallPreBarrier(addr, type);
+inline void EmitPreBarrier(MacroAssembler& masm, const AddrType& addr,
+                           MIRType type) {
+  masm.guardedCallPreBarrier(addr, type);
 }
 
-inline void
-EmitStubGuardFailure(MacroAssembler& masm)
-{
-    
-    masm.loadPtr(Address(ICStubReg, ICStub::offsetOfNext()), ICStubReg);
+inline void EmitStubGuardFailure(MacroAssembler& masm) {
+  
+  masm.loadPtr(Address(ICStubReg, ICStub::offsetOfNext()), ICStubReg);
 
-    
-    masm.jmp(Operand(ICStubReg, ICStub::offsetOfStubCode()));
+  
+  masm.jmp(Operand(ICStubReg, ICStub::offsetOfStubCode()));
 }
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -30,19 +30,11 @@ struct BaseCoord {
 
   operator T() const { return value; }
 
-  friend bool operator==(Sub aA, Sub aB) {
-    return aA.value == aB.value;
-  }
-  friend bool operator!=(Sub aA, Sub aB) {
-    return aA.value != aB.value;
-  }
+  friend bool operator==(Sub aA, Sub aB) { return aA.value == aB.value; }
+  friend bool operator!=(Sub aA, Sub aB) { return aA.value != aB.value; }
 
-  friend Sub operator+(Sub aA, Sub aB) {
-    return Sub(aA.value + aB.value);
-  }
-  friend Sub operator-(Sub aA, Sub aB) {
-    return Sub(aA.value - aB.value);
-  }
+  friend Sub operator+(Sub aA, Sub aB) { return Sub(aA.value + aB.value); }
+  friend Sub operator-(Sub aA, Sub aB) { return Sub(aA.value - aB.value); }
   friend Sub operator*(Sub aCoord, T aScale) {
     return Sub(aCoord.value * aScale);
   }
@@ -75,37 +67,19 @@ struct BaseCoord {
   
   
   
-  friend bool operator==(Sub aA, T aB) {
-    return aA.value == aB;
-  }
-  friend bool operator==(T aA, Sub aB) {
-    return aA == aB.value;
-  }
-  friend bool operator!=(Sub aA, T aB) {
-    return aA.value != aB;
-  }
-  friend bool operator!=(T aA, Sub aB) {
-    return aA != aB.value;
-  }
-  friend T operator+(Sub aA, T aB) {
-    return aA.value + aB;
-  }
-  friend T operator+(T aA, Sub aB) {
-    return aA + aB.value;
-  }
-  friend T operator-(Sub aA, T aB) {
-    return aA.value - aB;
-  }
-  friend T operator-(T aA, Sub aB) {
-    return aA - aB.value;
-  }
+  friend bool operator==(Sub aA, T aB) { return aA.value == aB; }
+  friend bool operator==(T aA, Sub aB) { return aA == aB.value; }
+  friend bool operator!=(Sub aA, T aB) { return aA.value != aB; }
+  friend bool operator!=(T aA, Sub aB) { return aA != aB.value; }
+  friend T operator+(Sub aA, T aB) { return aA.value + aB; }
+  friend T operator+(T aA, Sub aB) { return aA + aB.value; }
+  friend T operator-(Sub aA, T aB) { return aA.value - aB; }
+  friend T operator-(T aA, Sub aB) { return aA - aB.value; }
 
-  Sub operator-() const {
-    return Sub(-value);
-  }
+  Sub operator-() const { return Sub(-value); }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

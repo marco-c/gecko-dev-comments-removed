@@ -32,50 +32,48 @@ namespace widget {
 
 
 
-class KeymapWrapper
-{
-public:
-    
+class KeymapWrapper {
+ public:
+  
 
 
-    static uint32_t ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent);
+  static uint32_t ComputeDOMKeyCode(const GdkEventKey* aGdkKeyEvent);
 
-    
+  
 
 
-    static KeyNameIndex ComputeDOMKeyNameIndex(const GdkEventKey* aGdkKeyEvent);
+  static KeyNameIndex ComputeDOMKeyNameIndex(const GdkEventKey* aGdkKeyEvent);
 
-    
+  
 
 
-    static CodeNameIndex ComputeDOMCodeNameIndex(
-                           const GdkEventKey* aGdkKeyEvent);
+  static CodeNameIndex ComputeDOMCodeNameIndex(const GdkEventKey* aGdkKeyEvent);
 
-    
+  
 
 
-    enum Modifier {
-        NOT_MODIFIER       = 0x0000,
-        CAPS_LOCK          = 0x0001,
-        NUM_LOCK           = 0x0002,
-        SCROLL_LOCK        = 0x0004,
-        SHIFT              = 0x0008,
-        CTRL               = 0x0010,
-        ALT                = 0x0020,
-        META               = 0x0040,
-        SUPER              = 0x0080,
-        HYPER              = 0x0100,
-        LEVEL3             = 0x0200,
-        LEVEL5             = 0x0400
-    };
+  enum Modifier {
+    NOT_MODIFIER = 0x0000,
+    CAPS_LOCK = 0x0001,
+    NUM_LOCK = 0x0002,
+    SCROLL_LOCK = 0x0004,
+    SHIFT = 0x0008,
+    CTRL = 0x0010,
+    ALT = 0x0020,
+    META = 0x0040,
+    SUPER = 0x0080,
+    HYPER = 0x0100,
+    LEVEL3 = 0x0200,
+    LEVEL5 = 0x0400
+  };
 
-    
+  
 
 
 
-    typedef uint32_t Modifiers;
+  typedef uint32_t Modifiers;
 
-    
+  
 
 
 
@@ -83,9 +81,9 @@ public:
 
 
 
-    static guint GetCurrentModifierState();
+  static guint GetCurrentModifierState();
 
-    
+  
 
 
 
@@ -94,9 +92,9 @@ public:
 
 
 
-    static bool AreModifiersCurrentlyActive(Modifiers aModifiers);
+  static bool AreModifiersCurrentlyActive(Modifiers aModifiers);
 
-    
+  
 
 
 
@@ -107,28 +105,27 @@ public:
 
 
 
-    static bool AreModifiersActive(Modifiers aModifiers,
-                                   guint aModifierState);
+  static bool AreModifiersActive(Modifiers aModifiers, guint aModifierState);
 
-    
+  
 
 
 
-    static uint32_t ComputeCurrentKeyModifiers();
+  static uint32_t ComputeCurrentKeyModifiers();
 
-    
+  
 
 
 
-    static uint32_t ComputeKeyModifiers(guint aModifierState);
+  static uint32_t ComputeKeyModifiers(guint aModifierState);
 
-    
+  
 
 
-    static void InitInputEvent(WidgetInputEvent& aInputEvent,
-                               guint aModifierState);
+  static void InitInputEvent(WidgetInputEvent& aInputEvent,
+                             guint aModifierState);
 
-    
+  
 
 
 
@@ -137,11 +134,10 @@ public:
 
 
 
-    static void InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
-                             GdkEventKey* aGdkKeyEvent,
-                             bool aIsProcessedByIME);
+  static void InitKeyEvent(WidgetKeyboardEvent& aKeyEvent,
+                           GdkEventKey* aGdkKeyEvent, bool aIsProcessedByIME);
 
-    
+  
 
 
 
@@ -151,145 +147,137 @@ public:
 
 
 
-    static void WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyEvent,
-                                          GdkEventKey* aGdkKeyEvent);
+  static void WillDispatchKeyboardEvent(WidgetKeyboardEvent& aKeyEvent,
+                                        GdkEventKey* aGdkKeyEvent);
 
 #ifdef MOZ_WAYLAND
-    
+  
 
 
 
-    static void SetModifierMasks(xkb_keymap *aKeymap);
+  static void SetModifierMasks(xkb_keymap* aKeymap);
 #endif
 
-    
+  
 
 
-    static void Shutdown();
+  static void Shutdown();
 
-protected:
-
-    
-
+ protected:
+  
 
 
 
-    static KeymapWrapper* GetInstance();
 
-    KeymapWrapper();
-    ~KeymapWrapper();
+  static KeymapWrapper* GetInstance();
 
-    bool mInitialized;
+  KeymapWrapper();
+  ~KeymapWrapper();
 
-    
+  bool mInitialized;
+
+  
 
 
-    void Init();
-    void InitXKBExtension();
-    void InitBySystemSettingsX11();
+  void Init();
+  void InitXKBExtension();
+  void InitBySystemSettingsX11();
 #ifdef MOZ_WAYLAND
-    void InitBySystemSettingsWayland();
+  void InitBySystemSettingsWayland();
 #endif
 
-    
+  
 
 
-    struct ModifierKey {
-        guint mHardwareKeycode;
-        guint mMask;
+  struct ModifierKey {
+    guint mHardwareKeycode;
+    guint mMask;
 
-        explicit ModifierKey(guint aHardwareKeycode) :
-          mHardwareKeycode(aHardwareKeycode), mMask(0)
-        {
-        }
-    };
-    nsTArray<ModifierKey> mModifierKeys;
+    explicit ModifierKey(guint aHardwareKeycode)
+        : mHardwareKeycode(aHardwareKeycode), mMask(0) {}
+  };
+  nsTArray<ModifierKey> mModifierKeys;
 
-    
+  
 
 
 
-    ModifierKey* GetModifierKey(guint aHardwareKeycode);
+  ModifierKey* GetModifierKey(guint aHardwareKeycode);
 
-    
+  
 
 
 
-    enum ModifierIndex {
-        INDEX_NUM_LOCK,
-        INDEX_SCROLL_LOCK,
-        INDEX_ALT,
-        INDEX_META,
-        INDEX_SUPER,
-        INDEX_HYPER,
-        INDEX_LEVEL3,
-        INDEX_LEVEL5,
-        COUNT_OF_MODIFIER_INDEX
-    };
-    guint mModifierMasks[COUNT_OF_MODIFIER_INDEX];
+  enum ModifierIndex {
+    INDEX_NUM_LOCK,
+    INDEX_SCROLL_LOCK,
+    INDEX_ALT,
+    INDEX_META,
+    INDEX_SUPER,
+    INDEX_HYPER,
+    INDEX_LEVEL3,
+    INDEX_LEVEL5,
+    COUNT_OF_MODIFIER_INDEX
+  };
+  guint mModifierMasks[COUNT_OF_MODIFIER_INDEX];
 
-    guint GetModifierMask(Modifier aModifier) const;
+  guint GetModifierMask(Modifier aModifier) const;
 
-    
+  
 
 
 
 
 
 
-    static Modifier GetModifierForGDKKeyval(guint aGdkKeyval);
+  static Modifier GetModifierForGDKKeyval(guint aGdkKeyval);
 
-    static const char* GetModifierName(Modifier aModifier);
+  static const char* GetModifierName(Modifier aModifier);
 
-    
+  
 
 
-    GdkKeymap* mGdkKeymap;
+  GdkKeymap* mGdkKeymap;
 
-    
+  
 
 
-    int mXKBBaseEventCode;
+  int mXKBBaseEventCode;
 
-    
+  
 
 
 
 
 
-    XKeyboardState mKeyboardState;
+  XKeyboardState mKeyboardState;
 
-    
+  
 
 
-    static KeymapWrapper* sInstance;
+  static KeymapWrapper* sInstance;
 
-    
+  
 
 
-    static guint sLastRepeatableHardwareKeyCode;
-    enum RepeatState
-    {
-        NOT_PRESSED,
-        FIRST_PRESS,
-        REPEATING
-    };
-    static RepeatState sRepeatState;
+  static guint sLastRepeatableHardwareKeyCode;
+  enum RepeatState { NOT_PRESSED, FIRST_PRESS, REPEATING };
+  static RepeatState sRepeatState;
 
-    
+  
 
 
 
-    bool IsAutoRepeatableKey(guint aHardwareKeyCode);
+  bool IsAutoRepeatableKey(guint aHardwareKeyCode);
 
-    
+  
 
 
-    static void OnKeysChanged(GdkKeymap* aKeymap, KeymapWrapper* aKeymapWrapper);
-    static void OnDirectionChanged(GdkKeymap *aGdkKeymap,
-                                   KeymapWrapper* aKeymapWrapper);
+  static void OnKeysChanged(GdkKeymap* aKeymap, KeymapWrapper* aKeymapWrapper);
+  static void OnDirectionChanged(GdkKeymap* aGdkKeymap,
+                                 KeymapWrapper* aKeymapWrapper);
 
-    
+  
 
 
 
@@ -300,12 +288,11 @@ protected:
 
 
 
-    static uint32_t GetCharCodeFor(const GdkEventKey *aGdkKeyEvent);
-    uint32_t GetCharCodeFor(const GdkEventKey *aGdkKeyEvent,
-                            guint aModifierState,
-                            gint aGroup);
+  static uint32_t GetCharCodeFor(const GdkEventKey* aGdkKeyEvent);
+  uint32_t GetCharCodeFor(const GdkEventKey* aGdkKeyEvent, guint aModifierState,
+                          gint aGroup);
 
-    
+  
 
 
 
@@ -315,26 +302,26 @@ protected:
 
 
 
-    uint32_t GetUnmodifiedCharCodeFor(const GdkEventKey* aGdkKeyEvent);
+  uint32_t GetUnmodifiedCharCodeFor(const GdkEventKey* aGdkKeyEvent);
 
-    
+  
 
 
 
 
 
 
-    gint GetKeyLevel(GdkEventKey *aGdkKeyEvent);
+  gint GetKeyLevel(GdkEventKey* aGdkKeyEvent);
 
-    
+  
 
 
 
 
 
-    gint GetFirstLatinGroup();
+  gint GetFirstLatinGroup();
 
-    
+  
 
 
 
@@ -342,9 +329,9 @@ protected:
 
 
 
-    bool IsLatinGroup(guint8 aGroup);
+  bool IsLatinGroup(guint8 aGroup);
 
-    
+  
 
 
 
@@ -352,57 +339,54 @@ protected:
 
 
 
-    static bool IsBasicLatinLetterOrNumeral(uint32_t aCharCode);
+  static bool IsBasicLatinLetterOrNumeral(uint32_t aCharCode);
 
-    
+  
 
 
 
 
-    static bool IsPrintableASCIICharacter(uint32_t aCharCode)
-    {
-      return aCharCode >= 0x20 && aCharCode <= 0x7E;
-    }
+  static bool IsPrintableASCIICharacter(uint32_t aCharCode) {
+    return aCharCode >= 0x20 && aCharCode <= 0x7E;
+  }
 
-    
+  
 
 
 
 
-    static guint GetGDKKeyvalWithoutModifier(const GdkEventKey *aGdkKeyEvent);
+  static guint GetGDKKeyvalWithoutModifier(const GdkEventKey* aGdkKeyEvent);
 
-    
+  
 
 
 
-    static uint32_t GetDOMKeyCodeFromKeyPairs(guint aGdkKeyval);
+  static uint32_t GetDOMKeyCodeFromKeyPairs(guint aGdkKeyval);
 
-    
+  
 
 
 
 
-    static GdkFilterReturn FilterEvents(GdkXEvent* aXEvent,
-                                        GdkEvent* aGdkEvent,
-                                        gpointer aData);
+  static GdkFilterReturn FilterEvents(GdkXEvent* aXEvent, GdkEvent* aGdkEvent,
+                                      gpointer aData);
 
-    
+  
 
 
-    void WillDispatchKeyboardEventInternal(WidgetKeyboardEvent& aKeyEvent,
-                                           GdkEventKey* aGdkKeyEvent);
+  void WillDispatchKeyboardEventInternal(WidgetKeyboardEvent& aKeyEvent,
+                                         GdkEventKey* aGdkKeyEvent);
 
 #ifdef MOZ_WAYLAND
-    
+  
 
 
-    void SetModifierMask(xkb_keymap *aKeymap,
-                         ModifierIndex aModifierIndex,
-                         const char* aModifierName);
+  void SetModifierMask(xkb_keymap* aKeymap, ModifierIndex aModifierIndex,
+                       const char* aModifierName);
 #endif
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -177,11 +177,10 @@ class FastBernoulliTrial {
 
 
   FastBernoulliTrial(double aProbability, uint64_t aState0, uint64_t aState1)
-   : mProbability(0)
-   , mInvLogNotProbability(0)
-   , mGenerator(aState0, aState1)
-   , mSkipCount(0)
-  {
+      : mProbability(0),
+        mInvLogNotProbability(0),
+        mGenerator(aState0, aState1),
+        mSkipCount(0) {
     setProbability(aProbability);
   }
 
@@ -307,6 +306,7 @@ class FastBernoulliTrial {
   non_crypto::XorShift128PlusRNG mGenerator;
 
   
+
   size_t mSkipCount;
 
   
@@ -363,8 +363,8 @@ class FastBernoulliTrial {
 
 
 
-    double skipCount = std::floor(std::log(mGenerator.nextDouble())
-                                  * mInvLogNotProbability);
+    double skipCount =
+        std::floor(std::log(mGenerator.nextDouble()) * mInvLogNotProbability);
     if (skipCount < SIZE_MAX)
       mSkipCount = skipCount;
     else
@@ -374,6 +374,6 @@ class FastBernoulliTrial {
   }
 };
 
-}  
+} 
 
 #endif 

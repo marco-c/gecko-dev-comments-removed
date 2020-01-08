@@ -9,8 +9,8 @@
 
 #include <unordered_map>
 
-#include "base/platform_thread.h" 
-#include "mozilla/layers/AsyncCompositionManager.h" 
+#include "base/platform_thread.h"                    
+#include "mozilla/layers/AsyncCompositionManager.h"  
 #include "mozilla/layers/APZUtils.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
@@ -26,7 +26,7 @@ struct Transaction;
 class TransactionWrapper;
 struct WrTransformProperty;
 struct WrWindowId;
-} 
+}  
 
 namespace layers {
 
@@ -42,9 +42,8 @@ struct ScrollbarData;
 class APZSampler {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(APZSampler)
 
-public:
-  APZSampler(const RefPtr<APZCTreeManager>& aApz,
-             bool aIsUsingWebRender);
+ public:
+  APZSampler(const RefPtr<APZCTreeManager>& aApz, bool aIsUsingWebRender);
 
   void SetWebRenderWindowId(const wr::WindowId& aWindowId);
 
@@ -77,17 +76,20 @@ public:
 
   LayerToParentLayerMatrix4x4 ComputeTransformForScrollThumb(
       const LayerToParentLayerMatrix4x4& aCurrentTransform,
-      const LayerMetricsWrapper& aContent,
-      const ScrollbarData& aThumbData,
+      const LayerMetricsWrapper& aContent, const ScrollbarData& aThumbData,
       bool aScrollbarIsDescendant,
       AsyncTransformComponentMatrix* aOutClipTransform);
 
   CSSRect GetCurrentAsyncLayoutViewport(const LayerMetricsWrapper& aLayer);
-  ParentLayerPoint GetCurrentAsyncScrollOffset(const LayerMetricsWrapper& aLayer);
+  ParentLayerPoint GetCurrentAsyncScrollOffset(
+      const LayerMetricsWrapper& aLayer);
   AsyncTransform GetCurrentAsyncTransform(const LayerMetricsWrapper& aLayer);
-  AsyncTransform GetCurrentAsyncTransformForFixedAdjustment(const LayerMetricsWrapper& aLayer);
-  AsyncTransformComponentMatrix GetOverscrollTransform(const LayerMetricsWrapper& aLayer);
-  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(const LayerMetricsWrapper& aLayer);
+  AsyncTransform GetCurrentAsyncTransformForFixedAdjustment(
+      const LayerMetricsWrapper& aLayer);
+  AsyncTransformComponentMatrix GetOverscrollTransform(
+      const LayerMetricsWrapper& aLayer);
+  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(
+      const LayerMetricsWrapper& aLayer);
 
   void MarkAsyncTransformAppliedToContent(const LayerMetricsWrapper& aLayer);
   bool HasUnusedAsyncTransform(const LayerMetricsWrapper& aLayer);
@@ -104,12 +106,13 @@ public:
 
   bool IsSamplerThread() const;
 
-protected:
+ protected:
   virtual ~APZSampler();
 
-  static already_AddRefed<APZSampler> GetSampler(const wr::WrWindowId& aWindowId);
+  static already_AddRefed<APZSampler> GetSampler(
+      const wr::WrWindowId& aWindowId);
 
-private:
+ private:
   RefPtr<APZCTreeManager> mApz;
   bool mIsUsingWebRender;
 
@@ -135,7 +138,7 @@ private:
   TimeStamp mSampleTime;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

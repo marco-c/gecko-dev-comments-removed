@@ -26,15 +26,14 @@ class OriginAttributesPattern;
 
 namespace dom {
 
-class LocalStorageManager final : public nsIDOMStorageManager
-                                , public nsILocalStorageManager
-                                , public StorageObserverSink
-{
+class LocalStorageManager final : public nsIDOMStorageManager,
+                                  public nsILocalStorageManager,
+                                  public StorageObserverSink {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMSTORAGEMANAGER
   NS_DECL_NSILOCALSTORAGEMANAGER
 
-public:
+ public:
   LocalStorageManager();
 
   
@@ -45,13 +44,13 @@ public:
                               const nsACString& aOriginNoSuffix);
 
   
-  already_AddRefed<StorageUsage>
-  GetOriginUsage(const nsACString& aOriginNoSuffix);
+  already_AddRefed<StorageUsage> GetOriginUsage(
+      const nsACString& aOriginNoSuffix);
 
   static nsAutoCString CreateOrigin(const nsACString& aOriginSuffix,
                                     const nsACString& aOriginNoSuffix);
 
-private:
+ private:
   ~LocalStorageManager();
 
   
@@ -61,19 +60,15 @@ private:
 
   
   
-  class LocalStorageCacheHashKey : public nsCStringHashKey
-  {
-  public:
+  class LocalStorageCacheHashKey : public nsCStringHashKey {
+   public:
     explicit LocalStorageCacheHashKey(const nsACString* aKey)
-      : nsCStringHashKey(aKey)
-      , mCache(new LocalStorageCache(aKey))
-    {}
+        : nsCStringHashKey(aKey), mCache(new LocalStorageCache(aKey)) {}
 
     LocalStorageCacheHashKey(LocalStorageCacheHashKey&& aOther)
-      : nsCStringHashKey(std::move(aOther))
-      , mCache(std::move(aOther.mCache))
-      , mCacheRef(std::move(aOther.mCacheRef))
-    {
+        : nsCStringHashKey(std::move(aOther)),
+          mCache(std::move(aOther.mCache)),
+          mCacheRef(std::move(aOther.mCacheRef)) {
       NS_ERROR("Shouldn't be called");
     }
 
@@ -81,7 +76,7 @@ private:
     
     void HardRef() { mCacheRef = mCache; }
 
-  private:
+   private:
     
     LocalStorageCache* mCache;
     
@@ -90,9 +85,9 @@ private:
 
   
   
-  already_AddRefed<LocalStorageCache> PutCache(const nsACString& aOriginSuffix,
-                                               const nsACString& aOriginNoSuffix,
-                                               nsIPrincipal* aPrincipal);
+  already_AddRefed<LocalStorageCache> PutCache(
+      const nsACString& aOriginSuffix, const nsACString& aOriginNoSuffix,
+      nsIPrincipal* aPrincipal);
 
   enum class CreateMode {
     
@@ -104,11 +99,9 @@ private:
   };
 
   
-  nsresult GetStorageInternal(CreateMode aCreate,
-                              mozIDOMWindow* aWindow,
+  nsresult GetStorageInternal(CreateMode aCreate, mozIDOMWindow* aWindow,
                               nsIPrincipal* aPrincipal,
-                              const nsAString& aDocumentURI,
-                              bool aPrivate,
+                              const nsAString& aDocumentURI, bool aPrivate,
                               Storage** aRetval);
 
   
@@ -125,7 +118,7 @@ private:
   
   static LocalStorageManager* Ensure();
 
-private:
+ private:
   
   nsDataHashtable<nsCStringHashKey, RefPtr<StorageUsage> > mUsages;
 
@@ -137,7 +130,7 @@ private:
   static LocalStorageManager* sSelf;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

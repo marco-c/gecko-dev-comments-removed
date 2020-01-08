@@ -11,10 +11,9 @@
 
 namespace XPCNativeWrapper {
 
-bool
-AttachNewConstructorObject(JSContext* aCx, JS::HandleObject aGlobalObject);
+bool AttachNewConstructorObject(JSContext* aCx, JS::HandleObject aGlobalObject);
 
-} 
+}  
 
 
 
@@ -23,10 +22,8 @@ AttachNewConstructorObject(JSContext* aCx, JS::HandleObject aGlobalObject);
 
 namespace XPCWrapper {
 
-JSObject*
-UnsafeUnwrapSecurityWrapper(JSObject* obj);
+JSObject* UnsafeUnwrapSecurityWrapper(JSObject* obj);
 
-} 
-
+}  
 
 #endif

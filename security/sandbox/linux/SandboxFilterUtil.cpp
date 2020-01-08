@@ -17,7 +17,7 @@
 
 
 #ifndef SYS_ACCEPT4
-#define SYS_ACCEPT4  18
+#define SYS_ACCEPT4 18
 #endif
 #ifndef SYS_RECVMMSG
 #define SYS_RECVMMSG 19
@@ -31,8 +31,8 @@ using namespace sandbox::bpf_dsl;
 
 namespace mozilla {
 
-sandbox::bpf_dsl::ResultExpr
-SandboxPolicyBase::EvaluateSyscall(int aSysno) const {
+sandbox::bpf_dsl::ResultExpr SandboxPolicyBase::EvaluateSyscall(
+    int aSysno) const {
   switch (aSysno) {
 #ifdef __NR_socketcall
     case __NR_socketcall: {
@@ -61,9 +61,9 @@ SandboxPolicyBase::EvaluateSyscall(int aSysno) const {
       }
       return acc->Default(InvalidSyscall());
     }
-#endif 
-#endif 
-
+#endif  
+#endif  
+        
 #define DISPATCH_SOCKETCALL(sysnum, socketnum) \
   case sysnum:                                 \
     return EvaluateSocketCall(socketnum, true).valueOr(InvalidSyscall())
@@ -114,10 +114,10 @@ SandboxPolicyBase::EvaluateSyscall(int aSysno) const {
 #undef DISPATCH_SYSVCALL
 #endif  
 #endif  
-
-  default:
-    return InvalidSyscall();
+        
+    default:
+      return InvalidSyscall();
   }
 }
 
-}
+}  

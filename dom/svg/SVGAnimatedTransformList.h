@@ -37,11 +37,10 @@ namespace dom {
 
 
 
-class SVGAnimatedTransformList final : public nsWrapperCache
-{
+class SVGAnimatedTransformList final : public nsWrapperCache {
   friend class mozilla::DOMSVGTransformList;
 
-public:
+ public:
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(SVGAnimatedTransformList)
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(SVGAnimatedTransformList)
 
@@ -56,16 +55,16 @@ public:
 
 
 
-  static already_AddRefed<SVGAnimatedTransformList>
-    GetDOMWrapper(nsSVGAnimatedTransformList *aList, nsSVGElement *aElement);
+  static already_AddRefed<SVGAnimatedTransformList> GetDOMWrapper(
+      nsSVGAnimatedTransformList* aList, nsSVGElement* aElement);
 
   
 
 
 
 
-  static SVGAnimatedTransformList*
-    GetDOMWrapperIfExists(nsSVGAnimatedTransformList *aList);
+  static SVGAnimatedTransformList* GetDOMWrapperIfExists(
+      nsSVGAnimatedTransformList* aList);
 
   
 
@@ -90,23 +89,19 @@ public:
 
   
   nsSVGElement* GetParentObject() const { return mElement; }
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
   
   already_AddRefed<DOMSVGTransformList> BaseVal();
   already_AddRefed<DOMSVGTransformList> AnimVal();
 
-private:
-
+ private:
   
 
 
 
-  explicit SVGAnimatedTransformList(nsSVGElement *aElement)
-    : mBaseVal(nullptr)
-    , mAnimVal(nullptr)
-    , mElement(aElement)
-  {
-  }
+  explicit SVGAnimatedTransformList(nsSVGElement* aElement)
+      : mBaseVal(nullptr), mAnimVal(nullptr), mElement(aElement) {}
 
   ~SVGAnimatedTransformList();
 
@@ -117,15 +112,15 @@ private:
   
   
   
-  DOMSVGTransformList *mBaseVal;
-  DOMSVGTransformList *mAnimVal;
+  DOMSVGTransformList* mBaseVal;
+  DOMSVGTransformList* mAnimVal;
 
   
   
   RefPtr<nsSVGElement> mElement;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

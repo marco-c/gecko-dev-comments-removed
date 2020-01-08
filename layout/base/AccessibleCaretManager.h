@@ -31,7 +31,7 @@ namespace mozilla {
 namespace dom {
 class Element;
 class Selection;
-} 
+}  
 
 
 
@@ -46,9 +46,8 @@ class Selection;
 
 
 
-class AccessibleCaretManager
-{
-public:
+class AccessibleCaretManager {
+ public:
   explicit AccessibleCaretManager(nsIPresShell* aPresShell);
   virtual ~AccessibleCaretManager();
 
@@ -61,8 +60,7 @@ public:
   
   
   MOZ_CAN_RUN_SCRIPT
-  virtual nsresult PressCaret(const nsPoint& aPoint,
-                              EventClassID aEventClass);
+  virtual nsresult PressCaret(const nsPoint& aPoint, EventClassID aEventClass);
 
   
   
@@ -106,8 +104,7 @@ public:
 
   
   MOZ_CAN_RUN_SCRIPT
-  virtual nsresult OnSelectionChanged(nsIDocument* aDoc,
-                                      dom::Selection* aSel,
+  virtual nsresult OnSelectionChanged(nsIDocument* aDoc, dom::Selection* aSel,
                                       int16_t aReason);
   
   MOZ_CAN_RUN_SCRIPT
@@ -121,7 +118,7 @@ public:
   
   void SetLastInputSource(uint16_t aInputSource);
 
-protected:
+ protected:
   
   enum class CaretMode : uint8_t {
     
@@ -161,7 +158,7 @@ protected:
   
   MOZ_CAN_RUN_SCRIPT
   void UpdateCarets(
-    const UpdateCaretsHintSet& aHints = UpdateCaretsHint::Default);
+      const UpdateCaretsHintSet& aHints = UpdateCaretsHint::Default);
 
   
   MOZ_CAN_RUN_SCRIPT
@@ -204,10 +201,9 @@ protected:
   
   
   nsIFrame* GetFrameForFirstRangeStartOrLastRangeEnd(
-    nsDirection aDirection,
-    int32_t* aOutOffset,
-    nsIContent** aOutContent = nullptr,
-    int32_t* aOutContentOffset = nullptr) const;
+      nsDirection aDirection, int32_t* aOutOffset,
+      nsIContent** aOutContent = nullptr,
+      int32_t* aOutContentOffset = nullptr) const;
 
   nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;
@@ -225,8 +221,7 @@ protected:
   
   
   
-  MOZ_MUST_USE MOZ_CAN_RUN_SCRIPT
-  bool FlushLayout();
+  MOZ_MUST_USE MOZ_CAN_RUN_SCRIPT bool FlushLayout();
 
   dom::Element* GetEditingHostForFrame(nsIFrame* aFrame) const;
   dom::Selection* GetSelection() const;
@@ -275,8 +270,8 @@ protected:
   
   
   
-  virtual bool IsCaretDisplayableInCursorMode(nsIFrame** aOutFrame = nullptr,
-                                              int32_t* aOutOffset = nullptr) const;
+  virtual bool IsCaretDisplayableInCursorMode(
+      nsIFrame** aOutFrame = nullptr, int32_t* aOutOffset = nullptr) const;
 
   virtual bool HasNonEmptyTextContent(nsINode* aNode) const;
 
@@ -345,9 +340,10 @@ protected:
 std::ostream& operator<<(std::ostream& aStream,
                          const AccessibleCaretManager::CaretMode& aCaretMode);
 
-std::ostream& operator<<(std::ostream& aStream,
-                         const AccessibleCaretManager::UpdateCaretsHint& aResult);
+std::ostream& operator<<(
+    std::ostream& aStream,
+    const AccessibleCaretManager::UpdateCaretsHint& aResult);
 
-} 
+}  
 
-#endif 
+#endif  

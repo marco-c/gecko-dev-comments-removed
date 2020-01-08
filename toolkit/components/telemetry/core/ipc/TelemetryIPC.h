@@ -15,6 +15,7 @@
 
 
 
+
 namespace mozilla {
 
 namespace Telemetry {
@@ -27,7 +28,7 @@ struct DynamicScalarDefinition;
 struct ChildEventData;
 struct DiscardedData;
 
-}
+}  
 
 namespace TelemetryIPC {
 
@@ -37,26 +38,9 @@ namespace TelemetryIPC {
 
 
 
-void AccumulateChildHistograms(Telemetry::ProcessID aProcessType,
-                               const nsTArray<Telemetry::HistogramAccumulation>& aAccumulations);
-
-
-
-
-
-
-
-void AccumulateChildKeyedHistograms(Telemetry::ProcessID aProcessType,
-                                    const nsTArray<Telemetry::KeyedHistogramAccumulation>& aAccumulations);
-
-
-
-
-
-
-
-void UpdateChildScalars(Telemetry::ProcessID aProcessType,
-                        const nsTArray<Telemetry::ScalarAction>& aScalarActions);
+void AccumulateChildHistograms(
+    Telemetry::ProcessID aProcessType,
+    const nsTArray<Telemetry::HistogramAccumulation>& aAccumulations);
 
 
 
@@ -65,8 +49,33 @@ void UpdateChildScalars(Telemetry::ProcessID aProcessType,
 
 
 
-void UpdateChildKeyedScalars(Telemetry::ProcessID aProcessType,
-                             const nsTArray<Telemetry::KeyedScalarAction>& aScalarActions);
+void AccumulateChildKeyedHistograms(
+    Telemetry::ProcessID aProcessType,
+    const nsTArray<Telemetry::KeyedHistogramAccumulation>& aAccumulations);
+
+
+
+
+
+
+
+
+void UpdateChildScalars(
+    Telemetry::ProcessID aProcessType,
+    const nsTArray<Telemetry::ScalarAction>& aScalarActions);
+
+
+
+
+
+
+
+
+
+void UpdateChildKeyedScalars(
+    Telemetry::ProcessID aProcessType,
+    const nsTArray<Telemetry::KeyedScalarAction>& aScalarActions);
+
 
 
 
@@ -90,16 +99,18 @@ void RecordDiscardedData(Telemetry::ProcessID aProcessType,
 
 
 
-void GetDynamicScalarDefinitions(nsTArray<mozilla::Telemetry::DynamicScalarDefinition>& aDefs);
+void GetDynamicScalarDefinitions(
+    nsTArray<mozilla::Telemetry::DynamicScalarDefinition>& aDefs);
 
 
 
 
 
 
-void AddDynamicScalarDefinitions(const nsTArray<mozilla::Telemetry::DynamicScalarDefinition>& aDefs);
+void AddDynamicScalarDefinitions(
+    const nsTArray<mozilla::Telemetry::DynamicScalarDefinition>& aDefs);
 
-}
-}
+}  
+}  
 
-#endif 
+#endif  

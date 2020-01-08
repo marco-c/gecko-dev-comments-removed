@@ -13,11 +13,9 @@
 
 namespace mozilla {
 
-class ScrollAnimationPhysics
-{
-public:
-  virtual void Update(const TimeStamp& aTime,
-                      const nsPoint& aDestination,
+class ScrollAnimationPhysics {
+ public:
+  virtual void Update(const TimeStamp& aTime, const nsPoint& aDestination,
                       const nsSize& aCurrentVelocity) = 0;
 
   virtual void ApplyContentShift(const CSSPoint& aShiftDelta) = 0;
@@ -36,17 +34,17 @@ public:
 
 
 
-static inline double
-ComputeAcceleratedWheelDelta(double aDelta, int32_t aCounter, int32_t aFactor)
-{
+static inline double ComputeAcceleratedWheelDelta(double aDelta,
+                                                  int32_t aCounter,
+                                                  int32_t aFactor) {
   if (!aDelta) {
     return aDelta;
   }
   return (aDelta * aCounter * double(aFactor) / 10);
 }
 
-static const uint32_t kScrollSeriesTimeoutMs = 80; 
+static const uint32_t kScrollSeriesTimeoutMs = 80;  
 
-} 
+}  
 
-#endif 
+#endif  

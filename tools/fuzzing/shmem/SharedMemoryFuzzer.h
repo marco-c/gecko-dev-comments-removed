@@ -18,19 +18,18 @@ namespace ipc {
 
 
 
-class SharedMemoryFuzzer
-{
-public:
+class SharedMemoryFuzzer {
+ public:
   static void* MutateSharedMemory(void* aMemory, size_t aSize);
 
-private:
+ private:
   static uint64_t MutationProbability();
   static uint64_t MutationFactor();
   static bool IsEnabled();
   static bool IsLoggingEnabled();
 };
 
-} 
-} 
+}  
+}  
 
 #endif

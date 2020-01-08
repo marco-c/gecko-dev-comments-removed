@@ -15,24 +15,24 @@
 namespace mozilla {
 
 IncrementalTokenizer::IncrementalTokenizer(Consumer&& aConsumer,
-                                           const char * aWhitespaces,
-                                           const char * aAdditionalWordChars,
+                                           const char* aWhitespaces,
+                                           const char* aAdditionalWordChars,
                                            uint32_t aRawMinBuffered)
-  : TokenizerBase(aWhitespaces, aAdditionalWordChars)
+    : TokenizerBase(aWhitespaces, aAdditionalWordChars)
 #ifdef DEBUG
-  , mConsuming(false)
+      ,
+      mConsuming(false)
 #endif
-  , mNeedMoreInput(false)
-  , mRollback(false)
-  , mInputCursor(0)
-  , mConsumer(std::move(aConsumer))
-{
+      ,
+      mNeedMoreInput(false),
+      mRollback(false),
+      mInputCursor(0),
+      mConsumer(std::move(aConsumer)) {
   mInputFinished = false;
   mMinRawDelivery = aRawMinBuffered;
 }
 
-nsresult IncrementalTokenizer::FeedInput(const nsACString & aInput)
-{
+nsresult IncrementalTokenizer::FeedInput(const nsACString& aInput) {
   NS_ENSURE_TRUE(mConsumer, NS_ERROR_NOT_INITIALIZED);
   MOZ_ASSERT(!mInputFinished);
 
@@ -44,8 +44,8 @@ nsresult IncrementalTokenizer::FeedInput(const nsACString & aInput)
   return Process();
 }
 
-nsresult IncrementalTokenizer::FeedInput(nsIInputStream * aInput, uint32_t aCount)
-{
+nsresult IncrementalTokenizer::FeedInput(nsIInputStream* aInput,
+                                         uint32_t aCount) {
   NS_ENSURE_TRUE(mConsumer, NS_ERROR_NOT_INITIALIZED);
   MOZ_ASSERT(!mInputFinished);
   MOZ_ASSERT(!mConsuming);
@@ -57,7 +57,7 @@ nsresult IncrementalTokenizer::FeedInput(nsIInputStream * aInput, uint32_t aCoun
   while (NS_SUCCEEDED(rv) && aCount) {
     nsCString::index_type remainder = mInput.Length();
     nsCString::index_type load =
-      std::min<nsCString::index_type>(aCount, PR_UINT32_MAX - remainder);
+        std::min<nsCString::index_type>(aCount, PR_UINT32_MAX - remainder);
 
     if (!load) {
       
@@ -87,8 +87,7 @@ nsresult IncrementalTokenizer::FeedInput(nsIInputStream * aInput, uint32_t aCoun
   return rv;
 }
 
-nsresult IncrementalTokenizer::FinishInput()
-{
+nsresult IncrementalTokenizer::FinishInput() {
   NS_ENSURE_TRUE(mConsumer, NS_ERROR_NOT_INITIALIZED);
   MOZ_ASSERT(!mInputFinished);
   MOZ_ASSERT(!mConsuming);
@@ -102,8 +101,7 @@ nsresult IncrementalTokenizer::FinishInput()
   return rv;
 }
 
-bool IncrementalTokenizer::Next(Token & aToken)
-{
+bool IncrementalTokenizer::Next(Token& aToken) {
   
   MOZ_ASSERT(mConsuming);
 
@@ -123,8 +121,7 @@ bool IncrementalTokenizer::Next(Token & aToken)
   return true;
 }
 
-void IncrementalTokenizer::NeedMoreInput()
-{
+void IncrementalTokenizer::NeedMoreInput() {
   
   MOZ_ASSERT(mConsuming);
 
@@ -133,16 +130,14 @@ void IncrementalTokenizer::NeedMoreInput()
   mNeedMoreInput = !mInputFinished;
 }
 
-void IncrementalTokenizer::Rollback()
-{
+void IncrementalTokenizer::Rollback() {
   
   MOZ_ASSERT(mConsuming);
 
   mRollback = true;
 }
 
-nsresult IncrementalTokenizer::Process()
-{
+nsresult IncrementalTokenizer::Process() {
 #ifdef DEBUG
   
   MOZ_ASSERT(!mConsuming);
@@ -192,4 +187,4 @@ nsresult IncrementalTokenizer::Process()
   return rv;
 }
 
-} 
+}  

@@ -11,7 +11,8 @@
 #include "mozpkix/Result.h"
 #include "SignedCertificateTimestamp.h"
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
 
@@ -38,6 +39,7 @@ pkix::Result GetPrecertLogEntry(pkix::Input leafCertificate,
 
 void GetX509LogEntry(pkix::Input leafCertificate, LogEntry& output);
 
-} } 
+}  
+}  
 
 #endif  

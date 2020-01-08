@@ -7,9 +7,9 @@
 #ifndef mozilla_layers_LayerTreeOwnerTracker_h
 #define mozilla_layers_LayerTreeOwnerTracker_h
 
-#include "base/process.h"  
-#include "LayersTypes.h"   
-#include "mozilla/Mutex.h" 
+#include "base/process.h"   
+#include "LayersTypes.h"    
+#include "mozilla/Mutex.h"  
 
 #include <functional>
 #include <map>
@@ -17,7 +17,7 @@
 namespace mozilla {
 
 namespace dom {
-  class ContentParent;
+class ContentParent;
 }
 
 namespace layers {
@@ -34,9 +34,8 @@ namespace layers {
 
 
 
-class LayerTreeOwnerTracker final
-{
-public:
+class LayerTreeOwnerTracker final {
+ public:
   static void Initialize();
   static void Shutdown();
   static LayerTreeOwnerTracker* Get();
@@ -57,16 +56,18 @@ public:
 
   bool IsMapped(LayersId aLayersId, base::ProcessId aProcessId);
 
-  void Iterate(const std::function<void(LayersId aLayersId, base::ProcessId aProcessId)>& aCallback);
+  void Iterate(
+      const std::function<void(LayersId aLayersId, base::ProcessId aProcessId)>&
+          aCallback);
 
-private:
+ private:
   LayerTreeOwnerTracker();
 
   mozilla::Mutex mLayerIdsLock;
   std::map<LayersId, base::ProcessId> mLayerIds;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

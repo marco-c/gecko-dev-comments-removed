@@ -27,50 +27,47 @@ class ErrorResult;
 
 namespace dom {
 class Event;
-} 
+}  
 
-#define NS_DOMEVENTTARGETHELPER_IID \
-{ 0xa28385c6, 0x9451, 0x4d7e, \
-  { 0xa3, 0xdd, 0xf4, 0xb6, 0x87, 0x2f, 0xa4, 0x76 } }
+#define NS_DOMEVENTTARGETHELPER_IID                  \
+  {                                                  \
+    0xa28385c6, 0x9451, 0x4d7e, {                    \
+      0xa3, 0xdd, 0xf4, 0xb6, 0x87, 0x2f, 0xa4, 0x76 \
+    }                                                \
+  }
 
 class DOMEventTargetHelper : public dom::EventTarget,
-                             public LinkedListElement<DOMEventTargetHelper>
-{
-public:
+                             public LinkedListElement<DOMEventTargetHelper> {
+ public:
   DOMEventTargetHelper()
-    : mParentObject(nullptr)
-    , mOwnerWindow(nullptr)
-    , mHasOrHasHadOwnerWindow(false)
-    , mIsKeptAlive(false)
-  {
-  }
+      : mParentObject(nullptr),
+        mOwnerWindow(nullptr),
+        mHasOrHasHadOwnerWindow(false),
+        mIsKeptAlive(false) {}
   explicit DOMEventTargetHelper(nsPIDOMWindowInner* aWindow)
-    : mParentObject(nullptr)
-    , mOwnerWindow(nullptr)
-    , mHasOrHasHadOwnerWindow(false)
-    , mIsKeptAlive(false)
-  {
+      : mParentObject(nullptr),
+        mOwnerWindow(nullptr),
+        mHasOrHasHadOwnerWindow(false),
+        mIsKeptAlive(false) {
     
     
     nsIGlobalObject* global = aWindow ? aWindow->AsGlobal() : nullptr;
     BindToOwnerInternal(global);
   }
   explicit DOMEventTargetHelper(nsIGlobalObject* aGlobalObject)
-    : mParentObject(nullptr)
-    , mOwnerWindow(nullptr)
-    , mHasOrHasHadOwnerWindow(false)
-    , mIsKeptAlive(false)
-  {
+      : mParentObject(nullptr),
+        mOwnerWindow(nullptr),
+        mHasOrHasHadOwnerWindow(false),
+        mIsKeptAlive(false) {
     
     
     BindToOwnerInternal(aGlobalObject);
   }
   explicit DOMEventTargetHelper(DOMEventTargetHelper* aOther)
-    : mParentObject(nullptr)
-    , mOwnerWindow(nullptr)
-    , mHasOrHasHadOwnerWindow(false)
-    , mIsKeptAlive(false)
-  {
+      : mParentObject(nullptr),
+        mOwnerWindow(nullptr),
+        mHasOrHasHadOwnerWindow(false),
+        mIsKeptAlive(false) {
     
     
     if (!aOther) {
@@ -99,8 +96,7 @@ public:
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_DOMEVENTTARGETHELPER_IID)
 
-  void GetParentObject(nsIScriptGlobalObject **aParentObject)
-  {
+  void GetParentObject(nsIScriptGlobalObject** aParentObject) {
     if (mParentObject) {
       CallQueryInterface(mParentObject, aParentObject);
     } else {
@@ -108,8 +104,7 @@ public:
     }
   }
 
-  static DOMEventTargetHelper* FromSupports(nsISupports* aSupports)
-  {
+  static DOMEventTargetHelper* FromSupports(nsISupports* aSupports) {
     dom::EventTarget* target = static_cast<dom::EventTarget*>(aSupports);
 #ifdef DEBUG
     {
@@ -125,23 +120,19 @@ public:
     return static_cast<DOMEventTargetHelper*>(target);
   }
 
-  bool HasListenersFor(const nsAString& aType) const
-  {
+  bool HasListenersFor(const nsAString& aType) const {
     return mListenerManager && mListenerManager->HasListenersFor(aType);
   }
 
-  bool HasListenersFor(nsAtom* aTypeWithOn) const
-  {
+  bool HasListenersFor(nsAtom* aTypeWithOn) const {
     return mListenerManager && mListenerManager->HasListenersFor(aTypeWithOn);
   }
 
-  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindings() override
-  {
+  virtual nsPIDOMWindowOuter* GetOwnerGlobalForBindings() override {
     return nsPIDOMWindowOuter::GetFromCurrentInner(GetOwner());
   }
 
-  nsresult CheckInnerWindowCorrectness() const
-  {
+  nsresult CheckInnerWindowCorrectness() const {
     NS_ENSURE_STATE(!mHasOrHasHadOwnerWindow || mOwnerWindow);
     if (mOwnerWindow && !mOwnerWindow->IsCurrentInnerWindow()) {
       return NS_ERROR_FAILURE;
@@ -172,10 +163,7 @@ public:
 
   virtual void DisconnectFromOwner();
   using EventTarget::GetParentObject;
-  nsIGlobalObject* GetOwnerGlobal() const final
-  {
-    return mParentObject;
-  }
+  nsIGlobalObject* GetOwnerGlobal() const final { return mParentObject; }
   bool HasOrHasHadOwner() { return mHasOrHasHadOwnerWindow; }
 
   virtual void EventListenerAdded(nsAtom* aType) override;
@@ -184,7 +172,8 @@ public:
 
   
   nsresult DispatchTrustedEvent(const nsAString& aEventName);
-protected:
+
+ protected:
   virtual ~DOMEventTargetHelper();
 
   nsresult WantsUntrusted(bool* aRetVal);
@@ -195,10 +184,7 @@ protected:
   
   
   
-  virtual bool IsCertainlyAliveForCC() const
-  {
-    return mIsKeptAlive;
-  }
+  virtual bool IsCertainlyAliveForCC() const { return mIsKeptAlive; }
 
   RefPtr<EventListenerManager> mListenerManager;
   
@@ -214,7 +200,7 @@ protected:
 
   void BindToOwnerInternal(nsIGlobalObject* aOwner);
 
-private:
+ private:
   
   
   nsIGlobalObject* MOZ_NON_OWNING_REF mParentObject;
@@ -222,7 +208,7 @@ private:
   
   
   nsPIDOMWindowInner* MOZ_NON_OWNING_REF mOwnerWindow;
-  bool                       mHasOrHasHadOwnerWindow;
+  bool mHasOrHasHadOwnerWindow;
 
   struct {
     nsTArray<nsString> mStrings;
@@ -232,20 +218,17 @@ private:
   bool mIsKeptAlive;
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(DOMEventTargetHelper,
-                              NS_DOMEVENTTARGETHELPER_IID)
+NS_DEFINE_STATIC_IID_ACCESSOR(DOMEventTargetHelper, NS_DOMEVENTTARGETHELPER_IID)
 
-} 
+}  
 
 
-#define IMPL_EVENT_HANDLER(_event)                                        \
-  inline mozilla::dom::EventHandlerNonNull* GetOn##_event()               \
-  {                                                                       \
-    return GetEventHandler(nsGkAtoms::on##_event);                        \
-  }                                                                       \
-  inline void SetOn##_event(mozilla::dom::EventHandlerNonNull* aCallback) \
-  {                                                                       \
-    SetEventHandler(nsGkAtoms::on##_event, aCallback);                    \
+#define IMPL_EVENT_HANDLER(_event)                                          \
+  inline mozilla::dom::EventHandlerNonNull* GetOn##_event() {               \
+    return GetEventHandler(nsGkAtoms::on##_event);                          \
+  }                                                                         \
+  inline void SetOn##_event(mozilla::dom::EventHandlerNonNull* aCallback) { \
+    SetEventHandler(nsGkAtoms::on##_event, aCallback);                      \
   }
 
-#endif 
+#endif  

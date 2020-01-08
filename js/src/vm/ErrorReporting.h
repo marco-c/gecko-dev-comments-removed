@@ -11,11 +11,11 @@
 
 #include <stdarg.h>
 
-#include "jsapi.h" 
-#include "jsfriendapi.h" 
+#include "jsapi.h"        
+#include "jsfriendapi.h"  
 
-#include "js/UniquePtr.h" 
-#include "js/Utility.h" 
+#include "js/UniquePtr.h"  
+#include "js/Utility.h"    
 
 namespace js {
 
@@ -23,75 +23,70 @@ namespace js {
 
 
 
-struct ErrorMetadata
-{
-    
-    const char* filename;
+struct ErrorMetadata {
+  
+  const char* filename;
 
-    
-    
-    
-    uint32_t lineNumber;
-    uint32_t columnNumber;
+  
+  
+  
+  uint32_t lineNumber;
+  uint32_t columnNumber;
 
-    
-    
-    
-    
-    
-    
-    
-    JS::UniqueTwoByteChars lineOfContext;
+  
+  
+  
+  
+  
+  
+  
+  JS::UniqueTwoByteChars lineOfContext;
 
-    
-    
-    
-    
-    
-    static constexpr size_t lineOfContextRadius = 60;
+  
+  
+  
+  
+  
+  static constexpr size_t lineOfContextRadius = 60;
 
-    
-    size_t lineLength;
+  
+  size_t lineLength;
 
-    
-    
-    size_t tokenOffset;
+  
+  
+  size_t tokenOffset;
 
-    
-    
-    
-    bool isMuted;
+  
+  
+  
+  bool isMuted;
 };
 
-class CompileError : public JSErrorReport
-{
-  public:
-    void throwError(JSContext* cx);
+class CompileError : public JSErrorReport {
+ public:
+  void throwError(JSContext* cx);
 };
 
 class MOZ_STACK_CLASS ReportExceptionClosure final
-  : public ScriptEnvironmentPreparer::Closure
-{
-    JS::HandleValue exn_;
+    : public ScriptEnvironmentPreparer::Closure {
+  JS::HandleValue exn_;
 
-  public:
-    explicit ReportExceptionClosure(JS::HandleValue exn)
-      : exn_(exn) { }
+ public:
+  explicit ReportExceptionClosure(JS::HandleValue exn) : exn_(exn) {}
 
-    bool operator()(JSContext* cx) override;
+  bool operator()(JSContext* cx) override;
 };
 
 
-extern void
-CallWarningReporter(JSContext* cx, JSErrorReport* report);
+extern void CallWarningReporter(JSContext* cx, JSErrorReport* report);
 
 
 
 
 
-extern void
-ReportCompileError(JSContext* cx, ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
-                   unsigned flags, unsigned errorNumber, va_list args);
+extern void ReportCompileError(JSContext* cx, ErrorMetadata&& metadata,
+                               UniquePtr<JSErrorNotes> notes, unsigned flags,
+                               unsigned errorNumber, va_list args);
 
 
 
@@ -101,9 +96,9 @@ ReportCompileError(JSContext* cx, ErrorMetadata&& metadata, UniquePtr<JSErrorNot
 
 
 
-extern MOZ_MUST_USE bool
-ReportCompileWarning(JSContext* cx, ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
-                     unsigned flags, unsigned errorNumber, va_list args);
+extern MOZ_MUST_USE bool ReportCompileWarning(
+    JSContext* cx, ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
+    unsigned flags, unsigned errorNumber, va_list args);
 
 class GlobalObject;
 
@@ -112,9 +107,10 @@ class GlobalObject;
 
 
 
-extern void
-ReportErrorToGlobal(JSContext* cx, JS::Handle<js::GlobalObject*> global, JS::HandleValue error);
+extern void ReportErrorToGlobal(JSContext* cx,
+                                JS::Handle<js::GlobalObject*> global,
+                                JS::HandleValue error);
 
-} 
+}  
 
 #endif 

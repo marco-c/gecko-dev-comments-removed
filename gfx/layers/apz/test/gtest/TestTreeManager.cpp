@@ -25,13 +25,15 @@ TEST_F(APZCTreeManagerTester, ScrollablePaintedLayers) {
   EXPECT_EQ(ApzcOf(layers[1]), ApzcOf(layers[2]));
 
   
-  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1);
+  SetScrollableFrameMetrics(layers[1],
+                            ScrollableLayerGuid::START_SCROLL_ID + 1);
   manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
   EXPECT_NE(ApzcOf(layers[1]), ApzcOf(layers[2]));
 
   
   
-  SetScrollableFrameMetrics(layers[2], ScrollableLayerGuid::START_SCROLL_ID + 1);
+  SetScrollableFrameMetrics(layers[2],
+                            ScrollableLayerGuid::START_SCROLL_ID + 1);
   manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
   EXPECT_EQ(ApzcOf(layers[1]), ApzcOf(layers[2]));
 }
@@ -70,7 +72,8 @@ TEST_F(APZCTreeManagerTester, Bug1194876) {
   
   MultiTouchInput mti;
   mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
-  mti.mTouches.AppendElement(SingleTouchData(0, ParentLayerPoint(25, 50), ScreenSize(0, 0), 0, 0));
+  mti.mTouches.AppendElement(
+      SingleTouchData(0, ParentLayerPoint(25, 50), ScreenSize(0, 0), 0, 0));
   manager->ReceiveInputEvent(mti, nullptr, &blockId);
   manager->ContentReceivedInputBlock(blockId, false);
   targets.AppendElement(ApzcOf(layers[0])->GetGuid());
@@ -81,7 +84,8 @@ TEST_F(APZCTreeManagerTester, Bug1194876) {
   
   
   
-  mti.mTouches.AppendElement(SingleTouchData(1, ParentLayerPoint(75, 50), ScreenSize(0, 0), 0, 0));
+  mti.mTouches.AppendElement(
+      SingleTouchData(1, ParentLayerPoint(75, 50), ScreenSize(0, 0), 0, 0));
   manager->ReceiveInputEvent(mti, nullptr, &blockId);
   manager->ContentReceivedInputBlock(blockId, false);
   targets.AppendElement(ApzcOf(layers[0])->GetGuid());
@@ -103,10 +107,10 @@ TEST_F(APZCTreeManagerTester, Bug1198900) {
 
   ScreenPoint origin(100, 50);
   ScrollWheelInput swi(MillisecondsSinceStartup(mcc->Time()), mcc->Time(), 0,
-    ScrollWheelInput::SCROLLMODE_INSTANT, ScrollWheelInput::SCROLLDELTA_PIXEL,
-    origin, 0, 10, false, WheelDeltaAdjustmentStrategy::eNone);
+                       ScrollWheelInput::SCROLLMODE_INSTANT,
+                       ScrollWheelInput::SCROLLDELTA_PIXEL, origin, 0, 10,
+                       false, WheelDeltaAdjustmentStrategy::eNone);
   uint64_t blockId;
   manager->ReceiveInputEvent(swi, nullptr, &blockId);
   manager->ContentReceivedInputBlock(blockId,  true);
 }
-

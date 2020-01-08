@@ -28,7 +28,7 @@
 
 class nsPIWindowRoot;
 class nsXULPrototypeElement;
-#if 0 
+#if 0  
 class nsIObjectInputStream;
 class nsIObjectOutputStream;
 #else
@@ -52,42 +52,40 @@ namespace dom {
 class XULDocument final : public XMLDocument,
                           public nsIStreamLoaderObserver,
                           public nsICSSLoaderObserver,
-                          public nsIOffThreadScriptReceiver
-{
-public:
-    XULDocument();
+                          public nsIOffThreadScriptReceiver {
+ public:
+  XULDocument();
 
-    
-    NS_DECL_ISUPPORTS_INHERITED
-    NS_DECL_NSISTREAMLOADEROBSERVER
+  
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSISTREAMLOADEROBSERVER
 
-    
-    virtual void Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) override;
-    virtual void ResetToURI(nsIURI *aURI, nsILoadGroup* aLoadGroup,
-                            nsIPrincipal* aPrincipal) override;
+  
+  virtual void Reset(nsIChannel* aChannel, nsILoadGroup* aLoadGroup) override;
+  virtual void ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
+                          nsIPrincipal* aPrincipal) override;
 
-    virtual nsresult StartDocumentLoad(const char* aCommand,
-                                       nsIChannel *channel,
-                                       nsILoadGroup* aLoadGroup,
-                                       nsISupports* aContainer,
-                                       nsIStreamListener **aDocListener,
-                                       bool aReset = true,
-                                       nsIContentSink* aSink = nullptr) override;
+  virtual nsresult StartDocumentLoad(const char* aCommand, nsIChannel* channel,
+                                     nsILoadGroup* aLoadGroup,
+                                     nsISupports* aContainer,
+                                     nsIStreamListener** aDocListener,
+                                     bool aReset = true,
+                                     nsIContentSink* aSink = nullptr) override;
 
-    virtual void SetContentType(const nsAString& aContentType) override;
+  virtual void SetContentType(const nsAString& aContentType) override;
 
-    virtual void EndLoad() override;
+  virtual void EndLoad() override;
 
-    
-    NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
-    NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
-    NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
+  
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
 
-    
+  
 
 
-    void AddSubtreeToDocument(nsIContent* aContent);
-    
+  void AddSubtreeToDocument(nsIContent* aContent);
+  
 
 
 
@@ -97,254 +95,242 @@ public:
 
 
 
-    nsresult OnPrototypeLoadDone(bool aResumeWalk);
+  nsresult OnPrototypeLoadDone(bool aResumeWalk);
 
-    
-    virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
+  
+  virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
-    
-    NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet,
-                                bool aWasAlternate,
-                                nsresult aStatus) override;
+  
+  NS_IMETHOD StyleSheetLoaded(mozilla::StyleSheet* aSheet, bool aWasAlternate,
+                              nsresult aStatus) override;
 
-    virtual void EndUpdate() override;
+  virtual void EndUpdate() override;
 
-    virtual bool IsDocumentRightToLeft() override;
+  virtual bool IsDocumentRightToLeft() override;
 
-    
+  
 
 
-    void ResetDocumentDirection();
+  void ResetDocumentDirection();
 
-    NS_IMETHOD OnScriptCompileComplete(JSScript* aScript, nsresult aStatus) override;
+  NS_IMETHOD OnScriptCompileComplete(JSScript* aScript,
+                                     nsresult aStatus) override;
 
-    NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(XULDocument, XMLDocument)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(XULDocument, XMLDocument)
 
-    void TraceProtos(JSTracer* aTrc);
+  void TraceProtos(JSTracer* aTrc);
 
-protected:
-    virtual ~XULDocument();
+ protected:
+  virtual ~XULDocument();
 
-    
-    friend nsresult
-    (::NS_NewXULDocument(nsIDocument** aResult));
+  
+  friend nsresult(::NS_NewXULDocument(nsIDocument** aResult));
 
-    nsresult Init(void) override;
-    nsresult StartLayout(void);
+  nsresult Init(void) override;
+  nsresult StartLayout(void);
 
-    nsresult PrepareToLoad(nsISupports* aContainer,
-                           const char* aCommand,
-                           nsIChannel* aChannel,
-                           nsILoadGroup* aLoadGroup,
-                           nsIParser** aResult);
+  nsresult PrepareToLoad(nsISupports* aContainer, const char* aCommand,
+                         nsIChannel* aChannel, nsILoadGroup* aLoadGroup,
+                         nsIParser** aResult);
 
-    nsresult
-    PrepareToLoadPrototype(nsIURI* aURI,
-                           const char* aCommand,
-                           nsIPrincipal* aDocumentPrincipal,
-                           nsIParser** aResult);
+  nsresult PrepareToLoadPrototype(nsIURI* aURI, const char* aCommand,
+                                  nsIPrincipal* aDocumentPrincipal,
+                                  nsIParser** aResult);
 
-    void AddElementToDocumentPost(Element* aElement);
+  void AddElementToDocumentPost(Element* aElement);
 
-    static void DirectionChanged(const char* aPrefName, XULDocument* aData);
+  static void DirectionChanged(const char* aPrefName, XULDocument* aData);
 
-    
-    static int32_t gRefCnt;
+  
+  static int32_t gRefCnt;
 
-    static LazyLogModule gXULLog;
+  static LazyLogModule gXULLog;
 
-    virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapNode(JSContext* aCx,
+                             JS::Handle<JSObject*> aGivenProto) override;
 
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
 
-    XULDocument*             mNextSrcLoadWaiter;  
+  XULDocument* mNextSrcLoadWaiter;  
 
-    bool                        mIsWritingFastLoad;
-    bool                        mDocumentLoaded;
-    
+  bool mIsWritingFastLoad;
+  bool mDocumentLoaded;
+  
 
 
 
 
 
 
-    bool                       mStillWalking;
+  bool mStillWalking;
 
-    uint32_t mPendingSheets;
+  uint32_t mPendingSheets;
 
-    
+  
 
 
 
-    class ContextStack {
-    protected:
-        struct Entry {
-            nsXULPrototypeElement* mPrototype;
-            nsIContent*            mElement;
-            int32_t                mIndex;
-            Entry*                 mNext;
-        };
-
-        Entry* mTop;
-        int32_t mDepth;
-
-    public:
-        ContextStack();
-        ~ContextStack();
-
-        int32_t Depth() { return mDepth; }
-
-        nsresult Push(nsXULPrototypeElement* aPrototype, nsIContent* aElement);
-        nsresult Pop();
-        nsresult Peek(nsXULPrototypeElement** aPrototype, nsIContent** aElement, int32_t* aIndex);
-
-        nsresult SetTopIndex(int32_t aIndex);
+  class ContextStack {
+   protected:
+    struct Entry {
+      nsXULPrototypeElement* mPrototype;
+      nsIContent* mElement;
+      int32_t mIndex;
+      Entry* mNext;
     };
 
-    friend class ContextStack;
-    ContextStack mContextStack;
+    Entry* mTop;
+    int32_t mDepth;
 
-    
+   public:
+    ContextStack();
+    ~ContextStack();
 
+    int32_t Depth() { return mDepth; }
 
+    nsresult Push(nsXULPrototypeElement* aPrototype, nsIContent* aElement);
+    nsresult Pop();
+    nsresult Peek(nsXULPrototypeElement** aPrototype, nsIContent** aElement,
+                  int32_t* aIndex);
 
+    nsresult SetTopIndex(int32_t aIndex);
+  };
 
-    nsresult LoadScript(nsXULPrototypeScript *aScriptProto, bool* aBlock);
+  friend class ContextStack;
+  ContextStack mContextStack;
 
-    
+  
 
 
 
-    nsresult ExecuteScript(nsXULPrototypeScript *aScript);
 
-    
+  nsresult LoadScript(nsXULPrototypeScript* aScriptProto, bool* aBlock);
 
+  
 
 
-    nsresult CreateElementFromPrototype(nsXULPrototypeElement* aPrototype,
-                                        Element** aResult,
-                                        bool aIsRoot);
 
-    
+  nsresult ExecuteScript(nsXULPrototypeScript* aScript);
 
+  
 
-    nsresult AddAttributes(nsXULPrototypeElement* aPrototype, Element* aElement);
 
-    
 
+  nsresult CreateElementFromPrototype(nsXULPrototypeElement* aPrototype,
+                                      Element** aResult, bool aIsRoot);
 
+  
 
 
+  nsresult AddAttributes(nsXULPrototypeElement* aPrototype, Element* aElement);
 
-    nsXULPrototypeScript* mCurrentScriptProto;
+  
 
-    
 
 
 
-    bool mOffThreadCompiling;
 
-    
+  nsXULPrototypeScript* mCurrentScriptProto;
 
+  
 
 
-    char16_t* mOffThreadCompileStringBuf;
-    size_t mOffThreadCompileStringLength;
 
+  bool mOffThreadCompiling;
 
-protected:
-    
+  
 
 
 
-    RefPtr<nsXULPrototypeDocument> mCurrentPrototype;
+  char16_t* mOffThreadCompileStringBuf;
+  size_t mOffThreadCompileStringLength;
 
-    
+ protected:
+  
 
 
 
-    nsTArray< RefPtr<nsXULPrototypeDocument> > mPrototypes;
+  RefPtr<nsXULPrototypeDocument> mCurrentPrototype;
 
-    
+  
 
 
-    nsresult PrepareToWalk();
 
-    
+  nsTArray<RefPtr<nsXULPrototypeDocument> > mPrototypes;
 
+  
 
 
-    nsresult
-    CreateAndInsertPI(const nsXULPrototypePI* aProtoPI,
-                      nsINode* aParent, nsINode* aBeforeThis);
+  nsresult PrepareToWalk();
 
-    
+  
 
 
 
+  nsresult CreateAndInsertPI(const nsXULPrototypePI* aProtoPI, nsINode* aParent,
+                             nsINode* aBeforeThis);
 
+  
 
 
 
 
-    nsresult
-    InsertXMLStylesheetPI(const nsXULPrototypePI* aProtoPI,
-                          nsINode* aParent,
-                          nsINode* aBeforeThis,
-                          nsIContent* aPINode);
 
-    
 
 
 
-    nsresult ResumeWalk();
+  nsresult InsertXMLStylesheetPI(const nsXULPrototypePI* aProtoPI,
+                                 nsINode* aParent, nsINode* aBeforeThis,
+                                 nsIContent* aPINode);
 
-    
+  
 
 
 
+  nsresult ResumeWalk();
 
-    nsresult DoneWalking();
+  
 
-    class CachedChromeStreamListener : public nsIStreamListener {
-    protected:
-        RefPtr<XULDocument> mDocument;
-        bool mProtoLoaded;
 
-        virtual ~CachedChromeStreamListener();
 
-    public:
-        CachedChromeStreamListener(XULDocument* aDocument,
-                                   bool aProtoLoaded);
 
-        NS_DECL_ISUPPORTS
-        NS_DECL_NSIREQUESTOBSERVER
-        NS_DECL_NSISTREAMLISTENER
-    };
+  nsresult DoneWalking();
 
-    friend class CachedChromeStreamListener;
+  class CachedChromeStreamListener : public nsIStreamListener {
+   protected:
+    RefPtr<XULDocument> mDocument;
+    bool mProtoLoaded;
 
-    bool mInitialLayoutComplete;
+    virtual ~CachedChromeStreamListener();
 
-private:
-    
+   public:
+    CachedChromeStreamListener(XULDocument* aDocument, bool aProtoLoaded);
 
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIREQUESTOBSERVER
+    NS_DECL_NSISTREAMLISTENER
+  };
+
+  friend class CachedChromeStreamListener;
+
+  bool mInitialLayoutComplete;
+
+ private:
+  
 };
 
-} 
-} 
+}  
+}  
 
-inline mozilla::dom::XULDocument*
-nsIDocument::AsXULDocument()
-{
+inline mozilla::dom::XULDocument* nsIDocument::AsXULDocument() {
   MOZ_ASSERT(IsXULDocument());
   return static_cast<mozilla::dom::XULDocument*>(this);
 }
 
-#endif 
+#endif  

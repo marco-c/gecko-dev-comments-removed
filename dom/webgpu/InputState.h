@@ -14,18 +14,16 @@ namespace webgpu {
 
 class Device;
 
-class InputState final
-    : public ChildOf<Device>
-{
-public:
-    WEBGPU_DECL_GOOP(InputState)
+class InputState final : public ChildOf<Device> {
+ public:
+  WEBGPU_DECL_GOOP(InputState)
 
-private:
-    InputState() = delete;
-    virtual ~InputState();
+ private:
+  InputState() = delete;
+  virtual ~InputState();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

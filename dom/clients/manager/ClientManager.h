@@ -15,7 +15,7 @@ namespace mozilla {
 namespace ipc {
 class PBackgroundChild;
 class PrincipalInfo;
-} 
+}  
 namespace dom {
 
 class ClientClaimArgs;
@@ -36,8 +36,7 @@ class WorkerPrivate;
 
 
 
-class ClientManager final : public ClientThing<ClientManagerChild>
-{
+class ClientManager final : public ClientThing<ClientManagerChild> {
   friend class ClientManagerChild;
   friend class ClientSource;
 
@@ -47,76 +46,69 @@ class ClientManager final : public ClientThing<ClientManagerChild>
   
   
   
-  void
-  Shutdown();
+  void Shutdown();
 
-  UniquePtr<ClientSource>
-  CreateSourceInternal(ClientType aType,
-                       nsISerialEventTarget* aEventTarget,
-                       const mozilla::ipc::PrincipalInfo& aPrincipal);
+  UniquePtr<ClientSource> CreateSourceInternal(
+      ClientType aType, nsISerialEventTarget* aEventTarget,
+      const mozilla::ipc::PrincipalInfo& aPrincipal);
 
-  already_AddRefed<ClientHandle>
-  CreateHandleInternal(const ClientInfo& aClientInfo,
-                       nsISerialEventTarget* aSerialEventTarget);
+  already_AddRefed<ClientHandle> CreateHandleInternal(
+      const ClientInfo& aClientInfo, nsISerialEventTarget* aSerialEventTarget);
 
   
   
   
-  already_AddRefed<ClientOpPromise>
-  StartOp(const ClientOpConstructorArgs& aArgs,
-          nsISerialEventTarget* aSerialEventTarget);
+  already_AddRefed<ClientOpPromise> StartOp(
+      const ClientOpConstructorArgs& aArgs,
+      nsISerialEventTarget* aSerialEventTarget);
 
   
   
   
-  static already_AddRefed<ClientManager>
-  GetOrCreateForCurrentThread();
+  static already_AddRefed<ClientManager> GetOrCreateForCurrentThread();
 
   
-  mozilla::dom::WorkerPrivate*
-  GetWorkerPrivate() const;
+  mozilla::dom::WorkerPrivate* GetWorkerPrivate() const;
 
-public:
+ public:
   
   
   
-  static void
-  Startup();
+  static void Startup();
 
-  static UniquePtr<ClientSource>
-  CreateSource(ClientType aType, nsISerialEventTarget* aEventTarget,
-               nsIPrincipal* aPrincipal);
+  static UniquePtr<ClientSource> CreateSource(
+      ClientType aType, nsISerialEventTarget* aEventTarget,
+      nsIPrincipal* aPrincipal);
 
-  static UniquePtr<ClientSource>
-  CreateSource(ClientType aType, nsISerialEventTarget* aEventTarget,
-               const mozilla::ipc::PrincipalInfo& aPrincipal);
+  static UniquePtr<ClientSource> CreateSource(
+      ClientType aType, nsISerialEventTarget* aEventTarget,
+      const mozilla::ipc::PrincipalInfo& aPrincipal);
 
-  static already_AddRefed<ClientHandle>
-  CreateHandle(const ClientInfo& aClientInfo,
-               nsISerialEventTarget* aSerialEventTarget);
+  static already_AddRefed<ClientHandle> CreateHandle(
+      const ClientInfo& aClientInfo, nsISerialEventTarget* aSerialEventTarget);
 
-  static RefPtr<ClientOpPromise>
-  MatchAll(const ClientMatchAllArgs& aArgs, nsISerialEventTarget* aTarget);
+  static RefPtr<ClientOpPromise> MatchAll(const ClientMatchAllArgs& aArgs,
+                                          nsISerialEventTarget* aTarget);
 
-  static RefPtr<ClientOpPromise>
-  Claim(const ClientClaimArgs& aArgs, nsISerialEventTarget* aSerialEventTarget);
+  static RefPtr<ClientOpPromise> Claim(
+      const ClientClaimArgs& aArgs, nsISerialEventTarget* aSerialEventTarget);
 
-  static RefPtr<ClientOpPromise>
-  GetInfoAndState(const ClientGetInfoAndStateArgs& aArgs,
-                  nsISerialEventTarget* aSerialEventTarget);
+  static RefPtr<ClientOpPromise> GetInfoAndState(
+      const ClientGetInfoAndStateArgs& aArgs,
+      nsISerialEventTarget* aSerialEventTarget);
 
-  static RefPtr<ClientOpPromise>
-  Navigate(const ClientNavigateArgs& aArgs,
-           nsISerialEventTarget* aSerialEventTarget);
+  static RefPtr<ClientOpPromise> Navigate(
+      const ClientNavigateArgs& aArgs,
+      nsISerialEventTarget* aSerialEventTarget);
 
-  static RefPtr<ClientOpPromise>
-  OpenWindow(const ClientOpenWindowArgs& aArgs,
-             nsISerialEventTarget* aSerialEventTarget);
+  static RefPtr<ClientOpPromise> OpenWindow(
+      const ClientOpenWindowArgs& aArgs,
+      nsISerialEventTarget* aSerialEventTarget);
 
   NS_INLINE_DECL_REFCOUNTING(mozilla::dom::ClientManager)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

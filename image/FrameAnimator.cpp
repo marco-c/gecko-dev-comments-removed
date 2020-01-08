@@ -27,28 +27,21 @@ namespace image {
 
 
 
-const gfx::IntRect
-AnimationState::UpdateState(bool aAnimationFinished,
-                            RasterImage *aImage,
-                            const gfx::IntSize& aSize,
-                            bool aAllowInvalidation )
-{
-  LookupResult result =
-    SurfaceCache::Lookup(ImageKey(aImage),
-                         RasterSurfaceKey(aSize,
-                                          DefaultSurfaceFlags(),
-                                          PlaybackType::eAnimated),
-                          false);
+const gfx::IntRect AnimationState::UpdateState(
+    bool aAnimationFinished, RasterImage* aImage, const gfx::IntSize& aSize,
+    bool aAllowInvalidation ) {
+  LookupResult result = SurfaceCache::Lookup(
+      ImageKey(aImage),
+      RasterSurfaceKey(aSize, DefaultSurfaceFlags(), PlaybackType::eAnimated),
+       false);
 
-  return UpdateStateInternal(result, aAnimationFinished, aSize, aAllowInvalidation);
+  return UpdateStateInternal(result, aAnimationFinished, aSize,
+                             aAllowInvalidation);
 }
 
-const gfx::IntRect
-AnimationState::UpdateStateInternal(LookupResult& aResult,
-                                    bool aAnimationFinished,
-                                    const gfx::IntSize& aSize,
-                                    bool aAllowInvalidation )
-{
+const gfx::IntRect AnimationState::UpdateStateInternal(
+    LookupResult& aResult, bool aAnimationFinished, const gfx::IntSize& aSize,
+    bool aAllowInvalidation ) {
   
   if (aResult.Type() == MatchType::NOT_FOUND) {
     
@@ -109,27 +102,15 @@ AnimationState::UpdateStateInternal(LookupResult& aResult,
   return ret;
 }
 
-void
-AnimationState::NotifyDecodeComplete()
-{
-  mHasBeenDecoded = true;
-}
+void AnimationState::NotifyDecodeComplete() { mHasBeenDecoded = true; }
 
-void
-AnimationState::ResetAnimation()
-{
-  mCurrentAnimationFrameIndex = 0;
-}
+void AnimationState::ResetAnimation() { mCurrentAnimationFrameIndex = 0; }
 
-void
-AnimationState::SetAnimationMode(uint16_t aAnimationMode)
-{
+void AnimationState::SetAnimationMode(uint16_t aAnimationMode) {
   mAnimationMode = aAnimationMode;
 }
 
-void
-AnimationState::UpdateKnownFrameCount(uint32_t aFrameCount)
-{
+void AnimationState::UpdateKnownFrameCount(uint32_t aFrameCount) {
   if (aFrameCount <= mFrameCount) {
     
     
@@ -143,35 +124,25 @@ AnimationState::UpdateKnownFrameCount(uint32_t aFrameCount)
   mFrameCount = aFrameCount;
 }
 
-Maybe<uint32_t>
-AnimationState::FrameCount() const
-{
+Maybe<uint32_t> AnimationState::FrameCount() const {
   return mHasBeenDecoded ? Some(mFrameCount) : Nothing();
 }
 
-void
-AnimationState::SetFirstFrameRefreshArea(const IntRect& aRefreshArea)
-{
+void AnimationState::SetFirstFrameRefreshArea(const IntRect& aRefreshArea) {
   mFirstFrameRefreshArea = aRefreshArea;
 }
 
-void
-AnimationState::InitAnimationFrameTimeIfNecessary()
-{
+void AnimationState::InitAnimationFrameTimeIfNecessary() {
   if (mCurrentAnimationFrameTime.IsNull()) {
     mCurrentAnimationFrameTime = TimeStamp::Now();
   }
 }
 
-void
-AnimationState::SetAnimationFrameTime(const TimeStamp& aTime)
-{
+void AnimationState::SetAnimationFrameTime(const TimeStamp& aTime) {
   mCurrentAnimationFrameTime = aTime;
 }
 
-bool
-AnimationState::MaybeAdvanceAnimationFrameTime(const TimeStamp& aTime)
-{
+bool AnimationState::MaybeAdvanceAnimationFrameTime(const TimeStamp& aTime) {
   if (!gfxPrefs::ImageAnimatedResumeFromLastDisplayed() ||
       mCurrentAnimationFrameTime >= aTime) {
     return false;
@@ -184,21 +155,18 @@ AnimationState::MaybeAdvanceAnimationFrameTime(const TimeStamp& aTime)
   return true;
 }
 
-uint32_t
-AnimationState::GetCurrentAnimationFrameIndex() const
-{
+uint32_t AnimationState::GetCurrentAnimationFrameIndex() const {
   return mCurrentAnimationFrameIndex;
 }
 
-FrameTimeout
-AnimationState::LoopLength() const
-{
+FrameTimeout AnimationState::LoopLength() const {
   
   if (!mLoopLength) {
     return FrameTimeout::Forever();
   }
 
-  MOZ_ASSERT(mHasBeenDecoded, "We know the loop length but decoding isn't done?");
+  MOZ_ASSERT(mHasBeenDecoded,
+             "We know the loop length but decoding isn't done?");
 
   
   if (mAnimationMode != imgIContainer::kNormalAnimMode) {
@@ -212,11 +180,8 @@ AnimationState::LoopLength() const
 
 
 
-
-TimeStamp
-FrameAnimator::GetCurrentImgFrameEndTime(AnimationState& aState,
-                                         FrameTimeout aCurrentTimeout) const
-{
+TimeStamp FrameAnimator::GetCurrentImgFrameEndTime(
+    AnimationState& aState, FrameTimeout aCurrentTimeout) const {
   if (aCurrentTimeout == FrameTimeout::Forever()) {
     
     
@@ -224,21 +189,18 @@ FrameAnimator::GetCurrentImgFrameEndTime(AnimationState& aState,
     
     
     
-    return TimeStamp::NowLoRes() +
-           TimeDuration::FromMilliseconds(31536000.0);
+    return TimeStamp::NowLoRes() + TimeDuration::FromMilliseconds(31536000.0);
   }
 
   TimeDuration durationOfTimeout =
-    TimeDuration::FromMilliseconds(double(aCurrentTimeout.AsMilliseconds()));
+      TimeDuration::FromMilliseconds(double(aCurrentTimeout.AsMilliseconds()));
   return aState.mCurrentAnimationFrameTime + durationOfTimeout;
 }
 
-RefreshResult
-FrameAnimator::AdvanceFrame(AnimationState& aState,
-                            DrawableSurface& aFrames,
-                            RefPtr<imgFrame>& aCurrentFrame,
-                            TimeStamp aTime)
-{
+RefreshResult FrameAnimator::AdvanceFrame(AnimationState& aState,
+                                          DrawableSurface& aFrames,
+                                          RefPtr<imgFrame>& aCurrentFrame,
+                                          TimeStamp aTime) {
   AUTO_PROFILER_LABEL("FrameAnimator::AdvanceFrame", GRAPHICS);
 
   RefreshResult ret;
@@ -322,9 +284,8 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
   } else if (!nextFrame->IsFullFrame()) {
     MOZ_ASSERT(nextFrameIndex == currentFrameIndex + 1);
     RawAccessFrameRef currentRef =
-      aCurrentFrame->RawAccessRef( true);
-    RawAccessFrameRef nextRef =
-      nextFrame->RawAccessRef( true);
+        aCurrentFrame->RawAccessRef( true);
+    RawAccessFrameRef nextRef = nextFrame->RawAccessRef( true);
 
     
     if (!DoBlend(currentRef, nextRef, nextFrameIndex, &ret.mDirtyRect)) {
@@ -332,7 +293,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
       NS_WARNING("FrameAnimator::AdvanceFrame(): Compositing of frame failed");
       nextFrame->SetCompositingFailed(true);
       aState.mCurrentAnimationFrameTime =
-        GetCurrentImgFrameEndTime(aState, aCurrentFrame->GetTimeout());
+          GetCurrentImgFrameEndTime(aState, aCurrentFrame->GetTimeout());
       aState.mCurrentAnimationFrameIndex = nextFrameIndex;
       aState.mCompositedFrameRequested = false;
       aCurrentFrame = std::move(nextFrame);
@@ -347,7 +308,7 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
   }
 
   aState.mCurrentAnimationFrameTime =
-    GetCurrentImgFrameEndTime(aState, aCurrentFrame->GetTimeout());
+      GetCurrentImgFrameEndTime(aState, aCurrentFrame->GetTimeout());
 
   
   
@@ -362,17 +323,18 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
     if (delay.ToMilliseconds() > loopTime.AsMilliseconds()) {
       
       
-      uint64_t loops = static_cast<uint64_t>(delay.ToMilliseconds())
-                     / loopTime.AsMilliseconds();
+      uint64_t loops = static_cast<uint64_t>(delay.ToMilliseconds()) /
+                       loopTime.AsMilliseconds();
 
       
       if (aState.mLoopRemainingCount >= 0) {
         MOZ_ASSERT(aState.LoopCount() >= 0);
-        loops = std::min(loops, CheckedUint64(aState.mLoopRemainingCount).value());
+        loops =
+            std::min(loops, CheckedUint64(aState.mLoopRemainingCount).value());
       }
 
       aState.mCurrentAnimationFrameTime +=
-        TimeDuration::FromMilliseconds(loops * loopTime.AsMilliseconds());
+          TimeDuration::FromMilliseconds(loops * loopTime.AsMilliseconds());
 
       if (aState.mLoopRemainingCount >= 0) {
         MOZ_ASSERT(loops <= CheckedUint64(aState.mLoopRemainingCount).value());
@@ -393,19 +355,15 @@ FrameAnimator::AdvanceFrame(AnimationState& aState,
   return ret;
 }
 
-void
-FrameAnimator::ResetAnimation(AnimationState& aState)
-{
+void FrameAnimator::ResetAnimation(AnimationState& aState) {
   aState.ResetAnimation();
 
   
   
-  LookupResult result =
-    SurfaceCache::Lookup(ImageKey(mImage),
-                         RasterSurfaceKey(mSize,
-                                          DefaultSurfaceFlags(),
-                                          PlaybackType::eAnimated),
-                          false);
+  LookupResult result = SurfaceCache::Lookup(
+      ImageKey(mImage),
+      RasterSurfaceKey(mSize, DefaultSurfaceFlags(), PlaybackType::eAnimated),
+       false);
   if (!result) {
     return;
   }
@@ -413,11 +371,9 @@ FrameAnimator::ResetAnimation(AnimationState& aState)
   result.Surface().Reset();
 }
 
-RefreshResult
-FrameAnimator::RequestRefresh(AnimationState& aState,
-                              const TimeStamp& aTime,
-                              bool aAnimationFinished)
-{
+RefreshResult FrameAnimator::RequestRefresh(AnimationState& aState,
+                                            const TimeStamp& aTime,
+                                            bool aAnimationFinished) {
   
   RefreshResult ret;
 
@@ -430,14 +386,13 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   
   
   
-  LookupResult result =
-    SurfaceCache::Lookup(ImageKey(mImage),
-                         RasterSurfaceKey(mSize,
-                                          DefaultSurfaceFlags(),
-                                          PlaybackType::eAnimated),
-                          true);
+  LookupResult result = SurfaceCache::Lookup(
+      ImageKey(mImage),
+      RasterSurfaceKey(mSize, DefaultSurfaceFlags(), PlaybackType::eAnimated),
+       true);
 
-  ret.mDirtyRect = aState.UpdateStateInternal(result, aAnimationFinished, mSize);
+  ret.mDirtyRect =
+      aState.UpdateStateInternal(result, aAnimationFinished, mSize);
   if (aState.IsDiscarded() || !result) {
     aState.MaybeAdvanceAnimationFrameTime(aTime);
     if (!ret.mDirtyRect.IsEmpty()) {
@@ -447,13 +402,14 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   }
 
   RefPtr<imgFrame> currentFrame =
-    result.Surface().GetFrame(aState.mCurrentAnimationFrameIndex);
+      result.Surface().GetFrame(aState.mCurrentAnimationFrameIndex);
 
   
   
   if (!currentFrame) {
     MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
-    MOZ_ASSERT(aState.GetHasRequestedDecode() && !aState.GetIsCurrentlyDecoded());
+    MOZ_ASSERT(aState.GetHasRequestedDecode() &&
+               !aState.GetIsCurrentlyDecoded());
     MOZ_ASSERT(aState.mCompositedFrameInvalid);
     
     
@@ -462,7 +418,7 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   }
 
   TimeStamp currentFrameEndTime =
-    GetCurrentImgFrameEndTime(aState, currentFrame->GetTimeout());
+      GetCurrentImgFrameEndTime(aState, currentFrame->GetTimeout());
 
   
   
@@ -475,15 +431,15 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   while (currentFrameEndTime <= aTime) {
     TimeStamp oldFrameEndTime = currentFrameEndTime;
 
-    RefreshResult frameRes = AdvanceFrame(aState, result.Surface(),
-                                          currentFrame, aTime);
+    RefreshResult frameRes =
+        AdvanceFrame(aState, result.Surface(), currentFrame, aTime);
 
     
     ret.Accumulate(frameRes);
 
     
     currentFrameEndTime =
-      GetCurrentImgFrameEndTime(aState, currentFrame->GetTimeout());
+        GetCurrentImgFrameEndTime(aState, currentFrame->GetTimeout());
 
     
     
@@ -506,7 +462,7 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   if (currentFrameEndTime > aTime && aState.mCompositedFrameInvalid &&
       (mLastCompositedFrameIndex >= 0 || currentFrame->IsFullFrame())) {
     aState.mCompositedFrameInvalid = false;
-    ret.mDirtyRect = IntRect(IntPoint(0,0), mSize);
+    ret.mDirtyRect = IntRect(IntPoint(0, 0), mSize);
   }
 
   MOZ_ASSERT(!aState.mIsCurrentlyDecoded || !aState.mCompositedFrameInvalid);
@@ -514,24 +470,22 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   return ret;
 }
 
-LookupResult
-FrameAnimator::GetCompositedFrame(AnimationState& aState, bool aMarkUsed)
-{
+LookupResult FrameAnimator::GetCompositedFrame(AnimationState& aState,
+                                               bool aMarkUsed) {
   aState.mCompositedFrameRequested = true;
 
   
   if (!aState.mCompositedFrameInvalid && mLastCompositedFrameIndex >= 0 &&
-      (uint32_t(mLastCompositedFrameIndex) == aState.mCurrentAnimationFrameIndex)) {
+      (uint32_t(mLastCompositedFrameIndex) ==
+       aState.mCurrentAnimationFrameIndex)) {
     return LookupResult(DrawableSurface(mCompositingFrame->DrawableRef()),
                         MatchType::EXACT);
   }
 
-  LookupResult result =
-    SurfaceCache::Lookup(ImageKey(mImage),
-                         RasterSurfaceKey(mSize,
-                                          DefaultSurfaceFlags(),
-                                          PlaybackType::eAnimated),
-                         aMarkUsed);
+  LookupResult result = SurfaceCache::Lookup(
+      ImageKey(mImage),
+      RasterSurfaceKey(mSize, DefaultSurfaceFlags(), PlaybackType::eAnimated),
+      aMarkUsed);
 
   if (aState.mCompositedFrameInvalid) {
     MOZ_ASSERT(gfxPrefs::ImageMemAnimatedDiscardable());
@@ -564,66 +518,54 @@ FrameAnimator::GetCompositedFrame(AnimationState& aState, bool aMarkUsed)
   return result;
 }
 
-static void
-DoCollectSizeOfCompositingSurfaces(const RawAccessFrameRef& aSurface,
-                                   SurfaceMemoryCounterType aType,
-                                   nsTArray<SurfaceMemoryCounter>& aCounters,
-                                   MallocSizeOf aMallocSizeOf)
-{
+static void DoCollectSizeOfCompositingSurfaces(
+    const RawAccessFrameRef& aSurface, SurfaceMemoryCounterType aType,
+    nsTArray<SurfaceMemoryCounter>& aCounters, MallocSizeOf aMallocSizeOf) {
   
-  SurfaceKey key = RasterSurfaceKey(aSurface->GetImageSize(),
-                                    DefaultSurfaceFlags(),
-                                    PlaybackType::eStatic);
+  SurfaceKey key = RasterSurfaceKey(
+      aSurface->GetImageSize(), DefaultSurfaceFlags(), PlaybackType::eStatic);
 
   
-  aSurface->AddSizeOfExcludingThis(aMallocSizeOf,
-    [&](imgFrame::AddSizeOfCbData& aMetadata) {
-      
-      SurfaceMemoryCounter counter(key,  true,
-                                    false,
-                                    false, aType);
+  aSurface->AddSizeOfExcludingThis(
+      aMallocSizeOf, [&](imgFrame::AddSizeOfCbData& aMetadata) {
+        
+        SurfaceMemoryCounter counter(key,  true,
+                                      false,
+                                      false, aType);
 
-      
-      counter.Values().SetDecodedHeap(aMetadata.heap);
-      counter.Values().SetDecodedNonHeap(aMetadata.nonHeap);
-      counter.Values().SetExternalHandles(aMetadata.handles);
-      counter.Values().SetFrameIndex(aMetadata.index);
-      counter.Values().SetExternalId(aMetadata.externalId);
+        
+        counter.Values().SetDecodedHeap(aMetadata.heap);
+        counter.Values().SetDecodedNonHeap(aMetadata.nonHeap);
+        counter.Values().SetExternalHandles(aMetadata.handles);
+        counter.Values().SetFrameIndex(aMetadata.index);
+        counter.Values().SetExternalId(aMetadata.externalId);
 
-      aCounters.AppendElement(counter);
-    }
-  );
+        aCounters.AppendElement(counter);
+      });
 }
 
-void
-FrameAnimator::CollectSizeOfCompositingSurfaces(
+void FrameAnimator::CollectSizeOfCompositingSurfaces(
     nsTArray<SurfaceMemoryCounter>& aCounters,
-    MallocSizeOf aMallocSizeOf) const
-{
+    MallocSizeOf aMallocSizeOf) const {
   if (mCompositingFrame) {
     DoCollectSizeOfCompositingSurfaces(mCompositingFrame,
                                        SurfaceMemoryCounterType::COMPOSITING,
-                                       aCounters,
-                                       aMallocSizeOf);
+                                       aCounters, aMallocSizeOf);
   }
 
   if (mCompositingPrevFrame) {
-    DoCollectSizeOfCompositingSurfaces(mCompositingPrevFrame,
-                                       SurfaceMemoryCounterType::COMPOSITING_PREV,
-                                       aCounters,
-                                       aMallocSizeOf);
+    DoCollectSizeOfCompositingSurfaces(
+        mCompositingPrevFrame, SurfaceMemoryCounterType::COMPOSITING_PREV,
+        aCounters, aMallocSizeOf);
   }
 }
 
 
 
 
-bool
-FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
-                       const RawAccessFrameRef& aNextFrame,
-                       uint32_t aNextFrameIndex,
-                       IntRect* aDirtyRect)
-{
+bool FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
+                            const RawAccessFrameRef& aNextFrame,
+                            uint32_t aNextFrameIndex, IntRect* aDirtyRect) {
   if (!aPrevFrame || !aNextFrame) {
     MOZ_ASSERT_UNREACHABLE("Should have RawAccessFrameRefs to blend!");
     return false;
@@ -641,8 +583,7 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
 
   
   
-  if (isFullPrevFrame &&
-      (prevDisposalMethod == DisposalMethod::CLEAR)) {
+  if (isFullPrevFrame && (prevDisposalMethod == DisposalMethod::CLEAR)) {
     prevDisposalMethod = DisposalMethod::CLEAR_ALL;
   }
 
@@ -715,16 +656,14 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
   
   if (!mCompositingFrame) {
     RefPtr<imgFrame> newFrame = new imgFrame;
-    nsresult rv = newFrame->InitForAnimator(mSize,
-                                            SurfaceFormat::B8G8R8A8);
+    nsresult rv = newFrame->InitForAnimator(mSize, SurfaceFormat::B8G8R8A8);
     if (NS_FAILED(rv)) {
       mCompositingFrame.reset();
       return false;
     }
     mCompositingFrame = newFrame->RawAccessRef();
     needToBlankComposite = true;
-  } else if (int32_t(aNextFrameIndex) != mLastCompositedFrameIndex+1) {
-
+  } else if (int32_t(aNextFrameIndex) != mLastCompositedFrameIndex + 1) {
     
     
     needToBlankComposite = true;
@@ -762,37 +701,32 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
         if (needToBlankComposite) {
           
           
-          ClearFrame(mCompositingFrame.Data(),
-                     mCompositingFrame->GetRect());
+          ClearFrame(mCompositingFrame.Data(), mCompositingFrame->GetRect());
         } else {
           
-          ClearFrame(mCompositingFrame.Data(),
-                     mCompositingFrame->GetRect(),
+          ClearFrame(mCompositingFrame.Data(), mCompositingFrame->GetRect(),
                      prevRect);
         }
         break;
 
       case DisposalMethod::CLEAR_ALL:
-        ClearFrame(mCompositingFrame.Data(),
-                   mCompositingFrame->GetRect());
+        ClearFrame(mCompositingFrame.Data(), mCompositingFrame->GetRect());
         break;
 
       case DisposalMethod::RESTORE_PREVIOUS:
         
         
         if (mCompositingPrevFrame) {
-          CopyFrameImage(mCompositingPrevFrame.Data(),
-                         mCompositingPrevFrame->GetRect(),
-                         mCompositingFrame.Data(),
-                         mCompositingFrame->GetRect());
+          CopyFrameImage(
+              mCompositingPrevFrame.Data(), mCompositingPrevFrame->GetRect(),
+              mCompositingFrame.Data(), mCompositingFrame->GetRect());
 
           
           if (nextDisposalMethod != DisposalMethod::RESTORE_PREVIOUS) {
             mCompositingPrevFrame.reset();
           }
         } else {
-          ClearFrame(mCompositingFrame.Data(),
-                     mCompositingFrame->GetRect());
+          ClearFrame(mCompositingFrame.Data(), mCompositingFrame->GetRect());
         }
         break;
 
@@ -810,8 +744,7 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
         if (mLastCompositedFrameIndex != int32_t(aNextFrameIndex - 1)) {
           if (isFullPrevFrame && !aPrevFrame->GetIsPaletted()) {
             
-            CopyFrameImage(aPrevFrame.Data(),
-                           prevRect,
+            CopyFrameImage(aPrevFrame.Data(), prevRect,
                            mCompositingFrame.Data(),
                            mCompositingFrame->GetRect());
           } else {
@@ -823,10 +756,8 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
               }
             }
             DrawFrameTo(aPrevFrame.Data(), aPrevFrame->GetRect(),
-                        aPrevFrame.PaletteDataLength(),
-                        prevHasAlpha,
-                        mCompositingFrame.Data(),
-                        mCompositingFrame->GetRect(),
+                        aPrevFrame.PaletteDataLength(), prevHasAlpha,
+                        mCompositingFrame.Data(), mCompositingFrame->GetRect(),
                         aPrevFrame->GetBlendMethod(),
                         aPrevFrame->GetBlendRect());
           }
@@ -835,8 +766,7 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
   } else if (needToBlankComposite) {
     
     
-    ClearFrame(mCompositingFrame.Data(),
-               mCompositingFrame->GetRect());
+    ClearFrame(mCompositingFrame.Data(), mCompositingFrame->GetRect());
   }
 
   
@@ -849,8 +779,7 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
     
     if (!mCompositingPrevFrame) {
       RefPtr<imgFrame> newFrame = new imgFrame;
-      nsresult rv = newFrame->InitForAnimator(mSize,
-                                              SurfaceFormat::B8G8R8A8);
+      nsresult rv = newFrame->InitForAnimator(mSize, SurfaceFormat::B8G8R8A8);
       if (NS_FAILED(rv)) {
         mCompositingPrevFrame.reset();
         return false;
@@ -859,8 +788,7 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
       mCompositingPrevFrame = newFrame->RawAccessRef();
     }
 
-    CopyFrameImage(mCompositingFrame.Data(),
-                   mCompositingFrame->GetRect(),
+    CopyFrameImage(mCompositingFrame.Data(), mCompositingFrame->GetRect(),
                    mCompositingPrevFrame.Data(),
                    mCompositingPrevFrame->GetRect());
 
@@ -869,12 +797,9 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
 
   
   DrawFrameTo(aNextFrame.Data(), aNextFrame->GetRect(),
-              aNextFrame.PaletteDataLength(),
-              nextHasAlpha,
-              mCompositingFrame.Data(),
-              mCompositingFrame->GetRect(),
-              aNextFrame->GetBlendMethod(),
-              aNextFrame->GetBlendRect());
+              aNextFrame.PaletteDataLength(), nextHasAlpha,
+              mCompositingFrame.Data(), mCompositingFrame->GetRect(),
+              aNextFrame->GetBlendMethod(), aNextFrame->GetBlendRect());
 
   
   mCompositingFrame->Finish();
@@ -886,9 +811,7 @@ FrameAnimator::DoBlend(const RawAccessFrameRef& aPrevFrame,
 
 
 
-void
-FrameAnimator::ClearFrame(uint8_t* aFrameData, const IntRect& aFrameRect)
-{
+void FrameAnimator::ClearFrame(uint8_t* aFrameData, const IntRect& aFrameRect) {
   if (!aFrameData) {
     return;
   }
@@ -897,10 +820,8 @@ FrameAnimator::ClearFrame(uint8_t* aFrameData, const IntRect& aFrameRect)
 }
 
 
-void
-FrameAnimator::ClearFrame(uint8_t* aFrameData, const IntRect& aFrameRect,
-                          const IntRect& aRectToClear)
-{
+void FrameAnimator::ClearFrame(uint8_t* aFrameData, const IntRect& aFrameRect,
+                               const IntRect& aRectToClear) {
   if (!aFrameData || aFrameRect.Width() <= 0 || aFrameRect.Height() <= 0 ||
       aRectToClear.Width() <= 0 || aRectToClear.Height() <= 0) {
     return;
@@ -921,12 +842,9 @@ FrameAnimator::ClearFrame(uint8_t* aFrameData, const IntRect& aFrameRect,
 
 
 
-bool
-FrameAnimator::CopyFrameImage(const uint8_t* aDataSrc,
-                              const IntRect& aRectSrc,
-                              uint8_t* aDataDest,
-                              const IntRect& aRectDest)
-{
+bool FrameAnimator::CopyFrameImage(const uint8_t* aDataSrc,
+                                   const IntRect& aRectSrc, uint8_t* aDataDest,
+                                   const IntRect& aRectDest) {
   uint32_t dataLengthSrc = aRectSrc.Width() * aRectSrc.Height() * 4;
   uint32_t dataLengthDest = aRectDest.Width() * aRectDest.Height() * 4;
 
@@ -939,12 +857,13 @@ FrameAnimator::CopyFrameImage(const uint8_t* aDataSrc,
   return true;
 }
 
-nsresult
-FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
-                           uint32_t aSrcPaletteLength, bool aSrcHasAlpha,
-                           uint8_t* aDstPixels, const IntRect& aDstRect,
-                           BlendMethod aBlendMethod, const IntRect& aBlendRect)
-{
+nsresult FrameAnimator::DrawFrameTo(const uint8_t* aSrcData,
+                                    const IntRect& aSrcRect,
+                                    uint32_t aSrcPaletteLength,
+                                    bool aSrcHasAlpha, uint8_t* aDstPixels,
+                                    const IntRect& aDstRect,
+                                    BlendMethod aBlendMethod,
+                                    const IntRect& aBlendRect) {
   NS_ENSURE_ARG_POINTER(aSrcData);
   NS_ENSURE_ARG_POINTER(aDstPixels);
 
@@ -962,17 +881,19 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
   if (aSrcPaletteLength) {
     
     int32_t width = std::min(aSrcRect.Width(), aDstRect.Width() - aSrcRect.X());
-    int32_t height = std::min(aSrcRect.Height(), aDstRect.Height() - aSrcRect.Y());
+    int32_t height =
+        std::min(aSrcRect.Height(), aDstRect.Height() - aSrcRect.Y());
 
     
     NS_ASSERTION((aSrcRect.X() >= 0) && (aSrcRect.Y() >= 0) &&
-                 (aSrcRect.X() + width <= aDstRect.Width()) &&
-                 (aSrcRect.Y() + height <= aDstRect.Height()),
-                "FrameAnimator::DrawFrameTo: Invalid aSrcRect");
+                     (aSrcRect.X() + width <= aDstRect.Width()) &&
+                     (aSrcRect.Y() + height <= aDstRect.Height()),
+                 "FrameAnimator::DrawFrameTo: Invalid aSrcRect");
 
     
-    NS_ASSERTION((width <= aSrcRect.Width()) && (height <= aSrcRect.Height()),
-      "FrameAnimator::DrawFrameTo: source must be smaller than dest");
+    NS_ASSERTION(
+        (width <= aSrcRect.Width()) && (height <= aSrcRect.Height()),
+        "FrameAnimator::DrawFrameTo: source must be smaller than dest");
 
     
     const uint8_t* srcPixels = aSrcData + aSrcPaletteLength;
@@ -1004,21 +925,17 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
       }
     }
   } else {
-    pixman_image_t* src =
-      pixman_image_create_bits(
-          aSrcHasAlpha ? PIXMAN_a8r8g8b8 : PIXMAN_x8r8g8b8,
-          aSrcRect.Width(), aSrcRect.Height(),
-          reinterpret_cast<uint32_t*>(const_cast<uint8_t*>(aSrcData)),
-          aSrcRect.Width() * 4);
+    pixman_image_t* src = pixman_image_create_bits(
+        aSrcHasAlpha ? PIXMAN_a8r8g8b8 : PIXMAN_x8r8g8b8, aSrcRect.Width(),
+        aSrcRect.Height(),
+        reinterpret_cast<uint32_t*>(const_cast<uint8_t*>(aSrcData)),
+        aSrcRect.Width() * 4);
     if (!src) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
-    pixman_image_t* dst =
-      pixman_image_create_bits(PIXMAN_a8r8g8b8,
-                               aDstRect.Width(),
-                               aDstRect.Height(),
-                               reinterpret_cast<uint32_t*>(aDstPixels),
-                               aDstRect.Width() * 4);
+    pixman_image_t* dst = pixman_image_create_bits(
+        PIXMAN_a8r8g8b8, aDstRect.Width(), aDstRect.Height(),
+        reinterpret_cast<uint32_t*>(aDstPixels), aDstRect.Width() * 4);
     if (!dst) {
       pixman_image_unref(src);
       return NS_ERROR_OUT_OF_MEMORY;
@@ -1037,39 +954,26 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
     
     
     
-    auto op = aBlendMethod == BlendMethod::SOURCE ? PIXMAN_OP_SRC
-                                                  : PIXMAN_OP_OVER;
+    auto op =
+        aBlendMethod == BlendMethod::SOURCE ? PIXMAN_OP_SRC : PIXMAN_OP_OVER;
 
     if (aBlendMethod == BlendMethod::OVER ||
-        (aBlendMethod == BlendMethod::SOURCE && aSrcRect.IsEqualEdges(aBlendRect))) {
+        (aBlendMethod == BlendMethod::SOURCE &&
+         aSrcRect.IsEqualEdges(aBlendRect))) {
       
       
-      pixman_image_composite32(op,
-                               src,
-                               nullptr,
-                               dst,
-                               0, 0,
-                               0, 0,
-                               aSrcRect.X(), aSrcRect.Y(),
-                               aSrcRect.Width(), aSrcRect.Height());
+      pixman_image_composite32(op, src, nullptr, dst, 0, 0, 0, 0, aSrcRect.X(),
+                               aSrcRect.Y(), aSrcRect.Width(),
+                               aSrcRect.Height());
     } else {
       
-      pixman_image_composite32(PIXMAN_OP_OVER,
-                               src,
-                               nullptr,
-                               dst,
-                               0, 0,
-                               0, 0,
-                               aSrcRect.X(), aSrcRect.Y(),
-                               aSrcRect.Width(), aSrcRect.Height());
-      pixman_image_composite32(PIXMAN_OP_SRC,
-                               src,
-                               nullptr,
-                               dst,
-                               aBlendRect.X(), aBlendRect.Y(),
-                               0, 0,
-                               aBlendRect.X(), aBlendRect.Y(),
-                               aBlendRect.Width(), aBlendRect.Height());
+      pixman_image_composite32(PIXMAN_OP_OVER, src, nullptr, dst, 0, 0, 0, 0,
+                               aSrcRect.X(), aSrcRect.Y(), aSrcRect.Width(),
+                               aSrcRect.Height());
+      pixman_image_composite32(PIXMAN_OP_SRC, src, nullptr, dst, aBlendRect.X(),
+                               aBlendRect.Y(), 0, 0, aBlendRect.X(),
+                               aBlendRect.Y(), aBlendRect.Width(),
+                               aBlendRect.Height());
     }
 
     pixman_image_unref(src);
@@ -1079,5 +983,5 @@ FrameAnimator::DrawFrameTo(const uint8_t* aSrcData, const IntRect& aSrcRect,
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

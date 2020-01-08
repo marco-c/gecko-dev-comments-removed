@@ -12,70 +12,64 @@
 #include "nsAppStartupNotifier.h"
 #include "nsISimpleEnumerator.h"
 
- nsresult
-nsAppStartupNotifier::NotifyObservers(const char* aTopic)
-{
-    NS_ENSURE_ARG(aTopic);
-    nsresult rv;
+ nsresult nsAppStartupNotifier::NotifyObservers(
+    const char* aTopic) {
+  NS_ENSURE_ARG(aTopic);
+  nsresult rv;
 
-    
-    nsCOMPtr<nsICategoryManager> categoryManager =
-                    do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+  
+  nsCOMPtr<nsICategoryManager> categoryManager =
+      do_GetService(NS_CATEGORYMANAGER_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    nsDependentCString topic(aTopic);
+  nsDependentCString topic(aTopic);
 
-    nsCOMPtr<nsISimpleEnumerator> enumerator;
-    rv = categoryManager->EnumerateCategory(topic,
-                               getter_AddRefs(enumerator));
-    if (NS_FAILED(rv)) return rv;
+  nsCOMPtr<nsISimpleEnumerator> enumerator;
+  rv = categoryManager->EnumerateCategory(topic, getter_AddRefs(enumerator));
+  if (NS_FAILED(rv)) return rv;
 
-    nsCOMPtr<nsISupports> entry;
-    while (NS_SUCCEEDED(enumerator->GetNext(getter_AddRefs(entry)))) {
-        nsCOMPtr<nsISupportsCString> category = do_QueryInterface(entry, &rv);
+  nsCOMPtr<nsISupports> entry;
+  while (NS_SUCCEEDED(enumerator->GetNext(getter_AddRefs(entry)))) {
+    nsCOMPtr<nsISupportsCString> category = do_QueryInterface(entry, &rv);
+
+    if (NS_SUCCEEDED(rv)) {
+      nsAutoCString categoryEntry;
+      rv = category->GetData(categoryEntry);
+
+      nsCString contractId;
+      categoryManager->GetCategoryEntry(topic, categoryEntry, contractId);
+
+      if (NS_SUCCEEDED(rv)) {
+        
+        
+        
+
+        nsCOMPtr<nsISupports> startupInstance;
+        if (Substring(contractId, 0, 8).EqualsLiteral("service,"))
+          startupInstance = do_GetService(contractId.get() + 8, &rv);
+        else
+          startupInstance = do_CreateInstance(contractId.get(), &rv);
 
         if (NS_SUCCEEDED(rv)) {
-            nsAutoCString categoryEntry;
-            rv = category->GetData(categoryEntry);
+          
+          nsCOMPtr<nsIObserver> startupObserver =
+              do_QueryInterface(startupInstance, &rv);
+          if (NS_SUCCEEDED(rv)) {
+            rv = startupObserver->Observe(nullptr, aTopic, nullptr);
 
-            nsCString contractId;
-            categoryManager->GetCategoryEntry(topic, categoryEntry,
-                                              contractId);
-
-            if (NS_SUCCEEDED(rv)) {
-
-                
-                
-                
-
-                nsCOMPtr<nsISupports> startupInstance;
-                if (Substring(contractId, 0, 8).EqualsLiteral("service,"))
-                    startupInstance = do_GetService(contractId.get() + 8, &rv);
-                else
-                    startupInstance = do_CreateInstance(contractId.get(), &rv);
-
-                if (NS_SUCCEEDED(rv)) {
-                    
-                    nsCOMPtr<nsIObserver> startupObserver =
-                        do_QueryInterface(startupInstance, &rv);
-                    if (NS_SUCCEEDED(rv)) {
-                        rv = startupObserver->Observe(nullptr, aTopic, nullptr);
-
-                        
-                        NS_ASSERTION(NS_SUCCEEDED(rv), "Startup Observer failed!\n");
-                    }
-                }
-                else {
-                  #ifdef DEBUG
-                    nsAutoCString warnStr("Cannot create startup observer : ");
-                    warnStr += contractId.get();
-                    NS_WARNING(warnStr.get());
-                  #endif
-                }
-
-            }
+            
+            NS_ASSERTION(NS_SUCCEEDED(rv), "Startup Observer failed!\n");
+          }
+        } else {
+#ifdef DEBUG
+          nsAutoCString warnStr("Cannot create startup observer : ");
+          warnStr += contractId.get();
+          NS_WARNING(warnStr.get());
+#endif
         }
+      }
     }
+  }
 
-    return NS_OK;
+  return NS_OK;
 }

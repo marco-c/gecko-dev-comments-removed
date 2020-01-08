@@ -34,7 +34,7 @@
 namespace mozilla {
 
 void SandboxLogError(const char* aMessage);
-}
+}  
 
 #define SANDBOX_LOG_LEN 256
 
@@ -43,10 +43,11 @@ void SandboxLogError(const char* aMessage);
 
 
 
-#define SANDBOX_LOG_ERROR(fmt, args...) do {                          \
-  char _sandboxLogBuf[SANDBOX_LOG_LEN];                               \
-  ::base::strings::SafeSPrintf(_sandboxLogBuf, fmt, ## args);         \
-  ::mozilla::SandboxLogError(_sandboxLogBuf);                         \
-} while(0)
+#define SANDBOX_LOG_ERROR(fmt, args...)                        \
+  do {                                                         \
+    char _sandboxLogBuf[SANDBOX_LOG_LEN];                      \
+    ::base::strings::SafeSPrintf(_sandboxLogBuf, fmt, ##args); \
+    ::mozilla::SandboxLogError(_sandboxLogBuf);                \
+  } while (0)
 
-#endif 
+#endif  

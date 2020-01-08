@@ -38,9 +38,9 @@
 #include "nsRegionFwd.h"
 
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GTK)
-  #ifndef MOZ_ENABLE_FREETYPE
-  #define MOZ_ENABLE_FREETYPE
-  #endif
+#ifndef MOZ_ENABLE_FREETYPE
+#define MOZ_ENABLE_FREETYPE
+#endif
 #endif
 
 struct _cairo_surface;
@@ -50,10 +50,10 @@ struct _cairo_scaled_font;
 typedef _cairo_scaled_font cairo_scaled_font_t;
 
 struct FT_LibraryRec_;
-typedef FT_LibraryRec_* FT_Library;
+typedef FT_LibraryRec_ *FT_Library;
 
 struct FT_FaceRec_;
-typedef FT_FaceRec_* FT_Face;
+typedef FT_FaceRec_ *FT_Face;
 
 typedef int FT_Error;
 
@@ -73,7 +73,7 @@ struct CGContext;
 typedef struct CGContext *CGContextRef;
 
 struct CGFont;
-typedef CGFont* CGFontRef;
+typedef CGFont *CGFontRef;
 
 namespace mozilla {
 
@@ -82,12 +82,12 @@ class Mutex;
 namespace wr {
 struct FontInstanceOptions;
 struct FontInstancePlatformOptions;
-}
+}  
 
 namespace gfx {
 class UnscaledFont;
 class ScaledFont;
-}
+}  
 
 namespace gfx {
 
@@ -121,12 +121,11 @@ struct DrawOptions {
   explicit DrawOptions(Float aAlpha = 1.0f,
                        CompositionOp aCompositionOp = CompositionOp::OP_OVER,
                        AntialiasMode aAntialiasMode = AntialiasMode::DEFAULT)
-    : mAlpha(aAlpha)
-    , mCompositionOp(aCompositionOp)
-    , mAntialiasMode(aAntialiasMode)
-  {}
+      : mAlpha(aAlpha),
+        mCompositionOp(aCompositionOp),
+        mAntialiasMode(aAntialiasMode) {}
 
-  Float mAlpha;                 
+  Float mAlpha; 
 
   CompositionOp mCompositionOp; 
 
@@ -143,24 +142,21 @@ struct StrokeOptions {
   explicit StrokeOptions(Float aLineWidth = 1.0f,
                          JoinStyle aLineJoin = JoinStyle::MITER_OR_BEVEL,
                          CapStyle aLineCap = CapStyle::BUTT,
-                         Float aMiterLimit = 10.0f,
-                         size_t aDashLength = 0,
-                         const Float* aDashPattern = 0,
-                         Float aDashOffset = 0.f)
-    : mLineWidth(aLineWidth)
-    , mMiterLimit(aMiterLimit)
-    , mDashPattern(aDashLength > 0 ? aDashPattern : 0)
-    , mDashLength(aDashLength)
-    , mDashOffset(aDashOffset)
-    , mLineJoin(aLineJoin)
-    , mLineCap(aLineCap)
-  {
+                         Float aMiterLimit = 10.0f, size_t aDashLength = 0,
+                         const Float *aDashPattern = 0, Float aDashOffset = 0.f)
+      : mLineWidth(aLineWidth),
+        mMiterLimit(aMiterLimit),
+        mDashPattern(aDashLength > 0 ? aDashPattern : 0),
+        mDashLength(aDashLength),
+        mDashOffset(aDashOffset),
+        mLineJoin(aLineJoin),
+        mLineCap(aLineCap) {
     MOZ_ASSERT(aDashLength == 0 || aDashPattern);
   }
 
   Float mLineWidth;          
   Float mMiterLimit;         
-  const Float* mDashPattern; 
+  const Float *mDashPattern; 
 
 
 
@@ -176,16 +172,15 @@ struct StrokeOptions {
 
 struct DrawSurfaceOptions {
   
-  explicit DrawSurfaceOptions(SamplingFilter aSamplingFilter = SamplingFilter::LINEAR,
-                              SamplingBounds aSamplingBounds = SamplingBounds::UNBOUNDED)
-    : mSamplingFilter(aSamplingFilter)
-    , mSamplingBounds(aSamplingBounds)
-  { }
+  explicit DrawSurfaceOptions(
+      SamplingFilter aSamplingFilter = SamplingFilter::LINEAR,
+      SamplingBounds aSamplingBounds = SamplingBounds::UNBOUNDED)
+      : mSamplingFilter(aSamplingFilter), mSamplingBounds(aSamplingBounds) {}
 
-  SamplingFilter mSamplingFilter; 
+  SamplingFilter
+      mSamplingFilter; 
 
   SamplingBounds mSamplingBounds; 
-
 
 
 
@@ -196,16 +191,15 @@ struct DrawSurfaceOptions {
 
 
 
-class GradientStops : public external::AtomicRefCounted<GradientStops>
-{
-public:
+class GradientStops : public external::AtomicRefCounted<GradientStops> {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(GradientStops)
   virtual ~GradientStops() {}
 
   virtual BackendType GetBackendType() const = 0;
   virtual bool IsValid() const { return true; }
 
-protected:
+ protected:
   GradientStops() {}
 };
 
@@ -215,30 +209,23 @@ protected:
 
 
 
-class Pattern
-{
-public:
+class Pattern {
+ public:
   virtual ~Pattern() {}
 
   virtual PatternType GetType() const = 0;
 
-protected:
+ protected:
   Pattern() {}
 };
 
-class ColorPattern : public Pattern
-{
-public:
+class ColorPattern : public Pattern {
+ public:
   
   
-  explicit ColorPattern(const Color &aColor)
-    : mColor(aColor)
-  {}
+  explicit ColorPattern(const Color &aColor) : mColor(aColor) {}
 
-  virtual PatternType GetType() const override
-  {
-    return PatternType::COLOR;
-  }
+  virtual PatternType GetType() const override { return PatternType::COLOR; }
 
   Color mColor;
 };
@@ -248,107 +235,89 @@ public:
 
 
 
-class LinearGradientPattern : public Pattern
-{
-public:
+class LinearGradientPattern : public Pattern {
+ public:
   
-  LinearGradientPattern(const Point &aBegin,
-                        const Point &aEnd,
-                        GradientStops *aStops,
-                        const Matrix &aMatrix = Matrix())
-    : mBegin(aBegin)
-    , mEnd(aEnd)
-    , mStops(aStops)
-    , mMatrix(aMatrix)
-  {
-  }
+  LinearGradientPattern(const Point &aBegin, const Point &aEnd,
+                        GradientStops *aStops, const Matrix &aMatrix = Matrix())
+      : mBegin(aBegin), mEnd(aEnd), mStops(aStops), mMatrix(aMatrix) {}
 
-  virtual PatternType GetType() const override
-  {
+  virtual PatternType GetType() const override {
     return PatternType::LINEAR_GRADIENT;
   }
 
-  Point mBegin;                 
-  Point mEnd;                   
+  Point mBegin;  
+  Point mEnd;    
 
 
-  RefPtr<GradientStops> mStops; 
-
-
-  Matrix mMatrix;               
-
-};
-
-
-
-
-
-
-class RadialGradientPattern : public Pattern
-{
-public:
-  
-  RadialGradientPattern(const Point &aCenter1,
-                        const Point &aCenter2,
-                        Float aRadius1,
-                        Float aRadius2,
-                        GradientStops *aStops,
-                        const Matrix &aMatrix = Matrix())
-    : mCenter1(aCenter1)
-    , mCenter2(aCenter2)
-    , mRadius1(aRadius1)
-    , mRadius2(aRadius2)
-    , mStops(aStops)
-    , mMatrix(aMatrix)
-  {
-  }
-
-  virtual PatternType GetType() const override
-  {
-    return PatternType::RADIAL_GRADIENT;
-  }
-
-  Point mCenter1; 
-  Point mCenter2; 
-  Float mRadius1; 
-  Float mRadius2; 
-  RefPtr<GradientStops> mStops; 
+  RefPtr<GradientStops>
+      mStops;     
 
 
   Matrix mMatrix; 
+
 };
 
 
 
 
 
-class SurfacePattern : public Pattern
-{
-public:
+
+class RadialGradientPattern : public Pattern {
+ public:
+  
+  RadialGradientPattern(const Point &aCenter1, const Point &aCenter2,
+                        Float aRadius1, Float aRadius2, GradientStops *aStops,
+                        const Matrix &aMatrix = Matrix())
+      : mCenter1(aCenter1),
+        mCenter2(aCenter2),
+        mRadius1(aRadius1),
+        mRadius2(aRadius2),
+        mStops(aStops),
+        mMatrix(aMatrix) {}
+
+  virtual PatternType GetType() const override {
+    return PatternType::RADIAL_GRADIENT;
+  }
+
+  Point mCenter1;  
+  Point mCenter2;  
+  Float mRadius1;  
+  Float mRadius2;  
+  RefPtr<GradientStops>
+      mStops;      
+
+
+  Matrix mMatrix;  
+};
+
+
+
+
+
+class SurfacePattern : public Pattern {
+ public:
   
   SurfacePattern(SourceSurface *aSourceSurface, ExtendMode aExtendMode,
                  const Matrix &aMatrix = Matrix(),
                  SamplingFilter aSamplingFilter = SamplingFilter::GOOD,
                  const IntRect &aSamplingRect = IntRect())
-    : mSurface(aSourceSurface)
-    , mExtendMode(aExtendMode)
-    , mSamplingFilter(aSamplingFilter)
-    , mMatrix(aMatrix)
-    , mSamplingRect(aSamplingRect)
-  {}
+      : mSurface(aSourceSurface),
+        mExtendMode(aExtendMode),
+        mSamplingFilter(aSamplingFilter),
+        mMatrix(aMatrix),
+        mSamplingRect(aSamplingRect) {}
 
-  virtual PatternType GetType() const override
-  {
-    return PatternType::SURFACE;
-  }
+  virtual PatternType GetType() const override { return PatternType::SURFACE; }
 
-  RefPtr<SourceSurface> mSurface; 
-  ExtendMode mExtendMode;         
+  RefPtr<SourceSurface> mSurface;  
+  ExtendMode mExtendMode; 
 
-  SamplingFilter mSamplingFilter; 
-  Matrix mMatrix;                 
+  SamplingFilter
+      mSamplingFilter;  
+  Matrix mMatrix;       
 
-  IntRect mSamplingRect;          
+  IntRect mSamplingRect; 
 
 
 };
@@ -366,17 +335,14 @@ class DrawTargetCaptureImpl;
 
 
 
-class SourceSurface : public external::AtomicRefCounted<SourceSurface>
-{
-public:
+class SourceSurface : public external::AtomicRefCounted<SourceSurface> {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SourceSurface)
   virtual ~SourceSurface() {}
 
   virtual SurfaceType GetType() const = 0;
   virtual IntSize GetSize() const = 0;
-  virtual IntRect GetRect() const {
-    return IntRect(IntPoint(0, 0), GetSize());
-  }
+  virtual IntRect GetRect() const { return IntRect(IntPoint(0, 0), GetSize()); }
   virtual SurfaceFormat GetFormat() const = 0;
 
   
@@ -391,8 +357,7 @@ public:
 
 
 
-  virtual bool Equals(SourceSurface* aOther, bool aSymmetric = true)
-  {
+  virtual bool Equals(SourceSurface *aOther, bool aSymmetric = true) {
     return this == aOther ||
            (aSymmetric && aOther && aOther->Equals(this, false));
   }
@@ -403,8 +368,7 @@ public:
 
   bool IsDataSourceSurface() const {
     SurfaceType type = GetType();
-    return type == SurfaceType::DATA ||
-           type == SurfaceType::DATA_SHARED ||
+    return type == SurfaceType::DATA || type == SurfaceType::DATA_SHARED ||
            type == SurfaceType::DATA_RECYCLING_SHARED;
   }
 
@@ -417,21 +381,15 @@ public:
   
 
 
-  virtual void *GetNativeSurface(NativeSurfaceType aType) {
-    return nullptr;
-  }
+  virtual void *GetNativeSurface(NativeSurfaceType aType) { return nullptr; }
 
-  void AddUserData(UserDataKey *key, void *userData, void (*destroy)(void*)) {
+  void AddUserData(UserDataKey *key, void *userData, void (*destroy)(void *)) {
     mUserData.Add(key, userData, destroy);
   }
-  void *GetUserData(UserDataKey *key) const {
-    return mUserData.Get(key);
-  }
-  void RemoveUserData(UserDataKey *key) {
-    mUserData.RemoveAndDestroy(key);
-  }
+  void *GetUserData(UserDataKey *key) const { return mUserData.Get(key); }
+  void RemoveUserData(UserDataKey *key) { mUserData.RemoveAndDestroy(key); }
 
-protected:
+ protected:
   friend class DrawTargetCaptureImpl;
   friend class StoredPattern;
 
@@ -444,20 +402,13 @@ protected:
   UserData mUserData;
 };
 
-class DataSourceSurface : public SourceSurface
-{
-public:
+class DataSourceSurface : public SourceSurface {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DataSourceSurface, override)
-  DataSourceSurface()
-    : mMapCount(0)
-  {
-  }
+  DataSourceSurface() : mMapCount(0) {}
 
 #ifdef DEBUG
-  virtual ~DataSourceSurface()
-  {
-    MOZ_ASSERT(mMapCount == 0);
-  }
+  virtual ~DataSourceSurface() { MOZ_ASSERT(mMapCount == 0); }
 #endif
 
   struct MappedSurface {
@@ -465,11 +416,7 @@ public:
     int32_t mStride;
   };
 
-  enum MapType {
-    READ,
-    WRITE,
-    READ_WRITE
-  };
+  enum MapType { READ, WRITE, READ_WRITE };
 
   
 
@@ -479,22 +426,19 @@ public:
 
 
   class ScopedMap final {
-  public:
-    explicit ScopedMap(DataSourceSurface* aSurface, MapType aType)
-      : mSurface(aSurface)
-      , mIsMapped(aSurface->Map(aType, &mMap)) {}
+   public:
+    explicit ScopedMap(DataSourceSurface *aSurface, MapType aType)
+        : mSurface(aSurface), mIsMapped(aSurface->Map(aType, &mMap)) {}
 
-    ScopedMap(ScopedMap&& aOther)
-      : mSurface(std::move(aOther.mSurface))
-      , mMap(aOther.mMap)
-      , mIsMapped(aOther.mIsMapped)
-    {
+    ScopedMap(ScopedMap &&aOther)
+        : mSurface(std::move(aOther.mSurface)),
+          mMap(aOther.mMap),
+          mIsMapped(aOther.mIsMapped) {
       aOther.mMap.mData = nullptr;
       aOther.mIsMapped = false;
     }
 
-    ScopedMap& operator=(ScopedMap&& aOther)
-    {
+    ScopedMap &operator=(ScopedMap &&aOther) {
       if (mIsMapped) {
         mSurface->Unmap();
       }
@@ -506,36 +450,32 @@ public:
       return *this;
     }
 
-    ~ScopedMap()
-    {
+    ~ScopedMap() {
       if (mIsMapped) {
         mSurface->Unmap();
       }
     }
 
-    uint8_t* GetData() const
-    {
+    uint8_t *GetData() const {
       MOZ_ASSERT(mIsMapped);
       return mMap.mData;
     }
 
-    int32_t GetStride() const
-    {
+    int32_t GetStride() const {
       MOZ_ASSERT(mIsMapped);
       return mMap.mStride;
     }
 
-    const MappedSurface* GetMappedSurface() const
-    {
+    const MappedSurface *GetMappedSurface() const {
       MOZ_ASSERT(mIsMapped);
       return &mMap;
     }
 
     bool IsMapped() const { return mIsMapped; }
 
-  private:
-    ScopedMap(const ScopedMap& aOther) = delete;
-    ScopedMap& operator=(const ScopedMap& aOther) = delete;
+   private:
+    ScopedMap(const ScopedMap &aOther) = delete;
+    ScopedMap &operator=(const ScopedMap &aOther) = delete;
 
     RefPtr<DataSourceSurface> mSurface;
     MappedSurface mMap;
@@ -571,8 +511,7 @@ public:
 
 
 
-  virtual bool Map(MapType, MappedSurface *aMappedSurface)
-  {
+  virtual bool Map(MapType, MappedSurface *aMappedSurface) {
     aMappedSurface->mData = GetData();
     aMappedSurface->mStride = Stride();
     bool success = !!aMappedSurface->mData;
@@ -582,8 +521,7 @@ public:
     return success;
   }
 
-  virtual void Unmap()
-  {
+  virtual void Unmap() {
     mMapCount--;
     MOZ_ASSERT(mMapCount >= 0);
   }
@@ -601,42 +539,34 @@ public:
 
 
   virtual void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
-                                      size_t& aHeapSizeOut,
-                                      size_t& aNonHeapSizeOut,
-                                      size_t& aExtHandlesOut,
-                                      uint64_t& aExtIdOut) const
-  {
-  }
+                                      size_t &aHeapSizeOut,
+                                      size_t &aNonHeapSizeOut,
+                                      size_t &aExtHandlesOut,
+                                      uint64_t &aExtIdOut) const {}
 
   
 
 
 
-  virtual bool OnHeap() const
-  {
-    return true;
-  }
+  virtual bool OnHeap() const { return true; }
 
   
 
 
-  virtual Maybe<IntRect> TakeDirtyRect() {
-    return Nothing();
-  }
+  virtual Maybe<IntRect> TakeDirtyRect() { return Nothing(); }
 
   
 
 
-  virtual void Invalidate(const IntRect& aDirtyRect) { }
+  virtual void Invalidate(const IntRect &aDirtyRect) {}
 
-protected:
+ protected:
   Atomic<int32_t> mMapCount;
 };
 
 
-class PathSink : public RefCounted<PathSink>
-{
-public:
+class PathSink : public RefCounted<PathSink> {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PathSink)
   virtual ~PathSink() {}
 
@@ -648,12 +578,10 @@ public:
   
   virtual void LineTo(const Point &aPoint) = 0;
   
-  virtual void BezierTo(const Point &aCP1,
-                        const Point &aCP2,
+  virtual void BezierTo(const Point &aCP1, const Point &aCP2,
                         const Point &aCP3) = 0;
   
-  virtual void QuadraticBezierTo(const Point &aCP1,
-                                 const Point &aCP2) = 0;
+  virtual void QuadraticBezierTo(const Point &aCP1, const Point &aCP2) = 0;
   
 
 
@@ -673,9 +601,8 @@ class FlattenedPath;
 
 
 
-class Path : public external::AtomicRefCounted<Path>
-{
-public:
+class Path : public external::AtomicRefCounted<Path> {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(Path)
   virtual ~Path();
 
@@ -687,22 +614,24 @@ public:
   inline already_AddRefed<PathBuilder> CopyToBuilder() const {
     return CopyToBuilder(GetFillRule());
   }
-  inline already_AddRefed<PathBuilder> TransformedCopyToBuilder(const Matrix &aTransform) const {
+  inline already_AddRefed<PathBuilder> TransformedCopyToBuilder(
+      const Matrix &aTransform) const {
     return TransformedCopyToBuilder(aTransform, GetFillRule());
   }
   
 
 
-  virtual already_AddRefed<PathBuilder> CopyToBuilder(FillRule aFillRule) const = 0;
-  virtual already_AddRefed<PathBuilder> TransformedCopyToBuilder(const Matrix &aTransform,
-                                                             FillRule aFillRule) const = 0;
+  virtual already_AddRefed<PathBuilder> CopyToBuilder(
+      FillRule aFillRule) const = 0;
+  virtual already_AddRefed<PathBuilder> TransformedCopyToBuilder(
+      const Matrix &aTransform, FillRule aFillRule) const = 0;
 
   
 
 
 
-  virtual bool ContainsPoint(const Point &aPoint, const Matrix &aTransform) const = 0;
-
+  virtual bool ContainsPoint(const Point &aPoint,
+                             const Matrix &aTransform) const = 0;
 
   
 
@@ -738,10 +667,9 @@ public:
 
   virtual Float ComputeLength();
 
-  virtual Point ComputePointAtLength(Float aLength,
-                                     Point* aTangent = nullptr);
+  virtual Point ComputePointAtLength(Float aLength, Point *aTangent = nullptr);
 
-protected:
+ protected:
   Path();
   void EnsureFlattenedPath();
 
@@ -751,9 +679,8 @@ protected:
 
 
 
-class PathBuilder : public PathSink
-{
-public:
+class PathBuilder : public PathSink {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(PathBuilder, override)
   
 
@@ -763,13 +690,12 @@ public:
   virtual BackendType GetBackendType() const = 0;
 };
 
-struct Glyph
-{
+struct Glyph {
   uint32_t mIndex;
   Point mPosition;
 };
 
-static inline bool operator==(const Glyph& aOne, const Glyph& aOther) {
+static inline bool operator==(const Glyph &aOne, const Glyph &aOther) {
   return aOne.mIndex == aOther.mIndex && aOne.mPosition == aOther.mPosition;
 }
 
@@ -777,14 +703,13 @@ static inline bool operator==(const Glyph& aOne, const Glyph& aOther) {
 
 
 
-struct GlyphBuffer
-{
-  const Glyph *mGlyphs; 
+struct GlyphBuffer {
+  const Glyph
+      *mGlyphs;  
   uint32_t mNumGlyphs;  
 };
 
-struct GlyphMetrics
-{
+struct GlyphMetrics {
   
   
   Float mXBearing;
@@ -803,9 +728,8 @@ struct GlyphMetrics
   Float mHeight;
 };
 
-class UnscaledFont : public SupportsThreadSafeWeakPtr<UnscaledFont>
-{
-public:
+class UnscaledFont : public SupportsThreadSafeWeakPtr<UnscaledFont> {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(UnscaledFont)
   MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(UnscaledFont)
 
@@ -815,46 +739,46 @@ public:
 
   static uint32_t DeletionCounter() { return sDeletionCounter; }
 
-  typedef void (*FontFileDataOutput)(const uint8_t *aData, uint32_t aLength, uint32_t aIndex,
-                                     void *aBaton);
-  typedef void (*WRFontDescriptorOutput)(const uint8_t *aData, uint32_t aLength, uint32_t aIndex,
+  typedef void (*FontFileDataOutput)(const uint8_t *aData, uint32_t aLength,
+                                     uint32_t aIndex, void *aBaton);
+  typedef void (*WRFontDescriptorOutput)(const uint8_t *aData, uint32_t aLength,
+                                         uint32_t aIndex, void *aBaton);
+  typedef void (*FontInstanceDataOutput)(const uint8_t *aData, uint32_t aLength,
                                          void *aBaton);
-  typedef void (*FontInstanceDataOutput)(const uint8_t* aData, uint32_t aLength, void* aBaton);
-  typedef void (*FontDescriptorOutput)(const uint8_t* aData, uint32_t aLength, uint32_t aIndex,
-                                       void* aBaton);
+  typedef void (*FontDescriptorOutput)(const uint8_t *aData, uint32_t aLength,
+                                       uint32_t aIndex, void *aBaton);
 
   virtual bool GetFontFileData(FontFileDataOutput, void *) { return false; }
 
-  virtual bool GetWRFontDescriptor(WRFontDescriptorOutput, void *) { return false; }
+  virtual bool GetWRFontDescriptor(WRFontDescriptorOutput, void *) {
+    return false;
+  }
 
-  virtual bool GetFontInstanceData(FontInstanceDataOutput, void *) { return false; }
+  virtual bool GetFontInstanceData(FontInstanceDataOutput, void *) {
+    return false;
+  }
 
   virtual bool GetFontDescriptor(FontDescriptorOutput, void *) { return false; }
 
-  virtual already_AddRefed<ScaledFont>
-    CreateScaledFont(Float aGlyphSize,
-                     const uint8_t* aInstanceData,
-                     uint32_t aInstanceDataLength,
-                     const FontVariation* aVariations,
-                     uint32_t aNumVariations)
-  {
+  virtual already_AddRefed<ScaledFont> CreateScaledFont(
+      Float aGlyphSize, const uint8_t *aInstanceData,
+      uint32_t aInstanceDataLength, const FontVariation *aVariations,
+      uint32_t aNumVariations) {
     return nullptr;
   }
 
-  virtual already_AddRefed<ScaledFont>
-    CreateScaledFontFromWRFont(Float aGlyphSize,
-                               const wr::FontInstanceOptions* aOptions,
-                               const wr::FontInstancePlatformOptions* aPlatformOptions,
-                               const FontVariation* aVariations,
-                               uint32_t aNumVariations)
-  {
-    return CreateScaledFont(aGlyphSize, nullptr, 0, aVariations, aNumVariations);
+  virtual already_AddRefed<ScaledFont> CreateScaledFontFromWRFont(
+      Float aGlyphSize, const wr::FontInstanceOptions *aOptions,
+      const wr::FontInstancePlatformOptions *aPlatformOptions,
+      const FontVariation *aVariations, uint32_t aNumVariations) {
+    return CreateScaledFont(aGlyphSize, nullptr, 0, aVariations,
+                            aNumVariations);
   }
 
-protected:
+ protected:
   UnscaledFont() {}
 
-private:
+ private:
   static Atomic<uint32_t> sDeletionCounter;
 };
 
@@ -862,9 +786,8 @@ private:
 
 
 
-class ScaledFont : public SupportsThreadSafeWeakPtr<ScaledFont>
-{
-public:
+class ScaledFont : public SupportsThreadSafeWeakPtr<ScaledFont> {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(ScaledFont)
   MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(ScaledFont)
 
@@ -881,29 +804,36 @@ public:
 
 
 
-  virtual already_AddRefed<Path> GetPathForGlyphs(const GlyphBuffer &aBuffer, const DrawTarget *aTarget) = 0;
+  virtual already_AddRefed<Path> GetPathForGlyphs(
+      const GlyphBuffer &aBuffer, const DrawTarget *aTarget) = 0;
 
   
 
 
 
 
-  virtual void CopyGlyphsToBuilder(const GlyphBuffer &aBuffer, PathBuilder *aBuilder, const Matrix *aTransformHint = nullptr) = 0;
+  virtual void CopyGlyphsToBuilder(const GlyphBuffer &aBuffer,
+                                   PathBuilder *aBuilder,
+                                   const Matrix *aTransformHint = nullptr) = 0;
 
   
 
-  virtual void GetGlyphDesignMetrics(const uint16_t* aGlyphIndices, uint32_t aNumGlyphs, GlyphMetrics* aGlyphMetrics) = 0;
+  virtual void GetGlyphDesignMetrics(const uint16_t *aGlyphIndices,
+                                     uint32_t aNumGlyphs,
+                                     GlyphMetrics *aGlyphMetrics) = 0;
 
-  typedef void (*FontInstanceDataOutput)(const uint8_t* aData, uint32_t aLength,
-                                         const FontVariation* aVariations, uint32_t aNumVariations,
-                                         void* aBaton);
+  typedef void (*FontInstanceDataOutput)(const uint8_t *aData, uint32_t aLength,
+                                         const FontVariation *aVariations,
+                                         uint32_t aNumVariations, void *aBaton);
 
-  virtual bool GetFontInstanceData(FontInstanceDataOutput, void *) { return false; }
+  virtual bool GetFontInstanceData(FontInstanceDataOutput, void *) {
+    return false;
+  }
 
-  virtual bool GetWRFontInstanceOptions(Maybe<wr::FontInstanceOptions>* aOutOptions,
-                                        Maybe<wr::FontInstancePlatformOptions>* aOutPlatformOptions,
-                                        std::vector<FontVariation>* aOutVariations)
-  {
+  virtual bool GetWRFontInstanceOptions(
+      Maybe<wr::FontInstanceOptions> *aOutOptions,
+      Maybe<wr::FontInstancePlatformOptions> *aOutPlatformOptions,
+      std::vector<FontVariation> *aOutVariations) {
     return false;
   }
 
@@ -911,36 +841,32 @@ public:
 
   virtual bool HasVariationSettings() { return false; }
 
-  void AddUserData(UserDataKey *key, void *userData, void (*destroy)(void*)) {
+  void AddUserData(UserDataKey *key, void *userData, void (*destroy)(void *)) {
     mUserData.Add(key, userData, destroy);
   }
-  void *GetUserData(UserDataKey *key) {
-    return mUserData.Get(key);
-  }
+  void *GetUserData(UserDataKey *key) { return mUserData.Get(key); }
 
-  void RemoveUserData(UserDataKey *key) {
-    mUserData.RemoveAndDestroy(key);
-  }
+  void RemoveUserData(UserDataKey *key) { mUserData.RemoveAndDestroy(key); }
 
-  const RefPtr<UnscaledFont>& GetUnscaledFont() const { return mUnscaledFont; }
+  const RefPtr<UnscaledFont> &GetUnscaledFont() const { return mUnscaledFont; }
 
-  virtual cairo_scaled_font_t* GetCairoScaledFont() { return nullptr; }
-  virtual void SetCairoScaledFont(cairo_scaled_font_t* font) {}
+  virtual cairo_scaled_font_t *GetCairoScaledFont() { return nullptr; }
+  virtual void SetCairoScaledFont(cairo_scaled_font_t *font) {}
 
   Float GetSyntheticObliqueAngle() const { return mSyntheticObliqueAngle; }
-  void SetSyntheticObliqueAngle(Float aAngle) { mSyntheticObliqueAngle = aAngle; }
+  void SetSyntheticObliqueAngle(Float aAngle) {
+    mSyntheticObliqueAngle = aAngle;
+  }
 
-protected:
-  explicit ScaledFont(const RefPtr<UnscaledFont>& aUnscaledFont)
-    : mUnscaledFont(aUnscaledFont)
-    , mSyntheticObliqueAngle(0.0f)
-  {}
+ protected:
+  explicit ScaledFont(const RefPtr<UnscaledFont> &aUnscaledFont)
+      : mUnscaledFont(aUnscaledFont), mSyntheticObliqueAngle(0.0f) {}
 
   UserData mUserData;
   RefPtr<UnscaledFont> mUnscaledFont;
   Float mSyntheticObliqueAngle;
 
-private:
+ private:
   static Atomic<uint32_t> sDeletionCounter;
 };
 
@@ -948,9 +874,9 @@ private:
 
 
 
-class NativeFontResource : public external::AtomicRefCounted<NativeFontResource>
-{
-public:
+class NativeFontResource
+    : public external::AtomicRefCounted<NativeFontResource> {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(NativeFontResource)
 
   
@@ -962,10 +888,9 @@ public:
 
 
 
-  virtual already_AddRefed<UnscaledFont>
-    CreateUnscaledFont(uint32_t aIndex,
-                       const uint8_t* aInstanceData,
-                       uint32_t aInstanceDataLength) = 0;
+  virtual already_AddRefed<UnscaledFont> CreateUnscaledFont(
+      uint32_t aIndex, const uint8_t *aInstanceData,
+      uint32_t aInstanceDataLength) = 0;
 
   virtual ~NativeFontResource() {}
 };
@@ -977,15 +902,13 @@ class DrawTargetCapture;
 
 
 
-class DrawTarget : public external::AtomicRefCounted<DrawTarget>
-{
-public:
+class DrawTarget : public external::AtomicRefCounted<DrawTarget> {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawTarget)
   DrawTarget()
-    : mTransformDirty(false)
-    , mPermitSubpixelAA(false)
-    , mFormat(SurfaceFormat::UNKNOWN)
-  {}
+      : mTransformDirty(false),
+        mPermitSubpixelAA(false),
+        mFormat(SurfaceFormat::UNKNOWN) {}
   virtual ~DrawTarget() {}
 
   virtual bool IsValid() const { return true; };
@@ -1005,22 +928,21 @@ public:
 
   
   
-  virtual already_AddRefed<SourceSurface> IntoLuminanceSource(LuminanceType aLuminanceType,
-                                                              float aOpacity);
+  virtual already_AddRefed<SourceSurface> IntoLuminanceSource(
+      LuminanceType aLuminanceType, float aOpacity);
   virtual IntSize GetSize() const = 0;
-  virtual IntRect GetRect() const {
-    return IntRect(IntPoint(0, 0), GetSize());
-  }
+  virtual IntRect GetRect() const { return IntRect(IntPoint(0, 0), GetSize()); }
 
   
 
 
 
 
-  virtual bool LockBits(uint8_t** aData, IntSize* aSize,
-                        int32_t* aStride, SurfaceFormat* aFormat,
-                        IntPoint* aOrigin = nullptr) { return false; }
-  virtual void ReleaseBits(uint8_t* aData) {}
+  virtual bool LockBits(uint8_t **aData, IntSize *aSize, int32_t *aStride,
+                        SurfaceFormat *aFormat, IntPoint *aOrigin = nullptr) {
+    return false;
+  }
+  virtual void ReleaseBits(uint8_t *aData) {}
 
   
 
@@ -1035,7 +957,7 @@ public:
 
 
   virtual void DrawCapturedDT(DrawTargetCapture *aCaptureDT,
-                              const Matrix& aTransform);
+                              const Matrix &aTransform);
 
   
 
@@ -1050,17 +972,17 @@ public:
 
 
 
-  virtual void DrawSurface(SourceSurface *aSurface,
-                           const Rect &aDest,
-                           const Rect &aSource,
-                           const DrawSurfaceOptions &aSurfOptions = DrawSurfaceOptions(),
-                           const DrawOptions &aOptions = DrawOptions()) = 0;
+  virtual void DrawSurface(
+      SourceSurface *aSurface, const Rect &aDest, const Rect &aSource,
+      const DrawSurfaceOptions &aSurfOptions = DrawSurfaceOptions(),
+      const DrawOptions &aOptions = DrawOptions()) = 0;
 
-  virtual void DrawDependentSurface(uint64_t aId,
-                                    const Rect &aDest,
-                                    const DrawSurfaceOptions &aSurfOptions = DrawSurfaceOptions(),
-                                    const DrawOptions &aOptions = DrawOptions())
-  { MOZ_CRASH("GFX: DrawDependentSurface"); }
+  virtual void DrawDependentSurface(
+      uint64_t aId, const Rect &aDest,
+      const DrawSurfaceOptions &aSurfOptions = DrawSurfaceOptions(),
+      const DrawOptions &aOptions = DrawOptions()) {
+    MOZ_CRASH("GFX: DrawDependentSurface");
+  }
 
   
 
@@ -1070,8 +992,7 @@ public:
 
 
 
-  virtual void DrawFilter(FilterNode *aNode,
-                          const Rect &aSourceRect,
+  virtual void DrawFilter(FilterNode *aNode, const Rect &aSourceRect,
                           const Point &aDestPoint,
                           const DrawOptions &aOptions = DrawOptions()) = 0;
 
@@ -1090,10 +1011,8 @@ public:
 
 
   virtual void DrawSurfaceWithShadow(SourceSurface *aSurface,
-                                     const Point &aDest,
-                                     const Color &aColor,
-                                     const Point &aOffset,
-                                     Float aSigma,
+                                     const Point &aDest, const Color &aColor,
+                                     const Point &aOffset, Float aSigma,
                                      CompositionOp aOperator) = 0;
 
   
@@ -1113,8 +1032,7 @@ public:
 
 
 
-  virtual void CopySurface(SourceSurface *aSurface,
-                           const IntRect &aSourceRect,
+  virtual void CopySurface(SourceSurface *aSurface, const IntRect &aSourceRect,
                            const IntPoint &aDestination) = 0;
 
   
@@ -1124,8 +1042,7 @@ public:
 
 
   virtual void CopyRect(const IntRect &aSourceRect,
-                        const IntPoint &aDestination)
-  {
+                        const IntPoint &aDestination) {
     RefPtr<SourceSurface> source = Snapshot();
     CopySurface(source, aSourceRect, aDestination);
   }
@@ -1137,8 +1054,7 @@ public:
 
 
 
-  virtual void FillRect(const Rect &aRect,
-                        const Pattern &aPattern,
+  virtual void FillRect(const Rect &aRect, const Pattern &aPattern,
                         const DrawOptions &aOptions = DrawOptions()) = 0;
 
   
@@ -1148,7 +1064,19 @@ public:
 
 
 
-  virtual void StrokeRect(const Rect &aRect,
+  virtual void StrokeRect(const Rect &aRect, const Pattern &aPattern,
+                          const StrokeOptions &aStrokeOptions = StrokeOptions(),
+                          const DrawOptions &aOptions = DrawOptions()) = 0;
+
+  
+
+
+
+
+
+
+
+  virtual void StrokeLine(const Point &aStart, const Point &aEnd,
                           const Pattern &aPattern,
                           const StrokeOptions &aStrokeOptions = StrokeOptions(),
                           const DrawOptions &aOptions = DrawOptions()) = 0;
@@ -1161,22 +1089,7 @@ public:
 
 
 
-  virtual void StrokeLine(const Point &aStart,
-                          const Point &aEnd,
-                          const Pattern &aPattern,
-                          const StrokeOptions &aStrokeOptions = StrokeOptions(),
-                          const DrawOptions &aOptions = DrawOptions()) = 0;
-
-  
-
-
-
-
-
-
-
-  virtual void Stroke(const Path *aPath,
-                      const Pattern &aPattern,
+  virtual void Stroke(const Path *aPath, const Pattern &aPattern,
                       const StrokeOptions &aStrokeOptions = StrokeOptions(),
                       const DrawOptions &aOptions = DrawOptions()) = 0;
 
@@ -1187,26 +1100,23 @@ public:
 
 
 
-  virtual void Fill(const Path *aPath,
-                    const Pattern &aPattern,
+  virtual void Fill(const Path *aPath, const Pattern &aPattern,
                     const DrawOptions &aOptions = DrawOptions()) = 0;
 
   
 
 
-  virtual void FillGlyphs(ScaledFont *aFont,
-                          const GlyphBuffer &aBuffer,
+  virtual void FillGlyphs(ScaledFont *aFont, const GlyphBuffer &aBuffer,
                           const Pattern &aPattern,
                           const DrawOptions &aOptions = DrawOptions()) = 0;
 
   
 
 
-  virtual void StrokeGlyphs(ScaledFont* aFont,
-                            const GlyphBuffer& aBuffer,
-                            const Pattern& aPattern,
-                            const StrokeOptions& aStrokeOptions = StrokeOptions(),
-                            const DrawOptions& aOptions = DrawOptions());
+  virtual void StrokeGlyphs(
+      ScaledFont *aFont, const GlyphBuffer &aBuffer, const Pattern &aPattern,
+      const StrokeOptions &aStrokeOptions = StrokeOptions(),
+      const DrawOptions &aOptions = DrawOptions());
 
   
 
@@ -1217,8 +1127,7 @@ public:
 
 
 
-  virtual void Mask(const Pattern &aSource,
-                    const Pattern &aMask,
+  virtual void Mask(const Pattern &aSource, const Pattern &aMask,
                     const DrawOptions &aOptions = DrawOptions()) = 0;
 
   
@@ -1231,8 +1140,7 @@ public:
 
 
 
-  virtual void MaskSurface(const Pattern &aSource,
-                           SourceSurface *aMask,
+  virtual void MaskSurface(const Pattern &aSource, SourceSurface *aMask,
                            Point aOffset,
                            const DrawOptions &aOptions = DrawOptions()) = 0;
 
@@ -1242,8 +1150,9 @@ public:
 
 
 
-  virtual bool Draw3DTransformedSurface(SourceSurface* aSurface,
-                                        const Matrix4x4& aMatrix);
+
+  virtual bool Draw3DTransformedSurface(SourceSurface *aSurface,
+                                        const Matrix4x4 &aMatrix);
 
   
 
@@ -1268,7 +1177,7 @@ public:
 
 
 
-  virtual void PushDeviceSpaceClipRects(const IntRect* aRects, uint32_t aCount);
+  virtual void PushDeviceSpaceClipRects(const IntRect *aRects, uint32_t aCount);
 
   
 
@@ -1291,11 +1200,12 @@ public:
 
 
 
-  virtual void PushLayer(bool aOpaque, Float aOpacity,
-                         SourceSurface* aMask,
-                         const Matrix& aMaskTransform,
-                         const IntRect& aBounds = IntRect(),
-                         bool aCopyBackground = false) { MOZ_CRASH("GFX: PushLayer"); }
+  virtual void PushLayer(bool aOpaque, Float aOpacity, SourceSurface *aMask,
+                         const Matrix &aMaskTransform,
+                         const IntRect &aBounds = IntRect(),
+                         bool aCopyBackground = false) {
+    MOZ_CRASH("GFX: PushLayer");
+  }
 
   
 
@@ -1314,12 +1224,13 @@ public:
 
 
   virtual void PushLayerWithBlend(bool aOpaque, Float aOpacity,
-                         SourceSurface* aMask,
-                         const Matrix& aMaskTransform,
-                         const IntRect& aBounds = IntRect(),
-                         bool aCopyBackground = false,
-                         CompositionOp = CompositionOp::OP_OVER) { MOZ_CRASH("GFX: PushLayerWithBlend"); }
-
+                                  SourceSurface *aMask,
+                                  const Matrix &aMaskTransform,
+                                  const IntRect &aBounds = IntRect(),
+                                  bool aCopyBackground = false,
+                                  CompositionOp = CompositionOp::OP_OVER) {
+    MOZ_CRASH("GFX: PushLayerWithBlend");
+  }
 
   
 
@@ -1332,13 +1243,13 @@ public:
 
 
 
-  virtual void Blur(const AlphaBoxBlur& aBlur);
+  virtual void Blur(const AlphaBoxBlur &aBlur);
 
   
 
 
 
-  virtual void PadEdges(const IntRegion& aRegion);
+  virtual void PadEdges(const IntRegion &aRegion);
 
   
 
@@ -1351,18 +1262,20 @@ public:
 
 
 
-  virtual already_AddRefed<SourceSurface> CreateSourceSurfaceFromData(unsigned char *aData,
-                                                                      const IntSize &aSize,
-                                                                      int32_t aStride,
-                                                                      SurfaceFormat aFormat) const = 0;
+
+  virtual already_AddRefed<SourceSurface> CreateSourceSurfaceFromData(
+      unsigned char *aData, const IntSize &aSize, int32_t aStride,
+      SurfaceFormat aFormat) const = 0;
 
   
 
 
 
 
-  virtual already_AddRefed<SourceSurface> OptimizeSourceSurface(SourceSurface *aSurface) const = 0;
-  virtual already_AddRefed<SourceSurface> OptimizeSourceSurfaceForUnknownAlpha(SourceSurface *aSurface) const {
+  virtual already_AddRefed<SourceSurface> OptimizeSourceSurface(
+      SourceSurface *aSurface) const = 0;
+  virtual already_AddRefed<SourceSurface> OptimizeSourceSurfaceForUnknownAlpha(
+      SourceSurface *aSurface) const {
     return OptimizeSourceSurface(aSurface);
   }
 
@@ -1371,24 +1284,25 @@ public:
 
 
 
-  virtual already_AddRefed<SourceSurface>
-    CreateSourceSurfaceFromNativeSurface(const NativeSurface &aSurface) const = 0;
 
-  
-
-
-  virtual already_AddRefed<DrawTarget>
-    CreateSimilarDrawTarget(const IntSize &aSize, SurfaceFormat aFormat) const = 0;
+  virtual already_AddRefed<SourceSurface> CreateSourceSurfaceFromNativeSurface(
+      const NativeSurface &aSurface) const = 0;
 
   
 
 
 
+  virtual already_AddRefed<DrawTarget> CreateSimilarDrawTarget(
+      const IntSize &aSize, SurfaceFormat aFormat) const = 0;
+
+  
 
 
-  virtual bool
-    CanCreateSimilarDrawTarget(const IntSize &aSize, SurfaceFormat aFormat) const
-  {
+
+
+
+  virtual bool CanCreateSimilarDrawTarget(const IntSize &aSize,
+                                          SurfaceFormat aFormat) const {
     return true;
   }
 
@@ -1400,10 +1314,8 @@ public:
 
 
 
-  virtual already_AddRefed<DrawTarget>
-    CreateShadowDrawTarget(const IntSize &aSize, SurfaceFormat aFormat,
-                           float aSigma) const
-  {
+  virtual already_AddRefed<DrawTarget> CreateShadowDrawTarget(
+      const IntSize &aSize, SurfaceFormat aFormat, float aSigma) const {
     return CreateSimilarDrawTarget(aSize, aFormat);
   }
 
@@ -1411,10 +1323,9 @@ public:
 
 
 
-  virtual RefPtr<DrawTarget> CreateClippedDrawTarget(const IntSize& aMaxSize,
-                                                     const Matrix& aTransform,
-                                                     SurfaceFormat aFormat) const
-  {
+  virtual RefPtr<DrawTarget> CreateClippedDrawTarget(
+      const IntSize &aMaxSize, const Matrix &aTransform,
+      SurfaceFormat aFormat) const {
     return CreateSimilarDrawTarget(aMaxSize, aFormat);
   }
 
@@ -1424,9 +1335,8 @@ public:
 
 
 
-  virtual RefPtr<DrawTarget>
-  CreateSimilarRasterTarget(const IntSize& aSize, SurfaceFormat aFormat) const
-  {
+  virtual RefPtr<DrawTarget> CreateSimilarRasterTarget(
+      const IntSize &aSize, SurfaceFormat aFormat) const {
     return CreateSimilarDrawTarget(aSize, aFormat);
   }
 
@@ -1437,7 +1347,8 @@ public:
 
 
 
-  virtual already_AddRefed<PathBuilder> CreatePathBuilder(FillRule aFillRule = FillRule::FILL_WINDING) const = 0;
+  virtual already_AddRefed<PathBuilder> CreatePathBuilder(
+      FillRule aFillRule = FillRule::FILL_WINDING) const = 0;
 
   
 
@@ -1449,10 +1360,9 @@ public:
 
 
 
-  virtual already_AddRefed<GradientStops>
-    CreateGradientStops(GradientStop *aStops,
-                        uint32_t aNumStops,
-                        ExtendMode aExtendMode = ExtendMode::CLAMP) const = 0;
+  virtual already_AddRefed<GradientStops> CreateGradientStops(
+      GradientStop *aStops, uint32_t aNumStops,
+      ExtendMode aExtendMode = ExtendMode::CLAMP) const = 0;
 
   
 
@@ -1475,10 +1385,12 @@ public:
 
 
 
-  virtual void GetGlyphRasterizationMetrics(ScaledFont *aScaledFont, const uint16_t* aGlyphIndices,
-                                            uint32_t aNumGlyphs, GlyphMetrics* aGlyphMetrics)
-  {
-    aScaledFont->GetGlyphDesignMetrics(aGlyphIndices, aNumGlyphs, aGlyphMetrics);
+  virtual void GetGlyphRasterizationMetrics(ScaledFont *aScaledFont,
+                                            const uint16_t *aGlyphIndices,
+                                            uint32_t aNumGlyphs,
+                                            GlyphMetrics *aGlyphMetrics) {
+    aScaledFont->GetGlyphDesignMetrics(aGlyphIndices, aNumGlyphs,
+                                       aGlyphMetrics);
   }
 
   
@@ -1498,11 +1410,14 @@ public:
 
 
 
-  virtual void SetTransform(const Matrix &aTransform)
-    { mTransform = aTransform; mTransformDirty = true; }
+  virtual void SetTransform(const Matrix &aTransform) {
+    mTransform = aTransform;
+    mTransformDirty = true;
+  }
 
-  inline void ConcatTransform(const Matrix &aTransform)
-    { SetTransform(aTransform * Matrix(GetTransform())); }
+  inline void ConcatTransform(const Matrix &aTransform) {
+    SetTransform(aTransform * Matrix(GetTransform()));
+  }
 
   SurfaceFormat GetFormat() const { return mFormat; }
 
@@ -1515,28 +1430,20 @@ public:
   virtual bool IsTiledDrawTarget() const { return false; }
   virtual bool SupportsRegionClipping() const { return true; }
 
-  void AddUserData(UserDataKey *key, void *userData, void (*destroy)(void*)) {
+  void AddUserData(UserDataKey *key, void *userData, void (*destroy)(void *)) {
     mUserData.Add(key, userData, destroy);
   }
-  void *GetUserData(UserDataKey *key) const {
-    return mUserData.Get(key);
-  }
-  void *RemoveUserData(UserDataKey *key) {
-    return mUserData.Remove(key);
-  }
+  void *GetUserData(UserDataKey *key) const { return mUserData.Get(key); }
+  void *RemoveUserData(UserDataKey *key) { return mUserData.Remove(key); }
 
   
 
 
 
 
-  void SetOpaqueRect(const IntRect &aRect) {
-    mOpaqueRect = aRect;
-  }
+  void SetOpaqueRect(const IntRect &aRect) { mOpaqueRect = aRect; }
 
-  const IntRect &GetOpaqueRect() const {
-    return mOpaqueRect;
-  }
+  const IntRect &GetOpaqueRect() const { return mOpaqueRect; }
 
   virtual bool IsCurrentGroupOpaque() {
     return GetFormat() == SurfaceFormat::B8G8R8X8;
@@ -1546,9 +1453,7 @@ public:
     mPermitSubpixelAA = aPermitSubpixelAA;
   }
 
-  bool GetPermitSubpixelAA() {
-    return mPermitSubpixelAA;
-  }
+  bool GetPermitSubpixelAA() { return mPermitSubpixelAA; }
 
   
 
@@ -1571,18 +1476,17 @@ public:
 
 
 
+
   virtual void DetachAllSnapshots() = 0;
 
 #ifdef USE_SKIA_GPU
-  virtual bool InitWithGrContext(GrContext* aGrContext,
-                                 const IntSize &aSize,
-                                 SurfaceFormat aFormat)
-  {
+  virtual bool InitWithGrContext(GrContext *aGrContext, const IntSize &aSize,
+                                 SurfaceFormat aFormat) {
     MOZ_CRASH("GFX: InitWithGrContext");
   }
 #endif
 
-protected:
+ protected:
   UserData mUserData;
   Matrix mTransform;
   IntRect mOpaqueRect;
@@ -1592,53 +1496,48 @@ protected:
   SurfaceFormat mFormat;
 };
 
-class DrawTargetCapture : public DrawTarget
-{
-public:
+class DrawTargetCapture : public DrawTarget {
+ public:
   virtual bool IsCaptureDT() const override { return true; }
 
   virtual bool IsEmpty() const = 0;
   virtual void Dump() = 0;
 };
 
-class DrawEventRecorder : public RefCounted<DrawEventRecorder>
-{
-public:
+class DrawEventRecorder : public RefCounted<DrawEventRecorder> {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DrawEventRecorder)
   
   virtual bool Finish() = 0;
-  virtual ~DrawEventRecorder() { }
+  virtual ~DrawEventRecorder() {}
 };
 
-struct Tile
-{
+struct Tile {
   RefPtr<DrawTarget> mDrawTarget;
   IntPoint mTileOrigin;
 };
 
-struct TileSet
-{
-  Tile* mTiles;
+struct TileSet {
+  Tile *mTiles;
   size_t mTileCount;
 };
 
 struct Config {
-  LogForwarder* mLogForwarder;
+  LogForwarder *mLogForwarder;
   int32_t mMaxTextureSize;
   int32_t mMaxAllocSize;
 
   Config()
-  : mLogForwarder(nullptr)
-  , mMaxTextureSize(8192)
-  , mMaxAllocSize(52000000)
-  {}
+      : mLogForwarder(nullptr),
+        mMaxTextureSize(8192),
+        mMaxAllocSize(52000000) {}
 };
 
-class GFX2D_API Factory
-{
+class GFX2D_API Factory {
   using char_type = filesystem::Path::value_type;
-public:
-  static void Init(const Config& aConfig);
+
+ public:
+  static void Init(const Config &aConfig);
   static void ShutDown();
 
   static bool HasSSE2();
@@ -1660,8 +1559,7 @@ public:
 
 
 
-  static bool CheckSurfaceSize(const IntSize &sz,
-                               int32_t limit = 0,
+  static bool CheckSurfaceSize(const IntSize &sz, int32_t limit = 0,
                                int32_t allocLimit = 0);
 
   
@@ -1676,24 +1574,16 @@ public:
 
   static bool AllowedSurfaceSize(const IntSize &aSize);
 
-  static already_AddRefed<DrawTarget> CreateDrawTargetForCairoSurface(cairo_surface_t* aSurface, const IntSize& aSize, SurfaceFormat* aFormat = nullptr);
+  static already_AddRefed<DrawTarget> CreateDrawTargetForCairoSurface(
+      cairo_surface_t *aSurface, const IntSize &aSize,
+      SurfaceFormat *aFormat = nullptr);
 
-  static already_AddRefed<SourceSurface> CreateSourceSurfaceForCairoSurface(cairo_surface_t* aSurface, const IntSize& aSize, SurfaceFormat aFormat);
+  static already_AddRefed<SourceSurface> CreateSourceSurfaceForCairoSurface(
+      cairo_surface_t *aSurface, const IntSize &aSize, SurfaceFormat aFormat);
 
-  static already_AddRefed<DrawTarget>
-    CreateDrawTarget(BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat);
-
-  
-
-
-
-
-
-
-
-
-  static already_AddRefed<DrawTargetCapture>
-    CreateCaptureDrawTargetForTarget(gfx::DrawTarget* aTarget, size_t aFlushBytes = 0);
+  static already_AddRefed<DrawTarget> CreateDrawTarget(BackendType aBackend,
+                                                       const IntSize &aSize,
+                                                       SurfaceFormat aFormat);
 
   
 
@@ -1701,27 +1591,40 @@ public:
 
 
 
-  static already_AddRefed<DrawTargetCapture>
-    CreateCaptureDrawTarget(BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat);
 
-  static already_AddRefed<DrawTargetCapture>
-    CreateCaptureDrawTargetForData(BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat,
-                                   int32_t aStride, size_t aSurfaceAllocationSize);
 
-  static already_AddRefed<DrawTarget>
-    CreateWrapAndRecordDrawTarget(DrawEventRecorder *aRecorder, DrawTarget *aDT);
 
-  static already_AddRefed<DrawTarget>
-    CreateRecordingDrawTarget(DrawEventRecorder *aRecorder, DrawTarget *aDT, IntSize aSize);
+  static already_AddRefed<DrawTargetCapture> CreateCaptureDrawTargetForTarget(
+      gfx::DrawTarget *aTarget, size_t aFlushBytes = 0);
 
-  static already_AddRefed<DrawTarget>
-    CreateDrawTargetForData(BackendType aBackend, unsigned char* aData, const IntSize &aSize, int32_t aStride, SurfaceFormat aFormat, bool aUninitialized = false);
+  
+
+
+
+
+
+  static already_AddRefed<DrawTargetCapture> CreateCaptureDrawTarget(
+      BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat);
+
+  static already_AddRefed<DrawTargetCapture> CreateCaptureDrawTargetForData(
+      BackendType aBackend, const IntSize &aSize, SurfaceFormat aFormat,
+      int32_t aStride, size_t aSurfaceAllocationSize);
+
+  static already_AddRefed<DrawTarget> CreateWrapAndRecordDrawTarget(
+      DrawEventRecorder *aRecorder, DrawTarget *aDT);
+
+  static already_AddRefed<DrawTarget> CreateRecordingDrawTarget(
+      DrawEventRecorder *aRecorder, DrawTarget *aDT, IntSize aSize);
+
+  static already_AddRefed<DrawTarget> CreateDrawTargetForData(
+      BackendType aBackend, unsigned char *aData, const IntSize &aSize,
+      int32_t aStride, SurfaceFormat aFormat, bool aUninitialized = false);
 
 #ifdef XP_DARWIN
-  static already_AddRefed<ScaledFont>
-    CreateScaledFontForMacFont(CGFontRef aCGFont, const RefPtr<UnscaledFont>& aUnscaledFont, Float aSize,
-                               const Color& aFontSmoothingBackgroundColor, bool aUseFontSmoothing = true,
-                               bool aApplySyntheticBold = false);
+  static already_AddRefed<ScaledFont> CreateScaledFontForMacFont(
+      CGFontRef aCGFont, const RefPtr<UnscaledFont> &aUnscaledFont, Float aSize,
+      const Color &aFontSmoothingBackgroundColor, bool aUseFontSmoothing = true,
+      bool aApplySyntheticBold = false);
 #endif
 
   
@@ -1736,37 +1639,17 @@ public:
 
 
 
-  static already_AddRefed<NativeFontResource>
-    CreateNativeFontResource(uint8_t *aData, uint32_t aSize, BackendType aBackendType, FontType aFontType, void* aFontContext = nullptr);
+  static already_AddRefed<NativeFontResource> CreateNativeFontResource(
+      uint8_t *aData, uint32_t aSize, BackendType aBackendType,
+      FontType aFontType, void *aFontContext = nullptr);
 
   
 
 
 
-  static already_AddRefed<UnscaledFont>
-    CreateUnscaledFontFromFontDescriptor(FontType aType, const uint8_t* aData, uint32_t aDataLength, uint32_t aIndex);
-
-  
-
-
-
-
-
-
-  static already_AddRefed<ScaledFont>
-    CreateScaledFontForNativeFont(const NativeFont &aNativeFont,
-                                  const RefPtr<UnscaledFont>& aUnscaledFont,
-                                  Float aSize,
-                                  cairo_scaled_font_t* aScaledFont = nullptr);
-
-  
-
-
-
-
-
-  static already_AddRefed<DataSourceSurface>
-    CreateDataSourceSurface(const IntSize &aSize, SurfaceFormat aFormat, bool aZero = false);
+  static already_AddRefed<UnscaledFont> CreateUnscaledFontFromFontDescriptor(
+      FontType aType, const uint8_t *aData, uint32_t aDataLength,
+      uint32_t aIndex);
 
   
 
@@ -1775,10 +1658,31 @@ public:
 
 
 
-  static already_AddRefed<DataSourceSurface>
-    CreateDataSourceSurfaceWithStride(const IntSize &aSize, SurfaceFormat aFormat, int32_t aStride, bool aZero = false);
+  static already_AddRefed<ScaledFont> CreateScaledFontForNativeFont(
+      const NativeFont &aNativeFont, const RefPtr<UnscaledFont> &aUnscaledFont,
+      Float aSize, cairo_scaled_font_t *aScaledFont = nullptr);
 
-  typedef void (*SourceSurfaceDeallocator)(void* aClosure);
+  
+
+
+
+
+
+  static already_AddRefed<DataSourceSurface> CreateDataSourceSurface(
+      const IntSize &aSize, SurfaceFormat aFormat, bool aZero = false);
+
+  
+
+
+
+
+
+
+  static already_AddRefed<DataSourceSurface> CreateDataSourceSurfaceWithStride(
+      const IntSize &aSize, SurfaceFormat aFormat, int32_t aStride,
+      bool aZero = false);
+
+  typedef void (*SourceSurfaceDeallocator)(void *aClosure);
 
   
 
@@ -1793,46 +1697,41 @@ public:
 
 
 
-  static already_AddRefed<DataSourceSurface>
-    CreateWrappingDataSourceSurface(uint8_t *aData,
-                                    int32_t aStride,
-                                    const IntSize &aSize,
-                                    SurfaceFormat aFormat,
-                                    SourceSurfaceDeallocator aDeallocator = nullptr,
-                                    void* aClosure = nullptr);
+  static already_AddRefed<DataSourceSurface> CreateWrappingDataSourceSurface(
+      uint8_t *aData, int32_t aStride, const IntSize &aSize,
+      SurfaceFormat aFormat, SourceSurfaceDeallocator aDeallocator = nullptr,
+      void *aClosure = nullptr);
 
-  static void
-    CopyDataSourceSurface(DataSourceSurface* aSource,
-                          DataSourceSurface* aDest);
+  static void CopyDataSourceSurface(DataSourceSurface *aSource,
+                                    DataSourceSurface *aDest);
 
-
-  static already_AddRefed<DrawEventRecorder>
-    CreateEventRecorderForFile(const char_type* aFilename);
+  static already_AddRefed<DrawEventRecorder> CreateEventRecorderForFile(
+      const char_type *aFilename);
 
   static void SetGlobalEventRecorder(DrawEventRecorder *aRecorder);
 
   static uint32_t GetMaxSurfaceSize(BackendType aType);
 
-  static LogForwarder* GetLogForwarder() { return sConfig ? sConfig->mLogForwarder : nullptr; }
+  static LogForwarder *GetLogForwarder() {
+    return sConfig ? sConfig->mLogForwarder : nullptr;
+  }
 
-private:
-  static Config* sConfig;
-public:
+ private:
+  static Config *sConfig;
 
+ public:
 #ifdef USE_SKIA_GPU
-  static already_AddRefed<DrawTarget>
-    CreateDrawTargetSkiaWithGrContext(GrContext* aGrContext,
-                                      const IntSize &aSize,
-                                      SurfaceFormat aFormat);
+  static already_AddRefed<DrawTarget> CreateDrawTargetSkiaWithGrContext(
+      GrContext *aGrContext, const IntSize &aSize, SurfaceFormat aFormat);
 #endif
 
   static void PurgeAllCaches();
 
-  static already_AddRefed<DrawTarget>
-    CreateDualDrawTarget(DrawTarget *targetA, DrawTarget *targetB);
+  static already_AddRefed<DrawTarget> CreateDualDrawTarget(DrawTarget *targetA,
+                                                           DrawTarget *targetB);
 
-  static already_AddRefed<SourceSurface>
-    CreateDualSourceSurface(SourceSurface *sourceA, SourceSurface *sourceB);
+  static already_AddRefed<SourceSurface> CreateDualSourceSurface(
+      SourceSurface *sourceA, SourceSurface *sourceB);
 
   
 
@@ -1840,13 +1739,16 @@ public:
 
 
 
-  static already_AddRefed<DrawTarget> CreateTiledDrawTarget(const TileSet& aTileSet);
-  static already_AddRefed<DrawTarget> CreateOffsetDrawTarget(DrawTarget *aDrawTarget, IntPoint aTileOrigin);
+  static already_AddRefed<DrawTarget> CreateTiledDrawTarget(
+      const TileSet &aTileSet);
+  static already_AddRefed<DrawTarget> CreateOffsetDrawTarget(
+      DrawTarget *aDrawTarget, IntPoint aTileOrigin);
 
   static bool DoesBackendSupportDataDrawtarget(BackendType aType);
 
 #ifdef USE_SKIA
-  static already_AddRefed<DrawTarget> CreateDrawTargetWithSkCanvas(SkCanvas* aCanvas);
+  static already_AddRefed<DrawTarget> CreateDrawTargetWithSkCanvas(
+      SkCanvas *aCanvas);
 #endif
 
 #ifdef MOZ_ENABLE_FREETYPE
@@ -1858,58 +1760,60 @@ public:
   static void LockFTLibrary(FT_Library aFTLibrary);
   static void UnlockFTLibrary(FT_Library aFTLibrary);
 
-  static FT_Face NewFTFace(FT_Library aFTLibrary, const char* aFileName, int aFaceIndex);
-  static FT_Face NewFTFaceFromData(FT_Library aFTLibrary, const uint8_t* aData, size_t aDataSize, int aFaceIndex);
+  static FT_Face NewFTFace(FT_Library aFTLibrary, const char *aFileName,
+                           int aFaceIndex);
+  static FT_Face NewFTFaceFromData(FT_Library aFTLibrary, const uint8_t *aData,
+                                   size_t aDataSize, int aFaceIndex);
   static void ReleaseFTFace(FT_Face aFace);
-  static FT_Error LoadFTGlyph(FT_Face aFace, uint32_t aGlyphIndex, int32_t aFlags);
+  static FT_Error LoadFTGlyph(FT_Face aFace, uint32_t aGlyphIndex,
+                              int32_t aFlags);
 
-private:
+ private:
   static FT_Library mFTLibrary;
   static StaticMutex mFTLock;
-public:
+
+ public:
 #endif
 
 #ifdef WIN32
-  static already_AddRefed<DrawTarget> CreateDrawTargetForD3D11Texture(ID3D11Texture2D *aTexture, SurfaceFormat aFormat);
+  static already_AddRefed<DrawTarget> CreateDrawTargetForD3D11Texture(
+      ID3D11Texture2D *aTexture, SurfaceFormat aFormat);
 
   
 
 
 
+
   static bool SetDirect3D11Device(ID3D11Device *aDevice);
   static RefPtr<ID3D11Device> GetDirect3D11Device();
-  static RefPtr<ID2D1Device> GetD2D1Device(uint32_t* aOutSeqNo = nullptr);
+  static RefPtr<ID2D1Device> GetD2D1Device(uint32_t *aOutSeqNo = nullptr);
   static bool HasD2D1Device();
   static RefPtr<IDWriteFactory> GetDWriteFactory();
   static RefPtr<IDWriteFactory> EnsureDWriteFactory();
   static bool SupportsD2D1();
-  static RefPtr<IDWriteFontCollection> GetDWriteSystemFonts(bool aUpdate = false);
+  static RefPtr<IDWriteFontCollection> GetDWriteSystemFonts(
+      bool aUpdate = false);
 
   static uint64_t GetD2DVRAMUsageDrawTarget();
   static uint64_t GetD2DVRAMUsageSourceSurface();
   static void D2DCleanup();
 
-  static already_AddRefed<ScaledFont>
-    CreateScaledFontForDWriteFont(IDWriteFontFace* aFontFace,
-                                  const gfxFontStyle* aStyle,
-                                  const RefPtr<UnscaledFont>& aUnscaledFont,
-                                  Float aSize,
-                                  bool aUseEmbeddedBitmap,
-                                  bool aForceGDIMode,
-                                  IDWriteRenderingParams *aParams,
-                                  Float aGamma,
-                                  Float aContrast);
+  static already_AddRefed<ScaledFont> CreateScaledFontForDWriteFont(
+      IDWriteFontFace *aFontFace, const gfxFontStyle *aStyle,
+      const RefPtr<UnscaledFont> &aUnscaledFont, Float aSize,
+      bool aUseEmbeddedBitmap, bool aForceGDIMode,
+      IDWriteRenderingParams *aParams, Float aGamma, Float aContrast);
 
   static void SetSystemTextQuality(uint8_t aQuality);
 
-private:
+ private:
   static StaticRefPtr<ID2D1Device> mD2D1Device;
   static StaticRefPtr<ID3D11Device> mD3D11Device;
   static StaticRefPtr<IDWriteFactory> mDWriteFactory;
   static bool mDWriteFactoryInitialized;
   static StaticRefPtr<IDWriteFontCollection> mDWriteSystemFonts;
 
-protected:
+ protected:
   
   
   static StaticMutex mDeviceLock;
@@ -1920,11 +1824,11 @@ protected:
   friend class DrawTargetD2D1;
 #endif
 
-private:
+ private:
   static DrawEventRecorder *mRecorder;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

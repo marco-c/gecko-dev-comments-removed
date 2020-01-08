@@ -24,18 +24,15 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int);
 static int __argc;
 static wchar_t** __wargv;
 
-int WINAPI
-WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-        LPSTR lpszCommandLine, int nCmdShow)
-{
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+                   LPSTR lpszCommandLine, int nCmdShow) {
   LPWSTR commandLine = GetCommandLineW();
 
   
 
 
   __wargv = CommandLineToArgvW(commandLine, &__argc);
-  if (!__wargv)
-    return 127;
+  if (!__wargv) return 127;
 
   
 
@@ -66,13 +63,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 }
 #endif 
 
-
-int WINAPI
-wWinMain(HINSTANCE  hInstance, HINSTANCE  hPrevInstance,
-         LPWSTR  lpszCmdLine, int  nCmdShow)
-{
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+                    LPWSTR lpszCmdLine, int nCmdShow) {
   
-
 
 
 
@@ -83,24 +76,24 @@ wWinMain(HINSTANCE  hInstance, HINSTANCE  hPrevInstance,
   DWORD regValue = -1;
   DWORD regLength = sizeof regValue;
   HKEY hkeyCU, hkeyLM;
-  RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\mozilla.org\\windbgdlg", 0, KEY_READ, &hkeyCU);
-  RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"Software\\mozilla.org\\windbgdlg", 0, KEY_READ, &hkeyLM);
-  int argc =0;
+  RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\mozilla.org\\windbgdlg", 0,
+                KEY_READ, &hkeyCU);
+  RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"Software\\mozilla.org\\windbgdlg", 0,
+                KEY_READ, &hkeyLM);
+  int argc = 0;
   for (int i = __argc - 1; regValue == (DWORD)-1 && i; --i) {
     bool ok = false;
     if (hkeyCU)
-      ok = RegQueryValueExW(hkeyCU, __wargv[i], 0, &regType, (LPBYTE)&regValue, &regLength) == ERROR_SUCCESS;
+      ok = RegQueryValueExW(hkeyCU, __wargv[i], 0, &regType, (LPBYTE)&regValue,
+                            &regLength) == ERROR_SUCCESS;
     if (!ok && hkeyLM)
-      ok = RegQueryValueExW(hkeyLM, __wargv[i], 0, &regType, (LPBYTE)&regValue, &regLength) == ERROR_SUCCESS;
-    if (!ok)
-      regValue = -1;
+      ok = RegQueryValueExW(hkeyLM, __wargv[i], 0, &regType, (LPBYTE)&regValue,
+                            &regLength) == ERROR_SUCCESS;
+    if (!ok) regValue = -1;
   }
-  if (hkeyCU)
-    RegCloseKey(hkeyCU);
-  if (hkeyLM)
-    RegCloseKey(hkeyLM);
-  if (regValue != (DWORD)-1 && regValue != (DWORD)-2)
-    return regValue;
+  if (hkeyCU) RegCloseKey(hkeyCU);
+  if (hkeyLM) RegCloseKey(hkeyLM);
+  if (regValue != (DWORD)-1 && regValue != (DWORD)-2) return regValue;
   static const int size = 4096;
   static WCHAR msg[size];
 
@@ -109,13 +102,13 @@ wWinMain(HINSTANCE  hInstance, HINSTANCE  hPrevInstance,
 #else
   snwprintf(msg,
 #endif
-            size,
-            L"%s\n\nClick Abort to exit the Application.\n"
-            L"Click Retry to Debug the Application.\n"
-            L"Click Ignore to continue running the Application.",
-            lpszCmdLine);
+                   size,
+                   L"%s\n\nClick Abort to exit the Application.\n"
+                   L"Click Retry to Debug the Application.\n"
+                   L"Click Ignore to continue running the Application.",
+                   lpszCmdLine);
   msg[size - 1] = L'\0';
-  return MessageBoxW(nullptr, msg, L"NSGlue_Assertion",
-                     MB_ICONSTOP | MB_SYSTEMMODAL |
-                     MB_ABORTRETRYIGNORE | MB_DEFBUTTON3);
+  return MessageBoxW(
+      nullptr, msg, L"NSGlue_Assertion",
+      MB_ICONSTOP | MB_SYSTEMMODAL | MB_ABORTRETRYIGNORE | MB_DEFBUTTON3);
 }

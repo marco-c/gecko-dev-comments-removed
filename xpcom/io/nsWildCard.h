@@ -33,7 +33,6 @@
 
 
 
-
 #define NON_SXP -1
 #define INVALID_SXP -2
 #define VALID_SXP 1

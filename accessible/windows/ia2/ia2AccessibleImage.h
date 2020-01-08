@@ -13,12 +13,10 @@
 namespace mozilla {
 namespace a11y {
 
-class ia2AccessibleImage : public IAccessibleImage
-{
-public:
-
+class ia2AccessibleImage : public IAccessibleImage {
+ public:
   
-  STDMETHODIMP QueryInterface(REFIID, void**);
+  STDMETHODIMP QueryInterface(REFIID, void **);
 
   
   virtual  HRESULT STDMETHODCALLTYPE get_description(
@@ -34,7 +32,7 @@ public:
        long *width);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

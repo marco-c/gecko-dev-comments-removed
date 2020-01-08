@@ -17,9 +17,8 @@ namespace widget {
 
 
 
-class HeadlessKeyBindings final
-{
-public:
+class HeadlessKeyBindings final {
+ public:
   HeadlessKeyBindings() = default;
 
   static HeadlessKeyBindings& GetInstance();
@@ -30,7 +29,7 @@ public:
   MOZ_MUST_USE nsresult AttachNativeKeyEvent(WidgetKeyboardEvent& aEvent);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

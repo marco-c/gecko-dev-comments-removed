@@ -33,9 +33,8 @@ class nsSMILTimeValueSpec;
 
 
 
-class nsSMILInstanceTime final
-{
-public:
+class nsSMILInstanceTime final {
+ public:
   
   
   
@@ -57,8 +56,7 @@ public:
 
   void Unlink();
   void HandleChangedInterval(const nsSMILTimeContainer* aSrcContainer,
-                             bool aBeginObjectChanged,
-                             bool aEndObjectChanged);
+                             bool aBeginObjectChanged, bool aEndObjectChanged);
   void HandleDeletedInterval();
   void HandleFilteredInterval();
 
@@ -70,13 +68,12 @@ public:
   bool FromDOM() const { return !!(mFlags & kFromDOM); }
 
   bool ShouldPreserve() const;
-  void   UnmarkShouldPreserve();
+  void UnmarkShouldPreserve();
 
   void AddRefFixedEndpoint();
   void ReleaseFixedEndpoint();
 
-  void DependentUpdate(const nsSMILTimeValue& aNewTime)
-  {
+  void DependentUpdate(const nsSMILTimeValue& aNewTime) {
     MOZ_ASSERT(!IsFixedTime(),
                "Updating an instance time that is not expected to be updated");
     mTime = aNewTime;
@@ -87,8 +84,7 @@ public:
   const nsSMILInterval* GetBaseInterval() const { return mBaseInterval; }
   const nsSMILInstanceTime* GetBaseTime() const;
 
-  bool SameTimeAndBase(const nsSMILInstanceTime& aOther) const
-  {
+  bool SameTimeAndBase(const nsSMILInstanceTime& aOther) const {
     return mTime == aOther.mTime && GetBaseTime() == aOther.GetBaseTime();
   }
 
@@ -99,7 +95,7 @@ public:
 
   NS_INLINE_DECL_REFCOUNTING(nsSMILInstanceTime)
 
-private:
+ private:
   
   ~nsSMILInstanceTime();
 
@@ -134,8 +130,8 @@ private:
     
     kWasDynamicEndpoint = 8
   };
-  uint8_t       mFlags;   
-  mutable bool  mVisited; 
+  uint8_t mFlags;         
+  mutable bool mVisited;  
 
   
   
@@ -150,17 +146,17 @@ private:
   
   
   
-  uint16_t      mFixedEndpointRefCnt;
+  uint16_t mFixedEndpointRefCnt;
 
-  uint32_t      mSerial; 
-                         
-                         
+  uint32_t mSerial;  
+                     
+                     
 
-  nsSMILTimeValueSpec* mCreator; 
-                                 
-                                 
-  nsSMILInterval* mBaseInterval; 
-                                 
+  nsSMILTimeValueSpec* mCreator;  
+                                  
+                                  
+  nsSMILInterval* mBaseInterval;  
+                                  
 };
 
-#endif 
+#endif  

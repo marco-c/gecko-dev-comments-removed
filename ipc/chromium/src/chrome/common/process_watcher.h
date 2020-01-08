@@ -25,9 +25,8 @@ class ProcessWatcher {
   
   
   
-  static void EnsureProcessTerminated(base::ProcessHandle process_handle
-                                      , bool force=true
-  );
+  static void EnsureProcessTerminated(base::ProcessHandle process_handle,
+                                      bool force = true);
 
  private:
   

@@ -7,12 +7,12 @@
 #ifndef mozilla_layers_FocusState_h
 #define mozilla_layers_FocusState_h
 
-#include <unordered_map>    
-#include <unordered_set>    
+#include <unordered_map>  
+#include <unordered_set>  
 
-#include "mozilla/layers/FocusTarget.h" 
-#include "mozilla/layers/ScrollableLayerGuid.h"   
-#include "mozilla/Mutex.h"  
+#include "mozilla/layers/FocusTarget.h"          
+#include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "mozilla/Mutex.h"                       
 
 namespace mozilla {
 namespace layers {
@@ -67,9 +67,8 @@ namespace layers {
 
 
 
-class FocusState final
-{
-public:
+class FocusState final {
+ public:
   FocusState();
 
   
@@ -96,8 +95,7 @@ public:
 
 
 
-  void Update(LayersId aRootLayerTreeId,
-              LayersId aOriginatingLayersId,
+  void Update(LayersId aRootLayerTreeId, LayersId aOriginatingLayersId,
               const FocusTarget& aTarget);
 
   
@@ -127,7 +125,7 @@ public:
 
   bool CanIgnoreKeyboardShortcutMisses() const;
 
-private:
+ private:
   
 
 
@@ -137,15 +135,13 @@ private:
 
   bool IsCurrent(const MutexAutoLock& aLock) const;
 
-private:
+ private:
   
   
   mutable Mutex mMutex;
 
   
-  std::unordered_map<LayersId,
-                     FocusTarget,
-                     LayersId::HashFn> mFocusTree;
+  std::unordered_map<LayersId, FocusTarget, LayersId::HashFn> mFocusTree;
 
   
   
@@ -164,6 +160,7 @@ private:
   bool mReceivedUpdate;
 
   
+  
   LayersId mFocusLayersId;
   
   
@@ -172,7 +169,7 @@ private:
   ScrollableLayerGuid::ViewID mFocusVerticalTarget;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

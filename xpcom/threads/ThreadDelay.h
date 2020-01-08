@@ -11,7 +11,6 @@ namespace mozilla {
 
 
 
-void
-DelayForChaosMode(ChaosFeature aFeature, const uint32_t aMicrosecondLimit);
+void DelayForChaosMode(ChaosFeature aFeature, const uint32_t aMicrosecondLimit);
 
-} 
+}  

@@ -113,90 +113,87 @@ class TestNrSocket;
 
 
 class TestNat {
-  public:
+ public:
+  
+
+
+
+
+
+  class NatDelegate {
+   public:
+    virtual int on_read(TestNat *nat, void *buf, size_t maxlen,
+                        size_t *len) = 0;
+    virtual int on_sendto(TestNat *nat, const void *msg, size_t len, int flags,
+                          nr_transport_addr *to) = 0;
+    virtual int on_write(TestNat *nat, const void *msg, size_t len,
+                         size_t *written) = 0;
+  };
+
+  typedef enum {
+    
+
+    ENDPOINT_INDEPENDENT,
 
     
 
 
-
-
-
-    class NatDelegate {
-    public:
-      virtual int on_read(TestNat *nat, void *buf, size_t maxlen, size_t *len) = 0;
-      virtual int on_sendto(TestNat *nat, const void *msg, size_t len,
-                    int flags, nr_transport_addr *to) = 0;
-      virtual int on_write(TestNat *nat, const void *msg, size_t len, size_t *written) = 0;
-    };
-
-    typedef enum {
-      
-
-      ENDPOINT_INDEPENDENT,
-
-      
-
-
-      ADDRESS_DEPENDENT,
-
-      
-
-
-      PORT_DEPENDENT,
-    } NatBehavior;
-
-    TestNat() :
-      enabled_(false),
-      filtering_type_(ENDPOINT_INDEPENDENT),
-      mapping_type_(ENDPOINT_INDEPENDENT),
-      mapping_timeout_(30000),
-      allow_hairpinning_(false),
-      refresh_on_ingress_(false),
-      block_udp_(false),
-      block_stun_(false),
-      block_tcp_(false),
-      delay_stun_resp_ms_(0),
-      nat_delegate_(nullptr),
-      sockets_() {}
-
-    bool has_port_mappings() const;
+    ADDRESS_DEPENDENT,
 
     
-    bool is_my_external_tuple(const nr_transport_addr &addr) const;
-    bool is_an_internal_tuple(const nr_transport_addr &addr) const;
 
-    int create_socket_factory(nr_socket_factory **factorypp);
 
-    void insert_socket(TestNrSocket *socket) {
-      sockets_.insert(socket);
-    }
+    PORT_DEPENDENT,
+  } NatBehavior;
 
-    void erase_socket(TestNrSocket *socket) {
-      sockets_.erase(socket);
-    }
+  TestNat()
+      : enabled_(false),
+        filtering_type_(ENDPOINT_INDEPENDENT),
+        mapping_type_(ENDPOINT_INDEPENDENT),
+        mapping_timeout_(30000),
+        allow_hairpinning_(false),
+        refresh_on_ingress_(false),
+        block_udp_(false),
+        block_stun_(false),
+        block_tcp_(false),
+        delay_stun_resp_ms_(0),
+        nat_delegate_(nullptr),
+        sockets_() {}
 
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TestNat);
+  bool has_port_mappings() const;
 
-    static NatBehavior ToNatBehavior(const std::string& type);
+  
+  bool is_my_external_tuple(const nr_transport_addr &addr) const;
+  bool is_an_internal_tuple(const nr_transport_addr &addr) const;
 
-    bool enabled_;
-    TestNat::NatBehavior filtering_type_;
-    TestNat::NatBehavior mapping_type_;
-    uint32_t mapping_timeout_;
-    bool allow_hairpinning_;
-    bool refresh_on_ingress_;
-    bool block_udp_;
-    bool block_stun_;
-    bool block_tcp_;
-    
-    uint32_t delay_stun_resp_ms_;
+  int create_socket_factory(nr_socket_factory **factorypp);
 
-    NatDelegate* nat_delegate_;
+  void insert_socket(TestNrSocket *socket) { sockets_.insert(socket); }
 
-  private:
-    std::set<TestNrSocket*> sockets_;
+  void erase_socket(TestNrSocket *socket) { sockets_.erase(socket); }
 
-    ~TestNat(){}
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TestNat);
+
+  static NatBehavior ToNatBehavior(const std::string &type);
+
+  bool enabled_;
+  TestNat::NatBehavior filtering_type_;
+  TestNat::NatBehavior mapping_type_;
+  uint32_t mapping_timeout_;
+  bool allow_hairpinning_;
+  bool refresh_on_ingress_;
+  bool block_udp_;
+  bool block_stun_;
+  bool block_tcp_;
+  
+  uint32_t delay_stun_resp_ms_;
+
+  NatDelegate *nat_delegate_;
+
+ private:
+  std::set<TestNrSocket *> sockets_;
+
+  ~TestNat() {}
 };
 
 
@@ -208,152 +205,144 @@ class TestNat {
 
 
 class TestNrSocket : public NrSocketBase {
-  public:
-    explicit TestNrSocket(TestNat *nat);
+ public:
+  explicit TestNrSocket(TestNat *nat);
 
-    bool has_port_mappings() const;
-    bool is_my_external_tuple(const nr_transport_addr &addr) const;
+  bool has_port_mappings() const;
+  bool is_my_external_tuple(const nr_transport_addr &addr) const;
+
+  
+  int create(nr_transport_addr *addr) override;
+  int sendto(const void *msg, size_t len, int flags,
+             nr_transport_addr *to) override;
+  int recvfrom(void *buf, size_t maxlen, size_t *len, int flags,
+               nr_transport_addr *from) override;
+  int getaddr(nr_transport_addr *addrp) override;
+  void close() override;
+  int connect(nr_transport_addr *addr) override;
+  int write(const void *msg, size_t len, size_t *written) override;
+  int read(void *buf, size_t maxlen, size_t *len) override;
+
+  int listen(int backlog) override;
+  int accept(nr_transport_addr *addrp, nr_socket **sockp) override;
+  int async_wait(int how, NR_async_cb cb, void *cb_arg, char *function,
+                 int line) override;
+  int cancel(int how) override;
+
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TestNrSocket, override)
+
+ private:
+  virtual ~TestNrSocket();
+
+  class UdpPacket {
+   public:
+    UdpPacket(const void *msg, size_t len, const nr_transport_addr &addr)
+        : buffer_(new MediaPacket) {
+      buffer_->Copy(static_cast<const uint8_t *>(msg), len);
+      
+      nr_transport_addr_copy(&remote_address_,
+                             const_cast<nr_transport_addr *>(&addr));
+    }
+
+    nr_transport_addr remote_address_;
+    UniquePtr<MediaPacket> buffer_;
+
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(UdpPacket);
+
+   private:
+    ~UdpPacket() {}
+  };
+
+  class PortMapping {
+   public:
+    PortMapping(const nr_transport_addr &remote_address,
+                const RefPtr<NrSocketBase> &external_socket);
+
+    int sendto(const void *msg, size_t len, const nr_transport_addr &to);
+    int async_wait(int how, NR_async_cb cb, void *cb_arg, char *function,
+                   int line);
+    int cancel(int how);
+    int send_from_queue();
+    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PortMapping);
+
+    PRIntervalTime last_used_;
+    RefPtr<NrSocketBase> external_socket_;
+    
+    nr_transport_addr remote_address_;
+
+   private:
+    ~PortMapping() { external_socket_->close(); }
 
     
-    int create(nr_transport_addr *addr) override;
-    int sendto(const void *msg, size_t len,
-               int flags, nr_transport_addr *to) override;
-    int recvfrom(void * buf, size_t maxlen,
-                 size_t *len, int flags,
-                 nr_transport_addr *from) override;
-    int getaddr(nr_transport_addr *addrp) override;
-    void close() override;
-    int connect(nr_transport_addr *addr) override;
-    int write(const void *msg, size_t len, size_t *written) override;
-    int read(void *buf, size_t maxlen, size_t *len) override;
-
-    int listen(int backlog) override;
-    int accept(nr_transport_addr *addrp, nr_socket **sockp) override;
-    int async_wait(int how, NR_async_cb cb, void *cb_arg,
-                   char *function, int line) override;
-    int cancel(int how) override;
-
     
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TestNrSocket, override)
+    
+    std::list<RefPtr<UdpPacket>> send_queue_;
+  };
 
-  private:
-    virtual ~TestNrSocket();
-
-    class UdpPacket {
-      public:
-        UdpPacket(const void *msg, size_t len, const nr_transport_addr &addr) :
-          buffer_(new MediaPacket) {
-          buffer_->Copy(static_cast<const uint8_t*>(msg), len);
-          
-          nr_transport_addr_copy(&remote_address_,
-                                 const_cast<nr_transport_addr*>(&addr));
-        }
-
-        nr_transport_addr remote_address_;
-        UniquePtr<MediaPacket> buffer_;
-
-        NS_INLINE_DECL_THREADSAFE_REFCOUNTING(UdpPacket);
-      private:
-        ~UdpPacket(){}
-    };
-
-    class PortMapping {
-      public:
-        PortMapping(const nr_transport_addr &remote_address,
-                    const RefPtr<NrSocketBase> &external_socket);
-
-        int sendto(const void *msg, size_t len, const nr_transport_addr &to);
-        int async_wait(int how, NR_async_cb cb, void *cb_arg,
-                       char *function, int line);
-        int cancel(int how);
-        int send_from_queue();
-        NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PortMapping);
-
-        PRIntervalTime last_used_;
-        RefPtr<NrSocketBase> external_socket_;
-        
-        nr_transport_addr remote_address_;
-
-      private:
-        ~PortMapping() {
-          external_socket_->close();
-        }
-
-        
-        
-        
-        std::list<RefPtr<UdpPacket>> send_queue_;
-    };
-
-    struct DeferredPacket {
-      DeferredPacket(TestNrSocket *sock,
-                     const void *data, size_t len,
-                     int flags,
-                     nr_transport_addr *addr,
-                     RefPtr<NrSocketBase> internal_socket) :
-          socket_(sock),
+  struct DeferredPacket {
+    DeferredPacket(TestNrSocket *sock, const void *data, size_t len, int flags,
+                   nr_transport_addr *addr,
+                   RefPtr<NrSocketBase> internal_socket)
+        : socket_(sock),
           buffer_(),
           flags_(flags),
           internal_socket_(internal_socket) {
-        buffer_.Copy(reinterpret_cast<const uint8_t *>(data), len);
-        nr_transport_addr_copy(&to_, addr);
-      }
+      buffer_.Copy(reinterpret_cast<const uint8_t *>(data), len);
+      nr_transport_addr_copy(&to_, addr);
+    }
 
-      TestNrSocket *socket_;
-      MediaPacket buffer_;
-      int flags_;
-      nr_transport_addr to_;
-      RefPtr<NrSocketBase> internal_socket_;
-    };
-
-    bool is_port_mapping_stale(const PortMapping &port_mapping) const;
-    bool allow_ingress(const nr_transport_addr &from,
-                       PortMapping **port_mapping_used) const;
-    void destroy_stale_port_mappings();
-
-    static void socket_readable_callback(void *real_sock_v,
-                                         int how,
-                                         void *test_sock_v);
-    void on_socket_readable(NrSocketBase *external_or_internal_socket);
-    void fire_readable_callback();
-
-    static void port_mapping_tcp_passthrough_callback(void *ext_sock_v,
-                                                      int how,
-                                                      void *test_sock_v);
-    void cancel_port_mapping_async_wait(int how);
-
-    static void port_mapping_writeable_callback(void *ext_sock_v,
-                                                int how,
-                                                void *test_sock_v);
-    void write_to_port_mapping(NrSocketBase *external_socket);
-    bool is_tcp_connection_behind_nat() const;
-
-    PortMapping* get_port_mapping(const nr_transport_addr &remote_addr,
-                                  TestNat::NatBehavior filter) const;
-    PortMapping* create_port_mapping(
-        const nr_transport_addr &remote_addr,
-        const RefPtr<NrSocketBase> &external_socket) const;
-    RefPtr<NrSocketBase> create_external_socket(
-        const nr_transport_addr &remote_addr) const;
-
-    static void process_delayed_cb(NR_SOCKET s, int how, void *cb_arg);
-
-    RefPtr<NrSocketBase> readable_socket_;
-    
-    
+    TestNrSocket *socket_;
+    MediaPacket buffer_;
+    int flags_;
+    nr_transport_addr to_;
     RefPtr<NrSocketBase> internal_socket_;
-    RefPtr<TestNat> nat_;
-    bool tls_;
-    
-    
-    
-    
-    std::list<RefPtr<PortMapping>> port_mappings_;
+  };
 
-    void *timer_handle_;
+  bool is_port_mapping_stale(const PortMapping &port_mapping) const;
+  bool allow_ingress(const nr_transport_addr &from,
+                     PortMapping **port_mapping_used) const;
+  void destroy_stale_port_mappings();
+
+  static void socket_readable_callback(void *real_sock_v, int how,
+                                       void *test_sock_v);
+  void on_socket_readable(NrSocketBase *external_or_internal_socket);
+  void fire_readable_callback();
+
+  static void port_mapping_tcp_passthrough_callback(void *ext_sock_v, int how,
+                                                    void *test_sock_v);
+  void cancel_port_mapping_async_wait(int how);
+
+  static void port_mapping_writeable_callback(void *ext_sock_v, int how,
+                                              void *test_sock_v);
+  void write_to_port_mapping(NrSocketBase *external_socket);
+  bool is_tcp_connection_behind_nat() const;
+
+  PortMapping *get_port_mapping(const nr_transport_addr &remote_addr,
+                                TestNat::NatBehavior filter) const;
+  PortMapping *create_port_mapping(
+      const nr_transport_addr &remote_addr,
+      const RefPtr<NrSocketBase> &external_socket) const;
+  RefPtr<NrSocketBase> create_external_socket(
+      const nr_transport_addr &remote_addr) const;
+
+  static void process_delayed_cb(NR_SOCKET s, int how, void *cb_arg);
+
+  RefPtr<NrSocketBase> readable_socket_;
+  
+  
+  RefPtr<NrSocketBase> internal_socket_;
+  RefPtr<TestNat> nat_;
+  bool tls_;
+  
+  
+  
+  
+  std::list<RefPtr<PortMapping>> port_mappings_;
+
+  void *timer_handle_;
 };
 
-} 
+}  
 
-#endif 
-
+#endif  

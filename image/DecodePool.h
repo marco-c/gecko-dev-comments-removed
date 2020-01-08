@@ -39,9 +39,8 @@ class IDecodingTask;
 
 
 
-class DecodePool final : public nsIObserver
-{
-public:
+class DecodePool final : public nsIObserver {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -88,7 +87,7 @@ public:
 
   already_AddRefed<nsIEventTarget> GetIOEventTarget();
 
-private:
+ private:
   friend class DecodePoolWorker;
 
   DecodePool();
@@ -100,11 +99,11 @@ private:
   RefPtr<DecodePoolImpl> mImpl;
 
   
-  Mutex                         mMutex;
-  nsCOMPtr<nsIThread>           mIOThread;
+  Mutex mMutex;
+  nsCOMPtr<nsIThread> mIOThread;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

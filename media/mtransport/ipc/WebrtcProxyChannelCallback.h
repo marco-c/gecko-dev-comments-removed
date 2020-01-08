@@ -12,20 +12,19 @@
 namespace mozilla {
 namespace net {
 
-class WebrtcProxyChannelCallback
-{
-public:
+class WebrtcProxyChannelCallback {
+ public:
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
   virtual void OnClose(nsresult aReason) = 0;
   virtual void OnConnected() = 0;
   virtual void OnRead(nsTArray<uint8_t>&& aReadData) = 0;
 
-protected:
+ protected:
   virtual ~WebrtcProxyChannelCallback() = default;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

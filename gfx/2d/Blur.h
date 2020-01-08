@@ -15,7 +15,7 @@ namespace mozilla {
 namespace gfx {
 
 #ifdef _MSC_VER
-#pragma warning( disable : 4251 )
+#pragma warning(disable : 4251)
 #endif
 
 
@@ -36,10 +36,8 @@ namespace gfx {
 
 
 
-class GFX2D_API AlphaBoxBlur
-{
-public:
-
+class GFX2D_API AlphaBoxBlur {
+ public:
   
 
 
@@ -58,23 +56,17 @@ public:
 
 
 
-  AlphaBoxBlur(const Rect& aRect,
-               const IntSize& aSpreadRadius,
-               const IntSize& aBlurRadius,
-               const Rect* aDirtyRect,
+  AlphaBoxBlur(const Rect& aRect, const IntSize& aSpreadRadius,
+               const IntSize& aBlurRadius, const Rect* aDirtyRect,
                const Rect* aSkipRect);
 
-  AlphaBoxBlur(const Rect& aRect,
-               int32_t aStride,
-               float aSigmaX,
+  AlphaBoxBlur(const Rect& aRect, int32_t aStride, float aSigmaX,
                float aSigmaY);
 
   AlphaBoxBlur();
 
-  void Init(const Rect& aRect,
-            const IntSize& aSpreadRadius,
-            const IntSize& aBlurRadius,
-            const Rect* aDirtyRect,
+  void Init(const Rect& aRect, const IntSize& aSpreadRadius,
+            const IntSize& aBlurRadius, const Rect* aDirtyRect,
             const Rect* aSkipRect);
 
   ~AlphaBoxBlur();
@@ -135,23 +127,24 @@ public:
   static IntSize CalculateBlurRadius(const Point& aStandardDeviation);
   static Float CalculateBlurSigma(int32_t aBlurRadius);
 
-private:
-
-  void BoxBlur_C(uint8_t* aData,
-                 int32_t aLeftLobe, int32_t aRightLobe, int32_t aTopLobe,
-                 int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride) const;
-  void BoxBlur_SSE2(uint8_t* aData,
-                    int32_t aLeftLobe, int32_t aRightLobe, int32_t aTopLobe,
-                    int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride) const;
+ private:
+  void BoxBlur_C(uint8_t* aData, int32_t aLeftLobe, int32_t aRightLobe,
+                 int32_t aTopLobe, int32_t aBottomLobe,
+                 uint32_t* aIntegralImage, size_t aIntegralImageStride) const;
+  void BoxBlur_SSE2(uint8_t* aData, int32_t aLeftLobe, int32_t aRightLobe,
+                    int32_t aTopLobe, int32_t aBottomLobe,
+                    uint32_t* aIntegralImage,
+                    size_t aIntegralImageStride) const;
 #ifdef BUILD_ARM_NEON
-  void BoxBlur_NEON(uint8_t* aData,
-                    int32_t aLeftLobe, int32_t aRightLobe, int32_t aTopLobe,
-                    int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride) const;
+  void BoxBlur_NEON(uint8_t* aData, int32_t aLeftLobe, int32_t aRightLobe,
+                    int32_t aTopLobe, int32_t aBottomLobe,
+                    uint32_t* aIntegralImage,
+                    size_t aIntegralImageStride) const;
 #endif
 #ifdef _MIPS_ARCH_LOONGSON3A
-  void BoxBlur_LS3(uint8_t* aData,
-                    int32_t aLeftLobe, int32_t aRightLobe, int32_t aTopLobe,
-                    int32_t aBottomLobe, uint32_t *aIntegralImage, size_t aIntegralImageStride) const;
+  void BoxBlur_LS3(uint8_t* aData, int32_t aLeftLobe, int32_t aRightLobe,
+                   int32_t aTopLobe, int32_t aBottomLobe,
+                   uint32_t* aIntegralImage, size_t aIntegralImageStride) const;
 #endif
 
   static CheckedInt<int32_t> RoundUpToMultipleOf4(int32_t aVal);
@@ -199,7 +192,7 @@ private:
   bool mHasDirtyRect;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -21,9 +21,8 @@ namespace a11y {
 
 
 
-class XULButtonAccessible : public AccessibleWrap
-{
-public:
+class XULButtonAccessible : public AccessibleWrap {
+ public:
   enum { eAction_Click = 0 };
   XULButtonAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -47,7 +46,7 @@ public:
 
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
 
-protected:
+ protected:
   virtual ~XULButtonAccessible();
 
   
@@ -57,9 +56,8 @@ protected:
 
 
 
-class XULDropmarkerAccessible : public LeafAccessible
-{
-public:
+class XULDropmarkerAccessible : public LeafAccessible {
+ public:
   enum { eAction_Click = 0 };
   XULDropmarkerAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
@@ -72,23 +70,22 @@ public:
   virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
   virtual bool DoAction(uint8_t aIndex) const override;
 
-private:
+ private:
   bool DropmarkerOpen(bool aToggleOpen) const;
 };
 
 
 
 
-class XULGroupboxAccessible final : public AccessibleWrap
-{
-public:
+class XULGroupboxAccessible final : public AccessibleWrap {
+ public:
   XULGroupboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   virtual mozilla::a11y::role NativeRole() const override;
   virtual Relation RelationByType(RelationType aType) const override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
@@ -96,10 +93,8 @@ protected:
 
 
 
-class XULRadioButtonAccessible : public RadioButtonAccessible
-{
-
-public:
+class XULRadioButtonAccessible : public RadioButtonAccessible {
+ public:
   XULRadioButtonAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -113,9 +108,8 @@ public:
 
 
 
-class XULRadioGroupAccessible : public XULSelectControlAccessible
-{
-public:
+class XULRadioGroupAccessible : public XULSelectControlAccessible {
+ public:
   XULRadioGroupAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -131,9 +125,8 @@ public:
 
 
 
-class XULStatusBarAccessible : public AccessibleWrap
-{
-public:
+class XULStatusBarAccessible : public AccessibleWrap {
+ public:
   XULStatusBarAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -143,9 +136,8 @@ public:
 
 
 
-class XULToolbarButtonAccessible : public XULButtonAccessible
-{
-public:
+class XULToolbarButtonAccessible : public XULButtonAccessible {
+ public:
   XULToolbarButtonAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -162,15 +154,14 @@ public:
 
 
 
-class XULToolbarAccessible : public AccessibleWrap
-{
-public:
+class XULToolbarAccessible : public AccessibleWrap {
+ public:
   XULToolbarAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   virtual mozilla::a11y::role NativeRole() const override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
@@ -178,19 +169,16 @@ protected:
 
 
 
-class XULToolbarSeparatorAccessible : public LeafAccessible
-{
-public:
-  XULToolbarSeparatorAccessible(nsIContent* aContent,
-                                DocAccessible* aDoc);
+class XULToolbarSeparatorAccessible : public LeafAccessible {
+ public:
+  XULToolbarSeparatorAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   virtual mozilla::a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif
-

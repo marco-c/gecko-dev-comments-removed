@@ -19,42 +19,46 @@ class GeckoContentController;
 
 
 
-class APZChild final : public PAPZChild
-{
-public:
+class APZChild final : public PAPZChild {
+ public:
   explicit APZChild(RefPtr<GeckoContentController> aController);
   ~APZChild();
 
-  mozilla::ipc::IPCResult RecvRequestContentRepaint(const RepaintRequest& aRequest) override;
+  mozilla::ipc::IPCResult RecvRequestContentRepaint(
+      const RepaintRequest& aRequest) override;
 
-  mozilla::ipc::IPCResult RecvUpdateOverscrollVelocity(const float& aX, const float& aY, const bool& aIsRootContent) override;
+  mozilla::ipc::IPCResult RecvUpdateOverscrollVelocity(
+      const float& aX, const float& aY, const bool& aIsRootContent) override;
 
-  mozilla::ipc::IPCResult RecvUpdateOverscrollOffset(const float& aX, const float& aY, const bool& aIsRootContent) override;
+  mozilla::ipc::IPCResult RecvUpdateOverscrollOffset(
+      const float& aX, const float& aY, const bool& aIsRootContent) override;
 
-  mozilla::ipc::IPCResult RecvNotifyMozMouseScrollEvent(const ViewID& aScrollId,
-                                                        const nsString& aEvent) override;
+  mozilla::ipc::IPCResult RecvNotifyMozMouseScrollEvent(
+      const ViewID& aScrollId, const nsString& aEvent) override;
 
-  mozilla::ipc::IPCResult RecvNotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
-                                                   const APZStateChange& aChange,
-                                                   const int& aArg) override;
+  mozilla::ipc::IPCResult RecvNotifyAPZStateChange(
+      const ScrollableLayerGuid& aGuid, const APZStateChange& aChange,
+      const int& aArg) override;
 
   mozilla::ipc::IPCResult RecvNotifyFlushComplete() override;
 
-  mozilla::ipc::IPCResult RecvNotifyAsyncScrollbarDragInitiated(const uint64_t& aDragBlockId,
-                                                                const ViewID& aScrollId,
-                                                                const ScrollDirection& aDirection) override;
-  mozilla::ipc::IPCResult RecvNotifyAsyncScrollbarDragRejected(const ViewID& aScrollId) override;
+  mozilla::ipc::IPCResult RecvNotifyAsyncScrollbarDragInitiated(
+      const uint64_t& aDragBlockId, const ViewID& aScrollId,
+      const ScrollDirection& aDirection) override;
+  mozilla::ipc::IPCResult RecvNotifyAsyncScrollbarDragRejected(
+      const ViewID& aScrollId) override;
 
-  mozilla::ipc::IPCResult RecvNotifyAsyncAutoscrollRejected(const ViewID& aScrollId) override;
+  mozilla::ipc::IPCResult RecvNotifyAsyncAutoscrollRejected(
+      const ViewID& aScrollId) override;
 
   mozilla::ipc::IPCResult RecvDestroy() override;
 
-private:
+ private:
   RefPtr<GeckoContentController> mController;
 };
 
-} 
+}  
 
-} 
+}  
 
-#endif 
+#endif  

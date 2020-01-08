@@ -40,268 +40,247 @@ namespace plugins {
 
 class PluginInstanceChild;
 
-class PluginModuleChild : public PPluginModuleChild
-{
-protected:
-    virtual mozilla::ipc::RacyInterruptPolicy
-    MediateInterruptRace(const MessageInfo& parent,
-                         const MessageInfo& child) override
-    {
-        return MediateRace(parent, child);
-    }
+class PluginModuleChild : public PPluginModuleChild {
+ protected:
+  virtual mozilla::ipc::RacyInterruptPolicy MediateInterruptRace(
+      const MessageInfo& parent, const MessageInfo& child) override {
+    return MediateRace(parent, child);
+  }
 
-    virtual bool ShouldContinueFromReplyTimeout() override;
+  virtual bool ShouldContinueFromReplyTimeout() override;
 
-    virtual mozilla::ipc::IPCResult RecvSettingChanged(const PluginSettings& aSettings) override;
+  virtual mozilla::ipc::IPCResult RecvSettingChanged(
+      const PluginSettings& aSettings) override;
 
-    
-    virtual mozilla::ipc::IPCResult RecvInitProfiler(Endpoint<mozilla::PProfilerChild>&& aEndpoint) override;
-    virtual mozilla::ipc::IPCResult RecvDisableFlashProtectedMode() override;
-    virtual mozilla::ipc::IPCResult AnswerNP_GetEntryPoints(NPError* rv) override;
-    virtual mozilla::ipc::IPCResult AnswerNP_Initialize(const PluginSettings& aSettings, NPError* rv) override;
-    virtual mozilla::ipc::IPCResult AnswerSyncNPP_New(PPluginInstanceChild* aActor, NPError* rv)
-                                   override;
+  
+  virtual mozilla::ipc::IPCResult RecvInitProfiler(
+      Endpoint<mozilla::PProfilerChild>&& aEndpoint) override;
+  virtual mozilla::ipc::IPCResult RecvDisableFlashProtectedMode() override;
+  virtual mozilla::ipc::IPCResult AnswerNP_GetEntryPoints(NPError* rv) override;
+  virtual mozilla::ipc::IPCResult AnswerNP_Initialize(
+      const PluginSettings& aSettings, NPError* rv) override;
+  virtual mozilla::ipc::IPCResult AnswerSyncNPP_New(
+      PPluginInstanceChild* aActor, NPError* rv) override;
 
-    virtual mozilla::ipc::IPCResult
-    RecvInitPluginModuleChild(Endpoint<PPluginModuleChild>&& endpoint) override;
+  virtual mozilla::ipc::IPCResult RecvInitPluginModuleChild(
+      Endpoint<PPluginModuleChild>&& endpoint) override;
 
-    virtual mozilla::ipc::IPCResult
-    RecvInitPluginFunctionBroker(Endpoint<PFunctionBrokerChild>&& endpoint) override;
+  virtual mozilla::ipc::IPCResult RecvInitPluginFunctionBroker(
+      Endpoint<PFunctionBrokerChild>&& endpoint) override;
 
-    virtual PPluginInstanceChild*
-    AllocPPluginInstanceChild(const nsCString& aMimeType,
-                              const InfallibleTArray<nsCString>& aNames,
-                              const InfallibleTArray<nsCString>& aValues)
-                              override;
+  virtual PPluginInstanceChild* AllocPPluginInstanceChild(
+      const nsCString& aMimeType, const InfallibleTArray<nsCString>& aNames,
+      const InfallibleTArray<nsCString>& aValues) override;
 
-    virtual bool
-    DeallocPPluginInstanceChild(PPluginInstanceChild* aActor) override;
+  virtual bool DeallocPPluginInstanceChild(
+      PPluginInstanceChild* aActor) override;
 
-    virtual mozilla::ipc::IPCResult
-    RecvPPluginInstanceConstructor(PPluginInstanceChild* aActor,
-                                   const nsCString& aMimeType,
-                                   InfallibleTArray<nsCString>&& aNames,
-                                   InfallibleTArray<nsCString>&& aValues)
-                                   override;
-    virtual mozilla::ipc::IPCResult
-    AnswerNP_Shutdown(NPError *rv) override;
+  virtual mozilla::ipc::IPCResult RecvPPluginInstanceConstructor(
+      PPluginInstanceChild* aActor, const nsCString& aMimeType,
+      InfallibleTArray<nsCString>&& aNames,
+      InfallibleTArray<nsCString>&& aValues) override;
+  virtual mozilla::ipc::IPCResult AnswerNP_Shutdown(NPError* rv) override;
 
-    virtual mozilla::ipc::IPCResult
-    AnswerOptionalFunctionsSupported(bool *aURLRedirectNotify,
-                                     bool *aClearSiteData,
-                                     bool *aGetSitesWithData) override;
+  virtual mozilla::ipc::IPCResult AnswerOptionalFunctionsSupported(
+      bool* aURLRedirectNotify, bool* aClearSiteData,
+      bool* aGetSitesWithData) override;
 
-    virtual mozilla::ipc::IPCResult
-    RecvNPP_ClearSiteData(const nsCString& aSite,
-                            const uint64_t& aFlags,
-                            const uint64_t& aMaxAge,
-                            const uint64_t& aCallbackId) override;
+  virtual mozilla::ipc::IPCResult RecvNPP_ClearSiteData(
+      const nsCString& aSite, const uint64_t& aFlags, const uint64_t& aMaxAge,
+      const uint64_t& aCallbackId) override;
 
-    virtual mozilla::ipc::IPCResult
-    RecvNPP_GetSitesWithData(const uint64_t& aCallbackId) override;
+  virtual mozilla::ipc::IPCResult RecvNPP_GetSitesWithData(
+      const uint64_t& aCallbackId) override;
 
-    virtual mozilla::ipc::IPCResult
-    RecvSetAudioSessionData(const nsID& aId,
-                            const nsString& aDisplayName,
-                            const nsString& aIconPath) override;
+  virtual mozilla::ipc::IPCResult RecvSetAudioSessionData(
+      const nsID& aId, const nsString& aDisplayName,
+      const nsString& aIconPath) override;
 
-    virtual mozilla::ipc::IPCResult
-    RecvSetParentHangTimeout(const uint32_t& aSeconds) override;
+  virtual mozilla::ipc::IPCResult RecvSetParentHangTimeout(
+      const uint32_t& aSeconds) override;
 
-    virtual mozilla::ipc::IPCResult
-    AnswerInitCrashReporter(Shmem&& aShmem, mozilla::dom::NativeThreadId* aId) override;
+  virtual mozilla::ipc::IPCResult AnswerInitCrashReporter(
+      Shmem&& aShmem, mozilla::dom::NativeThreadId* aId) override;
 
-    virtual void
-    ActorDestroy(ActorDestroyReason why) override;
+  virtual void ActorDestroy(ActorDestroyReason why) override;
 
-    virtual mozilla::ipc::IPCResult
-    RecvProcessNativeEventsInInterruptCall() override;
+  virtual mozilla::ipc::IPCResult RecvProcessNativeEventsInInterruptCall()
+      override;
 
-    virtual mozilla::ipc::IPCResult
-    AnswerModuleSupportsAsyncRender(bool* aResult) override;
-public:
-    explicit PluginModuleChild(bool aIsChrome);
-    virtual ~PluginModuleChild();
+  virtual mozilla::ipc::IPCResult AnswerModuleSupportsAsyncRender(
+      bool* aResult) override;
 
-    void CommonInit();
+ public:
+  explicit PluginModuleChild(bool aIsChrome);
+  virtual ~PluginModuleChild();
+
+  void CommonInit();
 
 #if defined(OS_WIN) && defined(MOZ_SANDBOX)
-    
-    
-    static void SetFlashRoamingPath(const std::wstring& aRoamingPath);
-    static std::wstring GetFlashRoamingPath();
+  
+  
+  static void SetFlashRoamingPath(const std::wstring& aRoamingPath);
+  static std::wstring GetFlashRoamingPath();
 #endif
 
-    
-    bool InitForChrome(const std::string& aPluginFilename,
-                       base::ProcessId aParentPid,
-                       MessageLoop* aIOLoop,
-                       IPC::Channel* aChannel);
+  
+  bool InitForChrome(const std::string& aPluginFilename,
+                     base::ProcessId aParentPid, MessageLoop* aIOLoop,
+                     IPC::Channel* aChannel);
 
-    bool InitForContent(Endpoint<PPluginModuleChild>&& aEndpoint);
+  bool InitForContent(Endpoint<PPluginModuleChild>&& aEndpoint);
 
-    static bool
-    CreateForContentProcess(Endpoint<PPluginModuleChild>&& aEndpoint);
+  static bool CreateForContentProcess(Endpoint<PPluginModuleChild>&& aEndpoint);
 
-    void CleanUp();
+  void CleanUp();
 
-    NPError NP_Shutdown();
+  NPError NP_Shutdown();
 
-    const char* GetUserAgent();
+  const char* GetUserAgent();
 
-    static const NPNetscapeFuncs sBrowserFuncs;
+  static const NPNetscapeFuncs sBrowserFuncs;
 
-    static PluginModuleChild* GetChrome();
+  static PluginModuleChild* GetChrome();
 
-    
+  
 
 
-    static NPObject* NPN_CreateObject(NPP aNPP, NPClass* aClass);
-    
+  static NPObject* NPN_CreateObject(NPP aNPP, NPClass* aClass);
+  
 
 
-    static NPObject* NPN_RetainObject(NPObject* aNPObj);
-    
+  static NPObject* NPN_RetainObject(NPObject* aNPObj);
+  
 
 
-    static void NPN_ReleaseObject(NPObject* aNPObj);
+  static void NPN_ReleaseObject(NPObject* aNPObj);
 
-    
+  
 
 
-    static NPIdentifier NPN_GetStringIdentifier(const NPUTF8* aName);
-    static void NPN_GetStringIdentifiers(const NPUTF8** aNames,
-                                                     int32_t aNameCount,
-                                                     NPIdentifier* aIdentifiers);
-    static NPIdentifier NPN_GetIntIdentifier(int32_t aIntId);
-    static bool NPN_IdentifierIsString(NPIdentifier aIdentifier);
-    static NPUTF8* NPN_UTF8FromIdentifier(NPIdentifier aIdentifier);
-    static int32_t NPN_IntFromIdentifier(NPIdentifier aIdentifier);
+  static NPIdentifier NPN_GetStringIdentifier(const NPUTF8* aName);
+  static void NPN_GetStringIdentifiers(const NPUTF8** aNames,
+                                       int32_t aNameCount,
+                                       NPIdentifier* aIdentifiers);
+  static NPIdentifier NPN_GetIntIdentifier(int32_t aIntId);
+  static bool NPN_IdentifierIsString(NPIdentifier aIdentifier);
+  static NPUTF8* NPN_UTF8FromIdentifier(NPIdentifier aIdentifier);
+  static int32_t NPN_IntFromIdentifier(NPIdentifier aIdentifier);
 
 #ifdef MOZ_WIDGET_COCOA
-    void ProcessNativeEvents();
+  void ProcessNativeEvents();
 
-    void PluginShowWindow(uint32_t window_id, bool modal, CGRect r) {
-        SendPluginShowWindow(window_id, modal, r.origin.x, r.origin.y, r.size.width, r.size.height);
-    }
+  void PluginShowWindow(uint32_t window_id, bool modal, CGRect r) {
+    SendPluginShowWindow(window_id, modal, r.origin.x, r.origin.y, r.size.width,
+                         r.size.height);
+  }
 
-    void PluginHideWindow(uint32_t window_id) {
-        SendPluginHideWindow(window_id);
-    }
+  void PluginHideWindow(uint32_t window_id) { SendPluginHideWindow(window_id); }
 
-    void SetCursor(NSCursorInfo& cursorInfo) {
-        SendSetCursor(cursorInfo);
-    }
+  void SetCursor(NSCursorInfo& cursorInfo) { SendSetCursor(cursorInfo); }
 
-    void ShowCursor(bool show) {
-        SendShowCursor(show);
-    }
+  void ShowCursor(bool show) { SendShowCursor(show); }
 
-    void PushCursor(NSCursorInfo& cursorInfo) {
-        SendPushCursor(cursorInfo);
-    }
+  void PushCursor(NSCursorInfo& cursorInfo) { SendPushCursor(cursorInfo); }
 
-    void PopCursor() {
-        SendPopCursor();
-    }
+  void PopCursor() { SendPopCursor(); }
 
-    bool GetNativeCursorsSupported() {
-        return Settings().nativeCursorsSupported();
-    }
+  bool GetNativeCursorsSupported() {
+    return Settings().nativeCursorsSupported();
+  }
 #endif
 
-    int GetQuirks() { return mQuirks; }
+  int GetQuirks() { return mQuirks; }
 
-    const PluginSettings& Settings() const { return mCachedSettings; }
+  const PluginSettings& Settings() const { return mCachedSettings; }
 
-    NPError PluginRequiresAudioDeviceChanges(PluginInstanceChild* aInstance,
-                                             NPBool aShouldRegister);
-    mozilla::ipc::IPCResult RecvNPP_SetValue_NPNVaudioDeviceChangeDetails(
-        const NPAudioDeviceChangeDetailsIPC& detailsIPC) override;
-    mozilla::ipc::IPCResult RecvNPP_SetValue_NPNVaudioDeviceStateChanged(
+  NPError PluginRequiresAudioDeviceChanges(PluginInstanceChild* aInstance,
+                                           NPBool aShouldRegister);
+  mozilla::ipc::IPCResult RecvNPP_SetValue_NPNVaudioDeviceChangeDetails(
+      const NPAudioDeviceChangeDetailsIPC& detailsIPC) override;
+  mozilla::ipc::IPCResult RecvNPP_SetValue_NPNVaudioDeviceStateChanged(
       const NPAudioDeviceStateChangedIPC& aDeviceStateIPC) override;
 
-private:
-    NPError DoNP_Initialize(const PluginSettings& aSettings);
-    void AddQuirk(PluginQuirks quirk) {
-      if (mQuirks == QUIRKS_NOT_INITIALIZED)
-        mQuirks = 0;
-      mQuirks |= quirk;
-    }
-    void InitQuirksModes(const nsCString& aMimeType);
-    bool InitGraphics();
-    void DeinitGraphics();
+ private:
+  NPError DoNP_Initialize(const PluginSettings& aSettings);
+  void AddQuirk(PluginQuirks quirk) {
+    if (mQuirks == QUIRKS_NOT_INITIALIZED) mQuirks = 0;
+    mQuirks |= quirk;
+  }
+  void InitQuirksModes(const nsCString& aMimeType);
+  bool InitGraphics();
+  void DeinitGraphics();
 
 #if defined(MOZ_WIDGET_GTK)
-    static gboolean DetectNestedEventLoop(gpointer data);
-    static gboolean ProcessBrowserEvents(gpointer data);
+  static gboolean DetectNestedEventLoop(gpointer data);
+  static gboolean ProcessBrowserEvents(gpointer data);
 
-    virtual void EnteredCxxStack() override;
-    virtual void ExitedCxxStack() override;
+  virtual void EnteredCxxStack() override;
+  virtual void ExitedCxxStack() override;
 #endif
 
-    PRLibrary* mLibrary;
-    nsCString mPluginFilename; 
-    int mQuirks;
+  PRLibrary* mLibrary;
+  nsCString mPluginFilename;  
+  int mQuirks;
 
-    bool mIsChrome;
-    bool mHasShutdown; 
+  bool mIsChrome;
+  bool mHasShutdown;  
 
 #ifdef MOZ_GECKO_PROFILER
-    RefPtr<ChildProfilerController> mProfilerController;
+  RefPtr<ChildProfilerController> mProfilerController;
 #endif
 
-    
-    NP_PLUGINSHUTDOWN mShutdownFunc;
+  
+  NP_PLUGINSHUTDOWN mShutdownFunc;
 #if defined(OS_LINUX) || defined(OS_BSD) || defined(OS_SOLARIS)
-    NP_PLUGINUNIXINIT mInitializeFunc;
+  NP_PLUGINUNIXINIT mInitializeFunc;
 #elif defined(OS_WIN) || defined(OS_MACOSX)
-    NP_PLUGININIT mInitializeFunc;
-    NP_GETENTRYPOINTS mGetEntryPointsFunc;
+  NP_PLUGININIT mInitializeFunc;
+  NP_GETENTRYPOINTS mGetEntryPointsFunc;
 #endif
 
-    NPPluginFuncs mFunctions;
+  NPPluginFuncs mFunctions;
 
-    PluginSettings mCachedSettings;
+  PluginSettings mCachedSettings;
 
 #if defined(MOZ_WIDGET_GTK)
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    guint mNestedLoopTimerId;
-#  ifdef DEBUG
-    
-    
-    
-    
-    int mTopLoopDepth;
-#  endif
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  guint mNestedLoopTimerId;
+#ifdef DEBUG
+  
+  
+  
+  
+  int mTopLoopDepth;
+#endif
 #endif
 
 #if defined(XP_WIN)
@@ -311,59 +290,53 @@ private:
   PluginInstanceSet mAudioNotificationSet;
 #endif
 
-public: 
-    
+ public:  
+  
 
 
 
-    static void DeallocNPObject(NPObject* o);
+  static void DeallocNPObject(NPObject* o);
 
-    NPError NPP_Destroy(PluginInstanceChild* instance) {
-        return mFunctions.destroy(instance->GetNPP(), 0);
-    }
+  NPError NPP_Destroy(PluginInstanceChild* instance) {
+    return mFunctions.destroy(instance->GetNPP(), 0);
+  }
 
 #if defined(OS_MACOSX) && defined(MOZ_SANDBOX)
-    void EnableFlashSandbox(int aLevel, bool aShouldEnableLogging);
+  void EnableFlashSandbox(int aLevel, bool aShouldEnableLogging);
 #endif
 
-private:
-
+ private:
 #if defined(OS_MACOSX) && defined(MOZ_SANDBOX)
-    int mFlashSandboxLevel;
-    bool mEnableFlashSandboxLogging;
+  int mFlashSandboxLevel;
+  bool mEnableFlashSandboxLogging;
 #endif
 
 #if defined(OS_WIN)
-    virtual void EnteredCall() override;
-    virtual void ExitedCall() override;
+  virtual void EnteredCall() override;
+  virtual void ExitedCall() override;
 
-    
-    
-    struct IncallFrame
-    {
-        IncallFrame()
-            : _spinning(false)
-            , _savedNestableTasksAllowed(false)
-        { }
+  
+  
+  struct IncallFrame {
+    IncallFrame() : _spinning(false), _savedNestableTasksAllowed(false) {}
 
-        bool _spinning;
-        bool _savedNestableTasksAllowed;
-    };
+    bool _spinning;
+    bool _savedNestableTasksAllowed;
+  };
 
-    AutoTArray<IncallFrame, 8> mIncallPumpingStack;
+  AutoTArray<IncallFrame, 8> mIncallPumpingStack;
 
-    static LRESULT CALLBACK NestedInputEventHook(int code,
-                                                 WPARAM wParam,
-                                                 LPARAM lParam);
-    static LRESULT CALLBACK CallWindowProcHook(int code,
-                                               WPARAM wParam,
+  static LRESULT CALLBACK NestedInputEventHook(int code, WPARAM wParam,
                                                LPARAM lParam);
-    void SetEventHooks();
-    void ResetEventHooks();
-    HHOOK mNestedEventHook;
-    HHOOK mGlobalCallWndProcHook;
-public:
-    bool mAsyncRenderSupport;
+  static LRESULT CALLBACK CallWindowProcHook(int code, WPARAM wParam,
+                                             LPARAM lParam);
+  void SetEventHooks();
+  void ResetEventHooks();
+  HHOOK mNestedEventHook;
+  HHOOK mGlobalCallWndProcHook;
+
+ public:
+  bool mAsyncRenderSupport;
 #endif
 };
 

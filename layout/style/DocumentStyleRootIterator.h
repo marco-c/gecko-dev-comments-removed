@@ -17,7 +17,7 @@ namespace mozilla {
 
 namespace dom {
 class Element;
-} 
+}  
 
 
 
@@ -28,19 +28,18 @@ class Element;
 
 
 
-class DocumentStyleRootIterator
-{
-public:
+class DocumentStyleRootIterator {
+ public:
   explicit DocumentStyleRootIterator(nsINode* aStyleRoot);
   ~DocumentStyleRootIterator() { MOZ_COUNT_DTOR(DocumentStyleRootIterator); }
 
   dom::Element* GetNextStyleRoot();
 
-private:
+ private:
   AutoTArray<nsIContent*, 8> mStyleRoots;
   uint32_t mPosition;
 };
 
-} 
+}  
 
-#endif 
+#endif  

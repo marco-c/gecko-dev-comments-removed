@@ -20,34 +20,30 @@ namespace dom {
 
 
 
-class FileSystemUtils
-{
-public:
+class FileSystemUtils {
+ public:
   
 
 
-  static bool
-  IsDescendantPath(const nsAString& aPath,
-                   const nsAString& aDescendantPath);
-
-  
-
-
-
-  static bool
-  IsValidRelativeDOMPath(const nsAString& aPath,
-                         nsTArray<nsString>& aParts);
+  static bool IsDescendantPath(const nsAString& aPath,
+                               const nsAString& aDescendantPath);
 
   
 
 
 
-  static nsresult
-  DispatchRunnable(nsIGlobalObject* aGlobal,
-                   already_AddRefed<nsIRunnable>&& aRunnable);
+  static bool IsValidRelativeDOMPath(const nsAString& aPath,
+                                     nsTArray<nsString>& aParts);
+
+  
+
+
+
+  static nsresult DispatchRunnable(nsIGlobalObject* aGlobal,
+                                   already_AddRefed<nsIRunnable>&& aRunnable);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

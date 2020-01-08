@@ -16,10 +16,10 @@
 namespace mozilla {
 namespace dom {
 
-class HTMLProgressElement final : public nsGenericHTMLElement
-{
-public:
-  explicit HTMLProgressElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+class HTMLProgressElement final : public nsGenericHTMLElement {
+ public:
+  explicit HTMLProgressElement(
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   EventStates IntrinsicState() const override;
 
@@ -32,23 +32,22 @@ public:
 
   
   double Value() const;
-  void SetValue(double aValue, ErrorResult& aRv)
-  {
+  void SetValue(double aValue, ErrorResult& aRv) {
     SetDoubleAttr(nsGkAtoms::value, aValue, aRv);
   }
   double Max() const;
-  void SetMax(double aValue, ErrorResult& aRv)
-  {
+  void SetMax(double aValue, ErrorResult& aRv) {
     SetDoubleAttr(nsGkAtoms::max, aValue, aRv);
   }
   double Position() const;
 
-protected:
+ protected:
   virtual ~HTMLProgressElement();
 
-  virtual JSObject* WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapNode(JSContext* aCx,
+                             JS::Handle<JSObject*> aGivenProto) override;
 
-protected:
+ protected:
   
 
 
@@ -63,7 +62,7 @@ protected:
   static const double kDefaultMax;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

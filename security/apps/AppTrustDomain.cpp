@@ -32,31 +32,25 @@ using namespace mozilla::pkix;
 
 extern mozilla::LazyLogModule gPIPNSSLog;
 
-static char kDevImportedDER[] =
-  "network.http.signed-packages.developer-root";
+static char kDevImportedDER[] = "network.http.signed-packages.developer-root";
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
 StaticMutex AppTrustDomain::sMutex;
 UniquePtr<unsigned char[]> AppTrustDomain::sDevImportedDERData;
 unsigned int AppTrustDomain::sDevImportedDERLen = 0;
 
 AppTrustDomain::AppTrustDomain(UniqueCERTCertList& certChain, void* pinArg)
-  : mCertChain(certChain)
-  , mPinArg(pinArg)
-{
-}
+    : mCertChain(certChain), mPinArg(pinArg) {}
 
-nsresult
-AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot)
-{
+nsresult AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot) {
   SECItem trustedDER;
 
   
   
 
-  switch (trustedRoot)
-  {
+  switch (trustedRoot) {
     case nsIX509CertDB::AppXPCShellRoot:
       trustedDER.data = const_cast<uint8_t*>(xpcshellRoot);
       trustedDER.len = mozilla::ArrayLength(xpcshellRoot);
@@ -113,7 +107,7 @@ AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot)
 
         MOZ_ASSERT(length == sDevImportedDERLen);
         sDevImportedDERData.reset(
-          BitwiseCast<unsigned char*, char*>(data.release()));
+            BitwiseCast<unsigned char*, char*>(data.release()));
       }
 
       trustedDER.data = sDevImportedDERData.get();
@@ -125,8 +119,8 @@ AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot)
       return NS_ERROR_INVALID_ARG;
   }
 
-  mTrustedRoot.reset(CERT_NewTempCertificate(CERT_GetDefaultCertDB(),
-                                             &trustedDER, nullptr, false, true));
+  mTrustedRoot.reset(CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), &trustedDER, nullptr, false, true));
   if (!mTrustedRoot) {
     return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
   }
@@ -134,9 +128,8 @@ AppTrustDomain::SetTrustedRoot(AppTrustedRoot trustedRoot)
   return NS_OK;
 }
 
-Result
-AppTrustDomain::FindIssuer(Input encodedIssuerName, IssuerChecker& checker,
-                           Time)
+Result AppTrustDomain::FindIssuer(Input encodedIssuerName,
+                                  IssuerChecker& checker, Time)
 
 {
   MOZ_ASSERT(mTrustedRoot);
@@ -152,23 +145,20 @@ AppTrustDomain::FindIssuer(Input encodedIssuerName, IssuerChecker& checker,
   
   
   
-  SECItem encodedIssuerNameSECItem =
-    UnsafeMapInputToSECItem(encodedIssuerName);
-  UniqueCERTCertList
-    candidates(CERT_CreateSubjectCertList(nullptr, CERT_GetDefaultCertDB(),
-                                          &encodedIssuerNameSECItem, 0,
-                                          false));
+  SECItem encodedIssuerNameSECItem = UnsafeMapInputToSECItem(encodedIssuerName);
+  UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
+      nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameSECItem, 0, false));
   if (candidates) {
     for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
          !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
       Input certDER;
       Result rv = certDER.Init(n->cert->derCert.data, n->cert->derCert.len);
       if (rv != Success) {
-        continue; 
+        continue;  
       }
 
       bool keepGoing;
-      rv = checker.Check(certDER, nullptr,
+      rv = checker.Check(certDER, nullptr ,
                          keepGoing);
       if (rv != Success) {
         return rv;
@@ -182,12 +172,10 @@ AppTrustDomain::FindIssuer(Input encodedIssuerName, IssuerChecker& checker,
   return Success;
 }
 
-Result
-AppTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
-                             const CertPolicyId& policy,
-                             Input candidateCertDER,
-                      TrustLevel& trustLevel)
-{
+Result AppTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
+                                    const CertPolicyId& policy,
+                                    Input candidateCertDER,
+                                     TrustLevel& trustLevel) {
   MOZ_ASSERT(policy.IsAnyPolicy());
   MOZ_ASSERT(mTrustedRoot);
   if (!policy.IsAnyPolicy()) {
@@ -202,11 +190,9 @@ AppTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   
   
   
-  SECItem candidateCertDERSECItem =
-    UnsafeMapInputToSECItem(candidateCertDER);
-  UniqueCERTCertificate candidateCert(
-    CERT_NewTempCertificate(CERT_GetDefaultCertDB(), &candidateCertDERSECItem,
-                            nullptr, false, true));
+  SECItem candidateCertDERSECItem = UnsafeMapInputToSECItem(candidateCertDER);
+  UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false, true));
   if (!candidateCert) {
     return MapPRErrorCodeToResult(PR_GetError());
   }
@@ -221,10 +207,10 @@ AppTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
     
     
     uint32_t relevantTrustBit = endEntityOrCA == EndEntityOrCA::MustBeCA
-                              ? CERTDB_TRUSTED_CA
-                              : CERTDB_TRUSTED;
-    if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD)))
-            == CERTDB_TERMINAL_RECORD) {
+                                    ? CERTDB_TRUSTED_CA
+                                    : CERTDB_TRUSTED;
+    if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD))) ==
+        CERTDB_TERMINAL_RECORD) {
       trustLevel = TrustLevel::ActivelyDistrusted;
       return Success;
     }
@@ -240,73 +226,58 @@ AppTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   return Success;
 }
 
-Result
-AppTrustDomain::DigestBuf(Input item,
-                          DigestAlgorithm digestAlg,
-                           uint8_t* digestBuf,
-                          size_t digestBufLen)
-{
+Result AppTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
+                                  uint8_t* digestBuf,
+                                 size_t digestBufLen) {
   return DigestBufNSS(item, digestAlg, digestBuf, digestBufLen);
 }
 
-Result
-AppTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&, Time, Duration,
-                                 const Input*,
-                                 const Input*)
-{
+Result AppTrustDomain::CheckRevocation(EndEntityOrCA, const CertID&, Time,
+                                       Duration,
+                                        const Input*,
+                                        const Input*) {
   
   
   return Success;
 }
 
-Result
-AppTrustDomain::IsChainValid(const DERArray& certChain, Time time,
-                             const CertPolicyId& requiredPolicy)
-{
+Result AppTrustDomain::IsChainValid(const DERArray& certChain, Time time,
+                                    const CertPolicyId& requiredPolicy) {
   MOZ_ASSERT(requiredPolicy.IsAnyPolicy());
-  SECStatus srv = ConstructCERTCertListFromReversedDERArray(certChain,
-                                                            mCertChain);
+  SECStatus srv =
+      ConstructCERTCertListFromReversedDERArray(certChain, mCertChain);
   if (srv != SECSuccess) {
     return MapPRErrorCodeToResult(PR_GetError());
   }
   return Success;
 }
 
-Result
-AppTrustDomain::CheckSignatureDigestAlgorithm(DigestAlgorithm,
-                                              EndEntityOrCA,
-                                              Time)
-{
+Result AppTrustDomain::CheckSignatureDigestAlgorithm(DigestAlgorithm,
+                                                     EndEntityOrCA, Time) {
   
   return Success;
 }
 
-Result
-AppTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
-  EndEntityOrCA , unsigned int modulusSizeInBits)
-{
+Result AppTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
+    EndEntityOrCA , unsigned int modulusSizeInBits) {
   if (modulusSizeInBits < 2048u) {
     return Result::ERROR_INADEQUATE_KEY_SIZE;
   }
   return Success;
 }
 
-Result
-AppTrustDomain::VerifyRSAPKCS1SignedDigest(const SignedDigest& signedDigest,
-                                           Input subjectPublicKeyInfo)
-{
+Result AppTrustDomain::VerifyRSAPKCS1SignedDigest(
+    const SignedDigest& signedDigest, Input subjectPublicKeyInfo) {
   
   return VerifyRSAPKCS1SignedDigestNSS(signedDigest, subjectPublicKeyInfo,
                                        mPinArg);
 }
 
-Result
-AppTrustDomain::CheckECDSACurveIsAcceptable(EndEntityOrCA ,
-                                            NamedCurve curve)
-{
+Result AppTrustDomain::CheckECDSACurveIsAcceptable(
+    EndEntityOrCA , NamedCurve curve) {
   switch (curve) {
-    case NamedCurve::secp256r1: 
-    case NamedCurve::secp384r1: 
+    case NamedCurve::secp256r1:  
+    case NamedCurve::secp384r1:  
     case NamedCurve::secp521r1:
       return Success;
   }
@@ -314,34 +285,26 @@ AppTrustDomain::CheckECDSACurveIsAcceptable(EndEntityOrCA ,
   return Result::ERROR_UNSUPPORTED_ELLIPTIC_CURVE;
 }
 
-Result
-AppTrustDomain::VerifyECDSASignedDigest(const SignedDigest& signedDigest,
-                                        Input subjectPublicKeyInfo)
-{
+Result AppTrustDomain::VerifyECDSASignedDigest(const SignedDigest& signedDigest,
+                                               Input subjectPublicKeyInfo) {
   return VerifyECDSASignedDigestNSS(signedDigest, subjectPublicKeyInfo,
                                     mPinArg);
 }
 
-Result
-AppTrustDomain::CheckValidityIsAcceptable(Time , Time ,
-                                          EndEntityOrCA ,
-                                          KeyPurposeId )
-{
+Result AppTrustDomain::CheckValidityIsAcceptable(
+    Time , Time , EndEntityOrCA ,
+    KeyPurposeId ) {
   return Success;
 }
 
-Result
-AppTrustDomain::NetscapeStepUpMatchesServerAuth(Time ,
-                                                 bool& matches)
-{
+Result AppTrustDomain::NetscapeStepUpMatchesServerAuth(Time ,
+                                                        bool& matches) {
   matches = false;
   return Success;
 }
 
-void
-AppTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension ,
-                                       Input )
-{
-}
+void AppTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension ,
+                                            Input ) {}
 
-} } 
+}  
+}  

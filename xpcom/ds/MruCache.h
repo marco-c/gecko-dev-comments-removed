@@ -23,18 +23,16 @@ namespace detail {
 
 
 template <typename Value, bool IsPtr = std::is_pointer<Value>::value>
-struct EmptyChecker
-{
+struct EmptyChecker {
   static bool IsNotEmpty(const Value&) { return true; }
 };
 
 template <typename Value>
-struct EmptyChecker<Value, true>
-{
+struct EmptyChecker<Value, true> {
   static bool IsNotEmpty(const Value& aVal) { return aVal != nullptr; }
 };
 
-} 
+}  
 
 
 
@@ -63,9 +61,8 @@ struct EmptyChecker<Value, true>
 
 
 
-template <class Key, class Value, class Cache, size_t Size=31>
-class MruCache
-{
+template <class Key, class Value, class Cache, size_t Size = 31>
+class MruCache {
   
   
   
@@ -78,7 +75,7 @@ class MruCache
   
   
 
-public:
+ public:
   using KeyType = Key;
   using ValueType = Value;
 
@@ -89,20 +86,15 @@ public:
   
   
   template <typename U>
-  void Put(const KeyType& aKey, U&& aVal)
-  {
+  void Put(const KeyType& aKey, U&& aVal) {
     *RawEntry(aKey) = std::forward<U>(aVal);
   }
 
   
-  void Remove(const KeyType& aKey)
-  {
-    Lookup(aKey).Remove();
-  }
+  void Remove(const KeyType& aKey) { Lookup(aKey).Remove(); }
 
   
-  void Clear()
-  {
+  void Clear() {
     for (ValueType& val : mCache) {
       val = ValueType{};
     }
@@ -119,49 +111,41 @@ public:
   
   
   
-  class Entry
-  {
-  public:
-    Entry(ValueType* aEntry, bool aMatch)
-        : mEntry(aEntry)
-        , mMatch(aMatch)
-    {
+  class Entry {
+   public:
+    Entry(ValueType* aEntry, bool aMatch) : mEntry(aEntry), mMatch(aMatch) {
       MOZ_ASSERT(mEntry);
     }
 
     explicit operator bool() const { return mMatch; }
 
-    ValueType& Data() const
-    {
+    ValueType& Data() const {
       MOZ_ASSERT(mMatch);
       return *mEntry;
     }
 
-    template<typename U>
-    void Set(U&& aValue)
-    {
+    template <typename U>
+    void Set(U&& aValue) {
       mMatch = true;
       Data() = std::forward<U>(aValue);
     }
 
-    void Remove()
-    {
+    void Remove() {
       if (mMatch) {
         Data() = ValueType{};
         mMatch = false;
       }
     }
 
-  private:
-    ValueType* mEntry; 
-    bool mMatch;       
+   private:
+    ValueType* mEntry;  
+    bool mMatch;        
   };
 
   
   
   
-  Entry Lookup(const KeyType& aKey)
-  {
+  Entry Lookup(const KeyType& aKey) {
     using EmptyChecker = detail::EmptyChecker<ValueType>;
 
     auto entry = RawEntry(aKey);
@@ -169,15 +153,14 @@ public:
     return Entry(entry, match);
   }
 
-private:
-    MOZ_ALWAYS_INLINE ValueType* RawEntry(const KeyType& aKey)
-    {
-      return &mCache[Cache::Hash(aKey) % Size];
-    }
+ private:
+  MOZ_ALWAYS_INLINE ValueType* RawEntry(const KeyType& aKey) {
+    return &mCache[Cache::Hash(aKey) % Size];
+  }
 
-    ValueType mCache[Size] = {};
+  ValueType mCache[Size] = {};
 };
 
-} 
+}  
 
-#endif 
+#endif  

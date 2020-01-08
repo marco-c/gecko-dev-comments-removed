@@ -17,13 +17,10 @@ struct MIDIOptions;
 
 
 
-class MIDIPermissionRequest final
-  : public ContentPermissionRequestBase,
-    public nsIRunnable
-{
-public:
-  MIDIPermissionRequest(nsPIDOMWindowInner* aWindow,
-                        Promise* aPromise,
+class MIDIPermissionRequest final : public ContentPermissionRequestBase,
+                                    public nsIRunnable {
+ public:
+  MIDIPermissionRequest(nsPIDOMWindowInner* aWindow, Promise* aPromise,
                         const MIDIOptions& aOptions);
 
   NS_DECL_ISUPPORTS_INHERITED
@@ -35,7 +32,7 @@ public:
   NS_IMETHOD Allow(JS::HandleValue choices) override;
   NS_IMETHOD GetTypes(nsIArray** aTypes) override;
 
-private:
+ private:
   ~MIDIPermissionRequest() = default;
 
   
@@ -44,7 +41,7 @@ private:
   bool mNeedsSysex;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -11,10 +11,12 @@ namespace mozilla {
 namespace dom {
 
 
-class HTMLImageElementOrSVGImageElementOrHTMLCanvasElementOrHTMLVideoElementOrImageBitmapOrBlobOrCanvasRenderingContext2DOrImageData;
-typedef HTMLImageElementOrSVGImageElementOrHTMLCanvasElementOrHTMLVideoElementOrImageBitmapOrBlobOrCanvasRenderingContext2DOrImageData ImageBitmapSource;
+class
+    HTMLImageElementOrSVGImageElementOrHTMLCanvasElementOrHTMLVideoElementOrImageBitmapOrBlobOrCanvasRenderingContext2DOrImageData;
+typedef HTMLImageElementOrSVGImageElementOrHTMLCanvasElementOrHTMLVideoElementOrImageBitmapOrBlobOrCanvasRenderingContext2DOrImageData
+    ImageBitmapSource;
 
-}
-}
+}  
+}  
 
 #endif

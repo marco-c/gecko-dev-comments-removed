@@ -26,47 +26,46 @@ class nsBlockFrame;
 class nsPresContext;
 class nsBlockInFlowLineIterator;
 struct nsSize;
-template<class T> class nsTHashtable;
+template <class T>
+class nsTHashtable;
 namespace mozilla {
 class ComputedStyle;
 class LogicalMargin;
 class WritingMode;
-} 
+}  
 
 
 
 
 
 
-struct nsFrameContinuationState : public nsVoidPtrHashKey
-{
-  explicit nsFrameContinuationState(const void *aFrame)
-    : nsVoidPtrHashKey(aFrame)
-  {}
+struct nsFrameContinuationState : public nsVoidPtrHashKey {
+  explicit nsFrameContinuationState(const void* aFrame)
+      : nsVoidPtrHashKey(aFrame) {}
 
   
 
 
 
-  nsIFrame* mFirstVisualFrame { nullptr };
+  nsIFrame* mFirstVisualFrame{nullptr};
 
   
 
 
 
-  uint32_t mFrameCount { 0 };
+  uint32_t mFrameCount{0};
 
   
 
 
 
-  bool mHasContOnPrevLines { false };
+  bool mHasContOnPrevLines{false};
 
   
 
 
 
-  bool mHasContOnNextLines { false };
+  bool mHasContOnNextLines{false};
 };
 
 
@@ -78,13 +77,14 @@ typedef nsTHashtable<nsFrameContinuationState> nsContinuationStates;
 
 
 
-struct nsBidiPositionResolve
-{
+struct nsBidiPositionResolve {
   
   int32_t logicalIndex;
   
   
   int32_t visualIndex;
+  
+  
   
   
   
@@ -95,7 +95,7 @@ struct nsBidiPositionResolve
 };
 
 class nsBidiPresUtils {
-public:
+ public:
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
   nsBidiPresUtils();
@@ -107,8 +107,8 @@ public:
 
 
   class BidiProcessor {
-  public:
-    virtual ~BidiProcessor() { }
+   public:
+    virtual ~BidiProcessor() {}
 
     
 
@@ -122,9 +122,8 @@ public:
 
 
 
-    virtual void SetText(const char16_t*   aText,
-                         int32_t           aLength,
-                         nsBidiDirection   aDirection) = 0;
+    virtual void SetText(const char16_t* aText, int32_t aLength,
+                         nsBidiDirection aDirection) = 0;
 
     
 
@@ -143,8 +142,7 @@ public:
 
 
 
-    virtual void DrawText(nscoord   aXOffset,
-                          nscoord   aWidth) = 0;
+    virtual void DrawText(nscoord aXOffset, nscoord aWidth) = 0;
   };
 
   
@@ -170,8 +168,7 @@ public:
   static nscoord ReorderFrames(nsIFrame* aFirstFrameOnLine,
                                int32_t aNumFramesOnLine,
                                mozilla::WritingMode aLineWM,
-                               const nsSize& aContainerSize,
-                               nscoord aStart);
+                               const nsSize& aContainerSize, nscoord aStart);
 
   
 
@@ -180,10 +177,9 @@ public:
 
 
 
-  static nsresult FormatUnicodeText(nsPresContext*  aPresContext,
-                                    char16_t*       aText,
-                                    int32_t&        aTextLength,
-                                    nsCharType      aCharType);
+  static nsresult FormatUnicodeText(nsPresContext* aPresContext,
+                                    char16_t* aText, int32_t& aTextLength,
+                                    nsCharType aCharType);
 
   
 
@@ -209,37 +205,30 @@ public:
 
 
 
-  static nsresult RenderText(const char16_t*       aText,
-                             int32_t                aLength,
-                             nsBidiLevel            aBaseLevel,
-                             nsPresContext*         aPresContext,
-                             gfxContext&            aRenderingContext,
-                             DrawTarget*            aTextRunConstructionDrawTarget,
-                             nsFontMetrics&         aFontMetrics,
-                             nscoord                aX,
-                             nscoord                aY,
-                             nsBidiPositionResolve* aPosResolve = nullptr,
-                             int32_t                aPosResolveCount = 0)
-  {
-    return ProcessTextForRenderingContext(aText, aLength, aBaseLevel, aPresContext, aRenderingContext,
-                                          aTextRunConstructionDrawTarget,
-                                          aFontMetrics,
-                                          MODE_DRAW, aX, aY, aPosResolve, aPosResolveCount, nullptr);
+
+
+  static nsresult RenderText(
+      const char16_t* aText, int32_t aLength, nsBidiLevel aBaseLevel,
+      nsPresContext* aPresContext, gfxContext& aRenderingContext,
+      DrawTarget* aTextRunConstructionDrawTarget, nsFontMetrics& aFontMetrics,
+      nscoord aX, nscoord aY, nsBidiPositionResolve* aPosResolve = nullptr,
+      int32_t aPosResolveCount = 0) {
+    return ProcessTextForRenderingContext(
+        aText, aLength, aBaseLevel, aPresContext, aRenderingContext,
+        aTextRunConstructionDrawTarget, aFontMetrics, MODE_DRAW, aX, aY,
+        aPosResolve, aPosResolveCount, nullptr);
   }
 
-  static nscoord MeasureTextWidth(const char16_t*     aText,
-                                  int32_t              aLength,
-                                  nsBidiLevel          aBaseLevel,
-                                  nsPresContext*       aPresContext,
-                                  gfxContext&          aRenderingContext,
-                                  nsFontMetrics&       aFontMetrics)
-  {
+  static nscoord MeasureTextWidth(const char16_t* aText, int32_t aLength,
+                                  nsBidiLevel aBaseLevel,
+                                  nsPresContext* aPresContext,
+                                  gfxContext& aRenderingContext,
+                                  nsFontMetrics& aFontMetrics) {
     nscoord length;
-    nsresult rv = ProcessTextForRenderingContext(aText, aLength, aBaseLevel, aPresContext,
-                                                 aRenderingContext,
-                                                 aRenderingContext.GetDrawTarget(),
-                                                 aFontMetrics,
-                                                 MODE_MEASURE, 0, 0, nullptr, 0, &length);
+    nsresult rv = ProcessTextForRenderingContext(
+        aText, aLength, aBaseLevel, aPresContext, aRenderingContext,
+        aRenderingContext.GetDrawTarget(), aFontMetrics, MODE_MEASURE, 0, 0,
+        nullptr, 0, &length);
     return NS_SUCCEEDED(rv) ? length : 0;
   }
 
@@ -251,10 +240,9 @@ public:
 
 
 
-  static bool CheckLineOrder(nsIFrame*  aFirstFrameOnLine,
-                               int32_t    aNumFramesOnLine,
-                               nsIFrame** aLeftmost,
-                               nsIFrame** aRightmost);
+  static bool CheckLineOrder(nsIFrame* aFirstFrameOnLine,
+                             int32_t aNumFramesOnLine, nsIFrame** aLeftmost,
+                             nsIFrame** aRightmost);
 
   
 
@@ -263,9 +251,9 @@ public:
 
 
 
-  static nsIFrame* GetFrameToRightOf(const nsIFrame*  aFrame,
-                                     nsIFrame*        aFirstFrameOnLine,
-                                     int32_t          aNumFramesOnLine);
+  static nsIFrame* GetFrameToRightOf(const nsIFrame* aFrame,
+                                     nsIFrame* aFirstFrameOnLine,
+                                     int32_t aNumFramesOnLine);
 
   
 
@@ -274,9 +262,9 @@ public:
 
 
 
-  static nsIFrame* GetFrameToLeftOf(const nsIFrame*  aFrame,
-                                    nsIFrame*        aFirstFrameOnLine,
-                                    int32_t          aNumFramesOnLine);
+  static nsIFrame* GetFrameToLeftOf(const nsIFrame* aFrame,
+                                    nsIFrame* aFirstFrameOnLine,
+                                    int32_t aNumFramesOnLine);
 
   static nsIFrame* GetFirstLeaf(nsIFrame* aFrame);
 
@@ -348,16 +336,13 @@ public:
 
 
 
-  static nsresult ProcessText(const char16_t*       aText,
-                              int32_t                aLength,
-                              nsBidiLevel            aBaseLevel,
-                              nsPresContext*         aPresContext,
-                              BidiProcessor&         aprocessor,
-                              Mode                   aMode,
+  static nsresult ProcessText(const char16_t* aText, int32_t aLength,
+                              nsBidiLevel aBaseLevel,
+                              nsPresContext* aPresContext,
+                              BidiProcessor& aprocessor, Mode aMode,
                               nsBidiPositionResolve* aPosResolve,
-                              int32_t                aPosResolveCount,
-                              nscoord*               aWidth,
-                              nsBidi*                aBidiEngine);
+                              int32_t aPosResolveCount, nscoord* aWidth,
+                              nsBidi* aBidiEngine);
 
   
 
@@ -373,21 +358,16 @@ public:
 
   static nsBidiLevel BidiLevelFromStyle(mozilla::ComputedStyle* aComputedStyle);
 
-private:
-  static nsresult
-  ProcessTextForRenderingContext(const char16_t*       aText,
-                                 int32_t                aLength,
-                                 nsBidiLevel            aBaseLevel,
-                                 nsPresContext*         aPresContext,
-                                 gfxContext&            aRenderingContext,
-                                 DrawTarget*            aTextRunConstructionDrawTarget,
-                                 nsFontMetrics&         aFontMetrics,
-                                 Mode                   aMode,
-                                 nscoord                aX, 
-                                 nscoord                aY, 
-                                 nsBidiPositionResolve* aPosResolve,  
-                                 int32_t                aPosResolveCount,
-                                 nscoord*               aWidth );
+ private:
+  static nsresult ProcessTextForRenderingContext(
+      const char16_t* aText, int32_t aLength, nsBidiLevel aBaseLevel,
+      nsPresContext* aPresContext, gfxContext& aRenderingContext,
+      DrawTarget* aTextRunConstructionDrawTarget, nsFontMetrics& aFontMetrics,
+      Mode aMode,
+      nscoord aX,                         
+      nscoord aY,                         
+      nsBidiPositionResolve* aPosResolve, 
+      int32_t aPosResolveCount, nscoord* aWidth );
 
   
 
@@ -398,8 +378,7 @@ private:
 
 
   static void TraverseFrames(nsBlockInFlowLineIterator* aLineIter,
-                             nsIFrame*                  aCurrentFrame,
-                             BidiParagraphData*         aBpd);
+                             nsIFrame* aCurrentFrame, BidiParagraphData* aBpd);
 
   
 
@@ -415,7 +394,7 @@ private:
 
 
 
-  static bool ChildListMayRequireBidi(nsIFrame*    aFirstChild,
+  static bool ChildListMayRequireBidi(nsIFrame* aFirstChild,
                                       nsIContent** aCurrContent);
 
   
@@ -423,52 +402,16 @@ private:
 
 
   static void RepositionRubyContentFrame(
-    nsIFrame* aFrame, mozilla::WritingMode aFrameWM,
-    const mozilla::LogicalMargin& aBorderPadding);
+      nsIFrame* aFrame, mozilla::WritingMode aFrameWM,
+      const mozilla::LogicalMargin& aBorderPadding);
 
   
 
 
   static nscoord RepositionRubyFrame(
-    nsIFrame* aFrame,
-    const nsContinuationStates* aContinuationStates,
-    const mozilla::WritingMode aContainerWM,
-    const mozilla::LogicalMargin& aBorderPadding);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static nscoord RepositionFrame(nsIFrame* aFrame,
-                                 bool aIsEvenLevel,
-                                 nscoord aStartOrEnd,
-                                 const nsContinuationStates* aContinuationStates,
-                                 mozilla::WritingMode aContainerWM,
-                                 bool aContainerReverseOrder,
-                                 const nsSize& aContainerSize);
-
-  
-
-
-
-
-
-
-
-  static void InitContinuationStates(nsIFrame*              aFrame,
-                                     nsContinuationStates*  aContinuationStates);
+      nsIFrame* aFrame, const nsContinuationStates* aContinuationStates,
+      const mozilla::WritingMode aContainerWM,
+      const mozilla::LogicalMargin& aBorderPadding);
 
   
 
@@ -487,6 +430,13 @@ private:
 
 
 
+  static nscoord RepositionFrame(
+      nsIFrame* aFrame, bool aIsEvenLevel, nscoord aStartOrEnd,
+      const nsContinuationStates* aContinuationStates,
+      mozilla::WritingMode aContainerWM, bool aContainerReverseOrder,
+      const nsSize& aContainerSize);
+
+  
 
 
 
@@ -494,11 +444,38 @@ private:
 
 
 
-   static void IsFirstOrLast(nsIFrame* aFrame,
-                             const nsContinuationStates* aContinuationStates,
-                             bool aSpanInLineOrder ,
-                             bool& aIsFirst ,
-                             bool& aIsLast );
+
+  static void InitContinuationStates(nsIFrame* aFrame,
+                                     nsContinuationStates* aContinuationStates);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  static void IsFirstOrLast(nsIFrame* aFrame,
+                            const nsContinuationStates* aContinuationStates,
+                            bool aSpanInLineOrder ,
+                            bool& aIsFirst , bool& aIsLast );
 
   
 
@@ -527,11 +504,9 @@ private:
 
 
 
-  static inline
-  nsresult EnsureBidiContinuation(nsIFrame*       aFrame,
-                                  nsIFrame**      aNewFrame,
-                                  int32_t         aStart,
-                                  int32_t         aEnd);
+  static inline nsresult EnsureBidiContinuation(nsIFrame* aFrame,
+                                                nsIFrame** aNewFrame,
+                                                int32_t aStart, int32_t aEnd);
 
   
 
@@ -544,22 +519,15 @@ private:
 
 
 
-  static void RemoveBidiContinuation(BidiParagraphData* aBpd,
-                                     nsIFrame*          aFrame,
-                                     int32_t            aFirstIndex,
-                                     int32_t            aLastIndex);
-  static void CalculateCharType(nsBidi*          aBidiEngine,
-                                const char16_t* aText,
-                                int32_t&         aOffset,
-                                int32_t          aCharTypeLimit,
-                                int32_t&         aRunLimit,
-                                int32_t&         aRunLength,
-                                int32_t&         aRunCount,
-                                uint8_t&         aCharType,
-                                uint8_t&         aPrevCharType);
+  static void RemoveBidiContinuation(BidiParagraphData* aBpd, nsIFrame* aFrame,
+                                     int32_t aFirstIndex, int32_t aLastIndex);
+  static void CalculateCharType(nsBidi* aBidiEngine, const char16_t* aText,
+                                int32_t& aOffset, int32_t aCharTypeLimit,
+                                int32_t& aRunLimit, int32_t& aRunLength,
+                                int32_t& aRunCount, uint8_t& aCharType,
+                                uint8_t& aPrevCharType);
 
-  static void StripBidiControlCharacters(char16_t* aText,
-                                         int32_t&   aTextLength);
+  static void StripBidiControlCharacters(char16_t* aText, int32_t& aTextLength);
 };
 
 #endif 

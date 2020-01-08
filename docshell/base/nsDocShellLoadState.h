@@ -23,9 +23,8 @@ class OriginAttibutes;
 
 
 
-class nsDocShellLoadState final
-{
-public:
+class nsDocShellLoadState final {
+ public:
   NS_INLINE_DECL_REFCOUNTING(nsDocShellLoadState);
 
   nsDocShellLoadState();
@@ -128,11 +127,12 @@ public:
 
   
   
-  void
-  GetMaybeResultPrincipalURI(mozilla::Maybe<nsCOMPtr<nsIURI>>& aRPURI) const;
+  
+  void GetMaybeResultPrincipalURI(
+      mozilla::Maybe<nsCOMPtr<nsIURI>>& aRPURI) const;
 
-  void
-  SetMaybeResultPrincipalURI(mozilla::Maybe<nsCOMPtr<nsIURI>> const& aRPURI);
+  void SetMaybeResultPrincipalURI(
+      mozilla::Maybe<nsCOMPtr<nsIURI>> const& aRPURI);
 
   uint32_t LoadFlags() const;
 
@@ -159,26 +159,33 @@ public:
   
   
   
-  nsresult SetupInheritingPrincipal(uint32_t aItemType, const mozilla::OriginAttributes& aOriginAttributes);
+  nsresult SetupInheritingPrincipal(
+      uint32_t aItemType, const mozilla::OriginAttributes& aOriginAttributes);
 
   
   
-  nsresult SetupTriggeringPrincipal(const mozilla::OriginAttributes& aOriginAttributes);
+  nsresult SetupTriggeringPrincipal(
+      const mozilla::OriginAttributes& aOriginAttributes);
 
-  void SetIsFromProcessingFrameAttributes() { mIsFromProcessingFrameAttributes = true; }
-  bool GetIsFromProcessingFrameAttributes() { return mIsFromProcessingFrameAttributes; }
+  void SetIsFromProcessingFrameAttributes() {
+    mIsFromProcessingFrameAttributes = true;
+  }
+  bool GetIsFromProcessingFrameAttributes() {
+    return mIsFromProcessingFrameAttributes;
+  }
 
   
   
   
   
   void CalculateDocShellInternalLoadFlags();
-protected:
+
+ protected:
   
   
   ~nsDocShellLoadState();
 
-protected:
+ protected:
   
   nsCOMPtr<nsIURI> mReferrer;
 

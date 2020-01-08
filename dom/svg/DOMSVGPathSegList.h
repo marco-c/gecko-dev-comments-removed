@@ -12,7 +12,7 @@
 #include "nsDebug.h"
 #include "nsSVGElement.h"
 #include "nsTArray.h"
-#include "SVGPathData.h" 
+#include "SVGPathData.h"  
 #include "mozilla/Attributes.h"
 #include "mozilla/ErrorResult.h"
 
@@ -46,22 +46,18 @@ class SVGAnimatedPathSegList;
 
 
 
-class DOMSVGPathSegList final : public nsISupports,
-                                public nsWrapperCache
-{
+class DOMSVGPathSegList final : public nsISupports, public nsWrapperCache {
   friend class AutoChangePathSegListNotifier;
   friend class DOMSVGPathSeg;
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGPathSegList)
 
-  virtual JSObject* WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* cx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-  nsISupports* GetParentObject()
-  {
-    return static_cast<nsIContent*>(mElement);
-  }
+  nsISupports* GetParentObject() { return static_cast<nsIContent*>(mElement); }
 
   
 
@@ -80,27 +76,24 @@ public:
 
 
 
-  static already_AddRefed<DOMSVGPathSegList>
-  GetDOMWrapper(void *aList,
-                nsSVGElement *aElement,
-                bool aIsAnimValList);
+  static already_AddRefed<DOMSVGPathSegList> GetDOMWrapper(
+      void* aList, nsSVGElement* aElement, bool aIsAnimValList);
 
   
 
 
 
 
-  static DOMSVGPathSegList*
-  GetDOMWrapperIfExists(void *aList);
+  static DOMSVGPathSegList* GetDOMWrapperIfExists(void* aList);
 
   
 
 
 
   uint32_t LengthNoFlush() const {
-    MOZ_ASSERT(mItems.Length() == 0 ||
-               mItems.Length() == InternalList().CountItems(),
-               "DOM wrapper's list length is out of sync");
+    MOZ_ASSERT(
+        mItems.Length() == 0 || mItems.Length() == InternalList().CountItems(),
+        "DOM wrapper's list length is out of sync");
     return mItems.Length();
   }
 
@@ -132,8 +125,7 @@ public:
 
   bool AnimListMirrorsBaseList() const;
 
-  uint32_t NumberOfItems() const
-  {
+  uint32_t NumberOfItems() const {
     if (IsAnimValList()) {
       Element()->FlushAnimations();
     }
@@ -142,8 +134,7 @@ public:
   void Clear(ErrorResult& aError);
   already_AddRefed<DOMSVGPathSeg> Initialize(DOMSVGPathSeg& aNewItem,
                                              ErrorResult& aError);
-  already_AddRefed<DOMSVGPathSeg> GetItem(uint32_t index,
-                                          ErrorResult& error);
+  already_AddRefed<DOMSVGPathSeg> GetItem(uint32_t index, ErrorResult& error);
   already_AddRefed<DOMSVGPathSeg> IndexedGetter(uint32_t index, bool& found,
                                                 ErrorResult& error);
   already_AddRefed<DOMSVGPathSeg> InsertItemBefore(DOMSVGPathSeg& aNewItem,
@@ -155,38 +146,27 @@ public:
   already_AddRefed<DOMSVGPathSeg> RemoveItem(uint32_t aIndex,
                                              ErrorResult& aError);
   already_AddRefed<DOMSVGPathSeg> AppendItem(DOMSVGPathSeg& aNewItem,
-                                             ErrorResult& aError)
-  {
+                                             ErrorResult& aError) {
     return InsertItemBefore(aNewItem, LengthNoFlush(), aError);
   }
-  uint32_t Length() const
-  {
-    return NumberOfItems();
-  }
+  uint32_t Length() const { return NumberOfItems(); }
 
-private:
-
+ private:
   
 
 
 
-  DOMSVGPathSegList(nsSVGElement *aElement, bool aIsAnimValList)
-    : mElement(aElement)
-    , mIsAnimValList(aIsAnimValList)
-  {
-    InternalListWillChangeTo(InternalList()); 
+  DOMSVGPathSegList(nsSVGElement* aElement, bool aIsAnimValList)
+      : mElement(aElement), mIsAnimValList(aIsAnimValList) {
+    InternalListWillChangeTo(InternalList());  
   }
 
   ~DOMSVGPathSegList();
 
-  nsSVGElement* Element() const {
-    return mElement.get();
-  }
+  nsSVGElement* Element() const { return mElement.get(); }
 
   
-  bool IsAnimValList() const {
-    return mIsAnimValList;
-  }
+  bool IsAnimValList() const { return mIsAnimValList; }
 
   
 
@@ -204,8 +184,7 @@ private:
   
   already_AddRefed<DOMSVGPathSeg> GetItemAt(uint32_t aIndex);
 
-  void MaybeInsertNullInAnimValListAt(uint32_t aIndex,
-                                      uint32_t aInternalIndex,
+  void MaybeInsertNullInAnimValListAt(uint32_t aIndex, uint32_t aInternalIndex,
                                       uint32_t aArgCountForItem);
   void MaybeRemoveItemFromAnimValListAt(uint32_t aIndex,
                                         int32_t aArgCountForItem);
@@ -214,11 +193,9 @@ private:
   
   
   void UpdateListIndicesFromIndex(uint32_t aStartingIndex,
-                                  int32_t  aInternalDataIndexDelta);
+                                  int32_t aInternalDataIndexDelta);
 
-  DOMSVGPathSeg*& ItemAt(uint32_t aIndex) {
-    return mItems[aIndex].mItem;
-  }
+  DOMSVGPathSeg*& ItemAt(uint32_t aIndex) { return mItems[aIndex].mItem; }
 
   
 
@@ -230,16 +207,11 @@ private:
 
 
   struct ItemProxy {
-    ItemProxy()
-      : mItem(nullptr)
-      , mInternalDataIndex(0)
-    {}
-    ItemProxy(DOMSVGPathSeg *aItem, uint32_t aInternalDataIndex)
-      : mItem(aItem)
-      , mInternalDataIndex(aInternalDataIndex)
-    {}
+    ItemProxy() : mItem(nullptr), mInternalDataIndex(0) {}
+    ItemProxy(DOMSVGPathSeg* aItem, uint32_t aInternalDataIndex)
+        : mItem(aItem), mInternalDataIndex(aInternalDataIndex) {}
 
-    DOMSVGPathSeg *mItem;
+    DOMSVGPathSeg* mItem;
     uint32_t mInternalDataIndex;
   };
 
@@ -254,6 +226,6 @@ private:
   bool mIsAnimValList;
 };
 
-} 
+}  
 
-#endif 
+#endif  

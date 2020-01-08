@@ -22,17 +22,17 @@ static constexpr ValueOperand R2(esi, edi);
 
 
 
-static constexpr Register ICTailCallReg       = esi;
-static constexpr Register ICStubReg           = edi;
+static constexpr Register ICTailCallReg = esi;
+static constexpr Register ICStubReg = edi;
 
-static constexpr Register ExtractTemp0        = InvalidReg;
-static constexpr Register ExtractTemp1        = InvalidReg;
+static constexpr Register ExtractTemp0 = InvalidReg;
+static constexpr Register ExtractTemp1 = InvalidReg;
 
 
-static constexpr FloatRegister FloatReg0      = xmm0;
-static constexpr FloatRegister FloatReg1      = xmm1;
+static constexpr FloatRegister FloatReg0 = xmm0;
+static constexpr FloatRegister FloatReg1 = xmm1;
 
-} 
-} 
+}  
+}  
 
 #endif 

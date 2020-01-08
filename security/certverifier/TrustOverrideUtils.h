@@ -18,16 +18,15 @@ struct DataAndLength {
   uint32_t len;
 };
 
-template<size_t T>
-static bool
-CertDNIsInList(const CERTCertificate* aCert, const DataAndLength (&aDnList)[T])
-{
+template <size_t T>
+static bool CertDNIsInList(const CERTCertificate* aCert,
+                           const DataAndLength (&aDnList)[T]) {
   MOZ_ASSERT(aCert);
   if (!aCert) {
     return false;
   }
 
-  for (auto& dn: aDnList) {
+  for (auto& dn : aDnList) {
     if (aCert->derSubject.len == dn.len &&
         mozilla::ArrayEqual(aCert->derSubject.data, dn.data, dn.len)) {
       return true;
@@ -36,16 +35,15 @@ CertDNIsInList(const CERTCertificate* aCert, const DataAndLength (&aDnList)[T])
   return false;
 }
 
-template<size_t T>
-static bool
-CertSPKIIsInList(const CERTCertificate* aCert, const DataAndLength (&aSpkiList)[T])
-{
+template <size_t T>
+static bool CertSPKIIsInList(const CERTCertificate* aCert,
+                             const DataAndLength (&aSpkiList)[T]) {
   MOZ_ASSERT(aCert);
   if (!aCert) {
     return false;
   }
 
-  for (auto& spki: aSpkiList) {
+  for (auto& spki : aSpkiList) {
     if (aCert->derPublicKey.len == spki.len &&
         mozilla::ArrayEqual(aCert->derPublicKey.data, spki.data, spki.len)) {
       return true;
@@ -54,11 +52,10 @@ CertSPKIIsInList(const CERTCertificate* aCert, const DataAndLength (&aSpkiList)[
   return false;
 }
 
-template<size_t T, size_t R>
-static bool
-CertMatchesStaticData(const CERTCertificate* cert,
-                      const unsigned char (&subject)[T],
-                      const unsigned char (&spki)[R]) {
+template <size_t T, size_t R>
+static bool CertMatchesStaticData(const CERTCertificate* cert,
+                                  const unsigned char (&subject)[T],
+                                  const unsigned char (&spki)[R]) {
   MOZ_ASSERT(cert);
   if (!cert) {
     return false;
@@ -79,51 +76,49 @@ CertMatchesStaticData(const CERTCertificate* cert,
 
 
 
-template<size_t T>
-static nsresult
-CheckForSymantecDistrust(const nsCOMPtr<nsIX509CertList>& intCerts,
-                         const nsCOMPtr<nsIX509Cert>& eeCert,
-                         const PRTime& permitAfterDate,
-                         const DataAndLength (&whitelist)[T],
-                          bool& isDistrusted)
-{
-    
-    
+template <size_t T>
+static nsresult CheckForSymantecDistrust(
+    const nsCOMPtr<nsIX509CertList>& intCerts,
+    const nsCOMPtr<nsIX509Cert>& eeCert, const PRTime& permitAfterDate,
+    const DataAndLength (&whitelist)[T],
+     bool& isDistrusted) {
+  
+  
 
+  
+  
+
+  isDistrusted = true;
+
+  
+  if (permitAfterDate > 0) {
     
-    
+    nsCOMPtr<nsIX509CertValidity> validity;
+    nsresult rv = eeCert->GetValidity(getter_AddRefs(validity));
+    if (NS_FAILED(rv)) {
+      return rv;
+    }
 
-    isDistrusted = true;
-
-    
-    if (permitAfterDate > 0) {
-      
-      nsCOMPtr<nsIX509CertValidity> validity;
-      nsresult rv = eeCert->GetValidity(getter_AddRefs(validity));
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-
-      PRTime notBefore;
-      rv = validity->GetNotBefore(&notBefore);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-
-      
-      
-      if (notBefore >= permitAfterDate) {
-        isDistrusted = false;
-        return NS_OK;
-      }
+    PRTime notBefore;
+    rv = validity->GetNotBefore(&notBefore);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
 
     
-    RefPtr<nsNSSCertList> intCertList = intCerts->GetCertList();
+    
+    if (notBefore >= permitAfterDate) {
+      isDistrusted = false;
+      return NS_OK;
+    }
+  }
 
-    return intCertList->ForEachCertificateInChain(
-      [&isDistrusted, &whitelist] (nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
-                                    bool& aContinue) {
+  
+  RefPtr<nsNSSCertList> intCertList = intCerts->GetCertList();
+
+  return intCertList->ForEachCertificateInChain(
+      [&isDistrusted, &whitelist](nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
+                                   bool& aContinue) {
         
         UniqueCERTCertificate nssCert(aCert->GetCert());
         if (CertSPKIIsInList(nssCert.get(), whitelist)) {
@@ -132,7 +127,7 @@ CheckForSymantecDistrust(const nsCOMPtr<nsIX509CertList>& intCerts,
           aContinue = false;
         }
         return NS_OK;
-    });
+      });
 }
 
-#endif 
+#endif  

@@ -17,73 +17,59 @@
 namespace mozilla {
 
 namespace dom {
-  class PBrowserParent;
-  class PBrowserChild;
-} 
+class PBrowserParent;
+class PBrowserChild;
+}  
 
 
 
 
 
-class WidgetContentCommandEvent : public WidgetGUIEvent
-{
-public:
-  virtual WidgetContentCommandEvent* AsContentCommandEvent() override
-  {
+class WidgetContentCommandEvent : public WidgetGUIEvent {
+ public:
+  virtual WidgetContentCommandEvent* AsContentCommandEvent() override {
     return this;
   }
 
   WidgetContentCommandEvent(bool aIsTrusted, EventMessage aMessage,
-                            nsIWidget* aWidget,
-                            bool aOnlyEnabledCheck = false)
-    : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, eContentCommandEventClass)
-    , mOnlyEnabledCheck(aOnlyEnabledCheck)
-    , mSucceeded(false)
-    , mIsEnabled(false)
-  {
-  }
+                            nsIWidget* aWidget, bool aOnlyEnabledCheck = false)
+      : WidgetGUIEvent(aIsTrusted, aMessage, aWidget,
+                       eContentCommandEventClass),
+        mOnlyEnabledCheck(aOnlyEnabledCheck),
+        mSucceeded(false),
+        mIsEnabled(false) {}
 
-  virtual WidgetEvent* Duplicate() const override
-  {
+  virtual WidgetEvent* Duplicate() const override {
     
     NS_ASSERTION(!IsAllowedToDispatchDOMEvent(),
-      "WidgetQueryContentEvent needs to support Duplicate()");
+                 "WidgetQueryContentEvent needs to support Duplicate()");
     MOZ_CRASH("WidgetQueryContentEvent doesn't support Duplicate()");
     return nullptr;
   }
 
   
-  nsCOMPtr<nsITransferable> mTransferable; 
+  nsCOMPtr<nsITransferable> mTransferable;  
 
   
   
-  enum
-  {
-    eCmdScrollUnit_Line,
-    eCmdScrollUnit_Page,
-    eCmdScrollUnit_Whole
-  };
+  enum { eCmdScrollUnit_Line, eCmdScrollUnit_Page, eCmdScrollUnit_Whole };
 
-  struct ScrollInfo
-  {
-    ScrollInfo() :
-      mAmount(0), mUnit(eCmdScrollUnit_Line), mIsHorizontal(false)
-    {
-    }
+  struct ScrollInfo {
+    ScrollInfo()
+        : mAmount(0), mUnit(eCmdScrollUnit_Line), mIsHorizontal(false) {}
 
-    int32_t mAmount;    
-    uint8_t mUnit;      
-    bool mIsHorizontal; 
+    int32_t mAmount;     
+    uint8_t mUnit;       
+    bool mIsHorizontal;  
   } mScroll;
 
-  bool mOnlyEnabledCheck; 
+  bool mOnlyEnabledCheck;  
 
-  bool mSucceeded; 
-  bool mIsEnabled; 
+  bool mSucceeded;  
+  bool mIsEnabled;  
 
   void AssignContentCommandEventData(const WidgetContentCommandEvent& aEvent,
-                                     bool aCopyTargets)
-  {
+                                     bool aCopyTargets) {
     AssignGUIEventData(aEvent, aCopyTargets);
 
     mScroll = aEvent.mScroll;
@@ -102,47 +88,39 @@ public:
 
 
 
-class WidgetCommandEvent : public WidgetGUIEvent
-{
-public:
+class WidgetCommandEvent : public WidgetGUIEvent {
+ public:
   virtual WidgetCommandEvent* AsCommandEvent() override { return this; }
 
-protected:
-  WidgetCommandEvent(bool aIsTrusted, nsAtom* aEventType,
-                     nsAtom* aCommand, nsIWidget* aWidget)
-    : WidgetGUIEvent(aIsTrusted, eUnidentifiedEvent, aWidget,
-                     eCommandEventClass)
-    , mCommand(aCommand)
-  {
+ protected:
+  WidgetCommandEvent(bool aIsTrusted, nsAtom* aEventType, nsAtom* aCommand,
+                     nsIWidget* aWidget)
+      : WidgetGUIEvent(aIsTrusted, eUnidentifiedEvent, aWidget,
+                       eCommandEventClass),
+        mCommand(aCommand) {
     mSpecifiedEventType = aEventType;
   }
 
-public:
+ public:
   
 
 
 
   WidgetCommandEvent(bool aIsTrusted, nsAtom* aCommand, nsIWidget* aWidget)
-    : WidgetCommandEvent(aIsTrusted, nsGkAtoms::onAppCommand,
-                         aCommand, aWidget)
-  {
-  }
+      : WidgetCommandEvent(aIsTrusted, nsGkAtoms::onAppCommand, aCommand,
+                           aWidget) {}
 
   
 
 
-  WidgetCommandEvent()
-    : WidgetCommandEvent(false, nullptr, nullptr, nullptr)
-  {
-  }
+  WidgetCommandEvent() : WidgetCommandEvent(false, nullptr, nullptr, nullptr) {}
 
-  virtual WidgetEvent* Duplicate() const override
-  {
+  virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eCommandEventClass,
                "Duplicate() must be overridden by sub class");
     
     WidgetCommandEvent* result =
-      new WidgetCommandEvent(false, mSpecifiedEventType, mCommand, nullptr);
+        new WidgetCommandEvent(false, mSpecifiedEventType, mCommand, nullptr);
     result->AssignCommandEventData(*this, true);
     result->mFlags = mFlags;
     return result;
@@ -152,8 +130,7 @@ public:
 
   
   void AssignCommandEventData(const WidgetCommandEvent& aEvent,
-                              bool aCopyTargets)
-  {
+                              bool aCopyTargets) {
     AssignGUIEventData(aEvent, aCopyTargets);
 
     
@@ -166,23 +143,19 @@ public:
 
 
 
-class WidgetPluginEvent : public WidgetGUIEvent
-{
-private:
+class WidgetPluginEvent : public WidgetGUIEvent {
+ private:
   friend class dom::PBrowserParent;
   friend class dom::PBrowserChild;
 
-public:
+ public:
   virtual WidgetPluginEvent* AsPluginEvent() override { return this; }
 
   WidgetPluginEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget)
-    : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, ePluginEventClass)
-    , mRetargetToFocusedDocument(false)
-  {
-  }
+      : WidgetGUIEvent(aIsTrusted, aMessage, aWidget, ePluginEventClass),
+        mRetargetToFocusedDocument(false) {}
 
-  virtual WidgetEvent* Duplicate() const override
-  {
+  virtual WidgetEvent* Duplicate() const override {
     
     
     MOZ_ASSERT(mClass == ePluginEventClass,
@@ -199,20 +172,16 @@ public:
   bool mRetargetToFocusedDocument;
 
   void AssignPluginEventData(const WidgetPluginEvent& aEvent,
-                             bool aCopyTargets)
-  {
+                             bool aCopyTargets) {
     AssignGUIEventData(aEvent, aCopyTargets);
 
     mRetargetToFocusedDocument = aEvent.mRetargetToFocusedDocument;
   }
 
-protected:
-  WidgetPluginEvent()
-    : mRetargetToFocusedDocument(false)
-  {
-  }
+ protected:
+  WidgetPluginEvent() : mRetargetToFocusedDocument(false) {}
 };
 
-} 
+}  
 
-#endif 
+#endif  

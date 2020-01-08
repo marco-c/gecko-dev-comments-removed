@@ -80,8 +80,8 @@ Float GetBezierLength(const Bezier& aBezier, Float a, Float b);
 
 
 
-void GetSubBezier(Bezier* aSubBezier, const Bezier& aBezier,
-                  Float t1, Float t2);
+void GetSubBezier(Bezier* aSubBezier, const Bezier& aBezier, Float t1,
+                  Float t2);
 
 
 
@@ -105,7 +105,7 @@ void GetSubBezier(Bezier* aSubBezier, const Bezier& aBezier,
 
 
 Point FindBezierNearestPoint(const Bezier& aBezier, const Point& aTarget,
-                             Float aInitialT, Float* aT=nullptr);
+                             Float aInitialT, Float* aT = nullptr);
 
 
 
@@ -177,10 +177,10 @@ Float GetQuarterEllipticArcLength(Float a, Float b);
 
 
 Float CalculateDistanceToEllipticArc(const Point& P, const Point& normal,
-                                     const Point& origin,
-                                     Float width, Float height);
+                                     const Point& origin, Float width,
+                                     Float height);
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -7,7 +7,7 @@
 #include "ScriptedNotificationObserver.h"
 #include "imgIScriptedNotificationObserver.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsContentUtils.h"                     
+#include "nsContentUtils.h"  
 
 namespace mozilla {
 namespace image {
@@ -24,14 +24,11 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(ScriptedNotificationObserver)
 
 ScriptedNotificationObserver::ScriptedNotificationObserver(
     imgIScriptedNotificationObserver* aInner)
-: mInner(aInner)
-{ }
+    : mInner(aInner) {}
 
 NS_IMETHODIMP
-ScriptedNotificationObserver::Notify(imgIRequest* aRequest,
-                                     int32_t aType,
-                                     const nsIntRect* )
-{
+ScriptedNotificationObserver::Notify(imgIRequest* aRequest, int32_t aType,
+                                     const nsIntRect* ) {
   
   
   
@@ -66,5 +63,5 @@ ScriptedNotificationObserver::Notify(imgIRequest* aRequest,
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

@@ -16,13 +16,12 @@ namespace net {
 
 
 
-class nsStreamListenerWrapper final : public nsIStreamListener
-                                    , public nsIThreadRetargetableStreamListener
-{
-public:
+class nsStreamListenerWrapper final
+    : public nsIStreamListener,
+      public nsIThreadRetargetableStreamListener {
+ public:
   explicit nsStreamListenerWrapper(nsIStreamListener *listener)
-    : mListener(listener)
-  {
+      : mListener(listener) {
     MOZ_ASSERT(mListener, "no stream listener specified");
   }
 
@@ -31,13 +30,12 @@ public:
   NS_FORWARD_SAFE_NSISTREAMLISTENER(mListener)
   NS_DECL_NSITHREADRETARGETABLESTREAMLISTENER
 
-private:
+ private:
   ~nsStreamListenerWrapper() = default;
   nsCOMPtr<nsIStreamListener> mListener;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

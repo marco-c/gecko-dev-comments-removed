@@ -20,32 +20,26 @@
 using mozilla::IsAsciiAlpha;
 using mozilla::IsAsciiDigit;
 
-bool
-SingleLineTextInputTypeBase::IsMutable() const
-{
+bool SingleLineTextInputTypeBase::IsMutable() const {
   return !mInputElement->IsDisabled() &&
          !mInputElement->HasAttr(kNameSpaceID_None, nsGkAtoms::readonly);
 }
 
-bool
-SingleLineTextInputTypeBase::IsTooLong() const
-{
+bool SingleLineTextInputTypeBase::IsTooLong() const {
   int32_t maxLength = mInputElement->MaxLength();
 
   
   if (maxLength == -1) {
-   return false;
+    return false;
   }
 
   int32_t textLength =
-    mInputElement->InputTextLength(mozilla::dom::CallerType::System);
+      mInputElement->InputTextLength(mozilla::dom::CallerType::System);
 
   return textLength > maxLength;
 }
 
-bool
-SingleLineTextInputTypeBase::IsTooShort() const
-{
+bool SingleLineTextInputTypeBase::IsTooShort() const {
   int32_t minLength = mInputElement->MinLength();
 
   
@@ -54,14 +48,12 @@ SingleLineTextInputTypeBase::IsTooShort() const
   }
 
   int32_t textLength =
-    mInputElement->InputTextLength(mozilla::dom::CallerType::System);
+      mInputElement->InputTextLength(mozilla::dom::CallerType::System);
 
   return textLength && textLength < minLength;
 }
 
-bool
-SingleLineTextInputTypeBase::IsValueMissing() const
-{
+bool SingleLineTextInputTypeBase::IsValueMissing() const {
   if (!mInputElement->IsRequired()) {
     return false;
   }
@@ -73,9 +65,7 @@ SingleLineTextInputTypeBase::IsValueMissing() const
   return IsValueEmpty();
 }
 
-bool
-SingleLineTextInputTypeBase::HasPatternMismatch() const
-{
+bool SingleLineTextInputTypeBase::HasPatternMismatch() const {
   if (!mInputElement->HasPatternAttribute()) {
     return false;
   }
@@ -99,9 +89,7 @@ SingleLineTextInputTypeBase::HasPatternMismatch() const
 
 
 
-bool
-URLInputType::HasTypeMismatch() const
-{
+bool URLInputType::HasTypeMismatch() const {
   nsAutoString value;
   GetNonFileValueInternal(value);
 
@@ -125,22 +113,16 @@ URLInputType::HasTypeMismatch() const
 
   return !NS_SUCCEEDED(ioService->NewURI(NS_ConvertUTF16toUTF8(value), nullptr,
                                          nullptr, getter_AddRefs(uri)));
-
 }
 
-nsresult
-URLInputType::GetTypeMismatchMessage(nsAString& aMessage)
-{
-  return nsContentUtils::GetLocalizedString(nsContentUtils::eDOM_PROPERTIES,
-                                            "FormValidationInvalidURL",
-                                            aMessage);
+nsresult URLInputType::GetTypeMismatchMessage(nsAString& aMessage) {
+  return nsContentUtils::GetLocalizedString(
+      nsContentUtils::eDOM_PROPERTIES, "FormValidationInvalidURL", aMessage);
 }
 
 
 
-bool
-EmailInputType::HasTypeMismatch() const
-{
+bool EmailInputType::HasTypeMismatch() const {
   nsAutoString value;
   GetNonFileValueInternal(value);
 
@@ -148,13 +130,12 @@ EmailInputType::HasTypeMismatch() const
     return false;
   }
 
-  return mInputElement->HasAttr(kNameSpaceID_None, nsGkAtoms::multiple) ?
-    !IsValidEmailAddressList(value) : !IsValidEmailAddress(value);
+  return mInputElement->HasAttr(kNameSpaceID_None, nsGkAtoms::multiple)
+             ? !IsValidEmailAddressList(value)
+             : !IsValidEmailAddress(value);
 }
 
-bool
-EmailInputType::HasBadInput() const
-{
+bool EmailInputType::HasBadInput() const {
   
   
   
@@ -172,25 +153,18 @@ EmailInputType::HasBadInput() const
   return false;
 }
 
-nsresult
-EmailInputType::GetTypeMismatchMessage(nsAString& aMessage)
-{
-  return nsContentUtils::GetLocalizedString(nsContentUtils::eDOM_PROPERTIES,
-                                            "FormValidationInvalidEmail",
-                                            aMessage);
+nsresult EmailInputType::GetTypeMismatchMessage(nsAString& aMessage) {
+  return nsContentUtils::GetLocalizedString(
+      nsContentUtils::eDOM_PROPERTIES, "FormValidationInvalidEmail", aMessage);
 }
 
-nsresult
-EmailInputType::GetBadInputMessage(nsAString& aMessage)
-{
-  return nsContentUtils::GetLocalizedString(nsContentUtils::eDOM_PROPERTIES,
-                                            "FormValidationInvalidEmail",
-                                            aMessage);
+nsresult EmailInputType::GetBadInputMessage(nsAString& aMessage) {
+  return nsContentUtils::GetLocalizedString(
+      nsContentUtils::eDOM_PROPERTIES, "FormValidationInvalidEmail", aMessage);
 }
 
- bool
-EmailInputType::IsValidEmailAddressList(const nsAString& aValue)
-{
+ bool EmailInputType::IsValidEmailAddressList(
+    const nsAString& aValue) {
   HTMLSplitOnSpacesTokenizer tokenizer(aValue, ',');
 
   while (tokenizer.hasMoreTokens()) {
@@ -202,9 +176,7 @@ EmailInputType::IsValidEmailAddressList(const nsAString& aValue)
   return !tokenizer.separatorAfterCurrentToken();
 }
 
- bool
-EmailInputType::IsValidEmailAddress(const nsAString& aValue)
-{
+ bool EmailInputType::IsValidEmailAddress(const nsAString& aValue) {
   
   if (aValue.IsEmpty() || aValue.Last() == '.' || aValue.Last() == '-') {
     return false;
@@ -213,7 +185,8 @@ EmailInputType::IsValidEmailAddress(const nsAString& aValue)
   uint32_t atPos;
   nsAutoCString value;
   if (!PunycodeEncodeEmailAddress(aValue, value, &atPos) ||
-      atPos == (uint32_t)kNotFound || atPos == 0 || atPos == value.Length() - 1) {
+      atPos == (uint32_t)kNotFound || atPos == 0 ||
+      atPos == value.Length() - 1) {
     
     
     return false;
@@ -227,11 +200,11 @@ EmailInputType::IsValidEmailAddress(const nsAString& aValue)
     char16_t c = value[i];
 
     
-    if (!(IsAsciiAlpha(c) || IsAsciiDigit(c) ||
-          c == '.' || c == '!' || c == '#' || c == '$' || c == '%' ||
-          c == '&' || c == '\''|| c == '*' || c == '+' || c == '-' ||
-          c == '/' || c == '=' || c == '?' || c == '^' || c == '_' ||
-          c == '`' || c == '{' || c == '|' || c == '}' || c == '~' )) {
+    if (!(IsAsciiAlpha(c) || IsAsciiDigit(c) || c == '.' || c == '!' ||
+          c == '#' || c == '$' || c == '%' || c == '&' || c == '\'' ||
+          c == '*' || c == '+' || c == '-' || c == '/' || c == '=' ||
+          c == '?' || c == '^' || c == '_' || c == '`' || c == '{' ||
+          c == '|' || c == '}' || c == '~')) {
       return false;
     }
   }
@@ -250,16 +223,15 @@ EmailInputType::IsValidEmailAddress(const nsAString& aValue)
 
     if (c == '.') {
       
-      if (value[i-1] == '.' || value[i-1] == '-') {
+      if (value[i - 1] == '.' || value[i - 1] == '-') {
         return false;
       }
-    } else if (c == '-'){
+    } else if (c == '-') {
       
-      if (value[i-1] == '.') {
+      if (value[i - 1] == '.') {
         return false;
       }
-    } else if (!(IsAsciiAlpha(c) || IsAsciiDigit(c) ||
-                 c == '-')) {
+    } else if (!(IsAsciiAlpha(c) || IsAsciiDigit(c) || c == '-')) {
       
       return false;
     }
@@ -268,16 +240,13 @@ EmailInputType::IsValidEmailAddress(const nsAString& aValue)
   return true;
 }
 
- bool
-EmailInputType::PunycodeEncodeEmailAddress(const nsAString& aEmail,
-                                           nsAutoCString& aEncodedEmail,
-                                           uint32_t* aIndexOfAt)
-{
+ bool EmailInputType::PunycodeEncodeEmailAddress(
+    const nsAString& aEmail, nsAutoCString& aEncodedEmail,
+    uint32_t* aIndexOfAt) {
   nsAutoCString value = NS_ConvertUTF16toUTF8(aEmail);
   *aIndexOfAt = (uint32_t)value.FindChar('@');
 
-  if (*aIndexOfAt == (uint32_t)kNotFound ||
-      *aIndexOfAt == value.Length() - 1) {
+  if (*aIndexOfAt == (uint32_t)kNotFound || *aIndexOfAt == value.Length() - 1) {
     aEncodedEmail = value;
     return true;
   }

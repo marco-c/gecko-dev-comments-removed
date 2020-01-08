@@ -15,35 +15,27 @@ namespace dom {
 
 class BlobImpl;
 
-class FileSystemBase
-{
-public:
+class FileSystemBase {
+ public:
   NS_INLINE_DECL_REFCOUNTING(FileSystemBase)
 
   FileSystemBase();
 
-  virtual void
-  Shutdown();
+  virtual void Shutdown();
 
   
-  virtual void
-  SerializeDOMPath(nsAString& aOutput) const = 0;
+  virtual void SerializeDOMPath(nsAString& aOutput) const = 0;
 
-  virtual already_AddRefed<FileSystemBase>
-  Clone() = 0;
+  virtual already_AddRefed<FileSystemBase> Clone() = 0;
 
-  virtual bool
-  ShouldCreateDirectory() = 0;
+  virtual bool ShouldCreateDirectory() = 0;
 
-  virtual nsISupports*
-  GetParentObject() const;
+  virtual nsISupports* GetParentObject() const;
 
-  virtual void
-  GetDirectoryName(nsIFile* aFile, nsAString& aRetval,
-                   ErrorResult& aRv) const;
+  virtual void GetDirectoryName(nsIFile* aFile, nsAString& aRetval,
+                                ErrorResult& aRv) const;
 
-  void
-  GetDOMPath(nsIFile* aFile, nsAString& aRetval, ErrorResult& aRv) const;
+  void GetDOMPath(nsIFile* aFile, nsAString& aRetval, ErrorResult& aRv) const;
 
   
 
@@ -51,35 +43,23 @@ public:
 
 
 
-  const nsAString&
-  LocalRootPath() const
-  {
-    return mLocalRootPath;
-  }
+  const nsAString& LocalRootPath() const { return mLocalRootPath; }
 
-  bool
-  IsShutdown() const
-  {
-    return mShutdown;
-  }
+  bool IsShutdown() const { return mShutdown; }
 
-  virtual bool
-  IsSafeFile(nsIFile* aFile) const;
+  virtual bool IsSafeFile(nsIFile* aFile) const;
 
-  virtual bool
-  IsSafeDirectory(Directory* aDir) const;
+  virtual bool IsSafeDirectory(Directory* aDir) const;
 
-  bool
-  GetRealPath(BlobImpl* aFile, nsIFile** aPath) const;
+  bool GetRealPath(BlobImpl* aFile, nsIFile** aPath) const;
 
   
   virtual void Unlink() {}
-  virtual void Traverse(nsCycleCollectionTraversalCallback &cb) {}
+  virtual void Traverse(nsCycleCollectionTraversalCallback& cb) {}
 
-  void
-  AssertIsOnOwningThread() const;
+  void AssertIsOnOwningThread() const;
 
-protected:
+ protected:
   virtual ~FileSystemBase();
 
   
@@ -96,7 +76,7 @@ protected:
   bool mShutdown;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

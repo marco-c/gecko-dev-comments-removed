@@ -13,64 +13,55 @@
 class gfxMacFont;
 
 class gfxCoreTextShaper : public gfxFontShaper {
-public:
-    explicit gfxCoreTextShaper(gfxMacFont *aFont);
+ public:
+  explicit gfxCoreTextShaper(gfxMacFont *aFont);
 
-    virtual ~gfxCoreTextShaper();
+  virtual ~gfxCoreTextShaper();
 
-    bool ShapeText(DrawTarget      *aDrawTarget,
-                   const char16_t *aText,
-                   uint32_t         aOffset,
-                   uint32_t         aLength,
-                   Script           aScript,
-                   bool             aVertical,
-                   RoundingFlags    aRounding,
-                   gfxShapedText   *aShapedText) override;
+  bool ShapeText(DrawTarget *aDrawTarget, const char16_t *aText, uint32_t aOffset, uint32_t aLength,
+                 Script aScript, bool aVertical, RoundingFlags aRounding,
+                 gfxShapedText *aShapedText) override;
+
+  
+  static void Shutdown();
+
+  
+  
+  
+  enum FeatureFlags : uint8_t {
+    kDefaultFeatures = 0x00,
+    
+    
+    kDisableLigatures = 0x01,
+    kAddSmallCaps = 0x02,
+    kIndicFeatures = 0x04,
 
     
-    static void Shutdown();
+    kMaxFontInstances = 8
+  };
 
-    
-    
-    
-    enum FeatureFlags : uint8_t {
-        kDefaultFeatures  = 0x00,
-        
-        
-        kDisableLigatures = 0x01,
-        kAddSmallCaps     = 0x02,
-        kIndicFeatures    = 0x04,
+ protected:
+  CTFontRef mCTFont[kMaxFontInstances];
 
-        
-        kMaxFontInstances = 8
-    };
+  
+  CFDictionaryRef mAttributesDictLTR;
+  CFDictionaryRef mAttributesDictRTL;
 
-protected:
-    CTFontRef mCTFont[kMaxFontInstances];
+  nsresult SetGlyphsFromRun(gfxShapedText *aShapedText, uint32_t aOffset, uint32_t aLength,
+                            CTRunRef aCTRun);
 
-    
-    CFDictionaryRef mAttributesDictLTR;
-    CFDictionaryRef mAttributesDictRTL;
+  CTFontRef CreateCTFontWithFeatures(CGFloat aSize, CTFontDescriptorRef aDescriptor);
 
-    nsresult SetGlyphsFromRun(gfxShapedText *aShapedText,
-                              uint32_t       aOffset,
-                              uint32_t       aLength,
-                              CTRunRef       aCTRun);
+  CFDictionaryRef CreateAttrDict(bool aRightToLeft);
+  CFDictionaryRef CreateAttrDictWithoutDirection();
 
-    CTFontRef CreateCTFontWithFeatures(CGFloat aSize,
-                                       CTFontDescriptorRef aDescriptor);
+  static CTFontDescriptorRef CreateFontFeaturesDescriptor(
+      const std::pair<SInt16, SInt16> *aFeatures, size_t aCount);
 
-    CFDictionaryRef CreateAttrDict(bool aRightToLeft);
-    CFDictionaryRef CreateAttrDictWithoutDirection();
+  static CTFontDescriptorRef GetFeaturesDescriptor(FeatureFlags aFeatureFlags);
 
-    static CTFontDescriptorRef
-    CreateFontFeaturesDescriptor(const std::pair<SInt16,SInt16>* aFeatures,
-                                 size_t aCount);
-
-    static CTFontDescriptorRef GetFeaturesDescriptor(FeatureFlags aFeatureFlags);
-
-    
-    static CTFontDescriptorRef sFeaturesDescriptor[kMaxFontInstances];
+  
+  static CTFontDescriptorRef sFeaturesDescriptor[kMaxFontInstances];
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxCoreTextShaper::FeatureFlags)

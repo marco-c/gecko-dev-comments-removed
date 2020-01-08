@@ -22,13 +22,12 @@ namespace mozilla {
 class SVGAnimatedPreserveAspectRatio;
 class SVGGeometryFrame;
 class nsSVGAnimatedTransformList;
-} 
+}  
 
-class nsSVGPatternFrame final : public nsSVGPaintServerFrame
-{
+class nsSVGPatternFrame final : public nsSVGPaintServerFrame {
   typedef mozilla::gfx::SourceSurface SourceSurface;
 
-public:
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsSVGPatternFrame)
 
   friend nsIFrame* NS_NewSVGPatternFrame(nsIPresShell* aPresShell,
@@ -37,40 +36,35 @@ public:
   explicit nsSVGPatternFrame(ComputedStyle* aStyle);
 
   
-  virtual already_AddRefed<gfxPattern>
-    GetPaintServerPattern(nsIFrame *aSource,
-                          const DrawTarget* aDrawTarget,
-                          const gfxMatrix& aContextMatrix,
-                          nsStyleSVGPaint nsStyleSVG::*aFillOrStroke,
-                          float aOpacity,
-                          imgDrawingParams& aImgParams,
-                          const gfxRect* aOverrideBounds) override;
+  virtual already_AddRefed<gfxPattern> GetPaintServerPattern(
+      nsIFrame* aSource, const DrawTarget* aDrawTarget,
+      const gfxMatrix& aContextMatrix,
+      nsStyleSVGPaint nsStyleSVG::*aFillOrStroke, float aOpacity,
+      imgDrawingParams& aImgParams, const gfxRect* aOverrideBounds) override;
 
-public:
-  typedef mozilla::SVGAnimatedPreserveAspectRatio SVGAnimatedPreserveAspectRatio;
+ public:
+  typedef mozilla::SVGAnimatedPreserveAspectRatio
+      SVGAnimatedPreserveAspectRatio;
 
   
   virtual gfxMatrix GetCanvasTM() override;
 
   
-  virtual nsresult AttributeChanged(int32_t         aNameSpaceID,
-                                    nsAtom*        aAttribute,
-                                    int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
 #ifdef DEBUG
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 #endif
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override
-  {
+  virtual nsresult GetFrameName(nsAString& aResult) const override {
     return MakeFrameName(NS_LITERAL_STRING("SVGPattern"), aResult);
   }
-#endif 
+#endif  
 
-protected:
+ protected:
   
 
 
@@ -78,37 +72,30 @@ protected:
   nsSVGPatternFrame* GetReferencedPattern();
 
   
-  uint16_t GetEnumValue(uint32_t aIndex, nsIContent *aDefault);
-  uint16_t GetEnumValue(uint32_t aIndex)
-  {
+  uint16_t GetEnumValue(uint32_t aIndex, nsIContent* aDefault);
+  uint16_t GetEnumValue(uint32_t aIndex) {
     return GetEnumValue(aIndex, mContent);
   }
   mozilla::nsSVGAnimatedTransformList* GetPatternTransformList(
       nsIContent* aDefault);
   gfxMatrix GetPatternTransform();
-  const nsSVGViewBox &GetViewBox(nsIContent *aDefault);
-  const nsSVGViewBox &GetViewBox() { return GetViewBox(mContent); }
-  const SVGAnimatedPreserveAspectRatio &GetPreserveAspectRatio(
-      nsIContent *aDefault);
-  const SVGAnimatedPreserveAspectRatio &GetPreserveAspectRatio()
-  {
+  const nsSVGViewBox& GetViewBox(nsIContent* aDefault);
+  const nsSVGViewBox& GetViewBox() { return GetViewBox(mContent); }
+  const SVGAnimatedPreserveAspectRatio& GetPreserveAspectRatio(
+      nsIContent* aDefault);
+  const SVGAnimatedPreserveAspectRatio& GetPreserveAspectRatio() {
     return GetPreserveAspectRatio(mContent);
   }
-  const nsSVGLength2 *GetLengthValue(uint32_t aIndex, nsIContent *aDefault);
-  const nsSVGLength2 *GetLengthValue(uint32_t aIndex)
-  {
+  const nsSVGLength2* GetLengthValue(uint32_t aIndex, nsIContent* aDefault);
+  const nsSVGLength2* GetLengthValue(uint32_t aIndex) {
     return GetLengthValue(aIndex, mContent);
   }
 
-  already_AddRefed<SourceSurface>
-  PaintPattern(const DrawTarget* aDrawTarget,
-               Matrix *patternMatrix,
-               const Matrix &aContextMatrix,
-               nsIFrame *aSource,
-               nsStyleSVGPaint nsStyleSVG::*aFillOrStroke,
-               float aGraphicOpacity,
-               const gfxRect *aOverrideBounds,
-               imgDrawingParams& aImgParams);
+  already_AddRefed<SourceSurface> PaintPattern(
+      const DrawTarget* aDrawTarget, Matrix* patternMatrix,
+      const Matrix& aContextMatrix, nsIFrame* aSource,
+      nsStyleSVGPaint nsStyleSVG::*aFillOrStroke, float aGraphicOpacity,
+      const gfxRect* aOverrideBounds, imgDrawingParams& aImgParams);
 
   
 
@@ -120,28 +107,24 @@ protected:
 
   nsSVGPatternFrame* GetPatternWithChildren();
 
-  gfxRect    GetPatternRect(uint16_t aPatternUnits,
-                            const gfxRect &bbox,
-                            const Matrix &callerCTM,
-                            nsIFrame *aTarget);
-  gfxMatrix  ConstructCTM(const nsSVGViewBox& aViewBox,
-                          uint16_t aPatternContentUnits,
-                          uint16_t aPatternUnits,
-                          const gfxRect &callerBBox,
-                          const Matrix &callerCTM,
-                          nsIFrame *aTarget);
+  gfxRect GetPatternRect(uint16_t aPatternUnits, const gfxRect& bbox,
+                         const Matrix& callerCTM, nsIFrame* aTarget);
+  gfxMatrix ConstructCTM(const nsSVGViewBox& aViewBox,
+                         uint16_t aPatternContentUnits, uint16_t aPatternUnits,
+                         const gfxRect& callerBBox, const Matrix& callerCTM,
+                         nsIFrame* aTarget);
 
-private:
+ private:
   
   
   
   mozilla::SVGGeometryFrame* mSource;
   nsAutoPtr<gfxMatrix> mCTM;
 
-protected:
+ protected:
   
-  bool                              mLoopFlag;
-  bool                              mNoHRefURI;
+  bool mLoopFlag;
+  bool mNoHRefURI;
 };
 
 #endif

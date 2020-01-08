@@ -16,7 +16,7 @@ using std::string;
 
 
 class ScopedHInternet {
-public:
+ public:
   explicit ScopedHInternet(HINTERNET handle) : mHandle(handle) {}
 
   ~ScopedHInternet() {
@@ -28,7 +28,7 @@ public:
   bool empty() { return (mHandle == nullptr); }
   HINTERNET get() { return mHandle; }
 
-private:
+ private:
   HINTERNET mHandle;
 };
 
@@ -42,9 +42,7 @@ const size_t kUrlComponentsPathLength = 256;
 
 
 
-bool
-Post(const string& url, const string& payload)
-{
+bool Post(const string& url, const string& payload) {
   char scheme[kUrlComponentsSchemeLength];
   char host[kUrlComponentsHostLength];
   char path[kUrlComponentsPathLength];
@@ -75,22 +73,19 @@ Post(const string& url, const string& payload)
   }
 
   DWORD timeout = static_cast<DWORD>(kConnectionTimeoutMs);
-  bool rv = InternetSetOption(internet.get(),
-                              INTERNET_OPTION_CONNECT_TIMEOUT,
-                              &timeout,
-                              sizeof(timeout));
+  bool rv = InternetSetOption(internet.get(), INTERNET_OPTION_CONNECT_TIMEOUT,
+                              &timeout, sizeof(timeout));
   if (!rv) {
     PINGSENDER_LOG("ERROR: Could not set the connection timeout\n");
     return false;
   }
 
-  ScopedHInternet connection(InternetConnect(internet.get(),
-                                             host, components.nPort,
-                                              NULL,
-                                              NULL,
-                                             INTERNET_SERVICE_HTTP,
-                                              0,
-                                              NULL));
+  ScopedHInternet connection(
+      InternetConnect(internet.get(), host, components.nPort,
+                       NULL,
+                       NULL, INTERNET_SERVICE_HTTP,
+                       0,
+                       NULL));
 
   if (connection.empty()) {
     PINGSENDER_LOG("ERROR: Could not connect\n");
@@ -102,8 +97,7 @@ Post(const string& url, const string& payload)
   ScopedHInternet request(HttpOpenRequest(connection.get(), "POST", path,
                                            NULL,
                                            NULL,
-                                           NULL,
-                                          flags,
+                                           NULL, flags,
                                            NULL));
 
   if (request.empty()) {
@@ -117,11 +111,8 @@ Post(const string& url, const string& payload)
   headers += "\r\n";
   headers += kContentEncodingHeader;
 
-  rv = HttpSendRequest(request.get(),
-                       headers.c_str(),
-                       -1L,
-                       (LPVOID)payload.c_str(),
-                       payload.size());
+  rv = HttpSendRequest(request.get(), headers.c_str(), -1L,
+                       (LPVOID)payload.c_str(), payload.size());
   if (!rv) {
     PINGSENDER_LOG("ERROR: Could not execute HTTP POST request\n");
     return false;
@@ -132,22 +123,24 @@ Post(const string& url, const string& payload)
   
   DWORD statusCode = 0;
   DWORD bufferLength = sizeof(DWORD);
-  rv = HttpQueryInfo(request.get(),
-                      HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
-                      &statusCode,
-                      &bufferLength,
-                      NULL);
+  rv = HttpQueryInfo(
+      request.get(),
+       HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER,
+       &statusCode,
+       &bufferLength,
+       NULL);
   if (!rv) {
     PINGSENDER_LOG("ERROR: Could not get the HTTP status code\n");
     return false;
   }
 
   if (statusCode != 200) {
-    PINGSENDER_LOG("ERROR: Error submitting the HTTP request: code %lu\n", statusCode);
+    PINGSENDER_LOG("ERROR: Error submitting the HTTP request: code %lu\n",
+                   statusCode);
     return false;
   }
 
   return rv;
 }
 
-} 
+}  

@@ -28,35 +28,32 @@ namespace wasm {
 
 
 
-uint32_t
-ObservedCPUFeatures();
+uint32_t ObservedCPUFeatures();
 
 
 
-struct ScriptedCaller
-{
-    UniqueChars filename;
-    bool filenameIsURL;
-    unsigned line;
+struct ScriptedCaller {
+  UniqueChars filename;
+  bool filenameIsURL;
+  unsigned line;
 
-    ScriptedCaller() : filenameIsURL(false), line(0) {}
+  ScriptedCaller() : filenameIsURL(false), line(0) {}
 };
 
 
 
-struct CompileArgs : ShareableBase<CompileArgs>
-{
-    ScriptedCaller scriptedCaller;
-    UniqueChars sourceMapURL;
-    bool baselineEnabled;
-    bool forceCranelift;
-    bool debugEnabled;
-    bool ionEnabled;
-    bool sharedMemoryEnabled;
-    HasGcTypes gcTypesConfigured;
-    bool testTiering;
+struct CompileArgs : ShareableBase<CompileArgs> {
+  ScriptedCaller scriptedCaller;
+  UniqueChars sourceMapURL;
+  bool baselineEnabled;
+  bool forceCranelift;
+  bool debugEnabled;
+  bool ionEnabled;
+  bool sharedMemoryEnabled;
+  HasGcTypes gcTypesConfigured;
+  bool testTiering;
 
-    explicit CompileArgs(ScriptedCaller&& scriptedCaller)
+  explicit CompileArgs(ScriptedCaller&& scriptedCaller)
       : scriptedCaller(std::move(scriptedCaller)),
         baselineEnabled(false),
         forceCranelift(false),
@@ -64,10 +61,9 @@ struct CompileArgs : ShareableBase<CompileArgs>
         ionEnabled(false),
         sharedMemoryEnabled(false),
         gcTypesConfigured(HasGcTypes::False),
-        testTiering(false)
-    {}
+        testTiering(false) {}
 
-    CompileArgs(JSContext* cx, ScriptedCaller&& scriptedCaller);
+  CompileArgs(JSContext* cx, ScriptedCaller&& scriptedCaller);
 };
 
 typedef RefPtr<CompileArgs> MutableCompileArgs;
@@ -76,8 +72,7 @@ typedef RefPtr<const CompileArgs> SharedCompileArgs;
 
 
 
-double
-EstimateCompiledCodeSize(Tier tier, size_t bytecodeSize);
+double EstimateCompiledCodeSize(Tier tier, size_t bytecodeSize);
 
 
 
@@ -85,18 +80,15 @@ EstimateCompiledCodeSize(Tier tier, size_t bytecodeSize);
 
 
 
-SharedModule
-CompileBuffer(const CompileArgs& args,
-              const ShareableBytes& bytecode,
-              UniqueChars* error,
-              UniqueCharsVector* warnings,
-              UniqueLinkData* maybeLinkData = nullptr);
+SharedModule CompileBuffer(const CompileArgs& args,
+                           const ShareableBytes& bytecode, UniqueChars* error,
+                           UniqueCharsVector* warnings,
+                           UniqueLinkData* maybeLinkData = nullptr);
 
 
 
-void
-CompileTier2(const CompileArgs& args, const Bytes& bytecode, const Module& module,
-             Atomic<bool>* cancelled);
+void CompileTier2(const CompileArgs& args, const Bytes& bytecode,
+                  const Module& module, Atomic<bool>* cancelled);
 
 
 
@@ -118,27 +110,23 @@ CompileTier2(const CompileArgs& args, const Bytes& bytecode, const Module& modul
 
 typedef ExclusiveWaitableData<const uint8_t*> ExclusiveBytesPtr;
 
-struct StreamEndData
-{
-    bool reached;
-    const Bytes* tailBytes;
-    Tier2Listener tier2Listener;
+struct StreamEndData {
+  bool reached;
+  const Bytes* tailBytes;
+  Tier2Listener tier2Listener;
 
-    StreamEndData() : reached(false) {}
+  StreamEndData() : reached(false) {}
 };
 typedef ExclusiveWaitableData<StreamEndData> ExclusiveStreamEndData;
 
-SharedModule
-CompileStreaming(const CompileArgs& args,
-                 const Bytes& envBytes,
-                 const Bytes& codeBytes,
-                 const ExclusiveBytesPtr& codeBytesEnd,
-                 const ExclusiveStreamEndData& streamEnd,
-                 const Atomic<bool>& cancelled,
-                 UniqueChars* error,
-                 UniqueCharsVector* warnings);
+SharedModule CompileStreaming(const CompileArgs& args, const Bytes& envBytes,
+                              const Bytes& codeBytes,
+                              const ExclusiveBytesPtr& codeBytesEnd,
+                              const ExclusiveStreamEndData& streamEnd,
+                              const Atomic<bool>& cancelled, UniqueChars* error,
+                              UniqueCharsVector* warnings);
 
 }  
 }  
 
-#endif 
+#endif  

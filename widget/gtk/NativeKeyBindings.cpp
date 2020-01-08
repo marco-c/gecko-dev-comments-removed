@@ -23,17 +23,13 @@ static nsTArray<CommandInt>* gCurrentCommands = nullptr;
 static bool gHandled = false;
 
 
-static void
-copy_clipboard_cb(GtkWidget *w, gpointer user_data)
-{
+static void copy_clipboard_cb(GtkWidget* w, gpointer user_data) {
   gCurrentCommands->AppendElement(CommandCopy);
   g_signal_stop_emission_by_name(w, "copy_clipboard");
   gHandled = true;
 }
 
-static void
-cut_clipboard_cb(GtkWidget *w, gpointer user_data)
-{
+static void cut_clipboard_cb(GtkWidget* w, gpointer user_data) {
   gCurrentCommands->AppendElement(CommandCut);
   g_signal_stop_emission_by_name(w, "cut_clipboard");
   gHandled = true;
@@ -45,24 +41,23 @@ cut_clipboard_cb(GtkWidget *w, gpointer user_data)
 
 
 static const Command sDeleteCommands[][2] = {
-  
-  { CommandDeleteCharBackward, CommandDeleteCharForward },    
-  { CommandDeleteWordBackward, CommandDeleteWordForward },    
-  { CommandDeleteWordBackward, CommandDeleteWordForward },    
-  { CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine }, 
-  { CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine }, 
-  { CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine }, 
-  { CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine }, 
-  
-  
-  
-  { CommandDoNothing, CommandDoNothing } 
+    
+    {CommandDeleteCharBackward, CommandDeleteCharForward},       
+    {CommandDeleteWordBackward, CommandDeleteWordForward},       
+    {CommandDeleteWordBackward, CommandDeleteWordForward},       
+    {CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine},  
+    {CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine},  
+    {CommandDeleteToBeginningOfLine,
+     CommandDeleteToEndOfLine},  
+    {CommandDeleteToBeginningOfLine, CommandDeleteToEndOfLine},  
+    
+    
+    
+    {CommandDoNothing, CommandDoNothing}  
 };
 
-static void
-delete_from_cursor_cb(GtkWidget *w, GtkDeleteType del_type,
-                      gint count, gpointer user_data)
-{
+static void delete_from_cursor_cb(GtkWidget* w, GtkDeleteType del_type,
+                                  gint count, gpointer user_data) {
   g_signal_stop_emission_by_name(w, "delete_from_cursor");
   if (count == 0) {
     
@@ -81,8 +76,7 @@ delete_from_cursor_cb(GtkWidget *w, GtkDeleteType del_type,
 
     GPtrArray* array;
     gtk_style_context_get(context, flags, "gtk-key-bindings", &array, nullptr);
-    if (!array)
-      return;
+    if (!array) return;
     g_ptr_array_unref(array);
   }
 #endif
@@ -105,7 +99,6 @@ delete_from_cursor_cb(GtkWidget *w, GtkDeleteType del_type,
     }
   } else if (del_type == GTK_DELETE_DISPLAY_LINES ||
              del_type == GTK_DELETE_PARAGRAPHS) {
-
     
     
     if (forward) {
@@ -117,7 +110,7 @@ delete_from_cursor_cb(GtkWidget *w, GtkDeleteType del_type,
 
   Command command = sDeleteCommands[del_type][forward];
   if (!command) {
-    return; 
+    return;  
   }
 
   unsigned int absCount = Abs(count);
@@ -127,56 +120,43 @@ delete_from_cursor_cb(GtkWidget *w, GtkDeleteType del_type,
 }
 
 static const Command sMoveCommands[][2][2] = {
-  
-  
-  
-  
-  { 
-    { CommandCharPrevious, CommandCharNext },
-    { CommandSelectCharPrevious, CommandSelectCharNext }
-  },
-  { 
-    { CommandCharPrevious, CommandCharNext },
-    { CommandSelectCharPrevious, CommandSelectCharNext }
-  },
-  { 
-    { CommandWordPrevious, CommandWordNext },
-    { CommandSelectWordPrevious, CommandSelectWordNext }
-  },
-  { 
-    { CommandLinePrevious, CommandLineNext },
-    { CommandSelectLinePrevious, CommandSelectLineNext }
-  },
-  { 
-    { CommandBeginLine, CommandEndLine },
-    { CommandSelectBeginLine, CommandSelectEndLine }
-  },
-  { 
-    { CommandLinePrevious, CommandLineNext },
-    { CommandSelectLinePrevious, CommandSelectLineNext }
-  },
-  { 
-    { CommandBeginLine, CommandEndLine },
-    { CommandSelectBeginLine, CommandSelectEndLine }
-  },
-  { 
-    { CommandMovePageUp, CommandMovePageDown },
-    { CommandSelectPageUp, CommandSelectPageDown }
-  },
-  { 
-    { CommandMoveTop, CommandMoveBottom },
-    { CommandSelectTop, CommandSelectBottom }
-  },
-  { 
-    { CommandDoNothing, CommandDoNothing },
-    { CommandDoNothing, CommandDoNothing }
-  }
-};
+    
+    
+    
+    
+    {
+     {CommandCharPrevious, CommandCharNext},
+     {CommandSelectCharPrevious, CommandSelectCharNext}},
+    {
+     {CommandCharPrevious, CommandCharNext},
+     {CommandSelectCharPrevious, CommandSelectCharNext}},
+    {
+     {CommandWordPrevious, CommandWordNext},
+     {CommandSelectWordPrevious, CommandSelectWordNext}},
+    {
+     {CommandLinePrevious, CommandLineNext},
+     {CommandSelectLinePrevious, CommandSelectLineNext}},
+    {
+     {CommandBeginLine, CommandEndLine},
+     {CommandSelectBeginLine, CommandSelectEndLine}},
+    {
+     {CommandLinePrevious, CommandLineNext},
+     {CommandSelectLinePrevious, CommandSelectLineNext}},
+    {
+     {CommandBeginLine, CommandEndLine},
+     {CommandSelectBeginLine, CommandSelectEndLine}},
+    {
+     {CommandMovePageUp, CommandMovePageDown},
+     {CommandSelectPageUp, CommandSelectPageDown}},
+    {
+     {CommandMoveTop, CommandMoveBottom},
+     {CommandSelectTop, CommandSelectBottom}},
+    {
+     {CommandDoNothing, CommandDoNothing},
+     {CommandDoNothing, CommandDoNothing}}};
 
-static void
-move_cursor_cb(GtkWidget *w, GtkMovementStep step, gint count,
-               gboolean extend_selection, gpointer user_data)
-{
+static void move_cursor_cb(GtkWidget* w, GtkMovementStep step, gint count,
+                           gboolean extend_selection, gpointer user_data) {
   g_signal_stop_emission_by_name(w, "move_cursor");
   if (count == 0) {
     
@@ -192,7 +172,7 @@ move_cursor_cb(GtkWidget *w, GtkMovementStep step, gint count,
 
   Command command = sMoveCommands[step][extend_selection][forward];
   if (!command) {
-    return; 
+    return;  
   }
 
   unsigned int absCount = Abs(count);
@@ -201,18 +181,14 @@ move_cursor_cb(GtkWidget *w, GtkMovementStep step, gint count,
   }
 }
 
-static void
-paste_clipboard_cb(GtkWidget *w, gpointer user_data)
-{
+static void paste_clipboard_cb(GtkWidget* w, gpointer user_data) {
   gCurrentCommands->AppendElement(CommandPaste);
   g_signal_stop_emission_by_name(w, "paste_clipboard");
   gHandled = true;
 }
 
 
-static void
-select_all_cb(GtkWidget *w, gboolean select, gpointer user_data)
-{
+static void select_all_cb(GtkWidget* w, gboolean select, gpointer user_data) {
   gCurrentCommands->AppendElement(CommandSelectAll);
   g_signal_stop_emission_by_name(w, "select_all");
   gHandled = true;
@@ -222,9 +198,7 @@ NativeKeyBindings* NativeKeyBindings::sInstanceForSingleLineEditor = nullptr;
 NativeKeyBindings* NativeKeyBindings::sInstanceForMultiLineEditor = nullptr;
 
 
-NativeKeyBindings*
-NativeKeyBindings::GetInstance(NativeKeyBindingsType aType)
-{
+NativeKeyBindings* NativeKeyBindings::GetInstance(NativeKeyBindingsType aType) {
   switch (aType) {
     case nsIWidget::NativeKeyBindingsForSingleLineEditor:
       if (!sInstanceForSingleLineEditor) {
@@ -247,60 +221,53 @@ NativeKeyBindings::GetInstance(NativeKeyBindingsType aType)
 }
 
 
-void
-NativeKeyBindings::Shutdown()
-{
+void NativeKeyBindings::Shutdown() {
   delete sInstanceForSingleLineEditor;
   sInstanceForSingleLineEditor = nullptr;
   delete sInstanceForMultiLineEditor;
   sInstanceForMultiLineEditor = nullptr;
 }
 
-void
-NativeKeyBindings::Init(NativeKeyBindingsType  aType)
-{
+void NativeKeyBindings::Init(NativeKeyBindingsType aType) {
   switch (aType) {
-  case nsIWidget::NativeKeyBindingsForSingleLineEditor:
-    mNativeTarget = gtk_entry_new();
-    break;
-  default:
-    mNativeTarget = gtk_text_view_new();
-    if (gtk_major_version > 2 ||
-        (gtk_major_version == 2 && (gtk_minor_version > 2 ||
-                                    (gtk_minor_version == 2 &&
-                                     gtk_micro_version >= 2)))) {
-      
-      
-      g_signal_connect(mNativeTarget, "select_all",
-                       G_CALLBACK(select_all_cb), this);
-    }
-    break;
+    case nsIWidget::NativeKeyBindingsForSingleLineEditor:
+      mNativeTarget = gtk_entry_new();
+      break;
+    default:
+      mNativeTarget = gtk_text_view_new();
+      if (gtk_major_version > 2 ||
+          (gtk_major_version == 2 &&
+           (gtk_minor_version > 2 ||
+            (gtk_minor_version == 2 && gtk_micro_version >= 2)))) {
+        
+        
+        g_signal_connect(mNativeTarget, "select_all", G_CALLBACK(select_all_cb),
+                         this);
+      }
+      break;
   }
 
   g_object_ref_sink(mNativeTarget);
 
   g_signal_connect(mNativeTarget, "copy_clipboard",
                    G_CALLBACK(copy_clipboard_cb), this);
-  g_signal_connect(mNativeTarget, "cut_clipboard",
-                   G_CALLBACK(cut_clipboard_cb), this);
+  g_signal_connect(mNativeTarget, "cut_clipboard", G_CALLBACK(cut_clipboard_cb),
+                   this);
   g_signal_connect(mNativeTarget, "delete_from_cursor",
                    G_CALLBACK(delete_from_cursor_cb), this);
-  g_signal_connect(mNativeTarget, "move_cursor",
-                   G_CALLBACK(move_cursor_cb), this);
+  g_signal_connect(mNativeTarget, "move_cursor", G_CALLBACK(move_cursor_cb),
+                   this);
   g_signal_connect(mNativeTarget, "paste_clipboard",
                    G_CALLBACK(paste_clipboard_cb), this);
 }
 
-NativeKeyBindings::~NativeKeyBindings()
-{
+NativeKeyBindings::~NativeKeyBindings() {
   gtk_widget_destroy(mNativeTarget);
   g_object_unref(mNativeTarget);
 }
 
-void
-NativeKeyBindings::GetEditCommands(const WidgetKeyboardEvent& aEvent,
-                                   nsTArray<CommandInt>& aCommands)
-{
+void NativeKeyBindings::GetEditCommands(const WidgetKeyboardEvent& aEvent,
+                                        nsTArray<CommandInt>& aCommands) {
   
   
   
@@ -314,8 +281,7 @@ NativeKeyBindings::GetEditCommands(const WidgetKeyboardEvent& aEvent,
   if (aEvent.mCharCode) {
     keyval = gdk_unicode_to_keyval(aEvent.mCharCode);
   } else {
-    keyval =
-      static_cast<GdkEventKey*>(aEvent.mNativeKeyEvent)->keyval;
+    keyval = static_cast<GdkEventKey*>(aEvent.mNativeKeyEvent)->keyval;
   }
 
   if (GetEditCommandsInternal(aEvent, aCommands, keyval)) {
@@ -323,9 +289,9 @@ NativeKeyBindings::GetEditCommands(const WidgetKeyboardEvent& aEvent,
   }
 
   for (uint32_t i = 0; i < aEvent.mAlternativeCharCodes.Length(); ++i) {
-    uint32_t ch = aEvent.IsShift() ?
-      aEvent.mAlternativeCharCodes[i].mShiftedCharCode :
-      aEvent.mAlternativeCharCodes[i].mUnshiftedCharCode;
+    uint32_t ch = aEvent.IsShift()
+                      ? aEvent.mAlternativeCharCodes[i].mShiftedCharCode
+                      : aEvent.mAlternativeCharCodes[i].mUnshiftedCharCode;
     if (ch && ch != aEvent.mCharCode) {
       keyval = gdk_unicode_to_keyval(ch);
       if (GetEditCommandsInternal(aEvent, aCommands, keyval)) {
@@ -334,7 +300,7 @@ NativeKeyBindings::GetEditCommands(const WidgetKeyboardEvent& aEvent,
     }
   }
 
-
+  
 
 
 
@@ -349,19 +315,16 @@ NativeKeyBindings::GetEditCommands(const WidgetKeyboardEvent& aEvent,
 
 }
 
-bool
-NativeKeyBindings::GetEditCommandsInternal(const WidgetKeyboardEvent& aEvent,
-                                           nsTArray<CommandInt>& aCommands,
-                                           guint aKeyval)
-{
-  guint modifiers =
-    static_cast<GdkEventKey*>(aEvent.mNativeKeyEvent)->state;
+bool NativeKeyBindings::GetEditCommandsInternal(
+    const WidgetKeyboardEvent& aEvent, nsTArray<CommandInt>& aCommands,
+    guint aKeyval) {
+  guint modifiers = static_cast<GdkEventKey*>(aEvent.mNativeKeyEvent)->state;
 
   gCurrentCommands = &aCommands;
 
   gHandled = false;
-  gtk_bindings_activate(G_OBJECT(mNativeTarget),
-                        aKeyval, GdkModifierType(modifiers));
+  gtk_bindings_activate(G_OBJECT(mNativeTarget), aKeyval,
+                        GdkModifierType(modifiers));
 
   gCurrentCommands = nullptr;
 
@@ -370,5 +333,5 @@ NativeKeyBindings::GetEditCommandsInternal(const WidgetKeyboardEvent& aEvent,
   return gHandled;
 }
 
-} 
-} 
+}  
+}  

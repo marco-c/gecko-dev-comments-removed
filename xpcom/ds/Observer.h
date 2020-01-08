@@ -19,10 +19,9 @@ namespace mozilla {
 
 
 
-template<class T>
-class Observer
-{
-public:
+template <class T>
+class Observer {
+ public:
   virtual ~Observer() {}
   virtual void Notify(const T& aParam) = 0;
 };
@@ -35,10 +34,9 @@ public:
 
 
 
-template<class T>
-class ObserverList
-{
-public:
+template <class T>
+class ObserverList {
+ public:
   
 
 
@@ -46,8 +44,7 @@ public:
 
 
 
-  void AddObserver(Observer<T>* aObserver)
-  {
+  void AddObserver(Observer<T>* aObserver) {
     mObservers.AppendElementUnlessExists(aObserver);
   }
 
@@ -55,21 +52,16 @@ public:
 
 
 
-  bool RemoveObserver(Observer<T>* aObserver)
-  {
+  bool RemoveObserver(Observer<T>* aObserver) {
     return mObservers.RemoveElement(aObserver);
   }
 
-  uint32_t Length()
-  {
-    return mObservers.Length();
-  }
+  uint32_t Length() { return mObservers.Length(); }
 
   
 
 
-  void Broadcast(const T& aParam)
-  {
+  void Broadcast(const T& aParam) {
     typename nsTObserverArray<Observer<T>*>::ForwardIterator iter(mObservers);
     while (iter.HasMore()) {
       Observer<T>* obs = iter.GetNext();
@@ -77,10 +69,10 @@ public:
     }
   }
 
-protected:
+ protected:
   nsTObserverArray<Observer<T>*> mObservers;
 };
 
-} 
+}  
 
-#endif 
+#endif  

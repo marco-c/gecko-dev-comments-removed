@@ -8,7 +8,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
-#include "nsCaseTreatment.h" 
+#include "nsCaseTreatment.h"  
 #include "nsINode.h"
 #include "nsStringFwd.h"
 #include "nsISupportsImpl.h"
@@ -29,30 +29,33 @@ struct URLExtraData;
 namespace dom {
 class ShadowRoot;
 class HTMLSlotElement;
-} 
+}  
 namespace widget {
 struct IMEState;
-} 
-} 
+}  
+}  
 
 enum nsLinkState {
-  eLinkState_Unvisited  = 1,
-  eLinkState_Visited    = 2,
-  eLinkState_NotLink    = 3
+  eLinkState_Unvisited = 1,
+  eLinkState_Visited = 2,
+  eLinkState_NotLink = 3
 };
 
 
 
-#define NS_ICONTENT_IID \
-{ 0x8e1bab9d, 0x8815, 0x4d2c, \
-  { 0xa2, 0x4d, 0x7a, 0xba, 0x52, 0x39, 0xdc, 0x22 } }
+#define NS_ICONTENT_IID                              \
+  {                                                  \
+    0x8e1bab9d, 0x8815, 0x4d2c, {                    \
+      0xa2, 0x4d, 0x7a, 0xba, 0x52, 0x39, 0xdc, 0x22 \
+    }                                                \
+  }
 
 
 
 
 
 class nsIContent : public nsINode {
-public:
+ public:
   typedef mozilla::widget::IMEState IMEState;
 
   void ConstructUbiNode(void* storage) override;
@@ -62,12 +65,11 @@ public:
   
 
   explicit nsIContent(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-    : nsINode(std::move(aNodeInfo))
-  {
+      : nsINode(std::move(aNodeInfo)) {
     MOZ_ASSERT(mNodeInfo);
     SetNodeIsContent();
   }
-#endif 
+#endif  
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ICONTENT_IID)
 
@@ -105,8 +107,7 @@ public:
 
 
 
-  virtual nsresult BindToTree(nsIDocument* aDocument,
-                              nsIContent* aParent,
+  virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                               nsIContent* aBindingParent) = 0;
 
   
@@ -123,8 +124,7 @@ public:
 
 
 
-  virtual void UnbindFromTree(bool aDeep = true,
-                              bool aNullParent = true) = 0;
+  virtual void UnbindFromTree(bool aDeep = true, bool aNullParent = true) = 0;
 
   enum {
     
@@ -182,8 +182,7 @@ public:
 
 
 
-  void SetIsNativeAnonymousRoot()
-  {
+  void SetIsNativeAnonymousRoot() {
     SetFlags(NODE_IS_ANONYMOUS_ROOT | NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE |
              NODE_IS_NATIVE_ANONYMOUS_ROOT);
   }
@@ -198,23 +197,22 @@ public:
 
 
 
-  bool IsRootOfAnonymousSubtree() const
-  {
+  bool IsRootOfAnonymousSubtree() const {
     NS_ASSERTION(!IsRootOfNativeAnonymousSubtree() ||
-                 (GetParent() && GetBindingParent() == GetParent()),
+                     (GetParent() && GetBindingParent() == GetParent()),
                  "root of native anonymous subtree must have parent equal "
                  "to binding parent");
     NS_ASSERTION(!GetParent() ||
-                 ((GetBindingParent() == GetParent()) ==
-                  HasFlag(NODE_IS_ANONYMOUS_ROOT)) ||
-                 
-                 
-                 
-                 
-                 
-                 (GetBindingParent() &&
-                  (GetBindingParent() == GetParent()->GetBindingParent()) ==
-                  HasFlag(NODE_IS_ANONYMOUS_ROOT)),
+                     ((GetBindingParent() == GetParent()) ==
+                      HasFlag(NODE_IS_ANONYMOUS_ROOT)) ||
+                     
+                     
+                     
+                     
+                     
+                     (GetBindingParent() &&
+                      (GetBindingParent() == GetParent()->GetBindingParent()) ==
+                          HasFlag(NODE_IS_ANONYMOUS_ROOT)),
                  "For nodes with parent, flag and GetBindingParent() check "
                  "should match");
     return HasFlag(NODE_IS_ANONYMOUS_ROOT);
@@ -233,7 +231,6 @@ public:
 
   inline bool IsInHTMLDocument() const;
 
-
   
 
 
@@ -243,85 +240,64 @@ public:
 
 
 
-  inline int32_t GetNameSpaceID() const
-  {
-    return mNodeInfo->NamespaceID();
-  }
+  inline int32_t GetNameSpaceID() const { return mNodeInfo->NamespaceID(); }
 
-  inline bool IsHTMLElement() const
-  {
+  inline bool IsHTMLElement() const {
     return IsInNamespace(kNameSpaceID_XHTML);
   }
 
-  inline bool IsHTMLElement(const nsAtom* aTag) const
-  {
+  inline bool IsHTMLElement(const nsAtom* aTag) const {
     return mNodeInfo->Equals(aTag, kNameSpaceID_XHTML);
   }
 
-  template<typename First, typename... Args>
-  inline bool IsAnyOfHTMLElements(First aFirst, Args... aArgs) const
-  {
+  template <typename First, typename... Args>
+  inline bool IsAnyOfHTMLElements(First aFirst, Args... aArgs) const {
     return IsHTMLElement() && IsNodeInternal(aFirst, aArgs...);
   }
 
-  inline bool IsSVGElement() const
-  {
-    return IsInNamespace(kNameSpaceID_SVG);
-  }
+  inline bool IsSVGElement() const { return IsInNamespace(kNameSpaceID_SVG); }
 
-  inline bool IsSVGElement(const nsAtom* aTag) const
-  {
+  inline bool IsSVGElement(const nsAtom* aTag) const {
     return mNodeInfo->Equals(aTag, kNameSpaceID_SVG);
   }
 
-  template<typename First, typename... Args>
-  inline bool IsAnyOfSVGElements(First aFirst, Args... aArgs) const
-  {
+  template <typename First, typename... Args>
+  inline bool IsAnyOfSVGElements(First aFirst, Args... aArgs) const {
     return IsSVGElement() && IsNodeInternal(aFirst, aArgs...);
   }
 
-  inline bool IsXULElement() const
-  {
-    return IsInNamespace(kNameSpaceID_XUL);
-  }
+  inline bool IsXULElement() const { return IsInNamespace(kNameSpaceID_XUL); }
 
-  inline bool IsXULElement(const nsAtom* aTag) const
-  {
+  inline bool IsXULElement(const nsAtom* aTag) const {
     return mNodeInfo->Equals(aTag, kNameSpaceID_XUL);
   }
 
-  template<typename First, typename... Args>
-  inline bool IsAnyOfXULElements(First aFirst, Args... aArgs) const
-  {
+  template <typename First, typename... Args>
+  inline bool IsAnyOfXULElements(First aFirst, Args... aArgs) const {
     return IsXULElement() && IsNodeInternal(aFirst, aArgs...);
   }
 
-  inline bool IsMathMLElement() const
-  {
+  inline bool IsMathMLElement() const {
     return IsInNamespace(kNameSpaceID_MathML);
   }
 
-  inline bool IsMathMLElement(const nsAtom* aTag) const
-  {
+  inline bool IsMathMLElement(const nsAtom* aTag) const {
     return mNodeInfo->Equals(aTag, kNameSpaceID_MathML);
   }
 
-  template<typename First, typename... Args>
-  inline bool IsAnyOfMathMLElements(First aFirst, Args... aArgs) const
-  {
+  template <typename First, typename... Args>
+  inline bool IsAnyOfMathMLElements(First aFirst, Args... aArgs) const {
     return IsMathMLElement() && IsNodeInternal(aFirst, aArgs...);
   }
 
   inline bool IsActiveChildrenElement() const;
 
-  bool IsGeneratedContentContainerForBefore() const
-  {
+  bool IsGeneratedContentContainerForBefore() const {
     return IsRootOfNativeAnonymousSubtree() &&
            mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentbefore;
   }
 
-  bool IsGeneratedContentContainerForAfter() const
-  {
+  bool IsGeneratedContentContainerForAfter() const {
     return IsRootOfNativeAnonymousSubtree() &&
            mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentafter;
   }
@@ -331,7 +307,7 @@ public:
 
 
 
-  virtual const nsTextFragment *GetText() = 0;
+  virtual const nsTextFragment* GetText() = 0;
 
   
 
@@ -348,10 +324,7 @@ public:
 
   bool IsEventAttributeName(nsAtom* aName);
 
-  virtual bool IsEventAttributeNameInternal(nsAtom* aName)
-  {
-    return false;
-  }
+  virtual bool IsEventAttributeNameInternal(nsAtom* aName) { return false; }
 
   
 
@@ -399,8 +372,7 @@ public:
 
 
   virtual bool PerformAccesskey(bool aKeyCausesActivation,
-                                bool aIsTrustedEvent)
-  {
+                                bool aIsTrustedEvent) {
     return false;
   }
 
@@ -431,8 +403,7 @@ public:
 
 
 
-  virtual nsIContent* GetBindingParent() const
-  {
+  virtual nsIContent* GetBindingParent() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
     return slots ? slots->mBindingParent.get() : nullptr;
   }
@@ -442,8 +413,7 @@ public:
 
 
 
-  nsXBLBinding* GetXBLBinding() const
-  {
+  nsXBLBinding* GetXBLBinding() const {
     if (!HasFlag(NODE_MAY_BE_IN_BINDING_MNGR)) {
       return nullptr;
     }
@@ -467,8 +437,7 @@ public:
 
 
 
-  mozilla::dom::ShadowRoot* GetContainingShadow() const
-  {
+  mozilla::dom::ShadowRoot* GetContainingShadow() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
     return slots ? slots->mContainingShadow.get() : nullptr;
   }
@@ -486,8 +455,7 @@ public:
 
 
 
-  mozilla::dom::HTMLSlotElement* GetAssignedSlot() const
-  {
+  mozilla::dom::HTMLSlotElement* GetAssignedSlot() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
     return slots ? slots->mAssignedSlot.get() : nullptr;
   }
@@ -508,8 +476,7 @@ public:
 
   mozilla::dom::HTMLSlotElement* GetAssignedSlotByMode() const;
 
-  nsIContent* GetXBLInsertionParent() const
-  {
+  nsIContent* GetXBLInsertionParent() const {
     nsIContent* ip = GetXBLInsertionPoint();
     return ip ? ip->GetParent() : nullptr;
   }
@@ -520,8 +487,7 @@ public:
 
 
 
-  nsIContent* GetXBLInsertionPoint() const
-  {
+  nsIContent* GetXBLInsertionPoint() const {
     const nsExtendedContentSlots* slots = GetExistingExtendedContentSlots();
     return slots ? slots->mXBLInsertionPoint.get() : nullptr;
   }
@@ -561,10 +527,7 @@ public:
 
 
 
-  virtual already_AddRefed<nsIURI> GetHrefURI() const
-  {
-    return nullptr;
-  }
+  virtual already_AddRefed<nsIURI> GetHrefURI() const { return nullptr; }
 
   
 
@@ -593,9 +556,7 @@ public:
 
 
 
-  virtual void DoneCreatingElement()
-  {
-  }
+  virtual void DoneCreatingElement() {}
 
   
 
@@ -616,9 +577,7 @@ public:
 
 
 
-  virtual void DoneAddingChildren(bool aHaveNotified)
-  {
-  }
+  virtual void DoneAddingChildren(bool aHaveNotified) {}
 
   
 
@@ -631,10 +590,7 @@ public:
 
 
 
-  virtual bool IsDoneAddingChildren()
-  {
-    return true;
-  }
+  virtual bool IsDoneAddingChildren() { return true; }
 
   
 
@@ -659,9 +615,7 @@ public:
 
 
 
-  virtual void DestroyContent()
-  {
-  }
+  virtual void DestroyContent() {}
 
   
 
@@ -679,8 +633,7 @@ public:
 
 
 
-  nsIFrame* GetPrimaryFrame() const
-  {
+  nsIFrame* GetPrimaryFrame() const {
     return (IsInUncomposedDoc() || IsInShadowTree()) ? mPrimaryFrame : nullptr;
   }
 
@@ -726,7 +679,8 @@ public:
   }
 
   
-  virtual already_AddRefed<nsIURI> GetBaseURI(bool aTryUseXHRDocBaseURI = false) const override;
+  virtual already_AddRefed<nsIURI> GetBaseURI(
+      bool aTryUseXHRDocBaseURI = false) const override;
 
   
   nsIURI* GetBaseURIForStyleAttr() const;
@@ -734,23 +688,16 @@ public:
   
   
   
-  already_AddRefed<mozilla::URLExtraData>
-  GetURLDataForStyleAttr(nsIPrincipal* aSubjectPrincipal = nullptr) const;
+  already_AddRefed<mozilla::URLExtraData> GetURLDataForStyleAttr(
+      nsIPrincipal* aSubjectPrincipal = nullptr) const;
 
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
 
-  bool IsPurple() const
-  {
-    return mRefCnt.IsPurple();
-  }
+  bool IsPurple() const { return mRefCnt.IsPurple(); }
 
-  void RemovePurple()
-  {
-    mRefCnt.RemovePurple();
-  }
+  void RemovePurple() { mRefCnt.RemovePurple(); }
 
-  bool OwnedOnlyByTheDOMTree()
-  {
+  bool OwnedOnlyByTheDOMTree() {
     uint32_t rc = mRefCnt.get();
     if (GetParent()) {
       --rc;
@@ -759,7 +706,7 @@ public:
     return rc == 0;
   }
 
-protected:
+ protected:
   
 
 
@@ -768,16 +715,16 @@ protected:
 
 
 
-  class nsExtendedContentSlots
-  {
-  public:
+  class nsExtendedContentSlots {
+   public:
     nsExtendedContentSlots();
     virtual ~nsExtendedContentSlots();
 
     virtual void TraverseExtendedSlots(nsCycleCollectionTraversalCallback&);
     virtual void UnlinkExtendedSlots();
 
-    virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+    virtual size_t SizeOfExcludingThis(
+        mozilla::MallocSizeOf aMallocSizeOf) const;
 
     
 
@@ -803,40 +750,31 @@ protected:
     RefPtr<mozilla::dom::HTMLSlotElement> mAssignedSlot;
   };
 
-  class nsContentSlots : public nsINode::nsSlots
-  {
-  public:
-    nsContentSlots()
-      : nsINode::nsSlots()
-      , mExtendedSlots(0)
-    {
-    }
+  class nsContentSlots : public nsINode::nsSlots {
+   public:
+    nsContentSlots() : nsINode::nsSlots(), mExtendedSlots(0) {}
 
-    ~nsContentSlots()
-    {
+    ~nsContentSlots() {
       if (!(mExtendedSlots & sNonOwningExtendedSlotsFlag)) {
         delete GetExtendedContentSlots();
       }
     }
 
-    void Traverse(nsCycleCollectionTraversalCallback& aCb) override
-    {
+    void Traverse(nsCycleCollectionTraversalCallback& aCb) override {
       nsINode::nsSlots::Traverse(aCb);
       if (mExtendedSlots) {
         GetExtendedContentSlots()->TraverseExtendedSlots(aCb);
       }
     }
 
-    void Unlink() override
-    {
+    void Unlink() override {
       nsINode::nsSlots::Unlink();
       if (mExtendedSlots) {
         GetExtendedContentSlots()->UnlinkExtendedSlots();
       }
     }
 
-    void SetExtendedContentSlots(nsExtendedContentSlots* aSlots, bool aOwning)
-    {
+    void SetExtendedContentSlots(nsExtendedContentSlots* aSlots, bool aOwning) {
       mExtendedSlots = reinterpret_cast<uintptr_t>(aSlots);
       if (!aOwning) {
         mExtendedSlots |= sNonOwningExtendedSlotsFlag;
@@ -845,63 +783,51 @@ protected:
 
     
     
-    bool OwnsExtendedSlots() const
-    {
+    bool OwnsExtendedSlots() const {
       return !(mExtendedSlots & sNonOwningExtendedSlotsFlag);
     }
 
-    nsExtendedContentSlots* GetExtendedContentSlots() const
-    {
+    nsExtendedContentSlots* GetExtendedContentSlots() const {
       return reinterpret_cast<nsExtendedContentSlots*>(
-        mExtendedSlots & ~sNonOwningExtendedSlotsFlag);
+          mExtendedSlots & ~sNonOwningExtendedSlotsFlag);
     }
 
-  private:
+   private:
     static const uintptr_t sNonOwningExtendedSlotsFlag = 1u;
 
     uintptr_t mExtendedSlots;
   };
 
   
-  nsContentSlots* CreateSlots() override
-  {
-    return new nsContentSlots();
-  }
+  nsContentSlots* CreateSlots() override { return new nsContentSlots(); }
 
-  nsContentSlots* ContentSlots()
-  {
+  nsContentSlots* ContentSlots() {
     return static_cast<nsContentSlots*>(Slots());
   }
 
-  const nsContentSlots* GetExistingContentSlots() const
-  {
+  const nsContentSlots* GetExistingContentSlots() const {
     return static_cast<nsContentSlots*>(GetExistingSlots());
   }
 
-  nsContentSlots* GetExistingContentSlots()
-  {
+  nsContentSlots* GetExistingContentSlots() {
     return static_cast<nsContentSlots*>(GetExistingSlots());
   }
 
-  virtual nsExtendedContentSlots* CreateExtendedSlots()
-  {
+  virtual nsExtendedContentSlots* CreateExtendedSlots() {
     return new nsExtendedContentSlots();
   }
 
-  const nsExtendedContentSlots* GetExistingExtendedContentSlots() const
-  {
+  const nsExtendedContentSlots* GetExistingExtendedContentSlots() const {
     const nsContentSlots* slots = GetExistingContentSlots();
     return slots ? slots->GetExtendedContentSlots() : nullptr;
   }
 
-  nsExtendedContentSlots* GetExistingExtendedContentSlots()
-  {
+  nsExtendedContentSlots* GetExistingExtendedContentSlots() {
     nsContentSlots* slots = GetExistingContentSlots();
     return slots ? slots->GetExtendedContentSlots() : nullptr;
   }
 
-  nsExtendedContentSlots* ExtendedContentSlots()
-  {
+  nsExtendedContentSlots* ExtendedContentSlots() {
     nsContentSlots* slots = ContentSlots();
     if (!slots->GetExtendedContentSlots()) {
       slots->SetExtendedContentSlots(CreateExtendedSlots(), true);
@@ -917,7 +843,7 @@ protected:
 
   ~nsIContent() {}
 
-public:
+ public:
 #ifdef DEBUG
   
 
@@ -934,10 +860,11 @@ public:
 #endif
 
   enum ETabFocusType {
-    eTabFocus_textControlsMask = (1<<0),  
-    eTabFocus_formElementsMask = (1<<1),  
-    eTabFocus_linksMask = (1<<2),         
-    eTabFocus_any = 1 + (1<<1) + (1<<2)   
+    eTabFocus_textControlsMask =
+        (1 << 0),  
+    eTabFocus_formElementsMask = (1 << 1),   
+    eTabFocus_linksMask = (1 << 2),          
+    eTabFocus_any = 1 + (1 << 1) + (1 << 2)  
   };
 
   
@@ -950,14 +877,12 @@ public:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIContent, NS_ICONTENT_IID)
 
-inline nsIContent* nsINode::AsContent()
-{
+inline nsIContent* nsINode::AsContent() {
   MOZ_ASSERT(IsContent());
   return static_cast<nsIContent*>(this);
 }
 
-inline const nsIContent* nsINode::AsContent() const
-{
+inline const nsIContent* nsINode::AsContent() const {
   return const_cast<nsINode*>(this)->AsContent();
 }
 

@@ -24,194 +24,192 @@
 
 
 
-BEGIN_TEST(testAssemblerBuffer_BufferOffset)
-{
-    using js::jit::BufferOffset;
+BEGIN_TEST(testAssemblerBuffer_BufferOffset) {
+  using js::jit::BufferOffset;
 
-    BufferOffset off1;
-    BufferOffset off2(10);
+  BufferOffset off1;
+  BufferOffset off2(10);
 
-    CHECK(!off1.assigned());
-    CHECK(off2.assigned());
-    CHECK_EQUAL(off2.getOffset(), 10);
-    off1 = off2;
-    CHECK(off1.assigned());
-    CHECK_EQUAL(off1.getOffset(), 10);
+  CHECK(!off1.assigned());
+  CHECK(off2.assigned());
+  CHECK_EQUAL(off2.getOffset(), 10);
+  off1 = off2;
+  CHECK(off1.assigned());
+  CHECK_EQUAL(off1.getOffset(), 10);
 
-    return true;
+  return true;
 }
 END_TEST(testAssemblerBuffer_BufferOffset)
 
-BEGIN_TEST(testAssemblerBuffer_AssemblerBuffer)
-{
-    using js::jit::BufferOffset;
-    typedef js::jit::AssemblerBuffer<5 * sizeof(uint32_t), uint32_t> AsmBuf;
+BEGIN_TEST(testAssemblerBuffer_AssemblerBuffer) {
+  using js::jit::BufferOffset;
+  typedef js::jit::AssemblerBuffer<5 * sizeof(uint32_t), uint32_t> AsmBuf;
 
-    AsmBuf ab;
-    CHECK(ab.isAligned(16));
-    CHECK_EQUAL(ab.size(), 0u);
-    CHECK_EQUAL(ab.nextOffset().getOffset(), 0);
-    CHECK(!ab.oom());
-    CHECK(!ab.bail());
+  AsmBuf ab;
+  CHECK(ab.isAligned(16));
+  CHECK_EQUAL(ab.size(), 0u);
+  CHECK_EQUAL(ab.nextOffset().getOffset(), 0);
+  CHECK(!ab.oom());
+  CHECK(!ab.bail());
 
-    BufferOffset off1 = ab.putInt(1000017);
-    CHECK_EQUAL(off1.getOffset(), 0);
-    CHECK_EQUAL(ab.size(), 4u);
-    CHECK_EQUAL(ab.nextOffset().getOffset(), 4);
-    CHECK(!ab.isAligned(16));
-    CHECK(ab.isAligned(4));
-    CHECK(ab.isAligned(1));
-    CHECK_EQUAL(*ab.getInst(off1), 1000017u);
+  BufferOffset off1 = ab.putInt(1000017);
+  CHECK_EQUAL(off1.getOffset(), 0);
+  CHECK_EQUAL(ab.size(), 4u);
+  CHECK_EQUAL(ab.nextOffset().getOffset(), 4);
+  CHECK(!ab.isAligned(16));
+  CHECK(ab.isAligned(4));
+  CHECK(ab.isAligned(1));
+  CHECK_EQUAL(*ab.getInst(off1), 1000017u);
 
-    BufferOffset off2 = ab.putInt(1000018);
-    CHECK_EQUAL(off2.getOffset(), 4);
+  BufferOffset off2 = ab.putInt(1000018);
+  CHECK_EQUAL(off2.getOffset(), 4);
 
-    BufferOffset off3 = ab.putInt(1000019);
-    CHECK_EQUAL(off3.getOffset(), 8);
+  BufferOffset off3 = ab.putInt(1000019);
+  CHECK_EQUAL(off3.getOffset(), 8);
 
-    BufferOffset off4 = ab.putInt(1000020);
-    CHECK_EQUAL(off4.getOffset(), 12);
-    CHECK_EQUAL(ab.size(), 16u);
-    CHECK_EQUAL(ab.nextOffset().getOffset(), 16);
+  BufferOffset off4 = ab.putInt(1000020);
+  CHECK_EQUAL(off4.getOffset(), 12);
+  CHECK_EQUAL(ab.size(), 16u);
+  CHECK_EQUAL(ab.nextOffset().getOffset(), 16);
 
-    
-    BufferOffset off5 = ab.putInt(1000021);
-    CHECK_EQUAL(off5.getOffset(), 16);
-    CHECK_EQUAL(ab.size(), 20u);
-    CHECK_EQUAL(ab.nextOffset().getOffset(), 20);
+  
+  BufferOffset off5 = ab.putInt(1000021);
+  CHECK_EQUAL(off5.getOffset(), 16);
+  CHECK_EQUAL(ab.size(), 20u);
+  CHECK_EQUAL(ab.nextOffset().getOffset(), 20);
 
-    BufferOffset off6 = ab.putInt(1000022);
-    CHECK_EQUAL(off6.getOffset(), 20);
-    CHECK_EQUAL(ab.size(), 24u);
-    CHECK_EQUAL(ab.nextOffset().getOffset(), 24);
+  BufferOffset off6 = ab.putInt(1000022);
+  CHECK_EQUAL(off6.getOffset(), 20);
+  CHECK_EQUAL(ab.size(), 24u);
+  CHECK_EQUAL(ab.nextOffset().getOffset(), 24);
 
-    
-    CHECK_EQUAL(*ab.getInst(off1), 1000017u);
-    CHECK_EQUAL(*ab.getInst(off6), 1000022u);
-    CHECK_EQUAL(*ab.getInst(off1), 1000017u);
-    CHECK_EQUAL(*ab.getInst(off5), 1000021u);
+  
+  CHECK_EQUAL(*ab.getInst(off1), 1000017u);
+  CHECK_EQUAL(*ab.getInst(off6), 1000022u);
+  CHECK_EQUAL(*ab.getInst(off1), 1000017u);
+  CHECK_EQUAL(*ab.getInst(off5), 1000021u);
 
-    
-    const uint32_t fixdata[] = { 2000036, 2000037, 2000038, 2000039, 2000040, 2000041 };
+  
+  const uint32_t fixdata[] = {2000036, 2000037, 2000038,
+                              2000039, 2000040, 2000041};
 
-    
-    CHECK_EQUAL(ab.nextOffset().getOffset(), 24);
-    BufferOffset good1 = ab.putBytesLarge(sizeof(fixdata), fixdata);
-    CHECK_EQUAL(good1.getOffset(), 24);
-    CHECK_EQUAL(ab.nextOffset().getOffset(), 48);
-    CHECK_EQUAL(*ab.getInst(good1), 2000036u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(32)), 2000038u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(36)), 2000039u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(40)), 2000040u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(44)), 2000041u);
+  
+  CHECK_EQUAL(ab.nextOffset().getOffset(), 24);
+  BufferOffset good1 = ab.putBytesLarge(sizeof(fixdata), fixdata);
+  CHECK_EQUAL(good1.getOffset(), 24);
+  CHECK_EQUAL(ab.nextOffset().getOffset(), 48);
+  CHECK_EQUAL(*ab.getInst(good1), 2000036u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(32)), 2000038u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(36)), 2000039u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(40)), 2000040u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(44)), 2000041u);
 
-    return true;
+  return true;
 }
 END_TEST(testAssemblerBuffer_AssemblerBuffer)
 
-BEGIN_TEST(testAssemblerBuffer_BranchDeadlineSet)
-{
-    typedef js::jit::BranchDeadlineSet<3> DLSet;
-    using js::jit::BufferOffset;
+BEGIN_TEST(testAssemblerBuffer_BranchDeadlineSet) {
+  typedef js::jit::BranchDeadlineSet<3> DLSet;
+  using js::jit::BufferOffset;
 
-    js::LifoAlloc alloc(1024);
-    DLSet dls(alloc);
+  js::LifoAlloc alloc(1024);
+  DLSet dls(alloc);
 
-    CHECK(dls.empty());
-    CHECK(alloc.isEmpty()); 
-    CHECK_EQUAL(dls.size(), 0u);
-    CHECK_EQUAL(dls.maxRangeSize(), 0u);
+  CHECK(dls.empty());
+  CHECK(alloc.isEmpty());  
+  CHECK_EQUAL(dls.size(), 0u);
+  CHECK_EQUAL(dls.maxRangeSize(), 0u);
 
-    
-    dls.removeDeadline(1, BufferOffset(7));
+  
+  dls.removeDeadline(1, BufferOffset(7));
 
-    
-    dls.addDeadline(1, BufferOffset(10));
-    CHECK(!dls.empty());
-    CHECK_EQUAL(dls.size(), 1u);
-    CHECK_EQUAL(dls.maxRangeSize(), 1u);
+  
+  dls.addDeadline(1, BufferOffset(10));
+  CHECK(!dls.empty());
+  CHECK_EQUAL(dls.size(), 1u);
+  CHECK_EQUAL(dls.maxRangeSize(), 1u);
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
+  CHECK_EQUAL(dls.earliestDeadlineRange(), 1u);
+
+  
+  dls.removeDeadline(1, BufferOffset(7));
+  dls.removeDeadline(1, BufferOffset(17));
+  dls.removeDeadline(0, BufferOffset(10));
+  CHECK_EQUAL(dls.size(), 1u);
+  CHECK_EQUAL(dls.maxRangeSize(), 1u);
+
+  
+  dls.addDeadline(2, BufferOffset(10));
+  CHECK(!dls.empty());
+  CHECK_EQUAL(dls.size(), 2u);
+  CHECK_EQUAL(dls.maxRangeSize(), 1u);
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
+
+  
+  
+  if (dls.earliestDeadlineRange() == 1) {
+    dls.removeDeadline(1, BufferOffset(10));
+    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
+    CHECK_EQUAL(dls.earliestDeadlineRange(), 2u);
+  } else {
+    CHECK_EQUAL(dls.earliestDeadlineRange(), 2u);
+    dls.removeDeadline(2, BufferOffset(10));
     CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
     CHECK_EQUAL(dls.earliestDeadlineRange(), 1u);
+  }
 
-    
-    dls.removeDeadline(1, BufferOffset(7));
-    dls.removeDeadline(1, BufferOffset(17));
-    dls.removeDeadline(0, BufferOffset(10));
-    CHECK_EQUAL(dls.size(), 1u);
-    CHECK_EQUAL(dls.maxRangeSize(), 1u);
+  
+  dls.addDeadline(0, BufferOffset(20));
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
+  CHECK(dls.earliestDeadlineRange() > 0);
 
-    
-    dls.addDeadline(2, BufferOffset(10));
-    CHECK(!dls.empty());
-    CHECK_EQUAL(dls.size(), 2u);
-    CHECK_EQUAL(dls.maxRangeSize(), 1u);
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
+  
+  dls.addDeadline(0, BufferOffset(15));
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
+  CHECK(dls.earliestDeadlineRange() > 0);
 
-    
-    
-    if (dls.earliestDeadlineRange() == 1) {
-        dls.removeDeadline(1, BufferOffset(10));
-        CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
-        CHECK_EQUAL(dls.earliestDeadlineRange(), 2u);
-    } else {
-        CHECK_EQUAL(dls.earliestDeadlineRange(), 2u);
-        dls.removeDeadline(2, BufferOffset(10));
-        CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
-        CHECK_EQUAL(dls.earliestDeadlineRange(), 1u);
-    }
+  
+  dls.addDeadline(0, BufferOffset(30));
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
+  CHECK(dls.earliestDeadlineRange() > 0);
 
-    
-    dls.addDeadline(0, BufferOffset(20));
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
-    CHECK(dls.earliestDeadlineRange() > 0);
+  
+  dls.addDeadline(0, BufferOffset(25));
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
+  CHECK(dls.earliestDeadlineRange() > 0);
 
-    
-    dls.addDeadline(0, BufferOffset(15));
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
-    CHECK(dls.earliestDeadlineRange() > 0);
+  
+  dls.addDeadline(0, BufferOffset(5));
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 5);
+  CHECK_EQUAL(dls.earliestDeadlineRange(), 0u);
 
-    
-    dls.addDeadline(0, BufferOffset(30));
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
-    CHECK(dls.earliestDeadlineRange() > 0);
+  
+  dls.removeDeadline(0, BufferOffset(20));
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 5);
+  CHECK_EQUAL(dls.earliestDeadlineRange(), 0u);
 
-    
-    dls.addDeadline(0, BufferOffset(25));
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
-    CHECK(dls.earliestDeadlineRange() > 0);
+  
+  dls.removeDeadline(0, BufferOffset(5));
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
+  CHECK(dls.earliestDeadlineRange() > 0);
 
-    
-    dls.addDeadline(0, BufferOffset(5));
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 5);
-    CHECK_EQUAL(dls.earliestDeadlineRange(), 0u);
+  
+  dls.removeDeadline(dls.earliestDeadlineRange(), BufferOffset(10));
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 15);
+  CHECK_EQUAL(dls.earliestDeadlineRange(), 0u);
 
-    
-    dls.removeDeadline(0, BufferOffset(20));
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 5);
-    CHECK_EQUAL(dls.earliestDeadlineRange(), 0u);
+  
+  dls.removeDeadline(0, BufferOffset(30));
+  CHECK_EQUAL(dls.earliestDeadline().getOffset(), 15);
+  CHECK_EQUAL(dls.earliestDeadlineRange(), 0u);
 
-    
-    dls.removeDeadline(0, BufferOffset(5));
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 10);
-    CHECK(dls.earliestDeadlineRange() > 0);
+  
+  CHECK_EQUAL(dls.size(), 2u);
+  dls.removeDeadline(0, BufferOffset(25));
+  dls.removeDeadline(0, BufferOffset(15));
+  CHECK(dls.empty());
 
-    
-    dls.removeDeadline(dls.earliestDeadlineRange(), BufferOffset(10));
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 15);
-    CHECK_EQUAL(dls.earliestDeadlineRange(), 0u);
-
-    
-    dls.removeDeadline(0, BufferOffset(30));
-    CHECK_EQUAL(dls.earliestDeadline().getOffset(), 15);
-    CHECK_EQUAL(dls.earliestDeadlineRange(), 0u);
-
-    
-    CHECK_EQUAL(dls.size(), 2u);
-    dls.removeDeadline(0, BufferOffset(25));
-    dls.removeDeadline(0, BufferOffset(15));
-    CHECK(dls.empty());
-
-    return true;
+  return true;
 }
 END_TEST(testAssemblerBuffer_BranchDeadlineSet)
 
@@ -222,287 +220,298 @@ namespace {
 struct TestAssembler;
 
 typedef js::jit::AssemblerBufferWithConstantPools<
-   5 * sizeof(uint32_t),
-   4,
-   uint32_t,
-   TestAssembler,
-   3> AsmBufWithPool;
+     5 * sizeof(uint32_t),
+     4,
+     uint32_t,
+     TestAssembler,
+     3>
+    AsmBufWithPool;
 
-struct TestAssembler
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+struct TestAssembler {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    static const unsigned BranchRange = 36;
+  static const unsigned BranchRange = 36;
 
-    static void InsertIndexIntoTag(uint8_t* load_, uint32_t index)
-    {
-        uint32_t* load = reinterpret_cast<uint32_t*>(load_);
-        MOZ_ASSERT(*load == 0xc0cc0000, "Expected uninitialized constant pool load");
-        MOZ_ASSERT(index < 0x10000);
-        *load = 0xc1cc0000 + index;
-    }
+  static void InsertIndexIntoTag(uint8_t* load_, uint32_t index) {
+    uint32_t* load = reinterpret_cast<uint32_t*>(load_);
+    MOZ_ASSERT(*load == 0xc0cc0000,
+               "Expected uninitialized constant pool load");
+    MOZ_ASSERT(index < 0x10000);
+    *load = 0xc1cc0000 + index;
+  }
 
-    static void PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr)
-    {
-        uint32_t* load = reinterpret_cast<uint32_t*>(loadAddr);
-        uint32_t index = *load & 0xffff;
-        MOZ_ASSERT(*load == (0xc1cc0000 | index), "Expected constant pool load(index)");
-        ptrdiff_t offset =
-          reinterpret_cast<uint8_t*>(constPoolAddr) - reinterpret_cast<uint8_t*>(loadAddr);
-        offset += index * 4;
-        MOZ_ASSERT(offset % 4 == 0, "Unaligned constant pool");
-        MOZ_ASSERT(offset > 0 && offset < 0x10000, "Pool out of range");
-        *load = 0xc2cc0000 + offset;
-    }
+  static void PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr) {
+    uint32_t* load = reinterpret_cast<uint32_t*>(loadAddr);
+    uint32_t index = *load & 0xffff;
+    MOZ_ASSERT(*load == (0xc1cc0000 | index),
+               "Expected constant pool load(index)");
+    ptrdiff_t offset = reinterpret_cast<uint8_t*>(constPoolAddr) -
+                       reinterpret_cast<uint8_t*>(loadAddr);
+    offset += index * 4;
+    MOZ_ASSERT(offset % 4 == 0, "Unaligned constant pool");
+    MOZ_ASSERT(offset > 0 && offset < 0x10000, "Pool out of range");
+    *load = 0xc2cc0000 + offset;
+  }
 
-    static void WritePoolGuard(js::jit::BufferOffset branch, uint32_t* dest,
-                               js::jit::BufferOffset afterPool)
-    {
-        MOZ_ASSERT(branch.assigned());
-        MOZ_ASSERT(afterPool.assigned());
-        size_t branchOff = branch.getOffset();
-        size_t afterPoolOff = afterPool.getOffset();
-        MOZ_ASSERT(afterPoolOff > branchOff);
-        uint32_t delta = afterPoolOff - branchOff;
-        *dest = 0xb0bb0000 + delta;
-    }
+  static void WritePoolGuard(js::jit::BufferOffset branch, uint32_t* dest,
+                             js::jit::BufferOffset afterPool) {
+    MOZ_ASSERT(branch.assigned());
+    MOZ_ASSERT(afterPool.assigned());
+    size_t branchOff = branch.getOffset();
+    size_t afterPoolOff = afterPool.getOffset();
+    MOZ_ASSERT(afterPoolOff > branchOff);
+    uint32_t delta = afterPoolOff - branchOff;
+    *dest = 0xb0bb0000 + delta;
+  }
 
-    static void WritePoolHeader(void* start, js::jit::Pool* p, bool isNatural)
-    {
-        MOZ_ASSERT(!isNatural, "Natural pool guards not implemented.");
-        uint32_t* hdr = reinterpret_cast<uint32_t*>(start);
-        *hdr = 0xffff0000 + p->getPoolSize();
-    }
+  static void WritePoolHeader(void* start, js::jit::Pool* p, bool isNatural) {
+    MOZ_ASSERT(!isNatural, "Natural pool guards not implemented.");
+    uint32_t* hdr = reinterpret_cast<uint32_t*>(start);
+    *hdr = 0xffff0000 + p->getPoolSize();
+  }
 
-    static void PatchShortRangeBranchToVeneer(AsmBufWithPool* buffer, unsigned rangeIdx,
-                                              js::jit::BufferOffset deadline,
-                                              js::jit::BufferOffset veneer)
-    {
-        size_t branchOff = deadline.getOffset() - BranchRange;
-        size_t veneerOff = veneer.getOffset();
-        uint32_t *branch = buffer->getInst(js::jit::BufferOffset(branchOff));
+  static void PatchShortRangeBranchToVeneer(AsmBufWithPool* buffer,
+                                            unsigned rangeIdx,
+                                            js::jit::BufferOffset deadline,
+                                            js::jit::BufferOffset veneer) {
+    size_t branchOff = deadline.getOffset() - BranchRange;
+    size_t veneerOff = veneer.getOffset();
+    uint32_t* branch = buffer->getInst(js::jit::BufferOffset(branchOff));
 
-        MOZ_ASSERT((*branch & 0xffff0000) == 0xb1bb0000,
-                   "Expected short-range branch instruction");
-        
-        
-        *buffer->getInst(veneer) = 0xb2bb0000 | (*branch & 0xffff);
-        MOZ_ASSERT(veneerOff > branchOff, "Veneer should follow branch");
-        *branch = 0xb3bb0000 + (veneerOff - branchOff);
-    }
+    MOZ_ASSERT((*branch & 0xffff0000) == 0xb1bb0000,
+               "Expected short-range branch instruction");
+    
+    
+    *buffer->getInst(veneer) = 0xb2bb0000 | (*branch & 0xffff);
+    MOZ_ASSERT(veneerOff > branchOff, "Veneer should follow branch");
+    *branch = 0xb3bb0000 + (veneerOff - branchOff);
+  }
 };
-}
+}  
 
-BEGIN_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools)
-{
-    using js::jit::BufferOffset;
+BEGIN_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools) {
+  using js::jit::BufferOffset;
 
-    AsmBufWithPool ab( 1,
-                       1,
-                       0,
-                       17,
-                       0,
-                       0x11110000,
-                       0xaaaa0000,
-                       0);
+  AsmBufWithPool ab( 1,
+                     1,
+                     0,
+                     17,
+                     0,
+                     0x11110000,
+                     0xaaaa0000,
+                     0);
 
-    CHECK(ab.isAligned(16));
-    CHECK_EQUAL(ab.size(), 0u);
-    CHECK_EQUAL(ab.nextOffset().getOffset(), 0);
-    CHECK(!ab.oom());
-    CHECK(!ab.bail());
+  CHECK(ab.isAligned(16));
+  CHECK_EQUAL(ab.size(), 0u);
+  CHECK_EQUAL(ab.nextOffset().getOffset(), 0);
+  CHECK(!ab.oom());
+  CHECK(!ab.bail());
 
-    
-    uint32_t poolLoad[] = { 0xc0cc0000 };
-    uint32_t poolData[] = { 0xdddd0000, 0xdddd0001, 0xdddd0002, 0xdddd0003 };
-    AsmBufWithPool::PoolEntry pe;
-    BufferOffset load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
-    CHECK_EQUAL(pe.index(), 0u);
-    CHECK_EQUAL(load.getOffset(), 0);
+  
+  uint32_t poolLoad[] = {0xc0cc0000};
+  uint32_t poolData[] = {0xdddd0000, 0xdddd0001, 0xdddd0002, 0xdddd0003};
+  AsmBufWithPool::PoolEntry pe;
+  BufferOffset load =
+      ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
+  CHECK_EQUAL(pe.index(), 0u);
+  CHECK_EQUAL(load.getOffset(), 0);
 
-    
-    
-    CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000);
+  
+  
+  CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ab.putInt(0x22220001);
-    
-    
-    
-    ab.putInt(0x22220002);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ab.putInt(0x22220001);
+  
+  
+  
+  ab.putInt(0x22220002);
 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(0)), 0xc2cc0010u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(4)), 0x22220001u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(8)), 0xb0bb000cu);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(12)), 0xffff0004u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(16)), 0xdddd0000u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(20)), 0x22220002u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(0)), 0xc2cc0010u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(4)), 0x22220001u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(8)), 0xb0bb000cu);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(12)), 0xffff0004u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(16)), 0xdddd0000u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(20)), 0x22220002u);
 
-    
-    poolLoad[0] = 0xc0cc0000;
+  
+  poolLoad[0] = 0xc0cc0000;
 
-    
-    load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
-    CHECK_EQUAL(pe.index(), 1u); 
-    CHECK_EQUAL(load.getOffset(), 24);
-    CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000); 
-    ab.putInt(0x22220001);
-    ab.putInt(0x22220002);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(24)), 0xc2cc0010u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(28)), 0x22220001u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(32)), 0xb0bb000cu);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(36)), 0xffff0004u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(40)), 0xdddd0000u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(44)), 0x22220002u);
+  
+  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
+  CHECK_EQUAL(pe.index(), 1u);  
+  CHECK_EQUAL(load.getOffset(), 24);
+  CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000);  
+  ab.putInt(0x22220001);
+  ab.putInt(0x22220002);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(24)), 0xc2cc0010u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(28)), 0x22220001u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(32)), 0xb0bb000cu);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(36)), 0xffff0004u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(40)), 0xdddd0000u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(44)), 0x22220002u);
 
-    
-    poolLoad[0] = 0xc0cc0000;
-    load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
-    CHECK_EQUAL(pe.index(), 2u); 
-    CHECK_EQUAL(load.getOffset(), 48);
-    CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000); 
+  
+  poolLoad[0] = 0xc0cc0000;
+  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
+  CHECK_EQUAL(pe.index(), 2u);  
+  CHECK_EQUAL(load.getOffset(), 48);
+  CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000);  
 
-    poolLoad[0] = 0xc0cc0000;
-    load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)(poolData + 1), &pe);
-    CHECK_EQUAL(pe.index(), 3u); 
-    CHECK_EQUAL(load.getOffset(), 52);
-    CHECK_EQUAL(*ab.getInst(load), 0xc1cc0001); 
+  poolLoad[0] = 0xc0cc0000;
+  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)(poolData + 1), &pe);
+  CHECK_EQUAL(pe.index(), 3u);  
+  CHECK_EQUAL(load.getOffset(), 52);
+  CHECK_EQUAL(*ab.getInst(load), 0xc1cc0001);  
 
-    ab.putInt(0x22220005);
+  ab.putInt(0x22220005);
 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(48)), 0xc2cc0010u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(52)), 0xc2cc0010u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(56)), 0xb0bb0010u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(60)), 0xffff0008u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(64)), 0xdddd0000u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(68)), 0xdddd0001u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(72)), 0x22220005u); 
+  CHECK_EQUAL(*ab.getInst(BufferOffset(48)), 0xc2cc0010u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(52)), 0xc2cc0010u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(56)),
+              0xb0bb0010u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(60)), 0xffff0008u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(64)), 0xdddd0000u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(68)), 0xdddd0001u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(72)),
+              0x22220005u);  
 
-    
-    
-    
-    poolLoad[0] = 0xc0cc0000;
-    load = ab.allocEntry(1, 2, (uint8_t*)poolLoad, (uint8_t*)(poolData+2), &pe);
-    CHECK_EQUAL(pe.index(), 4u); 
-    CHECK_EQUAL(load.getOffset(), 76);
-    CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000); 
+  
+  
+  
+  poolLoad[0] = 0xc0cc0000;
+  load = ab.allocEntry(1, 2, (uint8_t*)poolLoad, (uint8_t*)(poolData + 2), &pe);
+  CHECK_EQUAL(pe.index(), 4u);  
+  CHECK_EQUAL(load.getOffset(), 76);
+  CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000);  
 
-    poolLoad[0] = 0xc0cc0000;
-    load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
-    CHECK_EQUAL(pe.index(), 6u); 
-    CHECK_EQUAL(load.getOffset(), 96);
-    CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000); 
+  poolLoad[0] = 0xc0cc0000;
+  load = ab.allocEntry(1, 1, (uint8_t*)poolLoad, (uint8_t*)poolData, &pe);
+  CHECK_EQUAL(pe.index(),
+              6u);  
+  CHECK_EQUAL(load.getOffset(), 96);
+  CHECK_EQUAL(*ab.getInst(load), 0xc1cc0000);  
 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(76)), 0xc2cc000cu); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(80)), 0xb0bb0010u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(84)), 0xffff0008u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(88)), 0xdddd0002u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(92)), 0xdddd0003u); 
+  CHECK_EQUAL(*ab.getInst(BufferOffset(76)), 0xc2cc000cu);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(80)),
+              0xb0bb0010u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(84)), 0xffff0008u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(88)), 0xdddd0002u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(92)), 0xdddd0003u);  
 
-    
-    
-    ab.enterNoPool(2);
-    ab.putInt(0x22220006);
-    ab.putInt(0x22220007);
-    ab.leaveNoPool();
+  
+  
+  ab.enterNoPool(2);
+  ab.putInt(0x22220006);
+  ab.putInt(0x22220007);
+  ab.leaveNoPool();
 
-    CHECK_EQUAL(*ab.getInst(BufferOffset( 96)), 0xc2cc000cu); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(100)), 0xb0bb000cu); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(104)), 0xffff0004u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(108)), 0xdddd0000u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(112)), 0x22220006u);
-    CHECK_EQUAL(*ab.getInst(BufferOffset(116)), 0x22220007u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(96)), 0xc2cc000cu);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(100)),
+              0xb0bb000cu);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(104)), 0xffff0004u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(108)), 0xdddd0000u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(112)), 0x22220006u);
+  CHECK_EQUAL(*ab.getInst(BufferOffset(116)), 0x22220007u);
 
-    return true;
+  return true;
 }
 END_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools)
 
-BEGIN_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools_ShortBranch)
-{
-    using js::jit::BufferOffset;
+BEGIN_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools_ShortBranch) {
+  using js::jit::BufferOffset;
 
-    AsmBufWithPool ab( 1,
-                       1,
-                       0,
-                       17,
-                       0,
-                       0x11110000,
-                       0xaaaa0000,
-                       0);
+  AsmBufWithPool ab( 1,
+                     1,
+                     0,
+                     17,
+                     0,
+                     0x11110000,
+                     0xaaaa0000,
+                     0);
 
-    
-    BufferOffset br1 = ab.putInt(0xb1bb00cc);
-    ab.registerBranchDeadline(1, BufferOffset(br1.getOffset() + TestAssembler::BranchRange));
-    ab.putInt(0x22220001);
-    BufferOffset off = ab.putInt(0x22220002);
-    ab.registerBranchDeadline(1, BufferOffset(off.getOffset() + TestAssembler::BranchRange));
-    ab.putInt(0x22220003);
-    ab.putInt(0x22220004);
+  
+  BufferOffset br1 = ab.putInt(0xb1bb00cc);
+  ab.registerBranchDeadline(
+      1, BufferOffset(br1.getOffset() + TestAssembler::BranchRange));
+  ab.putInt(0x22220001);
+  BufferOffset off = ab.putInt(0x22220002);
+  ab.registerBranchDeadline(
+      1, BufferOffset(off.getOffset() + TestAssembler::BranchRange));
+  ab.putInt(0x22220003);
+  ab.putInt(0x22220004);
 
-    
-    BufferOffset br2 = ab.putInt(0xb1bb0d2d);
-    ab.registerBranchDeadline(1, BufferOffset(br2.getOffset() + TestAssembler::BranchRange));
+  
+  BufferOffset br2 = ab.putInt(0xb1bb0d2d);
+  ab.registerBranchDeadline(
+      1, BufferOffset(br2.getOffset() + TestAssembler::BranchRange));
 
-    
-    CHECK_EQUAL(*ab.getInst(br1), 0xb1bb00cc);
-    CHECK_EQUAL(*ab.getInst(br2), 0xb1bb0d2d);
+  
+  CHECK_EQUAL(*ab.getInst(br1), 0xb1bb00cc);
+  CHECK_EQUAL(*ab.getInst(br2), 0xb1bb0d2d);
 
-    
-    
-    
-    ab.unregisterBranchDeadline(1, BufferOffset(off.getOffset() + TestAssembler::BranchRange));
+  
+  
+  
+  ab.unregisterBranchDeadline(
+      1, BufferOffset(off.getOffset() + TestAssembler::BranchRange));
 
-    off = ab.putInt(0x22220006);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    CHECK_EQUAL(off.getOffset(), 24);
-    
-    
-    
-    
-    
+  off = ab.putInt(0x22220006);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  CHECK_EQUAL(off.getOffset(), 24);
+  
+  
+  
+  
+  
 
-    off = ab.putInt(0x22220007);
-    CHECK_EQUAL(off.getOffset(), 44);
+  off = ab.putInt(0x22220007);
+  CHECK_EQUAL(off.getOffset(), 44);
 
-    
-    CHECK_EQUAL(*ab.getInst(br1), 0xb3bb0000 + 36);         
-    CHECK_EQUAL(*ab.getInst(BufferOffset(8)), 0x22220002u);  
-    CHECK_EQUAL(*ab.getInst(br2), 0xb3bb0000 + 20);         
-    CHECK_EQUAL(*ab.getInst(BufferOffset(28)), 0xb0bb0010u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(32)), 0xffff0000u); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(36)), 0xb2bb00ccu); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(40)), 0xb2bb0d2du); 
-    CHECK_EQUAL(*ab.getInst(BufferOffset(44)), 0x22220007u);
+  
+  CHECK_EQUAL(*ab.getInst(br1), 0xb3bb0000 + 36);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(8)),
+              0x22220002u);                        
+  CHECK_EQUAL(*ab.getInst(br2), 0xb3bb0000 + 20);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(28)), 0xb0bb0010u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(32)),
+              0xffff0000u);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(36)),
+              0xb2bb00ccu);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(40)),
+              0xb2bb0d2du);  
+  CHECK_EQUAL(*ab.getInst(BufferOffset(44)), 0x22220007u);
 
-    return true;
+  return true;
 }
 END_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools_ShortBranch)
 
@@ -511,69 +520,71 @@ END_TEST(testAssemblerBuffer_AssemblerBufferWithConstantPools_ShortBranch)
 
 #include "jit/MacroAssembler-inl.h"
 
-BEGIN_TEST(testAssemblerBuffer_ARM64)
-{
-    using namespace js::jit;
+BEGIN_TEST(testAssemblerBuffer_ARM64) {
+  using namespace js::jit;
 
-    js::LifoAlloc lifo(4096);
-    TempAllocator alloc(&lifo);
-    JitContext jc(cx, &alloc);
-    cx->runtime()->getJitRuntime(cx);
-    StackMacroAssembler masm;
+  js::LifoAlloc lifo(4096);
+  TempAllocator alloc(&lifo);
+  JitContext jc(cx, &alloc);
+  cx->runtime()->getJitRuntime(cx);
+  StackMacroAssembler masm;
 
-    
-    Label lab1;
-    masm.branch(Assembler::Equal, &lab1);
-    masm.branch(Assembler::LessThan, &lab1);
-    masm.bind(&lab1);
-    masm.branch(Assembler::Equal, &lab1);
+  
+  Label lab1;
+  masm.branch(Assembler::Equal, &lab1);
+  masm.branch(Assembler::LessThan, &lab1);
+  masm.bind(&lab1);
+  masm.branch(Assembler::Equal, &lab1);
 
-    CHECK_EQUAL(masm.getInstructionAt(BufferOffset(0))->InstructionBits(),
-                vixl::B_cond | vixl::Assembler::ImmCondBranch(2) | vixl::eq);
-    CHECK_EQUAL(masm.getInstructionAt(BufferOffset(4))->InstructionBits(),
-                vixl::B_cond | vixl::Assembler::ImmCondBranch(1) | vixl::lt);
-    CHECK_EQUAL(masm.getInstructionAt(BufferOffset(8))->InstructionBits(),
-                vixl::B_cond | vixl::Assembler::ImmCondBranch(0) | vixl::eq);
+  CHECK_EQUAL(masm.getInstructionAt(BufferOffset(0))->InstructionBits(),
+              vixl::B_cond | vixl::Assembler::ImmCondBranch(2) | vixl::eq);
+  CHECK_EQUAL(masm.getInstructionAt(BufferOffset(4))->InstructionBits(),
+              vixl::B_cond | vixl::Assembler::ImmCondBranch(1) | vixl::lt);
+  CHECK_EQUAL(masm.getInstructionAt(BufferOffset(8))->InstructionBits(),
+              vixl::B_cond | vixl::Assembler::ImmCondBranch(0) | vixl::eq);
 
-    
-    
-    Label lab2a;
-    Label lab2b;
-    masm.bind(&lab2a);
-    masm.B(&lab2b);
-    
-    for (unsigned n = 0; n < 1100000; n += 4) {
-        masm.Nop();
-    }
-    masm.branch(Assembler::LessThan, &lab2b);
-    masm.bind(&lab2b);
-    CHECK_EQUAL(masm.getInstructionAt(BufferOffset(lab2a.offset()))->InstructionBits(),
-                vixl::B | vixl::Assembler::ImmUncondBranch(1100000 / 4 + 2));
-    CHECK_EQUAL(masm.getInstructionAt(BufferOffset(lab2b.offset() - 4))->InstructionBits(),
-                vixl::B_cond | vixl::Assembler::ImmCondBranch(1) | vixl::lt);
+  
+  
+  Label lab2a;
+  Label lab2b;
+  masm.bind(&lab2a);
+  masm.B(&lab2b);
+  
+  for (unsigned n = 0; n < 1100000; n += 4) {
+    masm.Nop();
+  }
+  masm.branch(Assembler::LessThan, &lab2b);
+  masm.bind(&lab2b);
+  CHECK_EQUAL(
+      masm.getInstructionAt(BufferOffset(lab2a.offset()))->InstructionBits(),
+      vixl::B | vixl::Assembler::ImmUncondBranch(1100000 / 4 + 2));
+  CHECK_EQUAL(masm.getInstructionAt(BufferOffset(lab2b.offset() - 4))
+                  ->InstructionBits(),
+              vixl::B_cond | vixl::Assembler::ImmCondBranch(1) | vixl::lt);
 
-    
-    Label lab3a;
-    Label lab3b;
-    masm.bind(&lab3a);
-    masm.branch(Assembler::LessThan, &lab3b);
-    for (unsigned n = 0; n < 1100000; n += 4) {
-        masm.Nop();
-    }
-    masm.bind(&lab3b);
-    masm.B(&lab3a);
-    Instruction* bcond3 = masm.getInstructionAt(BufferOffset(lab3a.offset()));
-    CHECK_EQUAL(bcond3->BranchType(), vixl::CondBranchType);
-    ptrdiff_t delta = bcond3->ImmPCRawOffset() * 4;
-    Instruction* veneer = masm.getInstructionAt(BufferOffset(lab3a.offset() + delta));
-    CHECK_EQUAL(veneer->BranchType(), vixl::UncondBranchType);
-    delta += veneer->ImmPCRawOffset() * 4;
-    CHECK_EQUAL(delta, lab3b.offset() - lab3a.offset());
-    Instruction* b3 = masm.getInstructionAt(BufferOffset(lab3b.offset()));
-    CHECK_EQUAL(b3->BranchType(), vixl::UncondBranchType);
-    CHECK_EQUAL(4 * b3->ImmPCRawOffset(), -delta);
+  
+  Label lab3a;
+  Label lab3b;
+  masm.bind(&lab3a);
+  masm.branch(Assembler::LessThan, &lab3b);
+  for (unsigned n = 0; n < 1100000; n += 4) {
+    masm.Nop();
+  }
+  masm.bind(&lab3b);
+  masm.B(&lab3a);
+  Instruction* bcond3 = masm.getInstructionAt(BufferOffset(lab3a.offset()));
+  CHECK_EQUAL(bcond3->BranchType(), vixl::CondBranchType);
+  ptrdiff_t delta = bcond3->ImmPCRawOffset() * 4;
+  Instruction* veneer =
+      masm.getInstructionAt(BufferOffset(lab3a.offset() + delta));
+  CHECK_EQUAL(veneer->BranchType(), vixl::UncondBranchType);
+  delta += veneer->ImmPCRawOffset() * 4;
+  CHECK_EQUAL(delta, lab3b.offset() - lab3a.offset());
+  Instruction* b3 = masm.getInstructionAt(BufferOffset(lab3b.offset()));
+  CHECK_EQUAL(b3->BranchType(), vixl::UncondBranchType);
+  CHECK_EQUAL(4 * b3->ImmPCRawOffset(), -delta);
 
-    return true;
+  return true;
 }
 END_TEST(testAssemblerBuffer_ARM64)
 #endif 

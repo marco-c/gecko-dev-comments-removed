@@ -7,14 +7,14 @@
 #ifndef mozilla_layers_GeckoContentController_h
 #define mozilla_layers_GeckoContentController_h
 
-#include "InputData.h"                  
-#include "LayersTypes.h"                
-#include "Units.h"                      
-#include "mozilla/Assertions.h"         
-#include "mozilla/DefineEnum.h"         
-#include "mozilla/EventForwards.h"      
-#include "mozilla/layers/RepaintRequest.h" 
-#include "mozilla/layers/ScrollableLayerGuid.h" 
+#include "InputData.h"                           
+#include "LayersTypes.h"                         
+#include "Units.h"                               
+#include "mozilla/Assertions.h"                  
+#include "mozilla/DefineEnum.h"                  
+#include "mozilla/EventForwards.h"               
+#include "mozilla/layers/RepaintRequest.h"       
+#include "mozilla/layers/ScrollableLayerGuid.h"  
 #include "nsISupportsImpl.h"
 
 namespace mozilla {
@@ -23,9 +23,8 @@ class Runnable;
 
 namespace layers {
 
-class GeckoContentController
-{
-public:
+class GeckoContentController {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GeckoContentController)
 
   
@@ -67,10 +66,8 @@ public:
 
 
 
-  virtual void HandleTap(TapType aType,
-                         const LayoutDevicePoint& aPoint,
-                         Modifiers aModifiers,
-                         const ScrollableLayerGuid& aGuid,
+  virtual void HandleTap(TapType aType, const LayoutDevicePoint& aPoint,
+                         Modifiers aModifiers, const ScrollableLayerGuid& aGuid,
                          uint64_t aInputBlockId) = 0;
 
   
@@ -99,9 +96,11 @@ public:
 
 
 
-  virtual void PostDelayedTask(already_AddRefed<Runnable> aRunnable, int aDelayMs) = 0;
+  virtual void PostDelayedTask(already_AddRefed<Runnable> aRunnable,
+                               int aDelayMs) = 0;
 
   
+
 
 
   virtual bool IsRepaintThread() = 0;
@@ -147,14 +146,13 @@ public:
 
 
   virtual void NotifyAPZStateChange(const ScrollableLayerGuid& aGuid,
-                                    APZStateChange aChange,
-                                    int aArg = 0) {}
+                                    APZStateChange aChange, int aArg = 0) {}
 
   
 
 
-  virtual void NotifyMozMouseScrollEvent(const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent)
-  {}
+  virtual void NotifyMozMouseScrollEvent(
+      const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent) {}
 
   
 
@@ -169,17 +167,21 @@ public:
 
 
 
-  virtual void NotifyAsyncScrollbarDragInitiated(uint64_t aDragBlockId,
-                                                 const ScrollableLayerGuid::ViewID& aScrollId,
-                                                 ScrollDirection aDirection) = 0;
-  virtual void NotifyAsyncScrollbarDragRejected(const ScrollableLayerGuid::ViewID& aScrollId) = 0;
+  virtual void NotifyAsyncScrollbarDragInitiated(
+      uint64_t aDragBlockId, const ScrollableLayerGuid::ViewID& aScrollId,
+      ScrollDirection aDirection) = 0;
+  virtual void NotifyAsyncScrollbarDragRejected(
+      const ScrollableLayerGuid::ViewID& aScrollId) = 0;
 
-  virtual void NotifyAsyncAutoscrollRejected(const ScrollableLayerGuid::ViewID& aScrollId) = 0;
+  virtual void NotifyAsyncAutoscrollRejected(
+      const ScrollableLayerGuid::ViewID& aScrollId) = 0;
 
   virtual void CancelAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
 
-  virtual void UpdateOverscrollVelocity(float aX, float aY, bool aIsRootContent) {}
-  virtual void UpdateOverscrollOffset(float aX, float aY, bool aIsRootContent) {}
+  virtual void UpdateOverscrollVelocity(float aX, float aY,
+                                        bool aIsRootContent) {}
+  virtual void UpdateOverscrollOffset(float aX, float aY, bool aIsRootContent) {
+  }
 
   GeckoContentController() {}
 
@@ -188,12 +190,12 @@ public:
 
   virtual void Destroy() {}
 
-protected:
+ protected:
   
   virtual ~GeckoContentController() {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

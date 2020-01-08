@@ -17,7 +17,7 @@ namespace a11y {
 
 typedef RootAccessible RootAccessibleWrap;
 
-} 
-} 
+}  
+}  
 
 #endif

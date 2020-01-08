@@ -34,63 +34,62 @@ struct BytecodeEmitter;
 
 
 
-class MOZ_STACK_CLASS WhileEmitter
-{
-    BytecodeEmitter* bce_;
+class MOZ_STACK_CLASS WhileEmitter {
+  BytecodeEmitter* bce_;
 
-    
-    unsigned noteIndex_ = 0;
+  
+  unsigned noteIndex_ = 0;
 
-    mozilla::Maybe<LoopControl> loopInfo_;
+  mozilla::Maybe<LoopControl> loopInfo_;
 
-    
-    
-    mozilla::Maybe<TDZCheckCache> tdzCacheForBody_;
+  
+  
+  mozilla::Maybe<TDZCheckCache> tdzCacheForBody_;
 
 #ifdef DEBUG
+  
+  
+  
+  
+  
+  enum class State {
     
-    
-    
-    
-    
-    enum class State {
-        
-        Start,
+    Start,
 
-        
-        Body,
+    
+    Body,
 
-        
-        Cond,
+    
+    Cond,
 
-        
-        End
-    };
-    State state_ = State::Start;
+    
+    End
+  };
+  State state_ = State::Start;
 #endif
 
-  public:
-    explicit WhileEmitter(BytecodeEmitter* bce);
+ public:
+  explicit WhileEmitter(BytecodeEmitter* bce);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE bool emitBody(const mozilla::Maybe<uint32_t>& whilePos,
-                               const mozilla::Maybe<uint32_t>& bodyPos,
-                               const mozilla::Maybe<uint32_t>& endPos);
-    MOZ_MUST_USE bool emitCond(const mozilla::Maybe<uint32_t>& condPos);
-    MOZ_MUST_USE bool emitEnd();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool emitBody(const mozilla::Maybe<uint32_t>& whilePos,
+                             const mozilla::Maybe<uint32_t>& bodyPos,
+                             const mozilla::Maybe<uint32_t>& endPos);
+  MOZ_MUST_USE bool emitCond(const mozilla::Maybe<uint32_t>& condPos);
+  MOZ_MUST_USE bool emitEnd();
 };
 
 } 

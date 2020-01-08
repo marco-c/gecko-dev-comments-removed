@@ -63,7 +63,6 @@ const intptr_t kDoubleAlignment = 8;
 const intptr_t kDoubleAlignmentMask = kDoubleAlignment - 1;
 
 
-
 const int kNumRegisters = 32;
 
 
@@ -98,11 +97,8 @@ const uint32_t kFCSRDivideByZeroFlagMask = 1 << kFCSRDivideByZeroFlagBit;
 const uint32_t kFCSRInvalidOpFlagMask = 1 << kFCSRInvalidOpFlagBit;
 
 const uint32_t kFCSRFlagMask =
-    kFCSRInexactFlagMask |
-    kFCSRUnderflowFlagMask |
-    kFCSROverflowFlagMask |
-    kFCSRDivideByZeroFlagMask |
-    kFCSRInvalidOpFlagMask;
+    kFCSRInexactFlagMask | kFCSRUnderflowFlagMask | kFCSROverflowFlagMask |
+    kFCSRDivideByZeroFlagMask | kFCSRInvalidOpFlagMask;
 
 const uint32_t kFCSRExceptionFlagMask = kFCSRFlagMask ^ kFCSRInexactFlagMask;
 
@@ -125,365 +121,417 @@ class SimInstruction;
 
 
 class Simulator {
-    friend class MipsDebugger;
-  public:
+  friend class MipsDebugger;
 
+ public:
+  
+  enum Register {
+    no_reg = -1,
+    zero_reg = 0,
+    at,
+    v0,
+    v1,
+    a0,
+    a1,
+    a2,
+    a3,
+    a4,
+    a5,
+    a6,
+    a7,
+    t0,
+    t1,
+    t2,
+    t3,
+    s0,
+    s1,
+    s2,
+    s3,
+    s4,
+    s5,
+    s6,
+    s7,
+    t8,
+    t9,
+    k0,
+    k1,
+    gp,
+    sp,
+    s8,
+    ra,
     
-    enum Register {
-        no_reg = -1,
-        zero_reg = 0,
-        at,
-        v0, v1,
-        a0, a1, a2, a3, a4, a5, a6, a7,
-        t0, t1, t2, t3,
-        s0, s1, s2, s3, s4, s5, s6, s7,
-        t8, t9,
-        k0, k1,
-        gp,
-        sp,
-        s8,
-        ra,
-        
-        LO,
-        HI,
-        pc,   
-        kNumSimuRegisters,
-        
-        fp = s8
-    };
-
+    LO,
+    HI,
+    pc,  
+    kNumSimuRegisters,
     
-    enum FPURegister {
-        f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11,
-        f12, f13, f14, f15, f16, f17, f18, f19, f20, f21,
-        f22, f23, f24, f25, f26, f27, f28, f29, f30, f31,
-        kNumFPURegisters
-    };
+    fp = s8
+  };
 
+  
+  enum FPURegister {
+    f0,
+    f1,
+    f2,
+    f3,
+    f4,
+    f5,
+    f6,
+    f7,
+    f8,
+    f9,
+    f10,
+    f11,
+    f12,
+    f13,
+    f14,
+    f15,
+    f16,
+    f17,
+    f18,
+    f19,
+    f20,
+    f21,
+    f22,
+    f23,
+    f24,
+    f25,
+    f26,
+    f27,
+    f28,
+    f29,
+    f30,
+    f31,
+    kNumFPURegisters
+  };
+
+  
+  static Simulator* Create();
+
+  static void Destroy(Simulator* simulator);
+
+  
+  
+  Simulator();
+  ~Simulator();
+
+  static bool supportsAtomics() { return true; }
+
+  
+  
+  static Simulator* Current();
+
+  static inline uintptr_t StackLimit() {
+    return Simulator::Current()->stackLimit();
+  }
+
+  uintptr_t* addressOfStackLimit();
+
+  
+  
+  
+  void setRegister(int reg, int64_t value);
+  int64_t getRegister(int reg) const;
+  
+  void setFpuRegister(int fpureg, int64_t value);
+  void setFpuRegisterLo(int fpureg, int32_t value);
+  void setFpuRegisterHi(int fpureg, int32_t value);
+  void setFpuRegisterFloat(int fpureg, float value);
+  void setFpuRegisterDouble(int fpureg, double value);
+  int64_t getFpuRegister(int fpureg) const;
+  int32_t getFpuRegisterLo(int fpureg) const;
+  int32_t getFpuRegisterHi(int fpureg) const;
+  float getFpuRegisterFloat(int fpureg) const;
+  double getFpuRegisterDouble(int fpureg) const;
+  void setFCSRBit(uint32_t cc, bool value);
+  bool testFCSRBit(uint32_t cc);
+  template <typename T>
+  bool setFCSRRoundError(double original, double rounded);
+
+  
+  void set_pc(int64_t value);
+  int64_t get_pc() const;
+
+  template <typename T>
+  T get_pc_as() const {
+    return reinterpret_cast<T>(get_pc());
+  }
+
+  void enable_single_stepping(SingleStepCallback cb, void* arg);
+  void disable_single_stepping();
+
+  
+  uintptr_t stackLimit() const;
+  bool overRecursed(uintptr_t newsp = 0) const;
+  bool overRecursedWithExtra(uint32_t extra) const;
+
+  
+  template <bool enableStopSimAt>
+  void execute();
+
+  
+  int64_t call(uint8_t* entry, int argument_count, ...);
+
+  
+  uintptr_t pushAddress(uintptr_t address);
+
+  
+  uintptr_t popAddress();
+
+  
+  void setLastDebuggerInput(char* input);
+  char* lastDebuggerInput() { return lastDebuggerInput_; }
+
+  
+  
+  bool has_bad_pc() const;
+
+ private:
+  enum SpecialValues {
     
-    static Simulator* Create();
-
-    static void Destroy(Simulator* simulator);
-
     
-    Simulator();
-    ~Simulator();
-
-    static bool supportsAtomics() { return true; }
-
+    bad_ra = -1,
     
     
-    static Simulator* Current();
+    
+    
+    end_sim_pc = -2,
+    
+    Unpredictable = 0xbadbeaf
+  };
 
-    static inline uintptr_t StackLimit() {
-        return Simulator::Current()->stackLimit();
+  bool init();
+
+  
+  void format(SimInstruction* instr, const char* format);
+
+  
+  inline uint8_t readBU(uint64_t addr, SimInstruction* instr);
+  inline int8_t readB(uint64_t addr, SimInstruction* instr);
+  inline void writeB(uint64_t addr, uint8_t value, SimInstruction* instr);
+  inline void writeB(uint64_t addr, int8_t value, SimInstruction* instr);
+
+  inline uint16_t readHU(uint64_t addr, SimInstruction* instr);
+  inline int16_t readH(uint64_t addr, SimInstruction* instr);
+  inline void writeH(uint64_t addr, uint16_t value, SimInstruction* instr);
+  inline void writeH(uint64_t addr, int16_t value, SimInstruction* instr);
+
+  inline uint32_t readWU(uint64_t addr, SimInstruction* instr);
+  inline int32_t readW(uint64_t addr, SimInstruction* instr);
+  inline void writeW(uint64_t addr, uint32_t value, SimInstruction* instr);
+  inline void writeW(uint64_t addr, int32_t value, SimInstruction* instr);
+
+  inline int64_t readDW(uint64_t addr, SimInstruction* instr);
+  inline int64_t readDWL(uint64_t addr, SimInstruction* instr);
+  inline int64_t readDWR(uint64_t addr, SimInstruction* instr);
+  inline void writeDW(uint64_t addr, int64_t value, SimInstruction* instr);
+
+  inline double readD(uint64_t addr, SimInstruction* instr);
+  inline void writeD(uint64_t addr, double value, SimInstruction* instr);
+
+  inline int32_t loadLinkedW(uint64_t addr, SimInstruction* instr);
+  inline int storeConditionalW(uint64_t addr, int32_t value,
+                               SimInstruction* instr);
+
+  inline int64_t loadLinkedD(uint64_t addr, SimInstruction* instr);
+  inline int storeConditionalD(uint64_t addr, int64_t value,
+                               SimInstruction* instr);
+
+  
+  void configureTypeRegister(SimInstruction* instr, int64_t& alu_out,
+                             __int128& i128hilo, unsigned __int128& u128hilo,
+                             int64_t& next_pc, int32_t& return_addr_reg,
+                             bool& do_interrupt);
+
+  
+  void decodeTypeRegister(SimInstruction* instr);
+  void decodeTypeImmediate(SimInstruction* instr);
+  void decodeTypeJump(SimInstruction* instr);
+
+  
+  void softwareInterrupt(SimInstruction* instr);
+
+  
+  bool isWatchpoint(uint32_t code);
+  void printWatchpoint(uint32_t code);
+  void handleStop(uint32_t code, SimInstruction* instr);
+  bool isStopInstruction(SimInstruction* instr);
+  bool isEnabledStop(uint32_t code);
+  void enableStop(uint32_t code);
+  void disableStop(uint32_t code);
+  void increaseStopCounter(uint32_t code);
+  void printStopInfo(uint32_t code);
+
+  JS::ProfilingFrameIterator::RegisterState registerState();
+
+  
+  
+  bool MOZ_ALWAYS_INLINE handleWasmSegFault(uint64_t addr, unsigned numBytes) {
+    if (MOZ_LIKELY(!js::wasm::CodeExists)) {
+      return false;
     }
 
-    uintptr_t* addressOfStackLimit();
-
-    
-    
-    
-    void setRegister(int reg, int64_t value);
-    int64_t getRegister(int reg) const;
-    
-    void setFpuRegister(int fpureg, int64_t value);
-    void setFpuRegisterLo(int fpureg, int32_t value);
-    void setFpuRegisterHi(int fpureg, int32_t value);
-    void setFpuRegisterFloat(int fpureg, float value);
-    void setFpuRegisterDouble(int fpureg, double value);
-    int64_t getFpuRegister(int fpureg) const;
-    int32_t getFpuRegisterLo(int fpureg) const;
-    int32_t getFpuRegisterHi(int fpureg) const;
-    float getFpuRegisterFloat(int fpureg) const;
-    double getFpuRegisterDouble(int fpureg) const;
-    void setFCSRBit(uint32_t cc, bool value);
-    bool testFCSRBit(uint32_t cc);
-    template <typename T>
-    bool setFCSRRoundError(double original, double rounded);
-
-    
-    void set_pc(int64_t value);
-    int64_t get_pc() const;
-
-    template <typename T>
-    T get_pc_as() const { return reinterpret_cast<T>(get_pc()); }
-
-    void enable_single_stepping(SingleStepCallback cb, void* arg);
-    void disable_single_stepping();
-
-    
-    uintptr_t stackLimit() const;
-    bool overRecursed(uintptr_t newsp = 0) const;
-    bool overRecursedWithExtra(uint32_t extra) const;
-
-    
-    template<bool enableStopSimAt>
-    void execute();
-
-    
-    int64_t call(uint8_t* entry, int argument_count, ...);
-
-    
-    uintptr_t pushAddress(uintptr_t address);
-
-    
-    uintptr_t popAddress();
-
-    
-    void setLastDebuggerInput(char* input);
-    char* lastDebuggerInput() { return lastDebuggerInput_; }
-
-    
-    
-    bool has_bad_pc() const;
-
-  private:
-    enum SpecialValues {
-        
-        
-        bad_ra = -1,
-        
-        
-        
-        
-        end_sim_pc = -2,
-        
-        Unpredictable = 0xbadbeaf
-    };
-
-    bool init();
-
-    
-    void format(SimInstruction* instr, const char* format);
-
-    
-    inline uint8_t readBU(uint64_t addr, SimInstruction* instr);
-    inline int8_t readB(uint64_t addr, SimInstruction* instr);
-    inline void writeB(uint64_t addr, uint8_t value, SimInstruction* instr);
-    inline void writeB(uint64_t addr, int8_t value, SimInstruction* instr);
-
-    inline uint16_t readHU(uint64_t addr, SimInstruction* instr);
-    inline int16_t readH(uint64_t addr, SimInstruction* instr);
-    inline void writeH(uint64_t addr, uint16_t value, SimInstruction* instr);
-    inline void writeH(uint64_t addr, int16_t value, SimInstruction* instr);
-
-    inline uint32_t readWU(uint64_t addr, SimInstruction* instr);
-    inline int32_t readW(uint64_t addr, SimInstruction* instr);
-    inline void writeW(uint64_t addr, uint32_t value, SimInstruction* instr);
-    inline void writeW(uint64_t addr, int32_t value, SimInstruction* instr);
-
-    inline int64_t readDW(uint64_t addr, SimInstruction* instr);
-    inline int64_t readDWL(uint64_t addr, SimInstruction* instr);
-    inline int64_t readDWR(uint64_t addr, SimInstruction* instr);
-    inline void writeDW(uint64_t addr, int64_t value, SimInstruction* instr);
-
-    inline double readD(uint64_t addr, SimInstruction* instr);
-    inline void writeD(uint64_t addr, double value, SimInstruction* instr);
-
-    inline int32_t loadLinkedW(uint64_t addr, SimInstruction* instr);
-    inline int storeConditionalW(uint64_t addr, int32_t value, SimInstruction* instr);
-
-    inline int64_t loadLinkedD(uint64_t addr, SimInstruction* instr);
-    inline int storeConditionalD(uint64_t addr, int64_t value, SimInstruction* instr);
-
-    
-    void configureTypeRegister(SimInstruction* instr,
-                               int64_t& alu_out,
-                               __int128& i128hilo,
-                               unsigned __int128& u128hilo,
-                               int64_t& next_pc,
-                               int32_t& return_addr_reg,
-                               bool& do_interrupt);
-
-    
-    void decodeTypeRegister(SimInstruction* instr);
-    void decodeTypeImmediate(SimInstruction* instr);
-    void decodeTypeJump(SimInstruction* instr);
-
-    
-    void softwareInterrupt(SimInstruction* instr);
-
-    
-    bool isWatchpoint(uint32_t code);
-    void printWatchpoint(uint32_t code);
-    void handleStop(uint32_t code, SimInstruction* instr);
-    bool isStopInstruction(SimInstruction* instr);
-    bool isEnabledStop(uint32_t code);
-    void enableStop(uint32_t code);
-    void disableStop(uint32_t code);
-    void increaseStopCounter(uint32_t code);
-    void printStopInfo(uint32_t code);
-
-    JS::ProfilingFrameIterator::RegisterState registerState();
-
-    
-    
-    bool MOZ_ALWAYS_INLINE handleWasmSegFault(uint64_t addr, unsigned numBytes) {
-        if (MOZ_LIKELY(!js::wasm::CodeExists)) {
-            return false;
-        }
-
-        uint8_t* newPC;
-        if (!js::wasm::MemoryAccessTraps(registerState(), (uint8_t*)addr, numBytes, &newPC)) {
-            return false;
-        }
-
-        LLBit_ = false;
-        set_pc(int64_t(newPC));
-        return true;
+    uint8_t* newPC;
+    if (!js::wasm::MemoryAccessTraps(registerState(), (uint8_t*)addr, numBytes,
+                                     &newPC)) {
+      return false;
     }
 
-    
-    void instructionDecode(SimInstruction* instr);
-    
-    void branchDelayInstructionDecode(SimInstruction* instr);
+    LLBit_ = false;
+    set_pc(int64_t(newPC));
+    return true;
+  }
 
-  public:
-    static int64_t StopSimAt;
+  
+  void instructionDecode(SimInstruction* instr);
+  
+  void branchDelayInstructionDecode(SimInstruction* instr);
 
-    
-    static void* RedirectNativeFunction(void* nativeFunction, ABIFunctionType type);
+ public:
+  static int64_t StopSimAt;
 
-  private:
-    enum Exception {
-        kNone,
-        kIntegerOverflow,
-        kIntegerUnderflow,
-        kDivideByZero,
-        kNumExceptions
-    };
-    int16_t exceptions[kNumExceptions];
+  
+  static void* RedirectNativeFunction(void* nativeFunction,
+                                      ABIFunctionType type);
 
-    
-    void signalExceptions();
+ private:
+  enum Exception {
+    kNone,
+    kIntegerOverflow,
+    kIntegerUnderflow,
+    kDivideByZero,
+    kNumExceptions
+  };
+  int16_t exceptions[kNumExceptions];
 
-    
-    void setCallResultDouble(double result);
-    void setCallResultFloat(float result);
-    void setCallResult(int64_t res);
-    void setCallResult(__int128 res);
+  
+  void signalExceptions();
 
-    void callInternal(uint8_t* entry);
+  
+  void setCallResultDouble(double result);
+  void setCallResultFloat(float result);
+  void setCallResult(int64_t res);
+  void setCallResult(__int128 res);
 
-    
-    
-    int64_t registers_[kNumSimuRegisters];
-    
-    int64_t FPUregisters_[kNumFPURegisters];
-    
-    uint32_t FCSR_;
+  void callInternal(uint8_t* entry);
 
-    bool LLBit_;
-    uintptr_t LLAddr_;
-    int64_t lastLLValue_;
+  
+  
+  int64_t registers_[kNumSimuRegisters];
+  
+  int64_t FPUregisters_[kNumFPURegisters];
+  
+  uint32_t FCSR_;
 
-    
-    char* stack_;
-    uintptr_t stackLimit_;
-    bool pc_modified_;
-    int64_t icount_;
-    int64_t break_count_;
+  bool LLBit_;
+  uintptr_t LLAddr_;
+  int64_t lastLLValue_;
 
-    
-    char* lastDebuggerInput_;
+  
+  char* stack_;
+  uintptr_t stackLimit_;
+  bool pc_modified_;
+  int64_t icount_;
+  int64_t break_count_;
 
-    
-    SimInstruction* break_pc_;
-    Instr break_instr_;
+  
+  char* lastDebuggerInput_;
 
-    
-    bool single_stepping_;
-    SingleStepCallback single_step_callback_;
-    void* single_step_callback_arg_;
+  
+  SimInstruction* break_pc_;
+  Instr break_instr_;
 
-    
-    
-    static const uint32_t kNumOfWatchedStops = 256;
+  
+  bool single_stepping_;
+  SingleStepCallback single_step_callback_;
+  void* single_step_callback_arg_;
 
+  
+  
+  static const uint32_t kNumOfWatchedStops = 256;
 
-    
-    static const uint32_t kStopDisabledBit = 1U << 31;
+  
+  static const uint32_t kStopDisabledBit = 1U << 31;
 
-    
-    
-    
-    
-    struct StopCountAndDesc {
-        uint32_t count_;
-        char* desc_;
-    };
-    StopCountAndDesc watchedStops_[kNumOfWatchedStops];
+  
+  
+  
+  
+  struct StopCountAndDesc {
+    uint32_t count_;
+    char* desc_;
+  };
+  StopCountAndDesc watchedStops_[kNumOfWatchedStops];
 };
 
 
-class SimulatorProcess
-{
-    friend class Redirection;
-    friend class AutoLockSimulatorCache;
+class SimulatorProcess {
+  friend class Redirection;
+  friend class AutoLockSimulatorCache;
 
-  private:
+ private:
+  
+  struct ICacheHasher {
+    typedef void* Key;
+    typedef void* Lookup;
+    static HashNumber hash(const Lookup& l);
+    static bool match(const Key& k, const Lookup& l);
+  };
+
+ public:
+  typedef HashMap<void*, CachePage*, ICacheHasher, SystemAllocPolicy> ICacheMap;
+
+  static mozilla::Atomic<size_t, mozilla::ReleaseAcquire>
+      ICacheCheckingDisableCount;
+  static void FlushICache(void* start, size_t size);
+
+  static void checkICacheLocked(SimInstruction* instr);
+
+  static bool initialize() {
+    singleton_ = js_new<SimulatorProcess>();
+    return singleton_;
+  }
+  static void destroy() {
+    js_delete(singleton_);
+    singleton_ = nullptr;
+  }
+
+  SimulatorProcess();
+  ~SimulatorProcess();
+
+ private:
+  static SimulatorProcess* singleton_;
+
+  
+  
+  
+  Mutex cacheLock_;
+
+  Redirection* redirection_;
+  ICacheMap icache_;
+
+ public:
+  static ICacheMap& icache() {
     
-    struct ICacheHasher {
-        typedef void* Key;
-        typedef void* Lookup;
-        static HashNumber hash(const Lookup& l);
-        static bool match(const Key& k, const Lookup& l);
-    };
-
-  public:
-    typedef HashMap<void*, CachePage*, ICacheHasher, SystemAllocPolicy> ICacheMap;
-
-    static mozilla::Atomic<size_t, mozilla::ReleaseAcquire> ICacheCheckingDisableCount;
-    static void FlushICache(void* start, size_t size);
-
-    static void checkICacheLocked(SimInstruction* instr);
-
-    static bool initialize() {
-        singleton_ = js_new<SimulatorProcess>();
-        return singleton_;
-    }
-    static void destroy() {
-        js_delete(singleton_);
-        singleton_ = nullptr;
-    }
-
-    SimulatorProcess();
-    ~SimulatorProcess();
-
-  private:
-    static SimulatorProcess* singleton_;
-
     
     
-    
-    Mutex cacheLock_;
+    MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
+    return singleton_->icache_;
+  }
 
-    Redirection* redirection_;
-    ICacheMap icache_;
+  static Redirection* redirection() {
+    MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
+    return singleton_->redirection_;
+  }
 
-  public:
-    static ICacheMap& icache() {
-        
-        
-        
-        MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
-        return singleton_->icache_;
-    }
-
-    static Redirection* redirection() {
-        MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
-        return singleton_->redirection_;
-    }
-
-    static void setRedirection(js::jit::Redirection* redirection) {
-        MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
-        singleton_->redirection_ = redirection;
-    }
+  static void setRedirection(js::jit::Redirection* redirection) {
+    MOZ_ASSERT(singleton_->cacheLock_.ownedByCurrentThread());
+    singleton_->redirection_ = redirection;
+  }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 
 

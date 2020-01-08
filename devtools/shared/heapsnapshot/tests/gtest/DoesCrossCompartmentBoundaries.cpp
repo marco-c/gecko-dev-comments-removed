@@ -8,65 +8,60 @@
 #include "DevTools.h"
 
 DEF_TEST(DoesCrossCompartmentBoundaries, {
-    
-    JS::RealmOptions options;
-    JS::RootedObject newGlobal(cx, JS_NewGlobalObject(cx,
-                                                      getGlobalClass(),
-                                                      nullptr,
-                                                      JS::FireOnNewGlobalHook,
-                                                      options));
-    ASSERT_TRUE(newGlobal);
-    JS::Compartment* newCompartment = nullptr;
-    {
-      JSAutoRealm ar(cx, newGlobal);
-      ASSERT_TRUE(JS::InitRealmStandardClasses(cx));
-      newCompartment = js::GetContextCompartment(cx);
-    }
-    ASSERT_TRUE(newCompartment);
-    ASSERT_NE(newCompartment, compartment);
+  
+  JS::RealmOptions options;
+  JS::RootedObject newGlobal(
+      cx, JS_NewGlobalObject(cx, getGlobalClass(), nullptr,
+                             JS::FireOnNewGlobalHook, options));
+  ASSERT_TRUE(newGlobal);
+  JS::Compartment* newCompartment = nullptr;
+  {
+    JSAutoRealm ar(cx, newGlobal);
+    ASSERT_TRUE(JS::InitRealmStandardClasses(cx));
+    newCompartment = js::GetContextCompartment(cx);
+  }
+  ASSERT_TRUE(newCompartment);
+  ASSERT_NE(newCompartment, compartment);
 
-    
-    JS::CompartmentSet targetCompartments;
-    ASSERT_TRUE(targetCompartments.put(compartment));
-    ASSERT_TRUE(targetCompartments.put(newCompartment));
+  
+  JS::CompartmentSet targetCompartments;
+  ASSERT_TRUE(targetCompartments.put(compartment));
+  ASSERT_TRUE(targetCompartments.put(newCompartment));
 
-    FakeNode nodeA;
-    FakeNode nodeB;
-    FakeNode nodeC;
-    FakeNode nodeD;
+  FakeNode nodeA;
+  FakeNode nodeB;
+  FakeNode nodeC;
+  FakeNode nodeD;
 
-    nodeA.compartment = compartment;
-    nodeB.compartment = nullptr;
-    nodeC.compartment = newCompartment;
-    nodeD.compartment = nullptr;
+  nodeA.compartment = compartment;
+  nodeB.compartment = nullptr;
+  nodeC.compartment = newCompartment;
+  nodeD.compartment = nullptr;
 
-    AddEdge(nodeA, nodeB);
-    AddEdge(nodeA, nodeC);
-    AddEdge(nodeB, nodeD);
+  AddEdge(nodeA, nodeB);
+  AddEdge(nodeA, nodeC);
+  AddEdge(nodeB, nodeD);
 
-    ::testing::NiceMock<MockWriter> writer;
+  ::testing::NiceMock<MockWriter> writer;
 
-    
-    ExpectWriteNode(writer, nodeA);
+  
+  ExpectWriteNode(writer, nodeA);
 
-    
-    
-    ExpectWriteNode(writer, nodeB);
+  
+  
+  ExpectWriteNode(writer, nodeB);
 
-    
-    
-    ExpectWriteNode(writer, nodeC);
+  
+  
+  ExpectWriteNode(writer, nodeC);
 
-    
-    
-    ExpectWriteNode(writer, nodeD);
+  
+  
+  ExpectWriteNode(writer, nodeD);
 
-    JS::AutoCheckCannotGC noGC(cx);
+  JS::AutoCheckCannotGC noGC(cx);
 
-    ASSERT_TRUE(WriteHeapGraph(cx,
-                               JS::ubi::Node(&nodeA),
-                               writer,
-                                false,
-                               &targetCompartments,
-                               noGC));
-  });
+  ASSERT_TRUE(WriteHeapGraph(cx, JS::ubi::Node(&nodeA), writer,
+                              false, &targetCompartments,
+                             noGC));
+});

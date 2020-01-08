@@ -10,15 +10,14 @@ namespace mozilla {
 
 namespace ipc {
 class PrincipalInfo;
-} 
+}  
 
 namespace dom {
 
-bool
-ClientMatchPrincipalInfo(const mozilla::ipc::PrincipalInfo& aLeft,
-                         const mozilla::ipc::PrincipalInfo& aRight);
+bool ClientMatchPrincipalInfo(const mozilla::ipc::PrincipalInfo& aLeft,
+                              const mozilla::ipc::PrincipalInfo& aRight);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

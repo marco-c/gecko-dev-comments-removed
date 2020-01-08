@@ -16,20 +16,17 @@
 class nsXBLPrototypeBinding;
 class nsXBLProtoImplAnonymousMethod;
 
-class nsXBLProtoImpl final
-{
-public:
+class nsXBLProtoImpl final {
+ public:
   nsXBLProtoImpl()
-    : mPrecompiledMemberHolder(nullptr),
-      mMembers(nullptr),
-      mFields(nullptr),
-      mConstructor(nullptr),
-      mDestructor(nullptr)
-  {
+      : mPrecompiledMemberHolder(nullptr),
+        mMembers(nullptr),
+        mFields(nullptr),
+        mConstructor(nullptr),
+        mDestructor(nullptr) {
     MOZ_COUNT_CTOR(nsXBLProtoImpl);
   }
-  ~nsXBLProtoImpl()
-  {
+  ~nsXBLProtoImpl() {
     MOZ_COUNT_DTOR(nsXBLProtoImpl);
     
     
@@ -37,61 +34,55 @@ public:
     delete mFields;
   }
 
+  nsresult InstallImplementation(nsXBLPrototypeBinding* aPrototypeBinding,
+                                 nsXBLBinding* aBinding);
 
-  nsresult InstallImplementation(nsXBLPrototypeBinding* aPrototypeBinding, nsXBLBinding* aBinding);
-
-private:
+ private:
   nsresult InitTargetObjects(nsXBLPrototypeBinding* aBinding,
                              nsIContent* aBoundElement,
                              JS::MutableHandle<JSObject*> aTargetClassObject,
                              bool* aTargetIsNew);
 
-public:
+ public:
   nsresult CompilePrototypeMembers(nsXBLPrototypeBinding* aBinding);
 
   bool LookupMember(JSContext* aCx, nsString& aName, JS::Handle<jsid> aNameAsId,
                     JS::MutableHandle<JS::PropertyDescriptor> aDesc,
                     JS::Handle<JSObject*> aClassObject);
 
-  void SetMemberList(nsXBLProtoImplMember* aMemberList)
-  {
+  void SetMemberList(nsXBLProtoImplMember* aMemberList) {
     delete mMembers;
     mMembers = aMemberList;
   }
 
-  void SetFieldList(nsXBLProtoImplField* aFieldList)
-  {
+  void SetFieldList(nsXBLProtoImplField* aFieldList) {
     delete mFields;
     mFields = aFieldList;
   }
 
-  void Trace(const TraceCallbacks& aCallbacks, void *aClosure);
+  void Trace(const TraceCallbacks& aCallbacks, void* aClosure);
   void UnlinkJSObjects();
 
   nsXBLProtoImplField* FindField(const nsString& aFieldName) const;
 
   
   
-  bool ResolveAllFields(JSContext *cx, JS::Handle<JSObject*> obj) const;
+  bool ResolveAllFields(JSContext* cx, JS::Handle<JSObject*> obj) const;
 
   
   
   void UndefineFields(JSContext* cx, JS::Handle<JSObject*> obj) const;
 
-  bool CompiledMembers() const {
-    return mPrecompiledMemberHolder != nullptr;
-  }
+  bool CompiledMembers() const { return mPrecompiledMemberHolder != nullptr; }
 
-  nsresult Read(nsIObjectInputStream* aStream,
-                nsXBLPrototypeBinding* aBinding);
+  nsresult Read(nsIObjectInputStream* aStream, nsXBLPrototypeBinding* aBinding);
   nsresult Write(nsIObjectOutputStream* aStream,
                  nsXBLPrototypeBinding* aBinding);
 
-protected:
+ protected:
   
   nsXBLProtoImplMember* AddMember(nsXBLProtoImplMember* aMember,
-                                  nsXBLProtoImplMember* aPreviousMember)
-  {
+                                  nsXBLProtoImplMember* aPreviousMember) {
     if (aPreviousMember)
       aPreviousMember->SetNext(aMember);
     else
@@ -101,25 +92,26 @@ protected:
 
   void DestroyMembers();
 
-public:
-  nsString mClassName; 
+ public:
+  nsString mClassName;  
 
-protected:
-  JSObject* mPrecompiledMemberHolder; 
-                          
+ protected:
+  JSObject*
+      mPrecompiledMemberHolder;  
+                                 
+                                 
 
-  nsXBLProtoImplMember* mMembers; 
+  nsXBLProtoImplMember* mMembers;  
+                                   
 
-  nsXBLProtoImplField* mFields; 
+  nsXBLProtoImplField* mFields;  
 
-public:
-  nsXBLProtoImplAnonymousMethod* mConstructor; 
-  nsXBLProtoImplAnonymousMethod* mDestructor;  
+ public:
+  nsXBLProtoImplAnonymousMethod* mConstructor;  
+  nsXBLProtoImplAnonymousMethod* mDestructor;   
 };
 
-void
-NS_NewXBLProtoImpl(nsXBLPrototypeBinding* aBinding,
-                   const char16_t* aClassName,
-                   nsXBLProtoImpl** aResult);
+void NS_NewXBLProtoImpl(nsXBLPrototypeBinding* aBinding,
+                        const char16_t* aClassName, nsXBLProtoImpl** aResult);
 
-#endif 
+#endif  

@@ -25,18 +25,14 @@
 
 #include <sys/stat.h>
 
-class nsLocalFile final
-  : public nsILocalFileWin
-  , public nsIHashable
-{
-public:
+class nsLocalFile final : public nsILocalFileWin, public nsIHashable {
+ public:
   NS_DEFINE_STATIC_CID_ACCESSOR(NS_LOCAL_FILE_CID)
 
   nsLocalFile();
   explicit nsLocalFile(const nsAString& aFilePath);
 
-  static nsresult nsLocalFileConstructor(nsISupports* aOuter,
-                                         const nsIID& aIID,
+  static nsresult nsLocalFileConstructor(nsISupports* aOuter, const nsIID& aIID,
                                          void** aInstancePtr);
 
   
@@ -51,27 +47,26 @@ public:
   
   NS_DECL_NSIHASHABLE
 
-public:
+ public:
+  
   
   static bool CleanupCmdHandlerPath(nsAString& aCommandHandler);
 
-private:
+ private:
   
   enum CopyFileOption {
-    FollowSymlinks          = 1u << 0,
-    Move                    = 1u << 1,
-    SkipNtfsAclReset        = 1u << 2,
-    Rename                  = 1u << 3
+    FollowSymlinks = 1u << 0,
+    Move = 1u << 1,
+    SkipNtfsAclReset = 1u << 2,
+    Rename = 1u << 3
   };
 
   nsLocalFile(const nsLocalFile& aOther);
-  ~nsLocalFile()
-  {
-  }
+  ~nsLocalFile() {}
 
-  bool mDirty;            
+  bool mDirty;  
   bool mResolveDirty;
-  bool mFollowSymlinks;   
+  bool mFollowSymlinks;  
 
   
   nsString mWorkingPath;
@@ -86,8 +81,7 @@ private:
 
   PRFileInfo64 mFileInfo64;
 
-  void MakeDirty()
-  {
+  void MakeDirty() {
     mDirty = true;
     mResolveDirty = true;
     mShortWorkingPath.Truncate();
@@ -108,8 +102,7 @@ private:
   nsresult HasFileAttribute(DWORD aFileAttrib, bool* aResult);
   nsresult AppendInternal(const nsString& aNode, bool aMultipleComponents);
 
-  nsresult OpenNSPRFileDescMaybeShareDelete(int32_t aFlags,
-                                            int32_t aMode,
+  nsresult OpenNSPRFileDescMaybeShareDelete(int32_t aFlags, int32_t aMode,
                                             bool aShareDelete,
                                             PRFileDesc** aResult);
 };

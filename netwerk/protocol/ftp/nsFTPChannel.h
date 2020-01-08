@@ -28,104 +28,91 @@ class nsFtpChannel final : public nsBaseChannel,
                            public nsIResumableChannel,
                            public nsIProxiedChannel,
                            public nsIForcePendingChannel,
-                           public nsIChannelWithDivertableParentListener
-{
-public:
-    NS_DECL_ISUPPORTS_INHERITED
-    NS_DECL_NSIUPLOADCHANNEL
-    NS_DECL_NSIRESUMABLECHANNEL
-    NS_DECL_NSIPROXIEDCHANNEL
-    NS_DECL_NSICHANNELWITHDIVERTABLEPARENTLISTENER
+                           public nsIChannelWithDivertableParentListener {
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIUPLOADCHANNEL
+  NS_DECL_NSIRESUMABLECHANNEL
+  NS_DECL_NSIPROXIEDCHANNEL
+  NS_DECL_NSICHANNELWITHDIVERTABLEPARENTLISTENER
 
-    nsFtpChannel(nsIURI *uri, nsIProxyInfo *pi)
-        : mProxyInfo(pi)
-        , mStartPos(0)
-        , mResumeRequested(false)
-        , mLastModifiedTime(0)
-        , mForcePending(false)
-        , mSuspendCount(0)
-    {
-        SetURI(uri);
-    }
+  nsFtpChannel(nsIURI *uri, nsIProxyInfo *pi)
+      : mProxyInfo(pi),
+        mStartPos(0),
+        mResumeRequested(false),
+        mLastModifiedTime(0),
+        mForcePending(false),
+        mSuspendCount(0) {
+    SetURI(uri);
+  }
 
-    void UpdateURI(nsIURI *aURI) {
-        MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread(), "Not thread-safe.");
-        mURI = aURI;
-    }
+  void UpdateURI(nsIURI *aURI) {
+    MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread(), "Not thread-safe.");
+    mURI = aURI;
+  }
 
-    nsIProxyInfo *ProxyInfo() {
-        return mProxyInfo;
-    }
+  nsIProxyInfo *ProxyInfo() { return mProxyInfo; }
 
-    void SetProxyInfo(nsIProxyInfo *pi)
-    {
-        mProxyInfo = pi;
-    }
+  void SetProxyInfo(nsIProxyInfo *pi) { mProxyInfo = pi; }
 
-    NS_IMETHOD IsPending(bool *result) override;
+  NS_IMETHOD IsPending(bool *result) override;
 
-    
-    
-    bool Pending() const override;
+  
+  
+  bool Pending() const override;
 
-    
-    bool ResumeRequested() { return mResumeRequested; }
+  
+  bool ResumeRequested() { return mResumeRequested; }
 
-    
-    uint64_t StartPos() { return mStartPos; }
+  
+  uint64_t StartPos() { return mStartPos; }
 
-    
-    const nsCString &EntityID() {
-        return mEntityID;
-    }
-    void SetEntityID(const nsACString& entityID) {
-        mEntityID = entityID;
-    }
+  
+  const nsCString &EntityID() { return mEntityID; }
+  void SetEntityID(const nsACString &entityID) { mEntityID = entityID; }
 
-    NS_IMETHOD GetLastModifiedTime(PRTime* lastModifiedTime) override {
-        *lastModifiedTime = mLastModifiedTime;
-        return NS_OK;
-    }
+  NS_IMETHOD GetLastModifiedTime(PRTime *lastModifiedTime) override {
+    *lastModifiedTime = mLastModifiedTime;
+    return NS_OK;
+  }
 
-    NS_IMETHOD SetLastModifiedTime(PRTime lastModifiedTime) override {
-        mLastModifiedTime = lastModifiedTime;
-        return NS_OK;
-    }
+  NS_IMETHOD SetLastModifiedTime(PRTime lastModifiedTime) override {
+    mLastModifiedTime = lastModifiedTime;
+    return NS_OK;
+  }
 
-    
-    nsIInputStream *UploadStream() {
-        return mUploadStream;
-    }
+  
+  nsIInputStream *UploadStream() { return mUploadStream; }
 
-    
-    void GetFTPEventSink(nsCOMPtr<nsIFTPEventSink> &aResult);
+  
+  void GetFTPEventSink(nsCOMPtr<nsIFTPEventSink> &aResult);
 
-    NS_IMETHOD Suspend() override;
-    NS_IMETHOD Resume() override;
+  NS_IMETHOD Suspend() override;
+  NS_IMETHOD Resume() override;
 
-public:
-    NS_IMETHOD ForcePending(bool aForcePending) override;
+ public:
+  NS_IMETHOD ForcePending(bool aForcePending) override;
 
-protected:
-    virtual ~nsFtpChannel() = default;
-    virtual nsresult OpenContentStream(bool async, nsIInputStream **result,
-                                       nsIChannel** channel) override;
-    virtual bool GetStatusArg(nsresult status, nsString &statusArg) override;
-    virtual void OnCallbacksChanged() override;
+ protected:
+  virtual ~nsFtpChannel() = default;
+  virtual nsresult OpenContentStream(bool async, nsIInputStream **result,
+                                     nsIChannel **channel) override;
+  virtual bool GetStatusArg(nsresult status, nsString &statusArg) override;
+  virtual void OnCallbacksChanged() override;
 
-private:
-    nsCOMPtr<nsIProxyInfo>           mProxyInfo;
-    nsCOMPtr<nsIFTPEventSink>        mFTPEventSink;
-    nsCOMPtr<nsIInputStream>         mUploadStream;
-    uint64_t                         mStartPos;
-    nsCString                        mEntityID;
-    bool                             mResumeRequested;
-    PRTime                           mLastModifiedTime;
-    bool                             mForcePending;
-    RefPtr<ADivertableParentChannel> mParentChannel;
+ private:
+  nsCOMPtr<nsIProxyInfo> mProxyInfo;
+  nsCOMPtr<nsIFTPEventSink> mFTPEventSink;
+  nsCOMPtr<nsIInputStream> mUploadStream;
+  uint64_t mStartPos;
+  nsCString mEntityID;
+  bool mResumeRequested;
+  PRTime mLastModifiedTime;
+  bool mForcePending;
+  RefPtr<ADivertableParentChannel> mParentChannel;
 
-    
-    uint32_t                          mSuspendCount;
+  
+  uint32_t mSuspendCount;
 };
 
 #endif 

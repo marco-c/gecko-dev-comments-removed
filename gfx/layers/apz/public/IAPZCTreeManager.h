@@ -7,13 +7,13 @@
 #ifndef mozilla_layers_IAPZCTreeManager_h
 #define mozilla_layers_IAPZCTreeManager_h
 
-#include <stdint.h>                     
+#include <stdint.h>  
 
-#include "mozilla/layers/LayersTypes.h" 
-#include "mozilla/layers/ScrollableLayerGuid.h" 
-#include "nsTArrayForwardDeclare.h"     
-#include "nsISupportsImpl.h"            
-#include "Units.h"                      
+#include "mozilla/layers/LayersTypes.h"          
+#include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "nsTArrayForwardDeclare.h"  
+#include "nsISupportsImpl.h"         
+#include "Units.h"                   
 
 namespace mozilla {
 namespace layers {
@@ -22,19 +22,19 @@ class APZInputBridge;
 class KeyboardMap;
 
 enum AllowedTouchBehavior {
-  NONE =               0,
-  VERTICAL_PAN =       1 << 0,
-  HORIZONTAL_PAN =     1 << 1,
-  PINCH_ZOOM =         1 << 2,
-  DOUBLE_TAP_ZOOM =    1 << 3,
-  UNKNOWN =            1 << 4
+  NONE = 0,
+  VERTICAL_PAN = 1 << 0,
+  HORIZONTAL_PAN = 1 << 1,
+  PINCH_ZOOM = 1 << 2,
+  DOUBLE_TAP_ZOOM = 1 << 3,
+  UNKNOWN = 1 << 4
 };
 
 enum ZoomToRectBehavior : uint32_t {
-  DEFAULT_BEHAVIOR =   0,
-  DISABLE_ZOOM_OUT =   1 << 0,
+  DEFAULT_BEHAVIOR = 0,
+  DISABLE_ZOOM_OUT = 1 << 0,
   PAN_INTO_VIEW_ONLY = 1 << 1,
-  ONLY_ZOOM_TO_DEFAULT_SCALE  = 1 << 2
+  ONLY_ZOOM_TO_DEFAULT_SCALE = 1 << 2
 };
 
 class AsyncDragMetrics;
@@ -42,7 +42,7 @@ class AsyncDragMetrics;
 class IAPZCTreeManager {
   NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING(IAPZCTreeManager)
 
-public:
+ public:
   
 
 
@@ -54,10 +54,9 @@ public:
 
 
 
-  virtual void ZoomToRect(
-      const ScrollableLayerGuid& aGuid,
-      const CSSRect& aRect,
-      const uint32_t aFlags = DEFAULT_BEHAVIOR) = 0;
+  virtual void ZoomToRect(const ScrollableLayerGuid& aGuid,
+                          const CSSRect& aRect,
+                          const uint32_t aFlags = DEFAULT_BEHAVIOR) = 0;
 
   
 
@@ -66,9 +65,8 @@ public:
 
 
 
-  virtual void ContentReceivedInputBlock(
-      uint64_t aInputBlockId,
-      bool aPreventDefault) = 0;
+  virtual void ContentReceivedInputBlock(uint64_t aInputBlockId,
+                                         bool aPreventDefault) = 0;
 
   
 
@@ -81,9 +79,8 @@ public:
 
 
 
-  virtual void SetTargetAPZC(
-      uint64_t aInputBlockId,
-      const nsTArray<ScrollableLayerGuid>& aTargets) = 0;
+  virtual void SetTargetAPZC(uint64_t aInputBlockId,
+                             const nsTArray<ScrollableLayerGuid>& aTargets) = 0;
 
   
 
@@ -106,16 +103,13 @@ public:
 
 
   virtual void SetAllowedTouchBehavior(
-      uint64_t aInputBlockId,
-      const nsTArray<TouchBehaviorFlags>& aValues) = 0;
+      uint64_t aInputBlockId, const nsTArray<TouchBehaviorFlags>& aValues) = 0;
 
-  virtual void StartScrollbarDrag(
-      const ScrollableLayerGuid& aGuid,
-      const AsyncDragMetrics& aDragMetrics) = 0;
+  virtual void StartScrollbarDrag(const ScrollableLayerGuid& aGuid,
+                                  const AsyncDragMetrics& aDragMetrics) = 0;
 
-  virtual bool StartAutoscroll(
-      const ScrollableLayerGuid& aGuid,
-      const ScreenPoint& aAnchorLocation) = 0;
+  virtual bool StartAutoscroll(const ScrollableLayerGuid& aGuid,
+                               const ScreenPoint& aAnchorLocation) = 0;
 
   virtual void StopAutoscroll(const ScrollableLayerGuid& aGuid) = 0;
 
@@ -136,14 +130,13 @@ public:
 
   virtual APZInputBridge* InputBridge() = 0;
 
-protected:
-
+ protected:
   
 
-  virtual ~IAPZCTreeManager() { }
+  virtual ~IAPZCTreeManager() {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

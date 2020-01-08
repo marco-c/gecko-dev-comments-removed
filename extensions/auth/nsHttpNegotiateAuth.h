@@ -15,27 +15,26 @@
 
 
 
-class nsHttpNegotiateAuth final : public nsIHttpAuthenticator
-{
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIHTTPAUTHENTICATOR
+class nsHttpNegotiateAuth final : public nsIHttpAuthenticator {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIHTTPAUTHENTICATOR
 
-    static already_AddRefed<nsIHttpAuthenticator> GetOrCreate();
+  static already_AddRefed<nsIHttpAuthenticator> GetOrCreate();
 
-private:
-    ~nsHttpNegotiateAuth() {}
+ private:
+  ~nsHttpNegotiateAuth() {}
 
-    
-    bool TestBoolPref(const char *pref);
+  
+  bool TestBoolPref(const char *pref);
 
-    
-    bool TestNonFqdn(nsIURI *uri);
+  
+  bool TestNonFqdn(nsIURI *uri);
 
-    
-    RefPtr<mozilla::LazyIdleThread> mNegotiateThread;
+  
+  RefPtr<mozilla::LazyIdleThread> mNegotiateThread;
 
-    
-    static mozilla::StaticRefPtr<nsHttpNegotiateAuth> gSingleton;
+  
+  static mozilla::StaticRefPtr<nsHttpNegotiateAuth> gSingleton;
 };
 #endif 

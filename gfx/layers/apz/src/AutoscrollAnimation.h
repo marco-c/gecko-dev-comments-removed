@@ -14,28 +14,29 @@ namespace layers {
 
 class AsyncPanZoomController;
 
-class AutoscrollAnimation : public AsyncPanZoomAnimation
-{
-public:
+class AutoscrollAnimation : public AsyncPanZoomAnimation {
+ public:
   AutoscrollAnimation(AsyncPanZoomController& aApzc,
                       const ScreenPoint& aAnchorLocation);
 
-  bool DoSample(FrameMetrics& aFrameMetrics, const TimeDuration& aDelta) override;
+  bool DoSample(FrameMetrics& aFrameMetrics,
+                const TimeDuration& aDelta) override;
 
-  bool HandleScrollOffsetUpdate(const Maybe<CSSPoint>& aRelativeDelta) override
-  {
+  bool HandleScrollOffsetUpdate(
+      const Maybe<CSSPoint>& aRelativeDelta) override {
     
     
     return true;
   }
 
   void Cancel(CancelAnimationFlags aFlags) override;
-private:
+
+ private:
   AsyncPanZoomController& mApzc;
   ScreenPoint mAnchorLocation;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

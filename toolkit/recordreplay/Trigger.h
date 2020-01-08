@@ -15,7 +15,7 @@ namespace recordreplay {
 
 void InitializeTriggers();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

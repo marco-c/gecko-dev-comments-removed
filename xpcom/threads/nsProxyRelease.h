@@ -26,27 +26,21 @@
 
 namespace detail {
 
-template<typename T>
-class ProxyReleaseEvent : public mozilla::CancelableRunnable
-{
-public:
+template <typename T>
+class ProxyReleaseEvent : public mozilla::CancelableRunnable {
+ public:
   ProxyReleaseEvent(const char* aName, already_AddRefed<T> aDoomed)
-  : CancelableRunnable(aName), mDoomed(aDoomed.take()) {}
+      : CancelableRunnable(aName), mDoomed(aDoomed.take()) {}
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     NS_IF_RELEASE(mDoomed);
     return NS_OK;
   }
 
-  nsresult Cancel() override
-  {
-    return Run();
-  }
+  nsresult Cancel() override { return Run(); }
 
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-  NS_IMETHOD GetName(nsACString& aName) override
-  {
+  NS_IMETHOD GetName(nsACString& aName) override {
     if (mName) {
       aName.Append(nsPrintfCString("ProxyReleaseEvent for %s", mName));
     } else {
@@ -56,15 +50,13 @@ public:
   }
 #endif
 
-private:
+ private:
   T* MOZ_OWNING_REF mDoomed;
 };
 
-template<typename T>
-void
-ProxyRelease(const char* aName, nsIEventTarget* aTarget,
-             already_AddRefed<T> aDoomed, bool aAlwaysProxy)
-{
+template <typename T>
+void ProxyRelease(const char* aName, nsIEventTarget* aTarget,
+                  already_AddRefed<T> aDoomed, bool aAlwaysProxy) {
   
   RefPtr<T> doomed = aDoomed;
   nsresult rv;
@@ -91,40 +83,31 @@ ProxyRelease(const char* aName, nsIEventTarget* aTarget,
   }
 }
 
-template<bool nsISupportsBased>
-struct ProxyReleaseChooser
-{
-  template<typename T>
-  static void ProxyRelease(const char* aName,
-                           nsIEventTarget* aTarget,
-                           already_AddRefed<T> aDoomed,
-                           bool aAlwaysProxy)
-  {
+template <bool nsISupportsBased>
+struct ProxyReleaseChooser {
+  template <typename T>
+  static void ProxyRelease(const char* aName, nsIEventTarget* aTarget,
+                           already_AddRefed<T> aDoomed, bool aAlwaysProxy) {
     ::detail::ProxyRelease(aName, aTarget, std::move(aDoomed), aAlwaysProxy);
   }
 };
 
-template<>
-struct ProxyReleaseChooser<true>
-{
+template <>
+struct ProxyReleaseChooser<true> {
   
   
-  template<typename T>
-  static void ProxyRelease(const char* aName,
-                           nsIEventTarget* aTarget,
-                           already_AddRefed<T> aDoomed,
-                           bool aAlwaysProxy)
-  {
-    ProxyReleaseISupports(aName, aTarget, ToSupports(aDoomed.take()), aAlwaysProxy);
+  template <typename T>
+  static void ProxyRelease(const char* aName, nsIEventTarget* aTarget,
+                           already_AddRefed<T> aDoomed, bool aAlwaysProxy) {
+    ProxyReleaseISupports(aName, aTarget, ToSupports(aDoomed.take()),
+                          aAlwaysProxy);
   }
 
-  static void ProxyReleaseISupports(const char* aName,
-                                    nsIEventTarget* aTarget,
-                                    nsISupports* aDoomed,
-                                    bool aAlwaysProxy);
+  static void ProxyReleaseISupports(const char* aName, nsIEventTarget* aTarget,
+                                    nsISupports* aDoomed, bool aAlwaysProxy);
 };
 
-} 
+}  
 
 
 
@@ -141,13 +124,12 @@ struct ProxyReleaseChooser<true>
 
 
 
-template<class T>
+template <class T>
 inline NS_HIDDEN_(void)
-NS_ProxyRelease(const char* aName, nsIEventTarget* aTarget,
-                already_AddRefed<T> aDoomed, bool aAlwaysProxy = false)
-{
-  ::detail::ProxyReleaseChooser<mozilla::IsBaseOf<nsISupports, T>::value>
-    ::ProxyRelease(aName, aTarget, std::move(aDoomed), aAlwaysProxy);
+    NS_ProxyRelease(const char* aName, nsIEventTarget* aTarget,
+                    already_AddRefed<T> aDoomed, bool aAlwaysProxy = false) {
+  ::detail::ProxyReleaseChooser<mozilla::IsBaseOf<nsISupports, T>::value>::
+      ProxyRelease(aName, aTarget, std::move(aDoomed), aAlwaysProxy);
 }
 
 
@@ -163,18 +145,18 @@ NS_ProxyRelease(const char* aName, nsIEventTarget* aTarget,
 
 
 
-template<class T>
+template <class T>
 inline NS_HIDDEN_(void)
-NS_ReleaseOnMainThreadSystemGroup(const char* aName,
-                                  already_AddRefed<T> aDoomed,
-                                  bool aAlwaysProxy = false)
-{
+    NS_ReleaseOnMainThreadSystemGroup(const char* aName,
+                                      already_AddRefed<T> aDoomed,
+                                      bool aAlwaysProxy = false) {
   
   
   
   nsCOMPtr<nsIEventTarget> systemGroupEventTarget;
   if (!NS_IsMainThread() || aAlwaysProxy) {
-    systemGroupEventTarget = mozilla::SystemGroup::EventTargetFor(mozilla::TaskCategory::Other);
+    systemGroupEventTarget =
+        mozilla::SystemGroup::EventTargetFor(mozilla::TaskCategory::Other);
 
     if (!systemGroupEventTarget) {
       MOZ_ASSERT_UNREACHABLE("Could not get main thread; leaking an object!");
@@ -187,11 +169,10 @@ NS_ReleaseOnMainThreadSystemGroup(const char* aName,
                   aAlwaysProxy);
 }
 
-template<class T>
+template <class T>
 inline NS_HIDDEN_(void)
-NS_ReleaseOnMainThreadSystemGroup(already_AddRefed<T> aDoomed,
-                                  bool aAlwaysProxy = false)
-{
+    NS_ReleaseOnMainThreadSystemGroup(already_AddRefed<T> aDoomed,
+                                      bool aAlwaysProxy = false) {
   NS_ReleaseOnMainThreadSystemGroup("NS_ReleaseOnMainThreadSystemGroup",
                                     std::move(aDoomed), aAlwaysProxy);
 }
@@ -234,10 +215,9 @@ NS_ReleaseOnMainThreadSystemGroup(already_AddRefed<T> aDoomed,
 
 
 
-template<class T>
-class nsMainThreadPtrHolder final
-{
-public:
+template <class T>
+class nsMainThreadPtrHolder final {
+ public:
   
   
   
@@ -245,11 +225,12 @@ public:
   
   nsMainThreadPtrHolder(const char* aName, T* aPtr, bool aStrict = true,
                         nsIEventTarget* aMainThreadEventTarget = nullptr)
-    : mRawPtr(nullptr)
-    , mStrict(aStrict)
-    , mMainThreadEventTarget(aMainThreadEventTarget)
+      : mRawPtr(nullptr),
+        mStrict(aStrict),
+        mMainThreadEventTarget(aMainThreadEventTarget)
 #ifndef RELEASE_OR_BETA
-    , mName(aName)
+        ,
+        mName(aName)
 #endif
   {
     
@@ -260,21 +241,21 @@ public:
   nsMainThreadPtrHolder(const char* aName, already_AddRefed<T> aPtr,
                         bool aStrict = true,
                         nsIEventTarget* aMainThreadEventTarget = nullptr)
-    : mRawPtr(aPtr.take())
-    , mStrict(aStrict)
-    , mMainThreadEventTarget(aMainThreadEventTarget)
+      : mRawPtr(aPtr.take()),
+        mStrict(aStrict),
+        mMainThreadEventTarget(aMainThreadEventTarget)
 #ifndef RELEASE_OR_BETA
-    , mName(aName)
+        ,
+        mName(aName)
 #endif
   {
     
     
   }
 
-private:
+ private:
   
-  ~nsMainThreadPtrHolder()
-  {
+  ~nsMainThreadPtrHolder() {
     if (NS_IsMainThread()) {
       NS_IF_RELEASE(mRawPtr);
     } else if (mRawPtr) {
@@ -284,17 +265,16 @@ private:
       MOZ_ASSERT(mMainThreadEventTarget);
       NS_ProxyRelease(
 #ifdef RELEASE_OR_BETA
-        nullptr,
+          nullptr,
 #else
-        mName,
+          mName,
 #endif
-        mMainThreadEventTarget, dont_AddRef(mRawPtr));
+          mMainThreadEventTarget, dont_AddRef(mRawPtr));
     }
   }
 
-public:
-  T* get()
-  {
+ public:
+  T* get() {
     
     if (mStrict && MOZ_UNLIKELY(!NS_IsMainThread())) {
       NS_ERROR("Can't dereference nsMainThreadPtrHolder off main thread");
@@ -303,18 +283,14 @@ public:
     return mRawPtr;
   }
 
-  bool operator==(const nsMainThreadPtrHolder<T>& aOther) const
-  {
+  bool operator==(const nsMainThreadPtrHolder<T>& aOther) const {
     return mRawPtr == aOther.mRawPtr;
   }
-  bool operator!() const
-  {
-    return !mRawPtr;
-  }
+  bool operator!() const { return !mRawPtr; }
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsMainThreadPtrHolder<T>)
 
-private:
+ private:
   
   T* mRawPtr;
 
@@ -333,34 +309,25 @@ private:
   nsMainThreadPtrHolder(const nsMainThreadPtrHolder& aOther);
 };
 
-template<class T>
-class nsMainThreadPtrHandle
-{
+template <class T>
+class nsMainThreadPtrHandle {
   RefPtr<nsMainThreadPtrHolder<T>> mPtr;
 
-public:
+ public:
   nsMainThreadPtrHandle() : mPtr(nullptr) {}
   MOZ_IMPLICIT nsMainThreadPtrHandle(decltype(nullptr)) : mPtr(nullptr) {}
   explicit nsMainThreadPtrHandle(nsMainThreadPtrHolder<T>* aHolder)
-    : mPtr(aHolder)
-  {
-  }
+      : mPtr(aHolder) {}
   explicit nsMainThreadPtrHandle(
       already_AddRefed<nsMainThreadPtrHolder<T>> aHolder)
-    : mPtr(aHolder)
-  {
-  }
+      : mPtr(aHolder) {}
   nsMainThreadPtrHandle(const nsMainThreadPtrHandle& aOther)
-    : mPtr(aOther.mPtr)
-  {
-  }
-  nsMainThreadPtrHandle& operator=(const nsMainThreadPtrHandle& aOther)
-  {
+      : mPtr(aOther.mPtr) {}
+  nsMainThreadPtrHandle& operator=(const nsMainThreadPtrHandle& aOther) {
     mPtr = aOther.mPtr;
     return *this;
   }
-  nsMainThreadPtrHandle& operator=(nsMainThreadPtrHolder<T>* aHolder)
-  {
+  nsMainThreadPtrHandle& operator=(nsMainThreadPtrHolder<T>* aHolder) {
     mPtr = aHolder;
     return *this;
   }
@@ -368,8 +335,7 @@ public:
   
   
   
-  T* get() const
-  {
+  T* get() const {
     if (mPtr) {
       return mPtr.get()->get();
     }
@@ -380,32 +346,28 @@ public:
   T* operator->() const MOZ_NO_ADDREF_RELEASE_ON_RETURN { return get(); }
 
   
-  bool operator==(const nsMainThreadPtrHandle<T>& aOther) const
-  {
+  bool operator==(const nsMainThreadPtrHandle<T>& aOther) const {
     if (!mPtr || !aOther.mPtr) {
       return mPtr == aOther.mPtr;
     }
     return *mPtr == *aOther.mPtr;
   }
-  bool operator!=(const nsMainThreadPtrHandle<T>& aOther) const
-  {
+  bool operator!=(const nsMainThreadPtrHandle<T>& aOther) const {
     return !operator==(aOther);
   }
   bool operator==(decltype(nullptr)) const { return mPtr == nullptr; }
   bool operator!=(decltype(nullptr)) const { return mPtr != nullptr; }
-  bool operator!() const {
-    return !mPtr || !*mPtr;
-  }
+  bool operator!() const { return !mPtr || !*mPtr; }
 };
 
 namespace mozilla {
 
-template<typename T>
+template <typename T>
 using PtrHolder = nsMainThreadPtrHolder<T>;
 
-template<typename T>
+template <typename T>
 using PtrHandle = nsMainThreadPtrHandle<T>;
 
-} 
+}  
 
 #endif

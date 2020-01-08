@@ -13,7 +13,7 @@ namespace mozilla {
 namespace hal {
 class NetworkInformation;
 typedef Observer<hal::NetworkInformation> NetworkObserver;
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

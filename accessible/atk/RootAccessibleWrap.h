@@ -20,15 +20,13 @@ typedef RootAccessible RootAccessibleWrap;
 
 
 
-class GtkWindowAccessible final : public DummyAccessible
-{
-public:
+class GtkWindowAccessible final : public DummyAccessible {
+ public:
   explicit GtkWindowAccessible(AtkObject* aAccessible);
   virtual ~GtkWindowAccessible();
 };
 
-} 
-} 
+}  
+}  
 
-#endif   
-
+#endif 

@@ -67,23 +67,25 @@
 
 
 
+
+
+
+
 namespace mozilla {
 
 namespace scache {
 
-struct CacheEntry
-{
+struct CacheEntry {
   UniquePtr<char[]> data;
   uint32_t size;
 
-  CacheEntry() : size(0) { }
+  CacheEntry() : size(0) {}
 
   
-  CacheEntry(UniquePtr<char[]> buf, uint32_t len) : data(std::move(buf)), size(len) { }
+  CacheEntry(UniquePtr<char[]> buf, uint32_t len)
+      : data(std::move(buf)), size(len) {}
 
-  ~CacheEntry()
-  {
-  }
+  ~CacheEntry() {}
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
     return mallocSizeOf(this) + mallocSizeOf(data.get());
@@ -92,29 +94,28 @@ struct CacheEntry
 
 
 
-class StartupCacheListener final : public nsIObserver
-{
+class StartupCacheListener final : public nsIObserver {
   ~StartupCacheListener() {}
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 };
 
-class StartupCache : public nsIMemoryReporter
-{
+class StartupCache : public nsIMemoryReporter {
+  friend class StartupCacheListener;
 
-friend class StartupCacheListener;
-
-public:
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
 
   
 
   
-  nsresult GetBuffer(const char* id, UniquePtr<char[]>* outbuf, uint32_t* length);
+  nsresult GetBuffer(const char* id, UniquePtr<char[]>* outbuf,
+                     uint32_t* length);
 
   
-  nsresult PutBuffer(const char* id, UniquePtr<char[]>&& inbuf, uint32_t length);
+  nsresult PutBuffer(const char* id, UniquePtr<char[]>&& inbuf,
+                     uint32_t length);
 
   
   void InvalidateCache();
@@ -139,7 +140,8 @@ public:
   
   nsresult ResetStartupWriteTimer();
   bool StartupWriteComplete();
-private:
+
+ private:
   StartupCache();
   virtual ~StartupCache();
 
@@ -149,8 +151,8 @@ private:
   void WaitOnWriteThread();
 
   static nsresult InitSingleton();
-  static void WriteTimeout(nsITimer *aTimer, void *aClosure);
-  static void ThreadedWrite(void *aClosure);
+  static void WriteTimeout(nsITimer* aTimer, void* aClosure);
+  static void ThreadedWrite(void* aClosure);
 
   nsClassHashtable<nsCStringHashKey, CacheEntry> mTable;
   nsTArray<nsCString> mPendingWrites;
@@ -166,7 +168,7 @@ private:
   static StaticRefPtr<StartupCache> gStartupCache;
   static bool gShutdownInitiated;
   static bool gIgnoreDiskCache;
-  PRThread *mWriteThread;
+  PRThread* mWriteThread;
 #ifdef DEBUG
   nsTHashtable<nsISupportsHashKey> mWriteObjectMap;
 #endif
@@ -176,17 +178,15 @@ private:
 
 
 #ifdef DEBUG
-class StartupCacheDebugOutputStream final
-  : public nsIObjectOutputStream
-{
+class StartupCacheDebugOutputStream final : public nsIObjectOutputStream {
   ~StartupCacheDebugOutputStream() {}
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBJECTOUTPUTSTREAM
 
-  StartupCacheDebugOutputStream (nsIObjectOutputStream* binaryStream,
-                                   nsTHashtable<nsISupportsHashKey>* objectMap)
-  : mBinaryStream(binaryStream), mObjectMap(objectMap) { }
+  StartupCacheDebugOutputStream(nsIObjectOutputStream* binaryStream,
+                                nsTHashtable<nsISupportsHashKey>* objectMap)
+      : mBinaryStream(binaryStream), mObjectMap(objectMap) {}
 
   NS_FORWARD_SAFE_NSIBINARYOUTPUTSTREAM(mBinaryStream)
   NS_FORWARD_SAFE_NSIOUTPUTSTREAM(mBinaryStream)
@@ -194,11 +194,11 @@ class StartupCacheDebugOutputStream final
   bool CheckReferences(nsISupports* aObject);
 
   nsCOMPtr<nsIObjectOutputStream> mBinaryStream;
-  nsTHashtable<nsISupportsHashKey> *mObjectMap;
+  nsTHashtable<nsISupportsHashKey>* mObjectMap;
 };
-#endif 
+#endif  
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

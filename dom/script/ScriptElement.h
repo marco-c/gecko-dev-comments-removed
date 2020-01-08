@@ -21,10 +21,8 @@ namespace dom {
 
 
 
-class ScriptElement : public nsIScriptElement,
-                      public nsStubMutationObserver
-{
-public:
+class ScriptElement : public nsIScriptElement, public nsStubMutationObserver {
+ public:
   
   NS_DECL_NSISCRIPTLOADEROBSERVER
 
@@ -35,13 +33,11 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
 
   explicit ScriptElement(FromParser aFromParser)
-    : nsIScriptElement(aFromParser)
-  {
-  }
+      : nsIScriptElement(aFromParser) {}
 
   virtual nsresult FireErrorEvent() override;
 
-protected:
+ protected:
   
 
   
@@ -52,7 +48,7 @@ protected:
   virtual bool MaybeProcessScript() override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

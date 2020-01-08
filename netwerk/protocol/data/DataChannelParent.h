@@ -18,24 +18,22 @@ namespace net {
 
 
 
-class DataChannelParent : public nsIParentChannel
-                        , public PDataChannelParent
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIPARENTCHANNEL
-    NS_DECL_NSIREQUESTOBSERVER
-    NS_DECL_NSISTREAMLISTENER
+class DataChannelParent : public nsIParentChannel, public PDataChannelParent {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPARENTCHANNEL
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_NSISTREAMLISTENER
 
-    MOZ_MUST_USE bool Init(const uint32_t& aArgs);
+  MOZ_MUST_USE bool Init(const uint32_t& aArgs);
 
-private:
-    ~DataChannelParent() = default;
+ private:
+  ~DataChannelParent() = default;
 
-    virtual void ActorDestroy(ActorDestroyReason why) override;
+  virtual void ActorDestroy(ActorDestroyReason why) override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

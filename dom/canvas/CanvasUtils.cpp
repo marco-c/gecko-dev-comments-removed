@@ -44,157 +44,161 @@ using namespace mozilla::gfx;
 namespace mozilla {
 namespace CanvasUtils {
 
-bool IsImageExtractionAllowed(nsIDocument *aDocument, JSContext *aCx, nsIPrincipal& aPrincipal)
-{
+bool IsImageExtractionAllowed(nsIDocument* aDocument, JSContext* aCx,
+                              nsIPrincipal& aPrincipal) {
+  
+  if (!nsContentUtils::ShouldResistFingerprinting()) {
+    return true;
+  }
+
+  
+  if (!aDocument || !aCx) {
+    return false;
+  }
+
+  
+  if (nsContentUtils::IsSystemPrincipal(&aPrincipal)) {
+    return true;
+  }
+
+  
+  auto principal = BasePrincipal::Cast(&aPrincipal);
+  if (principal->AddonPolicy() || principal->ContentScriptAddonPolicy()) {
+    return true;
+  }
+
+  
+  nsIURI* docURI = aDocument->GetDocumentURI();
+  nsCString docURISpec;
+  docURI->GetSpec(docURISpec);
+
+  
+  bool isFileURL;
+  if (NS_SUCCEEDED(docURI->SchemeIs("file", &isFileURL)) && isFileURL) {
+    return true;
+  }
+
+  
+  JS::AutoFilename scriptFile;
+  unsigned scriptLine = 0;
+  bool isScriptKnown = false;
+  if (JS::DescribeScriptedCaller(aCx, &scriptFile, &scriptLine)) {
+    isScriptKnown = true;
     
-    if (!nsContentUtils::ShouldResistFingerprinting()) {
-        return true;
+    if (scriptFile.get() &&
+        strcmp(scriptFile.get(), "resource://pdf.js/build/pdf.js") == 0) {
+      return true;
     }
+  }
 
-    
-    if (!aDocument || !aCx) {
-        return false;
-    }
+  nsIDocument* topLevelDocument = aDocument->GetTopLevelContentDocument();
+  nsIURI* topLevelDocURI =
+      topLevelDocument ? topLevelDocument->GetDocumentURI() : nullptr;
+  nsCString topLevelDocURISpec;
+  if (topLevelDocURI) {
+    topLevelDocURI->GetSpec(topLevelDocURISpec);
+  }
 
-    
-    if (nsContentUtils::IsSystemPrincipal(&aPrincipal)) {
-        return true;
-    }
+  
+  nsresult rv;
+  nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
+      do_GetService(THIRDPARTYUTIL_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, false);
 
-    
-    auto principal = BasePrincipal::Cast(&aPrincipal);
-    if (principal->AddonPolicy() || principal->ContentScriptAddonPolicy()) {
-        return true;
-    }
-
-    
-    nsIURI *docURI = aDocument->GetDocumentURI();
-    nsCString docURISpec;
-    docURI->GetSpec(docURISpec);
-
-    
-    bool isFileURL;
-    if (NS_SUCCEEDED(docURI->SchemeIs("file", &isFileURL)) && isFileURL) {
-        return true;
-    }
-
-    
-    JS::AutoFilename scriptFile;
-    unsigned scriptLine = 0;
-    bool isScriptKnown = false;
-    if (JS::DescribeScriptedCaller(aCx, &scriptFile, &scriptLine)) {
-        isScriptKnown = true;
-        
-        if (scriptFile.get() &&
-                strcmp(scriptFile.get(), "resource://pdf.js/build/pdf.js") == 0) {
-            return true;
-        }
-    }
-
-    nsIDocument* topLevelDocument = aDocument->GetTopLevelContentDocument();
-    nsIURI *topLevelDocURI = topLevelDocument ? topLevelDocument->GetDocumentURI() : nullptr;
-    nsCString topLevelDocURISpec;
-    if (topLevelDocURI) {
-        topLevelDocURI->GetSpec(topLevelDocURISpec);
-    }
-
-    
-    nsresult rv;
-    nsCOMPtr<mozIThirdPartyUtil> thirdPartyUtil =
-        do_GetService(THIRDPARTYUTIL_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, false);
-
-    
-    bool isThirdParty = true;
-    rv = thirdPartyUtil->IsThirdPartyURI(topLevelDocURI, docURI, &isThirdParty);
-    NS_ENSURE_SUCCESS(rv, false);
-    if (isThirdParty) {
-        nsAutoCString message;
-        message.AppendPrintf("Blocked third party %s in page %s from extracting canvas data.",
-                             docURISpec.get(), topLevelDocURISpec.get());
-        if (isScriptKnown) {
-            message.AppendPrintf(" %s:%u.", scriptFile.get(), scriptLine);
-        }
-        nsContentUtils::LogMessageToConsole(message.get());
-        return false;
-    }
-
-    
-    nsCOMPtr<nsIPermissionManager> permissionManager =
-        do_GetService(NS_PERMISSIONMANAGER_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, false);
-
-    
-    
-    uint32_t permission;
-    rv = permissionManager->TestPermission(topLevelDocURI,
-                                           PERMISSION_CANVAS_EXTRACT_DATA,
-                                           &permission);
-    NS_ENSURE_SUCCESS(rv, false);
-    switch (permission) {
-    case nsIPermissionManager::ALLOW_ACTION:
-        return true;
-    case nsIPermissionManager::DENY_ACTION:
-        return false;
-    default:
-        break;
-    }
-
-    
-
-    
-    if (StaticPrefs::privacy_resistFingerprinting_autoDeclineNoUserInputCanvasPrompts() &&
-        !EventStateManager::IsHandlingUserInput()) {
-        nsAutoCString message;
-        message.AppendPrintf("Blocked %s in page %s from extracting canvas data because no user input was detected.",
-                             docURISpec.get(), topLevelDocURISpec.get());
-        if (isScriptKnown) {
-            message.AppendPrintf(" %s:%u.", scriptFile.get(), scriptLine);
-        }
-        nsContentUtils::LogMessageToConsole(message.get());
-
-        return false;
-    }
-
-    
+  
+  bool isThirdParty = true;
+  rv = thirdPartyUtil->IsThirdPartyURI(topLevelDocURI, docURI, &isThirdParty);
+  NS_ENSURE_SUCCESS(rv, false);
+  if (isThirdParty) {
     nsAutoCString message;
-    message.AppendPrintf("Blocked %s in page %s from extracting canvas data, but prompting the user.",
-                         docURISpec.get(), topLevelDocURISpec.get());
+    message.AppendPrintf(
+        "Blocked third party %s in page %s from extracting canvas data.",
+        docURISpec.get(), topLevelDocURISpec.get());
     if (isScriptKnown) {
-        message.AppendPrintf(" %s:%u.", scriptFile.get(), scriptLine);
+      message.AppendPrintf(" %s:%u.", scriptFile.get(), scriptLine);
+    }
+    nsContentUtils::LogMessageToConsole(message.get());
+    return false;
+  }
+
+  
+  nsCOMPtr<nsIPermissionManager> permissionManager =
+      do_GetService(NS_PERMISSIONMANAGER_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, false);
+
+  
+  
+  uint32_t permission;
+  rv = permissionManager->TestPermission(
+      topLevelDocURI, PERMISSION_CANVAS_EXTRACT_DATA, &permission);
+  NS_ENSURE_SUCCESS(rv, false);
+  switch (permission) {
+    case nsIPermissionManager::ALLOW_ACTION:
+      return true;
+    case nsIPermissionManager::DENY_ACTION:
+      return false;
+    default:
+      break;
+  }
+
+  
+  
+
+  
+  if (StaticPrefs::
+          privacy_resistFingerprinting_autoDeclineNoUserInputCanvasPrompts() &&
+      !EventStateManager::IsHandlingUserInput()) {
+    nsAutoCString message;
+    message.AppendPrintf(
+        "Blocked %s in page %s from extracting canvas data because no user "
+        "input was detected.",
+        docURISpec.get(), topLevelDocURISpec.get());
+    if (isScriptKnown) {
+      message.AppendPrintf(" %s:%u.", scriptFile.get(), scriptLine);
     }
     nsContentUtils::LogMessageToConsole(message.get());
 
-    
-    nsPIDOMWindowOuter *win = aDocument->GetWindow();
-    if (XRE_IsContentProcess()) {
-        TabChild* tabChild = TabChild::GetFrom(win);
-        if (tabChild) {
-            tabChild->SendShowCanvasPermissionPrompt(topLevelDocURISpec);
-        }
-    } else {
-        nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-        if (obs) {
-            obs->NotifyObservers(win, TOPIC_CANVAS_PERMISSIONS_PROMPT,
-                                 NS_ConvertUTF8toUTF16(topLevelDocURISpec).get());
-        }
-    }
-
-    
     return false;
+  }
+
+  
+  nsAutoCString message;
+  message.AppendPrintf(
+      "Blocked %s in page %s from extracting canvas data, but prompting the "
+      "user.",
+      docURISpec.get(), topLevelDocURISpec.get());
+  if (isScriptKnown) {
+    message.AppendPrintf(" %s:%u.", scriptFile.get(), scriptLine);
+  }
+  nsContentUtils::LogMessageToConsole(message.get());
+
+  
+  nsPIDOMWindowOuter* win = aDocument->GetWindow();
+  if (XRE_IsContentProcess()) {
+    TabChild* tabChild = TabChild::GetFrom(win);
+    if (tabChild) {
+      tabChild->SendShowCanvasPermissionPrompt(topLevelDocURISpec);
+    }
+  } else {
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->NotifyObservers(win, TOPIC_CANVAS_PERMISSIONS_PROMPT,
+                           NS_ConvertUTF8toUTF16(topLevelDocURISpec).get());
+    }
+  }
+
+  
+  return false;
 }
 
-bool
-GetCanvasContextType(const nsAString& str, dom::CanvasContextType* const out_type)
-{
+bool GetCanvasContextType(const nsAString& str,
+                          dom::CanvasContextType* const out_type) {
   if (str.EqualsLiteral("2d")) {
     *out_type = dom::CanvasContextType::Canvas2D;
     return true;
   }
 
-  if (str.EqualsLiteral("webgl") ||
-      str.EqualsLiteral("experimental-webgl"))
-  {
+  if (str.EqualsLiteral("webgl") || str.EqualsLiteral("experimental-webgl")) {
     *out_type = dom::CanvasContextType::WebGL1;
     return true;
   }
@@ -221,81 +225,74 @@ GetCanvasContextType(const nsAString& str, dom::CanvasContextType* const out_typ
 
 
 
-void
-DoDrawImageSecurityCheck(dom::HTMLCanvasElement *aCanvasElement,
-                         nsIPrincipal *aPrincipal,
-                         bool forceWriteOnly,
-                         bool CORSUsed)
-{
-    
-    if (!aCanvasElement) {
-        NS_WARNING("DoDrawImageSecurityCheck called without canvas element!");
-        return;
-    }
+void DoDrawImageSecurityCheck(dom::HTMLCanvasElement* aCanvasElement,
+                              nsIPrincipal* aPrincipal, bool forceWriteOnly,
+                              bool CORSUsed) {
+  
+  if (!aCanvasElement) {
+    NS_WARNING("DoDrawImageSecurityCheck called without canvas element!");
+    return;
+  }
 
-    if (aCanvasElement->IsWriteOnly() && !aCanvasElement->mExpandedReader) {
-        return;
-    }
+  if (aCanvasElement->IsWriteOnly() && !aCanvasElement->mExpandedReader) {
+    return;
+  }
 
-    
-    if (forceWriteOnly) {
-        aCanvasElement->SetWriteOnly();
-        return;
-    }
-
-    
-    if (CORSUsed)
-        return;
-
-    MOZ_ASSERT(aPrincipal, "Must have a principal here");
-
-    if (aCanvasElement->NodePrincipal()->Subsumes(aPrincipal)) {
-        
-        return;
-    }
-
-    if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
-        
-
-        if (aCanvasElement->mExpandedReader &&
-            aCanvasElement->mExpandedReader->Subsumes(aPrincipal)) {
-            
-            return;
-        }
-
-        if (!aCanvasElement->mExpandedReader) {
-            
-            aCanvasElement->SetWriteOnly(aPrincipal);
-            return;
-        }
-
-        
-        
-    }
-
+  
+  if (forceWriteOnly) {
     aCanvasElement->SetWriteOnly();
-}
+    return;
+  }
 
-bool
-CoerceDouble(const JS::Value& v, double* d)
-{
-    if (v.isDouble()) {
-        *d = v.toDouble();
-    } else if (v.isInt32()) {
-        *d = double(v.toInt32());
-    } else if (v.isUndefined()) {
-        *d = 0.0;
-    } else {
-        return false;
+  
+  if (CORSUsed) return;
+
+  MOZ_ASSERT(aPrincipal, "Must have a principal here");
+
+  if (aCanvasElement->NodePrincipal()->Subsumes(aPrincipal)) {
+    
+    return;
+  }
+
+  if (BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
+    
+
+    if (aCanvasElement->mExpandedReader &&
+        aCanvasElement->mExpandedReader->Subsumes(aPrincipal)) {
+      
+      return;
     }
-    return true;
+
+    if (!aCanvasElement->mExpandedReader) {
+      
+      aCanvasElement->SetWriteOnly(aPrincipal);
+      return;
+    }
+
+    
+    
+  }
+
+  aCanvasElement->SetWriteOnly();
 }
 
-bool
-HasDrawWindowPrivilege(JSContext* aCx, JSObject* )
-{
-  return nsContentUtils::CallerHasPermission(aCx, nsGkAtoms::all_urlsPermission);
+bool CoerceDouble(const JS::Value& v, double* d) {
+  if (v.isDouble()) {
+    *d = v.toDouble();
+  } else if (v.isInt32()) {
+    *d = double(v.toInt32());
+  } else if (v.isUndefined()) {
+    *d = 0.0;
+  } else {
+    return false;
+  }
+  return true;
 }
 
-} 
-} 
+bool HasDrawWindowPrivilege(JSContext* aCx, JSObject* ) {
+  return nsContentUtils::CallerHasPermission(aCx,
+                                             nsGkAtoms::all_urlsPermission);
+}
+
+}  
+}  

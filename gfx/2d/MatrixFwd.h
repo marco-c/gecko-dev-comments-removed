@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef MOZILLA_GFX_MATRIX_FWD_H_
 #define MOZILLA_GFX_MATRIX_FWD_H_
 
@@ -14,7 +13,7 @@
 namespace mozilla {
 namespace gfx {
 
-template<class T>
+template <class T>
 class BaseMatrix;
 
 typedef float Float;
@@ -25,15 +24,15 @@ typedef BaseMatrix<Double> MatrixDouble;
 
 struct UnknownUnits;
 
-template<class SourceUnits, class TargetUnits>
+template <class SourceUnits, class TargetUnits>
 class Matrix4x4Typed;
-template<class SourceUnits, class TargetUnits>
+template <class SourceUnits, class TargetUnits>
 class Matrix4x4TypedFlagged;
 
 typedef Matrix4x4Typed<UnknownUnits, UnknownUnits> Matrix4x4;
 typedef Matrix4x4TypedFlagged<UnknownUnits, UnknownUnits> Matrix4x4Flagged;
 
-} 
-} 
+}  
+}  
 
 #endif

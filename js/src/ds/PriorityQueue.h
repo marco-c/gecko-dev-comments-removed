@@ -19,119 +19,106 @@ namespace js {
 
 
 
-template <class T, class P,
-          size_t MinInlineCapacity = 0,
+template <class T, class P, size_t MinInlineCapacity = 0,
           class AllocPolicy = TempAllocPolicy>
-class PriorityQueue
-{
-    Vector<T, MinInlineCapacity, AllocPolicy> heap;
+class PriorityQueue {
+  Vector<T, MinInlineCapacity, AllocPolicy> heap;
 
-    PriorityQueue(const PriorityQueue&) = delete;
-    PriorityQueue& operator=(const PriorityQueue&) = delete;
+  PriorityQueue(const PriorityQueue&) = delete;
+  PriorityQueue& operator=(const PriorityQueue&) = delete;
 
-  public:
+ public:
+  explicit PriorityQueue(AllocPolicy ap = AllocPolicy()) : heap(ap) {}
 
-    explicit PriorityQueue(AllocPolicy ap = AllocPolicy())
-      : heap(ap)
-    {}
+  MOZ_MUST_USE bool reserve(size_t capacity) { return heap.reserve(capacity); }
 
-    MOZ_MUST_USE bool reserve(size_t capacity) {
-        return heap.reserve(capacity);
+  size_t length() const { return heap.length(); }
+
+  bool empty() const { return heap.empty(); }
+
+  T removeHighest() {
+    T highest = heap[0];
+    T last = heap.popCopy();
+    if (!heap.empty()) {
+      heap[0] = last;
+      siftDown(0);
     }
+    return highest;
+  }
 
-    size_t length() const {
-        return heap.length();
+  MOZ_MUST_USE bool insert(const T& v) {
+    if (!heap.append(v)) {
+      return false;
     }
+    siftUp(heap.length() - 1);
+    return true;
+  }
 
-    bool empty() const {
-        return heap.empty();
-    }
+  void infallibleInsert(const T& v) {
+    heap.infallibleAppend(v);
+    siftUp(heap.length() - 1);
+  }
 
-    T removeHighest() {
-        T highest = heap[0];
-        T last = heap.popCopy();
-        if (!heap.empty()) {
-            heap[0] = last;
-            siftDown(0);
+ private:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  void siftDown(size_t n) {
+    while (true) {
+      size_t left = n * 2 + 1;
+      size_t right = n * 2 + 2;
+
+      if (left < heap.length()) {
+        if (right < heap.length()) {
+          if (P::priority(heap[n]) < P::priority(heap[right]) &&
+              P::priority(heap[left]) < P::priority(heap[right])) {
+            swap(n, right);
+            n = right;
+            continue;
+          }
         }
-        return highest;
-    }
 
-    MOZ_MUST_USE bool insert(const T& v) {
-        if (!heap.append(v)) {
-            return false;
+        if (P::priority(heap[n]) < P::priority(heap[left])) {
+          swap(n, left);
+          n = left;
+          continue;
         }
-        siftUp(heap.length() - 1);
-        return true;
+      }
+
+      break;
     }
+  }
 
-    void infallibleInsert(const T& v) {
-        heap.infallibleAppend(v);
-        siftUp(heap.length() - 1);
+  void siftUp(size_t n) {
+    while (n > 0) {
+      size_t parent = (n - 1) / 2;
+
+      if (P::priority(heap[parent]) > P::priority(heap[n])) {
+        break;
+      }
+
+      swap(n, parent);
+      n = parent;
     }
+  }
 
-  private:
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    void siftDown(size_t n) {
-        while (true) {
-            size_t left = n * 2 + 1;
-            size_t right = n * 2 + 2;
-
-            if (left < heap.length()) {
-                if (right < heap.length()) {
-                    if (P::priority(heap[n]) < P::priority(heap[right]) &&
-                        P::priority(heap[left]) < P::priority(heap[right]))
-                    {
-                        swap(n, right);
-                        n = right;
-                        continue;
-                    }
-                }
-
-                if (P::priority(heap[n]) < P::priority(heap[left])) {
-                    swap(n, left);
-                    n = left;
-                    continue;
-                }
-            }
-
-            break;
-        }
-    }
-
-    void siftUp(size_t n) {
-        while (n > 0) {
-            size_t parent = (n - 1) / 2;
-
-            if (P::priority(heap[parent]) > P::priority(heap[n])) {
-                break;
-            }
-
-            swap(n, parent);
-            n = parent;
-        }
-    }
-
-    void swap(size_t a, size_t b) {
-        T tmp = heap[a];
-        heap[a] = heap[b];
-        heap[b] = tmp;
-    }
+  void swap(size_t a, size_t b) {
+    T tmp = heap[a];
+    heap[a] = heap[b];
+    heap[b] = tmp;
+  }
 };
 
-}  
+} 
 
 #endif 

@@ -22,10 +22,9 @@ class nsIMutableArray;
 
 
 
-struct DataStruct
-{
-  explicit DataStruct ( const char* aFlavor )
-    : mCacheFD(nullptr), mFlavor(aFlavor) { }
+struct DataStruct {
+  explicit DataStruct(const char* aFlavor)
+      : mCacheFD(nullptr), mFlavor(aFlavor) {}
   DataStruct(DataStruct&& aRHS);
   ~DataStruct();
 
@@ -34,43 +33,39 @@ struct DataStruct
   void GetData(nsISupports** aData);
   bool IsDataAvailable() const { return mData || mCacheFD; }
 
-protected:
-
+ protected:
   enum {
     
     
-    kLargeDatasetSize = 1000000        
+    kLargeDatasetSize = 1000000  
   };
 
   nsresult WriteCache(void* aData, uint32_t aDataLen);
   nsresult ReadCache(nsISupports** aData);
 
   
-  nsCOMPtr<nsISupports> mData;   
+  nsCOMPtr<nsISupports> mData;  
   PRFileDesc* mCacheFD;
   const nsCString mFlavor;
 
-private:
+ private:
   DataStruct(const DataStruct&) = delete;
   DataStruct& operator=(const DataStruct&) = delete;
-
 };
 
 
 
 
 
-class nsTransferable : public nsITransferable
-{
-public:
-
+class nsTransferable : public nsITransferable {
+ public:
   nsTransferable();
 
-    
+  
   NS_DECL_ISUPPORTS
   NS_DECL_NSITRANSFERABLE
 
-protected:
+ protected:
   virtual ~nsTransferable();
 
   
@@ -87,7 +82,6 @@ protected:
 #if DEBUG
   bool mInitialized;
 #endif
-
 };
 
-#endif 
+#endif  

@@ -22,26 +22,25 @@ namespace bmp {
 
 
 struct Header {
-  uint32_t mDataOffset;     
-  uint32_t mBIHSize;        
-  int32_t  mWidth;          
-  int32_t  mHeight;         
-  uint16_t mBpp;            
-  uint32_t mCompression;    
-  uint32_t mImageSize;      
-                            
-  uint32_t mNumColors;      
+  uint32_t mDataOffset;   
+  uint32_t mBIHSize;      
+  int32_t mWidth;         
+  int32_t mHeight;        
+  uint16_t mBpp;          
+  uint32_t mCompression;  
+  uint32_t mImageSize;    
+                          
+  uint32_t mNumColors;    
 
   Header()
-   : mDataOffset(0)
-   , mBIHSize(0)
-   , mWidth(0)
-   , mHeight(0)
-   , mBpp(0)
-   , mCompression(0)
-   , mImageSize(0)
-   , mNumColors(0)
-  {}
+      : mDataOffset(0),
+        mBIHSize(0),
+        mWidth(0),
+        mHeight(0),
+        mBpp(0),
+        mCompression(0),
+        mImageSize(0),
+        mNumColors(0) {}
 };
 
 
@@ -64,9 +63,8 @@ class BitFields {
     
     void Set(uint32_t aMask);
 
-  public:
-    Value()
-    {
+   public:
+    Value() {
       mMask = 0;
       mRightShift = 0;
       mBitWidth = 0;
@@ -87,7 +85,7 @@ class BitFields {
     uint8_t Get8(uint32_t aVal) const;
   };
 
-public:
+ public:
   
   Value mRed;
   Value mGreen;
@@ -114,15 +112,14 @@ public:
   static const size_t LENGTH = 12;
 };
 
-} 
+}  
 
 class RasterImage;
 
 
 
-class nsBMPDecoder : public Decoder
-{
-public:
+class nsBMPDecoder : public Decoder {
+ public:
   ~nsBMPDecoder();
 
   DecoderType GetType() const override { return DecoderType::BMP; }
@@ -152,7 +149,7 @@ public:
   nsresult BeforeFinishInternal() override;
   nsresult FinishInternal() override;
 
-private:
+ private:
   friend class DecoderFactory;
 
   enum class State {
@@ -215,28 +212,29 @@ private:
   
   bool mDoesHaveTransparency;
 
-  uint32_t mNumColors;      
-                            
-  UniquePtr<bmp::ColorTableEntry[]> mColors; 
+  uint32_t mNumColors;  
+                        
+  UniquePtr<bmp::ColorTableEntry[]>
+      mColors;              
   uint32_t mBytesPerColor;  
 
   
   
   uint32_t mPreGapLength;
 
-  uint32_t mPixelRowSize;   
+  uint32_t mPixelRowSize;  
 
-  int32_t mCurrentRow;      
-                            
-  int32_t mCurrentPos;      
-                            
-                            
+  int32_t mCurrentRow;  
+                        
+  int32_t mCurrentPos;  
+                        
+                        
 
   
   uint32_t mAbsoluteModeNumPixels;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

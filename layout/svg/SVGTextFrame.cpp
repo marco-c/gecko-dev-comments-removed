@@ -68,10 +68,9 @@ using namespace mozilla::image;
 
 
 
-static gfxTextRun::Range
-ConvertOriginalToSkipped(gfxSkipCharsIterator& aIterator,
-                         uint32_t aOriginalOffset, uint32_t aOriginalLength)
-{
+static gfxTextRun::Range ConvertOriginalToSkipped(
+    gfxSkipCharsIterator& aIterator, uint32_t aOriginalOffset,
+    uint32_t aOriginalLength) {
   uint32_t start = aIterator.ConvertOriginalToSkipped(aOriginalOffset);
   aIterator.AdvanceOriginal(aOriginalLength);
   return gfxTextRun::Range(start, aIterator.GetSkippedOffset());
@@ -81,9 +80,8 @@ ConvertOriginalToSkipped(gfxSkipCharsIterator& aIterator,
 
 
 
-static gfxPoint
-AppUnitsToGfxUnits(const nsPoint& aPoint, const nsPresContext* aContext)
-{
+static gfxPoint AppUnitsToGfxUnits(const nsPoint& aPoint,
+                                   const nsPresContext* aContext) {
   return gfxPoint(aContext->AppUnitsToGfxUnits(aPoint.x),
                   aContext->AppUnitsToGfxUnits(aPoint.y));
 }
@@ -92,9 +90,8 @@ AppUnitsToGfxUnits(const nsPoint& aPoint, const nsPresContext* aContext)
 
 
 
-static gfxRect
-AppUnitsToFloatCSSPixels(const gfxRect& aRect, const nsPresContext* aContext)
-{
+static gfxRect AppUnitsToFloatCSSPixels(const gfxRect& aRect,
+                                        const nsPresContext* aContext) {
   return gfxRect(nsPresContext::AppUnitsToFloatCSSPixels(aRect.x),
                  nsPresContext::AppUnitsToFloatCSSPixels(aRect.y),
                  nsPresContext::AppUnitsToFloatCSSPixels(aRect.width),
@@ -108,9 +105,7 @@ AppUnitsToFloatCSSPixels(const gfxRect& aRect, const nsPresContext* aContext)
 
 
 
-static void
-ScaleAround(gfxRect& aRect, const gfxPoint& aPoint, double aScale)
-{
+static void ScaleAround(gfxRect& aRect, const gfxPoint& aPoint, double aScale) {
   aRect.x = aPoint.x - aScale * (aPoint.x - aRect.x);
   aRect.y = aPoint.y - aScale * (aPoint.y - aRect.y);
   aRect.width *= aScale;
@@ -120,13 +115,9 @@ ScaleAround(gfxRect& aRect, const gfxPoint& aPoint, double aScale)
 
 
 
-static bool
-Inside(const gfxRect& aRect, const gfxPoint& aPoint)
-{
-  return aPoint.x >= aRect.x &&
-         aPoint.x < aRect.XMost() &&
-         aPoint.y >= aRect.y &&
-         aPoint.y < aRect.YMost();
+static bool Inside(const gfxRect& aRect, const gfxPoint& aPoint) {
+  return aPoint.x >= aRect.x && aPoint.x < aRect.XMost() &&
+         aPoint.y >= aRect.y && aPoint.y < aRect.YMost();
 }
 
 
@@ -137,18 +128,17 @@ Inside(const gfxRect& aRect, const gfxPoint& aPoint)
 
 
 
-static void
-GetAscentAndDescentInAppUnits(nsTextFrame* aFrame,
-                              gfxFloat& aAscent, gfxFloat& aDescent)
-{
+static void GetAscentAndDescentInAppUnits(nsTextFrame* aFrame,
+                                          gfxFloat& aAscent,
+                                          gfxFloat& aDescent) {
   gfxSkipCharsIterator it = aFrame->EnsureTextRun(nsTextFrame::eInflated);
   gfxTextRun* textRun = aFrame->GetTextRun(nsTextFrame::eInflated);
 
   gfxTextRun::Range range = ConvertOriginalToSkipped(
-    it, aFrame->GetContentOffset(), aFrame->GetContentLength());
+      it, aFrame->GetContentOffset(), aFrame->GetContentLength());
 
   gfxTextRun::Metrics metrics =
-    textRun->MeasureText(range, gfxFont::LOOSE_INK_EXTENTS, nullptr, nullptr);
+      textRun->MeasureText(range, gfxFont::LOOSE_INK_EXTENTS, nullptr, nullptr);
 
   aAscent = metrics.mAscent;
   aDescent = metrics.mDescent;
@@ -158,18 +148,15 @@ GetAscentAndDescentInAppUnits(nsTextFrame* aFrame,
 
 
 
-static void
-IntersectInterval(uint32_t& aStart, uint32_t& aLength,
-                  uint32_t aStartOther, uint32_t aLengthOther)
-{
+static void IntersectInterval(uint32_t& aStart, uint32_t& aLength,
+                              uint32_t aStartOther, uint32_t aLengthOther) {
   uint32_t aEnd = aStart + aLength;
   uint32_t aEndOther = aStartOther + aLengthOther;
 
   if (aStartOther >= aEnd || aStart >= aEndOther) {
     aLength = 0;
   } else {
-    if (aStartOther >= aStart)
-      aStart = aStartOther;
+    if (aStartOther >= aStart) aStart = aStartOther;
     aLength = std::min(aEnd, aEndOther) - aStart;
   }
 }
@@ -179,21 +166,17 @@ IntersectInterval(uint32_t& aStart, uint32_t& aLength,
 
 
 
-static void
-TrimOffsets(uint32_t& aStart, uint32_t& aLength,
-            const nsTextFrame::TrimmedOffsets& aTrimmedOffsets)
-{
-  IntersectInterval(aStart, aLength,
-                    aTrimmedOffsets.mStart, aTrimmedOffsets.mLength);
+static void TrimOffsets(uint32_t& aStart, uint32_t& aLength,
+                        const nsTextFrame::TrimmedOffsets& aTrimmedOffsets) {
+  IntersectInterval(aStart, aLength, aTrimmedOffsets.mStart,
+                    aTrimmedOffsets.mLength);
 }
 
 
 
 
 
-static nsIContent*
-GetFirstNonAAncestor(nsIContent* aContent)
-{
+static nsIContent* GetFirstNonAAncestor(nsIContent* aContent) {
   while (aContent && aContent->IsSVGElement(nsGkAtoms::a)) {
     aContent = aContent->GetParent();
   }
@@ -221,9 +204,7 @@ GetFirstNonAAncestor(nsIContent* aContent)
 
 
 
-static bool
-IsTextContentElement(nsIContent* aContent)
-{
+static bool IsTextContentElement(nsIContent* aContent) {
   if (aContent->IsSVGElement(nsGkAtoms::text)) {
     nsIContent* parent = GetFirstNonAAncestor(aContent->GetParent());
     return !parent || !IsTextContentElement(parent);
@@ -234,8 +215,7 @@ IsTextContentElement(nsIContent* aContent)
     return parent && parent->IsSVGElement(nsGkAtoms::text);
   }
 
-  if (aContent->IsAnyOfSVGElements(nsGkAtoms::a,
-                                   nsGkAtoms::tspan)) {
+  if (aContent->IsAnyOfSVGElements(nsGkAtoms::a, nsGkAtoms::tspan)) {
     return true;
   }
 
@@ -246,9 +226,7 @@ IsTextContentElement(nsIContent* aContent)
 
 
 
-static bool
-IsNonEmptyTextFrame(nsIFrame* aFrame)
-{
+static bool IsNonEmptyTextFrame(nsIFrame* aFrame) {
   nsTextFrame* textFrame = do_QueryFrame(aFrame);
   if (!textFrame) {
     return false;
@@ -266,11 +244,9 @@ IsNonEmptyTextFrame(nsIFrame* aFrame)
 
 
 
-static bool
-GetNonEmptyTextFrameAndNode(nsIFrame* aFrame,
-                            nsTextFrame*& aTextFrame,
-                            nsTextNode*& aTextNode)
-{
+static bool GetNonEmptyTextFrameAndNode(nsIFrame* aFrame,
+                                        nsTextFrame*& aTextFrame,
+                                        nsTextNode*& aTextNode) {
   nsTextFrame* text = do_QueryFrame(aFrame);
   bool isNonEmptyTextFrame = text && text->GetContentLength() != 0;
 
@@ -298,13 +274,9 @@ GetNonEmptyTextFrameAndNode(nsIFrame* aFrame,
 
 
 
-static bool
-IsGlyphPositioningAttribute(nsAtom* aAttribute)
-{
-  return aAttribute == nsGkAtoms::x ||
-         aAttribute == nsGkAtoms::y ||
-         aAttribute == nsGkAtoms::dx ||
-         aAttribute == nsGkAtoms::dy ||
+static bool IsGlyphPositioningAttribute(nsAtom* aAttribute) {
+  return aAttribute == nsGkAtoms::x || aAttribute == nsGkAtoms::y ||
+         aAttribute == nsGkAtoms::dx || aAttribute == nsGkAtoms::dy ||
          aAttribute == nsGkAtoms::rotate;
 }
 
@@ -316,21 +288,18 @@ IsGlyphPositioningAttribute(nsAtom* aAttribute)
 
 
 
-static nscoord
-GetBaselinePosition(nsTextFrame* aFrame,
-                    gfxTextRun* aTextRun,
-                    uint8_t aDominantBaseline,
-                    float aFontSizeScaleFactor)
-{
+static nscoord GetBaselinePosition(nsTextFrame* aFrame, gfxTextRun* aTextRun,
+                                   uint8_t aDominantBaseline,
+                                   float aFontSizeScaleFactor) {
   WritingMode writingMode = aFrame->GetWritingMode();
   gfxTextRun::Metrics metrics =
-    aTextRun->MeasureText(gfxFont::LOOSE_INK_EXTENTS, nullptr);
+      aTextRun->MeasureText(gfxFont::LOOSE_INK_EXTENTS, nullptr);
 
   switch (aDominantBaseline) {
     case NS_STYLE_DOMINANT_BASELINE_HANGING:
     case NS_STYLE_DOMINANT_BASELINE_TEXT_BEFORE_EDGE:
-      return writingMode.IsVerticalRL()
-             ? metrics.mAscent + metrics.mDescent : 0;
+      return writingMode.IsVerticalRL() ? metrics.mAscent + metrics.mDescent
+                                        : 0;
 
     case NS_STYLE_DOMINANT_BASELINE_USE_SCRIPT:
     case NS_STYLE_DOMINANT_BASELINE_NO_CHANGE:
@@ -343,19 +312,19 @@ GetBaselinePosition(nsTextFrame* aFrame,
     case NS_STYLE_DOMINANT_BASELINE_AUTO:
     case NS_STYLE_DOMINANT_BASELINE_ALPHABETIC:
       return writingMode.IsVerticalRL()
-             ? metrics.mAscent + metrics.mDescent -
-               aFrame->GetLogicalBaseline(writingMode)
-             : aFrame->GetLogicalBaseline(writingMode);
+                 ? metrics.mAscent + metrics.mDescent -
+                       aFrame->GetLogicalBaseline(writingMode)
+                 : aFrame->GetLogicalBaseline(writingMode);
 
     case NS_STYLE_DOMINANT_BASELINE_MIDDLE:
       return aFrame->GetLogicalBaseline(writingMode) -
-        SVGContentUtils::GetFontXHeight(aFrame) / 2.0 *
-        AppUnitsPerCSSPixel() * aFontSizeScaleFactor;
+             SVGContentUtils::GetFontXHeight(aFrame) / 2.0 *
+                 AppUnitsPerCSSPixel() * aFontSizeScaleFactor;
 
     case NS_STYLE_DOMINANT_BASELINE_TEXT_AFTER_EDGE:
     case NS_STYLE_DOMINANT_BASELINE_IDEOGRAPHIC:
-      return writingMode.IsVerticalLR()
-             ? 0 : metrics.mAscent + metrics.mDescent;
+      return writingMode.IsVerticalLR() ? 0
+                                        : metrics.mAscent + metrics.mDescent;
 
     case NS_STYLE_DOMINANT_BASELINE_CENTRAL:
     case NS_STYLE_DOMINANT_BASELINE_MATHEMATICAL:
@@ -376,14 +345,12 @@ GetBaselinePosition(nsTextFrame* aFrame,
 
 
 
-static gfxTextRun::Range
-ClusterRange(gfxTextRun* aTextRun, const gfxSkipCharsIterator& aIterator)
-{
+static gfxTextRun::Range ClusterRange(gfxTextRun* aTextRun,
+                                      const gfxSkipCharsIterator& aIterator) {
   uint32_t start = aIterator.GetSkippedOffset();
   uint32_t end = start + 1;
-  while (end < aTextRun->GetLength() &&
-         (!aTextRun->IsLigatureGroupStart(end) ||
-          !aTextRun->IsClusterStart(end))) {
+  while (end < aTextRun->GetLength() && (!aTextRun->IsLigatureGroupStart(end) ||
+                                         !aTextRun->IsClusterStart(end))) {
     end++;
   }
   return gfxTextRun::Range(start, end);
@@ -396,10 +363,9 @@ ClusterRange(gfxTextRun* aTextRun, const gfxSkipCharsIterator& aIterator)
 
 
 
-template<typename T, typename U>
-static void
-TruncateTo(nsTArray<T>& aArrayToTruncate, const nsTArray<U>& aReferenceArray)
-{
+template <typename T, typename U>
+static void TruncateTo(nsTArray<T>& aArrayToTruncate,
+                       const nsTArray<U>& aReferenceArray) {
   uint32_t length = aReferenceArray.Length();
   if (aArrayToTruncate.Length() > length) {
     aArrayToTruncate.TruncateLength(length);
@@ -416,9 +382,7 @@ TruncateTo(nsTArray<T>& aArrayToTruncate, const nsTArray<U>& aReferenceArray)
 
 
 
-static SVGTextFrame*
-FrameIfAnonymousChildReflowed(SVGTextFrame* aFrame)
-{
+static SVGTextFrame* FrameIfAnonymousChildReflowed(SVGTextFrame* aFrame) {
   MOZ_ASSERT(aFrame, "aFrame must not be null");
   nsIFrame* kid = aFrame->PrincipalChildList().FirstChild();
   if (NS_SUBTREE_DIRTY(kid)) {
@@ -428,9 +392,7 @@ FrameIfAnonymousChildReflowed(SVGTextFrame* aFrame)
   return aFrame;
 }
 
-static double
-GetContextScale(const gfxMatrix& aMatrix)
-{
+static double GetContextScale(const gfxMatrix& aMatrix) {
   
   
   
@@ -461,18 +423,14 @@ namespace mozilla {
 
 
 
-struct TextRenderedRun
-{
+struct TextRenderedRun {
   typedef gfxTextRun::Range Range;
 
   
 
 
 
-  TextRenderedRun()
-    : mFrame(nullptr)
-  {
-  }
+  TextRenderedRun() : mFrame(nullptr) {}
 
   
 
@@ -485,23 +443,20 @@ struct TextRenderedRun
                   uint32_t aTextFrameContentOffset,
                   uint32_t aTextFrameContentLength,
                   uint32_t aTextElementCharIndex)
-    : mFrame(aFrame),
-      mPosition(aPosition),
-      mLengthAdjustScaleFactor(aLengthAdjustScaleFactor),
-      mRotate(static_cast<float>(aRotate)),
-      mFontSizeScaleFactor(aFontSizeScaleFactor),
-      mBaseline(aBaseline),
-      mTextFrameContentOffset(aTextFrameContentOffset),
-      mTextFrameContentLength(aTextFrameContentLength),
-      mTextElementCharIndex(aTextElementCharIndex)
-  {
-  }
+      : mFrame(aFrame),
+        mPosition(aPosition),
+        mLengthAdjustScaleFactor(aLengthAdjustScaleFactor),
+        mRotate(static_cast<float>(aRotate)),
+        mFontSizeScaleFactor(aFontSizeScaleFactor),
+        mBaseline(aBaseline),
+        mTextFrameContentOffset(aTextFrameContentOffset),
+        mTextFrameContentLength(aTextFrameContentLength),
+        mTextElementCharIndex(aTextElementCharIndex) {}
 
   
 
 
-  gfxTextRun* GetTextRun() const
-  {
+  gfxTextRun* GetTextRun() const {
     mFrame->EnsureTextRun(nsTextFrame::eInflated);
     return mFrame->GetTextRun(nsTextFrame::eInflated);
   }
@@ -509,20 +464,15 @@ struct TextRenderedRun
   
 
 
-  bool IsRightToLeft() const
-  {
-    return GetTextRun()->IsRightToLeft();
-  }
+  bool IsRightToLeft() const { return GetTextRun()->IsRightToLeft(); }
 
   
 
 
-  bool IsVertical() const
-  {
-    return GetTextRun()->IsVertical();
-  }
+  bool IsVertical() const { return GetTextRun()->IsVertical(); }
 
   
+
 
 
 
@@ -609,8 +559,7 @@ struct TextRenderedRun
 
 
   gfxMatrix GetTransformFromUserSpaceForPainting(
-                                      nsPresContext* aContext,
-                                      const nsCharClipDisplayItem& aItem) const;
+      nsPresContext* aContext, const nsCharClipDisplayItem& aItem) const;
 
   
 
@@ -620,7 +569,8 @@ struct TextRenderedRun
 
 
 
-  gfxMatrix GetTransformFromRunUserSpaceToUserSpace(nsPresContext* aContext) const;
+  gfxMatrix GetTransformFromRunUserSpaceToUserSpace(
+      nsPresContext* aContext) const;
 
   
 
@@ -628,7 +578,8 @@ struct TextRenderedRun
 
 
 
-  gfxMatrix GetTransformFromRunUserSpaceToFrameUserSpace(nsPresContext* aContext) const;
+  gfxMatrix GetTransformFromRunUserSpaceToFrameUserSpace(
+      nsPresContext* aContext) const;
 
   
 
@@ -704,8 +655,9 @@ struct TextRenderedRun
 
 
 
-  SVGBBox GetUserSpaceRect(nsPresContext* aContext, uint32_t aFlags,
-                           const gfxMatrix* aAdditionalTransform = nullptr) const;
+  SVGBBox GetUserSpaceRect(
+      nsPresContext* aContext, uint32_t aFlags,
+      const gfxMatrix* aAdditionalTransform = nullptr) const;
 
   
 
@@ -788,11 +740,8 @@ struct TextRenderedRun
   uint32_t mTextElementCharIndex;
 };
 
-gfxMatrix
-TextRenderedRun::GetTransformFromUserSpaceForPainting(
-                                       nsPresContext* aContext,
-                                       const nsCharClipDisplayItem& aItem) const
-{
+gfxMatrix TextRenderedRun::GetTransformFromUserSpaceForPainting(
+    nsPresContext* aContext, const nsCharClipDisplayItem& aItem) const {
   
   
 
@@ -801,7 +750,8 @@ TextRenderedRun::GetTransformFromUserSpaceForPainting(
     return m;
   }
 
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx =
+      nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   
   m.PreTranslate(mPosition / cssPxPerDevPx);
@@ -817,14 +767,12 @@ TextRenderedRun::GetTransformFromUserSpaceForPainting(
   
   nsPoint t;
   if (IsVertical()) {
-    t = nsPoint(-mBaseline,
-                IsRightToLeft()
-                  ? -mFrame->GetRect().height + aItem.mVisIEndEdge
-                  : -aItem.mVisIStartEdge);
+    t = nsPoint(-mBaseline, IsRightToLeft()
+                                ? -mFrame->GetRect().height + aItem.mVisIEndEdge
+                                : -aItem.mVisIStartEdge);
   } else {
-    t = nsPoint(IsRightToLeft()
-                  ? -mFrame->GetRect().width + aItem.mVisIEndEdge
-                  : -aItem.mVisIStartEdge,
+    t = nsPoint(IsRightToLeft() ? -mFrame->GetRect().width + aItem.mVisIEndEdge
+                                : -aItem.mVisIStartEdge,
                 -mBaseline);
   }
   m.PreTranslate(AppUnitsToGfxUnits(t, aContext));
@@ -832,16 +780,15 @@ TextRenderedRun::GetTransformFromUserSpaceForPainting(
   return m;
 }
 
-gfxMatrix
-TextRenderedRun::GetTransformFromRunUserSpaceToUserSpace(
-                                                  nsPresContext* aContext) const
-{
+gfxMatrix TextRenderedRun::GetTransformFromRunUserSpaceToUserSpace(
+    nsPresContext* aContext) const {
   gfxMatrix m;
   if (!mFrame) {
     return m;
   }
 
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx =
+      nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   nscoord start, end;
   GetClipEdges(start, end);
@@ -859,25 +806,19 @@ TextRenderedRun::GetTransformFromRunUserSpaceToUserSpace(
   nsPoint t;
   if (IsVertical()) {
     t = nsPoint(-mBaseline,
-                IsRightToLeft()
-                  ? -mFrame->GetRect().height + start + end
-                  : 0);
+                IsRightToLeft() ? -mFrame->GetRect().height + start + end : 0);
   } else {
-    t = nsPoint(IsRightToLeft()
-                  ? -mFrame->GetRect().width + start + end
-                  : 0,
+    t = nsPoint(IsRightToLeft() ? -mFrame->GetRect().width + start + end : 0,
                 -mBaseline);
   }
-  m.PreTranslate(AppUnitsToGfxUnits(t, aContext) *
-                   cssPxPerDevPx / mFontSizeScaleFactor);
+  m.PreTranslate(AppUnitsToGfxUnits(t, aContext) * cssPxPerDevPx /
+                 mFontSizeScaleFactor);
 
   return m;
 }
 
-gfxMatrix
-TextRenderedRun::GetTransformFromRunUserSpaceToFrameUserSpace(
-                                                  nsPresContext* aContext) const
-{
+gfxMatrix TextRenderedRun::GetTransformFromRunUserSpaceToFrameUserSpace(
+    nsPresContext* aContext) const {
   gfxMatrix m;
   if (!mFrame) {
     return m;
@@ -894,10 +835,8 @@ TextRenderedRun::GetTransformFromRunUserSpaceToFrameUserSpace(
   return m.PreTranslate(t);
 }
 
-SVGBBox
-TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
-                                     uint32_t aFlags) const
-{
+SVGBBox TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
+                                             uint32_t aFlags) const {
   SVGBBox r;
   if (!mFrame) {
     return r;
@@ -913,8 +852,8 @@ TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   nsRect rect = mFrame->GetRect();
   bool vertical = IsVertical();
   nscoord above = vertical ? -self.x : -self.y;
-  nscoord below = vertical ? self.XMost() - rect.width
-                           : self.YMost() - rect.height;
+  nscoord below =
+      vertical ? self.XMost() - rect.width : self.YMost() - rect.height;
 
   gfxSkipCharsIterator it = mFrame->EnsureTextRun(nsTextFrame::eInflated);
   gfxTextRun* textRun = mFrame->GetTextRun(nsTextFrame::eInflated);
@@ -928,10 +867,10 @@ TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
 
   
   gfxTextRun::Metrics metrics =
-    textRun->MeasureText(range, gfxFont::LOOSE_INK_EXTENTS, nullptr, nullptr);
+      textRun->MeasureText(range, gfxFont::LOOSE_INK_EXTENTS, nullptr, nullptr);
   
-  gfxRect fontBox(0, -metrics.mAscent,
-      metrics.mAdvanceWidth, metrics.mAscent + metrics.mDescent);
+  gfxRect fontBox(0, -metrics.mAscent, metrics.mAdvanceWidth,
+                  metrics.mAscent + metrics.mDescent);
   metrics.mBoundingBox.UnionRect(metrics.mBoundingBox, fontBox);
 
   
@@ -946,8 +885,8 @@ TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
     x = metrics.mBoundingBox.x;
     width = metrics.mBoundingBox.width;
   }
-  nsRect fillInAppUnits(x, baseline - above,
-                        width, metrics.mBoundingBox.height + above + below);
+  nsRect fillInAppUnits(x, baseline - above, width,
+                        metrics.mBoundingBox.height + above + below);
   if (textRun->IsVertical()) {
     
     Swap(fillInAppUnits.x, fillInAppUnits.y);
@@ -957,23 +896,23 @@ TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   
   if (aFlags & eIncludeTextShadow) {
     fillInAppUnits =
-      nsLayoutUtils::GetTextShadowRectsUnion(fillInAppUnits, mFrame);
+        nsLayoutUtils::GetTextShadowRectsUnion(fillInAppUnits, mFrame);
   }
 
   
-  gfxRect fill = AppUnitsToFloatCSSPixels(gfxRect(fillInAppUnits.x,
-                                                  fillInAppUnits.y,
-                                                  fillInAppUnits.width,
-                                                  fillInAppUnits.height),
-                                          aContext);
+  gfxRect fill = AppUnitsToFloatCSSPixels(
+      gfxRect(fillInAppUnits.x, fillInAppUnits.y, fillInAppUnits.width,
+              fillInAppUnits.height),
+      aContext);
 
   
   
-  ScaleAround(fill,
-              textRun->IsVertical()
-                ? gfxPoint(nsPresContext::AppUnitsToFloatCSSPixels(baseline), 0.0)
-                : gfxPoint(0.0, nsPresContext::AppUnitsToFloatCSSPixels(baseline)),
-              1.0 / mFontSizeScaleFactor);
+  ScaleAround(
+      fill,
+      textRun->IsVertical()
+          ? gfxPoint(nsPresContext::AppUnitsToFloatCSSPixels(baseline), 0.0)
+          : gfxPoint(0.0, nsPresContext::AppUnitsToFloatCSSPixels(baseline)),
+      1.0 / mFontSizeScaleFactor);
 
   
   if (aFlags & eIncludeFill) {
@@ -981,20 +920,17 @@ TextRenderedRun::GetRunUserSpaceRect(nsPresContext* aContext,
   }
 
   
-  if ((aFlags & eIncludeStroke) &&
-      !fill.IsEmpty() &&
+  if ((aFlags & eIncludeStroke) && !fill.IsEmpty() &&
       nsSVGUtils::GetStrokeWidth(mFrame) > 0) {
-    r.UnionEdges(nsSVGUtils::PathExtentsToMaxStrokeExtents(fill, mFrame,
-                                                           gfxMatrix()));
+    r.UnionEdges(
+        nsSVGUtils::PathExtentsToMaxStrokeExtents(fill, mFrame, gfxMatrix()));
   }
 
   return r;
 }
 
-SVGBBox
-TextRenderedRun::GetFrameUserSpaceRect(nsPresContext* aContext,
-                                       uint32_t aFlags) const
-{
+SVGBBox TextRenderedRun::GetFrameUserSpaceRect(nsPresContext* aContext,
+                                               uint32_t aFlags) const {
   SVGBBox r = GetRunUserSpaceRect(aContext, aFlags);
   if (r.IsEmpty()) {
     return r;
@@ -1003,11 +939,9 @@ TextRenderedRun::GetFrameUserSpaceRect(nsPresContext* aContext,
   return m.TransformBounds(r.ToThebesRect());
 }
 
-SVGBBox
-TextRenderedRun::GetUserSpaceRect(nsPresContext* aContext,
-                                  uint32_t aFlags,
-                                  const gfxMatrix* aAdditionalTransform) const
-{
+SVGBBox TextRenderedRun::GetUserSpaceRect(
+    nsPresContext* aContext, uint32_t aFlags,
+    const gfxMatrix* aAdditionalTransform) const {
   SVGBBox r = GetRunUserSpaceRect(aContext, aFlags);
   if (r.IsEmpty()) {
     return r;
@@ -1019,10 +953,8 @@ TextRenderedRun::GetUserSpaceRect(nsPresContext* aContext,
   return m.TransformBounds(r.ToThebesRect());
 }
 
-void
-TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
-                              nscoord& aVisIEndEdge) const
-{
+void TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
+                                   nscoord& aVisIEndEdge) const {
   uint32_t contentLength = mFrame->GetContentLength();
   if (mTextFrameContentOffset == 0 &&
       mTextFrameContentLength == contentLength) {
@@ -1049,7 +981,7 @@ TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
   
   
   nsTextFrame::TrimmedOffsets trimmedOffsets =
-    mFrame->GetTrimmedOffsets(mFrame->GetContent()->GetText(), true);
+      mFrame->GetTrimmedOffsets(mFrame->GetContent()->GetText(), true);
   TrimOffsets(frameOffset, frameLength, trimmedOffsets);
 
   
@@ -1058,13 +990,13 @@ TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
 
   
   
-  nscoord startEdge = textRun->
-    GetAdvanceWidth(Range(frameRange.start, runRange.start), nullptr);
+  nscoord startEdge = textRun->GetAdvanceWidth(
+      Range(frameRange.start, runRange.start), nullptr);
 
   
   
-  nscoord endEdge = textRun->
-    GetAdvanceWidth(Range(runRange.end, frameRange.end), nullptr);
+  nscoord endEdge =
+      textRun->GetAdvanceWidth(Range(runRange.end, frameRange.end), nullptr);
 
   if (textRun->IsRightToLeft()) {
     aVisIStartEdge = endEdge;
@@ -1075,9 +1007,7 @@ TextRenderedRun::GetClipEdges(nscoord& aVisIStartEdge,
   }
 }
 
-nscoord
-TextRenderedRun::GetAdvanceWidth() const
-{
+nscoord TextRenderedRun::GetAdvanceWidth() const {
   gfxSkipCharsIterator it = mFrame->EnsureTextRun(nsTextFrame::eInflated);
   gfxTextRun* textRun = mFrame->GetTextRun(nsTextFrame::eInflated);
 
@@ -1087,15 +1017,14 @@ TextRenderedRun::GetAdvanceWidth() const
   return textRun->GetAdvanceWidth(range, nullptr);
 }
 
-int32_t
-TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
-                                      const gfxPoint& aPoint) const
-{
+int32_t TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
+                                              const gfxPoint& aPoint) const {
   if (mTextFrameContentLength == 0) {
     return -1;
   }
 
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx =
+      nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   
   
@@ -1112,9 +1041,8 @@ TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
 
   WritingMode writingMode = mFrame->GetWritingMode();
   if (writingMode.IsVertical()) {
-    gfxFloat leftEdge =
-      mFrame->GetLogicalBaseline(writingMode) -
-        (writingMode.IsVerticalRL() ? ascent : descent);
+    gfxFloat leftEdge = mFrame->GetLogicalBaseline(writingMode) -
+                        (writingMode.IsVerticalRL() ? ascent : descent);
     gfxFloat rightEdge = leftEdge + ascent + descent;
     if (p.x < aContext->AppUnitsToGfxUnits(leftEdge) ||
         p.x > aContext->AppUnitsToGfxUnits(rightEdge)) {
@@ -1137,7 +1065,7 @@ TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
   Range range = ConvertOriginalToSkipped(it, mTextFrameContentOffset,
                                          mTextFrameContentLength);
   gfxFloat runAdvance =
-    aContext->AppUnitsToGfxUnits(textRun->GetAdvanceWidth(range, nullptr));
+      aContext->AppUnitsToGfxUnits(textRun->GetAdvanceWidth(range, nullptr));
 
   gfxFloat pos = writingMode.IsVertical() ? p.y : p.x;
   if (pos < 0 || pos >= runAdvance) {
@@ -1151,9 +1079,8 @@ TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
   for (int32_t i = mTextFrameContentLength - 1; i >= 0; i--) {
     range = ConvertOriginalToSkipped(it, mTextFrameContentOffset, i);
     gfxFloat advance =
-      aContext->AppUnitsToGfxUnits(textRun->GetAdvanceWidth(range, nullptr));
-    if ((rtl && pos < runAdvance - advance) ||
-        (!rtl && pos >= advance)) {
+        aContext->AppUnitsToGfxUnits(textRun->GetAdvanceWidth(range, nullptr));
+    if ((rtl && pos < runAdvance - advance) || (!rtl && pos >= advance)) {
       return i;
     }
   }
@@ -1163,12 +1090,7 @@ TextRenderedRun::GetCharNumAtPosition(nsPresContext* aContext,
 
 
 
-enum SubtreePosition
-{
-  eBeforeSubtree,
-  eWithinSubtree,
-  eAfterSubtree
-};
+enum SubtreePosition { eBeforeSubtree, eWithinSubtree, eAfterSubtree };
 
 
 
@@ -1176,19 +1098,17 @@ enum SubtreePosition
 
 
 
-class TextNodeIterator
-{
-public:
+class TextNodeIterator {
+ public:
   
 
 
 
   explicit TextNodeIterator(nsIContent* aRoot, nsIContent* aSubtree = nullptr)
-    : mRoot(aRoot),
-      mSubtree(aSubtree == aRoot ? nullptr : aSubtree),
-      mCurrent(aRoot),
-      mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree)
-  {
+      : mRoot(aRoot),
+        mSubtree(aSubtree == aRoot ? nullptr : aSubtree),
+        mCurrent(aRoot),
+        mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree) {
     NS_ASSERTION(aRoot, "expected non-null root");
     if (!aRoot->IsText()) {
       Next();
@@ -1198,10 +1118,7 @@ public:
   
 
 
-  nsTextNode* Current() const
-  {
-    return static_cast<nsTextNode*>(mCurrent);
-  }
+  nsTextNode* Current() const { return static_cast<nsTextNode*>(mCurrent); }
 
   
 
@@ -1214,21 +1131,15 @@ public:
 
 
 
-  bool IsWithinSubtree() const
-  {
-    return mSubtreePosition == eWithinSubtree;
-  }
+  bool IsWithinSubtree() const { return mSubtreePosition == eWithinSubtree; }
 
   
 
 
 
-  bool IsAfterSubtree() const
-  {
-    return mSubtreePosition == eAfterSubtree;
-  }
+  bool IsAfterSubtree() const { return mSubtreePosition == eAfterSubtree; }
 
-private:
+ private:
   
 
 
@@ -1250,17 +1161,14 @@ private:
   SubtreePosition mSubtreePosition;
 };
 
-nsTextNode*
-TextNodeIterator::Next()
-{
+nsTextNode* TextNodeIterator::Next() {
   
   
   
   if (mCurrent) {
     do {
-      nsIContent* next = IsTextContentElement(mCurrent) ?
-                           mCurrent->GetFirstChild() :
-                           nullptr;
+      nsIContent* next =
+          IsTextContentElement(mCurrent) ? mCurrent->GetFirstChild() : nullptr;
       if (next) {
         mCurrent = next;
         if (mCurrent == mSubtree) {
@@ -1309,12 +1217,9 @@ TextNodeIterator::Next()
 
 
 
-struct TextNodeCorrespondence
-{
+struct TextNodeCorrespondence {
   explicit TextNodeCorrespondence(uint32_t aUndisplayedCharacters)
-    : mUndisplayedCharacters(aUndisplayedCharacters)
-  {
-  }
+      : mUndisplayedCharacters(aUndisplayedCharacters) {}
 
   uint32_t mUndisplayedCharacters;
 };
@@ -1326,16 +1231,15 @@ NS_DECLARE_FRAME_PROPERTY_DELETABLE(TextNodeCorrespondenceProperty,
 
 
 
-static uint32_t
-GetUndisplayedCharactersBeforeFrame(nsTextFrame* aFrame)
-{
+static uint32_t GetUndisplayedCharactersBeforeFrame(nsTextFrame* aFrame) {
   void* value = aFrame->GetProperty(TextNodeCorrespondenceProperty());
   TextNodeCorrespondence* correspondence =
-    static_cast<TextNodeCorrespondence*>(value);
+      static_cast<TextNodeCorrespondence*>(value);
   if (!correspondence) {
     
-    NS_ERROR("expected a TextNodeCorrespondenceProperty on nsTextFrame "
-             "used for SVG text");
+    NS_ERROR(
+        "expected a TextNodeCorrespondenceProperty on nsTextFrame "
+        "used for SVG text");
     return 0;
   }
   return correspondence->mUndisplayedCharacters;
@@ -1348,21 +1252,18 @@ GetUndisplayedCharactersBeforeFrame(nsTextFrame* aFrame)
 
 
 
-class TextNodeCorrespondenceRecorder
-{
-public:
+class TextNodeCorrespondenceRecorder {
+ public:
   
 
 
   static void RecordCorrespondence(SVGTextFrame* aRoot);
 
-private:
+ private:
   explicit TextNodeCorrespondenceRecorder(SVGTextFrame* aRoot)
-    : mNodeIterator(aRoot->GetContent()),
-      mPreviousNode(nullptr),
-      mNodeCharIndex(0)
-  {
-  }
+      : mNodeIterator(aRoot->GetContent()),
+        mPreviousNode(nullptr),
+        mNodeCharIndex(0) {}
 
   void Record(SVGTextFrame* aRoot);
   void TraverseAndRecord(nsIFrame* aFrame);
@@ -1389,9 +1290,8 @@ private:
   uint32_t mNodeCharIndex;
 };
 
- void
-TextNodeCorrespondenceRecorder::RecordCorrespondence(SVGTextFrame* aRoot)
-{
+ void TextNodeCorrespondenceRecorder::RecordCorrespondence(
+    SVGTextFrame* aRoot) {
   if (aRoot->GetStateBits() & NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY) {
     
     aRoot->MaybeResolveBidiForAnonymousBlockChild();
@@ -1401,9 +1301,7 @@ TextNodeCorrespondenceRecorder::RecordCorrespondence(SVGTextFrame* aRoot)
   }
 }
 
-void
-TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot)
-{
+void TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot) {
   if (!mNodeIterator.Current()) {
     
     return;
@@ -1425,8 +1323,7 @@ TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot)
       undisplayed += mPreviousNode->TextLength() - mNodeCharIndex;
     }
     
-    for (nsTextNode* textNode = mNodeIterator.Current();
-         textNode;
+    for (nsTextNode* textNode = mNodeIterator.Current(); textNode;
          textNode = NextNode()) {
       undisplayed += textNode->TextLength();
     }
@@ -1437,9 +1334,7 @@ TextNodeCorrespondenceRecorder::Record(SVGTextFrame* aRoot)
   aRoot->mTrailingUndisplayedCharacters = undisplayed;
 }
 
-nsTextNode*
-TextNodeCorrespondenceRecorder::NextNode()
-{
+nsTextNode* TextNodeCorrespondenceRecorder::NextNode() {
   mPreviousNode = mNodeIterator.Current();
   nsTextNode* next;
   do {
@@ -1448,9 +1343,7 @@ TextNodeCorrespondenceRecorder::NextNode()
   return next;
 }
 
-void
-TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame)
-{
+void TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame) {
   
   
   if (IsTextContentElement(aFrame->GetContent())) {
@@ -1473,11 +1366,13 @@ TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame)
   uint32_t undisplayed = 0;
   if (!mPreviousNode) {
     
-    NS_ASSERTION(mNodeCharIndex == 0, "incorrect tracking of undisplayed "
-                                      "characters in text nodes");
+    NS_ASSERTION(mNodeCharIndex == 0,
+                 "incorrect tracking of undisplayed "
+                 "characters in text nodes");
     if (!mNodeIterator.Current()) {
-      MOZ_ASSERT_UNREACHABLE("incorrect tracking of correspondence between "
-                             "text frames and text nodes");
+      MOZ_ASSERT_UNREACHABLE(
+          "incorrect tracking of correspondence between "
+          "text frames and text nodes");
     } else {
       
       
@@ -1495,10 +1390,10 @@ TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame)
     if (static_cast<uint32_t>(frame->GetContentOffset()) != mNodeCharIndex) {
       
       
-      NS_ASSERTION(mNodeCharIndex <
-                     static_cast<uint32_t>(frame->GetContentOffset()),
-                   "incorrect tracking of undisplayed characters in "
-                   "text nodes");
+      NS_ASSERTION(
+          mNodeCharIndex < static_cast<uint32_t>(frame->GetContentOffset()),
+          "incorrect tracking of undisplayed characters in "
+          "text nodes");
       undisplayed = frame->GetContentOffset() - mNodeCharIndex;
     }
   } else {
@@ -1513,8 +1408,7 @@ TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame)
     }
     
     
-    while (mNodeIterator.Current() &&
-           mNodeIterator.Current() != node) {
+    while (mNodeIterator.Current() && mNodeIterator.Current() != node) {
       undisplayed += mNodeIterator.Current()->TextLength();
       NextNode();
     }
@@ -1555,20 +1449,19 @@ TextNodeCorrespondenceRecorder::TraverseAndRecord(nsIFrame* aFrame)
 
 
 
-class TextFrameIterator
-{
-public:
+class TextFrameIterator {
+ public:
   
 
 
 
-  explicit TextFrameIterator(SVGTextFrame* aRoot, const nsIFrame* aSubtree = nullptr)
-    : mRootFrame(aRoot),
-      mSubtree(aSubtree),
-      mCurrentFrame(aRoot),
-      mCurrentPosition(),
-      mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree)
-  {
+  explicit TextFrameIterator(SVGTextFrame* aRoot,
+                             const nsIFrame* aSubtree = nullptr)
+      : mRootFrame(aRoot),
+        mSubtree(aSubtree),
+        mCurrentFrame(aRoot),
+        mCurrentPosition(),
+        mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree) {
     Init();
   }
 
@@ -1577,32 +1470,25 @@ public:
 
 
   TextFrameIterator(SVGTextFrame* aRoot, nsIContent* aSubtree)
-    : mRootFrame(aRoot),
-      mSubtree(aRoot && aSubtree && aSubtree != aRoot->GetContent() ?
-                 aSubtree->GetPrimaryFrame() :
-                 nullptr),
-      mCurrentFrame(aRoot),
-      mCurrentPosition(),
-      mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree)
-  {
+      : mRootFrame(aRoot),
+        mSubtree(aRoot && aSubtree && aSubtree != aRoot->GetContent()
+                     ? aSubtree->GetPrimaryFrame()
+                     : nullptr),
+        mCurrentFrame(aRoot),
+        mCurrentPosition(),
+        mSubtreePosition(mSubtree ? eBeforeSubtree : eWithinSubtree) {
     Init();
   }
 
   
 
 
-  SVGTextFrame* Root() const
-  {
-    return mRootFrame;
-  }
+  SVGTextFrame* Root() const { return mRootFrame; }
 
   
 
 
-  nsTextFrame* Current() const
-  {
-    return do_QueryFrame(mCurrentFrame);
-  }
+  nsTextFrame* Current() const { return do_QueryFrame(mCurrentFrame); }
 
   
 
@@ -1614,10 +1500,7 @@ public:
 
 
 
-  nsPoint Position() const
-  {
-    return mCurrentPosition;
-  }
+  nsPoint Position() const { return mCurrentPosition; }
 
   
 
@@ -1627,52 +1510,40 @@ public:
   
 
 
-  bool IsWithinSubtree() const
-  {
-    return mSubtreePosition == eWithinSubtree;
-  }
+  bool IsWithinSubtree() const { return mSubtreePosition == eWithinSubtree; }
 
   
 
 
-  bool IsAfterSubtree() const
-  {
-    return mSubtreePosition == eAfterSubtree;
-  }
+  bool IsAfterSubtree() const { return mSubtreePosition == eAfterSubtree; }
 
   
 
 
 
-  nsIFrame* TextPathFrame() const
-  {
-    return mTextPathFrames.IsEmpty() ?
-             nullptr :
-             mTextPathFrames.ElementAt(mTextPathFrames.Length() - 1);
+  nsIFrame* TextPathFrame() const {
+    return mTextPathFrames.IsEmpty()
+               ? nullptr
+               : mTextPathFrames.ElementAt(mTextPathFrames.Length() - 1);
   }
 
   
 
 
-  uint8_t DominantBaseline() const
-  {
+  uint8_t DominantBaseline() const {
     return mBaselines.ElementAt(mBaselines.Length() - 1);
   }
 
   
 
 
-  void Close()
-  {
-    mCurrentFrame = nullptr;
-  }
+  void Close() { mCurrentFrame = nullptr; }
 
-private:
+ private:
   
 
 
-  void Init()
-  {
+  void Init() {
     if (!mRootFrame) {
       return;
     }
@@ -1731,12 +1602,10 @@ private:
   SubtreePosition mSubtreePosition;
 };
 
-uint32_t
-TextFrameIterator::UndisplayedCharacters() const
-{
-  MOZ_ASSERT(!(mRootFrame->GetStateBits() &
-               NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY),
-             "Text correspondence must be up to date");
+uint32_t TextFrameIterator::UndisplayedCharacters() const {
+  MOZ_ASSERT(
+      !(mRootFrame->GetStateBits() & NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY),
+      "Text correspondence must be up to date");
 
   if (!mCurrentFrame) {
     return mRootFrame->mTrailingUndisplayedCharacters;
@@ -1746,17 +1615,15 @@ TextFrameIterator::UndisplayedCharacters() const
   return GetUndisplayedCharactersBeforeFrame(frame);
 }
 
-nsTextFrame*
-TextFrameIterator::Next()
-{
+nsTextFrame* TextFrameIterator::Next() {
   
   
   
   if (mCurrentFrame) {
     do {
-      nsIFrame* next = IsTextContentElement(mCurrentFrame->GetContent()) ?
-                         mCurrentFrame->PrincipalChildList().FirstChild() :
-                         nullptr;
+      nsIFrame* next = IsTextContentElement(mCurrentFrame->GetContent())
+                           ? mCurrentFrame->PrincipalChildList().FirstChild()
+                           : nullptr;
       if (next) {
         
         mCurrentPosition += next->GetPosition();
@@ -1817,16 +1684,13 @@ TextFrameIterator::Next()
           mCurrentFrame = mCurrentFrame->GetParent();
         }
       }
-    } while (mCurrentFrame &&
-             !IsNonEmptyTextFrame(mCurrentFrame));
+    } while (mCurrentFrame && !IsNonEmptyTextFrame(mCurrentFrame));
   }
 
   return Current();
 }
 
-void
-TextFrameIterator::PushBaseline(nsIFrame* aNextFrame)
-{
+void TextFrameIterator::PushBaseline(nsIFrame* aNextFrame) {
   uint8_t baseline = aNextFrame->StyleSVGReset()->mDominantBaseline;
   if (baseline == NS_STYLE_DOMINANT_BASELINE_AUTO) {
     baseline = mBaselines.LastElement();
@@ -1834,9 +1698,7 @@ TextFrameIterator::PushBaseline(nsIFrame* aNextFrame)
   mBaselines.AppendElement(baseline);
 }
 
-void
-TextFrameIterator::PopBaseline()
-{
+void TextFrameIterator::PopBaseline() {
   NS_ASSERTION(!mBaselines.IsEmpty(), "popped too many baselines");
   mBaselines.TruncateLength(mBaselines.Length() - 1);
 }
@@ -1847,9 +1709,8 @@ TextFrameIterator::PopBaseline()
 
 
 
-class TextRenderedRunIterator
-{
-public:
+class TextRenderedRunIterator {
+ public:
   
 
 
@@ -1876,14 +1737,12 @@ public:
   explicit TextRenderedRunIterator(SVGTextFrame* aSVGTextFrame,
                                    RenderedRunFilter aFilter = eAllFrames,
                                    const nsIFrame* aSubtree = nullptr)
-    : mFrameIterator(FrameIfAnonymousChildReflowed(aSVGTextFrame), aSubtree),
-      mFilter(aFilter),
-      mTextElementCharIndex(0),
-      mFrameStartTextElementCharIndex(0),
-      mFontSizeScaleFactor(aSVGTextFrame->mFontSizeScaleFactor),
-      mCurrent(First())
-  {
-  }
+      : mFrameIterator(FrameIfAnonymousChildReflowed(aSVGTextFrame), aSubtree),
+        mFilter(aFilter),
+        mTextElementCharIndex(0),
+        mFrameStartTextElementCharIndex(0),
+        mFontSizeScaleFactor(aSVGTextFrame->mFontSizeScaleFactor),
+        mCurrent(First()) {}
 
   
 
@@ -1896,38 +1755,29 @@ public:
 
 
   TextRenderedRunIterator(SVGTextFrame* aSVGTextFrame,
-                          RenderedRunFilter aFilter,
-                          nsIContent* aSubtree)
-    : mFrameIterator(FrameIfAnonymousChildReflowed(aSVGTextFrame), aSubtree),
-      mFilter(aFilter),
-      mTextElementCharIndex(0),
-      mFrameStartTextElementCharIndex(0),
-      mFontSizeScaleFactor(aSVGTextFrame->mFontSizeScaleFactor),
-      mCurrent(First())
-  {
-  }
+                          RenderedRunFilter aFilter, nsIContent* aSubtree)
+      : mFrameIterator(FrameIfAnonymousChildReflowed(aSVGTextFrame), aSubtree),
+        mFilter(aFilter),
+        mTextElementCharIndex(0),
+        mFrameStartTextElementCharIndex(0),
+        mFontSizeScaleFactor(aSVGTextFrame->mFontSizeScaleFactor),
+        mCurrent(First()) {}
 
   
 
 
-  TextRenderedRun Current() const
-  {
-    return mCurrent;
-  }
+  TextRenderedRun Current() const { return mCurrent; }
 
   
 
 
   TextRenderedRun Next();
 
-private:
+ private:
   
 
 
-  SVGTextFrame* Root() const
-  {
-    return mFrameIterator.Root();
-  }
+  SVGTextFrame* Root() const { return mFrameIterator.Root(); }
 
   
 
@@ -1967,9 +1817,7 @@ private:
   TextRenderedRun mCurrent;
 };
 
-TextRenderedRun
-TextRenderedRunIterator::Next()
-{
+TextRenderedRun TextRenderedRunIterator::Next() {
   if (!mFrameIterator.Current()) {
     
     
@@ -2002,7 +1850,8 @@ TextRenderedRunIterator::Next()
     
     
     
-    uint32_t runStart, runEnd;  
+    uint32_t runStart,
+        runEnd;  
     runStart = mTextElementCharIndex;
     runEnd = runStart + 1;
     while (runEnd < Root()->mPositions.Length() &&
@@ -2012,8 +1861,8 @@ TextRenderedRunIterator::Next()
 
     
     
-    offset = frame->GetContentOffset() + runStart -
-             mFrameStartTextElementCharIndex;
+    offset =
+        frame->GetContentOffset() + runStart - mFrameStartTextElementCharIndex;
     length = runEnd - runStart;
 
     
@@ -2023,21 +1872,21 @@ TextRenderedRunIterator::Next()
       length = contentEnd - offset;
     }
 
-    NS_ASSERTION(offset >= uint32_t(frame->GetContentOffset()), "invalid offset");
+    NS_ASSERTION(offset >= uint32_t(frame->GetContentOffset()),
+                 "invalid offset");
     NS_ASSERTION(offset + length <= contentEnd, "invalid offset or length");
 
     
     frame->EnsureTextRun(nsTextFrame::eInflated);
-    baseline = GetBaselinePosition(frame,
-                                   frame->GetTextRun(nsTextFrame::eInflated),
-                                   mFrameIterator.DominantBaseline(),
-                                   mFontSizeScaleFactor);
+    baseline = GetBaselinePosition(
+        frame, frame->GetTextRun(nsTextFrame::eInflated),
+        mFrameIterator.DominantBaseline(), mFontSizeScaleFactor);
 
     
     uint32_t untrimmedOffset = offset;
     uint32_t untrimmedLength = length;
     nsTextFrame::TrimmedOffsets trimmedOffsets =
-      frame->GetTrimmedOffsets(frame->GetContent()->GetText(), true);
+        frame->GetTrimmedOffsets(frame->GetContent()->GetText(), true);
     TrimOffsets(offset, length, trimmedOffsets);
     charIndex += offset - untrimmedOffset;
 
@@ -2083,14 +1932,12 @@ TextRenderedRunIterator::Next()
   }
 
   mCurrent = TextRenderedRun(frame, pt, Root()->mLengthAdjustScaleFactor,
-                             rotate, mFontSizeScaleFactor, baseline,
-                             offset, length, charIndex);
+                             rotate, mFontSizeScaleFactor, baseline, offset,
+                             length, charIndex);
   return mCurrent;
 }
 
-TextRenderedRun
-TextRenderedRunIterator::First()
-{
+TextRenderedRun TextRenderedRunIterator::First() {
   if (!mFrameIterator.Current()) {
     return TextRenderedRun();
   }
@@ -2114,11 +1961,10 @@ TextRenderedRunIterator::First()
 
 
 
-class CharIterator
-{
+class CharIterator {
   typedef gfxTextRun::Range Range;
 
-public:
+ public:
   
 
 
@@ -2148,18 +1994,13 @@ public:
 
 
 
-  CharIterator(SVGTextFrame* aSVGTextFrame,
-               CharacterFilter aFilter,
-               nsIContent* aSubtree,
-               bool aPostReflow = true);
+  CharIterator(SVGTextFrame* aSVGTextFrame, CharacterFilter aFilter,
+               nsIContent* aSubtree, bool aPostReflow = true);
 
   
 
 
-  bool AtEnd() const
-  {
-    return !mFrameIterator.Current();
-  }
+  bool AtEnd() const { return !mFrameIterator.Current(); }
 
   
 
@@ -2206,32 +2047,22 @@ public:
   
 
 
-  nsTextFrame* TextFrame() const
-  {
-    return mFrameIterator.Current();
-  }
+  nsTextFrame* TextFrame() const { return mFrameIterator.Current(); }
 
   
 
 
-  bool IsWithinSubtree() const
-  {
-    return mFrameIterator.IsWithinSubtree();
-  }
+  bool IsWithinSubtree() const { return mFrameIterator.IsWithinSubtree(); }
 
   
 
 
-  bool IsAfterSubtree() const
-  {
-    return mFrameIterator.IsAfterSubtree();
-  }
+  bool IsAfterSubtree() const { return mFrameIterator.IsAfterSubtree(); }
 
   
 
 
-  bool IsOriginalCharSkipped() const
-  {
+  bool IsOriginalCharSkipped() const {
     return mSkipCharsIterator.IsOriginalCharSkipped();
   }
 
@@ -2251,33 +2082,25 @@ public:
 
 
 
-  bool IsOriginalCharUnaddressable() const
-  {
+  bool IsOriginalCharUnaddressable() const {
     return IsOriginalCharSkipped() || IsOriginalCharTrimmed();
   }
 
   
 
 
-  gfxTextRun* TextRun() const
-  {
-    return mTextRun;
-  }
+  gfxTextRun* TextRun() const { return mTextRun; }
 
   
 
 
-  uint32_t TextElementCharIndex() const
-  {
-    return mTextElementCharIndex;
-  }
+  uint32_t TextElementCharIndex() const { return mTextElementCharIndex; }
 
   
 
 
 
-  uint32_t GlyphStartTextElementCharIndex() const
-  {
+  uint32_t GlyphStartTextElementCharIndex() const {
     return mGlyphStartTextElementCharIndex;
   }
 
@@ -2285,8 +2108,7 @@ public:
 
 
 
-  uint32_t GlyphUndisplayedCharacters() const
-  {
+  uint32_t GlyphUndisplayedCharacters() const {
     return mGlyphUndisplayedCharacters;
   }
 
@@ -2346,12 +2168,9 @@ public:
 
 
 
-  nsIFrame* TextPathFrame() const
-  {
-    return mFrameIterator.TextPathFrame();
-  }
+  nsIFrame* TextPathFrame() const { return mFrameIterator.TextPathFrame(); }
 
-private:
+ private:
   
 
 
@@ -2434,20 +2253,18 @@ private:
 
 CharIterator::CharIterator(SVGTextFrame* aSVGTextFrame,
                            CharIterator::CharacterFilter aFilter,
-                           nsIContent* aSubtree,
-                           bool aPostReflow)
-  : mFilter(aFilter),
-    mFrameIterator(aSVGTextFrame, aSubtree),
-    mFrameForTrimCheck(nullptr),
-    mTrimmedOffset(0),
-    mTrimmedLength(0),
-    mTextRun(nullptr),
-    mTextElementCharIndex(0),
-    mGlyphStartTextElementCharIndex(0),
-    mGlyphUndisplayedCharacters(0),
-    mLengthAdjustScaleFactor(aSVGTextFrame->mLengthAdjustScaleFactor),
-    mPostReflow(aPostReflow)
-{
+                           nsIContent* aSubtree, bool aPostReflow)
+    : mFilter(aFilter),
+      mFrameIterator(aSVGTextFrame, aSubtree),
+      mFrameForTrimCheck(nullptr),
+      mTrimmedOffset(0),
+      mTrimmedLength(0),
+      mTextRun(nullptr),
+      mTextElementCharIndex(0),
+      mGlyphStartTextElementCharIndex(0),
+      mGlyphUndisplayedCharacters(0),
+      mLengthAdjustScaleFactor(aSVGTextFrame->mLengthAdjustScaleFactor),
+      mPostReflow(aPostReflow) {
   if (!AtEnd()) {
     mSkipCharsIterator = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
     mTextRun = TextFrame()->GetTextRun(nsTextFrame::eInflated);
@@ -2459,9 +2276,7 @@ CharIterator::CharIterator(SVGTextFrame* aSVGTextFrame,
   }
 }
 
-bool
-CharIterator::Next()
-{
+bool CharIterator::Next() {
   while (NextCharacter()) {
     if (MatchesFilter()) {
       return true;
@@ -2470,9 +2285,7 @@ CharIterator::Next()
   return false;
 }
 
-bool
-CharIterator::Next(uint32_t aCount)
-{
+bool CharIterator::Next(uint32_t aCount) {
   if (aCount == 0 && AtEnd()) {
     return false;
   }
@@ -2485,9 +2298,7 @@ CharIterator::Next(uint32_t aCount)
   return true;
 }
 
-void
-CharIterator::NextWithinSubtree(uint32_t aCount)
-{
+void CharIterator::NextWithinSubtree(uint32_t aCount) {
   while (IsWithinSubtree() && aCount) {
     --aCount;
     if (!Next()) {
@@ -2496,9 +2307,7 @@ CharIterator::NextWithinSubtree(uint32_t aCount)
   }
 }
 
-bool
-CharIterator::AdvanceToCharacter(uint32_t aTextElementCharIndex)
-{
+bool CharIterator::AdvanceToCharacter(uint32_t aTextElementCharIndex) {
   while (mTextElementCharIndex < aTextElementCharIndex) {
     if (!Next()) {
       return false;
@@ -2507,9 +2316,7 @@ CharIterator::AdvanceToCharacter(uint32_t aTextElementCharIndex)
   return true;
 }
 
-bool
-CharIterator::AdvancePastCurrentFrame()
-{
+bool CharIterator::AdvancePastCurrentFrame() {
   
   nsTextFrame* currentFrame = TextFrame();
   do {
@@ -2520,9 +2327,7 @@ CharIterator::AdvancePastCurrentFrame()
   return true;
 }
 
-bool
-CharIterator::AdvancePastCurrentTextPathFrame()
-{
+bool CharIterator::AdvancePastCurrentTextPathFrame() {
   nsIFrame* currentTextPathFrame = TextPathFrame();
   NS_ASSERTION(currentTextPathFrame,
                "expected AdvancePastCurrentTextPathFrame to be called only "
@@ -2535,9 +2340,7 @@ CharIterator::AdvancePastCurrentTextPathFrame()
   return true;
 }
 
-bool
-CharIterator::AdvanceToSubtree()
-{
+bool CharIterator::AdvanceToSubtree() {
   while (!IsWithinSubtree()) {
     if (IsAfterSubtree()) {
       return false;
@@ -2549,16 +2352,13 @@ CharIterator::AdvanceToSubtree()
   return true;
 }
 
-bool
-CharIterator::IsClusterAndLigatureGroupStart() const
-{
-  return mTextRun->IsLigatureGroupStart(mSkipCharsIterator.GetSkippedOffset()) &&
+bool CharIterator::IsClusterAndLigatureGroupStart() const {
+  return mTextRun->IsLigatureGroupStart(
+             mSkipCharsIterator.GetSkippedOffset()) &&
          mTextRun->IsClusterStart(mSkipCharsIterator.GetSkippedOffset());
 }
 
-bool
-CharIterator::IsOriginalCharTrimmed() const
-{
+bool CharIterator::IsOriginalCharTrimmed() const {
   if (mFrameForTrimCheck != TextFrame()) {
     
     
@@ -2566,10 +2366,9 @@ CharIterator::IsOriginalCharTrimmed() const
     uint32_t offset = mFrameForTrimCheck->GetContentOffset();
     uint32_t length = mFrameForTrimCheck->GetContentLength();
     nsIContent* content = mFrameForTrimCheck->GetContent();
-    nsTextFrame::TrimmedOffsets trim =
-      mFrameForTrimCheck->GetTrimmedOffsets(content->GetText(),
-                                             true,
-                                            mPostReflow);
+    nsTextFrame::TrimmedOffsets trim = mFrameForTrimCheck->GetTrimmedOffsets(
+        content->GetText(),
+         true, mPostReflow);
     TrimOffsets(offset, length, trim);
     mTrimmedOffset = offset;
     mTrimmedLength = length;
@@ -2578,23 +2377,21 @@ CharIterator::IsOriginalCharTrimmed() const
   
   
   uint32_t index = mSkipCharsIterator.GetOriginalOffset();
-  return !((index >= mTrimmedOffset &&
-            index < mTrimmedOffset + mTrimmedLength) ||
-           (index >= mTrimmedOffset + mTrimmedLength &&
-            mFrameForTrimCheck->StyleText()->
-              NewlineIsSignificant(mFrameForTrimCheck) &&
-            mFrameForTrimCheck->GetContent()->GetText()->CharAt(index) == '\n'));
+  return !(
+      (index >= mTrimmedOffset && index < mTrimmedOffset + mTrimmedLength) ||
+      (index >= mTrimmedOffset + mTrimmedLength &&
+       mFrameForTrimCheck->StyleText()->NewlineIsSignificant(
+           mFrameForTrimCheck) &&
+       mFrameForTrimCheck->GetContent()->GetText()->CharAt(index) == '\n'));
 }
 
-void
-CharIterator::GetOriginalGlyphOffsets(uint32_t& aOriginalOffset,
-                                      uint32_t& aOriginalLength) const
-{
+void CharIterator::GetOriginalGlyphOffsets(uint32_t& aOriginalOffset,
+                                           uint32_t& aOriginalLength) const {
   gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
   it.SetOriginalOffset(mSkipCharsIterator.GetOriginalOffset() -
-                         (mTextElementCharIndex -
-                          mGlyphStartTextElementCharIndex -
-                          mGlyphUndisplayedCharacters));
+                       (mTextElementCharIndex -
+                        mGlyphStartTextElementCharIndex -
+                        mGlyphUndisplayedCharacters));
 
   while (it.GetSkippedOffset() > 0 &&
          (!mTextRun->IsClusterStart(it.GetSkippedOffset()) ||
@@ -2615,38 +2412,34 @@ CharIterator::GetOriginalGlyphOffsets(uint32_t& aOriginalOffset,
   aOriginalLength = it.GetOriginalOffset() - aOriginalOffset;
 }
 
-gfxFloat
-CharIterator::GetGlyphAdvance(nsPresContext* aContext) const
-{
+gfxFloat CharIterator::GetGlyphAdvance(nsPresContext* aContext) const {
   uint32_t offset, length;
   GetOriginalGlyphOffsets(offset, length);
 
   gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
   Range range = ConvertOriginalToSkipped(it, offset, length);
 
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx =
+      nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   gfxFloat advance = mTextRun->GetAdvanceWidth(range, nullptr);
-  return aContext->AppUnitsToGfxUnits(advance) *
-         mLengthAdjustScaleFactor * cssPxPerDevPx;
+  return aContext->AppUnitsToGfxUnits(advance) * mLengthAdjustScaleFactor *
+         cssPxPerDevPx;
 }
 
-gfxFloat
-CharIterator::GetAdvance(nsPresContext* aContext) const
-{
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+gfxFloat CharIterator::GetAdvance(nsPresContext* aContext) const {
+  float cssPxPerDevPx =
+      nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   uint32_t offset = mSkipCharsIterator.GetSkippedOffset();
-  gfxFloat advance = mTextRun->
-    GetAdvanceWidth(Range(offset, offset + 1), nullptr);
-  return aContext->AppUnitsToGfxUnits(advance) *
-         mLengthAdjustScaleFactor * cssPxPerDevPx;
+  gfxFloat advance =
+      mTextRun->GetAdvanceWidth(Range(offset, offset + 1), nullptr);
+  return aContext->AppUnitsToGfxUnits(advance) * mLengthAdjustScaleFactor *
+         cssPxPerDevPx;
 }
 
-gfxFloat
-CharIterator::GetGlyphPartialAdvance(uint32_t aPartLength,
-                                     nsPresContext* aContext) const
-{
+gfxFloat CharIterator::GetGlyphPartialAdvance(uint32_t aPartLength,
+                                              nsPresContext* aContext) const {
   uint32_t offset, length;
   GetOriginalGlyphOffsets(offset, length);
 
@@ -2656,16 +2449,15 @@ CharIterator::GetGlyphPartialAdvance(uint32_t aPartLength,
   gfxSkipCharsIterator it = TextFrame()->EnsureTextRun(nsTextFrame::eInflated);
   Range range = ConvertOriginalToSkipped(it, offset, length);
 
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx =
+      nsPresContext::AppUnitsToFloatCSSPixels(aContext->AppUnitsPerDevPixel());
 
   gfxFloat advance = mTextRun->GetAdvanceWidth(range, nullptr);
-  return aContext->AppUnitsToGfxUnits(advance) *
-         mLengthAdjustScaleFactor * cssPxPerDevPx;
+  return aContext->AppUnitsToGfxUnits(advance) * mLengthAdjustScaleFactor *
+         cssPxPerDevPx;
 }
 
-bool
-CharIterator::NextCharacter()
-{
+bool CharIterator::NextCharacter() {
   if (AtEnd()) {
     return false;
   }
@@ -2699,9 +2491,7 @@ CharIterator::NextCharacter()
   return true;
 }
 
-bool
-CharIterator::MatchesFilter() const
-{
+bool CharIterator::MatchesFilter() const {
   if (mFilter == eOriginal) {
     return true;
   }
@@ -2725,12 +2515,10 @@ CharIterator::MatchesFilter() const
 
 
 
-class SVGCharClipDisplayItem final : public nsCharClipDisplayItem
-{
-public:
+class SVGCharClipDisplayItem final : public nsCharClipDisplayItem {
+ public:
   explicit SVGCharClipDisplayItem(const TextRenderedRun& aRun)
-    : nsCharClipDisplayItem(aRun.mFrame)
-  {
+      : nsCharClipDisplayItem(aRun.mFrame) {
     aRun.GetClipEdges(mVisIStartEdge, mVisIEndEdge);
   }
 
@@ -2749,11 +2537,10 @@ public:
 
 
 
-class SVGTextDrawPathCallbacks final : public nsTextFrame::DrawPathCallbacks
-{
+class SVGTextDrawPathCallbacks final : public nsTextFrame::DrawPathCallbacks {
   typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
-public:
+ public:
   
 
 
@@ -2766,21 +2553,17 @@ public:
 
 
 
-  SVGTextDrawPathCallbacks(SVGTextFrame* aSVGTextFrame,
-                           gfxContext& aContext,
-                           nsTextFrame* aFrame,
-                           const gfxMatrix& aCanvasTM,
+  SVGTextDrawPathCallbacks(SVGTextFrame* aSVGTextFrame, gfxContext& aContext,
+                           nsTextFrame* aFrame, const gfxMatrix& aCanvasTM,
                            imgDrawingParams& aImgParams,
                            bool aShouldPaintSVGGlyphs)
-    : DrawPathCallbacks(aShouldPaintSVGGlyphs),
-      mSVGTextFrame(aSVGTextFrame),
-      mContext(aContext),
-      mFrame(aFrame),
-      mCanvasTM(aCanvasTM),
-      mImgParams(aImgParams),
-      mColor(0)
-  {
-  }
+      : DrawPathCallbacks(aShouldPaintSVGGlyphs),
+        mSVGTextFrame(aSVGTextFrame),
+        mContext(aContext),
+        mFrame(aFrame),
+        mCanvasTM(aCanvasTM),
+        mImgParams(aImgParams),
+        mColor(0) {}
 
   void NotifySelectionBackgroundNeedsFill(const Rect& aBackgroundRect,
                                           nscolor aColor,
@@ -2791,7 +2574,7 @@ public:
   void NotifyGlyphPathEmitted() override;
   void NotifyAfterText() override;
 
-private:
+ private:
   void SetupContext();
 
   bool IsClipPathChild() const {
@@ -2841,54 +2624,41 @@ private:
   nscolor mColor;
 };
 
-void
-SVGTextDrawPathCallbacks::NotifySelectionBackgroundNeedsFill(
-                                                      const Rect& aBackgroundRect,
-                                                      nscolor aColor,
-                                                      DrawTarget& aDrawTarget)
-{
+void SVGTextDrawPathCallbacks::NotifySelectionBackgroundNeedsFill(
+    const Rect& aBackgroundRect, nscolor aColor, DrawTarget& aDrawTarget) {
   if (IsClipPathChild()) {
     
     return;
   }
 
-  mColor = aColor; 
+  mColor = aColor;  
 
   GeneralPattern fillPattern;
   MakeFillPattern(&fillPattern);
   if (fillPattern.GetPattern()) {
-    DrawOptions drawOptions(aColor == NS_40PERCENT_FOREGROUND_COLOR ? 0.4 : 1.0);
+    DrawOptions drawOptions(aColor == NS_40PERCENT_FOREGROUND_COLOR ? 0.4
+                                                                    : 1.0);
     aDrawTarget.FillRect(aBackgroundRect, fillPattern, drawOptions);
   }
 }
 
-void
-SVGTextDrawPathCallbacks::NotifyBeforeText(nscolor aColor)
-{
+void SVGTextDrawPathCallbacks::NotifyBeforeText(nscolor aColor) {
   mColor = aColor;
   SetupContext();
   mContext.NewPath();
 }
 
-void
-SVGTextDrawPathCallbacks::NotifyGlyphPathEmitted()
-{
+void SVGTextDrawPathCallbacks::NotifyGlyphPathEmitted() {
   HandleTextGeometry();
   mContext.NewPath();
 }
 
-void
-SVGTextDrawPathCallbacks::NotifyAfterText()
-{
-  mContext.Restore();
-}
+void SVGTextDrawPathCallbacks::NotifyAfterText() { mContext.Restore(); }
 
-void
-SVGTextDrawPathCallbacks::PaintDecorationLine(Rect aPath, nscolor aColor)
-{
+void SVGTextDrawPathCallbacks::PaintDecorationLine(Rect aPath, nscolor aColor) {
   mColor = aColor;
   AntialiasMode aaMode =
-    nsSVGUtils::ToAntialiasMode(mFrame->StyleText()->mTextRendering);
+      nsSVGUtils::ToAntialiasMode(mFrame->StyleText()->mTextRendering);
 
   mContext.Save();
   mContext.NewPath();
@@ -2899,10 +2669,8 @@ SVGTextDrawPathCallbacks::PaintDecorationLine(Rect aPath, nscolor aColor)
   mContext.Restore();
 }
 
-void
-SVGTextDrawPathCallbacks::PaintSelectionDecorationLine(Rect aPath,
-                                                       nscolor aColor)
-{
+void SVGTextDrawPathCallbacks::PaintSelectionDecorationLine(Rect aPath,
+                                                            nscolor aColor) {
   if (IsClipPathChild()) {
     
     return;
@@ -2917,30 +2685,27 @@ SVGTextDrawPathCallbacks::PaintSelectionDecorationLine(Rect aPath,
   mContext.Restore();
 }
 
-void
-SVGTextDrawPathCallbacks::SetupContext()
-{
+void SVGTextDrawPathCallbacks::SetupContext() {
   mContext.Save();
 
   
   
   
   switch (mFrame->StyleText()->mTextRendering) {
-  case StyleTextRendering::Optimizespeed:
-    mContext.SetAntialiasMode(AntialiasMode::NONE);
-    break;
-  default:
-    mContext.SetAntialiasMode(AntialiasMode::SUBPIXEL);
-    break;
+    case StyleTextRendering::Optimizespeed:
+      mContext.SetAntialiasMode(AntialiasMode::NONE);
+      break;
+    default:
+      mContext.SetAntialiasMode(AntialiasMode::SUBPIXEL);
+      break;
   }
 }
 
-void
-SVGTextDrawPathCallbacks::HandleTextGeometry()
-{
+void SVGTextDrawPathCallbacks::HandleTextGeometry() {
   if (IsClipPathChild()) {
     RefPtr<Path> path = mContext.GetPath();
-    ColorPattern white(Color(1.f, 1.f, 1.f, 1.f)); 
+    ColorPattern white(
+        Color(1.f, 1.f, 1.f, 1.f));  
     mContext.GetDrawTarget()->Fill(path, white);
   } else {
     
@@ -2951,9 +2716,7 @@ SVGTextDrawPathCallbacks::HandleTextGeometry()
   }
 }
 
-void
-SVGTextDrawPathCallbacks::MakeFillPattern(GeneralPattern* aOutPattern)
-{
+void SVGTextDrawPathCallbacks::MakeFillPattern(GeneralPattern* aOutPattern) {
   if (mColor == NS_SAME_AS_FOREGROUND_COLOR ||
       mColor == NS_40PERCENT_FOREGROUND_COLOR) {
     nsSVGUtils::MakeFillPatternFor(mFrame, &mContext, aOutPattern, mImgParams);
@@ -2967,9 +2730,7 @@ SVGTextDrawPathCallbacks::MakeFillPattern(GeneralPattern* aOutPattern)
   aOutPattern->InitColorPattern(ToDeviceColor(mColor));
 }
 
-void
-SVGTextDrawPathCallbacks::FillAndStrokeGeometry()
-{
+void SVGTextDrawPathCallbacks::FillAndStrokeGeometry() {
   bool pushedGroup = false;
   if (mColor == NS_40PERCENT_FOREGROUND_COLOR) {
     pushedGroup = true;
@@ -2983,7 +2744,7 @@ SVGTextDrawPathCallbacks::FillAndStrokeGeometry()
   } else {
     while (paintOrder) {
       uint32_t component =
-        paintOrder & ((1 << NS_STYLE_PAINT_ORDER_BITWIDTH) - 1);
+          paintOrder & ((1 << NS_STYLE_PAINT_ORDER_BITWIDTH) - 1);
       switch (component) {
         case NS_STYLE_PAINT_ORDER_FILL:
           FillGeometry();
@@ -3001,16 +2762,14 @@ SVGTextDrawPathCallbacks::FillAndStrokeGeometry()
   }
 }
 
-void
-SVGTextDrawPathCallbacks::FillGeometry()
-{
+void SVGTextDrawPathCallbacks::FillGeometry() {
   GeneralPattern fillPattern;
   MakeFillPattern(&fillPattern);
   if (fillPattern.GetPattern()) {
     RefPtr<Path> path = mContext.GetPath();
-    FillRule fillRule = nsSVGUtils::ToFillRule(IsClipPathChild() ?
-                          mFrame->StyleSVG()->mClipRule :
-                          mFrame->StyleSVG()->mFillRule);
+    FillRule fillRule = nsSVGUtils::ToFillRule(
+        IsClipPathChild() ? mFrame->StyleSVG()->mClipRule
+                          : mFrame->StyleSVG()->mFillRule);
     if (fillRule != path->GetFillRule()) {
       RefPtr<PathBuilder> builder = path->CopyToBuilder(fillRule);
       path = builder->Finish();
@@ -3019,9 +2778,7 @@ SVGTextDrawPathCallbacks::FillGeometry()
   }
 }
 
-void
-SVGTextDrawPathCallbacks::StrokeGeometry()
-{
+void SVGTextDrawPathCallbacks::StrokeGeometry() {
   
   if (mColor == NS_SAME_AS_FOREGROUND_COLOR ||
       mColor == NS_40PERCENT_FOREGROUND_COLOR) {
@@ -3036,7 +2793,7 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
           return;
         }
         nsSVGElement* svgOwner =
-          static_cast<nsSVGElement*>(mFrame->GetParent()->GetContent());
+            static_cast<nsSVGElement*>(mFrame->GetParent()->GetContent());
 
         
         gfxMatrix outerSVGToUser;
@@ -3052,14 +2809,14 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
                                            nullptr);
         DrawOptions drawOptions;
         drawOptions.mAntialiasMode =
-          nsSVGUtils::ToAntialiasMode(mFrame->StyleText()->mTextRendering);
+            nsSVGUtils::ToAntialiasMode(mFrame->StyleText()->mTextRendering);
         mContext.GetDrawTarget()->Stroke(path, strokePattern, strokeOptions);
       }
     }
   }
 }
 
-} 
+}  
 
 
 
@@ -3067,53 +2824,46 @@ SVGTextDrawPathCallbacks::StrokeGeometry()
 
 
 
-
-class nsDisplaySVGText final : public nsDisplayItem
-{
-public:
+class nsDisplaySVGText final : public nsDisplayItem {
+ public:
   nsDisplaySVGText(nsDisplayListBuilder* aBuilder, SVGTextFrame* aFrame)
-    : nsDisplayItem(aBuilder, aFrame)
-  {
+      : nsDisplayItem(aBuilder, aFrame) {
     MOZ_COUNT_CTOR(nsDisplaySVGText);
     MOZ_ASSERT(aFrame, "Must have a frame!");
   }
 #ifdef NS_BUILD_REFCNT_LOGGING
-  virtual ~nsDisplaySVGText() {
-    MOZ_COUNT_DTOR(nsDisplaySVGText);
-  }
+  virtual ~nsDisplaySVGText() { MOZ_COUNT_DTOR(nsDisplaySVGText); }
 #endif
 
   NS_DISPLAY_DECL_NAME("nsDisplaySVGText", TYPE_SVG_TEXT)
 
   virtual void HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
                        HitTestState* aState,
-                       nsTArray<nsIFrame*> *aOutFrames) override;
-  virtual void Paint(nsDisplayListBuilder* aBuilder,
-                     gfxContext* aCtx) override;
-  nsDisplayItemGeometry* AllocateGeometry(nsDisplayListBuilder* aBuilder) override
-  {
+                       nsTArray<nsIFrame*>* aOutFrames) override;
+  virtual void Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) override;
+  nsDisplayItemGeometry* AllocateGeometry(
+      nsDisplayListBuilder* aBuilder) override {
     return new nsDisplayItemGenericImageGeometry(this, aBuilder);
   }
 
-  virtual nsRect GetComponentAlphaBounds(nsDisplayListBuilder* aBuilder) const override
-  {
+  virtual nsRect GetComponentAlphaBounds(
+      nsDisplayListBuilder* aBuilder) const override {
     bool snap;
     return GetBounds(aBuilder, &snap);
   }
 };
 
-void
-nsDisplaySVGText::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
-                          HitTestState* aState, nsTArray<nsIFrame*> *aOutFrames)
-{
-  SVGTextFrame *frame = static_cast<SVGTextFrame*>(mFrame);
+void nsDisplaySVGText::HitTest(nsDisplayListBuilder* aBuilder,
+                               const nsRect& aRect, HitTestState* aState,
+                               nsTArray<nsIFrame*>* aOutFrames) {
+  SVGTextFrame* frame = static_cast<SVGTextFrame*>(mFrame);
   nsPoint pointRelativeToReferenceFrame = aRect.Center();
   
   nsPoint userSpacePtInAppUnits = pointRelativeToReferenceFrame -
-                                    (ToReferenceFrame() - frame->GetPosition());
+                                  (ToReferenceFrame() - frame->GetPosition());
 
   gfxPoint userSpacePt =
-    gfxPoint(userSpacePtInAppUnits.x, userSpacePtInAppUnits.y) /
+      gfxPoint(userSpacePtInAppUnits.x, userSpacePtInAppUnits.y) /
       AppUnitsPerCSSPixel();
 
   nsIFrame* target = frame->GetFrameForPoint(userSpacePt);
@@ -3122,12 +2872,9 @@ nsDisplaySVGText::HitTest(nsDisplayListBuilder* aBuilder, const nsRect& aRect,
   }
 }
 
-void
-nsDisplaySVGText::Paint(nsDisplayListBuilder* aBuilder,
-                        gfxContext* aCtx)
-{
-  DrawTargetAutoDisableSubpixelAntialiasing
-    disable(aCtx->GetDrawTarget(), mDisableSubpixelAA);
+void nsDisplaySVGText::Paint(nsDisplayListBuilder* aBuilder, gfxContext* aCtx) {
+  DrawTargetAutoDisableSubpixelAntialiasing disable(aCtx->GetDrawTarget(),
+                                                    mDisableSubpixelAA);
 
   uint32_t appUnitsPerDevPixel = mFrame->PresContext()->AppUnitsPerDevPixel();
 
@@ -3137,15 +2884,15 @@ nsDisplaySVGText::Paint(nsDisplayListBuilder* aBuilder,
   nsPoint offset = ToReferenceFrame() - mFrame->GetPosition();
 
   gfxPoint devPixelOffset =
-    nsLayoutUtils::PointToGfxPoint(offset, appUnitsPerDevPixel);
+      nsLayoutUtils::PointToGfxPoint(offset, appUnitsPerDevPixel);
 
   gfxMatrix tm = nsSVGUtils::GetCSSPxToDevPxMatrix(mFrame) *
-                   gfxMatrix::Translation(devPixelOffset);
+                 gfxMatrix::Translation(devPixelOffset);
 
   gfxContext* ctx = aCtx;
   imgDrawingParams imgParams(aBuilder->ShouldSyncDecodeImages()
-                             ? imgIContainer::FLAG_SYNC_DECODE
-                             : imgIContainer::FLAG_SYNC_DECODE_IF_FAST);
+                                 ? imgIContainer::FLAG_SYNC_DECODE
+                                 : imgIContainer::FLAG_SYNC_DECODE_IF_FAST);
   static_cast<SVGTextFrame*>(mFrame)->PaintSVG(*ctx, tm, imgParams);
   nsDisplayItemGenericImageGeometry::UpdateDrawResult(this, imgParams.result);
 }
@@ -3154,15 +2901,13 @@ nsDisplaySVGText::Paint(nsDisplayListBuilder* aBuilder,
 
 
 NS_QUERYFRAME_HEAD(SVGTextFrame)
-  NS_QUERYFRAME_ENTRY(SVGTextFrame)
+NS_QUERYFRAME_ENTRY(SVGTextFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsSVGDisplayContainerFrame)
 
 
 
 
-nsIFrame*
-NS_NewSVGTextFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewSVGTextFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) SVGTextFrame(aStyle);
 }
 
@@ -3171,12 +2916,10 @@ NS_IMPL_FRAMEARENA_HELPERS(SVGTextFrame)
 
 
 
-void
-SVGTextFrame::Init(nsIContent*       aContent,
-                   nsContainerFrame* aParent,
-                   nsIFrame*         aPrevInFlow)
-{
-  NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::text), "Content is not an SVG text");
+void SVGTextFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                        nsIFrame* aPrevInFlow) {
+  NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::text),
+               "Content is not an SVG text");
 
   nsSVGDisplayContainerFrame::Init(aContent, aParent, aPrevInFlow);
   AddStateBits((aParent->GetStateBits() & NS_STATE_SVG_CLIPPATH_CHILD) |
@@ -3185,32 +2928,25 @@ SVGTextFrame::Init(nsIContent*       aContent,
   mMutationObserver = new MutationObserver(this);
 }
 
-void
-SVGTextFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                               const nsDisplayListSet& aLists)
-{
+void SVGTextFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                    const nsDisplayListSet& aLists) {
   if (NS_SUBTREE_DIRTY(this)) {
     
     
     
     return;
   }
-  if (!IsVisibleForPainting(aBuilder) &&
-      aBuilder->IsForPainting()) {
+  if (!IsVisibleForPainting(aBuilder) && aBuilder->IsForPainting()) {
     return;
   }
   DisplayOutline(aBuilder, aLists);
   aLists.Content()->AppendToTop(
-    MakeDisplayItem<nsDisplaySVGText>(aBuilder, this));
+      MakeDisplayItem<nsDisplaySVGText>(aBuilder, this));
 }
 
-nsresult
-SVGTextFrame::AttributeChanged(int32_t aNameSpaceID,
-                               nsAtom* aAttribute,
-                               int32_t aModType)
-{
-  if (aNameSpaceID != kNameSpaceID_None)
-    return NS_OK;
+nsresult SVGTextFrame::AttributeChanged(int32_t aNameSpaceID,
+                                        nsAtom* aAttribute, int32_t aModType) {
+  if (aNameSpaceID != kNameSpaceID_None) return NS_OK;
 
   if (aAttribute == nsGkAtoms::transform) {
     
@@ -3218,8 +2954,8 @@ SVGTextFrame::AttributeChanged(int32_t aNameSpaceID,
     
     
 
-    if (!(mState & NS_FRAME_FIRST_REFLOW) &&
-        mCanvasTM && mCanvasTM->IsSingular()) {
+    if (!(mState & NS_FRAME_FIRST_REFLOW) && mCanvasTM &&
+        mCanvasTM->IsSingular()) {
       
       NotifyGlyphMetricsChange();
     }
@@ -3233,9 +2969,7 @@ SVGTextFrame::AttributeChanged(int32_t aNameSpaceID,
   return NS_OK;
 }
 
-void
-SVGTextFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
-{
+void SVGTextFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   if (mState & NS_FRAME_IS_NONDISPLAY) {
     
     
@@ -3261,9 +2995,7 @@ SVGTextFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle)
   }
 }
 
-void
-SVGTextFrame::ReflowSVGNonDisplayText()
-{
+void SVGTextFrame::ReflowSVGNonDisplayText() {
   MOZ_ASSERT(nsSVGUtils::AnyOuterSVGIsCallingReflowSVG(this),
              "only call ReflowSVGNonDisplayText when an outer SVG frame is "
              "under ReflowSVG");
@@ -3279,9 +3011,8 @@ SVGTextFrame::ReflowSVGNonDisplayText()
   
   
   
-  nsLayoutUtils::PostRestyleEvent(
-    mContent->AsElement(), nsRestyleHint(0),
-    nsChangeHint_InvalidateRenderingObservers);
+  nsLayoutUtils::PostRestyleEvent(mContent->AsElement(), nsRestyleHint(0),
+                                  nsChangeHint_InvalidateRenderingObservers);
 
   
   
@@ -3290,9 +3021,8 @@ SVGTextFrame::ReflowSVGNonDisplayText()
   UpdateGlyphPositioning();
 }
 
-void
-SVGTextFrame::ScheduleReflowSVGNonDisplayText(nsIPresShell::IntrinsicDirty aReason)
-{
+void SVGTextFrame::ScheduleReflowSVGNonDisplayText(
+    nsIPresShell::IntrinsicDirty aReason) {
   MOZ_ASSERT(!nsSVGUtils::OuterSVGIsCallingReflowSVG(this),
              "do not call ScheduleReflowSVGNonDisplayText when the outer SVG "
              "frame is under ReflowSVG");
@@ -3334,40 +3064,28 @@ SVGTextFrame::ScheduleReflowSVGNonDisplayText(nsIPresShell::IntrinsicDirty aReas
 
 NS_IMPL_ISUPPORTS(SVGTextFrame::MutationObserver, nsIMutationObserver)
 
-void
-SVGTextFrame::MutationObserver::ContentAppended(nsIContent* aFirstNewContent)
-{
+void SVGTextFrame::MutationObserver::ContentAppended(
+    nsIContent* aFirstNewContent) {
   mFrame->NotifyGlyphMetricsChange();
 }
 
-void
-SVGTextFrame::MutationObserver::ContentInserted(nsIContent* aChild)
-{
+void SVGTextFrame::MutationObserver::ContentInserted(nsIContent* aChild) {
   mFrame->NotifyGlyphMetricsChange();
 }
 
-void
-SVGTextFrame::MutationObserver::ContentRemoved(nsIContent* aChild,
-                                               nsIContent* aPreviousSibling)
-{
+void SVGTextFrame::MutationObserver::ContentRemoved(
+    nsIContent* aChild, nsIContent* aPreviousSibling) {
   mFrame->NotifyGlyphMetricsChange();
 }
 
-void
-SVGTextFrame::MutationObserver::CharacterDataChanged(nsIContent* aContent,
-                                                     const CharacterDataChangeInfo&)
-{
+void SVGTextFrame::MutationObserver::CharacterDataChanged(
+    nsIContent* aContent, const CharacterDataChangeInfo&) {
   mFrame->NotifyGlyphMetricsChange();
 }
 
-void
-SVGTextFrame::MutationObserver::AttributeChanged(
-                                                Element* aElement,
-                                                int32_t aNameSpaceID,
-                                                nsAtom* aAttribute,
-                                                int32_t aModType,
-                                                const nsAttrValue* aOldValue)
-{
+void SVGTextFrame::MutationObserver::AttributeChanged(
+    Element* aElement, int32_t aNameSpaceID, nsAtom* aAttribute,
+    int32_t aModType, const nsAttrValue* aOldValue) {
   if (!aElement->IsSVGElement()) {
     return;
   }
@@ -3381,16 +3099,13 @@ SVGTextFrame::MutationObserver::AttributeChanged(
   mFrame->HandleAttributeChangeInDescendant(aElement, aNameSpaceID, aAttribute);
 }
 
-void
-SVGTextFrame::HandleAttributeChangeInDescendant(Element* aElement,
-                                                int32_t aNameSpaceID,
-                                                nsAtom* aAttribute)
-{
+void SVGTextFrame::HandleAttributeChangeInDescendant(Element* aElement,
+                                                     int32_t aNameSpaceID,
+                                                     nsAtom* aAttribute) {
   if (aElement->IsSVGElement(nsGkAtoms::textPath)) {
     if (aNameSpaceID == kNameSpaceID_None &&
         (aAttribute == nsGkAtoms::startOffset ||
-         aAttribute == nsGkAtoms::path ||
-         aAttribute == nsGkAtoms::side_)) {
+         aAttribute == nsGkAtoms::path || aAttribute == nsGkAtoms::side_)) {
       NotifyGlyphMetricsChange();
     } else if ((aNameSpaceID == kNameSpaceID_XLink ||
                 aNameSpaceID == kNameSpaceID_None) &&
@@ -3410,10 +3125,8 @@ SVGTextFrame::HandleAttributeChangeInDescendant(Element* aElement,
   }
 }
 
-void
-SVGTextFrame::FindCloserFrameForSelection(const nsPoint& aPoint,
-                                          FrameWithDistance* aCurrentBestFrame)
-{
+void SVGTextFrame::FindCloserFrameForSelection(
+    const nsPoint& aPoint, FrameWithDistance* aCurrentBestFrame) {
   if (GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
     return;
   }
@@ -3437,8 +3150,8 @@ SVGTextFrame::FindCloserFrameForSelection(const nsPoint& aPoint,
       if (!NS_SVGDisplayListHitTestingEnabled()) {
         m = GetCanvasTM();
       }
-      nsRect rect = nsSVGUtils::ToCanvasBounds(userRect.ToThebesRect(), m,
-                                               presContext);
+      nsRect rect =
+          nsSVGUtils::ToCanvasBounds(userRect.ToThebesRect(), m, presContext);
 
       if (nsLayoutUtils::PointIsCloserToRect(aPoint, rect,
                                              aCurrentBestFrame->mXDistance,
@@ -3452,9 +3165,7 @@ SVGTextFrame::FindCloserFrameForSelection(const nsPoint& aPoint,
 
 
 
-void
-SVGTextFrame::NotifySVGChanged(uint32_t aFlags)
-{
+void SVGTextFrame::NotifySVGChanged(uint32_t aFlags) {
   MOZ_ASSERT(aFlags & (TRANSFORM_CHANGED | COORD_CONTEXT_CHANGED),
              "Invalidation logic may need adjusting");
 
@@ -3490,8 +3201,7 @@ SVGTextFrame::NotifySVGChanged(uint32_t aFlags)
     
     
     gfxMatrix newTM =
-      (mState & NS_FRAME_IS_NONDISPLAY) ? gfxMatrix() :
-                                          GetCanvasTM();
+        (mState & NS_FRAME_IS_NONDISPLAY) ? gfxMatrix() : GetCanvasTM();
     
     float scale = GetContextScale(newTM);
     float change = scale / mLastContextScale;
@@ -3524,9 +3234,7 @@ SVGTextFrame::NotifySVGChanged(uint32_t aFlags)
 
 
 
-static int32_t
-GetCaretOffset(nsCaret* aCaret)
-{
+static int32_t GetCaretOffset(nsCaret* aCaret) {
   RefPtr<Selection> selection = aCaret->GetSelection();
   if (!selection) {
     return -1;
@@ -3542,9 +3250,7 @@ GetCaretOffset(nsCaret* aCaret)
 
 
 
-static bool
-ShouldPaintCaret(const TextRenderedRun& aThisRun, nsCaret* aCaret)
-{
+static bool ShouldPaintCaret(const TextRenderedRun& aThisRun, nsCaret* aCaret) {
   int32_t caretOffset = GetCaretOffset(aCaret);
 
   if (caretOffset < 0) {
@@ -3552,20 +3258,17 @@ ShouldPaintCaret(const TextRenderedRun& aThisRun, nsCaret* aCaret)
   }
 
   if (uint32_t(caretOffset) >= aThisRun.mTextFrameContentOffset &&
-      uint32_t(caretOffset) < aThisRun.mTextFrameContentOffset +
-                                aThisRun.mTextFrameContentLength) {
+      uint32_t(caretOffset) <
+          aThisRun.mTextFrameContentOffset + aThisRun.mTextFrameContentLength) {
     return true;
   }
 
   return false;
 }
 
-void
-SVGTextFrame::PaintSVG(gfxContext& aContext,
-                       const gfxMatrix& aTransform,
-                       imgDrawingParams& aImgParams,
-                       const nsIntRect *aDirtyRect)
-{
+void SVGTextFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
+                            imgDrawingParams& aImgParams,
+                            const nsIntRect* aDirtyRect) {
   DrawTarget& aDrawTarget = *aContext.GetDrawTarget();
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (!kid) {
@@ -3605,16 +3308,15 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
   
   if (aDirtyRect) {
     NS_ASSERTION(!NS_SVGDisplayListPaintingEnabled() ||
-                 (mState & NS_FRAME_IS_NONDISPLAY),
+                     (mState & NS_FRAME_IS_NONDISPLAY),
                  "Display lists handle dirty rect intersection test");
-    nsRect dirtyRect(aDirtyRect->x, aDirtyRect->y,
-                     aDirtyRect->width, aDirtyRect->height);
+    nsRect dirtyRect(aDirtyRect->x, aDirtyRect->y, aDirtyRect->width,
+                     aDirtyRect->height);
 
     gfxFloat appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
-    gfxRect frameRect(mRect.x / appUnitsPerDevPixel,
-                      mRect.y / appUnitsPerDevPixel,
-                      mRect.width / appUnitsPerDevPixel,
-                      mRect.height / appUnitsPerDevPixel);
+    gfxRect frameRect(
+        mRect.x / appUnitsPerDevPixel, mRect.y / appUnitsPerDevPixel,
+        mRect.width / appUnitsPerDevPixel, mRect.height / appUnitsPerDevPixel);
 
     nsRect canvasRect = nsLayoutUtils::RoundGfxRectToAppRect(
         GetCanvasTM().TransformBounds(frameRect), 1);
@@ -3646,7 +3348,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
   TextRenderedRun run = it.Current();
 
   SVGContextPaint* outerContextPaint =
-    SVGContextPaint::GetContextPaint(GetContent());
+      SVGContextPaint::GetContextPaint(GetContent());
 
   while (run.mFrame) {
     nsTextFrame* frame = run.mFrame;
@@ -3656,10 +3358,8 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     SVGCharClipDisplayItem item(run);
 
     RefPtr<SVGContextPaintImpl> contextPaint = new SVGContextPaintImpl();
-    DrawMode drawMode = contextPaint->Init(&aDrawTarget,
-                                           initialMatrix,
-                                           frame, outerContextPaint,
-                                           aImgParams);
+    DrawMode drawMode = contextPaint->Init(&aDrawTarget, initialMatrix, frame,
+                                           outerContextPaint, aImgParams);
     if (drawMode & DrawMode::GLYPH_STROKE) {
       ctxSR.EnsureSaved(&aContext);
       
@@ -3670,21 +3370,20 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
     
     
     gfxMatrix runTransform =
-      run.GetTransformFromUserSpaceForPainting(presContext, item) *
-      currentMatrix;
+        run.GetTransformFromUserSpaceForPainting(presContext, item) *
+        currentMatrix;
     aContext.SetMatrixDouble(runTransform);
 
     if (drawMode != DrawMode(0)) {
       bool paintSVGGlyphs;
       nsTextFrame::PaintTextParams params(&aContext);
       params.framePt = Point();
-      params.dirtyRect = LayoutDevicePixel::
-        FromAppUnits(frame->GetVisualOverflowRect(), auPerDevPx);
+      params.dirtyRect = LayoutDevicePixel::FromAppUnits(
+          frame->GetVisualOverflowRect(), auPerDevPx);
       params.contextPaint = contextPaint;
       if (ShouldRenderAsPath(frame, paintSVGGlyphs)) {
         SVGTextDrawPathCallbacks callbacks(this, aContext, frame,
-                                           matrixForPaintServers,
-                                           aImgParams,
+                                           matrixForPaintServers, aImgParams,
                                            paintSVGGlyphs);
         params.callbacks = &callbacks;
         frame->PaintText(params, item);
@@ -3704,9 +3403,7 @@ SVGTextFrame::PaintSVG(gfxContext& aContext,
   }
 }
 
-nsIFrame*
-SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint)
-{
+nsIFrame* SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint) {
   NS_ASSERTION(PrincipalChildList().FirstChild(), "must have a child frame");
 
   if (mState & NS_FRAME_IS_NONDISPLAY) {
@@ -3747,9 +3444,10 @@ SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint)
     }
 
     gfxPoint pointInRunUserSpace = m.TransformPoint(aPoint);
-    gfxRect frameRect =
-      run.GetRunUserSpaceRect(presContext, TextRenderedRun::eIncludeFill |
-                                           TextRenderedRun::eIncludeStroke).ToThebesRect();
+    gfxRect frameRect = run.GetRunUserSpaceRect(
+                               presContext, TextRenderedRun::eIncludeFill |
+                                                TextRenderedRun::eIncludeStroke)
+                            .ToThebesRect();
 
     if (Inside(frameRect, pointInRunUserSpace)) {
       hit = run.mFrame;
@@ -3758,9 +3456,7 @@ SVGTextFrame::GetFrameForPoint(const gfxPoint& aPoint)
   return hit;
 }
 
-void
-SVGTextFrame::ReflowSVG()
-{
+void SVGTextFrame::ReflowSVG() {
   NS_ASSERTION(nsSVGUtils::OuterSVGIsCallingReflowSVG(this),
                "This call is probaby a wasteful mistake");
 
@@ -3784,12 +3480,12 @@ SVGTextFrame::ReflowSVG()
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
     uint32_t runFlags = 0;
     if (run.mFrame->StyleSVG()->mFill.Type() != eStyleSVGPaintType_None) {
-      runFlags |= TextRenderedRun::eIncludeFill |
-                  TextRenderedRun::eIncludeTextShadow;
+      runFlags |=
+          TextRenderedRun::eIncludeFill | TextRenderedRun::eIncludeTextShadow;
     }
     if (nsSVGUtils::HasStroke(run.mFrame)) {
-      runFlags |= TextRenderedRun::eIncludeFill |
-                  TextRenderedRun::eIncludeTextShadow;
+      runFlags |=
+          TextRenderedRun::eIncludeFill | TextRenderedRun::eIncludeTextShadow;
     }
     
     
@@ -3813,8 +3509,8 @@ SVGTextFrame::ReflowSVG()
   if (r.IsEmpty()) {
     mRect.SetEmpty();
   } else {
-    mRect =
-      nsLayoutUtils::RoundGfxRectToAppRect(r.ToThebesRect(), AppUnitsPerCSSPixel());
+    mRect = nsLayoutUtils::RoundGfxRectToAppRect(r.ToThebesRect(),
+                                                 AppUnitsPerCSSPixel());
 
     
     
@@ -3835,7 +3531,7 @@ SVGTextFrame::ReflowSVG()
   RemoveStateBits(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY |
                   NS_FRAME_HAS_DIRTY_CHILDREN);
 
-  nsRect overflow = nsRect(nsPoint(0,0), mRect.Size());
+  nsRect overflow = nsRect(nsPoint(0, 0), mRect.Size());
   nsOverflowAreas overflowAreas(overflow, overflow);
   FinishAndStoreOverflow(overflowAreas, mRect.Size());
 
@@ -3849,10 +3545,8 @@ SVGTextFrame::ReflowSVG()
 
 
 
-static uint32_t
-TextRenderedRunFlagsForBBoxContribution(const TextRenderedRun& aRun,
-                                        uint32_t aBBoxFlags)
-{
+static uint32_t TextRenderedRunFlagsForBBoxContribution(
+    const TextRenderedRun& aRun, uint32_t aBBoxFlags) {
   uint32_t flags = 0;
   if ((aBBoxFlags & nsSVGUtils::eBBoxIncludeFillGeometry) ||
       ((aBBoxFlags & nsSVGUtils::eBBoxIncludeFill) &&
@@ -3867,10 +3561,8 @@ TextRenderedRunFlagsForBBoxContribution(const TextRenderedRun& aRun,
   return flags;
 }
 
-SVGBBox
-SVGTextFrame::GetBBoxContribution(const Matrix &aToBBoxUserspace,
-                                  uint32_t aFlags)
-{
+SVGBBox SVGTextFrame::GetBBoxContribution(const Matrix& aToBBoxUserspace,
+                                          uint32_t aFlags) {
   NS_ASSERTION(PrincipalChildList().FirstChild(), "must have a child frame");
   SVGBBox bbox;
 
@@ -3903,8 +3595,7 @@ SVGTextFrame::GetBBoxContribution(const Matrix &aToBBoxUserspace,
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
     uint32_t flags = TextRenderedRunFlagsForBBoxContribution(run, aFlags);
     gfxMatrix m = ThebesMatrix(aToBBoxUserspace);
-    SVGBBox bboxForRun =
-      run.GetUserSpaceRect(presContext, flags, &m);
+    SVGBBox bboxForRun = run.GetUserSpaceRect(presContext, flags, &m);
     bbox.UnionEdges(bboxForRun);
   }
 
@@ -3918,9 +3609,7 @@ SVGTextFrame::GetBBoxContribution(const Matrix &aToBBoxUserspace,
 
 
 
-static bool
-HasTextContent(nsIContent* aContent)
-{
+static bool HasTextContent(nsIContent* aContent) {
   NS_ASSERTION(aContent, "expected non-null aContent");
 
   TextNodeIterator it(aContent);
@@ -3935,9 +3624,7 @@ HasTextContent(nsIContent* aContent)
 
 
 
-static uint32_t
-GetTextContentLength(nsIContent* aContent)
-{
+static uint32_t GetTextContentLength(nsIContent* aContent) {
   NS_ASSERTION(aContent, "expected non-null aContent");
 
   uint32_t length = 0;
@@ -3948,19 +3635,15 @@ GetTextContentLength(nsIContent* aContent)
   return length;
 }
 
-int32_t
-SVGTextFrame::ConvertTextElementCharIndexToAddressableIndex(
-                                                           int32_t aIndex,
-                                                           nsIContent* aContent)
-{
+int32_t SVGTextFrame::ConvertTextElementCharIndexToAddressableIndex(
+    int32_t aIndex, nsIContent* aContent) {
   CharIterator it(this, CharIterator::eOriginal, aContent);
   if (!it.AdvanceToSubtree()) {
     return -1;
   }
   int32_t result = 0;
   int32_t textElementCharIndex;
-  while (!it.AtEnd() &&
-         it.IsWithinSubtree()) {
+  while (!it.AtEnd() && it.IsWithinSubtree()) {
     bool addressable = !it.IsOriginalCharUnaddressable();
     textElementCharIndex = it.TextElementCharIndex();
     it.Next();
@@ -3980,9 +3663,7 @@ SVGTextFrame::ConvertTextElementCharIndexToAddressableIndex(
 
 
 
-uint32_t
-SVGTextFrame::GetNumberOfChars(nsIContent* aContent)
-{
+uint32_t SVGTextFrame::GetNumberOfChars(nsIContent* aContent) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (NS_SUBTREE_DIRTY(kid)) {
     
@@ -4007,13 +3688,11 @@ SVGTextFrame::GetNumberOfChars(nsIContent* aContent)
 
 
 
-float
-SVGTextFrame::GetComputedTextLength(nsIContent* aContent)
-{
+float SVGTextFrame::GetComputedTextLength(nsIContent* aContent) {
   UpdateGlyphPositioning();
 
-  float cssPxPerDevPx = PresContext()->
-    AppUnitsToFloatCSSPixels(PresContext()->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = PresContext()->AppUnitsToFloatCSSPixels(
+      PresContext()->AppUnitsPerDevPixel());
 
   nscoord length = 0;
   TextRenderedRunIterator it(this, TextRenderedRunIterator::eAllFrames,
@@ -4022,18 +3701,16 @@ SVGTextFrame::GetComputedTextLength(nsIContent* aContent)
     length += run.GetAdvanceWidth();
   }
 
-  return PresContext()->AppUnitsToGfxUnits(length) *
-           cssPxPerDevPx * mLengthAdjustScaleFactor / mFontSizeScaleFactor;
+  return PresContext()->AppUnitsToGfxUnits(length) * cssPxPerDevPx *
+         mLengthAdjustScaleFactor / mFontSizeScaleFactor;
 }
 
 
 
 
 
-nsresult
-SVGTextFrame::SelectSubString(nsIContent* aContent,
-                              uint32_t charnum, uint32_t nchars)
-{
+nsresult SVGTextFrame::SelectSubString(nsIContent* aContent, uint32_t charnum,
+                                       uint32_t nchars) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (NS_SUBTREE_DIRTY(kid)) {
     
@@ -4046,8 +3723,7 @@ SVGTextFrame::SelectSubString(nsIContent* aContent,
   
   
   CharIterator chit(this, CharIterator::eAddressable, aContent);
-  if (!chit.AdvanceToSubtree() ||
-      !chit.Next(charnum) ||
+  if (!chit.AdvanceToSubtree() || !chit.Next(charnum) ||
       chit.IsAfterSubtree()) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
@@ -4058,8 +3734,8 @@ SVGTextFrame::SelectSubString(nsIContent* aContent,
 
   RefPtr<nsFrameSelection> frameSelection = GetFrameSelection();
 
-  frameSelection->HandleClick(content, charnum, charnum + nchars,
-                              false, false, CARET_ASSOCIATE_BEFORE);
+  frameSelection->HandleClick(content, charnum, charnum + nchars, false, false,
+                              CARET_ASSOCIATE_BEFORE);
   return NS_OK;
 }
 
@@ -4067,11 +3743,9 @@ SVGTextFrame::SelectSubString(nsIContent* aContent,
 
 
 
-nsresult
-SVGTextFrame::GetSubStringLength(nsIContent* aContent,
-                                 uint32_t charnum, uint32_t nchars,
-                                 float* aResult)
-{
+nsresult SVGTextFrame::GetSubStringLength(nsIContent* aContent,
+                                          uint32_t charnum, uint32_t nchars,
+                                          float* aResult) {
   
   
   
@@ -4089,9 +3763,9 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
   
   
   TextFrameIterator frameIter(this);
-  for (nsTextFrame* frame = frameIter.Current(); frame; frame = frameIter.Next()) {
-    if (frameIter.TextPathFrame() ||
-        frame->GetNextContinuation()) {
+  for (nsTextFrame* frame = frameIter.Current(); frame;
+       frame = frameIter.Next()) {
+    if (frameIter.TextPathFrame() || frame->GetNextContinuation()) {
       return GetSubStringLengthSlowFallback(aContent, charnum, nchars, aResult);
     }
   }
@@ -4104,8 +3778,7 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
   
   CharIterator chit(this, CharIterator::eAddressable, aContent,
                      false);
-  if (!chit.AdvanceToSubtree() ||
-      !chit.Next(charnum) ||
+  if (!chit.AdvanceToSubtree() || !chit.Next(charnum) ||
       chit.IsAfterSubtree()) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
@@ -4124,7 +3797,7 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
   
   nscoord textLength = 0;
 
-  TextFrameIterator frit(this); 
+  TextFrameIterator frit(this);  
 
   
   
@@ -4144,15 +3817,15 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
     uint32_t trimmedOffset = untrimmedOffset;
     uint32_t trimmedLength = untrimmedLength;
     nsTextFrame::TrimmedOffsets trimmedOffsets =
-      frame->GetTrimmedOffsets(frame->GetContent()->GetText(),
-                                true,
-                                false);
+        frame->GetTrimmedOffsets(frame->GetContent()->GetText(),
+                                  true,
+                                  false);
     TrimOffsets(trimmedOffset, trimmedLength, trimmedOffsets);
 
     textElementCharIndex += trimmedOffset - untrimmedOffset;
 
     if (textElementCharIndex >= charnum + nchars) {
-      break; 
+      break;  
     }
 
     uint32_t offset = textElementCharIndex;
@@ -4166,10 +3839,10 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
       offset += trimmedOffset - textElementCharIndex;
 
       gfxSkipCharsIterator skipCharsIter =
-        frame->EnsureTextRun(nsTextFrame::eInflated);
+          frame->EnsureTextRun(nsTextFrame::eInflated);
       gfxTextRun* textRun = frame->GetTextRun(nsTextFrame::eInflated);
       Range range =
-        ConvertOriginalToSkipped(skipCharsIter, offset, trimmedLength);
+          ConvertOriginalToSkipped(skipCharsIter, offset, trimmedLength);
 
       
       textLength += textRun->GetAdvanceWidth(range, nullptr);
@@ -4180,18 +3853,18 @@ SVGTextFrame::GetSubStringLength(nsIContent* aContent,
   }
 
   nsPresContext* presContext = PresContext();
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
+      presContext->AppUnitsPerDevPixel());
 
-  *aResult = presContext->AppUnitsToGfxUnits(textLength) *
-               cssPxPerDevPx / mFontSizeScaleFactor;
+  *aResult = presContext->AppUnitsToGfxUnits(textLength) * cssPxPerDevPx /
+             mFontSizeScaleFactor;
   return NS_OK;
 }
 
-nsresult
-SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
-                                             uint32_t charnum, uint32_t nchars,
-                                             float* aResult)
-{
+nsresult SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
+                                                      uint32_t charnum,
+                                                      uint32_t nchars,
+                                                      float* aResult) {
   
   
   
@@ -4205,8 +3878,7 @@ SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
   
   
   CharIterator chit(this, CharIterator::eAddressable, aContent);
-  if (!chit.AdvanceToSubtree() ||
-      !chit.Next(charnum) ||
+  if (!chit.AdvanceToSubtree() || !chit.Next(charnum) ||
       chit.IsAfterSubtree()) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
@@ -4243,7 +3915,7 @@ SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
       offset += run.mTextFrameContentOffset - run.mTextElementCharIndex;
 
       gfxSkipCharsIterator skipCharsIter =
-        run.mFrame->EnsureTextRun(nsTextFrame::eInflated);
+          run.mFrame->EnsureTextRun(nsTextFrame::eInflated);
       gfxTextRun* textRun = run.mFrame->GetTextRun(nsTextFrame::eInflated);
       Range range = ConvertOriginalToSkipped(skipCharsIter, offset, length);
 
@@ -4255,10 +3927,11 @@ SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
   }
 
   nsPresContext* presContext = PresContext();
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
+      presContext->AppUnitsPerDevPixel());
 
-  *aResult = presContext->AppUnitsToGfxUnits(textLength) *
-               cssPxPerDevPx / mFontSizeScaleFactor;
+  *aResult = presContext->AppUnitsToGfxUnits(textLength) * cssPxPerDevPx /
+             mFontSizeScaleFactor;
   return NS_OK;
 }
 
@@ -4266,10 +3939,8 @@ SVGTextFrame::GetSubStringLengthSlowFallback(nsIContent* aContent,
 
 
 
-int32_t
-SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
-                                   nsISVGPoint* aPoint)
-{
+int32_t SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
+                                           nsISVGPoint* aPoint) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (NS_SUBTREE_DIRTY(kid)) {
     
@@ -4285,7 +3956,8 @@ SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
 
   int32_t result = -1;
 
-  TextRenderedRunIterator it(this, TextRenderedRunIterator::eAllFrames, aContent);
+  TextRenderedRunIterator it(this, TextRenderedRunIterator::eAllFrames,
+                             aContent);
   for (TextRenderedRun run = it.Current(); run.mFrame; run = it.Next()) {
     
     int32_t index = run.GetCharNumAtPosition(context, p);
@@ -4305,11 +3977,9 @@ SVGTextFrame::GetCharNumAtPosition(nsIContent* aContent,
 
 
 
-nsresult
-SVGTextFrame::GetStartPositionOfChar(nsIContent* aContent,
-                                     uint32_t aCharNum,
-                                     nsISVGPoint** aResult)
-{
+nsresult SVGTextFrame::GetStartPositionOfChar(nsIContent* aContent,
+                                              uint32_t aCharNum,
+                                              nsISVGPoint** aResult) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (NS_SUBTREE_DIRTY(kid)) {
     
@@ -4320,8 +3990,7 @@ SVGTextFrame::GetStartPositionOfChar(nsIContent* aContent,
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::eAddressable, aContent);
-  if (!it.AdvanceToSubtree() ||
-      !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
@@ -4329,7 +3998,7 @@ SVGTextFrame::GetStartPositionOfChar(nsIContent* aContent,
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
 
   RefPtr<DOMSVGPoint> point =
-    new DOMSVGPoint(ToPoint(mPositions[startIndex].mPosition));
+      new DOMSVGPoint(ToPoint(mPositions[startIndex].mPosition));
   point.forget(aResult);
   return NS_OK;
 }
@@ -4338,11 +4007,9 @@ SVGTextFrame::GetStartPositionOfChar(nsIContent* aContent,
 
 
 
-nsresult
-SVGTextFrame::GetEndPositionOfChar(nsIContent* aContent,
-                                   uint32_t aCharNum,
-                                   nsISVGPoint** aResult)
-{
+nsresult SVGTextFrame::GetEndPositionOfChar(nsIContent* aContent,
+                                            uint32_t aCharNum,
+                                            nsISVGPoint** aResult) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (NS_SUBTREE_DIRTY(kid)) {
     
@@ -4353,8 +4020,7 @@ SVGTextFrame::GetEndPositionOfChar(nsIContent* aContent,
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::eAddressable, aContent);
-  if (!it.AdvanceToSubtree() ||
-      !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
@@ -4369,9 +4035,8 @@ SVGTextFrame::GetEndPositionOfChar(nsIContent* aContent,
 
   
   
-  Matrix m =
-    Matrix::Rotation(mPositions[startIndex].mAngle) *
-    Matrix::Translation(ToPoint(mPositions[startIndex].mPosition));
+  Matrix m = Matrix::Rotation(mPositions[startIndex].mAngle) *
+             Matrix::Translation(ToPoint(mPositions[startIndex].mPosition));
   Point p = m.TransformPoint(Point(advance / mFontSizeScaleFactor, 0));
 
   RefPtr<DOMSVGPoint> point = new DOMSVGPoint(p);
@@ -4383,11 +4048,8 @@ SVGTextFrame::GetEndPositionOfChar(nsIContent* aContent,
 
 
 
-nsresult
-SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
-                              uint32_t aCharNum,
-                              SVGIRect** aResult)
-{
+nsresult SVGTextFrame::GetExtentOfChar(nsIContent* aContent, uint32_t aCharNum,
+                                       SVGIRect** aResult) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (NS_SUBTREE_DIRTY(kid)) {
     
@@ -4398,14 +4060,14 @@ SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::eAddressable, aContent);
-  if (!it.AdvanceToSubtree() ||
-      !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
   nsPresContext* presContext = PresContext();
 
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
+      presContext->AppUnitsPerDevPixel());
 
   
   uint32_t startIndex = it.GlyphStartTextElementCharIndex();
@@ -4427,15 +4089,14 @@ SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
 
   gfxRect glyphRect;
   if (it.TextRun()->IsVertical()) {
-    glyphRect =
-      gfxRect(-presContext->AppUnitsToGfxUnits(descent) * cssPxPerDevPx, x,
-              presContext->AppUnitsToGfxUnits(ascent + descent) * cssPxPerDevPx,
-              advance);
+    glyphRect = gfxRect(
+        -presContext->AppUnitsToGfxUnits(descent) * cssPxPerDevPx, x,
+        presContext->AppUnitsToGfxUnits(ascent + descent) * cssPxPerDevPx,
+        advance);
   } else {
-    glyphRect =
-      gfxRect(x, -presContext->AppUnitsToGfxUnits(ascent) * cssPxPerDevPx,
-              advance,
-              presContext->AppUnitsToGfxUnits(ascent + descent) * cssPxPerDevPx);
+    glyphRect = gfxRect(
+        x, -presContext->AppUnitsToGfxUnits(ascent) * cssPxPerDevPx, advance,
+        presContext->AppUnitsToGfxUnits(ascent + descent) * cssPxPerDevPx);
   }
 
   
@@ -4450,11 +4111,8 @@ SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
 
 
 
-nsresult
-SVGTextFrame::GetRotationOfChar(nsIContent* aContent,
-                                uint32_t aCharNum,
-                                float* aResult)
-{
+nsresult SVGTextFrame::GetRotationOfChar(nsIContent* aContent,
+                                         uint32_t aCharNum, float* aResult) {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (NS_SUBTREE_DIRTY(kid)) {
     
@@ -4465,8 +4123,7 @@ SVGTextFrame::GetRotationOfChar(nsIContent* aContent,
   UpdateGlyphPositioning();
 
   CharIterator it(this, CharIterator::eAddressable, aContent);
-  if (!it.AdvanceToSubtree() ||
-      !it.Next(aCharNum)) {
+  if (!it.AdvanceToSubtree() || !it.Next(aCharNum)) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
   }
 
@@ -4487,11 +4144,9 @@ SVGTextFrame::GetRotationOfChar(nsIContent* aContent,
 
 
 
-static bool
-ShouldStartRunAtIndex(const nsTArray<CharPosition>& aPositions,
-                      const nsTArray<gfxPoint>& aDeltas,
-                      uint32_t aIndex)
-{
+static bool ShouldStartRunAtIndex(const nsTArray<CharPosition>& aPositions,
+                                  const nsTArray<gfxPoint>& aDeltas,
+                                  uint32_t aIndex) {
   if (aIndex == 0) {
     return true;
   }
@@ -4515,8 +4170,7 @@ ShouldStartRunAtIndex(const nsTArray<CharPosition>& aPositions,
 
   if (aIndex < aDeltas.Length()) {
     
-    if (aDeltas[aIndex].x != 0.0 ||
-        aDeltas[aIndex].y != 0.0) {
+    if (aDeltas[aIndex].x != 0.0 || aDeltas[aIndex].y != 0.0) {
       return true;
     }
   }
@@ -4524,21 +4178,19 @@ ShouldStartRunAtIndex(const nsTArray<CharPosition>& aPositions,
   return false;
 }
 
-bool
-SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
-                                      uint32_t& aIndex,
-                                      bool aInTextPath,
-                                      bool& aForceStartOfChunk,
-                                      nsTArray<gfxPoint>& aDeltas)
-{
+bool SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
+                                           uint32_t& aIndex, bool aInTextPath,
+                                           bool& aForceStartOfChunk,
+                                           nsTArray<gfxPoint>& aDeltas) {
   if (aContent->IsText()) {
     
     uint32_t length = static_cast<nsTextNode*>(aContent)->TextLength();
     if (length) {
       uint32_t end = aIndex + length;
       if (MOZ_UNLIKELY(end > mPositions.Length())) {
-        MOZ_ASSERT_UNREACHABLE("length of mPositions does not match characters "
-                               "found by iterating content");
+        MOZ_ASSERT_UNREACHABLE(
+            "length of mPositions does not match characters "
+            "found by iterating content");
         return false;
       }
       if (aForceStartOfChunk) {
@@ -4573,8 +4225,9 @@ SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
     
     if (HasTextContent(aContent)) {
       if (MOZ_UNLIKELY(aIndex >= mPositions.Length())) {
-        MOZ_ASSERT_UNREACHABLE("length of mPositions does not match characters "
-                               "found by iterating content");
+        MOZ_ASSERT_UNREACHABLE(
+            "length of mPositions does not match characters "
+            "found by iterating content");
         return false;
       }
       if (!mPositions[aIndex].IsXSpecified()) {
@@ -4598,7 +4251,7 @@ SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
     
     const SVGNumberList* rotate = nullptr;
     SVGAnimatedNumberList* animatedRotate =
-      element->GetAnimatedNumberList(nsGkAtoms::rotate);
+        element->GetAnimatedNumberList(nsGkAtoms::rotate);
     if (animatedRotate) {
       rotate = &animatedRotate->GetAnimValue();
     }
@@ -4607,8 +4260,9 @@ SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
     uint32_t count = GetTextContentLength(aContent);
 
     if (MOZ_UNLIKELY(aIndex + count > mPositions.Length())) {
-      MOZ_ASSERT_UNREACHABLE("length of mPositions does not match characters "
-                             "found by iterating content");
+      MOZ_ASSERT_UNREACHABLE(
+          "length of mPositions does not match characters "
+          "found by iterating content");
       return false;
     }
 
@@ -4686,8 +4340,7 @@ SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
 
   
   bool inTextPath = aInTextPath || aContent->IsSVGElement(nsGkAtoms::textPath);
-  for (nsIContent* child = aContent->GetFirstChild();
-       child;
+  for (nsIContent* child = aContent->GetFirstChild(); child;
        child = child->GetNextSibling()) {
     bool ok = ResolvePositionsForNode(child, aIndex, inTextPath,
                                       aForceStartOfChunk, aDeltas);
@@ -4704,10 +4357,8 @@ SVGTextFrame::ResolvePositionsForNode(nsIContent* aContent,
   return true;
 }
 
-bool
-SVGTextFrame::ResolvePositions(nsTArray<gfxPoint>& aDeltas,
-                               bool aRunPerGlyph)
-{
+bool SVGTextFrame::ResolvePositions(nsTArray<gfxPoint>& aDeltas,
+                                    bool aRunPerGlyph) {
   NS_ASSERTION(mPositions.IsEmpty(), "expected mPositions to be empty");
   RemoveStateBits(NS_STATE_SVG_POSITIONING_MAY_USE_PERCENTAGES);
 
@@ -4728,8 +4379,8 @@ SVGTextFrame::ResolvePositions(nsTArray<gfxPoint>& aDeltas,
     while (++index < it.TextElementCharIndex()) {
       mPositions.AppendElement(CharPosition::Unspecified(false));
     }
-    mPositions.AppendElement(CharPosition::Unspecified(
-                                             it.IsOriginalCharUnaddressable()));
+    mPositions.AppendElement(
+        CharPosition::Unspecified(it.IsOriginalCharUnaddressable()));
   }
   while (++index < it.TextElementCharIndex()) {
     mPositions.AppendElement(CharPosition::Unspecified(false));
@@ -4743,9 +4394,7 @@ SVGTextFrame::ResolvePositions(nsTArray<gfxPoint>& aDeltas,
   return ok && index > 0;
 }
 
-void
-SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions)
-{
+void SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions) {
   NS_ASSERTION(aPositions.IsEmpty(), "expected aPositions to be empty");
 
   nsPoint position, lastPosition;
@@ -4761,15 +4410,13 @@ SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions)
       if (textRun->IsRightToLeft()) {
         position.y += frame->GetRect().height;
       }
-      position.x += GetBaselinePosition(frame, textRun,
-                                        frit.DominantBaseline(),
+      position.x += GetBaselinePosition(frame, textRun, frit.DominantBaseline(),
                                         mFontSizeScaleFactor);
     } else {
       if (textRun->IsRightToLeft()) {
         position.x += frame->GetRect().width;
       }
-      position.y += GetBaselinePosition(frame, textRun,
-                                        frit.DominantBaseline(),
+      position.y += GetBaselinePosition(frame, textRun, frit.DominantBaseline(),
                                         mFontSizeScaleFactor);
     }
 
@@ -4780,7 +4427,7 @@ SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions)
 
     
     nsTextFrame::TrimmedOffsets trimmedOffsets =
-      frame->GetTrimmedOffsets(frame->GetContent()->GetText(), true);
+        frame->GetTrimmedOffsets(frame->GetContent()->GetText(), true);
     while (it.GetOriginalOffset() < trimmedOffsets.mStart) {
       aPositions.AppendElement(position);
       it.AdvanceOriginal(1);
@@ -4793,10 +4440,10 @@ SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions)
            (!textRun->IsLigatureGroupStart(it.GetSkippedOffset()) ||
             !textRun->IsClusterStart(it.GetSkippedOffset()))) {
       uint32_t offset = it.GetSkippedOffset();
-      nscoord advance = textRun->
-        GetAdvanceWidth(Range(offset, offset + 1), nullptr);
+      nscoord advance =
+          textRun->GetAdvanceWidth(Range(offset, offset + 1), nullptr);
       (textRun->IsVertical() ? position.y : position.x) +=
-        textRun->IsRightToLeft() ? -advance : advance;
+          textRun->IsRightToLeft() ? -advance : advance;
       aPositions.AppendElement(lastPosition);
       it.AdvanceOriginal(1);
     }
@@ -4808,10 +4455,10 @@ SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions)
           textRun->IsLigatureGroupStart(it.GetSkippedOffset()) &&
           textRun->IsClusterStart(it.GetSkippedOffset())) {
         
-        nscoord advance = textRun->
-          GetAdvanceWidth(ClusterRange(textRun, it), nullptr);
+        nscoord advance =
+            textRun->GetAdvanceWidth(ClusterRange(textRun, it), nullptr);
         (textRun->IsVertical() ? position.y : position.x) +=
-          textRun->IsRightToLeft() ? -advance : advance;
+            textRun->IsRightToLeft() ? -advance : advance;
         lastPosition = position;
       }
       it.AdvanceOriginal(1);
@@ -4827,22 +4474,16 @@ SVGTextFrame::DetermineCharPositions(nsTArray<nsPoint>& aPositions)
 
 
 
-enum TextAnchorSide {
-  eAnchorLeft,
-  eAnchorMiddle,
-  eAnchorRight
-};
+enum TextAnchorSide { eAnchorLeft, eAnchorMiddle, eAnchorRight };
 
 
 
 
 
-static TextAnchorSide
-ConvertLogicalTextAnchorToPhysical(uint8_t aTextAnchor, bool aIsRightToLeft)
-{
+static TextAnchorSide ConvertLogicalTextAnchorToPhysical(uint8_t aTextAnchor,
+                                                         bool aIsRightToLeft) {
   NS_ASSERTION(aTextAnchor <= 3, "unexpected value for aTextAnchor");
-  if (!aIsRightToLeft)
-    return TextAnchorSide(aTextAnchor);
+  if (!aIsRightToLeft) return TextAnchorSide(aTextAnchor);
   return TextAnchorSide(2 - aTextAnchor);
 }
 
@@ -4860,15 +4501,10 @@ ConvertLogicalTextAnchorToPhysical(uint8_t aTextAnchor, bool aIsRightToLeft)
 
 
 
-static void
-ShiftAnchoredChunk(nsTArray<CharPosition>& aCharPositions,
-                   uint32_t aChunkStart,
-                   uint32_t aChunkEnd,
-                   gfxFloat aVisIStartEdge,
-                   gfxFloat aVisIEndEdge,
-                   TextAnchorSide aAnchorSide,
-                   bool aVertical)
-{
+static void ShiftAnchoredChunk(nsTArray<CharPosition>& aCharPositions,
+                               uint32_t aChunkStart, uint32_t aChunkEnd,
+                               gfxFloat aVisIStartEdge, gfxFloat aVisIEndEdge,
+                               TextAnchorSide aAnchorSide, bool aVertical) {
   NS_ASSERTION(aVisIStartEdge <= aVisIEndEdge,
                "unexpected anchored chunk edges");
   NS_ASSERTION(aChunkStart < aChunkEnd,
@@ -4903,10 +4539,9 @@ ShiftAnchoredChunk(nsTArray<CharPosition>& aCharPositions,
   }
 }
 
-void
-SVGTextFrame::AdjustChunksForLineBreaks()
-{
-  nsBlockFrame* block = nsLayoutUtils::GetAsBlock(PrincipalChildList().FirstChild());
+void SVGTextFrame::AdjustChunksForLineBreaks() {
+  nsBlockFrame* block =
+      nsLayoutUtils::GetAsBlock(PrincipalChildList().FirstChild());
   NS_ASSERTION(block, "expected block frame");
 
   nsBlockFrame::LineIterator line = block->LinesBegin();
@@ -4921,9 +4556,7 @@ SVGTextFrame::AdjustChunksForLineBreaks()
   }
 }
 
-void
-SVGTextFrame::AdjustPositionsForClusters()
-{
+void SVGTextFrame::AdjustPositionsForClusters() {
   nsPresContext* presContext = PresContext();
 
   CharIterator it(this, CharIterator::eClusterOrLigatureGroupMiddle,
@@ -4946,16 +4579,16 @@ SVGTextFrame::AdjustPositionsForClusters()
     
     
     uint32_t partLength =
-      charIndex - startIndex - it.GlyphUndisplayedCharacters();
-    gfxFloat advance =
-      it.GetGlyphPartialAdvance(partLength, presContext) / mFontSizeScaleFactor;
+        charIndex - startIndex - it.GlyphUndisplayedCharacters();
+    gfxFloat advance = it.GetGlyphPartialAdvance(partLength, presContext) /
+                       mFontSizeScaleFactor;
     gfxPoint direction = gfxPoint(cos(angle), sin(angle)) *
                          (it.TextRun()->IsRightToLeft() ? -1.0 : 1.0);
     if (it.TextRun()->IsVertical()) {
       Swap(direction.x, direction.y);
     }
-    mPositions[charIndex].mPosition = mPositions[startIndex].mPosition +
-                                      direction * advance;
+    mPositions[charIndex].mPosition =
+        mPositions[startIndex].mPosition + direction * advance;
 
     
     
@@ -4983,9 +4616,7 @@ SVGTextFrame::AdjustPositionsForClusters()
   }
 }
 
-already_AddRefed<Path>
-SVGTextFrame::GetTextPath(nsIFrame* aTextPathFrame)
-{
+already_AddRefed<Path> SVGTextFrame::GetTextPath(nsIFrame* aTextPathFrame) {
   nsIContent* content = aTextPathFrame->GetContent();
   SVGTextPathElement* tp = static_cast<SVGTextPathElement*>(content);
   if (tp->mPath.IsRendered()) {
@@ -4995,7 +4626,7 @@ SVGTextFrame::GetTextPath(nsIFrame* aTextPathFrame)
   }
 
   SVGGeometryElement* geomElement =
-    SVGObserverUtils::GetAndObserveTextPathsPath(aTextPathFrame);
+      SVGObserverUtils::GetAndObserveTextPathsPath(aTextPathFrame);
   if (!geomElement) {
     return nullptr;
   }
@@ -5009,16 +4640,14 @@ SVGTextFrame::GetTextPath(nsIFrame* aTextPathFrame)
   if (!matrix.IsIdentity()) {
     
     RefPtr<PathBuilder> builder =
-      path->TransformedCopyToBuilder(ToMatrix(matrix));
+        path->TransformedCopyToBuilder(ToMatrix(matrix));
     path = builder->Finish();
   }
 
   return path.forget();
 }
 
-gfxFloat
-SVGTextFrame::GetOffsetScale(nsIFrame* aTextPathFrame)
-{
+gfxFloat SVGTextFrame::GetOffsetScale(nsIFrame* aTextPathFrame) {
   nsIContent* content = aTextPathFrame->GetContent();
   SVGTextPathElement* tp = static_cast<SVGTextPathElement*>(content);
   if (tp->mPath.IsRendered()) {
@@ -5028,33 +4657,29 @@ SVGTextFrame::GetOffsetScale(nsIFrame* aTextPathFrame)
   }
 
   SVGGeometryElement* geomElement =
-    SVGObserverUtils::GetAndObserveTextPathsPath(aTextPathFrame);
+      SVGObserverUtils::GetAndObserveTextPathsPath(aTextPathFrame);
   if (!geomElement) {
     return 1.0;
   }
   return geomElement->GetPathLengthScale(SVGGeometryElement::eForTextPath);
 }
 
-gfxFloat
-SVGTextFrame::GetStartOffset(nsIFrame* aTextPathFrame)
-{
-  SVGTextPathElement *tp =
-    static_cast<SVGTextPathElement*>(aTextPathFrame->GetContent());
-  nsSVGLength2 *length =
-    &tp->mLengthAttributes[SVGTextPathElement::STARTOFFSET];
+gfxFloat SVGTextFrame::GetStartOffset(nsIFrame* aTextPathFrame) {
+  SVGTextPathElement* tp =
+      static_cast<SVGTextPathElement*>(aTextPathFrame->GetContent());
+  nsSVGLength2* length =
+      &tp->mLengthAttributes[SVGTextPathElement::STARTOFFSET];
 
   if (length->IsPercentage()) {
     RefPtr<Path> data = GetTextPath(aTextPathFrame);
-    return data ?
-      length->GetAnimValInSpecifiedUnits() * data->ComputeLength() / 100.0 :
-      0.0;
+    return data ? length->GetAnimValInSpecifiedUnits() * data->ComputeLength() /
+                      100.0
+                : 0.0;
   }
   return length->GetAnimValue(tp) * GetOffsetScale(aTextPathFrame);
 }
 
-void
-SVGTextFrame::DoTextPathLayout()
-{
+void SVGTextFrame::DoTextPathLayout() {
   nsPresContext* context = PresContext();
 
   CharIterator it(this, CharIterator::eClusterAndLigatureGroupStart,
@@ -5080,9 +4705,9 @@ SVGTextFrame::DoTextPathLayout()
     }
 
     SVGTextPathElement* textPath =
-      static_cast<SVGTextPathElement*>(textPathFrame->GetContent());
+        static_cast<SVGTextPathElement*>(textPathFrame->GetContent());
     uint16_t side =
-      textPath->EnumAttributes()[SVGTextPathElement::SIDE].GetAnimValue();
+        textPath->EnumAttributes()[SVGTextPathElement::SIDE].GetAnimValue();
 
     gfxFloat offset = GetStartOffset(textPathFrame);
     Float pathLength = path->ComputeLength();
@@ -5091,18 +4716,18 @@ SVGTextFrame::DoTextPathLayout()
     do {
       uint32_t i = it.TextElementCharIndex();
       gfxFloat halfAdvance =
-        it.GetGlyphAdvance(context) / mFontSizeScaleFactor / 2.0;
+          it.GetGlyphAdvance(context) / mFontSizeScaleFactor / 2.0;
       gfxFloat sign = it.TextRun()->IsRightToLeft() ? -1.0 : 1.0;
       bool vertical = it.TextRun()->IsVertical();
-      gfxFloat midx = (vertical ? mPositions[i].mPosition.y
-                                : mPositions[i].mPosition.x) +
-                      sign * halfAdvance + offset;
+      gfxFloat midx =
+          (vertical ? mPositions[i].mPosition.y : mPositions[i].mPosition.x) +
+          sign * halfAdvance + offset;
 
       
       mPositions[i].mHidden = midx < 0 || midx > pathLength;
 
       
-      Point tangent; 
+      Point tangent;  
       Point pt;
       if (side == TEXTPATH_SIDETYPE_RIGHT) {
         pt = path->ComputePointAtLength(Float(pathLength - midx), &tangent);
@@ -5112,21 +4737,22 @@ SVGTextFrame::DoTextPathLayout()
       }
       Float rotation = vertical ? atan2f(-tangent.x, tangent.y)
                                 : atan2f(tangent.y, tangent.x);
-      Point normal(-tangent.y, tangent.x); 
+      Point normal(-tangent.y, tangent.x);  
       Point offsetFromPath = normal * (vertical ? -mPositions[i].mPosition.x
                                                 : mPositions[i].mPosition.y);
       pt += offsetFromPath;
       Point direction = tangent * sign;
-      mPositions[i].mPosition = ThebesPoint(pt) - ThebesPoint(direction) * halfAdvance;
+      mPositions[i].mPosition =
+          ThebesPoint(pt) - ThebesPoint(direction) * halfAdvance;
       mPositions[i].mAngle += rotation;
 
       
-      for (uint32_t j = i + 1;
-           j < mPositions.Length() && mPositions[j].mClusterOrLigatureGroupMiddle;
+      for (uint32_t j = i + 1; j < mPositions.Length() &&
+                               mPositions[j].mClusterOrLigatureGroupMiddle;
            j++) {
-        gfxPoint partialAdvance =
-          ThebesPoint(direction) * it.GetGlyphPartialAdvance(j - i, context) /
-                                                         mFontSizeScaleFactor;
+        gfxPoint partialAdvance = ThebesPoint(direction) *
+                                  it.GetGlyphPartialAdvance(j - i, context) /
+                                  mFontSizeScaleFactor;
         mPositions[j].mPosition = mPositions[i].mPosition + partialAdvance;
         mPositions[j].mAngle = mPositions[i].mAngle;
         mPositions[j].mHidden = mPositions[i].mHidden;
@@ -5137,9 +4763,7 @@ SVGTextFrame::DoTextPathLayout()
   }
 }
 
-void
-SVGTextFrame::DoAnchoring()
-{
+void SVGTextFrame::DoAnchoring() {
   nsPresContext* presContext = PresContext();
 
   CharIterator it(this, CharIterator::eOriginal,  nullptr);
@@ -5165,14 +4789,14 @@ SVGTextFrame::DoAnchoring()
     do {
       if (!it.IsOriginalCharSkipped() && !it.IsOriginalCharTrimmed()) {
         gfxFloat advance = it.GetAdvance(presContext) / mFontSizeScaleFactor;
-        gfxFloat pos =
-          it.TextRun()->IsVertical() ? mPositions[index].mPosition.y
-                                     : mPositions[index].mPosition.x;
+        gfxFloat pos = it.TextRun()->IsVertical()
+                           ? mPositions[index].mPosition.y
+                           : mPositions[index].mPosition.x;
         if (it.TextRun()->IsRightToLeft()) {
-          left  = std::min(left,  pos - advance);
+          left = std::min(left, pos - advance);
           right = std::max(right, pos);
         } else {
-          left  = std::min(left,  pos);
+          left = std::min(left, pos);
           right = std::max(right, pos + advance);
         }
       }
@@ -5182,22 +4806,18 @@ SVGTextFrame::DoAnchoring()
 
     if (left != std::numeric_limits<gfxFloat>::infinity()) {
       bool isRTL =
-        chunkFrame->StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
-      TextAnchorSide anchor =
-        ConvertLogicalTextAnchorToPhysical(chunkFrame->StyleSVG()->mTextAnchor,
-                                           isRTL);
+          chunkFrame->StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
+      TextAnchorSide anchor = ConvertLogicalTextAnchorToPhysical(
+          chunkFrame->StyleSVG()->mTextAnchor, isRTL);
 
-      ShiftAnchoredChunk(mPositions, start, end, left, right, anchor,
-                         vertical);
+      ShiftAnchoredChunk(mPositions, start, end, left, right, anchor, vertical);
     }
 
     start = it.TextElementCharIndex();
   }
 }
 
-void
-SVGTextFrame::DoGlyphPositioning()
-{
+void SVGTextFrame::DoGlyphPositioning() {
   mPositions.Clear();
   RemoveStateBits(NS_STATE_SVG_POSITIONING_DIRTY);
 
@@ -5222,11 +4842,13 @@ SVGTextFrame::DoGlyphPositioning()
 
   
   
-  SVGTextContentElement* element = static_cast<SVGTextContentElement*>(GetContent());
+  SVGTextContentElement* element =
+      static_cast<SVGTextContentElement*>(GetContent());
   nsSVGLength2* textLengthAttr =
-    element->GetAnimatedLength(nsGkAtoms::textLength);
+      element->GetAnimatedLength(nsGkAtoms::textLength);
   uint16_t lengthAdjust =
-    element->EnumAttributes()[SVGTextContentElement::LENGTHADJUST].GetAnimValue();
+      element->EnumAttributes()[SVGTextContentElement::LENGTHADJUST]
+          .GetAnimValue();
   bool adjustingTextLength = textLengthAttr->IsExplicitlySet();
   float expectedTextLength = textLengthAttr->GetAnimValue(element);
 
@@ -5268,7 +4890,8 @@ SVGTextFrame::DoGlyphPositioning()
   nsPresContext* presContext = PresContext();
   bool vertical = GetWritingMode().IsVertical();
 
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
+      presContext->AppUnitsPerDevPixel());
   double factor = cssPxPerDevPx / mFontSizeScaleFactor;
 
   
@@ -5276,10 +4899,11 @@ SVGTextFrame::DoGlyphPositioning()
   double adjustment = 0.0;
   mLengthAdjustScaleFactor = 1.0f;
   if (adjustingTextLength) {
-    nscoord frameLength = vertical ? PrincipalChildList().FirstChild()->GetRect().height
-                                   : PrincipalChildList().FirstChild()->GetRect().width;
-    float actualTextLength =
-      static_cast<float>(presContext->AppUnitsToGfxUnits(frameLength) * factor);
+    nscoord frameLength =
+        vertical ? PrincipalChildList().FirstChild()->GetRect().height
+                 : PrincipalChildList().FirstChild()->GetRect().width;
+    float actualTextLength = static_cast<float>(
+        presContext->AppUnitsToGfxUnits(frameLength) * factor);
 
     switch (lengthAdjust) {
       case LENGTHADJUST_SPACINGANDGLYPHS:
@@ -5299,7 +4923,8 @@ SVGTextFrame::DoGlyphPositioning()
           }
         }
         if (adjustableSpaces) {
-          adjustment = (expectedTextLength - actualTextLength) / adjustableSpaces;
+          adjustment =
+              (expectedTextLength - actualTextLength) / adjustableSpaces;
         }
         break;
     }
@@ -5318,8 +4943,8 @@ SVGTextFrame::DoGlyphPositioning()
     if (!mPositions[i].IsXSpecified()) {
       nscoord d = charPositions[i].x - charPositions[i - 1].x;
       mPositions[i].mPosition.x =
-        mPositions[i - 1].mPosition.x +
-        presContext->AppUnitsToGfxUnits(d) * factor * xLengthAdjustFactor;
+          mPositions[i - 1].mPosition.x +
+          presContext->AppUnitsToGfxUnits(d) * factor * xLengthAdjustFactor;
       if (!vertical && !mPositions[i].mUnaddressable) {
         mPositions[i].mPosition.x += adjustment;
       }
@@ -5328,8 +4953,8 @@ SVGTextFrame::DoGlyphPositioning()
     if (!mPositions[i].IsYSpecified()) {
       nscoord d = charPositions[i].y - charPositions[i - 1].y;
       mPositions[i].mPosition.y =
-        mPositions[i - 1].mPosition.y +
-        presContext->AppUnitsToGfxUnits(d) * factor * yLengthAdjustFactor;
+          mPositions[i - 1].mPosition.y +
+          presContext->AppUnitsToGfxUnits(d) * factor * yLengthAdjustFactor;
       if (vertical && !mPositions[i].mUnaddressable) {
         mPositions[i].mPosition.y += adjustment;
       }
@@ -5352,10 +4977,8 @@ SVGTextFrame::DoGlyphPositioning()
   DoTextPathLayout();
 }
 
-bool
-SVGTextFrame::ShouldRenderAsPath(nsTextFrame* aFrame,
-                                 bool& aShouldPaintSVGGlyphs)
-{
+bool SVGTextFrame::ShouldRenderAsPath(nsTextFrame* aFrame,
+                                      bool& aShouldPaintSVGGlyphs) {
   
   if (HasAnyStateBits(NS_STATE_SVG_CLIPPATH_CHILD)) {
     aShouldPaintSVGGlyphs = false;
@@ -5384,9 +5007,7 @@ SVGTextFrame::ShouldRenderAsPath(nsTextFrame* aFrame,
   return false;
 }
 
-void
-SVGTextFrame::ScheduleReflowSVG()
-{
+void SVGTextFrame::ScheduleReflowSVG() {
   if (mState & NS_FRAME_IS_NONDISPLAY) {
     ScheduleReflowSVGNonDisplayText(nsIPresShell::eStyleChange);
   } else {
@@ -5394,23 +5015,18 @@ SVGTextFrame::ScheduleReflowSVG()
   }
 }
 
-void
-SVGTextFrame::NotifyGlyphMetricsChange()
-{
+void SVGTextFrame::NotifyGlyphMetricsChange() {
   
   
   
   AddStateBits(NS_STATE_SVG_TEXT_CORRESPONDENCE_DIRTY |
                NS_STATE_SVG_POSITIONING_DIRTY);
-  nsLayoutUtils::PostRestyleEvent(
-    mContent->AsElement(), nsRestyleHint(0),
-    nsChangeHint_InvalidateRenderingObservers);
+  nsLayoutUtils::PostRestyleEvent(mContent->AsElement(), nsRestyleHint(0),
+                                  nsChangeHint_InvalidateRenderingObservers);
   ScheduleReflowSVG();
 }
 
-void
-SVGTextFrame::UpdateGlyphPositioning()
-{
+void SVGTextFrame::UpdateGlyphPositioning() {
   nsIFrame* kid = PrincipalChildList().FirstChild();
   if (!kid) {
     return;
@@ -5421,13 +5037,10 @@ SVGTextFrame::UpdateGlyphPositioning()
   }
 }
 
-void
-SVGTextFrame::MaybeResolveBidiForAnonymousBlockChild()
-{
+void SVGTextFrame::MaybeResolveBidiForAnonymousBlockChild() {
   nsIFrame* kid = PrincipalChildList().FirstChild();
 
-  if (kid &&
-      kid->GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION &&
+  if (kid && kid->GetStateBits() & NS_BLOCK_NEEDS_BIDI_RESOLUTION &&
       PresContext()->BidiEnabled()) {
     MOZ_ASSERT(static_cast<nsBlockFrame*>(do_QueryFrame(kid)),
                "Expect anonymous child to be an nsBlockFrame");
@@ -5435,12 +5048,9 @@ SVGTextFrame::MaybeResolveBidiForAnonymousBlockChild()
   }
 }
 
-void
-SVGTextFrame::MaybeReflowAnonymousBlockChild()
-{
+void SVGTextFrame::MaybeReflowAnonymousBlockChild() {
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (!kid)
-    return;
+  if (!kid) return;
 
   NS_ASSERTION(!(kid->GetStateBits() & NS_FRAME_IN_REFLOW),
                "should not be in reflow when about to reflow again");
@@ -5463,9 +5073,7 @@ SVGTextFrame::MaybeReflowAnonymousBlockChild()
   }
 }
 
-void
-SVGTextFrame::DoReflow()
-{
+void SVGTextFrame::DoReflow() {
   
   
   
@@ -5488,13 +5096,12 @@ SVGTextFrame::DoReflow()
     RemoveStateBits(NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN);
   }
 
-  nsPresContext *presContext = PresContext();
+  nsPresContext* presContext = PresContext();
   nsIFrame* kid = PrincipalChildList().FirstChild();
-  if (!kid)
-    return;
+  if (!kid) return;
 
   RefPtr<gfxContext> renderingContext =
-    presContext->PresShell()->CreateReferenceRenderingContext();
+      presContext->PresShell()->CreateReferenceRenderingContext();
 
   if (UpdateFontSizeScaleFactor()) {
     
@@ -5506,17 +5113,16 @@ SVGTextFrame::DoReflow()
 
   nscoord inlineSize = kid->GetPrefISize(renderingContext);
   WritingMode wm = kid->GetWritingMode();
-  ReflowInput reflowInput(presContext, kid,
-                                renderingContext,
-                                LogicalSize(wm, inlineSize,
-                                            NS_UNCONSTRAINEDSIZE));
+  ReflowInput reflowInput(presContext, kid, renderingContext,
+                          LogicalSize(wm, inlineSize, NS_UNCONSTRAINEDSIZE));
   ReflowOutput desiredSize(reflowInput);
   nsReflowStatus status;
 
-  NS_ASSERTION(reflowInput.ComputedPhysicalBorderPadding() == nsMargin(0, 0, 0, 0) &&
-               reflowInput.ComputedPhysicalMargin() == nsMargin(0, 0, 0, 0),
-               "style system should ensure that :-moz-svg-text "
-               "does not get styled");
+  NS_ASSERTION(
+      reflowInput.ComputedPhysicalBorderPadding() == nsMargin(0, 0, 0, 0) &&
+          reflowInput.ComputedPhysicalMargin() == nsMargin(0, 0, 0, 0),
+      "style system should ensure that :-moz-svg-text "
+      "does not get styled");
 
   kid->Reflow(presContext, desiredSize, reflowInput, status);
   kid->DidReflow(presContext, &reflowInput);
@@ -5528,18 +5134,15 @@ SVGTextFrame::DoReflow()
 
 #define CLAMP_MIN_SIZE 8.0
 #define CLAMP_MAX_SIZE 200.0
-#define PRECISE_SIZE   200.0
+#define PRECISE_SIZE 200.0
 
-bool
-SVGTextFrame::UpdateFontSizeScaleFactor()
-{
+bool SVGTextFrame::UpdateFontSizeScaleFactor() {
   double oldFontSizeScaleFactor = mFontSizeScaleFactor;
 
   nsPresContext* presContext = PresContext();
 
   bool geometricPrecision = false;
-  nscoord min = nscoord_MAX,
-          max = nscoord_MIN;
+  nscoord min = nscoord_MAX, max = nscoord_MIN;
 
   
   
@@ -5550,7 +5153,7 @@ SVGTextFrame::UpdateFontSizeScaleFactor()
       
       
       geometricPrecision = f->StyleText()->mTextRendering ==
-                             StyleTextRendering::Geometricprecision;
+                           StyleTextRendering::Geometricprecision;
     }
     nscoord size = f->StyleFont()->mFont.size;
     if (size) {
@@ -5594,15 +5197,14 @@ SVGTextFrame::UpdateFontSizeScaleFactor()
   
   
   
-  float cssPxPerDevPx =
-    nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
+      presContext->AppUnitsPerDevPixel());
   contextScale *= cssPxPerDevPx;
 
   double minTextRunSize = minSize * contextScale;
   double maxTextRunSize = maxSize * contextScale;
 
-  if (minTextRunSize >= CLAMP_MIN_SIZE &&
-      maxTextRunSize <= CLAMP_MAX_SIZE) {
+  if (minTextRunSize >= CLAMP_MIN_SIZE && maxTextRunSize <= CLAMP_MAX_SIZE) {
     
     
     mFontSizeScaleFactor = contextScale;
@@ -5620,9 +5222,7 @@ SVGTextFrame::UpdateFontSizeScaleFactor()
   return mFontSizeScaleFactor != oldFontSizeScaleFactor;
 }
 
-double
-SVGTextFrame::GetFontSizeScaleFactor() const
-{
+double SVGTextFrame::GetFontSizeScaleFactor() const {
   return mFontSizeScaleFactor;
 }
 
@@ -5631,13 +5231,11 @@ SVGTextFrame::GetFontSizeScaleFactor() const
 
 
 
-Point
-SVGTextFrame::TransformFramePointToTextChild(const Point& aPoint,
-                                             nsIFrame* aChildFrame)
-{
-  NS_ASSERTION(aChildFrame &&
-               nsLayoutUtils::GetClosestFrameOfType
-                 (aChildFrame->GetParent(), LayoutFrameType::SVGText) == this,
+Point SVGTextFrame::TransformFramePointToTextChild(const Point& aPoint,
+                                                   nsIFrame* aChildFrame) {
+  NS_ASSERTION(aChildFrame && nsLayoutUtils::GetClosestFrameOfType(
+                                  aChildFrame->GetParent(),
+                                  LayoutFrameType::SVGText) == this,
                "aChildFrame must be a descendant of this frame");
 
   UpdateGlyphPositioning();
@@ -5647,7 +5245,8 @@ SVGTextFrame::TransformFramePointToTextChild(const Point& aPoint,
   
   
   
-  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(presContext->AppUnitsPerDevPixel());
+  float cssPxPerDevPx = nsPresContext::AppUnitsToFloatCSSPixels(
+      presContext->AppUnitsPerDevPixel());
   float factor = AppUnitsPerCSSPixel();
   Point framePosition(NSAppUnitsToFloatPixels(mRect.x, factor),
                       NSAppUnitsToFloatPixels(mRect.y, factor));
@@ -5664,13 +5263,15 @@ SVGTextFrame::TransformFramePointToTextChild(const Point& aPoint,
     uint32_t flags = TextRenderedRun::eIncludeFill |
                      TextRenderedRun::eIncludeStroke |
                      TextRenderedRun::eNoHorizontalOverflow;
-    gfxRect runRect = run.GetRunUserSpaceRect(presContext, flags).ToThebesRect();
+    gfxRect runRect =
+        run.GetRunUserSpaceRect(presContext, flags).ToThebesRect();
 
     gfxMatrix m = run.GetTransformFromRunUserSpaceToUserSpace(presContext);
     if (!m.Invert()) {
       return aPoint;
     }
-    gfxPoint pointInRunUserSpace = m.TransformPoint(ThebesPoint(pointInUserSpace));
+    gfxPoint pointInRunUserSpace =
+        m.TransformPoint(ThebesPoint(pointInUserSpace));
 
     if (Inside(runRect, pointInRunUserSpace)) {
       
@@ -5678,14 +5279,14 @@ SVGTextFrame::TransformFramePointToTextChild(const Point& aPoint,
       dy = 0;
       pointInRun = pointInRunUserSpace;
       hit = run;
-    } else if (nsLayoutUtils::PointIsCloserToRect(pointInRunUserSpace,
-                                                  runRect, dx, dy)) {
+    } else if (nsLayoutUtils::PointIsCloserToRect(pointInRunUserSpace, runRect,
+                                                  dx, dy)) {
       
       
-      pointInRun.x = clamped(pointInRunUserSpace.x,
-                             runRect.X(), runRect.XMost());
-      pointInRun.y = clamped(pointInRunUserSpace.y,
-                             runRect.Y(), runRect.YMost());
+      pointInRun.x =
+          clamped(pointInRunUserSpace.x, runRect.X(), runRect.XMost());
+      pointInRun.y =
+          clamped(pointInRunUserSpace.y, runRect.Y(), runRect.YMost());
       hit = run;
     }
   }
@@ -5709,13 +5310,11 @@ SVGTextFrame::TransformFramePointToTextChild(const Point& aPoint,
 
 
 
-gfxRect
-SVGTextFrame::TransformFrameRectFromTextChild(const nsRect& aRect,
-                                              const nsIFrame* aChildFrame)
-{
-  NS_ASSERTION(aChildFrame &&
-               nsLayoutUtils::GetClosestFrameOfType
-                 (aChildFrame->GetParent(), LayoutFrameType::SVGText) == this,
+gfxRect SVGTextFrame::TransformFrameRectFromTextChild(
+    const nsRect& aRect, const nsIFrame* aChildFrame) {
+  NS_ASSERTION(aChildFrame && nsLayoutUtils::GetClosestFrameOfType(
+                                  aChildFrame->GetParent(),
+                                  LayoutFrameType::SVGText) == this,
                "aChildFrame must be a descendant of this frame");
 
   UpdateGlyphPositioning();
@@ -5730,18 +5329,18 @@ SVGTextFrame::TransformFrameRectFromTextChild(const nsRect& aRect,
     nsRect rectInTextFrame = aRect + aChildFrame->GetOffsetTo(run.mFrame);
 
     
-    gfxRect rectInFrameUserSpace =
-      AppUnitsToFloatCSSPixels(gfxRect(rectInTextFrame.x,
-                                       rectInTextFrame.y,
-                                       rectInTextFrame.width,
-                                       rectInTextFrame.height), presContext);
+    gfxRect rectInFrameUserSpace = AppUnitsToFloatCSSPixels(
+        gfxRect(rectInTextFrame.x, rectInTextFrame.y, rectInTextFrame.width,
+                rectInTextFrame.height),
+        presContext);
 
     
-    uint32_t flags = TextRenderedRun::eIncludeFill |
-                     TextRenderedRun::eIncludeStroke;
+    uint32_t flags =
+        TextRenderedRun::eIncludeFill | TextRenderedRun::eIncludeStroke;
 
-    if (rectInFrameUserSpace.IntersectRect(rectInFrameUserSpace,
-        run.GetFrameUserSpaceRect(presContext, flags).ToThebesRect())) {
+    if (rectInFrameUserSpace.IntersectRect(
+            rectInFrameUserSpace,
+            run.GetFrameUserSpaceRect(presContext, flags).ToThebesRect())) {
       
       
       gfxMatrix m = run.GetTransformFromRunUserSpaceToUserSpace(presContext);
@@ -5762,9 +5361,8 @@ SVGTextFrame::TransformFrameRectFromTextChild(const nsRect& aRect,
   return result - framePosition;
 }
 
-void
-SVGTextFrame::AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult)
-{
+void SVGTextFrame::AppendDirectlyOwnedAnonBoxes(
+    nsTArray<OwnedAnonBox>& aResult) {
   MOZ_ASSERT(PrincipalChildList().FirstChild(), "Must have our anon box");
   aResult.AppendElement(OwnedAnonBox(PrincipalChildList().FirstChild()));
 }

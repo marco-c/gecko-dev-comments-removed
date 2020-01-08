@@ -11,49 +11,49 @@
 
 class nsIDocument;
 
-class nsXMLPrettyPrinter : public nsStubDocumentObserver
-{
-public:
-    nsXMLPrettyPrinter();
+class nsXMLPrettyPrinter : public nsStubDocumentObserver {
+ public:
+  nsXMLPrettyPrinter();
 
-    NS_DECL_ISUPPORTS
+  NS_DECL_ISUPPORTS
 
-    
-    NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
-    NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
-    NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
-    NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-    NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
+  
+  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
+  NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED
 
-    
-
+  
 
 
 
 
 
 
-    nsresult PrettyPrint(nsIDocument* aDocument, bool* aDidPrettyPrint);
 
-    
+  nsresult PrettyPrint(nsIDocument* aDocument, bool* aDidPrettyPrint);
 
-
-    void Unhook();
-private:
-    virtual ~nsXMLPrettyPrinter();
-
-    
+  
 
 
+  void Unhook();
+
+ private:
+  virtual ~nsXMLPrettyPrinter();
+
+  
 
 
 
-    void MaybeUnhook(nsIContent* aContent);
 
-    nsIDocument* mDocument; 
-    bool mUnhookPending;
+
+  void MaybeUnhook(nsIContent* aContent);
+
+  nsIDocument* mDocument;  
+  bool mUnhookPending;
 };
 
 nsresult NS_NewXMLPrettyPrinter(nsXMLPrettyPrinter** aPrinter);
 
-#endif 
+#endif  

@@ -36,10 +36,9 @@ class nsIThread;
 namespace mozilla {
 namespace storage {
 
-class Connection final : public mozIStorageConnection
-                       , public nsIInterfaceRequestor
-{
-public:
+class Connection final : public mozIStorageConnection,
+                         public nsIInterfaceRequestor {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_MOZISTORAGEASYNCCONNECTION
   NS_DECL_MOZISTORAGECONNECTION
@@ -49,10 +48,7 @@ public:
 
 
   struct FunctionInfo {
-    enum FunctionType {
-      SIMPLE,
-      AGGREGATE
-    };
+    enum FunctionType { SIMPLE, AGGREGATE };
 
     nsCOMPtr<nsISupports> function;
     FunctionType type;
@@ -107,7 +103,7 @@ public:
   
 
 
-  nsresult initializeOnAsyncThread(nsIFile* aStorageFile);
+  nsresult initializeOnAsyncThread(nsIFile *aStorageFile);
 
   
 
@@ -119,7 +115,7 @@ public:
 
 
   int32_t getSqliteRuntimeStatus(int32_t aStatusOption,
-                                 int32_t* aMaxValue=nullptr);
+                                 int32_t *aMaxValue = nullptr);
   
 
 
@@ -128,7 +124,7 @@ public:
 
 
 
-  void setCommitHook(int (*aCallbackFn)(void *) , void *aData=nullptr) {
+  void setCommitHook(int (*aCallbackFn)(void *), void *aData = nullptr) {
     MOZ_ASSERT(mDBConn, "A connection must exist at this point");
     ::sqlite3_commit_hook(mDBConn, aCallbackFn, aData);
   };
@@ -203,8 +199,8 @@ public:
 
 
 
-  int prepareStatement(sqlite3* aNativeConnection,
-                       const nsCString &aSQL, sqlite3_stmt **_stmt);
+  int prepareStatement(sqlite3 *aNativeConnection, const nsCString &aSQL,
+                       sqlite3_stmt **_stmt);
 
   
 
@@ -216,15 +212,16 @@ public:
 
 
 
-  int stepStatement(sqlite3* aNativeConnection, sqlite3_stmt* aStatement);
+  int stepStatement(sqlite3 *aNativeConnection, sqlite3_stmt *aStatement);
 
   
 
 
 
 
-  nsresult beginTransactionInternal(sqlite3 *aNativeConnection,
-                                    int32_t aTransactionType=TRANSACTION_DEFERRED);
+  nsresult beginTransactionInternal(
+      sqlite3 *aNativeConnection,
+      int32_t aTransactionType = TRANSACTION_DEFERRED);
   nsresult commitTransactionInternal(sqlite3 *aNativeConnection);
   nsresult rollbackTransactionInternal(sqlite3 *aNativeConnection);
 
@@ -263,7 +260,8 @@ public:
   
 
 
-  bool isClosed(MutexAutoLock& lock);
+
+  bool isClosed(MutexAutoLock &lock);
 
   
 
@@ -275,7 +273,7 @@ public:
 
   nsresult initializeClone(Connection *aClone, bool aReadOnly);
 
-private:
+ private:
   ~Connection();
   nsresult initializeInternal();
   void initializeFailed();
@@ -306,10 +304,7 @@ private:
 
 
 
-  enum DatabaseElementType {
-    INDEX,
-    TABLE
-  };
+  enum DatabaseElementType { INDEX, TABLE };
 
   
 
@@ -321,8 +316,7 @@ private:
 
 
   nsresult databaseElementExists(enum DatabaseElementType aElementType,
-                                 const nsACString& aElementName,
-                                 bool *_exists);
+                                 const nsACString &aElementName, bool *_exists);
 
   bool findFunctionByInstance(nsISupports *aInstance);
 
@@ -434,25 +428,20 @@ private:
 
 
 
-
-class CallbackComplete final : public Runnable
-{
-public:
+class CallbackComplete final : public Runnable {
+ public:
   
 
 
 
 
 
-  CallbackComplete(nsresult aStatus,
-                   nsISupports* aValue,
+  CallbackComplete(nsresult aStatus, nsISupports *aValue,
                    already_AddRefed<mozIStorageCompletionCallback> aCallback)
-    : Runnable("storage::CallbackComplete")
-    , mStatus(aStatus)
-    , mValue(aValue)
-    , mCallback(aCallback)
-  {
-  }
+      : Runnable("storage::CallbackComplete"),
+        mStatus(aStatus),
+        mValue(aValue),
+        mCallback(aCallback) {}
 
   NS_IMETHOD Run() override {
     MOZ_ASSERT(NS_IsMainThread());
@@ -464,7 +453,7 @@ public:
     return rv;
   }
 
-private:
+ private:
   nsresult mStatus;
   nsCOMPtr<nsISupports> mValue;
   
@@ -473,17 +462,15 @@ private:
   RefPtr<mozIStorageCompletionCallback> mCallback;
 };
 
-} 
-} 
+}  
+}  
 
 
 
 
 
-inline nsISupports*
-ToSupports(mozilla::storage::Connection* p)
-{
-  return NS_ISUPPORTS_CAST(mozIStorageAsyncConnection*, p);
+inline nsISupports *ToSupports(mozilla::storage::Connection *p) {
+  return NS_ISUPPORTS_CAST(mozIStorageAsyncConnection *, p);
 }
 
-#endif 
+#endif  

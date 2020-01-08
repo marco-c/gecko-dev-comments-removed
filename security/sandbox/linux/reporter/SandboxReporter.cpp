@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <time.h> 
+#include <time.h>  
 
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -35,22 +35,18 @@ namespace mozilla {
 StaticAutoPtr<SandboxReporter> SandboxReporter::sSingleton;
 
 SandboxReporter::SandboxReporter()
-  : mClientFd(-1)
-  , mServerFd(-1)
-  , mMutex("SandboxReporter")
-  , mBuffer(MakeUnique<SandboxReport[]>(kSandboxReporterBufferSize))
-  , mCount(0)
-{
-}
+    : mClientFd(-1),
+      mServerFd(-1),
+      mMutex("SandboxReporter"),
+      mBuffer(MakeUnique<SandboxReport[]>(kSandboxReporterBufferSize)),
+      mCount(0) {}
 
-bool
-SandboxReporter::Init()
-{
+bool SandboxReporter::Init() {
   int fds[2];
 
   if (0 != socketpair(AF_UNIX, SOCK_SEQPACKET | SOCK_CLOEXEC, 0, fds)) {
     SANDBOX_LOG_ERROR("SandboxReporter: socketpair failed: %s",
-		      strerror(errno));
+                      strerror(errno));
     return false;
   }
   mClientFd = fds[0];
@@ -68,8 +64,7 @@ SandboxReporter::Init()
   return true;
 }
 
-SandboxReporter::~SandboxReporter()
-{
+SandboxReporter::~SandboxReporter() {
   if (mServerFd < 0) {
     return;
   }
@@ -79,9 +74,7 @@ SandboxReporter::~SandboxReporter()
   close(mClientFd);
 }
 
- SandboxReporter*
-SandboxReporter::Singleton()
-{
+ SandboxReporter* SandboxReporter::Singleton() {
   static StaticMutex sMutex;
   StaticMutexAutoLock lock(sMutex);
 
@@ -101,14 +94,13 @@ SandboxReporter::Singleton()
     
     
     NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "SandboxReporter::Singleton", [] { ClearOnShutdown(&sSingleton); }));
+        "SandboxReporter::Singleton", [] { ClearOnShutdown(&sSingleton); }));
   }
   return sSingleton.get();
 }
 
-void
-SandboxReporter::GetClientFileDescriptorMapping(int* aSrcFd, int* aDstFd) const
-{
+void SandboxReporter::GetClientFileDescriptorMapping(int* aSrcFd,
+                                                     int* aDstFd) const {
   MOZ_ASSERT(mClientFd >= 0);
   *aSrcFd = mClientFd;
   *aDstFd = kSandboxReporterFileDesc;
@@ -116,9 +108,7 @@ SandboxReporter::GetClientFileDescriptorMapping(int* aSrcFd, int* aDstFd) const
 
 
 
-static void
-SubmitToTelemetry(const SandboxReport& aReport)
-{
+static void SubmitToTelemetry(const SandboxReport& aReport) {
   nsAutoCString key;
   
   
@@ -133,21 +123,21 @@ SubmitToTelemetry(const SandboxReport& aReport)
   
 
   switch (aReport.mProcType) {
-  case SandboxReport::ProcType::CONTENT:
-    key.AppendLiteral("content");
-    break;
-  case SandboxReport::ProcType::MEDIA_PLUGIN:
-    key.AppendLiteral("gmp");
-    break;
-  case SandboxReport::ProcType::FILE:
-    key.AppendLiteral("file");
-    break;
-  default:
-    MOZ_ASSERT(false);
+    case SandboxReport::ProcType::CONTENT:
+      key.AppendLiteral("content");
+      break;
+    case SandboxReport::ProcType::MEDIA_PLUGIN:
+      key.AppendLiteral("gmp");
+      break;
+    case SandboxReport::ProcType::FILE:
+      key.AppendLiteral("file");
+      break;
+    default:
+      MOZ_ASSERT(false);
   }
   key.Append(':');
 
-  switch(aReport.mSyscall) {
+  switch (aReport.mSyscall) {
     
     
     
@@ -169,64 +159,62 @@ SubmitToTelemetry(const SandboxReport& aReport)
 
     
     
-#define ARG_DECIMAL(name, idx)           \
-    case __NR_##name:                    \
-      key.AppendLiteral(#name ":");      \
-      key.AppendInt(aReport.mArgs[idx]); \
-      break
+#define ARG_DECIMAL(name, idx)         \
+  case __NR_##name:                    \
+    key.AppendLiteral(#name ":");      \
+    key.AppendInt(aReport.mArgs[idx]); \
+    break
 
     
-#define ARG_HEX(name, idx)                    \
-    case __NR_##name:                         \
-      key.AppendLiteral(#name ":0x");         \
-      key.AppendInt(aReport.mArgs[idx], 16);  \
-      break
+#define ARG_HEX(name, idx)                 \
+  case __NR_##name:                        \
+    key.AppendLiteral(#name ":0x");        \
+    key.AppendInt(aReport.mArgs[idx], 16); \
+    break
 
     
     
     
-#define ARG_CLOCKID(name, idx)                              \
-    case __NR_##name:                                       \
-      key.AppendLiteral(#name ":");                         \
-      if (static_cast<clockid_t>(aReport.mArgs[idx]) < 0) { \
-        key.AppendLiteral("dynamic");                       \
-      } else {                                              \
-        key.AppendInt(aReport.mArgs[idx]);                  \
-      }                                                     \
-      break
+#define ARG_CLOCKID(name, idx)                            \
+  case __NR_##name:                                       \
+    key.AppendLiteral(#name ":");                         \
+    if (static_cast<clockid_t>(aReport.mArgs[idx]) < 0) { \
+      key.AppendLiteral("dynamic");                       \
+    } else {                                              \
+      key.AppendInt(aReport.mArgs[idx]);                  \
+    }                                                     \
+    break
 
     
 
-    ARG_HEX(clone, 0); 
-    ARG_DECIMAL(prctl, 0); 
-    ARG_HEX(ioctl, 1); 
-    ARG_DECIMAL(fcntl, 1); 
-    ARG_DECIMAL(madvise, 2); 
-    ARG_CLOCKID(clock_gettime, 0); 
+    ARG_HEX(clone, 0);              
+    ARG_DECIMAL(prctl, 0);          
+    ARG_HEX(ioctl, 1);              
+    ARG_DECIMAL(fcntl, 1);          
+    ARG_DECIMAL(madvise, 2);        
+    ARG_CLOCKID(clock_gettime, 0);  
 
 #ifdef __NR_socketcall
-    ARG_DECIMAL(socketcall, 0); 
+    ARG_DECIMAL(socketcall, 0);  
 #endif
 #ifdef __NR_ipc
-    ARG_DECIMAL(ipc, 0); 
+    ARG_DECIMAL(ipc, 0);  
 #endif
 
 #undef ARG_DECIMAL
 #undef ARG_HEX
 #undef ARG_CLOCKID
 
-  default:
-    
-    key.Append(SANDBOX_ARCH_NAME "/");
-    key.AppendInt(aReport.mSyscall);
+    default:
+      
+      key.Append(SANDBOX_ARCH_NAME "/");
+      key.AppendInt(aReport.mSyscall);
   }
 
   Telemetry::Accumulate(Telemetry::SANDBOX_REJECTED_SYSCALLS, key);
 }
 
-void
-SandboxReporter::AddOne(const SandboxReport& aReport)
-{
+void SandboxReporter::AddOne(const SandboxReport& aReport) {
   SubmitToTelemetry(aReport);
 
   MutexAutoLock lock(mMutex);
@@ -234,12 +222,10 @@ SandboxReporter::AddOne(const SandboxReport& aReport)
   ++mCount;
 }
 
-void
-SandboxReporter::ThreadMain(void)
-{
+void SandboxReporter::ThreadMain(void) {
   
   
-  (void) NS_GetCurrentThread();
+  (void)NS_GetCurrentThread();
 
   for (;;) {
     SandboxReport rep;
@@ -255,7 +241,7 @@ SandboxReporter::ThreadMain(void)
     const auto recvd = recvmsg(mServerFd, &msg, 0);
     if (recvd < 0) {
       if (errno == EINTR) {
-	continue;
+        continue;
       }
       SANDBOX_LOG_ERROR("SandboxReporter: recvmsg: %s", strerror(errno));
     }
@@ -264,8 +250,8 @@ SandboxReporter::ThreadMain(void)
     }
 
     if (static_cast<size_t>(recvd) < sizeof(rep)) {
-      SANDBOX_LOG_ERROR("SandboxReporter: packet too short (%d < %d)",
-			recvd, sizeof(rep));
+      SANDBOX_LOG_ERROR("SandboxReporter: packet too short (%d < %d)", recvd,
+                        sizeof(rep));
       continue;
     }
     if (msg.msg_flags & MSG_TRUNC) {
@@ -277,9 +263,7 @@ SandboxReporter::ThreadMain(void)
   }
 }
 
-SandboxReporter::Snapshot
-SandboxReporter::GetSnapshot()
-{
+SandboxReporter::Snapshot SandboxReporter::GetSnapshot() {
   Snapshot snapshot;
   MutexAutoLock lock(mMutex);
 
@@ -296,4 +280,4 @@ SandboxReporter::GetSnapshot()
   return snapshot;
 }
 
-} 
+}  

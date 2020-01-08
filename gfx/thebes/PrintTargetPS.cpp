@@ -11,33 +11,29 @@
 namespace mozilla {
 namespace gfx {
 
-static cairo_status_t
-write_func(void *closure, const unsigned char *data, unsigned int length)
-{
+static cairo_status_t write_func(void* closure, const unsigned char* data,
+                                 unsigned int length) {
   nsCOMPtr<nsIOutputStream> out = reinterpret_cast<nsIOutputStream*>(closure);
   do {
     uint32_t wrote = 0;
     if (NS_FAILED(out->Write((const char*)data, length, &wrote))) {
       break;
     }
-    data += wrote; length -= wrote;
+    data += wrote;
+    length -= wrote;
   } while (length > 0);
   NS_ASSERTION(length == 0, "not everything was written to the file");
   return CAIRO_STATUS_SUCCESS;
 }
 
 PrintTargetPS::PrintTargetPS(cairo_surface_t* aCairoSurface,
-                             const IntSize& aSize,
-                             nsIOutputStream *aStream,
+                             const IntSize& aSize, nsIOutputStream* aStream,
                              PageOrientation aOrientation)
-  : PrintTarget(aCairoSurface, aSize)
-  , mStream(aStream)
-  , mOrientation(aOrientation)
-{
-}
+    : PrintTarget(aCairoSurface, aSize),
+      mStream(aStream),
+      mOrientation(aOrientation) {}
 
-PrintTargetPS::~PrintTargetPS()
-{
+PrintTargetPS::~PrintTargetPS() {
   
   
   
@@ -48,11 +44,9 @@ PrintTargetPS::~PrintTargetPS()
   Finish();
 }
 
- already_AddRefed<PrintTargetPS>
-PrintTargetPS::CreateOrNull(nsIOutputStream *aStream,
-                            IntSize aSizeInPoints,
-                            PageOrientation aOrientation)
-{
+ already_AddRefed<PrintTargetPS> PrintTargetPS::CreateOrNull(
+    nsIOutputStream* aStream, IntSize aSizeInPoints,
+    PageOrientation aOrientation) {
   
   
   
@@ -62,27 +56,22 @@ PrintTargetPS::CreateOrNull(nsIOutputStream *aStream,
     Swap(aSizeInPoints.width, aSizeInPoints.height);
   }
 
-  cairo_surface_t* surface =
-    cairo_ps_surface_create_for_stream(write_func, (void*)aStream,
-                                       aSizeInPoints.width,
-                                       aSizeInPoints.height);
+  cairo_surface_t* surface = cairo_ps_surface_create_for_stream(
+      write_func, (void*)aStream, aSizeInPoints.width, aSizeInPoints.height);
   if (cairo_surface_status(surface)) {
     return nullptr;
   }
   cairo_ps_surface_restrict_to_level(surface, CAIRO_PS_LEVEL_2);
 
   
-  RefPtr<PrintTargetPS> target = new PrintTargetPS(surface, aSizeInPoints,
-                                                   aStream, aOrientation);
+  RefPtr<PrintTargetPS> target =
+      new PrintTargetPS(surface, aSizeInPoints, aStream, aOrientation);
   return target.forget();
 }
 
-nsresult
-PrintTargetPS::BeginPrinting(const nsAString& aTitle,
-                             const nsAString& aPrintToFileName,
-                             int32_t aStartPage,
-                             int32_t aEndPage)
-{
+nsresult PrintTargetPS::BeginPrinting(const nsAString& aTitle,
+                                      const nsAString& aPrintToFileName,
+                                      int32_t aStartPage, int32_t aEndPage) {
   if (mOrientation == PORTRAIT) {
     cairo_ps_surface_dsc_comment(mCairoSurface, "%%Orientation: Portrait");
   } else {
@@ -91,22 +80,18 @@ PrintTargetPS::BeginPrinting(const nsAString& aTitle,
   return NS_OK;
 }
 
-nsresult
-PrintTargetPS::EndPage()
-{
+nsresult PrintTargetPS::EndPage() {
   cairo_surface_show_page(mCairoSurface);
   return NS_OK;
 }
 
-void
-PrintTargetPS::Finish()
-{
+void PrintTargetPS::Finish() {
   if (mIsFinished) {
-    return; 
+    return;  
   }
   PrintTarget::Finish();
   mStream->Close();
 }
 
-} 
-} 
+}  
+}  

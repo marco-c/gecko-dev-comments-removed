@@ -13,17 +13,9 @@
 using namespace mozilla;
 
 static const char* const kJunkNames[] = {
-  nullptr,
-  "",
-  "123",
-  "backgroundz",
-  "zzzzzz",
-  "#@$&@#*@*$@$#"
-};
+    nullptr, "", "123", "backgroundz", "zzzzzz", "#@$&@#*@*$@$#"};
 
-bool
-TestKeywords()
-{
+bool TestKeywords() {
   nsCSSKeywords::AddRefTable();
 
   bool success = true;
@@ -35,8 +27,8 @@ TestKeywords()
   
   
   
-  const char*const*  et = &kCSSRawKeywords[0];
-  const char*const*  end = &kCSSRawKeywords[eCSSKeyword_COUNT - 1];
+  const char* const* et = &kCSSRawKeywords[0];
+  const char* const* end = &kCSSRawKeywords[eCSSKeyword_COUNT - 1];
   index = eCSSKeyword_UNKNOWN;
   while (et < end) {
     char tagName[512];
@@ -78,7 +70,7 @@ TestKeywords()
   }
 
   
-  for (int i = 0; i < (int) (sizeof(kJunkNames) / sizeof(const char*)); i++) {
+  for (int i = 0; i < (int)(sizeof(kJunkNames) / sizeof(const char*)); i++) {
     const char* const tag = kJunkNames[i];
     id = nsCSSKeywords::LookupKeyword(nsAutoCString(tag));
     if (eCSSKeyword_UNKNOWN < id) {
@@ -91,9 +83,7 @@ TestKeywords()
   return success;
 }
 
-int
-main(void)
-{
+int main(void) {
   nsresult rv = NS_InitXPCOM2(nullptr, nullptr, nullptr);
   NS_ENSURE_SUCCESS(rv, 2);
 

@@ -20,7 +20,7 @@
 #include "mozilla/UniquePtr.h"
 
 #include "nsCOMPtr.h"
-#include "nsXULAppAPI.h"        
+#include "nsXULAppAPI.h"  
 #include "nsString.h"
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
@@ -30,13 +30,12 @@
 namespace mozilla {
 namespace ipc {
 
-class GeckoChildProcessHost : public ChildProcessHost
-{
-protected:
+class GeckoChildProcessHost : public ChildProcessHost {
+ protected:
   typedef mozilla::Monitor Monitor;
   typedef std::vector<std::string> StringVector;
 
-public:
+ public:
   typedef base::ProcessHandle ProcessHandle;
 
   explicit GeckoChildProcessHost(GeckoProcessType aProcessType,
@@ -50,7 +49,7 @@ public:
   
   
   
-  bool AsyncLaunch(StringVector aExtraOpts=StringVector());
+  bool AsyncLaunch(StringVector aExtraOpts = StringVector());
 
   virtual bool WaitUntilConnected(int32_t aTimeoutMs = 0);
 
@@ -66,13 +65,13 @@ public:
   
   
   
-  bool LaunchAndWaitForProcessHandle(StringVector aExtraOpts=StringVector());
+  bool LaunchAndWaitForProcessHandle(StringVector aExtraOpts = StringVector());
 
   
   
   
-  bool SyncLaunch(StringVector aExtraOpts=StringVector(),
-                  int32_t timeoutMs=0);
+  bool SyncLaunch(StringVector aExtraOpts = StringVector(),
+                  int32_t timeoutMs = 0);
 
   virtual void OnChannelConnected(int32_t peer_pid) override;
   virtual void OnMessageReceived(IPC::Message&& aMsg) override;
@@ -92,24 +91,16 @@ public:
 
   virtual bool CanShutdown() override { return true; }
 
-  IPC::Channel* GetChannel() {
-    return channelp();
-  }
+  IPC::Channel* GetChannel() { return channelp(); }
 
   
   
-  ProcessHandle GetChildProcessHandle() {
-    return mChildProcessHandle;
-  }
+  ProcessHandle GetChildProcessHandle() { return mChildProcessHandle; }
 
-  GeckoProcessType GetProcessType() {
-    return mProcessType;
-  }
+  GeckoProcessType GetProcessType() { return mProcessType; }
 
 #ifdef XP_MACOSX
-  task_t GetChildTask() {
-    return mChildTask;
-  }
+  task_t GetChildTask() { return mChildTask; }
 #endif
 
 #ifdef XP_WIN
@@ -131,9 +122,11 @@ public:
   
   void SetAlreadyDead();
 
-  static void EnableSameExecutableForContentProc() { sRunSelfAsContentProc = true; }
+  static void EnableSameExecutableForContentProc() {
+    sRunSelfAsContentProc = true;
+  }
 
-protected:
+ protected:
   GeckoProcessType mProcessType;
   bool mIsFileContent;
   Monitor mMonitor;
@@ -175,7 +168,7 @@ protected:
   bool mEnableSandboxLogging;
   int32_t mSandboxLevel;
 #endif
-#endif 
+#endif  
 
   ProcessHandle mChildProcessHandle;
 #if defined(OS_MACOSX)
@@ -185,7 +178,7 @@ protected:
 
   bool OpenPrivilegedHandle(base::ProcessId aPid);
 
-private:
+ private:
   DISALLOW_EVIL_CONSTRUCTORS(GeckoChildProcessHost);
 
   
@@ -196,16 +189,14 @@ private:
   
   bool RunPerformAsyncLaunch(StringVector aExtraOpts);
 
-  enum class BinaryPathType {
-    Self,
-    PluginContainer
-  };
+  enum class BinaryPathType { Self, PluginContainer };
 
-  static BinaryPathType GetPathToBinary(FilePath& exePath, GeckoProcessType processType);
+  static BinaryPathType GetPathToBinary(FilePath& exePath,
+                                        GeckoProcessType processType);
 
   
   
-  void GetChildLogName(const char* origLogName, nsACString &buffer);
+  void GetChildLogName(const char* origLogName, nsACString& buffer);
 
   
   
@@ -226,12 +217,11 @@ private:
   static bool sRunSelfAsContentProc;
 
 #if defined(MOZ_WIDGET_ANDROID)
-  void LaunchAndroidService(const char* type,
-                            const std::vector<std::string>& argv,
-                            const base::file_handle_mapping_vector& fds_to_remap,
-                            ProcessHandle* process_handle);
-#endif 
-
+  void LaunchAndroidService(
+      const char* type, const std::vector<std::string>& argv,
+      const base::file_handle_mapping_vector& fds_to_remap,
+      ProcessHandle* process_handle);
+#endif  
 };
 
 } 

@@ -17,16 +17,12 @@ class Accessible;
 
 namespace filters {
 
-enum EResult {
-  eSkip = 0,
-  eMatch = 1,
-  eSkipSubtree = 2
-};
+enum EResult { eSkip = 0, eMatch = 1, eSkipSubtree = 2 };
 
 
 
 
-typedef uint32_t (*FilterFuncPtr) (Accessible*);
+typedef uint32_t (*FilterFuncPtr)(Accessible*);
 
 
 
@@ -43,8 +39,8 @@ uint32_t GetRow(Accessible* aAccessible);
 
 
 uint32_t GetCell(Accessible* aAccessible);
-} 
-} 
-} 
+}  
+}  
+}  
 
 #endif

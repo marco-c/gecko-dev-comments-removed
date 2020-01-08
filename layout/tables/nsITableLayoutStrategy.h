@@ -18,42 +18,42 @@
 class gfxContext;
 namespace mozilla {
 struct ReflowInput;
-} 
+}  
 
-class nsITableLayoutStrategy
-{
-public:
-    using ReflowInput = mozilla::ReflowInput;
+class nsITableLayoutStrategy {
+ public:
+  using ReflowInput = mozilla::ReflowInput;
 
-    virtual ~nsITableLayoutStrategy() {}
+  virtual ~nsITableLayoutStrategy() {}
 
-    
-    virtual nscoord GetMinISize(gfxContext* aRenderingContext) = 0;
+  
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) = 0;
 
-    
-    virtual nscoord GetPrefISize(gfxContext* aRenderingContext,
-                                 bool aComputingSize) = 0;
+  
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext,
+                               bool aComputingSize) = 0;
 
-    
-    virtual void MarkIntrinsicISizesDirty() = 0;
+  
+  virtual void MarkIntrinsicISizesDirty() = 0;
 
-    
-
-
-
-    virtual void ComputeColumnISizes(const ReflowInput& aReflowInput) = 0;
-
-    
+  
 
 
 
-    enum Type { Auto, Fixed };
-    Type GetType() const { return mType; }
+  virtual void ComputeColumnISizes(const ReflowInput& aReflowInput) = 0;
 
-protected:
-    explicit nsITableLayoutStrategy(Type aType) : mType(aType) {}
-private:
-    Type mType;
+  
+
+
+
+  enum Type { Auto, Fixed };
+  Type GetType() const { return mType; }
+
+ protected:
+  explicit nsITableLayoutStrategy(Type aType) : mType(aType) {}
+
+ private:
+  Type mType;
 };
 
 #endif 

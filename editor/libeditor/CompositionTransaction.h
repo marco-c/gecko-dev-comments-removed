@@ -6,13 +6,16 @@
 #ifndef CompositionTransaction_h
 #define CompositionTransaction_h
 
-#include "mozilla/EditTransactionBase.h"  
-#include "nsCycleCollectionParticipant.h" 
-#include "nsString.h"                     
+#include "mozilla/EditTransactionBase.h"   
+#include "nsCycleCollectionParticipant.h"  
+#include "nsString.h"                      
 
-#define NS_IMETEXTTXN_IID \
-  { 0xb391355d, 0x346c, 0x43d1, \
-    { 0x85, 0xed, 0x9e, 0x65, 0xbe, 0xe7, 0x7e, 0x48 } }
+#define NS_IMETEXTTXN_IID                            \
+  {                                                  \
+    0xb391355d, 0x346c, 0x43d1, {                    \
+      0x85, 0xed, 0x9e, 0x65, 0xbe, 0xe7, 0x7e, 0x48 \
+    }                                                \
+  }
 
 namespace mozilla {
 
@@ -22,7 +25,7 @@ class TextRangeArray;
 
 namespace dom {
 class Text;
-} 
+}  
 
 
 
@@ -30,15 +33,13 @@ class Text;
 
 
 
-class CompositionTransaction final : public EditTransactionBase
-{
-protected:
+class CompositionTransaction final : public EditTransactionBase {
+ protected:
   CompositionTransaction(EditorBase& aEditorBase,
-                         const nsAString& aStringToInsert,
-                         dom::Text& aTextNode,
+                         const nsAString& aStringToInsert, dom::Text& aTextNode,
                          uint32_t aOffset);
 
-public:
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IMETEXTTXN_IID)
 
   
@@ -55,11 +56,9 @@ public:
 
 
 
-  static already_AddRefed<CompositionTransaction>
-  Create(EditorBase& aEditorBase,
-         const nsAString& aStringToInsert,
-         dom::Text& aTextNode,
-         uint32_t aOffset);
+  static already_AddRefed<CompositionTransaction> Create(
+      EditorBase& aEditorBase, const nsAString& aStringToInsert,
+      dom::Text& aTextNode, uint32_t aOffset);
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CompositionTransaction,
                                            EditTransactionBase)
@@ -72,13 +71,12 @@ public:
 
   void MarkFixed();
 
-  static nsresult SetIMESelection(EditorBase& aEditorBase,
-                                  dom::Text* aTextNode,
+  static nsresult SetIMESelection(EditorBase& aEditorBase, dom::Text* aTextNode,
                                   uint32_t aOffsetInNode,
                                   uint32_t aLengthOfCompositionString,
                                   const TextRangeArray* aRanges);
 
-private:
+ private:
   ~CompositionTransaction();
 
   nsresult SetSelectionForRanges();
@@ -105,6 +103,6 @@ private:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(CompositionTransaction, NS_IMETEXTTXN_IID)
 
-} 
+}  
 
-#endif 
+#endif  

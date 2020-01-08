@@ -15,7 +15,7 @@ namespace gfx {
 void BufferUnrotate(uint8_t* aBuffer, int aByteWidth, int aHeight,
                     int aByteStride, int aXByteBoundary, int aYBoundary);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

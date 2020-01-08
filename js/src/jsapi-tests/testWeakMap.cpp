@@ -11,256 +11,234 @@
 
 JSObject* keyDelegate = nullptr;
 
-BEGIN_TEST(testWeakMap_basicOperations)
-{
-    JS::RootedObject map(cx, JS::NewWeakMapObject(cx));
-    CHECK(IsWeakMapObject(map));
+BEGIN_TEST(testWeakMap_basicOperations) {
+  JS::RootedObject map(cx, JS::NewWeakMapObject(cx));
+  CHECK(IsWeakMapObject(map));
 
-    JS::RootedObject key(cx, newKey());
-    CHECK(key);
-    CHECK(!IsWeakMapObject(key));
+  JS::RootedObject key(cx, newKey());
+  CHECK(key);
+  CHECK(!IsWeakMapObject(key));
 
-    JS::RootedValue r(cx);
-    CHECK(GetWeakMapEntry(cx, map, key, &r));
-    CHECK(r.isUndefined());
+  JS::RootedValue r(cx);
+  CHECK(GetWeakMapEntry(cx, map, key, &r));
+  CHECK(r.isUndefined());
 
-    CHECK(checkSize(map, 0));
+  CHECK(checkSize(map, 0));
 
-    JS::RootedValue val(cx, JS::Int32Value(1));
-    CHECK(SetWeakMapEntry(cx, map, key, val));
+  JS::RootedValue val(cx, JS::Int32Value(1));
+  CHECK(SetWeakMapEntry(cx, map, key, val));
 
-    CHECK(GetWeakMapEntry(cx, map, key, &r));
-    CHECK(r == val);
-    CHECK(checkSize(map, 1));
+  CHECK(GetWeakMapEntry(cx, map, key, &r));
+  CHECK(r == val);
+  CHECK(checkSize(map, 1));
 
-    JS_GC(cx);
+  JS_GC(cx);
 
-    CHECK(GetWeakMapEntry(cx, map, key, &r));
-    CHECK(r == val);
-    CHECK(checkSize(map, 1));
+  CHECK(GetWeakMapEntry(cx, map, key, &r));
+  CHECK(r == val);
+  CHECK(checkSize(map, 1));
 
-    key = nullptr;
-    JS_GC(cx);
+  key = nullptr;
+  JS_GC(cx);
 
-    CHECK(checkSize(map, 0));
+  CHECK(checkSize(map, 0));
 
-    return true;
+  return true;
 }
 
-JSObject* newKey()
-{
-    return JS_NewPlainObject(cx);
-}
+JSObject* newKey() { return JS_NewPlainObject(cx); }
 
-bool
-checkSize(JS::HandleObject map, uint32_t expected)
-{
-    JS::RootedObject keys(cx);
-    CHECK(JS_NondeterministicGetWeakMapKeys(cx, map, &keys));
+bool checkSize(JS::HandleObject map, uint32_t expected) {
+  JS::RootedObject keys(cx);
+  CHECK(JS_NondeterministicGetWeakMapKeys(cx, map, &keys));
 
-    uint32_t length;
-    CHECK(JS_GetArrayLength(cx, keys, &length));
-    CHECK(length == expected);
+  uint32_t length;
+  CHECK(JS_GetArrayLength(cx, keys, &length));
+  CHECK(length == expected);
 
-    return true;
+  return true;
 }
 END_TEST(testWeakMap_basicOperations)
 
-BEGIN_TEST(testWeakMap_keyDelegates)
-{
+BEGIN_TEST(testWeakMap_keyDelegates) {
 #ifdef JS_GC_ZEAL
-    AutoLeaveZeal nozeal(cx);
+  AutoLeaveZeal nozeal(cx);
 #endif 
 
-    JS_SetGCParameter(cx, JSGC_MODE, JSGC_MODE_INCREMENTAL);
-    JS_GC(cx);
-    JS::RootedObject map(cx, JS::NewWeakMapObject(cx));
-    CHECK(map);
+  JS_SetGCParameter(cx, JSGC_MODE, JSGC_MODE_INCREMENTAL);
+  JS_GC(cx);
+  JS::RootedObject map(cx, JS::NewWeakMapObject(cx));
+  CHECK(map);
 
-    JS::RootedObject key(cx, newKey());
-    CHECK(key);
+  JS::RootedObject key(cx, newKey());
+  CHECK(key);
 
-    JS::RootedObject delegate(cx, newDelegate());
-    CHECK(delegate);
-    keyDelegate = delegate;
+  JS::RootedObject delegate(cx, newDelegate());
+  CHECK(delegate);
+  keyDelegate = delegate;
 
-    JS::RootedObject delegateRoot(cx);
-    {
-        JSAutoRealm ar(cx, delegate);
-        delegateRoot = JS_NewPlainObject(cx);
-        CHECK(delegateRoot);
-        JS::RootedValue delegateValue(cx, JS::ObjectValue(*delegate));
-        CHECK(JS_DefineProperty(cx, delegateRoot, "delegate", delegateValue, 0));
-    }
-    delegate = nullptr;
+  JS::RootedObject delegateRoot(cx);
+  {
+    JSAutoRealm ar(cx, delegate);
+    delegateRoot = JS_NewPlainObject(cx);
+    CHECK(delegateRoot);
+    JS::RootedValue delegateValue(cx, JS::ObjectValue(*delegate));
+    CHECK(JS_DefineProperty(cx, delegateRoot, "delegate", delegateValue, 0));
+  }
+  delegate = nullptr;
 
-    
+  
 
 
 
-    CHECK(newCCW(map, delegateRoot));
-    js::SliceBudget budget(js::WorkBudget(1000000));
-    cx->runtime()->gc.startDebugGC(GC_NORMAL, budget);
-    while (JS::IsIncrementalGCInProgress(cx)) {
-        cx->runtime()->gc.debugGCSlice(budget);
-    }
+  CHECK(newCCW(map, delegateRoot));
+  js::SliceBudget budget(js::WorkBudget(1000000));
+  cx->runtime()->gc.startDebugGC(GC_NORMAL, budget);
+  while (JS::IsIncrementalGCInProgress(cx)) {
+    cx->runtime()->gc.debugGCSlice(budget);
+  }
 #ifdef DEBUG
-    CHECK(map->zone()->lastSweepGroupIndex() < delegateRoot->zone()->lastSweepGroupIndex());
+  CHECK(map->zone()->lastSweepGroupIndex() <
+        delegateRoot->zone()->lastSweepGroupIndex());
 #endif
 
-    
-    JS::RootedValue val(cx, JS::Int32Value(1));
-    CHECK(SetWeakMapEntry(cx, map, key, val));
-    CHECK(checkSize(map, 1));
+  
+  JS::RootedValue val(cx, JS::Int32Value(1));
+  CHECK(SetWeakMapEntry(cx, map, key, val));
+  CHECK(checkSize(map, 1));
 
-    
-    key = nullptr;
-    CHECK(newCCW(map, delegateRoot));
-    budget = js::SliceBudget(js::WorkBudget(100000));
-    cx->runtime()->gc.startDebugGC(GC_NORMAL, budget);
-    while (JS::IsIncrementalGCInProgress(cx)) {
-        cx->runtime()->gc.debugGCSlice(budget);
-    }
-    CHECK(checkSize(map, 1));
+  
 
-    
+  key = nullptr;
+  CHECK(newCCW(map, delegateRoot));
+  budget = js::SliceBudget(js::WorkBudget(100000));
+  cx->runtime()->gc.startDebugGC(GC_NORMAL, budget);
+  while (JS::IsIncrementalGCInProgress(cx)) {
+    cx->runtime()->gc.debugGCSlice(budget);
+  }
+  CHECK(checkSize(map, 1));
+
+  
 
 
 
 #ifdef DEBUG
-    CHECK(map->zone()->lastSweepGroupIndex() == delegateRoot->zone()->lastSweepGroupIndex());
+  CHECK(map->zone()->lastSweepGroupIndex() ==
+        delegateRoot->zone()->lastSweepGroupIndex());
 #endif
 
-    
-    delegateRoot = nullptr;
-    keyDelegate = nullptr;
-    JS_GC(cx);
-    CHECK(checkSize(map, 0));
+  
+  delegateRoot = nullptr;
+  keyDelegate = nullptr;
+  JS_GC(cx);
+  CHECK(checkSize(map, 0));
 
-    return true;
+  return true;
 }
 
-static size_t
-DelegateObjectMoved(JSObject* obj, JSObject* old)
-{
-    if (!keyDelegate) {
-        return 0;  
+static size_t DelegateObjectMoved(JSObject* obj, JSObject* old) {
+  if (!keyDelegate) {
+    return 0;  
+  }
+
+  MOZ_RELEASE_ASSERT(keyDelegate == old);
+  keyDelegate = obj;
+  return 0;
+}
+
+static JSObject* GetKeyDelegate(JSObject* obj) { return keyDelegate; }
+
+JSObject* newKey() {
+  static const js::ClassExtension keyClassExtension = {GetKeyDelegate};
+
+  static const js::Class keyClass = {
+      "keyWithDelegate",  JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
+      JS_NULL_CLASS_OPS,  JS_NULL_CLASS_SPEC,
+      &keyClassExtension, JS_NULL_OBJECT_OPS};
+
+  JS::RootedObject key(cx, JS_NewObject(cx, Jsvalify(&keyClass)));
+  if (!key) {
+    return nullptr;
+  }
+
+  return key;
+}
+
+JSObject* newCCW(JS::HandleObject sourceZone, JS::HandleObject destZone) {
+  
+
+
+
+
+  JS::RootedObject object(cx);
+  {
+    JSAutoRealm ar(cx, destZone);
+    object = JS_NewPlainObject(cx);
+    if (!object) {
+      return nullptr;
     }
-
-    MOZ_RELEASE_ASSERT(keyDelegate == old);
-    keyDelegate = obj;
-    return 0;
-}
-
-static JSObject* GetKeyDelegate(JSObject* obj)
-{
-    return keyDelegate;
-}
-
-JSObject* newKey()
-{
-    static const js::ClassExtension keyClassExtension = {
-        GetKeyDelegate
-    };
-
-    static const js::Class keyClass = {
-        "keyWithDelegate",
-        JSCLASS_HAS_PRIVATE | JSCLASS_HAS_RESERVED_SLOTS(1),
-        JS_NULL_CLASS_OPS,
-        JS_NULL_CLASS_SPEC,
-        &keyClassExtension,
-        JS_NULL_OBJECT_OPS
-    };
-
-    JS::RootedObject key(cx, JS_NewObject(cx, Jsvalify(&keyClass)));
-    if (!key) {
-        return nullptr;
+  }
+  {
+    JSAutoRealm ar(cx, sourceZone);
+    if (!JS_WrapObject(cx, &object)) {
+      return nullptr;
     }
+  }
 
-    return key;
+  
+  
+  cx->runtime()->gc.evictNursery();
+
+  return object;
 }
 
-JSObject* newCCW(JS::HandleObject sourceZone, JS::HandleObject destZone)
-{
-    
+JSObject* newDelegate() {
+  static const js::ClassOps delegateClassOps = {
+      nullptr, 
+      nullptr, 
+      nullptr, 
+      nullptr, 
+      nullptr, 
+      nullptr, 
+      nullptr, 
+      nullptr, 
+      nullptr, 
+      nullptr, 
+      JS_GlobalObjectTraceHook,
+  };
 
+  static const js::ClassExtension delegateClassExtension = {
+      nullptr, DelegateObjectMoved};
 
+  static const js::Class delegateClass = {
+      "delegate",
+      JSCLASS_GLOBAL_FLAGS | JSCLASS_HAS_RESERVED_SLOTS(1),
+      &delegateClassOps,
+      JS_NULL_CLASS_SPEC,
+      &delegateClassExtension,
+      JS_NULL_OBJECT_OPS};
 
+  
+  JS::RealmOptions options;
+  JS::RootedObject global(
+      cx, JS_NewGlobalObject(cx, Jsvalify(&delegateClass), nullptr,
+                             JS::FireOnNewGlobalHook, options));
+  if (!global) {
+    return nullptr;
+  }
 
-    JS::RootedObject object(cx);
-    {
-        JSAutoRealm ar(cx, destZone);
-        object = JS_NewPlainObject(cx);
-        if (!object) {
-            return nullptr;
-        }
-    }
-    {
-        JSAutoRealm ar(cx, sourceZone);
-        if (!JS_WrapObject(cx, &object)) {
-            return nullptr;
-        }
-    }
-
-    
-    
-    cx->runtime()->gc.evictNursery();
-
-    return object;
+  JS_SetReservedSlot(global, 0, JS::Int32Value(42));
+  return global;
 }
 
-JSObject* newDelegate()
-{
-    static const js::ClassOps delegateClassOps = {
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        nullptr, 
-        JS_GlobalObjectTraceHook,
-    };
+bool checkSize(JS::HandleObject map, uint32_t expected) {
+  JS::RootedObject keys(cx);
+  CHECK(JS_NondeterministicGetWeakMapKeys(cx, map, &keys));
 
-    static const js::ClassExtension delegateClassExtension = {
-        nullptr,
-        DelegateObjectMoved
-    };
+  uint32_t length;
+  CHECK(JS_GetArrayLength(cx, keys, &length));
+  CHECK(length == expected);
 
-    static const js::Class delegateClass = {
-        "delegate",
-        JSCLASS_GLOBAL_FLAGS | JSCLASS_HAS_RESERVED_SLOTS(1),
-        &delegateClassOps,
-        JS_NULL_CLASS_SPEC,
-        &delegateClassExtension,
-        JS_NULL_OBJECT_OPS
-    };
-
-    
-    JS::RealmOptions options;
-    JS::RootedObject global(cx, JS_NewGlobalObject(cx, Jsvalify(&delegateClass), nullptr,
-                                                   JS::FireOnNewGlobalHook, options));
-    if (!global) {
-        return nullptr;
-    }
-
-    JS_SetReservedSlot(global, 0, JS::Int32Value(42));
-    return global;
-}
-
-bool
-checkSize(JS::HandleObject map, uint32_t expected)
-{
-    JS::RootedObject keys(cx);
-    CHECK(JS_NondeterministicGetWeakMapKeys(cx, map, &keys));
-
-    uint32_t length;
-    CHECK(JS_GetArrayLength(cx, keys, &length));
-    CHECK(length == expected);
-
-    return true;
+  return true;
 }
 END_TEST(testWeakMap_keyDelegates)

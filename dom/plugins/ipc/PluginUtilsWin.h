@@ -20,8 +20,8 @@ namespace PluginUtilsWin {
 nsresult RegisterForAudioDeviceChanges(PluginModuleParent* aModuleParent,
                                        bool aShouldRegister);
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

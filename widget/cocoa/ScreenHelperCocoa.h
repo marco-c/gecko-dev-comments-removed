@@ -15,9 +15,8 @@
 namespace mozilla {
 namespace widget {
 
-class ScreenHelperCocoa final : public ScreenManager::Helper
-{
-public:
+class ScreenHelperCocoa final : public ScreenManager::Helper {
+ public:
   ScreenHelperCocoa();
   ~ScreenHelperCocoa() override;
 
@@ -25,11 +24,11 @@ public:
 
   static NSScreen* CocoaScreenForScreen(nsIScreen* aScreen);
 
-private:
+ private:
   ScreenHelperDelegate* mDelegate;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

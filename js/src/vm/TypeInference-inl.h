@@ -15,7 +15,7 @@
 #include "mozilla/Casting.h"
 #include "mozilla/PodOperations.h"
 
-#include <utility> 
+#include <utility>  
 
 #include "builtin/Symbol.h"
 #include "gc/GC.h"
@@ -42,209 +42,180 @@ namespace js {
 
 
 
-jit::IonScript*
-RecompileInfo::maybeIonScriptToInvalidate(const TypeZone& zone) const
-{
-    MOZ_ASSERT(script_->zone() == zone.zone());
+jit::IonScript* RecompileInfo::maybeIonScriptToInvalidate(
+    const TypeZone& zone) const {
+  MOZ_ASSERT(script_->zone() == zone.zone());
 
-    
-    
-    MOZ_ASSERT_IF(zone.currentCompilationId(), zone.currentCompilationId().ref() != id_);
+  
+  
+  MOZ_ASSERT_IF(zone.currentCompilationId(),
+                zone.currentCompilationId().ref() != id_);
 
-    if (!script_->hasIonScript() || script_->ionScript()->compilationId() != id_) {
-        return nullptr;
-    }
+  if (!script_->hasIonScript() ||
+      script_->ionScript()->compilationId() != id_) {
+    return nullptr;
+  }
 
-    return script_->ionScript();
+  return script_->ionScript();
 }
 
-inline bool
-RecompileInfo::shouldSweep(const TypeZone& zone)
-{
-    if (IsAboutToBeFinalizedUnbarriered(&script_)) {
-        return true;
-    }
+inline bool RecompileInfo::shouldSweep(const TypeZone& zone) {
+  if (IsAboutToBeFinalizedUnbarriered(&script_)) {
+    return true;
+  }
 
-    MOZ_ASSERT(script_->zone() == zone.zone());
+  MOZ_ASSERT(script_->zone() == zone.zone());
 
-    
-    
-    if (zone.currentCompilationId() && zone.currentCompilationId().ref() == id_) {
-        return false;
-    }
+  
+  
+  if (zone.currentCompilationId() && zone.currentCompilationId().ref() == id_) {
+    return false;
+  }
 
-    return maybeIonScriptToInvalidate(zone) == nullptr;
+  return maybeIonScriptToInvalidate(zone) == nullptr;
 }
 
 
 
 
 
- inline TypeSet::ObjectKey*
-TypeSet::ObjectKey::get(JSObject* obj)
-{
-    MOZ_ASSERT(obj);
-    if (obj->isSingleton()) {
-        return (ObjectKey*) (uintptr_t(obj) | 1);
-    }
-    return (ObjectKey*) obj->group();
+ inline TypeSet::ObjectKey* TypeSet::ObjectKey::get(JSObject* obj) {
+  MOZ_ASSERT(obj);
+  if (obj->isSingleton()) {
+    return (ObjectKey*)(uintptr_t(obj) | 1);
+  }
+  return (ObjectKey*)obj->group();
 }
 
- inline TypeSet::ObjectKey*
-TypeSet::ObjectKey::get(ObjectGroup* group)
-{
-    MOZ_ASSERT(group);
-    if (group->singleton()) {
-        return (ObjectKey*) (uintptr_t(group->singleton()) | 1);
-    }
-    return (ObjectKey*) group;
+ inline TypeSet::ObjectKey* TypeSet::ObjectKey::get(
+    ObjectGroup* group) {
+  MOZ_ASSERT(group);
+  if (group->singleton()) {
+    return (ObjectKey*)(uintptr_t(group->singleton()) | 1);
+  }
+  return (ObjectKey*)group;
 }
 
-inline ObjectGroup*
-TypeSet::ObjectKey::groupNoBarrier()
-{
-    MOZ_ASSERT(isGroup());
-    return (ObjectGroup*) this;
+inline ObjectGroup* TypeSet::ObjectKey::groupNoBarrier() {
+  MOZ_ASSERT(isGroup());
+  return (ObjectGroup*)this;
 }
 
-inline JSObject*
-TypeSet::ObjectKey::singletonNoBarrier()
-{
-    MOZ_ASSERT(isSingleton());
-    return (JSObject*) (uintptr_t(this) & ~1);
+inline JSObject* TypeSet::ObjectKey::singletonNoBarrier() {
+  MOZ_ASSERT(isSingleton());
+  return (JSObject*)(uintptr_t(this) & ~1);
 }
 
-inline ObjectGroup*
-TypeSet::ObjectKey::group()
-{
-    ObjectGroup* res = groupNoBarrier();
-    ObjectGroup::readBarrier(res);
-    return res;
+inline ObjectGroup* TypeSet::ObjectKey::group() {
+  ObjectGroup* res = groupNoBarrier();
+  ObjectGroup::readBarrier(res);
+  return res;
 }
 
-inline JSObject*
-TypeSet::ObjectKey::singleton()
-{
-    JSObject* res = singletonNoBarrier();
-    JSObject::readBarrier(res);
-    return res;
+inline JSObject* TypeSet::ObjectKey::singleton() {
+  JSObject* res = singletonNoBarrier();
+  JSObject::readBarrier(res);
+  return res;
 }
 
-inline JS::Compartment*
-TypeSet::ObjectKey::maybeCompartment()
-{
-    if (isSingleton()) {
-        return singletonNoBarrier()->compartment();
-    }
+inline JS::Compartment* TypeSet::ObjectKey::maybeCompartment() {
+  if (isSingleton()) {
+    return singletonNoBarrier()->compartment();
+  }
 
-    return groupNoBarrier()->compartment();
+  return groupNoBarrier()->compartment();
 }
 
- inline TypeSet::Type
-TypeSet::ObjectType(const JSObject* obj)
-{
-    if (obj->isSingleton()) {
-        return Type(uintptr_t(obj) | 1);
-    }
-    return Type(uintptr_t(obj->group()));
+ inline TypeSet::Type TypeSet::ObjectType(const JSObject* obj) {
+  if (obj->isSingleton()) {
+    return Type(uintptr_t(obj) | 1);
+  }
+  return Type(uintptr_t(obj->group()));
 }
 
- inline TypeSet::Type
-TypeSet::ObjectType(const ObjectGroup* group)
-{
-    if (group->singleton()) {
-        return Type(uintptr_t(group->singleton()) | 1);
-    }
-    return Type(uintptr_t(group));
+ inline TypeSet::Type TypeSet::ObjectType(
+    const ObjectGroup* group) {
+  if (group->singleton()) {
+    return Type(uintptr_t(group->singleton()) | 1);
+  }
+  return Type(uintptr_t(group));
 }
 
- inline TypeSet::Type
-TypeSet::ObjectType(const ObjectKey* obj)
-{
-    return Type(uintptr_t(obj));
+ inline TypeSet::Type TypeSet::ObjectType(const ObjectKey* obj) {
+  return Type(uintptr_t(obj));
 }
 
-inline TypeSet::Type
-TypeSet::GetValueType(const Value& val)
-{
-    if (val.isDouble()) {
-        return TypeSet::DoubleType();
-    }
-    if (val.isObject()) {
-        return TypeSet::ObjectType(&val.toObject());
-    }
-    return TypeSet::PrimitiveType(val.extractNonDoubleType());
+inline TypeSet::Type TypeSet::GetValueType(const Value& val) {
+  if (val.isDouble()) {
+    return TypeSet::DoubleType();
+  }
+  if (val.isObject()) {
+    return TypeSet::ObjectType(&val.toObject());
+  }
+  return TypeSet::PrimitiveType(val.extractNonDoubleType());
 }
 
-inline bool
-TypeSet::IsUntrackedValue(const Value& val)
-{
-    return val.isMagic() && (val.whyMagic() == JS_OPTIMIZED_OUT ||
-                             val.whyMagic() == JS_UNINITIALIZED_LEXICAL);
+inline bool TypeSet::IsUntrackedValue(const Value& val) {
+  return val.isMagic() && (val.whyMagic() == JS_OPTIMIZED_OUT ||
+                           val.whyMagic() == JS_UNINITIALIZED_LEXICAL);
 }
 
-inline TypeSet::Type
-TypeSet::GetMaybeUntrackedValueType(const Value& val)
-{
-    return IsUntrackedValue(val) ? UnknownType() : GetValueType(val);
+inline TypeSet::Type TypeSet::GetMaybeUntrackedValueType(const Value& val) {
+  return IsUntrackedValue(val) ? UnknownType() : GetValueType(val);
 }
 
-inline TypeFlags
-PrimitiveTypeFlag(JSValueType type)
-{
-    switch (type) {
-      case JSVAL_TYPE_UNDEFINED:
-        return TYPE_FLAG_UNDEFINED;
-      case JSVAL_TYPE_NULL:
-        return TYPE_FLAG_NULL;
-      case JSVAL_TYPE_BOOLEAN:
-        return TYPE_FLAG_BOOLEAN;
-      case JSVAL_TYPE_INT32:
-        return TYPE_FLAG_INT32;
-      case JSVAL_TYPE_DOUBLE:
-        return TYPE_FLAG_DOUBLE;
-      case JSVAL_TYPE_STRING:
-        return TYPE_FLAG_STRING;
-      case JSVAL_TYPE_SYMBOL:
-        return TYPE_FLAG_SYMBOL;
+inline TypeFlags PrimitiveTypeFlag(JSValueType type) {
+  switch (type) {
+    case JSVAL_TYPE_UNDEFINED:
+      return TYPE_FLAG_UNDEFINED;
+    case JSVAL_TYPE_NULL:
+      return TYPE_FLAG_NULL;
+    case JSVAL_TYPE_BOOLEAN:
+      return TYPE_FLAG_BOOLEAN;
+    case JSVAL_TYPE_INT32:
+      return TYPE_FLAG_INT32;
+    case JSVAL_TYPE_DOUBLE:
+      return TYPE_FLAG_DOUBLE;
+    case JSVAL_TYPE_STRING:
+      return TYPE_FLAG_STRING;
+    case JSVAL_TYPE_SYMBOL:
+      return TYPE_FLAG_SYMBOL;
 #ifdef ENABLE_BIGINT
-      case JSVAL_TYPE_BIGINT:
-        return TYPE_FLAG_BIGINT;
+    case JSVAL_TYPE_BIGINT:
+      return TYPE_FLAG_BIGINT;
 #endif
-      case JSVAL_TYPE_MAGIC:
-        return TYPE_FLAG_LAZYARGS;
-      default:
-        MOZ_CRASH("Bad JSValueType");
-    }
+    case JSVAL_TYPE_MAGIC:
+      return TYPE_FLAG_LAZYARGS;
+    default:
+      MOZ_CRASH("Bad JSValueType");
+  }
 }
 
-inline JSValueType
-TypeFlagPrimitive(TypeFlags flags)
-{
-    switch (flags) {
-      case TYPE_FLAG_UNDEFINED:
-        return JSVAL_TYPE_UNDEFINED;
-      case TYPE_FLAG_NULL:
-        return JSVAL_TYPE_NULL;
-      case TYPE_FLAG_BOOLEAN:
-        return JSVAL_TYPE_BOOLEAN;
-      case TYPE_FLAG_INT32:
-        return JSVAL_TYPE_INT32;
-      case TYPE_FLAG_DOUBLE:
-        return JSVAL_TYPE_DOUBLE;
-      case TYPE_FLAG_STRING:
-        return JSVAL_TYPE_STRING;
-      case TYPE_FLAG_SYMBOL:
-        return JSVAL_TYPE_SYMBOL;
+inline JSValueType TypeFlagPrimitive(TypeFlags flags) {
+  switch (flags) {
+    case TYPE_FLAG_UNDEFINED:
+      return JSVAL_TYPE_UNDEFINED;
+    case TYPE_FLAG_NULL:
+      return JSVAL_TYPE_NULL;
+    case TYPE_FLAG_BOOLEAN:
+      return JSVAL_TYPE_BOOLEAN;
+    case TYPE_FLAG_INT32:
+      return JSVAL_TYPE_INT32;
+    case TYPE_FLAG_DOUBLE:
+      return JSVAL_TYPE_DOUBLE;
+    case TYPE_FLAG_STRING:
+      return JSVAL_TYPE_STRING;
+    case TYPE_FLAG_SYMBOL:
+      return JSVAL_TYPE_SYMBOL;
 #ifdef ENABLE_BIGINT
-      case TYPE_FLAG_BIGINT:
-        return JSVAL_TYPE_BIGINT;
+    case TYPE_FLAG_BIGINT:
+      return JSVAL_TYPE_BIGINT;
 #endif
-      case TYPE_FLAG_LAZYARGS:
-        return JSVAL_TYPE_MAGIC;
-      default:
-        MOZ_CRASH("Bad TypeFlags");
-    }
+    case TYPE_FLAG_LAZYARGS:
+      return JSVAL_TYPE_MAGIC;
+    default:
+      MOZ_CRASH("Bad TypeFlags");
+  }
 }
 
 
@@ -252,26 +223,22 @@ TypeFlagPrimitive(TypeFlags flags)
 
 
 
-inline jsid
-IdToTypeId(jsid id)
-{
-    MOZ_ASSERT(!JSID_IS_EMPTY(id));
+inline jsid IdToTypeId(jsid id) {
+  MOZ_ASSERT(!JSID_IS_EMPTY(id));
 
-    
-    
-    return JSID_IS_INT(id) ? JSID_VOID : id;
+  
+  
+  return JSID_IS_INT(id) ? JSID_VOID : id;
 }
 
-const char * TypeIdStringImpl(jsid id);
+const char* TypeIdStringImpl(jsid id);
 
 
-static inline const char*
-TypeIdString(jsid id)
-{
+static inline const char* TypeIdString(jsid id) {
 #ifdef DEBUG
-    return TypeIdStringImpl(id);
+  return TypeIdStringImpl(id);
 #else
-    return "(missing)";
+  return "(missing)";
 #endif
 }
 
@@ -313,121 +280,109 @@ TypeIdString(jsid id)
 
 
 
-class TypeNewScript
-{
-  private:
-    
-    HeapPtr<JSFunction*> function_ = {};
+class TypeNewScript {
+ private:
+  
+  HeapPtr<JSFunction*> function_ = {};
 
-    
-    
-    PreliminaryObjectArray* preliminaryObjects = nullptr;
+  
+  
+  PreliminaryObjectArray* preliminaryObjects = nullptr;
 
-    
-    
-    
-    
-    
-    
-    HeapPtr<PlainObject*> templateObject_ = {};
+  
+  
+  
+  
+  
+  
+  HeapPtr<PlainObject*> templateObject_ = {};
 
-    
-    
-    
-    
-    
-    
-    
-    
-    TypeNewScriptInitializer* initializerList = nullptr;
+  
+  
+  
+  
+  
+  
+  
+  
+  TypeNewScriptInitializer* initializerList = nullptr;
 
-    
-    
-    
-    
-    
-    HeapPtr<Shape*> initializedShape_ = {};
+  
+  
+  
+  
+  
+  HeapPtr<Shape*> initializedShape_ = {};
 
-    
-    
-    HeapPtr<ObjectGroup*> initializedGroup_ = {};
+  
+  
+  HeapPtr<ObjectGroup*> initializedGroup_ = {};
 
-  public:
-    TypeNewScript() = default;
+ public:
+  TypeNewScript() = default;
 
-    ~TypeNewScript() {
-        js_delete(preliminaryObjects);
-        js_free(initializerList);
-    }
+  ~TypeNewScript() {
+    js_delete(preliminaryObjects);
+    js_free(initializerList);
+  }
 
-    void clear() {
-        function_ = nullptr;
-        templateObject_ = nullptr;
-        initializedShape_ = nullptr;
-        initializedGroup_ = nullptr;
-    }
+  void clear() {
+    function_ = nullptr;
+    templateObject_ = nullptr;
+    initializedShape_ = nullptr;
+    initializedGroup_ = nullptr;
+  }
 
-    static void writeBarrierPre(TypeNewScript* newScript);
+  static void writeBarrierPre(TypeNewScript* newScript);
 
-    bool analyzed() const {
-        return preliminaryObjects == nullptr;
-    }
+  bool analyzed() const { return preliminaryObjects == nullptr; }
 
-    PlainObject* templateObject() const {
-        return templateObject_;
-    }
+  PlainObject* templateObject() const { return templateObject_; }
 
-    Shape* initializedShape() const {
-        return initializedShape_;
-    }
+  Shape* initializedShape() const { return initializedShape_; }
 
-    ObjectGroup* initializedGroup() const {
-        return initializedGroup_;
-    }
+  ObjectGroup* initializedGroup() const { return initializedGroup_; }
 
-    JSFunction* function() const {
-        return function_;
-    }
+  JSFunction* function() const { return function_; }
 
-    void trace(JSTracer* trc);
-    void sweep();
+  void trace(JSTracer* trc);
+  void sweep();
 
-    void registerNewObject(PlainObject* res);
-    bool maybeAnalyze(JSContext* cx, ObjectGroup* group, bool* regenerate, bool force = false);
+  void registerNewObject(PlainObject* res);
+  bool maybeAnalyze(JSContext* cx, ObjectGroup* group, bool* regenerate,
+                    bool force = false);
 
-    bool rollbackPartiallyInitializedObjects(JSContext* cx, ObjectGroup* group);
+  bool rollbackPartiallyInitializedObjects(JSContext* cx, ObjectGroup* group);
 
-    static bool make(JSContext* cx, ObjectGroup* group, JSFunction* fun);
-    static TypeNewScript* makeNativeVersion(JSContext* cx, TypeNewScript* newScript,
-                                            PlainObject* templateObject);
+  static bool make(JSContext* cx, ObjectGroup* group, JSFunction* fun);
+  static TypeNewScript* makeNativeVersion(JSContext* cx,
+                                          TypeNewScript* newScript,
+                                          PlainObject* templateObject);
 
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
-    static size_t offsetOfPreliminaryObjects() {
-        return offsetof(TypeNewScript, preliminaryObjects);
-    }
+  static size_t offsetOfPreliminaryObjects() {
+    return offsetof(TypeNewScript, preliminaryObjects);
+  }
 };
 
-inline
-UnboxedLayout::~UnboxedLayout()
-{
-    if (newScript_) {
-        newScript_->clear();
-    }
-    js_delete(newScript_);
-    js_free(traceList_);
+inline UnboxedLayout::~UnboxedLayout() {
+  if (newScript_) {
+    newScript_->clear();
+  }
+  js_delete(newScript_);
+  js_free(traceList_);
 
-    nativeGroup_.init(nullptr);
-    nativeShape_.init(nullptr);
-    replacementGroup_.init(nullptr);
-    constructorCode_.init(nullptr);
+  nativeGroup_.init(nullptr);
+  nativeShape_.init(nullptr);
+  replacementGroup_.init(nullptr);
+  constructorCode_.init(nullptr);
 }
 
-inline bool
-ObjectGroup::hasUnanalyzedPreliminaryObjects()
-{
-    return (newScriptDontCheckGeneration() && !newScriptDontCheckGeneration()->analyzed()) ||
-           maybePreliminaryObjectsDontCheckGeneration();
+inline bool ObjectGroup::hasUnanalyzedPreliminaryObjects() {
+  return (newScriptDontCheckGeneration() &&
+          !newScriptDontCheckGeneration()->analyzed()) ||
+         maybePreliminaryObjectsDontCheckGeneration();
 }
 
 
@@ -439,67 +394,62 @@ ObjectGroup::hasUnanalyzedPreliminaryObjects()
 
 
 
-struct MOZ_RAII AutoEnterAnalysis
-{
-    
-    
-    UniquePtr<UnboxedLayout> unboxedLayoutToCleanUp;
+struct MOZ_RAII AutoEnterAnalysis {
+  
+  
+  UniquePtr<UnboxedLayout> unboxedLayoutToCleanUp;
 
-    
-    gc::AutoSuppressGC suppressGC;
+  
+  gc::AutoSuppressGC suppressGC;
 
-    
-    
-    mozilla::Maybe<AutoClearTypeInferenceStateOnOOM> oom;
+  
+  
+  mozilla::Maybe<AutoClearTypeInferenceStateOnOOM> oom;
 
-    
-    RecompileInfoVector pendingRecompiles;
+  
+  RecompileInfoVector pendingRecompiles;
 
-    
-    js::AutoSuppressAllocationMetadataBuilder suppressMetadata;
+  
+  js::AutoSuppressAllocationMetadataBuilder suppressMetadata;
 
-    FreeOp* freeOp;
-    Zone* zone;
+  FreeOp* freeOp;
+  Zone* zone;
 
-    explicit AutoEnterAnalysis(JSContext* cx)
-      : suppressGC(cx), suppressMetadata(cx)
-    {
-        init(cx->defaultFreeOp(), cx->zone());
+  explicit AutoEnterAnalysis(JSContext* cx)
+      : suppressGC(cx), suppressMetadata(cx) {
+    init(cx->defaultFreeOp(), cx->zone());
+  }
+
+  AutoEnterAnalysis(FreeOp* fop, Zone* zone)
+      : suppressGC(TlsContext.get()), suppressMetadata(zone) {
+    init(fop, zone);
+  }
+
+  ~AutoEnterAnalysis() {
+    if (this != zone->types.activeAnalysis) {
+      return;
     }
 
-    AutoEnterAnalysis(FreeOp* fop, Zone* zone)
-      : suppressGC(TlsContext.get()),
-        suppressMetadata(zone)
-    {
-        init(fop, zone);
+    zone->types.activeAnalysis = nullptr;
+
+    if (!pendingRecompiles.empty()) {
+      zone->types.processPendingRecompiles(freeOp, pendingRecompiles);
     }
+  }
 
-    ~AutoEnterAnalysis()
-    {
-        if (this != zone->types.activeAnalysis) {
-            return;
-        }
-
-        zone->types.activeAnalysis = nullptr;
-
-        if (!pendingRecompiles.empty()) {
-            zone->types.processPendingRecompiles(freeOp, pendingRecompiles);
-        }
-    }
-
-  private:
-    void init(FreeOp* fop, Zone* zone) {
+ private:
+  void init(FreeOp* fop, Zone* zone) {
 #ifdef JS_CRASH_DIAGNOSTICS
-        MOZ_RELEASE_ASSERT(CurrentThreadCanAccessZone(zone));
+    MOZ_RELEASE_ASSERT(CurrentThreadCanAccessZone(zone));
 #endif
-        this->freeOp = fop;
-        this->zone = zone;
+    this->freeOp = fop;
+    this->zone = zone;
 
-        if (!zone->types.activeAnalysis) {
-            oom.emplace(zone);
-            zone->types.activeAnalysis = this;
-        }
+    if (!zone->types.activeAnalysis) {
+      oom.emplace(zone);
+      zone->types.activeAnalysis = this;
     }
+  }
 };
 
 
@@ -515,199 +465,180 @@ void TypeMonitorCallSlow(JSContext* cx, JSObject* callee, const CallArgs& args,
 
 
 
-inline void
-TypeMonitorCall(JSContext* cx, const js::CallArgs& args, bool constructing)
-{
-    if (args.callee().is<JSFunction>()) {
-        JSFunction* fun = &args.callee().as<JSFunction>();
-        if (fun->isInterpreted()) {
-            AutoSweepTypeScript sweep(fun->nonLazyScript());
-            if (fun->nonLazyScript()->types(sweep)) {
-                TypeMonitorCallSlow(cx, &args.callee(), args, constructing);
-            }
-        }
+inline void TypeMonitorCall(JSContext* cx, const js::CallArgs& args,
+                            bool constructing) {
+  if (args.callee().is<JSFunction>()) {
+    JSFunction* fun = &args.callee().as<JSFunction>();
+    if (fun->isInterpreted()) {
+      AutoSweepTypeScript sweep(fun->nonLazyScript());
+      if (fun->nonLazyScript()->types(sweep)) {
+        TypeMonitorCallSlow(cx, &args.callee(), args, constructing);
+      }
     }
+  }
 }
 
-MOZ_ALWAYS_INLINE bool
-TrackPropertyTypes(JSObject* obj, jsid id)
-{
-    if (obj->hasLazyGroup() || obj->group()->unknownPropertiesDontCheckGeneration()) {
-        return false;
-    }
-
-    if (obj->isSingleton() && !obj->group()->maybeGetPropertyDontCheckGeneration(id)) {
-        return false;
-    }
-
-    return true;
-}
-
-void
-EnsureTrackPropertyTypes(JSContext* cx, JSObject* obj, jsid id);
-
-inline bool
-CanHaveEmptyPropertyTypesForOwnProperty(JSObject* obj)
-{
-    
-    
-    
-    return obj->is<GlobalObject>();
-}
-
-inline bool
-PropertyHasBeenMarkedNonConstant(JSObject* obj, jsid id)
-{
-    
-    if (!obj->isSingleton()) {
-        return true;
-    }
-
-    
-    AutoSweepObjectGroup sweep(obj->group());
-    if (obj->group()->unknownProperties(sweep)) {
-        return true;
-    }
-    HeapTypeSet* types = obj->group()->maybeGetProperty(sweep, IdToTypeId(id));
-    return types->nonConstantProperty();
-}
-
-MOZ_ALWAYS_INLINE bool
-HasTrackedPropertyType(JSObject* obj, jsid id, TypeSet::Type type)
-{
-    MOZ_ASSERT(id == IdToTypeId(id));
-    MOZ_ASSERT(TrackPropertyTypes(obj, id));
-
-    if (HeapTypeSet* types = obj->group()->maybeGetPropertyDontCheckGeneration(id)) {
-        if (!types->hasType(type)) {
-            return false;
-        }
-        
-        if (obj->isSingleton() && !types->nonConstantProperty()) {
-            return false;
-        }
-        return true;
-    }
-
+MOZ_ALWAYS_INLINE bool TrackPropertyTypes(JSObject* obj, jsid id) {
+  if (obj->hasLazyGroup() ||
+      obj->group()->unknownPropertiesDontCheckGeneration()) {
     return false;
+  }
+
+  if (obj->isSingleton() &&
+      !obj->group()->maybeGetPropertyDontCheckGeneration(id)) {
+    return false;
+  }
+
+  return true;
 }
 
-MOZ_ALWAYS_INLINE bool
-HasTypePropertyId(JSObject* obj, jsid id, TypeSet::Type type)
-{
-    id = IdToTypeId(id);
-    if (!TrackPropertyTypes(obj, id)) {
-        return true;
+void EnsureTrackPropertyTypes(JSContext* cx, JSObject* obj, jsid id);
+
+inline bool CanHaveEmptyPropertyTypesForOwnProperty(JSObject* obj) {
+  
+  
+  
+  return obj->is<GlobalObject>();
+}
+
+inline bool PropertyHasBeenMarkedNonConstant(JSObject* obj, jsid id) {
+  
+  if (!obj->isSingleton()) {
+    return true;
+  }
+
+  
+  AutoSweepObjectGroup sweep(obj->group());
+  if (obj->group()->unknownProperties(sweep)) {
+    return true;
+  }
+  HeapTypeSet* types = obj->group()->maybeGetProperty(sweep, IdToTypeId(id));
+  return types->nonConstantProperty();
+}
+
+MOZ_ALWAYS_INLINE bool HasTrackedPropertyType(JSObject* obj, jsid id,
+                                              TypeSet::Type type) {
+  MOZ_ASSERT(id == IdToTypeId(id));
+  MOZ_ASSERT(TrackPropertyTypes(obj, id));
+
+  if (HeapTypeSet* types =
+          obj->group()->maybeGetPropertyDontCheckGeneration(id)) {
+    if (!types->hasType(type)) {
+      return false;
     }
-
-    return HasTrackedPropertyType(obj, id, type);
-}
-
-MOZ_ALWAYS_INLINE bool
-HasTypePropertyId(JSObject* obj, jsid id, const Value& value)
-{
-    return HasTypePropertyId(obj, id, TypeSet::GetValueType(value));
-}
-
-void AddTypePropertyId(JSContext* cx, ObjectGroup* group, JSObject* obj, jsid id, TypeSet::Type type);
-void AddTypePropertyId(JSContext* cx, ObjectGroup* group, JSObject* obj, jsid id, const Value& value);
-
-
-MOZ_ALWAYS_INLINE void
-AddTypePropertyId(JSContext* cx, JSObject* obj, jsid id, TypeSet::Type type)
-{
-    id = IdToTypeId(id);
-    if (TrackPropertyTypes(obj, id) && !HasTrackedPropertyType(obj, id, type)) {
-        AddTypePropertyId(cx, obj->group(), obj, id, type);
+    
+    if (obj->isSingleton() && !types->nonConstantProperty()) {
+      return false;
     }
+    return true;
+  }
+
+  return false;
 }
 
-MOZ_ALWAYS_INLINE void
-AddTypePropertyId(JSContext* cx, JSObject* obj, jsid id, const Value& value)
-{
-    return AddTypePropertyId(cx, obj, id, TypeSet::GetValueType(value));
+MOZ_ALWAYS_INLINE bool HasTypePropertyId(JSObject* obj, jsid id,
+                                         TypeSet::Type type) {
+  id = IdToTypeId(id);
+  if (!TrackPropertyTypes(obj, id)) {
+    return true;
+  }
+
+  return HasTrackedPropertyType(obj, id, type);
 }
 
-inline void
-MarkObjectGroupFlags(JSContext* cx, JSObject* obj, ObjectGroupFlags flags)
-{
-    if (obj->hasLazyGroup()) {
-        return;
-    }
-
-    AutoSweepObjectGroup sweep(obj->group());
-    if (!obj->group()->hasAllFlags(sweep, flags)) {
-        obj->group()->setFlags(sweep, cx, flags);
-    }
+MOZ_ALWAYS_INLINE bool HasTypePropertyId(JSObject* obj, jsid id,
+                                         const Value& value) {
+  return HasTypePropertyId(obj, id, TypeSet::GetValueType(value));
 }
 
-inline void
-MarkObjectGroupUnknownProperties(JSContext* cx, ObjectGroup* obj)
-{
-    AutoSweepObjectGroup sweep(obj);
-    if (!obj->unknownProperties(sweep)) {
-        obj->markUnknown(sweep, cx);
-    }
+void AddTypePropertyId(JSContext* cx, ObjectGroup* group, JSObject* obj,
+                       jsid id, TypeSet::Type type);
+void AddTypePropertyId(JSContext* cx, ObjectGroup* group, JSObject* obj,
+                       jsid id, const Value& value);
+
+
+MOZ_ALWAYS_INLINE void AddTypePropertyId(JSContext* cx, JSObject* obj, jsid id,
+                                         TypeSet::Type type) {
+  id = IdToTypeId(id);
+  if (TrackPropertyTypes(obj, id) && !HasTrackedPropertyType(obj, id, type)) {
+    AddTypePropertyId(cx, obj->group(), obj, id, type);
+  }
 }
 
-inline void
-MarkTypePropertyNonData(JSContext* cx, JSObject* obj, jsid id)
-{
-    id = IdToTypeId(id);
-    if (TrackPropertyTypes(obj, id)) {
-        obj->group()->markPropertyNonData(cx, obj, id);
-    }
+MOZ_ALWAYS_INLINE void AddTypePropertyId(JSContext* cx, JSObject* obj, jsid id,
+                                         const Value& value) {
+  return AddTypePropertyId(cx, obj, id, TypeSet::GetValueType(value));
 }
 
-inline void
-MarkTypePropertyNonWritable(JSContext* cx, JSObject* obj, jsid id)
-{
-    id = IdToTypeId(id);
-    if (TrackPropertyTypes(obj, id)) {
-        obj->group()->markPropertyNonWritable(cx, obj, id);
-    }
+inline void MarkObjectGroupFlags(JSContext* cx, JSObject* obj,
+                                 ObjectGroupFlags flags) {
+  if (obj->hasLazyGroup()) {
+    return;
+  }
+
+  AutoSweepObjectGroup sweep(obj->group());
+  if (!obj->group()->hasAllFlags(sweep, flags)) {
+    obj->group()->setFlags(sweep, cx, flags);
+  }
+}
+
+inline void MarkObjectGroupUnknownProperties(JSContext* cx, ObjectGroup* obj) {
+  AutoSweepObjectGroup sweep(obj);
+  if (!obj->unknownProperties(sweep)) {
+    obj->markUnknown(sweep, cx);
+  }
+}
+
+inline void MarkTypePropertyNonData(JSContext* cx, JSObject* obj, jsid id) {
+  id = IdToTypeId(id);
+  if (TrackPropertyTypes(obj, id)) {
+    obj->group()->markPropertyNonData(cx, obj, id);
+  }
+}
+
+inline void MarkTypePropertyNonWritable(JSContext* cx, JSObject* obj, jsid id) {
+  id = IdToTypeId(id);
+  if (TrackPropertyTypes(obj, id)) {
+    obj->group()->markPropertyNonWritable(cx, obj, id);
+  }
 }
 
 
-inline void
-MarkObjectStateChange(JSContext* cx, JSObject* obj)
-{
-    if (obj->hasLazyGroup()) {
-        return;
-    }
+inline void MarkObjectStateChange(JSContext* cx, JSObject* obj) {
+  if (obj->hasLazyGroup()) {
+    return;
+  }
 
-    AutoSweepObjectGroup sweep(obj->group());
-    if (!obj->group()->unknownProperties(sweep)) {
-        obj->group()->markStateChange(sweep, cx);
-    }
+  AutoSweepObjectGroup sweep(obj->group());
+  if (!obj->group()->unknownProperties(sweep)) {
+    obj->group()->markStateChange(sweep, cx);
+  }
 }
 
 
-extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc, TypeSet::Type type);
-extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc, StackTypeSet* types,
+extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
                               TypeSet::Type type);
-extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc, const Value& rval);
+extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
+                              StackTypeSet* types, TypeSet::Type type);
+extern void TypeMonitorResult(JSContext* cx, JSScript* script, jsbytecode* pc,
+                              const Value& rval);
 
 
 
 
 
- inline unsigned
-TypeScript::NumTypeSets(JSScript* script)
-{
-    size_t num = script->nTypeSets() + 1 ;
-    if (JSFunction* fun = script->functionNonDelazifying()) {
-        num += fun->nargs();
-    }
-    return num;
+ inline unsigned TypeScript::NumTypeSets(JSScript* script) {
+  size_t num = script->nTypeSets() + 1 ;
+  if (JSFunction* fun = script->functionNonDelazifying()) {
+    num += fun->nargs();
+  }
+  return num;
 }
 
- inline StackTypeSet*
-TypeScript::ThisTypes(JSScript* script)
-{
-    AutoSweepTypeScript sweep(script);
-    TypeScript* types = script->types(sweep);
-    return types ? types->typeArray() + script->nTypeSets() : nullptr;
+ inline StackTypeSet* TypeScript::ThisTypes(JSScript* script) {
+  AutoSweepTypeScript sweep(script);
+  TypeScript* types = script->types(sweep);
+  return types ? types->typeArray() + script->nTypeSets() : nullptr;
 }
 
 
@@ -716,890 +647,812 @@ TypeScript::ThisTypes(JSScript* script)
 
 
 
- inline StackTypeSet*
-TypeScript::ArgTypes(JSScript* script, unsigned i)
-{
-    MOZ_ASSERT(i < script->functionNonDelazifying()->nargs());
-    AutoSweepTypeScript sweep(script);
-    TypeScript* types = script->types(sweep);
-    return types ? types->typeArray() + script->nTypeSets() + 1 + i : nullptr;
+ inline StackTypeSet* TypeScript::ArgTypes(JSScript* script,
+                                                       unsigned i) {
+  MOZ_ASSERT(i < script->functionNonDelazifying()->nargs());
+  AutoSweepTypeScript sweep(script);
+  TypeScript* types = script->types(sweep);
+  return types ? types->typeArray() + script->nTypeSets() + 1 + i : nullptr;
 }
 
 template <typename TYPESET>
- inline TYPESET*
-TypeScript::BytecodeTypes(JSScript* script, jsbytecode* pc, uint32_t* bytecodeMap,
-                          uint32_t* hint, TYPESET* typeArray)
-{
-    MOZ_ASSERT(CodeSpec[*pc].format & JOF_TYPESET);
-    uint32_t offset = script->pcToOffset(pc);
+ inline TYPESET* TypeScript::BytecodeTypes(JSScript* script,
+                                                       jsbytecode* pc,
+                                                       uint32_t* bytecodeMap,
+                                                       uint32_t* hint,
+                                                       TYPESET* typeArray) {
+  MOZ_ASSERT(CodeSpec[*pc].format & JOF_TYPESET);
+  uint32_t offset = script->pcToOffset(pc);
 
-    
-    if ((*hint + 1) < script->nTypeSets() && bytecodeMap[*hint + 1] == offset) {
-        (*hint)++;
-        return typeArray + *hint;
-    }
-
-    
-    if (bytecodeMap[*hint] == offset) {
-        return typeArray + *hint;
-    }
-
-    
-    
-    
-    size_t loc;
-#ifdef DEBUG
-    bool found =
-#endif
-        mozilla::BinarySearch(bytecodeMap, 0, script->nTypeSets() - 1, offset, &loc);
-
-    MOZ_ASSERT_IF(found, bytecodeMap[loc] == offset);
-    *hint = mozilla::AssertedCast<uint32_t>(loc);
+  
+  if ((*hint + 1) < script->nTypeSets() && bytecodeMap[*hint + 1] == offset) {
+    (*hint)++;
     return typeArray + *hint;
-}
-
- inline StackTypeSet*
-TypeScript::BytecodeTypes(JSScript* script, jsbytecode* pc)
-{
-    MOZ_ASSERT(CurrentThreadCanAccessZone(script->zone()));
-    AutoSweepTypeScript sweep(script);
-    TypeScript* types = script->types(sweep);
-    if (!types) {
-        return nullptr;
-    }
-    uint32_t* hint = script->baselineScript()->bytecodeTypeMap() + script->nTypeSets();
-    return BytecodeTypes(script, pc, script->baselineScript()->bytecodeTypeMap(),
-                         hint, types->typeArray());
-}
-
- inline void
-TypeScript::Monitor(JSContext* cx, JSScript* script, jsbytecode* pc, const js::Value& rval)
-{
-    TypeMonitorResult(cx, script, pc, rval);
-}
-
- inline void
-TypeScript::Monitor(JSContext* cx, JSScript* script, jsbytecode* pc, TypeSet::Type type)
-{
-    TypeMonitorResult(cx, script, pc, type);
-}
-
- inline void
-TypeScript::Monitor(JSContext* cx, const js::Value& rval)
-{
-    jsbytecode* pc;
-    RootedScript script(cx, cx->currentScript(&pc));
-    Monitor(cx, script, pc, rval);
-}
-
- inline void
-TypeScript::Monitor(JSContext* cx, JSScript* script, jsbytecode* pc, StackTypeSet* types,
-                    const js::Value& rval)
-{
-    TypeSet::Type type = TypeSet::GetValueType(rval);
-    if (!types->hasType(type)) {
-        TypeMonitorResult(cx, script, pc, types, type);
-    }
-}
-
- inline void
-TypeScript::MonitorAssign(JSContext* cx, HandleObject obj, jsid id)
-{
-    if (!obj->isSingleton()) {
-        
-
-
-
-
-
-
-
-        uint32_t i;
-        if (IdIsIndex(id, &i)) {
-            return;
-        }
-
-        
-        
-        
-        ObjectGroup* group = obj->group();
-        if (group->basePropertyCountDontCheckGeneration() < 128) {
-            return;
-        }
-        MarkObjectGroupUnknownProperties(cx, group);
-    }
-}
-
- inline void
-TypeScript::SetThis(JSContext* cx, JSScript* script, TypeSet::Type type)
-{
-    cx->check(script, type);
-
-    AutoSweepTypeScript sweep(script);
-    StackTypeSet* types = ThisTypes(script);
-    if (!types) {
-        return;
-    }
-
-    if (!types->hasType(type)) {
-        AutoEnterAnalysis enter(cx);
-
-        InferSpew(ISpewOps, "externalType: setThis %p: %s",
-                  script, TypeSet::TypeString(type).get());
-        types->addType(sweep, cx, type);
-    }
-}
-
- inline void
-TypeScript::SetThis(JSContext* cx, JSScript* script, const js::Value& value)
-{
-    SetThis(cx, script, TypeSet::GetValueType(value));
-}
-
- inline void
-TypeScript::SetArgument(JSContext* cx, JSScript* script, unsigned arg, TypeSet::Type type)
-{
-    cx->check(script->compartment(), type);
-
-    AutoSweepTypeScript sweep(script);
-    StackTypeSet* types = ArgTypes(script, arg);
-    if (!types) {
-        return;
-    }
-
-    if (!types->hasType(type)) {
-        AutoEnterAnalysis enter(cx);
-
-        InferSpew(ISpewOps, "externalType: setArg %p %u: %s",
-                  script, arg, TypeSet::TypeString(type).get());
-        types->addType(sweep, cx, type);
-    }
-}
-
- inline void
-TypeScript::SetArgument(JSContext* cx, JSScript* script, unsigned arg, const js::Value& value)
-{
-    SetArgument(cx, script, arg, TypeSet::GetValueType(value));
-}
-
-inline
-AutoKeepTypeScripts::AutoKeepTypeScripts(JSContext* cx)
-  : zone_(cx->zone()->types),
-    prev_(zone_.keepTypeScripts)
-{
-    zone_.keepTypeScripts = true;
-}
-
-inline
-AutoKeepTypeScripts::~AutoKeepTypeScripts()
-{
-    MOZ_ASSERT(zone_.keepTypeScripts);
-    zone_.keepTypeScripts = prev_;
-}
-
-
-
-
-
-
-struct TypeHashSet
-{
-    
-    
-    
-    
-    
-    
-    static const unsigned SET_ARRAY_SIZE = 8;
-    static const unsigned SET_CAPACITY_OVERFLOW = 1u << 30;
-
-    
-    static inline unsigned
-    Capacity(unsigned count)
-    {
-        MOZ_ASSERT(count >= 2);
-        MOZ_ASSERT(count < SET_CAPACITY_OVERFLOW);
-
-        if (count <= SET_ARRAY_SIZE) {
-            return SET_ARRAY_SIZE;
-        }
-
-        return 1u << (mozilla::FloorLog2(count) + 2);
-    }
-
-    
-    template <class T, class KEY>
-    static inline uint32_t
-    HashKey(T v)
-    {
-        uint32_t nv = KEY::keyBits(v);
-
-        uint32_t hash = 84696351 ^ (nv & 0xff);
-        hash = (hash * 16777619) ^ ((nv >> 8) & 0xff);
-        hash = (hash * 16777619) ^ ((nv >> 16) & 0xff);
-        return (hash * 16777619) ^ ((nv >> 24) & 0xff);
-    }
-
-    
-    
-    template <class T, class U, class KEY>
-    static U**
-    InsertTry(LifoAlloc& alloc, U**& values, unsigned& count, T key)
-    {
-        unsigned capacity = Capacity(count);
-        unsigned insertpos = HashKey<T,KEY>(key) & (capacity - 1);
-
-        MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == capacity);
-
-        
-        bool converting = (count == SET_ARRAY_SIZE);
-
-        if (!converting) {
-            while (values[insertpos] != nullptr) {
-                if (KEY::getKey(values[insertpos]) == key) {
-                    return &values[insertpos];
-                }
-                insertpos = (insertpos + 1) & (capacity - 1);
-            }
-        }
-
-        if (count >= SET_CAPACITY_OVERFLOW) {
-            return nullptr;
-        }
-
-        count++;
-        unsigned newCapacity = Capacity(count);
-
-        if (newCapacity == capacity) {
-            MOZ_ASSERT(!converting);
-            return &values[insertpos];
-        }
-
-        
-        
-        U** newValues = alloc.newArray<U*>(newCapacity + 1);
-        if (!newValues) {
-            return nullptr;
-        }
-        mozilla::PodZero(newValues, newCapacity + 1);
-
-        newValues[0] = (U*)uintptr_t(newCapacity);
-        newValues++;
-
-        for (unsigned i = 0; i < capacity; i++) {
-            if (values[i]) {
-                unsigned pos = HashKey<T,KEY>(KEY::getKey(values[i])) & (newCapacity - 1);
-                while (newValues[pos] != nullptr) {
-                    pos = (pos + 1) & (newCapacity - 1);
-                }
-                newValues[pos] = values[i];
-            }
-        }
-
-        values = newValues;
-
-        insertpos = HashKey<T,KEY>(key) & (newCapacity - 1);
-        while (values[insertpos] != nullptr) {
-            insertpos = (insertpos + 1) & (newCapacity - 1);
-        }
-        return &values[insertpos];
-    }
-
-    
-    
-    template <class T, class U, class KEY>
-    static inline U**
-    Insert(LifoAlloc& alloc, U**& values, unsigned& count, T key)
-    {
-        if (count == 0) {
-            MOZ_ASSERT(values == nullptr);
-            count++;
-            return (U**) &values;
-        }
-
-        if (count == 1) {
-            U* oldData = (U*) values;
-            if (KEY::getKey(oldData) == key) {
-                return (U**) &values;
-            }
-
-            
-            
-            values = alloc.newArray<U*>(SET_ARRAY_SIZE + 1);
-            if (!values) {
-                values = (U**) oldData;
-                return nullptr;
-            }
-            mozilla::PodZero(values, SET_ARRAY_SIZE + 1);
-
-            values[0] = (U*)uintptr_t(SET_ARRAY_SIZE);
-            values++;
-
-            count++;
-
-            values[0] = oldData;
-            return &values[1];
-        }
-
-        if (count <= SET_ARRAY_SIZE) {
-            MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == SET_ARRAY_SIZE);
-
-            for (unsigned i = 0; i < count; i++) {
-                if (KEY::getKey(values[i]) == key) {
-                    return &values[i];
-                }
-            }
-
-            if (count < SET_ARRAY_SIZE) {
-                count++;
-                return &values[count - 1];
-            }
-        }
-
-        return InsertTry<T,U,KEY>(alloc, values, count, key);
-    }
-
-    
-    template <class T, class U, class KEY>
-    static MOZ_ALWAYS_INLINE U*
-    Lookup(U** values, unsigned count, T key)
-    {
-        if (count == 0) {
-            return nullptr;
-        }
-
-        if (count == 1) {
-            return (KEY::getKey((U*) values) == key) ? (U*) values : nullptr;
-        }
-
-        if (count <= SET_ARRAY_SIZE) {
-            MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == SET_ARRAY_SIZE);
-            for (unsigned i = 0; i < count; i++) {
-                if (KEY::getKey(values[i]) == key) {
-                    return values[i];
-                }
-            }
-            return nullptr;
-        }
-
-        unsigned capacity = Capacity(count);
-        unsigned pos = HashKey<T,KEY>(key) & (capacity - 1);
-
-        MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == capacity);
-
-        while (values[pos] != nullptr) {
-            if (KEY::getKey(values[pos]) == key) {
-                return values[pos];
-            }
-            pos = (pos + 1) & (capacity - 1);
-        }
-
-        return nullptr;
-    }
-
-    template <class T, class U, class Key, typename Fun>
-    static void
-    MapEntries(U**& values, unsigned count, Fun f)
-    {
-        
-        if (count == 0) {
-            MOZ_RELEASE_ASSERT(!values);
-            return;
-        }
-
-        
-        
-        if (count == 1) {
-            values = reinterpret_cast<U**>(f(reinterpret_cast<U*>(values)));
-            return;
-        }
-
-        
-        
-        if (count <= SET_ARRAY_SIZE) {
-            for (unsigned i = 0; i < count; i++) {
-                values[i] = f(values[i]);
-            }
-            return;
-        }
-
-        
-        auto lowBit = [](U* elem) -> bool {
-            return bool(reinterpret_cast<uintptr_t>(elem) & 1);
-        };
-        auto toggleLowBit = [](U* elem) -> U* {
-            return reinterpret_cast<U*>(reinterpret_cast<uintptr_t>(elem) ^ 1);
-        };
-
-        
-        
-        
-        
-        
-        
-        unsigned capacity = Capacity(count);
-        MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == capacity);
-        unsigned found = 0;
-        for (unsigned i = 0; i < capacity; i++) {
-            if (!values[i]) {
-                continue;
-            }
-            MOZ_ASSERT(found <= count);
-            U* elem = f(values[i]);
-            values[i] = nullptr;
-            MOZ_ASSERT(!lowBit(elem));
-            values[found++] = toggleLowBit(elem);
-        }
-        MOZ_ASSERT(found == count);
-
-        
-        
-        
-        
-        
-        
-        unsigned mask = capacity - 1;
-        for (unsigned i = 0; i < count; i++) {
-            U* elem = values[i];
-            if (!lowBit(elem)) {
-                
-                
-                continue;
-            }
-            values[i] = nullptr;
-            while (elem) {
-                MOZ_ASSERT(lowBit(elem));
-                elem = toggleLowBit(elem);
-                unsigned pos = HashKey<T,Key>(Key::getKey(elem)) & mask;
-                while (values[pos] != nullptr && !lowBit(values[pos])) {
-                    pos = (pos + 1) & mask;
-                }
-                
-                
-                
-                std::swap(values[pos], elem);
-            }
-        }
+  }
+
+  
+  if (bytecodeMap[*hint] == offset) {
+    return typeArray + *hint;
+  }
+
+  
+  
+  
+  size_t loc;
 #ifdef DEBUG
-        unsigned inserted = 0;
-        for (unsigned i = 0; i < capacity; i++) {
-            if (!values[i]) {
-                continue;
-            }
-            inserted++;
-        }
-        MOZ_ASSERT(inserted == count);
+  bool found =
 #endif
+      mozilla::BinarySearch(bytecodeMap, 0, script->nTypeSets() - 1, offset,
+                            &loc);
+
+  MOZ_ASSERT_IF(found, bytecodeMap[loc] == offset);
+  *hint = mozilla::AssertedCast<uint32_t>(loc);
+  return typeArray + *hint;
+}
+
+ inline StackTypeSet* TypeScript::BytecodeTypes(JSScript* script,
+                                                            jsbytecode* pc) {
+  MOZ_ASSERT(CurrentThreadCanAccessZone(script->zone()));
+  AutoSweepTypeScript sweep(script);
+  TypeScript* types = script->types(sweep);
+  if (!types) {
+    return nullptr;
+  }
+  uint32_t* hint =
+      script->baselineScript()->bytecodeTypeMap() + script->nTypeSets();
+  return BytecodeTypes(script, pc, script->baselineScript()->bytecodeTypeMap(),
+                       hint, types->typeArray());
+}
+
+ inline void TypeScript::Monitor(JSContext* cx, JSScript* script,
+                                             jsbytecode* pc,
+                                             const js::Value& rval) {
+  TypeMonitorResult(cx, script, pc, rval);
+}
+
+ inline void TypeScript::Monitor(JSContext* cx, JSScript* script,
+                                             jsbytecode* pc,
+                                             TypeSet::Type type) {
+  TypeMonitorResult(cx, script, pc, type);
+}
+
+ inline void TypeScript::Monitor(JSContext* cx,
+                                             const js::Value& rval) {
+  jsbytecode* pc;
+  RootedScript script(cx, cx->currentScript(&pc));
+  Monitor(cx, script, pc, rval);
+}
+
+ inline void TypeScript::Monitor(JSContext* cx, JSScript* script,
+                                             jsbytecode* pc,
+                                             StackTypeSet* types,
+                                             const js::Value& rval) {
+  TypeSet::Type type = TypeSet::GetValueType(rval);
+  if (!types->hasType(type)) {
+    TypeMonitorResult(cx, script, pc, types, type);
+  }
+}
+
+ inline void TypeScript::MonitorAssign(JSContext* cx,
+                                                   HandleObject obj, jsid id) {
+  if (!obj->isSingleton()) {
+    
+
+
+
+
+
+
+
+    uint32_t i;
+    if (IdIsIndex(id, &i)) {
+      return;
     }
+
+    
+    
+    
+    ObjectGroup* group = obj->group();
+    if (group->basePropertyCountDontCheckGeneration() < 128) {
+      return;
+    }
+    MarkObjectGroupUnknownProperties(cx, group);
+  }
+}
+
+ inline void TypeScript::SetThis(JSContext* cx, JSScript* script,
+                                             TypeSet::Type type) {
+  cx->check(script, type);
+
+  AutoSweepTypeScript sweep(script);
+  StackTypeSet* types = ThisTypes(script);
+  if (!types) {
+    return;
+  }
+
+  if (!types->hasType(type)) {
+    AutoEnterAnalysis enter(cx);
+
+    InferSpew(ISpewOps, "externalType: setThis %p: %s", script,
+              TypeSet::TypeString(type).get());
+    types->addType(sweep, cx, type);
+  }
+}
+
+ inline void TypeScript::SetThis(JSContext* cx, JSScript* script,
+                                             const js::Value& value) {
+  SetThis(cx, script, TypeSet::GetValueType(value));
+}
+
+ inline void TypeScript::SetArgument(JSContext* cx,
+                                                 JSScript* script, unsigned arg,
+                                                 TypeSet::Type type) {
+  cx->check(script->compartment(), type);
+
+  AutoSweepTypeScript sweep(script);
+  StackTypeSet* types = ArgTypes(script, arg);
+  if (!types) {
+    return;
+  }
+
+  if (!types->hasType(type)) {
+    AutoEnterAnalysis enter(cx);
+
+    InferSpew(ISpewOps, "externalType: setArg %p %u: %s", script, arg,
+              TypeSet::TypeString(type).get());
+    types->addType(sweep, cx, type);
+  }
+}
+
+ inline void TypeScript::SetArgument(JSContext* cx,
+                                                 JSScript* script, unsigned arg,
+                                                 const js::Value& value) {
+  SetArgument(cx, script, arg, TypeSet::GetValueType(value));
+}
+
+inline AutoKeepTypeScripts::AutoKeepTypeScripts(JSContext* cx)
+    : zone_(cx->zone()->types), prev_(zone_.keepTypeScripts) {
+  zone_.keepTypeScripts = true;
+}
+
+inline AutoKeepTypeScripts::~AutoKeepTypeScripts() {
+  MOZ_ASSERT(zone_.keepTypeScripts);
+  zone_.keepTypeScripts = prev_;
+}
+
+
+
+
+
+
+struct TypeHashSet {
+  
+  
+  
+  
+  
+  
+  static const unsigned SET_ARRAY_SIZE = 8;
+  static const unsigned SET_CAPACITY_OVERFLOW = 1u << 30;
+
+  
+  static inline unsigned Capacity(unsigned count) {
+    MOZ_ASSERT(count >= 2);
+    MOZ_ASSERT(count < SET_CAPACITY_OVERFLOW);
+
+    if (count <= SET_ARRAY_SIZE) {
+      return SET_ARRAY_SIZE;
+    }
+
+    return 1u << (mozilla::FloorLog2(count) + 2);
+  }
+
+  
+  template <class T, class KEY>
+  static inline uint32_t HashKey(T v) {
+    uint32_t nv = KEY::keyBits(v);
+
+    uint32_t hash = 84696351 ^ (nv & 0xff);
+    hash = (hash * 16777619) ^ ((nv >> 8) & 0xff);
+    hash = (hash * 16777619) ^ ((nv >> 16) & 0xff);
+    return (hash * 16777619) ^ ((nv >> 24) & 0xff);
+  }
+
+  
+  
+  template <class T, class U, class KEY>
+  static U** InsertTry(LifoAlloc& alloc, U**& values, unsigned& count, T key) {
+    unsigned capacity = Capacity(count);
+    unsigned insertpos = HashKey<T, KEY>(key) & (capacity - 1);
+
+    MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == capacity);
+
+    
+    bool converting = (count == SET_ARRAY_SIZE);
+
+    if (!converting) {
+      while (values[insertpos] != nullptr) {
+        if (KEY::getKey(values[insertpos]) == key) {
+          return &values[insertpos];
+        }
+        insertpos = (insertpos + 1) & (capacity - 1);
+      }
+    }
+
+    if (count >= SET_CAPACITY_OVERFLOW) {
+      return nullptr;
+    }
+
+    count++;
+    unsigned newCapacity = Capacity(count);
+
+    if (newCapacity == capacity) {
+      MOZ_ASSERT(!converting);
+      return &values[insertpos];
+    }
+
+    
+    
+    U** newValues = alloc.newArray<U*>(newCapacity + 1);
+    if (!newValues) {
+      return nullptr;
+    }
+    mozilla::PodZero(newValues, newCapacity + 1);
+
+    newValues[0] = (U*)uintptr_t(newCapacity);
+    newValues++;
+
+    for (unsigned i = 0; i < capacity; i++) {
+      if (values[i]) {
+        unsigned pos =
+            HashKey<T, KEY>(KEY::getKey(values[i])) & (newCapacity - 1);
+        while (newValues[pos] != nullptr) {
+          pos = (pos + 1) & (newCapacity - 1);
+        }
+        newValues[pos] = values[i];
+      }
+    }
+
+    values = newValues;
+
+    insertpos = HashKey<T, KEY>(key) & (newCapacity - 1);
+    while (values[insertpos] != nullptr) {
+      insertpos = (insertpos + 1) & (newCapacity - 1);
+    }
+    return &values[insertpos];
+  }
+
+  
+  
+  template <class T, class U, class KEY>
+  static inline U** Insert(LifoAlloc& alloc, U**& values, unsigned& count,
+                           T key) {
+    if (count == 0) {
+      MOZ_ASSERT(values == nullptr);
+      count++;
+      return (U**)&values;
+    }
+
+    if (count == 1) {
+      U* oldData = (U*)values;
+      if (KEY::getKey(oldData) == key) {
+        return (U**)&values;
+      }
+
+      
+      
+      values = alloc.newArray<U*>(SET_ARRAY_SIZE + 1);
+      if (!values) {
+        values = (U**)oldData;
+        return nullptr;
+      }
+      mozilla::PodZero(values, SET_ARRAY_SIZE + 1);
+
+      values[0] = (U*)uintptr_t(SET_ARRAY_SIZE);
+      values++;
+
+      count++;
+
+      values[0] = oldData;
+      return &values[1];
+    }
+
+    if (count <= SET_ARRAY_SIZE) {
+      MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == SET_ARRAY_SIZE);
+
+      for (unsigned i = 0; i < count; i++) {
+        if (KEY::getKey(values[i]) == key) {
+          return &values[i];
+        }
+      }
+
+      if (count < SET_ARRAY_SIZE) {
+        count++;
+        return &values[count - 1];
+      }
+    }
+
+    return InsertTry<T, U, KEY>(alloc, values, count, key);
+  }
+
+  
+  template <class T, class U, class KEY>
+  static MOZ_ALWAYS_INLINE U* Lookup(U** values, unsigned count, T key) {
+    if (count == 0) {
+      return nullptr;
+    }
+
+    if (count == 1) {
+      return (KEY::getKey((U*)values) == key) ? (U*)values : nullptr;
+    }
+
+    if (count <= SET_ARRAY_SIZE) {
+      MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == SET_ARRAY_SIZE);
+      for (unsigned i = 0; i < count; i++) {
+        if (KEY::getKey(values[i]) == key) {
+          return values[i];
+        }
+      }
+      return nullptr;
+    }
+
+    unsigned capacity = Capacity(count);
+    unsigned pos = HashKey<T, KEY>(key) & (capacity - 1);
+
+    MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == capacity);
+
+    while (values[pos] != nullptr) {
+      if (KEY::getKey(values[pos]) == key) {
+        return values[pos];
+      }
+      pos = (pos + 1) & (capacity - 1);
+    }
+
+    return nullptr;
+  }
+
+  template <class T, class U, class Key, typename Fun>
+  static void MapEntries(U**& values, unsigned count, Fun f) {
+    
+    if (count == 0) {
+      MOZ_RELEASE_ASSERT(!values);
+      return;
+    }
+
+    
+    
+    if (count == 1) {
+      values = reinterpret_cast<U**>(f(reinterpret_cast<U*>(values)));
+      return;
+    }
+
+    
+    
+    if (count <= SET_ARRAY_SIZE) {
+      for (unsigned i = 0; i < count; i++) {
+        values[i] = f(values[i]);
+      }
+      return;
+    }
+
+    
+    auto lowBit = [](U* elem) -> bool {
+      return bool(reinterpret_cast<uintptr_t>(elem) & 1);
+    };
+    auto toggleLowBit = [](U* elem) -> U* {
+      return reinterpret_cast<U*>(reinterpret_cast<uintptr_t>(elem) ^ 1);
+    };
+
+    
+    
+    
+    
+    
+    
+    unsigned capacity = Capacity(count);
+    MOZ_RELEASE_ASSERT(uintptr_t(values[-1]) == capacity);
+    unsigned found = 0;
+    for (unsigned i = 0; i < capacity; i++) {
+      if (!values[i]) {
+        continue;
+      }
+      MOZ_ASSERT(found <= count);
+      U* elem = f(values[i]);
+      values[i] = nullptr;
+      MOZ_ASSERT(!lowBit(elem));
+      values[found++] = toggleLowBit(elem);
+    }
+    MOZ_ASSERT(found == count);
+
+    
+    
+    
+    
+    
+    
+    unsigned mask = capacity - 1;
+    for (unsigned i = 0; i < count; i++) {
+      U* elem = values[i];
+      if (!lowBit(elem)) {
+        
+        
+        continue;
+      }
+      values[i] = nullptr;
+      while (elem) {
+        MOZ_ASSERT(lowBit(elem));
+        elem = toggleLowBit(elem);
+        unsigned pos = HashKey<T, Key>(Key::getKey(elem)) & mask;
+        while (values[pos] != nullptr && !lowBit(values[pos])) {
+          pos = (pos + 1) & mask;
+        }
+        
+        
+        
+        std::swap(values[pos], elem);
+      }
+    }
+#ifdef DEBUG
+    unsigned inserted = 0;
+    for (unsigned i = 0; i < capacity; i++) {
+      if (!values[i]) {
+        continue;
+      }
+      inserted++;
+    }
+    MOZ_ASSERT(inserted == count);
+#endif
+  }
 };
 
 
 
 
 
-inline TypeSet::ObjectKey*
-TypeSet::Type::objectKey() const
-{
-    MOZ_ASSERT(isObject());
-    return (ObjectKey*) data;
+inline TypeSet::ObjectKey* TypeSet::Type::objectKey() const {
+  MOZ_ASSERT(isObject());
+  return (ObjectKey*)data;
 }
 
-inline JSObject*
-TypeSet::Type::singleton() const
-{
-    return objectKey()->singleton();
+inline JSObject* TypeSet::Type::singleton() const {
+  return objectKey()->singleton();
 }
 
-inline ObjectGroup*
-TypeSet::Type::group() const
-{
-    return objectKey()->group();
+inline ObjectGroup* TypeSet::Type::group() const {
+  return objectKey()->group();
 }
 
-inline JSObject*
-TypeSet::Type::singletonNoBarrier() const
-{
-    return objectKey()->singletonNoBarrier();
+inline JSObject* TypeSet::Type::singletonNoBarrier() const {
+  return objectKey()->singletonNoBarrier();
 }
 
-inline ObjectGroup*
-TypeSet::Type::groupNoBarrier() const
-{
-    return objectKey()->groupNoBarrier();
+inline ObjectGroup* TypeSet::Type::groupNoBarrier() const {
+  return objectKey()->groupNoBarrier();
 }
 
-inline void
-TypeSet::Type::trace(JSTracer* trc)
-{
-    if (isSingletonUnchecked()) {
-        JSObject* obj = singletonNoBarrier();
-        TraceManuallyBarrieredEdge(trc, &obj, "TypeSet::Object");
-        *this = TypeSet::ObjectType(obj);
-    } else if (isGroupUnchecked()) {
-        ObjectGroup* group = groupNoBarrier();
-        TraceManuallyBarrieredEdge(trc, &group, "TypeSet::Group");
-        *this = TypeSet::ObjectType(group);
+inline void TypeSet::Type::trace(JSTracer* trc) {
+  if (isSingletonUnchecked()) {
+    JSObject* obj = singletonNoBarrier();
+    TraceManuallyBarrieredEdge(trc, &obj, "TypeSet::Object");
+    *this = TypeSet::ObjectType(obj);
+  } else if (isGroupUnchecked()) {
+    ObjectGroup* group = groupNoBarrier();
+    TraceManuallyBarrieredEdge(trc, &group, "TypeSet::Group");
+    *this = TypeSet::ObjectType(group);
+  }
+}
+
+inline JS::Compartment* TypeSet::Type::maybeCompartment() {
+  if (isSingletonUnchecked()) {
+    return singletonNoBarrier()->compartment();
+  }
+
+  if (isGroupUnchecked()) {
+    return groupNoBarrier()->compartment();
+  }
+
+  return nullptr;
+}
+
+MOZ_ALWAYS_INLINE bool TypeSet::hasType(Type type) const {
+  if (unknown()) {
+    return true;
+  }
+
+  if (type.isUnknown()) {
+    return false;
+  } else if (type.isPrimitive()) {
+    return !!(flags & PrimitiveTypeFlag(type.primitive()));
+  } else if (type.isAnyObject()) {
+    return !!(flags & TYPE_FLAG_ANYOBJECT);
+  } else {
+    return !!(flags & TYPE_FLAG_ANYOBJECT) ||
+           TypeHashSet::Lookup<ObjectKey*, ObjectKey, ObjectKey>(
+               objectSet, baseObjectCount(), type.objectKey()) != nullptr;
+  }
+}
+
+inline void TypeSet::setBaseObjectCount(uint32_t count) {
+  MOZ_ASSERT(count <= TYPE_FLAG_DOMOBJECT_COUNT_LIMIT);
+  flags = (flags & ~TYPE_FLAG_OBJECT_COUNT_MASK) |
+          (count << TYPE_FLAG_OBJECT_COUNT_SHIFT);
+}
+
+inline void HeapTypeSet::newPropertyState(const AutoSweepObjectGroup& sweep,
+                                          JSContext* cx) {
+  checkMagic();
+
+  
+  if (!cx->helperThread()) {
+    TypeConstraint* constraint = constraintList(sweep);
+    while (constraint) {
+      constraint->newPropertyState(cx, this);
+      constraint = constraint->next();
     }
+  } else {
+    MOZ_ASSERT(!constraintList(sweep));
+  }
 }
 
-inline JS::Compartment*
-TypeSet::Type::maybeCompartment()
-{
-    if (isSingletonUnchecked()) {
-        return singletonNoBarrier()->compartment();
-    }
+inline void HeapTypeSet::setNonDataProperty(const AutoSweepObjectGroup& sweep,
+                                            JSContext* cx) {
+  checkMagic();
 
-    if (isGroupUnchecked()) {
-        return groupNoBarrier()->compartment();
-    }
+  if (flags & TYPE_FLAG_NON_DATA_PROPERTY) {
+    return;
+  }
 
+  flags |= TYPE_FLAG_NON_DATA_PROPERTY;
+  newPropertyState(sweep, cx);
+}
+
+inline void HeapTypeSet::setNonWritableProperty(
+    const AutoSweepObjectGroup& sweep, JSContext* cx) {
+  checkMagic();
+
+  if (flags & TYPE_FLAG_NON_WRITABLE_PROPERTY) {
+    return;
+  }
+
+  flags |= TYPE_FLAG_NON_WRITABLE_PROPERTY;
+  newPropertyState(sweep, cx);
+}
+
+inline void HeapTypeSet::setNonConstantProperty(
+    const AutoSweepObjectGroup& sweep, JSContext* cx) {
+  checkMagic();
+
+  if (flags & TYPE_FLAG_NON_CONSTANT_PROPERTY) {
+    return;
+  }
+
+  flags |= TYPE_FLAG_NON_CONSTANT_PROPERTY;
+  newPropertyState(sweep, cx);
+}
+
+inline unsigned TypeSet::getObjectCount() const {
+  MOZ_ASSERT(!unknownObject());
+  uint32_t count = baseObjectCount();
+  if (count > TypeHashSet::SET_ARRAY_SIZE) {
+    return TypeHashSet::Capacity(count);
+  }
+  return count;
+}
+
+inline TypeSet::ObjectKey* TypeSet::getObject(unsigned i) const {
+  MOZ_ASSERT(i < getObjectCount());
+  if (baseObjectCount() == 1) {
+    MOZ_ASSERT(i == 0);
+    return (ObjectKey*)objectSet;
+  }
+  return objectSet[i];
+}
+
+inline JSObject* TypeSet::getSingleton(unsigned i) const {
+  ObjectKey* key = getObject(i);
+  return (key && key->isSingleton()) ? key->singleton() : nullptr;
+}
+
+inline ObjectGroup* TypeSet::getGroup(unsigned i) const {
+  ObjectKey* key = getObject(i);
+  return (key && key->isGroup()) ? key->group() : nullptr;
+}
+
+inline JSObject* TypeSet::getSingletonNoBarrier(unsigned i) const {
+  ObjectKey* key = getObject(i);
+  return (key && key->isSingleton()) ? key->singletonNoBarrier() : nullptr;
+}
+
+inline ObjectGroup* TypeSet::getGroupNoBarrier(unsigned i) const {
+  ObjectKey* key = getObject(i);
+  return (key && key->isGroup()) ? key->groupNoBarrier() : nullptr;
+}
+
+inline bool TypeSet::hasGroup(unsigned i) const { return getGroupNoBarrier(i); }
+
+inline bool TypeSet::hasSingleton(unsigned i) const {
+  return getSingletonNoBarrier(i);
+}
+
+inline const Class* TypeSet::getObjectClass(unsigned i) const {
+  if (JSObject* object = getSingleton(i)) {
+    return object->getClass();
+  }
+  if (ObjectGroup* group = getGroup(i)) {
+    return group->clasp();
+  }
+  return nullptr;
+}
+
+
+
+
+
+inline uint32_t ObjectGroup::basePropertyCountDontCheckGeneration() {
+  uint32_t flags = flagsDontCheckGeneration();
+  return (flags & OBJECT_FLAG_PROPERTY_COUNT_MASK) >>
+         OBJECT_FLAG_PROPERTY_COUNT_SHIFT;
+}
+
+inline uint32_t ObjectGroup::basePropertyCount(
+    const AutoSweepObjectGroup& sweep) {
+  MOZ_ASSERT(sweep.group() == this);
+  return basePropertyCountDontCheckGeneration();
+}
+
+inline void ObjectGroup::setBasePropertyCount(const AutoSweepObjectGroup& sweep,
+                                              uint32_t count) {
+  
+  MOZ_ASSERT(count <= OBJECT_FLAG_PROPERTY_COUNT_LIMIT);
+  flags_ = (flags(sweep) & ~OBJECT_FLAG_PROPERTY_COUNT_MASK) |
+           (count << OBJECT_FLAG_PROPERTY_COUNT_SHIFT);
+}
+
+inline HeapTypeSet* ObjectGroup::getProperty(const AutoSweepObjectGroup& sweep,
+                                             JSContext* cx, JSObject* obj,
+                                             jsid id) {
+  MOZ_ASSERT(JSID_IS_VOID(id) || JSID_IS_EMPTY(id) || JSID_IS_STRING(id) ||
+             JSID_IS_SYMBOL(id));
+  MOZ_ASSERT_IF(!JSID_IS_EMPTY(id), id == IdToTypeId(id));
+  MOZ_ASSERT(!unknownProperties(sweep));
+  MOZ_ASSERT_IF(obj, obj->group() == this);
+  MOZ_ASSERT_IF(singleton(), obj);
+  MOZ_ASSERT(cx->compartment() == compartment());
+
+  if (HeapTypeSet* types = maybeGetProperty(sweep, id)) {
+    return types;
+  }
+
+  Property* base = cx->typeLifoAlloc().new_<Property>(id);
+  if (!base) {
+    markUnknown(sweep, cx);
     return nullptr;
-}
+  }
 
-MOZ_ALWAYS_INLINE bool
-TypeSet::hasType(Type type) const
-{
-    if (unknown()) {
-        return true;
-    }
-
-    if (type.isUnknown()) {
-        return false;
-    } else if (type.isPrimitive()) {
-        return !!(flags & PrimitiveTypeFlag(type.primitive()));
-    } else if (type.isAnyObject()) {
-        return !!(flags & TYPE_FLAG_ANYOBJECT);
-    } else {
-        return !!(flags & TYPE_FLAG_ANYOBJECT) ||
-               TypeHashSet::Lookup<ObjectKey*, ObjectKey, ObjectKey>
-                   (objectSet, baseObjectCount(), type.objectKey()) != nullptr;
-    }
-}
-
-inline void
-TypeSet::setBaseObjectCount(uint32_t count)
-{
-    MOZ_ASSERT(count <= TYPE_FLAG_DOMOBJECT_COUNT_LIMIT);
-    flags = (flags & ~TYPE_FLAG_OBJECT_COUNT_MASK)
-          | (count << TYPE_FLAG_OBJECT_COUNT_SHIFT);
-}
-
-inline void
-HeapTypeSet::newPropertyState(const AutoSweepObjectGroup& sweep, JSContext* cx)
-{
-    checkMagic();
-
-    
-    if (!cx->helperThread()) {
-        TypeConstraint* constraint = constraintList(sweep);
-        while (constraint) {
-            constraint->newPropertyState(cx, this);
-            constraint = constraint->next();
-        }
-    } else {
-        MOZ_ASSERT(!constraintList(sweep));
-    }
-}
-
-inline void
-HeapTypeSet::setNonDataProperty(const AutoSweepObjectGroup& sweep, JSContext* cx)
-{
-    checkMagic();
-
-    if (flags & TYPE_FLAG_NON_DATA_PROPERTY) {
-        return;
-    }
-
-    flags |= TYPE_FLAG_NON_DATA_PROPERTY;
-    newPropertyState(sweep, cx);
-}
-
-inline void
-HeapTypeSet::setNonWritableProperty(const AutoSweepObjectGroup& sweep, JSContext* cx)
-{
-    checkMagic();
-
-    if (flags & TYPE_FLAG_NON_WRITABLE_PROPERTY) {
-        return;
-    }
-
-    flags |= TYPE_FLAG_NON_WRITABLE_PROPERTY;
-    newPropertyState(sweep, cx);
-}
-
-inline void
-HeapTypeSet::setNonConstantProperty(const AutoSweepObjectGroup& sweep, JSContext* cx)
-{
-    checkMagic();
-
-    if (flags & TYPE_FLAG_NON_CONSTANT_PROPERTY) {
-        return;
-    }
-
-    flags |= TYPE_FLAG_NON_CONSTANT_PROPERTY;
-    newPropertyState(sweep, cx);
-}
-
-inline unsigned
-TypeSet::getObjectCount() const
-{
-    MOZ_ASSERT(!unknownObject());
-    uint32_t count = baseObjectCount();
-    if (count > TypeHashSet::SET_ARRAY_SIZE) {
-        return TypeHashSet::Capacity(count);
-    }
-    return count;
-}
-
-inline TypeSet::ObjectKey*
-TypeSet::getObject(unsigned i) const
-{
-    MOZ_ASSERT(i < getObjectCount());
-    if (baseObjectCount() == 1) {
-        MOZ_ASSERT(i == 0);
-        return (ObjectKey*) objectSet;
-    }
-    return objectSet[i];
-}
-
-inline JSObject*
-TypeSet::getSingleton(unsigned i) const
-{
-    ObjectKey* key = getObject(i);
-    return (key && key->isSingleton()) ? key->singleton() : nullptr;
-}
-
-inline ObjectGroup*
-TypeSet::getGroup(unsigned i) const
-{
-    ObjectKey* key = getObject(i);
-    return (key && key->isGroup()) ? key->group() : nullptr;
-}
-
-inline JSObject*
-TypeSet::getSingletonNoBarrier(unsigned i) const
-{
-    ObjectKey* key = getObject(i);
-    return (key && key->isSingleton()) ? key->singletonNoBarrier() : nullptr;
-}
-
-inline ObjectGroup*
-TypeSet::getGroupNoBarrier(unsigned i) const
-{
-    ObjectKey* key = getObject(i);
-    return (key && key->isGroup()) ? key->groupNoBarrier() : nullptr;
-}
-
-inline bool
-TypeSet::hasGroup(unsigned i) const
-{
-    return getGroupNoBarrier(i);
-}
-
-inline bool
-TypeSet::hasSingleton(unsigned i) const
-{
-    return getSingletonNoBarrier(i);
-}
-
-inline const Class*
-TypeSet::getObjectClass(unsigned i) const
-{
-    if (JSObject* object = getSingleton(i)) {
-        return object->getClass();
-    }
-    if (ObjectGroup* group = getGroup(i)) {
-        return group->clasp();
-    }
+  uint32_t propertyCount = basePropertyCount(sweep);
+  Property** pprop = TypeHashSet::Insert<jsid, Property, Property>(
+      cx->typeLifoAlloc(), propertySet, propertyCount, id);
+  if (!pprop) {
+    markUnknown(sweep, cx);
     return nullptr;
-}
+  }
 
+  MOZ_ASSERT(!*pprop);
 
+  setBasePropertyCount(sweep, propertyCount);
+  *pprop = base;
 
+  updateNewPropertyTypes(sweep, cx, obj, id, &base->types);
 
-
-inline uint32_t
-ObjectGroup::basePropertyCountDontCheckGeneration()
-{
-    uint32_t flags = flagsDontCheckGeneration();
-    return (flags & OBJECT_FLAG_PROPERTY_COUNT_MASK) >> OBJECT_FLAG_PROPERTY_COUNT_SHIFT;
-}
-
-inline uint32_t
-ObjectGroup::basePropertyCount(const AutoSweepObjectGroup& sweep)
-{
-    MOZ_ASSERT(sweep.group() == this);
-    return basePropertyCountDontCheckGeneration();
-}
-
-inline void
-ObjectGroup::setBasePropertyCount(const AutoSweepObjectGroup& sweep, uint32_t count)
-{
+  if (propertyCount == OBJECT_FLAG_PROPERTY_COUNT_LIMIT) {
     
-    MOZ_ASSERT(count <= OBJECT_FLAG_PROPERTY_COUNT_LIMIT);
-    flags_ = (flags(sweep) & ~OBJECT_FLAG_PROPERTY_COUNT_MASK)
-           | (count << OBJECT_FLAG_PROPERTY_COUNT_SHIFT);
-}
-
-inline HeapTypeSet*
-ObjectGroup::getProperty(const AutoSweepObjectGroup& sweep, JSContext* cx, JSObject* obj, jsid id)
-{
-    MOZ_ASSERT(JSID_IS_VOID(id) || JSID_IS_EMPTY(id) || JSID_IS_STRING(id) || JSID_IS_SYMBOL(id));
-    MOZ_ASSERT_IF(!JSID_IS_EMPTY(id), id == IdToTypeId(id));
-    MOZ_ASSERT(!unknownProperties(sweep));
-    MOZ_ASSERT_IF(obj, obj->group() == this);
-    MOZ_ASSERT_IF(singleton(), obj);
-    MOZ_ASSERT(cx->compartment() == compartment());
-
-    if (HeapTypeSet* types = maybeGetProperty(sweep, id)) {
-        return types;
-    }
-
-    Property* base = cx->typeLifoAlloc().new_<Property>(id);
-    if (!base) {
-        markUnknown(sweep, cx);
-        return nullptr;
-    }
-
-    uint32_t propertyCount = basePropertyCount(sweep);
-    Property** pprop = TypeHashSet::Insert<jsid, Property, Property>
-                           (cx->typeLifoAlloc(), propertySet, propertyCount, id);
-    if (!pprop) {
-        markUnknown(sweep, cx);
-        return nullptr;
-    }
-
-    MOZ_ASSERT(!*pprop);
-
-    setBasePropertyCount(sweep, propertyCount);
-    *pprop = base;
-
-    updateNewPropertyTypes(sweep, cx, obj, id, &base->types);
-
-    if (propertyCount == OBJECT_FLAG_PROPERTY_COUNT_LIMIT) {
-        
-        
-        
-        markUnknown(sweep, cx);
-    }
-
-    base->types.checkMagic();
-    return &base->types;
-}
-
-MOZ_ALWAYS_INLINE HeapTypeSet*
-ObjectGroup::maybeGetPropertyDontCheckGeneration(jsid id)
-{
-    MOZ_ASSERT(JSID_IS_VOID(id) || JSID_IS_EMPTY(id) || JSID_IS_STRING(id) || JSID_IS_SYMBOL(id));
-    MOZ_ASSERT_IF(!JSID_IS_EMPTY(id), id == IdToTypeId(id));
-    MOZ_ASSERT(!unknownPropertiesDontCheckGeneration());
-
-    Property* prop = TypeHashSet::Lookup<jsid, Property, Property>
-                         (propertySet, basePropertyCountDontCheckGeneration(), id);
-
-    if (!prop) {
-        return nullptr;
-    }
-
-    prop->types.checkMagic();
-    return &prop->types;
-}
-
-MOZ_ALWAYS_INLINE HeapTypeSet*
-ObjectGroup::maybeGetProperty(const AutoSweepObjectGroup& sweep, jsid id)
-{
-    MOZ_ASSERT(sweep.group() == this);
-    return maybeGetPropertyDontCheckGeneration(id);
-}
-
-inline unsigned
-ObjectGroup::getPropertyCount(const AutoSweepObjectGroup& sweep)
-{
-    uint32_t count = basePropertyCount(sweep);
-    if (count > TypeHashSet::SET_ARRAY_SIZE) {
-        return TypeHashSet::Capacity(count);
-    }
-    return count;
-}
-
-inline ObjectGroup::Property*
-ObjectGroup::getProperty(const AutoSweepObjectGroup& sweep, unsigned i)
-{
-    MOZ_ASSERT(i < getPropertyCount(sweep));
-    Property* result;
-    if (basePropertyCount(sweep) == 1) {
-        MOZ_ASSERT(i == 0);
-        result = (Property*) propertySet;
-    } else {
-        result = propertySet[i];
-    }
-    if (result) {
-        result->types.checkMagic();
-    }
-    return result;
-}
-
-inline
-AutoSweepObjectGroup::AutoSweepObjectGroup(ObjectGroup* group)
-#ifdef DEBUG
-  : group_(group)
-#endif
-{
-    if (group->needsSweep()) {
-        group->sweep(*this);
-    }
-}
-
-#ifdef DEBUG
-inline
-AutoSweepObjectGroup::~AutoSweepObjectGroup()
-{
     
-    MOZ_ASSERT(!group_->needsSweep());
-}
-#endif
-
-inline
-AutoSweepTypeScript::AutoSweepTypeScript(JSScript* script)
-#ifdef DEBUG
-  : script_(script)
-#endif
-{
-    if (script->typesNeedsSweep()) {
-        script->sweepTypes(*this);
-    }
-}
-
-#ifdef DEBUG
-inline
-AutoSweepTypeScript::~AutoSweepTypeScript()
-{
     
-    MOZ_ASSERT(!script_->typesNeedsSweep());
+    markUnknown(sweep, cx);
+  }
+
+  base->types.checkMagic();
+  return &base->types;
+}
+
+MOZ_ALWAYS_INLINE HeapTypeSet* ObjectGroup::maybeGetPropertyDontCheckGeneration(
+    jsid id) {
+  MOZ_ASSERT(JSID_IS_VOID(id) || JSID_IS_EMPTY(id) || JSID_IS_STRING(id) ||
+             JSID_IS_SYMBOL(id));
+  MOZ_ASSERT_IF(!JSID_IS_EMPTY(id), id == IdToTypeId(id));
+  MOZ_ASSERT(!unknownPropertiesDontCheckGeneration());
+
+  Property* prop = TypeHashSet::Lookup<jsid, Property, Property>(
+      propertySet, basePropertyCountDontCheckGeneration(), id);
+
+  if (!prop) {
+    return nullptr;
+  }
+
+  prop->types.checkMagic();
+  return &prop->types;
+}
+
+MOZ_ALWAYS_INLINE HeapTypeSet* ObjectGroup::maybeGetProperty(
+    const AutoSweepObjectGroup& sweep, jsid id) {
+  MOZ_ASSERT(sweep.group() == this);
+  return maybeGetPropertyDontCheckGeneration(id);
+}
+
+inline unsigned ObjectGroup::getPropertyCount(
+    const AutoSweepObjectGroup& sweep) {
+  uint32_t count = basePropertyCount(sweep);
+  if (count > TypeHashSet::SET_ARRAY_SIZE) {
+    return TypeHashSet::Capacity(count);
+  }
+  return count;
+}
+
+inline ObjectGroup::Property* ObjectGroup::getProperty(
+    const AutoSweepObjectGroup& sweep, unsigned i) {
+  MOZ_ASSERT(i < getPropertyCount(sweep));
+  Property* result;
+  if (basePropertyCount(sweep) == 1) {
+    MOZ_ASSERT(i == 0);
+    result = (Property*)propertySet;
+  } else {
+    result = propertySet[i];
+  }
+  if (result) {
+    result->types.checkMagic();
+  }
+  return result;
+}
+
+inline AutoSweepObjectGroup::AutoSweepObjectGroup(ObjectGroup* group)
+#ifdef DEBUG
+    : group_(group)
+#endif
+{
+  if (group->needsSweep()) {
+    group->sweep(*this);
+  }
+}
+
+#ifdef DEBUG
+inline AutoSweepObjectGroup::~AutoSweepObjectGroup() {
+  
+  MOZ_ASSERT(!group_->needsSweep());
 }
 #endif
 
-} 
-
-inline js::TypeScript*
-JSScript::types(const js::AutoSweepTypeScript& sweep)
+inline AutoSweepTypeScript::AutoSweepTypeScript(JSScript* script)
+#ifdef DEBUG
+    : script_(script)
+#endif
 {
-    MOZ_ASSERT(sweep.script() == this);
-    return types_;
+  if (script->typesNeedsSweep()) {
+    script->sweepTypes(*this);
+  }
 }
 
-inline bool
-JSScript::typesNeedsSweep() const
-{
-    MOZ_ASSERT(!js::TlsContext.get()->inUnsafeCallWithABI);
-    return types_ && typesGeneration() != zone()->types.generation;
+#ifdef DEBUG
+inline AutoSweepTypeScript::~AutoSweepTypeScript() {
+  
+  MOZ_ASSERT(!script_->typesNeedsSweep());
+}
+#endif
+
+}  
+
+inline js::TypeScript* JSScript::types(const js::AutoSweepTypeScript& sweep) {
+  MOZ_ASSERT(sweep.script() == this);
+  return types_;
 }
 
-inline bool
-JSScript::ensureHasTypes(JSContext* cx, js::AutoKeepTypeScripts&)
-{
-    js::AutoSweepTypeScript sweep(this);
-    return types(sweep) || makeTypes(cx);
+inline bool JSScript::typesNeedsSweep() const {
+  MOZ_ASSERT(!js::TlsContext.get()->inUnsafeCallWithABI);
+  return types_ && typesGeneration() != zone()->types.generation;
+}
+
+inline bool JSScript::ensureHasTypes(JSContext* cx, js::AutoKeepTypeScripts&) {
+  js::AutoSweepTypeScript sweep(this);
+  return types(sweep) || makeTypes(cx);
 }
 
 #endif 

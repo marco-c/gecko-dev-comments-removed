@@ -20,9 +20,8 @@ class ScriptLoadRequest;
 class ScriptLoader;
 class SRICheckDataVerifier;
 
-class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver
-{
-public:
+class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver {
+ public:
   explicit ScriptLoadHandler(ScriptLoader* aScriptLoader,
                              ScriptLoadRequest* aRequest,
                              SRICheckDataVerifier* aSRIDataVerifier);
@@ -30,7 +29,7 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIINCREMENTALSTREAMLOADEROBSERVER
 
-private:
+ private:
   virtual ~ScriptLoadHandler();
 
   
@@ -45,12 +44,11 @@ private:
 
 
 
-  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader,
-                     const uint8_t* aData, uint32_t aDataLength,
-                     bool aEndOfStream);
-  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader,
-                     const uint8_t* aData, uint32_t aDataLength,
-                     bool aEndOfStream, nsCString& oCharset);
+  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
+                     uint32_t aDataLength, bool aEndOfStream);
+  bool EnsureDecoder(nsIIncrementalStreamLoader* aLoader, const uint8_t* aData,
+                     uint32_t aDataLength, bool aEndOfStream,
+                     nsCString& oCharset);
 
   
 
@@ -77,7 +75,7 @@ private:
   mozilla::UniquePtr<mozilla::Decoder> mDecoder;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

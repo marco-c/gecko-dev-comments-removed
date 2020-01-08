@@ -19,17 +19,17 @@ namespace mozilla {
 class VsyncObserver;
 namespace gl {
 class GLContext;
-} 
+}  
 namespace layers {
 class Compositor;
 class LayerManager;
 class LayerManagerComposite;
 class Compositor;
-} 
+}  
 namespace gfx {
 class DrawTarget;
 class SourceSurface;
-} 
+}  
 namespace widget {
 
 class WinCompositorWidget;
@@ -47,9 +47,8 @@ class PlatformCompositorWidgetDelegate;
 
 class HeadlessCompositorWidget;
 
-class CompositorWidgetDelegate
-{
-public:
+class CompositorWidgetDelegate {
+ public:
   virtual PlatformCompositorWidgetDelegate* AsPlatformSpecificDelegate() {
     return nullptr;
   }
@@ -69,16 +68,13 @@ class CompositorWidgetParent;
 
 class CompositorWidgetChild;
 
-# define MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
+#define MOZ_WIDGET_SUPPORTS_OOP_COMPOSITING
 #endif
 
-class WidgetRenderingContext
-{
-public:
+class WidgetRenderingContext {
+ public:
 #if defined(XP_MACOSX)
-  WidgetRenderingContext()
-    : mLayerManager(nullptr)
-    , mGL(nullptr) {}
+  WidgetRenderingContext() : mLayerManager(nullptr), mGL(nullptr) {}
   layers::LayerManagerComposite* mLayerManager;
   gl::GLContext* mGL;
 #elif defined(MOZ_WIDGET_ANDROID)
@@ -90,18 +86,17 @@ public:
 
 
 
-class CompositorWidget
-{
-public:
+class CompositorWidget {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(mozilla::widget::CompositorWidget)
 
   
 
 
 
-  static RefPtr<CompositorWidget> CreateLocal(const CompositorWidgetInitData& aInitData,
-                                              const layers::CompositorOptions& aOptions,
-                                              nsIWidget* aWidget);
+  static RefPtr<CompositorWidget> CreateLocal(
+      const CompositorWidgetInitData& aInitData,
+      const layers::CompositorOptions& aOptions, nsIWidget* aWidget);
 
   
 
@@ -110,9 +105,7 @@ public:
 
 
 
-  virtual bool PreRender(WidgetRenderingContext* aContext) {
-    return true;
-  }
+  virtual bool PreRender(WidgetRenderingContext* aContext) { return true; }
 
   
 
@@ -121,8 +114,7 @@ public:
 
 
 
-  virtual void PostRender(WidgetRenderingContext* aContext)
-  {}
+  virtual void PostRender(WidgetRenderingContext* aContext) {}
 
   
 
@@ -130,8 +122,7 @@ public:
 
 
   virtual void DrawWindowUnderlay(WidgetRenderingContext* aContext,
-                                  LayoutDeviceIntRect aRect)
-  {}
+                                  LayoutDeviceIntRect aRect) {}
 
   
 
@@ -139,8 +130,7 @@ public:
 
 
   virtual void DrawWindowOverlay(WidgetRenderingContext* aContext,
-                                 LayoutDeviceIntRect aRect)
-  {}
+                                 LayoutDeviceIntRect aRect) {}
 
   
 
@@ -152,10 +142,8 @@ public:
 
 
   virtual already_AddRefed<gfx::DrawTarget> StartRemoteDrawing();
-  virtual already_AddRefed<gfx::DrawTarget>
-  StartRemoteDrawingInRegion(LayoutDeviceIntRegion& aInvalidRegion,
-                             layers::BufferMode* aBufferMode)
-  {
+  virtual already_AddRefed<gfx::DrawTarget> StartRemoteDrawingInRegion(
+      LayoutDeviceIntRegion& aInvalidRegion, layers::BufferMode* aBufferMode) {
     return StartRemoteDrawing();
   }
 
@@ -166,11 +154,9 @@ public:
 
 
 
-  virtual void EndRemoteDrawing()
-  {}
+  virtual void EndRemoteDrawing() {}
   virtual void EndRemoteDrawingInRegion(gfx::DrawTarget* aDrawTarget,
-                                        LayoutDeviceIntRegion& aInvalidRegion)
-  {
+                                        LayoutDeviceIntRegion& aInvalidRegion) {
     EndRemoteDrawing();
   }
 
@@ -180,17 +166,7 @@ public:
 
 
 
-  virtual bool NeedsToDeferEndRemoteDrawing() {
-    return false;
-  }
-
-  
-
-
-
-
-  virtual void CleanupWindowEffects()
-  {}
+  virtual bool NeedsToDeferEndRemoteDrawing() { return false; }
 
   
 
@@ -198,12 +174,19 @@ public:
 
 
 
+  virtual void CleanupWindowEffects() {}
+
+  
 
 
 
-  virtual bool InitCompositor(layers::Compositor* aCompositor) {
-    return true;
-  }
+
+
+
+
+
+
+  virtual bool InitCompositor(layers::Compositor* aCompositor) { return true; }
 
   
 
@@ -239,17 +222,14 @@ public:
 
 
 
-  virtual uintptr_t GetWidgetKey() {
-    return 0;
-  }
+  virtual uintptr_t GetWidgetKey() { return 0; }
 
   
 
 
-  virtual already_AddRefed<gfx::DrawTarget>
-  GetBackBufferDrawTarget(gfx::DrawTarget* aScreenTarget,
-                          const LayoutDeviceIntRect& aRect,
-                          const LayoutDeviceIntRect& aClearRect);
+  virtual already_AddRefed<gfx::DrawTarget> GetBackBufferDrawTarget(
+      gfx::DrawTarget* aScreenTarget, const LayoutDeviceIntRect& aRect,
+      const LayoutDeviceIntRect& aClearRect);
 
   
 
@@ -268,40 +248,28 @@ public:
 
 
 
-  const layers::CompositorOptions& GetCompositorOptions() {
-    return mOptions;
-  }
+  const layers::CompositorOptions& GetCompositorOptions() { return mOptions; }
 
   
 
 
-  virtual bool IsHidden() const {
-    return false;
-  }
+  virtual bool IsHidden() const { return false; }
 
   
 
 
   virtual RefPtr<VsyncObserver> GetVsyncObserver() const;
 
-  virtual WinCompositorWidget* AsWindows() {
-    return nullptr;
-  }
-  virtual GtkCompositorWidget* AsX11() {
-    return nullptr;
-  }
-  virtual AndroidCompositorWidget* AsAndroid() {
-    return nullptr;
-  }
+  virtual WinCompositorWidget* AsWindows() { return nullptr; }
+  virtual GtkCompositorWidget* AsX11() { return nullptr; }
+  virtual AndroidCompositorWidget* AsAndroid() { return nullptr; }
 
   
 
 
-  virtual CompositorWidgetDelegate* AsDelegate() {
-    return nullptr;
-  }
+  virtual CompositorWidgetDelegate* AsDelegate() { return nullptr; }
 
-protected:
+ protected:
   explicit CompositorWidget(const layers::CompositorOptions& aOptions);
   virtual ~CompositorWidget();
 
@@ -311,7 +279,7 @@ protected:
   layers::CompositorOptions mOptions;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

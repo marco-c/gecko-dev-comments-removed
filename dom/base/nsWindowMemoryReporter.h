@@ -84,9 +84,8 @@
 
 class nsWindowMemoryReporter final : public nsIMemoryReporter,
                                      public nsIObserver,
-                                     public nsSupportsWeakReference
-{
-public:
+                                     public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
   NS_DECL_NSIOBSERVER
@@ -106,7 +105,7 @@ public:
 
   static int64_t GhostWindowsDistinguishedAmount();
 
-private:
+ private:
   ~nsWindowMemoryReporter();
 
   
@@ -133,7 +132,8 @@ private:
 
 
 
-  void CheckForGhostWindows(nsTHashtable<nsUint64HashKey> *aOutGhostIDs = nullptr);
+  void CheckForGhostWindows(
+      nsTHashtable<nsUint64HashKey>* aOutGhostIDs = nullptr);
 
   
 
@@ -175,5 +175,4 @@ private:
   int64_t mGhostWindowCount;
 };
 
-#endif 
-
+#endif  

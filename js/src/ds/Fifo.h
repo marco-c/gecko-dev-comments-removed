@@ -26,169 +26,156 @@ namespace js {
 
 
 
-template <typename T,
-          size_t MinInlineCapacity = 0,
+template <typename T, size_t MinInlineCapacity = 0,
           class AllocPolicy = TempAllocPolicy>
-class Fifo
-{
-    static_assert(MinInlineCapacity % 2 == 0, "MinInlineCapacity must be even!");
+class Fifo {
+  static_assert(MinInlineCapacity % 2 == 0, "MinInlineCapacity must be even!");
 
-  protected:
-    
-    
-    
-    
-    
-    
-    
-    
-    Vector<T, MinInlineCapacity / 2, AllocPolicy> front_;
-    Vector<T, MinInlineCapacity / 2, AllocPolicy> rear_;
+ protected:
+  
+  
+  
+  
+  
+  
+  
+  
+  Vector<T, MinInlineCapacity / 2, AllocPolicy> front_;
+  Vector<T, MinInlineCapacity / 2, AllocPolicy> rear_;
 
-  private:
-    
-    void fixup() {
-        if (front_.empty() && !rear_.empty()) {
-            front_.swap(rear_);
-            Reverse(front_.begin(), front_.end());
-        }
+ private:
+  
+  void fixup() {
+    if (front_.empty() && !rear_.empty()) {
+      front_.swap(rear_);
+      Reverse(front_.begin(), front_.end());
+    }
+  }
+
+ public:
+  explicit Fifo(AllocPolicy alloc = AllocPolicy())
+      : front_(alloc), rear_(alloc) {}
+
+  Fifo(Fifo&& rhs)
+      : front_(std::move(rhs.front_)), rear_(std::move(rhs.rear_)) {}
+
+  Fifo& operator=(Fifo&& rhs) {
+    MOZ_ASSERT(&rhs != this, "self-move disallowed");
+    this->~Fifo();
+    new (this) Fifo(std::move(rhs));
+    return *this;
+  }
+
+  Fifo(const Fifo&) = delete;
+  Fifo& operator=(const Fifo&) = delete;
+
+  size_t length() const {
+    MOZ_ASSERT_IF(rear_.length() > 0, front_.length() > 0);  
+    return front_.length() + rear_.length();
+  }
+
+  bool empty() const {
+    MOZ_ASSERT_IF(rear_.length() > 0, front_.length() > 0);  
+    return front_.empty();
+  }
+
+  
+  struct ConstIterator {
+    const Fifo& self_;
+    size_t idx_;
+
+    ConstIterator(const Fifo& self, size_t idx) : self_(self), idx_(idx) {}
+
+    ConstIterator& operator++() {
+      ++idx_;
+      return *this;
     }
 
-  public:
-    explicit Fifo(AllocPolicy alloc = AllocPolicy())
-        : front_(alloc)
-        , rear_(alloc)
-    { }
-
-    Fifo(Fifo&& rhs)
-        : front_(std::move(rhs.front_))
-        , rear_(std::move(rhs.rear_))
-    { }
-
-    Fifo& operator=(Fifo&& rhs) {
-        MOZ_ASSERT(&rhs != this, "self-move disallowed");
-        this->~Fifo();
-        new (this) Fifo(std::move(rhs));
-        return *this;
+    const T& operator*() const {
+      
+      size_t split = self_.front_.length();
+      return (idx_ < split) ? self_.front_[(split - 1) - idx_]
+                            : self_.rear_[idx_ - split];
     }
 
-    Fifo(const Fifo&) = delete;
-    Fifo& operator=(const Fifo&) = delete;
-
-    size_t length() const {
-        MOZ_ASSERT_IF(rear_.length() > 0, front_.length() > 0); 
-        return front_.length() + rear_.length();
+    bool operator!=(const ConstIterator& other) const {
+      return (&self_ != &other.self_) || (idx_ != other.idx_);
     }
+  };
 
-    bool empty() const {
-        MOZ_ASSERT_IF(rear_.length() > 0, front_.length() > 0); 
-        return front_.empty();
+  ConstIterator begin() const { return ConstIterator(*this, 0); }
+
+  ConstIterator end() const { return ConstIterator(*this, length()); }
+
+  
+  
+  template <typename U>
+  MOZ_MUST_USE bool pushBack(U&& u) {
+    if (!rear_.append(std::forward<U>(u))) {
+      return false;
     }
+    fixup();
+    return true;
+  }
 
-    
-    struct ConstIterator
-    {
-        const Fifo& self_;
-        size_t idx_;
-
-        ConstIterator(const Fifo& self, size_t idx)
-            : self_(self), idx_(idx)
-        { }
-
-        ConstIterator& operator++() {
-            ++idx_;
-            return *this;
-        }
-
-        const T& operator*() const {
-            
-            size_t split = self_.front_.length();
-            return (idx_ < split) ? self_.front_[(split - 1) - idx_]
-                                  : self_.rear_[idx_ - split];
-        }
-
-        bool operator!=(const ConstIterator& other) const {
-            return (&self_ != &other.self_) || (idx_ != other.idx_);
-        }
-    };
-
-    ConstIterator begin() const {
-        return ConstIterator(*this, 0);
+  
+  template <typename... Args>
+  MOZ_MUST_USE bool emplaceBack(Args&&... args) {
+    if (!rear_.emplaceBack(std::forward<Args>(args)...)) {
+      return false;
     }
+    fixup();
+    return true;
+  }
 
-    ConstIterator end() const {
-        return ConstIterator(*this, length());
-    }
+  
+  T& front() {
+    MOZ_ASSERT(!empty());
+    return front_.back();
+  }
+  const T& front() const {
+    MOZ_ASSERT(!empty());
+    return front_.back();
+  }
 
-    
-    
-    template <typename U>
-    MOZ_MUST_USE bool pushBack(U&& u) {
-        if (!rear_.append(std::forward<U>(u))) {
-            return false;
-        }
-        fixup();
-        return true;
-    }
+  
+  void popFront() {
+    MOZ_ASSERT(!empty());
+    front_.popBack();
+    fixup();
+  }
 
-    
-    template <typename... Args>
-    MOZ_MUST_USE bool emplaceBack(Args&&... args) {
-        if (!rear_.emplaceBack(std::forward<Args>(args)...)) {
-            return false;
-        }
-        fixup();
-        return true;
-    }
+  
+  T popCopyFront() {
+    T ret = front();
+    popFront();
+    return ret;
+  }
 
-    
-    T& front() {
-        MOZ_ASSERT(!empty());
-        return front_.back();
-    }
-    const T& front() const {
-        MOZ_ASSERT(!empty());
-        return front_.back();
-    }
+  
+  void clear() {
+    front_.clear();
+    rear_.clear();
+  }
 
-    
-    void popFront() {
-        MOZ_ASSERT(!empty());
-        front_.popBack();
-        fixup();
-    }
+  
+  
+  template <class Pred>
+  size_t eraseIf(Pred pred) {
+    size_t erased = EraseIf(front_, pred);
+    erased += EraseIf(rear_, pred);
+    return erased;
+  }
 
-    
-    T popCopyFront() {
-        T ret = front();
-        popFront();
-        return ret;
-    }
-
-    
-    void clear() {
-        front_.clear();
-        rear_.clear();
-    }
-
-    
-    
-    template <class Pred>
-    size_t eraseIf(Pred pred) {
-        size_t erased = EraseIf(front_, pred);
-        erased += EraseIf(rear_, pred);
-        return erased;
-    }
-
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return front_.sizeOfExcludingThis(mallocSizeOf) +
-               rear_.sizeOfExcludingThis(mallocSizeOf);
-    }
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
-    }
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return front_.sizeOfExcludingThis(mallocSizeOf) +
+           rear_.sizeOfExcludingThis(mallocSizeOf);
+  }
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
+  }
 };
 
-} 
+}  
 
 #endif 

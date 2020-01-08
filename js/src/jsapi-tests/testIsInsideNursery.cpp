@@ -9,24 +9,23 @@
 
 #include "vm/JSContext-inl.h"
 
-BEGIN_TEST(testIsInsideNursery)
-{
-    
-    CHECK(!cx->nursery().isInside(cx));
-    CHECK(!cx->nursery().isInside((void*)nullptr));
+BEGIN_TEST(testIsInsideNursery) {
+  
+  CHECK(!cx->nursery().isInside(cx));
+  CHECK(!cx->nursery().isInside((void*)nullptr));
 
-    JS_GC(cx);
+  JS_GC(cx);
 
-    JS::RootedObject object(cx, JS_NewPlainObject(cx));
+  JS::RootedObject object(cx, JS_NewPlainObject(cx));
 
-    
-    CHECK(js::gc::IsInsideNursery(object));
+  
+  CHECK(js::gc::IsInsideNursery(object));
 
-    JS_GC(cx);
+  JS_GC(cx);
 
-    
-    CHECK(!js::gc::IsInsideNursery(object));
+  
+  CHECK(!js::gc::IsInsideNursery(object));
 
-    return true;
+  return true;
 }
 END_TEST(testIsInsideNursery)

@@ -19,13 +19,11 @@ class ErrorResult;
 
 namespace dom {
 
-class ServiceWorkerJob
-{
-public:
+class ServiceWorkerJob {
+ public:
   
-  class Callback
-  {
-  public:
+  class Callback {
+   public:
     
     
     
@@ -35,115 +33,89 @@ public:
     NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
   };
 
-  enum class Type
-  {
-    Register,
-    Update,
-    Unregister
-  };
+  enum class Type { Register, Update, Unregister };
 
-  enum class State
-  {
-    Initial,
-    Started,
-    Finished
-  };
+  enum class State { Initial, Started, Finished };
 
-  Type
-  GetType() const;
+  Type GetType() const;
 
-  State
-  GetState() const;
+  State GetState() const;
 
   
   
   
-  bool
-  Canceled() const;
+  bool Canceled() const;
 
   
   
-  bool
-  ResultCallbacksInvoked() const;
+  bool ResultCallbacksInvoked() const;
 
-  bool
-  IsEquivalentTo(ServiceWorkerJob* aJob) const;
+  bool IsEquivalentTo(ServiceWorkerJob* aJob) const;
 
   
   
   
   
   
-  void
-  AppendResultCallback(Callback* aCallback);
+  void AppendResultCallback(Callback* aCallback);
 
   
   
-  void
-  StealResultCallbacksFrom(ServiceWorkerJob* aJob);
+  void StealResultCallbacksFrom(ServiceWorkerJob* aJob);
 
   
   
   
   
-  void
-  Start(Callback* aFinalCallback);
+  void Start(Callback* aFinalCallback);
 
   
   
-  void
-  Cancel();
+  void Cancel();
 
-protected:
-  ServiceWorkerJob(Type aType,
-                   nsIPrincipal* aPrincipal,
-                   const nsACString& aScope,
-                   const nsACString& aScriptSpec);
+ protected:
+  ServiceWorkerJob(Type aType, nsIPrincipal* aPrincipal,
+                   const nsACString& aScope, const nsACString& aScriptSpec);
 
   virtual ~ServiceWorkerJob();
 
   
   
   
-  void
-  InvokeResultCallbacks(ErrorResult& aRv);
+  void InvokeResultCallbacks(ErrorResult& aRv);
 
   
-  void
-  InvokeResultCallbacks(nsresult aRv);
-
-  
-  
-  
-  void
-  Finish(ErrorResult& aRv);
-
-  
-  void
-  Finish(nsresult aRv);
+  void InvokeResultCallbacks(nsresult aRv);
 
   
   
-  virtual void
-  AsyncExecute() = 0;
+  
+  void Finish(ErrorResult& aRv);
+
+  
+  void Finish(nsresult aRv);
+
+  
+  
+  virtual void AsyncExecute() = 0;
 
   const Type mType;
   nsCOMPtr<nsIPrincipal> mPrincipal;
   const nsCString mScope;
   const nsCString mScriptSpec;
 
-private:
+ private:
   RefPtr<Callback> mFinalCallback;
   nsTArray<RefPtr<Callback>> mResultCallbackList;
   State mState;
   bool mCanceled;
   bool mResultCallbacksInvoked;
 
-public:
+ public:
   NS_INLINE_DECL_REFCOUNTING(ServiceWorkerJob)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

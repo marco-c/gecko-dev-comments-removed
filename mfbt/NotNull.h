@@ -100,10 +100,10 @@ namespace mozilla {
 
 
 template <typename T>
-class NotNull
-{
-  template <typename U> friend constexpr NotNull<U> WrapNotNull(U aBasePtr);
-  template<typename U, typename... Args>
+class NotNull {
+  template <typename U>
+  friend constexpr NotNull<U> WrapNotNull(U aBasePtr);
+  template <typename U, typename... Args>
   friend constexpr NotNull<U> MakeNotNull(Args&&... aArgs);
 
   T mBasePtr;
@@ -112,15 +112,14 @@ class NotNull
   template <typename U>
   constexpr explicit NotNull(U aBasePtr) : mBasePtr(aBasePtr) {}
 
-public:
+ public:
   
   NotNull() = delete;
 
   
   template <typename U>
   constexpr MOZ_IMPLICIT NotNull(const NotNull<U>& aOther)
-    : mBasePtr(aOther.get())
-  {
+      : mBasePtr(aOther.get()) {
     static_assert(sizeof(T) == sizeof(NotNull<T>),
                   "NotNull must have zero space overhead.");
     static_assert(offsetof(NotNull<T>, mBasePtr) == 0,
@@ -149,9 +148,7 @@ public:
 };
 
 template <typename T>
-constexpr NotNull<T>
-WrapNotNull(const T aBasePtr)
-{
+constexpr NotNull<T> WrapNotNull(const T aBasePtr) {
   NotNull<T> notNull(aBasePtr);
   MOZ_RELEASE_ASSERT(aBasePtr);
   return notNull;
@@ -162,9 +159,8 @@ namespace detail {
 
 
 
-template<typename Pointer>
-struct PointedTo
-{
+template <typename Pointer>
+struct PointedTo {
   
   using Type = typename RemoveReference<decltype(*DeclVal<Pointer>())>::Type;
   using NonConstType = typename RemoveConst<Type>::Type;
@@ -174,29 +170,25 @@ struct PointedTo
 
 
 
-template<typename T>
-struct PointedTo<T*>
-{
+template <typename T>
+struct PointedTo<T*> {
   using Type = T;
   using NonConstType = T;
 };
 
-template<typename T>
-struct PointedTo<const T*>
-{
+template <typename T>
+struct PointedTo<const T*> {
   using Type = const T;
   using NonConstType = T;
 };
 
-} 
+}  
 
 
 
 
-template<typename T, typename... Args>
-constexpr NotNull<T>
-MakeNotNull(Args&&... aArgs)
-{
+template <typename T, typename... Args>
+constexpr NotNull<T> MakeNotNull(Args&&... aArgs) {
   using Pointee = typename detail::PointedTo<T>::NonConstType;
   static_assert(!IsArray<Pointee>::value,
                 "MakeNotNull cannot construct an array");
@@ -205,62 +197,46 @@ MakeNotNull(Args&&... aArgs)
 
 
 template <typename T, typename U>
-constexpr bool
-operator==(const NotNull<T>& aLhs, const NotNull<U>& aRhs)
-{
+constexpr bool operator==(const NotNull<T>& aLhs, const NotNull<U>& aRhs) {
   return aLhs.get() == aRhs.get();
 }
 template <typename T, typename U>
-constexpr bool
-operator!=(const NotNull<T>& aLhs, const NotNull<U>& aRhs)
-{
+constexpr bool operator!=(const NotNull<T>& aLhs, const NotNull<U>& aRhs) {
   return aLhs.get() != aRhs.get();
 }
 
 
 template <typename T, typename U>
-constexpr bool
-operator==(const NotNull<T>& aLhs, const U& aRhs)
-{
+constexpr bool operator==(const NotNull<T>& aLhs, const U& aRhs) {
   return aLhs.get() == aRhs;
 }
 template <typename T, typename U>
-constexpr bool
-operator!=(const NotNull<T>& aLhs, const U& aRhs)
-{
+constexpr bool operator!=(const NotNull<T>& aLhs, const U& aRhs) {
   return aLhs.get() != aRhs;
 }
 
 
 template <typename T, typename U>
-constexpr bool
-operator==(const T& aLhs, const NotNull<U>& aRhs)
-{
+constexpr bool operator==(const T& aLhs, const NotNull<U>& aRhs) {
   return aLhs == aRhs.get();
 }
 template <typename T, typename U>
-constexpr bool
-operator!=(const T& aLhs, const NotNull<U>& aRhs)
-{
+constexpr bool operator!=(const T& aLhs, const NotNull<U>& aRhs) {
   return aLhs != aRhs.get();
 }
 
 
 template <typename T>
-bool
-operator==(const NotNull<T>&, decltype(nullptr)) = delete;
+bool operator==(const NotNull<T>&, decltype(nullptr)) = delete;
 template <typename T>
-bool
-operator!=(const NotNull<T>&, decltype(nullptr)) = delete;
+bool operator!=(const NotNull<T>&, decltype(nullptr)) = delete;
 
 
 template <typename T>
-bool
-operator==(decltype(nullptr), const NotNull<T>&) = delete;
+bool operator==(decltype(nullptr), const NotNull<T>&) = delete;
 template <typename T>
-bool
-operator!=(decltype(nullptr), const NotNull<T>&) = delete;
+bool operator!=(decltype(nullptr), const NotNull<T>&) = delete;
 
-} 
+}  
 
 #endif 

@@ -16,16 +16,15 @@
 #include "nsFrame.h"
 
 
-class nsSplittableFrame : public nsFrame
-{
-public:
+class nsSplittableFrame : public nsFrame {
+ public:
   NS_DECL_ABSTRACT_FRAME(nsSplittableFrame)
 
-  void Init(nsIContent*       aContent,
-            nsContainerFrame* aParent,
-            nsIFrame*         aPrevInFlow) override;
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 
-  void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  void DestroyFrom(nsIFrame* aDestructRoot,
+                   PostDestroyData& aPostDestroyData) override;
 
   
 
@@ -35,6 +34,7 @@ public:
 
 
 
+  
   
   nsIFrame* GetPrevContinuation() const final;
   nsIFrame* GetNextContinuation() const final;
@@ -70,14 +70,14 @@ public:
 
   
   
+  
   static void RemoveFromFlow(nsIFrame* aFrame);
 
-protected:
+ protected:
   nsSplittableFrame(ComputedStyle* aStyle, ClassID aID)
-    : nsFrame(aStyle, aID)
-    , mPrevContinuation(nullptr)
-    , mNextContinuation(nullptr)
-  {}
+      : nsFrame(aStyle, aID),
+        mPrevContinuation(nullptr),
+        mNextContinuation(nullptr) {}
 
   
 
@@ -93,13 +93,15 @@ protected:
 
 
 
+
   nscoord GetEffectiveComputedBSize(const ReflowInput& aReflowInput,
                                     nscoord aConsumed = NS_INTRINSICSIZE) const;
 
   
 
 
-  LogicalSides GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const override;
+  LogicalSides GetLogicalSkipSides(
+      const ReflowInput* aReflowInput = nullptr) const override;
 
   
 
@@ -113,8 +115,8 @@ protected:
 
   LogicalSides PreReflowBlockLevelLogicalSkipSides() const;
 
-  nsIFrame*   mPrevContinuation;
-  nsIFrame*   mNextContinuation;
+  nsIFrame* mPrevContinuation;
+  nsIFrame* mNextContinuation;
 };
 
 #endif 

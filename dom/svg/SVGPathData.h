@@ -21,7 +21,7 @@
 
 #include <string.h>
 
-class nsSVGPathDataParser; 
+class nsSVGPathDataParser;  
 
 struct nsSVGMark;
 
@@ -73,8 +73,7 @@ namespace mozilla {
 
 
 
-class SVGPathData
-{
+class SVGPathData {
   friend class SVGAnimatedPathSegList;
   friend class DOMSVGPathSegList;
   friend class DOMSVGPathSeg;
@@ -89,11 +88,11 @@ class SVGPathData
   typedef gfx::Float Float;
   typedef gfx::CapStyle CapStyle;
 
-public:
+ public:
   typedef const float* const_iterator;
 
-  SVGPathData(){}
-  ~SVGPathData(){}
+  SVGPathData() {}
+  ~SVGPathData() {}
 
   
   
@@ -101,9 +100,7 @@ public:
   
   void GetValueAsString(nsAString& aValue) const;
 
-  bool IsEmpty() const {
-    return mData.IsEmpty();
-  }
+  bool IsEmpty() const { return mData.IsEmpty(); }
 
 #ifdef DEBUG
   
@@ -117,13 +114,9 @@ public:
 
 
 
-  uint32_t Length() const {
-    return mData.Length();
-  }
+  uint32_t Length() const { return mData.Length(); }
 
-  const float& operator[](uint32_t aIndex) const {
-    return mData[aIndex];
-  }
+  const float& operator[](uint32_t aIndex) const { return mData[aIndex]; }
 
   
   bool operator==(const SVGPathData& rhs) const {
@@ -138,26 +131,24 @@ public:
     return mData.SetCapacity(aSize, fallible);
   }
 
-  void Compact() {
-    mData.Compact();
-  }
-
+  void Compact() { mData.Compact(); }
 
   float GetPathLength() const;
 
   uint32_t GetPathSegAtLength(float aLength) const;
 
-  void GetMarkerPositioningData(nsTArray<nsSVGMark> *aMarks) const;
+  void GetMarkerPositioningData(nsTArray<nsSVGMark>* aMarks) const;
 
   
 
 
-  bool GetSegmentLengths(nsTArray<double> *aLengths) const;
+  bool GetSegmentLengths(nsTArray<double>* aLengths) const;
 
   
 
 
-  bool GetDistancesFromOriginToEndsOfVisibleSegments(FallibleTArray<double> *aArray) const;
+  bool GetDistancesFromOriginToEndsOfVisibleSegments(
+      FallibleTArray<double>* aArray) const;
 
   
 
@@ -166,20 +157,16 @@ public:
 
   already_AddRefed<Path> BuildPathForMeasuring() const;
 
-  already_AddRefed<Path> BuildPath(PathBuilder* aBuilder,
-                               uint8_t aCapStyle,
-                               Float aStrokeWidth) const;
+  already_AddRefed<Path> BuildPath(PathBuilder* aBuilder, uint8_t aCapStyle,
+                                   Float aStrokeWidth) const;
   
 
 
 
 
-  static already_AddRefed<Path>
-  BuildPath(const nsTArray<StylePathCommand>& aPath,
-            PathBuilder* aBuilder,
-            uint8_t aCapStyle,
-            Float aStrokeWidth,
-            float aZoomFactor = 1.0);
+  static already_AddRefed<Path> BuildPath(
+      const nsTArray<StylePathCommand>& aPath, PathBuilder* aBuilder,
+      uint8_t aCapStyle, Float aStrokeWidth, float aZoomFactor = 1.0);
 
   const_iterator begin() const { return mData.Elements(); }
   const_iterator end() const { return mData.Elements() + mData.Length(); }
@@ -195,7 +182,7 @@ public:
   
   
 
-protected:
+ protected:
   typedef float* iterator;
 
   
@@ -204,9 +191,7 @@ protected:
 
   nsresult CopyFrom(const SVGPathData& rhs);
 
-  float& operator[](uint32_t aIndex) {
-    return mData[aIndex];
-  }
+  float& operator[](uint32_t aIndex) { return mData[aIndex]; }
 
   
 
@@ -218,9 +203,7 @@ protected:
 
   nsresult SetValueFromString(const nsAString& aValue);
 
-  void Clear() {
-    mData.Clear();
-  }
+  void Clear() { mData.Clear(); }
 
   
   
@@ -230,7 +213,7 @@ protected:
   
   
 
-  nsresult AppendSeg(uint32_t aType, ...); 
+  nsresult AppendSeg(uint32_t aType, ...);  
 
   iterator begin() { return mData.Elements(); }
   iterator end() { return mData.Elements() + mData.Length(); }
@@ -246,15 +229,12 @@ protected:
 
 
 
+class SVGPathDataAndInfo final : public SVGPathData {
+ public:
+  explicit SVGPathDataAndInfo(nsSVGElement* aElement = nullptr)
+      : mElement(do_GetWeakReference(static_cast<nsINode*>(aElement))) {}
 
-class SVGPathDataAndInfo final : public SVGPathData
-{
-public:
-  explicit SVGPathDataAndInfo(nsSVGElement *aElement = nullptr)
-    : mElement(do_GetWeakReference(static_cast<nsINode*>(aElement)))
-  {}
-
-  void SetElement(nsSVGElement *aElement) {
+  void SetElement(nsSVGElement* aElement) {
     mElement = do_GetWeakReference(static_cast<nsINode*>(aElement));
   }
 
@@ -291,11 +271,11 @@ public:
   
   using SVGPathData::iterator;
   using SVGPathData::operator[];
-  using SVGPathData::SetLength;
   using SVGPathData::begin;
   using SVGPathData::end;
+  using SVGPathData::SetLength;
 
-private:
+ private:
   
   
   
@@ -303,6 +283,6 @@ private:
   nsWeakPtr mElement;
 };
 
-} 
+}  
 
-#endif 
+#endif  

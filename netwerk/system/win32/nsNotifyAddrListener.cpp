@@ -46,235 +46,224 @@ static LazyLogModule gNotifyAddrLog("nsNotifyAddr");
 #define LOG(args) MOZ_LOG(gNotifyAddrLog, mozilla::LogLevel::Debug, args)
 
 static HMODULE sNetshell;
-static decltype(NcFreeNetconProperties)* sNcFreeNetconProperties;
+static decltype(NcFreeNetconProperties) *sNcFreeNetconProperties;
 
 static HMODULE sIphlpapi;
-static decltype(NotifyIpInterfaceChange)* sNotifyIpInterfaceChange;
-static decltype(CancelMibChangeNotify2)* sCancelMibChangeNotify2;
+static decltype(NotifyIpInterfaceChange) *sNotifyIpInterfaceChange;
+static decltype(CancelMibChangeNotify2) *sCancelMibChangeNotify2;
 
 #define NETWORK_NOTIFY_CHANGED_PREF "network.notify.changed"
 #define NETWORK_NOTIFY_IPV6_PREF "network.notify.IPv6"
 
 
 
-static const unsigned int kNetworkChangeCoalescingPeriod  = 1000;
+static const unsigned int kNetworkChangeCoalescingPeriod = 1000;
 
-static void InitIphlpapi(void)
-{
-    if (!sIphlpapi) {
-        sIphlpapi = LoadLibraryW(L"Iphlpapi.dll");
-        if (sIphlpapi) {
-            sNotifyIpInterfaceChange = (decltype(NotifyIpInterfaceChange)*)
-                GetProcAddress(sIphlpapi, "NotifyIpInterfaceChange");
-            sCancelMibChangeNotify2 = (decltype(CancelMibChangeNotify2)*)
-                GetProcAddress(sIphlpapi, "CancelMibChangeNotify2");
-        } else {
-            NS_WARNING("Failed to load Iphlpapi.dll - cannot detect network"
-                       " changes!");
-        }
-    }
-}
-
-static void InitNetshellLibrary(void)
-{
-    if (!sNetshell) {
-        sNetshell = LoadLibraryW(L"Netshell.dll");
-        if (sNetshell) {
-            sNcFreeNetconProperties = (decltype(NcFreeNetconProperties)*)
-                GetProcAddress(sNetshell, "NcFreeNetconProperties");
-        }
-    }
-}
-
-static void FreeDynamicLibraries(void)
-{
-    if (sNetshell) {
-        sNcFreeNetconProperties = nullptr;
-        FreeLibrary(sNetshell);
-        sNetshell = nullptr;
-    }
+static void InitIphlpapi(void) {
+  if (!sIphlpapi) {
+    sIphlpapi = LoadLibraryW(L"Iphlpapi.dll");
     if (sIphlpapi) {
-        sNotifyIpInterfaceChange = nullptr;
-        sCancelMibChangeNotify2 = nullptr;
-        FreeLibrary(sIphlpapi);
-        sIphlpapi = nullptr;
+      sNotifyIpInterfaceChange =
+          (decltype(NotifyIpInterfaceChange) *)GetProcAddress(
+              sIphlpapi, "NotifyIpInterfaceChange");
+      sCancelMibChangeNotify2 =
+          (decltype(CancelMibChangeNotify2) *)GetProcAddress(
+              sIphlpapi, "CancelMibChangeNotify2");
+    } else {
+      NS_WARNING(
+          "Failed to load Iphlpapi.dll - cannot detect network"
+          " changes!");
     }
+  }
 }
 
-NS_IMPL_ISUPPORTS(nsNotifyAddrListener,
-                  nsINetworkLinkService,
-                  nsIRunnable,
+static void InitNetshellLibrary(void) {
+  if (!sNetshell) {
+    sNetshell = LoadLibraryW(L"Netshell.dll");
+    if (sNetshell) {
+      sNcFreeNetconProperties =
+          (decltype(NcFreeNetconProperties) *)GetProcAddress(
+              sNetshell, "NcFreeNetconProperties");
+    }
+  }
+}
+
+static void FreeDynamicLibraries(void) {
+  if (sNetshell) {
+    sNcFreeNetconProperties = nullptr;
+    FreeLibrary(sNetshell);
+    sNetshell = nullptr;
+  }
+  if (sIphlpapi) {
+    sNotifyIpInterfaceChange = nullptr;
+    sCancelMibChangeNotify2 = nullptr;
+    FreeLibrary(sIphlpapi);
+    sIphlpapi = nullptr;
+  }
+}
+
+NS_IMPL_ISUPPORTS(nsNotifyAddrListener, nsINetworkLinkService, nsIRunnable,
                   nsIObserver)
 
 nsNotifyAddrListener::nsNotifyAddrListener()
     : mLinkUp(true)  
-    , mStatusKnown(false)
-    , mCheckAttempted(false)
-    , mCheckEvent(nullptr)
-    , mShutdown(false)
-    , mIPInterfaceChecksum(0)
-    , mAllowChangedEvent(true)
-    , mIPv6Changes(false)
-    , mCoalescingActive(false)
-{
-    InitIphlpapi();
+      ,
+      mStatusKnown(false),
+      mCheckAttempted(false),
+      mCheckEvent(nullptr),
+      mShutdown(false),
+      mIPInterfaceChecksum(0),
+      mAllowChangedEvent(true),
+      mIPv6Changes(false),
+      mCoalescingActive(false) {
+  InitIphlpapi();
 }
 
-nsNotifyAddrListener::~nsNotifyAddrListener()
-{
-    NS_ASSERTION(!mThread, "nsNotifyAddrListener thread shutdown failed");
-    FreeDynamicLibraries();
-}
-
-NS_IMETHODIMP
-nsNotifyAddrListener::GetIsLinkUp(bool *aIsUp)
-{
-    if (!mCheckAttempted && !mStatusKnown) {
-        mCheckAttempted = true;
-        CheckLinkStatus();
-    }
-
-    *aIsUp = mLinkUp;
-    return NS_OK;
+nsNotifyAddrListener::~nsNotifyAddrListener() {
+  NS_ASSERTION(!mThread, "nsNotifyAddrListener thread shutdown failed");
+  FreeDynamicLibraries();
 }
 
 NS_IMETHODIMP
-nsNotifyAddrListener::GetLinkStatusKnown(bool *aIsUp)
-{
-    *aIsUp = mStatusKnown;
-    return NS_OK;
+nsNotifyAddrListener::GetIsLinkUp(bool *aIsUp) {
+  if (!mCheckAttempted && !mStatusKnown) {
+    mCheckAttempted = true;
+    CheckLinkStatus();
+  }
+
+  *aIsUp = mLinkUp;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsNotifyAddrListener::GetLinkType(uint32_t *aLinkType)
-{
-    NS_ENSURE_ARG_POINTER(aLinkType);
-
-    
-    *aLinkType = nsINetworkLinkService::LINK_TYPE_UNKNOWN;
-    return NS_OK;
+nsNotifyAddrListener::GetLinkStatusKnown(bool *aIsUp) {
+  *aIsUp = mStatusKnown;
+  return NS_OK;
 }
 
-static bool macAddr(BYTE addr[], DWORD len, char *buf, size_t buflen)
-{
-    buf[0] = '\0';
-    if (!addr || !len || (len * 3 > buflen)) {
-        return false;
-    }
+NS_IMETHODIMP
+nsNotifyAddrListener::GetLinkType(uint32_t *aLinkType) {
+  NS_ENSURE_ARG_POINTER(aLinkType);
 
-    for (DWORD i = 0; i < len; ++i) {
-        sprintf_s(buf + (i * 3), sizeof(buf + (i * 3)),
-                  "%02x%s", addr[i], (i == len-1) ? "" : ":");
-    }
-    return true;
+  
+  *aLinkType = nsINetworkLinkService::LINK_TYPE_UNKNOWN;
+  return NS_OK;
 }
 
-bool nsNotifyAddrListener::findMac(char *gateway)
-{
-    
-    DWORD dwActualSize = 0;
-    bool found = FALSE;
-
-    
-    DWORD status = GetIpNetTable(NULL, &dwActualSize, FALSE);
-    if (status == ERROR_INSUFFICIENT_BUFFER) {
-        
-        UniquePtr <char[]>buf(new char[dwActualSize]);
-        PMIB_IPNETTABLE pIpNetTable =
-            reinterpret_cast<PMIB_IPNETTABLE>(&buf[0]);
-
-        status = GetIpNetTable(pIpNetTable, &dwActualSize, FALSE);
-
-        if (status == NO_ERROR) {
-            for (DWORD i = 0; i < pIpNetTable->dwNumEntries; ++i) {
-                char hw[256];
-
-                if (!macAddr(pIpNetTable->table[i].bPhysAddr,
-                             pIpNetTable->table[i].dwPhysAddrLen,
-                             hw, sizeof(hw))) {
-                    
-                    continue;
-                }
-
-                struct in_addr addr;
-                addr.s_addr = pIpNetTable->table[i].dwAddr;
-
-                if (!strcmp(gateway, inet_ntoa(addr))) {
-                    LOG(("networkid: MAC %s\n", hw));
-                    nsAutoCString mac(hw);
-                    
-                    
-                    nsAutoCString addition("local-rubbish");
-                    nsAutoCString output;
-                    SHA1Sum sha1;
-                    nsCString combined(mac + addition);
-                    sha1.update(combined.get(), combined.Length());
-                    uint8_t digest[SHA1Sum::kHashSize];
-                    sha1.finish(digest);
-                    nsCString newString(reinterpret_cast<char*>(digest),
-                                        SHA1Sum::kHashSize);
-                    nsresult rv = Base64Encode(newString, output);
-                    if (NS_FAILED(rv)) {
-                        found = false;
-                        break;
-                    }
-                    LOG(("networkid: id %s\n", output.get()));
-                    if (mNetworkId != output) {
-                        
-                        Telemetry::Accumulate(Telemetry::NETWORK_ID, 1);
-                        mNetworkId = output;
-                    }
-                    else {
-                        
-                        Telemetry::Accumulate(Telemetry::NETWORK_ID, 2);
-                    }
-                    found = true;
-                    break;
-                }
-            }
-        }
-    }
-    return found;
-}
-
-
-static bool defaultgw(char *aGateway, size_t aGatewayLen)
-{
-    PMIB_IPFORWARDTABLE pIpForwardTable = NULL;
-
-    DWORD dwSize = 0;
-    if (GetIpForwardTable(NULL, &dwSize, 0) != ERROR_INSUFFICIENT_BUFFER) {
-        return false;
-    }
-
-    UniquePtr <char[]>buf(new char[dwSize]);
-    pIpForwardTable = reinterpret_cast<PMIB_IPFORWARDTABLE>(&buf[0]);
-
-    
-    
-
-    DWORD retVal = GetIpForwardTable(pIpForwardTable, &dwSize, 0);
-    if (retVal == NO_ERROR) {
-        for (unsigned int i = 0; i < pIpForwardTable->dwNumEntries; ++i) {
-            
-            struct in_addr IpAddr;
-            IpAddr.S_un.S_addr = static_cast<u_long>
-                (pIpForwardTable->table[i].dwForwardDest);
-            char *ipStr = inet_ntoa(IpAddr);
-            if (ipStr && !strcmp("0.0.0.0", ipStr)) {
-                
-                IpAddr.S_un.S_addr = static_cast<u_long>
-                    (pIpForwardTable->table[i].dwForwardNextHop);
-                ipStr = inet_ntoa(IpAddr);
-                if (ipStr) {
-                    strcpy_s(aGateway, aGatewayLen, ipStr);
-                    return true;
-                }
-            }
-        } 
-    }
-
+static bool macAddr(BYTE addr[], DWORD len, char *buf, size_t buflen) {
+  buf[0] = '\0';
+  if (!addr || !len || (len * 3 > buflen)) {
     return false;
+  }
+
+  for (DWORD i = 0; i < len; ++i) {
+    sprintf_s(buf + (i * 3), sizeof(buf + (i * 3)), "%02x%s", addr[i],
+              (i == len - 1) ? "" : ":");
+  }
+  return true;
+}
+
+bool nsNotifyAddrListener::findMac(char *gateway) {
+  
+  DWORD dwActualSize = 0;
+  bool found = FALSE;
+
+  
+  DWORD status = GetIpNetTable(NULL, &dwActualSize, FALSE);
+  if (status == ERROR_INSUFFICIENT_BUFFER) {
+    
+    UniquePtr<char[]> buf(new char[dwActualSize]);
+    PMIB_IPNETTABLE pIpNetTable = reinterpret_cast<PMIB_IPNETTABLE>(&buf[0]);
+
+    status = GetIpNetTable(pIpNetTable, &dwActualSize, FALSE);
+
+    if (status == NO_ERROR) {
+      for (DWORD i = 0; i < pIpNetTable->dwNumEntries; ++i) {
+        char hw[256];
+
+        if (!macAddr(pIpNetTable->table[i].bPhysAddr,
+                     pIpNetTable->table[i].dwPhysAddrLen, hw, sizeof(hw))) {
+          
+          continue;
+        }
+
+        struct in_addr addr;
+        addr.s_addr = pIpNetTable->table[i].dwAddr;
+
+        if (!strcmp(gateway, inet_ntoa(addr))) {
+          LOG(("networkid: MAC %s\n", hw));
+          nsAutoCString mac(hw);
+          
+          
+          nsAutoCString addition("local-rubbish");
+          nsAutoCString output;
+          SHA1Sum sha1;
+          nsCString combined(mac + addition);
+          sha1.update(combined.get(), combined.Length());
+          uint8_t digest[SHA1Sum::kHashSize];
+          sha1.finish(digest);
+          nsCString newString(reinterpret_cast<char *>(digest),
+                              SHA1Sum::kHashSize);
+          nsresult rv = Base64Encode(newString, output);
+          if (NS_FAILED(rv)) {
+            found = false;
+            break;
+          }
+          LOG(("networkid: id %s\n", output.get()));
+          if (mNetworkId != output) {
+            
+            Telemetry::Accumulate(Telemetry::NETWORK_ID, 1);
+            mNetworkId = output;
+          } else {
+            
+            Telemetry::Accumulate(Telemetry::NETWORK_ID, 2);
+          }
+          found = true;
+          break;
+        }
+      }
+    }
+  }
+  return found;
+}
+
+
+static bool defaultgw(char *aGateway, size_t aGatewayLen) {
+  PMIB_IPFORWARDTABLE pIpForwardTable = NULL;
+
+  DWORD dwSize = 0;
+  if (GetIpForwardTable(NULL, &dwSize, 0) != ERROR_INSUFFICIENT_BUFFER) {
+    return false;
+  }
+
+  UniquePtr<char[]> buf(new char[dwSize]);
+  pIpForwardTable = reinterpret_cast<PMIB_IPFORWARDTABLE>(&buf[0]);
+
+  
+  
+
+  DWORD retVal = GetIpForwardTable(pIpForwardTable, &dwSize, 0);
+  if (retVal == NO_ERROR) {
+    for (unsigned int i = 0; i < pIpForwardTable->dwNumEntries; ++i) {
+      
+      struct in_addr IpAddr;
+      IpAddr.S_un.S_addr =
+          static_cast<u_long>(pIpForwardTable->table[i].dwForwardDest);
+      char *ipStr = inet_ntoa(IpAddr);
+      if (ipStr && !strcmp("0.0.0.0", ipStr)) {
+        
+        IpAddr.S_un.S_addr =
+            static_cast<u_long>(pIpForwardTable->table[i].dwForwardNextHop);
+        ipStr = inet_ntoa(IpAddr);
+        if (ipStr) {
+          strcpy_s(aGateway, aGatewayLen, ipStr);
+          return true;
+        }
+      }
+    }  
+  }
+
+  return false;
 }
 
 
@@ -284,406 +273,368 @@ static bool defaultgw(char *aGateway, size_t aGatewayLen)
 
 
 
-void nsNotifyAddrListener::calculateNetworkId(void)
-{
-    bool found = FALSE;
-    char gateway[128];
-    if (defaultgw(gateway, sizeof(gateway) )) {
-        found = findMac(gateway);
-    }
-    if (!found) {
-        
-        Telemetry::Accumulate(Telemetry::NETWORK_ID, 0);
-    }
+void nsNotifyAddrListener::calculateNetworkId(void) {
+  bool found = FALSE;
+  char gateway[128];
+  if (defaultgw(gateway, sizeof(gateway))) {
+    found = findMac(gateway);
+  }
+  if (!found) {
+    
+    Telemetry::Accumulate(Telemetry::NETWORK_ID, 0);
+  }
 }
 
 
 static void WINAPI OnInterfaceChange(PVOID callerContext,
                                      PMIB_IPINTERFACE_ROW row,
-                                     MIB_NOTIFICATION_TYPE notificationType)
-{
-    nsNotifyAddrListener *notify = static_cast<nsNotifyAddrListener*>(callerContext);
-    notify->CheckLinkStatus();
+                                     MIB_NOTIFICATION_TYPE notificationType) {
+  nsNotifyAddrListener *notify =
+      static_cast<nsNotifyAddrListener *>(callerContext);
+  notify->CheckLinkStatus();
 }
 
 DWORD
-nsNotifyAddrListener::nextCoalesceWaitTime()
-{
-    
-    double period = (TimeStamp::Now() - mChangeTime).ToMilliseconds();
-    if (period >= kNetworkChangeCoalescingPeriod) {
-        calculateNetworkId();
-        SendEvent(NS_NETWORK_LINK_DATA_CHANGED);
-        mCoalescingActive = false;
-        return INFINITE; 
-    } else {
-        
-        return static_cast<DWORD>
-            (kNetworkChangeCoalescingPeriod - period);
-    }
-}
-
-NS_IMETHODIMP
-nsNotifyAddrListener::Run()
-{
-    mStartTime = TimeStamp::Now();
-
+nsNotifyAddrListener::nextCoalesceWaitTime() {
+  
+  double period = (TimeStamp::Now() - mChangeTime).ToMilliseconds();
+  if (period >= kNetworkChangeCoalescingPeriod) {
     calculateNetworkId();
+    SendEvent(NS_NETWORK_LINK_DATA_CHANGED);
+    mCoalescingActive = false;
+    return INFINITE;  
+  } else {
+    
+    return static_cast<DWORD>(kNetworkChangeCoalescingPeriod - period);
+  }
+}
 
-    DWORD waitTime = INFINITE;
+NS_IMETHODIMP
+nsNotifyAddrListener::Run() {
+  mStartTime = TimeStamp::Now();
 
-    if (!sNotifyIpInterfaceChange || !sCancelMibChangeNotify2 || !mIPv6Changes) {
-        
-        
-        HANDLE ev = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        NS_ENSURE_TRUE(ev, NS_ERROR_OUT_OF_MEMORY);
+  calculateNetworkId();
 
-        HANDLE handles[2] = { ev, mCheckEvent };
-        OVERLAPPED overlapped = { 0 };
-        bool shuttingDown = false;
+  DWORD waitTime = INFINITE;
 
-        overlapped.hEvent = ev;
-        while (!shuttingDown) {
-            HANDLE h;
-            DWORD ret = NotifyAddrChange(&h, &overlapped);
+  if (!sNotifyIpInterfaceChange || !sCancelMibChangeNotify2 || !mIPv6Changes) {
+    
+    
+    HANDLE ev = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    NS_ENSURE_TRUE(ev, NS_ERROR_OUT_OF_MEMORY);
 
-            if (ret == ERROR_IO_PENDING) {
-                ret = WaitForMultipleObjects(2, handles, FALSE, waitTime);
-                if (ret == WAIT_OBJECT_0) {
-                    CheckLinkStatus();
-                } else if (!mShutdown) {
-                    waitTime = nextCoalesceWaitTime();
-                } else {
-                    shuttingDown = true;
-                }
-            } else {
-                shuttingDown = true;
-            }
-        }
-        CloseHandle(ev);
-    } else {
-        
-        HANDLE interfacechange;
-        
-        DWORD ret = sNotifyIpInterfaceChange(
-            AF_UNSPEC, 
-            (PIPINTERFACE_CHANGE_CALLBACK)OnInterfaceChange,
-            this,  
-            false, 
-            &interfacechange);
+    HANDLE handles[2] = {ev, mCheckEvent};
+    OVERLAPPED overlapped = {0};
+    bool shuttingDown = false;
 
-        if (ret == NO_ERROR) {
-            do {
-                ret = WaitForSingleObject(mCheckEvent, waitTime);
-                if (!mShutdown) {
-                    waitTime = nextCoalesceWaitTime();
-                }
-                else {
-                    break;
-                }
-            } while (ret != WAIT_FAILED);
-            sCancelMibChangeNotify2(interfacechange);
+    overlapped.hEvent = ev;
+    while (!shuttingDown) {
+      HANDLE h;
+      DWORD ret = NotifyAddrChange(&h, &overlapped);
+
+      if (ret == ERROR_IO_PENDING) {
+        ret = WaitForMultipleObjects(2, handles, FALSE, waitTime);
+        if (ret == WAIT_OBJECT_0) {
+          CheckLinkStatus();
+        } else if (!mShutdown) {
+          waitTime = nextCoalesceWaitTime();
         } else {
-            LOG(("Link Monitor: sNotifyIpInterfaceChange returned %d\n",
-                 (int)ret));
+          shuttingDown = true;
         }
+      } else {
+        shuttingDown = true;
+      }
     }
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNotifyAddrListener::Observe(nsISupports *subject,
-                              const char *topic,
-                              const char16_t *data)
-{
-    if (!strcmp("xpcom-shutdown-threads", topic))
-        Shutdown();
-
-    return NS_OK;
-}
-
-nsresult
-nsNotifyAddrListener::Init(void)
-{
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (!observerService)
-        return NS_ERROR_FAILURE;
-
-    nsresult rv = observerService->AddObserver(this, "xpcom-shutdown-threads",
-                                               false);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    Preferences::AddBoolVarCache(&mAllowChangedEvent,
-                                 NETWORK_NOTIFY_CHANGED_PREF, true);
-    Preferences::AddBoolVarCache(&mIPv6Changes,
-                                 NETWORK_NOTIFY_IPV6_PREF, false);
-
-    mCheckEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    NS_ENSURE_TRUE(mCheckEvent, NS_ERROR_OUT_OF_MEMORY);
-
-    rv = NS_NewNamedThread("Link Monitor", getter_AddRefs(mThread), this);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    return NS_OK;
-}
-
-nsresult
-nsNotifyAddrListener::Shutdown(void)
-{
+    CloseHandle(ev);
+  } else {
     
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (observerService)
-        observerService->RemoveObserver(this, "xpcom-shutdown-threads");
-
-    if (!mCheckEvent)
-        return NS_OK;
-
-    mShutdown = true;
-    SetEvent(mCheckEvent);
-
-    nsresult rv = mThread ? mThread->Shutdown() : NS_OK;
-
+    HANDLE interfacechange;
     
-    
-    
-    mThread = nullptr;
+    DWORD ret = sNotifyIpInterfaceChange(
+        AF_UNSPEC,  
+        (PIPINTERFACE_CHANGE_CALLBACK)OnInterfaceChange,
+        this,   
+        false,  
+        &interfacechange);
 
-    CloseHandle(mCheckEvent);
-    mCheckEvent = nullptr;
-
-    return rv;
-}
-
-
-
-
-
-
-
-nsresult
-nsNotifyAddrListener::NetworkChanged()
-{
-    if (mCoalescingActive) {
-        LOG(("NetworkChanged: absorbed an event (coalescing active)\n"));
+    if (ret == NO_ERROR) {
+      do {
+        ret = WaitForSingleObject(mCheckEvent, waitTime);
+        if (!mShutdown) {
+          waitTime = nextCoalesceWaitTime();
+        } else {
+          break;
+        }
+      } while (ret != WAIT_FAILED);
+      sCancelMibChangeNotify2(interfacechange);
     } else {
-        
-        mChangeTime = TimeStamp::Now();
-        mCoalescingActive = true;
-        SetEvent(mCheckEvent);
-        LOG(("NetworkChanged: coalescing period started\n"));
+      LOG(("Link Monitor: sNotifyIpInterfaceChange returned %d\n", (int)ret));
     }
-    return NS_OK;
-}
-
-
-
-
-nsresult
-nsNotifyAddrListener::SendEvent(const char *aEventID)
-{
-    if (!aEventID)
-        return NS_ERROR_NULL_POINTER;
-
-    LOG(("SendEvent: network is '%s'\n", aEventID));
-
-    nsresult rv;
-    nsCOMPtr<nsIRunnable> event = new ChangeEvent(this, aEventID);
-    if (NS_FAILED(rv = NS_DispatchToMainThread(event)))
-        NS_WARNING("Failed to dispatch ChangeEvent");
-    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsNotifyAddrListener::ChangeEvent::Run()
-{
-    nsCOMPtr<nsIObserverService> observerService =
-        mozilla::services::GetObserverService();
-    if (observerService)
-        observerService->NotifyObservers(
-                mService, NS_NETWORK_LINK_TOPIC,
-                NS_ConvertASCIItoUTF16(mEventID).get());
-    return NS_OK;
+nsNotifyAddrListener::Observe(nsISupports *subject, const char *topic,
+                              const char16_t *data) {
+  if (!strcmp("xpcom-shutdown-threads", topic)) Shutdown();
+
+  return NS_OK;
+}
+
+nsresult nsNotifyAddrListener::Init(void) {
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  if (!observerService) return NS_ERROR_FAILURE;
+
+  nsresult rv =
+      observerService->AddObserver(this, "xpcom-shutdown-threads", false);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  Preferences::AddBoolVarCache(&mAllowChangedEvent, NETWORK_NOTIFY_CHANGED_PREF,
+                               true);
+  Preferences::AddBoolVarCache(&mIPv6Changes, NETWORK_NOTIFY_IPV6_PREF, false);
+
+  mCheckEvent = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+  NS_ENSURE_TRUE(mCheckEvent, NS_ERROR_OUT_OF_MEMORY);
+
+  rv = NS_NewNamedThread("Link Monitor", getter_AddRefs(mThread), this);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
+}
+
+nsresult nsNotifyAddrListener::Shutdown(void) {
+  
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  if (observerService)
+    observerService->RemoveObserver(this, "xpcom-shutdown-threads");
+
+  if (!mCheckEvent) return NS_OK;
+
+  mShutdown = true;
+  SetEvent(mCheckEvent);
+
+  nsresult rv = mThread ? mThread->Shutdown() : NS_OK;
+
+  
+  
+  
+  mThread = nullptr;
+
+  CloseHandle(mCheckEvent);
+  mCheckEvent = nullptr;
+
+  return rv;
 }
 
 
 
 
 
-bool
-nsNotifyAddrListener::CheckICSGateway(PIP_ADAPTER_ADDRESSES aAdapter)
-{
-    if (!aAdapter->FirstUnicastAddress)
-        return false;
 
-    LPSOCKADDR aAddress = aAdapter->FirstUnicastAddress->Address.lpSockaddr;
-    if (!aAddress)
-        return false;
 
-    PSOCKADDR_IN in_addr = (PSOCKADDR_IN)aAddress;
-    bool isGateway = (aAddress->sa_family == AF_INET &&
-        in_addr->sin_addr.S_un.S_un_b.s_b1 == 192 &&
-        in_addr->sin_addr.S_un.S_un_b.s_b2 == 168 &&
-        in_addr->sin_addr.S_un.S_un_b.s_b3 == 0 &&
-        in_addr->sin_addr.S_un.S_un_b.s_b4 == 1);
-
-    if (isGateway)
-      isGateway = CheckICSStatus(aAdapter->FriendlyName);
-
-    return isGateway;
+nsresult nsNotifyAddrListener::NetworkChanged() {
+  if (mCoalescingActive) {
+    LOG(("NetworkChanged: absorbed an event (coalescing active)\n"));
+  } else {
+    
+    mChangeTime = TimeStamp::Now();
+    mCoalescingActive = true;
+    SetEvent(mCheckEvent);
+    LOG(("NetworkChanged: coalescing period started\n"));
+  }
+  return NS_OK;
 }
 
-bool
-nsNotifyAddrListener::CheckICSStatus(PWCHAR aAdapterName)
-{
-    InitNetshellLibrary();
 
-    
-    
-    
-    bool isICSGatewayAdapter = false;
 
-    HRESULT hr;
-    RefPtr<INetSharingManager> netSharingManager;
-    hr = CoCreateInstance(
-                CLSID_NetSharingManager,
-                nullptr,
-                CLSCTX_INPROC_SERVER,
-                IID_INetSharingManager,
-                getter_AddRefs(netSharingManager));
 
-    RefPtr<INetSharingPrivateConnectionCollection> privateCollection;
+nsresult nsNotifyAddrListener::SendEvent(const char *aEventID) {
+  if (!aEventID) return NS_ERROR_NULL_POINTER;
+
+  LOG(("SendEvent: network is '%s'\n", aEventID));
+
+  nsresult rv;
+  nsCOMPtr<nsIRunnable> event = new ChangeEvent(this, aEventID);
+  if (NS_FAILED(rv = NS_DispatchToMainThread(event)))
+    NS_WARNING("Failed to dispatch ChangeEvent");
+  return rv;
+}
+
+NS_IMETHODIMP
+nsNotifyAddrListener::ChangeEvent::Run() {
+  nsCOMPtr<nsIObserverService> observerService =
+      mozilla::services::GetObserverService();
+  if (observerService)
+    observerService->NotifyObservers(mService, NS_NETWORK_LINK_TOPIC,
+                                     NS_ConvertASCIItoUTF16(mEventID).get());
+  return NS_OK;
+}
+
+
+
+
+bool nsNotifyAddrListener::CheckICSGateway(PIP_ADAPTER_ADDRESSES aAdapter) {
+  if (!aAdapter->FirstUnicastAddress) return false;
+
+  LPSOCKADDR aAddress = aAdapter->FirstUnicastAddress->Address.lpSockaddr;
+  if (!aAddress) return false;
+
+  PSOCKADDR_IN in_addr = (PSOCKADDR_IN)aAddress;
+  bool isGateway = (aAddress->sa_family == AF_INET &&
+                    in_addr->sin_addr.S_un.S_un_b.s_b1 == 192 &&
+                    in_addr->sin_addr.S_un.S_un_b.s_b2 == 168 &&
+                    in_addr->sin_addr.S_un.S_un_b.s_b3 == 0 &&
+                    in_addr->sin_addr.S_un.S_un_b.s_b4 == 1);
+
+  if (isGateway) isGateway = CheckICSStatus(aAdapter->FriendlyName);
+
+  return isGateway;
+}
+
+bool nsNotifyAddrListener::CheckICSStatus(PWCHAR aAdapterName) {
+  InitNetshellLibrary();
+
+  
+  
+  
+  bool isICSGatewayAdapter = false;
+
+  HRESULT hr;
+  RefPtr<INetSharingManager> netSharingManager;
+  hr = CoCreateInstance(CLSID_NetSharingManager, nullptr, CLSCTX_INPROC_SERVER,
+                        IID_INetSharingManager,
+                        getter_AddRefs(netSharingManager));
+
+  RefPtr<INetSharingPrivateConnectionCollection> privateCollection;
+  if (SUCCEEDED(hr)) {
+    hr = netSharingManager->get_EnumPrivateConnections(
+        ICSSC_DEFAULT, getter_AddRefs(privateCollection));
+  }
+
+  RefPtr<IEnumNetSharingPrivateConnection> privateEnum;
+  if (SUCCEEDED(hr)) {
+    RefPtr<IUnknown> privateEnumUnknown;
+    hr = privateCollection->get__NewEnum(getter_AddRefs(privateEnumUnknown));
     if (SUCCEEDED(hr)) {
-        hr = netSharingManager->get_EnumPrivateConnections(
-                    ICSSC_DEFAULT,
-                    getter_AddRefs(privateCollection));
+      hr = privateEnumUnknown->QueryInterface(
+          IID_IEnumNetSharingPrivateConnection, getter_AddRefs(privateEnum));
     }
+  }
 
-    RefPtr<IEnumNetSharingPrivateConnection> privateEnum;
-    if (SUCCEEDED(hr)) {
-        RefPtr<IUnknown> privateEnumUnknown;
-        hr = privateCollection->get__NewEnum(getter_AddRefs(privateEnumUnknown));
-        if (SUCCEEDED(hr)) {
-            hr = privateEnumUnknown->QueryInterface(
-                        IID_IEnumNetSharingPrivateConnection,
-                        getter_AddRefs(privateEnum));
+  if (SUCCEEDED(hr)) {
+    ULONG fetched;
+    VARIANT connectionVariant;
+    while (!isICSGatewayAdapter &&
+           SUCCEEDED(hr = privateEnum->Next(1, &connectionVariant, &fetched)) &&
+           fetched) {
+      if (connectionVariant.vt != VT_UNKNOWN) {
+        
+        
+        
+        
+        
+        NS_ERROR(
+            "Variant of unexpected type, expecting VT_UNKNOWN, we probably "
+            "leak it!");
+        continue;
+      }
+
+      RefPtr<INetConnection> connection;
+      if (SUCCEEDED(connectionVariant.punkVal->QueryInterface(
+              IID_INetConnection, getter_AddRefs(connection)))) {
+        connectionVariant.punkVal->Release();
+
+        NETCON_PROPERTIES *properties;
+        if (SUCCEEDED(connection->GetProperties(&properties))) {
+          if (!wcscmp(properties->pszwName, aAdapterName))
+            isICSGatewayAdapter = true;
+
+          if (sNcFreeNetconProperties) sNcFreeNetconProperties(properties);
         }
+      }
     }
+  }
 
-    if (SUCCEEDED(hr)) {
-        ULONG fetched;
-        VARIANT connectionVariant;
-        while (!isICSGatewayAdapter &&
-               SUCCEEDED(hr = privateEnum->Next(1, &connectionVariant,
-               &fetched)) &&
-               fetched) {
-            if (connectionVariant.vt != VT_UNKNOWN) {
-                
-                
-                
-                
-                
-                NS_ERROR("Variant of unexpected type, expecting VT_UNKNOWN, we probably leak it!");
-                continue;
-            }
-
-            RefPtr<INetConnection> connection;
-            if (SUCCEEDED(connectionVariant.punkVal->QueryInterface(
-                              IID_INetConnection,
-                              getter_AddRefs(connection)))) {
-                connectionVariant.punkVal->Release();
-
-                NETCON_PROPERTIES *properties;
-                if (SUCCEEDED(connection->GetProperties(&properties))) {
-                    if (!wcscmp(properties->pszwName, aAdapterName))
-                        isICSGatewayAdapter = true;
-
-                    if (sNcFreeNetconProperties)
-                        sNcFreeNetconProperties(properties);
-                }
-            }
-        }
-    }
-
-    return isICSGatewayAdapter;
+  return isICSGatewayAdapter;
 }
 
 DWORD
-nsNotifyAddrListener::CheckAdaptersAddresses(void)
-{
-    ULONG len = 16384;
+nsNotifyAddrListener::CheckAdaptersAddresses(void) {
+  ULONG len = 16384;
 
-    PIP_ADAPTER_ADDRESSES adapterList = (PIP_ADAPTER_ADDRESSES) moz_xmalloc(len);
+  PIP_ADAPTER_ADDRESSES adapterList = (PIP_ADAPTER_ADDRESSES)moz_xmalloc(len);
 
-    ULONG flags = GAA_FLAG_SKIP_DNS_SERVER|GAA_FLAG_SKIP_MULTICAST|
-        GAA_FLAG_SKIP_ANYCAST;
+  ULONG flags = GAA_FLAG_SKIP_DNS_SERVER | GAA_FLAG_SKIP_MULTICAST |
+                GAA_FLAG_SKIP_ANYCAST;
 
-    DWORD ret = GetAdaptersAddresses(AF_UNSPEC, flags, nullptr, adapterList, &len);
-    if (ret == ERROR_BUFFER_OVERFLOW) {
-        free(adapterList);
-        adapterList = static_cast<PIP_ADAPTER_ADDRESSES> (moz_xmalloc(len));
-
-        ret = GetAdaptersAddresses(AF_UNSPEC, flags, nullptr, adapterList, &len);
-    }
-
-    if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) {
-        free(adapterList);
-        return ERROR_NOT_SUPPORTED;
-    }
-
-    
-    
-    
-    
-    
-    
-    ULONG sumAll = 0;
-
-    if (ret == ERROR_SUCCESS) {
-        bool linkUp = false;
-        ULONG sum = 0;
-
-        for (PIP_ADAPTER_ADDRESSES adapter = adapterList; adapter;
-             adapter = adapter->Next) {
-            if (adapter->OperStatus != IfOperStatusUp ||
-                !adapter->FirstUnicastAddress ||
-                adapter->IfType == IF_TYPE_SOFTWARE_LOOPBACK ||
-                CheckICSGateway(adapter) ) {
-                continue;
-            }
-
-            sum <<= 2;
-            
-            for (int i = 0; adapter->AdapterName[i]; ++i) {
-                sum += adapter->AdapterName[i];
-            }
-
-            
-            for (PIP_ADAPTER_UNICAST_ADDRESS pip = adapter->FirstUnicastAddress;
-                 pip; pip = pip->Next) {
-                SOCKET_ADDRESS *sockAddr = &pip->Address;
-                for (int i = 0; i < sockAddr->iSockaddrLength; ++i) {
-                    sum += (reinterpret_cast<unsigned char *>
-                            (sockAddr->lpSockaddr))[i];
-                }
-            }
-            linkUp = true;
-            sumAll ^= sum;
-        }
-        mLinkUp = linkUp;
-        mStatusKnown = true;
-    }
+  DWORD ret =
+      GetAdaptersAddresses(AF_UNSPEC, flags, nullptr, adapterList, &len);
+  if (ret == ERROR_BUFFER_OVERFLOW) {
     free(adapterList);
+    adapterList = static_cast<PIP_ADAPTER_ADDRESSES>(moz_xmalloc(len));
 
-    if (mLinkUp) {
-        
-        mIPInterfaceChecksum = sumAll;
+    ret = GetAdaptersAddresses(AF_UNSPEC, flags, nullptr, adapterList, &len);
+  }
+
+  if (FAILED(CoInitializeEx(nullptr, COINIT_MULTITHREADED))) {
+    free(adapterList);
+    return ERROR_NOT_SUPPORTED;
+  }
+
+  
+  
+  
+  
+  
+  
+  ULONG sumAll = 0;
+
+  if (ret == ERROR_SUCCESS) {
+    bool linkUp = false;
+    ULONG sum = 0;
+
+    for (PIP_ADAPTER_ADDRESSES adapter = adapterList; adapter;
+         adapter = adapter->Next) {
+      if (adapter->OperStatus != IfOperStatusUp ||
+          !adapter->FirstUnicastAddress ||
+          adapter->IfType == IF_TYPE_SOFTWARE_LOOPBACK ||
+          CheckICSGateway(adapter)) {
+        continue;
+      }
+
+      sum <<= 2;
+      
+      for (int i = 0; adapter->AdapterName[i]; ++i) {
+        sum += adapter->AdapterName[i];
+      }
+
+      
+      for (PIP_ADAPTER_UNICAST_ADDRESS pip = adapter->FirstUnicastAddress; pip;
+           pip = pip->Next) {
+        SOCKET_ADDRESS *sockAddr = &pip->Address;
+        for (int i = 0; i < sockAddr->iSockaddrLength; ++i) {
+          sum += (reinterpret_cast<unsigned char *>(sockAddr->lpSockaddr))[i];
+        }
+      }
+      linkUp = true;
+      sumAll ^= sum;
     }
+    mLinkUp = linkUp;
+    mStatusKnown = true;
+  }
+  free(adapterList);
 
-    CoUninitialize();
+  if (mLinkUp) {
+    
+    mIPInterfaceChecksum = sumAll;
+  }
 
-    return ret;
+  CoUninitialize();
+
+  return ret;
 }
 
 
@@ -691,56 +642,54 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void)
 
 
 
-void
-nsNotifyAddrListener::CheckLinkStatus(void)
-{
-    DWORD ret;
-    const char *event;
-    bool prevLinkUp = mLinkUp;
-    ULONG prevCsum = mIPInterfaceChecksum;
+void nsNotifyAddrListener::CheckLinkStatus(void) {
+  DWORD ret;
+  const char *event;
+  bool prevLinkUp = mLinkUp;
+  ULONG prevCsum = mIPInterfaceChecksum;
 
-    LOG(("check status of all network adapters\n"));
+  LOG(("check status of all network adapters\n"));
 
-    
-    
-    
-    
-    if (NS_IsMainThread()) {
-        NS_WARNING("CheckLinkStatus called on main thread! No check "
-                   "performed. Assuming link is up, status is unknown.");
-        mLinkUp = true;
+  
+  
+  
+  
+  if (NS_IsMainThread()) {
+    NS_WARNING(
+        "CheckLinkStatus called on main thread! No check "
+        "performed. Assuming link is up, status is unknown.");
+    mLinkUp = true;
 
-        if (!mStatusKnown) {
-            event = NS_NETWORK_LINK_DATA_UNKNOWN;
-        } else if (!prevLinkUp) {
-            event = NS_NETWORK_LINK_DATA_UP;
-        } else {
-            
-            event = nullptr;
-        }
-
-        if (event) {
-            SendEvent(event);
-        }
+    if (!mStatusKnown) {
+      event = NS_NETWORK_LINK_DATA_UNKNOWN;
+    } else if (!prevLinkUp) {
+      event = NS_NETWORK_LINK_DATA_UP;
     } else {
-        ret = CheckAdaptersAddresses();
-        if (ret != ERROR_SUCCESS) {
-            mLinkUp = true;
-        }
-
-        if (mLinkUp && (prevCsum != mIPInterfaceChecksum)) {
-            TimeDuration since = TimeStamp::Now() - mStartTime;
-
-            
-            
-            if (mAllowChangedEvent && (since.ToMilliseconds() > 2000)) {
-                NetworkChanged();
-            }
-        }
-        if (prevLinkUp != mLinkUp) {
-            
-            SendEvent(mLinkUp ?
-                      NS_NETWORK_LINK_DATA_UP : NS_NETWORK_LINK_DATA_DOWN);
-        }
+      
+      event = nullptr;
     }
+
+    if (event) {
+      SendEvent(event);
+    }
+  } else {
+    ret = CheckAdaptersAddresses();
+    if (ret != ERROR_SUCCESS) {
+      mLinkUp = true;
+    }
+
+    if (mLinkUp && (prevCsum != mIPInterfaceChecksum)) {
+      TimeDuration since = TimeStamp::Now() - mStartTime;
+
+      
+      
+      if (mAllowChangedEvent && (since.ToMilliseconds() > 2000)) {
+        NetworkChanged();
+      }
+    }
+    if (prevLinkUp != mLinkUp) {
+      
+      SendEvent(mLinkUp ? NS_NETWORK_LINK_DATA_UP : NS_NETWORK_LINK_DATA_DOWN);
+    }
+  }
 }

@@ -14,9 +14,7 @@ namespace net {
 
 NS_IMPL_ISUPPORTS(FileChannelParent, nsIParentChannel, nsIStreamListener)
 
-bool
-FileChannelParent::Init(const uint32_t &channelId)
-{
+bool FileChannelParent::Init(const uint32_t &channelId) {
   nsCOMPtr<nsIChannel> channel;
   MOZ_ALWAYS_SUCCEEDS(
       NS_LinkRedirectChannels(channelId, this, getter_AddRefs(channel)));
@@ -25,65 +23,53 @@ FileChannelParent::Init(const uint32_t &channelId)
 }
 
 NS_IMETHODIMP
-FileChannelParent::SetParentListener(HttpChannelParentListener* aListener)
-{
+FileChannelParent::SetParentListener(HttpChannelParentListener *aListener) {
   
   return NS_OK;
 }
 
 NS_IMETHODIMP
-FileChannelParent::NotifyTrackingProtectionDisabled()
-{
+FileChannelParent::NotifyTrackingProtectionDisabled() {
   
   return NS_OK;
 }
 
 NS_IMETHODIMP
-FileChannelParent::NotifyCookieAllowed()
-{
+FileChannelParent::NotifyCookieAllowed() {
   
   return NS_OK;
 }
 
 NS_IMETHODIMP
-FileChannelParent::NotifyTrackingCookieBlocked(uint32_t aRejectedReason)
-{
+FileChannelParent::NotifyTrackingCookieBlocked(uint32_t aRejectedReason) {
   
   return NS_OK;
 }
 
 NS_IMETHODIMP
-FileChannelParent::NotifyTrackingResource(bool aIsThirdParty)
-{
+FileChannelParent::NotifyTrackingResource(bool aIsThirdParty) {
   
   return NS_OK;
 }
 
 NS_IMETHODIMP
-FileChannelParent::SetClassifierMatchedInfo(const nsACString& aList,
-                                            const nsACString& aProvider,
-                                            const nsACString& aFullHash)
-{
+FileChannelParent::SetClassifierMatchedInfo(const nsACString &aList,
+                                            const nsACString &aProvider,
+                                            const nsACString &aFullHash) {
   
   return NS_OK;
 }
 
 NS_IMETHODIMP
-FileChannelParent::Delete()
-{
+FileChannelParent::Delete() {
   
   return NS_OK;
 }
 
-void
-FileChannelParent::ActorDestroy(ActorDestroyReason why)
-{
-}
+void FileChannelParent::ActorDestroy(ActorDestroyReason why) {}
 
 NS_IMETHODIMP
-FileChannelParent::OnStartRequest(nsIRequest *aRequest,
-                                  nsISupports *aContext)
-{
+FileChannelParent::OnStartRequest(nsIRequest *aRequest, nsISupports *aContext) {
   
   
   
@@ -91,25 +77,20 @@ FileChannelParent::OnStartRequest(nsIRequest *aRequest,
 }
 
 NS_IMETHODIMP
-FileChannelParent::OnStopRequest(nsIRequest *aRequest,
-                                 nsISupports *aContext,
-                                 nsresult aStatusCode)
-{
+FileChannelParent::OnStopRequest(nsIRequest *aRequest, nsISupports *aContext,
+                                 nsresult aStatusCode) {
   
   MOZ_ASSERT(NS_FAILED(aStatusCode));
   return NS_OK;
 }
 
 NS_IMETHODIMP
-FileChannelParent::OnDataAvailable(nsIRequest *aRequest,
-                                   nsISupports *aContext,
+FileChannelParent::OnDataAvailable(nsIRequest *aRequest, nsISupports *aContext,
                                    nsIInputStream *aInputStream,
-                                   uint64_t aOffset,
-                                   uint32_t aCount)
-{
+                                   uint64_t aOffset, uint32_t aCount) {
   
   MOZ_CRASH("Should never be called");
 }
 
-} 
-} 
+}  
+}  

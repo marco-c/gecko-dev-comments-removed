@@ -21,24 +21,24 @@
 
 
 class MOZ_RAII CPOWTimer final {
-  public:
-    explicit inline CPOWTimer(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    ~CPOWTimer();
+ public:
+  explicit inline CPOWTimer(JSContext* cx MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+  ~CPOWTimer();
 
-  private:
-    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
+ private:
+  MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 
-    
-
-
-
-    JSContext* cx_;
-
-    
+  
 
 
 
-    int64_t startInterval_;
+  JSContext* cx_;
+
+  
+
+
+
+  int64_t startInterval_;
 };
 
 #endif

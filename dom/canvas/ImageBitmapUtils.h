@@ -15,12 +15,13 @@ namespace mozilla {
 namespace layers {
 class Image;
 struct PlanarYCbCrData;
-}
+}  
 
 namespace dom {
 
 struct ChannelPixelLayout;
-template<typename> class Sequence;
+template <typename>
+class Sequence;
 
 typedef nsTArray<ChannelPixelLayout> ImagePixelLayout;
 
@@ -29,9 +30,10 @@ typedef nsTArray<ChannelPixelLayout> ImagePixelLayout;
 
 
 
-UniquePtr<ImagePixelLayout>
-CreateDefaultPixelLayout(ImageBitmapFormat aFormat,
-                         uint32_t aWidth, uint32_t aHeight, uint32_t aStride);
+UniquePtr<ImagePixelLayout> CreateDefaultPixelLayout(ImageBitmapFormat aFormat,
+                                                     uint32_t aWidth,
+                                                     uint32_t aHeight,
+                                                     uint32_t aStride);
 
 
 
@@ -39,36 +41,13 @@ CreateDefaultPixelLayout(ImageBitmapFormat aFormat,
 
 
 
-UniquePtr<ImagePixelLayout>
-CreatePixelLayoutFromPlanarYCbCrData(const layers::PlanarYCbCrData* aData);
+UniquePtr<ImagePixelLayout> CreatePixelLayoutFromPlanarYCbCrData(
+    const layers::PlanarYCbCrData* aData);
 
 
 
 
-uint8_t
-GetChannelCountOfImageFormat(ImageBitmapFormat aFormat);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-UniquePtr<ImagePixelLayout>
-CopyAndConvertImageData(ImageBitmapFormat aSrcFormat,
-                        const uint8_t* aSrcBuffer,
-                        const ImagePixelLayout* aSrcLayout,
-                        ImageBitmapFormat aDstFormat,
-                        uint8_t* aDstBuffer);
+uint8_t GetChannelCountOfImageFormat(ImageBitmapFormat aFormat);
 
 
 
@@ -80,12 +59,31 @@ CopyAndConvertImageData(ImageBitmapFormat aSrcFormat,
 
 
 
-ImageBitmapFormat
-FindBestMatchingFromat(ImageBitmapFormat aSrcFormat,
-                       const Sequence<ImageBitmapFormat>& aCandidates);
-
-} 
-} 
 
 
-#endif 
+
+
+
+UniquePtr<ImagePixelLayout> CopyAndConvertImageData(
+    ImageBitmapFormat aSrcFormat, const uint8_t* aSrcBuffer,
+    const ImagePixelLayout* aSrcLayout, ImageBitmapFormat aDstFormat,
+    uint8_t* aDstBuffer);
+
+
+
+
+
+
+
+
+
+
+
+ImageBitmapFormat FindBestMatchingFromat(
+    ImageBitmapFormat aSrcFormat,
+    const Sequence<ImageBitmapFormat>& aCandidates);
+
+}  
+}  
+
+#endif  

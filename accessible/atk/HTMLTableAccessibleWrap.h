@@ -16,8 +16,7 @@ typedef class HTMLTableAccessible HTMLTableAccessibleWrap;
 typedef class HTMLTableCellAccessible HTMLTableCellAccessibleWrap;
 typedef class HTMLTableHeaderCellAccessible HTMLTableHeaderCellAccessibleWrap;
 
-} 
-} 
+}  
+}  
 
 #endif
-

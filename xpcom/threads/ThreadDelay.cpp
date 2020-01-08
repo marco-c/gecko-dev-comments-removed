@@ -15,9 +15,8 @@
 
 namespace mozilla {
 
-void
-DelayForChaosMode(ChaosFeature aFeature, const uint32_t aMicrosecondLimit)
-{
+void DelayForChaosMode(ChaosFeature aFeature,
+                       const uint32_t aMicrosecondLimit) {
   if (!ChaosMode::isActive(aFeature)) {
     return;
   }
@@ -28,10 +27,11 @@ DelayForChaosMode(ChaosFeature aFeature, const uint32_t aMicrosecondLimit)
   
   
   
+  
 #else
   const uint32_t duration = ChaosMode::randomUint32LessThan(aMicrosecondLimit);
   ::usleep(duration);
 #endif
 }
 
-} 
+}  

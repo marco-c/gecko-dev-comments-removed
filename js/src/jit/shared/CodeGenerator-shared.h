@@ -36,551 +36,520 @@ class OutOfLineCallVM;
 class OutOfLineTruncateSlow;
 
 struct ReciprocalMulConstants {
-    int64_t multiplier;
-    int32_t shiftAmount;
+  int64_t multiplier;
+  int32_t shiftAmount;
 };
 
-class CodeGeneratorShared : public LElementVisitor
-{
-    js::Vector<OutOfLineCode*, 0, SystemAllocPolicy> outOfLineCode_;
+class CodeGeneratorShared : public LElementVisitor {
+  js::Vector<OutOfLineCode*, 0, SystemAllocPolicy> outOfLineCode_;
 
-    MacroAssembler& ensureMasm(MacroAssembler* masm);
-    mozilla::Maybe<IonHeapMacroAssembler> maybeMasm_;
+  MacroAssembler& ensureMasm(MacroAssembler* masm);
+  mozilla::Maybe<IonHeapMacroAssembler> maybeMasm_;
 
-  public:
-    MacroAssembler& masm;
+ public:
+  MacroAssembler& masm;
 
-  protected:
-    MIRGenerator* gen;
-    LIRGraph& graph;
-    LBlock* current;
-    SnapshotWriter snapshots_;
-    RecoverWriter recovers_;
-    mozilla::Maybe<TrampolinePtr> deoptTable_;
+ protected:
+  MIRGenerator* gen;
+  LIRGraph& graph;
+  LBlock* current;
+  SnapshotWriter snapshots_;
+  RecoverWriter recovers_;
+  mozilla::Maybe<TrampolinePtr> deoptTable_;
 #ifdef DEBUG
-    uint32_t pushedArgs_;
+  uint32_t pushedArgs_;
 #endif
-    uint32_t lastOsiPointOffset_;
-    SafepointWriter safepoints_;
-    Label invalidate_;
-    CodeOffset invalidateEpilogueData_;
+  uint32_t lastOsiPointOffset_;
+  SafepointWriter safepoints_;
+  Label invalidate_;
+  CodeOffset invalidateEpilogueData_;
 
-    
-    NonAssertingLabel returnLabel_;
+  
+  NonAssertingLabel returnLabel_;
 
-    js::Vector<SafepointIndex, 0, SystemAllocPolicy> safepointIndices_;
-    js::Vector<OsiIndex, 0, SystemAllocPolicy> osiIndices_;
+  js::Vector<SafepointIndex, 0, SystemAllocPolicy> safepointIndices_;
+  js::Vector<OsiIndex, 0, SystemAllocPolicy> osiIndices_;
 
-    
-    js::Vector<SnapshotOffset, 0, SystemAllocPolicy> bailouts_;
+  
+  js::Vector<SnapshotOffset, 0, SystemAllocPolicy> bailouts_;
 
-    
-    js::Vector<uint8_t, 0, SystemAllocPolicy> runtimeData_;
+  
+  js::Vector<uint8_t, 0, SystemAllocPolicy> runtimeData_;
 
-    
-    js::Vector<uint32_t, 0, SystemAllocPolicy> icList_;
+  
+  js::Vector<uint32_t, 0, SystemAllocPolicy> icList_;
 
-    
-    struct CompileTimeICInfo {
-        CodeOffset icOffsetForJump;
-        CodeOffset icOffsetForPush;
-    };
-    js::Vector<CompileTimeICInfo, 0, SystemAllocPolicy> icInfo_;
+  
+  struct CompileTimeICInfo {
+    CodeOffset icOffsetForJump;
+    CodeOffset icOffsetForPush;
+  };
+  js::Vector<CompileTimeICInfo, 0, SystemAllocPolicy> icInfo_;
 
 #ifdef JS_TRACE_LOGGING
-    struct PatchableTLEvent {
-        CodeOffset offset;
-        const char* event;
-        PatchableTLEvent(CodeOffset offset, const char* event)
-            : offset(offset), event(event)
-        {}
-    };
-    js::Vector<PatchableTLEvent, 0, SystemAllocPolicy> patchableTLEvents_;
-    js::Vector<CodeOffset, 0, SystemAllocPolicy> patchableTLScripts_;
+  struct PatchableTLEvent {
+    CodeOffset offset;
+    const char* event;
+    PatchableTLEvent(CodeOffset offset, const char* event)
+        : offset(offset), event(event) {}
+  };
+  js::Vector<PatchableTLEvent, 0, SystemAllocPolicy> patchableTLEvents_;
+  js::Vector<CodeOffset, 0, SystemAllocPolicy> patchableTLScripts_;
 #endif
 
-  protected:
-    js::Vector<NativeToBytecode, 0, SystemAllocPolicy> nativeToBytecodeList_;
-    uint8_t* nativeToBytecodeMap_;
-    uint32_t nativeToBytecodeMapSize_;
-    uint32_t nativeToBytecodeTableOffset_;
-    uint32_t nativeToBytecodeNumRegions_;
+ protected:
+  js::Vector<NativeToBytecode, 0, SystemAllocPolicy> nativeToBytecodeList_;
+  uint8_t* nativeToBytecodeMap_;
+  uint32_t nativeToBytecodeMapSize_;
+  uint32_t nativeToBytecodeTableOffset_;
+  uint32_t nativeToBytecodeNumRegions_;
 
-    JSScript** nativeToBytecodeScriptList_;
-    uint32_t nativeToBytecodeScriptListLength_;
+  JSScript** nativeToBytecodeScriptList_;
+  uint32_t nativeToBytecodeScriptListLength_;
 
-    bool isProfilerInstrumentationEnabled() {
-        return gen->isProfilerInstrumentationEnabled();
-    }
+  bool isProfilerInstrumentationEnabled() {
+    return gen->isProfilerInstrumentationEnabled();
+  }
 
-    bool stringsCanBeInNursery() const {
-        return gen->stringsCanBeInNursery();
-    }
+  bool stringsCanBeInNursery() const { return gen->stringsCanBeInNursery(); }
 
-    js::Vector<NativeToTrackedOptimizations, 0, SystemAllocPolicy> trackedOptimizations_;
-    uint8_t* trackedOptimizationsMap_;
-    uint32_t trackedOptimizationsMapSize_;
-    uint32_t trackedOptimizationsRegionTableOffset_;
-    uint32_t trackedOptimizationsTypesTableOffset_;
-    uint32_t trackedOptimizationsAttemptsTableOffset_;
+  js::Vector<NativeToTrackedOptimizations, 0, SystemAllocPolicy>
+      trackedOptimizations_;
+  uint8_t* trackedOptimizationsMap_;
+  uint32_t trackedOptimizationsMapSize_;
+  uint32_t trackedOptimizationsRegionTableOffset_;
+  uint32_t trackedOptimizationsTypesTableOffset_;
+  uint32_t trackedOptimizationsAttemptsTableOffset_;
 
-    bool isOptimizationTrackingEnabled() {
-        return gen->isOptimizationTrackingEnabled();
-    }
+  bool isOptimizationTrackingEnabled() {
+    return gen->isOptimizationTrackingEnabled();
+  }
 
-  protected:
-    
-    
-    size_t osrEntryOffset_;
+ protected:
+  
+  
+  size_t osrEntryOffset_;
 
-    TempAllocator& alloc() const {
-        return graph.mir().alloc();
-    }
+  TempAllocator& alloc() const { return graph.mir().alloc(); }
 
-    inline void setOsrEntryOffset(size_t offset) {
-        MOZ_ASSERT(osrEntryOffset_ == 0);
-        osrEntryOffset_ = offset;
-    }
-    inline size_t getOsrEntryOffset() const {
-        return osrEntryOffset_;
-    }
+  inline void setOsrEntryOffset(size_t offset) {
+    MOZ_ASSERT(osrEntryOffset_ == 0);
+    osrEntryOffset_ = offset;
+  }
+  inline size_t getOsrEntryOffset() const { return osrEntryOffset_; }
 
-    
-    
-    size_t skipArgCheckEntryOffset_;
+  
+  
+  size_t skipArgCheckEntryOffset_;
 
-    inline void setSkipArgCheckEntryOffset(size_t offset) {
-        MOZ_ASSERT(skipArgCheckEntryOffset_ == 0);
-        skipArgCheckEntryOffset_ = offset;
-    }
-    inline size_t getSkipArgCheckEntryOffset() const {
-        return skipArgCheckEntryOffset_;
-    }
+  inline void setSkipArgCheckEntryOffset(size_t offset) {
+    MOZ_ASSERT(skipArgCheckEntryOffset_ == 0);
+    skipArgCheckEntryOffset_ = offset;
+  }
+  inline size_t getSkipArgCheckEntryOffset() const {
+    return skipArgCheckEntryOffset_;
+  }
 
-    typedef js::Vector<SafepointIndex, 8, SystemAllocPolicy> SafepointIndices;
+  typedef js::Vector<SafepointIndex, 8, SystemAllocPolicy> SafepointIndices;
 
-  protected:
+ protected:
 #ifdef CHECK_OSIPOINT_REGISTERS
-    
-    
-    
-    bool checkOsiPointRegisters;
+  
+  
+  
+  bool checkOsiPointRegisters;
 #endif
 
-    
-    
-    
-    int32_t frameDepth_;
+  
+  
+  
+  int32_t frameDepth_;
 
-    
-    FrameSizeClass frameClass_;
+  
+  FrameSizeClass frameClass_;
 
-    
-    inline int32_t ArgToStackOffset(int32_t slot) const;
+  
+  inline int32_t ArgToStackOffset(int32_t slot) const;
 
-    inline int32_t SlotToStackOffset(int32_t slot) const;
-    inline int32_t StackOffsetToSlot(int32_t offset) const;
+  inline int32_t SlotToStackOffset(int32_t slot) const;
+  inline int32_t StackOffsetToSlot(int32_t offset) const;
 
-    
-    inline int32_t StackOffsetOfPassedArg(int32_t slot) const;
+  
+  inline int32_t StackOffsetOfPassedArg(int32_t slot) const;
 
-    inline int32_t ToStackOffset(LAllocation a) const;
-    inline int32_t ToStackOffset(const LAllocation* a) const;
+  inline int32_t ToStackOffset(LAllocation a) const;
+  inline int32_t ToStackOffset(const LAllocation* a) const;
 
-    inline Address ToAddress(const LAllocation& a);
-    inline Address ToAddress(const LAllocation* a);
+  inline Address ToAddress(const LAllocation& a);
+  inline Address ToAddress(const LAllocation* a);
 
-    uint32_t frameSize() const {
-        return frameClass_ == FrameSizeClass::None() ? frameDepth_ : frameClass_.frameSize();
-    }
+  uint32_t frameSize() const {
+    return frameClass_ == FrameSizeClass::None() ? frameDepth_
+                                                 : frameClass_.frameSize();
+  }
 
-  protected:
+ protected:
 #ifdef CHECK_OSIPOINT_REGISTERS
-    void resetOsiPointRegs(LSafepoint* safepoint);
-    bool shouldVerifyOsiPointRegs(LSafepoint* safepoint);
-    void verifyOsiPointRegs(LSafepoint* safepoint);
+  void resetOsiPointRegs(LSafepoint* safepoint);
+  bool shouldVerifyOsiPointRegs(LSafepoint* safepoint);
+  void verifyOsiPointRegs(LSafepoint* safepoint);
 #endif
 
-    bool addNativeToBytecodeEntry(const BytecodeSite* site);
-    void dumpNativeToBytecodeEntries();
-    void dumpNativeToBytecodeEntry(uint32_t idx);
+  bool addNativeToBytecodeEntry(const BytecodeSite* site);
+  void dumpNativeToBytecodeEntries();
+  void dumpNativeToBytecodeEntry(uint32_t idx);
 
-    bool addTrackedOptimizationsEntry(const TrackedOptimizations* optimizations);
-    void extendTrackedOptimizationsEntry(const TrackedOptimizations* optimizations);
+  bool addTrackedOptimizationsEntry(const TrackedOptimizations* optimizations);
+  void extendTrackedOptimizationsEntry(
+      const TrackedOptimizations* optimizations);
 
-  public:
-    MIRGenerator& mirGen() const {
-        return *gen;
+ public:
+  MIRGenerator& mirGen() const { return *gen; }
+
+  
+  
+  
+  friend class DataPtr;
+  template <typename T>
+  class DataPtr {
+    CodeGeneratorShared* cg_;
+    size_t index_;
+
+    T* lookup() { return reinterpret_cast<T*>(&cg_->runtimeData_[index_]); }
+
+   public:
+    DataPtr(CodeGeneratorShared* cg, size_t index) : cg_(cg), index_(index) {}
+
+    T* operator->() { return lookup(); }
+    T* operator*() { return lookup(); }
+  };
+
+ protected:
+  MOZ_MUST_USE
+  bool allocateData(size_t size, size_t* offset) {
+    MOZ_ASSERT(size % sizeof(void*) == 0);
+    *offset = runtimeData_.length();
+    masm.propagateOOM(runtimeData_.appendN(0, size));
+    return !masm.oom();
+  }
+
+  template <typename T>
+  inline size_t allocateIC(const T& cache) {
+    static_assert(mozilla::IsBaseOf<IonIC, T>::value,
+                  "T must inherit from IonIC");
+    size_t index;
+    masm.propagateOOM(
+        allocateData(sizeof(mozilla::AlignedStorage2<T>), &index));
+    masm.propagateOOM(icList_.append(index));
+    masm.propagateOOM(icInfo_.append(CompileTimeICInfo()));
+    if (masm.oom()) {
+      return SIZE_MAX;
     }
-
     
-    
-    
-    friend class DataPtr;
-    template <typename T>
-    class DataPtr
-    {
-        CodeGeneratorShared* cg_;
-        size_t index_;
+    MOZ_ASSERT(index == icList_.back());
+    new (&runtimeData_[index]) T(cache);
+    return index;
+  }
 
-        T* lookup() {
-            return reinterpret_cast<T*>(&cg_->runtimeData_[index_]);
-        }
-      public:
-        DataPtr(CodeGeneratorShared* cg, size_t index)
-          : cg_(cg), index_(index) { }
+ protected:
+  
+  void encode(LRecoverInfo* recover);
+  void encode(LSnapshot* snapshot);
+  void encodeAllocation(LSnapshot* snapshot, MDefinition* def,
+                        uint32_t* startIndex);
 
-        T * operator ->() {
-            return lookup();
-        }
-        T * operator*() {
-            return lookup();
-        }
-    };
+  
+  
+  
+  bool assignBailoutId(LSnapshot* snapshot);
 
-  protected:
-    MOZ_MUST_USE
-    bool allocateData(size_t size, size_t* offset) {
-        MOZ_ASSERT(size % sizeof(void*) == 0);
-        *offset = runtimeData_.length();
-        masm.propagateOOM(runtimeData_.appendN(0, size));
-        return !masm.oom();
+  
+  
+  bool encodeSafepoints();
+
+  
+  bool createNativeToBytecodeScriptList(JSContext* cx);
+  bool generateCompactNativeToBytecodeMap(JSContext* cx, JitCode* code);
+  void verifyCompactNativeToBytecodeMap(JitCode* code);
+
+  bool generateCompactTrackedOptimizationsMap(JSContext* cx, JitCode* code,
+                                              IonTrackedTypeVector* allTypes);
+  void verifyCompactTrackedOptimizationsMap(
+      JitCode* code, uint32_t numRegions,
+      const UniqueTrackedOptimizations& unique,
+      const IonTrackedTypeVector* allTypes);
+
+  
+  
+  void markSafepoint(LInstruction* ins);
+  void markSafepointAt(uint32_t offset, LInstruction* ins);
+
+  
+  
+  
+  uint32_t markOsiPoint(LOsiPoint* ins);
+
+  
+  
+  
+  
+  
+  void ensureOsiSpace();
+
+  OutOfLineCode* oolTruncateDouble(
+      FloatRegister src, Register dest, MInstruction* mir,
+      wasm::BytecodeOffset callOffset = wasm::BytecodeOffset());
+  void emitTruncateDouble(FloatRegister src, Register dest,
+                          MTruncateToInt32* mir);
+  void emitTruncateFloat32(FloatRegister src, Register dest,
+                           MTruncateToInt32* mir);
+
+  void emitPreBarrier(Register elements, const LAllocation* index,
+                      int32_t offsetAdjustment);
+  void emitPreBarrier(Address address);
+
+  
+  
+  
+  MBasicBlock* skipTrivialBlocks(MBasicBlock* block) {
+    while (block->lir()->isTrivial()) {
+      LGoto* ins = block->lir()->rbegin()->toGoto();
+      MOZ_ASSERT(ins->numSuccessors() == 1);
+      block = ins->getSuccessor(0);
     }
+    return block;
+  }
 
-    template <typename T>
-    inline size_t allocateIC(const T& cache) {
-        static_assert(mozilla::IsBaseOf<IonIC, T>::value, "T must inherit from IonIC");
-        size_t index;
-        masm.propagateOOM(allocateData(sizeof(mozilla::AlignedStorage2<T>), &index));
-        masm.propagateOOM(icList_.append(index));
-        masm.propagateOOM(icInfo_.append(CompileTimeICInfo()));
-        if (masm.oom()) {
-            return SIZE_MAX;
-        }
-        
-        MOZ_ASSERT(index == icList_.back());
-        new (&runtimeData_[index]) T(cache);
-        return index;
+  
+  
+  inline bool isNextBlock(LBlock* block) {
+    uint32_t target = skipTrivialBlocks(block->mir())->id();
+    uint32_t i = current->mir()->id() + 1;
+    if (target < i) {
+      return false;
     }
-
-  protected:
     
-    void encode(LRecoverInfo* recover);
-    void encode(LSnapshot* snapshot);
-    void encodeAllocation(LSnapshot* snapshot, MDefinition* def, uint32_t* startIndex);
-
-    
-    
-    
-    bool assignBailoutId(LSnapshot* snapshot);
-
-    
-    
-    bool encodeSafepoints();
-
-    
-    bool createNativeToBytecodeScriptList(JSContext* cx);
-    bool generateCompactNativeToBytecodeMap(JSContext* cx, JitCode* code);
-    void verifyCompactNativeToBytecodeMap(JitCode* code);
-
-    bool generateCompactTrackedOptimizationsMap(JSContext* cx, JitCode* code,
-                                                IonTrackedTypeVector* allTypes);
-    void verifyCompactTrackedOptimizationsMap(JitCode* code, uint32_t numRegions,
-                                              const UniqueTrackedOptimizations& unique,
-                                              const IonTrackedTypeVector* allTypes);
-
-    
-    
-    void markSafepoint(LInstruction* ins);
-    void markSafepointAt(uint32_t offset, LInstruction* ins);
-
-    
-    
-    
-    uint32_t markOsiPoint(LOsiPoint* ins);
-
-    
-    
-    
-    
-    
-    void ensureOsiSpace();
-
-    OutOfLineCode* oolTruncateDouble(FloatRegister src, Register dest, MInstruction* mir,
-                                     wasm::BytecodeOffset callOffset = wasm::BytecodeOffset());
-    void emitTruncateDouble(FloatRegister src, Register dest, MTruncateToInt32* mir);
-    void emitTruncateFloat32(FloatRegister src, Register dest, MTruncateToInt32* mir);
-
-    void emitPreBarrier(Register elements, const LAllocation* index, int32_t offsetAdjustment);
-    void emitPreBarrier(Address address);
-
-    
-    
-    
-    MBasicBlock* skipTrivialBlocks(MBasicBlock* block) {
-        while (block->lir()->isTrivial()) {
-            LGoto* ins = block->lir()->rbegin()->toGoto();
-            MOZ_ASSERT(ins->numSuccessors() == 1);
-            block = ins->getSuccessor(0);
-        }
-        return block;
+    for (; i != target; ++i) {
+      if (!graph.getBlock(i)->isTrivial()) {
+        return false;
+      }
     }
+    return true;
+  }
 
-    
-    
-    inline bool isNextBlock(LBlock* block) {
-        uint32_t target = skipTrivialBlocks(block->mir())->id();
-        uint32_t i = current->mir()->id() + 1;
-        if (target < i) {
-            return false;
-        }
-        
-        for (; i != target; ++i) {
-            if (!graph.getBlock(i)->isTrivial()) {
-                return false;
-            }
-        }
-        return true;
-    }
+ protected:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void saveVolatile(Register output) {
+    LiveRegisterSet regs(RegisterSet::Volatile());
+    regs.takeUnchecked(output);
+    masm.PushRegsInMask(regs);
+  }
+  void restoreVolatile(Register output) {
+    LiveRegisterSet regs(RegisterSet::Volatile());
+    regs.takeUnchecked(output);
+    masm.PopRegsInMask(regs);
+  }
+  void saveVolatile(FloatRegister output) {
+    LiveRegisterSet regs(RegisterSet::Volatile());
+    regs.takeUnchecked(output);
+    masm.PushRegsInMask(regs);
+  }
+  void restoreVolatile(FloatRegister output) {
+    LiveRegisterSet regs(RegisterSet::Volatile());
+    regs.takeUnchecked(output);
+    masm.PopRegsInMask(regs);
+  }
+  void saveVolatile(LiveRegisterSet temps) {
+    masm.PushRegsInMask(LiveRegisterSet(RegisterSet::VolatileNot(temps.set())));
+  }
+  void restoreVolatile(LiveRegisterSet temps) {
+    masm.PopRegsInMask(LiveRegisterSet(RegisterSet::VolatileNot(temps.set())));
+  }
+  void saveVolatile() {
+    masm.PushRegsInMask(LiveRegisterSet(RegisterSet::Volatile()));
+  }
+  void restoreVolatile() {
+    masm.PopRegsInMask(LiveRegisterSet(RegisterSet::Volatile()));
+  }
 
-  protected:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    void saveVolatile(Register output) {
-        LiveRegisterSet regs(RegisterSet::Volatile());
-        regs.takeUnchecked(output);
-        masm.PushRegsInMask(regs);
-    }
-    void restoreVolatile(Register output) {
-        LiveRegisterSet regs(RegisterSet::Volatile());
-        regs.takeUnchecked(output);
-        masm.PopRegsInMask(regs);
-    }
-    void saveVolatile(FloatRegister output) {
-        LiveRegisterSet regs(RegisterSet::Volatile());
-        regs.takeUnchecked(output);
-        masm.PushRegsInMask(regs);
-    }
-    void restoreVolatile(FloatRegister output) {
-        LiveRegisterSet regs(RegisterSet::Volatile());
-        regs.takeUnchecked(output);
-        masm.PopRegsInMask(regs);
-    }
-    void saveVolatile(LiveRegisterSet temps) {
-        masm.PushRegsInMask(LiveRegisterSet(RegisterSet::VolatileNot(temps.set())));
-    }
-    void restoreVolatile(LiveRegisterSet temps) {
-        masm.PopRegsInMask(LiveRegisterSet(RegisterSet::VolatileNot(temps.set())));
-    }
-    void saveVolatile() {
-        masm.PushRegsInMask(LiveRegisterSet(RegisterSet::Volatile()));
-    }
-    void restoreVolatile() {
-        masm.PopRegsInMask(LiveRegisterSet(RegisterSet::Volatile()));
-    }
+  
+  
+  
+  
+  inline void saveLive(LInstruction* ins);
+  inline void restoreLive(LInstruction* ins);
+  inline void restoreLiveIgnore(LInstruction* ins, LiveRegisterSet reg);
 
-    
-    
-    
-    
-    inline void saveLive(LInstruction* ins);
-    inline void restoreLive(LInstruction* ins);
-    inline void restoreLiveIgnore(LInstruction* ins, LiveRegisterSet reg);
+  
+  inline void saveLiveVolatile(LInstruction* ins);
+  inline void restoreLiveVolatile(LInstruction* ins);
 
-    
-    inline void saveLiveVolatile(LInstruction* ins);
-    inline void restoreLiveVolatile(LInstruction* ins);
-
-  public:
-    template <typename T>
-    void pushArg(const T& t) {
-        masm.Push(t);
+ public:
+  template <typename T>
+  void pushArg(const T& t) {
+    masm.Push(t);
 #ifdef DEBUG
-        pushedArgs_++;
+    pushedArgs_++;
 #endif
-    }
+  }
 
-    template <typename T>
-    CodeOffset pushArgWithPatch(const T& t) {
+  template <typename T>
+  CodeOffset pushArgWithPatch(const T& t) {
 #ifdef DEBUG
-        pushedArgs_++;
+    pushedArgs_++;
 #endif
-        return masm.PushWithPatch(t);
-    }
+    return masm.PushWithPatch(t);
+  }
 
-    void storePointerResultTo(Register reg) {
-        masm.storeCallPointerResult(reg);
-    }
+  void storePointerResultTo(Register reg) { masm.storeCallPointerResult(reg); }
 
-    void storeFloatResultTo(FloatRegister reg) {
-        masm.storeCallFloatResult(reg);
-    }
+  void storeFloatResultTo(FloatRegister reg) { masm.storeCallFloatResult(reg); }
 
-    template <typename T>
-    void storeResultValueTo(const T& t) {
-        masm.storeCallResultValue(t);
-    }
+  template <typename T>
+  void storeResultValueTo(const T& t) {
+    masm.storeCallResultValue(t);
+  }
 
-  protected:
-    void callVM(const VMFunction& f, LInstruction* ins, const Register* dynStack = nullptr);
+ protected:
+  void callVM(const VMFunction& f, LInstruction* ins,
+              const Register* dynStack = nullptr);
 
-    template <class ArgSeq, class StoreOutputTo>
-    inline OutOfLineCode* oolCallVM(const VMFunction& fun, LInstruction* ins, const ArgSeq& args,
-                                    const StoreOutputTo& out);
+  template <class ArgSeq, class StoreOutputTo>
+  inline OutOfLineCode* oolCallVM(const VMFunction& fun, LInstruction* ins,
+                                  const ArgSeq& args, const StoreOutputTo& out);
 
-    void addIC(LInstruction* lir, size_t cacheIndex);
+  void addIC(LInstruction* lir, size_t cacheIndex);
 
-    ReciprocalMulConstants computeDivisionConstants(uint32_t d, int maxLog);
+  ReciprocalMulConstants computeDivisionConstants(uint32_t d, int maxLog);
 
-  protected:
-    bool generatePrologue();
-    bool generateEpilogue();
+ protected:
+  bool generatePrologue();
+  bool generateEpilogue();
 
-    void addOutOfLineCode(OutOfLineCode* code, const MInstruction* mir);
-    void addOutOfLineCode(OutOfLineCode* code, const BytecodeSite* site);
-    bool generateOutOfLineCode();
+  void addOutOfLineCode(OutOfLineCode* code, const MInstruction* mir);
+  void addOutOfLineCode(OutOfLineCode* code, const BytecodeSite* site);
+  bool generateOutOfLineCode();
 
-    Label* getJumpLabelForBranch(MBasicBlock* block);
+  Label* getJumpLabelForBranch(MBasicBlock* block);
 
-    
-    
-    
-    void jumpToBlock(MBasicBlock* mir);
+  
+  
+  
+  void jumpToBlock(MBasicBlock* mir);
 
 
 #if !defined(JS_CODEGEN_MIPS32) && !defined(JS_CODEGEN_MIPS64)
-    void jumpToBlock(MBasicBlock* mir, Assembler::Condition cond);
+  void jumpToBlock(MBasicBlock* mir, Assembler::Condition cond);
 #endif
 
-  private:
-    void generateInvalidateEpilogue();
+ private:
+  void generateInvalidateEpilogue();
 
-  public:
-    CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph, MacroAssembler* masm);
+ public:
+  CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph, MacroAssembler* masm);
 
-  public:
-    template <class ArgSeq, class StoreOutputTo>
-    void visitOutOfLineCallVM(OutOfLineCallVM<ArgSeq, StoreOutputTo>* ool);
+ public:
+  template <class ArgSeq, class StoreOutputTo>
+  void visitOutOfLineCallVM(OutOfLineCallVM<ArgSeq, StoreOutputTo>* ool);
 
-    void visitOutOfLineTruncateSlow(OutOfLineTruncateSlow* ool);
+  void visitOutOfLineTruncateSlow(OutOfLineTruncateSlow* ool);
 
-    bool omitOverRecursedCheck() const;
+  bool omitOverRecursedCheck() const;
 
 #ifdef JS_TRACE_LOGGING
-  protected:
-    void emitTracelogScript(bool isStart);
-    void emitTracelogTree(bool isStart, uint32_t textId);
-    void emitTracelogTree(bool isStart, const char* text, TraceLoggerTextId enabledTextId);
+ protected:
+  void emitTracelogScript(bool isStart);
+  void emitTracelogTree(bool isStart, uint32_t textId);
+  void emitTracelogTree(bool isStart, const char* text,
+                        TraceLoggerTextId enabledTextId);
 #endif
 
-  public:
+ public:
 #ifdef JS_TRACE_LOGGING
-    void emitTracelogScriptStart() {
-        emitTracelogScript( true);
-    }
-    void emitTracelogScriptStop() {
-        emitTracelogScript( false);
-    }
-    void emitTracelogStartEvent(uint32_t textId) {
-        emitTracelogTree( true, textId);
-    }
-    void emitTracelogStopEvent(uint32_t textId) {
-        emitTracelogTree( false, textId);
-    }
-    
-    
-    
-    void emitTracelogStartEvent(const char* text, TraceLoggerTextId enabledTextId) {
-        emitTracelogTree( true, text, enabledTextId);
-    }
-    void emitTracelogStopEvent(const char* text, TraceLoggerTextId enabledTextId) {
-        emitTracelogTree( false, text, enabledTextId);
-    }
-    void emitTracelogIonStart() {
-        emitTracelogScriptStart();
-        emitTracelogStartEvent(TraceLogger_IonMonkey);
-    }
-    void emitTracelogIonStop() {
-        emitTracelogStopEvent(TraceLogger_IonMonkey);
-        emitTracelogScriptStop();
-    }
+  void emitTracelogScriptStart() { emitTracelogScript(true); }
+  void emitTracelogScriptStop() { emitTracelogScript(false); }
+  void emitTracelogStartEvent(uint32_t textId) {
+    emitTracelogTree(true, textId);
+  }
+  void emitTracelogStopEvent(uint32_t textId) {
+    emitTracelogTree(false, textId);
+  }
+  
+  
+  
+  void emitTracelogStartEvent(const char* text,
+                              TraceLoggerTextId enabledTextId) {
+    emitTracelogTree(true, text, enabledTextId);
+  }
+  void emitTracelogStopEvent(const char* text,
+                             TraceLoggerTextId enabledTextId) {
+    emitTracelogTree(false, text, enabledTextId);
+  }
+  void emitTracelogIonStart() {
+    emitTracelogScriptStart();
+    emitTracelogStartEvent(TraceLogger_IonMonkey);
+  }
+  void emitTracelogIonStop() {
+    emitTracelogStopEvent(TraceLogger_IonMonkey);
+    emitTracelogScriptStop();
+  }
 #else
-    void emitTracelogScriptStart() {}
-    void emitTracelogScriptStop() {}
-    void emitTracelogStartEvent(uint32_t textId) {}
-    void emitTracelogStopEvent(uint32_t textId) {}
-    void emitTracelogStartEvent(const char* text, TraceLoggerTextId enabledTextId) {}
-    void emitTracelogStopEvent(const char* text, TraceLoggerTextId enabledTextId) {}
-    void emitTracelogIonStart() {}
-    void emitTracelogIonStop() {}
+  void emitTracelogScriptStart() {}
+  void emitTracelogScriptStop() {}
+  void emitTracelogStartEvent(uint32_t textId) {}
+  void emitTracelogStopEvent(uint32_t textId) {}
+  void emitTracelogStartEvent(const char* text,
+                              TraceLoggerTextId enabledTextId) {}
+  void emitTracelogStopEvent(const char* text,
+                             TraceLoggerTextId enabledTextId) {}
+  void emitTracelogIonStart() {}
+  void emitTracelogIonStop() {}
 #endif
 
-    bool isGlobalObject(JSObject* object);
+  bool isGlobalObject(JSObject* object);
 };
 
 
-class OutOfLineCode : public TempObject
-{
-    Label entry_;
-    Label rejoin_;
-    uint32_t framePushed_;
-    const BytecodeSite* site_;
+class OutOfLineCode : public TempObject {
+  Label entry_;
+  Label rejoin_;
+  uint32_t framePushed_;
+  const BytecodeSite* site_;
 
-  public:
-    OutOfLineCode()
-      : framePushed_(0),
-        site_()
-    { }
+ public:
+  OutOfLineCode() : framePushed_(0), site_() {}
 
-    virtual void generate(CodeGeneratorShared* codegen) = 0;
+  virtual void generate(CodeGeneratorShared* codegen) = 0;
 
-    Label* entry() {
-        return &entry_;
-    }
-    virtual void bind(MacroAssembler* masm) {
-        masm->bind(entry());
-    }
-    Label* rejoin() {
-        return &rejoin_;
-    }
-    void setFramePushed(uint32_t framePushed) {
-        framePushed_ = framePushed;
-    }
-    uint32_t framePushed() const {
-        return framePushed_;
-    }
-    void setBytecodeSite(const BytecodeSite* site) {
-        site_ = site;
-    }
-    const BytecodeSite* bytecodeSite() const {
-        return site_;
-    }
-    jsbytecode* pc() const {
-        return site_->pc();
-    }
-    JSScript* script() const {
-        return site_->script();
-    }
+  Label* entry() { return &entry_; }
+  virtual void bind(MacroAssembler* masm) { masm->bind(entry()); }
+  Label* rejoin() { return &rejoin_; }
+  void setFramePushed(uint32_t framePushed) { framePushed_ = framePushed; }
+  uint32_t framePushed() const { return framePushed_; }
+  void setBytecodeSite(const BytecodeSite* site) { site_ = site; }
+  const BytecodeSite* bytecodeSite() const { return site_; }
+  jsbytecode* pc() const { return site_->pc(); }
+  JSScript* script() const { return site_->script(); }
 };
 
 
 template <typename T>
-class OutOfLineCodeBase : public OutOfLineCode
-{
-  public:
-    virtual void generate(CodeGeneratorShared* codegen) override {
-        accept(static_cast<T*>(codegen));
-    }
+class OutOfLineCodeBase : public OutOfLineCode {
+ public:
+  virtual void generate(CodeGeneratorShared* codegen) override {
+    accept(static_cast<T*>(codegen));
+  }
 
-  public:
-    virtual void accept(T* codegen) = 0;
+ public:
+  virtual void accept(T* codegen) = 0;
 };
 
 
@@ -603,221 +572,203 @@ template <typename... ArgTypes>
 class ArgSeq;
 
 template <>
-class ArgSeq<>
-{
-  public:
-    ArgSeq() { }
+class ArgSeq<> {
+ public:
+  ArgSeq() {}
 
-    inline void generate(CodeGeneratorShared* codegen) const {
-    }
+  inline void generate(CodeGeneratorShared* codegen) const {}
 };
 
 template <typename HeadType, typename... TailTypes>
-class ArgSeq<HeadType, TailTypes...> : public ArgSeq<TailTypes...>
-{
-  private:
-    using RawHeadType = typename mozilla::RemoveReference<HeadType>::Type;
-    RawHeadType head_;
+class ArgSeq<HeadType, TailTypes...> : public ArgSeq<TailTypes...> {
+ private:
+  using RawHeadType = typename mozilla::RemoveReference<HeadType>::Type;
+  RawHeadType head_;
 
-  public:
-    template <typename ProvidedHead, typename... ProvidedTail>
-    explicit ArgSeq(ProvidedHead&& head, ProvidedTail&&... tail)
+ public:
+  template <typename ProvidedHead, typename... ProvidedTail>
+  explicit ArgSeq(ProvidedHead&& head, ProvidedTail&&... tail)
       : ArgSeq<TailTypes...>(std::forward<ProvidedTail>(tail)...),
-        head_(std::forward<ProvidedHead>(head))
-    { }
+        head_(std::forward<ProvidedHead>(head)) {}
 
-    
-    
-    inline void generate(CodeGeneratorShared* codegen) const {
-        this->ArgSeq<TailTypes...>::generate(codegen);
-        codegen->pushArg(head_);
-    }
+  
+  
+  inline void generate(CodeGeneratorShared* codegen) const {
+    this->ArgSeq<TailTypes...>::generate(codegen);
+    codegen->pushArg(head_);
+  }
 };
 
 template <typename... ArgTypes>
-inline ArgSeq<ArgTypes...>
-ArgList(ArgTypes&&... args)
-{
-    return ArgSeq<ArgTypes...>(std::forward<ArgTypes>(args)...);
+inline ArgSeq<ArgTypes...> ArgList(ArgTypes&&... args) {
+  return ArgSeq<ArgTypes...>(std::forward<ArgTypes>(args)...);
 }
 
 
 
-struct StoreNothing
-{
-    inline void generate(CodeGeneratorShared* codegen) const {
-    }
-    inline LiveRegisterSet clobbered() const {
-        return LiveRegisterSet(); 
-    }
+struct StoreNothing {
+  inline void generate(CodeGeneratorShared* codegen) const {}
+  inline LiveRegisterSet clobbered() const {
+    return LiveRegisterSet();  
+  }
 };
 
-class StoreRegisterTo
-{
-  private:
-    Register out_;
+class StoreRegisterTo {
+ private:
+  Register out_;
 
-  public:
-    explicit StoreRegisterTo(Register out)
-      : out_(out)
-    { }
+ public:
+  explicit StoreRegisterTo(Register out) : out_(out) {}
 
-    inline void generate(CodeGeneratorShared* codegen) const {
-        
-        
-        codegen->storePointerResultTo(out_);
-    }
-    inline LiveRegisterSet clobbered() const {
-        LiveRegisterSet set;
-        set.add(out_);
-        return set;
-    }
+  inline void generate(CodeGeneratorShared* codegen) const {
+    
+    
+    codegen->storePointerResultTo(out_);
+  }
+  inline LiveRegisterSet clobbered() const {
+    LiveRegisterSet set;
+    set.add(out_);
+    return set;
+  }
 };
 
-class StoreFloatRegisterTo
-{
-  private:
-    FloatRegister out_;
+class StoreFloatRegisterTo {
+ private:
+  FloatRegister out_;
 
-  public:
-    explicit StoreFloatRegisterTo(FloatRegister out)
-      : out_(out)
-    { }
+ public:
+  explicit StoreFloatRegisterTo(FloatRegister out) : out_(out) {}
 
-    inline void generate(CodeGeneratorShared* codegen) const {
-        codegen->storeFloatResultTo(out_);
-    }
-    inline LiveRegisterSet clobbered() const {
-        LiveRegisterSet set;
-        set.add(out_);
-        return set;
-    }
+  inline void generate(CodeGeneratorShared* codegen) const {
+    codegen->storeFloatResultTo(out_);
+  }
+  inline LiveRegisterSet clobbered() const {
+    LiveRegisterSet set;
+    set.add(out_);
+    return set;
+  }
 };
 
 template <typename Output>
-class StoreValueTo_
-{
-  private:
-    Output out_;
+class StoreValueTo_ {
+ private:
+  Output out_;
 
-  public:
-    explicit StoreValueTo_(const Output& out)
-      : out_(out)
-    { }
+ public:
+  explicit StoreValueTo_(const Output& out) : out_(out) {}
 
-    inline void generate(CodeGeneratorShared* codegen) const {
-        codegen->storeResultValueTo(out_);
-    }
-    inline LiveRegisterSet clobbered() const {
-        LiveRegisterSet set;
-        set.add(out_);
-        return set;
-    }
+  inline void generate(CodeGeneratorShared* codegen) const {
+    codegen->storeResultValueTo(out_);
+  }
+  inline LiveRegisterSet clobbered() const {
+    LiveRegisterSet set;
+    set.add(out_);
+    return set;
+  }
 };
 
 template <typename Output>
-StoreValueTo_<Output> StoreValueTo(const Output& out)
-{
-    return StoreValueTo_<Output>(out);
+StoreValueTo_<Output> StoreValueTo(const Output& out) {
+  return StoreValueTo_<Output>(out);
 }
 
 template <class ArgSeq, class StoreOutputTo>
-class OutOfLineCallVM : public OutOfLineCodeBase<CodeGeneratorShared>
-{
-  private:
-    LInstruction* lir_;
-    const VMFunction& fun_;
-    ArgSeq args_;
-    StoreOutputTo out_;
+class OutOfLineCallVM : public OutOfLineCodeBase<CodeGeneratorShared> {
+ private:
+  LInstruction* lir_;
+  const VMFunction& fun_;
+  ArgSeq args_;
+  StoreOutputTo out_;
 
-  public:
-    OutOfLineCallVM(LInstruction* lir, const VMFunction& fun, const ArgSeq& args,
-                    const StoreOutputTo& out)
-      : lir_(lir),
-        fun_(fun),
-        args_(args),
-        out_(out)
-    { }
+ public:
+  OutOfLineCallVM(LInstruction* lir, const VMFunction& fun, const ArgSeq& args,
+                  const StoreOutputTo& out)
+      : lir_(lir), fun_(fun), args_(args), out_(out) {}
 
-    void accept(CodeGeneratorShared* codegen) override {
-        codegen->visitOutOfLineCallVM(this);
-    }
+  void accept(CodeGeneratorShared* codegen) override {
+    codegen->visitOutOfLineCallVM(this);
+  }
 
-    LInstruction* lir() const { return lir_; }
-    const VMFunction& function() const { return fun_; }
-    const ArgSeq& args() const { return args_; }
-    const StoreOutputTo& out() const { return out_; }
+  LInstruction* lir() const { return lir_; }
+  const VMFunction& function() const { return fun_; }
+  const ArgSeq& args() const { return args_; }
+  const StoreOutputTo& out() const { return out_; }
 };
 
 template <class ArgSeq, class StoreOutputTo>
-inline OutOfLineCode*
-CodeGeneratorShared::oolCallVM(const VMFunction& fun, LInstruction* lir, const ArgSeq& args,
-                               const StoreOutputTo& out)
-{
-    MOZ_ASSERT(lir->mirRaw());
-    MOZ_ASSERT(lir->mirRaw()->isInstruction());
+inline OutOfLineCode* CodeGeneratorShared::oolCallVM(const VMFunction& fun,
+                                                     LInstruction* lir,
+                                                     const ArgSeq& args,
+                                                     const StoreOutputTo& out) {
+  MOZ_ASSERT(lir->mirRaw());
+  MOZ_ASSERT(lir->mirRaw()->isInstruction());
 
-    OutOfLineCode* ool = new(alloc()) OutOfLineCallVM<ArgSeq, StoreOutputTo>(lir, fun, args, out);
-    addOutOfLineCode(ool, lir->mirRaw()->toInstruction());
-    return ool;
+  OutOfLineCode* ool =
+      new (alloc()) OutOfLineCallVM<ArgSeq, StoreOutputTo>(lir, fun, args, out);
+  addOutOfLineCode(ool, lir->mirRaw()->toInstruction());
+  return ool;
 }
 
 template <class ArgSeq, class StoreOutputTo>
-void
-CodeGeneratorShared::visitOutOfLineCallVM(OutOfLineCallVM<ArgSeq, StoreOutputTo>* ool)
-{
-    LInstruction* lir = ool->lir();
+void CodeGeneratorShared::visitOutOfLineCallVM(
+    OutOfLineCallVM<ArgSeq, StoreOutputTo>* ool) {
+  LInstruction* lir = ool->lir();
 
-    saveLive(lir);
-    ool->args().generate(this);
-    callVM(ool->function(), lir);
-    ool->out().generate(this);
-    restoreLiveIgnore(lir, ool->out().clobbered());
-    masm.jump(ool->rejoin());
+  saveLive(lir);
+  ool->args().generate(this);
+  callVM(ool->function(), lir);
+  ool->out().generate(this);
+  restoreLiveIgnore(lir, ool->out().clobbered());
+  masm.jump(ool->rejoin());
 }
 
 template <class CodeGen>
-class OutOfLineWasmTruncateCheckBase : public OutOfLineCodeBase<CodeGen>
-{
-    MIRType fromType_;
-    MIRType toType_;
-    FloatRegister input_;
-    Register output_;
-    Register64 output64_;
-    TruncFlags flags_;
-    wasm::BytecodeOffset bytecodeOffset_;
+class OutOfLineWasmTruncateCheckBase : public OutOfLineCodeBase<CodeGen> {
+  MIRType fromType_;
+  MIRType toType_;
+  FloatRegister input_;
+  Register output_;
+  Register64 output64_;
+  TruncFlags flags_;
+  wasm::BytecodeOffset bytecodeOffset_;
 
-  public:
-    OutOfLineWasmTruncateCheckBase(MWasmTruncateToInt32* mir, FloatRegister input,
-                                   Register output)
-      : fromType_(mir->input()->type()), toType_(MIRType::Int32), input_(input), output_(output),
-        output64_(Register64::Invalid()), flags_(mir->flags()),
-        bytecodeOffset_(mir->bytecodeOffset())
-    { }
+ public:
+  OutOfLineWasmTruncateCheckBase(MWasmTruncateToInt32* mir, FloatRegister input,
+                                 Register output)
+      : fromType_(mir->input()->type()),
+        toType_(MIRType::Int32),
+        input_(input),
+        output_(output),
+        output64_(Register64::Invalid()),
+        flags_(mir->flags()),
+        bytecodeOffset_(mir->bytecodeOffset()) {}
 
-    OutOfLineWasmTruncateCheckBase(MWasmTruncateToInt64* mir, FloatRegister input,
-                                   Register64 output)
-      : fromType_(mir->input()->type()), toType_(MIRType::Int64), input_(input),
-        output_(Register::Invalid()), output64_(output), flags_(mir->flags()),
-        bytecodeOffset_(mir->bytecodeOffset())
-    { }
+  OutOfLineWasmTruncateCheckBase(MWasmTruncateToInt64* mir, FloatRegister input,
+                                 Register64 output)
+      : fromType_(mir->input()->type()),
+        toType_(MIRType::Int64),
+        input_(input),
+        output_(Register::Invalid()),
+        output64_(output),
+        flags_(mir->flags()),
+        bytecodeOffset_(mir->bytecodeOffset()) {}
 
-    void accept(CodeGen* codegen) override {
-        codegen->visitOutOfLineWasmTruncateCheck(this);
-    }
+  void accept(CodeGen* codegen) override {
+    codegen->visitOutOfLineWasmTruncateCheck(this);
+  }
 
-    FloatRegister input() const { return input_; }
-    Register output() const { return output_; }
-    Register64 output64() const { return output64_; }
-    MIRType toType() const { return toType_; }
-    MIRType fromType() const { return fromType_; }
-    bool isUnsigned() const { return flags_ & TRUNC_UNSIGNED; }
-    bool isSaturating() const { return flags_ & TRUNC_SATURATING; }
-    TruncFlags flags() const { return flags_; }
-    wasm::BytecodeOffset bytecodeOffset() const { return bytecodeOffset_; }
+  FloatRegister input() const { return input_; }
+  Register output() const { return output_; }
+  Register64 output64() const { return output64_; }
+  MIRType toType() const { return toType_; }
+  MIRType fromType() const { return fromType_; }
+  bool isUnsigned() const { return flags_ & TRUNC_UNSIGNED; }
+  bool isSaturating() const { return flags_ & TRUNC_SATURATING; }
+  TruncFlags flags() const { return flags_; }
+  wasm::BytecodeOffset bytecodeOffset() const { return bytecodeOffset_; }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

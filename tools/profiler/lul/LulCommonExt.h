@@ -55,8 +55,6 @@
 
 
 
-
-
 #ifndef LulCommonExt_h
 #define LulCommonExt_h
 
@@ -67,15 +65,14 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <cstddef>            
+#include <cstddef>  
 
 #include "mozilla/Assertions.h"
 
 namespace lul {
 
-using std::string;
 using std::map;
-
+using std::string;
 
 
 
@@ -95,17 +92,16 @@ bool IsEmptyUniqueString(const UniqueString*);
 
 
 
-
 class UniqueStringUniverse {
-public:
+ public:
   UniqueStringUniverse() {}
   ~UniqueStringUniverse();
   
   const UniqueString* ToUniqueString(string str);
-private:
+
+ private:
   map<string, UniqueString*> map_;
 };
-
 
 
 
@@ -115,7 +111,7 @@ typedef struct {
   uint32_t data1;
   uint16_t data2;
   uint16_t data3;
-  uint8_t  data4[8];
+  uint8_t data4[8];
 } MDGUID;  
 
 typedef MDGUID GUID;
@@ -161,206 +157,24 @@ typedef MDGUID GUID;
 
 
 
-
 template <typename T>
 class scoped_ptr {
  private:
-
   T* ptr;
 
-  scoped_ptr(scoped_ptr const &);
-  scoped_ptr & operator=(scoped_ptr const &);
+  scoped_ptr(scoped_ptr const&);
+  scoped_ptr& operator=(scoped_ptr const&);
 
  public:
-
   typedef T element_type;
 
-  explicit scoped_ptr(T* p = 0): ptr(p) {}
+  explicit scoped_ptr(T* p = 0) : ptr(p) {}
 
-  ~scoped_ptr() {
-    delete ptr;
-  }
+  ~scoped_ptr() { delete ptr; }
 
   void reset(T* p = 0) {
     if (ptr != p) {
       delete ptr;
-      ptr = p;
-    }
-  }
-
-  T& operator*() const {
-    MOZ_ASSERT(ptr != 0);
-    return *ptr;
-  }
-
-  T* operator->() const  {
-    MOZ_ASSERT(ptr != 0);
-    return ptr;
-  }
-
-  bool operator==(T* p) const {
-    return ptr == p;
-  }
-
-  bool operator!=(T* p) const {
-    return ptr != p;
-  }
-
-  T* get() const  {
-    return ptr;
-  }
-
-  void swap(scoped_ptr & b) {
-    T* tmp = b.ptr;
-    b.ptr = ptr;
-    ptr = tmp;
-  }
-
-  T* release() {
-    T* tmp = ptr;
-    ptr = 0;
-    return tmp;
-  }
-
- private:
-
-  
-  template <typename U> bool operator==(scoped_ptr<U> const& p) const;
-  template <typename U> bool operator!=(scoped_ptr<U> const& p) const;
-};
-
-template<typename T> inline
-void swap(scoped_ptr<T>& a, scoped_ptr<T>& b) {
-  a.swap(b);
-}
-
-template<typename T> inline
-bool operator==(T* p, const scoped_ptr<T>& b) {
-  return p == b.get();
-}
-
-template<typename T> inline
-bool operator!=(T* p, const scoped_ptr<T>& b) {
-  return p != b.get();
-}
-
-
-
-
-
-template<typename T>
-class scoped_array {
- private:
-
-  T* ptr;
-
-  scoped_array(scoped_array const &);
-  scoped_array & operator=(scoped_array const &);
-
- public:
-
-  typedef T element_type;
-
-  explicit scoped_array(T* p = 0) : ptr(p) {}
-
-  ~scoped_array() {
-    delete[] ptr;
-  }
-
-  void reset(T* p = 0) {
-    if (ptr != p) {
-      delete [] ptr;
-      ptr = p;
-    }
-  }
-
-  T& operator[](std::ptrdiff_t i) const {
-    MOZ_ASSERT(ptr != 0);
-    MOZ_ASSERT(i >= 0);
-    return ptr[i];
-  }
-
-  bool operator==(T* p) const {
-    return ptr == p;
-  }
-
-  bool operator!=(T* p) const {
-    return ptr != p;
-  }
-
-  T* get() const {
-    return ptr;
-  }
-
-  void swap(scoped_array & b) {
-    T* tmp = b.ptr;
-    b.ptr = ptr;
-    ptr = tmp;
-  }
-
-  T* release() {
-    T* tmp = ptr;
-    ptr = 0;
-    return tmp;
-  }
-
- private:
-
-  
-  template <typename U> bool operator==(scoped_array<U> const& p) const;
-  template <typename U> bool operator!=(scoped_array<U> const& p) const;
-};
-
-template<class T> inline
-void swap(scoped_array<T>& a, scoped_array<T>& b) {
-  a.swap(b);
-}
-
-template<typename T> inline
-bool operator==(T* p, const scoped_array<T>& b) {
-  return p == b.get();
-}
-
-template<typename T> inline
-bool operator!=(T* p, const scoped_array<T>& b) {
-  return p != b.get();
-}
-
-
-
-
-class ScopedPtrMallocFree {
- public:
-  inline void operator()(void* x) const {
-    free(x);
-  }
-};
-
-
-
-
-template<typename T, typename FreeProc = ScopedPtrMallocFree>
-class scoped_ptr_malloc {
- private:
-
-  T* ptr;
-
-  scoped_ptr_malloc(scoped_ptr_malloc const &);
-  scoped_ptr_malloc & operator=(scoped_ptr_malloc const &);
-
- public:
-
-  typedef T element_type;
-
-  explicit scoped_ptr_malloc(T* p = 0): ptr(p) {}
-
-  ~scoped_ptr_malloc() {
-    free_((void*) ptr);
-  }
-
-  void reset(T* p = 0) {
-    if (ptr != p) {
-      free_((void*) ptr);
       ptr = p;
     }
   }
@@ -375,19 +189,13 @@ class scoped_ptr_malloc {
     return ptr;
   }
 
-  bool operator==(T* p) const {
-    return ptr == p;
-  }
+  bool operator==(T* p) const { return ptr == p; }
 
-  bool operator!=(T* p) const {
-    return ptr != p;
-  }
+  bool operator!=(T* p) const { return ptr != p; }
 
-  T* get() const {
-    return ptr;
-  }
+  T* get() const { return ptr; }
 
-  void swap(scoped_ptr_malloc & b) {
+  void swap(scoped_ptr& b) {
     T* tmp = b.ptr;
     b.ptr = ptr;
     ptr = tmp;
@@ -400,7 +208,162 @@ class scoped_ptr_malloc {
   }
 
  private:
+  
+  template <typename U>
+  bool operator==(scoped_ptr<U> const& p) const;
+  template <typename U>
+  bool operator!=(scoped_ptr<U> const& p) const;
+};
 
+template <typename T>
+inline void swap(scoped_ptr<T>& a, scoped_ptr<T>& b) {
+  a.swap(b);
+}
+
+template <typename T>
+inline bool operator==(T* p, const scoped_ptr<T>& b) {
+  return p == b.get();
+}
+
+template <typename T>
+inline bool operator!=(T* p, const scoped_ptr<T>& b) {
+  return p != b.get();
+}
+
+
+
+
+
+template <typename T>
+class scoped_array {
+ private:
+  T* ptr;
+
+  scoped_array(scoped_array const&);
+  scoped_array& operator=(scoped_array const&);
+
+ public:
+  typedef T element_type;
+
+  explicit scoped_array(T* p = 0) : ptr(p) {}
+
+  ~scoped_array() { delete[] ptr; }
+
+  void reset(T* p = 0) {
+    if (ptr != p) {
+      delete[] ptr;
+      ptr = p;
+    }
+  }
+
+  T& operator[](std::ptrdiff_t i) const {
+    MOZ_ASSERT(ptr != 0);
+    MOZ_ASSERT(i >= 0);
+    return ptr[i];
+  }
+
+  bool operator==(T* p) const { return ptr == p; }
+
+  bool operator!=(T* p) const { return ptr != p; }
+
+  T* get() const { return ptr; }
+
+  void swap(scoped_array& b) {
+    T* tmp = b.ptr;
+    b.ptr = ptr;
+    ptr = tmp;
+  }
+
+  T* release() {
+    T* tmp = ptr;
+    ptr = 0;
+    return tmp;
+  }
+
+ private:
+  
+  template <typename U>
+  bool operator==(scoped_array<U> const& p) const;
+  template <typename U>
+  bool operator!=(scoped_array<U> const& p) const;
+};
+
+template <class T>
+inline void swap(scoped_array<T>& a, scoped_array<T>& b) {
+  a.swap(b);
+}
+
+template <typename T>
+inline bool operator==(T* p, const scoped_array<T>& b) {
+  return p == b.get();
+}
+
+template <typename T>
+inline bool operator!=(T* p, const scoped_array<T>& b) {
+  return p != b.get();
+}
+
+
+
+class ScopedPtrMallocFree {
+ public:
+  inline void operator()(void* x) const { free(x); }
+};
+
+
+
+
+template <typename T, typename FreeProc = ScopedPtrMallocFree>
+class scoped_ptr_malloc {
+ private:
+  T* ptr;
+
+  scoped_ptr_malloc(scoped_ptr_malloc const&);
+  scoped_ptr_malloc& operator=(scoped_ptr_malloc const&);
+
+ public:
+  typedef T element_type;
+
+  explicit scoped_ptr_malloc(T* p = 0) : ptr(p) {}
+
+  ~scoped_ptr_malloc() { free_((void*)ptr); }
+
+  void reset(T* p = 0) {
+    if (ptr != p) {
+      free_((void*)ptr);
+      ptr = p;
+    }
+  }
+
+  T& operator*() const {
+    MOZ_ASSERT(ptr != 0);
+    return *ptr;
+  }
+
+  T* operator->() const {
+    MOZ_ASSERT(ptr != 0);
+    return ptr;
+  }
+
+  bool operator==(T* p) const { return ptr == p; }
+
+  bool operator!=(T* p) const { return ptr != p; }
+
+  T* get() const { return ptr; }
+
+  void swap(scoped_ptr_malloc& b) {
+    T* tmp = b.ptr;
+    b.ptr = ptr;
+    ptr = tmp;
+  }
+
+  T* release() {
+    T* tmp = ptr;
+    ptr = 0;
+    return tmp;
+  }
+
+ private:
   
   template <typename U, typename GP>
   bool operator==(scoped_ptr_malloc<U, GP> const& p) const;
@@ -410,21 +373,21 @@ class scoped_ptr_malloc {
   static FreeProc const free_;
 };
 
-template<typename T, typename FP>
-FP const scoped_ptr_malloc<T,FP>::free_ = FP();
+template <typename T, typename FP>
+FP const scoped_ptr_malloc<T, FP>::free_ = FP();
 
-template<typename T, typename FP> inline
-void swap(scoped_ptr_malloc<T,FP>& a, scoped_ptr_malloc<T,FP>& b) {
+template <typename T, typename FP>
+inline void swap(scoped_ptr_malloc<T, FP>& a, scoped_ptr_malloc<T, FP>& b) {
   a.swap(b);
 }
 
-template<typename T, typename FP> inline
-bool operator==(T* p, const scoped_ptr_malloc<T,FP>& b) {
+template <typename T, typename FP>
+inline bool operator==(T* p, const scoped_ptr_malloc<T, FP>& b) {
   return p == b.get();
 }
 
-template<typename T, typename FP> inline
-bool operator!=(T* p, const scoped_ptr_malloc<T,FP>& b) {
+template <typename T, typename FP>
+inline bool operator!=(T* p, const scoped_ptr_malloc<T, FP>& b) {
   return p != b.get();
 }
 
@@ -436,9 +399,8 @@ bool operator!=(T* p, const scoped_ptr_malloc<T,FP>& b) {
 
 
 
-
 class Module {
-public:
+ public:
   
   typedef uint64_t Address;
 
@@ -446,12 +408,7 @@ public:
   
   
   
-  enum ExprHow {
-    kExprInvalid = 1,
-    kExprPostfix,
-    kExprSimple,
-    kExprSimpleMem
-  };
+  enum ExprHow { kExprInvalid = 1, kExprPostfix, kExprSimple, kExprSimpleMem };
 
   struct Expr {
     
@@ -485,7 +442,7 @@ public:
         case kExprSimpleMem: {
           char buf[40];
           sprintf(buf, " %ld %c%s", labs(offset_), offset_ < 0 ? '-' : '+',
-                                    how_ == kExprSimple ? "" : " ^");
+                  how_ == kExprSimple ? "" : " ^");
           return std::string(FromUniqueString(ident_)) + std::string(buf);
         }
         case kExprInvalid:
@@ -498,11 +455,11 @@ public:
     
     const UniqueString* ident_;
     
-    long        offset_;
+    long offset_;
     
     std::string postfix_;
     
-    ExprHow     how_;
+    ExprHow how_;
   };
 
   
@@ -538,17 +495,15 @@ public:
 
   
   
-  Module(const std::string &name, const std::string &os,
-         const std::string &architecture, const std::string &id);
+  Module(const std::string& name, const std::string& os,
+         const std::string& architecture, const std::string& id);
   ~Module();
 
-private:
-
+ private:
   
   std::string name_, os_, architecture_, id_;
 };
 
-
 }  
 
-#endif 
+#endif  

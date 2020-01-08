@@ -27,7 +27,8 @@ class nsIInputStream;
 class nsIOutputStream;
 class nsIRequestContext;
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
 class nsHttpChunkedDecoder;
 class nsHttpHeaderArray;
@@ -41,443 +42,451 @@ class SpdyConnectTransaction;
 
 
 
-class nsHttpTransaction final : public nsAHttpTransaction
-                              , public ATokenBucketEvent
-                              , public nsIInputStreamCallback
-                              , public nsIOutputStreamCallback
-                              , public ARefBase
-{
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSAHTTPTRANSACTION
-    NS_DECL_NSIINPUTSTREAMCALLBACK
-    NS_DECL_NSIOUTPUTSTREAMCALLBACK
+class nsHttpTransaction final : public nsAHttpTransaction,
+                                public ATokenBucketEvent,
+                                public nsIInputStreamCallback,
+                                public nsIOutputStreamCallback,
+                                public ARefBase {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSAHTTPTRANSACTION
+  NS_DECL_NSIINPUTSTREAMCALLBACK
+  NS_DECL_NSIOUTPUTSTREAMCALLBACK
 
-    nsHttpTransaction();
+  nsHttpTransaction();
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE nsresult Init(uint32_t               caps,
-                               nsHttpConnectionInfo  *connInfo,
-                               nsHttpRequestHead     *reqHeaders,
-                               nsIInputStream        *reqBody,
-                               uint64_t               reqContentLength,
-                               bool                   reqBodyIncludesHeaders,
-                               nsIEventTarget        *consumerTarget,
-                               nsIInterfaceRequestor *callbacks,
-                               nsITransportEventSink *eventsink,
-                               uint64_t               topLevelOuterContentWindowId,
-                               nsIAsyncInputStream  **responseBody);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE nsresult Init(uint32_t caps, nsHttpConnectionInfo *connInfo,
+                             nsHttpRequestHead *reqHeaders,
+                             nsIInputStream *reqBody, uint64_t reqContentLength,
+                             bool reqBodyIncludesHeaders,
+                             nsIEventTarget *consumerTarget,
+                             nsIInterfaceRequestor *callbacks,
+                             nsITransportEventSink *eventsink,
+                             uint64_t topLevelOuterContentWindowId,
+                             nsIAsyncInputStream **responseBody);
 
-    void OnActivated() override;
+  void OnActivated() override;
 
-    
-    nsHttpResponseHead    *ResponseHead()   { return mHaveAllHeaders ? mResponseHead : nullptr; }
-    nsISupports           *SecurityInfo()   { return mSecurityInfo; }
+  
+  nsHttpResponseHead *ResponseHead() {
+    return mHaveAllHeaders ? mResponseHead : nullptr;
+  }
+  nsISupports *SecurityInfo() { return mSecurityInfo; }
 
-    nsIEventTarget        *ConsumerTarget() { return mConsumerTarget; }
-    nsISupports           *HttpChannel()    { return mChannel; }
+  nsIEventTarget *ConsumerTarget() { return mConsumerTarget; }
+  nsISupports *HttpChannel() { return mChannel; }
 
-    void SetSecurityCallbacks(nsIInterfaceRequestor* aCallbacks);
+  void SetSecurityCallbacks(nsIInterfaceRequestor *aCallbacks);
 
-    
-    
-    nsHttpResponseHead *TakeResponseHead();
+  
+  
+  nsHttpResponseHead *TakeResponseHead();
 
-    
-    
-    nsHttpHeaderArray *TakeResponseTrailers();
+  
+  
+  nsHttpHeaderArray *TakeResponseTrailers();
 
-    
-    
-    already_AddRefed<nsAHttpConnection> GetConnectionReference();
+  
+  
+  already_AddRefed<nsAHttpConnection> GetConnectionReference();
 
-    
-    bool ResponseIsComplete() { return mResponseIsComplete; }
-    void SetResponseIsComplete() { mResponseIsComplete = true; }
+  
+  bool ResponseIsComplete() { return mResponseIsComplete; }
+  void SetResponseIsComplete() { mResponseIsComplete = true; }
 
-    bool      ProxyConnectFailed() { return mProxyConnectFailed; }
+  bool ProxyConnectFailed() { return mProxyConnectFailed; }
 
-    void EnableKeepAlive() { mCaps |= NS_HTTP_ALLOW_KEEPALIVE; }
-    void MakeSticky() { mCaps |= NS_HTTP_STICKY_CONNECTION; }
+  void EnableKeepAlive() { mCaps |= NS_HTTP_ALLOW_KEEPALIVE; }
+  void MakeSticky() { mCaps |= NS_HTTP_STICKY_CONNECTION; }
 
-    
-    void    SetPriority(int32_t priority) { mPriority = priority; }
-    int32_t    Priority()                 { return mPriority; }
+  
+  void SetPriority(int32_t priority) { mPriority = priority; }
+  int32_t Priority() { return mPriority; }
 
-    void PrintDiagnostics(nsCString &log);
+  void PrintDiagnostics(nsCString &log);
 
-    
-    void SetPendingTime(bool now = true) { mPendingTime = now ? TimeStamp::Now() : TimeStamp(); }
-    const TimeStamp GetPendingTime() { return mPendingTime; }
+  
+  
+  void SetPendingTime(bool now = true) {
+    mPendingTime = now ? TimeStamp::Now() : TimeStamp();
+  }
+  const TimeStamp GetPendingTime() { return mPendingTime; }
 
-    
-    nsIRequestContext *RequestContext() override { return mRequestContext.get(); }
-    void SetRequestContext(nsIRequestContext *aRequestContext);
-    void DispatchedAsBlocking();
-    void RemoveDispatchedAsBlocking();
+  
+  nsIRequestContext *RequestContext() override { return mRequestContext.get(); }
+  void SetRequestContext(nsIRequestContext *aRequestContext);
+  void DispatchedAsBlocking();
+  void RemoveDispatchedAsBlocking();
 
-    void DisableSpdy() override;
+  void DisableSpdy() override;
 
-    nsHttpTransaction *QueryHttpTransaction() override { return this; }
+  nsHttpTransaction *QueryHttpTransaction() override { return this; }
 
-    Http2PushedStream *GetPushedStream() { return mPushedStream; }
-    Http2PushedStream *TakePushedStream()
-    {
-        Http2PushedStream *r = mPushedStream;
-        mPushedStream = nullptr;
-        return r;
+  Http2PushedStream *GetPushedStream() { return mPushedStream; }
+  Http2PushedStream *TakePushedStream() {
+    Http2PushedStream *r = mPushedStream;
+    mPushedStream = nullptr;
+    return r;
+  }
+  void SetPushedStream(Http2PushedStream *push) { mPushedStream = push; }
+  uint32_t InitialRwin() const { return mInitialRwin; };
+  bool ChannelPipeFull() { return mWaitingOnPipeOut; }
+
+  
+  const TimingStruct Timings();
+  void BootstrapTimings(TimingStruct times);
+  void SetDomainLookupStart(mozilla::TimeStamp timeStamp,
+                            bool onlyIfNull = false);
+  void SetDomainLookupEnd(mozilla::TimeStamp timeStamp,
+                          bool onlyIfNull = false);
+  void SetConnectStart(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
+  void SetConnectEnd(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
+  void SetRequestStart(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
+  void SetResponseStart(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
+  void SetResponseEnd(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
+
+  mozilla::TimeStamp GetDomainLookupStart();
+  mozilla::TimeStamp GetDomainLookupEnd();
+  mozilla::TimeStamp GetConnectStart();
+  mozilla::TimeStamp GetTcpConnectEnd();
+  mozilla::TimeStamp GetSecureConnectionStart();
+
+  mozilla::TimeStamp GetConnectEnd();
+  mozilla::TimeStamp GetRequestStart();
+  mozilla::TimeStamp GetResponseStart();
+  mozilla::TimeStamp GetResponseEnd();
+
+  int64_t GetTransferSize() { return mTransferSize; }
+
+  MOZ_MUST_USE bool Do0RTT() override;
+  MOZ_MUST_USE nsresult Finish0RTT(bool aRestart,
+                                   bool aAlpnChanged ) override;
+
+  
+  
+  void Refused0RTT();
+
+  MOZ_MUST_USE bool CanDo0RTT() override;
+  MOZ_MUST_USE nsresult RestartOnFastOpenError() override;
+
+  uint64_t TopLevelOuterContentWindowId() override {
+    return mTopLevelOuterContentWindowId;
+  }
+
+  void SetFastOpenStatus(uint8_t aStatus) override;
+
+  void SetHttpTrailers(nsCString &aTrailers);
+
+  bool IsWebsocketUpgrade();
+  void SetH2WSTransaction(SpdyConnectTransaction *);
+
+ private:
+  friend class DeleteHttpTransaction;
+  virtual ~nsHttpTransaction();
+
+  MOZ_MUST_USE nsresult Restart();
+  char *LocateHttpStart(char *buf, uint32_t len, bool aAllowPartialMatch);
+  MOZ_MUST_USE nsresult ParseLine(nsACString &line);
+  MOZ_MUST_USE nsresult ParseLineSegment(char *seg, uint32_t len);
+  MOZ_MUST_USE nsresult ParseHead(char *, uint32_t count, uint32_t *countRead);
+  MOZ_MUST_USE nsresult HandleContentStart();
+  MOZ_MUST_USE nsresult HandleContent(char *, uint32_t count,
+                                      uint32_t *contentRead,
+                                      uint32_t *contentRemaining);
+  MOZ_MUST_USE nsresult ProcessData(char *, uint32_t, uint32_t *);
+  void DeleteSelfOnConsumerThread();
+  void ReleaseBlockingTransaction();
+
+  static MOZ_MUST_USE nsresult ReadRequestSegment(nsIInputStream *, void *,
+                                                  const char *, uint32_t,
+                                                  uint32_t, uint32_t *);
+  static MOZ_MUST_USE nsresult WritePipeSegment(nsIOutputStream *, void *,
+                                                char *, uint32_t, uint32_t,
+                                                uint32_t *);
+
+  bool TimingEnabled() const { return mCaps & NS_HTTP_TIMING_ENABLED; }
+
+  bool ResponseTimeoutEnabled() const final;
+
+  void ReuseConnectionOnRestartOK(bool reuseOk) override {
+    mReuseOnRestart = reuseOk;
+  }
+
+  
+  
+  
+  
+  
+  void CheckForStickyAuthScheme();
+  void CheckForStickyAuthSchemeAt(nsHttpAtom const &header);
+
+  
+  
+  
+  bool ShouldThrottle();
+
+ private:
+  class UpdateSecurityCallbacks : public Runnable {
+   public:
+    UpdateSecurityCallbacks(nsHttpTransaction *aTrans,
+                            nsIInterfaceRequestor *aCallbacks)
+        : Runnable("net::nsHttpTransaction::UpdateSecurityCallbacks"),
+          mTrans(aTrans),
+          mCallbacks(aCallbacks) {}
+
+    NS_IMETHOD Run() override {
+      if (mTrans->mConnection)
+        mTrans->mConnection->SetSecurityCallbacks(mCallbacks);
+      return NS_OK;
     }
-    void SetPushedStream(Http2PushedStream *push) { mPushedStream = push; }
-    uint32_t InitialRwin() const { return mInitialRwin; };
-    bool ChannelPipeFull() { return mWaitingOnPipeOut; }
 
-    
-    const TimingStruct Timings();
-    void BootstrapTimings(TimingStruct times);
-    void SetDomainLookupStart(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
-    void SetDomainLookupEnd(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
-    void SetConnectStart(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
-    void SetConnectEnd(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
-    void SetRequestStart(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
-    void SetResponseStart(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
-    void SetResponseEnd(mozilla::TimeStamp timeStamp, bool onlyIfNull = false);
-
-    mozilla::TimeStamp GetDomainLookupStart();
-    mozilla::TimeStamp GetDomainLookupEnd();
-    mozilla::TimeStamp GetConnectStart();
-    mozilla::TimeStamp GetTcpConnectEnd();
-    mozilla::TimeStamp GetSecureConnectionStart();
-
-    mozilla::TimeStamp GetConnectEnd();
-    mozilla::TimeStamp GetRequestStart();
-    mozilla::TimeStamp GetResponseStart();
-    mozilla::TimeStamp GetResponseEnd();
-
-    int64_t GetTransferSize() { return mTransferSize; }
-
-    MOZ_MUST_USE bool Do0RTT() override;
-    MOZ_MUST_USE nsresult Finish0RTT(bool aRestart, bool aAlpnChanged ) override;
-
-    
-    
-    void Refused0RTT();
-
-    MOZ_MUST_USE bool CanDo0RTT() override;
-    MOZ_MUST_USE nsresult RestartOnFastOpenError() override;
-
-    uint64_t TopLevelOuterContentWindowId() override
-    {
-        return mTopLevelOuterContentWindowId;
-    }
-
-    void SetFastOpenStatus(uint8_t aStatus) override;
-
-    void SetHttpTrailers(nsCString &aTrailers);
-
-    bool IsWebsocketUpgrade();
-    void SetH2WSTransaction(SpdyConnectTransaction *);
-private:
-    friend class DeleteHttpTransaction;
-    virtual ~nsHttpTransaction();
-
-    MOZ_MUST_USE nsresult Restart();
-    char    *LocateHttpStart(char *buf, uint32_t len,
-                             bool aAllowPartialMatch);
-    MOZ_MUST_USE nsresult ParseLine(nsACString &line);
-    MOZ_MUST_USE nsresult ParseLineSegment(char *seg, uint32_t len);
-    MOZ_MUST_USE nsresult ParseHead(char *, uint32_t count,
-                                    uint32_t *countRead);
-    MOZ_MUST_USE nsresult HandleContentStart();
-    MOZ_MUST_USE nsresult HandleContent(char *, uint32_t count,
-                                        uint32_t *contentRead,
-                                        uint32_t *contentRemaining);
-    MOZ_MUST_USE nsresult ProcessData(char *, uint32_t, uint32_t *);
-    void     DeleteSelfOnConsumerThread();
-    void     ReleaseBlockingTransaction();
-
-    static MOZ_MUST_USE nsresult ReadRequestSegment(nsIInputStream *, void *,
-                                                    const char *, uint32_t,
-                                                    uint32_t, uint32_t *);
-    static MOZ_MUST_USE nsresult WritePipeSegment(nsIOutputStream *, void *,
-                                                  char *, uint32_t, uint32_t,
-                                                  uint32_t *);
-
-    bool TimingEnabled() const { return mCaps & NS_HTTP_TIMING_ENABLED; }
-
-    bool ResponseTimeoutEnabled() const final;
-
-    void ReuseConnectionOnRestartOK(bool reuseOk) override { mReuseOnRestart = reuseOk; }
-
-    
-    
-    
-    
-    
-    void CheckForStickyAuthScheme();
-    void CheckForStickyAuthSchemeAt(nsHttpAtom const& header);
-
-    
-    
-    bool ShouldThrottle();
-
-private:
-    class UpdateSecurityCallbacks : public Runnable
-    {
-      public:
-        UpdateSecurityCallbacks(nsHttpTransaction* aTrans,
-                                nsIInterfaceRequestor* aCallbacks)
-          : Runnable("net::nsHttpTransaction::UpdateSecurityCallbacks")
-          , mTrans(aTrans)
-          , mCallbacks(aCallbacks)
-        {
-        }
-
-        NS_IMETHOD Run() override
-        {
-            if (mTrans->mConnection)
-                mTrans->mConnection->SetSecurityCallbacks(mCallbacks);
-            return NS_OK;
-        }
-      private:
-        RefPtr<nsHttpTransaction> mTrans;
-        nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
-    };
-
-    Mutex mLock;
-
+   private:
+    RefPtr<nsHttpTransaction> mTrans;
     nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
-    nsCOMPtr<nsITransportEventSink> mTransportSink;
-    nsCOMPtr<nsIEventTarget>        mConsumerTarget;
-    nsCOMPtr<nsISupports>           mSecurityInfo;
-    nsCOMPtr<nsIAsyncInputStream>   mPipeIn;
-    nsCOMPtr<nsIAsyncOutputStream>  mPipeOut;
-    nsCOMPtr<nsIRequestContext>     mRequestContext;
+  };
 
-    nsCOMPtr<nsISupports>             mChannel;
-    nsCOMPtr<nsIHttpActivityObserver> mActivityDistributor;
+  Mutex mLock;
 
-    nsCString                       mReqHeaderBuf;    
-    nsCOMPtr<nsIInputStream>        mRequestStream;
-    int64_t                         mRequestSize;
+  nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
+  nsCOMPtr<nsITransportEventSink> mTransportSink;
+  nsCOMPtr<nsIEventTarget> mConsumerTarget;
+  nsCOMPtr<nsISupports> mSecurityInfo;
+  nsCOMPtr<nsIAsyncInputStream> mPipeIn;
+  nsCOMPtr<nsIAsyncOutputStream> mPipeOut;
+  nsCOMPtr<nsIRequestContext> mRequestContext;
 
-    RefPtr<nsAHttpConnection>     mConnection;
-    RefPtr<nsHttpConnectionInfo>  mConnInfo;
-    nsHttpRequestHead              *mRequestHead;     
-    nsHttpResponseHead             *mResponseHead;    
+  nsCOMPtr<nsISupports> mChannel;
+  nsCOMPtr<nsIHttpActivityObserver> mActivityDistributor;
 
-    nsAHttpSegmentReader           *mReader;
-    nsAHttpSegmentWriter           *mWriter;
+  nsCString mReqHeaderBuf;  
+  nsCOMPtr<nsIInputStream> mRequestStream;
+  int64_t mRequestSize;
 
-    nsCString                       mLineBuf;         
+  RefPtr<nsAHttpConnection> mConnection;
+  RefPtr<nsHttpConnectionInfo> mConnInfo;
+  nsHttpRequestHead *mRequestHead;    
+  nsHttpResponseHead *mResponseHead;  
 
-    int64_t                         mContentLength;   
-    int64_t                         mContentRead;     
-    Atomic<int64_t, ReleaseAcquire> mTransferSize; 
+  nsAHttpSegmentReader *mReader;
+  nsAHttpSegmentWriter *mWriter;
 
-    
-    
-    
-    
-    
-    uint32_t                        mInvalidResponseBytesRead;
+  nsCString mLineBuf;  
 
-    Http2PushedStream               *mPushedStream;
-    uint32_t                        mInitialRwin;
+  int64_t mContentLength;  
+  int64_t mContentRead;    
+  Atomic<int64_t, ReleaseAcquire> mTransferSize;  
 
-    nsHttpChunkedDecoder            *mChunkedDecoder;
+  
+  
+  
+  
+  
+  uint32_t mInvalidResponseBytesRead;
 
-    TimingStruct                    mTimings;
+  Http2PushedStream *mPushedStream;
+  uint32_t mInitialRwin;
 
-    nsresult                        mStatus;
+  nsHttpChunkedDecoder *mChunkedDecoder;
 
-    int16_t                         mPriority;
+  TimingStruct mTimings;
 
-    uint16_t                        mRestartCount;        
-    uint32_t                        mCaps;
+  nsresult mStatus;
 
-    HttpVersion                     mHttpVersion;
-    uint16_t                        mHttpResponseCode;
+  int16_t mPriority;
 
-    uint32_t                        mCurrentHttpResponseHeaderSize;
+  uint16_t
+      mRestartCount;  
+  uint32_t mCaps;
 
-    int32_t const THROTTLE_NO_LIMIT = -1;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int32_t                         mThrottlingReadAllowance;
+  HttpVersion mHttpVersion;
+  uint16_t mHttpResponseCode;
 
-    
-    
-    
-    
-    
-    
-    
-    Atomic<uint32_t>                mCapsToClear;
-    Atomic<bool, ReleaseAcquire>    mResponseIsComplete;
+  uint32_t mCurrentHttpResponseHeaderSize;
 
-    
-    
-    
-    bool                            mReadingStopped;
+  int32_t const THROTTLE_NO_LIMIT = -1;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int32_t mThrottlingReadAllowance;
 
-    
-    
-    bool                            mClosed;
-    bool                            mConnected;
-    bool                            mActivated;
-    bool                            mHaveStatusLine;
-    bool                            mHaveAllHeaders;
-    bool                            mTransactionDone;
-    bool                            mDidContentStart;
-    bool                            mNoContent; 
-    bool                            mSentData;
-    bool                            mReceivedData;
-    bool                            mStatusEventPending;
-    bool                            mHasRequestBody;
-    bool                            mProxyConnectFailed;
-    bool                            mHttpResponseMatched;
-    bool                            mPreserveStream;
-    bool                            mDispatchedAsBlocking;
-    bool                            mResponseTimeoutEnabled;
-    bool                            mForceRestart;
-    bool                            mReuseOnRestart;
-    bool                            mContentDecoding;
-    bool                            mContentDecodingCheck;
-    bool                            mDeferredSendProgress;
-    bool                            mWaitingOnPipeOut;
+  
+  
+  
+  
+  
+  
+  
+  Atomic<uint32_t> mCapsToClear;
+  Atomic<bool, ReleaseAcquire> mResponseIsComplete;
 
-    
-    
-    
+  
+  
+  
+  bool mReadingStopped;
 
-    
-    bool                            mReportedStart;
-    bool                            mReportedResponseHeader;
+  
+  
+  bool mClosed;
+  bool mConnected;
+  bool mActivated;
+  bool mHaveStatusLine;
+  bool mHaveAllHeaders;
+  bool mTransactionDone;
+  bool mDidContentStart;
+  bool mNoContent;  
+  bool mSentData;
+  bool mReceivedData;
+  bool mStatusEventPending;
+  bool mHasRequestBody;
+  bool mProxyConnectFailed;
+  bool mHttpResponseMatched;
+  bool mPreserveStream;
+  bool mDispatchedAsBlocking;
+  bool mResponseTimeoutEnabled;
+  bool mForceRestart;
+  bool mReuseOnRestart;
+  bool mContentDecoding;
+  bool mContentDecodingCheck;
+  bool mDeferredSendProgress;
+  bool mWaitingOnPipeOut;
 
-    
-    bool                            mResponseHeadTaken;
-    nsAutoPtr<nsHttpHeaderArray>    mForTakeResponseTrailers;
-    bool                            mResponseTrailersTaken;
+  
+  
+  
 
-    
-    TimeStamp                       mPendingTime;
+  
+  bool mReportedStart;
+  bool mReportedResponseHeader;
 
-    uint64_t                        mTopLevelOuterContentWindowId;
+  
+  bool mResponseHeadTaken;
+  nsAutoPtr<nsHttpHeaderArray> mForTakeResponseTrailers;
+  bool mResponseTrailersTaken;
 
+  
+  TimeStamp mPendingTime;
 
-public:
-    
-    
-    
-    bool TryToRunPacedRequest();
+  uint64_t mTopLevelOuterContentWindowId;
 
-    
-    
-    
-    
-    
-    void OnTokenBucketAdmitted() override; 
+  
+ public:
+  
+  
+  
+  bool TryToRunPacedRequest();
 
-    
-    
-    
-    
-    void CancelPacing(nsresult reason);
+  
+  
+  
+  
+  
+  void OnTokenBucketAdmitted() override;  
 
-    
-    
-    void ResumeReading();
+  
+  
+  
+  
+  void CancelPacing(nsresult reason);
 
-    
-    
-    bool EligibleForThrottling() const;
+  
+  
+  void ResumeReading();
 
-private:
-    bool mSubmittedRatePacing;
-    bool mPassedRatePacing;
-    bool mSynchronousRatePaceRequest;
-    nsCOMPtr<nsICancelable> mTokenBucketCancel;
-public:
-    void     SetClassOfService(uint32_t cos);
-    uint32_t ClassOfService() { return mClassOfService; }
-private:
-    uint32_t mClassOfService;
+  
+  
+  bool EligibleForThrottling() const;
 
-public:
-    
-    
-    
-    
-    
-    
+ private:
+  bool mSubmittedRatePacing;
+  bool mPassedRatePacing;
+  bool mSynchronousRatePaceRequest;
+  nsCOMPtr<nsICancelable> mTokenBucketCancel;
 
-    void SetTunnelProvider(ASpdySession *provider) { mTunnelProvider = provider; }
-    ASpdySession *TunnelProvider() { return mTunnelProvider; }
-    nsIInterfaceRequestor *SecurityCallbacks() { return mCallbacks; }
+ public:
+  void SetClassOfService(uint32_t cos);
+  uint32_t ClassOfService() { return mClassOfService; }
 
-private:
-    RefPtr<ASpdySession> mTunnelProvider;
+ private:
+  uint32_t mClassOfService;
 
-public:
-    void SetTransactionObserver(TransactionObserver *arg) { mTransactionObserver = arg; }
-private:
-    RefPtr<TransactionObserver> mTransactionObserver;
-public:
-    void GetNetworkAddresses(NetAddr &self, NetAddr &peer);
+ public:
+  
+  
+  
+  
+  
+  
 
-private:
-    NetAddr                         mSelfAddr;
-    NetAddr                         mPeerAddr;
+  void SetTunnelProvider(ASpdySession *provider) { mTunnelProvider = provider; }
+  ASpdySession *TunnelProvider() { return mTunnelProvider; }
+  nsIInterfaceRequestor *SecurityCallbacks() { return mCallbacks; }
 
-    bool                            m0RTTInProgress;
-    bool                            mDoNotTryEarlyData;
-    enum
-    {
-        EARLY_NONE,
-        EARLY_SENT,
-        EARLY_ACCEPTED,
-        EARLY_425
-    } mEarlyDataDisposition;
+ private:
+  RefPtr<ASpdySession> mTunnelProvider;
 
-    uint8_t mFastOpenStatus;
+ public:
+  void SetTransactionObserver(TransactionObserver *arg) {
+    mTransactionObserver = arg;
+  }
 
-    
-    RefPtr<SpdyConnectTransaction> mH2WSTransaction;
+ private:
+  RefPtr<TransactionObserver> mTransactionObserver;
+
+ public:
+  void GetNetworkAddresses(NetAddr &self, NetAddr &peer);
+
+ private:
+  NetAddr mSelfAddr;
+  NetAddr mPeerAddr;
+
+  bool m0RTTInProgress;
+  bool mDoNotTryEarlyData;
+  enum {
+    EARLY_NONE,
+    EARLY_SENT,
+    EARLY_ACCEPTED,
+    EARLY_425
+  } mEarlyDataDisposition;
+
+  uint8_t mFastOpenStatus;
+
+  
+  RefPtr<SpdyConnectTransaction> mH2WSTransaction;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

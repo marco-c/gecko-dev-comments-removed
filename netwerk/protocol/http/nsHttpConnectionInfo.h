@@ -28,177 +28,178 @@
 
 
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
 extern LazyLogModule gHttpLog;
 
-class nsHttpConnectionInfo final : public ARefBase
-{
-public:
-    nsHttpConnectionInfo(const nsACString &originHost,
-                         int32_t originPort,
-                         const nsACString &npnToken,
-                         const nsACString &username,
-                         nsProxyInfo *proxyInfo,
-                         const OriginAttributes &originAttributes,
-                         bool endToEndSSL = false);
+class nsHttpConnectionInfo final : public ARefBase {
+ public:
+  nsHttpConnectionInfo(const nsACString &originHost, int32_t originPort,
+                       const nsACString &npnToken, const nsACString &username,
+                       nsProxyInfo *proxyInfo,
+                       const OriginAttributes &originAttributes,
+                       bool endToEndSSL = false);
 
-    
-    
-    
-    nsHttpConnectionInfo(const nsACString &originHost,
-                         int32_t originPort,
-                         const nsACString &npnToken,
-                         const nsACString &username,
-                         nsProxyInfo *proxyInfo,
-                         const OriginAttributes &originAttributes,
-                         const nsACString &routedHost,
-                         int32_t routedPort);
+  
+  
+  
+  nsHttpConnectionInfo(const nsACString &originHost, int32_t originPort,
+                       const nsACString &npnToken, const nsACString &username,
+                       nsProxyInfo *proxyInfo,
+                       const OriginAttributes &originAttributes,
+                       const nsACString &routedHost, int32_t routedPort);
 
-private:
-    virtual ~nsHttpConnectionInfo()
-    {
-        MOZ_LOG(gHttpLog, LogLevel::Debug, ("Destroying nsHttpConnectionInfo @%p\n", this));
-    }
+ private:
+  virtual ~nsHttpConnectionInfo() {
+    MOZ_LOG(gHttpLog, LogLevel::Debug,
+            ("Destroying nsHttpConnectionInfo @%p\n", this));
+  }
 
-    void BuildHashKey();
+  void BuildHashKey();
 
-public:
-    const nsCString& HashKey() const { return mHashKey; }
+ public:
+  const nsCString &HashKey() const { return mHashKey; }
 
-    const nsCString &GetOrigin() const { return mOrigin; }
-    const char   *Origin()       const { return mOrigin.get(); }
-    int32_t       OriginPort()   const { return mOriginPort; }
+  const nsCString &GetOrigin() const { return mOrigin; }
+  const char *Origin() const { return mOrigin.get(); }
+  int32_t OriginPort() const { return mOriginPort; }
 
-    const nsCString &GetRoutedHost() const { return mRoutedHost; }
-    const char      *RoutedHost() const { return mRoutedHost.get(); }
-    int32_t          RoutedPort() const { return mRoutedPort; }
+  const nsCString &GetRoutedHost() const { return mRoutedHost; }
+  const char *RoutedHost() const { return mRoutedHost.get(); }
+  int32_t RoutedPort() const { return mRoutedPort; }
 
-    
-    nsHttpConnectionInfo* Clone() const;
-    void CloneAsDirectRoute(nsHttpConnectionInfo **outParam);
-    MOZ_MUST_USE nsresult CreateWildCard(nsHttpConnectionInfo **outParam);
+  
+  nsHttpConnectionInfo *Clone() const;
+  void CloneAsDirectRoute(nsHttpConnectionInfo **outParam);
+  MOZ_MUST_USE nsresult CreateWildCard(nsHttpConnectionInfo **outParam);
 
-    const char *ProxyHost() const { return mProxyInfo ? mProxyInfo->Host().get() : nullptr; }
-    int32_t     ProxyPort() const { return mProxyInfo ? mProxyInfo->Port() : -1; }
-    const char *ProxyType() const { return mProxyInfo ? mProxyInfo->Type() : nullptr; }
-    const char *ProxyUsername() const { return mProxyInfo ? mProxyInfo->Username().get() : nullptr; }
-    const char *ProxyPassword() const { return mProxyInfo ? mProxyInfo->Password().get() : nullptr; }
+  const char *ProxyHost() const {
+    return mProxyInfo ? mProxyInfo->Host().get() : nullptr;
+  }
+  int32_t ProxyPort() const { return mProxyInfo ? mProxyInfo->Port() : -1; }
+  const char *ProxyType() const {
+    return mProxyInfo ? mProxyInfo->Type() : nullptr;
+  }
+  const char *ProxyUsername() const {
+    return mProxyInfo ? mProxyInfo->Username().get() : nullptr;
+  }
+  const char *ProxyPassword() const {
+    return mProxyInfo ? mProxyInfo->Password().get() : nullptr;
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    bool Equals(const nsHttpConnectionInfo *info)
-    {
-        return mHashKey.Equals(info->HashKey());
-    }
+  
+  
+  
+  
+  
+  
+  
+  bool Equals(const nsHttpConnectionInfo *info) {
+    return mHashKey.Equals(info->HashKey());
+  }
 
-    const char   *Username() const       { return mUsername.get(); }
-    nsProxyInfo  *ProxyInfo() const      { return mProxyInfo; }
-    int32_t       DefaultPort() const    { return mEndToEndSSL ? NS_HTTPS_DEFAULT_PORT : NS_HTTP_DEFAULT_PORT; }
-    void          SetAnonymous(bool anon)
-                                         { mHashKey.SetCharAt(anon ? 'A' : '.', 2); }
-    bool          GetAnonymous() const   { return mHashKey.CharAt(2) == 'A'; }
-    void          SetPrivate(bool priv)  { mHashKey.SetCharAt(priv ? 'P' : '.', 3); }
-    bool          GetPrivate() const     { return mHashKey.CharAt(3) == 'P'; }
-    void          SetInsecureScheme(bool insecureScheme)
-                                       { mHashKey.SetCharAt(insecureScheme ? 'I' : '.', 4); }
-    bool          GetInsecureScheme() const   { return mHashKey.CharAt(4) == 'I'; }
+  const char *Username() const { return mUsername.get(); }
+  nsProxyInfo *ProxyInfo() const { return mProxyInfo; }
+  int32_t DefaultPort() const {
+    return mEndToEndSSL ? NS_HTTPS_DEFAULT_PORT : NS_HTTP_DEFAULT_PORT;
+  }
+  void SetAnonymous(bool anon) { mHashKey.SetCharAt(anon ? 'A' : '.', 2); }
+  bool GetAnonymous() const { return mHashKey.CharAt(2) == 'A'; }
+  void SetPrivate(bool priv) { mHashKey.SetCharAt(priv ? 'P' : '.', 3); }
+  bool GetPrivate() const { return mHashKey.CharAt(3) == 'P'; }
+  void SetInsecureScheme(bool insecureScheme) {
+    mHashKey.SetCharAt(insecureScheme ? 'I' : '.', 4);
+  }
+  bool GetInsecureScheme() const { return mHashKey.CharAt(4) == 'I'; }
 
-    void          SetNoSpdy(bool aNoSpdy)
-                                       { mHashKey.SetCharAt(aNoSpdy ? 'X' : '.', 5); }
-    bool          GetNoSpdy() const    { return mHashKey.CharAt(5) == 'X'; }
+  void SetNoSpdy(bool aNoSpdy) { mHashKey.SetCharAt(aNoSpdy ? 'X' : '.', 5); }
+  bool GetNoSpdy() const { return mHashKey.CharAt(5) == 'X'; }
 
-    void          SetBeConservative(bool aBeConservative)
-                                            { mHashKey.SetCharAt(aBeConservative ? 'C' : '.', 6); }
-    bool          GetBeConservative() const { return mHashKey.CharAt(6) == 'C'; }
+  void SetBeConservative(bool aBeConservative) {
+    mHashKey.SetCharAt(aBeConservative ? 'C' : '.', 6);
+  }
+  bool GetBeConservative() const { return mHashKey.CharAt(6) == 'C'; }
 
-    void          SetTlsFlags(uint32_t aTlsFlags);
-    uint32_t      GetTlsFlags() const { return mTlsFlags; }
+  void SetTlsFlags(uint32_t aTlsFlags);
+  uint32_t GetTlsFlags() const { return mTlsFlags; }
 
-    
-    void          SetTrrUsed(bool aUsed) { mTrrUsed = aUsed; }
-    bool          GetTrrUsed() const { return mTrrUsed; }
+  
+  void SetTrrUsed(bool aUsed) { mTrrUsed = aUsed; }
+  bool GetTrrUsed() const { return mTrrUsed; }
 
-    
-    
-    void          SetTrrDisabled(bool aNoTrr);
-    bool          GetTrrDisabled() const { return mTrrDisabled; }
+  
+  
+  void SetTrrDisabled(bool aNoTrr);
+  bool GetTrrDisabled() const { return mTrrDisabled; }
 
-    const nsCString &GetNPNToken() { return mNPNToken; }
-    const nsCString &GetUsername() { return mUsername; }
+  const nsCString &GetNPNToken() { return mNPNToken; }
+  const nsCString &GetUsername() { return mUsername; }
 
-    const OriginAttributes &GetOriginAttributes() { return mOriginAttributes; }
+  const OriginAttributes &GetOriginAttributes() { return mOriginAttributes; }
 
-    
-    bool UsingProxy();
+  
+  bool UsingProxy();
 
-    
-    bool UsingHttpProxy() const { return mUsingHttpProxy || mUsingHttpsProxy; }
+  
+  bool UsingHttpProxy() const { return mUsingHttpProxy || mUsingHttpsProxy; }
 
-    
-    bool UsingHttpsProxy() const { return mUsingHttpsProxy; }
+  
+  bool UsingHttpsProxy() const { return mUsingHttpsProxy; }
 
-    
-    bool EndToEndSSL() const { return mEndToEndSSL; }
+  
+  bool EndToEndSSL() const { return mEndToEndSSL; }
 
-    
-    bool FirstHopSSL() const { return mEndToEndSSL || mUsingHttpsProxy; }
+  
+  
+  bool FirstHopSSL() const { return mEndToEndSSL || mUsingHttpsProxy; }
 
-    
-    bool UsingConnect() const { return mUsingConnect; }
+  
+  
+  bool UsingConnect() const { return mUsingConnect; }
 
-    
-    bool HostIsLocalIPLiteral() const;
+  
+  bool HostIsLocalIPLiteral() const;
 
-    bool GetLessThanTls13() const { return mLessThanTls13; }
-    void SetLessThanTls13(bool aLessThanTls13)
-    {
-      mLessThanTls13 = aLessThanTls13;
-    }
+  bool GetLessThanTls13() const { return mLessThanTls13; }
+  void SetLessThanTls13(bool aLessThanTls13) {
+    mLessThanTls13 = aLessThanTls13;
+  }
 
-private:
-    void Init(const nsACString &host,
-              int32_t port,
-              const nsACString &npnToken,
-              const nsACString &username,
-              nsProxyInfo* proxyInfo,
-              const OriginAttributes &originAttributes,
-              bool EndToEndSSL);
-    void SetOriginServer(const nsACString &host, int32_t port);
+ private:
+  void Init(const nsACString &host, int32_t port, const nsACString &npnToken,
+            const nsACString &username, nsProxyInfo *proxyInfo,
+            const OriginAttributes &originAttributes, bool EndToEndSSL);
+  void SetOriginServer(const nsACString &host, int32_t port);
 
-    nsCString              mOrigin;
-    int32_t                mOriginPort;
-    nsCString              mRoutedHost;
-    int32_t                mRoutedPort;
+  nsCString mOrigin;
+  int32_t mOriginPort;
+  nsCString mRoutedHost;
+  int32_t mRoutedPort;
 
-    nsCString              mHashKey;
-    nsCString              mUsername;
-    nsCOMPtr<nsProxyInfo>  mProxyInfo;
-    bool                   mUsingHttpProxy;
-    bool                   mUsingHttpsProxy;
-    bool                   mEndToEndSSL;
-    bool                   mUsingConnect;  
-    nsCString              mNPNToken;
-    OriginAttributes       mOriginAttributes;
+  nsCString mHashKey;
+  nsCString mUsername;
+  nsCOMPtr<nsProxyInfo> mProxyInfo;
+  bool mUsingHttpProxy;
+  bool mUsingHttpsProxy;
+  bool mEndToEndSSL;
+  bool mUsingConnect;  
+  nsCString mNPNToken;
+  OriginAttributes mOriginAttributes;
 
-    uint32_t               mTlsFlags;
-    uint16_t               mTrrUsed : 1;
-    uint16_t               mTrrDisabled : 1;
+  uint32_t mTlsFlags;
+  uint16_t mTrrUsed : 1;
+  uint16_t mTrrDisabled : 1;
 
-    bool mLessThanTls13; 
-                         
-                         
+  bool mLessThanTls13;  
+                        
+                        
 
-
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo, override)
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(nsHttpConnectionInfo, override)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

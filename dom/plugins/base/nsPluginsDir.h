@@ -15,26 +15,26 @@
 
 
 class nsPluginsDir {
-public:
-	
+ public:
+  
 
 
-	static bool IsPluginFile(nsIFile* file);
+  static bool IsPluginFile(nsIFile* file);
 };
 
 struct PRLibrary;
 
 struct nsPluginInfo {
-	char* fName;				
-	char* fDescription;			
-	uint32_t fVariantCount;
-	char** fMimeTypeArray;
-	char** fMimeDescriptionArray;
-	char** fExtensionArray;
-	char* fFileName;
-	char* fFullPath;
-	char* fVersion;
-	bool fSupportsAsyncRender;
+  char* fName;         
+  char* fDescription;  
+  uint32_t fVariantCount;
+  char** fMimeTypeArray;
+  char** fMimeDescriptionArray;
+  char** fExtensionArray;
+  char* fFileName;
+  char* fFullPath;
+  char* fVersion;
+  bool fSupportsAsyncRender;
 };
 
 
@@ -46,31 +46,33 @@ struct nsPluginInfo {
 class nsPluginFile {
   PRLibrary* pLibrary;
   nsCOMPtr<nsIFile> mPlugin;
-public:
-	
+
+ public:
+  
 
 
 
 
-	explicit nsPluginFile(nsIFile* spec);
-	virtual ~nsPluginFile();
-
-	
-
-
-
-	nsresult LoadPlugin(PRLibrary **outLibrary);
-
-	
-
-
-
-	nsresult GetPluginInfo(nsPluginInfo &outPluginInfo, PRLibrary **outLibrary);
+  explicit nsPluginFile(nsIFile* spec);
+  virtual ~nsPluginFile();
 
   
 
 
-	nsresult FreePluginInfo(nsPluginInfo &PluginInfo);
+
+  nsresult LoadPlugin(PRLibrary** outLibrary);
+
+  
+
+
+
+
+  nsresult GetPluginInfo(nsPluginInfo& outPluginInfo, PRLibrary** outLibrary);
+
+  
+
+
+  nsresult FreePluginInfo(nsPluginInfo& PluginInfo);
 };
 
 #endif 

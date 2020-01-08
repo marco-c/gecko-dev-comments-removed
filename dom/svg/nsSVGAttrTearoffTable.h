@@ -19,13 +19,11 @@
 
 
 
-template<class SimpleType, class TearoffType>
-class nsSVGAttrTearoffTable
-{
-public:
+template <class SimpleType, class TearoffType>
+class nsSVGAttrTearoffTable {
+ public:
 #ifdef DEBUG
-  ~nsSVGAttrTearoffTable()
-  {
+  ~nsSVGAttrTearoffTable() {
     MOZ_ASSERT(!mTable, "Tear-off objects remain in hashtable at shutdown.");
   }
 #endif
@@ -36,37 +34,33 @@ public:
 
   void RemoveTearoff(SimpleType* aSimple);
 
-private:
+ private:
   typedef nsPtrHashKey<SimpleType> SimpleTypePtrKey;
-  typedef nsDataHashtable<SimpleTypePtrKey, TearoffType* > TearoffTable;
+  typedef nsDataHashtable<SimpleTypePtrKey, TearoffType*> TearoffTable;
 
   TearoffTable* mTable;
 };
 
-template<class SimpleType, class TearoffType>
-TearoffType*
-nsSVGAttrTearoffTable<SimpleType, TearoffType>::GetTearoff(SimpleType* aSimple)
-{
-  if (!mTable)
-    return nullptr;
+template <class SimpleType, class TearoffType>
+TearoffType* nsSVGAttrTearoffTable<SimpleType, TearoffType>::GetTearoff(
+    SimpleType* aSimple) {
+  if (!mTable) return nullptr;
 
-  TearoffType *tearoff = nullptr;
+  TearoffType* tearoff = nullptr;
 
 #ifdef DEBUG
   bool found =
 #endif
-    mTable->Get(aSimple, &tearoff);
+      mTable->Get(aSimple, &tearoff);
   MOZ_ASSERT(!found || tearoff,
              "null pointer stored in attribute tear-off map");
 
   return tearoff;
 }
 
-template<class SimpleType, class TearoffType>
-void
-nsSVGAttrTearoffTable<SimpleType, TearoffType>::AddTearoff(SimpleType* aSimple,
-                                                          TearoffType* aTearoff)
-{
+template <class SimpleType, class TearoffType>
+void nsSVGAttrTearoffTable<SimpleType, TearoffType>::AddTearoff(
+    SimpleType* aSimple, TearoffType* aTearoff) {
   if (!mTable) {
     mTable = new TearoffTable;
   }
@@ -81,11 +75,9 @@ nsSVGAttrTearoffTable<SimpleType, TearoffType>::AddTearoff(SimpleType* aSimple,
   mTable->Put(aSimple, aTearoff);
 }
 
-template<class SimpleType, class TearoffType>
-void
-nsSVGAttrTearoffTable<SimpleType, TearoffType>::RemoveTearoff(
-    SimpleType* aSimple)
-{
+template <class SimpleType, class TearoffType>
+void nsSVGAttrTearoffTable<SimpleType, TearoffType>::RemoveTearoff(
+    SimpleType* aSimple) {
   if (!mTable) {
     
     
@@ -99,4 +91,4 @@ nsSVGAttrTearoffTable<SimpleType, TearoffType>::RemoveTearoff(
   }
 }
 
-#endif 
+#endif  

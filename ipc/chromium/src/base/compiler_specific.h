@@ -24,12 +24,12 @@
 
 
 
-#define MSVC_SUPPRESS_WARNING(n) __pragma(warning(suppress:n))
+#define MSVC_SUPPRESS_WARNING(n) __pragma(warning(suppress : n))
 
 
 
-#define MSVC_PUSH_DISABLE_WARNING(n) __pragma(warning(push)) \
-                                     __pragma(warning(disable:n))
+#define MSVC_PUSH_DISABLE_WARNING(n) \
+  __pragma(warning(push)) __pragma(warning(disable : n))
 
 
 
@@ -51,9 +51,9 @@
 
 
 
-#define ALLOW_THIS_IN_INITIALIZER_LIST(code) MSVC_PUSH_DISABLE_WARNING(4355) \
-                                             code \
-                                             MSVC_POP_WARNING()
+#define ALLOW_THIS_IN_INITIALIZER_LIST(code) \
+  MSVC_PUSH_DISABLE_WARNING(4355)            \
+  code MSVC_POP_WARNING()
 
 #else  
 

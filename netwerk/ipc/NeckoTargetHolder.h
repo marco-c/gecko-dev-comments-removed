@@ -16,14 +16,12 @@ namespace net {
 
 
 
-class NeckoTargetHolder
-{
-public:
-  explicit NeckoTargetHolder(nsIEventTarget *aNeckoTarget)
-    : mNeckoTarget(aNeckoTarget)
-  {}
+class NeckoTargetHolder {
+ public:
+  explicit NeckoTargetHolder(nsIEventTarget* aNeckoTarget)
+      : mNeckoTarget(aNeckoTarget) {}
 
-protected:
+ protected:
   virtual ~NeckoTargetHolder() = default;
   
   virtual already_AddRefed<nsIEventTarget> GetNeckoTarget();
@@ -36,7 +34,7 @@ protected:
   nsCOMPtr<nsIEventTarget> mNeckoTarget;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

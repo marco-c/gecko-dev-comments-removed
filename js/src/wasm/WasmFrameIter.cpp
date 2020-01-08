@@ -34,302 +34,273 @@ using mozilla::Maybe;
 
 
 WasmFrameIter::WasmFrameIter(JitActivation* activation, wasm::Frame* fp)
-  : activation_(activation),
-    code_(nullptr),
-    codeRange_(nullptr),
-    lineOrBytecode_(0),
-    fp_(fp ? fp : activation->wasmExitFP()),
-    unwoundIonCallerFP_(nullptr),
-    unwoundIonFrameType_(jit::FrameType(-1)),
-    unwind_(Unwind::False),
-    unwoundAddressOfReturnAddress_(nullptr)
-{
-    MOZ_ASSERT(fp_);
+    : activation_(activation),
+      code_(nullptr),
+      codeRange_(nullptr),
+      lineOrBytecode_(0),
+      fp_(fp ? fp : activation->wasmExitFP()),
+      unwoundIonCallerFP_(nullptr),
+      unwoundIonFrameType_(jit::FrameType(-1)),
+      unwind_(Unwind::False),
+      unwoundAddressOfReturnAddress_(nullptr) {
+  MOZ_ASSERT(fp_);
 
-    
-    
-    
+  
+  
+  
 
-    if (activation->isWasmTrapping()) {
-        const TrapData& trapData = activation->wasmTrapData();
-        void* unwoundPC = trapData.unwoundPC;
+  if (activation->isWasmTrapping()) {
+    const TrapData& trapData = activation->wasmTrapData();
+    void* unwoundPC = trapData.unwoundPC;
 
-        code_ = &fp_->tls->instance->code();
-        MOZ_ASSERT(code_ == LookupCode(unwoundPC));
+    code_ = &fp_->tls->instance->code();
+    MOZ_ASSERT(code_ == LookupCode(unwoundPC));
 
-        codeRange_ = code_->lookupFuncRange(unwoundPC);
-        MOZ_ASSERT(codeRange_);
-
-        lineOrBytecode_ = trapData.bytecodeOffset;
-
-        MOZ_ASSERT(!done());
-        return;
-    }
-
-    
-    
-    
-    
-    
-
-    popFrame();
-    MOZ_ASSERT(!done() || unwoundIonCallerFP_);
-}
-
-bool
-WasmFrameIter::done() const
-{
-    MOZ_ASSERT(!!fp_ == !!code_);
-    MOZ_ASSERT(!!fp_ == !!codeRange_);
-    return !fp_;
-}
-
-void
-WasmFrameIter::operator++()
-{
-    MOZ_ASSERT(!done());
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    if (unwind_ == Unwind::True) {
-        if (activation_->isWasmTrapping()) {
-            activation_->finishWasmTrap();
-        }
-        activation_->setWasmExitFP(fp_);
-    }
-
-    popFrame();
-}
-
-void
-WasmFrameIter::popFrame()
-{
-    Frame* prevFP = fp_;
-    fp_ = prevFP->callerFP;
-
-    if (uintptr_t(fp_) & ExitOrJitEntryFPTag) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        MOZ_ASSERT(!LookupCode(prevFP->returnAddress));
-
-        unwoundIonCallerFP_ = (uint8_t*)(uintptr_t(fp_) & ~uintptr_t(ExitOrJitEntryFPTag));
-        unwoundIonFrameType_ = FrameType::Exit;
-
-        fp_ = nullptr;
-        code_ = nullptr;
-        codeRange_ = nullptr;
-
-        if (unwind_ == Unwind::True) {
-            activation_->setJSExitFP(unwoundIonCallerFP_);
-            unwoundAddressOfReturnAddress_ = &prevFP->returnAddress;
-        }
-
-        MOZ_ASSERT(done());
-        return;
-    }
-
-    if (!fp_) {
-        code_ = nullptr;
-        codeRange_ = nullptr;
-
-        if (unwind_ == Unwind::True) {
-            
-            
-            activation_->setWasmExitFP(nullptr);
-            unwoundAddressOfReturnAddress_ = &prevFP->returnAddress;
-        }
-
-        MOZ_ASSERT(done());
-        return;
-    }
-
-    void* returnAddress = prevFP->returnAddress;
-
-    code_ = LookupCode(returnAddress, &codeRange_);
+    codeRange_ = code_->lookupFuncRange(unwoundPC);
     MOZ_ASSERT(codeRange_);
 
-    if (codeRange_->isJitEntry()) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        unwoundIonCallerFP_ = (uint8_t*) fp_;
-        unwoundIonFrameType_ = FrameType::JSJitToWasm;
+    lineOrBytecode_ = trapData.bytecodeOffset;
 
-        fp_ = nullptr;
-        code_ = nullptr;
-        codeRange_ = nullptr;
+    MOZ_ASSERT(!done());
+    return;
+  }
 
-        if (unwind_ == Unwind::True) {
-            activation_->setJSExitFP(unwoundIonCallerFP_);
-            unwoundAddressOfReturnAddress_ = &prevFP->returnAddress;
-        }
+  
+  
+  
+  
+  
 
-        MOZ_ASSERT(done());
-        return;
+  popFrame();
+  MOZ_ASSERT(!done() || unwoundIonCallerFP_);
+}
+
+bool WasmFrameIter::done() const {
+  MOZ_ASSERT(!!fp_ == !!code_);
+  MOZ_ASSERT(!!fp_ == !!codeRange_);
+  return !fp_;
+}
+
+void WasmFrameIter::operator++() {
+  MOZ_ASSERT(!done());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (unwind_ == Unwind::True) {
+    if (activation_->isWasmTrapping()) {
+      activation_->finishWasmTrap();
+    }
+    activation_->setWasmExitFP(fp_);
+  }
+
+  popFrame();
+}
+
+void WasmFrameIter::popFrame() {
+  Frame* prevFP = fp_;
+  fp_ = prevFP->callerFP;
+
+  if (uintptr_t(fp_) & ExitOrJitEntryFPTag) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(!LookupCode(prevFP->returnAddress));
+
+    unwoundIonCallerFP_ =
+        (uint8_t*)(uintptr_t(fp_) & ~uintptr_t(ExitOrJitEntryFPTag));
+    unwoundIonFrameType_ = FrameType::Exit;
+
+    fp_ = nullptr;
+    code_ = nullptr;
+    codeRange_ = nullptr;
+
+    if (unwind_ == Unwind::True) {
+      activation_->setJSExitFP(unwoundIonCallerFP_);
+      unwoundAddressOfReturnAddress_ = &prevFP->returnAddress;
     }
 
-    MOZ_ASSERT(code_ == &fp_->tls->instance->code());
-    MOZ_ASSERT(codeRange_->kind() == CodeRange::Function);
-
-    const CallSite* callsite = code_->lookupCallSite(returnAddress);
-    MOZ_ASSERT(callsite);
-
-    lineOrBytecode_ = callsite->lineOrBytecode();
-
-    MOZ_ASSERT(!done());
-}
-
-const char*
-WasmFrameIter::filename() const
-{
-    MOZ_ASSERT(!done());
-    return code_->metadata().filename.get();
-}
-
-const char16_t*
-WasmFrameIter::displayURL() const
-{
-    MOZ_ASSERT(!done());
-    return code_->metadata().displayURL();
-}
-
-bool
-WasmFrameIter::mutedErrors() const
-{
-    MOZ_ASSERT(!done());
-    return code_->metadata().mutedErrors();
-}
-
-JSAtom*
-WasmFrameIter::functionDisplayAtom() const
-{
-    MOZ_ASSERT(!done());
-
-    JSContext* cx = activation_->cx();
-    JSAtom* atom = instance()->getFuncDisplayAtom(cx, codeRange_->funcIndex());
-    if (!atom) {
-        cx->clearPendingException();
-        return cx->names().empty;
-    }
-
-    return atom;
-}
-
-unsigned
-WasmFrameIter::lineOrBytecode() const
-{
-    MOZ_ASSERT(!done());
-    return lineOrBytecode_;
-}
-
-uint32_t
-WasmFrameIter::funcIndex() const
-{
-    MOZ_ASSERT(!done());
-    return codeRange_->funcIndex();
-}
-
-unsigned
-WasmFrameIter::computeLine(uint32_t* column) const
-{
-    if (instance()->isAsmJS()) {
-        if (column) {
-            *column = 1;
-        }
-        return lineOrBytecode_;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    MOZ_ASSERT(!(codeRange_->funcIndex() & ColumnBit));
-    if (column) {
-        *column = codeRange_->funcIndex() | ColumnBit;
-    }
-    return lineOrBytecode_;
-}
-
-Instance*
-WasmFrameIter::instance() const
-{
-    MOZ_ASSERT(!done());
-    return fp_->tls->instance;
-}
-
-void**
-WasmFrameIter::unwoundAddressOfReturnAddress() const
-{
     MOZ_ASSERT(done());
-    MOZ_ASSERT(unwind_ == Unwind::True);
-    MOZ_ASSERT(unwoundAddressOfReturnAddress_);
-    return unwoundAddressOfReturnAddress_;
+    return;
+  }
+
+  if (!fp_) {
+    code_ = nullptr;
+    codeRange_ = nullptr;
+
+    if (unwind_ == Unwind::True) {
+      
+      
+      activation_->setWasmExitFP(nullptr);
+      unwoundAddressOfReturnAddress_ = &prevFP->returnAddress;
+    }
+
+    MOZ_ASSERT(done());
+    return;
+  }
+
+  void* returnAddress = prevFP->returnAddress;
+
+  code_ = LookupCode(returnAddress, &codeRange_);
+  MOZ_ASSERT(codeRange_);
+
+  if (codeRange_->isJitEntry()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unwoundIonCallerFP_ = (uint8_t*)fp_;
+    unwoundIonFrameType_ = FrameType::JSJitToWasm;
+
+    fp_ = nullptr;
+    code_ = nullptr;
+    codeRange_ = nullptr;
+
+    if (unwind_ == Unwind::True) {
+      activation_->setJSExitFP(unwoundIonCallerFP_);
+      unwoundAddressOfReturnAddress_ = &prevFP->returnAddress;
+    }
+
+    MOZ_ASSERT(done());
+    return;
+  }
+
+  MOZ_ASSERT(code_ == &fp_->tls->instance->code());
+  MOZ_ASSERT(codeRange_->kind() == CodeRange::Function);
+
+  const CallSite* callsite = code_->lookupCallSite(returnAddress);
+  MOZ_ASSERT(callsite);
+
+  lineOrBytecode_ = callsite->lineOrBytecode();
+
+  MOZ_ASSERT(!done());
 }
 
-bool
-WasmFrameIter::debugEnabled() const
-{
-    MOZ_ASSERT(!done());
-
-    
-    
-    
-    
-    
-    return code_->metadata().debugEnabled &&
-           codeRange_->funcIndex() >= code_->metadata(Tier::Debug).funcImports.length();
+const char* WasmFrameIter::filename() const {
+  MOZ_ASSERT(!done());
+  return code_->metadata().filename.get();
 }
 
-DebugFrame*
-WasmFrameIter::debugFrame() const
-{
-    MOZ_ASSERT(!done());
-    return DebugFrame::from(fp_);
+const char16_t* WasmFrameIter::displayURL() const {
+  MOZ_ASSERT(!done());
+  return code_->metadata().displayURL();
 }
 
-jit::FrameType
-WasmFrameIter::unwoundIonFrameType() const
-{
-    MOZ_ASSERT(unwoundIonCallerFP_);
-    MOZ_ASSERT(unwoundIonFrameType_ != jit::FrameType(-1));
-    return unwoundIonFrameType_;
+bool WasmFrameIter::mutedErrors() const {
+  MOZ_ASSERT(!done());
+  return code_->metadata().mutedErrors();
+}
+
+JSAtom* WasmFrameIter::functionDisplayAtom() const {
+  MOZ_ASSERT(!done());
+
+  JSContext* cx = activation_->cx();
+  JSAtom* atom = instance()->getFuncDisplayAtom(cx, codeRange_->funcIndex());
+  if (!atom) {
+    cx->clearPendingException();
+    return cx->names().empty;
+  }
+
+  return atom;
+}
+
+unsigned WasmFrameIter::lineOrBytecode() const {
+  MOZ_ASSERT(!done());
+  return lineOrBytecode_;
+}
+
+uint32_t WasmFrameIter::funcIndex() const {
+  MOZ_ASSERT(!done());
+  return codeRange_->funcIndex();
+}
+
+unsigned WasmFrameIter::computeLine(uint32_t* column) const {
+  if (instance()->isAsmJS()) {
+    if (column) {
+      *column = 1;
+    }
+    return lineOrBytecode_;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  MOZ_ASSERT(!(codeRange_->funcIndex() & ColumnBit));
+  if (column) {
+    *column = codeRange_->funcIndex() | ColumnBit;
+  }
+  return lineOrBytecode_;
+}
+
+Instance* WasmFrameIter::instance() const {
+  MOZ_ASSERT(!done());
+  return fp_->tls->instance;
+}
+
+void** WasmFrameIter::unwoundAddressOfReturnAddress() const {
+  MOZ_ASSERT(done());
+  MOZ_ASSERT(unwind_ == Unwind::True);
+  MOZ_ASSERT(unwoundAddressOfReturnAddress_);
+  return unwoundAddressOfReturnAddress_;
+}
+
+bool WasmFrameIter::debugEnabled() const {
+  MOZ_ASSERT(!done());
+
+  
+  
+  
+  
+  
+  return code_->metadata().debugEnabled &&
+         codeRange_->funcIndex() >=
+             code_->metadata(Tier::Debug).funcImports.length();
+}
+
+DebugFrame* WasmFrameIter::debugFrame() const {
+  MOZ_ASSERT(!done());
+  return DebugFrame::from(fp_);
+}
+
+jit::FrameType WasmFrameIter::unwoundIonFrameType() const {
+  MOZ_ASSERT(unwoundIonCallerFP_);
+  MOZ_ASSERT(unwoundIonFrameType_ != jit::FrameType(-1));
+  return unwoundIonFrameType_;
 }
 
 
@@ -392,1086 +363,1070 @@ static const unsigned SetFP = 3;
 static const unsigned PoppedFP = 4;
 static const unsigned PoppedTLSReg = 5;
 #else
-# error "Unknown architecture!"
+#error "Unknown architecture!"
 #endif
 static constexpr unsigned SetJitEntryFP = PushedRetAddr + SetFP - PushedFP;
 
-
-static void
-LoadActivation(MacroAssembler& masm, const Register& dest)
-{
-    
-    masm.loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, cx)), dest);
-    masm.loadPtr(Address(dest, JSContext::offsetOfActivation()), dest);
+static void LoadActivation(MacroAssembler& masm, const Register& dest) {
+  
+  masm.loadPtr(Address(WasmTlsReg, offsetof(wasm::TlsData, cx)), dest);
+  masm.loadPtr(Address(dest, JSContext::offsetOfActivation()), dest);
 }
 
-void
-wasm::SetExitFP(MacroAssembler& masm, ExitReason reason, Register scratch)
-{
-    MOZ_ASSERT(!reason.isNone());
+void wasm::SetExitFP(MacroAssembler& masm, ExitReason reason,
+                     Register scratch) {
+  MOZ_ASSERT(!reason.isNone());
 
-    LoadActivation(masm, scratch);
+  LoadActivation(masm, scratch);
 
-    masm.store32(Imm32(reason.encode()),
-                 Address(scratch, JitActivation::offsetOfEncodedWasmExitReason()));
+  masm.store32(
+      Imm32(reason.encode()),
+      Address(scratch, JitActivation::offsetOfEncodedWasmExitReason()));
 
-    masm.orPtr(Imm32(ExitOrJitEntryFPTag), FramePointer);
-    masm.storePtr(FramePointer, Address(scratch, JitActivation::offsetOfPackedExitFP()));
-    masm.andPtr(Imm32(int32_t(~ExitOrJitEntryFPTag)), FramePointer);
+  masm.orPtr(Imm32(ExitOrJitEntryFPTag), FramePointer);
+  masm.storePtr(FramePointer,
+                Address(scratch, JitActivation::offsetOfPackedExitFP()));
+  masm.andPtr(Imm32(int32_t(~ExitOrJitEntryFPTag)), FramePointer);
 }
 
-void
-wasm::ClearExitFP(MacroAssembler& masm, Register scratch)
-{
-    LoadActivation(masm, scratch);
-    masm.storePtr(ImmWord(0x0), Address(scratch, JitActivation::offsetOfPackedExitFP()));
-    masm.store32(Imm32(0x0), Address(scratch, JitActivation::offsetOfEncodedWasmExitReason()));
+void wasm::ClearExitFP(MacroAssembler& masm, Register scratch) {
+  LoadActivation(masm, scratch);
+  masm.storePtr(ImmWord(0x0),
+                Address(scratch, JitActivation::offsetOfPackedExitFP()));
+  masm.store32(
+      Imm32(0x0),
+      Address(scratch, JitActivation::offsetOfEncodedWasmExitReason()));
 }
 
-static void
-GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry)
-{
-    masm.setFramePushed(0);
+static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
+  masm.setFramePushed(0);
 
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-    {
-        *entry = masm.currentOffset();
+  {
+    *entry = masm.currentOffset();
 
-        masm.subFromStackPtr(Imm32(sizeof(Frame)));
-        masm.storePtr(ra, Address(StackPointer, offsetof(Frame, returnAddress)));
-        MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
-        masm.storePtr(WasmTlsReg, Address(StackPointer, offsetof(Frame, tls)));
-        MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
-        masm.storePtr(FramePointer, Address(StackPointer, offsetof(Frame, callerFP)));
-        MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
-        masm.moveStackPtrTo(FramePointer);
-        MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
-    }
+    masm.subFromStackPtr(Imm32(sizeof(Frame)));
+    masm.storePtr(ra, Address(StackPointer, offsetof(Frame, returnAddress)));
+    MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+    masm.storePtr(WasmTlsReg, Address(StackPointer, offsetof(Frame, tls)));
+    MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
+    masm.storePtr(FramePointer,
+                  Address(StackPointer, offsetof(Frame, callerFP)));
+    MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+    masm.moveStackPtrTo(FramePointer);
+    MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+  }
 #elif defined(JS_CODEGEN_ARM64)
-    {
-        
-        MOZ_ASSERT(masm.GetStackPointer64().code() == sp.code());
-
-        AutoForbidPools afp(&masm,  5);
-
-        *entry = masm.currentOffset();
-
-        masm.Sub(sp, sp, sizeof(Frame));
-        masm.Str(ARMRegister(lr, 64), MemOperand(sp, offsetof(Frame, returnAddress)));
-        MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
-        masm.Str(ARMRegister(WasmTlsReg, 64), MemOperand(sp, offsetof(Frame, tls)));
-        MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
-        masm.Str(ARMRegister(FramePointer, 64), MemOperand(sp, offsetof(Frame, callerFP)));
-        MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
-        masm.Mov(ARMRegister(FramePointer, 64), sp);
-        MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
-    }
-#else
-    {
-# if defined(JS_CODEGEN_ARM)
-        AutoForbidPools afp(&masm,  7);
-
-        *entry = masm.currentOffset();
-
-        MOZ_ASSERT(BeforePushRetAddr == 0);
-        masm.push(lr);
-# else
-        *entry = masm.currentOffset();
-        
-# endif
-
-        MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
-        masm.push(WasmTlsReg);
-        MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
-        masm.push(FramePointer);
-        MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
-        masm.moveStackPtrTo(FramePointer);
-        MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
-    }
-#endif
-}
-
-static void
-GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
-                         uint32_t* ret)
-{
-    if (framePushed) {
-        masm.freeStack(framePushed);
-    }
-
-    if (!reason.isNone()) {
-        ClearExitFP(masm, ABINonArgReturnVolatileReg);
-    }
-
-    DebugOnly<uint32_t> poppedFP;
-    DebugOnly<uint32_t> poppedTlsReg;
-
-#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-
-    masm.loadPtr(Address(StackPointer, offsetof(Frame, callerFP)), FramePointer);
-    poppedFP = masm.currentOffset();
-    masm.loadPtr(Address(StackPointer, offsetof(Frame, tls)), WasmTlsReg);
-    poppedTlsReg = masm.currentOffset();
-    masm.loadPtr(Address(StackPointer, offsetof(Frame, returnAddress)), ra);
-
-    *ret = masm.currentOffset();
-    masm.as_jr(ra);
-    masm.addToStackPtr(Imm32(sizeof(Frame)));
-
-#elif defined(JS_CODEGEN_ARM64)
-
+  {
     
     MOZ_ASSERT(masm.GetStackPointer64().code() == sp.code());
 
     AutoForbidPools afp(&masm,  5);
 
-    masm.Ldr(ARMRegister(FramePointer, 64), MemOperand(sp, offsetof(Frame, callerFP)));
-    poppedFP = masm.currentOffset();
+    *entry = masm.currentOffset();
 
-    masm.Ldr(ARMRegister(WasmTlsReg, 64), MemOperand(sp, offsetof(Frame, tls)));
-    poppedTlsReg = masm.currentOffset();
+    masm.Sub(sp, sp, sizeof(Frame));
+    masm.Str(ARMRegister(lr, 64),
+             MemOperand(sp, offsetof(Frame, returnAddress)));
+    MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+    masm.Str(ARMRegister(WasmTlsReg, 64), MemOperand(sp, offsetof(Frame, tls)));
+    MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
+    masm.Str(ARMRegister(FramePointer, 64),
+             MemOperand(sp, offsetof(Frame, callerFP)));
+    MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+    masm.Mov(ARMRegister(FramePointer, 64), sp);
+    MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+  }
+#else
+  {
+#if defined(JS_CODEGEN_ARM)
+    AutoForbidPools afp(&masm,  7);
 
-    masm.Ldr(ARMRegister(lr, 64), MemOperand(sp, offsetof(Frame, returnAddress)));
-    *ret = masm.currentOffset();
+    *entry = masm.currentOffset();
 
-    masm.Add(sp, sp, sizeof(Frame));
-    masm.Ret(ARMRegister(lr, 64));
+    MOZ_ASSERT(BeforePushRetAddr == 0);
+    masm.push(lr);
+#else
+    *entry = masm.currentOffset();
+    
+#endif
+
+    MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
+    masm.push(WasmTlsReg);
+    MOZ_ASSERT_IF(!masm.oom(), PushedTLS == masm.currentOffset() - *entry);
+    masm.push(FramePointer);
+    MOZ_ASSERT_IF(!masm.oom(), PushedFP == masm.currentOffset() - *entry);
+    masm.moveStackPtrTo(FramePointer);
+    MOZ_ASSERT_IF(!masm.oom(), SetFP == masm.currentOffset() - *entry);
+  }
+#endif
+}
+
+static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
+                                     ExitReason reason, uint32_t* ret) {
+  if (framePushed) {
+    masm.freeStack(framePushed);
+  }
+
+  if (!reason.isNone()) {
+    ClearExitFP(masm, ABINonArgReturnVolatileReg);
+  }
+
+  DebugOnly<uint32_t> poppedFP;
+  DebugOnly<uint32_t> poppedTlsReg;
+
+#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+
+  masm.loadPtr(Address(StackPointer, offsetof(Frame, callerFP)), FramePointer);
+  poppedFP = masm.currentOffset();
+  masm.loadPtr(Address(StackPointer, offsetof(Frame, tls)), WasmTlsReg);
+  poppedTlsReg = masm.currentOffset();
+  masm.loadPtr(Address(StackPointer, offsetof(Frame, returnAddress)), ra);
+
+  *ret = masm.currentOffset();
+  masm.as_jr(ra);
+  masm.addToStackPtr(Imm32(sizeof(Frame)));
+
+#elif defined(JS_CODEGEN_ARM64)
+
+  
+  MOZ_ASSERT(masm.GetStackPointer64().code() == sp.code());
+
+  AutoForbidPools afp(&masm,  5);
+
+  masm.Ldr(ARMRegister(FramePointer, 64),
+           MemOperand(sp, offsetof(Frame, callerFP)));
+  poppedFP = masm.currentOffset();
+
+  masm.Ldr(ARMRegister(WasmTlsReg, 64), MemOperand(sp, offsetof(Frame, tls)));
+  poppedTlsReg = masm.currentOffset();
+
+  masm.Ldr(ARMRegister(lr, 64), MemOperand(sp, offsetof(Frame, returnAddress)));
+  *ret = masm.currentOffset();
+
+  masm.Add(sp, sp, sizeof(Frame));
+  masm.Ret(ARMRegister(lr, 64));
 
 #else
-    
-# if defined(JS_CODEGEN_ARM)
-    AutoForbidPools afp(&masm,  7);
-# endif
+  
+#if defined(JS_CODEGEN_ARM)
+  AutoForbidPools afp(&masm,  7);
+#endif
 
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
 
-    masm.pop(FramePointer);
-    poppedFP = masm.currentOffset();
+  masm.pop(FramePointer);
+  poppedFP = masm.currentOffset();
 
-    masm.pop(WasmTlsReg);
-    poppedTlsReg = masm.currentOffset();
+  masm.pop(WasmTlsReg);
+  poppedTlsReg = masm.currentOffset();
 
-    *ret = masm.currentOffset();
-    masm.ret();
+  *ret = masm.currentOffset();
+  masm.ret();
 
 #endif
 
-    MOZ_ASSERT_IF(!masm.oom(), PoppedFP == *ret - poppedFP);
-    MOZ_ASSERT_IF(!masm.oom(), PoppedTLSReg == *ret - poppedTlsReg);
+  MOZ_ASSERT_IF(!masm.oom(), PoppedFP == *ret - poppedFP);
+  MOZ_ASSERT_IF(!masm.oom(), PoppedTLSReg == *ret - poppedTlsReg);
 }
 
-void
-wasm::GenerateFunctionPrologue(MacroAssembler& masm, const FuncTypeIdDesc& funcTypeId,
-                               const Maybe<uint32_t>& tier1FuncIndex, FuncOffsets* offsets)
-{
-    
-    
-    
-    masm.flushBuffer();
-    masm.haltingAlign(CodeAlignment);
+void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
+                                    const FuncTypeIdDesc& funcTypeId,
+                                    const Maybe<uint32_t>& tier1FuncIndex,
+                                    FuncOffsets* offsets) {
+  
+  
+  
+  masm.flushBuffer();
+  masm.haltingAlign(CodeAlignment);
 
-    
-    
-    Label normalEntry;
+  
+  
+  Label normalEntry;
 
+  
+  
+  offsets->begin = masm.currentOffset();
+  switch (funcTypeId.kind()) {
+    case FuncTypeIdDescKind::Global: {
+      Register scratch = WasmTableCallScratchReg0;
+      masm.loadWasmGlobalPtr(funcTypeId.globalDataOffset(), scratch);
+      masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg, scratch,
+                     &normalEntry);
+      masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
+      break;
+    }
+    case FuncTypeIdDescKind::Immediate: {
+      masm.branch32(Assembler::Condition::Equal, WasmTableCallSigReg,
+                    Imm32(funcTypeId.immediate()), &normalEntry);
+      masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
+      break;
+    }
+    case FuncTypeIdDescKind::None:
+      break;
+  }
+
+  
+  
+  masm.flushBuffer();
+
+  
+  masm.nopAlign(CodeAlignment);
+  masm.bind(&normalEntry);
+  GenerateCallablePrologue(masm, &offsets->normalEntry);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (tier1FuncIndex) {
+    Register scratch = ABINonArgReg0;
+    masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, jumpTable)), scratch);
+    masm.jump(Address(scratch, *tier1FuncIndex * sizeof(uintptr_t)));
+  }
+
+  offsets->tierEntry = masm.currentOffset();
+
+  MOZ_ASSERT(masm.framePushed() == 0);
+}
+
+void wasm::GenerateFunctionEpilogue(MacroAssembler& masm, unsigned framePushed,
+                                    FuncOffsets* offsets) {
+  
+  MOZ_ASSERT(masm.framePushed() == framePushed);
+  GenerateCallableEpilogue(masm, framePushed, ExitReason::None(),
+                           &offsets->ret);
+  MOZ_ASSERT(masm.framePushed() == 0);
+}
+
+void wasm::GenerateExitPrologue(MacroAssembler& masm, unsigned framePushed,
+                                ExitReason reason, CallableOffsets* offsets) {
+  masm.haltingAlign(CodeAlignment);
+
+  GenerateCallablePrologue(masm, &offsets->begin);
+
+  
+  
+  SetExitFP(masm, reason, ABINonArgReturnVolatileReg);
+
+  MOZ_ASSERT(masm.framePushed() == 0);
+  masm.reserveStack(framePushed);
+}
+
+void wasm::GenerateExitEpilogue(MacroAssembler& masm, unsigned framePushed,
+                                ExitReason reason, CallableOffsets* offsets) {
+  
+  MOZ_ASSERT(masm.framePushed() == framePushed);
+  GenerateCallableEpilogue(masm, framePushed, reason, &offsets->ret);
+  MOZ_ASSERT(masm.framePushed() == 0);
+}
+
+static void AssertNoWasmExitFPInJitExit(MacroAssembler& masm) {
+  
+  
+  
+  
+#ifdef DEBUG
+  Register scratch = ABINonArgReturnReg0;
+  LoadActivation(masm, scratch);
+
+  Label ok;
+  masm.branchTestPtr(Assembler::Zero,
+                     Address(scratch, JitActivation::offsetOfPackedExitFP()),
+                     Imm32(uintptr_t(ExitOrJitEntryFPTag)), &ok);
+  masm.breakpoint();
+  masm.bind(&ok);
+#endif
+}
+
+void wasm::GenerateJitExitPrologue(MacroAssembler& masm, unsigned framePushed,
+                                   CallableOffsets* offsets) {
+  masm.haltingAlign(CodeAlignment);
+
+  GenerateCallablePrologue(masm, &offsets->begin);
+  AssertNoWasmExitFPInJitExit(masm);
+
+  MOZ_ASSERT(masm.framePushed() == 0);
+  masm.reserveStack(framePushed);
+}
+
+void wasm::GenerateJitExitEpilogue(MacroAssembler& masm, unsigned framePushed,
+                                   CallableOffsets* offsets) {
+  
+  MOZ_ASSERT(masm.framePushed() == framePushed);
+  AssertNoWasmExitFPInJitExit(masm);
+  GenerateCallableEpilogue(masm, framePushed, ExitReason::None(),
+                           &offsets->ret);
+  MOZ_ASSERT(masm.framePushed() == 0);
+}
+
+void wasm::GenerateJitEntryPrologue(MacroAssembler& masm, Offsets* offsets) {
+  masm.haltingAlign(CodeAlignment);
+
+  {
+#if defined(JS_CODEGEN_ARM)
+    AutoForbidPools afp(&masm,  2);
+    offsets->begin = masm.currentOffset();
+    MOZ_ASSERT(BeforePushRetAddr == 0);
+    masm.push(lr);
+#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+    offsets->begin = masm.currentOffset();
+    masm.push(ra);
+#elif defined(JS_CODEGEN_ARM64)
+    AutoForbidPools afp(&masm,  3);
+    offsets->begin = masm.currentOffset();
+    MOZ_ASSERT(BeforePushRetAddr == 0);
     
+    masm.Sub(sp, sp, 8);
+    masm.storePtr(lr, Address(masm.getStackPointer(), 0));
+    masm.adjustFrame(8);
+#else
     
     offsets->begin = masm.currentOffset();
-    switch (funcTypeId.kind()) {
-      case FuncTypeIdDescKind::Global: {
-        Register scratch = WasmTableCallScratchReg0;
-        masm.loadWasmGlobalPtr(funcTypeId.globalDataOffset(), scratch);
-        masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg, scratch,
-                       &normalEntry);
-        masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
-        break;
-      }
-      case FuncTypeIdDescKind::Immediate: {
-        masm.branch32(Assembler::Condition::Equal, WasmTableCallSigReg,
-                      Imm32(funcTypeId.immediate()), &normalEntry);
-        masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
-        break;
-      }
-      case FuncTypeIdDescKind::None:
-        break;
-    }
-
-    
-    
-    masm.flushBuffer();
-
-    
-    masm.nopAlign(CodeAlignment);
-    masm.bind(&normalEntry);
-    GenerateCallablePrologue(masm, &offsets->normalEntry);
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (tier1FuncIndex) {
-        Register scratch = ABINonArgReg0;
-        masm.loadPtr(Address(WasmTlsReg, offsetof(TlsData, jumpTable)), scratch);
-        masm.jump(Address(scratch, *tier1FuncIndex * sizeof(uintptr_t)));
-    }
-
-    offsets->tierEntry = masm.currentOffset();
-
-    MOZ_ASSERT(masm.framePushed() == 0);
-}
-
-void
-wasm::GenerateFunctionEpilogue(MacroAssembler& masm, unsigned framePushed, FuncOffsets* offsets)
-{
-    
-    MOZ_ASSERT(masm.framePushed() == framePushed);
-    GenerateCallableEpilogue(masm, framePushed, ExitReason::None(), &offsets->ret);
-    MOZ_ASSERT(masm.framePushed() == 0);
-}
-
-void
-wasm::GenerateExitPrologue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
-                           CallableOffsets* offsets)
-{
-    masm.haltingAlign(CodeAlignment);
-
-    GenerateCallablePrologue(masm, &offsets->begin);
-
-    
-    
-    SetExitFP(masm, reason, ABINonArgReturnVolatileReg);
-
-    MOZ_ASSERT(masm.framePushed() == 0);
-    masm.reserveStack(framePushed);
-}
-
-void
-wasm::GenerateExitEpilogue(MacroAssembler& masm, unsigned framePushed, ExitReason reason,
-                           CallableOffsets* offsets)
-{
-    
-    MOZ_ASSERT(masm.framePushed() == framePushed);
-    GenerateCallableEpilogue(masm, framePushed, reason, &offsets->ret);
-    MOZ_ASSERT(masm.framePushed() == 0);
-}
-
-static void
-AssertNoWasmExitFPInJitExit(MacroAssembler& masm)
-{
-    
-    
-    
-    
-#ifdef DEBUG
-    Register scratch = ABINonArgReturnReg0;
-    LoadActivation(masm, scratch);
-
-    Label ok;
-    masm.branchTestPtr(Assembler::Zero,
-                       Address(scratch, JitActivation::offsetOfPackedExitFP()),
-                       Imm32(uintptr_t(ExitOrJitEntryFPTag)),
-                       &ok);
-    masm.breakpoint();
-    masm.bind(&ok);
 #endif
-}
+    MOZ_ASSERT_IF(!masm.oom(),
+                  PushedRetAddr == masm.currentOffset() - offsets->begin);
 
-void
-wasm::GenerateJitExitPrologue(MacroAssembler& masm, unsigned framePushed, CallableOffsets* offsets)
-{
-    masm.haltingAlign(CodeAlignment);
-
-    GenerateCallablePrologue(masm, &offsets->begin);
-    AssertNoWasmExitFPInJitExit(masm);
-
-    MOZ_ASSERT(masm.framePushed() == 0);
-    masm.reserveStack(framePushed);
-}
-
-void
-wasm::GenerateJitExitEpilogue(MacroAssembler& masm, unsigned framePushed, CallableOffsets* offsets)
-{
     
-    MOZ_ASSERT(masm.framePushed() == framePushed);
-    AssertNoWasmExitFPInJitExit(masm);
-    GenerateCallableEpilogue(masm, framePushed, ExitReason::None(), &offsets->ret);
-    MOZ_ASSERT(masm.framePushed() == 0);
-}
+    masm.moveStackPtrTo(FramePointer);
+    MOZ_ASSERT_IF(!masm.oom(),
+                  SetJitEntryFP == masm.currentOffset() - offsets->begin);
+  }
 
-void
-wasm::GenerateJitEntryPrologue(MacroAssembler& masm, Offsets* offsets)
-{
-    masm.haltingAlign(CodeAlignment);
-
-    {
-#if defined(JS_CODEGEN_ARM)
-        AutoForbidPools afp(&masm,  2);
-        offsets->begin = masm.currentOffset();
-        MOZ_ASSERT(BeforePushRetAddr == 0);
-        masm.push(lr);
-#elif defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-        offsets->begin = masm.currentOffset();
-        masm.push(ra);
-#elif defined(JS_CODEGEN_ARM64)
-        AutoForbidPools afp(&masm,  3);
-        offsets->begin = masm.currentOffset();
-        MOZ_ASSERT(BeforePushRetAddr == 0);
-        
-        masm.Sub(sp, sp, 8);
-        masm.storePtr(lr, Address(masm.getStackPointer(), 0));
-        masm.adjustFrame(8);
-#else
-        
-        offsets->begin = masm.currentOffset();
-#endif
-        MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - offsets->begin);
-
-        
-        masm.moveStackPtrTo(FramePointer);
-        MOZ_ASSERT_IF(!masm.oom(), SetJitEntryFP == masm.currentOffset() - offsets->begin);
-    }
-
-    masm.setFramePushed(0);
+  masm.setFramePushed(0);
 }
 
 
 
 
 ProfilingFrameIterator::ProfilingFrameIterator()
-  : code_(nullptr),
-    codeRange_(nullptr),
-    callerFP_(nullptr),
-    callerPC_(nullptr),
-    stackAddress_(nullptr),
-    unwoundIonCallerFP_(nullptr),
-    exitReason_(ExitReason::Fixed::None)
-{
-    MOZ_ASSERT(done());
+    : code_(nullptr),
+      codeRange_(nullptr),
+      callerFP_(nullptr),
+      callerPC_(nullptr),
+      stackAddress_(nullptr),
+      unwoundIonCallerFP_(nullptr),
+      exitReason_(ExitReason::Fixed::None) {
+  MOZ_ASSERT(done());
 }
 
 ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation)
-  : code_(nullptr),
-    codeRange_(nullptr),
-    callerFP_(nullptr),
-    callerPC_(nullptr),
-    stackAddress_(nullptr),
-    unwoundIonCallerFP_(nullptr),
-    exitReason_(activation.wasmExitReason())
-{
-    initFromExitFP(activation.wasmExitFP());
+    : code_(nullptr),
+      codeRange_(nullptr),
+      callerFP_(nullptr),
+      callerPC_(nullptr),
+      stackAddress_(nullptr),
+      unwoundIonCallerFP_(nullptr),
+      exitReason_(activation.wasmExitReason()) {
+  initFromExitFP(activation.wasmExitFP());
 }
 
-ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation, const Frame* fp)
-  : code_(nullptr),
-    codeRange_(nullptr),
-    callerFP_(nullptr),
-    callerPC_(nullptr),
-    stackAddress_(nullptr),
-    unwoundIonCallerFP_(nullptr),
-    exitReason_(ExitReason::Fixed::ImportJit)
-{
-    MOZ_ASSERT(fp);
-    initFromExitFP(fp);
+ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation,
+                                               const Frame* fp)
+    : code_(nullptr),
+      codeRange_(nullptr),
+      callerFP_(nullptr),
+      callerPC_(nullptr),
+      stackAddress_(nullptr),
+      unwoundIonCallerFP_(nullptr),
+      exitReason_(ExitReason::Fixed::ImportJit) {
+  MOZ_ASSERT(fp);
+  initFromExitFP(fp);
 }
 
-static inline void
-AssertDirectJitCall(const void* fp)
-{
-    
-    
-    
+static inline void AssertDirectJitCall(const void* fp) {
+  
+  
+  
 #ifdef DEBUG
-    auto* jitCaller = (ExitFrameLayout*)(uintptr_t(fp) & ~ExitOrJitEntryFPTag);
-    MOZ_ASSERT(jitCaller->footer()->type() == jit::ExitFrameType::DirectWasmJitCall);
+  auto* jitCaller = (ExitFrameLayout*)(uintptr_t(fp) & ~ExitOrJitEntryFPTag);
+  MOZ_ASSERT(jitCaller->footer()->type() ==
+             jit::ExitFrameType::DirectWasmJitCall);
 #endif
 }
 
-static inline void
-AssertMatchesCallSite(void* callerPC, Frame* callerFP)
-{
+static inline void AssertMatchesCallSite(void* callerPC, Frame* callerFP) {
 #ifdef DEBUG
-    const CodeRange* callerCodeRange;
-    const Code* code = LookupCode(callerPC, &callerCodeRange);
+  const CodeRange* callerCodeRange;
+  const Code* code = LookupCode(callerPC, &callerCodeRange);
 
-    if (!code) {
-        AssertDirectJitCall(callerFP);
-        return;
-    }
+  if (!code) {
+    AssertDirectJitCall(callerFP);
+    return;
+  }
 
-    MOZ_ASSERT(callerCodeRange);
+  MOZ_ASSERT(callerCodeRange);
 
-    if (callerCodeRange->isInterpEntry()) {
-        MOZ_ASSERT(callerFP == nullptr);
-        return;
-    }
+  if (callerCodeRange->isInterpEntry()) {
+    MOZ_ASSERT(callerFP == nullptr);
+    return;
+  }
 
-    if (callerCodeRange->isJitEntry()) {
-        MOZ_ASSERT(callerFP != nullptr);
-        return;
-    }
+  if (callerCodeRange->isJitEntry()) {
+    MOZ_ASSERT(callerFP != nullptr);
+    return;
+  }
 
-    const CallSite* callsite = code->lookupCallSite(callerPC);
-    MOZ_ASSERT(callsite);
+  const CallSite* callsite = code->lookupCallSite(callerPC);
+  MOZ_ASSERT(callsite);
 #endif
 }
 
-void
-ProfilingFrameIterator::initFromExitFP(const Frame* fp)
-{
-    MOZ_ASSERT(fp);
-    stackAddress_ = (void*)fp;
+void ProfilingFrameIterator::initFromExitFP(const Frame* fp) {
+  MOZ_ASSERT(fp);
+  stackAddress_ = (void*)fp;
 
-    void* pc = fp->returnAddress;
+  void* pc = fp->returnAddress;
 
-    code_ = LookupCode(pc, &codeRange_);
+  code_ = LookupCode(pc, &codeRange_);
 
-    if (!code_) {
-        
-        
-        MOZ_ASSERT(uintptr_t(fp->callerFP) & ExitOrJitEntryFPTag);
-        AssertDirectJitCall(fp->callerFP);
-
-        unwoundIonCallerFP_ = (uint8_t*)(uintptr_t(fp->callerFP) & ~ExitOrJitEntryFPTag);
-        MOZ_ASSERT(done());
-        return;
-    }
-
-    MOZ_ASSERT(codeRange_);
-
+  if (!code_) {
     
     
-    
-    
-    
-    
-    switch (codeRange_->kind()) {
-      case CodeRange::InterpEntry:
-        callerPC_ = nullptr;
-        callerFP_ = nullptr;
-        codeRange_ = nullptr;
-        exitReason_ = ExitReason(ExitReason::Fixed::FakeInterpEntry);
-        break;
-      case CodeRange::JitEntry:
-        callerPC_ = nullptr;
-        callerFP_ = nullptr;
-        unwoundIonCallerFP_ = (uint8_t*) fp->callerFP;
-        break;
-      case CodeRange::Function:
-        fp = fp->callerFP;
-        callerPC_ = fp->returnAddress;
-        callerFP_ = fp->callerFP;
-        AssertMatchesCallSite(callerPC_, callerFP_);
-        break;
-      case CodeRange::ImportJitExit:
-      case CodeRange::ImportInterpExit:
-      case CodeRange::BuiltinThunk:
-      case CodeRange::TrapExit:
-      case CodeRange::DebugTrap:
-      case CodeRange::Throw:
-      case CodeRange::FarJumpIsland:
-        MOZ_CRASH("Unexpected CodeRange kind");
-    }
+    MOZ_ASSERT(uintptr_t(fp->callerFP) & ExitOrJitEntryFPTag);
+    AssertDirectJitCall(fp->callerFP);
 
-    MOZ_ASSERT(!done());
+    unwoundIonCallerFP_ =
+        (uint8_t*)(uintptr_t(fp->callerFP) & ~ExitOrJitEntryFPTag);
+    MOZ_ASSERT(done());
+    return;
+  }
+
+  MOZ_ASSERT(codeRange_);
+
+  
+  
+  
+  
+  
+  
+  switch (codeRange_->kind()) {
+    case CodeRange::InterpEntry:
+      callerPC_ = nullptr;
+      callerFP_ = nullptr;
+      codeRange_ = nullptr;
+      exitReason_ = ExitReason(ExitReason::Fixed::FakeInterpEntry);
+      break;
+    case CodeRange::JitEntry:
+      callerPC_ = nullptr;
+      callerFP_ = nullptr;
+      unwoundIonCallerFP_ = (uint8_t*)fp->callerFP;
+      break;
+    case CodeRange::Function:
+      fp = fp->callerFP;
+      callerPC_ = fp->returnAddress;
+      callerFP_ = fp->callerFP;
+      AssertMatchesCallSite(callerPC_, callerFP_);
+      break;
+    case CodeRange::ImportJitExit:
+    case CodeRange::ImportInterpExit:
+    case CodeRange::BuiltinThunk:
+    case CodeRange::TrapExit:
+    case CodeRange::DebugTrap:
+    case CodeRange::Throw:
+    case CodeRange::FarJumpIsland:
+      MOZ_CRASH("Unexpected CodeRange kind");
+  }
+
+  MOZ_ASSERT(!done());
 }
 
-static void
-AssertCallerFP(DebugOnly<bool> fpWasTagged, Frame* const fp, void** const sp)
-{
-    MOZ_ASSERT_IF(!fpWasTagged.value,
-                  fp == reinterpret_cast<Frame*>(sp)->callerFP);
-    MOZ_ASSERT_IF(fpWasTagged.value,
-                  (Frame*)(uintptr_t(fp) | 0x1) == reinterpret_cast<Frame*>(sp)->callerFP);
+static void AssertCallerFP(DebugOnly<bool> fpWasTagged, Frame* const fp,
+                           void** const sp) {
+  MOZ_ASSERT_IF(!fpWasTagged.value,
+                fp == reinterpret_cast<Frame*>(sp)->callerFP);
+  MOZ_ASSERT_IF(fpWasTagged.value, (Frame*)(uintptr_t(fp) | 0x1) ==
+                                       reinterpret_cast<Frame*>(sp)->callerFP);
 }
 
-bool
-js::wasm::StartUnwinding(const RegisterState& registers, UnwindState* unwindState,
-                         bool* unwoundCaller)
-{
-    
-    uint8_t* const pc = (uint8_t*) registers.pc;
-    void** const sp = (void**) registers.sp;
+bool js::wasm::StartUnwinding(const RegisterState& registers,
+                              UnwindState* unwindState, bool* unwoundCaller) {
+  
+  uint8_t* const pc = (uint8_t*)registers.pc;
+  void** const sp = (void**)registers.sp;
 
-    
-    
-    
-    
-    
-    DebugOnly<bool> fpWasTagged = uintptr_t(registers.fp) & ExitOrJitEntryFPTag;
-    Frame* const fp = (Frame*) (intptr_t(registers.fp) & ~ExitOrJitEntryFPTag);
+  
+  
+  
+  
+  
+  DebugOnly<bool> fpWasTagged = uintptr_t(registers.fp) & ExitOrJitEntryFPTag;
+  Frame* const fp = (Frame*)(intptr_t(registers.fp) & ~ExitOrJitEntryFPTag);
 
-    
-    
-    
-    
-    const CodeRange* codeRange;
-    uint8_t* codeBase;
-    const Code* code = nullptr;
+  
+  
+  
+  
+  const CodeRange* codeRange;
+  uint8_t* codeBase;
+  const Code* code = nullptr;
 
-    const CodeSegment* codeSegment = LookupCodeSegment(pc, &codeRange);
-    if (codeSegment) {
-        code = &codeSegment->code();
-        codeBase = codeSegment->base();
-        MOZ_ASSERT(codeRange);
-    } else if (!LookupBuiltinThunk(pc, &codeRange, &codeBase)) {
-        return false;
-    }
+  const CodeSegment* codeSegment = LookupCodeSegment(pc, &codeRange);
+  if (codeSegment) {
+    code = &codeSegment->code();
+    codeBase = codeSegment->base();
+    MOZ_ASSERT(codeRange);
+  } else if (!LookupBuiltinThunk(pc, &codeRange, &codeBase)) {
+    return false;
+  }
 
-    
-    
-    
-    
-    
-    
-    uint32_t offsetInCode = pc - codeBase;
-    MOZ_ASSERT(offsetInCode >= codeRange->begin());
-    MOZ_ASSERT(offsetInCode < codeRange->end());
+  
+  
+  
+  
+  
+  
+  uint32_t offsetInCode = pc - codeBase;
+  MOZ_ASSERT(offsetInCode >= codeRange->begin());
+  MOZ_ASSERT(offsetInCode < codeRange->end());
 
-    
-    
-    
-    
-    
-    uint32_t offsetFromEntry;
-    if (codeRange->isFunction()) {
-        if (offsetInCode < codeRange->funcNormalEntry()) {
-            offsetFromEntry = 0;
-        } else {
-            offsetFromEntry = offsetInCode - codeRange->funcNormalEntry();
-        }
+  
+  
+  
+  
+  
+  uint32_t offsetFromEntry;
+  if (codeRange->isFunction()) {
+    if (offsetInCode < codeRange->funcNormalEntry()) {
+      offsetFromEntry = 0;
     } else {
-        offsetFromEntry = offsetInCode - codeRange->begin();
+      offsetFromEntry = offsetInCode - codeRange->funcNormalEntry();
     }
+  } else {
+    offsetFromEntry = offsetInCode - codeRange->begin();
+  }
 
-    
-    
-    *unwoundCaller = true;
+  
+  
+  *unwoundCaller = true;
 
-    Frame* fixedFP = nullptr;
-    void* fixedPC = nullptr;
-    switch (codeRange->kind()) {
-      case CodeRange::Function:
-      case CodeRange::FarJumpIsland:
-      case CodeRange::ImportJitExit:
-      case CodeRange::ImportInterpExit:
-      case CodeRange::BuiltinThunk:
-      case CodeRange::DebugTrap:
+  Frame* fixedFP = nullptr;
+  void* fixedPC = nullptr;
+  switch (codeRange->kind()) {
+    case CodeRange::Function:
+    case CodeRange::FarJumpIsland:
+    case CodeRange::ImportJitExit:
+    case CodeRange::ImportInterpExit:
+    case CodeRange::BuiltinThunk:
+    case CodeRange::DebugTrap:
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-        if (codeRange->isThunk()) {
-            
-            
-            fixedPC = pc;
-            fixedFP = fp;
-            *unwoundCaller = false;
-            AssertMatchesCallSite(fp->returnAddress, fp->callerFP);
-        } else if (offsetFromEntry < PushedFP) {
-            
-            
-            
-            
-            fixedPC = (uint8_t*) registers.lr;
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-        } else
-#elif defined(JS_CODEGEN_ARM64)
-        if (offsetFromEntry < PushedFP || codeRange->isThunk()) {
-            
-            
-            
-            
-            
-            
-            
-            fixedPC = (uint8_t*) registers.lr;
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-        } else
-#elif defined(JS_CODEGEN_ARM)
-        if (offsetFromEntry == BeforePushRetAddr || codeRange->isThunk()) {
-            
-            fixedPC = (uint8_t*) registers.lr;
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-        } else
-#endif
-        if (offsetFromEntry == PushedRetAddr || codeRange->isThunk()) {
-            
-            
-            fixedPC = sp[0];
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-        } else if (offsetFromEntry >= PushedTLS && offsetFromEntry < PushedFP) {
-            
-            
-            fixedPC = sp[1];
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-        } else if (offsetFromEntry == PushedFP) {
-            
-            AssertCallerFP(fpWasTagged, fp, sp);
-            fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-        } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
-                   offsetInCode <= codeRange->ret())
-        {
-            (void)PoppedTLSReg;
-            
-            
-            
-            AssertCallerFP(fpWasTagged, fp, sp);
-            fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-#elif defined(JS_CODEGEN_ARM64)
-        
-        
-        } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
-                   offsetInCode <= codeRange->ret())
-        {
-            fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-#else
-        } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
-                   offsetInCode < codeRange->ret() - PoppedTLSReg)
-        {
-            
-            fixedPC = sp[1];
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-        } else if (offsetInCode == codeRange->ret()) {
-            
-            
-            fixedPC = sp[0];
-            fixedFP = fp;
-            AssertMatchesCallSite(fixedPC, fixedFP);
-#endif
-        } else {
-            if (codeRange->kind() == CodeRange::ImportJitExit) {
-                
-                
-                
-                if (offsetInCode >= codeRange->jitExitUntrustedFPStart() &&
-                    offsetInCode < codeRange->jitExitUntrustedFPEnd())
-                {
-                    return false;
-                }
-            }
-            
-            fixedPC = pc;
-            fixedFP = fp;
-            *unwoundCaller = false;
-            AssertMatchesCallSite(fp->returnAddress, fp->callerFP);
-            break;
-        }
-        break;
-      case CodeRange::TrapExit:
+      if (codeRange->isThunk()) {
         
         
         fixedPC = pc;
         fixedFP = fp;
         *unwoundCaller = false;
         AssertMatchesCallSite(fp->returnAddress, fp->callerFP);
+      } else if (offsetFromEntry < PushedFP) {
+        
+        
+        
+        
+        fixedPC = (uint8_t*)registers.lr;
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+      } else
+#elif defined(JS_CODEGEN_ARM64)
+      if (offsetFromEntry < PushedFP || codeRange->isThunk()) {
+        
+        
+        
+        
+        
+        
+        
+        fixedPC = (uint8_t*)registers.lr;
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+      } else
+#elif defined(JS_CODEGEN_ARM)
+      if (offsetFromEntry == BeforePushRetAddr || codeRange->isThunk()) {
+        
+        fixedPC = (uint8_t*)registers.lr;
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+      } else
+#endif
+          if (offsetFromEntry == PushedRetAddr || codeRange->isThunk()) {
+        
+        
+        fixedPC = sp[0];
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+      } else if (offsetFromEntry >= PushedTLS && offsetFromEntry < PushedFP) {
+        
+        
+        fixedPC = sp[1];
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+      } else if (offsetFromEntry == PushedFP) {
+        
+        AssertCallerFP(fpWasTagged, fp, sp);
+        fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+#if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
+      } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
+                 offsetInCode <= codeRange->ret()) {
+        (void)PoppedTLSReg;
+        
+        
+        
+        AssertCallerFP(fpWasTagged, fp, sp);
+        fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+#elif defined(JS_CODEGEN_ARM64)
+        
+        
+      } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
+                 offsetInCode <= codeRange->ret()) {
+        fixedPC = reinterpret_cast<Frame*>(sp)->returnAddress;
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+#else
+      } else if (offsetInCode >= codeRange->ret() - PoppedFP &&
+                 offsetInCode < codeRange->ret() - PoppedTLSReg) {
+        
+        fixedPC = sp[1];
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+      } else if (offsetInCode == codeRange->ret()) {
+        
+        
+        fixedPC = sp[0];
+        fixedFP = fp;
+        AssertMatchesCallSite(fixedPC, fixedFP);
+#endif
+      } else {
+        if (codeRange->kind() == CodeRange::ImportJitExit) {
+          
+          
+          
+          if (offsetInCode >= codeRange->jitExitUntrustedFPStart() &&
+              offsetInCode < codeRange->jitExitUntrustedFPEnd()) {
+            return false;
+          }
+        }
+        
+        fixedPC = pc;
+        fixedFP = fp;
+        *unwoundCaller = false;
+        AssertMatchesCallSite(fp->returnAddress, fp->callerFP);
         break;
-      case CodeRange::InterpEntry:
-        
-        
-        
-        break;
-      case CodeRange::JitEntry:
-        
-        
-        
+      }
+      break;
+    case CodeRange::TrapExit:
+      
+      
+      fixedPC = pc;
+      fixedFP = fp;
+      *unwoundCaller = false;
+      AssertMatchesCallSite(fp->returnAddress, fp->callerFP);
+      break;
+    case CodeRange::InterpEntry:
+      
+      
+      
+      break;
+    case CodeRange::JitEntry:
+      
+      
+      
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
     defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-        if (offsetFromEntry < PushedRetAddr) {
-            
-            
-            
-            
-            return false;
-        }
-#endif
-        fixedFP = offsetFromEntry < SetJitEntryFP ? (Frame*) sp : fp;
-        fixedPC = nullptr;
-
+      if (offsetFromEntry < PushedRetAddr) {
         
-        
-        if (intptr_t(fixedFP) == (FailFP & ~ExitOrJitEntryFPTag)) {
-            return false;
-        }
-        break;
-      case CodeRange::Throw:
         
         
         
         return false;
-    }
+      }
+#endif
+      fixedFP = offsetFromEntry < SetJitEntryFP ? (Frame*)sp : fp;
+      fixedPC = nullptr;
 
-    unwindState->code = code;
-    unwindState->codeRange = codeRange;
-    unwindState->fp = fixedFP;
-    unwindState->pc = fixedPC;
-    return true;
+      
+      
+      if (intptr_t(fixedFP) == (FailFP & ~ExitOrJitEntryFPTag)) {
+        return false;
+      }
+      break;
+    case CodeRange::Throw:
+      
+      
+      
+      return false;
+  }
+
+  unwindState->code = code;
+  unwindState->codeRange = codeRange;
+  unwindState->fp = fixedFP;
+  unwindState->pc = fixedPC;
+  return true;
 }
 
 ProfilingFrameIterator::ProfilingFrameIterator(const JitActivation& activation,
                                                const RegisterState& state)
-  : code_(nullptr),
-    codeRange_(nullptr),
-    callerFP_(nullptr),
-    callerPC_(nullptr),
-    stackAddress_(nullptr),
-    unwoundIonCallerFP_(nullptr),
-    exitReason_(ExitReason::Fixed::None)
-{
+    : code_(nullptr),
+      codeRange_(nullptr),
+      callerFP_(nullptr),
+      callerPC_(nullptr),
+      stackAddress_(nullptr),
+      unwoundIonCallerFP_(nullptr),
+      exitReason_(ExitReason::Fixed::None) {
+  
+  
+  
+  if (activation.hasWasmExitFP()) {
+    exitReason_ = activation.wasmExitReason();
+    initFromExitFP(activation.wasmExitFP());
+    return;
+  }
+
+  bool unwoundCaller;
+  UnwindState unwindState;
+  if (!StartUnwinding(state, &unwindState, &unwoundCaller)) {
+    MOZ_ASSERT(done());
+    return;
+  }
+
+  if (unwoundCaller) {
+    callerFP_ = unwindState.fp;
+    callerPC_ = unwindState.pc;
     
     
     
-    if (activation.hasWasmExitFP()) {
-        exitReason_ = activation.wasmExitReason();
-        initFromExitFP(activation.wasmExitFP());
-        return;
+    
+    
+    if (unwindState.codeRange && unwindState.codeRange->isFunction() &&
+        (uintptr_t(state.fp) & ExitOrJitEntryFPTag)) {
+      unwoundIonCallerFP_ = (uint8_t*)callerFP_;
     }
-
-    bool unwoundCaller;
-    UnwindState unwindState;
-    if (!StartUnwinding(state, &unwindState, &unwoundCaller)) {
-        MOZ_ASSERT(done());
-        return;
+  } else {
+    callerFP_ = unwindState.fp->callerFP;
+    callerPC_ = unwindState.fp->returnAddress;
+    
+    
+    if ((uintptr_t(callerFP_) & ExitOrJitEntryFPTag)) {
+      MOZ_ASSERT(unwindState.codeRange->isFunction());
+      unwoundIonCallerFP_ =
+          (uint8_t*)(uintptr_t(callerFP_) & ~ExitOrJitEntryFPTag);
     }
+  }
 
-    if (unwoundCaller) {
-        callerFP_ = unwindState.fp;
-        callerPC_ = unwindState.pc;
-        
-        
-        
-        
-        
-        if (unwindState.codeRange &&
-            unwindState.codeRange->isFunction() &&
-            (uintptr_t(state.fp) & ExitOrJitEntryFPTag))
-        {
-            unwoundIonCallerFP_ = (uint8_t*) callerFP_;
-        }
-    } else {
-        callerFP_ = unwindState.fp->callerFP;
-        callerPC_ = unwindState.fp->returnAddress;
-        
-        
-        if ((uintptr_t(callerFP_) & ExitOrJitEntryFPTag)) {
-            MOZ_ASSERT(unwindState.codeRange->isFunction());
-            unwoundIonCallerFP_ = (uint8_t*)(uintptr_t(callerFP_) & ~ExitOrJitEntryFPTag);
-        }
-    }
+  if (unwindState.codeRange->isJitEntry()) {
+    MOZ_ASSERT(!unwoundIonCallerFP_);
+    unwoundIonCallerFP_ = (uint8_t*)callerFP_;
+  }
 
-    if (unwindState.codeRange->isJitEntry()) {
-        MOZ_ASSERT(!unwoundIonCallerFP_);
-        unwoundIonCallerFP_ = (uint8_t*) callerFP_;
-    }
+  if (unwindState.codeRange->isInterpEntry()) {
+    unwindState.codeRange = nullptr;
+    exitReason_ = ExitReason(ExitReason::Fixed::FakeInterpEntry);
+  }
 
-    if (unwindState.codeRange->isInterpEntry()) {
-        unwindState.codeRange = nullptr;
-        exitReason_ = ExitReason(ExitReason::Fixed::FakeInterpEntry);
-    }
-
-    code_ = unwindState.code;
-    codeRange_ = unwindState.codeRange;
-    stackAddress_ = state.sp;
-    MOZ_ASSERT(!done());
+  code_ = unwindState.code;
+  codeRange_ = unwindState.codeRange;
+  stackAddress_ = state.sp;
+  MOZ_ASSERT(!done());
 }
 
-void
-ProfilingFrameIterator::operator++()
-{
-    if (!exitReason_.isNone()) {
-        DebugOnly<bool> wasInterpEntry = exitReason_.isInterpEntry();
-        exitReason_ = ExitReason::None();
-        MOZ_ASSERT((!codeRange_) == wasInterpEntry);
-        MOZ_ASSERT(done() == wasInterpEntry);
-        return;
-    }
+void ProfilingFrameIterator::operator++() {
+  if (!exitReason_.isNone()) {
+    DebugOnly<bool> wasInterpEntry = exitReason_.isInterpEntry();
+    exitReason_ = ExitReason::None();
+    MOZ_ASSERT((!codeRange_) == wasInterpEntry);
+    MOZ_ASSERT(done() == wasInterpEntry);
+    return;
+  }
 
-    if (unwoundIonCallerFP_) {
-        MOZ_ASSERT(codeRange_->isFunction() || codeRange_->isJitEntry());
-        callerPC_ = nullptr;
-        callerFP_ = nullptr;
-        codeRange_ = nullptr;
-        MOZ_ASSERT(done());
-        return;
-    }
+  if (unwoundIonCallerFP_) {
+    MOZ_ASSERT(codeRange_->isFunction() || codeRange_->isJitEntry());
+    callerPC_ = nullptr;
+    callerFP_ = nullptr;
+    codeRange_ = nullptr;
+    MOZ_ASSERT(done());
+    return;
+  }
 
-    if (!callerPC_) {
-        MOZ_ASSERT(!callerFP_);
-        codeRange_ = nullptr;
-        MOZ_ASSERT(done());
-        return;
-    }
+  if (!callerPC_) {
+    MOZ_ASSERT(!callerFP_);
+    codeRange_ = nullptr;
+    MOZ_ASSERT(done());
+    return;
+  }
 
-    if (!callerFP_) {
-        MOZ_ASSERT(LookupCode(callerPC_, &codeRange_) == code_);
-        MOZ_ASSERT(codeRange_->kind() == CodeRange::InterpEntry);
-        exitReason_ = ExitReason(ExitReason::Fixed::FakeInterpEntry);
-        codeRange_ = nullptr;
-        callerPC_ = nullptr;
-        MOZ_ASSERT(!done());
-        return;
-    }
-
-    code_ = LookupCode(callerPC_, &codeRange_);
-
-    if (!code_ && uintptr_t(callerFP_) & ExitOrJitEntryFPTag) {
-        
-        
-        MOZ_ASSERT(!codeRange_);
-        AssertDirectJitCall(callerFP_);
-        unwoundIonCallerFP_ = (uint8_t*) (uintptr_t(callerFP_) & ~uintptr_t(ExitOrJitEntryFPTag));
-        MOZ_ASSERT(done());
-        return;
-    }
-
-    MOZ_ASSERT(codeRange_);
-
-    if (codeRange_->isJitEntry()) {
-        unwoundIonCallerFP_ = (uint8_t*) callerFP_;
-        MOZ_ASSERT(!done());
-        return;
-    }
-
-    MOZ_ASSERT(code_ == &callerFP_->tls->instance->code());
-
-    switch (codeRange_->kind()) {
-      case CodeRange::Function:
-      case CodeRange::ImportJitExit:
-      case CodeRange::ImportInterpExit:
-      case CodeRange::BuiltinThunk:
-      case CodeRange::TrapExit:
-      case CodeRange::DebugTrap:
-      case CodeRange::FarJumpIsland:
-        stackAddress_ = callerFP_;
-        callerPC_ = callerFP_->returnAddress;
-        AssertMatchesCallSite(callerPC_, callerFP_->callerFP);
-        callerFP_ = callerFP_->callerFP;
-        break;
-      case CodeRange::InterpEntry:
-        MOZ_CRASH("should have had null caller fp");
-      case CodeRange::JitEntry:
-        MOZ_CRASH("should have been guarded above");
-      case CodeRange::Throw:
-        MOZ_CRASH("code range doesn't have frame");
-    }
-
+  if (!callerFP_) {
+    MOZ_ASSERT(LookupCode(callerPC_, &codeRange_) == code_);
+    MOZ_ASSERT(codeRange_->kind() == CodeRange::InterpEntry);
+    exitReason_ = ExitReason(ExitReason::Fixed::FakeInterpEntry);
+    codeRange_ = nullptr;
+    callerPC_ = nullptr;
     MOZ_ASSERT(!done());
+    return;
+  }
+
+  code_ = LookupCode(callerPC_, &codeRange_);
+
+  if (!code_ && uintptr_t(callerFP_) & ExitOrJitEntryFPTag) {
+    
+    
+    MOZ_ASSERT(!codeRange_);
+    AssertDirectJitCall(callerFP_);
+    unwoundIonCallerFP_ =
+        (uint8_t*)(uintptr_t(callerFP_) & ~uintptr_t(ExitOrJitEntryFPTag));
+    MOZ_ASSERT(done());
+    return;
+  }
+
+  MOZ_ASSERT(codeRange_);
+
+  if (codeRange_->isJitEntry()) {
+    unwoundIonCallerFP_ = (uint8_t*)callerFP_;
+    MOZ_ASSERT(!done());
+    return;
+  }
+
+  MOZ_ASSERT(code_ == &callerFP_->tls->instance->code());
+
+  switch (codeRange_->kind()) {
+    case CodeRange::Function:
+    case CodeRange::ImportJitExit:
+    case CodeRange::ImportInterpExit:
+    case CodeRange::BuiltinThunk:
+    case CodeRange::TrapExit:
+    case CodeRange::DebugTrap:
+    case CodeRange::FarJumpIsland:
+      stackAddress_ = callerFP_;
+      callerPC_ = callerFP_->returnAddress;
+      AssertMatchesCallSite(callerPC_, callerFP_->callerFP);
+      callerFP_ = callerFP_->callerFP;
+      break;
+    case CodeRange::InterpEntry:
+      MOZ_CRASH("should have had null caller fp");
+    case CodeRange::JitEntry:
+      MOZ_CRASH("should have been guarded above");
+    case CodeRange::Throw:
+      MOZ_CRASH("code range doesn't have frame");
+  }
+
+  MOZ_ASSERT(!done());
 }
 
-static const char*
-ThunkedNativeToDescription(SymbolicAddress func)
-{
-    MOZ_ASSERT(NeedsBuiltinThunk(func));
-    switch (func) {
-      case SymbolicAddress::HandleDebugTrap:
-      case SymbolicAddress::HandleThrow:
-      case SymbolicAddress::HandleTrap:
-      case SymbolicAddress::CallImport_Void:
-      case SymbolicAddress::CallImport_I32:
-      case SymbolicAddress::CallImport_I64:
-      case SymbolicAddress::CallImport_F64:
-      case SymbolicAddress::CallImport_Ref:
-      case SymbolicAddress::CoerceInPlace_ToInt32:
-      case SymbolicAddress::CoerceInPlace_ToNumber:
-        MOZ_ASSERT(!NeedsBuiltinThunk(func), "not in sync with NeedsBuiltinThunk");
-        break;
-      case SymbolicAddress::ToInt32:
-        return "call to asm.js native ToInt32 coercion (in wasm)";
-      case SymbolicAddress::DivI64:
-        return "call to native i64.div_s (in wasm)";
-      case SymbolicAddress::UDivI64:
-        return "call to native i64.div_u (in wasm)";
-      case SymbolicAddress::ModI64:
-        return "call to native i64.rem_s (in wasm)";
-      case SymbolicAddress::UModI64:
-        return "call to native i64.rem_u (in wasm)";
-      case SymbolicAddress::TruncateDoubleToUint64:
-        return "call to native i64.trunc_u/f64 (in wasm)";
-      case SymbolicAddress::TruncateDoubleToInt64:
-        return "call to native i64.trunc_s/f64 (in wasm)";
-      case SymbolicAddress::SaturatingTruncateDoubleToUint64:
-        return "call to native i64.trunc_u:sat/f64 (in wasm)";
-      case SymbolicAddress::SaturatingTruncateDoubleToInt64:
-        return "call to native i64.trunc_s:sat/f64 (in wasm)";
-      case SymbolicAddress::Uint64ToDouble:
-        return "call to native f64.convert_u/i64 (in wasm)";
-      case SymbolicAddress::Uint64ToFloat32:
-        return "call to native f32.convert_u/i64 (in wasm)";
-      case SymbolicAddress::Int64ToDouble:
-        return "call to native f64.convert_s/i64 (in wasm)";
-      case SymbolicAddress::Int64ToFloat32:
-        return "call to native f32.convert_s/i64 (in wasm)";
+static const char* ThunkedNativeToDescription(SymbolicAddress func) {
+  MOZ_ASSERT(NeedsBuiltinThunk(func));
+  switch (func) {
+    case SymbolicAddress::HandleDebugTrap:
+    case SymbolicAddress::HandleThrow:
+    case SymbolicAddress::HandleTrap:
+    case SymbolicAddress::CallImport_Void:
+    case SymbolicAddress::CallImport_I32:
+    case SymbolicAddress::CallImport_I64:
+    case SymbolicAddress::CallImport_F64:
+    case SymbolicAddress::CallImport_Ref:
+    case SymbolicAddress::CoerceInPlace_ToInt32:
+    case SymbolicAddress::CoerceInPlace_ToNumber:
+      MOZ_ASSERT(!NeedsBuiltinThunk(func),
+                 "not in sync with NeedsBuiltinThunk");
+      break;
+    case SymbolicAddress::ToInt32:
+      return "call to asm.js native ToInt32 coercion (in wasm)";
+    case SymbolicAddress::DivI64:
+      return "call to native i64.div_s (in wasm)";
+    case SymbolicAddress::UDivI64:
+      return "call to native i64.div_u (in wasm)";
+    case SymbolicAddress::ModI64:
+      return "call to native i64.rem_s (in wasm)";
+    case SymbolicAddress::UModI64:
+      return "call to native i64.rem_u (in wasm)";
+    case SymbolicAddress::TruncateDoubleToUint64:
+      return "call to native i64.trunc_u/f64 (in wasm)";
+    case SymbolicAddress::TruncateDoubleToInt64:
+      return "call to native i64.trunc_s/f64 (in wasm)";
+    case SymbolicAddress::SaturatingTruncateDoubleToUint64:
+      return "call to native i64.trunc_u:sat/f64 (in wasm)";
+    case SymbolicAddress::SaturatingTruncateDoubleToInt64:
+      return "call to native i64.trunc_s:sat/f64 (in wasm)";
+    case SymbolicAddress::Uint64ToDouble:
+      return "call to native f64.convert_u/i64 (in wasm)";
+    case SymbolicAddress::Uint64ToFloat32:
+      return "call to native f32.convert_u/i64 (in wasm)";
+    case SymbolicAddress::Int64ToDouble:
+      return "call to native f64.convert_s/i64 (in wasm)";
+    case SymbolicAddress::Int64ToFloat32:
+      return "call to native f32.convert_s/i64 (in wasm)";
 #if defined(JS_CODEGEN_ARM)
-      case SymbolicAddress::aeabi_idivmod:
-        return "call to native i32.div_s (in wasm)";
-      case SymbolicAddress::aeabi_uidivmod:
-        return "call to native i32.div_u (in wasm)";
+    case SymbolicAddress::aeabi_idivmod:
+      return "call to native i32.div_s (in wasm)";
+    case SymbolicAddress::aeabi_uidivmod:
+      return "call to native i32.div_u (in wasm)";
 #endif
-      case SymbolicAddress::ModD:
-        return "call to asm.js native f64 % (mod)";
-      case SymbolicAddress::SinD:
-        return "call to asm.js native f64 Math.sin";
-      case SymbolicAddress::CosD:
-        return "call to asm.js native f64 Math.cos";
-      case SymbolicAddress::TanD:
-        return "call to asm.js native f64 Math.tan";
-      case SymbolicAddress::ASinD:
-        return "call to asm.js native f64 Math.asin";
-      case SymbolicAddress::ACosD:
-        return "call to asm.js native f64 Math.acos";
-      case SymbolicAddress::ATanD:
-        return "call to asm.js native f64 Math.atan";
-      case SymbolicAddress::CeilD:
-        return "call to native f64.ceil (in wasm)";
-      case SymbolicAddress::CeilF:
-        return "call to native f32.ceil (in wasm)";
-      case SymbolicAddress::FloorD:
-        return "call to native f64.floor (in wasm)";
-      case SymbolicAddress::FloorF:
-        return "call to native f32.floor (in wasm)";
-      case SymbolicAddress::TruncD:
-        return "call to native f64.trunc (in wasm)";
-      case SymbolicAddress::TruncF:
-        return "call to native f32.trunc (in wasm)";
-      case SymbolicAddress::NearbyIntD:
-        return "call to native f64.nearest (in wasm)";
-      case SymbolicAddress::NearbyIntF:
-        return "call to native f32.nearest (in wasm)";
-      case SymbolicAddress::ExpD:
-        return "call to asm.js native f64 Math.exp";
-      case SymbolicAddress::LogD:
-        return "call to asm.js native f64 Math.log";
-      case SymbolicAddress::PowD:
-        return "call to asm.js native f64 Math.pow";
-      case SymbolicAddress::ATan2D:
-        return "call to asm.js native f64 Math.atan2";
-      case SymbolicAddress::GrowMemory:
-        return "call to native grow_memory (in wasm)";
-      case SymbolicAddress::CurrentMemory:
-        return "call to native current_memory (in wasm)";
-      case SymbolicAddress::WaitI32:
-        return "call to native i32.wait (in wasm)";
-      case SymbolicAddress::WaitI64:
-        return "call to native i64.wait (in wasm)";
-      case SymbolicAddress::Wake:
-        return "call to native wake (in wasm)";
-      case SymbolicAddress::CoerceInPlace_JitEntry:
-        return "out-of-line coercion for jit entry arguments (in wasm)";
-      case SymbolicAddress::ReportInt64JSCall:
-        return "jit call to int64 wasm function";
-      case SymbolicAddress::MemCopy:
-        return "call to native memory.copy function";
-      case SymbolicAddress::MemDrop:
-        return "call to native memory.drop function";
-      case SymbolicAddress::MemFill:
-        return "call to native memory.fill function";
-      case SymbolicAddress::MemInit:
-        return "call to native memory.init function";
-      case SymbolicAddress::TableCopy:
-        return "call to native table.copy function";
-      case SymbolicAddress::TableDrop:
-        return "call to native table.drop function";
-      case SymbolicAddress::TableGet:
-        return "call to native table.get function";
-      case SymbolicAddress::TableGrow:
-        return "call to native table.grow function";
-      case SymbolicAddress::TableInit:
-        return "call to native table.init function";
-      case SymbolicAddress::TableSet:
-        return "call to native table.set function";
-      case SymbolicAddress::TableSize:
-        return "call to native table.size function";
-      case SymbolicAddress::PostBarrier:
-        return "call to native GC postbarrier (in wasm)";
-      case SymbolicAddress::StructNew:
-        return "call to native struct.new (in wasm)";
-      case SymbolicAddress::StructNarrow:
-        return "call to native struct.narrow (in wasm)";
+    case SymbolicAddress::ModD:
+      return "call to asm.js native f64 % (mod)";
+    case SymbolicAddress::SinD:
+      return "call to asm.js native f64 Math.sin";
+    case SymbolicAddress::CosD:
+      return "call to asm.js native f64 Math.cos";
+    case SymbolicAddress::TanD:
+      return "call to asm.js native f64 Math.tan";
+    case SymbolicAddress::ASinD:
+      return "call to asm.js native f64 Math.asin";
+    case SymbolicAddress::ACosD:
+      return "call to asm.js native f64 Math.acos";
+    case SymbolicAddress::ATanD:
+      return "call to asm.js native f64 Math.atan";
+    case SymbolicAddress::CeilD:
+      return "call to native f64.ceil (in wasm)";
+    case SymbolicAddress::CeilF:
+      return "call to native f32.ceil (in wasm)";
+    case SymbolicAddress::FloorD:
+      return "call to native f64.floor (in wasm)";
+    case SymbolicAddress::FloorF:
+      return "call to native f32.floor (in wasm)";
+    case SymbolicAddress::TruncD:
+      return "call to native f64.trunc (in wasm)";
+    case SymbolicAddress::TruncF:
+      return "call to native f32.trunc (in wasm)";
+    case SymbolicAddress::NearbyIntD:
+      return "call to native f64.nearest (in wasm)";
+    case SymbolicAddress::NearbyIntF:
+      return "call to native f32.nearest (in wasm)";
+    case SymbolicAddress::ExpD:
+      return "call to asm.js native f64 Math.exp";
+    case SymbolicAddress::LogD:
+      return "call to asm.js native f64 Math.log";
+    case SymbolicAddress::PowD:
+      return "call to asm.js native f64 Math.pow";
+    case SymbolicAddress::ATan2D:
+      return "call to asm.js native f64 Math.atan2";
+    case SymbolicAddress::GrowMemory:
+      return "call to native grow_memory (in wasm)";
+    case SymbolicAddress::CurrentMemory:
+      return "call to native current_memory (in wasm)";
+    case SymbolicAddress::WaitI32:
+      return "call to native i32.wait (in wasm)";
+    case SymbolicAddress::WaitI64:
+      return "call to native i64.wait (in wasm)";
+    case SymbolicAddress::Wake:
+      return "call to native wake (in wasm)";
+    case SymbolicAddress::CoerceInPlace_JitEntry:
+      return "out-of-line coercion for jit entry arguments (in wasm)";
+    case SymbolicAddress::ReportInt64JSCall:
+      return "jit call to int64 wasm function";
+    case SymbolicAddress::MemCopy:
+      return "call to native memory.copy function";
+    case SymbolicAddress::MemDrop:
+      return "call to native memory.drop function";
+    case SymbolicAddress::MemFill:
+      return "call to native memory.fill function";
+    case SymbolicAddress::MemInit:
+      return "call to native memory.init function";
+    case SymbolicAddress::TableCopy:
+      return "call to native table.copy function";
+    case SymbolicAddress::TableDrop:
+      return "call to native table.drop function";
+    case SymbolicAddress::TableGet:
+      return "call to native table.get function";
+    case SymbolicAddress::TableGrow:
+      return "call to native table.grow function";
+    case SymbolicAddress::TableInit:
+      return "call to native table.init function";
+    case SymbolicAddress::TableSet:
+      return "call to native table.set function";
+    case SymbolicAddress::TableSize:
+      return "call to native table.size function";
+    case SymbolicAddress::PostBarrier:
+      return "call to native GC postbarrier (in wasm)";
+    case SymbolicAddress::StructNew:
+      return "call to native struct.new (in wasm)";
+    case SymbolicAddress::StructNarrow:
+      return "call to native struct.narrow (in wasm)";
 #if defined(JS_CODEGEN_MIPS32)
-      case SymbolicAddress::js_jit_gAtomic64Lock:
-        MOZ_CRASH();
+    case SymbolicAddress::js_jit_gAtomic64Lock:
+      MOZ_CRASH();
 #endif
-      case SymbolicAddress::Limit:
-        break;
-    }
-    return "?";
+    case SymbolicAddress::Limit:
+      break;
+  }
+  return "?";
 }
 
-const char*
-ProfilingFrameIterator::label() const
-{
-    MOZ_ASSERT(!done());
+const char* ProfilingFrameIterator::label() const {
+  MOZ_ASSERT(!done());
 
-    
-    
-    
-    static const char importJitDescription[] = "fast exit trampoline (in wasm)";
-    static const char importInterpDescription[] = "slow exit trampoline (in wasm)";
-    static const char builtinNativeDescription[] = "fast exit trampoline to native (in wasm)";
-    static const char trapDescription[] = "trap handling (in wasm)";
-    static const char debugTrapDescription[] = "debug trap handling (in wasm)";
+  
+  
+  
+  static const char importJitDescription[] = "fast exit trampoline (in wasm)";
+  static const char importInterpDescription[] =
+      "slow exit trampoline (in wasm)";
+  static const char builtinNativeDescription[] =
+      "fast exit trampoline to native (in wasm)";
+  static const char trapDescription[] = "trap handling (in wasm)";
+  static const char debugTrapDescription[] = "debug trap handling (in wasm)";
 
-    if (!exitReason_.isFixed()) {
-        return ThunkedNativeToDescription(exitReason_.symbolic());
-    }
+  if (!exitReason_.isFixed()) {
+    return ThunkedNativeToDescription(exitReason_.symbolic());
+  }
 
-    switch (exitReason_.fixed()) {
-      case ExitReason::Fixed::None:
-        break;
-      case ExitReason::Fixed::ImportJit:
-        return importJitDescription;
-      case ExitReason::Fixed::ImportInterp:
-        return importInterpDescription;
-      case ExitReason::Fixed::BuiltinNative:
-        return builtinNativeDescription;
-      case ExitReason::Fixed::Trap:
-        return trapDescription;
-      case ExitReason::Fixed::DebugTrap:
-        return debugTrapDescription;
-      case ExitReason::Fixed::FakeInterpEntry:
-        return "slow entry trampoline (in wasm)";
-    }
+  switch (exitReason_.fixed()) {
+    case ExitReason::Fixed::None:
+      break;
+    case ExitReason::Fixed::ImportJit:
+      return importJitDescription;
+    case ExitReason::Fixed::ImportInterp:
+      return importInterpDescription;
+    case ExitReason::Fixed::BuiltinNative:
+      return builtinNativeDescription;
+    case ExitReason::Fixed::Trap:
+      return trapDescription;
+    case ExitReason::Fixed::DebugTrap:
+      return debugTrapDescription;
+    case ExitReason::Fixed::FakeInterpEntry:
+      return "slow entry trampoline (in wasm)";
+  }
 
-    switch (codeRange_->kind()) {
-      case CodeRange::Function:          return code_->profilingLabel(codeRange_->funcIndex());
-      case CodeRange::InterpEntry:       MOZ_CRASH("should be an ExitReason");
-      case CodeRange::JitEntry:          return "fast entry trampoline (in wasm)";
-      case CodeRange::ImportJitExit:     return importJitDescription;
-      case CodeRange::BuiltinThunk:      return builtinNativeDescription;
-      case CodeRange::ImportInterpExit:  return importInterpDescription;
-      case CodeRange::TrapExit:          return trapDescription;
-      case CodeRange::DebugTrap:         return debugTrapDescription;
-      case CodeRange::FarJumpIsland:     return "interstitial (in wasm)";
-      case CodeRange::Throw:             MOZ_CRASH("does not have a frame");
-    }
+  switch (codeRange_->kind()) {
+    case CodeRange::Function:
+      return code_->profilingLabel(codeRange_->funcIndex());
+    case CodeRange::InterpEntry:
+      MOZ_CRASH("should be an ExitReason");
+    case CodeRange::JitEntry:
+      return "fast entry trampoline (in wasm)";
+    case CodeRange::ImportJitExit:
+      return importJitDescription;
+    case CodeRange::BuiltinThunk:
+      return builtinNativeDescription;
+    case CodeRange::ImportInterpExit:
+      return importInterpDescription;
+    case CodeRange::TrapExit:
+      return trapDescription;
+    case CodeRange::DebugTrap:
+      return debugTrapDescription;
+    case CodeRange::FarJumpIsland:
+      return "interstitial (in wasm)";
+    case CodeRange::Throw:
+      MOZ_CRASH("does not have a frame");
+  }
 
-    MOZ_CRASH("bad code range kind");
+  MOZ_CRASH("bad code range kind");
 }

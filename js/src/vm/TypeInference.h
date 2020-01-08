@@ -20,11 +20,11 @@
 #include "gc/Barrier.h"
 #include "jit/IonTypes.h"
 #include "js/AllocPolicy.h"
-#include "js/HeapAPI.h" 
+#include "js/HeapAPI.h"  
 #include "js/UbiNode.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
-#include "threading/ProtectedData.h" 
+#include "threading/ProtectedData.h"  
 #include "vm/Shape.h"
 #include "vm/TypeSet.h"
 
@@ -41,7 +41,7 @@ class ICScript;
 struct IonScript;
 class TempAllocator;
 
-} 
+}  
 
 
 
@@ -49,175 +49,149 @@ class TempAllocator;
 
 
 
-class AutoClearTypeInferenceStateOnOOM
-{
-    Zone* zone;
+class AutoClearTypeInferenceStateOnOOM {
+  Zone* zone;
 
-    AutoClearTypeInferenceStateOnOOM(const AutoClearTypeInferenceStateOnOOM&) = delete;
-    void operator=(const AutoClearTypeInferenceStateOnOOM&) = delete;
+  AutoClearTypeInferenceStateOnOOM(const AutoClearTypeInferenceStateOnOOM&) =
+      delete;
+  void operator=(const AutoClearTypeInferenceStateOnOOM&) = delete;
 
-  public:
-    explicit AutoClearTypeInferenceStateOnOOM(Zone* zone);
-    ~AutoClearTypeInferenceStateOnOOM();
+ public:
+  explicit AutoClearTypeInferenceStateOnOOM(Zone* zone);
+  ~AutoClearTypeInferenceStateOnOOM();
 };
 
-class MOZ_RAII AutoSweepBase
-{
-    
-    
-    JS::AutoCheckCannotGC nogc;
+class MOZ_RAII AutoSweepBase {
+  
+  
+  JS::AutoCheckCannotGC nogc;
 };
 
 
 
-class MOZ_RAII AutoSweepObjectGroup : public AutoSweepBase
-{
+class MOZ_RAII AutoSweepObjectGroup : public AutoSweepBase {
 #ifdef DEBUG
-    ObjectGroup* group_;
+  ObjectGroup* group_;
 #endif
 
-  public:
-    inline explicit AutoSweepObjectGroup(ObjectGroup* group);
+ public:
+  inline explicit AutoSweepObjectGroup(ObjectGroup* group);
 #ifdef DEBUG
-    inline ~AutoSweepObjectGroup();
+  inline ~AutoSweepObjectGroup();
 
-    ObjectGroup* group() const {
-        return group_;
-    }
+  ObjectGroup* group() const { return group_; }
 #endif
 };
 
 
 
-class MOZ_RAII AutoSweepTypeScript : public AutoSweepBase
-{
+class MOZ_RAII AutoSweepTypeScript : public AutoSweepBase {
 #ifdef DEBUG
-    JSScript* script_;
+  JSScript* script_;
 #endif
 
-  public:
-    inline explicit AutoSweepTypeScript(JSScript* script);
+ public:
+  inline explicit AutoSweepTypeScript(JSScript* script);
 #ifdef DEBUG
-    inline ~AutoSweepTypeScript();
+  inline ~AutoSweepTypeScript();
 
-    JSScript* script() const {
-        return script_;
-    }
+  JSScript* script() const { return script_; }
 #endif
 };
 
-CompilerConstraintList*
-NewCompilerConstraintList(jit::TempAllocator& alloc);
+CompilerConstraintList* NewCompilerConstraintList(jit::TempAllocator& alloc);
 
-bool
-AddClearDefiniteGetterSetterForPrototypeChain(JSContext* cx, ObjectGroup* group, HandleId id);
+bool AddClearDefiniteGetterSetterForPrototypeChain(JSContext* cx,
+                                                   ObjectGroup* group,
+                                                   HandleId id);
 
-bool
-AddClearDefiniteFunctionUsesInScript(JSContext* cx, ObjectGroup* group,
-                                     JSScript* script, JSScript* calleeScript);
-
-
+bool AddClearDefiniteFunctionUsesInScript(JSContext* cx, ObjectGroup* group,
+                                          JSScript* script,
+                                          JSScript* calleeScript);
 
 
 
 
-class PreliminaryObjectArray
-{
-  public:
-    static const uint32_t COUNT = 20;
 
-  private:
-    
-    
-    JSObject* objects[COUNT] = {}; 
 
-  public:
-    PreliminaryObjectArray() = default;
+class PreliminaryObjectArray {
+ public:
+  static const uint32_t COUNT = 20;
 
-    void registerNewObject(PlainObject* res);
-    void unregisterObject(PlainObject* obj);
+ private:
+  
+  
+  JSObject* objects[COUNT] = {};  
 
-    JSObject* get(size_t i) const {
-        MOZ_ASSERT(i < COUNT);
-        return objects[i];
-    }
+ public:
+  PreliminaryObjectArray() = default;
 
-    bool full() const;
-    bool empty() const;
-    void sweep();
+  void registerNewObject(PlainObject* res);
+  void unregisterObject(PlainObject* obj);
+
+  JSObject* get(size_t i) const {
+    MOZ_ASSERT(i < COUNT);
+    return objects[i];
+  }
+
+  bool full() const;
+  bool empty() const;
+  void sweep();
 };
 
-class PreliminaryObjectArrayWithTemplate : public PreliminaryObjectArray
-{
-    HeapPtr<Shape*> shape_;
+class PreliminaryObjectArrayWithTemplate : public PreliminaryObjectArray {
+  HeapPtr<Shape*> shape_;
 
-  public:
-    explicit PreliminaryObjectArrayWithTemplate(Shape* shape)
-      : shape_(shape)
-    {}
+ public:
+  explicit PreliminaryObjectArrayWithTemplate(Shape* shape) : shape_(shape) {}
 
-    void clear() {
-        shape_.init(nullptr);
-    }
+  void clear() { shape_.init(nullptr); }
 
-    Shape* shape() {
-        return shape_;
-    }
+  Shape* shape() { return shape_; }
 
-    void maybeAnalyze(JSContext* cx, ObjectGroup* group, bool force = false);
+  void maybeAnalyze(JSContext* cx, ObjectGroup* group, bool force = false);
 
-    void trace(JSTracer* trc);
+  void trace(JSTracer* trc);
 
-    static void writeBarrierPre(PreliminaryObjectArrayWithTemplate* preliminaryObjects);
+  static void writeBarrierPre(
+      PreliminaryObjectArrayWithTemplate* preliminaryObjects);
 };
 
 
 
 
-class TypeNewScriptInitializer
-{
-  public:
-    enum Kind
-    {
-        SETPROP,
-        SETPROP_FRAME,
-        DONE
-    } kind;
-    uint32_t offset;
 
-    TypeNewScriptInitializer(Kind kind, uint32_t offset)
-      : kind(kind), offset(offset)
-    {}
+class TypeNewScriptInitializer {
+ public:
+  enum Kind { SETPROP, SETPROP_FRAME, DONE } kind;
+  uint32_t offset;
+
+  TypeNewScriptInitializer(Kind kind, uint32_t offset)
+      : kind(kind), offset(offset) {}
 };
 
 
 inline bool isInlinableCall(jsbytecode* pc);
 
-bool
-ClassCanHaveExtraProperties(const Class* clasp);
+bool ClassCanHaveExtraProperties(const Class* clasp);
 
-class RecompileInfo
-{
-    JSScript* script_;
-    IonCompilationId id_;
+class RecompileInfo {
+  JSScript* script_;
+  IonCompilationId id_;
 
-  public:
-    RecompileInfo(JSScript* script, IonCompilationId id)
-      : script_(script),
-        id_(id)
-    {}
+ public:
+  RecompileInfo(JSScript* script, IonCompilationId id)
+      : script_(script), id_(id) {}
 
-    JSScript* script() const {
-        return script_;
-    }
+  JSScript* script() const { return script_; }
 
-    inline jit::IonScript* maybeIonScriptToInvalidate(const TypeZone& zone) const;
+  inline jit::IonScript* maybeIonScriptToInvalidate(const TypeZone& zone) const;
 
-    inline bool shouldSweep(const TypeZone& zone);
+  inline bool shouldSweep(const TypeZone& zone);
 
-    bool operator==(const RecompileInfo& other) const {
-        return script_== other.script_ && id_ == other.id_;
-    }
+  bool operator==(const RecompileInfo& other) const {
+    return script_ == other.script_ && id_ == other.id_;
+  }
 };
 
 
@@ -225,259 +199,262 @@ class RecompileInfo
 typedef Vector<RecompileInfo, 1, SystemAllocPolicy> RecompileInfoVector;
 
 
-class TypeScript
-{
-    friend class ::JSScript;
+class TypeScript {
+  friend class ::JSScript;
 
-    
-    
-    
-    
-    RecompileInfoVector inlinedCompilations_;
+  
+  
+  
+  
+  RecompileInfoVector inlinedCompilations_;
 
-    
-    
-    js::UniquePtr<js::jit::ICScript> icScript_;
+  
+  
+  js::UniquePtr<js::jit::ICScript> icScript_;
 
-    
-    StackTypeSet typeArray_[1];
+  
+  StackTypeSet typeArray_[1];
 
-  public:
-    RecompileInfoVector& inlinedCompilations() {
-        return inlinedCompilations_;
+ public:
+  RecompileInfoVector& inlinedCompilations() { return inlinedCompilations_; }
+  MOZ_MUST_USE bool addInlinedCompilation(RecompileInfo info) {
+    if (!inlinedCompilations_.empty() && inlinedCompilations_.back() == info) {
+      return true;
     }
-    MOZ_MUST_USE bool addInlinedCompilation(RecompileInfo info) {
-        if (!inlinedCompilations_.empty() && inlinedCompilations_.back() == info) {
-            return true;
-        }
-        return inlinedCompilations_.append(info);
-    }
+    return inlinedCompilations_.append(info);
+  }
 
-    jit::ICScript* icScript() const {
-        MOZ_ASSERT(icScript_);
-        return icScript_.get();
-    }
+  jit::ICScript* icScript() const {
+    MOZ_ASSERT(icScript_);
+    return icScript_.get();
+  }
 
+  
+  StackTypeSet* typeArray() const {
     
-    StackTypeSet* typeArray() const {
-        
-        JS_STATIC_ASSERT(sizeof(TypeScript) ==
-                         sizeof(typeArray_) + offsetof(TypeScript, typeArray_));
-        return const_cast<StackTypeSet*>(typeArray_);
-    }
+    JS_STATIC_ASSERT(sizeof(TypeScript) ==
+                     sizeof(typeArray_) + offsetof(TypeScript, typeArray_));
+    return const_cast<StackTypeSet*>(typeArray_);
+  }
 
-    static inline size_t SizeIncludingTypeArray(size_t arraySize) {
-        
-        JS_STATIC_ASSERT(sizeof(TypeScript) ==
-            sizeof(StackTypeSet) + offsetof(TypeScript, typeArray_));
-        return offsetof(TypeScript, typeArray_) + arraySize * sizeof(StackTypeSet);
-    }
-
-    static inline unsigned NumTypeSets(JSScript* script);
-
-    static inline StackTypeSet* ThisTypes(JSScript* script);
-    static inline StackTypeSet* ArgTypes(JSScript* script, unsigned i);
-
+  static inline size_t SizeIncludingTypeArray(size_t arraySize) {
     
-    static inline StackTypeSet* BytecodeTypes(JSScript* script, jsbytecode* pc);
+    JS_STATIC_ASSERT(sizeof(TypeScript) ==
+                     sizeof(StackTypeSet) + offsetof(TypeScript, typeArray_));
+    return offsetof(TypeScript, typeArray_) + arraySize * sizeof(StackTypeSet);
+  }
 
-    template <typename TYPESET>
-    static inline TYPESET* BytecodeTypes(JSScript* script, jsbytecode* pc, uint32_t* bytecodeMap,
-                                         uint32_t* hint, TYPESET* typeArray);
+  static inline unsigned NumTypeSets(JSScript* script);
 
+  static inline StackTypeSet* ThisTypes(JSScript* script);
+  static inline StackTypeSet* ArgTypes(JSScript* script, unsigned i);
+
+  
+  static inline StackTypeSet* BytecodeTypes(JSScript* script, jsbytecode* pc);
+
+  template <typename TYPESET>
+  static inline TYPESET* BytecodeTypes(JSScript* script, jsbytecode* pc,
+                                       uint32_t* bytecodeMap, uint32_t* hint,
+                                       TYPESET* typeArray);
+
+  
+
+
+
+
+
+
+  static inline void Monitor(JSContext* cx, JSScript* script, jsbytecode* pc,
+                             const js::Value& val);
+  static inline void Monitor(JSContext* cx, JSScript* script, jsbytecode* pc,
+                             TypeSet::Type type);
+  static inline void Monitor(JSContext* cx, const js::Value& rval);
+
+  static inline void Monitor(JSContext* cx, JSScript* script, jsbytecode* pc,
+                             StackTypeSet* types, const js::Value& val);
+
+  
+  static inline void MonitorAssign(JSContext* cx, HandleObject obj, jsid id);
+
+  
+  static inline void SetThis(JSContext* cx, JSScript* script,
+                             TypeSet::Type type);
+  static inline void SetThis(JSContext* cx, JSScript* script,
+                             const js::Value& value);
+  static inline void SetArgument(JSContext* cx, JSScript* script, unsigned arg,
+                                 TypeSet::Type type);
+  static inline void SetArgument(JSContext* cx, JSScript* script, unsigned arg,
+                                 const js::Value& value);
+
+  
+
+
+
+
+  static bool FreezeTypeSets(CompilerConstraintList* constraints,
+                             JSScript* script, TemporaryTypeSet** pThisTypes,
+                             TemporaryTypeSet** pArgTypes,
+                             TemporaryTypeSet** pBytecodeTypes);
+
+  static void Purge(JSContext* cx, HandleScript script);
+
+  void destroy(Zone* zone);
+
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     
-
-
-
-
-
-
-    static inline void Monitor(JSContext* cx, JSScript* script, jsbytecode* pc,
-                               const js::Value& val);
-    static inline void Monitor(JSContext* cx, JSScript* script, jsbytecode* pc,
-                               TypeSet::Type type);
-    static inline void Monitor(JSContext* cx, const js::Value& rval);
-
-    static inline void Monitor(JSContext* cx, JSScript* script, jsbytecode* pc,
-                               StackTypeSet* types, const js::Value& val);
-
-    
-    static inline void MonitorAssign(JSContext* cx, HandleObject obj, jsid id);
-
-    
-    static inline void SetThis(JSContext* cx, JSScript* script, TypeSet::Type type);
-    static inline void SetThis(JSContext* cx, JSScript* script, const js::Value& value);
-    static inline void SetArgument(JSContext* cx, JSScript* script, unsigned arg,
-                                   TypeSet::Type type);
-    static inline void SetArgument(JSContext* cx, JSScript* script, unsigned arg,
-                                   const js::Value& value);
-
-    
-
-
-
-
-    static bool FreezeTypeSets(CompilerConstraintList* constraints, JSScript* script,
-                               TemporaryTypeSet** pThisTypes,
-                               TemporaryTypeSet** pArgTypes,
-                               TemporaryTypeSet** pBytecodeTypes);
-
-    static void Purge(JSContext* cx, HandleScript script);
-
-    void destroy(Zone* zone);
-
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        
-        return mallocSizeOf(this);
-    }
+    return mallocSizeOf(this);
+  }
 
 #ifdef DEBUG
-    void printTypes(JSContext* cx, HandleScript script) const;
+  void printTypes(JSContext* cx, HandleScript script) const;
 #endif
 };
 
 
-class MOZ_RAII AutoKeepTypeScripts
-{
-    TypeZone& zone_;
-    bool prev_;
+class MOZ_RAII AutoKeepTypeScripts {
+  TypeZone& zone_;
+  bool prev_;
 
-    AutoKeepTypeScripts(const AutoKeepTypeScripts&) = delete;
-    void operator=(const AutoKeepTypeScripts&) = delete;
+  AutoKeepTypeScripts(const AutoKeepTypeScripts&) = delete;
+  void operator=(const AutoKeepTypeScripts&) = delete;
 
-  public:
-    explicit inline AutoKeepTypeScripts(JSContext* cx);
-    inline ~AutoKeepTypeScripts();
+ public:
+  explicit inline AutoKeepTypeScripts(JSContext* cx);
+  inline ~AutoKeepTypeScripts();
 };
 
-void
-FillBytecodeTypeMap(JSScript* script, uint32_t* bytecodeMap);
+void FillBytecodeTypeMap(JSScript* script, uint32_t* bytecodeMap);
 
 class RecompileInfo;
 
 
 
-bool
-FinishCompilation(JSContext* cx, HandleScript script, CompilerConstraintList* constraints,
-                  IonCompilationId compilationId, bool* isValidOut);
+bool FinishCompilation(JSContext* cx, HandleScript script,
+                       CompilerConstraintList* constraints,
+                       IonCompilationId compilationId, bool* isValidOut);
 
 
 
-void
-FinishDefinitePropertiesAnalysis(JSContext* cx, CompilerConstraintList* constraints);
+void FinishDefinitePropertiesAnalysis(JSContext* cx,
+                                      CompilerConstraintList* constraints);
 
 struct AutoEnterAnalysis;
 
-class TypeZone
-{
-    JS::Zone* const zone_;
+class TypeZone {
+  JS::Zone* const zone_;
 
-    
-    static const size_t TYPE_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 8 * 1024;
-    ZoneData<LifoAlloc> typeLifoAlloc_;
+  
+  static const size_t TYPE_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 8 * 1024;
+  ZoneData<LifoAlloc> typeLifoAlloc_;
 
-    
-    ZoneData<mozilla::Maybe<IonCompilationId>> currentCompilationId_;
+  
+  ZoneData<mozilla::Maybe<IonCompilationId>> currentCompilationId_;
 
-    TypeZone(const TypeZone&) = delete;
-    void operator=(const TypeZone&) = delete;
+  TypeZone(const TypeZone&) = delete;
+  void operator=(const TypeZone&) = delete;
 
-  public:
-    
-    ZoneOrGCTaskOrIonCompileData<uint32_t> generation;
+ public:
+  
+  ZoneOrGCTaskOrIonCompileData<uint32_t> generation;
 
-    
-    
-    ZoneData<LifoAlloc> sweepTypeLifoAlloc;
+  
+  
+  ZoneData<LifoAlloc> sweepTypeLifoAlloc;
 
-    ZoneData<bool> sweepingTypes;
-    ZoneData<bool> oomSweepingTypes;
+  ZoneData<bool> sweepingTypes;
+  ZoneData<bool> oomSweepingTypes;
 
-    ZoneData<bool> keepTypeScripts;
+  ZoneData<bool> keepTypeScripts;
 
-    
-    ZoneData<AutoEnterAnalysis*> activeAnalysis;
+  
+  ZoneData<AutoEnterAnalysis*> activeAnalysis;
 
-    explicit TypeZone(JS::Zone* zone);
-    ~TypeZone();
+  explicit TypeZone(JS::Zone* zone);
+  ~TypeZone();
 
-    JS::Zone* zone() const { return zone_; }
+  JS::Zone* zone() const { return zone_; }
 
-    LifoAlloc& typeLifoAlloc() {
+  LifoAlloc& typeLifoAlloc() {
 #ifdef JS_CRASH_DIAGNOSTICS
-        MOZ_RELEASE_ASSERT(CurrentThreadCanAccessZone(zone_));
+    MOZ_RELEASE_ASSERT(CurrentThreadCanAccessZone(zone_));
 #endif
-        return typeLifoAlloc_.ref();
-    }
+    return typeLifoAlloc_.ref();
+  }
 
-    void beginSweep();
-    void endSweep(JSRuntime* rt);
-    void clearAllNewScriptsOnOOM();
+  void beginSweep();
+  void endSweep(JSRuntime* rt);
+  void clearAllNewScriptsOnOOM();
 
-    
-    void addPendingRecompile(JSContext* cx, const RecompileInfo& info);
-    void addPendingRecompile(JSContext* cx, JSScript* script);
+  
+  void addPendingRecompile(JSContext* cx, const RecompileInfo& info);
+  void addPendingRecompile(JSContext* cx, JSScript* script);
 
-    void processPendingRecompiles(FreeOp* fop, RecompileInfoVector& recompiles);
+  void processPendingRecompiles(FreeOp* fop, RecompileInfoVector& recompiles);
 
-    bool isSweepingTypes() const {
-        return sweepingTypes;
-    }
-    void setSweepingTypes(bool sweeping) {
-        MOZ_RELEASE_ASSERT(sweepingTypes != sweeping);
-        MOZ_ASSERT_IF(sweeping, !oomSweepingTypes);
-        sweepingTypes = sweeping;
-        oomSweepingTypes = false;
-    }
-    void setOOMSweepingTypes() {
-        MOZ_ASSERT(sweepingTypes);
-        oomSweepingTypes = true;
-    }
-    bool hadOOMSweepingTypes() {
-        MOZ_ASSERT(sweepingTypes);
-        return oomSweepingTypes;
-    }
+  bool isSweepingTypes() const { return sweepingTypes; }
+  void setSweepingTypes(bool sweeping) {
+    MOZ_RELEASE_ASSERT(sweepingTypes != sweeping);
+    MOZ_ASSERT_IF(sweeping, !oomSweepingTypes);
+    sweepingTypes = sweeping;
+    oomSweepingTypes = false;
+  }
+  void setOOMSweepingTypes() {
+    MOZ_ASSERT(sweepingTypes);
+    oomSweepingTypes = true;
+  }
+  bool hadOOMSweepingTypes() {
+    MOZ_ASSERT(sweepingTypes);
+    return oomSweepingTypes;
+  }
 
-    mozilla::Maybe<IonCompilationId> currentCompilationId() const {
-        return currentCompilationId_.ref();
-    }
-    mozilla::Maybe<IonCompilationId>& currentCompilationIdRef() {
-        return currentCompilationId_.ref();
-    }
+  mozilla::Maybe<IonCompilationId> currentCompilationId() const {
+    return currentCompilationId_.ref();
+  }
+  mozilla::Maybe<IonCompilationId>& currentCompilationIdRef() {
+    return currentCompilationId_.ref();
+  }
 };
 
 enum TypeSpewChannel {
-    ISpewOps,      
-    ISpewResult,   
-    SPEW_COUNT
+  ISpewOps,    
+  ISpewResult, 
+  SPEW_COUNT
 };
 
 #ifdef DEBUG
 
 bool InferSpewActive(TypeSpewChannel channel);
-const char * InferSpewColorReset();
-const char * InferSpewColor(TypeConstraint* constraint);
-const char * InferSpewColor(TypeSet* types);
+const char* InferSpewColorReset();
+const char* InferSpewColor(TypeConstraint* constraint);
+const char* InferSpewColor(TypeSet* types);
 
-#define InferSpew(channel, ...) if (InferSpewActive(channel)) { InferSpewImpl(__VA_ARGS__); } else {}
+#define InferSpew(channel, ...)   \
+  if (InferSpewActive(channel)) { \
+    InferSpewImpl(__VA_ARGS__);   \
+  } else {                        \
+  }
 void InferSpewImpl(const char* fmt, ...) MOZ_FORMAT_PRINTF(1, 2);
 
 
-bool ObjectGroupHasProperty(JSContext* cx, ObjectGroup* group, jsid id, const Value& value);
+bool ObjectGroupHasProperty(JSContext* cx, ObjectGroup* group, jsid id,
+                            const Value& value);
 
 #else
 
-inline const char * InferSpewColorReset() { return nullptr; }
-inline const char * InferSpewColor(TypeConstraint* constraint) { return nullptr; }
-inline const char * InferSpewColor(TypeSet* types) { return nullptr; }
+inline const char* InferSpewColorReset() { return nullptr; }
+inline const char* InferSpewColor(TypeConstraint* constraint) {
+  return nullptr;
+}
+inline const char* InferSpewColor(TypeSet* types) { return nullptr; }
 
-#define InferSpew(channel, ...) do {} while (0)
+#define InferSpew(channel, ...) \
+  do {                          \
+  } while (0)
 
 #endif
 
 
-void
-PrintTypes(JSContext* cx, JS::Compartment* comp, bool force);
+void PrintTypes(JSContext* cx, JS::Compartment* comp, bool force);
 
 } 
 
@@ -486,21 +463,24 @@ PrintTypes(JSContext* cx, JS::Compartment* comp, bool force);
 namespace JS {
 namespace ubi {
 
-template<>
+template <>
 class Concrete<js::ObjectGroup> : TracerConcrete<js::ObjectGroup> {
-  protected:
-    explicit Concrete(js::ObjectGroup *ptr) : TracerConcrete<js::ObjectGroup>(ptr) { }
+ protected:
+  explicit Concrete(js::ObjectGroup* ptr)
+      : TracerConcrete<js::ObjectGroup>(ptr) {}
 
-  public:
-    static void construct(void *storage, js::ObjectGroup *ptr) { new (storage) Concrete(ptr); }
+ public:
+  static void construct(void* storage, js::ObjectGroup* ptr) {
+    new (storage) Concrete(ptr);
+  }
 
-    Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
+  Size size(mozilla::MallocSizeOf mallocSizeOf) const override;
 
-    const char16_t* typeName() const override { return concreteTypeName; }
-    static const char16_t concreteTypeName[];
+  const char16_t* typeName() const override { return concreteTypeName; }
+  static const char16_t concreteTypeName[];
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

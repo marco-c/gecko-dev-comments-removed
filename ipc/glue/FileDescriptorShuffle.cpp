@@ -43,9 +43,7 @@ static const int kDupFdCmd = F_DUPFD;
 
 
 
-bool
-FileDescriptorShuffle::Init(MappingRef aMapping)
-{
+bool FileDescriptorShuffle::Init(MappingRef aMapping) {
   MOZ_ASSERT(mMapping.IsEmpty());
 
   
@@ -90,9 +88,7 @@ FileDescriptorShuffle::Init(MappingRef aMapping)
   return true;
 }
 
-bool
-FileDescriptorShuffle::MapsTo(int aFd) const
-{
+bool FileDescriptorShuffle::MapsTo(int aFd) const {
   
   
   if (aFd > mMaxDst) {
@@ -106,13 +102,12 @@ FileDescriptorShuffle::MapsTo(int aFd) const
   return false;
 }
 
-FileDescriptorShuffle::~FileDescriptorShuffle()
-{
+FileDescriptorShuffle::~FileDescriptorShuffle() {
   for (const auto& fd : mTempFds) {
     mozilla::DebugOnly<int> rv = IGNORE_EINTR(close(fd));
     MOZ_ASSERT(rv == 0);
   }
 }
 
-} 
-} 
+}  
+}  

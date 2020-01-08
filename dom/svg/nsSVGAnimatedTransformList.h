@@ -22,7 +22,7 @@ namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
 class SVGTransform;
-} 
+}  
 
 
 
@@ -38,16 +38,14 @@ class SVGTransform;
 
 
 
-class nsSVGAnimatedTransformList
-{
+class nsSVGAnimatedTransformList {
   
   friend class dom::SVGTransform;
   friend class DOMSVGTransformList;
 
-public:
+ public:
   nsSVGAnimatedTransformList()
-    : mIsAttrSet(false),
-      mRequiresFrameReconstruction(true) { }
+      : mIsAttrSet(false), mRequiresFrameReconstruction(true) {}
 
   
 
@@ -56,9 +54,7 @@ public:
 
 
 
-  const SVGTransformList& GetBaseValue() const {
-    return mBaseVal;
-  }
+  const SVGTransformList& GetBaseValue() const { return mBaseVal; }
 
   nsresult SetBaseValue(const SVGTransformList& aValue,
                         nsSVGElement* aSVGElement);
@@ -73,9 +69,9 @@ public:
   }
 
   nsresult SetAnimValue(const SVGTransformList& aNewAnimValue,
-                        nsSVGElement *aElement);
+                        nsSVGElement* aElement);
 
-  void ClearAnimValue(nsSVGElement *aElement);
+  void ClearAnimValue(nsSVGElement* aElement);
 
   
 
@@ -90,12 +86,11 @@ public:
 
 
 
-  bool HasTransform() const
-    { return (mAnimVal && !mAnimVal->IsEmpty()) || !mBaseVal.IsEmpty(); }
-
-  bool IsAnimating() const {
-    return !!mAnimVal;
+  bool HasTransform() const {
+    return (mAnimVal && !mAnimVal->IsEmpty()) || !mBaseVal.IsEmpty();
   }
+
+  bool IsAnimating() const { return !!mAnimVal; }
 
   
 
@@ -114,8 +109,7 @@ public:
 
   mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aSVGElement);
 
-private:
-
+ private:
   
   
   
@@ -124,30 +118,25 @@ private:
   SVGTransformList mBaseVal;
   nsAutoPtr<SVGTransformList> mAnimVal;
   bool mIsAttrSet;
-   
+  
   bool mRequiresFrameReconstruction;
 
-  struct SMILAnimatedTransformList : public nsISMILAttr
-  {
-  public:
+  struct SMILAnimatedTransformList : public nsISMILAttr {
+   public:
     SMILAnimatedTransformList(nsSVGAnimatedTransformList* aVal,
                               nsSVGElement* aSVGElement)
-      : mVal(aVal)
-      , mElement(aSVGElement)
-    {}
+        : mVal(aVal), mElement(aSVGElement) {}
 
     
-    virtual nsresult ValueFromString(const nsAString& aStr,
-                                     const dom::SVGAnimationElement* aSrcElement,
-                                     nsSMILValue& aValue,
-                                     bool& aPreventCachingOfSandwich) const override;
+    virtual nsresult ValueFromString(
+        const nsAString& aStr, const dom::SVGAnimationElement* aSrcElement,
+        nsSMILValue& aValue, bool& aPreventCachingOfSandwich) const override;
     virtual nsSMILValue GetBaseValue() const override;
     virtual void ClearAnimValue() override;
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
 
-  protected:
-    static void ParseValue(const nsAString& aSpec,
-                           const nsAtom* aTransformType,
+   protected:
+    static void ParseValue(const nsAString& aSpec, const nsAtom* aTransformType,
                            nsSMILValue& aResult);
     static int32_t ParseParameterList(const nsAString& aSpec, float* aVars,
                                       int32_t aNVars);
@@ -160,6 +149,6 @@ private:
   };
 };
 
-} 
+}  
 
-#endif 
+#endif  

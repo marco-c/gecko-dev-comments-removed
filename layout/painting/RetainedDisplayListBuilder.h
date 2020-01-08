@@ -13,30 +13,24 @@
 
 namespace mozilla {
 class DisplayListChecker;
-} 
+}  
 
 
 
 
 
 
-
-struct RetainedDisplayListData
-{
+struct RetainedDisplayListData {
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(DisplayListData, RetainedDisplayListData)
 
-  enum class FrameFlags : uint8_t
-  {
+  enum class FrameFlags : uint8_t {
     None = 0,
     Modified = 1 << 0,
     HasProps = 1 << 1,
     HadWillChange = 1 << 2
   };
 
-  RetainedDisplayListData()
-    : mModifiedFramesCount(0)
-  {
-  }
+  RetainedDisplayListData() : mModifiedFramesCount(0) {}
 
   
 
@@ -46,7 +40,10 @@ struct RetainedDisplayListData
   
 
 
-  void Clear() { mFrames.Clear(); mModifiedFramesCount = 0; }
+  void Clear() {
+    mFrames.Clear();
+    mModifiedFramesCount = 0;
+  }
 
   
 
@@ -76,7 +73,7 @@ struct RetainedDisplayListData
 
   bool Remove(nsIFrame* aFrame) { return mFrames.Remove(aFrame); }
 
-private:
+ private:
   nsDataHashtable<nsPtrHashKey<nsIFrame>, FrameFlags> mFrames;
   uint32_t mModifiedFramesCount;
 };
@@ -87,40 +84,28 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RetainedDisplayListData::FrameFlags)
 
 
 
-RetainedDisplayListData*
-GetRetainedDisplayListData(nsIFrame* aRootFrame);
+RetainedDisplayListData* GetRetainedDisplayListData(nsIFrame* aRootFrame);
 
 
 
 
 
-RetainedDisplayListData*
-GetOrSetRetainedDisplayListData(nsIFrame* aRootFrame);
+RetainedDisplayListData* GetOrSetRetainedDisplayListData(nsIFrame* aRootFrame);
 
-struct RetainedDisplayListBuilder
-{
+struct RetainedDisplayListBuilder {
   RetainedDisplayListBuilder(nsIFrame* aReferenceFrame,
-                             nsDisplayListBuilderMode aMode,
-                             bool aBuildCaret)
-    : mBuilder(aReferenceFrame, aMode, aBuildCaret, true)
-  {
-  }
+                             nsDisplayListBuilderMode aMode, bool aBuildCaret)
+      : mBuilder(aReferenceFrame, aMode, aBuildCaret, true) {}
   ~RetainedDisplayListBuilder() { mList.DeleteAll(&mBuilder); }
 
   nsDisplayListBuilder* Builder() { return &mBuilder; }
 
   nsDisplayList* List() { return &mList; }
 
-  enum class PartialUpdateResult
-  {
-    Failed,
-    NoChange,
-    Updated
-  };
+  enum class PartialUpdateResult { Failed, NoChange, Updated };
 
   PartialUpdateResult AttemptPartialUpdate(
-    nscolor aBackstop,
-    mozilla::DisplayListChecker* aChecker);
+      nscolor aBackstop, mozilla::DisplayListChecker* aChecker);
 
   
 
@@ -132,28 +117,25 @@ struct RetainedDisplayListBuilder
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(Cached, RetainedDisplayListBuilder)
 
-private:
+ private:
   bool PreProcessDisplayList(RetainedDisplayList* aList,
                              AnimatedGeometryRoot* aAGR,
                              uint32_t aCallerKey = 0,
                              uint32_t aNestingDepth = 0);
   bool MergeDisplayLists(
-    nsDisplayList* aNewList,
-    RetainedDisplayList* aOldList,
-    RetainedDisplayList* aOutList,
-    mozilla::Maybe<const mozilla::ActiveScrolledRoot*>& aOutContainerASR,
-    uint32_t aOuterKey = 0);
+      nsDisplayList* aNewList, RetainedDisplayList* aOldList,
+      RetainedDisplayList* aOutList,
+      mozilla::Maybe<const mozilla::ActiveScrolledRoot*>& aOutContainerASR,
+      uint32_t aOuterKey = 0);
 
   bool ComputeRebuildRegion(nsTArray<nsIFrame*>& aModifiedFrames,
                             nsRect* aOutDirty,
                             AnimatedGeometryRoot** aOutModifiedAGR,
                             nsTArray<nsIFrame*>& aOutFramesWithProps);
-  bool ProcessFrame(nsIFrame* aFrame,
-                    nsDisplayListBuilder& aBuilder,
+  bool ProcessFrame(nsIFrame* aFrame, nsDisplayListBuilder& aBuilder,
                     nsIFrame* aStopAtFrame,
                     nsTArray<nsIFrame*>& aOutFramesWithProps,
-                    const bool aStopAtStackingContext,
-                    nsRect* aOutDirty,
+                    const bool aStopAtStackingContext, nsRect* aOutDirty,
                     AnimatedGeometryRoot** aOutModifiedAGR);
 
   void IncrementSubDocPresShellPaintCount(nsDisplayItem* aItem);
@@ -165,4 +147,4 @@ private:
   WeakFrame mPreviousCaret;
 };
 
-#endif 
+#endif  

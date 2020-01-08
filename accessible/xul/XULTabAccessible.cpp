@@ -26,31 +26,19 @@ using namespace mozilla::a11y;
 
 
 
-XULTabAccessible::
-  XULTabAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-  HyperTextAccessibleWrap(aContent, aDoc)
-{
+XULTabAccessible::XULTabAccessible(nsIContent* aContent, DocAccessible* aDoc)
+    : HyperTextAccessibleWrap(aContent, aDoc) {}
+
+
+
+
+uint8_t XULTabAccessible::ActionCount() const { return 1; }
+
+void XULTabAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
+  if (aIndex == eAction_Switch) aName.AssignLiteral("switch");
 }
 
-
-
-
-uint8_t
-XULTabAccessible::ActionCount() const
-{
-  return 1;
-}
-
-void
-XULTabAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName)
-{
-  if (aIndex == eAction_Switch)
-    aName.AssignLiteral("switch");
-}
-
-bool
-XULTabAccessible::DoAction(uint8_t index) const
-{
+bool XULTabAccessible::DoAction(uint8_t index) const {
   if (index == eAction_Switch) {
     
     RefPtr<nsXULElement> tab = nsXULElement::FromNodeOrNull(mContent);
@@ -65,15 +53,9 @@ XULTabAccessible::DoAction(uint8_t index) const
 
 
 
-role
-XULTabAccessible::NativeRole() const
-{
-  return roles::PAGETAB;
-}
+role XULTabAccessible::NativeRole() const { return roles::PAGETAB; }
 
-uint64_t
-XULTabAccessible::NativeState() const
-{
+uint64_t XULTabAccessible::NativeState() const {
   
 
   
@@ -89,44 +71,34 @@ XULTabAccessible::NativeState() const
     if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::pinned,
                                            nsGkAtoms::_true, eCaseMatters))
       state |= states::PINNED;
-
   }
 
   return state;
 }
 
-uint64_t
-XULTabAccessible::NativeInteractiveState() const
-{
+uint64_t XULTabAccessible::NativeInteractiveState() const {
   uint64_t state = Accessible::NativeInteractiveState();
   return (state & states::UNAVAILABLE) ? state : state | states::SELECTABLE;
 }
 
-Relation
-XULTabAccessible::RelationByType(RelationType aType) const
-{
+Relation XULTabAccessible::RelationByType(RelationType aType) const {
   Relation rel = AccessibleWrap::RelationByType(aType);
-  if (aType != RelationType::LABEL_FOR)
-    return rel;
+  if (aType != RelationType::LABEL_FOR) return rel;
 
   
   nsCOMPtr<nsIDOMXULRelatedElement> tabsElm =
-    do_QueryInterface(mContent->GetParent());
-  if (!tabsElm)
-    return rel;
+      do_QueryInterface(mContent->GetParent());
+  if (!tabsElm) return rel;
 
   RefPtr<mozilla::dom::Element> tabpanelElement;
   tabsElm->GetRelatedElement(GetNode(), getter_AddRefs(tabpanelElement));
-  if (!tabpanelElement)
-    return rel;
+  if (!tabpanelElement) return rel;
 
   rel.AppendTarget(mDoc, tabpanelElement);
   return rel;
 }
 
-void
-XULTabAccessible::ApplyARIAState(uint64_t* aState) const
-{
+void XULTabAccessible::ApplyARIAState(uint64_t* aState) const {
   HyperTextAccessibleWrap::ApplyARIAState(aState);
   
   
@@ -140,40 +112,21 @@ XULTabAccessible::ApplyARIAState(uint64_t* aState) const
 
 
 
-XULTabsAccessible::
-  XULTabsAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-  XULSelectControlAccessible(aContent, aDoc)
-{
-}
+XULTabsAccessible::XULTabsAccessible(nsIContent* aContent, DocAccessible* aDoc)
+    : XULSelectControlAccessible(aContent, aDoc) {}
 
-role
-XULTabsAccessible::NativeRole() const
-{
-  return roles::PAGETABLIST;
-}
+role XULTabsAccessible::NativeRole() const { return roles::PAGETABLIST; }
 
-uint8_t
-XULTabsAccessible::ActionCount() const
-{
-  return 0;
-}
+uint8_t XULTabsAccessible::ActionCount() const { return 0; }
 
-void
-XULTabsAccessible::Value(nsString& aValue) const
-{
-  aValue.Truncate();
-}
+void XULTabsAccessible::Value(nsString& aValue) const { aValue.Truncate(); }
 
-ENameValueFlag
-XULTabsAccessible::NativeName(nsString& aName) const
-{
+ENameValueFlag XULTabsAccessible::NativeName(nsString& aName) const {
   
   return eNameOK;
 }
 
-void
-XULTabsAccessible::ApplyARIAState(uint64_t* aState) const
-{
+void XULTabsAccessible::ApplyARIAState(uint64_t* aState) const {
   XULSelectControlAccessible::ApplyARIAState(aState);
   
   
@@ -191,9 +144,7 @@ XULTabsAccessible::ApplyARIAState(uint64_t* aState) const
 
 
 
-void
-XULTabsAccessible::SelectedItems(nsTArray<Accessible*>* aItems)
-{
+void XULTabsAccessible::SelectedItems(nsTArray<Accessible*>* aItems) {
   if (nsAccUtils::IsARIAMultiSelectable(this)) {
     AccessibleWrap::SelectedItems(aItems);
   } else {
@@ -201,9 +152,7 @@ XULTabsAccessible::SelectedItems(nsTArray<Accessible*>* aItems)
   }
 }
 
-Accessible*
-XULTabsAccessible::GetSelectedItem(uint32_t aIndex)
-{
+Accessible* XULTabsAccessible::GetSelectedItem(uint32_t aIndex) {
   if (nsAccUtils::IsARIAMultiSelectable(this)) {
     return AccessibleWrap::GetSelectedItem(aIndex);
   }
@@ -211,9 +160,7 @@ XULTabsAccessible::GetSelectedItem(uint32_t aIndex)
   return XULSelectControlAccessible::GetSelectedItem(aIndex);
 }
 
-uint32_t
-XULTabsAccessible::SelectedItemCount()
-{
+uint32_t XULTabsAccessible::SelectedItemCount() {
   if (nsAccUtils::IsARIAMultiSelectable(this)) {
     return AccessibleWrap::SelectedItemCount();
   }
@@ -221,9 +168,7 @@ XULTabsAccessible::SelectedItemCount()
   return XULSelectControlAccessible::SelectedItemCount();
 }
 
-bool
-XULTabsAccessible::IsItemSelected(uint32_t aIndex)
-{
+bool XULTabsAccessible::IsItemSelected(uint32_t aIndex) {
   if (nsAccUtils::IsARIAMultiSelectable(this)) {
     return AccessibleWrap::IsItemSelected(aIndex);
   }
@@ -235,46 +180,30 @@ XULTabsAccessible::IsItemSelected(uint32_t aIndex)
 
 
 
-
-role
-XULTabpanelsAccessible::NativeRole() const
-{
-  return roles::PANE;
-}
+role XULTabpanelsAccessible::NativeRole() const { return roles::PANE; }
 
 
 
 
 
-XULTabpanelAccessible::
-  XULTabpanelAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-  AccessibleWrap(aContent, aDoc)
-{
-}
+XULTabpanelAccessible::XULTabpanelAccessible(nsIContent* aContent,
+                                             DocAccessible* aDoc)
+    : AccessibleWrap(aContent, aDoc) {}
 
-role
-XULTabpanelAccessible::NativeRole() const
-{
-  return roles::PROPERTYPAGE;
-}
+role XULTabpanelAccessible::NativeRole() const { return roles::PROPERTYPAGE; }
 
-Relation
-XULTabpanelAccessible::RelationByType(RelationType aType) const
-{
+Relation XULTabpanelAccessible::RelationByType(RelationType aType) const {
   Relation rel = AccessibleWrap::RelationByType(aType);
-  if (aType != RelationType::LABELLED_BY)
-    return rel;
+  if (aType != RelationType::LABELLED_BY) return rel;
 
   
   nsCOMPtr<nsIDOMXULRelatedElement> tabpanelsElm =
-    do_QueryInterface(mContent->GetParent());
-  if (!tabpanelsElm)
-    return rel;
+      do_QueryInterface(mContent->GetParent());
+  if (!tabpanelsElm) return rel;
 
   RefPtr<mozilla::dom::Element> tabElement;
   tabpanelsElm->GetRelatedElement(GetNode(), getter_AddRefs(tabElement));
-  if (!tabElement)
-    return rel;
+  if (!tabElement) return rel;
 
   rel.AppendTarget(mDoc, tabElement);
   return rel;

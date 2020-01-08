@@ -35,7 +35,7 @@ class DocManager;
 class NotificationController;
 class DocAccessibleChild;
 class RelatedAccIterator;
-template<class Class, class ... Args>
+template <class Class, class... Args>
 class TNotification;
 
 class DocAccessible : public HyperTextAccessibleWrap,
@@ -43,16 +43,14 @@ class DocAccessible : public HyperTextAccessibleWrap,
                       public nsIObserver,
                       public nsIScrollPositionListener,
                       public nsSupportsWeakReference,
-                      public nsIAccessiblePivotObserver
-{
+                      public nsIAccessiblePivotObserver {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DocAccessible, Accessible)
 
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIACCESSIBLEPIVOTOBSERVER
 
-public:
-
+ public:
   DocAccessible(nsIDocument* aDocument, nsIPresShell* aPresShell);
 
   
@@ -105,7 +103,9 @@ public:
   
 
 
-  void MimeType(nsAString& aType) const { mDocumentNode->GetContentType(aType); }
+  void MimeType(nsAString& aType) const {
+    mDocumentNode->GetContentType(aType);
+  }
 
   
 
@@ -130,19 +130,15 @@ public:
   
 
 
-  bool IsContentLoaded() const
-  {
+  bool IsContentLoaded() const {
     
     
     
     return mDocumentNode && mDocumentNode->IsVisible() &&
-      (mDocumentNode->IsShowing() || HasLoadState(eDOMLoaded));
+           (mDocumentNode->IsShowing() || HasLoadState(eDOMLoaded));
   }
 
-  bool IsHidden() const
-  {
-    return mDocumentNode->Hidden();
-  }
+  bool IsHidden() const { return mDocumentNode->Hidden(); }
 
   
 
@@ -163,9 +159,10 @@ public:
   
 
 
-  bool HasLoadState(LoadState aState) const
-    { return (mLoadState & static_cast<uint32_t>(aState)) ==
-        static_cast<uint32_t>(aState); }
+  bool HasLoadState(LoadState aState) const {
+    return (mLoadState & static_cast<uint32_t>(aState)) ==
+           static_cast<uint32_t>(aState);
+  }
 
   
 
@@ -175,20 +172,21 @@ public:
   
 
 
-  DocAccessible* ParentDocument() const
-    { return mParent ? mParent->Document() : nullptr; }
+  DocAccessible* ParentDocument() const {
+    return mParent ? mParent->Document() : nullptr;
+  }
 
   
 
 
-  uint32_t ChildDocumentCount() const
-    { return mChildDocuments.Length(); }
+  uint32_t ChildDocumentCount() const { return mChildDocuments.Length(); }
 
   
 
 
-  DocAccessible* GetChildDocumentAt(uint32_t aIndex) const
-    { return mChildDocuments.SafeElementAt(aIndex, nullptr); }
+  DocAccessible* GetChildDocumentAt(uint32_t aIndex) const {
+    return mChildDocuments.SafeElementAt(aIndex, nullptr);
+  }
 
   
 
@@ -205,11 +203,9 @@ public:
   
 
 
-  Accessible* AnchorJump()
-    { return GetAccessibleOrContainer(mAnchorJumpElm); }
+  Accessible* AnchorJump() { return GetAccessibleOrContainer(mAnchorJumpElm); }
 
-  void SetAnchorJump(nsIContent* aTargetNode)
-    { mAnchorJumpElm = aTargetNode; }
+  void SetAnchorJump(nsIContent* aTargetNode) { mAnchorJumpElm = aTargetNode; }
 
   
 
@@ -223,7 +219,7 @@ public:
 
 
 
-  template<class Class, class Arg>
+  template <class Class, class Arg>
   void HandleNotification(Class* aInstance,
                           typename TNotification<Class, Arg>::Callback aMethod,
                           Arg* aArg);
@@ -234,10 +230,9 @@ public:
 
 
 
-  Accessible* GetAccessible(nsINode* aNode) const
-  {
-    return aNode == mDocumentNode ?
-      const_cast<DocAccessible*>(this) : mNodeToAccessibleMap.Get(aNode);
+  Accessible* GetAccessible(nsINode* aNode) const {
+    return aNode == mDocumentNode ? const_cast<DocAccessible*>(this)
+                                  : mNodeToAccessibleMap.Get(aNode);
   }
 
   
@@ -252,8 +247,7 @@ public:
   
 
 
-  bool HasAccessible(nsINode* aNode) const
-    { return GetAccessible(aNode); }
+  bool HasAccessible(nsINode* aNode) const { return GetAccessible(aNode); }
 
   
 
@@ -262,10 +256,8 @@ public:
 
 
 
-  Accessible* GetAccessibleByUniqueID(void* aUniqueID)
-  {
-    return UniqueID() == aUniqueID ?
-      this : mAccessibleCache.GetWeak(aUniqueID);
+  Accessible* GetAccessibleByUniqueID(void* aUniqueID) {
+    return UniqueID() == aUniqueID ? this : mAccessibleCache.GetWeak(aUniqueID);
   }
 
   
@@ -278,18 +270,14 @@ public:
 
 
 
-  enum {
-    eIgnoreARIAHidden = 0,
-    eNoContainerIfARIAHidden = 1
-  };
-  Accessible* GetAccessibleOrContainer(nsINode* aNode,
-                                       int aARIAHiddenFlag = eIgnoreARIAHidden) const;
+  enum { eIgnoreARIAHidden = 0, eNoContainerIfARIAHidden = 1 };
+  Accessible* GetAccessibleOrContainer(
+      nsINode* aNode, int aARIAHiddenFlag = eIgnoreARIAHidden) const;
 
   
 
 
-  Accessible* GetContainerAccessible(nsINode* aNode) const
-  {
+  Accessible* GetContainerAccessible(nsINode* aNode) const {
     return aNode ? GetAccessibleOrContainer(aNode->GetParentNode()) : nullptr;
   }
 
@@ -297,8 +285,8 @@ public:
 
 
 
-  Accessible* AccessibleOrTrueContainer(nsINode* aNode,
-                                        int aARIAHiddenFlag = eIgnoreARIAHidden) const;
+  Accessible* AccessibleOrTrueContainer(
+      nsINode* aNode, int aARIAHiddenFlag = eIgnoreARIAHidden) const;
 
   
 
@@ -308,17 +296,15 @@ public:
   
 
 
-  Accessible* ARIAOwnedAt(Accessible* aParent, uint32_t aIndex) const
-  {
-    nsTArray<RefPtr<Accessible> >* children = mARIAOwnsHash.Get(aParent);
+  Accessible* ARIAOwnedAt(Accessible* aParent, uint32_t aIndex) const {
+    nsTArray<RefPtr<Accessible>>* children = mARIAOwnsHash.Get(aParent);
     if (children) {
       return children->SafeElementAt(aIndex);
     }
     return nullptr;
   }
-  uint32_t ARIAOwnedCount(Accessible* aParent) const
-  {
-    nsTArray<RefPtr<Accessible> >* children = mARIAOwnsHash.Get(aParent);
+  uint32_t ARIAOwnedCount(Accessible* aParent) const {
+    nsTArray<RefPtr<Accessible>>* children = mARIAOwnsHash.Get(aParent);
     return children ? children->Length() : 0;
   }
 
@@ -329,8 +315,9 @@ public:
 
 
 
-  bool IsDependentID(dom::Element* aElement, const nsAString& aID) const
-    { return GetRelProviders(aElement, aID); }
+  bool IsDependentID(dom::Element* aElement, const nsAString& aID) const {
+    return GetRelProviders(aElement, aID);
+  }
 
   
 
@@ -385,7 +372,7 @@ public:
 
   DocAccessibleChild* IPCDoc() const { return mIPCDoc; }
 
-protected:
+ protected:
   virtual ~DocAccessible();
 
   void LastRelease();
@@ -429,8 +416,7 @@ protected:
 
 
 
-  bool AppendChildDocument(DocAccessible* aChildDocument)
-  {
+  bool AppendChildDocument(DocAccessible* aChildDocument) {
     return mChildDocuments.AppendElement(aChildDocument);
   }
 
@@ -438,8 +424,7 @@ protected:
 
 
 
-  void RemoveChildDocument(DocAccessible* aChildDocument)
-  {
+  void RemoveChildDocument(DocAccessible* aChildDocument) {
     mChildDocuments.RemoveElement(aChildDocument);
   }
 
@@ -451,8 +436,7 @@ protected:
 
 
 
-  void AddDependentIDsFor(Accessible* aRelProvider,
-                          nsAtom* aRelAttr = nullptr);
+  void AddDependentIDsFor(Accessible* aRelProvider, nsAtom* aRelAttr = nullptr);
 
   
 
@@ -482,8 +466,8 @@ protected:
 
 
 
-  void AttributeChangedImpl(Accessible* aAccessible,
-                            int32_t aNameSpaceID, nsAtom* aAttribute);
+  void AttributeChangedImpl(Accessible* aAccessible, int32_t aNameSpaceID,
+                            nsAtom* aAttribute);
 
   
 
@@ -501,8 +485,9 @@ protected:
   
 
 
-  void ProcessContentInserted(Accessible* aContainer,
-                              const nsTArray<nsCOMPtr<nsIContent> >* aInsertedContent);
+  void ProcessContentInserted(
+      Accessible* aContainer,
+      const nsTArray<nsCOMPtr<nsIContent>>* aInsertedContent);
   void ProcessContentInserted(Accessible* aContainer,
                               nsIContent* aInsertedContent);
 
@@ -523,7 +508,7 @@ protected:
   
 
 
-  void PutChildrenBack(nsTArray<RefPtr<Accessible> >* aChildren,
+  void PutChildrenBack(nsTArray<RefPtr<Accessible>>* aChildren,
                        uint32_t aStartIdx);
 
   bool MoveChild(Accessible* aChild, Accessible* aNewParent,
@@ -592,8 +577,7 @@ protected:
 
   void ARIAActiveDescendantIDMaybeMoved(dom::Element* aElm);
 
-protected:
-
+ protected:
   
 
 
@@ -610,11 +594,11 @@ protected:
 
   AccessibleHashtable mAccessibleCache;
   nsDataHashtable<nsPtrHashKey<const nsINode>, Accessible*>
-    mNodeToAccessibleMap;
+      mNodeToAccessibleMap;
 
   nsIDocument* mDocumentNode;
   nsCOMPtr<nsITimer> mScrollWatchTimer;
-  uint16_t mScrollPositionChangedTicks; 
+  uint16_t mScrollPositionChangedTicks;  
   TimeStamp mLastScrollingDispatch;
 
   
@@ -649,7 +633,7 @@ protected:
     bool mStateBitWasOn;
   };
 
-  nsTArray<RefPtr<DocAccessible> > mChildDocuments;
+  nsTArray<RefPtr<DocAccessible>> mChildDocuments;
 
   
 
@@ -659,23 +643,23 @@ protected:
   
 
 
-  class AttrRelProvider
-  {
-  public:
-    AttrRelProvider(nsAtom* aRelAttr, nsIContent* aContent) :
-      mRelAttr(aRelAttr), mContent(aContent) { }
+  class AttrRelProvider {
+   public:
+    AttrRelProvider(nsAtom* aRelAttr, nsIContent* aContent)
+        : mRelAttr(aRelAttr), mContent(aContent) {}
 
     nsAtom* mRelAttr;
     nsCOMPtr<nsIContent> mContent;
 
-  private:
+   private:
     AttrRelProvider();
     AttrRelProvider(const AttrRelProvider&);
-    AttrRelProvider& operator =(const AttrRelProvider&);
+    AttrRelProvider& operator=(const AttrRelProvider&);
   };
 
-  typedef nsTArray<nsAutoPtr<AttrRelProvider> > AttrRelProviders;
-  typedef nsClassHashtable<nsStringHashKey, AttrRelProviders> DependentIDsHashtable;
+  typedef nsTArray<nsAutoPtr<AttrRelProvider>> AttrRelProviders;
+  typedef nsClassHashtable<nsStringHashKey, AttrRelProviders>
+      DependentIDsHashtable;
 
   
 
@@ -686,14 +670,14 @@ protected:
                                     const nsAString& aID) const;
   AttrRelProviders* GetOrCreateRelProviders(dom::Element* aElement,
                                             const nsAString& aID);
-  void RemoveRelProvidersIfEmpty(dom::Element* aElement,
-                                 const nsAString& aID);
+  void RemoveRelProvidersIfEmpty(dom::Element* aElement, const nsAString& aID);
 
   
 
 
-  nsClassHashtable<nsPtrHashKey<dom::DocumentOrShadowRoot>, DependentIDsHashtable>
-    mDependentIDsHashes;
+  nsClassHashtable<nsPtrHashKey<dom::DocumentOrShadowRoot>,
+                   DependentIDsHashtable>
+      mDependentIDsHashes;
 
   friend class RelatedAccIterator;
 
@@ -708,8 +692,8 @@ protected:
   
 
 
-  nsClassHashtable<nsPtrHashKey<Accessible>, nsTArray<RefPtr<Accessible> > >
-    mARIAOwnsHash;
+  nsClassHashtable<nsPtrHashKey<Accessible>, nsTArray<RefPtr<Accessible>>>
+      mARIAOwnsHash;
 
   
 
@@ -718,21 +702,18 @@ protected:
   friend class EventTree;
   friend class NotificationController;
 
-private:
-
+ private:
   nsIPresShell* mPresShell;
 
   
   DocAccessibleChild* mIPCDoc;
 };
 
-inline DocAccessible*
-Accessible::AsDoc()
-{
+inline DocAccessible* Accessible::AsDoc() {
   return IsDoc() ? static_cast<DocAccessible*>(this) : nullptr;
 }
 
-} 
-} 
+}  
+}  
 
 #endif

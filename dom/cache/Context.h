@@ -25,7 +25,7 @@ namespace quota {
 
 class DirectoryLock;
 
-} 
+}  
 
 namespace cache {
 
@@ -62,20 +62,20 @@ class Manager;
 
 
 
-class Context final
-{
+class Context final {
   typedef mozilla::dom::quota::DirectoryLock DirectoryLock;
 
-public:
+ public:
   
   
-  class ThreadsafeHandle final
-  {
+  class ThreadsafeHandle final {
     friend class Context;
-  public:
+
+   public:
     void AllowToClose();
     void InvalidateAndAllowToClose();
-  private:
+
+   private:
     explicit ThreadsafeHandle(Context* aContext);
     ~ThreadsafeHandle();
 
@@ -107,9 +107,8 @@ public:
   
   
   
-  class Activity
-  {
-  public:
+  class Activity {
+   public:
     virtual void Cancel() = 0;
     virtual bool MatchesCacheId(CacheId aCacheId) const = 0;
   };
@@ -117,9 +116,10 @@ public:
   
   
   
-  static already_AddRefed<Context>
-  Create(Manager* aManager, nsISerialEventTarget* aTarget,
-         Action* aInitAction, Context* aOldContext);
+  static already_AddRefed<Context> Create(Manager* aManager,
+                                          nsISerialEventTarget* aTarget,
+                                          Action* aInitAction,
+                                          Context* aOldContext);
 
   
   
@@ -153,37 +153,32 @@ public:
   void AddActivity(Activity* aActivity);
   void RemoveActivity(Activity* aActivity);
 
-  const QuotaInfo&
-  GetQuotaInfo() const
-  {
-    return mQuotaInfo;
-  }
+  const QuotaInfo& GetQuotaInfo() const { return mQuotaInfo; }
 
   
   
   
   void NoteOrphanedData();
 
-private:
+ private:
   class Data;
   class QuotaInitRunnable;
   class ActionRunnable;
 
-  enum State
-  {
+  enum State {
     STATE_CONTEXT_PREINIT,
     STATE_CONTEXT_INIT,
     STATE_CONTEXT_READY,
     STATE_CONTEXT_CANCELED
   };
 
-  struct PendingAction
-  {
+  struct PendingAction {
     nsCOMPtr<nsIEventTarget> mTarget;
     RefPtr<Action> mAction;
   };
 
-  Context(Manager* aManager, nsISerialEventTarget* aTarget, Action* aInitAction);
+  Context(Manager* aManager, nsISerialEventTarget* aTarget,
+          Action* aInitAction);
   ~Context();
   void Init(Context* aOldContext);
   void Start();
@@ -191,15 +186,11 @@ private:
   void OnQuotaInit(nsresult aRv, const QuotaInfo& aQuotaInfo,
                    already_AddRefed<DirectoryLock> aDirectoryLock);
 
+  already_AddRefed<ThreadsafeHandle> CreateThreadsafeHandle();
 
-  already_AddRefed<ThreadsafeHandle>
-  CreateThreadsafeHandle();
+  void SetNextContext(Context* aNextContext);
 
-  void
-  SetNextContext(Context* aNextContext);
-
-  void
-  DoomTargetData();
+  void DoomTargetData();
 
   RefPtr<Manager> mManager;
   nsCOMPtr<nsISerialEventTarget> mTarget;
@@ -224,12 +215,12 @@ private:
   RefPtr<DirectoryLock> mDirectoryLock;
   RefPtr<Context> mNextContext;
 
-public:
+ public:
   NS_INLINE_DECL_REFCOUNTING(cache::Context)
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

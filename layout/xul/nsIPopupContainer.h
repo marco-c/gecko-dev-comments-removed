@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef nsIPopupContainer_h___
 #define nsIPopupContainer_h___
 
@@ -17,11 +16,10 @@ namespace mozilla {
 namespace dom {
 class Element;
 }
-}
+}  
 
-class nsIPopupContainer
-{
-public:
+class nsIPopupContainer {
+ public:
   NS_DECL_QUERYFRAME_TARGET(nsIPopupContainer)
 
   virtual nsPopupSetFrame* GetPopupSetFrame() = 0;
@@ -34,4 +32,3 @@ public:
 };
 
 #endif
-

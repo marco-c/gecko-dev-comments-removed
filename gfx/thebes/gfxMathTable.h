@@ -11,103 +11,100 @@
 
 
 
-class gfxMathTable
-{
-public:
+class gfxMathTable {
+ public:
+  
+
+
+
+  gfxMathTable(hb_face_t *aFace, gfxFloat aSize);
+
+  
+
+
+  ~gfxMathTable();
+
+  enum MathConstant {
     
-
-
-
-    gfxMathTable(hb_face_t *aFace, gfxFloat aSize);
-
     
+    ScriptPercentScaleDown,
+    ScriptScriptPercentScaleDown,
+    DelimitedSubFormulaMinHeight,
+    DisplayOperatorMinHeight,
+    MathLeading,
+    AxisHeight,
+    AccentBaseHeight,
+    FlattenedAccentBaseHeight,
+    SubscriptShiftDown,
+    SubscriptTopMax,
+    SubscriptBaselineDropMin,
+    SuperscriptShiftUp,
+    SuperscriptShiftUpCramped,
+    SuperscriptBottomMin,
+    SuperscriptBaselineDropMax,
+    SubSuperscriptGapMin,
+    SuperscriptBottomMaxWithSubscript,
+    SpaceAfterScript,
+    UpperLimitGapMin,
+    UpperLimitBaselineRiseMin,
+    LowerLimitGapMin,
+    LowerLimitBaselineDropMin,
+    StackTopShiftUp,
+    StackTopDisplayStyleShiftUp,
+    StackBottomShiftDown,
+    StackBottomDisplayStyleShiftDown,
+    StackGapMin,
+    StackDisplayStyleGapMin,
+    StretchStackTopShiftUp,
+    StretchStackBottomShiftDown,
+    StretchStackGapAboveMin,
+    StretchStackGapBelowMin,
+    FractionNumeratorShiftUp,
+    FractionNumeratorDisplayStyleShiftUp,
+    FractionDenominatorShiftDown,
+    FractionDenominatorDisplayStyleShiftDown,
+    FractionNumeratorGapMin,
+    FractionNumDisplayStyleGapMin,
+    FractionRuleThickness,
+    FractionDenominatorGapMin,
+    FractionDenomDisplayStyleGapMin,
+    SkewedFractionHorizontalGap,
+    SkewedFractionVerticalGap,
+    OverbarVerticalGap,
+    OverbarRuleThickness,
+    OverbarExtraAscender,
+    UnderbarVerticalGap,
+    UnderbarRuleThickness,
+    UnderbarExtraDescender,
+    RadicalVerticalGap,
+    RadicalDisplayStyleVerticalGap,
+    RadicalRuleThickness,
+    RadicalExtraAscender,
+    RadicalKernBeforeDegree,
+    RadicalKernAfterDegree,
+    RadicalDegreeBottomRaisePercent
+  };
+
+  
 
 
-    ~gfxMathTable();
+  gfxFloat Constant(MathConstant aConstant) const;
 
-    enum MathConstant {
-        
-        
-        ScriptPercentScaleDown,
-        ScriptScriptPercentScaleDown,
-        DelimitedSubFormulaMinHeight,
-        DisplayOperatorMinHeight,
-        MathLeading,
-        AxisHeight,
-        AccentBaseHeight,
-        FlattenedAccentBaseHeight,
-        SubscriptShiftDown,
-        SubscriptTopMax,
-        SubscriptBaselineDropMin,
-        SuperscriptShiftUp,
-        SuperscriptShiftUpCramped,
-        SuperscriptBottomMin,
-        SuperscriptBaselineDropMax,
-        SubSuperscriptGapMin,
-        SuperscriptBottomMaxWithSubscript,
-        SpaceAfterScript,
-        UpperLimitGapMin,
-        UpperLimitBaselineRiseMin,
-        LowerLimitGapMin,
-        LowerLimitBaselineDropMin,
-        StackTopShiftUp,
-        StackTopDisplayStyleShiftUp,
-        StackBottomShiftDown,
-        StackBottomDisplayStyleShiftDown,
-        StackGapMin,
-        StackDisplayStyleGapMin,
-        StretchStackTopShiftUp,
-        StretchStackBottomShiftDown,
-        StretchStackGapAboveMin,
-        StretchStackGapBelowMin,
-        FractionNumeratorShiftUp,
-        FractionNumeratorDisplayStyleShiftUp,
-        FractionDenominatorShiftDown,
-        FractionDenominatorDisplayStyleShiftDown,
-        FractionNumeratorGapMin,
-        FractionNumDisplayStyleGapMin,
-        FractionRuleThickness,
-        FractionDenominatorGapMin,
-        FractionDenomDisplayStyleGapMin,
-        SkewedFractionHorizontalGap,
-        SkewedFractionVerticalGap,
-        OverbarVerticalGap,
-        OverbarRuleThickness,
-        OverbarExtraAscender,
-        UnderbarVerticalGap,
-        UnderbarRuleThickness,
-        UnderbarExtraDescender,
-        RadicalVerticalGap,
-        RadicalDisplayStyleVerticalGap,
-        RadicalRuleThickness,
-        RadicalExtraAscender,
-        RadicalKernBeforeDegree,
-        RadicalKernAfterDegree,
-        RadicalDegreeBottomRaisePercent
-    };
-
-    
+  
 
 
-    gfxFloat Constant(MathConstant aConstant) const;
+  nscoord Constant(MathConstant aConstant,
+                   uint32_t aAppUnitsPerDevPixel) const {
+    return NSToCoordRound(Constant(aConstant) * aAppUnitsPerDevPixel);
+  }
 
-    
-
-
-    nscoord Constant(MathConstant aConstant,
-                     uint32_t aAppUnitsPerDevPixel) const
-    {
-        return NSToCoordRound(Constant(aConstant) * aAppUnitsPerDevPixel);
-    }
-
-    
+  
 
 
 
-    gfxFloat
-    ItalicsCorrection(uint32_t aGlyphID) const;
+  gfxFloat ItalicsCorrection(uint32_t aGlyphID) const;
 
-    
+  
 
 
 
@@ -115,10 +112,10 @@ public:
 
 
 
-    uint32_t VariantsSize(uint32_t aGlyphID, bool aVertical,
-                          uint16_t aSize) const;
+  uint32_t VariantsSize(uint32_t aGlyphID, bool aVertical,
+                        uint16_t aSize) const;
 
-    
+  
 
 
 
@@ -132,24 +129,24 @@ public:
 
 
 
-    bool VariantsParts(uint32_t aGlyphID, bool aVertical,
-                       uint32_t aGlyphs[4]) const;
+  bool VariantsParts(uint32_t aGlyphID, bool aVertical,
+                     uint32_t aGlyphs[4]) const;
 
-private:
-    
-    hb_font_t *mHBFont;
+ private:
+  
+  hb_font_t *mHBFont;
 
-    static const unsigned int kMaxCachedSizeCount = 10;
-    struct MathVariantCacheEntry {
-      uint32_t glyphID;
-      bool vertical;
-      uint32_t sizes[kMaxCachedSizeCount];
-      uint32_t parts[4];
-      bool arePartsValid;
-    };
-    mutable MathVariantCacheEntry mMathVariantCache;
-    void ClearCache() const;
-    void UpdateMathVariantCache(uint32_t aGlyphID, bool aVertical) const;
+  static const unsigned int kMaxCachedSizeCount = 10;
+  struct MathVariantCacheEntry {
+    uint32_t glyphID;
+    bool vertical;
+    uint32_t sizes[kMaxCachedSizeCount];
+    uint32_t parts[4];
+    bool arePartsValid;
+  };
+  mutable MathVariantCacheEntry mMathVariantCache;
+  void ClearCache() const;
+  void UpdateMathVariantCache(uint32_t aGlyphID, bool aVertical) const;
 };
 
 #endif

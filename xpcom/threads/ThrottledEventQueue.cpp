@@ -15,9 +15,7 @@
 
 namespace mozilla {
 
-namespace {
-
-} 
+namespace {}  
 
 
 
@@ -60,36 +58,28 @@ namespace {
 
 
 
-class ThrottledEventQueue::Inner final : public nsISupports
-{
+class ThrottledEventQueue::Inner final : public nsISupports {
   
   
   
-  class Executor final : public Runnable
-  {
+  class Executor final : public Runnable {
     
     
     RefPtr<Inner> mInner;
 
-  public:
+   public:
     explicit Executor(Inner* aInner)
-      : Runnable("ThrottledEventQueue::Inner::Executor")
-      , mInner(aInner)
-    { }
+        : Runnable("ThrottledEventQueue::Inner::Executor"), mInner(aInner) {}
 
     NS_IMETHODIMP
-    Run() override
-    {
+    Run() override {
       mInner->ExecuteRunnable();
       return NS_OK;
     }
 
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
     NS_IMETHODIMP
-    GetName(nsACString& aName) override
-    {
-      return mInner->CurrentName(aName);
-    }
+    GetName(nsACString& aName) override { return mInner->CurrentName(aName); }
 #endif
   };
 
@@ -118,15 +108,12 @@ class ThrottledEventQueue::Inner final : public nsISupports
   bool mIsPaused;
 
   explicit Inner(nsISerialEventTarget* aBaseTarget)
-    : mMutex("ThrottledEventQueue")
-    , mIdleCondVar(mMutex, "ThrottledEventQueue:Idle")
-    , mBaseTarget(aBaseTarget)
-    , mIsPaused(false)
-  {
-  }
+      : mMutex("ThrottledEventQueue"),
+        mIdleCondVar(mMutex, "ThrottledEventQueue:Idle"),
+        mBaseTarget(aBaseTarget),
+        mIsPaused(false) {}
 
-  ~Inner()
-  {
+  ~Inner() {
 #ifdef DEBUG
     MutexAutoLock lock(mMutex);
 
@@ -148,8 +135,7 @@ class ThrottledEventQueue::Inner final : public nsISupports
   
   
   nsresult EnsureExecutor(MutexAutoLock& lock) {
-    if (mExecutor)
-      return NS_OK;
+    if (mExecutor) return NS_OK;
 
     
     
@@ -163,9 +149,7 @@ class ThrottledEventQueue::Inner final : public nsISupports
     return NS_OK;
   }
 
-  nsresult
-  CurrentName(nsACString& aName)
-  {
+  nsresult CurrentName(nsACString& aName) {
     nsCOMPtr<nsIRunnable> event;
 
 #ifdef DEBUG
@@ -192,9 +176,7 @@ class ThrottledEventQueue::Inner final : public nsISupports
     return NS_OK;
   }
 
-  void
-  ExecuteRunnable()
-  {
+  void ExecuteRunnable() {
     
     nsCOMPtr<nsIRunnable> event;
 
@@ -232,7 +214,7 @@ class ThrottledEventQueue::Inner final : public nsISupports
         
         
         MOZ_ALWAYS_SUCCEEDS(
-          mBaseTarget->Dispatch(mExecutor, NS_DISPATCH_NORMAL));
+            mBaseTarget->Dispatch(mExecutor, NS_DISPATCH_NORMAL));
       }
 
       
@@ -248,35 +230,28 @@ class ThrottledEventQueue::Inner final : public nsISupports
     Unused << event->Run();
   }
 
-public:
-  static already_AddRefed<Inner>
-  Create(nsISerialEventTarget* aBaseTarget)
-  {
+ public:
+  static already_AddRefed<Inner> Create(nsISerialEventTarget* aBaseTarget) {
     MOZ_ASSERT(NS_IsMainThread());
-    MOZ_ASSERT(ClearOnShutdown_Internal::sCurrentShutdownPhase == ShutdownPhase::NotInShutdown);
+    MOZ_ASSERT(ClearOnShutdown_Internal::sCurrentShutdownPhase ==
+               ShutdownPhase::NotInShutdown);
 
     RefPtr<Inner> ref = new Inner(aBaseTarget);
     return ref.forget();
   }
 
-  bool
-  IsEmpty() const
-  {
+  bool IsEmpty() const {
     
     return Length() == 0;
   }
 
-  uint32_t
-  Length() const
-  {
+  uint32_t Length() const {
     
     MutexAutoLock lock(mMutex);
     return mEventQueue.Count(lock);
   }
 
-  void
-  AwaitIdle() const
-  {
+  void AwaitIdle() const {
     
     
     
@@ -293,22 +268,14 @@ public:
     }
   }
 
-  bool
-  IsPaused() const
-  {
+  bool IsPaused() const {
     MutexAutoLock lock(mMutex);
     return IsPaused(lock);
   }
 
-  bool
-  IsPaused(const MutexAutoLock& aProofOfLock) const
-  {
-    return mIsPaused;
-  }
+  bool IsPaused(const MutexAutoLock& aProofOfLock) const { return mIsPaused; }
 
-  nsresult
-  SetIsPaused(bool aIsPaused)
-  {
+  nsresult SetIsPaused(bool aIsPaused) {
     MutexAutoLock lock(mMutex);
 
     
@@ -325,19 +292,14 @@ public:
     return NS_OK;
   }
 
-  nsresult
-  DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags)
-  {
+  nsresult DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags) {
     
     nsCOMPtr<nsIRunnable> r = aEvent;
     return Dispatch(r.forget(), aFlags);
   }
 
-  nsresult
-  Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags)
-  {
-    MOZ_ASSERT(aFlags == NS_DISPATCH_NORMAL ||
-               aFlags == NS_DISPATCH_AT_END);
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags) {
+    MOZ_ASSERT(aFlags == NS_DISPATCH_NORMAL || aFlags == NS_DISPATCH_AT_END);
 
     
     MutexAutoLock lock(mMutex);
@@ -347,8 +309,7 @@ public:
       
       
       nsresult rv = EnsureExecutor(lock);
-      if (NS_FAILED(rv))
-        return rv;
+      if (NS_FAILED(rv)) return rv;
     }
 
     
@@ -357,110 +318,77 @@ public:
     return NS_OK;
   }
 
-  nsresult
-  DelayedDispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aDelay)
-  {
+  nsresult DelayedDispatch(already_AddRefed<nsIRunnable> aEvent,
+                           uint32_t aDelay) {
     
     
     return NS_ERROR_NOT_IMPLEMENTED;
   }
 
-  bool
-  IsOnCurrentThread()
-  {
-    return mBaseTarget->IsOnCurrentThread();
-  }
+  bool IsOnCurrentThread() { return mBaseTarget->IsOnCurrentThread(); }
 
   NS_DECL_THREADSAFE_ISUPPORTS
 };
 
 NS_IMPL_ISUPPORTS(ThrottledEventQueue::Inner, nsISupports);
 
-NS_IMPL_ISUPPORTS(ThrottledEventQueue,
-                  ThrottledEventQueue,
-                  nsIEventTarget,
+NS_IMPL_ISUPPORTS(ThrottledEventQueue, ThrottledEventQueue, nsIEventTarget,
                   nsISerialEventTarget);
 
 ThrottledEventQueue::ThrottledEventQueue(already_AddRefed<Inner> aInner)
-  : mInner(aInner)
-{
+    : mInner(aInner) {
   MOZ_ASSERT(mInner);
 }
 
-already_AddRefed<ThrottledEventQueue>
-ThrottledEventQueue::Create(nsISerialEventTarget* aBaseTarget)
-{
+already_AddRefed<ThrottledEventQueue> ThrottledEventQueue::Create(
+    nsISerialEventTarget* aBaseTarget) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aBaseTarget);
 
   RefPtr<Inner> inner = Inner::Create(aBaseTarget);
 
-  RefPtr<ThrottledEventQueue> ref =
-    new ThrottledEventQueue(inner.forget());
+  RefPtr<ThrottledEventQueue> ref = new ThrottledEventQueue(inner.forget());
   return ref.forget();
 }
 
-bool
-ThrottledEventQueue::IsEmpty() const
-{
-  return mInner->IsEmpty();
-}
+bool ThrottledEventQueue::IsEmpty() const { return mInner->IsEmpty(); }
 
-uint32_t
-ThrottledEventQueue::Length() const
-{
-  return mInner->Length();
-}
+uint32_t ThrottledEventQueue::Length() const { return mInner->Length(); }
 
-void
-ThrottledEventQueue::AwaitIdle() const
-{
-  return mInner->AwaitIdle();
-}
+void ThrottledEventQueue::AwaitIdle() const { return mInner->AwaitIdle(); }
 
-nsresult
-ThrottledEventQueue::SetIsPaused(bool aIsPaused)
-{
+nsresult ThrottledEventQueue::SetIsPaused(bool aIsPaused) {
   return mInner->SetIsPaused(aIsPaused);
 }
 
-bool
-ThrottledEventQueue::IsPaused() const
-{
-  return mInner->IsPaused();
-}
+bool ThrottledEventQueue::IsPaused() const { return mInner->IsPaused(); }
 
 NS_IMETHODIMP
-ThrottledEventQueue::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags)
-{
+ThrottledEventQueue::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags) {
   return mInner->DispatchFromScript(aEvent, aFlags);
 }
 
 NS_IMETHODIMP
 ThrottledEventQueue::Dispatch(already_AddRefed<nsIRunnable> aEvent,
-                                     uint32_t aFlags)
-{
+                              uint32_t aFlags) {
   return mInner->Dispatch(std::move(aEvent), aFlags);
 }
 
 NS_IMETHODIMP
 ThrottledEventQueue::DelayedDispatch(already_AddRefed<nsIRunnable> aEvent,
-                                            uint32_t aFlags)
-{
+                                     uint32_t aFlags) {
   return mInner->DelayedDispatch(std::move(aEvent), aFlags);
 }
 
 NS_IMETHODIMP
-ThrottledEventQueue::IsOnCurrentThread(bool* aResult)
-{
+ThrottledEventQueue::IsOnCurrentThread(bool* aResult) {
   *aResult = mInner->IsOnCurrentThread();
   return NS_OK;
 }
 
 NS_IMETHODIMP_(bool)
-ThrottledEventQueue::IsOnCurrentThreadInfallible()
-{
+ThrottledEventQueue::IsOnCurrentThreadInfallible() {
   return mInner->IsOnCurrentThread();
 }
 
-} 
+}  

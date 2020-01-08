@@ -11,42 +11,28 @@
 #include "VRGPUChild.h"
 #include "VRGPUParent.h"
 
-
 namespace mozilla {
 namespace gfx {
 
 static StaticAutoPtr<VRProcessManager> sSingleton;
 
- VRProcessManager*
-VRProcessManager::Get()
-{
-  return sSingleton;
-}
+ VRProcessManager* VRProcessManager::Get() { return sSingleton; }
 
- void
-VRProcessManager::Initialize()
-{
+ void VRProcessManager::Initialize() {
   MOZ_ASSERT(XRE_IsParentProcess());
   sSingleton = new VRProcessManager();
 }
 
- void
-VRProcessManager::Shutdown()
-{
-  sSingleton = nullptr;
-}
+ void VRProcessManager::Shutdown() { sSingleton = nullptr; }
 
-VRProcessManager::VRProcessManager()
- : mProcess(nullptr)
-{
+VRProcessManager::VRProcessManager() : mProcess(nullptr) {
   MOZ_COUNT_CTOR(VRProcessManager);
 
   mObserver = new Observer(this);
   nsContentUtils::RegisterShutdownObserver(mObserver);
 }
 
-VRProcessManager::~VRProcessManager()
-{
+VRProcessManager::~VRProcessManager() {
   MOZ_COUNT_DTOR(VRProcessManager);
 
   DestroyProcess();
@@ -54,9 +40,7 @@ VRProcessManager::~VRProcessManager()
   MOZ_ASSERT(!mProcess);
 }
 
-void
-VRProcessManager::LaunchVRProcess()
-{
+void VRProcessManager::LaunchVRProcess() {
   if (mProcess) {
     return;
   }
@@ -69,9 +53,7 @@ VRProcessManager::LaunchVRProcess()
   }
 }
 
-void
-VRProcessManager::DisableVRProcess(const char* aMessage)
-{
+void VRProcessManager::DisableVRProcess(const char* aMessage) {
   if (!gfxPrefs::VRProcessEnabled()) {
     return;
   }
@@ -79,9 +61,7 @@ VRProcessManager::DisableVRProcess(const char* aMessage)
   DestroyProcess();
 }
 
-void
-VRProcessManager::DestroyProcess()
-{
+void VRProcessManager::DestroyProcess() {
   if (!mProcess) {
     return;
   }
@@ -90,34 +70,31 @@ VRProcessManager::DestroyProcess()
   mProcess = nullptr;
 }
 
-bool
-VRProcessManager::CreateGPUBridges(base::ProcessId aOtherProcess,
-                                   mozilla::ipc::Endpoint<PVRGPUChild>* aOutVRBridge)
-{
+bool VRProcessManager::CreateGPUBridges(
+    base::ProcessId aOtherProcess,
+    mozilla::ipc::Endpoint<PVRGPUChild>* aOutVRBridge) {
   if (!CreateGPUVRManager(aOtherProcess, aOutVRBridge)) {
     return false;
   }
   return true;
 }
 
-bool
-VRProcessManager::CreateGPUVRManager(base::ProcessId aOtherProcess,
-                                     mozilla::ipc::Endpoint<PVRGPUChild>* aOutEndpoint)
-{
+bool VRProcessManager::CreateGPUVRManager(
+    base::ProcessId aOtherProcess,
+    mozilla::ipc::Endpoint<PVRGPUChild>* aOutEndpoint) {
   base::ProcessId vrparentPid = mProcess
-                                ? mProcess->OtherPid()  
-                                : base::GetCurrentProcId();
+                                    ? mProcess->OtherPid()  
+                                    : base::GetCurrentProcId();
 
   ipc::Endpoint<PVRGPUParent> vrparentPipe;
   ipc::Endpoint<PVRGPUChild> vrchildPipe;
-  nsresult rv = PVRGPU::CreateEndpoints(vrparentPid,   
-                                        aOtherProcess, 
-                                        &vrparentPipe,
-                                        &vrchildPipe);
+  nsresult rv = PVRGPU::CreateEndpoints(vrparentPid,    
+                                        aOtherProcess,  
+                                        &vrparentPipe, &vrchildPipe);
 
   if (NS_FAILED(rv)) {
-	  gfxCriticalNote << "Could not create gpu-vr bridge: " << hexa(int(rv));
-	  return false;
+    gfxCriticalNote << "Could not create gpu-vr bridge: " << hexa(int(rv));
+    return false;
   }
 
   
@@ -131,28 +108,20 @@ VRProcessManager::CreateGPUVRManager(base::ProcessId aOtherProcess,
 NS_IMPL_ISUPPORTS(VRProcessManager::Observer, nsIObserver);
 
 VRProcessManager::Observer::Observer(VRProcessManager* aManager)
- : mManager(aManager)
-{
-}
+    : mManager(aManager) {}
 
 NS_IMETHODIMP
-VRProcessManager::Observer::Observe(nsISupports* aSubject, const char* aTopic, const char16_t* aData)
-{
+VRProcessManager::Observer::Observe(nsISupports* aSubject, const char* aTopic,
+                                    const char16_t* aData) {
   if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
     mManager->OnXPCOMShutdown();
   }
   return NS_OK;
 }
 
-void
-VRProcessManager::CleanShutdown()
-{
-  DestroyProcess();
-}
+void VRProcessManager::CleanShutdown() { DestroyProcess(); }
 
-void
-VRProcessManager::OnXPCOMShutdown()
-{
+void VRProcessManager::OnXPCOMShutdown() {
   if (mObserver) {
     nsContentUtils::UnregisterShutdownObserver(mObserver);
     mObserver = nullptr;
@@ -161,11 +130,7 @@ VRProcessManager::OnXPCOMShutdown()
   CleanShutdown();
 }
 
-VRChild*
-VRProcessManager::GetVRChild()
-{
-  return mProcess->GetActor();
-}
+VRChild* VRProcessManager::GetVRChild() { return mProcess->GetActor(); }
 
-} 
-} 
+}  
+}  

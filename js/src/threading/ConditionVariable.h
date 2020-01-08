@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 #ifndef XP_WIN
-# include <pthread.h>
+#include <pthread.h>
 #endif
 
 #include "threading/LockGuard.h"
@@ -22,39 +22,31 @@
 
 namespace js {
 
-template <class T> class ExclusiveData;
+template <class T>
+class ExclusiveData;
 
-enum class CVStatus {
-  NoTimeout,
-  Timeout
-};
+enum class CVStatus { NoTimeout, Timeout };
 
-template <typename T> using UniqueLock = LockGuard<T>;
+template <typename T>
+using UniqueLock = LockGuard<T>;
 
 
-class ConditionVariable
-{
-public:
+class ConditionVariable {
+ public:
   struct PlatformData;
 
   ConditionVariable() = default;
   ~ConditionVariable() = default;
 
   
-  void notify_one() {
-    impl_.notify_one();
-  }
+  void notify_one() { impl_.notify_one(); }
 
   
-  void notify_all() {
-    impl_.notify_all();
-  }
+  void notify_all() { impl_.notify_all(); }
 
   
   
-  void wait(UniqueLock<Mutex>& lock) {
-    impl_.wait(lock.lock);
-  }
+  void wait(UniqueLock<Mutex>& lock) { impl_.wait(lock.lock); }
 
   
   
@@ -99,7 +91,8 @@ public:
   CVStatus wait_for(UniqueLock<Mutex>& lock,
                     const mozilla::TimeDuration& rel_time) {
     return impl_.wait_for(lock.lock, rel_time) == mozilla::CVStatus::Timeout
-      ? CVStatus::Timeout : CVStatus::NoTimeout;
+               ? CVStatus::Timeout
+               : CVStatus::NoTimeout;
   }
 
   
@@ -113,15 +106,15 @@ public:
                       std::move(pred));
   }
 
-
-private:
+ private:
   ConditionVariable(const ConditionVariable&) = delete;
   ConditionVariable& operator=(const ConditionVariable&) = delete;
-  template <class T> friend class ExclusiveWaitableData;
+  template <class T>
+  friend class ExclusiveWaitableData;
 
   mozilla::detail::ConditionVariableImpl impl_;
 };
 
-} 
+}  
 
-#endif 
+#endif  

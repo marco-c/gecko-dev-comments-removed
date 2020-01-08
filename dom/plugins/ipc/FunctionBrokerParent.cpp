@@ -16,11 +16,10 @@ UlongPairToIdMap sPairToIdMap;
 IdToUlongPairMap sIdToPairMap;
 PtrToIdMap sPtrToIdMap;
 IdToPtrMap sIdToPtrMap;
-#endif 
+#endif  
 
- FunctionBrokerParent*
-FunctionBrokerParent::Create(Endpoint<PFunctionBrokerParent>&& aParentEnd)
-{
+ FunctionBrokerParent* FunctionBrokerParent::Create(
+    Endpoint<PFunctionBrokerParent>&& aParentEnd) {
   FunctionBrokerThread* thread = FunctionBrokerThread::Create();
   if (!thread) {
     return nullptr;
@@ -33,19 +32,19 @@ FunctionBrokerParent::Create(Endpoint<PFunctionBrokerParent>&& aParentEnd)
   return new FunctionBrokerParent(thread, std::move(aParentEnd));
 }
 
-FunctionBrokerParent::FunctionBrokerParent(FunctionBrokerThread* aThread,
-                                           Endpoint<PFunctionBrokerParent>&& aParentEnd) :
-    mThread(aThread)
-  , mMonitor("FunctionBrokerParent Lock")
-  , mShutdownDone(false)
-{
+FunctionBrokerParent::FunctionBrokerParent(
+    FunctionBrokerThread* aThread, Endpoint<PFunctionBrokerParent>&& aParentEnd)
+    : mThread(aThread),
+      mMonitor("FunctionBrokerParent Lock"),
+      mShutdownDone(false) {
   MOZ_ASSERT(mThread);
-  mThread->Dispatch(NewNonOwningRunnableMethod<Endpoint<PFunctionBrokerParent>&&>(
-          "FunctionBrokerParent::Bind", this, &FunctionBrokerParent::Bind, std::move(aParentEnd)));
+  mThread->Dispatch(
+      NewNonOwningRunnableMethod<Endpoint<PFunctionBrokerParent>&&>(
+          "FunctionBrokerParent::Bind", this, &FunctionBrokerParent::Bind,
+          std::move(aParentEnd)));
 }
 
-FunctionBrokerParent::~FunctionBrokerParent()
-{
+FunctionBrokerParent::~FunctionBrokerParent() {
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
   
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
@@ -53,17 +52,13 @@ FunctionBrokerParent::~FunctionBrokerParent()
 #endif
 }
 
-void
-FunctionBrokerParent::Bind(Endpoint<PFunctionBrokerParent>&& aEnd)
-{
+void FunctionBrokerParent::Bind(Endpoint<PFunctionBrokerParent>&& aEnd) {
   MOZ_RELEASE_ASSERT(mThread->IsOnThread());
   DebugOnly<bool> ok = aEnd.Bind(this);
   MOZ_ASSERT(ok);
 }
 
-void
-FunctionBrokerParent::ShutdownOnBrokerThread()
-{
+void FunctionBrokerParent::ShutdownOnBrokerThread() {
   MOZ_ASSERT(mThread->IsOnThread());
   Close();
 
@@ -73,9 +68,7 @@ FunctionBrokerParent::ShutdownOnBrokerThread()
   mMonitor.Notify();
 }
 
-void
-FunctionBrokerParent::Destroy(FunctionBrokerParent* aInst)
-{
+void FunctionBrokerParent::Destroy(FunctionBrokerParent* aInst) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aInst);
 
@@ -83,8 +76,8 @@ FunctionBrokerParent::Destroy(FunctionBrokerParent* aInst)
     
     MonitorAutoLock lock(aInst->mMonitor);
     aInst->mThread->Dispatch(NewNonOwningRunnableMethod(
-      "FunctionBrokerParent::ShutdownOnBrokerThread", aInst,
-      &FunctionBrokerParent::ShutdownOnBrokerThread));
+        "FunctionBrokerParent::ShutdownOnBrokerThread", aInst,
+        &FunctionBrokerParent::ShutdownOnBrokerThread));
 
     
     while (!aInst->mShutdownDone) {
@@ -95,17 +88,13 @@ FunctionBrokerParent::Destroy(FunctionBrokerParent* aInst)
   delete aInst;
 }
 
-void
-FunctionBrokerParent::ActorDestroy(ActorDestroyReason aWhy)
-{
+void FunctionBrokerParent::ActorDestroy(ActorDestroyReason aWhy) {
   MOZ_RELEASE_ASSERT(mThread->IsOnThread());
 }
 
-mozilla::ipc::IPCResult
-FunctionBrokerParent::RecvBrokerFunction(const FunctionHookId &aFunctionId,
-                                         const IpdlTuple &aInTuple,
-                                         IpdlTuple *aOutTuple)
-{
+mozilla::ipc::IPCResult FunctionBrokerParent::RecvBrokerFunction(
+    const FunctionHookId& aFunctionId, const IpdlTuple& aInTuple,
+    IpdlTuple* aOutTuple) {
 #if defined(XP_WIN)
   MOZ_ASSERT(mThread->IsOnThread());
   if (RunBrokeredFunction(OtherPid(), aFunctionId, aInTuple, aOutTuple)) {
@@ -113,18 +102,16 @@ FunctionBrokerParent::RecvBrokerFunction(const FunctionHookId &aFunctionId,
   }
   return IPC_FAIL_NO_REASON(this);
 #else
-  MOZ_ASSERT_UNREACHABLE("BrokerFunction is currently only implemented on Windows.");
+  MOZ_ASSERT_UNREACHABLE(
+      "BrokerFunction is currently only implemented on Windows.");
   return IPC_FAIL_NO_REASON(this);
 #endif
 }
 
 
-bool
-FunctionBrokerParent::RunBrokeredFunction(base::ProcessId aClientId,
-                                        const FunctionHookId &aFunctionId,
-                                        const IPC::IpdlTuple &aInTuple,
-                                        IPC::IpdlTuple *aOutTuple)
-{
+bool FunctionBrokerParent::RunBrokeredFunction(
+    base::ProcessId aClientId, const FunctionHookId& aFunctionId,
+    const IPC::IpdlTuple& aInTuple, IPC::IpdlTuple* aOutTuple) {
   if ((size_t)aFunctionId >= FunctionHook::GetHooks()->Length()) {
     MOZ_ASSERT_UNREACHABLE("Invalid function ID");
     return false;
@@ -140,13 +127,12 @@ FunctionBrokerParent::RunBrokeredFunction(base::ProcessId aClientId,
 mozilla::SandboxPermissions FunctionBrokerParent::sSandboxPermissions;
 
 
-void
-FunctionBrokerParent::RemovePermissionsForProcess(base::ProcessId aClientId)
-{
+void FunctionBrokerParent::RemovePermissionsForProcess(
+    base::ProcessId aClientId) {
   sSandboxPermissions.RemovePermissionsForProcess(aClientId);
 }
 
-#endif 
+#endif  
 
-} 
-} 
+}  
+}  

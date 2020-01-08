@@ -37,148 +37,146 @@
 #include "jit/JitSpewer.h"
 
 
-#define PRETTYHEX(x)                       (((x)<0)?"-":""),((unsigned)((x)^((x)>>31))+((unsigned)(x)>>31))
+#define PRETTYHEX(x)      \
+  (((x) < 0) ? "-" : ""), \
+      ((unsigned)((x) ^ ((x) >> 31)) + ((unsigned)(x) >> 31))
 
-#define MEM_o     "%s0x%x"
-#define MEM_os    MEM_o   "(,%s,%d)"
-#define MEM_ob    MEM_o   "(%s)"
-#define MEM_obs   MEM_o   "(%s,%s,%d)"
+#define MEM_o "%s0x%x"
+#define MEM_os MEM_o "(,%s,%d)"
+#define MEM_ob MEM_o "(%s)"
+#define MEM_obs MEM_o "(%s,%s,%d)"
 
-#define MEM_o32   "%s0x%04x"
-#define MEM_o32s  MEM_o32 "(,%s,%d)"
-#define MEM_o32b  MEM_o32 "(%s)"
+#define MEM_o32 "%s0x%04x"
+#define MEM_o32s MEM_o32 "(,%s,%d)"
+#define MEM_o32b MEM_o32 "(%s)"
 #define MEM_o32bs MEM_o32 "(%s,%s,%d)"
-#define MEM_o32r  ".Lfrom%d(%%rip)"
+#define MEM_o32r ".Lfrom%d(%%rip)"
 
-#define ADDR_o(offset)                       PRETTYHEX(offset)
-#define ADDR_os(offset, index, scale)        ADDR_o(offset), GPRegName((index)), (1<<(scale))
-#define ADDR_ob(offset, base)                ADDR_o(offset), GPRegName((base))
-#define ADDR_obs(offset, base, index, scale) ADDR_ob(offset, base), GPRegName((index)), (1<<(scale))
+#define ADDR_o(offset) PRETTYHEX(offset)
+#define ADDR_os(offset, index, scale) \
+  ADDR_o(offset), GPRegName((index)), (1 << (scale))
+#define ADDR_ob(offset, base) ADDR_o(offset), GPRegName((base))
+#define ADDR_obs(offset, base, index, scale) \
+  ADDR_ob(offset, base), GPRegName((index)), (1 << (scale))
 
-#define ADDR_o32(offset)                       ADDR_o(offset)
-#define ADDR_o32s(offset, index, scale)        ADDR_os(offset, index, scale)
-#define ADDR_o32b(offset, base)                ADDR_ob(offset, base)
-#define ADDR_o32bs(offset, base, index, scale) ADDR_obs(offset, base, index, scale)
-#define ADDR_o32r(offset)                      (offset)
+#define ADDR_o32(offset) ADDR_o(offset)
+#define ADDR_o32s(offset, index, scale) ADDR_os(offset, index, scale)
+#define ADDR_o32b(offset, base) ADDR_ob(offset, base)
+#define ADDR_o32bs(offset, base, index, scale) \
+  ADDR_obs(offset, base, index, scale)
+#define ADDR_o32r(offset) (offset)
 
 namespace js {
 
-    class Sprinter;
+class Sprinter;
 
 namespace jit {
 
+
+
+
+class AssemblerBufferAllocPolicy : private SystemAllocPolicy {
+ public:
+  using SystemAllocPolicy::checkSimulatedOOM;
+  using SystemAllocPolicy::free_;
+  using SystemAllocPolicy::reportAllocOverflow;
+
+  template <typename T>
+  T* pod_realloc(T* p, size_t oldSize, size_t newSize) {
+    static_assert(
+        sizeof(T) == 1,
+        "AssemblerBufferAllocPolicy should only be used with byte vectors");
+    MOZ_ASSERT(oldSize <= MaxCodeBytesPerProcess);
+    if (MOZ_UNLIKELY(newSize > MaxCodeBytesPerProcess)) {
+      return nullptr;
+    }
+    return SystemAllocPolicy::pod_realloc<T>(p, oldSize, newSize);
+  }
+  template <typename T>
+  T* pod_malloc(size_t numElems) {
+    static_assert(
+        sizeof(T) == 1,
+        "AssemblerBufferAllocPolicy should only be used with byte vectors");
+    if (MOZ_UNLIKELY(numElems > MaxCodeBytesPerProcess)) {
+      return nullptr;
+    }
+    return SystemAllocPolicy::pod_malloc<T>(numElems);
+  }
+};
+
+class AssemblerBuffer {
+  template <size_t size, typename T>
+  MOZ_ALWAYS_INLINE void sizedAppendUnchecked(T value) {
+    m_buffer.infallibleAppend(reinterpret_cast<unsigned char*>(&value), size);
+  }
+
+  template <size_t size, typename T>
+  MOZ_ALWAYS_INLINE void sizedAppend(T value) {
+    if (MOZ_UNLIKELY(
+            !m_buffer.append(reinterpret_cast<unsigned char*>(&value), size))) {
+      oomDetected();
+    }
+  }
+
+ public:
+  AssemblerBuffer() : m_oom(false) {}
+
+  void ensureSpace(size_t space) {
     
     
-    
-    class AssemblerBufferAllocPolicy : private SystemAllocPolicy
-    {
-      public:
-        using SystemAllocPolicy::checkSimulatedOOM;
-        using SystemAllocPolicy::reportAllocOverflow;
-        using SystemAllocPolicy::free_;
+    MOZ_ASSERT(space <= 16);
+    if (MOZ_UNLIKELY(!m_buffer.reserve(m_buffer.length() + space))) {
+      oomDetected();
+    }
+  }
 
-        template <typename T> T* pod_realloc(T* p, size_t oldSize, size_t newSize) {
-            static_assert(sizeof(T) == 1,
-                          "AssemblerBufferAllocPolicy should only be used with byte vectors");
-            MOZ_ASSERT(oldSize <= MaxCodeBytesPerProcess);
-            if (MOZ_UNLIKELY(newSize > MaxCodeBytesPerProcess)) {
-                return nullptr;
-            }
-            return SystemAllocPolicy::pod_realloc<T>(p, oldSize, newSize);
-        }
-        template <typename T> T* pod_malloc(size_t numElems) {
-            static_assert(sizeof(T) == 1,
-                          "AssemblerBufferAllocPolicy should only be used with byte vectors");
-            if (MOZ_UNLIKELY(numElems > MaxCodeBytesPerProcess)) {
-                return nullptr;
-            }
-            return SystemAllocPolicy::pod_malloc<T>(numElems);
-        }
-    };
+  bool isAligned(size_t alignment) const {
+    return !(m_buffer.length() & (alignment - 1));
+  }
 
-    class AssemblerBuffer
-    {
-        template<size_t size, typename T>
-        MOZ_ALWAYS_INLINE void sizedAppendUnchecked(T value)
-        {
-            m_buffer.infallibleAppend(reinterpret_cast<unsigned char*>(&value), size);
-        }
+  MOZ_ALWAYS_INLINE void putByteUnchecked(int value) {
+    sizedAppendUnchecked<1>(value);
+  }
+  MOZ_ALWAYS_INLINE void putShortUnchecked(int value) {
+    sizedAppendUnchecked<2>(value);
+  }
+  MOZ_ALWAYS_INLINE void putIntUnchecked(int value) {
+    sizedAppendUnchecked<4>(value);
+  }
+  MOZ_ALWAYS_INLINE void putInt64Unchecked(int64_t value) {
+    sizedAppendUnchecked<8>(value);
+  }
 
-        template<size_t size, typename T>
-        MOZ_ALWAYS_INLINE void sizedAppend(T value)
-        {
-            if (MOZ_UNLIKELY(!m_buffer.append(reinterpret_cast<unsigned char*>(&value), size))) {
-                oomDetected();
-            }
-        }
+  MOZ_ALWAYS_INLINE void putByte(int value) { sizedAppend<1>(value); }
+  MOZ_ALWAYS_INLINE void putShort(int value) { sizedAppend<2>(value); }
+  MOZ_ALWAYS_INLINE void putInt(int value) { sizedAppend<4>(value); }
+  MOZ_ALWAYS_INLINE void putInt64(int64_t value) { sizedAppend<8>(value); }
 
-    public:
-        AssemblerBuffer() : m_oom(false) {}
+  MOZ_MUST_USE bool append(const unsigned char* values, size_t size) {
+    if (MOZ_UNLIKELY(!m_buffer.append(values, size))) {
+      oomDetected();
+      return false;
+    }
+    return true;
+  }
 
-        void ensureSpace(size_t space)
-        {
-            
-            
-            MOZ_ASSERT(space <= 16);
-            if (MOZ_UNLIKELY(!m_buffer.reserve(m_buffer.length() + space))) {
-                oomDetected();
-            }
-        }
+  size_t size() const { return m_buffer.length(); }
 
-        bool isAligned(size_t alignment) const
-        {
-            return !(m_buffer.length() & (alignment - 1));
-        }
+  bool oom() const { return m_oom; }
 
-        MOZ_ALWAYS_INLINE void putByteUnchecked(int value) { sizedAppendUnchecked<1>(value); }
-        MOZ_ALWAYS_INLINE void putShortUnchecked(int value) { sizedAppendUnchecked<2>(value); }
-        MOZ_ALWAYS_INLINE void putIntUnchecked(int value) { sizedAppendUnchecked<4>(value); }
-        MOZ_ALWAYS_INLINE void putInt64Unchecked(int64_t value) { sizedAppendUnchecked<8>(value); }
+  bool reserve(size_t size) { return !m_oom && m_buffer.reserve(size); }
 
-        MOZ_ALWAYS_INLINE void putByte(int value) { sizedAppend<1>(value); }
-        MOZ_ALWAYS_INLINE void putShort(int value) { sizedAppend<2>(value); }
-        MOZ_ALWAYS_INLINE void putInt(int value) { sizedAppend<4>(value); }
-        MOZ_ALWAYS_INLINE void putInt64(int64_t value) { sizedAppend<8>(value); }
+  bool swap(Vector<uint8_t, 0, SystemAllocPolicy>& bytes);
 
-        MOZ_MUST_USE bool append(const unsigned char* values, size_t size)
-        {
-            if (MOZ_UNLIKELY(!m_buffer.append(values, size))) {
-                oomDetected();
-                return false;
-            }
-            return true;
-        }
+  const unsigned char* buffer() const {
+    MOZ_RELEASE_ASSERT(!m_oom);
+    return m_buffer.begin();
+  }
 
-        size_t size() const
-        {
-            return m_buffer.length();
-        }
+  unsigned char* data() { return m_buffer.begin(); }
 
-        bool oom() const
-        {
-            return m_oom;
-        }
-
-        bool reserve(size_t size)
-        {
-            return !m_oom && m_buffer.reserve(size);
-        }
-
-        bool swap(Vector<uint8_t, 0, SystemAllocPolicy>& bytes);
-
-        const unsigned char* buffer() const
-        {
-            MOZ_RELEASE_ASSERT(!m_oom);
-            return m_buffer.begin();
-        }
-
-        unsigned char* data()
-        {
-            return m_buffer.begin();
-        }
-
-    protected:
-        
+ protected:
+  
 
 
 
@@ -192,57 +190,52 @@ namespace jit {
 
 
 
-        void oomDetected()
-        {
-            m_oom = true;
-            m_buffer.clear();
-        }
+  void oomDetected() {
+    m_oom = true;
+    m_buffer.clear();
+  }
 
-        mozilla::Vector<unsigned char, 256, AssemblerBufferAllocPolicy> m_buffer;
-        bool m_oom;
-    };
+  mozilla::Vector<unsigned char, 256, AssemblerBufferAllocPolicy> m_buffer;
+  bool m_oom;
+};
 
-    class GenericAssembler
-    {
+class GenericAssembler {
 #ifdef JS_JITSPEW
-        Sprinter* printer;
+  Sprinter* printer;
 #endif
-      public:
-
-        GenericAssembler()
+ public:
+  GenericAssembler()
 #ifdef JS_JITSPEW
-          : printer(nullptr)
+      : printer(nullptr)
 #endif
-        {}
+  {
+  }
 
-        void setPrinter(Sprinter* sp)
-        {
+  void setPrinter(Sprinter* sp) {
 #ifdef JS_JITSPEW
-            printer = sp;
+    printer = sp;
 #endif
-        }
+  }
 
 #ifdef JS_JITSPEW
-        inline void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3)
-        {
-            if (MOZ_UNLIKELY(printer || JitSpewEnabled(JitSpew_Codegen))) {
-                va_list va;
-                va_start(va, fmt);
-                spew(fmt, va);
-                va_end(va);
-            }
-        }
+  inline void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3) {
+    if (MOZ_UNLIKELY(printer || JitSpewEnabled(JitSpew_Codegen))) {
+      va_list va;
+      va_start(va, fmt);
+      spew(fmt, va);
+      va_end(va);
+    }
+  }
 #else
-        MOZ_ALWAYS_INLINE void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3)
-        { }
+  MOZ_ALWAYS_INLINE void spew(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3) {}
 #endif
 
 #ifdef JS_JITSPEW
-        MOZ_COLD void spew(const char* fmt, va_list va) MOZ_FORMAT_PRINTF(2, 0);
+  MOZ_COLD void spew(const char* fmt, va_list va) MOZ_FORMAT_PRINTF(2, 0);
 #endif
-    };
+};
 
-} 
-} 
+}  
+}  
 
 #endif 

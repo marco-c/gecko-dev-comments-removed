@@ -7,15 +7,15 @@
 #ifndef SHAREDRGBIMAGE_H_
 #define SHAREDRGBIMAGE_H_
 
-#include <stddef.h>                     
-#include <stdint.h>                     
-#include "ImageContainer.h"             
+#include <stddef.h>          
+#include <stdint.h>          
+#include "ImageContainer.h"  
 #include "gfxTypes.h"
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Types.h"          
-#include "nsCOMPtr.h"                   
+#include "mozilla/Attributes.h"  
+#include "mozilla/RefPtr.h"      
+#include "mozilla/gfx/Point.h"   
+#include "mozilla/gfx/Types.h"   
+#include "nsCOMPtr.h"            
 
 namespace mozilla {
 namespace layers {
@@ -31,15 +31,14 @@ already_AddRefed<Image> CreateSharedRGBImage(ImageContainer* aImageContainer,
 
 
 
-class SharedRGBImage : public Image
-{
-public:
+class SharedRGBImage : public Image {
+ public:
   explicit SharedRGBImage(ImageClient* aCompositable);
 
-protected:
+ protected:
   virtual ~SharedRGBImage();
 
-public:
+ public:
   TextureClient* GetTextureClient(KnowsCompositor* aForwarder) override;
 
   uint8_t* GetBuffer() const override;
@@ -49,14 +48,15 @@ public:
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override;
 
   bool Allocate(gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
-private:
+
+ private:
   gfx::IntSize mSize;
   RefPtr<ImageClient> mCompositable;
   RefPtr<TextureClient> mTextureClient;
   nsCountedRef<nsMainThreadSourceSurfaceRef> mSourceSurface;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

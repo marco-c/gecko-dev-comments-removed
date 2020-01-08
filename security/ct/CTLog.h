@@ -10,7 +10,8 @@
 #include <stdint.h>
 #include <vector>
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
 
@@ -22,8 +23,7 @@ typedef std::vector<CTLogOperatorId> CTLogOperatorList;
 
 
 
-enum class CTLogStatus
-{
+enum class CTLogStatus {
   
   Unknown,
   
@@ -32,6 +32,7 @@ enum class CTLogStatus
   Disqualified,
 };
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

@@ -17,206 +17,201 @@
 
 using namespace js;
 
-static gc::AllocKind
-GetProxyGCObjectKind(const Class* clasp, const BaseProxyHandler* handler, const Value& priv)
-{
-    MOZ_ASSERT(clasp->isProxy());
+static gc::AllocKind GetProxyGCObjectKind(const Class* clasp,
+                                          const BaseProxyHandler* handler,
+                                          const Value& priv) {
+  MOZ_ASSERT(clasp->isProxy());
 
-    uint32_t nreserved = JSCLASS_RESERVED_SLOTS(clasp);
+  uint32_t nreserved = JSCLASS_RESERVED_SLOTS(clasp);
 
-    
-    
-    
-    MOZ_ASSERT(nreserved > 0);
+  
+  
+  
+  MOZ_ASSERT(nreserved > 0);
 
-    MOZ_ASSERT(js::detail::ProxyValueArray::sizeOf(nreserved) % sizeof(Value) == 0,
-               "ProxyValueArray must be a multiple of Value");
+  MOZ_ASSERT(
+      js::detail::ProxyValueArray::sizeOf(nreserved) % sizeof(Value) == 0,
+      "ProxyValueArray must be a multiple of Value");
 
-    uint32_t nslots = js::detail::ProxyValueArray::sizeOf(nreserved) / sizeof(Value);
-    MOZ_ASSERT(nslots <= NativeObject::MAX_FIXED_SLOTS);
+  uint32_t nslots =
+      js::detail::ProxyValueArray::sizeOf(nreserved) / sizeof(Value);
+  MOZ_ASSERT(nslots <= NativeObject::MAX_FIXED_SLOTS);
 
-    gc::AllocKind kind = gc::GetGCObjectKind(nslots);
-    if (handler->finalizeInBackground(priv)) {
-        kind = GetBackgroundAllocKind(kind);
-    }
+  gc::AllocKind kind = gc::GetGCObjectKind(nslots);
+  if (handler->finalizeInBackground(priv)) {
+    kind = GetBackgroundAllocKind(kind);
+  }
 
-    return kind;
+  return kind;
 }
 
- ProxyObject*
-ProxyObject::New(JSContext* cx, const BaseProxyHandler* handler, HandleValue priv, TaggedProto proto_,
-                 const ProxyOptions& options)
-{
-    Rooted<TaggedProto> proto(cx, proto_);
+ ProxyObject* ProxyObject::New(JSContext* cx,
+                                           const BaseProxyHandler* handler,
+                                           HandleValue priv, TaggedProto proto_,
+                                           const ProxyOptions& options) {
+  Rooted<TaggedProto> proto(cx, proto_);
 
-    const Class* clasp = options.clasp();
+  const Class* clasp = options.clasp();
 
-    MOZ_ASSERT(isValidProxyClass(clasp));
-    MOZ_ASSERT(clasp->shouldDelayMetadataBuilder());
-    MOZ_ASSERT_IF(proto.isObject(), cx->compartment() == proto.toObject()->compartment());
-    MOZ_ASSERT(clasp->hasFinalize());
-    MOZ_ASSERT_IF(priv.isGCThing(), !JS::GCThingIsMarkedGray(JS::GCCellPtr(priv)));
+  MOZ_ASSERT(isValidProxyClass(clasp));
+  MOZ_ASSERT(clasp->shouldDelayMetadataBuilder());
+  MOZ_ASSERT_IF(proto.isObject(),
+                cx->compartment() == proto.toObject()->compartment());
+  MOZ_ASSERT(clasp->hasFinalize());
+  MOZ_ASSERT_IF(priv.isGCThing(),
+                !JS::GCThingIsMarkedGray(JS::GCCellPtr(priv)));
 
-    
-
-
-
-
+  
 
 
-    if (proto.isObject() && !options.singleton() && !clasp->isDOMClass()) {
-        ObjectGroupRealm& realm = ObjectGroupRealm::getForNewObject(cx);
-        RootedObject protoObj(cx, proto.toObject());
-        if (!JSObject::setNewGroupUnknown(cx, realm, clasp, protoObj)) {
-            return nullptr;
-        }
+
+
+
+
+  if (proto.isObject() && !options.singleton() && !clasp->isDOMClass()) {
+    ObjectGroupRealm& realm = ObjectGroupRealm::getForNewObject(cx);
+    RootedObject protoObj(cx, proto.toObject());
+    if (!JSObject::setNewGroupUnknown(cx, realm, clasp, protoObj)) {
+      return nullptr;
     }
+  }
 
-    
-    
-    NewObjectKind newKind = NurseryAllocatedProxy;
-    if (options.singleton()) {
-        MOZ_ASSERT(priv.isNull() || (priv.isGCThing() && priv.toGCThing()->isTenured()));
-        newKind = SingletonObject;
-    } else if ((priv.isGCThing() && priv.toGCThing()->isTenured()) ||
-               !handler->canNurseryAllocate())
-    {
-        newKind = TenuredObject;
-    }
+  
+  
+  NewObjectKind newKind = NurseryAllocatedProxy;
+  if (options.singleton()) {
+    MOZ_ASSERT(priv.isNull() ||
+               (priv.isGCThing() && priv.toGCThing()->isTenured()));
+    newKind = SingletonObject;
+  } else if ((priv.isGCThing() && priv.toGCThing()->isTenured()) ||
+             !handler->canNurseryAllocate()) {
+    newKind = TenuredObject;
+  }
 
-    gc::AllocKind allocKind = GetProxyGCObjectKind(clasp, handler, priv);
+  gc::AllocKind allocKind = GetProxyGCObjectKind(clasp, handler, priv);
 
-    AutoSetNewObjectMetadata metadata(cx);
-    
-    
-    ProxyObject* proxy;
-    JS_TRY_VAR_OR_RETURN_NULL(cx, proxy, create(cx, clasp, proto, allocKind, newKind));
+  AutoSetNewObjectMetadata metadata(cx);
+  
+  
+  ProxyObject* proxy;
+  JS_TRY_VAR_OR_RETURN_NULL(cx, proxy,
+                            create(cx, clasp, proto, allocKind, newKind));
 
-    proxy->setInlineValueArray();
+  proxy->setInlineValueArray();
 
-    detail::ProxyValueArray* values = detail::GetProxyDataLayout(proxy)->values();
-    values->init(proxy->numReservedSlots());
+  detail::ProxyValueArray* values = detail::GetProxyDataLayout(proxy)->values();
+  values->init(proxy->numReservedSlots());
 
-    proxy->data.handler = handler;
-    if (IsCrossCompartmentWrapper(proxy)) {
-        proxy->setCrossCompartmentPrivate(priv);
-    } else {
-        proxy->setSameCompartmentPrivate(priv);
-    }
+  proxy->data.handler = handler;
+  if (IsCrossCompartmentWrapper(proxy)) {
+    proxy->setCrossCompartmentPrivate(priv);
+  } else {
+    proxy->setSameCompartmentPrivate(priv);
+  }
 
-    
-    if (newKind != SingletonObject && !clasp->isDOMClass()) {
-        MarkObjectGroupUnknownProperties(cx, proxy->group());
-    }
+  
+  if (newKind != SingletonObject && !clasp->isDOMClass()) {
+    MarkObjectGroupUnknownProperties(cx, proxy->group());
+  }
 
-    return proxy;
+  return proxy;
 }
 
-gc::AllocKind
-ProxyObject::allocKindForTenure() const
-{
-    MOZ_ASSERT(usingInlineValueArray());
-    Value priv = private_();
-    return GetProxyGCObjectKind(getClass(), data.handler, priv);
+gc::AllocKind ProxyObject::allocKindForTenure() const {
+  MOZ_ASSERT(usingInlineValueArray());
+  Value priv = private_();
+  return GetProxyGCObjectKind(getClass(), data.handler, priv);
 }
 
-void
-ProxyObject::setCrossCompartmentPrivate(const Value& priv)
-{
-    setPrivate(priv);
+void ProxyObject::setCrossCompartmentPrivate(const Value& priv) {
+  setPrivate(priv);
 }
 
-void
-ProxyObject::setSameCompartmentPrivate(const Value& priv)
-{
-    MOZ_ASSERT(IsObjectValueInCompartment(priv, compartment()));
-    setPrivate(priv);
+void ProxyObject::setSameCompartmentPrivate(const Value& priv) {
+  MOZ_ASSERT(IsObjectValueInCompartment(priv, compartment()));
+  setPrivate(priv);
 }
 
-inline void
-ProxyObject::setPrivate(const Value& priv)
-{
-    MOZ_ASSERT_IF(IsMarkedBlack(this) && priv.isGCThing(),
-                  !JS::GCThingIsMarkedGray(JS::GCCellPtr(priv)));
-    *slotOfPrivate() = priv;
+inline void ProxyObject::setPrivate(const Value& priv) {
+  MOZ_ASSERT_IF(IsMarkedBlack(this) && priv.isGCThing(),
+                !JS::GCThingIsMarkedGray(JS::GCCellPtr(priv)));
+  *slotOfPrivate() = priv;
 }
 
-void
-ProxyObject::nuke()
-{
-    
-    
-    setSameCompartmentPrivate(DeadProxyTargetValue(this));
+void ProxyObject::nuke() {
+  
+  
+  setSameCompartmentPrivate(DeadProxyTargetValue(this));
 
-    
-    setHandler(&DeadObjectProxy::singleton);
+  
+  setHandler(&DeadObjectProxy::singleton);
 
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
 }
 
- JS::Result<ProxyObject*, JS::OOM&>
-ProxyObject::create(JSContext* cx, const Class* clasp, Handle<TaggedProto> proto,
-                    gc::AllocKind allocKind, NewObjectKind newKind)
-{
-    MOZ_ASSERT(clasp->isProxy());
+ JS::Result<ProxyObject*, JS::OOM&> ProxyObject::create(
+    JSContext* cx, const Class* clasp, Handle<TaggedProto> proto,
+    gc::AllocKind allocKind, NewObjectKind newKind) {
+  MOZ_ASSERT(clasp->isProxy());
 
-    Realm* realm = cx->realm();
-    RootedObjectGroup group(cx);
-    RootedShape shape(cx);
+  Realm* realm = cx->realm();
+  RootedObjectGroup group(cx);
+  RootedShape shape(cx);
 
-    
-    if (!realm->newProxyCache.lookup(clasp, proto, group.address(), shape.address())) {
-        group = ObjectGroup::defaultNewGroup(cx, clasp, proto, nullptr);
-        if (!group) {
-            return cx->alreadyReportedOOM();
-        }
-
-        shape = EmptyShape::getInitialShape(cx, clasp, proto,  0);
-        if (!shape) {
-            return cx->alreadyReportedOOM();
-        }
-
-        MOZ_ASSERT(group->realm() == realm);
-        realm->newProxyCache.add(group, shape);
+  
+  if (!realm->newProxyCache.lookup(clasp, proto, group.address(),
+                                   shape.address())) {
+    group = ObjectGroup::defaultNewGroup(cx, clasp, proto, nullptr);
+    if (!group) {
+      return cx->alreadyReportedOOM();
     }
 
-    gc::InitialHeap heap = GetInitialHeap(newKind, clasp);
-    debugCheckNewObject(group, shape, allocKind, heap);
-
-    JSObject* obj = js::Allocate<JSObject>(cx, allocKind,  0, heap, clasp);
-    if (!obj) {
-        return cx->alreadyReportedOOM();
+    shape = EmptyShape::getInitialShape(cx, clasp, proto,  0);
+    if (!shape) {
+      return cx->alreadyReportedOOM();
     }
 
-    ProxyObject* pobj = static_cast<ProxyObject*>(obj);
-    pobj->initGroup(group);
-    pobj->initShape(shape);
+    MOZ_ASSERT(group->realm() == realm);
+    realm->newProxyCache.add(group, shape);
+  }
 
-    MOZ_ASSERT(clasp->shouldDelayMetadataBuilder());
-    cx->realm()->setObjectPendingMetadata(cx, pobj);
+  gc::InitialHeap heap = GetInitialHeap(newKind, clasp);
+  debugCheckNewObject(group, shape, allocKind, heap);
 
-    js::gc::gcTracer.traceCreateObject(pobj);
+  JSObject* obj = js::Allocate<JSObject>(cx, allocKind,  0,
+                                         heap, clasp);
+  if (!obj) {
+    return cx->alreadyReportedOOM();
+  }
 
-    if (newKind == SingletonObject) {
-        Rooted<ProxyObject*> pobjRoot(cx, pobj);
-        if (!JSObject::setSingleton(cx, pobjRoot)) {
-            return cx->alreadyReportedOOM();
-        }
-        pobj = pobjRoot;
+  ProxyObject* pobj = static_cast<ProxyObject*>(obj);
+  pobj->initGroup(group);
+  pobj->initShape(shape);
+
+  MOZ_ASSERT(clasp->shouldDelayMetadataBuilder());
+  cx->realm()->setObjectPendingMetadata(cx, pobj);
+
+  js::gc::gcTracer.traceCreateObject(pobj);
+
+  if (newKind == SingletonObject) {
+    Rooted<ProxyObject*> pobjRoot(cx, pobj);
+    if (!JSObject::setSingleton(cx, pobjRoot)) {
+      return cx->alreadyReportedOOM();
     }
+    pobj = pobjRoot;
+  }
 
-    return pobj;
+  return pobj;
 }
 
-JS_FRIEND_API void
-js::detail::SetValueInProxy(Value* slot, const Value& value)
-{
-    
-    
-    *reinterpret_cast<GCPtrValue*>(slot) = value;
+JS_FRIEND_API void js::detail::SetValueInProxy(Value* slot,
+                                               const Value& value) {
+  
+  
+  *reinterpret_cast<GCPtrValue*>(slot) = value;
 }

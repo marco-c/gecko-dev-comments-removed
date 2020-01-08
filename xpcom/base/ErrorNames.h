@@ -19,6 +19,6 @@ namespace mozilla {
 
 void GetErrorName(nsresult rv, nsACString& name);
 
-} 
+}  
 
-#endif 
+#endif  

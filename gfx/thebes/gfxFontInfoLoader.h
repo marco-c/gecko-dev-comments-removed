@@ -21,19 +21,19 @@
 
 
 struct FontFaceData {
-    FontFaceData() : mUVSOffset(0) {}
+  FontFaceData() : mUVSOffset(0) {}
 
-    FontFaceData(const FontFaceData& aFontFaceData) {
-        mFullName = aFontFaceData.mFullName;
-        mPostscriptName = aFontFaceData.mPostscriptName;
-        mCharacterMap = aFontFaceData.mCharacterMap;
-        mUVSOffset = aFontFaceData.mUVSOffset;
-    }
+  FontFaceData(const FontFaceData& aFontFaceData) {
+    mFullName = aFontFaceData.mFullName;
+    mPostscriptName = aFontFaceData.mPostscriptName;
+    mCharacterMap = aFontFaceData.mCharacterMap;
+    mUVSOffset = aFontFaceData.mUVSOffset;
+  }
 
-    nsCString mFullName;
-    nsCString mPostscriptName;
-    RefPtr<gfxCharacterMap> mCharacterMap;
-    uint32_t mUVSOffset;
+  nsCString mFullName;
+  nsCString mPostscriptName;
+  RefPtr<gfxCharacterMap> mCharacterMap;
+  uint32_t mUVSOffset;
 };
 
 
@@ -44,100 +44,89 @@ struct FontFaceData {
 
 
 class FontInfoData {
-public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FontInfoData)
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(FontInfoData)
 
-    FontInfoData(bool aLoadOtherNames,
-                 bool aLoadFaceNames,
-                 bool aLoadCmaps) :
-        mCanceled(false),
+  FontInfoData(bool aLoadOtherNames, bool aLoadFaceNames, bool aLoadCmaps)
+      : mCanceled(false),
         mLoadOtherNames(aLoadOtherNames),
         mLoadFaceNames(aLoadFaceNames),
-        mLoadCmaps(aLoadCmaps)
-    {
-        MOZ_COUNT_CTOR(FontInfoData);
+        mLoadCmaps(aLoadCmaps) {
+    MOZ_COUNT_CTOR(FontInfoData);
+  }
+
+ protected:
+  
+  virtual ~FontInfoData() { MOZ_COUNT_DTOR(FontInfoData); }
+
+ public:
+  virtual void Load();
+
+  
+  
+  virtual void LoadFontFamilyData(const nsACString& aFamilyName) = 0;
+
+  
+
+  
+  virtual already_AddRefed<gfxCharacterMap> GetCMAP(const nsACString& aFontName,
+                                                    uint32_t& aUVSOffset) {
+    FontFaceData faceData;
+    if (!mFontFaceData.Get(aFontName, &faceData) || !faceData.mCharacterMap) {
+      return nullptr;
     }
 
-protected:
-    
-    virtual ~FontInfoData() {
-        MOZ_COUNT_DTOR(FontInfoData);
+    aUVSOffset = faceData.mUVSOffset;
+    RefPtr<gfxCharacterMap> cmap = faceData.mCharacterMap;
+    return cmap.forget();
+  }
+
+  
+  virtual void GetFaceNames(const nsACString& aFontName, nsACString& aFullName,
+                            nsACString& aPostscriptName) {
+    FontFaceData faceData;
+    if (!mFontFaceData.Get(aFontName, &faceData)) {
+      return;
     }
 
-public:
-    virtual void Load();
+    aFullName = faceData.mFullName;
+    aPostscriptName = faceData.mPostscriptName;
+  }
 
-    
-    
-    virtual void LoadFontFamilyData(const nsACString& aFamilyName) = 0;
+  
+  virtual bool GetOtherFamilyNames(const nsACString& aFamilyName,
+                                   nsTArray<nsCString>& aOtherFamilyNames) {
+    return mOtherFamilyNames.Get(aFamilyName, &aOtherFamilyNames);
+  }
 
-    
+  nsTArray<nsCString> mFontFamiliesToLoad;
 
-    
-    virtual already_AddRefed<gfxCharacterMap>
-    GetCMAP(const nsACString& aFontName,
-            uint32_t& aUVSOffset)
-    {
-        FontFaceData faceData;
-        if (!mFontFaceData.Get(aFontName, &faceData) ||
-            !faceData.mCharacterMap) {
-            return nullptr;
-        }
+  
+  
+  mozilla::Atomic<bool> mCanceled;
 
-        aUVSOffset = faceData.mUVSOffset;
-        RefPtr<gfxCharacterMap> cmap = faceData.mCharacterMap;
-        return cmap.forget();
-    }
+  
+  mozilla::TimeDuration mLoadTime;
 
-    
-    virtual void GetFaceNames(const nsACString& aFontName,
-                              nsACString& aFullName,
-                              nsACString& aPostscriptName)
-    {
-        FontFaceData faceData;
-        if (!mFontFaceData.Get(aFontName, &faceData)) {
-            return;
-        }
+  struct FontCounts {
+    uint32_t families;
+    uint32_t fonts;
+    uint32_t cmaps;
+    uint32_t facenames;
+    uint32_t othernames;
+  };
 
-        aFullName = faceData.mFullName;
-        aPostscriptName = faceData.mPostscriptName;
-    }
+  FontCounts mLoadStats;
 
-    
-    virtual bool GetOtherFamilyNames(const nsACString& aFamilyName,
-                                     nsTArray<nsCString>& aOtherFamilyNames)
-    {
-        return mOtherFamilyNames.Get(aFamilyName, &aOtherFamilyNames); 
-    }
+  bool mLoadOtherNames;
+  bool mLoadFaceNames;
+  bool mLoadCmaps;
 
-    nsTArray<nsCString> mFontFamiliesToLoad;
+  
+  nsDataHashtable<nsCStringHashKey, FontFaceData> mFontFaceData;
 
-    
-    
-    mozilla::Atomic<bool> mCanceled;
-
-    
-    mozilla::TimeDuration mLoadTime;
-
-    struct FontCounts {
-        uint32_t families;
-        uint32_t fonts;
-        uint32_t cmaps;
-        uint32_t facenames;
-        uint32_t othernames;
-    };
-
-    FontCounts mLoadStats;
-
-    bool mLoadOtherNames;
-    bool mLoadFaceNames;
-    bool mLoadCmaps;
-
-    
-    nsDataHashtable<nsCStringHashKey, FontFaceData> mFontFaceData;
-
-    
-    nsDataHashtable<nsCStringHashKey, nsTArray<nsCString> > mOtherFamilyNames;
+  
+  nsDataHashtable<nsCStringHashKey, nsTArray<nsCString> > mOtherFamilyNames;
 };
 
 
@@ -149,106 +138,98 @@ public:
 
 
 class gfxFontInfoLoader {
-public:
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef enum {
+    stateInitial,
+    stateTimerOnDelay,
+    stateAsyncLoad,
+    stateTimerOnInterval,
+    stateTimerOff
+  } TimerState;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    typedef enum {
-        stateInitial,
-        stateTimerOnDelay,
-        stateAsyncLoad,
-        stateTimerOnInterval,
-        stateTimerOff
-    } TimerState;
+  gfxFontInfoLoader() : mInterval(0), mState(stateInitial) {
+    MOZ_COUNT_CTOR(gfxFontInfoLoader);
+  }
 
-    gfxFontInfoLoader() :
-        mInterval(0), mState(stateInitial)
-    {
-        MOZ_COUNT_CTOR(gfxFontInfoLoader);
-    }
+  virtual ~gfxFontInfoLoader();
 
-    virtual ~gfxFontInfoLoader();
+  
+  
+  void StartLoader(uint32_t aDelay, uint32_t aInterval);
 
-    
-    void StartLoader(uint32_t aDelay, uint32_t aInterval);
+  
+  virtual void FinalizeLoader(FontInfoData* aFontInfo);
 
-    
-    virtual void FinalizeLoader(FontInfoData *aFontInfo);
+  
+  void CancelLoader();
 
-    
-    void CancelLoader();
+  uint32_t GetInterval() { return mInterval; }
 
-    uint32_t GetInterval() { return mInterval; }
+ protected:
+  class ShutdownObserver : public nsIObserver {
+   public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIOBSERVER
 
-protected:
-    class ShutdownObserver : public nsIObserver
-    {
-    public:
-        NS_DECL_ISUPPORTS
-        NS_DECL_NSIOBSERVER
+    explicit ShutdownObserver(gfxFontInfoLoader* aLoader) : mLoader(aLoader) {}
 
-        explicit ShutdownObserver(gfxFontInfoLoader *aLoader)
-            : mLoader(aLoader)
-        { }
+   protected:
+    virtual ~ShutdownObserver() {}
 
-    protected:
-        virtual ~ShutdownObserver()
-        { }
+    gfxFontInfoLoader* mLoader;
+  };
 
-        gfxFontInfoLoader *mLoader;
-    };
+  
+  
+  virtual already_AddRefed<FontInfoData> CreateFontInfoData() {
+    return nullptr;
+  }
 
-    
-    
-    virtual already_AddRefed<FontInfoData> CreateFontInfoData() {
-        return nullptr;
-    }
+  
+  virtual void InitLoader() = 0;
 
-    
-    virtual void InitLoader() = 0;
+  
+  
+  virtual bool LoadFontInfo() = 0;
 
-    
-    
-    virtual bool LoadFontInfo() = 0;
+  
+  virtual void CleanupLoader() { mFontInfo = nullptr; }
 
-    
-    virtual void CleanupLoader() {
-        mFontInfo = nullptr;
-    }
+  
+  static void LoadFontInfoCallback(nsITimer* aTimer, void* aThis) {
+    gfxFontInfoLoader* loader = static_cast<gfxFontInfoLoader*>(aThis);
+    loader->LoadFontInfoTimerFire();
+  }
 
-    
-    static void LoadFontInfoCallback(nsITimer *aTimer, void *aThis) {
-        gfxFontInfoLoader *loader = static_cast<gfxFontInfoLoader*>(aThis);
-        loader->LoadFontInfoTimerFire();
-    }
+  static void DelayedStartCallback(nsITimer* aTimer, void* aThis) {
+    gfxFontInfoLoader* loader = static_cast<gfxFontInfoLoader*>(aThis);
+    loader->StartLoader(0, loader->GetInterval());
+  }
 
-    static void DelayedStartCallback(nsITimer *aTimer, void *aThis) {
-        gfxFontInfoLoader *loader = static_cast<gfxFontInfoLoader*>(aThis);
-        loader->StartLoader(0, loader->GetInterval());
-    }
+  void LoadFontInfoTimerFire();
 
-    void LoadFontInfoTimerFire();
+  void AddShutdownObserver();
+  void RemoveShutdownObserver();
 
-    void AddShutdownObserver();
-    void RemoveShutdownObserver();
+  nsCOMPtr<nsITimer> mTimer;
+  nsCOMPtr<nsIObserver> mObserver;
+  nsCOMPtr<nsIThread> mFontLoaderThread;
+  uint32_t mInterval;
+  TimerState mState;
 
-    nsCOMPtr<nsITimer> mTimer;
-    nsCOMPtr<nsIObserver> mObserver;
-    nsCOMPtr<nsIThread> mFontLoaderThread;
-    uint32_t mInterval;
-    TimerState mState;
+  
+  RefPtr<FontInfoData> mFontInfo;
 
-    
-    RefPtr<FontInfoData> mFontInfo;
-
-    
-    mozilla::TimeDuration mLoadTime;
+  
+  mozilla::TimeDuration mLoadTime;
 };
 
 #endif 

@@ -4,7 +4,7 @@
 
 
 
- 
+
 
 
 
@@ -56,43 +56,32 @@ extern "C" {
 
 #include "nr_socket_prsock.h"
 
-namespace mozilla
-{
+namespace mozilla {
 using namespace net;
 
-namespace net
-{
+namespace net {
 class WebrtcProxyChannelWrapper;
-} 
+}  
 
 class NrSocketProxyData;
 class NrSocketProxyConfig;
 
-class NrSocketProxy : public NrSocketBase,
-                      public WebrtcProxyChannelCallback
-{
-public:
+class NrSocketProxy : public NrSocketBase, public WebrtcProxyChannelCallback {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(NrSocketProxy, override)
 
   explicit NrSocketProxy(const std::shared_ptr<NrSocketProxyConfig>& aConfig);
 
   
-  int create(nr_transport_addr *aAddr) override;
-  int connect(nr_transport_addr *aAddr) override;
+  int create(nr_transport_addr* aAddr) override;
+  int connect(nr_transport_addr* aAddr) override;
   void close() override;
-  int write(const void* aBuffer,
-            size_t aCount,
-            size_t* aWrote) override;
+  int write(const void* aBuffer, size_t aCount, size_t* aWrote) override;
   int read(void* aBuffer, size_t aCount, size_t* aRead) override;
   int getaddr(nr_transport_addr* aAddr) override;
-  int sendto(const void* aBuffer,
-             size_t aCount,
-             int aFlags,
+  int sendto(const void* aBuffer, size_t aCount, int aFlags,
              nr_transport_addr* aAddr) override;
-  int recvfrom(void* aBuffer,
-               size_t aCount,
-               size_t* aRead,
-               int aFlags,
+  int recvfrom(void* aBuffer, size_t aCount, size_t* aRead, int aFlags,
                nr_transport_addr* aAddr) override;
   int listen(int aBacklog) override;
   int accept(nr_transport_addr* aAddr, nr_socket** aSocket) override;
@@ -107,22 +96,22 @@ public:
   
   void AssignChannel_DoNotUse(WebrtcProxyChannelWrapper* aWrapper);
 
-protected:
+ protected:
   virtual ~NrSocketProxy();
 
-private:
+ private:
   void DoCallbacks();
 
   bool mClosed;
 
-  size_t                        mReadOffset;
-  std::list<NrSocketProxyData>  mReadQueue;
+  size_t mReadOffset;
+  std::list<NrSocketProxyData> mReadQueue;
 
   std::shared_ptr<NrSocketProxyConfig> mConfig;
 
   RefPtr<WebrtcProxyChannelWrapper> mWebrtcProxyChannel;
 };
 
-} 
+}  
 
-#endif 
+#endif  

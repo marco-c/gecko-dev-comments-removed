@@ -22,56 +22,57 @@ class gfxVarReceiver;
 
 
 #define GFX_VARS_LIST(_)
-      \
-  _(BrowserTabsRemoteAutostart, bool,             false)                \
-  _(ContentBackend,             BackendType,      BackendType::NONE)    \
-  _(SoftwareBackend,            BackendType,      BackendType::NONE)    \
-  _(TileSize,                   IntSize,          IntSize(-1, -1))      \
-  _(UseXRender,                 bool,             false)                \
-  _(OffscreenFormat,            gfxImageFormat,   mozilla::gfx::SurfaceFormat::X8R8G8B8_UINT32) \
-  _(RequiresAcceleratedGLContextForCompositorOGL, bool, false)          \
-  _(CanUseHardwareVideoDecoding, bool,            false)                \
-  _(PDMWMFDisableD3D11Dlls,     nsCString,        nsCString())          \
-  _(PDMWMFDisableD3D9Dlls,      nsCString,        nsCString())          \
-  _(DXInterop2Blocked,          bool,             false)                \
-  _(DXNV12Blocked,              bool,             false)                \
-  _(DXP010Blocked,              bool,             false)                \
-  _(DXP016Blocked,              bool,             false)                \
-  _(UseWebRender,               bool,             false)                \
-  _(UseWebRenderANGLE,          bool,             false)                \
-  _(UseWebRenderDCompWin,       bool,             false)                \
-  _(UseWebRenderDCompWinTripleBuffering, bool,    false)                \
-  _(UseWebRenderProgramBinary,  bool,             false)                \
-  _(UseWebRenderProgramBinaryDisk, bool,          false)                \
-  _(WebRenderDebugFlags,        int32_t,          0)                    \
-  _(ScreenDepth,                int32_t,          0)                    \
-  _(GREDirectory,               nsString,         nsString())           \
-  _(ProfDirectory,              nsString,         nsString())           \
-  _(UseOMTP,                    bool,             false)                \
-  _(AllowD3D11KeyedMutex,       bool,             false)                \
-  _(SystemTextQuality,          int32_t,          5 /* CLEARTYPE_QUALITY */) \
+ \
+  _(BrowserTabsRemoteAutostart, bool, false)                       \
+  _(ContentBackend, BackendType, BackendType::NONE)                \
+  _(SoftwareBackend, BackendType, BackendType::NONE)               \
+  _(TileSize, IntSize, IntSize(-1, -1))                            \
+  _(UseXRender, bool, false)                                       \
+  _(OffscreenFormat, gfxImageFormat,                               \
+    mozilla::gfx::SurfaceFormat::X8R8G8B8_UINT32)                  \
+  _(RequiresAcceleratedGLContextForCompositorOGL, bool, false)     \
+  _(CanUseHardwareVideoDecoding, bool, false)                      \
+  _(PDMWMFDisableD3D11Dlls, nsCString, nsCString())                \
+  _(PDMWMFDisableD3D9Dlls, nsCString, nsCString())                 \
+  _(DXInterop2Blocked, bool, false)                                \
+  _(DXNV12Blocked, bool, false)                                    \
+  _(DXP010Blocked, bool, false)                                    \
+  _(DXP016Blocked, bool, false)                                    \
+  _(UseWebRender, bool, false)                                     \
+  _(UseWebRenderANGLE, bool, false)                                \
+  _(UseWebRenderDCompWin, bool, false)                             \
+  _(UseWebRenderDCompWinTripleBuffering, bool, false)              \
+  _(UseWebRenderProgramBinary, bool, false)                        \
+  _(UseWebRenderProgramBinaryDisk, bool, false)                    \
+  _(WebRenderDebugFlags, int32_t, 0)                               \
+  _(ScreenDepth, int32_t, 0)                                       \
+  _(GREDirectory, nsString, nsString())                            \
+  _(ProfDirectory, nsString, nsString())                           \
+  _(UseOMTP, bool, false)                                          \
+  _(AllowD3D11KeyedMutex, bool, false)                             \
+  _(SystemTextQuality, int32_t, 5 /* CLEARTYPE_QUALITY */)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class gfxVars final {
+ public:
   
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class gfxVars final
-{
-public:
   
-  
-  static void SetValuesForInitialize(const nsTArray<GfxVarUpdate>& aInitUpdates);
+  static void SetValuesForInitialize(
+      const nsTArray<GfxVarUpdate>& aInitUpdates);
 
   static void Initialize();
   static void Shutdown();
@@ -83,33 +84,28 @@ public:
   
   static nsTArray<GfxVarUpdate> FetchNonDefaultVars();
 
-public:
+ public:
   
-  class VarBase
-  {
-  public:
+  class VarBase {
+   public:
     VarBase();
     virtual void SetValue(const GfxVarValue& aValue) = 0;
     virtual void GetValue(GfxVarValue* aOutValue) = 0;
     virtual bool HasDefaultValue() const = 0;
-    size_t Index() const {
-      return mIndex;
-    }
-  private:
+    size_t Index() const { return mIndex; }
+
+   private:
     size_t mIndex;
   };
 
-private:
+ private:
   static StaticAutoPtr<gfxVars> sInstance;
   static StaticAutoPtr<nsTArray<VarBase*>> sVarList;
 
   template <typename T, T Default()>
-  class VarImpl final : public VarBase
-  {
-  public:
-    VarImpl()
-     : mValue(Default())
-    {}
+  class VarImpl final : public VarBase {
+   public:
+    VarImpl() : mValue(Default()) {}
     void SetValue(const GfxVarValue& aValue) override {
       aValue.get(&mValue);
       if (mListener) {
@@ -119,12 +115,8 @@ private:
     void GetValue(GfxVarValue* aOutValue) override {
       *aOutValue = GfxVarValue(mValue);
     }
-    bool HasDefaultValue() const override {
-      return mValue == Default();
-    }
-    const T& Get() const {
-      return mValue;
-    }
+    bool HasDefaultValue() const override { return mValue == Default(); }
+    const T& Get() const { return mValue; }
     
     bool Set(const T& aValue) {
       MOZ_ASSERT(XRE_IsParentProcess());
@@ -138,58 +130,53 @@ private:
       return true;
     }
 
-    void SetListener(const std::function<void()>& aListener)
-    {
+    void SetListener(const std::function<void()>& aListener) {
       mListener = aListener;
     }
-  private:
+
+   private:
     T mValue;
     std::function<void()> mListener;
   };
 
-#define GFX_VAR_DECL(CxxName, DataType, DefaultValue)           \
-private:                                                        \
-  static DataType Get##CxxName##Default() {                     \
-    return DefaultValue;                                        \
-  }                                                             \
-  VarImpl<DataType, Get##CxxName##Default> mVar##CxxName;       \
-public:                                                         \
-  static const DataType& CxxName() {                            \
-    return sInstance->mVar##CxxName.Get();                      \
-  }                                                             \
-  static DataType Get##CxxName##OrDefault() {                   \
-    if (!sInstance) {                                           \
-      return DefaultValue;                                      \
-    }                                                           \
-    return sInstance->mVar##CxxName.Get();                      \
-  }                                                             \
-  static void Set##CxxName(const DataType& aValue) {            \
-    if (sInstance->mVar##CxxName.Set(aValue)) {                 \
-      sInstance->NotifyReceivers(&sInstance->mVar##CxxName);    \
-    }                                                           \
-  }                                                             \
-                                                                \
-  static void                                                   \
-  Set##CxxName##Listener(const std::function<void()>& aListener)  \
-  {                                                             \
-    sInstance->mVar##CxxName.SetListener(aListener);            \
+#define GFX_VAR_DECL(CxxName, DataType, DefaultValue)                          \
+ private:                                                                      \
+  static DataType Get##CxxName##Default() { return DefaultValue; }             \
+  VarImpl<DataType, Get##CxxName##Default> mVar##CxxName;                      \
+                                                                               \
+ public:                                                                       \
+  static const DataType& CxxName() { return sInstance->mVar##CxxName.Get(); }  \
+  static DataType Get##CxxName##OrDefault() {                                  \
+    if (!sInstance) {                                                          \
+      return DefaultValue;                                                     \
+    }                                                                          \
+    return sInstance->mVar##CxxName.Get();                                     \
+  }                                                                            \
+  static void Set##CxxName(const DataType& aValue) {                           \
+    if (sInstance->mVar##CxxName.Set(aValue)) {                                \
+      sInstance->NotifyReceivers(&sInstance->mVar##CxxName);                   \
+    }                                                                          \
+  }                                                                            \
+                                                                               \
+  static void Set##CxxName##Listener(const std::function<void()>& aListener) { \
+    sInstance->mVar##CxxName.SetListener(aListener);                           \
   }
 
   GFX_VARS_LIST(GFX_VAR_DECL)
 #undef GFX_VAR_DECL
 
-private:
+ private:
   gfxVars();
 
   void NotifyReceivers(VarBase* aVar);
 
-private:
+ private:
   nsTArray<gfxVarReceiver*> mReceivers;
 };
 
 #undef GFX_VARS_LIST
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

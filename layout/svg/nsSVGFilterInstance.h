@@ -20,8 +20,8 @@ struct nsStyleFilter;
 namespace mozilla {
 namespace dom {
 class SVGFilterElement;
-} 
-} 
+}  
+}  
 
 
 
@@ -64,15 +64,14 @@ class SVGFilterElement;
 
 
 
-class nsSVGFilterInstance
-{
+class nsSVGFilterInstance {
   typedef mozilla::gfx::Point3D Point3D;
   typedef mozilla::gfx::IntRect IntRect;
   typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::gfx::FilterPrimitiveDescription FilterPrimitiveDescription;
   typedef mozilla::dom::UserSpaceMetrics UserSpaceMetrics;
 
-public:
+ public:
   
 
 
@@ -81,8 +80,7 @@ public:
 
 
 
-  nsSVGFilterInstance(const nsStyleFilter& aFilter,
-                      nsIFrame* aTargetFrame,
+  nsSVGFilterInstance(const nsStyleFilter& aFilter, nsIFrame* aTargetFrame,
                       nsIContent* aTargetContent,
                       const UserSpaceMetrics& aMetrics,
                       const gfxRect& aTargetBBox,
@@ -106,17 +104,16 @@ public:
 
 
 
-  nsresult BuildPrimitives(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                           nsTArray<RefPtr<SourceSurface>>& aInputImages,
-                           bool aInputIsTainted);
+  nsresult BuildPrimitives(
+      nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
+      nsTArray<RefPtr<SourceSurface>>& aInputImages, bool aInputIsTainted);
 
-  float GetPrimitiveNumber(uint8_t aCtxType, const nsSVGNumber2 *aNumber) const
-  {
+  float GetPrimitiveNumber(uint8_t aCtxType,
+                           const nsSVGNumber2* aNumber) const {
     return GetPrimitiveNumber(aCtxType, aNumber->GetAnimValue());
   }
-  float GetPrimitiveNumber(uint8_t aCtxType, const nsSVGNumberPair *aNumberPair,
-                           nsSVGNumberPair::PairIndex aIndex) const
-  {
+  float GetPrimitiveNumber(uint8_t aCtxType, const nsSVGNumberPair* aNumberPair,
+                           nsSVGNumberPair::PairIndex aIndex) const {
     return GetPrimitiveNumber(aCtxType, aNumberPair->GetAnimValue(aIndex));
   }
 
@@ -132,7 +129,7 @@ public:
 
   gfxRect UserSpaceToFilterSpace(const gfxRect& aUserSpaceRect) const;
 
-private:
+ private:
   
 
 
@@ -141,18 +138,19 @@ private:
   
 
 
-  IntRect ComputeFilterPrimitiveSubregion(nsSVGFE* aFilterElement,
-                                          const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                                          const nsTArray<int32_t>& aInputIndices);
+  IntRect ComputeFilterPrimitiveSubregion(
+      nsSVGFE* aFilterElement,
+      const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
+      const nsTArray<int32_t>& aInputIndices);
 
   
 
 
 
-  void GetInputsAreTainted(const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                           const nsTArray<int32_t>& aInputIndices,
-                           bool aFilterInputIsTainted,
-                           nsTArray<bool>& aOutInputsAreTainted);
+  void GetInputsAreTainted(
+      const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
+      const nsTArray<int32_t>& aInputIndices, bool aFilterInputIsTainted,
+      nsTArray<bool>& aOutInputsAreTainted);
 
   
 
@@ -175,7 +173,8 @@ private:
 
 
 
-  int32_t GetOrCreateSourceAlphaIndex(nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs);
+  int32_t GetOrCreateSourceAlphaIndex(
+      nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs);
 
   
 
@@ -184,12 +183,13 @@ private:
 
 
 
-  nsresult GetSourceIndices(nsSVGFE* aPrimitiveElement,
-                            nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
-                            const nsDataHashtable<nsStringHashKey, int32_t>& aImageTable,
-                            nsTArray<int32_t>& aSourceIndices);
+  nsresult GetSourceIndices(
+      nsSVGFE* aPrimitiveElement,
+      nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,
+      const nsDataHashtable<nsStringHashKey, int32_t>& aImageTable,
+      nsTArray<int32_t>& aSourceIndices);
 
-   
+  
 
 
 

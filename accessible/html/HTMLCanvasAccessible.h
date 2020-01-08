@@ -14,9 +14,8 @@ namespace a11y {
 
 
 
-class HTMLCanvasAccessible : public HyperTextAccessibleWrap
-{
-public:
+class HTMLCanvasAccessible : public HyperTextAccessibleWrap {
+ public:
   HTMLCanvasAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -26,11 +25,11 @@ public:
   
   virtual a11y::role NativeRole() const override;
 
-protected:
-  virtual ~HTMLCanvasAccessible() { }
+ protected:
+  virtual ~HTMLCanvasAccessible() {}
 };
 
-} 
-} 
+}  
+}  
 
 #endif

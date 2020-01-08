@@ -17,48 +17,47 @@
 
 
 
-class nsNSSASN1Sequence : public nsIASN1Sequence
-{
-public:
+class nsNSSASN1Sequence : public nsIASN1Sequence {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIASN1SEQUENCE
   NS_DECL_NSIASN1OBJECT
 
   nsNSSASN1Sequence();
-protected:
+
+ protected:
   virtual ~nsNSSASN1Sequence();
   
-private:
+ private:
   nsCOMPtr<nsIMutableArray> mASN1Objects;
   nsString mDisplayName;
   nsString mDisplayValue;
   uint32_t mType;
   uint32_t mTag;
-  bool     mIsValidContainer;
-  bool     mIsExpanded;
+  bool mIsValidContainer;
+  bool mIsExpanded;
 };
 
-class nsNSSASN1PrintableItem : public nsIASN1PrintableItem
-{
-public:
+class nsNSSASN1PrintableItem : public nsIASN1PrintableItem {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIASN1PRINTABLEITEM
   NS_DECL_NSIASN1OBJECT
 
   nsNSSASN1PrintableItem();
-protected:
+
+ protected:
   virtual ~nsNSSASN1PrintableItem();
   
-private:
+ private:
   nsString mDisplayName;
   nsString mValue;
   uint32_t mType;
   uint32_t mTag;
   unsigned char *mData;
-  uint32_t       mLen;
+  uint32_t mLen;
 };
 
-nsresult CreateFromDER(unsigned char *data,
-                       unsigned int   len,
+nsresult CreateFromDER(unsigned char *data, unsigned int len,
                        nsIASN1Object **retval);
-#endif 
+#endif  

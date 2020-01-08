@@ -20,8 +20,7 @@ namespace recordreplay {
 
 static Atomic<size_t, SequentiallyConsistent, Behavior::DontPreserve> gNumLocks;
 
-struct LockAcquires
-{
+struct LockAcquires {
   
   
   Stream* mAcquires;
@@ -58,9 +57,7 @@ typedef std::unordered_map<void*, Lock*> LockMap;
 static LockMap* gLocks;
 static ReadWriteSpinLock gLocksLock;
 
-static Lock*
-CreateNewLock(Thread* aThread, size_t aId)
-{
+static Lock* CreateNewLock(Thread* aThread, size_t aId) {
   LockAcquires* info = gLockAcquires.Create(aId);
   info->mAcquires = gRecordingFile->OpenStream(StreamName::Lock, aId);
 
@@ -71,13 +68,11 @@ CreateNewLock(Thread* aThread, size_t aId)
   return new Lock(aId);
 }
 
- void
-Lock::New(void* aNativeLock)
-{
+ void Lock::New(void* aNativeLock) {
   Thread* thread = Thread::Current();
   RecordingEventSection res(thread);
   if (!res.CanAccessEvents()) {
-    Destroy(aNativeLock); 
+    Destroy(aNativeLock);  
     return;
   }
 
@@ -107,9 +102,7 @@ Lock::New(void* aNativeLock)
   thread->EndDisallowEvents();
 }
 
- void
-Lock::Destroy(void* aNativeLock)
-{
+ void Lock::Destroy(void* aNativeLock) {
   Lock* lock = nullptr;
   {
     AutoWriteSpinLock ex(gLocksLock);
@@ -124,9 +117,7 @@ Lock::Destroy(void* aNativeLock)
   delete lock;
 }
 
- Lock*
-Lock::Find(void* aNativeLock)
-{
+ Lock* Lock::Find(void* aNativeLock) {
   MOZ_RELEASE_ASSERT(IsRecordingOrReplaying());
 
   Maybe<AutoReadSpinLock> ex;
@@ -147,10 +138,8 @@ Lock::Find(void* aNativeLock)
         
         
         
-        if (lock->mOwner &&
-            Thread::GetById(lock->mOwner)->ShouldIdle() &&
-            Thread::CurrentIsMainThread())
-        {
+        if (lock->mOwner && Thread::GetById(lock->mOwner)->ShouldIdle() &&
+            Thread::CurrentIsMainThread()) {
           ex.reset();
           EnsureNotDivergedFromRecording();
           Unreachable();
@@ -164,9 +153,7 @@ Lock::Find(void* aNativeLock)
   return nullptr;
 }
 
-void
-Lock::Enter()
-{
+void Lock::Enter() {
   Thread* thread = Thread::Current();
 
   RecordingEventSection res(thread);
@@ -187,7 +174,8 @@ Lock::Enter()
   } else {
     
     
-    while (thread->Id() != acquires->mNextOwner && !thread->MaybeDivergeFromRecording()) {
+    while (thread->Id() != acquires->mNextOwner &&
+           !thread->MaybeDivergeFromRecording()) {
       Thread::Wait();
     }
     if (!thread->HasDivergedFromRecording()) {
@@ -196,9 +184,7 @@ Lock::Enter()
   }
 }
 
-void
-Lock::Exit()
-{
+void Lock::Exit() {
   Thread* thread = Thread::Current();
   if (IsReplaying() && !thread->HasDivergedFromRecording()) {
     mOwner = 0;
@@ -209,11 +195,10 @@ Lock::Exit()
   }
 }
 
- void
-Lock::LockAquiresUpdated(size_t aLockId)
-{
+ void Lock::LockAquiresUpdated(size_t aLockId) {
   LockAcquires* acquires = gLockAcquires.MaybeGet(aLockId);
-  if (acquires && acquires->mAcquires && acquires->mNextOwner == LockAcquires::NoNextOwner) {
+  if (acquires && acquires->mAcquires &&
+      acquires->mNextOwner == LockAcquires::NoNextOwner) {
     acquires->ReadAndNotifyNextOwner(Thread::Current());
   }
 }
@@ -233,9 +218,7 @@ static Lock** gAtomicLocks;
 
 static SpinLock* gAtomicLockOwners;
 
- void
-Lock::InitializeLocks()
-{
+ void Lock::InitializeLocks() {
   Thread* thread = Thread::Current();
 
   gNumLocks = 1;
@@ -251,9 +234,8 @@ Lock::InitializeLocks()
 
 extern "C" {
 
-MOZ_EXPORT void
-RecordReplayInterface_InternalBeginOrderedAtomicAccess(const void* aValue)
-{
+MOZ_EXPORT void RecordReplayInterface_InternalBeginOrderedAtomicAccess(
+    const void* aValue) {
   MOZ_RELEASE_ASSERT(IsRecordingOrReplaying());
 
   Thread* thread = Thread::Current();
@@ -287,13 +269,12 @@ RecordReplayInterface_InternalBeginOrderedAtomicAccess(const void* aValue)
   thread->AtomicLockId().emplace(atomicId);
 }
 
-MOZ_EXPORT void
-RecordReplayInterface_InternalEndOrderedAtomicAccess()
-{
+MOZ_EXPORT void RecordReplayInterface_InternalEndOrderedAtomicAccess() {
   MOZ_RELEASE_ASSERT(IsRecordingOrReplaying());
 
   Thread* thread = Thread::Current();
-  if (!thread || thread->PassThroughEvents() || thread->HasDivergedFromRecording()) {
+  if (!thread || thread->PassThroughEvents() ||
+      thread->HasDivergedFromRecording()) {
     return;
   }
 
@@ -308,7 +289,7 @@ RecordReplayInterface_InternalEndOrderedAtomicAccess()
   gAtomicLocks[atomicId]->Exit();
 }
 
-} 
+}  
 
-} 
-} 
+}  
+}  

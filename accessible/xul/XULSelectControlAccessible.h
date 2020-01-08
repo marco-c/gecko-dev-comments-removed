@@ -16,9 +16,8 @@ namespace a11y {
 
 
 
-class XULSelectControlAccessible : public AccessibleWrap
-{
-public:
+class XULSelectControlAccessible : public AccessibleWrap {
+ public:
   XULSelectControlAccessible(nsIContent* aContent, DocAccessible* aDoc);
   virtual ~XULSelectControlAccessible() {}
 
@@ -39,14 +38,13 @@ public:
   virtual Accessible* CurrentItem() const override;
   virtual void SetCurrentItem(const Accessible* aItem) override;
 
-protected:
+ protected:
   
   
   nsCOMPtr<nsIDOMXULSelectControlElement> mSelectControl;
 };
 
-} 
-} 
+}  
+}  
 
 #endif
-

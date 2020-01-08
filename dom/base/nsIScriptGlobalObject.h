@@ -18,35 +18,35 @@ class nsIScriptGlobalObject;
 namespace mozilla {
 namespace dom {
 struct ErrorEventInit;
-} 
-} 
+}  
+}  
 
 
 
 
 
 
-bool
-NS_HandleScriptError(nsIScriptGlobalObject *aScriptGlobal,
-                     const mozilla::dom::ErrorEventInit &aErrorEvent,
-                     nsEventStatus *aStatus);
+bool NS_HandleScriptError(nsIScriptGlobalObject *aScriptGlobal,
+                          const mozilla::dom::ErrorEventInit &aErrorEvent,
+                          nsEventStatus *aStatus);
+
+
+#define NS_ISCRIPTGLOBALOBJECT_IID                   \
+  {                                                  \
+    0x876f83bd, 0x6314, 0x460a, {                    \
+      0xa0, 0x45, 0x1c, 0x8f, 0x46, 0x2f, 0xb8, 0xe1 \
+    }                                                \
+  }
 
 
 
-#define NS_ISCRIPTGLOBALOBJECT_IID \
-{ 0x876f83bd, 0x6314, 0x460a, \
-  { 0xa0, 0x45, 0x1c, 0x8f, 0x46, 0x2f, 0xb8, 0xe1 } }
 
 
 
 
 
-
-
-
-class nsIScriptGlobalObject : public nsIGlobalObject
-{
-public:
+class nsIScriptGlobalObject : public nsIGlobalObject {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ISCRIPTGLOBALOBJECT_IID)
 
   
@@ -64,9 +64,7 @@ public:
 
   virtual nsIScriptContext *GetScriptContext() = 0;
 
-  nsIScriptContext* GetContext() {
-    return GetScriptContext();
-  }
+  nsIScriptContext *GetContext() { return GetScriptContext(); }
 
   
 
@@ -78,11 +76,10 @@ public:
 
   virtual bool IsBlackForCC(bool aTracingNeeded = true) { return false; }
 
-protected:
+ protected:
   virtual ~nsIScriptGlobalObject() {}
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(nsIScriptGlobalObject,
-                              NS_ISCRIPTGLOBALOBJECT_IID)
+NS_DEFINE_STATIC_IID_ACCESSOR(nsIScriptGlobalObject, NS_ISCRIPTGLOBALOBJECT_IID)
 
 #endif

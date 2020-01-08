@@ -18,36 +18,33 @@ namespace dom {
 
 class nsIContentParent;
 
-} 
+}  
 
 namespace ipc {
 
 class BackgroundParentImpl;
 class FileDescriptor;
 
-class FileDescriptorSetParent final
-  : public PFileDescriptorSetParent
-{
+class FileDescriptorSetParent final : public PFileDescriptorSetParent {
   friend class BackgroundParentImpl;
   friend class mozilla::dom::nsIContentParent;
 
   nsTArray<FileDescriptor> mFileDescriptors;
 
-public:
-  void
-  ForgetFileDescriptors(nsTArray<FileDescriptor>& aFileDescriptors);
+ public:
+  void ForgetFileDescriptors(nsTArray<FileDescriptor>& aFileDescriptors);
 
-private:
+ private:
   explicit FileDescriptorSetParent(const FileDescriptor& aFileDescriptor);
   ~FileDescriptorSetParent();
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-  virtual mozilla::ipc::IPCResult
-  RecvAddFileDescriptor(const FileDescriptor& aFileDescriptor) override;
+  virtual mozilla::ipc::IPCResult RecvAddFileDescriptor(
+      const FileDescriptor& aFileDescriptor) override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

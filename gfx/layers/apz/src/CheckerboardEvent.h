@@ -26,7 +26,7 @@ namespace layers {
 
 
 class CheckerboardEvent {
-public:
+ public:
   
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     RendertraceProperty, (
@@ -41,7 +41,7 @@ public:
   static const char* sDescriptions[sRendertracePropertyCount];
   static const char* sColors[sRendertracePropertyCount];
 
-public:
+ public:
   explicit CheckerboardEvent(bool aRecordTrace);
 
   
@@ -91,7 +91,7 @@ public:
 
   bool RecordFrameInfo(uint32_t aCssPixelsCheckerboarded);
 
-private:
+ private:
   
 
 
@@ -105,17 +105,14 @@ private:
 
 
 
-  void LogInfo(RendertraceProperty aProperty,
-               const TimeStamp& aTimestamp,
-               const CSSRect& aRect,
-               const std::string& aExtraInfo,
+  void LogInfo(RendertraceProperty aProperty, const TimeStamp& aTimestamp,
+               const CSSRect& aRect, const std::string& aExtraInfo,
                const MonitorAutoLock& aProofOfLock);
 
   
 
 
-  struct PropertyValue
-  {
+  struct PropertyValue {
     RendertraceProperty mProperty;
     TimeStamp mTimeStamp;
     CSSRect mRect;
@@ -128,9 +125,8 @@ private:
 
 
 
-  class PropertyBuffer
-  {
-  public:
+  class PropertyBuffer {
+   public:
     PropertyBuffer();
     
 
@@ -145,7 +141,7 @@ private:
     void Flush(std::vector<PropertyValue>& aOut,
                const MonitorAutoLock& aProofOfLock);
 
-  private:
+   private:
     static const uint32_t BUFFER_SIZE = 5;
 
     
@@ -156,7 +152,7 @@ private:
     PropertyValue mValues[BUFFER_SIZE];
   };
 
-private:
+ private:
   
 
 
@@ -217,7 +213,7 @@ private:
   std::ostringstream mRendertraceInfo;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

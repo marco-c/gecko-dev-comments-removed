@@ -16,17 +16,17 @@ namespace mozilla {
 struct ReflowInput;
 
 class CSSAlignUtils {
-public:
+ public:
   
 
 
   enum class AlignJustifyFlags {
-    eNoFlags           = 0,
+    eNoFlags = 0,
     
-    eOverflowSafe      = 1 << 0,
+    eOverflowSafe = 1 << 0,
     
     
-    eSameSide          = 1 << 1,
+    eSameSide = 1 << 1,
     
     
     
@@ -59,6 +59,6 @@ public:
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSAlignUtils::AlignJustifyFlags)
 
-} 
+}  
 
-#endif 
+#endif  

@@ -29,8 +29,8 @@ typedef mozilla::Vector<RefPtr<nsPerformanceGroup>, 8> GroupVector;
 
 
 
-class nsPerformanceObservationTarget final: public nsIPerformanceObservable {
-public:
+class nsPerformanceObservationTarget final : public nsIPerformanceObservable {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPERFORMANCEOBSERVABLE
 
@@ -43,14 +43,15 @@ public:
   
 
 
-  void NotifyJankObservers(nsIPerformanceGroupDetails* source, nsIPerformanceAlert* gravity);
+  void NotifyJankObservers(nsIPerformanceGroupDetails* source,
+                           nsIPerformanceAlert* gravity);
 
   
 
 
   void SetTarget(nsPerformanceGroupDetails* details);
 
-private:
+ private:
   ~nsPerformanceObservationTarget() {}
 
   
@@ -74,11 +75,8 @@ private:
 
 
 class nsGroupHolder {
-public:
-  nsGroupHolder()
-    : mGroup(nullptr)
-    , mPendingObservationTarget(nullptr)
-  { }
+ public:
+  nsGroupHolder() : mGroup(nullptr), mPendingObservationTarget(nullptr) {}
 
   
 
@@ -101,7 +99,8 @@ public:
 
 
   void SetGroup(class nsPerformanceGroup*);
-private:
+
+ private:
   
   class nsPerformanceGroup* mGroup;
 
@@ -116,9 +115,8 @@ private:
 
 
 class nsPerformanceStatsService final : public nsIPerformanceStatsService,
-                                        public nsIObserver
-{
-public:
+                                        public nsIObserver {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPERFORMANCESTATSSERVICE
   NS_DECL_NSIOBSERVER
@@ -126,12 +124,12 @@ public:
   nsPerformanceStatsService();
   nsresult Init();
 
-private:
+ private:
   nsresult InitInternal();
   void Dispose();
   ~nsPerformanceStatsService();
 
-protected:
+ protected:
   friend nsPerformanceGroup;
 
   
@@ -157,15 +155,12 @@ protected:
   uint64_t GetNextId();
   uint64_t mUIdCounter;
 
-
-
   
 
 
-  static nsIPerformanceStats* GetStatsForGroup(const js::PerformanceGroup* group);
+  static nsIPerformanceStats* GetStatsForGroup(
+      const js::PerformanceGroup* group);
   static nsIPerformanceStats* GetStatsForGroup(const nsPerformanceGroup* group);
-
-
 
   
 
@@ -183,7 +178,22 @@ protected:
 
 
   bool GetPerformanceGroups(JSContext* cx, js::PerformanceGroupVector&);
-  static bool GetPerformanceGroupsCallback(JSContext* cx, js::PerformanceGroupVector&, void* closure);
+  static bool GetPerformanceGroupsCallback(JSContext* cx,
+                                           js::PerformanceGroupVector&,
+                                           void* closure);
+
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -192,36 +202,17 @@ protected:
 
 
 
-
-
-
-
-
-
-
-
-
-
-  
-
-
-
-
-  struct WindowIdToGroup: public nsUint64HashKey,
-                          public nsGroupHolder {
-    explicit WindowIdToGroup(const uint64_t* key)
-      : nsUint64HashKey(key)
-    {}
+  struct WindowIdToGroup : public nsUint64HashKey, public nsGroupHolder {
+    explicit WindowIdToGroup(const uint64_t* key) : nsUint64HashKey(key) {}
   };
   nsTHashtable<WindowIdToGroup> mWindowIdToGroup;
 
   
 
 
-  struct Groups: public nsPtrHashKey<nsPerformanceGroup> {
+  struct Groups : public nsPtrHashKey<nsPerformanceGroup> {
     explicit Groups(const nsPerformanceGroup* key)
-      : nsPtrHashKey<nsPerformanceGroup>(key)
-    {}
+        : nsPtrHashKey<nsPerformanceGroup>(key) {}
   };
   nsTHashtable<Groups> mGroups;
 
@@ -309,7 +300,8 @@ protected:
   static bool StopwatchCommitCallback(uint64_t iteration,
                                       js::PerformanceGroupVector& recentGroups,
                                       void* closure);
-  bool StopwatchCommit(uint64_t iteration, js::PerformanceGroupVector& recentGroups);
+  bool StopwatchCommit(uint64_t iteration,
+                       js::PerformanceGroupVector& recentGroups);
 
   
 
@@ -335,13 +327,9 @@ protected:
 
 
 
-  void CommitGroup(uint64_t iteration,
-                   uint64_t userTime, uint64_t systemTime,  uint64_t cycles,
-                   bool isJankVisible,
+  void CommitGroup(uint64_t iteration, uint64_t userTime, uint64_t systemTime,
+                   uint64_t cycles, bool isJankVisible,
                    nsPerformanceGroup* group);
-
-
-
 
   
 
@@ -368,7 +356,6 @@ protected:
 
   bool mIsMonitoringPerCompartment;
 
-
   
 
 
@@ -385,8 +372,7 @@ protected:
 
   bool IsHandlingUserInput();
 
-
-public:
+ public:
   
 
 
@@ -407,7 +393,7 @@ public:
 
   void NotifyJankObservers(const mozilla::Vector<uint64_t>& previousJankLevels);
 
-private:
+ private:
   
 
 
@@ -423,7 +409,6 @@ private:
 
 
   RefPtr<class PendingAlertsCollector> mPendingAlertsCollector;
-
 
   
 
@@ -481,8 +466,6 @@ private:
 
 
 
-
-
 struct PerformanceData {
   
 
@@ -519,25 +502,21 @@ struct PerformanceData {
 
 
 
-
-
-class nsPerformanceGroupDetails final: public nsIPerformanceGroupDetails {
-public:
+class nsPerformanceGroupDetails final : public nsIPerformanceGroupDetails {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPERFORMANCEGROUPDETAILS
 
-  nsPerformanceGroupDetails(const nsAString& aName,
-                            const nsAString& aGroupId,
-                            const uint64_t aWindowId,
-                            const uint64_t aProcessId,
+  nsPerformanceGroupDetails(const nsAString& aName, const nsAString& aGroupId,
+                            const uint64_t aWindowId, const uint64_t aProcessId,
                             const bool aIsSystem)
-    : mName(aName)
-    , mGroupId(aGroupId)
-    , mWindowId(aWindowId)
-    , mProcessId(aProcessId)
-    , mIsSystem(aIsSystem)
-  { }
-public:
+      : mName(aName),
+        mGroupId(aGroupId),
+        mWindowId(aWindowId),
+        mProcessId(aProcessId),
+        mIsSystem(aIsSystem) {}
+
+ public:
   const nsAString& Name() const;
   const nsAString& GroupId() const;
   uint64_t WindowId() const;
@@ -545,7 +524,8 @@ public:
   bool IsWindow() const;
   bool IsSystem() const;
   bool IsContentProcess() const;
-private:
+
+ private:
   ~nsPerformanceGroupDetails() {}
 
   const nsString mName;
@@ -583,9 +563,8 @@ enum class PerformanceGroupScope {
 
 
 
-class nsPerformanceGroup final: public js::PerformanceGroup {
-public:
-
+class nsPerformanceGroup final : public js::PerformanceGroup {
+ public:
   
   
   typedef PerformanceGroupScope GroupScope;
@@ -605,21 +584,20 @@ public:
 
 
 
-  static nsPerformanceGroup*
-    Make(nsPerformanceStatsService* service,
-         const nsAString& name,
-         uint64_t windowId,
-         uint64_t processId,
-         bool isSystem,
-         GroupScope scope);
+  static nsPerformanceGroup* Make(nsPerformanceStatsService* service,
+                                  const nsAString& name, uint64_t windowId,
+                                  uint64_t processId, bool isSystem,
+                                  GroupScope scope);
 
   
+
 
 
   static inline nsPerformanceGroup* Get(js::PerformanceGroup* self) {
     return static_cast<nsPerformanceGroup*>(self);
   }
-  static inline const nsPerformanceGroup* Get(const js::PerformanceGroup* self) {
+  static inline const nsPerformanceGroup* Get(
+      const js::PerformanceGroup* self) {
     return static_cast<const nsPerformanceGroup*>(self);
   }
 
@@ -652,7 +630,6 @@ public:
 
   void SetObservationTarget(nsPerformanceObservationTarget*);
 
-
   
 
 
@@ -661,15 +638,10 @@ public:
   bool HasPendingAlert() const;
   void SetHasPendingAlert(bool value);
 
-protected:
-  nsPerformanceGroup(nsPerformanceStatsService* service,
-                     const nsAString& name,
-                     const nsAString& groupId,
-                     uint64_t windowId,
-                     uint64_t processId,
-                     bool isSystem,
-                     GroupScope scope);
-
+ protected:
+  nsPerformanceGroup(nsPerformanceStatsService* service, const nsAString& name,
+                     const nsAString& groupId, uint64_t windowId,
+                     uint64_t processId, bool isSystem, GroupScope scope);
 
   
 
@@ -678,12 +650,10 @@ protected:
 
 
 
-  virtual void Delete() override {
-    delete this;
-  }
+  virtual void Delete() override { delete this; }
   ~nsPerformanceGroup();
 
-private:
+ private:
   
 
 
@@ -700,9 +670,9 @@ private:
 
   const GroupScope mScope;
 
+  
 
-
-public:
+ public:
   
 
 
@@ -737,7 +707,8 @@ public:
 
 
   void ResetRecent();
-private:
+
+ private:
   
 
 

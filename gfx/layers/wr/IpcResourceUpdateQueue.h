@@ -21,8 +21,9 @@ namespace wr {
 
 
 class ShmSegmentsWriter {
-public:
-  ShmSegmentsWriter(layers::WebRenderBridgeChild* aAllocator, size_t aChunkSize);
+ public:
+  ShmSegmentsWriter(layers::WebRenderBridgeChild* aAllocator,
+                    size_t aChunkSize);
   ~ShmSegmentsWriter();
 
   ShmSegmentsWriter(ShmSegmentsWriter&& aOther) noexcept;
@@ -33,20 +34,21 @@ public:
 
   layers::OffsetRange Write(Range<uint8_t> aBytes);
 
-  template<typename T>
-  layers::OffsetRange WriteAsBytes(Range<T> aValues)
-  {
-    return Write(Range<uint8_t>((uint8_t*)aValues.begin().get(), aValues.length() * sizeof(T)));
+  template <typename T>
+  layers::OffsetRange WriteAsBytes(Range<T> aValues) {
+    return Write(Range<uint8_t>((uint8_t*)aValues.begin().get(),
+                                aValues.length() * sizeof(T)));
   }
 
-  void Flush(nsTArray<layers::RefCountedShmem>& aSmallAllocs, nsTArray<mozilla::ipc::Shmem>& aLargeAllocs);
+  void Flush(nsTArray<layers::RefCountedShmem>& aSmallAllocs,
+             nsTArray<mozilla::ipc::Shmem>& aLargeAllocs);
 
   void Clear();
   bool IsEmpty() const;
 
   layers::WebRenderBridgeChild* WrBridge() const { return mShmAllocator; }
 
-protected:
+ protected:
   bool AllocChunk();
   layers::OffsetRange AllocLargeChunk(size_t aSize);
 
@@ -58,13 +60,13 @@ protected:
 };
 
 class ShmSegmentsReader {
-public:
+ public:
   ShmSegmentsReader(const nsTArray<layers::RefCountedShmem>& aSmallShmems,
                     const nsTArray<mozilla::ipc::Shmem>& aLargeShmems);
 
   bool Read(const layers::OffsetRange& aRange, wr::Vec<uint8_t>& aInto);
 
-protected:
+ protected:
   bool ReadLarge(const layers::OffsetRange& aRange, wr::Vec<uint8_t>& aInto);
 
   const nsTArray<layers::RefCountedShmem>& mSmallAllocs;
@@ -73,27 +75,27 @@ protected:
 };
 
 class IpcResourceUpdateQueue {
-public:
+ public:
   
   
   
   
   
   
-  explicit IpcResourceUpdateQueue(layers::WebRenderBridgeChild* aAllocator, size_t aChunkSize = 57328);
+  explicit IpcResourceUpdateQueue(layers::WebRenderBridgeChild* aAllocator,
+                                  size_t aChunkSize = 57328);
 
   IpcResourceUpdateQueue(IpcResourceUpdateQueue&& aOther) noexcept;
   IpcResourceUpdateQueue& operator=(IpcResourceUpdateQueue&& aOther) noexcept;
 
   IpcResourceUpdateQueue(const IpcResourceUpdateQueue& aOther) = delete;
-  IpcResourceUpdateQueue& operator=(const IpcResourceUpdateQueue& aOther) = delete;
+  IpcResourceUpdateQueue& operator=(const IpcResourceUpdateQueue& aOther) =
+      delete;
 
-  bool AddImage(wr::ImageKey aKey,
-                const ImageDescriptor& aDescriptor,
+  bool AddImage(wr::ImageKey aKey, const ImageDescriptor& aDescriptor,
                 Range<uint8_t> aBytes);
 
-  bool AddBlobImage(wr::BlobImageKey aKey,
-                    const ImageDescriptor& aDescriptor,
+  bool AddBlobImage(wr::BlobImageKey aKey, const ImageDescriptor& aDescriptor,
                     Range<uint8_t> aBytes);
 
   void AddExternalImage(wr::ExternalImageId aExtId, wr::ImageKey aKey);
@@ -103,17 +105,14 @@ public:
                                    layers::TextureClient* aTexture,
                                    bool aIsUpdate);
 
-  bool UpdateImageBuffer(wr::ImageKey aKey,
-                         const ImageDescriptor& aDescriptor,
+  bool UpdateImageBuffer(wr::ImageKey aKey, const ImageDescriptor& aDescriptor,
                          Range<uint8_t> aBytes);
 
   bool UpdateBlobImage(wr::BlobImageKey aKey,
                        const ImageDescriptor& aDescriptor,
-                       Range<uint8_t> aBytes,
-                       ImageIntRect aDirtyRect);
+                       Range<uint8_t> aBytes, ImageIntRect aDirtyRect);
 
-  void UpdateExternalImage(ExternalImageId aExtID,
-                           ImageKey aKey,
+  void UpdateExternalImage(ExternalImageId aExtID, ImageKey aKey,
                            ImageIntRect aDirtyRect);
 
   void SetBlobImageVisibleArea(BlobImageKey aKey, const ImageIntRect& aArea);
@@ -124,12 +123,12 @@ public:
 
   bool AddRawFont(wr::FontKey aKey, Range<uint8_t> aBytes, uint32_t aIndex);
 
-  bool AddFontDescriptor(wr::FontKey aKey, Range<uint8_t> aBytes, uint32_t aIndex);
+  bool AddFontDescriptor(wr::FontKey aKey, Range<uint8_t> aBytes,
+                         uint32_t aIndex);
 
   void DeleteFont(wr::FontKey aKey);
 
-  void AddFontInstance(wr::FontInstanceKey aKey,
-                       wr::FontKey aFontKey,
+  void AddFontInstance(wr::FontInstanceKey aKey, wr::FontKey aFontKey,
                        float aGlyphSize,
                        const wr::FontInstanceOptions* aOptions,
                        const wr::FontInstancePlatformOptions* aPlatformOptions,
@@ -145,14 +144,17 @@ public:
 
   bool IsEmpty() const;
 
-  static void ReleaseShmems(mozilla::ipc::IProtocol*, nsTArray<layers::RefCountedShmem>& aShms);
-  static void ReleaseShmems(mozilla::ipc::IProtocol*, nsTArray<mozilla::ipc::Shmem>& aShms);
-protected:
+  static void ReleaseShmems(mozilla::ipc::IProtocol*,
+                            nsTArray<layers::RefCountedShmem>& aShms);
+  static void ReleaseShmems(mozilla::ipc::IProtocol*,
+                            nsTArray<mozilla::ipc::Shmem>& aShms);
+
+ protected:
   ShmSegmentsWriter mWriter;
   nsTArray<layers::OpUpdateResource> mUpdates;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

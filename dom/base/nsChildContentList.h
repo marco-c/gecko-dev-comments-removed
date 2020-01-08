@@ -8,8 +8,8 @@
 #define nsChildContentList_h__
 
 #include "nsISupportsImpl.h"
-#include "nsINodeList.h"      
-#include "js/TypeDecls.h"     
+#include "nsINodeList.h"   
+#include "js/TypeDecls.h"  
 
 class nsIContent;
 class nsINode;
@@ -20,19 +20,15 @@ class nsINode;
 
 
 
-class nsAttrChildContentList : public nsINodeList
-{
-public:
-  explicit nsAttrChildContentList(nsINode* aNode)
-    : mNode(aNode)
-  {
-  }
+class nsAttrChildContentList : public nsINodeList {
+ public:
+  explicit nsAttrChildContentList(nsINode* aNode) : mNode(aNode) {}
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS(nsAttrChildContentList)
 
   
-  virtual JSObject* WrapObject(JSContext *cx,
+  virtual JSObject* WrapObject(JSContext* cx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
   
@@ -40,33 +36,24 @@ public:
   virtual nsIContent* Item(uint32_t aIndex) override;
   uint32_t Length() override;
 
-  virtual void DropReference()
-  {
-    mNode = nullptr;
-  }
+  virtual void DropReference() { mNode = nullptr; }
 
-  virtual nsINode* GetParentObject() override
-  {
-    return mNode;
-  }
+  virtual nsINode* GetParentObject() override { return mNode; }
 
-protected:
+ protected:
   virtual ~nsAttrChildContentList() {}
 
-private:
+ private:
   
   
   
   nsINode* MOZ_NON_OWNING_REF mNode;
 };
 
-class nsParentNodeChildContentList final : public nsAttrChildContentList
-{
-public:
+class nsParentNodeChildContentList final : public nsAttrChildContentList {
+ public:
   explicit nsParentNodeChildContentList(nsINode* aNode)
-    : nsAttrChildContentList(aNode)
-    , mIsCacheValid(false)
-  {
+      : nsAttrChildContentList(aNode), mIsCacheValid(false) {
     ValidateCache();
   }
 
@@ -75,19 +62,17 @@ public:
   virtual nsIContent* Item(uint32_t aIndex) override;
   uint32_t Length() override;
 
-  void DropReference() override
-  {
+  void DropReference() override {
     InvalidateCache();
     nsAttrChildContentList::DropReference();
   }
 
-  void InvalidateCache()
-  {
+  void InvalidateCache() {
     mIsCacheValid = false;
     mCachedChildArray.Clear();
   }
 
-private:
+ private:
   ~nsParentNodeChildContentList() {}
 
   

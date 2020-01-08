@@ -45,8 +45,7 @@ namespace CrashReporter {
 
 
 
-static inline bool
-IsDummy() {
+static inline bool IsDummy() {
 #ifdef MOZ_CRASHREPORTER
   return false;
 #else
@@ -54,7 +53,7 @@ IsDummy() {
 #endif
 }
 
-nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force=false);
+nsresult SetExceptionHandler(nsIFile* aXREDirectory, bool force = false);
 nsresult UnsetExceptionHandler();
 
 
@@ -80,14 +79,13 @@ void SetTelemetrySessionId(const nsACString& id);
 
 
 
-bool     GetCrashEventsDir(nsAString& aPath);
+bool GetCrashEventsDir(nsAString& aPath);
 
-bool     GetEnabled();
-bool     GetServerURL(nsACString& aServerURL);
+bool GetEnabled();
+bool GetServerURL(nsACString& aServerURL);
 nsresult SetServerURL(const nsACString& aServerURL);
-bool     GetMinidumpPath(nsAString& aPath);
+bool GetMinidumpPath(nsAString& aPath);
 nsresult SetMinidumpPath(const nsAString& aPath);
-
 
 
 
@@ -110,8 +108,7 @@ void SetEventloopNestingLevel(uint32_t level);
 void SetMinidumpAnalysisAllThreads();
 
 nsresult SetRestartArgs(int argc, char** argv);
-nsresult SetupExtraData(nsIFile* aAppDataDirectory,
-                        const nsACString& aBuildID);
+nsresult SetupExtraData(nsIFile* aAppDataDirectory, const nsACString& aBuildID);
 
 nsresult RegisterAppMemory(void* ptr, size_t length);
 nsresult UnregisterAppMemory(void* ptr);
@@ -121,7 +118,7 @@ void SetIncludeContextHeap(bool aValue);
 
 
 typedef mozilla::EnumeratedArray<Annotation, Annotation::Count, nsCString>
-        AnnotationTable;
+    AnnotationTable;
 
 void DeleteMinidumpFilesForID(const nsAString& id);
 bool GetMinidumpForID(const nsAString& id, nsIFile** minidump);
@@ -141,17 +138,18 @@ bool AppendExtraData(nsIFile* extraFile, const AnnotationTable& data);
 
 
 
-void RenameAdditionalHangMinidump(nsIFile* aDumpFile, const nsIFile* aOwnerDumpFile,
+void RenameAdditionalHangMinidump(nsIFile* aDumpFile,
+                                  const nsIFile* aOwnerDumpFile,
                                   const nsACString& aDumpFileProcessType);
 
 #ifdef XP_WIN32
-  nsresult WriteMinidumpForException(EXCEPTION_POINTERS* aExceptionInfo);
+nsresult WriteMinidumpForException(EXCEPTION_POINTERS* aExceptionInfo);
 #endif
 #ifdef XP_LINUX
-  bool WriteMinidumpForSigInfo(int signo, siginfo_t* info, void* uc);
+bool WriteMinidumpForSigInfo(int signo, siginfo_t* info, void* uc);
 #endif
 #ifdef XP_MACOSX
-  nsresult AppendObjCExceptionInfoToAppNotes(void *inException);
+nsresult AppendObjCExceptionInfoToAppNotes(void* inException);
 #endif
 nsresult GetSubmitReports(bool* aSubmitReport);
 nsresult SetSubmitReports(bool aSubmitReport);
@@ -179,8 +177,7 @@ bool TakeMinidump(nsIFile** aResult, bool aMoveToPending = false);
 
 
 
-bool TakeMinidumpForChild(uint32_t childPid,
-                          nsIFile** dump,
+bool TakeMinidumpForChild(uint32_t childPid, nsIFile** dump,
                           uint32_t* aSequence = nullptr);
 
 #if defined(XP_WIN)
@@ -201,13 +198,11 @@ typedef int FileHandle;
 #endif
 
 #if !defined(XP_WIN)
-int
-GetAnnotationTimeCrashFd();
+int GetAnnotationTimeCrashFd();
 #endif
-void
-RegisterChildCrashAnnotationFileDescriptor(ProcessId aProcess, PRFileDesc* aFd);
-void
-DeregisterChildCrashAnnotationFileDescriptor(ProcessId aProcess);
+void RegisterChildCrashAnnotationFileDescriptor(ProcessId aProcess,
+                                                PRFileDesc* aFd);
+void DeregisterChildCrashAnnotationFileDescriptor(ProcessId aProcess);
 
 
 
@@ -256,7 +251,7 @@ bool CreateAdditionalChildMinidump(ProcessHandle childPid,
 
 void GetChildProcessTmpDir(nsIFile** aOutTmpDir);
 
-#  if defined(XP_WIN32) || defined(XP_MACOSX)
+#if defined(XP_WIN32) || defined(XP_MACOSX)
 
 const char* GetChildNotificationPipe();
 
@@ -264,10 +259,9 @@ const char* GetChildNotificationPipe();
 
 
 
-class InjectorCrashCallback
-{
-public:
-  InjectorCrashCallback() { }
+class InjectorCrashCallback {
+ public:
+  InjectorCrashCallback() {}
 
   
 
@@ -286,14 +280,13 @@ void UnregisterInjectorCallback(DWORD processID);
 
 
 #if defined(XP_WIN32)
-bool
-SetRemoteExceptionHandler(const nsACString& crashPipe,
-                          uintptr_t aCrashTimeAnnotationFile);
+bool SetRemoteExceptionHandler(const nsACString& crashPipe,
+                               uintptr_t aCrashTimeAnnotationFile);
 #else
 bool SetRemoteExceptionHandler(const nsACString& crashPipe);
 #endif
 
-#  else
+#else
 
 
 
@@ -324,16 +317,14 @@ void SetCrashAnnotationPipeForChild(int childCrashAnnotationFd);
 
 
 
-void AddLibraryMapping(const char* library_name,
-                       uintptr_t   start_address,
-                       size_t      mapping_length,
-                       size_t      file_offset);
+void AddLibraryMapping(const char* library_name, uintptr_t start_address,
+                       size_t mapping_length, size_t file_offset);
 
 #endif
 
 
 void SetCurrentThreadName(const char* aName);
 
-} 
+}  
 
 #endif 

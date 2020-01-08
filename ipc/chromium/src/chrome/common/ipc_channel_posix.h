@@ -42,13 +42,11 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
     return old;
   }
   bool Send(Message* message);
-  void GetClientFileDescriptorMapping(int *src_fd, int *dest_fd) const;
+  void GetClientFileDescriptorMapping(int* src_fd, int* dest_fd) const;
 
   void ResetFileDescriptor(int fd);
 
-  int GetFileDescriptor() const {
-      return pipe_;
-  }
+  int GetFileDescriptor() const { return pipe_; }
   void CloseClientFileDescriptor();
 
   
@@ -115,9 +113,7 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
   
   
   
-  enum {
-    kControlBufferSlopBytes = 32
-  };
+  enum { kControlBufferSlopBytes = 32 };
 
   
   
@@ -153,11 +149,9 @@ class Channel::ChannelImpl : public MessageLoopForIO::Watcher {
     uint32_t id;
     RefPtr<FileDescriptorSet> fds;
 
-    PendingDescriptors() : id(0) { }
-    PendingDescriptors(uint32_t id, FileDescriptorSet *fds)
-      : id(id),
-        fds(fds)
-    { }
+    PendingDescriptors() : id(0) {}
+    PendingDescriptors(uint32_t id, FileDescriptorSet* fds)
+        : id(id), fds(fds) {}
   };
 
   std::list<PendingDescriptors> pending_fds_;

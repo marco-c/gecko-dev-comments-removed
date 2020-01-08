@@ -26,33 +26,33 @@
 #define OSVR_UTIL_EXPORT_H
 
 #ifdef OSVR_UTIL_STATIC_DEFINE
-#  define OSVR_UTIL_EXPORT
-#  define OSVR_UTIL_NO_EXPORT
+#define OSVR_UTIL_EXPORT
+#define OSVR_UTIL_NO_EXPORT
 #endif
 
 
-#if defined(__BORLANDC__) || defined(__CODEGEARC__) || defined(__HP_aCC) ||    \
+#if defined(__BORLANDC__) || defined(__CODEGEARC__) || defined(__HP_aCC) || \
     defined(__PGI) || defined(__WATCOMC__)
 
-#  ifndef OSVR_UTIL_DEPRECATED
-#    define OSVR_UTIL_DEPRECATED
-#  endif
+#ifndef OSVR_UTIL_DEPRECATED
+#define OSVR_UTIL_DEPRECATED
+#endif
 #endif
 
 
 #if defined(__INTEL_COMPILER)
 
 
-#  if __INTEL_COMPILER >= 1200
+#if __INTEL_COMPILER >= 1200
 
-#    define OSVR_UTIL_EXPORT_HEADER_SUPPORTS_ATTRIBUTES
-#  endif
+#define OSVR_UTIL_EXPORT_HEADER_SUPPORTS_ATTRIBUTES
+#endif
 
 #elif defined(__GNUC__)
-#  if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
+#if (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 2))
 
-#    define OSVR_UTIL_EXPORT_HEADER_SUPPORTS_ATTRIBUTES
-#  endif
+#define OSVR_UTIL_EXPORT_HEADER_SUPPORTS_ATTRIBUTES
+#endif
 #endif
 
 
@@ -60,53 +60,53 @@
 
 
 #ifndef OSVR_UTIL_EXPORT
-#  ifdef osvrUtil_EXPORTS
-      
-#    define OSVR_UTIL_EXPORT __declspec(dllexport)
-#  else
-      
-#    define OSVR_UTIL_EXPORT __declspec(dllimport)
-#  endif
+#ifdef osvrUtil_EXPORTS
+
+#define OSVR_UTIL_EXPORT __declspec(dllexport)
+#else
+
+#define OSVR_UTIL_EXPORT __declspec(dllimport)
+#endif
 #endif
 
 #ifndef OSVR_UTIL_DEPRECATED
-#  define OSVR_UTIL_DEPRECATED __declspec(deprecated)
+#define OSVR_UTIL_DEPRECATED __declspec(deprecated)
 #endif
 
 #elif defined(_WIN32) && defined(__GNUC__)
 
 
 #ifndef OSVR_UTIL_EXPORT
-#  ifdef osvrUtil_EXPORTS
-      
-#    define OSVR_UTIL_EXPORT __attribute__((dllexport))
-#  else
-      
-#    define OSVR_UTIL_EXPORT __attribute__((dllimport))
-#  endif
+#ifdef osvrUtil_EXPORTS
+
+#define OSVR_UTIL_EXPORT __attribute__((dllexport))
+#else
+
+#define OSVR_UTIL_EXPORT __attribute__((dllimport))
+#endif
 #endif
 
 #ifndef OSVR_UTIL_DEPRECATED
-#  define OSVR_UTIL_DEPRECATED __attribute__((__deprecated__))
+#define OSVR_UTIL_DEPRECATED __attribute__((__deprecated__))
 #endif
 
-#elif defined(OSVR_UTIL_EXPORT_HEADER_SUPPORTS_ATTRIBUTES) ||         \
+#elif defined(OSVR_UTIL_EXPORT_HEADER_SUPPORTS_ATTRIBUTES) || \
     (defined(__APPLE__) && defined(__MACH__))
 
 
 
 
 #ifndef OSVR_UTIL_EXPORT
-  
-#  define OSVR_UTIL_EXPORT __attribute__((visibility("default")))
+
+#define OSVR_UTIL_EXPORT __attribute__((visibility("default")))
 #endif
 
 #ifndef OSVR_UTIL_NO_EXPORT
-#  define OSVR_UTIL_NO_EXPORT __attribute__((visibility("hidden")))
+#define OSVR_UTIL_NO_EXPORT __attribute__((visibility("hidden")))
 #endif
 
 #ifndef OSVR_UTIL_DEPRECATED
-#  define OSVR_UTIL_DEPRECATED __attribute__((__deprecated__))
+#define OSVR_UTIL_DEPRECATED __attribute__((__deprecated__))
 #endif
 
 #endif
@@ -114,22 +114,22 @@
 
 
 #ifndef OSVR_UTIL_EXPORT
-#  define OSVR_UTIL_EXPORT
+#define OSVR_UTIL_EXPORT
 #endif
 
 
 #ifndef OSVR_UTIL_NO_EXPORT
-#  define OSVR_UTIL_NO_EXPORT
+#define OSVR_UTIL_NO_EXPORT
 #endif
 
 
 #ifndef OSVR_UTIL_DEPRECATED_EXPORT
-#  define OSVR_UTIL_DEPRECATED_EXPORT OSVR_UTIL_EXPORT OSVR_UTIL_DEPRECATED
+#define OSVR_UTIL_DEPRECATED_EXPORT OSVR_UTIL_EXPORT OSVR_UTIL_DEPRECATED
 #endif
 
 
 #ifndef OSVR_UTIL_DEPRECATED_NO_EXPORT
-#  define OSVR_UTIL_DEPRECATED_NO_EXPORT OSVR_UTIL_NO_EXPORT OSVR_UTIL_DEPRECATED
+#define OSVR_UTIL_DEPRECATED_NO_EXPORT OSVR_UTIL_NO_EXPORT OSVR_UTIL_DEPRECATED
 #endif
 
 

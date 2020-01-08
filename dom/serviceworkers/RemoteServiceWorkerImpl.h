@@ -14,43 +14,36 @@ namespace dom {
 
 class ServiceWorkerChild;
 
-class RemoteServiceWorkerImpl final : public ServiceWorker::Inner
-{
+class RemoteServiceWorkerImpl final : public ServiceWorker::Inner {
   ServiceWorkerChild* mActor;
   ServiceWorker* mWorker;
   bool mShutdown;
 
   ~RemoteServiceWorkerImpl();
 
-  void
-  Shutdown();
+  void Shutdown();
 
   
-  void
-  AddServiceWorker(ServiceWorker* aWorker) override;
+  void AddServiceWorker(ServiceWorker* aWorker) override;
 
-  void
-  RemoveServiceWorker(ServiceWorker* aWorker) override;
+  void RemoveServiceWorker(ServiceWorker* aWorker) override;
 
-  void
-  GetRegistration(ServiceWorkerRegistrationCallback&& aSuccessCB,
-                  ServiceWorkerFailureCallback&& aFailureCB) override;
+  void GetRegistration(ServiceWorkerRegistrationCallback&& aSuccessCB,
+                       ServiceWorkerFailureCallback&& aFailureCB) override;
 
-  void
-  PostMessage(RefPtr<ServiceWorkerCloneData>&& aData,
-              const ClientInfo& aClientInfo,
-              const ClientState& aClientState) override;
+  void PostMessage(RefPtr<ServiceWorkerCloneData>&& aData,
+                   const ClientInfo& aClientInfo,
+                   const ClientState& aClientState) override;
 
-public:
+ public:
   explicit RemoteServiceWorkerImpl(const ServiceWorkerDescriptor& aDescriptor);
 
-  void
-  RevokeActor(ServiceWorkerChild* aActor);
+  void RevokeActor(ServiceWorkerChild* aActor);
 
   NS_INLINE_DECL_REFCOUNTING(RemoteServiceWorkerImpl, override)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

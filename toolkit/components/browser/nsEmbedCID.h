@@ -24,8 +24,7 @@
 
 
 
-#define NS_WEBBROWSER_CONTRACTID \
-  "@mozilla.org/embedding/browser/nsWebBrowser;1"
+#define NS_WEBBROWSER_CONTRACTID "@mozilla.org/embedding/browser/nsWebBrowser;1"
 
 
 
@@ -40,7 +39,6 @@
 
 
 
-#define NS_PROMPTSERVICE_CONTRACTID \
- "@mozilla.org/embedcomp/prompt-service;1"
+#define NS_PROMPTSERVICE_CONTRACTID "@mozilla.org/embedcomp/prompt-service;1"
 
-#endif 
+#endif  

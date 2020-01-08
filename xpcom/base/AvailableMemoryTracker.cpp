@@ -26,7 +26,7 @@
 #include "mozilla/Unused.h"
 
 #if defined(MOZ_MEMORY)
-#   include "mozmemory.h"
+#include "mozmemory.h"
 #endif  
 
 using namespace mozilla;
@@ -40,9 +40,8 @@ Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowCommitSpaceEvents;
 Atomic<uint32_t, MemoryOrdering::Relaxed> sNumLowPhysicalMemEvents;
 
 class nsAvailableMemoryWatcher final : public nsIObserver,
-                                       public nsITimerCallback
-{
-public:
+                                       public nsITimerCallback {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSITIMERCALLBACK
@@ -50,7 +49,7 @@ public:
   nsAvailableMemoryWatcher();
   nsresult Init();
 
-private:
+ private:
   
   
 #if defined(HAVE_64BIT_BUILD)
@@ -81,7 +80,7 @@ private:
   static bool IsCommitSpaceLow(const MEMORYSTATUSEX& aStat);
   static bool IsPhysicalMemoryLow(const MEMORYSTATUSEX& aStat);
 
-  ~nsAvailableMemoryWatcher() {};
+  ~nsAvailableMemoryWatcher(){};
   bool OngoingMemoryPressure() { return mUnderMemoryPressure; }
   void AdjustPollingInterval(const bool aLowMemory);
   void SendMemoryPressureEvent();
@@ -94,23 +93,17 @@ private:
 };
 
 const char* const nsAvailableMemoryWatcher::kObserverTopics[] = {
-  "quit-application",
-  "user-interaction-active",
-  "user-interaction-inactive",
+    "quit-application",
+    "user-interaction-active",
+    "user-interaction-inactive",
 };
 
 NS_IMPL_ISUPPORTS(nsAvailableMemoryWatcher, nsIObserver, nsITimerCallback)
 
 nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
-  : mTimer(nullptr)
-  , mUnderMemoryPressure(false)
-  , mSavedReport(false)
-{
-}
+    : mTimer(nullptr), mUnderMemoryPressure(false), mSavedReport(false) {}
 
-nsresult
-nsAvailableMemoryWatcher::Init()
-{
+nsresult nsAvailableMemoryWatcher::Init() {
   mTimer = NS_NewTimer();
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
@@ -127,9 +120,7 @@ nsAvailableMemoryWatcher::Init()
   return NS_OK;
 }
 
-void
-nsAvailableMemoryWatcher::Shutdown()
-{
+void nsAvailableMemoryWatcher::Shutdown() {
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   MOZ_ASSERT(observerService);
 
@@ -143,9 +134,8 @@ nsAvailableMemoryWatcher::Shutdown()
   }
 }
 
- bool
-nsAvailableMemoryWatcher::IsVirtualMemoryLow(const MEMORYSTATUSEX& aStat)
-{
+ bool nsAvailableMemoryWatcher::IsVirtualMemoryLow(
+    const MEMORYSTATUSEX& aStat) {
   if ((kLowVirtualMemoryThreshold != 0) &&
       (aStat.ullAvailVirtual < kLowVirtualMemoryThreshold)) {
     sNumLowVirtualMemEvents++;
@@ -155,24 +145,22 @@ nsAvailableMemoryWatcher::IsVirtualMemoryLow(const MEMORYSTATUSEX& aStat)
   return false;
 }
 
- bool
-nsAvailableMemoryWatcher::IsCommitSpaceLow(const MEMORYSTATUSEX& aStat)
-{
+ bool nsAvailableMemoryWatcher::IsCommitSpaceLow(
+    const MEMORYSTATUSEX& aStat) {
   if ((kLowCommitSpaceThreshold != 0) &&
       (aStat.ullAvailPageFile < kLowCommitSpaceThreshold)) {
     sNumLowCommitSpaceEvents++;
     CrashReporter::AnnotateCrashReport(
-      CrashReporter::Annotation::LowCommitSpaceEvents,
-      uint32_t(sNumLowCommitSpaceEvents));
+        CrashReporter::Annotation::LowCommitSpaceEvents,
+        uint32_t(sNumLowCommitSpaceEvents));
     return true;
   }
 
   return false;
 }
 
- bool
-nsAvailableMemoryWatcher::IsPhysicalMemoryLow(const MEMORYSTATUSEX& aStat)
-{
+ bool nsAvailableMemoryWatcher::IsPhysicalMemoryLow(
+    const MEMORYSTATUSEX& aStat) {
   if ((kLowPhysicalMemoryThreshold != 0) &&
       (aStat.ullAvailPhys < kLowPhysicalMemoryThreshold)) {
     sNumLowPhysicalMemEvents++;
@@ -182,20 +170,16 @@ nsAvailableMemoryWatcher::IsPhysicalMemoryLow(const MEMORYSTATUSEX& aStat)
   return false;
 }
 
-void
-nsAvailableMemoryWatcher::SendMemoryPressureEvent()
-{
-    MemoryPressureState state = OngoingMemoryPressure() ? MemPressure_Ongoing
-                                                        : MemPressure_New;
-    NS_DispatchEventualMemoryPressure(state);
+void nsAvailableMemoryWatcher::SendMemoryPressureEvent() {
+  MemoryPressureState state =
+      OngoingMemoryPressure() ? MemPressure_Ongoing : MemPressure_New;
+  NS_DispatchEventualMemoryPressure(state);
 }
 
-void
-nsAvailableMemoryWatcher::MaybeSaveMemoryReport()
-{
+void nsAvailableMemoryWatcher::MaybeSaveMemoryReport() {
   if (!mSavedReport && OngoingMemoryPressure()) {
     nsCOMPtr<nsICrashReporter> cr =
-      do_GetService("@mozilla.org/toolkit/crash-reporter;1");
+        do_GetService("@mozilla.org/toolkit/crash-reporter;1");
     if (cr) {
       if (NS_SUCCEEDED(cr->SaveMemoryReport())) {
         mSavedReport = true;
@@ -204,9 +188,7 @@ nsAvailableMemoryWatcher::MaybeSaveMemoryReport()
   }
 }
 
-void
-nsAvailableMemoryWatcher::AdjustPollingInterval(const bool aLowMemory)
-{
+void nsAvailableMemoryWatcher::AdjustPollingInterval(const bool aLowMemory) {
   if (aLowMemory) {
     
     
@@ -222,23 +204,20 @@ nsAvailableMemoryWatcher::AdjustPollingInterval(const bool aLowMemory)
 
 
 NS_IMETHODIMP
-nsAvailableMemoryWatcher::Notify(nsITimer* aTimer)
-{
+nsAvailableMemoryWatcher::Notify(nsITimer* aTimer) {
   MEMORYSTATUSEX stat;
   stat.dwLength = sizeof(stat);
   bool success = GlobalMemoryStatusEx(&stat);
 
   if (success) {
-    bool lowMemory =
-      IsVirtualMemoryLow(stat) ||
-      IsCommitSpaceLow(stat) ||
-      IsPhysicalMemoryLow(stat);
+    bool lowMemory = IsVirtualMemoryLow(stat) || IsCommitSpaceLow(stat) ||
+                     IsPhysicalMemoryLow(stat);
 
     if (lowMemory) {
       SendMemoryPressureEvent();
       MaybeSaveMemoryReport();
     } else {
-      mSavedReport = false; 
+      mSavedReport = false;  
     }
 
     AdjustPollingInterval(lowMemory);
@@ -253,8 +232,7 @@ nsAvailableMemoryWatcher::Notify(nsITimer* aTimer)
 
 NS_IMETHODIMP
 nsAvailableMemoryWatcher::Observe(nsISupports* aSubject, const char* aTopic,
-                                  const char16_t* aData)
-{
+                                  const char16_t* aData) {
   if (strcmp(aTopic, "quit-application") == 0) {
     Shutdown();
   } else if (strcmp(aTopic, "user-interaction-inactive") == 0) {
@@ -269,34 +247,26 @@ nsAvailableMemoryWatcher::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-static int64_t
-LowMemoryEventsVirtualDistinguishedAmount()
-{
+static int64_t LowMemoryEventsVirtualDistinguishedAmount() {
   return sNumLowVirtualMemEvents;
 }
 
-static int64_t
-LowMemoryEventsCommitSpaceDistinguishedAmount()
-{
+static int64_t LowMemoryEventsCommitSpaceDistinguishedAmount() {
   return sNumLowCommitSpaceEvents;
 }
 
-static int64_t
-LowMemoryEventsPhysicalDistinguishedAmount()
-{
+static int64_t LowMemoryEventsPhysicalDistinguishedAmount() {
   return sNumLowPhysicalMemEvents;
 }
 
-class LowEventsReporter final : public nsIMemoryReporter
-{
+class LowEventsReporter final : public nsIMemoryReporter {
   ~LowEventsReporter() {}
 
-public:
+ public:
   NS_DECL_ISUPPORTS
 
   NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
-                            nsISupports* aData, bool aAnonymize) override
-  {
+                            nsISupports* aData, bool aAnonymize) override {
     
     MOZ_COLLECT_REPORT(
       "low-memory-events/virtual", KIND_OTHER, UNITS_COUNT_CUMULATIVE,
@@ -331,7 +301,7 @@ public:
 };
 NS_IMPL_ISUPPORTS(LowEventsReporter, nsIMemoryReporter)
 
-#endif 
+#endif  
 
 
 
@@ -339,11 +309,10 @@ NS_IMPL_ISUPPORTS(LowEventsReporter, nsIMemoryReporter)
 
 
 
-class nsJemallocFreeDirtyPagesRunnable final : public nsIRunnable
-{
+class nsJemallocFreeDirtyPagesRunnable final : public nsIRunnable {
   ~nsJemallocFreeDirtyPagesRunnable() {}
 
-public:
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIRUNNABLE
 };
@@ -351,8 +320,7 @@ public:
 NS_IMPL_ISUPPORTS(nsJemallocFreeDirtyPagesRunnable, nsIRunnable)
 
 NS_IMETHODIMP
-nsJemallocFreeDirtyPagesRunnable::Run()
-{
+nsJemallocFreeDirtyPagesRunnable::Run() {
   MOZ_ASSERT(NS_IsMainThread());
 
 #if defined(MOZ_MEMORY)
@@ -367,11 +335,10 @@ nsJemallocFreeDirtyPagesRunnable::Run()
 
 
 
-class nsMemoryPressureWatcher final : public nsIObserver
-{
+class nsMemoryPressureWatcher final : public nsIObserver {
   ~nsMemoryPressureWatcher() {}
 
-public:
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -385,9 +352,7 @@ NS_IMPL_ISUPPORTS(nsMemoryPressureWatcher, nsIObserver)
 
 
 
-void
-nsMemoryPressureWatcher::Init()
-{
+void nsMemoryPressureWatcher::Init() {
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
 
   if (os) {
@@ -401,8 +366,7 @@ nsMemoryPressureWatcher::Init()
 
 NS_IMETHODIMP
 nsMemoryPressureWatcher::Observe(nsISupports* aSubject, const char* aTopic,
-                                 const char16_t* aData)
-{
+                                 const char16_t* aData) {
   MOZ_ASSERT(!strcmp(aTopic, "memory-pressure"), "Unknown topic");
 
   nsCOMPtr<nsIRunnable> runnable = new nsJemallocFreeDirtyPagesRunnable();
@@ -412,14 +376,12 @@ nsMemoryPressureWatcher::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_OK;
 }
 
-} 
+}  
 
 namespace mozilla {
 namespace AvailableMemoryTracker {
 
-void
-Init()
-{
+void Init() {
   
   RefPtr<nsMemoryPressureWatcher> watcher = new nsMemoryPressureWatcher();
   watcher->Init();
@@ -427,11 +389,11 @@ Init()
 #if defined(XP_WIN)
   RegisterStrongMemoryReporter(new LowEventsReporter());
   RegisterLowMemoryEventsVirtualDistinguishedAmount(
-    LowMemoryEventsVirtualDistinguishedAmount);
+      LowMemoryEventsVirtualDistinguishedAmount);
   RegisterLowMemoryEventsCommitSpaceDistinguishedAmount(
-    LowMemoryEventsCommitSpaceDistinguishedAmount);
+      LowMemoryEventsCommitSpaceDistinguishedAmount);
   RegisterLowMemoryEventsPhysicalDistinguishedAmount(
-    LowMemoryEventsPhysicalDistinguishedAmount);
+      LowMemoryEventsPhysicalDistinguishedAmount);
 
   if (XRE_IsParentProcess()) {
     RefPtr<nsAvailableMemoryWatcher> poller = new nsAvailableMemoryWatcher();
@@ -440,8 +402,8 @@ Init()
       NS_WARNING("Could not start the available memory watcher");
     }
   }
-#endif 
+#endif  
 }
 
-} 
-} 
+}  
+}  

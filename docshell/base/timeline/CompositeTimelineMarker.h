@@ -12,13 +12,11 @@
 
 namespace mozilla {
 
-class CompositeTimelineMarker : public TimelineMarker
-{
-public:
+class CompositeTimelineMarker : public TimelineMarker {
+ public:
   CompositeTimelineMarker(const TimeStamp& aTime,
                           MarkerTracingType aTracingType)
-    : TimelineMarker("Composite", aTime, aTracingType)
-  {
+      : TimelineMarker("Composite", aTime, aTracingType) {
     
     
     
@@ -28,6 +26,6 @@ public:
   }
 };
 
-} 
+}  
 
-#endif 
+#endif  

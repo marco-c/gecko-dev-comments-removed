@@ -27,7 +27,7 @@ class DrawEventRecorder;
 
 
 class PrintTarget {
-public:
+ public:
   typedef std::function<void(nsresult)> PageDoneCallback;
 
   NS_INLINE_DECL_REFCOUNTING(PrintTarget);
@@ -35,13 +35,10 @@ public:
   
   virtual nsresult BeginPrinting(const nsAString& aTitle,
                                  const nsAString& aPrintToFileName,
-                                 int32_t aStartPage,
-                                 int32_t aEndPage) {
+                                 int32_t aStartPage, int32_t aEndPage) {
     return NS_OK;
   }
-  virtual nsresult EndPrinting() {
-    return NS_OK;
-  }
+  virtual nsresult EndPrinting() { return NS_OK; }
   virtual nsresult AbortPrinting() {
 #ifdef DEBUG
     mHasActivePage = false;
@@ -76,13 +73,9 @@ public:
 
 
 
-  virtual bool RotateNeededForLandscape() const {
-    return false;
-  }
+  virtual bool RotateNeededForLandscape() const { return false; }
 
-  const IntSize& GetSize() const {
-    return mSize;
-  }
+  const IntSize& GetSize() const { return mSize; }
 
   
 
@@ -127,9 +120,8 @@ public:
 
 
 
-  virtual already_AddRefed<DrawTarget>
-  MakeDrawTarget(const IntSize& aSize,
-                 DrawEventRecorder* aRecorder = nullptr);
+  virtual already_AddRefed<DrawTarget> MakeDrawTarget(
+      const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr);
 
   
 
@@ -154,20 +146,18 @@ public:
   static void AdjustPrintJobNameForIPP(const nsAString& aJobName,
                                        nsString& aAdjustedJobName);
 
-protected:
-
+ protected:
   
   explicit PrintTarget(cairo_surface_t* aCairoSurface, const IntSize& aSize);
 
   
   virtual ~PrintTarget();
 
-  static already_AddRefed<DrawTarget>
-  CreateWrapAndRecordDrawTarget(DrawEventRecorder* aRecorder,
-                                DrawTarget* aDrawTarget);
+  static already_AddRefed<DrawTarget> CreateWrapAndRecordDrawTarget(
+      DrawEventRecorder* aRecorder, DrawTarget* aDrawTarget);
 
   cairo_surface_t* mCairoSurface;
-  RefPtr<DrawTarget> mRefDT; 
+  RefPtr<DrawTarget> mRefDT;  
 
   IntSize mSize;
   bool mIsFinished;
@@ -178,7 +168,7 @@ protected:
   PageDoneCallback mPageDoneCallback;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

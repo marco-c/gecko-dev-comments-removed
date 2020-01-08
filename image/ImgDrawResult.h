@@ -6,7 +6,7 @@
 #ifndef mozilla_image_ImgDrawResult_h
 #define mozilla_image_ImgDrawResult_h
 
-#include <cstdint> 
+#include <cstdint>  
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
 
@@ -55,8 +55,7 @@ namespace image {
 
 
 
-enum class MOZ_MUST_USE_TYPE ImgDrawResult : uint8_t
-{
+enum class MOZ_MUST_USE_TYPE ImgDrawResult : uint8_t {
   SUCCESS,
   SUCCESS_NOT_COMPLETE,
   INCOMPLETE,
@@ -76,9 +75,9 @@ enum class MOZ_MUST_USE_TYPE ImgDrawResult : uint8_t
 
 
 
-inline ImgDrawResult
-operator&(const ImgDrawResult aLeft, const ImgDrawResult aRight)
-{
+
+inline ImgDrawResult operator&(const ImgDrawResult aLeft,
+                               const ImgDrawResult aRight) {
   if (MOZ_LIKELY(aLeft == ImgDrawResult::SUCCESS)) {
     return aRight;
   }
@@ -97,9 +96,8 @@ operator&(const ImgDrawResult aLeft, const ImgDrawResult aRight)
   return aLeft;
 }
 
-inline ImgDrawResult&
-operator&=(ImgDrawResult& aLeft, const ImgDrawResult aRight)
-{
+inline ImgDrawResult& operator&=(ImgDrawResult& aLeft,
+                                 const ImgDrawResult aRight) {
   aLeft = aLeft & aRight;
   return aLeft;
 }
@@ -112,15 +110,14 @@ operator&=(ImgDrawResult& aLeft, const ImgDrawResult aRight)
 
 struct imgDrawingParams {
   explicit imgDrawingParams(uint32_t aImageFlags = 0)
-    : imageFlags(aImageFlags), result(ImgDrawResult::SUCCESS)
-  {}
+      : imageFlags(aImageFlags), result(ImgDrawResult::SUCCESS) {}
 
-  const uint32_t imageFlags; 
-                             
-  ImgDrawResult result;         
+  const uint32_t imageFlags;  
+                              
+  ImgDrawResult result;       
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

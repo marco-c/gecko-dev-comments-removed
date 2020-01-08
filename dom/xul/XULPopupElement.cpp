@@ -21,26 +21,21 @@
 namespace mozilla {
 namespace dom {
 
-nsXULElement*
-NS_NewXULPopupElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-{
+nsXULElement* NS_NewXULPopupElement(
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
   return new XULPopupElement(std::move(aNodeInfo));
 }
 
-JSObject*
-XULPopupElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
-{
+JSObject* XULPopupElement::WrapNode(JSContext* aCx,
+                                    JS::Handle<JSObject*> aGivenProto) {
   return XULPopupElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-void
-XULPopupElement::OpenPopup(Element* aAnchorElement,
-                           const StringOrOpenPopupOptions& aOptions,
-                           int32_t aXPos, int32_t aYPos,
-                           bool aIsContextMenu,
-                           bool aAttributesOverride,
-                           Event* aTriggerEvent)
-{
+void XULPopupElement::OpenPopup(Element* aAnchorElement,
+                                const StringOrOpenPopupOptions& aOptions,
+                                int32_t aXPos, int32_t aYPos,
+                                bool aIsContextMenu, bool aAttributesOverride,
+                                Event* aTriggerEvent) {
   nsAutoString position;
   if (aOptions.IsOpenPopupOptions()) {
     const OpenPopupOptions& options = aOptions.GetAsOpenPopupOptions();
@@ -50,8 +45,7 @@ XULPopupElement::OpenPopup(Element* aAnchorElement,
     aIsContextMenu = options.mIsContextMenu;
     aAttributesOverride = options.mAttributesOverride;
     aTriggerEvent = options.mTriggerEvent;
-  }
-  else {
+  } else {
     position = aOptions.GetAsString();
   }
 
@@ -68,119 +62,102 @@ XULPopupElement::OpenPopup(Element* aAnchorElement,
       }
     }
 
-    pm->ShowPopup(this, aAnchorElement, position, aXPos, aYPos,
-                  aIsContextMenu, aAttributesOverride, false, aTriggerEvent);
+    pm->ShowPopup(this, aAnchorElement, position, aXPos, aYPos, aIsContextMenu,
+                  aAttributesOverride, false, aTriggerEvent);
   }
 }
 
-void
-XULPopupElement::OpenPopupAtScreen(int32_t aXPos, int32_t aYPos,
-                                   bool aIsContextMenu,
-                                   Event* aTriggerEvent)
-{
+void XULPopupElement::OpenPopupAtScreen(int32_t aXPos, int32_t aYPos,
+                                        bool aIsContextMenu,
+                                        Event* aTriggerEvent) {
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
     pm->ShowPopupAtScreen(this, aXPos, aYPos, aIsContextMenu, aTriggerEvent);
   }
 }
 
-void
-XULPopupElement::OpenPopupAtScreenRect(const nsAString& aPosition,
-                                       int32_t aXPos, int32_t aYPos,
-                                       int32_t aWidth, int32_t aHeight,
-                                       bool aIsContextMenu,
-                                       bool aAttributesOverride,
-                                       Event* aTriggerEvent)
-{
+void XULPopupElement::OpenPopupAtScreenRect(const nsAString& aPosition,
+                                            int32_t aXPos, int32_t aYPos,
+                                            int32_t aWidth, int32_t aHeight,
+                                            bool aIsContextMenu,
+                                            bool aAttributesOverride,
+                                            Event* aTriggerEvent) {
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
-    pm->ShowPopupAtScreenRect(this, aPosition,
-                              nsIntRect(aXPos, aYPos, aWidth, aHeight),
-                              aIsContextMenu, aAttributesOverride, aTriggerEvent);
+    pm->ShowPopupAtScreenRect(
+        this, aPosition, nsIntRect(aXPos, aYPos, aWidth, aHeight),
+        aIsContextMenu, aAttributesOverride, aTriggerEvent);
   }
 }
 
-void
-XULPopupElement::HidePopup(bool aCancel)
-{
+void XULPopupElement::HidePopup(bool aCancel) {
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
   if (pm) {
     pm->HidePopup(this, false, true, false, aCancel);
   }
 }
 
-void
-XULPopupElement::MoveTo(int32_t aLeft, int32_t aTop)
-{
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
+void XULPopupElement::MoveTo(int32_t aLeft, int32_t aTop) {
+  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (menuPopupFrame) {
     menuPopupFrame->MoveTo(CSSIntPoint(aLeft, aTop), true);
   }
 }
 
-void
-XULPopupElement::MoveToAnchor(Element* aAnchorElement,
-                              const nsAString& aPosition,
-                              int32_t aXPos, int32_t aYPos,
-                              bool aAttributesOverride)
-{
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
+void XULPopupElement::MoveToAnchor(Element* aAnchorElement,
+                                   const nsAString& aPosition, int32_t aXPos,
+                                   int32_t aYPos, bool aAttributesOverride) {
+  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (menuPopupFrame && menuPopupFrame->IsVisible()) {
-    menuPopupFrame->MoveToAnchor(aAnchorElement, aPosition, aXPos, aYPos, aAttributesOverride);
+    menuPopupFrame->MoveToAnchor(aAnchorElement, aPosition, aXPos, aYPos,
+                                 aAttributesOverride);
   }
 }
 
-void
-XULPopupElement::SizeTo(int32_t aWidth, int32_t aHeight)
-{
+void XULPopupElement::SizeTo(int32_t aWidth, int32_t aHeight) {
   nsAutoString width, height;
   width.AppendInt(aWidth);
   height.AppendInt(aHeight);
 
-  nsCOMPtr<nsIContent> kungFuDeathGrip = this; 
+  nsCOMPtr<nsIContent> kungFuDeathGrip = this;  
 
   
   
   
-  bool heightSame = AttrValueIs(kNameSpaceID_None, nsGkAtoms::height, height, eCaseMatters);
+  bool heightSame =
+      AttrValueIs(kNameSpaceID_None, nsGkAtoms::height, height, eCaseMatters);
 
   SetAttr(kNameSpaceID_None, nsGkAtoms::width, width, heightSame);
   SetAttr(kNameSpaceID_None, nsGkAtoms::height, height, true);
 
   
   
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
+  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (menuPopupFrame && menuPopupFrame->PopupState() == ePopupShown) {
     menuPopupFrame->SetPopupPosition(nullptr, false, false, true);
   }
 }
 
-bool
-XULPopupElement::AutoPosition()
-{
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
+bool XULPopupElement::AutoPosition() {
+  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (menuPopupFrame) {
     return menuPopupFrame->GetAutoPosition();
   }
   return true;
 }
 
-void
-XULPopupElement::SetAutoPosition(bool aShouldAutoPosition)
-{
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
+void XULPopupElement::SetAutoPosition(bool aShouldAutoPosition) {
+  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (menuPopupFrame) {
     menuPopupFrame->SetAutoPosition(aShouldAutoPosition);
   }
 }
 
-void
-XULPopupElement::GetState(nsString& aState)
-{
+void XULPopupElement::GetState(nsString& aState) {
   
   aState.AssignLiteral("closed");
 
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
+  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (menuPopupFrame) {
     switch (menuPopupFrame->PopupState()) {
       case ePopupShown:
@@ -205,17 +182,13 @@ XULPopupElement::GetState(nsString& aState)
   }
 }
 
-nsINode*
-XULPopupElement::GetTriggerNode() const
-{
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
+nsINode* XULPopupElement::GetTriggerNode() const {
+  nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   return nsMenuPopupFrame::GetTriggerContent(menuPopupFrame);
 }
 
 
-Element*
-XULPopupElement::GetAnchorNode() const
-{
+Element* XULPopupElement::GetAnchorNode() const {
   nsMenuPopupFrame* menuPopupFrame = do_QueryFrame(GetPrimaryFrame());
   if (!menuPopupFrame) {
     return nullptr;
@@ -224,13 +197,12 @@ XULPopupElement::GetAnchorNode() const
   return Element::FromNodeOrNull(menuPopupFrame->GetAnchor());
 }
 
-already_AddRefed<DOMRect>
-XULPopupElement::GetOuterScreenRect()
-{
+already_AddRefed<DOMRect> XULPopupElement::GetOuterScreenRect() {
   RefPtr<DOMRect> rect = new DOMRect(ToSupports(this));
 
   
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame(FlushType::Frames));
+  nsMenuPopupFrame* menuPopupFrame =
+      do_QueryFrame(GetPrimaryFrame(FlushType::Frames));
   if (!menuPopupFrame || !menuPopupFrame->IsOpen()) {
     return rect.forget();
   }
@@ -248,15 +220,13 @@ XULPopupElement::GetOuterScreenRect()
   return rect.forget();
 }
 
-void
-XULPopupElement::GetAlignmentPosition(nsString& positionStr)
-{
+void XULPopupElement::GetAlignmentPosition(nsString& positionStr) {
   positionStr.Truncate();
 
   
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame(FlushType::Layout));
-  if (!menuPopupFrame)
-    return;
+  nsMenuPopupFrame* menuPopupFrame =
+      do_QueryFrame(GetPrimaryFrame(FlushType::Layout));
+  if (!menuPopupFrame) return;
 
   int8_t position = menuPopupFrame->GetAlignmentPosition();
   switch (position) {
@@ -299,12 +269,10 @@ XULPopupElement::GetAlignmentPosition(nsString& positionStr)
   }
 }
 
-int32_t
-XULPopupElement::AlignmentOffset()
-{
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame(FlushType::Frames));
-  if (!menuPopupFrame)
-    return 0;
+int32_t XULPopupElement::AlignmentOffset() {
+  nsMenuPopupFrame* menuPopupFrame =
+      do_QueryFrame(GetPrimaryFrame(FlushType::Frames));
+  if (!menuPopupFrame) return 0;
 
   int32_t pp = mozilla::AppUnitsPerCSSPixel();
   
@@ -315,15 +283,14 @@ XULPopupElement::AlignmentOffset()
   return popupOffset.x;
 }
 
-void
-XULPopupElement::SetConstraintRect(dom::DOMRectReadOnly& aRect)
-{
-  nsMenuPopupFrame *menuPopupFrame = do_QueryFrame(GetPrimaryFrame(FlushType::Frames));
+void XULPopupElement::SetConstraintRect(dom::DOMRectReadOnly& aRect) {
+  nsMenuPopupFrame* menuPopupFrame =
+      do_QueryFrame(GetPrimaryFrame(FlushType::Frames));
   if (menuPopupFrame) {
-    menuPopupFrame->SetOverrideConstraintRect(
-      LayoutDeviceIntRect::Truncate(aRect.Left(), aRect.Top(), aRect.Width(), aRect.Height()));
+    menuPopupFrame->SetOverrideConstraintRect(LayoutDeviceIntRect::Truncate(
+        aRect.Left(), aRect.Top(), aRect.Width(), aRect.Height()));
   }
 }
 
-} 
-} 
+}  
+}  

@@ -4,17 +4,13 @@
 
 #include "PSMRunnable.h"
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
 SyncRunnableBase::SyncRunnableBase()
-  : Runnable("psm::SyncRunnableBase")
-  , monitor("SyncRunnableBase::monitor")
-{
-}
+    : Runnable("psm::SyncRunnableBase"), monitor("SyncRunnableBase::monitor") {}
 
-nsresult
-SyncRunnableBase::DispatchToMainThreadAndWait()
-{
+nsresult SyncRunnableBase::DispatchToMainThreadAndWait() {
   nsresult rv;
   if (NS_IsMainThread()) {
     RunOnTargetThread();
@@ -31,18 +27,16 @@ SyncRunnableBase::DispatchToMainThreadAndWait()
 }
 
 NS_IMETHODIMP
-SyncRunnableBase::Run()
-{
+SyncRunnableBase::Run() {
   RunOnTargetThread();
   mozilla::MonitorAutoLock(monitor).Notify();
   return NS_OK;
 }
 
-nsresult
-NotifyObserverRunnable::Run()
-{
+nsresult NotifyObserverRunnable::Run() {
   mObserver->Observe(nullptr, mTopic, nullptr);
   return NS_OK;
 }
 
-} } 
+}  
+}  

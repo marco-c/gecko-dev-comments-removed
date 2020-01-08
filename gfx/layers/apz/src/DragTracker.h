@@ -19,9 +19,8 @@ namespace layers {
 
 
 
-class DragTracker
-{
-public:
+class DragTracker {
+ public:
   DragTracker();
   static bool StartsDrag(const MouseInput& aInput);
   static bool EndsDrag(const MouseInput& aInput);
@@ -29,12 +28,12 @@ public:
   bool InDrag() const;
   bool IsOnScrollbar(bool aOnScrollbar);
 
-private:
+ private:
   Maybe<bool> mOnScrollbar;
   bool mInDrag;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

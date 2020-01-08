@@ -28,15 +28,13 @@ using mozilla::ipc::CloseFileRunnable;
 #ifdef DEBUG
 
 CloseFileRunnable::CloseFileRunnable(const FileDescriptor& aFileDescriptor)
-: mFileDescriptor(aFileDescriptor)
-{
+    : mFileDescriptor(aFileDescriptor) {
   MOZ_ASSERT(aFileDescriptor.IsValid());
 }
 
-#endif 
+#endif  
 
-CloseFileRunnable::~CloseFileRunnable()
-{
+CloseFileRunnable::~CloseFileRunnable() {
   if (mFileDescriptor.IsValid()) {
     
     
@@ -46,28 +44,23 @@ CloseFileRunnable::~CloseFileRunnable()
 
 NS_IMPL_ISUPPORTS(CloseFileRunnable, nsIRunnable)
 
-void
-CloseFileRunnable::Dispatch()
-{
+void CloseFileRunnable::Dispatch() {
   nsCOMPtr<nsIEventTarget> eventTarget =
-    do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
+      do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
   NS_ENSURE_TRUE_VOID(eventTarget);
 
   nsresult rv = eventTarget->Dispatch(this, NS_DISPATCH_NORMAL);
   NS_ENSURE_SUCCESS_VOID(rv);
 }
 
-void
-CloseFileRunnable::CloseFile()
-{
+void CloseFileRunnable::CloseFile() {
   
   
   mFileDescriptor = FileDescriptor();
 }
 
 NS_IMETHODIMP
-CloseFileRunnable::Run()
-{
+CloseFileRunnable::Run() {
   MOZ_ASSERT(!NS_IsMainThread());
 
   CloseFile();
@@ -77,10 +70,7 @@ CloseFileRunnable::Run()
 namespace mozilla {
 namespace ipc {
 
-FILE*
-FileDescriptorToFILE(const FileDescriptor& aDesc,
-                     const char* aOpenMode)
-{
+FILE* FileDescriptorToFILE(const FileDescriptor& aDesc, const char* aOpenMode) {
   if (!aDesc.IsValid()) {
     errno = EBADF;
     return nullptr;
@@ -104,9 +94,7 @@ FileDescriptorToFILE(const FileDescriptor& aDesc,
   return file;
 }
 
-FileDescriptor
-FILEToFileDescriptor(FILE* aStream)
-{
+FileDescriptor FILEToFileDescriptor(FILE* aStream) {
   if (!aStream) {
     errno = EBADF;
     return FileDescriptor();
@@ -122,5 +110,5 @@ FILEToFileDescriptor(FILE* aStream)
 #endif
 }
 
-} 
-} 
+}  
+}  

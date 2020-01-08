@@ -7,12 +7,13 @@
 #ifndef mozilla_toolkit_system_windowsDHCPClient_windowsNetworkFunctionsWrapper_h
 #define mozilla_toolkit_system_windowsDHCPClient_windowsNetworkFunctionsWrapper_h
 
-#include <winsock2.h> 
-                      
+#include <winsock2.h>  
+                       
 #include <dhcpcsdk.h>
 #include <iphlpapi.h>
 
 #include "nsISupports.h"
+
 
 
 namespace mozilla {
@@ -20,41 +21,28 @@ namespace toolkit {
 namespace system {
 namespace windowsDHCPClient {
 
-class WindowsNetworkFunctionsWrapper : nsISupports
-{
+class WindowsNetworkFunctionsWrapper : nsISupports {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  WindowsNetworkFunctionsWrapper(){};
 
-  public:
-
-    NS_DECL_THREADSAFE_ISUPPORTS
-    WindowsNetworkFunctionsWrapper(){};
-
-    virtual ULONG GetAdaptersAddressesWrapped(
-      _In_    ULONG                 aFamily,
-      _In_    ULONG                 aFlags,
-      _In_    PVOID                 aReserved,
+  virtual ULONG GetAdaptersAddressesWrapped(
+      _In_ ULONG aFamily, _In_ ULONG aFlags, _In_ PVOID aReserved,
       _Inout_ PIP_ADAPTER_ADDRESSES aAdapterAddresses,
-      _Inout_ PULONG                aSizePointer
-    );
+      _Inout_ PULONG aSizePointer);
 
-    virtual DWORD DhcpRequestParamsWrapped(
-    _In_    DWORD                 aFlags,
-    _In_    LPVOID                aReserved,
-    _In_    LPWSTR                aAdapterName,
-    _In_    LPDHCPCAPI_CLASSID    aClassId,
-    _In_    DHCPCAPI_PARAMS_ARRAY aSendParams,
-    _Inout_ DHCPCAPI_PARAMS_ARRAY aRecdParams,
-    _In_    LPBYTE                aBuffer,
-    _Inout_ LPDWORD               apSize,
-    _In_    LPWSTR                aRequestIdStr
-  );
+  virtual DWORD DhcpRequestParamsWrapped(
+      _In_ DWORD aFlags, _In_ LPVOID aReserved, _In_ LPWSTR aAdapterName,
+      _In_ LPDHCPCAPI_CLASSID aClassId, _In_ DHCPCAPI_PARAMS_ARRAY aSendParams,
+      _Inout_ DHCPCAPI_PARAMS_ARRAY aRecdParams, _In_ LPBYTE aBuffer,
+      _Inout_ LPDWORD apSize, _In_ LPWSTR aRequestIdStr);
 
-  protected:
-    virtual ~WindowsNetworkFunctionsWrapper(){};
-
+ protected:
+  virtual ~WindowsNetworkFunctionsWrapper(){};
 };
 
-} 
-} 
-} 
-} 
-#endif 
+}  
+}  
+}  
+}  
+#endif  

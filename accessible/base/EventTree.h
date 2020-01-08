@@ -24,9 +24,8 @@ class NotificationController;
 
 
 
-class TreeMutation final
-{
-public:
+class TreeMutation final {
+ public:
   static const bool kNoEvents = true;
   static const bool kNoShutdown = true;
 
@@ -37,9 +36,10 @@ public:
   void BeforeRemoval(Accessible* aChild, bool aNoShutdown = false);
   void Done();
 
-private:
-  NotificationController* Controller() const
-    { return mParent->Document()->Controller(); }
+ private:
+  NotificationController* Controller() const {
+    return mParent->Document()->Controller();
+  }
 
   static EventTree* const kNoEventTree;
 
@@ -64,14 +64,18 @@ private:
 
 
 
-
 class EventTree final {
-public:
-  EventTree() :
-    mFirst(nullptr), mNext(nullptr), mContainer(nullptr), mFireReorder(false) { }
-  explicit EventTree(Accessible* aContainer, bool aFireReorder) :
-    mFirst(nullptr), mNext(nullptr), mContainer(aContainer),
-    mFireReorder(aFireReorder) { }
+ public:
+  EventTree()
+      : mFirst(nullptr),
+        mNext(nullptr),
+        mContainer(nullptr),
+        mFireReorder(false) {}
+  explicit EventTree(Accessible* aContainer, bool aFireReorder)
+      : mFirst(nullptr),
+        mNext(nullptr),
+        mContainer(aContainer),
+        mFireReorder(aFireReorder) {}
   ~EventTree() { Clear(); }
 
   void Shown(Accessible* aTarget);
@@ -91,7 +95,7 @@ public:
   void Log(uint32_t aLevel = UINT32_MAX) const;
 #endif
 
-private:
+ private:
   
 
 
@@ -111,14 +115,14 @@ private:
   nsTArray<RefPtr<AccMutationEvent>> mDependentEvents;
   bool mFireReorder;
 
-  static NotificationController* Controller(Accessible* aAcc)
-    { return aAcc->Document()->Controller(); }
+  static NotificationController* Controller(Accessible* aAcc) {
+    return aAcc->Document()->Controller();
+  }
 
   friend class NotificationController;
 };
 
+}  
+}  
 
-} 
-} 
-
-#endif 
+#endif  

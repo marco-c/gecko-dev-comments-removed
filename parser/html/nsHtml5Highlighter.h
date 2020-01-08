@@ -16,9 +16,8 @@
 
 
 
-class nsHtml5Highlighter
-{
-public:
+class nsHtml5Highlighter {
+ public:
   
 
 
@@ -147,7 +146,7 @@ public:
 
   void AddBase(nsHtml5String aValue);
 
-private:
+ private:
   
 
 
@@ -227,8 +226,7 @@ private:
 
 
 
-  nsIContent** CreateElement(nsAtom* aName,
-                             nsHtml5HtmlAttributes* aAttributes,
+  nsIContent** CreateElement(nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,
                              nsIContent** aIntendedParent,
                              mozilla::dom::HTMLContentCreatorFunction aCreator);
 
@@ -248,8 +246,7 @@ private:
 
 
 
-  void Push(nsAtom* aName,
-            nsHtml5HtmlAttributes* aAttributes,
+  void Push(nsAtom* aName, nsHtml5HtmlAttributes* aAttributes,
             mozilla::dom::HTMLContentCreatorFunction aCreator);
 
   
@@ -264,8 +261,7 @@ private:
 
 
 
-  void AppendCharacters(const char16_t* aBuffer,
-                        int32_t aStart,
+  void AppendCharacters(const char16_t* aBuffer, int32_t aStart,
                         int32_t aLength);
 
   
@@ -344,7 +340,7 @@ private:
   
 
 
-  mozilla::UniquePtr<nsIContent* []> mHandles;
+  mozilla::UniquePtr<nsIContent*[]> mHandles;
 
   
 
@@ -354,7 +350,7 @@ private:
   
 
 
-  nsTArray<mozilla::UniquePtr<nsIContent* []>> mOldHandles;
+  nsTArray<mozilla::UniquePtr<nsIContent*[]>> mOldHandles;
 
   
 
@@ -412,4 +408,4 @@ private:
   bool mSeenBase;
 };
 
-#endif 
+#endif  

@@ -35,16 +35,13 @@ namespace {
 
 
 
-class MacCrashReporterLock
-{
-public:
-  void Lock()
-  {
+class MacCrashReporterLock {
+ public:
+  void Lock() {
     sInnerMutex.Lock();
     sIsLocked = true;
   }
-  void Unlock()
-  {
+  void Unlock() {
     sIsLocked = false;
     sInnerMutex.Unlock();
   }
@@ -54,15 +51,10 @@ public:
 
 
 
-  bool IsLocked()
-  {
-    return sIsLocked;
-  }
-  void AssertCurrentThreadOwns()
-  {
-    sInnerMutex.AssertCurrentThreadOwns();
-  }
-private:
+  bool IsLocked() { return sIsLocked; }
+  void AssertCurrentThreadOwns() { sInnerMutex.AssertCurrentThreadOwns(); }
+
+ private:
   static StaticMutex sInnerMutex;
   static bool sIsLocked;
 };
@@ -72,7 +64,7 @@ bool MacCrashReporterLock::sIsLocked;
 
 typedef mozilla::BaseAutoLock<MacCrashReporterLock&> CrashReporterAutoLock;
 typedef MacCrashReporterLock CrashReporterLockType;
-#else 
+#else  
 
 typedef StaticMutexAutoLock CrashReporterAutoLock;
 typedef StaticMutex CrashReporterLockType;
@@ -82,32 +74,28 @@ typedef StaticMutex CrashReporterLockType;
 static CrashReporterLockType sMutex;
 
 class ThreadAnnotationSpan {
-public:
+ public:
   ThreadAnnotationSpan(uint32_t aBegin, uint32_t aEnd)
-    : mBegin(aBegin)
-    , mEnd(aEnd)
-  {
+      : mBegin(aBegin), mEnd(aEnd) {
     MOZ_ASSERT(mBegin < mEnd);
   }
 
   ~ThreadAnnotationSpan();
 
   class Comparator {
-  public:
-     bool Equals(const ThreadAnnotationSpan* const& a,
-                 const ThreadAnnotationSpan* const& b) const
-     {
-       return a->mBegin == b->mBegin;
-     }
+   public:
+    bool Equals(const ThreadAnnotationSpan* const& a,
+                const ThreadAnnotationSpan* const& b) const {
+      return a->mBegin == b->mBegin;
+    }
 
-     bool LessThan(const ThreadAnnotationSpan* const& a,
-                   const ThreadAnnotationSpan* const& b) const
-     {
-       return a->mBegin < b->mBegin;
-     }
+    bool LessThan(const ThreadAnnotationSpan* const& a,
+                  const ThreadAnnotationSpan* const& b) const {
+      return a->mBegin < b->mBegin;
+    }
   };
 
-private:
+ private:
   
   
   ThreadAnnotationSpan(const ThreadAnnotationSpan& aOther) = delete;
@@ -126,19 +114,16 @@ private:
 
 
 class ThreadAnnotationData {
-public:
-  ThreadAnnotationData()
-  {}
+ public:
+  ThreadAnnotationData() {}
 
-  ~ThreadAnnotationData()
-  {}
+  ~ThreadAnnotationData() {}
 
   
   
   
-  ThreadAnnotationSpan*
-  AddThreadAnnotation(ThreadId aTid, const char* aThreadName)
-  {
+  ThreadAnnotationSpan* AddThreadAnnotation(ThreadId aTid,
+                                            const char* aThreadName) {
     if (!aTid || !aThreadName) {
       return nullptr;
     }
@@ -154,13 +139,11 @@ public:
 
   
   
-  void EraseThreadAnnotation(const ThreadAnnotationSpan& aThreadInfo)
-  {
+  void EraseThreadAnnotation(const ThreadAnnotationSpan& aThreadInfo) {
     uint32_t begin = aThreadInfo.mBegin;
     uint32_t end = aThreadInfo.mEnd;
 
-    if (!(begin < end &&
-          end <= mData.Length())) {
+    if (!(begin < end && end <= mData.Length())) {
       return;
     }
 
@@ -185,11 +168,11 @@ public:
   }
 
   
-  void GetData(const std::function<void(const char*)>& aCallback)
-  {
+  void GetData(const std::function<void(const char*)>& aCallback) {
     aCallback(mData.BeginReading());
   }
-private:
+
+ private:
   
   nsCString mData;
 
@@ -202,21 +185,19 @@ private:
 static bool sInitialized = false;
 static UniquePtr<ThreadAnnotationData> sThreadAnnotations;
 
-static unsigned sTLSThreadInfoKey = (unsigned) -1;
-void ThreadLocalDestructor(void* aUserData)
-{
+static unsigned sTLSThreadInfoKey = (unsigned)-1;
+void ThreadLocalDestructor(void* aUserData) {
   MOZ_ASSERT(aUserData);
 
   CrashReporterAutoLock lock(sMutex);
 
   ThreadAnnotationSpan* aThreadInfo =
-    static_cast<ThreadAnnotationSpan*>(aUserData);
+      static_cast<ThreadAnnotationSpan*>(aUserData);
   delete aThreadInfo;
 }
 
 
-ThreadAnnotationSpan::~ThreadAnnotationSpan()
-{
+ThreadAnnotationSpan::~ThreadAnnotationSpan() {
   
   
   sMutex.AssertCurrentThreadOwns();
@@ -226,18 +207,17 @@ ThreadAnnotationSpan::~ThreadAnnotationSpan()
   }
 }
 
-} 
+}  
 
-void InitThreadAnnotation()
-{
+void InitThreadAnnotation() {
   CrashReporterAutoLock lock(sMutex);
 
   if (sInitialized) {
     return;
   }
 
-  PRStatus status = PR_NewThreadPrivateIndex(&sTLSThreadInfoKey,
-                                             &ThreadLocalDestructor);
+  PRStatus status =
+      PR_NewThreadPrivateIndex(&sTLSThreadInfoKey, &ThreadLocalDestructor);
   if (status == PR_FAILURE) {
     return;
   }
@@ -247,8 +227,7 @@ void InitThreadAnnotation()
   sThreadAnnotations = mozilla::MakeUnique<ThreadAnnotationData>();
 }
 
-void SetCurrentThreadName(const char* aName)
-{
+void SetCurrentThreadName(const char* aName) {
   if (PR_GetThreadPrivate(sTLSThreadInfoKey)) {
     
     
@@ -262,15 +241,13 @@ void SetCurrentThreadName(const char* aName)
   }
 
   ThreadAnnotationSpan* threadInfo =
-    sThreadAnnotations->AddThreadAnnotation(CurrentThreadId(),
-                                            aName);
+      sThreadAnnotations->AddThreadAnnotation(CurrentThreadId(), aName);
   
   PR_SetThreadPrivate(sTLSThreadInfoKey, threadInfo);
 }
 
 void GetFlatThreadAnnotation(const std::function<void(const char*)>& aCallback,
-                             bool aIsHandlingException)
-{
+                             bool aIsHandlingException) {
   bool lockNeeded = true;
 
 #ifdef XP_MACOSX
@@ -306,12 +283,11 @@ void GetFlatThreadAnnotation(const std::function<void(const char*)>& aCallback,
   }
 }
 
-void ShutdownThreadAnnotation()
-{
+void ShutdownThreadAnnotation() {
   CrashReporterAutoLock lock(sMutex);
 
   sInitialized = false;
   sThreadAnnotations.reset();
 }
 
-}
+}  

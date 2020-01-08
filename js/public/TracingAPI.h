@@ -16,116 +16,120 @@ class JS_PUBLIC_API JSTracer;
 
 namespace JS {
 class JS_PUBLIC_API CallbackTracer;
-template <typename T> class Heap;
-template <typename T> class TenuredHeap;
+template <typename T>
+class Heap;
+template <typename T>
+class TenuredHeap;
 
 
-JS_FRIEND_API const char*
-GCTraceKindToAscii(JS::TraceKind kind);
+JS_FRIEND_API const char* GCTraceKindToAscii(JS::TraceKind kind);
 
-} 
+}  
 
 enum WeakMapTraceKind {
-    
+  
 
 
 
-    DoNotTraceWeakMaps,
+  DoNotTraceWeakMaps,
 
-    
-
-
-
-    ExpandWeakMaps,
-
-    
+  
 
 
 
-    TraceWeakMapValues,
+  ExpandWeakMaps,
 
-    
+  
 
 
 
-    TraceWeakMapKeysValues
+  TraceWeakMapValues,
+
+  
+
+
+
+  TraceWeakMapKeysValues
 };
 
-class JS_PUBLIC_API JSTracer
-{
-  public:
+class JS_PUBLIC_API JSTracer {
+ public:
+  
+  JSRuntime* runtime() const { return runtime_; }
+
+  
+  WeakMapTraceKind weakMapAction() const { return weakMapAction_; }
+
+  enum class TracerKindTag {
     
-    JSRuntime* runtime() const { return runtime_; }
+    
+    
+    Marking,
 
     
-    WeakMapTraceKind weakMapAction() const { return weakMapAction_; }
+    
+    
+    
+    WeakMarking,
 
-    enum class TracerKindTag {
-        
-        
-        
-        Marking,
+    
+    
+    Tenuring,
 
-        
-        
-        
-        
-        WeakMarking,
-
-        
-        
-        Tenuring,
-
-        
-        
-        Callback
-    };
-    bool isMarkingTracer() const { return tag_ == TracerKindTag::Marking || tag_ == TracerKindTag::WeakMarking; }
-    bool isWeakMarkingTracer() const { return tag_ == TracerKindTag::WeakMarking; }
-    bool isTenuringTracer() const { return tag_ == TracerKindTag::Tenuring; }
-    bool isCallbackTracer() const { return tag_ == TracerKindTag::Callback; }
-    inline JS::CallbackTracer* asCallbackTracer();
-    bool traceWeakEdges() const { return traceWeakEdges_; }
-    bool canSkipJsids() const { return canSkipJsids_; }
+    
+    
+    Callback
+  };
+  bool isMarkingTracer() const {
+    return tag_ == TracerKindTag::Marking || tag_ == TracerKindTag::WeakMarking;
+  }
+  bool isWeakMarkingTracer() const {
+    return tag_ == TracerKindTag::WeakMarking;
+  }
+  bool isTenuringTracer() const { return tag_ == TracerKindTag::Tenuring; }
+  bool isCallbackTracer() const { return tag_ == TracerKindTag::Callback; }
+  inline JS::CallbackTracer* asCallbackTracer();
+  bool traceWeakEdges() const { return traceWeakEdges_; }
+  bool canSkipJsids() const { return canSkipJsids_; }
 #ifdef DEBUG
-    bool checkEdges() { return checkEdges_; }
+  bool checkEdges() { return checkEdges_; }
 #endif
 
-    
-    
-    uint32_t gcNumberForMarking() const;
+  
+  
+  uint32_t gcNumberForMarking() const;
 
-  protected:
-    JSTracer(JSRuntime* rt, TracerKindTag tag,
-             WeakMapTraceKind weakTraceKind = TraceWeakMapValues)
-      : runtime_(rt)
-      , weakMapAction_(weakTraceKind)
+ protected:
+  JSTracer(JSRuntime* rt, TracerKindTag tag,
+           WeakMapTraceKind weakTraceKind = TraceWeakMapValues)
+      : runtime_(rt),
+        weakMapAction_(weakTraceKind)
 #ifdef DEBUG
-      , checkEdges_(true)
+        ,
+        checkEdges_(true)
 #endif
-      , tag_(tag)
-      , traceWeakEdges_(true)
-      , canSkipJsids_(false)
-    {}
+        ,
+        tag_(tag),
+        traceWeakEdges_(true),
+        canSkipJsids_(false) {
+  }
 
 #ifdef DEBUG
-    
-    void setCheckEdges(bool check) {
-        checkEdges_ = check;
-    }
-#endif
-
-  private:
-    JSRuntime* runtime_;
-    WeakMapTraceKind weakMapAction_;
-#ifdef DEBUG
-    bool checkEdges_;
+  
+  void setCheckEdges(bool check) { checkEdges_ = check; }
 #endif
 
-  protected:
-    TracerKindTag tag_;
-    bool traceWeakEdges_;
-    bool canSkipJsids_;
+ private:
+  JSRuntime* runtime_;
+  WeakMapTraceKind weakMapAction_;
+#ifdef DEBUG
+  bool checkEdges_;
+#endif
+
+ protected:
+  TracerKindTag tag_;
+  bool traceWeakEdges_;
+  bool canSkipJsids_;
 };
 
 namespace JS {
@@ -134,234 +138,239 @@ class AutoTracingName;
 class AutoTracingIndex;
 class AutoTracingCallback;
 
-class JS_PUBLIC_API CallbackTracer : public JSTracer
-{
-  public:
-    CallbackTracer(JSRuntime* rt, WeakMapTraceKind weakTraceKind = TraceWeakMapValues)
+class JS_PUBLIC_API CallbackTracer : public JSTracer {
+ public:
+  CallbackTracer(JSRuntime* rt,
+                 WeakMapTraceKind weakTraceKind = TraceWeakMapValues)
       : JSTracer(rt, JSTracer::TracerKindTag::Callback, weakTraceKind),
-        contextName_(nullptr), contextIndex_(InvalidIndex), contextFunctor_(nullptr)
-    {}
-    CallbackTracer(JSContext* cx, WeakMapTraceKind weakTraceKind = TraceWeakMapValues);
+        contextName_(nullptr),
+        contextIndex_(InvalidIndex),
+        contextFunctor_(nullptr) {}
+  CallbackTracer(JSContext* cx,
+                 WeakMapTraceKind weakTraceKind = TraceWeakMapValues);
 
-    
-    
-    
-    
-    
-    virtual void onObjectEdge(JSObject** objp) { onChild(JS::GCCellPtr(*objp)); }
-    virtual void onStringEdge(JSString** strp) { onChild(JS::GCCellPtr(*strp)); }
-    virtual void onSymbolEdge(JS::Symbol** symp) { onChild(JS::GCCellPtr(*symp)); }
+  
+  
+  
+  
+  
+  virtual void onObjectEdge(JSObject** objp) { onChild(JS::GCCellPtr(*objp)); }
+  virtual void onStringEdge(JSString** strp) { onChild(JS::GCCellPtr(*strp)); }
+  virtual void onSymbolEdge(JS::Symbol** symp) {
+    onChild(JS::GCCellPtr(*symp));
+  }
 #ifdef ENABLE_BIGINT
-    virtual void onBigIntEdge(JS::BigInt** bip) { onChild(JS::GCCellPtr(*bip)); }
+  virtual void onBigIntEdge(JS::BigInt** bip) { onChild(JS::GCCellPtr(*bip)); }
 #endif
-    virtual void onScriptEdge(JSScript** scriptp) { onChild(JS::GCCellPtr(*scriptp)); }
-    virtual void onShapeEdge(js::Shape** shapep) {
-        onChild(JS::GCCellPtr(*shapep, JS::TraceKind::Shape));
-    }
-    virtual void onObjectGroupEdge(js::ObjectGroup** groupp) {
-        onChild(JS::GCCellPtr(*groupp, JS::TraceKind::ObjectGroup));
-    }
-    virtual void onBaseShapeEdge(js::BaseShape** basep) {
-        onChild(JS::GCCellPtr(*basep, JS::TraceKind::BaseShape));
-    }
-    virtual void onJitCodeEdge(js::jit::JitCode** codep) {
-        onChild(JS::GCCellPtr(*codep, JS::TraceKind::JitCode));
-    }
-    virtual void onLazyScriptEdge(js::LazyScript** lazyp) {
-        onChild(JS::GCCellPtr(*lazyp, JS::TraceKind::LazyScript));
-    }
-    virtual void onScopeEdge(js::Scope** scopep) {
-        onChild(JS::GCCellPtr(*scopep, JS::TraceKind::Scope));
-    }
-    virtual void onRegExpSharedEdge(js::RegExpShared** sharedp) {
-        onChild(JS::GCCellPtr(*sharedp, JS::TraceKind::RegExpShared));
-    }
+  virtual void onScriptEdge(JSScript** scriptp) {
+    onChild(JS::GCCellPtr(*scriptp));
+  }
+  virtual void onShapeEdge(js::Shape** shapep) {
+    onChild(JS::GCCellPtr(*shapep, JS::TraceKind::Shape));
+  }
+  virtual void onObjectGroupEdge(js::ObjectGroup** groupp) {
+    onChild(JS::GCCellPtr(*groupp, JS::TraceKind::ObjectGroup));
+  }
+  virtual void onBaseShapeEdge(js::BaseShape** basep) {
+    onChild(JS::GCCellPtr(*basep, JS::TraceKind::BaseShape));
+  }
+  virtual void onJitCodeEdge(js::jit::JitCode** codep) {
+    onChild(JS::GCCellPtr(*codep, JS::TraceKind::JitCode));
+  }
+  virtual void onLazyScriptEdge(js::LazyScript** lazyp) {
+    onChild(JS::GCCellPtr(*lazyp, JS::TraceKind::LazyScript));
+  }
+  virtual void onScopeEdge(js::Scope** scopep) {
+    onChild(JS::GCCellPtr(*scopep, JS::TraceKind::Scope));
+  }
+  virtual void onRegExpSharedEdge(js::RegExpShared** sharedp) {
+    onChild(JS::GCCellPtr(*sharedp, JS::TraceKind::RegExpShared));
+  }
 
-    
-    
-    virtual void onChild(const JS::GCCellPtr& thing) = 0;
+  
+  
+  virtual void onChild(const JS::GCCellPtr& thing) = 0;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    
-    
-    const char* contextName() const { MOZ_ASSERT(contextName_); return contextName_; }
+  
+  
+  const char* contextName() const {
+    MOZ_ASSERT(contextName_);
+    return contextName_;
+  }
 
-    
-    
-    
-    const static size_t InvalidIndex = size_t(-1);
-    size_t contextIndex() const { return contextIndex_; }
+  
+  
+  
+  const static size_t InvalidIndex = size_t(-1);
+  size_t contextIndex() const { return contextIndex_; }
 
-    
-    
-    
-    
-    
-    void getTracingEdgeName(char* buffer, size_t bufferSize);
+  
+  
+  
+  
+  
+  void getTracingEdgeName(char* buffer, size_t bufferSize);
 
-    
-    
-    
-    
-    
-    class ContextFunctor {
-      public:
-        virtual void operator()(CallbackTracer* trc, char* buf, size_t bufsize) = 0;
-    };
+  
+  
+  
+  
+  
+  class ContextFunctor {
+   public:
+    virtual void operator()(CallbackTracer* trc, char* buf, size_t bufsize) = 0;
+  };
 
 #ifdef DEBUG
-    enum class TracerKind {
-        DoNotCare,
-        Moving,
-        GrayBuffering,
-        VerifyTraceProtoAndIface,
-        ClearEdges,
-        UnmarkGray
-    };
-    virtual TracerKind getTracerKind() const { return TracerKind::DoNotCare; }
+  enum class TracerKind {
+    DoNotCare,
+    Moving,
+    GrayBuffering,
+    VerifyTraceProtoAndIface,
+    ClearEdges,
+    UnmarkGray
+  };
+  virtual TracerKind getTracerKind() const { return TracerKind::DoNotCare; }
 #endif
 
-    
-    
-    
-    
-    
-    void dispatchToOnEdge(JSObject** objp) { onObjectEdge(objp); }
-    void dispatchToOnEdge(JSString** strp) { onStringEdge(strp); }
-    void dispatchToOnEdge(JS::Symbol** symp) { onSymbolEdge(symp); }
+  
+  
+  
+  
+  
+  void dispatchToOnEdge(JSObject** objp) { onObjectEdge(objp); }
+  void dispatchToOnEdge(JSString** strp) { onStringEdge(strp); }
+  void dispatchToOnEdge(JS::Symbol** symp) { onSymbolEdge(symp); }
 #ifdef ENABLE_BIGINT
-    void dispatchToOnEdge(JS::BigInt** bip) { onBigIntEdge(bip); }
+  void dispatchToOnEdge(JS::BigInt** bip) { onBigIntEdge(bip); }
 #endif
-    void dispatchToOnEdge(JSScript** scriptp) { onScriptEdge(scriptp); }
-    void dispatchToOnEdge(js::Shape** shapep) { onShapeEdge(shapep); }
-    void dispatchToOnEdge(js::ObjectGroup** groupp) { onObjectGroupEdge(groupp); }
-    void dispatchToOnEdge(js::BaseShape** basep) { onBaseShapeEdge(basep); }
-    void dispatchToOnEdge(js::jit::JitCode** codep) { onJitCodeEdge(codep); }
-    void dispatchToOnEdge(js::LazyScript** lazyp) { onLazyScriptEdge(lazyp); }
-    void dispatchToOnEdge(js::Scope** scopep) { onScopeEdge(scopep); }
-    void dispatchToOnEdge(js::RegExpShared** sharedp) { onRegExpSharedEdge(sharedp); }
+  void dispatchToOnEdge(JSScript** scriptp) { onScriptEdge(scriptp); }
+  void dispatchToOnEdge(js::Shape** shapep) { onShapeEdge(shapep); }
+  void dispatchToOnEdge(js::ObjectGroup** groupp) { onObjectGroupEdge(groupp); }
+  void dispatchToOnEdge(js::BaseShape** basep) { onBaseShapeEdge(basep); }
+  void dispatchToOnEdge(js::jit::JitCode** codep) { onJitCodeEdge(codep); }
+  void dispatchToOnEdge(js::LazyScript** lazyp) { onLazyScriptEdge(lazyp); }
+  void dispatchToOnEdge(js::Scope** scopep) { onScopeEdge(scopep); }
+  void dispatchToOnEdge(js::RegExpShared** sharedp) {
+    onRegExpSharedEdge(sharedp);
+  }
 
-  protected:
-    void setTraceWeakEdges(bool value) {
-        traceWeakEdges_ = value;
-    }
+ protected:
+  void setTraceWeakEdges(bool value) { traceWeakEdges_ = value; }
 
-    
-    
-    void setCanSkipJsids(bool value) {
-        canSkipJsids_ = value;
-    }
+  
+  
+  void setCanSkipJsids(bool value) { canSkipJsids_ = value; }
 
-  private:
-    friend class AutoTracingName;
-    const char* contextName_;
+ private:
+  friend class AutoTracingName;
+  const char* contextName_;
 
-    friend class AutoTracingIndex;
-    size_t contextIndex_;
+  friend class AutoTracingIndex;
+  size_t contextIndex_;
 
-    friend class AutoTracingDetails;
-    ContextFunctor* contextFunctor_;
+  friend class AutoTracingDetails;
+  ContextFunctor* contextFunctor_;
 };
 
 
-class MOZ_RAII AutoTracingName
-{
-    CallbackTracer* trc_;
-    const char* prior_;
+class MOZ_RAII AutoTracingName {
+  CallbackTracer* trc_;
+  const char* prior_;
 
-  public:
-    AutoTracingName(CallbackTracer* trc, const char* name) : trc_(trc), prior_(trc->contextName_) {
-        MOZ_ASSERT(name);
-        trc->contextName_ = name;
-    }
-    ~AutoTracingName() {
-        MOZ_ASSERT(trc_->contextName_);
-        trc_->contextName_ = prior_;
-    }
+ public:
+  AutoTracingName(CallbackTracer* trc, const char* name)
+      : trc_(trc), prior_(trc->contextName_) {
+    MOZ_ASSERT(name);
+    trc->contextName_ = name;
+  }
+  ~AutoTracingName() {
+    MOZ_ASSERT(trc_->contextName_);
+    trc_->contextName_ = prior_;
+  }
 };
 
 
-class MOZ_RAII AutoTracingIndex
-{
-    CallbackTracer* trc_;
+class MOZ_RAII AutoTracingIndex {
+  CallbackTracer* trc_;
 
-  public:
-    explicit AutoTracingIndex(JSTracer* trc, size_t initial = 0) : trc_(nullptr) {
-        if (trc->isCallbackTracer()) {
-            trc_ = trc->asCallbackTracer();
-            MOZ_ASSERT(trc_->contextIndex_ == CallbackTracer::InvalidIndex);
-            trc_->contextIndex_ = initial;
-        }
+ public:
+  explicit AutoTracingIndex(JSTracer* trc, size_t initial = 0) : trc_(nullptr) {
+    if (trc->isCallbackTracer()) {
+      trc_ = trc->asCallbackTracer();
+      MOZ_ASSERT(trc_->contextIndex_ == CallbackTracer::InvalidIndex);
+      trc_->contextIndex_ = initial;
     }
-    ~AutoTracingIndex() {
-        if (trc_) {
-            MOZ_ASSERT(trc_->contextIndex_ != CallbackTracer::InvalidIndex);
-            trc_->contextIndex_ = CallbackTracer::InvalidIndex;
-        }
+  }
+  ~AutoTracingIndex() {
+    if (trc_) {
+      MOZ_ASSERT(trc_->contextIndex_ != CallbackTracer::InvalidIndex);
+      trc_->contextIndex_ = CallbackTracer::InvalidIndex;
     }
+  }
 
-    void operator++() {
-        if (trc_) {
-            MOZ_ASSERT(trc_->contextIndex_ != CallbackTracer::InvalidIndex);
-            ++trc_->contextIndex_;
-        }
+  void operator++() {
+    if (trc_) {
+      MOZ_ASSERT(trc_->contextIndex_ != CallbackTracer::InvalidIndex);
+      ++trc_->contextIndex_;
     }
+  }
 };
 
 
 
-class MOZ_RAII AutoTracingDetails
-{
-    CallbackTracer* trc_;
+class MOZ_RAII AutoTracingDetails {
+  CallbackTracer* trc_;
 
-  public:
-    AutoTracingDetails(JSTracer* trc, CallbackTracer::ContextFunctor& func) : trc_(nullptr) {
-        if (trc->isCallbackTracer()) {
-            trc_ = trc->asCallbackTracer();
-            MOZ_ASSERT(trc_->contextFunctor_ == nullptr);
-            trc_->contextFunctor_ = &func;
-        }
+ public:
+  AutoTracingDetails(JSTracer* trc, CallbackTracer::ContextFunctor& func)
+      : trc_(nullptr) {
+    if (trc->isCallbackTracer()) {
+      trc_ = trc->asCallbackTracer();
+      MOZ_ASSERT(trc_->contextFunctor_ == nullptr);
+      trc_->contextFunctor_ = &func;
     }
-    ~AutoTracingDetails() {
-        if (trc_) {
-            MOZ_ASSERT(trc_->contextFunctor_);
-            trc_->contextFunctor_ = nullptr;
-        }
+  }
+  ~AutoTracingDetails() {
+    if (trc_) {
+      MOZ_ASSERT(trc_->contextFunctor_);
+      trc_->contextFunctor_ = nullptr;
     }
+  }
 };
 
-} 
+}  
 
-JS::CallbackTracer*
-JSTracer::asCallbackTracer()
-{
-    MOZ_ASSERT(isCallbackTracer());
-    return static_cast<JS::CallbackTracer*>(this);
+JS::CallbackTracer* JSTracer::asCallbackTracer() {
+  MOZ_ASSERT(isCallbackTracer());
+  return static_cast<JS::CallbackTracer*>(this);
 }
 
 namespace js {
 namespace gc {
 template <typename T>
-JS_PUBLIC_API void TraceExternalEdge(JSTracer* trc, T* thingp, const char* name);
-} 
-} 
+JS_PUBLIC_API void TraceExternalEdge(JSTracer* trc, T* thingp,
+                                     const char* name);
+}  
+}  
 
 namespace JS {
 
@@ -381,24 +390,21 @@ namespace JS {
 
 
 template <typename T>
-inline void
-TraceEdge(JSTracer* trc, JS::Heap<T>* thingp, const char* name)
-{
-    MOZ_ASSERT(thingp);
-    if (*thingp) {
-        js::gc::TraceExternalEdge(trc, thingp->unsafeGet(), name);
-    }
+inline void TraceEdge(JSTracer* trc, JS::Heap<T>* thingp, const char* name) {
+  MOZ_ASSERT(thingp);
+  if (*thingp) {
+    js::gc::TraceExternalEdge(trc, thingp->unsafeGet(), name);
+  }
 }
 
 template <typename T>
-inline void
-TraceEdge(JSTracer* trc, JS::TenuredHeap<T>* thingp, const char* name)
-{
-    MOZ_ASSERT(thingp);
-    if (T ptr = thingp->unbarrieredGetPtr()) {
-        js::gc::TraceExternalEdge(trc, &ptr, name);
-        thingp->setPtr(ptr);
-    }
+inline void TraceEdge(JSTracer* trc, JS::TenuredHeap<T>* thingp,
+                      const char* name) {
+  MOZ_ASSERT(thingp);
+  if (T ptr = thingp->unbarrieredGetPtr()) {
+    js::gc::TraceExternalEdge(trc, &ptr, name);
+    thingp->setPtr(ptr);
+  }
 }
 
 
@@ -408,29 +414,31 @@ TraceEdge(JSTracer* trc, JS::TenuredHeap<T>* thingp, const char* name)
 
 
 template <typename T>
-extern JS_PUBLIC_API void
-UnsafeTraceRoot(JSTracer* trc, T* edgep, const char* name);
+extern JS_PUBLIC_API void UnsafeTraceRoot(JSTracer* trc, T* edgep,
+                                          const char* name);
 
-extern JS_PUBLIC_API void
-TraceChildren(JSTracer* trc, GCCellPtr thing);
+extern JS_PUBLIC_API void TraceChildren(JSTracer* trc, GCCellPtr thing);
 
-using ZoneSet = js::HashSet<Zone*, js::DefaultHasher<Zone*>, js::SystemAllocPolicy>;
-using CompartmentSet = js::HashSet<JS::Compartment*, js::DefaultHasher<JS::Compartment*>,
-                                   js::SystemAllocPolicy>;
-
-
-
+using ZoneSet =
+    js::HashSet<Zone*, js::DefaultHasher<Zone*>, js::SystemAllocPolicy>;
+using CompartmentSet =
+    js::HashSet<JS::Compartment*, js::DefaultHasher<JS::Compartment*>,
+                js::SystemAllocPolicy>;
 
 
 
-extern JS_PUBLIC_API void
-TraceIncomingCCWs(JSTracer* trc, const JS::CompartmentSet& compartments);
 
-} 
 
-extern JS_PUBLIC_API void
-JS_GetTraceThingInfo(char* buf, size_t bufsize, JSTracer* trc,
-                     void* thing, JS::TraceKind kind, bool includeDetails);
+
+extern JS_PUBLIC_API void TraceIncomingCCWs(
+    JSTracer* trc, const JS::CompartmentSet& compartments);
+
+}  
+
+extern JS_PUBLIC_API void JS_GetTraceThingInfo(char* buf, size_t bufsize,
+                                               JSTracer* trc, void* thing,
+                                               JS::TraceKind kind,
+                                               bool includeDetails);
 
 namespace js {
 
@@ -440,23 +448,22 @@ namespace js {
 
 
 template <typename T>
-extern JS_PUBLIC_API void
-UnsafeTraceManuallyBarrieredEdge(JSTracer* trc, T* edgep, const char* name);
+extern JS_PUBLIC_API void UnsafeTraceManuallyBarrieredEdge(JSTracer* trc,
+                                                           T* edgep,
+                                                           const char* name);
 
 namespace gc {
 
 
 template <typename T>
-extern JS_PUBLIC_API bool
-EdgeNeedsSweep(JS::Heap<T>* edgep);
+extern JS_PUBLIC_API bool EdgeNeedsSweep(JS::Heap<T>* edgep);
 
 
 
 template <typename T>
-bool
-IsAboutToBeFinalizedUnbarriered(T* thingp);
+bool IsAboutToBeFinalizedUnbarriered(T* thingp);
 
-} 
-} 
+}  
+}  
 
 #endif 

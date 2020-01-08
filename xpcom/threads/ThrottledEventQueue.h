@@ -11,9 +11,12 @@
 
 #include "nsISerialEventTarget.h"
 
-#define NS_THROTTLEDEVENTQUEUE_IID \
-{ 0x8f3cf7dc, 0xfc14, 0x4ad5, \
-  { 0x9f, 0xd5, 0xdb, 0x79, 0xbc, 0xe6, 0xd5, 0x08 } }
+#define NS_THROTTLEDEVENTQUEUE_IID                   \
+  {                                                  \
+    0x8f3cf7dc, 0xfc14, 0x4ad5, {                    \
+      0x9f, 0xd5, 0xdb, 0x79, 0xbc, 0xe6, 0xd5, 0x08 \
+    }                                                \
+  }
 
 namespace mozilla {
 
@@ -55,18 +58,17 @@ namespace mozilla {
 
 
 
-class ThrottledEventQueue final : public nsISerialEventTarget
-{
+class ThrottledEventQueue final : public nsISerialEventTarget {
   class Inner;
   RefPtr<Inner> mInner;
 
   explicit ThrottledEventQueue(already_AddRefed<Inner> aInner);
   ~ThrottledEventQueue() = default;
 
-public:
+ public:
   
-  static already_AddRefed<ThrottledEventQueue>
-  Create(nsISerialEventTarget* aBaseTarget);
+  static already_AddRefed<ThrottledEventQueue> Create(
+      nsISerialEventTarget* aBaseTarget);
 
   
   bool IsEmpty() const;
@@ -108,6 +110,6 @@ public:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(ThrottledEventQueue, NS_THROTTLEDEVENTQUEUE_IID);
 
-} 
+}  
 
-#endif 
+#endif  

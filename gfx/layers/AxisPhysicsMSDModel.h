@@ -17,7 +17,7 @@ namespace layers {
 
 
 class AxisPhysicsMSDModel : public AxisPhysicsModel {
-public:
+ public:
   AxisPhysicsMSDModel(double aInitialPosition, double aInitialDestination,
                       double aInitialVelocity, double aSpringConstant,
                       double aDampingRatio);
@@ -40,11 +40,10 @@ public:
 
   bool IsFinished(double aSmallestVisibleIncrement);
 
-protected:
+ protected:
   virtual double Acceleration(const State &aState) override;
 
-private:
-
+ private:
   
 
 
@@ -76,11 +75,9 @@ private:
 
 
   double mDampingRatio;
-
 };
 
-
-} 
-} 
+}  
+}  
 
 #endif

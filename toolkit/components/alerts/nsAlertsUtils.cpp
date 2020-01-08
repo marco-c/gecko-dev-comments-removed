@@ -11,25 +11,20 @@
 #include "nsString.h"
 
 
-bool
-nsAlertsUtils::IsActionablePrincipal(nsIPrincipal* aPrincipal)
-{
+bool nsAlertsUtils::IsActionablePrincipal(nsIPrincipal* aPrincipal) {
   return aPrincipal &&
          !nsContentUtils::IsSystemOrExpandedPrincipal(aPrincipal) &&
          !aPrincipal->GetIsNullPrincipal();
 }
 
 
-void
-nsAlertsUtils::GetSourceHostPort(nsIPrincipal* aPrincipal,
-                                 nsAString& aHostPort)
-{
+void nsAlertsUtils::GetSourceHostPort(nsIPrincipal* aPrincipal,
+                                      nsAString& aHostPort) {
   if (!IsActionablePrincipal(aPrincipal)) {
     return;
   }
   nsCOMPtr<nsIURI> principalURI;
-  if (NS_WARN_IF(NS_FAILED(
-      aPrincipal->GetURI(getter_AddRefs(principalURI))))) {
+  if (NS_WARN_IF(NS_FAILED(aPrincipal->GetURI(getter_AddRefs(principalURI))))) {
     return;
   }
   if (!principalURI) {

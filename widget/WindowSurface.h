@@ -15,13 +15,14 @@ namespace widget {
 
 
 class WindowSurface {
-public:
+ public:
   virtual ~WindowSurface() {}
 
   
   
   
-  virtual already_AddRefed<gfx::DrawTarget> Lock(const LayoutDeviceIntRegion& aRegion) = 0;
+  virtual already_AddRefed<gfx::DrawTarget> Lock(
+      const LayoutDeviceIntRegion& aRegion) = 0;
 
   
   
@@ -34,4 +35,4 @@ public:
 }  
 }  
 
-#endif 
+#endif  

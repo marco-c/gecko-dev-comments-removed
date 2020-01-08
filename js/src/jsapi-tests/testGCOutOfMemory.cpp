@@ -9,64 +9,63 @@
 #include "js/CompilationAndEvaluation.h"
 #include "jsapi-tests/tests.h"
 
-BEGIN_TEST(testGCOutOfMemory)
-{
-    
-    static const char source[] =
-        "var max = 0; (function() {"
-        "    var array = [];"
-        "    for (; ; ++max)"
-        "        array.push({});"
-        "    array = []; array.push(0);"
-        "})();";
+BEGIN_TEST(testGCOutOfMemory) {
+  
+  static const char source[] =
+      "var max = 0; (function() {"
+      "    var array = [];"
+      "    for (; ; ++max)"
+      "        array.push({});"
+      "    array = []; array.push(0);"
+      "})();";
 
-    JS::CompileOptions opts(cx);
+  JS::CompileOptions opts(cx);
 
-    JS::RootedValue root(cx);
-    bool ok = JS::EvaluateUtf8(cx, opts, source, strlen(source), &root);
+  JS::RootedValue root(cx);
+  bool ok = JS::EvaluateUtf8(cx, opts, source, strlen(source), &root);
 
-    
-    CHECK(!ok);
-    CHECK(JS_GetPendingException(cx, &root));
-    CHECK(root.isString());
-    bool match = false;
-    CHECK(JS_StringEqualsAscii(cx, root.toString(), "out of memory", &match));
-    CHECK(match);
-    JS_ClearPendingException(cx);
+  
+  CHECK(!ok);
+  CHECK(JS_GetPendingException(cx, &root));
+  CHECK(root.isString());
+  bool match = false;
+  CHECK(JS_StringEqualsAscii(cx, root.toString(), "out of memory", &match));
+  CHECK(match);
+  JS_ClearPendingException(cx);
 
-    JS_GC(cx);
+  JS_GC(cx);
 
-    
-    
-    EVAL("(function() {"
-         "    var array = [];"
-         "    for (var i = max >> 2; i != 0;) {"
-         "        --i;"
-         "        array.push({});"
-         "    }"
-         "})();", &root);
-    CHECK(!JS_IsExceptionPending(cx));
-    return true;
+  
+  
+  EVAL(
+      "(function() {"
+      "    var array = [];"
+      "    for (var i = max >> 2; i != 0;) {"
+      "        --i;"
+      "        array.push({});"
+      "    }"
+      "})();",
+      &root);
+  CHECK(!JS_IsExceptionPending(cx));
+  return true;
 }
 
 virtual JSContext* createContext() override {
-    
-    
-    
-    
-    
-    
-    
-    JSContext* cx = JS_NewContext(1024 * 1024, 128 * 1024);
-    if (!cx) {
-        return nullptr;
-    }
-    setNativeStackQuota(cx);
-    return cx;
+  
+  
+  
+  
+  
+  
+  
+  JSContext* cx = JS_NewContext(1024 * 1024, 128 * 1024);
+  if (!cx) {
+    return nullptr;
+  }
+  setNativeStackQuota(cx);
+  return cx;
 }
 
-virtual void destroyContext() override {
-    JS_DestroyContext(cx);
-}
+virtual void destroyContext() override { JS_DestroyContext(cx); }
 
 END_TEST(testGCOutOfMemory)

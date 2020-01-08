@@ -18,25 +18,21 @@ namespace dom {
 
 
 
-class WebGLVertexArrayObject final
-  : public WebGLVertexArrayGL
-{
-public:
+class WebGLVertexArrayObject final : public WebGLVertexArrayGL {
+ public:
   static WebGLVertexArray* Create(WebGLContext* webgl);
 
-  virtual JSObject* WrapObject(JSContext* cx, JS::Handle<JSObject*> givenProto) override;
+  virtual JSObject* WrapObject(JSContext* cx,
+                               JS::Handle<JSObject*> givenProto) override;
 
-private:
+ private:
   explicit WebGLVertexArrayObject(WebGLContext* webgl)
-    : WebGLVertexArrayGL(webgl)
-  { }
+      : WebGLVertexArrayGL(webgl) {}
 
-  ~WebGLVertexArrayObject() {
-    DeleteOnce();
-  }
+  ~WebGLVertexArrayObject() { DeleteOnce(); }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

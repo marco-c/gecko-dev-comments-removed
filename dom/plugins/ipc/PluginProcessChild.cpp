@@ -44,9 +44,7 @@ namespace mozilla {
 namespace plugins {
 
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
-static void
-SetSandboxTempPath(const std::wstring& aFullTmpPath)
-{
+static void SetSandboxTempPath(const std::wstring& aFullTmpPath) {
   
   
   
@@ -58,149 +56,146 @@ SetSandboxTempPath(const std::wstring& aFullTmpPath)
 }
 #endif
 
-bool
-PluginProcessChild::Init(int aArgc, char* aArgv[])
-{
-    nsDebugImpl::SetMultiprocessMode("NPAPI");
+bool PluginProcessChild::Init(int aArgc, char* aArgv[]) {
+  nsDebugImpl::SetMultiprocessMode("NPAPI");
 
 #if defined(XP_MACOSX)
+  
+  
+  
+  
+  
+  
+  nsCString interpose(PR_GetEnv("DYLD_INSERT_LIBRARIES"));
+  if (!interpose.IsEmpty()) {
     
     
     
-    
-    
-    
-    nsCString interpose(PR_GetEnv("DYLD_INSERT_LIBRARIES"));
-    if (!interpose.IsEmpty()) {
-        
-        
-        
-        int32_t lastSeparatorPos = interpose.RFind(":");
-        int32_t lastTriggerPos = interpose.RFind("libplugin_child_interpose.dylib");
-        bool needsReset = false;
-        if (lastTriggerPos != -1) {
-            if (lastSeparatorPos == -1) {
-                interpose.Truncate();
-                needsReset = true;
-            } else if (lastTriggerPos > lastSeparatorPos) {
-                interpose.SetLength(lastSeparatorPos);
-                needsReset = true;
-            }
-        }
-        if (needsReset) {
-            nsCString setInterpose("DYLD_INSERT_LIBRARIES=");
-            if (!interpose.IsEmpty()) {
-                setInterpose.Append(interpose);
-            }
-            
-            char* setInterposePtr = strdup(setInterpose.get());
-            PR_SetEnv(setInterposePtr);
-        }
+    int32_t lastSeparatorPos = interpose.RFind(":");
+    int32_t lastTriggerPos = interpose.RFind("libplugin_child_interpose.dylib");
+    bool needsReset = false;
+    if (lastTriggerPos != -1) {
+      if (lastSeparatorPos == -1) {
+        interpose.Truncate();
+        needsReset = true;
+      } else if (lastTriggerPos > lastSeparatorPos) {
+        interpose.SetLength(lastSeparatorPos);
+        needsReset = true;
+      }
     }
+    if (needsReset) {
+      nsCString setInterpose("DYLD_INSERT_LIBRARIES=");
+      if (!interpose.IsEmpty()) {
+        setInterpose.Append(interpose);
+      }
+      
+      char* setInterposePtr = strdup(setInterpose.get());
+      PR_SetEnv(setInterposePtr);
+    }
+  }
 #endif
 
-    
-    
-    message_loop()->set_exception_restoration(true);
+  
+  
+  message_loop()->set_exception_restoration(true);
 
-    std::string pluginFilename;
+  std::string pluginFilename;
 
 #if defined(OS_POSIX)
-    
-    
-    
-    std::vector<std::string> values = CommandLine::ForCurrentProcess()->argv();
-    MOZ_ASSERT(values.size() >= 2, "not enough args");
+  
+  
+  
+  std::vector<std::string> values = CommandLine::ForCurrentProcess()->argv();
+  MOZ_ASSERT(values.size() >= 2, "not enough args");
 
-    pluginFilename = UnmungePluginDsoPath(values[1]);
+  pluginFilename = UnmungePluginDsoPath(values[1]);
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
-    int level;
-    if (values.size() >= 4 && values[2] == "-flashSandboxLevel" &&
-        (level = std::stoi(values[3], nullptr)) > 0) {
+  int level;
+  if (values.size() >= 4 && values[2] == "-flashSandboxLevel" &&
+      (level = std::stoi(values[3], nullptr)) > 0) {
+    level = ClampFlashSandboxLevel(level);
+    MOZ_ASSERT(level > 0);
 
-      level = ClampFlashSandboxLevel(level);
-      MOZ_ASSERT(level > 0);
-
-      bool enableLogging = false;
-      if (values.size() >= 5 && values[4] == "-flashSandboxLogging") {
-        enableLogging = true;
-      }
-
-      mPlugin.EnableFlashSandbox(level, enableLogging);
+    bool enableLogging = false;
+    if (values.size() >= 5 && values[4] == "-flashSandboxLogging") {
+      enableLogging = true;
     }
+
+    mPlugin.EnableFlashSandbox(level, enableLogging);
+  }
 #endif
 
 #elif defined(OS_WIN)
-    std::vector<std::wstring> values =
-        CommandLine::ForCurrentProcess()->GetLooseValues();
-    MOZ_ASSERT(values.size() >= 1, "not enough loose args");
+  std::vector<std::wstring> values =
+      CommandLine::ForCurrentProcess()->GetLooseValues();
+  MOZ_ASSERT(values.size() >= 1, "not enough loose args");
 
-    
-    
-    
-    
-    
-    pluginFilename = WideToUTF8(values[0]);
+  
+  
+  
+  
+  
+  
+  pluginFilename = WideToUTF8(values[0]);
 
-    
-    
-    NS_SetMainThread();
-    mozilla::TimeStamp::Startup();
-    NS_LogInit();
-    mozilla::LogModule::Init(aArgc, aArgv);
-    nsThreadManager::get().Init();
+  
+  
+  NS_SetMainThread();
+  mozilla::TimeStamp::Startup();
+  NS_LogInit();
+  mozilla::LogModule::Init(aArgc, aArgv);
+  nsThreadManager::get().Init();
 
 #if defined(MOZ_SANDBOX)
-    MOZ_ASSERT(values.size() >= 3, "not enough loose args for sandboxed plugin process");
+  MOZ_ASSERT(values.size() >= 3,
+             "not enough loose args for sandboxed plugin process");
 
-    
-    
-    SetSandboxTempPath(values[1]);
-    PluginModuleChild::SetFlashRoamingPath(values[2]);
+  
+  
+  SetSandboxTempPath(values[1]);
+  PluginModuleChild::SetFlashRoamingPath(values[2]);
 
-    
-    
-    
-    mozilla::SandboxTarget::Instance()->StartSandbox();
+  
+  
+  
+  mozilla::SandboxTarget::Instance()->StartSandbox();
 #endif
 #else
-#  error Sorry
+#error Sorry
 #endif
 
-    bool retval = mPlugin.InitForChrome(pluginFilename, ParentPid(),
-                                        IOThreadChild::message_loop(),
-                                        IOThreadChild::channel());
+  bool retval = mPlugin.InitForChrome(pluginFilename, ParentPid(),
+                                      IOThreadChild::message_loop(),
+                                      IOThreadChild::channel());
 #if defined(XP_MACOSX)
-    if (nsCocoaFeatures::OnYosemiteOrLater()) {
-      
-      
-      
-      
-      
-      
-      CGSSetDebugOptions(0x80000007);
-    }
+  if (nsCocoaFeatures::OnYosemiteOrLater()) {
+    
+    
+    
+    
+    
+    
+    CGSSetDebugOptions(0x80000007);
+  }
 #endif
-    return retval;
+  return retval;
 }
 
-void
-PluginProcessChild::CleanUp()
-{
+void PluginProcessChild::CleanUp() {
 #if defined(OS_WIN)
-    MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(NS_IsMainThread());
 
-    
-    
-    
-    
-    nsThreadManager::get().Shutdown();
-    NS_LogTerm();
+  
+  
+  
+  
+  nsThreadManager::get().Shutdown();
+  NS_LogTerm();
 #endif
 
-    mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
+  mozilla::KillClearOnShutdown(ShutdownPhase::ShutdownFinal);
 }
 
-} 
-} 
+}  
+}  

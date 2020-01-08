@@ -4,13 +4,11 @@
 
 
 
-
 #ifndef WidgetStyleCache_h
 #define WidgetStyleCache_h
 
 #include <gtk/gtk.h>
 #include "gtkdrawing.h"
-
 
 typedef unsigned StyleFlags;
 enum : StyleFlags {
@@ -18,23 +16,19 @@ enum : StyleFlags {
   WHATEVER_MIGHT_BE_NEEDED = 1U << 0,
 };
 
-GtkWidget*
-GetWidget(WidgetNodeType aNodeType);
+GtkWidget* GetWidget(WidgetNodeType aNodeType);
 
-cairo_surface_t*
-GetWidgetIconSurface(GtkWidget* aWidgetIcon, int aScale);
+cairo_surface_t* GetWidgetIconSurface(GtkWidget* aWidgetIcon, int aScale);
 
 
 
 
 
-GtkStyleContext*
-CreateStyleForWidget(GtkWidget* aWidget, GtkStyleContext* aParentStyle);
+GtkStyleContext* CreateStyleForWidget(GtkWidget* aWidget,
+                                      GtkStyleContext* aParentStyle);
 
-GtkStyleContext*
-CreateCSSNode(const char*      aName,
-              GtkStyleContext* aParentStyle,
-              GType            aType = G_TYPE_NONE);
+GtkStyleContext* CreateCSSNode(const char* aName, GtkStyleContext* aParentStyle,
+                               GType aType = G_TYPE_NONE);
 
 
 
@@ -46,11 +40,10 @@ CreateCSSNode(const char*      aName,
 
 
 
-GtkStyleContext*
-GetStyleContext(WidgetNodeType aNodeType,
-                GtkTextDirection aDirection = GTK_TEXT_DIR_NONE,
-                GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL,
-                StyleFlags aFlags = NO_STYLE_FLAGS);
+GtkStyleContext* GetStyleContext(
+    WidgetNodeType aNodeType, GtkTextDirection aDirection = GTK_TEXT_DIR_NONE,
+    GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL,
+    StyleFlags aFlags = NO_STYLE_FLAGS);
 
 
 
@@ -58,12 +51,10 @@ GetStyleContext(WidgetNodeType aNodeType,
 
 
 
-GtkStyleContext*
-CreateStyleContextWithStates(WidgetNodeType aNodeType,
-                             GtkTextDirection aDirection = GTK_TEXT_DIR_NONE,
-                             GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL);
+GtkStyleContext* CreateStyleContextWithStates(
+    WidgetNodeType aNodeType, GtkTextDirection aDirection = GTK_TEXT_DIR_NONE,
+    GtkStateFlags aStateFlags = GTK_STATE_FLAG_NORMAL);
 
-void
-ResetWidgetCache(void);
+void ResetWidgetCache(void);
 
-#endif 
+#endif  

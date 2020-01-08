@@ -22,9 +22,8 @@ using mozilla::OriginAttributes;
 namespace mozilla {
 namespace psm {
 
-class PublicKeyPinningService
-{
-public:
+class PublicKeyPinningService {
+ public:
   
 
 
@@ -34,13 +33,12 @@ public:
 
 
 
-  static nsresult ChainHasValidPins(const RefPtr<nsNSSCertList>& certList,
-                                    const char* hostname,
-                                    mozilla::pkix::Time time,
-                                    bool enforceTestMode,
-                                    const OriginAttributes& originAttributes,
-                             bool& chainHasValidPins,
-                    PinningTelemetryInfo* pinningTelemetryInfo);
+  static nsresult ChainHasValidPins(
+      const RefPtr<nsNSSCertList>& certList, const char* hostname,
+      mozilla::pkix::Time time, bool enforceTestMode,
+      const OriginAttributes& originAttributes,
+       bool& chainHasValidPins,
+       PinningTelemetryInfo* pinningTelemetryInfo);
   
 
 
@@ -48,18 +46,17 @@ public:
 
   static nsresult ChainMatchesPinset(const RefPtr<nsNSSCertList>& certList,
                                      const nsTArray<nsCString>& aSHA256keys,
-                              bool& chainMatchesPinset);
+                                      bool& chainMatchesPinset);
 
   
 
 
 
 
-  static nsresult HostHasPins(const char* hostname,
-                              mozilla::pkix::Time time,
+  static nsresult HostHasPins(const char* hostname, mozilla::pkix::Time time,
                               bool enforceTestMode,
                               const OriginAttributes& originAttributes,
-                       bool& hostHasPins);
+                               bool& hostHasPins);
 
   
 
@@ -69,6 +66,7 @@ public:
   static nsAutoCString CanonicalizeHostname(const char* hostname);
 };
 
-}} 
+}  
+}  
 
-#endif 
+#endif  

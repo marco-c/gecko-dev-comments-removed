@@ -23,9 +23,7 @@ void HandleLauncherError(const LauncherError& aError);
 
 
 template <typename T>
-inline void
-HandleLauncherError(const LauncherResult<T>& aResult)
-{
+inline void HandleLauncherError(const LauncherResult<T>& aResult) {
   MOZ_ASSERT(aResult.isErr());
   if (aResult.isOk()) {
     return;
@@ -36,13 +34,12 @@ HandleLauncherError(const LauncherResult<T>& aResult)
 
 
 
-inline void
-HandleLauncherError(const GenericErrorResult<LauncherError>& aResult)
-{
+inline void HandleLauncherError(
+    const GenericErrorResult<LauncherError>& aResult) {
   LauncherVoidResult r(aResult);
   HandleLauncherError(r);
 }
 
-} 
+}  
 
-#endif 
+#endif  

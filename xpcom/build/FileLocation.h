@@ -18,9 +18,8 @@ class nsZipItem;
 
 namespace mozilla {
 
-class FileLocation
-{
-public:
+class FileLocation {
+ public:
   
 
 
@@ -106,9 +105,8 @@ public:
   
 
 
-  class Data
-  {
-  public:
+  class Data {
+   public:
     
 
 
@@ -118,7 +116,8 @@ public:
 
 
     nsresult Copy(char* aBuf, uint32_t aLen);
-  protected:
+
+   protected:
     friend class FileLocation;
     nsZipItem* mItem;
     RefPtr<nsZipArchive> mZip;
@@ -130,7 +129,8 @@ public:
 
 
   nsresult GetData(Data& aData);
-private:
+
+ private:
   nsCOMPtr<nsIFile> mBaseFile;
   RefPtr<nsZipArchive> mBaseZip;
   nsCString mPath;

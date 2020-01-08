@@ -17,7 +17,7 @@ PRFileDesc* CreateNamedPipeLayer();
 
 extern PRDescIdentity nsNamedPipeLayerIdentity;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

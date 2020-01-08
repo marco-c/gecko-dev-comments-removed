@@ -3,6 +3,7 @@
 
 
 
+
 #ifndef ctypes_CTypes_h
 #define ctypes_CTypes_h
 
@@ -35,18 +36,17 @@ class StringBuilder {
   Vector<CharT, N, SystemAllocPolicy> v;
 
   
-  bool errored { false };
+  bool errored{false};
 
 #ifdef DEBUG
   
-  bool finished { false };
+  bool finished{false};
 
   
-  mutable bool checked { false };
+  mutable bool checked{false};
 #endif
 
  public:
-
   explicit operator bool() const {
 #ifdef DEBUG
     checked = true;
@@ -64,23 +64,24 @@ class StringBuilder {
     return result;
   }
 
-  bool resize(size_t n) {
-    return handle(v.resize(n));
-  }
+  bool resize(size_t n) { return handle(v.resize(n)); }
 
   CharT& operator[](size_t index) { return v[index]; }
   const CharT& operator[](size_t index) const { return v[index]; }
   size_t length() const { return v.length(); }
 
-  template<typename U> MOZ_MUST_USE bool append(U&& u) {
+  template <typename U>
+  MOZ_MUST_USE bool append(U&& u) {
     return handle(v.append(u));
   }
 
-  template<typename U> MOZ_MUST_USE bool append(const U* begin, const U* end) {
+  template <typename U>
+  MOZ_MUST_USE bool append(const U* begin, const U* end) {
     return handle(v.append(begin, end));
   }
 
-  template<typename U> MOZ_MUST_USE bool append(const U* begin, size_t len) {
+  template <typename U>
+  MOZ_MUST_USE bool append(const U* begin, size_t len) {
     return handle(v.append(begin, len));
   }
 
@@ -107,16 +108,15 @@ class StringBuilder {
 
 
 typedef StringBuilder<char16_t, 0> AutoString;
-typedef StringBuilder<char,     0> AutoCString;
+typedef StringBuilder<char, 0> AutoCString;
 
 typedef Vector<char16_t, 0, SystemAllocPolicy> AutoStringChars;
-typedef Vector<char,     0, SystemAllocPolicy> AutoCStringChars;
+typedef Vector<char, 0, SystemAllocPolicy> AutoCStringChars;
 
 
 template <class T, size_t N, size_t ArrayLength>
-void
-AppendString(JSContext* cx, StringBuilder<T, N>& v, const char (&array)[ArrayLength])
-{
+void AppendString(JSContext* cx, StringBuilder<T, N>& v,
+                  const char (&array)[ArrayLength]) {
   
   size_t alen = ArrayLength - 1;
   size_t vlen = v.length();
@@ -130,9 +130,7 @@ AppendString(JSContext* cx, StringBuilder<T, N>& v, const char (&array)[ArrayLen
 }
 
 template <class T, size_t N>
-void
-AppendChars(StringBuilder<T, N>& v, const char c, size_t count)
-{
+void AppendChars(StringBuilder<T, N>& v, const char c, size_t count) {
   size_t vlen = v.length();
   if (!v.resize(vlen + count)) {
     return;
@@ -144,9 +142,7 @@ AppendChars(StringBuilder<T, N>& v, const char c, size_t count)
 }
 
 template <class T, size_t N>
-void
-AppendUInt(StringBuilder<T, N>& v, unsigned n)
-{
+void AppendUInt(StringBuilder<T, N>& v, unsigned n) {
   char array[16];
   size_t alen = SprintfLiteral(array, "%u", n);
   size_t vlen = v.length();
@@ -160,18 +156,15 @@ AppendUInt(StringBuilder<T, N>& v, unsigned n)
 }
 
 template <class T, size_t N, size_t M, class AP>
-void
-AppendString(JSContext* cx, StringBuilder<T, N>& v, mozilla::Vector<T, M, AP>& w)
-{
+void AppendString(JSContext* cx, StringBuilder<T, N>& v,
+                  mozilla::Vector<T, M, AP>& w) {
   if (!v.append(w.begin(), w.length())) {
     return;
   }
 }
 
 template <size_t N>
-void
-AppendString(JSContext* cx, StringBuilder<char16_t, N>& v, JSString* str)
-{
+void AppendString(JSContext* cx, StringBuilder<char16_t, N>& v, JSString* str) {
   MOZ_ASSERT(str);
   JSLinearString* linear = str->ensureLinear(cx);
   if (!linear) {
@@ -190,9 +183,7 @@ AppendString(JSContext* cx, StringBuilder<char16_t, N>& v, JSString* str)
 }
 
 template <size_t N>
-void
-AppendString(JSContext* cx, StringBuilder<char, N>& v, JSString* str)
-{
+void AppendString(JSContext* cx, StringBuilder<char, N>& v, JSString* str) {
   MOZ_ASSERT(str);
   size_t vlen = v.length();
   size_t alen = str->length();
@@ -220,9 +211,8 @@ AppendString(JSContext* cx, StringBuilder<char, N>& v, JSString* str)
 }
 
 template <class T, size_t N, size_t ArrayLength>
-void
-PrependString(JSContext* cx, StringBuilder<T, N>& v, const char (&array)[ArrayLength])
-{
+void PrependString(JSContext* cx, StringBuilder<T, N>& v,
+                   const char (&array)[ArrayLength]) {
   
   size_t alen = ArrayLength - 1;
   size_t vlen = v.length();
@@ -240,9 +230,8 @@ PrependString(JSContext* cx, StringBuilder<T, N>& v, const char (&array)[ArrayLe
 }
 
 template <size_t N>
-void
-PrependString(JSContext* cx, StringBuilder<char16_t, N>& v, JSString* str)
-{
+void PrependString(JSContext* cx, StringBuilder<char16_t, N>& v,
+                   JSString* str) {
   MOZ_ASSERT(str);
   size_t vlen = v.length();
   size_t alen = str->length();
@@ -270,11 +259,11 @@ PrependString(JSContext* cx, StringBuilder<char16_t, N>& v, JSString* str)
   }
 }
 
-MOZ_MUST_USE bool
-ReportErrorIfUnpairedSurrogatePresent(JSContext* cx, JSLinearString* str);
+MOZ_MUST_USE bool ReportErrorIfUnpairedSurrogatePresent(JSContext* cx,
+                                                        JSLinearString* str);
 
-MOZ_MUST_USE JSObject*
-GetThisObject(JSContext* cx, const CallArgs& args, const char* msg);
+MOZ_MUST_USE JSObject* GetThisObject(JSContext* cx, const CallArgs& args,
+                                     const char* msg);
 
 
 
@@ -282,8 +271,7 @@ GetThisObject(JSContext* cx, const CallArgs& args, const char* msg);
 
 
 enum ErrorNum {
-#define MSG_DEF(name, count, exception, format) \
-  name,
+#define MSG_DEF(name, count, exception, format) name,
 #include "ctypes/ctypes.msg"
 #undef MSG_DEF
   CTYPESERR_LIMIT
@@ -309,7 +297,7 @@ enum TypeCode {
 #define DEFINE_TYPE(name, type, ffiType) TYPE_##name,
   CTYPES_FOR_EACH_TYPE(DEFINE_TYPE)
 #undef DEFINE_TYPE
-  TYPE_pointer,
+      TYPE_pointer,
   TYPE_function,
   TYPE_array,
   TYPE_struct
@@ -317,29 +305,25 @@ enum TypeCode {
 
 
 
-struct FieldInfo
-{
-  JS::Heap<JSObject*> mType;    
-  size_t              mIndex;   
-  size_t              mOffset;  
+struct FieldInfo {
+  JS::Heap<JSObject*> mType;  
+  size_t mIndex;              
+  size_t mOffset;             
 
-  void trace(JSTracer* trc) {
-    JS::TraceEdge(trc, &mType, "fieldType");
-  }
+  void trace(JSTracer* trc) { JS::TraceEdge(trc, &mType, "fieldType"); }
 };
 
-struct UnbarrieredFieldInfo
-{
-  JSObject*           mType;    
-  size_t              mIndex;   
-  size_t              mOffset;  
+struct UnbarrieredFieldInfo {
+  JSObject* mType;  
+  size_t mIndex;    
+  size_t mOffset;   
 };
 static_assert(sizeof(UnbarrieredFieldInfo) == sizeof(FieldInfo),
-              "UnbarrieredFieldInfo should be the same as FieldInfo but with unbarriered mType");
+              "UnbarrieredFieldInfo should be the same as FieldInfo but with "
+              "unbarriered mType");
 
 
-struct FieldHashPolicy : DefaultHasher<JSFlatString*>
-{
+struct FieldHashPolicy : DefaultHasher<JSFlatString*> {
   typedef JSFlatString* Key;
   typedef Key Lookup;
 
@@ -354,9 +338,8 @@ struct FieldHashPolicy : DefaultHasher<JSFlatString*>
 
   static uint32_t hash(const Lookup& l) {
     JS::AutoCheckCannotGC nogc;
-    return l->hasLatin1Chars()
-           ? hash(l->latin1Chars(nogc), l->length())
-           : hash(l->twoByteChars(nogc), l->length());
+    return l->hasLatin1Chars() ? hash(l->latin1Chars(nogc), l->length())
+                               : hash(l->twoByteChars(nogc), l->length());
   }
 
   static bool match(const Key& k, const Lookup& l) {
@@ -377,8 +360,7 @@ using FieldInfoHash = GCHashMap<js::HeapPtr<JSFlatString*>, FieldInfo,
 
 
 
-struct FunctionInfo
-{
+struct FunctionInfo {
   
   
   
@@ -406,23 +388,19 @@ struct FunctionInfo
 };
 
 
-struct ClosureInfo
-{
+struct ClosureInfo {
   JSContext* cx;
   JS::Heap<JSObject*> closureObj;  
   JS::Heap<JSObject*> typeObj;     
-  JS::Heap<JSObject*> thisObj;     
-  JS::Heap<JSObject*> jsfnObj;     
-  void* errResult;                 
-  ffi_closure* closure;            
+  JS::Heap<JSObject*> thisObj;  
+  JS::Heap<JSObject*> jsfnObj;  
+  void* errResult;       
+  ffi_closure* closure;  
 
   
   
   explicit ClosureInfo(JSContext* context)
-    : cx(context)
-    , errResult(nullptr)
-    , closure(nullptr)
-  {}
+      : cx(context), errResult(nullptr), closure(nullptr) {}
 
   ~ClosureInfo() {
     if (closure) {
@@ -442,90 +420,94 @@ const JSCTypesCallbacks* GetCallbacks(JSObject* obj);
 
 
 enum CTypesGlobalSlot {
-  SLOT_CALLBACKS = 0, 
-  SLOT_ERRNO = 1,     
-  SLOT_LASTERROR = 2, 
+  SLOT_CALLBACKS = 0,  
+  SLOT_ERRNO = 1,      
+  SLOT_LASTERROR =
+      2,  
   CTYPESGLOBAL_SLOTS
 };
 
 enum CABISlot {
-  SLOT_ABICODE = 0, 
+  SLOT_ABICODE = 0,  
   CABI_SLOTS
 };
 
 enum CTypeProtoSlot {
-  SLOT_POINTERPROTO      = 0,  
-  SLOT_ARRAYPROTO        = 1,  
-  SLOT_STRUCTPROTO       = 2,  
-  SLOT_FUNCTIONPROTO     = 3,  
-  SLOT_CDATAPROTO        = 4,  
-  SLOT_POINTERDATAPROTO  = 5,  
-  SLOT_ARRAYDATAPROTO    = 6,  
-  SLOT_STRUCTDATAPROTO   = 7,  
-  SLOT_FUNCTIONDATAPROTO = 8,  
-  SLOT_INT64PROTO        = 9,  
-  SLOT_UINT64PROTO       = 10, 
-  SLOT_CTYPES            = 11, 
-  SLOT_OURDATAPROTO      = 12, 
+  SLOT_POINTERPROTO = 0,   
+  SLOT_ARRAYPROTO = 1,     
+  SLOT_STRUCTPROTO = 2,    
+  SLOT_FUNCTIONPROTO = 3,  
+  SLOT_CDATAPROTO = 4,     
+  SLOT_POINTERDATAPROTO =
+      5,  
+  SLOT_ARRAYDATAPROTO = 6,  
+  SLOT_STRUCTDATAPROTO =
+      7,  
+  SLOT_FUNCTIONDATAPROTO =
+      8,                
+  SLOT_INT64PROTO = 9,  
+  SLOT_UINT64PROTO = 10,   
+  SLOT_CTYPES = 11,        
+  SLOT_OURDATAPROTO = 12,  
   CTYPEPROTO_SLOTS
 };
 
 enum CTypeSlot {
-  SLOT_PROTO     = 0, 
-  SLOT_TYPECODE  = 1, 
-  SLOT_FFITYPE   = 2, 
-  SLOT_NAME      = 3, 
-  SLOT_SIZE      = 4, 
-  SLOT_ALIGN     = 5, 
-  SLOT_PTR       = 6, 
+  SLOT_PROTO = 0,     
+  SLOT_TYPECODE = 1,  
+  SLOT_FFITYPE = 2,   
+  SLOT_NAME = 3,      
+  SLOT_SIZE = 4,      
+  SLOT_ALIGN = 5,     
+  SLOT_PTR = 6,       
   
   
-  SLOT_TARGET_T  = 7, 
-  SLOT_ELEMENT_T = 7, 
-  SLOT_LENGTH    = 8, 
-  SLOT_FIELDS    = 7, 
-  SLOT_FIELDINFO = 8, 
-  SLOT_FNINFO    = 7, 
-  SLOT_ARGS_T    = 8, 
+  SLOT_TARGET_T = 7,   
+  SLOT_ELEMENT_T = 7,  
+  SLOT_LENGTH = 8,     
+  SLOT_FIELDS = 7,     
+  SLOT_FIELDINFO = 8,  
+  SLOT_FNINFO = 7,     
+  SLOT_ARGS_T = 8,     
   CTYPE_SLOTS
 };
 
 enum CDataSlot {
-  SLOT_CTYPE    = 0, 
-  SLOT_REFERENT = 1, 
-  SLOT_DATA     = 2, 
-  SLOT_OWNS     = 3, 
-  SLOT_FUNNAME  = 4, 
+  SLOT_CTYPE = 0,     
+  SLOT_REFERENT = 1,  
+  SLOT_DATA = 2,      
+  SLOT_OWNS = 3,      
+  SLOT_FUNNAME = 4,   
   CDATA_SLOTS
 };
 
 enum CClosureSlot {
-  SLOT_CLOSUREINFO = 0, 
+  SLOT_CLOSUREINFO = 0,  
   CCLOSURE_SLOTS
 };
 
 enum CDataFinalizerSlot {
   
   
-  SLOT_DATAFINALIZER_VALTYPE           = 0,
+  SLOT_DATAFINALIZER_VALTYPE = 0,
   
   
-  SLOT_DATAFINALIZER_CODETYPE          = 1,
+  SLOT_DATAFINALIZER_CODETYPE = 1,
   CDATAFINALIZER_SLOTS
 };
 
 enum TypeCtorSlot {
-  SLOT_FN_CTORPROTO = 0 
+  SLOT_FN_CTORPROTO = 0  
   
 };
 
 enum Int64Slot {
-  SLOT_INT64 = 0, 
+  SLOT_INT64 = 0,  
   INT64_SLOTS
 };
 
 enum Int64FunctionSlot {
-  SLOT_FN_INT64PROTO = 0 
+  SLOT_FN_INT64PROTO = 0  
   
 };
 
@@ -534,99 +516,102 @@ enum Int64FunctionSlot {
 
 
 namespace CType {
-  JSObject* Create(JSContext* cx, HandleObject typeProto, HandleObject dataProto,
-    TypeCode type, JSString* name, HandleValue size, HandleValue align,
-                   ffi_type* ffiType);
+JSObject* Create(JSContext* cx, HandleObject typeProto, HandleObject dataProto,
+                 TypeCode type, JSString* name, HandleValue size,
+                 HandleValue align, ffi_type* ffiType);
 
-  JSObject* DefineBuiltin(JSContext* cx, HandleObject ctypesObj, const char* propName,
-    JSObject* typeProto, JSObject* dataProto, const char* name, TypeCode type,
-    HandleValue size, HandleValue align, ffi_type* ffiType);
+JSObject* DefineBuiltin(JSContext* cx, HandleObject ctypesObj,
+                        const char* propName, JSObject* typeProto,
+                        JSObject* dataProto, const char* name, TypeCode type,
+                        HandleValue size, HandleValue align, ffi_type* ffiType);
 
-  bool IsCType(JSObject* obj);
-  bool IsCTypeProto(JSObject* obj);
-  TypeCode GetTypeCode(JSObject* typeObj);
-  bool TypesEqual(JSObject* t1, JSObject* t2);
-  size_t GetSize(JSObject* obj);
-  MOZ_MUST_USE bool GetSafeSize(JSObject* obj, size_t* result);
-  bool IsSizeDefined(JSObject* obj);
-  size_t GetAlignment(JSObject* obj);
-  ffi_type* GetFFIType(JSContext* cx, JSObject* obj);
-  JSString* GetName(JSContext* cx, HandleObject obj);
-  JSObject* GetProtoFromCtor(JSObject* obj, CTypeProtoSlot slot);
-  JSObject* GetProtoFromType(JSContext* cx, JSObject* obj, CTypeProtoSlot slot);
-  const JSCTypesCallbacks* GetCallbacksFromType(JSObject* obj);
-} 
+bool IsCType(JSObject* obj);
+bool IsCTypeProto(JSObject* obj);
+TypeCode GetTypeCode(JSObject* typeObj);
+bool TypesEqual(JSObject* t1, JSObject* t2);
+size_t GetSize(JSObject* obj);
+MOZ_MUST_USE bool GetSafeSize(JSObject* obj, size_t* result);
+bool IsSizeDefined(JSObject* obj);
+size_t GetAlignment(JSObject* obj);
+ffi_type* GetFFIType(JSContext* cx, JSObject* obj);
+JSString* GetName(JSContext* cx, HandleObject obj);
+JSObject* GetProtoFromCtor(JSObject* obj, CTypeProtoSlot slot);
+JSObject* GetProtoFromType(JSContext* cx, JSObject* obj, CTypeProtoSlot slot);
+const JSCTypesCallbacks* GetCallbacksFromType(JSObject* obj);
+}  
 
 namespace PointerType {
-  JSObject* CreateInternal(JSContext* cx, HandleObject baseType);
+JSObject* CreateInternal(JSContext* cx, HandleObject baseType);
 
-  JSObject* GetBaseType(JSObject* obj);
-} 
+JSObject* GetBaseType(JSObject* obj);
+}  
 
 typedef UniquePtr<ffi_type> UniquePtrFFIType;
 
 namespace ArrayType {
-  JSObject* CreateInternal(JSContext* cx, HandleObject baseType, size_t length,
-    bool lengthDefined);
+JSObject* CreateInternal(JSContext* cx, HandleObject baseType, size_t length,
+                         bool lengthDefined);
 
-  JSObject* GetBaseType(JSObject* obj);
-  size_t GetLength(JSObject* obj);
-  MOZ_MUST_USE bool GetSafeLength(JSObject* obj, size_t* result);
-  UniquePtrFFIType BuildFFIType(JSContext* cx, JSObject* obj);
-} 
+JSObject* GetBaseType(JSObject* obj);
+size_t GetLength(JSObject* obj);
+MOZ_MUST_USE bool GetSafeLength(JSObject* obj, size_t* result);
+UniquePtrFFIType BuildFFIType(JSContext* cx, JSObject* obj);
+}  
 
 namespace StructType {
-  MOZ_MUST_USE bool DefineInternal(JSContext* cx, JSObject* typeObj, JSObject* fieldsObj);
+MOZ_MUST_USE bool DefineInternal(JSContext* cx, JSObject* typeObj,
+                                 JSObject* fieldsObj);
 
-  const FieldInfoHash* GetFieldInfo(JSObject* obj);
-  const FieldInfo* LookupField(JSContext* cx, JSObject* obj, JSFlatString* name);
-  JSObject* BuildFieldsArray(JSContext* cx, JSObject* obj);
-  UniquePtrFFIType BuildFFIType(JSContext* cx, JSObject* obj);
-} 
+const FieldInfoHash* GetFieldInfo(JSObject* obj);
+const FieldInfo* LookupField(JSContext* cx, JSObject* obj, JSFlatString* name);
+JSObject* BuildFieldsArray(JSContext* cx, JSObject* obj);
+UniquePtrFFIType BuildFFIType(JSContext* cx, JSObject* obj);
+}  
 
 namespace FunctionType {
-  JSObject* CreateInternal(JSContext* cx, HandleValue abi, HandleValue rtype,
-    const HandleValueArray& args);
+JSObject* CreateInternal(JSContext* cx, HandleValue abi, HandleValue rtype,
+                         const HandleValueArray& args);
 
-  JSObject* ConstructWithObject(JSContext* cx, JSObject* typeObj,
-    JSObject* refObj, PRFuncPtr fnptr, JSObject* result);
+JSObject* ConstructWithObject(JSContext* cx, JSObject* typeObj,
+                              JSObject* refObj, PRFuncPtr fnptr,
+                              JSObject* result);
 
-  FunctionInfo* GetFunctionInfo(JSObject* obj);
-  void BuildSymbolName(JSContext* cx, JSString* name, JSObject* typeObj,
-    AutoCString& result);
-} 
+FunctionInfo* GetFunctionInfo(JSObject* obj);
+void BuildSymbolName(JSContext* cx, JSString* name, JSObject* typeObj,
+                     AutoCString& result);
+}  
 
 namespace CClosure {
-  JSObject* Create(JSContext* cx, HandleObject typeObj, HandleObject fnObj,
-    HandleObject thisObj, HandleValue errVal, PRFuncPtr* fnptr);
-} 
+JSObject* Create(JSContext* cx, HandleObject typeObj, HandleObject fnObj,
+                 HandleObject thisObj, HandleValue errVal, PRFuncPtr* fnptr);
+}  
 
 namespace CData {
-  JSObject* Create(JSContext* cx, HandleObject typeObj, HandleObject refObj,
-    void* data, bool ownResult);
+JSObject* Create(JSContext* cx, HandleObject typeObj, HandleObject refObj,
+                 void* data, bool ownResult);
 
-  JSObject* GetCType(JSObject* dataObj);
-  void* GetData(JSObject* dataObj);
-  bool IsCData(JSObject* obj);
-  bool IsCDataMaybeUnwrap(MutableHandleObject obj);
-  bool IsCData(HandleValue v);
-  bool IsCDataProto(JSObject* obj);
+JSObject* GetCType(JSObject* dataObj);
+void* GetData(JSObject* dataObj);
+bool IsCData(JSObject* obj);
+bool IsCDataMaybeUnwrap(MutableHandleObject obj);
+bool IsCData(HandleValue v);
+bool IsCDataProto(JSObject* obj);
 
-  
-  MOZ_MUST_USE bool Cast(JSContext* cx, unsigned argc, Value* vp);
-  
-  MOZ_MUST_USE bool GetRuntime(JSContext* cx, unsigned argc, Value* vp);
-} 
+
+MOZ_MUST_USE bool Cast(JSContext* cx, unsigned argc, Value* vp);
+
+MOZ_MUST_USE bool GetRuntime(JSContext* cx, unsigned argc, Value* vp);
+}  
 
 namespace Int64 {
-  bool IsInt64(JSObject* obj);
-} 
+bool IsInt64(JSObject* obj);
+}  
 
 namespace UInt64 {
-  bool IsUInt64(JSObject* obj);
-} 
+bool IsUInt64(JSObject* obj);
+}  
 
-} 
-} 
+}  
+}  
 
 #endif 

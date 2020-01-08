@@ -18,79 +18,63 @@
 namespace mozilla {
 namespace dom {
 
-File::File(nsISupports* aParent, BlobImpl* aImpl)
-  : Blob(aParent, aImpl)
-{
+File::File(nsISupports* aParent, BlobImpl* aImpl) : Blob(aParent, aImpl) {
   MOZ_ASSERT(aImpl->IsFile());
 }
 
-File::~File()
-{}
+File::~File() {}
 
- File*
-File::Create(nsISupports* aParent, BlobImpl* aImpl)
-{
+ File* File::Create(nsISupports* aParent, BlobImpl* aImpl) {
   MOZ_ASSERT(aImpl);
   MOZ_ASSERT(aImpl->IsFile());
 
   return new File(aParent, aImpl);
 }
 
- already_AddRefed<File>
-File::Create(nsISupports* aParent, const nsAString& aName,
-             const nsAString& aContentType, uint64_t aLength,
-             int64_t aLastModifiedDate)
-{
-  RefPtr<File> file = new File(aParent,
-    new BaseBlobImpl(aName, aContentType, aLength, aLastModifiedDate));
+ already_AddRefed<File> File::Create(nsISupports* aParent,
+                                                 const nsAString& aName,
+                                                 const nsAString& aContentType,
+                                                 uint64_t aLength,
+                                                 int64_t aLastModifiedDate) {
+  RefPtr<File> file = new File(
+      aParent,
+      new BaseBlobImpl(aName, aContentType, aLength, aLastModifiedDate));
   return file.forget();
 }
 
- already_AddRefed<File>
-File::CreateMemoryFile(nsISupports* aParent, void* aMemoryBuffer,
-                       uint64_t aLength, const nsAString& aName,
-                       const nsAString& aContentType,
-                       int64_t aLastModifiedDate)
-{
-  RefPtr<File> file = new File(aParent,
-    new MemoryBlobImpl(aMemoryBuffer, aLength, aName,
-                       aContentType, aLastModifiedDate));
+ already_AddRefed<File> File::CreateMemoryFile(
+    nsISupports* aParent, void* aMemoryBuffer, uint64_t aLength,
+    const nsAString& aName, const nsAString& aContentType,
+    int64_t aLastModifiedDate) {
+  RefPtr<File> file =
+      new File(aParent, new MemoryBlobImpl(aMemoryBuffer, aLength, aName,
+                                           aContentType, aLastModifiedDate));
   return file.forget();
 }
 
- already_AddRefed<File>
-File::CreateFromFile(nsISupports* aParent, nsIFile* aFile)
-{
+ already_AddRefed<File> File::CreateFromFile(nsISupports* aParent,
+                                                         nsIFile* aFile) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
   RefPtr<File> file = new File(aParent, new FileBlobImpl(aFile));
   return file.forget();
 }
 
- already_AddRefed<File>
-File::CreateFromFile(nsISupports* aParent, nsIFile* aFile,
-                     const nsAString& aName, const nsAString& aContentType)
-{
+ already_AddRefed<File> File::CreateFromFile(
+    nsISupports* aParent, nsIFile* aFile, const nsAString& aName,
+    const nsAString& aContentType) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess());
-  RefPtr<File> file = new File(aParent,
-    new FileBlobImpl(aFile, aName, aContentType));
+  RefPtr<File> file =
+      new File(aParent, new FileBlobImpl(aFile, aName, aContentType));
   return file.forget();
 }
 
-JSObject*
-File::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
+JSObject* File::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return File_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-void
-File::GetName(nsAString& aFileName) const
-{
-  mImpl->GetName(aFileName);
-}
+void File::GetName(nsAString& aFileName) const { mImpl->GetName(aFileName); }
 
-void
-File::GetRelativePath(nsAString& aPath) const
-{
+void File::GetRelativePath(nsAString& aPath) const {
   aPath.Truncate();
 
   nsAutoString path;
@@ -103,32 +87,24 @@ File::GetRelativePath(nsAString& aPath) const
   }
 }
 
-int64_t
-File::GetLastModified(ErrorResult& aRv)
-{
+int64_t File::GetLastModified(ErrorResult& aRv) {
   return mImpl->GetLastModified(aRv);
 }
 
-void
-File::GetMozFullPath(nsAString& aFilename, SystemCallerGuarantee aGuarantee,
-                     ErrorResult& aRv) const
-{
+void File::GetMozFullPath(nsAString& aFilename,
+                          SystemCallerGuarantee aGuarantee,
+                          ErrorResult& aRv) const {
   mImpl->GetMozFullPath(aFilename, aGuarantee, aRv);
 }
 
-void
-File::GetMozFullPathInternal(nsAString& aFileName, ErrorResult& aRv) const
-{
+void File::GetMozFullPathInternal(nsAString& aFileName,
+                                  ErrorResult& aRv) const {
   mImpl->GetMozFullPathInternal(aFileName, aRv);
 }
 
- already_AddRefed<File>
-File::Constructor(const GlobalObject& aGlobal,
-                  const Sequence<BlobPart>& aData,
-                  const nsAString& aName,
-                  const FilePropertyBag& aBag,
-                  ErrorResult& aRv)
-{
+ already_AddRefed<File> File::Constructor(
+    const GlobalObject& aGlobal, const Sequence<BlobPart>& aData,
+    const nsAString& aName, const FilePropertyBag& aBag, ErrorResult& aRv) {
   
   nsString name(aName);
   name.ReplaceChar('/', ':');
@@ -151,27 +127,21 @@ File::Constructor(const GlobalObject& aGlobal,
   return file.forget();
 }
 
- already_AddRefed<Promise>
-File::CreateFromNsIFile(const GlobalObject& aGlobal,
-                        nsIFile* aData,
-                        const ChromeFilePropertyBag& aBag,
-                        SystemCallerGuarantee aGuarantee,
-                        ErrorResult& aRv)
-{
+ already_AddRefed<Promise> File::CreateFromNsIFile(
+    const GlobalObject& aGlobal, nsIFile* aData,
+    const ChromeFilePropertyBag& aBag, SystemCallerGuarantee aGuarantee,
+    ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
 
   RefPtr<Promise> promise =
-    FileCreatorHelper::CreateFile(global, aData, aBag, true, aRv);
+      FileCreatorHelper::CreateFile(global, aData, aBag, true, aRv);
   return promise.forget();
 }
 
- already_AddRefed<Promise>
-File::CreateFromFileName(const GlobalObject& aGlobal,
-                         const nsAString& aPath,
-                         const ChromeFilePropertyBag& aBag,
-                         SystemCallerGuarantee aGuarantee,
-                         ErrorResult& aRv)
-{
+ already_AddRefed<Promise> File::CreateFromFileName(
+    const GlobalObject& aGlobal, const nsAString& aPath,
+    const ChromeFilePropertyBag& aBag, SystemCallerGuarantee aGuarantee,
+    ErrorResult& aRv) {
   nsCOMPtr<nsIFile> file;
   aRv = NS_NewLocalFile(aPath, false, getter_AddRefs(file));
   if (NS_WARN_IF(aRv.Failed())) {
@@ -181,9 +151,9 @@ File::CreateFromFileName(const GlobalObject& aGlobal,
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aGlobal.GetAsSupports());
 
   RefPtr<Promise> promise =
-    FileCreatorHelper::CreateFile(global, file, aBag, false, aRv);
+      FileCreatorHelper::CreateFile(global, file, aBag, false, aRv);
   return promise.forget();
 }
 
-} 
-} 
+}  
+}  

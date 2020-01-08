@@ -6,21 +6,21 @@
 #ifndef _NS_DEVICECONTEXT_H_
 #define _NS_DEVICECONTEXT_H_
 
-#include <stdint.h>                     
-#include <sys/types.h>                  
-#include "gfxTypes.h"                   
-#include "gfxFont.h"                    
-#include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
-#include "nsCOMPtr.h"                   
-#include "nsCoord.h"                    
-#include "nsError.h"                    
-#include "nsISupports.h"                
-#include "nsMathUtils.h"                
-#include "nscore.h"                     
-#include "mozilla/AppUnits.h"           
-#include "nsFontMetrics.h"              
-#include "mozilla/gfx/PrintTarget.h"    
+#include <stdint.h>                   
+#include <sys/types.h>                
+#include "gfxTypes.h"                 
+#include "gfxFont.h"                  
+#include "mozilla/Assertions.h"       
+#include "mozilla/RefPtr.h"           
+#include "nsCOMPtr.h"                 
+#include "nsCoord.h"                  
+#include "nsError.h"                  
+#include "nsISupports.h"              
+#include "nsMathUtils.h"              
+#include "nscore.h"                   
+#include "mozilla/AppUnits.h"         
+#include "nsFontMetrics.h"            
+#include "mozilla/gfx/PrintTarget.h"  
 
 class gfxContext;
 class gfxTextPerfMetrics;
@@ -34,123 +34,124 @@ class nsIScreenManager;
 class nsIWidget;
 struct nsRect;
 
-class nsDeviceContext final
-{
-public:
-    typedef mozilla::gfx::PrintTarget PrintTarget;
+class nsDeviceContext final {
+ public:
+  typedef mozilla::gfx::PrintTarget PrintTarget;
 
-    nsDeviceContext();
+  nsDeviceContext();
 
-    NS_INLINE_DECL_REFCOUNTING(nsDeviceContext)
+  NS_INLINE_DECL_REFCOUNTING(nsDeviceContext)
 
-    
+  
 
 
 
 
-    nsresult Init(nsIWidget *aWidget);
+  nsresult Init(nsIWidget* aWidget);
 
-    
+  
 
 
 
-    void InitFontCache();
+  void InitFontCache();
 
-    void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
+  void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
 
-    
+  
 
 
 
 
-    nsresult InitForPrinting(nsIDeviceContextSpec *aDevSpec);
+  nsresult InitForPrinting(nsIDeviceContextSpec* aDevSpec);
 
-    
+  
 
 
 
 
 
-    already_AddRefed<gfxContext> CreateRenderingContext();
+  already_AddRefed<gfxContext> CreateRenderingContext();
 
-    
+  
 
 
 
 
 
-    already_AddRefed<gfxContext> CreateReferenceRenderingContext();
+  already_AddRefed<gfxContext> CreateReferenceRenderingContext();
 
-    
+  
 
 
 
 
-    int32_t AppUnitsPerDevPixel() const { return mAppUnitsPerDevPixel; }
+  int32_t AppUnitsPerDevPixel() const { return mAppUnitsPerDevPixel; }
 
-    
+  
 
 
 
-    nscoord GfxUnitsToAppUnits(gfxFloat aGfxUnits) const
-    { return nscoord(NS_round(aGfxUnits * AppUnitsPerDevPixel())); }
+  nscoord GfxUnitsToAppUnits(gfxFloat aGfxUnits) const {
+    return nscoord(NS_round(aGfxUnits * AppUnitsPerDevPixel()));
+  }
 
-    
+  
 
 
-    gfxFloat AppUnitsToGfxUnits(nscoord aAppUnits) const
-    { return gfxFloat(aAppUnits) / AppUnitsPerDevPixel(); }
+  gfxFloat AppUnitsToGfxUnits(nscoord aAppUnits) const {
+    return gfxFloat(aAppUnits) / AppUnitsPerDevPixel();
+  }
 
-    
+  
 
 
 
-    int32_t AppUnitsPerPhysicalInch() const
-    { return mAppUnitsPerPhysicalInch; }
+  int32_t AppUnitsPerPhysicalInch() const { return mAppUnitsPerPhysicalInch; }
 
-    
+  
 
 
 
-    int32_t AppUnitsPerDevPixelAtUnitFullZoom() const
-    { return mAppUnitsPerDevPixelAtUnitFullZoom; }
+  int32_t AppUnitsPerDevPixelAtUnitFullZoom() const {
+    return mAppUnitsPerDevPixelAtUnitFullZoom;
+  }
 
-    
+  
 
 
 
 
-    already_AddRefed<nsFontMetrics> GetMetricsFor(
-        const nsFont& aFont, const nsFontMetrics::Params& aParams);
+  already_AddRefed<nsFontMetrics> GetMetricsFor(
+      const nsFont& aFont, const nsFontMetrics::Params& aParams);
 
-    
+  
 
 
 
-    nsresult FontMetricsDeleted(const nsFontMetrics* aFontMetrics);
+  nsresult FontMetricsDeleted(const nsFontMetrics* aFontMetrics);
 
-    
+  
 
 
 
 
-    nsresult FlushFontCache();
+  nsresult FlushFontCache();
 
-    
+  
 
 
-    nsresult GetDepth(uint32_t& aDepth);
+  nsresult GetDepth(uint32_t& aDepth);
 
-    
+  
 
 
 
 
 
 
-    nsresult GetDeviceSurfaceDimensions(nscoord& aWidth, nscoord& aHeight);
+  nsresult GetDeviceSurfaceDimensions(nscoord& aWidth, nscoord& aHeight);
 
-    
+  
 
 
 
@@ -159,9 +160,9 @@ public:
 
 
 
-    nsresult GetRect(nsRect& aRect);
+  nsresult GetRect(nsRect& aRect);
 
-    
+  
 
 
 
@@ -172,15 +173,15 @@ public:
 
 
 
-    nsresult GetClientRect(nsRect& aRect);
+  nsresult GetClientRect(nsRect& aRect);
 
-    
+  
 
 
 
-    bool IsCurrentlyPrintingDocument() const { return mIsCurrentlyPrintingDoc; }
+  bool IsCurrentlyPrintingDocument() const { return mIsCurrentlyPrintingDoc; }
 
-    
+  
 
 
 
@@ -194,43 +195,42 @@ public:
 
 
 
-    nsresult BeginDocument(const nsAString& aTitle,
-                           const nsAString& aPrintToFileName,
-                           int32_t          aStartPage,
-                           int32_t          aEndPage);
+  nsresult BeginDocument(const nsAString& aTitle,
+                         const nsAString& aPrintToFileName, int32_t aStartPage,
+                         int32_t aEndPage);
 
-    
+  
 
 
 
 
 
-    nsresult EndDocument();
+  nsresult EndDocument();
 
-    
+  
 
 
 
 
-    nsresult AbortDocument();
+  nsresult AbortDocument();
 
-    
+  
 
 
 
 
 
-    nsresult BeginPage();
+  nsresult BeginPage();
 
-    
+  
 
 
 
 
 
-    nsresult EndPage();
+  nsresult EndPage();
 
-    
+  
 
 
 
@@ -242,67 +242,68 @@ public:
 
 
 
-    bool CheckDPIChange(double* aScale = nullptr);
+  bool CheckDPIChange(double* aScale = nullptr);
 
-    
+  
 
 
 
 
-    bool SetFullZoom(float aScale);
+  bool SetFullZoom(float aScale);
 
-    
+  
 
 
-    float GetFullZoom() const { return mFullZoom; }
+  float GetFullZoom() const { return mFullZoom; }
 
-    
+  
 
 
-    bool IsPrinterContext();
+  bool IsPrinterContext();
 
-    mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale();
+  mozilla::DesktopToLayoutDeviceScale GetDesktopToDeviceScale();
 
-    bool IsSyncPagePrinting() const;
-    void RegisterPageDoneCallback(PrintTarget::PageDoneCallback&& aCallback);
-    void UnregisterPageDoneCallback();
-private:
-    
-    ~nsDeviceContext();
+  bool IsSyncPagePrinting() const;
+  void RegisterPageDoneCallback(PrintTarget::PageDoneCallback&& aCallback);
+  void UnregisterPageDoneCallback();
 
-    
+ private:
+  
+  ~nsDeviceContext();
 
+  
 
 
-    already_AddRefed<gfxContext>
-    CreateRenderingContextCommon(bool aWantReferenceContext);
 
-    void SetDPI(double* aScale = nullptr);
-    void ComputeClientRectUsingScreen(nsRect *outRect);
-    void ComputeFullAreaUsingScreen(nsRect *outRect);
-    void FindScreen(nsIScreen **outScreen);
+  already_AddRefed<gfxContext> CreateRenderingContextCommon(
+      bool aWantReferenceContext);
 
-    
-    bool CalcPrintingSize();
-    void UpdateAppUnitsForFullZoom();
+  void SetDPI(double* aScale = nullptr);
+  void ComputeClientRectUsingScreen(nsRect* outRect);
+  void ComputeFullAreaUsingScreen(nsRect* outRect);
+  void FindScreen(nsIScreen** outScreen);
 
-    nscoord  mWidth;
-    nscoord  mHeight;
-    int32_t  mAppUnitsPerDevPixel;
-    int32_t  mAppUnitsPerDevPixelAtUnitFullZoom;
-    int32_t  mAppUnitsPerPhysicalInch;
-    float    mFullZoom;
-    float    mPrintingScale;
-    gfxPoint  mPrintingTranslate;
+  
+  bool CalcPrintingSize();
+  void UpdateAppUnitsForFullZoom();
 
-    RefPtr<nsFontCache>            mFontCache;
-    nsCOMPtr<nsIWidget>            mWidget;
-    nsCOMPtr<nsIScreenManager>     mScreenManager;
-    nsCOMPtr<nsIDeviceContextSpec> mDeviceContextSpec;
-    RefPtr<PrintTarget>            mPrintTarget;
-    bool                           mIsCurrentlyPrintingDoc;
+  nscoord mWidth;
+  nscoord mHeight;
+  int32_t mAppUnitsPerDevPixel;
+  int32_t mAppUnitsPerDevPixelAtUnitFullZoom;
+  int32_t mAppUnitsPerPhysicalInch;
+  float mFullZoom;
+  float mPrintingScale;
+  gfxPoint mPrintingTranslate;
+
+  RefPtr<nsFontCache> mFontCache;
+  nsCOMPtr<nsIWidget> mWidget;
+  nsCOMPtr<nsIScreenManager> mScreenManager;
+  nsCOMPtr<nsIDeviceContextSpec> mDeviceContextSpec;
+  RefPtr<PrintTarget> mPrintTarget;
+  bool mIsCurrentlyPrintingDoc;
 #ifdef DEBUG
-    bool mIsInitialized;
+  bool mIsInitialized;
 #endif
 };
 

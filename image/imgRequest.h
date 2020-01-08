@@ -36,8 +36,8 @@ namespace mozilla {
 namespace image {
 class Image;
 class ProgressTracker;
-} 
-} 
+}  
+}  
 
 struct NewPartResult;
 
@@ -45,14 +45,13 @@ class imgRequest final : public nsIStreamListener,
                          public nsIThreadRetargetableStreamListener,
                          public nsIChannelEventSink,
                          public nsIInterfaceRequestor,
-                         public nsIAsyncVerifyRedirectCallback
-{
+                         public nsIAsyncVerifyRedirectCallback {
   typedef mozilla::image::Image Image;
   typedef mozilla::image::ImageCacheKey ImageCacheKey;
   typedef mozilla::image::ProgressTracker ProgressTracker;
   typedef mozilla::net::ReferrerPolicy ReferrerPolicy;
 
-public:
+ public:
   imgRequest(imgLoader* aLoader, const ImageCacheKey& aCacheKey);
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -63,16 +62,12 @@ public:
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSIASYNCVERIFYREDIRECTCALLBACK
 
-  MOZ_MUST_USE nsresult Init(nsIURI* aURI,
-                             nsIURI* aFinalURI,
-                             bool aHadInsecureRedirect,
-                             nsIRequest* aRequest,
-                             nsIChannel* aChannel,
-                             imgCacheEntry* aCacheEntry,
+  MOZ_MUST_USE nsresult Init(nsIURI* aURI, nsIURI* aFinalURI,
+                             bool aHadInsecureRedirect, nsIRequest* aRequest,
+                             nsIChannel* aChannel, imgCacheEntry* aCacheEntry,
                              nsISupports* aCX,
                              nsIPrincipal* aTriggeringPrincipal,
-                             int32_t aCORSMode,
-                             ReferrerPolicy aReferrerPolicy);
+                             int32_t aCORSMode, ReferrerPolicy aReferrerPolicy);
 
   void ClearLoader();
 
@@ -95,9 +90,7 @@ public:
   
   void StartDecoding();
 
-  inline uint64_t InnerWindowID() const {
-    return mInnerWindowId;
-  }
+  inline uint64_t InnerWindowID() const { return mInnerWindowId; }
 
   
   
@@ -125,8 +118,7 @@ public:
 
   
   
-  already_AddRefed<nsIPrincipal> GetTriggeringPrincipal() const
-  {
+  already_AddRefed<nsIPrincipal> GetTriggeringPrincipal() const {
     nsCOMPtr<nsIPrincipal> principal = mTriggeringPrincipal;
     return principal.forget();
   }
@@ -205,7 +197,7 @@ public:
 
   bool HasConsumers() const;
 
-private:
+ private:
   friend class FinishPreparingForNewPartRunnable;
 
   virtual ~imgRequest();
@@ -231,6 +223,7 @@ private:
   nsCOMPtr<nsIURI> mURI;
   
   nsCOMPtr<nsIURI> mFinalURI;
+  
   
   
   
@@ -291,4 +284,4 @@ private:
   bool mHadInsecureRedirect : 1;
 };
 
-#endif 
+#endif  

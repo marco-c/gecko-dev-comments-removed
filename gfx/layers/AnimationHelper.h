@@ -8,9 +8,9 @@
 #define mozilla_layers_AnimationHelper_h
 
 #include "mozilla/dom/Nullable.h"
-#include "mozilla/ComputedTimingFunction.h" 
-#include "mozilla/layers/LayersMessages.h" 
-#include "mozilla/TimeStamp.h"          
+#include "mozilla/ComputedTimingFunction.h"  
+#include "mozilla/layers/LayersMessages.h"   
+#include "mozilla/TimeStamp.h"               
 #include "mozilla/TimingParams.h"
 #include "X11UndefineNone.h"
 
@@ -52,12 +52,7 @@ struct AnimationTransform {
 };
 
 struct AnimatedValue {
-  enum {
-    TRANSFORM,
-    OPACITY,
-    COLOR,
-    NONE
-  } mType {NONE};
+  enum { TRANSFORM, OPACITY, COLOR, NONE } mType{NONE};
 
   union {
     AnimationTransform mTransform;
@@ -66,31 +61,22 @@ struct AnimatedValue {
   };
 
   AnimatedValue(gfx::Matrix4x4&& aTransformInDevSpace,
-                gfx::Matrix4x4&& aFrameTransform,
-                const TransformData& aData)
-    : mType(AnimatedValue::TRANSFORM)
-    , mOpacity(0.0)
-  {
+                gfx::Matrix4x4&& aFrameTransform, const TransformData& aData)
+      : mType(AnimatedValue::TRANSFORM), mOpacity(0.0) {
     mTransform.mTransformInDevSpace = std::move(aTransformInDevSpace);
     mTransform.mFrameTransform = std::move(aFrameTransform);
     mTransform.mData = aData;
   }
 
   explicit AnimatedValue(const float& aValue)
-    : mType(AnimatedValue::OPACITY)
-    , mOpacity(aValue)
-  {
-  }
+      : mType(AnimatedValue::OPACITY), mOpacity(aValue) {}
 
   explicit AnimatedValue(nscolor aValue)
-    : mType(AnimatedValue::COLOR)
-    , mColor(aValue)
-  {
-  }
+      : mType(AnimatedValue::COLOR), mColor(aValue) {}
 
   ~AnimatedValue() {}
 
-private:
+ private:
   AnimatedValue() = delete;
 };
 
@@ -108,28 +94,24 @@ private:
 
 
 
-class CompositorAnimationStorage final
-{
+class CompositorAnimationStorage final {
   typedef nsClassHashtable<nsUint64HashKey, AnimatedValue> AnimatedValueTable;
   typedef nsClassHashtable<nsUint64HashKey, AnimationArray> AnimationsTable;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorAnimationStorage)
-public:
-
+ public:
   
 
 
 
-  void SetAnimatedValue(uint64_t aId,
-                        gfx::Matrix4x4&& aTransformInDevSpace,
+  void SetAnimatedValue(uint64_t aId, gfx::Matrix4x4&& aTransformInDevSpace,
                         gfx::Matrix4x4&& aFrameTransform,
                         const TransformData& aData);
 
   
 
 
-  void SetAnimatedValue(uint64_t aId,
-                        gfx::Matrix4x4&& aTransformInDevSpace);
+  void SetAnimatedValue(uint64_t aId, gfx::Matrix4x4&& aTransformInDevSpace);
 
   
 
@@ -151,15 +133,11 @@ public:
   
 
 
-  AnimatedValueTable::Iterator ConstAnimatedValueTableIter() const
-  {
+  AnimatedValueTable::Iterator ConstAnimatedValueTableIter() const {
     return mAnimatedValues.ConstIter();
   }
 
-  uint32_t AnimatedValueCount() const
-  {
-    return mAnimatedValues.Count();
-  }
+  uint32_t AnimatedValueCount() const { return mAnimatedValues.Count(); }
 
   
 
@@ -174,15 +152,11 @@ public:
   
 
 
-  AnimationsTable::Iterator ConstAnimationsTableIter() const
-  {
+  AnimationsTable::Iterator ConstAnimationsTableIter() const {
     return mAnimations.ConstIter();
   }
 
-  uint32_t AnimationsCount() const
-  {
-    return mAnimations.Count();
-  }
+  uint32_t AnimationsCount() const { return mAnimations.Count(); }
 
   
 
@@ -190,10 +164,10 @@ public:
   void Clear();
   void ClearById(const uint64_t& aId);
 
-private:
-  ~CompositorAnimationStorage() { };
+ private:
+  ~CompositorAnimationStorage(){};
 
-private:
+ private:
   AnimatedValueTable mAnimatedValues;
   AnimationsTable mAnimations;
 };
@@ -203,15 +177,9 @@ private:
 
 
 
-class AnimationHelper
-{
-public:
-
-  enum class SampleResult {
-    None,
-    Skipped,
-    Sampled
-  };
+class AnimationHelper {
+ public:
+  enum class SampleResult { None, Skipped, Sampled };
 
   
 
@@ -228,21 +196,18 @@ public:
 
 
 
-  static SampleResult
-  SampleAnimationForEachNode(TimeStamp aPreviousFrameTime,
-                             TimeStamp aCurrentFrameTime,
-                             AnimationArray& aAnimations,
-                             InfallibleTArray<AnimData>& aAnimationData,
-                             RefPtr<RawServoAnimationValue>& aAnimationValue,
-                             const AnimatedValue* aPreviousValue);
+  static SampleResult SampleAnimationForEachNode(
+      TimeStamp aPreviousFrameTime, TimeStamp aCurrentFrameTime,
+      AnimationArray& aAnimations, InfallibleTArray<AnimData>& aAnimationData,
+      RefPtr<RawServoAnimationValue>& aAnimationValue,
+      const AnimatedValue* aPreviousValue);
   
 
 
 
-  static void
-  SetAnimations(AnimationArray& aAnimations,
-                InfallibleTArray<AnimData>& aAnimData,
-                RefPtr<RawServoAnimationValue>& aBaseAnimationStyle);
+  static void SetAnimations(
+      AnimationArray& aAnimations, InfallibleTArray<AnimData>& aAnimData,
+      RefPtr<RawServoAnimationValue>& aBaseAnimationStyle);
 
   
 
@@ -263,13 +228,12 @@ public:
 
 
 
-  static bool
-  SampleAnimations(CompositorAnimationStorage* aStorage,
-                   TimeStamp aPreviousFrameTime,
-                   TimeStamp aCurrentFrameTime);
+  static bool SampleAnimations(CompositorAnimationStorage* aStorage,
+                               TimeStamp aPreviousFrameTime,
+                               TimeStamp aCurrentFrameTime);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

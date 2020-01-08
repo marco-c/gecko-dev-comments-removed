@@ -36,7 +36,7 @@ namespace mozilla {
 namespace gfx {
 class DataSourceSurface;
 class DrawTarget;
-} 
+}  
 
 namespace layers {
 class LayersIPCChannel;
@@ -44,7 +44,7 @@ class SharedSurfaceTextureClient;
 enum class TextureFlags : uint32_t;
 class SurfaceDescriptor;
 class TextureClient;
-} 
+}  
 
 namespace gl {
 
@@ -52,286 +52,259 @@ class GLContext;
 class SurfaceFactory;
 class ShSurfHandle;
 
-class SharedSurface
-{
-public:
-    static void ProdCopy(SharedSurface* src, SharedSurface* dest,
-                         SurfaceFactory* factory);
+class SharedSurface {
+ public:
+  static void ProdCopy(SharedSurface* src, SharedSurface* dest,
+                       SurfaceFactory* factory);
 
-    const SharedSurfaceType mType;
-    const AttachmentType mAttachType;
-    const WeakPtr<GLContext> mGL;
-    const gfx::IntSize mSize;
-    const bool mHasAlpha;
-    const bool mCanRecycle;
-protected:
-    bool mIsLocked;
-    bool mIsProducerAcquired;
+  const SharedSurfaceType mType;
+  const AttachmentType mAttachType;
+  const WeakPtr<GLContext> mGL;
+  const gfx::IntSize mSize;
+  const bool mHasAlpha;
+  const bool mCanRecycle;
 
-    SharedSurface(SharedSurfaceType type,
-                  AttachmentType attachType,
-                  GLContext* gl,
-                  const gfx::IntSize& size,
-                  bool hasAlpha,
-                  bool canRecycle);
+ protected:
+  bool mIsLocked;
+  bool mIsProducerAcquired;
 
-public:
-    virtual ~SharedSurface();
+  SharedSurface(SharedSurfaceType type, AttachmentType attachType,
+                GLContext* gl, const gfx::IntSize& size, bool hasAlpha,
+                bool canRecycle);
 
-    
-    
-    virtual layers::TextureFlags GetTextureFlags() const;
+ public:
+  virtual ~SharedSurface();
 
-    bool IsLocked() const { return mIsLocked; }
-    bool IsProducerAcquired() const { return mIsProducerAcquired; }
+  
+  
+  virtual layers::TextureFlags GetTextureFlags() const;
 
-    
-    
-    void LockProd();
+  bool IsLocked() const { return mIsLocked; }
+  bool IsProducerAcquired() const { return mIsProducerAcquired; }
 
-    
-    void UnlockProd();
+  
+  
+  void LockProd();
 
-    
-    
-    virtual void Commit(){}
+  
+  void UnlockProd();
 
-protected:
-    virtual void LockProdImpl() = 0;
-    virtual void UnlockProdImpl() = 0;
+  
+  
+  virtual void Commit() {}
 
-    virtual void ProducerAcquireImpl() = 0;
-    virtual void ProducerReleaseImpl() = 0;
-    virtual void ProducerReadAcquireImpl() { ProducerAcquireImpl(); }
-    virtual void ProducerReadReleaseImpl() { ProducerReleaseImpl(); }
+ protected:
+  virtual void LockProdImpl() = 0;
+  virtual void UnlockProdImpl() = 0;
 
-public:
-    void ProducerAcquire() {
-        MOZ_ASSERT(!mIsProducerAcquired);
-        ProducerAcquireImpl();
-        mIsProducerAcquired = true;
-    }
-    void ProducerRelease() {
-        MOZ_ASSERT(mIsProducerAcquired);
-        ProducerReleaseImpl();
-        mIsProducerAcquired = false;
-    }
-    void ProducerReadAcquire() {
-        MOZ_ASSERT(!mIsProducerAcquired);
-        ProducerReadAcquireImpl();
-        mIsProducerAcquired = true;
-    }
-    void ProducerReadRelease() {
-        MOZ_ASSERT(mIsProducerAcquired);
-        ProducerReadReleaseImpl();
-        mIsProducerAcquired = false;
-    }
+  virtual void ProducerAcquireImpl() = 0;
+  virtual void ProducerReleaseImpl() = 0;
+  virtual void ProducerReadAcquireImpl() { ProducerAcquireImpl(); }
+  virtual void ProducerReadReleaseImpl() { ProducerReleaseImpl(); }
 
-    
-    
-    
-    virtual void WaitForBufferOwnership() {}
+ public:
+  void ProducerAcquire() {
+    MOZ_ASSERT(!mIsProducerAcquired);
+    ProducerAcquireImpl();
+    mIsProducerAcquired = true;
+  }
+  void ProducerRelease() {
+    MOZ_ASSERT(mIsProducerAcquired);
+    ProducerReleaseImpl();
+    mIsProducerAcquired = false;
+  }
+  void ProducerReadAcquire() {
+    MOZ_ASSERT(!mIsProducerAcquired);
+    ProducerReadAcquireImpl();
+    mIsProducerAcquired = true;
+  }
+  void ProducerReadRelease() {
+    MOZ_ASSERT(mIsProducerAcquired);
+    ProducerReadReleaseImpl();
+    mIsProducerAcquired = false;
+  }
 
-    
-    
-    virtual bool IsBufferAvailable() const { return true; }
+  
+  
+  
+  virtual void WaitForBufferOwnership() {}
 
-    
-    virtual GLenum ProdTextureTarget() const {
-        MOZ_ASSERT(mAttachType == AttachmentType::GLTexture);
-        return LOCAL_GL_TEXTURE_2D;
-    }
+  
+  
+  virtual bool IsBufferAvailable() const { return true; }
 
-    virtual GLuint ProdTexture() {
-        MOZ_ASSERT(mAttachType == AttachmentType::GLTexture);
-        MOZ_CRASH("GFX: Did you forget to override this function?");
-    }
+  
+  virtual GLenum ProdTextureTarget() const {
+    MOZ_ASSERT(mAttachType == AttachmentType::GLTexture);
+    return LOCAL_GL_TEXTURE_2D;
+  }
 
-    virtual GLuint ProdRenderbuffer() {
-        MOZ_ASSERT(mAttachType == AttachmentType::GLRenderbuffer);
-        MOZ_CRASH("GFX: Did you forget to override this function?");
-    }
+  virtual GLuint ProdTexture() {
+    MOZ_ASSERT(mAttachType == AttachmentType::GLTexture);
+    MOZ_CRASH("GFX: Did you forget to override this function?");
+  }
 
-    virtual bool CopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x,
-                                GLint y, GLsizei width, GLsizei height, GLint border)
-    {
-        return false;
-    }
+  virtual GLuint ProdRenderbuffer() {
+    MOZ_ASSERT(mAttachType == AttachmentType::GLRenderbuffer);
+    MOZ_CRASH("GFX: Did you forget to override this function?");
+  }
 
-    virtual bool ReadPixels(GLint x, GLint y,
-                            GLsizei width, GLsizei height,
-                            GLenum format, GLenum type,
-                            GLvoid* pixels)
-    {
-        return false;
-    }
+  virtual bool CopyTexImage2D(GLenum target, GLint level, GLenum internalformat,
+                              GLint x, GLint y, GLsizei width, GLsizei height,
+                              GLint border) {
+    return false;
+  }
 
-    virtual bool NeedsIndirectReads() const {
-        return false;
-    }
+  virtual bool ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
+                          GLenum format, GLenum type, GLvoid* pixels) {
+    return false;
+  }
 
-    virtual bool ToSurfaceDescriptor(layers::SurfaceDescriptor* const out_descriptor) = 0;
+  virtual bool NeedsIndirectReads() const { return false; }
 
-    virtual bool ReadbackBySharedHandle(gfx::DataSourceSurface* out_surface) {
-        return false;
-    }
+  virtual bool ToSurfaceDescriptor(
+      layers::SurfaceDescriptor* const out_descriptor) = 0;
+
+  virtual bool ReadbackBySharedHandle(gfx::DataSourceSurface* out_surface) {
+    return false;
+  }
 };
 
-template<typename T>
-class RefSet
-{
-    std::set<T*> mSet;
+template <typename T>
+class RefSet {
+  std::set<T*> mSet;
 
-public:
-    ~RefSet() {
-        clear();
+ public:
+  ~RefSet() { clear(); }
+
+  auto begin() -> decltype(mSet.begin()) { return mSet.begin(); }
+
+  void clear() {
+    for (auto itr = mSet.begin(); itr != mSet.end(); ++itr) {
+      (*itr)->Release();
+    }
+    mSet.clear();
+  }
+
+  bool empty() const { return mSet.empty(); }
+
+  bool insert(T* x) {
+    if (mSet.insert(x).second) {
+      x->AddRef();
+      return true;
     }
 
-    auto begin() -> decltype(mSet.begin()) {
-        return mSet.begin();
+    return false;
+  }
+
+  bool erase(T* x) {
+    if (mSet.erase(x)) {
+      x->Release();
+      return true;
     }
 
-    void clear() {
-        for (auto itr = mSet.begin(); itr != mSet.end(); ++itr) {
-            (*itr)->Release();
-        }
-        mSet.clear();
-    }
-
-    bool empty() const {
-        return mSet.empty();
-    }
-
-    bool insert(T* x) {
-        if (mSet.insert(x).second) {
-            x->AddRef();
-            return true;
-        }
-
-        return false;
-    }
-
-    bool erase(T* x) {
-        if (mSet.erase(x)) {
-            x->Release();
-            return true;
-        }
-
-        return false;
-    }
+    return false;
+  }
 };
 
-template<typename T>
-class RefQueue
-{
-    std::queue<T*> mQueue;
+template <typename T>
+class RefQueue {
+  std::queue<T*> mQueue;
 
-public:
-    ~RefQueue() {
-        clear();
-    }
+ public:
+  ~RefQueue() { clear(); }
 
-    void clear() {
-        while (!empty()) {
-            pop();
-        }
+  void clear() {
+    while (!empty()) {
+      pop();
     }
+  }
 
-    bool empty() const {
-        return mQueue.empty();
-    }
+  bool empty() const { return mQueue.empty(); }
 
-    size_t size() const {
-        return mQueue.size();
-    }
+  size_t size() const { return mQueue.size(); }
 
-    void push(T* x) {
-        mQueue.push(x);
-        x->AddRef();
-    }
+  void push(T* x) {
+    mQueue.push(x);
+    x->AddRef();
+  }
 
-    T* front() const {
-        return mQueue.front();
-    }
+  T* front() const { return mQueue.front(); }
 
-    void pop() {
-        T* x = mQueue.front();
-        x->Release();
-        mQueue.pop();
-    }
+  void pop() {
+    T* x = mQueue.front();
+    x->Release();
+    mQueue.pop();
+  }
 };
 
-class SurfaceFactory : public SupportsWeakPtr<SurfaceFactory>
-{
-public:
-    
-    
-    MOZ_DECLARE_WEAKREFERENCE_TYPENAME(SurfaceFactory)
+class SurfaceFactory : public SupportsWeakPtr<SurfaceFactory> {
+ public:
+  
+  
+  MOZ_DECLARE_WEAKREFERENCE_TYPENAME(SurfaceFactory)
 
-    const SharedSurfaceType mType;
-    GLContext* const mGL;
-    const SurfaceCaps mCaps;
-    const RefPtr<layers::LayersIPCChannel> mAllocator;
-    const layers::TextureFlags mFlags;
-    const GLFormats mFormats;
-    Mutex mMutex;
-protected:
-    SurfaceCaps mDrawCaps;
-    SurfaceCaps mReadCaps;
-    RefQueue<layers::SharedSurfaceTextureClient> mRecycleFreePool;
-    RefSet<layers::SharedSurfaceTextureClient> mRecycleTotalPool;
+  const SharedSurfaceType mType;
+  GLContext* const mGL;
+  const SurfaceCaps mCaps;
+  const RefPtr<layers::LayersIPCChannel> mAllocator;
+  const layers::TextureFlags mFlags;
+  const GLFormats mFormats;
+  Mutex mMutex;
 
-    SurfaceFactory(SharedSurfaceType type, GLContext* gl, const SurfaceCaps& caps,
-                   const RefPtr<layers::LayersIPCChannel>& allocator,
-                   const layers::TextureFlags& flags);
+ protected:
+  SurfaceCaps mDrawCaps;
+  SurfaceCaps mReadCaps;
+  RefQueue<layers::SharedSurfaceTextureClient> mRecycleFreePool;
+  RefSet<layers::SharedSurfaceTextureClient> mRecycleTotalPool;
 
-public:
-    virtual ~SurfaceFactory();
+  SurfaceFactory(SharedSurfaceType type, GLContext* gl, const SurfaceCaps& caps,
+                 const RefPtr<layers::LayersIPCChannel>& allocator,
+                 const layers::TextureFlags& flags);
 
-    const SurfaceCaps& DrawCaps() const {
-        return mDrawCaps;
-    }
+ public:
+  virtual ~SurfaceFactory();
 
-    const SurfaceCaps& ReadCaps() const {
-        return mReadCaps;
-    }
+  const SurfaceCaps& DrawCaps() const { return mDrawCaps; }
 
-protected:
-    virtual UniquePtr<SharedSurface> CreateShared(const gfx::IntSize& size) = 0;
+  const SurfaceCaps& ReadCaps() const { return mReadCaps; }
 
-    void StartRecycling(layers::SharedSurfaceTextureClient* tc);
-    void SetRecycleCallback(layers::SharedSurfaceTextureClient* tc);
-    void StopRecycling(layers::SharedSurfaceTextureClient* tc);
+ protected:
+  virtual UniquePtr<SharedSurface> CreateShared(const gfx::IntSize& size) = 0;
 
-public:
-    UniquePtr<SharedSurface> NewSharedSurface(const gfx::IntSize& size);
-    
-    already_AddRefed<layers::SharedSurfaceTextureClient> NewTexClient(const gfx::IntSize& size);
+  void StartRecycling(layers::SharedSurfaceTextureClient* tc);
+  void SetRecycleCallback(layers::SharedSurfaceTextureClient* tc);
+  void StopRecycling(layers::SharedSurfaceTextureClient* tc);
 
-    static void RecycleCallback(layers::TextureClient* tc, void* );
+ public:
+  UniquePtr<SharedSurface> NewSharedSurface(const gfx::IntSize& size);
+  
+  already_AddRefed<layers::SharedSurfaceTextureClient> NewTexClient(
+      const gfx::IntSize& size);
 
-    
-    bool Recycle(layers::SharedSurfaceTextureClient* texClient);
+  static void RecycleCallback(layers::TextureClient* tc, void* );
+
+  
+  bool Recycle(layers::SharedSurfaceTextureClient* texClient);
 };
 
-class ScopedReadbackFB
-{
-    GLContext* const mGL;
-    ScopedBindFramebuffer mAutoFB;
-    GLuint mTempFB = 0;
-    GLuint mTempTex = 0;
-    SharedSurface* mSurfToUnlock = nullptr;
-    SharedSurface* mSurfToLock = nullptr;
+class ScopedReadbackFB {
+  GLContext* const mGL;
+  ScopedBindFramebuffer mAutoFB;
+  GLuint mTempFB = 0;
+  GLuint mTempTex = 0;
+  SharedSurface* mSurfToUnlock = nullptr;
+  SharedSurface* mSurfToLock = nullptr;
 
-public:
-    explicit ScopedReadbackFB(SharedSurface* src);
-    ~ScopedReadbackFB();
+ public:
+  explicit ScopedReadbackFB(SharedSurface* src);
+  ~ScopedReadbackFB();
 };
 
 bool ReadbackSharedSurface(SharedSurface* src, gfx::DrawTarget* dst);
 uint32_t ReadPixel(SharedSurface* src);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

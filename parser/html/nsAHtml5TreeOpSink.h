@@ -10,9 +10,8 @@
 
 
 
-class nsAHtml5TreeOpSink
-{
-public:
+class nsAHtml5TreeOpSink {
+ public:
   
 
 

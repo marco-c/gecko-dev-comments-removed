@@ -37,1224 +37,1178 @@ using mozilla::DebugOnly;
 using mozilla::PodCopy;
 using mozilla::RoundUpPow2;
 
-struct EmptyObjectElements
-{
-    const ObjectElements emptyElementsHeader;
+struct EmptyObjectElements {
+  const ObjectElements emptyElementsHeader;
 
-    
-    
-    const Value val;
+  
+  
+  const Value val;
 
-  public:
-    constexpr EmptyObjectElements()
-      : emptyElementsHeader(0, 0),
-        val(UndefinedValue())
-    {}
-    explicit constexpr EmptyObjectElements(ObjectElements::SharedMemory shmem)
-      : emptyElementsHeader(0, 0, shmem),
-        val(UndefinedValue())
-    {}
+ public:
+  constexpr EmptyObjectElements()
+      : emptyElementsHeader(0, 0), val(UndefinedValue()) {}
+  explicit constexpr EmptyObjectElements(ObjectElements::SharedMemory shmem)
+      : emptyElementsHeader(0, 0, shmem), val(UndefinedValue()) {}
 };
 
 static constexpr EmptyObjectElements emptyElementsHeader;
 
 
-HeapSlot* const js::emptyObjectElements =
-    reinterpret_cast<HeapSlot*>(uintptr_t(&emptyElementsHeader) + sizeof(ObjectElements));
+HeapSlot* const js::emptyObjectElements = reinterpret_cast<HeapSlot*>(
+    uintptr_t(&emptyElementsHeader) + sizeof(ObjectElements));
 
-static constexpr
-EmptyObjectElements emptyElementsHeaderShared(ObjectElements::SharedMemory::IsShared);
+static constexpr EmptyObjectElements emptyElementsHeaderShared(
+    ObjectElements::SharedMemory::IsShared);
 
 
-HeapSlot* const js::emptyObjectElementsShared =
-    reinterpret_cast<HeapSlot*>(uintptr_t(&emptyElementsHeaderShared) + sizeof(ObjectElements));
-
+HeapSlot* const js::emptyObjectElementsShared = reinterpret_cast<HeapSlot*>(
+    uintptr_t(&emptyElementsHeaderShared) + sizeof(ObjectElements));
 
 #ifdef DEBUG
 
-bool
-NativeObject::canHaveNonEmptyElements()
-{
-    return !this->is<TypedArrayObject>();
+bool NativeObject::canHaveNonEmptyElements() {
+  return !this->is<TypedArrayObject>();
 }
 
-#endif 
+#endif  
 
- void
-ObjectElements::ConvertElementsToDoubles(JSContext* cx, uintptr_t elementsPtr)
-{
-    
-
+ void ObjectElements::ConvertElementsToDoubles(
+    JSContext* cx, uintptr_t elementsPtr) {
+  
 
 
 
-    HeapSlot* elementsHeapPtr = (HeapSlot*) elementsPtr;
-    MOZ_ASSERT(elementsHeapPtr != emptyObjectElements &&
-               elementsHeapPtr != emptyObjectElementsShared);
 
-    ObjectElements* header = ObjectElements::fromElements(elementsHeapPtr);
-    MOZ_ASSERT(!header->shouldConvertDoubleElements());
+  HeapSlot* elementsHeapPtr = (HeapSlot*)elementsPtr;
+  MOZ_ASSERT(elementsHeapPtr != emptyObjectElements &&
+             elementsHeapPtr != emptyObjectElementsShared);
 
-    
-    
-    Value* vp = (Value*) elementsPtr;
-    for (size_t i = 0; i < header->initializedLength; i++) {
-        if (vp[i].isInt32()) {
-            vp[i].setDouble(vp[i].toInt32());
-        }
+  ObjectElements* header = ObjectElements::fromElements(elementsHeapPtr);
+  MOZ_ASSERT(!header->shouldConvertDoubleElements());
+
+  
+  
+  Value* vp = (Value*)elementsPtr;
+  for (size_t i = 0; i < header->initializedLength; i++) {
+    if (vp[i].isInt32()) {
+      vp[i].setDouble(vp[i].toInt32());
     }
+  }
 
-    header->setShouldConvertDoubleElements();
+  header->setShouldConvertDoubleElements();
 }
 
- bool
-ObjectElements::MakeElementsCopyOnWrite(JSContext* cx, NativeObject* obj)
-{
-    static_assert(sizeof(HeapSlot) >= sizeof(GCPtrObject),
-                  "there must be enough room for the owner object pointer at "
-                  "the end of the elements");
-    if (!obj->ensureElements(cx, obj->getDenseInitializedLength() + 1)) {
-        return false;
-    }
+ bool ObjectElements::MakeElementsCopyOnWrite(JSContext* cx,
+                                                          NativeObject* obj) {
+  static_assert(sizeof(HeapSlot) >= sizeof(GCPtrObject),
+                "there must be enough room for the owner object pointer at "
+                "the end of the elements");
+  if (!obj->ensureElements(cx, obj->getDenseInitializedLength() + 1)) {
+    return false;
+  }
 
-    ObjectElements* header = obj->getElementsHeader();
+  ObjectElements* header = obj->getElementsHeader();
 
-    
-    
-    MOZ_ASSERT(!header->isCopyOnWrite());
-    MOZ_ASSERT(obj->isExtensible());
-    header->flags |= COPY_ON_WRITE;
+  
+  
+  MOZ_ASSERT(!header->isCopyOnWrite());
+  MOZ_ASSERT(obj->isExtensible());
+  header->flags |= COPY_ON_WRITE;
 
-    header->ownerObject().init(obj);
-    return true;
+  header->ownerObject().init(obj);
+  return true;
 }
 
- bool
-ObjectElements::PreventExtensions(JSContext* cx, NativeObject* obj)
-{
-    if (!obj->maybeCopyElementsForWrite(cx)) {
-        return false;
-    }
+ bool ObjectElements::PreventExtensions(JSContext* cx,
+                                                    NativeObject* obj) {
+  if (!obj->maybeCopyElementsForWrite(cx)) {
+    return false;
+  }
 
-    if (!obj->hasEmptyElements()) {
-        obj->shrinkCapacityToInitializedLength(cx);
-        MarkObjectGroupFlags(cx, obj, OBJECT_FLAG_NON_EXTENSIBLE_ELEMENTS);
-    }
+  if (!obj->hasEmptyElements()) {
+    obj->shrinkCapacityToInitializedLength(cx);
+    MarkObjectGroupFlags(cx, obj, OBJECT_FLAG_NON_EXTENSIBLE_ELEMENTS);
+  }
 
-    
-    MOZ_ASSERT(obj->getElementsHeader()->numShiftedElements() == 0);
+  
+  MOZ_ASSERT(obj->getElementsHeader()->numShiftedElements() == 0);
 
-    return true;
+  return true;
 }
 
- void
-ObjectElements::FreezeOrSeal(JSContext* cx, NativeObject* obj, IntegrityLevel level)
-{
-    MOZ_ASSERT_IF(level == IntegrityLevel::Frozen && obj->is<ArrayObject>(),
-                  !obj->as<ArrayObject>().lengthIsWritable());
-    MOZ_ASSERT(!obj->denseElementsAreCopyOnWrite());
-    MOZ_ASSERT(!obj->isExtensible());
-    MOZ_ASSERT(obj->getElementsHeader()->numShiftedElements() == 0);
+ void ObjectElements::FreezeOrSeal(JSContext* cx, NativeObject* obj,
+                                               IntegrityLevel level) {
+  MOZ_ASSERT_IF(level == IntegrityLevel::Frozen && obj->is<ArrayObject>(),
+                !obj->as<ArrayObject>().lengthIsWritable());
+  MOZ_ASSERT(!obj->denseElementsAreCopyOnWrite());
+  MOZ_ASSERT(!obj->isExtensible());
+  MOZ_ASSERT(obj->getElementsHeader()->numShiftedElements() == 0);
 
-    if (obj->hasEmptyElements() || obj->denseElementsAreFrozen()) {
-        return;
-    }
+  if (obj->hasEmptyElements() || obj->denseElementsAreFrozen()) {
+    return;
+  }
 
-    if (!obj->denseElementsAreSealed()) {
-        obj->getElementsHeader()->seal();
-    }
+  if (!obj->denseElementsAreSealed()) {
+    obj->getElementsHeader()->seal();
+  }
 
-    if (level == IntegrityLevel::Frozen) {
-        obj->getElementsHeader()->freeze();
-    }
+  if (level == IntegrityLevel::Frozen) {
+    obj->getElementsHeader()->freeze();
+  }
 }
 
 #ifdef DEBUG
-static mozilla::Atomic<bool, mozilla::Relaxed, mozilla::recordreplay::Behavior::DontPreserve>
+static mozilla::Atomic<bool, mozilla::Relaxed,
+                       mozilla::recordreplay::Behavior::DontPreserve>
     gShapeConsistencyChecksEnabled(false);
 
- void
-js::NativeObject::enableShapeConsistencyChecks()
-{
-    gShapeConsistencyChecksEnabled = true;
+ void js::NativeObject::enableShapeConsistencyChecks() {
+  gShapeConsistencyChecksEnabled = true;
 }
 
-void
-js::NativeObject::checkShapeConsistency()
-{
-    if (!gShapeConsistencyChecksEnabled) {
-        return;
+void js::NativeObject::checkShapeConsistency() {
+  if (!gShapeConsistencyChecksEnabled) {
+    return;
+  }
+
+  MOZ_ASSERT(isNative());
+
+  Shape* shape = lastProperty();
+  Shape* prev = nullptr;
+
+  AutoCheckCannotGC nogc;
+  if (inDictionaryMode()) {
+    if (ShapeTable* table = shape->maybeTable(nogc)) {
+      for (uint32_t fslot = table->freeList(); fslot != SHAPE_INVALID_SLOT;
+           fslot = getSlot(fslot).toPrivateUint32()) {
+        MOZ_ASSERT(fslot < slotSpan());
+      }
+
+      while (shape->parent) {
+        MOZ_ASSERT_IF(lastProperty() != shape, !shape->hasTable());
+
+        ShapeTable::Entry& entry =
+            table->search<MaybeAdding::NotAdding>(shape->propid(), nogc);
+        MOZ_ASSERT(entry.shape() == shape);
+        shape = shape->parent;
+      }
     }
 
-    MOZ_ASSERT(isNative());
-
-    Shape* shape = lastProperty();
-    Shape* prev = nullptr;
-
-    AutoCheckCannotGC nogc;
-    if (inDictionaryMode()) {
-        if (ShapeTable* table = shape->maybeTable(nogc)) {
-            for (uint32_t fslot = table->freeList();
-                 fslot != SHAPE_INVALID_SLOT;
-                 fslot = getSlot(fslot).toPrivateUint32())
-            {
-                MOZ_ASSERT(fslot < slotSpan());
-            }
-
-            while (shape->parent) {
-                MOZ_ASSERT_IF(lastProperty() != shape, !shape->hasTable());
-
-                ShapeTable::Entry& entry = table->search<MaybeAdding::NotAdding>(shape->propid(),
-                                                                                 nogc);
-                MOZ_ASSERT(entry.shape() == shape);
-                shape = shape->parent;
-            }
-        }
-
-        shape = lastProperty();
-        while (shape) {
-            MOZ_ASSERT_IF(!shape->isEmptyShape() && shape->isDataProperty(),
-                          shape->slot() < slotSpan());
-            if (!prev) {
-                MOZ_ASSERT(lastProperty() == shape);
-                MOZ_ASSERT(shape->listp == &shapeRef());
-            } else {
-                MOZ_ASSERT(shape->listp == &prev->parent);
-            }
-            prev = shape;
-            shape = shape->parent;
-        }
-    } else {
-        while (shape->parent) {
-            if (ShapeTable* table = shape->maybeTable(nogc)) {
-                MOZ_ASSERT(shape->parent);
-                for (Shape::Range<NoGC> r(shape); !r.empty(); r.popFront()) {
-                    ShapeTable::Entry& entry =
-                        table->search<MaybeAdding::NotAdding>(r.front().propid(), nogc);
-                    MOZ_ASSERT(entry.shape() == &r.front());
-                }
-            }
-            if (prev) {
-                MOZ_ASSERT_IF(shape->isDataProperty(), prev->maybeSlot() >= shape->maybeSlot());
-                shape->kids.checkConsistency(prev);
-            }
-            prev = shape;
-            shape = shape->parent;
-        }
+    shape = lastProperty();
+    while (shape) {
+      MOZ_ASSERT_IF(!shape->isEmptyShape() && shape->isDataProperty(),
+                    shape->slot() < slotSpan());
+      if (!prev) {
+        MOZ_ASSERT(lastProperty() == shape);
+        MOZ_ASSERT(shape->listp == &shapeRef());
+      } else {
+        MOZ_ASSERT(shape->listp == &prev->parent);
+      }
+      prev = shape;
+      shape = shape->parent;
     }
+  } else {
+    while (shape->parent) {
+      if (ShapeTable* table = shape->maybeTable(nogc)) {
+        MOZ_ASSERT(shape->parent);
+        for (Shape::Range<NoGC> r(shape); !r.empty(); r.popFront()) {
+          ShapeTable::Entry& entry =
+              table->search<MaybeAdding::NotAdding>(r.front().propid(), nogc);
+          MOZ_ASSERT(entry.shape() == &r.front());
+        }
+      }
+      if (prev) {
+        MOZ_ASSERT_IF(shape->isDataProperty(),
+                      prev->maybeSlot() >= shape->maybeSlot());
+        shape->kids.checkConsistency(prev);
+      }
+      prev = shape;
+      shape = shape->parent;
+    }
+  }
 }
 #endif
 
-void
-js::NativeObject::initializeSlotRange(uint32_t start, uint32_t length)
-{
-    
+void js::NativeObject::initializeSlotRange(uint32_t start, uint32_t length) {
+  
 
 
 
-    HeapSlot* fixedStart;
-    HeapSlot* fixedEnd;
-    HeapSlot* slotsStart;
-    HeapSlot* slotsEnd;
-    getSlotRangeUnchecked(start, length, &fixedStart, &fixedEnd, &slotsStart, &slotsEnd);
+  HeapSlot* fixedStart;
+  HeapSlot* fixedEnd;
+  HeapSlot* slotsStart;
+  HeapSlot* slotsEnd;
+  getSlotRangeUnchecked(start, length, &fixedStart, &fixedEnd, &slotsStart,
+                        &slotsEnd);
 
-    uint32_t offset = start;
-    for (HeapSlot* sp = fixedStart; sp < fixedEnd; sp++) {
-        sp->init(this, HeapSlot::Slot, offset++, UndefinedValue());
-    }
-    for (HeapSlot* sp = slotsStart; sp < slotsEnd; sp++) {
-        sp->init(this, HeapSlot::Slot, offset++, UndefinedValue());
-    }
+  uint32_t offset = start;
+  for (HeapSlot* sp = fixedStart; sp < fixedEnd; sp++) {
+    sp->init(this, HeapSlot::Slot, offset++, UndefinedValue());
+  }
+  for (HeapSlot* sp = slotsStart; sp < slotsEnd; sp++) {
+    sp->init(this, HeapSlot::Slot, offset++, UndefinedValue());
+  }
 }
 
-void
-js::NativeObject::initSlotRange(uint32_t start, const Value* vector, uint32_t length)
-{
-    HeapSlot* fixedStart;
-    HeapSlot* fixedEnd;
-    HeapSlot* slotsStart;
-    HeapSlot* slotsEnd;
-    getSlotRange(start, length, &fixedStart, &fixedEnd, &slotsStart, &slotsEnd);
-    for (HeapSlot* sp = fixedStart; sp < fixedEnd; sp++) {
-        sp->init(this, HeapSlot::Slot, start++, *vector++);
-    }
-    for (HeapSlot* sp = slotsStart; sp < slotsEnd; sp++) {
-        sp->init(this, HeapSlot::Slot, start++, *vector++);
-    }
+void js::NativeObject::initSlotRange(uint32_t start, const Value* vector,
+                                     uint32_t length) {
+  HeapSlot* fixedStart;
+  HeapSlot* fixedEnd;
+  HeapSlot* slotsStart;
+  HeapSlot* slotsEnd;
+  getSlotRange(start, length, &fixedStart, &fixedEnd, &slotsStart, &slotsEnd);
+  for (HeapSlot* sp = fixedStart; sp < fixedEnd; sp++) {
+    sp->init(this, HeapSlot::Slot, start++, *vector++);
+  }
+  for (HeapSlot* sp = slotsStart; sp < slotsEnd; sp++) {
+    sp->init(this, HeapSlot::Slot, start++, *vector++);
+  }
 }
 
-void
-js::NativeObject::copySlotRange(uint32_t start, const Value* vector, uint32_t length)
-{
-    HeapSlot* fixedStart;
-    HeapSlot* fixedEnd;
-    HeapSlot* slotsStart;
-    HeapSlot* slotsEnd;
-    getSlotRange(start, length, &fixedStart, &fixedEnd, &slotsStart, &slotsEnd);
-    for (HeapSlot* sp = fixedStart; sp < fixedEnd; sp++) {
-        sp->set(this, HeapSlot::Slot, start++, *vector++);
-    }
-    for (HeapSlot* sp = slotsStart; sp < slotsEnd; sp++) {
-        sp->set(this, HeapSlot::Slot, start++, *vector++);
-    }
+void js::NativeObject::copySlotRange(uint32_t start, const Value* vector,
+                                     uint32_t length) {
+  HeapSlot* fixedStart;
+  HeapSlot* fixedEnd;
+  HeapSlot* slotsStart;
+  HeapSlot* slotsEnd;
+  getSlotRange(start, length, &fixedStart, &fixedEnd, &slotsStart, &slotsEnd);
+  for (HeapSlot* sp = fixedStart; sp < fixedEnd; sp++) {
+    sp->set(this, HeapSlot::Slot, start++, *vector++);
+  }
+  for (HeapSlot* sp = slotsStart; sp < slotsEnd; sp++) {
+    sp->set(this, HeapSlot::Slot, start++, *vector++);
+  }
 }
 
 #ifdef DEBUG
 
-bool
-js::NativeObject::slotInRange(uint32_t slot, SentinelAllowed sentinel) const
-{
-    MOZ_ASSERT(!gc::IsForwarded(lastProperty()));
-    uint32_t capacity = numFixedSlots() + numDynamicSlots();
-    if (sentinel == SENTINEL_ALLOWED) {
-        return slot <= capacity;
-    }
-    return slot < capacity;
+bool js::NativeObject::slotInRange(uint32_t slot,
+                                   SentinelAllowed sentinel) const {
+  MOZ_ASSERT(!gc::IsForwarded(lastProperty()));
+  uint32_t capacity = numFixedSlots() + numDynamicSlots();
+  if (sentinel == SENTINEL_ALLOWED) {
+    return slot <= capacity;
+  }
+  return slot < capacity;
 }
 
-bool
-js::NativeObject::slotIsFixed(uint32_t slot) const
-{
-    
-    
-    return slot < numFixedSlotsMaybeForwarded();
+bool js::NativeObject::slotIsFixed(uint32_t slot) const {
+  
+  
+  return slot < numFixedSlotsMaybeForwarded();
 }
 
-bool
-js::NativeObject::isNumFixedSlots(uint32_t nfixed) const
-{
-    
-    
-    return nfixed == numFixedSlotsMaybeForwarded();
+bool js::NativeObject::isNumFixedSlots(uint32_t nfixed) const {
+  
+  
+  return nfixed == numFixedSlotsMaybeForwarded();
 }
 
 #endif 
 
-Shape*
-js::NativeObject::lookup(JSContext* cx, jsid id)
-{
-    MOZ_ASSERT(isNative());
-    return Shape::search(cx, lastProperty(), id);
+Shape* js::NativeObject::lookup(JSContext* cx, jsid id) {
+  MOZ_ASSERT(isNative());
+  return Shape::search(cx, lastProperty(), id);
 }
 
-Shape*
-js::NativeObject::lookupPure(jsid id)
-{
-    MOZ_ASSERT(isNative());
-    return Shape::searchNoHashify(lastProperty(), id);
+Shape* js::NativeObject::lookupPure(jsid id) {
+  MOZ_ASSERT(isNative());
+  return Shape::searchNoHashify(lastProperty(), id);
 }
 
-void
-NativeObject::setLastPropertyShrinkFixedSlots(Shape* shape)
-{
-    MOZ_ASSERT(!inDictionaryMode());
-    MOZ_ASSERT(!shape->inDictionary());
-    MOZ_ASSERT(shape->zone() == zone());
-    MOZ_ASSERT(lastProperty()->slotSpan() == shape->slotSpan());
-    MOZ_ASSERT(shape->getObjectClass() == getClass());
+void NativeObject::setLastPropertyShrinkFixedSlots(Shape* shape) {
+  MOZ_ASSERT(!inDictionaryMode());
+  MOZ_ASSERT(!shape->inDictionary());
+  MOZ_ASSERT(shape->zone() == zone());
+  MOZ_ASSERT(lastProperty()->slotSpan() == shape->slotSpan());
+  MOZ_ASSERT(shape->getObjectClass() == getClass());
 
-    DebugOnly<size_t> oldFixed = numFixedSlots();
-    DebugOnly<size_t> newFixed = shape->numFixedSlots();
-    MOZ_ASSERT(newFixed < oldFixed);
-    MOZ_ASSERT(shape->slotSpan() <= oldFixed);
-    MOZ_ASSERT(shape->slotSpan() <= newFixed);
-    MOZ_ASSERT(dynamicSlotsCount(oldFixed, shape->slotSpan(), getClass()) == 0);
-    MOZ_ASSERT(dynamicSlotsCount(newFixed, shape->slotSpan(), getClass()) == 0);
+  DebugOnly<size_t> oldFixed = numFixedSlots();
+  DebugOnly<size_t> newFixed = shape->numFixedSlots();
+  MOZ_ASSERT(newFixed < oldFixed);
+  MOZ_ASSERT(shape->slotSpan() <= oldFixed);
+  MOZ_ASSERT(shape->slotSpan() <= newFixed);
+  MOZ_ASSERT(dynamicSlotsCount(oldFixed, shape->slotSpan(), getClass()) == 0);
+  MOZ_ASSERT(dynamicSlotsCount(newFixed, shape->slotSpan(), getClass()) == 0);
 
-    setShape(shape);
+  setShape(shape);
 }
 
-void
-NativeObject::setLastPropertyMakeNonNative(Shape* shape)
-{
-    MOZ_ASSERT(!inDictionaryMode());
-    MOZ_ASSERT(!shape->getObjectClass()->isNative());
-    MOZ_ASSERT(shape->zone() == zone());
-    MOZ_ASSERT(shape->slotSpan() == 0);
-    MOZ_ASSERT(shape->numFixedSlots() == 0);
+void NativeObject::setLastPropertyMakeNonNative(Shape* shape) {
+  MOZ_ASSERT(!inDictionaryMode());
+  MOZ_ASSERT(!shape->getObjectClass()->isNative());
+  MOZ_ASSERT(shape->zone() == zone());
+  MOZ_ASSERT(shape->slotSpan() == 0);
+  MOZ_ASSERT(shape->numFixedSlots() == 0);
 
-    if (hasDynamicElements()) {
-        js_free(getUnshiftedElementsHeader());
-    }
-    if (hasDynamicSlots()) {
-        js_free(slots_);
-        slots_ = nullptr;
-    }
-
-    setShape(shape);
-}
-
-void
-NativeObject::setLastPropertyMakeNative(JSContext* cx, Shape* shape)
-{
-    MOZ_ASSERT(getClass()->isNative());
-    MOZ_ASSERT(shape->getObjectClass()->isNative());
-    MOZ_ASSERT(!shape->inDictionary());
-
-    
-    
-    
-    initShape(shape);
-
+  if (hasDynamicElements()) {
+    js_free(getUnshiftedElementsHeader());
+  }
+  if (hasDynamicSlots()) {
+    js_free(slots_);
     slots_ = nullptr;
-    elements_ = emptyObjectElements;
+  }
 
-    size_t oldSpan = shape->numFixedSlots();
-    size_t newSpan = shape->slotSpan();
-
-    initializeSlotRange(0, oldSpan);
-
-    
-    
-    AutoEnterOOMUnsafeRegion oomUnsafe;
-    if (oldSpan != newSpan && !updateSlotsForSpan(cx, oldSpan, newSpan)) {
-        oomUnsafe.crash("NativeObject::setLastPropertyMakeNative");
-    }
+  setShape(shape);
 }
 
-bool
-NativeObject::setSlotSpan(JSContext* cx, uint32_t span)
-{
-    MOZ_ASSERT(inDictionaryMode());
+void NativeObject::setLastPropertyMakeNative(JSContext* cx, Shape* shape) {
+  MOZ_ASSERT(getClass()->isNative());
+  MOZ_ASSERT(shape->getObjectClass()->isNative());
+  MOZ_ASSERT(!shape->inDictionary());
 
-    size_t oldSpan = lastProperty()->base()->slotSpan();
-    if (oldSpan == span) {
-        return true;
-    }
+  
+  
+  
+  initShape(shape);
 
-    if (!updateSlotsForSpan(cx, oldSpan, span)) {
-        return false;
-    }
+  slots_ = nullptr;
+  elements_ = emptyObjectElements;
 
-    lastProperty()->base()->setSlotSpan(span);
+  size_t oldSpan = shape->numFixedSlots();
+  size_t newSpan = shape->slotSpan();
+
+  initializeSlotRange(0, oldSpan);
+
+  
+  
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+  if (oldSpan != newSpan && !updateSlotsForSpan(cx, oldSpan, newSpan)) {
+    oomUnsafe.crash("NativeObject::setLastPropertyMakeNative");
+  }
+}
+
+bool NativeObject::setSlotSpan(JSContext* cx, uint32_t span) {
+  MOZ_ASSERT(inDictionaryMode());
+
+  size_t oldSpan = lastProperty()->base()->slotSpan();
+  if (oldSpan == span) {
     return true;
+  }
+
+  if (!updateSlotsForSpan(cx, oldSpan, span)) {
+    return false;
+  }
+
+  lastProperty()->base()->setSlotSpan(span);
+  return true;
 }
 
-bool
-NativeObject::growSlots(JSContext* cx, uint32_t oldCount, uint32_t newCount)
-{
-    MOZ_ASSERT(newCount > oldCount);
-    MOZ_ASSERT_IF(!is<ArrayObject>(), newCount >= SLOT_CAPACITY_MIN);
+bool NativeObject::growSlots(JSContext* cx, uint32_t oldCount,
+                             uint32_t newCount) {
+  MOZ_ASSERT(newCount > oldCount);
+  MOZ_ASSERT_IF(!is<ArrayObject>(), newCount >= SLOT_CAPACITY_MIN);
 
-    
-
+  
 
 
 
-    NativeObject::slotsSizeMustNotOverflow();
-    MOZ_ASSERT(newCount <= MAX_SLOTS_COUNT);
 
-    if (!oldCount) {
-        MOZ_ASSERT(!slots_);
-        slots_ = AllocateObjectBuffer<HeapSlot>(cx, this, newCount);
-        if (!slots_) {
-            return false;
-        }
-        Debug_SetSlotRangeToCrashOnTouch(slots_, newCount);
-        return true;
+  NativeObject::slotsSizeMustNotOverflow();
+  MOZ_ASSERT(newCount <= MAX_SLOTS_COUNT);
+
+  if (!oldCount) {
+    MOZ_ASSERT(!slots_);
+    slots_ = AllocateObjectBuffer<HeapSlot>(cx, this, newCount);
+    if (!slots_) {
+      return false;
     }
-
-    HeapSlot* newslots = ReallocateObjectBuffer<HeapSlot>(cx, this, slots_, oldCount, newCount);
-    if (!newslots) {
-        return false;  
-    }
-
-    slots_ = newslots;
-
-    Debug_SetSlotRangeToCrashOnTouch(slots_ + oldCount, newCount - oldCount);
-
+    Debug_SetSlotRangeToCrashOnTouch(slots_, newCount);
     return true;
+  }
+
+  HeapSlot* newslots =
+      ReallocateObjectBuffer<HeapSlot>(cx, this, slots_, oldCount, newCount);
+  if (!newslots) {
+    return false; 
+  }
+
+  slots_ = newslots;
+
+  Debug_SetSlotRangeToCrashOnTouch(slots_ + oldCount, newCount - oldCount);
+
+  return true;
 }
 
- bool
-NativeObject::growSlotsPure(JSContext* cx, NativeObject* obj, uint32_t newCount)
-{
-    
-    AutoUnsafeCallWithABI unsafe;
+ bool NativeObject::growSlotsPure(JSContext* cx, NativeObject* obj,
+                                              uint32_t newCount) {
+  
+  AutoUnsafeCallWithABI unsafe;
 
-    if (!obj->growSlots(cx, obj->numDynamicSlots(), newCount)) {
-        cx->recoverFromOutOfMemory();
-        return false;
-    }
+  if (!obj->growSlots(cx, obj->numDynamicSlots(), newCount)) {
+    cx->recoverFromOutOfMemory();
+    return false;
+  }
+  return true;
+}
+
+ bool NativeObject::addDenseElementPure(JSContext* cx,
+                                                    NativeObject* obj) {
+  
+  AutoUnsafeCallWithABI unsafe;
+
+  MOZ_ASSERT(obj->getDenseInitializedLength() == obj->getDenseCapacity());
+  MOZ_ASSERT(!obj->denseElementsAreCopyOnWrite());
+  MOZ_ASSERT(obj->isExtensible());
+  MOZ_ASSERT(!obj->isIndexed());
+  MOZ_ASSERT(!obj->is<TypedArrayObject>());
+  MOZ_ASSERT_IF(obj->is<ArrayObject>(),
+                obj->as<ArrayObject>().lengthIsWritable());
+
+  
+  
+  uint32_t oldCapacity = obj->getDenseCapacity();
+  if (MOZ_UNLIKELY(!obj->growElements(cx, oldCapacity + 1))) {
+    cx->recoverFromOutOfMemory();
+    return false;
+  }
+
+  MOZ_ASSERT(obj->getDenseCapacity() > oldCapacity);
+  MOZ_ASSERT(obj->getDenseCapacity() <= MAX_DENSE_ELEMENTS_COUNT);
+  return true;
+}
+
+static void FreeSlots(JSContext* cx, HeapSlot* slots) {
+  if (cx->helperThread()) {
+    js_free(slots);
+  } else {
+    cx->nursery().freeBuffer(slots);
+  }
+}
+
+void NativeObject::shrinkSlots(JSContext* cx, uint32_t oldCount,
+                               uint32_t newCount) {
+  MOZ_ASSERT(newCount < oldCount);
+
+  if (newCount == 0) {
+    FreeSlots(cx, slots_);
+    slots_ = nullptr;
+    return;
+  }
+
+  MOZ_ASSERT_IF(!is<ArrayObject>(), newCount >= SLOT_CAPACITY_MIN);
+
+  HeapSlot* newslots =
+      ReallocateObjectBuffer<HeapSlot>(cx, this, slots_, oldCount, newCount);
+  if (!newslots) {
+    cx->recoverFromOutOfMemory();
+    return; 
+  }
+
+  slots_ = newslots;
+}
+
+bool NativeObject::willBeSparseElements(uint32_t requiredCapacity,
+                                        uint32_t newElementsHint) {
+  MOZ_ASSERT(isNative());
+  MOZ_ASSERT(requiredCapacity > MIN_SPARSE_INDEX);
+
+  uint32_t cap = getDenseCapacity();
+  MOZ_ASSERT(requiredCapacity >= cap);
+
+  if (requiredCapacity > MAX_DENSE_ELEMENTS_COUNT) {
     return true;
-}
+  }
 
- bool
-NativeObject::addDenseElementPure(JSContext* cx, NativeObject* obj)
-{
-    
-    AutoUnsafeCallWithABI unsafe;
+  uint32_t minimalDenseCount = requiredCapacity / SPARSE_DENSITY_RATIO;
+  if (newElementsHint >= minimalDenseCount) {
+    return false;
+  }
+  minimalDenseCount -= newElementsHint;
 
-    MOZ_ASSERT(obj->getDenseInitializedLength() == obj->getDenseCapacity());
-    MOZ_ASSERT(!obj->denseElementsAreCopyOnWrite());
-    MOZ_ASSERT(obj->isExtensible());
-    MOZ_ASSERT(!obj->isIndexed());
-    MOZ_ASSERT(!obj->is<TypedArrayObject>());
-    MOZ_ASSERT_IF(obj->is<ArrayObject>(), obj->as<ArrayObject>().lengthIsWritable());
-
-    
-    
-    uint32_t oldCapacity = obj->getDenseCapacity();
-    if (MOZ_UNLIKELY(!obj->growElements(cx, oldCapacity + 1))) {
-        cx->recoverFromOutOfMemory();
-        return false;
-    }
-
-    MOZ_ASSERT(obj->getDenseCapacity() > oldCapacity);
-    MOZ_ASSERT(obj->getDenseCapacity() <= MAX_DENSE_ELEMENTS_COUNT);
+  if (minimalDenseCount > cap) {
     return true;
+  }
+
+  uint32_t len = getDenseInitializedLength();
+  const Value* elems = getDenseElements();
+  for (uint32_t i = 0; i < len; i++) {
+    if (!elems[i].isMagic(JS_ELEMENTS_HOLE) && !--minimalDenseCount) {
+      return false;
+    }
+  }
+  return true;
 }
 
-static void
-FreeSlots(JSContext* cx, HeapSlot* slots)
-{
-    if (cx->helperThread()) {
-        js_free(slots);
-    } else {
-        cx->nursery().freeBuffer(slots);
-    }
-}
-
-void
-NativeObject::shrinkSlots(JSContext* cx, uint32_t oldCount, uint32_t newCount)
-{
-    MOZ_ASSERT(newCount < oldCount);
-
-    if (newCount == 0) {
-        FreeSlots(cx, slots_);
-        slots_ = nullptr;
-        return;
-    }
-
-    MOZ_ASSERT_IF(!is<ArrayObject>(), newCount >= SLOT_CAPACITY_MIN);
-
-    HeapSlot* newslots = ReallocateObjectBuffer<HeapSlot>(cx, this, slots_, oldCount, newCount);
-    if (!newslots) {
-        cx->recoverFromOutOfMemory();
-        return;  
-    }
-
-    slots_ = newslots;
-}
-
-bool
-NativeObject::willBeSparseElements(uint32_t requiredCapacity, uint32_t newElementsHint)
-{
-    MOZ_ASSERT(isNative());
-    MOZ_ASSERT(requiredCapacity > MIN_SPARSE_INDEX);
-
-    uint32_t cap = getDenseCapacity();
-    MOZ_ASSERT(requiredCapacity >= cap);
-
-    if (requiredCapacity > MAX_DENSE_ELEMENTS_COUNT) {
-        return true;
-    }
-
-    uint32_t minimalDenseCount = requiredCapacity / SPARSE_DENSITY_RATIO;
-    if (newElementsHint >= minimalDenseCount) {
-        return false;
-    }
-    minimalDenseCount -= newElementsHint;
-
-    if (minimalDenseCount > cap) {
-        return true;
-    }
-
-    uint32_t len = getDenseInitializedLength();
-    const Value* elems = getDenseElements();
-    for (uint32_t i = 0; i < len; i++) {
-        if (!elems[i].isMagic(JS_ELEMENTS_HOLE) && !--minimalDenseCount) {
-            return false;
-        }
-    }
-    return true;
-}
-
- DenseElementResult
-NativeObject::maybeDensifySparseElements(JSContext* cx, HandleNativeObject obj)
-{
-    
+ DenseElementResult NativeObject::maybeDensifySparseElements(
+    JSContext* cx, HandleNativeObject obj) {
+  
 
 
 
 
-    if (!obj->inDictionaryMode()) {
+  if (!obj->inDictionaryMode()) {
+    return DenseElementResult::Incomplete;
+  }
+
+  
+
+
+
+  uint32_t slotSpan = obj->slotSpan();
+  if (slotSpan != RoundUpPow2(slotSpan)) {
+    return DenseElementResult::Incomplete;
+  }
+
+  
+  if (!obj->isExtensible()) {
+    return DenseElementResult::Incomplete;
+  }
+
+  
+
+
+
+  uint32_t numDenseElements = 0;
+  uint32_t newInitializedLength = 0;
+
+  RootedShape shape(cx, obj->lastProperty());
+  while (!shape->isEmptyShape()) {
+    uint32_t index;
+    if (IdIsIndex(shape->propid(), &index)) {
+      if (shape->attributes() == JSPROP_ENUMERATE &&
+          shape->hasDefaultGetter() && shape->hasDefaultSetter()) {
+        numDenseElements++;
+        newInitializedLength = Max(newInitializedLength, index + 1);
+      } else {
+        
+
+
+
         return DenseElementResult::Incomplete;
+      }
     }
+    shape = shape->previous();
+  }
 
-    
+  if (numDenseElements * SPARSE_DENSITY_RATIO < newInitializedLength) {
+    return DenseElementResult::Incomplete;
+  }
+
+  if (newInitializedLength > MAX_DENSE_ELEMENTS_COUNT) {
+    return DenseElementResult::Incomplete;
+  }
+
+  
 
 
 
-    uint32_t slotSpan = obj->slotSpan();
-    if (slotSpan != RoundUpPow2(slotSpan)) {
-        return DenseElementResult::Incomplete;
+
+  if (!obj->maybeCopyElementsForWrite(cx)) {
+    return DenseElementResult::Failure;
+  }
+
+  if (newInitializedLength > obj->getDenseCapacity()) {
+    if (!obj->growElements(cx, newInitializedLength)) {
+      return DenseElementResult::Failure;
     }
+  }
 
-    
-    if (!obj->isExtensible()) {
-        return DenseElementResult::Incomplete;
-    }
+  obj->ensureDenseInitializedLength(cx, newInitializedLength, 0);
 
-    
+  RootedValue value(cx);
 
+  shape = obj->lastProperty();
+  while (!shape->isEmptyShape()) {
+    jsid id = shape->propid();
+    uint32_t index;
+    if (IdIsIndex(id, &index)) {
+      value = obj->getSlot(shape->slot());
 
-
-    uint32_t numDenseElements = 0;
-    uint32_t newInitializedLength = 0;
-
-    RootedShape shape(cx, obj->lastProperty());
-    while (!shape->isEmptyShape()) {
-        uint32_t index;
-        if (IdIsIndex(shape->propid(), &index)) {
-            if (shape->attributes() == JSPROP_ENUMERATE &&
-                shape->hasDefaultGetter() &&
-                shape->hasDefaultSetter())
-            {
-                numDenseElements++;
-                newInitializedLength = Max(newInitializedLength, index + 1);
-            } else {
-                
+      
 
 
 
-                return DenseElementResult::Incomplete;
-            }
-        }
+
+
+
+      if (shape != obj->lastProperty()) {
         shape = shape->previous();
-    }
-
-    if (numDenseElements * SPARSE_DENSITY_RATIO < newInitializedLength) {
-        return DenseElementResult::Incomplete;
-    }
-
-    if (newInitializedLength > MAX_DENSE_ELEMENTS_COUNT) {
-        return DenseElementResult::Incomplete;
-    }
-
-    
-
-
-
-
-    if (!obj->maybeCopyElementsForWrite(cx)) {
-        return DenseElementResult::Failure;
-    }
-
-    if (newInitializedLength > obj->getDenseCapacity()) {
-        if (!obj->growElements(cx, newInitializedLength)) {
-            return DenseElementResult::Failure;
+        if (!NativeObject::removeProperty(cx, obj, id)) {
+          return DenseElementResult::Failure;
         }
-    }
-
-    obj->ensureDenseInitializedLength(cx, newInitializedLength, 0);
-
-    RootedValue value(cx);
-
-    shape = obj->lastProperty();
-    while (!shape->isEmptyShape()) {
-        jsid id = shape->propid();
-        uint32_t index;
-        if (IdIsIndex(id, &index)) {
-            value = obj->getSlot(shape->slot());
-
-            
-
-
-
-
-
-
-            if (shape != obj->lastProperty()) {
-                shape = shape->previous();
-                if (!NativeObject::removeProperty(cx, obj, id)) {
-                    return DenseElementResult::Failure;
-                }
-            } else {
-                if (!NativeObject::removeProperty(cx, obj, id)) {
-                    return DenseElementResult::Failure;
-                }
-                shape = obj->lastProperty();
-            }
-
-            obj->setDenseElement(index, value);
-        } else {
-            shape = shape->previous();
+      } else {
+        if (!NativeObject::removeProperty(cx, obj, id)) {
+          return DenseElementResult::Failure;
         }
-    }
+        shape = obj->lastProperty();
+      }
 
-    
-
-
-
-
-    if (!NativeObject::clearFlag(cx, obj, BaseShape::INDEXED)) {
-        return DenseElementResult::Failure;
-    }
-
-    return DenseElementResult::Success;
-}
-
-void
-NativeObject::moveShiftedElements()
-{
-    MOZ_ASSERT(isExtensible());
-
-    ObjectElements* header = getElementsHeader();
-    uint32_t numShifted = header->numShiftedElements();
-    MOZ_ASSERT(numShifted > 0);
-
-    uint32_t initLength = header->initializedLength;
-
-    ObjectElements* newHeader = static_cast<ObjectElements*>(getUnshiftedElementsHeader());
-    memmove(newHeader, header, sizeof(ObjectElements));
-
-    newHeader->clearShiftedElements();
-    newHeader->capacity += numShifted;
-    elements_ = newHeader->elements();
-
-    
-    
-    newHeader->initializedLength += numShifted;
-
-    
-    
-    for (size_t i = 0; i < numShifted; i++) {
-        initDenseElement(i, UndefinedValue());
-    }
-    moveDenseElements(0, numShifted, initLength);
-
-    
-    
-    
-    setDenseInitializedLength(initLength);
-}
-
-void
-NativeObject::maybeMoveShiftedElements()
-{
-    MOZ_ASSERT(isExtensible());
-
-    ObjectElements* header = getElementsHeader();
-    MOZ_ASSERT(header->numShiftedElements() > 0);
-
-    
-    if (header->capacity < header->numAllocatedElements() / 3) {
-        moveShiftedElements();
-    }
-}
-
-bool
-NativeObject::tryUnshiftDenseElements(uint32_t count)
-{
-    MOZ_ASSERT(isExtensible());
-    MOZ_ASSERT(count > 0);
-
-    ObjectElements* header = getElementsHeader();
-    uint32_t numShifted = header->numShiftedElements();
-
-    if (count > numShifted) {
-        
-        
-        
-
-        
-        
-        
-        if (header->initializedLength <= 10 ||
-            header->isCopyOnWrite() ||
-            header->hasNonwritableArrayLength() ||
-            MOZ_UNLIKELY(count > ObjectElements::MaxShiftedElements))
-        {
-            return false;
-        }
-
-        MOZ_ASSERT(header->capacity >= header->initializedLength);
-        uint32_t unusedCapacity = header->capacity - header->initializedLength;
-
-        
-        
-        uint32_t toShift = count - numShifted;
-        MOZ_ASSERT(toShift <= ObjectElements::MaxShiftedElements,
-                   "count <= MaxShiftedElements so toShift <= MaxShiftedElements");
-
-        
-        if (toShift > unusedCapacity) {
-            return false;
-        }
-
-        
-        
-        toShift = Min(toShift + unusedCapacity / 2, unusedCapacity);
-
-        
-        if (numShifted + toShift > ObjectElements::MaxShiftedElements) {
-            toShift = ObjectElements::MaxShiftedElements - numShifted;
-        }
-
-        MOZ_ASSERT(count <= numShifted + toShift);
-        MOZ_ASSERT(numShifted + toShift <= ObjectElements::MaxShiftedElements);
-        MOZ_ASSERT(toShift <= unusedCapacity);
-
-        
-        uint32_t initLen = header->initializedLength;
-        setDenseInitializedLength(initLen + toShift);
-        for (uint32_t i = 0; i < toShift; i++) {
-            initDenseElement(initLen + i, UndefinedValue());
-        }
-        moveDenseElements(toShift, 0, initLen);
-
-        
-        shiftDenseElementsUnchecked(toShift);
-
-        
-        header = getElementsHeader();
-        MOZ_ASSERT(header->numShiftedElements() == numShifted + toShift);
-
-        numShifted = header->numShiftedElements();
-        MOZ_ASSERT(count <= numShifted);
-    }
-
-    elements_ -= count;
-    ObjectElements* newHeader = getElementsHeader();
-    memmove(newHeader, header, sizeof(ObjectElements));
-
-    newHeader->unshiftShiftedElements(count);
-
-    
-    for (uint32_t i = 0; i < count; i++) {
-        initDenseElement(i, UndefinedValue());
-    }
-
-    return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- bool
-NativeObject::goodElementsAllocationAmount(JSContext* cx, uint32_t reqCapacity,
-                                           uint32_t length, uint32_t* goodAmount)
-{
-    if (reqCapacity > MAX_DENSE_ELEMENTS_COUNT) {
-        ReportOutOfMemory(cx);
-        return false;
-    }
-
-    uint32_t reqAllocated = reqCapacity + ObjectElements::VALUES_PER_HEADER;
-
-    
-    const uint32_t Mebi = 1 << 20;
-    if (reqAllocated < Mebi) {
-        uint32_t amount = mozilla::AssertedCast<uint32_t>(RoundUpPow2(reqAllocated));
-
-        
-        
-        
-        
-        
-        
-        uint32_t goodCapacity = amount - ObjectElements::VALUES_PER_HEADER;
-        if (length >= reqCapacity && goodCapacity > (length / 3) * 2) {
-            amount = length + ObjectElements::VALUES_PER_HEADER;
-        }
-
-        if (amount < SLOT_CAPACITY_MIN) {
-            amount = SLOT_CAPACITY_MIN;
-        }
-
-        *goodAmount = amount;
-
-        return true;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static const uint32_t BigBuckets[] = {
-        0x100000, 0x200000, 0x300000, 0x400000, 0x500000, 0x600000, 0x700000,
-        0x800000, 0x900000, 0xb00000, 0xd00000, 0xf00000, 0x1100000, 0x1400000,
-        0x1700000, 0x1a00000, 0x1e00000, 0x2200000, 0x2700000, 0x2c00000,
-        0x3200000, 0x3900000, 0x4100000, 0x4a00000, 0x5400000, 0x5f00000,
-        0x6b00000, 0x7900000, 0x8900000, 0x9b00000, 0xaf00000, 0xc500000,
-        0xde00000, 0xfa00000
-    };
-    MOZ_ASSERT(BigBuckets[ArrayLength(BigBuckets) - 1] <= MAX_DENSE_ELEMENTS_ALLOCATION);
-
-    
-    for (uint32_t b : BigBuckets) {
-        if (b >= reqAllocated) {
-            *goodAmount = b;
-            return true;
-        }
-    }
-
-    
-    *goodAmount = MAX_DENSE_ELEMENTS_ALLOCATION;
-    return true;
-}
-
-bool
-NativeObject::growElements(JSContext* cx, uint32_t reqCapacity)
-{
-    MOZ_ASSERT(isExtensible());
-    MOZ_ASSERT(canHaveNonEmptyElements());
-    if (denseElementsAreCopyOnWrite()) {
-        MOZ_CRASH();
-    }
-
-    
-    
-    
-    uint32_t numShifted = getElementsHeader()->numShiftedElements();
-    if (numShifted > 0) {
-        
-        
-        
-        
-        static const size_t MaxElementsToMoveEagerly = 20;
-
-        if (getElementsHeader()->initializedLength <= MaxElementsToMoveEagerly) {
-            moveShiftedElements();
-        } else {
-            maybeMoveShiftedElements();
-        }
-        if (getDenseCapacity() >= reqCapacity) {
-            return true;
-        }
-        numShifted = getElementsHeader()->numShiftedElements();
-
-        
-        
-        CheckedInt<uint32_t> checkedReqCapacity(reqCapacity);
-        checkedReqCapacity += numShifted;
-        if (MOZ_UNLIKELY(!checkedReqCapacity.isValid())) {
-            moveShiftedElements();
-            numShifted = 0;
-        }
-    }
-
-    uint32_t oldCapacity = getDenseCapacity();
-    MOZ_ASSERT(oldCapacity < reqCapacity);
-
-    uint32_t newAllocated = 0;
-    if (is<ArrayObject>() && !as<ArrayObject>().lengthIsWritable()) {
-        MOZ_ASSERT(reqCapacity <= as<ArrayObject>().length());
-        MOZ_ASSERT(reqCapacity <= MAX_DENSE_ELEMENTS_COUNT);
-        
-        
-        
-        newAllocated = reqCapacity + numShifted + ObjectElements::VALUES_PER_HEADER;
+      obj->setDenseElement(index, value);
     } else {
-        if (!goodElementsAllocationAmount(cx, reqCapacity + numShifted,
-                                          getElementsHeader()->length,
-                                          &newAllocated))
-        {
-            return false;
-        }
+      shape = shape->previous();
     }
+  }
 
-    uint32_t newCapacity = newAllocated - ObjectElements::VALUES_PER_HEADER - numShifted;
-    MOZ_ASSERT(newCapacity > oldCapacity && newCapacity >= reqCapacity);
+  
 
-    
-    
-    MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
 
-    uint32_t initlen = getDenseInitializedLength();
 
-    HeapSlot* oldHeaderSlots = reinterpret_cast<HeapSlot*>(getUnshiftedElementsHeader());
-    HeapSlot* newHeaderSlots;
-    if (hasDynamicElements()) {
-        MOZ_ASSERT(oldCapacity <= MAX_DENSE_ELEMENTS_COUNT);
-        uint32_t oldAllocated = oldCapacity + ObjectElements::VALUES_PER_HEADER + numShifted;
 
-        newHeaderSlots = ReallocateObjectBuffer<HeapSlot>(cx, this, oldHeaderSlots, oldAllocated, newAllocated);
-        if (!newHeaderSlots) {
-            return false;   
-        }
-    } else {
-        newHeaderSlots = AllocateObjectBuffer<HeapSlot>(cx, this, newAllocated);
-        if (!newHeaderSlots) {
-            return false;   
-        }
-        PodCopy(newHeaderSlots, oldHeaderSlots,
-                ObjectElements::VALUES_PER_HEADER + initlen + numShifted);
-    }
+  if (!NativeObject::clearFlag(cx, obj, BaseShape::INDEXED)) {
+    return DenseElementResult::Failure;
+  }
 
-    ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
-    elements_ = newheader->elements() + numShifted;
-    getElementsHeader()->capacity = newCapacity;
-
-    Debug_SetSlotRangeToCrashOnTouch(elements_ + initlen, newCapacity - initlen);
-
-    return true;
+  return DenseElementResult::Success;
 }
 
-void
-NativeObject::shrinkElements(JSContext* cx, uint32_t reqCapacity)
-{
-    MOZ_ASSERT(canHaveNonEmptyElements());
-    MOZ_ASSERT(reqCapacity >= getDenseInitializedLength());
+void NativeObject::moveShiftedElements() {
+  MOZ_ASSERT(isExtensible());
 
-    if (denseElementsAreCopyOnWrite()) {
-        MOZ_CRASH();
+  ObjectElements* header = getElementsHeader();
+  uint32_t numShifted = header->numShiftedElements();
+  MOZ_ASSERT(numShifted > 0);
+
+  uint32_t initLength = header->initializedLength;
+
+  ObjectElements* newHeader =
+      static_cast<ObjectElements*>(getUnshiftedElementsHeader());
+  memmove(newHeader, header, sizeof(ObjectElements));
+
+  newHeader->clearShiftedElements();
+  newHeader->capacity += numShifted;
+  elements_ = newHeader->elements();
+
+  
+  
+  newHeader->initializedLength += numShifted;
+
+  
+  
+  for (size_t i = 0; i < numShifted; i++) {
+    initDenseElement(i, UndefinedValue());
+  }
+  moveDenseElements(0, numShifted, initLength);
+
+  
+  
+  
+  setDenseInitializedLength(initLength);
+}
+
+void NativeObject::maybeMoveShiftedElements() {
+  MOZ_ASSERT(isExtensible());
+
+  ObjectElements* header = getElementsHeader();
+  MOZ_ASSERT(header->numShiftedElements() > 0);
+
+  
+  if (header->capacity < header->numAllocatedElements() / 3) {
+    moveShiftedElements();
+  }
+}
+
+bool NativeObject::tryUnshiftDenseElements(uint32_t count) {
+  MOZ_ASSERT(isExtensible());
+  MOZ_ASSERT(count > 0);
+
+  ObjectElements* header = getElementsHeader();
+  uint32_t numShifted = header->numShiftedElements();
+
+  if (count > numShifted) {
+    
+    
+    
+
+    
+    
+    
+    if (header->initializedLength <= 10 || header->isCopyOnWrite() ||
+        header->hasNonwritableArrayLength() ||
+        MOZ_UNLIKELY(count > ObjectElements::MaxShiftedElements)) {
+      return false;
     }
 
-    if (!hasDynamicElements()) {
-        return;
+    MOZ_ASSERT(header->capacity >= header->initializedLength);
+    uint32_t unusedCapacity = header->capacity - header->initializedLength;
+
+    
+    
+    uint32_t toShift = count - numShifted;
+    MOZ_ASSERT(toShift <= ObjectElements::MaxShiftedElements,
+               "count <= MaxShiftedElements so toShift <= MaxShiftedElements");
+
+    
+    if (toShift > unusedCapacity) {
+      return false;
     }
 
     
-    uint32_t numShifted = getElementsHeader()->numShiftedElements();
-    if (numShifted > 0) {
-        maybeMoveShiftedElements();
-        numShifted = getElementsHeader()->numShiftedElements();
+    
+    toShift = Min(toShift + unusedCapacity / 2, unusedCapacity);
+
+    
+    if (numShifted + toShift > ObjectElements::MaxShiftedElements) {
+      toShift = ObjectElements::MaxShiftedElements - numShifted;
     }
 
-    uint32_t oldCapacity = getDenseCapacity();
-    MOZ_ASSERT(reqCapacity < oldCapacity);
+    MOZ_ASSERT(count <= numShifted + toShift);
+    MOZ_ASSERT(numShifted + toShift <= ObjectElements::MaxShiftedElements);
+    MOZ_ASSERT(toShift <= unusedCapacity);
 
-    uint32_t newAllocated = 0;
-    MOZ_ALWAYS_TRUE(goodElementsAllocationAmount(cx, reqCapacity + numShifted, 0, &newAllocated));
+    
+    uint32_t initLen = header->initializedLength;
+    setDenseInitializedLength(initLen + toShift);
+    for (uint32_t i = 0; i < toShift; i++) {
+      initDenseElement(initLen + i, UndefinedValue());
+    }
+    moveDenseElements(toShift, 0, initLen);
+
+    
+    shiftDenseElementsUnchecked(toShift);
+
+    
+    header = getElementsHeader();
+    MOZ_ASSERT(header->numShiftedElements() == numShifted + toShift);
+
+    numShifted = header->numShiftedElements();
+    MOZ_ASSERT(count <= numShifted);
+  }
+
+  elements_ -= count;
+  ObjectElements* newHeader = getElementsHeader();
+  memmove(newHeader, header, sizeof(ObjectElements));
+
+  newHeader->unshiftShiftedElements(count);
+
+  
+  for (uint32_t i = 0; i < count; i++) {
+    initDenseElement(i, UndefinedValue());
+  }
+
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ bool NativeObject::goodElementsAllocationAmount(
+    JSContext* cx, uint32_t reqCapacity, uint32_t length,
+    uint32_t* goodAmount) {
+  if (reqCapacity > MAX_DENSE_ELEMENTS_COUNT) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
+
+  uint32_t reqAllocated = reqCapacity + ObjectElements::VALUES_PER_HEADER;
+
+  
+  const uint32_t Mebi = 1 << 20;
+  if (reqAllocated < Mebi) {
+    uint32_t amount =
+        mozilla::AssertedCast<uint32_t>(RoundUpPow2(reqAllocated));
+
+    
+    
+    
+    
+    
+    
+    uint32_t goodCapacity = amount - ObjectElements::VALUES_PER_HEADER;
+    if (length >= reqCapacity && goodCapacity > (length / 3) * 2) {
+      amount = length + ObjectElements::VALUES_PER_HEADER;
+    }
+
+    if (amount < SLOT_CAPACITY_MIN) {
+      amount = SLOT_CAPACITY_MIN;
+    }
+
+    *goodAmount = amount;
+
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const uint32_t BigBuckets[] = {
+      0x100000,  0x200000,  0x300000,  0x400000,  0x500000,  0x600000,
+      0x700000,  0x800000,  0x900000,  0xb00000,  0xd00000,  0xf00000,
+      0x1100000, 0x1400000, 0x1700000, 0x1a00000, 0x1e00000, 0x2200000,
+      0x2700000, 0x2c00000, 0x3200000, 0x3900000, 0x4100000, 0x4a00000,
+      0x5400000, 0x5f00000, 0x6b00000, 0x7900000, 0x8900000, 0x9b00000,
+      0xaf00000, 0xc500000, 0xde00000, 0xfa00000};
+  MOZ_ASSERT(BigBuckets[ArrayLength(BigBuckets) - 1] <=
+             MAX_DENSE_ELEMENTS_ALLOCATION);
+
+  
+  for (uint32_t b : BigBuckets) {
+    if (b >= reqAllocated) {
+      *goodAmount = b;
+      return true;
+    }
+  }
+
+  
+  *goodAmount = MAX_DENSE_ELEMENTS_ALLOCATION;
+  return true;
+}
+
+bool NativeObject::growElements(JSContext* cx, uint32_t reqCapacity) {
+  MOZ_ASSERT(isExtensible());
+  MOZ_ASSERT(canHaveNonEmptyElements());
+  if (denseElementsAreCopyOnWrite()) {
+    MOZ_CRASH();
+  }
+
+  
+  
+  
+  uint32_t numShifted = getElementsHeader()->numShiftedElements();
+  if (numShifted > 0) {
+    
+    
+    
+    
+    static const size_t MaxElementsToMoveEagerly = 20;
+
+    if (getElementsHeader()->initializedLength <= MaxElementsToMoveEagerly) {
+      moveShiftedElements();
+    } else {
+      maybeMoveShiftedElements();
+    }
+    if (getDenseCapacity() >= reqCapacity) {
+      return true;
+    }
+    numShifted = getElementsHeader()->numShiftedElements();
+
+    
+    
+    CheckedInt<uint32_t> checkedReqCapacity(reqCapacity);
+    checkedReqCapacity += numShifted;
+    if (MOZ_UNLIKELY(!checkedReqCapacity.isValid())) {
+      moveShiftedElements();
+      numShifted = 0;
+    }
+  }
+
+  uint32_t oldCapacity = getDenseCapacity();
+  MOZ_ASSERT(oldCapacity < reqCapacity);
+
+  uint32_t newAllocated = 0;
+  if (is<ArrayObject>() && !as<ArrayObject>().lengthIsWritable()) {
+    MOZ_ASSERT(reqCapacity <= as<ArrayObject>().length());
+    MOZ_ASSERT(reqCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+    
+    
+    
+    newAllocated = reqCapacity + numShifted + ObjectElements::VALUES_PER_HEADER;
+  } else {
+    if (!goodElementsAllocationAmount(cx, reqCapacity + numShifted,
+                                      getElementsHeader()->length,
+                                      &newAllocated)) {
+      return false;
+    }
+  }
+
+  uint32_t newCapacity =
+      newAllocated - ObjectElements::VALUES_PER_HEADER - numShifted;
+  MOZ_ASSERT(newCapacity > oldCapacity && newCapacity >= reqCapacity);
+
+  
+  
+  MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+
+  uint32_t initlen = getDenseInitializedLength();
+
+  HeapSlot* oldHeaderSlots =
+      reinterpret_cast<HeapSlot*>(getUnshiftedElementsHeader());
+  HeapSlot* newHeaderSlots;
+  if (hasDynamicElements()) {
     MOZ_ASSERT(oldCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+    uint32_t oldAllocated =
+        oldCapacity + ObjectElements::VALUES_PER_HEADER + numShifted;
 
-    uint32_t oldAllocated = oldCapacity + ObjectElements::VALUES_PER_HEADER + numShifted;
-    if (newAllocated == oldAllocated) {
-        return;  
-    }
-
-    MOZ_ASSERT(newAllocated > ObjectElements::VALUES_PER_HEADER);
-    uint32_t newCapacity = newAllocated - ObjectElements::VALUES_PER_HEADER - numShifted;
-    MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
-
-    HeapSlot* oldHeaderSlots = reinterpret_cast<HeapSlot*>(getUnshiftedElementsHeader());
-    HeapSlot* newHeaderSlots = ReallocateObjectBuffer<HeapSlot>(cx, this, oldHeaderSlots,
-                                                                oldAllocated, newAllocated);
+    newHeaderSlots = ReallocateObjectBuffer<HeapSlot>(
+        cx, this, oldHeaderSlots, oldAllocated, newAllocated);
     if (!newHeaderSlots) {
-        cx->recoverFromOutOfMemory();
-        return;  
+      return false;  
     }
+  } else {
+    newHeaderSlots = AllocateObjectBuffer<HeapSlot>(cx, this, newAllocated);
+    if (!newHeaderSlots) {
+      return false;  
+    }
+    PodCopy(newHeaderSlots, oldHeaderSlots,
+            ObjectElements::VALUES_PER_HEADER + initlen + numShifted);
+  }
 
-    ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
-    elements_ = newheader->elements() + numShifted;
-    getElementsHeader()->capacity = newCapacity;
+  ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
+  elements_ = newheader->elements() + numShifted;
+  getElementsHeader()->capacity = newCapacity;
+
+  Debug_SetSlotRangeToCrashOnTouch(elements_ + initlen, newCapacity - initlen);
+
+  return true;
 }
 
- bool
-NativeObject::CopyElementsForWrite(JSContext* cx, NativeObject* obj)
-{
-    MOZ_ASSERT(obj->denseElementsAreCopyOnWrite());
-    MOZ_ASSERT(obj->isExtensible());
+void NativeObject::shrinkElements(JSContext* cx, uint32_t reqCapacity) {
+  MOZ_ASSERT(canHaveNonEmptyElements());
+  MOZ_ASSERT(reqCapacity >= getDenseInitializedLength());
 
-    
-    MOZ_ASSERT(obj->getElementsHeader()->ownerObject() != obj);
+  if (denseElementsAreCopyOnWrite()) {
+    MOZ_CRASH();
+  }
 
-    uint32_t initlen = obj->getDenseInitializedLength();
-    uint32_t newAllocated = 0;
-    if (!goodElementsAllocationAmount(cx, initlen, 0, &newAllocated)) {
-        return false;
-    }
+  if (!hasDynamicElements()) {
+    return;
+  }
 
-    uint32_t newCapacity = newAllocated - ObjectElements::VALUES_PER_HEADER;
+  
+  uint32_t numShifted = getElementsHeader()->numShiftedElements();
+  if (numShifted > 0) {
+    maybeMoveShiftedElements();
+    numShifted = getElementsHeader()->numShiftedElements();
+  }
 
-    
-    MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+  uint32_t oldCapacity = getDenseCapacity();
+  MOZ_ASSERT(reqCapacity < oldCapacity);
 
-    JSObject::writeBarrierPre(obj->getElementsHeader()->ownerObject());
+  uint32_t newAllocated = 0;
+  MOZ_ALWAYS_TRUE(goodElementsAllocationAmount(cx, reqCapacity + numShifted, 0,
+                                               &newAllocated));
+  MOZ_ASSERT(oldCapacity <= MAX_DENSE_ELEMENTS_COUNT);
 
-    HeapSlot* newHeaderSlots = AllocateObjectBuffer<HeapSlot>(cx, obj, newAllocated);
-    if (!newHeaderSlots) {
-        return false;
-    }
-    ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
-    js_memcpy(newheader, obj->getElementsHeader(),
-              (ObjectElements::VALUES_PER_HEADER + initlen) * sizeof(Value));
+  uint32_t oldAllocated =
+      oldCapacity + ObjectElements::VALUES_PER_HEADER + numShifted;
+  if (newAllocated == oldAllocated) {
+    return;  
+  }
 
-    newheader->capacity = newCapacity;
-    newheader->clearCopyOnWrite();
-    obj->elements_ = newheader->elements();
+  MOZ_ASSERT(newAllocated > ObjectElements::VALUES_PER_HEADER);
+  uint32_t newCapacity =
+      newAllocated - ObjectElements::VALUES_PER_HEADER - numShifted;
+  MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
 
-    Debug_SetSlotRangeToCrashOnTouch(obj->elements_ + initlen, newCapacity - initlen);
+  HeapSlot* oldHeaderSlots =
+      reinterpret_cast<HeapSlot*>(getUnshiftedElementsHeader());
+  HeapSlot* newHeaderSlots = ReallocateObjectBuffer<HeapSlot>(
+      cx, this, oldHeaderSlots, oldAllocated, newAllocated);
+  if (!newHeaderSlots) {
+    cx->recoverFromOutOfMemory();
+    return;  
+  }
 
-    return true;
+  ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
+  elements_ = newheader->elements() + numShifted;
+  getElementsHeader()->capacity = newCapacity;
 }
 
- bool
-NativeObject::allocDictionarySlot(JSContext* cx, HandleNativeObject obj, uint32_t* slotp)
-{
-    MOZ_ASSERT(obj->inDictionaryMode());
+ bool NativeObject::CopyElementsForWrite(JSContext* cx,
+                                                     NativeObject* obj) {
+  MOZ_ASSERT(obj->denseElementsAreCopyOnWrite());
+  MOZ_ASSERT(obj->isExtensible());
 
-    uint32_t slot = obj->slotSpan();
-    MOZ_ASSERT(slot >= JSSLOT_FREE(obj->getClass()));
+  
+  MOZ_ASSERT(obj->getElementsHeader()->ownerObject() != obj);
 
-    
-    
-    
-    {
-        AutoCheckCannotGC nogc;
-        if (ShapeTable* table = obj->lastProperty()->maybeTable(nogc)) {
-            uint32_t last = table->freeList();
-            if (last != SHAPE_INVALID_SLOT) {
+  uint32_t initlen = obj->getDenseInitializedLength();
+  uint32_t newAllocated = 0;
+  if (!goodElementsAllocationAmount(cx, initlen, 0, &newAllocated)) {
+    return false;
+  }
+
+  uint32_t newCapacity = newAllocated - ObjectElements::VALUES_PER_HEADER;
+
+  
+  MOZ_ASSERT(newCapacity <= MAX_DENSE_ELEMENTS_COUNT);
+
+  JSObject::writeBarrierPre(obj->getElementsHeader()->ownerObject());
+
+  HeapSlot* newHeaderSlots =
+      AllocateObjectBuffer<HeapSlot>(cx, obj, newAllocated);
+  if (!newHeaderSlots) {
+    return false;
+  }
+  ObjectElements* newheader = reinterpret_cast<ObjectElements*>(newHeaderSlots);
+  js_memcpy(newheader, obj->getElementsHeader(),
+            (ObjectElements::VALUES_PER_HEADER + initlen) * sizeof(Value));
+
+  newheader->capacity = newCapacity;
+  newheader->clearCopyOnWrite();
+  obj->elements_ = newheader->elements();
+
+  Debug_SetSlotRangeToCrashOnTouch(obj->elements_ + initlen,
+                                   newCapacity - initlen);
+
+  return true;
+}
+
+ bool NativeObject::allocDictionarySlot(JSContext* cx,
+                                                    HandleNativeObject obj,
+                                                    uint32_t* slotp) {
+  MOZ_ASSERT(obj->inDictionaryMode());
+
+  uint32_t slot = obj->slotSpan();
+  MOZ_ASSERT(slot >= JSSLOT_FREE(obj->getClass()));
+
+  
+  
+  
+  {
+    AutoCheckCannotGC nogc;
+    if (ShapeTable* table = obj->lastProperty()->maybeTable(nogc)) {
+      uint32_t last = table->freeList();
+      if (last != SHAPE_INVALID_SLOT) {
 #ifdef DEBUG
-                MOZ_ASSERT(last < slot);
-                uint32_t next = obj->getSlot(last).toPrivateUint32();
-                MOZ_ASSERT_IF(next != SHAPE_INVALID_SLOT, next < slot);
+        MOZ_ASSERT(last < slot);
+        uint32_t next = obj->getSlot(last).toPrivateUint32();
+        MOZ_ASSERT_IF(next != SHAPE_INVALID_SLOT, next < slot);
 #endif
 
-                *slotp = last;
+        *slotp = last;
 
-                const Value& vref = obj->getSlot(last);
-                table->setFreeList(vref.toPrivateUint32());
-                obj->setSlot(last, UndefinedValue());
-                return true;
-            }
-        }
+        const Value& vref = obj->getSlot(last);
+        table->setFreeList(vref.toPrivateUint32());
+        obj->setSlot(last, UndefinedValue());
+        return true;
+      }
     }
+  }
 
-    if (slot >= SHAPE_MAXIMUM_SLOT) {
-        ReportOutOfMemory(cx);
-        return false;
-    }
+  if (slot >= SHAPE_MAXIMUM_SLOT) {
+    ReportOutOfMemory(cx);
+    return false;
+  }
 
-    *slotp = slot;
+  *slotp = slot;
 
-    return obj->setSlotSpan(cx, slot + 1);
+  return obj->setSlotSpan(cx, slot + 1);
 }
 
-void
-NativeObject::freeSlot(JSContext* cx, uint32_t slot)
-{
-    MOZ_ASSERT(slot < slotSpan());
+void NativeObject::freeSlot(JSContext* cx, uint32_t slot) {
+  MOZ_ASSERT(slot < slotSpan());
 
-    if (inDictionaryMode()) {
-        
-        
-        AutoCheckCannotGC nogc;
-        if (ShapeTable* table = lastProperty()->ensureTableForDictionary(cx, nogc)) {
-            uint32_t last = table->freeList();
+  if (inDictionaryMode()) {
+    
+    
+    AutoCheckCannotGC nogc;
+    if (ShapeTable* table =
+            lastProperty()->ensureTableForDictionary(cx, nogc)) {
+      uint32_t last = table->freeList();
 
-            
-            MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan() && last != slot);
+      
+      MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT,
+                    last < slotSpan() && last != slot);
 
-            
-            
-            if (JSSLOT_FREE(getClass()) <= slot) {
-                MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan());
-                setSlot(slot, PrivateUint32Value(last));
-                table->setFreeList(slot);
-                return;
-            }
-        } else {
-            
-            
-            
-            cx->recoverFromOutOfMemory();
-        }
+      
+      
+      if (JSSLOT_FREE(getClass()) <= slot) {
+        MOZ_ASSERT_IF(last != SHAPE_INVALID_SLOT, last < slotSpan());
+        setSlot(slot, PrivateUint32Value(last));
+        table->setFreeList(slot);
+        return;
+      }
+    } else {
+      
+      
+      
+      cx->recoverFromOutOfMemory();
     }
-    setSlot(slot, UndefinedValue());
+  }
+  setSlot(slot, UndefinedValue());
 }
 
- Shape*
-NativeObject::addDataProperty(JSContext* cx, HandleNativeObject obj,
-                              HandlePropertyName name, uint32_t slot, unsigned attrs)
-{
-    MOZ_ASSERT(!(attrs & (JSPROP_GETTER | JSPROP_SETTER)));
-    RootedId id(cx, NameToId(name));
-    return addDataProperty(cx, obj, id, slot, attrs);
+ Shape* NativeObject::addDataProperty(JSContext* cx,
+                                                  HandleNativeObject obj,
+                                                  HandlePropertyName name,
+                                                  uint32_t slot,
+                                                  unsigned attrs) {
+  MOZ_ASSERT(!(attrs & (JSPROP_GETTER | JSPROP_SETTER)));
+  RootedId id(cx, NameToId(name));
+  return addDataProperty(cx, obj, id, slot, attrs);
 }
 
 template <AllowGC allowGC>
-bool
-js::NativeLookupOwnProperty(JSContext* cx,
-                            typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
-                            typename MaybeRooted<jsid, allowGC>::HandleType id,
-                            typename MaybeRooted<PropertyResult, allowGC>::MutableHandleType propp)
-{
-    bool done;
-    return LookupOwnPropertyInline<allowGC>(cx, obj, id, propp, &done);
+bool js::NativeLookupOwnProperty(
+    JSContext* cx, typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
+    typename MaybeRooted<jsid, allowGC>::HandleType id,
+    typename MaybeRooted<PropertyResult, allowGC>::MutableHandleType propp) {
+  bool done;
+  return LookupOwnPropertyInline<allowGC>(cx, obj, id, propp, &done);
 }
 
-template bool
-js::NativeLookupOwnProperty<CanGC>(JSContext* cx, HandleNativeObject obj, HandleId id,
-                                   MutableHandle<PropertyResult> propp);
+template bool js::NativeLookupOwnProperty<CanGC>(
+    JSContext* cx, HandleNativeObject obj, HandleId id,
+    MutableHandle<PropertyResult> propp);
 
-template bool
-js::NativeLookupOwnProperty<NoGC>(JSContext* cx, NativeObject* const& obj, const jsid& id,
-                                  FakeMutableHandle<PropertyResult> propp);
+template bool js::NativeLookupOwnProperty<NoGC>(
+    JSContext* cx, NativeObject* const& obj, const jsid& id,
+    FakeMutableHandle<PropertyResult> propp);
 
 
 
-static MOZ_ALWAYS_INLINE bool
-CallAddPropertyHook(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue value)
-{
-    JSAddPropertyOp addProperty = obj->getClass()->getAddProperty();
-    if (MOZ_UNLIKELY(addProperty)) {
-        MOZ_ASSERT(!cx->helperThread());
+static MOZ_ALWAYS_INLINE bool CallAddPropertyHook(JSContext* cx,
+                                                  HandleNativeObject obj,
+                                                  HandleId id,
+                                                  HandleValue value) {
+  JSAddPropertyOp addProperty = obj->getClass()->getAddProperty();
+  if (MOZ_UNLIKELY(addProperty)) {
+    MOZ_ASSERT(!cx->helperThread());
 
-        if (!CallJSAddPropertyOp(cx, addProperty, obj, id, value)) {
-            NativeObject::removeProperty(cx, obj, id);
-            return false;
-        }
+    if (!CallJSAddPropertyOp(cx, addProperty, obj, id, value)) {
+      NativeObject::removeProperty(cx, obj, id);
+      return false;
+    }
+  }
+  return true;
+}
+
+static MOZ_ALWAYS_INLINE bool CallAddPropertyHookDense(JSContext* cx,
+                                                       HandleNativeObject obj,
+                                                       uint32_t index,
+                                                       HandleValue value) {
+  
+  if (obj->is<ArrayObject>()) {
+    ArrayObject* arr = &obj->as<ArrayObject>();
+    uint32_t length = arr->length();
+    if (index >= length) {
+      arr->setLength(cx, index + 1);
     }
     return true;
-}
+  }
 
-static MOZ_ALWAYS_INLINE bool
-CallAddPropertyHookDense(JSContext* cx, HandleNativeObject obj, uint32_t index,
-                         HandleValue value)
-{
-    
-    if (obj->is<ArrayObject>()) {
-        ArrayObject* arr = &obj->as<ArrayObject>();
-        uint32_t length = arr->length();
-        if (index >= length) {
-            arr->setLength(cx, index + 1);
-        }
-        return true;
+  JSAddPropertyOp addProperty = obj->getClass()->getAddProperty();
+  if (MOZ_UNLIKELY(addProperty)) {
+    MOZ_ASSERT(!cx->helperThread());
+
+    if (!obj->maybeCopyElementsForWrite(cx)) {
+      return false;
     }
 
-    JSAddPropertyOp addProperty = obj->getClass()->getAddProperty();
-    if (MOZ_UNLIKELY(addProperty)) {
-        MOZ_ASSERT(!cx->helperThread());
-
-        if (!obj->maybeCopyElementsForWrite(cx)) {
-            return false;
-        }
-
-        RootedId id(cx, INT_TO_JSID(index));
-        if (!CallJSAddPropertyOp(cx, addProperty, obj, id, value)) {
-            obj->setDenseElementHole(cx, index);
-            return false;
-        }
+    RootedId id(cx, INT_TO_JSID(index));
+    if (!CallJSAddPropertyOp(cx, addProperty, obj, id, value)) {
+      obj->setDenseElementHole(cx, index);
+      return false;
     }
-    return true;
+  }
+  return true;
 }
 
 
@@ -1262,50 +1216,17 @@ CallAddPropertyHookDense(JSContext* cx, HandleNativeObject obj, uint32_t index,
 
 
 
-static bool
-WouldDefinePastNonwritableLength(ArrayObject* arr, uint32_t index)
-{
-    return !arr->lengthIsWritable() && index >= arr->length();
+static bool WouldDefinePastNonwritableLength(ArrayObject* arr, uint32_t index) {
+  return !arr->lengthIsWritable() && index >= arr->length();
 }
 
-static MOZ_ALWAYS_INLINE void
-UpdateShapeTypeAndValue(JSContext* cx, NativeObject* obj, Shape* shape, jsid id,
-                        const Value& value)
-{
-    MOZ_ASSERT(id == shape->propid());
+static MOZ_ALWAYS_INLINE void UpdateShapeTypeAndValue(JSContext* cx,
+                                                      NativeObject* obj,
+                                                      Shape* shape, jsid id,
+                                                      const Value& value) {
+  MOZ_ASSERT(id == shape->propid());
 
-    if (shape->isDataProperty()) {
-        obj->setSlotWithType(cx, shape, value,  false);
-
-        
-        
-        
-        AutoSweepObjectGroup sweep(obj->groupRaw());
-        if (TypeNewScript* newScript = obj->groupRaw()->newScript(sweep)) {
-            if (newScript->initializedShape() == shape) {
-                obj->setGroup(newScript->initializedGroup());
-            }
-        }
-    } else {
-        MarkTypePropertyNonData(cx, obj, id);
-    }
-    if (!shape->writable()) {
-        MarkTypePropertyNonWritable(cx, obj, id);
-    }
-}
-
-
-static MOZ_ALWAYS_INLINE void
-UpdateShapeTypeAndValueForWritableDataProp(JSContext* cx, NativeObject* obj, Shape* shape,
-                                           jsid id, const Value& value)
-{
-    MOZ_ASSERT(id == shape->propid());
-
-    MOZ_ASSERT(shape->isDataProperty());
-    MOZ_ASSERT(shape->hasDefaultGetter());
-    MOZ_ASSERT(shape->hasDefaultSetter());
-    MOZ_ASSERT(shape->writable());
-
+  if (shape->isDataProperty()) {
     obj->setSlotWithType(cx, shape, value,  false);
 
     
@@ -1313,118 +1234,147 @@ UpdateShapeTypeAndValueForWritableDataProp(JSContext* cx, NativeObject* obj, Sha
     
     AutoSweepObjectGroup sweep(obj->groupRaw());
     if (TypeNewScript* newScript = obj->groupRaw()->newScript(sweep)) {
-        if (newScript->initializedShape() == shape) {
-            obj->setGroup(newScript->initializedGroup());
-        }
+      if (newScript->initializedShape() == shape) {
+        obj->setGroup(newScript->initializedGroup());
+      }
     }
+  } else {
+    MarkTypePropertyNonData(cx, obj, id);
+  }
+  if (!shape->writable()) {
+    MarkTypePropertyNonWritable(cx, obj, id);
+  }
 }
 
-void
-js::AddPropertyTypesAfterProtoChange(JSContext* cx, NativeObject* obj, ObjectGroup* oldGroup)
-{
-    AutoSweepObjectGroup sweepObjGroup(obj->group());
-    MOZ_ASSERT(obj->group() != oldGroup);
-    MOZ_ASSERT(!obj->group()->unknownProperties(sweepObjGroup));
 
-    
-    AutoSweepObjectGroup sweepOldGroup(oldGroup);
-    MarkObjectGroupFlags(cx, obj, oldGroup->flags(sweepOldGroup) &
-                         (OBJECT_FLAG_DYNAMIC_MASK & ~OBJECT_FLAG_UNKNOWN_PROPERTIES));
+static MOZ_ALWAYS_INLINE void UpdateShapeTypeAndValueForWritableDataProp(
+    JSContext* cx, NativeObject* obj, Shape* shape, jsid id,
+    const Value& value) {
+  MOZ_ASSERT(id == shape->propid());
 
-    
-    
-    static const size_t MaxPropertyCount = 40;
+  MOZ_ASSERT(shape->isDataProperty());
+  MOZ_ASSERT(shape->hasDefaultGetter());
+  MOZ_ASSERT(shape->hasDefaultSetter());
+  MOZ_ASSERT(shape->writable());
 
-    size_t nprops = obj->getDenseInitializedLength();
-    if (nprops > MaxPropertyCount) {
-        MarkObjectGroupUnknownProperties(cx, obj->group());
-        return;
+  obj->setSlotWithType(cx, shape, value,  false);
+
+  
+  
+  
+  AutoSweepObjectGroup sweep(obj->groupRaw());
+  if (TypeNewScript* newScript = obj->groupRaw()->newScript(sweep)) {
+    if (newScript->initializedShape() == shape) {
+      obj->setGroup(newScript->initializedGroup());
     }
-
-    
-    for (size_t i = 0; i < obj->getDenseInitializedLength(); i++) {
-        Value val = obj->getDenseElement(i);
-        if (!val.isMagic(JS_ELEMENTS_HOLE)) {
-            AddTypePropertyId(cx, obj, JSID_VOID, val);
-        }
-    }
-
-    
-    for (Shape::Range<NoGC> r(obj->lastProperty()); !r.empty(); r.popFront()) {
-        Shape* shape = &r.front();
-        jsid id = shape->propid();
-        if (JSID_IS_EMPTY(id)) {
-            continue;
-        }
-
-        if (nprops++ > MaxPropertyCount) {
-            MarkObjectGroupUnknownProperties(cx, obj->group());
-            return;
-        }
-
-        Value val = shape->isDataProperty() ? obj->getSlot(shape->slot()) : UndefinedValue();
-        UpdateShapeTypeAndValue(cx, obj, shape, id, val);
-    }
+  }
 }
 
-static bool
-PurgeProtoChain(JSContext* cx, JSObject* objArg, HandleId id)
-{
-    
-    RootedObject obj(cx, objArg);
+void js::AddPropertyTypesAfterProtoChange(JSContext* cx, NativeObject* obj,
+                                          ObjectGroup* oldGroup) {
+  AutoSweepObjectGroup sweepObjGroup(obj->group());
+  MOZ_ASSERT(obj->group() != oldGroup);
+  MOZ_ASSERT(!obj->group()->unknownProperties(sweepObjGroup));
 
-    RootedShape shape(cx);
-    while (obj) {
-        
-        if (!obj->isNative()) {
-            break;
-        }
+  
+  AutoSweepObjectGroup sweepOldGroup(oldGroup);
+  MarkObjectGroupFlags(
+      cx, obj,
+      oldGroup->flags(sweepOldGroup) &
+          (OBJECT_FLAG_DYNAMIC_MASK & ~OBJECT_FLAG_UNKNOWN_PROPERTIES));
 
-        shape = obj->as<NativeObject>().lookup(cx, id);
-        if (shape) {
-            return NativeObject::reshapeForShadowedProp(cx, obj.as<NativeObject>());
-        }
+  
+  
+  static const size_t MaxPropertyCount = 40;
 
-        obj = obj->staticPrototype();
+  size_t nprops = obj->getDenseInitializedLength();
+  if (nprops > MaxPropertyCount) {
+    MarkObjectGroupUnknownProperties(cx, obj->group());
+    return;
+  }
+
+  
+  for (size_t i = 0; i < obj->getDenseInitializedLength(); i++) {
+    Value val = obj->getDenseElement(i);
+    if (!val.isMagic(JS_ELEMENTS_HOLE)) {
+      AddTypePropertyId(cx, obj, JSID_VOID, val);
+    }
+  }
+
+  
+  for (Shape::Range<NoGC> r(obj->lastProperty()); !r.empty(); r.popFront()) {
+    Shape* shape = &r.front();
+    jsid id = shape->propid();
+    if (JSID_IS_EMPTY(id)) {
+      continue;
     }
 
+    if (nprops++ > MaxPropertyCount) {
+      MarkObjectGroupUnknownProperties(cx, obj->group());
+      return;
+    }
+
+    Value val = shape->isDataProperty() ? obj->getSlot(shape->slot())
+                                        : UndefinedValue();
+    UpdateShapeTypeAndValue(cx, obj, shape, id, val);
+  }
+}
+
+static bool PurgeProtoChain(JSContext* cx, JSObject* objArg, HandleId id) {
+  
+  RootedObject obj(cx, objArg);
+
+  RootedShape shape(cx);
+  while (obj) {
+    
+    if (!obj->isNative()) {
+      break;
+    }
+
+    shape = obj->as<NativeObject>().lookup(cx, id);
+    if (shape) {
+      return NativeObject::reshapeForShadowedProp(cx, obj.as<NativeObject>());
+    }
+
+    obj = obj->staticPrototype();
+  }
+
+  return true;
+}
+
+static bool PurgeEnvironmentChainHelper(JSContext* cx, HandleObject objArg,
+                                        HandleId id) {
+  
+  RootedObject obj(cx, objArg);
+
+  MOZ_ASSERT(obj->isNative());
+  MOZ_ASSERT(obj->isDelegate());
+
+  
+  if (JSID_IS_INT(id)) {
     return true;
-}
+  }
 
-static bool
-PurgeEnvironmentChainHelper(JSContext* cx, HandleObject objArg, HandleId id)
-{
-    
-    RootedObject obj(cx, objArg);
+  if (!PurgeProtoChain(cx, obj->staticPrototype(), id)) {
+    return false;
+  }
 
-    MOZ_ASSERT(obj->isNative());
-    MOZ_ASSERT(obj->isDelegate());
+  
 
-    
-    if (JSID_IS_INT(id)) {
-        return true;
-    }
 
-    if (!PurgeProtoChain(cx, obj->staticPrototype(), id)) {
+
+
+
+
+  if (obj->is<CallObject>()) {
+    while ((obj = obj->enclosingEnvironment()) != nullptr) {
+      if (!PurgeProtoChain(cx, obj, id)) {
         return false;
+      }
     }
+  }
 
-    
-
-
-
-
-
-
-    if (obj->is<CallObject>()) {
-        while ((obj = obj->enclosingEnvironment()) != nullptr) {
-            if (!PurgeProtoChain(cx, obj, id)) {
-                return false;
-            }
-        }
-    }
-
-    return true;
+  return true;
 }
 
 
@@ -1434,999 +1384,983 @@ PurgeEnvironmentChainHelper(JSContext* cx, HandleObject objArg, HandleId id)
 
 
 
-static MOZ_ALWAYS_INLINE bool
-ReshapeForShadowedProp(JSContext* cx, HandleObject obj, HandleId id)
-{
-    if (obj->isDelegate() && obj->isNative()) {
-        return PurgeEnvironmentChainHelper(cx, obj, id);
-    }
-    return true;
+static MOZ_ALWAYS_INLINE bool ReshapeForShadowedProp(JSContext* cx,
+                                                     HandleObject obj,
+                                                     HandleId id) {
+  if (obj->isDelegate() && obj->isNative()) {
+    return PurgeEnvironmentChainHelper(cx, obj, id);
+  }
+  return true;
 }
 
- bool
-NativeObject::reshapeForShadowedProp(JSContext* cx, HandleNativeObject obj)
-{
-    return generateOwnShape(cx, obj);
+ bool NativeObject::reshapeForShadowedProp(JSContext* cx,
+                                                       HandleNativeObject obj) {
+  return generateOwnShape(cx, obj);
 }
 
- bool
-NativeObject::reshapeForProtoMutation(JSContext* cx, HandleNativeObject obj)
-{
-    return generateOwnShape(cx, obj);
+ bool NativeObject::reshapeForProtoMutation(
+    JSContext* cx, HandleNativeObject obj) {
+  return generateOwnShape(cx, obj);
 }
 
 enum class IsAddOrChange { Add, AddOrChange };
 
 template <IsAddOrChange AddOrChange>
-static MOZ_ALWAYS_INLINE bool
-AddOrChangeProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                    Handle<PropertyDescriptor> desc)
-{
-    desc.assertComplete();
+static MOZ_ALWAYS_INLINE bool AddOrChangeProperty(
+    JSContext* cx, HandleNativeObject obj, HandleId id,
+    Handle<PropertyDescriptor> desc) {
+  desc.assertComplete();
 
-    if (!ReshapeForShadowedProp(cx, obj, id)) {
+  if (!ReshapeForShadowedProp(cx, obj, id)) {
+    return false;
+  }
+
+  
+  if (JSID_IS_INT(id) && !desc.getter() && !desc.setter() &&
+      desc.attributes() == JSPROP_ENUMERATE &&
+      (!obj->isIndexed() || !obj->containsPure(id)) &&
+      !obj->is<TypedArrayObject>()) {
+    uint32_t index = JSID_TO_INT(id);
+    DenseElementResult edResult = obj->ensureDenseElements(cx, index, 1);
+    if (edResult == DenseElementResult::Failure) {
+      return false;
+    }
+    if (edResult == DenseElementResult::Success) {
+      obj->setDenseElementWithType(cx, index, desc.value());
+      if (!CallAddPropertyHookDense(cx, obj, index, desc.value())) {
         return false;
+      }
+      return true;
     }
+  }
 
-    
-    if (JSID_IS_INT(id) &&
-        !desc.getter() &&
-        !desc.setter() &&
-        desc.attributes() == JSPROP_ENUMERATE &&
-        (!obj->isIndexed() || !obj->containsPure(id)) &&
-        !obj->is<TypedArrayObject>())
-    {
-        uint32_t index = JSID_TO_INT(id);
-        DenseElementResult edResult = obj->ensureDenseElements(cx, index, 1);
-        if (edResult == DenseElementResult::Failure) {
-            return false;
-        }
-        if (edResult == DenseElementResult::Success) {
-            obj->setDenseElementWithType(cx, index, desc.value());
-            if (!CallAddPropertyHookDense(cx, obj, index, desc.value())) {
-                return false;
-            }
-            return true;
-        }
-    }
-
-    
-    
-    Shape* shape;
-    if (AddOrChange == IsAddOrChange::Add) {
-        if (Shape::isDataProperty(desc.attributes(), desc.getter(), desc.setter())) {
-            shape = NativeObject::addDataProperty(cx, obj, id, SHAPE_INVALID_SLOT,
-                                                  desc.attributes());
-        } else {
-            shape = NativeObject::addAccessorProperty(cx, obj, id, desc.getter(), desc.setter(),
-                                                      desc.attributes());
-        }
+  
+  
+  Shape* shape;
+  if (AddOrChange == IsAddOrChange::Add) {
+    if (Shape::isDataProperty(desc.attributes(), desc.getter(),
+                              desc.setter())) {
+      shape = NativeObject::addDataProperty(cx, obj, id, SHAPE_INVALID_SLOT,
+                                            desc.attributes());
     } else {
-        if (Shape::isDataProperty(desc.attributes(), desc.getter(), desc.setter())) {
-            shape = NativeObject::putDataProperty(cx, obj, id, desc.attributes());
-        } else {
-            shape = NativeObject::putAccessorProperty(cx, obj, id, desc.getter(), desc.setter(),
-                                                      desc.attributes());
-        }
+      shape = NativeObject::addAccessorProperty(
+          cx, obj, id, desc.getter(), desc.setter(), desc.attributes());
     }
-    if (!shape) {
-        return false;
+  } else {
+    if (Shape::isDataProperty(desc.attributes(), desc.getter(),
+                              desc.setter())) {
+      shape = NativeObject::putDataProperty(cx, obj, id, desc.attributes());
+    } else {
+      shape = NativeObject::putAccessorProperty(
+          cx, obj, id, desc.getter(), desc.setter(), desc.attributes());
     }
+  }
+  if (!shape) {
+    return false;
+  }
 
-    UpdateShapeTypeAndValue(cx, obj, shape, id, desc.value());
+  UpdateShapeTypeAndValue(cx, obj, shape, id, desc.value());
 
-    
-    
-    if (JSID_IS_INT(id)) {
-        if (!obj->maybeCopyElementsForWrite(cx)) {
-            return false;
-        }
-
-        uint32_t index = JSID_TO_INT(id);
-        obj->removeDenseElementForSparseIndex(cx, index);
-        DenseElementResult edResult =
-            NativeObject::maybeDensifySparseElements(cx, obj);
-        if (edResult == DenseElementResult::Failure) {
-            return false;
-        }
-        if (edResult == DenseElementResult::Success) {
-            MOZ_ASSERT(!desc.setter());
-            return CallAddPropertyHookDense(cx, obj, index, desc.value());
-        }
+  
+  
+  if (JSID_IS_INT(id)) {
+    if (!obj->maybeCopyElementsForWrite(cx)) {
+      return false;
     }
 
-    return CallAddPropertyHook(cx, obj, id, desc.value());
+    uint32_t index = JSID_TO_INT(id);
+    obj->removeDenseElementForSparseIndex(cx, index);
+    DenseElementResult edResult =
+        NativeObject::maybeDensifySparseElements(cx, obj);
+    if (edResult == DenseElementResult::Failure) {
+      return false;
+    }
+    if (edResult == DenseElementResult::Success) {
+      MOZ_ASSERT(!desc.setter());
+      return CallAddPropertyHookDense(cx, obj, index, desc.value());
+    }
+  }
+
+  return CallAddPropertyHook(cx, obj, id, desc.value());
 }
 
 
 
 
-static MOZ_ALWAYS_INLINE bool
-AddDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue v)
-{
-    MOZ_ASSERT(!JSID_IS_INT(id));
+static MOZ_ALWAYS_INLINE bool AddDataProperty(JSContext* cx,
+                                              HandleNativeObject obj,
+                                              HandleId id, HandleValue v) {
+  MOZ_ASSERT(!JSID_IS_INT(id));
 
-    if (!ReshapeForShadowedProp(cx, obj, id)) {
-        return false;
-    }
+  if (!ReshapeForShadowedProp(cx, obj, id)) {
+    return false;
+  }
 
-    Shape* shape = NativeObject::addEnumerableDataProperty(cx, obj, id);
-    if (!shape) {
-        return false;
-    }
+  Shape* shape = NativeObject::addEnumerableDataProperty(cx, obj, id);
+  if (!shape) {
+    return false;
+  }
 
-    UpdateShapeTypeAndValueForWritableDataProp(cx, obj, shape, id, v);
+  UpdateShapeTypeAndValueForWritableDataProp(cx, obj, shape, id, v);
 
-    return CallAddPropertyHook(cx, obj, id, v);
+  return CallAddPropertyHook(cx, obj, id, v);
 }
 
-static MOZ_ALWAYS_INLINE bool
-AddDataPropertyNonDelegate(JSContext* cx, HandlePlainObject obj, HandleId id, HandleValue v)
-{
-    MOZ_ASSERT(!JSID_IS_INT(id));
-    MOZ_ASSERT(!obj->isDelegate());
+static MOZ_ALWAYS_INLINE bool AddDataPropertyNonDelegate(JSContext* cx,
+                                                         HandlePlainObject obj,
+                                                         HandleId id,
+                                                         HandleValue v) {
+  MOZ_ASSERT(!JSID_IS_INT(id));
+  MOZ_ASSERT(!obj->isDelegate());
 
-    
-    
-    Shape* shape = NativeObject::addEnumerableDataProperty(cx, obj, id);
-    if (!shape) {
-        return false;
-    }
+  
+  
+  Shape* shape = NativeObject::addEnumerableDataProperty(cx, obj, id);
+  if (!shape) {
+    return false;
+  }
 
-    UpdateShapeTypeAndValueForWritableDataProp(cx, obj, shape, id, v);
+  UpdateShapeTypeAndValueForWritableDataProp(cx, obj, shape, id, v);
 
-    MOZ_ASSERT(!obj->getClass()->getAddProperty());
-    return true;
+  MOZ_ASSERT(!obj->getClass()->getAddProperty());
+  return true;
 }
 
-static bool IsConfigurable(unsigned attrs) { return (attrs & JSPROP_PERMANENT) == 0; }
-static bool IsEnumerable(unsigned attrs) { return (attrs & JSPROP_ENUMERATE) != 0; }
-static bool IsWritable(unsigned attrs) { return (attrs & JSPROP_READONLY) == 0; }
+static bool IsConfigurable(unsigned attrs) {
+  return (attrs & JSPROP_PERMANENT) == 0;
+}
+static bool IsEnumerable(unsigned attrs) {
+  return (attrs & JSPROP_ENUMERATE) != 0;
+}
+static bool IsWritable(unsigned attrs) {
+  return (attrs & JSPROP_READONLY) == 0;
+}
 
 static bool IsAccessorDescriptor(unsigned attrs) {
-    return (attrs & (JSPROP_GETTER | JSPROP_SETTER)) != 0;
+  return (attrs & (JSPROP_GETTER | JSPROP_SETTER)) != 0;
 }
 
 static bool IsDataDescriptor(unsigned attrs) {
-    MOZ_ASSERT((attrs & (JSPROP_IGNORE_VALUE | JSPROP_IGNORE_READONLY)) == 0);
-    return !IsAccessorDescriptor(attrs);
+  MOZ_ASSERT((attrs & (JSPROP_IGNORE_VALUE | JSPROP_IGNORE_READONLY)) == 0);
+  return !IsAccessorDescriptor(attrs);
 }
 
 template <AllowGC allowGC>
-static MOZ_ALWAYS_INLINE bool
-GetExistingProperty(JSContext* cx,
-                    typename MaybeRooted<Value, allowGC>::HandleType receiver,
-                    typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
-                    typename MaybeRooted<Shape*, allowGC>::HandleType shape,
-                    typename MaybeRooted<Value, allowGC>::MutableHandleType vp);
+static MOZ_ALWAYS_INLINE bool GetExistingProperty(
+    JSContext* cx, typename MaybeRooted<Value, allowGC>::HandleType receiver,
+    typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
+    typename MaybeRooted<Shape*, allowGC>::HandleType shape,
+    typename MaybeRooted<Value, allowGC>::MutableHandleType vp);
 
-static bool
-GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj, HandleId id,
-                         Handle<PropertyResult> prop, MutableHandleValue vp)
-{
-    if (prop.isDenseOrTypedArrayElement()) {
-        vp.set(obj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
-        return true;
-    }
-    MOZ_ASSERT(!cx->helperThread());
+static bool GetExistingPropertyValue(JSContext* cx, HandleNativeObject obj,
+                                     HandleId id, Handle<PropertyResult> prop,
+                                     MutableHandleValue vp) {
+  if (prop.isDenseOrTypedArrayElement()) {
+    vp.set(obj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
+    return true;
+  }
+  MOZ_ASSERT(!cx->helperThread());
 
-    MOZ_ASSERT(prop.shape()->propid() == id);
-    MOZ_ASSERT(obj->contains(cx, prop.shape()));
+  MOZ_ASSERT(prop.shape()->propid() == id);
+  MOZ_ASSERT(obj->contains(cx, prop.shape()));
 
-    RootedValue receiver(cx, ObjectValue(*obj));
-    RootedShape shape(cx, prop.shape());
-    return GetExistingProperty<CanGC>(cx, receiver, obj, shape, vp);
+  RootedValue receiver(cx, ObjectValue(*obj));
+  RootedShape shape(cx, prop.shape());
+  return GetExistingProperty<CanGC>(cx, receiver, obj, shape, vp);
 }
 
 
 
 
 
-static bool
-DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj, HandleId id,
-                          Handle<PropertyResult> prop, unsigned shapeAttrs,
-                          Handle<PropertyDescriptor> desc, bool *redundant)
-{
-    *redundant = false;
+static bool DefinePropertyIsRedundant(JSContext* cx, HandleNativeObject obj,
+                                      HandleId id, Handle<PropertyResult> prop,
+                                      unsigned shapeAttrs,
+                                      Handle<PropertyDescriptor> desc,
+                                      bool* redundant) {
+  *redundant = false;
 
-    if (desc.hasConfigurable() && desc.configurable() != IsConfigurable(shapeAttrs)) {
+  if (desc.hasConfigurable() &&
+      desc.configurable() != IsConfigurable(shapeAttrs)) {
+    return true;
+  }
+  if (desc.hasEnumerable() && desc.enumerable() != IsEnumerable(shapeAttrs)) {
+    return true;
+  }
+  if (desc.isDataDescriptor()) {
+    if (IsAccessorDescriptor(shapeAttrs)) {
+      return true;
+    }
+    if (desc.hasWritable() && desc.writable() != IsWritable(shapeAttrs)) {
+      return true;
+    }
+    if (desc.hasValue()) {
+      
+      RootedValue currentValue(cx);
+      if (!prop.isDenseOrTypedArrayElement() &&
+          prop.shape()->isDataProperty()) {
+        
+        
+        
+        currentValue.set(obj->getSlot(prop.shape()->slot()));
+      } else {
+        if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
+          return false;
+        }
+      }
+
+      
+      
+      if (desc.value() != currentValue) {
         return true;
+      }
+    }
+
+    GetterOp existingGetterOp =
+        prop.isDenseOrTypedArrayElement() ? nullptr : prop.shape()->getter();
+    if (desc.getter() != existingGetterOp) {
+      return true;
+    }
+
+    SetterOp existingSetterOp =
+        prop.isDenseOrTypedArrayElement() ? nullptr : prop.shape()->setter();
+    if (desc.setter() != existingSetterOp) {
+      return true;
+    }
+  } else {
+    if (desc.hasGetterObject() &&
+        (!(shapeAttrs & JSPROP_GETTER) ||
+         desc.getterObject() != prop.shape()->getterObject())) {
+      return true;
+    }
+    if (desc.hasSetterObject() &&
+        (!(shapeAttrs & JSPROP_SETTER) ||
+         desc.setterObject() != prop.shape()->setterObject())) {
+      return true;
+    }
+  }
+
+  *redundant = true;
+  return true;
+}
+
+bool js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj,
+                              HandleId id, Handle<PropertyDescriptor> desc_,
+                              ObjectOpResult& result) {
+  desc_.assertValid();
+
+  
+  
+  
+  
+  
+  
+
+  
+  if (obj->is<ArrayObject>()) {
+    
+    Rooted<ArrayObject*> arr(cx, &obj->as<ArrayObject>());
+    if (id == NameToId(cx->names().length)) {
+      
+      if (desc_.isAccessorDescriptor()) {
+        return result.fail(JSMSG_CANT_REDEFINE_PROP);
+      }
+
+      MOZ_ASSERT(!cx->helperThread());
+      return ArraySetLength(cx, arr, id, desc_.attributes(), desc_.value(),
+                            result);
+    }
+
+    
+    uint32_t index;
+    if (IdIsIndex(id, &index)) {
+      if (WouldDefinePastNonwritableLength(arr, index)) {
+        return result.fail(JSMSG_CANT_DEFINE_PAST_ARRAY_LENGTH);
+      }
+    }
+  } else if (obj->is<TypedArrayObject>()) {
+    
+    uint64_t index;
+    if (IsTypedArrayIndex(id, &index)) {
+      MOZ_ASSERT(!cx->helperThread());
+      return DefineTypedArrayElement(cx, obj, index, desc_, result);
+    }
+  } else if (obj->is<ArgumentsObject>()) {
+    Rooted<ArgumentsObject*> argsobj(cx, &obj->as<ArgumentsObject>());
+    if (id == NameToId(cx->names().length)) {
+      
+      
+      
+      
+      
+      if ((desc_.attributes() & JSPROP_RESOLVING) == 0) {
+        if (!ArgumentsObject::reifyLength(cx, argsobj)) {
+          return false;
+        }
+      }
+    } else if (JSID_IS_SYMBOL(id) &&
+               JSID_TO_SYMBOL(id) == cx->wellKnownSymbols().iterator) {
+      
+      if ((desc_.attributes() & JSPROP_RESOLVING) == 0) {
+        if (!ArgumentsObject::reifyIterator(cx, argsobj)) {
+          return false;
+        }
+      }
+    } else if (JSID_IS_INT(id)) {
+      if ((desc_.attributes() & JSPROP_RESOLVING) == 0) {
+        argsobj->markElementOverridden();
+      }
+    }
+  }
+
+  
+  Rooted<PropertyResult> prop(cx);
+  if (desc_.attributes() & JSPROP_RESOLVING) {
+    
+    
+    
+    NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop);
+  } else {
+    if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
+      return false;
+    }
+  }
+
+  
+  
+  
+
+  
+  
+  
+  
+  Rooted<PropertyDescriptor> desc(cx, desc_);
+
+  
+  if (!prop) {
+    if (!obj->isExtensible()) {
+      return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
+    }
+
+    
+    CompletePropertyDescriptor(&desc);
+
+    if (!AddOrChangeProperty<IsAddOrChange::Add>(cx, obj, id, desc)) {
+      return false;
+    }
+    return result.succeed();
+  }
+
+  
+  
+  
+  unsigned shapeAttrs = GetPropertyAttributes(obj, prop);
+  bool redundant;
+  if (!DefinePropertyIsRedundant(cx, obj, id, prop, shapeAttrs, desc,
+                                 &redundant)) {
+    return false;
+  }
+  if (redundant) {
+    
+    
+    
+    
+    if (!prop.isDenseOrTypedArrayElement() && desc.hasValue()) {
+      UpdateShapeTypeAndValue(cx, obj, prop.shape(), id, desc.value());
+    }
+    return result.succeed();
+  }
+
+  
+  if (!IsConfigurable(shapeAttrs)) {
+    if (desc.hasConfigurable() && desc.configurable()) {
+      return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
     if (desc.hasEnumerable() && desc.enumerable() != IsEnumerable(shapeAttrs)) {
-        return true;
+      return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
-    if (desc.isDataDescriptor()) {
-        if (IsAccessorDescriptor(shapeAttrs)) {
-            return true;
-        }
-        if (desc.hasWritable() && desc.writable() != IsWritable(shapeAttrs)) {
-            return true;
-        }
-        if (desc.hasValue()) {
-            
-            RootedValue currentValue(cx);
-            if (!prop.isDenseOrTypedArrayElement() &&
-                prop.shape()->isDataProperty())
-            {
-                
-                
-                
-                currentValue.set(obj->getSlot(prop.shape()->slot()));
-            } else {
-                if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
-                    return false;
-                }
-            }
+  }
 
-            
-            
-            if (desc.value() != currentValue) {
-                return true;
-            }
-        }
+  
+  if (!desc.hasConfigurable()) {
+    desc.setConfigurable(IsConfigurable(shapeAttrs));
+  }
+  if (!desc.hasEnumerable()) {
+    desc.setEnumerable(IsEnumerable(shapeAttrs));
+  }
 
-        GetterOp existingGetterOp =
-            prop.isDenseOrTypedArrayElement() ? nullptr : prop.shape()->getter();
-        if (desc.getter() != existingGetterOp) {
-            return true;
-        }
-
-        SetterOp existingSetterOp =
-            prop.isDenseOrTypedArrayElement() ? nullptr : prop.shape()->setter();
-        if (desc.setter() != existingSetterOp) {
-            return true;
-        }
-    } else {
-        if (desc.hasGetterObject() &&
-            (!(shapeAttrs & JSPROP_GETTER) || desc.getterObject() != prop.shape()->getterObject()))
-        {
-            return true;
-        }
-        if (desc.hasSetterObject() &&
-            (!(shapeAttrs & JSPROP_SETTER) || desc.setterObject() != prop.shape()->setterObject()))
-        {
-            return true;
-        }
-    }
-
-    *redundant = true;
-    return true;
-}
-
-bool
-js::NativeDefineProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                         Handle<PropertyDescriptor> desc_,
-                         ObjectOpResult& result)
-{
-    desc_.assertValid();
-
-    
-    
-    
-    
-    
-    
-
-    
-    if (obj->is<ArrayObject>()) {
-        
-        Rooted<ArrayObject*> arr(cx, &obj->as<ArrayObject>());
-        if (id == NameToId(cx->names().length)) {
-            
-            if (desc_.isAccessorDescriptor()) {
-                return result.fail(JSMSG_CANT_REDEFINE_PROP);
-            }
-
-            MOZ_ASSERT(!cx->helperThread());
-            return ArraySetLength(cx, arr, id, desc_.attributes(), desc_.value(), result);
-        }
-
-        
-        uint32_t index;
-        if (IdIsIndex(id, &index)) {
-            if (WouldDefinePastNonwritableLength(arr, index)) {
-                return result.fail(JSMSG_CANT_DEFINE_PAST_ARRAY_LENGTH);
-            }
-        }
-    } else if (obj->is<TypedArrayObject>()) {
-        
-        uint64_t index;
-        if (IsTypedArrayIndex(id, &index)) {
-            MOZ_ASSERT(!cx->helperThread());
-            return DefineTypedArrayElement(cx, obj, index, desc_, result);
-        }
-    } else if (obj->is<ArgumentsObject>()) {
-        Rooted<ArgumentsObject*> argsobj(cx, &obj->as<ArgumentsObject>());
-        if (id == NameToId(cx->names().length)) {
-            
-            
-            
-            
-            
-            if ((desc_.attributes() & JSPROP_RESOLVING) == 0) {
-                if (!ArgumentsObject::reifyLength(cx, argsobj)) {
-                    return false;
-                }
-            }
-        } else if (JSID_IS_SYMBOL(id) && JSID_TO_SYMBOL(id) == cx->wellKnownSymbols().iterator) {
-            
-            if ((desc_.attributes() & JSPROP_RESOLVING) == 0) {
-                if (!ArgumentsObject::reifyIterator(cx, argsobj)) {
-                    return false;
-                }
-            }
-        } else if (JSID_IS_INT(id)) {
-            if ((desc_.attributes() & JSPROP_RESOLVING) == 0) {
-                argsobj->markElementOverridden();
-            }
-        }
-    }
-
-    
-    Rooted<PropertyResult> prop(cx);
-    if (desc_.attributes() & JSPROP_RESOLVING) {
-        
-        
-        
-        NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop);
-    } else {
-        if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
-            return false;
-        }
-    }
-
-    
-    
+  
+  if (desc.isGenericDescriptor()) {
     
 
     
     
-    
-    
-    Rooted<PropertyDescriptor> desc(cx, desc_);
-
-    
-    if (!prop) {
-        if (!obj->isExtensible()) {
-            return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
-        }
-
-        
-        CompletePropertyDescriptor(&desc);
-
-        if (!AddOrChangeProperty<IsAddOrChange::Add>(cx, obj, id, desc)) {
-            return false;
-        }
-        return result.succeed();
-    }
-
-    
-    
-    
-    unsigned shapeAttrs = GetPropertyAttributes(obj, prop);
-    bool redundant;
-    if (!DefinePropertyIsRedundant(cx, obj, id, prop, shapeAttrs, desc, &redundant)) {
+    MOZ_ASSERT(!desc.hasValue());
+    MOZ_ASSERT(!desc.hasWritable());
+    MOZ_ASSERT(!desc.hasGetterObject());
+    MOZ_ASSERT(!desc.hasSetterObject());
+    if (IsDataDescriptor(shapeAttrs)) {
+      RootedValue currentValue(cx);
+      if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
         return false;
+      }
+      desc.setValue(currentValue);
+      desc.setWritable(IsWritable(shapeAttrs));
+    } else {
+      desc.setGetterObject(prop.shape()->getterObject());
+      desc.setSetterObject(prop.shape()->setterObject());
     }
-    if (redundant) {
-        
-        
-        
-        
-        if (!prop.isDenseOrTypedArrayElement() && desc.hasValue()) {
-            UpdateShapeTypeAndValue(cx, obj, prop.shape(), id, desc.value());
-        }
-        return result.succeed();
-    }
-
+  } else if (desc.isDataDescriptor() != IsDataDescriptor(shapeAttrs)) {
     
     if (!IsConfigurable(shapeAttrs)) {
-        if (desc.hasConfigurable() && desc.configurable()) {
-            return result.fail(JSMSG_CANT_REDEFINE_PROP);
-        }
-        if (desc.hasEnumerable() && desc.enumerable() != IsEnumerable(shapeAttrs)) {
-            return result.fail(JSMSG_CANT_REDEFINE_PROP);
-        }
+      return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
 
     
-    if (!desc.hasConfigurable()) {
-        desc.setConfigurable(IsConfigurable(shapeAttrs));
+    CompletePropertyDescriptor(&desc);
+  } else if (desc.isDataDescriptor()) {
+    
+    bool frozen = !IsConfigurable(shapeAttrs) && !IsWritable(shapeAttrs);
+
+    
+    if (frozen && desc.hasWritable() && desc.writable()) {
+      return result.fail(JSMSG_CANT_REDEFINE_PROP);
     }
-    if (!desc.hasEnumerable()) {
-        desc.setEnumerable(IsEnumerable(shapeAttrs));
+
+    if (frozen || !desc.hasValue()) {
+      RootedValue currentValue(cx);
+      if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
+        return false;
+      }
+
+      if (!desc.hasValue()) {
+        
+        desc.setValue(currentValue);
+      } else {
+        
+        bool same;
+        MOZ_ASSERT(!cx->helperThread());
+        if (!SameValue(cx, desc.value(), currentValue, &same)) {
+          return false;
+        }
+        if (!same) {
+          return result.fail(JSMSG_CANT_REDEFINE_PROP);
+        }
+      }
     }
 
     
-    if (desc.isGenericDescriptor()) {
-        
+    if (frozen) {
+      return result.succeed();
+    }
 
-        
-        
-        MOZ_ASSERT(!desc.hasValue());
-        MOZ_ASSERT(!desc.hasWritable());
-        MOZ_ASSERT(!desc.hasGetterObject());
-        MOZ_ASSERT(!desc.hasSetterObject());
-        if (IsDataDescriptor(shapeAttrs)) {
-            RootedValue currentValue(cx);
-            if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
-                return false;
-            }
-            desc.setValue(currentValue);
-            desc.setWritable(IsWritable(shapeAttrs));
-        } else {
-            desc.setGetterObject(prop.shape()->getterObject());
-            desc.setSetterObject(prop.shape()->setterObject());
-        }
-    } else if (desc.isDataDescriptor() != IsDataDescriptor(shapeAttrs)) {
-        
-        if (!IsConfigurable(shapeAttrs)) {
-            return result.fail(JSMSG_CANT_REDEFINE_PROP);
-        }
+    
+    if (!desc.hasWritable()) {
+      desc.setWritable(IsWritable(shapeAttrs));
+    }
+  } else {
+    
+    MOZ_ASSERT(prop.shape()->isAccessorDescriptor());
+    MOZ_ASSERT(desc.isAccessorDescriptor());
 
-        
-        CompletePropertyDescriptor(&desc);
-    } else if (desc.isDataDescriptor()) {
-        
-        bool frozen = !IsConfigurable(shapeAttrs) && !IsWritable(shapeAttrs);
-
-        
-        if (frozen && desc.hasWritable() && desc.writable()) {
-            return result.fail(JSMSG_CANT_REDEFINE_PROP);
-        }
-
-        if (frozen || !desc.hasValue()) {
-            RootedValue currentValue(cx);
-            if (!GetExistingPropertyValue(cx, obj, id, prop, &currentValue)) {
-                return false;
-            }
-
-            if (!desc.hasValue()) {
-                
-                desc.setValue(currentValue);
-            } else {
-                
-                bool same;
-                MOZ_ASSERT(!cx->helperThread());
-                if (!SameValue(cx, desc.value(), currentValue, &same)) {
-                    return false;
-                }
-                if (!same) {
-                    return result.fail(JSMSG_CANT_REDEFINE_PROP);
-                }
-            }
-        }
-
-        
-        if (frozen) {
-            return result.succeed();
-        }
-
-        
-        if (!desc.hasWritable()) {
-            desc.setWritable(IsWritable(shapeAttrs));
-        }
+    
+    
+    if (desc.hasSetterObject()) {
+      
+      if (!IsConfigurable(shapeAttrs) &&
+          desc.setterObject() != prop.shape()->setterObject()) {
+        return result.fail(JSMSG_CANT_REDEFINE_PROP);
+      }
     } else {
-        
-        MOZ_ASSERT(prop.shape()->isAccessorDescriptor());
-        MOZ_ASSERT(desc.isAccessorDescriptor());
-
-        
-        
-        if (desc.hasSetterObject()) {
-            
-            if (!IsConfigurable(shapeAttrs) &&
-                desc.setterObject() != prop.shape()->setterObject())
-            {
-                return result.fail(JSMSG_CANT_REDEFINE_PROP);
-            }
-        } else {
-            
-            desc.setSetterObject(prop.shape()->setterObject());
-        }
-        if (desc.hasGetterObject()) {
-            
-            if (!IsConfigurable(shapeAttrs) &&
-                desc.getterObject() != prop.shape()->getterObject())
-            {
-                return result.fail(JSMSG_CANT_REDEFINE_PROP);
-            }
-        } else {
-            
-            desc.setGetterObject(prop.shape()->getterObject());
-        }
-
-        
+      
+      desc.setSetterObject(prop.shape()->setterObject());
+    }
+    if (desc.hasGetterObject()) {
+      
+      if (!IsConfigurable(shapeAttrs) &&
+          desc.getterObject() != prop.shape()->getterObject()) {
+        return result.fail(JSMSG_CANT_REDEFINE_PROP);
+      }
+    } else {
+      
+      desc.setGetterObject(prop.shape()->getterObject());
     }
 
     
-    if (!AddOrChangeProperty<IsAddOrChange::AddOrChange>(cx, obj, id, desc)) {
-        return false;
-    }
+  }
+
+  
+  if (!AddOrChangeProperty<IsAddOrChange::AddOrChange>(cx, obj, id, desc)) {
+    return false;
+  }
+
+  
+  return result.succeed();
+}
+
+bool js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj,
+                                  HandleId id, HandleValue value,
+                                  unsigned attrs, ObjectOpResult& result) {
+  Rooted<PropertyDescriptor> desc(cx);
+  desc.initFields(nullptr, value, attrs, nullptr, nullptr);
+  return NativeDefineProperty(cx, obj, id, desc, result);
+}
+
+bool js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj,
+                                      HandleId id, GetterOp getter,
+                                      SetterOp setter, unsigned attrs) {
+  Rooted<PropertyDescriptor> desc(cx);
+  desc.initFields(nullptr, UndefinedHandleValue, attrs, getter, setter);
+
+  ObjectOpResult result;
+  if (!NativeDefineProperty(cx, obj, id, desc, result)) {
+    return false;
+  }
+
+  if (!result) {
+    
+    
+    
+    MOZ_ASSERT(!cx->helperThread());
+    result.reportError(cx, obj, id);
+    return false;
+  }
+
+  return true;
+}
+
+bool js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj,
+                                      HandleId id, HandleObject getter,
+                                      HandleObject setter, unsigned attrs) {
+  Rooted<PropertyDescriptor> desc(cx);
+  {
+    GetterOp getterOp = JS_DATA_TO_FUNC_PTR(GetterOp, getter.get());
+    SetterOp setterOp = JS_DATA_TO_FUNC_PTR(SetterOp, setter.get());
+    desc.initFields(nullptr, UndefinedHandleValue, attrs, getterOp, setterOp);
+  }
+
+  ObjectOpResult result;
+  if (!NativeDefineProperty(cx, obj, id, desc, result)) {
+    return false;
+  }
+
+  if (!result) {
+    
+    
+    
+    MOZ_ASSERT(!cx->helperThread());
+    result.reportError(cx, obj, id);
+    return false;
+  }
+
+  return true;
+}
+
+bool js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj,
+                                  HandleId id, HandleValue value,
+                                  unsigned attrs) {
+  ObjectOpResult result;
+  if (!NativeDefineDataProperty(cx, obj, id, value, attrs, result)) {
+    return false;
+  }
+  if (!result) {
+    
+    
+    
+    MOZ_ASSERT(!cx->helperThread());
+    result.reportError(cx, obj, id);
+    return false;
+  }
+  return true;
+}
+
+bool js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj,
+                                  PropertyName* name, HandleValue value,
+                                  unsigned attrs) {
+  RootedId id(cx, NameToId(name));
+  return NativeDefineDataProperty(cx, obj, id, value, attrs);
+}
+
+static bool DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj,
+                                      HandleId id, HandleValue v,
+                                      ObjectOpResult& result) {
+  
+
+  
+  if (obj->is<ArrayObject>()) {
+    
+    
+    MOZ_ASSERT(id != NameToId(cx->names().length));
 
     
-    return result.succeed();
-}
-
-bool
-js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                             HandleValue value, unsigned attrs, ObjectOpResult& result)
-{
-    Rooted<PropertyDescriptor> desc(cx);
-    desc.initFields(nullptr, value, attrs, nullptr, nullptr);
-    return NativeDefineProperty(cx, obj, id, desc, result);
-}
-
-bool
-js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                                 GetterOp getter, SetterOp setter, unsigned attrs)
-{
-    Rooted<PropertyDescriptor> desc(cx);
-    desc.initFields(nullptr, UndefinedHandleValue, attrs, getter, setter);
-
-    ObjectOpResult result;
-    if (!NativeDefineProperty(cx, obj, id, desc, result)) {
-        return false;
+    uint32_t index;
+    if (IdIsIndex(id, &index)) {
+      if (WouldDefinePastNonwritableLength(&obj->as<ArrayObject>(), index)) {
+        return result.fail(JSMSG_CANT_DEFINE_PAST_ARRAY_LENGTH);
+      }
     }
-
-    if (!result) {
-        
-        
-        
-        MOZ_ASSERT(!cx->helperThread());
-        result.reportError(cx, obj, id);
-        return false;
-    }
-
-    return true;
-}
-
-bool
-js::NativeDefineAccessorProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                                 HandleObject getter, HandleObject setter, unsigned attrs)
-{
-    Rooted<PropertyDescriptor> desc(cx);
-    {
-        GetterOp getterOp = JS_DATA_TO_FUNC_PTR(GetterOp, getter.get());
-        SetterOp setterOp = JS_DATA_TO_FUNC_PTR(SetterOp, setter.get());
-        desc.initFields(nullptr, UndefinedHandleValue, attrs, getterOp, setterOp);
-    }
-
-    ObjectOpResult result;
-    if (!NativeDefineProperty(cx, obj, id, desc, result)) {
-        return false;
-    }
-
-    if (!result) {
-        
-        
-        
-        MOZ_ASSERT(!cx->helperThread());
-        result.reportError(cx, obj, id);
-        return false;
-    }
-
-    return true;
-}
-
-bool
-js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                             HandleValue value, unsigned attrs)
-{
-    ObjectOpResult result;
-    if (!NativeDefineDataProperty(cx, obj, id, value, attrs, result)) {
-        return false;
-    }
-    if (!result) {
-        
-        
-        
-        MOZ_ASSERT(!cx->helperThread());
-        result.reportError(cx, obj, id);
-        return false;
-    }
-    return true;
-}
-
-bool
-js::NativeDefineDataProperty(JSContext* cx, HandleNativeObject obj, PropertyName* name,
-                             HandleValue value, unsigned attrs)
-{
-    RootedId id(cx, NameToId(name));
-    return NativeDefineDataProperty(cx, obj, id, value, attrs);
-}
-
-static bool
-DefineNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                          HandleValue v, ObjectOpResult& result)
-{
+  } else if (obj->is<TypedArrayObject>()) {
     
+    uint64_t index;
+    if (IsTypedArrayIndex(id, &index)) {
+      
+      
+      MOZ_ASSERT(index >= obj->as<TypedArrayObject>().length());
+
+      
+
+      
+      
+      
+      double d;
+      if (!ToNumber(cx, v, &d)) {
+        return false;
+      }
+
+      
+      
+      if (obj->as<TypedArrayObject>().hasDetachedBuffer()) {
+        return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+      }
+
+      
+      
+      return result.failSoft(JSMSG_BAD_INDEX);
+    }
+  } else if (obj->is<ArgumentsObject>()) {
+    
+    
+    
+    MOZ_ASSERT_IF(id == NameToId(cx->names().length),
+                  obj->as<ArgumentsObject>().hasOverriddenLength());
+    MOZ_ASSERT_IF(JSID_IS_SYMBOL(id) &&
+                      JSID_TO_SYMBOL(id) == cx->wellKnownSymbols().iterator,
+                  obj->as<ArgumentsObject>().hasOverriddenIterator());
 
     
-    if (obj->is<ArrayObject>()) {
-        
-        
-        MOZ_ASSERT(id != NameToId(cx->names().length));
-
-        
-        uint32_t index;
-        if (IdIsIndex(id, &index)) {
-            if (WouldDefinePastNonwritableLength(&obj->as<ArrayObject>(), index)) {
-                return result.fail(JSMSG_CANT_DEFINE_PAST_ARRAY_LENGTH);
-            }
-        }
-    } else if (obj->is<TypedArrayObject>()) {
-        
-        uint64_t index;
-        if (IsTypedArrayIndex(id, &index)) {
-            
-            
-            MOZ_ASSERT(index >= obj->as<TypedArrayObject>().length());
-
-            
-
-            
-            
-            
-            double d;
-            if (!ToNumber(cx, v, &d)) {
-                return false;
-            }
-
-            
-            
-            if (obj->as<TypedArrayObject>().hasDetachedBuffer()) {
-                return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
-            }
-
-            
-            
-            return result.failSoft(JSMSG_BAD_INDEX);
-        }
-    } else if (obj->is<ArgumentsObject>()) {
-        
-        
-        
-        MOZ_ASSERT_IF(id == NameToId(cx->names().length),
-                      obj->as<ArgumentsObject>().hasOverriddenLength());
-        MOZ_ASSERT_IF(JSID_IS_SYMBOL(id) && JSID_TO_SYMBOL(id) == cx->wellKnownSymbols().iterator,
-                      obj->as<ArgumentsObject>().hasOverriddenIterator());
-
-        
-        if (JSID_IS_INT(id)) {
-            obj->as<ArgumentsObject>().markElementOverridden();
-        }
+    if (JSID_IS_INT(id)) {
+      obj->as<ArgumentsObject>().markElementOverridden();
     }
+  }
 
 #ifdef DEBUG
-    Rooted<PropertyResult> prop(cx);
-    NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop);
-    MOZ_ASSERT(!prop, "didn't expect to find an existing property");
+  Rooted<PropertyResult> prop(cx);
+  NativeLookupOwnPropertyNoResolve(cx, obj, id, &prop);
+  MOZ_ASSERT(!prop, "didn't expect to find an existing property");
 #endif
 
+  
+  
+
+  
+  if (!obj->isExtensible()) {
+    return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
+  }
+
+  if (JSID_IS_INT(id)) {
     
     
 
-    
-    if (!obj->isExtensible()) {
-        return result.fail(JSMSG_CANT_DEFINE_PROP_OBJECT_NOT_EXTENSIBLE);
+    Rooted<PropertyDescriptor> desc(cx);
+    desc.setDataDescriptor(v, JSPROP_ENUMERATE);
+
+    if (!AddOrChangeProperty<IsAddOrChange::Add>(cx, obj, id, desc)) {
+      return false;
     }
-
-    if (JSID_IS_INT(id)) {
-        
-        
-
-        Rooted<PropertyDescriptor> desc(cx);
-        desc.setDataDescriptor(v, JSPROP_ENUMERATE);
-
-        if (!AddOrChangeProperty<IsAddOrChange::Add>(cx, obj, id, desc)) {
-            return false;
-        }
-    } else {
-        if (!AddDataProperty(cx, obj, id, v)) {
-            return false;
-        }
+  } else {
+    if (!AddDataProperty(cx, obj, id, v)) {
+      return false;
     }
+  }
 
-    return result.succeed();
+  return result.succeed();
 }
 
-bool
-js::AddOrUpdateSparseElementHelper(JSContext* cx, HandleArrayObject obj, int32_t int_id,
-                                   HandleValue v, bool strict)
-{
-    MOZ_ASSERT(INT_FITS_IN_JSID(int_id));
-    RootedId id(cx, INT_TO_JSID(int_id));
+bool js::AddOrUpdateSparseElementHelper(JSContext* cx, HandleArrayObject obj,
+                                        int32_t int_id, HandleValue v,
+                                        bool strict) {
+  MOZ_ASSERT(INT_FITS_IN_JSID(int_id));
+  RootedId id(cx, INT_TO_JSID(int_id));
 
-    
-    MOZ_ASSERT(int_id >= 0);
-    MOZ_ASSERT(uint32_t(int_id) >= obj->getDenseInitializedLength());
+  
+  
+  MOZ_ASSERT(int_id >= 0);
+  MOZ_ASSERT(uint32_t(int_id) >= obj->getDenseInitializedLength());
 
-    
-    
-    
-    
-    RootedShape shape(cx, obj->lastProperty()->search(cx, id));
+  
+  
+  
+  
+  RootedShape shape(cx, obj->lastProperty()->search(cx, id));
 
-    
-    
-    if (shape == nullptr) {
-        Rooted<PropertyDescriptor> desc(cx);
-        desc.setDataDescriptor(v, JSPROP_ENUMERATE);
-        desc.assertComplete();
-
-        return AddOrChangeProperty<IsAddOrChange::Add>(cx, obj, id, desc);
-    }
-
-    
-    if (shape->writable() && shape->isDataProperty()) {
-        
-        
-        obj->setSlotWithType(cx, shape, v,  true);
-        return true;
-    }
-
-    
-    RootedValue receiver(cx, ObjectValue(*obj));
-    JS::ObjectOpResult result;
-    return SetProperty(cx, obj, id, v, receiver, result) &&
-           result.checkStrictErrorOrWarning(cx, obj, id, strict);
-}
-
-
-
-
-
-bool
-js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id, bool* foundp)
-{
-    RootedNativeObject pobj(cx, obj);
-    Rooted<PropertyResult> prop(cx);
-
-    
-    
-    for (;;) {
-        
-        bool done;
-        if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop, &done)) {
-            return false;
-        }
-
-        
-        if (prop) {
-            *foundp = true;
-            return true;
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        JSObject* proto = done ? nullptr : pobj->staticPrototype();
-
-        
-        if (!proto) {
-            *foundp = false;
-            return true;
-        }
-
-        
-        
-        
-        
-        
-        if (!proto->isNative()) {
-            RootedObject protoRoot(cx, proto);
-            return HasProperty(cx, protoRoot, id, foundp);
-        }
-
-        pobj = &proto->as<NativeObject>();
-    }
-}
-
-
-
-
-bool
-js::NativeGetOwnPropertyDescriptor(JSContext* cx, HandleNativeObject obj, HandleId id,
-                                   MutableHandle<PropertyDescriptor> desc)
-{
-    Rooted<PropertyResult> prop(cx);
-    if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
-        return false;
-    }
-    if (!prop) {
-        desc.object().set(nullptr);
-        return true;
-    }
-
-    desc.setAttributes(GetPropertyAttributes(obj, prop));
-    if (desc.isAccessorDescriptor()) {
-        
-        
-        
-        
-        
-        
-        
-        
-        if (desc.hasGetterObject()) {
-            desc.setGetterObject(prop.shape()->getterObject());
-        } else {
-            desc.setGetterObject(nullptr);
-            desc.attributesRef() |= JSPROP_GETTER;
-        }
-        if (desc.hasSetterObject()) {
-            desc.setSetterObject(prop.shape()->setterObject());
-        } else {
-            desc.setSetterObject(nullptr);
-            desc.attributesRef() |= JSPROP_SETTER;
-        }
-
-        desc.value().setUndefined();
-    } else {
-        
-        
-        
-        
-        desc.setGetter(nullptr);
-        desc.setSetter(nullptr);
-
-        if (prop.isDenseOrTypedArrayElement()) {
-            desc.value().set(obj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
-        } else {
-            RootedShape shape(cx, prop.shape());
-            if (!NativeGetExistingProperty(cx, obj, obj, shape, desc.value())) {
-                return false;
-            }
-        }
-    }
-
-    desc.object().set(obj);
+  
+  
+  if (shape == nullptr) {
+    Rooted<PropertyDescriptor> desc(cx);
+    desc.setDataDescriptor(v, JSPROP_ENUMERATE);
     desc.assertComplete();
+
+    return AddOrChangeProperty<IsAddOrChange::Add>(cx, obj, id, desc);
+  }
+
+  
+  if (shape->writable() && shape->isDataProperty()) {
+    
+    
+    
+    obj->setSlotWithType(cx, shape, v,  true);
     return true;
+  }
+
+  
+  RootedValue receiver(cx, ObjectValue(*obj));
+  JS::ObjectOpResult result;
+  return SetProperty(cx, obj, id, v, receiver, result) &&
+         result.checkStrictErrorOrWarning(cx, obj, id, strict);
 }
 
 
 
 
-static inline bool
-CallGetter(JSContext* cx, HandleObject obj, HandleValue receiver, HandleShape shape,
-           MutableHandleValue vp)
-{
-    MOZ_ASSERT(!shape->hasDefaultGetter());
+bool js::NativeHasProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                           bool* foundp) {
+  RootedNativeObject pobj(cx, obj);
+  Rooted<PropertyResult> prop(cx);
 
-    if (shape->hasGetterValue()) {
-        RootedValue getter(cx, shape->getterValue());
-        return js::CallGetter(cx, receiver, getter, vp);
+  
+  
+  for (;;) {
+    
+    bool done;
+    if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop, &done)) {
+      return false;
     }
 
     
-    RootedId id(cx, shape->propid());
-    return CallJSGetterOp(cx, shape->getterOp(), obj, id, vp);
+    if (prop) {
+      *foundp = true;
+      return true;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    JSObject* proto = done ? nullptr : pobj->staticPrototype();
+
+    
+    if (!proto) {
+      *foundp = false;
+      return true;
+    }
+
+    
+    
+    
+    
+    
+    if (!proto->isNative()) {
+      RootedObject protoRoot(cx, proto);
+      return HasProperty(cx, protoRoot, id, foundp);
+    }
+
+    pobj = &proto->as<NativeObject>();
+  }
+}
+
+
+
+bool js::NativeGetOwnPropertyDescriptor(
+    JSContext* cx, HandleNativeObject obj, HandleId id,
+    MutableHandle<PropertyDescriptor> desc) {
+  Rooted<PropertyResult> prop(cx);
+  if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
+    return false;
+  }
+  if (!prop) {
+    desc.object().set(nullptr);
+    return true;
+  }
+
+  desc.setAttributes(GetPropertyAttributes(obj, prop));
+  if (desc.isAccessorDescriptor()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (desc.hasGetterObject()) {
+      desc.setGetterObject(prop.shape()->getterObject());
+    } else {
+      desc.setGetterObject(nullptr);
+      desc.attributesRef() |= JSPROP_GETTER;
+    }
+    if (desc.hasSetterObject()) {
+      desc.setSetterObject(prop.shape()->setterObject());
+    } else {
+      desc.setSetterObject(nullptr);
+      desc.attributesRef() |= JSPROP_SETTER;
+    }
+
+    desc.value().setUndefined();
+  } else {
+    
+    
+    
+    
+    desc.setGetter(nullptr);
+    desc.setSetter(nullptr);
+
+    if (prop.isDenseOrTypedArrayElement()) {
+      desc.value().set(obj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
+    } else {
+      RootedShape shape(cx, prop.shape());
+      if (!NativeGetExistingProperty(cx, obj, obj, shape, desc.value())) {
+        return false;
+      }
+    }
+  }
+
+  desc.object().set(obj);
+  desc.assertComplete();
+  return true;
+}
+
+
+
+static inline bool CallGetter(JSContext* cx, HandleObject obj,
+                              HandleValue receiver, HandleShape shape,
+                              MutableHandleValue vp) {
+  MOZ_ASSERT(!shape->hasDefaultGetter());
+
+  if (shape->hasGetterValue()) {
+    RootedValue getter(cx, shape->getterValue());
+    return js::CallGetter(cx, receiver, getter, vp);
+  }
+
+  
+  RootedId id(cx, shape->propid());
+  return CallJSGetterOp(cx, shape->getterOp(), obj, id, vp);
 }
 
 template <AllowGC allowGC>
-static MOZ_ALWAYS_INLINE bool
-GetExistingProperty(JSContext* cx,
-                    typename MaybeRooted<Value, allowGC>::HandleType receiver,
-                    typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
-                    typename MaybeRooted<Shape*, allowGC>::HandleType shape,
-                    typename MaybeRooted<Value, allowGC>::MutableHandleType vp)
-{
-    if (shape->isDataProperty()) {
-        MOZ_ASSERT(shape->hasDefaultGetter());
+static MOZ_ALWAYS_INLINE bool GetExistingProperty(
+    JSContext* cx, typename MaybeRooted<Value, allowGC>::HandleType receiver,
+    typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
+    typename MaybeRooted<Shape*, allowGC>::HandleType shape,
+    typename MaybeRooted<Value, allowGC>::MutableHandleType vp) {
+  if (shape->isDataProperty()) {
+    MOZ_ASSERT(shape->hasDefaultGetter());
 
-        vp.set(obj->getSlot(shape->slot()));
+    vp.set(obj->getSlot(shape->slot()));
 
-        MOZ_ASSERT_IF(!vp.isMagic(JS_UNINITIALIZED_LEXICAL) &&
-                      !obj->isSingleton() &&
-                      !obj->template is<EnvironmentObject>() &&
-                      shape->hasDefaultGetter(),
-                      ObjectGroupHasProperty(cx, obj->group(), shape->propid(), vp));
-        return true;
+    MOZ_ASSERT_IF(
+        !vp.isMagic(JS_UNINITIALIZED_LEXICAL) && !obj->isSingleton() &&
+            !obj->template is<EnvironmentObject>() && shape->hasDefaultGetter(),
+        ObjectGroupHasProperty(cx, obj->group(), shape->propid(), vp));
+    return true;
+  }
+
+  vp.setUndefined();
+
+  if (shape->hasDefaultGetter()) {
+    return true;
+  }
+
+  {
+    jsbytecode* pc;
+    JSScript* script = cx->currentScript(&pc);
+    if (script && script->hasICScript()) {
+      switch (JSOp(*pc)) {
+        case JSOP_GETPROP:
+        case JSOP_CALLPROP:
+        case JSOP_LENGTH:
+          script->icScript()->noteAccessedGetter(script->pcToOffset(pc));
+          break;
+        default:
+          break;
+      }
     }
+  }
 
-    vp.setUndefined();
-
-    if (shape->hasDefaultGetter()) {
-        return true;
-    }
-
-    {
-        jsbytecode* pc;
-        JSScript* script = cx->currentScript(&pc);
-        if (script && script->hasICScript()) {
-            switch (JSOp(*pc)) {
-              case JSOP_GETPROP:
-              case JSOP_CALLPROP:
-              case JSOP_LENGTH:
-                script->icScript()->noteAccessedGetter(script->pcToOffset(pc));
-                break;
-              default:
-                break;
-            }
-        }
-    }
-
-    if (!allowGC) {
-        return false;
-    }
-
-    return CallGetter(cx,
-                      MaybeRooted<JSObject*, allowGC>::toHandle(obj),
-                      MaybeRooted<Value, allowGC>::toHandle(receiver),
-                      MaybeRooted<Shape*, allowGC>::toHandle(shape),
-                      MaybeRooted<Value, allowGC>::toMutableHandle(vp));
-}
-
-bool
-js::NativeGetExistingProperty(JSContext* cx, HandleObject receiver, HandleNativeObject obj,
-                              HandleShape shape, MutableHandleValue vp)
-{
-    RootedValue receiverValue(cx, ObjectValue(*receiver));
-    return GetExistingProperty<CanGC>(cx, receiverValue, obj, shape, vp);
-}
-
-
-
-
-
-
-static bool
-Detecting(JSContext* cx, JSScript* script, jsbytecode* pc)
-{
-    MOZ_ASSERT(script->containsPC(pc));
-
-    
-    while (pc < script->codeEnd() && (BytecodeIsJumpTarget(JSOp(*pc)) ||
-                                      JSOp(*pc) == JSOP_DUP))
-        pc = GetNextPc(pc);
-
-    MOZ_ASSERT(script->containsPC(pc));
-    if (pc >= script->codeEnd()) {
-        return false;
-    }
-
-    
-    JSOp op = JSOp(*pc);
-    if (CodeSpec[op].format & JOF_DETECTING) {
-        return true;
-    }
-
-    jsbytecode* endpc = script->codeEnd();
-
-    if (op == JSOP_NULL) {
-        
-        if (++pc < endpc) {
-            op = JSOp(*pc);
-            return op == JSOP_EQ || op == JSOP_NE;
-        }
-        return false;
-    }
-
-    
-    if (op == JSOP_GETGNAME || op == JSOP_GETNAME) {
-        JSAtom* atom = script->getAtom(GET_UINT32_INDEX(pc));
-        if (atom == cx->names().undefined &&
-            (pc += CodeSpec[op].length) < endpc) {
-            op = JSOp(*pc);
-            return op == JSOP_EQ || op == JSOP_NE || op == JSOP_STRICTEQ || op == JSOP_STRICTNE;
-        }
-    }
-    if (op == JSOP_UNDEFINED) {
-        if ((pc += CodeSpec[op].length) < endpc) {
-            op = JSOp(*pc);
-            return op == JSOP_EQ || op == JSOP_NE || op == JSOP_STRICTEQ || op == JSOP_STRICTNE;
-        }
-    }
-
+  if (!allowGC) {
     return false;
+  }
+
+  return CallGetter(cx, MaybeRooted<JSObject*, allowGC>::toHandle(obj),
+                    MaybeRooted<Value, allowGC>::toHandle(receiver),
+                    MaybeRooted<Shape*, allowGC>::toHandle(shape),
+                    MaybeRooted<Value, allowGC>::toMutableHandle(vp));
+}
+
+bool js::NativeGetExistingProperty(JSContext* cx, HandleObject receiver,
+                                   HandleNativeObject obj, HandleShape shape,
+                                   MutableHandleValue vp) {
+  RootedValue receiverValue(cx, ObjectValue(*receiver));
+  return GetExistingProperty<CanGC>(cx, receiverValue, obj, shape, vp);
+}
+
+
+
+
+
+
+static bool Detecting(JSContext* cx, JSScript* script, jsbytecode* pc) {
+  MOZ_ASSERT(script->containsPC(pc));
+
+  
+  while (pc < script->codeEnd() &&
+         (BytecodeIsJumpTarget(JSOp(*pc)) || JSOp(*pc) == JSOP_DUP))
+    pc = GetNextPc(pc);
+
+  MOZ_ASSERT(script->containsPC(pc));
+  if (pc >= script->codeEnd()) {
+    return false;
+  }
+
+  
+  JSOp op = JSOp(*pc);
+  if (CodeSpec[op].format & JOF_DETECTING) {
+    return true;
+  }
+
+  jsbytecode* endpc = script->codeEnd();
+
+  if (op == JSOP_NULL) {
+    
+    if (++pc < endpc) {
+      op = JSOp(*pc);
+      return op == JSOP_EQ || op == JSOP_NE;
+    }
+    return false;
+  }
+
+  
+  if (op == JSOP_GETGNAME || op == JSOP_GETNAME) {
+    JSAtom* atom = script->getAtom(GET_UINT32_INDEX(pc));
+    if (atom == cx->names().undefined && (pc += CodeSpec[op].length) < endpc) {
+      op = JSOp(*pc);
+      return op == JSOP_EQ || op == JSOP_NE || op == JSOP_STRICTEQ ||
+             op == JSOP_STRICTNE;
+    }
+  }
+  if (op == JSOP_UNDEFINED) {
+    if ((pc += CodeSpec[op].length) < endpc) {
+      op = JSOp(*pc);
+      return op == JSOP_EQ || op == JSOP_NE || op == JSOP_STRICTEQ ||
+             op == JSOP_STRICTNE;
+    }
+  }
+
+  return false;
 }
 
 enum IsNameLookup { NotNameLookup = false, NameLookup = true };
@@ -2446,329 +2380,323 @@ enum IsNameLookup { NotNameLookup = false, NameLookup = true };
 
 
 
-static bool
-GetNonexistentProperty(JSContext* cx, HandleId id, IsNameLookup nameLookup, MutableHandleValue vp)
-{
-    vp.setUndefined();
+static bool GetNonexistentProperty(JSContext* cx, HandleId id,
+                                   IsNameLookup nameLookup,
+                                   MutableHandleValue vp) {
+  vp.setUndefined();
 
-    
-    if (nameLookup) {
-        ReportIsNotDefined(cx, id);
-        return false;
-    }
-
-    
-    
-    
-    
-    
-    if (MOZ_LIKELY(!cx->realm()->behaviors().extraWarnings(cx))) {
-        return true;
-    }
-
-    jsbytecode* pc;
-    RootedScript script(cx, cx->currentScript(&pc));
-    if (!script) {
-        return true;
-    }
-
-    if (*pc != JSOP_GETPROP && *pc != JSOP_GETELEM) {
-        return true;
-    }
-
-    
-    if (script->warnedAboutUndefinedProp()) {
-        return true;
-    }
-
-    
-    
-    
-    if (script->selfHosted()) {
-        return true;
-    }
-
-    
-    pc += CodeSpec[*pc].length;
-    if (Detecting(cx, script, pc)) {
-        return true;
-    }
-
-    unsigned flags = JSREPORT_WARNING | JSREPORT_STRICT;
-    script->setWarnedAboutUndefinedProp();
-
-    
-    UniqueChars bytes = IdToPrintableUTF8(cx, id, IdToPrintableBehavior::IdIsPropertyKey);
-    if (!bytes) {
-        return false;
-    }
-
-    return JS_ReportErrorFlagsAndNumberUTF8(cx, flags, GetErrorMessage, nullptr,
-                                            JSMSG_UNDEFINED_PROP, bytes.get());
-}
-
-
-
-bool
-GetNonexistentProperty(JSContext* cx, const jsid& id, IsNameLookup nameLookup,
-                       FakeMutableHandle<Value> vp)
-{
+  
+  if (nameLookup) {
+    ReportIsNotDefined(cx, id);
     return false;
+  }
+
+  
+  
+  
+  
+  
+  if (MOZ_LIKELY(!cx->realm()->behaviors().extraWarnings(cx))) {
+    return true;
+  }
+
+  jsbytecode* pc;
+  RootedScript script(cx, cx->currentScript(&pc));
+  if (!script) {
+    return true;
+  }
+
+  if (*pc != JSOP_GETPROP && *pc != JSOP_GETELEM) {
+    return true;
+  }
+
+  
+  if (script->warnedAboutUndefinedProp()) {
+    return true;
+  }
+
+  
+  
+  
+  if (script->selfHosted()) {
+    return true;
+  }
+
+  
+  pc += CodeSpec[*pc].length;
+  if (Detecting(cx, script, pc)) {
+    return true;
+  }
+
+  unsigned flags = JSREPORT_WARNING | JSREPORT_STRICT;
+  script->setWarnedAboutUndefinedProp();
+
+  
+  UniqueChars bytes =
+      IdToPrintableUTF8(cx, id, IdToPrintableBehavior::IdIsPropertyKey);
+  if (!bytes) {
+    return false;
+  }
+
+  return JS_ReportErrorFlagsAndNumberUTF8(cx, flags, GetErrorMessage, nullptr,
+                                          JSMSG_UNDEFINED_PROP, bytes.get());
 }
 
-static inline bool
-GeneralizedGetProperty(JSContext* cx, HandleObject obj, HandleId id, HandleValue receiver,
-                       IsNameLookup nameLookup, MutableHandleValue vp)
-{
-    if (!CheckRecursionLimit(cx)) {
-        return false;
-    }
-    if (nameLookup) {
-        
-        
-        
-        
-        
-        
-        
-        
 
-        bool found;
-        if (!HasProperty(cx, obj, id, &found)) {
-            return false;
-        }
-        if (!found) {
-            ReportIsNotDefined(cx, id);
-            return false;
-        }
-    }
 
-    return GetProperty(cx, obj, receiver, id, vp);
+bool GetNonexistentProperty(JSContext* cx, const jsid& id,
+                            IsNameLookup nameLookup,
+                            FakeMutableHandle<Value> vp) {
+  return false;
 }
 
-static inline bool
-GeneralizedGetProperty(JSContext* cx, JSObject* obj, jsid id, const Value& receiver,
-                       IsNameLookup nameLookup, FakeMutableHandle<Value> vp)
-{
-    if (!CheckRecursionLimitDontReport(cx)) {
-        return false;
-    }
-    if (nameLookup) {
-        return false;
-    }
-    return GetPropertyNoGC(cx, obj, receiver, id, vp.address());
-}
-
-bool
-js::GetSparseElementHelper(JSContext* cx, HandleArrayObject obj, int32_t int_id,
-                           MutableHandleValue result)
-{
+static inline bool GeneralizedGetProperty(JSContext* cx, HandleObject obj,
+                                          HandleId id, HandleValue receiver,
+                                          IsNameLookup nameLookup,
+                                          MutableHandleValue vp) {
+  if (!CheckRecursionLimit(cx)) {
+    return false;
+  }
+  if (nameLookup) {
     
-    MOZ_ASSERT(obj->hasStaticPrototype());
-
     
-    MOZ_ASSERT_IF(obj->staticPrototype() != nullptr,
-                  !ObjectMayHaveExtraIndexedProperties(obj->staticPrototype()));
+    
+    
+    
+    
+    
+    
 
-    MOZ_ASSERT(INT_FITS_IN_JSID(int_id));
-    RootedId id(cx, INT_TO_JSID(int_id));
-
-    Shape* rawShape = obj->lastProperty()->search(cx, id);
-    if (!rawShape) {
-        
-        result.setUndefined();
-        return true;
+    bool found;
+    if (!HasProperty(cx, obj, id, &found)) {
+      return false;
     }
+    if (!found) {
+      ReportIsNotDefined(cx, id);
+      return false;
+    }
+  }
 
-    RootedValue receiver(cx, ObjectValue(*obj));
-    RootedShape shape(cx, rawShape);
-    return GetExistingProperty<CanGC>(cx, receiver, obj, shape, result);
+  return GetProperty(cx, obj, receiver, id, vp);
+}
+
+static inline bool GeneralizedGetProperty(JSContext* cx, JSObject* obj, jsid id,
+                                          const Value& receiver,
+                                          IsNameLookup nameLookup,
+                                          FakeMutableHandle<Value> vp) {
+  if (!CheckRecursionLimitDontReport(cx)) {
+    return false;
+  }
+  if (nameLookup) {
+    return false;
+  }
+  return GetPropertyNoGC(cx, obj, receiver, id, vp.address());
+}
+
+bool js::GetSparseElementHelper(JSContext* cx, HandleArrayObject obj,
+                                int32_t int_id, MutableHandleValue result) {
+  
+  MOZ_ASSERT(obj->hasStaticPrototype());
+
+  
+  MOZ_ASSERT_IF(obj->staticPrototype() != nullptr,
+                !ObjectMayHaveExtraIndexedProperties(obj->staticPrototype()));
+
+  MOZ_ASSERT(INT_FITS_IN_JSID(int_id));
+  RootedId id(cx, INT_TO_JSID(int_id));
+
+  Shape* rawShape = obj->lastProperty()->search(cx, id);
+  if (!rawShape) {
+    
+    result.setUndefined();
+    return true;
+  }
+
+  RootedValue receiver(cx, ObjectValue(*obj));
+  RootedShape shape(cx, rawShape);
+  return GetExistingProperty<CanGC>(cx, receiver, obj, shape, result);
 }
 
 template <AllowGC allowGC>
-static MOZ_ALWAYS_INLINE bool
-NativeGetPropertyInline(JSContext* cx,
-                        typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
-                        typename MaybeRooted<Value, allowGC>::HandleType receiver,
-                        typename MaybeRooted<jsid, allowGC>::HandleType id,
-                        IsNameLookup nameLookup,
-                        typename MaybeRooted<Value, allowGC>::MutableHandleType vp)
-{
-    typename MaybeRooted<NativeObject*, allowGC>::RootType pobj(cx, obj);
-    typename MaybeRooted<PropertyResult, allowGC>::RootType prop(cx);
+static MOZ_ALWAYS_INLINE bool NativeGetPropertyInline(
+    JSContext* cx, typename MaybeRooted<NativeObject*, allowGC>::HandleType obj,
+    typename MaybeRooted<Value, allowGC>::HandleType receiver,
+    typename MaybeRooted<jsid, allowGC>::HandleType id, IsNameLookup nameLookup,
+    typename MaybeRooted<Value, allowGC>::MutableHandleType vp) {
+  typename MaybeRooted<NativeObject*, allowGC>::RootType pobj(cx, obj);
+  typename MaybeRooted<PropertyResult, allowGC>::RootType prop(cx);
 
+  
+  
+  for (;;) {
     
-    
-    for (;;) {
-        
-        bool done;
-        if (!LookupOwnPropertyInline<allowGC>(cx, pobj, id, &prop, &done)) {
-            return false;
-        }
-
-        if (prop) {
-            
-            
-            if (prop.isDenseOrTypedArrayElement()) {
-                vp.set(pobj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
-                return true;
-            }
-
-            typename MaybeRooted<Shape*, allowGC>::RootType shape(cx, prop.shape());
-            return GetExistingProperty<allowGC>(cx, receiver, pobj, shape, vp);
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        JSObject* proto = done ? nullptr : pobj->staticPrototype();
-
-        
-        
-        if (!proto) {
-            return GetNonexistentProperty(cx, id, nameLookup, vp);
-        }
-
-        
-        
-        
-        
-        
-        if (proto->getOpsGetProperty()) {
-            RootedObject protoRoot(cx, proto);
-            return GeneralizedGetProperty(cx, protoRoot, id, receiver, nameLookup, vp);
-        }
-
-        pobj = &proto->as<NativeObject>();
+    bool done;
+    if (!LookupOwnPropertyInline<allowGC>(cx, pobj, id, &prop, &done)) {
+      return false;
     }
+
+    if (prop) {
+      
+      
+      if (prop.isDenseOrTypedArrayElement()) {
+        vp.set(pobj->getDenseOrTypedArrayElement(JSID_TO_INT(id)));
+        return true;
+      }
+
+      typename MaybeRooted<Shape*, allowGC>::RootType shape(cx, prop.shape());
+      return GetExistingProperty<allowGC>(cx, receiver, pobj, shape, vp);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    JSObject* proto = done ? nullptr : pobj->staticPrototype();
+
+    
+    
+    if (!proto) {
+      return GetNonexistentProperty(cx, id, nameLookup, vp);
+    }
+
+    
+    
+    
+    
+    
+    if (proto->getOpsGetProperty()) {
+      RootedObject protoRoot(cx, proto);
+      return GeneralizedGetProperty(cx, protoRoot, id, receiver, nameLookup,
+                                    vp);
+    }
+
+    pobj = &proto->as<NativeObject>();
+  }
 }
 
-bool
-js::NativeGetProperty(JSContext* cx, HandleNativeObject obj, HandleValue receiver, HandleId id,
-                      MutableHandleValue vp)
-{
-    return NativeGetPropertyInline<CanGC>(cx, obj, receiver, id, NotNameLookup, vp);
+bool js::NativeGetProperty(JSContext* cx, HandleNativeObject obj,
+                           HandleValue receiver, HandleId id,
+                           MutableHandleValue vp) {
+  return NativeGetPropertyInline<CanGC>(cx, obj, receiver, id, NotNameLookup,
+                                        vp);
 }
 
-bool
-js::NativeGetPropertyNoGC(JSContext* cx, NativeObject* obj, const Value& receiver, jsid id, Value* vp)
-{
-    AutoAssertNoPendingException noexc(cx);
-    return NativeGetPropertyInline<NoGC>(cx, obj, receiver, id, NotNameLookup, vp);
+bool js::NativeGetPropertyNoGC(JSContext* cx, NativeObject* obj,
+                               const Value& receiver, jsid id, Value* vp) {
+  AutoAssertNoPendingException noexc(cx);
+  return NativeGetPropertyInline<NoGC>(cx, obj, receiver, id, NotNameLookup,
+                                       vp);
 }
 
-bool
-js::NativeGetElement(JSContext* cx, HandleNativeObject obj, HandleValue receiver,
-                     int32_t index, MutableHandleValue vp)
-{
-    RootedId id(cx);
+bool js::NativeGetElement(JSContext* cx, HandleNativeObject obj,
+                          HandleValue receiver, int32_t index,
+                          MutableHandleValue vp) {
+  RootedId id(cx);
 
-    if (MOZ_LIKELY(index >=0)) {
-        if (!IndexToId(cx, index, &id)) {
-            return false;
-        }
+  if (MOZ_LIKELY(index >= 0)) {
+    if (!IndexToId(cx, index, &id)) {
+      return false;
+    }
+  } else {
+    RootedValue indexVal(cx, Int32Value(index));
+    if (!ValueToId<CanGC>(cx, indexVal, &id)) {
+      return false;
+    }
+  }
+  return NativeGetProperty(cx, obj, receiver, id, vp);
+}
+
+bool js::GetNameBoundInEnvironment(JSContext* cx, HandleObject envArg,
+                                   HandleId id, MutableHandleValue vp) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RootedObject env(cx, MaybeUnwrapWithEnvironment(envArg));
+  RootedValue receiver(cx, ObjectValue(*env));
+  if (env->getOpsGetProperty()) {
+    return GeneralizedGetProperty(cx, env, id, receiver, NameLookup, vp);
+  }
+  return NativeGetPropertyInline<CanGC>(cx, env.as<NativeObject>(), receiver,
+                                        id, NameLookup, vp);
+}
+
+
+
+static bool MaybeReportUndeclaredVarAssignment(JSContext* cx, HandleId id) {
+  unsigned flags;
+  {
+    jsbytecode* pc;
+    JSScript* script =
+        cx->currentScript(&pc, JSContext::AllowCrossRealm::Allow);
+    if (!script) {
+      return true;
+    }
+
+    
+    
+    if (IsStrictSetPC(pc)) {
+      flags = JSREPORT_ERROR;
+    } else if (cx->realm()->behaviors().extraWarnings(cx)) {
+      flags = JSREPORT_WARNING | JSREPORT_STRICT;
     } else {
-        RootedValue indexVal(cx, Int32Value(index));
-        if (!ValueToId<CanGC>(cx, indexVal, &id)) {
-            return false;
-        }
+      return true;
     }
-    return NativeGetProperty(cx, obj, receiver, id, vp);
-}
+  }
 
-bool
-js::GetNameBoundInEnvironment(JSContext* cx, HandleObject envArg, HandleId id, MutableHandleValue vp)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    RootedObject env(cx, MaybeUnwrapWithEnvironment(envArg));
-    RootedValue receiver(cx, ObjectValue(*env));
-    if (env->getOpsGetProperty()) {
-        return GeneralizedGetProperty(cx, env, id, receiver, NameLookup, vp);
-    }
-    return NativeGetPropertyInline<CanGC>(cx, env.as<NativeObject>(), receiver, id, NameLookup, vp);
-}
-
-
-
-
-static bool
-MaybeReportUndeclaredVarAssignment(JSContext* cx, HandleId id)
-{
-    unsigned flags;
-    {
-        jsbytecode* pc;
-        JSScript* script = cx->currentScript(&pc, JSContext::AllowCrossRealm::Allow);
-        if (!script) {
-            return true;
-        }
-
-        
-        
-        if (IsStrictSetPC(pc)) {
-            flags = JSREPORT_ERROR;
-        } else if (cx->realm()->behaviors().extraWarnings(cx)) {
-            flags = JSREPORT_WARNING | JSREPORT_STRICT;
-        } else {
-            return true;
-        }
-    }
-
-    UniqueChars bytes = IdToPrintableUTF8(cx, id, IdToPrintableBehavior::IdIsIdentifier);
-    if (!bytes) {
-        return false;
-    }
-    return JS_ReportErrorFlagsAndNumberUTF8(cx, flags, GetErrorMessage, nullptr,
-                                            JSMSG_UNDECLARED_VAR, bytes.get());
+  UniqueChars bytes =
+      IdToPrintableUTF8(cx, id, IdToPrintableBehavior::IdIsIdentifier);
+  if (!bytes) {
+    return false;
+  }
+  return JS_ReportErrorFlagsAndNumberUTF8(cx, flags, GetErrorMessage, nullptr,
+                                          JSMSG_UNDECLARED_VAR, bytes.get());
 }
 
 
 
 
 
-static bool
-NativeSetExistingDataProperty(JSContext* cx, HandleNativeObject obj, HandleShape shape,
-                              HandleValue v, ObjectOpResult& result)
-{
-    MOZ_ASSERT(obj->isNative());
-    MOZ_ASSERT(shape->isDataDescriptor());
+static bool NativeSetExistingDataProperty(JSContext* cx, HandleNativeObject obj,
+                                          HandleShape shape, HandleValue v,
+                                          ObjectOpResult& result) {
+  MOZ_ASSERT(obj->isNative());
+  MOZ_ASSERT(shape->isDataDescriptor());
 
-    if (shape->hasDefaultSetter()) {
-        if (shape->isDataProperty()) {
-            
+  if (shape->hasDefaultSetter()) {
+    if (shape->isDataProperty()) {
+      
 
-            
-            
-            
-            bool overwriting = !obj->is<GlobalObject>() || !obj->getSlot(shape->slot()).isUndefined();
-            obj->setSlotWithType(cx, shape, v, overwriting);
-            return result.succeed();
-        }
-
-        
-        
-        
-        return result.fail(JSMSG_GETTER_ONLY);
+      
+      
+      
+      bool overwriting = !obj->is<GlobalObject>() ||
+                         !obj->getSlot(shape->slot()).isUndefined();
+      obj->setSlotWithType(cx, shape, v, overwriting);
+      return result.succeed();
     }
 
-    MOZ_ASSERT(!obj->is<WithEnvironmentObject>());  
+    
+    
+    
+    return result.fail(JSMSG_GETTER_ONLY);
+  }
 
-    RootedId id(cx, shape->propid());
-    return CallJSSetterOp(cx, shape->setterOp(), obj, id, v, result);
+  MOZ_ASSERT(!obj->is<WithEnvironmentObject>());  
+
+  RootedId id(cx, shape->propid());
+  return CallJSSetterOp(cx, shape->setterOp(), obj, id, v, result);
 }
 
 
@@ -2779,67 +2707,65 @@ NativeSetExistingDataProperty(JSContext* cx, HandleNativeObject obj, HandleShape
 
 
 
-bool
-js::SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v, HandleValue receiverValue,
-                          ObjectOpResult& result)
-{
+bool js::SetPropertyByDefining(JSContext* cx, HandleId id, HandleValue v,
+                               HandleValue receiverValue,
+                               ObjectOpResult& result) {
+  
+  if (!receiverValue.isObject()) {
+    return result.fail(JSMSG_SET_NON_OBJECT_RECEIVER);
+  }
+  RootedObject receiver(cx, &receiverValue.toObject());
+
+  bool existing;
+  {
     
-    if (!receiverValue.isObject()) {
-        return result.fail(JSMSG_SET_NON_OBJECT_RECEIVER);
-    }
-    RootedObject receiver(cx, &receiverValue.toObject());
-
-    bool existing;
-    {
-        
-        Rooted<PropertyDescriptor> desc(cx);
-        if (!GetOwnPropertyDescriptor(cx, receiver, id, &desc)) {
-            return false;
-        }
-
-        existing = !!desc.object();
-
-        
-        if (existing) {
-            
-            if (desc.isAccessorDescriptor()) {
-                return result.fail(JSMSG_OVERWRITING_ACCESSOR);
-            }
-
-            
-            if (!desc.writable()) {
-                return result.fail(JSMSG_READ_ONLY);
-            }
-        }
+    Rooted<PropertyDescriptor> desc(cx);
+    if (!GetOwnPropertyDescriptor(cx, receiver, id, &desc)) {
+      return false;
     }
 
-    
-    if (!ReshapeForShadowedProp(cx, receiver, id)) {
-        return false;
-    }
+    existing = !!desc.object();
 
     
-    unsigned attrs =
-        existing
-        ? JSPROP_IGNORE_ENUMERATE | JSPROP_IGNORE_READONLY | JSPROP_IGNORE_PERMANENT
-        : JSPROP_ENUMERATE;
-    return DefineDataProperty(cx, receiver, id, v, attrs, result);
+    if (existing) {
+      
+      if (desc.isAccessorDescriptor()) {
+        return result.fail(JSMSG_OVERWRITING_ACCESSOR);
+      }
+
+      
+      if (!desc.writable()) {
+        return result.fail(JSMSG_READ_ONLY);
+      }
+    }
+  }
+
+  
+  
+  if (!ReshapeForShadowedProp(cx, receiver, id)) {
+    return false;
+  }
+
+  
+  unsigned attrs = existing ? JSPROP_IGNORE_ENUMERATE | JSPROP_IGNORE_READONLY |
+                                  JSPROP_IGNORE_PERMANENT
+                            : JSPROP_ENUMERATE;
+  return DefineDataProperty(cx, receiver, id, v, attrs, result);
 }
 
 
 
-bool
-js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id, HandleValue v,
-                       HandleValue receiver, ObjectOpResult& result)
-{
-    MOZ_ASSERT(!obj->is<ProxyObject>());
+bool js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id,
+                            HandleValue v, HandleValue receiver,
+                            ObjectOpResult& result) {
+  MOZ_ASSERT(!obj->is<ProxyObject>());
 
-    RootedObject proto(cx, obj->staticPrototype());
-    if (proto) {
-        return SetProperty(cx, proto, id, v, receiver, result);
-    }
+  RootedObject proto(cx, obj->staticPrototype());
+  if (proto) {
+    return SetProperty(cx, proto, id, v, receiver, result);
+  }
 
-    return SetPropertyByDefining(cx, id, v, receiver, result);
+  return SetPropertyByDefining(cx, id, v, receiver, result);
 }
 
 
@@ -2850,463 +2776,465 @@ js::SetPropertyOnProto(JSContext* cx, HandleObject obj, HandleId id, HandleValue
 
 
 template <QualifiedBool IsQualified>
-static bool
-SetNonexistentProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue v,
-                       HandleValue receiver, ObjectOpResult& result)
-{
-    if (!IsQualified && receiver.isObject() && receiver.toObject().isUnqualifiedVarObj()) {
-        if (!MaybeReportUndeclaredVarAssignment(cx, id)) {
-            return false;
-        }
+static bool SetNonexistentProperty(JSContext* cx, HandleNativeObject obj,
+                                   HandleId id, HandleValue v,
+                                   HandleValue receiver,
+                                   ObjectOpResult& result) {
+  if (!IsQualified && receiver.isObject() &&
+      receiver.toObject().isUnqualifiedVarObj()) {
+    if (!MaybeReportUndeclaredVarAssignment(cx, id)) {
+      return false;
     }
+  }
 
+  
+  
+  if (IsQualified && receiver.isObject() && obj == &receiver.toObject()) {
     
     
-    if (IsQualified && receiver.isObject() && obj == &receiver.toObject()) {
-        
-        
-        
+    
 #ifdef DEBUG
-        if (GetOwnPropertyOp op = obj->getOpsGetOwnPropertyDescriptor()) {
-            Rooted<PropertyDescriptor> desc(cx);
-            if (!op(cx, obj, id, &desc)) {
-                return false;
-            }
+    if (GetOwnPropertyOp op = obj->getOpsGetOwnPropertyDescriptor()) {
+      Rooted<PropertyDescriptor> desc(cx);
+      if (!op(cx, obj, id, &desc)) {
+        return false;
+      }
 
-            MOZ_ASSERT(!desc.object());
-        }
+      MOZ_ASSERT(!desc.object());
+    }
 #endif
 
-        
-        if (DefinePropertyOp op = obj->getOpsDefineProperty()) {
-            
-            if (!ReshapeForShadowedProp(cx, obj, id)) {
-                return false;
-            }
-
-            Rooted<PropertyDescriptor> desc(cx);
-            desc.initFields(nullptr, v, JSPROP_ENUMERATE, nullptr, nullptr);
-
-            MOZ_ASSERT(!cx->helperThread());
-            return op(cx, obj, id, desc, result);
-        }
-
-        return DefineNonexistentProperty(cx, obj, id, v, result);
-    }
-
-    return SetPropertyByDefining(cx, id, v, receiver, result);
-}
-
-
-
-static bool
-SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj, uint64_t index, HandleValue v,
-                     ObjectOpResult& result)
-{
     
-
-    
-    double d;
-    if (!ToNumber(cx, v, &d)) {
+    if (DefinePropertyOp op = obj->getOpsDefineProperty()) {
+      
+      
+      if (!ReshapeForShadowedProp(cx, obj, id)) {
         return false;
+      }
+
+      Rooted<PropertyDescriptor> desc(cx);
+      desc.initFields(nullptr, v, JSPROP_ENUMERATE, nullptr, nullptr);
+
+      MOZ_ASSERT(!cx->helperThread());
+      return op(cx, obj, id, desc, result);
     }
 
-    
-    if (obj->hasDetachedBuffer()) {
-        return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
-    }
+    return DefineNonexistentProperty(cx, obj, id, v, result);
+  }
 
-    
-    
-
-    
-    uint32_t length = obj->length();
-
-    
-    if (index >= length) {
-        return result.failSoft(JSMSG_BAD_INDEX);
-    }
-
-    
-    TypedArrayObject::setElement(*obj, index, d);
-
-    
-    return result.succeed();
+  return SetPropertyByDefining(cx, id, v, receiver, result);
 }
 
 
-static bool
-SetDenseElement(JSContext* cx, HandleNativeObject obj, uint32_t index, HandleValue v,
-                ObjectOpResult& result)
-{
+
+static bool SetTypedArrayElement(JSContext* cx, Handle<TypedArrayObject*> obj,
+                                 uint64_t index, HandleValue v,
+                                 ObjectOpResult& result) {
+  
+
+  
+  double d;
+  if (!ToNumber(cx, v, &d)) {
+    return false;
+  }
+
+  
+  if (obj->hasDetachedBuffer()) {
+    return result.failSoft(JSMSG_TYPED_ARRAY_DETACHED);
+  }
+
+  
+  
+
+  
+  uint32_t length = obj->length();
+
+  
+  if (index >= length) {
+    return result.failSoft(JSMSG_BAD_INDEX);
+  }
+
+  
+  TypedArrayObject::setElement(*obj, index, d);
+
+  
+  return result.succeed();
+}
+
+
+static bool SetDenseElement(JSContext* cx, HandleNativeObject obj,
+                            uint32_t index, HandleValue v,
+                            ObjectOpResult& result) {
+  MOZ_ASSERT(!obj->is<TypedArrayObject>());
+  MOZ_ASSERT(obj->containsDenseElement(index));
+
+  if (!obj->maybeCopyElementsForWrite(cx)) {
+    return false;
+  }
+
+  obj->setDenseElementWithType(cx, index, v);
+  return result.succeed();
+}
+
+
+
+
+
+
+
+
+
+static bool SetExistingProperty(JSContext* cx, HandleId id, HandleValue v,
+                                HandleValue receiver, HandleNativeObject pobj,
+                                Handle<PropertyResult> prop,
+                                ObjectOpResult& result) {
+  
+  if (prop.isDenseOrTypedArrayElement()) {
+    
+    if (pobj->denseElementsAreFrozen()) {
+      return result.fail(JSMSG_READ_ONLY);
+    }
+
+    
+    if (receiver.isObject() && pobj == &receiver.toObject()) {
+      uint32_t index = JSID_TO_INT(id);
+
+      if (pobj->is<TypedArrayObject>()) {
+        Rooted<TypedArrayObject*> tobj(cx, &pobj->as<TypedArrayObject>());
+        return SetTypedArrayElement(cx, tobj, index, v, result);
+      }
+
+      return SetDenseElement(cx, pobj, index, v, result);
+    }
+
+    
+    return SetPropertyByDefining(cx, id, v, receiver, result);
+  }
+
+  
+  RootedShape shape(cx, prop.shape());
+  if (shape->isDataDescriptor()) {
+    
+    if (!shape->writable()) {
+      return result.fail(JSMSG_READ_ONLY);
+    }
+
+    
+    if (receiver.isObject() && pobj == &receiver.toObject()) {
+      
+      
+      
+
+      
+      return NativeSetExistingDataProperty(cx, pobj, shape, v, result);
+    }
+
+    
+    
+    return SetPropertyByDefining(cx, id, v, receiver, result);
+  }
+
+  
+  MOZ_ASSERT(shape->isAccessorDescriptor());
+  MOZ_ASSERT_IF(!shape->hasSetterObject(), shape->hasDefaultSetter());
+  if (shape->hasDefaultSetter()) {
+    return result.fail(JSMSG_GETTER_ONLY);
+  }
+
+  RootedValue setter(cx, ObjectValue(*shape->setterObject()));
+  if (!js::CallSetter(cx, receiver, setter, v)) {
+    return false;
+  }
+
+  return result.succeed();
+}
+
+template <QualifiedBool IsQualified>
+bool js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
+                           HandleValue v, HandleValue receiver,
+                           ObjectOpResult& result) {
+  
+  
+  
+  Rooted<PropertyResult> prop(cx);
+  RootedNativeObject pobj(cx, obj);
+
+  
+  
+  
+  for (;;) {
+    
+    bool done;
+    if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop, &done)) {
+      return false;
+    }
+
+    if (prop) {
+      
+      return SetExistingProperty(cx, id, v, receiver, pobj, prop, result);
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    JSObject* proto = done ? nullptr : pobj->staticPrototype();
+    if (!proto) {
+      
+      return SetNonexistentProperty<IsQualified>(cx, obj, id, v, receiver,
+                                                 result);
+    }
+
+    
+    
+    
+    
+    
+    if (!proto->isNative()) {
+      
+      
+      
+      RootedObject protoRoot(cx, proto);
+      if (!IsQualified) {
+        bool found;
+        if (!HasProperty(cx, protoRoot, id, &found)) {
+          return false;
+        }
+        if (!found) {
+          return SetNonexistentProperty<IsQualified>(cx, obj, id, v, receiver,
+                                                     result);
+        }
+      }
+
+      return SetProperty(cx, protoRoot, id, v, receiver, result);
+    }
+    pobj = &proto->as<NativeObject>();
+  }
+}
+
+template bool js::NativeSetProperty<Qualified>(JSContext* cx,
+                                               HandleNativeObject obj,
+                                               HandleId id, HandleValue value,
+                                               HandleValue receiver,
+                                               ObjectOpResult& result);
+
+template bool js::NativeSetProperty<Unqualified>(JSContext* cx,
+                                                 HandleNativeObject obj,
+                                                 HandleId id, HandleValue value,
+                                                 HandleValue receiver,
+                                                 ObjectOpResult& result);
+
+bool js::NativeSetElement(JSContext* cx, HandleNativeObject obj, uint32_t index,
+                          HandleValue v, HandleValue receiver,
+                          ObjectOpResult& result) {
+  RootedId id(cx);
+  if (!IndexToId(cx, index, &id)) {
+    return false;
+  }
+  return NativeSetProperty<Qualified>(cx, obj, id, v, receiver, result);
+}
+
+
+
+
+bool js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj,
+                              HandleId id, ObjectOpResult& result) {
+  
+  Rooted<PropertyResult> prop(cx);
+  if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
+    return false;
+  }
+
+  
+  if (!prop) {
+    
+    
+    return CallJSDeletePropertyOp(cx, obj->getClass()->getDelProperty(), obj,
+                                  id, result);
+  }
+
+  
+  if (GetPropertyAttributes(obj, prop) & JSPROP_PERMANENT) {
+    return result.failCantDelete();
+  }
+
+  if (!CallJSDeletePropertyOp(cx, obj->getClass()->getDelProperty(), obj, id,
+                              result)) {
+    return false;
+  }
+  if (!result) {
+    return true;
+  }
+
+  
+  if (prop.isDenseOrTypedArrayElement()) {
+    
     MOZ_ASSERT(!obj->is<TypedArrayObject>());
-    MOZ_ASSERT(obj->containsDenseElement(index));
 
     if (!obj->maybeCopyElementsForWrite(cx)) {
-        return false;
+      return false;
     }
 
-    obj->setDenseElementWithType(cx, index, v);
-    return result.succeed();
+    obj->setDenseElementHole(cx, JSID_TO_INT(id));
+  } else {
+    if (!NativeObject::removeProperty(cx, obj, id)) {
+      return false;
+    }
+  }
+
+  return SuppressDeletedProperty(cx, obj, id);
 }
 
+bool js::CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target,
+                                  HandleNativeObject from,
+                                  HandlePlainObject excludedItems,
+                                  bool* optimized) {
+  MOZ_ASSERT(
+      !target->isDelegate(),
+      "CopyDataPropertiesNative should only be called during object literal "
+      "construction"
+      "which precludes that |target| is the prototype of any other object");
 
+  *optimized = false;
 
-
-
-
-
-
-
-static bool
-SetExistingProperty(JSContext* cx, HandleId id, HandleValue v, HandleValue receiver,
-                    HandleNativeObject pobj, Handle<PropertyResult> prop, ObjectOpResult& result)
-{
-    
-    if (prop.isDenseOrTypedArrayElement()) {
-        
-        if (pobj->denseElementsAreFrozen()) {
-            return result.fail(JSMSG_READ_ONLY);
-        }
-
-        
-        if (receiver.isObject() && pobj == &receiver.toObject()) {
-            uint32_t index = JSID_TO_INT(id);
-
-            if (pobj->is<TypedArrayObject>()) {
-                Rooted<TypedArrayObject*> tobj(cx, &pobj->as<TypedArrayObject>());
-                return SetTypedArrayElement(cx, tobj, index, v, result);
-            }
-
-            return SetDenseElement(cx, pobj, index, v, result);
-        }
-
-        
-        return SetPropertyByDefining(cx, id, v, receiver, result);
-    }
-
-    
-    RootedShape shape(cx, prop.shape());
-    if (shape->isDataDescriptor()) {
-        
-        if (!shape->writable()) {
-            return result.fail(JSMSG_READ_ONLY);
-        }
-
-        
-        if (receiver.isObject() && pobj == &receiver.toObject()) {
-            
-            
-            
-
-            
-            return NativeSetExistingDataProperty(cx, pobj, shape, v, result);
-        }
-
-        
-        
-        return SetPropertyByDefining(cx, id, v, receiver, result);
-    }
-
-    
-    MOZ_ASSERT(shape->isAccessorDescriptor());
-    MOZ_ASSERT_IF(!shape->hasSetterObject(), shape->hasDefaultSetter());
-    if (shape->hasDefaultSetter()) {
-        return result.fail(JSMSG_GETTER_ONLY);
-    }
-
-    RootedValue setter(cx, ObjectValue(*shape->setterObject()));
-    if (!js::CallSetter(cx, receiver, setter, v)) {
-        return false;
-    }
-
-    return result.succeed();
-}
-
-template <QualifiedBool IsQualified>
-bool
-js::NativeSetProperty(JSContext* cx, HandleNativeObject obj, HandleId id, HandleValue v,
-                      HandleValue receiver, ObjectOpResult& result)
-{
-    
-    
-    
-    Rooted<PropertyResult> prop(cx);
-    RootedNativeObject pobj(cx, obj);
-
-    
-    
-    
-    for (;;) {
-        
-        bool done;
-        if (!LookupOwnPropertyInline<CanGC>(cx, pobj, id, &prop, &done)) {
-            return false;
-        }
-
-        if (prop) {
-            
-            return SetExistingProperty(cx, id, v, receiver, pobj, prop, result);
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        JSObject* proto = done ? nullptr : pobj->staticPrototype();
-        if (!proto) {
-            
-            return SetNonexistentProperty<IsQualified>(cx, obj, id, v, receiver, result);
-        }
-
-        
-        
-        
-        
-        
-        if (!proto->isNative()) {
-            
-            
-            
-            RootedObject protoRoot(cx, proto);
-            if (!IsQualified) {
-                bool found;
-                if (!HasProperty(cx, protoRoot, id, &found)) {
-                    return false;
-                }
-                if (!found) {
-                    return SetNonexistentProperty<IsQualified>(cx, obj, id, v, receiver, result);
-                }
-            }
-
-            return SetProperty(cx, protoRoot, id, v, receiver, result);
-        }
-        pobj = &proto->as<NativeObject>();
-    }
-}
-
-template bool
-js::NativeSetProperty<Qualified>(JSContext* cx, HandleNativeObject obj, HandleId id,
-                                 HandleValue value, HandleValue receiver,
-                                 ObjectOpResult& result);
-
-template bool
-js::NativeSetProperty<Unqualified>(JSContext* cx, HandleNativeObject obj, HandleId id,
-                                   HandleValue value, HandleValue receiver,
-                                   ObjectOpResult& result);
-
-bool
-js::NativeSetElement(JSContext* cx, HandleNativeObject obj, uint32_t index, HandleValue v,
-                     HandleValue receiver, ObjectOpResult& result)
-{
-    RootedId id(cx);
-    if (!IndexToId(cx, index, &id)) {
-        return false;
-    }
-    return NativeSetProperty<Qualified>(cx, obj, id, v, receiver, result);
-}
-
-
-
-
-bool
-js::NativeDeleteProperty(JSContext* cx, HandleNativeObject obj, HandleId id,
-                         ObjectOpResult& result)
-{
-    
-    Rooted<PropertyResult> prop(cx);
-    if (!NativeLookupOwnProperty<CanGC>(cx, obj, id, &prop)) {
-        return false;
-    }
-
-    
-    if (!prop) {
-        
-        
-        return CallJSDeletePropertyOp(cx, obj->getClass()->getDelProperty(), obj, id, result);
-    }
-
-    
-    if (GetPropertyAttributes(obj, prop) & JSPROP_PERMANENT) {
-        return result.failCantDelete();
-    }
-
-    if (!CallJSDeletePropertyOp(cx, obj->getClass()->getDelProperty(), obj, id, result)) {
-        return false;
-    }
-    if (!result) {
-        return true;
-    }
-
-    
-    if (prop.isDenseOrTypedArrayElement()) {
-        
-        MOZ_ASSERT(!obj->is<TypedArrayObject>());
-
-        if (!obj->maybeCopyElementsForWrite(cx)) {
-            return false;
-        }
-
-        obj->setDenseElementHole(cx, JSID_TO_INT(id));
-    } else {
-        if (!NativeObject::removeProperty(cx, obj, id)) {
-            return false;
-        }
-    }
-
-    return SuppressDeletedProperty(cx, obj, id);
-}
-
-bool
-js::CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target, HandleNativeObject from,
-                             HandlePlainObject excludedItems, bool* optimized)
-{
-    MOZ_ASSERT(!target->isDelegate(),
-               "CopyDataPropertiesNative should only be called during object literal construction"
-               "which precludes that |target| is the prototype of any other object");
-
-    *optimized = false;
-
-    
-    
-    if (from->getDenseInitializedLength() > 0 ||
-        from->isIndexed() ||
-        from->is<TypedArrayObject>() ||
-        from->getClass()->getNewEnumerate() ||
-        from->getClass()->getEnumerate())
-    {
-        return true;
-    }
-
-    
-    using ShapeVector = GCVector<Shape*, 8>;
-    Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
-
-    RootedShape fromShape(cx, from->lastProperty());
-    for (Shape::Range<NoGC> r(fromShape); !r.empty(); r.popFront()) {
-        Shape* shape = &r.front();
-        jsid id = shape->propid();
-        MOZ_ASSERT(!JSID_IS_INT(id));
-
-        if (!shape->enumerable()) {
-            continue;
-        }
-        if (excludedItems && excludedItems->contains(cx, id)) {
-            continue;
-        }
-
-        
-        
-        
-        
-        
-        if (!shape->isDataProperty()) {
-            return true;
-        }
-
-        if (!shapes.append(shape)) {
-            return false;
-        }
-    }
-
-    *optimized = true;
-
-    
-    
-    const bool targetHadNoOwnProperties = target->lastProperty()->isEmptyShape();
-
-    RootedId key(cx);
-    RootedValue value(cx);
-    for (size_t i = shapes.length(); i > 0; i--) {
-        Shape* shape = shapes[i - 1];
-        MOZ_ASSERT(shape->isDataProperty());
-        MOZ_ASSERT(shape->enumerable());
-
-        key = shape->propid();
-        MOZ_ASSERT(!JSID_IS_INT(key));
-
-        MOZ_ASSERT(from->isNative());
-        MOZ_ASSERT(from->lastProperty() == fromShape);
-
-        value = from->getSlot(shape->slot());
-        if (targetHadNoOwnProperties) {
-            MOZ_ASSERT(!target->contains(cx, key),
-                       "didn't expect to find an existing property");
-
-            if (!AddDataPropertyNonDelegate(cx, target, key, value)) {
-                return false;
-            }
-        } else {
-            if (!NativeDefineDataProperty(cx, target, key, value, JSPROP_ENUMERATE)) {
-                return false;
-            }
-        }
-    }
-
+  
+  
+  if (from->getDenseInitializedLength() > 0 || from->isIndexed() ||
+      from->is<TypedArrayObject>() || from->getClass()->getNewEnumerate() ||
+      from->getClass()->getEnumerate()) {
     return true;
-}
+  }
 
-bool
-js::CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target,
-                             Handle<UnboxedPlainObject*> from, HandlePlainObject excludedItems,
-                             bool* optimized)
-{
-    MOZ_ASSERT(!target->isDelegate(),
-               "CopyDataPropertiesNative should only be called during object literal construction"
-               "which precludes that |target| is the prototype of any other object");
+  
+  using ShapeVector = GCVector<Shape*, 8>;
+  Rooted<ShapeVector> shapes(cx, ShapeVector(cx));
 
-    *optimized = false;
+  RootedShape fromShape(cx, from->lastProperty());
+  for (Shape::Range<NoGC> r(fromShape); !r.empty(); r.popFront()) {
+    Shape* shape = &r.front();
+    jsid id = shape->propid();
+    MOZ_ASSERT(!JSID_IS_INT(id));
 
-    
-    if (from->maybeExpando()) {
-        return true;
+    if (!shape->enumerable()) {
+      continue;
+    }
+    if (excludedItems && excludedItems->contains(cx, id)) {
+      continue;
     }
 
-    *optimized = true;
+    
+    
+    
+    
+    
+    if (!shape->isDataProperty()) {
+      return true;
+    }
 
-    
-    
-    const bool targetHadNoOwnProperties = target->lastProperty()->isEmptyShape();
+    if (!shapes.append(shape)) {
+      return false;
+    }
+  }
+
+  *optimized = true;
+
+  
+  
+  const bool targetHadNoOwnProperties = target->lastProperty()->isEmptyShape();
+
+  RootedId key(cx);
+  RootedValue value(cx);
+  for (size_t i = shapes.length(); i > 0; i--) {
+    Shape* shape = shapes[i - 1];
+    MOZ_ASSERT(shape->isDataProperty());
+    MOZ_ASSERT(shape->enumerable());
+
+    key = shape->propid();
+    MOZ_ASSERT(!JSID_IS_INT(key));
+
+    MOZ_ASSERT(from->isNative());
+    MOZ_ASSERT(from->lastProperty() == fromShape);
+
+    value = from->getSlot(shape->slot());
+    if (targetHadNoOwnProperties) {
+      MOZ_ASSERT(!target->contains(cx, key),
+                 "didn't expect to find an existing property");
+
+      if (!AddDataPropertyNonDelegate(cx, target, key, value)) {
+        return false;
+      }
+    } else {
+      if (!NativeDefineDataProperty(cx, target, key, value, JSPROP_ENUMERATE)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+bool js::CopyDataPropertiesNative(JSContext* cx, HandlePlainObject target,
+                                  Handle<UnboxedPlainObject*> from,
+                                  HandlePlainObject excludedItems,
+                                  bool* optimized) {
+  MOZ_ASSERT(
+      !target->isDelegate(),
+      "CopyDataPropertiesNative should only be called during object literal "
+      "construction"
+      "which precludes that |target| is the prototype of any other object");
+
+  *optimized = false;
+
+  
+  if (from->maybeExpando()) {
+    return true;
+  }
+
+  *optimized = true;
+
+  
+  
+  const bool targetHadNoOwnProperties = target->lastProperty()->isEmptyShape();
 
 #ifdef DEBUG
-    RootedObjectGroup fromGroup(cx, from->group());
+  RootedObjectGroup fromGroup(cx, from->group());
 #endif
 
-    RootedId key(cx);
-    RootedValue value(cx);
-    const UnboxedLayout& layout = from->layout();
-    for (size_t i = 0; i < layout.properties().length(); i++) {
-        const UnboxedLayout::Property& property = layout.properties()[i];
-        key = NameToId(property.name);
-        MOZ_ASSERT(!JSID_IS_INT(key));
+  RootedId key(cx);
+  RootedValue value(cx);
+  const UnboxedLayout& layout = from->layout();
+  for (size_t i = 0; i < layout.properties().length(); i++) {
+    const UnboxedLayout::Property& property = layout.properties()[i];
+    key = NameToId(property.name);
+    MOZ_ASSERT(!JSID_IS_INT(key));
 
-        if (excludedItems && excludedItems->contains(cx, key)) {
-            continue;
-        }
-
-        
-        MOZ_ASSERT(from->group() == fromGroup);
-
-        
-        value = from->getValue(property);
-
-        if (targetHadNoOwnProperties) {
-            MOZ_ASSERT(!target->contains(cx, key),
-                       "didn't expect to find an existing property");
-
-            if (!AddDataPropertyNonDelegate(cx, target, key, value)) {
-                return false;
-            }
-        } else {
-            if (!NativeDefineDataProperty(cx, target, key, value, JSPROP_ENUMERATE)) {
-                return false;
-            }
-        }
+    if (excludedItems && excludedItems->contains(cx, key)) {
+      continue;
     }
 
-    return true;
+    
+    MOZ_ASSERT(from->group() == fromGroup);
+
+    
+    value = from->getValue(property);
+
+    if (targetHadNoOwnProperties) {
+      MOZ_ASSERT(!target->contains(cx, key),
+                 "didn't expect to find an existing property");
+
+      if (!AddDataPropertyNonDelegate(cx, target, key, value)) {
+        return false;
+      }
+    } else {
+      if (!NativeDefineDataProperty(cx, target, key, value, JSPROP_ENUMERATE)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }

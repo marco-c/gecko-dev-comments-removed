@@ -14,8 +14,8 @@
 namespace mozilla {
 
 namespace ipc {
-  class PBackgroundParent;
-} 
+class PBackgroundParent;
+}  
 
 namespace dom {
 
@@ -25,22 +25,20 @@ namespace cache {
 
 class ManagerId;
 
-class PrincipalVerifier final : public Runnable
-{
-public:
+class PrincipalVerifier final : public Runnable {
+ public:
   
   
   
   
-  class Listener
-  {
-  public:
+  class Listener {
+   public:
     virtual void OnPrincipalVerified(nsresult aRv, ManagerId* aManagerId) = 0;
   };
 
-  static already_AddRefed<PrincipalVerifier>
-  CreateAndDispatch(Listener* aListener, mozilla::ipc::PBackgroundParent* aActor,
-                    const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+  static already_AddRefed<PrincipalVerifier> CreateAndDispatch(
+      Listener* aListener, mozilla::ipc::PBackgroundParent* aActor,
+      const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
   void AddListener(Listener* aListener);
 
@@ -48,8 +46,9 @@ public:
   
   void RemoveListener(Listener* aListener);
 
-private:
-  PrincipalVerifier(Listener* aListener, mozilla::ipc::PBackgroundParent* aActor,
+ private:
+  PrincipalVerifier(Listener* aListener,
+                    mozilla::ipc::PBackgroundParent* aActor,
                     const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
   virtual ~PrincipalVerifier();
 
@@ -71,12 +70,12 @@ private:
   nsresult mResult;
   RefPtr<ManagerId> mManagerId;
 
-public:
+ public:
   NS_DECL_NSIRUNNABLE
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

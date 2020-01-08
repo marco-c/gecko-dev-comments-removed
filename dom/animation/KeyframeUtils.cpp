@@ -16,21 +16,21 @@
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/TimingParams.h"
-#include "mozilla/dom/BaseKeyframeTypesBinding.h" 
+#include "mozilla/dom/BaseKeyframeTypesBinding.h"  
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeEffectBinding.h"
-#include "mozilla/dom/KeyframeEffect.h" 
+#include "mozilla/dom/KeyframeEffect.h"  
 #include "mozilla/dom/Nullable.h"
-#include "jsapi.h" 
+#include "jsapi.h"  
 #include "nsClassHashtable.h"
-#include "nsContentUtils.h" 
+#include "nsContentUtils.h"  
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"
-#include "nsCSSPseudoElements.h" 
-#include "nsDocument.h" 
+#include "nsCSSPseudoElements.h"  
+#include "nsDocument.h"  
 #include "nsIScriptError.h"
 #include "nsTArray.h"
-#include <algorithm> 
+#include <algorithm>  
 
 using mozilla::dom::Nullable;
 
@@ -54,8 +54,7 @@ enum class ListAllowance { eDisallow, eAllow };
 
 
 
-struct PropertyValuesPair
-{
+struct PropertyValuesPair {
   nsCSSPropertyID mProperty;
   nsTArray<nsString> mValues;
 };
@@ -64,21 +63,17 @@ struct PropertyValuesPair
 
 
 
-struct AdditionalProperty
-{
+struct AdditionalProperty {
   nsCSSPropertyID mProperty;
-  size_t mJsidIndex;        
+  size_t mJsidIndex;  
 
-  struct PropertyComparator
-  {
+  struct PropertyComparator {
     bool Equals(const AdditionalProperty& aLhs,
-                const AdditionalProperty& aRhs) const
-    {
+                const AdditionalProperty& aRhs) const {
       return aLhs.mProperty == aRhs.mProperty;
     }
     bool LessThan(const AdditionalProperty& aLhs,
-                  const AdditionalProperty& aRhs) const
-    {
+                  const AdditionalProperty& aRhs) const {
       return nsCSSProps::PropertyIDLNameSortPosition(aLhs.mProperty) <
              nsCSSProps::PropertyIDLNameSortPosition(aRhs.mProperty);
     }
@@ -92,8 +87,7 @@ struct AdditionalProperty
 
 
 
-struct KeyframeValueEntry
-{
+struct KeyframeValueEntry {
   nsCSSPropertyID mProperty;
   AnimationValue mValue;
 
@@ -101,17 +95,13 @@ struct KeyframeValueEntry
   Maybe<ComputedTimingFunction> mTimingFunction;
   dom::CompositeOperation mComposite;
 
-  struct PropertyOffsetComparator
-  {
+  struct PropertyOffsetComparator {
     static bool Equals(const KeyframeValueEntry& aLhs,
-                       const KeyframeValueEntry& aRhs)
-    {
-      return aLhs.mProperty == aRhs.mProperty &&
-             aLhs.mOffset == aRhs.mOffset;
+                       const KeyframeValueEntry& aRhs) {
+      return aLhs.mProperty == aRhs.mProperty && aLhs.mOffset == aRhs.mOffset;
     }
     static bool LessThan(const KeyframeValueEntry& aLhs,
-                         const KeyframeValueEntry& aRhs)
-    {
+                         const KeyframeValueEntry& aRhs) {
       
       int32_t order = nsCSSProps::PropertyIDLNameSortPosition(aLhs.mProperty) -
                       nsCSSProps::PropertyIDLNameSortPosition(aRhs.mProperty);
@@ -125,16 +115,13 @@ struct KeyframeValueEntry
   };
 };
 
-class ComputedOffsetComparator
-{
-public:
-  static bool Equals(const Keyframe& aLhs, const Keyframe& aRhs)
-  {
+class ComputedOffsetComparator {
+ public:
+  static bool Equals(const Keyframe& aLhs, const Keyframe& aRhs) {
     return aLhs.mComputedOffset == aRhs.mComputedOffset;
   }
 
-  static bool LessThan(const Keyframe& aLhs, const Keyframe& aRhs)
-  {
+  static bool LessThan(const Keyframe& aLhs, const Keyframe& aRhs) {
     return aLhs.mComputedOffset < aRhs.mComputedOffset;
   }
 };
@@ -145,72 +132,56 @@ public:
 
 
 
-static void
-GetKeyframeListFromKeyframeSequence(JSContext* aCx,
-                                    nsIDocument* aDocument,
+static void GetKeyframeListFromKeyframeSequence(JSContext* aCx,
+                                                nsIDocument* aDocument,
+                                                JS::ForOfIterator& aIterator,
+                                                nsTArray<Keyframe>& aResult,
+                                                ErrorResult& aRv);
+
+static bool ConvertKeyframeSequence(JSContext* aCx, nsIDocument* aDocument,
                                     JS::ForOfIterator& aIterator,
-                                    nsTArray<Keyframe>& aResult,
-                                    ErrorResult& aRv);
+                                    nsTArray<Keyframe>& aResult);
 
-static bool
-ConvertKeyframeSequence(JSContext* aCx,
-                        nsIDocument* aDocument,
-                        JS::ForOfIterator& aIterator,
-                        nsTArray<Keyframe>& aResult);
+static bool GetPropertyValuesPairs(JSContext* aCx,
+                                   JS::Handle<JSObject*> aObject,
+                                   ListAllowance aAllowLists,
+                                   nsTArray<PropertyValuesPair>& aResult);
 
-static bool
-GetPropertyValuesPairs(JSContext* aCx,
-                       JS::Handle<JSObject*> aObject,
-                       ListAllowance aAllowLists,
-                       nsTArray<PropertyValuesPair>& aResult);
+static bool AppendStringOrStringSequenceToArray(JSContext* aCx,
+                                                JS::Handle<JS::Value> aValue,
+                                                ListAllowance aAllowLists,
+                                                nsTArray<nsString>& aValues);
 
-static bool
-AppendStringOrStringSequenceToArray(JSContext* aCx,
-                                    JS::Handle<JS::Value> aValue,
-                                    ListAllowance aAllowLists,
-                                    nsTArray<nsString>& aValues);
+static bool AppendValueAsString(JSContext* aCx, nsTArray<nsString>& aValues,
+                                JS::Handle<JS::Value> aValue);
 
-static bool
-AppendValueAsString(JSContext* aCx,
-                    nsTArray<nsString>& aValues,
-                    JS::Handle<JS::Value> aValue);
+static Maybe<PropertyValuePair> MakePropertyValuePair(
+    nsCSSPropertyID aProperty, const nsAString& aStringValue,
+    nsIDocument* aDocument);
 
-static Maybe<PropertyValuePair>
-MakePropertyValuePair(nsCSSPropertyID aProperty, const nsAString& aStringValue,
-                      nsIDocument* aDocument);
-
-static bool
-HasValidOffsets(const nsTArray<Keyframe>& aKeyframes);
+static bool HasValidOffsets(const nsTArray<Keyframe>& aKeyframes);
 
 #ifdef DEBUG
-static void
-MarkAsComputeValuesFailureKey(PropertyValuePair& aPair);
+static void MarkAsComputeValuesFailureKey(PropertyValuePair& aPair);
 
 #endif
 
+static nsTArray<ComputedKeyframeValues> GetComputedKeyframeValues(
+    const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
+    const ComputedStyle* aComputedValues);
 
-static nsTArray<ComputedKeyframeValues>
-GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                          dom::Element* aElement,
-                          const ComputedStyle* aComputedValues);
+static void BuildSegmentsFromValueEntries(
+    nsTArray<KeyframeValueEntry>& aEntries,
+    nsTArray<AnimationProperty>& aResult);
 
-static void
-BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
-                              nsTArray<AnimationProperty>& aResult);
+static void GetKeyframeListFromPropertyIndexedKeyframe(
+    JSContext* aCx, nsIDocument* aDocument, JS::Handle<JS::Value> aValue,
+    nsTArray<Keyframe>& aResult, ErrorResult& aRv);
 
-static void
-GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
-                                           nsIDocument* aDocument,
-                                           JS::Handle<JS::Value> aValue,
-                                           nsTArray<Keyframe>& aResult,
-                                           ErrorResult& aRv);
+static bool HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
+                                      nsIDocument* aDocument);
 
-static bool
-HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                          nsIDocument* aDocument);
-
-static void
-DistributeRange(const Range<Keyframe>& aRange);
+static void DistributeRange(const Range<Keyframe>& aRange);
 
 
 
@@ -218,12 +189,9 @@ DistributeRange(const Range<Keyframe>& aRange);
 
 
 
- nsTArray<Keyframe>
-KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
-                                      nsIDocument* aDocument,
-                                      JS::Handle<JSObject*> aFrames,
-                                      ErrorResult& aRv)
-{
+ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
+    JSContext* aCx, nsIDocument* aDocument, JS::Handle<JSObject*> aFrames,
+    ErrorResult& aRv) {
   MOZ_ASSERT(!aRv.Failed());
 
   nsTArray<Keyframe> keyframes;
@@ -265,9 +233,8 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
   return keyframes;
 }
 
- void
-KeyframeUtils::DistributeKeyframes(nsTArray<Keyframe>& aKeyframes)
-{
+ void KeyframeUtils::DistributeKeyframes(
+    nsTArray<Keyframe>& aKeyframes) {
   if (aKeyframes.IsEmpty()) {
     return;
   }
@@ -303,15 +270,12 @@ KeyframeUtils::DistributeKeyframes(nsTArray<Keyframe>& aKeyframes)
 
  nsTArray<AnimationProperty>
 KeyframeUtils::GetAnimationPropertiesFromKeyframes(
-  const nsTArray<Keyframe>& aKeyframes,
-  dom::Element* aElement,
-  const ComputedStyle* aStyle,
-  dom::CompositeOperation aEffectComposite)
-{
+    const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
+    const ComputedStyle* aStyle, dom::CompositeOperation aEffectComposite) {
   nsTArray<AnimationProperty> result;
 
   const nsTArray<ComputedKeyframeValues> computedValues =
-    GetComputedKeyframeValues(aKeyframes, aElement, aStyle);
+      GetComputedKeyframeValues(aKeyframes, aElement, aStyle);
   if (computedValues.IsEmpty()) {
     
     
@@ -337,9 +301,9 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
       
       
       entry->mComposite =
-        frame.mComposite == dom::CompositeOperationOrAuto::Auto
-        ? aEffectComposite
-        : static_cast<dom::CompositeOperation>(frame.mComposite);
+          frame.mComposite == dom::CompositeOperationOrAuto::Auto
+              ? aEffectComposite
+              : static_cast<dom::CompositeOperation>(frame.mComposite);
     }
   }
 
@@ -347,9 +311,8 @@ KeyframeUtils::GetAnimationPropertiesFromKeyframes(
   return result;
 }
 
- bool
-KeyframeUtils::IsAnimatableProperty(nsCSSPropertyID aProperty)
-{
+ bool KeyframeUtils::IsAnimatableProperty(
+    nsCSSPropertyID aProperty) {
   
   
   
@@ -376,13 +339,11 @@ KeyframeUtils::IsAnimatableProperty(nsCSSPropertyID aProperty)
 
 
 
-static void
-GetKeyframeListFromKeyframeSequence(JSContext* aCx,
-                                    nsIDocument* aDocument,
-                                    JS::ForOfIterator& aIterator,
-                                    nsTArray<Keyframe>& aResult,
-                                    ErrorResult& aRv)
-{
+static void GetKeyframeListFromKeyframeSequence(JSContext* aCx,
+                                                nsIDocument* aDocument,
+                                                JS::ForOfIterator& aIterator,
+                                                nsTArray<Keyframe>& aResult,
+                                                ErrorResult& aRv) {
   MOZ_ASSERT(!aRv.Failed());
   MOZ_ASSERT(aResult.IsEmpty());
 
@@ -414,12 +375,9 @@ GetKeyframeListFromKeyframeSequence(JSContext* aCx,
 
 
 
-static bool
-ConvertKeyframeSequence(JSContext* aCx,
-                        nsIDocument* aDocument,
-                        JS::ForOfIterator& aIterator,
-                        nsTArray<Keyframe>& aResult)
-{
+static bool ConvertKeyframeSequence(JSContext* aCx, nsIDocument* aDocument,
+                                    JS::ForOfIterator& aIterator,
+                                    nsTArray<Keyframe>& aResult) {
   JS::Rooted<JS::Value> value(aCx);
   ErrorResult parseEasingResult;
 
@@ -463,18 +421,15 @@ ConvertKeyframeSequence(JSContext* aCx,
     nsTArray<PropertyValuesPair> propertyValuePairs;
     if (value.isObject()) {
       JS::Rooted<JSObject*> object(aCx, &value.toObject());
-      if (!GetPropertyValuesPairs(aCx, object,
-                                  ListAllowance::eDisallow,
+      if (!GetPropertyValuesPairs(aCx, object, ListAllowance::eDisallow,
                                   propertyValuePairs)) {
         return false;
       }
     }
 
     if (!parseEasingResult.Failed()) {
-      keyframe->mTimingFunction =
-        TimingParams::ParseEasing(keyframeDict.mEasing,
-                                  aDocument,
-                                  parseEasingResult);
+      keyframe->mTimingFunction = TimingParams::ParseEasing(
+          keyframeDict.mEasing, aDocument, parseEasingResult);
       
       
       
@@ -486,7 +441,7 @@ ConvertKeyframeSequence(JSContext* aCx,
       MOZ_ASSERT(pair.mValues.Length() == 1);
 
       Maybe<PropertyValuePair> valuePair =
-        MakePropertyValuePair(pair.mProperty, pair.mValues[0], aDocument);
+          MakePropertyValuePair(pair.mProperty, pair.mValues[0], aDocument);
       if (!valuePair) {
         continue;
       }
@@ -527,12 +482,10 @@ ConvertKeyframeSequence(JSContext* aCx,
 
 
 
-static bool
-GetPropertyValuesPairs(JSContext* aCx,
-                       JS::Handle<JSObject*> aObject,
-                       ListAllowance aAllowLists,
-                       nsTArray<PropertyValuesPair>& aResult)
-{
+static bool GetPropertyValuesPairs(JSContext* aCx,
+                                   JS::Handle<JSObject*> aObject,
+                                   ListAllowance aAllowLists,
+                                   nsTArray<PropertyValuesPair>& aResult) {
   nsTArray<AdditionalProperty> properties;
 
   
@@ -550,9 +503,8 @@ GetPropertyValuesPairs(JSContext* aCx,
     if (!propName.init(aCx, ids[i])) {
       return false;
     }
-    nsCSSPropertyID property =
-      nsCSSProps::LookupPropertyByIDLName(propName,
-                                          CSSEnabledState::eForAllContent);
+    nsCSSPropertyID property = nsCSSProps::LookupPropertyByIDLName(
+        propName, CSSEnabledState::eForAllContent);
     if (KeyframeUtils::IsAnimatableProperty(property)) {
       AdditionalProperty* p = properties.AppendElement();
       p->mProperty = property;
@@ -587,12 +539,10 @@ GetPropertyValuesPairs(JSContext* aCx,
 
 
 
-static bool
-AppendStringOrStringSequenceToArray(JSContext* aCx,
-                                    JS::Handle<JS::Value> aValue,
-                                    ListAllowance aAllowLists,
-                                    nsTArray<nsString>& aValues)
-{
+static bool AppendStringOrStringSequenceToArray(JSContext* aCx,
+                                                JS::Handle<JS::Value> aValue,
+                                                ListAllowance aAllowLists,
+                                                nsTArray<nsString>& aValues) {
   if (aAllowLists == ListAllowance::eAllow && aValue.isObject()) {
     
     
@@ -631,30 +581,23 @@ AppendStringOrStringSequenceToArray(JSContext* aCx,
 
 
 
-static bool
-AppendValueAsString(JSContext* aCx,
-                    nsTArray<nsString>& aValues,
-                    JS::Handle<JS::Value> aValue)
-{
+static bool AppendValueAsString(JSContext* aCx, nsTArray<nsString>& aValues,
+                                JS::Handle<JS::Value> aValue) {
   return ConvertJSValueToString(aCx, aValue, dom::eStringify, dom::eStringify,
                                 *aValues.AppendElement());
 }
 
-static void
-ReportInvalidPropertyValueToConsole(nsCSSPropertyID aProperty,
-                                    const nsAString& aInvalidPropertyValue,
-                                    nsIDocument* aDoc)
-{
+static void ReportInvalidPropertyValueToConsole(
+    nsCSSPropertyID aProperty, const nsAString& aInvalidPropertyValue,
+    nsIDocument* aDoc) {
   const nsString& invalidValue = PromiseFlatString(aInvalidPropertyValue);
   const NS_ConvertASCIItoUTF16 propertyName(
-    nsCSSProps::GetStringValue(aProperty));
-  const char16_t* params[] = { invalidValue.get(), propertyName.get() };
-  nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                  NS_LITERAL_CSTRING("Animation"),
-                                  aDoc,
-                                  nsContentUtils::eDOM_PROPERTIES,
-                                  "InvalidKeyframePropertyValue",
-                                  params, ArrayLength(params));
+      nsCSSProps::GetStringValue(aProperty));
+  const char16_t* params[] = {invalidValue.get(), propertyName.get()};
+  nsContentUtils::ReportToConsole(
+      nsIScriptError::warningFlag, NS_LITERAL_CSTRING("Animation"), aDoc,
+      nsContentUtils::eDOM_PROPERTIES, "InvalidKeyframePropertyValue", params,
+      ArrayLength(params));
 }
 
 
@@ -667,17 +610,16 @@ ReportInvalidPropertyValueToConsole(nsCSSPropertyID aProperty,
 
 
 
-static Maybe<PropertyValuePair>
-MakePropertyValuePair(nsCSSPropertyID aProperty, const nsAString& aStringValue,
-                      nsIDocument* aDocument)
-{
+static Maybe<PropertyValuePair> MakePropertyValuePair(
+    nsCSSPropertyID aProperty, const nsAString& aStringValue,
+    nsIDocument* aDocument) {
   MOZ_ASSERT(aDocument);
   Maybe<PropertyValuePair> result;
 
   ServoCSSParser::ParsingEnvironment env =
-    ServoCSSParser::GetParsingEnvironment(aDocument);
+      ServoCSSParser::GetParsingEnvironment(aDocument);
   RefPtr<RawServoDeclarationBlock> servoDeclarationBlock =
-    ServoCSSParser::ParseProperty(aProperty, aStringValue, env);
+      ServoCSSParser::ParseProperty(aProperty, aStringValue, env);
 
   if (servoDeclarationBlock) {
     result.emplace(aProperty, std::move(servoDeclarationBlock));
@@ -695,9 +637,7 @@ MakePropertyValuePair(nsCSSPropertyID aProperty, const nsAString& aStringValue,
 
 
 
-static bool
-HasValidOffsets(const nsTArray<Keyframe>& aKeyframes)
-{
+static bool HasValidOffsets(const nsTArray<Keyframe>& aKeyframes) {
   double offset = 0.0;
   for (const Keyframe& keyframe : aKeyframes) {
     if (keyframe.mOffset) {
@@ -720,9 +660,7 @@ HasValidOffsets(const nsTArray<Keyframe>& aKeyframes)
 
 
 
-static void
-MarkAsComputeValuesFailureKey(PropertyValuePair& aPair)
-{
+static void MarkAsComputeValuesFailureKey(PropertyValuePair& aPair) {
   MOZ_ASSERT(nsCSSProps::IsShorthand(aPair.mProperty),
              "Only shorthand property values can be marked as failure values");
 
@@ -734,12 +672,9 @@ MarkAsComputeValuesFailureKey(PropertyValuePair& aPair)
 
 
 
-
-static nsTArray<ComputedKeyframeValues>
-GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                          dom::Element* aElement,
-                          const ComputedStyle* aComputedStyle)
-{
+static nsTArray<ComputedKeyframeValues> GetComputedKeyframeValues(
+    const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
+    const ComputedStyle* aComputedStyle) {
   MOZ_ASSERT(aElement);
 
   nsTArray<ComputedKeyframeValues> result;
@@ -753,43 +688,37 @@ GetComputedKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
     return result;
   }
 
-  result = presContext->StyleSet()->
-    GetComputedKeyframeValuesFor(aKeyframes, aElement, aComputedStyle);
+  result = presContext->StyleSet()->GetComputedKeyframeValuesFor(
+      aKeyframes, aElement, aComputedStyle);
   return result;
 }
 
-static void
-AppendInitialSegment(AnimationProperty* aAnimationProperty,
-                     const KeyframeValueEntry& aFirstEntry)
-{
+static void AppendInitialSegment(AnimationProperty* aAnimationProperty,
+                                 const KeyframeValueEntry& aFirstEntry) {
   AnimationPropertySegment* segment =
-    aAnimationProperty->mSegments.AppendElement();
-  segment->mFromKey        = 0.0f;
-  segment->mToKey          = aFirstEntry.mOffset;
-  segment->mToValue        = aFirstEntry.mValue;
-  segment->mToComposite    = aFirstEntry.mComposite;
+      aAnimationProperty->mSegments.AppendElement();
+  segment->mFromKey = 0.0f;
+  segment->mToKey = aFirstEntry.mOffset;
+  segment->mToValue = aFirstEntry.mValue;
+  segment->mToComposite = aFirstEntry.mComposite;
 }
 
-static void
-AppendFinalSegment(AnimationProperty* aAnimationProperty,
-                   const KeyframeValueEntry& aLastEntry)
-{
+static void AppendFinalSegment(AnimationProperty* aAnimationProperty,
+                               const KeyframeValueEntry& aLastEntry) {
   AnimationPropertySegment* segment =
-    aAnimationProperty->mSegments.AppendElement();
-  segment->mFromKey        = aLastEntry.mOffset;
-  segment->mFromValue      = aLastEntry.mValue;
-  segment->mFromComposite  = aLastEntry.mComposite;
-  segment->mToKey          = 1.0f;
+      aAnimationProperty->mSegments.AppendElement();
+  segment->mFromKey = aLastEntry.mOffset;
+  segment->mFromValue = aLastEntry.mValue;
+  segment->mFromComposite = aLastEntry.mComposite;
+  segment->mToKey = 1.0f;
   segment->mTimingFunction = aLastEntry.mTimingFunction;
 }
 
 
 
 
-static AnimationProperty*
-HandleMissingInitialKeyframe(nsTArray<AnimationProperty>& aResult,
-                             const KeyframeValueEntry& aEntry)
-{
+static AnimationProperty* HandleMissingInitialKeyframe(
+    nsTArray<AnimationProperty>& aResult, const KeyframeValueEntry& aEntry) {
   MOZ_ASSERT(aEntry.mOffset != 0.0f,
              "The offset of the entry should not be 0.0");
 
@@ -807,11 +736,9 @@ HandleMissingInitialKeyframe(nsTArray<AnimationProperty>& aResult,
   return result;
 }
 
-static void
-HandleMissingFinalKeyframe(nsTArray<AnimationProperty>& aResult,
-                           const KeyframeValueEntry& aEntry,
-                           AnimationProperty* aCurrentAnimationProperty)
-{
+static void HandleMissingFinalKeyframe(
+    nsTArray<AnimationProperty>& aResult, const KeyframeValueEntry& aEntry,
+    AnimationProperty* aCurrentAnimationProperty) {
   MOZ_ASSERT(aEntry.mOffset != 1.0f,
              "The offset of the entry should not be 1.0");
 
@@ -846,10 +773,9 @@ HandleMissingFinalKeyframe(nsTArray<AnimationProperty>& aResult,
 
 
 
-static void
-BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
-                              nsTArray<AnimationProperty>& aResult)
-{
+static void BuildSegmentsFromValueEntries(
+    nsTArray<KeyframeValueEntry>& aEntries,
+    nsTArray<AnimationProperty>& aResult) {
   if (aEntries.IsEmpty()) {
     return;
   }
@@ -904,12 +830,11 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
     }
 
     MOZ_ASSERT(aEntries[i].mProperty != eCSSProperty_UNKNOWN &&
-               aEntries[i + 1].mProperty != eCSSProperty_UNKNOWN,
+                   aEntries[i + 1].mProperty != eCSSProperty_UNKNOWN,
                "Each entry should specify a valid property");
 
     
-    if (aEntries[i].mProperty != lastProperty &&
-        aEntries[i].mOffset != 0.0f) {
+    if (aEntries[i].mProperty != lastProperty && aEntries[i].mOffset != 0.0f) {
       
       
       
@@ -957,8 +882,7 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
     if (aEntries[i].mOffset == 0.0f && aEntries[i + 1].mOffset == 0.0f) {
       
       MOZ_ASSERT(aEntries[i].mProperty == aEntries[i + 1].mProperty);
-      while (j + 1 < n &&
-             aEntries[j + 1].mOffset == 0.0f &&
+      while (j + 1 < n && aEntries[j + 1].mOffset == 0.0f &&
              aEntries[j + 1].mProperty == aEntries[j].mProperty) {
         ++j;
       }
@@ -966,8 +890,7 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
       if (aEntries[i + 1].mOffset == 1.0f &&
           aEntries[i + 1].mProperty == aEntries[i].mProperty) {
         
-        while (j + 1 < n &&
-               aEntries[j + 1].mOffset == 1.0f &&
+        while (j + 1 < n && aEntries[j + 1].mOffset == 1.0f &&
                aEntries[j + 1].mProperty == aEntries[j].mProperty) {
           ++j;
         }
@@ -994,14 +917,14 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
 
     
     AnimationPropertySegment* segment =
-      animationProperty->mSegments.AppendElement();
-    segment->mFromKey        = aEntries[i].mOffset;
-    segment->mToKey          = aEntries[j].mOffset;
-    segment->mFromValue      = aEntries[i].mValue;
-    segment->mToValue        = aEntries[j].mValue;
+        animationProperty->mSegments.AppendElement();
+    segment->mFromKey = aEntries[i].mOffset;
+    segment->mToKey = aEntries[j].mOffset;
+    segment->mFromValue = aEntries[i].mValue;
+    segment->mToValue = aEntries[j].mValue;
     segment->mTimingFunction = aEntries[i].mTimingFunction;
-    segment->mFromComposite  = aEntries[i].mComposite;
-    segment->mToComposite    = aEntries[j].mComposite;
+    segment->mFromComposite = aEntries[i].mComposite;
+    segment->mToComposite = aEntries[j].mComposite;
 
     i = j;
   }
@@ -1018,13 +941,9 @@ BuildSegmentsFromValueEntries(nsTArray<KeyframeValueEntry>& aEntries,
 
 
 
-static void
-GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
-                                           nsIDocument* aDocument,
-                                           JS::Handle<JS::Value> aValue,
-                                           nsTArray<Keyframe>& aResult,
-                                           ErrorResult& aRv)
-{
+static void GetKeyframeListFromPropertyIndexedKeyframe(
+    JSContext* aCx, nsIDocument* aDocument, JS::Handle<JS::Value> aValue,
+    nsTArray<Keyframe>& aResult, ErrorResult& aRv) {
   MOZ_ASSERT(aValue.isObject());
   MOZ_ASSERT(aResult.IsEmpty());
   MOZ_ASSERT(!aRv.Failed());
@@ -1077,7 +996,7 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
       }
 
       Maybe<PropertyValuePair> valuePair =
-        MakePropertyValuePair(pair.mProperty, stringValue, aDocument);
+          MakePropertyValuePair(pair.mProperty, stringValue, aDocument);
       if (!valuePair) {
         continue;
       }
@@ -1114,7 +1033,7 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
   
 
   size_t offsetsToFill =
-    offsets ? std::min(offsets->Length(), aResult.Length()) : 0;
+      offsets ? std::min(offsets->Length(), aResult.Length()) : 0;
   for (size_t i = 0; i < offsetsToFill; i++) {
     if (!offsets->ElementAt(i).IsNull()) {
       aResult[i].mOffset.emplace(offsets->ElementAt(i).Value());
@@ -1196,9 +1115,9 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
     auto& composite = keyframeDict.mComposite;
     if (composite.IsCompositeOperationOrAuto()) {
       singleCompositeOp.AppendElement(
-        composite.GetAsCompositeOperationOrAuto());
+          composite.GetAsCompositeOperationOrAuto());
       const FallibleTArray<dom::CompositeOperationOrAuto>& asFallibleArray =
-        singleCompositeOp;
+          singleCompositeOp;
       compositeOps = &asFallibleArray;
     } else if (composite.IsCompositeOperationOrAutoSequence()) {
       compositeOps = &composite.GetAsCompositeOperationOrAutoSequence();
@@ -1224,10 +1143,8 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
 
 
 
-static bool
-HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                          nsIDocument* aDocument)
-{
+static bool HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
+                                      nsIDocument* aDocument) {
   
   
   
@@ -1241,9 +1158,9 @@ HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
   
   
 
-  nsCSSPropertyIDSet properties;              
-  nsCSSPropertyIDSet propertiesWithFromValue; 
-  nsCSSPropertyIDSet propertiesWithToValue;   
+  nsCSSPropertyIDSet properties;               
+  nsCSSPropertyIDSet propertiesWithFromValue;  
+  nsCSSPropertyIDSet propertiesWithToValue;  
 
   auto addToPropertySets = [&](nsCSSPropertyID aProperty, double aOffset) {
     properties.AddProperty(aProperty);
@@ -1261,18 +1178,14 @@ HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
     
     
     
-    double computedOffset = i == len - 1
-                            ? 1.0
-                            : i == 0 ? 0.0 : 0.5;
-    double offsetToUse = frame.mOffset
-                         ? frame.mOffset.value()
-                         : computedOffset;
+    double computedOffset = i == len - 1 ? 1.0 : i == 0 ? 0.0 : 0.5;
+    double offsetToUse = frame.mOffset ? frame.mOffset.value() : computedOffset;
 
     for (const PropertyValuePair& pair : frame.mPropertyValues) {
       if (nsCSSProps::IsShorthand(pair.mProperty)) {
         MOZ_ASSERT(pair.mServoDeclarationBlock);
-        CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(
-            prop, pair.mProperty, CSSEnabledState::eForAllContent) {
+        CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(prop, pair.mProperty,
+                                             CSSEnabledState::eForAllContent) {
           addToPropertySets(*prop, offsetToUse);
         }
       } else {
@@ -1292,11 +1205,9 @@ HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
 
 
 
-static void
-DistributeRange(const Range<Keyframe>& aRange)
-{
-  const Range<Keyframe> rangeToAdjust = Range<Keyframe>(aRange.begin() + 1,
-                                                        aRange.end() - 1);
+static void DistributeRange(const Range<Keyframe>& aRange) {
+  const Range<Keyframe> rangeToAdjust =
+      Range<Keyframe>(aRange.begin() + 1, aRange.end() - 1);
   const size_t n = aRange.length() - 1;
   const double startOffset = aRange[0].mComputedOffset;
   const double diffOffset = aRange[n].mComputedOffset - startOffset;
@@ -1306,5 +1217,4 @@ DistributeRange(const Range<Keyframe>& aRange)
   }
 }
 
-
-} 
+}  

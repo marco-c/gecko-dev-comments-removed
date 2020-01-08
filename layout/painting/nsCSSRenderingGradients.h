@@ -17,35 +17,25 @@ namespace mozilla {
 
 namespace layers {
 class StackingContextHelper;
-} 
+}  
 
 namespace wr {
 class DisplayListBuilder;
-} 
+}  
 
 
 
-struct ColorStop
-{
-  ColorStop()
-    : mPosition(0)
-    , mIsMidpoint(false)
-  {
-  }
+struct ColorStop {
+  ColorStop() : mPosition(0), mIsMidpoint(false) {}
   ColorStop(double aPosition, bool aIsMidPoint, const gfx::Color& aColor)
-    : mPosition(aPosition)
-    , mIsMidpoint(aIsMidPoint)
-    , mColor(aColor)
-  {
-  }
-  double mPosition; 
+      : mPosition(aPosition), mIsMidpoint(aIsMidPoint), mColor(aColor) {}
+  double mPosition;  
   bool mIsMidpoint;
   gfx::Color mColor;
 };
 
-class nsCSSGradientRenderer final
-{
-public:
+class nsCSSGradientRenderer final {
+ public:
   
 
 
@@ -64,19 +54,14 @@ public:
 
 
 
-  void Paint(gfxContext& aContext,
-             const nsRect& aDest,
-             const nsRect& aFill,
-             const nsSize& aRepeatSize,
-             const mozilla::CSSIntRect& aSrc,
-             const nsRect& aDirtyRect,
-             float aOpacity = 1.0);
+  void Paint(gfxContext& aContext, const nsRect& aDest, const nsRect& aFill,
+             const nsSize& aRepeatSize, const mozilla::CSSIntRect& aSrc,
+             const nsRect& aDirtyRect, float aOpacity = 1.0);
 
   
 
 
-  void BuildWebRenderParameters(float aOpacity,
-                                wr::ExtendMode& aMode,
+  void BuildWebRenderParameters(float aOpacity, wr::ExtendMode& aMode,
                                 nsTArray<wr::GradientStop>& aStops,
                                 LayoutDevicePoint& aLineStart,
                                 LayoutDevicePoint& aLineEnd,
@@ -93,21 +78,18 @@ public:
 
   void BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuilder,
                                   const layers::StackingContextHelper& aSc,
-                                  const nsRect& aDest,
-                                  const nsRect& aFill,
+                                  const nsRect& aDest, const nsRect& aFill,
                                   const nsSize& aRepeatSize,
                                   const mozilla::CSSIntRect& aSrc,
                                   bool aIsBackfaceVisible,
                                   float aOpacity = 1.0);
 
-private:
+ private:
   nsCSSGradientRenderer()
-    : mPresContext(nullptr)
-    , mGradient(nullptr)
-    , mRadiusX(0.0)
-    , mRadiusY(0.0)
-  {
-  }
+      : mPresContext(nullptr),
+        mGradient(nullptr),
+        mRadiusX(0.0),
+        mRadiusY(0.0) {}
 
   
 
@@ -117,14 +99,10 @@ private:
 
 
 
-  bool TryPaintTilesWithExtendMode(gfxContext& aContext,
-                                   gfxPattern* aGradientPattern,
-                                   nscoord aXStart,
-                                   nscoord aYStart,
-                                   const gfxRect& aDirtyAreaToFill,
-                                   const nsRect& aDest,
-                                   const nsSize& aRepeatSize,
-                                   bool aForceRepeatToCoverTiles);
+  bool TryPaintTilesWithExtendMode(
+      gfxContext& aContext, gfxPattern* aGradientPattern, nscoord aXStart,
+      nscoord aYStart, const gfxRect& aDirtyAreaToFill, const nsRect& aDest,
+      const nsSize& aRepeatSize, bool aForceRepeatToCoverTiles);
 
   nsPresContext* mPresContext;
   nsStyleGradient* mGradient;
@@ -133,6 +111,6 @@ private:
   double mRadiusX, mRadiusY;
 };
 
-} 
+}  
 
 #endif 

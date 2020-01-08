@@ -17,17 +17,16 @@ struct IAccessible;
 namespace mozilla {
 namespace a11y {
 
-class HTMLWin32ObjectOwnerAccessible : public AccessibleWrap
-{
-public:
+class HTMLWin32ObjectOwnerAccessible : public AccessibleWrap {
+ public:
   
   
   
   
   
   
-  HTMLWin32ObjectOwnerAccessible(nsIContent* aContent,
-                                 DocAccessible* aDoc, void* aHwnd);
+  HTMLWin32ObjectOwnerAccessible(nsIContent* aContent, DocAccessible* aDoc,
+                                 void* aHwnd);
   virtual ~HTMLWin32ObjectOwnerAccessible() {}
 
   
@@ -35,7 +34,7 @@ public:
   virtual mozilla::a11y::role NativeRole() const override;
   virtual bool NativelyUnavailable() const;
 
-protected:
+ protected:
   void* mHwnd;
   RefPtr<Accessible> mNativeAccessible;
 };
@@ -49,22 +48,21 @@ protected:
 
 
 
-class HTMLWin32ObjectAccessible : public DummyAccessible
-{
-public:
+class HTMLWin32ObjectAccessible : public DummyAccessible {
+ public:
   HTMLWin32ObjectAccessible(void* aHwnd, DocAccessible* aDoc);
   virtual ~HTMLWin32ObjectAccessible() {}
 
   virtual void GetNativeInterface(void** aNativeAccessible) override;
 
-protected:
+ protected:
   void* mHwnd;
 #if defined(MOZ_CONTENT_SANDBOX)
   mscom::ProxyUniquePtr<IAccessible> mCOMProxy;
 #endif
 };
 
-} 
-} 
+}  
+}  
 
 #endif

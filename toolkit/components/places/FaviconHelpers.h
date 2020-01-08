@@ -53,21 +53,13 @@ namespace places {
 
 
 
-enum AsyncFaviconFetchMode {
-  FETCH_NEVER = 0
-, FETCH_IF_MISSING
-, FETCH_ALWAYS
-};
+enum AsyncFaviconFetchMode { FETCH_NEVER = 0, FETCH_IF_MISSING, FETCH_ALWAYS };
 
 
 
 
-struct IconPayload
-{
-  IconPayload()
-  : id(0)
-  , width(0)
-  {
+struct IconPayload {
+  IconPayload() : id(0), width(0) {
     data.SetIsVoid(true);
     mimeType.SetIsVoid(true);
   }
@@ -81,21 +73,18 @@ struct IconPayload
 
 
 
-struct IconData
-{
+struct IconData {
   IconData()
-  : expiration(0)
-  , fetchMode(FETCH_NEVER)
-  , status(ICON_STATUS_UNKNOWN)
-  , rootIcon(0)
-  {
-  }
+      : expiration(0),
+        fetchMode(FETCH_NEVER),
+        status(ICON_STATUS_UNKNOWN),
+        rootIcon(0) {}
 
   nsCString spec;
   nsCString host;
   PRTime expiration;
   enum AsyncFaviconFetchMode fetchMode;
-  uint16_t status; 
+  uint16_t status;  
   uint8_t rootIcon;
   nsTArray<IconPayload> payloads;
 };
@@ -103,35 +92,25 @@ struct IconData
 
 
 
-struct PageData
-{
-  PageData()
-  : id(0)
-  , placeId(0)
-  , canAddToHistory(true)
-  {
+struct PageData {
+  PageData() : id(0), placeId(0), canAddToHistory(true) {
     guid.SetIsVoid(true);
   }
 
-  int64_t id; 
-  int64_t placeId; 
+  int64_t id;       
+  int64_t placeId;  
   nsCString spec;
   nsCString host;
   nsCString bookmarkedSpec;
-  bool canAddToHistory; 
+  bool canAddToHistory;  
   nsCString guid;
 };
 
 
 
 
-struct FrameData
-{
-  FrameData(uint16_t aIndex, uint16_t aWidth)
-  : index(aIndex)
-  , width(aWidth)
-  {
-  }
+struct FrameData {
+  FrameData(uint16_t aIndex, uint16_t aWidth) : index(aIndex), width(aWidth) {}
 
   uint16_t index;
   uint16_t width;
@@ -141,12 +120,11 @@ struct FrameData
 
 
 
-class AsyncFetchAndSetIconForPage final : public Runnable
-                                        , public nsIStreamListener
-                                        , public nsIInterfaceRequestor
-                                        , public nsIChannelEventSink
-                                        , public mozIPlacesPendingOperation
- {
+class AsyncFetchAndSetIconForPage final : public Runnable,
+                                          public nsIStreamListener,
+                                          public nsIInterfaceRequestor,
+                                          public nsIChannelEventSink,
+                                          public mozIPlacesPendingOperation {
  public:
   NS_DECL_NSIRUNNABLE
   NS_DECL_NSISTREAMLISTENER
@@ -170,14 +148,13 @@ class AsyncFetchAndSetIconForPage final : public Runnable
 
 
 
-  AsyncFetchAndSetIconForPage(IconData& aIcon,
-                              PageData& aPage,
+  AsyncFetchAndSetIconForPage(IconData& aIcon, PageData& aPage,
                               bool aFaviconLoadPrivate,
                               nsIFaviconDataCallback* aCallback,
                               nsIPrincipal* aLoadingPrincipal,
                               uint64_t aRequestContextID);
 
-private:
+ private:
   nsresult FetchFromNetwork();
   virtual ~AsyncFetchAndSetIconForPage() {}
 
@@ -195,9 +172,8 @@ private:
 
 
 
-class AsyncAssociateIconToPage final : public Runnable
-{
-public:
+class AsyncAssociateIconToPage final : public Runnable {
+ public:
   NS_DECL_NSIRUNNABLE
 
   
@@ -210,11 +186,11 @@ public:
 
 
 
-  AsyncAssociateIconToPage(const IconData& aIcon,
-                           const PageData& aPage,
-                           const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback);
+  AsyncAssociateIconToPage(
+      const IconData& aIcon, const PageData& aPage,
+      const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback);
 
-private:
+ private:
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   IconData mIcon;
   PageData mPage;
@@ -224,9 +200,8 @@ private:
 
 
 
-class AsyncGetFaviconURLForPage final : public Runnable
-{
-public:
+class AsyncGetFaviconURLForPage final : public Runnable {
+ public:
   NS_DECL_NSIRUNNABLE
 
   
@@ -246,7 +221,7 @@ public:
                             uint16_t aPreferredWidth,
                             nsIFaviconDataCallback* aCallback);
 
-private:
+ private:
   uint16_t mPreferredWidth;
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   nsCString mPageSpec;
@@ -257,10 +232,8 @@ private:
 
 
 
-
-class AsyncGetFaviconDataForPage final : public Runnable
-{
-public:
+class AsyncGetFaviconDataForPage final : public Runnable {
+ public:
   NS_DECL_NSIRUNNABLE
 
   
@@ -281,21 +254,20 @@ public:
                              uint16_t aPreferredWidth,
                              nsIFaviconDataCallback* aCallback);
 
-private:
+ private:
   uint16_t mPreferredWidth;
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   nsCString mPageSpec;
   nsCString mPageHost;
 };
 
-class AsyncReplaceFaviconData final : public Runnable
-{
-public:
+class AsyncReplaceFaviconData final : public Runnable {
+ public:
   NS_DECL_NSIRUNNABLE
 
   explicit AsyncReplaceFaviconData(const IconData& aIcon);
 
-private:
+ private:
   nsresult RemoveIconDataCacheEntry();
 
   IconData mIcon;
@@ -304,9 +276,8 @@ private:
 
 
 
-class NotifyIconObservers final : public Runnable
-{
-public:
+class NotifyIconObservers final : public Runnable {
+ public:
   NS_DECL_NSIRUNNABLE
 
   
@@ -319,11 +290,11 @@ public:
 
 
 
-  NotifyIconObservers(const IconData& aIcon,
-                      const PageData& aPage,
-                      const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback);
+  NotifyIconObservers(
+      const IconData& aIcon, const PageData& aPage,
+      const nsMainThreadPtrHandle<nsIFaviconDataCallback>& aCallback);
 
-private:
+ private:
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   IconData mIcon;
   PageData mPage;
@@ -333,9 +304,8 @@ private:
 
 
 
-class FetchAndConvertUnsupportedPayloads final : public Runnable
-{
-public:
+class FetchAndConvertUnsupportedPayloads final : public Runnable {
+ public:
   NS_DECL_NSIRUNNABLE
 
   
@@ -346,7 +316,7 @@ public:
 
   explicit FetchAndConvertUnsupportedPayloads(mozIStorageConnection* aDBConn);
 
-private:
+ private:
   nsresult ConvertPayload(int64_t aId, const nsACString& aMimeType,
                           nsCString& aPayload, int32_t* aWidth);
   nsresult StorePayload(int64_t aId, int32_t aWidth, const nsCString& aPayload);
@@ -357,9 +327,8 @@ private:
 
 
 
-class AsyncCopyFavicons final : public Runnable
-{
-public:
+class AsyncCopyFavicons final : public Runnable {
+ public:
   NS_DECL_NSIRUNNABLE
 
   
@@ -374,15 +343,14 @@ public:
 
 
 
-  AsyncCopyFavicons(PageData& aFromPage,
-                    PageData& aToPage,
+  AsyncCopyFavicons(PageData& aFromPage, PageData& aToPage,
                     nsIFaviconDataCallback* aCallback);
 
-private:
+ private:
   PageData mFromPage;
   PageData mToPage;
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
 };
 
-} 
-} 
+}  
+}  

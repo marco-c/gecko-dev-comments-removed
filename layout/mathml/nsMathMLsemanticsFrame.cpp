@@ -4,7 +4,6 @@
 
 
 
-
 #include "nsMathMLsemanticsFrame.h"
 #include "nsMimeTypes.h"
 #include "mozilla/gfx/2D.h"
@@ -15,21 +14,16 @@ using namespace mozilla;
 
 
 
-nsIFrame*
-NS_NewMathMLsemanticsFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewMathMLsemanticsFrame(nsIPresShell* aPresShell,
+                                     ComputedStyle* aStyle) {
   return new (aPresShell) nsMathMLsemanticsFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsMathMLsemanticsFrame)
 
-nsMathMLsemanticsFrame::~nsMathMLsemanticsFrame()
-{
-}
+nsMathMLsemanticsFrame::~nsMathMLsemanticsFrame() {}
 
-nsIFrame*
-nsMathMLsemanticsFrame::GetSelectedFrame()
-{
+nsIFrame* nsMathMLsemanticsFrame::GetSelectedFrame() {
   
   nsIFrame* childFrame = mFrames.FirstChild();
   mSelectedFrame = childFrame;
@@ -52,8 +46,7 @@ nsMathMLsemanticsFrame::GetSelectedFrame()
 
   
   
-  if (!firstChildIsAnnotation &&
-      childFrame->IsFrameOfType(nsIFrame::eMathML)) {
+  if (!firstChildIsAnnotation && childFrame->IsFrameOfType(nsIFrame::eMathML)) {
     nsIMathMLFrame* mathMLFrame = do_QueryFrame(childFrame);
     if (mathMLFrame) {
       TransmitAutomaticData();
@@ -66,11 +59,10 @@ nsMathMLsemanticsFrame::GetSelectedFrame()
   
   
   
-  for ( ; childFrame; childFrame = childFrame->GetNextSibling()) {
+  for (; childFrame; childFrame = childFrame->GetNextSibling()) {
     nsIContent* childContent = childFrame->GetContent();
 
     if (childContent->IsMathMLElement(nsGkAtoms::annotation_)) {
-
       
       
       
@@ -103,13 +95,11 @@ nsMathMLsemanticsFrame::GetSelectedFrame()
       
       
       nsAutoString value;
-      childContent->AsElement()->GetAttr(kNameSpaceID_None,
-                                         nsGkAtoms::encoding,
+      childContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::encoding,
                                          value);
       if (value.EqualsLiteral("application/mathml-presentation+xml") ||
           value.EqualsLiteral("MathML-Presentation") ||
-          value.EqualsLiteral(IMAGE_SVG_XML) ||
-          value.EqualsLiteral("SVG1.1") ||
+          value.EqualsLiteral(IMAGE_SVG_XML) || value.EqualsLiteral("SVG1.1") ||
           value.EqualsLiteral(APPLICATION_XHTML_XML) ||
           value.EqualsLiteral(TEXT_HTML)) {
         mSelectedFrame = childFrame;

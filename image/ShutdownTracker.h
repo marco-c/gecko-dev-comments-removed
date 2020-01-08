@@ -20,8 +20,7 @@ namespace image {
 
 
 
-struct ShutdownTracker
-{
+struct ShutdownTracker {
   
 
 
@@ -36,11 +35,11 @@ struct ShutdownTracker
 
   static bool ShutdownHasStarted();
 
-private:
+ private:
   virtual ~ShutdownTracker() = 0;  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

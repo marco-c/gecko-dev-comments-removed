@@ -33,9 +33,7 @@ using namespace mozilla;
 
 
 
-nsIFrame*
-NS_NewLeafBoxFrame (nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewLeafBoxFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsLeafBoxFrame(aStyle);
 }
 
@@ -44,11 +42,8 @@ NS_IMPL_FRAMEARENA_HELPERS(nsLeafBoxFrame)
 
 
 
-void
-nsLeafBoxFrame::Init(nsIContent*       aContent,
-                     nsContainerFrame* aParent,
-                     nsIFrame*         aPrevInFlow)
-{
+void nsLeafBoxFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                          nsIFrame* aPrevInFlow) {
   nsLeafFrame::Init(aContent, aParent, aPrevInFlow);
 
   if (GetStateBits() & NS_FRAME_FONT_INFLATION_CONTAINER) {
@@ -58,41 +53,38 @@ nsLeafBoxFrame::Init(nsIContent*       aContent,
   UpdateMouseThrough();
 }
 
-nsresult
-nsLeafBoxFrame::AttributeChanged(int32_t aNameSpaceID,
-                                 nsAtom* aAttribute,
-                                 int32_t aModType)
-{
-  nsresult rv = nsLeafFrame::AttributeChanged(aNameSpaceID, aAttribute,
-                                              aModType);
+nsresult nsLeafBoxFrame::AttributeChanged(int32_t aNameSpaceID,
+                                          nsAtom* aAttribute,
+                                          int32_t aModType) {
+  nsresult rv =
+      nsLeafFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 
-  if (aAttribute == nsGkAtoms::mousethrough)
-    UpdateMouseThrough();
+  if (aAttribute == nsGkAtoms::mousethrough) UpdateMouseThrough();
 
   return rv;
 }
 
-void nsLeafBoxFrame::UpdateMouseThrough()
-{
-  static Element::AttrValuesArray strings[] =
-    {nsGkAtoms::never, nsGkAtoms::always, nullptr};
-  switch (mContent->AsElement()->FindAttrValueIn(kNameSpaceID_None,
-                                                 nsGkAtoms::mousethrough,
-                                                 strings, eCaseMatters)) {
-    case 0: AddStateBits(NS_FRAME_MOUSE_THROUGH_NEVER); break;
-    case 1: AddStateBits(NS_FRAME_MOUSE_THROUGH_ALWAYS); break;
+void nsLeafBoxFrame::UpdateMouseThrough() {
+  static Element::AttrValuesArray strings[] = {nsGkAtoms::never,
+                                               nsGkAtoms::always, nullptr};
+  switch (mContent->AsElement()->FindAttrValueIn(
+      kNameSpaceID_None, nsGkAtoms::mousethrough, strings, eCaseMatters)) {
+    case 0:
+      AddStateBits(NS_FRAME_MOUSE_THROUGH_NEVER);
+      break;
+    case 1:
+      AddStateBits(NS_FRAME_MOUSE_THROUGH_ALWAYS);
+      break;
     case 2: {
-        RemoveStateBits(NS_FRAME_MOUSE_THROUGH_ALWAYS);
-        RemoveStateBits(NS_FRAME_MOUSE_THROUGH_NEVER);
-        break;
+      RemoveStateBits(NS_FRAME_MOUSE_THROUGH_ALWAYS);
+      RemoveStateBits(NS_FRAME_MOUSE_THROUGH_NEVER);
+      break;
     }
   }
 }
 
-void
-nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                 const nsDisplayListSet& aLists)
-{
+void nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                      const nsDisplayListSet& aLists) {
   
   
   
@@ -104,12 +96,11 @@ nsLeafBoxFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     return;
 
   aLists.Content()->AppendToTop(
-    MakeDisplayItem<nsDisplayEventReceiver>(aBuilder, this));
+      MakeDisplayItem<nsDisplayEventReceiver>(aBuilder, this));
 }
 
- nscoord
-nsLeafBoxFrame::GetMinISize(gfxContext *aRenderingContext)
-{
+ nscoord nsLeafBoxFrame::GetMinISize(
+    gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_MIN_INLINE_SIZE(this, result);
   nsBoxLayoutState state(PresContext(), aRenderingContext);
@@ -129,9 +120,8 @@ nsLeafBoxFrame::GetMinISize(gfxContext *aRenderingContext)
   return result;
 }
 
- nscoord
-nsLeafBoxFrame::GetPrefISize(gfxContext *aRenderingContext)
-{
+ nscoord nsLeafBoxFrame::GetPrefISize(
+    gfxContext* aRenderingContext) {
   nscoord result;
   DISPLAY_PREF_INLINE_SIZE(this, result);
   nsBoxLayoutState state(PresContext(), aRenderingContext);
@@ -151,35 +141,26 @@ nsLeafBoxFrame::GetPrefISize(gfxContext *aRenderingContext)
   return result;
 }
 
-nscoord
-nsLeafBoxFrame::GetIntrinsicISize()
-{
+nscoord nsLeafBoxFrame::GetIntrinsicISize() {
   
   return 0;
 }
 
-LogicalSize
-nsLeafBoxFrame::ComputeAutoSize(gfxContext*         aRenderingContext,
-                                WritingMode         aWM,
-                                const LogicalSize&  aCBSize,
-                                nscoord             aAvailableISize,
-                                const LogicalSize&  aMargin,
-                                const LogicalSize&  aBorder,
-                                const LogicalSize&  aPadding,
-                                ComputeSizeFlags    aFlags)
-{
+LogicalSize nsLeafBoxFrame::ComputeAutoSize(
+    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
+    nscoord aAvailableISize, const LogicalSize& aMargin,
+    const LogicalSize& aBorder, const LogicalSize& aPadding,
+    ComputeSizeFlags aFlags) {
   
-  return nsFrame::ComputeAutoSize(aRenderingContext, aWM,
-                                  aCBSize, aAvailableISize,
-                                  aMargin, aBorder, aPadding, aFlags);
+  return nsFrame::ComputeAutoSize(aRenderingContext, aWM, aCBSize,
+                                  aAvailableISize, aMargin, aBorder, aPadding,
+                                  aFlags);
 }
 
-void
-nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
-                     ReflowOutput&     aDesiredSize,
-                     const ReflowInput& aReflowInput,
-                     nsReflowStatus&          aStatus)
-{
+void nsLeafBoxFrame::Reflow(nsPresContext* aPresContext,
+                            ReflowOutput& aDesiredSize,
+                            const ReflowInput& aReflowInput,
+                            nsReflowStatus& aStatus) {
   
   
   
@@ -190,25 +171,34 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aDesiredSize, aStatus);
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
-  NS_ASSERTION(aReflowInput.ComputedWidth() >=0 &&
-               aReflowInput.ComputedHeight() >= 0, "Computed Size < 0");
+  NS_ASSERTION(
+      aReflowInput.ComputedWidth() >= 0 && aReflowInput.ComputedHeight() >= 0,
+      "Computed Size < 0");
 
 #ifdef DO_NOISY_REFLOW
-  printf("\n-------------Starting LeafBoxFrame Reflow ----------------------------\n");
+  printf(
+      "\n-------------Starting LeafBoxFrame Reflow "
+      "----------------------------\n");
   printf("%p ** nsLBF::Reflow %d R: ", this, myCounter++);
   switch (aReflowInput.reason) {
     case eReflowReason_Initial:
-      printf("Ini");break;
+      printf("Ini");
+      break;
     case eReflowReason_Incremental:
-      printf("Inc");break;
+      printf("Inc");
+      break;
     case eReflowReason_Resize:
-      printf("Rsz");break;
+      printf("Rsz");
+      break;
     case eReflowReason_StyleChange:
-      printf("Sty");break;
+      printf("Sty");
+      break;
     case eReflowReason_Dirty:
       printf("Drt ");
       break;
-    default:printf("<unknown>%d", aReflowInput.reason);break;
+    default:
+      printf("<unknown>%d", aReflowInput.reason);
+      break;
   }
 
   printSize("AW", aReflowInput.AvailableWidth());
@@ -223,7 +213,8 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
   
   nsBoxLayoutState state(aPresContext, aReflowInput.mRenderingContext);
 
-  nsSize computedSize(aReflowInput.ComputedWidth(),aReflowInput.ComputedHeight());
+  nsSize computedSize(aReflowInput.ComputedWidth(),
+                      aReflowInput.ComputedHeight());
 
   nsMargin m;
   m = aReflowInput.ComputedPhysicalBorderPadding();
@@ -236,14 +227,15 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
     computedSize.height = minSize.height - m.top - m.bottom;
   }
 
-  nsSize prefSize(0,0);
+  nsSize prefSize(0, 0);
 
   
-  if (computedSize.width == NS_INTRINSICSIZE || computedSize.height == NS_INTRINSICSIZE) {
-     prefSize = GetXULPrefSize(state);
-     nsSize minSize = GetXULMinSize(state);
-     nsSize maxSize = GetXULMaxSize(state);
-     prefSize = BoundsCheck(minSize, prefSize, maxSize);
+  if (computedSize.width == NS_INTRINSICSIZE ||
+      computedSize.height == NS_INTRINSICSIZE) {
+    prefSize = GetXULPrefSize(state);
+    nsSize minSize = GetXULMinSize(state);
+    nsSize maxSize = GetXULMaxSize(state);
+    prefSize = BoundsCheck(minSize, prefSize, maxSize);
   }
 
   
@@ -274,9 +266,9 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
   
   
   computedSize.height = std::max(0, computedSize.height - m.TopBottom());
-  computedSize.height = NS_CSS_MINMAX(computedSize.height,
-                                      aReflowInput.ComputedMinHeight(),
-                                      aReflowInput.ComputedMaxHeight());
+  computedSize.height =
+      NS_CSS_MINMAX(computedSize.height, aReflowInput.ComputedMinHeight(),
+                    aReflowInput.ComputedMaxHeight());
   computedSize.height += m.TopBottom();
 
   nsRect r(mRect.x, mRect.y, computedSize.width, computedSize.height);
@@ -296,72 +288,57 @@ nsLeafBoxFrame::Reflow(nsPresContext*   aPresContext,
 
 #ifdef DO_NOISY_REFLOW
   {
-    printf("%p ** nsLBF(done) W:%d H:%d  ", this, aDesiredSize.Width(), aDesiredSize.Height());
+    printf("%p ** nsLBF(done) W:%d H:%d  ", this, aDesiredSize.Width(),
+           aDesiredSize.Height());
 
     if (maxElementWidth) {
       printf("MW:%d\n", *maxElementWidth);
     } else {
       printf("MW:?\n");
     }
-
   }
 #endif
 }
 
 #ifdef DEBUG_FRAME_DUMP
-nsresult
-nsLeafBoxFrame::GetFrameName(nsAString& aResult) const
-{
+nsresult nsLeafBoxFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(NS_LITERAL_STRING("LeafBox"), aResult);
 }
 #endif
 
-nsresult
-nsLeafBoxFrame::CharacterDataChanged(const CharacterDataChangeInfo& aInfo)
-{
+nsresult nsLeafBoxFrame::CharacterDataChanged(
+    const CharacterDataChangeInfo& aInfo) {
   MarkIntrinsicISizesDirty();
   return nsLeafFrame::CharacterDataChanged(aInfo);
 }
 
- nsSize
-nsLeafBoxFrame::GetXULPrefSize(nsBoxLayoutState& aState)
-{
-    return nsBox::GetXULPrefSize(aState);
+ nsSize nsLeafBoxFrame::GetXULPrefSize(nsBoxLayoutState& aState) {
+  return nsBox::GetXULPrefSize(aState);
 }
 
- nsSize
-nsLeafBoxFrame::GetXULMinSize(nsBoxLayoutState& aState)
-{
-    return nsBox::GetXULMinSize(aState);
+ nsSize nsLeafBoxFrame::GetXULMinSize(nsBoxLayoutState& aState) {
+  return nsBox::GetXULMinSize(aState);
 }
 
- nsSize
-nsLeafBoxFrame::GetXULMaxSize(nsBoxLayoutState& aState)
-{
-    return nsBox::GetXULMaxSize(aState);
+ nsSize nsLeafBoxFrame::GetXULMaxSize(nsBoxLayoutState& aState) {
+  return nsBox::GetXULMaxSize(aState);
 }
 
- nscoord
-nsLeafBoxFrame::GetXULFlex()
-{
-    return nsBox::GetXULFlex();
+ nscoord nsLeafBoxFrame::GetXULFlex() {
+  return nsBox::GetXULFlex();
 }
 
- nscoord
-nsLeafBoxFrame::GetXULBoxAscent(nsBoxLayoutState& aState)
-{
-    return nsBox::GetXULBoxAscent(aState);
+ nscoord nsLeafBoxFrame::GetXULBoxAscent(
+    nsBoxLayoutState& aState) {
+  return nsBox::GetXULBoxAscent(aState);
 }
 
- void
-nsLeafBoxFrame::MarkIntrinsicISizesDirty()
-{
+ void nsLeafBoxFrame::MarkIntrinsicISizesDirty() {
   
   
 }
 
 NS_IMETHODIMP
-nsLeafBoxFrame::DoXULLayout(nsBoxLayoutState& aState)
-{
-    return nsBox::DoXULLayout(aState);
+nsLeafBoxFrame::DoXULLayout(nsBoxLayoutState& aState) {
+  return nsBox::DoXULLayout(aState);
 }

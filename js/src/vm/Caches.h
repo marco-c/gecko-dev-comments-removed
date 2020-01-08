@@ -31,17 +31,16 @@ namespace js {
 
 
 struct GSNCache {
-    typedef HashMap<jsbytecode*,
-                    jssrcnote*,
-                    PointerHasher<jsbytecode*>,
-                    SystemAllocPolicy> Map;
+  typedef HashMap<jsbytecode*, jssrcnote*, PointerHasher<jsbytecode*>,
+                  SystemAllocPolicy>
+      Map;
 
-    jsbytecode*     code;
-    Map             map;
+  jsbytecode* code;
+  Map map;
 
-    GSNCache() : code(nullptr) { }
+  GSNCache() : code(nullptr) {}
 
-    void purge();
+  void purge();
 };
 
 
@@ -49,223 +48,220 @@ struct GSNCache {
 
 
 struct EnvironmentCoordinateNameCache {
-    typedef HashMap<uint32_t,
-                    jsid,
-                    DefaultHasher<uint32_t>,
-                    SystemAllocPolicy> Map;
+  typedef HashMap<uint32_t, jsid, DefaultHasher<uint32_t>, SystemAllocPolicy>
+      Map;
 
-    Shape* shape;
-    Map map;
+  Shape* shape;
+  Map map;
 
-    EnvironmentCoordinateNameCache() : shape(nullptr) {}
-    void purge();
+  EnvironmentCoordinateNameCache() : shape(nullptr) {}
+  void purge();
 };
 
-struct EvalCacheEntry
-{
-    JSLinearString* str;
-    JSScript* script;
-    JSScript* callerScript;
-    jsbytecode* pc;
+struct EvalCacheEntry {
+  JSLinearString* str;
+  JSScript* script;
+  JSScript* callerScript;
+  jsbytecode* pc;
 
-    
-    
-    
-    
-    
-    bool needsSweep() {
-        return !str->isTenured();
-    }
+  
+  
+  
+  
+  
+  bool needsSweep() { return !str->isTenured(); }
 };
 
-struct EvalCacheLookup
-{
-    explicit EvalCacheLookup(JSContext* cx) : str(cx), callerScript(cx) {}
-    RootedLinearString str;
-    RootedScript callerScript;
-    MOZ_INIT_OUTSIDE_CTOR jsbytecode* pc;
+struct EvalCacheLookup {
+  explicit EvalCacheLookup(JSContext* cx) : str(cx), callerScript(cx) {}
+  RootedLinearString str;
+  RootedScript callerScript;
+  MOZ_INIT_OUTSIDE_CTOR jsbytecode* pc;
 };
 
-struct EvalCacheHashPolicy
-{
-    typedef EvalCacheLookup Lookup;
+struct EvalCacheHashPolicy {
+  typedef EvalCacheLookup Lookup;
 
-    static HashNumber hash(const Lookup& l);
-    static bool match(const EvalCacheEntry& entry, const EvalCacheLookup& l);
+  static HashNumber hash(const Lookup& l);
+  static bool match(const EvalCacheEntry& entry, const EvalCacheLookup& l);
 };
 
-typedef GCHashSet<EvalCacheEntry, EvalCacheHashPolicy, SystemAllocPolicy> EvalCache;
+typedef GCHashSet<EvalCacheEntry, EvalCacheHashPolicy, SystemAllocPolicy>
+    EvalCache;
 
 
 
 
 
 
-class NewObjectCache
-{
+class NewObjectCache {
+  
+  static const unsigned MAX_OBJ_SIZE = 4 * sizeof(void*) + 16 * sizeof(Value);
+
+  static void staticAsserts() {
+    JS_STATIC_ASSERT(NewObjectCache::MAX_OBJ_SIZE == sizeof(JSObject_Slots16));
+    JS_STATIC_ASSERT(gc::AllocKind::OBJECT_LAST ==
+                     gc::AllocKind::OBJECT16_BACKGROUND);
+  }
+
+  struct Entry {
     
-    static const unsigned MAX_OBJ_SIZE = 4 * sizeof(void*) + 16 * sizeof(Value);
-
-    static void staticAsserts() {
-        JS_STATIC_ASSERT(NewObjectCache::MAX_OBJ_SIZE == sizeof(JSObject_Slots16));
-        JS_STATIC_ASSERT(gc::AllocKind::OBJECT_LAST == gc::AllocKind::OBJECT16_BACKGROUND);
-    }
-
-    struct Entry
-    {
-        
-        const Class* clasp;
-
-        
-
-
-
-
-
-
-
-
-
-
-
-
-        gc::Cell* key;
-
-        
-        gc::AllocKind kind;
-
-        
-        uint32_t nbytes;
-
-        
-
-
-
-        char templateObject[MAX_OBJ_SIZE];
-    };
-
-    using EntryArray = Entry[41]; 
-    EntryArray entries;
-
-  public:
-
-    using EntryIndex = int;
-
-    NewObjectCache()
-      : entries{} 
-    {}
-
-    void purge() {
-        new (&entries) EntryArray{}; 
-    }
-
-    
-    void clearNurseryObjects(JSRuntime* rt);
-
-    
-
-
-
-    inline bool lookupProto(const Class* clasp, JSObject* proto, gc::AllocKind kind, EntryIndex* pentry);
-    inline bool lookupGlobal(const Class* clasp, js::GlobalObject* global, gc::AllocKind kind,
-                             EntryIndex* pentry);
-
-    bool lookupGroup(js::ObjectGroup* group, gc::AllocKind kind, EntryIndex* pentry) {
-        return lookup(group->clasp(), group, kind, pentry);
-    }
+    const Class* clasp;
 
     
 
 
 
 
-    inline NativeObject* newObjectFromHit(JSContext* cx, EntryIndex entry, js::gc::InitialHeap heap);
+
+
+
+
+
+
+
+
+    gc::Cell* key;
 
     
-    void fillProto(EntryIndex entry, const Class* clasp, js::TaggedProto proto,
-                   gc::AllocKind kind, NativeObject* obj);
-
-    inline void fillGlobal(EntryIndex entry, const Class* clasp, js::GlobalObject* global,
-                           gc::AllocKind kind, NativeObject* obj);
-
-    void fillGroup(EntryIndex entry, js::ObjectGroup* group, gc::AllocKind kind,
-                   NativeObject* obj)
-    {
-        MOZ_ASSERT(obj->group() == group);
-        return fill(entry, group->clasp(), group, kind, obj);
-    }
+    gc::AllocKind kind;
 
     
-    void invalidateEntriesForShape(JSContext* cx, HandleShape shape, HandleObject proto);
+    uint32_t nbytes;
 
-  private:
-    EntryIndex makeIndex(const Class* clasp, gc::Cell* key, gc::AllocKind kind) {
-        uintptr_t hash = (uintptr_t(clasp) ^ uintptr_t(key)) + size_t(kind);
-        return hash % mozilla::ArrayLength(entries);
-    }
+    
 
-    bool lookup(const Class* clasp, gc::Cell* key, gc::AllocKind kind, EntryIndex* pentry) {
-        *pentry = makeIndex(clasp, key, kind);
-        Entry* entry = &entries[*pentry];
 
-        
-        
-        return entry->clasp == clasp && entry->key == key;
-    }
 
-    void fill(EntryIndex entry_, const Class* clasp, gc::Cell* key, gc::AllocKind kind,
-              NativeObject* obj) {
-        MOZ_ASSERT(unsigned(entry_) < mozilla::ArrayLength(entries));
-        MOZ_ASSERT(entry_ == makeIndex(clasp, key, kind));
-        Entry* entry = &entries[entry_];
+    char templateObject[MAX_OBJ_SIZE];
+  };
 
-        MOZ_ASSERT(!obj->hasDynamicSlots());
-        MOZ_ASSERT(obj->hasEmptyElements() || obj->is<ArrayObject>());
+  using EntryArray = Entry[41];  
+  EntryArray entries;
 
-        entry->clasp = clasp;
-        entry->key = key;
-        entry->kind = kind;
+ public:
+  using EntryIndex = int;
 
-        entry->nbytes = gc::Arena::thingSize(kind);
-        js_memcpy(&entry->templateObject, obj, entry->nbytes);
-    }
+  NewObjectCache()
+      : entries{}  
+  {}
 
-    static void copyCachedToObject(NativeObject* dst, NativeObject* src, gc::AllocKind kind) {
-        js_memcpy(dst, src, gc::Arena::thingSize(kind));
+  void purge() {
+    new (&entries) EntryArray{};  
+  }
 
-        
-        dst->initGroup(src->group());
-        dst->initShape(src->shape());
-    }
+  
+  void clearNurseryObjects(JSRuntime* rt);
+
+  
+
+
+
+  inline bool lookupProto(const Class* clasp, JSObject* proto,
+                          gc::AllocKind kind, EntryIndex* pentry);
+  inline bool lookupGlobal(const Class* clasp, js::GlobalObject* global,
+                           gc::AllocKind kind, EntryIndex* pentry);
+
+  bool lookupGroup(js::ObjectGroup* group, gc::AllocKind kind,
+                   EntryIndex* pentry) {
+    return lookup(group->clasp(), group, kind, pentry);
+  }
+
+  
+
+
+
+
+  inline NativeObject* newObjectFromHit(JSContext* cx, EntryIndex entry,
+                                        js::gc::InitialHeap heap);
+
+  
+  void fillProto(EntryIndex entry, const Class* clasp, js::TaggedProto proto,
+                 gc::AllocKind kind, NativeObject* obj);
+
+  inline void fillGlobal(EntryIndex entry, const Class* clasp,
+                         js::GlobalObject* global, gc::AllocKind kind,
+                         NativeObject* obj);
+
+  void fillGroup(EntryIndex entry, js::ObjectGroup* group, gc::AllocKind kind,
+                 NativeObject* obj) {
+    MOZ_ASSERT(obj->group() == group);
+    return fill(entry, group->clasp(), group, kind, obj);
+  }
+
+  
+  void invalidateEntriesForShape(JSContext* cx, HandleShape shape,
+                                 HandleObject proto);
+
+ private:
+  EntryIndex makeIndex(const Class* clasp, gc::Cell* key, gc::AllocKind kind) {
+    uintptr_t hash = (uintptr_t(clasp) ^ uintptr_t(key)) + size_t(kind);
+    return hash % mozilla::ArrayLength(entries);
+  }
+
+  bool lookup(const Class* clasp, gc::Cell* key, gc::AllocKind kind,
+              EntryIndex* pentry) {
+    *pentry = makeIndex(clasp, key, kind);
+    Entry* entry = &entries[*pentry];
+
+    
+    
+    return entry->clasp == clasp && entry->key == key;
+  }
+
+  void fill(EntryIndex entry_, const Class* clasp, gc::Cell* key,
+            gc::AllocKind kind, NativeObject* obj) {
+    MOZ_ASSERT(unsigned(entry_) < mozilla::ArrayLength(entries));
+    MOZ_ASSERT(entry_ == makeIndex(clasp, key, kind));
+    Entry* entry = &entries[entry_];
+
+    MOZ_ASSERT(!obj->hasDynamicSlots());
+    MOZ_ASSERT(obj->hasEmptyElements() || obj->is<ArrayObject>());
+
+    entry->clasp = clasp;
+    entry->key = key;
+    entry->kind = kind;
+
+    entry->nbytes = gc::Arena::thingSize(kind);
+    js_memcpy(&entry->templateObject, obj, entry->nbytes);
+  }
+
+  static void copyCachedToObject(NativeObject* dst, NativeObject* src,
+                                 gc::AllocKind kind) {
+    js_memcpy(dst, src, gc::Arena::thingSize(kind));
+
+    
+    dst->initGroup(src->group());
+    dst->initShape(src->shape());
+  }
 };
 
-class RuntimeCaches
-{
-  public:
-    js::GSNCache gsnCache;
-    js::EnvironmentCoordinateNameCache envCoordinateNameCache;
-    js::NewObjectCache newObjectCache;
-    js::UncompressedSourceCache uncompressedSourceCache;
-    js::EvalCache evalCache;
+class RuntimeCaches {
+ public:
+  js::GSNCache gsnCache;
+  js::EnvironmentCoordinateNameCache envCoordinateNameCache;
+  js::NewObjectCache newObjectCache;
+  js::UncompressedSourceCache uncompressedSourceCache;
+  js::EvalCache evalCache;
 
-    void purgeForMinorGC(JSRuntime* rt) {
-        newObjectCache.clearNurseryObjects(rt);
-        evalCache.sweep();
-    }
+  void purgeForMinorGC(JSRuntime* rt) {
+    newObjectCache.clearNurseryObjects(rt);
+    evalCache.sweep();
+  }
 
-    void purgeForCompaction() {
-        newObjectCache.purge();
-        evalCache.clear();
-    }
+  void purgeForCompaction() {
+    newObjectCache.purge();
+    evalCache.clear();
+  }
 
-    void purge() {
-        purgeForCompaction();
-        gsnCache.purge();
-        envCoordinateNameCache.purge();
-        uncompressedSourceCache.purge();
-    }
+  void purge() {
+    purgeForCompaction();
+    gsnCache.purge();
+    envCoordinateNameCache.purge();
+    uncompressedSourceCache.purge();
+  }
 };
 
-} 
+}  
 
 #endif 

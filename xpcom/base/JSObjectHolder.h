@@ -23,21 +23,20 @@ namespace mozilla {
 
 
 
-class JSObjectHolder final : public nsISupports
-{
-public:
+class JSObjectHolder final : public nsISupports {
+ public:
   JSObjectHolder(JSContext* aCx, JSObject* aObject) : mJSObject(aCx, aObject) {}
 
   NS_DECL_ISUPPORTS
 
   JSObject* GetJSObject() { return mJSObject; }
 
-private:
+ private:
   ~JSObjectHolder() {}
 
   JS::PersistentRooted<JSObject*> mJSObject;
 };
 
-} 
+}  
 
-#endif 
+#endif  

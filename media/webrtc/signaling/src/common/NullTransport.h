@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NULL_TRANSPORT_H_
 #define NULL_TRANSPORT_H_
 
@@ -15,23 +14,19 @@ namespace mozilla {
 
 
 
-class NullTransport : public webrtc::Transport
-{
-public:
-  virtual bool SendRtp(const uint8_t* packet,
-                       size_t length,
-                       const webrtc::PacketOptions& options) override
-  {
-    (void) packet;
-    (void) length;
-    (void) options;
+class NullTransport : public webrtc::Transport {
+ public:
+  virtual bool SendRtp(const uint8_t* packet, size_t length,
+                       const webrtc::PacketOptions& options) override {
+    (void)packet;
+    (void)length;
+    (void)options;
     return true;
   }
 
-  virtual bool SendRtcp(const uint8_t* packet, size_t length) override
-  {
-    (void) packet;
-    (void) length;
+  virtual bool SendRtcp(const uint8_t* packet, size_t length) override {
+    (void)packet;
+    (void)length;
     return true;
   }
 #if 0
@@ -51,11 +46,11 @@ public:
 
   virtual ~NullTransport() {}
 
-private:
+ private:
   NullTransport(const NullTransport& other) = delete;
   void operator=(const NullTransport& other) = delete;
 };
 
-} 
+}  
 
 #endif

@@ -24,15 +24,14 @@ enum nsSMILTargetAttrType {
   eSMILTargetAttrType_XML
 };
 
-class SVGAnimationElement : public SVGAnimationElementBase,
-                            public SVGTests
-{
-protected:
-  explicit SVGAnimationElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+class SVGAnimationElement : public SVGAnimationElementBase, public SVGTests {
+ protected:
+  explicit SVGAnimationElement(
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
   nsresult Init();
   virtual ~SVGAnimationElement();
 
-public:
+ public:
   
   NS_DECL_ISUPPORTS_INHERITED
 
@@ -49,11 +48,10 @@ public:
   virtual bool IsNodeOfType(uint32_t aFlags) const override;
 
   
-  virtual bool ParseAttribute(int32_t aNamespaceID,
-                                nsAtom* aAttribute,
-                                const nsAString& aValue,
-                                nsIPrincipal* aMaybeScriptedPrincipal,
-                                nsAttrValue& aResult) override;
+  virtual bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                              const nsAString& aValue,
+                              nsIPrincipal* aMaybeScriptedPrincipal,
+                              nsAttrValue& aResult) override;
   virtual nsresult AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                 const nsAttrValue* aValue,
                                 const nsAttrValue* aOldValue,
@@ -100,11 +98,11 @@ public:
 
 
   class HrefTargetTracker final : public IDTracker {
-  public:
+   public:
     explicit HrefTargetTracker(SVGAnimationElement* aAnimationElement)
-      : mAnimationElement(aAnimationElement)
-    {}
-  protected:
+        : mAnimationElement(aAnimationElement) {}
+
+   protected:
     
     
     
@@ -116,15 +114,16 @@ public:
     
     
     virtual bool IsPersistent() override { return true; }
-  private:
+
+   private:
     SVGAnimationElement* const mAnimationElement;
   };
 
-  HrefTargetTracker    mHrefTarget;
-  nsSMILTimedElement   mTimedElement;
+  HrefTargetTracker mHrefTarget;
+  nsSMILTimedElement mTimedElement;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

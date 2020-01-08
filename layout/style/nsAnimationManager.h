@@ -35,19 +35,16 @@ struct NonOwningAnimationTarget;
 
 namespace dom {
 
-class CSSAnimation final : public Animation
-{
-public:
- explicit CSSAnimation(nsIGlobalObject* aGlobal,
-                       nsAtom* aAnimationName)
-    : dom::Animation(aGlobal)
-    , mAnimationName(aAnimationName)
-    , mIsStylePaused(false)
-    , mPauseShouldStick(false)
-    , mNeedsNewAnimationIndexWhenRun(false)
-    , mPreviousPhase(ComputedTiming::AnimationPhase::Idle)
-    , mPreviousIteration(0)
-  {
+class CSSAnimation final : public Animation {
+ public:
+  explicit CSSAnimation(nsIGlobalObject* aGlobal, nsAtom* aAnimationName)
+      : dom::Animation(aGlobal),
+        mAnimationName(aAnimationName),
+        mIsStylePaused(false),
+        mPauseShouldStick(false),
+        mNeedsNewAnimationIndexWhenRun(false),
+        mPreviousPhase(ComputedTiming::AnimationPhase::Idle),
+        mPreviousIteration(0) {
     
     
     
@@ -62,8 +59,7 @@ public:
   const CSSAnimation* AsCSSAnimation() const override { return this; }
 
   
-  void GetAnimationName(nsString& aRetVal) const
-  {
+  void GetAnimationName(nsString& aRetVal) const {
     mAnimationName->ToString(aRetVal);
   }
 
@@ -88,8 +84,7 @@ public:
 
   void PlayFromStyle();
   void PauseFromStyle();
-  void CancelFromStyle() override
-  {
+  void CancelFromStyle() override {
     
     
     
@@ -112,17 +107,16 @@ public:
   }
 
   void Tick() override;
-  void QueueEvents(const StickyTimeDuration& aActiveTime = StickyTimeDuration());
+  void QueueEvents(
+      const StickyTimeDuration& aActiveTime = StickyTimeDuration());
 
   bool IsStylePaused() const { return mIsStylePaused; }
 
   bool HasLowerCompositeOrderThan(const CSSAnimation& aOther) const;
 
-  void SetAnimationIndex(uint64_t aIndex)
-  {
+  void SetAnimationIndex(uint64_t aIndex) {
     MOZ_ASSERT(IsTiedToMarkup());
-    if (IsRelevant() &&
-        mAnimationIndex != aIndex) {
+    if (IsRelevant() && mAnimationIndex != aIndex) {
       nsNodeUtils::AnimationChanged(this);
       PostUpdate();
     }
@@ -133,8 +127,7 @@ public:
   
   
   
-  void SetOwningElement(const OwningElementRef& aElement)
-  {
+  void SetOwningElement(const OwningElementRef& aElement) {
     mOwningElement = aElement;
   }
   
@@ -145,11 +138,11 @@ public:
     QueueEvents(aActiveTime);
   }
 
-protected:
-  virtual ~CSSAnimation()
-  {
-    MOZ_ASSERT(!mOwningElement.IsSet(), "Owning element should be cleared "
-                                        "before a CSS animation is destroyed");
+ protected:
+  virtual ~CSSAnimation() {
+    MOZ_ASSERT(!mOwningElement.IsSet(),
+               "Owning element should be cleared "
+               "before a CSS animation is destroyed");
   }
 
   
@@ -162,9 +155,9 @@ protected:
   
   
   TimeDuration InitialAdvance() const {
-    return mEffect ?
-           std::max(TimeDuration(), mEffect->SpecifiedTiming().Delay() * -1) :
-           TimeDuration();
+    return mEffect ? std::max(TimeDuration(),
+                              mEffect->SpecifiedTiming().Delay() * -1)
+                   : TimeDuration();
   }
 
   RefPtr<nsAtom> mAnimationName;
@@ -254,18 +247,12 @@ protected:
 } 
 
 template <>
-struct AnimationTypeTraits<dom::CSSAnimation>
-{
-  static nsAtom* ElementPropertyAtom()
-  {
-    return nsGkAtoms::animationsProperty;
-  }
-  static nsAtom* BeforePropertyAtom()
-  {
+struct AnimationTypeTraits<dom::CSSAnimation> {
+  static nsAtom* ElementPropertyAtom() { return nsGkAtoms::animationsProperty; }
+  static nsAtom* BeforePropertyAtom() {
     return nsGkAtoms::animationsOfBeforeProperty;
   }
-  static nsAtom* AfterPropertyAtom()
-  {
+  static nsAtom* AfterPropertyAtom() {
     return nsGkAtoms::animationsOfAfterProperty;
   }
 };
@@ -273,18 +260,16 @@ struct AnimationTypeTraits<dom::CSSAnimation>
 } 
 
 class nsAnimationManager final
-  : public mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation>
-{
-public:
-  explicit nsAnimationManager(nsPresContext *aPresContext)
-    : mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation>(aPresContext)
-  {
-  }
+    : public mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation> {
+ public:
+  explicit nsAnimationManager(nsPresContext* aPresContext)
+      : mozilla::CommonAnimationManager<mozilla::dom::CSSAnimation>(
+            aPresContext) {}
 
   typedef mozilla::AnimationCollection<mozilla::dom::CSSAnimation>
-    CSSAnimationCollection;
+      CSSAnimationCollection;
   typedef nsTArray<RefPtr<mozilla::dom::CSSAnimation>>
-    OwningCSSAnimationPtrArray;
+      OwningCSSAnimationPtrArray;
 
   ~nsAnimationManager() override = default;
 
@@ -292,11 +277,9 @@ public:
 
 
 
-  void UpdateAnimations(
-    mozilla::dom::Element* aElement,
-    mozilla::CSSPseudoElementType aPseudoType,
-    const mozilla::ComputedStyle* aComputedValues);
-
+  void UpdateAnimations(mozilla::dom::Element* aElement,
+                        mozilla::CSSPseudoElementType aPseudoType,
+                        const mozilla::ComputedStyle* aComputedValues);
 
   
   
@@ -313,11 +296,8 @@ public:
   
   template <class IterType, class TimingFunctionType>
   static bool FindMatchingKeyframe(
-    IterType&& aIter,
-    double aOffset,
-    const TimingFunctionType& aTimingFunctionToMatch,
-    size_t& aIndex)
-  {
+      IterType&& aIter, double aOffset,
+      const TimingFunctionType& aTimingFunctionToMatch, size_t& aIndex) {
     aIndex = 0;
     for (mozilla::Keyframe& keyframe : aIter) {
       if (keyframe.mOffset.value() != aOffset) {
@@ -331,12 +311,11 @@ public:
     return false;
   }
 
-  bool AnimationMayBeReferenced(nsAtom* aName) const
-  {
+  bool AnimationMayBeReferenced(nsAtom* aName) const {
     return mMaybeReferencedAnimations.Contains(aName);
   }
 
-private:
+ private:
   
   
   
@@ -345,10 +324,9 @@ private:
   
   nsTHashtable<nsRefPtrHashKey<nsAtom>> mMaybeReferencedAnimations;
 
-  void DoUpdateAnimations(
-    const mozilla::NonOwningAnimationTarget& aTarget,
-    const nsStyleDisplay& aStyleDisplay,
-    ServoCSSAnimationBuilder& aBuilder);
+  void DoUpdateAnimations(const mozilla::NonOwningAnimationTarget& aTarget,
+                          const nsStyleDisplay& aStyleDisplay,
+                          ServoCSSAnimationBuilder& aBuilder);
 };
 
 #endif 

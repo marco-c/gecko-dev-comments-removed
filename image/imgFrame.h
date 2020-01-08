@@ -23,13 +23,9 @@ class ImageRegion;
 class DrawableFrameRef;
 class RawAccessFrameRef;
 
-enum class Opacity : uint8_t {
-  FULLY_OPAQUE,
-  SOME_TRANSPARENCY
-};
+enum class Opacity : uint8_t { FULLY_OPAQUE, SOME_TRANSPARENCY };
 
-class imgFrame
-{
+class imgFrame {
   typedef gfx::Color Color;
   typedef gfx::DataSourceSurface DataSourceSurface;
   typedef gfx::DrawTarget DrawTarget;
@@ -40,7 +36,7 @@ class imgFrame
   typedef gfx::SourceSurface SourceSurface;
   typedef gfx::SurfaceFormat SurfaceFormat;
 
-public:
+ public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(imgFrame)
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(imgFrame)
 
@@ -54,22 +50,17 @@ public:
 
 
 
-  nsresult InitForDecoder(const nsIntSize& aImageSize,
-                          const nsIntRect& aRect,
-                          SurfaceFormat aFormat,
-                          uint8_t aPaletteDepth,
+  nsresult InitForDecoder(const nsIntSize& aImageSize, const nsIntRect& aRect,
+                          SurfaceFormat aFormat, uint8_t aPaletteDepth,
                           bool aNonPremult,
                           const Maybe<AnimationParams>& aAnimParams,
-                          bool aIsFullFrame,
-                          bool aShouldRecycle);
+                          bool aIsFullFrame, bool aShouldRecycle);
 
-  nsresult InitForAnimator(const nsIntSize& aSize,
-                           SurfaceFormat aFormat)
-  {
+  nsresult InitForAnimator(const nsIntSize& aSize, SurfaceFormat aFormat) {
     nsIntRect frameRect(0, 0, aSize.width, aSize.height);
-    AnimationParams animParams { frameRect, FrameTimeout::Forever(),
-                                  1, BlendMethod::OVER,
-                                 DisposalMethod::NOT_SPECIFIED };
+    AnimationParams animParams{frameRect, FrameTimeout::Forever(),
+                                1, BlendMethod::OVER,
+                               DisposalMethod::NOT_SPECIFIED};
     
     
     
@@ -101,12 +92,10 @@ public:
 
 
 
-  nsresult InitWithDrawable(gfxDrawable* aDrawable,
-                            const nsIntSize& aSize,
+  nsresult InitWithDrawable(gfxDrawable* aDrawable, const nsIntSize& aSize,
                             const SurfaceFormat aFormat,
                             SamplingFilter aSamplingFilter,
-                            uint32_t aImageFlags,
-                            gfx::BackendType aBackend);
+                            uint32_t aImageFlags, gfx::BackendType aBackend);
 
   DrawableFrameRef DrawableRef();
 
@@ -190,7 +179,9 @@ public:
   const IntRect& GetRect() const { return mFrameRect; }
   IntSize GetSize() const { return mFrameRect.Size(); }
   const IntRect& GetBlendRect() const { return mBlendRect; }
-  IntRect GetBoundedBlendRect() const { return mBlendRect.Intersect(mFrameRect); }
+  IntRect GetBoundedBlendRect() const {
+    return mBlendRect.Intersect(mFrameRect);
+  }
   FrameTimeout GetTimeout() const { return mTimeout; }
   BlendMethod GetBlendMethod() const { return mBlendMethod; }
   DisposalMethod GetDisposalMethod() const { return mDisposalMethod; }
@@ -220,8 +211,7 @@ public:
 
   struct AddSizeOfCbData {
     AddSizeOfCbData()
-      : heap(0), nonHeap(0), handles(0), index(0), externalId(0)
-    { }
+        : heap(0), nonHeap(0), handles(0), index(0), externalId(0) {}
 
     size_t heap;
     size_t nonHeap;
@@ -235,8 +225,7 @@ public:
   void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
                               const AddSizeOfCb& aCallback) const;
 
-private: 
-
+ private:  
   ~imgFrame();
 
   
@@ -268,27 +257,19 @@ private:
 
   already_AddRefed<SourceSurface> GetSourceSurfaceInternal(bool aTemporary);
 
-  uint32_t PaletteDataLength() const
-  {
-    return mPaletteDepth ? (size_t(1) << mPaletteDepth) * sizeof(uint32_t)
-                         : 0;
+  uint32_t PaletteDataLength() const {
+    return mPaletteDepth ? (size_t(1) << mPaletteDepth) * sizeof(uint32_t) : 0;
   }
 
   struct SurfaceWithFormat {
     RefPtr<gfxDrawable> mDrawable;
     SurfaceFormat mFormat;
-    SurfaceWithFormat()
-      : mFormat(SurfaceFormat::UNKNOWN)
-    {
-    }
+    SurfaceWithFormat() : mFormat(SurfaceFormat::UNKNOWN) {}
     SurfaceWithFormat(gfxDrawable* aDrawable, SurfaceFormat aFormat)
-      : mDrawable(aDrawable), mFormat(aFormat)
-    { }
+        : mDrawable(aDrawable), mFormat(aFormat) {}
     SurfaceWithFormat(SurfaceWithFormat&& aOther)
-      : mDrawable(std::move(aOther.mDrawable)), mFormat(aOther.mFormat)
-    { }
-    SurfaceWithFormat& operator=(SurfaceWithFormat&& aOther)
-    {
+        : mDrawable(std::move(aOther.mDrawable)), mFormat(aOther.mFormat) {}
+    SurfaceWithFormat& operator=(SurfaceWithFormat&& aOther) {
       mDrawable = std::move(aOther.mDrawable);
       mFormat = aOther.mFormat;
       return *this;
@@ -298,12 +279,11 @@ private:
     bool IsValid() { return !!mDrawable; }
   };
 
-  SurfaceWithFormat SurfaceForDrawing(bool               aDoPartialDecode,
-                                      bool               aDoTile,
-                                      ImageRegion&       aRegion,
-                                      SourceSurface*     aSurface);
+  SurfaceWithFormat SurfaceForDrawing(bool aDoPartialDecode, bool aDoTile,
+                                      ImageRegion& aRegion,
+                                      SourceSurface* aSurface);
 
-private: 
+ private:  
   friend class DrawableFrameRef;
   friend class RawAccessFrameRef;
   friend class RecyclingSourceSurface;
@@ -348,50 +328,49 @@ private:
   bool mOptimizable;
   bool mShouldRecycle;
 
-
   
   
   
 
   
-  IntSize      mImageSize;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  IntRect      mFrameRect;
+  IntSize mImageSize;
 
   
   
   
   
   
-  IntRect      mBlendRect;
+  
+  
+  
+  
+  IntRect mFrameRect;
 
   
   
   
-  IntRect      mDirtyRect;
+  
+  
+  IntRect mBlendRect;
+
+  
+  
+  
+  IntRect mDirtyRect;
 
   
   FrameTimeout mTimeout;
 
   DisposalMethod mDisposalMethod;
-  BlendMethod    mBlendMethod;
-  SurfaceFormat  mFormat;
+  BlendMethod mBlendMethod;
+  SurfaceFormat mFormat;
 
   
   
   
   
-  uint8_t*     mPalettedImageData;
-  uint8_t      mPaletteDepth;
+  uint8_t* mPalettedImageData;
+  uint8_t mPaletteDepth;
 
   bool mNonPremult;
 
@@ -411,16 +390,13 @@ private:
 
 
 
-class DrawableFrameRef final
-{
+class DrawableFrameRef final {
   typedef gfx::DataSourceSurface DataSourceSurface;
 
-public:
-  DrawableFrameRef() { }
+ public:
+  DrawableFrameRef() {}
 
-  explicit DrawableFrameRef(imgFrame* aFrame)
-    : mFrame(aFrame)
-  {
+  explicit DrawableFrameRef(imgFrame* aFrame) : mFrame(aFrame) {
     MOZ_ASSERT(aFrame);
     MonitorAutoLock lock(aFrame->mMonitor);
     MOZ_ASSERT(!aFrame->GetIsPaletted(), "Paletted must use RawAccessFrameRef");
@@ -437,12 +413,9 @@ public:
   }
 
   DrawableFrameRef(DrawableFrameRef&& aOther)
-    : mFrame(aOther.mFrame.forget())
-    , mRef(std::move(aOther.mRef))
-  { }
+      : mFrame(aOther.mFrame.forget()), mRef(std::move(aOther.mRef)) {}
 
-  DrawableFrameRef& operator=(DrawableFrameRef&& aOther)
-  {
+  DrawableFrameRef& operator=(DrawableFrameRef&& aOther) {
     MOZ_ASSERT(this != &aOther, "Self-moves are prohibited");
     mFrame = aOther.mFrame.forget();
     mRef = std::move(aOther.mRef);
@@ -451,14 +424,12 @@ public:
 
   explicit operator bool() const { return bool(mFrame); }
 
-  imgFrame* operator->()
-  {
+  imgFrame* operator->() {
     MOZ_ASSERT(mFrame);
     return mFrame;
   }
 
-  const imgFrame* operator->() const
-  {
+  const imgFrame* operator->() const {
     MOZ_ASSERT(mFrame);
     return mFrame;
   }
@@ -466,13 +437,12 @@ public:
   imgFrame* get() { return mFrame; }
   const imgFrame* get() const { return mFrame; }
 
-  void reset()
-  {
+  void reset() {
     mFrame = nullptr;
     mRef.reset();
   }
 
-private:
+ private:
   DrawableFrameRef(const DrawableFrameRef& aOther) = delete;
   DrawableFrameRef& operator=(const DrawableFrameRef& aOther) = delete;
 
@@ -495,16 +465,12 @@ private:
 
 
 
-class RawAccessFrameRef final
-{
-public:
-  RawAccessFrameRef() : mData(nullptr) { }
+class RawAccessFrameRef final {
+ public:
+  RawAccessFrameRef() : mData(nullptr) {}
 
-  explicit RawAccessFrameRef(imgFrame* aFrame,
-                             bool aOnlyFinished)
-    : mFrame(aFrame)
-    , mData(nullptr)
-  {
+  explicit RawAccessFrameRef(imgFrame* aFrame, bool aOnlyFinished)
+      : mFrame(aFrame), mData(nullptr) {
     MOZ_ASSERT(mFrame, "Need a frame");
 
     mData = mFrame->LockImageData(aOnlyFinished);
@@ -514,21 +480,17 @@ public:
   }
 
   RawAccessFrameRef(RawAccessFrameRef&& aOther)
-    : mFrame(aOther.mFrame.forget())
-    , mData(aOther.mData)
-  {
+      : mFrame(aOther.mFrame.forget()), mData(aOther.mData) {
     aOther.mData = nullptr;
   }
 
-  ~RawAccessFrameRef()
-  {
+  ~RawAccessFrameRef() {
     if (mFrame) {
       mFrame->UnlockImageData();
     }
   }
 
-  RawAccessFrameRef& operator=(RawAccessFrameRef&& aOther)
-  {
+  RawAccessFrameRef& operator=(RawAccessFrameRef&& aOther) {
     MOZ_ASSERT(this != &aOther, "Self-moves are prohibited");
 
     if (mFrame) {
@@ -544,14 +506,12 @@ public:
 
   explicit operator bool() const { return bool(mFrame); }
 
-  imgFrame* operator->()
-  {
+  imgFrame* operator->() {
     MOZ_ASSERT(mFrame);
     return mFrame.get();
   }
 
-  const imgFrame* operator->() const
-  {
+  const imgFrame* operator->() const {
     MOZ_ASSERT(mFrame);
     return mFrame;
   }
@@ -559,8 +519,7 @@ public:
   imgFrame* get() { return mFrame; }
   const imgFrame* get() const { return mFrame; }
 
-  void reset()
-  {
+  void reset() {
     if (mFrame) {
       mFrame->UnlockImageData();
     }
@@ -571,7 +530,7 @@ public:
   uint8_t* Data() const { return mData; }
   uint32_t PaletteDataLength() const { return mFrame->PaletteDataLength(); }
 
-private:
+ private:
   RawAccessFrameRef(const RawAccessFrameRef& aOther) = delete;
   RawAccessFrameRef& operator=(const RawAccessFrameRef& aOther) = delete;
 
@@ -579,7 +538,7 @@ private:
   uint8_t* mData;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

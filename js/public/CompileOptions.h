@@ -52,15 +52,15 @@
 #ifndef js_CompileOptions_h
 #define js_CompileOptions_h
 
-#include "mozilla/Attributes.h" 
-#include "mozilla/MemoryReporting.h" 
+#include "mozilla/Attributes.h"       
+#include "mozilla/MemoryReporting.h"  
 
-#include <stddef.h> 
-#include <stdint.h> 
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "jstypes.h" 
+#include "jstypes.h"  
 
-#include "js/RootingAPI.h" 
+#include "js/RootingAPI.h"  
 
 struct JSContext;
 class JSObject;
@@ -69,11 +69,10 @@ class JSString;
 
 namespace JS {
 
-enum class AsmJSOption : uint8_t
-{
-    Enabled,
-    Disabled,
-    DisabledByDebugger,
+enum class AsmJSOption : uint8_t {
+  Enabled,
+  Disabled,
+  DisabledByDebugger,
 };
 
 
@@ -82,10 +81,9 @@ enum class AsmJSOption : uint8_t
 
 
 
-class JS_PUBLIC_API TransitiveCompileOptions
-{
-  protected:
-    
+class JS_PUBLIC_API TransitiveCompileOptions {
+ protected:
+  
 
 
 
@@ -98,57 +96,57 @@ class JS_PUBLIC_API TransitiveCompileOptions
 
 
 
-    bool mutedErrors_ = false;
+  bool mutedErrors_ = false;
 
-    const char* filename_ = nullptr;
-    const char* introducerFilename_ = nullptr;
-    const char16_t* sourceMapURL_ = nullptr;
+  const char* filename_ = nullptr;
+  const char* introducerFilename_ = nullptr;
+  const char16_t* sourceMapURL_ = nullptr;
 
-  public:
-    
-    bool selfHostingMode = false;
-    bool canLazilyParse = true;
-    bool strictOption = false;
-    bool extraWarningsOption = false;
-    bool werrorOption = false;
-    AsmJSOption asmJSOption = AsmJSOption::Disabled;
-    bool throwOnAsmJSValidationFailureOption = false;
-    bool forceAsync = false;
-    bool sourceIsLazy = false;
-    bool allowHTMLComments = true;
-    bool isProbablySystemCode = false;
-    bool hideScriptFromDebugger = false;
+ public:
+  
+  bool selfHostingMode = false;
+  bool canLazilyParse = true;
+  bool strictOption = false;
+  bool extraWarningsOption = false;
+  bool werrorOption = false;
+  AsmJSOption asmJSOption = AsmJSOption::Disabled;
+  bool throwOnAsmJSValidationFailureOption = false;
+  bool forceAsync = false;
+  bool sourceIsLazy = false;
+  bool allowHTMLComments = true;
+  bool isProbablySystemCode = false;
+  bool hideScriptFromDebugger = false;
 
-    
+  
 
 
 
-    const char* introductionType = nullptr;
+  const char* introductionType = nullptr;
 
-    unsigned introductionLineno = 0;
-    uint32_t introductionOffset = 0;
-    bool hasIntroductionInfo = false;
+  unsigned introductionLineno = 0;
+  uint32_t introductionOffset = 0;
+  bool hasIntroductionInfo = false;
 
-  protected:
-    TransitiveCompileOptions() = default;
+ protected:
+  TransitiveCompileOptions() = default;
 
-    
-    
-    void copyPODTransitiveOptions(const TransitiveCompileOptions& rhs);
+  
+  
+  void copyPODTransitiveOptions(const TransitiveCompileOptions& rhs);
 
-  public:
-    
-    
-    bool mutedErrors() const { return mutedErrors_; }
-    const char* filename() const { return filename_; }
-    const char* introducerFilename() const { return introducerFilename_; }
-    const char16_t* sourceMapURL() const { return sourceMapURL_; }
-    virtual JSObject* element() const = 0;
-    virtual JSString* elementAttributeName() const = 0;
-    virtual JSScript* introductionScript() const = 0;
+ public:
+  
+  
+  bool mutedErrors() const { return mutedErrors_; }
+  const char* filename() const { return filename_; }
+  const char* introducerFilename() const { return introducerFilename_; }
+  const char16_t* sourceMapURL() const { return sourceMapURL_; }
+  virtual JSObject* element() const = 0;
+  virtual JSString* elementAttributeName() const = 0;
+  virtual JSScript* introductionScript() const = 0;
 
-  private:
-    void operator=(const TransitiveCompileOptions&) = delete;
+ private:
+  void operator=(const TransitiveCompileOptions&) = delete;
 };
 
 class JS_PUBLIC_API CompileOptions;
@@ -161,58 +159,55 @@ class JS_PUBLIC_API CompileOptions;
 
 
 
-class JS_PUBLIC_API ReadOnlyCompileOptions
-  : public TransitiveCompileOptions
-{
-  public:
-    
-    unsigned lineno  = 1;
-    unsigned column = 0;
+class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
+ public:
+  
+  unsigned lineno = 1;
+  unsigned column = 0;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    unsigned scriptSourceOffset = 0;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  unsigned scriptSourceOffset = 0;
 
-    
-    bool isRunOnce =  false;
+  
+  bool isRunOnce = false;
 
-    bool nonSyntacticScope = false;
-    bool noScriptRval = false;
-    bool allowSyntaxParser = true;
+  bool nonSyntacticScope = false;
+  bool noScriptRval = false;
+  bool allowSyntaxParser = true;
 
+ private:
+  friend class CompileOptions;
 
-  private:
-    friend class CompileOptions;
+ protected:
+  ReadOnlyCompileOptions() = default;
 
-  protected:
-    ReadOnlyCompileOptions() = default;
+  
+  
+  void copyPODOptions(const ReadOnlyCompileOptions& rhs);
 
-    
-    
-    void copyPODOptions(const ReadOnlyCompileOptions& rhs);
+ public:
+  
+  
+  bool mutedErrors() const { return mutedErrors_; }
+  const char* filename() const { return filename_; }
+  const char* introducerFilename() const { return introducerFilename_; }
+  const char16_t* sourceMapURL() const { return sourceMapURL_; }
+  virtual JSObject* element() const override = 0;
+  virtual JSString* elementAttributeName() const override = 0;
+  virtual JSScript* introductionScript() const override = 0;
 
-  public:
-    
-    
-    bool mutedErrors() const { return mutedErrors_; }
-    const char* filename() const { return filename_; }
-    const char* introducerFilename() const { return introducerFilename_; }
-    const char16_t* sourceMapURL() const { return sourceMapURL_; }
-    virtual JSObject* element() const override = 0;
-    virtual JSString* elementAttributeName() const override = 0;
-    virtual JSScript* introductionScript() const override = 0;
-
-  private:
-    void operator=(const ReadOnlyCompileOptions&) = delete;
+ private:
+  void operator=(const ReadOnlyCompileOptions&) = delete;
 };
 
 
@@ -228,128 +223,129 @@ class JS_PUBLIC_API ReadOnlyCompileOptions
 
 
 
-class JS_PUBLIC_API OwningCompileOptions final
-  : public ReadOnlyCompileOptions
-{
-    PersistentRooted<JSObject*> elementRoot;
-    PersistentRooted<JSString*> elementAttributeNameRoot;
-    PersistentRooted<JSScript*> introductionScriptRoot;
+class JS_PUBLIC_API OwningCompileOptions final : public ReadOnlyCompileOptions {
+  PersistentRooted<JSObject*> elementRoot;
+  PersistentRooted<JSString*> elementAttributeNameRoot;
+  PersistentRooted<JSScript*> introductionScriptRoot;
 
-  public:
-    
-    explicit OwningCompileOptions(JSContext* cx);
-    ~OwningCompileOptions();
+ public:
+  
+  explicit OwningCompileOptions(JSContext* cx);
+  ~OwningCompileOptions();
 
-    JSObject* element() const override { return elementRoot; }
-    JSString* elementAttributeName() const override { return elementAttributeNameRoot; }
-    JSScript* introductionScript() const override { return introductionScriptRoot; }
+  JSObject* element() const override { return elementRoot; }
+  JSString* elementAttributeName() const override {
+    return elementAttributeNameRoot;
+  }
+  JSScript* introductionScript() const override {
+    return introductionScriptRoot;
+  }
 
-    
-    bool copy(JSContext* cx, const ReadOnlyCompileOptions& rhs);
+  
+  bool copy(JSContext* cx, const ReadOnlyCompileOptions& rhs);
 
-    
-    MOZ_MUST_USE bool setFile(JSContext* cx, const char* f);
-    MOZ_MUST_USE bool setFileAndLine(JSContext* cx, const char* f, unsigned l);
-    MOZ_MUST_USE bool setSourceMapURL(JSContext* cx, const char16_t* s);
-    MOZ_MUST_USE bool setIntroducerFilename(JSContext* cx, const char* s);
+  
+  MOZ_MUST_USE bool setFile(JSContext* cx, const char* f);
+  MOZ_MUST_USE bool setFileAndLine(JSContext* cx, const char* f, unsigned l);
+  MOZ_MUST_USE bool setSourceMapURL(JSContext* cx, const char16_t* s);
+  MOZ_MUST_USE bool setIntroducerFilename(JSContext* cx, const char* s);
 
-    
+  
 
-    OwningCompileOptions& setLine(unsigned l) {
-        lineno = l;
-        return *this;
+  OwningCompileOptions& setLine(unsigned l) {
+    lineno = l;
+    return *this;
+  }
+
+  OwningCompileOptions& setElement(JSObject* e) {
+    elementRoot = e;
+    return *this;
+  }
+
+  OwningCompileOptions& setElementAttributeName(JSString* p) {
+    elementAttributeNameRoot = p;
+    return *this;
+  }
+
+  OwningCompileOptions& setIntroductionScript(JSScript* s) {
+    introductionScriptRoot = s;
+    return *this;
+  }
+
+  OwningCompileOptions& setMutedErrors(bool mute) {
+    mutedErrors_ = mute;
+    return *this;
+  }
+
+  OwningCompileOptions& setColumn(unsigned c) {
+    column = c;
+    return *this;
+  }
+
+  OwningCompileOptions& setScriptSourceOffset(unsigned o) {
+    scriptSourceOffset = o;
+    return *this;
+  }
+
+  OwningCompileOptions& setIsRunOnce(bool once) {
+    isRunOnce = once;
+    return *this;
+  }
+
+  OwningCompileOptions& setNoScriptRval(bool nsr) {
+    noScriptRval = nsr;
+    return *this;
+  }
+
+  OwningCompileOptions& setSelfHostingMode(bool shm) {
+    selfHostingMode = shm;
+    return *this;
+  }
+
+  OwningCompileOptions& setCanLazilyParse(bool clp) {
+    canLazilyParse = clp;
+    return *this;
+  }
+
+  OwningCompileOptions& setAllowSyntaxParser(bool clp) {
+    allowSyntaxParser = clp;
+    return *this;
+  }
+
+  OwningCompileOptions& setSourceIsLazy(bool l) {
+    sourceIsLazy = l;
+    return *this;
+  }
+
+  OwningCompileOptions& setNonSyntacticScope(bool n) {
+    nonSyntacticScope = n;
+    return *this;
+  }
+
+  OwningCompileOptions& setIntroductionType(const char* t) {
+    introductionType = t;
+    return *this;
+  }
+
+  bool setIntroductionInfo(JSContext* cx, const char* introducerFn,
+                           const char* intro, unsigned line, JSScript* script,
+                           uint32_t offset) {
+    if (!setIntroducerFilename(cx, introducerFn)) {
+      return false;
     }
 
-    OwningCompileOptions& setElement(JSObject* e) {
-        elementRoot = e;
-        return *this;
-    }
+    introductionType = intro;
+    introductionLineno = line;
+    introductionScriptRoot = script;
+    introductionOffset = offset;
+    hasIntroductionInfo = true;
+    return true;
+  }
 
-    OwningCompileOptions& setElementAttributeName(JSString* p) {
-        elementAttributeNameRoot = p;
-        return *this;
-    }
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
-    OwningCompileOptions& setIntroductionScript(JSScript* s) {
-        introductionScriptRoot = s;
-        return *this;
-    }
-
-    OwningCompileOptions& setMutedErrors(bool mute) {
-        mutedErrors_ = mute;
-        return *this;
-    }
-
-    OwningCompileOptions& setColumn(unsigned c) {
-        column = c;
-        return *this;
-    }
-
-    OwningCompileOptions& setScriptSourceOffset(unsigned o) {
-        scriptSourceOffset = o;
-        return *this;
-    }
-
-    OwningCompileOptions& setIsRunOnce(bool once) {
-        isRunOnce = once;
-        return *this;
-    }
-
-    OwningCompileOptions& setNoScriptRval(bool nsr) {
-        noScriptRval = nsr;
-        return *this;
-    }
-
-    OwningCompileOptions& setSelfHostingMode(bool shm) {
-        selfHostingMode = shm;
-        return *this;
-    }
-
-    OwningCompileOptions& setCanLazilyParse(bool clp) {
-        canLazilyParse = clp;
-        return *this;
-    }
-
-    OwningCompileOptions& setAllowSyntaxParser(bool clp) {
-        allowSyntaxParser = clp;
-        return *this;
-    }
-
-    OwningCompileOptions& setSourceIsLazy(bool l) {
-        sourceIsLazy = l;
-        return *this;
-    }
-
-    OwningCompileOptions& setNonSyntacticScope(bool n) {
-        nonSyntacticScope = n;
-        return *this;
-    }
-
-    OwningCompileOptions& setIntroductionType(const char* t) {
-        introductionType = t;
-        return *this;
-    }
-
-    bool setIntroductionInfo(JSContext* cx, const char* introducerFn,
-                             const char* intro, unsigned line,
-                             JSScript* script, uint32_t offset)
-    {
-        if (!setIntroducerFilename(cx, introducerFn)) {
-            return false;
-        }
-
-        introductionType = intro;
-        introductionLineno = line;
-        introductionScriptRoot = script;
-        introductionOffset = offset;
-        hasIntroductionInfo = true;
-        return true;
-    }
-
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-
-  private:
-    void operator=(const CompileOptions& rhs) = delete;
+ private:
+  void operator=(const CompileOptions& rhs) = delete;
 };
 
 
@@ -360,173 +356,167 @@ class JS_PUBLIC_API OwningCompileOptions final
 
 
 class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
-  : public ReadOnlyCompileOptions
-{
-  private:
-    Rooted<JSObject*> elementRoot;
-    Rooted<JSString*> elementAttributeNameRoot;
-    Rooted<JSScript*> introductionScriptRoot;
+    : public ReadOnlyCompileOptions {
+ private:
+  Rooted<JSObject*> elementRoot;
+  Rooted<JSString*> elementAttributeNameRoot;
+  Rooted<JSScript*> introductionScriptRoot;
 
-  public:
-    explicit CompileOptions(JSContext* cx);
+ public:
+  explicit CompileOptions(JSContext* cx);
 
-    CompileOptions(JSContext* cx, const ReadOnlyCompileOptions& rhs)
+  CompileOptions(JSContext* cx, const ReadOnlyCompileOptions& rhs)
       : ReadOnlyCompileOptions(),
         elementRoot(cx),
         elementAttributeNameRoot(cx),
-        introductionScriptRoot(cx)
-    {
-        copyPODOptions(rhs);
+        introductionScriptRoot(cx) {
+    copyPODOptions(rhs);
 
-        filename_ = rhs.filename();
-        introducerFilename_ = rhs.introducerFilename();
-        sourceMapURL_ = rhs.sourceMapURL();
-        elementRoot = rhs.element();
-        elementAttributeNameRoot = rhs.elementAttributeName();
-        introductionScriptRoot = rhs.introductionScript();
-    }
+    filename_ = rhs.filename();
+    introducerFilename_ = rhs.introducerFilename();
+    sourceMapURL_ = rhs.sourceMapURL();
+    elementRoot = rhs.element();
+    elementAttributeNameRoot = rhs.elementAttributeName();
+    introductionScriptRoot = rhs.introductionScript();
+  }
 
-    CompileOptions(JSContext* cx, const TransitiveCompileOptions& rhs)
+  CompileOptions(JSContext* cx, const TransitiveCompileOptions& rhs)
       : ReadOnlyCompileOptions(),
         elementRoot(cx),
         elementAttributeNameRoot(cx),
-        introductionScriptRoot(cx)
-    {
-        copyPODTransitiveOptions(rhs);
+        introductionScriptRoot(cx) {
+    copyPODTransitiveOptions(rhs);
 
-        filename_ = rhs.filename();
-        introducerFilename_ = rhs.introducerFilename();
-        sourceMapURL_ = rhs.sourceMapURL();
-        elementRoot = rhs.element();
-        elementAttributeNameRoot = rhs.elementAttributeName();
-        introductionScriptRoot = rhs.introductionScript();
-    }
+    filename_ = rhs.filename();
+    introducerFilename_ = rhs.introducerFilename();
+    sourceMapURL_ = rhs.sourceMapURL();
+    elementRoot = rhs.element();
+    elementAttributeNameRoot = rhs.elementAttributeName();
+    introductionScriptRoot = rhs.introductionScript();
+  }
 
-    JSObject* element() const override {
-        return elementRoot;
-    }
+  JSObject* element() const override { return elementRoot; }
 
-    JSString* elementAttributeName() const override {
-        return elementAttributeNameRoot;
-    }
+  JSString* elementAttributeName() const override {
+    return elementAttributeNameRoot;
+  }
 
-    JSScript* introductionScript() const override {
-        return introductionScriptRoot;
-    }
+  JSScript* introductionScript() const override {
+    return introductionScriptRoot;
+  }
 
-    CompileOptions& setFile(const char* f) {
-        filename_ = f;
-        return *this;
-    }
+  CompileOptions& setFile(const char* f) {
+    filename_ = f;
+    return *this;
+  }
 
-    CompileOptions& setLine(unsigned l) {
-        lineno = l;
-        return *this;
-    }
+  CompileOptions& setLine(unsigned l) {
+    lineno = l;
+    return *this;
+  }
 
-    CompileOptions& setFileAndLine(const char* f, unsigned l) {
-        filename_ = f;
-        lineno = l;
-        return *this;
-    }
+  CompileOptions& setFileAndLine(const char* f, unsigned l) {
+    filename_ = f;
+    lineno = l;
+    return *this;
+  }
 
-    CompileOptions& setSourceMapURL(const char16_t* s) {
-        sourceMapURL_ = s;
-        return *this;
-    }
+  CompileOptions& setSourceMapURL(const char16_t* s) {
+    sourceMapURL_ = s;
+    return *this;
+  }
 
-    CompileOptions& setElement(JSObject* e) {
-        elementRoot = e;
-        return *this;
-    }
+  CompileOptions& setElement(JSObject* e) {
+    elementRoot = e;
+    return *this;
+  }
 
-    CompileOptions& setElementAttributeName(JSString* p) {
-        elementAttributeNameRoot = p;
-        return *this;
-    }
+  CompileOptions& setElementAttributeName(JSString* p) {
+    elementAttributeNameRoot = p;
+    return *this;
+  }
 
-    CompileOptions& setIntroductionScript(JSScript* s) {
-        introductionScriptRoot = s;
-        return *this;
-    }
+  CompileOptions& setIntroductionScript(JSScript* s) {
+    introductionScriptRoot = s;
+    return *this;
+  }
 
-    CompileOptions& setMutedErrors(bool mute) {
-        mutedErrors_ = mute;
-        return *this;
-    }
+  CompileOptions& setMutedErrors(bool mute) {
+    mutedErrors_ = mute;
+    return *this;
+  }
 
-    CompileOptions& setColumn(unsigned c) {
-        column = c;
-        return *this;
-    }
+  CompileOptions& setColumn(unsigned c) {
+    column = c;
+    return *this;
+  }
 
-    CompileOptions& setScriptSourceOffset(unsigned o) {
-        scriptSourceOffset = o;
-        return *this;
-    }
+  CompileOptions& setScriptSourceOffset(unsigned o) {
+    scriptSourceOffset = o;
+    return *this;
+  }
 
-    CompileOptions& setIsRunOnce(bool once) {
-        isRunOnce = once;
-        return *this;
-    }
+  CompileOptions& setIsRunOnce(bool once) {
+    isRunOnce = once;
+    return *this;
+  }
 
-    CompileOptions& setNoScriptRval(bool nsr) {
-        noScriptRval = nsr;
-        return *this;
-    }
+  CompileOptions& setNoScriptRval(bool nsr) {
+    noScriptRval = nsr;
+    return *this;
+  }
 
-    CompileOptions& setSelfHostingMode(bool shm) {
-        selfHostingMode = shm;
-        return *this;
-    }
+  CompileOptions& setSelfHostingMode(bool shm) {
+    selfHostingMode = shm;
+    return *this;
+  }
 
-    CompileOptions& setCanLazilyParse(bool clp) {
-        canLazilyParse = clp;
-        return *this;
-    }
+  CompileOptions& setCanLazilyParse(bool clp) {
+    canLazilyParse = clp;
+    return *this;
+  }
 
-    CompileOptions& setAllowSyntaxParser(bool clp) {
-        allowSyntaxParser = clp;
-        return *this;
-    }
+  CompileOptions& setAllowSyntaxParser(bool clp) {
+    allowSyntaxParser = clp;
+    return *this;
+  }
 
-    CompileOptions& setSourceIsLazy(bool l) {
-        sourceIsLazy = l;
-        return *this;
-    }
+  CompileOptions& setSourceIsLazy(bool l) {
+    sourceIsLazy = l;
+    return *this;
+  }
 
-    CompileOptions& setNonSyntacticScope(bool n) {
-        nonSyntacticScope = n;
-        return *this;
-    }
+  CompileOptions& setNonSyntacticScope(bool n) {
+    nonSyntacticScope = n;
+    return *this;
+  }
 
-    CompileOptions& setIntroductionType(const char* t) {
-        introductionType = t;
-        return *this;
-    }
+  CompileOptions& setIntroductionType(const char* t) {
+    introductionType = t;
+    return *this;
+  }
 
-    CompileOptions& setIntroductionInfo(const char* introducerFn,
-                                        const char* intro, unsigned line,
-                                        JSScript* script, uint32_t offset)
-    {
-        introducerFilename_ = introducerFn;
-        introductionType = intro;
-        introductionLineno = line;
-        introductionScriptRoot = script;
-        introductionOffset = offset;
-        hasIntroductionInfo = true;
-        return *this;
-    }
+  CompileOptions& setIntroductionInfo(const char* introducerFn,
+                                      const char* intro, unsigned line,
+                                      JSScript* script, uint32_t offset) {
+    introducerFilename_ = introducerFn;
+    introductionType = intro;
+    introductionLineno = line;
+    introductionScriptRoot = script;
+    introductionOffset = offset;
+    hasIntroductionInfo = true;
+    return *this;
+  }
 
-    CompileOptions& maybeMakeStrictMode(bool strict) {
-        strictOption = strictOption || strict;
-        return *this;
-    }
+  CompileOptions& maybeMakeStrictMode(bool strict) {
+    strictOption = strictOption || strict;
+    return *this;
+  }
 
-  private:
-    void operator=(const CompileOptions& rhs) = delete;
+ private:
+  void operator=(const CompileOptions& rhs) = delete;
 };
 
-} 
+}  
 
 #endif 

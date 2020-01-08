@@ -26,18 +26,15 @@ namespace mozilla {
 namespace dom {
 class Element;
 class Selection;
-} 
-} 
+}  
+}  
 
-
-#define TYPEAHEADFIND_NOTFOUND_WAV_URL \
-        "chrome://global/content/notfound.wav"
+#define TYPEAHEADFIND_NOTFOUND_WAV_URL "chrome://global/content/notfound.wav"
 
 class nsTypeAheadFind : public nsITypeAheadFind,
                         public nsIObserver,
-                        public nsSupportsWeakReference
-{
-public:
+                        public nsSupportsWeakReference {
+ public:
   nsTypeAheadFind();
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -46,7 +43,7 @@ public:
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsTypeAheadFind, nsITypeAheadFind)
 
-protected:
+ protected:
   virtual ~nsTypeAheadFind();
 
   nsresult PrefsReset();
@@ -71,11 +68,11 @@ protected:
                        nsRange *aRange);
   nsresult FindItNow(nsIPresShell *aPresShell, bool aIsLinksOnly,
                      bool aIsFirstVisiblePreferred, bool aFindPrev,
-                     uint16_t* aResult);
+                     uint16_t *aResult);
   nsresult GetSearchContainers(nsISupports *aContainer,
                                nsISelectionController *aSelectionController,
-                               bool aIsFirstVisiblePreferred,
-                               bool aFindPrev, nsIPresShell **aPresShell,
+                               bool aIsFirstVisiblePreferred, bool aFindPrev,
+                               nsIPresShell **aPresShell,
                                nsPresContext **aPresContext);
 
   
@@ -93,9 +90,11 @@ protected:
   bool mStartLinksOnlyPref;
   bool mCaretBrowsingOn;
   bool mDidAddObservers;
-  nsCOMPtr<mozilla::dom::Element> mFoundLink; 
-  nsCOMPtr<mozilla::dom::Element> mFoundEditable; 
-  RefPtr<nsRange> mFoundRange;            
+  nsCOMPtr<mozilla::dom::Element>
+      mFoundLink;  
+  nsCOMPtr<mozilla::dom::Element>
+      mFoundEditable;           
+  RefPtr<nsRange> mFoundRange;  
   nsCOMPtr<nsPIDOMWindowInner> mCurrentWindow;
   
   
@@ -140,5 +139,5 @@ protected:
   nsWeakPtr mDocShell;
   nsWeakPtr mPresShell;
   nsWeakPtr mSelectionController;
-                                          
+  
 };

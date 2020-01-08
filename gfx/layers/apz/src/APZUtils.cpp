@@ -11,47 +11,37 @@
 namespace mozilla {
 namespace layers {
 
-AutoApplyAsyncTestAttributes::AutoApplyAsyncTestAttributes(AsyncPanZoomController* aApzc)
-  : mApzc(aApzc)
-  , mPrevFrameMetrics(aApzc->Metrics())
-{
+AutoApplyAsyncTestAttributes::AutoApplyAsyncTestAttributes(
+    AsyncPanZoomController* aApzc)
+    : mApzc(aApzc), mPrevFrameMetrics(aApzc->Metrics()) {
   mApzc->ApplyAsyncTestAttributes();
 }
 
-AutoApplyAsyncTestAttributes::~AutoApplyAsyncTestAttributes()
-{
+AutoApplyAsyncTestAttributes::~AutoApplyAsyncTestAttributes() {
   mApzc->UnapplyAsyncTestAttributes(mPrevFrameMetrics);
 }
 
 namespace apz {
 
- void
-InitializeGlobalState()
-{
+ void InitializeGlobalState() {
   MOZ_ASSERT(NS_IsMainThread());
   AsyncPanZoomController::InitializeGlobalState();
 }
 
- const ScreenMargin
-CalculatePendingDisplayPort(const FrameMetrics& aFrameMetrics,
-                            const ParentLayerPoint& aVelocity)
-{
-  return AsyncPanZoomController::CalculatePendingDisplayPort(
-      aFrameMetrics, aVelocity);
+ const ScreenMargin CalculatePendingDisplayPort(
+    const FrameMetrics& aFrameMetrics, const ParentLayerPoint& aVelocity) {
+  return AsyncPanZoomController::CalculatePendingDisplayPort(aFrameMetrics,
+                                                             aVelocity);
 }
 
- bool
-IsCloseToHorizontal(float aAngle, float aThreshold)
-{
+ bool IsCloseToHorizontal(float aAngle, float aThreshold) {
   return (aAngle < aThreshold || aAngle > (M_PI - aThreshold));
 }
 
- bool
-IsCloseToVertical(float aAngle, float aThreshold)
-{
+ bool IsCloseToVertical(float aAngle, float aThreshold) {
   return (fabs(aAngle - (M_PI / 2)) < aThreshold);
 }
 
-} 
-} 
-} 
+}  
+}  
+}  

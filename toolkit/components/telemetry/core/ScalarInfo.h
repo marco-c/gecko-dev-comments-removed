@@ -26,16 +26,17 @@ struct BaseScalarInfo {
   mozilla::Telemetry::Common::SupportedProduct products;
   bool builtin;
 
-  BaseScalarInfo(uint32_t aKind, uint32_t aDataset,
-                 mozilla::Telemetry::Common::RecordedProcessType aRecordInProcess,
-                 bool aKeyed, mozilla::Telemetry::Common::SupportedProduct aProducts, bool aBuiltin = true)
-    : kind(aKind)
-    , dataset(aDataset)
-    , record_in_processes(aRecordInProcess)
-    , keyed(aKeyed)
-    , products(aProducts)
-    , builtin(aBuiltin)
-  {}
+  BaseScalarInfo(
+      uint32_t aKind, uint32_t aDataset,
+      mozilla::Telemetry::Common::RecordedProcessType aRecordInProcess,
+      bool aKeyed, mozilla::Telemetry::Common::SupportedProduct aProducts,
+      bool aBuiltin = true)
+      : kind(aKind),
+        dataset(aDataset),
+        record_in_processes(aRecordInProcess),
+        keyed(aKeyed),
+        products(aProducts),
+        builtin(aBuiltin) {}
   virtual ~BaseScalarInfo() {}
 
   virtual const char *name() const = 0;
@@ -62,32 +63,27 @@ struct ScalarInfo : BaseScalarInfo {
   
   
   
+  
   ScalarInfo(uint32_t aKind, uint32_t aNameOffset, uint32_t aExpirationOffset,
              uint32_t aDataset,
              mozilla::Telemetry::Common::RecordedProcessType aRecordInProcess,
-             bool aKeyed, mozilla::Telemetry::Common::SupportedProduct aProducts,
-             uint32_t aStoreCount,  uint16_t aStoreOffset)
-    : BaseScalarInfo(aKind, aDataset, aRecordInProcess, aKeyed, aProducts)
-    , name_offset(aNameOffset)
-    , expiration_offset(aExpirationOffset)
-    , store_count(aStoreCount)
-    , store_offset(aStoreOffset)
-  {}
+             bool aKeyed,
+             mozilla::Telemetry::Common::SupportedProduct aProducts,
+             uint32_t aStoreCount, uint16_t aStoreOffset)
+      : BaseScalarInfo(aKind, aDataset, aRecordInProcess, aKeyed, aProducts),
+        name_offset(aNameOffset),
+        expiration_offset(aExpirationOffset),
+        store_count(aStoreCount),
+        store_offset(aStoreOffset) {}
 
   const char *name() const override;
   const char *expiration() const override;
 
-  uint32_t storeOffset() const override
-  {
-    return store_offset;
-  };
+  uint32_t storeOffset() const override { return store_offset; };
 
-  uint32_t storeCount() const override
-  {
-    return store_count;
-  };
+  uint32_t storeCount() const override { return store_count; };
 };
 
-} 
+}  
 
-#endif 
+#endif  

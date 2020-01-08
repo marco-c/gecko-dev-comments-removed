@@ -24,7 +24,7 @@
 
 #include <wchar.h>
 #include <windows.h>
-#endif 
+#endif  
 
 #include "mozilla/MemoryChecking.h"
 #include "mozilla/TypedEnumBits.h"
@@ -38,15 +38,13 @@
 namespace mozilla {
 
 enum ArgResult {
-  ARG_NONE  = 0,
+  ARG_NONE = 0,
   ARG_FOUND = 1,
-  ARG_BAD   = 2 
+  ARG_BAD = 2  
 };
 
 template <typename CharT>
-inline void
-RemoveArg(int& argc, CharT **argv)
-{
+inline void RemoveArg(int& argc, CharT** argv) {
   do {
     *argv = *(argv + 1);
     ++argv;
@@ -58,66 +56,55 @@ RemoveArg(int& argc, CharT **argv)
 namespace internal {
 
 template <typename FuncT, typename CharT>
-static inline bool
-strimatch(FuncT aToLowerFn, const CharT* lowerstr, const CharT* mixedstr)
-{
-  while(*lowerstr) {
-    if (!*mixedstr) return false; 
-    if (static_cast<CharT>(aToLowerFn(*mixedstr)) != *lowerstr) return false; 
+static inline bool strimatch(FuncT aToLowerFn, const CharT* lowerstr,
+                             const CharT* mixedstr) {
+  while (*lowerstr) {
+    if (!*mixedstr) return false;  
+    if (static_cast<CharT>(aToLowerFn(*mixedstr)) != *lowerstr)
+      return false;  
 
     ++lowerstr;
     ++mixedstr;
   }
 
-  if (*mixedstr) return false; 
+  if (*mixedstr) return false;  
 
   return true;
 }
 
-} 
+}  
 
-inline bool
-strimatch(const char* lowerstr, const char* mixedstr)
-{
+inline bool strimatch(const char* lowerstr, const char* mixedstr) {
   return internal::strimatch(&tolower, lowerstr, mixedstr);
 }
 
-inline bool
-strimatch(const wchar_t* lowerstr, const wchar_t* mixedstr)
-{
+inline bool strimatch(const wchar_t* lowerstr, const wchar_t* mixedstr) {
   return internal::strimatch(&towlower, lowerstr, mixedstr);
 }
 
-enum class FlagLiteral
-{
-  osint,
-  safemode
-};
+enum class FlagLiteral { osint, safemode };
 
 template <typename CharT, FlagLiteral Literal>
 inline const CharT* GetLiteral();
 
-#define DECLARE_FLAG_LITERAL(enum_name, literal)                 \
-  template <> inline                                             \
-  const char* GetLiteral<char, FlagLiteral::enum_name>()         \
-  {                                                              \
-    return literal;                                              \
-  }                                                              \
-                                                                 \
-  template <> inline                                             \
-  const wchar_t* GetLiteral<wchar_t, FlagLiteral::enum_name>()   \
-  {                                                              \
-    return L##literal;                                           \
+#define DECLARE_FLAG_LITERAL(enum_name, literal)                        \
+  template <>                                                           \
+  inline const char* GetLiteral<char, FlagLiteral::enum_name>() {       \
+    return literal;                                                     \
+  }                                                                     \
+                                                                        \
+  template <>                                                           \
+  inline const wchar_t* GetLiteral<wchar_t, FlagLiteral::enum_name>() { \
+    return L##literal;                                                  \
   }
 
 DECLARE_FLAG_LITERAL(osint, "osint")
 DECLARE_FLAG_LITERAL(safemode, "safe-mode")
 
-enum class CheckArgFlag : uint32_t
-{
+enum class CheckArgFlag : uint32_t {
   None = 0,
-  CheckOSInt = (1 << 0), 
-  RemoveArg = (1 << 1)   
+  CheckOSInt = (1 << 0),  
+  RemoveArg = (1 << 1)    
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CheckArgFlag)
@@ -135,23 +122,21 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CheckArgFlag)
 
 
 template <typename CharT>
-inline ArgResult
-CheckArg(int& aArgc, CharT** aArgv, const CharT* aArg, const CharT **aParam,
-         CheckArgFlag aFlags)
-{
+inline ArgResult CheckArg(int& aArgc, CharT** aArgv, const CharT* aArg,
+                          const CharT** aParam, CheckArgFlag aFlags) {
   MOZ_ASSERT(aArgv && aArg);
 
-  CharT **curarg = aArgv + 1; 
+  CharT** curarg = aArgv + 1;  
   ArgResult ar = ARG_NONE;
 
   while (*curarg) {
-    CharT *arg = curarg[0];
+    CharT* arg = curarg[0];
 
     if (arg[0] == '-'
 #if defined(XP_WIN)
         || *arg == '/'
 #endif
-        ) {
+    ) {
       ++arg;
 
       if (*arg == '-') {
@@ -175,7 +160,7 @@ CheckArg(int& aArgc, CharT** aArgv, const CharT* aArg, const CharT **aParam,
 #if defined(XP_WIN)
               || **curarg == '/'
 #endif
-              ) {
+          ) {
             return ARG_BAD;
           }
 
@@ -197,15 +182,14 @@ CheckArg(int& aArgc, CharT** aArgv, const CharT* aArg, const CharT **aParam,
   }
 
   if ((aFlags & CheckArgFlag::CheckOSInt) && ar == ARG_FOUND) {
-    ArgResult arOSInt = CheckArg(aArgc, aArgv,
-                                 GetLiteral<CharT, FlagLiteral::osint>(),
-                                 static_cast<const CharT**>(nullptr),
-                                 CheckArgFlag::None);
+    ArgResult arOSInt =
+        CheckArg(aArgc, aArgv, GetLiteral<CharT, FlagLiteral::osint>(),
+                 static_cast<const CharT**>(nullptr), CheckArgFlag::None);
     if (arOSInt == ARG_FOUND) {
       ar = ARG_BAD;
 #if defined(MOZILLA_INTERNAL_API)
       PR_fprintf(PR_STDERR, "Error: argument --osint is invalid\n");
-#endif 
+#endif  
     }
   }
 
@@ -221,9 +205,7 @@ namespace internal {
 
 
 
-inline int
-ArgStrLen(const wchar_t *s)
-{
+inline int ArgStrLen(const wchar_t* s) {
   int backslashes = 0;
   int i = wcslen(s);
   bool hasDoubleQuote = wcschr(s, L'"') != nullptr;
@@ -231,7 +213,7 @@ ArgStrLen(const wchar_t *s)
   bool addDoubleQuotes = wcspbrk(s, L" \t") != nullptr;
 
   if (addDoubleQuotes) {
-    i += 2; 
+    i += 2;  
   }
 
   if (hasDoubleQuote) {
@@ -240,6 +222,7 @@ ArgStrLen(const wchar_t *s)
         ++backslashes;
       } else {
         if (*s == '"') {
+          
           
           i += backslashes + 1;
         }
@@ -263,16 +246,14 @@ ArgStrLen(const wchar_t *s)
 
 
 
-inline wchar_t*
-ArgToString(wchar_t *d, const wchar_t *s)
-{
+inline wchar_t* ArgToString(wchar_t* d, const wchar_t* s) {
   int backslashes = 0;
   bool hasDoubleQuote = wcschr(s, L'"') != nullptr;
   
   bool addDoubleQuotes = wcspbrk(s, L" \t") != nullptr;
 
   if (addDoubleQuotes) {
-    *d = '"'; 
+    *d = '"';  
     ++d;
   }
 
@@ -284,6 +265,7 @@ ArgToString(wchar_t *d, const wchar_t *s)
       } else {
         if (*s == '"') {
           
+          
           for (i = 0; i <= backslashes; ++i) {
             *d = '\\';
             ++d;
@@ -294,7 +276,8 @@ ArgToString(wchar_t *d, const wchar_t *s)
       }
 
       *d = *s;
-      ++d; ++s;
+      ++d;
+      ++s;
     }
   } else {
     wcscpy(d, s);
@@ -302,21 +285,19 @@ ArgToString(wchar_t *d, const wchar_t *s)
   }
 
   if (addDoubleQuotes) {
-    *d = '"'; 
+    *d = '"';  
     ++d;
   }
 
   return d;
 }
 
-} 
+}  
 
 
 
 
-inline UniquePtr<wchar_t[]>
-MakeCommandLine(int argc, wchar_t **argv)
-{
+inline UniquePtr<wchar_t[]> MakeCommandLine(int argc, wchar_t** argv) {
   int i;
   int len = 0;
 
@@ -335,7 +316,7 @@ MakeCommandLine(int argc, wchar_t **argv)
     return s;
   }
 
-  wchar_t *c = s.get();
+  wchar_t* c = s.get();
   for (i = 0; i < argc; ++i) {
     c = internal::ArgToString(c, argv[i]);
     if (i + 1 != argc) {
@@ -349,9 +330,7 @@ MakeCommandLine(int argc, wchar_t **argv)
   return s;
 }
 
-inline bool
-SetArgv0ToFullBinaryPath(wchar_t* aArgv[])
-{
+inline bool SetArgv0ToFullBinaryPath(wchar_t* aArgv[]) {
   if (!aArgv) {
     return false;
   }
@@ -391,14 +370,12 @@ SetArgv0ToFullBinaryPath(wchar_t* aArgv[])
   return true;
 }
 
-#endif 
+#endif  
 
 
-MOZ_NEVER_INLINE inline void
-SaveToEnv(const char *aEnvString)
-{
+MOZ_NEVER_INLINE inline void SaveToEnv(const char* aEnvString) {
 #if defined(MOZILLA_INTERNAL_API)
-  char *expr = strdup(aEnvString);
+  char* expr = strdup(aEnvString);
   if (expr) {
     PR_SetEnv(expr);
   }
@@ -408,15 +385,14 @@ SaveToEnv(const char *aEnvString)
 #elif defined(XP_WIN)
   
   
+  
   _putenv(aEnvString);
 #else
 #error "Not implemented for this configuration"
 #endif
 }
 
-inline bool
-EnvHasValue(const char* aVarName)
-{
+inline bool EnvHasValue(const char* aVarName) {
 #if defined(MOZILLA_INTERNAL_API)
   const char* val = PR_GetEnv(aVarName);
   return val && *val;
@@ -429,6 +405,6 @@ EnvHasValue(const char* aVarName)
 #endif
 }
 
-} 
+}  
 
-#endif 
+#endif  

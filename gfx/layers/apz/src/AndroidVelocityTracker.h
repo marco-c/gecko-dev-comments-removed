@@ -19,18 +19,18 @@ namespace mozilla {
 namespace layers {
 
 class AndroidVelocityTracker : public VelocityTracker {
-public:
+ public:
   explicit AndroidVelocityTracker();
   void StartTracking(ParentLayerCoord aPos, uint32_t aTimestamp) override;
-  Maybe<float> AddPosition(ParentLayerCoord aPos,
-                           uint32_t aTimestampMs,
+  Maybe<float> AddPosition(ParentLayerCoord aPos, uint32_t aTimestampMs,
                            bool aIsAxisLocked) override;
   float HandleDynamicToolbarMovement(uint32_t aStartTimestampMs,
                                      uint32_t aEndTimestampMs,
                                      ParentLayerCoord aDelta) override;
   Maybe<float> ComputeVelocity(uint32_t aTimestampMs) override;
   void Clear() override;
-private:
+
+ private:
   
   
   nsTArray<std::pair<uint32_t, ParentLayerCoord>> mHistory;
@@ -42,7 +42,7 @@ private:
   ParentLayerCoord mAdditionalDelta;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

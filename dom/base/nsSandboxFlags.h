@@ -25,7 +25,7 @@ const unsigned long SANDBOXED_NONE = 0x0;
 
 
 
-const unsigned long SANDBOXED_NAVIGATION  = 0x1;
+const unsigned long SANDBOXED_NAVIGATION = 0x1;
 
 
 

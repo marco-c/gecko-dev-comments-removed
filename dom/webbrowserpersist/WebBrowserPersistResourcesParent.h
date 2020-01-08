@@ -17,39 +17,39 @@
 namespace mozilla {
 
 class WebBrowserPersistResourcesParent final
-    : public PWebBrowserPersistResourcesParent
-    , public nsIWebBrowserPersistDocumentReceiver
-{
-public:
-    WebBrowserPersistResourcesParent(nsIWebBrowserPersistDocument* aDocument,
-                                     nsIWebBrowserPersistResourceVisitor* aVisitor);
+    : public PWebBrowserPersistResourcesParent,
+      public nsIWebBrowserPersistDocumentReceiver {
+ public:
+  WebBrowserPersistResourcesParent(
+      nsIWebBrowserPersistDocument* aDocument,
+      nsIWebBrowserPersistResourceVisitor* aVisitor);
 
-    virtual mozilla::ipc::IPCResult
-    RecvVisitResource(const nsCString& aURI, const nsContentPolicyType& aContentPolicyType) override;
+  virtual mozilla::ipc::IPCResult RecvVisitResource(
+      const nsCString& aURI,
+      const nsContentPolicyType& aContentPolicyType) override;
 
-    virtual mozilla::ipc::IPCResult
-    RecvVisitDocument(PWebBrowserPersistDocumentParent* aSubDocument) override;
+  virtual mozilla::ipc::IPCResult RecvVisitDocument(
+      PWebBrowserPersistDocumentParent* aSubDocument) override;
 
-    virtual mozilla::ipc::IPCResult
-    Recv__delete__(const nsresult& aStatus) override;
+  virtual mozilla::ipc::IPCResult Recv__delete__(
+      const nsresult& aStatus) override;
 
-    virtual void
-    ActorDestroy(ActorDestroyReason aWhy) override;
+  virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
-    NS_DECL_NSIWEBBROWSERPERSISTDOCUMENTRECEIVER
-    NS_DECL_ISUPPORTS
+  NS_DECL_NSIWEBBROWSERPERSISTDOCUMENTRECEIVER
+  NS_DECL_ISUPPORTS
 
-private:
-    
-    
-    
-    
-    nsCOMPtr<nsIWebBrowserPersistDocument> mDocument;
-    nsCOMPtr<nsIWebBrowserPersistResourceVisitor> mVisitor;
+ private:
+  
+  
+  
+  
+  nsCOMPtr<nsIWebBrowserPersistDocument> mDocument;
+  nsCOMPtr<nsIWebBrowserPersistResourceVisitor> mVisitor;
 
-    virtual ~WebBrowserPersistResourcesParent();
+  virtual ~WebBrowserPersistResourcesParent();
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -17,8 +17,8 @@ typedef bool WebGLboolean;
 
 namespace mozilla {
 namespace gl {
-class GLContext; 
-} 
+class GLContext;  
+}  
 
 
 
@@ -27,9 +27,11 @@ class GLContext;
 
 
 enum class WebGLVertexAttrib0Status : uint8_t {
-    Default, 
-    EmulatedUninitializedArray, 
-    EmulatedInitializedArray 
+  Default,                     
+  EmulatedUninitializedArray,  
+                               
+  EmulatedInitializedArray  
+                            
 };
 
 
@@ -41,164 +43,156 @@ enum class WebGLVertexAttrib0Status : uint8_t {
 
 
 enum class WebGLTexelFormat : uint8_t {
-    
-    None,
-    
-    FormatNotSupportingAnyConversion,
-    
-    
-    
-    Auto,
-    
-    A8,
-    A16F, 
-    A32F, 
-    R8,
-    R16F, 
-    R32F, 
-    
-    RA8,
-    RA16F, 
-    RA32F, 
-    RG8,
-    RG16F,
-    RG32F,
-    
-    RGB8,
-    RGB565,
-    RGB11F11F10F,
-    RGB16F, 
-    RGB32F, 
-    
-    RGBA8,
-    RGBA5551,
-    RGBA4444,
-    RGBA16F, 
-    RGBA32F, 
-    
-    RGBX8,
-    BGRX8,
-    BGRA8
+  
+  
+  None,
+  
+  FormatNotSupportingAnyConversion,
+  
+  
+  
+  Auto,
+  
+  A8,
+  A16F,  
+  A32F,  
+  R8,
+  R16F,  
+  R32F,  
+  
+  RA8,
+  RA16F,  
+  RA32F,  
+  RG8,
+  RG16F,
+  RG32F,
+  
+  RGB8,
+  RGB565,
+  RGB11F11F10F,
+  RGB16F,  
+  RGB32F,  
+  
+  RGBA8,
+  RGBA5551,
+  RGBA4444,
+  RGBA16F,  
+  RGBA32F,  
+  
+  RGBX8,
+  BGRX8,
+  BGRA8
 };
 
 enum class WebGLTexImageFunc : uint8_t {
-    TexImage,
-    TexSubImage,
-    CopyTexImage,
-    CopyTexSubImage,
-    CompTexImage,
-    CompTexSubImage,
+  TexImage,
+  TexSubImage,
+  CopyTexImage,
+  CopyTexSubImage,
+  CompTexImage,
+  CompTexSubImage,
 };
 
-enum class WebGLTexDimensions : uint8_t {
-    Tex2D,
-    Tex3D
-};
+enum class WebGLTexDimensions : uint8_t { Tex2D, Tex3D };
 
 
 enum class WebGLExtensionID : uint8_t {
-    ANGLE_instanced_arrays,
-    EXT_blend_minmax,
-    EXT_color_buffer_float,
-    EXT_color_buffer_half_float,
-    EXT_texture_compression_bptc,
-    EXT_texture_compression_rgtc,
-    EXT_frag_depth,
-    EXT_sRGB,
-    EXT_shader_texture_lod,
-    EXT_texture_filter_anisotropic,
-    EXT_disjoint_timer_query,
-    MOZ_debug,
-    OES_element_index_uint,
-    OES_standard_derivatives,
-    OES_texture_float,
-    OES_texture_float_linear,
-    OES_texture_half_float,
-    OES_texture_half_float_linear,
-    OES_vertex_array_object,
-    WEBGL_color_buffer_float,
-    WEBGL_compressed_texture_astc,
-    WEBGL_compressed_texture_etc,
-    WEBGL_compressed_texture_etc1,
-    WEBGL_compressed_texture_pvrtc,
-    WEBGL_compressed_texture_s3tc,
-    WEBGL_compressed_texture_s3tc_srgb,
-    WEBGL_debug_renderer_info,
-    WEBGL_debug_shaders,
-    WEBGL_depth_texture,
-    WEBGL_draw_buffers,
-    WEBGL_lose_context,
-    Max,
-    Unknown
+  ANGLE_instanced_arrays,
+  EXT_blend_minmax,
+  EXT_color_buffer_float,
+  EXT_color_buffer_half_float,
+  EXT_texture_compression_bptc,
+  EXT_texture_compression_rgtc,
+  EXT_frag_depth,
+  EXT_sRGB,
+  EXT_shader_texture_lod,
+  EXT_texture_filter_anisotropic,
+  EXT_disjoint_timer_query,
+  MOZ_debug,
+  OES_element_index_uint,
+  OES_standard_derivatives,
+  OES_texture_float,
+  OES_texture_float_linear,
+  OES_texture_half_float,
+  OES_texture_half_float_linear,
+  OES_vertex_array_object,
+  WEBGL_color_buffer_float,
+  WEBGL_compressed_texture_astc,
+  WEBGL_compressed_texture_etc,
+  WEBGL_compressed_texture_etc1,
+  WEBGL_compressed_texture_pvrtc,
+  WEBGL_compressed_texture_s3tc,
+  WEBGL_compressed_texture_s3tc_srgb,
+  WEBGL_debug_renderer_info,
+  WEBGL_debug_shaders,
+  WEBGL_depth_texture,
+  WEBGL_draw_buffers,
+  WEBGL_lose_context,
+  Max,
+  Unknown
 };
 
-class UniqueBuffer
-{
-    
-    void* mBuffer;
+class UniqueBuffer {
+  
+  void* mBuffer;
 
-public:
-    UniqueBuffer()
-        : mBuffer(nullptr)
-    { }
+ public:
+  UniqueBuffer() : mBuffer(nullptr) {}
 
-    MOZ_IMPLICIT UniqueBuffer(void* buffer)
-        : mBuffer(buffer)
-    { }
+  MOZ_IMPLICIT UniqueBuffer(void* buffer) : mBuffer(buffer) {}
 
-    ~UniqueBuffer() {
-        free(mBuffer);
-    }
+  ~UniqueBuffer() { free(mBuffer); }
 
-    UniqueBuffer(UniqueBuffer&& other) {
-        this->mBuffer = other.mBuffer;
-        other.mBuffer = nullptr;
-    }
+  UniqueBuffer(UniqueBuffer&& other) {
+    this->mBuffer = other.mBuffer;
+    other.mBuffer = nullptr;
+  }
 
-    UniqueBuffer& operator =(UniqueBuffer&& other) {
-        free(this->mBuffer);
-        this->mBuffer = other.mBuffer;
-        other.mBuffer = nullptr;
-        return *this;
-    }
+  UniqueBuffer& operator=(UniqueBuffer&& other) {
+    free(this->mBuffer);
+    this->mBuffer = other.mBuffer;
+    other.mBuffer = nullptr;
+    return *this;
+  }
 
-    UniqueBuffer& operator =(void* newBuffer) {
-        free(this->mBuffer);
-        this->mBuffer = newBuffer;
-        return *this;
-    }
+  UniqueBuffer& operator=(void* newBuffer) {
+    free(this->mBuffer);
+    this->mBuffer = newBuffer;
+    return *this;
+  }
 
-    explicit operator bool() const { return bool(mBuffer); }
+  explicit operator bool() const { return bool(mBuffer); }
 
-    void* get() const { return mBuffer; }
+  void* get() const { return mBuffer; }
 
-    UniqueBuffer(const UniqueBuffer& other) = delete; 
-    void operator =(const UniqueBuffer& other) = delete; 
+  UniqueBuffer(const UniqueBuffer& other) =
+      delete;  
+  void operator=(const UniqueBuffer& other) =
+      delete;  
 };
 
 namespace webgl {
 struct FormatUsageInfo;
 
-struct SampleableInfo final
-{
-    const char* incompleteReason = nullptr;
-    uint32_t levels = 0;
-    const webgl::FormatUsageInfo* usage = nullptr;
-    bool isDepthTexCompare = false;
+struct SampleableInfo final {
+  const char* incompleteReason = nullptr;
+  uint32_t levels = 0;
+  const webgl::FormatUsageInfo* usage = nullptr;
+  bool isDepthTexCompare = false;
 
-    bool IsComplete() const { return bool(levels); }
+  bool IsComplete() const { return bool(levels); }
 };
 
 enum class AttribBaseType : uint8_t {
-    Int,
-    UInt,
-    Float, 
-    Boolean, 
+  Int,
+  UInt,
+  Float,    
+  Boolean,  
 };
 const char* ToString(AttribBaseType);
 
-} 
+}  
 
-} 
+}  
 
 #endif

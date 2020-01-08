@@ -13,6 +13,6 @@ namespace mozilla {
 
 nsresult GetSelectedCityInfo(nsAString& aCountryCode);
 
-} 
+}  
 
 #endif

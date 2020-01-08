@@ -24,8 +24,7 @@ class nsINode;
 
 
 
-enum EValueRule
-{
+enum EValueRule {
   
 
 
@@ -52,9 +51,7 @@ enum EValueRule
 
 
 
-
-enum EActionRule
-{
+enum EActionRule {
   eNoAction,
   eActivateAction,
   eClickAction,
@@ -74,14 +71,7 @@ enum EActionRule
 
 
 
-
-enum ELiveAttrRule
-{
-  eNoLiveAttr,
-  eOffLiveAttr,
-  ePoliteLiveAttr
-};
-
+enum ELiveAttrRule { eNoLiveAttr, eOffLiveAttr, ePoliteLiveAttr };
 
 
 
@@ -95,7 +85,6 @@ const bool kUseMapRole = true;
 
 
 const bool kUseNativeRole = false;
-
 
 
 
@@ -136,25 +125,25 @@ const uint8_t ATTR_GLOBAL = 0x1 << 3;
 
 
 
-struct nsRoleMapEntry
-{
+struct nsRoleMapEntry {
   
 
 
-  bool Is(nsAtom* aARIARole) const
-    { return roleAtom == aARIARole; }
-
-  
-
-
-  bool IsOfType(mozilla::a11y::AccGenericType aType) const
-    { return accTypes & aType; }
+  bool Is(nsAtom* aARIARole) const { return roleAtom == aARIARole; }
 
   
 
 
-  const nsDependentAtomString ARIARoleString() const
-    { return nsDependentAtomString(roleAtom); }
+  bool IsOfType(mozilla::a11y::AccGenericType aType) const {
+    return accTypes & aType;
+  }
+
+  
+
+
+  const nsDependentAtomString ARIARoleString() const {
+    return nsDependentAtomString(roleAtom);
+  }
 
   
   nsStaticAtom* const roleAtom;
@@ -179,7 +168,7 @@ struct nsRoleMapEntry
   uint32_t accTypes;
 
   
-  uint64_t state; 
+  uint64_t state;  
 
   
   
@@ -191,7 +180,6 @@ struct nsRoleMapEntry
   mozilla::a11y::aria::EStateRule attributeMap3;
   mozilla::a11y::aria::EStateRule attributeMap4;
 };
-
 
 
 
@@ -282,34 +270,31 @@ uint8_t AttrCharacteristicsFor(nsAtom* aAtom);
 
 bool HasDefinedARIAHidden(nsIContent* aContent);
 
- 
 
 
 
-class AttrIterator
-{
-public:
+
+class AttrIterator {
+ public:
   explicit AttrIterator(nsIContent* aContent)
-    : mElement(Element::FromNode(aContent))
-    , mAttrIdx(0)
-  {
+      : mElement(Element::FromNode(aContent)), mAttrIdx(0) {
     mAttrCount = mElement ? mElement->GetAttrCount() : 0;
   }
 
   bool Next(nsAString& aAttrName, nsAString& aAttrValue);
 
-private:
+ private:
   AttrIterator() = delete;
   AttrIterator(const AttrIterator&) = delete;
-  AttrIterator& operator= (const AttrIterator&) = delete;
+  AttrIterator& operator=(const AttrIterator&) = delete;
 
   dom::Element* mElement;
   uint32_t mAttrIdx;
   uint32_t mAttrCount;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
 #endif

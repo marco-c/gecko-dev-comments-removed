@@ -9,49 +9,37 @@
 
 #include <algorithm>
 
-namespace mozilla
-{
-class EncodingConstraints
-{
-public:
-  EncodingConstraints() :
-    maxWidth(0),
-    maxHeight(0),
-    maxFps(0),
-    maxFs(0),
-    maxBr(0),
-    maxPps(0),
-    maxMbps(0),
-    maxCpb(0),
-    maxDpb(0),
-    scaleDownBy(1.0)
-  {}
+namespace mozilla {
+class EncodingConstraints {
+ public:
+  EncodingConstraints()
+      : maxWidth(0),
+        maxHeight(0),
+        maxFps(0),
+        maxFs(0),
+        maxBr(0),
+        maxPps(0),
+        maxMbps(0),
+        maxCpb(0),
+        maxDpb(0),
+        scaleDownBy(1.0) {}
 
-  bool operator==(const EncodingConstraints& constraints) const
-  {
-    return
-      maxWidth == constraints.maxWidth &&
-      maxHeight == constraints.maxHeight &&
-      maxFps == constraints.maxFps &&
-      maxFs == constraints.maxFs &&
-      maxBr == constraints.maxBr &&
-      maxPps == constraints.maxPps &&
-      maxMbps == constraints.maxMbps &&
-      maxCpb == constraints.maxCpb &&
-      maxDpb == constraints.maxDpb &&
-      scaleDownBy == constraints.scaleDownBy;
+  bool operator==(const EncodingConstraints& constraints) const {
+    return maxWidth == constraints.maxWidth &&
+           maxHeight == constraints.maxHeight && maxFps == constraints.maxFps &&
+           maxFs == constraints.maxFs && maxBr == constraints.maxBr &&
+           maxPps == constraints.maxPps && maxMbps == constraints.maxMbps &&
+           maxCpb == constraints.maxCpb && maxDpb == constraints.maxDpb &&
+           scaleDownBy == constraints.scaleDownBy;
   }
 
   
 
 
-  bool ResolutionEquals(const EncodingConstraints& constraints) const
-  {
-    return
-      maxWidth == constraints.maxWidth &&
-      maxHeight == constraints.maxHeight &&
-      maxFs == constraints.maxFs &&
-      scaleDownBy == constraints.scaleDownBy;
+  bool ResolutionEquals(const EncodingConstraints& constraints) const {
+    return maxWidth == constraints.maxWidth &&
+           maxHeight == constraints.maxHeight && maxFs == constraints.maxFs &&
+           scaleDownBy == constraints.scaleDownBy;
   }
 
   uint32_t maxWidth;
@@ -60,11 +48,11 @@ public:
   uint32_t maxFs;
   uint32_t maxBr;
   uint32_t maxPps;
-  uint32_t maxMbps; 
-  uint32_t maxCpb; 
-  uint32_t maxDpb; 
-  double scaleDownBy; 
+  uint32_t maxMbps;    
+  uint32_t maxCpb;     
+  uint32_t maxDpb;     
+  double scaleDownBy;  
 };
-} 
+}  
 
-#endif 
+#endif  

@@ -22,48 +22,43 @@ class gfxPattern;
 
 
 class gfxDrawable {
-    NS_INLINE_DECL_REFCOUNTING(gfxDrawable)
-public:
-    typedef mozilla::gfx::AntialiasMode AntialiasMode;
-    typedef mozilla::gfx::CompositionOp CompositionOp;
-    typedef mozilla::gfx::DrawTarget DrawTarget;
+  NS_INLINE_DECL_REFCOUNTING(gfxDrawable)
+ public:
+  typedef mozilla::gfx::AntialiasMode AntialiasMode;
+  typedef mozilla::gfx::CompositionOp CompositionOp;
+  typedef mozilla::gfx::DrawTarget DrawTarget;
 
-    explicit gfxDrawable(const mozilla::gfx::IntSize aSize)
-     : mSize(aSize) {}
+  explicit gfxDrawable(const mozilla::gfx::IntSize aSize) : mSize(aSize) {}
 
-    
-
+  
 
 
 
 
 
-    virtual bool Draw(gfxContext* aContext,
-                        const gfxRect& aFillRect,
-                        mozilla::gfx::ExtendMode aExtendMode,
-                        const mozilla::gfx::SamplingFilter aSamplingFilter,
-                        gfxFloat aOpacity = 1.0,
-                        const gfxMatrix& aTransform = gfxMatrix()) = 0;
 
-    virtual bool DrawWithSamplingRect(DrawTarget* aDrawTarget,
-                                      CompositionOp aOp,
-                                      AntialiasMode aAntialiasMode,
-                                      const gfxRect& aFillRect,
-                                      const gfxRect& aSamplingRect,
-                                      mozilla::gfx::ExtendMode aExtendMode,
-                                      const mozilla::gfx::SamplingFilter aSamplingFilter,
-                                      gfxFloat aOpacity = 1.0)
-    {
-        return false;
-    }
+  virtual bool Draw(gfxContext* aContext, const gfxRect& aFillRect,
+                    mozilla::gfx::ExtendMode aExtendMode,
+                    const mozilla::gfx::SamplingFilter aSamplingFilter,
+                    gfxFloat aOpacity = 1.0,
+                    const gfxMatrix& aTransform = gfxMatrix()) = 0;
 
-    virtual mozilla::gfx::IntSize Size() { return mSize; }
+  virtual bool DrawWithSamplingRect(
+      DrawTarget* aDrawTarget, CompositionOp aOp, AntialiasMode aAntialiasMode,
+      const gfxRect& aFillRect, const gfxRect& aSamplingRect,
+      mozilla::gfx::ExtendMode aExtendMode,
+      const mozilla::gfx::SamplingFilter aSamplingFilter,
+      gfxFloat aOpacity = 1.0) {
+    return false;
+  }
 
-protected:
-    
-    virtual ~gfxDrawable() {}
+  virtual mozilla::gfx::IntSize Size() { return mSize; }
 
-    const mozilla::gfx::IntSize mSize;
+ protected:
+  
+  virtual ~gfxDrawable() {}
+
+  const mozilla::gfx::IntSize mSize;
 };
 
 
@@ -71,40 +66,36 @@ protected:
 
 
 class gfxSurfaceDrawable : public gfxDrawable {
-public:
-    gfxSurfaceDrawable(mozilla::gfx::SourceSurface* aSurface, const mozilla::gfx::IntSize aSize,
-                       const gfxMatrix aTransform = gfxMatrix());
-    virtual ~gfxSurfaceDrawable() {}
+ public:
+  gfxSurfaceDrawable(mozilla::gfx::SourceSurface* aSurface,
+                     const mozilla::gfx::IntSize aSize,
+                     const gfxMatrix aTransform = gfxMatrix());
+  virtual ~gfxSurfaceDrawable() {}
 
-    virtual bool Draw(gfxContext* aContext,
-                        const gfxRect& aFillRect,
-                        mozilla::gfx::ExtendMode aExtendMode,
-                        const mozilla::gfx::SamplingFilter aSamplingFilter,
-                        gfxFloat aOpacity = 1.0,
-                        const gfxMatrix& aTransform = gfxMatrix()) override;
+  virtual bool Draw(gfxContext* aContext, const gfxRect& aFillRect,
+                    mozilla::gfx::ExtendMode aExtendMode,
+                    const mozilla::gfx::SamplingFilter aSamplingFilter,
+                    gfxFloat aOpacity = 1.0,
+                    const gfxMatrix& aTransform = gfxMatrix()) override;
 
-    virtual bool DrawWithSamplingRect(DrawTarget* aDrawTarget,
-                                      CompositionOp aOp,
-                                      AntialiasMode aAntialiasMode,
-                                      const gfxRect& aFillRect,
-                                      const gfxRect& aSamplingRect,
-                                      mozilla::gfx::ExtendMode aExtendMode,
-                                      const mozilla::gfx::SamplingFilter aSamplingFilter,
-                                      gfxFloat aOpacity = 1.0) override;
+  virtual bool DrawWithSamplingRect(
+      DrawTarget* aDrawTarget, CompositionOp aOp, AntialiasMode aAntialiasMode,
+      const gfxRect& aFillRect, const gfxRect& aSamplingRect,
+      mozilla::gfx::ExtendMode aExtendMode,
+      const mozilla::gfx::SamplingFilter aSamplingFilter,
+      gfxFloat aOpacity = 1.0) override;
 
-protected:
-    void DrawInternal(DrawTarget* aDrawTarget,
-                      CompositionOp aOp,
-                      AntialiasMode aAntialiasMode,
-                      const gfxRect& aFillRect,
-                      const mozilla::gfx::IntRect& aSamplingRect,
-                      mozilla::gfx::ExtendMode aExtendMode,
-                      const mozilla::gfx::SamplingFilter aSamplingFilter,
-                      gfxFloat aOpacity,
-                      const gfxMatrix& aTransform = gfxMatrix());
+ protected:
+  void DrawInternal(DrawTarget* aDrawTarget, CompositionOp aOp,
+                    AntialiasMode aAntialiasMode, const gfxRect& aFillRect,
+                    const mozilla::gfx::IntRect& aSamplingRect,
+                    mozilla::gfx::ExtendMode aExtendMode,
+                    const mozilla::gfx::SamplingFilter aSamplingFilter,
+                    gfxFloat aOpacity,
+                    const gfxMatrix& aTransform = gfxMatrix());
 
-    RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
-    const gfxMatrix mTransform;
+  RefPtr<mozilla::gfx::SourceSurface> mSourceSurface;
+  const gfxMatrix mTransform;
 };
 
 
@@ -112,24 +103,22 @@ protected:
 
 
 class gfxDrawingCallback {
-    NS_INLINE_DECL_REFCOUNTING(gfxDrawingCallback)
-protected:
-    
-    virtual ~gfxDrawingCallback() {}
+  NS_INLINE_DECL_REFCOUNTING(gfxDrawingCallback)
+ protected:
+  
+  virtual ~gfxDrawingCallback() {}
 
-public:
-    
-
-
+ public:
+  
 
 
 
 
-    virtual bool operator()(gfxContext* aContext,
-                            const gfxRect& aFillRect,
-                            const mozilla::gfx::SamplingFilter aSamplingFilter,
-                            const gfxMatrix& aTransform = gfxMatrix()) = 0;
 
+
+  virtual bool operator()(gfxContext* aContext, const gfxRect& aFillRect,
+                          const mozilla::gfx::SamplingFilter aSamplingFilter,
+                          const gfxMatrix& aTransform = gfxMatrix()) = 0;
 };
 
 
@@ -137,25 +126,24 @@ public:
 
 
 class gfxCallbackDrawable : public gfxDrawable {
-public:
-    gfxCallbackDrawable(gfxDrawingCallback* aCallback, const mozilla::gfx::IntSize aSize);
-    virtual ~gfxCallbackDrawable() {}
+ public:
+  gfxCallbackDrawable(gfxDrawingCallback* aCallback,
+                      const mozilla::gfx::IntSize aSize);
+  virtual ~gfxCallbackDrawable() {}
 
-    virtual bool Draw(gfxContext* aContext,
-                      const gfxRect& aFillRect,
-                      mozilla::gfx::ExtendMode aExtendMode,
-                      const mozilla::gfx::SamplingFilter aSamplingFilter,
-                      gfxFloat aOpacity = 1.0,
-                      const gfxMatrix& aTransform = gfxMatrix()) override;
+  virtual bool Draw(gfxContext* aContext, const gfxRect& aFillRect,
+                    mozilla::gfx::ExtendMode aExtendMode,
+                    const mozilla::gfx::SamplingFilter aSamplingFilter,
+                    gfxFloat aOpacity = 1.0,
+                    const gfxMatrix& aTransform = gfxMatrix()) override;
 
-protected:
-    already_AddRefed<gfxSurfaceDrawable>
-    MakeSurfaceDrawable(gfxContext* aContext,
-                        mozilla::gfx::SamplingFilter aSamplingFilter =
-                        mozilla::gfx::SamplingFilter::LINEAR);
+ protected:
+  already_AddRefed<gfxSurfaceDrawable> MakeSurfaceDrawable(
+      gfxContext* aContext, mozilla::gfx::SamplingFilter aSamplingFilter =
+                                mozilla::gfx::SamplingFilter::LINEAR);
 
-    RefPtr<gfxDrawingCallback> mCallback;
-    RefPtr<gfxSurfaceDrawable> mSurfaceDrawable;
+  RefPtr<gfxDrawingCallback> mCallback;
+  RefPtr<gfxSurfaceDrawable> mSurfaceDrawable;
 };
 
 
@@ -163,22 +151,20 @@ protected:
 
 
 class gfxPatternDrawable : public gfxDrawable {
-public:
-    gfxPatternDrawable(gfxPattern* aPattern,
-                       const mozilla::gfx::IntSize aSize);
-    virtual ~gfxPatternDrawable();
+ public:
+  gfxPatternDrawable(gfxPattern* aPattern, const mozilla::gfx::IntSize aSize);
+  virtual ~gfxPatternDrawable();
 
-    virtual bool Draw(gfxContext* aContext,
-                      const gfxRect& aFillRect,
-                      mozilla::gfx::ExtendMode aExtendMode,
-                      const mozilla::gfx::SamplingFilter aSamplingFilter,
-                      gfxFloat aOpacity = 1.0,
-                      const gfxMatrix& aTransform = gfxMatrix()) override;
+  virtual bool Draw(gfxContext* aContext, const gfxRect& aFillRect,
+                    mozilla::gfx::ExtendMode aExtendMode,
+                    const mozilla::gfx::SamplingFilter aSamplingFilter,
+                    gfxFloat aOpacity = 1.0,
+                    const gfxMatrix& aTransform = gfxMatrix()) override;
 
-protected:
-    already_AddRefed<gfxCallbackDrawable> MakeCallbackDrawable();
+ protected:
+  already_AddRefed<gfxCallbackDrawable> MakeCallbackDrawable();
 
-    RefPtr<gfxPattern> mPattern;
+  RefPtr<gfxPattern> mPattern;
 };
 
 #endif 

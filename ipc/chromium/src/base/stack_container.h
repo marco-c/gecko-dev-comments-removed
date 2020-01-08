@@ -30,7 +30,7 @@
 
 
 
-template<typename T, size_t stack_capacity>
+template <typename T, size_t stack_capacity>
 class StackAllocator : public std::allocator<T> {
  public:
   typedef typename std::allocator<T>::pointer pointer;
@@ -40,8 +40,7 @@ class StackAllocator : public std::allocator<T> {
   
   
   struct Source {
-    Source() : used_stack_buffer_(false) {
-    }
+    Source() : used_stack_buffer_(false) {}
 
     
     T* stack_buffer() { return reinterpret_cast<T*>(stack_buffer_); }
@@ -67,15 +66,14 @@ class StackAllocator : public std::allocator<T> {
   };
 
   
-  template<typename U>
+  template <typename U>
   struct rebind {
     typedef StackAllocator<U, stack_capacity> other;
   };
 
   
   StackAllocator(const StackAllocator<T, stack_capacity>& rhs)
-      : source_(rhs.source_) {
-  }
+      : source_(rhs.source_) {}
 
   
   
@@ -86,20 +84,18 @@ class StackAllocator : public std::allocator<T> {
   
   
   
-  template<typename U, size_t other_capacity>
+  template <typename U, size_t other_capacity>
   explicit StackAllocator(const StackAllocator<U, other_capacity>& other)
-      : source_(NULL) {
-  }
+      : source_(NULL) {}
 
-  explicit StackAllocator(Source* source) : source_(source) {
-  }
+  explicit StackAllocator(Source* source) : source_(source) {}
 
   
   
   
   pointer allocate(size_type n, void* hint = 0) {
-    if (source_ != NULL && !source_->used_stack_buffer_
-        && n <= stack_capacity) {
+    if (source_ != NULL && !source_->used_stack_buffer_ &&
+        n <= stack_capacity) {
       source_->used_stack_buffer_ = true;
       return source_->stack_buffer();
     } else {
@@ -128,7 +124,7 @@ class StackAllocator : public std::allocator<T> {
 
 
 
-template<typename TContainerType, int stack_capacity>
+template <typename TContainerType, int stack_capacity>
 class StackContainer {
  public:
   typedef TContainerType ContainerType;
@@ -160,9 +156,7 @@ class StackContainer {
 #ifdef UNIT_TEST
   
   
-  const typename Allocator::Source& stack_data() const {
-    return stack_data_;
-  }
+  const typename Allocator::Source& stack_data() const { return stack_data_; }
 #endif
 
  protected:
@@ -174,38 +168,35 @@ class StackContainer {
 };
 
 
-template<size_t stack_capacity>
-class StackString : public StackContainer<
-    std::basic_string<char,
-                      std::char_traits<char>,
-                      StackAllocator<char, stack_capacity> >,
-    stack_capacity> {
+template <size_t stack_capacity>
+class StackString
+    : public StackContainer<
+          std::basic_string<char, std::char_traits<char>,
+                            StackAllocator<char, stack_capacity> >,
+          stack_capacity> {
  public:
-  StackString() : StackContainer<
-      std::basic_string<char,
-                        std::char_traits<char>,
-                        StackAllocator<char, stack_capacity> >,
-      stack_capacity>() {
-  }
+  StackString()
+      : StackContainer<std::basic_string<char, std::char_traits<char>,
+                                         StackAllocator<char, stack_capacity> >,
+                       stack_capacity>() {}
 
  private:
   DISALLOW_EVIL_CONSTRUCTORS(StackString);
 };
 
 
-template<size_t stack_capacity>
-class StackWString : public StackContainer<
-    std::basic_string<wchar_t,
-                      std::char_traits<wchar_t>,
-                      StackAllocator<wchar_t, stack_capacity> >,
-    stack_capacity> {
+template <size_t stack_capacity>
+class StackWString
+    : public StackContainer<
+          std::basic_string<wchar_t, std::char_traits<wchar_t>,
+                            StackAllocator<wchar_t, stack_capacity> >,
+          stack_capacity> {
  public:
-  StackWString() : StackContainer<
-      std::basic_string<wchar_t,
-                        std::char_traits<wchar_t>,
-                        StackAllocator<wchar_t, stack_capacity> >,
-      stack_capacity>() {
-  }
+  StackWString()
+      : StackContainer<
+            std::basic_string<wchar_t, std::char_traits<wchar_t>,
+                              StackAllocator<wchar_t, stack_capacity> >,
+            stack_capacity>() {}
 
  private:
   DISALLOW_EVIL_CONSTRUCTORS(StackWString);
@@ -217,24 +208,22 @@ class StackWString : public StackContainer<
 
 
 
-template<typename T, size_t stack_capacity>
-class StackVector : public StackContainer<
-    std::vector<T, StackAllocator<T, stack_capacity> >,
-    stack_capacity> {
+template <typename T, size_t stack_capacity>
+class StackVector
+    : public StackContainer<std::vector<T, StackAllocator<T, stack_capacity> >,
+                            stack_capacity> {
  public:
-  StackVector() : StackContainer<
-      std::vector<T, StackAllocator<T, stack_capacity> >,
-      stack_capacity>() {
-  }
+  StackVector()
+      : StackContainer<std::vector<T, StackAllocator<T, stack_capacity> >,
+                       stack_capacity>() {}
 
   
   
   
   
   StackVector(const StackVector<T, stack_capacity>& other)
-      : StackContainer<
-            std::vector<T, StackAllocator<T, stack_capacity> >,
-            stack_capacity>() {
+      : StackContainer<std::vector<T, StackAllocator<T, stack_capacity> >,
+                       stack_capacity>() {
     this->container().assign(other->begin(), other->end());
   }
 

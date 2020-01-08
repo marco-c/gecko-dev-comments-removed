@@ -34,67 +34,55 @@ namespace dom {
 
 
 
-struct DictionaryBase
-{
-protected:
+struct DictionaryBase {
+ protected:
   bool ParseJSON(JSContext* aCx, const nsAString& aJSON,
                  JS::MutableHandle<JS::Value> aVal);
 
-  bool StringifyToJSON(JSContext* aCx,
-                       JS::Handle<JSObject*> aObj,
+  bool StringifyToJSON(JSContext* aCx, JS::Handle<JSObject*> aObj,
                        nsAString& aJSON) const;
 
   
   
   
   
-  struct FastDictionaryInitializer {
-  };
+  struct FastDictionaryInitializer {};
 
   bool mIsAnyMemberPresent = false;
 
-private:
+ private:
   
   
   static bool AppendJSONToString(const char16_t* aJSONData,
                                  uint32_t aDataLength, void* aString);
 
-public:
-  bool IsAnyMemberPresent() const
-  {
-    return mIsAnyMemberPresent;
-  }
+ public:
+  bool IsAnyMemberPresent() const { return mIsAnyMemberPresent; }
 };
 
-template<typename T>
+template <typename T>
 inline typename EnableIf<IsBaseOf<DictionaryBase, T>::value, void>::Type
-ImplCycleCollectionUnlink(T& aDictionary)
-{
+ImplCycleCollectionUnlink(T& aDictionary) {
   aDictionary.UnlinkForCC();
 }
 
-template<typename T>
+template <typename T>
 inline typename EnableIf<IsBaseOf<DictionaryBase, T>::value, void>::Type
 ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            T& aDictionary,
-                            const char* aName,
-                            uint32_t aFlags = 0)
-{
+                            T& aDictionary, const char* aName,
+                            uint32_t aFlags = 0) {
   aDictionary.TraverseForCC(aCallback, aFlags);
 }
 
 
 
 
-struct AllTypedArraysBase {
-};
+struct AllTypedArraysBase {};
 
 
 
 
-struct AllOwningUnionBase {
-};
-
+struct AllOwningUnionBase {};
 
 struct EnumEntry {
   const char* value;
@@ -103,30 +91,20 @@ struct EnumEntry {
 
 enum class CallerType : uint32_t;
 
-class MOZ_STACK_CLASS GlobalObject
-{
-public:
+class MOZ_STACK_CLASS GlobalObject {
+ public:
   GlobalObject(JSContext* aCx, JSObject* aObject);
 
-  JSObject* Get() const
-  {
-    return mGlobalJSObject;
-  }
+  JSObject* Get() const { return mGlobalJSObject; }
 
   nsISupports* GetAsSupports() const;
 
   
   
   
-  JSContext* Context() const
-  {
-    return mCx;
-  }
+  JSContext* Context() const { return mCx; }
 
-  bool Failed() const
-  {
-    return !Get();
-  }
+  bool Failed() const { return !Get(); }
 
   
   
@@ -136,222 +114,164 @@ public:
   
   dom::CallerType CallerType() const;
 
-protected:
+ protected:
   JS::Rooted<JSObject*> mGlobalJSObject;
   JSContext* mCx;
-  mutable nsISupports* MOZ_UNSAFE_REF("Valid because GlobalObject is a stack "
-                                      "class, and mGlobalObject points to the "
-                                      "global, so it won't be destroyed as long "
-                                      "as GlobalObject lives on the stack") mGlobalObject;
+  mutable nsISupports* MOZ_UNSAFE_REF(
+      "Valid because GlobalObject is a stack "
+      "class, and mGlobalObject points to the "
+      "global, so it won't be destroyed as long "
+      "as GlobalObject lives on the stack") mGlobalObject;
 };
 
 
-template<typename T, typename InternalType>
-class Optional_base
-{
-public:
-  Optional_base()
-  {}
+template <typename T, typename InternalType>
+class Optional_base {
+ public:
+  Optional_base() {}
 
-  explicit Optional_base(const T& aValue)
-  {
-    mImpl.emplace(aValue);
-  }
+  explicit Optional_base(const T& aValue) { mImpl.emplace(aValue); }
 
-  bool operator==(const Optional_base<T, InternalType>& aOther) const
-  {
+  bool operator==(const Optional_base<T, InternalType>& aOther) const {
     return mImpl == aOther.mImpl;
   }
 
-  bool operator!=(const Optional_base<T, InternalType>& aOther) const
-  {
+  bool operator!=(const Optional_base<T, InternalType>& aOther) const {
     return mImpl != aOther.mImpl;
   }
 
-  template<typename T1, typename T2>
-  explicit Optional_base(const T1& aValue1, const T2& aValue2)
-  {
+  template <typename T1, typename T2>
+  explicit Optional_base(const T1& aValue1, const T2& aValue2) {
     mImpl.emplace(aValue1, aValue2);
   }
 
-  bool WasPassed() const
-  {
-    return mImpl.isSome();
-  }
+  bool WasPassed() const { return mImpl.isSome(); }
 
   
-  template<typename... Args>
-  InternalType& Construct(Args&&... aArgs)
-  {
+  template <typename... Args>
+  InternalType& Construct(Args&&... aArgs) {
     mImpl.emplace(std::forward<Args>(aArgs)...);
     return *mImpl;
   }
 
-  void Reset()
-  {
-    mImpl.reset();
-  }
+  void Reset() { mImpl.reset(); }
 
-  const T& Value() const
-  {
-    return *mImpl;
-  }
+  const T& Value() const { return *mImpl; }
 
   
-  InternalType& Value()
-  {
-    return *mImpl;
-  }
+  InternalType& Value() { return *mImpl; }
 
   
-  const InternalType& InternalValue() const
-  {
-    return *mImpl;
-  }
+  const InternalType& InternalValue() const { return *mImpl; }
 
   
   
   
 
-private:
+ private:
   
   Optional_base(const Optional_base& other) = delete;
-  const Optional_base &operator=(const Optional_base &other) = delete;
+  const Optional_base& operator=(const Optional_base& other) = delete;
 
-protected:
+ protected:
   Maybe<InternalType> mImpl;
 };
 
-template<typename T>
-class Optional : public Optional_base<T, T>
-{
-public:
-  MOZ_ALLOW_TEMPORARY Optional() :
-    Optional_base<T, T>()
-  {}
+template <typename T>
+class Optional : public Optional_base<T, T> {
+ public:
+  MOZ_ALLOW_TEMPORARY Optional() : Optional_base<T, T>() {}
 
-  explicit Optional(const T& aValue) :
-    Optional_base<T, T>(aValue)
-  {}
+  explicit Optional(const T& aValue) : Optional_base<T, T>(aValue) {}
 };
 
-template<typename T>
-class Optional<JS::Handle<T> > :
-  public Optional_base<JS::Handle<T>, JS::Rooted<T> >
-{
-public:
-  MOZ_ALLOW_TEMPORARY Optional() :
-    Optional_base<JS::Handle<T>, JS::Rooted<T> >()
-  {}
+template <typename T>
+class Optional<JS::Handle<T> >
+    : public Optional_base<JS::Handle<T>, JS::Rooted<T> > {
+ public:
+  MOZ_ALLOW_TEMPORARY Optional()
+      : Optional_base<JS::Handle<T>, JS::Rooted<T> >() {}
 
-  explicit Optional(JSContext* cx) :
-    Optional_base<JS::Handle<T>, JS::Rooted<T> >()
-  {
+  explicit Optional(JSContext* cx)
+      : Optional_base<JS::Handle<T>, JS::Rooted<T> >() {
     this->Construct(cx);
   }
 
-  Optional(JSContext* cx, const T& aValue) :
-    Optional_base<JS::Handle<T>, JS::Rooted<T> >(cx, aValue)
-  {}
+  Optional(JSContext* cx, const T& aValue)
+      : Optional_base<JS::Handle<T>, JS::Rooted<T> >(cx, aValue) {}
 
   
   
-  JS::Handle<T> Value() const
-  {
-    return *this->mImpl;
-  }
+  JS::Handle<T> Value() const { return *this->mImpl; }
 
   
   
-  JS::Rooted<T>& Value()
-  {
-    return *this->mImpl;
-  }
+  JS::Rooted<T>& Value() { return *this->mImpl; }
 };
 
 
 
 
-template<>
-class Optional<JSObject*> : public Optional_base<JSObject*, JSObject*>
-{
-public:
-  Optional() :
-    Optional_base<JSObject*, JSObject*>()
-  {}
+template <>
+class Optional<JSObject*> : public Optional_base<JSObject*, JSObject*> {
+ public:
+  Optional() : Optional_base<JSObject*, JSObject*>() {}
 
-  explicit Optional(JSObject* aValue) :
-    Optional_base<JSObject*, JSObject*>(aValue)
-  {}
+  explicit Optional(JSObject* aValue)
+      : Optional_base<JSObject*, JSObject*>(aValue) {}
 
   
-  JSObject*& Construct()
-  {
+  JSObject*& Construct() {
     
     
     return Optional_base<JSObject*, JSObject*>::Construct(
-      static_cast<JSObject*>(nullptr));
+        static_cast<JSObject*>(nullptr));
   }
 
   template <class T1>
-  JSObject*& Construct(const T1& t1)
-  {
+  JSObject*& Construct(const T1& t1) {
     return Optional_base<JSObject*, JSObject*>::Construct(t1);
   }
 };
 
 
-template<>
-class Optional<JS::Value>
-{
-private:
+template <>
+class Optional<JS::Value> {
+ private:
   Optional() = delete;
 
   explicit Optional(const JS::Value& aValue) = delete;
 };
 
 
-template<typename U> class NonNull;
-template<typename T>
-class Optional<NonNull<T> > : public Optional_base<T, NonNull<T> >
-{
-public:
+template <typename U>
+class NonNull;
+template <typename T>
+class Optional<NonNull<T> > : public Optional_base<T, NonNull<T> > {
+ public:
   
   
   
-  T& Value() const
-  {
-    return *this->mImpl->get();
-  }
+  T& Value() const { return *this->mImpl->get(); }
 
   
   
-  NonNull<T>& Value()
-  {
-    return *this->mImpl;
-  }
+  NonNull<T>& Value() { return *this->mImpl; }
 };
 
 
 
-template<typename T>
-class Optional<OwningNonNull<T> > : public Optional_base<T, OwningNonNull<T> >
-{
-public:
+template <typename T>
+class Optional<OwningNonNull<T> > : public Optional_base<T, OwningNonNull<T> > {
+ public:
   
   
   
-  T& Value() const
-  {
-    return *this->mImpl->get();
-  }
+  T& Value() const { return *this->mImpl->get(); }
 
   
   
-  OwningNonNull<T>& Value()
-  {
-    return *this->mImpl;
-  }
+  OwningNonNull<T>& Value() { return *this->mImpl; }
 };
 
 
@@ -361,79 +281,65 @@ public:
 
 namespace binding_detail {
 struct FakeString;
-} 
+}  
 
-template<>
-class Optional<nsAString>
-{
-public:
-  Optional()
-    : mStr(nullptr)
-  {}
+template <>
+class Optional<nsAString> {
+ public:
+  Optional() : mStr(nullptr) {}
 
-  bool WasPassed() const
-  {
-    return !!mStr;
-  }
+  bool WasPassed() const { return !!mStr; }
 
-  void operator=(const nsAString* str)
-  {
+  void operator=(const nsAString* str) {
     MOZ_ASSERT(str);
     mStr = str;
   }
 
   
   
-  void operator=(const binding_detail::FakeString* str)
-  {
+  void operator=(const binding_detail::FakeString* str) {
     MOZ_ASSERT(str);
     mStr = reinterpret_cast<const nsString*>(str);
   }
 
-  const nsAString& Value() const
-  {
+  const nsAString& Value() const {
     MOZ_ASSERT(WasPassed());
     return *mStr;
   }
 
-private:
+ private:
   
   Optional(const Optional& other) = delete;
-  const Optional &operator=(const Optional &other) = delete;
+  const Optional& operator=(const Optional& other) = delete;
 
   const nsAString* mStr;
 };
 
-template<typename T>
-inline void
-ImplCycleCollectionUnlink(Optional<T>& aField)
-{
+template <typename T>
+inline void ImplCycleCollectionUnlink(Optional<T>& aField) {
   if (aField.WasPassed()) {
     ImplCycleCollectionUnlink(aField.Value());
   }
 }
 
-template<typename T>
-inline void
-ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            Optional<T>& aField,
-                            const char* aName,
-                            uint32_t aFlags = 0)
-{
+template <typename T>
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback, Optional<T>& aField,
+    const char* aName, uint32_t aFlags = 0) {
   if (aField.WasPassed()) {
     ImplCycleCollectionTraverse(aCallback, aField.Value(), aName, aFlags);
   }
 }
 
-template<class T>
-class NonNull
-{
-public:
+template <class T>
+class NonNull {
+ public:
   NonNull()
 #ifdef DEBUG
-    : inited(false)
+      : inited(false)
 #endif
-  {}
+  {
+  }
 
   
   operator T&() const {
@@ -456,7 +362,7 @@ public:
 #endif
   }
 
-  template<typename U>
+  template <typename U>
   void operator=(U* t) {
     ptr = t->ToAStringPtr();
     MOZ_ASSERT(ptr);
@@ -485,7 +391,7 @@ public:
     return ptr;
   }
 
-protected:
+ protected:
   
   MOZ_INIT_OUTSIDE_CTOR T* ptr;
 #ifdef DEBUG
@@ -497,61 +403,42 @@ protected:
 
 
 
-template<typename T>
-class Sequence : public FallibleTArray<T>
-{
-public:
-  Sequence() : FallibleTArray<T>()
-  {}
+template <typename T>
+class Sequence : public FallibleTArray<T> {
+ public:
+  Sequence() : FallibleTArray<T>() {}
 };
 
-inline nsWrapperCache*
-GetWrapperCache(nsWrapperCache* cache)
-{
-  return cache;
-}
+inline nsWrapperCache* GetWrapperCache(nsWrapperCache* cache) { return cache; }
 
-inline nsWrapperCache*
-GetWrapperCache(void* p)
-{
-  return nullptr;
-}
+inline nsWrapperCache* GetWrapperCache(void* p) { return nullptr; }
 
 
 
 template <template <typename> class SmartPtr, typename T>
-inline nsWrapperCache*
-GetWrapperCache(const SmartPtr<T>& aObject)
-{
+inline nsWrapperCache* GetWrapperCache(const SmartPtr<T>& aObject) {
   return GetWrapperCache(aObject.get());
 }
 
-enum class ReflectionScope {
-  Content,
-  XBL,
-  UAWidget
-};
+enum class ReflectionScope { Content, XBL, UAWidget };
 
 struct MOZ_STACK_CLASS ParentObject {
-  template<class T>
-  MOZ_IMPLICIT ParentObject(T* aObject) :
-    mObject(aObject),
-    mWrapperCache(GetWrapperCache(aObject)),
-    mReflectionScope(ReflectionScope::Content)
-  {}
+  template <class T>
+  MOZ_IMPLICIT ParentObject(T* aObject)
+      : mObject(aObject),
+        mWrapperCache(GetWrapperCache(aObject)),
+        mReflectionScope(ReflectionScope::Content) {}
 
-  template<class T, template<typename> class SmartPtr>
-  MOZ_IMPLICIT ParentObject(const SmartPtr<T>& aObject) :
-    mObject(aObject.get()),
-    mWrapperCache(GetWrapperCache(aObject.get())),
-    mReflectionScope(ReflectionScope::Content)
-  {}
+  template <class T, template <typename> class SmartPtr>
+  MOZ_IMPLICIT ParentObject(const SmartPtr<T>& aObject)
+      : mObject(aObject.get()),
+        mWrapperCache(GetWrapperCache(aObject.get())),
+        mReflectionScope(ReflectionScope::Content) {}
 
-  ParentObject(nsISupports* aObject, nsWrapperCache* aCache) :
-    mObject(aObject),
-    mWrapperCache(aCache),
-    mReflectionScope(ReflectionScope::Content)
-  {}
+  ParentObject(nsISupports* aObject, nsWrapperCache* aCache)
+      : mObject(aObject),
+        mWrapperCache(aCache),
+        mReflectionScope(ReflectionScope::Content) {}
 
   
   
@@ -563,12 +450,10 @@ struct MOZ_STACK_CLASS ParentObject {
 namespace binding_detail {
 
 
-template<typename T>
-class AutoSequence : public AutoTArray<T, 16>
-{
-public:
-  AutoSequence() : AutoTArray<T, 16>()
-  {}
+template <typename T>
+class AutoSequence : public AutoTArray<T, 16> {
+ public:
+  AutoSequence() : AutoTArray<T, 16>() {}
 
   
   operator const Sequence<T>&() const {
@@ -576,19 +461,16 @@ public:
   }
 };
 
-} 
+}  
 
 
-enum class CallerType : uint32_t {
-  System,
-  NonSystem
-};
+enum class CallerType : uint32_t { System, NonSystem };
 
 
 
 
 class SystemCallerGuarantee {
-public:
+ public:
   operator CallerType() const { return CallerType::System; }
 };
 
@@ -598,12 +480,10 @@ typedef void (*CreateInterfaceObjectsMethod)(JSContext* aCx,
                                              ProtoAndIfaceCache& aCache,
                                              bool aDefineOnGlobal);
 JS::Handle<JSObject*> GetPerInterfaceObjectHandle(
-  JSContext* aCx,
-  size_t aSlotId,
-  CreateInterfaceObjectsMethod aCreator,
-  bool aDefineOnGlobal);
+    JSContext* aCx, size_t aSlotId, CreateInterfaceObjectsMethod aCreator,
+    bool aDefineOnGlobal);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

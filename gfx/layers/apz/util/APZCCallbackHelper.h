@@ -21,28 +21,28 @@ class nsIDocument;
 class nsIPresShell;
 class nsIScrollableFrame;
 class nsIWidget;
-template<class T> struct already_AddRefed;
-template<class T> class nsCOMPtr;
+template <class T>
+struct already_AddRefed;
+template <class T>
+class nsCOMPtr;
 
 namespace mozilla {
 namespace layers {
 
 typedef std::function<void(uint64_t, const nsTArray<TouchBehaviorFlags>&)>
-        SetAllowedTouchBehaviorCallback;
+    SetAllowedTouchBehaviorCallback;
 
 
-class DisplayportSetListener : public nsAPostRefreshObserver
-{
-public:
-  DisplayportSetListener(nsIWidget* aWidget,
-                         nsIPresShell* aPresShell,
+class DisplayportSetListener : public nsAPostRefreshObserver {
+ public:
+  DisplayportSetListener(nsIWidget* aWidget, nsIPresShell* aPresShell,
                          const uint64_t& aInputBlockId,
                          const nsTArray<ScrollableLayerGuid>& aTargets);
   virtual ~DisplayportSetListener();
   bool Register();
   void DidRefresh() override;
 
-private:
+ private:
   RefPtr<nsIWidget> mWidget;
   RefPtr<nsIPresShell> mPresShell;
   uint64_t mInputBlockId;
@@ -55,105 +55,98 @@ private:
 
 
 
-class APZCCallbackHelper
-{
-    typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
 
-public:
-    
+class APZCCallbackHelper {
+  typedef mozilla::layers::ScrollableLayerGuid ScrollableLayerGuid;
 
+ public:
+  
 
 
 
-    static void UpdateRootFrame(const RepaintRequest& aRequest);
 
-    
+  static void UpdateRootFrame(const RepaintRequest& aRequest);
 
+  
 
 
 
-    static void UpdateSubFrame(const RepaintRequest& aRequest);
 
-    
+  static void UpdateSubFrame(const RepaintRequest& aRequest);
 
+  
 
 
-    static bool GetOrCreateScrollIdentifiers(nsIContent* aContent,
-                                             uint32_t* aPresShellIdOut,
-                                             ScrollableLayerGuid::ViewID* aViewIdOut);
 
-    
+  static bool GetOrCreateScrollIdentifiers(
+      nsIContent* aContent, uint32_t* aPresShellIdOut,
+      ScrollableLayerGuid::ViewID* aViewIdOut);
 
-    static void InitializeRootDisplayport(nsIPresShell* aPresShell);
+  
 
-    
-    static nsPresContext* GetPresContextForContent(nsIContent* aContent);
+  static void InitializeRootDisplayport(nsIPresShell* aPresShell);
 
-    
-    static nsIPresShell* GetRootContentDocumentPresShellForContent(nsIContent* aContent);
+  
+  static nsPresContext* GetPresContextForContent(nsIContent* aContent);
 
-    
+  
 
+  static nsIPresShell* GetRootContentDocumentPresShellForContent(
+      nsIContent* aContent);
 
+  
 
 
 
 
-    static CSSPoint ApplyCallbackTransform(const CSSPoint& aInput,
-                                           const ScrollableLayerGuid& aGuid);
 
-    
 
+  static CSSPoint ApplyCallbackTransform(const CSSPoint& aInput,
+                                         const ScrollableLayerGuid& aGuid);
 
-    static mozilla::LayoutDeviceIntPoint
-    ApplyCallbackTransform(const LayoutDeviceIntPoint& aPoint,
-                           const ScrollableLayerGuid& aGuid,
-                           const CSSToLayoutDeviceScale& aScale);
+  
 
-    
 
-    static void ApplyCallbackTransform(WidgetEvent& aEvent,
-                                       const ScrollableLayerGuid& aGuid,
-                                       const CSSToLayoutDeviceScale& aScale);
+  static mozilla::LayoutDeviceIntPoint ApplyCallbackTransform(
+      const LayoutDeviceIntPoint& aPoint, const ScrollableLayerGuid& aGuid,
+      const CSSToLayoutDeviceScale& aScale);
 
-    
+  
 
+  static void ApplyCallbackTransform(WidgetEvent& aEvent,
+                                     const ScrollableLayerGuid& aGuid,
+                                     const CSSToLayoutDeviceScale& aScale);
 
-    static nsEventStatus DispatchWidgetEvent(WidgetGUIEvent& aEvent);
+  
 
-    
 
-    static nsEventStatus DispatchSynthesizedMouseEvent(EventMessage aMsg,
-                                                       uint64_t aTime,
-                                                       const LayoutDevicePoint& aRefPoint,
-                                                       Modifiers aModifiers,
-                                                       int32_t aClickCount,
-                                                       nsIWidget* aWidget);
+  static nsEventStatus DispatchWidgetEvent(WidgetGUIEvent& aEvent);
 
-    
+  
 
-    MOZ_CAN_RUN_SCRIPT
-    static bool DispatchMouseEvent(const nsCOMPtr<nsIPresShell>& aPresShell,
-                                   const nsString& aType,
-                                   const CSSPoint& aPoint,
-                                   int32_t aButton,
-                                   int32_t aClickCount,
-                                   int32_t aModifiers,
-                                   bool aIgnoreRootScrollFrame,
-                                   unsigned short aInputSourceArg,
-                                   uint32_t aPointerId);
+  static nsEventStatus DispatchSynthesizedMouseEvent(
+      EventMessage aMsg, uint64_t aTime, const LayoutDevicePoint& aRefPoint,
+      Modifiers aModifiers, int32_t aClickCount, nsIWidget* aWidget);
 
-    
+  
 
-    static void FireSingleTapEvent(const LayoutDevicePoint& aPoint,
-                                   Modifiers aModifiers,
-                                   int32_t aClickCount,
-                                   nsIWidget* aWidget);
 
-    
+  MOZ_CAN_RUN_SCRIPT
+  static bool DispatchMouseEvent(const nsCOMPtr<nsIPresShell>& aPresShell,
+                                 const nsString& aType, const CSSPoint& aPoint,
+                                 int32_t aButton, int32_t aClickCount,
+                                 int32_t aModifiers,
+                                 bool aIgnoreRootScrollFrame,
+                                 unsigned short aInputSourceArg,
+                                 uint32_t aPointerId);
 
+  
 
+  static void FireSingleTapEvent(const LayoutDevicePoint& aPoint,
+                                 Modifiers aModifiers, int32_t aClickCount,
+                                 nsIWidget* aWidget);
 
+  
 
 
 
@@ -166,60 +159,60 @@ public:
 
 
 
-    static UniquePtr<DisplayportSetListener> SendSetTargetAPZCNotification(
-            nsIWidget* aWidget,
-            nsIDocument* aDocument,
-            const WidgetGUIEvent& aEvent,
-            const ScrollableLayerGuid& aGuid,
-            uint64_t aInputBlockId);
 
-    
 
-    static void SendSetAllowedTouchBehaviorNotification(nsIWidget* aWidget,
-                                                        nsIDocument* aDocument,
-                                                        const WidgetTouchEvent& aEvent,
-                                                        uint64_t aInputBlockId,
-                                                        const SetAllowedTouchBehaviorCallback& aCallback);
 
-    
-    static void NotifyMozMouseScrollEvent(const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent);
+  static UniquePtr<DisplayportSetListener> SendSetTargetAPZCNotification(
+      nsIWidget* aWidget, nsIDocument* aDocument, const WidgetGUIEvent& aEvent,
+      const ScrollableLayerGuid& aGuid, uint64_t aInputBlockId);
 
-    
-    static void NotifyFlushComplete(nsIPresShell* aShell);
+  
 
-    static void NotifyAsyncScrollbarDragInitiated(uint64_t aDragBlockId,
-                                                  const ScrollableLayerGuid::ViewID& aScrollId,
-                                                  ScrollDirection aDirection);
-    static void NotifyAsyncScrollbarDragRejected(const ScrollableLayerGuid::ViewID& aScrollId);
-    static void NotifyAsyncAutoscrollRejected(const ScrollableLayerGuid::ViewID& aScrollId);
+  static void SendSetAllowedTouchBehaviorNotification(
+      nsIWidget* aWidget, nsIDocument* aDocument,
+      const WidgetTouchEvent& aEvent, uint64_t aInputBlockId,
+      const SetAllowedTouchBehaviorCallback& aCallback);
 
-    static void CancelAutoscroll(const ScrollableLayerGuid::ViewID& aScrollId);
+  
+  static void NotifyMozMouseScrollEvent(
+      const ScrollableLayerGuid::ViewID& aScrollId, const nsString& aEvent);
 
-    static ScreenMargin
-    AdjustDisplayPortForScrollDelta(const RepaintRequest& aRequest,
-                                    const CSSPoint& aActualScrollOffset);
+  
+  static void NotifyFlushComplete(nsIPresShell* aShell);
 
-    
+  static void NotifyAsyncScrollbarDragInitiated(
+      uint64_t aDragBlockId, const ScrollableLayerGuid::ViewID& aScrollId,
+      ScrollDirection aDirection);
+  static void NotifyAsyncScrollbarDragRejected(
+      const ScrollableLayerGuid::ViewID& aScrollId);
+  static void NotifyAsyncAutoscrollRejected(
+      const ScrollableLayerGuid::ViewID& aScrollId);
 
+  static void CancelAutoscroll(const ScrollableLayerGuid::ViewID& aScrollId);
 
+  static ScreenMargin AdjustDisplayPortForScrollDelta(
+      const RepaintRequest& aRequest, const CSSPoint& aActualScrollOffset);
 
+  
 
-    static bool
-    IsScrollInProgress(nsIScrollableFrame* aFrame);
 
-    
 
 
+  static bool IsScrollInProgress(nsIScrollableFrame* aFrame);
 
-    static void NotifyPinchGesture(PinchGestureInput::PinchGestureType aType,
-                                   LayoutDeviceCoord aSpanChange,
-                                   Modifiers aModifiers,
-                                   nsIWidget* aWidget);
-private:
+  
+
+
+
+  static void NotifyPinchGesture(PinchGestureInput::PinchGestureType aType,
+                                 LayoutDeviceCoord aSpanChange,
+                                 Modifiers aModifiers, nsIWidget* aWidget);
+
+ private:
   static uint64_t sLastTargetAPZCNotificationInputBlock;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

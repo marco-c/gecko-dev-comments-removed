@@ -10,9 +10,7 @@
 #include "nsWrapperCache.h"
 #include "js/TracingAPI.h"
 
-inline JSObject*
-nsWrapperCache::GetWrapperPreserveColor() const
-{
+inline JSObject* nsWrapperCache::GetWrapperPreserveColor() const {
   JSObject* obj = GetWrapperMaybeDead();
   if (obj && js::gc::EdgeNeedsSweepUnbarriered(&obj)) {
     
@@ -25,19 +23,15 @@ nsWrapperCache::GetWrapperPreserveColor() const
   return obj;
 }
 
-inline JSObject*
-nsWrapperCache::GetWrapper() const
-{
-    JSObject* obj = GetWrapperPreserveColor();
-    if (obj) {
-      JS::ExposeObjectToActiveJS(obj);
-    }
-    return obj;
+inline JSObject* nsWrapperCache::GetWrapper() const {
+  JSObject* obj = GetWrapperPreserveColor();
+  if (obj) {
+    JS::ExposeObjectToActiveJS(obj);
+  }
+  return obj;
 }
 
-inline bool
-nsWrapperCache::HasKnownLiveWrapper() const
-{
+inline bool nsWrapperCache::HasKnownLiveWrapper() const {
   
   
   
@@ -47,18 +41,15 @@ nsWrapperCache::HasKnownLiveWrapper() const
   return o && !JS::ObjectIsMarkedGray(o);
 }
 
-static void
-SearchGray(JS::GCCellPtr aGCThing, const char* aName, void* aClosure)
-{
+static void SearchGray(JS::GCCellPtr aGCThing, const char* aName,
+                       void* aClosure) {
   bool* hasGrayObjects = static_cast<bool*>(aClosure);
   if (!*hasGrayObjects && aGCThing && JS::GCThingIsMarkedGray(aGCThing)) {
     *hasGrayObjects = true;
   }
 }
 
-inline bool
-nsWrapperCache::HasNothingToTrace(nsISupports* aThis)
-{
+inline bool nsWrapperCache::HasNothingToTrace(nsISupports* aThis) {
   nsXPCOMCycleCollectionParticipant* participant = nullptr;
   CallQueryInterface(aThis, &participant);
   bool hasGrayObjects = false;
@@ -66,15 +57,12 @@ nsWrapperCache::HasNothingToTrace(nsISupports* aThis)
   return !hasGrayObjects;
 }
 
-inline bool
-nsWrapperCache::HasKnownLiveWrapperAndDoesNotNeedTracing(nsISupports* aThis)
-{
+inline bool nsWrapperCache::HasKnownLiveWrapperAndDoesNotNeedTracing(
+    nsISupports* aThis) {
   return HasKnownLiveWrapper() && HasNothingToTrace(aThis);
 }
 
-inline void
-nsWrapperCache::MarkWrapperLive()
-{
+inline void nsWrapperCache::MarkWrapperLive() {
   
   
   GetWrapper();

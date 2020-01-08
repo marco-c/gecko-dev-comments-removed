@@ -22,132 +22,123 @@ using JS::HandleObject;
 using JS::HandleValue;
 using JS::UniqueTwoByteChars;
 
-void
-js::CallWarningReporter(JSContext* cx, JSErrorReport* reportp)
-{
-    MOZ_ASSERT(reportp);
-    MOZ_ASSERT(JSREPORT_IS_WARNING(reportp->flags));
+void js::CallWarningReporter(JSContext* cx, JSErrorReport* reportp) {
+  MOZ_ASSERT(reportp);
+  MOZ_ASSERT(JSREPORT_IS_WARNING(reportp->flags));
 
-    if (JS::WarningReporter warningReporter = cx->runtime()->warningReporter) {
-        warningReporter(cx, reportp);
-    }
+  if (JS::WarningReporter warningReporter = cx->runtime()->warningReporter) {
+    warningReporter(cx, reportp);
+  }
 }
 
-void
-js::CompileError::throwError(JSContext* cx)
-{
-    if (JSREPORT_IS_WARNING(flags)) {
-        CallWarningReporter(cx, this);
-        return;
-    }
+void js::CompileError::throwError(JSContext* cx) {
+  if (JSREPORT_IS_WARNING(flags)) {
+    CallWarningReporter(cx, this);
+    return;
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ErrorToException(cx, this, nullptr, nullptr);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ErrorToException(cx, this, nullptr, nullptr);
 }
 
-bool
-js::ReportExceptionClosure::operator()(JSContext* cx)
-{
-    cx->setPendingException(exn_);
+bool js::ReportExceptionClosure::operator()(JSContext* cx) {
+  cx->setPendingException(exn_);
+  return false;
+}
+
+bool js::ReportCompileWarning(JSContext* cx, ErrorMetadata&& metadata,
+                              UniquePtr<JSErrorNotes> notes, unsigned flags,
+                              unsigned errorNumber, va_list args) {
+  
+  
+  
+  CompileError tempErr;
+  CompileError* err = &tempErr;
+  if (cx->helperThread() && !cx->addPendingCompileError(&err)) {
     return false;
+  }
+
+  err->notes = std::move(notes);
+  err->flags = flags;
+  err->errorNumber = errorNumber;
+
+  err->filename = metadata.filename;
+  err->lineno = metadata.lineNumber;
+  err->column = metadata.columnNumber;
+  err->isMuted = metadata.isMuted;
+
+  if (UniqueTwoByteChars lineOfContext = std::move(metadata.lineOfContext)) {
+    err->initOwnedLinebuf(lineOfContext.release(), metadata.lineLength,
+                          metadata.tokenOffset);
+  }
+
+  if (!ExpandErrorArgumentsVA(cx, GetErrorMessage, nullptr, errorNumber,
+                              nullptr, ArgumentsAreLatin1, err, args)) {
+    return false;
+  }
+
+  if (!cx->helperThread()) {
+    err->throwError(cx);
+  }
+
+  return true;
 }
 
-bool
-js::ReportCompileWarning(JSContext* cx, ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
-                         unsigned flags, unsigned errorNumber, va_list args)
-{
-    
-    
-    
-    CompileError tempErr;
-    CompileError* err = &tempErr;
-    if (cx->helperThread() && !cx->addPendingCompileError(&err)) {
-        return false;
-    }
+void js::ReportCompileError(JSContext* cx, ErrorMetadata&& metadata,
+                            UniquePtr<JSErrorNotes> notes, unsigned flags,
+                            unsigned errorNumber, va_list args) {
+  
+  
+  
+  CompileError tempErr;
+  CompileError* err = &tempErr;
+  if (cx->helperThread() && !cx->addPendingCompileError(&err)) {
+    return;
+  }
 
-    err->notes = std::move(notes);
-    err->flags = flags;
-    err->errorNumber = errorNumber;
+  err->notes = std::move(notes);
+  err->flags = flags;
+  err->errorNumber = errorNumber;
 
-    err->filename = metadata.filename;
-    err->lineno = metadata.lineNumber;
-    err->column = metadata.columnNumber;
-    err->isMuted = metadata.isMuted;
+  err->filename = metadata.filename;
+  err->lineno = metadata.lineNumber;
+  err->column = metadata.columnNumber;
+  err->isMuted = metadata.isMuted;
 
-    if (UniqueTwoByteChars lineOfContext = std::move(metadata.lineOfContext)) {
-        err->initOwnedLinebuf(lineOfContext.release(), metadata.lineLength, metadata.tokenOffset);
-    }
+  if (UniqueTwoByteChars lineOfContext = std::move(metadata.lineOfContext)) {
+    err->initOwnedLinebuf(lineOfContext.release(), metadata.lineLength,
+                          metadata.tokenOffset);
+  }
 
-    if (!ExpandErrorArgumentsVA(cx, GetErrorMessage, nullptr, errorNumber,
-                                nullptr, ArgumentsAreLatin1, err, args))
-    {
-        return false;
-    }
+  if (!ExpandErrorArgumentsVA(cx, GetErrorMessage, nullptr, errorNumber,
+                              nullptr, ArgumentsAreLatin1, err, args)) {
+    return;
+  }
 
-    if (!cx->helperThread()) {
-        err->throwError(cx);
-    }
-
-    return true;
+  if (!cx->helperThread()) {
+    err->throwError(cx);
+  }
 }
 
-void
-js::ReportCompileError(JSContext* cx, ErrorMetadata&& metadata, UniquePtr<JSErrorNotes> notes,
-                       unsigned flags, unsigned errorNumber, va_list args)
-{
-    
-    
-    
-    CompileError tempErr;
-    CompileError* err = &tempErr;
-    if (cx->helperThread() && !cx->addPendingCompileError(&err)) {
-        return;
-    }
-
-    err->notes = std::move(notes);
-    err->flags = flags;
-    err->errorNumber = errorNumber;
-
-    err->filename = metadata.filename;
-    err->lineno = metadata.lineNumber;
-    err->column = metadata.columnNumber;
-    err->isMuted = metadata.isMuted;
-
-    if (UniqueTwoByteChars lineOfContext = std::move(metadata.lineOfContext)) {
-        err->initOwnedLinebuf(lineOfContext.release(), metadata.lineLength, metadata.tokenOffset);
-    }
-
-    if (!ExpandErrorArgumentsVA(cx, GetErrorMessage, nullptr, errorNumber,
-                                nullptr, ArgumentsAreLatin1, err, args))
-    {
-        return;
-    }
-
-    if (!cx->helperThread()) {
-        err->throwError(cx);
-    }
-}
-
-void
-js::ReportErrorToGlobal(JSContext* cx, Handle<GlobalObject*> global, HandleValue error)
-{
-    MOZ_ASSERT(!cx->isExceptionPending());
+void js::ReportErrorToGlobal(JSContext* cx, Handle<GlobalObject*> global,
+                             HandleValue error) {
+  MOZ_ASSERT(!cx->isExceptionPending());
 #ifdef DEBUG
-    
-    if (error.isObject()) {
-        AssertSameCompartment(global, &error.toObject());
-    }
-#endif 
-    js::ReportExceptionClosure report(error);
-    PrepareScriptEnvironmentAndInvoke(cx, global, report);
+  
+  if (error.isObject()) {
+    AssertSameCompartment(global, &error.toObject());
+  }
+#endif  
+  js::ReportExceptionClosure report(error);
+  PrepareScriptEnvironmentAndInvoke(cx, global, report);
 }

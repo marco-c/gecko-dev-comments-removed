@@ -11,29 +11,27 @@
 
 class txExecutionState;
 
-class txUnknownHandler : public txBufferingHandler
-{
-public:
-    explicit txUnknownHandler(txExecutionState* aEs);
-    virtual ~txUnknownHandler();
+class txUnknownHandler : public txBufferingHandler {
+ public:
+  explicit txUnknownHandler(txExecutionState* aEs);
+  virtual ~txUnknownHandler();
 
-    TX_DECL_TXAXMLEVENTHANDLER
+  TX_DECL_TXAXMLEVENTHANDLER
 
-private:
-    nsresult createHandlerAndFlush(bool aHTMLRoot,
-                                   const nsAString& aName,
-                                   const int32_t aNsID);
+ private:
+  nsresult createHandlerAndFlush(bool aHTMLRoot, const nsAString& aName,
+                                 const int32_t aNsID);
 
-    
+  
 
 
 
 
-    txExecutionState* mEs;
+  txExecutionState* mEs;
 
-    
-    
-    bool mFlushed;
+  
+  
+  bool mFlushed;
 };
 
 #endif 

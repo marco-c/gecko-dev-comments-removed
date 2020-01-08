@@ -47,27 +47,26 @@ class Decoder;
 
 
 
-struct SurfaceInvalidRect
-{
-  gfx::IntRect mInputSpaceRect;   
-  gfx::IntRect mOutputSpaceRect;  
+struct SurfaceInvalidRect {
+  gfx::IntRect mInputSpaceRect;  
+  gfx::IntRect
+      mOutputSpaceRect;  
 };
 
 
 
 
 
-enum class WriteState : uint8_t
-{
+enum class WriteState : uint8_t {
   NEED_MORE_DATA,  
 
-  FINISHED,        
-                   
+  FINISHED,  
+             
 
-  FAILURE          
-                   
-                   
-                   
+  FAILURE  
+           
+           
+           
 };
 
 
@@ -97,16 +96,11 @@ using NextPixel = Variant<PixelType, WriteState>;
 
 
 
-class SurfaceFilter
-{
-public:
-  SurfaceFilter()
-    : mRowPointer(nullptr)
-    , mCol(0)
-    , mPixelSize(0)
-  { }
+class SurfaceFilter {
+ public:
+  SurfaceFilter() : mRowPointer(nullptr), mCol(0), mPixelSize(0) {}
 
-  virtual ~SurfaceFilter() { }
+  virtual ~SurfaceFilter() {}
 
   
 
@@ -115,8 +109,7 @@ public:
 
 
 
-  uint8_t* ResetToFirstRow()
-  {
+  uint8_t* ResetToFirstRow() {
     mCol = 0;
     mRowPointer = DoResetToFirstRow();
     return mRowPointer;
@@ -128,8 +121,7 @@ public:
 
 
 
-  uint8_t* AdvanceRow()
-  {
+  uint8_t* AdvanceRow() {
     mCol = 0;
     mRowPointer = DoAdvanceRow();
     return mRowPointer;
@@ -169,10 +161,11 @@ public:
 
 
   template <typename PixelType, typename Func>
-  WriteState WritePixels(Func aFunc)
-  {
+  WriteState WritePixels(Func aFunc) {
     Maybe<WriteState> result;
-    while (!(result = DoWritePixelsToRow<PixelType>(std::forward<Func>(aFunc)))) { }
+    while (
+        !(result = DoWritePixelsToRow<PixelType>(std::forward<Func>(aFunc)))) {
+    }
 
     return *result;
   }
@@ -206,10 +199,11 @@ public:
 
 
   template <typename PixelType, typename Func>
-  WriteState WritePixelBlocks(Func aFunc)
-  {
+  WriteState WritePixelBlocks(Func aFunc) {
     Maybe<WriteState> result;
-    while (!(result = DoWritePixelBlockToRow<PixelType>(std::forward<Func>(aFunc)))) { }
+    while (!(result = DoWritePixelBlockToRow<PixelType>(
+                 std::forward<Func>(aFunc)))) {
+    }
 
     return *result;
   }
@@ -244,10 +238,9 @@ public:
 
 
   template <typename PixelType, typename Func>
-  WriteState WritePixelsToRow(Func aFunc)
-  {
+  WriteState WritePixelsToRow(Func aFunc) {
     return DoWritePixelsToRow<PixelType>(std::forward<Func>(aFunc))
-           .valueOr(WriteState::NEED_MORE_DATA);
+        .valueOr(WriteState::NEED_MORE_DATA);
   }
 
   
@@ -275,8 +268,7 @@ public:
 
 
   template <typename PixelType>
-  WriteState WriteBuffer(const PixelType* aSource)
-  {
+  WriteState WriteBuffer(const PixelType* aSource) {
     return WriteBuffer(aSource, 0, mInputSize.width);
   }
 
@@ -314,10 +306,8 @@ public:
 
 
   template <typename PixelType>
-  WriteState WriteBuffer(const PixelType* aSource,
-                         const size_t aStartColumn,
-                         const size_t aLength)
-  {
+  WriteState WriteBuffer(const PixelType* aSource, const size_t aStartColumn,
+                         const size_t aLength) {
     MOZ_ASSERT(mPixelSize == 1 || mPixelSize == 4);
     MOZ_ASSERT_IF(mPixelSize == 1, sizeof(PixelType) == sizeof(uint8_t));
     MOZ_ASSERT_IF(mPixelSize == 4, sizeof(PixelType) == sizeof(uint32_t));
@@ -334,7 +324,8 @@ public:
     PixelType* dest = reinterpret_cast<PixelType*>(mRowPointer);
 
     
-    const size_t prefixLength = std::min<size_t>(mInputSize.width, aStartColumn);
+    const size_t prefixLength =
+        std::min<size_t>(mInputSize.width, aStartColumn);
     if (MOZ_UNLIKELY(prefixLength != aStartColumn)) {
       NS_WARNING("Provided starting column is out-of-bounds in WriteBuffer");
     }
@@ -344,7 +335,7 @@ public:
 
     
     const size_t bufferLength =
-      std::min<size_t>(mInputSize.width - prefixLength, aLength);
+        std::min<size_t>(mInputSize.width - prefixLength, aLength);
     if (MOZ_UNLIKELY(bufferLength != aLength)) {
       NS_WARNING("Provided buffer length is out-of-bounds in WriteBuffer");
     }
@@ -353,7 +344,8 @@ public:
     dest += bufferLength;
 
     
-    const size_t suffixLength = mInputSize.width - (prefixLength + bufferLength);
+    const size_t suffixLength =
+        mInputSize.width - (prefixLength + bufferLength);
     memset(dest, 0, suffixLength * sizeof(PixelType));
 
     AdvanceRow();
@@ -369,8 +361,7 @@ public:
 
 
 
-  WriteState WriteEmptyRow()
-  {
+  WriteState WriteEmptyRow() {
     if (IsSurfaceFinished()) {
       return WriteState::FINISHED;  
     }
@@ -409,8 +400,7 @@ public:
 
 
   template <typename PixelType, typename Func>
-  WriteState WriteUnsafeComputedRow(Func aFunc)
-  {
+  WriteState WriteUnsafeComputedRow(Func aFunc) {
     MOZ_ASSERT(mPixelSize == 1 || mPixelSize == 4);
     MOZ_ASSERT_IF(mPixelSize == 1, sizeof(PixelType) == sizeof(uint8_t));
     MOZ_ASSERT_IF(mPixelSize == 4, sizeof(PixelType) == sizeof(uint32_t));
@@ -445,8 +435,7 @@ public:
 
   virtual Maybe<SurfaceInvalidRect> TakeInvalidRect() = 0;
 
-protected:
-
+ protected:
   
 
 
@@ -462,7 +451,6 @@ protected:
 
   virtual uint8_t* DoAdvanceRow() = 0;
 
-
   
   
   
@@ -478,16 +466,14 @@ protected:
 
 
 
-  void ConfigureFilter(gfx::IntSize aInputSize, uint8_t aPixelSize)
-  {
+  void ConfigureFilter(gfx::IntSize aInputSize, uint8_t aPixelSize) {
     mInputSize = aInputSize;
     mPixelSize = aPixelSize;
 
     ResetToFirstRow();
   }
 
-private:
-
+ private:
   
 
 
@@ -498,8 +484,7 @@ private:
 
 
   template <typename PixelType, typename Func>
-  Maybe<WriteState> DoWritePixelBlockToRow(Func aFunc)
-  {
+  Maybe<WriteState> DoWritePixelBlockToRow(Func aFunc) {
     MOZ_ASSERT(mPixelSize == 1 || mPixelSize == 4);
     MOZ_ASSERT_IF(mPixelSize == 1, sizeof(PixelType) == sizeof(uint8_t));
     MOZ_ASSERT_IF(mPixelSize == 4, sizeof(PixelType) == sizeof(uint32_t));
@@ -517,8 +502,7 @@ private:
       MOZ_ASSERT(result.isNothing());
       mCol = mInputSize.width;
       AdvanceRow();  
-      return IsSurfaceFinished() ? Some(WriteState::FINISHED)
-                                 : Nothing();
+      return IsSurfaceFinished() ? Some(WriteState::FINISHED) : Nothing();
     }
 
     MOZ_ASSERT(written >= 0 && written < remainder);
@@ -544,8 +528,7 @@ private:
 
 
   template <typename PixelType, typename Func>
-  Maybe<WriteState> DoWritePixelsToRow(Func aFunc)
-  {
+  Maybe<WriteState> DoWritePixelsToRow(Func aFunc) {
     MOZ_ASSERT(mPixelSize == 1 || mPixelSize == 4);
     MOZ_ASSERT_IF(mPixelSize == 1, sizeof(PixelType) == sizeof(uint8_t));
     MOZ_ASSERT_IF(mPixelSize == 4, sizeof(PixelType) == sizeof(uint32_t));
@@ -582,49 +565,40 @@ private:
 
     AdvanceRow();  
 
-    return IsSurfaceFinished() ? Some(WriteState::FINISHED)
-                               : Nothing();
+    return IsSurfaceFinished() ? Some(WriteState::FINISHED) : Nothing();
   }
 
   template <typename PixelType>
-  void ZeroOutRestOfSurface()
-  {
-    WritePixels<PixelType>([]{ return AsVariant(PixelType(0)); });
+  void ZeroOutRestOfSurface() {
+    WritePixels<PixelType>([] { return AsVariant(PixelType(0)); });
   }
 
   gfx::IntSize mInputSize;  
   uint8_t* mRowPointer;     
   int32_t mCol;             
-  uint8_t  mPixelSize;      
+  uint8_t mPixelSize;  
 };
 
 
 
 
 
-class SurfacePipe
-{
-public:
-  SurfacePipe()
-  { }
+class SurfacePipe {
+ public:
+  SurfacePipe() {}
 
-  SurfacePipe(SurfacePipe&& aOther)
-    : mHead(std::move(aOther.mHead))
-  { }
+  SurfacePipe(SurfacePipe&& aOther) : mHead(std::move(aOther.mHead)) {}
 
-  ~SurfacePipe()
-  { }
+  ~SurfacePipe() {}
 
-  SurfacePipe& operator=(SurfacePipe&& aOther)
-  {
+  SurfacePipe& operator=(SurfacePipe&& aOther) {
     MOZ_ASSERT(this != &aOther);
     mHead = std::move(aOther.mHead);
     return *this;
   }
 
   
-  void ResetToFirstRow()
-  {
+  void ResetToFirstRow() {
     MOZ_ASSERT(mHead, "Use before configured!");
     mHead->ResetToFirstRow();
   }
@@ -636,8 +610,7 @@ public:
 
 
   template <typename PixelType, typename Func>
-  WriteState WritePixels(Func aFunc)
-  {
+  WriteState WritePixels(Func aFunc) {
     MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WritePixels<PixelType>(std::forward<Func>(aFunc));
   }
@@ -650,8 +623,7 @@ public:
 
 
   template <typename PixelType, typename Func>
-  WriteState WritePixelBlocks(Func aFunc)
-  {
+  WriteState WritePixelBlocks(Func aFunc) {
     MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WritePixelBlocks<PixelType>(std::forward<Func>(aFunc));
   }
@@ -664,8 +636,7 @@ public:
 
 
   template <typename PixelType, typename Func>
-  WriteState WritePixelsToRow(Func aFunc)
-  {
+  WriteState WritePixelsToRow(Func aFunc) {
     MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WritePixelsToRow<PixelType>(std::forward<Func>(aFunc));
   }
@@ -680,8 +651,7 @@ public:
 
 
   template <typename PixelType>
-  WriteState WriteBuffer(const PixelType* aSource)
-  {
+  WriteState WriteBuffer(const PixelType* aSource) {
     MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WriteBuffer<PixelType>(aSource);
   }
@@ -697,10 +667,8 @@ public:
 
 
   template <typename PixelType>
-  WriteState WriteBuffer(const PixelType* aSource,
-                         const size_t aStartColumn,
-                         const size_t aLength)
-  {
+  WriteState WriteBuffer(const PixelType* aSource, const size_t aStartColumn,
+                         const size_t aLength) {
     MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WriteBuffer<PixelType>(aSource, aStartColumn, aLength);
   }
@@ -711,8 +679,7 @@ public:
 
 
 
-  WriteState WriteEmptyRow()
-  {
+  WriteState WriteEmptyRow() {
     MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->WriteEmptyRow();
   }
@@ -721,19 +688,17 @@ public:
   bool IsSurfaceFinished() const { return mHead->IsSurfaceFinished(); }
 
   
-  Maybe<SurfaceInvalidRect> TakeInvalidRect() const
-  {
+  Maybe<SurfaceInvalidRect> TakeInvalidRect() const {
     MOZ_ASSERT(mHead, "Use before configured!");
     return mHead->TakeInvalidRect();
   }
 
-private:
+ private:
   friend class SurfacePipeFactory;
   friend class TestSurfacePipeFactory;
 
   explicit SurfacePipe(UniquePtr<SurfaceFilter>&& aHead)
-    : mHead(std::move(aHead))
-  { }
+      : mHead(std::move(aHead)) {}
 
   SurfacePipe(const SurfacePipe&) = delete;
   SurfacePipe& operator=(const SurfacePipe&) = delete;
@@ -745,42 +710,40 @@ private:
 
 
 
-class AbstractSurfaceSink : public SurfaceFilter
-{
-public:
+class AbstractSurfaceSink : public SurfaceFilter {
+ public:
   AbstractSurfaceSink()
-    : mImageData(nullptr)
-    , mImageDataLength(0)
-    , mRow(0)
-    , mFlipVertically(false)
-  { }
+      : mImageData(nullptr),
+        mImageDataLength(0),
+        mRow(0),
+        mFlipVertically(false) {}
 
   Maybe<SurfaceInvalidRect> TakeInvalidRect() final;
 
-protected:
+ protected:
   uint8_t* DoResetToFirstRow() final;
   uint8_t* DoAdvanceRow() final;
   virtual uint8_t* GetRowPointer() const = 0;
 
-  gfx::IntRect mInvalidRect;  
-                              
-  uint8_t*  mImageData;       
-  uint32_t  mImageDataLength; 
-  uint32_t  mRow;             
-  bool      mFlipVertically;  
+  gfx::IntRect
+      mInvalidRect;     
+                        
+  uint8_t* mImageData;  
+  uint32_t mImageDataLength;  
+  uint32_t mRow;              
+  bool mFlipVertically;       
 };
 
 class SurfaceSink;
 
 
-struct SurfaceConfig
-{
+struct SurfaceConfig {
   using Filter = SurfaceSink;
   Decoder* mDecoder;           
   gfx::IntSize mOutputSize;    
   gfx::SurfaceFormat mFormat;  
   bool mFlipVertically;        
-  Maybe<AnimationParams> mAnimParams; 
+  Maybe<AnimationParams> mAnimParams;  
 };
 
 
@@ -790,19 +753,17 @@ struct SurfaceConfig
 
 
 
-class SurfaceSink final : public AbstractSurfaceSink
-{
-public:
+class SurfaceSink final : public AbstractSurfaceSink {
+ public:
   nsresult Configure(const SurfaceConfig& aConfig);
 
-protected:
+ protected:
   uint8_t* GetRowPointer() const override;
 };
 
 class PalettedSurfaceSink;
 
-struct PalettedSurfaceConfig
-{
+struct PalettedSurfaceConfig {
   using Filter = PalettedSurfaceSink;
   Decoder* mDecoder;           
   gfx::IntSize mOutputSize;    
@@ -810,7 +771,7 @@ struct PalettedSurfaceConfig
   gfx::SurfaceFormat mFormat;  
   uint8_t mPaletteDepth;       
   bool mFlipVertically;        
-  Maybe<AnimationParams> mAnimParams; 
+  Maybe<AnimationParams> mAnimParams;  
 };
 
 
@@ -823,17 +784,16 @@ struct PalettedSurfaceConfig
 
 
 
-class PalettedSurfaceSink final : public AbstractSurfaceSink
-{
-public:
+class PalettedSurfaceSink final : public AbstractSurfaceSink {
+ public:
   bool IsValidPalettedPipe() const override { return true; }
 
   nsresult Configure(const PalettedSurfaceConfig& aConfig);
 
-protected:
+ protected:
   uint8_t* GetRowPointer() const override;
 
-private:
+ private:
   
 
 
@@ -842,7 +802,7 @@ private:
   gfx::IntRect mFrameRect;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

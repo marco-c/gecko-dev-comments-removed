@@ -43,13 +43,19 @@ void f() {
 
   int exp = (int)true;
 
-  if (x == b) {}
-  if (x != b) {}
+  if (x == b) {
+  }
+  if (x != b) {
+  }
 
-  if (b == exp) {}
-  if (exp == b) {}
+  if (b == exp) {
+  }
+  if (exp == b) {
+  }
 
   char* ptr;
   
-  if (ptr) {}
+  
+  if (ptr) {
+  }
 }

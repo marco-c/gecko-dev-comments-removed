@@ -21,28 +21,27 @@ static const double kLongIdlePeriodMS = 50.0;
 
 static const double kMinIdlePeriodMS = 3.0;
 
-static const uint32_t kMaxTimerThreadBound = 5;       
-static const uint32_t kMaxTimerThreadBoundClamp = 15; 
+static const uint32_t kMaxTimerThreadBound = 5;        
+static const uint32_t kMaxTimerThreadBoundClamp = 15;  
 
 namespace mozilla {
 
 NS_IMETHODIMP
-MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline)
-{
+MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aIdleDeadline);
 
   TimeStamp now = TimeStamp::Now();
   TimeStamp currentGuess =
-    now + TimeDuration::FromMilliseconds(kLongIdlePeriodMS);
+      now + TimeDuration::FromMilliseconds(kLongIdlePeriodMS);
 
   currentGuess = nsRefreshDriver::GetIdleDeadlineHint(currentGuess);
-  currentGuess = NS_GetTimerDeadlineHintOnCurrentThread(currentGuess, kMaxTimerThreadBound);
+  currentGuess = NS_GetTimerDeadlineHintOnCurrentThread(currentGuess,
+                                                        kMaxTimerThreadBound);
 
   
   
-  TimeDuration minIdlePeriod =
-    TimeDuration::FromMilliseconds(kMinIdlePeriodMS);
+  TimeDuration minIdlePeriod = TimeDuration::FromMilliseconds(kMinIdlePeriodMS);
   bool busySoon = currentGuess.IsNull() ||
                   (now >= (currentGuess - minIdlePeriod)) ||
                   currentGuess < mLastIdleDeadline;
@@ -54,10 +53,8 @@ MainThreadIdlePeriod::GetIdlePeriodHint(TimeStamp* aIdleDeadline)
   return NS_OK;
 }
 
- float
-MainThreadIdlePeriod::GetLongIdlePeriod()
-{
+ float MainThreadIdlePeriod::GetLongIdlePeriod() {
   return kLongIdlePeriodMS;
 }
 
-} 
+}  

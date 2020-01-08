@@ -18,9 +18,8 @@
 
 
 
-nsresult
-net_NewTransportEventSinkProxy(nsITransportEventSink **aResult,
-                               nsITransportEventSink *aSink,
-                               nsIEventTarget *aTarget);
+nsresult net_NewTransportEventSinkProxy(nsITransportEventSink **aResult,
+                                        nsITransportEventSink *aSink,
+                                        nsIEventTarget *aTarget);
 
-#endif 
+#endif  

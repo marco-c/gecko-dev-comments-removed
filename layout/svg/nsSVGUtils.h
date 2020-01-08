@@ -52,12 +52,12 @@ class SVGGeometryFrame;
 namespace dom {
 class Element;
 class UserSpaceMetrics;
-} 
+}  
 namespace gfx {
 class DrawTarget;
 class GeneralPattern;
-} 
-} 
+}  
+}  
 
 
 
@@ -65,10 +65,9 @@ class GeneralPattern;
 
 #define NS_SVG_OFFSCREEN_MAX_DIMENSION 4096
 
-#define SVG_HIT_TEST_FILL        0x01
-#define SVG_HIT_TEST_STROKE      0x02
+#define SVG_HIT_TEST_FILL 0x01
+#define SVG_HIT_TEST_STROKE 0x02
 #define SVG_HIT_TEST_CHECK_MRECT 0x04
-
 
 bool NS_SVGDisplayListHitTestingEnabled();
 bool NS_SVGDisplayListPaintingEnabled();
@@ -81,35 +80,23 @@ bool NS_SVGNewGetBBoxEnabled();
 class SVGBBox {
   typedef mozilla::gfx::Rect Rect;
 
-public:
-  SVGBBox()
-    : mIsEmpty(true) {}
+ public:
+  SVGBBox() : mIsEmpty(true) {}
 
-  MOZ_IMPLICIT SVGBBox(const Rect& aRect)
-    : mBBox(aRect), mIsEmpty(false) {}
+  MOZ_IMPLICIT SVGBBox(const Rect& aRect) : mBBox(aRect), mIsEmpty(false) {}
 
   MOZ_IMPLICIT SVGBBox(const gfxRect& aRect)
-    : mBBox(ToRect(aRect)), mIsEmpty(false) {}
+      : mBBox(ToRect(aRect)), mIsEmpty(false) {}
 
-  operator const Rect& () {
-    return mBBox;
-  }
+  operator const Rect&() { return mBBox; }
 
-  gfxRect ToThebesRect() const {
-    return ThebesRect(mBBox);
-  }
+  gfxRect ToThebesRect() const { return ThebesRect(mBBox); }
 
-  bool IsEmpty() const {
-    return mIsEmpty;
-  }
+  bool IsEmpty() const { return mIsEmpty; }
 
-  bool IsFinite() const {
-    return mBBox.IsFinite();
-  }
+  bool IsFinite() const { return mBBox.IsFinite(); }
 
-  void Scale(float aScale) {
-    mBBox.Scale(aScale);
-  }
+  void Scale(float aScale) { mBBox.Scale(aScale); }
 
   void UnionEdges(const SVGBBox& aSVGBBox) {
     if (aSVGBBox.mIsEmpty) {
@@ -132,7 +119,7 @@ public:
     }
   }
 
-private:
+ private:
   Rect mBBox;
   bool mIsEmpty;
 };
@@ -140,20 +127,19 @@ private:
 
 #undef CLIP_MASK
 
-class MOZ_RAII SVGAutoRenderState
-{
+class MOZ_RAII SVGAutoRenderState {
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
-public:
-  explicit SVGAutoRenderState(DrawTarget* aDrawTarget
-                              MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+ public:
+  explicit SVGAutoRenderState(
+      DrawTarget* aDrawTarget MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
   ~SVGAutoRenderState();
 
   void SetPaintingToWindow(bool aPaintingToWindow);
 
   static bool IsPaintingToWindow(DrawTarget* aDrawTarget);
 
-private:
+ private:
   DrawTarget* mDrawTarget;
   void* mOriginalRenderState;
   bool mPaintingToWindow;
@@ -165,10 +151,8 @@ private:
 
 
 
-
-class nsSVGUtils
-{
-public:
+class nsSVGUtils {
+ public:
   typedef mozilla::dom::Element Element;
   typedef mozilla::gfx::AntialiasMode AntialiasMode;
   typedef mozilla::gfx::DrawTarget DrawTarget;
@@ -189,8 +173,8 @@ public:
 
 
 
-  static nsRect GetPostFilterVisualOverflowRect(nsIFrame *aFrame,
-                                                const nsRect &aUnfilteredRect);
+  static nsRect GetPostFilterVisualOverflowRect(nsIFrame* aFrame,
+                                                const nsRect& aUnfilteredRect);
 
   
 
@@ -220,13 +204,13 @@ public:
 
 
 
-  static void ScheduleReflowSVG(nsIFrame *aFrame);
+  static void ScheduleReflowSVG(nsIFrame* aFrame);
 
   
 
 
 
-  static bool NeedsReflowSVG(nsIFrame *aFrame);
+  static bool NeedsReflowSVG(nsIFrame* aFrame);
 
   
 
@@ -240,20 +224,20 @@ public:
 
 
 
-  static float ObjectSpace(const gfxRect &aRect, const nsSVGLength2 *aLength);
+  static float ObjectSpace(const gfxRect& aRect, const nsSVGLength2* aLength);
 
   
 
 
 
-  static float UserSpace(nsSVGElement *aSVGElement,
-                         const nsSVGLength2 *aLength);
-  static float UserSpace(nsIFrame *aFrame, const nsSVGLength2 *aLength);
+  static float UserSpace(nsSVGElement* aSVGElement,
+                         const nsSVGLength2* aLength);
+  static float UserSpace(nsIFrame* aFrame, const nsSVGLength2* aLength);
   static float UserSpace(const mozilla::dom::UserSpaceMetrics& aMetrics,
-                         const nsSVGLength2 *aLength);
+                         const nsSVGLength2* aLength);
 
   
-  static nsSVGOuterSVGFrame* GetOuterSVGFrame(nsIFrame *aFrame);
+  static nsSVGOuterSVGFrame* GetOuterSVGFrame(nsIFrame* aFrame);
 
   
 
@@ -265,23 +249,22 @@ public:
 
   
 
-  static void PaintFrameWithEffects(nsIFrame *aFrame,
-                                    gfxContext& aContext,
+  static void PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
                                     const gfxMatrix& aTransform,
                                     imgDrawingParams& aImgParams,
-                                    const nsIntRect *aDirtyRect = nullptr);
+                                    const nsIntRect* aDirtyRect = nullptr);
 
   
 
-  static bool HitTestClip(nsIFrame *aFrame, const gfxPoint &aPoint);
+  static bool HitTestClip(nsIFrame* aFrame, const gfxPoint& aPoint);
 
   
 
 
 
 
-  static nsIFrame* HitTestChildren(nsSVGDisplayContainerFrame *aFrame,
-                                   const gfxPoint &aPoint);
+  static nsIFrame* HitTestChildren(nsSVGDisplayContainerFrame* aFrame,
+                                   const gfxPoint& aPoint);
 
   
 
@@ -305,7 +288,7 @@ public:
 
 
 
-  static void NotifyChildrenOfSVGChange(nsIFrame *aFrame, uint32_t aFlags);
+  static void NotifyChildrenOfSVGChange(nsIFrame* aFrame, uint32_t aFlags);
 
   static nsRect TransformFrameRectToOuterSVG(const nsRect& aRect,
                                              const gfxMatrix& aMatrix,
@@ -321,37 +304,14 @@ public:
 
 
   static mozilla::gfx::IntSize ConvertToSurfaceSize(const gfxSize& aSize,
-                                                    bool *aResultOverflows);
+                                                    bool* aResultOverflows);
 
   
 
 
-  static bool HitTestRect(const mozilla::gfx::Matrix &aMatrix,
-                          float aRX, float aRY, float aRWidth, float aRHeight,
-                          float aX, float aY);
-
-
-  
-
-
-
-
-
-
-  static gfxRect GetClipRectForFrame(nsIFrame *aFrame,
-                                     float aX, float aY, float aWidth,
-                                     float aHeight);
-
-  static void SetClipRect(gfxContext *aContext,
-                          const gfxMatrix &aCTM,
-                          const gfxRect &aRect);
-
-  
-
-
-
-
-  static bool CanOptimizeOpacity(nsIFrame *aFrame);
+  static bool HitTestRect(const mozilla::gfx::Matrix& aMatrix, float aRX,
+                          float aRY, float aRWidth, float aRHeight, float aX,
+                          float aY);
 
   
 
@@ -360,31 +320,50 @@ public:
 
 
 
+  static gfxRect GetClipRectForFrame(nsIFrame* aFrame, float aX, float aY,
+                                     float aWidth, float aHeight);
+
+  static void SetClipRect(gfxContext* aContext, const gfxMatrix& aCTM,
+                          const gfxRect& aRect);
+
+  
 
 
 
-  static gfxMatrix AdjustMatrixForUnits(const gfxMatrix &aMatrix,
-                                        nsSVGEnum *aUnits,
-                                        nsIFrame *aFrame,
+
+  static bool CanOptimizeOpacity(nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+
+
+
+  static gfxMatrix AdjustMatrixForUnits(const gfxMatrix& aMatrix,
+                                        nsSVGEnum* aUnits, nsIFrame* aFrame,
                                         uint32_t aFlags);
 
   enum BBoxFlags {
-    eBBoxIncludeFill           = 1 << 0,
+    eBBoxIncludeFill = 1 << 0,
     
     
-    eBBoxIncludeFillGeometry   = 1 << 1,
-    eBBoxIncludeStroke         = 1 << 2,
+    eBBoxIncludeFillGeometry = 1 << 1,
+    eBBoxIncludeStroke = 1 << 2,
     
     
     eBBoxIncludeStrokeGeometry = 1 << 3,
-    eBBoxIncludeMarkers        = 1 << 4,
-    eBBoxIncludeClipped        = 1 << 5,
+    eBBoxIncludeMarkers = 1 << 4,
+    eBBoxIncludeClipped = 1 << 5,
     
     
     
     eUseFrameBoundsForOuterSVG = 1 << 6,
     
-    eForGetClientRects         = 1 << 7,
+    eForGetClientRects = 1 << 7,
     
     
     
@@ -415,7 +394,7 @@ public:
 
 
 
-  static gfxRect GetBBox(nsIFrame *aFrame,
+  static gfxRect GetBBox(nsIFrame* aFrame,
                          
                          
                          uint32_t aFlags = eBBoxIncludeFillGeometry,
@@ -429,7 +408,7 @@ public:
 
 
 
-  static gfxPoint FrameSpaceInCSSPxToUserSpaceOffset(nsIFrame *aFrame);
+  static gfxPoint FrameSpaceInCSSPxToUserSpaceOffset(nsIFrame* aFrame);
 
   
 
@@ -442,12 +421,12 @@ public:
 
 
 
-  static gfxRect GetRelativeRect(uint16_t aUnits, const nsSVGLength2 *aXYWH,
-                                 const gfxRect& aBBox, nsIFrame *aFrame);
+  static gfxRect GetRelativeRect(uint16_t aUnits, const nsSVGLength2* aXYWH,
+                                 const gfxRect& aBBox, nsIFrame* aFrame);
 
-  static gfxRect GetRelativeRect(uint16_t aUnits, const nsSVGLength2 *aXYWH,
-                                 const gfxRect& aBBox,
-                                 const mozilla::dom::UserSpaceMetrics& aMetrics);
+  static gfxRect GetRelativeRect(
+      uint16_t aUnits, const nsSVGLength2* aXYWH, const gfxRect& aBBox,
+      const mozilla::dom::UserSpaceMetrics& aMetrics);
 
   
 
@@ -455,8 +434,8 @@ public:
 
   static nsIFrame* GetFirstNonAAncestorFrame(nsIFrame* aStartFrame);
 
-  static bool OuterSVGIsCallingReflowSVG(nsIFrame *aFrame);
-  static bool AnyOuterSVGIsCallingReflowSVG(nsIFrame *aFrame);
+  static bool OuterSVGIsCallingReflowSVG(nsIFrame* aFrame);
+  static bool AnyOuterSVGIsCallingReflowSVG(nsIFrame* aFrame);
 
   
 
@@ -468,7 +447,7 @@ public:
 
 
 
-  static bool GetNonScalingStrokeTransform(nsIFrame *aFrame,
+  static bool GetNonScalingStrokeTransform(nsIFrame* aFrame,
                                            gfxMatrix* aUserToOuterSVG);
 
   
@@ -495,28 +474,24 @@ public:
 
 
 
-  static int32_t ClampToInt(double aVal)
-  {
-    return NS_lround(std::max(double(INT32_MIN),
-                            std::min(double(INT32_MAX), aVal)));
+  static int32_t ClampToInt(double aVal) {
+    return NS_lround(
+        std::max(double(INT32_MIN), std::min(double(INT32_MAX), aVal)));
   }
 
-  static nscolor GetFallbackOrPaintColor(mozilla::ComputedStyle *aComputedStyle,
-                                         nsStyleSVGPaint nsStyleSVG::*aFillOrStroke);
+  static nscolor GetFallbackOrPaintColor(
+      mozilla::ComputedStyle* aComputedStyle,
+      nsStyleSVGPaint nsStyleSVG::*aFillOrStroke);
 
-  static void
-  MakeFillPatternFor(nsIFrame *aFrame,
-                     gfxContext* aContext,
-                     GeneralPattern* aOutPattern,
-                     imgDrawingParams& aImgParams,
-                     SVGContextPaint* aContextPaint = nullptr);
+  static void MakeFillPatternFor(nsIFrame* aFrame, gfxContext* aContext,
+                                 GeneralPattern* aOutPattern,
+                                 imgDrawingParams& aImgParams,
+                                 SVGContextPaint* aContextPaint = nullptr);
 
-  static void
-  MakeStrokePatternFor(nsIFrame* aFrame,
-                       gfxContext* aContext,
-                       GeneralPattern* aOutPattern,
-                       imgDrawingParams& aImgParams,
-                       SVGContextPaint* aContextPaint = nullptr);
+  static void MakeStrokePatternFor(nsIFrame* aFrame, gfxContext* aContext,
+                                   GeneralPattern* aOutPattern,
+                                   imgDrawingParams& aImgParams,
+                                   SVGContextPaint* aContextPaint = nullptr);
 
   static float GetOpacity(nsStyleSVGOpacitySource aOpacityType,
                           const float& aOpacity,
@@ -534,8 +509,8 @@ public:
   
 
 
-  static void SetupStrokeGeometry(nsIFrame* aFrame, gfxContext *aContext,
-                                       SVGContextPaint* aContextPaint = nullptr);
+  static void SetupStrokeGeometry(nsIFrame* aFrame, gfxContext* aContext,
+                                  SVGContextPaint* aContextPaint = nullptr);
 
   
 
@@ -546,13 +521,16 @@ public:
   static uint16_t GetGeometryHitTestFlags(nsIFrame* aFrame);
 
   static FillRule ToFillRule(mozilla::StyleFillRule aFillRule) {
-    return aFillRule == mozilla::StyleFillRule::Evenodd ?
-             FillRule::FILL_EVEN_ODD : FillRule::FILL_WINDING;
+    return aFillRule == mozilla::StyleFillRule::Evenodd
+               ? FillRule::FILL_EVEN_ODD
+               : FillRule::FILL_WINDING;
   }
 
-  static AntialiasMode ToAntialiasMode(mozilla::StyleTextRendering aTextRendering) {
-    return aTextRendering == mozilla::StyleTextRendering::Optimizespeed ?
-             AntialiasMode::NONE : AntialiasMode::SUBPIXEL;
+  static AntialiasMode ToAntialiasMode(
+      mozilla::StyleTextRendering aTextRendering) {
+    return aTextRendering == mozilla::StyleTextRendering::Optimizespeed
+               ? AntialiasMode::NONE
+               : AntialiasMode::SUBPIXEL;
   }
 
   
@@ -580,9 +558,9 @@ public:
 
 
 
-  static nsRect ToCanvasBounds(const gfxRect &aUserspaceRect,
-                               const gfxMatrix &aToCanvas,
-                               const nsPresContext *presContext);
+  static nsRect ToCanvasBounds(const gfxRect& aUserspaceRect,
+                               const gfxMatrix& aToCanvas,
+                               const nsPresContext* presContext);
 
   struct MaskUsage {
     bool shouldGenerateMaskLayer;
@@ -592,19 +570,16 @@ public:
     float opacity;
 
     MaskUsage()
-      : shouldGenerateMaskLayer(false)
-      , shouldGenerateClipMaskLayer(false)
-      , shouldApplyClipPath(false)
-      , shouldApplyBasicShapeOrPath(false)
-      , opacity(0.0)
-    { }
+        : shouldGenerateMaskLayer(false),
+          shouldGenerateClipMaskLayer(false),
+          shouldApplyClipPath(false),
+          shouldApplyBasicShapeOrPath(false),
+          opacity(0.0) {}
 
     bool shouldDoSomething() {
-      return shouldGenerateMaskLayer
-          || shouldGenerateClipMaskLayer
-          || shouldApplyClipPath
-          || shouldApplyBasicShapeOrPath
-          || opacity != 1.0;
+      return shouldGenerateMaskLayer || shouldGenerateClipMaskLayer ||
+             shouldApplyClipPath || shouldApplyBasicShapeOrPath ||
+             opacity != 1.0;
     }
   };
 

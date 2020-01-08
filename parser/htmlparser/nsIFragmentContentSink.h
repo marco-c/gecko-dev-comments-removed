@@ -12,12 +12,15 @@ class nsIDocument;
 namespace mozilla {
 namespace dom {
 class DocumentFragment;
-} 
-} 
+}  
+}  
 
-#define NS_I_FRAGMENT_CONTENT_SINK_IID \
-  { 0x1a8ce30b, 0x63fc, 0x441a, \
-    { 0xa3, 0xaa, 0xf7, 0x16, 0xc0, 0xfe, 0x96, 0x69 } }
+#define NS_I_FRAGMENT_CONTENT_SINK_IID               \
+  {                                                  \
+    0x1a8ce30b, 0x63fc, 0x441a, {                    \
+      0xa3, 0xaa, 0xf7, 0x16, 0xc0, 0xfe, 0x96, 0x69 \
+    }                                                \
+  }
 
 
 
@@ -26,7 +29,7 @@ class DocumentFragment;
 
 
 class nsIFragmentContentSink : public nsISupports {
-public:
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_I_FRAGMENT_CONTENT_SINK_IID)
   
 
@@ -34,7 +37,8 @@ public:
 
 
 
-  NS_IMETHOD FinishFragmentParsing(mozilla::dom::DocumentFragment** aFragment) = 0;
+  NS_IMETHOD FinishFragmentParsing(mozilla::dom::DocumentFragment** aFragment) =
+      0;
 
   
 
@@ -76,7 +80,7 @@ public:
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIFragmentContentSink,
                               NS_I_FRAGMENT_CONTENT_SINK_IID)
 
-nsresult
-NS_NewXMLFragmentContentSink(nsIFragmentContentSink** aInstancePtrResult);
+nsresult NS_NewXMLFragmentContentSink(
+    nsIFragmentContentSink** aInstancePtrResult);
 
 #endif

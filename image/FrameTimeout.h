@@ -20,8 +20,7 @@ namespace image {
 
 
 
-struct FrameTimeout
-{
+struct FrameTimeout {
   
 
 
@@ -33,8 +32,7 @@ struct FrameTimeout
   static FrameTimeout Forever() { return FrameTimeout(-1); }
 
   
-  static FrameTimeout FromRawMilliseconds(int32_t aRawMilliseconds)
-  {
+  static FrameTimeout FromRawMilliseconds(int32_t aRawMilliseconds) {
     
     if (aRawMilliseconds < 0) {
       return FrameTimeout::Forever();
@@ -52,7 +50,7 @@ struct FrameTimeout
     
     
     
-    if (aRawMilliseconds >= 0 && aRawMilliseconds <= 10 ) {
+    if (aRawMilliseconds >= 0 && aRawMilliseconds <= 10) {
       return FrameTimeout(100);
     }
 
@@ -60,15 +58,15 @@ struct FrameTimeout
     return FrameTimeout(aRawMilliseconds);
   }
 
-  bool operator==(const FrameTimeout& aOther) const
-  {
+  bool operator==(const FrameTimeout& aOther) const {
     return mTimeout == aOther.mTimeout;
   }
 
-  bool operator!=(const FrameTimeout& aOther) const { return !(*this == aOther); }
+  bool operator!=(const FrameTimeout& aOther) const {
+    return !(*this == aOther);
+  }
 
-  FrameTimeout operator+(const FrameTimeout& aOther)
-  {
+  FrameTimeout operator+(const FrameTimeout& aOther) {
     if (*this == Forever() || aOther == Forever()) {
       return Forever();
     }
@@ -76,8 +74,7 @@ struct FrameTimeout
     return FrameTimeout(mTimeout + aOther.mTimeout);
   }
 
-  FrameTimeout& operator+=(const FrameTimeout& aOther)
-  {
+  FrameTimeout& operator+=(const FrameTimeout& aOther) {
     *this = *this + aOther;
     return *this;
   }
@@ -86,10 +83,10 @@ struct FrameTimeout
 
 
 
-  uint32_t AsMilliseconds() const
-  {
+  uint32_t AsMilliseconds() const {
     if (*this == Forever()) {
-      MOZ_ASSERT_UNREACHABLE("Calling AsMilliseconds() on an infinite FrameTimeout");
+      MOZ_ASSERT_UNREACHABLE(
+          "Calling AsMilliseconds() on an infinite FrameTimeout");
       return 100;  
     }
 
@@ -105,15 +102,13 @@ struct FrameTimeout
 
   int32_t AsEncodedValueDeprecated() const { return mTimeout; }
 
-private:
-  explicit FrameTimeout(int32_t aTimeout)
-    : mTimeout(aTimeout)
-  { }
+ private:
+  explicit FrameTimeout(int32_t aTimeout) : mTimeout(aTimeout) {}
 
   int32_t mTimeout;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -12,10 +12,8 @@
 
 
 
-
-class BaseElf: public LibHandle
-{
-public:
+class BaseElf : public LibHandle {
+ public:
   
 
 
@@ -34,19 +32,16 @@ public:
   const Elf::Sym *GetSymbol(const char *symbol, unsigned long hash) const;
 
   explicit BaseElf(const char *path, Mappable *mappable = nullptr)
-  : LibHandle(path)
-  , mappable(mappable)
-  {
-  }
+      : LibHandle(path), mappable(mappable) {}
 
-protected:
-   
+ protected:
+  
 
 
 
-   virtual void *GetSymbolPtr(const char *symbol) const;
-   virtual bool Contains(void *addr) const;
-   virtual void *GetBase() const { return GetPtr(0); }
+  virtual void *GetSymbolPtr(const char *symbol) const;
+  virtual bool Contains(void *addr) const;
+  virtual void *GetBase() const { return GetPtr(0); }
 
 #ifdef __ARM_EABI__
   virtual const void *FindExidx(int *pcount) const;
@@ -54,14 +49,13 @@ protected:
 
   virtual Mappable *GetMappable() const { return NULL; };
 
-public:
-
+ public:
+  
   
 
 
 
-  void *GetPtr(const Elf::Addr offset) const
-  {
+  void *GetPtr(const Elf::Addr offset) const {
     if (reinterpret_cast<void *>(offset) > base)
       return reinterpret_cast<void *>(offset);
     return base + offset;
@@ -71,8 +65,7 @@ public:
 
 
   template <typename T>
-  const T *GetPtr(const Elf::Addr offset) const
-  {
+  const T *GetPtr(const Elf::Addr offset) const {
     if (reinterpret_cast<void *>(offset) > base)
       return reinterpret_cast<const T *>(offset);
     return reinterpret_cast<const T *>(base + offset);
@@ -90,7 +83,7 @@ public:
   Array<Elf::Word> buckets;
   UnsizedArray<Elf::Word> chains;
 
-
+  
   
   Elf::Strtab strtab;
 
@@ -106,23 +99,18 @@ public:
 
 
 
-
-class LoadedElf: public BaseElf
-{
-public:
+class LoadedElf : public BaseElf {
+ public:
   
 
 
 
-  static already_AddRefed<LibHandle> Create(const char *path,
-                                                 void *base_addr);
+  static already_AddRefed<LibHandle> Create(const char *path, void *base_addr);
 
-private:
-  explicit LoadedElf(const char *path)
-  : BaseElf(path) { }
+ private:
+  explicit LoadedElf(const char *path) : BaseElf(path) {}
 
-  ~LoadedElf()
-  {
+  ~LoadedElf() {
     
 
     base.release();
@@ -136,6 +124,5 @@ private:
 
   bool InitDyn(const Elf::Phdr *pt_dyn);
 };
-
 
 #endif 

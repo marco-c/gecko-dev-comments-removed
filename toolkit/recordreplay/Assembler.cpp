@@ -15,19 +15,14 @@ namespace mozilla {
 namespace recordreplay {
 
 Assembler::Assembler()
-  : mCursor(nullptr)
-  , mCursorEnd(nullptr)
-  , mCanAllocateStorage(true)
-{}
+    : mCursor(nullptr), mCursorEnd(nullptr), mCanAllocateStorage(true) {}
 
 Assembler::Assembler(uint8_t* aStorage, size_t aSize)
-  : mCursor(aStorage)
-  , mCursorEnd(aStorage + aSize)
-  , mCanAllocateStorage(false)
-{}
+    : mCursor(aStorage),
+      mCursorEnd(aStorage + aSize),
+      mCanAllocateStorage(false) {}
 
-Assembler::~Assembler()
-{
+Assembler::~Assembler() {
   
   
   for (auto pair : mJumps) {
@@ -37,30 +32,24 @@ Assembler::~Assembler()
     for (auto copyPair : mCopiedInstructions) {
       if (copyPair.first == target) {
         PatchJump(source, copyPair.second);
-	break;
+        break;
       }
     }
   }
 }
 
-void
-Assembler::NoteOriginalInstruction(uint8_t* aIp)
-{
+void Assembler::NoteOriginalInstruction(uint8_t* aIp) {
   mCopiedInstructions.emplaceBack(aIp, Current());
 }
 
-void
-Assembler::Advance(size_t aSize)
-{
+void Assembler::Advance(size_t aSize) {
   MOZ_RELEASE_ASSERT(aSize <= MaximumAdvance);
   mCursor += aSize;
 }
 
 static const size_t JumpBytes = 17;
 
-uint8_t*
-Assembler::Current()
-{
+uint8_t* Assembler::Current() {
   
   
   
@@ -85,18 +74,14 @@ Assembler::Current()
   return mCursor;
 }
 
-static void
-Push16(uint8_t** aIp, uint16_t aValue)
-{
+static void Push16(uint8_t** aIp, uint16_t aValue) {
   (*aIp)[0] = 0x66;
   (*aIp)[1] = 0x68;
   *reinterpret_cast<uint16_t*>(*aIp + 2) = aValue;
   (*aIp) += 4;
 }
 
- void
-Assembler::PatchJump(uint8_t* aIp, void* aTarget)
-{
+ void Assembler::PatchJump(uint8_t* aIp, void* aTarget) {
   
   
   
@@ -105,20 +90,16 @@ Assembler::PatchJump(uint8_t* aIp, void* aTarget)
   Push16(&aIp, ntarget >> 32);
   Push16(&aIp, ntarget >> 16);
   Push16(&aIp, ntarget);
-  *aIp = 0xC3; 
+  *aIp = 0xC3;  
 }
 
-void
-Assembler::Jump(void* aTarget)
-{
+void Assembler::Jump(void* aTarget) {
   PatchJump(Current(), aTarget);
-  mJumps.emplaceBack(Current(), (uint8_t*) aTarget);
+  mJumps.emplaceBack(Current(), (uint8_t*)aTarget);
   Advance(JumpBytes);
 }
 
-static uint8_t
-OppositeJump(uint8_t aOpcode)
-{
+static uint8_t OppositeJump(uint8_t aOpcode) {
   
   
   if (aOpcode >= 0x80 && aOpcode <= 0x8F) {
@@ -129,122 +110,108 @@ OppositeJump(uint8_t aOpcode)
   return (aOpcode & 1) ? aOpcode - 1 : aOpcode + 1;
 }
 
-void
-Assembler::ConditionalJump(uint8_t aCode, void* aTarget)
-{
+void Assembler::ConditionalJump(uint8_t aCode, void* aTarget) {
   uint8_t* ip = Current();
   ip[0] = OppositeJump(aCode);
-  ip[1] = (uint8_t) JumpBytes;
+  ip[1] = (uint8_t)JumpBytes;
   Advance(2);
   Jump(aTarget);
 }
 
-void
-Assembler::CopyInstruction(uint8_t* aIp, size_t aSize)
-{
+void Assembler::CopyInstruction(uint8_t* aIp, size_t aSize) {
   MOZ_RELEASE_ASSERT(aSize <= MaximumInstructionLength);
   memcpy(Current(), aIp, aSize);
   Advance(aSize);
 }
 
-void
-Assembler::PushRax()
-{
-  NewInstruction(0x50);
-}
+void Assembler::PushRax() { NewInstruction(0x50); }
 
-void
-Assembler::PopRax()
-{
-  NewInstruction(0x58);
-}
+void Assembler::PopRax() { NewInstruction(0x58); }
 
-void
-Assembler::JumpToRax()
-{
-  NewInstruction(0xFF, 0xE0);
-}
+void Assembler::JumpToRax() { NewInstruction(0xFF, 0xE0); }
 
-void
-Assembler::CallRax()
-{
-  NewInstruction(0xFF, 0xD0);
-}
+void Assembler::CallRax() { NewInstruction(0xFF, 0xD0); }
 
-void
-Assembler::LoadRax(size_t aWidth)
-{
+void Assembler::LoadRax(size_t aWidth) {
   switch (aWidth) {
-  case 1: NewInstruction(0x8A, 0x00); break;
-  case 2: NewInstruction(0x66, 0x8B, 0x00); break;
-  case 4: NewInstruction(0x8B, 0x00); break;
-  case 8: NewInstruction(0x48, 0x8B, 0x00); break;
-  default: MOZ_CRASH();
+    case 1:
+      NewInstruction(0x8A, 0x00);
+      break;
+    case 2:
+      NewInstruction(0x66, 0x8B, 0x00);
+      break;
+    case 4:
+      NewInstruction(0x8B, 0x00);
+      break;
+    case 8:
+      NewInstruction(0x48, 0x8B, 0x00);
+      break;
+    default:
+      MOZ_CRASH();
   }
 }
 
-void
-Assembler::CompareRaxWithTopOfStack()
-{
+void Assembler::CompareRaxWithTopOfStack() {
   NewInstruction(0x48, 0x39, 0x04, 0x24);
 }
 
-void
-Assembler::PushRbx()
-{
-  NewInstruction(0x53);
-}
+void Assembler::PushRbx() { NewInstruction(0x53); }
 
-void
-Assembler::PopRbx()
-{
-  NewInstruction(0x5B);
-}
+void Assembler::PopRbx() { NewInstruction(0x5B); }
 
-void
-Assembler::StoreRbxToRax(size_t aWidth)
-{
+void Assembler::StoreRbxToRax(size_t aWidth) {
   switch (aWidth) {
-  case 1: NewInstruction(0x88, 0x18); break;
-  case 2: NewInstruction(0x66, 0x89, 0x18); break;
-  case 4: NewInstruction(0x89, 0x18); break;
-  case 8: NewInstruction(0x48, 0x89, 0x18); break;
-  default: MOZ_CRASH();
+    case 1:
+      NewInstruction(0x88, 0x18);
+      break;
+    case 2:
+      NewInstruction(0x66, 0x89, 0x18);
+      break;
+    case 4:
+      NewInstruction(0x89, 0x18);
+      break;
+    case 8:
+      NewInstruction(0x48, 0x89, 0x18);
+      break;
+    default:
+      MOZ_CRASH();
   }
 }
 
-void
-Assembler::CompareValueWithRax(uint8_t aValue, size_t aWidth)
-{
+void Assembler::CompareValueWithRax(uint8_t aValue, size_t aWidth) {
   switch (aWidth) {
-  case 1: NewInstruction(0x3C, aValue); break;
-  case 2: NewInstruction(0x66, 0x83, 0xF8, aValue); break;
-  case 4: NewInstruction(0x83, 0xF8, aValue); break;
-  case 8: NewInstruction(0x48, 0x83, 0xF8, aValue); break;
-  default: MOZ_CRASH();
+    case 1:
+      NewInstruction(0x3C, aValue);
+      break;
+    case 2:
+      NewInstruction(0x66, 0x83, 0xF8, aValue);
+      break;
+    case 4:
+      NewInstruction(0x83, 0xF8, aValue);
+      break;
+    case 8:
+      NewInstruction(0x48, 0x83, 0xF8, aValue);
+      break;
+    default:
+      MOZ_CRASH();
   }
 }
 
 static const size_t MoveImmediateBytes = 10;
 
- void
-Assembler::PatchMoveImmediateToRax(uint8_t* aIp, void* aValue)
-{
+ void Assembler::PatchMoveImmediateToRax(uint8_t* aIp,
+                                                     void* aValue) {
   aIp[0] = 0x40 | (1 << 3);
   aIp[1] = 0xB8;
   *reinterpret_cast<void**>(aIp + 2) = aValue;
 }
 
-void
-Assembler::MoveImmediateToRax(void* aValue)
-{
+void Assembler::MoveImmediateToRax(void* aValue) {
   PatchMoveImmediateToRax(Current(), aValue);
   Advance(MoveImmediateBytes);
 }
 
-void
-Assembler::MoveRaxToRegister( int aRegister)
-{
+void Assembler::MoveRaxToRegister( int aRegister) {
   MOZ_RELEASE_ASSERT(aRegister == NormalizeRegister(aRegister));
 
   if (aRegister <= UD_R_RDI) {
@@ -254,9 +221,7 @@ Assembler::MoveRaxToRegister( int aRegister)
   }
 }
 
-void
-Assembler::MoveRegisterToRax( int aRegister)
-{
+void Assembler::MoveRegisterToRax( int aRegister) {
   MOZ_RELEASE_ASSERT(aRegister == NormalizeRegister(aRegister));
 
   if (aRegister <= UD_R_RDI) {
@@ -266,9 +231,8 @@ Assembler::MoveRegisterToRax( int aRegister)
   }
 }
 
-void
-Assembler::ExchangeByteRegisterWithAddressAtRbx( int aRegister)
-{
+void Assembler::ExchangeByteRegisterWithAddressAtRbx(
+     int aRegister) {
   MOZ_RELEASE_ASSERT(aRegister == NormalizeRegister(aRegister));
 
   if (aRegister <= UD_R_RDI) {
@@ -278,15 +242,12 @@ Assembler::ExchangeByteRegisterWithAddressAtRbx( int aRegister)
   }
 }
 
-void
-Assembler::ExchangeByteRbxWithAddressAtRax()
-{
+void Assembler::ExchangeByteRbxWithAddressAtRax() {
   NewInstruction(0x86, 0x18);
 }
 
-  int
-Assembler::NormalizeRegister( int aRegister)
-{
+  int Assembler::NormalizeRegister(
+     int aRegister) {
   if (aRegister >= UD_R_AL && aRegister <= UD_R_R15B) {
     return aRegister - UD_R_AL + UD_R_RAX;
   }
@@ -302,50 +263,40 @@ Assembler::NormalizeRegister( int aRegister)
   return UD_NONE;
 }
 
- bool
-Assembler::CanPatchShortJump(uint8_t* aIp, void* aTarget)
-{
+ bool Assembler::CanPatchShortJump(uint8_t* aIp, void* aTarget) {
   return (aIp + 2 - 128 <= aTarget) && (aIp + 2 + 127 >= aTarget);
 }
 
- void
-Assembler::PatchShortJump(uint8_t* aIp, void* aTarget)
-{
+ void Assembler::PatchShortJump(uint8_t* aIp, void* aTarget) {
   MOZ_RELEASE_ASSERT(CanPatchShortJump(aIp, aTarget));
   aIp[0] = 0xEB;
   aIp[1] = uint8_t(static_cast<uint8_t*>(aTarget) - aIp - 2);
 }
 
- void
-Assembler::PatchJumpClobberRax(uint8_t* aIp, void* aTarget)
-{
+ void Assembler::PatchJumpClobberRax(uint8_t* aIp, void* aTarget) {
   PatchMoveImmediateToRax(aIp, aTarget);
-  aIp[10] = 0x50; 
-  aIp[11] = 0xC3; 
+  aIp[10] = 0x50;  
+  aIp[11] = 0xC3;  
 }
 
- void
-Assembler::PatchClobber(uint8_t* aIp)
-{
-  aIp[0] = 0xCC; 
+ void Assembler::PatchClobber(uint8_t* aIp) {
+  aIp[0] = 0xCC;  
 }
 
-static uint8_t*
-PageStart(uint8_t* aPtr)
-{
+static uint8_t* PageStart(uint8_t* aPtr) {
   static_assert(sizeof(size_t) == sizeof(uintptr_t), "Unsupported Platform");
-  return reinterpret_cast<uint8_t*>(reinterpret_cast<size_t>(aPtr) & ~(PageSize - 1));
+  return reinterpret_cast<uint8_t*>(reinterpret_cast<size_t>(aPtr) &
+                                    ~(PageSize - 1));
 }
 
-void
-UnprotectExecutableMemory(uint8_t* aAddress, size_t aSize)
-{
+void UnprotectExecutableMemory(uint8_t* aAddress, size_t aSize) {
   MOZ_ASSERT(aSize);
   uint8_t* pageStart = PageStart(aAddress);
   uint8_t* pageEnd = PageStart(aAddress + aSize - 1) + PageSize;
-  int ret = mprotect(pageStart, pageEnd - pageStart, PROT_READ | PROT_EXEC | PROT_WRITE);
+  int ret = mprotect(pageStart, pageEnd - pageStart,
+                     PROT_READ | PROT_EXEC | PROT_WRITE);
   MOZ_RELEASE_ASSERT(ret >= 0);
 }
 
-} 
-} 
+}  
+}  

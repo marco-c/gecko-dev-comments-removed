@@ -24,22 +24,20 @@ namespace mozilla {
 
 
 
-class nsHangDetails : public nsIHangDetails
-{
-public:
+class nsHangDetails : public nsIHangDetails {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIHANGDETAILS
 
   explicit nsHangDetails(HangDetails&& aDetails)
-    : mDetails(std::move(aDetails))
-  {}
+      : mDetails(std::move(aDetails)) {}
 
   
   
   
   void Submit();
 
-private:
+ private:
   virtual ~nsHangDetails() {}
 
   HangDetails mDetails;
@@ -53,20 +51,18 @@ private:
 
 
 
-class ProcessHangStackRunnable final : public Runnable
-{
-public:
+class ProcessHangStackRunnable final : public Runnable {
+ public:
   explicit ProcessHangStackRunnable(HangDetails&& aHangDetails)
-    : Runnable("ProcessHangStackRunnable")
-    , mHangDetails(std::move(aHangDetails))
-  {}
+      : Runnable("ProcessHangStackRunnable"),
+        mHangDetails(std::move(aHangDetails)) {}
 
   NS_IMETHOD Run() override;
 
-private:
+ private:
   HangDetails mHangDetails;
 };
 
-} 
+}  
 
-#endif 
+#endif  

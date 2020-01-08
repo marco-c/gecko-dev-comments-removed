@@ -18,10 +18,10 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Atomics.h"
 #include "InputData.h"
-#include "Axis.h"                       
+#include "Axis.h"  
 #include "InputQueue.h"
 #include "APZUtils.h"
-#include "Layers.h"                     
+#include "Layers.h"  
 #include "LayersTypes.h"
 #include "mozilla/gfx/Matrix.h"
 #include "nsIScrollableFrame.h"
@@ -37,7 +37,7 @@ namespace ipc {
 
 class SharedMemoryBasic;
 
-} 
+}  
 
 namespace layers {
 
@@ -50,7 +50,8 @@ class GestureEventListener;
 struct AsyncTransform;
 class AsyncPanZoomAnimation;
 class StackScrollerFlingAnimation;
-template <typename FlingPhysics> class GenericFlingAnimation;
+template <typename FlingPhysics>
+class GenericFlingAnimation;
 class AndroidFlingPhysics;
 class DesktopFlingPhysics;
 class InputBlockState;
@@ -69,13 +70,13 @@ struct KeyboardScrollAction;
 
 
 class PlatformSpecificStateBase {
-public:
+ public:
   virtual ~PlatformSpecificStateBase() = default;
   virtual AndroidSpecificState* AsAndroidSpecificState() { return nullptr; }
   
-  virtual AsyncPanZoomAnimation* CreateFlingAnimation(AsyncPanZoomController& aApzc,
-                                                      const FlingHandoffState& aHandoffState,
-                                                      float aPLPPI);
+  virtual AsyncPanZoomAnimation* CreateFlingAnimation(
+      AsyncPanZoomController& aApzc, const FlingHandoffState& aHandoffState,
+      float aPLPPI);
   virtual UniquePtr<VelocityTracker> CreateVelocityTracker(Axis* aAxis);
 
   static void InitializeGlobalState() {}
@@ -94,15 +95,14 @@ struct AncestorTransform {
 
   AncestorTransform() = default;
 
-  AncestorTransform(const gfx::Matrix4x4& aTransform, bool aTransformIsPerspective) {
+  AncestorTransform(const gfx::Matrix4x4& aTransform,
+                    bool aTransformIsPerspective) {
     (aTransformIsPerspective ? mPerspectiveTransform : mTransform) = aTransform;
   }
 
   AncestorTransform(const gfx::Matrix4x4& aTransform,
                     const gfx::Matrix4x4& aPerspectiveTransform)
-    : mTransform(aTransform)
-    , mPerspectiveTransform(aPerspectiveTransform)
-  {}
+      : mTransform(aTransform), mPerspectiveTransform(aPerspectiveTransform) {}
 
   gfx::Matrix4x4 CombinedTransform() const {
     return mTransform * mPerspectiveTransform;
@@ -117,12 +117,10 @@ struct AncestorTransform {
   }
 
   friend AncestorTransform operator*(const AncestorTransform& aA,
-                                     const AncestorTransform& aB)
-  {
+                                     const AncestorTransform& aB) {
     return AncestorTransform{
-      aA.mTransform * aB.mTransform,
-      aA.mPerspectiveTransform * aB.mPerspectiveTransform
-    };
+        aA.mTransform * aB.mTransform,
+        aA.mPerspectiveTransform * aB.mPerspectiveTransform};
   }
 };
 
@@ -152,9 +150,9 @@ class AsyncPanZoomController {
   typedef mozilla::MonitorAutoLock MonitorAutoLock;
   typedef mozilla::gfx::Matrix4x4 Matrix4x4;
   typedef mozilla::layers::RepaintRequest::ScrollOffsetUpdateType
-    RepaintUpdateType;
+      RepaintUpdateType;
 
-public:
+ public:
   enum GestureBehavior {
     
     
@@ -191,8 +189,7 @@ public:
 
   ScreenCoord GetSecondTapTolerance() const;
 
-  AsyncPanZoomController(LayersId aLayersId,
-                         APZCTreeManager* aTreeManager,
+  AsyncPanZoomController(LayersId aLayersId, APZCTreeManager* aTreeManager,
                          const RefPtr<InputQueue>& aInputQueue,
                          GeckoContentController* aController,
                          GestureBehavior aGestures = DEFAULT_GESTURES);
@@ -263,8 +260,9 @@ public:
 
 
 
-  void NotifyLayersUpdated(const ScrollMetadata& aScrollMetadata, bool aIsFirstPaint,
-                           bool aThisLayerTreeUpdated);
+
+  void NotifyLayersUpdated(const ScrollMetadata& aScrollMetadata,
+                           bool aIsFirstPaint, bool aThisLayerTreeUpdated);
 
   
 
@@ -276,7 +274,8 @@ public:
 
 
 
-  void SetMetricsSharingController(MetricsSharingController* aMetricsSharingController);
+  void SetMetricsSharingController(
+      MetricsSharingController* aMetricsSharingController);
 
   
   
@@ -337,8 +336,7 @@ public:
 
 
   static const ScreenMargin CalculatePendingDisplayPort(
-    const FrameMetrics& aFrameMetrics,
-    const ParentLayerPoint& aVelocity);
+      const FrameMetrics& aFrameMetrics, const ParentLayerPoint& aVelocity);
 
   nsEventStatus HandleDragEvent(const MouseInput& aEvent,
                                 const AsyncDragMetrics& aDragMetrics,
@@ -347,8 +345,9 @@ public:
   
 
 
-  nsEventStatus HandleInputEvent(const InputData& aEvent,
-                                 const ScreenToParentLayerMatrix4x4& aTransformToApzc);
+  nsEventStatus HandleInputEvent(
+      const InputData& aEvent,
+      const ScreenToParentLayerMatrix4x4& aTransformToApzc);
 
   
 
@@ -381,6 +380,7 @@ public:
   void StopAutoscroll();
 
   
+
 
 
   void GetGuid(ScrollableLayerGuid* aGuidOut) const;
@@ -530,15 +530,14 @@ public:
   const FrameMetrics& Metrics() const;
   FrameMetrics& Metrics();
 
-
-private:
+ private:
   
   
   
   
   bool IsContentOfHonouredTargetRightToLeft(bool aHonoursRoot) const;
 
-protected:
+ protected:
   
   virtual ~AsyncPanZoomController();
 
@@ -617,12 +616,10 @@ protected:
 
 
 
-  ParentLayerPoint
-  GetScrollWheelDelta(const ScrollWheelInput& aEvent,
-                      double aDeltaX,
-                      double aDeltaY,
-                      double aMultiplierX,
-                      double aMultiplierY) const;
+  ParentLayerPoint GetScrollWheelDelta(const ScrollWheelInput& aEvent,
+                                       double aDeltaX, double aDeltaY,
+                                       double aMultiplierX,
+                                       double aMultiplierY) const;
 
   
 
@@ -635,8 +632,7 @@ protected:
 
 
   template <typename T>
-  ParentLayerPoint
-  GetScrollWheelDelta(ScrollWheelInput&, T, T, T, T) = delete;
+  ParentLayerPoint GetScrollWheelDelta(ScrollWheelInput&, T, T, T, T) = delete;
 
   
 
@@ -714,8 +710,7 @@ protected:
 
 
 
-  void ScaleWithFocus(float aScale,
-                      const CSSPoint& aFocus);
+  void ScaleWithFocus(float aScale, const CSSPoint& aFocus);
 
   
 
@@ -765,6 +760,7 @@ protected:
   
 
 
+
   void HandlePanningWithTouchAction(double angle);
 
   
@@ -806,8 +802,8 @@ protected:
 
 
 
-  void RequestContentRepaint(RepaintUpdateType aUpdateType =
-                               RepaintUpdateType::eUserAction);
+  void RequestContentRepaint(
+      RepaintUpdateType aUpdateType = RepaintUpdateType::eUserAction);
 
   
 
@@ -859,6 +855,7 @@ protected:
   enum PinchLockMode {
     PINCH_FREE,     
     PINCH_STANDARD, 
+
     PINCH_STICKY,   
   };
 
@@ -892,12 +889,13 @@ protected:
   Atomic<APZCTreeManager*> mTreeManager;
 
   
+
   already_AddRefed<GeckoContentController> GetGeckoContentController() const;
   already_AddRefed<GestureEventListener> GetGestureEventListener() const;
 
   PlatformSpecificStateBase* GetPlatformSpecificState();
 
-protected:
+ protected:
   
   
   ScrollMetadata mScrollMetadata;
@@ -922,9 +920,10 @@ protected:
   
   
   
+  
   mutable RecursiveMutex mRecursiveMutex;
 
-private:
+ private:
   
   
   
@@ -933,6 +932,7 @@ private:
   
   ScrollMetadata mLastContentPaintMetadata;
   FrameMetrics& mLastContentPaintMetrics;  
+                                           
   
   RepaintRequest mLastPaintRequestMetrics;
   
@@ -993,7 +993,7 @@ private:
 
   friend class Axis;
 
-public:
+ public:
   
 
 
@@ -1003,7 +1003,7 @@ public:
 
   template <typename Callable>
   auto CallWithLastContentPaintMetrics(const Callable& callable) const
-    -> decltype(callable(mLastContentPaintMetrics)) {
+      -> decltype(callable(mLastContentPaintMetrics)) {
     RecursiveMutexAutoLock lock(mRecursiveMutex);
     return callable(mLastContentPaintMetrics);
   }
@@ -1015,7 +1015,7 @@ public:
 
 
 
-public:
+ public:
   
 
 
@@ -1048,20 +1048,23 @@ public:
 
 
 
-  ParentLayerPoint GetCurrentAsyncScrollOffset(AsyncTransformConsumer aMode) const;
+  ParentLayerPoint GetCurrentAsyncScrollOffset(
+      AsyncTransformConsumer aMode) const;
 
   
 
 
 
 
-  CSSPoint GetCurrentAsyncScrollOffsetInCssPixels(AsyncTransformConsumer aMode) const;
+  CSSPoint GetCurrentAsyncScrollOffsetInCssPixels(
+      AsyncTransformConsumer aMode) const;
 
   
 
 
 
-  AsyncTransformComponentMatrix GetOverscrollTransform(AsyncTransformConsumer aMode) const;
+  AsyncTransformComponentMatrix GetOverscrollTransform(
+      AsyncTransformConsumer aMode) const;
 
   
 
@@ -1070,7 +1073,8 @@ public:
 
 
 
-  AsyncTransform GetCurrentAsyncViewportTransform(AsyncTransformConsumer aMode) const;
+  AsyncTransform GetCurrentAsyncViewportTransform(
+      AsyncTransformConsumer aMode) const;
 
   
 
@@ -1084,22 +1088,25 @@ public:
 
 
 
-  AsyncTransform GetCurrentAsyncTransformForFixedAdjustment(AsyncTransformConsumer aMode) const;
+  AsyncTransform GetCurrentAsyncTransformForFixedAdjustment(
+      AsyncTransformConsumer aMode) const;
 
   
 
 
 
-  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(AsyncTransformConsumer aMode) const;
+  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(
+      AsyncTransformConsumer aMode) const;
 
   
 
 
 
 
-  LayoutDeviceToParentLayerScale GetCurrentPinchZoomScale(AsyncTransformConsumer aMode) const;
+  LayoutDeviceToParentLayerScale GetCurrentPinchZoomScale(
+      AsyncTransformConsumer aMode) const;
 
-private:
+ private:
   
 
 
@@ -1124,7 +1131,7 @@ private:
   CSSPoint GetEffectiveScrollOffset(AsyncTransformConsumer aMode) const;
   CSSToParentLayerScale2D GetEffectiveZoom(AsyncTransformConsumer aMode) const;
 
-private:
+ private:
   friend class AutoApplyAsyncTestAttributes;
 
   
@@ -1150,34 +1157,37 @@ private:
 
 
 
-protected:
+ protected:
   enum PanZoomState {
-    NOTHING,                  
-    FLING,                    
-    TOUCHING,                 
+    NOTHING,  
+    FLING,    
+    TOUCHING, 
 
-    PANNING,                  
-    PANNING_LOCKED_X,         
-    PANNING_LOCKED_Y,         
+    PANNING,          
+    PANNING_LOCKED_X, 
 
-    PAN_MOMENTUM,             
+    PANNING_LOCKED_Y, 
 
-    PINCHING,                 
-    ANIMATING_ZOOM,           
-    OVERSCROLL_ANIMATION,     
+    PAN_MOMENTUM, 
 
-    SMOOTH_SCROLL,            
 
-    WHEEL_SCROLL,             
-    KEYBOARD_SCROLL,          
-    AUTOSCROLL,               
-    SCROLLBAR_DRAG            
+    PINCHING, 
+    ANIMATING_ZOOM,       
+    OVERSCROLL_ANIMATION, 
+
+    SMOOTH_SCROLL,        
+
+    WHEEL_SCROLL,    
+    KEYBOARD_SCROLL, 
+
+    AUTOSCROLL,      
+    SCROLLBAR_DRAG   
   };
   
   
   PanZoomState mState;
 
-private:
+ private:
   friend class StateChangeNotificationBlocker;
   
 
@@ -1196,7 +1206,8 @@ private:
 
 
 
-  void DispatchStateChangeNotification(PanZoomState aOldState, PanZoomState aNewState);
+  void DispatchStateChangeNotification(PanZoomState aOldState,
+                                       PanZoomState aNewState);
   
 
 
@@ -1207,7 +1218,7 @@ private:
 
 
 
-public:
+ public:
   
 
 
@@ -1220,7 +1231,8 @@ public:
 
 
 
-  bool ArePointerEventsConsumable(TouchBlockState* aBlock, const MultiTouchInput& aInput);
+  bool ArePointerEventsConsumable(TouchBlockState* aBlock,
+                                  const MultiTouchInput& aInput);
 
   
 
@@ -1230,9 +1242,10 @@ public:
   
 
 
+
   const RefPtr<InputQueue>& GetInputQueue() const;
 
-private:
+ private:
   void CancelAnimationAndGestureState();
 
   RefPtr<InputQueue> mInputQueue;
@@ -1242,13 +1255,13 @@ private:
 
   PanGestureBlockState* GetCurrentPanGestureBlock() const;
 
-private:
+ private:
   
 
 
 
 
-public:
+ public:
   
 
 
@@ -1260,12 +1273,14 @@ public:
 
   ParentLayerPoint AttemptFling(const FlingHandoffState& aHandoffState);
 
-  ParentLayerPoint AdjustHandoffVelocityForOverscrollBehavior(ParentLayerPoint& aHandoffVelocity) const;
+  ParentLayerPoint AdjustHandoffVelocityForOverscrollBehavior(
+      ParentLayerPoint& aHandoffVelocity) const;
 
-private:
+ private:
   friend class StackScrollerFlingAnimation;
   friend class AutoscrollAnimation;
-  template <typename FlingPhysics> friend class GenericFlingAnimation;
+  template <typename FlingPhysics>
+  friend class GenericFlingAnimation;
   friend class AndroidFlingPhysics;
   friend class DesktopFlingPhysics;
   friend class OverscrollAnimation;
@@ -1290,9 +1305,10 @@ private:
   
   
   
-  void HandleFlingOverscroll(const ParentLayerPoint& aVelocity,
-                             const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
-                             const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
+  void HandleFlingOverscroll(
+      const ParentLayerPoint& aVelocity,
+      const RefPtr<const OverscrollHandoffChain>& aOverscrollHandoffChain,
+      const RefPtr<const AsyncPanZoomController>& aScrolledApzc);
 
   void HandleSmoothScrollOverscroll(const ParentLayerPoint& aVelocity);
 
@@ -1309,21 +1325,18 @@ private:
 
   
   
-  float ComputePLPPI(ParentLayerPoint aPoint, ParentLayerPoint aDirection) const;
+  float ComputePLPPI(ParentLayerPoint aPoint,
+                     ParentLayerPoint aDirection) const;
 
   
 
 
 
 
-public:
-  void SetParent(AsyncPanZoomController* aParent) {
-    mParent = aParent;
-  }
+ public:
+  void SetParent(AsyncPanZoomController* aParent) { mParent = aParent; }
 
-  AsyncPanZoomController* GetParent() const {
-    return mParent;
-  }
+  AsyncPanZoomController* GetParent() const { return mParent; }
 
   
 
@@ -1342,18 +1355,17 @@ public:
     return Metrics().IsRootContent();
   }
 
-private:
+ private:
   
   
 
   RefPtr<AsyncPanZoomController> mParent;
 
-
   
 
 
 
-public:
+ public:
   ScrollableLayerGuid::ViewID GetScrollHandoffParentId() const {
     return mScrollMetadata.GetScrollParentId();
   }
@@ -1380,8 +1392,7 @@ public:
 
 
 
-  bool AttemptScroll(ParentLayerPoint& aStartPoint,
-                     ParentLayerPoint& aEndPoint,
+  bool AttemptScroll(ParentLayerPoint& aStartPoint, ParentLayerPoint& aEndPoint,
                      OverscrollHandoffState& aOverscrollHandoffState);
 
   void FlushRepaintForOverscrollHandoff();
@@ -1413,7 +1424,7 @@ public:
 
   RefPtr<const OverscrollHandoffChain> BuildOverscrollHandoffChain();
 
-private:
+ private:
   
 
 
@@ -1446,7 +1457,7 @@ private:
 
 
 
-public:
+ public:
   void SetAncestorTransform(const AncestorTransform& aAncestorTransform) {
     mAncestorTransform = aAncestorTransform;
   }
@@ -1474,18 +1485,17 @@ public:
 
   bool IsInPanningState() const;
 
-private:
+ private:
   
 
 
   AncestorTransform mAncestorTransform;
 
-
   
 
 
 
-private:
+ private:
   
 
   const uint32_t mAPZCId;
@@ -1504,19 +1514,15 @@ private:
 
   void ShareCompositorFrameMetrics();
 
-
   
 
 
 
-public:
+ public:
   
 
 
-  bool TestHasAsyncKeyScrolled() const
-  {
-    return mTestHasAsyncKeyScrolled;
-  }
+  bool TestHasAsyncKeyScrolled() const { return mTestHasAsyncKeyScrolled; }
 
   
 
@@ -1527,22 +1533,17 @@ public:
 
   void SetTestAsyncZoom(const LayerToParentLayerScale& aZoom);
 
-  void MarkAsyncTransformAppliedToContent()
-  {
+  void MarkAsyncTransformAppliedToContent() {
     mAsyncTransformAppliedToContent = true;
   }
 
-  bool GetAsyncTransformAppliedToContent() const
-  {
+  bool GetAsyncTransformAppliedToContent() const {
     return mAsyncTransformAppliedToContent;
   }
 
-  LayersId GetLayersId() const
-  {
-    return mLayersId;
-  }
+  LayersId GetLayersId() const { return mLayersId; }
 
-private:
+ private:
   
   CSSPoint mTestAsyncScrollOffset;
   
@@ -1557,7 +1558,7 @@ private:
 
 
 
-private:
+ private:
   
   void UpdateCheckerboardEvent(const MutexAutoLock& aProofOfLock,
                                uint32_t aMagnitude);
@@ -1572,7 +1573,6 @@ private:
   
   
   PotentialCheckerboardDurationTracker mPotentialCheckerboardTracker;
-
 
   
 
@@ -1610,7 +1610,7 @@ private:
                                     nsIScrollableFrame::ScrollUnit aUnit);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

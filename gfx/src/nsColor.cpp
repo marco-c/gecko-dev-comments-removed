@@ -4,17 +4,17 @@
 
 
 
-#include "mozilla/ArrayUtils.h"         
-#include "mozilla/mozalloc.h"           
+#include "mozilla/ArrayUtils.h"  
+#include "mozilla/mozalloc.h"    
 #include "mozilla/MathAlgorithms.h"
 
 #include "nsColor.h"
-#include <sys/types.h>                  
-#include "nsColorNames.h"               
-#include "nsDebug.h"                    
+#include <sys/types.h>     
+#include "nsColorNames.h"  
+#include "nsDebug.h"       
 #include "nsStaticNameTable.h"
-#include "nsString.h"                   
-#include "nscore.h"                     
+#include "nsString.h"  
+#include "nscore.h"    
 
 using namespace mozilla;
 
@@ -37,25 +37,23 @@ static const nscolor kColors[] = {
 
 static nsStaticCaseInsensitiveNameTable* gColorTable = nullptr;
 
-void nsColorNames::AddRefTable(void) 
-{
+void nsColorNames::AddRefTable(void) {
   NS_ASSERTION(!gColorTable, "pre existing array!");
   if (!gColorTable) {
     gColorTable =
-      new nsStaticCaseInsensitiveNameTable(kColorNames, eColorName_COUNT);
+        new nsStaticCaseInsensitiveNameTable(kColorNames, eColorName_COUNT);
   }
 }
 
-void nsColorNames::ReleaseTable(void)
-{
+void nsColorNames::ReleaseTable(void) {
   if (gColorTable) {
     delete gColorTable;
     gColorTable = nullptr;
   }
 }
 
-static int ComponentValue(const char16_t* aColorSpec, int aLen, int color, int dpc)
-{
+static int ComponentValue(const char16_t* aColorSpec, int aLen, int color,
+                          int dpc) {
   int component = 0;
   int index = (color * dpc);
   if (2 < dpc) {
@@ -65,22 +63,18 @@ static int ComponentValue(const char16_t* aColorSpec, int aLen, int color, int d
     char16_t ch = ((index < aLen) ? aColorSpec[index++] : '0');
     if (('0' <= ch) && (ch <= '9')) {
       component = (component * 16) + (ch - '0');
-    } else if ((('a' <= ch) && (ch <= 'f')) || 
-               (('A' <= ch) && (ch <= 'F'))) {
+    } else if ((('a' <= ch) && (ch <= 'f')) || (('A' <= ch) && (ch <= 'F'))) {
       
       component = (component * 16) + (ch & 7) + 9;
-    }
-    else {  
+    } else {  
       component = (component * 16);
     }
   }
   return component;
 }
 
-bool
-NS_HexToRGBA(const nsAString& aColorSpec, nsHexColorType aType,
-             nscolor* aResult)
-{
+bool NS_HexToRGBA(const nsAString& aColorSpec, nsHexColorType aType,
+                  nscolor* aResult) {
   const char16_t* buffer = aColorSpec.BeginReading();
 
   int nameLen = aColorSpec.Length();
@@ -96,8 +90,7 @@ NS_HexToRGBA(const nsAString& aColorSpec, nsHexColorType aType,
   
   for (int i = 0; i < nameLen; i++) {
     char16_t ch = buffer[i];
-    if (((ch >= '0') && (ch <= '9')) ||
-        ((ch >= 'a') && (ch <= 'f')) ||
+    if (((ch >= '0') && (ch <= '9')) || ((ch >= 'a') && (ch <= 'f')) ||
         ((ch >= 'A') && (ch <= 'F'))) {
       
       continue;
@@ -136,8 +129,7 @@ NS_HexToRGBA(const nsAString& aColorSpec, nsHexColorType aType,
 
 
 
-bool NS_LooseHexToRGB(const nsString& aColorSpec, nscolor* aResult)
-{
+bool NS_LooseHexToRGB(const nsString& aColorSpec, nscolor* aResult) {
   if (aColorSpec.EqualsLiteral("transparent")) {
     return false;
   }
@@ -173,8 +165,7 @@ bool NS_LooseHexToRGB(const nsString& aColorSpec, nscolor* aResult)
       MOZ_ASSERT(c * dpc < nameLen,
                  "should not pass end of string while newdpc > 2");
       char16_t ch = colorSpec[c * dpc];
-      if (('1' <= ch && ch <= '9') ||
-          ('A' <= ch && ch <= 'F') ||
+      if (('1' <= ch && ch <= '9') || ('A' <= ch && ch <= 'F') ||
           ('a' <= ch && ch <= 'f')) {
         haveNonzero = true;
         break;
@@ -200,8 +191,7 @@ bool NS_LooseHexToRGB(const nsString& aColorSpec, nscolor* aResult)
   return true;
 }
 
-bool NS_ColorNameToRGB(const nsAString& aColorName, nscolor* aResult)
-{
+bool NS_ColorNameToRGB(const nsAString& aColorName, nscolor* aResult) {
   if (!gColorTable) return false;
 
   int32_t id = gColorTable->Lookup(aColorName);
@@ -219,12 +209,10 @@ bool NS_ColorNameToRGB(const nsAString& aColorName, nscolor* aResult)
 
 
 
-#define MOZ_BLEND(target, bg, fg, fgalpha)       \
-  FAST_DIVIDE_BY_255(target, (bg)*(255-fgalpha) + (fg)*(fgalpha))
+#define MOZ_BLEND(target, bg, fg, fgalpha) \
+  FAST_DIVIDE_BY_255(target, (bg) * (255 - fgalpha) + (fg) * (fgalpha))
 
-nscolor
-NS_ComposeColors(nscolor aBG, nscolor aFG)
-{
+nscolor NS_ComposeColors(nscolor aBG, nscolor aFG) {
   
   int r, g, b, a;
 
@@ -233,7 +221,7 @@ NS_ComposeColors(nscolor aBG, nscolor aFG)
 
   
   
-  FAST_DIVIDE_BY_255(a, bgAlpha*(255-fgAlpha));
+  FAST_DIVIDE_BY_255(a, bgAlpha * (255 - fgAlpha));
   a = fgAlpha + a;
   int blendAlpha;
   if (a == 0) {
@@ -241,7 +229,7 @@ NS_ComposeColors(nscolor aBG, nscolor aFG)
     
     blendAlpha = 255;
   } else {
-    blendAlpha = (fgAlpha*255)/a;
+    blendAlpha = (fgAlpha * 255) / a;
   }
   MOZ_BLEND(r, NS_GET_R(aBG), NS_GET_R(aFG), blendAlpha);
   MOZ_BLEND(g, NS_GET_G(aBG), NS_GET_G(aFG), blendAlpha);
@@ -254,45 +242,35 @@ NS_ComposeColors(nscolor aBG, nscolor aFG)
 
 
 
-static float
-HSL_HueToRGB(float m1, float m2, float h)
-{
-  if (h < 0.0f)
-    h += 1.0f;
-  if (h > 1.0f)
-    h -= 1.0f;
-  if (h < (float)(1.0/6.0))
-    return m1 + (m2 - m1)*h*6.0f;
-  if (h < (float)(1.0/2.0))
-    return m2;
-  if (h < (float)(2.0/3.0))
-    return m1 + (m2 - m1)*((float)(2.0/3.0) - h)*6.0f;
-  return m1;      
+static float HSL_HueToRGB(float m1, float m2, float h) {
+  if (h < 0.0f) h += 1.0f;
+  if (h > 1.0f) h -= 1.0f;
+  if (h < (float)(1.0 / 6.0)) return m1 + (m2 - m1) * h * 6.0f;
+  if (h < (float)(1.0 / 2.0)) return m2;
+  if (h < (float)(2.0 / 3.0))
+    return m1 + (m2 - m1) * ((float)(2.0 / 3.0) - h) * 6.0f;
+  return m1;
 }
 
 
-nscolor
-NS_HSL2RGB(float h, float s, float l)
-{
+nscolor NS_HSL2RGB(float h, float s, float l) {
   uint8_t r, g, b;
   float m1, m2;
   if (l <= 0.5f) {
-    m2 = l*(s+1);
+    m2 = l * (s + 1);
   } else {
-    m2 = l + s - l*s;
+    m2 = l + s - l * s;
   }
-  m1 = l*2 - m2;
+  m1 = l * 2 - m2;
   
   
-  r = ClampColor(255 * HSL_HueToRGB(m1, m2, h + 1.0f/3.0f));
+  r = ClampColor(255 * HSL_HueToRGB(m1, m2, h + 1.0f / 3.0f));
   g = ClampColor(255 * HSL_HueToRGB(m1, m2, h));
-  b = ClampColor(255 * HSL_HueToRGB(m1, m2, h - 1.0f/3.0f));
-  return NS_RGB(r, g, b);  
+  b = ClampColor(255 * HSL_HueToRGB(m1, m2, h - 1.0f / 3.0f));
+  return NS_RGB(r, g, b);
 }
 
-const char*
-NS_RGBToColorName(nscolor aColor)
-{
+const char* NS_RGBToColorName(nscolor aColor) {
   for (size_t idx = 0; idx < ArrayLength(kColors); ++idx) {
     if (kColors[idx] == aColor) {
       return kColorNames[idx];

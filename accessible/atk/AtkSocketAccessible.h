@@ -12,9 +12,9 @@
 
 
 #ifdef __ATK_H__
-extern "C" typedef void (*AtkSocketEmbedType) (AtkSocket*, gchar*);
+extern "C" typedef void (*AtkSocketEmbedType)(AtkSocket*, gchar*);
 #else
-extern "C" typedef void (*AtkSocketEmbedType) (void*, void*);
+extern "C" typedef void (*AtkSocketEmbedType)(void*, void*);
 #endif
 
 namespace mozilla {
@@ -24,10 +24,8 @@ namespace a11y {
 
 
 
-class AtkSocketAccessible : public AccessibleWrap
-{
-public:
-
+class AtkSocketAccessible : public AccessibleWrap {
+ public:
   
   static AtkSocketEmbedType g_atk_socket_embed;
 #ifdef __ATK_H__
@@ -50,7 +48,7 @@ public:
   virtual void GetNativeInterface(void** aOutAccessible) override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

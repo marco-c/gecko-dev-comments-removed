@@ -18,9 +18,8 @@ class MIDIPortInfo;
 
 
 
-class MIDIPortInterface
-{
-public:
+class MIDIPortInterface {
+ public:
   MIDIPortInterface(const MIDIPortInfo& aPortInfo, bool aSysexEnabled);
   const nsString& Id() const { return mId; }
   const nsString& Name() const { return mName; }
@@ -32,7 +31,8 @@ public:
   MIDIPortConnectionState ConnectionState() const { return mConnectionState; }
   bool IsShutdown() const { return mShuttingDown; }
   virtual void Shutdown();
-protected:
+
+ protected:
   virtual ~MIDIPortInterface();
   nsString mId;
   nsString mName;
@@ -45,7 +45,7 @@ protected:
   bool mShuttingDown;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

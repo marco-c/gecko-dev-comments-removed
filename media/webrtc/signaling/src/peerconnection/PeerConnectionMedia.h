@@ -25,7 +25,7 @@ class PeerIdentity;
 namespace dom {
 class MediaStreamTrack;
 }
-}
+}  
 
 #include "nriceresolver.h"
 #include "nricemediastream.h"
@@ -46,7 +46,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   ~PeerConnectionMedia();
 
  public:
-  explicit PeerConnectionMedia(PeerConnectionImpl *parent);
+  explicit PeerConnectionMedia(PeerConnectionImpl* parent);
 
   nsresult Init(const dom::RTCConfiguration& aConfiguration);
   
@@ -78,19 +78,17 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   nsresult UpdateMediaPipelines();
 
   
-  nsresult AddTransceiver(
-      JsepTransceiver* aJsepTransceiver,
-      dom::MediaStreamTrack& aReceiveTrack,
-      dom::MediaStreamTrack* aSendTrack,
-      RefPtr<TransceiverImpl>* aTransceiverImpl);
+  nsresult AddTransceiver(JsepTransceiver* aJsepTransceiver,
+                          dom::MediaStreamTrack& aReceiveTrack,
+                          dom::MediaStreamTrack* aSendTrack,
+                          RefPtr<TransceiverImpl>* aTransceiverImpl);
 
   void GetTransmitPipelinesMatching(
       const dom::MediaStreamTrack* aTrack,
       nsTArray<RefPtr<MediaPipeline>>* aPipelines);
 
-  void GetReceivePipelinesMatching(
-      const dom::MediaStreamTrack* aTrack,
-      nsTArray<RefPtr<MediaPipeline>>* aPipelines);
+  void GetReceivePipelinesMatching(const dom::MediaStreamTrack* aTrack,
+                                   nsTArray<RefPtr<MediaPipeline>>* aPipelines);
 
   std::string GetTransportIdMatching(const dom::MediaStreamTrack& aTrack) const;
 
@@ -121,8 +119,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   
   
-  std::vector<RefPtr<TransceiverImpl>>& GetTransceivers()
-  {
+  std::vector<RefPtr<TransceiverImpl>>& GetTransceivers() {
     return mTransceivers;
   }
 
@@ -141,8 +138,8 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   
   sigslot::signal2<const std::string&, const std::string&> SignalCandidate;
   
-  sigslot::signal5<const std::string&, uint16_t,
-                   const std::string&, uint16_t, const std::string&>
+  sigslot::signal5<const std::string&, uint16_t, const std::string&, uint16_t,
+                   const std::string&>
       SignalUpdateDefaultCandidate;
 
   
@@ -152,16 +149,14 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   RefPtr<MediaTransportHandler> mTransportHandler;
 
  private:
-  void InitLocalAddrs(); 
+  void InitLocalAddrs();  
   nsresult InitProxy();
   class ProtocolProxyQueryHandler : public nsIProtocolProxyCallback {
    public:
-    explicit ProtocolProxyQueryHandler(PeerConnectionMedia *pcm) :
-      pcm_(pcm) {}
+    explicit ProtocolProxyQueryHandler(PeerConnectionMedia* pcm) : pcm_(pcm) {}
 
-    NS_IMETHOD OnProxyAvailable(nsICancelable *request,
-                                nsIChannel *aChannel,
-                                nsIProxyInfo *proxyinfo,
+    NS_IMETHOD OnProxyAvailable(nsICancelable* request, nsIChannel* aChannel,
+                                nsIProxyInfo* proxyinfo,
                                 nsresult result) override;
     NS_DECL_ISUPPORTS
 
@@ -173,10 +168,10 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
 
   class StunAddrsHandler : public net::StunAddrsListener {
    public:
-    explicit StunAddrsHandler(PeerConnectionMedia *pcm) :
-      pcm_(pcm) {}
+    explicit StunAddrsHandler(PeerConnectionMedia* pcm) : pcm_(pcm) {}
     void OnStunAddrsAvailable(
         const mozilla::net::NrIceStunAddrArray& addrs) override;
+
    private:
     RefPtr<PeerConnectionMedia> pcm_;
     virtual ~StunAddrsHandler() {}
@@ -190,16 +185,13 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   void SelfDestruct_m();
 
   
-  void UpdateTransport(const JsepTransceiver& aTransceiver,
-                       bool aForceIceTcp);
+  void UpdateTransport(const JsepTransceiver& aTransceiver, bool aForceIceTcp);
 
   void GatherIfReady();
   void FlushIceCtxOperationQueueIfReady();
   void PerformOrEnqueueIceCtxOperation(nsIRunnable* runnable);
   void EnsureIceGathering_s(bool aDefaultRouteOnly);
-  void StartIceChecks_s(bool aIsControlling,
-                        bool aIsOfferer,
-                        bool aIsIceLite,
+  void StartIceChecks_s(bool aIsControlling, bool aIsOfferer, bool aIsIceLite,
                         const std::vector<std::string>& aIceOptionsList);
 
   bool GetPrefDefaultAddressOnly() const;
@@ -224,7 +216,7 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   }
 
   
-  PeerConnectionImpl *mParent;
+  PeerConnectionImpl* mParent;
   
   std::string mParentHandle;
   std::string mParentName;
@@ -264,6 +256,6 @@ class PeerConnectionMedia : public sigslot::has_slots<> {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PeerConnectionMedia)
 };
 
-} 
+}  
 
 #endif

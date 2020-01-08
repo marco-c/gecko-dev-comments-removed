@@ -19,44 +19,40 @@ namespace js {
     AutoNoteSingleThreadedRegion::count(0);
 
 template <AllowedHelperThread Helper>
-static inline bool
-OnHelperThread()
-{
-    if (Helper == AllowedHelperThread::IonCompile || Helper == AllowedHelperThread::GCTaskOrIonCompile) {
-        if (CurrentThreadIsIonCompiling()) {
-            return true;
-        }
+static inline bool OnHelperThread() {
+  if (Helper == AllowedHelperThread::IonCompile ||
+      Helper == AllowedHelperThread::GCTaskOrIonCompile) {
+    if (CurrentThreadIsIonCompiling()) {
+      return true;
     }
+  }
 
-    if (Helper == AllowedHelperThread::GCTask || Helper == AllowedHelperThread::GCTaskOrIonCompile) {
-        if (TlsContext.get()->performingGC) {
-            return true;
-        }
+  if (Helper == AllowedHelperThread::GCTask ||
+      Helper == AllowedHelperThread::GCTaskOrIonCompile) {
+    if (TlsContext.get()->performingGC) {
+      return true;
     }
+  }
 
-    return false;
+  return false;
 }
 
-void
-CheckThreadLocal::check() const
-{
-    JSContext* cx = TlsContext.get();
-    MOZ_ASSERT(cx);
-    MOZ_ASSERT_IF(cx->isMainThreadContext(),
-                  CurrentThreadCanAccessRuntime(cx->runtime()));
-    MOZ_ASSERT(id == ThisThread::GetId());
+void CheckThreadLocal::check() const {
+  JSContext* cx = TlsContext.get();
+  MOZ_ASSERT(cx);
+  MOZ_ASSERT_IF(cx->isMainThreadContext(),
+                CurrentThreadCanAccessRuntime(cx->runtime()));
+  MOZ_ASSERT(id == ThisThread::GetId());
 }
 
 template <AllowedHelperThread Helper>
-void
-CheckMainThread<Helper>::check() const
-{
-    if (OnHelperThread<Helper>()) {
-        return;
-    }
+void CheckMainThread<Helper>::check() const {
+  if (OnHelperThread<Helper>()) {
+    return;
+  }
 
-    JSContext* cx = TlsContext.get();
-    MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
+  JSContext* cx = TlsContext.get();
+  MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
 }
 
 template class CheckMainThread<AllowedHelperThread::None>;
@@ -64,21 +60,19 @@ template class CheckMainThread<AllowedHelperThread::GCTask>;
 template class CheckMainThread<AllowedHelperThread::IonCompile>;
 
 template <AllowedHelperThread Helper>
-void
-CheckZone<Helper>::check() const
-{
-    if (OnHelperThread<Helper>()) {
-        return;
-    }
+void CheckZone<Helper>::check() const {
+  if (OnHelperThread<Helper>()) {
+    return;
+  }
 
-    if (zone->usedByHelperThread()) {
-        
-        MOZ_ASSERT(zone->ownedByCurrentHelperThread());
-    } else {
-        
-        
-        MOZ_ASSERT(CurrentThreadCanAccessRuntime(TlsContext.get()->runtime()));
-    }
+  if (zone->usedByHelperThread()) {
+    
+    MOZ_ASSERT(zone->ownedByCurrentHelperThread());
+  } else {
+    
+    
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(TlsContext.get()->runtime()));
+  }
 }
 
 template class CheckZone<AllowedHelperThread::None>;
@@ -87,58 +81,58 @@ template class CheckZone<AllowedHelperThread::IonCompile>;
 template class CheckZone<AllowedHelperThread::GCTaskOrIonCompile>;
 
 template <GlobalLock Lock, AllowedHelperThread Helper>
-void
-CheckGlobalLock<Lock, Helper>::check() const
-{
-    if (OnHelperThread<Helper>()) {
-        return;
-    }
+void CheckGlobalLock<Lock, Helper>::check() const {
+  if (OnHelperThread<Helper>()) {
+    return;
+  }
 
-    switch (Lock) {
-      case GlobalLock::GCLock:
-        MOZ_ASSERT(TlsContext.get()->runtime()->gc.currentThreadHasLockedGC());
-        break;
-      case GlobalLock::ScriptDataLock:
-        MOZ_ASSERT(TlsContext.get()->runtime()->currentThreadHasScriptDataAccess());
-        break;
-      case GlobalLock::HelperThreadLock:
-        MOZ_ASSERT(HelperThreadState().isLockedByCurrentThread());
-        break;
-    }
+  switch (Lock) {
+    case GlobalLock::GCLock:
+      MOZ_ASSERT(TlsContext.get()->runtime()->gc.currentThreadHasLockedGC());
+      break;
+    case GlobalLock::ScriptDataLock:
+      MOZ_ASSERT(
+          TlsContext.get()->runtime()->currentThreadHasScriptDataAccess());
+      break;
+    case GlobalLock::HelperThreadLock:
+      MOZ_ASSERT(HelperThreadState().isLockedByCurrentThread());
+      break;
+  }
 }
 
 template class CheckGlobalLock<GlobalLock::GCLock, AllowedHelperThread::None>;
-template class CheckGlobalLock<GlobalLock::ScriptDataLock, AllowedHelperThread::None>;
-template class CheckGlobalLock<GlobalLock::HelperThreadLock, AllowedHelperThread::None>;
+template class CheckGlobalLock<GlobalLock::ScriptDataLock,
+                               AllowedHelperThread::None>;
+template class CheckGlobalLock<GlobalLock::HelperThreadLock,
+                               AllowedHelperThread::None>;
 
 template <AllowedHelperThread Helper>
-void
-CheckArenaListAccess<Helper>::check() const
-{
-    MOZ_ASSERT(zone);
+void CheckArenaListAccess<Helper>::check() const {
+  MOZ_ASSERT(zone);
 
-    if (OnHelperThread<Helper>()) {
-        return;
+  if (OnHelperThread<Helper>()) {
+    return;
+  }
+
+  JSRuntime* rt = TlsContext.get()->runtime();
+  if (zone->isAtomsZone()) {
+    
+    
+    if (rt->currentThreadHasAtomsTableAccess()) {
+      return;
     }
 
-    JSRuntime* rt = TlsContext.get()->runtime();
-    if (zone->isAtomsZone()) {
-        
-        
-        if (rt->currentThreadHasAtomsTableAccess()) {
-            return;
-        }
+    
+    MOZ_ASSERT_IF(rt->isOffThreadParseRunning(),
+                  rt->gc.currentThreadHasLockedGC());
+    return;
+  }
 
-        
-        MOZ_ASSERT_IF(rt->isOffThreadParseRunning(), rt->gc.currentThreadHasLockedGC());
-        return;
-    }
-
-    CheckZone<AllowedHelperThread::None>::check();
+  CheckZone<AllowedHelperThread::None>::check();
 }
 
 template class CheckArenaListAccess<AllowedHelperThread::GCTask>;
 
-#endif 
+#endif  
 
-} 
+}  

@@ -14,12 +14,11 @@
 namespace IPC {
 
 template <>
-struct ParamTraits<mozilla::dom::FileMode> :
-  public ContiguousEnumSerializer<mozilla::dom::FileMode,
-                                  mozilla::dom::FileMode::Readonly,
-                                  mozilla::dom::FileMode::EndGuard_>
-{ };
+struct ParamTraits<mozilla::dom::FileMode>
+    : public ContiguousEnumSerializer<mozilla::dom::FileMode,
+                                      mozilla::dom::FileMode::Readonly,
+                                      mozilla::dom::FileMode::EndGuard_> {};
 
-} 
+}  
 
-#endif 
+#endif  

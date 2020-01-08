@@ -22,30 +22,30 @@
 #define f_frsize f_bsize
 #else
 #include "sys/statvfs.h"
-#endif 
+#endif  
 #if !defined(ANDROID)
 #include "sys/wait.h"
 #include <spawn.h>
-#endif 
-#endif 
+#endif  
+#endif  
 
 #if defined(XP_LINUX)
 #include <linux/fadvise.h>
-#endif 
+#endif  
 
 #if defined(XP_MACOSX)
 #include "copyfile.h"
-#endif 
+#endif  
 
 #if defined(XP_WIN)
 #include <windows.h>
 #include <accctrl.h>
 
 #ifndef PATH_MAX
-#  define PATH_MAX MAX_PATH
+#define PATH_MAX MAX_PATH
 #endif
 
-#endif 
+#endif  
 
 #include "jsapi.h"
 #include "jsfriendapi.h"
@@ -76,11 +76,10 @@
 #include "nsIOSFileConstantsService.h"
 #include "nsZipArchive.h"
 
-#if defined(__DragonFly__) || defined(__FreeBSD__) \
-  || defined(__NetBSD__) || defined(__OpenBSD__)
+#if defined(__DragonFly__) || defined(__FreeBSD__) || defined(__NetBSD__) || \
+    defined(__OpenBSD__)
 #define __dd_fd dd_fd
 #endif
-
 
 
 
@@ -93,12 +92,11 @@ namespace {
 
 StaticRefPtr<OSFileConstantsService> gInstance;
 
-} 
+}  
 
-struct
-OSFileConstantsService::Paths
-{
+struct OSFileConstantsService::Paths {
   
+
 
 
   nsString libDir;
@@ -106,8 +104,7 @@ OSFileConstantsService::Paths
   nsString profileDir;
   nsString localProfileDir;
 
-  Paths()
-  {
+  Paths() {
     libDir.SetIsVoid(true);
     tmpDir.SetIsVoid(true);
     profileDir.SetIsVoid(true);
@@ -122,8 +119,7 @@ OSFileConstantsService::Paths
 
 
 
-nsresult GetPathToSpecialDir(const char *aKey, nsString& aOutPath)
-{
+nsresult GetPathToSpecialDir(const char *aKey, nsString &aOutPath) {
   nsCOMPtr<nsIFile> file;
   nsresult rv = NS_GetSpecialDirectory(aKey, getter_AddRefs(file));
   if (NS_FAILED(rv) || !file) {
@@ -144,21 +140,21 @@ nsresult GetPathToSpecialDir(const char *aKey, nsString& aOutPath)
 
 
 NS_IMETHODIMP
-OSFileConstantsService::Observe(nsISupports*,
-                                const char* aTopic,
-                                const char16_t*)
-{
+OSFileConstantsService::Observe(nsISupports *, const char *aTopic,
+                                const char16_t *) {
   if (!mInitialized) {
     
     
     return NS_OK;
   }
 
-  nsresult rv = GetPathToSpecialDir(NS_APP_USER_PROFILE_50_DIR, mPaths->profileDir);
+  nsresult rv =
+      GetPathToSpecialDir(NS_APP_USER_PROFILE_50_DIR, mPaths->profileDir);
   if (NS_FAILED(rv)) {
     return rv;
   }
-  rv = GetPathToSpecialDir(NS_APP_USER_PROFILE_LOCAL_50_DIR, mPaths->localProfileDir);
+  rv = GetPathToSpecialDir(NS_APP_USER_PROFILE_LOCAL_50_DIR,
+                           mPaths->localProfileDir);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -170,9 +166,7 @@ OSFileConstantsService::Observe(nsISupports*,
 
 
 
-nsresult
-OSFileConstantsService::InitOSFileConstants()
-{
+nsresult OSFileConstantsService::InitOSFileConstants() {
   MOZ_ASSERT(NS_IsMainThread());
   if (mInitialized) {
     return NS_OK;
@@ -182,7 +176,8 @@ OSFileConstantsService::InitOSFileConstants()
 
   
   nsCOMPtr<nsIFile> file;
-  nsresult rv = NS_GetSpecialDirectory(NS_XPCOM_LIBRARY_FILE, getter_AddRefs(file));
+  nsresult rv =
+      NS_GetSpecialDirectory(NS_XPCOM_LIBRARY_FILE, getter_AddRefs(file));
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -203,13 +198,15 @@ OSFileConstantsService::InitOSFileConstants()
   
   rv = GetPathToSpecialDir(NS_APP_USER_PROFILE_50_DIR, paths->profileDir);
   if (NS_SUCCEEDED(rv)) {
-    rv = GetPathToSpecialDir(NS_APP_USER_PROFILE_LOCAL_50_DIR, paths->localProfileDir);
+    rv = GetPathToSpecialDir(NS_APP_USER_PROFILE_LOCAL_50_DIR,
+                             paths->localProfileDir);
   }
 
   
   
   if (NS_FAILED(rv)) {
-    nsCOMPtr<nsIObserverService> obsService = do_GetService(NS_OBSERVERSERVICE_CONTRACTID, &rv);
+    nsCOMPtr<nsIObserverService> obsService =
+        do_GetService(NS_OBSERVERSERVICE_CONTRACTID, &rv);
     if (NS_FAILED(rv)) {
       return rv;
     }
@@ -242,7 +239,7 @@ OSFileConstantsService::InitOSFileConstants()
 
 
 
-#define INT_CONSTANT(name)      \
+#define INT_CONSTANT(name) \
   { #name, JS::Int32Value(name) }
 
 
@@ -253,14 +250,14 @@ OSFileConstantsService::InitOSFileConstants()
 
 
 
-#define UINT_CONSTANT(name)      \
+#define UINT_CONSTANT(name) \
   { #name, JS::NumberValue(name) }
 
 
 
 
-#define PROP_END { nullptr, JS::UndefinedValue() }
-
+#define PROP_END \
+  { nullptr, JS::UndefinedValue() }
 
 
 #if !defined(S_IRGRP)
@@ -276,7 +273,7 @@ OSFileConstantsService::InitOSFileConstants()
 #define S_IWUSR 0200
 #define S_IRUSR 0400
 #define S_IRWXU 0700
-#endif 
+#endif  
 
 
 
@@ -286,331 +283,350 @@ OSFileConstantsService::InitOSFileConstants()
 
 
 
-static const dom::ConstantSpec gLibcProperties[] =
-{
-  
-  INT_CONSTANT(O_APPEND),
+static const dom::ConstantSpec gLibcProperties[] = {
+    
+    INT_CONSTANT(O_APPEND),
 #if defined(O_CLOEXEC)
-  INT_CONSTANT(O_CLOEXEC),
-#endif 
-  INT_CONSTANT(O_CREAT),
+    INT_CONSTANT(O_CLOEXEC),
+#endif  
+    INT_CONSTANT(O_CREAT),
 #if defined(O_DIRECTORY)
-  INT_CONSTANT(O_DIRECTORY),
-#endif 
+    INT_CONSTANT(O_DIRECTORY),
+#endif  
 #if defined(O_EVTONLY)
-  INT_CONSTANT(O_EVTONLY),
-#endif 
-  INT_CONSTANT(O_EXCL),
+    INT_CONSTANT(O_EVTONLY),
+#endif  
+    INT_CONSTANT(O_EXCL),
 #if defined(O_EXLOCK)
-  INT_CONSTANT(O_EXLOCK),
-#endif 
+    INT_CONSTANT(O_EXLOCK),
+#endif  
 #if defined(O_LARGEFILE)
-  INT_CONSTANT(O_LARGEFILE),
-#endif 
+    INT_CONSTANT(O_LARGEFILE),
+#endif  
 #if defined(O_NOFOLLOW)
-  INT_CONSTANT(O_NOFOLLOW),
-#endif 
+    INT_CONSTANT(O_NOFOLLOW),
+#endif  
 #if defined(O_NONBLOCK)
-  INT_CONSTANT(O_NONBLOCK),
-#endif 
-  INT_CONSTANT(O_RDONLY),
-  INT_CONSTANT(O_RDWR),
+    INT_CONSTANT(O_NONBLOCK),
+#endif  
+    INT_CONSTANT(O_RDONLY),
+    INT_CONSTANT(O_RDWR),
 #if defined(O_RSYNC)
-  INT_CONSTANT(O_RSYNC),
-#endif 
+    INT_CONSTANT(O_RSYNC),
+#endif  
 #if defined(O_SHLOCK)
-  INT_CONSTANT(O_SHLOCK),
-#endif 
+    INT_CONSTANT(O_SHLOCK),
+#endif  
 #if defined(O_SYMLINK)
-  INT_CONSTANT(O_SYMLINK),
-#endif 
+    INT_CONSTANT(O_SYMLINK),
+#endif  
 #if defined(O_SYNC)
-  INT_CONSTANT(O_SYNC),
-#endif 
-  INT_CONSTANT(O_TRUNC),
-  INT_CONSTANT(O_WRONLY),
+    INT_CONSTANT(O_SYNC),
+#endif  
+    INT_CONSTANT(O_TRUNC),
+    INT_CONSTANT(O_WRONLY),
 
 #if defined(FD_CLOEXEC)
-  INT_CONSTANT(FD_CLOEXEC),
-#endif 
+    INT_CONSTANT(FD_CLOEXEC),
+#endif  
 
 #if defined(AT_EACCESS)
-  INT_CONSTANT(AT_EACCESS),
-#endif 
+    INT_CONSTANT(AT_EACCESS),
+#endif  
 #if defined(AT_FDCWD)
-  INT_CONSTANT(AT_FDCWD),
-#endif 
+    INT_CONSTANT(AT_FDCWD),
+#endif  
 #if defined(AT_SYMLINK_NOFOLLOW)
-  INT_CONSTANT(AT_SYMLINK_NOFOLLOW),
-#endif 
+    INT_CONSTANT(AT_SYMLINK_NOFOLLOW),
+#endif  
 
 #if defined(POSIX_FADV_SEQUENTIAL)
-  INT_CONSTANT(POSIX_FADV_SEQUENTIAL),
-#endif 
+    INT_CONSTANT(POSIX_FADV_SEQUENTIAL),
+#endif  
 
-  
+
 #if defined(F_OK)
-  INT_CONSTANT(F_OK),
-  INT_CONSTANT(R_OK),
-  INT_CONSTANT(W_OK),
-  INT_CONSTANT(X_OK),
-#endif 
+    INT_CONSTANT(F_OK),
+    INT_CONSTANT(R_OK),
+    INT_CONSTANT(W_OK),
+    INT_CONSTANT(X_OK),
+#endif  
 
-  
-  INT_CONSTANT(S_IRGRP),
-  INT_CONSTANT(S_IROTH),
-  INT_CONSTANT(S_IRUSR),
-  INT_CONSTANT(S_IRWXG),
-  INT_CONSTANT(S_IRWXO),
-  INT_CONSTANT(S_IRWXU),
-  INT_CONSTANT(S_IWGRP),
-  INT_CONSTANT(S_IWOTH),
-  INT_CONSTANT(S_IWUSR),
-  INT_CONSTANT(S_IXOTH),
-  INT_CONSTANT(S_IXGRP),
-  INT_CONSTANT(S_IXUSR),
+    
+    INT_CONSTANT(S_IRGRP),
+    INT_CONSTANT(S_IROTH),
+    INT_CONSTANT(S_IRUSR),
+    INT_CONSTANT(S_IRWXG),
+    INT_CONSTANT(S_IRWXO),
+    INT_CONSTANT(S_IRWXU),
+    INT_CONSTANT(S_IWGRP),
+    INT_CONSTANT(S_IWOTH),
+    INT_CONSTANT(S_IWUSR),
+    INT_CONSTANT(S_IXOTH),
+    INT_CONSTANT(S_IXGRP),
+    INT_CONSTANT(S_IXUSR),
 
-  
-  INT_CONSTANT(SEEK_CUR),
-  INT_CONSTANT(SEEK_END),
-  INT_CONSTANT(SEEK_SET),
+    
+    INT_CONSTANT(SEEK_CUR),
+    INT_CONSTANT(SEEK_END),
+    INT_CONSTANT(SEEK_SET),
 
 #if defined(XP_UNIX)
-  
-  INT_CONSTANT(POLLERR),
-  INT_CONSTANT(POLLHUP),
-  INT_CONSTANT(POLLIN),
-  INT_CONSTANT(POLLNVAL),
-  INT_CONSTANT(POLLOUT),
+    
+    INT_CONSTANT(POLLERR),
+    INT_CONSTANT(POLLHUP),
+    INT_CONSTANT(POLLIN),
+    INT_CONSTANT(POLLNVAL),
+    INT_CONSTANT(POLLOUT),
 
-  
+
 #if defined(WNOHANG)
-  INT_CONSTANT(WNOHANG),
-#endif 
+    INT_CONSTANT(WNOHANG),
+#endif  
 
-  
-  INT_CONSTANT(F_GETLK),
-  INT_CONSTANT(F_SETFD),
-  INT_CONSTANT(F_SETFL),
-  INT_CONSTANT(F_SETLK),
-  INT_CONSTANT(F_SETLKW),
+    
+    INT_CONSTANT(F_GETLK),
+    INT_CONSTANT(F_SETFD),
+    INT_CONSTANT(F_SETFL),
+    INT_CONSTANT(F_SETLK),
+    INT_CONSTANT(F_SETLKW),
 
-  
-  INT_CONSTANT(F_RDLCK),
-  INT_CONSTANT(F_WRLCK),
-  INT_CONSTANT(F_UNLCK),
+    
+    INT_CONSTANT(F_RDLCK),
+    INT_CONSTANT(F_WRLCK),
+    INT_CONSTANT(F_UNLCK),
 
-  
+
 #if defined(SPLICE_F_MOVE)
-  INT_CONSTANT(SPLICE_F_MOVE),
-#endif 
+    INT_CONSTANT(SPLICE_F_MOVE),
+#endif  
 #if defined(SPLICE_F_NONBLOCK)
-  INT_CONSTANT(SPLICE_F_NONBLOCK),
-#endif 
+    INT_CONSTANT(SPLICE_F_NONBLOCK),
+#endif  
 #if defined(SPLICE_F_MORE)
-  INT_CONSTANT(SPLICE_F_MORE),
-#endif 
+    INT_CONSTANT(SPLICE_F_MORE),
+#endif  
 #if defined(SPLICE_F_GIFT)
-  INT_CONSTANT(SPLICE_F_GIFT),
-#endif 
-#endif 
-  
-#if defined(COPYFILE_DATA)
-  INT_CONSTANT(COPYFILE_DATA),
-  INT_CONSTANT(COPYFILE_EXCL),
-  INT_CONSTANT(COPYFILE_XATTR),
-  INT_CONSTANT(COPYFILE_STAT),
-  INT_CONSTANT(COPYFILE_ACL),
-  INT_CONSTANT(COPYFILE_MOVE),
-#endif 
+    INT_CONSTANT(SPLICE_F_GIFT),
+#endif  
+#endif  
 
-  
-  INT_CONSTANT(EACCES),
-  INT_CONSTANT(EAGAIN),
-  INT_CONSTANT(EBADF),
-  INT_CONSTANT(EEXIST),
-  INT_CONSTANT(EFAULT),
-  INT_CONSTANT(EFBIG),
-  INT_CONSTANT(EINVAL),
-  INT_CONSTANT(EINTR),
-  INT_CONSTANT(EIO),
-  INT_CONSTANT(EISDIR),
-#if defined(ELOOP) 
-  INT_CONSTANT(ELOOP),
-#endif 
-  INT_CONSTANT(EMFILE),
-  INT_CONSTANT(ENAMETOOLONG),
-  INT_CONSTANT(ENFILE),
-  INT_CONSTANT(ENOENT),
-  INT_CONSTANT(ENOMEM),
-  INT_CONSTANT(ENOSPC),
-  INT_CONSTANT(ENOTDIR),
-  INT_CONSTANT(ENXIO),
-#if defined(EOPNOTSUPP) 
-  INT_CONSTANT(EOPNOTSUPP),
-#endif 
-#if defined(EOVERFLOW) 
-  INT_CONSTANT(EOVERFLOW),
-#endif 
-  INT_CONSTANT(EPERM),
-  INT_CONSTANT(ERANGE),
-#if defined(ETIMEDOUT) 
-  INT_CONSTANT(ETIMEDOUT),
-#endif 
-#if defined(EWOULDBLOCK) 
-  INT_CONSTANT(EWOULDBLOCK),
-#endif 
-  INT_CONSTANT(EXDEV),
+#if defined(COPYFILE_DATA)
+    INT_CONSTANT(COPYFILE_DATA),
+    INT_CONSTANT(COPYFILE_EXCL),
+    INT_CONSTANT(COPYFILE_XATTR),
+    INT_CONSTANT(COPYFILE_STAT),
+    INT_CONSTANT(COPYFILE_ACL),
+    INT_CONSTANT(COPYFILE_MOVE),
+#endif  
+
+    
+    INT_CONSTANT(EACCES),
+    INT_CONSTANT(EAGAIN),
+    INT_CONSTANT(EBADF),
+    INT_CONSTANT(EEXIST),
+    INT_CONSTANT(EFAULT),
+    INT_CONSTANT(EFBIG),
+    INT_CONSTANT(EINVAL),
+    INT_CONSTANT(EINTR),
+    INT_CONSTANT(EIO),
+    INT_CONSTANT(EISDIR),
+#if defined(ELOOP)  
+    INT_CONSTANT(ELOOP),
+#endif  
+    INT_CONSTANT(EMFILE),
+    INT_CONSTANT(ENAMETOOLONG),
+    INT_CONSTANT(ENFILE),
+    INT_CONSTANT(ENOENT),
+    INT_CONSTANT(ENOMEM),
+    INT_CONSTANT(ENOSPC),
+    INT_CONSTANT(ENOTDIR),
+    INT_CONSTANT(ENXIO),
+#if defined(EOPNOTSUPP)  
+    INT_CONSTANT(EOPNOTSUPP),
+#endif                  
+#if defined(EOVERFLOW)  
+    INT_CONSTANT(EOVERFLOW),
+#endif  
+    INT_CONSTANT(EPERM),
+    INT_CONSTANT(ERANGE),
+#if defined(ETIMEDOUT)  
+    INT_CONSTANT(ETIMEDOUT),
+#endif                    
+#if defined(EWOULDBLOCK)  
+    INT_CONSTANT(EWOULDBLOCK),
+#endif  
+    INT_CONSTANT(EXDEV),
 
 #if defined(DT_UNKNOWN)
-  
-  INT_CONSTANT(DT_UNKNOWN),
-  INT_CONSTANT(DT_FIFO),
-  INT_CONSTANT(DT_CHR),
-  INT_CONSTANT(DT_DIR),
-  INT_CONSTANT(DT_BLK),
-  INT_CONSTANT(DT_REG),
-  INT_CONSTANT(DT_LNK),
-  INT_CONSTANT(DT_SOCK),
-#endif 
+    
+    INT_CONSTANT(DT_UNKNOWN),
+    INT_CONSTANT(DT_FIFO),
+    INT_CONSTANT(DT_CHR),
+    INT_CONSTANT(DT_DIR),
+    INT_CONSTANT(DT_BLK),
+    INT_CONSTANT(DT_REG),
+    INT_CONSTANT(DT_LNK),
+    INT_CONSTANT(DT_SOCK),
+#endif  
 
 #if defined(S_IFIFO)
-  
-  INT_CONSTANT(S_IFMT),
-  INT_CONSTANT(S_IFIFO),
-  INT_CONSTANT(S_IFCHR),
-  INT_CONSTANT(S_IFDIR),
-  INT_CONSTANT(S_IFBLK),
-  INT_CONSTANT(S_IFREG),
-  INT_CONSTANT(S_IFLNK),
-  INT_CONSTANT(S_IFSOCK),
-#endif 
+    
+    INT_CONSTANT(S_IFMT),
+    INT_CONSTANT(S_IFIFO),
+    INT_CONSTANT(S_IFCHR),
+    INT_CONSTANT(S_IFDIR),
+    INT_CONSTANT(S_IFBLK),
+    INT_CONSTANT(S_IFREG),
+    INT_CONSTANT(S_IFLNK),
+    INT_CONSTANT(S_IFSOCK),
+#endif  
 
-  INT_CONSTANT(PATH_MAX),
+    INT_CONSTANT(PATH_MAX),
 
-  
-  
-  
-  
-  
-  
-  
+
+
+
+
+
+
+
 
 #if defined(XP_UNIX)
-  
-  { "OSFILE_SIZEOF_MODE_T", JS::Int32Value(sizeof (mode_t)) },
+    
+    {"OSFILE_SIZEOF_MODE_T", JS::Int32Value(sizeof(mode_t))},
 
-  
-  { "OSFILE_SIZEOF_GID_T", JS::Int32Value(sizeof (gid_t)) },
+    
+    {"OSFILE_SIZEOF_GID_T", JS::Int32Value(sizeof(gid_t))},
 
-  
-  { "OSFILE_SIZEOF_UID_T", JS::Int32Value(sizeof (uid_t)) },
+    
+    {"OSFILE_SIZEOF_UID_T", JS::Int32Value(sizeof(uid_t))},
 
-  
-  { "OSFILE_SIZEOF_TIME_T", JS::Int32Value(sizeof (time_t)) },
+    
+    {"OSFILE_SIZEOF_TIME_T", JS::Int32Value(sizeof(time_t))},
 
-  
-  { "OSFILE_SIZEOF_FSBLKCNT_T", JS::Int32Value(sizeof (fsblkcnt_t)) },
+    
+    {"OSFILE_SIZEOF_FSBLKCNT_T", JS::Int32Value(sizeof(fsblkcnt_t))},
 
 #if !defined(ANDROID)
-  
-  { "OSFILE_SIZEOF_POSIX_SPAWN_FILE_ACTIONS_T", JS::Int32Value(sizeof (posix_spawn_file_actions_t)) },
-#endif 
+    
+    {"OSFILE_SIZEOF_POSIX_SPAWN_FILE_ACTIONS_T",
+     JS::Int32Value(sizeof(posix_spawn_file_actions_t))},
+#endif  
 
-  
-  
-  { "OSFILE_SIZEOF_DIRENT", JS::Int32Value(sizeof (dirent)) },
+    
+    
+    {"OSFILE_SIZEOF_DIRENT", JS::Int32Value(sizeof(dirent))},
 
-  
+
 #if defined(XP_UNIX)
-  { "OSFILE_SIZEOF_FLOCK", JS::Int32Value(sizeof (struct flock)) },
-  { "OSFILE_OFFSETOF_FLOCK_L_START", JS::Int32Value(offsetof (struct flock, l_start)) },
-  { "OSFILE_OFFSETOF_FLOCK_L_LEN", JS::Int32Value(offsetof (struct flock, l_len)) },
-  { "OSFILE_OFFSETOF_FLOCK_L_PID", JS::Int32Value(offsetof (struct flock, l_pid)) },
-  { "OSFILE_OFFSETOF_FLOCK_L_TYPE", JS::Int32Value(offsetof (struct flock, l_type)) },
-  { "OSFILE_OFFSETOF_FLOCK_L_WHENCE", JS::Int32Value(offsetof (struct flock, l_whence)) },
-#endif 
-  
-  { "OSFILE_OFFSETOF_DIRENT_D_NAME", JS::Int32Value(offsetof (struct dirent, d_name)) },
-  
-  
-  { "OSFILE_SIZEOF_DIRENT_D_NAME", JS::Int32Value(sizeof (struct dirent) - offsetof (struct dirent, d_name)) },
+    {"OSFILE_SIZEOF_FLOCK", JS::Int32Value(sizeof(struct flock))},
+    {"OSFILE_OFFSETOF_FLOCK_L_START",
+     JS::Int32Value(offsetof(struct flock, l_start))},
+    {"OSFILE_OFFSETOF_FLOCK_L_LEN",
+     JS::Int32Value(offsetof(struct flock, l_len))},
+    {"OSFILE_OFFSETOF_FLOCK_L_PID",
+     JS::Int32Value(offsetof(struct flock, l_pid))},
+    {"OSFILE_OFFSETOF_FLOCK_L_TYPE",
+     JS::Int32Value(offsetof(struct flock, l_type))},
+    {"OSFILE_OFFSETOF_FLOCK_L_WHENCE",
+     JS::Int32Value(offsetof(struct flock, l_whence))},
+#endif  
+    
+    {"OSFILE_OFFSETOF_DIRENT_D_NAME",
+     JS::Int32Value(offsetof(struct dirent, d_name))},
+    
+    
+    {"OSFILE_SIZEOF_DIRENT_D_NAME",
+     JS::Int32Value(sizeof(struct dirent) - offsetof(struct dirent, d_name))},
 
-  
-  { "OSFILE_SIZEOF_TIMEVAL", JS::Int32Value(sizeof (struct timeval)) },
-  { "OSFILE_OFFSETOF_TIMEVAL_TV_SEC", JS::Int32Value(offsetof (struct timeval, tv_sec)) },
-  { "OSFILE_OFFSETOF_TIMEVAL_TV_USEC", JS::Int32Value(offsetof (struct timeval, tv_usec)) },
+    
+    {"OSFILE_SIZEOF_TIMEVAL", JS::Int32Value(sizeof(struct timeval))},
+    {"OSFILE_OFFSETOF_TIMEVAL_TV_SEC",
+     JS::Int32Value(offsetof(struct timeval, tv_sec))},
+    {"OSFILE_OFFSETOF_TIMEVAL_TV_USEC",
+     JS::Int32Value(offsetof(struct timeval, tv_usec))},
 
 #if defined(DT_UNKNOWN)
-  
-  
-  
-  { "OSFILE_OFFSETOF_DIRENT_D_TYPE", JS::Int32Value(offsetof (struct dirent, d_type)) },
-#endif 
+    
+    
+    
+    {"OSFILE_OFFSETOF_DIRENT_D_TYPE",
+     JS::Int32Value(offsetof(struct dirent, d_type))},
+#endif  
 
-  
-  
+
+
 #if defined(dirfd)
-  { "OSFILE_SIZEOF_DIR", JS::Int32Value(sizeof (DIR)) },
+    {"OSFILE_SIZEOF_DIR", JS::Int32Value(sizeof(DIR))},
 
-  { "OSFILE_OFFSETOF_DIR_DD_FD", JS::Int32Value(offsetof (DIR, __dd_fd)) },
+    {"OSFILE_OFFSETOF_DIR_DD_FD", JS::Int32Value(offsetof(DIR, __dd_fd))},
 #endif
 
-  
+    
 
-  { "OSFILE_SIZEOF_STAT", JS::Int32Value(sizeof (struct stat)) },
+    {"OSFILE_SIZEOF_STAT", JS::Int32Value(sizeof(struct stat))},
 
-  { "OSFILE_OFFSETOF_STAT_ST_MODE", JS::Int32Value(offsetof (struct stat, st_mode)) },
-  { "OSFILE_OFFSETOF_STAT_ST_UID", JS::Int32Value(offsetof (struct stat, st_uid)) },
-  { "OSFILE_OFFSETOF_STAT_ST_GID", JS::Int32Value(offsetof (struct stat, st_gid)) },
-  { "OSFILE_OFFSETOF_STAT_ST_SIZE", JS::Int32Value(offsetof (struct stat, st_size)) },
+    {"OSFILE_OFFSETOF_STAT_ST_MODE",
+     JS::Int32Value(offsetof(struct stat, st_mode))},
+    {"OSFILE_OFFSETOF_STAT_ST_UID",
+     JS::Int32Value(offsetof(struct stat, st_uid))},
+    {"OSFILE_OFFSETOF_STAT_ST_GID",
+     JS::Int32Value(offsetof(struct stat, st_gid))},
+    {"OSFILE_OFFSETOF_STAT_ST_SIZE",
+     JS::Int32Value(offsetof(struct stat, st_size))},
 
 #if defined(HAVE_ST_ATIMESPEC)
-  { "OSFILE_OFFSETOF_STAT_ST_ATIME", JS::Int32Value(offsetof (struct stat, st_atimespec)) },
-  { "OSFILE_OFFSETOF_STAT_ST_MTIME", JS::Int32Value(offsetof (struct stat, st_mtimespec)) },
-  { "OSFILE_OFFSETOF_STAT_ST_CTIME", JS::Int32Value(offsetof (struct stat, st_ctimespec)) },
+    {"OSFILE_OFFSETOF_STAT_ST_ATIME",
+     JS::Int32Value(offsetof(struct stat, st_atimespec))},
+    {"OSFILE_OFFSETOF_STAT_ST_MTIME",
+     JS::Int32Value(offsetof(struct stat, st_mtimespec))},
+    {"OSFILE_OFFSETOF_STAT_ST_CTIME",
+     JS::Int32Value(offsetof(struct stat, st_ctimespec))},
 #else
-  { "OSFILE_OFFSETOF_STAT_ST_ATIME", JS::Int32Value(offsetof (struct stat, st_atime)) },
-  { "OSFILE_OFFSETOF_STAT_ST_MTIME", JS::Int32Value(offsetof (struct stat, st_mtime)) },
-  { "OSFILE_OFFSETOF_STAT_ST_CTIME", JS::Int32Value(offsetof (struct stat, st_ctime)) },
-#endif 
+    {"OSFILE_OFFSETOF_STAT_ST_ATIME",
+     JS::Int32Value(offsetof(struct stat, st_atime))},
+    {"OSFILE_OFFSETOF_STAT_ST_MTIME",
+     JS::Int32Value(offsetof(struct stat, st_mtime))},
+    {"OSFILE_OFFSETOF_STAT_ST_CTIME",
+     JS::Int32Value(offsetof(struct stat, st_ctime))},
+#endif  
 
-  
+
 #if defined(_DARWIN_FEATURE_64_BIT_INODE)
-  { "OSFILE_OFFSETOF_STAT_ST_BIRTHTIME", JS::Int32Value(offsetof (struct stat, st_birthtime)) },
-#endif 
+    {"OSFILE_OFFSETOF_STAT_ST_BIRTHTIME",
+     JS::Int32Value(offsetof(struct stat, st_birthtime))},
+#endif  
 
-  
+    
 
-  { "OSFILE_SIZEOF_STATVFS", JS::Int32Value(sizeof (struct statvfs)) },
+    {"OSFILE_SIZEOF_STATVFS", JS::Int32Value(sizeof(struct statvfs))},
 
-  { "OSFILE_OFFSETOF_STATVFS_F_FRSIZE", JS::Int32Value(offsetof (struct statvfs, f_frsize)) },
-  { "OSFILE_OFFSETOF_STATVFS_F_BAVAIL", JS::Int32Value(offsetof (struct statvfs, f_bavail)) },
+    {"OSFILE_OFFSETOF_STATVFS_F_FRSIZE",
+     JS::Int32Value(offsetof(struct statvfs, f_frsize))},
+    {"OSFILE_OFFSETOF_STATVFS_F_BAVAIL",
+     JS::Int32Value(offsetof(struct statvfs, f_bavail))},
 
-#endif 
+#endif  
 
 
 
-  
 
-  
-  
-  
-  
-  
-  
+
+
+
+
+
 #if defined(_DARWIN_FEATURE_64_BIT_INODE)
-   { "_DARWIN_FEATURE_64_BIT_INODE", JS::Int32Value(1) },
-#endif 
+    {"_DARWIN_FEATURE_64_BIT_INODE", JS::Int32Value(1)},
+#endif  
 
-  
+
 #if defined(_STAT_VER)
-  INT_CONSTANT(_STAT_VER),
-#endif 
+    INT_CONSTANT(_STAT_VER),
+#endif  
 
-  PROP_END
-};
-
+    PROP_END};
 
 #if defined(XP_WIN)
 
@@ -621,91 +637,87 @@ static const dom::ConstantSpec gLibcProperties[] =
 
 
 
-static const dom::ConstantSpec gWinProperties[] =
-{
-  
-  INT_CONSTANT(FORMAT_MESSAGE_FROM_SYSTEM),
-  INT_CONSTANT(FORMAT_MESSAGE_IGNORE_INSERTS),
+static const dom::ConstantSpec gWinProperties[] = {
+    
+    INT_CONSTANT(FORMAT_MESSAGE_FROM_SYSTEM),
+    INT_CONSTANT(FORMAT_MESSAGE_IGNORE_INSERTS),
 
-  
-  INT_CONSTANT(MAX_PATH),
+    
+    INT_CONSTANT(MAX_PATH),
 
-  
-  INT_CONSTANT(GENERIC_ALL),
-  INT_CONSTANT(GENERIC_EXECUTE),
-  INT_CONSTANT(GENERIC_READ),
-  INT_CONSTANT(GENERIC_WRITE),
+    
+    INT_CONSTANT(GENERIC_ALL),
+    INT_CONSTANT(GENERIC_EXECUTE),
+    INT_CONSTANT(GENERIC_READ),
+    INT_CONSTANT(GENERIC_WRITE),
 
-  
-  INT_CONSTANT(FILE_SHARE_DELETE),
-  INT_CONSTANT(FILE_SHARE_READ),
-  INT_CONSTANT(FILE_SHARE_WRITE),
+    
+    INT_CONSTANT(FILE_SHARE_DELETE),
+    INT_CONSTANT(FILE_SHARE_READ),
+    INT_CONSTANT(FILE_SHARE_WRITE),
 
-  
-  INT_CONSTANT(CREATE_ALWAYS),
-  INT_CONSTANT(CREATE_NEW),
-  INT_CONSTANT(OPEN_ALWAYS),
-  INT_CONSTANT(OPEN_EXISTING),
-  INT_CONSTANT(TRUNCATE_EXISTING),
+    
+    INT_CONSTANT(CREATE_ALWAYS),
+    INT_CONSTANT(CREATE_NEW),
+    INT_CONSTANT(OPEN_ALWAYS),
+    INT_CONSTANT(OPEN_EXISTING),
+    INT_CONSTANT(TRUNCATE_EXISTING),
 
-  
-  INT_CONSTANT(FILE_ATTRIBUTE_ARCHIVE),
-  INT_CONSTANT(FILE_ATTRIBUTE_DIRECTORY),
-  INT_CONSTANT(FILE_ATTRIBUTE_HIDDEN),
-  INT_CONSTANT(FILE_ATTRIBUTE_NORMAL),
-  INT_CONSTANT(FILE_ATTRIBUTE_READONLY),
-  INT_CONSTANT(FILE_ATTRIBUTE_REPARSE_POINT),
-  INT_CONSTANT(FILE_ATTRIBUTE_SYSTEM),
-  INT_CONSTANT(FILE_ATTRIBUTE_TEMPORARY),
-  INT_CONSTANT(FILE_FLAG_BACKUP_SEMANTICS),
+    
+    INT_CONSTANT(FILE_ATTRIBUTE_ARCHIVE),
+    INT_CONSTANT(FILE_ATTRIBUTE_DIRECTORY),
+    INT_CONSTANT(FILE_ATTRIBUTE_HIDDEN),
+    INT_CONSTANT(FILE_ATTRIBUTE_NORMAL),
+    INT_CONSTANT(FILE_ATTRIBUTE_READONLY),
+    INT_CONSTANT(FILE_ATTRIBUTE_REPARSE_POINT),
+    INT_CONSTANT(FILE_ATTRIBUTE_SYSTEM),
+    INT_CONSTANT(FILE_ATTRIBUTE_TEMPORARY),
+    INT_CONSTANT(FILE_FLAG_BACKUP_SEMANTICS),
 
-  
-  { "INVALID_HANDLE_VALUE", JS::Int32Value(INT_PTR(INVALID_HANDLE_VALUE)) },
+    
+    {"INVALID_HANDLE_VALUE", JS::Int32Value(INT_PTR(INVALID_HANDLE_VALUE))},
 
+    
+    INT_CONSTANT(FILE_FLAG_DELETE_ON_CLOSE),
 
-  
-  INT_CONSTANT(FILE_FLAG_DELETE_ON_CLOSE),
+    
+    INT_CONSTANT(FILE_BEGIN),
+    INT_CONSTANT(FILE_CURRENT),
+    INT_CONSTANT(FILE_END),
 
-  
-  INT_CONSTANT(FILE_BEGIN),
-  INT_CONSTANT(FILE_CURRENT),
-  INT_CONSTANT(FILE_END),
+    
+    UINT_CONSTANT(INVALID_SET_FILE_POINTER),
 
-  
-  UINT_CONSTANT(INVALID_SET_FILE_POINTER),
+    
+    INT_CONSTANT(FILE_ATTRIBUTE_DIRECTORY),
 
-  
-  INT_CONSTANT(FILE_ATTRIBUTE_DIRECTORY),
+    
+    INT_CONSTANT(MOVEFILE_COPY_ALLOWED),
+    INT_CONSTANT(MOVEFILE_REPLACE_EXISTING),
 
+    
+    INT_CONSTANT(INVALID_FILE_ATTRIBUTES),
 
-  
-  INT_CONSTANT(MOVEFILE_COPY_ALLOWED),
-  INT_CONSTANT(MOVEFILE_REPLACE_EXISTING),
+    
+    INT_CONSTANT(UNPROTECTED_DACL_SECURITY_INFORMATION),
+    INT_CONSTANT(SE_FILE_OBJECT),
+    INT_CONSTANT(DACL_SECURITY_INFORMATION),
 
-  
-  INT_CONSTANT(INVALID_FILE_ATTRIBUTES),
+    
+    INT_CONSTANT(ERROR_INVALID_HANDLE),
+    INT_CONSTANT(ERROR_ACCESS_DENIED),
+    INT_CONSTANT(ERROR_DIR_NOT_EMPTY),
+    INT_CONSTANT(ERROR_FILE_EXISTS),
+    INT_CONSTANT(ERROR_ALREADY_EXISTS),
+    INT_CONSTANT(ERROR_FILE_NOT_FOUND),
+    INT_CONSTANT(ERROR_NO_MORE_FILES),
+    INT_CONSTANT(ERROR_PATH_NOT_FOUND),
+    INT_CONSTANT(ERROR_BAD_ARGUMENTS),
+    INT_CONSTANT(ERROR_SHARING_VIOLATION),
+    INT_CONSTANT(ERROR_NOT_SUPPORTED),
 
-  
-  INT_CONSTANT(UNPROTECTED_DACL_SECURITY_INFORMATION),
-  INT_CONSTANT(SE_FILE_OBJECT),
-  INT_CONSTANT(DACL_SECURITY_INFORMATION),
-
-  
-  INT_CONSTANT(ERROR_INVALID_HANDLE),
-  INT_CONSTANT(ERROR_ACCESS_DENIED),
-  INT_CONSTANT(ERROR_DIR_NOT_EMPTY),
-  INT_CONSTANT(ERROR_FILE_EXISTS),
-  INT_CONSTANT(ERROR_ALREADY_EXISTS),
-  INT_CONSTANT(ERROR_FILE_NOT_FOUND),
-  INT_CONSTANT(ERROR_NO_MORE_FILES),
-  INT_CONSTANT(ERROR_PATH_NOT_FOUND),
-  INT_CONSTANT(ERROR_BAD_ARGUMENTS),
-  INT_CONSTANT(ERROR_SHARING_VIOLATION),
-  INT_CONSTANT(ERROR_NOT_SUPPORTED),
-
-  PROP_END
-};
-#endif 
+    PROP_END};
+#endif  
 
 
 
@@ -713,10 +725,9 @@ static const dom::ConstantSpec gWinProperties[] =
 
 
 
-
-JSObject *GetOrCreateObjectProperty(JSContext *cx, JS::Handle<JSObject*> aObject,
-                                    const char *aProperty)
-{
+JSObject *GetOrCreateObjectProperty(JSContext *cx,
+                                    JS::Handle<JSObject *> aObject,
+                                    const char *aProperty) {
   JS::Rooted<JS::Value> val(cx);
   if (!JS_GetProperty(cx, aObject, aProperty, &val)) {
     return nullptr;
@@ -727,8 +738,8 @@ JSObject *GetOrCreateObjectProperty(JSContext *cx, JS::Handle<JSObject*> aObject
     }
 
     JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
-                              JSMSG_UNEXPECTED_TYPE,
-                              aProperty, "not an object");
+                              JSMSG_UNEXPECTED_TYPE, aProperty,
+                              "not an object");
     return nullptr;
   }
   return JS_DefineObject(cx, aObject, aProperty, nullptr, JSPROP_ENUMERATE);
@@ -739,13 +750,12 @@ JSObject *GetOrCreateObjectProperty(JSContext *cx, JS::Handle<JSObject*> aObject
 
 
 
-bool SetStringProperty(JSContext *cx, JS::Handle<JSObject*> aObject, const char *aProperty,
-                       const nsString aValue)
-{
+bool SetStringProperty(JSContext *cx, JS::Handle<JSObject *> aObject,
+                       const char *aProperty, const nsString aValue) {
   if (aValue.IsVoid()) {
     return true;
   }
-  JSString* strValue = JS_NewUCStringCopyZ(cx, aValue.get());
+  JSString *strValue = JS_NewUCStringCopyZ(cx, aValue.get());
   NS_ENSURE_TRUE(strValue, false);
   JS::Rooted<JS::Value> valValue(cx, JS::StringValue(strValue));
   return JS_SetProperty(cx, aObject, aProperty, valValue);
@@ -757,29 +767,27 @@ bool SetStringProperty(JSContext *cx, JS::Handle<JSObject*> aObject, const char 
 
 
 
-bool
-OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
-                                              JS::Handle<JSObject*> aGlobal)
-{
+bool OSFileConstantsService::DefineOSFileConstants(
+    JSContext *aCx, JS::Handle<JSObject *> aGlobal) {
   if (!mInitialized) {
     JS_ReportErrorNumberASCII(aCx, js::GetErrorMessage, nullptr,
-                              JSMSG_CANT_OPEN,
-                              "OSFileConstants", "initialization has failed");
+                              JSMSG_CANT_OPEN, "OSFileConstants",
+                              "initialization has failed");
     return false;
   }
 
-  JS::Rooted<JSObject*> objOS(aCx);
+  JS::Rooted<JSObject *> objOS(aCx);
   if (!(objOS = GetOrCreateObjectProperty(aCx, aGlobal, "OS"))) {
     return false;
   }
-  JS::Rooted<JSObject*> objConstants(aCx);
+  JS::Rooted<JSObject *> objConstants(aCx);
   if (!(objConstants = GetOrCreateObjectProperty(aCx, objOS, "Constants"))) {
     return false;
   }
 
   
 
-  JS::Rooted<JSObject*> objLibc(aCx);
+  JS::Rooted<JSObject *> objLibc(aCx);
   if (!(objLibc = GetOrCreateObjectProperty(aCx, objConstants, "libc"))) {
     return false;
   }
@@ -790,29 +798,30 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
 #if defined(XP_WIN)
   
 
-  JS::Rooted<JSObject*> objWin(aCx);
+  JS::Rooted<JSObject *> objWin(aCx);
   if (!(objWin = GetOrCreateObjectProperty(aCx, objConstants, "Win"))) {
     return false;
   }
   if (!dom::DefineConstants(aCx, objWin, gWinProperties)) {
     return false;
   }
-#endif 
+#endif  
 
   
 
-  JS::Rooted<JSObject*> objSys(aCx);
+  JS::Rooted<JSObject *> objSys(aCx);
   if (!(objSys = GetOrCreateObjectProperty(aCx, objConstants, "Sys"))) {
     return false;
   }
 
-  nsCOMPtr<nsIXULRuntime> runtime = do_GetService(XULRUNTIME_SERVICE_CONTRACTID);
+  nsCOMPtr<nsIXULRuntime> runtime =
+      do_GetService(XULRUNTIME_SERVICE_CONTRACTID);
   if (runtime) {
     nsAutoCString os;
     DebugOnly<nsresult> rv = runtime->GetOS(os);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
 
-    JSString* strVersion = JS_NewStringCopyZ(aCx, os.get());
+    JSString *strVersion = JS_NewStringCopyZ(aCx, os.get());
     if (!strVersion) {
       return false;
     }
@@ -834,19 +843,20 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
   JS::Rooted<JS::Value> valBits(aCx, JS::Int32Value(64));
 #else
   JS::Rooted<JS::Value> valBits(aCx, JS::Int32Value(32));
-#endif 
+#endif  
   if (!JS_SetProperty(aCx, objSys, "bits", valBits)) {
     return false;
   }
 
-  if (!JS_DefineProperty(aCx, objSys, "umask", mUserUmask,
-                         JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT)) {
-      return false;
+  if (!JS_DefineProperty(
+          aCx, objSys, "umask", mUserUmask,
+          JSPROP_ENUMERATE | JSPROP_READONLY | JSPROP_PERMANENT)) {
+    return false;
   }
 
   
 
-  JS::Rooted<JSObject*> objPath(aCx);
+  JS::Rooted<JSObject *> objPath(aCx);
   if (!(objPath = GetOrCreateObjectProperty(aCx, objConstants, "Path"))) {
     return false;
   }
@@ -868,7 +878,7 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
   libxul.AppendLiteral(MOZ_DLL_PREFIX);
   libxul.AppendLiteral("xul");
   libxul.AppendLiteral(MOZ_DLL_SUFFIX);
-#endif 
+#endif  
 
   if (!SetStringProperty(aCx, objPath, "libxul", libxul)) {
     return false;
@@ -883,14 +893,15 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
   }
 
   
-  if (!mPaths->profileDir.IsVoid()
-    && !SetStringProperty(aCx, objPath, "profileDir", mPaths->profileDir)) {
+  if (!mPaths->profileDir.IsVoid() &&
+      !SetStringProperty(aCx, objPath, "profileDir", mPaths->profileDir)) {
     return false;
   }
 
   
-  if (!mPaths->localProfileDir.IsVoid()
-    && !SetStringProperty(aCx, objPath, "localProfileDir", mPaths->localProfileDir)) {
+  if (!mPaths->localProfileDir.IsVoid() &&
+      !SetStringProperty(aCx, objPath, "localProfileDir",
+                         mPaths->localProfileDir)) {
     return false;
   }
 
@@ -907,9 +918,9 @@ OSFileConstantsService::DefineOSFileConstants(JSContext* aCx,
   libsqlite3.AppendLiteral("nss3");
   libsqlite3.AppendLiteral(MOZ_DLL_SUFFIX);
 #else
-    
+  
   libsqlite3 = libxul;
-#endif 
+#endif  
 
   if (!SetStringProperty(aCx, objPath, "libsqlite3", libsqlite3)) {
     return false;
@@ -922,8 +933,7 @@ NS_IMPL_ISUPPORTS(OSFileConstantsService, nsIOSFileConstantsService,
                   nsIObserver)
 
  already_AddRefed<OSFileConstantsService>
-OSFileConstantsService::GetOrCreate()
-{
+OSFileConstantsService::GetOrCreate() {
   if (!gInstance) {
     MOZ_ASSERT(NS_IsMainThread());
 
@@ -942,20 +952,16 @@ OSFileConstantsService::GetOrCreate()
 }
 
 OSFileConstantsService::OSFileConstantsService()
-  : mInitialized(false)
-  , mUserUmask(0)
-{
+    : mInitialized(false), mUserUmask(0) {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
-OSFileConstantsService::~OSFileConstantsService()
-{
+OSFileConstantsService::~OSFileConstantsService() {
   MOZ_ASSERT(NS_IsMainThread());
 }
 
 NS_IMETHODIMP
-OSFileConstantsService::Init(JSContext *aCx)
-{
+OSFileConstantsService::Init(JSContext *aCx) {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsresult rv = InitOSFileConstants();
@@ -963,8 +969,8 @@ OSFileConstantsService::Init(JSContext *aCx)
     return rv;
   }
 
-  mozJSComponentLoader* loader = mozJSComponentLoader::Get();
-  JS::Rooted<JSObject*> targetObj(aCx);
+  mozJSComponentLoader *loader = mozJSComponentLoader::Get();
+  JS::Rooted<JSObject *> targetObj(aCx);
   loader->FindTargetObject(aCx, &targetObj);
 
   if (!DefineOSFileConstants(aCx, targetObj)) {
@@ -974,4 +980,4 @@ OSFileConstantsService::Init(JSContext *aCx)
   return NS_OK;
 }
 
-} 
+}  

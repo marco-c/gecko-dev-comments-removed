@@ -45,6 +45,7 @@ struct rust_u2f_manager;
 struct rust_u2f_app_ids;
 
 
+
 struct rust_u2f_key_handles;
 
 
@@ -55,26 +56,20 @@ typedef void (*rust_u2f_callback)(uint64_t, rust_u2f_result*);
 
 
 
-
 rust_u2f_manager* rust_u2f_mgr_new();
  void rust_u2f_mgr_free(rust_u2f_manager* mgr);
 
-uint64_t rust_u2f_mgr_register(rust_u2f_manager* mgr,
-                               uint64_t flags,
-                               uint64_t timeout,
-                               rust_u2f_callback,
+uint64_t rust_u2f_mgr_register(rust_u2f_manager* mgr, uint64_t flags,
+                               uint64_t timeout, rust_u2f_callback,
                                const uint8_t* challenge_ptr,
                                size_t challenge_len,
                                const uint8_t* application_ptr,
                                size_t application_len,
                                const rust_u2f_key_handles* khs);
 
-uint64_t rust_u2f_mgr_sign(rust_u2f_manager* mgr,
-                           uint64_t flags,
-                           uint64_t timeout,
-                           rust_u2f_callback,
-                           const uint8_t* challenge_ptr,
-                           size_t challenge_len,
+uint64_t rust_u2f_mgr_sign(rust_u2f_manager* mgr, uint64_t flags,
+                           uint64_t timeout, rust_u2f_callback,
+                           const uint8_t* challenge_ptr, size_t challenge_len,
                            const rust_u2f_app_ids* app_ids,
                            const rust_u2f_key_handles* khs);
 
@@ -82,34 +77,29 @@ void rust_u2f_mgr_cancel(rust_u2f_manager* mgr);
 
 
 
-
 rust_u2f_app_ids* rust_u2f_app_ids_new();
-void rust_u2f_app_ids_add(rust_u2f_app_ids* ids,
-                          const uint8_t* id,
+void rust_u2f_app_ids_add(rust_u2f_app_ids* ids, const uint8_t* id,
                           size_t id_len);
  void rust_u2f_app_ids_free(rust_u2f_app_ids* ids);
 
 
 
-
 rust_u2f_key_handles* rust_u2f_khs_new();
-void rust_u2f_khs_add(rust_u2f_key_handles* khs,
-                      const uint8_t* key_handle,
-                      size_t key_handle_len,
-                      uint8_t transports);
+void rust_u2f_khs_add(rust_u2f_key_handles* khs, const uint8_t* key_handle,
+                      size_t key_handle_len, uint8_t transports);
  void rust_u2f_khs_free(rust_u2f_key_handles* khs);
 
 
 
 
+uint8_t rust_u2f_result_error(const rust_u2f_result* res);
 
-uint8_t rust_u2f_result_error(const rust_u2f_result *res);
 
-
-bool rust_u2f_resbuf_length(const rust_u2f_result *res, uint8_t bid, size_t* len);
-bool rust_u2f_resbuf_copy(const rust_u2f_result *res, uint8_t bid, uint8_t* dst);
+bool rust_u2f_resbuf_length(const rust_u2f_result* res, uint8_t bid,
+                            size_t* len);
+bool rust_u2f_resbuf_copy(const rust_u2f_result* res, uint8_t bid,
+                          uint8_t* dst);
  void rust_u2f_res_free(rust_u2f_result* res);
-
 }
 
-#endif 
+#endif  

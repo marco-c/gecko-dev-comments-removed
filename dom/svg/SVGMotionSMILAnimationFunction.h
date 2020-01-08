@@ -23,7 +23,7 @@ namespace mozilla {
 
 namespace dom {
 class SVGMPathElement;
-} 
+}  
 
 
 
@@ -31,14 +31,12 @@ class SVGMPathElement;
 
 
 
-class SVGMotionSMILAnimationFunction final : public nsSMILAnimationFunction
-{
+class SVGMotionSMILAnimationFunction final : public nsSMILAnimationFunction {
   typedef mozilla::gfx::Path Path;
 
-public:
+ public:
   SVGMotionSMILAnimationFunction();
-  virtual bool SetAttr(nsAtom* aAttribute,
-                       const nsAString& aValue,
+  virtual bool SetAttr(nsAtom* aAttribute, const nsAString& aValue,
                        nsAttrValue& aResult,
                        nsresult* aParseResult = nullptr) override;
   virtual bool UnsetAttr(nsAtom* aAttribute) override;
@@ -50,13 +48,13 @@ public:
   
   void MpathChanged() { mIsPathStale = mHasChanged = true; }
 
-protected:
+ protected:
   enum PathSourceType {
     
     
-    ePathSourceType_None,      
-    ePathSourceType_ByAttr,    
-    ePathSourceType_ToAttr,    
+    ePathSourceType_None,    
+    ePathSourceType_ByAttr,  
+    ePathSourceType_ToAttr,  
     ePathSourceType_ValuesAttr,
     ePathSourceType_PathAttr,
     ePathSourceType_Mpath
@@ -69,37 +67,36 @@ protected:
 
   virtual bool IsToAnimation() const override;
 
-  void     CheckKeyPoints();
+  void CheckKeyPoints();
   nsresult SetKeyPoints(const nsAString& aKeyPoints, nsAttrValue& aResult);
-  void     UnsetKeyPoints();
+  void UnsetKeyPoints();
   nsresult SetRotate(const nsAString& aRotate, nsAttrValue& aResult);
-  void     UnsetRotate();
+  void UnsetRotate();
 
   
-  void     MarkStaleIfAttributeAffectsPath(nsAtom* aAttribute);
-  void     RebuildPathAndVertices(const nsIContent* aContextElem);
-  void     RebuildPathAndVerticesFromMpathElem(dom::SVGMPathElement* aMpathElem);
-  void     RebuildPathAndVerticesFromPathAttr();
-  void     RebuildPathAndVerticesFromBasicAttrs(const nsIContent* aContextElem);
-  bool     GenerateValuesForPathAndPoints(Path* aPath,
-                                          bool aIsKeyPoints,
-                                          FallibleTArray<double>& aPointDistances,
-                                          nsSMILValueArray& aResult);
+  void MarkStaleIfAttributeAffectsPath(nsAtom* aAttribute);
+  void RebuildPathAndVertices(const nsIContent* aContextElem);
+  void RebuildPathAndVerticesFromMpathElem(dom::SVGMPathElement* aMpathElem);
+  void RebuildPathAndVerticesFromPathAttr();
+  void RebuildPathAndVerticesFromBasicAttrs(const nsIContent* aContextElem);
+  bool GenerateValuesForPathAndPoints(Path* aPath, bool aIsKeyPoints,
+                                      FallibleTArray<double>& aPointDistances,
+                                      nsSMILValueArray& aResult);
 
   
   
-  FallibleTArray<double>     mKeyPoints; 
+  FallibleTArray<double> mKeyPoints;  
 
-  RotateType                 mRotateType;  
-  float                      mRotateAngle; 
+  RotateType mRotateType;  
+  float mRotateAngle;      
 
-  PathSourceType             mPathSourceType; 
-  RefPtr<Path>               mPath;           
-  FallibleTArray<double>     mPathVertices; 
+  PathSourceType mPathSourceType;        
+  RefPtr<Path> mPath;                    
+  FallibleTArray<double> mPathVertices;  
 
-  bool                       mIsPathStale;
+  bool mIsPathStale;
 };
 
-} 
+}  
 
-#endif 
+#endif  

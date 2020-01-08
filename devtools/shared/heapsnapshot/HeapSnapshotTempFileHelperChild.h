@@ -12,21 +12,20 @@
 namespace mozilla {
 namespace devtools {
 
-class HeapSnapshotTempFileHelperChild : public PHeapSnapshotTempFileHelperChild
-{
-    explicit HeapSnapshotTempFileHelperChild() { }
+class HeapSnapshotTempFileHelperChild
+    : public PHeapSnapshotTempFileHelperChild {
+  explicit HeapSnapshotTempFileHelperChild() {}
 
-public:
-    static inline PHeapSnapshotTempFileHelperChild* Create();
+ public:
+  static inline PHeapSnapshotTempFileHelperChild* Create();
 };
 
  inline PHeapSnapshotTempFileHelperChild*
-HeapSnapshotTempFileHelperChild::Create()
-{
-    return new HeapSnapshotTempFileHelperChild();
+HeapSnapshotTempFileHelperChild::Create() {
+  return new HeapSnapshotTempFileHelperChild();
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -42,7 +42,9 @@ const int InputBufferSize = 8 * 16384;
 
 
 
-const size_t RealtimeFrameLimit = 8192 + 4096 
+
+
+const size_t RealtimeFrameLimit = 8192 + 4096  
                                   - WEBAUDIO_BLOCK_SIZE;
 
 
@@ -56,213 +58,211 @@ const size_t MaxRealtimeFFTSize = 4096;
 
 ReverbConvolver::ReverbConvolver(const float* impulseResponseData,
                                  size_t impulseResponseLength,
-                                 size_t maxFFTSize,
-                                 size_t convolverRenderPhase,
+                                 size_t maxFFTSize, size_t convolverRenderPhase,
                                  bool useBackgroundThreads)
-    : m_impulseResponseLength(impulseResponseLength)
-    , m_accumulationBuffer(impulseResponseLength + WEBAUDIO_BLOCK_SIZE)
-    , m_inputBuffer(InputBufferSize)
-    , m_backgroundThread("ConvolverWorker")
-    , m_backgroundThreadCondition(&m_backgroundThreadLock)
-    , m_useBackgroundThreads(useBackgroundThreads)
-    , m_wantsToExit(false)
-    , m_moreInputBuffered(false)
-{
+    : m_impulseResponseLength(impulseResponseLength),
+      m_accumulationBuffer(impulseResponseLength + WEBAUDIO_BLOCK_SIZE),
+      m_inputBuffer(InputBufferSize),
+      m_backgroundThread("ConvolverWorker"),
+      m_backgroundThreadCondition(&m_backgroundThreadLock),
+      m_useBackgroundThreads(useBackgroundThreads),
+      m_wantsToExit(false),
+      m_moreInputBuffered(false) {
+  
+  
+  
+  bool hasRealtimeConstraint = useBackgroundThreads;
+
+  const float* response = impulseResponseData;
+  size_t totalResponseLength = impulseResponseLength;
+
+  
+  
+  size_t reverbTotalLatency = 0;
+
+  size_t stageOffset = 0;
+  size_t stagePhase = 0;
+  size_t fftSize = MinFFTSize;
+  while (stageOffset < totalResponseLength) {
+    size_t stageSize = fftSize / 2;
+
     
     
-    bool hasRealtimeConstraint = useBackgroundThreads;
-
-    const float* response = impulseResponseData;
-    size_t totalResponseLength = impulseResponseLength;
-
     
-    
-    size_t reverbTotalLatency = 0;
-
-    size_t stageOffset = 0;
-    size_t stagePhase = 0;
-    size_t fftSize = MinFFTSize;
-    while (stageOffset < totalResponseLength) {
-        size_t stageSize = fftSize / 2;
-
-        
-        
-        if (stageSize + stageOffset > totalResponseLength) {
-            stageSize = totalResponseLength - stageOffset;
-            
-            fftSize = MinFFTSize;
-            while (stageSize * 2 > fftSize) {
-              fftSize *= 2;
-            }
-        }
-
-        
-        int renderPhase = convolverRenderPhase + stagePhase;
-
-        nsAutoPtr<ReverbConvolverStage> stage
-          (new ReverbConvolverStage(response, totalResponseLength,
-                                    reverbTotalLatency, stageOffset, stageSize,
-                                    fftSize, renderPhase,
-                                    &m_accumulationBuffer));
-
-        bool isBackgroundStage = false;
-
-        if (this->useBackgroundThreads() && stageOffset > RealtimeFrameLimit) {
-            m_backgroundStages.AppendElement(stage.forget());
-            isBackgroundStage = true;
-        } else
-            m_stages.AppendElement(stage.forget());
-
-        
+    if (stageSize + stageOffset > totalResponseLength) {
+      stageSize = totalResponseLength - stageOffset;
+      
+      fftSize = MinFFTSize;
+      while (stageSize * 2 > fftSize) {
         fftSize *= 2;
-
-        stageOffset += stageSize;
-
-        if (hasRealtimeConstraint && !isBackgroundStage &&
-            fftSize > MaxRealtimeFFTSize) {
-          fftSize = MaxRealtimeFFTSize;
-          
-          
-          
-          
-          
-          
-          
-          const uint32_t phaseLookup[] = { 14, 0, 10, 4 };
-          stagePhase =
-            WEBAUDIO_BLOCK_SIZE *
-            phaseLookup[m_stages.Length() % ArrayLength(phaseLookup)];
-        } else if (fftSize > maxFFTSize) {
-            fftSize = maxFFTSize;
-            
-            
-            
-            stagePhase += 5 * WEBAUDIO_BLOCK_SIZE;
-        } else if (stageSize > WEBAUDIO_BLOCK_SIZE) {
-            
-            
-            stagePhase = stageSize - WEBAUDIO_BLOCK_SIZE;
-        }
+      }
     }
 
     
     
-    if (this->useBackgroundThreads() && m_backgroundStages.Length() > 0) {
-        if (!m_backgroundThread.Start()) {
-          NS_WARNING("Cannot start convolver thread.");
-          return;
-        }
-        m_backgroundThread.message_loop()->PostTask(NewNonOwningRunnableMethod(
-          "WebCore::ReverbConvolver::backgroundThreadEntry",
-          this,
-          &ReverbConvolver::backgroundThreadEntry));
+    int renderPhase = convolverRenderPhase + stagePhase;
+
+    nsAutoPtr<ReverbConvolverStage> stage(new ReverbConvolverStage(
+        response, totalResponseLength, reverbTotalLatency, stageOffset,
+        stageSize, fftSize, renderPhase, &m_accumulationBuffer));
+
+    bool isBackgroundStage = false;
+
+    if (this->useBackgroundThreads() && stageOffset > RealtimeFrameLimit) {
+      m_backgroundStages.AppendElement(stage.forget());
+      isBackgroundStage = true;
+    } else
+      m_stages.AppendElement(stage.forget());
+
+    
+    fftSize *= 2;
+
+    stageOffset += stageSize;
+
+    if (hasRealtimeConstraint && !isBackgroundStage &&
+        fftSize > MaxRealtimeFFTSize) {
+      fftSize = MaxRealtimeFFTSize;
+      
+      
+      
+      
+      
+      
+      
+      const uint32_t phaseLookup[] = {14, 0, 10, 4};
+      stagePhase = WEBAUDIO_BLOCK_SIZE *
+                   phaseLookup[m_stages.Length() % ArrayLength(phaseLookup)];
+    } else if (fftSize > maxFFTSize) {
+      fftSize = maxFFTSize;
+      
+      
+      
+      stagePhase += 5 * WEBAUDIO_BLOCK_SIZE;
+    } else if (stageSize > WEBAUDIO_BLOCK_SIZE) {
+      
+      
+      stagePhase = stageSize - WEBAUDIO_BLOCK_SIZE;
     }
+  }
+
+  
+  
+  
+  if (this->useBackgroundThreads() && m_backgroundStages.Length() > 0) {
+    if (!m_backgroundThread.Start()) {
+      NS_WARNING("Cannot start convolver thread.");
+      return;
+    }
+    m_backgroundThread.message_loop()->PostTask(NewNonOwningRunnableMethod(
+        "WebCore::ReverbConvolver::backgroundThreadEntry", this,
+        &ReverbConvolver::backgroundThreadEntry));
+  }
 }
 
-ReverbConvolver::~ReverbConvolver()
-{
+ReverbConvolver::~ReverbConvolver() {
+  
+  if (useBackgroundThreads() && m_backgroundThread.IsRunning()) {
+    m_wantsToExit = true;
+
     
-    if (useBackgroundThreads() && m_backgroundThread.IsRunning()) {
-        m_wantsToExit = true;
-
-        
-        {
-            AutoLock locker(m_backgroundThreadLock);
-            m_moreInputBuffered = true;
-            m_backgroundThreadCondition.Signal();
-        }
-
-        m_backgroundThread.Stop();
+    {
+      AutoLock locker(m_backgroundThreadLock);
+      m_moreInputBuffered = true;
+      m_backgroundThreadCondition.Signal();
     }
+
+    m_backgroundThread.Stop();
+  }
 }
 
-size_t ReverbConvolver::sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-{
-    size_t amount = aMallocSizeOf(this);
-    amount += m_stages.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    for (size_t i = 0; i < m_stages.Length(); i++) {
-        if (m_stages[i]) {
-            amount += m_stages[i]->sizeOfIncludingThis(aMallocSizeOf);
-        }
+size_t ReverbConvolver::sizeOfIncludingThis(
+    mozilla::MallocSizeOf aMallocSizeOf) const {
+  size_t amount = aMallocSizeOf(this);
+  amount += m_stages.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (size_t i = 0; i < m_stages.Length(); i++) {
+    if (m_stages[i]) {
+      amount += m_stages[i]->sizeOfIncludingThis(aMallocSizeOf);
     }
+  }
 
-    amount += m_backgroundStages.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    for (size_t i = 0; i < m_backgroundStages.Length(); i++) {
-        if (m_backgroundStages[i]) {
-            amount += m_backgroundStages[i]->sizeOfIncludingThis(aMallocSizeOf);
-        }
+  amount += m_backgroundStages.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (size_t i = 0; i < m_backgroundStages.Length(); i++) {
+    if (m_backgroundStages[i]) {
+      amount += m_backgroundStages[i]->sizeOfIncludingThis(aMallocSizeOf);
     }
+  }
 
-    
-    
-    amount += m_accumulationBuffer.sizeOfExcludingThis(aMallocSizeOf);
-    amount += m_inputBuffer.sizeOfExcludingThis(aMallocSizeOf);
+  
+  
+  amount += m_accumulationBuffer.sizeOfExcludingThis(aMallocSizeOf);
+  amount += m_inputBuffer.sizeOfExcludingThis(aMallocSizeOf);
 
-    
-    
-    
-    
-    return amount;
+  
+  
+  
+  
+  return amount;
 }
 
-void ReverbConvolver::backgroundThreadEntry()
-{
-    while (!m_wantsToExit) {
-        
-        m_moreInputBuffered = false;
-        {
-            AutoLock locker(m_backgroundThreadLock);
-            while (!m_moreInputBuffered && !m_wantsToExit)
-                m_backgroundThreadCondition.Wait();
-        }
-
-        
-        int writeIndex = m_inputBuffer.writeIndex();
-
-        
-        
-        int readIndex;
-
-        while ((readIndex = m_backgroundStages[0]->inputReadIndex()) != writeIndex) { 
-            
-            for (size_t i = 0; i < m_backgroundStages.Length(); ++i)
-                m_backgroundStages[i]->processInBackground(this);
-        }
+void ReverbConvolver::backgroundThreadEntry() {
+  while (!m_wantsToExit) {
+    
+    m_moreInputBuffered = false;
+    {
+      AutoLock locker(m_backgroundThreadLock);
+      while (!m_moreInputBuffered && !m_wantsToExit)
+        m_backgroundThreadCondition.Wait();
     }
+
+    
+    
+    int writeIndex = m_inputBuffer.writeIndex();
+
+    
+    
+    
+    int readIndex;
+
+    while ((readIndex = m_backgroundStages[0]->inputReadIndex()) !=
+           writeIndex) {  
+      
+      for (size_t i = 0; i < m_backgroundStages.Length(); ++i)
+        m_backgroundStages[i]->processInBackground(this);
+    }
+  }
 }
 
 void ReverbConvolver::process(const float* sourceChannelData,
-                              float* destinationChannelData)
-{
-    const float* source = sourceChannelData;
-    float* destination = destinationChannelData;
-    bool isDataSafe = source && destination;
-    MOZ_ASSERT(isDataSafe);
-    if (!isDataSafe)
-        return;
+                              float* destinationChannelData) {
+  const float* source = sourceChannelData;
+  float* destination = destinationChannelData;
+  bool isDataSafe = source && destination;
+  MOZ_ASSERT(isDataSafe);
+  if (!isDataSafe) return;
 
-    
-    m_inputBuffer.write(source, WEBAUDIO_BLOCK_SIZE);
+  
+  m_inputBuffer.write(source, WEBAUDIO_BLOCK_SIZE);
 
-    
-    for (size_t i = 0; i < m_stages.Length(); ++i)
-        m_stages[i]->process(source);
+  
+  for (size_t i = 0; i < m_stages.Length(); ++i) m_stages[i]->process(source);
 
-    
-    m_accumulationBuffer.readAndClear(destination, WEBAUDIO_BLOCK_SIZE);
+  
+  m_accumulationBuffer.readAndClear(destination, WEBAUDIO_BLOCK_SIZE);
 
-    
+  
 
-    
-    
-    
-    
-    
-    if (m_backgroundThreadLock.Try()) {
-        m_moreInputBuffered = true;
-        m_backgroundThreadCondition.Signal();
-        m_backgroundThreadLock.Release();
-    }
+  
+  
+  
+  
+  
+  
+  
+  if (m_backgroundThreadLock.Try()) {
+    m_moreInputBuffered = true;
+    m_backgroundThreadCondition.Signal();
+    m_backgroundThreadLock.Release();
+  }
 }
 
-} 
+}  

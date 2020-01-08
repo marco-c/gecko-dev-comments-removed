@@ -217,7 +217,7 @@ namespace ipc {
 class IProtocol;
 class PBackgroundChild;
 class PBackgroundParent;
-}
+}  
 
 namespace dom {
 
@@ -227,47 +227,44 @@ class nsIContentParent;
 
 namespace IPCBlobUtils {
 
-already_AddRefed<BlobImpl>
-Deserialize(const IPCBlob& aIPCBlob);
+already_AddRefed<BlobImpl> Deserialize(const IPCBlob& aIPCBlob);
 
 
 
-nsresult
-Serialize(BlobImpl* aBlobImpl, nsIContentChild* aManager, IPCBlob& aIPCBlob);
+nsresult Serialize(BlobImpl* aBlobImpl, nsIContentChild* aManager,
+                   IPCBlob& aIPCBlob);
 
-nsresult
-Serialize(BlobImpl* aBlobImpl, mozilla::ipc::PBackgroundChild* aManager,
-          IPCBlob& aIPCBlob);
+nsresult Serialize(BlobImpl* aBlobImpl,
+                   mozilla::ipc::PBackgroundChild* aManager, IPCBlob& aIPCBlob);
 
-nsresult
-Serialize(BlobImpl* aBlobImpl, nsIContentParent* aManager, IPCBlob& aIPCBlob);
+nsresult Serialize(BlobImpl* aBlobImpl, nsIContentParent* aManager,
+                   IPCBlob& aIPCBlob);
 
-nsresult
-Serialize(BlobImpl* aBlobImpl, mozilla::ipc::PBackgroundParent* aManager,
-          IPCBlob& aIPCBlob);
-
+nsresult Serialize(BlobImpl* aBlobImpl,
+                   mozilla::ipc::PBackgroundParent* aManager,
+                   IPCBlob& aIPCBlob);
 
 
-nsresult
-SerializeUntyped(BlobImpl* aBlobImpl, mozilla::ipc::IProtocol* aActor, IPCBlob& aIPCBlob);
 
-} 
-} 
+nsresult SerializeUntyped(BlobImpl* aBlobImpl, mozilla::ipc::IProtocol* aActor,
+                          IPCBlob& aIPCBlob);
+
+}  
+}  
 
 namespace ipc {
 
 
 
 
-template<>
-struct IPDLParamTraits<mozilla::dom::BlobImpl>
-{
+template <>
+struct IPDLParamTraits<mozilla::dom::BlobImpl> {
   static void Write(IPC::Message* aMsg, IProtocol* aActor,
                     mozilla::dom::BlobImpl* aParam);
   static bool Read(const IPC::Message* aMsg, PickleIterator* aIter,
                    IProtocol* aActor, RefPtr<mozilla::dom::BlobImpl>* aResult);
 };
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

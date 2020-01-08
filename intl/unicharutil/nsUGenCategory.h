@@ -12,14 +12,14 @@
 
 
 enum class nsUGenCategory {
-  kUndefined    = 0,
-  kMark         = 1, 
-  kNumber       = 2, 
-  kSeparator    = 3, 
-  kOther        = 4, 
-  kLetter       = 5, 
-  kPunctuation  = 6, 
-  kSymbol       = 7  
+  kUndefined = 0,
+  kMark = 1,         
+  kNumber = 2,       
+  kSeparator = 3,    
+  kOther = 4,        
+  kLetter = 5,       
+  kPunctuation = 6,  
+  kSymbol = 7        
 };
 
-#endif 
+#endif  

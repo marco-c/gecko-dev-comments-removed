@@ -12,13 +12,12 @@
 
 
 
-template<class T> static inline gpointer
-FuncToGpointer(T aFunction)
-{
-    return reinterpret_cast<gpointer>
-        (reinterpret_cast<uintptr_t>
-         
-         (reinterpret_cast<void (*)()>(aFunction)));
+template <class T>
+static inline gpointer FuncToGpointer(T aFunction) {
+  return reinterpret_cast<gpointer>(
+      reinterpret_cast<uintptr_t>
+      
+      (reinterpret_cast<void (*)()>(aFunction)));
 }
 
-#endif 
+#endif  

@@ -17,9 +17,8 @@ namespace net {
 class BrowseOperator;
 class RegisterOperator;
 
-class nsDNSServiceDiscovery final : public nsIDNSServiceDiscovery
-{
-public:
+class nsDNSServiceDiscovery final : public nsIDNSServiceDiscovery {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIDNSSERVICEDISCOVERY
 
@@ -35,14 +34,14 @@ public:
   nsresult StopDiscovery(nsIDNSServiceDiscoveryListener* aListener);
   nsresult UnregisterService(nsIDNSRegistrationListener* aListener);
 
-private:
+ private:
   virtual ~nsDNSServiceDiscovery() = default;
 
   nsRefPtrHashtable<nsISupportsHashKey, BrowseOperator> mDiscoveryMap;
   nsRefPtrHashtable<nsISupportsHashKey, RegisterOperator> mRegisterMap;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

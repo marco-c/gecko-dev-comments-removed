@@ -11,7 +11,7 @@
 const uint32_t kEVENT_WIN_UNKNOWN = 0x00000000;
 
 static const uint32_t gWinEventMap[] = {
-  
+    
   kEVENT_WIN_UNKNOWN,                                
   EVENT_OBJECT_SHOW,                                 
   EVENT_OBJECT_HIDE,                                 
@@ -101,5 +101,5 @@ static const uint32_t gWinEventMap[] = {
   kEVENT_WIN_UNKNOWN,                                
   EVENT_OBJECT_VALUECHANGE,                          
   kEVENT_WIN_UNKNOWN,                                
-  
+    
 };

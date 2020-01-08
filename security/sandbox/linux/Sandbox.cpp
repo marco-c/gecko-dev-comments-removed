@@ -64,7 +64,7 @@ extern "C" {
 namespace __sanitizer {
 
 typedef signed long sptr;
-} 
+}  
 
 typedef struct {
   int coverage_sandboxed;
@@ -72,10 +72,10 @@ typedef struct {
   unsigned int coverage_max_block_size;
 } __sanitizer_sandbox_arguments;
 
-MOZ_IMPORT_API void
-__sanitizer_sandbox_on_notify(__sanitizer_sandbox_arguments *args);
-} 
-#endif 
+MOZ_IMPORT_API void __sanitizer_sandbox_on_notify(
+    __sanitizer_sandbox_arguments* args);
+}  
+#endif  
 
 
 mozilla::Atomic<int> gSeccompTsyncBroadcastSignum(0);
@@ -92,16 +92,14 @@ static void (*gChromiumSigSysHandler)(int, siginfo_t*, void*);
 
 
 
-static bool
-ContextIsError(const ucontext_t *aContext, int aError)
-{
+static bool ContextIsError(const ucontext_t* aContext, int aError) {
   
   
   typedef decltype(+SECCOMP_RESULT(aContext)) reg_t;
 
 #ifdef __mips__
-  return SECCOMP_PARM4(aContext) != 0
-    && SECCOMP_RESULT(aContext) == static_cast<reg_t>(aError);
+  return SECCOMP_PARM4(aContext) != 0 &&
+         SECCOMP_RESULT(aContext) == static_cast<reg_t>(aError);
 #else
   return SECCOMP_RESULT(aContext) == static_cast<reg_t>(-aError);
 #endif
@@ -119,10 +117,8 @@ ContextIsError(const ucontext_t *aContext, int aError)
 
 
 
-static void
-SigSysHandler(int nr, siginfo_t *info, void *void_context)
-{
-  ucontext_t *ctx = static_cast<ucontext_t*>(void_context);
+static void SigSysHandler(int nr, siginfo_t* info, void* void_context) {
+  ucontext_t* ctx = static_cast<ucontext_t*>(void_context);
   
   
   MOZ_DIAGNOSTIC_ASSERT(ctx);
@@ -143,12 +139,12 @@ SigSysHandler(int nr, siginfo_t *info, void *void_context)
 
   
   
-  SANDBOX_LOG_ERROR("seccomp sandbox violation: pid %d, tid %d, syscall %d,"
-                    " args %d %d %d %d %d %d.%s",
-                    report.mPid, report.mTid, report.mSyscall,
-                    report.mArgs[0], report.mArgs[1], report.mArgs[2],
-                    report.mArgs[3], report.mArgs[4], report.mArgs[5],
-                    gSandboxCrashOnError ? "  Killing process." : "");
+  SANDBOX_LOG_ERROR(
+      "seccomp sandbox violation: pid %d, tid %d, syscall %d,"
+      " args %d %d %d %d %d %d.%s",
+      report.mPid, report.mTid, report.mSyscall, report.mArgs[0],
+      report.mArgs[1], report.mArgs[2], report.mArgs[3], report.mArgs[4],
+      report.mArgs[5], gSandboxCrashOnError ? "  Killing process." : "");
 
   if (gSandboxCrashOnError) {
     
@@ -167,9 +163,7 @@ SigSysHandler(int nr, siginfo_t *info, void *void_context)
 
 
 
-static void
-InstallSigSysHandler(void)
-{
+static void InstallSigSysHandler(void) {
   struct sigaction act;
 
   
@@ -219,9 +213,8 @@ InstallSigSysHandler(void)
 
 
 
-static bool MOZ_MUST_USE
-InstallSyscallFilter(const sock_fprog *aProg, bool aUseTSync)
-{
+static bool MOZ_MUST_USE InstallSyscallFilter(const sock_fprog* aProg,
+                                              bool aUseTSync) {
   if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
     if (!aUseTSync && errno == ETXTBSY) {
       return false;
@@ -238,7 +231,8 @@ InstallSyscallFilter(const sock_fprog *aProg, bool aUseTSync)
       MOZ_CRASH("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER)");
     }
   } else {
-    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, (unsigned long)aProg, 0, 0)) {
+    if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, (unsigned long)aProg, 0,
+              0)) {
       SANDBOX_LOG_ERROR("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER) failed: %s",
                         strerror(errno));
       MOZ_CRASH("seccomp+tsync failed, but kernel supports tsync");
@@ -260,15 +254,12 @@ const sock_fprog* gSetSandboxFilter;
 
 
 
-static int
-FindFreeSignalNumber()
-{
+static int FindFreeSignalNumber() {
   for (int signum = SIGRTMAX; signum >= SIGRTMIN; --signum) {
     struct sigaction sa;
 
     if (sigaction(signum, nullptr, &sa) == 0 &&
-        (sa.sa_flags & SA_SIGINFO) == 0 &&
-        sa.sa_handler == SIG_DFL) {
+        (sa.sa_flags & SA_SIGINFO) == 0 && sa.sa_handler == SIG_DFL) {
       return signum;
     }
   }
@@ -277,15 +268,11 @@ FindFreeSignalNumber()
 
 
 
-static bool
-SetThreadSandbox()
-{
+static bool SetThreadSandbox() {
   return InstallSyscallFilter(gSetSandboxFilter, false);
 }
 
-static void
-SetThreadSandboxHandler(int signum)
-{
+static void SetThreadSandboxHandler(int signum) {
   
   
   if (SetThreadSandbox()) {
@@ -295,13 +282,10 @@ SetThreadSandboxHandler(int signum)
   }
   
   
-  syscall(__NR_futex, reinterpret_cast<int*>(&gSetSandboxDone),
-          FUTEX_WAKE, 1);
+  syscall(__NR_futex, reinterpret_cast<int*>(&gSetSandboxDone), FUTEX_WAKE, 1);
 }
 
-static void
-EnterChroot()
-{
+static void EnterChroot() {
   if (!PR_GetEnv(kSandboxChrootEnvFlag)) {
     return;
   }
@@ -314,12 +298,10 @@ EnterChroot()
   close(kSandboxChrootClientFd);
 }
 
-static void
-BroadcastSetThreadSandbox(const sock_fprog* aFilter)
-{
+static void BroadcastSetThreadSandbox(const sock_fprog* aFilter) {
   pid_t pid, tid, myTid;
-  DIR *taskdp;
-  struct dirent *de;
+  DIR* taskdp;
+  struct dirent* de;
 
   
   
@@ -344,7 +326,7 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
     sandboxProgress = false;
     
     while ((de = readdir(taskdp))) {
-      char *endptr;
+      char* endptr;
       tid = strtol(de->d_name, &endptr, 10);
       if (*endptr != '\0' || tid <= 0) {
         
@@ -384,15 +366,16 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
       
       
       
-      static const int crashDelay = 10; 
+      static const int crashDelay = 10;  
       struct timespec timeLimit;
       clock_gettime(CLOCK_MONOTONIC, &timeLimit);
       timeLimit.tv_sec += crashDelay;
       while (true) {
-        static const struct timespec futexTimeout = { 0, 10*1000*1000 }; 
+        static const struct timespec futexTimeout = {0,
+                                                     10 * 1000 * 1000};  
         
         if (syscall(__NR_futex, reinterpret_cast<int*>(&gSetSandboxDone),
-                  FUTEX_WAIT, 0, &futexTimeout) != 0) {
+                    FUTEX_WAIT, 0, &futexTimeout) != 0) {
           if (errno != EWOULDBLOCK && errno != ETIMEDOUT && errno != EINTR) {
             SANDBOX_LOG_ERROR("FUTEX_WAIT: %s\n", strerror(errno));
             MOZ_CRASH();
@@ -421,9 +404,10 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
         if (now.tv_sec > timeLimit.tv_sec ||
             (now.tv_sec == timeLimit.tv_sec &&
              now.tv_nsec > timeLimit.tv_nsec)) {
-          SANDBOX_LOG_ERROR("Thread %d unresponsive for %d seconds."
-                            "  Killing process.",
-                            tid, crashDelay);
+          SANDBOX_LOG_ERROR(
+              "Thread %d unresponsive for %d seconds."
+              "  Killing process.",
+              tid, crashDelay);
           MOZ_CRASH();
         }
       }
@@ -435,8 +419,8 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
   oldHandler = signal(tsyncSignum, SIG_DFL);
   if (oldHandler != SetThreadSandboxHandler) {
     
-    SANDBOX_LOG_ERROR("handler for signal %d was changed to %p!",
-                      tsyncSignum, oldHandler);
+    SANDBOX_LOG_ERROR("handler for signal %d was changed to %p!", tsyncSignum,
+                      oldHandler);
     MOZ_CRASH();
   }
   gSeccompTsyncBroadcastSignum = 0;
@@ -446,9 +430,7 @@ BroadcastSetThreadSandbox(const sock_fprog* aFilter)
   gSetSandboxFilter = nullptr;
 }
 
-static void
-ApplySandboxWithTSync(sock_fprog* aFilter)
-{
+static void ApplySandboxWithTSync(sock_fprog* aFilter) {
   
   
   
@@ -459,9 +441,7 @@ ApplySandboxWithTSync(sock_fprog* aFilter)
 }
 
 #ifdef NIGHTLY_BUILD
-static bool
-IsLibPresent(const char* aName)
-{
+static bool IsLibPresent(const char* aName) {
   if (const auto handle = dlopen(aName, RTLD_LAZY | RTLD_NOLOAD)) {
     dlclose(handle);
     return true;
@@ -469,13 +449,12 @@ IsLibPresent(const char* aName)
   return false;
 }
 
-static const Array<const char*, 1> kLibsThatWillCrash {
-  "libesets_pac.so",
+static const Array<const char*, 1> kLibsThatWillCrash{
+    "libesets_pac.so",
 };
-#endif 
+#endif  
 
-void
-SandboxEarlyInit() {
+void SandboxEarlyInit() {
   if (PR_GetEnv("MOZ_SANDBOXED") == nullptr) {
     return;
   }
@@ -485,8 +464,8 @@ SandboxEarlyInit() {
   const char* oldPreload = PR_GetEnv("MOZ_ORIG_LD_PRELOAD");
   char* preloadEntry;
   
-  if (asprintf(&preloadEntry, "LD_PRELOAD=%s",
-               oldPreload ? oldPreload : "") != -1) {
+  if (asprintf(&preloadEntry, "LD_PRELOAD=%s", oldPreload ? oldPreload : "") !=
+      -1) {
     PR_SetEnv(preloadEntry);
   }
 
@@ -510,15 +489,14 @@ SandboxEarlyInit() {
     oldHandler = signal(tsyncSignum, SetThreadSandboxHandler);
     if (oldHandler != SIG_DFL) {
       
-      SANDBOX_LOG_ERROR("signal %d in use by handler %p!\n",
-                        tsyncSignum, oldHandler);
+      SANDBOX_LOG_ERROR("signal %d in use by handler %p!\n", tsyncSignum,
+                        oldHandler);
       MOZ_CRASH();
     }
   }
 }
 
-static void
-SandboxLateInit() {
+static void SandboxLateInit() {
 #ifdef NIGHTLY_BUILD
   gSandboxCrashOnError = true;
   for (const char* name : kLibsThatWillCrash) {
@@ -537,9 +515,8 @@ SandboxLateInit() {
 }
 
 
-static void
-SetCurrentProcessSandbox(UniquePtr<sandbox::bpf_dsl::Policy> aPolicy)
-{
+static void SetCurrentProcessSandbox(
+    UniquePtr<sandbox::bpf_dsl::Policy> aPolicy) {
   MOZ_ASSERT(gSandboxCrashFunc);
   MOZ_RELEASE_ASSERT(gSandboxReporterClient != nullptr);
   SandboxLateInit();
@@ -606,9 +583,7 @@ SetCurrentProcessSandbox(UniquePtr<sandbox::bpf_dsl::Policy> aPolicy)
 
 
 
-bool
-SetContentProcessSandbox(ContentProcessSandboxParams&& aParams)
-{
+bool SetContentProcessSandbox(ContentProcessSandboxParams&& aParams) {
   int brokerFd = aParams.mBrokerFd;
   aParams.mBrokerFd = -1;
 
@@ -619,9 +594,8 @@ SetContentProcessSandbox(ContentProcessSandboxParams&& aParams)
     return false;
   }
 
-  auto procType = aParams.mFileProcess
-    ? SandboxReport::ProcType::FILE
-    : SandboxReport::ProcType::CONTENT;
+  auto procType = aParams.mFileProcess ? SandboxReport::ProcType::FILE
+                                       : SandboxReport::ProcType::CONTENT;
   gSandboxReporterClient = new SandboxReporterClient(procType);
 
   
@@ -630,10 +604,11 @@ SetContentProcessSandbox(ContentProcessSandboxParams&& aParams)
     sBroker = new SandboxBrokerClient(brokerFd);
   }
 
-  SetCurrentProcessSandbox(GetContentSandboxPolicy(sBroker, std::move(aParams)));
+  SetCurrentProcessSandbox(
+      GetContentSandboxPolicy(sBroker, std::move(aParams)));
   return true;
 }
-#endif 
+#endif  
 
 #ifdef MOZ_GMP_SANDBOX
 
@@ -647,21 +622,19 @@ SetContentProcessSandbox(ContentProcessSandboxParams&& aParams)
 
 
 
-void
-SetMediaPluginSandbox(const char *aFilePath)
-{
+void SetMediaPluginSandbox(const char* aFilePath) {
   MOZ_RELEASE_ASSERT(aFilePath != nullptr);
   if (!SandboxInfo::Get().Test(SandboxInfo::kEnabledForMedia)) {
     return;
   }
 
   gSandboxReporterClient =
-    new SandboxReporterClient(SandboxReport::ProcType::MEDIA_PLUGIN);
+      new SandboxReporterClient(SandboxReport::ProcType::MEDIA_PLUGIN);
 
   SandboxOpenedFile plugin(aFilePath);
   if (!plugin.IsOpen()) {
-    SANDBOX_LOG_ERROR("failed to open plugin file %s: %s",
-                      aFilePath, strerror(errno));
+    SANDBOX_LOG_ERROR("failed to open plugin file %s: %s", aFilePath,
+                      strerror(errno));
     MOZ_CRASH();
   }
 
@@ -670,14 +643,14 @@ SetMediaPluginSandbox(const char *aFilePath)
   files->Add("/dev/urandom", true);
   files->Add("/sys/devices/system/cpu/cpu0/tsc_freq_khz");
   files->Add("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
-  files->Add("/proc/cpuinfo"); 
+  files->Add("/proc/cpuinfo");  
 #ifdef __i386__
-  files->Add("/proc/self/auxv"); 
+  files->Add("/proc/self/auxv");  
 #endif
 
   
   SetCurrentProcessSandbox(GetMediaSandboxPolicy(files));
 }
-#endif 
+#endif  
 
-} 
+}  

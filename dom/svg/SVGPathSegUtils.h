@@ -14,49 +14,46 @@
 
 namespace mozilla {
 
-#define NS_SVG_PATH_SEG_MAX_ARGS         7
-#define NS_SVG_PATH_SEG_FIRST_VALID_TYPE dom::SVGPathSeg_Binding::PATHSEG_CLOSEPATH
-#define NS_SVG_PATH_SEG_LAST_VALID_TYPE  dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL
-#define NS_SVG_PATH_SEG_TYPE_COUNT       (NS_SVG_PATH_SEG_LAST_VALID_TYPE + 1)
+#define NS_SVG_PATH_SEG_MAX_ARGS 7
+#define NS_SVG_PATH_SEG_FIRST_VALID_TYPE \
+  dom::SVGPathSeg_Binding::PATHSEG_CLOSEPATH
+#define NS_SVG_PATH_SEG_LAST_VALID_TYPE \
+  dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL
+#define NS_SVG_PATH_SEG_TYPE_COUNT (NS_SVG_PATH_SEG_LAST_VALID_TYPE + 1)
 
 
 
 
 
 
-struct SVGPathTraversalState
-{
+struct SVGPathTraversalState {
   typedef gfx::Point Point;
 
-  enum TraversalMode {
-    eUpdateAll,
-    eUpdateOnlyStartAndCurrentPos
-  };
+  enum TraversalMode { eUpdateAll, eUpdateOnlyStartAndCurrentPos };
 
   SVGPathTraversalState()
-    : start(0.0, 0.0)
-    , pos(0.0, 0.0)
-    , cp1(0.0, 0.0)
-    , cp2(0.0, 0.0)
-    , length(0.0)
-    , mode(eUpdateAll)
-  {}
+      : start(0.0, 0.0),
+        pos(0.0, 0.0),
+        cp1(0.0, 0.0),
+        cp2(0.0, 0.0),
+        length(0.0),
+        mode(eUpdateAll) {}
 
   bool ShouldUpdateLengthAndControlPoints() { return mode == eUpdateAll; }
 
-  Point start; 
+  Point start;  
 
-  Point pos;   
+  Point pos;  
 
-  Point cp1;   
-               
-               
+  Point cp1;  
+              
+              
 
-  Point cp2;   
-               
-               
+  Point cp2;  
+              
+              
 
-  float length;   
+  float length;  
 
   TraversalMode mode;  
 };
@@ -74,15 +71,12 @@ struct SVGPathTraversalState
 
 
 
+class SVGPathSegUtils {
+ private:
+  SVGPathSegUtils() {}  
 
-class SVGPathSegUtils
-{
-private:
-  SVGPathSegUtils(){} 
-
-public:
-
-  static void GetValueAsString(const float *aSeg, nsAString& aValue);
+ public:
+  static void GetValueAsString(const float* aSeg, nsAString& aValue);
 
   
 
@@ -94,13 +88,15 @@ public:
 
 
   static float EncodeType(uint32_t aType) {
-    static_assert(sizeof(uint32_t) == sizeof(float), "sizeof uint32_t and float must be the same");
+    static_assert(sizeof(uint32_t) == sizeof(float),
+                  "sizeof uint32_t and float must be the same");
     MOZ_ASSERT(IsValidType(aType), "Seg type not recognized");
     return *(reinterpret_cast<float*>(&aType));
   }
 
   static uint32_t DecodeType(float aType) {
-    static_assert(sizeof(uint32_t) == sizeof(float), "sizeof uint32_t and float must be the same");
+    static_assert(sizeof(uint32_t) == sizeof(float),
+                  "sizeof uint32_t and float must be the same");
     uint32_t type = *(reinterpret_cast<uint32_t*>(&aType));
     MOZ_ASSERT(IsValidType(type), "Seg type not recognized");
     return type;
@@ -110,28 +106,29 @@ public:
     MOZ_ASSERT(IsValidType(aType), "Seg type not recognized");
 
     static const char16_t table[] = {
-      char16_t('x'),  
-      char16_t('z'),  
-      char16_t('M'),  
-      char16_t('m'),  
-      char16_t('L'),  
-      char16_t('l'),  
-      char16_t('C'),  
-      char16_t('c'),  
-      char16_t('Q'),  
-      char16_t('q'),  
-      char16_t('A'),  
-      char16_t('a'),  
-      char16_t('H'),  
-      char16_t('h'),  
-      char16_t('V'),  
-      char16_t('v'),  
-      char16_t('S'),  
-      char16_t('s'),  
-      char16_t('T'),  
-      char16_t('t')   
+        char16_t('x'),  
+        char16_t('z'),  
+        char16_t('M'),  
+        char16_t('m'),  
+        char16_t('L'),  
+        char16_t('l'),  
+        char16_t('C'),  
+        char16_t('c'),  
+        char16_t('Q'),  
+        char16_t('q'),  
+        char16_t('A'),  
+        char16_t('a'),  
+        char16_t('H'),  
+        char16_t('h'),  
+        char16_t('V'),  
+        char16_t('v'),  
+        char16_t('S'),  
+        char16_t('s'),  
+        char16_t('T'),  
+        char16_t('t')   
     };
-    static_assert(MOZ_ARRAY_LENGTH(table) == NS_SVG_PATH_SEG_TYPE_COUNT, "Unexpected table size");
+    static_assert(MOZ_ARRAY_LENGTH(table) == NS_SVG_PATH_SEG_TYPE_COUNT,
+                  "Unexpected table size");
 
     return table[aType];
   }
@@ -140,28 +137,29 @@ public:
     MOZ_ASSERT(IsValidType(aType), "Seg type not recognized");
 
     static const uint8_t table[] = {
-      0,  
-      0,  
-      2,  
-      2,  
-      2,  
-      2,  
-      6,  
-      6,  
-      4,  
-      4,  
-      7,  
-      7,  
-      1,  
-      1,  
-      1,  
-      1,  
-      4,  
-      4,  
-      2,  
-      2   
+        0,  
+        0,  
+        2,  
+        2,  
+        2,  
+        2,  
+        6,  
+        6,  
+        4,  
+        4,  
+        7,  
+        7,  
+        1,  
+        1,  
+        1,  
+        1,  
+        4,  
+        4,  
+        2,  
+        2   
     };
-    static_assert(MOZ_ARRAY_LENGTH(table) == NS_SVG_PATH_SEG_TYPE_COUNT, "Unexpected table size");
+    static_assert(MOZ_ARRAY_LENGTH(table) == NS_SVG_PATH_SEG_TYPE_COUNT,
+                  "Unexpected table size");
 
     return table[aType];
   }
@@ -189,8 +187,10 @@ public:
   static bool IsQuadraticType(uint32_t aType) {
     return aType == dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_REL ||
            aType == dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_ABS ||
-           aType == dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL ||
-           aType == dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_ABS;
+           aType ==
+               dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL ||
+           aType ==
+               dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_ABS;
   }
 
   static bool IsArcType(uint32_t aType) {
@@ -203,37 +203,40 @@ public:
 
     
     
-    static_assert(NS_SVG_PATH_SEG_LAST_VALID_TYPE ==
-                    dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL,
-                  "Unexpected type");
+    static_assert(
+        NS_SVG_PATH_SEG_LAST_VALID_TYPE ==
+            dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL,
+        "Unexpected type");
 
     return aType >= dom::SVGPathSeg_Binding::PATHSEG_MOVETO_ABS;
   }
 
   static bool IsRelativeType(uint32_t aType) {
-    MOZ_ASSERT
-      (IsRelativeOrAbsoluteType(aType),
-       "IsRelativeType called with segment type that does not come in relative and absolute forms");
+    MOZ_ASSERT(IsRelativeOrAbsoluteType(aType),
+               "IsRelativeType called with segment type that does not come in "
+               "relative and absolute forms");
 
     
     
-    static_assert(NS_SVG_PATH_SEG_LAST_VALID_TYPE ==
-                    dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL,
-                  "Unexpected type");
+    static_assert(
+        NS_SVG_PATH_SEG_LAST_VALID_TYPE ==
+            dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL,
+        "Unexpected type");
 
     return aType & 1;
   }
 
   static uint32_t RelativeVersionOfType(uint32_t aType) {
-    MOZ_ASSERT
-      (IsRelativeOrAbsoluteType(aType),
-       "RelativeVersionOfType called with segment type that does not come in relative and absolute forms");
+    MOZ_ASSERT(IsRelativeOrAbsoluteType(aType),
+               "RelativeVersionOfType called with segment type that does not "
+               "come in relative and absolute forms");
 
     
     
-    static_assert(NS_SVG_PATH_SEG_LAST_VALID_TYPE ==
-                   dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL,
-                  "Unexpected type");
+    static_assert(
+        NS_SVG_PATH_SEG_LAST_VALID_TYPE ==
+            dom::SVGPathSeg_Binding::PATHSEG_CURVETO_QUADRATIC_SMOOTH_REL,
+        "Unexpected type");
 
     return aType | 1;
   }
@@ -254,6 +257,6 @@ public:
                                   SVGPathTraversalState& aState);
 };
 
-} 
+}  
 
-#endif 
+#endif  

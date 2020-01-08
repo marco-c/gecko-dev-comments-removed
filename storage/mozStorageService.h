@@ -24,11 +24,10 @@ namespace mozilla {
 namespace storage {
 
 class Connection;
-class Service : public mozIStorageService
-              , public nsIObserver
-              , public nsIMemoryReporter
-{
-public:
+class Service : public mozIStorageService,
+                public nsIObserver,
+                public nsIMemoryReporter {
+ public:
   
 
 
@@ -47,8 +46,7 @@ public:
 
 
 
-  int localeCompareStrings(const nsAString &aStr1,
-                           const nsAString &aStr2,
+  int localeCompareStrings(const nsAString &aStr1, const nsAString &aStr2,
                            int32_t aComparisonStrength);
 
   static already_AddRefed<Service> getSingleton();
@@ -68,17 +66,13 @@ public:
 
 
 
-  static int32_t getDefaultPageSize()
-  {
-    return sDefaultPageSize;
-  }
+  static int32_t getDefaultPageSize() { return sDefaultPageSize; }
 
   
 
 
 
-  static bool pageSizeIsValid(int32_t aPageSize)
-  {
+  static bool pageSizeIsValid(int32_t aPageSize) {
     return aPageSize == 512 || aPageSize == 1024 || aPageSize == 2048 ||
            aPageSize == 4096 || aPageSize == 8192 || aPageSize == 16384 ||
            aPageSize == 32768 || aPageSize == 65536;
@@ -117,9 +111,9 @@ public:
 
 
 
-  void getConnections(nsTArray<RefPtr<Connection> >& aConnections);
+  void getConnections(nsTArray<RefPtr<Connection> > &aConnections);
 
-private:
+ private:
   Service();
   virtual ~Service();
 
@@ -177,7 +171,7 @@ private:
   static int32_t sDefaultPageSize;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

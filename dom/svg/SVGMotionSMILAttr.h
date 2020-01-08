@@ -20,7 +20,7 @@ namespace mozilla {
 
 namespace dom {
 class SVGAnimationElement;
-} 
+}  
 
 
 
@@ -29,29 +29,27 @@ class SVGAnimationElement;
 
 
 
-class SVGMotionSMILAttr : public nsISMILAttr
-{
-public:
+class SVGMotionSMILAttr : public nsISMILAttr {
+ public:
   explicit SVGMotionSMILAttr(nsSVGElement* aSVGElement)
-    : mSVGElement(aSVGElement) {}
+      : mSVGElement(aSVGElement) {}
 
   
-  virtual nsresult ValueFromString(const nsAString& aStr,
-                                   const dom::SVGAnimationElement* aSrcElement,
-                                   nsSMILValue& aValue,
-                                   bool& aPreventCachingOfSandwich) const override;
+  virtual nsresult ValueFromString(
+      const nsAString& aStr, const dom::SVGAnimationElement* aSrcElement,
+      nsSMILValue& aValue, bool& aPreventCachingOfSandwich) const override;
   virtual nsSMILValue GetBaseValue() const override;
-  virtual nsresult    SetAnimValue(const nsSMILValue& aValue) override;
-  virtual void        ClearAnimValue() override;
+  virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
+  virtual void ClearAnimValue() override;
   virtual const nsIContent* GetTargetNode() const override;
 
-protected:
+ protected:
   
   
   
   nsSVGElement* mSVGElement;
 };
 
-} 
+}  
 
-#endif 
+#endif  

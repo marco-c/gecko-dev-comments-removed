@@ -21,37 +21,30 @@
 
 #ifdef ANDROID
 #include "android/log.h"
-#define LOG(...) __android_log_print(ANDROID_LOG_INFO, "Gecko:DumpUtils", ## __VA_ARGS__)
+#define LOG(...) \
+  __android_log_print(ANDROID_LOG_INFO, "Gecko:DumpUtils", ##__VA_ARGS__)
 #else
 #define LOG(...)
 #endif
 
-#ifdef XP_UNIX 
+#ifdef XP_UNIX  
 
 
 
 
 
-class FdWatcher
-  : public MessageLoopForIO::Watcher
-  , public nsIObserver
-{
-protected:
+class FdWatcher : public MessageLoopForIO::Watcher, public nsIObserver {
+ protected:
   MessageLoopForIO::FileDescriptorWatcher mReadWatcher;
   int mFd;
 
-  virtual ~FdWatcher()
-  {
+  virtual ~FdWatcher() {
     
     MOZ_ASSERT(mFd == -1);
   }
 
-public:
-  FdWatcher()
-    : mFd(-1)
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-  }
+ public:
+  FdWatcher() : mFd(-1) { MOZ_ASSERT(NS_IsMainThread()); }
 
   
 
@@ -63,7 +56,7 @@ public:
 
 
   virtual void OnFileCanReadWithoutBlocking(int aFd) override = 0;
-  virtual void OnFileCanWriteWithoutBlocking(int aFd) override {};
+  virtual void OnFileCanWriteWithoutBlocking(int aFd) override{};
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
@@ -84,29 +77,26 @@ public:
   virtual void StopWatching();
 
   NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
-                     const char16_t* aData) override
-  {
+                     const char16_t* aData) override {
     MOZ_ASSERT(NS_IsMainThread());
     MOZ_ASSERT(!strcmp(aTopic, "xpcom-shutdown"));
 
     XRE_GetIOMessageLoop()->PostTask(mozilla::NewRunnableMethod(
-      "FdWatcher::StopWatching", this, &FdWatcher::StopWatching));
+        "FdWatcher::StopWatching", this, &FdWatcher::StopWatching));
 
     return NS_OK;
   }
 };
 
 typedef void (*FifoCallback)(const nsCString& aInputStr);
-struct FifoInfo
-{
+struct FifoInfo {
   nsCString mCommand;
   FifoCallback mCallback;
 };
 typedef nsTArray<FifoInfo> FifoInfoArray;
 
-class FifoWatcher : public FdWatcher
-{
-public:
+class FifoWatcher : public FdWatcher {
+ public:
   
 
 
@@ -127,32 +117,27 @@ public:
 
   virtual void OnFileCanReadWithoutBlocking(int aFd) override;
 
-private:
+ private:
   nsAutoCString mDirPath;
 
   static mozilla::StaticRefPtr<FifoWatcher> sSingleton;
 
   explicit FifoWatcher(nsCString aPath)
-    : mDirPath(aPath)
-    , mFifoInfoLock("FifoWatcher.mFifoInfoLock")
-  {
-  }
+      : mDirPath(aPath), mFifoInfoLock("FifoWatcher.mFifoInfoLock") {}
 
-  mozilla::Mutex mFifoInfoLock; 
+  mozilla::Mutex mFifoInfoLock;  
   FifoInfoArray mFifoInfo;
 };
 
 typedef void (*PipeCallback)(const uint8_t aRecvSig);
-struct SignalInfo
-{
+struct SignalInfo {
   uint8_t mSignal;
   PipeCallback mCallback;
 };
 typedef nsTArray<SignalInfo> SignalInfoArray;
 
-class SignalPipeWatcher : public FdWatcher
-{
-public:
+class SignalPipeWatcher : public FdWatcher {
+ public:
   static SignalPipeWatcher* GetSingleton();
 
   void RegisterCallback(uint8_t aSignal, PipeCallback aCallback);
@@ -167,29 +152,22 @@ public:
 
   virtual void OnFileCanReadWithoutBlocking(int aFd) override;
 
-private:
+ private:
   static mozilla::StaticRefPtr<SignalPipeWatcher> sSingleton;
 
-  SignalPipeWatcher()
-    : mSignalInfoLock("SignalPipeWatcher.mSignalInfoLock")
-  {
+  SignalPipeWatcher() : mSignalInfoLock("SignalPipeWatcher.mSignalInfoLock") {
     MOZ_ASSERT(NS_IsMainThread());
   }
 
-  mozilla::Mutex mSignalInfoLock; 
+  mozilla::Mutex mSignalInfoLock;  
   SignalInfoArray mSignalInfo;
 };
 
-#endif 
+#endif  
 
-class nsDumpUtils
-{
-public:
-
-  enum Mode {
-    CREATE,
-    CREATE_UNIQUE
-  };
+class nsDumpUtils {
+ public:
+  enum Mode { CREATE, CREATE_UNIQUE };
 
   
 
@@ -198,8 +176,7 @@ public:
 
 
 
-  static nsresult OpenTempFile(const nsACString& aFilename,
-                               nsIFile** aFile,
+  static nsresult OpenTempFile(const nsACString& aFilename, nsIFile** aFile,
                                const nsACString& aFoldername = EmptyCString(),
                                Mode aMode = CREATE_UNIQUE);
 };

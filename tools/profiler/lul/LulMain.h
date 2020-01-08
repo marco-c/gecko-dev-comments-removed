@@ -50,25 +50,18 @@
 
 
 
-
 namespace lul {
 
 
 class TaggedUWord {
-public:
+ public:
   
   
-  explicit TaggedUWord(uintptr_t w)
-    : mValue(w)
-    , mValid(true)
-  {}
+  explicit TaggedUWord(uintptr_t w) : mValue(w), mValid(true) {}
 
   
   
-  TaggedUWord()
-    : mValue(0)
-    , mValid(false)
-  {}
+  TaggedUWord() : mValue(0), mValid(false) {}
 
   
   TaggedUWord operator+(TaggedUWord rhs) const {
@@ -108,8 +101,7 @@ public:
   TaggedUWord operator<<(TaggedUWord rhs) const {
     if (Valid() && rhs.Valid()) {
       uintptr_t shift = rhs.Value();
-      if (shift < 8 * sizeof(uintptr_t))
-        return TaggedUWord(Value() << shift);
+      if (shift < 8 * sizeof(uintptr_t)) return TaggedUWord(Value() << shift);
     }
     return TaggedUWord();
   }
@@ -123,20 +115,19 @@ public:
   
   
   bool IsAligned() const {
-    return mValid && (mValue & (sizeof(uintptr_t)-1)) == 0;
+    return mValid && (mValue & (sizeof(uintptr_t) - 1)) == 0;
   }
 
   
   uintptr_t Value() const { return mValue; }
 
   
-  bool      Valid() const { return mValid; }
+  bool Valid() const { return mValid; }
 
-private:
+ private:
   uintptr_t mValue;
   bool mValid;
 };
-
 
 
 
@@ -162,7 +153,7 @@ struct UnwindRegs {
   TaggedUWord fp;
   TaggedUWord pc;
 #else
-# error "Unknown plat"
+#error "Unknown plat"
 #endif
 };
 
@@ -172,56 +163,45 @@ struct UnwindRegs {
 
 
 
-
-static const size_t N_STACK_BYTES = 160*1024;
+static const size_t N_STACK_BYTES = 160 * 1024;
 
 
 struct StackImage {
   
   
   uintptr_t mStartAvma;
-  size_t    mLen;
-  uint8_t   mContents[N_STACK_BYTES];
+  size_t mLen;
+  uint8_t mContents[N_STACK_BYTES];
 };
 
 
-
-template<typename T>
+template <typename T>
 class LULStats {
-public:
-  LULStats()
-    : mContext(0)
-    , mCFI(0)
-    , mFP(0)
-  {}
+ public:
+  LULStats() : mContext(0), mCFI(0), mFP(0) {}
 
   template <typename S>
   explicit LULStats(const LULStats<S>& aOther)
-    : mContext(aOther.mContext)
-    , mCFI(aOther.mCFI)
-    , mFP(aOther.mFP)
-  {}
+      : mContext(aOther.mContext), mCFI(aOther.mCFI), mFP(aOther.mFP) {}
 
   template <typename S>
-  LULStats<T>& operator=(const LULStats<S>& aOther)
-  {
+  LULStats<T>& operator=(const LULStats<S>& aOther) {
     mContext = aOther.mContext;
-    mCFI     = aOther.mCFI;
-    mFP      = aOther.mFP;
+    mCFI = aOther.mCFI;
+    mFP = aOther.mFP;
     return *this;
   }
 
   template <typename S>
   uint32_t operator-(const LULStats<S>& aOther) {
-    return (mContext - aOther.mContext) +
-           (mCFI - aOther.mCFI) + (mFP - aOther.mFP);
+    return (mContext - aOther.mContext) + (mCFI - aOther.mCFI) +
+           (mFP - aOther.mFP);
   }
 
-  T mContext; 
-  T mCFI;     
-  T mFP;      
+  T mContext;  
+  T mCFI;      
+  T mFP;       
 };
-
 
 
 
@@ -254,7 +234,7 @@ class SegArray;
 class UniqueStringUniverse;
 
 class LUL {
-public:
+ public:
   
   explicit LUL(void (*aLog)(const char*));
 
@@ -277,8 +257,8 @@ public:
   
   
   
-  void NotifyAfterMap(uintptr_t aRXavma, size_t aSize,
-                      const char* aFileName, const void* aMappedImage);
+  void NotifyAfterMap(uintptr_t aRXavma, size_t aSize, const char* aFileName,
+                      const void* aMappedImage);
 
   
   
@@ -306,9 +286,7 @@ public:
   
   
   
-  void NotifyBeforeUnmapAll() {
-    NotifyBeforeUnmap(0, UINTPTR_MAX);
-  }
+  void NotifyBeforeUnmapAll() { NotifyBeforeUnmap(0, UINTPTR_MAX); }
 
   
   
@@ -336,11 +314,10 @@ public:
   
   
   
-  void Unwind(uintptr_t* aFramePCs,
-              uintptr_t* aFrameSPs,
-              size_t* aFramesUsed,
-              size_t* aFramePointerFramesAcquired,
-              size_t aFramesAvail,
+  void Unwind( uintptr_t* aFramePCs,
+               uintptr_t* aFrameSPs,
+               size_t* aFramesUsed,
+               size_t* aFramePointerFramesAcquired, size_t aFramesAvail,
               UnwindRegs* aStartRegs, StackImage* aStackImg);
 
   
@@ -357,7 +334,7 @@ public:
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf) const;
 
-private:
+ private:
   
   LULStats<uint32_t> mStatsPrevious;
 
@@ -392,10 +369,9 @@ private:
 
 
 
+void RunLulUnitTests( int* aNTests,  int* aNTestsPassed,
+                     LUL* aLUL);
 
-void
-RunLulUnitTests(int* aNTests, int*aNTestsPassed, LUL* aLUL);
+}  
 
-} 
-
-#endif 
+#endif  

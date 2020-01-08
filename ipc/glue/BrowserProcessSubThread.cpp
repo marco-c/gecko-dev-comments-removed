@@ -19,58 +19,50 @@ namespace ipc {
 
 
 static const char* kBrowserThreadNames[BrowserProcessSubThread::ID_COUNT] = {
-  "Gecko_IOThread",  
+    "Gecko_IOThread",  
 
 
 
 #if defined(OS_LINUX) || defined(OS_SOLARIS)
-  "Gecko_Background_X11Thread",  
+    "Gecko_Background_X11Thread",  
 #endif
 };
 
  StaticMutex BrowserProcessSubThread::sLock;
 BrowserProcessSubThread* BrowserProcessSubThread::sBrowserThreads[ID_COUNT] = {
-  nullptr,  
+    nullptr,  
 
 
 
 #if defined(OS_LINUX) || defined(OS_SOLARIS)
-  nullptr,  
+    nullptr,  
 #endif
 };
 
-BrowserProcessSubThread::BrowserProcessSubThread(ID aId) :
-  base::Thread(kBrowserThreadNames[aId]),
-  mIdentifier(aId)
-{
+BrowserProcessSubThread::BrowserProcessSubThread(ID aId)
+    : base::Thread(kBrowserThreadNames[aId]), mIdentifier(aId) {
   StaticMutexAutoLock lock(sLock);
   DCHECK(aId >= 0 && aId < ID_COUNT);
   DCHECK(sBrowserThreads[aId] == nullptr);
   sBrowserThreads[aId] = this;
 }
 
-BrowserProcessSubThread::~BrowserProcessSubThread()
-{
+BrowserProcessSubThread::~BrowserProcessSubThread() {
   Stop();
   {
     StaticMutexAutoLock lock(sLock);
     sBrowserThreads[mIdentifier] = nullptr;
   }
-
 }
 
-void
-BrowserProcessSubThread::Init()
-{
+void BrowserProcessSubThread::Init() {
 #if defined(OS_WIN)
   
   CoInitialize(nullptr);
 #endif
 }
 
-void
-BrowserProcessSubThread::CleanUp()
-{
+void BrowserProcessSubThread::CleanUp() {
 #if defined(OS_WIN)
   
   
@@ -79,17 +71,14 @@ BrowserProcessSubThread::CleanUp()
 }
 
 
-MessageLoop*
-BrowserProcessSubThread::GetMessageLoop(ID aId)
-{
+MessageLoop* BrowserProcessSubThread::GetMessageLoop(ID aId) {
   StaticMutexAutoLock lock(sLock);
   DCHECK(aId >= 0 && aId < ID_COUNT);
 
-  if (sBrowserThreads[aId])
-    return sBrowserThreads[aId]->message_loop();
+  if (sBrowserThreads[aId]) return sBrowserThreads[aId]->message_loop();
 
   return nullptr;
 }
 
-} 
-} 
+}  
+}  

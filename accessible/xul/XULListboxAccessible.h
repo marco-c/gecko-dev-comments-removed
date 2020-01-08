@@ -21,9 +21,8 @@ namespace a11y {
 
 
 
-class XULColumAccessible : public AccessibleWrap
-{
-public:
+class XULColumAccessible : public AccessibleWrap {
+ public:
   XULColumAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -35,9 +34,8 @@ public:
 
 
 
-class XULColumnItemAccessible : public LeafAccessible
-{
-public:
+class XULColumnItemAccessible : public LeafAccessible {
+ public:
   XULColumnItemAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -56,15 +54,15 @@ public:
 
 
 class XULListboxAccessible : public XULSelectControlAccessible,
-                             public TableAccessible
-{
-public:
+                             public TableAccessible {
+ public:
   XULListboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
   virtual uint32_t ColCount() const override;
   virtual uint32_t RowCount() override;
-  virtual Accessible* CellAt(uint32_t aRowIndex, uint32_t aColumnIndex) override;
+  virtual Accessible* CellAt(uint32_t aRowIndex,
+                             uint32_t aColumnIndex) override;
   virtual bool IsColSelected(uint32_t aColIdx) override;
   virtual bool IsRowSelected(uint32_t aRowIdx) override;
   virtual bool IsCellSelected(uint32_t aRowIdx, uint32_t aColIdx) override;
@@ -92,7 +90,7 @@ public:
 
   virtual Accessible* ContainerWidget() const override;
 
-protected:
+ protected:
   virtual ~XULListboxAccessible() {}
 
   bool IsMulticolumn() const { return ColCount() > 1; }
@@ -101,9 +99,8 @@ protected:
 
 
 
-class XULListitemAccessible : public XULMenuitemAccessible
-{
-public:
+class XULListitemAccessible : public XULMenuitemAccessible {
+ public:
   enum { eAction_Click = 0 };
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(XULListitemAccessible,
@@ -123,7 +120,7 @@ public:
   
   virtual Accessible* ContainerWidget() const override;
 
-protected:
+ protected:
   virtual ~XULListitemAccessible();
 
   
@@ -136,11 +133,11 @@ protected:
 
   Accessible* GetListAccessible() const;
 
-private:
+ private:
   bool mIsCheckbox;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

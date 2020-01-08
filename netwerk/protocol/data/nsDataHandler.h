@@ -9,50 +9,45 @@
 #include "nsIProtocolHandler.h"
 #include "nsWeakReference.h"
 
-class nsDataHandler : public nsIProtocolHandler
-                    , public nsSupportsWeakReference
-{
-    virtual ~nsDataHandler() = default;
+class nsDataHandler : public nsIProtocolHandler,
+                      public nsSupportsWeakReference {
+  virtual ~nsDataHandler() = default;
 
-public:
-    NS_DECL_ISUPPORTS
+ public:
+  NS_DECL_ISUPPORTS
 
-    
-    NS_DECL_NSIPROTOCOLHANDLER
+  
+  NS_DECL_NSIPROTOCOLHANDLER
 
-    
-    nsDataHandler() = default;
+  
+  nsDataHandler() = default;
 
-    
-    static MOZ_MUST_USE nsresult
-    Create(nsISupports* aOuter, const nsIID& aIID, void* *aResult);
+  
+  static MOZ_MUST_USE nsresult Create(nsISupports* aOuter, const nsIID& aIID,
+                                      void** aResult);
 
-    
-    
-    
-    
-    static MOZ_MUST_USE nsresult ParseURI(nsCString& spec,
-                                          nsCString& contentType,
-                                          nsCString* contentCharset,
-                                          bool& isBase64,
-                                          nsCString* dataBuffer);
+  
+  
+  
+  
+  static MOZ_MUST_USE nsresult ParseURI(nsCString& spec, nsCString& contentType,
+                                        nsCString* contentCharset,
+                                        bool& isBase64, nsCString* dataBuffer);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    static MOZ_MUST_USE nsresult ParsePathWithoutRef(
-        const nsACString& aPath,
-        nsCString& aContentType,
-        nsCString* aContentCharset,
-        bool& aIsBase64,
-        nsDependentCSubstring* aDataBuffer);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static MOZ_MUST_USE nsresult
+  ParsePathWithoutRef(const nsACString& aPath, nsCString& aContentType,
+                      nsCString* aContentCharset, bool& aIsBase64,
+                      nsDependentCSubstring* aDataBuffer);
 };
 
 #endif 

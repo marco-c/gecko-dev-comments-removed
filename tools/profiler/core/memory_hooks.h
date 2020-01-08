@@ -12,7 +12,7 @@ namespace mozilla {
 namespace profiler {
 void install_memory_counter(bool aInstall);
 }
-}
+}  
 #endif
 
 #endif

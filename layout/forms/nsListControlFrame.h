@@ -38,8 +38,8 @@ class Event;
 class HTMLOptionElement;
 class HTMLSelectElement;
 class HTMLOptionsCollection;
-} 
-} 
+}  
+}  
 
 
 
@@ -47,9 +47,8 @@ class HTMLOptionsCollection;
 
 class nsListControlFrame final : public nsHTMLScrollFrame,
                                  public nsIFormControlFrame,
-                                 public nsISelectControlFrame
-{
-public:
+                                 public nsISelectControlFrame {
+ public:
   typedef mozilla::dom::HTMLOptionElement HTMLOptionElement;
 
   friend nsContainerFrame* NS_NewListControlFrame(nsIPresShell* aPresShell,
@@ -58,53 +57,52 @@ public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsListControlFrame)
 
-    
+  
   virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus) override;
 
-  virtual void SetInitialChildList(ChildListID     aListID,
-                                   nsFrameList&    aChildList) override;
+  virtual void SetInitialChildList(ChildListID aListID,
+                                   nsFrameList& aChildList) override;
 
-  virtual nscoord GetPrefISize(gfxContext *aRenderingContext) override;
-  virtual nscoord GetMinISize(gfxContext *aRenderingContext) override;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
 
-  virtual void Reflow(nsPresContext*           aCX,
-                      ReflowOutput&     aDesiredSize,
+  virtual void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus) override;
+                      nsReflowStatus& aStatus) override;
 
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 
-  virtual void DidReflow(nsPresContext*            aPresContext,
-                         const ReflowInput*  aReflowInput) override;
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  virtual void DidReflow(nsPresContext* aPresContext,
+                         const ReflowInput* aReflowInput) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
   virtual nsContainerFrame* GetContentInsertionFrame() override;
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
-    return nsHTMLScrollFrame::IsFrameOfType(aFlags &
-      ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
+    return nsHTMLScrollFrame::IsFrameOfType(
+        aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
   }
 
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-    
-  virtual nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) override;
+  
+  virtual nsresult SetFormProperty(nsAtom* aName,
+                                   const nsAString& aValue) override;
   virtual void SetFocus(bool aOn = true, bool aRepaint = false) override;
 
   virtual mozilla::ScrollStyles GetScrollStyles() const override;
   virtual bool ShouldPropagateComputedBSizeToScrolledContent() const override;
 
-    
+  
 #ifdef ACCESSIBILITY
   virtual mozilla::a11y::AccType AccessibleType() override;
 #endif
@@ -210,9 +208,7 @@ public:
 
 
 
-  bool MightNeedSecondPass() const {
-    return mMightNeedSecondPass;
-  }
+  bool MightNeedSecondPass() const { return mMightNeedSecondPass; }
 
   void SetSuppressScrollbarUpdate(bool aSuppress) {
     nsHTMLScrollFrame::SetSuppressScrollbarUpdate(aSuppress);
@@ -245,10 +241,10 @@ public:
 
 
 
-  void FireMenuItemActiveEvent(); 
+  void FireMenuItemActiveEvent();  
 #endif
 
-protected:
+ protected:
   
 
 
@@ -268,9 +264,9 @@ protected:
 
 
   bool GetMultiple() const {
-    return mContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::multiple);
+    return mContent->AsElement()->HasAttr(kNameSpaceID_None,
+                                          nsGkAtoms::multiple);
   }
-
 
   
 
@@ -286,9 +282,9 @@ protected:
   
 
 
-  static bool
-  IsOptionInteractivelySelectable(mozilla::dom::HTMLSelectElement* aSelect,
-                                  mozilla::dom::HTMLOptionElement* aOption);
+  static bool IsOptionInteractivelySelectable(
+      mozilla::dom::HTMLSelectElement* aSelect,
+      mozilla::dom::HTMLOptionElement* aOption);
 
   
 
@@ -309,15 +305,16 @@ protected:
 
 
 
-  bool       IgnoreMouseEventForSelection(mozilla::dom::Event* aEvent);
+  bool IgnoreMouseEventForSelection(mozilla::dom::Event* aEvent);
 
   
 
 
 
-  void       UpdateInListState(mozilla::dom::Event* aEvent);
-  void       AdjustIndexForDisabledOpt(int32_t aStartIndex, int32_t &anNewIndex,
-                                       int32_t aNumOptions, int32_t aDoAdjustInc, int32_t aDoAdjustIncNext);
+  void UpdateInListState(mozilla::dom::Event* aEvent);
+  void AdjustIndexForDisabledOpt(int32_t aStartIndex, int32_t& anNewIndex,
+                                 int32_t aNumOptions, int32_t aDoAdjustInc,
+                                 int32_t aDoAdjustIncNext);
 
   
 
@@ -337,11 +334,11 @@ protected:
   nsresult GetIndexFromDOMEvent(mozilla::dom::Event* aMouseEvent,
                                 int32_t& aCurIndex);
 
-  bool     CheckIfAllFramesHere();
-  bool     IsLeftButton(mozilla::dom::Event* aMouseEvent);
+  bool CheckIfAllFramesHere();
+  bool IsLeftButton(mozilla::dom::Event* aMouseEvent);
 
   
-  nscoord  CalcFallbackRowBSize(float aFontSizeInflation);
+  nscoord CalcFallbackRowBSize(float aFontSizeInflation);
 
   
   
@@ -349,54 +346,48 @@ protected:
   nscoord CalcIntrinsicBSize(nscoord aBSizeOfARow, int32_t aNumberOfOptions);
 
   
-  void     SetComboboxItem(int32_t aIndex);
+  void SetComboboxItem(int32_t aIndex);
 
   
 
 
 
 
-  void ReflowAsDropdown(nsPresContext*           aPresContext,
-                        ReflowOutput&     aDesiredSize,
+  void ReflowAsDropdown(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                         const ReflowInput& aReflowInput,
-                        nsReflowStatus&          aStatus);
+                        nsReflowStatus& aStatus);
 
   
-  bool     SetOptionsSelectedFromFrame(int32_t aStartIndex,
-                                       int32_t aEndIndex,
-                                       bool aValue,
-                                       bool aClearAll);
-  bool     ToggleOptionSelectedFromFrame(int32_t aIndex);
+  bool SetOptionsSelectedFromFrame(int32_t aStartIndex, int32_t aEndIndex,
+                                   bool aValue, bool aClearAll);
+  bool ToggleOptionSelectedFromFrame(int32_t aIndex);
   
 
 
-  bool     SingleSelection(int32_t aClickedIndex, bool aDoToggle);
-  bool     ExtendedSelection(int32_t aStartIndex, int32_t aEndIndex,
-                             bool aClearAll);
+  bool SingleSelection(int32_t aClickedIndex, bool aDoToggle);
+  bool ExtendedSelection(int32_t aStartIndex, int32_t aEndIndex,
+                         bool aClearAll);
   
 
 
-  bool     PerformSelection(int32_t aClickedIndex, bool aIsShift,
-                            bool aIsControl);
+  bool PerformSelection(int32_t aClickedIndex, bool aIsShift, bool aIsControl);
   
 
 
-  bool     HandleListSelection(mozilla::dom::Event * aDOMEvent,
-                               int32_t selectedIndex);
-  void     InitSelectionRange(int32_t aClickedIndex);
+  bool HandleListSelection(mozilla::dom::Event* aDOMEvent,
+                           int32_t selectedIndex);
+  void InitSelectionRange(int32_t aClickedIndex);
   MOZ_CAN_RUN_SCRIPT
-  void     PostHandleKeyEvent(int32_t aNewIndex, uint32_t aCharCode,
-                              bool aIsShift, bool aIsControlOrMeta);
+  void PostHandleKeyEvent(int32_t aNewIndex, uint32_t aCharCode, bool aIsShift,
+                          bool aIsControlOrMeta);
 
-public:
+ public:
   nsSelectsAreaFrame* GetOptionsContainer() const {
     return static_cast<nsSelectsAreaFrame*>(GetScrolledFrame());
   }
 
-protected:
-  nscoord BSizeOfARow() {
-    return GetOptionsContainer()->BSizeOfARow();
-  }
+ protected:
+  nscoord BSizeOfARow() { return GetOptionsContainer()->BSizeOfARow(); }
 
   
 
@@ -407,8 +398,8 @@ protected:
   void SetViewInternal(nsView* aView) override { mView = aView; }
 
   
-  int32_t      mStartSelectionIndex;
-  int32_t      mEndSelectionIndex;
+  int32_t mStartSelectionIndex;
+  int32_t mEndSelectionIndex;
 
   nsComboboxControlFrame* mComboboxFrame;
 
@@ -416,37 +407,37 @@ protected:
   nsView* mView;
 
   uint32_t mNumDisplayRows;
-  bool mChangesSinceDragStart:1;
-  bool mButtonDown:1;
+  bool mChangesSinceDragStart : 1;
+  bool mButtonDown : 1;
 
   
-  bool mItemSelectionStarted:1;
+  bool mItemSelectionStarted : 1;
 
-  bool mIsAllContentHere:1;
-  bool mIsAllFramesHere:1;
-  bool mHasBeenInitialized:1;
-  bool mNeedToReset:1;
-  bool mPostChildrenLoadedReset:1;
-
-  
-  bool mControlSelectMode:1;
+  bool mIsAllContentHere : 1;
+  bool mIsAllFramesHere : 1;
+  bool mHasBeenInitialized : 1;
+  bool mNeedToReset : 1;
+  bool mPostChildrenLoadedReset : 1;
 
   
-  
-  bool mMightNeedSecondPass:1;
-
-  
-
-
-
-  bool mHasPendingInterruptAtStartOfReflow:1;
+  bool mControlSelectMode : 1;
 
   
   
-  bool mDropdownCanGrow:1;
+  bool mMightNeedSecondPass : 1;
 
   
-  bool mForceSelection:1;
+
+
+
+  bool mHasPendingInterruptAtStartOfReflow : 1;
+
+  
+  
+  bool mDropdownCanGrow : 1;
+
+  
+  bool mForceSelection : 1;
 
   
   
@@ -460,39 +451,31 @@ protected:
 
   RefPtr<nsListEventListener> mEventListener;
 
-  static nsListControlFrame * mFocused;
-  static nsString * sIncrementalString;
+  static nsListControlFrame* mFocused;
+  static nsString* sIncrementalString;
 
 #ifdef DO_REFLOW_COUNTER
   int32_t mReflowId;
 #endif
 
-private:
+ private:
   
-  static nsAString& GetIncrementalString ();
+  static nsAString& GetIncrementalString();
   static DOMTimeStamp gLastKeyTime;
 
-  class MOZ_RAII AutoIncrementalSearchResetter
-  {
-  public:
-    AutoIncrementalSearchResetter() :
-      mCancelled(false)
-    {
-    }
-    ~AutoIncrementalSearchResetter()
-    {
+  class MOZ_RAII AutoIncrementalSearchResetter {
+   public:
+    AutoIncrementalSearchResetter() : mCancelled(false) {}
+    ~AutoIncrementalSearchResetter() {
       if (!mCancelled) {
         nsListControlFrame::GetIncrementalString().Truncate();
       }
     }
-    void Cancel()
-    {
-      mCancelled = true;
-    }
-  private:
+    void Cancel() { mCancelled = true; }
+
+   private:
     bool mCancelled;
   };
 };
 
 #endif 
-

@@ -39,22 +39,23 @@ class TaskDispatcher;
 
 
 
-class AbstractThread : public nsISerialEventTarget
-{
-public:
+class AbstractThread : public nsISerialEventTarget {
+ public:
   
   
   static AbstractThread* GetCurrent() { return sCurrentThreadTLS.get(); }
 
-  AbstractThread(bool aSupportsTailDispatch) : mSupportsTailDispatch(aSupportsTailDispatch) {}
+  AbstractThread(bool aSupportsTailDispatch)
+      : mSupportsTailDispatch(aSupportsTailDispatch) {}
 
   
-  static already_AddRefed<AbstractThread>
-  CreateXPCOMThreadWrapper(nsIThread* aThread, bool aRequireTailDispatch);
+  static already_AddRefed<AbstractThread> CreateXPCOMThreadWrapper(
+      nsIThread* aThread, bool aRequireTailDispatch);
 
   
-  static already_AddRefed<AbstractThread>
-  CreateEventTargetWrapper(nsIEventTarget* aEventTarget, bool aRequireTailDispatch);
+  
+  static already_AddRefed<AbstractThread> CreateEventTargetWrapper(
+      nsIEventTarget* aEventTarget, bool aRequireTailDispatch);
 
   
   
@@ -65,10 +66,12 @@ public:
   
   
   NS_IMETHOD_(bool) IsOnCurrentThreadInfallible(void) override;
-  NS_IMETHOD IsOnCurrentThread(bool *_retval) override;
-  NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable> event, uint32_t flags) override;
-  NS_IMETHOD DispatchFromScript(nsIRunnable *event, uint32_t flags) override;
-  NS_IMETHOD DelayedDispatch(already_AddRefed<nsIRunnable> event, uint32_t delay) override;
+  NS_IMETHOD IsOnCurrentThread(bool* _retval) override;
+  NS_IMETHOD Dispatch(already_AddRefed<nsIRunnable> event,
+                      uint32_t flags) override;
+  NS_IMETHOD DispatchFromScript(nsIRunnable* event, uint32_t flags) override;
+  NS_IMETHOD DelayedDispatch(already_AddRefed<nsIRunnable> event,
+                             uint32_t delay) override;
 
   enum DispatchReason { NormalDispatch, TailDispatch };
   virtual nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable,
@@ -106,6 +109,7 @@ public:
   
   
   
+  
   static AbstractThread* MainThread();
 
   
@@ -118,30 +122,24 @@ public:
 
   
   
-  virtual already_AddRefed<nsIRunnable>
-  CreateDirectTaskDrainer(already_AddRefed<nsIRunnable> aRunnable)
-  {
+  virtual already_AddRefed<nsIRunnable> CreateDirectTaskDrainer(
+      already_AddRefed<nsIRunnable> aRunnable) {
     MOZ_CRASH("Not support!");
   }
 
-  struct AutoEnter
-  {
-    explicit AutoEnter(AbstractThread* aThread)
-    {
+  struct AutoEnter {
+    explicit AutoEnter(AbstractThread* aThread) {
       mLastCurrentThread = sCurrentThreadTLS.get();
       sCurrentThreadTLS.set(aThread);
     }
 
-    ~AutoEnter()
-    {
-      sCurrentThreadTLS.set(mLastCurrentThread);
-    }
+    ~AutoEnter() { sCurrentThreadTLS.set(mLastCurrentThread); }
 
-  private:
+   private:
     AbstractThread* mLastCurrentThread = nullptr;
   };
 
-protected:
+ protected:
   virtual ~AbstractThread() {}
   static MOZ_THREAD_LOCAL(AbstractThread*) sCurrentThreadTLS;
 
@@ -150,6 +148,6 @@ protected:
   const bool mSupportsTailDispatch;
 };
 
-} 
+}  
 
 #endif

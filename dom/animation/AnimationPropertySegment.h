@@ -9,13 +9,12 @@
 
 #include "mozilla/ComputedTimingFunction.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/StyleAnimationValue.h" 
-#include "mozilla/dom/BaseKeyframeTypesBinding.h" 
+#include "mozilla/StyleAnimationValue.h"           
+#include "mozilla/dom/BaseKeyframeTypesBinding.h"  
 
 namespace mozilla {
 
-struct AnimationPropertySegment
-{
+struct AnimationPropertySegment {
   float mFromKey, mToKey;
   
   
@@ -25,39 +24,32 @@ struct AnimationPropertySegment
   dom::CompositeOperation mFromComposite = dom::CompositeOperation::Replace;
   dom::CompositeOperation mToComposite = dom::CompositeOperation::Replace;
 
-  bool HasReplaceableValues() const
-  {
+  bool HasReplaceableValues() const {
     return HasReplaceableFromValue() && HasReplaceableToValue();
   }
 
-  bool HasReplaceableFromValue() const
-  {
+  bool HasReplaceableFromValue() const {
     return !mFromValue.IsNull() &&
            mFromComposite == dom::CompositeOperation::Replace;
   }
 
-  bool HasReplaceableToValue() const
-  {
+  bool HasReplaceableToValue() const {
     return !mToValue.IsNull() &&
            mToComposite == dom::CompositeOperation::Replace;
   }
 
-  bool operator==(const AnimationPropertySegment& aOther) const
-  {
-    return mFromKey == aOther.mFromKey &&
-           mToKey == aOther.mToKey &&
-           mFromValue == aOther.mFromValue &&
-           mToValue == aOther.mToValue &&
+  bool operator==(const AnimationPropertySegment& aOther) const {
+    return mFromKey == aOther.mFromKey && mToKey == aOther.mToKey &&
+           mFromValue == aOther.mFromValue && mToValue == aOther.mToValue &&
            mTimingFunction == aOther.mTimingFunction &&
            mFromComposite == aOther.mFromComposite &&
            mToComposite == aOther.mToComposite;
   }
-  bool operator!=(const AnimationPropertySegment& aOther) const
-  {
+  bool operator!=(const AnimationPropertySegment& aOther) const {
     return !(*this == aOther);
   }
 };
 
-}
+}  
 
-#endif 
+#endif  

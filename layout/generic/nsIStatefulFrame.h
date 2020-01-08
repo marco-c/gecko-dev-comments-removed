@@ -17,10 +17,9 @@
 
 namespace mozilla {
 class PresState;
-} 
+}  
 
-class nsIStatefulFrame
-{
+class nsIStatefulFrame {
  public:
   NS_DECL_QUERYFRAME_TARGET(nsIStatefulFrame)
 
@@ -31,10 +30,8 @@ class nsIStatefulFrame
   NS_IMETHOD RestoreState(mozilla::PresState* aState) = 0;
 
   
-  NS_IMETHOD GenerateStateKey(nsIContent* aContent,
-                              nsIDocument* aDocument,
-                              nsACString& aKey)
-  {
+  NS_IMETHOD GenerateStateKey(nsIContent* aContent, nsIDocument* aDocument,
+                              nsACString& aKey) {
     return nsContentUtils::GenerateStateKey(aContent, aDocument, aKey);
   };
 };

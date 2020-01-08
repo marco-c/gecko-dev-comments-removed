@@ -12,7 +12,8 @@
 #include "certt.h"
 #include "mozpkix/Result.h"
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
 
@@ -22,9 +23,8 @@ void GetCTLogOperatorsFromVerifiedSCTList(const VerifiedSCTList& list,
 
 
 
-class CTDiversityPolicy
-{
-public:
+class CTDiversityPolicy {
+ public:
   
   
   
@@ -35,6 +35,7 @@ public:
                                      CTLogOperatorList& dependentOperators);
 };
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

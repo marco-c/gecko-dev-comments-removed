@@ -36,9 +36,8 @@
 
 
 
-class nsDequeFunctor
-{
-public:
+class nsDequeFunctor {
+ public:
   virtual void operator()(void* aObject) = 0;
   virtual ~nsDequeFunctor() {}
 };
@@ -56,10 +55,10 @@ public:
 
 
 
-class nsDeque
-{
+class nsDeque {
   typedef mozilla::fallible_t fallible_t;
-public:
+
+ public:
   
 
 
@@ -88,8 +87,7 @@ public:
 
 
 
-  void Push(void* aItem)
-  {
+  void Push(void* aItem) {
     if (!Push(aItem, mozilla::fallible)) {
       NS_ABORT_OOM(mSize * sizeof(void*));
     }
@@ -108,8 +106,7 @@ public:
 
 
 
-  void PushFront(void* aItem)
-  {
+  void PushFront(void* aItem) {
     if (!PushFront(aItem, mozilla::fallible)) {
       NS_ABORT_OOM(mSize * sizeof(void*));
     }
@@ -183,120 +180,94 @@ public:
   
   
   
-  class ConstDequeIterator
-  {
-  public:
+  class ConstDequeIterator {
+   public:
     ConstDequeIterator(const nsDeque& aDeque, size_t aIndex)
-      : mDeque(aDeque)
-      , mIndex(aIndex)
-    {
-    }
-    ConstDequeIterator& operator++()
-    {
+        : mDeque(aDeque), mIndex(aIndex) {}
+    ConstDequeIterator& operator++() {
       ++mIndex;
       return *this;
     }
-    bool operator==(const ConstDequeIterator& aOther) const
-    {
+    bool operator==(const ConstDequeIterator& aOther) const {
       return mIndex == aOther.mIndex;
     }
-    bool operator!=(const ConstDequeIterator& aOther) const
-    {
+    bool operator!=(const ConstDequeIterator& aOther) const {
       return mIndex != aOther.mIndex;
     }
-    void* operator*() const
-    {
+    void* operator*() const {
       
       MOZ_RELEASE_ASSERT(mIndex < mDeque.GetSize());
       return mDeque.ObjectAt(mIndex);
     }
-  private:
+
+   private:
     const nsDeque& mDeque;
     size_t mIndex;
   };
   
-  ConstDequeIterator begin() const
-  {
-    return ConstDequeIterator(*this, 0);
-  }
-  ConstDequeIterator end() const
-  {
-    return ConstDequeIterator(*this, mSize);
-  }
+  ConstDequeIterator begin() const { return ConstDequeIterator(*this, 0); }
+  ConstDequeIterator end() const { return ConstDequeIterator(*this, mSize); }
 
   
   
   
   
   
-  class ConstIterator
-  {
-  public:
+  class ConstIterator {
+   public:
     
     
     static const size_t EndIteratorIndex = size_t(-1);
 
     ConstIterator(const nsDeque& aDeque, size_t aIndex)
-      : mDeque(aDeque)
-      , mIndex(aIndex)
-    {
-    }
-    ConstIterator& operator++()
-    {
+        : mDeque(aDeque), mIndex(aIndex) {}
+    ConstIterator& operator++() {
       
       MOZ_ASSERT(mIndex != EndIteratorIndex);
       ++mIndex;
       return *this;
     }
-    bool operator==(const ConstIterator& aOther) const
-    {
+    bool operator==(const ConstIterator& aOther) const {
       return EffectiveIndex() == aOther.EffectiveIndex();
     }
-    bool operator!=(const ConstIterator& aOther) const
-    {
+    bool operator!=(const ConstIterator& aOther) const {
       return EffectiveIndex() != aOther.EffectiveIndex();
     }
-    void* operator*() const
-    {
+    void* operator*() const {
       
       MOZ_RELEASE_ASSERT(mIndex < mDeque.GetSize());
       return mDeque.ObjectAt(mIndex);
     }
-  private:
+
+   private:
     
     
-    size_t EffectiveIndex() const
-    {
+    size_t EffectiveIndex() const {
       return (mIndex < mDeque.GetSize()) ? mIndex : mDeque.GetSize();
     }
 
     const nsDeque& mDeque;
-    size_t mIndex; 
+    size_t mIndex;  
   };
   
   
-  ConstIterator begin()
-  {
-    return ConstIterator(*this, 0);
-  }
-  ConstIterator end()
-  {
+  ConstIterator begin() { return ConstIterator(*this, 0); }
+  ConstIterator end() {
     return ConstIterator(*this, ConstIterator::EndIteratorIndex);
   }
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-protected:
-  size_t         mSize;
-  size_t         mCapacity;
-  size_t         mOrigin;
+ protected:
+  size_t mSize;
+  size_t mCapacity;
+  size_t mOrigin;
   nsDequeFunctor* mDeallocator;
-  void*           mBuffer[8];
-  void**          mData;
+  void* mBuffer[8];
+  void** mData;
 
-private:
-
+ private:
   
 
 

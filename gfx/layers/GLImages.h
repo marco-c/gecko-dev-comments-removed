@@ -10,18 +10,17 @@
 #include "AndroidSurfaceTexture.h"
 #include "GLContextTypes.h"
 #include "GLTypes.h"
-#include "ImageContainer.h"             
-#include "ImageTypes.h"                 
-#include "nsCOMPtr.h"                   
-#include "mozilla/gfx/Point.h"          
+#include "ImageContainer.h"     
+#include "ImageTypes.h"         
+#include "nsCOMPtr.h"           
+#include "mozilla/gfx/Point.h"  
 
 namespace mozilla {
 namespace layers {
 
-class GLImage : public Image
-{
-public:
-  explicit GLImage(ImageFormat aFormat) : Image(nullptr, aFormat){}
+class GLImage : public Image {
+ public:
+  explicit GLImage(ImageFormat aFormat) : Image(nullptr, aFormat) {}
 
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override;
 
@@ -30,12 +29,10 @@ public:
 
 #ifdef MOZ_WIDGET_ANDROID
 
-class SurfaceTextureImage : public GLImage
-{
-public:
+class SurfaceTextureImage : public GLImage {
+ public:
   SurfaceTextureImage(AndroidSurfaceTextureHandle aHandle,
-                      const gfx::IntSize& aSize,
-                      bool aContinuous,
+                      const gfx::IntSize& aSize, bool aContinuous,
                       gl::OriginPos aOriginPos);
 
   gfx::IntSize GetSize() const override { return mSize; }
@@ -43,8 +40,7 @@ public:
   bool GetContinuous() const { return mContinuous; }
   gl::OriginPos GetOriginPos() const { return mOriginPos; }
 
-  already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override
-  {
+  already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override {
     
     
     
@@ -53,16 +49,16 @@ public:
 
   SurfaceTextureImage* AsSurfaceTextureImage() override { return this; }
 
-private:
+ private:
   AndroidSurfaceTextureHandle mHandle;
   gfx::IntSize mSize;
   bool mContinuous;
   gl::OriginPos mOriginPos;
 };
 
-#endif 
+#endif  
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

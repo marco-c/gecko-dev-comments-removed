@@ -28,9 +28,8 @@ namespace mozilla {
 
 
 
-MFBT_API Maybe<uint64_t>
-RandomUint64();
+MFBT_API Maybe<uint64_t> RandomUint64();
 
-} 
+}  
 
-#endif 
+#endif  

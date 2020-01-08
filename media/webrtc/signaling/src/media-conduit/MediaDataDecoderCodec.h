@@ -12,23 +12,20 @@ namespace mozilla {
 
 class WebrtcVideoDecoder;
 class WebrtcVideoEncoder;
-class MediaDataDecoderCodec
-{
+class MediaDataDecoderCodec {
  public:
   
 
 
 
-  static WebrtcVideoEncoder* CreateEncoder(
-    webrtc::VideoCodecType aCodecType);
+  static WebrtcVideoEncoder* CreateEncoder(webrtc::VideoCodecType aCodecType);
 
   
 
 
 
-  static WebrtcVideoDecoder* CreateDecoder(
-    webrtc::VideoCodecType aCodecType);
+  static WebrtcVideoDecoder* CreateDecoder(webrtc::VideoCodecType aCodecType);
 };
-}
+}  
 
-#endif 
+#endif  

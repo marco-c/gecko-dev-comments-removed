@@ -18,17 +18,12 @@ namespace mozilla {
 namespace dom {
 class Element;
 class HTMLSlotElement;
-} 
-} 
+}  
+}  
 
 namespace mozilla {
 
-enum Directionality : uint8_t {
-  eDir_NotSet,
-  eDir_RTL,
-  eDir_LTR,
-  eDir_Auto
-};
+enum Directionality : uint8_t { eDir_NotSet, eDir_RTL, eDir_LTR, eDir_Auto };
 
 
 
@@ -39,9 +34,9 @@ enum Directionality : uint8_t {
 
 
 
-Directionality
-GetDirectionFromText(const char16_t* aText, const uint32_t aLength,
-                     uint32_t* aFirstStrong = nullptr);
+Directionality GetDirectionFromText(const char16_t* aText,
+                                    const uint32_t aLength,
+                                    uint32_t* aFirstStrong = nullptr);
 
 
 
@@ -61,8 +56,7 @@ Directionality RecomputeDirectionality(mozilla::dom::Element* aElement,
 
 
 void SetDirectionalityOnDescendants(mozilla::dom::Element* aElement,
-                                    Directionality aDir,
-                                    bool aNotify = true);
+                                    Directionality aDir, bool aNotify = true);
 
 
 
@@ -131,8 +125,7 @@ void ResetDirectionSetByTextNode(nsTextNode* aTextNode);
 
 
 void SetDirectionalityFromValue(mozilla::dom::Element* aElement,
-                                const nsAString& aValue,
-                                bool aNotify);
+                                const nsAString& aValue, bool aNotify);
 
 
 
@@ -142,11 +135,8 @@ void SetDirectionalityFromValue(mozilla::dom::Element* aElement,
 
 
 
-void OnSetDirAttr(mozilla::dom::Element* aElement,
-                  const nsAttrValue* aNewValue,
-                  bool hadValidDir,
-                  bool hadDirAuto,
-                  bool aNotify);
+void OnSetDirAttr(mozilla::dom::Element* aElement, const nsAttrValue* aNewValue,
+                  bool hadValidDir, bool hadDirAuto, bool aNotify);
 
 
 
@@ -161,6 +151,6 @@ void SetDirOnBind(mozilla::dom::Element* aElement, nsIContent* aParent);
 
 
 void ResetDir(mozilla::dom::Element* aElement);
-} 
+}  
 
 #endif 

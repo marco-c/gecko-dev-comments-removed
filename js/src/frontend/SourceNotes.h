@@ -36,129 +36,129 @@ namespace js {
 
 
 class SrcNote {
-  public:
-    
-    
-    class For {
-      public:
-        enum Fields {
-            
-            CondOffset,
+ public:
+  
+  
+  class For {
+   public:
+    enum Fields {
+      
+      CondOffset,
 
-            
-            UpdateOffset,
+      
+      UpdateOffset,
 
-            
-            
-            BackJumpOffset,
-            Count,
-        };
+      
+      
+      BackJumpOffset,
+      Count,
     };
-    
-    
-    class While {
-      public:
-        enum Fields {
-            
-            BackJumpOffset,
-            Count,
-        };
+  };
+  
+  
+  class While {
+   public:
+    enum Fields {
+      
+      BackJumpOffset,
+      Count,
     };
-    
-    class DoWhile {
-      public:
-        enum Fields {
-            
-            CondOffset,
+  };
+  
+  class DoWhile {
+   public:
+    enum Fields {
+      
+      CondOffset,
 
-            
-            
-            BackJumpOffset,
-            Count,
-        };
+      
+      
+      BackJumpOffset,
+      Count,
     };
-    
-    
-    class ForIn {
-      public:
-        enum Fields {
-            
-            BackJumpOffset,
-            Count,
-        };
+  };
+  
+  
+  class ForIn {
+   public:
+    enum Fields {
+      
+      BackJumpOffset,
+      Count,
     };
-    
-    
-    class ForOf {
-      public:
-        enum Fields {
-            
-            BackJumpOffset,
-            Count,
-        };
+  };
+  
+  
+  class ForOf {
+   public:
+    enum Fields {
+      
+      BackJumpOffset,
+      Count,
     };
-    
-    class TableSwitch {
-      public:
-        enum Fields {
-            
-            
-            EndOffset,
-            Count
-        };
+  };
+  
+  class TableSwitch {
+   public:
+    enum Fields {
+      
+      
+      EndOffset,
+      Count
     };
-    
-    class CondSwitch {
-      public:
-        enum Fields {
-            
-            
-            EndOffset,
+  };
+  
+  class CondSwitch {
+   public:
+    enum Fields {
+      
+      
+      EndOffset,
 
-            
-            FirstCaseOffset,
-            Count
-        };
+      
+      FirstCaseOffset,
+      Count
     };
-    
-    class NextCase {
-      public:
-        enum Fields {
-            
-            
-            NextCaseOffset,
-            Count
-        };
+  };
+  
+  class NextCase {
+   public:
+    enum Fields {
+      
+      
+      NextCaseOffset,
+      Count
     };
-    
-    class Try {
-      public:
-        enum Fields {
-            
-            
-            EndOfTryJumpOffset,
-            Count
-        };
+  };
+  
+  class Try {
+   public:
+    enum Fields {
+      
+      
+      EndOfTryJumpOffset,
+      Count
     };
-    
-    class ColSpan {
-      public:
-        enum Fields {
-            
-            
-            Span,
-            Count
-        };
+  };
+  
+  class ColSpan {
+   public:
+    enum Fields {
+      
+      
+      Span,
+      Count
     };
-    
-    class SetLine {
-      public:
-        enum Fields {
-            
-            Line,
-            Count
-        };
+  };
+  
+  class SetLine {
+   public:
+    enum Fields {
+      
+      Line,
+      Count
     };
+  };
 };
 
 
@@ -194,76 +194,62 @@ class SrcNote {
 
 enum SrcNoteType {
 #define DEFINE_SRC_NOTE_TYPE(sym, name, arity) sym,
-    FOR_EACH_SRC_NOTE_TYPE(DEFINE_SRC_NOTE_TYPE)
+  FOR_EACH_SRC_NOTE_TYPE(DEFINE_SRC_NOTE_TYPE)
 #undef DEFINE_SRC_NOTE_TYPE
 
-    SRC_LAST,
-    SRC_LAST_GETTABLE = SRC_TRY
+      SRC_LAST,
+  SRC_LAST_GETTABLE = SRC_TRY
 };
 
 static_assert(SRC_XDELTA == 24, "SRC_XDELTA should be 24");
 
 
-inline void
-SN_MAKE_TERMINATOR(jssrcnote* sn)
-{
-    *sn = SRC_NULL;
-}
+inline void SN_MAKE_TERMINATOR(jssrcnote* sn) { *sn = SRC_NULL; }
 
-inline bool
-SN_IS_TERMINATOR(jssrcnote* sn)
-{
-    return *sn == SRC_NULL;
-}
+inline bool SN_IS_TERMINATOR(jssrcnote* sn) { return *sn == SRC_NULL; }
 
-} 
+}  
 
-#define SN_TYPE_BITS            5
-#define SN_DELTA_BITS           3
-#define SN_XDELTA_BITS          6
-#define SN_TYPE_MASK            (JS_BITMASK(SN_TYPE_BITS) << SN_DELTA_BITS)
-#define SN_DELTA_MASK           ((ptrdiff_t)JS_BITMASK(SN_DELTA_BITS))
-#define SN_XDELTA_MASK          ((ptrdiff_t)JS_BITMASK(SN_XDELTA_BITS))
+#define SN_TYPE_BITS 5
+#define SN_DELTA_BITS 3
+#define SN_XDELTA_BITS 6
+#define SN_TYPE_MASK (JS_BITMASK(SN_TYPE_BITS) << SN_DELTA_BITS)
+#define SN_DELTA_MASK ((ptrdiff_t)JS_BITMASK(SN_DELTA_BITS))
+#define SN_XDELTA_MASK ((ptrdiff_t)JS_BITMASK(SN_XDELTA_BITS))
 
-#define SN_MAKE_NOTE(sn,t,d)    (*(sn) = (jssrcnote)                          \
-                                          (((t) << SN_DELTA_BITS)             \
-                                           | ((d) & SN_DELTA_MASK)))
-#define SN_MAKE_XDELTA(sn,d)    (*(sn) = (jssrcnote)                          \
-                                          ((SRC_XDELTA << SN_DELTA_BITS)      \
-                                           | ((d) & SN_XDELTA_MASK)))
+#define SN_MAKE_NOTE(sn, t, d) \
+  (*(sn) = (jssrcnote)(((t) << SN_DELTA_BITS) | ((d)&SN_DELTA_MASK)))
+#define SN_MAKE_XDELTA(sn, d) \
+  (*(sn) = (jssrcnote)((SRC_XDELTA << SN_DELTA_BITS) | ((d)&SN_XDELTA_MASK)))
 
-#define SN_IS_XDELTA(sn)        ((*(sn) >> SN_DELTA_BITS) >= SRC_XDELTA)
-#define SN_TYPE(sn)             ((js::SrcNoteType)(SN_IS_XDELTA(sn)           \
-                                                   ? SRC_XDELTA               \
-                                                   : *(sn) >> SN_DELTA_BITS))
-#define SN_SET_TYPE(sn,type)    SN_MAKE_NOTE(sn, type, SN_DELTA(sn))
-#define SN_IS_GETTABLE(sn)      (SN_TYPE(sn) <= SRC_LAST_GETTABLE)
+#define SN_IS_XDELTA(sn) ((*(sn) >> SN_DELTA_BITS) >= SRC_XDELTA)
+#define SN_TYPE(sn) \
+  ((js::SrcNoteType)(SN_IS_XDELTA(sn) ? SRC_XDELTA : *(sn) >> SN_DELTA_BITS))
+#define SN_SET_TYPE(sn, type) SN_MAKE_NOTE(sn, type, SN_DELTA(sn))
+#define SN_IS_GETTABLE(sn) (SN_TYPE(sn) <= SRC_LAST_GETTABLE)
 
-#define SN_DELTA(sn)            ((ptrdiff_t)(SN_IS_XDELTA(sn)                 \
-                                             ? *(sn) & SN_XDELTA_MASK         \
-                                             : *(sn) & SN_DELTA_MASK))
-#define SN_SET_DELTA(sn,delta)  (SN_IS_XDELTA(sn)                             \
-                                 ? SN_MAKE_XDELTA(sn, delta)                  \
-                                 : SN_MAKE_NOTE(sn, SN_TYPE(sn), delta))
+#define SN_DELTA(sn) \
+  ((ptrdiff_t)(SN_IS_XDELTA(sn) ? *(sn)&SN_XDELTA_MASK : *(sn)&SN_DELTA_MASK))
+#define SN_SET_DELTA(sn, delta)                 \
+  (SN_IS_XDELTA(sn) ? SN_MAKE_XDELTA(sn, delta) \
+                    : SN_MAKE_NOTE(sn, SN_TYPE(sn), delta))
 
-#define SN_DELTA_LIMIT          ((ptrdiff_t)JS_BIT(SN_DELTA_BITS))
-#define SN_XDELTA_LIMIT         ((ptrdiff_t)JS_BIT(SN_XDELTA_BITS))
+#define SN_DELTA_LIMIT ((ptrdiff_t)JS_BIT(SN_DELTA_BITS))
+#define SN_XDELTA_LIMIT ((ptrdiff_t)JS_BIT(SN_XDELTA_BITS))
 
 
 
 
 
 
-#define SN_4BYTE_OFFSET_FLAG    0x80
-#define SN_4BYTE_OFFSET_MASK    0x7f
+#define SN_4BYTE_OFFSET_FLAG 0x80
+#define SN_4BYTE_OFFSET_MASK 0x7f
 
-#define SN_OFFSET_BITS          31
-#define SN_MAX_OFFSET (((size_t) 1 << SN_OFFSET_BITS) - 1)
+#define SN_OFFSET_BITS 31
+#define SN_MAX_OFFSET (((size_t)1 << SN_OFFSET_BITS) - 1)
 
-inline bool
-SN_REPRESENTABLE_OFFSET(ptrdiff_t offset)
-{
-    return 0 <= offset && size_t(offset) <= SN_MAX_OFFSET;
+inline bool SN_REPRESENTABLE_OFFSET(ptrdiff_t offset) {
+  return 0 <= offset && size_t(offset) <= SN_MAX_OFFSET;
 }
 
 
@@ -281,51 +267,45 @@ SN_REPRESENTABLE_OFFSET(ptrdiff_t offset)
 #define SN_MIN_COLSPAN (-SN_COLSPAN_SIGN_BIT)
 #define SN_MAX_COLSPAN (SN_COLSPAN_SIGN_BIT - 1)
 
-inline bool
-SN_REPRESENTABLE_COLSPAN(ptrdiff_t colspan)
-{
-    return SN_MIN_COLSPAN <= colspan && colspan <= SN_MAX_COLSPAN;
+inline bool SN_REPRESENTABLE_COLSPAN(ptrdiff_t colspan) {
+  return SN_MIN_COLSPAN <= colspan && colspan <= SN_MAX_COLSPAN;
 }
 
-inline ptrdiff_t
-SN_OFFSET_TO_COLSPAN(ptrdiff_t offset) {
-    
-    MOZ_ASSERT(!(offset & ~((1U << SN_OFFSET_BITS) - 1)));
-    
-    return (offset ^ SN_COLSPAN_SIGN_BIT) - SN_COLSPAN_SIGN_BIT;
+inline ptrdiff_t SN_OFFSET_TO_COLSPAN(ptrdiff_t offset) {
+  
+  MOZ_ASSERT(!(offset & ~((1U << SN_OFFSET_BITS) - 1)));
+  
+  return (offset ^ SN_COLSPAN_SIGN_BIT) - SN_COLSPAN_SIGN_BIT;
 }
 
-inline ptrdiff_t
-SN_COLSPAN_TO_OFFSET(ptrdiff_t colspan) {
-    
-    ptrdiff_t offset = colspan & ((1U << SN_OFFSET_BITS) - 1);
-    
-    MOZ_ASSERT(SN_OFFSET_TO_COLSPAN(offset) == colspan);
-    return offset;
+inline ptrdiff_t SN_COLSPAN_TO_OFFSET(ptrdiff_t colspan) {
+  
+  ptrdiff_t offset = colspan & ((1U << SN_OFFSET_BITS) - 1);
+  
+  MOZ_ASSERT(SN_OFFSET_TO_COLSPAN(offset) == colspan);
+  return offset;
 }
 
-#define SN_LENGTH(sn)           ((js_SrcNoteSpec[SN_TYPE(sn)].arity == 0) ? 1 \
-                                 : js::SrcNoteLength(sn))
-#define SN_NEXT(sn)             ((sn) + SN_LENGTH(sn))
+#define SN_LENGTH(sn) \
+  ((js_SrcNoteSpec[SN_TYPE(sn)].arity == 0) ? 1 : js::SrcNoteLength(sn))
+#define SN_NEXT(sn) ((sn) + SN_LENGTH(sn))
 
 struct JSSrcNoteSpec {
-    const char*     name;      
-    int8_t          arity;      
+  const char* name; 
+  int8_t arity;     
 };
 
 extern JS_FRIEND_DATA const JSSrcNoteSpec js_SrcNoteSpec[];
 
 namespace js {
 
-extern JS_FRIEND_API unsigned
-SrcNoteLength(jssrcnote* sn);
+extern JS_FRIEND_API unsigned SrcNoteLength(jssrcnote* sn);
 
 
 
 
-extern JS_FRIEND_API ptrdiff_t
-GetSrcNoteOffset(jssrcnote* sn, unsigned which);
+extern JS_FRIEND_API ptrdiff_t GetSrcNoteOffset(jssrcnote* sn, unsigned which);
 
-} 
+}  
 
 #endif 

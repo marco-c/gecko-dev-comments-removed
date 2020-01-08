@@ -18,11 +18,11 @@ namespace layers {
 
 
 class LayerUserData {
-public:
+ public:
   virtual ~LayerUserData() {}
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

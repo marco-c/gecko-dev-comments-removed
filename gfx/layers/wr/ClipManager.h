@@ -49,9 +49,8 @@ class WebRenderLayerManager;
 
 
 
-class ClipManager
-{
-public:
+class ClipManager {
+ public:
   ClipManager();
 
   void BeginBuild(WebRenderLayerManager* aManager,
@@ -69,21 +68,18 @@ public:
                           const wr::WrClipId& aClipId);
   void PopOverrideForASR(const ActiveScrolledRoot* aASR);
 
-private:
+ private:
   Maybe<wr::WrClipId> ClipIdAfterOverride(const Maybe<wr::WrClipId>& aClipId);
 
-  Maybe<wr::WrClipId>
-  GetScrollLayer(const ActiveScrolledRoot* aASR);
+  Maybe<wr::WrClipId> GetScrollLayer(const ActiveScrolledRoot* aASR);
 
-  Maybe<wr::WrClipId>
-  DefineScrollLayers(const ActiveScrolledRoot* aASR,
-                     nsDisplayItem* aItem,
-                     const StackingContextHelper& aSc);
+  Maybe<wr::WrClipId> DefineScrollLayers(const ActiveScrolledRoot* aASR,
+                                         nsDisplayItem* aItem,
+                                         const StackingContextHelper& aSc);
 
-  Maybe<wr::WrClipChainId>
-  DefineClipChain(const DisplayItemClipChain* aChain,
-                  int32_t aAppUnitsPerDevPixel,
-                  const StackingContextHelper& aSc);
+  Maybe<wr::WrClipChainId> DefineClipChain(const DisplayItemClipChain* aChain,
+                                           int32_t aAppUnitsPerDevPixel,
+                                           const StackingContextHelper& aSc);
 
   WebRenderLayerManager* MOZ_NON_OWNING_REF mManager;
   wr::DisplayListBuilder* mBuilder;
@@ -99,7 +95,9 @@ private:
   
   
   
-  typedef std::unordered_map<const DisplayItemClipChain*, wr::WrClipId> ClipIdMap;
+  
+  typedef std::unordered_map<const DisplayItemClipChain*, wr::WrClipId>
+      ClipIdMap;
   std::stack<ClipIdMap> mCacheStack;
 
   
@@ -118,14 +116,12 @@ private:
   
   
   
-  std::unordered_map<wr::WrClipId,
-                     std::stack<wr::WrClipId>> mASROverride;
+  std::unordered_map<wr::WrClipId, std::stack<wr::WrClipId>> mASROverride;
 
   
   struct ItemClips {
     ItemClips(const ActiveScrolledRoot* aASR,
-              const DisplayItemClipChain* aChain,
-              bool aSeparateLeaf);
+              const DisplayItemClipChain* aChain, bool aSeparateLeaf);
 
     
     const ActiveScrolledRoot* mASR;
@@ -139,8 +135,7 @@ private:
     
     bool mApplied;
 
-    void Apply(wr::DisplayListBuilder* aBuilder,
-               int32_t aAppUnitsPerDevPixel);
+    void Apply(wr::DisplayListBuilder* aBuilder, int32_t aAppUnitsPerDevPixel);
     void Unapply(wr::DisplayListBuilder* aBuilder);
     bool HasSameInputs(const ItemClips& aOther);
     void CopyOutputsFrom(const ItemClips& aOther);
@@ -154,7 +149,7 @@ private:
   std::stack<ItemClips> mItemClipStack;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

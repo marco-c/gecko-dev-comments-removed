@@ -9,13 +9,13 @@
 
 #ifdef JS_POSIX_NSPR
 
-# include "vm/PosixNSPR.h"
+#include "vm/PosixNSPR.h"
 
 #else 
 
-# include "prinit.h"
-# include "prio.h"
-# include "private/pprio.h"
+#include "prinit.h"
+#include "prio.h"
+#include "private/pprio.h"
 
 #endif 
 

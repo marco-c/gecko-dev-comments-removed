@@ -13,35 +13,31 @@ class nsIInputStream;
 
 namespace mozilla {
 
-MOZ_MUST_USE nsresult
-Base64EncodeInputStream(nsIInputStream* aInputStream,
-                        nsACString& aDest,
-                        uint32_t aCount,
-                        uint32_t aOffset = 0);
-MOZ_MUST_USE nsresult
-Base64EncodeInputStream(nsIInputStream* aInputStream,
-                        nsAString& aDest,
-                        uint32_t aCount,
-                        uint32_t aOffset = 0);
+MOZ_MUST_USE nsresult Base64EncodeInputStream(nsIInputStream* aInputStream,
+                                              nsACString& aDest,
+                                              uint32_t aCount,
+                                              uint32_t aOffset = 0);
+MOZ_MUST_USE nsresult Base64EncodeInputStream(nsIInputStream* aInputStream,
+                                              nsAString& aDest, uint32_t aCount,
+                                              uint32_t aOffset = 0);
 
-MOZ_MUST_USE nsresult
-Base64Encode(const char* aBinary, uint32_t aBinaryLen, char** aBase64);
-MOZ_MUST_USE nsresult
-Base64Encode(const nsACString& aBinary, nsACString& aBase64);
+MOZ_MUST_USE nsresult Base64Encode(const char* aBinary, uint32_t aBinaryLen,
+                                   char** aBase64);
+MOZ_MUST_USE nsresult Base64Encode(const nsACString& aBinary,
+                                   nsACString& aBase64);
 
 
-MOZ_MUST_USE nsresult
-Base64Encode(const nsAString& aBinary, nsAString& aBase64);
+MOZ_MUST_USE nsresult Base64Encode(const nsAString& aBinary,
+                                   nsAString& aBase64);
 
-MOZ_MUST_USE nsresult
-Base64Decode(const char* aBase64, uint32_t aBase64Len, char** aBinary,
-             uint32_t* aBinaryLen);
-MOZ_MUST_USE nsresult
-Base64Decode(const nsACString& aBase64, nsACString& aBinary);
+MOZ_MUST_USE nsresult Base64Decode(const char* aBase64, uint32_t aBase64Len,
+                                   char** aBinary, uint32_t* aBinaryLen);
+MOZ_MUST_USE nsresult Base64Decode(const nsACString& aBase64,
+                                   nsACString& aBinary);
 
 
-MOZ_MUST_USE nsresult
-Base64Decode(const nsAString& aBase64, nsAString& aBinary);
+MOZ_MUST_USE nsresult Base64Decode(const nsAString& aBase64,
+                                   nsAString& aBinary);
 
 enum class Base64URLEncodePaddingPolicy {
   Include,
@@ -53,10 +49,9 @@ enum class Base64URLEncodePaddingPolicy {
 
 
 
-MOZ_MUST_USE nsresult
-Base64URLEncode(uint32_t aBinaryLen, const uint8_t* aBinary,
-                Base64URLEncodePaddingPolicy aPaddingPolicy,
-                nsACString& aBase64);
+MOZ_MUST_USE nsresult Base64URLEncode(
+    uint32_t aBinaryLen, const uint8_t* aBinary,
+    Base64URLEncodePaddingPolicy aPaddingPolicy, nsACString& aBase64);
 
 enum class Base64URLDecodePaddingPolicy {
   Require,
@@ -67,11 +62,10 @@ enum class Base64URLDecodePaddingPolicy {
 
 
 
-MOZ_MUST_USE nsresult
-Base64URLDecode(const nsACString& aBase64,
-                Base64URLDecodePaddingPolicy aPaddingPolicy,
-                FallibleTArray<uint8_t>& aBinary);
+MOZ_MUST_USE nsresult Base64URLDecode(
+    const nsACString& aBase64, Base64URLDecodePaddingPolicy aPaddingPolicy,
+    FallibleTArray<uint8_t>& aBinary);
 
-} 
+}  
 
 #endif

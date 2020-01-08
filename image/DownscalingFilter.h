@@ -38,14 +38,15 @@ namespace image {
 
 
 
-template <typename Next> class DownscalingFilter;
+template <typename Next>
+class DownscalingFilter;
 
 
 
 
-struct DownscalingConfig
-{
-  template <typename Next> using Filter = DownscalingFilter<Next>;
+struct DownscalingConfig {
+  template <typename Next>
+  using Filter = DownscalingFilter<Next>;
   gfx::IntSize mInputSize;     
                                
                                
@@ -64,20 +65,24 @@ struct DownscalingConfig
 
 
 template <typename Next>
-class DownscalingFilter final : public SurfaceFilter
-{
-public:
+class DownscalingFilter final : public SurfaceFilter {
+ public:
   Maybe<SurfaceInvalidRect> TakeInvalidRect() override { return Nothing(); }
 
   template <typename... Rest>
-  nsresult Configure(const DownscalingConfig& aConfig, const Rest&... aRest)
-  {
+  nsresult Configure(const DownscalingConfig& aConfig, const Rest&... aRest) {
     return NS_ERROR_FAILURE;
   }
 
-protected:
-  uint8_t* DoResetToFirstRow() override { MOZ_CRASH(); return nullptr; }
-  uint8_t* DoAdvanceRow() override { MOZ_CRASH(); return nullptr; }
+ protected:
+  uint8_t* DoResetToFirstRow() override {
+    MOZ_CRASH();
+    return nullptr;
+  }
+  uint8_t* DoAdvanceRow() override {
+    MOZ_CRASH();
+    return nullptr;
+  }
 };
 
 #else
@@ -89,25 +94,19 @@ protected:
 
 
 template <typename Next>
-class DownscalingFilter final : public SurfaceFilter
-{
-public:
+class DownscalingFilter final : public SurfaceFilter {
+ public:
   DownscalingFilter()
-    : mWindowCapacity(0)
-    , mRowsInWindow(0)
-    , mInputRow(0)
-    , mOutputRow(0)
-    , mHasAlpha(true)
-  { }
+      : mWindowCapacity(0),
+        mRowsInWindow(0),
+        mInputRow(0),
+        mOutputRow(0),
+        mHasAlpha(true) {}
 
-  ~DownscalingFilter()
-  {
-    ReleaseWindow();
-  }
+  ~DownscalingFilter() { ReleaseWindow(); }
 
   template <typename... Rest>
-  nsresult Configure(const DownscalingConfig& aConfig, const Rest&... aRest)
-  {
+  nsresult Configure(const DownscalingConfig& aConfig, const Rest&... aRest) {
     nsresult rv = mNext.Configure(aRest...);
     if (NS_FAILED(rv)) {
       return rv;
@@ -143,15 +142,17 @@ public:
     ReleaseWindow();
 
     auto resizeMethod = gfx::ConvolutionFilter::ResizeMethod::LANCZOS3;
-    if (!mXFilter.ComputeResizeFilter(resizeMethod, mInputSize.width, outputSize.width) ||
-        !mYFilter.ComputeResizeFilter(resizeMethod, mInputSize.height, outputSize.height)) {
+    if (!mXFilter.ComputeResizeFilter(resizeMethod, mInputSize.width,
+                                      outputSize.width) ||
+        !mYFilter.ComputeResizeFilter(resizeMethod, mInputSize.height,
+                                      outputSize.height)) {
       NS_WARNING("Failed to compute filters for image downscaling");
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
     
     mRowBuffer.reset(new (fallible)
-                       uint8_t[PaddedWidthInBytes(mInputSize.width)]);
+                         uint8_t[PaddedWidthInBytes(mInputSize.width)]);
     if (MOZ_UNLIKELY(!mRowBuffer)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
@@ -188,8 +189,7 @@ public:
     return NS_OK;
   }
 
-  Maybe<SurfaceInvalidRect> TakeInvalidRect() override
-  {
+  Maybe<SurfaceInvalidRect> TakeInvalidRect() override {
     Maybe<SurfaceInvalidRect> invalidRect = mNext.TakeInvalidRect();
 
     if (invalidRect) {
@@ -200,9 +200,8 @@ public:
     return invalidRect;
   }
 
-protected:
-  uint8_t* DoResetToFirstRow() override
-  {
+ protected:
+  uint8_t* DoResetToFirstRow() override {
     mNext.ResetToFirstRow();
 
     mInputRow = 0;
@@ -212,8 +211,7 @@ protected:
     return GetRowPointer();
   }
 
-  uint8_t* DoAdvanceRow() override
-  {
+  uint8_t* DoAdvanceRow() override {
     if (mInputRow >= mInputSize.height) {
       NS_WARNING("Advancing DownscalingFilter past the end of the input");
       return nullptr;
@@ -226,14 +224,15 @@ protected:
 
     int32_t filterOffset = 0;
     int32_t filterLength = 0;
-    mYFilter.GetFilterOffsetAndLength(mOutputRow,
-                                      &filterOffset, &filterLength);
+    mYFilter.GetFilterOffsetAndLength(mOutputRow, &filterOffset, &filterLength);
 
     int32_t inputRowToRead = filterOffset + mRowsInWindow;
     MOZ_ASSERT(mInputRow <= inputRowToRead, "Reading past end of input");
     if (mInputRow == inputRowToRead) {
-      MOZ_RELEASE_ASSERT(mRowsInWindow < mWindowCapacity, "Need more rows than capacity!");
-      mXFilter.ConvolveHorizontally(mRowBuffer.get(), mWindow[mRowsInWindow++], mHasAlpha);
+      MOZ_RELEASE_ASSERT(mRowsInWindow < mWindowCapacity,
+                         "Need more rows than capacity!");
+      mXFilter.ConvolveHorizontally(mRowBuffer.get(), mWindow[mRowsInWindow++],
+                                    mHasAlpha);
     }
 
     MOZ_ASSERT(mOutputRow < mNext.InputSize().height,
@@ -246,40 +245,38 @@ protected:
         break;  
       }
 
-      mYFilter.GetFilterOffsetAndLength(mOutputRow,
-                                        &filterOffset, &filterLength);
+      mYFilter.GetFilterOffsetAndLength(mOutputRow, &filterOffset,
+                                        &filterLength);
     }
 
     mInputRow++;
 
-    return mInputRow < mInputSize.height ? GetRowPointer()
-                                         : nullptr;
+    return mInputRow < mInputSize.height ? GetRowPointer() : nullptr;
   }
 
-private:
+ private:
   uint8_t* GetRowPointer() const { return mRowBuffer.get(); }
 
-  static size_t PaddedWidthInBytes(size_t aLogicalWidth)
-  {
+  static size_t PaddedWidthInBytes(size_t aLogicalWidth) {
     
     
-    return gfx::ConvolutionFilter::PadBytesForSIMD(aLogicalWidth * sizeof(uint32_t));
+    return gfx::ConvolutionFilter::PadBytesForSIMD(aLogicalWidth *
+                                                   sizeof(uint32_t));
   }
 
-  void DownscaleInputRow()
-  {
+  void DownscaleInputRow() {
     MOZ_ASSERT(mOutputRow < mNext.InputSize().height,
                "Writing past end of output");
 
     int32_t filterOffset = 0;
     int32_t filterLength = 0;
-    mYFilter.GetFilterOffsetAndLength(mOutputRow,
-                                      &filterOffset, &filterLength);
+    mYFilter.GetFilterOffsetAndLength(mOutputRow, &filterOffset, &filterLength);
 
     mNext.template WriteUnsafeComputedRow<uint32_t>([&](uint32_t* aRow,
                                                         uint32_t aLength) {
-      mYFilter.ConvolveVertically(mWindow.get(), reinterpret_cast<uint8_t*>(aRow),
-                                  mOutputRow, mXFilter.NumValues(), mHasAlpha);
+      mYFilter.ConvolveVertically(mWindow.get(),
+                                  reinterpret_cast<uint8_t*>(aRow), mOutputRow,
+                                  mXFilter.NumValues(), mHasAlpha);
     });
 
     mOutputRow++;
@@ -290,8 +287,8 @@ private:
 
     int32_t newFilterOffset = 0;
     int32_t newFilterLength = 0;
-    mYFilter.GetFilterOffsetAndLength(mOutputRow,
-                                      &newFilterOffset, &newFilterLength);
+    mYFilter.GetFilterOffsetAndLength(mOutputRow, &newFilterOffset,
+                                      &newFilterLength);
 
     int diff = newFilterOffset - filterOffset;
     MOZ_ASSERT(diff >= 0, "Moving backwards in the filter?");
@@ -309,8 +306,7 @@ private:
     }
   }
 
-  void ReleaseWindow()
-  {
+  void ReleaseWindow() {
     if (!mWindow) {
       return;
     }
@@ -323,12 +319,12 @@ private:
     mWindowCapacity = 0;
   }
 
-  Next mNext;                       
+  Next mNext;  
 
-  gfx::IntSize mInputSize;          
-  gfxSize mScale;                   
-                                    
-                                    
+  gfx::IntSize mInputSize;  
+  gfxSize mScale;           
+                            
+                            
 
   UniquePtr<uint8_t[]> mRowBuffer;  
   UniquePtr<uint8_t*[]> mWindow;    
@@ -338,16 +334,16 @@ private:
 
   int32_t mWindowCapacity;  
 
-  int32_t mRowsInWindow;    
-  int32_t mInputRow;        
-  int32_t mOutputRow;       
+  int32_t mRowsInWindow;  
+  int32_t mInputRow;      
+  int32_t mOutputRow;     
 
-  bool mHasAlpha;           
+  bool mHasAlpha;  
 };
 
 #endif
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

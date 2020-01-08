@@ -23,8 +23,7 @@ namespace devtools {
 
 
 class MOZ_STACK_CLASS ZeroCopyNSIOutputStream
-  : public ::google::protobuf::io::ZeroCopyOutputStream
-{
+    : public ::google::protobuf::io::ZeroCopyOutputStream {
   static const int BUFFER_SIZE = 8192;
 
   
@@ -47,7 +46,7 @@ class MOZ_STACK_CLASS ZeroCopyNSIOutputStream
   
   nsresult writeBuffer();
 
-public:
+ public:
   explicit ZeroCopyNSIOutputStream(nsCOMPtr<nsIOutputStream>& out);
 
   nsresult flush() { return writeBuffer(); }
@@ -64,7 +63,7 @@ public:
   virtual ::google::protobuf::int64 ByteCount() const override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

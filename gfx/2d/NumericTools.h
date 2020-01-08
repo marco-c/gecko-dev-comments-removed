@@ -14,9 +14,7 @@ namespace mozilla {
 
 
 
-inline int32_t
-RoundDownToMultiple(int32_t x, int32_t aMultiplier)
-{
+inline int32_t RoundDownToMultiple(int32_t x, int32_t aMultiplier) {
   
   
   int mod = x % aMultiplier;
@@ -29,9 +27,7 @@ RoundDownToMultiple(int32_t x, int32_t aMultiplier)
 
 
 
-inline int32_t
-RoundUpToMultiple(int32_t x, int32_t aMultiplier)
-{
+inline int32_t RoundUpToMultiple(int32_t x, int32_t aMultiplier) {
   int mod = x % aMultiplier;
   if (x > 0) {
     return mod ? x + aMultiplier - mod : x;
@@ -39,6 +35,6 @@ RoundUpToMultiple(int32_t x, int32_t aMultiplier)
   return x - mod;
 }
 
-} 
+}  
 
 #endif 

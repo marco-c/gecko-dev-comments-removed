@@ -19,6 +19,6 @@ void SandboxLaunchPrepare(GeckoProcessType aType,
                           base::LaunchOptions* aOptions);
 bool HasAtiDrivers();
 
-} 
+}  
 
-#endif 
+#endif  

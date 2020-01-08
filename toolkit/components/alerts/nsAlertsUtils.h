@@ -8,25 +8,22 @@
 #include "nsIPrincipal.h"
 #include "nsString.h"
 
-class nsAlertsUtils final
-{
-private:
+class nsAlertsUtils final {
+ private:
   nsAlertsUtils() = delete;
 
-public:
+ public:
   
 
 
 
 
-  static bool
-  IsActionablePrincipal(nsIPrincipal* aPrincipal);
+  static bool IsActionablePrincipal(nsIPrincipal* aPrincipal);
 
   
 
 
 
-  static void
-  GetSourceHostPort(nsIPrincipal* aPrincipal, nsAString& aHostPort);
+  static void GetSourceHostPort(nsIPrincipal* aPrincipal, nsAString& aHostPort);
 };
 #endif 

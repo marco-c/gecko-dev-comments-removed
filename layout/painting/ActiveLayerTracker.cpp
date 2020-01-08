@@ -38,11 +38,9 @@ using namespace gfx;
 
 
 
-class LayerActivity
-{
-public:
-  enum ActivityIndex
-  {
+class LayerActivity {
+ public:
+  enum ActivityIndex {
     ACTIVITY_OPACITY,
     ACTIVITY_TRANSFORM,
     ACTIVITY_LEFT,
@@ -59,21 +57,16 @@ public:
   };
 
   explicit LayerActivity(nsIFrame* aFrame)
-    : mFrame(aFrame)
-    , mContent(nullptr)
-    , mContentActive(false)
-  {
+      : mFrame(aFrame), mContent(nullptr), mContentActive(false) {
     PodArrayZero(mRestyleCounts);
   }
   ~LayerActivity();
   nsExpirationState* GetExpirationState() { return &mState; }
-  uint8_t& RestyleCountForProperty(nsCSSPropertyID aProperty)
-  {
+  uint8_t& RestyleCountForProperty(nsCSSPropertyID aProperty) {
     return mRestyleCounts[GetActivityIndexForProperty(aProperty)];
   }
 
-  static ActivityIndex GetActivityIndexForProperty(nsCSSPropertyID aProperty)
-  {
+  static ActivityIndex GetActivityIndexForProperty(nsCSSPropertyID aProperty) {
     switch (aProperty) {
       case eCSSProperty_opacity:
         return ACTIVITY_OPACITY;
@@ -123,41 +116,33 @@ public:
   bool mContentActive;
 };
 
-class LayerActivityTracker final : public nsExpirationTracker<LayerActivity, 4>
-{
-public:
+class LayerActivityTracker final
+    : public nsExpirationTracker<LayerActivity, 4> {
+ public:
   
-  enum
-  {
-    GENERATION_MS = 100
-  };
+  enum { GENERATION_MS = 100 };
 
   explicit LayerActivityTracker(nsIEventTarget* aEventTarget)
-    : nsExpirationTracker<LayerActivity, 4>(GENERATION_MS,
-                                            "LayerActivityTracker",
-                                            aEventTarget)
-    , mDestroying(false)
-  {
-  }
-  ~LayerActivityTracker() override
-  {
+      : nsExpirationTracker<LayerActivity, 4>(
+            GENERATION_MS, "LayerActivityTracker", aEventTarget),
+        mDestroying(false) {}
+  ~LayerActivityTracker() override {
     mDestroying = true;
     AgeAllGenerations();
   }
 
   void NotifyExpired(LayerActivity* aObject) override;
 
-public:
+ public:
   WeakFrame mCurrentScrollHandlerFrame;
 
-private:
+ private:
   bool mDestroying;
 };
 
 static LayerActivityTracker* gLayerActivityTracker = nullptr;
 
-LayerActivity::~LayerActivity()
-{
+LayerActivity::~LayerActivity() {
   if (mFrame || mContent) {
     NS_ASSERTION(gLayerActivityTracker, "Should still have a tracker");
     gLayerActivityTracker->RemoveObject(this);
@@ -167,9 +152,7 @@ LayerActivity::~LayerActivity()
 
 NS_DECLARE_FRAME_PROPERTY_DELETABLE(LayerActivityProperty, LayerActivity)
 
-void
-LayerActivityTracker::NotifyExpired(LayerActivity* aObject)
-{
+void LayerActivityTracker::NotifyExpired(LayerActivity* aObject) {
   if (!mDestroying && aObject->mAnimatingScrollHandlerFrame.IsAlive()) {
     
     PodArrayZero(aObject->mRestyleCounts);
@@ -201,25 +184,21 @@ LayerActivityTracker::NotifyExpired(LayerActivity* aObject)
   }
 }
 
-static LayerActivity*
-GetLayerActivity(nsIFrame* aFrame)
-{
+static LayerActivity* GetLayerActivity(nsIFrame* aFrame) {
   if (!aFrame->HasAnyStateBits(NS_FRAME_HAS_LAYER_ACTIVITY_PROPERTY)) {
     return nullptr;
   }
   return aFrame->GetProperty(LayerActivityProperty());
 }
 
-static LayerActivity*
-GetLayerActivityForUpdate(nsIFrame* aFrame)
-{
+static LayerActivity* GetLayerActivityForUpdate(nsIFrame* aFrame) {
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   if (layerActivity) {
     gLayerActivityTracker->MarkUsed(layerActivity);
   } else {
     if (!gLayerActivityTracker) {
       gLayerActivityTracker = new LayerActivityTracker(
-        SystemGroup::EventTargetFor(TaskCategory::Other));
+          SystemGroup::EventTargetFor(TaskCategory::Other));
     }
     layerActivity = new LayerActivity(aFrame);
     gLayerActivityTracker->AddObject(layerActivity);
@@ -229,39 +208,31 @@ GetLayerActivityForUpdate(nsIFrame* aFrame)
   return layerActivity;
 }
 
-static void
-IncrementMutationCount(uint8_t* aCount)
-{
+static void IncrementMutationCount(uint8_t* aCount) {
   *aCount = uint8_t(std::min(0xFF, *aCount + 1));
 }
 
- void
-ActiveLayerTracker::TransferActivityToContent(nsIFrame* aFrame,
-                                              nsIContent* aContent)
-{
+ void ActiveLayerTracker::TransferActivityToContent(
+    nsIFrame* aFrame, nsIContent* aContent) {
   if (!aFrame->HasAnyStateBits(NS_FRAME_HAS_LAYER_ACTIVITY_PROPERTY)) {
     return;
   }
   LayerActivity* layerActivity =
-    aFrame->RemoveProperty(LayerActivityProperty());
+      aFrame->RemoveProperty(LayerActivityProperty());
   aFrame->RemoveStateBits(NS_FRAME_HAS_LAYER_ACTIVITY_PROPERTY);
   if (!layerActivity) {
     return;
   }
   layerActivity->mFrame = nullptr;
   layerActivity->mContent = aContent;
-  aContent->SetProperty(nsGkAtoms::LayerActivity,
-                        layerActivity,
-                        nsINode::DeleteProperty<LayerActivity>,
-                        true);
+  aContent->SetProperty(nsGkAtoms::LayerActivity, layerActivity,
+                        nsINode::DeleteProperty<LayerActivity>, true);
 }
 
- void
-ActiveLayerTracker::TransferActivityToFrame(nsIContent* aContent,
-                                            nsIFrame* aFrame)
-{
+ void ActiveLayerTracker::TransferActivityToFrame(
+    nsIContent* aContent, nsIFrame* aFrame) {
   LayerActivity* layerActivity = static_cast<LayerActivity*>(
-    aContent->UnsetProperty(nsGkAtoms::LayerActivity));
+      aContent->UnsetProperty(nsGkAtoms::LayerActivity));
   if (!layerActivity) {
     return;
   }
@@ -271,51 +242,48 @@ ActiveLayerTracker::TransferActivityToFrame(nsIContent* aContent,
   aFrame->SetProperty(LayerActivityProperty(), layerActivity);
 }
 
-static void
-IncrementScaleRestyleCountIfNeeded(nsIFrame* aFrame, LayerActivity* aActivity)
-{
+static void IncrementScaleRestyleCountIfNeeded(nsIFrame* aFrame,
+                                               LayerActivity* aActivity) {
   const nsStyleDisplay* display = aFrame->StyleDisplay();
   if (!display->mSpecifiedTransform && !display->HasIndividualTransform() &&
       !(display->mMotion && display->mMotion->HasPath())) {
     
     aActivity->mPreviousTransformScale = Nothing();
     IncrementMutationCount(
-      &aActivity->mRestyleCounts[LayerActivity::ACTIVITY_SCALE]);
+        &aActivity->mRestyleCounts[LayerActivity::ACTIVITY_SCALE]);
     return;
   }
 
   
   nsStyleTransformMatrix::TransformReferenceBox refBox(aFrame);
   Matrix4x4 transform = nsStyleTransformMatrix::ReadTransforms(
-    display->mIndividualTransform ? display->mIndividualTransform->mHead
-                                  : nullptr,
-    nsLayoutUtils::ResolveMotionPath(aFrame),
-    display->mSpecifiedTransform ? display->mSpecifiedTransform->mHead
-                                 : nullptr,
-    refBox,
-    AppUnitsPerCSSPixel());
+      display->mIndividualTransform ? display->mIndividualTransform->mHead
+                                    : nullptr,
+      nsLayoutUtils::ResolveMotionPath(aFrame),
+      display->mSpecifiedTransform ? display->mSpecifiedTransform->mHead
+                                   : nullptr,
+      refBox, AppUnitsPerCSSPixel());
   Matrix transform2D;
   if (!transform.Is2D(&transform2D)) {
     
     aActivity->mPreviousTransformScale = Nothing();
     IncrementMutationCount(
-      &aActivity->mRestyleCounts[LayerActivity::ACTIVITY_SCALE]);
+        &aActivity->mRestyleCounts[LayerActivity::ACTIVITY_SCALE]);
     return;
   }
 
   Size scale = transform2D.ScaleFactors(true);
   if (aActivity->mPreviousTransformScale == Some(scale)) {
-    return; 
+    return;  
   }
 
   aActivity->mPreviousTransformScale = Some(scale);
   IncrementMutationCount(
-    &aActivity->mRestyleCounts[LayerActivity::ACTIVITY_SCALE]);
+      &aActivity->mRestyleCounts[LayerActivity::ACTIVITY_SCALE]);
 }
 
- void
-ActiveLayerTracker::NotifyRestyle(nsIFrame* aFrame, nsCSSPropertyID aProperty)
-{
+ void ActiveLayerTracker::NotifyRestyle(nsIFrame* aFrame,
+                                                    nsCSSPropertyID aProperty) {
   LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
   uint8_t& mutationCount = layerActivity->RestyleCountForProperty(aProperty);
   IncrementMutationCount(&mutationCount);
@@ -325,26 +293,21 @@ ActiveLayerTracker::NotifyRestyle(nsIFrame* aFrame, nsCSSPropertyID aProperty)
   }
 }
 
- void
-ActiveLayerTracker::NotifyOffsetRestyle(nsIFrame* aFrame)
-{
+ void ActiveLayerTracker::NotifyOffsetRestyle(nsIFrame* aFrame) {
   LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
   IncrementMutationCount(
-    &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_LEFT]);
+      &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_LEFT]);
   IncrementMutationCount(
-    &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TOP]);
+      &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TOP]);
   IncrementMutationCount(
-    &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_RIGHT]);
+      &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_RIGHT]);
   IncrementMutationCount(
-    &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_BOTTOM]);
+      &layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_BOTTOM]);
 }
 
- void
-ActiveLayerTracker::NotifyAnimated(nsIFrame* aFrame,
-                                   nsCSSPropertyID aProperty,
-                                   const nsAString& aNewValue,
-                                   nsDOMCSSDeclaration* aDOMCSSDecl)
-{
+ void ActiveLayerTracker::NotifyAnimated(
+    nsIFrame* aFrame, nsCSSPropertyID aProperty, const nsAString& aNewValue,
+    nsDOMCSSDeclaration* aDOMCSSDecl) {
   LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
   uint8_t& mutationCount = layerActivity->RestyleCountForProperty(aProperty);
   if (mutationCount != 0xFF) {
@@ -357,18 +320,15 @@ ActiveLayerTracker::NotifyAnimated(nsIFrame* aFrame,
   }
 }
 
- void
-ActiveLayerTracker::NotifyAnimatedFromScrollHandler(nsIFrame* aFrame,
-                                                    nsCSSPropertyID aProperty,
-                                                    nsIFrame* aScrollFrame)
-{
+ void ActiveLayerTracker::NotifyAnimatedFromScrollHandler(
+    nsIFrame* aFrame, nsCSSPropertyID aProperty, nsIFrame* aScrollFrame) {
   if (aFrame->PresContext() != aScrollFrame->PresContext()) {
     
     return;
   }
   LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
   LayerActivity::ActivityIndex activityIndex =
-    LayerActivity::GetActivityIndexForProperty(aProperty);
+      LayerActivity::GetActivityIndexForProperty(aProperty);
 
   if (layerActivity->mAnimatingScrollHandlerFrame.GetFrame() != aScrollFrame) {
     
@@ -380,9 +340,8 @@ ActiveLayerTracker::NotifyAnimatedFromScrollHandler(nsIFrame* aFrame,
   layerActivity->mScrollHandlerInducedActivity += activityIndex;
 }
 
-static bool
-IsPresContextInScriptAnimationCallback(nsPresContext* aPresContext)
-{
+static bool IsPresContextInScriptAnimationCallback(
+    nsPresContext* aPresContext) {
   if (aPresContext->RefreshDriver()->IsInRefresh()) {
     return true;
   }
@@ -392,69 +351,56 @@ IsPresContextInScriptAnimationCallback(nsPresContext* aPresContext)
   return win && win->IsRunningTimeout();
 }
 
- void
-ActiveLayerTracker::NotifyInlineStyleRuleModified(
-  nsIFrame* aFrame,
-  nsCSSPropertyID aProperty,
-  const nsAString& aNewValue,
-  nsDOMCSSDeclaration* aDOMCSSDecl)
-{
+ void ActiveLayerTracker::NotifyInlineStyleRuleModified(
+    nsIFrame* aFrame, nsCSSPropertyID aProperty, const nsAString& aNewValue,
+    nsDOMCSSDeclaration* aDOMCSSDecl) {
   if (IsPresContextInScriptAnimationCallback(aFrame->PresContext())) {
     NotifyAnimated(aFrame, aProperty, aNewValue, aDOMCSSDecl);
   }
   if (gLayerActivityTracker &&
       gLayerActivityTracker->mCurrentScrollHandlerFrame.IsAlive()) {
     NotifyAnimatedFromScrollHandler(
-      aFrame,
-      aProperty,
-      gLayerActivityTracker->mCurrentScrollHandlerFrame.GetFrame());
+        aFrame, aProperty,
+        gLayerActivityTracker->mCurrentScrollHandlerFrame.GetFrame());
   }
 }
 
- void
-ActiveLayerTracker::NotifyNeedsRepaint(nsIFrame* aFrame)
-{
+ void ActiveLayerTracker::NotifyNeedsRepaint(nsIFrame* aFrame) {
   LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
   if (IsPresContextInScriptAnimationCallback(aFrame->PresContext())) {
     
     
     layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] =
-      0xFF;
+        0xFF;
   } else {
     IncrementMutationCount(
-      &layerActivity
-         ->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT]);
+        &layerActivity
+             ->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT]);
   }
 }
 
- bool
-ActiveLayerTracker::IsStyleMaybeAnimated(nsIFrame* aFrame,
-                                         nsCSSPropertyID aProperty)
-{
+ bool ActiveLayerTracker::IsStyleMaybeAnimated(
+    nsIFrame* aFrame, nsCSSPropertyID aProperty) {
   return IsStyleAnimated(nullptr, aFrame, aProperty);
 }
 
- bool
-ActiveLayerTracker::IsBackgroundPositionAnimated(nsDisplayListBuilder* aBuilder,
-                                                 nsIFrame* aFrame)
-{
-  return IsStyleAnimated(
-           aBuilder, aFrame, eCSSProperty_background_position_x) ||
+ bool ActiveLayerTracker::IsBackgroundPositionAnimated(
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame) {
+  return IsStyleAnimated(aBuilder, aFrame,
+                         eCSSProperty_background_position_x) ||
          IsStyleAnimated(aBuilder, aFrame, eCSSProperty_background_position_y);
 }
 
-static bool
-CheckScrollInducedActivity(LayerActivity* aLayerActivity,
-                           LayerActivity::ActivityIndex aActivityIndex,
-                           nsDisplayListBuilder* aBuilder)
-{
+static bool CheckScrollInducedActivity(
+    LayerActivity* aLayerActivity, LayerActivity::ActivityIndex aActivityIndex,
+    nsDisplayListBuilder* aBuilder) {
   if (!aLayerActivity->mScrollHandlerInducedActivity.contains(aActivityIndex) ||
       !aLayerActivity->mAnimatingScrollHandlerFrame.IsAlive()) {
     return false;
   }
 
   nsIScrollableFrame* scrollFrame =
-    do_QueryFrame(aLayerActivity->mAnimatingScrollHandlerFrame.GetFrame());
+      do_QueryFrame(aLayerActivity->mAnimatingScrollHandlerFrame.GetFrame());
   if (scrollFrame && (!aBuilder || scrollFrame->IsScrollingActive(aBuilder))) {
     return true;
   }
@@ -466,11 +412,9 @@ CheckScrollInducedActivity(LayerActivity* aLayerActivity,
   return false;
 }
 
- bool
-ActiveLayerTracker::IsStyleAnimated(nsDisplayListBuilder* aBuilder,
-                                    nsIFrame* aFrame,
-                                    nsCSSPropertyID aProperty)
-{
+ bool ActiveLayerTracker::IsStyleAnimated(
+    nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
+    nsCSSPropertyID aProperty) {
   
   if ((aFrame->StyleDisplay()->mWillChangeBitField &
        NS_STYLE_WILL_CHANGE_TRANSFORM) &&
@@ -490,7 +434,7 @@ ActiveLayerTracker::IsStyleAnimated(nsDisplayListBuilder* aBuilder,
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   if (layerActivity) {
     LayerActivity::ActivityIndex activityIndex =
-      LayerActivity::GetActivityIndexForProperty(aProperty);
+        LayerActivity::GetActivityIndexForProperty(aProperty);
     if (layerActivity->mRestyleCounts[activityIndex] >= 2) {
       
       
@@ -498,7 +442,8 @@ ActiveLayerTracker::IsStyleAnimated(nsDisplayListBuilder* aBuilder,
       
       
       if (layerActivity
-              ->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] < 2 ||
+                  ->mRestyleCounts[LayerActivity::ACTIVITY_TRIGGERED_REPAINT] <
+              2 ||
           (aProperty == eCSSProperty_transform &&
            IsScaleSubjectToAnimation(aFrame))) {
         return true;
@@ -515,9 +460,7 @@ ActiveLayerTracker::IsStyleAnimated(nsDisplayListBuilder* aBuilder,
   return nsLayoutUtils::HasEffectiveAnimation(aFrame, aProperty);
 }
 
- bool
-ActiveLayerTracker::IsOffsetStyleAnimated(nsIFrame* aFrame)
-{
+ bool ActiveLayerTracker::IsOffsetStyleAnimated(nsIFrame* aFrame) {
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   if (layerActivity) {
     if (layerActivity->mRestyleCounts[LayerActivity::ACTIVITY_LEFT] >= 2 ||
@@ -535,9 +478,8 @@ ActiveLayerTracker::IsOffsetStyleAnimated(nsIFrame* aFrame)
   return false;
 }
 
- bool
-ActiveLayerTracker::IsScaleSubjectToAnimation(nsIFrame* aFrame)
-{
+ bool ActiveLayerTracker::IsScaleSubjectToAnimation(
+    nsIFrame* aFrame) {
   
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   if (layerActivity &&
@@ -556,35 +498,28 @@ ActiveLayerTracker::IsScaleSubjectToAnimation(nsIFrame* aFrame)
   return false;
 }
 
- void
-ActiveLayerTracker::NotifyContentChange(nsIFrame* aFrame)
-{
+ void ActiveLayerTracker::NotifyContentChange(nsIFrame* aFrame) {
   LayerActivity* layerActivity = GetLayerActivityForUpdate(aFrame);
   layerActivity->mContentActive = true;
 }
 
- bool
-ActiveLayerTracker::IsContentActive(nsIFrame* aFrame)
-{
+ bool ActiveLayerTracker::IsContentActive(nsIFrame* aFrame) {
   LayerActivity* layerActivity = GetLayerActivity(aFrame);
   return layerActivity && layerActivity->mContentActive;
 }
 
- void
-ActiveLayerTracker::SetCurrentScrollHandlerFrame(nsIFrame* aFrame)
-{
+ void ActiveLayerTracker::SetCurrentScrollHandlerFrame(
+    nsIFrame* aFrame) {
   if (!gLayerActivityTracker) {
     gLayerActivityTracker = new LayerActivityTracker(
-      SystemGroup::EventTargetFor(TaskCategory::Other));
+        SystemGroup::EventTargetFor(TaskCategory::Other));
   }
   gLayerActivityTracker->mCurrentScrollHandlerFrame = aFrame;
 }
 
- void
-ActiveLayerTracker::Shutdown()
-{
+ void ActiveLayerTracker::Shutdown() {
   delete gLayerActivityTracker;
   gLayerActivityTracker = nullptr;
 }
 
-} 
+}  

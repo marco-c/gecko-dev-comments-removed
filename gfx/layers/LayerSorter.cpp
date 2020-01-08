@@ -5,23 +5,23 @@
 
 
 #include "LayerSorter.h"
-#include <math.h>                       
-#include <stdint.h>                     
-#include <stdio.h>                      
-#include <stdlib.h>                     
-#include "DirectedGraph.h"              
-#include "Layers.h"                     
-#include "gfxEnv.h"                     
-#include "gfxLineSegment.h"             
-#include "gfxPoint.h"                   
-#include "gfxQuad.h"                    
-#include "gfxRect.h"                    
-#include "gfxTypes.h"                   
-#include "gfxUtils.h"                   
-#include "mozilla/gfx/BasePoint3D.h"    
-#include "mozilla/Sprintf.h"            
-#include "nsRegion.h"                   
-#include "nsTArray.h"                   
+#include <math.h>                     
+#include <stdint.h>                   
+#include <stdio.h>                    
+#include <stdlib.h>                   
+#include "DirectedGraph.h"            
+#include "Layers.h"                   
+#include "gfxEnv.h"                   
+#include "gfxLineSegment.h"           
+#include "gfxPoint.h"                 
+#include "gfxQuad.h"                  
+#include "gfxRect.h"                  
+#include "gfxTypes.h"                 
+#include "gfxUtils.h"                 
+#include "mozilla/gfx/BasePoint3D.h"  
+#include "mozilla/Sprintf.h"          
+#include "nsRegion.h"                 
+#include "nsTArray.h"                 
 #include "limits.h"
 #include "mozilla/Assertions.h"
 
@@ -44,21 +44,22 @@ enum LayerSortOrder {
 
 
 
-static gfxFloat RecoverZDepth(const Matrix4x4& aTransform, const gfxPoint& aPoint)
-{
-    const Point3D l(0, 0, 1);
-    Point3D l0 = Point3D(aPoint.x, aPoint.y, 0);
-    Point3D p0 = aTransform.TransformPoint(Point3D(0, 0, 0));
-    Point3D normal = aTransform.GetNormalVector();
 
-    gfxFloat n = normal.DotProduct(p0 - l0); 
-    gfxFloat d = normal.DotProduct(l);
+static gfxFloat RecoverZDepth(const Matrix4x4& aTransform,
+                              const gfxPoint& aPoint) {
+  const Point3D l(0, 0, 1);
+  Point3D l0 = Point3D(aPoint.x, aPoint.y, 0);
+  Point3D p0 = aTransform.TransformPoint(Point3D(0, 0, 0));
+  Point3D normal = aTransform.GetNormalVector();
 
-    if (!d) {
-        return 0;
-    }
+  gfxFloat n = normal.DotProduct(p0 - l0);
+  gfxFloat d = normal.DotProduct(l);
 
-    return n/d;
+  if (!d) {
+    return 0;
+  }
+
+  return n / d;
 }
 
 
@@ -79,20 +80,23 @@ static gfxFloat RecoverZDepth(const Matrix4x4& aTransform, const gfxPoint& aPoin
 
 
 static LayerSortOrder CompareDepth(Layer* aOne, Layer* aTwo) {
-  gfxRect ourRect = ThebesRect(aOne->GetLocalVisibleRegion().GetBounds().ToUnknownRect());
-  gfxRect otherRect = ThebesRect(aTwo->GetLocalVisibleRegion().GetBounds().ToUnknownRect());
+  gfxRect ourRect =
+      ThebesRect(aOne->GetLocalVisibleRegion().GetBounds().ToUnknownRect());
+  gfxRect otherRect =
+      ThebesRect(aTwo->GetLocalVisibleRegion().GetBounds().ToUnknownRect());
 
   MOZ_ASSERT(aOne->GetParent() && aOne->GetParent()->Extend3DContext() &&
              aTwo->GetParent() && aTwo->GetParent()->Extend3DContext());
   
   Matrix4x4 ourTransform =
-    aOne->GetLocalTransform() * aOne->GetParent()->GetEffectiveTransform();
+      aOne->GetLocalTransform() * aOne->GetParent()->GetEffectiveTransform();
   Matrix4x4 otherTransform =
-    aTwo->GetLocalTransform() * aTwo->GetParent()->GetEffectiveTransform();
+      aTwo->GetLocalTransform() * aTwo->GetParent()->GetEffectiveTransform();
 
   
   gfxQuad ourTransformedRect = gfxUtils::TransformToQuad(ourRect, ourTransform);
-  gfxQuad otherTransformedRect = gfxUtils::TransformToQuad(otherRect, otherTransform);
+  gfxQuad otherTransformedRect =
+      gfxUtils::TransformToQuad(otherRect, otherTransform);
 
   gfxRect ourBounds = ourTransformedRect.GetBounds();
   gfxRect otherBounds = otherTransformedRect.GetBounds();
@@ -114,7 +118,7 @@ static LayerSortOrder CompareDepth(Layer* aOne, Layer* aTwo) {
       points.AppendElement(ourTransformedRect.mPoints[i]);
     }
   }
-  
+
   
   
   for (uint32_t i = 0; i < 4; i++) {
@@ -135,6 +139,7 @@ static LayerSortOrder CompareDepth(Layer* aOne, Layer* aTwo) {
     return Undefined;
   }
 
+  
   
   gfxFloat highest = 0;
   for (uint32_t i = 0; i < points.Length(); i++) {
@@ -181,8 +186,7 @@ static const int RESET = 0;
 
 
 
-static void SetTextColor(uint32_t aColor)
-{
+static void SetTextColor(uint32_t aColor) {
   char command[13];
 
   
@@ -192,29 +196,26 @@ static void SetTextColor(uint32_t aColor)
   printf("%s", command);
 }
 
-static void print_layer_internal(FILE* aFile, Layer* aLayer, uint32_t aColor)
-{
+static void print_layer_internal(FILE* aFile, Layer* aLayer, uint32_t aColor) {
   SetTextColor(aColor);
   fprintf(aFile, "%p", aLayer);
   SetTextColor(GREEN);
 }
 #else
 
-const char *colors[] = { "Black", "Red", "Green", "Yellow", "Blue", "Magenta", "Cyan", "White" };
+const char* colors[] = {"Black", "Red",     "Green", "Yellow",
+                        "Blue",  "Magenta", "Cyan",  "White"};
 
-static void print_layer_internal(FILE* aFile, Layer* aLayer, uint32_t aColor)
-{
+static void print_layer_internal(FILE* aFile, Layer* aLayer, uint32_t aColor) {
   fprintf(aFile, "%p(%s)", aLayer, colors[aColor]);
 }
 #endif
 
-static void print_layer(FILE* aFile, Layer* aLayer)
-{
+static void print_layer(FILE* aFile, Layer* aLayer) {
   print_layer_internal(aFile, aLayer, aLayer->GetDebugColorIndex());
 }
 
-static void DumpLayerList(nsTArray<Layer*>& aLayers)
-{
+static void DumpLayerList(nsTArray<Layer*>& aLayers) {
   for (uint32_t i = 0; i < aLayers.Length(); i++) {
     print_layer(stderr, aLayers.ElementAt(i));
     fprintf(stderr, " ");
@@ -222,10 +223,9 @@ static void DumpLayerList(nsTArray<Layer*>& aLayers)
   fprintf(stderr, "\n");
 }
 
-static void DumpEdgeList(DirectedGraph<Layer*>& aGraph)
-{
+static void DumpEdgeList(DirectedGraph<Layer*>& aGraph) {
   const nsTArray<DirectedGraph<Layer*>::Edge>& edges = aGraph.GetEdgeList();
-  
+
   for (uint32_t i = 0; i < edges.Length(); i++) {
     fprintf(stderr, "From: ");
     print_layer(stderr, edges.ElementAt(i).mFrom);
@@ -241,11 +241,9 @@ static void DumpEdgeList(DirectedGraph<Layer*>& aGraph)
 
 #define MAX_SORTABLE_LAYERS 100
 
-
 uint32_t gColorIndex = 1;
 
-void SortLayersBy3DZOrder(nsTArray<Layer*>& aLayers)
-{
+void SortLayersBy3DZOrder(nsTArray<Layer*>& aLayers) {
   uint32_t nodeCount = aLayers.Length();
   if (nodeCount > MAX_SORTABLE_LAYERS) {
     return;
@@ -306,7 +304,7 @@ void SortLayersBy3DZOrder(nsTArray<Layer*>& aLayers)
       uint32_t last = noIncoming.Length() - 1;
 
       Layer* layer = noIncoming.ElementAt(last);
-      MOZ_ASSERT(layer); 
+      MOZ_ASSERT(layer);  
 
       noIncoming.RemoveElementAt(last);
       sortedList.AppendElement(layer);
@@ -359,5 +357,5 @@ void SortLayersBy3DZOrder(nsTArray<Layer*>& aLayers)
   aLayers.AppendElements(sortedList);
 }
 
-} 
-} 
+}  
+}  

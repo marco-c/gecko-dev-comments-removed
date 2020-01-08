@@ -18,9 +18,8 @@
 
 
 
-class nsPrintSettingsService : public nsIPrintSettingsService
-{
-public:
+class nsPrintSettingsService : public nsIPrintSettingsService {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRINTSETTINGSSERVICE
 
@@ -34,28 +33,28 @@ public:
 
   virtual nsresult Init();
 
-private:
+ private:
   
   nsPrintSettingsService(const nsPrintSettingsService& x) = delete;
   nsPrintSettingsService& operator=(const nsPrintSettingsService& x) = delete;
 
-protected:
+ protected:
   virtual ~nsPrintSettingsService() {}
 
-  void ReadBitFieldPref(const char * aPrefId, int32_t anOption);
-  void WriteBitFieldPref(const char * aPrefId, int32_t anOption);
-  void ReadJustification(const char * aPrefId, int16_t& aJust,
+  void ReadBitFieldPref(const char* aPrefId, int32_t anOption);
+  void WriteBitFieldPref(const char* aPrefId, int32_t anOption);
+  void ReadJustification(const char* aPrefId, int16_t& aJust,
                          int16_t aInitValue);
-  void WriteJustification(const char * aPrefId, int16_t aJust);
-  void ReadInchesToTwipsPref(const char * aPrefId, int32_t&  aTwips,
-                             const char * aMarginPref);
-  void WriteInchesFromTwipsPref(const char * aPrefId, int32_t aTwips);
-  void ReadInchesIntToTwipsPref(const char * aPrefId, int32_t&  aTwips,
-                                const char * aMarginPref);
-  void WriteInchesIntFromTwipsPref(const char * aPrefId, int32_t aTwips);
+  void WriteJustification(const char* aPrefId, int16_t aJust);
+  void ReadInchesToTwipsPref(const char* aPrefId, int32_t& aTwips,
+                             const char* aMarginPref);
+  void WriteInchesFromTwipsPref(const char* aPrefId, int32_t aTwips);
+  void ReadInchesIntToTwipsPref(const char* aPrefId, int32_t& aTwips,
+                                const char* aMarginPref);
+  void WriteInchesIntFromTwipsPref(const char* aPrefId, int32_t aTwips);
 
-  nsresult ReadPrefDouble(const char * aPrefId, double& aVal);
-  nsresult WritePrefDouble(const char * aPrefId, double aVal);
+  nsresult ReadPrefDouble(const char* aPrefId, double& aVal);
+  nsresult WritePrefDouble(const char* aPrefId, double aVal);
 
   
 
@@ -64,8 +63,7 @@ protected:
 
 
   virtual nsresult ReadPrefs(nsIPrintSettings* aPS,
-                             const nsAString& aPrinterName,
-                             uint32_t aFlags);
+                             const nsAString& aPrinterName, uint32_t aFlags);
   
 
 
@@ -73,11 +71,9 @@ protected:
 
 
   virtual nsresult WritePrefs(nsIPrintSettings* aPS,
-                              const nsAString& aPrinterName,
-                              uint32_t aFlags);
+                              const nsAString& aPrinterName, uint32_t aFlags);
 
-  const char* GetPrefName(const char* aPrefName,
-                          const nsAString&  aPrinterName);
+  const char* GetPrefName(const char* aPrefName, const nsAString& aPrinterName);
 
   
 
@@ -85,7 +81,7 @@ protected:
 
 
 
-  virtual nsresult _CreatePrintSettings(nsIPrintSettings **_retval);
+  virtual nsresult _CreatePrintSettings(nsIPrintSettings** _retval);
 
   
   nsCOMPtr<nsIPrintSettings> mGlobalPrintSettings;
@@ -93,4 +89,4 @@ protected:
   nsCString mPrefName;
 };
 
-#endif 
+#endif  

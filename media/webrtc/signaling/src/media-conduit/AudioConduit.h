@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef AUDIO_SESSION_H_
 #define AUDIO_SESSION_H_
 
@@ -28,18 +27,16 @@
 namespace mozilla {
 
 
-DOMHighResTimeStamp
-NTPtoDOMHighResTimeStamp(uint32_t ntpHigh, uint32_t ntpLow);
+DOMHighResTimeStamp NTPtoDOMHighResTimeStamp(uint32_t ntpHigh, uint32_t ntpLow);
 
 
 
 
 
-class WebrtcAudioConduit: public AudioSessionConduit
-                        , public webrtc::Transport
-                        , public webrtc::RtpPacketObserver
-{
-public:
+class WebrtcAudioConduit : public AudioSessionConduit,
+                           public webrtc::Transport,
+                           public webrtc::RtpPacketObserver {
+ public:
   
   static const unsigned int CODEC_PLNAME_SIZE;
 
@@ -47,13 +44,14 @@ public:
 
 
 
-  MediaConduitErrorCode ReceivedRTPPacket(const void *data, int len, uint32_t ssrc) override;
+  MediaConduitErrorCode ReceivedRTPPacket(const void* data, int len,
+                                          uint32_t ssrc) override;
 
   
 
 
 
-  MediaConduitErrorCode ReceivedRTCPPacket(const void *data, int len) override;
+  MediaConduitErrorCode ReceivedRTCPPacket(const void* data, int len) override;
 
   MediaConduitErrorCode StopTransmitting() override;
   MediaConduitErrorCode StartTransmitting() override;
@@ -73,7 +71,8 @@ public:
 
 
 
-  MediaConduitErrorCode ConfigureSendMediaCodec(const AudioCodecConfig* codecConfig) override;
+  MediaConduitErrorCode ConfigureSendMediaCodec(
+      const AudioCodecConfig* codecConfig) override;
   
 
 
@@ -84,19 +83,22 @@ public:
 
 
   MediaConduitErrorCode ConfigureRecvMediaCodecs(
-    const std::vector<UniquePtr<AudioCodecConfig>>& codecConfigList) override;
+      const std::vector<UniquePtr<AudioCodecConfig>>& codecConfigList) override;
 
-  MediaConduitErrorCode
-  SetLocalRTPExtensions(MediaSessionConduitLocalDirection aDirection,
-                        const RtpExtList& extensions) override;
+  MediaConduitErrorCode SetLocalRTPExtensions(
+      MediaSessionConduitLocalDirection aDirection,
+      const RtpExtList& extensions) override;
 
   
 
 
 
-  MediaConduitErrorCode SetTransmitterTransport(RefPtr<TransportInterface> aTransport) override;
 
-  MediaConduitErrorCode SetReceiverTransport(RefPtr<TransportInterface> aTransport) override;
+  MediaConduitErrorCode SetTransmitterTransport(
+      RefPtr<TransportInterface> aTransport) override;
+
+  MediaConduitErrorCode SetReceiverTransport(
+      RefPtr<TransportInterface> aTransport) override;
 
   
 
@@ -146,57 +148,54 @@ public:
 
 
 
-   MediaConduitErrorCode GetAudioFrame(int16_t speechData[],
-                                       int32_t samplingFreqHz,
-                                       int32_t capture_delay,
-                                       int& lengthSamples) override;
-
-
-  
-
-
-
-   bool SendRtp(const uint8_t* data,
-                size_t len,
-                const webrtc::PacketOptions& options) override;
+  MediaConduitErrorCode GetAudioFrame(int16_t speechData[],
+                                      int32_t samplingFreqHz,
+                                      int32_t capture_delay,
+                                      int& lengthSamples) override;
 
   
 
 
 
-  bool SendRtcp(const uint8_t *data,
-                size_t len) override;
+  bool SendRtp(const uint8_t* data, size_t len,
+               const webrtc::PacketOptions& options) override;
+
+  
+
+
+
+  bool SendRtcp(const uint8_t* data, size_t len) override;
 
   uint64_t CodecPluginID() override { return 0; }
   void SetPCHandle(const std::string& aPCHandle) override {}
-  MediaConduitErrorCode DeliverPacket(const void *data, int len) override;
+  MediaConduitErrorCode DeliverPacket(const void* data, int len) override;
 
   void DeleteStreams() override {}
 
   WebrtcAudioConduit(RefPtr<WebRtcCallWrapper> aCall,
                      nsCOMPtr<nsIEventTarget> aStsThread)
-    : mFakeAudioDevice(new webrtc::FakeAudioDeviceModule())
-    , mTransportMonitor("WebrtcAudioConduit")
-    , mTransmitterTransport(nullptr)
-    , mReceiverTransport(nullptr)
-    , mCall(aCall)
-    , mRecvStreamConfig()
-    , mRecvStream(nullptr)
-    , mSendStreamConfig(this) 
-    , mSendStream(nullptr)
-    , mRecvSSRC(0)
-    , mEngineTransmitting(false)
-    , mEngineReceiving(false)
-    , mRecvChannel(-1)
-    , mSendChannel(-1)
-    , mDtmfEnabled(false)
-    , mMutex("WebrtcAudioConduit::mMutex")
-    , mCaptureDelay(150)
-    , mSamples(0)
-    , mLastSyncLog(0)
-    , mStsThread(aStsThread)
-  {
-  }
+      : mFakeAudioDevice(new webrtc::FakeAudioDeviceModule()),
+        mTransportMonitor("WebrtcAudioConduit"),
+        mTransmitterTransport(nullptr),
+        mReceiverTransport(nullptr),
+        mCall(aCall),
+        mRecvStreamConfig(),
+        mRecvStream(nullptr),
+        mSendStreamConfig(
+            this)  
+        ,
+        mSendStream(nullptr),
+        mRecvSSRC(0),
+        mEngineTransmitting(false),
+        mEngineReceiving(false),
+        mRecvChannel(-1),
+        mSendChannel(-1),
+        mDtmfEnabled(false),
+        mMutex("WebrtcAudioConduit::mMutex"),
+        mCaptureDelay(150),
+        mSamples(0),
+        mLastSyncLog(0),
+        mStsThread(aStsThread) {}
 
   virtual ~WebrtcAudioConduit();
 
@@ -214,10 +213,7 @@ public:
   bool SetLocalSSRCs(const std::vector<unsigned int>& aSSRCs) override;
   std::vector<unsigned int> GetLocalSSRCs() override;
   bool SetRemoteSSRC(unsigned int ssrc) override;
-  bool UnsetRemoteSSRC(uint32_t ssrc) override
-  {
-    return true;
-  }
+  bool UnsetRemoteSSRC(uint32_t ssrc) override { return true; }
   bool GetRemoteSSRC(unsigned int* ssrc) override;
   bool SetLocalCNAME(const char* cname) override;
   bool SetLocalMID(const std::string& mid) override;
@@ -230,64 +226,53 @@ public:
   bool GetRecvPacketTypeStats(
       webrtc::RtcpPacketTypeCounter* aPacketCounts) override;
 
-  bool GetVideoEncoderStats(double* framerateMean,
-                            double* framerateStdDev,
-                            double* bitrateMean,
-                            double* bitrateStdDev,
+  bool GetVideoEncoderStats(double* framerateMean, double* framerateStdDev,
+                            double* bitrateMean, double* bitrateStdDev,
                             uint32_t* droppedFrames,
-                            uint32_t* framesEncoded) override
-  {
+                            uint32_t* framesEncoded) override {
     return false;
   }
-  bool GetVideoDecoderStats(double* framerateMean,
-                            double* framerateStdDev,
-                            double* bitrateMean,
-                            double* bitrateStdDev,
+  bool GetVideoDecoderStats(double* framerateMean, double* framerateStdDev,
+                            double* bitrateMean, double* bitrateStdDev,
                             uint32_t* discardedPackets,
-                            uint32_t* framesDecoded) override
-  {
+                            uint32_t* framesDecoded) override {
     return false;
   }
-  bool GetAVStats(int32_t* jitterBufferDelayMs,
-                  int32_t* playoutBufferDelayMs,
+  bool GetAVStats(int32_t* jitterBufferDelayMs, int32_t* playoutBufferDelayMs,
                   int32_t* avSyncOffsetMs) override;
-  bool GetRTPStats(unsigned int* jitterMs, unsigned int* cumulativeLost) override;
-  bool GetRTCPReceiverReport(DOMHighResTimeStamp* timestamp,
-                             uint32_t* jitterMs,
-                             uint32_t* packetsReceived,
-                             uint64_t* bytesReceived,
-                             uint32_t *cumulativeLost,
-                             int32_t* rttMs) override;
+  bool GetRTPStats(unsigned int* jitterMs,
+                   unsigned int* cumulativeLost) override;
+  bool GetRTCPReceiverReport(DOMHighResTimeStamp* timestamp, uint32_t* jitterMs,
+                             uint32_t* packetsReceived, uint64_t* bytesReceived,
+                             uint32_t* cumulativeLost, int32_t* rttMs) override;
   bool GetRTCPSenderReport(DOMHighResTimeStamp* timestamp,
                            unsigned int* packetsSent,
                            uint64_t* bytesSent) override;
 
   bool SetDtmfPayloadType(unsigned char type, int freq) override;
 
-  bool InsertDTMFTone(int channel, int eventCode, bool outOfBand,
-                      int lengthMs, int attenuationDb) override;
+  bool InsertDTMFTone(int channel, int eventCode, bool outOfBand, int lengthMs,
+                      int attenuationDb) override;
 
   void GetRtpSources(const int64_t aTimeNow,
                      nsTArray<dom::RTCRtpSourceEntry>& outSources) override;
 
   void OnRtpPacket(const webrtc::WebRtcRTPHeader* aRtpHeader,
-                   const int64_t aTimestamp,
-                   const uint32_t aJitter) override;
+                   const int64_t aTimestamp, const uint32_t aJitter) override;
 
   
   void InsertAudioLevelForContributingSource(uint32_t aSource,
-                                             int64_t aTimestamp,
-                                             bool aHasLevel,
+                                             int64_t aTimestamp, bool aHasLevel,
                                              uint8_t aLevel);
 
   bool IsSamplingFreqSupported(int freq) const override;
 
-protected:
+ protected:
   
   std::unique_ptr<webrtc::voe::ChannelProxy> mRecvChannelProxy = nullptr;
   std::unique_ptr<webrtc::voe::ChannelProxy> mSendChannelProxy = nullptr;
 
-private:
+ private:
   WebrtcAudioConduit(const WebrtcAudioConduit& other) = delete;
   void operator=(const WebrtcAudioConduit& other) = delete;
 
@@ -299,7 +284,8 @@ private:
   unsigned int GetNum10msSamplesForFrequency(int samplingFreqHz) const;
 
   
-  MediaConduitErrorCode ValidateCodecConfig(const AudioCodecConfig* codecInfo, bool send);
+  MediaConduitErrorCode ValidateCodecConfig(const AudioCodecConfig* codecInfo,
+                                            bool send);
 
   MediaConduitErrorCode CreateSendStream();
   void DeleteSendStream();
@@ -325,21 +311,24 @@ private:
   webrtc::AudioSendStream* mSendStream;
 
   
-  Atomic<uint32_t> mRecvSSRC; 
+  Atomic<uint32_t> mRecvSSRC;  
   RtpPacketQueue mRtpPacketQueue;
 
   
-  mozilla::Atomic<bool> mEngineTransmitting; 
-  mozilla::Atomic<bool> mEngineReceiving;    
-                            
+  mozilla::Atomic<bool>
+      mEngineTransmitting;  
+  mozilla::Atomic<bool>
+      mEngineReceiving;  
+                         
+  
   
   
   
   struct Processing {
     TimeStamp mTimeStamp;
-    uint32_t mRTPTimeStamp; 
+    uint32_t mRTPTimeStamp;  
   };
-  AutoTArray<Processing,8> mProcessing;
+  AutoTArray<Processing, 8> mProcessing;
 
   int mRecvChannel;
   int mSendChannel;
@@ -351,7 +340,7 @@ private:
   
   int32_t mCaptureDelay;
 
-  webrtc::AudioFrame mAudioFrame; 
+  webrtc::AudioFrame mAudioFrame;  
 
   uint32_t mSamples;
   uint32_t mLastSyncLog;
@@ -362,6 +351,6 @@ private:
   const nsCOMPtr<nsIEventTarget> mStsThread;
 };
 
-} 
+}  
 
 #endif

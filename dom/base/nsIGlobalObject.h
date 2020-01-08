@@ -20,9 +20,12 @@
 #include "js/TypeDecls.h"
 
 
-#define NS_IGLOBALOBJECT_IID \
-{ 0x11afa8be, 0xd997, 0x4e07, \
-{ 0xa6, 0xa3, 0x6f, 0x87, 0x2e, 0xc3, 0xee, 0x7f } }
+#define NS_IGLOBALOBJECT_IID                         \
+  {                                                  \
+    0x11afa8be, 0xd997, 0x4e07, {                    \
+      0xa6, 0xa3, 0x6f, 0x87, 0x2e, 0xc3, 0xee, 0x7f \
+    }                                                \
+  }
 
 class nsCycleCollectionTraversalCallback;
 class nsIPrincipal;
@@ -34,12 +37,11 @@ namespace dom {
 class ServiceWorker;
 class ServiceWorkerRegistration;
 class ServiceWorkerRegistrationDescriptor;
-} 
-} 
+}  
+}  
 
 class nsIGlobalObject : public nsISupports,
-                        public mozilla::dom::DispatcherTrait
-{
+                        public mozilla::dom::DispatcherTrait {
   nsTArray<nsCString> mHostObjectURIs;
 
   
@@ -48,16 +50,12 @@ class nsIGlobalObject : public nsISupports,
 
   bool mIsDying;
 
-protected:
-
+ protected:
   bool mIsInnerWindow;
 
-  nsIGlobalObject()
-   : mIsDying(false)
-   , mIsInnerWindow(false)
-  {}
+  nsIGlobalObject() : mIsDying(false), mIsInnerWindow(false) {}
 
-public:
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IGLOBALOBJECT_IID)
 
   
@@ -74,11 +72,7 @@ public:
 
 
 
-  bool
-  IsDying() const
-  {
-    return mIsDying;
-  }
+  bool IsDying() const { return mIsDying; }
 
   
   
@@ -98,7 +92,7 @@ public:
   
   
   void UnlinkHostObjectURIs();
-  void TraverseHostObjectURIs(nsCycleCollectionTraversalCallback &aCb);
+  void TraverseHostObjectURIs(nsCycleCollectionTraversalCallback& aCb);
 
   
   
@@ -109,51 +103,49 @@ public:
 
   
   
-  void
-  ForEachEventTargetObject(const std::function<void(mozilla::DOMEventTargetHelper*, bool* aDoneOut)>& aFunc) const;
+  void ForEachEventTargetObject(
+      const std::function<void(mozilla::DOMEventTargetHelper*, bool* aDoneOut)>&
+          aFunc) const;
 
   virtual bool IsInSyncOperation() { return false; }
 
-  virtual mozilla::Maybe<mozilla::dom::ClientInfo>
-  GetClientInfo() const;
+  virtual mozilla::Maybe<mozilla::dom::ClientInfo> GetClientInfo() const;
 
-  virtual mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor>
-  GetController() const;
-
-  
-  
-  virtual RefPtr<mozilla::dom::ServiceWorker>
-  GetOrCreateServiceWorker(const mozilla::dom::ServiceWorkerDescriptor& aDescriptor);
+  virtual mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor> GetController()
+      const;
 
   
   
-  virtual RefPtr<mozilla::dom::ServiceWorkerRegistration>
-  GetServiceWorkerRegistration(const mozilla::dom::ServiceWorkerRegistrationDescriptor& aDescriptor) const;
+  virtual RefPtr<mozilla::dom::ServiceWorker> GetOrCreateServiceWorker(
+      const mozilla::dom::ServiceWorkerDescriptor& aDescriptor);
 
   
   
   virtual RefPtr<mozilla::dom::ServiceWorkerRegistration>
-  GetOrCreateServiceWorkerRegistration(const mozilla::dom::ServiceWorkerRegistrationDescriptor& aDescriptor);
+  GetServiceWorkerRegistration(
+      const mozilla::dom::ServiceWorkerRegistrationDescriptor& aDescriptor)
+      const;
 
+  
+  
+  virtual RefPtr<mozilla::dom::ServiceWorkerRegistration>
+  GetOrCreateServiceWorkerRegistration(
+      const mozilla::dom::ServiceWorkerRegistrationDescriptor& aDescriptor);
+
+  
   
   nsPIDOMWindowInner* AsInnerWindow();
-protected:
+
+ protected:
   virtual ~nsIGlobalObject();
 
-  void
-  StartDying()
-  {
-    mIsDying = true;
-  }
+  void StartDying() { mIsDying = true; }
 
-  void
-  DisconnectEventTargetObjects();
+  void DisconnectEventTargetObjects();
 
-  size_t
-  ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aSizeOf) const;
+  size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aSizeOf) const;
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(nsIGlobalObject,
-                              NS_IGLOBALOBJECT_IID)
+NS_DEFINE_STATIC_IID_ACCESSOR(nsIGlobalObject, NS_IGLOBALOBJECT_IID)
 
-#endif 
+#endif  

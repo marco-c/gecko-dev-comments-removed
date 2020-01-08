@@ -27,13 +27,13 @@
 
 
 
-mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2
-NSErrorToLabel(nsresult rv);
+mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2 NSErrorToLabel(
+    nsresult rv);
 
 
 
 
-mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2
-HTTPStatusToLabel(uint32_t status);
+mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2 HTTPStatusToLabel(
+    uint32_t status);
 
-#endif 
+#endif  

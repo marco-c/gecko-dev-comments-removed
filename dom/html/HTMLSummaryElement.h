@@ -18,15 +18,12 @@ class HTMLDetailsElement;
 
 
 
-class HTMLSummaryElement final : public nsGenericHTMLElement
-{
-public:
+class HTMLSummaryElement final : public nsGenericHTMLElement {
+ public:
   using NodeInfo = mozilla::dom::NodeInfo;
 
   explicit HTMLSummaryElement(already_AddRefed<NodeInfo>&& aNodeInfo)
-    : nsGenericHTMLElement(std::move(aNodeInfo))
-  {
-  }
+      : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLSummaryElement, summary)
 
@@ -47,14 +44,14 @@ public:
   
   HTMLDetailsElement* GetDetails() const;
 
-protected:
+ protected:
   virtual ~HTMLSummaryElement();
 
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

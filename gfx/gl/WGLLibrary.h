@@ -36,77 +36,73 @@ namespace gl {
 
 
 
-class WGLLibrary
-{
-public:
-    ~WGLLibrary() {
-        Reset();
-    }
+class WGLLibrary {
+ public:
+  ~WGLLibrary() { Reset(); }
 
-private:
-    void Reset();
+ private:
+  void Reset();
 
-public:
-    struct {
-        HGLRC  (GLAPIENTRY * fCreateContext) (HDC);
-        BOOL   (GLAPIENTRY * fDeleteContext) (HGLRC);
-        BOOL   (GLAPIENTRY * fMakeCurrent) (HDC, HGLRC);
-        PROC   (GLAPIENTRY * fGetProcAddress) (LPCSTR);
-        HGLRC  (GLAPIENTRY * fGetCurrentContext) (void);
-        HDC    (GLAPIENTRY * fGetCurrentDC) (void);
-        
-        HANDLE (GLAPIENTRY * fCreatePbuffer) (HDC hDC, int iPixelFormat, int iWidth,
-                                              int iHeight, const int* piAttribList);
-        BOOL (GLAPIENTRY * fDestroyPbuffer) (HANDLE hPbuffer);
-        HDC  (GLAPIENTRY * fGetPbufferDC) (HANDLE hPbuffer);
-        int  (GLAPIENTRY * fReleasePbufferDC) (HANDLE hPbuffer, HDC dc);
-        
-        
-        BOOL (GLAPIENTRY * fChoosePixelFormat) (HDC hdc, const int* piAttribIList,
-                                                const FLOAT* pfAttribFList,
-                                                UINT nMaxFormats, int* piFormats,
-                                                UINT* nNumFormats);
-        
-        
-        
-        
-        
-        
-        const char* (GLAPIENTRY * fGetExtensionsStringARB) (HDC hdc);
-        HGLRC (GLAPIENTRY * fCreateContextAttribsARB) (HDC hdc, HGLRC hShareContext,
-                                                       const int* attribList);
-        
-        BOOL   (GLAPIENTRY * fDXSetResourceShareHandleNV) (void* dxObject,
-                                                           HANDLE shareHandle);
-        HANDLE (GLAPIENTRY * fDXOpenDeviceNV) (void* dxDevice);
-        BOOL   (GLAPIENTRY * fDXCloseDeviceNV) (HANDLE hDevice);
-        HANDLE (GLAPIENTRY * fDXRegisterObjectNV) (HANDLE hDevice, void* dxObject,
-                                                   GLuint name, GLenum type,
-                                                   GLenum access);
-        BOOL   (GLAPIENTRY * fDXUnregisterObjectNV) (HANDLE hDevice, HANDLE hObject);
-        BOOL   (GLAPIENTRY * fDXObjectAccessNV) (HANDLE hObject, GLenum access);
-        BOOL   (GLAPIENTRY * fDXLockObjectsNV) (HANDLE hDevice, GLint count,
-                                                HANDLE* hObjects);
-        BOOL   (GLAPIENTRY * fDXUnlockObjectsNV) (HANDLE hDevice, GLint count,
-                                                  HANDLE* hObjects);
-    } mSymbols = {};
-
-    bool EnsureInitialized();
+ public:
+  struct {
+    HGLRC(GLAPIENTRY* fCreateContext)(HDC);
+    BOOL(GLAPIENTRY* fDeleteContext)(HGLRC);
+    BOOL(GLAPIENTRY* fMakeCurrent)(HDC, HGLRC);
+    PROC(GLAPIENTRY* fGetProcAddress)(LPCSTR);
+    HGLRC(GLAPIENTRY* fGetCurrentContext)(void);
+    HDC(GLAPIENTRY* fGetCurrentDC)(void);
     
-    HGLRC CreateContextWithFallback(HDC dc, bool tryRobustBuffers) const;
+    HANDLE(GLAPIENTRY* fCreatePbuffer)
+    (HDC hDC, int iPixelFormat, int iWidth, int iHeight,
+     const int* piAttribList);
+    BOOL(GLAPIENTRY* fDestroyPbuffer)(HANDLE hPbuffer);
+    HDC(GLAPIENTRY* fGetPbufferDC)(HANDLE hPbuffer);
+    int(GLAPIENTRY* fReleasePbufferDC)(HANDLE hPbuffer, HDC dc);
+    
+    
+    BOOL(GLAPIENTRY* fChoosePixelFormat)
+    (HDC hdc, const int* piAttribIList, const FLOAT* pfAttribFList,
+     UINT nMaxFormats, int* piFormats, UINT* nNumFormats);
+    
+    
+    
+    
+    
+    
+    const char*(GLAPIENTRY* fGetExtensionsStringARB)(HDC hdc);
+    HGLRC(GLAPIENTRY* fCreateContextAttribsARB)
+    (HDC hdc, HGLRC hShareContext, const int* attribList);
+    
+    BOOL(GLAPIENTRY* fDXSetResourceShareHandleNV)
+    (void* dxObject, HANDLE shareHandle);
+    HANDLE(GLAPIENTRY* fDXOpenDeviceNV)(void* dxDevice);
+    BOOL(GLAPIENTRY* fDXCloseDeviceNV)(HANDLE hDevice);
+    HANDLE(GLAPIENTRY* fDXRegisterObjectNV)
+    (HANDLE hDevice, void* dxObject, GLuint name, GLenum type, GLenum access);
+    BOOL(GLAPIENTRY* fDXUnregisterObjectNV)(HANDLE hDevice, HANDLE hObject);
+    BOOL(GLAPIENTRY* fDXObjectAccessNV)(HANDLE hObject, GLenum access);
+    BOOL(GLAPIENTRY* fDXLockObjectsNV)
+    (HANDLE hDevice, GLint count, HANDLE* hObjects);
+    BOOL(GLAPIENTRY* fDXUnlockObjectsNV)
+    (HANDLE hDevice, GLint count, HANDLE* hObjects);
+  } mSymbols = {};
 
-    bool HasDXInterop2() const { return bool(mSymbols.fDXOpenDeviceNV); }
-    bool IsInitialized() const { return mInitialized; }
-    auto GetOGLLibrary() const { return mOGLLibrary; }
-    auto RootDc() const { return mRootDc; }
+  bool EnsureInitialized();
+  
+  HGLRC CreateContextWithFallback(HDC dc, bool tryRobustBuffers) const;
 
-private:
-    bool mInitialized = false;
-    PRLibrary* mOGLLibrary;
-    bool mHasRobustness;
-    HWND mDummyWindow;
-    HDC mRootDc;
-    HGLRC mDummyGlrc;
+  bool HasDXInterop2() const { return bool(mSymbols.fDXOpenDeviceNV); }
+  bool IsInitialized() const { return mInitialized; }
+  auto GetOGLLibrary() const { return mOGLLibrary; }
+  auto RootDc() const { return mRootDc; }
+
+ private:
+  bool mInitialized = false;
+  PRLibrary* mOGLLibrary;
+  bool mHasRobustness;
+  HWND mDummyWindow;
+  HDC mRootDc;
+  HGLRC mDummyGlrc;
 };
 
 

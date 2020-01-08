@@ -24,14 +24,12 @@ class Element;
 
 namespace indexedDB {
 
-class PermissionRequestBase
-  : public nsIObserver
-  , public nsIIDBPermissionsRequest
-{
+class PermissionRequestBase : public nsIObserver,
+                              public nsIIDBPermissionsRequest {
   nsCOMPtr<Element> mOwnerElement;
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
-public:
+ public:
   enum PermissionValue {
     kPermissionAllowed = nsIPermissionManager::ALLOW_ACTION,
     kPermissionDenied = nsIPermissionManager::DENY_ACTION,
@@ -43,39 +41,32 @@ public:
   
   
   
-  static nsresult
-  GetCurrentPermission(nsIPrincipal* aPrincipal,
-                       PermissionValue* aCurrentValue);
+  static nsresult GetCurrentPermission(nsIPrincipal* aPrincipal,
+                                       PermissionValue* aCurrentValue);
 
-  static PermissionValue
-  PermissionValueForIntPermission(uint32_t aIntPermission);
-
-  
-  nsresult
-  PromptIfNeeded(PermissionValue* aCurrentValue);
-
-protected:
-  PermissionRequestBase(Element* aOwnerElement,
-                        nsIPrincipal* aPrincipal);
+  static PermissionValue PermissionValueForIntPermission(
+      uint32_t aIntPermission);
 
   
-  virtual
-  ~PermissionRequestBase();
+  nsresult PromptIfNeeded(PermissionValue* aCurrentValue);
 
-  virtual void
-  OnPromptComplete(PermissionValue aPermissionValue) = 0;
+ protected:
+  PermissionRequestBase(Element* aOwnerElement, nsIPrincipal* aPrincipal);
 
-private:
-  void
-  SetExplicitPermission(nsIPrincipal* aPrincipal,
-                        uint32_t aIntPermission);
+  
+  virtual ~PermissionRequestBase();
+
+  virtual void OnPromptComplete(PermissionValue aPermissionValue) = 0;
+
+ private:
+  void SetExplicitPermission(nsIPrincipal* aPrincipal, uint32_t aIntPermission);
 
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIIDBPERMISSIONSREQUEST
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

@@ -15,36 +15,30 @@ namespace dom {
 
 class RemoteServiceWorkerImpl;
 
-class ServiceWorkerChild final : public PServiceWorkerChild
-                               , public WorkerHolderToken::Listener
-{
+class ServiceWorkerChild final : public PServiceWorkerChild,
+                                 public WorkerHolderToken::Listener {
   RefPtr<WorkerHolderToken> mWorkerHolderToken;
   RemoteServiceWorkerImpl* mOwner;
   bool mTeardownStarted;
 
   
-  void
-  ActorDestroy(ActorDestroyReason aReason) override;
+  void ActorDestroy(ActorDestroyReason aReason) override;
 
   
-  void
-  WorkerShuttingDown() override;
+  void WorkerShuttingDown() override;
 
-public:
+ public:
   explicit ServiceWorkerChild(WorkerHolderToken* aWorkerHolderToken);
   ~ServiceWorkerChild() = default;
 
-  void
-  SetOwner(RemoteServiceWorkerImpl* aOwner);
+  void SetOwner(RemoteServiceWorkerImpl* aOwner);
 
-  void
-  RevokeOwner(RemoteServiceWorkerImpl* aOwner);
+  void RevokeOwner(RemoteServiceWorkerImpl* aOwner);
 
-  void
-  MaybeStartTeardown();
+  void MaybeStartTeardown();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -27,7 +27,7 @@
 
 #ifdef MOZ_WIDGET_ANDROID
 #include "nsIPresentationNetworkHelper.h"
-#endif 
+#endif  
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -44,20 +44,20 @@ namespace dom {
 
 namespace {
 
-class PresentationNetworkHelper final : public nsIPresentationNetworkHelperListener
-{
-public:
+class PresentationNetworkHelper final
+    : public nsIPresentationNetworkHelperListener {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRESENTATIONNETWORKHELPERLISTENER
 
-  using Function = nsresult(PresentationControllingInfo::*)(const nsACString&);
+  using Function = nsresult (PresentationControllingInfo::*)(const nsACString&);
 
   explicit PresentationNetworkHelper(PresentationControllingInfo* aInfo,
                                      const Function& aFunc);
 
   nsresult GetWifiIPAddress();
 
-private:
+ private:
   ~PresentationNetworkHelper() = default;
 
   RefPtr<PresentationControllingInfo> mInfo;
@@ -67,22 +67,18 @@ private:
 NS_IMPL_ISUPPORTS(PresentationNetworkHelper,
                   nsIPresentationNetworkHelperListener)
 
-PresentationNetworkHelper::PresentationNetworkHelper(PresentationControllingInfo* aInfo,
-                                                     const Function& aFunc)
-  : mInfo(aInfo)
-  , mFunc(aFunc)
-{
+PresentationNetworkHelper::PresentationNetworkHelper(
+    PresentationControllingInfo* aInfo, const Function& aFunc)
+    : mInfo(aInfo), mFunc(aFunc) {
   MOZ_ASSERT(aInfo);
   MOZ_ASSERT(aFunc);
 }
 
-nsresult
-PresentationNetworkHelper::GetWifiIPAddress()
-{
+nsresult PresentationNetworkHelper::GetWifiIPAddress() {
   nsresult rv;
 
   nsCOMPtr<nsIPresentationNetworkHelper> networkHelper =
-    do_GetService(PRESENTATION_NETWORK_HELPER_CONTRACTID, &rv);
+      do_GetService(PRESENTATION_NETWORK_HELPER_CONTRACTID, &rv);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -91,59 +87,51 @@ PresentationNetworkHelper::GetWifiIPAddress()
 }
 
 NS_IMETHODIMP
-PresentationNetworkHelper::OnError(const nsACString & aReason)
-{
+PresentationNetworkHelper::OnError(const nsACString& aReason) {
   PRES_ERROR("PresentationNetworkHelper::OnError: %s",
-    nsPromiseFlatCString(aReason).get());
+             nsPromiseFlatCString(aReason).get());
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PresentationNetworkHelper::OnGetWifiIPAddress(const nsACString& aIPAddress)
-{
+PresentationNetworkHelper::OnGetWifiIPAddress(const nsACString& aIPAddress) {
   MOZ_ASSERT(mInfo);
   MOZ_ASSERT(mFunc);
 
-  NS_DispatchToMainThread(
-    NewRunnableMethod<nsCString>("dom::PresentationNetworkHelper::OnGetWifiIPAddress",
-                                 mInfo,
-                                 mFunc,
-                                 aIPAddress));
+  NS_DispatchToMainThread(NewRunnableMethod<nsCString>(
+      "dom::PresentationNetworkHelper::OnGetWifiIPAddress", mInfo, mFunc,
+      aIPAddress));
   return NS_OK;
 }
 
-} 
+}  
 
-#endif 
+#endif  
 
-class TCPPresentationChannelDescription final : public nsIPresentationChannelDescription
-{
-public:
+class TCPPresentationChannelDescription final
+    : public nsIPresentationChannelDescription {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPRESENTATIONCHANNELDESCRIPTION
 
-  TCPPresentationChannelDescription(const nsACString& aAddress,
-                                    uint16_t aPort)
-    : mAddress(aAddress)
-    , mPort(aPort)
-  {
-  }
+  TCPPresentationChannelDescription(const nsACString& aAddress, uint16_t aPort)
+      : mAddress(aAddress), mPort(aPort) {}
 
-private:
+ private:
   ~TCPPresentationChannelDescription() {}
 
   nsCString mAddress;
   uint16_t mPort;
 };
 
-} 
-} 
+}  
+}  
 
-NS_IMPL_ISUPPORTS(TCPPresentationChannelDescription, nsIPresentationChannelDescription)
+NS_IMPL_ISUPPORTS(TCPPresentationChannelDescription,
+                  nsIPresentationChannelDescription)
 
 NS_IMETHODIMP
-TCPPresentationChannelDescription::GetType(uint8_t* aRetVal)
-{
+TCPPresentationChannelDescription::GetType(uint8_t* aRetVal) {
   if (NS_WARN_IF(!aRetVal)) {
     return NS_ERROR_INVALID_POINTER;
   }
@@ -153,8 +141,7 @@ TCPPresentationChannelDescription::GetType(uint8_t* aRetVal)
 }
 
 NS_IMETHODIMP
-TCPPresentationChannelDescription::GetTcpAddress(nsIArray** aRetVal)
-{
+TCPPresentationChannelDescription::GetTcpAddress(nsIArray** aRetVal) {
   if (NS_WARN_IF(!aRetVal)) {
     return NS_ERROR_INVALID_POINTER;
   }
@@ -167,7 +154,8 @@ TCPPresentationChannelDescription::GetTcpAddress(nsIArray** aRetVal)
   
   
   
-  nsCOMPtr<nsISupportsCString> address = do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID);
+  nsCOMPtr<nsISupportsCString> address =
+      do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID);
   if (NS_WARN_IF(!address)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
@@ -180,8 +168,7 @@ TCPPresentationChannelDescription::GetTcpAddress(nsIArray** aRetVal)
 }
 
 NS_IMETHODIMP
-TCPPresentationChannelDescription::GetTcpPort(uint16_t* aRetVal)
-{
+TCPPresentationChannelDescription::GetTcpPort(uint16_t* aRetVal) {
   if (NS_WARN_IF(!aRetVal)) {
     return NS_ERROR_INVALID_POINTER;
   }
@@ -191,8 +178,8 @@ TCPPresentationChannelDescription::GetTcpPort(uint16_t* aRetVal)
 }
 
 NS_IMETHODIMP
-TCPPresentationChannelDescription::GetDataChannelSDP(nsAString& aDataChannelSDP)
-{
+TCPPresentationChannelDescription::GetDataChannelSDP(
+    nsAString& aDataChannelSDP) {
   aDataChannelSDP.Truncate();
   return NS_OK;
 }
@@ -206,19 +193,16 @@ NS_IMPL_ISUPPORTS(PresentationSessionInfo,
                   nsIPresentationControlChannelListener,
                   nsIPresentationSessionTransportBuilderListener);
 
- nsresult
-PresentationSessionInfo::Init(nsIPresentationControlChannel* aControlChannel)
-{
+ nsresult PresentationSessionInfo::Init(
+    nsIPresentationControlChannel* aControlChannel) {
   SetControlChannel(aControlChannel);
   return NS_OK;
 }
 
- void
-PresentationSessionInfo::Shutdown(nsresult aReason)
-{
+ void PresentationSessionInfo::Shutdown(nsresult aReason) {
   PRES_DEBUG("%s:id[%s], reason[%" PRIx32 "], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), static_cast<uint32_t>(aReason),
-             mRole);
+             NS_ConvertUTF16toUTF8(mSessionId).get(),
+             static_cast<uint32_t>(aReason), mRole);
 
   NS_WARNING_ASSERTION(NS_SUCCEEDED(aReason), "bad reason");
 
@@ -239,9 +223,8 @@ PresentationSessionInfo::Shutdown(nsresult aReason)
   ResetBuilder();
 }
 
-nsresult
-PresentationSessionInfo::SetListener(nsIPresentationSessionListener* aListener)
-{
+nsresult PresentationSessionInfo::SetListener(
+    nsIPresentationSessionListener* aListener) {
   mListener = aListener;
 
   if (mListener) {
@@ -261,9 +244,7 @@ PresentationSessionInfo::SetListener(nsIPresentationSessionListener* aListener)
   return NS_OK;
 }
 
-nsresult
-PresentationSessionInfo::Send(const nsAString& aData)
-{
+nsresult PresentationSessionInfo::Send(const nsAString& aData) {
   if (NS_WARN_IF(!IsSessionReady())) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
@@ -275,9 +256,7 @@ PresentationSessionInfo::Send(const nsAString& aData)
   return mTransport->Send(aData);
 }
 
-nsresult
-PresentationSessionInfo::SendBinaryMsg(const nsACString& aData)
-{
+nsresult PresentationSessionInfo::SendBinaryMsg(const nsACString& aData) {
   if (NS_WARN_IF(!IsSessionReady())) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
@@ -289,9 +268,7 @@ PresentationSessionInfo::SendBinaryMsg(const nsACString& aData)
   return mTransport->SendBinaryMsg(aData);
 }
 
-nsresult
-PresentationSessionInfo::SendBlob(Blob* aBlob)
-{
+nsresult PresentationSessionInfo::SendBlob(Blob* aBlob) {
   if (NS_WARN_IF(!IsSessionReady())) {
     return NS_ERROR_DOM_INVALID_STATE_ERR;
   }
@@ -303,10 +280,7 @@ PresentationSessionInfo::SendBlob(Blob* aBlob)
   return mTransport->SendBlob(aBlob);
 }
 
-nsresult
-PresentationSessionInfo::Close(nsresult aReason,
-                               uint32_t aState)
-{
+nsresult PresentationSessionInfo::Close(nsresult aReason, uint32_t aState) {
   
   if (nsIPresentationSessionListener::STATE_TERMINATED == mState) {
     return NS_OK;
@@ -322,7 +296,8 @@ PresentationSessionInfo::Close(nsresult aReason,
     case nsIPresentationSessionListener::STATE_TERMINATED: {
       if (!mControlChannel) {
         nsCOMPtr<nsIPresentationControlChannel> ctrlChannel;
-        nsresult rv = mDevice->EstablishControlChannel(getter_AddRefs(ctrlChannel));
+        nsresult rv =
+            mDevice->EstablishControlChannel(getter_AddRefs(ctrlChannel));
         if (NS_FAILED(rv)) {
           Shutdown(rv);
           return rv;
@@ -340,57 +315,48 @@ PresentationSessionInfo::Close(nsresult aReason,
   return NS_OK;
 }
 
-nsresult
-PresentationSessionInfo::OnTerminate(nsIPresentationControlChannel* aControlChannel)
-{
-  mIsOnTerminating = true; 
+nsresult PresentationSessionInfo::OnTerminate(
+    nsIPresentationControlChannel* aControlChannel) {
+  mIsOnTerminating = true;  
   SetStateWithReason(nsIPresentationSessionListener::STATE_TERMINATED, NS_OK);
   SetControlChannel(aControlChannel);
 
   return NS_OK;
 }
 
-nsresult
-PresentationSessionInfo::ReplySuccess()
-{
+nsresult PresentationSessionInfo::ReplySuccess() {
   SetStateWithReason(nsIPresentationSessionListener::STATE_CONNECTED, NS_OK);
   return NS_OK;
 }
 
-nsresult
-PresentationSessionInfo::ReplyError(nsresult aError)
-{
+nsresult PresentationSessionInfo::ReplyError(nsresult aError) {
   Shutdown(aError);
 
   
   return UntrackFromService();
 }
 
- nsresult
-PresentationSessionInfo::UntrackFromService()
-{
+ nsresult PresentationSessionInfo::UntrackFromService() {
   nsCOMPtr<nsIPresentationService> service =
-    do_GetService(PRESENTATION_SERVICE_CONTRACTID);
+      do_GetService(PRESENTATION_SERVICE_CONTRACTID);
   if (NS_WARN_IF(!service)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-  static_cast<PresentationService*>(service.get())->UntrackSessionInfo(mSessionId, mRole);
+  static_cast<PresentationService*>(service.get())
+      ->UntrackSessionInfo(mSessionId, mRole);
 
   return NS_OK;
 }
 
-nsPIDOMWindowInner*
-PresentationSessionInfo::GetWindow()
-{
+nsPIDOMWindowInner* PresentationSessionInfo::GetWindow() {
   nsCOMPtr<nsIPresentationService> service =
-  do_GetService(PRESENTATION_SERVICE_CONTRACTID);
+      do_GetService(PRESENTATION_SERVICE_CONTRACTID);
   if (NS_WARN_IF(!service)) {
     return nullptr;
   }
   uint64_t windowId = 0;
-  if (NS_WARN_IF(NS_FAILED(service->GetWindowIdBySessionId(mSessionId,
-                                                           mRole,
-                                                           &windowId)))) {
+  if (NS_WARN_IF(NS_FAILED(
+          service->GetWindowIdBySessionId(mSessionId, mRole, &windowId)))) {
     return nullptr;
   }
 
@@ -402,29 +368,25 @@ PresentationSessionInfo::GetWindow()
   return window->AsInner();
 }
 
- bool
-PresentationSessionInfo::IsAccessible(base::ProcessId aProcessId)
-{
+ bool PresentationSessionInfo::IsAccessible(
+    base::ProcessId aProcessId) {
   
   return true;
 }
 
-void
-PresentationSessionInfo::ContinueTermination()
-{
+void PresentationSessionInfo::ContinueTermination() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mControlChannel);
 
-  if (NS_WARN_IF(NS_FAILED(mControlChannel->Terminate(mSessionId)))
-      || mIsOnTerminating) {
+  if (NS_WARN_IF(NS_FAILED(mControlChannel->Terminate(mSessionId))) ||
+      mIsOnTerminating) {
     Shutdown(NS_OK);
   }
 }
 
 
 NS_IMETHODIMP
-PresentationSessionInfo::NotifyTransportReady()
-{
+PresentationSessionInfo::NotifyTransportReady() {
   PRES_DEBUG("%s:id[%s], role[%d], state[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole, mState);
 
@@ -454,11 +416,10 @@ PresentationSessionInfo::NotifyTransportReady()
 }
 
 NS_IMETHODIMP
-PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
-{
+PresentationSessionInfo::NotifyTransportClosed(nsresult aReason) {
   PRES_DEBUG("%s:id[%s], reason[%" PRIx32 "], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), static_cast<uint32_t>(aReason),
-             mRole);
+             NS_ConvertUTF16toUTF8(mSessionId).get(),
+             static_cast<uint32_t>(aReason), mRole);
 
   MOZ_ASSERT(NS_IsMainThread());
 
@@ -477,6 +438,7 @@ PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
 
   if (mState == nsIPresentationSessionListener::STATE_CONNECTED) {
     
+    
     SetStateWithReason(nsIPresentationSessionListener::STATE_CLOSED, aReason);
   }
 
@@ -491,8 +453,7 @@ PresentationSessionInfo::NotifyTransportClosed(nsresult aReason)
 }
 
 NS_IMETHODIMP
-PresentationSessionInfo::NotifyData(const nsACString& aData, bool aIsBinary)
-{
+PresentationSessionInfo::NotifyData(const nsACString& aData, bool aIsBinary) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (NS_WARN_IF(!IsSessionReady())) {
@@ -508,8 +469,8 @@ PresentationSessionInfo::NotifyData(const nsACString& aData, bool aIsBinary)
 
 
 NS_IMETHODIMP
-PresentationSessionInfo::OnSessionTransport(nsIPresentationSessionTransport* aTransport)
-{
+PresentationSessionInfo::OnSessionTransport(
+    nsIPresentationSessionTransport* aTransport) {
   PRES_DEBUG("%s:id[%s], role[%d], state[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole, mState);
 
@@ -538,37 +499,33 @@ PresentationSessionInfo::OnSessionTransport(nsIPresentationSessionTransport* aTr
 }
 
 NS_IMETHODIMP
-PresentationSessionInfo::OnError(nsresult aReason)
-{
+PresentationSessionInfo::OnError(nsresult aReason) {
   PRES_DEBUG("%s:id[%s], reason[%" PRIx32 "], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), static_cast<uint32_t>(aReason),
-             mRole);
+             NS_ConvertUTF16toUTF8(mSessionId).get(),
+             static_cast<uint32_t>(aReason), mRole);
 
   ResetBuilder();
   return ReplyError(aReason);
 }
 
 NS_IMETHODIMP
-PresentationSessionInfo::SendOffer(nsIPresentationChannelDescription* aOffer)
-{
+PresentationSessionInfo::SendOffer(nsIPresentationChannelDescription* aOffer) {
   return mControlChannel->SendOffer(aOffer);
 }
 
 NS_IMETHODIMP
-PresentationSessionInfo::SendAnswer(nsIPresentationChannelDescription* aAnswer)
-{
+PresentationSessionInfo::SendAnswer(
+    nsIPresentationChannelDescription* aAnswer) {
   return mControlChannel->SendAnswer(aAnswer);
 }
 
 NS_IMETHODIMP
-PresentationSessionInfo::SendIceCandidate(const nsAString& candidate)
-{
+PresentationSessionInfo::SendIceCandidate(const nsAString& candidate) {
   return mControlChannel->SendIceCandidate(candidate);
 }
 
 NS_IMETHODIMP
-PresentationSessionInfo::Close(nsresult reason)
-{
+PresentationSessionInfo::Close(nsresult reason) {
   return mControlChannel->Disconnect(reason);
 }
 
@@ -595,12 +552,10 @@ PresentationSessionInfo::Close(nsresult reason)
 
 
 NS_IMPL_ISUPPORTS_INHERITED(PresentationControllingInfo,
-                            PresentationSessionInfo,
-                            nsIServerSocketListener)
+                            PresentationSessionInfo, nsIServerSocketListener)
 
-nsresult
-PresentationControllingInfo::Init(nsIPresentationControlChannel* aControlChannel)
-{
+nsresult PresentationControllingInfo::Init(
+    nsIPresentationControlChannel* aControlChannel) {
   PresentationSessionInfo::Init(aControlChannel);
 
   
@@ -623,15 +578,13 @@ PresentationControllingInfo::Init(nsIPresentationControlChannel* aControlChannel
   int32_t port;
   rv = mServerSocket->GetPort(&port);
   if (!NS_WARN_IF(NS_FAILED(rv))) {
-    PRES_DEBUG("%s:ServerSocket created.port[%d]\n",__func__, port);
+    PRES_DEBUG("%s:ServerSocket created.port[%d]\n", __func__, port);
   }
 
   return NS_OK;
 }
 
-void
-PresentationControllingInfo::Shutdown(nsresult aReason)
-{
+void PresentationControllingInfo::Shutdown(nsresult aReason) {
   PresentationSessionInfo::Shutdown(aReason);
 
   
@@ -641,24 +594,23 @@ PresentationControllingInfo::Shutdown(nsresult aReason)
   }
 }
 
-nsresult
-PresentationControllingInfo::GetAddress()
-{
+nsresult PresentationControllingInfo::GetAddress() {
   if (nsContentUtils::ShouldResistFingerprinting()) {
     return NS_ERROR_FAILURE;
   }
 
 #if defined(MOZ_WIDGET_ANDROID)
   RefPtr<PresentationNetworkHelper> networkHelper =
-    new PresentationNetworkHelper(this,
-                                  &PresentationControllingInfo::OnGetAddress);
+      new PresentationNetworkHelper(this,
+                                    &PresentationControllingInfo::OnGetAddress);
   nsresult rv = networkHelper->GetWifiIPAddress();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
 #else
-  nsCOMPtr<nsINetworkInfoService> networkInfo = do_GetService(NETWORKINFOSERVICE_CONTRACT_ID);
+  nsCOMPtr<nsINetworkInfoService> networkInfo =
+      do_GetService(NETWORKINFOSERVICE_CONTRACT_ID);
   MOZ_ASSERT(networkInfo);
 
   nsresult rv = networkInfo->ListNetworkAddresses(this);
@@ -671,9 +623,7 @@ PresentationControllingInfo::GetAddress()
   return NS_OK;
 }
 
-nsresult
-PresentationControllingInfo::OnGetAddress(const nsACString& aAddress)
-{
+nsresult PresentationControllingInfo::OnGetAddress(const nsACString& aAddress) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (NS_WARN_IF(!mServerSocket)) {
@@ -691,20 +641,20 @@ PresentationControllingInfo::OnGetAddress(const nsACString& aAddress)
   }
 
   RefPtr<TCPPresentationChannelDescription> description =
-    new TCPPresentationChannelDescription(aAddress, static_cast<uint16_t>(port));
+      new TCPPresentationChannelDescription(aAddress,
+                                            static_cast<uint16_t>(port));
   return mControlChannel->SendOffer(description);
 }
 
 
 NS_IMETHODIMP
-PresentationControllingInfo::OnIceCandidate(const nsAString& aCandidate)
-{
+PresentationControllingInfo::OnIceCandidate(const nsAString& aCandidate) {
   if (mTransportType != nsIPresentationChannelDescription::TYPE_DATACHANNEL) {
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
-    builder = do_QueryInterface(mBuilder);
+  nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> builder =
+      do_QueryInterface(mBuilder);
 
   if (NS_WARN_IF(!builder)) {
     return NS_ERROR_FAILURE;
@@ -714,18 +664,18 @@ PresentationControllingInfo::OnIceCandidate(const nsAString& aCandidate)
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::OnOffer(nsIPresentationChannelDescription* aDescription)
-{
+PresentationControllingInfo::OnOffer(
+    nsIPresentationChannelDescription* aDescription) {
   MOZ_ASSERT(false, "Sender side should not receive offer.");
   return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::OnAnswer(nsIPresentationChannelDescription* aDescription)
-{
+PresentationControllingInfo::OnAnswer(
+    nsIPresentationChannelDescription* aDescription) {
   if (mTransportType == nsIPresentationChannelDescription::TYPE_DATACHANNEL) {
-    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
-      builder = do_QueryInterface(mBuilder);
+    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> builder =
+        do_QueryInterface(mBuilder);
 
     if (NS_WARN_IF(!builder)) {
       return NS_ERROR_FAILURE;
@@ -744,7 +694,7 @@ PresentationControllingInfo::OnAnswer(nsIPresentationChannelDescription* aDescri
 
   
   
-  if (IsSessionReady()){
+  if (IsSessionReady()) {
     return ReplySuccess();
   }
 
@@ -752,8 +702,7 @@ PresentationControllingInfo::OnAnswer(nsIPresentationChannelDescription* aDescri
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::NotifyConnected()
-{
+PresentationControllingInfo::NotifyConnected() {
   PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
 
@@ -784,8 +733,7 @@ PresentationControllingInfo::NotifyConnected()
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::NotifyReconnected()
-{
+PresentationControllingInfo::NotifyReconnected() {
   PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
 
@@ -798,9 +746,7 @@ PresentationControllingInfo::NotifyReconnected()
   return NotifyReconnectResult(NS_OK);
 }
 
-nsresult
-PresentationControllingInfo::BuildTransport()
-{
+nsresult PresentationControllingInfo::BuildTransport() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mState != nsIPresentationSessionListener::STATE_CONNECTING) {
@@ -811,7 +757,8 @@ PresentationControllingInfo::BuildTransport()
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  if (!Preferences::GetBool("dom.presentation.session_transport.data_channel.enable")) {
+  if (!Preferences::GetBool(
+          "dom.presentation.session_transport.data_channel.enable")) {
     
     return GetAddress();
   }
@@ -830,14 +777,13 @@ PresentationControllingInfo::BuildTransport()
 
 
   mTransportType = nsIPresentationChannelDescription::TYPE_DATACHANNEL;
-  if (NS_WARN_IF(NS_FAILED(
-    mBuilderConstructor->CreateTransportBuilder(mTransportType,
-                                                getter_AddRefs(mBuilder))))) {
+  if (NS_WARN_IF(NS_FAILED(mBuilderConstructor->CreateTransportBuilder(
+          mTransportType, getter_AddRefs(mBuilder))))) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
   nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
-    dataChannelBuilder(do_QueryInterface(mBuilder));
+      dataChannelBuilder(do_QueryInterface(mBuilder));
   if (NS_WARN_IF(!dataChannelBuilder)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -845,10 +791,8 @@ PresentationControllingInfo::BuildTransport()
   
   nsPIDOMWindowInner* window = GetWindow();
 
-  nsresult rv = dataChannelBuilder->
-         BuildDataChannelTransport(nsIPresentationService::ROLE_CONTROLLER,
-                                   window,
-                                   this);
+  nsresult rv = dataChannelBuilder->BuildDataChannelTransport(
+      nsIPresentationService::ROLE_CONTROLLER, window, this);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -857,17 +801,16 @@ PresentationControllingInfo::BuildTransport()
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::NotifyDisconnected(nsresult aReason)
-{
+PresentationControllingInfo::NotifyDisconnected(nsresult aReason) {
   PRES_DEBUG("%s:id[%s], reason[%" PRIx32 "], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), static_cast<uint32_t>(aReason),
-             mRole);
+             NS_ConvertUTF16toUTF8(mSessionId).get(),
+             static_cast<uint32_t>(aReason), mRole);
 
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mTransportType == nsIPresentationChannelDescription::TYPE_DATACHANNEL) {
-    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
-      builder = do_QueryInterface(mBuilder);
+    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> builder =
+        do_QueryInterface(mBuilder);
     if (builder) {
       Unused << NS_WARN_IF(NS_FAILED(builder->NotifyDisconnected(aReason)));
     }
@@ -909,12 +852,11 @@ PresentationControllingInfo::NotifyDisconnected(nsresult aReason)
 
 NS_IMETHODIMP
 PresentationControllingInfo::OnSocketAccepted(nsIServerSocket* aServerSocket,
-                                            nsISocketTransport* aTransport)
-{
+                                              nsISocketTransport* aTransport) {
   int32_t port;
   nsresult rv = aTransport->GetPort(&port);
   if (!NS_WARN_IF(NS_FAILED(rv))) {
-    PRES_DEBUG("%s:receive from port[%d]\n",__func__, port);
+    PRES_DEBUG("%s:receive from port[%d]\n", __func__, port);
   }
 
   MOZ_ASSERT(NS_IsMainThread());
@@ -926,8 +868,8 @@ PresentationControllingInfo::OnSocketAccepted(nsIServerSocket* aServerSocket,
   
   nsCOMPtr<nsIPresentationTCPSessionTransportBuilder> builder;
   if (NS_SUCCEEDED(mBuilderConstructor->CreateTransportBuilder(
-                     nsIPresentationChannelDescription::TYPE_TCP,
-                     getter_AddRefs(mBuilder)))) {
+          nsIPresentationChannelDescription::TYPE_TCP,
+          getter_AddRefs(mBuilder)))) {
     builder = do_QueryInterface(mBuilder);
   }
 
@@ -941,14 +883,14 @@ PresentationControllingInfo::OnSocketAccepted(nsIServerSocket* aServerSocket,
 
 NS_IMETHODIMP
 PresentationControllingInfo::OnStopListening(nsIServerSocket* aServerSocket,
-                                           nsresult aStatus)
-{
-  PRES_DEBUG("controller %s:status[%" PRIx32 "]\n",__func__,
+                                             nsresult aStatus) {
+  PRES_DEBUG("controller %s:status[%" PRIx32 "]\n", __func__,
              static_cast<uint32_t>(aStatus));
 
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (aStatus == NS_BINDING_ABORTED) { 
+  if (aStatus ==
+      NS_BINDING_ABORTED) {  
     return NS_OK;
   }
 
@@ -983,9 +925,8 @@ PresentationControllingInfo::OnStopListening(nsIServerSocket* aServerSocket,
 
 
 
-nsresult
-PresentationControllingInfo::Reconnect(nsIPresentationServiceCallback* aCallback)
-{
+nsresult PresentationControllingInfo::Reconnect(
+    nsIPresentationServiceCallback* aCallback) {
   PRES_DEBUG("%s:id[%s], role[%d], state[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole, mState);
 
@@ -1033,9 +974,7 @@ PresentationControllingInfo::Reconnect(nsIPresentationServiceCallback* aCallback
   return NS_OK;
 }
 
-nsresult
-PresentationControllingInfo::ContinueReconnect()
-{
+nsresult PresentationControllingInfo::ContinueReconnect() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mControlChannel);
 
@@ -1049,9 +988,8 @@ PresentationControllingInfo::ContinueReconnect()
 
 
 NS_IMETHODIMP
-PresentationControllingInfo::OnListedNetworkAddresses(const char** aAddressArray,
-                                                      uint32_t aAddressArraySize)
-{
+PresentationControllingInfo::OnListedNetworkAddresses(
+    const char** aAddressArray, uint32_t aAddressArraySize) {
   if (!aAddressArraySize) {
     return OnListNetworkAddressesFailed();
   }
@@ -1067,33 +1005,26 @@ PresentationControllingInfo::OnListedNetworkAddresses(const char** aAddressArray
   
   
   NS_DispatchToMainThread(NewRunnableMethod<nsCString>(
-    "dom::PresentationControllingInfo::OnGetAddress",
-    this,
-    &PresentationControllingInfo::OnGetAddress,
-    ip));
+      "dom::PresentationControllingInfo::OnGetAddress", this,
+      &PresentationControllingInfo::OnGetAddress, ip));
 
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::OnListNetworkAddressesFailed()
-{
+PresentationControllingInfo::OnListNetworkAddressesFailed() {
   PRES_ERROR("PresentationControllingInfo:OnListNetworkAddressesFailed");
 
   
   
   NS_DispatchToMainThread(NewRunnableMethod<nsCString>(
-    "dom::PresentationControllingInfo::OnGetAddress",
-    this,
-    &PresentationControllingInfo::OnGetAddress,
-    "127.0.0.1"));
+      "dom::PresentationControllingInfo::OnGetAddress", this,
+      &PresentationControllingInfo::OnGetAddress, "127.0.0.1"));
 
   return NS_OK;
 }
 
-nsresult
-PresentationControllingInfo::NotifyReconnectResult(nsresult aStatus)
-{
+nsresult PresentationControllingInfo::NotifyReconnectResult(nsresult aStatus) {
   if (!mReconnectCallback) {
     MOZ_ASSERT(false, "mReconnectCallback can not be null here.");
     return NS_ERROR_FAILURE;
@@ -1101,7 +1032,7 @@ PresentationControllingInfo::NotifyReconnectResult(nsresult aStatus)
 
   mIsReconnecting = false;
   nsCOMPtr<nsIPresentationServiceCallback> callback =
-    mReconnectCallback.forget();
+      mReconnectCallback.forget();
   if (NS_FAILED(aStatus)) {
     return callback->NotifyError(aStatus);
   }
@@ -1111,16 +1042,15 @@ PresentationControllingInfo::NotifyReconnectResult(nsresult aStatus)
 
 
 NS_IMETHODIMP
-PresentationControllingInfo::NotifyTransportReady()
-{
+PresentationControllingInfo::NotifyTransportReady() {
   return PresentationSessionInfo::NotifyTransportReady();
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::NotifyTransportClosed(nsresult aReason)
-{
+PresentationControllingInfo::NotifyTransportClosed(nsresult aReason) {
   if (!mDoReconnectAfterClose) {
-    return PresentationSessionInfo::NotifyTransportClosed(aReason);;
+    return PresentationSessionInfo::NotifyTransportClosed(aReason);
+    ;
   }
 
   MOZ_ASSERT(mState == nsIPresentationSessionListener::STATE_CLOSED);
@@ -1132,8 +1062,8 @@ PresentationControllingInfo::NotifyTransportClosed(nsresult aReason)
 }
 
 NS_IMETHODIMP
-PresentationControllingInfo::NotifyData(const nsACString& aData, bool aIsBinary)
-{
+PresentationControllingInfo::NotifyData(const nsACString& aData,
+                                        bool aIsBinary) {
   return PresentationSessionInfo::NotifyData(aData, aIsBinary);
 }
 
@@ -1157,23 +1087,20 @@ PresentationControllingInfo::NotifyData(const nsACString& aData, bool aIsBinary)
 
 
 
-NS_IMPL_ISUPPORTS_INHERITED(PresentationPresentingInfo,
-                            PresentationSessionInfo,
-                            nsITimerCallback,
-                            nsINamed)
+NS_IMPL_ISUPPORTS_INHERITED(PresentationPresentingInfo, PresentationSessionInfo,
+                            nsITimerCallback, nsINamed)
 
-nsresult
-PresentationPresentingInfo::Init(nsIPresentationControlChannel* aControlChannel)
-{
+nsresult PresentationPresentingInfo::Init(
+    nsIPresentationControlChannel* aControlChannel) {
   PresentationSessionInfo::Init(aControlChannel);
 
   
   
   nsresult rv;
   int32_t timeout =
-    Preferences::GetInt("presentation.receiver.loading.timeout", 10000);
-  rv = NS_NewTimerWithCallback(getter_AddRefs(mTimer),
-                               this, timeout, nsITimer::TYPE_ONE_SHOT);
+      Preferences::GetInt("presentation.receiver.loading.timeout", 10000);
+  rv = NS_NewTimerWithCallback(getter_AddRefs(mTimer), this, timeout,
+                               nsITimer::TYPE_ONE_SHOT);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1181,9 +1108,7 @@ PresentationPresentingInfo::Init(nsIPresentationControlChannel* aControlChannel)
   return NS_OK;
 }
 
-void
-PresentationPresentingInfo::Shutdown(nsresult aReason)
-{
+void PresentationPresentingInfo::Shutdown(nsresult aReason) {
   PresentationSessionInfo::Shutdown(aReason);
 
   if (mTimer) {
@@ -1199,8 +1124,8 @@ PresentationPresentingInfo::Shutdown(nsresult aReason)
 
 
 NS_IMETHODIMP
-PresentationPresentingInfo::OnSessionTransport(nsIPresentationSessionTransport* aTransport)
-{
+PresentationPresentingInfo::OnSessionTransport(
+    nsIPresentationSessionTransport* aTransport) {
   nsresult rv = PresentationSessionInfo::OnSessionTransport(aTransport);
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1219,6 +1144,7 @@ PresentationPresentingInfo::OnSessionTransport(nsIPresentationSessionTransport* 
     
     
     
+    
     nsCOMPtr<nsINetAddr> selfAddr;
     rv = mTransport->GetSelfAddress(getter_AddRefs(selfAddr));
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "GetSelfAddress failed");
@@ -1230,7 +1156,7 @@ PresentationPresentingInfo::OnSessionTransport(nsIPresentationSessionTransport* 
       selfAddr->GetPort(&port);
     }
     nsCOMPtr<nsIPresentationChannelDescription> description =
-      new TCPPresentationChannelDescription(address, port);
+        new TCPPresentationChannelDescription(address, port);
 
     return mControlChannel->SendAnswer(description);
   }
@@ -1240,8 +1166,8 @@ PresentationPresentingInfo::OnSessionTransport(nsIPresentationSessionTransport* 
 
 
 NS_IMETHODIMP
-PresentationPresentingInfo::FlushPendingEvents(nsIPresentationDataChannelSessionTransportBuilder* builder)
-{
+PresentationPresentingInfo::FlushPendingEvents(
+    nsIPresentationDataChannelSessionTransportBuilder* builder) {
   if (NS_WARN_IF(!builder)) {
     return NS_ERROR_FAILURE;
   }
@@ -1260,9 +1186,7 @@ PresentationPresentingInfo::FlushPendingEvents(nsIPresentationDataChannelSession
   return NS_OK;
 }
 
-nsresult
-PresentationPresentingInfo::InitTransportAndSendAnswer()
-{
+nsresult PresentationPresentingInfo::InitTransportAndSendAnswer() {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mState == nsIPresentationSessionListener::STATE_CONNECTING);
 
@@ -1276,9 +1200,8 @@ PresentationPresentingInfo::InitTransportAndSendAnswer()
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
 
-  if (NS_WARN_IF(NS_FAILED(
-    mBuilderConstructor->CreateTransportBuilder(type,
-                                                getter_AddRefs(mBuilder))))) {
+  if (NS_WARN_IF(NS_FAILED(mBuilderConstructor->CreateTransportBuilder(
+          type, getter_AddRefs(mBuilder))))) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
@@ -1286,7 +1209,7 @@ PresentationPresentingInfo::InitTransportAndSendAnswer()
     
     
     nsCOMPtr<nsIPresentationTCPSessionTransportBuilder> builder =
-      do_QueryInterface(mBuilder);
+        do_QueryInterface(mBuilder);
     if (NS_WARN_IF(!builder)) {
       return NS_ERROR_NOT_AVAILABLE;
     }
@@ -1296,7 +1219,8 @@ PresentationPresentingInfo::InitTransportAndSendAnswer()
   }
 
   if (type == nsIPresentationChannelDescription::TYPE_DATACHANNEL) {
-    if (!Preferences::GetBool("dom.presentation.session_transport.data_channel.enable")) {
+    if (!Preferences::GetBool(
+            "dom.presentation.session_transport.data_channel.enable")) {
       return NS_ERROR_NOT_IMPLEMENTED;
     }
     
@@ -1315,18 +1239,16 @@ PresentationPresentingInfo::InitTransportAndSendAnswer()
 
     mTransportType = nsIPresentationChannelDescription::TYPE_DATACHANNEL;
 
-    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> dataChannelBuilder =
-      do_QueryInterface(mBuilder);
+    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
+        dataChannelBuilder = do_QueryInterface(mBuilder);
     if (NS_WARN_IF(!dataChannelBuilder)) {
       return NS_ERROR_NOT_AVAILABLE;
     }
 
     nsPIDOMWindowInner* window = GetWindow();
 
-    rv = dataChannelBuilder->
-           BuildDataChannelTransport(nsIPresentationService::ROLE_RECEIVER,
-                                     window,
-                                     this);
+    rv = dataChannelBuilder->BuildDataChannelTransport(
+        nsIPresentationService::ROLE_RECEIVER, window, this);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -1343,12 +1265,12 @@ PresentationPresentingInfo::InitTransportAndSendAnswer()
   return NS_ERROR_UNEXPECTED;
 }
 
-nsresult
-PresentationPresentingInfo::UntrackFromService()
-{
+nsresult PresentationPresentingInfo::UntrackFromService() {
   
   if (mContentParent) {
-    Unused << NS_WARN_IF(!static_cast<ContentParent*>(mContentParent.get())->SendNotifyPresentationReceiverCleanUp(mSessionId));
+    Unused << NS_WARN_IF(
+        !static_cast<ContentParent*>(mContentParent.get())
+             ->SendNotifyPresentationReceiverCleanUp(mSessionId));
   }
 
   
@@ -1358,28 +1280,27 @@ PresentationPresentingInfo::UntrackFromService()
   mDevice = nullptr;
 
   
+  
   nsCOMPtr<nsIPresentationService> service =
-    do_GetService(PRESENTATION_SERVICE_CONTRACTID);
+      do_GetService(PRESENTATION_SERVICE_CONTRACTID);
   if (NS_WARN_IF(!service)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-  static_cast<PresentationService*>(service.get())->UntrackSessionInfo(mSessionId, mRole);
+  static_cast<PresentationService*>(service.get())
+      ->UntrackSessionInfo(mSessionId, mRole);
 
   return NS_OK;
 }
 
-bool
-PresentationPresentingInfo::IsAccessible(base::ProcessId aProcessId)
-{
+bool PresentationPresentingInfo::IsAccessible(base::ProcessId aProcessId) {
   
-  return (mContentParent) ?
-          aProcessId == static_cast<ContentParent*>(mContentParent.get())->OtherPid() :
-          false;
+  return (mContentParent)
+             ? aProcessId ==
+                   static_cast<ContentParent*>(mContentParent.get())->OtherPid()
+             : false;
 }
 
-nsresult
-PresentationPresentingInfo::NotifyResponderReady()
-{
+nsresult PresentationPresentingInfo::NotifyResponderReady() {
   PRES_DEBUG("%s:id[%s], role[%d], state[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole, mState);
 
@@ -1402,9 +1323,7 @@ PresentationPresentingInfo::NotifyResponderReady()
   return NS_OK;
 }
 
-nsresult
-PresentationPresentingInfo::NotifyResponderFailure()
-{
+nsresult PresentationPresentingInfo::NotifyResponderFailure() {
   PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
 
@@ -1416,9 +1335,7 @@ PresentationPresentingInfo::NotifyResponderFailure()
   return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
 }
 
-nsresult
-PresentationPresentingInfo::DoReconnect()
-{
+nsresult PresentationPresentingInfo::DoReconnect() {
   PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
 
@@ -1431,8 +1348,8 @@ PresentationPresentingInfo::DoReconnect()
 
 
 NS_IMETHODIMP
-PresentationPresentingInfo::OnOffer(nsIPresentationChannelDescription* aDescription)
-{
+PresentationPresentingInfo::OnOffer(
+    nsIPresentationChannelDescription* aDescription) {
   if (NS_WARN_IF(mHasFlushPendingEvents)) {
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
   }
@@ -1456,15 +1373,14 @@ PresentationPresentingInfo::OnOffer(nsIPresentationChannelDescription* aDescript
 }
 
 NS_IMETHODIMP
-PresentationPresentingInfo::OnAnswer(nsIPresentationChannelDescription* aDescription)
-{
+PresentationPresentingInfo::OnAnswer(
+    nsIPresentationChannelDescription* aDescription) {
   MOZ_ASSERT(false, "Receiver side should not receive answer.");
   return NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
-PresentationPresentingInfo::OnIceCandidate(const nsAString& aCandidate)
-{
+PresentationPresentingInfo::OnIceCandidate(const nsAString& aCandidate) {
   if (!mBuilder && !mHasFlushPendingEvents) {
     mPendingCandidates.AppendElement(nsString(aCandidate));
     return NS_OK;
@@ -1474,15 +1390,14 @@ PresentationPresentingInfo::OnIceCandidate(const nsAString& aCandidate)
     return NS_ERROR_FAILURE;
   }
 
-  nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
-    builder = do_QueryInterface(mBuilder);
+  nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> builder =
+      do_QueryInterface(mBuilder);
 
   return builder->OnIceCandidate(aCandidate);
 }
 
 NS_IMETHODIMP
-PresentationPresentingInfo::NotifyConnected()
-{
+PresentationPresentingInfo::NotifyConnected() {
   PRES_DEBUG("%s:id[%s], role[%d]\n", __func__,
              NS_ConvertUTF16toUTF8(mSessionId).get(), mRole);
 
@@ -1494,24 +1409,22 @@ PresentationPresentingInfo::NotifyConnected()
 }
 
 NS_IMETHODIMP
-PresentationPresentingInfo::NotifyReconnected()
-{
+PresentationPresentingInfo::NotifyReconnected() {
   MOZ_ASSERT(false, "NotifyReconnected should not be called at receiver side.");
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PresentationPresentingInfo::NotifyDisconnected(nsresult aReason)
-{
+PresentationPresentingInfo::NotifyDisconnected(nsresult aReason) {
   PRES_DEBUG("%s:id[%s], reason[%" PRIx32 "], role[%d]\n", __func__,
-             NS_ConvertUTF16toUTF8(mSessionId).get(), static_cast<uint32_t>(aReason),
-             mRole);
+             NS_ConvertUTF16toUTF8(mSessionId).get(),
+             static_cast<uint32_t>(aReason), mRole);
 
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mTransportType == nsIPresentationChannelDescription::TYPE_DATACHANNEL) {
-    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder>
-      builder = do_QueryInterface(mBuilder);
+    nsCOMPtr<nsIPresentationDataChannelSessionTransportBuilder> builder =
+        do_QueryInterface(mBuilder);
     if (builder) {
       Unused << NS_WARN_IF(NS_FAILED(builder->NotifyDisconnected(aReason)));
     }
@@ -1524,7 +1437,8 @@ PresentationPresentingInfo::NotifyDisconnected(nsresult aReason)
   if (NS_WARN_IF(NS_FAILED(aReason))) {
     
     
-    SetStateWithReason(nsIPresentationSessionListener::STATE_TERMINATED, aReason);
+    SetStateWithReason(nsIPresentationSessionListener::STATE_TERMINATED,
+                       aReason);
 
     
     return ReplyError(NS_ERROR_DOM_OPERATION_ERR);
@@ -1535,8 +1449,7 @@ PresentationPresentingInfo::NotifyDisconnected(nsresult aReason)
 
 
 NS_IMETHODIMP
-PresentationPresentingInfo::Notify(nsITimer* aTimer)
-{
+PresentationPresentingInfo::Notify(nsITimer* aTimer) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_WARNING("The receiver page fails to become ready before timeout.");
 
@@ -1546,17 +1459,14 @@ PresentationPresentingInfo::Notify(nsITimer* aTimer)
 
 
 NS_IMETHODIMP
-PresentationPresentingInfo::GetName(nsACString& aName)
-{
+PresentationPresentingInfo::GetName(nsACString& aName) {
   aName.AssignLiteral("PresentationPresentingInfo");
   return NS_OK;
 }
 
 
-void
-PresentationPresentingInfo::ResolvedCallback(JSContext* aCx,
-                                             JS::Handle<JS::Value> aValue)
-{
+void PresentationPresentingInfo::ResolvedCallback(
+    JSContext* aCx, JS::Handle<JS::Value> aValue) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (NS_WARN_IF(!aValue.isObject())) {
@@ -1597,7 +1507,9 @@ PresentationPresentingInfo::ResolvedCallback(JSContext* aCx,
     
     
     mContentParent = tabParent->Manager();
-    Unused << NS_WARN_IF(!static_cast<ContentParent*>(mContentParent.get())->SendNotifyPresentationReceiverLaunched(tabParent, mSessionId));
+    Unused << NS_WARN_IF(
+        !static_cast<ContentParent*>(mContentParent.get())
+             ->SendNotifyPresentationReceiverLaunched(tabParent, mSessionId));
   } else {
     
     IgnoredErrorResult error;
@@ -1617,10 +1529,8 @@ PresentationPresentingInfo::ResolvedCallback(JSContext* aCx,
   }
 }
 
-void
-PresentationPresentingInfo::RejectedCallback(JSContext* aCx,
-                                             JS::Handle<JS::Value> aValue)
-{
+void PresentationPresentingInfo::RejectedCallback(
+    JSContext* aCx, JS::Handle<JS::Value> aValue) {
   MOZ_ASSERT(NS_IsMainThread());
   NS_WARNING("Launching the receiver page has been rejected.");
 

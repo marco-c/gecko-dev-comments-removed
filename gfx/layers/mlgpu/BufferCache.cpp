@@ -15,11 +15,10 @@ namespace layers {
 using namespace mlg;
 
 BufferCache::BufferCache(MLGDevice* aDevice)
- : mDevice(aDevice),
-   mFirstSizeClass(CeilingLog2(kConstantBufferElementSize)),
-   mFrameNumber(0),
-   mNextSizeClassToShrink(0)
-{
+    : mDevice(aDevice),
+      mFirstSizeClass(CeilingLog2(kConstantBufferElementSize)),
+      mFrameNumber(0),
+      mNextSizeClassToShrink(0) {
   
   
   size_t maxBindSize = mDevice->GetMaxConstantBufferBindSize();
@@ -31,17 +30,14 @@ BufferCache::BufferCache(MLGDevice* aDevice)
   mCaches.resize(lastSizeClass - mFirstSizeClass + 1);
 }
 
-BufferCache::~BufferCache()
-{
-}
+BufferCache::~BufferCache() {}
 
-RefPtr<MLGBuffer>
-BufferCache::GetOrCreateBuffer(size_t aBytes)
-{
+RefPtr<MLGBuffer> BufferCache::GetOrCreateBuffer(size_t aBytes) {
   size_t sizeClass = CeilingLog2(aBytes);
   size_t sizeClassIndex = sizeClass - mFirstSizeClass;
   if (sizeClassIndex >= mCaches.size()) {
-    return mDevice->CreateBuffer(MLGBufferType::Constant, aBytes, MLGUsage::Dynamic, nullptr);
+    return mDevice->CreateBuffer(MLGBufferType::Constant, aBytes,
+                                 MLGUsage::Dynamic, nullptr);
   }
 
   CachePool& pool = mCaches[sizeClassIndex];
@@ -64,8 +60,8 @@ BufferCache::GetOrCreateBuffer(size_t aBytes)
   size_t bytes = (size_t(1) << sizeClass);
   MOZ_ASSERT(bytes >= aBytes);
 
-  RefPtr<MLGBuffer> buffer =
-    mDevice->CreateBuffer(MLGBufferType::Constant, bytes, MLGUsage::Dynamic, nullptr);
+  RefPtr<MLGBuffer> buffer = mDevice->CreateBuffer(
+      MLGBufferType::Constant, bytes, MLGUsage::Dynamic, nullptr);
   if (!buffer) {
     return nullptr;
   }
@@ -74,9 +70,7 @@ BufferCache::GetOrCreateBuffer(size_t aBytes)
   return buffer;
 }
 
-void
-BufferCache::EndFrame()
-{
+void BufferCache::EndFrame() {
   
   static size_t kMaxUnusedFrameCount = 60 * 5;
 
@@ -98,5 +92,5 @@ BufferCache::EndFrame()
   mFrameNumber++;
 }
 
-} 
-} 
+}  
+}  

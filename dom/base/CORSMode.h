@@ -30,6 +30,6 @@ enum CORSMode : uint8_t {
   CORS_USE_CREDENTIALS
 };
 
-} 
+}  
 
 #endif 

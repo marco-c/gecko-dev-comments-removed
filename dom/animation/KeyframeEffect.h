@@ -56,10 +56,9 @@ class UnrestrictedDoubleOrKeyframeEffectOptions;
 enum class IterationCompositeOperation : uint8_t;
 enum class CompositeOperation : uint8_t;
 struct AnimationPropertyDetails;
-}
+}  
 
-struct AnimationProperty
-{
+struct AnimationProperty {
   nsCSSPropertyID mProperty = eCSSProperty_UNKNOWN;
 
   
@@ -81,9 +80,8 @@ struct AnimationProperty
   
   AnimationProperty() = default;
   AnimationProperty(const AnimationProperty& aOther)
-    : mProperty(aOther.mProperty), mSegments(aOther.mSegments) { }
-  AnimationProperty& operator=(const AnimationProperty& aOther)
-  {
+      : mProperty(aOther.mProperty), mSegments(aOther.mSegments) {}
+  AnimationProperty& operator=(const AnimationProperty& aOther) {
     mProperty = aOther.mProperty;
     mSegments = aOther.mSegments;
     return *this;
@@ -95,13 +93,10 @@ struct AnimationProperty
   
   
   
-  bool operator==(const AnimationProperty& aOther) const
-  {
-    return mProperty == aOther.mProperty &&
-           mSegments == aOther.mSegments;
+  bool operator==(const AnimationProperty& aOther) const {
+    return mProperty == aOther.mProperty && mSegments == aOther.mSegments;
   }
-  bool operator!=(const AnimationProperty& aOther) const
-  {
+  bool operator!=(const AnimationProperty& aOther) const {
     return !(*this == aOther);
   }
 };
@@ -112,13 +107,11 @@ namespace dom {
 
 class Animation;
 
-class KeyframeEffect : public AnimationEffect
-{
-public:
+class KeyframeEffect : public AnimationEffect {
+ public:
   KeyframeEffect(nsIDocument* aDocument,
                  const Maybe<OwningAnimationTarget>& aTarget,
-                 TimingParams&& aTiming,
-                 const KeyframeEffectParams& aOptions);
+                 TimingParams&& aTiming, const KeyframeEffectParams& aOptions);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(KeyframeEffect,
@@ -130,31 +123,28 @@ public:
   KeyframeEffect* AsKeyframeEffect() override { return this; }
 
   
-  static already_AddRefed<KeyframeEffect>
-  Constructor(const GlobalObject& aGlobal,
-              const Nullable<ElementOrCSSPseudoElement>& aTarget,
-              JS::Handle<JSObject*> aKeyframes,
-              const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
-              ErrorResult& aRv);
+  static already_AddRefed<KeyframeEffect> Constructor(
+      const GlobalObject& aGlobal,
+      const Nullable<ElementOrCSSPseudoElement>& aTarget,
+      JS::Handle<JSObject*> aKeyframes,
+      const UnrestrictedDoubleOrKeyframeEffectOptions& aOptions,
+      ErrorResult& aRv);
 
-  static already_AddRefed<KeyframeEffect>
-  Constructor(const GlobalObject& aGlobal,
-              KeyframeEffect& aSource,
-              ErrorResult& aRv);
+  static already_AddRefed<KeyframeEffect> Constructor(
+      const GlobalObject& aGlobal, KeyframeEffect& aSource, ErrorResult& aRv);
 
   
   
   
-  static already_AddRefed<KeyframeEffect>
-  Constructor(const GlobalObject& aGlobal,
-              const Nullable<ElementOrCSSPseudoElement>& aTarget,
-              JS::Handle<JSObject*> aKeyframes,
-              const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
-              ErrorResult& aRv);
+  static already_AddRefed<KeyframeEffect> Constructor(
+      const GlobalObject& aGlobal,
+      const Nullable<ElementOrCSSPseudoElement>& aTarget,
+      JS::Handle<JSObject*> aKeyframes,
+      const UnrestrictedDoubleOrKeyframeAnimationOptions& aOptions,
+      ErrorResult& aRv);
 
   void GetTarget(Nullable<OwningElementOrCSSPseudoElement>& aRv) const;
-  Maybe<NonOwningAnimationTarget> GetTarget() const
-  {
+  Maybe<NonOwningAnimationTarget> GetTarget() const {
     Maybe<NonOwningAnimationTarget> result;
     if (mTarget) {
       result.emplace(*mTarget);
@@ -168,15 +158,14 @@ public:
   
   void SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget);
 
-  void GetKeyframes(JSContext*& aCx,
-                    nsTArray<JSObject*>& aResult,
+  void GetKeyframes(JSContext*& aCx, nsTArray<JSObject*>& aResult,
                     ErrorResult& aRv);
   void GetProperties(nsTArray<AnimationPropertyDetails>& aProperties,
                      ErrorResult& aRv) const;
 
   IterationCompositeOperation IterationComposite() const;
   void SetIterationComposite(
-    const IterationCompositeOperation& aIterationComposite);
+      const IterationCompositeOperation& aIterationComposite);
 
   CompositeOperation Composite() const;
   void SetComposite(const CompositeOperation& aComposite);
@@ -206,12 +195,11 @@ public:
   
   
   bool HasEffectiveAnimationOfProperty(nsCSSPropertyID aProperty,
-                                       const EffectSet& aEffect) const
-  {
+                                       const EffectSet& aEffect) const {
     return GetEffectiveAnimationOfProperty(aProperty, aEffect) != nullptr;
   }
   const AnimationProperty* GetEffectiveAnimationOfProperty(
-    nsCSSPropertyID aProperty, const EffectSet& aEffect) const;
+      nsCSSPropertyID aProperty, const EffectSet& aEffect) const;
 
   
   
@@ -227,8 +215,7 @@ public:
   nsCSSPropertyIDSet GetPropertiesForCompositor(EffectSet& aEffects,
                                                 const nsIFrame* aFrame) const;
 
-  const InfallibleTArray<AnimationProperty>& Properties() const
-  {
+  const InfallibleTArray<AnimationProperty>& Properties() const {
     return mProperties;
   }
 
@@ -248,7 +235,6 @@ public:
   void ComposeStyle(RawServoAnimationValueMap& aComposeResult,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
-
   
   bool IsRunningOnCompositor() const;
   void SetIsRunningOnCompositor(nsCSSPropertyID aProperty, bool aIsRunning);
@@ -264,11 +250,10 @@ public:
   
   
   bool ShouldBlockAsyncTransformAnimations(
-    const nsIFrame* aFrame,
-    AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
+      const nsIFrame* aFrame,
+      AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
   bool HasGeometricProperties() const;
-  bool AffectsGeometry() const override
-  {
+  bool AffectsGeometry() const override {
     return GetTarget() && HasGeometricProperties();
   }
 
@@ -279,9 +264,8 @@ public:
   
   
   
-  void SetPerformanceWarning(
-    nsCSSPropertyID aProperty,
-    const AnimationPerformanceWarning& aWarning);
+  void SetPerformanceWarning(nsCSSPropertyID aProperty,
+                             const AnimationPerformanceWarning& aWarning);
 
   
   
@@ -297,8 +281,7 @@ public:
   
   bool ContainsAnimatedScale(const nsIFrame* aFrame) const;
 
-  AnimationValue BaseStyle(nsCSSPropertyID aProperty) const
-  {
+  AnimationValue BaseStyle(nsCSSPropertyID aProperty) const {
     AnimationValue result;
     bool hasProperty = false;
     
@@ -325,30 +308,28 @@ public:
   };
 
   MatchForCompositor IsMatchForCompositor(
-    nsCSSPropertyID aProperty,
-    const nsIFrame* aFrame,
-    const EffectSet& aEffects,
-    AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
+      nsCSSPropertyID aProperty, const nsIFrame* aFrame,
+      const EffectSet& aEffects,
+      AnimationPerformanceWarning::Type& aPerformanceWarning ) const;
 
   static bool HasComputedTimingChanged(
-    const ComputedTiming& aComputedTiming,
-    IterationCompositeOperation aIterationComposite,
-    const Nullable<double>& aProgressOnLastCompose,
-    uint64_t aCurrentIterationOnLastCompose);
+      const ComputedTiming& aComputedTiming,
+      IterationCompositeOperation aIterationComposite,
+      const Nullable<double>& aProgressOnLastCompose,
+      uint64_t aCurrentIterationOnLastCompose);
 
-protected:
+ protected:
   ~KeyframeEffect() override = default;
 
-  static Maybe<OwningAnimationTarget>
-  ConvertTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget);
+  static Maybe<OwningAnimationTarget> ConvertTarget(
+      const Nullable<ElementOrCSSPseudoElement>& aTarget);
 
-  template<class OptionsType>
-  static already_AddRefed<KeyframeEffect>
-  ConstructKeyframeEffect(const GlobalObject& aGlobal,
-                          const Nullable<ElementOrCSSPseudoElement>& aTarget,
-                          JS::Handle<JSObject*> aKeyframes,
-                          const OptionsType& aOptions,
-                          ErrorResult& aRv);
+  template <class OptionsType>
+  static already_AddRefed<KeyframeEffect> ConstructKeyframeEffect(
+      const GlobalObject& aGlobal,
+      const Nullable<ElementOrCSSPseudoElement>& aTarget,
+      JS::Handle<JSObject*> aKeyframes, const OptionsType& aOptions,
+      ErrorResult& aRv);
 
   
   
@@ -401,7 +382,7 @@ protected:
   KeyframeEffectParams mEffectOptions;
 
   
-  nsTArray<Keyframe>          mKeyframes;
+  nsTArray<Keyframe> mKeyframes;
 
   
   nsTArray<AnimationProperty> mProperties;
@@ -424,14 +405,14 @@ protected:
   
   
   nsRefPtrHashtable<nsUint32HashKey, RawServoAnimationValue>
-    mBaseStyleValuesForServo;
+      mBaseStyleValuesForServo;
 
   
   
   
   bool mInEffectSet = false;
 
-private:
+ private:
   nsChangeHint mCumulativeChangeHint;
 
   void ComposeStyleRule(RawServoAnimationValueMap& aAnimationValues,
@@ -439,12 +420,9 @@ private:
                         const AnimationPropertySegment& aSegment,
                         const ComputedTiming& aComputedTiming);
 
-
   already_AddRefed<ComputedStyle> CreateComputedStyleForAnimationValue(
-    nsCSSPropertyID aProperty,
-    const AnimationValue& aValue,
-    nsPresContext* aPresContext,
-    const ComputedStyle* aBaseComputedStyle);
+      nsCSSPropertyID aProperty, const AnimationValue& aValue,
+      nsPresContext* aPresContext, const ComputedStyle* aBaseComputedStyle);
 
   
   nsIFrame* GetPrimaryFrame() const;
@@ -464,8 +442,8 @@ private:
   
   
   static bool CanAnimateTransformOnCompositor(
-    const nsIFrame* aFrame,
-    AnimationPerformanceWarning::Type& aPerformanceWarning );
+      const nsIFrame* aFrame,
+      AnimationPerformanceWarning::Type& aPerformanceWarning );
   static bool IsGeometricProperty(const nsCSSPropertyID aProperty);
 
   static const TimeDuration OverflowRegionRefreshInterval();
@@ -476,23 +454,21 @@ private:
   
   
   
-  bool HasPropertiesThatMightAffectOverflow() const
-  {
-    return mCumulativeChangeHint & (nsChangeHint_AddOrRemoveTransform |
-                                    nsChangeHint_UpdateOverflow |
-                                    nsChangeHint_UpdatePostTransformOverflow |
-                                    nsChangeHint_UpdateTransformLayer);
+  bool HasPropertiesThatMightAffectOverflow() const {
+    return mCumulativeChangeHint &
+           (nsChangeHint_AddOrRemoveTransform | nsChangeHint_UpdateOverflow |
+            nsChangeHint_UpdatePostTransformOverflow |
+            nsChangeHint_UpdateTransformLayer);
   }
 
   
   
-  bool HasVisibilityChange() const
-  {
+  bool HasVisibilityChange() const {
     return mCumulativeChangeHint & nsChangeHint_VisibilityChange;
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -29,8 +29,7 @@ class SourceBufferIterator;
 
 
 
-enum class DecoderType
-{
+enum class DecoderType {
   PNG,
   GIF,
   JPEG,
@@ -42,9 +41,8 @@ enum class DecoderType
   UNKNOWN
 };
 
-class DecoderFactory
-{
-public:
+class DecoderFactory {
+ public:
   
   static DecoderType GetDecoderType(const char* aMimeType);
 
@@ -72,15 +70,13 @@ public:
 
 
 
-  static nsresult
-  CreateDecoder(DecoderType aType,
-                NotNull<RasterImage*> aImage,
-                NotNull<SourceBuffer*> aSourceBuffer,
-                const gfx::IntSize& aIntrinsicSize,
-                const gfx::IntSize& aOutputSize,
-                DecoderFlags aDecoderFlags,
-                SurfaceFlags aSurfaceFlags,
-                IDecodingTask** aOutTask);
+  static nsresult CreateDecoder(DecoderType aType, NotNull<RasterImage*> aImage,
+                                NotNull<SourceBuffer*> aSourceBuffer,
+                                const gfx::IntSize& aIntrinsicSize,
+                                const gfx::IntSize& aOutputSize,
+                                DecoderFlags aDecoderFlags,
+                                SurfaceFlags aSurfaceFlags,
+                                IDecodingTask** aOutTask);
 
   
 
@@ -103,15 +99,11 @@ public:
 
 
 
-  static nsresult
-  CreateAnimationDecoder(DecoderType aType,
-                         NotNull<RasterImage*> aImage,
-                         NotNull<SourceBuffer*> aSourceBuffer,
-                         const gfx::IntSize& aIntrinsicSize,
-                         DecoderFlags aDecoderFlags,
-                         SurfaceFlags aSurfaceFlags,
-                         size_t aCurrentFrame,
-                         IDecodingTask** aOutTask);
+  static nsresult CreateAnimationDecoder(
+      DecoderType aType, NotNull<RasterImage*> aImage,
+      NotNull<SourceBuffer*> aSourceBuffer, const gfx::IntSize& aIntrinsicSize,
+      DecoderFlags aDecoderFlags, SurfaceFlags aSurfaceFlags,
+      size_t aCurrentFrame, IDecodingTask** aOutTask);
 
   
 
@@ -119,25 +111,7 @@ public:
 
 
 
-  static already_AddRefed<Decoder>
-  CloneAnimationDecoder(Decoder* aDecoder);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  static already_AddRefed<IDecodingTask>
-  CreateMetadataDecoder(DecoderType aType,
-                        NotNull<RasterImage*> aImage,
-                        NotNull<SourceBuffer*> aSourceBuffer);
+  static already_AddRefed<Decoder> CloneAnimationDecoder(Decoder* aDecoder);
 
   
 
@@ -151,22 +125,9 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-  static already_AddRefed<Decoder>
-  CreateDecoderForICOResource(DecoderType aType,
-                              SourceBufferIterator&& aIterator,
-                              NotNull<nsICODecoder*> aICODecoder,
-                              bool aIsMetadataDecode,
-                              const Maybe<gfx::IntSize>& aExpectedSize,
-                              const Maybe<uint32_t>& aDataOffset = Nothing());
+  static already_AddRefed<IDecodingTask> CreateMetadataDecoder(
+      DecoderType aType, NotNull<RasterImage*> aImage,
+      NotNull<SourceBuffer*> aSourceBuffer);
 
   
 
@@ -183,12 +144,17 @@ public:
 
 
 
-  static already_AddRefed<Decoder>
-  CreateAnonymousDecoder(DecoderType aType,
-                         NotNull<SourceBuffer*> aSourceBuffer,
-                         const Maybe<gfx::IntSize>& aOutputSize,
-                         DecoderFlags aDecoderFlags,
-                         SurfaceFlags aSurfaceFlags);
+
+
+
+
+
+
+  static already_AddRefed<Decoder> CreateDecoderForICOResource(
+      DecoderType aType, SourceBufferIterator&& aIterator,
+      NotNull<nsICODecoder*> aICODecoder, bool aIsMetadataDecode,
+      const Maybe<gfx::IntSize>& aExpectedSize,
+      const Maybe<uint32_t>& aDataOffset = Nothing());
 
   
 
@@ -200,11 +166,30 @@ public:
 
 
 
-  static already_AddRefed<Decoder>
-  CreateAnonymousMetadataDecoder(DecoderType aType,
-                                 NotNull<SourceBuffer*> aSourceBuffer);
 
-private:
+
+
+
+
+  static already_AddRefed<Decoder> CreateAnonymousDecoder(
+      DecoderType aType, NotNull<SourceBuffer*> aSourceBuffer,
+      const Maybe<gfx::IntSize>& aOutputSize, DecoderFlags aDecoderFlags,
+      SurfaceFlags aSurfaceFlags);
+
+  
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<Decoder> CreateAnonymousMetadataDecoder(
+      DecoderType aType, NotNull<SourceBuffer*> aSourceBuffer);
+
+ private:
   virtual ~DecoderFactory() = 0;
 
   
@@ -215,7 +200,7 @@ private:
                                               bool aIsRedecode);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

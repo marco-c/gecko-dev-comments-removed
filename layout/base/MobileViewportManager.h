@@ -20,19 +20,17 @@ class nsViewportInfo;
 namespace mozilla {
 namespace dom {
 class EventTarget;
-} 
-} 
+}  
+}  
 
-class MobileViewportManager final : public nsIDOMEventListener
-                                  , public nsIObserver
-{
-public:
+class MobileViewportManager final : public nsIDOMEventListener,
+                                    public nsIObserver {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDOMEVENTLISTENER
   NS_DECL_NSIOBSERVER
 
-  MobileViewportManager(nsIPresShell* aPresShell,
-                        nsIDocument* aDocument);
+  MobileViewportManager(nsIPresShell* aPresShell, nsIDocument* aDocument);
   void Destroy();
 
   
@@ -55,10 +53,10 @@ public:
 
   float ComputeIntrinsicResolution() const;
 
-private:
+ private:
   void SetRestoreResolution(float aResolution);
 
-public:
+ public:
   
 
   void RequestReflow();
@@ -72,7 +70,7 @@ public:
 
   void SetInitialViewport();
 
-  private:
+ private:
   ~MobileViewportManager();
 
   
@@ -83,26 +81,26 @@ public:
   void RefreshVisualViewportSize();
 
   
-  mozilla::CSSToScreenScale ClampZoom(const mozilla::CSSToScreenScale& aZoom,
-                                      const nsViewportInfo& aViewportInfo) const;
-
-  
-  mozilla::CSSToScreenScale
-  ScaleZoomWithDisplayWidth(const mozilla::CSSToScreenScale& aZoom,
-                            const float& aDisplayWidthChangeRatio,
-                            const mozilla::CSSSize& aNewViewport,
-                            const mozilla::CSSSize& aOldViewport);
+  mozilla::CSSToScreenScale ClampZoom(
+      const mozilla::CSSToScreenScale& aZoom,
+      const nsViewportInfo& aViewportInfo) const;
 
   
 
+  mozilla::CSSToScreenScale ScaleZoomWithDisplayWidth(
+      const mozilla::CSSToScreenScale& aZoom,
+      const float& aDisplayWidthChangeRatio,
+      const mozilla::CSSSize& aNewViewport,
+      const mozilla::CSSSize& aOldViewport);
+
+  
 
 
 
 
 
-  enum class UpdateType {
-    ViewportSize, ContentSize
-  };
+
+  enum class UpdateType { ViewportSize, ContentSize };
 
   
   void UpdateResolution(const nsViewportInfo& aViewportInfo,
@@ -115,18 +113,20 @@ public:
                                 const mozilla::CSSToScreenScale& aZoom);
 
   
+
   void UpdateDisplayPortMargins();
 
   
-  mozilla::CSSToScreenScale ComputeIntrinsicScale(const nsViewportInfo& aViewportInfo,
-                                                  const mozilla::ScreenIntSize& aDisplaySize,
-                                                  const mozilla::CSSSize& aViewportSize) const;
+  mozilla::CSSToScreenScale ComputeIntrinsicScale(
+      const nsViewportInfo& aViewportInfo,
+      const mozilla::ScreenIntSize& aDisplaySize,
+      const mozilla::CSSSize& aViewportSize) const;
 
   
 
 
-  mozilla::ScreenIntSize
-  GetCompositionSize(const mozilla::ScreenIntSize& aDisplaySize) const;
+  mozilla::ScreenIntSize GetCompositionSize(
+      const mozilla::ScreenIntSize& aDisplaySize) const;
 
   
 
@@ -136,7 +136,8 @@ public:
                                    const mozilla::ScreenIntSize& aDisplaySize);
 
   nsCOMPtr<nsIDocument> mDocument;
-  nsIPresShell* MOZ_NON_OWNING_REF mPresShell; 
+  nsIPresShell* MOZ_NON_OWNING_REF
+      mPresShell;  
   nsCOMPtr<mozilla::dom::EventTarget> mEventTarget;
   bool mIsFirstPaint;
   bool mPainted;

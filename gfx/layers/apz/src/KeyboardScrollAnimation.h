@@ -15,20 +15,16 @@ namespace layers {
 
 class AsyncPanZoomController;
 
-class KeyboardScrollAnimation
-  : public GenericScrollAnimation
-{
-public:
+class KeyboardScrollAnimation : public GenericScrollAnimation {
+ public:
   KeyboardScrollAnimation(AsyncPanZoomController& aApzc,
                           const nsPoint& aInitialPosition,
                           KeyboardScrollAction::KeyboardScrollActionType aType);
 
-  KeyboardScrollAnimation* AsKeyboardScrollAnimation() override {
-    return this;
-  }
+  KeyboardScrollAnimation* AsKeyboardScrollAnimation() override { return this; }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

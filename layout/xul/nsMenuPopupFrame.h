@@ -31,8 +31,8 @@ class nsIWidget;
 namespace mozilla {
 namespace dom {
 class KeyboardEvent;
-} 
-} 
+}  
+}  
 
 
 
@@ -77,9 +77,10 @@ enum nsPopupState {
 };
 
 enum ConsumeOutsideClicksResult {
-  ConsumeOutsideClicks_ParentOnly = 0, 
-  ConsumeOutsideClicks_True = 1, 
-  ConsumeOutsideClicks_Never = 2 
+  ConsumeOutsideClicks_ParentOnly =
+      0,                          
+  ConsumeOutsideClicks_True = 1,  
+  ConsumeOutsideClicks_Never = 2  
 };
 
 
@@ -94,15 +95,15 @@ enum FlipStyle {
 
 enum FlipType {
   FlipType_Default = 0,
-  FlipType_None = 1,    
-  FlipType_Both = 2,    
-  FlipType_Slide = 3    
+  FlipType_None = 1,  
+  FlipType_Both = 2,  
+  FlipType_Slide = 3  
 };
 
 enum MenuPopupAnchorType {
-  MenuPopupAnchorType_Node = 0, 
-  MenuPopupAnchorType_Point = 1, 
-  MenuPopupAnchorType_Rect = 2, 
+  MenuPopupAnchorType_Node = 0,   
+  MenuPopupAnchorType_Point = 1,  
+  MenuPopupAnchorType_Rect = 2,   
 };
 
 
@@ -136,22 +137,20 @@ enum MenuPopupAnchorType {
 #define POPUPPOSITION_HFLIP(v) (v ^ 1)
 #define POPUPPOSITION_VFLIP(v) (v ^ 2)
 
-nsIFrame* NS_NewMenuPopupFrame(nsIPresShell* aPresShell, mozilla::ComputedStyle* aStyle);
+nsIFrame* NS_NewMenuPopupFrame(nsIPresShell* aPresShell,
+                               mozilla::ComputedStyle* aStyle);
 
 class nsView;
 class nsMenuPopupFrame;
 
 
 class nsXULPopupShownEvent final : public mozilla::Runnable,
-                                   public nsIDOMEventListener
-{
-public:
+                                   public nsIDOMEventListener {
+ public:
   nsXULPopupShownEvent(nsIContent* aPopup, nsPresContext* aPresContext)
-    : mozilla::Runnable("nsXULPopupShownEvent")
-    , mPopup(aPopup)
-    , mPresContext(aPresContext)
-  {
-  }
+      : mozilla::Runnable("nsXULPopupShownEvent"),
+        mPopup(aPopup),
+        mPresContext(aPresContext) {}
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIRUNNABLE
@@ -159,18 +158,18 @@ public:
 
   void CancelListener();
 
-protected:
-  virtual ~nsXULPopupShownEvent() { }
+ protected:
+  virtual ~nsXULPopupShownEvent() {}
 
-private:
+ private:
   nsCOMPtr<nsIContent> mPopup;
   RefPtr<nsPresContext> mPresContext;
 };
 
-class nsMenuPopupFrame final : public nsBoxFrame, public nsMenuParent,
-                               public nsIReflowCallback
-{
-public:
+class nsMenuPopupFrame final : public nsBoxFrame,
+                               public nsMenuParent,
+                               public nsIReflowCallback {
+ public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsMenuPopupFrame)
 
@@ -180,8 +179,7 @@ public:
   virtual nsMenuFrame* GetCurrentMenuItem() override;
   NS_IMETHOD SetCurrentMenuItem(nsMenuFrame* aMenuItem) override;
   virtual void CurrentMenuIsBeingDestroyed() override;
-  NS_IMETHOD ChangeMenuItem(nsMenuFrame* aMenuItem,
-                            bool aSelectFirstItem,
+  NS_IMETHOD ChangeMenuItem(nsMenuFrame* aMenuItem, bool aSelectFirstItem,
                             bool aFromKey) override;
 
   
@@ -189,7 +187,9 @@ public:
   nsPopupState PopupState() { return mPopupState; }
   void SetPopupState(nsPopupState aPopupState) { mPopupState = aPopupState; }
 
-  NS_IMETHOD SetActive(bool aActiveFlag) override { return NS_OK; } 
+  NS_IMETHOD SetActive(bool aActiveFlag) override {
+    return NS_OK;
+  }  
   virtual bool IsActive() override { return false; }
   virtual bool IsMenuBar() override { return false; }
 
@@ -221,15 +221,14 @@ public:
   nsIWidget* GetWidget();
 
   
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 
-  virtual nsresult AttributeChanged(int32_t aNameSpaceID,
-                                    nsAtom* aAttribute,
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                     int32_t aModType) override;
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
 
   bool HasRemoteContent() const;
 
@@ -237,10 +236,7 @@ public:
   
   bool IsNoAutoHide() const;
 
-  nsPopupLevel PopupLevel() const
-  {
-    return PopupLevel(IsNoAutoHide());
-  }
+  nsPopupLevel PopupLevel() const { return PopupLevel(IsNoAutoHide()); }
 
   
   
@@ -250,7 +246,7 @@ public:
   nsresult CreateWidgetForView(nsView* aView);
   uint8_t GetShadowStyle();
 
-  virtual void SetInitialChildList(ChildListID  aListID,
+  virtual void SetInitialChildList(ChildListID aListID,
                                    nsFrameList& aChildList) override;
 
   virtual bool IsLeafDynamic() const override;
@@ -285,11 +281,13 @@ public:
 
   nsPopupType PopupType() const { return mPopupType; }
   bool IsMenu() override { return mPopupType == ePopupTypeMenu; }
-  bool IsOpen() override { return mPopupState == ePopupOpening ||
-                                      mPopupState == ePopupVisible ||
-                                      mPopupState == ePopupShown; }
-  bool IsVisible() { return mPopupState == ePopupVisible ||
-                            mPopupState == ePopupShown; }
+  bool IsOpen() override {
+    return mPopupState == ePopupOpening || mPopupState == ePopupVisible ||
+           mPopupState == ePopupShown;
+  }
+  bool IsVisible() {
+    return mPopupState == ePopupVisible || mPopupState == ePopupShown;
+  }
 
   
   bool IsMenuList();
@@ -305,16 +303,13 @@ public:
 
   
   
-  void InitializePopup(nsIContent* aAnchorContent,
-                       nsIContent* aTriggerContent,
-                       const nsAString& aPosition,
-                       int32_t aXPos, int32_t aYPos,
+  void InitializePopup(nsIContent* aAnchorContent, nsIContent* aTriggerContent,
+                       const nsAString& aPosition, int32_t aXPos, int32_t aYPos,
                        MenuPopupAnchorType aAnchorType,
                        bool aAttributesOverride);
 
   void InitializePopupAtRect(nsIContent* aTriggerContent,
-                             const nsAString& aPosition,
-                             const nsIntRect& aRect,
+                             const nsAString& aPosition, const nsIntRect& aRect,
                              bool aAttributesOverride);
 
   
@@ -322,9 +317,8 @@ public:
 
 
 
-  void InitializePopupAtScreen(nsIContent* aTriggerContent,
-                               int32_t aXPos, int32_t aYPos,
-                               bool aIsContextMenu);
+  void InitializePopupAtScreen(nsIContent* aTriggerContent, int32_t aXPos,
+                               int32_t aYPos, bool aIsContextMenu);
 
   
   void ShowPopup(bool aIsContextMenu);
@@ -343,13 +337,13 @@ public:
 
   void ClearIncrementalString() { mIncrementalString.Truncate(); }
   static bool IsWithinIncrementalTime(DOMTimeStamp time) {
-    return !sTimeoutOfIncrementalSearch || time - sLastKeyTime <= sTimeoutOfIncrementalSearch;
+    return !sTimeoutOfIncrementalSearch ||
+           time - sLastKeyTime <= sTimeoutOfIncrementalSearch;
   }
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override
-  {
-      return MakeFrameName(NS_LITERAL_STRING("MenuPopup"), aResult);
+  virtual nsresult GetFrameName(nsAString& aResult) const override {
+    return MakeFrameName(NS_LITERAL_STRING("MenuPopup"), aResult);
   }
 #endif
 
@@ -363,10 +357,8 @@ public:
   
   void MoveTo(const mozilla::CSSIntPoint& aPos, bool aUpdateAttrs);
 
-  void MoveToAnchor(nsIContent* aAnchorContent,
-                    const nsAString& aPosition,
-                    int32_t aXPos, int32_t aYPos,
-                    bool aAttributesOverride);
+  void MoveToAnchor(nsIContent* aAnchorContent, const nsAString& aPosition,
+                    int32_t aXPos, int32_t aYPos, bool aAttributesOverride);
 
   bool GetAutoPosition();
   void SetAutoPosition(bool aShouldAutoPosition);
@@ -386,10 +378,10 @@ public:
   
   
   
-  mozilla::LayoutDeviceIntRect
-  GetConstraintRect(const mozilla::LayoutDeviceIntRect& aAnchorRect,
-                    const mozilla::LayoutDeviceIntRect& aRootScreenRect,
-                    nsPopupLevel aPopupLevel);
+  mozilla::LayoutDeviceIntRect GetConstraintRect(
+      const mozilla::LayoutDeviceIntRect& aAnchorRect,
+      const mozilla::LayoutDeviceIntRect& aRootScreenRect,
+      nsPopupLevel aPopupLevel);
 
   
   
@@ -414,8 +406,7 @@ public:
   
   nsIntRect GetScreenAnchorRect() const { return mScreenRect; }
 
-  mozilla::LayoutDeviceIntPoint GetLastClientOffset() const
-  {
+  mozilla::LayoutDeviceIntPoint GetLastClientOffset() const {
     return mLastClientOffset;
   }
 
@@ -427,8 +418,7 @@ public:
 
   
   
-  bool ClearPopupShownDispatcher()
-  {
+  bool ClearPopupShownDispatcher() {
     if (mPopupShownDispatcher) {
       mPopupShownDispatcher->CancelListener();
       mPopupShownDispatcher = nullptr;
@@ -454,8 +444,7 @@ public:
   virtual bool ReflowFinished() override;
   virtual void ReflowCallbackCanceled() override;
 
-protected:
-
+ protected:
   
   nsPopupLevel PopupLevel(bool aIsNoAutoHide) const;
 
@@ -468,8 +457,8 @@ protected:
   
   
   
-  nsPoint AdjustPositionForAnchorAlign(nsRect& anchorRect,
-                                       FlipStyle& aHFlip, FlipStyle& aVFlip);
+  nsPoint AdjustPositionForAnchorAlign(nsRect& anchorRect, FlipStyle& aHFlip,
+                                       FlipStyle& aVFlip);
 
   
   
@@ -513,12 +502,14 @@ protected:
   
   nscoord SlideOrResize(nscoord& aScreenPoint, nscoord aSize,
                         nscoord aScreenBegin, nscoord aScreenEnd,
-                        nscoord *aOffset);
+                        nscoord* aOffset);
 
   
   
-  nsRect ComputeAnchorRect(nsPresContext* aRootPresContext, nsIFrame* aAnchorFrame);
+  nsRect ComputeAnchorRect(nsPresContext* aRootPresContext,
+                           nsIFrame* aAnchorFrame);
 
+  
   
   void MoveToAttributePosition();
 
@@ -531,8 +522,10 @@ protected:
 
   bool IsDirectionRTL() const {
     return mAnchorContent && mAnchorContent->GetPrimaryFrame()
-      ? mAnchorContent->GetPrimaryFrame()->StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL
-      : StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
+               ? mAnchorContent->GetPrimaryFrame()
+                         ->StyleVisibility()
+                         ->mDirection == NS_STYLE_DIRECTION_RTL
+               : StyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL;
   }
 
   
@@ -549,11 +542,12 @@ protected:
   
   
   bool ShouldFollowAnchor();
-public:
+
+ public:
   bool ShouldFollowAnchor(nsRect& aRect);
 
-protected:
-  nsString     mIncrementalString;  
+ protected:
+  nsString mIncrementalString;  
 
   
   
@@ -563,7 +557,7 @@ protected:
   
   nsCOMPtr<nsIContent> mTriggerContent;
 
-  nsMenuFrame* mCurrentMenu; 
+  nsMenuFrame* mCurrentMenu;  
   nsView* mView;
 
   RefPtr<nsXULPopupShownEvent> mPopupShownDispatcher;
@@ -594,24 +588,24 @@ protected:
   
   mozilla::LayoutDeviceIntPoint mLastClientOffset;
 
-  nsPopupType mPopupType; 
-  nsPopupState mPopupState; 
+  nsPopupType mPopupType;    
+  nsPopupState mPopupState;  
 
   
   int8_t mPopupAlignment;
   int8_t mPopupAnchor;
   int8_t mPosition;
 
-  FlipType mFlip; 
+  FlipType mFlip;  
 
   struct ReflowCallbackData {
-    ReflowCallbackData() :
-      mPosted(false),
-      mAnchor(nullptr),
-      mSizedToPopup(false),
-      mIsOpenChanged(false)
-    {}
-    void MarkPosted(nsIFrame* aAnchor, bool aSizedToPopup, bool aIsOpenChanged) {
+    ReflowCallbackData()
+        : mPosted(false),
+          mAnchor(nullptr),
+          mSizedToPopup(false),
+          mIsOpenChanged(false) {}
+    void MarkPosted(nsIFrame* aAnchor, bool aSizedToPopup,
+                    bool aIsOpenChanged) {
       mPosted = true;
       mAnchor = aAnchor;
       mSizedToPopup = aSizedToPopup;
@@ -630,17 +624,19 @@ protected:
   };
   ReflowCallbackData mReflowCallbackData;
 
-  bool mIsOpenChanged; 
-  bool mIsContextMenu; 
+  bool mIsOpenChanged;  
+  bool mIsContextMenu;  
   
   bool mAdjustOffsetForContextMenu;
-  bool mGeneratedChildren; 
+  bool mGeneratedChildren;  
 
-  bool mMenuCanOverlapOSBar;    
-  bool mShouldAutoPosition; 
-  bool mInContentShell; 
-  bool mIsMenuLocked; 
-  bool mMouseTransparent; 
+  bool mMenuCanOverlapOSBar;  
+  bool mShouldAutoPosition;   
+                              
+  bool mInContentShell;       
+  bool mIsMenuLocked;         
+  bool mMouseTransparent;     
+                              
 
   
   
@@ -651,6 +647,7 @@ protected:
   bool mHFlip;
   bool mVFlip;
 
+  
   
   
   
@@ -667,6 +664,6 @@ protected:
 
   
   static uint32_t sTimeoutOfIncrementalSearch;
-}; 
+};  
 
 #endif

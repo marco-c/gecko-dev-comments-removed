@@ -22,21 +22,23 @@ class TextEditor;
 
 namespace dom {
 class Element;
-} 
-} 
+}  
+}  
 
 
-#define NS_ITEXTCONTROLELEMENT_IID    \
-{ 0x3df7db6d, 0xa548, 0x4e20, \
- { 0x97, 0xfd, 0x75, 0xa3, 0x31, 0xa2, 0xf3, 0xd4 } }
+#define NS_ITEXTCONTROLELEMENT_IID                   \
+  {                                                  \
+    0x3df7db6d, 0xa548, 0x4e20, {                    \
+      0x97, 0xfd, 0x75, 0xa3, 0x31, 0xa2, 0xf3, 0xd4 \
+    }                                                \
+  }
 
 
 
 
 
 class nsITextControlElement : public nsISupports {
-public:
-
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ITEXTCONTROLELEMENT_IID)
 
   
@@ -96,7 +98,8 @@ public:
 
 
 
-  NS_IMETHOD_(void) GetTextEditorValue(nsAString& aValue, bool aIgnoreWrap) const = 0;
+  NS_IMETHOD_(void)
+  GetTextEditorValue(nsAString& aValue, bool aIgnoreWrap) const = 0;
 
   
 
@@ -165,6 +168,7 @@ public:
   
 
 
+
   NS_IMETHOD_(void) UpdateOverlayTextVisibility(bool aNotify) = 0;
 
   
@@ -180,7 +184,8 @@ public:
   
 
 
-  NS_IMETHOD_(void) OnValueChanged(bool aNotify, bool aWasInteractiveUserChange) = 0;
+  NS_IMETHOD_(void)
+  OnValueChanged(bool aNotify, bool aWasInteractiveUserChange) = 0;
 
   
 
@@ -195,13 +200,13 @@ public:
 
   
   typedef enum {
-    eHTMLTextWrap_Off     = 1,    
-    eHTMLTextWrap_Hard    = 2,    
-    eHTMLTextWrap_Soft    = 3     
+    eHTMLTextWrap_Off = 1,   
+    eHTMLTextWrap_Hard = 2,  
+    eHTMLTextWrap_Soft = 3   
   } nsHTMLTextWrap;
 
-  static bool
-  GetWrapPropertyEnum(nsIContent* aContent, nsHTMLTextWrap& aWrapProp);
+  static bool GetWrapPropertyEnum(nsIContent* aContent,
+                                  nsHTMLTextWrap& aWrapProp);
 
   
 
@@ -215,8 +220,6 @@ public:
   GetTextControlElementFromEditingHost(nsIContent* aHost);
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(nsITextControlElement,
-                              NS_ITEXTCONTROLELEMENT_IID)
+NS_DEFINE_STATIC_IID_ACCESSOR(nsITextControlElement, NS_ITEXTCONTROLELEMENT_IID)
 
-#endif 
-
+#endif  

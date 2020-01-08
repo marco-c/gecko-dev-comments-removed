@@ -30,41 +30,41 @@ extern void usePointer(const void* ptr);
 
 template <typename T>
 void use(const T& thing) {
-    usePointer(&thing);
+  usePointer(&thing);
 }
 
 struct AutoSuppressHazardsForTest {
-    int dummy;
-    AutoSuppressHazardsForTest() : dummy(3) {}
-    ~AutoSuppressHazardsForTest() {
-        
-        usePointer(&dummy);
-    }
+  int dummy;
+  AutoSuppressHazardsForTest() : dummy(3) {}
+  ~AutoSuppressHazardsForTest() {
+    
+    usePointer(&dummy);
+  }
 } JS_HAZ_GC_SUPPRESSED;
 
 struct GDBFragment {
-    GDBFragment() {
-        next = allFragments;
-        allFragments = this;
-    }
+  GDBFragment() {
+    next = allFragments;
+    allFragments = this;
+  }
 
-    
-    
-    virtual const char* name() = 0;
+  
+  
+  virtual const char* name() = 0;
 
-    
-    
-    
-    
-    virtual void run(JSContext* cx, const char**& argv) = 0;
+  
+  
+  
+  
+  virtual void run(JSContext* cx, const char**& argv) = 0;
 
-    
-    
-    
-    static GDBFragment* allFragments;
+  
+  
+  
+  static GDBFragment* allFragments;
 
-    
-    GDBFragment* next;
+  
+  GDBFragment* next;
 };
 
 
@@ -77,16 +77,20 @@ struct GDBFragment {
 
 
 
-#define FRAGMENT(category, subname)                                                             \
-class FRAGMENT_CLASS_NAME(category, subname): public GDBFragment {                              \
-    void run(JSContext* cx, const char**& argv) override;                                       \
-    const char* name() override { return FRAGMENT_STRING_NAME(category, subname); }             \
-    static FRAGMENT_CLASS_NAME(category, subname) singleton;                                    \
-};                                                                                              \
-FRAGMENT_CLASS_NAME(category, subname) FRAGMENT_CLASS_NAME(category, subname)::singleton;       \
-void FRAGMENT_CLASS_NAME(category, subname)::run(JSContext* cx, const char**& argv)
+#define FRAGMENT(category, subname)                                   \
+  class FRAGMENT_CLASS_NAME(category, subname) : public GDBFragment { \
+    void run(JSContext* cx, const char**& argv) override;             \
+    const char* name() override {                                     \
+      return FRAGMENT_STRING_NAME(category, subname);                 \
+    }                                                                 \
+    static FRAGMENT_CLASS_NAME(category, subname) singleton;          \
+  };                                                                  \
+  FRAGMENT_CLASS_NAME(category, subname)                              \
+  FRAGMENT_CLASS_NAME(category, subname)::singleton;                  \
+  void FRAGMENT_CLASS_NAME(category, subname)::run(JSContext* cx,     \
+                                                   const char**& argv)
 
 #define FRAGMENT_STRING_NAME(category, subname) (#category "." #subname)
-#define FRAGMENT_CLASS_NAME(category, subname) Fragment_ ## category ## _ ## subname
+#define FRAGMENT_CLASS_NAME(category, subname) Fragment_##category##_##subname
 
 #endif 

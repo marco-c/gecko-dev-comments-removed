@@ -23,24 +23,20 @@
 
 
 
-class nsSMILCompositor : public PLDHashEntryHdr
-{
-public:
+class nsSMILCompositor : public PLDHashEntryHdr {
+ public:
   typedef nsSMILTargetIdentifier KeyType;
   typedef const KeyType& KeyTypeRef;
   typedef const KeyType* KeyTypePointer;
 
   explicit nsSMILCompositor(KeyTypePointer aKey)
-   : mKey(*aKey),
-     mForceCompositing(false)
-  { }
+      : mKey(*aKey), mForceCompositing(false) {}
   nsSMILCompositor(nsSMILCompositor&& toMove)
-    : PLDHashEntryHdr(std::move(toMove)),
-      mKey(std::move(toMove.mKey)),
-      mAnimationFunctions(std::move(toMove.mAnimationFunctions)),
-      mForceCompositing(false)
-  { }
-  ~nsSMILCompositor() { }
+      : PLDHashEntryHdr(std::move(toMove)),
+        mKey(std::move(toMove.mKey)),
+        mAnimationFunctions(std::move(toMove.mAnimationFunctions)),
+        mForceCompositing(false) {}
+  ~nsSMILCompositor() {}
 
   
   KeyTypeRef GetKey() const { return mKey; }
@@ -78,8 +74,8 @@ public:
   
   
   
-  mozilla::UniquePtr<nsISMILAttr>
-  CreateSMILAttr(mozilla::ComputedStyle* aBaseComputedStyle);
+  mozilla::UniquePtr<nsISMILAttr> CreateSMILAttr(
+      mozilla::ComputedStyle* aBaseComputedStyle);
 
   
   
@@ -123,4 +119,4 @@ public:
   nsSMILValue mCachedBaseValue;
 };
 
-#endif 
+#endif  

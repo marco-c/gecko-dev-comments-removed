@@ -31,48 +31,46 @@
 #include <gtk/gtk.h>
 #endif
 
-int
-main(int argc, char** argv, char** envp)
-{
+int main(int argc, char** argv, char** envp) {
 #ifdef MOZ_WIDGET_GTK
-    
-    
-    
-    gtk_parse_args(&argc, &argv);
+  
+  
+  
+  gtk_parse_args(&argc, &argv);
 #endif
 
 #ifdef XP_MACOSX
-    InitAutoreleasePool();
+  InitAutoreleasePool();
 #endif
 
-    
-    
-    setbuf(stdout, nullptr);
+  
+  
+  setbuf(stdout, nullptr);
 
 #ifdef HAS_DLL_BLOCKLIST
-    DllBlocklist_Initialize();
+  DllBlocklist_Initialize();
 #endif
 
-    XREShellData shellData;
+  XREShellData shellData;
 #if defined(XP_WIN) && defined(MOZ_SANDBOX)
-    shellData.sandboxBrokerServices =
+  shellData.sandboxBrokerServices =
       mozilla::sandboxing::GetInitializedBrokerServices();
 #endif
 
-    mozilla::Bootstrap::UniquePtr bootstrap = mozilla::GetBootstrap();
-    if (!bootstrap) {
-        return 2;
-    }
+  mozilla::Bootstrap::UniquePtr bootstrap = mozilla::GetBootstrap();
+  if (!bootstrap) {
+    return 2;
+  }
 
-    int result = bootstrap->XRE_XPCShellMain(argc, argv, envp, &shellData);
+  int result = bootstrap->XRE_XPCShellMain(argc, argv, envp, &shellData);
 
 #if defined(DEBUG) && defined(HAS_DLL_BLOCKLIST)
-    DllBlocklist_Shutdown();
+  DllBlocklist_Shutdown();
 #endif
 
 #ifdef XP_MACOSX
-    FinishAutoreleasePool();
+  FinishAutoreleasePool();
 #endif
 
-    return result;
+  return result;
 }

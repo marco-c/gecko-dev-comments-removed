@@ -13,7 +13,7 @@
 #include <inputscope.h>
 
 #define NS_WM_IMEFIRST WM_IME_SETCONTEXT
-#define NS_WM_IMELAST  WM_IME_KEYUP
+#define NS_WM_IMELAST WM_IME_KEYUP
 
 class nsWindow;
 
@@ -28,9 +28,8 @@ struct MSGResult;
 
 
 
-class IMEHandler final
-{
-private:
+class IMEHandler final {
+ private:
   
 
 
@@ -39,7 +38,7 @@ private:
 
   static void Initialize();
 
-public:
+ public:
   static void Terminate();
 
   
@@ -58,9 +57,8 @@ public:
 
 
 
-  static bool ProcessMessage(nsWindow* aWindow, UINT aMessage,
-                             WPARAM& aWParam, LPARAM& aLParam,
-                             MSGResult& aResult);
+  static bool ProcessMessage(nsWindow* aWindow, UINT aMessage, WPARAM& aWParam,
+                             LPARAM& aLParam, MSGResult& aResult);
 
   
 
@@ -103,8 +101,7 @@ public:
 
 
 
-  static void SetInputContext(nsWindow* aWindow,
-                              InputContext& aInputContext,
+  static void SetInputContext(nsWindow* aWindow, InputContext& aInputContext,
                               const InputContextAction& aAction);
 
   
@@ -133,16 +130,16 @@ public:
 
 
   static void OnKeyboardLayoutChanged();
-#endif 
+#endif  
 
 #ifdef DEBUG
   
 
 
   static bool CurrentKeyboardLayoutHasIME();
-#endif 
+#endif  
 
-private:
+ private:
   static nsWindow* sFocusedWindow;
   static InputContextAction::Cause sLastContextActionCause;
 
@@ -190,10 +187,10 @@ private:
 
 
   static HWND GetOnScreenKeyboardWindow();
-#endif 
+#endif  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

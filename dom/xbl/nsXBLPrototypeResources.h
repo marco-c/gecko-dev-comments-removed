@@ -21,14 +21,13 @@ namespace mozilla {
 class CSSStyleSheet;
 class ServoStyleSet;
 class ServoStyleRuleMap;
-} 
+}  
 
 
 
 
-class nsXBLPrototypeResources
-{
-public:
+class nsXBLPrototypeResources {
+ public:
   explicit nsXBLPrototypeResources(nsXBLPrototypeBinding* aBinding);
   ~nsXBLPrototypeResources();
 
@@ -39,7 +38,7 @@ public:
 
   nsresult Write(nsIObjectOutputStream* aStream);
 
-  void Traverse(nsCycleCollectionTraversalCallback &cb);
+  void Traverse(nsCycleCollectionTraversalCallback& cb);
   void Unlink();
 
   void ClearLoader();
@@ -48,26 +47,17 @@ public:
   void RemoveStyleSheet(mozilla::StyleSheet* aSheet);
   void InsertStyleSheetAt(size_t aIndex, mozilla::StyleSheet* aSheet);
 
-  mozilla::StyleSheet* StyleSheetAt(size_t aIndex) const
-  {
+  mozilla::StyleSheet* StyleSheetAt(size_t aIndex) const {
     return mStyleSheetList[aIndex];
   }
 
-  size_t SheetCount() const
-  {
-    return mStyleSheetList.Length();
-  }
+  size_t SheetCount() const { return mStyleSheetList.Length(); }
 
-  bool HasStyleSheets() const
-  {
-    return !mStyleSheetList.IsEmpty();
-  }
+  bool HasStyleSheets() const { return !mStyleSheetList.IsEmpty(); }
 
   void AppendStyleSheetsTo(nsTArray<mozilla::StyleSheet*>& aResult) const;
 
-
-  const RawServoAuthorStyles* GetServoStyles() const
-  {
+  const RawServoAuthorStyles* GetServoStyles() const {
     return mServoStyles.get();
   }
 
@@ -82,7 +72,8 @@ public:
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
+ private:
+  
   
   RefPtr<nsXBLResourceLoader> mLoader;
 
@@ -91,7 +82,6 @@ private:
   
   
   nsTArray<RefPtr<mozilla::StyleSheet>> mStyleSheetList;
-
 
   
   

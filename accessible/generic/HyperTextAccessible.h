@@ -30,8 +30,8 @@ namespace a11y {
 class TextRange;
 
 struct DOMPoint {
-  DOMPoint() : node(nullptr), idx(0) { }
-  DOMPoint(nsINode* aNode, int32_t aIdx) : node(aNode), idx(aIdx) { }
+  DOMPoint() : node(nullptr), idx(0) {}
+  DOMPoint(nsINode* aNode, int32_t aIdx) : node(aNode), idx(aIdx) {}
 
   nsINode* node;
   int32_t idx;
@@ -46,9 +46,8 @@ const char16_t kForcedNewLineChar = '\n';
 
 
 
-class HyperTextAccessible : public AccessibleWrap
-{
-public:
+class HyperTextAccessible : public AccessibleWrap {
+ public:
   HyperTextAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HyperTextAccessible, AccessibleWrap)
@@ -68,43 +67,37 @@ public:
   
 
   
-  nsresult ContentToRenderedOffset(nsIFrame *aFrame, int32_t aContentOffset,
-                                   uint32_t *aRenderedOffset) const;
+  nsresult ContentToRenderedOffset(nsIFrame* aFrame, int32_t aContentOffset,
+                                   uint32_t* aRenderedOffset) const;
 
   
-  nsresult RenderedToContentOffset(nsIFrame *aFrame, uint32_t aRenderedOffset,
-                                   int32_t *aContentOffset) const;
+  nsresult RenderedToContentOffset(nsIFrame* aFrame, uint32_t aRenderedOffset,
+                                   int32_t* aContentOffset) const;
 
   
   
-
-  
-
-
-  uint32_t LinkCount()
-    { return EmbeddedChildCount(); }
 
   
 
 
-  Accessible* LinkAt(uint32_t aIndex)
-  {
-    return GetEmbeddedChildAt(aIndex);
-  }
+  uint32_t LinkCount() { return EmbeddedChildCount(); }
 
   
 
 
-  int32_t LinkIndexOf(Accessible* aLink)
-  {
+  Accessible* LinkAt(uint32_t aIndex) { return GetEmbeddedChildAt(aIndex); }
+
+  
+
+
+  int32_t LinkIndexOf(Accessible* aLink) {
     return GetIndexOfEmbeddedChild(aLink);
   }
 
   
 
 
-  int32_t LinkIndexAtOffset(uint32_t aOffset)
-  {
+  int32_t LinkIndexAtOffset(uint32_t aOffset) {
     Accessible* child = GetChildAtOffset(aOffset);
     return child ? LinkIndexOf(child) : -1;
   }
@@ -175,21 +168,18 @@ public:
   
 
 
-  uint32_t CharacterCount() const
-    { return GetChildOffset(ChildCount()); }
+  uint32_t CharacterCount() const { return GetChildOffset(ChildCount()); }
 
   
 
 
   bool CharAt(int32_t aOffset, nsAString& aChar,
-              int32_t* aStartOffset = nullptr, int32_t* aEndOffset = nullptr)
-  {
+              int32_t* aStartOffset = nullptr, int32_t* aEndOffset = nullptr) {
     NS_ASSERTION(!aStartOffset == !aEndOffset,
                  "Offsets should be both defined or both undefined!");
 
     int32_t childIdx = GetChildIndexAtOffset(aOffset);
-    if (childIdx == -1)
-      return false;
+    if (childIdx == -1) return false;
 
     Accessible* child = GetChildAt(childIdx);
     child->AppendTextTo(aChar, aOffset - GetChildOffset(childIdx), 1);
@@ -201,8 +191,7 @@ public:
     return true;
   }
 
-  char16_t CharAt(int32_t aOffset)
-  {
+  char16_t CharAt(int32_t aOffset) {
     nsAutoString charAtOffset;
     CharAt(aOffset, charAtOffset);
     return charAtOffset.CharAt(0);
@@ -211,27 +200,28 @@ public:
   
 
 
-  bool IsCharAt(int32_t aOffset, char16_t aChar)
-    { return CharAt(aOffset) == aChar; }
+  bool IsCharAt(int32_t aOffset, char16_t aChar) {
+    return CharAt(aOffset) == aChar;
+  }
 
   
 
 
-  bool IsLineEndCharAt(int32_t aOffset)
-    { return IsCharAt(aOffset, '\n'); }
+  bool IsLineEndCharAt(int32_t aOffset) { return IsCharAt(aOffset, '\n'); }
 
   
 
 
-  void TextSubstring(int32_t aStartOffset, int32_t aEndOffset, nsAString& aText);
+  void TextSubstring(int32_t aStartOffset, int32_t aEndOffset,
+                     nsAString& aText);
 
   
 
 
 
   void TextBeforeOffset(int32_t aOffset, AccessibleTextBoundary aBoundaryType,
-                       int32_t* aStartOffset, int32_t* aEndOffset,
-                       nsAString& aText);
+                        int32_t* aStartOffset, int32_t* aEndOffset,
+                        nsAString& aText);
   void TextAtOffset(int32_t aOffset, AccessibleTextBoundary aBoundaryType,
                     int32_t* aStartOffset, int32_t* aEndOffset,
                     nsAString& aText);
@@ -242,9 +232,9 @@ public:
   
 
 
-  already_AddRefed<nsIPersistentProperties>
-    TextAttributes(bool aIncludeDefAttrs, int32_t aOffset,
-                   int32_t* aStartOffset, int32_t* aEndOffset);
+  already_AddRefed<nsIPersistentProperties> TextAttributes(
+      bool aIncludeDefAttrs, int32_t aOffset, int32_t* aStartOffset,
+      int32_t* aEndOffset);
 
   
 
@@ -260,8 +250,7 @@ public:
 
 
   int32_t GetChildOffset(const Accessible* aChild,
-                         bool aInvalidateAfter = false) const
-  {
+                         bool aInvalidateAfter = false) const {
     int32_t index = GetIndexOf(aChild);
     return index == -1 ? -1 : GetChildOffset(index, aInvalidateAfter);
   }
@@ -284,8 +273,7 @@ public:
 
 
 
-  Accessible* GetChildAtOffset(uint32_t aOffset) const
-  {
+  Accessible* GetChildAtOffset(uint32_t aOffset) const {
     return GetChildAt(GetChildIndexAtOffset(aOffset));
   }
 
@@ -303,17 +291,19 @@ public:
   
 
 
-  nsIntRect TextBounds(int32_t aStartOffset, int32_t aEndOffset,
-                       uint32_t aCoordType = nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE);
+  nsIntRect TextBounds(
+      int32_t aStartOffset, int32_t aEndOffset,
+      uint32_t aCoordType =
+          nsIAccessibleCoordinateType::COORDTYPE_SCREEN_RELATIVE);
 
   
 
 
 
-  nsIntRect CharBounds(int32_t aOffset, uint32_t aCoordType)
-  {
-    int32_t endOffset = aOffset == static_cast<int32_t>(CharacterCount()) ?
-      aOffset : aOffset + 1;
+  nsIntRect CharBounds(int32_t aOffset, uint32_t aCoordType) {
+    int32_t endOffset = aOffset == static_cast<int32_t>(CharacterCount())
+                            ? aOffset
+                            : aOffset + 1;
     return TextBounds(aOffset, endOffset, aCoordType);
   }
 
@@ -346,15 +336,15 @@ public:
   
 
 
-  bool SelectionBoundsAt(int32_t aSelectionNum,
-                         int32_t* aStartOffset, int32_t* aEndOffset);
+  bool SelectionBoundsAt(int32_t aSelectionNum, int32_t* aStartOffset,
+                         int32_t* aEndOffset);
 
   
 
 
 
-  bool SetSelectionBoundsAt(int32_t aSelectionNum,
-                            int32_t aStartOffset, int32_t aEndOffset);
+  bool SetSelectionBoundsAt(int32_t aSelectionNum, int32_t aStartOffset,
+                            int32_t aEndOffset);
 
   
 
@@ -377,10 +367,8 @@ public:
   
 
 
-  void ScrollSubstringToPoint(int32_t aStartOffset,
-                              int32_t aEndOffset,
-                              uint32_t aCoordinateType,
-                              int32_t aX, int32_t aY);
+  void ScrollSubstringToPoint(int32_t aStartOffset, int32_t aEndOffset,
+                              uint32_t aCoordinateType, int32_t aX, int32_t aY);
 
   
 
@@ -431,8 +419,8 @@ public:
 
   dom::Selection* DOMSelection() const;
 
-protected:
-  virtual ~HyperTextAccessible() { }
+ protected:
+  virtual ~HyperTextAccessible() {}
 
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
@@ -457,18 +445,16 @@ protected:
   
 
 
-  bool IsEmptyLastLineOffset(int32_t aOffset)
-  {
+  bool IsEmptyLastLineOffset(int32_t aOffset) {
     return aOffset == static_cast<int32_t>(CharacterCount()) &&
-      IsLineEndCharAt(aOffset - 1);
+           IsLineEndCharAt(aOffset - 1);
   }
 
   
 
 
   uint32_t FindWordBoundary(uint32_t aOffset, nsDirection aDirection,
-                           EWordMovementType aWordMovementType)
-  {
+                            EWordMovementType aWordMovementType) {
     return FindOffset(aOffset, aDirection, eSelectWord, aWordMovementType);
   }
 
@@ -505,8 +491,7 @@ protected:
 
 
 
-  nsIntRect GetBoundsInFrame(nsIFrame* aFrame,
-                             uint32_t aStartRenderedOffset,
+  nsIntRect GetBoundsInFrame(nsIFrame* aFrame, uint32_t aStartRenderedOffset,
                              uint32_t aEndRenderedOffset);
 
   
@@ -569,7 +554,7 @@ protected:
 
   void SetMathMLXMLRoles(nsIPersistentProperties* aAttributes);
 
-private:
+ private:
   
 
 
@@ -579,15 +564,11 @@ private:
 
 
 
-
-inline HyperTextAccessible*
-Accessible::AsHyperText()
-{
+inline HyperTextAccessible* Accessible::AsHyperText() {
   return IsHyperText() ? static_cast<HyperTextAccessible*>(this) : nullptr;
 }
 
-} 
-} 
+}  
+}  
 
 #endif
-

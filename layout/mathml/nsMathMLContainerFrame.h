@@ -25,19 +25,18 @@
 
 
 
-#define STRETCH_CONSIDER_ACTUAL_SIZE    0x00000001 // just use our current size
-#define STRETCH_CONSIDER_EMBELLISHMENTS 0x00000002 // size calculations include embellishments
+#define STRETCH_CONSIDER_ACTUAL_SIZE 0x00000001  // just use our current size
+#define STRETCH_CONSIDER_EMBELLISHMENTS \
+  0x00000002  // size calculations include embellishments
 
-class nsMathMLContainerFrame : public nsContainerFrame,
-                               public nsMathMLFrame
-{
+class nsMathMLContainerFrame : public nsContainerFrame, public nsMathMLFrame {
   friend class nsMathMLmfencedFrame;
-public:
+
+ public:
   nsMathMLContainerFrame(ComputedStyle* aStyle, ClassID aID)
-    : nsContainerFrame(aStyle, aID)
-    , mIntrinsicWidth(NS_INTRINSIC_WIDTH_UNKNOWN)
-    , mBlockStartAscent(0)
-  {}
+      : nsContainerFrame(aStyle, aID),
+        mIntrinsicWidth(NS_INTRINSIC_WIDTH_UNKNOWN),
+        mBlockStartAscent(0) {}
 
   NS_DECL_QUERYFRAME_TARGET(nsMathMLContainerFrame)
   NS_DECL_QUERYFRAME
@@ -47,46 +46,37 @@ public:
   
 
   NS_IMETHOD
-  Stretch(DrawTarget*          aDrawTarget,
-          nsStretchDirection   aStretchDirection,
-          nsBoundingMetrics&   aContainerSize,
+  Stretch(DrawTarget* aDrawTarget, nsStretchDirection aStretchDirection,
+          nsBoundingMetrics& aContainerSize,
           ReflowOutput& aDesiredStretchSize) override;
 
   NS_IMETHOD
-  UpdatePresentationDataFromChildAt(int32_t         aFirstIndex,
-                                    int32_t         aLastIndex,
-                                    uint32_t        aFlagsValues,
-                                    uint32_t        aFlagsToUpdate) override
-  {
+  UpdatePresentationDataFromChildAt(int32_t aFirstIndex, int32_t aLastIndex,
+                                    uint32_t aFlagsValues,
+                                    uint32_t aFlagsToUpdate) override {
     PropagatePresentationDataFromChildAt(this, aFirstIndex, aLastIndex,
-      aFlagsValues, aFlagsToUpdate);
+                                         aFlagsValues, aFlagsToUpdate);
     return NS_OK;
   }
 
   
   
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
     if (aFlags & (eLineParticipant | eSupportsContainLayoutAndPaint)) {
       return false;
     }
-    return nsContainerFrame::IsFrameOfType(aFlags &
-      ~(eMathML | eExcludesIgnorableWhitespace));
+    return nsContainerFrame::IsFrameOfType(
+        aFlags & ~(eMathML | eExcludesIgnorableWhitespace));
   }
 
-  virtual void
-  AppendFrames(ChildListID     aListID,
-               nsFrameList&    aFrameList) override;
+  virtual void AppendFrames(ChildListID aListID,
+                            nsFrameList& aFrameList) override;
 
-  virtual void
-  InsertFrames(ChildListID     aListID,
-               nsIFrame*       aPrevFrame,
-               nsFrameList&    aFrameList) override;
+  virtual void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                            nsFrameList& aFrameList) override;
 
-  virtual void
-  RemoveFrame(ChildListID     aListID,
-              nsIFrame*       aOldFrame) override;
+  virtual void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override;
 
   
 
@@ -98,25 +88,22 @@ public:
   
 
 
-  virtual void
-  GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
-                           ReflowOutput& aDesiredSize);
+  virtual void GetIntrinsicISizeMetrics(gfxContext* aRenderingContext,
+                                        ReflowOutput& aDesiredSize);
 
-  virtual void
-  Reflow(nsPresContext*          aPresContext,
-         ReflowOutput&     aDesiredSize,
-         const ReflowInput& aReflowInput,
-         nsReflowStatus&          aStatus) override;
+  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
+                      const ReflowInput& aReflowInput,
+                      nsReflowStatus& aStatus) override;
 
-  virtual void DidReflow(nsPresContext*           aPresContext,
-            const ReflowInput*  aReflowInput) override
+  virtual void DidReflow(nsPresContext* aPresContext,
+                         const ReflowInput* aReflowInput) override
 
   {
     mPresentationData.flags &= ~NS_MATHML_STRETCH_DONE;
     return nsContainerFrame::DidReflow(aPresContext, aReflowInput);
   }
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
   virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override;
@@ -140,23 +127,23 @@ public:
   
   
   
-  virtual nsresult
-  AttributeChanged(int32_t         aNameSpaceID,
-                   nsAtom*        aAttribute,
-                   int32_t         aModType) override;
+  
+  
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
   
-  nscoord
-  MirrorIfRTL(nscoord aParentWidth, nscoord aChildWidth, nscoord aChildLeading)
-  {
-    return (StyleVisibility()->mDirection ?
-            aParentWidth - aChildWidth - aChildLeading : aChildLeading);
+  nscoord MirrorIfRTL(nscoord aParentWidth, nscoord aChildWidth,
+                      nscoord aChildLeading) {
+    return (StyleVisibility()->mDirection
+                ? aParentWidth - aChildWidth - aChildLeading
+                : aChildLeading);
   }
 
   
   
 
-protected:
+ protected:
   
 
 
@@ -186,10 +173,8 @@ protected:
 
 
 
-  virtual nsresult
-  Place(DrawTarget*          aDrawTarget,
-        bool                 aPlaceOrigin,
-        ReflowOutput& aDesiredSize);
+  virtual nsresult Place(DrawTarget* aDrawTarget, bool aPlaceOrigin,
+                         ReflowOutput& aDesiredSize);
 
   
   
@@ -199,79 +184,65 @@ protected:
   
   
   
-  virtual nsresult
-  MeasureForWidth(DrawTarget* aDrawTarget,
-                  ReflowOutput& aDesiredSize);
-
+  virtual nsresult MeasureForWidth(DrawTarget* aDrawTarget,
+                                   ReflowOutput& aDesiredSize);
 
   
   
-  virtual nsresult
-  ChildListChanged(int32_t aModType);
+  
+  virtual nsresult ChildListChanged(int32_t aModType);
 
   
   
-  void
-  GetPreferredStretchSize(DrawTarget*          aDrawTarget,
-                          uint32_t             aOptions,
-                          nsStretchDirection   aStretchDirection,
-                          nsBoundingMetrics&   aPreferredStretchSize);
+  void GetPreferredStretchSize(DrawTarget* aDrawTarget, uint32_t aOptions,
+                               nsStretchDirection aStretchDirection,
+                               nsBoundingMetrics& aPreferredStretchSize);
 
   
   
-  nsresult
-  TransmitAutomaticDataForMrowLikeElement();
+  nsresult TransmitAutomaticDataForMrowLikeElement();
 
-public:
+ public:
   
   
-  nsresult
-  ReflowError(DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize);
+  nsresult ReflowError(DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize);
   
 
 
 
 
 
-  nsresult
-  ReportParseError(const char16_t*           aAttribute,
-                   const char16_t*           aValue);
+  nsresult ReportParseError(const char16_t* aAttribute, const char16_t* aValue);
 
   
 
 
 
-  nsresult
-  ReportChildCountError();
+  nsresult ReportChildCountError();
 
   
 
 
 
 
-  nsresult
-  ReportInvalidChildError(nsAtom* aChildTag);
+  nsresult ReportInvalidChildError(nsAtom* aChildTag);
 
   
 
 
 
-  nsresult
-  ReportErrorToConsole(const char*       aErrorMsgId,
-                       const char16_t** aParams = nullptr,
-                       uint32_t          aParamCount = 0);
+  nsresult ReportErrorToConsole(const char* aErrorMsgId,
+                                const char16_t** aParams = nullptr,
+                                uint32_t aParamCount = 0);
 
   
   
   
-  void
-  ReflowChild(nsIFrame*                aKidFrame,
-              nsPresContext*          aPresContext,
-              ReflowOutput&     aDesiredSize,
-              const ReflowInput& aReflowInput,
-              nsReflowStatus&          aStatus);
+  void ReflowChild(nsIFrame* aKidFrame, nsPresContext* aPresContext,
+                   ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
+                   nsReflowStatus& aStatus);
 
-protected:
+ protected:
   
   
   
@@ -279,19 +250,17 @@ protected:
   
   
   
-  virtual nscoord
-  FixInterFrameSpacing(ReflowOutput& aDesiredSize);
+  virtual nscoord FixInterFrameSpacing(ReflowOutput& aDesiredSize);
 
   
   
-  virtual nsresult
-  FinalizeReflow(DrawTarget* aDrawTarget, ReflowOutput& aDesiredSize);
+  virtual nsresult FinalizeReflow(DrawTarget* aDrawTarget,
+                                  ReflowOutput& aDesiredSize);
 
   
-  static void
-  SaveReflowAndBoundingMetricsFor(nsIFrame*                  aFrame,
-                                  const ReflowOutput& aReflowOutput,
-                                  const nsBoundingMetrics&   aBoundingMetrics);
+  static void SaveReflowAndBoundingMetricsFor(
+      nsIFrame* aFrame, const ReflowOutput& aReflowOutput,
+      const nsBoundingMetrics& aBoundingMetrics);
 
   
   
@@ -300,11 +269,10 @@ protected:
   
   
   
-  static void
-  GetReflowAndBoundingMetricsFor(nsIFrame*            aFrame,
-                                 ReflowOutput& aReflowOutput,
-                                 nsBoundingMetrics&   aBoundingMetrics,
-                                 eMathMLFrameType*    aMathMLFrameType = nullptr);
+  static void GetReflowAndBoundingMetricsFor(
+      nsIFrame* aFrame, ReflowOutput& aReflowOutput,
+      nsBoundingMetrics& aBoundingMetrics,
+      eMathMLFrameType* aMathMLFrameType = nullptr);
 
   
   
@@ -312,23 +280,19 @@ protected:
 
   
   
-  static void
-  PropagatePresentationDataFor(nsIFrame*       aFrame,
-                               uint32_t        aFlagsValues,
-                               uint32_t        aFlagsToUpdate);
+  static void PropagatePresentationDataFor(nsIFrame* aFrame,
+                                           uint32_t aFlagsValues,
+                                           uint32_t aFlagsToUpdate);
 
-public:
-  static void
-  PropagatePresentationDataFromChildAt(nsIFrame*       aParentFrame,
-                                       int32_t         aFirstChildIndex,
-                                       int32_t         aLastChildIndex,
-                                       uint32_t        aFlagsValues,
-                                       uint32_t        aFlagsToUpdate);
+ public:
+  static void PropagatePresentationDataFromChildAt(nsIFrame* aParentFrame,
+                                                   int32_t aFirstChildIndex,
+                                                   int32_t aLastChildIndex,
+                                                   uint32_t aFlagsValues,
+                                                   uint32_t aFlagsToUpdate);
 
   
-  static void
-  PropagateFrameFlagFor(nsIFrame* aFrame,
-                        nsFrameState aFlags);
+  static void PropagateFrameFlagFor(nsIFrame* aFrame, nsFrameState aFlags);
 
   
   
@@ -342,8 +306,7 @@ public:
   
   
   
-  static void
-  RebuildAutomaticDataForChildren(nsIFrame* aParentFrame);
+  static void RebuildAutomaticDataForChildren(nsIFrame* aParentFrame);
 
   
   
@@ -355,15 +318,14 @@ public:
   
   
   
-  static nsresult
-  ReLayoutChildren(nsIFrame* aParentFrame);
+  
+  static nsresult ReLayoutChildren(nsIFrame* aParentFrame);
 
-protected:
+ protected:
   
   
   
-  void
-  PositionRowChildFrames(nscoord aOffsetX, nscoord aBaseline);
+  void PositionRowChildFrames(nscoord aOffsetX, nscoord aBaseline);
 
   
   
@@ -387,7 +349,7 @@ protected:
 
   nscoord mBlockStartAscent;
 
-private:
+ private:
   class RowChildFrameIterator;
   friend class RowChildFrameIterator;
 };
@@ -401,21 +363,19 @@ private:
 
 
 
-class nsMathMLmathBlockFrame final : public nsBlockFrame
-{
-public:
+class nsMathMLmathBlockFrame final : public nsBlockFrame {
+ public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmathBlockFrame)
 
   friend nsContainerFrame* NS_NewMathMLmathBlockFrame(nsIPresShell* aPresShell,
-          ComputedStyle* aStyle);
+                                                      ComputedStyle* aStyle);
 
   
   
-  virtual void
-  SetInitialChildList(ChildListID     aListID,
-                      nsFrameList&    aChildList) override
-  {
+  
+  virtual void SetInitialChildList(ChildListID aListID,
+                                   nsFrameList& aChildList) override {
     MOZ_ASSERT(aListID == kPrincipalList || aListID == kBackdropList,
                "unexpected frame list");
     nsBlockFrame::SetInitialChildList(aListID, aChildList);
@@ -425,10 +385,8 @@ public:
     }
   }
 
-  virtual void
-  AppendFrames(ChildListID     aListID,
-               nsFrameList&    aFrameList) override
-  {
+  virtual void AppendFrames(ChildListID aListID,
+                            nsFrameList& aFrameList) override {
     NS_ASSERTION(aListID == kPrincipalList || aListID == kNoReflowPrincipalList,
                  "unexpected frame list");
     nsBlockFrame::AppendFrames(aListID, aFrameList);
@@ -436,11 +394,8 @@ public:
       nsMathMLContainerFrame::ReLayoutChildren(this);
   }
 
-  virtual void
-  InsertFrames(ChildListID     aListID,
-               nsIFrame*       aPrevFrame,
-               nsFrameList&    aFrameList) override
-  {
+  virtual void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                            nsFrameList& aFrameList) override {
     NS_ASSERTION(aListID == kPrincipalList || aListID == kNoReflowPrincipalList,
                  "unexpected frame list");
     nsBlockFrame::InsertFrames(aListID, aPrevFrame, aFrameList);
@@ -448,10 +403,7 @@ public:
       nsMathMLContainerFrame::ReLayoutChildren(this);
   }
 
-  virtual void
-  RemoveFrame(ChildListID     aListID,
-              nsIFrame*       aOldFrame) override
-  {
+  virtual void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override {
     NS_ASSERTION(aListID == kPrincipalList || aListID == kNoReflowPrincipalList,
                  "unexpected frame list");
     nsBlockFrame::RemoveFrame(aListID, aOldFrame);
@@ -460,20 +412,18 @@ public:
   }
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override {
-    return nsBlockFrame::IsFrameOfType(aFlags &
-              ~(nsIFrame::eMathML | nsIFrame::eExcludesIgnorableWhitespace));
+    return nsBlockFrame::IsFrameOfType(
+        aFlags & ~(nsIFrame::eMathML | nsIFrame::eExcludesIgnorableWhitespace));
   }
 
   
   bool IsMrowLike() {
-    return mFrames.FirstChild() != mFrames.LastChild() ||
-           !mFrames.FirstChild();
+    return mFrames.FirstChild() != mFrames.LastChild() || !mFrames.FirstChild();
   }
 
-protected:
+ protected:
   explicit nsMathMLmathBlockFrame(ComputedStyle* aStyle)
-    : nsBlockFrame(aStyle, kClassID)
-  {
+      : nsBlockFrame(aStyle, kClassID) {
     
     
     
@@ -485,29 +435,24 @@ protected:
 
 
 class nsMathMLmathInlineFrame final : public nsInlineFrame,
-                                      public nsMathMLFrame
-{
-public:
+                                      public nsMathMLFrame {
+ public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmathInlineFrame)
 
   friend nsContainerFrame* NS_NewMathMLmathInlineFrame(nsIPresShell* aPresShell,
                                                        ComputedStyle* aStyle);
 
-  virtual void
-  SetInitialChildList(ChildListID     aListID,
-                      nsFrameList&    aChildList) override
-  {
+  virtual void SetInitialChildList(ChildListID aListID,
+                                   nsFrameList& aChildList) override {
     NS_ASSERTION(aListID == kPrincipalList, "unexpected frame list");
     nsInlineFrame::SetInitialChildList(aListID, aChildList);
     
     nsMathMLContainerFrame::RebuildAutomaticDataForChildren(this);
   }
 
-  virtual void
-  AppendFrames(ChildListID     aListID,
-               nsFrameList&    aFrameList) override
-  {
+  virtual void AppendFrames(ChildListID aListID,
+                            nsFrameList& aFrameList) override {
     NS_ASSERTION(aListID == kPrincipalList || aListID == kNoReflowPrincipalList,
                  "unexpected frame list");
     nsInlineFrame::AppendFrames(aListID, aFrameList);
@@ -515,11 +460,8 @@ public:
       nsMathMLContainerFrame::ReLayoutChildren(this);
   }
 
-  virtual void
-  InsertFrames(ChildListID     aListID,
-               nsIFrame*       aPrevFrame,
-               nsFrameList&    aFrameList) override
-  {
+  virtual void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                            nsFrameList& aFrameList) override {
     NS_ASSERTION(aListID == kPrincipalList || aListID == kNoReflowPrincipalList,
                  "unexpected frame list");
     nsInlineFrame::InsertFrames(aListID, aPrevFrame, aFrameList);
@@ -527,10 +469,7 @@ public:
       nsMathMLContainerFrame::ReLayoutChildren(this);
   }
 
-  virtual void
-  RemoveFrame(ChildListID     aListID,
-              nsIFrame*       aOldFrame) override
-  {
+  virtual void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override {
     NS_ASSERTION(aListID == kPrincipalList || aListID == kNoReflowPrincipalList,
                  "unexpected frame list");
     nsInlineFrame::RemoveFrame(aListID, aOldFrame);
@@ -539,20 +478,17 @@ public:
   }
 
   virtual bool IsFrameOfType(uint32_t aFlags) const override {
-      return nsInlineFrame::IsFrameOfType(aFlags &
-                ~(nsIFrame::eMathML | nsIFrame::eExcludesIgnorableWhitespace));
+    return nsInlineFrame::IsFrameOfType(
+        aFlags & ~(nsIFrame::eMathML | nsIFrame::eExcludesIgnorableWhitespace));
   }
 
-  bool
-  IsMrowLike() override {
-    return mFrames.FirstChild() != mFrames.LastChild() ||
-           !mFrames.FirstChild();
+  bool IsMrowLike() override {
+    return mFrames.FirstChild() != mFrames.LastChild() || !mFrames.FirstChild();
   }
 
-protected:
+ protected:
   explicit nsMathMLmathInlineFrame(ComputedStyle* aStyle)
-    : nsInlineFrame(aStyle, kClassID)
-  {}
+      : nsInlineFrame(aStyle, kClassID) {}
 
   virtual ~nsMathMLmathInlineFrame() {}
 };

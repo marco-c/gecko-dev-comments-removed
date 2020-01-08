@@ -12,31 +12,29 @@
 
 #include "mozilla/Scoped.h"
 #include "nsString.h"
-#include "unicode/unum.h" 
+#include "unicode/unum.h"  
 
 class nsIContent;
 
 struct ScopedUNumberFormatTraits {
   typedef UNumberFormat* type;
   static type empty() { return nullptr; }
-  static void release(type handle) { if (handle) unum_close(handle); }
+  static void release(type handle) {
+    if (handle) unum_close(handle);
+  }
 };
 typedef mozilla::Scoped<ScopedUNumberFormatTraits> AutoCloseUNumberFormat;
 
-class ICUUtils
-{
-public:
-
+class ICUUtils {
+ public:
   
 
 
 
   class LanguageTagIterForContent {
-  public:
+   public:
     explicit LanguageTagIterForContent(nsIContent* aContent)
-      : mContent(aContent)
-      , mCurrentFallbackIndex(-1)
-    {}
+        : mContent(aContent), mCurrentFallbackIndex(-1) {}
 
     
 
@@ -54,11 +52,9 @@ public:
 
     void GetNext(nsACString& aBCP47LangTag);
 
-    bool IsAtStart() const {
-      return mCurrentFallbackIndex < 0;
-    }
+    bool IsAtStart() const { return mCurrentFallbackIndex < 0; }
 
-  private:
+   private:
     nsIContent* mContent;
     int8_t mCurrentFallbackIndex;
   };
@@ -79,8 +75,7 @@ public:
   static double ParseNumber(nsAString& aValue,
                             LanguageTagIterForContent& aLangTags);
 
-  static void AssignUCharArrayToString(UChar* aICUString,
-                                       int32_t aLength,
+  static void AssignUCharArrayToString(UChar* aICUString, int32_t aLength,
                                        nsAString& aMozString);
 
   

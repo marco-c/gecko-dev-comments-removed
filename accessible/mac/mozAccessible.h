@@ -22,34 +22,27 @@
 namespace mozilla {
 namespace a11y {
 
-inline id <mozAccessible>
-GetObjectOrRepresentedView(id <mozAccessible> aObject)
-{
+inline id<mozAccessible> GetObjectOrRepresentedView(id<mozAccessible> aObject) {
   return [aObject hasRepresentedView] ? [aObject representedView] : aObject;
 }
 
-inline mozAccessible*
-GetNativeFromGeckoAccessible(Accessible* aAccessible)
-{
+inline mozAccessible* GetNativeFromGeckoAccessible(Accessible* aAccessible) {
   mozAccessible* native = nil;
   aAccessible->GetNativeInterface((void**)&native);
   return native;
 }
 
-inline mozAccessible*
-GetNativeFromProxy(const ProxyAccessible* aProxy)
-{
+inline mozAccessible* GetNativeFromProxy(const ProxyAccessible* aProxy) {
   return reinterpret_cast<mozAccessible*>(aProxy->GetWrapper());
 }
 
-} 
-} 
+}  
+}  
 
 
 static const uintptr_t IS_PROXY = 1;
 
-@interface mozAccessible : NSObject <mozAccessible>
-{
+@interface mozAccessible : NSObject <mozAccessible> {
   
 
 
@@ -68,7 +61,7 @@ static const uintptr_t IS_PROXY = 1;
   
 
 
-  mozilla::a11y::role        mRole;
+  mozilla::a11y::role mRole;
 }
 
 
@@ -81,7 +74,7 @@ static const uintptr_t IS_PROXY = 1;
 - (id)initWithAccessible:(uintptr_t)aGeckoObj;
 
 
-- (id <mozAccessible>)parent;
+- (id<mozAccessible>)parent;
 
 
 - (NSArray*)children;
@@ -181,4 +174,3 @@ static const uintptr_t IS_PROXY = 1;
 - (void)accessibilitySetValue:(id)value forAttribute:(NSString*)attribute;
 
 @end
-

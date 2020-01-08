@@ -23,11 +23,11 @@ namespace layers {
 class ClientLayerManager;
 
 class ClientMultiTiledLayerBuffer
-  : public TiledLayerBuffer<ClientMultiTiledLayerBuffer, TileClient>
-  , public ClientTiledLayerBuffer
-{
+    : public TiledLayerBuffer<ClientMultiTiledLayerBuffer, TileClient>,
+      public ClientTiledLayerBuffer {
   friend class TiledLayerBuffer<ClientMultiTiledLayerBuffer, TileClient>;
-public:
+
+ public:
   ClientMultiTiledLayerBuffer(ClientTiledPaintedLayer& aPaintedLayer,
                               CompositableClient& aCompositableClient,
                               ClientLayerManager* aManager,
@@ -63,7 +63,6 @@ public:
     mRetainedTiles.Clear();
   }
 
-
   const nsIntRegion& GetValidRegion() override {
     return TiledLayerBuffer::GetValidRegion();
   }
@@ -72,9 +71,7 @@ public:
     return TiledLayerBuffer::IsLowPrecision();
   }
 
-  void Dump(std::stringstream& aStream,
-            const char* aPrefix,
-            bool aDumpHtml,
+  void Dump(std::stringstream& aStream, const char* aPrefix, bool aDumpHtml,
             TextureDumpMode aCompress) override {
     TiledLayerBuffer::Dump(aStream, aPrefix, aDumpHtml, aCompress);
   }
@@ -96,20 +93,17 @@ public:
     mResolution = aResolution;
   }
 
-protected:
-  bool ValidateTile(TileClient& aTile,
-                    const nsIntPoint& aTileRect,
-                    nsIntRegion& aDirtyRegion,
-                    TilePaintFlags aFlags);
+ protected:
+  bool ValidateTile(TileClient& aTile, const nsIntPoint& aTileRect,
+                    nsIntRegion& aDirtyRegion, TilePaintFlags aFlags);
 
   void Update(const nsIntRegion& aNewValidRegion,
-              const nsIntRegion& aPaintRegion,
-              const nsIntRegion& aDirtyRegion,
+              const nsIntRegion& aPaintRegion, const nsIntRegion& aDirtyRegion,
               TilePaintFlags aFlags);
 
   TileClient GetPlaceholderTile() const { return TileClient(); }
 
-private:
+ private:
   RefPtr<ClientLayerManager> mManager;
   LayerManager::DrawPaintedLayerCallback mCallback;
   void* mCallbackData;
@@ -118,7 +112,7 @@ private:
   
   nsIntRegion mNewValidRegion;
 
-  SharedFrameMetricsHelper*  mSharedFrameMetricsHelper;
+  SharedFrameMetricsHelper* mSharedFrameMetricsHelper;
 
   
   
@@ -167,22 +161,20 @@ private:
 
 
 
-class MultiTiledContentClient : public TiledContentClient
-{
-public:
+class MultiTiledContentClient : public TiledContentClient {
+ public:
   MultiTiledContentClient(ClientTiledPaintedLayer& aPaintedLayer,
                           ClientLayerManager* aManager);
 
-protected:
-  ~MultiTiledContentClient()
-  {
+ protected:
+  ~MultiTiledContentClient() {
     MOZ_COUNT_DTOR(MultiTiledContentClient);
 
-      mTiledBuffer.DiscardBuffers();
-      mLowPrecisionTiledBuffer.DiscardBuffers();
+    mTiledBuffer.DiscardBuffers();
+    mLowPrecisionTiledBuffer.DiscardBuffers();
   }
 
-public:
+ public:
   void ClearCachedResources() override;
   void UpdatedBuffer(TiledBufferType aType) override;
 
@@ -194,14 +186,14 @@ public:
     return nullptr;
   }
 
-private:
+ private:
   SharedFrameMetricsHelper mSharedFrameMetricsHelper;
   ClientMultiTiledLayerBuffer mTiledBuffer;
   ClientMultiTiledLayerBuffer mLowPrecisionTiledBuffer;
   bool mHasLowPrecision;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

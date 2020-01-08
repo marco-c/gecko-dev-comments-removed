@@ -21,21 +21,17 @@ namespace mozilla {
 
 
 
-template<typename T>
-class RustCell
-{
-public:
-  RustCell()
-    : mValue()
-  {
-  }
+template <typename T>
+class RustCell {
+ public:
+  RustCell() : mValue() {}
 
   T Get() const { return mValue; }
 
-private:
+ private:
   T mValue;
 };
 
-} 
+}  
 
-#endif 
+#endif  

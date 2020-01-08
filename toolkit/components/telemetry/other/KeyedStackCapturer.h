@@ -23,12 +23,9 @@ namespace Telemetry {
 
 
 
-class KeyedStackCapturer
-{
-public:
-  KeyedStackCapturer()
-    : mStackCapturerMutex("Telemetry::StackCapturerMutex")
-  {}
+class KeyedStackCapturer {
+ public:
+  KeyedStackCapturer() : mStackCapturerMutex("Telemetry::StackCapturerMutex") {}
 
   
 
@@ -38,8 +35,8 @@ public:
   
 
 
-   NS_IMETHODIMP ReflectCapturedStacks(
-    JSContext *cx, JS::MutableHandle<JS::Value> ret);
+  NS_IMETHODIMP ReflectCapturedStacks(JSContext* cx,
+                                      JS::MutableHandle<JS::Value> ret);
 
   
 
@@ -48,7 +45,7 @@ public:
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
+ private:
   
 
 
@@ -59,19 +56,18 @@ private:
     uint32_t mIndex;
 
     StackFrequencyInfo(uint32_t aCount, uint32_t aIndex)
-      : mCount(aCount)
-      , mIndex(aIndex)
-    {}
+        : mCount(aCount), mIndex(aIndex) {}
   };
 
-  typedef nsClassHashtable<nsCStringHashKey, StackFrequencyInfo> FrequencyInfoMapType;
+  typedef nsClassHashtable<nsCStringHashKey, StackFrequencyInfo>
+      FrequencyInfoMapType;
 
   FrequencyInfoMapType mStackInfos;
   CombinedStacks mStacks;
   Mutex mStackCapturerMutex;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

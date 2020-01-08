@@ -5,23 +5,23 @@
 
 #include "HTMLEditUtils.h"
 
-#include "TextEditUtils.h"              
-#include "mozilla/ArrayUtils.h"         
-#include "mozilla/Assertions.h"         
-#include "mozilla/EditAction.h"         
-#include "mozilla/EditorBase.h"         
-#include "mozilla/dom/Element.h"        
-#include "nsAString.h"                  
-#include "nsCOMPtr.h"                   
+#include "TextEditUtils.h"        
+#include "mozilla/ArrayUtils.h"   
+#include "mozilla/Assertions.h"   
+#include "mozilla/EditAction.h"   
+#include "mozilla/EditorBase.h"   
+#include "mozilla/dom/Element.h"  
+#include "nsAString.h"            
+#include "nsCOMPtr.h"             
 #include "nsCaseTreatment.h"
-#include "nsDebug.h"                    
-#include "nsError.h"                    
-#include "nsGkAtoms.h"                  
+#include "nsDebug.h"    
+#include "nsError.h"    
+#include "nsGkAtoms.h"  
 #include "nsHTMLTags.h"
-#include "nsAtom.h"                    
-#include "nsNameSpaceManager.h"        
-#include "nsLiteralString.h"            
-#include "nsString.h"                   
+#include "nsAtom.h"              
+#include "nsNameSpaceManager.h"  
+#include "nsLiteralString.h"     
+#include "nsString.h"            
 #include "mozilla/dom/HTMLAnchorElement.h"
 
 namespace mozilla {
@@ -29,142 +29,91 @@ namespace mozilla {
 
 
 
-bool
-HTMLEditUtils::IsInlineStyle(nsINode* aNode)
-{
+bool HTMLEditUtils::IsInlineStyle(nsINode* aNode) {
   MOZ_ASSERT(aNode);
-  return aNode->IsAnyOfHTMLElements(nsGkAtoms::b,
-                                    nsGkAtoms::i,
-                                    nsGkAtoms::u,
-                                    nsGkAtoms::tt,
-                                    nsGkAtoms::s,
-                                    nsGkAtoms::strike,
-                                    nsGkAtoms::big,
-                                    nsGkAtoms::small,
-                                    nsGkAtoms::sub,
-                                    nsGkAtoms::sup,
-                                    nsGkAtoms::font);
+  return aNode->IsAnyOfHTMLElements(
+      nsGkAtoms::b, nsGkAtoms::i, nsGkAtoms::u, nsGkAtoms::tt, nsGkAtoms::s,
+      nsGkAtoms::strike, nsGkAtoms::big, nsGkAtoms::small, nsGkAtoms::sub,
+      nsGkAtoms::sup, nsGkAtoms::font);
 }
 
 
 
 
-bool
-HTMLEditUtils::IsFormatNode(nsINode* aNode)
-{
+bool HTMLEditUtils::IsFormatNode(nsINode* aNode) {
   MOZ_ASSERT(aNode);
-  return aNode->IsAnyOfHTMLElements(nsGkAtoms::p,
-                                    nsGkAtoms::pre,
-                                    nsGkAtoms::h1,
-                                    nsGkAtoms::h2,
-                                    nsGkAtoms::h3,
-                                    nsGkAtoms::h4,
-                                    nsGkAtoms::h5,
-                                    nsGkAtoms::h6,
-                                    nsGkAtoms::address);
+  return aNode->IsAnyOfHTMLElements(
+      nsGkAtoms::p, nsGkAtoms::pre, nsGkAtoms::h1, nsGkAtoms::h2, nsGkAtoms::h3,
+      nsGkAtoms::h4, nsGkAtoms::h5, nsGkAtoms::h6, nsGkAtoms::address);
 }
 
 
 
 
 
-bool
-HTMLEditUtils::IsNodeThatCanOutdent(nsINode* aNode)
-{
+bool HTMLEditUtils::IsNodeThatCanOutdent(nsINode* aNode) {
   MOZ_ASSERT(aNode);
-  return aNode->IsAnyOfHTMLElements(nsGkAtoms::ul,
-                                    nsGkAtoms::ol,
-                                    nsGkAtoms::dl,
-                                    nsGkAtoms::li,
-                                    nsGkAtoms::dd,
-                                    nsGkAtoms::dt,
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::ul, nsGkAtoms::ol, nsGkAtoms::dl,
+                                    nsGkAtoms::li, nsGkAtoms::dd, nsGkAtoms::dt,
                                     nsGkAtoms::blockquote);
 }
 
 
 
 
-bool
-HTMLEditUtils::IsHeader(nsINode& aNode)
-{
-  return aNode.IsAnyOfHTMLElements(nsGkAtoms::h1,
-                                   nsGkAtoms::h2,
-                                   nsGkAtoms::h3,
-                                   nsGkAtoms::h4,
-                                   nsGkAtoms::h5,
-                                   nsGkAtoms::h6);
+bool HTMLEditUtils::IsHeader(nsINode& aNode) {
+  return aNode.IsAnyOfHTMLElements(nsGkAtoms::h1, nsGkAtoms::h2, nsGkAtoms::h3,
+                                   nsGkAtoms::h4, nsGkAtoms::h5, nsGkAtoms::h6);
 }
 
 
 
 
-bool
-HTMLEditUtils::IsListItem(nsINode* aNode)
-{
+bool HTMLEditUtils::IsListItem(nsINode* aNode) {
   MOZ_ASSERT(aNode);
-  return aNode->IsAnyOfHTMLElements(nsGkAtoms::li,
-                                    nsGkAtoms::dd,
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::li, nsGkAtoms::dd,
                                     nsGkAtoms::dt);
 }
 
 
 
 
-bool
-HTMLEditUtils::IsTableElement(nsINode* aNode)
-{
+bool HTMLEditUtils::IsTableElement(nsINode* aNode) {
   MOZ_ASSERT(aNode);
-  return aNode->IsAnyOfHTMLElements(nsGkAtoms::table,
-                                    nsGkAtoms::tr,
-                                    nsGkAtoms::td,
-                                    nsGkAtoms::th,
-                                    nsGkAtoms::thead,
-                                    nsGkAtoms::tfoot,
-                                    nsGkAtoms::tbody,
-                                    nsGkAtoms::caption);
+  return aNode->IsAnyOfHTMLElements(
+      nsGkAtoms::table, nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th,
+      nsGkAtoms::thead, nsGkAtoms::tfoot, nsGkAtoms::tbody, nsGkAtoms::caption);
 }
 
 
 
 
 
-bool
-HTMLEditUtils::IsTableElementButNotTable(nsINode* aNode)
-{
+bool HTMLEditUtils::IsTableElementButNotTable(nsINode* aNode) {
   MOZ_ASSERT(aNode);
-  return aNode->IsAnyOfHTMLElements(nsGkAtoms::tr,
-                                     nsGkAtoms::td,
-                                     nsGkAtoms::th,
-                                     nsGkAtoms::thead,
-                                     nsGkAtoms::tfoot,
-                                     nsGkAtoms::tbody,
-                                     nsGkAtoms::caption);
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th,
+                                    nsGkAtoms::thead, nsGkAtoms::tfoot,
+                                    nsGkAtoms::tbody, nsGkAtoms::caption);
 }
 
 
 
 
-bool
-HTMLEditUtils::IsTable(nsINode* aNode)
-{
+bool HTMLEditUtils::IsTable(nsINode* aNode) {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::table);
 }
 
 
 
 
-bool
-HTMLEditUtils::IsTableRow(nsINode* aNode)
-{
+bool HTMLEditUtils::IsTableRow(nsINode* aNode) {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::tr);
 }
 
 
 
 
-bool
-HTMLEditUtils::IsTableCell(nsINode* aNode)
-{
+bool HTMLEditUtils::IsTableCell(nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th);
 }
@@ -172,9 +121,7 @@ HTMLEditUtils::IsTableCell(nsINode* aNode)
 
 
 
-bool
-HTMLEditUtils::IsTableCellOrCaption(nsINode& aNode)
-{
+bool HTMLEditUtils::IsTableCellOrCaption(nsINode& aNode) {
   return aNode.IsAnyOfHTMLElements(nsGkAtoms::td, nsGkAtoms::th,
                                    nsGkAtoms::caption);
 }
@@ -182,43 +129,35 @@ HTMLEditUtils::IsTableCellOrCaption(nsINode& aNode)
 
 
 
-bool
-HTMLEditUtils::IsList(nsINode* aNode)
-{
+bool HTMLEditUtils::IsList(nsINode* aNode) {
   MOZ_ASSERT(aNode);
-  return aNode->IsAnyOfHTMLElements(nsGkAtoms::ul,
-                                    nsGkAtoms::ol,
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::ul, nsGkAtoms::ol,
                                     nsGkAtoms::dl);
 }
 
 
 
 
-bool
-HTMLEditUtils::IsPre(nsINode* aNode)
-{
+bool HTMLEditUtils::IsPre(nsINode* aNode) {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::pre);
 }
 
 
 
 
-bool
-HTMLEditUtils::IsImage(nsINode* aNode)
-{
+bool HTMLEditUtils::IsImage(nsINode* aNode) {
   return aNode && aNode->IsHTMLElement(nsGkAtoms::img);
 }
 
-bool
-HTMLEditUtils::IsLink(nsINode* aNode)
-{
+bool HTMLEditUtils::IsLink(nsINode* aNode) {
   MOZ_ASSERT(aNode);
 
   if (!aNode->IsContent()) {
     return false;
   }
 
-  RefPtr<HTMLAnchorElement> anchor = HTMLAnchorElement::FromNodeOrNull(aNode->AsContent());
+  RefPtr<HTMLAnchorElement> anchor =
+      HTMLAnchorElement::FromNodeOrNull(aNode->AsContent());
   if (!anchor) {
     return false;
   }
@@ -228,9 +167,7 @@ HTMLEditUtils::IsLink(nsINode* aNode)
   return !tmpText.IsEmpty();
 }
 
-bool
-HTMLEditUtils::IsNamedAnchor(nsINode* aNode)
-{
+bool HTMLEditUtils::IsNamedAnchor(nsINode* aNode) {
   MOZ_ASSERT(aNode);
   if (!aNode->IsHTMLElement(nsGkAtoms::a)) {
     return false;
@@ -238,15 +175,14 @@ HTMLEditUtils::IsNamedAnchor(nsINode* aNode)
 
   nsAutoString text;
   return aNode->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::name,
-                                     text) && !text.IsEmpty();
+                                     text) &&
+         !text.IsEmpty();
 }
 
 
 
 
-bool
-HTMLEditUtils::IsMozDiv(nsINode* aNode)
-{
+bool HTMLEditUtils::IsMozDiv(nsINode* aNode) {
   MOZ_ASSERT(aNode);
   return aNode->IsHTMLElement(nsGkAtoms::div) &&
          TextEditUtils::HasMozAttr(aNode);
@@ -255,24 +191,20 @@ HTMLEditUtils::IsMozDiv(nsINode* aNode)
 
 
 
-bool
-HTMLEditUtils::IsMailCite(nsINode* aNode)
-{
+bool HTMLEditUtils::IsMailCite(nsINode* aNode) {
   MOZ_ASSERT(aNode);
 
   
   if (aNode->IsElement() &&
       aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::type,
-                                      NS_LITERAL_STRING("cite"),
-                                      eIgnoreCase)) {
+                                      NS_LITERAL_STRING("cite"), eIgnoreCase)) {
     return true;
   }
 
   
   if (aNode->IsElement() &&
       aNode->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::mozquote,
-                                      NS_LITERAL_STRING("true"),
-                                      eIgnoreCase)) {
+                                      NS_LITERAL_STRING("true"), eIgnoreCase)) {
     return true;
   }
 
@@ -282,39 +214,20 @@ HTMLEditUtils::IsMailCite(nsINode* aNode)
 
 
 
-bool
-HTMLEditUtils::IsFormWidget(nsINode* aNode)
-{
+bool HTMLEditUtils::IsFormWidget(nsINode* aNode) {
   MOZ_ASSERT(aNode);
-  return aNode->IsAnyOfHTMLElements(nsGkAtoms::textarea,
-                                    nsGkAtoms::select,
-                                    nsGkAtoms::button,
-                                    nsGkAtoms::output,
-                                    nsGkAtoms::keygen,
-                                    nsGkAtoms::progress,
-                                    nsGkAtoms::meter,
-                                    nsGkAtoms::input);
+  return aNode->IsAnyOfHTMLElements(nsGkAtoms::textarea, nsGkAtoms::select,
+                                    nsGkAtoms::button, nsGkAtoms::output,
+                                    nsGkAtoms::keygen, nsGkAtoms::progress,
+                                    nsGkAtoms::meter, nsGkAtoms::input);
 }
 
-bool
-HTMLEditUtils::SupportsAlignAttr(nsINode& aNode)
-{
-  return aNode.IsAnyOfHTMLElements(nsGkAtoms::hr,
-                                   nsGkAtoms::table,
-                                   nsGkAtoms::tbody,
-                                   nsGkAtoms::tfoot,
-                                   nsGkAtoms::thead,
-                                   nsGkAtoms::tr,
-                                   nsGkAtoms::td,
-                                   nsGkAtoms::th,
-                                   nsGkAtoms::div,
-                                   nsGkAtoms::p,
-                                   nsGkAtoms::h1,
-                                   nsGkAtoms::h2,
-                                   nsGkAtoms::h3,
-                                   nsGkAtoms::h4,
-                                   nsGkAtoms::h5,
-                                   nsGkAtoms::h6);
+bool HTMLEditUtils::SupportsAlignAttr(nsINode& aNode) {
+  return aNode.IsAnyOfHTMLElements(
+      nsGkAtoms::hr, nsGkAtoms::table, nsGkAtoms::tbody, nsGkAtoms::tfoot,
+      nsGkAtoms::thead, nsGkAtoms::tr, nsGkAtoms::td, nsGkAtoms::th,
+      nsGkAtoms::div, nsGkAtoms::p, nsGkAtoms::h1, nsGkAtoms::h2, nsGkAtoms::h3,
+      nsGkAtoms::h4, nsGkAtoms::h5, nsGkAtoms::h6);
 }
 
 
@@ -327,94 +240,93 @@ HTMLEditUtils::SupportsAlignAttr(nsINode& aNode)
 
 
 
-#define GROUP_NONE             0
+#define GROUP_NONE 0
 
 
-#define GROUP_TOPLEVEL         (1 << 1)
+#define GROUP_TOPLEVEL (1 << 1)
 
 
-#define GROUP_HEAD_CONTENT     (1 << 2)
+#define GROUP_HEAD_CONTENT (1 << 2)
 
 
-#define GROUP_FONTSTYLE        (1 << 3)
-
-
-
-#define GROUP_PHRASE           (1 << 4)
+#define GROUP_FONTSTYLE (1 << 3)
 
 
 
-#define GROUP_SPECIAL          (1 << 5)
-
-
-#define GROUP_FORMCONTROL      (1 << 6)
+#define GROUP_PHRASE (1 << 4)
 
 
 
+#define GROUP_SPECIAL (1 << 5)
 
 
-#define GROUP_BLOCK            (1 << 7)
+#define GROUP_FORMCONTROL (1 << 6)
 
 
-#define GROUP_FRAME            (1 << 8)
 
 
-#define GROUP_TABLE_CONTENT    (1 << 9)
+
+#define GROUP_BLOCK (1 << 7)
 
 
-#define GROUP_TBODY_CONTENT    (1 << 10)
+#define GROUP_FRAME (1 << 8)
 
 
-#define GROUP_TR_CONTENT       (1 << 11)
+#define GROUP_TABLE_CONTENT (1 << 9)
+
+
+#define GROUP_TBODY_CONTENT (1 << 10)
+
+
+#define GROUP_TR_CONTENT (1 << 11)
 
 
 #define GROUP_COLGROUP_CONTENT (1 << 12)
 
 
-#define GROUP_OBJECT_CONTENT   (1 << 13)
+#define GROUP_OBJECT_CONTENT (1 << 13)
 
 
-#define GROUP_LI               (1 << 14)
+#define GROUP_LI (1 << 14)
 
 
-#define GROUP_MAP_CONTENT      (1 << 15)
+#define GROUP_MAP_CONTENT (1 << 15)
 
 
-#define GROUP_SELECT_CONTENT   (1 << 16)
+#define GROUP_SELECT_CONTENT (1 << 16)
 
 
-#define GROUP_OPTIONS          (1 << 17)
+#define GROUP_OPTIONS (1 << 17)
 
 
-#define GROUP_DL_CONTENT       (1 << 18)
+#define GROUP_DL_CONTENT (1 << 18)
 
 
-#define GROUP_P                (1 << 19)
+#define GROUP_P (1 << 19)
 
 
-#define GROUP_LEAF             (1 << 20)
+#define GROUP_LEAF (1 << 20)
 
 
 
-#define GROUP_OL_UL            (1 << 21)
+#define GROUP_OL_UL (1 << 21)
 
 
-#define GROUP_HEADING          (1 << 22)
+#define GROUP_HEADING (1 << 22)
 
 
-#define GROUP_FIGCAPTION       (1 << 23)
+#define GROUP_FIGCAPTION (1 << 23)
 
 
-#define GROUP_PICTURE_CONTENT  (1 << 24)
+#define GROUP_PICTURE_CONTENT (1 << 24)
 
-#define GROUP_INLINE_ELEMENT \
+#define GROUP_INLINE_ELEMENT                                            \
   (GROUP_FONTSTYLE | GROUP_PHRASE | GROUP_SPECIAL | GROUP_FORMCONTROL | \
    GROUP_LEAF)
 
 #define GROUP_FLOW_ELEMENT (GROUP_INLINE_ELEMENT | GROUP_BLOCK)
 
-struct ElementInfo final
-{
+struct ElementInfo final {
 #ifdef DEBUG
   nsHTMLTag mTag;
 #endif
@@ -433,182 +345,169 @@ struct ElementInfo final
 #endif
 
 static const ElementInfo kElements[eHTMLTag_userdefined] = {
-  ELEM(a, true, false, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
-  ELEM(abbr, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(acronym, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(address, true, true, GROUP_BLOCK, GROUP_INLINE_ELEMENT | GROUP_P),
-  
-  
-  
-  
-  ELEM(applet,
-       true,
-       true,
-       GROUP_SPECIAL | GROUP_BLOCK,
-       GROUP_FLOW_ELEMENT | GROUP_OBJECT_CONTENT),
-  ELEM(area, false, false, GROUP_MAP_CONTENT, GROUP_NONE),
-  ELEM(article, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(aside, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(audio, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(b, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
-  ELEM(base, false, false, GROUP_HEAD_CONTENT, GROUP_NONE),
-  ELEM(basefont, false, false, GROUP_SPECIAL, GROUP_NONE),
-  ELEM(bdi, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
-  ELEM(bdo, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
-  ELEM(bgsound, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(big, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
-  ELEM(blockquote, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(body, true, true, GROUP_TOPLEVEL, GROUP_FLOW_ELEMENT),
-  ELEM(br, false, false, GROUP_SPECIAL, GROUP_NONE),
-  ELEM(button, true, true, GROUP_FORMCONTROL | GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(canvas, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(caption, true, true, GROUP_NONE, GROUP_INLINE_ELEMENT),
-  ELEM(center, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(cite, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(code, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(col,
-       false,
-       false,
-       GROUP_TABLE_CONTENT | GROUP_COLGROUP_CONTENT,
-       GROUP_NONE),
-  ELEM(colgroup, true, false, GROUP_NONE, GROUP_COLGROUP_CONTENT),
-  ELEM(data, true, false, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(datalist,
-       true,
-       false,
-       GROUP_PHRASE,
-       GROUP_OPTIONS | GROUP_INLINE_ELEMENT),
-  ELEM(dd, true, false, GROUP_DL_CONTENT, GROUP_FLOW_ELEMENT),
-  ELEM(del, true, true, GROUP_PHRASE | GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(details, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(dfn, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(dialog, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(dir, true, false, GROUP_BLOCK, GROUP_LI),
-  ELEM(div, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(dl, true, false, GROUP_BLOCK, GROUP_DL_CONTENT),
-  ELEM(dt, true, true, GROUP_DL_CONTENT, GROUP_INLINE_ELEMENT),
-  ELEM(em, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(embed, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(fieldset, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(figcaption, true, false, GROUP_FIGCAPTION, GROUP_FLOW_ELEMENT),
-  ELEM(figure, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT | GROUP_FIGCAPTION),
-  ELEM(font, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
-  ELEM(footer, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(form, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(frame, false, false, GROUP_FRAME, GROUP_NONE),
-  ELEM(frameset, true, true, GROUP_FRAME, GROUP_FRAME),
-  ELEM(h1, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
-  ELEM(h2, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
-  ELEM(h3, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
-  ELEM(h4, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
-  ELEM(h5, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
-  ELEM(h6, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
-  ELEM(head, true, false, GROUP_TOPLEVEL, GROUP_HEAD_CONTENT),
-  ELEM(header, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(hgroup, true, false, GROUP_BLOCK, GROUP_HEADING),
-  ELEM(hr, false, false, GROUP_BLOCK, GROUP_NONE),
-  ELEM(html, true, false, GROUP_TOPLEVEL, GROUP_TOPLEVEL),
-  ELEM(i, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
-  ELEM(iframe, true, true, GROUP_SPECIAL | GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(image, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(img, false, false, GROUP_SPECIAL | GROUP_PICTURE_CONTENT, GROUP_NONE),
-  ELEM(input, false, false, GROUP_FORMCONTROL, GROUP_NONE),
-  ELEM(ins, true, true, GROUP_PHRASE | GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(kbd, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(keygen, false, false, GROUP_FORMCONTROL, GROUP_NONE),
-  ELEM(label, true, false, GROUP_FORMCONTROL, GROUP_INLINE_ELEMENT),
-  ELEM(legend, true, true, GROUP_NONE, GROUP_INLINE_ELEMENT),
-  ELEM(li, true, false, GROUP_LI, GROUP_FLOW_ELEMENT),
-  ELEM(link, false, false, GROUP_HEAD_CONTENT, GROUP_NONE),
-  ELEM(listing, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(main, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(map, true, true, GROUP_SPECIAL, GROUP_BLOCK | GROUP_MAP_CONTENT),
-  ELEM(mark, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(marquee, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(menu, true, true, GROUP_BLOCK, GROUP_LI | GROUP_FLOW_ELEMENT),
-  ELEM(menuitem, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(meta, false, false, GROUP_HEAD_CONTENT, GROUP_NONE),
-  ELEM(meter, true, false, GROUP_SPECIAL, GROUP_FLOW_ELEMENT),
-  ELEM(multicol, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(nav, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(nobr, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(noembed, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(noframes, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(noscript, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(object,
-       true,
-       true,
-       GROUP_SPECIAL | GROUP_BLOCK,
-       GROUP_FLOW_ELEMENT | GROUP_OBJECT_CONTENT),
-  
-  ELEM(ol, true, true, GROUP_BLOCK | GROUP_OL_UL, GROUP_LI | GROUP_OL_UL),
-  ELEM(optgroup, true, false, GROUP_SELECT_CONTENT, GROUP_OPTIONS),
-  ELEM(option, true, false, GROUP_SELECT_CONTENT | GROUP_OPTIONS, GROUP_LEAF),
-  ELEM(output, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
-  ELEM(p, true, false, GROUP_BLOCK | GROUP_P, GROUP_INLINE_ELEMENT),
-  ELEM(param, false, false, GROUP_OBJECT_CONTENT, GROUP_NONE),
-  ELEM(picture, true, false, GROUP_SPECIAL, GROUP_PICTURE_CONTENT),
-  ELEM(plaintext, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(pre, true, true, GROUP_BLOCK, GROUP_INLINE_ELEMENT),
-  ELEM(progress, true, false, GROUP_SPECIAL, GROUP_FLOW_ELEMENT),
-  ELEM(q, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
-  ELEM(rb, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(rp, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(rt, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(rtc, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(ruby, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(s, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
-  ELEM(samp, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(script, true, false, GROUP_HEAD_CONTENT | GROUP_SPECIAL, GROUP_LEAF),
-  ELEM(section, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(select, true, false, GROUP_FORMCONTROL, GROUP_SELECT_CONTENT),
-  ELEM(small, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
-  ELEM(slot, true, false, GROUP_NONE, GROUP_FLOW_ELEMENT),
-  ELEM(source, false, false, GROUP_PICTURE_CONTENT, GROUP_NONE),
-  ELEM(span, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
-  ELEM(strike, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
-  ELEM(strong, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(style, true, false, GROUP_HEAD_CONTENT, GROUP_LEAF),
-  ELEM(sub, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
-  ELEM(summary, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
-  ELEM(sup, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
-  ELEM(table, true, false, GROUP_BLOCK, GROUP_TABLE_CONTENT),
-  ELEM(tbody, true, false, GROUP_TABLE_CONTENT, GROUP_TBODY_CONTENT),
-  ELEM(td, true, false, GROUP_TR_CONTENT, GROUP_FLOW_ELEMENT),
-  ELEM(textarea, true, false, GROUP_FORMCONTROL, GROUP_LEAF),
-  ELEM(tfoot, true, false, GROUP_NONE, GROUP_TBODY_CONTENT),
-  ELEM(th, true, false, GROUP_TR_CONTENT, GROUP_FLOW_ELEMENT),
-  ELEM(thead, true, false, GROUP_NONE, GROUP_TBODY_CONTENT),
-  ELEM(template, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(time, true, false, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(title, true, false, GROUP_HEAD_CONTENT, GROUP_LEAF),
-  ELEM(tr, true, false, GROUP_TBODY_CONTENT, GROUP_TR_CONTENT),
-  ELEM(track, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(tt, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
-  ELEM(u, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
-  
-  ELEM(ul, true, true, GROUP_BLOCK | GROUP_OL_UL, GROUP_LI | GROUP_OL_UL),
-  ELEM(var, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
-  ELEM(video, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(wbr, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(xmp, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(a, true, false, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
+    ELEM(abbr, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(acronym, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(address, true, true, GROUP_BLOCK, GROUP_INLINE_ELEMENT | GROUP_P),
+    
+    
+    
+    
+    ELEM(applet, true, true, GROUP_SPECIAL | GROUP_BLOCK,
+         GROUP_FLOW_ELEMENT | GROUP_OBJECT_CONTENT),
+    ELEM(area, false, false, GROUP_MAP_CONTENT, GROUP_NONE),
+    ELEM(article, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(aside, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(audio, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(b, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
+    ELEM(base, false, false, GROUP_HEAD_CONTENT, GROUP_NONE),
+    ELEM(basefont, false, false, GROUP_SPECIAL, GROUP_NONE),
+    ELEM(bdi, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
+    ELEM(bdo, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
+    ELEM(bgsound, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(big, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
+    ELEM(blockquote, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(body, true, true, GROUP_TOPLEVEL, GROUP_FLOW_ELEMENT),
+    ELEM(br, false, false, GROUP_SPECIAL, GROUP_NONE),
+    ELEM(button, true, true, GROUP_FORMCONTROL | GROUP_BLOCK,
+         GROUP_FLOW_ELEMENT),
+    ELEM(canvas, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(caption, true, true, GROUP_NONE, GROUP_INLINE_ELEMENT),
+    ELEM(center, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(cite, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(code, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(col, false, false, GROUP_TABLE_CONTENT | GROUP_COLGROUP_CONTENT,
+         GROUP_NONE),
+    ELEM(colgroup, true, false, GROUP_NONE, GROUP_COLGROUP_CONTENT),
+    ELEM(data, true, false, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(datalist, true, false, GROUP_PHRASE,
+         GROUP_OPTIONS | GROUP_INLINE_ELEMENT),
+    ELEM(dd, true, false, GROUP_DL_CONTENT, GROUP_FLOW_ELEMENT),
+    ELEM(del, true, true, GROUP_PHRASE | GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(details, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(dfn, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(dialog, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(dir, true, false, GROUP_BLOCK, GROUP_LI),
+    ELEM(div, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(dl, true, false, GROUP_BLOCK, GROUP_DL_CONTENT),
+    ELEM(dt, true, true, GROUP_DL_CONTENT, GROUP_INLINE_ELEMENT),
+    ELEM(em, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(embed, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(fieldset, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(figcaption, true, false, GROUP_FIGCAPTION, GROUP_FLOW_ELEMENT),
+    ELEM(figure, true, true, GROUP_BLOCK,
+         GROUP_FLOW_ELEMENT | GROUP_FIGCAPTION),
+    ELEM(font, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
+    ELEM(footer, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(form, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(frame, false, false, GROUP_FRAME, GROUP_NONE),
+    ELEM(frameset, true, true, GROUP_FRAME, GROUP_FRAME),
+    ELEM(h1, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
+    ELEM(h2, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
+    ELEM(h3, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
+    ELEM(h4, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
+    ELEM(h5, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
+    ELEM(h6, true, false, GROUP_BLOCK | GROUP_HEADING, GROUP_INLINE_ELEMENT),
+    ELEM(head, true, false, GROUP_TOPLEVEL, GROUP_HEAD_CONTENT),
+    ELEM(header, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(hgroup, true, false, GROUP_BLOCK, GROUP_HEADING),
+    ELEM(hr, false, false, GROUP_BLOCK, GROUP_NONE),
+    ELEM(html, true, false, GROUP_TOPLEVEL, GROUP_TOPLEVEL),
+    ELEM(i, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
+    ELEM(iframe, true, true, GROUP_SPECIAL | GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(image, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(img, false, false, GROUP_SPECIAL | GROUP_PICTURE_CONTENT, GROUP_NONE),
+    ELEM(input, false, false, GROUP_FORMCONTROL, GROUP_NONE),
+    ELEM(ins, true, true, GROUP_PHRASE | GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(kbd, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(keygen, false, false, GROUP_FORMCONTROL, GROUP_NONE),
+    ELEM(label, true, false, GROUP_FORMCONTROL, GROUP_INLINE_ELEMENT),
+    ELEM(legend, true, true, GROUP_NONE, GROUP_INLINE_ELEMENT),
+    ELEM(li, true, false, GROUP_LI, GROUP_FLOW_ELEMENT),
+    ELEM(link, false, false, GROUP_HEAD_CONTENT, GROUP_NONE),
+    ELEM(listing, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(main, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(map, true, true, GROUP_SPECIAL, GROUP_BLOCK | GROUP_MAP_CONTENT),
+    ELEM(mark, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(marquee, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(menu, true, true, GROUP_BLOCK, GROUP_LI | GROUP_FLOW_ELEMENT),
+    ELEM(menuitem, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(meta, false, false, GROUP_HEAD_CONTENT, GROUP_NONE),
+    ELEM(meter, true, false, GROUP_SPECIAL, GROUP_FLOW_ELEMENT),
+    ELEM(multicol, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(nav, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(nobr, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(noembed, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(noframes, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(noscript, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(object, true, true, GROUP_SPECIAL | GROUP_BLOCK,
+         GROUP_FLOW_ELEMENT | GROUP_OBJECT_CONTENT),
+    
+    ELEM(ol, true, true, GROUP_BLOCK | GROUP_OL_UL, GROUP_LI | GROUP_OL_UL),
+    ELEM(optgroup, true, false, GROUP_SELECT_CONTENT, GROUP_OPTIONS),
+    ELEM(option, true, false, GROUP_SELECT_CONTENT | GROUP_OPTIONS, GROUP_LEAF),
+    ELEM(output, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
+    ELEM(p, true, false, GROUP_BLOCK | GROUP_P, GROUP_INLINE_ELEMENT),
+    ELEM(param, false, false, GROUP_OBJECT_CONTENT, GROUP_NONE),
+    ELEM(picture, true, false, GROUP_SPECIAL, GROUP_PICTURE_CONTENT),
+    ELEM(plaintext, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(pre, true, true, GROUP_BLOCK, GROUP_INLINE_ELEMENT),
+    ELEM(progress, true, false, GROUP_SPECIAL, GROUP_FLOW_ELEMENT),
+    ELEM(q, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
+    ELEM(rb, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(rp, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(rt, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(rtc, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(ruby, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(s, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
+    ELEM(samp, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(script, true, false, GROUP_HEAD_CONTENT | GROUP_SPECIAL, GROUP_LEAF),
+    ELEM(section, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(select, true, false, GROUP_FORMCONTROL, GROUP_SELECT_CONTENT),
+    ELEM(small, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
+    ELEM(slot, true, false, GROUP_NONE, GROUP_FLOW_ELEMENT),
+    ELEM(source, false, false, GROUP_PICTURE_CONTENT, GROUP_NONE),
+    ELEM(span, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
+    ELEM(strike, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
+    ELEM(strong, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(style, true, false, GROUP_HEAD_CONTENT, GROUP_LEAF),
+    ELEM(sub, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
+    ELEM(summary, true, true, GROUP_BLOCK, GROUP_FLOW_ELEMENT),
+    ELEM(sup, true, true, GROUP_SPECIAL, GROUP_INLINE_ELEMENT),
+    ELEM(table, true, false, GROUP_BLOCK, GROUP_TABLE_CONTENT),
+    ELEM(tbody, true, false, GROUP_TABLE_CONTENT, GROUP_TBODY_CONTENT),
+    ELEM(td, true, false, GROUP_TR_CONTENT, GROUP_FLOW_ELEMENT),
+    ELEM(textarea, true, false, GROUP_FORMCONTROL, GROUP_LEAF),
+    ELEM(tfoot, true, false, GROUP_NONE, GROUP_TBODY_CONTENT),
+    ELEM(th, true, false, GROUP_TR_CONTENT, GROUP_FLOW_ELEMENT),
+    ELEM(thead, true, false, GROUP_NONE, GROUP_TBODY_CONTENT),
+    ELEM(template, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(time, true, false, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(title, true, false, GROUP_HEAD_CONTENT, GROUP_LEAF),
+    ELEM(tr, true, false, GROUP_TBODY_CONTENT, GROUP_TR_CONTENT),
+    ELEM(track, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(tt, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
+    ELEM(u, true, true, GROUP_FONTSTYLE, GROUP_INLINE_ELEMENT),
+    
+    ELEM(ul, true, true, GROUP_BLOCK | GROUP_OL_UL, GROUP_LI | GROUP_OL_UL),
+    ELEM(var, true, true, GROUP_PHRASE, GROUP_INLINE_ELEMENT),
+    ELEM(video, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(wbr, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(xmp, false, false, GROUP_NONE, GROUP_NONE),
 
-  
-  ELEM(text, false, false, GROUP_LEAF, GROUP_NONE),
-  ELEM(whitespace, false, false, GROUP_LEAF, GROUP_NONE),
-  ELEM(newline, false, false, GROUP_LEAF, GROUP_NONE),
-  ELEM(comment, false, false, GROUP_LEAF, GROUP_NONE),
-  ELEM(entity, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(doctypeDecl, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(markupDecl, false, false, GROUP_NONE, GROUP_NONE),
-  ELEM(instruction, false, false, GROUP_NONE, GROUP_NONE),
+    
+    ELEM(text, false, false, GROUP_LEAF, GROUP_NONE),
+    ELEM(whitespace, false, false, GROUP_LEAF, GROUP_NONE),
+    ELEM(newline, false, false, GROUP_LEAF, GROUP_NONE),
+    ELEM(comment, false, false, GROUP_LEAF, GROUP_NONE),
+    ELEM(entity, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(doctypeDecl, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(markupDecl, false, false, GROUP_NONE, GROUP_NONE),
+    ELEM(instruction, false, false, GROUP_NONE, GROUP_NONE),
 
-  ELEM(userdefined, true, false, GROUP_NONE, GROUP_FLOW_ELEMENT)
-};
+    ELEM(userdefined, true, false, GROUP_NONE, GROUP_FLOW_ELEMENT)};
 
-bool
-HTMLEditUtils::CanContain(int32_t aParent, int32_t aChild)
-{
+bool HTMLEditUtils::CanContain(int32_t aParent, int32_t aChild) {
   NS_ASSERTION(aParent > eHTMLTag_unknown && aParent <= eHTMLTag_userdefined,
                "aParent out of range!");
   NS_ASSERTION(aChild > eHTMLTag_unknown && aChild <= eHTMLTag_userdefined,
@@ -629,14 +528,8 @@ HTMLEditUtils::CanContain(int32_t aParent, int32_t aChild)
   
   if (aParent == eHTMLTag_button) {
     static const nsHTMLTag kButtonExcludeKids[] = {
-      eHTMLTag_a,
-      eHTMLTag_fieldset,
-      eHTMLTag_form,
-      eHTMLTag_iframe,
-      eHTMLTag_input,
-      eHTMLTag_select,
-      eHTMLTag_textarea
-    };
+        eHTMLTag_a,     eHTMLTag_fieldset, eHTMLTag_form,    eHTMLTag_iframe,
+        eHTMLTag_input, eHTMLTag_select,   eHTMLTag_textarea};
 
     uint32_t j;
     for (j = 0; j < ArrayLength(kButtonExcludeKids); ++j) {
@@ -665,44 +558,26 @@ HTMLEditUtils::CanContain(int32_t aParent, int32_t aChild)
   return (parent.mCanContainGroups & child.mGroup) != 0;
 }
 
-bool
-HTMLEditUtils::IsContainer(int32_t aTag)
-{
+bool HTMLEditUtils::IsContainer(int32_t aTag) {
   NS_ASSERTION(aTag > eHTMLTag_unknown && aTag <= eHTMLTag_userdefined,
                "aTag out of range!");
 
   return kElements[aTag - 1].mIsContainer;
 }
 
-bool
-HTMLEditUtils::IsNonListSingleLineContainer(nsINode& aNode)
-{
-  return aNode.IsAnyOfHTMLElements(nsGkAtoms::address,
-                                   nsGkAtoms::div,
-                                   nsGkAtoms::h1,
-                                   nsGkAtoms::h2,
-                                   nsGkAtoms::h3,
-                                   nsGkAtoms::h4,
-                                   nsGkAtoms::h5,
-                                   nsGkAtoms::h6,
-                                   nsGkAtoms::listing,
-                                   nsGkAtoms::p,
-                                   nsGkAtoms::pre,
-                                   nsGkAtoms::xmp);
+bool HTMLEditUtils::IsNonListSingleLineContainer(nsINode& aNode) {
+  return aNode.IsAnyOfHTMLElements(
+      nsGkAtoms::address, nsGkAtoms::div, nsGkAtoms::h1, nsGkAtoms::h2,
+      nsGkAtoms::h3, nsGkAtoms::h4, nsGkAtoms::h5, nsGkAtoms::h6,
+      nsGkAtoms::listing, nsGkAtoms::p, nsGkAtoms::pre, nsGkAtoms::xmp);
 }
 
-bool
-HTMLEditUtils::IsSingleLineContainer(nsINode& aNode)
-{
+bool HTMLEditUtils::IsSingleLineContainer(nsINode& aNode) {
   return IsNonListSingleLineContainer(aNode) ||
-         aNode.IsAnyOfHTMLElements(nsGkAtoms::li,
-                                   nsGkAtoms::dt,
-                                   nsGkAtoms::dd);
+         aNode.IsAnyOfHTMLElements(nsGkAtoms::li, nsGkAtoms::dt, nsGkAtoms::dd);
 }
 
-EditAction
-HTMLEditUtils::GetEditActionForInsert(const nsAtom& aTagName)
-{
+EditAction HTMLEditUtils::GetEditActionForInsert(const nsAtom& aTagName) {
   
   
   if (&aTagName == nsGkAtoms::ul) {
@@ -720,9 +595,7 @@ HTMLEditUtils::GetEditActionForInsert(const nsAtom& aTagName)
   return EditAction::eInsertNode;
 }
 
-EditAction
-HTMLEditUtils::GetEditActionForRemoveList(const nsAtom& aTagName)
-{
+EditAction HTMLEditUtils::GetEditActionForRemoveList(const nsAtom& aTagName) {
   
   
   if (&aTagName == nsGkAtoms::ul) {
@@ -736,64 +609,59 @@ HTMLEditUtils::GetEditActionForRemoveList(const nsAtom& aTagName)
   return EditAction::eRemoveListElement;
 }
 
-EditAction
-HTMLEditUtils::GetEditActionForInsert(const Element& aElement)
-{
+EditAction HTMLEditUtils::GetEditActionForInsert(const Element& aElement) {
   return GetEditActionForInsert(*aElement.NodeInfo()->NameAtom());
 }
 
-EditAction
-HTMLEditUtils::GetEditActionForFormatText(const nsAtom& aProperty,
-                                          const nsAtom* aAttribute,
-                                          bool aToSetStyle)
-{
+EditAction HTMLEditUtils::GetEditActionForFormatText(const nsAtom& aProperty,
+                                                     const nsAtom* aAttribute,
+                                                     bool aToSetStyle) {
   
   
   if (&aProperty == nsGkAtoms::b) {
-    return aToSetStyle ? EditAction::eSetFontWeightProperty :
-                         EditAction::eRemoveFontWeightProperty;
+    return aToSetStyle ? EditAction::eSetFontWeightProperty
+                       : EditAction::eRemoveFontWeightProperty;
   }
   if (&aProperty == nsGkAtoms::i) {
-    return aToSetStyle ? EditAction::eSetTextStyleProperty :
-                         EditAction::eRemoveTextStyleProperty;
+    return aToSetStyle ? EditAction::eSetTextStyleProperty
+                       : EditAction::eRemoveTextStyleProperty;
   }
   if (&aProperty == nsGkAtoms::u) {
-    return aToSetStyle ? EditAction::eSetTextDecorationPropertyUnderline :
-                         EditAction::eRemoveTextDecorationPropertyUnderline;
+    return aToSetStyle ? EditAction::eSetTextDecorationPropertyUnderline
+                       : EditAction::eRemoveTextDecorationPropertyUnderline;
   }
   if (&aProperty == nsGkAtoms::strike) {
-    return aToSetStyle ? EditAction::eSetTextDecorationPropertyLineThrough :
-                         EditAction::eRemoveTextDecorationPropertyLineThrough;
+    return aToSetStyle ? EditAction::eSetTextDecorationPropertyLineThrough
+                       : EditAction::eRemoveTextDecorationPropertyLineThrough;
   }
   if (&aProperty == nsGkAtoms::sup) {
-    return aToSetStyle ? EditAction::eSetVerticalAlignPropertySuper :
-                         EditAction::eRemoveVerticalAlignPropertySuper;
+    return aToSetStyle ? EditAction::eSetVerticalAlignPropertySuper
+                       : EditAction::eRemoveVerticalAlignPropertySuper;
   }
   if (&aProperty == nsGkAtoms::sub) {
-    return aToSetStyle ? EditAction::eSetVerticalAlignPropertySub :
-                         EditAction::eRemoveVerticalAlignPropertySub;
+    return aToSetStyle ? EditAction::eSetVerticalAlignPropertySub
+                       : EditAction::eRemoveVerticalAlignPropertySub;
   }
   if (&aProperty == nsGkAtoms::font) {
     if (aAttribute == nsGkAtoms::face) {
-      return aToSetStyle ? EditAction::eSetFontFamilyProperty :
-                           EditAction::eRemoveFontFamilyProperty;
+      return aToSetStyle ? EditAction::eSetFontFamilyProperty
+                         : EditAction::eRemoveFontFamilyProperty;
     }
     if (aAttribute == nsGkAtoms::color) {
-      return aToSetStyle ? EditAction::eSetColorProperty :
-                           EditAction::eRemoveColorProperty;
+      return aToSetStyle ? EditAction::eSetColorProperty
+                         : EditAction::eRemoveColorProperty;
     }
     if (aAttribute == nsGkAtoms::bgcolor) {
-      return aToSetStyle ? EditAction::eSetBackgroundColorPropertyInline :
-                           EditAction::eRemoveBackgroundColorPropertyInline;
+      return aToSetStyle ? EditAction::eSetBackgroundColorPropertyInline
+                         : EditAction::eRemoveBackgroundColorPropertyInline;
     }
   }
-  return aToSetStyle ? EditAction::eSetInlineStyleProperty :
-                       EditAction::eRemoveInlineStyleProperty;
+  return aToSetStyle ? EditAction::eSetInlineStyleProperty
+                     : EditAction::eRemoveInlineStyleProperty;
 }
 
-EditAction
-HTMLEditUtils::GetEditActionForAlignment(const nsAString& aAlignType)
-{
+EditAction HTMLEditUtils::GetEditActionForAlignment(
+    const nsAString& aAlignType) {
   
   
   if (aAlignType.EqualsLiteral("left")) {
@@ -811,4 +679,4 @@ HTMLEditUtils::GetEditActionForAlignment(const nsAString& aAlignType)
   return EditAction::eSetAlignment;
 }
 
-} 
+}  

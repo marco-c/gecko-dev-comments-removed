@@ -52,16 +52,16 @@ OSVR_EXTERN_C_BEGIN
 
 
 typedef struct OSVR_Pose3 {
-    
-    OSVR_Vec3 translation;
-    
-    OSVR_Quaternion rotation;
+  
+  OSVR_Vec3 translation;
+  
+  OSVR_Quaternion rotation;
 } OSVR_Pose3;
 
 
 OSVR_INLINE void osvrPose3SetIdentity(OSVR_Pose3 *pose) {
-    osvrQuatSetIdentity(&(pose->rotation));
-    osvrVec3Zero(&(pose->translation));
+  osvrQuatSetIdentity(&(pose->rotation));
+  osvrVec3Zero(&(pose->translation));
 }
 
 

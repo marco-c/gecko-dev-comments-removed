@@ -14,20 +14,18 @@ namespace dom {
 
 class ClientHandle;
 
-class ClientHandleOpChild final : public PClientHandleOpChild
-{
+class ClientHandleOpChild final : public PClientHandleOpChild {
   RefPtr<ClientHandle> mClientHandle;
   const ClientOpCallback mResolveCallback;
   const ClientOpCallback mRejectCallback;
 
   
-  void
-  ActorDestroy(ActorDestroyReason aReason) override;
+  void ActorDestroy(ActorDestroyReason aReason) override;
 
-  mozilla::ipc::IPCResult
-  Recv__delete__(const ClientOpResult& aResult) override;
+  mozilla::ipc::IPCResult Recv__delete__(
+      const ClientOpResult& aResult) override;
 
-public:
+ public:
   ClientHandleOpChild(ClientHandle* aClientHandle,
                       const ClientOpConstructorArgs& aArgs,
                       const ClientOpCallback&& aResolveCallback,
@@ -36,7 +34,7 @@ public:
   ~ClientHandleOpChild() = default;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

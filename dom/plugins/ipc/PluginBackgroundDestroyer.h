@@ -23,16 +23,17 @@ namespace plugins {
 
 
 
-class PluginBackgroundDestroyerParent : public PPluginBackgroundDestroyerParent {
-public:
-    explicit PluginBackgroundDestroyerParent(gfxASurface* aDyingBackground);
+class PluginBackgroundDestroyerParent
+    : public PPluginBackgroundDestroyerParent {
+ public:
+  explicit PluginBackgroundDestroyerParent(gfxASurface* aDyingBackground);
 
-    virtual ~PluginBackgroundDestroyerParent();
+  virtual ~PluginBackgroundDestroyerParent();
 
-private:
-    virtual void ActorDestroy(ActorDestroyReason why) override;
+ private:
+  virtual void ActorDestroy(ActorDestroyReason why) override;
 
-    RefPtr<gfxASurface> mDyingBackground;
+  RefPtr<gfxASurface> mDyingBackground;
 };
 
 
@@ -40,17 +41,16 @@ private:
 
 
 class PluginBackgroundDestroyerChild : public PPluginBackgroundDestroyerChild {
-public:
-    PluginBackgroundDestroyerChild() { }
-    virtual ~PluginBackgroundDestroyerChild() { }
+ public:
+  PluginBackgroundDestroyerChild() {}
+  virtual ~PluginBackgroundDestroyerChild() {}
 
-private:
-    
-    virtual void ActorDestroy(ActorDestroyReason why) override
-    { }
+ private:
+  
+  virtual void ActorDestroy(ActorDestroyReason why) override {}
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

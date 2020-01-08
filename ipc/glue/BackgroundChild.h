@@ -19,7 +19,7 @@ class BlobImpl;
 class ContentChild;
 class ContentParent;
 
-} 
+}  
 
 namespace ipc {
 
@@ -43,33 +43,29 @@ class PBackgroundChild;
 
 
 
-class BackgroundChild final
-{
+class BackgroundChild final {
   friend class mozilla::dom::ContentChild;
   friend class mozilla::dom::ContentParent;
 
   typedef mozilla::ipc::Transport Transport;
 
-public:
+ public:
   
-  static PBackgroundChild*
-  GetForCurrentThread();
+  static PBackgroundChild* GetForCurrentThread();
 
   
-  static PBackgroundChild*
-  GetOrCreateForCurrentThread(nsIEventTarget* aMainEventTarget = nullptr);
+  static PBackgroundChild* GetOrCreateForCurrentThread(
+      nsIEventTarget* aMainEventTarget = nullptr);
 
   
-  static void
-  CloseForCurrentThread();
+  static void CloseForCurrentThread();
 
-private:
+ private:
   
-  static void
-  Startup();
+  static void Startup();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

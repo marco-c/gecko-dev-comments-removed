@@ -36,9 +36,8 @@ class AddrInfo;
 
 
 
-nsresult
-GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily, uint16_t aFlags,
-            AddrInfo** aAddrInfo, bool aGetTtl);
+nsresult GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily,
+                     uint16_t aFlags, AddrInfo** aAddrInfo, bool aGetTtl);
 
 
 
@@ -46,8 +45,7 @@ GetAddrInfo(const nsACString& aHost, uint16_t aAddressFamily, uint16_t aFlags,
 
 
 
-nsresult
-GetAddrInfoInit();
+nsresult GetAddrInfoInit();
 
 
 
@@ -56,10 +54,9 @@ GetAddrInfoInit();
 
 
 
-nsresult
-GetAddrInfoShutdown();
+nsresult GetAddrInfoShutdown();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

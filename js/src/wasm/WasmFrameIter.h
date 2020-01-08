@@ -30,7 +30,7 @@ class MacroAssembler;
 struct Register;
 class Label;
 enum class FrameType;
-} 
+}  
 
 namespace wasm {
 
@@ -54,46 +54,45 @@ typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
 
 
 
-class WasmFrameIter
-{
-  public:
-    enum class Unwind { True, False };
-    static constexpr uint32_t ColumnBit = 1u << 31;
+class WasmFrameIter {
+ public:
+  enum class Unwind { True, False };
+  static constexpr uint32_t ColumnBit = 1u << 31;
 
-  private:
-    jit::JitActivation* activation_;
-    const Code* code_;
-    const CodeRange* codeRange_;
-    unsigned lineOrBytecode_;
-    Frame* fp_;
-    uint8_t* unwoundIonCallerFP_;
-    jit::FrameType unwoundIonFrameType_;
-    Unwind unwind_;
-    void** unwoundAddressOfReturnAddress_;
+ private:
+  jit::JitActivation* activation_;
+  const Code* code_;
+  const CodeRange* codeRange_;
+  unsigned lineOrBytecode_;
+  Frame* fp_;
+  uint8_t* unwoundIonCallerFP_;
+  jit::FrameType unwoundIonFrameType_;
+  Unwind unwind_;
+  void** unwoundAddressOfReturnAddress_;
 
-    void popFrame();
+  void popFrame();
 
-  public:
-    
-    explicit WasmFrameIter(jit::JitActivation* activation, Frame* fp = nullptr);
-    const jit::JitActivation* activation() const { return activation_; }
-    void setUnwind(Unwind unwind) { unwind_ = unwind; }
-    void operator++();
-    bool done() const;
-    const char* filename() const;
-    const char16_t* displayURL() const;
-    bool mutedErrors() const;
-    JSAtom* functionDisplayAtom() const;
-    unsigned lineOrBytecode() const;
-    uint32_t funcIndex() const;
-    unsigned computeLine(uint32_t* column) const;
-    const CodeRange* codeRange() const { return codeRange_; }
-    Instance* instance() const;
-    void** unwoundAddressOfReturnAddress() const;
-    bool debugEnabled() const;
-    DebugFrame* debugFrame() const;
-    jit::FrameType unwoundIonFrameType() const;
-    uint8_t* unwoundIonCallerFP() const { return unwoundIonCallerFP_; }
+ public:
+  
+  explicit WasmFrameIter(jit::JitActivation* activation, Frame* fp = nullptr);
+  const jit::JitActivation* activation() const { return activation_; }
+  void setUnwind(Unwind unwind) { unwind_ = unwind; }
+  void operator++();
+  bool done() const;
+  const char* filename() const;
+  const char16_t* displayURL() const;
+  bool mutedErrors() const;
+  JSAtom* functionDisplayAtom() const;
+  unsigned lineOrBytecode() const;
+  uint32_t funcIndex() const;
+  unsigned computeLine(uint32_t* column) const;
+  const CodeRange* codeRange() const { return codeRange_; }
+  Instance* instance() const;
+  void** unwoundAddressOfReturnAddress() const;
+  bool debugEnabled() const;
+  DebugFrame* debugFrame() const;
+  jit::FrameType unwoundIonFrameType() const;
+  uint8_t* unwoundIonCallerFP() const { return unwoundIonCallerFP_; }
 };
 
 enum class SymbolicAddress;
@@ -102,143 +101,140 @@ enum class SymbolicAddress;
 
 
 
-class ExitReason
-{
-  public:
-    enum class Fixed : uint32_t
-    {
-        None,            
-        FakeInterpEntry, 
-        ImportJit,       
-        ImportInterp,    
-        BuiltinNative,   
-        Trap,            
-        DebugTrap        
-    };
+class ExitReason {
+ public:
+  enum class Fixed : uint32_t {
+    None,             
+    FakeInterpEntry,  
+    ImportJit,        
+    ImportInterp,     
+    BuiltinNative,    
+    Trap,             
+    DebugTrap         
+  };
 
-  private:
-    uint32_t payload_;
+ private:
+  uint32_t payload_;
 
-    ExitReason() : ExitReason(Fixed::None) {}
+  ExitReason() : ExitReason(Fixed::None) {}
 
-  public:
+ public:
+  MOZ_IMPLICIT ExitReason(Fixed exitReason)
+      : payload_(0x0 | (uint32_t(exitReason) << 1)) {
+    MOZ_ASSERT(isFixed());
+    MOZ_ASSERT_IF(isNone(), payload_ == 0);
+  }
 
-    MOZ_IMPLICIT ExitReason(Fixed exitReason)
-      : payload_(0x0 | (uint32_t(exitReason) << 1))
-    {
-        MOZ_ASSERT(isFixed());
-        MOZ_ASSERT_IF(isNone(), payload_ == 0);
-    }
+  explicit ExitReason(SymbolicAddress sym)
+      : payload_(0x1 | (uint32_t(sym) << 1)) {
+    MOZ_ASSERT(uint32_t(sym) <= (UINT32_MAX << 1), "packing constraints");
+    MOZ_ASSERT(!isFixed());
+  }
 
-    explicit ExitReason(SymbolicAddress sym)
-      : payload_(0x1 | (uint32_t(sym) << 1))
-    {
-        MOZ_ASSERT(uint32_t(sym) <= (UINT32_MAX << 1), "packing constraints");
-        MOZ_ASSERT(!isFixed());
-    }
+  static ExitReason Decode(uint32_t payload) {
+    ExitReason reason;
+    reason.payload_ = payload;
+    return reason;
+  }
 
-    static ExitReason Decode(uint32_t payload) {
-        ExitReason reason;
-        reason.payload_ = payload;
-        return reason;
-    }
+  static ExitReason None() { return ExitReason(ExitReason::Fixed::None); }
 
-    static ExitReason None() { return ExitReason(ExitReason::Fixed::None); }
+  bool isFixed() const { return (payload_ & 0x1) == 0; }
+  bool isNone() const { return isFixed() && fixed() == Fixed::None; }
+  bool isNative() const {
+    return !isFixed() || fixed() == Fixed::BuiltinNative;
+  }
+  bool isInterpEntry() const {
+    return isFixed() && fixed() == Fixed::FakeInterpEntry;
+  }
 
-    bool isFixed() const { return (payload_ & 0x1) == 0; }
-    bool isNone() const { return isFixed() && fixed() == Fixed::None; }
-    bool isNative() const { return !isFixed() || fixed() == Fixed::BuiltinNative; }
-    bool isInterpEntry() const { return isFixed() && fixed() == Fixed::FakeInterpEntry; }
-
-    uint32_t encode() const {
-        return payload_;
-    }
-    Fixed fixed() const {
-        MOZ_ASSERT(isFixed());
-        return Fixed(payload_ >> 1);
-    }
-    SymbolicAddress symbolic() const {
-        MOZ_ASSERT(!isFixed());
-        return SymbolicAddress(payload_ >> 1);
-    }
+  uint32_t encode() const { return payload_; }
+  Fixed fixed() const {
+    MOZ_ASSERT(isFixed());
+    return Fixed(payload_ >> 1);
+  }
+  SymbolicAddress symbolic() const {
+    MOZ_ASSERT(!isFixed());
+    return SymbolicAddress(payload_ >> 1);
+  }
 };
 
 
 
-class ProfilingFrameIterator
-{
-    const Code* code_;
-    const CodeRange* codeRange_;
-    Frame* callerFP_;
-    void* callerPC_;
-    void* stackAddress_;
-    uint8_t* unwoundIonCallerFP_;
-    ExitReason exitReason_;
+class ProfilingFrameIterator {
+  const Code* code_;
+  const CodeRange* codeRange_;
+  Frame* callerFP_;
+  void* callerPC_;
+  void* stackAddress_;
+  uint8_t* unwoundIonCallerFP_;
+  ExitReason exitReason_;
 
-    void initFromExitFP(const Frame* fp);
+  void initFromExitFP(const Frame* fp);
 
-  public:
-    ProfilingFrameIterator();
+ public:
+  ProfilingFrameIterator();
 
-    
-    
-    explicit ProfilingFrameIterator(const jit::JitActivation& activation);
+  
+  
+  explicit ProfilingFrameIterator(const jit::JitActivation& activation);
 
-    
-    
-    ProfilingFrameIterator(const jit::JitActivation& activation, const Frame* fp);
+  
+  
+  ProfilingFrameIterator(const jit::JitActivation& activation, const Frame* fp);
 
-    
-    
-    ProfilingFrameIterator(const jit::JitActivation& activation,
-                           const RegisterState& state);
+  
+  
+  ProfilingFrameIterator(const jit::JitActivation& activation,
+                         const RegisterState& state);
 
-    void operator++();
-    bool done() const { return !codeRange_ && exitReason_.isNone(); }
+  void operator++();
+  bool done() const { return !codeRange_ && exitReason_.isNone(); }
 
-    void* stackAddress() const { MOZ_ASSERT(!done()); return stackAddress_; }
-    uint8_t* unwoundIonCallerFP() const { MOZ_ASSERT(done()); return unwoundIonCallerFP_; }
-    const char* label() const;
+  void* stackAddress() const {
+    MOZ_ASSERT(!done());
+    return stackAddress_;
+  }
+  uint8_t* unwoundIonCallerFP() const {
+    MOZ_ASSERT(done());
+    return unwoundIonCallerFP_;
+  }
+  const char* label() const;
 };
 
 
 
-void
-SetExitFP(jit::MacroAssembler& masm, ExitReason reason, jit::Register scratch);
-void
-ClearExitFP(jit::MacroAssembler& masm, jit::Register scratch);
+void SetExitFP(jit::MacroAssembler& masm, ExitReason reason,
+               jit::Register scratch);
+void ClearExitFP(jit::MacroAssembler& masm, jit::Register scratch);
 
-void
-GenerateExitPrologue(jit::MacroAssembler& masm, unsigned framePushed, ExitReason reason,
-                     CallableOffsets* offsets);
-void
-GenerateExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed, ExitReason reason,
-                     CallableOffsets* offsets);
+void GenerateExitPrologue(jit::MacroAssembler& masm, unsigned framePushed,
+                          ExitReason reason, CallableOffsets* offsets);
+void GenerateExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
+                          ExitReason reason, CallableOffsets* offsets);
 
-void
-GenerateJitExitPrologue(jit::MacroAssembler& masm, unsigned framePushed, CallableOffsets* offsets);
-void
-GenerateJitExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed, CallableOffsets* offsets);
+void GenerateJitExitPrologue(jit::MacroAssembler& masm, unsigned framePushed,
+                             CallableOffsets* offsets);
+void GenerateJitExitEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
+                             CallableOffsets* offsets);
 
-void
-GenerateJitEntryPrologue(jit::MacroAssembler& masm, Offsets* offsets);
+void GenerateJitEntryPrologue(jit::MacroAssembler& masm, Offsets* offsets);
 
-void
-GenerateFunctionPrologue(jit::MacroAssembler& masm, const FuncTypeIdDesc& funcTypeId,
-                         const mozilla::Maybe<uint32_t>& tier1FuncIndex,
-                         FuncOffsets* offsets);
-void
-GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed, FuncOffsets* offsets);
+void GenerateFunctionPrologue(jit::MacroAssembler& masm,
+                              const FuncTypeIdDesc& funcTypeId,
+                              const mozilla::Maybe<uint32_t>& tier1FuncIndex,
+                              FuncOffsets* offsets);
+void GenerateFunctionEpilogue(jit::MacroAssembler& masm, unsigned framePushed,
+                              FuncOffsets* offsets);
 
 
 
-struct UnwindState
-{
-    Frame* fp;
-    void* pc;
-    const Code* code;
-    const CodeRange* codeRange;
-    UnwindState() : fp(nullptr), pc(nullptr), code(nullptr), codeRange(nullptr) {}
+struct UnwindState {
+  Frame* fp;
+  void* pc;
+  const Code* code;
+  const CodeRange* codeRange;
+  UnwindState() : fp(nullptr), pc(nullptr), code(nullptr), codeRange(nullptr) {}
 };
 
 
@@ -252,9 +248,8 @@ struct UnwindState
 
 
 
-bool
-StartUnwinding(const RegisterState& registers, UnwindState* unwindState,
-               bool* unwoundCaller);
+bool StartUnwinding(const RegisterState& registers, UnwindState* unwindState,
+                    bool* unwoundCaller);
 
 
 
@@ -269,7 +264,7 @@ StartUnwinding(const RegisterState& registers, UnwindState* unwindState,
 
 constexpr uintptr_t ExitOrJitEntryFPTag = 0x1;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

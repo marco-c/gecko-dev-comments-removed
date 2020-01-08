@@ -33,14 +33,15 @@ HANDLE sEventHandle = nullptr;
 
 
 class HWNDGetter : public mozilla::Runnable {
-public:
+ public:
   HWNDGetter() : Runnable("HWNDGetter"), hidden_window_hwnd(nullptr) {}
 
   HWND hidden_window_hwnd;
 
   NS_IMETHOD Run() override {
     
-    nsCOMPtr<nsIAppShellService> appShell(do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
+    nsCOMPtr<nsIAppShellService> appShell(
+        do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
     nsCOMPtr<nsIXULWindow> hiddenWindow;
 
     nsresult rv = appShell->GetHiddenWindow(getter_AddRefs(hiddenWindow));
@@ -56,14 +57,12 @@ public:
 
     nsCOMPtr<nsIBaseWindow> baseWindow(do_QueryInterface(docShell));
 
-    if (!baseWindow)
-      return NS_ERROR_FAILURE;
+    if (!baseWindow) return NS_ERROR_FAILURE;
 
     nsCOMPtr<nsIWidget> widget;
     baseWindow->GetMainWidget(getter_AddRefs(widget));
 
-    if (!widget)
-      return NS_ERROR_FAILURE;
+    if (!widget) return NS_ERROR_FAILURE;
 
     hidden_window_hwnd = (HWND)widget->GetNativeData(NS_NATIVE_WINDOW);
 
@@ -71,8 +70,7 @@ public:
   }
 };
 
-HWND GetHiddenWindowHWND()
-{
+HWND GetHiddenWindowHWND() {
   
   
   RefPtr<HWNDGetter> getter = new HWNDGetter();
@@ -80,32 +78,27 @@ HWND GetHiddenWindowHWND()
   return getter->hidden_window_hwnd;
 }
 
-} 
+}  
 
 namespace mozilla {
 
-bool InitWidgetTracing()
-{
+bool InitWidgetTracing() {
   sEventHandle = CreateEventW(nullptr, FALSE, FALSE, nullptr);
   return sEventHandle != nullptr;
 }
 
-void CleanUpWidgetTracing()
-{
+void CleanUpWidgetTracing() {
   CloseHandle(sEventHandle);
   sEventHandle = nullptr;
 }
 
 
-void SignalTracerThread()
-{
-  if (sEventHandle != nullptr)
-    SetEvent(sEventHandle);
+void SignalTracerThread() {
+  if (sEventHandle != nullptr) SetEvent(sEventHandle);
 }
 
 
-bool FireAndWaitForTracerEvent()
-{
+bool FireAndWaitForTracerEvent() {
   MOZ_ASSERT(sEventHandle, "Tracing not initialized!");
 
   
@@ -114,8 +107,7 @@ bool FireAndWaitForTracerEvent()
     hidden_window = GetHiddenWindowHWND();
   }
 
-  if (hidden_window == nullptr)
-    return false;
+  if (hidden_window == nullptr) return false;
 
   
   
@@ -124,4 +116,4 @@ bool FireAndWaitForTracerEvent()
   return true;
 }
 
-} 
+}  

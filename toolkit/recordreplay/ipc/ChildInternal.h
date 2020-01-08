@@ -59,7 +59,8 @@ bool MaybeDivergeFromRecording();
 void PositionHit(const js::BreakpointPosition& aPosition);
 
 
-js::ExecutionPoint CurrentExecutionPoint(const Maybe<js::BreakpointPosition>& aPosition);
+js::ExecutionPoint CurrentExecutionPoint(
+    const Maybe<js::BreakpointPosition>& aPosition);
 
 
 
@@ -80,7 +81,7 @@ void AfterCheckpoint(const CheckpointId& aCheckpoint);
 
 size_t LastNormalCheckpoint();
 
-} 
+}  
 
 namespace child {
 
@@ -91,16 +92,17 @@ void HitBreakpoint(bool aRecordingEndpoint);
 
 
 
-struct MinidumpInfo
-{
+struct MinidumpInfo {
   int mExceptionType;
   int mCode;
   int mSubcode;
   mach_port_t mThread;
 
   MinidumpInfo(int aExceptionType, int aCode, int aSubcode, mach_port_t aThread)
-    : mExceptionType(aExceptionType), mCode(aCode), mSubcode(aSubcode), mThread(aThread)
-  {}
+      : mExceptionType(aExceptionType),
+        mCode(aCode),
+        mSubcode(aSubcode),
+        mThread(aThread) {}
 };
 
 
@@ -132,9 +134,9 @@ void SendResetMiddlemanCalls();
 
 bool CurrentRepaintCannotFail();
 
-} 
+}  
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

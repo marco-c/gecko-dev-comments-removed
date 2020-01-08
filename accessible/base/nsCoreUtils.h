@@ -10,7 +10,7 @@
 #include "mozilla/dom/Element.h"
 #include "nsIAccessibleEvent.h"
 #include "nsIContent.h"
-#include "nsIDocument.h" 
+#include "nsIDocument.h"  
 #include "nsIPresShell.h"
 
 #include "nsPoint.h"
@@ -27,9 +27,8 @@ class nsIWidget;
 
 
 
-class nsCoreUtils
-{
-public:
+class nsCoreUtils {
+ public:
   
 
 
@@ -52,7 +51,7 @@ public:
 
   static void DispatchClickEvent(nsITreeBoxObject *aTreeBoxObj,
                                  int32_t aRowIndex, nsTreeColumn *aColumn,
-                                 const nsAString& aPseudoElt = EmptyString());
+                                 const nsAString &aPseudoElt = EmptyString());
 
   
 
@@ -65,10 +64,10 @@ public:
 
 
 
-  static void DispatchMouseEvent(mozilla::EventMessage aMessage,
-                                 int32_t aX, int32_t aY,
-                                 nsIContent *aContent, nsIFrame *aFrame,
-                                 nsIPresShell *aPresShell, nsIWidget *aRootWidget);
+  static void DispatchMouseEvent(mozilla::EventMessage aMessage, int32_t aX,
+                                 int32_t aY, nsIContent *aContent,
+                                 nsIFrame *aFrame, nsIPresShell *aPresShell,
+                                 nsIWidget *aRootWidget);
 
   
 
@@ -81,10 +80,10 @@ public:
 
 
 
-  static void DispatchTouchEvent(mozilla::EventMessage aMessage,
-                                 int32_t aX, int32_t aY,
-                                 nsIContent* aContent, nsIFrame* aFrame,
-                                 nsIPresShell* aPresShell, nsIWidget* aRootWidget);
+  static void DispatchTouchEvent(mozilla::EventMessage aMessage, int32_t aX,
+                                 int32_t aY, nsIContent *aContent,
+                                 nsIFrame *aFrame, nsIPresShell *aPresShell,
+                                 nsIWidget *aRootWidget);
 
   
 
@@ -102,7 +101,7 @@ public:
 
 
 
-  static nsIContent* GetDOMElementFor(nsIContent *aContent);
+  static nsIContent *GetDOMElementFor(nsIContent *aContent);
 
   
 
@@ -122,9 +121,9 @@ public:
 
 
 
-   static bool IsAncestorOf(nsINode *aPossibleAncestorNode,
-                              nsINode *aPossibleDescendantNode,
-                              nsINode *aRootNode = nullptr);
+  static bool IsAncestorOf(nsINode *aPossibleAncestorNode,
+                           nsINode *aPossibleDescendantNode,
+                           nsINode *aRootNode = nullptr);
 
   
 
@@ -134,7 +133,7 @@ public:
 
 
 
-  static nsresult ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
+  static nsresult ScrollSubstringTo(nsIFrame *aFrame, nsRange *aRange,
                                     uint32_t aScrollType);
 
   
@@ -145,7 +144,9 @@ public:
 
 
 
-  static nsresult ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
+
+
+  static nsresult ScrollSubstringTo(nsIFrame *aFrame, nsRange *aRange,
                                     nsIPresShell::ScrollAxis aVertical,
                                     nsIPresShell::ScrollAxis aHorizontal);
 
@@ -157,16 +158,16 @@ public:
 
 
 
-  static void ScrollFrameToPoint(nsIFrame *aScrollableFrame,
-                                 nsIFrame *aFrame, const nsIntPoint& aPoint);
+  static void ScrollFrameToPoint(nsIFrame *aScrollableFrame, nsIFrame *aFrame,
+                                 const nsIntPoint &aPoint);
 
   
 
 
 
-  static void ConvertScrollTypeToPercents(uint32_t aScrollType,
-                                          nsIPresShell::ScrollAxis *aVertical,
-                                          nsIPresShell::ScrollAxis *aHorizontal);
+  static void ConvertScrollTypeToPercents(
+      uint32_t aScrollType, nsIPresShell::ScrollAxis *aVertical,
+      nsIPresShell::ScrollAxis *aHorizontal);
 
   
 
@@ -194,7 +195,7 @@ public:
   
 
 
-  static bool IsTabDocument(nsIDocument* aDocumentNode);
+  static bool IsTabDocument(nsIDocument *aDocumentNode);
 
   
 
@@ -204,8 +205,7 @@ public:
   
 
 
-  static nsIPresShell *GetPresShellFor(nsINode *aNode)
-  {
+  static nsIPresShell *GetPresShellFor(nsINode *aNode) {
     return aNode->OwnerDoc()->GetShell();
   }
 
@@ -215,14 +215,14 @@ public:
 
 
 
-  static bool GetID(nsIContent *aContent, nsAString& aID);
+
+  static bool GetID(nsIContent *aContent, nsAString &aID);
 
   
 
 
 
-  static bool GetUIntAttr(nsIContent *aContent, nsAtom *aAttr,
-                          int32_t* aUInt);
+  static bool GetUIntAttr(nsIContent *aContent, nsAtom *aAttr, int32_t *aUInt);
 
   
 
@@ -232,25 +232,25 @@ public:
 
 
   static void GetLanguageFor(nsIContent *aContent, nsIContent *aRootContent,
-                             nsAString& aLanguage);
+                             nsAString &aLanguage);
 
   
 
 
-  static already_AddRefed<nsIBoxObject>
-    GetTreeBodyBoxObject(nsITreeBoxObject *aTreeBoxObj);
+  static already_AddRefed<nsIBoxObject> GetTreeBodyBoxObject(
+      nsITreeBoxObject *aTreeBoxObj);
 
   
 
 
-  static already_AddRefed<nsITreeBoxObject>
-    GetTreeBoxObject(nsIContent* aContent);
+  static already_AddRefed<nsITreeBoxObject> GetTreeBoxObject(
+      nsIContent *aContent);
 
   
 
 
-  static already_AddRefed<nsTreeColumn>
-    GetFirstSensibleColumn(nsITreeBoxObject *aTree);
+  static already_AddRefed<nsTreeColumn> GetFirstSensibleColumn(
+      nsITreeBoxObject *aTree);
 
   
 
@@ -260,20 +260,20 @@ public:
   
 
 
-  static already_AddRefed<nsTreeColumn>
-    GetSensibleColumnAt(nsITreeBoxObject *aTree, uint32_t aIndex);
+  static already_AddRefed<nsTreeColumn> GetSensibleColumnAt(
+      nsITreeBoxObject *aTree, uint32_t aIndex);
 
   
 
 
-  static already_AddRefed<nsTreeColumn>
-    GetNextSensibleColumn(nsTreeColumn *aColumn);
+  static already_AddRefed<nsTreeColumn> GetNextSensibleColumn(
+      nsTreeColumn *aColumn);
 
   
 
 
-  static already_AddRefed<nsTreeColumn>
-    GetPreviousSensibleColumn(nsTreeColumn *aColumn);
+  static already_AddRefed<nsTreeColumn> GetPreviousSensibleColumn(
+      nsTreeColumn *aColumn);
 
   
 
@@ -283,17 +283,16 @@ public:
   
 
 
-  static void ScrollTo(nsIPresShell* aPresShell, nsIContent* aContent,
+  static void ScrollTo(nsIPresShell *aPresShell, nsIContent *aContent,
                        uint32_t aScrollType);
 
   
 
 
-  static bool IsHTMLTableHeader(nsIContent *aContent)
-  {
+  static bool IsHTMLTableHeader(nsIContent *aContent) {
     return aContent->NodeInfo()->Equals(nsGkAtoms::th) ||
-      (aContent->IsElement() &&
-       aContent->AsElement()->HasAttr(kNameSpaceID_None, nsGkAtoms::scope));
+           (aContent->IsElement() && aContent->AsElement()->HasAttr(
+                                         kNameSpaceID_None, nsGkAtoms::scope));
   }
 
   
@@ -301,15 +300,14 @@ public:
 
 
 
-  static bool IsWhitespaceString(const nsAString& aString);
+  static bool IsWhitespaceString(const nsAString &aString);
 
   
 
 
-  static bool IsWhitespace(char16_t aChar)
-  {
-    return aChar == ' ' || aChar == '\n' ||
-      aChar == '\r' || aChar == '\t' || aChar == 0xa0;
+  static bool IsWhitespace(char16_t aChar) {
+    return aChar == ' ' || aChar == '\n' || aChar == '\r' || aChar == '\t' ||
+           aChar == 0xa0;
   }
 
   

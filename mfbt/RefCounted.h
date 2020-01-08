@@ -64,20 +64,17 @@ const MozRefCountType DEAD = 0xffffdead;
 
 
 #ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-class RefCountLogger
-{
-public:
+class RefCountLogger {
+ public:
   static void logAddRef(const void* aPointer, MozRefCountType aRefCount,
-                        const char* aTypeName, uint32_t aInstanceSize)
-  {
+                        const char* aTypeName, uint32_t aInstanceSize) {
     MOZ_ASSERT(aRefCount != DEAD);
     NS_LogAddRef(const_cast<void*>(aPointer), aRefCount, aTypeName,
                  aInstanceSize);
   }
 
   static void logRelease(const void* aPointer, MozRefCountType aRefCount,
-                         const char* aTypeName)
-  {
+                         const char* aTypeName) {
     MOZ_ASSERT(aRefCount != DEAD);
     NS_LogRelease(const_cast<void*>(aPointer), aRefCount, aTypeName);
   }
@@ -85,16 +82,12 @@ public:
 #endif
 
 
-enum RefCountAtomicity
-{
-  AtomicRefCount,
-  NonAtomicRefCount
-};
+enum RefCountAtomicity { AtomicRefCount, NonAtomicRefCount };
 
-template<typename T, RefCountAtomicity Atomicity, recordreplay::Behavior Recording>
-class RC
-{
-public:
+template <typename T, RefCountAtomicity Atomicity,
+          recordreplay::Behavior Recording>
+class RC {
+ public:
   explicit RC(T aCount) : mValue(aCount) {}
 
   T operator++() { return ++mValue; }
@@ -104,18 +97,16 @@ public:
 
   operator T() const { return mValue; }
 
-private:
+ private:
   T mValue;
 };
 
-template<typename T, recordreplay::Behavior Recording>
-class RC<T, AtomicRefCount, Recording>
-{
-public:
-  explicit RC(T aCount) : mValue(aCount) { }
+template <typename T, recordreplay::Behavior Recording>
+class RC<T, AtomicRefCount, Recording> {
+ public:
+  explicit RC(T aCount) : mValue(aCount) {}
 
-  T operator++()
-  {
+  T operator++() {
     
     
     
@@ -128,8 +119,7 @@ public:
     return mValue.fetch_add(1, std::memory_order_relaxed) + 1;
   }
 
-  T operator--()
-  {
+  T operator--() {
     
     
     
@@ -153,30 +143,27 @@ public:
     mValue.store(aValue, std::memory_order_seq_cst);
   }
 
-  operator T() const
-  {
+  operator T() const {
     
     
     AutoRecordAtomicAccess<Recording> record(this);
     return mValue.load(std::memory_order_acquire);
   }
 
-private:
+ private:
   std::atomic<T> mValue;
 };
 
-template<typename T, RefCountAtomicity Atomicity,
-         recordreplay::Behavior Recording = recordreplay::Behavior::Preserve>
-class RefCounted
-{
-protected:
+template <typename T, RefCountAtomicity Atomicity,
+          recordreplay::Behavior Recording = recordreplay::Behavior::Preserve>
+class RefCounted {
+ protected:
   RefCounted() : mRefCnt(0) {}
   ~RefCounted() { MOZ_ASSERT(mRefCnt == detail::DEAD); }
 
-public:
+ public:
   
-  void AddRef() const
-  {
+  void AddRef() const {
     
     MOZ_ASSERT(int32_t(mRefCnt) >= 0);
 #ifndef MOZ_REFCOUNTED_LEAK_CHECKING
@@ -190,8 +177,7 @@ public:
 #endif
   }
 
-  void Release() const
-  {
+  void Release() const {
     
     MOZ_ASSERT(int32_t(mRefCnt) > 0);
 #ifndef MOZ_REFCOUNTED_LEAK_CHECKING
@@ -220,20 +206,19 @@ public:
   void ref() { AddRef(); }
   void deref() { Release(); }
   MozRefCountType refCount() const { return mRefCnt; }
-  bool hasOneRef() const
-  {
+  bool hasOneRef() const {
     MOZ_ASSERT(mRefCnt > 0);
     return mRefCnt == 1;
   }
 
-private:
+ private:
   mutable RC<MozRefCountType, Atomicity, Recording> mRefCnt;
 };
 
 #ifdef MOZ_REFCOUNTED_LEAK_CHECKING
 
 
-#define MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(T, ...) \
+#define MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(T, ...)           \
   virtual const char* typeName() const __VA_ARGS__ { return #T; } \
   virtual size_t typeSize() const __VA_ARGS__ { return sizeof(*this); }
 #else
@@ -243,18 +228,16 @@ private:
 
 
 
-#define MOZ_DECLARE_REFCOUNTED_TYPENAME(T) \
+#define MOZ_DECLARE_REFCOUNTED_TYPENAME(T)    \
   const char* typeName() const { return #T; } \
   size_t typeSize() const { return sizeof(*this); }
 
-} 
+}  
 
-template<typename T>
-class RefCounted : public detail::RefCounted<T, detail::NonAtomicRefCount>
-{
-public:
-  ~RefCounted()
-  {
+template <typename T>
+class RefCounted : public detail::RefCounted<T, detail::NonAtomicRefCount> {
+ public:
+  ~RefCounted() {
     static_assert(IsBaseOf<RefCounted, T>::value,
                   "T must derive from RefCounted<T>");
   }
@@ -269,20 +252,20 @@ namespace external {
 
 
 
-template<typename T, recordreplay::Behavior Recording = recordreplay::Behavior::Preserve>
-class AtomicRefCounted :
-  public mozilla::detail::RefCounted<T, mozilla::detail::AtomicRefCount, Recording>
-{
-public:
-  ~AtomicRefCounted()
-  {
+template <typename T,
+          recordreplay::Behavior Recording = recordreplay::Behavior::Preserve>
+class AtomicRefCounted
+    : public mozilla::detail::RefCounted<T, mozilla::detail::AtomicRefCount,
+                                         Recording> {
+ public:
+  ~AtomicRefCounted() {
     static_assert(IsBaseOf<AtomicRefCounted, T>::value,
                   "T must derive from AtomicRefCounted<T>");
   }
 };
 
-} 
+}  
 
-} 
+}  
 
-#endif 
+#endif  

@@ -11,33 +11,35 @@
 #include <shlobj.h>
 
 struct IDataObject;
-class  nsDataObjCollection;
+class nsDataObjCollection;
 
 
 
 
 
-class nsDragService : public nsBaseDragService
-{
-public:
+class nsDragService : public nsBaseDragService {
+ public:
   nsDragService();
   virtual ~nsDragService();
-  
-  
-  virtual nsresult InvokeDragSessionImpl(nsIArray* anArrayTransferables,
-                                         const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-                                         uint32_t aActionType);
 
   
-  NS_IMETHOD GetData(nsITransferable * aTransferable, uint32_t anItem) override;
-  NS_IMETHOD GetNumDropItems(uint32_t * aNumItems) override;
-  NS_IMETHOD IsDataFlavorSupported(const char *aDataFlavor, bool *_retval) override;
+  virtual nsresult InvokeDragSessionImpl(
+      nsIArray* anArrayTransferables,
+      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      uint32_t aActionType);
+
+  
+  NS_IMETHOD GetData(nsITransferable* aTransferable, uint32_t anItem) override;
+  NS_IMETHOD GetNumDropItems(uint32_t* aNumItems) override;
+  NS_IMETHOD IsDataFlavorSupported(const char* aDataFlavor,
+                                   bool* _retval) override;
   NS_IMETHOD EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) override;
-  NS_IMETHOD UpdateDragImage(nsINode* aImage, int32_t aImageX, int32_t aImageY) override;
+  NS_IMETHOD UpdateDragImage(nsINode* aImage, int32_t aImageX,
+                             int32_t aImageY) override;
 
   
-  NS_IMETHOD SetIDataObject(IDataObject * aDataObj);
-  NS_IMETHOD StartInvokingDragSession(IDataObject * aDataObj,
+  NS_IMETHOD SetIDataObject(IDataObject* aDataObj);
+  NS_IMETHOD StartInvokingDragSession(IDataObject* aDataObj,
                                       uint32_t aActionType);
 
   
@@ -45,20 +47,20 @@ public:
 
   IDataObject* GetDataObject() { return mDataObject; }
 
-protected:
-  nsDataObjCollection* GetDataObjCollection(IDataObject * aDataObj);
+ protected:
+  nsDataObjCollection* GetDataObjCollection(IDataObject* aDataObj);
 
   
   
   bool IsCollectionObject(IDataObject* inDataObj);
 
   
-  bool CreateDragImage(nsINode *aDOMNode,
+  bool CreateDragImage(nsINode* aDOMNode,
                        const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-                       SHDRAGIMAGE *psdi);
+                       SHDRAGIMAGE* psdi);
 
-  IDataObject * mDataObject;
+  IDataObject* mDataObject;
   bool mSentLocalDropEvent;
 };
 
-#endif 
+#endif  

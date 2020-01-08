@@ -9,14 +9,11 @@
 
 namespace detail {
 
- void
-ProxyReleaseChooser<true>::ProxyReleaseISupports(const char* aName,
-                                                 nsIEventTarget* aTarget,
-                                                 nsISupports* aDoomed,
-                                                 bool aAlwaysProxy)
-{
+ void ProxyReleaseChooser<true>::ProxyReleaseISupports(
+    const char* aName, nsIEventTarget* aTarget, nsISupports* aDoomed,
+    bool aAlwaysProxy) {
   ::detail::ProxyRelease<nsISupports>(aName, aTarget, dont_AddRef(aDoomed),
                                       aAlwaysProxy);
 }
 
-} 
+}  

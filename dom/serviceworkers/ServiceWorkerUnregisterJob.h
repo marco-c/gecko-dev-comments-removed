@@ -12,32 +12,27 @@
 namespace mozilla {
 namespace dom {
 
-class ServiceWorkerUnregisterJob final : public ServiceWorkerJob
-{
-public:
-  ServiceWorkerUnregisterJob(nsIPrincipal* aPrincipal,
-                             const nsACString& aScope,
+class ServiceWorkerUnregisterJob final : public ServiceWorkerJob {
+ public:
+  ServiceWorkerUnregisterJob(nsIPrincipal* aPrincipal, const nsACString& aScope,
                              bool aSendToParent);
 
-  bool
-  GetResult() const;
+  bool GetResult() const;
 
-private:
+ private:
   class PushUnsubscribeCallback;
 
   virtual ~ServiceWorkerUnregisterJob();
 
-  virtual void
-  AsyncExecute() override;
+  virtual void AsyncExecute() override;
 
-  void
-  Unregister();
+  void Unregister();
 
   bool mResult;
   bool mSendToParent;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

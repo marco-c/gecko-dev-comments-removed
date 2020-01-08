@@ -24,9 +24,8 @@ namespace mozilla {
 
 
 
-class Dafsa
-{
-public:
+class Dafsa {
+ public:
   using Graph = Span<const uint8_t>;
 
   
@@ -46,10 +45,10 @@ public:
 
   static const int kKeyNotFound;
 
-private:
+ private:
   const Graph mData;
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -8,9 +8,7 @@
 
 namespace mozilla {
 
-void
-HandleLauncherError(const LauncherError& aError)
-{
+void HandleLauncherError(const LauncherError& aError) {
   
   
   WindowsError::UniqueString msg = aError.mError.AsString();
@@ -21,4 +19,4 @@ HandleLauncherError(const LauncherError& aError)
   ::MessageBoxW(nullptr, msg.get(), L"Firefox", MB_OK | MB_ICONERROR);
 }
 
-} 
+}  

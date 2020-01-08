@@ -43,96 +43,67 @@ static bool sIOPoisoned = false;
 
 
 
-typedef NTSTATUS (NTAPI* NtCreateFileFn)(
-  PHANDLE aFileHandle,
-  ACCESS_MASK aDesiredAccess,
-  POBJECT_ATTRIBUTES aObjectAttributes,
-  PIO_STATUS_BLOCK aIoStatusBlock,
-  PLARGE_INTEGER aAllocationSize,
-  ULONG aFileAttributes,
-  ULONG aShareAccess,
-  ULONG aCreateDisposition,
-  ULONG aCreateOptions,
-  PVOID aEaBuffer,
-  ULONG aEaLength);
+typedef NTSTATUS(NTAPI* NtCreateFileFn)(
+    PHANDLE aFileHandle, ACCESS_MASK aDesiredAccess,
+    POBJECT_ATTRIBUTES aObjectAttributes, PIO_STATUS_BLOCK aIoStatusBlock,
+    PLARGE_INTEGER aAllocationSize, ULONG aFileAttributes, ULONG aShareAccess,
+    ULONG aCreateDisposition, ULONG aCreateOptions, PVOID aEaBuffer,
+    ULONG aEaLength);
 
 
 
 
 
-typedef NTSTATUS (NTAPI* NtReadFileFn)(
-  HANDLE aFileHandle,
-  HANDLE aEvent,
-  PIO_APC_ROUTINE aApc,
-  PVOID aApcCtx,
-  PIO_STATUS_BLOCK aIoStatus,
-  PVOID aBuffer,
-  ULONG aLength,
-  PLARGE_INTEGER aOffset,
-  PULONG aKey);
+typedef NTSTATUS(NTAPI* NtReadFileFn)(HANDLE aFileHandle, HANDLE aEvent,
+                                      PIO_APC_ROUTINE aApc, PVOID aApcCtx,
+                                      PIO_STATUS_BLOCK aIoStatus, PVOID aBuffer,
+                                      ULONG aLength, PLARGE_INTEGER aOffset,
+                                      PULONG aKey);
 
 
 
 
 
-typedef NTSTATUS (NTAPI* NtReadFileScatterFn)(
-  HANDLE aFileHandle,
-  HANDLE aEvent,
-  PIO_APC_ROUTINE aApc,
-  PVOID aApcCtx,
-  PIO_STATUS_BLOCK aIoStatus,
-  FILE_SEGMENT_ELEMENT* aSegments,
-  ULONG aLength,
-  PLARGE_INTEGER aOffset,
-  PULONG aKey);
+typedef NTSTATUS(NTAPI* NtReadFileScatterFn)(
+    HANDLE aFileHandle, HANDLE aEvent, PIO_APC_ROUTINE aApc, PVOID aApcCtx,
+    PIO_STATUS_BLOCK aIoStatus, FILE_SEGMENT_ELEMENT* aSegments, ULONG aLength,
+    PLARGE_INTEGER aOffset, PULONG aKey);
 
 
 
 
 
-typedef NTSTATUS (NTAPI* NtWriteFileFn)(
-  HANDLE aFileHandle,
-  HANDLE aEvent,
-  PIO_APC_ROUTINE aApc,
-  PVOID aApcCtx,
-  PIO_STATUS_BLOCK aIoStatus,
-  PVOID aBuffer,
-  ULONG aLength,
-  PLARGE_INTEGER aOffset,
-  PULONG aKey);
+typedef NTSTATUS(NTAPI* NtWriteFileFn)(HANDLE aFileHandle, HANDLE aEvent,
+                                       PIO_APC_ROUTINE aApc, PVOID aApcCtx,
+                                       PIO_STATUS_BLOCK aIoStatus,
+                                       PVOID aBuffer, ULONG aLength,
+                                       PLARGE_INTEGER aOffset, PULONG aKey);
 
 
 
 
 
-typedef NTSTATUS (NTAPI* NtWriteFileGatherFn)(
-  HANDLE aFileHandle,
-  HANDLE aEvent,
-  PIO_APC_ROUTINE aApc,
-  PVOID aApcCtx,
-  PIO_STATUS_BLOCK aIoStatus,
-  FILE_SEGMENT_ELEMENT* aSegments,
-  ULONG aLength,
-  PLARGE_INTEGER aOffset,
-  PULONG aKey);
+typedef NTSTATUS(NTAPI* NtWriteFileGatherFn)(
+    HANDLE aFileHandle, HANDLE aEvent, PIO_APC_ROUTINE aApc, PVOID aApcCtx,
+    PIO_STATUS_BLOCK aIoStatus, FILE_SEGMENT_ELEMENT* aSegments, ULONG aLength,
+    PLARGE_INTEGER aOffset, PULONG aKey);
 
 
 
 
 
 
-typedef NTSTATUS (NTAPI* NtFlushBuffersFileFn)(
-  HANDLE aFileHandle,
-  PIO_STATUS_BLOCK aIoStatusBlock);
+typedef NTSTATUS(NTAPI* NtFlushBuffersFileFn)(HANDLE aFileHandle,
+                                              PIO_STATUS_BLOCK aIoStatusBlock);
 
 typedef struct _FILE_NETWORK_OPEN_INFORMATION* PFILE_NETWORK_OPEN_INFORMATION;
 
 
 
 
-typedef NTSTATUS (NTAPI* NtQueryFullAttributesFileFn)(
-  POBJECT_ATTRIBUTES aObjectAttributes,
-  PFILE_NETWORK_OPEN_INFORMATION aFileInformation);
+typedef NTSTATUS(NTAPI* NtQueryFullAttributesFileFn)(
+    POBJECT_ATTRIBUTES aObjectAttributes,
+    PFILE_NETWORK_OPEN_INFORMATION aFileInformation);
 
 
 
@@ -140,26 +111,24 @@ typedef NTSTATUS (NTAPI* NtQueryFullAttributesFileFn)(
 
 
 
-class WinIOAutoObservation : public IOInterposeObserver::Observation
-{
-public:
-  WinIOAutoObservation(IOInterposeObserver::Operation aOp,
-                       HANDLE aFileHandle, const LARGE_INTEGER* aOffset)
-    : IOInterposeObserver::Observation(
-        aOp, sReference, !IsDebugFile(reinterpret_cast<intptr_t>(aFileHandle)))
-    , mFileHandle(aFileHandle)
-    , mHasQueriedFilename(false)
-  {
+class WinIOAutoObservation : public IOInterposeObserver::Observation {
+ public:
+  WinIOAutoObservation(IOInterposeObserver::Operation aOp, HANDLE aFileHandle,
+                       const LARGE_INTEGER* aOffset)
+      : IOInterposeObserver::Observation(
+            aOp, sReference,
+            !IsDebugFile(reinterpret_cast<intptr_t>(aFileHandle))),
+        mFileHandle(aFileHandle),
+        mHasQueriedFilename(false) {
     if (mShouldReport) {
       mOffset.QuadPart = aOffset ? aOffset->QuadPart : 0;
     }
   }
 
   WinIOAutoObservation(IOInterposeObserver::Operation aOp, nsAString& aFilename)
-    : IOInterposeObserver::Observation(aOp, sReference)
-    , mFileHandle(nullptr)
-    , mHasQueriedFilename(false)
-  {
+      : IOInterposeObserver::Observation(aOp, sReference),
+        mFileHandle(nullptr),
+        mHasQueriedFilename(false) {
     if (mShouldReport) {
       nsAutoString dosPath;
       if (NtPathToDosPath(aFilename, dosPath)) {
@@ -173,25 +142,21 @@ public:
   
   void Filename(nsAString& aFilename) override;
 
-  ~WinIOAutoObservation()
-  {
-    Report();
-  }
+  ~WinIOAutoObservation() { Report(); }
 
-private:
-  HANDLE              mFileHandle;
-  LARGE_INTEGER       mOffset;
-  bool                mHasQueriedFilename;
-  nsString            mFilename;
-  static const char*  sReference;
+ private:
+  HANDLE mFileHandle;
+  LARGE_INTEGER mOffset;
+  bool mHasQueriedFilename;
+  nsString mFilename;
+  static const char* sReference;
 };
 
 const char* WinIOAutoObservation::sReference = "PoisonIOInterposer";
 
 
-void
-WinIOAutoObservation::Filename(nsAString& aFilename)
-{
+void WinIOAutoObservation::Filename(nsAString& aFilename) {
+  
   
   if (mHasQueriedFilename) {
     aFilename = mFilename;
@@ -210,39 +175,30 @@ WinIOAutoObservation::Filename(nsAString& aFilename)
 
 
 static WindowsDllInterceptor::FuncHookType<NtCreateFileFn>
-  gOriginalNtCreateFile;
-static WindowsDllInterceptor::FuncHookType<NtReadFileFn>
-  gOriginalNtReadFile;
+    gOriginalNtCreateFile;
+static WindowsDllInterceptor::FuncHookType<NtReadFileFn> gOriginalNtReadFile;
 static WindowsDllInterceptor::FuncHookType<NtReadFileScatterFn>
-  gOriginalNtReadFileScatter;
-static WindowsDllInterceptor::FuncHookType<NtWriteFileFn>
-  gOriginalNtWriteFile;
+    gOriginalNtReadFileScatter;
+static WindowsDllInterceptor::FuncHookType<NtWriteFileFn> gOriginalNtWriteFile;
 static WindowsDllInterceptor::FuncHookType<NtWriteFileGatherFn>
-  gOriginalNtWriteFileGather;
+    gOriginalNtWriteFileGather;
 static WindowsDllInterceptor::FuncHookType<NtFlushBuffersFileFn>
-  gOriginalNtFlushBuffersFile;
+    gOriginalNtFlushBuffersFile;
 static WindowsDllInterceptor::FuncHookType<NtQueryFullAttributesFileFn>
-  gOriginalNtQueryFullAttributesFile;
+    gOriginalNtQueryFullAttributesFile;
 
-static NTSTATUS NTAPI
-InterposedNtCreateFile(PHANDLE aFileHandle,
-                       ACCESS_MASK aDesiredAccess,
-                       POBJECT_ATTRIBUTES aObjectAttributes,
-                       PIO_STATUS_BLOCK aIoStatusBlock,
-                       PLARGE_INTEGER aAllocationSize,
-                       ULONG aFileAttributes,
-                       ULONG aShareAccess,
-                       ULONG aCreateDisposition,
-                       ULONG aCreateOptions,
-                       PVOID aEaBuffer,
-                       ULONG aEaLength)
-{
+static NTSTATUS NTAPI InterposedNtCreateFile(
+    PHANDLE aFileHandle, ACCESS_MASK aDesiredAccess,
+    POBJECT_ATTRIBUTES aObjectAttributes, PIO_STATUS_BLOCK aIoStatusBlock,
+    PLARGE_INTEGER aAllocationSize, ULONG aFileAttributes, ULONG aShareAccess,
+    ULONG aCreateDisposition, ULONG aCreateOptions, PVOID aEaBuffer,
+    ULONG aEaLength) {
   
   const wchar_t* buf =
-    aObjectAttributes ? aObjectAttributes->ObjectName->Buffer : L"";
-  uint32_t len =
-    aObjectAttributes ? aObjectAttributes->ObjectName->Length / sizeof(WCHAR) :
-                        0;
+      aObjectAttributes ? aObjectAttributes->ObjectName->Buffer : L"";
+  uint32_t len = aObjectAttributes
+                     ? aObjectAttributes->ObjectName->Length / sizeof(WCHAR)
+                     : 0;
   nsDependentSubstring filename(buf, len);
   WinIOAutoObservation timer(IOInterposeObserver::OpCreateOrOpen, filename);
 
@@ -250,30 +206,18 @@ InterposedNtCreateFile(PHANDLE aFileHandle,
   MOZ_ASSERT(gOriginalNtCreateFile);
 
   
-  return gOriginalNtCreateFile(aFileHandle,
-                               aDesiredAccess,
-                               aObjectAttributes,
-                               aIoStatusBlock,
-                               aAllocationSize,
-                               aFileAttributes,
-                               aShareAccess,
-                               aCreateDisposition,
-                               aCreateOptions,
-                               aEaBuffer,
-                               aEaLength);
+  return gOriginalNtCreateFile(aFileHandle, aDesiredAccess, aObjectAttributes,
+                               aIoStatusBlock, aAllocationSize, aFileAttributes,
+                               aShareAccess, aCreateDisposition, aCreateOptions,
+                               aEaBuffer, aEaLength);
 }
 
-static NTSTATUS NTAPI
-InterposedNtReadFile(HANDLE aFileHandle,
-                     HANDLE aEvent,
-                     PIO_APC_ROUTINE aApc,
-                     PVOID aApcCtx,
-                     PIO_STATUS_BLOCK aIoStatus,
-                     PVOID aBuffer,
-                     ULONG aLength,
-                     PLARGE_INTEGER aOffset,
-                     PULONG aKey)
-{
+static NTSTATUS NTAPI InterposedNtReadFile(HANDLE aFileHandle, HANDLE aEvent,
+                                           PIO_APC_ROUTINE aApc, PVOID aApcCtx,
+                                           PIO_STATUS_BLOCK aIoStatus,
+                                           PVOID aBuffer, ULONG aLength,
+                                           PLARGE_INTEGER aOffset,
+                                           PULONG aKey) {
   
   WinIOAutoObservation timer(IOInterposeObserver::OpRead, aFileHandle, aOffset);
 
@@ -281,28 +225,14 @@ InterposedNtReadFile(HANDLE aFileHandle,
   MOZ_ASSERT(gOriginalNtReadFile);
 
   
-  return gOriginalNtReadFile(aFileHandle,
-                             aEvent,
-                             aApc,
-                             aApcCtx,
-                             aIoStatus,
-                             aBuffer,
-                             aLength,
-                             aOffset,
-                             aKey);
+  return gOriginalNtReadFile(aFileHandle, aEvent, aApc, aApcCtx, aIoStatus,
+                             aBuffer, aLength, aOffset, aKey);
 }
 
-static NTSTATUS NTAPI
-InterposedNtReadFileScatter(HANDLE aFileHandle,
-                            HANDLE aEvent,
-                            PIO_APC_ROUTINE aApc,
-                            PVOID aApcCtx,
-                            PIO_STATUS_BLOCK aIoStatus,
-                            FILE_SEGMENT_ELEMENT* aSegments,
-                            ULONG aLength,
-                            PLARGE_INTEGER aOffset,
-                            PULONG aKey)
-{
+static NTSTATUS NTAPI InterposedNtReadFileScatter(
+    HANDLE aFileHandle, HANDLE aEvent, PIO_APC_ROUTINE aApc, PVOID aApcCtx,
+    PIO_STATUS_BLOCK aIoStatus, FILE_SEGMENT_ELEMENT* aSegments, ULONG aLength,
+    PLARGE_INTEGER aOffset, PULONG aKey) {
   
   WinIOAutoObservation timer(IOInterposeObserver::OpRead, aFileHandle, aOffset);
 
@@ -310,29 +240,18 @@ InterposedNtReadFileScatter(HANDLE aFileHandle,
   MOZ_ASSERT(gOriginalNtReadFileScatter);
 
   
-  return gOriginalNtReadFileScatter(aFileHandle,
-                                    aEvent,
-                                    aApc,
-                                    aApcCtx,
-                                    aIoStatus,
-                                    aSegments,
-                                    aLength,
-                                    aOffset,
+  return gOriginalNtReadFileScatter(aFileHandle, aEvent, aApc, aApcCtx,
+                                    aIoStatus, aSegments, aLength, aOffset,
                                     aKey);
 }
 
 
-static NTSTATUS NTAPI
-InterposedNtWriteFile(HANDLE aFileHandle,
-                      HANDLE aEvent,
-                      PIO_APC_ROUTINE aApc,
-                      PVOID aApcCtx,
-                      PIO_STATUS_BLOCK aIoStatus,
-                      PVOID aBuffer,
-                      ULONG aLength,
-                      PLARGE_INTEGER aOffset,
-                      PULONG aKey)
-{
+static NTSTATUS NTAPI InterposedNtWriteFile(HANDLE aFileHandle, HANDLE aEvent,
+                                            PIO_APC_ROUTINE aApc, PVOID aApcCtx,
+                                            PIO_STATUS_BLOCK aIoStatus,
+                                            PVOID aBuffer, ULONG aLength,
+                                            PLARGE_INTEGER aOffset,
+                                            PULONG aKey) {
   
   WinIOAutoObservation timer(IOInterposeObserver::OpWrite, aFileHandle,
                              aOffset);
@@ -341,29 +260,15 @@ InterposedNtWriteFile(HANDLE aFileHandle,
   MOZ_ASSERT(gOriginalNtWriteFile);
 
   
-  return gOriginalNtWriteFile(aFileHandle,
-                              aEvent,
-                              aApc,
-                              aApcCtx,
-                              aIoStatus,
-                              aBuffer,
-                              aLength,
-                              aOffset,
-                              aKey);
+  return gOriginalNtWriteFile(aFileHandle, aEvent, aApc, aApcCtx, aIoStatus,
+                              aBuffer, aLength, aOffset, aKey);
 }
 
 
-static NTSTATUS NTAPI
-InterposedNtWriteFileGather(HANDLE aFileHandle,
-                            HANDLE aEvent,
-                            PIO_APC_ROUTINE aApc,
-                            PVOID aApcCtx,
-                            PIO_STATUS_BLOCK aIoStatus,
-                            FILE_SEGMENT_ELEMENT* aSegments,
-                            ULONG aLength,
-                            PLARGE_INTEGER aOffset,
-                            PULONG aKey)
-{
+static NTSTATUS NTAPI InterposedNtWriteFileGather(
+    HANDLE aFileHandle, HANDLE aEvent, PIO_APC_ROUTINE aApc, PVOID aApcCtx,
+    PIO_STATUS_BLOCK aIoStatus, FILE_SEGMENT_ELEMENT* aSegments, ULONG aLength,
+    PLARGE_INTEGER aOffset, PULONG aKey) {
   
   WinIOAutoObservation timer(IOInterposeObserver::OpWrite, aFileHandle,
                              aOffset);
@@ -372,21 +277,13 @@ InterposedNtWriteFileGather(HANDLE aFileHandle,
   MOZ_ASSERT(gOriginalNtWriteFileGather);
 
   
-  return gOriginalNtWriteFileGather(aFileHandle,
-                                    aEvent,
-                                    aApc,
-                                    aApcCtx,
-                                    aIoStatus,
-                                    aSegments,
-                                    aLength,
-                                    aOffset,
+  return gOriginalNtWriteFileGather(aFileHandle, aEvent, aApc, aApcCtx,
+                                    aIoStatus, aSegments, aLength, aOffset,
                                     aKey);
 }
 
-static NTSTATUS NTAPI
-InterposedNtFlushBuffersFile(HANDLE aFileHandle,
-                             PIO_STATUS_BLOCK aIoStatusBlock)
-{
+static NTSTATUS NTAPI InterposedNtFlushBuffersFile(
+    HANDLE aFileHandle, PIO_STATUS_BLOCK aIoStatusBlock) {
   
   WinIOAutoObservation timer(IOInterposeObserver::OpFSync, aFileHandle,
                              nullptr);
@@ -395,21 +292,18 @@ InterposedNtFlushBuffersFile(HANDLE aFileHandle,
   MOZ_ASSERT(gOriginalNtFlushBuffersFile);
 
   
-  return gOriginalNtFlushBuffersFile(aFileHandle,
-                                     aIoStatusBlock);
+  return gOriginalNtFlushBuffersFile(aFileHandle, aIoStatusBlock);
 }
 
-static NTSTATUS NTAPI
-InterposedNtQueryFullAttributesFile(
+static NTSTATUS NTAPI InterposedNtQueryFullAttributesFile(
     POBJECT_ATTRIBUTES aObjectAttributes,
-    PFILE_NETWORK_OPEN_INFORMATION aFileInformation)
-{
+    PFILE_NETWORK_OPEN_INFORMATION aFileInformation) {
   
   const wchar_t* buf =
-    aObjectAttributes ? aObjectAttributes->ObjectName->Buffer : L"";
-  uint32_t len =
-    aObjectAttributes ? aObjectAttributes->ObjectName->Length / sizeof(WCHAR) :
-                        0;
+      aObjectAttributes ? aObjectAttributes->ObjectName->Buffer : L"";
+  uint32_t len = aObjectAttributes
+                     ? aObjectAttributes->ObjectName->Length / sizeof(WCHAR)
+                     : 0;
   nsDependentSubstring filename(buf, len);
   WinIOAutoObservation timer(IOInterposeObserver::OpStat, filename);
 
@@ -421,7 +315,7 @@ InterposedNtQueryFullAttributesFile(
                                             aFileInformation);
 }
 
-} 
+}  
 
 
 
@@ -430,9 +324,7 @@ static WindowsDllInterceptor sNtDllInterceptor;
 
 namespace mozilla {
 
-void
-InitPoisonIOInterposer()
-{
+void InitPoisonIOInterposer() {
   
   
   
@@ -472,9 +364,7 @@ InitPoisonIOInterposer()
                                          &InterposedNtQueryFullAttributesFile);
 }
 
-void
-ClearPoisonIOInterposer()
-{
+void ClearPoisonIOInterposer() {
   MOZ_ASSERT(false);
   if (sIOPoisoned) {
     
@@ -483,4 +373,4 @@ ClearPoisonIOInterposer()
   }
 }
 
-} 
+}  

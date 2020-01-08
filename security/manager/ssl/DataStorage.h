@@ -28,7 +28,7 @@ namespace dom {
 class ContentChild;
 class DataStorageEntry;
 class DataStorageItem;
-}
+}  
 
 
 
@@ -98,11 +98,10 @@ enum class DataStorageClass {
 #undef DATA_STORAGE
 };
 
-class DataStorage : public nsIObserver
-{
+class DataStorage : public nsIObserver {
   typedef dom::DataStorageItem DataStorageItem;
 
-public:
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -116,9 +115,9 @@ public:
   
   
   
-  nsresult Init(bool& aDataWillPersist,
-                const InfallibleTArray<mozilla::dom::DataStorageItem>*
-                  aItems = nullptr);
+  nsresult Init(
+       bool& aDataWillPersist,
+      const InfallibleTArray<mozilla::dom::DataStorageItem>* aItems = nullptr);
   
   
   
@@ -138,21 +137,24 @@ public:
   static void GetAllFileNames(nsTArray<nsString>& aItems);
 
   
-  static void GetAllChildProcessData(nsTArray<mozilla::dom::DataStorageEntry>& aEntries);
+  static void GetAllChildProcessData(
+      nsTArray<mozilla::dom::DataStorageEntry>& aEntries);
 
   
   void GetAll(InfallibleTArray<DataStorageItem>* aItems);
 
   
-  static void SetCachedStorageEntries(const InfallibleTArray<mozilla::dom::DataStorageEntry>& aEntries);
+  static void SetCachedStorageEntries(
+      const InfallibleTArray<mozilla::dom::DataStorageEntry>& aEntries);
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
+ private:
   explicit DataStorage(const nsString& aFilename);
   virtual ~DataStorage();
 
-  static already_AddRefed<DataStorage> GetFromRawFileName(const nsString& aFilename);
+  static already_AddRefed<DataStorage> GetFromRawFileName(
+      const nsString& aFilename);
 
   friend class ::psm_DataStorageTest;
   friend class mozilla::dom::ContentChild;
@@ -161,21 +163,19 @@ private:
   class Writer;
   class Reader;
 
-  class Entry
-  {
-  public:
+  class Entry {
+   public:
     Entry();
     bool UpdateScore();
 
     uint32_t mScore;
-    int32_t mLastAccessed; 
+    int32_t mLastAccessed;  
     nsCString mValue;
   };
 
   
-  class KeyAndEntry
-  {
-  public:
+  class KeyAndEntry {
+   public:
     nsCString mKey;
     Entry mEntry;
   };
@@ -213,27 +213,28 @@ private:
                         InfallibleTArray<DataStorageItem>* aItems,
                         const MutexAutoLock& aProofOfLock);
 
-  Mutex mMutex; 
-  DataStorageTable  mPersistentDataTable;
-  DataStorageTable  mTemporaryDataTable;
-  DataStorageTable  mPrivateDataTable;
+  Mutex mMutex;  
+  DataStorageTable mPersistentDataTable;
+  DataStorageTable mTemporaryDataTable;
+  DataStorageTable mPrivateDataTable;
   nsCOMPtr<nsIFile> mBackingFile;
-  nsCOMPtr<nsITimer> mTimer; 
-  uint32_t mTimerDelay; 
-  bool mPendingWrite; 
+  nsCOMPtr<nsITimer>
+      mTimer;            
+  uint32_t mTimerDelay;  
+  bool mPendingWrite;    
   bool mShuttingDown;
   
 
-  mozilla::Atomic<bool> mInitCalled; 
+  mozilla::Atomic<bool> mInitCalled;  
 
-  Monitor mReadyMonitor; 
-  bool mReady; 
+  Monitor mReadyMonitor;  
+  bool mReady;  
 
   const nsString mFilename;
 
   static StaticAutoPtr<DataStorages> sDataStorages;
 };
 
-} 
+}  
 
-#endif 
+#endif  

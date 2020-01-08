@@ -4,26 +4,25 @@
 
 
 
-
 #ifndef nsRegion_h__
 #define nsRegion_h__
 
-#include <stddef.h>                     
-#include <stdint.h>                     
-#include <sys/types.h>                  
-#include <ostream>                      
-#include "nsCoord.h"                    
-#include "nsError.h"                    
-#include "nsPoint.h"                    
-#include "nsRect.h"                     
+#include <stddef.h>     
+#include <stdint.h>     
+#include <sys/types.h>  
+#include <ostream>      
+#include "nsCoord.h"    
+#include "nsError.h"    
+#include "nsPoint.h"    
+#include "nsRect.h"     
 #include "nsRectAbsolute.h"
-#include "nsMargin.h"                   
-#include "nsRegionFwd.h"                
-#include "nsString.h"                   
-#include "xpcom-config.h"               
-#include "mozilla/ArrayView.h"          
-#include "mozilla/Move.h"               
-#include "mozilla/gfx/MatrixFwd.h"      
+#include "nsMargin.h"               
+#include "nsRegionFwd.h"            
+#include "nsString.h"               
+#include "xpcom-config.h"           
+#include "mozilla/ArrayView.h"      
+#include "mozilla/Move.h"           
+#include "mozilla/gfx/MatrixFwd.h"  
 #include "mozilla/gfx/Logging.h"
 #include "nsTArray.h"
 
@@ -49,38 +48,31 @@
 
 
 
-enum class VisitSide {
-	TOP,
-	BOTTOM,
-	LEFT,
-	RIGHT
-};
+enum class VisitSide { TOP, BOTTOM, LEFT, RIGHT };
 
 namespace regiondetails {
 struct Band;
 }
 
-template<>
-struct nsTArray_CopyChooser<regiondetails::Band>
-{
+template <>
+struct nsTArray_CopyChooser<regiondetails::Band> {
   typedef nsTArray_CopyWithConstructors<regiondetails::Band> Type;
 };
 
 namespace regiondetails {
 
-template<typename T, typename E>
-class UncheckedArray : public T
-{
-public:
+template <typename T, typename E>
+class UncheckedArray : public T {
+ public:
   using T::Elements;
   using T::Length;
 
-  E & operator[](size_t aIndex) { return Elements()[aIndex]; }
+  E& operator[](size_t aIndex) { return Elements()[aIndex]; }
   const E& operator[](size_t aIndex) const { return Elements()[aIndex]; }
   E& LastElement() { return Elements()[Length() - 1]; }
   const E& LastElement() const { return Elements()[Length() - 1]; }
 
-  using iterator = E* ;
+  using iterator = E*;
   using const_iterator = const E*;
 
   iterator begin() { return iterator(Elements()); }
@@ -91,29 +83,23 @@ public:
   const_iterator cend() const { return end(); }
 };
 
-struct Strip
-{
+struct Strip {
   
   
   Strip() { MOZ_CRASH(); }
   Strip(int32_t aLeft, int32_t aRight) : left(aLeft), right(aRight) {}
 
-  bool operator != (const Strip& aOther) const
-  {
+  bool operator!=(const Strip& aOther) const {
     return left != aOther.left || right != aOther.right;
   }
 
-  uint32_t Size() const
-  {
-    return right - left;
-  }
+  uint32_t Size() const { return right - left; }
 
   int32_t left;
   int32_t right;
 };
 
-struct Band
-{
+struct Band {
   using Strip = regiondetails::Strip;
 #ifndef DEBUG
   using StripArray = regiondetails::UncheckedArray<AutoTArray<Strip, 2>, Strip>;
@@ -122,22 +108,18 @@ struct Band
 #endif
 
   MOZ_IMPLICIT Band(const nsRectAbsolute& aRect)
-    : top(aRect.Y()), bottom(aRect.YMost())
-  {
-    mStrips.AppendElement(Strip{ aRect.X(), aRect.XMost() });
+      : top(aRect.Y()), bottom(aRect.YMost()) {
+    mStrips.AppendElement(Strip{aRect.X(), aRect.XMost()});
   }
 
   Band(const Band& aOther)
-    : top(aOther.top), bottom(aOther.bottom)
-    , mStrips(aOther.mStrips)
-  {}
+      : top(aOther.top), bottom(aOther.bottom), mStrips(aOther.mStrips) {}
   Band(const Band&& aOther)
-    : top(aOther.top), bottom(aOther.bottom)
-    , mStrips(std::move(aOther.mStrips))
-  {}
+      : top(aOther.top),
+        bottom(aOther.bottom),
+        mStrips(std::move(aOther.mStrips)) {}
 
-  void InsertStrip(const Strip& aStrip)
-  {
+  void InsertStrip(const Strip& aStrip) {
     for (size_t i = 0; i < mStrips.Length(); i++) {
       Strip& strip = mStrips[i];
       if (strip.left > aStrip.right) {
@@ -175,8 +157,7 @@ struct Band
     mStrips.AppendElement(aStrip);
   }
 
-  void SubStrip(const Strip& aStrip)
-  {
+  void SubStrip(const Strip& aStrip) {
     for (size_t i = 0; i < mStrips.Length(); i++) {
       Strip& strip = mStrips[i];
       if (strip.left > aStrip.right) {
@@ -221,8 +202,7 @@ struct Band
     }
   }
 
-  bool Intersects(const Strip& aStrip) const
-  {
+  bool Intersects(const Strip& aStrip) const {
     for (const Strip& strip : mStrips) {
       if (strip.left >= aStrip.right) {
         return false;
@@ -237,8 +217,7 @@ struct Band
     return false;
   }
 
-  bool IntersectStripBounds(Strip& aStrip) const
-  {
+  bool IntersectStripBounds(Strip& aStrip) const {
     bool intersected = false;
 
     int32_t rightMost;
@@ -263,15 +242,13 @@ struct Band
 
     if (intersected) {
       aStrip.right = rightMost;
-    }
-    else {
+    } else {
       aStrip.right = aStrip.left = 0;
     }
     return intersected;
   }
 
-  bool ContainsStrip(const Strip& aStrip) const
-  {
+  bool ContainsStrip(const Strip& aStrip) const {
     for (const Strip& strip : mStrips) {
       if (strip.left > aStrip.left) {
         return false;
@@ -284,15 +261,13 @@ struct Band
     return false;
   }
 
-  bool EqualStrips(const Band& aBand) const
-  {
+  bool EqualStrips(const Band& aBand) const {
     if (mStrips.Length() != aBand.mStrips.Length()) {
       return false;
     }
 
     for (auto iter1 = mStrips.begin(), iter2 = aBand.mStrips.begin();
-      iter1 != mStrips.end(); iter1++, iter2++)
-    {
+         iter1 != mStrips.end(); iter1++, iter2++) {
       if (*iter1 != *iter2) {
         return false;
       }
@@ -301,8 +276,7 @@ struct Band
     return true;
   }
 
-  void IntersectStrip(const Strip& aStrip)
-  {
+  void IntersectStrip(const Strip& aStrip) {
     size_t i = 0;
 
     while (i < mStrips.Length()) {
@@ -323,8 +297,7 @@ struct Band
     }
   }
 
-  void IntersectStrips(const Band& aOther)
-  {
+  void IntersectStrips(const Band& aOther) {
     auto iter = mStrips.begin();
     auto iterOther = aOther.mStrips.begin();
 
@@ -335,6 +308,7 @@ struct Band
       while (true) {
         while (iter != mStrips.end() && iter->right <= iterOther->left) {
           
+          
           iter++;
         }
 
@@ -343,7 +317,9 @@ struct Band
           break;
         }
 
-        while (iterOther != aOther.mStrips.end() && iterOther->right <= iter->left) {
+        while (iterOther != aOther.mStrips.end() &&
+               iterOther->right <= iter->left) {
+          
           
           iterOther++;
         }
@@ -363,7 +339,8 @@ struct Band
         break;
       }
 
-      newStrips.AppendElement(Strip(std::max(iter->left, iterOther->left), std::min(iterOther->right, iter->right)));
+      newStrips.AppendElement(Strip(std::max(iter->left, iterOther->left),
+                                    std::min(iterOther->right, iter->right)));
 
       if (iterOther->right < iter->right) {
         iterOther++;
@@ -378,8 +355,7 @@ struct Band
     mStrips = newStrips;
   }
 
-  bool Intersects(const Band& aOther) const
-  {
+  bool Intersects(const Band& aOther) const {
     auto iter = mStrips.begin();
     auto iterOther = aOther.mStrips.begin();
 
@@ -387,6 +363,7 @@ struct Band
     while (true) {
       while (true) {
         while (iter != mStrips.end() && iter->right <= iterOther->left) {
+          
           
           iter++;
         }
@@ -396,7 +373,9 @@ struct Band
           break;
         }
 
-        while (iterOther != aOther.mStrips.end() && iterOther->right <= iter->left) {
+        while (iterOther != aOther.mStrips.end() &&
+               iterOther->right <= iter->left) {
+          
           
           iterOther++;
         }
@@ -412,7 +391,7 @@ struct Band
         }
       }
 
-      if (iter == mStrips.end()|| iterOther == aOther.mStrips.end()) {
+      if (iter == mStrips.end() || iterOther == aOther.mStrips.end()) {
         break;
       }
 
@@ -421,15 +400,16 @@ struct Band
     return false;
   }
 
-  void SubStrips(const Band& aOther)
-  {
+  void SubStrips(const Band& aOther) {
     size_t idx = 0;
     auto iterOther = aOther.mStrips.begin();
 
     
     while (true) {
       while (true) {
-        while (idx < mStrips.Length() && mStrips[idx].right <= iterOther->left) {
+        while (idx < mStrips.Length() &&
+               mStrips[idx].right <= iterOther->left) {
+          
           
           idx++;
         }
@@ -439,7 +419,9 @@ struct Band
           break;
         }
 
-        while (iterOther != aOther.mStrips.end() && iterOther->right <= mStrips[idx].left) {
+        while (iterOther != aOther.mStrips.end() &&
+               iterOther->right <= mStrips[idx].left) {
+          
           
           iterOther++;
         }
@@ -471,6 +453,7 @@ struct Band
         }
         mStrips[oldIdx].right = iterOther->left;
         
+        
         continue;
       } else if (mStrips[idx].right > iterOther->right) {
         mStrips[idx].left = iterOther->right;
@@ -491,11 +474,10 @@ struct Band
   int32_t bottom;
   StripArray mStrips;
 };
-}
+}  
 
-class nsRegion
-{
-public:
+class nsRegion {
+ public:
   using Band = regiondetails::Band;
   using Strip = regiondetails::Strip;
 #ifndef DEBUG
@@ -510,63 +492,57 @@ public:
   typedef nsPoint PointType;
   typedef nsMargin MarginType;
 
-  nsRegion() { }
+  nsRegion() {}
   MOZ_IMPLICIT nsRegion(const nsRect& aRect) {
     mBounds = nsRectAbsolute::FromRect(aRect);
   }
-  MOZ_IMPLICIT nsRegion(const nsRectAbsolute& aRect) {
-    mBounds = aRect;
-  }
-  explicit nsRegion(mozilla::gfx::ArrayView<pixman_box32_t> aRects)
-  {
+  MOZ_IMPLICIT nsRegion(const nsRectAbsolute& aRect) { mBounds = aRect; }
+  explicit nsRegion(mozilla::gfx::ArrayView<pixman_box32_t> aRects) {
     for (uint32_t i = 0; i < aRects.Length(); i++) {
       AddRect(BoxToRect(aRects[i]));
     }
   }
 
   nsRegion(const nsRegion& aRegion) { Copy(aRegion); }
-  nsRegion(nsRegion&& aRegion) { mBands.SwapElements(aRegion.mBands); mBounds = aRegion.mBounds; aRegion.SetEmpty(); }
-  nsRegion& operator =(nsRegion&& aRegion) {
+  nsRegion(nsRegion&& aRegion) {
+    mBands.SwapElements(aRegion.mBands);
+    mBounds = aRegion.mBounds;
+    aRegion.SetEmpty();
+  }
+  nsRegion& operator=(nsRegion&& aRegion) {
     mBands.SwapElements(aRegion.mBands);
     mBounds = aRegion.mBounds;
     aRegion.SetEmpty();
     return *this;
   }
-  nsRegion& operator =(const nsRect& aRect) { Copy(aRect); return *this; }
-  nsRegion& operator =(const nsRegion& aRegion) { Copy(aRegion); return *this; }
-  bool operator==(const nsRegion& aRgn) const
-  {
-    return IsEqual(aRgn);
+  nsRegion& operator=(const nsRect& aRect) {
+    Copy(aRect);
+    return *this;
   }
-  bool operator!=(const nsRegion& aRgn) const
-  {
-    return !(*this == aRgn);
+  nsRegion& operator=(const nsRegion& aRegion) {
+    Copy(aRegion);
+    return *this;
   }
+  bool operator==(const nsRegion& aRgn) const { return IsEqual(aRgn); }
+  bool operator!=(const nsRegion& aRgn) const { return !(*this == aRgn); }
 
   friend std::ostream& operator<<(std::ostream& stream, const nsRegion& m);
   void OutputToStream(std::string aObjName, std::ostream& stream) const;
 
-  static
-    nsresult InitStatic()
-  {
-    return NS_OK;
-  }
+  static nsresult InitStatic() { return NS_OK; }
 
-  static
-    void ShutdownStatic() {}
+  static void ShutdownStatic() {}
 
-private:
+ private:
 #ifdef DEBUG_REGIONS
-  class OperationStringGenerator
-  {
-  public:
+  class OperationStringGenerator {
+   public:
     virtual ~OperationStringGenerator() {}
 
     virtual void OutputOp() = 0;
   };
 #endif
-public:
-
+ public:
   void AssertStateInternal() const;
   void AssertState() const {
 #ifdef DEBUG_REGIONS
@@ -574,9 +550,8 @@ public:
 #endif
   }
 
-private:
-  void And(BandArray& aOut, const BandArray& aIn1, const BandArray& aIn2)
-  {
+ private:
+  void And(BandArray& aOut, const BandArray& aIn1, const BandArray& aIn2) {
     size_t idx = 0;
     size_t idxOther = 0;
 
@@ -587,20 +562,25 @@ private:
       while (true) {
         while (idx != aIn1.Length() && aIn1[idx].bottom <= aIn2[idxOther].top) {
           
+          
           idx++;
         }
 
         if (idx == aIn1.Length()) {
           
+          
           break;
         }
 
-        while (idxOther != aIn2.Length() && aIn2[idxOther].bottom <= aIn1[idx].top) {
+        while (idxOther != aIn2.Length() &&
+               aIn2[idxOther].bottom <= aIn1[idx].top) {
+          
           
           idxOther++;
         }
 
         if (idxOther == aIn2.Length()) {
+          
           
           break;
         }
@@ -619,6 +599,7 @@ private:
 
       Band newBand(aIn1[idx]);
       
+      
       newBand.top = std::max(aIn1[idx].top, aIn2[idxOther].top);
       newBand.bottom = std::min(aIn1[idx].bottom, aIn2[idxOther].bottom);
       newBand.IntersectStrips(aIn2[idxOther]);
@@ -627,7 +608,7 @@ private:
         
         
         if (aOut.Length() && aOut.LastElement().bottom == newBand.top &&
-          aOut.LastElement().EqualStrips(newBand)) {
+            aOut.LastElement().EqualStrips(newBand)) {
           aOut.LastElement().bottom = newBand.bottom;
         } else {
           aOut.AppendElement(std::move(newBand));
@@ -638,42 +619,43 @@ private:
         idxOther++;
         if (idxOther == aIn2.Length()) {
           
+          
           break;
         }
       } else {
+        
         
         idx++;
       }
     }
   }
 
-public:
-  nsRegion& AndWith(const nsRegion& aRegion)
-  {
+ public:
+  nsRegion& AndWith(const nsRegion& aRegion) {
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorAndWith : public OperationStringGenerator
-    {
-    public:
-      OperationStringGeneratorAndWith(nsRegion& aRegion, const nsRegion& aOtherRegion)
-        : mRegion(&aRegion), mRegionCopy(aRegion), mOtherRegion(aOtherRegion)
-      {
+    class OperationStringGeneratorAndWith : public OperationStringGenerator {
+     public:
+      OperationStringGeneratorAndWith(nsRegion& aRegion,
+                                      const nsRegion& aOtherRegion)
+          : mRegion(&aRegion),
+            mRegionCopy(aRegion),
+            mOtherRegion(aOtherRegion) {
         aRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorAndWith()
-      {
+      virtual ~OperationStringGeneratorAndWith() {
         mRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegionCopy.OutputToStream("r1", stream);
         mOtherRegion.OutputToStream("r2", stream);
         stream << "r1.AndWith(r2);\n";
         gfxCriticalError() << stream.str();
       }
-    private:
-      nsRegion * mRegion;
+
+     private:
+      nsRegion* mRegion;
       nsRegion mRegionCopy;
       nsRegion mOtherRegion;
     };
@@ -715,31 +697,29 @@ public:
     return *this;
   }
 
-  nsRegion& AndWith(const nsRectAbsolute& aRect)
-  {
+  nsRegion& AndWith(const nsRectAbsolute& aRect) {
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorAndWith : public OperationStringGenerator
-    {
-    public:
-      OperationStringGeneratorAndWith(nsRegion& aRegion, const nsRectAbsolute& aRect)
-        : mRegion(&aRegion), mRegionCopy(aRegion), mRect(aRect)
-      {
+    class OperationStringGeneratorAndWith : public OperationStringGenerator {
+     public:
+      OperationStringGeneratorAndWith(nsRegion& aRegion,
+                                      const nsRectAbsolute& aRect)
+          : mRegion(&aRegion), mRegionCopy(aRegion), mRect(aRect) {
         aRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorAndWith()
-      {
+      virtual ~OperationStringGeneratorAndWith() {
         mRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegionCopy.OutputToStream("r", stream);
-        stream << "r.AndWith(nsRect(" << mRect.X() << ", " << mRect.Y() << ", " << mRect.Width() << ", " << mRect.Height() << "));\n";
+        stream << "r.AndWith(nsRect(" << mRect.X() << ", " << mRect.Y() << ", "
+               << mRect.Width() << ", " << mRect.Height() << "));\n";
         gfxCriticalError() << stream.str();
       }
-    private:
-      nsRegion * mRegion;
+
+     private:
+      nsRegion* mRegion;
       nsRegion mRegionCopy;
       nsRectAbsolute mRect;
     };
@@ -808,35 +788,32 @@ public:
   nsRegion& AndWith(const nsRect& aRect) {
     return AndWith(nsRectAbsolute::FromRect(aRect));
   }
-  nsRegion& And(const nsRegion& aRgn1, const nsRegion& aRgn2)
-  {
+  nsRegion& And(const nsRegion& aRgn1, const nsRegion& aRgn2) {
     if (&aRgn1 == this) {
       return AndWith(aRgn2);
     }
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorAnd : public OperationStringGenerator
-    {
-    public:
-      OperationStringGeneratorAnd(nsRegion& aRegion, const nsRegion& aRegion1, const nsRegion& aRegion2)
-        : mRegion(&aRegion), mRegion1(aRegion1), mRegion2(aRegion2)
-      {
+    class OperationStringGeneratorAnd : public OperationStringGenerator {
+     public:
+      OperationStringGeneratorAnd(nsRegion& aRegion, const nsRegion& aRegion1,
+                                  const nsRegion& aRegion2)
+          : mRegion(&aRegion), mRegion1(aRegion1), mRegion2(aRegion2) {
         aRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorAnd()
-      {
+      virtual ~OperationStringGeneratorAnd() {
         mRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegion1.OutputToStream("r1", stream);
         mRegion2.OutputToStream("r2", stream);
         stream << "nsRegion r3;\nr3.And(r1, r2);\n";
         gfxCriticalError() << stream.str();
       }
-    private:
-      nsRegion * mRegion;
+
+     private:
+      nsRegion* mRegion;
       nsRegion mRegion1;
       nsRegion mRegion2;
     };
@@ -871,37 +848,36 @@ public:
     AssertState();
     return *this;
   }
-  nsRegion& And(const nsRect& aRect, const nsRegion& aRegion)
-  {
+  nsRegion& And(const nsRect& aRect, const nsRegion& aRegion) {
     return And(aRegion, aRect);
   }
-  nsRegion& And(const nsRegion& aRegion, const nsRectAbsolute& aRect)
-  {
+  nsRegion& And(const nsRegion& aRegion, const nsRectAbsolute& aRect) {
     if (&aRegion == this) {
       return AndWith(aRect);
     }
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorAnd : public OperationStringGenerator
-    {
-    public:
-      OperationStringGeneratorAnd(nsRegion& aThisRegion, const nsRegion& aRegion, const nsRectAbsolute& aRect)
-        : mThisRegion(&aThisRegion), mRegion(aRegion), mRect(aRect)
-      {
+    class OperationStringGeneratorAnd : public OperationStringGenerator {
+     public:
+      OperationStringGeneratorAnd(nsRegion& aThisRegion,
+                                  const nsRegion& aRegion,
+                                  const nsRectAbsolute& aRect)
+          : mThisRegion(&aThisRegion), mRegion(aRegion), mRect(aRect) {
         aThisRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorAnd()
-      {
+      virtual ~OperationStringGeneratorAnd() {
         mThisRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegion.OutputToStream("r", stream);
-        stream << "nsRegion r2;\nr.And(r2, nsRect(" << mRect.X() << ", " << mRect.Y() << ", " << mRect.Width() << ", " << mRect.Height() << "));\n";
+        stream << "nsRegion r2;\nr.And(r2, nsRect(" << mRect.X() << ", "
+               << mRect.Y() << ", " << mRect.Width() << ", " << mRect.Height()
+               << "));\n";
         gfxCriticalError() << stream.str();
       }
-    private:
+
+     private:
       nsRegion* mThisRegion;
       nsRegion mRegion;
       nsRectAbsolute mRect;
@@ -944,8 +920,7 @@ public:
       newBand.IntersectStrip(Strip(aRect.X(), aRect.XMost()));
 
       if (newBand.mStrips.Length()) {
-        if (!mBands.IsEmpty() &&
-            newBand.top == mBands.LastElement().bottom &&
+        if (!mBands.IsEmpty() && newBand.top == mBands.LastElement().bottom &&
             newBand.EqualStrips(mBands.LastElement())) {
           mBands.LastElement().bottom = newBand.bottom;
         } else {
@@ -965,32 +940,27 @@ public:
     AssertState();
     return *this;
   }
-  nsRegion& And(const nsRegion& aRegion, const nsRect& aRect)
-  {
+  nsRegion& And(const nsRegion& aRegion, const nsRect& aRect) {
     return And(aRegion, nsRectAbsolute::FromRect(aRect));
   }
-  nsRegion& And(const nsRect& aRect1, const nsRect& aRect2)
-  {
+  nsRegion& And(const nsRect& aRect1, const nsRect& aRect2) {
     nsRect tmpRect;
 
     tmpRect.IntersectRect(aRect1, aRect2);
     return Copy(tmpRect);
   }
 
-  nsRegion& OrWith(const nsRegion& aOther)
-  {
+  nsRegion& OrWith(const nsRegion& aOther) {
     for (RectIterator idx(aOther); !idx.Done(); idx.Next()) {
       AddRect(idx.GetAbsolute());
     }
     return *this;
   }
-  nsRegion& OrWith(const nsRect& aOther)
-  {
+  nsRegion& OrWith(const nsRect& aOther) {
     AddRect(nsRectAbsolute::FromRect(aOther));
     return *this;
   }
-  nsRegion& Or(const nsRegion& aRgn1, const nsRegion& aRgn2)
-  {
+  nsRegion& Or(const nsRegion& aRgn1, const nsRegion& aRgn2) {
     if (&aRgn1 != this) {
       *this = aRgn1;
     }
@@ -999,34 +969,24 @@ public:
     }
     return *this;
   }
-  nsRegion& Or(const nsRegion& aRegion, const nsRect& aRect)
-  {
+  nsRegion& Or(const nsRegion& aRegion, const nsRect& aRect) {
     if (&aRegion != this) {
       *this = aRegion;
     }
     AddRect(nsRectAbsolute::FromRect(aRect));
     return *this;
   }
-  nsRegion& Or(const nsRect& aRect, const nsRegion& aRegion)
-  {
-    return  Or(aRegion, aRect);
+  nsRegion& Or(const nsRect& aRect, const nsRegion& aRegion) {
+    return Or(aRegion, aRect);
   }
-  nsRegion& Or(const nsRect& aRect1, const nsRect& aRect2)
-  {
+  nsRegion& Or(const nsRect& aRect1, const nsRect& aRect2) {
     Copy(aRect1);
     return Or(*this, aRect2);
   }
 
-  nsRegion& XorWith(const nsRegion& aOther)
-  {
-    return Xor(*this, aOther);
-  }
-  nsRegion& XorWith(const nsRect& aOther)
-  {
-    return Xor(*this, aOther);
-  }
-  nsRegion& Xor(const nsRegion& aRgn1, const nsRegion& aRgn2)
-  {
+  nsRegion& XorWith(const nsRegion& aOther) { return Xor(*this, aOther); }
+  nsRegion& XorWith(const nsRect& aOther) { return Xor(*this, aOther); }
+  nsRegion& Xor(const nsRegion& aRgn1, const nsRegion& aRgn2) {
     
     
     nsRegion p;
@@ -1035,47 +995,43 @@ public:
     q.Sub(aRgn2, aRgn1);
     return Or(p, q);
   }
-  nsRegion& Xor(const nsRegion& aRegion, const nsRect& aRect)
-  {
+  nsRegion& Xor(const nsRegion& aRegion, const nsRect& aRect) {
     return Xor(aRegion, nsRegion(aRect));
   }
-  nsRegion& Xor(const nsRect& aRect, const nsRegion& aRegion)
-  {
+  nsRegion& Xor(const nsRect& aRect, const nsRegion& aRegion) {
     return Xor(nsRegion(aRect), aRegion);
   }
-  nsRegion& Xor(const nsRect& aRect1, const nsRect& aRect2)
-  {
+  nsRegion& Xor(const nsRect& aRect1, const nsRect& aRect2) {
     return Xor(nsRegion(aRect1), nsRegion(aRect2));
   }
 
   nsRegion ToAppUnits(nscoord aAppUnitsPerPixel) const;
 
-  nsRegion& SubWith(const nsRegion& aOther)
-  {
+  nsRegion& SubWith(const nsRegion& aOther) {
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorSubWith : public OperationStringGenerator
-    {
-    public:
-      OperationStringGeneratorSubWith(nsRegion& aRegion, const nsRegion& aOtherRegion)
-        : mRegion(&aRegion), mRegionCopy(aRegion), mOtherRegion(aOtherRegion)
-      {
+    class OperationStringGeneratorSubWith : public OperationStringGenerator {
+     public:
+      OperationStringGeneratorSubWith(nsRegion& aRegion,
+                                      const nsRegion& aOtherRegion)
+          : mRegion(&aRegion),
+            mRegionCopy(aRegion),
+            mOtherRegion(aOtherRegion) {
         aRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorSubWith()
-      {
+      virtual ~OperationStringGeneratorSubWith() {
         mRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegionCopy.OutputToStream("r1", stream);
         mOtherRegion.OutputToStream("r2", stream);
         stream << "r1.SubWith(r2);\n";
         gfxCriticalError() << stream.str();
       }
-    private:
-      nsRegion * mRegion;
+
+     private:
+      nsRegion* mRegion;
       nsRegion mRegionCopy;
       nsRegion mOtherRegion;
     };
@@ -1099,22 +1055,28 @@ public:
     size_t idxOther = 0;
     while (idx < mBands.Length()) {
       while (true) {
-        while (idx != mBands.Length() && mBands[idx].bottom <= aOther.mBands[idxOther].top) {
+        while (idx != mBands.Length() &&
+               mBands[idx].bottom <= aOther.mBands[idxOther].top) {
+          
           
           idx++;
         }
 
         if (idx == mBands.Length()) {
           
+          
           break;
         }
 
-        while (idxOther != aOther.mBands.Length() && aOther.mBands[idxOther].bottom <= mBands[idx].top) {
+        while (idxOther != aOther.mBands.Length() &&
+               aOther.mBands[idxOther].bottom <= mBands[idx].top) {
+          
           
           idxOther++;
         }
 
         if (idxOther == aOther.mBands.Length()) {
+          
           
           break;
         }
@@ -1196,18 +1158,11 @@ public:
     EnsureSimplified();
     return *this;
   }
-  nsRegion& SubOut(const nsRegion& aOther)
-  {
-    return SubWith(aOther);
-  }
-  nsRegion& SubOut(const nsRect& aOther)
-  {
-    return SubWith(aOther);
-  }
+  nsRegion& SubOut(const nsRegion& aOther) { return SubWith(aOther); }
+  nsRegion& SubOut(const nsRect& aOther) { return SubWith(aOther); }
 
-private:
-  void AppendOrExtend(const Band& aNewBand)
-  {
+ private:
+  void AppendOrExtend(const Band& aNewBand) {
     if (aNewBand.mStrips.IsEmpty()) {
       return;
     }
@@ -1216,14 +1171,14 @@ private:
       return;
     }
 
-    if (mBands.LastElement().bottom == aNewBand.top && mBands.LastElement().EqualStrips(aNewBand)) {
+    if (mBands.LastElement().bottom == aNewBand.top &&
+        mBands.LastElement().EqualStrips(aNewBand)) {
       mBands.LastElement().bottom = aNewBand.bottom;
     } else {
       mBands.AppendElement(aNewBand);
     }
   }
-  void AppendOrExtend(const Band&& aNewBand)
-  {
+  void AppendOrExtend(const Band&& aNewBand) {
     if (aNewBand.mStrips.IsEmpty()) {
       return;
     }
@@ -1232,41 +1187,40 @@ private:
       return;
     }
 
-    if (mBands.LastElement().bottom == aNewBand.top && mBands.LastElement().EqualStrips(aNewBand)) {
+    if (mBands.LastElement().bottom == aNewBand.top &&
+        mBands.LastElement().EqualStrips(aNewBand)) {
       mBands.LastElement().bottom = aNewBand.bottom;
     } else {
       mBands.AppendElement(std::move(aNewBand));
     }
   }
-public:
-  nsRegion& Sub(const nsRegion& aRgn1, const nsRegion& aRgn2)
-  {
+
+ public:
+  nsRegion& Sub(const nsRegion& aRgn1, const nsRegion& aRgn2) {
     if (&aRgn1 == this) {
       return SubWith(aRgn2);
     }
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorSub : public OperationStringGenerator
-    {
-    public:
-      OperationStringGeneratorSub(nsRegion& aRegion, const nsRegion& aRgn1, const nsRegion& aRgn2)
-        : mRegion(&aRegion), mRegion1(aRgn1), mRegion2(aRgn2)
-      {
+    class OperationStringGeneratorSub : public OperationStringGenerator {
+     public:
+      OperationStringGeneratorSub(nsRegion& aRegion, const nsRegion& aRgn1,
+                                  const nsRegion& aRgn2)
+          : mRegion(&aRegion), mRegion1(aRgn1), mRegion2(aRgn2) {
         aRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorSub()
-      {
+      virtual ~OperationStringGeneratorSub() {
         mRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegion1.OutputToStream("r1", stream);
         mRegion2.OutputToStream("r2", stream);
         stream << "nsRegion r3;\nr3.Sub(r1, r2);\n";
         gfxCriticalError() << stream.str();
       }
-    private:
+
+     private:
       nsRegion* mRegion;
       nsRegion mRegion1;
       nsRegion mRegion2;
@@ -1304,7 +1258,8 @@ public:
     
     
     while (idx < bands1.Length()) {
-      while (idxOther < bands2.Length() && bands2[idxOther].bottom <= bands1[idx].top) {
+      while (idxOther < bands2.Length() &&
+             bands2[idxOther].bottom <= bands1[idx].top) {
         
         
         idxOther++;
@@ -1332,7 +1287,8 @@ public:
       }
 
       int32_t lastBottom = std::max(other.top, origBand.top);
-      while (idxOther < bands2.Length() && bands2[idxOther].top < origBand.bottom) {
+      while (idxOther < bands2.Length() &&
+             bands2[idxOther].top < origBand.bottom) {
         const Band& other = bands2[idxOther];
         Band newBand(origBand);
         newBand.top = std::max(origBand.top, other.top);
@@ -1380,8 +1336,7 @@ public:
 
     if (mBands.IsEmpty()) {
       mBounds.SetEmpty();
-    }
-    else {
+    } else {
       mBounds = CalculateBounds();
     }
 
@@ -1390,10 +1345,9 @@ public:
     return *this;
   }
 
-private:
+ private:
   
-  void RunSubtraction(const nsRectAbsolute& aRect)
-  {
+  void RunSubtraction(const nsRectAbsolute& aRect) {
     Strip rectStrip(aRect.X(), aRect.XMost());
 
     size_t idx = 0;
@@ -1447,7 +1401,8 @@ private:
       mBands[idx].top = aRect.YMost();
 
       if (newBand.mStrips.Length()) {
-        if (idx && mBands[idx - 1].bottom == newBand.top && newBand.EqualStrips(mBands[idx - 1])) {
+        if (idx && mBands[idx - 1].bottom == newBand.top &&
+            newBand.EqualStrips(mBands[idx - 1])) {
           mBands[idx - 1].bottom = aRect.YMost();
         } else {
           mBands.InsertElementAt(idx, std::move(newBand));
@@ -1458,7 +1413,7 @@ private:
     }
   }
 
-public:
+ public:
   nsRegion& SubWith(const nsRectAbsolute& aRect) {
     if (!mBounds.Intersects(aRect)) {
       return *this;
@@ -1470,28 +1425,27 @@ public:
     }
 
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorSubWith : public OperationStringGenerator
-    {
-    public:
-      OperationStringGeneratorSubWith(nsRegion& aRegion, const nsRectAbsolute& aRect)
-        : mRegion(&aRegion), mRegionCopy(aRegion), mRect(aRect)
-      {
+    class OperationStringGeneratorSubWith : public OperationStringGenerator {
+     public:
+      OperationStringGeneratorSubWith(nsRegion& aRegion,
+                                      const nsRectAbsolute& aRect)
+          : mRegion(&aRegion), mRegionCopy(aRegion), mRect(aRect) {
         aRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorSubWith()
-      {
+      virtual ~OperationStringGeneratorSubWith() {
         mRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegionCopy.OutputToStream("r", stream);
-        stream << "r.SubWith(nsRect(" << mRect.X() << ", " << mRect.Y() << ", " << mRect.Width() << ", " << mRect.Height() << "));\n";
+        stream << "r.SubWith(nsRect(" << mRect.X() << ", " << mRect.Y() << ", "
+               << mRect.Width() << ", " << mRect.Height() << "));\n";
         gfxCriticalError() << stream.str();
       }
-    private:
-      nsRegion * mRegion;
+
+     private:
+      nsRegion* mRegion;
       nsRegion mRegionCopy;
       nsRectAbsolute mRect;
     };
@@ -1513,8 +1467,7 @@ public:
     AssertState();
     return *this;
   }
-  nsRegion& Sub(const nsRegion& aRegion, const nsRectAbsolute& aRect)
-  {
+  nsRegion& Sub(const nsRegion& aRegion, const nsRectAbsolute& aRect) {
     if (aRect.Contains(aRegion.mBounds)) {
       SetEmpty();
       return *this;
@@ -1523,28 +1476,29 @@ public:
       return SubWith(aRect);
     }
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorSub : public OperationStringGenerator
-    {
-    public:
-      OperationStringGeneratorSub(nsRegion& aRegion, const nsRegion& aRegionOther, const nsRectAbsolute& aRect)
-        : mRegion(&aRegion), mRegionOther(aRegionOther), mRect(aRect)
-      {
+    class OperationStringGeneratorSub : public OperationStringGenerator {
+     public:
+      OperationStringGeneratorSub(nsRegion& aRegion,
+                                  const nsRegion& aRegionOther,
+                                  const nsRectAbsolute& aRect)
+          : mRegion(&aRegion), mRegionOther(aRegionOther), mRect(aRect) {
         aRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorSub()
-      {
+      virtual ~OperationStringGeneratorSub() {
         mRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegionOther.OutputToStream("r1", stream);
-        stream << "nsRegion r2;\nr2.Sub(r1, nsRect(" << mRect.X() << ", " << mRect.Y() << ", " << mRect.Width() << ", " << mRect.Height() << "));\n";
+        stream << "nsRegion r2;\nr2.Sub(r1, nsRect(" << mRect.X() << ", "
+               << mRect.Y() << ", " << mRect.Width() << ", " << mRect.Height()
+               << "));\n";
         gfxCriticalError() << stream.str();
       }
-    private:
-      nsRegion * mRegion;
+
+     private:
+      nsRegion* mRegion;
       nsRegion mRegionOther;
       nsRectAbsolute mRect;
     };
@@ -1594,6 +1548,7 @@ public:
       mBands.AppendElement(std::move(newBand));
     }
 
+    
     
     bool didIntersect = false;
 
@@ -1646,27 +1601,22 @@ public:
   nsRegion& SubWith(const nsRect& aRect) {
     return SubWith(nsRectAbsolute::FromRect(aRect));
   }
-  nsRegion& Sub(const nsRect& aRect, const nsRegion& aRegion)
-  {
+  nsRegion& Sub(const nsRect& aRect, const nsRegion& aRegion) {
     Copy(aRect);
     return SubWith(aRegion);
   }
-  nsRegion& Sub(const nsRectAbsolute& aRect, const nsRegion& aRegion)
-  {
+  nsRegion& Sub(const nsRectAbsolute& aRect, const nsRegion& aRegion) {
     Copy(aRect);
     return SubWith(aRegion);
   }
-  nsRegion& Sub(const nsRect& aRect1, const nsRect& aRect2)
-  {
+  nsRegion& Sub(const nsRect& aRect1, const nsRect& aRect2) {
     Copy(aRect1);
     return SubWith(aRect2);
   }
-  nsRegion& Sub(const nsRegion& aRegion, const nsRect& aRect)
-  {
+  nsRegion& Sub(const nsRegion& aRegion, const nsRect& aRect) {
     return Sub(aRegion, nsRectAbsolute::FromRect(aRect));
   }
-  nsRegion& Sub(const nsRectAbsolute& aRect1, const nsRectAbsolute& aRect2)
-  {
+  nsRegion& Sub(const nsRectAbsolute& aRect1, const nsRectAbsolute& aRect2) {
     Copy(aRect1);
     return SubWith(aRect2);
   }
@@ -1676,8 +1626,7 @@ public:
 
 
 
-  bool Contains(int aX, int aY) const
-  {
+  bool Contains(int aX, int aY) const {
     if (mBands.IsEmpty()) {
       return mBounds.Contains(aX, aY);
     }
@@ -1701,8 +1650,7 @@ public:
     }
     return false;
   }
-  bool Contains(const nsRectAbsolute& aRect) const
-  {
+  bool Contains(const nsRectAbsolute& aRect) const {
     if (aRect.IsEmpty()) {
       return false;
     }
@@ -1754,8 +1702,7 @@ public:
     }
     return false;
   }
-  bool Contains(const nsRect& aRect) const
-  {
+  bool Contains(const nsRect& aRect) const {
     return Contains(nsRectAbsolute::FromRect(aRect));
   }
 
@@ -1765,35 +1712,31 @@ public:
     return Intersects(nsRectAbsolute::FromRect(aRect));
   }
 
-  void MoveBy(int32_t aXOffset, int32_t aYOffset)
-  {
+  void MoveBy(int32_t aXOffset, int32_t aYOffset) {
     MoveBy(nsPoint(aXOffset, aYOffset));
   }
-  void MoveBy(nsPoint aPt)
-  {
+  void MoveBy(nsPoint aPt) {
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorMoveBy : public OperationStringGenerator
-    {
-    public:
+    class OperationStringGeneratorMoveBy : public OperationStringGenerator {
+     public:
       OperationStringGeneratorMoveBy(nsRegion& aRegion, const nsPoint& aPoint)
-        : mRegion(&aRegion), mRegionCopy(aRegion), mPoint(aPoint)
-      {
+          : mRegion(&aRegion), mRegionCopy(aRegion), mPoint(aPoint) {
         aRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorMoveBy()
-      {
+      virtual ~OperationStringGeneratorMoveBy() {
         mRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegionCopy.OutputToStream("r", stream);
-        stream << "r.MoveBy(nsPoint(" << mPoint.x << ", " << mPoint.y << "));\n";
+        stream << "r.MoveBy(nsPoint(" << mPoint.x << ", " << mPoint.y
+               << "));\n";
         gfxCriticalError() << stream.str();
       }
-    private:
-      nsRegion * mRegion;
+
+     private:
+      nsRegion* mRegion;
       nsRegion mRegionCopy;
       nsPoint mPoint;
     };
@@ -1812,25 +1755,21 @@ public:
     }
     AssertState();
   }
-  void SetEmpty()
-  {
+  void SetEmpty() {
     mBands.Clear();
     mBounds.SetEmpty();
   }
 
-  nsRegion MovedBy(int32_t aXOffset, int32_t aYOffset) const
-  {
+  nsRegion MovedBy(int32_t aXOffset, int32_t aYOffset) const {
     return MovedBy(nsPoint(aXOffset, aYOffset));
   }
-  nsRegion MovedBy(const nsPoint& aPt) const
-  {
+  nsRegion MovedBy(const nsPoint& aPt) const {
     nsRegion copy(*this);
     copy.MoveBy(aPt);
     return copy;
   }
 
-  nsRegion Intersect(const nsRegion& aOther) const
-  {
+  nsRegion Intersect(const nsRegion& aOther) const {
     nsRegion intersection;
     intersection.And(*this, aOther);
     return intersection;
@@ -1838,8 +1777,7 @@ public:
 
   void Inflate(const nsMargin& aMargin);
 
-  nsRegion Inflated(const nsMargin& aMargin) const
-  {
+  nsRegion Inflated(const nsMargin& aMargin) const {
     nsRegion copy(*this);
     copy.Inflate(aMargin);
     return copy;
@@ -1847,8 +1785,7 @@ public:
 
   bool IsEmpty() const { return mBounds.IsEmpty(); }
   bool IsComplex() const { return GetNumRects() > 1; }
-  bool IsEqual(const nsRegion& aRegion) const
-  {
+  bool IsEqual(const nsRegion& aRegion) const {
     if (!mBounds.IsEqualInterior(aRegion.mBounds)) {
       return false;
     }
@@ -1858,8 +1795,7 @@ public:
     }
 
     for (auto iter1 = mBands.begin(), iter2 = aRegion.mBands.begin();
-      iter1 != mBands.end(); iter1++, iter2++)
-    {
+         iter1 != mBands.end(); iter1++, iter2++) {
       if (iter1->top != iter2->top || iter1->bottom != iter2->bottom ||
           !iter1->EqualStrips(*iter2)) {
         return false;
@@ -1869,8 +1805,7 @@ public:
     return true;
   }
 
-  uint32_t GetNumRects() const
-  {
+  uint32_t GetNumRects() const {
     if (mBands.IsEmpty()) {
       return mBounds.IsEmpty() ? 0 : 1;
     }
@@ -1894,16 +1829,20 @@ public:
 
 
 
-  MOZ_MUST_USE nsRegion
-    ScaleToOtherAppUnitsRoundOut(int32_t aFromAPP, int32_t aToAPP) const;
-  MOZ_MUST_USE nsRegion
-    ScaleToOtherAppUnitsRoundIn(int32_t aFromAPP, int32_t aToAPP) const;
+
+  MOZ_MUST_USE nsRegion ScaleToOtherAppUnitsRoundOut(int32_t aFromAPP,
+                                                     int32_t aToAPP) const;
+  MOZ_MUST_USE nsRegion ScaleToOtherAppUnitsRoundIn(int32_t aFromAPP,
+                                                    int32_t aToAPP) const;
   nsRegion& ScaleRoundOut(float aXScale, float aYScale);
   nsRegion& ScaleInverseRoundOut(float aXScale, float aYScale);
-  nsRegion& Transform(const mozilla::gfx::Matrix4x4 &aTransform);
-  nsIntRegion ScaleToOutsidePixels(float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const;
-  nsIntRegion ScaleToInsidePixels(float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const;
-  nsIntRegion ScaleToNearestPixels(float aXScale, float aYScale, nscoord aAppUnitsPerPixel) const;
+  nsRegion& Transform(const mozilla::gfx::Matrix4x4& aTransform);
+  nsIntRegion ScaleToOutsidePixels(float aXScale, float aYScale,
+                                   nscoord aAppUnitsPerPixel) const;
+  nsIntRegion ScaleToInsidePixels(float aXScale, float aYScale,
+                                  nscoord aAppUnitsPerPixel) const;
+  nsIntRegion ScaleToNearestPixels(float aXScale, float aYScale,
+                                   nscoord aAppUnitsPerPixel) const;
   nsIntRegion ToOutsidePixels(nscoord aAppUnitsPerPixel) const;
   nsIntRegion ToNearestPixels(nscoord aAppUnitsPerPixel) const;
 
@@ -1948,42 +1887,38 @@ public:
 
 
 
-  typedef void(*visitFn)(void *closure, VisitSide side, int x1, int y1, int x2, int y2);
-  void VisitEdges(visitFn, void *closure) const;
+  typedef void (*visitFn)(void* closure, VisitSide side, int x1, int y1, int x2,
+                          int y2);
+  void VisitEdges(visitFn, void* closure) const;
 
   nsCString ToString() const;
 
-  static inline pixman_box32_t RectToBox(const nsRect &aRect)
-  {
-    pixman_box32_t box = { aRect.X(), aRect.Y(), aRect.XMost(), aRect.YMost() };
+  static inline pixman_box32_t RectToBox(const nsRect& aRect) {
+    pixman_box32_t box = {aRect.X(), aRect.Y(), aRect.XMost(), aRect.YMost()};
     return box;
   }
 
-  static inline pixman_box32_t RectToBox(const mozilla::gfx::IntRect &aRect)
-  {
-    pixman_box32_t box = { aRect.X(), aRect.Y(), aRect.XMost(), aRect.YMost() };
+  static inline pixman_box32_t RectToBox(const mozilla::gfx::IntRect& aRect) {
+    pixman_box32_t box = {aRect.X(), aRect.Y(), aRect.XMost(), aRect.YMost()};
     return box;
   }
-private:
 
+ private:
   nsIntRegion ToPixels(nscoord aAppUnitsPerPixel, bool aOutsidePixels) const;
 
-  nsRegion& Copy(const nsRegion& aRegion)
-  {
+  nsRegion& Copy(const nsRegion& aRegion) {
     mBounds = aRegion.mBounds;
     mBands = aRegion.mBands;
     return *this;
   }
 
-  nsRegion& Copy(const nsRect& aRect)
-  {
+  nsRegion& Copy(const nsRect& aRect) {
     mBands.Clear();
     mBounds = nsRectAbsolute::FromRect(aRect);
     return *this;
   }
 
-  nsRegion& Copy(const nsRectAbsolute& aRect)
-  {
+  nsRegion& Copy(const nsRectAbsolute& aRect) {
     mBands.Clear();
     mBounds = aRect;
     return *this;
@@ -1995,36 +1930,32 @@ private:
     }
   }
 
-  static inline nsRectAbsolute BoxToRect(const pixman_box32_t &aBox)
-  {
-    return nsRectAbsolute(aBox.x1, aBox.y1,
-                          aBox.x2, aBox.y2);
+  static inline nsRectAbsolute BoxToRect(const pixman_box32_t& aBox) {
+    return nsRectAbsolute(aBox.x1, aBox.y1, aBox.x2, aBox.y2);
   }
 
-  void AddRect(const nsRectAbsolute& aRect)
-  {
+  void AddRect(const nsRectAbsolute& aRect) {
 #ifdef DEBUG_REGIONS
-    class OperationStringGeneratorAddRect : public OperationStringGenerator
-    {
-    public:
-      OperationStringGeneratorAddRect(nsRegion& aRegion, const nsRectAbsolute& aRect)
-        : mRegion(&aRegion), mRegionCopy(aRegion), mRect(aRect)
-      {
+    class OperationStringGeneratorAddRect : public OperationStringGenerator {
+     public:
+      OperationStringGeneratorAddRect(nsRegion& aRegion,
+                                      const nsRectAbsolute& aRect)
+          : mRegion(&aRegion), mRegionCopy(aRegion), mRect(aRect) {
         aRegion.mCurrentOpGenerator = this;
       }
-      virtual ~OperationStringGeneratorAddRect()
-      {
+      virtual ~OperationStringGeneratorAddRect() {
         mRegion->mCurrentOpGenerator = nullptr;
       }
 
-      virtual void OutputOp() override
-      {
+      virtual void OutputOp() override {
         std::stringstream stream;
         mRegionCopy.OutputToStream("r", stream);
-        stream << "r.OrWith(nsRect(" << mRect.X() << ", " << mRect.Y() << ", " << mRect.Width() << ", " << mRect.Height() << "));\n";
+        stream << "r.OrWith(nsRect(" << mRect.X() << ", " << mRect.Y() << ", "
+               << mRect.Width() << ", " << mRect.Height() << "));\n";
         gfxCriticalError() << stream.str();
       }
-    private:
+
+     private:
       nsRegion* mRegion;
       nsRegion mRegionCopy;
       nsRectAbsolute mRect;
@@ -2124,7 +2055,8 @@ private:
     if (remaining.top < remaining.bottom) {
       
       if (idx) {
-        if (mBands[idx - 1].bottom == remaining.top && mBands[idx - 1].EqualStrips(remaining)) {
+        if (mBands[idx - 1].bottom == remaining.top &&
+            mBands[idx - 1].EqualStrips(remaining)) {
           mBands[idx - 1].bottom = remaining.bottom;
           CompressBefore(idx);
           AssertState();
@@ -2145,8 +2077,7 @@ private:
 
   
   
-  nsRectAbsolute CalculateBounds() const
-  {
+  nsRectAbsolute CalculateBounds() const {
     if (mBands.IsEmpty()) {
       return mBounds;
     }
@@ -2168,16 +2099,17 @@ private:
                                             const Band& aBottomBand);
 
   
-  bool CompressAdjacentBands(size_t& aIdx)
-  {
+  bool CompressAdjacentBands(size_t& aIdx) {
     if ((aIdx + 1) < mBands.Length()) {
-      if (mBands[aIdx + 1].top == mBands[aIdx].bottom && mBands[aIdx + 1].EqualStrips(mBands[aIdx])) {
+      if (mBands[aIdx + 1].top == mBands[aIdx].bottom &&
+          mBands[aIdx + 1].EqualStrips(mBands[aIdx])) {
         mBands[aIdx].bottom = mBands[aIdx + 1].bottom;
         mBands.RemoveElementAt(aIdx + 1);
       }
     }
     if (aIdx) {
-      if (mBands[aIdx - 1].bottom == mBands[aIdx].top && mBands[aIdx].EqualStrips(mBands[aIdx - 1])) {
+      if (mBands[aIdx - 1].bottom == mBands[aIdx].top &&
+          mBands[aIdx].EqualStrips(mBands[aIdx - 1])) {
         mBands[aIdx - 1].bottom = mBands[aIdx].bottom;
         mBands.RemoveElementAt(aIdx);
         return true;
@@ -2186,10 +2118,10 @@ private:
     return false;
   }
 
-  void CompressBefore(size_t& aIdx)
-  {
+  void CompressBefore(size_t& aIdx) {
     if (aIdx && aIdx < mBands.Length()) {
-      if (mBands[aIdx - 1].bottom == mBands[aIdx].top && mBands[aIdx - 1].EqualStrips(mBands[aIdx])) {
+      if (mBands[aIdx - 1].bottom == mBands[aIdx].top &&
+          mBands[aIdx - 1].EqualStrips(mBands[aIdx])) {
         mBands[aIdx].top = mBands[aIdx - 1].top;
         mBands.RemoveElementAt(aIdx - 1);
         aIdx--;
@@ -2197,8 +2129,8 @@ private:
     }
   }
 
-
   BandArray mBands;
+  
   
   nsRectAbsolute mBounds;
 #ifdef DEBUG_REGIONS
@@ -2206,19 +2138,19 @@ private:
   OperationStringGenerator* mCurrentOpGenerator;
 #endif
 
-public:
-  class RectIterator
-  {
+ public:
+  class RectIterator {
     const nsRegion& mRegion;
     typename BandArray::const_iterator mCurrentBand;
     typename StripArray::const_iterator mCurrentStrip;
 
-  public:
+   public:
     explicit RectIterator(const nsRegion& aRegion)
-      : mRegion(aRegion)
-      , mCurrentBand(aRegion.mBands.begin())
+        : mRegion(aRegion),
+          mCurrentBand(aRegion.mBands.begin())
 #ifndef DEBUG
-      , mCurrentStrip(nullptr)
+          ,
+          mCurrentStrip(nullptr)
 #endif
     {
       mIsDone = mRegion.mBounds.IsEmpty();
@@ -2229,18 +2161,16 @@ public:
 
     bool Done() const { return mIsDone; }
 
-    const nsRect Get() const
-    {
+    const nsRect Get() const {
       if (mRegion.mBands.IsEmpty()) {
         return mRegion.GetBounds();
       }
       return nsRect(mCurrentStrip->left, mCurrentBand->top,
-        mCurrentStrip->right - mCurrentStrip->left,
-        mCurrentBand->bottom - mCurrentBand->top);
+                    mCurrentStrip->right - mCurrentStrip->left,
+                    mCurrentBand->bottom - mCurrentBand->top);
     }
 
-    const nsRectAbsolute GetAbsolute() const
-    {
+    const nsRectAbsolute GetAbsolute() const {
       if (mRegion.mBands.IsEmpty()) {
         return mRegion.mBounds;
       }
@@ -2248,8 +2178,7 @@ public:
                             mCurrentStrip->right, mCurrentBand->bottom);
     }
 
-    void Next()
-    {
+    void Next() {
       if (mRegion.mBands.IsEmpty()) {
         mIsDone = true;
         return;
@@ -2279,8 +2208,7 @@ namespace gfx {
 
 
 template <typename Derived, typename Rect, typename Point, typename Margin>
-class BaseIntRegion
-{
+class BaseIntRegion {
   friend class ::nsRegion;
 
   
@@ -2288,146 +2216,110 @@ class BaseIntRegion
   template <typename units>
   friend class IntRegionTyped;
 
-public:
+ public:
   typedef Rect RectType;
   typedef Point PointType;
   typedef Margin MarginType;
 
-  BaseIntRegion () {}
-  MOZ_IMPLICIT BaseIntRegion (const Rect& aRect) : mImpl (ToRect(aRect)) {}
-  explicit BaseIntRegion (mozilla::gfx::ArrayView<pixman_box32_t> aRects) : mImpl (aRects) {}
-  BaseIntRegion (const BaseIntRegion& aRegion) : mImpl (aRegion.mImpl) {}
-  BaseIntRegion (BaseIntRegion&& aRegion) : mImpl (std::move(aRegion.mImpl)) {}
-  Derived& operator = (const Rect& aRect) { mImpl = ToRect (aRect); return This(); }
-  Derived& operator = (const Derived& aRegion) { mImpl = aRegion.mImpl; return This(); }
-  Derived& operator = (Derived&& aRegion) { mImpl = std::move(aRegion.mImpl); return This(); }
+  BaseIntRegion() {}
+  MOZ_IMPLICIT BaseIntRegion(const Rect& aRect) : mImpl(ToRect(aRect)) {}
+  explicit BaseIntRegion(mozilla::gfx::ArrayView<pixman_box32_t> aRects)
+      : mImpl(aRects) {}
+  BaseIntRegion(const BaseIntRegion& aRegion) : mImpl(aRegion.mImpl) {}
+  BaseIntRegion(BaseIntRegion&& aRegion) : mImpl(std::move(aRegion.mImpl)) {}
+  Derived& operator=(const Rect& aRect) {
+    mImpl = ToRect(aRect);
+    return This();
+  }
+  Derived& operator=(const Derived& aRegion) {
+    mImpl = aRegion.mImpl;
+    return This();
+  }
+  Derived& operator=(Derived&& aRegion) {
+    mImpl = std::move(aRegion.mImpl);
+    return This();
+  }
 
-  bool operator==(const Derived& aRgn) const
-  {
-    return IsEqual(aRgn);
-  }
-  bool operator!=(const Derived& aRgn) const
-  {
-    return !(*this == aRgn);
-  }
+  bool operator==(const Derived& aRgn) const { return IsEqual(aRgn); }
+  bool operator!=(const Derived& aRgn) const { return !(*this == aRgn); }
 
   friend std::ostream& operator<<(std::ostream& stream, const Derived& m) {
     return stream << m.mImpl;
   }
 
-  void AndWith(const Derived& aOther)
-  {
-    And(This(), aOther);
-  }
-  void AndWith(const Rect& aOther)
-  {
-    And(This(), aOther);
-  }
-  Derived& And  (const Derived& aRgn1,   const Derived& aRgn2)
-  {
-    mImpl.And (aRgn1.mImpl, aRgn2.mImpl);
+  void AndWith(const Derived& aOther) { And(This(), aOther); }
+  void AndWith(const Rect& aOther) { And(This(), aOther); }
+  Derived& And(const Derived& aRgn1, const Derived& aRgn2) {
+    mImpl.And(aRgn1.mImpl, aRgn2.mImpl);
     return This();
   }
-  Derived& And  (const Derived& aRegion, const Rect& aRect)
-  {
-    mImpl.And (aRegion.mImpl, ToRect (aRect));
+  Derived& And(const Derived& aRegion, const Rect& aRect) {
+    mImpl.And(aRegion.mImpl, ToRect(aRect));
     return This();
   }
-  Derived& And  (const Rect& aRect, const Derived& aRegion)
-  {
-    return  And  (aRegion, aRect);
+  Derived& And(const Rect& aRect, const Derived& aRegion) {
+    return And(aRegion, aRect);
   }
-  Derived& And  (const Rect& aRect1, const Rect& aRect2)
-  {
+  Derived& And(const Rect& aRect1, const Rect& aRect2) {
     Rect TmpRect;
 
-    TmpRect.IntersectRect (aRect1, aRect2);
-    mImpl = ToRect (TmpRect);
+    TmpRect.IntersectRect(aRect1, aRect2);
+    mImpl = ToRect(TmpRect);
     return This();
   }
 
-  Derived& OrWith(const Derived& aOther)
-  {
-    return Or(This(), aOther);
-  }
-  Derived& OrWith(const Rect& aOther)
-  {
-    return Or(This(), aOther);
-  }
-  Derived& Or   (const Derived& aRgn1,   const Derived& aRgn2)
-  {
-    mImpl.Or (aRgn1.mImpl, aRgn2.mImpl);
+  Derived& OrWith(const Derived& aOther) { return Or(This(), aOther); }
+  Derived& OrWith(const Rect& aOther) { return Or(This(), aOther); }
+  Derived& Or(const Derived& aRgn1, const Derived& aRgn2) {
+    mImpl.Or(aRgn1.mImpl, aRgn2.mImpl);
     return This();
   }
-  Derived& Or   (const Derived& aRegion, const Rect& aRect)
-  {
-    mImpl.Or (aRegion.mImpl, ToRect (aRect));
+  Derived& Or(const Derived& aRegion, const Rect& aRect) {
+    mImpl.Or(aRegion.mImpl, ToRect(aRect));
     return This();
   }
-  Derived& Or   (const Rect& aRect, const Derived& aRegion)
-  {
-    return  Or   (aRegion, aRect);
+  Derived& Or(const Rect& aRect, const Derived& aRegion) {
+    return Or(aRegion, aRect);
   }
-  Derived& Or   (const Rect& aRect1, const Rect& aRect2)
-  {
-    mImpl = ToRect (aRect1);
-    return Or (This(), aRect2);
+  Derived& Or(const Rect& aRect1, const Rect& aRect2) {
+    mImpl = ToRect(aRect1);
+    return Or(This(), aRect2);
   }
 
-  Derived& XorWith(const Derived& aOther)
-  {
-    return Xor(This(), aOther);
-  }
-  Derived& XorWith(const Rect& aOther)
-  {
-    return Xor(This(), aOther);
-  }
-  Derived& Xor  (const Derived& aRgn1,   const Derived& aRgn2)
-  {
-    mImpl.Xor (aRgn1.mImpl, aRgn2.mImpl);
+  Derived& XorWith(const Derived& aOther) { return Xor(This(), aOther); }
+  Derived& XorWith(const Rect& aOther) { return Xor(This(), aOther); }
+  Derived& Xor(const Derived& aRgn1, const Derived& aRgn2) {
+    mImpl.Xor(aRgn1.mImpl, aRgn2.mImpl);
     return This();
   }
-  Derived& Xor  (const Derived& aRegion, const Rect& aRect)
-  {
-    mImpl.Xor (aRegion.mImpl, ToRect (aRect));
+  Derived& Xor(const Derived& aRegion, const Rect& aRect) {
+    mImpl.Xor(aRegion.mImpl, ToRect(aRect));
     return This();
   }
-  Derived& Xor  (const Rect& aRect, const Derived& aRegion)
-  {
-    return  Xor  (aRegion, aRect);
+  Derived& Xor(const Rect& aRect, const Derived& aRegion) {
+    return Xor(aRegion, aRect);
   }
-  Derived& Xor  (const Rect& aRect1, const Rect& aRect2)
-  {
-    mImpl = ToRect (aRect1);
-    return Xor (This(), aRect2);
+  Derived& Xor(const Rect& aRect1, const Rect& aRect2) {
+    mImpl = ToRect(aRect1);
+    return Xor(This(), aRect2);
   }
 
-  Derived& SubOut(const Derived& aOther)
-  {
-    return Sub(This(), aOther);
-  }
-  Derived& SubOut(const Rect& aOther)
-  {
-    return Sub(This(), aOther);
-  }
-  Derived& Sub  (const Derived& aRgn1,   const Derived& aRgn2)
-  {
-    mImpl.Sub (aRgn1.mImpl, aRgn2.mImpl);
+  Derived& SubOut(const Derived& aOther) { return Sub(This(), aOther); }
+  Derived& SubOut(const Rect& aOther) { return Sub(This(), aOther); }
+  Derived& Sub(const Derived& aRgn1, const Derived& aRgn2) {
+    mImpl.Sub(aRgn1.mImpl, aRgn2.mImpl);
     return This();
   }
-  Derived& Sub  (const Derived& aRegion, const Rect& aRect)
-  {
-    mImpl.Sub (aRegion.mImpl, ToRect (aRect));
+  Derived& Sub(const Derived& aRegion, const Rect& aRect) {
+    mImpl.Sub(aRegion.mImpl, ToRect(aRect));
     return This();
   }
-  Derived& Sub  (const Rect& aRect, const Derived& aRegion)
-  {
-    return Sub (Derived (aRect), aRegion);
+  Derived& Sub(const Rect& aRect, const Derived& aRegion) {
+    return Sub(Derived(aRect), aRegion);
   }
-  Derived& Sub  (const Rect& aRect1, const Rect& aRect2)
-  {
-    mImpl = ToRect (aRect1);
-    return Sub (This(), aRect2);
+  Derived& Sub(const Rect& aRect1, const Rect& aRect2) {
+    mImpl = ToRect(aRect1);
+    return Sub(This(), aRect2);
   }
 
   
@@ -2435,76 +2327,57 @@ public:
 
 
 
-  bool Contains (int aX, int aY) const
-  {
-    return mImpl.Contains(aX, aY);
+  bool Contains(int aX, int aY) const { return mImpl.Contains(aX, aY); }
+  bool Contains(const Rect& aRect) const {
+    return mImpl.Contains(ToRect(aRect));
   }
-  bool Contains (const Rect& aRect) const
-  {
-    return mImpl.Contains (ToRect (aRect));
+  bool Contains(const Derived& aRgn) const {
+    return mImpl.Contains(aRgn.mImpl);
   }
-  bool Contains (const Derived& aRgn) const
-  {
-    return mImpl.Contains (aRgn.mImpl);
-  }
-  bool Intersects (const Rect& aRect) const
-  {
-    return mImpl.Intersects (ToRect (aRect));
+  bool Intersects(const Rect& aRect) const {
+    return mImpl.Intersects(ToRect(aRect));
   }
 
-  void MoveBy (int32_t aXOffset, int32_t aYOffset)
-  {
-    MoveBy (Point (aXOffset, aYOffset));
+  void MoveBy(int32_t aXOffset, int32_t aYOffset) {
+    MoveBy(Point(aXOffset, aYOffset));
   }
-  void MoveBy (Point aPt)
-  {
-    mImpl.MoveBy (aPt.X(), aPt.Y());
-  }
-  Derived MovedBy(int32_t aXOffset, int32_t aYOffset) const
-  {
+  void MoveBy(Point aPt) { mImpl.MoveBy(aPt.X(), aPt.Y()); }
+  Derived MovedBy(int32_t aXOffset, int32_t aYOffset) const {
     return MovedBy(Point(aXOffset, aYOffset));
   }
-  Derived MovedBy(const Point& aPt) const
-  {
+  Derived MovedBy(const Point& aPt) const {
     Derived copy(This());
     copy.MoveBy(aPt);
     return copy;
   }
 
-  Derived Intersect(const Derived& aOther) const
-  {
+  Derived Intersect(const Derived& aOther) const {
     Derived intersection;
     intersection.And(This(), aOther);
     return intersection;
   }
 
-  void Inflate(const Margin& aMargin)
-  {
-    mImpl.Inflate(nsMargin(aMargin.top, aMargin.right, aMargin.bottom, aMargin.left));
+  void Inflate(const Margin& aMargin) {
+    mImpl.Inflate(
+        nsMargin(aMargin.top, aMargin.right, aMargin.bottom, aMargin.left));
   }
-  Derived Inflated(const Margin& aMargin) const
-  {
+  Derived Inflated(const Margin& aMargin) const {
     Derived copy(This());
     copy.Inflate(aMargin);
     return copy;
   }
 
-  void SetEmpty ()
-  {
-    mImpl.SetEmpty  ();
-  }
+  void SetEmpty() { mImpl.SetEmpty(); }
 
-  bool IsEmpty () const { return mImpl.IsEmpty (); }
-  bool IsComplex () const { return mImpl.IsComplex (); }
-  bool IsEqual (const Derived& aRegion) const
-  {
-    return mImpl.IsEqual (aRegion.mImpl);
+  bool IsEmpty() const { return mImpl.IsEmpty(); }
+  bool IsComplex() const { return mImpl.IsComplex(); }
+  bool IsEqual(const Derived& aRegion) const {
+    return mImpl.IsEqual(aRegion.mImpl);
   }
-  uint32_t GetNumRects () const { return mImpl.GetNumRects (); }
-  Rect GetBounds () const { return FromRect (mImpl.GetBounds ()); }
-  uint64_t Area () const { return mImpl.Area(); }
-  nsRegion ToAppUnits (nscoord aAppUnitsPerPixel) const
-  {
+  uint32_t GetNumRects() const { return mImpl.GetNumRects(); }
+  Rect GetBounds() const { return FromRect(mImpl.GetBounds()); }
+  uint64_t Area() const { return mImpl.Area(); }
+  nsRegion ToAppUnits(nscoord aAppUnitsPerPixel) const {
     nsRegion result;
     for (auto iter = RectIterator(*this); !iter.Done(); iter.Next()) {
       nsRect appRect = ::ToAppUnits(iter.Get(), aAppUnitsPerPixel);
@@ -2512,19 +2385,16 @@ public:
     }
     return result;
   }
-  Rect GetLargestRectangle (const Rect& aContainingRect = Rect()) const
-  {
-    return FromRect (mImpl.GetLargestRectangle( ToRect(aContainingRect) ));
+  Rect GetLargestRectangle(const Rect& aContainingRect = Rect()) const {
+    return FromRect(mImpl.GetLargestRectangle(ToRect(aContainingRect)));
   }
 
-  Derived& ScaleRoundOut (float aXScale, float aYScale)
-  {
+  Derived& ScaleRoundOut(float aXScale, float aYScale) {
     mImpl.ScaleRoundOut(aXScale, aYScale);
     return This();
   }
 
-  Derived& ScaleInverseRoundOut (float aXScale, float aYScale)
-  {
+  Derived& ScaleInverseRoundOut(float aXScale, float aYScale) {
     mImpl.ScaleInverseRoundOut(aXScale, aYScale);
     return This();
   }
@@ -2533,8 +2403,7 @@ public:
   
   
   
-  Derived& Transform (const mozilla::gfx::Matrix4x4 &aTransform)
-  {
+  Derived& Transform(const mozilla::gfx::Matrix4x4& aTransform) {
     mImpl.Transform(aTransform);
     return This();
   }
@@ -2545,46 +2414,36 @@ public:
 
 
 
-  void SimplifyOutward (uint32_t aMaxRects)
-  {
-    mImpl.SimplifyOutward (aMaxRects);
-  }
-  void SimplifyOutwardByArea (uint32_t aThreshold)
-  {
-    mImpl.SimplifyOutwardByArea (aThreshold);
+  void SimplifyOutward(uint32_t aMaxRects) { mImpl.SimplifyOutward(aMaxRects); }
+  void SimplifyOutwardByArea(uint32_t aThreshold) {
+    mImpl.SimplifyOutwardByArea(aThreshold);
   }
   
 
 
 
 
-  void SimplifyInward (uint32_t aMaxRects)
-  {
-    mImpl.SimplifyInward (aMaxRects);
-  }
+  void SimplifyInward(uint32_t aMaxRects) { mImpl.SimplifyInward(aMaxRects); }
 
-  typedef void (*visitFn)(void *closure, VisitSide side, int x1, int y1, int x2, int y2);
-  void VisitEdges (visitFn visit, void *closure) const
-  {
-    mImpl.VisitEdges (visit, closure);
+  typedef void (*visitFn)(void* closure, VisitSide side, int x1, int y1, int x2,
+                          int y2);
+  void VisitEdges(visitFn visit, void* closure) const {
+    mImpl.VisitEdges(visit, closure);
   }
 
   nsCString ToString() const { return mImpl.ToString(); }
 
-  class RectIterator
-  {
-    nsRegion::RectIterator mImpl; 
-    mutable Rect mTmp;            
+  class RectIterator {
+    nsRegion::RectIterator mImpl;  
+    mutable Rect mTmp;             
 
-  public:
+   public:
     explicit RectIterator(const BaseIntRegion& aRegion)
-      : mImpl(aRegion.mImpl)
-    {}
+        : mImpl(aRegion.mImpl) {}
 
     bool Done() const { return mImpl.Done(); }
 
-    const Rect& Get() const
-    {
+    const Rect& Get() const {
       mTmp = FromRect(mImpl.Get());
       return mTmp;
     }
@@ -2594,84 +2453,79 @@ public:
 
   RectIterator RectIter() const { return RectIterator(*this); }
 
-protected:
+ protected:
   
   
   explicit BaseIntRegion(const nsRegion& aImpl) : mImpl(aImpl) {}
   const nsRegion& Impl() const { return mImpl; }
-private:
+
+ private:
   nsRegion mImpl;
 
-  static nsRect ToRect(const Rect& aRect)
-  {
-    return nsRect (aRect.X(), aRect.Y(), aRect.Width(), aRect.Height());
+  static nsRect ToRect(const Rect& aRect) {
+    return nsRect(aRect.X(), aRect.Y(), aRect.Width(), aRect.Height());
   }
-  static Rect FromRect(const nsRect& aRect)
-  {
-    return Rect (aRect.X(), aRect.Y(), aRect.Width(), aRect.Height());
+  static Rect FromRect(const nsRect& aRect) {
+    return Rect(aRect.X(), aRect.Y(), aRect.Width(), aRect.Height());
   }
 
-  Derived& This()
-  {
-    return *static_cast<Derived*>(this);
-  }
-  const Derived& This() const
-  {
-    return *static_cast<const Derived*>(this);
-  }
+  Derived& This() { return *static_cast<Derived*>(this); }
+  const Derived& This() const { return *static_cast<const Derived*>(this); }
 };
 
 template <class units>
-class IntRegionTyped :
-    public BaseIntRegion<IntRegionTyped<units>, IntRectTyped<units>, IntPointTyped<units>, IntMarginTyped<units>>
-{
-  typedef BaseIntRegion<IntRegionTyped<units>, IntRectTyped<units>, IntPointTyped<units>, IntMarginTyped<units>> Super;
+class IntRegionTyped
+    : public BaseIntRegion<IntRegionTyped<units>, IntRectTyped<units>,
+                           IntPointTyped<units>, IntMarginTyped<units>> {
+  typedef BaseIntRegion<IntRegionTyped<units>, IntRectTyped<units>,
+                        IntPointTyped<units>, IntMarginTyped<units>>
+      Super;
 
   
   template <typename OtherUnits>
   friend class IntRegionTyped;
 
-  static_assert(IsPixel<units>::value, "'units' must be a coordinate system tag");
+  static_assert(IsPixel<units>::value,
+                "'units' must be a coordinate system tag");
 
-public:
+ public:
   typedef IntRectTyped<units> RectType;
   typedef IntPointTyped<units> PointType;
   typedef IntMarginTyped<units> MarginType;
 
   
   IntRegionTyped() {}
-  MOZ_IMPLICIT IntRegionTyped(const IntRectTyped<units>& aRect) : Super(aRect) {}
+  MOZ_IMPLICIT IntRegionTyped(const IntRectTyped<units>& aRect)
+      : Super(aRect) {}
   IntRegionTyped(const IntRegionTyped& aRegion) : Super(aRegion) {}
-  explicit IntRegionTyped(mozilla::gfx::ArrayView<pixman_box32_t> aRects) : Super(aRects) {}
+  explicit IntRegionTyped(mozilla::gfx::ArrayView<pixman_box32_t> aRects)
+      : Super(aRects) {}
   IntRegionTyped(IntRegionTyped&& aRegion) : Super(std::move(aRegion)) {}
 
   
   
-  IntRegionTyped& operator=(const IntRegionTyped& aRegion)
-  {
+  IntRegionTyped& operator=(const IntRegionTyped& aRegion) {
     return Super::operator=(aRegion);
   }
-  IntRegionTyped& operator=(IntRegionTyped&& aRegion)
-  {
+  IntRegionTyped& operator=(IntRegionTyped&& aRegion) {
     return Super::operator=(std::move(aRegion));
   }
 
-  static IntRegionTyped FromUnknownRegion(const IntRegion& aRegion)
-  {
+  static IntRegionTyped FromUnknownRegion(const IntRegion& aRegion) {
     return IntRegionTyped(aRegion.Impl());
   }
-  IntRegion ToUnknownRegion() const
-  {
+  IntRegion ToUnknownRegion() const {
     
     return IntRegion(this->Impl());
   }
-private:
+
+ private:
   
   explicit IntRegionTyped(const nsRegion& aRegion) : Super(aRegion) {}
 };
 
-} 
-} 
+}  
+}  
 
 typedef mozilla::gfx::IntRegion nsIntRegion;
 

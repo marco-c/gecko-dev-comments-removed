@@ -12,9 +12,7 @@ namespace mozilla {
 namespace layers {
 
 ConstantStagingBuffer::ConstantStagingBuffer(MLGDevice* aDevice)
- : StagingBuffer(mlg::kMaxConstantBufferSize)
-{
-}
+    : StagingBuffer(mlg::kMaxConstantBufferSize) {}
 
-} 
-} 
+}  
+}  

@@ -21,24 +21,18 @@
 namespace mozilla {
 namespace dom {
 
- void
-FuzzingFunctions::GarbageCollect(const GlobalObject&)
-{
+ void FuzzingFunctions::GarbageCollect(const GlobalObject&) {
   nsJSContext::GarbageCollectNow(JS::gcreason::COMPONENT_UTILS,
                                  nsJSContext::NonIncrementalGC,
                                  nsJSContext::NonShrinkingGC);
 }
 
- void
-FuzzingFunctions::CycleCollect(const GlobalObject&)
-{
+ void FuzzingFunctions::CycleCollect(const GlobalObject&) {
   nsJSContext::CycleCollectNow();
 }
 
- void
-FuzzingFunctions::EnableAccessibility(const GlobalObject&,
-                                      ErrorResult& aRv)
-{
+ void FuzzingFunctions::EnableAccessibility(const GlobalObject&,
+                                                        ErrorResult& aRv) {
   RefPtr<nsIAccessibilityService> a11y;
   nsresult rv;
 
@@ -48,44 +42,36 @@ FuzzingFunctions::EnableAccessibility(const GlobalObject&,
   }
 }
 
-struct ModifierKey final
-{
+struct ModifierKey final {
   Modifier mModifier;
   KeyNameIndex mKeyNameIndex;
   bool mLockable;
 
-  ModifierKey(Modifier aModifier,
-              KeyNameIndex aKeyNameIndex,
-              bool aLockable)
-    : mModifier(aModifier)
-    , mKeyNameIndex(aKeyNameIndex)
-    , mLockable(aLockable)
-  {
-  }
+  ModifierKey(Modifier aModifier, KeyNameIndex aKeyNameIndex, bool aLockable)
+      : mModifier(aModifier),
+        mKeyNameIndex(aKeyNameIndex),
+        mLockable(aLockable) {}
 };
 
 static const ModifierKey kModifierKeys[] = {
-  ModifierKey(MODIFIER_ALT, KEY_NAME_INDEX_Alt, false),
-  ModifierKey(MODIFIER_ALTGRAPH, KEY_NAME_INDEX_AltGraph, false),
-  ModifierKey(MODIFIER_CONTROL, KEY_NAME_INDEX_Control, false),
-  ModifierKey(MODIFIER_FN, KEY_NAME_INDEX_Fn, false),
-  ModifierKey(MODIFIER_META, KEY_NAME_INDEX_Meta, false),
-  ModifierKey(MODIFIER_OS, KEY_NAME_INDEX_OS, false),
-  ModifierKey(MODIFIER_SHIFT, KEY_NAME_INDEX_Shift, false),
-  ModifierKey(MODIFIER_SYMBOL, KEY_NAME_INDEX_Symbol, false),
-  ModifierKey(MODIFIER_CAPSLOCK, KEY_NAME_INDEX_CapsLock, true),
-  ModifierKey(MODIFIER_FNLOCK, KEY_NAME_INDEX_FnLock, true),
-  ModifierKey(MODIFIER_NUMLOCK, KEY_NAME_INDEX_NumLock, true),
-  ModifierKey(MODIFIER_SCROLLLOCK, KEY_NAME_INDEX_ScrollLock, true),
-  ModifierKey(MODIFIER_SYMBOLLOCK, KEY_NAME_INDEX_SymbolLock, true),
+    ModifierKey(MODIFIER_ALT, KEY_NAME_INDEX_Alt, false),
+    ModifierKey(MODIFIER_ALTGRAPH, KEY_NAME_INDEX_AltGraph, false),
+    ModifierKey(MODIFIER_CONTROL, KEY_NAME_INDEX_Control, false),
+    ModifierKey(MODIFIER_FN, KEY_NAME_INDEX_Fn, false),
+    ModifierKey(MODIFIER_META, KEY_NAME_INDEX_Meta, false),
+    ModifierKey(MODIFIER_OS, KEY_NAME_INDEX_OS, false),
+    ModifierKey(MODIFIER_SHIFT, KEY_NAME_INDEX_Shift, false),
+    ModifierKey(MODIFIER_SYMBOL, KEY_NAME_INDEX_Symbol, false),
+    ModifierKey(MODIFIER_CAPSLOCK, KEY_NAME_INDEX_CapsLock, true),
+    ModifierKey(MODIFIER_FNLOCK, KEY_NAME_INDEX_FnLock, true),
+    ModifierKey(MODIFIER_NUMLOCK, KEY_NAME_INDEX_NumLock, true),
+    ModifierKey(MODIFIER_SCROLLLOCK, KEY_NAME_INDEX_ScrollLock, true),
+    ModifierKey(MODIFIER_SYMBOLLOCK, KEY_NAME_INDEX_SymbolLock, true),
 };
 
- Modifiers
-FuzzingFunctions::ActivateModifiers(TextInputProcessor* aTextInputProcessor,
-                                    Modifiers aModifiers,
-                                    nsIWidget* aWidget,
-                                    ErrorResult& aRv)
-{
+ Modifiers FuzzingFunctions::ActivateModifiers(
+    TextInputProcessor* aTextInputProcessor, Modifiers aModifiers,
+    nsIWidget* aWidget, ErrorResult& aRv) {
   MOZ_ASSERT(aTextInputProcessor);
 
   if (aModifiers == MODIFIER_NONE) {
@@ -98,18 +84,17 @@ FuzzingFunctions::ActivateModifiers(TextInputProcessor* aTextInputProcessor,
   
   
   
-  uint32_t flags =
-    nsITextInputProcessor::KEY_NON_PRINTABLE_KEY |
-    nsITextInputProcessor::KEY_DONT_DISPATCH_MODIFIER_KEY_EVENT;
+  uint32_t flags = nsITextInputProcessor::KEY_NON_PRINTABLE_KEY |
+                   nsITextInputProcessor::KEY_DONT_DISPATCH_MODIFIER_KEY_EVENT;
 
   Modifiers activatedModifiers = MODIFIER_NONE;
   Modifiers activeModifiers = aTextInputProcessor->GetActiveModifiers();
   for (const ModifierKey& kModifierKey : kModifierKeys) {
     if (!(kModifierKey.mModifier & aModifiers)) {
-      continue; 
+      continue;  
     }
     if (kModifierKey.mModifier & activeModifiers) {
-      continue; 
+      continue;  
     }
     WidgetKeyboardEvent event(true, eVoidEvent, aWidget);
     
@@ -129,12 +114,9 @@ FuzzingFunctions::ActivateModifiers(TextInputProcessor* aTextInputProcessor,
   return activatedModifiers;
 }
 
- Modifiers
-FuzzingFunctions::InactivateModifiers(TextInputProcessor* aTextInputProcessor,
-                                      Modifiers aModifiers,
-                                      nsIWidget* aWidget,
-                                      ErrorResult& aRv)
-{
+ Modifiers FuzzingFunctions::InactivateModifiers(
+    TextInputProcessor* aTextInputProcessor, Modifiers aModifiers,
+    nsIWidget* aWidget, ErrorResult& aRv) {
   MOZ_ASSERT(aTextInputProcessor);
 
   if (aModifiers == MODIFIER_NONE) {
@@ -147,18 +129,17 @@ FuzzingFunctions::InactivateModifiers(TextInputProcessor* aTextInputProcessor,
   
   
   
-  uint32_t flags =
-    nsITextInputProcessor::KEY_NON_PRINTABLE_KEY |
-    nsITextInputProcessor::KEY_DONT_DISPATCH_MODIFIER_KEY_EVENT;
+  uint32_t flags = nsITextInputProcessor::KEY_NON_PRINTABLE_KEY |
+                   nsITextInputProcessor::KEY_DONT_DISPATCH_MODIFIER_KEY_EVENT;
 
   Modifiers inactivatedModifiers = MODIFIER_NONE;
   Modifiers activeModifiers = aTextInputProcessor->GetActiveModifiers();
   for (const ModifierKey& kModifierKey : kModifierKeys) {
     if (!(kModifierKey.mModifier & aModifiers)) {
-      continue; 
+      continue;  
     }
     if (kModifierKey.mModifier & activeModifiers) {
-      continue; 
+      continue;  
     }
     WidgetKeyboardEvent event(true, eVoidEvent, aWidget);
     
@@ -178,27 +159,25 @@ FuzzingFunctions::InactivateModifiers(TextInputProcessor* aTextInputProcessor,
   return inactivatedModifiers;
 }
 
- void
-FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
-                                           const nsAString& aKeyValue,
-                                           const KeyboardEventInit& aDict,
-                                           ErrorResult& aRv)
-{
+ void FuzzingFunctions::SynthesizeKeyboardEvents(
+    const GlobalObject&, const nsAString& aKeyValue,
+    const KeyboardEventInit& aDict, ErrorResult& aRv) {
   
   uint32_t flags = 0;
   
   
   WidgetKeyboardEvent event(true, eVoidEvent, nullptr);
   event.mKeyCode = aDict.mKeyCode;
-  event.mCharCode = 0; 
+  event.mCharCode = 0;  
   event.mKeyNameIndex = WidgetKeyboardEvent::GetKeyNameIndex(aKeyValue);
   if (event.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING) {
     event.mKeyValue = aKeyValue;
   }
   
   event.mCodeNameIndex =
-    aDict.mCode.IsEmpty() ? CODE_NAME_INDEX_UNKNOWN :
-                            WidgetKeyboardEvent::GetCodeNameIndex(aDict.mCode);
+      aDict.mCode.IsEmpty()
+          ? CODE_NAME_INDEX_UNKNOWN
+          : WidgetKeyboardEvent::GetCodeNameIndex(aDict.mCode);
   if (NS_WARN_IF(event.mCodeNameIndex == CODE_NAME_INDEX_USE_STRING)) {
     
     
@@ -210,23 +189,23 @@ FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   event.mIsRepeat = aDict.mRepeat;
 
 #define SET_MODIFIER(aName, aValue) \
-  if (aDict.m##aName) { \
-    event.mModifiers |= aValue; \
-  } \
+  if (aDict.m##aName) {             \
+    event.mModifiers |= aValue;     \
+  }
 
-  SET_MODIFIER(CtrlKey,                 MODIFIER_CONTROL)
-  SET_MODIFIER(ShiftKey,                MODIFIER_SHIFT)
-  SET_MODIFIER(AltKey,                  MODIFIER_ALT)
-  SET_MODIFIER(MetaKey,                 MODIFIER_META)
-  SET_MODIFIER(ModifierAltGraph,        MODIFIER_ALTGRAPH)
-  SET_MODIFIER(ModifierCapsLock,        MODIFIER_CAPSLOCK)
-  SET_MODIFIER(ModifierFn,              MODIFIER_FN)
-  SET_MODIFIER(ModifierFnLock,          MODIFIER_FNLOCK)
-  SET_MODIFIER(ModifierNumLock,         MODIFIER_NUMLOCK)
-  SET_MODIFIER(ModifierOS,              MODIFIER_OS)
-  SET_MODIFIER(ModifierScrollLock,      MODIFIER_SCROLLLOCK)
-  SET_MODIFIER(ModifierSymbol,          MODIFIER_SYMBOL)
-  SET_MODIFIER(ModifierSymbolLock,      MODIFIER_SYMBOLLOCK)
+  SET_MODIFIER(CtrlKey, MODIFIER_CONTROL)
+  SET_MODIFIER(ShiftKey, MODIFIER_SHIFT)
+  SET_MODIFIER(AltKey, MODIFIER_ALT)
+  SET_MODIFIER(MetaKey, MODIFIER_META)
+  SET_MODIFIER(ModifierAltGraph, MODIFIER_ALTGRAPH)
+  SET_MODIFIER(ModifierCapsLock, MODIFIER_CAPSLOCK)
+  SET_MODIFIER(ModifierFn, MODIFIER_FN)
+  SET_MODIFIER(ModifierFnLock, MODIFIER_FNLOCK)
+  SET_MODIFIER(ModifierNumLock, MODIFIER_NUMLOCK)
+  SET_MODIFIER(ModifierOS, MODIFIER_OS)
+  SET_MODIFIER(ModifierScrollLock, MODIFIER_SCROLLLOCK)
+  SET_MODIFIER(ModifierSymbol, MODIFIER_SYMBOL)
+  SET_MODIFIER(ModifierSymbolLock, MODIFIER_SYMBOLLOCK)
 
 #undef SET_MODIFIER
 
@@ -247,14 +226,14 @@ FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   if (event.mKeyNameIndex == KEY_NAME_INDEX_USE_STRING) {
     if (event.mCodeNameIndex == CODE_NAME_INDEX_UNKNOWN) {
       event.mCodeNameIndex =
-        TextInputProcessor::GuessCodeNameIndexOfPrintableKeyInUSEnglishLayout(
-          event.mKeyValue, maybeNonStandardLocation);
+          TextInputProcessor::GuessCodeNameIndexOfPrintableKeyInUSEnglishLayout(
+              event.mKeyValue, maybeNonStandardLocation);
       MOZ_ASSERT(event.mCodeNameIndex != CODE_NAME_INDEX_USE_STRING);
     }
     if (!event.mKeyCode) {
       event.mKeyCode =
-        TextInputProcessor::GuessKeyCodeOfPrintableKeyInUSEnglishLayout(
-          event.mKeyValue, maybeNonStandardLocation);
+          TextInputProcessor::GuessKeyCodeOfPrintableKeyInUSEnglishLayout(
+              event.mKeyValue, maybeNonStandardLocation);
       if (!event.mKeyCode) {
         
         flags |= nsITextInputProcessor::KEY_KEEP_KEYCODE_ZERO;
@@ -267,8 +246,8 @@ FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   
   else if (event.mCodeNameIndex == CODE_NAME_INDEX_UNKNOWN) {
     event.mCodeNameIndex =
-      WidgetKeyboardEvent::ComputeCodeNameIndexFromKeyNameIndex(
-        event.mKeyNameIndex, maybeNonStandardLocation);
+        WidgetKeyboardEvent::ComputeCodeNameIndexFromKeyNameIndex(
+            event.mKeyNameIndex, maybeNonStandardLocation);
   }
 
   
@@ -303,7 +282,7 @@ FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   }
 
   nsCOMPtr<nsPIDOMWindowInner> activeWindowInner =
-    activeWindow->EnsureInnerWindow();
+      activeWindow->EnsureInnerWindow();
   if (NS_WARN_IF(!activeWindowInner)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
@@ -312,9 +291,7 @@ FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   RefPtr<TextInputProcessor> textInputProcessor = new TextInputProcessor();
   bool beganInputTransaction = false;
   aRv = textInputProcessor->BeginInputTransactionForFuzzing(
-                              activeWindowInner,
-                              nullptr,
-                              &beganInputTransaction);
+      activeWindowInner, nullptr, &beganInputTransaction);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -327,8 +304,8 @@ FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   }
 
   
-  Modifiers activatedModifiers =
-    ActivateModifiers(textInputProcessor, event.mModifiers, event.mWidget, aRv);
+  Modifiers activatedModifiers = ActivateModifiers(
+      textInputProcessor, event.mModifiers, event.mWidget, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -359,5 +336,5 @@ FuzzingFunctions::SynthesizeKeyboardEvents(const GlobalObject&,
   
 }
 
-} 
-} 
+}  
+}  

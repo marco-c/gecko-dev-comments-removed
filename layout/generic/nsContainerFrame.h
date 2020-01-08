@@ -16,10 +16,10 @@
 
 
 
-#define NS_FRAME_NO_MOVE_VIEW         0x0001
-#define NS_FRAME_NO_MOVE_FRAME        (0x0002 | NS_FRAME_NO_MOVE_VIEW)
-#define NS_FRAME_NO_SIZE_VIEW         0x0004
-#define NS_FRAME_NO_VISIBILITY        0x0008
+#define NS_FRAME_NO_MOVE_VIEW 0x0001
+#define NS_FRAME_NO_MOVE_FRAME (0x0002 | NS_FRAME_NO_MOVE_VIEW)
+#define NS_FRAME_NO_SIZE_VIEW 0x0004
+#define NS_FRAME_NO_VISIBILITY 0x0008
 
 
 #define NS_FRAME_NO_DELETE_NEXT_IN_FLOW_CHILD 0x0010
@@ -35,46 +35,43 @@ class nsOverflowContinuationTracker;
 
 
 
-#define CRAZY_COORD (10000000*60)
+#define CRAZY_COORD (10000000 * 60)
 #define CRAZY_SIZE(_x) (((_x) < -CRAZY_COORD) || ((_x) > CRAZY_COORD))
 #endif
 
 
 
 
-class nsContainerFrame : public nsSplittableFrame
-{
-public:
+class nsContainerFrame : public nsSplittableFrame {
+ public:
   NS_DECL_ABSTRACT_FRAME(nsContainerFrame)
   NS_DECL_QUERYFRAME_TARGET(nsContainerFrame)
   NS_DECL_QUERYFRAME
 
   
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
-  virtual nsContainerFrame* GetContentInsertionFrame() override
-  {
-    return this;
-  }
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
+  virtual nsContainerFrame* GetContentInsertionFrame() override { return this; }
 
   virtual const nsFrameList& GetChildList(ChildListID aList) const override;
   virtual void GetChildLists(nsTArray<ChildList>* aLists) const override;
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
   virtual void ChildIsDirty(nsIFrame* aChild) override;
 
-  virtual FrameSearchResult PeekOffsetNoAmount(bool aForward, int32_t* aOffset) override;
-  virtual FrameSearchResult
-  PeekOffsetCharacter(bool aForward, int32_t* aOffset,
-                      PeekOffsetCharacterOptions aOptions =
-                        PeekOffsetCharacterOptions()) override;
+  virtual FrameSearchResult PeekOffsetNoAmount(bool aForward,
+                                               int32_t* aOffset) override;
+  virtual FrameSearchResult PeekOffsetCharacter(
+      bool aForward, int32_t* aOffset,
+      PeekOffsetCharacterOptions aOptions =
+          PeekOffsetCharacterOptions()) override;
 
-  virtual nsresult AttributeChanged(int32_t         aNameSpaceID,
-                                    nsAtom*        aAttribute,
-                                    int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
 #ifdef DEBUG_FRAME_DUMP
-  void List(FILE* out = stderr, const char* aPrefix = "", uint32_t aFlags = 0) const override;
+  void List(FILE* out = stderr, const char* aPrefix = "",
+            uint32_t aFlags = 0) const override;
 #endif
 
   
@@ -117,8 +114,7 @@ public:
 
 
 
-  virtual void InsertFrames(ChildListID  aListID,
-                            nsIFrame*    aPrevFrame,
+  virtual void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
                             nsFrameList& aFrameList);
 
   
@@ -152,7 +148,7 @@ public:
 
 
   virtual void DeleteNextInFlowChild(nsIFrame* aNextInFlow,
-                                     bool      aDeletingEmptyFrames);
+                                     bool aDeletingEmptyFrames);
 
   
   static void PositionFrameView(nsIFrame* aKidFrame);
@@ -162,8 +158,8 @@ public:
                                     nsIFrame* aNewParentFrame);
 
   static nsresult ReparentFrameViewList(const nsFrameList& aChildFrameList,
-                                        nsIFrame*          aOldParentFrame,
-                                        nsIFrame*          aNewParentFrame);
+                                        nsIFrame* aOldParentFrame,
+                                        nsIFrame* aNewParentFrame);
 
   
   
@@ -172,10 +168,9 @@ public:
   
   
   static void SyncFrameViewAfterReflow(nsPresContext* aPresContext,
-                                       nsIFrame*       aFrame,
-                                       nsView*        aView,
-                                       const nsRect&   aVisualOverflowArea,
-                                       uint32_t        aFlags = 0);
+                                       nsIFrame* aFrame, nsView* aView,
+                                       const nsRect& aVisualOverflowArea,
+                                       uint32_t aFlags = 0);
 
   
   
@@ -184,13 +179,12 @@ public:
   enum {
     SET_ASYNC = 0x01,
   };
-  static void SyncWindowProperties(nsPresContext*       aPresContext,
-                                   nsIFrame*            aFrame,
-                                   nsView*              aView,
-                                   gfxContext*          aRC,
-                                   uint32_t             aFlags);
+  static void SyncWindowProperties(nsPresContext* aPresContext,
+                                   nsIFrame* aFrame, nsView* aView,
+                                   gfxContext* aRC, uint32_t aFlags);
 
   
+
 
 
 
@@ -200,28 +194,23 @@ public:
 
 
   static void SetSizeConstraints(nsPresContext* aPresContext,
-                                 nsIWidget* aWidget,
-                                 const nsSize& aMinSize,
+                                 nsIWidget* aWidget, const nsSize& aMinSize,
                                  const nsSize& aMaxSize);
 
   
-  void DoInlineIntrinsicISize(gfxContext *aRenderingContext,
-                              InlineIntrinsicISizeData *aData,
+  void DoInlineIntrinsicISize(gfxContext* aRenderingContext,
+                              InlineIntrinsicISizeData* aData,
                               nsLayoutUtils::IntrinsicISizeType aType);
 
   
 
 
 
-  virtual mozilla::LogicalSize
-  ComputeAutoSize(gfxContext*                 aRenderingContext,
-                  mozilla::WritingMode        aWM,
-                  const mozilla::LogicalSize& aCBSize,
-                  nscoord                     aAvailableISize,
-                  const mozilla::LogicalSize& aMargin,
-                  const mozilla::LogicalSize& aBorder,
-                  const mozilla::LogicalSize& aPadding,
-                  ComputeSizeFlags            aFlags) override;
+  virtual mozilla::LogicalSize ComputeAutoSize(
+      gfxContext* aRenderingContext, mozilla::WritingMode aWM,
+      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
+      const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
+      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags) override;
 
   
 
@@ -236,15 +225,12 @@ public:
 
 
 
-  void ReflowChild(nsIFrame*                      aChildFrame,
-                   nsPresContext*                 aPresContext,
-                   ReflowOutput&           aDesiredSize,
-                   const ReflowInput&       aReflowInput,
-                   const mozilla::WritingMode&    aWM,
-                   const mozilla::LogicalPoint&   aPos,
-                   const nsSize&                  aContainerSize,
-                   uint32_t                       aFlags,
-                   nsReflowStatus&                aStatus,
+  void ReflowChild(nsIFrame* aChildFrame, nsPresContext* aPresContext,
+                   ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
+                   const mozilla::WritingMode& aWM,
+                   const mozilla::LogicalPoint& aPos,
+                   const nsSize& aContainerSize, uint32_t aFlags,
+                   nsReflowStatus& aStatus,
                    nsOverflowContinuationTracker* aTracker = nullptr);
 
   
@@ -266,35 +252,28 @@ public:
 
 
 
-  static void FinishReflowChild(nsIFrame*                    aKidFrame,
-                                nsPresContext*               aPresContext,
-                                const ReflowOutput&   aDesiredSize,
-                                const ReflowInput*     aReflowInput,
-                                const mozilla::WritingMode&  aWM,
-                                const mozilla::LogicalPoint& aPos,
-                                const nsSize&                aContainerSize,
-                                uint32_t                     aFlags);
-
-  
-  
-  
-  void ReflowChild(nsIFrame*                      aKidFrame,
-                   nsPresContext*                 aPresContext,
-                   ReflowOutput&           aDesiredSize,
-                   const ReflowInput&       aReflowInput,
-                   nscoord                        aX,
-                   nscoord                        aY,
-                   uint32_t                       aFlags,
-                   nsReflowStatus&                aStatus,
-                   nsOverflowContinuationTracker* aTracker = nullptr);
-
-  static void FinishReflowChild(nsIFrame*                  aKidFrame,
-                                nsPresContext*             aPresContext,
+  static void FinishReflowChild(nsIFrame* aKidFrame,
+                                nsPresContext* aPresContext,
                                 const ReflowOutput& aDesiredSize,
-                                const ReflowInput*   aReflowInput,
-                                nscoord                    aX,
-                                nscoord                    aY,
-                                uint32_t                   aFlags);
+                                const ReflowInput* aReflowInput,
+                                const mozilla::WritingMode& aWM,
+                                const mozilla::LogicalPoint& aPos,
+                                const nsSize& aContainerSize, uint32_t aFlags);
+
+  
+  
+  
+  void ReflowChild(nsIFrame* aKidFrame, nsPresContext* aPresContext,
+                   ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
+                   nscoord aX, nscoord aY, uint32_t aFlags,
+                   nsReflowStatus& aStatus,
+                   nsOverflowContinuationTracker* aTracker = nullptr);
+
+  static void FinishReflowChild(nsIFrame* aKidFrame,
+                                nsPresContext* aPresContext,
+                                const ReflowOutput& aDesiredSize,
+                                const ReflowInput* aReflowInput, nscoord aX,
+                                nscoord aY, uint32_t aFlags);
 
   static void PositionChildViews(nsIFrame* aFrame);
 
@@ -341,8 +320,7 @@ public:
                                    nsContainerFrame* aParent);
   static inline void DefaultChildFrameMerge(nsFrameList& aDest,
                                             nsFrameList& aSrc,
-                                            nsContainerFrame* aParent)
-  {
+                                            nsContainerFrame* aParent) {
     aDest.AppendFrames(nullptr, aSrc);
   }
 
@@ -371,13 +349,10 @@ public:
 
 
 
-  void ReflowOverflowContainerChildren(nsPresContext*           aPresContext,
-                                       const ReflowInput& aReflowInput,
-                                       nsOverflowAreas&         aOverflowRects,
-                                       uint32_t                 aFlags,
-                                       nsReflowStatus&          aStatus,
-                                       ChildFrameMerger aMergeFunc =
-                                         DefaultChildFrameMerge);
+  void ReflowOverflowContainerChildren(
+      nsPresContext* aPresContext, const ReflowInput& aReflowInput,
+      nsOverflowAreas& aOverflowRects, uint32_t aFlags, nsReflowStatus& aStatus,
+      ChildFrameMerger aMergeFunc = DefaultChildFrameMerge);
 
   
 
@@ -385,15 +360,14 @@ public:
 
   virtual bool DrainSelfOverflowList() override;
 
-
   
 
 
 
 
 
-  nsFrameList* DrainExcessOverflowContainersList(ChildFrameMerger aMergeFunc =
-                                                   DefaultChildFrameMerge);
+  nsFrameList* DrainExcessOverflowContainersList(
+      ChildFrameMerger aMergeFunc = DefaultChildFrameMerge);
 
   
 
@@ -419,7 +393,7 @@ public:
   
 
 
-  void DisplayOverflowContainers(nsDisplayListBuilder*   aBuilder,
+  void DisplayOverflowContainers(nsDisplayListBuilder* aBuilder,
                                  const nsDisplayListSet& aLists);
 
   
@@ -431,11 +405,10 @@ public:
 
 
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
-  static void PlaceFrameView(nsIFrame* aFrame)
-  {
+  static void PlaceFrameView(nsIFrame* aFrame) {
     if (aFrame->HasView())
       nsContainerFrame::PositionFrameView(aFrame);
     else
@@ -475,18 +448,15 @@ public:
 
 
 
-  bool RenumberFrameAndDescendants(int32_t* aOrdinal,
-                                   int32_t aDepth,
+  bool RenumberFrameAndDescendants(int32_t* aOrdinal, int32_t aDepth,
                                    int32_t aIncrement,
                                    bool aForCounting) override;
   
 
 
 
-  virtual bool RenumberChildFrames(int32_t* aOrdinal,
-                                   int32_t aDepth,
-                                   int32_t aIncrement,
-                                   bool aForCounting);
+  virtual bool RenumberChildFrames(int32_t* aOrdinal, int32_t aDepth,
+                                   int32_t aIncrement, bool aForCounting);
 
   
 
@@ -509,8 +479,7 @@ public:
 
 
   virtual uint16_t CSSAlignmentForAbsPosChild(
-                     const ReflowInput& aChildRI,
-                     mozilla::LogicalAxis aLogicalAxis) const;
+      const ReflowInput& aChildRI, mozilla::LogicalAxis aLogicalAxis) const;
 
 #define NS_DECLARE_FRAME_PROPERTY_FRAMELIST(prop) \
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(prop, nsFrameList)
@@ -526,15 +495,9 @@ public:
   
   NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(FirstLetterProperty, nsIFrame)
 
-  void SetHasFirstLetterChild()
-  {
-    mHasFirstLetterChild = true;
-  }
+  void SetHasFirstLetterChild() { mHasFirstLetterChild = true; }
 
-  void ClearHasFirstLetterChild()
-  {
-    mHasFirstLetterChild = false;
-  }
+  void ClearHasFirstLetterChild() { mHasFirstLetterChild = false; }
 
 #ifdef DEBUG
   
@@ -544,10 +507,9 @@ public:
   }
 #endif
 
-protected:
+ protected:
   nsContainerFrame(ComputedStyle* aStyle, ClassID aID)
-    : nsSplittableFrame(aStyle, aID)
-  {}
+      : nsSplittableFrame(aStyle, aID) {}
 
   ~nsContainerFrame();
 
@@ -557,7 +519,7 @@ protected:
 
 
 
-  void DestroyAbsoluteFrames(nsIFrame*        aDestructRoot,
+  void DestroyAbsoluteFrames(nsIFrame* aDestructRoot,
                              PostDestroyData& aPostDestroyData);
 
   
@@ -574,20 +536,19 @@ protected:
 
 
 
-  void BuildDisplayListForNonBlockChildren(nsDisplayListBuilder*   aBuilder,
+  void BuildDisplayListForNonBlockChildren(nsDisplayListBuilder* aBuilder,
                                            const nsDisplayListSet& aLists,
-                                           uint32_t                aFlags = 0);
+                                           uint32_t aFlags = 0);
 
   
 
 
 
-  void BuildDisplayListForInline(nsDisplayListBuilder*   aBuilder,
+  void BuildDisplayListForInline(nsDisplayListBuilder* aBuilder,
                                  const nsDisplayListSet& aLists) {
     DisplayBorderBackgroundOutline(aBuilder, aLists);
     BuildDisplayListForNonBlockChildren(aBuilder, aLists, DISPLAY_CHILD_INLINE);
   }
-
 
   
   
@@ -682,12 +643,11 @@ protected:
 
 
 
-  struct ContinuationTraversingState
-  {
+  struct ContinuationTraversingState {
     nsContainerFrame* mNextInFlow;
     explicit ContinuationTraversingState(nsContainerFrame* aFrame)
-      : mNextInFlow(static_cast<nsContainerFrame*>(aFrame->GetNextInFlow()))
-    { }
+        : mNextInFlow(static_cast<nsContainerFrame*>(aFrame->GetNextInFlow())) {
+    }
   };
 
   
@@ -733,9 +693,9 @@ protected:
 
 
 
-  void SafelyDestroyFrameListProp(nsIFrame*        aDestructRoot,
+  void SafelyDestroyFrameListProp(nsIFrame* aDestructRoot,
                                   PostDestroyData& aPostDestroyData,
-                                  nsIPresShell*    aPresShell,
+                                  nsIPresShell* aPresShell,
                                   FrameListPropertyDescriptor aProp);
 
   
@@ -758,9 +718,9 @@ protected:
 
 
 #define IS_TRUE_OVERFLOW_CONTAINER(frame)                      \
-  (  (frame->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)  \
-  && !( (frame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&      \
-        frame->IsAbsolutelyPositioned()  )  )
+  ((frame->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) && \
+   !((frame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) &&         \
+     frame->IsAbsolutelyPositioned()))
 
 
 
@@ -790,7 +750,7 @@ protected:
 
 
 class nsOverflowContinuationTracker {
-public:
+ public:
   
 
 
@@ -803,9 +763,8 @@ public:
 
 
 
-  nsOverflowContinuationTracker(nsContainerFrame* aFrame,
-                                bool              aWalkOOFFrames,
-                                bool              aSkipOverflowContainerChildren = true);
+  nsOverflowContinuationTracker(nsContainerFrame* aFrame, bool aWalkOOFFrames,
+                                bool aSkipOverflowContainerChildren = true);
   
 
 
@@ -825,8 +784,7 @@ public:
 
 
 
-  nsresult Insert(nsIFrame*       aOverflowCont,
-                  nsReflowStatus& aReflowStatus);
+  nsresult Insert(nsIFrame* aOverflowCont, nsReflowStatus& aReflowStatus);
   
 
 
@@ -841,17 +799,16 @@ public:
 
 
   class MOZ_RAII AutoFinish {
-  public:
+   public:
     AutoFinish(nsOverflowContinuationTracker* aTracker, nsIFrame* aChild)
-      : mTracker(aTracker), mChild(aChild)
-    {
+        : mTracker(aTracker), mChild(aChild) {
       if (mTracker) mTracker->BeginFinish(mChild);
     }
-    ~AutoFinish()
-    {
+    ~AutoFinish() {
       if (mTracker) mTracker->EndFinish(mChild);
     }
-  private:
+
+   private:
     nsOverflowContinuationTracker* mTracker;
     nsIFrame* mChild;
   };
@@ -865,8 +822,7 @@ public:
 
 
 
-  void Skip(nsIFrame* aChild, nsReflowStatus& aReflowStatus)
-  {
+  void Skip(nsIFrame* aChild, nsReflowStatus& aReflowStatus) {
     MOZ_ASSERT(aChild, "null ptr");
     if (aChild == mSentry) {
       StepForward();
@@ -876,8 +832,7 @@ public:
     }
   }
 
-private:
-
+ private:
   
 
 
@@ -915,27 +870,19 @@ private:
   bool mWalkOOFFrames;
 };
 
-inline
-nsFrameList*
-nsContainerFrame::GetOverflowFrames() const
-{
+inline nsFrameList* nsContainerFrame::GetOverflowFrames() const {
   nsFrameList* list = GetProperty(OverflowProperty());
   NS_ASSERTION(!list || !list->IsEmpty(), "Unexpected empty overflow list");
   return list;
 }
 
-inline
-nsFrameList*
-nsContainerFrame::StealOverflowFrames()
-{
+inline nsFrameList* nsContainerFrame::StealOverflowFrames() {
   nsFrameList* list = RemoveProperty(OverflowProperty());
   NS_ASSERTION(!list || !list->IsEmpty(), "Unexpected empty overflow list");
   return list;
 }
 
-inline void
-nsContainerFrame::DestroyOverflowList()
-{
+inline void nsContainerFrame::DestroyOverflowList() {
   nsFrameList* list = RemovePropTableFrames(OverflowProperty());
   MOZ_ASSERT(list && list->IsEmpty());
   list->Delete(PresShell());

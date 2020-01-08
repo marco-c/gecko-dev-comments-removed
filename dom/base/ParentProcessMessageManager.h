@@ -17,9 +17,8 @@ namespace dom {
 
 
 
-class ParentProcessMessageManager final : public MessageBroadcaster
-{
-public:
+class ParentProcessMessageManager final : public MessageBroadcaster {
+ public:
   ParentProcessMessageManager();
 
   virtual JSObject* WrapObject(JSContext* aCx,
@@ -27,29 +26,26 @@ public:
 
   
   void LoadProcessScript(const nsAString& aUrl, bool aAllowDelayedLoad,
-                         mozilla::ErrorResult& aError)
-  {
+                         mozilla::ErrorResult& aError) {
     LoadScript(aUrl, aAllowDelayedLoad, false, aError);
   }
-  void RemoveDelayedProcessScript(const nsAString& aURL)
-  {
+  void RemoveDelayedProcessScript(const nsAString& aURL) {
     RemoveDelayedScript(aURL);
   }
   void GetDelayedProcessScripts(JSContext* aCx,
                                 nsTArray<nsTArray<JS::Value>>& aScripts,
-                                mozilla::ErrorResult& aError)
-  {
+                                mozilla::ErrorResult& aError) {
     GetDelayedScripts(aCx, aScripts, aError);
   }
 
   
   using nsFrameMessageManager::GetInitialProcessData;
 
-private:
+ private:
   virtual ~ParentProcessMessageManager();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

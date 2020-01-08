@@ -36,10 +36,9 @@ namespace mozilla {
 
 
 
-template<class InnerQueueT>
-class PrioritizedEventQueue final : public AbstractEventQueue
-{
-public:
+template <class InnerQueueT>
+class PrioritizedEventQueue final : public AbstractEventQueue {
+ public:
   static const bool SupportsPrioritization = true;
 
   PrioritizedEventQueue(UniquePtr<InnerQueueT> aHighQueue,
@@ -48,11 +47,10 @@ public:
                         UniquePtr<InnerQueueT> aIdleQueue,
                         already_AddRefed<nsIIdlePeriod> aIdlePeriod);
 
-  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
-                EventPriority aPriority,
+  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent, EventPriority aPriority,
                 const MutexAutoLock& aProofOfLock) final;
-  already_AddRefed<nsIRunnable> GetEvent(EventPriority* aPriority,
-                                         const MutexAutoLock& aProofOfLock) final;
+  already_AddRefed<nsIRunnable> GetEvent(
+      EventPriority* aPriority, const MutexAutoLock& aProofOfLock) final;
 
   bool IsEmpty(const MutexAutoLock& aProofOfLock) final;
   size_t Count(const MutexAutoLock& aProofOfLock) const final;
@@ -68,7 +66,9 @@ public:
   
   
   
-  void SetNextIdleDeadlineRef(TimeStamp& aDeadline) { mNextIdleDeadline = &aDeadline; }
+  void SetNextIdleDeadlineRef(TimeStamp& aDeadline) {
+    mNextIdleDeadline = &aDeadline;
+  }
 #endif
 
   void EnableInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
@@ -76,8 +76,8 @@ public:
   void SuspendInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
   void ResumeInputEventPrioritization(const MutexAutoLock& aProofOfLock) final;
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const override
-  {
+  size_t SizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) const override {
     size_t n = 0;
 
     n += mHighQueue->SizeOfIncludingThis(aMallocSizeOf);
@@ -92,8 +92,9 @@ public:
     return n;
   }
 
-private:
-  EventPriority SelectQueue(bool aUpdateState, const MutexAutoLock& aProofOfLock);
+ private:
+  EventPriority SelectQueue(bool aUpdateState,
+                            const MutexAutoLock& aProofOfLock);
 
   
   mozilla::TimeStamp GetIdleDeadline();
@@ -132,8 +133,7 @@ private:
 
   TimeStamp mInputHandlingStartTime;
 
-  enum InputEventQueueState
-  {
+  enum InputEventQueueState {
     STATE_DISABLED,
     STATE_FLUSHING,
     STATE_SUSPEND,
@@ -146,6 +146,6 @@ class EventQueue;
 extern template class PrioritizedEventQueue<EventQueue>;
 extern template class PrioritizedEventQueue<LabeledEventQueue>;
 
-} 
+}  
 
-#endif 
+#endif  

@@ -21,9 +21,7 @@
 
 namespace mozilla {
 
-inline void
-NoteIntentionalCrash(const char* aProcessType)
-{
+inline void NoteIntentionalCrash(const char* aProcessType) {
 
 
 
@@ -60,6 +58,6 @@ NoteIntentionalCrash(const char* aProcessType)
 #endif
 }
 
-} 
+}  
 
-#endif 
+#endif  

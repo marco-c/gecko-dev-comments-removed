@@ -15,13 +15,13 @@ namespace recordreplay {
 
 
 void GeneratePLHashTableCallbacks(PLHashFunction* aKeyHash,
-				  PLHashComparator* aKeyCompare,
-				  PLHashComparator* aValueCompare,
-				  const PLHashAllocOps** aAllocOps,
-				  void** aAllocPrivate);
+                                  PLHashComparator* aKeyCompare,
+                                  PLHashComparator* aValueCompare,
+                                  const PLHashAllocOps** aAllocOps,
+                                  void** aAllocPrivate);
 void DestroyPLHashTableCallbacks(void* aAllocPrivate);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

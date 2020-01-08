@@ -31,16 +31,15 @@ namespace layers {
 
 
 
-static already_AddRefed<dom::Element>
-ElementFromPoint(const nsCOMPtr<nsIPresShell>& aShell,
-                 const CSSPoint& aPoint)
-{
+static already_AddRefed<dom::Element> ElementFromPoint(
+    const nsCOMPtr<nsIPresShell>& aShell, const CSSPoint& aPoint) {
   if (nsIFrame* rootFrame = aShell->GetRootFrame()) {
-    if (nsIFrame* frame = nsLayoutUtils::GetFrameForPoint(rootFrame,
-          CSSPoint::ToAppUnits(aPoint),
-          nsLayoutUtils::IGNORE_PAINT_SUPPRESSION |
-          nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME)) {
-      while (frame && (!frame->GetContent() || frame->GetContent()->IsInAnonymousSubtree())) {
+    if (nsIFrame* frame = nsLayoutUtils::GetFrameForPoint(
+            rootFrame, CSSPoint::ToAppUnits(aPoint),
+            nsLayoutUtils::IGNORE_PAINT_SUPPRESSION |
+                nsLayoutUtils::IGNORE_ROOT_SCROLL_FRAME)) {
+      while (frame && (!frame->GetContent() ||
+                       frame->GetContent()->IsInAnonymousSubtree())) {
         frame = nsLayoutUtils::GetParentOrPlaceholderFor(frame);
       }
       nsIContent* content = frame->GetContent();
@@ -56,8 +55,7 @@ ElementFromPoint(const nsCOMPtr<nsIPresShell>& aShell,
   return nullptr;
 }
 
-static bool
-ShouldZoomToElement(const nsCOMPtr<dom::Element>& aElement) {
+static bool ShouldZoomToElement(const nsCOMPtr<dom::Element>& aElement) {
   if (nsIFrame* frame = aElement->GetPrimaryFrame()) {
     if (frame->GetDisplay() == StyleDisplay::Inline) {
       return false;
@@ -69,16 +67,16 @@ ShouldZoomToElement(const nsCOMPtr<dom::Element>& aElement) {
   return true;
 }
 
-static bool
-IsRectZoomedIn(const CSSRect& aRect, const CSSRect& aCompositedArea)
-{
+static bool IsRectZoomedIn(const CSSRect& aRect,
+                           const CSSRect& aCompositedArea) {
   
   
   
   CSSRect overlap = aCompositedArea.Intersect(aRect);
   float overlapArea = overlap.Width() * overlap.Height();
-  float availHeight = std::min(aRect.Width() * aCompositedArea.Height() / aCompositedArea.Width(),
-                               aRect.Height());
+  float availHeight = std::min(
+      aRect.Width() * aCompositedArea.Height() / aCompositedArea.Width(),
+      aRect.Height());
   float showing = overlapArea / (aRect.Width() * availHeight);
   float ratioW = aRect.Width() / aCompositedArea.Width();
   float ratioH = aRect.Height() / aCompositedArea.Height();
@@ -86,10 +84,8 @@ IsRectZoomedIn(const CSSRect& aRect, const CSSRect& aCompositedArea)
   return showing > 0.9 && (ratioW > 0.9 || ratioH > 0.9);
 }
 
-CSSRect
-CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
-                      const CSSPoint& aPoint)
-{
+CSSRect CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
+                              const CSSPoint& aPoint) {
   
   aRootContentDocument->FlushPendingNotifications(FlushType::Layout);
 
@@ -119,11 +115,14 @@ CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
     return zoomOut;
   }
 
-  FrameMetrics metrics = nsLayoutUtils::CalculateBasicFrameMetrics(rootScrollFrame);
-  CSSRect compositedArea(CSSPoint::FromAppUnits(shell->GetVisualViewportOffset()),
-                         metrics.CalculateCompositedSizeInCssPixels());
+  FrameMetrics metrics =
+      nsLayoutUtils::CalculateBasicFrameMetrics(rootScrollFrame);
+  CSSRect compositedArea(
+      CSSPoint::FromAppUnits(shell->GetVisualViewportOffset()),
+      metrics.CalculateCompositedSizeInCssPixels());
   const CSSCoord margin = 15;
-  CSSRect rect = nsLayoutUtils::GetBoundingContentRect(element, rootScrollFrame);
+  CSSRect rect =
+      nsLayoutUtils::GetBoundingContentRect(element, rootScrollFrame);
 
   
   
@@ -133,7 +132,8 @@ CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
     const float widthRatio = rect.Width() / compositedArea.Width();
     float targetHeight = compositedArea.Height() * widthRatio;
     if (widthRatio < 0.9 && targetHeight < rect.Height()) {
-      const CSSPoint scrollPoint = CSSPoint::FromAppUnits(rootScrollFrame->GetScrollPosition());
+      const CSSPoint scrollPoint =
+          CSSPoint::FromAppUnits(rootScrollFrame->GetScrollPosition());
       float newY = aPoint.y + scrollPoint.y - (targetHeight * 0.5f);
       if ((newY + targetHeight) > rect.YMost()) {
         rect.MoveByY(rect.Height() - targetHeight);
@@ -145,11 +145,10 @@ CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
   }
 
   rect = CSSRect(std::max(metrics.GetScrollableRect().X(), rect.X() - margin),
-                 rect.Y(),
-                 rect.Width() + 2 * margin,
-                 rect.Height());
+                 rect.Y(), rect.Width() + 2 * margin, rect.Height());
   
-  rect.SetWidth(std::min(rect.Width(), metrics.GetScrollableRect().XMost() - rect.X()));
+  rect.SetWidth(
+      std::min(rect.Width(), metrics.GetScrollableRect().XMost() - rect.X()));
 
   
   
@@ -167,12 +166,13 @@ CalculateRectToZoomTo(const nsCOMPtr<nsIDocument>& aRootContentDocument,
   
   
   CSSCoord cssTapY = metrics.GetScrollOffset().y + aPoint.y;
-  if ((rect.Height() > rounded.Height()) && (cssTapY > rounded.Y() + (rounded.Height() * 1.2))) {
+  if ((rect.Height() > rounded.Height()) &&
+      (cssTapY > rounded.Y() + (rounded.Height() * 1.2))) {
     rounded.MoveToY(cssTapY - (rounded.Height() / 2));
   }
 
   return rounded;
 }
 
-}
-}
+}  
+}  

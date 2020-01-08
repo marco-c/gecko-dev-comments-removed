@@ -31,15 +31,14 @@ namespace mozilla {
 namespace dom {
 class SVGSVGElement;
 class SVGDocument;
-} 
+}  
 
 namespace image {
 
 class SVGDocumentWrapper final : public nsIStreamListener,
                                  public nsIObserver,
-                                 nsSupportsWeakReference
-{
-public:
+                                 nsSupportsWeakReference {
+ public:
   SVGDocumentWrapper();
 
   NS_DECL_ISUPPORTS
@@ -47,10 +46,7 @@ public:
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSIOBSERVER
 
-  enum Dimension {
-    eWidth,
-    eHeight
-  };
+  enum Dimension { eWidth, eHeight };
 
   
 
@@ -73,8 +69,7 @@ public:
   
 
 
-  inline nsIPresShell* GetPresShell()
-    { return mViewer->GetPresShell(); }
+  inline nsIPresShell* GetPresShell() { return mViewer->GetPresShell(); }
 
   
 
@@ -99,7 +94,7 @@ public:
 
 
 
-  bool      IsAnimated();
+  bool IsAnimated();
 
   
 
@@ -124,24 +119,23 @@ public:
 
   void FlushLayout();
 
-private:
+ private:
   ~SVGDocumentWrapper();
 
-  nsresult SetupViewer(nsIRequest* aRequest,
-                       nsIContentViewer** aViewer,
+  nsresult SetupViewer(nsIRequest* aRequest, nsIContentViewer** aViewer,
                        nsILoadGroup** aLoadGroup);
-  void     DestroyViewer();
-  void     RegisterForXPCOMShutdown();
-  void     UnregisterForXPCOMShutdown();
+  void DestroyViewer();
+  void RegisterForXPCOMShutdown();
+  void UnregisterForXPCOMShutdown();
 
-  nsCOMPtr<nsIContentViewer>  mViewer;
-  nsCOMPtr<nsILoadGroup>      mLoadGroup;
+  nsCOMPtr<nsIContentViewer> mViewer;
+  nsCOMPtr<nsILoadGroup> mLoadGroup;
   nsCOMPtr<nsIStreamListener> mListener;
-  bool                        mIgnoreInvalidation;
-  bool                        mRegisteredForXPCOMShutdown;
+  bool mIgnoreInvalidation;
+  bool mRegisteredForXPCOMShutdown;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -21,9 +21,8 @@ class DocAccessibleParent;
 
 
 
-class OuterDocAccessible final : public AccessibleWrap
-{
-public:
+class OuterDocAccessible final : public AccessibleWrap {
+ public:
   OuterDocAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   NS_INLINE_DECL_REFCOUNTING_INHERITED(OuterDocAccessible, AccessibleWrap)
@@ -43,19 +42,17 @@ public:
 #if defined(XP_WIN)
   virtual uint32_t ChildCount() const override;
   virtual Accessible* GetChildAt(uint32_t aIndex) const override;
-#endif 
+#endif  
 
-protected:
+ protected:
   virtual ~OuterDocAccessible() override;
 };
 
-inline OuterDocAccessible*
-Accessible::AsOuterDoc()
-{
+inline OuterDocAccessible* Accessible::AsOuterDoc() {
   return IsOuterDoc() ? static_cast<OuterDocAccessible*>(this) : nullptr;
 }
 
-} 
-} 
+}  
+}  
 
 #endif

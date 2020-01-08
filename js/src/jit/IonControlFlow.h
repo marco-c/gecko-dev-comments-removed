@@ -22,292 +22,227 @@ class CFGControlInstruction;
 
 
 
-#define TRIVIAL_CFG_NEW_WRAPPERS                                              \
-    template <typename... Args>                                               \
-    static CFGThisOpcode* New(TempAllocator& alloc, Args&&... args) {         \
-        return new(alloc) CFGThisOpcode(std::forward<Args>(args)...);     \
-    }                                                                         \
-    template <typename... Args>                                               \
-    static CFGThisOpcode* New(TempAllocator::Fallible alloc, Args&&... args)  \
-    {                                                                         \
-        return new(alloc) CFGThisOpcode(std::forward<Args>(args)...);     \
-    }
+#define TRIVIAL_CFG_NEW_WRAPPERS                                             \
+  template <typename... Args>                                                \
+  static CFGThisOpcode* New(TempAllocator& alloc, Args&&... args) {          \
+    return new (alloc) CFGThisOpcode(std::forward<Args>(args)...);           \
+  }                                                                          \
+  template <typename... Args>                                                \
+  static CFGThisOpcode* New(TempAllocator::Fallible alloc, Args&&... args) { \
+    return new (alloc) CFGThisOpcode(std::forward<Args>(args)...);           \
+  }
 
-class CFGSpace
-{
-    static const size_t DEFAULT_CHUNK_SIZE = 4096;
+class CFGSpace {
+  static const size_t DEFAULT_CHUNK_SIZE = 4096;
 
-  protected:
-    LifoAlloc allocator_;
-  public:
+ protected:
+  LifoAlloc allocator_;
 
-    explicit CFGSpace()
-      : allocator_(DEFAULT_CHUNK_SIZE)
-    {}
+ public:
+  explicit CFGSpace() : allocator_(DEFAULT_CHUNK_SIZE) {}
 
-    LifoAlloc& lifoAlloc() {
-        return allocator_;
-    }
+  LifoAlloc& lifoAlloc() { return allocator_; }
 
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-        return allocator_.sizeOfExcludingThis(mallocSizeOf);
-    }
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
+    return allocator_.sizeOfExcludingThis(mallocSizeOf);
+  }
 };
 
-class CFGBlock : public TempObject
-{
-    size_t id_;
-    jsbytecode* start;
-    jsbytecode* stop;
-    CFGControlInstruction* end;
-    bool inWorkList;
+class CFGBlock : public TempObject {
+  size_t id_;
+  jsbytecode* start;
+  jsbytecode* stop;
+  CFGControlInstruction* end;
+  bool inWorkList;
 
-  public:
-    explicit CFGBlock(jsbytecode* start)
-      : id_(-1),
-        start(start),
-        stop(nullptr),
-        end(nullptr),
-        inWorkList(false)
-    {}
+ public:
+  explicit CFGBlock(jsbytecode* start)
+      : id_(-1), start(start), stop(nullptr), end(nullptr), inWorkList(false) {}
 
-    static CFGBlock* New(TempAllocator& alloc, jsbytecode* start) {
-        return new(alloc) CFGBlock(start);
-    }
+  static CFGBlock* New(TempAllocator& alloc, jsbytecode* start) {
+    return new (alloc) CFGBlock(start);
+  }
 
-    void operator=(const CFGBlock&) = delete;
+  void operator=(const CFGBlock&) = delete;
 
-    jsbytecode* startPc() const {
-        return start;
-    }
-    void setStartPc(jsbytecode* startPc) {
-        start = startPc;
-    }
-    jsbytecode* stopPc() const {
-        MOZ_ASSERT(stop);
-        return stop;
-    }
-    void setStopPc(jsbytecode* stopPc) {
-        stop = stopPc;
-    }
-    CFGControlInstruction* stopIns() const {
-        MOZ_ASSERT(end);
-        return end;
-    }
-    void setStopIns(CFGControlInstruction* stopIns) {
-        end = stopIns;
-    }
-    bool isInWorkList() const {
-        return inWorkList;
-    }
-    void setInWorklist() {
-        MOZ_ASSERT(!inWorkList);
-        inWorkList = true;
-    }
-    void clearInWorkList() {
-        MOZ_ASSERT(inWorkList);
-        inWorkList = false;
-    }
-    size_t id() const {
-        return id_;
-    }
-    void setId(size_t id) {
-        id_ = id;
-    }
+  jsbytecode* startPc() const { return start; }
+  void setStartPc(jsbytecode* startPc) { start = startPc; }
+  jsbytecode* stopPc() const {
+    MOZ_ASSERT(stop);
+    return stop;
+  }
+  void setStopPc(jsbytecode* stopPc) { stop = stopPc; }
+  CFGControlInstruction* stopIns() const {
+    MOZ_ASSERT(end);
+    return end;
+  }
+  void setStopIns(CFGControlInstruction* stopIns) { end = stopIns; }
+  bool isInWorkList() const { return inWorkList; }
+  void setInWorklist() {
+    MOZ_ASSERT(!inWorkList);
+    inWorkList = true;
+  }
+  void clearInWorkList() {
+    MOZ_ASSERT(inWorkList);
+    inWorkList = false;
+  }
+  size_t id() const { return id_; }
+  void setId(size_t id) { id_ = id; }
 };
 
-#define CFG_CONTROL_OPCODE_LIST(_)                                          \
-    _(Test)                                                                 \
-    _(CondSwitchCase)                                                       \
-    _(Goto)                                                                 \
-    _(Return)                                                               \
-    _(RetRVal)                                                              \
-    _(LoopEntry)                                                            \
-    _(BackEdge)                                                             \
-    _(TableSwitch)                                                          \
-    _(Try)                                                                  \
-    _(Throw)
+#define CFG_CONTROL_OPCODE_LIST(_) \
+  _(Test)                          \
+  _(CondSwitchCase)                \
+  _(Goto)                          \
+  _(Return)                        \
+  _(RetRVal)                       \
+  _(LoopEntry)                     \
+  _(BackEdge)                      \
+  _(TableSwitch)                   \
+  _(Try)                           \
+  _(Throw)
 
 
 #define FORWARD_DECLARE(type) class CFG##type;
- CFG_CONTROL_OPCODE_LIST(FORWARD_DECLARE)
+CFG_CONTROL_OPCODE_LIST(FORWARD_DECLARE)
 #undef FORWARD_DECLARE
 
-#define CFG_CONTROL_HEADER(type_name)                                        \
-    static const Type classOpcode = CFGControlInstruction::Type_##type_name; \
-    using CFGThisOpcode = CFG##type_name;                                    \
-    Type type() const override {                                             \
-        return classOpcode;                                                  \
-    }                                                                        \
-    const char* Name() const override {                                      \
-        return #type_name;                                                   \
-    }                                                                        \
+#define CFG_CONTROL_HEADER(type_name)                                      \
+  static const Type classOpcode = CFGControlInstruction::Type_##type_name; \
+  using CFGThisOpcode = CFG##type_name;                                    \
+  Type type() const override { return classOpcode; }                       \
+  const char* Name() const override { return #type_name; }
 
+class CFGControlInstruction : public TempObject {
+ public:
+  enum Type {
+#define DEFINE_TYPES(type) Type_##type,
+    CFG_CONTROL_OPCODE_LIST(DEFINE_TYPES)
+#undef DEFINE_TYPES
+  };
 
-class CFGControlInstruction : public TempObject
-{
-  public:
-    enum Type {
-#   define DEFINE_TYPES(type) Type_##type,
-        CFG_CONTROL_OPCODE_LIST(DEFINE_TYPES)
-#   undef DEFINE_TYPES
-    };
+  virtual size_t numSuccessors() const = 0;
+  virtual CFGBlock* getSuccessor(size_t i) const = 0;
+  virtual void replaceSuccessor(size_t i, CFGBlock* successor) = 0;
+  virtual Type type() const = 0;
+  virtual const char* Name() const = 0;
 
-    virtual size_t numSuccessors() const = 0;
-    virtual CFGBlock* getSuccessor(size_t i) const = 0;
-    virtual void replaceSuccessor(size_t i, CFGBlock* successor) = 0;
-    virtual Type type() const = 0;
-    virtual const char* Name() const = 0;
-
-    template<typename CFGType> bool is() const {
-        return type() == CFGType::classOpcode;
-    }
-    template<typename CFGType> CFGType* to() {
-        MOZ_ASSERT(this->is<CFGType>());
-        return static_cast<CFGType*>(this);
-    }
-    template<typename CFGType> const CFGType* to() const {
-        MOZ_ASSERT(this->is<CFGType>());
-        return static_cast<const CFGType*>(this);
-    }
-#   define TYPE_CASTS(type)             \
-    bool is##type() const {             \
-        return this->is<CFG##type>();   \
-    }                                   \
-    CFG##type* to##type() {             \
-        return this->to<CFG##type>();   \
-    }                                   \
-    const CFG##type* to##type() const { \
-        return this->to<CFG##type>();   \
-    }
-    CFG_CONTROL_OPCODE_LIST(TYPE_CASTS)
-#   undef TYPE_CASTS
+  template <typename CFGType>
+  bool is() const {
+    return type() == CFGType::classOpcode;
+  }
+  template <typename CFGType>
+  CFGType* to() {
+    MOZ_ASSERT(this->is<CFGType>());
+    return static_cast<CFGType*>(this);
+  }
+  template <typename CFGType>
+  const CFGType* to() const {
+    MOZ_ASSERT(this->is<CFGType>());
+    return static_cast<const CFGType*>(this);
+  }
+#define TYPE_CASTS(type)                                  \
+  bool is##type() const { return this->is<CFG##type>(); } \
+  CFG##type* to##type() { return this->to<CFG##type>(); } \
+  const CFG##type* to##type() const { return this->to<CFG##type>(); }
+  CFG_CONTROL_OPCODE_LIST(TYPE_CASTS)
+#undef TYPE_CASTS
 };
 
 template <size_t Successors>
-class CFGAryControlInstruction : public CFGControlInstruction
-{
-    mozilla::Array<CFGBlock*, Successors> successors_;
+class CFGAryControlInstruction : public CFGControlInstruction {
+  mozilla::Array<CFGBlock*, Successors> successors_;
 
-  public:
-    size_t numSuccessors() const final {
-        return Successors;
-    }
-    CFGBlock* getSuccessor(size_t i) const final {
-        return successors_[i];
-    }
-    void replaceSuccessor(size_t i, CFGBlock* succ) final {
-        successors_[i] = succ;
-    }
+ public:
+  size_t numSuccessors() const final { return Successors; }
+  CFGBlock* getSuccessor(size_t i) const final { return successors_[i]; }
+  void replaceSuccessor(size_t i, CFGBlock* succ) final {
+    successors_[i] = succ;
+  }
 };
 
-class CFGTry : public CFGControlInstruction
-{
-    CFGBlock* tryBlock_;
-    jsbytecode* catchStartPc_;
-    CFGBlock* mergePoint_;
+class CFGTry : public CFGControlInstruction {
+  CFGBlock* tryBlock_;
+  jsbytecode* catchStartPc_;
+  CFGBlock* mergePoint_;
 
-    CFGTry(CFGBlock* successor, jsbytecode* catchStartPc, CFGBlock* mergePoint)
+  CFGTry(CFGBlock* successor, jsbytecode* catchStartPc, CFGBlock* mergePoint)
       : tryBlock_(successor),
         catchStartPc_(catchStartPc),
-        mergePoint_(mergePoint)
-    { }
+        mergePoint_(mergePoint) {}
 
-  public:
-    CFG_CONTROL_HEADER(Try)
-    TRIVIAL_CFG_NEW_WRAPPERS
+ public:
+  CFG_CONTROL_HEADER(Try)
+  TRIVIAL_CFG_NEW_WRAPPERS
 
-    static CFGTry* CopyWithNewTargets(TempAllocator& alloc, CFGTry* old,
-                                      CFGBlock* tryBlock, CFGBlock* merge)
-    {
-        return new(alloc) CFGTry(tryBlock, old->catchStartPc(), merge);
-    }
+  static CFGTry* CopyWithNewTargets(TempAllocator& alloc, CFGTry* old,
+                                    CFGBlock* tryBlock, CFGBlock* merge) {
+    return new (alloc) CFGTry(tryBlock, old->catchStartPc(), merge);
+  }
 
-    size_t numSuccessors() const final {
-        return 2;
+  size_t numSuccessors() const final { return 2; }
+  CFGBlock* getSuccessor(size_t i) const final {
+    MOZ_ASSERT(i < numSuccessors());
+    return (i == 0) ? tryBlock_ : mergePoint_;
+  }
+  void replaceSuccessor(size_t i, CFGBlock* succ) final {
+    MOZ_ASSERT(i < numSuccessors());
+    if (i == 0) {
+      tryBlock_ = succ;
+    } else {
+      mergePoint_ = succ;
     }
-    CFGBlock* getSuccessor(size_t i) const final {
-        MOZ_ASSERT(i < numSuccessors());
-        return (i == 0) ? tryBlock_ : mergePoint_;
-    }
-    void replaceSuccessor(size_t i, CFGBlock* succ) final {
-        MOZ_ASSERT(i < numSuccessors());
-        if (i == 0) {
-            tryBlock_ = succ;
-        } else {
-            mergePoint_ = succ;
-        }
-    }
+  }
 
-    CFGBlock* tryBlock() const {
-        return getSuccessor(0);
-    }
+  CFGBlock* tryBlock() const { return getSuccessor(0); }
 
-    jsbytecode* catchStartPc() const {
-        return catchStartPc_;
-    }
+  jsbytecode* catchStartPc() const { return catchStartPc_; }
 
-    CFGBlock* afterTryCatchBlock() const {
-        return getSuccessor(1);
-    }
+  CFGBlock* afterTryCatchBlock() const { return getSuccessor(1); }
 };
 
-class CFGTableSwitch : public CFGControlInstruction
-{
-    Vector<CFGBlock*, 4, JitAllocPolicy> successors_;
-    size_t low_;
-    size_t high_;
+class CFGTableSwitch : public CFGControlInstruction {
+  Vector<CFGBlock*, 4, JitAllocPolicy> successors_;
+  size_t low_;
+  size_t high_;
 
-    CFGTableSwitch(TempAllocator& alloc, size_t low, size_t high)
-      : successors_(alloc),
-        low_(low),
-        high_(high)
-    {}
+  CFGTableSwitch(TempAllocator& alloc, size_t low, size_t high)
+      : successors_(alloc), low_(low), high_(high) {}
 
-  public:
-    CFG_CONTROL_HEADER(TableSwitch);
+ public:
+  CFG_CONTROL_HEADER(TableSwitch);
 
-    static CFGTableSwitch* New(TempAllocator& alloc, size_t low, size_t high) {
-        return new(alloc) CFGTableSwitch(alloc, low, high);
-    }
+  static CFGTableSwitch* New(TempAllocator& alloc, size_t low, size_t high) {
+    return new (alloc) CFGTableSwitch(alloc, low, high);
+  }
 
-    size_t numSuccessors() const final {
-        return successors_.length();
-    }
-    CFGBlock* getSuccessor(size_t i) const final {
-        MOZ_ASSERT(i < numSuccessors());
-        return successors_[i];
-    }
-    void replaceSuccessor(size_t i, CFGBlock* succ) final {
-        MOZ_ASSERT(i < numSuccessors());
-        successors_[i] = succ;
-    }
+  size_t numSuccessors() const final { return successors_.length(); }
+  CFGBlock* getSuccessor(size_t i) const final {
+    MOZ_ASSERT(i < numSuccessors());
+    return successors_[i];
+  }
+  void replaceSuccessor(size_t i, CFGBlock* succ) final {
+    MOZ_ASSERT(i < numSuccessors());
+    successors_[i] = succ;
+  }
 
-    bool addDefault(CFGBlock* defaultCase) {
-        MOZ_ASSERT(successors_.length() == 0);
-        return successors_.append(defaultCase);
-    }
+  bool addDefault(CFGBlock* defaultCase) {
+    MOZ_ASSERT(successors_.length() == 0);
+    return successors_.append(defaultCase);
+  }
 
-    bool addCase(CFGBlock* caseBlock) {
-        MOZ_ASSERT(successors_.length() > 0);
-        return successors_.append(caseBlock);
-    }
+  bool addCase(CFGBlock* caseBlock) {
+    MOZ_ASSERT(successors_.length() > 0);
+    return successors_.append(caseBlock);
+  }
 
-    CFGBlock* defaultCase() const {
-        return getSuccessor(0);
-    }
+  CFGBlock* defaultCase() const { return getSuccessor(0); }
 
-    CFGBlock* getCase(size_t i) const {
-        return getSuccessor(i + 1);
-    }
+  CFGBlock* getCase(size_t i) const { return getSuccessor(i + 1); }
 
-    size_t high() const {
-        return high_;
-    }
+  size_t high() const { return high_; }
 
-    size_t low() const {
-        return low_;
-    }
+  size_t low() const { return low_; }
 };
 
 
@@ -320,202 +255,53 @@ class CFGTableSwitch : public CFGControlInstruction
 
 
 
-class CFGCondSwitchCase : public CFGAryControlInstruction<2>
-{
-    const uint8_t truePopAmount_;
-    const uint8_t falsePopAmount_;
+class CFGCondSwitchCase : public CFGAryControlInstruction<2> {
+  const uint8_t truePopAmount_;
+  const uint8_t falsePopAmount_;
 
-    CFGCondSwitchCase(CFGBlock* succ1, size_t truePopAmount, CFGBlock* succ2, size_t falsePopAmount)
-      : truePopAmount_(truePopAmount),
-        falsePopAmount_(falsePopAmount)
-    {
-        MOZ_ASSERT(truePopAmount_ == truePopAmount,
-                   "truePopAmount should fit in uint8_t");
-        MOZ_ASSERT(falsePopAmount_ == falsePopAmount,
-                   "falsePopAmount should fit in uint8_t");
-        replaceSuccessor(0, succ1);
-        replaceSuccessor(1, succ2);
-    }
+  CFGCondSwitchCase(CFGBlock* succ1, size_t truePopAmount, CFGBlock* succ2,
+                    size_t falsePopAmount)
+      : truePopAmount_(truePopAmount), falsePopAmount_(falsePopAmount) {
+    MOZ_ASSERT(truePopAmount_ == truePopAmount,
+               "truePopAmount should fit in uint8_t");
+    MOZ_ASSERT(falsePopAmount_ == falsePopAmount,
+               "falsePopAmount should fit in uint8_t");
+    replaceSuccessor(0, succ1);
+    replaceSuccessor(1, succ2);
+  }
 
-  public:
-    CFG_CONTROL_HEADER(CondSwitchCase);
+ public:
+  CFG_CONTROL_HEADER(CondSwitchCase);
 
-    static CFGCondSwitchCase* NewFalseBranchIsDefault(TempAllocator& alloc, CFGBlock* case_,
-                                                      CFGBlock* default_)
-    {
-        
-        
-        return new(alloc) CFGCondSwitchCase(case_, 2, default_, 2);
-    }
-
-    static CFGCondSwitchCase* NewFalseBranchIsNextCase(TempAllocator& alloc, CFGBlock* case_,
-                                                       CFGBlock* nextCase)
-    {
-        
-        
-        
-        return new(alloc) CFGCondSwitchCase(case_, 2, nextCase, 1);
-    }
-
-    static CFGCondSwitchCase* CopyWithNewTargets(TempAllocator& alloc, CFGCondSwitchCase* old,
-                                                 CFGBlock* succ1, CFGBlock* succ2)
-    {
-        return new(alloc) CFGCondSwitchCase(succ1, old->truePopAmount(),
-                                            succ2, old->falsePopAmount());
-    }
-
-    CFGBlock* trueBranch() const {
-        return getSuccessor(0);
-    }
-    CFGBlock* falseBranch() const {
-        return getSuccessor(1);
-    }
-    size_t truePopAmount() const {
-        return truePopAmount_;
-    }
-    size_t falsePopAmount() const {
-        return falsePopAmount_;
-    }
-};
-
-
-
-
-
-
-
-
-
-class CFGTest : public CFGAryControlInstruction<2>
-{
+  static CFGCondSwitchCase* NewFalseBranchIsDefault(TempAllocator& alloc,
+                                                    CFGBlock* case_,
+                                                    CFGBlock* default_) {
     
     
-    bool keepCondition_;
+    return new (alloc) CFGCondSwitchCase(case_, 2, default_, 2);
+  }
 
-    CFGTest(CFGBlock* succ1, CFGBlock* succ2)
-      : keepCondition_(false)
-    {
-        replaceSuccessor(0, succ1);
-        replaceSuccessor(1, succ2);
-    }
-    CFGTest(CFGBlock* succ1, CFGBlock* succ2, bool keepCondition)
-      : keepCondition_(keepCondition)
-    {
-        replaceSuccessor(0, succ1);
-        replaceSuccessor(1, succ2);
-    }
+  static CFGCondSwitchCase* NewFalseBranchIsNextCase(TempAllocator& alloc,
+                                                     CFGBlock* case_,
+                                                     CFGBlock* nextCase) {
+    
+    
+    
+    return new (alloc) CFGCondSwitchCase(case_, 2, nextCase, 1);
+  }
 
-  public:
-    CFG_CONTROL_HEADER(Test);
-    TRIVIAL_CFG_NEW_WRAPPERS
+  static CFGCondSwitchCase* CopyWithNewTargets(TempAllocator& alloc,
+                                               CFGCondSwitchCase* old,
+                                               CFGBlock* succ1,
+                                               CFGBlock* succ2) {
+    return new (alloc) CFGCondSwitchCase(succ1, old->truePopAmount(), succ2,
+                                         old->falsePopAmount());
+  }
 
-    static CFGTest* CopyWithNewTargets(TempAllocator& alloc, CFGTest* old,
-                                       CFGBlock* succ1, CFGBlock* succ2)
-    {
-        return new(alloc) CFGTest(succ1, succ2, old->mustKeepCondition());
-    }
-
-    CFGBlock* trueBranch() const {
-        return getSuccessor(0);
-    }
-    CFGBlock* falseBranch() const {
-        return getSuccessor(1);
-    }
-    void keepCondition() {
-        keepCondition_ = true;
-    }
-    bool mustKeepCondition() const {
-        return keepCondition_;
-    }
-};
-
-
-
-
-
-
-
-
-class CFGReturn : public CFGAryControlInstruction<0>
-{
-  public:
-    CFG_CONTROL_HEADER(Return);
-    TRIVIAL_CFG_NEW_WRAPPERS
-};
-
-
-
-
-
-
-
-class CFGRetRVal : public CFGAryControlInstruction<0>
-{
-  public:
-    CFG_CONTROL_HEADER(RetRVal);
-    TRIVIAL_CFG_NEW_WRAPPERS
-};
-
-
-
-
-
-
-
-
-class CFGThrow : public CFGAryControlInstruction<0>
-{
-  public:
-    CFG_CONTROL_HEADER(Throw);
-    TRIVIAL_CFG_NEW_WRAPPERS
-};
-
-class CFGUnaryControlInstruction : public CFGAryControlInstruction<1>
-{
-  public:
-    explicit CFGUnaryControlInstruction(CFGBlock* block) {
-        MOZ_ASSERT(block);
-        replaceSuccessor(0, block);
-    }
-
-    CFGBlock* successor() const {
-        return getSuccessor(0);
-    }
-};
-
-
-
-
-
-
-
-
-class CFGGoto : public CFGUnaryControlInstruction
-{
-    const size_t popAmount_;
-
-    explicit CFGGoto(CFGBlock* block)
-      : CFGUnaryControlInstruction(block),
-        popAmount_(0)
-    {}
-
-    CFGGoto(CFGBlock* block, size_t popAmount_)
-      : CFGUnaryControlInstruction(block),
-        popAmount_(popAmount_)
-    {}
-
-  public:
-    CFG_CONTROL_HEADER(Goto);
-    TRIVIAL_CFG_NEW_WRAPPERS
-
-    static CFGGoto* CopyWithNewTargets(TempAllocator& alloc, CFGGoto* old, CFGBlock* block)
-    {
-        return new(alloc) CFGGoto(block, old->popAmount());
-    }
-
-    size_t popAmount() const {
-        return popAmount_;
-    }
+  CFGBlock* trueBranch() const { return getSuccessor(0); }
+  CFGBlock* falseBranch() const { return getSuccessor(1); }
+  size_t truePopAmount() const { return truePopAmount_; }
+  size_t falsePopAmount() const { return falsePopAmount_; }
 };
 
 
@@ -526,20 +312,131 @@ class CFGGoto : public CFGUnaryControlInstruction
 
 
 
-class CFGBackEdge : public CFGUnaryControlInstruction
-{
-    explicit CFGBackEdge(CFGBlock* block)
-      : CFGUnaryControlInstruction(block)
-    {}
+class CFGTest : public CFGAryControlInstruction<2> {
+  
+  
+  bool keepCondition_;
 
-  public:
-    CFG_CONTROL_HEADER(BackEdge);
-    TRIVIAL_CFG_NEW_WRAPPERS
+  CFGTest(CFGBlock* succ1, CFGBlock* succ2) : keepCondition_(false) {
+    replaceSuccessor(0, succ1);
+    replaceSuccessor(1, succ2);
+  }
+  CFGTest(CFGBlock* succ1, CFGBlock* succ2, bool keepCondition)
+      : keepCondition_(keepCondition) {
+    replaceSuccessor(0, succ1);
+    replaceSuccessor(1, succ2);
+  }
 
-    static CFGBackEdge* CopyWithNewTargets(TempAllocator& alloc, CFGBackEdge* old, CFGBlock* block)
-    {
-        return new(alloc) CFGBackEdge(block);
-    }
+ public:
+  CFG_CONTROL_HEADER(Test);
+  TRIVIAL_CFG_NEW_WRAPPERS
+
+  static CFGTest* CopyWithNewTargets(TempAllocator& alloc, CFGTest* old,
+                                     CFGBlock* succ1, CFGBlock* succ2) {
+    return new (alloc) CFGTest(succ1, succ2, old->mustKeepCondition());
+  }
+
+  CFGBlock* trueBranch() const { return getSuccessor(0); }
+  CFGBlock* falseBranch() const { return getSuccessor(1); }
+  void keepCondition() { keepCondition_ = true; }
+  bool mustKeepCondition() const { return keepCondition_; }
+};
+
+
+
+
+
+
+
+
+class CFGReturn : public CFGAryControlInstruction<0> {
+ public:
+  CFG_CONTROL_HEADER(Return);
+  TRIVIAL_CFG_NEW_WRAPPERS
+};
+
+
+
+
+
+
+
+class CFGRetRVal : public CFGAryControlInstruction<0> {
+ public:
+  CFG_CONTROL_HEADER(RetRVal);
+  TRIVIAL_CFG_NEW_WRAPPERS
+};
+
+
+
+
+
+
+
+
+class CFGThrow : public CFGAryControlInstruction<0> {
+ public:
+  CFG_CONTROL_HEADER(Throw);
+  TRIVIAL_CFG_NEW_WRAPPERS
+};
+
+class CFGUnaryControlInstruction : public CFGAryControlInstruction<1> {
+ public:
+  explicit CFGUnaryControlInstruction(CFGBlock* block) {
+    MOZ_ASSERT(block);
+    replaceSuccessor(0, block);
+  }
+
+  CFGBlock* successor() const { return getSuccessor(0); }
+};
+
+
+
+
+
+
+
+
+class CFGGoto : public CFGUnaryControlInstruction {
+  const size_t popAmount_;
+
+  explicit CFGGoto(CFGBlock* block)
+      : CFGUnaryControlInstruction(block), popAmount_(0) {}
+
+  CFGGoto(CFGBlock* block, size_t popAmount_)
+      : CFGUnaryControlInstruction(block), popAmount_(popAmount_) {}
+
+ public:
+  CFG_CONTROL_HEADER(Goto);
+  TRIVIAL_CFG_NEW_WRAPPERS
+
+  static CFGGoto* CopyWithNewTargets(TempAllocator& alloc, CFGGoto* old,
+                                     CFGBlock* block) {
+    return new (alloc) CFGGoto(block, old->popAmount());
+  }
+
+  size_t popAmount() const { return popAmount_; }
+};
+
+
+
+
+
+
+
+
+
+class CFGBackEdge : public CFGUnaryControlInstruction {
+  explicit CFGBackEdge(CFGBlock* block) : CFGUnaryControlInstruction(block) {}
+
+ public:
+  CFG_CONTROL_HEADER(BackEdge);
+  TRIVIAL_CFG_NEW_WRAPPERS
+
+  static CFGBackEdge* CopyWithNewTargets(TempAllocator& alloc, CFGBackEdge* old,
+                                         CFGBlock* block) {
+    return new (alloc) CFGBackEdge(block);
+  }
 };
 
 
@@ -551,347 +448,317 @@ class CFGBackEdge : public CFGUnaryControlInstruction
 
 
 
-class CFGLoopEntry : public CFGUnaryControlInstruction
-{
-    bool canOsr_;
-    bool isForIn_;
-    size_t stackPhiCount_;
-    jsbytecode* loopStopPc_;
+class CFGLoopEntry : public CFGUnaryControlInstruction {
+  bool canOsr_;
+  bool isForIn_;
+  size_t stackPhiCount_;
+  jsbytecode* loopStopPc_;
 
-    CFGLoopEntry(CFGBlock* block, size_t stackPhiCount)
+  CFGLoopEntry(CFGBlock* block, size_t stackPhiCount)
       : CFGUnaryControlInstruction(block),
         canOsr_(false),
         isForIn_(false),
         stackPhiCount_(stackPhiCount),
-        loopStopPc_(nullptr)
-    {}
+        loopStopPc_(nullptr) {}
 
-    CFGLoopEntry(CFGBlock* block, bool canOsr, bool isForIn, size_t stackPhiCount,
-                 jsbytecode* loopStopPc)
+  CFGLoopEntry(CFGBlock* block, bool canOsr, bool isForIn, size_t stackPhiCount,
+               jsbytecode* loopStopPc)
       : CFGUnaryControlInstruction(block),
         canOsr_(canOsr),
         isForIn_(isForIn),
         stackPhiCount_(stackPhiCount),
-        loopStopPc_(loopStopPc)
-    {}
+        loopStopPc_(loopStopPc) {}
 
-  public:
-    CFG_CONTROL_HEADER(LoopEntry);
-    TRIVIAL_CFG_NEW_WRAPPERS
+ public:
+  CFG_CONTROL_HEADER(LoopEntry);
+  TRIVIAL_CFG_NEW_WRAPPERS
 
-    static CFGLoopEntry* CopyWithNewTargets(TempAllocator& alloc, CFGLoopEntry* old,
-                                            CFGBlock* loopEntry)
-    {
-        return new(alloc) CFGLoopEntry(loopEntry, old->canOsr(), old->isForIn(),
-                                       old->stackPhiCount(), old->loopStopPc());
-    }
+  static CFGLoopEntry* CopyWithNewTargets(TempAllocator& alloc,
+                                          CFGLoopEntry* old,
+                                          CFGBlock* loopEntry) {
+    return new (alloc) CFGLoopEntry(loopEntry, old->canOsr(), old->isForIn(),
+                                    old->stackPhiCount(), old->loopStopPc());
+  }
 
-    void setCanOsr() {
-        canOsr_ = true;
-    }
+  void setCanOsr() { canOsr_ = true; }
 
-    bool canOsr() const {
-        return canOsr_;
-    }
+  bool canOsr() const { return canOsr_; }
 
-    void setIsForIn() {
-        isForIn_ = true;
-    }
-    bool isForIn() const {
-        return isForIn_;
-    }
+  void setIsForIn() { isForIn_ = true; }
+  bool isForIn() const { return isForIn_; }
 
-    size_t stackPhiCount() const {
-        return stackPhiCount_;
-    }
+  size_t stackPhiCount() const { return stackPhiCount_; }
 
-    jsbytecode* loopStopPc() const {
-        MOZ_ASSERT(loopStopPc_);
-        return loopStopPc_;
-    }
+  jsbytecode* loopStopPc() const {
+    MOZ_ASSERT(loopStopPc_);
+    return loopStopPc_;
+  }
 
-    void setLoopStopPc(jsbytecode* loopStopPc) {
-        loopStopPc_ = loopStopPc;
-    }
+  void setLoopStopPc(jsbytecode* loopStopPc) { loopStopPc_ = loopStopPc; }
 };
 
 typedef Vector<CFGBlock*, 4, JitAllocPolicy> CFGBlockVector;
 
-class ControlFlowGraph : public TempObject
-{
-    
-    
-    Vector<CFGBlock, 4, JitAllocPolicy> blocks_;
+class ControlFlowGraph : public TempObject {
+  
+  
+  Vector<CFGBlock, 4, JitAllocPolicy> blocks_;
 
-    explicit ControlFlowGraph(TempAllocator& alloc)
-      : blocks_(alloc)
-    {}
+  explicit ControlFlowGraph(TempAllocator& alloc) : blocks_(alloc) {}
 
-  public:
-    static ControlFlowGraph* New(TempAllocator& alloc) {
-        return new(alloc) ControlFlowGraph(alloc);
-    }
+ public:
+  static ControlFlowGraph* New(TempAllocator& alloc) {
+    return new (alloc) ControlFlowGraph(alloc);
+  }
 
-    ControlFlowGraph(const ControlFlowGraph&) = delete;
-    void operator=(const ControlFlowGraph&) = delete;
+  ControlFlowGraph(const ControlFlowGraph&) = delete;
+  void operator=(const ControlFlowGraph&) = delete;
 
-    void dump(GenericPrinter& print, JSScript* script);
-    bool init(TempAllocator& alloc, const CFGBlockVector& blocks);
+  void dump(GenericPrinter& print, JSScript* script);
+  bool init(TempAllocator& alloc, const CFGBlockVector& blocks);
 
-    const CFGBlock* block(size_t i) const {
-        return &blocks_[i];
-    }
+  const CFGBlock* block(size_t i) const { return &blocks_[i]; }
 
-    size_t numBlocks() const {
-        return blocks_.length();
-    }
+  size_t numBlocks() const { return blocks_.length(); }
 };
 
-class ControlFlowGenerator
-{
-    static int CmpSuccessors(const void* a, const void* b);
+class ControlFlowGenerator {
+  static int CmpSuccessors(const void* a, const void* b);
 
-    JSScript* script;
-    CFGBlock* current;
-    jsbytecode* pc;
-    GSNCache gsn;
-    TempAllocator& alloc_;
-    CFGBlockVector blocks_;
+  JSScript* script;
+  CFGBlock* current;
+  jsbytecode* pc;
+  GSNCache gsn;
+  TempAllocator& alloc_;
+  CFGBlockVector blocks_;
 
-  public:
-    ControlFlowGenerator(const ControlFlowGenerator&) = delete;
-    void operator=(const ControlFlowGenerator&) = delete;
+ public:
+  ControlFlowGenerator(const ControlFlowGenerator&) = delete;
+  void operator=(const ControlFlowGenerator&) = delete;
 
-    TempAllocator& alloc() {
-        return alloc_;
+  TempAllocator& alloc() { return alloc_; }
+
+  enum class ControlStatus {
+    Error,
+    Abort,
+    Ended,   
+    Joined,  
+    Jumped,  
+    None     
+  };
+
+  struct DeferredEdge : public TempObject {
+    CFGBlock* block;
+    DeferredEdge* next;
+
+    DeferredEdge(CFGBlock* block, DeferredEdge* next)
+        : block(block), next(next) {}
+  };
+
+  struct ControlFlowInfo {
+    
+    uint32_t cfgEntry;
+
+    
+    jsbytecode* continuepc;
+
+    ControlFlowInfo(uint32_t cfgEntry, jsbytecode* continuepc)
+        : cfgEntry(cfgEntry), continuepc(continuepc) {}
+  };
+
+  
+  
+  
+  
+  struct CFGState {
+    enum State {
+      IF_TRUE,             
+      IF_TRUE_EMPTY_ELSE,  
+      IF_ELSE_TRUE,        
+      IF_ELSE_FALSE,       
+      DO_WHILE_LOOP_BODY,  
+      DO_WHILE_LOOP_COND,  
+      WHILE_LOOP_COND,     
+      WHILE_LOOP_BODY,     
+      FOR_LOOP_COND,       
+      FOR_LOOP_BODY,       
+      FOR_LOOP_UPDATE,     
+      TABLE_SWITCH,        
+      COND_SWITCH_CASE,    
+      COND_SWITCH_BODY,    
+      AND_OR,              
+      LABEL,               
+      TRY                  
+    };
+
+    State state;         
+    jsbytecode* stopAt;  
+
+    
+    union {
+      struct {
+        CFGBlock* ifFalse;
+        jsbytecode* falseEnd;
+        CFGBlock* ifTrue;  
+        CFGTest* test;
+      } branch;
+      struct {
+        
+        CFGBlock* entry;
+
+        
+        jsbytecode* bodyStart;
+        jsbytecode* bodyEnd;
+
+        
+        jsbytecode* exitpc;
+
+        
+        CFGBlock* successor;
+
+        
+        DeferredEdge* breaks;
+        DeferredEdge* continues;
+
+        
+        State initialState;
+        jsbytecode* initialPc;
+        jsbytecode* initialStopAt;
+        jsbytecode* loopHead;
+
+        
+        jsbytecode* condpc;
+        jsbytecode* updatepc;
+        jsbytecode* updateEnd;
+      } loop;
+      struct {
+        
+        FixedList<CFGBlock*>* bodies;
+
+        
+        
+        
+        uint32_t currentIdx;
+
+        
+        jsbytecode* defaultTarget;
+        uint32_t defaultIdx;
+
+        
+        jsbytecode* exitpc;
+        DeferredEdge* breaks;
+      } switch_;
+      struct {
+        DeferredEdge* breaks;
+      } label;
+      struct {
+        CFGBlock* successor;
+      } try_;
+    };
+
+    inline bool isLoop() const {
+      switch (state) {
+        case DO_WHILE_LOOP_COND:
+        case DO_WHILE_LOOP_BODY:
+        case WHILE_LOOP_COND:
+        case WHILE_LOOP_BODY:
+        case FOR_LOOP_COND:
+        case FOR_LOOP_BODY:
+        case FOR_LOOP_UPDATE:
+          return true;
+        default:
+          return false;
+      }
     }
 
-    enum class ControlStatus {
-        Error,
-        Abort,
-        Ended,        
-        Joined,       
-        Jumped,       
-        None          
-    };
+    static CFGState If(jsbytecode* join, CFGTest* test);
+    static CFGState IfElse(jsbytecode* trueEnd, jsbytecode* falseEnd,
+                           CFGTest* test);
+    static CFGState AndOr(jsbytecode* join, CFGBlock* lhs);
+    static CFGState TableSwitch(TempAllocator& alloc, jsbytecode* exitpc);
+    static CFGState CondSwitch(TempAllocator& alloc, jsbytecode* exitpc,
+                               jsbytecode* defaultTarget);
+    static CFGState Label(jsbytecode* exitpc);
+    static CFGState Try(jsbytecode* exitpc, CFGBlock* successor);
+  };
 
-    struct DeferredEdge : public TempObject
-    {
-        CFGBlock* block;
-        DeferredEdge* next;
+  Vector<CFGState, 8, JitAllocPolicy> cfgStack_;
+  Vector<ControlFlowInfo, 4, JitAllocPolicy> loops_;
+  Vector<ControlFlowInfo, 0, JitAllocPolicy> switches_;
+  Vector<ControlFlowInfo, 2, JitAllocPolicy> labels_;
+  bool aborted_;
+  bool checkedTryFinally_;
 
-        DeferredEdge(CFGBlock* block, DeferredEdge* next)
-          : block(block), next(next)
-        { }
-    };
+ public:
+  ControlFlowGenerator(TempAllocator& alloc, JSScript* script);
 
-    struct ControlFlowInfo {
-        
-        uint32_t cfgEntry;
-
-        
-        jsbytecode* continuepc;
-
-        ControlFlowInfo(uint32_t cfgEntry, jsbytecode* continuepc)
-          : cfgEntry(cfgEntry),
-            continuepc(continuepc)
-        { }
-    };
-
-
-    
-    
-    
-    
-    struct CFGState {
-        enum State {
-            IF_TRUE,            
-            IF_TRUE_EMPTY_ELSE, 
-            IF_ELSE_TRUE,       
-            IF_ELSE_FALSE,      
-            DO_WHILE_LOOP_BODY, 
-            DO_WHILE_LOOP_COND, 
-            WHILE_LOOP_COND,    
-            WHILE_LOOP_BODY,    
-            FOR_LOOP_COND,      
-            FOR_LOOP_BODY,      
-            FOR_LOOP_UPDATE,    
-            TABLE_SWITCH,       
-            COND_SWITCH_CASE,   
-            COND_SWITCH_BODY,   
-            AND_OR,             
-            LABEL,              
-            TRY                 
-        };
-
-        State state;            
-        jsbytecode* stopAt;     
-
-        
-        union {
-            struct {
-                CFGBlock* ifFalse;
-                jsbytecode* falseEnd;
-                CFGBlock* ifTrue;    
-                CFGTest* test;
-            } branch;
-            struct {
-                
-                CFGBlock* entry;
-
-                
-                jsbytecode* bodyStart;
-                jsbytecode* bodyEnd;
-
-                
-                jsbytecode* exitpc;
-
-                
-                CFGBlock* successor;
-
-                
-                DeferredEdge* breaks;
-                DeferredEdge* continues;
-
-                
-                State initialState;
-                jsbytecode* initialPc;
-                jsbytecode* initialStopAt;
-                jsbytecode* loopHead;
-
-                
-                jsbytecode* condpc;
-                jsbytecode* updatepc;
-                jsbytecode* updateEnd;
-            } loop;
-            struct {
-                
-                FixedList<CFGBlock*>* bodies;
-
-                
-                
-                
-                uint32_t currentIdx;
-
-                
-                jsbytecode* defaultTarget;
-                uint32_t defaultIdx;
-
-                
-                jsbytecode* exitpc;
-                DeferredEdge* breaks;
-            } switch_;
-            struct {
-                DeferredEdge* breaks;
-            } label;
-            struct {
-                CFGBlock* successor;
-            } try_;
-        };
-
-        inline bool isLoop() const {
-            switch (state) {
-              case DO_WHILE_LOOP_COND:
-              case DO_WHILE_LOOP_BODY:
-              case WHILE_LOOP_COND:
-              case WHILE_LOOP_BODY:
-              case FOR_LOOP_COND:
-              case FOR_LOOP_BODY:
-              case FOR_LOOP_UPDATE:
-                return true;
-              default:
-                return false;
-            }
-        }
-
-        static CFGState If(jsbytecode* join, CFGTest* test);
-        static CFGState IfElse(jsbytecode* trueEnd, jsbytecode* falseEnd, CFGTest* test);
-        static CFGState AndOr(jsbytecode* join, CFGBlock* lhs);
-        static CFGState TableSwitch(TempAllocator& alloc, jsbytecode* exitpc);
-        static CFGState CondSwitch(TempAllocator& alloc, jsbytecode* exitpc,
-                                   jsbytecode* defaultTarget);
-        static CFGState Label(jsbytecode* exitpc);
-        static CFGState Try(jsbytecode* exitpc, CFGBlock* successor);
-    };
-
-    Vector<CFGState, 8, JitAllocPolicy> cfgStack_;
-    Vector<ControlFlowInfo, 4, JitAllocPolicy> loops_;
-    Vector<ControlFlowInfo, 0, JitAllocPolicy> switches_;
-    Vector<ControlFlowInfo, 2, JitAllocPolicy> labels_;
-    bool aborted_;
-    bool checkedTryFinally_;
-
-  public:
-    ControlFlowGenerator(TempAllocator& alloc, JSScript* script);
-
-    MOZ_MUST_USE bool traverseBytecode();
-    MOZ_MUST_USE bool addBlock(CFGBlock* block);
-    ControlFlowGraph* getGraph(TempAllocator& alloc) {
-        ControlFlowGraph* cfg = ControlFlowGraph::New(alloc);
-        if (!cfg) {
-            return nullptr;
-        }
-        if (!cfg->init(alloc, blocks_)) {
-            return nullptr;
-        }
-        return cfg;
+  MOZ_MUST_USE bool traverseBytecode();
+  MOZ_MUST_USE bool addBlock(CFGBlock* block);
+  ControlFlowGraph* getGraph(TempAllocator& alloc) {
+    ControlFlowGraph* cfg = ControlFlowGraph::New(alloc);
+    if (!cfg) {
+      return nullptr;
     }
-
-    bool aborted() const {
-        return aborted_;
+    if (!cfg->init(alloc, blocks_)) {
+      return nullptr;
     }
+    return cfg;
+  }
 
-  private:
-    void popCfgStack();
-    MOZ_MUST_USE bool processDeferredContinues(CFGState& state);
-    ControlStatus processControlEnd();
-    ControlStatus processCfgStack();
-    ControlStatus processCfgEntry(CFGState& state);
-    ControlStatus processIfStart(JSOp op);
-    ControlStatus processIfEnd(CFGState& state);
-    ControlStatus processIfElseTrueEnd(CFGState& state);
-    ControlStatus processIfElseFalseEnd(CFGState& state);
-    ControlStatus processDoWhileLoop(jssrcnote* sn);
-    ControlStatus processDoWhileBodyEnd(CFGState& state);
-    ControlStatus processDoWhileCondEnd(CFGState& state);
-    ControlStatus processWhileCondEnd(CFGState& state);
-    ControlStatus processWhileBodyEnd(CFGState& state);
-    ControlStatus processForLoop(JSOp op, jssrcnote* sn);
-    ControlStatus processForCondEnd(CFGState& state);
-    ControlStatus processForBodyEnd(CFGState& state);
-    ControlStatus processForUpdateEnd(CFGState& state);
-    ControlStatus processWhileOrForInOrForOfLoop(jssrcnote* sn);
-    ControlStatus processNextTableSwitchCase(CFGState& state);
-    ControlStatus processCondSwitch();
-    ControlStatus processCondSwitchCase(CFGState& state);
-    ControlStatus processCondSwitchDefault(CFGState& state);
-    ControlStatus processCondSwitchBody(CFGState& state);
-    ControlStatus processSwitchBreak(JSOp op);
-    ControlStatus processSwitchEnd(DeferredEdge* breaks, jsbytecode* exitpc);
-    ControlStatus processTry();
-    ControlStatus processTryEnd(CFGState& state);
-    ControlStatus processThrow();
-    ControlStatus processTableSwitch(JSOp op, jssrcnote* sn);
-    ControlStatus processContinue(JSOp op);
-    ControlStatus processBreak(JSOp op, jssrcnote* sn);
-    ControlStatus processReturn(JSOp op);
-    ControlStatus snoopControlFlow(JSOp op);
-    ControlStatus processBrokenLoop(CFGState& state);
-    ControlStatus finishLoop(CFGState& state, CFGBlock* successor);
-    ControlStatus processAndOr(JSOp op);
-    ControlStatus processAndOrEnd(CFGState& state);
-    ControlStatus processLabel();
-    ControlStatus processLabelEnd(CFGState& state);
+  bool aborted() const { return aborted_; }
 
-    MOZ_MUST_USE bool pushLoop(CFGState::State state, jsbytecode* stopAt, CFGBlock* entry,
-                               jsbytecode* loopHead, jsbytecode* initialPc,
-                               jsbytecode* bodyStart, jsbytecode* bodyEnd,
-                               jsbytecode* exitpc, jsbytecode* continuepc);
-    void endCurrentBlock(CFGControlInstruction* ins);
-    CFGBlock* createBreakCatchBlock(DeferredEdge* edge, jsbytecode* pc);
+ private:
+  void popCfgStack();
+  MOZ_MUST_USE bool processDeferredContinues(CFGState& state);
+  ControlStatus processControlEnd();
+  ControlStatus processCfgStack();
+  ControlStatus processCfgEntry(CFGState& state);
+  ControlStatus processIfStart(JSOp op);
+  ControlStatus processIfEnd(CFGState& state);
+  ControlStatus processIfElseTrueEnd(CFGState& state);
+  ControlStatus processIfElseFalseEnd(CFGState& state);
+  ControlStatus processDoWhileLoop(jssrcnote* sn);
+  ControlStatus processDoWhileBodyEnd(CFGState& state);
+  ControlStatus processDoWhileCondEnd(CFGState& state);
+  ControlStatus processWhileCondEnd(CFGState& state);
+  ControlStatus processWhileBodyEnd(CFGState& state);
+  ControlStatus processForLoop(JSOp op, jssrcnote* sn);
+  ControlStatus processForCondEnd(CFGState& state);
+  ControlStatus processForBodyEnd(CFGState& state);
+  ControlStatus processForUpdateEnd(CFGState& state);
+  ControlStatus processWhileOrForInOrForOfLoop(jssrcnote* sn);
+  ControlStatus processNextTableSwitchCase(CFGState& state);
+  ControlStatus processCondSwitch();
+  ControlStatus processCondSwitchCase(CFGState& state);
+  ControlStatus processCondSwitchDefault(CFGState& state);
+  ControlStatus processCondSwitchBody(CFGState& state);
+  ControlStatus processSwitchBreak(JSOp op);
+  ControlStatus processSwitchEnd(DeferredEdge* breaks, jsbytecode* exitpc);
+  ControlStatus processTry();
+  ControlStatus processTryEnd(CFGState& state);
+  ControlStatus processThrow();
+  ControlStatus processTableSwitch(JSOp op, jssrcnote* sn);
+  ControlStatus processContinue(JSOp op);
+  ControlStatus processBreak(JSOp op, jssrcnote* sn);
+  ControlStatus processReturn(JSOp op);
+  ControlStatus snoopControlFlow(JSOp op);
+  ControlStatus processBrokenLoop(CFGState& state);
+  ControlStatus finishLoop(CFGState& state, CFGBlock* successor);
+  ControlStatus processAndOr(JSOp op);
+  ControlStatus processAndOrEnd(CFGState& state);
+  ControlStatus processLabel();
+  ControlStatus processLabelEnd(CFGState& state);
+
+  MOZ_MUST_USE bool pushLoop(CFGState::State state, jsbytecode* stopAt,
+                             CFGBlock* entry, jsbytecode* loopHead,
+                             jsbytecode* initialPc, jsbytecode* bodyStart,
+                             jsbytecode* bodyEnd, jsbytecode* exitpc,
+                             jsbytecode* continuepc);
+  void endCurrentBlock(CFGControlInstruction* ins);
+  CFGBlock* createBreakCatchBlock(DeferredEdge* edge, jsbytecode* pc);
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

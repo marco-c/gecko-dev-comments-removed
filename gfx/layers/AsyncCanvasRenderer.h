@@ -8,9 +8,9 @@
 #define MOZILLA_LAYERS_ASYNCCANVASRENDERER_H_
 
 #include "LayersTypes.h"
-#include "mozilla/gfx/Point.h"          
+#include "mozilla/gfx/Point.h"  
 #include "mozilla/Mutex.h"
-#include "nsCOMPtr.h"                   
+#include "nsCOMPtr.h"  
 
 class nsICanvasRenderingContextInternal;
 class nsIInputStream;
@@ -51,11 +51,10 @@ class TextureClient;
 
 
 
-class AsyncCanvasRenderer final
-{
+class AsyncCanvasRenderer final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(AsyncCanvasRenderer)
 
-public:
+ public:
   AsyncCanvasRenderer();
 
   void NotifyElementAboutAttributesChanged();
@@ -63,18 +62,11 @@ public:
 
   void SetCanvasClient(CanvasClient* aClient);
 
-  void SetWidth(uint32_t aWidth)
-  {
-    mWidth = aWidth;
-  }
+  void SetWidth(uint32_t aWidth) { mWidth = aWidth; }
 
-  void SetHeight(uint32_t aHeight)
-  {
-    mHeight = aHeight;
-  }
+  void SetHeight(uint32_t aHeight) { mHeight = aHeight; }
 
-  void SetIsAlphaPremultiplied(bool aIsAlphaPremultiplied)
-  {
+  void SetIsAlphaPremultiplied(bool aIsAlphaPremultiplied) {
     mIsAlphaPremultiplied = aIsAlphaPremultiplied;
   }
 
@@ -91,30 +83,22 @@ public:
   
   
   
-  void CopyFromTextureClient(TextureClient *aClient);
+  void CopyFromTextureClient(TextureClient* aClient);
 
   
   
   
-  nsresult
-  GetInputStream(const char *aMimeType,
-                 const char16_t *aEncoderOptions,
-                 nsIInputStream **aStream);
+  nsresult GetInputStream(const char* aMimeType,
+                          const char16_t* aEncoderOptions,
+                          nsIInputStream** aStream);
 
-  gfx::IntSize GetSize() const
-  {
-    return gfx::IntSize(mWidth, mHeight);
-  }
+  gfx::IntSize GetSize() const { return gfx::IntSize(mWidth, mHeight); }
 
-  CompositableHandle GetCanvasClientAsyncHandle() const
-  {
+  CompositableHandle GetCanvasClientAsyncHandle() const {
     return mCanvasClientAsyncHandle;
   }
 
-  CanvasClient* GetCanvasClient() const
-  {
-    return mCanvasClient;
-  }
+  CanvasClient* GetCanvasClient() const { return mCanvasClient; }
 
   already_AddRefed<nsISerialEventTarget> GetActiveEventTarget();
 
@@ -129,8 +113,8 @@ public:
   
   
   RefPtr<gl::GLContext> mGLContext;
-private:
 
+ private:
   virtual ~AsyncCanvasRenderer();
 
   
@@ -162,7 +146,7 @@ private:
   nsCOMPtr<nsISerialEventTarget> mActiveEventTarget;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -24,699 +24,641 @@
 using namespace mozilla::dom;
 
 txXPathTreeWalker::txXPathTreeWalker(const txXPathTreeWalker& aOther)
-    : mPosition(aOther.mPosition)
-{
-}
+    : mPosition(aOther.mPosition) {}
 
 txXPathTreeWalker::txXPathTreeWalker(const txXPathNode& aNode)
-    : mPosition(aNode)
-{
-}
+    : mPosition(aNode) {}
 
-void
-txXPathTreeWalker::moveToRoot()
-{
-    if (mPosition.isDocument()) {
-        return;
-    }
+void txXPathTreeWalker::moveToRoot() {
+  if (mPosition.isDocument()) {
+    return;
+  }
 
-    nsIDocument* root = mPosition.mNode->GetUncomposedDoc();
-    if (root) {
-        mPosition.mIndex = txXPathNode::eDocument;
-        mPosition.mNode = root;
-    }
-    else {
-        nsINode *rootNode = mPosition.Root();
+  nsIDocument* root = mPosition.mNode->GetUncomposedDoc();
+  if (root) {
+    mPosition.mIndex = txXPathNode::eDocument;
+    mPosition.mNode = root;
+  } else {
+    nsINode* rootNode = mPosition.Root();
 
-        NS_ASSERTION(rootNode->IsContent(),
-                     "root of subtree wasn't an nsIContent");
-
-        mPosition.mIndex = txXPathNode::eContent;
-        mPosition.mNode = rootNode;
-    }
-}
-
-bool
-txXPathTreeWalker::moveToElementById(const nsAString& aID)
-{
-    if (aID.IsEmpty()) {
-        return false;
-    }
-
-    nsIDocument* doc = mPosition.mNode->GetUncomposedDoc();
-
-    nsCOMPtr<nsIContent> content;
-    if (doc) {
-        content = doc->GetElementById(aID);
-    }
-    else {
-        
-        nsINode *rootNode = mPosition.Root();
-
-        NS_ASSERTION(rootNode->IsContent(),
-                     "root of subtree wasn't an nsIContent");
-
-        content = nsContentUtils::MatchElementId(
-            static_cast<nsIContent*>(rootNode), aID);
-    }
-
-    if (!content) {
-        return false;
-    }
+    NS_ASSERTION(rootNode->IsContent(), "root of subtree wasn't an nsIContent");
 
     mPosition.mIndex = txXPathNode::eContent;
-    mPosition.mNode = content;
-
-    return true;
+    mPosition.mNode = rootNode;
+  }
 }
 
-bool
-txXPathTreeWalker::moveToFirstAttribute()
-{
-    if (!mPosition.isContent()) {
-        return false;
-    }
+bool txXPathTreeWalker::moveToElementById(const nsAString& aID) {
+  if (aID.IsEmpty()) {
+    return false;
+  }
 
-    return moveToValidAttribute(0);
-}
+  nsIDocument* doc = mPosition.mNode->GetUncomposedDoc();
 
-bool
-txXPathTreeWalker::moveToNextAttribute()
-{
+  nsCOMPtr<nsIContent> content;
+  if (doc) {
+    content = doc->GetElementById(aID);
+  } else {
     
-    if (!mPosition.isAttribute()) {
-        return false;
-    }
+    nsINode* rootNode = mPosition.Root();
 
-    return moveToValidAttribute(mPosition.mIndex + 1);
-}
+    NS_ASSERTION(rootNode->IsContent(), "root of subtree wasn't an nsIContent");
 
-bool
-txXPathTreeWalker::moveToValidAttribute(uint32_t aStartIndex)
-{
-    NS_ASSERTION(!mPosition.isDocument(), "documents doesn't have attrs");
+    content =
+        nsContentUtils::MatchElementId(static_cast<nsIContent*>(rootNode), aID);
+  }
 
-    if (!mPosition.Content()->IsElement()) {
-      return false;
-    }
-
-    Element* element = mPosition.Content()->AsElement();
-    uint32_t total = element->GetAttrCount();
-    if (aStartIndex >= total) {
-        return false;
-    }
-
-    uint32_t index;
-    for (index = aStartIndex; index < total; ++index) {
-        const nsAttrName* name = element->GetAttrNameAt(index);
-
-        
-        if (name->NamespaceID() != kNameSpaceID_XMLNS) {
-            mPosition.mIndex = index;
-
-            return true;
-        }
-    }
+  if (!content) {
     return false;
+  }
+
+  mPosition.mIndex = txXPathNode::eContent;
+  mPosition.mNode = content;
+
+  return true;
 }
 
-bool
-txXPathTreeWalker::moveToNamedAttribute(nsAtom* aLocalName, int32_t aNSID)
-{
-    if (!mPosition.isContent() || !mPosition.Content()->IsElement()) {
-        return false;
-    }
-
-    Element* element = mPosition.Content()->AsElement();
-
-    const nsAttrName* name;
-    uint32_t i;
-    for (i = 0; (name = element->GetAttrNameAt(i)); ++i) {
-        if (name->Equals(aLocalName, aNSID)) {
-            mPosition.mIndex = i;
-
-            return true;
-        }
-    }
+bool txXPathTreeWalker::moveToFirstAttribute() {
+  if (!mPosition.isContent()) {
     return false;
+  }
+
+  return moveToValidAttribute(0);
 }
 
-bool
-txXPathTreeWalker::moveToFirstChild()
-{
-    if (mPosition.isAttribute()) {
-        return false;
-    }
+bool txXPathTreeWalker::moveToNextAttribute() {
+  
+  if (!mPosition.isAttribute()) {
+    return false;
+  }
 
-    nsIContent* child = mPosition.mNode->GetFirstChild();
-    if (!child) {
-        return false;
+  return moveToValidAttribute(mPosition.mIndex + 1);
+}
+
+bool txXPathTreeWalker::moveToValidAttribute(uint32_t aStartIndex) {
+  NS_ASSERTION(!mPosition.isDocument(), "documents doesn't have attrs");
+
+  if (!mPosition.Content()->IsElement()) {
+    return false;
+  }
+
+  Element* element = mPosition.Content()->AsElement();
+  uint32_t total = element->GetAttrCount();
+  if (aStartIndex >= total) {
+    return false;
+  }
+
+  uint32_t index;
+  for (index = aStartIndex; index < total; ++index) {
+    const nsAttrName* name = element->GetAttrNameAt(index);
+
+    
+    if (name->NamespaceID() != kNameSpaceID_XMLNS) {
+      mPosition.mIndex = index;
+
+      return true;
     }
+  }
+  return false;
+}
+
+bool txXPathTreeWalker::moveToNamedAttribute(nsAtom* aLocalName,
+                                             int32_t aNSID) {
+  if (!mPosition.isContent() || !mPosition.Content()->IsElement()) {
+    return false;
+  }
+
+  Element* element = mPosition.Content()->AsElement();
+
+  const nsAttrName* name;
+  uint32_t i;
+  for (i = 0; (name = element->GetAttrNameAt(i)); ++i) {
+    if (name->Equals(aLocalName, aNSID)) {
+      mPosition.mIndex = i;
+
+      return true;
+    }
+  }
+  return false;
+}
+
+bool txXPathTreeWalker::moveToFirstChild() {
+  if (mPosition.isAttribute()) {
+    return false;
+  }
+
+  nsIContent* child = mPosition.mNode->GetFirstChild();
+  if (!child) {
+    return false;
+  }
+  mPosition.mIndex = txXPathNode::eContent;
+  mPosition.mNode = child;
+
+  return true;
+}
+
+bool txXPathTreeWalker::moveToLastChild() {
+  if (mPosition.isAttribute()) {
+    return false;
+  }
+
+  nsIContent* child = mPosition.mNode->GetLastChild();
+  if (!child) {
+    return false;
+  }
+
+  mPosition.mIndex = txXPathNode::eContent;
+  mPosition.mNode = child;
+
+  return true;
+}
+
+bool txXPathTreeWalker::moveToNextSibling() {
+  if (!mPosition.isContent()) {
+    return false;
+  }
+
+  nsINode* sibling = mPosition.mNode->GetNextSibling();
+  if (!sibling) {
+    return false;
+  }
+
+  mPosition.mNode = sibling;
+
+  return true;
+}
+
+bool txXPathTreeWalker::moveToPreviousSibling() {
+  if (!mPosition.isContent()) {
+    return false;
+  }
+
+  nsINode* sibling = mPosition.mNode->GetPreviousSibling();
+  if (!sibling) {
+    return false;
+  }
+
+  mPosition.mNode = sibling;
+
+  return true;
+}
+
+bool txXPathTreeWalker::moveToParent() {
+  if (mPosition.isDocument()) {
+    return false;
+  }
+
+  if (mPosition.isAttribute()) {
     mPosition.mIndex = txXPathNode::eContent;
-    mPosition.mNode = child;
 
     return true;
-}
+  }
 
-bool
-txXPathTreeWalker::moveToLastChild()
-{
-    if (mPosition.isAttribute()) {
-        return false;
-    }
+  nsINode* parent = mPosition.mNode->GetParentNode();
+  if (!parent) {
+    return false;
+  }
 
-    nsIContent* child = mPosition.mNode->GetLastChild();
-    if (!child) {
-        return false;
-    }
+  mPosition.mIndex = mPosition.mNode->GetParent() ? txXPathNode::eContent
+                                                  : txXPathNode::eDocument;
+  mPosition.mNode = parent;
 
-    mPosition.mIndex = txXPathNode::eContent;
-    mPosition.mNode = child;
-
-    return true;
-}
-
-bool
-txXPathTreeWalker::moveToNextSibling()
-{
-    if (!mPosition.isContent()) {
-        return false;
-    }
-
-    nsINode* sibling = mPosition.mNode->GetNextSibling();
-    if (!sibling) {
-      return false;
-    }
-
-    mPosition.mNode = sibling;
-
-    return true;
-}
-
-bool
-txXPathTreeWalker::moveToPreviousSibling()
-{
-    if (!mPosition.isContent()) {
-        return false;
-    }
-
-    nsINode* sibling = mPosition.mNode->GetPreviousSibling();
-    if (!sibling) {
-      return false;
-    }
-
-    mPosition.mNode = sibling;
-
-    return true;
-}
-
-bool
-txXPathTreeWalker::moveToParent()
-{
-    if (mPosition.isDocument()) {
-        return false;
-    }
-
-    if (mPosition.isAttribute()) {
-        mPosition.mIndex = txXPathNode::eContent;
-
-        return true;
-    }
-
-    nsINode* parent = mPosition.mNode->GetParentNode();
-    if (!parent) {
-        return false;
-    }
-
-    mPosition.mIndex = mPosition.mNode->GetParent() ?
-      txXPathNode::eContent : txXPathNode::eDocument;
-    mPosition.mNode = parent;
-
-    return true;
+  return true;
 }
 
 txXPathNode::txXPathNode(const txXPathNode& aNode)
-  : mNode(aNode.mNode),
-    mRefCountRoot(aNode.mRefCountRoot),
-    mIndex(aNode.mIndex)
-{
-    MOZ_COUNT_CTOR(txXPathNode);
-    if (mRefCountRoot) {
-        NS_ADDREF(Root());
-    }
+    : mNode(aNode.mNode),
+      mRefCountRoot(aNode.mRefCountRoot),
+      mIndex(aNode.mIndex) {
+  MOZ_COUNT_CTOR(txXPathNode);
+  if (mRefCountRoot) {
+    NS_ADDREF(Root());
+  }
 }
 
-txXPathNode::~txXPathNode()
-{
-    MOZ_COUNT_DTOR(txXPathNode);
-    if (mRefCountRoot) {
-        nsINode *root = Root();
-        NS_RELEASE(root);
-    }
-}
-
-
-bool
-txXPathNodeUtils::getAttr(const txXPathNode& aNode, nsAtom* aLocalName,
-                          int32_t aNSID, nsAString& aValue)
-{
-    if (aNode.isDocument() || aNode.isAttribute() ||
-        !aNode.Content()->IsElement()) {
-        return false;
-    }
-
-    return aNode.Content()->AsElement()->GetAttr(aNSID, aLocalName, aValue);
+txXPathNode::~txXPathNode() {
+  MOZ_COUNT_DTOR(txXPathNode);
+  if (mRefCountRoot) {
+    nsINode* root = Root();
+    NS_RELEASE(root);
+  }
 }
 
 
-already_AddRefed<nsAtom>
-txXPathNodeUtils::getLocalName(const txXPathNode& aNode)
-{
-    if (aNode.isDocument()) {
-        return nullptr;
+bool txXPathNodeUtils::getAttr(const txXPathNode& aNode, nsAtom* aLocalName,
+                               int32_t aNSID, nsAString& aValue) {
+  if (aNode.isDocument() || aNode.isAttribute() ||
+      !aNode.Content()->IsElement()) {
+    return false;
+  }
+
+  return aNode.Content()->AsElement()->GetAttr(aNSID, aLocalName, aValue);
+}
+
+
+already_AddRefed<nsAtom> txXPathNodeUtils::getLocalName(
+    const txXPathNode& aNode) {
+  if (aNode.isDocument()) {
+    return nullptr;
+  }
+
+  if (aNode.isContent()) {
+    if (aNode.mNode->IsElement()) {
+      RefPtr<nsAtom> localName = aNode.Content()->NodeInfo()->NameAtom();
+      return localName.forget();
     }
 
-    if (aNode.isContent()) {
-        if (aNode.mNode->IsElement()) {
-            RefPtr<nsAtom> localName =
-                aNode.Content()->NodeInfo()->NameAtom();
-            return localName.forget();
-        }
-
-        if (aNode.mNode->IsProcessingInstruction()) {
-            return NS_Atomize(aNode.mNode->NodeName());
-        }
-
-        return nullptr;
+    if (aNode.mNode->IsProcessingInstruction()) {
+      return NS_Atomize(aNode.mNode->NodeName());
     }
 
-    
-    RefPtr<nsAtom> localName =
+    return nullptr;
+  }
+
+  
+  RefPtr<nsAtom> localName =
       aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex)->LocalName();
 
-    return localName.forget();
+  return localName.forget();
 }
 
-nsAtom*
-txXPathNodeUtils::getPrefix(const txXPathNode& aNode)
-{
-    if (aNode.isDocument()) {
-        return nullptr;
-    }
+nsAtom* txXPathNodeUtils::getPrefix(const txXPathNode& aNode) {
+  if (aNode.isDocument()) {
+    return nullptr;
+  }
 
-    if (aNode.isContent()) {
-        
-        
-        return aNode.Content()->NodeInfo()->GetPrefixAtom();
-    }
-
-    return aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex)->GetPrefix();
-}
-
-
-void
-txXPathNodeUtils::getLocalName(const txXPathNode& aNode, nsAString& aLocalName)
-{
-    if (aNode.isDocument()) {
-        aLocalName.Truncate();
-
-        return;
-    }
-
-    if (aNode.isContent()) {
-        if (aNode.mNode->IsElement()) {
-            mozilla::dom::NodeInfo* nodeInfo = aNode.Content()->NodeInfo();
-            nodeInfo->GetName(aLocalName);
-            return;
-        }
-
-        if (aNode.mNode->IsProcessingInstruction()) {
-            
-            
-            
-            aLocalName = aNode.mNode->NodeName();
-            return;
-        }
-
-        aLocalName.Truncate();
-
-        return;
-    }
-
-    aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex)->LocalName()->
-      ToString(aLocalName);
-
+  if (aNode.isContent()) {
     
-    if (aNode.Content()->NodeInfo()->NamespaceEquals(kNameSpaceID_None) &&
-        aNode.Content()->IsHTMLElement()) {
-        nsContentUtils::ASCIIToUpper(aLocalName);
-    }
+    
+    return aNode.Content()->NodeInfo()->GetPrefixAtom();
+  }
+
+  return aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex)->GetPrefix();
 }
 
 
-void
-txXPathNodeUtils::getNodeName(const txXPathNode& aNode, nsAString& aName)
-{
-    if (aNode.isDocument()) {
-        aName.Truncate();
+void txXPathNodeUtils::getLocalName(const txXPathNode& aNode,
+                                    nsAString& aLocalName) {
+  if (aNode.isDocument()) {
+    aLocalName.Truncate();
 
-        return;
+    return;
+  }
+
+  if (aNode.isContent()) {
+    if (aNode.mNode->IsElement()) {
+      mozilla::dom::NodeInfo* nodeInfo = aNode.Content()->NodeInfo();
+      nodeInfo->GetName(aLocalName);
+      return;
     }
 
-    if (aNode.isContent()) {
-        
-        if (aNode.mNode->IsElement() ||
-            aNode.mNode->NodeType() == nsINode::PROCESSING_INSTRUCTION_NODE) {
-            aName = aNode.Content()->NodeName();
-            return;
-        }
-
-        aName.Truncate();
-
-        return;
+    if (aNode.mNode->IsProcessingInstruction()) {
+      
+      
+      
+      aLocalName = aNode.mNode->NodeName();
+      return;
     }
 
-    aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex)->GetQualifiedName(aName);
+    aLocalName.Truncate();
+
+    return;
+  }
+
+  aNode.Content()
+      ->AsElement()
+      ->GetAttrNameAt(aNode.mIndex)
+      ->LocalName()
+      ->ToString(aLocalName);
+
+  
+  if (aNode.Content()->NodeInfo()->NamespaceEquals(kNameSpaceID_None) &&
+      aNode.Content()->IsHTMLElement()) {
+    nsContentUtils::ASCIIToUpper(aLocalName);
+  }
 }
 
 
-int32_t
-txXPathNodeUtils::getNamespaceID(const txXPathNode& aNode)
-{
-    if (aNode.isDocument()) {
-        return kNameSpaceID_None;
+void txXPathNodeUtils::getNodeName(const txXPathNode& aNode, nsAString& aName) {
+  if (aNode.isDocument()) {
+    aName.Truncate();
+
+    return;
+  }
+
+  if (aNode.isContent()) {
+    
+    if (aNode.mNode->IsElement() ||
+        aNode.mNode->NodeType() == nsINode::PROCESSING_INSTRUCTION_NODE) {
+      aName = aNode.Content()->NodeName();
+      return;
     }
 
-    if (aNode.isContent()) {
-        return aNode.Content()->GetNameSpaceID();
-    }
+    aName.Truncate();
 
-    return aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex)->NamespaceID();
+    return;
+  }
+
+  aNode.Content()
+      ->AsElement()
+      ->GetAttrNameAt(aNode.mIndex)
+      ->GetQualifiedName(aName);
 }
 
 
-void
-txXPathNodeUtils::getNamespaceURI(const txXPathNode& aNode, nsAString& aURI)
-{
-    nsContentUtils::NameSpaceManager()->GetNameSpaceURI(getNamespaceID(aNode), aURI);
+int32_t txXPathNodeUtils::getNamespaceID(const txXPathNode& aNode) {
+  if (aNode.isDocument()) {
+    return kNameSpaceID_None;
+  }
+
+  if (aNode.isContent()) {
+    return aNode.Content()->GetNameSpaceID();
+  }
+
+  return aNode.Content()
+      ->AsElement()
+      ->GetAttrNameAt(aNode.mIndex)
+      ->NamespaceID();
 }
 
 
-uint16_t
-txXPathNodeUtils::getNodeType(const txXPathNode& aNode)
-{
-    if (aNode.isDocument()) {
-        return txXPathNodeType::DOCUMENT_NODE;
-    }
-
-    if (aNode.isContent()) {
-        return aNode.mNode->NodeType();
-    }
-
-    return txXPathNodeType::ATTRIBUTE_NODE;
+void txXPathNodeUtils::getNamespaceURI(const txXPathNode& aNode,
+                                       nsAString& aURI) {
+  nsContentUtils::NameSpaceManager()->GetNameSpaceURI(getNamespaceID(aNode),
+                                                      aURI);
 }
 
 
-void
-txXPathNodeUtils::appendNodeValue(const txXPathNode& aNode, nsAString& aResult)
-{
-    if (aNode.isAttribute()) {
-        const nsAttrName* name = aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex);
+uint16_t txXPathNodeUtils::getNodeType(const txXPathNode& aNode) {
+  if (aNode.isDocument()) {
+    return txXPathNodeType::DOCUMENT_NODE;
+  }
 
-        if (aResult.IsEmpty()) {
-            aNode.Content()->AsElement()->GetAttr(name->NamespaceID(),
-                                                  name->LocalName(),
-                                                  aResult);
-        } else {
-            nsAutoString result;
-            aNode.Content()->AsElement()->GetAttr(name->NamespaceID(),
-                                                  name->LocalName(),
-                                                  result);
-            aResult.Append(result);
-        }
+  if (aNode.isContent()) {
+    return aNode.mNode->NodeType();
+  }
 
-        return;
-    }
-
-    if (aNode.isDocument() ||
-        aNode.mNode->IsElement() ||
-        aNode.mNode->IsDocumentFragment()) {
-        nsContentUtils::AppendNodeTextContent(aNode.mNode, true, aResult,
-                                              mozilla::fallible);
-
-        return;
-    }
-
-    MOZ_ASSERT(aNode.mNode->IsCharacterData());
-    static_cast<CharacterData*>(aNode.Content())->AppendTextTo(aResult);
+  return txXPathNodeType::ATTRIBUTE_NODE;
 }
 
 
-bool
-txXPathNodeUtils::isWhitespace(const txXPathNode& aNode)
-{
-    NS_ASSERTION(aNode.isContent() && isText(aNode), "Wrong type!");
+void txXPathNodeUtils::appendNodeValue(const txXPathNode& aNode,
+                                       nsAString& aResult) {
+  if (aNode.isAttribute()) {
+    const nsAttrName* name =
+        aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex);
 
-    return aNode.Content()->TextIsOnlyWhitespace();
+    if (aResult.IsEmpty()) {
+      aNode.Content()->AsElement()->GetAttr(name->NamespaceID(),
+                                            name->LocalName(), aResult);
+    } else {
+      nsAutoString result;
+      aNode.Content()->AsElement()->GetAttr(name->NamespaceID(),
+                                            name->LocalName(), result);
+      aResult.Append(result);
+    }
+
+    return;
+  }
+
+  if (aNode.isDocument() || aNode.mNode->IsElement() ||
+      aNode.mNode->IsDocumentFragment()) {
+    nsContentUtils::AppendNodeTextContent(aNode.mNode, true, aResult,
+                                          mozilla::fallible);
+
+    return;
+  }
+
+  MOZ_ASSERT(aNode.mNode->IsCharacterData());
+  static_cast<CharacterData*>(aNode.Content())->AppendTextTo(aResult);
 }
 
 
-txXPathNode*
-txXPathNodeUtils::getOwnerDocument(const txXPathNode& aNode)
-{
-    return new txXPathNode(aNode.mNode->OwnerDoc());
+bool txXPathNodeUtils::isWhitespace(const txXPathNode& aNode) {
+  NS_ASSERTION(aNode.isContent() && isText(aNode), "Wrong type!");
+
+  return aNode.Content()->TextIsOnlyWhitespace();
+}
+
+
+txXPathNode* txXPathNodeUtils::getOwnerDocument(const txXPathNode& aNode) {
+  return new txXPathNode(aNode.mNode->OwnerDoc());
 }
 
 const char gPrintfFmt[] = "id0x%" PRIxPTR;
 const char gPrintfFmtAttr[] = "id0x%" PRIxPTR "-%010i";
 
 
-nsresult
-txXPathNodeUtils::getXSLTId(const txXPathNode& aNode,
-                            const txXPathNode& aBase,
-                            nsAString& aResult)
-{
-    uintptr_t nodeid = ((uintptr_t)aNode.mNode) - ((uintptr_t)aBase.mNode);
-    if (!aNode.isAttribute()) {
-        CopyASCIItoUTF16(nsPrintfCString(gPrintfFmt, nodeid),
-                         aResult);
-    }
-    else {
-        CopyASCIItoUTF16(nsPrintfCString(gPrintfFmtAttr,
-                                         nodeid, aNode.mIndex), aResult);
-    }
+nsresult txXPathNodeUtils::getXSLTId(const txXPathNode& aNode,
+                                     const txXPathNode& aBase,
+                                     nsAString& aResult) {
+  uintptr_t nodeid = ((uintptr_t)aNode.mNode) - ((uintptr_t)aBase.mNode);
+  if (!aNode.isAttribute()) {
+    CopyASCIItoUTF16(nsPrintfCString(gPrintfFmt, nodeid), aResult);
+  } else {
+    CopyASCIItoUTF16(nsPrintfCString(gPrintfFmtAttr, nodeid, aNode.mIndex),
+                     aResult);
+  }
 
-    return NS_OK;
+  return NS_OK;
 }
 
 
-nsresult
-txXPathNodeUtils::getBaseURI(const txXPathNode& aNode, nsAString& aURI)
-{
-    return aNode.mNode->GetBaseURI(aURI);
+nsresult txXPathNodeUtils::getBaseURI(const txXPathNode& aNode,
+                                      nsAString& aURI) {
+  return aNode.mNode->GetBaseURI(aURI);
 }
 
 
-int
-txXPathNodeUtils::comparePosition(const txXPathNode& aNode,
-                                  const txXPathNode& aOtherNode)
-{
-    
-    if (aNode.mNode == aOtherNode.mNode) {
-        if (aNode.mIndex == aOtherNode.mIndex) {
-            return 0;
-        }
-
-        NS_ASSERTION(!aNode.isDocument() && !aOtherNode.isDocument(),
-                     "documents should always have a set index");
-
-        if (aNode.isContent() || (!aOtherNode.isContent() &&
-                                  aNode.mIndex < aOtherNode.mIndex)) {
-            return -1;
-        }
-
-        return 1;
+int txXPathNodeUtils::comparePosition(const txXPathNode& aNode,
+                                      const txXPathNode& aOtherNode) {
+  
+  if (aNode.mNode == aOtherNode.mNode) {
+    if (aNode.mIndex == aOtherNode.mIndex) {
+      return 0;
     }
 
-    
-    nsIDocument* document = aNode.mNode->GetUncomposedDoc();
-    nsIDocument* otherDocument = aOtherNode.mNode->GetUncomposedDoc();
+    NS_ASSERTION(!aNode.isDocument() && !aOtherNode.isDocument(),
+                 "documents should always have a set index");
 
-    
-    
-    if (document != otherDocument) {
-        return document < otherDocument ? -1 : 1;
+    if (aNode.isContent() ||
+        (!aOtherNode.isContent() && aNode.mIndex < aOtherNode.mIndex)) {
+      return -1;
     }
 
-    
-    
+    return 1;
+  }
+
+  
+  nsIDocument* document = aNode.mNode->GetUncomposedDoc();
+  nsIDocument* otherDocument = aOtherNode.mNode->GetUncomposedDoc();
+
+  
+  
+  if (document != otherDocument) {
+    return document < otherDocument ? -1 : 1;
+  }
+
+  
+  
+
+  
+  AutoTArray<nsINode*, 8> parents, otherParents;
+  nsINode* node = aNode.mNode;
+  nsINode* otherNode = aOtherNode.mNode;
+  nsINode* parent;
+  nsINode* otherParent;
+  while (node && otherNode) {
+    parent = node->GetParentNode();
+    otherParent = otherNode->GetParentNode();
 
     
-    AutoTArray<nsINode*, 8> parents, otherParents;
-    nsINode* node = aNode.mNode;
-    nsINode* otherNode = aOtherNode.mNode;
-    nsINode* parent;
-    nsINode* otherParent;
-    while (node && otherNode) {
-        parent = node->GetParentNode();
-        otherParent = otherNode->GetParentNode();
-
+    if (parent == otherParent) {
+      if (!parent) {
         
-        if (parent == otherParent) {
-            if (!parent) {
-                
-                
-                return node < otherNode ? -1 : 1;
-            }
+        
+        return node < otherNode ? -1 : 1;
+      }
 
-            return parent->ComputeIndexOf(node) < parent->ComputeIndexOf(otherNode) ?
-                   -1 : 1;
-        }
-
-        parents.AppendElement(node);
-        otherParents.AppendElement(otherNode);
-        node = parent;
-        otherNode = otherParent;
+      return parent->ComputeIndexOf(node) < parent->ComputeIndexOf(otherNode)
+                 ? -1
+                 : 1;
     }
 
-    while (node) {
-        parents.AppendElement(node);
-        node = node->GetParentNode();
+    parents.AppendElement(node);
+    otherParents.AppendElement(otherNode);
+    node = parent;
+    otherNode = otherParent;
+  }
+
+  while (node) {
+    parents.AppendElement(node);
+    node = node->GetParentNode();
+  }
+  while (otherNode) {
+    otherParents.AppendElement(otherNode);
+    otherNode = otherNode->GetParentNode();
+  }
+
+  
+  int32_t total = parents.Length() - 1;
+  int32_t otherTotal = otherParents.Length() - 1;
+  NS_ASSERTION(total != otherTotal, "Can't have same number of parents");
+
+  int32_t lastIndex = std::min(total, otherTotal);
+  int32_t i;
+  parent = nullptr;
+  for (i = 0; i <= lastIndex; ++i) {
+    node = parents.ElementAt(total - i);
+    otherNode = otherParents.ElementAt(otherTotal - i);
+    if (node != otherNode) {
+      if (!parent) {
+        
+        NS_ASSERTION(i == 0, "this shouldn't happen");
+        return node < otherNode ? -1 : 1;
+      }
+
+      int32_t index = parent->ComputeIndexOf(node);
+      int32_t otherIndex = parent->ComputeIndexOf(otherNode);
+      NS_ASSERTION(index != otherIndex && index >= 0 && otherIndex >= 0,
+                   "invalid index in compareTreePosition");
+
+      return index < otherIndex ? -1 : 1;
     }
-    while (otherNode) {
-        otherParents.AppendElement(otherNode);
-        otherNode = otherNode->GetParentNode();
-    }
 
-    
-    int32_t total = parents.Length() - 1;
-    int32_t otherTotal = otherParents.Length() - 1;
-    NS_ASSERTION(total != otherTotal, "Can't have same number of parents");
+    parent = node;
+  }
 
-    int32_t lastIndex = std::min(total, otherTotal);
-    int32_t i;
-    parent = nullptr;
-    for (i = 0; i <= lastIndex; ++i) {
-        node = parents.ElementAt(total - i);
-        otherNode = otherParents.ElementAt(otherTotal - i);
-        if (node != otherNode) {
-            if (!parent) {
-                
-                NS_ASSERTION(i == 0, "this shouldn't happen");
-                return node < otherNode ? -1 : 1;
-            }
-
-            int32_t index = parent->ComputeIndexOf(node);
-            int32_t otherIndex = parent->ComputeIndexOf(otherNode);
-            NS_ASSERTION(index != otherIndex && index >= 0 && otherIndex >= 0,
-                         "invalid index in compareTreePosition");
-
-            return index < otherIndex ? -1 : 1;
-        }
-
-        parent = node;
-    }
-
-    
-    
-    return total < otherTotal ? -1 : 1;
+  
+  
+  return total < otherTotal ? -1 : 1;
 }
 
 
-txXPathNode*
-txXPathNativeNode::createXPathNode(nsIContent* aContent, bool aKeepRootAlive)
-{
-    nsINode* root = aKeepRootAlive ? txXPathNode::RootOf(aContent) : nullptr;
+txXPathNode* txXPathNativeNode::createXPathNode(nsIContent* aContent,
+                                                bool aKeepRootAlive) {
+  nsINode* root = aKeepRootAlive ? txXPathNode::RootOf(aContent) : nullptr;
 
-    return new txXPathNode(aContent, txXPathNode::eContent, root);
+  return new txXPathNode(aContent, txXPathNode::eContent, root);
 }
 
 
-txXPathNode*
-txXPathNativeNode::createXPathNode(nsINode* aNode, bool aKeepRootAlive)
-{
-    uint16_t nodeType = aNode->NodeType();
-    if (nodeType == nsINode::ATTRIBUTE_NODE) {
-        auto* attr = static_cast<Attr*>(aNode);
+txXPathNode* txXPathNativeNode::createXPathNode(nsINode* aNode,
+                                                bool aKeepRootAlive) {
+  uint16_t nodeType = aNode->NodeType();
+  if (nodeType == nsINode::ATTRIBUTE_NODE) {
+    auto* attr = static_cast<Attr*>(aNode);
 
-        NodeInfo* nodeInfo = attr->NodeInfo();
-        Element* parent = attr->GetElement();
-        if (!parent) {
-            return nullptr;
-        }
-
-        nsINode* root = aKeepRootAlive ? txXPathNode::RootOf(parent) : nullptr;
-
-        uint32_t i, total = parent->GetAttrCount();
-        for (i = 0; i < total; ++i) {
-            const nsAttrName* name = parent->GetAttrNameAt(i);
-            if (nodeInfo->Equals(name->LocalName(), name->NamespaceID())) {
-                return new txXPathNode(parent, i, root);
-            }
-        }
-
-        NS_ERROR("Couldn't find the attribute in its parent!");
-
-        return nullptr;
+    NodeInfo* nodeInfo = attr->NodeInfo();
+    Element* parent = attr->GetElement();
+    if (!parent) {
+      return nullptr;
     }
 
-    uint32_t index;
-    nsINode* root = aKeepRootAlive ? aNode : nullptr;
+    nsINode* root = aKeepRootAlive ? txXPathNode::RootOf(parent) : nullptr;
 
-    if (nodeType == nsINode::DOCUMENT_NODE) {
-        index = txXPathNode::eDocument;
-    }
-    else {
-        index = txXPathNode::eContent;
-        if (root) {
-            root = txXPathNode::RootOf(root);
-        }
+    uint32_t i, total = parent->GetAttrCount();
+    for (i = 0; i < total; ++i) {
+      const nsAttrName* name = parent->GetAttrNameAt(i);
+      if (nodeInfo->Equals(name->LocalName(), name->NamespaceID())) {
+        return new txXPathNode(parent, i, root);
+      }
     }
 
-    return new txXPathNode(aNode, index, root);
+    NS_ERROR("Couldn't find the attribute in its parent!");
+
+    return nullptr;
+  }
+
+  uint32_t index;
+  nsINode* root = aKeepRootAlive ? aNode : nullptr;
+
+  if (nodeType == nsINode::DOCUMENT_NODE) {
+    index = txXPathNode::eDocument;
+  } else {
+    index = txXPathNode::eContent;
+    if (root) {
+      root = txXPathNode::RootOf(root);
+    }
+  }
+
+  return new txXPathNode(aNode, index, root);
 }
 
 
-txXPathNode*
-txXPathNativeNode::createXPathNode(nsIDocument* aDocument)
-{
-    return new txXPathNode(aDocument);
+txXPathNode* txXPathNativeNode::createXPathNode(nsIDocument* aDocument) {
+  return new txXPathNode(aDocument);
 }
 
 
-nsINode*
-txXPathNativeNode::getNode(const txXPathNode& aNode)
-{
-    if (!aNode.isAttribute()) {
-        return aNode.mNode;
-    }
+nsINode* txXPathNativeNode::getNode(const txXPathNode& aNode) {
+  if (!aNode.isAttribute()) {
+    return aNode.mNode;
+  }
 
-    const nsAttrName* name =
+  const nsAttrName* name =
       aNode.Content()->AsElement()->GetAttrNameAt(aNode.mIndex);
 
-    nsAutoString namespaceURI;
-    nsContentUtils::NameSpaceManager()->GetNameSpaceURI(name->NamespaceID(), namespaceURI);
+  nsAutoString namespaceURI;
+  nsContentUtils::NameSpaceManager()->GetNameSpaceURI(name->NamespaceID(),
+                                                      namespaceURI);
 
-    nsCOMPtr<Element> element = do_QueryInterface(aNode.mNode);
-    nsDOMAttributeMap* map = element->Attributes();
-    return map->GetNamedItemNS(namespaceURI,
-                               nsDependentAtomString(name->LocalName()));
+  nsCOMPtr<Element> element = do_QueryInterface(aNode.mNode);
+  nsDOMAttributeMap* map = element->Attributes();
+  return map->GetNamedItemNS(namespaceURI,
+                             nsDependentAtomString(name->LocalName()));
 }
 
 
-nsIContent*
-txXPathNativeNode::getContent(const txXPathNode& aNode)
-{
-    NS_ASSERTION(aNode.isContent(),
-                 "Only call getContent on nsIContent wrappers!");
-    return aNode.Content();
+nsIContent* txXPathNativeNode::getContent(const txXPathNode& aNode) {
+  NS_ASSERTION(aNode.isContent(),
+               "Only call getContent on nsIContent wrappers!");
+  return aNode.Content();
 }
 
 
-nsIDocument*
-txXPathNativeNode::getDocument(const txXPathNode& aNode)
-{
-    NS_ASSERTION(aNode.isDocument(),
-                 "Only call getDocument on nsIDocument wrappers!");
-    return aNode.Document();
+nsIDocument* txXPathNativeNode::getDocument(const txXPathNode& aNode) {
+  NS_ASSERTION(aNode.isDocument(),
+               "Only call getDocument on nsIDocument wrappers!");
+  return aNode.Document();
 }

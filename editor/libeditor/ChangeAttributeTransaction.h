@@ -9,9 +9,9 @@
 #include "mozilla/Attributes.h"           
 #include "mozilla/EditTransactionBase.h"  
 #include "nsCOMPtr.h"                     
-#include "nsCycleCollectionParticipant.h" 
-#include "nsISupportsImpl.h"              
-#include "nsString.h"                     
+#include "nsCycleCollectionParticipant.h"  
+#include "nsISupportsImpl.h"               
+#include "nsString.h"                      
 
 class nsAtom;
 
@@ -19,20 +19,18 @@ namespace mozilla {
 
 namespace dom {
 class Element;
-} 
+}  
 
 
 
 
 
-class ChangeAttributeTransaction final : public EditTransactionBase
-{
-protected:
-  ChangeAttributeTransaction(dom::Element& aElement,
-                             nsAtom& aAttribute,
+class ChangeAttributeTransaction final : public EditTransactionBase {
+ protected:
+  ChangeAttributeTransaction(dom::Element& aElement, nsAtom& aAttribute,
                              const nsAString* aValue);
 
-public:
+ public:
   
 
 
@@ -41,10 +39,8 @@ public:
 
 
 
-  static already_AddRefed<ChangeAttributeTransaction>
-  Create(dom::Element& aElement,
-         nsAtom& aAttribute,
-         const nsAString& aValue);
+  static already_AddRefed<ChangeAttributeTransaction> Create(
+      dom::Element& aElement, nsAtom& aAttribute, const nsAString& aValue);
 
   
 
@@ -53,9 +49,8 @@ public:
 
 
 
-  static already_AddRefed<ChangeAttributeTransaction>
-  CreateToRemove(dom::Element& aElement,
-                 nsAtom& aAttribute);
+  static already_AddRefed<ChangeAttributeTransaction> CreateToRemove(
+      dom::Element& aElement, nsAtom& aAttribute);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ChangeAttributeTransaction,
@@ -65,7 +60,7 @@ public:
 
   NS_IMETHOD RedoTransaction() override;
 
-private:
+ private:
   virtual ~ChangeAttributeTransaction();
 
   
@@ -87,6 +82,6 @@ private:
   bool mAttributeWasSet;
 };
 
-} 
+}  
 
-#endif 
+#endif  

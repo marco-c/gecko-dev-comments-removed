@@ -5,7 +5,6 @@
 
 
 
-
 #include "mozilla/ScopeExit.h"
 
 #include "jsapi.h"
@@ -22,68 +21,58 @@ using namespace js;
 extern JS::PersistentRootedObject gGlobal;
 extern JSContext* gCx;
 
-static int
-testStructuredCloneReaderInit(int *argc, char ***argv) {
+static int testStructuredCloneReaderInit(int* argc, char*** argv) { return 0; }
+
+static int testStructuredCloneReaderFuzz(const uint8_t* buf, size_t size) {
+  auto gcGuard = mozilla::MakeScopeExit([&] {
+    JS::PrepareForFullGC(gCx);
+    JS::NonIncrementalGC(gCx, GC_NORMAL, JS::gcreason::API);
+  });
+
+  if (!size) return 0;
+
+  
+  const size_t kSegmentAlignment = 8;
+  size_t buf_size = JS_ROUNDUP(size, kSegmentAlignment);
+
+  JS::StructuredCloneScope scope = JS::StructuredCloneScope::DifferentProcess;
+
+  auto clonebuf = MakeUnique<JSStructuredCloneData>(scope);
+  if (!clonebuf || !clonebuf->Init(buf_size)) {
+    ReportOutOfMemory(gCx);
+    return 0;
+  }
+
+  
+  clonebuf->AppendBytes((const char*)buf, size);
+  char padding[kSegmentAlignment] = {0};
+  clonebuf->AppendBytes(padding, buf_size - size);
+
+  RootedValue deserialized(gCx);
+  if (!JS_ReadStructuredClone(gCx, *clonebuf, JS_STRUCTURED_CLONE_VERSION,
+                              scope, &deserialized, nullptr, nullptr)) {
+    return 0;
+  }
+
+  
+
+
+
+
+
+
+
+
+  mozilla::Maybe<JSAutoStructuredCloneBuffer> clonebufOut;
+  JS::CloneDataPolicy policy;
+
+  clonebufOut.emplace(scope, nullptr, nullptr);
+  if (!clonebufOut->write(gCx, deserialized, UndefinedHandleValue, policy)) {
+    return 0;
+  }
+
   return 0;
 }
 
-static int
-testStructuredCloneReaderFuzz(const uint8_t* buf, size_t size) {
-    auto gcGuard = mozilla::MakeScopeExit([&] {
-        JS::PrepareForFullGC(gCx);
-        JS::NonIncrementalGC(gCx, GC_NORMAL, JS::gcreason::API);
-    });
-
-    if (!size) return 0;
-
-    
-    const size_t kSegmentAlignment = 8;
-    size_t buf_size = JS_ROUNDUP(size, kSegmentAlignment);
-
-    JS::StructuredCloneScope scope = JS::StructuredCloneScope::DifferentProcess;
-
-    auto clonebuf = MakeUnique<JSStructuredCloneData>(scope);
-    if (!clonebuf || !clonebuf->Init(buf_size)) {
-        ReportOutOfMemory(gCx);
-        return 0;
-    }
-
-    
-    clonebuf->AppendBytes((const char*)buf, size);
-    char padding[kSegmentAlignment] = {0};
-    clonebuf->AppendBytes(padding, buf_size - size);
-
-    RootedValue deserialized(gCx);
-    if (!JS_ReadStructuredClone(gCx, *clonebuf,
-    			JS_STRUCTURED_CLONE_VERSION,
-    			scope,
-    			&deserialized, nullptr, nullptr))
-    {
-        return 0;
-    }
-
-    
-
-
-
-
-
-
-
-
-    mozilla::Maybe<JSAutoStructuredCloneBuffer> clonebufOut;
-    JS::CloneDataPolicy policy;
-
-    clonebufOut.emplace(scope, nullptr, nullptr);
-    if (!clonebufOut->write(gCx, deserialized, UndefinedHandleValue, policy)) {
-        return 0;
-    }
-
-    return 0;
-}
-
-MOZ_FUZZING_INTERFACE_RAW(
-    testStructuredCloneReaderInit,
-    testStructuredCloneReaderFuzz,
-    StructuredCloneReader
-);
+MOZ_FUZZING_INTERFACE_RAW(testStructuredCloneReaderInit,
+                          testStructuredCloneReaderFuzz, StructuredCloneReader);

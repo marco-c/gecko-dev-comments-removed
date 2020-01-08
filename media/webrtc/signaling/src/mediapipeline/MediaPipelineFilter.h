@@ -76,7 +76,6 @@ class MediaPipelineFilter {
   std::set<std::string> remote_rid_set_;
 };
 
-} 
+}  
 
-#endif 
-
+#endif  

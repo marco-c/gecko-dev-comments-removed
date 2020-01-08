@@ -12,9 +12,8 @@
 class gfxUserFontEntry;
 class nsIFrame;
 
-class nsFontFaceUtils
-{
-public:
+class nsFontFaceUtils {
+ public:
   
   static void MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
                                      const gfxUserFontEntry* aFont);

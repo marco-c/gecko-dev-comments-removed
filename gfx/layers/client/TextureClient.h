@@ -7,29 +7,29 @@
 #ifndef MOZILLA_GFX_TEXTURECLIENT_H
 #define MOZILLA_GFX_TEXTURECLIENT_H
 
-#include <stddef.h>                     
-#include <stdint.h>                     
-#include "GLTextureImage.h"             
-#include "ImageTypes.h"                 
-#include "mozilla/Assertions.h"         
+#include <stddef.h>              
+#include <stdint.h>              
+#include "GLTextureImage.h"      
+#include "ImageTypes.h"          
+#include "mozilla/Assertions.h"  
 #include "mozilla/Atomics.h"
-#include "mozilla/Attributes.h"         
+#include "mozilla/Attributes.h"  
 #include "mozilla/DebugOnly.h"
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/2D.h"             
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Types.h"          
-#include "mozilla/ipc/Shmem.h"          
+#include "mozilla/RefPtr.h"     
+#include "mozilla/gfx/2D.h"     
+#include "mozilla/gfx/Point.h"  
+#include "mozilla/gfx/Types.h"  
+#include "mozilla/ipc/Shmem.h"  
 #include "mozilla/layers/AtomicRefCountedWithFinalize.h"
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/mozalloc.h"           
+#include "mozilla/mozalloc.h"               
 #include "mozilla/gfx/CriticalSection.h"
 #include "mozilla/webrender/WebRenderTypes.h"
-#include "nsCOMPtr.h"                   
-#include "nsISupportsImpl.h"            
+#include "nsCOMPtr.h"         
+#include "nsISupportsImpl.h"  
 #include "GfxTexturesReporter.h"
 #include "pratom.h"
 #include "nsThreadUtils.h"
@@ -77,7 +77,8 @@ class SyncObjectClient;
 
 enum TextureAllocationFlags {
   ALLOC_DEFAULT = 0,
-  ALLOC_CLEAR_BUFFER = 1 << 1,  
+  ALLOC_CLEAR_BUFFER =
+      1 << 1,  
   ALLOC_CLEAR_BUFFER_WHITE = 1 << 2,  
   ALLOC_CLEAR_BUFFER_BLACK = 1 << 3,  
   ALLOC_DISALLOW_BUFFERTEXTURECLIENT = 1 << 4,
@@ -105,41 +106,35 @@ enum TextureAllocationFlags {
 
 
 
-class TextureReadbackSink
-{
+class TextureReadbackSink {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TextureReadbackSink)
-public:
+ public:
   
 
 
 
 
 
-  virtual void ProcessReadback(gfx::DataSourceSurface *aSourceSurface) = 0;
+  virtual void ProcessReadback(gfx::DataSourceSurface* aSourceSurface) = 0;
 
-protected:
+ protected:
   virtual ~TextureReadbackSink() {}
 };
 
-enum class BackendSelector
-{
-  Content,
-  Canvas
-};
+enum class BackendSelector { Content, Canvas };
 
 
 
 
-struct MappedTextureData
-{
+
+struct MappedTextureData {
   uint8_t* data;
   gfx::IntSize size;
   int32_t stride;
   gfx::SurfaceFormat format;
 };
 
-struct MappedYCbCrChannelData
-{
+struct MappedYCbCrChannelData {
   uint8_t* data;
   gfx::IntSize size;
   int32_t stride;
@@ -154,14 +149,12 @@ struct MappedYCbCrTextureData {
   MappedYCbCrChannelData cb;
   MappedYCbCrChannelData cr;
   
+  
   uint8_t* metadata;
   StereoMode stereoMode;
 
-  bool CopyInto(MappedYCbCrTextureData& aDst)
-  {
-    return y.CopyInto(aDst.y)
-        && cb.CopyInto(aDst.cb)
-        && cr.CopyInto(aDst.cr);
+  bool CopyInto(MappedYCbCrTextureData& aDst) {
+    return y.CopyInto(aDst.y) && cb.CopyInto(aDst.cb) && cr.CopyInto(aDst.cr);
   }
 };
 
@@ -188,10 +181,10 @@ class NonBlockingTextureReadLock;
 
 
 class TextureReadLock {
-protected:
+ protected:
   virtual ~TextureReadLock() {}
 
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TextureReadLock)
 
   virtual bool ReadLock() = 0;
@@ -199,10 +192,11 @@ public:
   virtual int32_t ReadUnlock() = 0;
   virtual bool IsValid() const = 0;
 
-  static already_AddRefed<TextureReadLock>
-  Deserialize(const ReadLockDescriptor& aDescriptor, ISurfaceAllocator* aAllocator);
+  static already_AddRefed<TextureReadLock> Deserialize(
+      const ReadLockDescriptor& aDescriptor, ISurfaceAllocator* aAllocator);
 
-  virtual bool Serialize(ReadLockDescriptor& aOutput, base::ProcessId aOther) = 0;
+  virtual bool Serialize(ReadLockDescriptor& aOutput,
+                         base::ProcessId aOther) = 0;
 
   enum LockType {
     TYPE_NONBLOCKING_MEMORY,
@@ -213,18 +207,19 @@ public:
 
   virtual NonBlockingTextureReadLock* AsNonBlockingLock() { return nullptr; }
 
-protected:
+ protected:
   NS_DECL_OWNINGTHREAD
 };
 
 class NonBlockingTextureReadLock : public TextureReadLock {
-public:
+ public:
   virtual int32_t GetReadCount() = 0;
 
-  static already_AddRefed<TextureReadLock>
-  Create(LayersIPCChannel* aAllocator);
+  static already_AddRefed<TextureReadLock> Create(LayersIPCChannel* aAllocator);
 
-  virtual NonBlockingTextureReadLock* AsNonBlockingLock() override { return this; }
+  virtual NonBlockingTextureReadLock* AsNonBlockingLock() override {
+    return this;
+  }
 };
 
 #ifdef XP_WIN
@@ -233,7 +228,7 @@ class DXGIYCbCrTextureData;
 #endif
 
 class TextureData {
-public:
+ public:
   struct Info {
     gfx::IntSize size;
     gfx::SurfaceFormat format;
@@ -244,13 +239,12 @@ public:
     bool canConcurrentlyReadLock;
 
     Info()
-    : format(gfx::SurfaceFormat::UNKNOWN)
-    , hasIntermediateBuffer(false)
-    , hasSynchronization(false)
-    , supportsMoz2D(false)
-    , canExposeMappedData(false)
-    , canConcurrentlyReadLock(true)
-    {}
+        : format(gfx::SurfaceFormat::UNKNOWN),
+          hasIntermediateBuffer(false),
+          hasSynchronization(false),
+          supportsMoz2D(false),
+          canExposeMappedData(false),
+          canConcurrentlyReadLock(true) {}
   };
 
   TextureData() { MOZ_COUNT_CTOR(TextureData); }
@@ -263,7 +257,9 @@ public:
 
   virtual void Unlock() = 0;
 
-  virtual already_AddRefed<gfx::DrawTarget> BorrowDrawTarget() { return nullptr; }
+  virtual already_AddRefed<gfx::DrawTarget> BorrowDrawTarget() {
+    return nullptr;
+  }
 
   virtual bool BorrowMappedData(MappedTextureData&) { return false; }
 
@@ -275,31 +271,32 @@ public:
   virtual void Forget(LayersIPCChannel* aAllocator) {}
 
   virtual bool Serialize(SurfaceDescriptor& aDescriptor) = 0;
-  virtual void GetSubDescriptor(GPUVideoSubDescriptor* aOutDesc) { }
+  virtual void GetSubDescriptor(GPUVideoSubDescriptor* aOutDesc) {}
 
   virtual void OnForwardedToHost() {}
 
-  virtual TextureData*
-  CreateSimilar(LayersIPCChannel* aAllocator,
-                LayersBackend aLayersBackend,
-                TextureFlags aFlags = TextureFlags::DEFAULT,
-                TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT) const { return nullptr; }
+  virtual TextureData* CreateSimilar(
+      LayersIPCChannel* aAllocator, LayersBackend aLayersBackend,
+      TextureFlags aFlags = TextureFlags::DEFAULT,
+      TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT) const {
+    return nullptr;
+  }
 
-  virtual bool UpdateFromSurface(gfx::SourceSurface* aSurface) { return false; };
+  virtual bool UpdateFromSurface(gfx::SourceSurface* aSurface) {
+    return false;
+  };
 
   virtual bool ReadBack(TextureReadbackSink* aReadbackSink) { return false; }
 
-  virtual void SyncWithObject(SyncObjectClient* aSyncObject) {};
+  virtual void SyncWithObject(SyncObjectClient* aSyncObject){};
 
-  virtual TextureFlags GetTextureFlags() const { return TextureFlags::NO_FLAGS; }
+  virtual TextureFlags GetTextureFlags() const {
+    return TextureFlags::NO_FLAGS;
+  }
 
 #ifdef XP_WIN
-  virtual D3D11TextureData* AsD3D11TextureData() {
-    return nullptr;
-  }
-  virtual DXGIYCbCrTextureData* AsDXGIYCbCrTextureData() {
-    return nullptr;
-  }
+  virtual D3D11TextureData* AsD3D11TextureData() { return nullptr; }
+  virtual DXGIYCbCrTextureData* AsDXGIYCbCrTextureData() { return nullptr; }
 #endif
 
   virtual BufferTextureData* AsBufferTextureData() { return nullptr; }
@@ -330,60 +327,46 @@ public:
 
 
 
-class TextureClient
-  : public AtomicRefCountedWithFinalize<TextureClient>
-{
-public:
-  explicit TextureClient(TextureData* aData, TextureFlags aFlags, LayersIPCChannel* aAllocator);
+class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
+ public:
+  explicit TextureClient(TextureData* aData, TextureFlags aFlags,
+                         LayersIPCChannel* aAllocator);
 
   virtual ~TextureClient();
 
-  static already_AddRefed<TextureClient>
-  CreateWithData(TextureData* aData, TextureFlags aFlags, LayersIPCChannel* aAllocator);
+  static already_AddRefed<TextureClient> CreateWithData(
+      TextureData* aData, TextureFlags aFlags, LayersIPCChannel* aAllocator);
 
   
-  static already_AddRefed<TextureClient>
-  CreateForDrawing(KnowsCompositor* aAllocator,
-                   gfx::SurfaceFormat aFormat,
-                   gfx::IntSize aSize,
-                   BackendSelector aSelector,
-                   TextureFlags aTextureFlags,
-                   TextureAllocationFlags flags = ALLOC_DEFAULT);
+  static already_AddRefed<TextureClient> CreateForDrawing(
+      KnowsCompositor* aAllocator, gfx::SurfaceFormat aFormat,
+      gfx::IntSize aSize, BackendSelector aSelector, TextureFlags aTextureFlags,
+      TextureAllocationFlags flags = ALLOC_DEFAULT);
 
-  static already_AddRefed<TextureClient>
-  CreateFromSurface(KnowsCompositor* aAllocator,
-                    gfx::SourceSurface* aSurface,
-                    BackendSelector aSelector,
-                    TextureFlags aTextureFlags,
-                    TextureAllocationFlags aAllocFlags);
+  static already_AddRefed<TextureClient> CreateFromSurface(
+      KnowsCompositor* aAllocator, gfx::SourceSurface* aSurface,
+      BackendSelector aSelector, TextureFlags aTextureFlags,
+      TextureAllocationFlags aAllocFlags);
 
   
-  static already_AddRefed<TextureClient>
-  CreateForYCbCr(KnowsCompositor* aAllocator,
-                 gfx::IntSize aYSize,
-                 uint32_t aYStride,
-                 gfx::IntSize aCbCrSize,
-                 uint32_t aCbCrStride,
-                 StereoMode aStereoMode,
-                 gfx::ColorDepth aColorDepth,
-                 YUVColorSpace aYUVColorSpace,
-                 TextureFlags aTextureFlags);
+  static already_AddRefed<TextureClient> CreateForYCbCr(
+      KnowsCompositor* aAllocator, gfx::IntSize aYSize, uint32_t aYStride,
+      gfx::IntSize aCbCrSize, uint32_t aCbCrStride, StereoMode aStereoMode,
+      gfx::ColorDepth aColorDepth, YUVColorSpace aYUVColorSpace,
+      TextureFlags aTextureFlags);
 
   
   
-  static already_AddRefed<TextureClient>
-  CreateForRawBufferAccess(KnowsCompositor* aAllocator,
-                           gfx::SurfaceFormat aFormat,
-                           gfx::IntSize aSize,
-                           gfx::BackendType aMoz2dBackend,
-                           TextureFlags aTextureFlags,
-                           TextureAllocationFlags flags = ALLOC_DEFAULT);
+  static already_AddRefed<TextureClient> CreateForRawBufferAccess(
+      KnowsCompositor* aAllocator, gfx::SurfaceFormat aFormat,
+      gfx::IntSize aSize, gfx::BackendType aMoz2dBackend,
+      TextureFlags aTextureFlags, TextureAllocationFlags flags = ALLOC_DEFAULT);
 
   
-  already_AddRefed<TextureClient>
-  CreateSimilar(LayersBackend aLayersBackend = LayersBackend::LAYERS_NONE,
-                TextureFlags aFlags = TextureFlags::DEFAULT,
-                TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT) const;
+  already_AddRefed<TextureClient> CreateSimilar(
+      LayersBackend aLayersBackend = LayersBackend::LAYERS_NONE,
+      TextureFlags aFlags = TextureFlags::DEFAULT,
+      TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT) const;
 
   
 
@@ -475,8 +458,7 @@ public:
 
 
 
-  bool CopyToTextureClient(TextureClient* aTarget,
-                           const gfx::IntRect* aRect,
+  bool CopyToTextureClient(TextureClient* aTarget, const gfx::IntRect* aRect,
                            const gfx::IntPoint* aPoint);
 
   
@@ -503,8 +485,7 @@ public:
 
   TextureFlags GetFlags() const { return mFlags; }
 
-  bool HasFlags(TextureFlags aFlags) const
-  {
+  bool HasFlags(TextureFlags aFlags) const {
     return (mFlags & aFlags) == aFlags;
   }
 
@@ -541,7 +522,9 @@ public:
 
 
 
-  bool IsAddedToCompositableClient() const { return mAddedToCompositableClient; }
+  bool IsAddedToCompositableClient() const {
+    return mAddedToCompositableClient;
+  }
 
   
 
@@ -576,6 +559,7 @@ public:
 
 
 
+
   void Destroy();
 
   
@@ -595,13 +579,18 @@ public:
     mReadbackSink = aReadbackSink;
   }
 
-  void SyncWithObject(SyncObjectClient* aSyncObject) { mData->SyncWithObject(aSyncObject); }
+  void SyncWithObject(SyncObjectClient* aSyncObject) {
+    mData->SyncWithObject(aSyncObject);
+  }
 
   LayersIPCChannel* GetAllocator() { return mAllocator; }
 
-  ITextureClientRecycleAllocator* GetRecycleAllocator() { return mRecycleAllocator; }
+  ITextureClientRecycleAllocator* GetRecycleAllocator() {
+    return mRecycleAllocator;
+  }
   void SetRecycleAllocator(ITextureClientRecycleAllocator* aAllocator);
 
+  
   
   TextureData* GetInternalData() { return mData; }
   const TextureData* GetInternalData() const { return mData; }
@@ -621,8 +610,7 @@ public:
 
 
 
-  void SetLastFwdTransactionId(uint64_t aTransactionId)
-  {
+  void SetLastFwdTransactionId(uint64_t aTransactionId) {
     MOZ_ASSERT(mFwdTransactionId <= aTransactionId);
     mFwdTransactionId = aTransactionId;
   }
@@ -649,32 +637,26 @@ public:
 
   wr::MaybeExternalImageId GetExternalImageKey() { return mExternalImageId; }
 
-private:
-  static void TextureClientRecycleCallback(TextureClient* aClient, void* aClosure);
+ private:
+  static void TextureClientRecycleCallback(TextureClient* aClient,
+                                           void* aClosure);
 
   
   
   
   
   friend class TextureClientPool;
-  static already_AddRefed<TextureClient>
-  CreateForDrawing(TextureForwarder* aAllocator,
-                   gfx::SurfaceFormat aFormat,
-                   gfx::IntSize aSize,
-                   LayersBackend aLayersBackend,
-                   int32_t aMaxTextureSize,
-                   BackendSelector aSelector,
-                   TextureFlags aTextureFlags,
-                   TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT);
+  static already_AddRefed<TextureClient> CreateForDrawing(
+      TextureForwarder* aAllocator, gfx::SurfaceFormat aFormat,
+      gfx::IntSize aSize, LayersBackend aLayersBackend, int32_t aMaxTextureSize,
+      BackendSelector aSelector, TextureFlags aTextureFlags,
+      TextureAllocationFlags aAllocFlags = ALLOC_DEFAULT);
 
-  static already_AddRefed<TextureClient>
-  CreateForRawBufferAccess(LayersIPCChannel* aAllocator,
-                           gfx::SurfaceFormat aFormat,
-                           gfx::IntSize aSize,
-                           gfx::BackendType aMoz2dBackend,
-                           LayersBackend aLayersBackend,
-                           TextureFlags aTextureFlags,
-                           TextureAllocationFlags flags = ALLOC_DEFAULT);
+  static already_AddRefed<TextureClient> CreateForRawBufferAccess(
+      LayersIPCChannel* aAllocator, gfx::SurfaceFormat aFormat,
+      gfx::IntSize aSize, gfx::BackendType aMoz2dBackend,
+      LayersBackend aLayersBackend, TextureFlags aTextureFlags,
+      TextureAllocationFlags flags = ALLOC_DEFAULT);
 
   void EnableReadLock();
   void EnableBlockingReadLock();
@@ -689,7 +671,8 @@ private:
   void Finalize() {}
 
   friend class AtomicRefCountedWithFinalize<TextureClient>;
-protected:
+
+ protected:
   
 
 
@@ -757,10 +740,10 @@ protected:
   friend void TestTextureClientSurface(TextureClient*, gfxImageSurface*);
   friend void TestTextureClientYCbCr(TextureClient*, PlanarYCbCrData&);
   friend already_AddRefed<TextureHost> CreateTextureHostWithBackend(
-    TextureClient*, ISurfaceAllocator*, LayersBackend&);
+      TextureClient*, ISurfaceAllocator*, LayersBackend&);
 
 #ifdef GFX_DEBUG_TRACK_CLIENTS_IN_POOL
-public:
+ public:
   
   TextureClientPool* mPoolTracker;
 #endif
@@ -769,37 +752,29 @@ public:
 
 
 
-class TextureClientReleaseTask : public Runnable
-{
-public:
+class TextureClientReleaseTask : public Runnable {
+ public:
   explicit TextureClientReleaseTask(TextureClient* aClient)
-    : Runnable("layers::TextureClientReleaseTask")
-    , mTextureClient(aClient)
-  {
-    }
+      : Runnable("layers::TextureClientReleaseTask"), mTextureClient(aClient) {}
 
-    NS_IMETHOD Run() override
-    {
-        mTextureClient = nullptr;
-        return NS_OK;
-    }
+  NS_IMETHOD Run() override {
+    mTextureClient = nullptr;
+    return NS_OK;
+  }
 
-private:
-    RefPtr<TextureClient> mTextureClient;
+ private:
+  RefPtr<TextureClient> mTextureClient;
 };
 
 
 
-class MOZ_RAII TextureClientAutoLock
-{
+class MOZ_RAII TextureClientAutoLock {
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
 
-public:
-  TextureClientAutoLock(TextureClient* aTexture, OpenMode aMode
-                        MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-   : mTexture(aTexture),
-     mSucceeded(false)
-  {
+ public:
+  TextureClientAutoLock(TextureClient* aTexture,
+                        OpenMode aMode MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mTexture(aTexture), mSucceeded(false) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     mSucceeded = mTexture->Lock(aMode);
@@ -821,7 +796,7 @@ public:
     return mSucceeded;
   }
 
-private:
+ private:
   TextureClient* mTexture;
 #ifdef DEBUG
   bool mChecked;
@@ -832,14 +807,11 @@ private:
 
 
 
-class MOZ_RAII DualTextureClientAutoLock
-{
-public:
-  DualTextureClientAutoLock(TextureClient* aTexture, TextureClient* aTextureOnWhite, OpenMode aMode)
-    : mTarget(nullptr)
-    , mTexture(aTexture)
-    , mTextureOnWhite(aTextureOnWhite)
-  {
+class MOZ_RAII DualTextureClientAutoLock {
+ public:
+  DualTextureClientAutoLock(TextureClient* aTexture,
+                            TextureClient* aTextureOnWhite, OpenMode aMode)
+      : mTarget(nullptr), mTexture(aTexture), mTextureOnWhite(aTextureOnWhite) {
     if (!mTexture->Lock(aMode)) {
       return;
     }
@@ -879,8 +851,7 @@ public:
     }
   }
 
-  ~DualTextureClientAutoLock()
-  {
+  ~DualTextureClientAutoLock() {
     if (Succeeded()) {
       mTarget = nullptr;
 
@@ -898,30 +869,30 @@ public:
 
   RefPtr<gfx::DrawTarget> mTarget;
 
-private:
+ private:
   RefPtr<TextureClient> mTexture;
   RefPtr<TextureClient> mTextureOnWhite;
 };
 
-class KeepAlive
-{
-public:
+class KeepAlive {
+ public:
   virtual ~KeepAlive() {}
 };
 
-template<typename T>
-class TKeepAlive : public KeepAlive
-{
-public:
+template <typename T>
+class TKeepAlive : public KeepAlive {
+ public:
   explicit TKeepAlive(T* aData) : mData(aData) {}
-protected:
+
+ protected:
   RefPtr<T> mData;
 };
 
 
-bool UpdateYCbCrTextureClient(TextureClient* aTexture, const PlanarYCbCrData& aData);
+bool UpdateYCbCrTextureClient(TextureClient* aTexture,
+                              const PlanarYCbCrData& aData);
 
-} 
-} 
+}  
+}  
 
 #endif

@@ -29,12 +29,11 @@ namespace mozilla {
 class CSSStyleSheet;
 namespace dom {
 class ShadowRoot;
-} 
-} 
+}  
+}  
 
-class nsStyleLinkElement : public nsIStyleSheetLinkingElement
-{
-public:
+class nsStyleLinkElement : public nsIStyleSheetLinkingElement {
+ public:
   nsStyleLinkElement();
   virtual ~nsStyleLinkElement();
 
@@ -47,8 +46,8 @@ public:
   mozilla::StyleSheet* GetStyleSheet() override;
   void InitStyleLinkElement(bool aDontLoadStyle) override;
 
-  mozilla::Result<Update, nsresult>
-    UpdateStyleSheet(nsICSSLoaderObserver*) override;
+  mozilla::Result<Update, nsresult> UpdateStyleSheet(
+      nsICSSLoaderObserver*) override;
 
   void SetEnableUpdates(bool aEnableUpdates) override;
   void GetCharset(nsAString& aCharset) override;
@@ -60,24 +59,24 @@ public:
   uint32_t GetColumnNumber() override;
 
   enum RelValue {
-    ePREFETCH =     0x00000001,
+    ePREFETCH = 0x00000001,
     eDNS_PREFETCH = 0x00000002,
-    eSTYLESHEET =   0x00000004,
-    eNEXT =         0x00000008,
-    eALTERNATE =    0x00000010,
-    ePRECONNECT =   0x00000020,
+    eSTYLESHEET = 0x00000004,
+    eNEXT = 0x00000008,
+    eALTERNATE = 0x00000010,
+    ePRECONNECT = 0x00000020,
     
-    ePRELOAD =      0x00000080
+    ePRELOAD = 0x00000080
   };
 
   
   static uint32_t ParseLinkTypes(const nsAString& aTypes);
 
-  void UpdateStyleSheetInternal()
-  {
+  void UpdateStyleSheetInternal() {
     mozilla::Unused << UpdateStyleSheetInternal(nullptr, nullptr);
   }
-protected:
+
+ protected:
   
 
 
@@ -91,8 +90,7 @@ protected:
 
 
   mozilla::Result<Update, nsresult> UpdateStyleSheetInternal(
-      nsIDocument* aOldDocument,
-      mozilla::dom::ShadowRoot* aOldShadowRoot,
+      nsIDocument* aOldDocument, mozilla::dom::ShadowRoot* aOldShadowRoot,
       ForceUpdate = ForceUpdate::No);
 
   
@@ -101,8 +99,7 @@ protected:
   
   
   static void GetTitleAndMediaForElement(const mozilla::dom::Element&,
-                                         nsString& aTitle,
-                                         nsString& aMedia);
+                                         nsString& aTitle, nsString& aMedia);
 
   
   static bool IsCSSMimeTypeAttribute(const mozilla::dom::Element&);
@@ -111,9 +108,9 @@ protected:
 
   
   void Unlink();
-  void Traverse(nsCycleCollectionTraversalCallback &cb);
+  void Traverse(nsCycleCollectionTraversalCallback& cb);
 
-private:
+ private:
   
 
 
@@ -126,14 +123,13 @@ private:
 
 
 
-  mozilla::Result<Update, nsresult>
-    DoUpdateStyleSheet(nsIDocument* aOldDocument,
-                       mozilla::dom::ShadowRoot* aOldShadowRoot,
-                       nsICSSLoaderObserver* aObserver,
-                       ForceUpdate);
+  mozilla::Result<Update, nsresult> DoUpdateStyleSheet(
+      nsIDocument* aOldDocument, mozilla::dom::ShadowRoot* aOldShadowRoot,
+      nsICSSLoaderObserver* aObserver, ForceUpdate);
 
   RefPtr<mozilla::StyleSheet> mStyleSheet;
-protected:
+
+ protected:
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
   bool mDontLoadStyle;
   bool mUpdatesEnabled;
@@ -142,4 +138,3 @@ protected:
 };
 
 #endif 
-

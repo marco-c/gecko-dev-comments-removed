@@ -18,30 +18,31 @@ namespace mozilla {
 namespace widget {
 
 class WindowSurfaceX11Image : public WindowSurfaceX11 {
-public:
+ public:
   WindowSurfaceX11Image(Display* aDisplay, Window aWindow, Visual* aVisual,
                         unsigned int aDepth, bool aIsShaped);
   ~WindowSurfaceX11Image();
 
-  already_AddRefed<gfx::DrawTarget> Lock(const LayoutDeviceIntRegion& aRegion) override;
+  already_AddRefed<gfx::DrawTarget> Lock(
+      const LayoutDeviceIntRegion& aRegion) override;
   void Commit(const LayoutDeviceIntRegion& aInvalidRegion) override;
   bool IsFallback() const override { return true; }
 
-private:
+ private:
   void ResizeTransparencyBitmap(int aWidth, int aHeight);
   void ApplyTransparencyBitmap();
 
   RefPtr<gfxXlibSurface> mWindowSurface;
   RefPtr<gfxImageSurface> mImageSurface;
 
-  gchar*  mTransparencyBitmap;
+  gchar* mTransparencyBitmap;
   int32_t mTransparencyBitmapWidth;
   int32_t mTransparencyBitmapHeight;
-  bool    mIsShaped;
+  bool mIsShaped;
 };
 
 }  
 }  
 
-#endif 
-#endif 
+#endif  
+#endif  

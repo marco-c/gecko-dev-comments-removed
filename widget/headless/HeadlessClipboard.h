@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef mozilla_widget_HeadlessClipboard_h
 #define mozilla_widget_HeadlessClipboard_h
 
@@ -14,22 +13,21 @@
 namespace mozilla {
 namespace widget {
 
-class HeadlessClipboard final : public nsIClipboard
-{
-public:
+class HeadlessClipboard final : public nsIClipboard {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSICLIPBOARD
 
   HeadlessClipboard();
 
-protected:
+ protected:
   ~HeadlessClipboard() {}
 
-private:
+ private:
   UniquePtr<HeadlessClipboardData> mClipboard;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

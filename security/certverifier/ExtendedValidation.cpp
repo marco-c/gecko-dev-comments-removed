@@ -18,14 +18,15 @@
 #include "pk11pub.h"
 #include "mozpkix/pkixtypes.h"
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
-struct EVInfo
-{
+struct EVInfo {
   
   const char* dottedOid;
-  const char* oidName; 
-                  
+  const char*
+      oidName;  
+                
   unsigned char sha256Fingerprint[SHA256_LENGTH];
   const char* issuerBase64;
   const char* serialBase64;
@@ -87,7 +88,7 @@ static const size_t NUM_TEST_EV_ROOTS = 2;
 #endif
 
 static const struct EVInfo kEVInfos[] = {
-  
+
   
   
 #ifdef DEBUG
@@ -893,19 +894,19 @@ static const struct EVInfo kEVInfos[] = {
     "ViBSb290IENlcnRpZmljYXRpb24gQXV0aG9yaXR5IFJTQSBSMg==",
     "VrYpzTS8ePY=",
   },
-  
+    
 };
 
 static SECOidTag sEVInfoOIDTags[ArrayLength(kEVInfos)];
 
 static_assert(SEC_OID_UNKNOWN == 0,
-  "We depend on zero-initialized globals being interpreted as SEC_OID_UNKNOWN.");
-static_assert(ArrayLength(sEVInfoOIDTags) == ArrayLength(kEVInfos),
-  "These arrays are used in parallel and must have the same length.");
+              "We depend on zero-initialized globals being interpreted as "
+              "SEC_OID_UNKNOWN.");
+static_assert(
+    ArrayLength(sEVInfoOIDTags) == ArrayLength(kEVInfos),
+    "These arrays are used in parallel and must have the same length.");
 
-static SECOidTag
-RegisterOID(const SECItem& oidItem, const char* oidName)
-{
+static SECOidTag RegisterOID(const SECItem& oidItem, const char* oidName) {
   SECOidData od;
   od.oid.len = oidItem.len;
   od.oid.data = oidItem.data;
@@ -918,9 +919,7 @@ RegisterOID(const SECItem& oidItem, const char* oidName)
 
 static SECOidTag sCABForumEVOIDTag = SEC_OID_UNKNOWN;
 
-static bool
-isEVPolicy(SECOidTag policyOIDTag)
-{
+static bool isEVPolicy(SECOidTag policyOIDTag) {
   if (policyOIDTag != SEC_OID_UNKNOWN && policyOIDTag == sCABForumEVOIDTag) {
     return true;
   }
@@ -934,19 +933,16 @@ isEVPolicy(SECOidTag policyOIDTag)
   return false;
 }
 
-bool
-CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
-                               const mozilla::pkix::CertPolicyId& policy)
-{
+bool CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
+                                    const mozilla::pkix::CertPolicyId& policy) {
   MOZ_ASSERT(cert);
   if (!cert) {
     return false;
   }
 
   unsigned char fingerprint[SHA256_LENGTH];
-  SECStatus srv =
-    PK11_HashBuf(SEC_OID_SHA256, fingerprint, cert->derCert.data,
-                 AssertedCast<int32_t>(cert->derCert.len));
+  SECStatus srv = PK11_HashBuf(SEC_OID_SHA256, fingerprint, cert->derCert.data,
+                               AssertedCast<int32_t>(cert->derCert.len));
   if (srv != SECSuccess) {
     return false;
   }
@@ -976,15 +972,13 @@ CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
   return false;
 }
 
-nsresult
-LoadExtendedValidationInfo()
-{
+nsresult LoadExtendedValidationInfo() {
   static const char* sCABForumOIDString = "2.23.140.1.1";
   static const char* sCABForumOIDDescription = "CA/Browser Forum EV OID";
 
   ScopedAutoSECItem cabforumOIDItem;
-  if (SEC_StringToOID(nullptr, &cabforumOIDItem, sCABForumOIDString, 0)
-        != SECSuccess) {
+  if (SEC_StringToOID(nullptr, &cabforumOIDItem, sCABForumOIDString, 0) !=
+      SECSuccess) {
     return NS_ERROR_FAILURE;
   }
   sCABForumEVOIDTag = RegisterOID(cabforumOIDItem, sCABForumOIDDescription);
@@ -1003,8 +997,8 @@ LoadExtendedValidationInfo()
     
     
     nsAutoCString derIssuer;
-    nsresult rv = Base64Decode(nsDependentCString(entry.issuerBase64),
-                               derIssuer);
+    nsresult rv =
+        Base64Decode(nsDependentCString(entry.issuerBase64), derIssuer);
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Could not base64-decode built-in EV issuer");
     if (NS_FAILED(rv)) {
       return rv;
@@ -1019,10 +1013,10 @@ LoadExtendedValidationInfo()
 
     CERTIssuerAndSN ias;
     ias.derIssuer.data =
-      BitwiseCast<unsigned char*, const char*>(derIssuer.get());
+        BitwiseCast<unsigned char*, const char*>(derIssuer.get());
     ias.derIssuer.len = derIssuer.Length();
     ias.serialNumber.data =
-      BitwiseCast<unsigned char*, const char*>(serialNumber.get());
+        BitwiseCast<unsigned char*, const char*>(serialNumber.get());
     ias.serialNumber.len = serialNumber.Length();
     ias.serialNumber.type = siUnsignedInteger;
 
@@ -1069,11 +1063,10 @@ LoadExtendedValidationInfo()
 
 
 
-bool
-GetFirstEVPolicyFromPolicyList(const UniqueCERTCertificatePolicies& policies,
-                        mozilla::pkix::CertPolicyId& policy,
-                        SECOidTag& policyOidTag)
-{
+bool GetFirstEVPolicyFromPolicyList(
+    const UniqueCERTCertificatePolicies& policies,
+     mozilla::pkix::CertPolicyId& policy,
+     SECOidTag& policyOidTag) {
   for (size_t i = 0; policies->policyInfos[i]; i++) {
     const CERTPolicyInfo* policyInfo = policies->policyInfos[i];
     SECOidTag policyInfoOID = policyInfo->oid;
@@ -1100,23 +1093,22 @@ GetFirstEVPolicyFromPolicyList(const UniqueCERTCertificatePolicies& policies,
   return false;
 }
 
-bool
-GetFirstEVPolicy(CERTCertificate& cert,
-                  mozilla::pkix::CertPolicyId& policy,
-                  SECOidTag& policyOidTag)
-{
+bool GetFirstEVPolicy(CERTCertificate& cert,
+                       mozilla::pkix::CertPolicyId& policy,
+                       SECOidTag& policyOidTag) {
   if (!cert.extensions) {
     return false;
   }
 
   for (size_t i = 0; cert.extensions[i]; i++) {
     const CERTCertExtension* extension = cert.extensions[i];
-    if (SECOID_FindOIDTag(&extension->id) != SEC_OID_X509_CERTIFICATE_POLICIES) {
+    if (SECOID_FindOIDTag(&extension->id) !=
+        SEC_OID_X509_CERTIFICATE_POLICIES) {
       continue;
     }
 
     UniqueCERTCertificatePolicies policies(
-      CERT_DecodeCertificatePoliciesExtension(&extension->value));
+        CERT_DecodeCertificatePoliciesExtension(&extension->value));
     if (!policies) {
       continue;
     }
@@ -1129,4 +1121,5 @@ GetFirstEVPolicy(CERTCertificate& cert,
   return false;
 }
 
-} } 
+}  
+}  

@@ -64,19 +64,17 @@ namespace net {
 
 class EventTokenBucket;
 
-class ATokenBucketEvent
-{
-public:
+class ATokenBucketEvent {
+ public:
   virtual void OnTokenBucketAdmitted() = 0;
 };
 
 class TokenBucketCancelable;
 
-class EventTokenBucket : public nsITimerCallback
-                       , public nsINamed
-                       , public ARefBase
-{
-public:
+class EventTokenBucket : public nsITimerCallback,
+                         public nsINamed,
+                         public ARefBase {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
@@ -98,7 +96,7 @@ public:
   
   nsresult SubmitEvent(ATokenBucketEvent *event, nsICancelable **cancelable);
 
-private:
+ private:
   virtual ~EventTokenBucket();
   void CleanupTimers();
 
@@ -112,18 +110,19 @@ private:
   void UpdateTimer();
   void UpdateCredits();
 
-  const static uint64_t kUsecPerSec =  1000000;
+  const static uint64_t kUsecPerSec = 1000000;
   const static uint64_t kUsecPerMsec = 1000;
   const static uint64_t kMaxHz = 10000;
 
-  uint64_t mUnitCost;   
-  uint64_t mMaxCredit; 
-  uint64_t mCredit; 
+  uint64_t
+      mUnitCost;  
+  uint64_t mMaxCredit;  
+  uint64_t mCredit;     
 
-  bool     mPaused;
-  bool     mStopped;
-  nsDeque  mEvents;
-  bool     mTimerArmed;
+  bool mPaused;
+  bool mStopped;
+  nsDeque mEvents;
+  bool mTimerArmed;
   TimeStamp mLastUpdate;
 
   
@@ -136,12 +135,12 @@ private:
   
   
   
-  const static uint64_t kCostFineGrainThreshold =  50 * kUsecPerMsec;
+  const static uint64_t kCostFineGrainThreshold = 50 * kUsecPerMsec;
 
-  void FineGrainTimers(); 
-  void NormalTimers(); 
-  void WantNormalTimers(); 
-  void FineGrainResetTimerNotify(); 
+  void FineGrainTimers();   
+  void NormalTimers();      
+  void WantNormalTimers();  
+  void FineGrainResetTimerNotify();  
 
   TimeStamp mLastFineGrainTimerUse;
   bool mFineGrainTimerInUse;
@@ -150,7 +149,7 @@ private:
 #endif
 };
 
-} 
-} 
+}  
+}  
 
 #endif

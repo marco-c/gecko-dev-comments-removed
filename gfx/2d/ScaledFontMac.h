@@ -21,22 +21,20 @@
 namespace mozilla {
 namespace gfx {
 
-class ScaledFontMac : public ScaledFontBase
-{
-public:
+class ScaledFontMac : public ScaledFontBase {
+ public:
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(ScaledFontMac, override)
   ScaledFontMac(CGFontRef aFont, const RefPtr<UnscaledFont>& aUnscaledFont, Float aSize,
-                bool aOwnsFont = false,
-                const Color &aFontSmoothingBackgroundColor = Color(),
-                bool aUseFontSmoothing = true,
-                bool aApplySyntheticBold = false);
+                bool aOwnsFont = false, const Color& aFontSmoothingBackgroundColor = Color(),
+                bool aUseFontSmoothing = true, bool aApplySyntheticBold = false);
   ~ScaledFontMac();
 
   FontType GetType() const override { return FontType::MAC; }
 #ifdef USE_SKIA
   SkTypeface* CreateSkTypeface() override;
 #endif
-  already_AddRefed<Path> GetPathForGlyphs(const GlyphBuffer &aBuffer, const DrawTarget *aTarget) override;
+  already_AddRefed<Path> GetPathForGlyphs(const GlyphBuffer& aBuffer,
+                                          const DrawTarget* aTarget) override;
 
   bool GetFontInstanceData(FontInstanceDataOutput aCb, void* aBaton) override;
 
@@ -52,28 +50,27 @@ public:
   cairo_font_face_t* GetCairoFontFace() override;
 #endif
 
-private:
+ private:
   friend class DrawTargetSkia;
   CGFontRef mFont;
-  CTFontRef mCTFont; 
+  CTFontRef mCTFont;  
   Color mFontSmoothingBackgroundColor;
   bool mUseFontSmoothing;
   bool mApplySyntheticBold;
 
-  typedef void (CTFontDrawGlyphsFuncT)(CTFontRef,
-                                       const CGGlyph[], const CGPoint[],
-                                       size_t, CGContextRef);
+  typedef void(CTFontDrawGlyphsFuncT)(CTFontRef, const CGGlyph[], const CGPoint[], size_t,
+                                      CGContextRef);
 
   static bool sSymbolLookupDone;
 
-public:
+ public:
   
   
   
   static CTFontDrawGlyphsFuncT* CTFontDrawGlyphsPtr;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

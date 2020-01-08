@@ -13,74 +13,62 @@ namespace mozilla {
 namespace layers {
 
 StackingContextHelper::StackingContextHelper()
-  : mBuilder(nullptr)
-  , mScale(1.0f, 1.0f)
-  , mAffectsClipPositioning(false)
-  , mIsPreserve3D(false)
-  , mRasterizeLocally(false)
-{
+    : mBuilder(nullptr),
+      mScale(1.0f, 1.0f),
+      mAffectsClipPositioning(false),
+      mIsPreserve3D(false),
+      mRasterizeLocally(false) {
   
 }
 
-StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParentSC,
-                                             const ActiveScrolledRoot* aAsr,
-                                             wr::DisplayListBuilder& aBuilder,
-                                             const nsTArray<wr::WrFilterOp>& aFilters,
-                                             const LayoutDeviceRect& aBounds,
-                                             const gfx::Matrix4x4* aBoundTransform,
-                                             const wr::WrAnimationProperty* aAnimation,
-                                             const float* aOpacityPtr,
-                                             const gfx::Matrix4x4* aTransformPtr,
-                                             const gfx::Matrix4x4* aPerspectivePtr,
-                                             const gfx::CompositionOp& aMixBlendMode,
-                                             bool aBackfaceVisible,
-                                             bool aIsPreserve3D,
-                                             const Maybe<nsDisplayTransform*>& aDeferredTransformItem,
-                                             const wr::WrClipId* aClipNodeId,
-                                             bool aAnimated)
-  : mBuilder(&aBuilder)
-  , mScale(1.0f, 1.0f)
-  , mDeferredTransformItem(aDeferredTransformItem)
-  , mIsPreserve3D(aIsPreserve3D)
-  , mRasterizeLocally(aAnimated || aParentSC.mRasterizeLocally)
-{
+StackingContextHelper::StackingContextHelper(
+    const StackingContextHelper& aParentSC, const ActiveScrolledRoot* aAsr,
+    wr::DisplayListBuilder& aBuilder, const nsTArray<wr::WrFilterOp>& aFilters,
+    const LayoutDeviceRect& aBounds, const gfx::Matrix4x4* aBoundTransform,
+    const wr::WrAnimationProperty* aAnimation, const float* aOpacityPtr,
+    const gfx::Matrix4x4* aTransformPtr, const gfx::Matrix4x4* aPerspectivePtr,
+    const gfx::CompositionOp& aMixBlendMode, bool aBackfaceVisible,
+    bool aIsPreserve3D,
+    const Maybe<nsDisplayTransform*>& aDeferredTransformItem,
+    const wr::WrClipId* aClipNodeId, bool aAnimated)
+    : mBuilder(&aBuilder),
+      mScale(1.0f, 1.0f),
+      mDeferredTransformItem(aDeferredTransformItem),
+      mIsPreserve3D(aIsPreserve3D),
+      mRasterizeLocally(aAnimated || aParentSC.mRasterizeLocally) {
   
   
   gfx::Matrix transform2d;
-  if (aBoundTransform && aBoundTransform->CanDraw2D(&transform2d)
-      && !aPerspectivePtr
-      && !aParentSC.mIsPreserve3D) {
+  if (aBoundTransform && aBoundTransform->CanDraw2D(&transform2d) &&
+      !aPerspectivePtr && !aParentSC.mIsPreserve3D) {
     mInheritedTransform = transform2d * aParentSC.mInheritedTransform;
     mScale = mInheritedTransform.ScaleFactors(true);
     if (aAnimated) {
-      mSnappingSurfaceTransform = gfx::Matrix::Scaling(mScale.width, mScale.height);
+      mSnappingSurfaceTransform =
+          gfx::Matrix::Scaling(mScale.width, mScale.height);
     } else {
-      mSnappingSurfaceTransform = transform2d * aParentSC.mSnappingSurfaceTransform;
+      mSnappingSurfaceTransform =
+          transform2d * aParentSC.mSnappingSurfaceTransform;
     }
   } else {
     mInheritedTransform = aParentSC.mInheritedTransform;
     mScale = aParentSC.mScale;
   }
 
-  auto rasterSpace = mRasterizeLocally
-    ? wr::RasterSpace::Local(std::max(mScale.width, mScale.height))
-    : wr::RasterSpace::Screen();
+  auto rasterSpace =
+      mRasterizeLocally
+          ? wr::RasterSpace::Local(std::max(mScale.width, mScale.height))
+          : wr::RasterSpace::Screen();
 
   mReferenceFrameId = mBuilder->PushStackingContext(
-          wr::ToLayoutRect(aBounds),
-          aClipNodeId,
-          aAnimation,
-          aOpacityPtr,
-          aTransformPtr,
-          aIsPreserve3D ? wr::TransformStyle::Preserve3D : wr::TransformStyle::Flat,
-          aPerspectivePtr,
-          wr::ToMixBlendMode(aMixBlendMode),
-          aFilters,
-          aBackfaceVisible,
-          rasterSpace);
+      wr::ToLayoutRect(aBounds), aClipNodeId, aAnimation, aOpacityPtr,
+      aTransformPtr,
+      aIsPreserve3D ? wr::TransformStyle::Preserve3D : wr::TransformStyle::Flat,
+      aPerspectivePtr, wr::ToMixBlendMode(aMixBlendMode), aFilters,
+      aBackfaceVisible, rasterSpace);
 
-  mAffectsClipPositioning = mReferenceFrameId.isSome() ||
-      (aBounds.TopLeft() != LayoutDevicePoint());
+  mAffectsClipPositioning =
+      mReferenceFrameId.isSome() || (aBounds.TopLeft() != LayoutDevicePoint());
 
   
   
@@ -101,29 +89,27 @@ StackingContextHelper::StackingContextHelper(const StackingContextHelper& aParen
   }
 }
 
-StackingContextHelper::~StackingContextHelper()
-{
+StackingContextHelper::~StackingContextHelper() {
   if (mBuilder) {
     mBuilder->PopStackingContext(mReferenceFrameId.isSome());
   }
 }
 
 const Maybe<nsDisplayTransform*>&
-StackingContextHelper::GetDeferredTransformItem() const
-{
+StackingContextHelper::GetDeferredTransformItem() const {
   return mDeferredTransformItem;
 }
 
-Maybe<gfx::Matrix4x4>
-StackingContextHelper::GetDeferredTransformMatrix() const
-{
+Maybe<gfx::Matrix4x4> StackingContextHelper::GetDeferredTransformMatrix()
+    const {
   if (mDeferredTransformItem) {
     
     
     
     
     
-    gfx::Matrix4x4 result = (*mDeferredTransformItem)->GetTransform().GetMatrix();
+    gfx::Matrix4x4 result =
+        (*mDeferredTransformItem)->GetTransform().GetMatrix();
     if (mDeferredAncestorTransform) {
       result = *mDeferredAncestorTransform * result;
     }
@@ -133,5 +119,5 @@ StackingContextHelper::GetDeferredTransformMatrix() const
   }
 }
 
-} 
-} 
+}  
+}  

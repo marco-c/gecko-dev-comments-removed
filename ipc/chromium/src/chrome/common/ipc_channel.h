@@ -42,10 +42,7 @@ class Channel {
     virtual void GetQueuedMessages(std::queue<Message>& queue) {}
   };
 
-  enum Mode {
-    MODE_SERVER,
-    MODE_CLIENT
-  };
+  enum Mode { MODE_SERVER, MODE_CLIENT };
 
   enum {
     
@@ -73,15 +70,15 @@ class Channel {
 
   
   
-# if defined(OS_POSIX)
+#if defined(OS_POSIX)
   
   Channel(int fd, Mode mode, Listener* listener);
-# elif defined(OS_WIN)
+#elif defined(OS_WIN)
   
   
-  Channel(const std::wstring& channel_id, void* server_pipe,
-          Mode mode, Listener* listener);
-# endif
+  Channel(const std::wstring& channel_id, void* server_pipe, Mode mode,
+          Listener* listener);
+#endif
 
   ~Channel();
 
@@ -122,7 +119,7 @@ class Channel {
   
   
   
-  void GetClientFileDescriptorMapping(int *src_fd, int *dest_fd) const;
+  void GetClientFileDescriptorMapping(int* src_fd, int* dest_fd) const;
 
   
   int GetFileDescriptor() const;
@@ -145,18 +142,19 @@ class Channel {
   
   
   
+  
   static std::wstring GenerateVerifiedChannelID(const std::wstring& prefix);
 
 #if defined(MOZ_WIDGET_ANDROID)
   
   
   static void SetClientChannelFd(int fd);
-#endif 
+#endif  
 
  private:
   
   class ChannelImpl;
-  ChannelImpl *channel_impl_;
+  ChannelImpl* channel_impl_;
 
   enum {
 #if defined(OS_MACOSX)

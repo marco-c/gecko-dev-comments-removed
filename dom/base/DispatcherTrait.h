@@ -23,7 +23,7 @@ class TabGroup;
 
 
 class DispatcherTrait {
-public:
+ public:
   
   
   virtual nsresult Dispatch(TaskCategory aCategory,
@@ -39,7 +39,7 @@ public:
   virtual AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -6,18 +6,21 @@
 #ifndef InsertTextTransaction_h
 #define InsertTextTransaction_h
 
-#include "mozilla/EditTransactionBase.h"  
-#include "nsCycleCollectionParticipant.h" 
-#include "nsID.h"                       
-#include "nsISupportsImpl.h"            
-#include "nsString.h"                   
-#include "nscore.h"                     
+#include "mozilla/EditTransactionBase.h"   
+#include "nsCycleCollectionParticipant.h"  
+#include "nsID.h"                          
+#include "nsISupportsImpl.h"               
+#include "nsString.h"                      
+#include "nscore.h"                        
 
 class nsITransaction;
 
-#define NS_INSERTTEXTTXN_IID \
-{ 0x8c9ad77f, 0x22a7, 0x4d01, \
-  { 0xb1, 0x59, 0x8a, 0x0f, 0xdb, 0x1d, 0x08, 0xe9 } }
+#define NS_INSERTTEXTTXN_IID                         \
+  {                                                  \
+    0x8c9ad77f, 0x22a7, 0x4d01, {                    \
+      0xb1, 0x59, 0x8a, 0x0f, 0xdb, 0x1d, 0x08, 0xe9 \
+    }                                                \
+  }
 
 namespace mozilla {
 
@@ -25,20 +28,18 @@ class EditorBase;
 
 namespace dom {
 class Text;
-} 
+}  
 
 
 
 
-class InsertTextTransaction final : public EditTransactionBase
-{
-protected:
+class InsertTextTransaction final : public EditTransactionBase {
+ protected:
   InsertTextTransaction(EditorBase& aEditorBase,
-                        const nsAString& aStringToInsert,
-                        dom::Text& aTextNode,
+                        const nsAString& aStringToInsert, dom::Text& aTextNode,
                         uint32_t aOffset);
 
-public:
+ public:
   
 
 
@@ -48,11 +49,9 @@ public:
 
 
 
-  static already_AddRefed<InsertTextTransaction>
-  Create(EditorBase& aEditorBase,
-         const nsAString& aStringToInsert,
-         dom::Text& aTextNode,
-         uint32_t aOffset);
+  static already_AddRefed<InsertTextTransaction> Create(
+      EditorBase& aEditorBase, const nsAString& aStringToInsert,
+      dom::Text& aTextNode, uint32_t aOffset);
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_INSERTTEXTTXN_IID)
 
@@ -69,7 +68,7 @@ public:
 
   void GetData(nsString& aResult);
 
-private:
+ private:
   virtual ~InsertTextTransaction();
 
   
@@ -90,6 +89,6 @@ private:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(InsertTextTransaction, NS_INSERTTEXTTXN_IID)
 
-} 
+}  
 
-#endif 
+#endif  

@@ -20,7 +20,7 @@ namespace mozilla {
 
 namespace dom {
 class TabParent;
-} 
+}  
 
 
 
@@ -33,10 +33,8 @@ class TabParent;
 
 
 
-class BrowserElementParent
-{
-public:
-
+class BrowserElementParent {
+ public:
   
 
 
@@ -87,12 +85,11 @@ public:
 
 
 
-  static OpenWindowResult
-  OpenWindowOOP(dom::TabParent* aOpenerTabParent,
-                dom::TabParent* aPopupTabParent,
-                const nsAString& aURL,
-                const nsAString& aName,
-                const nsAString& aFeatures);
+  static OpenWindowResult OpenWindowOOP(dom::TabParent* aOpenerTabParent,
+                                        dom::TabParent* aPopupTabParent,
+                                        const nsAString& aURL,
+                                        const nsAString& aName,
+                                        const nsAString& aFeatures);
 
   
 
@@ -105,23 +102,18 @@ public:
 
 
 
-  static OpenWindowResult
-  OpenWindowInProcess(nsPIDOMWindowOuter* aOpenerWindow,
-                      nsIURI* aURI,
-                      const nsAString& aName,
-                      const nsACString& aFeatures,
-                      bool aForceNoOpener,
-                      mozIDOMWindowProxy** aReturnWindow);
+  static OpenWindowResult OpenWindowInProcess(
+      nsPIDOMWindowOuter* aOpenerWindow, nsIURI* aURI, const nsAString& aName,
+      const nsACString& aFeatures, bool aForceNoOpener,
+      mozIDOMWindowProxy** aReturnWindow);
 
-private:
-  static OpenWindowResult
-  DispatchOpenWindowEvent(dom::Element* aOpenerFrameElement,
-                          dom::Element* aPopupFrameElement,
-                          const nsAString& aURL,
-                          const nsAString& aName,
-                          const nsAString& aFeatures);
+ private:
+  static OpenWindowResult DispatchOpenWindowEvent(
+      dom::Element* aOpenerFrameElement, dom::Element* aPopupFrameElement,
+      const nsAString& aURL, const nsAString& aName,
+      const nsAString& aFeatures);
 };
 
-} 
+}  
 
 #endif

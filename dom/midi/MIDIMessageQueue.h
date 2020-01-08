@@ -19,15 +19,15 @@ class MIDIMessage;
 
 
 
-class MIDIMessageQueue
-{
-public:
+class MIDIMessageQueue {
+ public:
   MIDIMessageQueue();
   ~MIDIMessageQueue() = default;
   
   void Add(nsTArray<MIDIMessage>& aMsg);
   
-  void GetMessagesBefore(TimeStamp aTimestamp, nsTArray<MIDIMessage>& aMsgArray);
+  void GetMessagesBefore(TimeStamp aTimestamp,
+                         nsTArray<MIDIMessage>& aMsgArray);
   
   void GetMessages(nsTArray<MIDIMessage>& aMsgArray);
   
@@ -36,14 +36,15 @@ public:
   
   
   void ClearAfterNow();
-private:
+
+ private:
   
   nsTArray<MIDIMessage> mMessageQueue;
   
   Mutex mMutex;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -26,16 +26,15 @@ namespace mozilla {
 namespace dom {
 class HTMLAreaElement;
 }
-}
+}  
 
 class nsImageMap final : public nsStubMutationObserver,
-                         public nsIDOMEventListener
-{
+                         public nsIDOMEventListener {
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::ColorPattern ColorPattern;
   typedef mozilla::gfx::StrokeOptions StrokeOptions;
 
-public:
+ public:
   nsImageMap();
 
   void Init(nsImageFrame* aImageFrame, nsIContent* aMap);
@@ -79,12 +78,11 @@ public:
   
   NS_DECL_NSIDOMEVENTLISTENER
 
-  nsresult GetBoundsForAreaContent(nsIContent *aContent,
-                                   nsRect& aBounds);
+  nsresult GetBoundsForAreaContent(nsIContent* aContent, nsRect& aBounds);
 
   using AreaList = AutoTArray<mozilla::UniquePtr<Area>, 8>;
 
-protected:
+ protected:
   virtual ~nsImageMap();
 
   void FreeAreas();
@@ -96,7 +94,7 @@ protected:
   void AddArea(mozilla::dom::HTMLAreaElement* aArea);
   void AreaRemoved(mozilla::dom::HTMLAreaElement* aArea);
 
-  void MaybeUpdateAreas(nsIContent *aContent);
+  void MaybeUpdateAreas(nsIContent* aContent);
 
   nsImageFrame* mImageFrame;  
   nsCOMPtr<nsIContent> mMap;

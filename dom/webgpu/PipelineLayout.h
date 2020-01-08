@@ -14,18 +14,16 @@ namespace webgpu {
 
 class Device;
 
-class PipelineLayout final
-    : public ChildOf<Device>
-{
-public:
-    WEBGPU_DECL_GOOP(PipelineLayout)
+class PipelineLayout final : public ChildOf<Device> {
+ public:
+  WEBGPU_DECL_GOOP(PipelineLayout)
 
-private:
-    PipelineLayout() = delete;
-    virtual ~PipelineLayout();
+ private:
+  PipelineLayout() = delete;
+  virtual ~PipelineLayout();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

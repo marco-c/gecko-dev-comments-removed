@@ -18,33 +18,31 @@ namespace mozilla {
 namespace dom {
 class ContentParent;
 
-struct RemoteFrameInfo
-{
+struct RemoteFrameInfo {
   ContentParentId mOpenerCpId;
   TabId mOpenerTabId;
   TabContext mContext;
 };
 
-struct ContentProcessInfo
-{
+struct ContentProcessInfo {
   ContentParent* mCp;
   ContentParentId mParentCpId;
   std::set<ContentParentId> mChildrenCpId;
   std::map<TabId, RemoteFrameInfo> mRemoteFrames;
 };
 
-class ContentProcessManager final
-{
-public:
+class ContentProcessManager final {
+ public:
   static ContentProcessManager* GetSingleton();
-  ~ContentProcessManager() {MOZ_COUNT_DTOR(ContentProcessManager);};
+  ~ContentProcessManager() { MOZ_COUNT_DTOR(ContentProcessManager); };
 
   
 
 
 
-  void AddContentProcess(ContentParent* aChildCp,
-                         const ContentParentId& aParentCpId = ContentParentId(0));
+  void AddContentProcess(
+      ContentParent* aChildCp,
+      const ContentParentId& aParentCpId = ContentParentId(0));
   
 
 
@@ -69,8 +67,8 @@ public:
   
 
 
-  nsTArray<ContentParentId>
-  GetAllChildProcessById(const ContentParentId& aParentCpId);
+  nsTArray<ContentParentId> GetAllChildProcessById(
+      const ContentParentId& aParentCpId);
 
   
 
@@ -85,7 +83,6 @@ public:
                            const IPCTabContext& aContext,
                            const ContentParentId& aChildCpId);
 
-
   
 
 
@@ -95,16 +92,15 @@ public:
   
 
 
-  bool
-  GetTabContextByProcessAndTabId(const ContentParentId& aChildCpId,
-                                 const TabId& aChildTabId,
-                                  TabContext* aTabContext);
+  bool GetTabContextByProcessAndTabId(const ContentParentId& aChildCpId,
+                                      const TabId& aChildTabId,
+                                       TabContext* aTabContext);
 
   
 
 
-  nsTArray<TabContext>
-  GetTabContextByContentProcess(const ContentParentId& aChildCpId);
+  nsTArray<TabContext> GetTabContextByContentProcess(
+      const ContentParentId& aChildCpId);
 
   
 
@@ -112,38 +108,25 @@ public:
 
   bool GetRemoteFrameOpenerTabId(const ContentParentId& aChildCpId,
                                  const TabId& aChildTabId,
-                                 ContentParentId* aOpenerCpId,
+                                  ContentParentId* aOpenerCpId,
                                   TabId* aOpenerTabId);
 
   
 
 
-  ContentParentId
-  GetTabProcessId(const TabId& aTabId);
+  ContentParentId GetTabProcessId(const TabId& aTabId);
 
   
 
 
 
-  nsTArray<TabId>
-  GetTabParentsByProcessId(const ContentParentId& aChildCpId);
+  nsTArray<TabId> GetTabParentsByProcessId(const ContentParentId& aChildCpId);
 
   
 
 
 
-  uint32_t
-  GetTabParentCountByProcessId(const ContentParentId& aChildCpId);
-
-  
-
-
-
-
-
-  already_AddRefed<TabParent>
-  GetTabParentByProcessAndTabId(const ContentParentId& aChildCpId,
-                                const TabId& aChildTabId);
+  uint32_t GetTabParentCountByProcessId(const ContentParentId& aChildCpId);
 
   
 
@@ -151,24 +134,32 @@ public:
 
 
 
+  already_AddRefed<TabParent> GetTabParentByProcessAndTabId(
+      const ContentParentId& aChildCpId, const TabId& aChildTabId);
+
+  
 
 
 
 
 
-  already_AddRefed<TabParent>
-  GetTopLevelTabParentByProcessAndTabId(const ContentParentId& aChildCpId,
-                                        const TabId& aChildTabId);
 
-private:
+
+
+
+
+  already_AddRefed<TabParent> GetTopLevelTabParentByProcessAndTabId(
+      const ContentParentId& aChildCpId, const TabId& aChildTabId);
+
+ private:
   static StaticAutoPtr<ContentProcessManager> sSingleton;
   std::map<ContentParentId, ContentProcessInfo> mContentParentMap;
   std::map<TabId, ContentParentId> mTabProcessMap;
 
-  ContentProcessManager() {MOZ_COUNT_CTOR(ContentProcessManager);};
+  ContentProcessManager() { MOZ_COUNT_CTOR(ContentProcessManager); };
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

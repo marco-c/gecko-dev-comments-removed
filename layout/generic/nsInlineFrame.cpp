@@ -34,61 +34,53 @@ using namespace mozilla::layout;
 
 
 
-
-nsInlineFrame*
-NS_NewInlineFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsInlineFrame* NS_NewInlineFrame(nsIPresShell* aPresShell,
+                                 ComputedStyle* aStyle) {
   return new (aPresShell) nsInlineFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsInlineFrame)
 
 NS_QUERYFRAME_HEAD(nsInlineFrame)
-  NS_QUERYFRAME_ENTRY(nsInlineFrame)
+NS_QUERYFRAME_ENTRY(nsInlineFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 
 #ifdef DEBUG_FRAME_DUMP
-nsresult
-nsInlineFrame::GetFrameName(nsAString& aResult) const
-{
+nsresult nsInlineFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(NS_LITERAL_STRING("Inline"), aResult);
 }
 #endif
 
-void
-nsInlineFrame::InvalidateFrame(uint32_t aDisplayItemKey, bool aRebuildDisplayItems)
-{
+void nsInlineFrame::InvalidateFrame(uint32_t aDisplayItemKey,
+                                    bool aRebuildDisplayItems) {
   if (nsSVGUtils::IsInSVGTextSubtree(this)) {
     nsIFrame* svgTextFrame = nsLayoutUtils::GetClosestFrameOfType(
-      GetParent(), LayoutFrameType::SVGText);
+        GetParent(), LayoutFrameType::SVGText);
     svgTextFrame->InvalidateFrame();
     return;
   }
   nsContainerFrame::InvalidateFrame(aDisplayItemKey, aRebuildDisplayItems);
 }
 
-void
-nsInlineFrame::InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey, bool aRebuildDisplayItems)
-{
+void nsInlineFrame::InvalidateFrameWithRect(const nsRect& aRect,
+                                            uint32_t aDisplayItemKey,
+                                            bool aRebuildDisplayItems) {
   if (nsSVGUtils::IsInSVGTextSubtree(this)) {
     nsIFrame* svgTextFrame = nsLayoutUtils::GetClosestFrameOfType(
-      GetParent(), LayoutFrameType::SVGText);
+        GetParent(), LayoutFrameType::SVGText);
     svgTextFrame->InvalidateFrame();
     return;
   }
-  nsContainerFrame::InvalidateFrameWithRect(aRect, aDisplayItemKey, aRebuildDisplayItems);
+  nsContainerFrame::InvalidateFrameWithRect(aRect, aDisplayItemKey,
+                                            aRebuildDisplayItems);
 }
 
-static inline bool
-IsMarginZero(const nsStyleCoord &aCoord)
-{
+static inline bool IsMarginZero(const nsStyleCoord& aCoord) {
   return aCoord.GetUnit() == eStyleUnit_Auto ||
          nsLayoutUtils::IsMarginZero(aCoord);
 }
 
- bool
-nsInlineFrame::IsSelfEmpty()
-{
+ bool nsInlineFrame::IsSelfEmpty() {
 #if 0
   
   
@@ -108,23 +100,19 @@ nsInlineFrame::IsSelfEmpty()
   
   
   if (wm.IsVertical()) {
-    haveStart =
-      border->GetComputedBorderWidth(eSideTop) != 0 ||
-      !nsLayoutUtils::IsPaddingZero(padding->mPadding.GetTop()) ||
-      !IsMarginZero(margin->mMargin.GetTop());
-    haveEnd =
-      border->GetComputedBorderWidth(eSideBottom) != 0 ||
-      !nsLayoutUtils::IsPaddingZero(padding->mPadding.GetBottom()) ||
-      !IsMarginZero(margin->mMargin.GetBottom());
+    haveStart = border->GetComputedBorderWidth(eSideTop) != 0 ||
+                !nsLayoutUtils::IsPaddingZero(padding->mPadding.GetTop()) ||
+                !IsMarginZero(margin->mMargin.GetTop());
+    haveEnd = border->GetComputedBorderWidth(eSideBottom) != 0 ||
+              !nsLayoutUtils::IsPaddingZero(padding->mPadding.GetBottom()) ||
+              !IsMarginZero(margin->mMargin.GetBottom());
   } else {
-    haveStart =
-      border->GetComputedBorderWidth(eSideLeft) != 0 ||
-      !nsLayoutUtils::IsPaddingZero(padding->mPadding.GetLeft()) ||
-      !IsMarginZero(margin->mMargin.GetLeft());
-    haveEnd =
-      border->GetComputedBorderWidth(eSideRight) != 0 ||
-      !nsLayoutUtils::IsPaddingZero(padding->mPadding.GetRight()) ||
-      !IsMarginZero(margin->mMargin.GetRight());
+    haveStart = border->GetComputedBorderWidth(eSideLeft) != 0 ||
+                !nsLayoutUtils::IsPaddingZero(padding->mPadding.GetLeft()) ||
+                !IsMarginZero(margin->mMargin.GetLeft());
+    haveEnd = border->GetComputedBorderWidth(eSideRight) != 0 ||
+              !nsLayoutUtils::IsPaddingZero(padding->mPadding.GetRight()) ||
+              !IsMarginZero(margin->mMargin.GetRight());
   }
   if (haveStart || haveEnd) {
     
@@ -143,39 +131,32 @@ nsInlineFrame::IsSelfEmpty()
       
       
       nsIFrame* firstCont = FirstContinuation();
-      return
-        (!haveStart || firstCont->FrameIsNonFirstInIBSplit()) &&
-        (!haveEnd || firstCont->FrameIsNonLastInIBSplit());
+      return (!haveStart || firstCont->FrameIsNonFirstInIBSplit()) &&
+             (!haveEnd || firstCont->FrameIsNonLastInIBSplit());
     }
     return false;
   }
   return true;
 }
 
-bool
-nsInlineFrame::IsEmpty()
-{
+bool nsInlineFrame::IsEmpty() {
   if (!IsSelfEmpty()) {
     return false;
   }
 
   for (nsIFrame* kid : mFrames) {
-    if (!kid->IsEmpty())
-      return false;
+    if (!kid->IsEmpty()) return false;
   }
 
   return true;
 }
 
-nsIFrame::FrameSearchResult
-nsInlineFrame::PeekOffsetCharacter(bool aForward, int32_t* aOffset,
-                                   PeekOffsetCharacterOptions aOptions)
-{
+nsIFrame::FrameSearchResult nsInlineFrame::PeekOffsetCharacter(
+    bool aForward, int32_t* aOffset, PeekOffsetCharacterOptions aOptions) {
   
-  NS_ASSERTION (aOffset && *aOffset <= 1, "aOffset out of range");
+  NS_ASSERTION(aOffset && *aOffset <= 1, "aOffset out of range");
   int32_t startOffset = *aOffset;
-  if (startOffset < 0)
-    startOffset = 1;
+  if (startOffset < 0) startOffset = 1;
   if (aForward == (startOffset == 0)) {
     
     
@@ -184,9 +165,8 @@ nsInlineFrame::PeekOffsetCharacter(bool aForward, int32_t* aOffset,
   return CONTINUE;
 }
 
-void
-nsInlineFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
-{
+void nsInlineFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                PostDestroyData& aPostDestroyData) {
   nsFrameList* overflowFrames = GetOverflowFrames();
   if (overflowFrames) {
     
@@ -197,9 +177,7 @@ nsInlineFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestro
   nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
-nsresult
-nsInlineFrame::StealFrame(nsIFrame* aChild)
-{
+nsresult nsInlineFrame::StealFrame(nsIFrame* aChild) {
   if (MaybeStealOverflowContainerFrame(aChild)) {
     return NS_OK;
   }
@@ -234,10 +212,8 @@ nsInlineFrame::StealFrame(nsIFrame* aChild)
   return removed ? NS_OK : NS_ERROR_UNEXPECTED;
 }
 
-void
-nsInlineFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                const nsDisplayListSet& aLists)
-{
+void nsInlineFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                                     const nsDisplayListSet& aLists) {
   BuildDisplayListForInline(aBuilder, aLists);
 
   
@@ -252,39 +228,28 @@ nsInlineFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
 
 
 
- void
-nsInlineFrame::AddInlineMinISize(gfxContext *aRenderingContext,
-                                 nsIFrame::InlineMinISizeData *aData)
-{
+ void nsInlineFrame::AddInlineMinISize(
+    gfxContext* aRenderingContext, nsIFrame::InlineMinISizeData* aData) {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::MIN_ISIZE);
 }
 
- void
-nsInlineFrame::AddInlinePrefISize(gfxContext *aRenderingContext,
-                                  nsIFrame::InlinePrefISizeData *aData)
-{
+ void nsInlineFrame::AddInlinePrefISize(
+    gfxContext* aRenderingContext, nsIFrame::InlinePrefISizeData* aData) {
   DoInlineIntrinsicISize(aRenderingContext, aData, nsLayoutUtils::PREF_ISIZE);
   aData->mLineIsEmpty = false;
 }
 
 
-LogicalSize
-nsInlineFrame::ComputeSize(gfxContext *aRenderingContext,
-                           WritingMode aWM,
-                           const LogicalSize& aCBSize,
-                           nscoord aAvailableISize,
-                           const LogicalSize& aMargin,
-                           const LogicalSize& aBorder,
-                           const LogicalSize& aPadding,
-                           ComputeSizeFlags aFlags)
-{
+LogicalSize nsInlineFrame::ComputeSize(
+    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
+    nscoord aAvailableISize, const LogicalSize& aMargin,
+    const LogicalSize& aBorder, const LogicalSize& aPadding,
+    ComputeSizeFlags aFlags) {
   
   return LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
 }
 
-nsRect
-nsInlineFrame::ComputeTightBounds(DrawTarget* aDrawTarget) const
-{
+nsRect nsInlineFrame::ComputeTightBounds(DrawTarget* aDrawTarget) const {
   
   if (Style()->HasTextDecorationLines()) {
     return GetVisualOverflowRect();
@@ -292,11 +257,9 @@ nsInlineFrame::ComputeTightBounds(DrawTarget* aDrawTarget) const
   return ComputeSimpleTightBounds(aDrawTarget);
 }
 
-static void
-ReparentChildListStyle(nsPresContext* aPresContext,
-                       const nsFrameList::Slice& aFrames,
-                       nsIFrame* aParentFrame)
-{
+static void ReparentChildListStyle(nsPresContext* aPresContext,
+                                   const nsFrameList::Slice& aFrames,
+                                   nsIFrame* aParentFrame) {
   RestyleManager* restyleManager = aPresContext->RestyleManager();
 
   for (nsFrameList::Enumerator e(aFrames); !e.AtEnd(); e.Next()) {
@@ -306,12 +269,9 @@ ReparentChildListStyle(nsPresContext* aPresContext,
   }
 }
 
-void
-nsInlineFrame::Reflow(nsPresContext*          aPresContext,
-                      ReflowOutput&     aMetrics,
-                      const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus)
-{
+void nsInlineFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
+                           const ReflowInput& aReflowInput,
+                           nsReflowStatus& aStatus) {
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsInlineFrame");
   DISPLAY_REFLOW(aPresContext, this, aReflowInput, aMetrics, aStatus);
@@ -327,7 +287,7 @@ nsInlineFrame::Reflow(nsPresContext*          aPresContext,
 
   bool lazilySetParentPointer = false;
 
-   
+  
   nsInlineFrame* prevInFlow = (nsInlineFrame*)GetPrevInFlow();
   if (prevInFlow) {
     AutoFrameListPtr prevOverflowFrames(aPresContext,
@@ -349,13 +309,14 @@ nsInlineFrame::Reflow(nsPresContext*          aPresContext,
         
         
         
+        
         mFrames.SetFrames(*prevOverflowFrames);
         lazilySetParentPointer = true;
       } else {
         
         
         const nsFrameList::Slice& newFrames =
-          mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
+            mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
         
         
         
@@ -388,7 +349,7 @@ nsInlineFrame::Reflow(nsPresContext*          aPresContext,
   irs.mPrevFrame = nullptr;
   irs.mLineContainer = aReflowInput.mLineLayout->LineContainerFrame();
   irs.mLineLayout = aReflowInput.mLineLayout;
-  irs.mNextInFlow = (nsInlineFrame*) GetNextInFlow();
+  irs.mNextInFlow = (nsInlineFrame*)GetNextInFlow();
   irs.mSetParentPointer = lazilySetParentPointer;
 
   if (mFrames.IsEmpty()) {
@@ -407,13 +368,10 @@ nsInlineFrame::Reflow(nsPresContext*          aPresContext,
   NS_FRAME_SET_TRUNCATION(aStatus, aReflowInput, aMetrics);
 }
 
-nsresult
-nsInlineFrame::AttributeChanged(int32_t aNameSpaceID,
-                                nsAtom* aAttribute,
-                                int32_t aModType)
-{
+nsresult nsInlineFrame::AttributeChanged(int32_t aNameSpaceID,
+                                         nsAtom* aAttribute, int32_t aModType) {
   nsresult rv =
-    nsContainerFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
+      nsContainerFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
 
   if (NS_FAILED(rv)) {
     return rv;
@@ -421,17 +379,15 @@ nsInlineFrame::AttributeChanged(int32_t aNameSpaceID,
 
   if (nsSVGUtils::IsInSVGTextSubtree(this)) {
     SVGTextFrame* f = static_cast<SVGTextFrame*>(
-      nsLayoutUtils::GetClosestFrameOfType(this, LayoutFrameType::SVGText));
-    f->HandleAttributeChangeInDescendant(mContent->AsElement(),
-                                         aNameSpaceID, aAttribute);
+        nsLayoutUtils::GetClosestFrameOfType(this, LayoutFrameType::SVGText));
+    f->HandleAttributeChangeInDescendant(mContent->AsElement(), aNameSpaceID,
+                                         aAttribute);
   }
 
   return NS_OK;
 }
 
-bool
-nsInlineFrame::DrainSelfOverflowListInternal(bool aInFirstLine)
-{
+bool nsInlineFrame::DrainSelfOverflowListInternal(bool aInFirstLine) {
   AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
   if (!overflowFrames || overflowFrames->IsEmpty()) {
     return false;
@@ -453,9 +409,7 @@ nsInlineFrame::DrainSelfOverflowListInternal(bool aInFirstLine)
   return true;
 }
 
- bool
-nsInlineFrame::DrainSelfOverflowList()
-{
+ bool nsInlineFrame::DrainSelfOverflowList() {
   nsIFrame* lineContainer = nsLayoutUtils::FindNearestBlockAncestor(this);
   
   
@@ -469,16 +423,12 @@ nsInlineFrame::DrainSelfOverflowList()
   return DrainSelfOverflowListInternal(inFirstLine);
 }
 
- bool
-nsInlineFrame::CanContinueTextRun() const
-{
+ bool nsInlineFrame::CanContinueTextRun() const {
   
   return true;
 }
 
- void
-nsInlineFrame::PullOverflowsFromPrevInFlow()
-{
+ void nsInlineFrame::PullOverflowsFromPrevInFlow() {
   nsInlineFrame* prevInFlow = static_cast<nsInlineFrame*>(GetPrevInFlow());
   if (prevInFlow) {
     nsPresContext* presContext = PresContext();
@@ -493,13 +443,10 @@ nsInlineFrame::PullOverflowsFromPrevInFlow()
   }
 }
 
-void
-nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
-                            const ReflowInput& aReflowInput,
-                            InlineReflowInput& irs,
-                            ReflowOutput& aMetrics,
-                            nsReflowStatus& aStatus)
-{
+void nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
+                                 const ReflowInput& aReflowInput,
+                                 InlineReflowInput& irs, ReflowOutput& aMetrics,
+                                 nsReflowStatus& aStatus) {
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
   nsLineLayout* lineLayout = aReflowInput.mLineLayout;
@@ -509,9 +456,8 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
   WritingMode lineWM = aReflowInput.mLineLayout->mRootSpan->mWritingMode;
   LogicalMargin framePadding = aReflowInput.ComputedLogicalBorderPadding();
   nscoord startEdge = 0;
-  const bool boxDecorationBreakClone =
-    MOZ_UNLIKELY(StyleBorder()->mBoxDecorationBreak ==
-                   StyleBoxDecorationBreak::Clone);
+  const bool boxDecorationBreakClone = MOZ_UNLIKELY(
+      StyleBorder()->mBoxDecorationBreak == StyleBoxDecorationBreak::Clone);
   
   
   
@@ -567,7 +513,7 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
         if (child) {
           NS_ASSERTION(child->IsTextFrame(), "unexpected frame type");
           nsIFrame* nextInFlow = child->GetNextInFlow();
-          for ( ; nextInFlow; nextInFlow = nextInFlow->GetNextInFlow()) {
+          for (; nextInFlow; nextInFlow = nextInFlow->GetNextInFlow()) {
             NS_ASSERTION(nextInFlow->IsTextFrame(), "unexpected frame type");
             if (mFrames.ContainsFrame(nextInFlow)) {
               nextInFlow->SetParent(this);
@@ -575,12 +521,11 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
                 restyleManager->ReparentComputedStyleForFirstLine(nextInFlow);
                 nsLayoutUtils::MarkDescendantsDirty(nextInFlow);
               }
-            }
-            else {
+            } else {
 #ifdef DEBUG
               
               
-              for ( ; nextInFlow; nextInFlow = nextInFlow->GetNextInFlow()) {
+              for (; nextInFlow; nextInFlow = nextInFlow->GetNextInFlow()) {
                 NS_ASSERTION(!mFrames.ContainsFrame(nextInFlow),
                              "unexpected letter frame flow");
               }
@@ -619,8 +564,8 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
   if (!done && GetNextInFlow()) {
     while (true) {
       bool reflowingFirstLetter = lineLayout->GetFirstLetterStyleOK();
-      if (!frame) { 
-                    
+      if (!frame) {  
+                     
         frame = PullOneFrame(aPresContext, irs);
       }
 #ifdef NOISY_PUSHING
@@ -676,15 +621,14 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
 
 
 
-  if ((aStatus.IsComplete() &&
-       !LastInFlow()->GetNextContinuation() &&
+  if ((aStatus.IsComplete() && !LastInFlow()->GetNextContinuation() &&
        !FrameIsNonLastInIBSplit()) ||
       boxDecorationBreakClone) {
     aMetrics.ISize(lineWM) += framePadding.IEnd(frameWM);
   }
 
-  nsLayoutUtils::SetBSizeFromFontMetrics(this, aMetrics,
-                                         framePadding, lineWM, frameWM);
+  nsLayoutUtils::SetBSizeFromFontMetrics(this, aMetrics, framePadding, lineWM,
+                                         frameWM);
 
   
   
@@ -692,15 +636,13 @@ nsInlineFrame::ReflowFrames(nsPresContext* aPresContext,
 
 #ifdef NOISY_FINAL_SIZE
   ListTag(stdout);
-  printf(": metrics=%d,%d ascent=%d\n",
-         aMetrics.Width(), aMetrics.Height(), aMetrics.TopAscent());
+  printf(": metrics=%d,%d ascent=%d\n", aMetrics.Width(), aMetrics.Height(),
+         aMetrics.TopAscent());
 #endif
 }
 
 
- bool
-nsInlineFrame::HasFramesToPull(nsInlineFrame* aNextInFlow)
-{
+ bool nsInlineFrame::HasFramesToPull(nsInlineFrame* aNextInFlow) {
   while (aNextInFlow) {
     if (!aNextInFlow->mFrames.IsEmpty()) {
       return true;
@@ -715,13 +657,10 @@ nsInlineFrame::HasFramesToPull(nsInlineFrame* aNextInFlow)
   return false;
 }
 
-void
-nsInlineFrame::ReflowInlineFrame(nsPresContext* aPresContext,
-                                 const ReflowInput& aReflowInput,
-                                 InlineReflowInput& irs,
-                                 nsIFrame* aFrame,
-                                 nsReflowStatus& aStatus)
-{
+void nsInlineFrame::ReflowInlineFrame(nsPresContext* aPresContext,
+                                      const ReflowInput& aReflowInput,
+                                      InlineReflowInput& irs, nsIFrame* aFrame,
+                                      nsReflowStatus& aStatus) {
   nsLineLayout* lineLayout = aReflowInput.mLineLayout;
   bool reflowingFirstLetter = lineLayout->GetFirstLetterStyleOK();
   bool pushedFrame;
@@ -738,8 +677,7 @@ nsInlineFrame::ReflowInlineFrame(nsPresContext* aPresContext,
       aStatus.SetIncomplete();
       aStatus.SetInlineLineBreakAfter(oldBreakType);
       PushFrames(aPresContext, aFrame, irs.mPrevFrame, irs);
-    }
-    else {
+    } else {
       
       
     }
@@ -774,9 +712,8 @@ nsInlineFrame::ReflowInlineFrame(nsPresContext* aPresContext,
   }
 }
 
-nsIFrame*
-nsInlineFrame::PullOneFrame(nsPresContext* aPresContext, InlineReflowInput& irs)
-{
+nsIFrame* nsInlineFrame::PullOneFrame(nsPresContext* aPresContext,
+                                      InlineReflowInput& irs) {
   nsIFrame* frame = nullptr;
   nsInlineFrame* nextInFlow = irs.mNextInFlow;
 
@@ -834,15 +771,12 @@ nsInlineFrame::PullOneFrame(nsPresContext* aPresContext, InlineReflowInput& irs)
   return frame;
 }
 
-void
-nsInlineFrame::PushFrames(nsPresContext* aPresContext,
-                          nsIFrame* aFromChild,
-                          nsIFrame* aPrevSibling,
-                          InlineReflowInput& aState)
-{
+void nsInlineFrame::PushFrames(nsPresContext* aPresContext,
+                               nsIFrame* aFromChild, nsIFrame* aPrevSibling,
+                               InlineReflowInput& aState) {
 #ifdef NOISY_PUSHING
-  printf("%p pushing aFromChild %p, disconnecting from prev sib %p\n",
-         this, aFromChild, aPrevSibling);
+  printf("%p pushing aFromChild %p, disconnecting from prev sib %p\n", this,
+         aFromChild, aPrevSibling);
 #endif
 
   PushChildrenToOverflow(aFromChild, aPrevSibling);
@@ -853,38 +787,34 @@ nsInlineFrame::PushFrames(nsPresContext* aPresContext,
 
 
 
-
-nsIFrame::LogicalSides
-nsInlineFrame::GetLogicalSkipSides(const ReflowInput* aReflowInput) const
-{
+nsIFrame::LogicalSides nsInlineFrame::GetLogicalSkipSides(
+    const ReflowInput* aReflowInput) const {
   if (MOZ_UNLIKELY(StyleBorder()->mBoxDecorationBreak ==
-                     StyleBoxDecorationBreak::Clone)) {
+                   StyleBoxDecorationBreak::Clone)) {
     return LogicalSides();
   }
 
   LogicalSides skip;
   if (!IsFirst()) {
-    nsInlineFrame* prev = (nsInlineFrame*) GetPrevContinuation();
+    nsInlineFrame* prev = (nsInlineFrame*)GetPrevContinuation();
     if ((GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET) ||
         (prev && (prev->mRect.height || prev->mRect.width))) {
       
       
       skip |= eLogicalSideBitsIStart;
-    }
-    else {
+    } else {
       
       
     }
   }
   if (!IsLast()) {
-    nsInlineFrame* next = (nsInlineFrame*) GetNextContinuation();
+    nsInlineFrame* next = (nsInlineFrame*)GetNextContinuation();
     if ((GetStateBits() & NS_INLINE_FRAME_BIDI_VISUAL_STATE_IS_SET) ||
         (next && (next->mRect.height || next->mRect.width))) {
       
       
       skip |= eLogicalSideBitsIEnd;
-    }
-    else {
+    } else {
       
       
     }
@@ -912,31 +842,28 @@ nsInlineFrame::GetLogicalSkipSides(const ReflowInput* aReflowInput) const
   return skip;
 }
 
-nscoord
-nsInlineFrame::GetLogicalBaseline(mozilla::WritingMode aWritingMode) const
-{
+nscoord nsInlineFrame::GetLogicalBaseline(
+    mozilla::WritingMode aWritingMode) const {
   return mBaseline;
 }
 
 #ifdef ACCESSIBILITY
-a11y::AccType
-nsInlineFrame::AccessibleType()
-{
+a11y::AccType nsInlineFrame::AccessibleType() {
   
   
-  if (mContent->IsHTMLElement(nsGkAtoms::input))  
+  if (mContent->IsHTMLElement(
+          nsGkAtoms::input))  
     return a11y::eHTMLButtonType;
-  if (mContent->IsHTMLElement(nsGkAtoms::img))  
+  if (mContent->IsHTMLElement(
+          nsGkAtoms::img))  
     return a11y::eHyperTextType;
 
   return a11y::eNoType;
 }
 #endif
 
-void
-nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
-  ServoRestyleState& aRestyleState)
-{
+void nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
+    ServoRestyleState& aRestyleState) {
   MOZ_ASSERT(GetStateBits() & NS_FRAME_OWNS_ANON_BOXES,
              "Why did we get called?");
   MOZ_ASSERT(GetStateBits() & NS_FRAME_PART_OF_IBSPLIT,
@@ -958,8 +885,8 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
   
   
   RefPtr<ComputedStyle> newContext =
-    aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
-      nsCSSAnonBoxes::mozBlockInsideInlineWrapper(), ourStyle);
+      aRestyleState.StyleSet().ResolveInheritingAnonymousBoxStyle(
+          nsCSSAnonBoxes::mozBlockInsideInlineWrapper(), ourStyle);
 
   
   
@@ -972,10 +899,11 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
                "Must be first continuation");
 
     MOZ_ASSERT(blockFrame->Style()->GetPseudo() ==
-               nsCSSAnonBoxes::mozBlockInsideInlineWrapper(),
+                   nsCSSAnonBoxes::mozBlockInsideInlineWrapper(),
                "Unexpected kind of ComputedStyle");
 
-    for (nsIFrame* cont = blockFrame; cont; cont = cont->GetNextContinuation()) {
+    for (nsIFrame* cont = blockFrame; cont;
+         cont = cont->GetNextContinuation()) {
       cont->SetComputedStyle(newContext);
     }
 
@@ -989,7 +917,8 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
 
     MOZ_ASSERT(nextInline, "There is always a trailing inline in an IB split");
 
-    for (nsIFrame* cont = nextInline; cont; cont = cont->GetNextContinuation()) {
+    for (nsIFrame* cont = nextInline; cont;
+         cont = cont->GetNextContinuation()) {
       cont->SetComputedStyle(ourStyle);
     }
     blockFrame = nextInline->GetProperty(nsIFrame::IBSplitSibling());
@@ -1000,19 +929,15 @@ nsInlineFrame::UpdateStyleOfOwnedAnonBoxesForIBSplit(
 
 
 
-nsFirstLineFrame*
-NS_NewFirstLineFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsFirstLineFrame* NS_NewFirstLineFrame(nsIPresShell* aPresShell,
+                                       ComputedStyle* aStyle) {
   return new (aPresShell) nsFirstLineFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsFirstLineFrame)
 
-void
-nsFirstLineFrame::Init(nsIContent*       aContent,
-                       nsContainerFrame* aParent,
-                       nsIFrame*         aPrevInFlow)
-{
+void nsFirstLineFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                            nsIFrame* aPrevInFlow) {
   nsInlineFrame::Init(aContent, aParent, aPrevInFlow);
   if (!aPrevInFlow) {
     MOZ_ASSERT(Style()->GetPseudo() == nsCSSPseudoElements::firstLine());
@@ -1028,29 +953,25 @@ nsFirstLineFrame::Init(nsIContent*       aContent,
     
     
     ComputedStyle* parentContext = aParent->Style();
-    RefPtr<ComputedStyle> newSC = PresContext()->StyleSet()->
-      ResolveInheritingAnonymousBoxStyle(nsCSSAnonBoxes::mozLineFrame(),
-                                         parentContext);
+    RefPtr<ComputedStyle> newSC =
+        PresContext()->StyleSet()->ResolveInheritingAnonymousBoxStyle(
+            nsCSSAnonBoxes::mozLineFrame(), parentContext);
     SetComputedStyle(newSC);
   } else {
     MOZ_ASSERT(FirstInFlow() != aPrevInFlow);
     MOZ_ASSERT(aPrevInFlow->Style()->GetPseudo() ==
-                 nsCSSAnonBoxes::mozLineFrame());
+               nsCSSAnonBoxes::mozLineFrame());
   }
 }
 
 #ifdef DEBUG_FRAME_DUMP
-nsresult
-nsFirstLineFrame::GetFrameName(nsAString& aResult) const
-{
+nsresult nsFirstLineFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(NS_LITERAL_STRING("Line"), aResult);
 }
 #endif
 
-nsIFrame*
-nsFirstLineFrame::PullOneFrame(nsPresContext* aPresContext,
-                               InlineReflowInput& irs)
-{
+nsIFrame* nsFirstLineFrame::PullOneFrame(nsPresContext* aPresContext,
+                                         InlineReflowInput& irs) {
   nsIFrame* frame = nsInlineFrame::PullOneFrame(aPresContext, irs);
   if (frame && !GetPrevInFlow()) {
     
@@ -1062,12 +983,10 @@ nsFirstLineFrame::PullOneFrame(nsPresContext* aPresContext,
   return frame;
 }
 
-void
-nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
-                         ReflowOutput& aMetrics,
-                         const ReflowInput& aReflowInput,
-                         nsReflowStatus& aStatus)
-{
+void nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
+                              ReflowOutput& aMetrics,
+                              const ReflowInput& aReflowInput,
+                              nsReflowStatus& aStatus) {
   MarkInReflow();
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
 
@@ -1083,7 +1002,7 @@ nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
     if (prevOverflowFrames) {
       
       const nsFrameList::Slice& newFrames =
-        mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
+          mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
       ReparentChildListStyle(aPresContext, newFrames, this);
     }
   }
@@ -1096,7 +1015,7 @@ nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   irs.mPrevFrame = nullptr;
   irs.mLineContainer = aReflowInput.mLineLayout->LineContainerFrame();
   irs.mLineLayout = aReflowInput.mLineLayout;
-  irs.mNextInFlow = (nsInlineFrame*) GetNextInFlow();
+  irs.mNextInFlow = (nsInlineFrame*)GetNextInFlow();
 
   bool wasEmpty = mFrames.IsEmpty();
   if (wasEmpty) {
@@ -1134,10 +1053,9 @@ nsFirstLineFrame::Reflow(nsPresContext* aPresContext,
   
 }
 
- void
-nsFirstLineFrame::PullOverflowsFromPrevInFlow()
-{
-  nsFirstLineFrame* prevInFlow = static_cast<nsFirstLineFrame*>(GetPrevInFlow());
+ void nsFirstLineFrame::PullOverflowsFromPrevInFlow() {
+  nsFirstLineFrame* prevInFlow =
+      static_cast<nsFirstLineFrame*>(GetPrevInFlow());
   if (prevInFlow) {
     nsPresContext* presContext = PresContext();
     AutoFrameListPtr prevOverflowFrames(presContext,
@@ -1145,20 +1063,18 @@ nsFirstLineFrame::PullOverflowsFromPrevInFlow()
     if (prevOverflowFrames) {
       
       const nsFrameList::Slice& newFrames =
-        mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
+          mFrames.InsertFrames(this, nullptr, *prevOverflowFrames);
       ReparentChildListStyle(presContext, newFrames, this);
     }
   }
 }
 
- bool
-nsFirstLineFrame::DrainSelfOverflowList()
-{
+ bool nsFirstLineFrame::DrainSelfOverflowList() {
   AutoFrameListPtr overflowFrames(PresContext(), StealOverflowFrames());
   if (overflowFrames) {
     bool result = !overflowFrames->IsEmpty();
     const nsFrameList::Slice& newFrames =
-      mFrames.AppendFrames(nullptr, *overflowFrames);
+        mFrames.AppendFrames(nullptr, *overflowFrames);
     ReparentChildListStyle(PresContext(), newFrames, this);
     return result;
   }

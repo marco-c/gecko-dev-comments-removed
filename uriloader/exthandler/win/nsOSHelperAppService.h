@@ -10,6 +10,7 @@
 
 
 
+
 #include "nsExternalHelperAppService.h"
 #include "nsCExternalHandlerService.h"
 #include "nsMIMEInfoImpl.h"
@@ -24,42 +25,52 @@
 
 class nsMIMEInfoWin;
 
-class nsOSHelperAppService : public nsExternalHelperAppService
-{
-public:
+class nsOSHelperAppService : public nsExternalHelperAppService {
+ public:
   nsOSHelperAppService();
   virtual ~nsOSHelperAppService();
 
   
-  nsresult OSProtocolHandlerExists(const char * aProtocolScheme, bool * aHandlerExists);
-  nsresult LoadUriInternal(nsIURI * aURL);
-  NS_IMETHOD GetApplicationDescription(const nsACString& aScheme, nsAString& _retval) override;
+  nsresult OSProtocolHandlerExists(const char* aProtocolScheme,
+                                   bool* aHandlerExists);
+  nsresult LoadUriInternal(nsIURI* aURL);
+  NS_IMETHOD GetApplicationDescription(const nsACString& aScheme,
+                                       nsAString& _retval) override;
 
   
-  already_AddRefed<nsIMIMEInfo> GetMIMEInfoFromOS(const nsACString& aMIMEType, const nsACString& aFileExt, bool *aFound);
-  NS_IMETHOD GetProtocolHandlerInfoFromOS(const nsACString &aScheme, 
-                                          bool *found,
-                                          nsIHandlerInfo **_retval);
+  already_AddRefed<nsIMIMEInfo> GetMIMEInfoFromOS(const nsACString& aMIMEType,
+                                                  const nsACString& aFileExt,
+                                                  bool* aFound);
+  NS_IMETHOD GetProtocolHandlerInfoFromOS(const nsACString& aScheme,
+                                          bool* found,
+                                          nsIHandlerInfo** _retval);
   virtual bool GetMIMETypeFromOSForExtension(const nsACString& aExtension,
                                              nsACString& aMIMEType) override;
 
   
 
 
-  static bool GetValueString(HKEY hKey, const char16_t* pValueName, nsAString& result);
+  static bool GetValueString(HKEY hKey, const char16_t* pValueName,
+                             nsAString& result);
 
-protected:
-  nsresult GetDefaultAppInfo(const nsAString& aTypeName, nsAString& aDefaultDescription, nsIFile** aDefaultApplication);
+ protected:
+  nsresult GetDefaultAppInfo(const nsAString& aTypeName,
+                             nsAString& aDefaultDescription,
+                             nsIFile** aDefaultApplication);
   
-  already_AddRefed<nsMIMEInfoWin> GetByExtension(const nsString& aFileExt, const char *aTypeHint = nullptr);
-  nsresult FindOSMimeInfoForType(const char * aMimeContentType, nsIURI * aURI, char ** aFileExtension, nsIMIMEInfo ** aMIMEInfo);
+  already_AddRefed<nsMIMEInfoWin> GetByExtension(
+      const nsString& aFileExt, const char* aTypeHint = nullptr);
+  nsresult FindOSMimeInfoForType(const char* aMimeContentType, nsIURI* aURI,
+                                 char** aFileExtension,
+                                 nsIMIMEInfo** aMIMEInfo);
 
-  static nsresult GetMIMEInfoFromRegistry(const nsString& fileType, nsIMIMEInfo *pInfo);
+  static nsresult GetMIMEInfoFromRegistry(const nsString& fileType,
+                                          nsIMIMEInfo* pInfo);
   
-  static bool typeFromExtEquals(const char16_t* aExt, const char *aType);
+  static bool typeFromExtEquals(const char16_t* aExt, const char* aType);
 
-private:
+ private:
   IApplicationAssociationRegistration* mAppAssoc;
 };
 
-#endif 
+#endif  

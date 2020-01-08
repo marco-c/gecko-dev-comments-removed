@@ -9,11 +9,11 @@
 
 #include "Layers.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
-#include "mozilla/gfx/Matrix.h"             
-#include "mozilla/layers/LayersTypes.h"     
-#include "mozilla/layers/ScrollableLayerGuid.h" 
-#include "mozilla/Maybe.h"                  
-#include "mozilla/RefPtr.h"               
+#include "mozilla/gfx/Matrix.h"                  
+#include "mozilla/layers/LayersTypes.h"          
+#include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "mozilla/Maybe.h"                       
+#include "mozilla/RefPtr.h"                      
 
 namespace mozilla {
 namespace layers {
@@ -59,14 +59,14 @@ class AsyncPanZoomController;
 class HitTestingTreeNode {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(HitTestingTreeNode);
 
-private:
+ private:
   ~HitTestingTreeNode();
-public:
+
+ public:
   HitTestingTreeNode(AsyncPanZoomController* aApzc, bool aIsPrimaryHolder,
                      LayersId aLayersId);
   void RecycleWith(const RecursiveMutexAutoLock& aProofOfTreeLock,
-                   AsyncPanZoomController* aApzc,
-                   LayersId aLayersId);
+                   AsyncPanZoomController* aApzc, LayersId aLayersId);
   
   
   void Destroy();
@@ -130,8 +130,9 @@ public:
   
 
 
-  Maybe<LayerPoint> Untransform(const ParentLayerPoint& aPoint,
-                                const LayerToParentLayerMatrix4x4& aTransform) const;
+  Maybe<LayerPoint> Untransform(
+      const ParentLayerPoint& aPoint,
+      const LayerToParentLayerMatrix4x4& aTransform) const;
   
 
   gfx::CompositorHitTestInfo HitTest(const LayerPoint& aPoint) const;
@@ -143,12 +144,11 @@ public:
   
   void Dump(const char* aPrefix = "") const;
 
-private:
+ private:
   friend class HitTestingTreeNodeAutoLock;
   
   void Lock(const RecursiveMutexAutoLock& aProofOfTreeLock);
   void Unlock(const RecursiveMutexAutoLock& aProofOfTreeLock);
-
 
   void SetApzcParent(AsyncPanZoomController* aApzc);
 
@@ -215,12 +215,12 @@ private:
 
 
 
-class MOZ_RAII HitTestingTreeNodeAutoLock
-{
-public:
+class MOZ_RAII HitTestingTreeNodeAutoLock {
+ public:
   HitTestingTreeNodeAutoLock();
   HitTestingTreeNodeAutoLock(const HitTestingTreeNodeAutoLock&) = delete;
-  HitTestingTreeNodeAutoLock& operator=(const HitTestingTreeNodeAutoLock&) = delete;
+  HitTestingTreeNodeAutoLock& operator=(const HitTestingTreeNodeAutoLock&) =
+      delete;
   HitTestingTreeNodeAutoLock(HitTestingTreeNodeAutoLock&&) = delete;
   ~HitTestingTreeNodeAutoLock();
 
@@ -237,14 +237,17 @@ public:
   
   
   
-  HitTestingTreeNode* Get(mozilla::RecursiveMutexAutoLock& aProofOfTreeLock) const { return mNode.get(); }
+  HitTestingTreeNode* Get(
+      mozilla::RecursiveMutexAutoLock& aProofOfTreeLock) const {
+    return mNode.get();
+  }
 
-private:
+ private:
   RefPtr<HitTestingTreeNode> mNode;
   RecursiveMutex* mTreeMutex;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

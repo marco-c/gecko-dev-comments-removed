@@ -18,44 +18,33 @@ namespace dom {
 class Promise;
 struct StorageEstimate;
 
-class StorageManager final
-  : public nsISupports
-  , public nsWrapperCache
-{
+class StorageManager final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mOwner;
 
-public:
-  explicit
-  StorageManager(nsIGlobalObject* aGlobal);
+ public:
+  explicit StorageManager(nsIGlobalObject* aGlobal);
 
-  nsIGlobalObject*
-  GetParentObject() const
-  {
-    return mOwner;
-  }
+  nsIGlobalObject* GetParentObject() const { return mOwner; }
 
   
-  already_AddRefed<Promise>
-  Persisted(ErrorResult& aRv);
+  already_AddRefed<Promise> Persisted(ErrorResult& aRv);
 
-  already_AddRefed<Promise>
-  Persist(ErrorResult& aRv);
+  already_AddRefed<Promise> Persist(ErrorResult& aRv);
 
-  already_AddRefed<Promise>
-  Estimate(ErrorResult& aRv);
+  already_AddRefed<Promise> Estimate(ErrorResult& aRv);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(StorageManager)
 
   
-  virtual JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-private:
+ private:
   ~StorageManager();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

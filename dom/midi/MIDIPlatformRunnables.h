@@ -20,12 +20,9 @@ class MIDIPortInfo;
 
 
 
-class MIDIBackgroundRunnable : public Runnable
-{
-public:
-  MIDIBackgroundRunnable(const char* aName) :
-    Runnable(aName)
-  {}
+class MIDIBackgroundRunnable : public Runnable {
+ public:
+  MIDIBackgroundRunnable(const char* aName) : Runnable(aName) {}
   virtual ~MIDIBackgroundRunnable() = default;
   NS_IMETHOD Run() override;
   virtual void RunInternal() = 0;
@@ -36,24 +33,21 @@ public:
 
 
 
-class ReceiveRunnable final : public MIDIBackgroundRunnable
-{
-public:
-  ReceiveRunnable(const nsAString& aPortId, const nsTArray<MIDIMessage>& aMsgs) :
-    MIDIBackgroundRunnable("ReceiveRunnable"),
-    mMsgs(aMsgs),
-    mPortId(aPortId)
-  {}
+class ReceiveRunnable final : public MIDIBackgroundRunnable {
+ public:
+  ReceiveRunnable(const nsAString& aPortId, const nsTArray<MIDIMessage>& aMsgs)
+      : MIDIBackgroundRunnable("ReceiveRunnable"),
+        mMsgs(aMsgs),
+        mPortId(aPortId) {}
   
-  ReceiveRunnable(const nsAString& aPortId, const MIDIMessage& aMsgs) :
-    MIDIBackgroundRunnable("ReceiveRunnable"),
-    mPortId(aPortId)
-  {
+  ReceiveRunnable(const nsAString& aPortId, const MIDIMessage& aMsgs)
+      : MIDIBackgroundRunnable("ReceiveRunnable"), mPortId(aPortId) {
     mMsgs.AppendElement(aMsgs);
   }
   ~ReceiveRunnable() = default;
   void RunInternal() override;
-private:
+
+ private:
   nsTArray<MIDIMessage> mMsgs;
   nsString mPortId;
 };
@@ -63,16 +57,14 @@ private:
 
 
 
-class AddPortRunnable final : public MIDIBackgroundRunnable
-{
-public:
-  explicit AddPortRunnable(const MIDIPortInfo& aPortInfo) :
-    MIDIBackgroundRunnable("AddPortRunnable"),
-    mPortInfo(aPortInfo)
-  {}
+class AddPortRunnable final : public MIDIBackgroundRunnable {
+ public:
+  explicit AddPortRunnable(const MIDIPortInfo& aPortInfo)
+      : MIDIBackgroundRunnable("AddPortRunnable"), mPortInfo(aPortInfo) {}
   ~AddPortRunnable() = default;
   void RunInternal() override;
-private:
+
+ private:
   MIDIPortInfo mPortInfo;
 };
 
@@ -81,16 +73,14 @@ private:
 
 
 
-class RemovePortRunnable final : public MIDIBackgroundRunnable
-{
-public:
-  explicit RemovePortRunnable(const MIDIPortInfo& aPortInfo) :
-    MIDIBackgroundRunnable("RemovePortRunnable"),
-    mPortInfo(aPortInfo)
-  {}
+class RemovePortRunnable final : public MIDIBackgroundRunnable {
+ public:
+  explicit RemovePortRunnable(const MIDIPortInfo& aPortInfo)
+      : MIDIBackgroundRunnable("RemovePortRunnable"), mPortInfo(aPortInfo) {}
   ~RemovePortRunnable() = default;
   void RunInternal() override;
-private:
+
+ private:
   MIDIPortInfo mPortInfo;
 };
 
@@ -99,12 +89,9 @@ private:
 
 
 
-class SendPortListRunnable final : public MIDIBackgroundRunnable
-{
-public:
-  SendPortListRunnable() :
-    MIDIBackgroundRunnable("SendPortListRunnable")
-  {}
+class SendPortListRunnable final : public MIDIBackgroundRunnable {
+ public:
+  SendPortListRunnable() : MIDIBackgroundRunnable("SendPortListRunnable") {}
   ~SendPortListRunnable() = default;
   void RunInternal() override;
 };
@@ -114,26 +101,24 @@ public:
 
 
 
-class SetStatusRunnable final : public MIDIBackgroundRunnable
-{
-public:
-  SetStatusRunnable(const nsAString& aPortId,
-                    MIDIPortDeviceState aState,
-                    MIDIPortConnectionState aConnection)  :
-    MIDIBackgroundRunnable("SetStatusRunnable"),
-    mPortId(aPortId),
-    mState(aState),
-    mConnection(aConnection)
-  {}
+class SetStatusRunnable final : public MIDIBackgroundRunnable {
+ public:
+  SetStatusRunnable(const nsAString& aPortId, MIDIPortDeviceState aState,
+                    MIDIPortConnectionState aConnection)
+      : MIDIBackgroundRunnable("SetStatusRunnable"),
+        mPortId(aPortId),
+        mState(aState),
+        mConnection(aConnection) {}
   ~SetStatusRunnable() = default;
   void RunInternal() override;
-private:
+
+ private:
   nsString mPortId;
   MIDIPortDeviceState mState;
   MIDIPortConnectionState mConnection;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

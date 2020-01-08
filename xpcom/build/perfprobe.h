@@ -22,7 +22,7 @@
 #include "nsTArray.h"
 #include "nsAutoPtr.h"
 #include <windows.h>
-#undef GetStartupInfo //Prevent Windows from polluting global namespace
+#undef GetStartupInfo  // Prevent Windows from polluting global namespace
 #include <wmistr.h>
 #include <evntrace.h>
 
@@ -36,9 +36,8 @@ class ProbeManager;
 
 
 
-class Probe
-{
-public:
+class Probe {
+ public:
   NS_INLINE_DECL_REFCOUNTING(Probe)
 
   
@@ -48,14 +47,13 @@ public:
 
   nsresult Trigger();
 
-protected:
-  ~Probe() {};
+ protected:
+  ~Probe(){};
 
   Probe(const nsCID& aGUID, const nsACString& aName, ProbeManager* aManager);
   friend class ProbeManager;
 
-protected:
-
+ protected:
   
 
 
@@ -83,10 +81,8 @@ protected:
 
 
 
-
-class ProbeManager
-{
-public:
+class ProbeManager {
+ public:
   NS_INLINE_DECL_REFCOUNTING(ProbeManager)
 
   
@@ -146,14 +142,14 @@ public:
 
   bool IsActive();
 
-protected:
+ protected:
   ~ProbeManager();
 
   nsresult StartSession(nsTArray<RefPtr<Probe>>& aProbes);
   nsresult Init(const nsCID& aApplicationUID,
                 const nsACString& aApplicationName);
 
-protected:
+ protected:
   
 
 
@@ -193,12 +189,11 @@ protected:
 
   friend class Probe;  
   friend ULONG WINAPI ControlCallback(WMIDPREQUESTCODE aRequestCode,
-                                      PVOID aContext,
-                                      ULONG* aReserved,
+                                      PVOID aContext, ULONG* aReserved,
                                       PVOID aBuffer);  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

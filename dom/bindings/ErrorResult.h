@@ -40,8 +40,9 @@
 
 namespace IPC {
 class Message;
-template <typename> struct ParamTraits;
-} 
+template <typename>
+struct ParamTraits;
+}  
 class PickleIterator;
 
 namespace mozilla {
@@ -49,51 +50,50 @@ namespace mozilla {
 namespace dom {
 
 enum ErrNum {
-#define MSG_DEF(_name, _argc, _exn, _str) \
-  _name,
+#define MSG_DEF(_name, _argc, _exn, _str) _name,
 #include "mozilla/dom/Errors.msg"
 #undef MSG_DEF
   Err_Limit
 };
 
 
+
 #if defined(DEBUG) && (defined(__clang__) || defined(__GNUC__))
 uint16_t constexpr ErrorFormatNumArgs[] = {
-#define MSG_DEF(_name, _argc, _exn, _str) \
-  _argc,
+#define MSG_DEF(_name, _argc, _exn, _str) _argc,
 #include "mozilla/dom/Errors.msg"
 #undef MSG_DEF
 };
 #endif
 
-uint16_t
-GetErrorArgCount(const ErrNum aErrorNumber);
+uint16_t GetErrorArgCount(const ErrNum aErrorNumber);
 
 namespace binding_detail {
 void ThrowErrorMessage(JSContext* aCx, const unsigned aErrorNumber, ...);
-} 
+}  
 
-template<typename... Ts>
-inline bool
-ThrowErrorMessage(JSContext* aCx, const ErrNum aErrorNumber, Ts&&... aArgs)
-{
+template <typename... Ts>
+inline bool ThrowErrorMessage(JSContext* aCx, const ErrNum aErrorNumber,
+                              Ts&&... aArgs) {
   binding_detail::ThrowErrorMessage(aCx, static_cast<unsigned>(aErrorNumber),
                                     std::forward<Ts>(aArgs)...);
   return false;
 }
 
-struct StringArrayAppender
-{
-  static void Append(nsTArray<nsString>& aArgs, uint16_t aCount)
-  {
-    MOZ_RELEASE_ASSERT(aCount == 0, "Must give at least as many string arguments as are required by the ErrNum.");
+struct StringArrayAppender {
+  static void Append(nsTArray<nsString>& aArgs, uint16_t aCount) {
+    MOZ_RELEASE_ASSERT(aCount == 0,
+                       "Must give at least as many string arguments as are "
+                       "required by the ErrNum.");
   }
 
-  template<typename... Ts>
-  static void Append(nsTArray<nsString>& aArgs, uint16_t aCount, const nsAString& aFirst, Ts&&... aOtherArgs)
-  {
+  template <typename... Ts>
+  static void Append(nsTArray<nsString>& aArgs, uint16_t aCount,
+                     const nsAString& aFirst, Ts&&... aOtherArgs) {
     if (aCount == 0) {
-      MOZ_ASSERT(false, "There should not be more string arguments provided than are required by the ErrNum.");
+      MOZ_ASSERT(false,
+                 "There should not be more string arguments provided than are "
+                 "required by the ErrNum.");
       return;
     }
     aArgs.AppendElement(aFirst);
@@ -101,7 +101,7 @@ struct StringArrayAppender
   }
 };
 
-} 
+}  
 
 class ErrorResult;
 class OOMReporter;
@@ -119,14 +119,15 @@ namespace binding_danger {
 
 
 
-template<typename CleanupPolicy>
+template <typename CleanupPolicy>
 class TErrorResult {
-public:
+ public:
   TErrorResult()
-    : mResult(NS_OK)
+      : mResult(NS_OK)
 #ifdef DEBUG
-    , mMightHaveUnreportedJSException(false)
-    , mUnionState(HasNothing)
+        ,
+        mMightHaveUnreportedJSException(false),
+        mUnionState(HasNothing)
 #endif
   {
   }
@@ -149,20 +150,15 @@ public:
   }
 
   TErrorResult(TErrorResult&& aRHS)
-    
-    
-    
-    : TErrorResult()
-  {
+      
+      
+      
+      : TErrorResult() {
     *this = std::move(aRHS);
   }
   TErrorResult& operator=(TErrorResult&& aRHS);
 
-  explicit TErrorResult(nsresult aRv)
-    : TErrorResult()
-  {
-    AssignErrorCode(aRv);
-  }
+  explicit TErrorResult(nsresult aRv) : TErrorResult() { AssignErrorCode(aRv); }
 
   operator ErrorResult&();
   operator const ErrorResult&() const;
@@ -205,10 +201,7 @@ public:
   
   
   
-  
-  void ThrowWithCustomCleanup(nsresult rv) {
-    Throw(rv);
-  }
+  void ThrowWithCustomCleanup(nsresult rv) { Throw(rv); }
 
   
   
@@ -266,8 +259,7 @@ public:
   
   
   MOZ_MUST_USE
-  bool MaybeSetPendingException(JSContext* cx)
-  {
+  bool MaybeSetPendingException(JSContext* cx) {
     WouldReportJSException();
     if (!Failed()) {
       return false;
@@ -289,22 +281,19 @@ public:
   
   void StealExceptionFromJSContext(JSContext* cx);
 
-  template<dom::ErrNum errorNumber, typename... Ts>
-  void ThrowTypeError(Ts&&... messageArgs)
-  {
+  template <dom::ErrNum errorNumber, typename... Ts>
+  void ThrowTypeError(Ts&&... messageArgs) {
     ThrowErrorWithMessage<errorNumber>(NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR,
                                        std::forward<Ts>(messageArgs)...);
   }
 
-  template<dom::ErrNum errorNumber, typename... Ts>
-  void ThrowRangeError(Ts&&... messageArgs)
-  {
+  template <dom::ErrNum errorNumber, typename... Ts>
+  void ThrowRangeError(Ts&&... messageArgs) {
     ThrowErrorWithMessage<errorNumber>(NS_ERROR_INTERNAL_ERRORRESULT_RANGEERROR,
                                        std::forward<Ts>(messageArgs)...);
   }
 
-  bool IsErrorWithMessage() const
-  {
+  bool IsErrorWithMessage() const {
     return ErrorCode() == NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR ||
            ErrorCode() == NS_ERROR_INTERNAL_ERRORRESULT_RANGEERROR;
   }
@@ -320,8 +309,7 @@ public:
   
   
   void ThrowJSException(JSContext* cx, JS::Handle<JS::Value> exn);
-  bool IsJSException() const
-  {
+  bool IsJSException() const {
     return ErrorCode() == NS_ERROR_INTERNAL_ERRORRESULT_JS_EXCEPTION;
   }
 
@@ -330,9 +318,9 @@ public:
   
   
   
-  void ThrowDOMException(nsresult rv, const nsACString& message = EmptyCString());
-  bool IsDOMException() const
-  {
+  void ThrowDOMException(nsresult rv,
+                         const nsACString& message = EmptyCString());
+  bool IsDOMException() const {
     return ErrorCode() == NS_ERROR_INTERNAL_ERRORRESULT_DOMEXCEPTION;
   }
 
@@ -355,14 +343,12 @@ public:
     return ErrorCode() == NS_ERROR_UNCATCHABLE_EXCEPTION;
   }
 
-  void MOZ_ALWAYS_INLINE MightThrowJSException()
-  {
+  void MOZ_ALWAYS_INLINE MightThrowJSException() {
 #ifdef DEBUG
     mMightHaveUnreportedJSException = true;
 #endif
   }
-  void MOZ_ALWAYS_INLINE WouldReportJSException()
-  {
+  void MOZ_ALWAYS_INLINE WouldReportJSException() {
 #ifdef DEBUG
     mMightHaveUnreportedJSException = false;
 #endif
@@ -375,31 +361,21 @@ public:
   
   
   
-  void operator=(nsresult rv) {
-    AssignErrorCode(rv);
-  }
+  void operator=(nsresult rv) { AssignErrorCode(rv); }
 
-  bool Failed() const {
-    return NS_FAILED(mResult);
-  }
+  bool Failed() const { return NS_FAILED(mResult); }
 
-  bool ErrorCodeIs(nsresult rv) const {
-    return mResult == rv;
-  }
+  bool ErrorCodeIs(nsresult rv) const { return mResult == rv; }
 
   
-  uint32_t ErrorCodeAsInt() const {
-    return static_cast<uint32_t>(ErrorCode());
-  }
+  uint32_t ErrorCodeAsInt() const { return static_cast<uint32_t>(ErrorCode()); }
 
   bool operator==(const ErrorResult& aRight) const;
 
-protected:
-  nsresult ErrorCode() const {
-    return mResult;
-  }
+ protected:
+  nsresult ErrorCode() const { return mResult; }
 
-private:
+ private:
 #ifdef DEBUG
   enum UnionState {
     HasMessage,
@@ -407,7 +383,7 @@ private:
     HasJSException,
     HasNothing
   };
-#endif 
+#endif  
 
   friend struct IPC::ParamTraits<TErrorResult>;
   friend struct IPC::ParamTraits<ErrorResult>;
@@ -415,29 +391,32 @@ private:
   bool DeserializeMessage(const IPC::Message* aMsg, PickleIterator* aIter);
 
   void SerializeDOMExceptionInfo(IPC::Message* aMsg) const;
-  bool DeserializeDOMExceptionInfo(const IPC::Message* aMsg, PickleIterator* aIter);
+  bool DeserializeDOMExceptionInfo(const IPC::Message* aMsg,
+                                   PickleIterator* aIter);
 
   
   
-  nsTArray<nsString>& CreateErrorMessageHelper(const dom::ErrNum errorNumber, nsresult errorType);
+  nsTArray<nsString>& CreateErrorMessageHelper(const dom::ErrNum errorNumber,
+                                               nsresult errorType);
 
-  template<dom::ErrNum errorNumber, typename... Ts>
-  void ThrowErrorWithMessage(nsresult errorType, Ts&&... messageArgs)
-  {
+  template <dom::ErrNum errorNumber, typename... Ts>
+  void ThrowErrorWithMessage(nsresult errorType, Ts&&... messageArgs) {
 #if defined(DEBUG) && (defined(__clang__) || defined(__GNUC__))
-    static_assert(dom::ErrorFormatNumArgs[errorNumber] == sizeof...(messageArgs),
-                  "Pass in the right number of arguments");
+    static_assert(
+        dom::ErrorFormatNumArgs[errorNumber] == sizeof...(messageArgs),
+        "Pass in the right number of arguments");
 #endif
 
     ClearUnionData();
 
-    nsTArray<nsString>& messageArgsArray = CreateErrorMessageHelper(errorNumber, errorType);
+    nsTArray<nsString>& messageArgsArray =
+        CreateErrorMessageHelper(errorNumber, errorType);
     uint16_t argCount = dom::GetErrorArgCount(errorNumber);
     dom::StringArrayAppender::Append(messageArgsArray, argCount,
                                      std::forward<Ts>(messageArgs)...);
 #ifdef DEBUG
     mUnionState = HasMessage;
-#endif 
+#endif  
   }
 
   MOZ_ALWAYS_INLINE void AssertInOwningThread() const {
@@ -460,7 +439,8 @@ private:
     MOZ_ASSERT(aRv != NS_ERROR_INTERNAL_ERRORRESULT_DOMEXCEPTION,
                "Use ThrowDOMException()");
     MOZ_ASSERT(!IsDOMException(), "Don't overwrite DOM exceptions");
-    MOZ_ASSERT(aRv != NS_ERROR_XPC_NOT_ENOUGH_ARGS, "May need to bring back ThrowNotEnoughArgsError");
+    MOZ_ASSERT(aRv != NS_ERROR_XPC_NOT_ENOUGH_ARGS,
+               "May need to bring back ThrowNotEnoughArgsError");
     MOZ_ASSERT(aRv != NS_ERROR_INTERNAL_ERRORRESULT_EXCEPTION_ON_JSCONTEXT,
                "Use NoteJSContextException");
     mResult = aRv;
@@ -487,8 +467,7 @@ private:
   void SetPendingDOMException(JSContext* cx);
   void SetPendingGenericErrorException(JSContext* cx);
 
-  MOZ_ALWAYS_INLINE void AssertReportedOrSuppressed()
-  {
+  MOZ_ALWAYS_INLINE void AssertReportedOrSuppressed() {
     MOZ_ASSERT(!Failed());
     MOZ_ASSERT(!mMightHaveUnreportedJSException);
     MOZ_ASSERT(mUnionState == HasNothing);
@@ -510,17 +489,17 @@ private:
     
     
     MOZ_INIT_OUTSIDE_CTOR
-    Message* mMessage; 
+    Message* mMessage;  
 
     
     
     MOZ_INIT_OUTSIDE_CTOR
-    JS::Value mJSException; 
+    JS::Value mJSException;  
 
     
     
     MOZ_INIT_OUTSIDE_CTOR
-    DOMExceptionInfo* mDOMExceptionInfo; 
+    DOMExceptionInfo* mDOMExceptionInfo;  
 
     
     
@@ -539,7 +518,7 @@ private:
   JS::Value& InitJSException() {
     
     
-    new (&mExtra.mJSException) JS::Value(); 
+    new (&mExtra.mJSException) JS::Value();  
     return mExtra.mJSException;
   }
 
@@ -595,67 +574,56 @@ struct ThreadSafeJustSuppressCleanupPolicy {
   static const bool assertSameThread = false;
 };
 
-} 
+}  
 
 
 
-class ErrorResult :
-    public binding_danger::TErrorResult<binding_danger::AssertAndSuppressCleanupPolicy>
-{
-  typedef binding_danger::TErrorResult<binding_danger::AssertAndSuppressCleanupPolicy> BaseErrorResult;
+class ErrorResult : public binding_danger::TErrorResult<
+                        binding_danger::AssertAndSuppressCleanupPolicy> {
+  typedef binding_danger::TErrorResult<
+      binding_danger::AssertAndSuppressCleanupPolicy>
+      BaseErrorResult;
 
-public:
-  ErrorResult()
-    : BaseErrorResult()
-  {}
+ public:
+  ErrorResult() : BaseErrorResult() {}
 
-  ErrorResult(ErrorResult&& aRHS)
-    : BaseErrorResult(std::move(aRHS))
-  {}
+  ErrorResult(ErrorResult&& aRHS) : BaseErrorResult(std::move(aRHS)) {}
 
-  explicit ErrorResult(nsresult aRv)
-    : BaseErrorResult(aRv)
-  {}
+  explicit ErrorResult(nsresult aRv) : BaseErrorResult(aRv) {}
 
-  void operator=(nsresult rv)
-  {
-    BaseErrorResult::operator=(rv);
-  }
+  void operator=(nsresult rv) { BaseErrorResult::operator=(rv); }
 
-  ErrorResult& operator=(ErrorResult&& aRHS)
-  {
+  ErrorResult& operator=(ErrorResult&& aRHS) {
     BaseErrorResult::operator=(std::move(aRHS));
     return *this;
   }
 
-private:
+ private:
   
   
   ErrorResult(const ErrorResult&) = delete;
   void operator=(const ErrorResult&) = delete;
 };
 
-template<typename CleanupPolicy>
-binding_danger::TErrorResult<CleanupPolicy>::operator ErrorResult&()
-{
+template <typename CleanupPolicy>
+binding_danger::TErrorResult<CleanupPolicy>::operator ErrorResult&() {
   return *static_cast<ErrorResult*>(
-     reinterpret_cast<TErrorResult<AssertAndSuppressCleanupPolicy>*>(this));
+      reinterpret_cast<TErrorResult<AssertAndSuppressCleanupPolicy>*>(this));
 }
 
-template<typename CleanupPolicy>
-binding_danger::TErrorResult<CleanupPolicy>::operator const ErrorResult&() const
-{
+template <typename CleanupPolicy>
+binding_danger::TErrorResult<CleanupPolicy>::operator const ErrorResult&()
+    const {
   return *static_cast<const ErrorResult*>(
-     reinterpret_cast<const TErrorResult<AssertAndSuppressCleanupPolicy>*>(this));
+      reinterpret_cast<const TErrorResult<AssertAndSuppressCleanupPolicy>*>(
+          this));
 }
 
 
 
 
-class IgnoredErrorResult :
-    public binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy>
-{
-};
+class IgnoredErrorResult : public binding_danger::TErrorResult<
+                               binding_danger::JustSuppressCleanupPolicy> {};
 
 
 
@@ -663,58 +631,47 @@ class IgnoredErrorResult :
 
 
 
-class CopyableErrorResult :
-    public binding_danger::TErrorResult<binding_danger::ThreadSafeJustSuppressCleanupPolicy>
-{
-  typedef binding_danger::TErrorResult<binding_danger::ThreadSafeJustSuppressCleanupPolicy> BaseErrorResult;
+class CopyableErrorResult
+    : public binding_danger::TErrorResult<
+          binding_danger::ThreadSafeJustSuppressCleanupPolicy> {
+  typedef binding_danger::TErrorResult<
+      binding_danger::ThreadSafeJustSuppressCleanupPolicy>
+      BaseErrorResult;
 
-public:
-  CopyableErrorResult()
-    : BaseErrorResult()
-  {}
+ public:
+  CopyableErrorResult() : BaseErrorResult() {}
 
-  explicit CopyableErrorResult(const ErrorResult& aRight)
-    : BaseErrorResult()
-  {
+  explicit CopyableErrorResult(const ErrorResult& aRight) : BaseErrorResult() {
     auto val = reinterpret_cast<const CopyableErrorResult&>(aRight);
     operator=(val);
   }
 
   CopyableErrorResult(CopyableErrorResult&& aRHS)
-    : BaseErrorResult(std::move(aRHS))
-  {}
+      : BaseErrorResult(std::move(aRHS)) {}
 
-  explicit CopyableErrorResult(nsresult aRv)
-    : BaseErrorResult(aRv)
-  {}
+  explicit CopyableErrorResult(nsresult aRv) : BaseErrorResult(aRv) {}
 
-  void operator=(nsresult rv)
-  {
-    BaseErrorResult::operator=(rv);
-  }
+  void operator=(nsresult rv) { BaseErrorResult::operator=(rv); }
 
-  CopyableErrorResult& operator=(CopyableErrorResult&& aRHS)
-  {
+  CopyableErrorResult& operator=(CopyableErrorResult&& aRHS) {
     BaseErrorResult::operator=(std::move(aRHS));
     return *this;
   }
 
-  CopyableErrorResult(const CopyableErrorResult& aRight)
-    : BaseErrorResult()
-  {
+  CopyableErrorResult(const CopyableErrorResult& aRight) : BaseErrorResult() {
     operator=(aRight);
   }
 
-  CopyableErrorResult&
-  operator=(const CopyableErrorResult& aRight)
-  {
+  CopyableErrorResult& operator=(const CopyableErrorResult& aRight) {
     
     
     
-    MOZ_DIAGNOSTIC_ASSERT(!IsJSException(),
-                          "Attempt to copy to ErrorResult with a JS exception value.");
-    MOZ_DIAGNOSTIC_ASSERT(!aRight.IsJSException(),
-                          "Attempt to copy from ErrorResult with a JS exception value.");
+    MOZ_DIAGNOSTIC_ASSERT(
+        !IsJSException(),
+        "Attempt to copy to ErrorResult with a JS exception value.");
+    MOZ_DIAGNOSTIC_ASSERT(
+        !aRight.IsJSException(),
+        "Attempt to copy from ErrorResult with a JS exception value.");
     if (aRight.IsJSException()) {
       SuppressException();
       Throw(NS_ERROR_FAILURE);
@@ -727,13 +684,11 @@ public:
 
 namespace dom {
 namespace binding_detail {
-class FastErrorResult :
-    public mozilla::binding_danger::TErrorResult<
-      mozilla::binding_danger::JustAssertCleanupPolicy>
-{
+class FastErrorResult : public mozilla::binding_danger::TErrorResult<
+                            mozilla::binding_danger::JustAssertCleanupPolicy> {
 };
-} 
-} 
+}  
+}  
 
 
 
@@ -750,55 +705,42 @@ class FastErrorResult :
 
 namespace binding_danger {
 class OOMReporterInstantiator;
-} 
+}  
 
-class OOMReporter : private dom::binding_detail::FastErrorResult
-{
-public:
-  void ReportOOM()
-  {
-    Throw(NS_ERROR_OUT_OF_MEMORY);
-  }
+class OOMReporter : private dom::binding_detail::FastErrorResult {
+ public:
+  void ReportOOM() { Throw(NS_ERROR_OUT_OF_MEMORY); }
 
-private:
+ private:
   
   
   friend class binding_danger::OOMReporterInstantiator;
 
   
-  template<typename CleanupPolicy>
+  template <typename CleanupPolicy>
   friend class binding_danger::TErrorResult;
 
-  OOMReporter()
-    : dom::binding_detail::FastErrorResult()
-  {
-  }
+  OOMReporter() : dom::binding_detail::FastErrorResult() {}
 };
 
 namespace binding_danger {
-class OOMReporterInstantiator : public OOMReporter
-{
-public:
-  OOMReporterInstantiator()
-    : OOMReporter()
-  {
-  }
+class OOMReporterInstantiator : public OOMReporter {
+ public:
+  OOMReporterInstantiator() : OOMReporter() {}
 
   
   
   
-  bool MaybeSetPendingException(JSContext* cx)
-  {
+  bool MaybeSetPendingException(JSContext* cx) {
     return OOMReporter::MaybeSetPendingException(cx);
   }
 };
-} 
+}  
 
-template<typename CleanupPolicy>
-binding_danger::TErrorResult<CleanupPolicy>::operator OOMReporter&()
-{
+template <typename CleanupPolicy>
+binding_danger::TErrorResult<CleanupPolicy>::operator OOMReporter&() {
   return *static_cast<OOMReporter*>(
-     reinterpret_cast<TErrorResult<JustAssertCleanupPolicy>*>(this));
+      reinterpret_cast<TErrorResult<JustAssertCleanupPolicy>*>(this));
 }
 
 
@@ -807,42 +749,48 @@ binding_danger::TErrorResult<CleanupPolicy>::operator OOMReporter&()
 
 
 class MOZ_TEMPORARY_CLASS IgnoreErrors {
-public:
+ public:
   operator ErrorResult&() && { return mInner; }
   operator OOMReporter&() && { return mInner; }
-private:
+
+ private:
   
   
   
-  binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy> mInner;
+  binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy>
+      mInner;
 } JS_HAZ_ROOTED;
 
 
 
 
 
-#define ENSURE_SUCCESS(res, ret)                                          \
-  do {                                                                    \
-    if (res.Failed()) {                                                   \
-      nsCString msg;                                                      \
-      msg.AppendPrintf("ENSURE_SUCCESS(%s, %s) failed with "              \
-                       "result 0x%X", #res, #ret, res.ErrorCodeAsInt());  \
-      NS_WARNING(msg.get());                                              \
-      return ret;                                                         \
-    }                                                                     \
-  } while(0)
+#define ENSURE_SUCCESS(res, ret)                \
+  do {                                          \
+    if (res.Failed()) {                         \
+      nsCString msg;                            \
+      msg.AppendPrintf(                         \
+          "ENSURE_SUCCESS(%s, %s) failed with " \
+          "result 0x%X",                        \
+          #res, #ret, res.ErrorCodeAsInt());    \
+      NS_WARNING(msg.get());                    \
+      return ret;                               \
+    }                                           \
+  } while (0)
 
-#define ENSURE_SUCCESS_VOID(res)                                          \
-  do {                                                                    \
-    if (res.Failed()) {                                                   \
-      nsCString msg;                                                      \
-      msg.AppendPrintf("ENSURE_SUCCESS_VOID(%s) failed with "             \
-                       "result 0x%X", #res, res.ErrorCodeAsInt());        \
-      NS_WARNING(msg.get());                                              \
-      return;                                                             \
-    }                                                                     \
-  } while(0)
+#define ENSURE_SUCCESS_VOID(res)                 \
+  do {                                           \
+    if (res.Failed()) {                          \
+      nsCString msg;                             \
+      msg.AppendPrintf(                          \
+          "ENSURE_SUCCESS_VOID(%s) failed with " \
+          "result 0x%X",                         \
+          #res, res.ErrorCodeAsInt());           \
+      NS_WARNING(msg.get());                     \
+      return;                                    \
+    }                                            \
+  } while (0)
 
-} 
+}  
 
 #endif 

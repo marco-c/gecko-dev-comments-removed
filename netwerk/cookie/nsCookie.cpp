@@ -16,17 +16,12 @@
 
 
 
-static inline void
-StrBlockCopy(const nsACString &aSource1,
-             const nsACString &aSource2,
-             const nsACString &aSource3,
-             const nsACString &aSource4,
-             char             *&aDest1,
-             char             *&aDest2,
-             char             *&aDest3,
-             char             *&aDest4,
-             char             *&aDestEnd)
-{
+static inline void StrBlockCopy(const nsACString &aSource1,
+                                const nsACString &aSource2,
+                                const nsACString &aSource3,
+                                const nsACString &aSource4, char *&aDest1,
+                                char *&aDest2, char *&aDest3, char *&aDest4,
+                                char *&aDestEnd) {
   size_t len1 = aSource1.Length();
   memcpy(aDest1, aSource1.BeginReading(), len1);
   aDest1[len1] = 0;
@@ -67,9 +62,7 @@ StrBlockCopy(const nsACString &aSource1,
 
 static int64_t gLastCreationTime;
 
-int64_t
-nsCookie::GenerateUniqueCreationTime(int64_t aCreationTime)
-{
+int64_t nsCookie::GenerateUniqueCreationTime(int64_t aCreationTime) {
   
   
   if (aCreationTime > gLastCreationTime) {
@@ -81,20 +74,13 @@ nsCookie::GenerateUniqueCreationTime(int64_t aCreationTime)
   return ++gLastCreationTime;
 }
 
-nsCookie *
-nsCookie::Create(const nsACString &aName,
-                 const nsACString &aValue,
-                 const nsACString &aHost,
-                 const nsACString &aPath,
-                 int64_t           aExpiry,
-                 int64_t           aLastAccessed,
-                 int64_t           aCreationTime,
-                 bool              aIsSession,
-                 bool              aIsSecure,
-                 bool              aIsHttpOnly,
-                 const OriginAttributes& aOriginAttributes,
-                 int32_t           aSameSite)
-{
+nsCookie *nsCookie::Create(const nsACString &aName, const nsACString &aValue,
+                           const nsACString &aHost, const nsACString &aPath,
+                           int64_t aExpiry, int64_t aLastAccessed,
+                           int64_t aCreationTime, bool aIsSession,
+                           bool aIsSecure, bool aIsHttpOnly,
+                           const OriginAttributes &aOriginAttributes,
+                           int32_t aSameSite) {
   
   
   nsAutoCString aUTF8Value;
@@ -107,19 +93,16 @@ nsCookie::Create(const nsACString &aName,
   
   
   void *place = ::operator new(sizeof(nsCookie) + stringLength);
-  if (!place)
-    return nullptr;
+  if (!place) return nullptr;
 
   
   char *name, *value, *host, *path, *end;
   name = static_cast<char *>(place) + sizeof(nsCookie);
-  StrBlockCopy(aName, aUTF8Value, aHost, aPath,
-               name, value, host, path, end);
+  StrBlockCopy(aName, aUTF8Value, aHost, aPath, name, value, host, path, end);
 
   
   
-  if (aCreationTime > gLastCreationTime)
-    gLastCreationTime = aCreationTime;
+  if (aCreationTime > gLastCreationTime) gLastCreationTime = aCreationTime;
 
   
   if (aSameSite < 0 || aSameSite > nsICookie2::SAMESITE_STRICT) {
@@ -127,26 +110,23 @@ nsCookie::Create(const nsACString &aName,
   }
 
   
-  return new (place) nsCookie(name, value, host, path, end,
-                              aExpiry, aLastAccessed, aCreationTime,
-                              aIsSession, aIsSecure, aIsHttpOnly,
-                              aOriginAttributes, aSameSite);
+  return new (place) nsCookie(
+      name, value, host, path, end, aExpiry, aLastAccessed, aCreationTime,
+      aIsSession, aIsSecure, aIsHttpOnly, aOriginAttributes, aSameSite);
 }
 
-size_t
-nsCookie::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-{
-    
-    
-    return aMallocSizeOf(this);
+size_t nsCookie::SizeOfIncludingThis(
+    mozilla::MallocSizeOf aMallocSizeOf) const {
+  
+  
+  return aMallocSizeOf(this);
 }
 
-bool
-nsCookie::IsStale() const
-{
+bool nsCookie::IsStale() const {
   int64_t currentTimeInUsec = PR_Now();
 
-  return currentTimeInUsec - LastAccessed() > CookieStaleThreshold() * PR_USEC_PER_SEC;
+  return currentTimeInUsec - LastAccessed() >
+         CookieStaleThreshold() * PR_USEC_PER_SEC;
 }
 
 
@@ -155,23 +135,62 @@ nsCookie::IsStale() const
 
 
 
-NS_IMETHODIMP nsCookie::GetName(nsACString &aName)         { aName = Name();            return NS_OK; }
-NS_IMETHODIMP nsCookie::GetValue(nsACString &aValue)       { aValue = Value();          return NS_OK; }
-NS_IMETHODIMP nsCookie::GetHost(nsACString &aHost)         { aHost = Host();            return NS_OK; }
-NS_IMETHODIMP nsCookie::GetRawHost(nsACString &aHost)      { aHost = RawHost();         return NS_OK; }
-NS_IMETHODIMP nsCookie::GetPath(nsACString &aPath)         { aPath = Path();            return NS_OK; }
-NS_IMETHODIMP nsCookie::GetExpiry(int64_t *aExpiry)        { *aExpiry = Expiry();       return NS_OK; }
-NS_IMETHODIMP nsCookie::GetIsSession(bool *aIsSession)   { *aIsSession = IsSession(); return NS_OK; }
-NS_IMETHODIMP nsCookie::GetIsDomain(bool *aIsDomain)     { *aIsDomain = IsDomain();   return NS_OK; }
-NS_IMETHODIMP nsCookie::GetIsSecure(bool *aIsSecure)     { *aIsSecure = IsSecure();   return NS_OK; }
-NS_IMETHODIMP nsCookie::GetIsHttpOnly(bool *aHttpOnly)   { *aHttpOnly = IsHttpOnly(); return NS_OK; }
-NS_IMETHODIMP nsCookie::GetCreationTime(int64_t *aCreation){ *aCreation = CreationTime(); return NS_OK; }
-NS_IMETHODIMP nsCookie::GetLastAccessed(int64_t *aTime)    { *aTime = LastAccessed();   return NS_OK; }
-NS_IMETHODIMP nsCookie::GetSameSite(int32_t *aSameSite)    { *aSameSite = SameSite();   return NS_OK; }
+NS_IMETHODIMP nsCookie::GetName(nsACString &aName) {
+  aName = Name();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetValue(nsACString &aValue) {
+  aValue = Value();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetHost(nsACString &aHost) {
+  aHost = Host();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetRawHost(nsACString &aHost) {
+  aHost = RawHost();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetPath(nsACString &aPath) {
+  aPath = Path();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetExpiry(int64_t *aExpiry) {
+  *aExpiry = Expiry();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetIsSession(bool *aIsSession) {
+  *aIsSession = IsSession();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetIsDomain(bool *aIsDomain) {
+  *aIsDomain = IsDomain();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetIsSecure(bool *aIsSecure) {
+  *aIsSecure = IsSecure();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetIsHttpOnly(bool *aHttpOnly) {
+  *aHttpOnly = IsHttpOnly();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetCreationTime(int64_t *aCreation) {
+  *aCreation = CreationTime();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetLastAccessed(int64_t *aTime) {
+  *aTime = LastAccessed();
+  return NS_OK;
+}
+NS_IMETHODIMP nsCookie::GetSameSite(int32_t *aSameSite) {
+  *aSameSite = SameSite();
+  return NS_OK;
+}
 
 NS_IMETHODIMP
-nsCookie::GetOriginAttributes(JSContext *aCx, JS::MutableHandle<JS::Value> aVal)
-{
+nsCookie::GetOriginAttributes(JSContext *aCx,
+                              JS::MutableHandle<JS::Value> aVal) {
   if (NS_WARN_IF(!ToJSValue(aCx, mOriginAttributes, aVal))) {
     return NS_ERROR_FAILURE;
   }
@@ -181,8 +200,7 @@ nsCookie::GetOriginAttributes(JSContext *aCx, JS::MutableHandle<JS::Value> aVal)
 
 
 NS_IMETHODIMP
-nsCookie::GetExpires(uint64_t *aExpires)
-{
+nsCookie::GetExpires(uint64_t *aExpires) {
   if (IsSession()) {
     *aExpires = 0;
   } else {

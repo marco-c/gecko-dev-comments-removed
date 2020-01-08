@@ -67,8 +67,6 @@ void AtExitManager::ProcessCallbacksNow() {
 }
 
 
-bool AtExitManager::AlreadyRegistered() {
-  return !!g_top_manager;
-}
+bool AtExitManager::AlreadyRegistered() { return !!g_top_manager; }
 
 }  

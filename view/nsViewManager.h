@@ -21,10 +21,10 @@ class nsRegion;
 class nsDeviceContext;
 class nsIPresShell;
 
-class nsViewManager final
-{
+class nsViewManager final {
   ~nsViewManager();
-public:
+
+ public:
   friend class nsView;
 
   typedef mozilla::LayoutDeviceIntRect LayoutDeviceIntRect;
@@ -56,8 +56,7 @@ public:
 
 
 
-  nsView* CreateView(const nsRect& aBounds,
-                     nsView* aParent,
+  nsView* CreateView(const nsRect& aBounds, nsView* aParent,
                      nsViewVisibility aVisibilityFlag = nsViewVisibility_kShow);
 
   
@@ -72,7 +71,7 @@ public:
 
 
 
-  void SetRootView(nsView *aView);
+  void SetRootView(nsView* aView);
 
   
 
@@ -80,7 +79,7 @@ public:
 
 
 
-  void GetWindowDimensions(nscoord *aWidth, nscoord *aHeight);
+  void GetWindowDimensions(nscoord* aWidth, nscoord* aHeight);
 
   
 
@@ -102,7 +101,7 @@ public:
 
 
 
-  void InvalidateView(nsView *aView);
+  void InvalidateView(nsView* aView);
 
   
 
@@ -111,7 +110,7 @@ public:
 
 
 
-  void InvalidateViewNoSuppression(nsView *aView, const nsRect &aRect);
+  void InvalidateViewNoSuppression(nsView* aView, const nsRect& aRect);
 
   
 
@@ -126,8 +125,7 @@ public:
 
 
 
-  void DispatchEvent(mozilla::WidgetGUIEvent *aEvent,
-                     nsView* aViewTarget,
+  void DispatchEvent(mozilla::WidgetGUIEvent* aEvent, nsView* aViewTarget,
                      nsEventStatus* aStatus);
 
   
@@ -145,7 +143,7 @@ public:
 
 
 
-  void InsertChild(nsView *aParent, nsView *aChild, nsView *aSibling,
+  void InsertChild(nsView* aParent, nsView* aChild, nsView* aSibling,
                    bool aAfter);
 
   
@@ -155,7 +153,7 @@ public:
 
 
 
-  void RemoveChild(nsView *aChild);
+  void RemoveChild(nsView* aChild);
 
   
 
@@ -166,7 +164,7 @@ public:
 
 
 
-  void MoveViewTo(nsView *aView, nscoord aX, nscoord aY);
+  void MoveViewTo(nsView* aView, nscoord aX, nscoord aY);
 
   
 
@@ -180,7 +178,7 @@ public:
 
 
 
-  void ResizeView(nsView *aView, const nsRect &aRect,
+  void ResizeView(nsView* aView, const nsRect& aRect,
                   bool aRepaintExposedAreaOnly = false);
 
   
@@ -194,7 +192,7 @@ public:
 
 
 
-  void SetViewVisibility(nsView *aView, nsViewVisibility aVisible);
+  void SetViewVisibility(nsView* aView, nsViewVisibility aVisible);
 
   
 
@@ -208,7 +206,7 @@ public:
 
 
 
-  void SetViewZIndex(nsView *aView, bool aAutoZIndex, int32_t aZindex);
+  void SetViewZIndex(nsView* aView, bool aAutoZIndex, int32_t aZindex);
 
   
 
@@ -217,13 +215,13 @@ public:
 
 
 
-  void SetViewFloating(nsView *aView, bool aFloatingView);
+  void SetViewFloating(nsView* aView, bool aFloatingView);
 
   
 
 
 
-  void SetPresShell(nsIPresShell *aPresShell) { mPresShell = aPresShell; }
+  void SetPresShell(nsIPresShell* aPresShell) { mPresShell = aPresShell; }
 
   
 
@@ -233,10 +231,7 @@ public:
   
 
 
-  nsDeviceContext* GetDeviceContext() const
-  {
-    return mContext;
-  }
+  nsDeviceContext* GetDeviceContext() const { return mContext; }
 
   
 
@@ -251,7 +246,7 @@ public:
 
 
   class MOZ_STACK_CLASS AutoDisableRefresh {
-  public:
+   public:
     explicit AutoDisableRefresh(nsViewManager* aVM) {
       if (aVM) {
         mRootVM = aVM->IncrementDisableRefreshCount();
@@ -262,25 +257,26 @@ public:
         mRootVM->DecrementDisableRefreshCount();
       }
     }
-  private:
+
+   private:
     AutoDisableRefresh(const AutoDisableRefresh& aOther);
     const AutoDisableRefresh& operator=(const AutoDisableRefresh& aOther);
 
     RefPtr<nsViewManager> mRootVM;
   };
 
-private:
+ private:
   friend class AutoDisableRefresh;
 
   nsViewManager* IncrementDisableRefreshCount();
   void DecrementDisableRefreshCount();
 
-public:
+ public:
   
 
 
 
-  void GetRootWidget(nsIWidget **aWidget);
+  void GetRootWidget(nsIWidget** aWidget);
 
   
 
@@ -316,22 +312,21 @@ public:
 
   void UpdateWidgetGeometry();
 
-  int32_t AppUnitsPerDevPixel() const
-  {
+  int32_t AppUnitsPerDevPixel() const {
     return mContext->AppUnitsPerDevPixel();
   }
 
-private:
+ private:
   static uint32_t gLastUserEventTime;
 
   
   void InvalidateHierarchy();
   void FlushPendingInvalidates();
 
-  void ProcessPendingUpdatesForView(nsView *aView,
+  void ProcessPendingUpdatesForView(nsView* aView,
                                     bool aFlushDirtyRegion = true);
-  void ProcessPendingUpdatesRecurse(nsView* aView,
-                                    AutoTArray<nsCOMPtr<nsIWidget>, 1>& aWidgets);
+  void ProcessPendingUpdatesRecurse(
+      nsView* aView, AutoTArray<nsCOMPtr<nsIWidget>, 1>& aWidgets);
   void ProcessPendingUpdatesPaint(nsIWidget* aWidget);
 
   void FlushDirtyRegionToWidget(nsView* aView);
@@ -339,18 +334,19 @@ private:
 
 
   void CallWillPaintOnObservers();
-  void ReparentChildWidgets(nsView* aView, nsIWidget *aNewWidget);
-  void ReparentWidgets(nsView* aView, nsView *aParent);
-  void InvalidateWidgetArea(nsView *aWidgetView, const nsRegion &aDamagedRegion);
+  void ReparentChildWidgets(nsView* aView, nsIWidget* aNewWidget);
+  void ReparentWidgets(nsView* aView, nsView* aParent);
+  void InvalidateWidgetArea(nsView* aWidgetView,
+                            const nsRegion& aDamagedRegion);
 
-  void InvalidateViews(nsView *aView);
+  void InvalidateViews(nsView* aView);
 
   
   void Refresh(nsView* aView, const LayoutDeviceIntRegion& aRegion);
 
   
 
-  bool IsViewInserted(nsView *aView);
+  bool IsViewInserted(nsView* aView);
 
   
 
@@ -362,15 +358,11 @@ private:
   void DoSetWindowDimensions(nscoord aWidth, nscoord aHeight);
   bool ShouldDelayResize() const;
 
-  bool IsPainting() const {
-    return RootViewManager()->mPainting;
-  }
+  bool IsPainting() const { return RootViewManager()->mPainting; }
 
-  void SetPainting(bool aPainting) {
-    RootViewManager()->mPainting = aPainting;
-  }
+  void SetPainting(bool aPainting) { RootViewManager()->mPainting = aPainting; }
 
-  void InvalidateView(nsView *aView, const nsRect &aRect);
+  void InvalidateView(nsView* aView, const nsRect& aRect);
 
   nsViewManager* RootViewManager() const { return mRootViewManager; }
   bool IsRootVM() const { return this == RootViewManager(); }
@@ -378,7 +370,9 @@ private:
   
   
   
-  bool IsPaintingAllowed() { return RootViewManager()->mRefreshDisableCount == 0; }
+  bool IsPaintingAllowed() {
+    return RootViewManager()->mRefreshDisableCount == 0;
+  }
 
   void WillPaintWindow(nsIWidget* aWidget);
   bool PaintWindow(nsIWidget* aWidget, const LayoutDeviceIntRegion& aRegion);
@@ -389,31 +383,31 @@ private:
   void PostPendingUpdate();
 
   RefPtr<nsDeviceContext> mContext;
-  nsIPresShell   *mPresShell;
+  nsIPresShell* mPresShell;
 
   
   
-  nsSize            mDelayedResize;
+  nsSize mDelayedResize;
 
-  nsView           *mRootView;
+  nsView* mRootView;
   
   
-  nsViewManager   *mRootViewManager;
-
-  
-  
-  
-
-  int32_t           mRefreshDisableCount;
-  
-  bool              mPainting;
-  bool              mRecursiveRefreshPending;
-  bool              mHasPendingWidgetGeometryChanges;
+  nsViewManager* mRootViewManager;
 
   
+  
+  
+
+  int32_t mRefreshDisableCount;
+  
+  bool mPainting;
+  bool mRecursiveRefreshPending;
+  bool mHasPendingWidgetGeometryChanges;
 
   
-  static nsTArray<nsViewManager*> *gViewManagers;
+
+  
+  static nsTArray<nsViewManager*>* gViewManagers;
 };
 
 

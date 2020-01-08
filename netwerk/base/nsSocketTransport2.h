@@ -42,463 +42,443 @@ class nsIInterfaceRequestor;
 namespace mozilla {
 namespace net {
 
-nsresult
-ErrorAccordingToNSPR(PRErrorCode errorCode);
+nsresult ErrorAccordingToNSPR(PRErrorCode errorCode);
 
 class nsSocketTransport;
 
-class nsSocketInputStream : public nsIAsyncInputStream
-{
-public:
-    NS_DECL_ISUPPORTS_INHERITED
-    NS_DECL_NSIINPUTSTREAM
-    NS_DECL_NSIASYNCINPUTSTREAM
+class nsSocketInputStream : public nsIAsyncInputStream {
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIINPUTSTREAM
+  NS_DECL_NSIASYNCINPUTSTREAM
 
-    explicit nsSocketInputStream(nsSocketTransport *);
-    virtual ~nsSocketInputStream() = default;
+  explicit nsSocketInputStream(nsSocketTransport *);
+  virtual ~nsSocketInputStream() = default;
 
-    bool     IsReferenced() { return mReaderRefCnt > 0; }
-    nsresult Condition()    { return mCondition; }
-    uint64_t ByteCount()    { return mByteCount; }
+  bool IsReferenced() { return mReaderRefCnt > 0; }
+  nsresult Condition() { return mCondition; }
+  uint64_t ByteCount() { return mByteCount; }
 
-    
-    void OnSocketReady(nsresult condition);
+  
+  void OnSocketReady(nsresult condition);
 
-private:
-    nsSocketTransport               *mTransport;
-    ThreadSafeAutoRefCnt             mReaderRefCnt;
+ private:
+  nsSocketTransport *mTransport;
+  ThreadSafeAutoRefCnt mReaderRefCnt;
 
-    
-    nsresult                         mCondition;
-    nsCOMPtr<nsIInputStreamCallback> mCallback;
-    uint32_t                         mCallbackFlags;
-    uint64_t                         mByteCount;
+  
+  nsresult mCondition;
+  nsCOMPtr<nsIInputStreamCallback> mCallback;
+  uint32_t mCallbackFlags;
+  uint64_t mByteCount;
 };
 
 
 
-class nsSocketOutputStream : public nsIAsyncOutputStream
-{
-public:
-    NS_DECL_ISUPPORTS_INHERITED
-    NS_DECL_NSIOUTPUTSTREAM
-    NS_DECL_NSIASYNCOUTPUTSTREAM
+class nsSocketOutputStream : public nsIAsyncOutputStream {
+ public:
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIOUTPUTSTREAM
+  NS_DECL_NSIASYNCOUTPUTSTREAM
 
-    explicit nsSocketOutputStream(nsSocketTransport *);
-    virtual ~nsSocketOutputStream() = default;
+  explicit nsSocketOutputStream(nsSocketTransport *);
+  virtual ~nsSocketOutputStream() = default;
 
-    bool     IsReferenced() { return mWriterRefCnt > 0; }
-    nsresult Condition()    { return mCondition; }
-    uint64_t ByteCount()    { return mByteCount; }
+  bool IsReferenced() { return mWriterRefCnt > 0; }
+  nsresult Condition() { return mCondition; }
+  uint64_t ByteCount() { return mByteCount; }
 
-    
-    void OnSocketReady(nsresult condition);
+  
+  void OnSocketReady(nsresult condition);
 
-private:
-    static nsresult WriteFromSegments(nsIInputStream *, void *,
-                                      const char *, uint32_t offset,
-                                      uint32_t count, uint32_t *countRead);
+ private:
+  static nsresult WriteFromSegments(nsIInputStream *, void *, const char *,
+                                    uint32_t offset, uint32_t count,
+                                    uint32_t *countRead);
 
-    nsSocketTransport                *mTransport;
-    ThreadSafeAutoRefCnt              mWriterRefCnt;
+  nsSocketTransport *mTransport;
+  ThreadSafeAutoRefCnt mWriterRefCnt;
 
-    
-    nsresult                          mCondition;
-    nsCOMPtr<nsIOutputStreamCallback> mCallback;
-    uint32_t                          mCallbackFlags;
-    uint64_t                          mByteCount;
+  
+  nsresult mCondition;
+  nsCOMPtr<nsIOutputStreamCallback> mCallback;
+  uint32_t mCallbackFlags;
+  uint64_t mByteCount;
 };
 
 
 
-class nsSocketTransport final : public nsASocketHandler
-                              , public nsISocketTransport
-                              , public nsIDNSListener
-                              , public nsIClassInfo
-                              , public nsIInterfaceRequestor
-{
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSITRANSPORT
-    NS_DECL_NSISOCKETTRANSPORT
-    NS_DECL_NSIDNSLISTENER
-    NS_DECL_NSICLASSINFO
-    NS_DECL_NSIINTERFACEREQUESTOR
+class nsSocketTransport final : public nsASocketHandler,
+                                public nsISocketTransport,
+                                public nsIDNSListener,
+                                public nsIClassInfo,
+                                public nsIInterfaceRequestor {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSITRANSPORT
+  NS_DECL_NSISOCKETTRANSPORT
+  NS_DECL_NSIDNSLISTENER
+  NS_DECL_NSICLASSINFO
+  NS_DECL_NSIINTERFACEREQUESTOR
 
-    nsSocketTransport();
+  nsSocketTransport();
 
-    
-    
-    nsresult Init(const char **socketTypes, uint32_t typeCount,
-                  const nsACString &host, uint16_t port,
-                  const nsACString &hostRoute, uint16_t portRoute,
-                  nsIProxyInfo *proxyInfo);
+  
+  
+  nsresult Init(const char **socketTypes, uint32_t typeCount,
+                const nsACString &host, uint16_t port,
+                const nsACString &hostRoute, uint16_t portRoute,
+                nsIProxyInfo *proxyInfo);
 
-    
-    
-    nsresult InitWithConnectedSocket(PRFileDesc *socketFD,
-                                     const NetAddr *addr);
+  
+  
+  nsresult InitWithConnectedSocket(PRFileDesc *socketFD, const NetAddr *addr);
 
-    
-    
-    nsresult InitWithConnectedSocket(PRFileDesc* aSocketFD,
-                                     const NetAddr* aAddr,
-                                     nsISupports* aSecInfo);
+  
+  
+  nsresult InitWithConnectedSocket(PRFileDesc *aSocketFD, const NetAddr *aAddr,
+                                   nsISupports *aSecInfo);
 
 #ifdef XP_UNIX
-    
-    
-    
-    nsresult InitWithFilename(const char *filename);
+  
+  
+  
+  nsresult InitWithFilename(const char *filename);
 
-    
-    
-    
-    
-    
-    nsresult InitWithName(const char *name, size_t len);
+  
+  
+  
+  
+  
+  nsresult InitWithName(const char *name, size_t len);
 #endif
 
-    
-    void OnSocketReady(PRFileDesc *, int16_t outFlags) override;
-    void OnSocketDetached(PRFileDesc *) override;
-    void IsLocal(bool *aIsLocal) override;
-    void OnKeepaliveEnabledPrefChange(bool aEnabled) final;
+  
+  void OnSocketReady(PRFileDesc *, int16_t outFlags) override;
+  void OnSocketDetached(PRFileDesc *) override;
+  void IsLocal(bool *aIsLocal) override;
+  void OnKeepaliveEnabledPrefChange(bool aEnabled) final;
 
-    
-    void OnSocketEvent(uint32_t type, nsresult status, nsISupports *param);
+  
+  void OnSocketEvent(uint32_t type, nsresult status, nsISupports *param);
 
-    uint64_t ByteCountReceived() override { return mInput.ByteCount(); }
-    uint64_t ByteCountSent() override { return mOutput.ByteCount(); }
-    static void CloseSocket(PRFileDesc *aFd, bool aTelemetryEnabled);
-    static void SendPRBlockingTelemetry(PRIntervalTime aStart,
-        Telemetry::HistogramID aIDNormal,
-        Telemetry::HistogramID aIDShutdown,
-        Telemetry::HistogramID aIDConnectivityChange,
-        Telemetry::HistogramID aIDLinkChange,
-        Telemetry::HistogramID aIDOffline);
+  uint64_t ByteCountReceived() override { return mInput.ByteCount(); }
+  uint64_t ByteCountSent() override { return mOutput.ByteCount(); }
+  static void CloseSocket(PRFileDesc *aFd, bool aTelemetryEnabled);
+  static void SendPRBlockingTelemetry(
+      PRIntervalTime aStart, Telemetry::HistogramID aIDNormal,
+      Telemetry::HistogramID aIDShutdown,
+      Telemetry::HistogramID aIDConnectivityChange,
+      Telemetry::HistogramID aIDLinkChange, Telemetry::HistogramID aIDOffline);
 
+  static bool HasIPv4Connectivity() { return sHasIPv4Connectivity; }
+  static bool HasIPv6Connectivity() { return sHasIPv6Connectivity; }
 
-    static bool HasIPv4Connectivity() { return sHasIPv4Connectivity; }
-    static bool HasIPv6Connectivity() { return sHasIPv6Connectivity; }
-protected:
+ protected:
+  virtual ~nsSocketTransport();
+  void CleanupTypes();
 
-    virtual ~nsSocketTransport();
-    void     CleanupTypes();
+ private:
+  
+  enum {
+    MSG_ENSURE_CONNECT,
+    MSG_DNS_LOOKUP_COMPLETE,
+    MSG_RETRY_INIT_SOCKET,
+    MSG_TIMEOUT_CHANGED,
+    MSG_INPUT_CLOSED,
+    MSG_INPUT_PENDING,
+    MSG_OUTPUT_CLOSED,
+    MSG_OUTPUT_PENDING
+  };
+  nsresult PostEvent(uint32_t type, nsresult status = NS_OK,
+                     nsISupports *param = nullptr);
 
-private:
+  enum {
+    STATE_CLOSED,
+    STATE_IDLE,
+    STATE_RESOLVING,
+    STATE_CONNECTING,
+    STATE_TRANSFERRING
+  };
 
-    
-    enum {
-        MSG_ENSURE_CONNECT,
-        MSG_DNS_LOOKUP_COMPLETE,
-        MSG_RETRY_INIT_SOCKET,
-        MSG_TIMEOUT_CHANGED,
-        MSG_INPUT_CLOSED,
-        MSG_INPUT_PENDING,
-        MSG_OUTPUT_CLOSED,
-        MSG_OUTPUT_PENDING
-    };
-    nsresult PostEvent(uint32_t type, nsresult status = NS_OK, nsISupports *param = nullptr);
-
-    enum {
-        STATE_CLOSED,
-        STATE_IDLE,
-        STATE_RESOLVING,
-        STATE_CONNECTING,
-        STATE_TRANSFERRING
-    };
-
-    
-    class MOZ_STACK_CLASS PRFileDescAutoLock
-    {
-    public:
-      explicit PRFileDescAutoLock(nsSocketTransport *aSocketTransport,
-                                  bool aAlsoDuringFastOpen,
-                                  nsresult *aConditionWhileLocked = nullptr)
-        : mSocketTransport(aSocketTransport)
-        , mFd(nullptr)
-      {
-        MOZ_ASSERT(aSocketTransport);
-        MutexAutoLock lock(mSocketTransport->mLock);
-        if (aConditionWhileLocked) {
-          *aConditionWhileLocked = mSocketTransport->mCondition;
-          if (NS_FAILED(mSocketTransport->mCondition)) {
-            return;
-          }
-        }
-        if (!aAlsoDuringFastOpen) {
-          mFd = mSocketTransport->GetFD_Locked();
-        } else {
-          mFd = mSocketTransport->GetFD_LockedAlsoDuringFastOpen();
+  
+  class MOZ_STACK_CLASS PRFileDescAutoLock {
+   public:
+    explicit PRFileDescAutoLock(nsSocketTransport *aSocketTransport,
+                                bool aAlsoDuringFastOpen,
+                                nsresult *aConditionWhileLocked = nullptr)
+        : mSocketTransport(aSocketTransport), mFd(nullptr) {
+      MOZ_ASSERT(aSocketTransport);
+      MutexAutoLock lock(mSocketTransport->mLock);
+      if (aConditionWhileLocked) {
+        *aConditionWhileLocked = mSocketTransport->mCondition;
+        if (NS_FAILED(mSocketTransport->mCondition)) {
+          return;
         }
       }
-      ~PRFileDescAutoLock() {
-        MutexAutoLock lock(mSocketTransport->mLock);
-        if (mFd) {
-          mSocketTransport->ReleaseFD_Locked(mFd);
-        }
+      if (!aAlsoDuringFastOpen) {
+        mFd = mSocketTransport->GetFD_Locked();
+      } else {
+        mFd = mSocketTransport->GetFD_LockedAlsoDuringFastOpen();
       }
-      bool IsInitialized() {
-        return mFd;
+    }
+    ~PRFileDescAutoLock() {
+      MutexAutoLock lock(mSocketTransport->mLock);
+      if (mFd) {
+        mSocketTransport->ReleaseFD_Locked(mFd);
       }
-      operator PRFileDesc*() {
-        return mFd;
-      }
-      nsresult SetKeepaliveEnabled(bool aEnable);
-      nsresult SetKeepaliveVals(bool aEnabled, int aIdleTime,
-                                int aRetryInterval, int aProbeCount);
-    private:
-      operator PRFileDescAutoLock*() { return nullptr; }
+    }
+    bool IsInitialized() { return mFd; }
+    operator PRFileDesc *() { return mFd; }
+    nsresult SetKeepaliveEnabled(bool aEnable);
+    nsresult SetKeepaliveVals(bool aEnabled, int aIdleTime, int aRetryInterval,
+                              int aProbeCount);
 
-      
-      nsSocketTransport *mSocketTransport;
-      PRFileDesc        *mFd;
-    };
-    friend class PRFileDescAutoLock;
+   private:
+    operator PRFileDescAutoLock *() { return nullptr; }
 
-    class LockedPRFileDesc
-    {
-    public:
-      explicit LockedPRFileDesc(nsSocketTransport *aSocketTransport)
-        : mSocketTransport(aSocketTransport)
-        , mFd(nullptr)
-      {
-        MOZ_ASSERT(aSocketTransport);
-      }
-      ~LockedPRFileDesc() = default;
-      bool IsInitialized() {
-        return mFd;
-      }
-      LockedPRFileDesc& operator=(PRFileDesc *aFd) {
+    
+    nsSocketTransport *mSocketTransport;
+    PRFileDesc *mFd;
+  };
+  friend class PRFileDescAutoLock;
+
+  class LockedPRFileDesc {
+   public:
+    explicit LockedPRFileDesc(nsSocketTransport *aSocketTransport)
+        : mSocketTransport(aSocketTransport), mFd(nullptr) {
+      MOZ_ASSERT(aSocketTransport);
+    }
+    ~LockedPRFileDesc() = default;
+    bool IsInitialized() { return mFd; }
+    LockedPRFileDesc &operator=(PRFileDesc *aFd) {
+      mSocketTransport->mLock.AssertCurrentThreadOwns();
+      mFd = aFd;
+      return *this;
+    }
+    operator PRFileDesc *() {
+      if (mSocketTransport->mAttached) {
         mSocketTransport->mLock.AssertCurrentThreadOwns();
-        mFd = aFd;
-        return *this;
       }
-      operator PRFileDesc*() {
-        if (mSocketTransport->mAttached) {
-          mSocketTransport->mLock.AssertCurrentThreadOwns();
-        }
-        return mFd;
-      }
-      bool operator==(PRFileDesc *aFd) {
-        mSocketTransport->mLock.AssertCurrentThreadOwns();
-        return mFd == aFd;
-      }
-    private:
-      operator LockedPRFileDesc*() { return nullptr; }
-      
-      nsSocketTransport *mSocketTransport;
-      PRFileDesc        *mFd;
-    };
-    friend class LockedPRFileDesc;
-
-    
-    
-    
-    
-
-    
-    char       **mTypes;
-    uint32_t     mTypeCount;
-    nsCString    mHost;
-    nsCString    mProxyHost;
-    nsCString    mOriginHost;
-    uint16_t     mPort;
-    nsCOMPtr<nsIProxyInfo> mProxyInfo;
-    uint16_t     mProxyPort;
-    uint16_t     mOriginPort;
-    bool mProxyTransparent;
-    bool mProxyTransparentResolvesHost;
-    bool mHttpsProxy;
-    uint32_t     mConnectionFlags;
-    
-    
-    bool         mResetFamilyPreference;
-    uint32_t     mTlsFlags;
-    bool mReuseAddrPort;
-
-    
-    
-    
-    
-    
-    OriginAttributes mOriginAttributes;
-
-    uint16_t         SocketPort() { return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyPort : mPort; }
-    const nsCString &SocketHost() { return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyHost : mHost; }
-
-    
-    
-    
-    
-
-    
-    uint32_t     mState;     
-    bool mAttached;
-    bool mInputClosed;
-    bool mOutputClosed;
-
-    
-    
-    bool mResolving;
-
-    nsCOMPtr<nsICancelable> mDNSRequest;
-    nsCOMPtr<nsIDNSRecord>  mDNSRecord;
-
-    nsresult                mDNSLookupStatus;
-    PRIntervalTime          mDNSARequestFinished;
-    nsCOMPtr<nsICancelable> mDNSTxtRequest;
-    nsCString               mDNSRecordTxt;
-    bool                    mEsniQueried;
-    bool                    mEsniUsed;
-
-    
-    
-    void                    SetSocketName(PRFileDesc *fd);
-    NetAddr                 mNetAddr;
-    NetAddr                 mSelfAddr; 
-    Atomic<bool, Relaxed>   mNetAddrIsSet;
-    Atomic<bool, Relaxed>   mSelfAddrIsSet;
-
-    nsAutoPtr<NetAddr>      mBindAddr;
-
-    
-
-    void     SendStatus(nsresult status);
-    nsresult ResolveHost();
-    nsresult BuildSocket(PRFileDesc *&, bool &, bool &);
-    nsresult InitiateSocket();
-    bool     RecoverFromError();
-
-    void OnMsgInputPending()
-    {
-        if (mState == STATE_TRANSFERRING)
-            mPollFlags |= (PR_POLL_READ | PR_POLL_EXCEPT);
+      return mFd;
     }
-    void OnMsgOutputPending()
-    {
-        if (mState == STATE_TRANSFERRING)
-            mPollFlags |= (PR_POLL_WRITE | PR_POLL_EXCEPT);
+    bool operator==(PRFileDesc *aFd) {
+      mSocketTransport->mLock.AssertCurrentThreadOwns();
+      return mFd == aFd;
     }
-    void OnMsgInputClosed(nsresult reason);
-    void OnMsgOutputClosed(nsresult reason);
 
+   private:
+    operator LockedPRFileDesc *() { return nullptr; }
     
-    void OnSocketConnected();
+    nsSocketTransport *mSocketTransport;
+    PRFileDesc *mFd;
+  };
+  friend class LockedPRFileDesc;
 
-    
-    
-    
+  
+  
+  
+  
 
-    Mutex            mLock;  
-    LockedPRFileDesc mFD;
-    nsrefcnt         mFDref;       
-    bool             mFDconnected; 
-    bool             mFDFastOpenInProgress; 
-                                            
-                                            
+  
+  char **mTypes;
+  uint32_t mTypeCount;
+  nsCString mHost;
+  nsCString mProxyHost;
+  nsCString mOriginHost;
+  uint16_t mPort;
+  nsCOMPtr<nsIProxyInfo> mProxyInfo;
+  uint16_t mProxyPort;
+  uint16_t mOriginPort;
+  bool mProxyTransparent;
+  bool mProxyTransparentResolvesHost;
+  bool mHttpsProxy;
+  uint32_t mConnectionFlags;
+  
+  
+  bool mResetFamilyPreference;
+  uint32_t mTlsFlags;
+  bool mReuseAddrPort;
 
-    
-    
-    
-    RefPtr<nsSocketTransportService> mSocketTransportService;
+  
+  
+  
+  
+  
+  OriginAttributes mOriginAttributes;
 
-    nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
-    nsCOMPtr<nsITransportEventSink> mEventSink;
-    nsCOMPtr<nsISupports>           mSecInfo;
+  uint16_t SocketPort() {
+    return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyPort : mPort;
+  }
+  const nsCString &SocketHost() {
+    return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyHost : mHost;
+  }
 
-    nsSocketInputStream  mInput;
-    nsSocketOutputStream mOutput;
+  
+  
+  
+  
 
-    friend class nsSocketInputStream;
-    friend class nsSocketOutputStream;
+  
+  uint32_t mState;  
+  bool mAttached;
+  bool mInputClosed;
+  bool mOutputClosed;
 
-    
-    uint16_t mTimeouts[2];
+  
+  
+  bool mResolving;
 
-    
-    uint8_t mQoSBits;
+  nsCOMPtr<nsICancelable> mDNSRequest;
+  nsCOMPtr<nsIDNSRecord> mDNSRecord;
 
-    
-    
-    
-    PRFileDesc *GetFD_Locked();
-    PRFileDesc *GetFD_LockedAlsoDuringFastOpen();
-    void        ReleaseFD_Locked(PRFileDesc *fd);
-    bool FastOpenInProgress();
+  nsresult mDNSLookupStatus;
+  PRIntervalTime mDNSARequestFinished;
+  nsCOMPtr<nsICancelable> mDNSTxtRequest;
+  nsCString mDNSRecordTxt;
+  bool mEsniQueried;
+  bool mEsniUsed;
 
+  
+  
+  void SetSocketName(PRFileDesc *fd);
+  NetAddr mNetAddr;
+  NetAddr mSelfAddr;  
+  Atomic<bool, Relaxed> mNetAddrIsSet;
+  Atomic<bool, Relaxed> mSelfAddrIsSet;
+
+  nsAutoPtr<NetAddr> mBindAddr;
+
+  
+
+  void SendStatus(nsresult status);
+  nsresult ResolveHost();
+  nsresult BuildSocket(PRFileDesc *&, bool &, bool &);
+  nsresult InitiateSocket();
+  bool RecoverFromError();
+
+  void OnMsgInputPending() {
+    if (mState == STATE_TRANSFERRING)
+      mPollFlags |= (PR_POLL_READ | PR_POLL_EXCEPT);
+  }
+  void OnMsgOutputPending() {
+    if (mState == STATE_TRANSFERRING)
+      mPollFlags |= (PR_POLL_WRITE | PR_POLL_EXCEPT);
+  }
+  void OnMsgInputClosed(nsresult reason);
+  void OnMsgOutputClosed(nsresult reason);
+
+  
+  void OnSocketConnected();
+
+  
+  
+  
+
+  Mutex mLock;  
+  LockedPRFileDesc mFD;
+  nsrefcnt mFDref;             
+  bool mFDconnected;           
+  bool mFDFastOpenInProgress;  
+                               
+                               
+
+  
+  
+  
+  RefPtr<nsSocketTransportService> mSocketTransportService;
+
+  nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
+  nsCOMPtr<nsITransportEventSink> mEventSink;
+  nsCOMPtr<nsISupports> mSecInfo;
+
+  nsSocketInputStream mInput;
+  nsSocketOutputStream mOutput;
+
+  friend class nsSocketInputStream;
+  friend class nsSocketOutputStream;
+
+  
+  uint16_t mTimeouts[2];
+
+  
+  uint8_t mQoSBits;
+
+  
+  
+  
+  PRFileDesc *GetFD_Locked();
+  PRFileDesc *GetFD_LockedAlsoDuringFastOpen();
+  void ReleaseFD_Locked(PRFileDesc *fd);
+  bool FastOpenInProgress();
+
+  
+  
+  
+  void OnInputClosed(nsresult reason) {
     
+    if (OnSocketThread())
+      OnMsgInputClosed(reason);
+    else
+      PostEvent(MSG_INPUT_CLOSED, reason);
+  }
+  void OnInputPending() {
     
+    if (OnSocketThread())
+      OnMsgInputPending();
+    else
+      PostEvent(MSG_INPUT_PENDING);
+  }
+  void OnOutputClosed(nsresult reason) {
     
-    void OnInputClosed(nsresult reason)
-    {
-        
-        if (OnSocketThread())
-            OnMsgInputClosed(reason);
-        else
-            PostEvent(MSG_INPUT_CLOSED, reason);
-    }
-    void OnInputPending()
-    {
-        
-        if (OnSocketThread())
-            OnMsgInputPending();
-        else
-            PostEvent(MSG_INPUT_PENDING);
-    }
-    void OnOutputClosed(nsresult reason)
-    {
-        
-        if (OnSocketThread())
-            OnMsgOutputClosed(reason); 
-        else
-            PostEvent(MSG_OUTPUT_CLOSED, reason);
-    }
-    void OnOutputPending()
-    {
-        
-        if (OnSocketThread())
-            OnMsgOutputPending();
-        else
-            PostEvent(MSG_OUTPUT_PENDING);
-    }
+    if (OnSocketThread())
+      OnMsgOutputClosed(reason);  
+    else
+      PostEvent(MSG_OUTPUT_CLOSED, reason);
+  }
+  void OnOutputPending() {
+    
+    if (OnSocketThread())
+      OnMsgOutputPending();
+    else
+      PostEvent(MSG_OUTPUT_PENDING);
+  }
 
 #ifdef ENABLE_SOCKET_TRACING
-    void TraceInBuf(const char *buf, int32_t n);
-    void TraceOutBuf(const char *buf, int32_t n);
+  void TraceInBuf(const char *buf, int32_t n);
+  void TraceOutBuf(const char *buf, int32_t n);
 #endif
 
-    
-    nsresult EnsureKeepaliveValsAreInitialized();
+  
+  nsresult EnsureKeepaliveValsAreInitialized();
 
-    
-    nsresult SetKeepaliveEnabledInternal(bool aEnable);
+  
+  nsresult SetKeepaliveEnabledInternal(bool aEnable);
 
-    
-    
-    bool mKeepaliveEnabled;
+  
+  
+  bool mKeepaliveEnabled;
 
-    
-    int32_t mKeepaliveIdleTimeS;
-    int32_t mKeepaliveRetryIntervalS;
-    int32_t mKeepaliveProbeCount;
+  
+  int32_t mKeepaliveIdleTimeS;
+  int32_t mKeepaliveRetryIntervalS;
+  int32_t mKeepaliveProbeCount;
 
-    
-    TCPFastOpen *mFastOpenCallback;
-    bool mFastOpenLayerHasBufferedData;
-    uint8_t mFastOpenStatus;
-    nsresult mFirstRetryError;
+  
+  TCPFastOpen *mFastOpenCallback;
+  bool mFastOpenLayerHasBufferedData;
+  uint8_t mFastOpenStatus;
+  nsresult mFirstRetryError;
 
-    bool mDoNotRetryToConnect;
+  bool mDoNotRetryToConnect;
 
-    static bool sHasIPv4Connectivity;
-    static bool sHasIPv6Connectivity;
-    static uint32_t sIPv4FailedCounter;
-    static uint32_t sIPv6FailedCounter;
+  static bool sHasIPv4Connectivity;
+  static bool sHasIPv6Connectivity;
+  static uint32_t sIPv4FailedCounter;
+  static uint32_t sIPv6FailedCounter;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

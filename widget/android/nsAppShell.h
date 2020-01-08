@@ -26,247 +26,214 @@
 namespace mozilla {
 bool ProcessNextEvent();
 void NotifyEvent();
-}
+}  
 
 class nsWindow;
 
-class nsAppShell :
-    public nsBaseAppShell
-{
-public:
-    struct Event : mozilla::LinkedListElement<Event>
-    {
-        static uint64_t GetTime()
-        {
-            timespec time;
-            if (clock_gettime(CLOCK_MONOTONIC, &time)) {
-                return 0ull;
-            }
-            return uint64_t(time.tv_sec) * 1000000000ull + time.tv_nsec;
-        }
-
-        uint64_t mPostTime{ 0 };
-
-        bool HasSameTypeAs(const Event* other) const
-        {
-            
-            return *reinterpret_cast<const uintptr_t*>(this)
-                    == *reinterpret_cast<const uintptr_t*>(other);
-        }
-
-        virtual ~Event() {}
-        virtual void Run() = 0;
-
-        virtual void PostTo(mozilla::LinkedList<Event>& queue)
-        {
-            queue.insertBack(this);
-        }
-
-        virtual bool IsUIEvent() const
-        {
-            return false;
-        }
-    };
-
-    template<typename T>
-    class LambdaEvent : public Event
-    {
-    protected:
-        T lambda;
-
-    public:
-        explicit LambdaEvent(T&& l) : lambda(std::move(l)) {}
-        void Run() override { return lambda(); }
-    };
-
-    class ProxyEvent : public Event
-    {
-    protected:
-        mozilla::UniquePtr<Event> baseEvent;
-
-    public:
-        explicit ProxyEvent(mozilla::UniquePtr<Event>&& event)
-            : baseEvent(std::move(event))
-        {}
-
-        void PostTo(mozilla::LinkedList<Event>& queue) override
-        {
-            baseEvent->PostTo(queue);
-        }
-
-        void Run() override
-        {
-            baseEvent->Run();
-        }
-    };
-
-    static nsAppShell* Get()
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        return sAppShell;
+class nsAppShell : public nsBaseAppShell {
+ public:
+  struct Event : mozilla::LinkedListElement<Event> {
+    static uint64_t GetTime() {
+      timespec time;
+      if (clock_gettime(CLOCK_MONOTONIC, &time)) {
+        return 0ull;
+      }
+      return uint64_t(time.tv_sec) * 1000000000ull + time.tv_nsec;
     }
 
-    nsAppShell();
+    uint64_t mPostTime{0};
 
-    NS_DECL_ISUPPORTS_INHERITED
-    NS_DECL_NSIOBSERVER
+    bool HasSameTypeAs(const Event* other) const {
+      
+      return *reinterpret_cast<const uintptr_t*>(this) ==
+             *reinterpret_cast<const uintptr_t*>(other);
+    }
 
-    nsresult Init();
+    virtual ~Event() {}
+    virtual void Run() = 0;
 
-    void NotifyNativeEvent();
-    bool ProcessNextNativeEvent(bool mayWait) override;
+    virtual void PostTo(mozilla::LinkedList<Event>& queue) {
+      queue.insertBack(this);
+    }
 
+    virtual bool IsUIEvent() const { return false; }
+  };
+
+  template <typename T>
+  class LambdaEvent : public Event {
+   protected:
+    T lambda;
+
+   public:
+    explicit LambdaEvent(T&& l) : lambda(std::move(l)) {}
+    void Run() override { return lambda(); }
+  };
+
+  class ProxyEvent : public Event {
+   protected:
+    mozilla::UniquePtr<Event> baseEvent;
+
+   public:
+    explicit ProxyEvent(mozilla::UniquePtr<Event>&& event)
+        : baseEvent(std::move(event)) {}
+
+    void PostTo(mozilla::LinkedList<Event>& queue) override {
+      baseEvent->PostTo(queue);
+    }
+
+    void Run() override { baseEvent->Run(); }
+  };
+
+  static nsAppShell* Get() {
+    MOZ_ASSERT(NS_IsMainThread());
+    return sAppShell;
+  }
+
+  nsAppShell();
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIOBSERVER
+
+  nsresult Init();
+
+  void NotifyNativeEvent();
+  bool ProcessNextNativeEvent(bool mayWait) override;
+
+  
+  
+  template <typename T, typename D>
+  static void PostEvent(mozilla::UniquePtr<T, D>&& event) {
+    mozilla::MutexAutoLock lock(*sAppShellLock);
+    if (!sAppShell) {
+      return;
+    }
+    sAppShell->mEventQueue.Post(std::move(event));
+  }
+
+  
+  
+  template <typename T>
+  static void PostEvent(T&& lambda) {
+    mozilla::MutexAutoLock lock(*sAppShellLock);
+    if (!sAppShell) {
+      return;
+    }
+    sAppShell->mEventQueue.Post(
+        mozilla::MakeUnique<LambdaEvent<T>>(std::move(lambda)));
+  }
+
+  
+  static void SyncRunEvent(Event&& event,
+                           mozilla::UniquePtr<Event> (*eventFactory)(
+                               mozilla::UniquePtr<Event>&&) = nullptr);
+
+  template <typename T>
+  static typename mozilla::EnableIf<!mozilla::IsBaseOf<Event, T>::value,
+                                    void>::Type
+  SyncRunEvent(T&& lambda) {
+    SyncRunEvent(LambdaEvent<T>(std::forward<T>(lambda)));
+  }
+
+  static already_AddRefed<nsIURI> ResolveURI(const nsCString& aUriStr);
+
+  void SetBrowserApp(nsIAndroidBrowserApp* aBrowserApp) {
+    mBrowserApp = aBrowserApp;
+  }
+
+  nsIAndroidBrowserApp* GetBrowserApp() { return mBrowserApp; }
+
+ protected:
+  static nsAppShell* sAppShell;
+  static mozilla::StaticAutoPtr<mozilla::Mutex> sAppShellLock;
+
+  static void RecordLatencies();
+
+  virtual ~nsAppShell();
+
+  nsresult AddObserver(const nsAString& aObserverKey, nsIObserver* aObserver);
+
+  class NativeCallbackEvent : public Event {
     
     
-    template<typename T, typename D>
-    static void PostEvent(mozilla::UniquePtr<T, D>&& event)
-    {
-        mozilla::MutexAutoLock lock(*sAppShellLock);
-        if (!sAppShell) {
-            return;
-        }
-        sAppShell->mEventQueue.Post(std::move(event));
+    nsAppShell* const appShell;
+
+   public:
+    explicit NativeCallbackEvent(nsAppShell* as) : appShell(as) {}
+    void Run() override { appShell->NativeEventCallback(); }
+  };
+
+  void ScheduleNativeEventCallback() override {
+    mEventQueue.Post(mozilla::MakeUnique<NativeCallbackEvent>(this));
+  }
+
+  class Queue {
+   private:
+    mozilla::Monitor mMonitor;
+    mozilla::LinkedList<Event> mQueue;
+
+   public:
+    enum { LATENCY_UI, LATENCY_OTHER, LATENCY_COUNT };
+    static uint32_t sLatencyCount[LATENCY_COUNT];
+    static uint64_t sLatencyTime[LATENCY_COUNT];
+
+    Queue() : mMonitor("nsAppShell.Queue") {}
+
+    void Signal() {
+      mozilla::MonitorAutoLock lock(mMonitor);
+      lock.NotifyAll();
     }
 
-    
-    
-    template<typename T>
-    static void PostEvent(T&& lambda)
-    {
-        mozilla::MutexAutoLock lock(*sAppShellLock);
-        if (!sAppShell) {
-            return;
-        }
-        sAppShell->mEventQueue.Post(mozilla::MakeUnique<LambdaEvent<T>>(
-                std::move(lambda)));
-    }
+    void Post(mozilla::UniquePtr<Event>&& event) {
+      MOZ_ASSERT(event && !event->isInList());
 
-    
-    static void SyncRunEvent(Event&& event,
-                             mozilla::UniquePtr<Event>(*eventFactory)(
-                                    mozilla::UniquePtr<Event>&&) = nullptr);
-
-    template<typename T> static
-    typename mozilla::EnableIf<!mozilla::IsBaseOf<Event, T>::value, void>::Type
-    SyncRunEvent(T&& lambda)
-    {
-        SyncRunEvent(LambdaEvent<T>(std::forward<T>(lambda)));
-    }
-
-    static already_AddRefed<nsIURI> ResolveURI(const nsCString& aUriStr);
-
-    void SetBrowserApp(nsIAndroidBrowserApp* aBrowserApp) {
-        mBrowserApp = aBrowserApp;
-    }
-
-    nsIAndroidBrowserApp* GetBrowserApp() {
-        return mBrowserApp;
-    }
-
-protected:
-    static nsAppShell* sAppShell;
-    static mozilla::StaticAutoPtr<mozilla::Mutex> sAppShellLock;
-
-    static void RecordLatencies();
-
-    virtual ~nsAppShell();
-
-    nsresult AddObserver(const nsAString &aObserverKey, nsIObserver *aObserver);
-
-    class NativeCallbackEvent : public Event
-    {
+      mozilla::MonitorAutoLock lock(mMonitor);
+      event->PostTo(mQueue);
+      if (event->isInList()) {
+        event->mPostTime = Event::GetTime();
         
-        
-        nsAppShell* const appShell;
-
-    public:
-        explicit NativeCallbackEvent(nsAppShell* as) : appShell(as) {}
-        void Run() override { appShell->NativeEventCallback(); }
-    };
-
-    void ScheduleNativeEventCallback() override
-    {
-        mEventQueue.Post(mozilla::MakeUnique<NativeCallbackEvent>(this));
+        mozilla::Unused << event.release();
+      }
+      lock.NotifyAll();
     }
 
-    class Queue
-    {
-    private:
-        mozilla::Monitor mMonitor;
-        mozilla::LinkedList<Event> mQueue;
+    mozilla::UniquePtr<Event> Pop(bool mayWait) {
+      mozilla::MonitorAutoLock lock(mMonitor);
 
-    public:
-        enum {
-            LATENCY_UI,
-            LATENCY_OTHER,
-            LATENCY_COUNT
-        };
-        static uint32_t sLatencyCount[LATENCY_COUNT];
-        static uint64_t sLatencyTime[LATENCY_COUNT];
-
-        Queue() : mMonitor("nsAppShell.Queue")
-        {}
-
-        void Signal()
-        {
-            mozilla::MonitorAutoLock lock(mMonitor);
-            lock.NotifyAll();
-        }
-
-        void Post(mozilla::UniquePtr<Event>&& event)
-        {
-            MOZ_ASSERT(event && !event->isInList());
-
-            mozilla::MonitorAutoLock lock(mMonitor);
-            event->PostTo(mQueue);
-            if (event->isInList()) {
-                event->mPostTime = Event::GetTime();
-                
-                mozilla::Unused << event.release();
-            }
-            lock.NotifyAll();
-        }
-
-        mozilla::UniquePtr<Event> Pop(bool mayWait)
-        {
-            mozilla::MonitorAutoLock lock(mMonitor);
-
-            if (mayWait && mQueue.isEmpty()) {
+      if (mayWait && mQueue.isEmpty()) {
 #ifdef EARLY_BETA_OR_EARLIER
-                
-                nsAppShell::RecordLatencies();
+        
+        nsAppShell::RecordLatencies();
 #endif
-                lock.Wait();
-            }
+        lock.Wait();
+      }
 
-            
-            mozilla::UniquePtr<Event> event(mQueue.popFirst());
-            if (!event || !event->mPostTime) {
-                return event;
-            }
+      
+      mozilla::UniquePtr<Event> event(mQueue.popFirst());
+      if (!event || !event->mPostTime) {
+        return event;
+      }
 
 #ifdef EARLY_BETA_OR_EARLIER
-            const size_t latencyType = event->IsUIEvent() ? LATENCY_UI : LATENCY_OTHER;
-            const uint64_t latency = Event::GetTime() - event->mPostTime;
+      const size_t latencyType =
+          event->IsUIEvent() ? LATENCY_UI : LATENCY_OTHER;
+      const uint64_t latency = Event::GetTime() - event->mPostTime;
 
-            sLatencyCount[latencyType]++;
-            sLatencyTime[latencyType] += latency;
+      sLatencyCount[latencyType]++;
+      sLatencyTime[latencyType] += latency;
 #endif
-            return event;
-        }
+      return event;
+    }
 
-    } mEventQueue;
+  } mEventQueue;
 
-private:
+ private:
+  mozilla::CondVar mSyncRunFinished;
+  bool mSyncRunQuit;
 
-    mozilla::CondVar mSyncRunFinished;
-    bool mSyncRunQuit;
+  bool mAllowCoalescingTouches;
 
-    bool mAllowCoalescingTouches;
-
-    nsCOMPtr<nsIAndroidBrowserApp> mBrowserApp;
-    nsInterfaceHashtable<nsStringHashKey, nsIObserver> mObserversHash;
+  nsCOMPtr<nsIAndroidBrowserApp> mBrowserApp;
+  nsInterfaceHashtable<nsStringHashKey, nsIObserver> mObserversHash;
 };
 
-#endif 
-
+#endif  

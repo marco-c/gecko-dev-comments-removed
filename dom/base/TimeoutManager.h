@@ -24,9 +24,8 @@ namespace dom {
 class TimeoutExecutor;
 
 
-class TimeoutManager final
-{
-public:
+class TimeoutManager final {
+ public:
   explicit TimeoutManager(nsGlobalWindowInner& aWindow);
   ~TimeoutManager();
   TimeoutManager(const TimeoutManager& rhs) = delete;
@@ -37,17 +36,12 @@ public:
   static uint32_t GetNestingLevel() { return sNestingLevel; }
   static void SetNestingLevel(uint32_t aLevel) { sNestingLevel = aLevel; }
 
-  bool HasTimeouts() const
-  {
-    return !mTimeouts.IsEmpty();
-  }
+  bool HasTimeouts() const { return !mTimeouts.IsEmpty(); }
 
-  nsresult SetTimeout(nsITimeoutHandler* aHandler,
-                      int32_t interval, bool aIsInterval,
-                      mozilla::dom::Timeout::Reason aReason,
+  nsresult SetTimeout(nsITimeoutHandler* aHandler, int32_t interval,
+                      bool aIsInterval, mozilla::dom::Timeout::Reason aReason,
                       int32_t* aReturn);
-  void ClearTimeout(int32_t aTimerId,
-                    mozilla::dom::Timeout::Reason aReason);
+  void ClearTimeout(int32_t aTimerId, mozilla::dom::Timeout::Reason aReason);
 
   
   void RunTimeout(const TimeStamp& aNow, const TimeStamp& aTargetDeadline);
@@ -86,22 +80,20 @@ public:
   
   
   template <class Callable>
-  void ForEachUnorderedTimeout(Callable c)
-  {
+  void ForEachUnorderedTimeout(Callable c) {
     mTimeouts.ForEach(c);
   }
 
   void BeginSyncOperation();
   void EndSyncOperation();
 
-  nsIEventTarget*
-  EventTarget();
+  nsIEventTarget* EventTarget();
 
   bool BudgetThrottlingEnabled(bool aIsBackground) const;
 
   static const uint32_t InvalidFiringId;
 
-private:
+ private:
   void MaybeStartThrottleTimeout();
 
   
@@ -113,46 +105,34 @@ private:
 
   bool IsActive() const;
 
-  uint32_t
-  CreateFiringId();
+  uint32_t CreateFiringId();
 
-  void
-  DestroyFiringId(uint32_t aFiringId);
+  void DestroyFiringId(uint32_t aFiringId);
 
-  bool
-  IsValidFiringId(uint32_t aFiringId) const;
+  bool IsValidFiringId(uint32_t aFiringId) const;
 
-  bool
-  IsInvalidFiringId(uint32_t aFiringId) const;
+  bool IsInvalidFiringId(uint32_t aFiringId) const;
 
-  TimeDuration
-  MinSchedulingDelay() const;
+  TimeDuration MinSchedulingDelay() const;
 
   nsresult MaybeSchedule(const TimeStamp& aWhen,
                          const TimeStamp& aNow = TimeStamp::Now());
 
-  void RecordExecution(Timeout* aRunningTimeout,
-                       Timeout* aTimeout);
+  void RecordExecution(Timeout* aRunningTimeout, Timeout* aTimeout);
 
   void UpdateBudget(const TimeStamp& aNow,
                     const TimeDuration& aDuration = TimeDuration());
 
   mozilla::PerformanceCounter* GetPerformanceCounter();
-private:
+
+ private:
   struct Timeouts {
-    explicit Timeouts(const TimeoutManager& aManager)
-      : mManager(aManager)
-    {
-    }
+    explicit Timeouts(const TimeoutManager& aManager) : mManager(aManager) {}
 
     
     
     
-    enum class SortBy
-    {
-      TimeRemaining,
-      TimeWhen
-    };
+    enum class SortBy { TimeRemaining, TimeWhen };
     void Insert(mozilla::dom::Timeout* aTimeout, SortBy aSortBy);
 
     const Timeout* GetFirst() const { return mTimeoutList.getFirst(); }
@@ -164,10 +144,8 @@ private:
     void Clear() { mTimeoutList.clear(); }
 
     template <class Callable>
-    void ForEach(Callable c)
-    {
-      for (Timeout* timeout = GetFirst();
-           timeout;
+    void ForEach(Callable c) {
+      for (Timeout* timeout = GetFirst(); timeout;
            timeout = timeout->getNext()) {
         c(timeout);
       }
@@ -175,10 +153,8 @@ private:
 
     
     template <class Callable>
-    bool ForEachAbortable(Callable c)
-    {
-      for (Timeout* timeout = GetFirst();
-           timeout;
+    bool ForEachAbortable(Callable c) {
+      for (Timeout* timeout = GetFirst(); timeout;
            timeout = timeout->getNext()) {
         if (c(timeout)) {
           return true;
@@ -187,47 +163,47 @@ private:
       return false;
     }
 
-  private:
+   private:
     
     
-    const TimeoutManager&     mManager;
+    const TimeoutManager& mManager;
 
     typedef mozilla::LinkedList<RefPtr<Timeout>> TimeoutList;
 
     
     
-    TimeoutList               mTimeoutList;
+    TimeoutList mTimeoutList;
   };
 
   
   
-  nsGlobalWindowInner&             mWindow;
+  nsGlobalWindowInner& mWindow;
   
   
   
-  RefPtr<TimeoutExecutor>     mExecutor;
+  RefPtr<TimeoutExecutor> mExecutor;
   
-  Timeouts                    mTimeouts;
-  uint32_t                    mTimeoutIdCounter;
-  uint32_t                    mNextFiringId;
-  AutoTArray<uint32_t, 2>     mFiringIdStack;
-  mozilla::dom::Timeout*      mRunningTimeout;
+  Timeouts mTimeouts;
+  uint32_t mTimeoutIdCounter;
+  uint32_t mNextFiringId;
+  AutoTArray<uint32_t, 2> mFiringIdStack;
+  mozilla::dom::Timeout* mRunningTimeout;
 
-   
-  uint32_t                    mIdleCallbackTimeoutCounter;
+  
+  uint32_t mIdleCallbackTimeoutCounter;
 
-  nsCOMPtr<nsITimer>          mThrottleTimeoutsTimer;
-  mozilla::TimeStamp          mLastBudgetUpdate;
-  mozilla::TimeDuration       mExecutionBudget;
+  nsCOMPtr<nsITimer> mThrottleTimeoutsTimer;
+  mozilla::TimeStamp mLastBudgetUpdate;
+  mozilla::TimeDuration mExecutionBudget;
 
-  bool                        mThrottleTimeouts;
-  bool                        mThrottleTrackingTimeouts;
-  bool                        mBudgetThrottleTimeouts;
+  bool mThrottleTimeouts;
+  bool mThrottleTrackingTimeouts;
+  bool mBudgetThrottleTimeouts;
 
-  static uint32_t             sNestingLevel;
+  static uint32_t sNestingLevel;
 };
 
-}
-}
+}  
+}  
 
 #endif

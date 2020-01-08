@@ -10,13 +10,10 @@
 
 #include "nsTStringComparator.cpp"
 
-
-int
-nsCaseInsensitiveCStringComparator::operator()(const char_type* aLhs,
-                                               const char_type* aRhs,
-                                               uint32_t aLhsLength,
-                                               uint32_t aRhsLength) const
-{
+int nsCaseInsensitiveCStringComparator::operator()(const char_type* aLhs,
+                                                   const char_type* aRhs,
+                                                   uint32_t aLhsLength,
+                                                   uint32_t aRhsLength) const {
   if (aLhsLength != aRhsLength) {
     return (aLhsLength > aRhsLength) ? 1 : -1;
   }

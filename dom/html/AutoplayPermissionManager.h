@@ -25,9 +25,8 @@ namespace mozilla {
 
 
 class AutoplayPermissionManager final
-  : public SupportsWeakPtr<AutoplayPermissionManager>
-{
-public:
+    : public SupportsWeakPtr<AutoplayPermissionManager> {
+ public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(AutoplayPermissionManager)
   NS_INLINE_DECL_REFCOUNTING(AutoplayPermissionManager)
 
@@ -53,7 +52,7 @@ public:
   
   void DenyPlayRequestIfExists();
 
-private:
+ private:
   ~AutoplayPermissionManager();
 
   nsWeakPtr mWindow;
@@ -64,6 +63,6 @@ private:
   bool mRequestDispatched = false;
 };
 
-} 
+}  
 
-#endif 
+#endif  

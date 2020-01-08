@@ -17,10 +17,8 @@ namespace mozilla {
 class Encoding;
 namespace dom {
 
-class FallbackEncoding : public nsIObserver
-                       , nsSupportsWeakReference
-{
-public:
+class FallbackEncoding : public nsIObserver, nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -73,23 +71,19 @@ public:
 
   static void Shutdown();
 
-private:
-
+ private:
   
 
 
   static StaticRefPtr<FallbackEncoding> sInstance;
 
   FallbackEncoding();
-  virtual ~FallbackEncoding() {};
+  virtual ~FallbackEncoding(){};
 
   
 
 
-  void Invalidate()
-  {
-    mFallback = nullptr;
-  }
+  void Invalidate() { mFallback = nullptr; }
 
   static void PrefChanged(const char*, void*);
 
@@ -102,8 +96,7 @@ private:
   const Encoding* mFallback;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

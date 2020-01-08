@@ -12,49 +12,51 @@ typedef nsTArray<double> AudioDoubleArray;
 namespace blink {
 
 class IIRFilter final {
-public:
-    
-    
-    const static size_t kMaxOrder = 19;
-    IIRFilter(const AudioDoubleArray* feedforwardCoef, const AudioDoubleArray* feedbackCoef);
-    ~IIRFilter();
+ public:
+  
+  
+  
+  const static size_t kMaxOrder = 19;
+  IIRFilter(const AudioDoubleArray* feedforwardCoef,
+            const AudioDoubleArray* feedbackCoef);
+  ~IIRFilter();
 
-    void process(const float* sourceP, float* destP, size_t framesToProcess);
+  void process(const float* sourceP, float* destP, size_t framesToProcess);
 
-    void reset();
+  void reset();
 
-    void getFrequencyResponse(int nFrequencies,
-        const float* frequency,
-        float* magResponse,
-        float* phaseResponse);
+  void getFrequencyResponse(int nFrequencies, const float* frequency,
+                            float* magResponse, float* phaseResponse);
 
-    bool buffersAreZero();
+  bool buffersAreZero();
 
-private:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    AudioDoubleArray m_xBuffer;
-    AudioDoubleArray m_yBuffer;
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  AudioDoubleArray m_xBuffer;
+  AudioDoubleArray m_yBuffer;
 
-    
-    
-    
-    int m_bufferIndex;
+  
+  
+  
+  
+  int m_bufferIndex;
 
-    
-    const AudioDoubleArray* m_feedback;
-    const AudioDoubleArray* m_feedforward;
+  
+  const AudioDoubleArray* m_feedback;
+  const AudioDoubleArray* m_feedforward;
 };
 
-} 
+}  
 
-#endif 
+#endif  

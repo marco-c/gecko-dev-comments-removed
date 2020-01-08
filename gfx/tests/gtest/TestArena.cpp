@@ -21,13 +21,14 @@ using namespace mozilla::gfx;
 #endif
 
 
+
 namespace test_arena {
 
 class A;
 class B;
 
 class Base {
-public:
+ public:
   virtual ~Base() {}
   virtual A* AsA() { return nullptr; }
   virtual B* AsB() { return nullptr; }
@@ -37,7 +38,7 @@ static int sDtorItemA = 0;
 static int sDtorItemB = 0;
 
 class A : public Base {
-public:
+ public:
   virtual A* AsA() override { return this; }
 
   explicit A(uint64_t val) : mVal(val) {}
@@ -47,7 +48,7 @@ public:
 };
 
 class B : public Base {
-public:
+ public:
   virtual B* AsB() override { return this; }
 
   explicit B(const string& str) : mVal(str) {}
@@ -63,8 +64,7 @@ struct BigStruct {
   explicit BigStruct(uint64_t val) : mVal(val) {}
 };
 
-void TestArenaAlloc(IterableArena::ArenaType aType)
-{
+void TestArenaAlloc(IterableArena::ArenaType aType) {
   sDtorItemA = 0;
   sDtorItemB = 0;
   IterableArena arena(aType, 256);
@@ -72,9 +72,7 @@ void TestArenaAlloc(IterableArena::ArenaType aType)
   
   {
     int iterations = 0;
-    arena.ForEach([&](void* item){
-      iterations++;
-    });
+    arena.ForEach([&](void* item) { iterations++; });
     ASSERT_EQ(iterations, 0);
   }
 
@@ -107,23 +105,22 @@ void TestArenaAlloc(IterableArena::ArenaType aType)
   ASSERT_EQ(((Base*)arena.GetStorage(a1))->AsA()->mVal, (uint64_t)42);
   ASSERT_EQ(((Base*)arena.GetStorage(a2))->AsA()->mVal, (uint64_t)1337);
 
-  ASSERT_EQ(((Base*)arena.GetStorage(b1))->AsB()->mVal, std::string("Obladi oblada"));
-  ASSERT_EQ(((Base*)arena.GetStorage(b2))->AsB()->mVal, std::string("Yellow submarine"));
-  ASSERT_EQ(((Base*)arena.GetStorage(b3))->AsB()->mVal, std::string("She's got a ticket to ride"));
+  ASSERT_EQ(((Base*)arena.GetStorage(b1))->AsB()->mVal,
+            std::string("Obladi oblada"));
+  ASSERT_EQ(((Base*)arena.GetStorage(b2))->AsB()->mVal,
+            std::string("Yellow submarine"));
+  ASSERT_EQ(((Base*)arena.GetStorage(b3))->AsB()->mVal,
+            std::string("She's got a ticket to ride"));
 
   {
     int iterations = 0;
-    arena.ForEach([&](void* item){
-      iterations++;
-    });
+    arena.ForEach([&](void* item) { iterations++; });
     ASSERT_EQ(iterations, 5);
   }
 
   
   
-  arena.ForEach([](void* item){
-    ((Base*)item)->~Base();
-  });
+  arena.ForEach([](void* item) { ((Base*)item)->~Base(); });
   arena.Clear();
   ASSERT_EQ(sDtorItemA, 2);
   ASSERT_EQ(sDtorItemB, 3);
@@ -131,16 +128,12 @@ void TestArenaAlloc(IterableArena::ArenaType aType)
   
   {
     int iterations = 0;
-    arena.ForEach([&](void* item){
-      iterations++;
-    });
+    arena.ForEach([&](void* item) { iterations++; });
     ASSERT_EQ(iterations, 0);
   }
-
 }
 
-void TestArenaLimit(IterableArena::ArenaType aType, bool aShouldReachLimit)
-{
+void TestArenaLimit(IterableArena::ArenaType aType, bool aShouldReachLimit) {
   IterableArena arena(aType, 128);
 
   
@@ -158,7 +151,7 @@ void TestArenaLimit(IterableArena::ArenaType aType, bool aShouldReachLimit)
   ASSERT_EQ(reachedLimit, aShouldReachLimit);
 }
 
-} 
+}  
 
 using namespace test_arena;
 
@@ -179,6 +172,7 @@ TEST(Moz2D, GrowableArena) {
   auto b = arena.Alloc<BigStruct>(2);
   auto c = arena.Alloc<BigStruct>(3);
 
+  
   
   ASSERT_EQ(((BigStruct*)arena.GetStorage(a))->mVal, (uint64_t)1);
   ASSERT_EQ(((BigStruct*)arena.GetStorage(b))->mVal, (uint64_t)2);

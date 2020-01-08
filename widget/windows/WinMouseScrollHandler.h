@@ -26,41 +26,35 @@ class ModifierKeyState;
 struct MSGResult;
 
 class MouseScrollHandler {
-public:
+ public:
   static MouseScrollHandler* GetInstance();
 
   static void Initialize();
   static void Shutdown();
 
   static bool NeedsMessage(UINT aMsg);
-  static bool ProcessMessage(nsWindowBase* aWidget,
-                             UINT msg,
-                             WPARAM wParam,
-                             LPARAM lParam,
-                             MSGResult& aResult);
+  static bool ProcessMessage(nsWindowBase* aWidget, UINT msg, WPARAM wParam,
+                             LPARAM lParam, MSGResult& aResult);
 
   
 
 
 
-  static nsresult SynthesizeNativeMouseScrollEvent(nsWindowBase* aWidget,
-                                                   const LayoutDeviceIntPoint& aPoint,
-                                                   uint32_t aNativeMessage,
-                                                   int32_t aDelta,
-                                                   uint32_t aModifierFlags,
-                                                   uint32_t aAdditionalFlags);
+  static nsresult SynthesizeNativeMouseScrollEvent(
+      nsWindowBase* aWidget, const LayoutDeviceIntPoint& aPoint,
+      uint32_t aNativeMessage, int32_t aDelta, uint32_t aModifierFlags,
+      uint32_t aAdditionalFlags);
 
   
 
 
 
 
-  static bool IsWaitingInternalMessage()
-  {
+  static bool IsWaitingInternalMessage() {
     return sInstance && sInstance->mIsWaitingInternalMessage;
   }
 
-private:
+ private:
   MouseScrollHandler();
   ~MouseScrollHandler();
 
@@ -74,8 +68,7 @@ private:
 
 
 
-  static void InitEvent(nsWindowBase* aWidget,
-                        WidgetGUIEvent& aEvent,
+  static void InitEvent(nsWindowBase* aWidget, WidgetGUIEvent& aEvent,
                         LayoutDeviceIntPoint* aPoint = nullptr);
 
   
@@ -109,10 +102,8 @@ private:
 
 
 
-  void ProcessNativeMouseWheelMessage(nsWindowBase* aWidget,
-                                      UINT aMessage,
-                                      WPARAM aWParam,
-                                      LPARAM aLParam);
+  void ProcessNativeMouseWheelMessage(nsWindowBase* aWidget, UINT aMessage,
+                                      WPARAM aWParam, LPARAM aLParam);
 
   
 
@@ -126,10 +117,8 @@ private:
 
 
 
-  bool ProcessNativeScrollMessage(nsWindowBase* aWidget,
-                                  UINT aMessage,
-                                  WPARAM aWParam,
-                                  LPARAM aLParam);
+  bool ProcessNativeScrollMessage(nsWindowBase* aWidget, UINT aMessage,
+                                  WPARAM aWParam, LPARAM aLParam);
 
   
 
@@ -141,10 +130,8 @@ private:
 
 
 
-  void HandleMouseWheelMessage(nsWindowBase* aWidget,
-                               UINT aMessage,
-                               WPARAM aWParam,
-                               LPARAM aLParam);
+  void HandleMouseWheelMessage(nsWindowBase* aWidget, UINT aMessage,
+                               WPARAM aWParam, LPARAM aLParam);
 
   
 
@@ -158,8 +145,7 @@ private:
 
 
   void HandleScrollMessageAsMouseWheelMessage(nsWindowBase* aWidget,
-                                              UINT aMessage,
-                                              WPARAM aWParam,
+                                              UINT aMessage, WPARAM aWParam,
                                               LPARAM aLParam);
 
   
@@ -173,17 +159,16 @@ private:
 
 
 
-  POINT ComputeMessagePos(UINT aMessage,
-                          WPARAM aWParam,
-                          LPARAM aLParam);
+  POINT ComputeMessagePos(UINT aMessage, WPARAM aWParam, LPARAM aLParam);
 
   class EventInfo {
-  public:
+   public:
     
 
 
 
-    EventInfo(nsWindowBase* aWidget, UINT aMessage, WPARAM aWParam, LPARAM aLParam);
+    EventInfo(nsWindowBase* aWidget, UINT aMessage, WPARAM aWParam,
+              LPARAM aLParam);
 
     bool CanDispatchWheelEvent() const;
 
@@ -199,11 +184,9 @@ private:
 
     int32_t GetScrollAmount() const;
 
-  protected:
-    EventInfo() :
-      mIsVertical(false), mIsPage(false), mDelta(0), mWnd(nullptr)
-    {
-    }
+   protected:
+    EventInfo()
+        : mIsVertical(false), mIsPage(false), mDelta(0), mWnd(nullptr) {}
 
     
     bool mIsVertical;
@@ -218,11 +201,8 @@ private:
   };
 
   class LastEventInfo : public EventInfo {
-  public:
-    LastEventInfo() :
-      EventInfo(), mAccumulatedDelta(0)
-    {
-    }
+   public:
+    LastEventInfo() : EventInfo(), mAccumulatedDelta(0) {}
 
     
 
@@ -255,11 +235,10 @@ private:
 
 
 
-    bool InitWheelEvent(nsWindowBase* aWidget,
-                        WidgetWheelEvent& aWheelEvent,
+    bool InitWheelEvent(nsWindowBase* aWidget, WidgetWheelEvent& aWheelEvent,
                         const ModifierKeyState& aModKeyState);
 
-  private:
+   private:
     static int32_t RoundDelta(double aDelta);
 
     int32_t mAccumulatedDelta;
@@ -268,7 +247,7 @@ private:
   LastEventInfo mLastEventInfo;
 
   class SystemSettings {
-  public:
+   public:
     SystemSettings() : mInitialized(false) {}
 
     void Init();
@@ -289,17 +268,15 @@ private:
     
     bool IsOverridingSystemScrollSpeedAllowed();
 
-    int32_t GetScrollAmount(bool aForVertical) const
-    {
+    int32_t GetScrollAmount(bool aForVertical) const {
       MOZ_ASSERT(mInitialized, "SystemSettings must be initialized");
       return aForVertical ? mScrollLines : mScrollChars;
     }
 
-    bool IsPageScroll(bool aForVertical) const
-    {
+    bool IsPageScroll(bool aForVertical) const {
       MOZ_ASSERT(mInitialized, "SystemSettings must be initialized");
-      return aForVertical ? (uint32_t(mScrollLines) == WHEEL_PAGESCROLL) :
-                            (uint32_t(mScrollChars) == WHEEL_PAGESCROLL);
+      return aForVertical ? (uint32_t(mScrollLines) == WHEEL_PAGESCROLL)
+                          : (uint32_t(mScrollChars) == WHEEL_PAGESCROLL);
     }
 
     
@@ -307,7 +284,7 @@ private:
     static int32_t DefaultScrollLines() { return 3; }
     static int32_t DefaultScrollChars() { return 3; }
 
-  private:
+   private:
     bool mInitialized;
     
     
@@ -329,59 +306,51 @@ private:
   SystemSettings mSystemSettings;
 
   class UserPrefs {
-  public:
+   public:
     UserPrefs();
     ~UserPrefs();
 
     void MarkDirty();
 
-    bool IsScrollMessageHandledAsWheelMessage()
-    {
+    bool IsScrollMessageHandledAsWheelMessage() {
       Init();
       return mScrollMessageHandledAsWheelMessage;
     }
 
-    bool IsSystemSettingCacheEnabled()
-    {
+    bool IsSystemSettingCacheEnabled() {
       Init();
       return mEnableSystemSettingCache;
     }
 
-    bool IsSystemSettingCacheForciblyEnabled()
-    {
+    bool IsSystemSettingCacheForciblyEnabled() {
       Init();
       return mForceEnableSystemSettingCache;
     }
 
-    bool ShouldEmulateToMakeWindowUnderCursorForeground()
-    {
+    bool ShouldEmulateToMakeWindowUnderCursorForeground() {
       Init();
       return mEmulateToMakeWindowUnderCursorForeground;
     }
 
-    int32_t GetOverriddenVerticalScrollAmout()
-    {
+    int32_t GetOverriddenVerticalScrollAmout() {
       Init();
       return mOverriddenVerticalScrollAmount;
     }
 
-    int32_t GetOverriddenHorizontalScrollAmout()
-    {
+    int32_t GetOverriddenHorizontalScrollAmout() {
       Init();
       return mOverriddenHorizontalScrollAmount;
     }
 
-    int32_t GetMouseScrollTransactionTimeout()
-    {
+    int32_t GetMouseScrollTransactionTimeout() {
       Init();
       return mMouseScrollTransactionTimeout;
     }
 
-  private:
+   private:
     void Init();
 
-    static void OnChange(const char* aPrefName, UserPrefs* aClosure)
-    {
+    static void OnChange(const char* aPrefName, UserPrefs* aClosure) {
       aClosure->MarkDirty();
     }
 
@@ -398,19 +367,20 @@ private:
   UserPrefs mUserPrefs;
 
   class SynthesizingEvent {
-  public:
-    SynthesizingEvent() :
-      mWnd(nullptr), mMessage(0), mWParam(0), mLParam(0),
-      mStatus(NOT_SYNTHESIZING)
-    {
-    }
+   public:
+    SynthesizingEvent()
+        : mWnd(nullptr),
+          mMessage(0),
+          mWParam(0),
+          mLParam(0),
+          mStatus(NOT_SYNTHESIZING) {}
 
     ~SynthesizingEvent() {}
 
     static bool IsSynthesizing();
 
-    nsresult Synthesize(const POINTS& aCursorPoint, HWND aWnd,
-                        UINT aMessage, WPARAM aWParam, LPARAM aLParam,
+    nsresult Synthesize(const POINTS& aCursorPoint, HWND aWnd, UINT aMessage,
+                        WPARAM aWParam, LPARAM aLParam,
                         const BYTE (&aKeyStates)[256]);
 
     void NativeMessageReceived(nsWindowBase* aWidget, UINT aMessage,
@@ -421,7 +391,7 @@ private:
 
     const POINTS& GetCursorPoint() const { return mCursorPoint; }
 
-  private:
+   private:
     POINTS mCursorPoint;
     HWND mWnd;
     UINT mMessage;
@@ -438,8 +408,7 @@ private:
     };
     Status mStatus;
 
-    const char* GetStatusName()
-    {
+    const char* GetStatusName() {
       switch (mStatus) {
         case NOT_SYNTHESIZING:
           return "NOT_SYNTHESIZING";
@@ -455,49 +424,38 @@ private:
     }
 
     void Finish();
-  }; 
+  };  
 
   SynthesizingEvent* mSynthesizingEvent;
 
-public:
-
+ public:
   class Device {
-  public:
+   public:
     
-    class SynTP
-    {
-    public:
-      static bool IsDriverInstalled()
-      {
-        return sMajorVersion != 0;
-      }
+    class SynTP {
+     public:
+      static bool IsDriverInstalled() { return sMajorVersion != 0; }
       
 
 
 
-      static int32_t GetDriverMajorVersion()
-      {
-        return sMajorVersion;
-      }
+      static int32_t GetDriverMajorVersion() { return sMajorVersion; }
       
 
 
 
-      static int32_t GetDriverMinorVersion()
-      {
-        return sMinorVersion;
-      }
+      static int32_t GetDriverMinorVersion() { return sMinorVersion; }
 
       static void Init();
 
-    private:
+     private:
       static bool sInitialized;
       static int32_t sMajorVersion;
       static int32_t sMinorVersion;
     };
 
     class Elantech {
-    public:
+     public:
       
 
 
@@ -514,10 +472,8 @@ public:
 
 
 
-      static bool HandleKeyMessage(nsWindowBase* aWidget,
-                                   UINT aMsg,
-                                   WPARAM aWParam,
-                                   LPARAM aLParam);
+      static bool HandleKeyMessage(nsWindowBase* aWidget, UINT aMsg,
+                                   WPARAM aWParam, LPARAM aLParam);
 
       static void UpdateZoomUntil();
       static bool IsZooming();
@@ -526,89 +482,77 @@ public:
 
       static bool IsPinchHackNeeded() { return sUsePinchHack; }
 
-
-    private:
+     private:
       
       static bool sUseSwipeHack;
       
       static bool sUsePinchHack;
       static DWORD sZoomUntil;
-    }; 
+    };  
 
     
-    class Apoint
-    {
-    public:
-      static bool IsDriverInstalled()
-      {
-        return sMajorVersion != 0;
-      }
+    class Apoint {
+     public:
+      static bool IsDriverInstalled() { return sMajorVersion != 0; }
       
 
 
 
-      static int32_t GetDriverMajorVersion()
-      {
-        return sMajorVersion;
-      }
+      static int32_t GetDriverMajorVersion() { return sMajorVersion; }
       
 
 
 
-      static int32_t GetDriverMinorVersion()
-      {
-        return sMinorVersion;
-      }
+      static int32_t GetDriverMinorVersion() { return sMinorVersion; }
 
       static void Init();
 
-    private:
+     private:
       static bool sInitialized;
       static int32_t sMajorVersion;
       static int32_t sMinorVersion;
     };
 
     class TrackPoint {
-    public:
+     public:
       
 
 
 
       static bool IsDriverInstalled();
-    }; 
+    };  
 
     class UltraNav {
-    public:
+     public:
       
 
 
 
 
       static bool IsObsoleteDriverInstalled();
-    }; 
+    };  
 
     class SetPoint {
-    public:
+     public:
       
 
 
 
 
-      static bool IsGetMessagePosResponseValid(UINT aMessage,
-                                               WPARAM aWParam,
+      static bool IsGetMessagePosResponseValid(UINT aMessage, WPARAM aWParam,
                                                LPARAM aLParam);
-    private:
+
+     private:
       static bool sMightBeUsing;
     };
 
     static void Init();
 
-    static bool IsFakeScrollableWindowNeeded()
-    {
+    static bool IsFakeScrollableWindowNeeded() {
       return sFakeScrollableWindowNeeded;
     }
 
-  private:
+   private:
     
 
 
@@ -623,10 +567,10 @@ public:
                                   bool aValueIfAutomatic);
 
     static bool sFakeScrollableWindowNeeded;
-  }; 
+  };  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -14,20 +14,21 @@ class nsIFormControl;
 namespace mozilla {
 namespace dom {
 class HTMLInputElement;
-} 
-} 
+}  
+}  
 
-#define NS_IRADIOGROUPCONTAINER_IID   \
-{ 0x800320a0, 0x733f, 0x11e4, \
-  { 0x82, 0xf8, 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66 } }
+#define NS_IRADIOGROUPCONTAINER_IID                  \
+  {                                                  \
+    0x800320a0, 0x733f, 0x11e4, {                    \
+      0x82, 0xf8, 0x08, 0x00, 0x20, 0x0c, 0x9a, 0x66 \
+    }                                                \
+  }
 
 
 
 
-class nsIRadioGroupContainer : public nsISupports
-{
-public:
-
+class nsIRadioGroupContainer : public nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IRADIOGROUPCONTAINER_IID)
 
   
@@ -37,8 +38,7 @@ public:
 
 
 
-  NS_IMETHOD WalkRadioGroup(const nsAString& aName,
-                            nsIRadioVisitor* aVisitor,
+  NS_IMETHOD WalkRadioGroup(const nsAString& aName, nsIRadioVisitor* aVisitor,
                             bool aFlushContent) = 0;
 
   
@@ -46,15 +46,16 @@ public:
 
 
 
-  virtual void SetCurrentRadioButton(const nsAString& aName,
-                                     mozilla::dom::HTMLInputElement* aRadio) = 0;
+  virtual void SetCurrentRadioButton(
+      const nsAString& aName, mozilla::dom::HTMLInputElement* aRadio) = 0;
 
   
 
 
 
 
-  virtual mozilla::dom::HTMLInputElement* GetCurrentRadioButton(const nsAString& aName) = 0;
+  virtual mozilla::dom::HTMLInputElement* GetCurrentRadioButton(
+      const nsAString& aName) = 0;
 
   
 
@@ -63,9 +64,8 @@ public:
 
 
 
-  NS_IMETHOD GetNextRadioButton(const nsAString& aName,
-                                const bool aPrevious,
-                                mozilla::dom::HTMLInputElement*  aFocusedRadio,
+  NS_IMETHOD GetNextRadioButton(const nsAString& aName, const bool aPrevious,
+                                mozilla::dom::HTMLInputElement* aFocusedRadio,
                                 mozilla::dom::HTMLInputElement** aRadio) = 0;
 
   

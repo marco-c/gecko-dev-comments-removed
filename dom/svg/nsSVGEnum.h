@@ -21,8 +21,8 @@ class nsSMILValue;
 namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
-} 
-} 
+}  
+}  
 
 typedef uint8_t nsSVGEnumValue;
 
@@ -31,9 +31,8 @@ struct nsSVGEnumMapping {
   const nsSVGEnumValue mVal;
 };
 
-class nsSVGEnum
-{
-public:
+class nsSVGEnum {
+ public:
   void Init(uint8_t aAttrEnum, uint16_t aValue) {
     mAnimVal = mBaseVal = uint8_t(aValue);
     mAttrEnum = aAttrEnum;
@@ -41,56 +40,44 @@ public:
     mIsBaseSet = false;
   }
 
-  nsresult SetBaseValueAtom(const nsAtom* aValue, nsSVGElement *aSVGElement);
-  nsAtom* GetBaseValueAtom(nsSVGElement *aSVGElement);
-  nsresult SetBaseValue(uint16_t aValue,
-                        nsSVGElement *aSVGElement);
-  uint16_t GetBaseValue() const
-    { return mBaseVal; }
+  nsresult SetBaseValueAtom(const nsAtom* aValue, nsSVGElement* aSVGElement);
+  nsAtom* GetBaseValueAtom(nsSVGElement* aSVGElement);
+  nsresult SetBaseValue(uint16_t aValue, nsSVGElement* aSVGElement);
+  uint16_t GetBaseValue() const { return mBaseVal; }
 
-  void SetAnimValue(uint16_t aValue, nsSVGElement *aSVGElement);
-  uint16_t GetAnimValue() const
-    { return mAnimVal; }
-  bool IsExplicitlySet() const
-    { return mIsAnimated || mIsBaseSet; }
+  void SetAnimValue(uint16_t aValue, nsSVGElement* aSVGElement);
+  uint16_t GetAnimValue() const { return mAnimVal; }
+  bool IsExplicitlySet() const { return mIsAnimated || mIsBaseSet; }
 
-  already_AddRefed<mozilla::dom::SVGAnimatedEnumeration>
-  ToDOMAnimatedEnum(nsSVGElement* aSVGElement);
+  already_AddRefed<mozilla::dom::SVGAnimatedEnumeration> ToDOMAnimatedEnum(
+      nsSVGElement* aSVGElement);
 
   mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aSVGElement);
 
-private:
+ private:
   nsSVGEnumValue mAnimVal;
   nsSVGEnumValue mBaseVal;
-  uint8_t mAttrEnum; 
+  uint8_t mAttrEnum;  
   bool mIsAnimated;
   bool mIsBaseSet;
 
-  const nsSVGEnumMapping* GetMapping(nsSVGElement *aSVGElement);
+  const nsSVGEnumMapping* GetMapping(nsSVGElement* aSVGElement);
 
-public:
-  struct DOMAnimatedEnum final : public mozilla::dom::SVGAnimatedEnumeration
-  {
-    DOMAnimatedEnum(nsSVGEnum* aVal, nsSVGElement *aSVGElement)
-      : mozilla::dom::SVGAnimatedEnumeration(aSVGElement)
-      , mVal(aVal)
-    {}
+ public:
+  struct DOMAnimatedEnum final : public mozilla::dom::SVGAnimatedEnumeration {
+    DOMAnimatedEnum(nsSVGEnum* aVal, nsSVGElement* aSVGElement)
+        : mozilla::dom::SVGAnimatedEnumeration(aSVGElement), mVal(aVal) {}
     virtual ~DOMAnimatedEnum();
 
-    nsSVGEnum *mVal; 
+    nsSVGEnum* mVal;  
 
     using mozilla::dom::SVGAnimatedEnumeration::SetBaseVal;
-    virtual uint16_t BaseVal() override
-    {
-      return mVal->GetBaseValue();
-    }
+    virtual uint16_t BaseVal() override { return mVal->GetBaseValue(); }
     virtual void SetBaseVal(uint16_t aBaseVal,
-                            mozilla::ErrorResult& aRv) override
-    {
+                            mozilla::ErrorResult& aRv) override {
       aRv = mVal->SetBaseValue(aBaseVal, mSVGElement);
     }
-    virtual uint16_t AnimVal() override
-    {
+    virtual uint16_t AnimVal() override {
       
       
       
@@ -99,11 +86,10 @@ public:
     }
   };
 
-  struct SMILEnum : public nsISMILAttr
-  {
-  public:
+  struct SMILEnum : public nsISMILAttr {
+   public:
     SMILEnum(nsSVGEnum* aVal, nsSVGElement* aSVGElement)
-      : mVal(aVal), mSVGElement(aSVGElement) {}
+        : mVal(aVal), mSVGElement(aSVGElement) {}
 
     
     
@@ -112,14 +98,14 @@ public:
     nsSVGElement* mSVGElement;
 
     
-    virtual nsresult ValueFromString(const nsAString& aStr,
-                                     const mozilla::dom::SVGAnimationElement* aSrcElement,
-                                     nsSMILValue& aValue,
-                                     bool& aPreventCachingOfSandwich) const override;
+    virtual nsresult ValueFromString(
+        const nsAString& aStr,
+        const mozilla::dom::SVGAnimationElement* aSrcElement,
+        nsSMILValue& aValue, bool& aPreventCachingOfSandwich) const override;
     virtual nsSMILValue GetBaseValue() const override;
     virtual void ClearAnimValue() override;
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   };
 };
 
-#endif 
+#endif  

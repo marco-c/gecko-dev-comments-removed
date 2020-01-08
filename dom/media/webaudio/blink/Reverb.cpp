@@ -38,209 +38,233 @@ using namespace mozilla;
 namespace WebCore {
 
 
+
 const float GainCalibration = 0.00125f;
 const float GainCalibrationSampleRate = 44100;
 
 
+
 const float MinPower = 0.000125f;
 
-static float calculateNormalizationScale(const nsTArray<const float*>& response, size_t aLength, float sampleRate)
-{
-    
-    size_t numberOfChannels = response.Length();
+static float calculateNormalizationScale(const nsTArray<const float*>& response,
+                                         size_t aLength, float sampleRate) {
+  
+  size_t numberOfChannels = response.Length();
 
-    float power = 0;
+  float power = 0;
 
-    for (size_t i = 0; i < numberOfChannels; ++i) {
-        float channelPower = AudioBufferSumOfSquares(response[i], aLength);
-        power += channelPower;
-    }
+  for (size_t i = 0; i < numberOfChannels; ++i) {
+    float channelPower = AudioBufferSumOfSquares(response[i], aLength);
+    power += channelPower;
+  }
 
-    power = sqrt(power / (numberOfChannels * aLength));
+  power = sqrt(power / (numberOfChannels * aLength));
 
-    
-    if (!IsFinite(power) || IsNaN(power) || power < MinPower)
-        power = MinPower;
+  
+  if (!IsFinite(power) || IsNaN(power) || power < MinPower) power = MinPower;
 
-    float scale = 1 / power;
+  float scale = 1 / power;
 
-    scale *= GainCalibration; 
+  scale *= GainCalibration;  
+                             
 
-    
-    if (sampleRate)
-        scale *= GainCalibrationSampleRate / sampleRate;
+  
+  if (sampleRate) scale *= GainCalibrationSampleRate / sampleRate;
 
-    
-    if (numberOfChannels == 4)
-        scale *= 0.5f;
+  
+  if (numberOfChannels == 4) scale *= 0.5f;
 
-    return scale;
+  return scale;
 }
 
-Reverb::Reverb(const AudioChunk& impulseResponse, size_t maxFFTSize, bool useBackgroundThreads, bool normalize, float sampleRate, bool* aAllocationFailure)
-{
-    MOZ_ASSERT(aAllocationFailure);
-    size_t impulseResponseBufferLength = impulseResponse.mDuration;
-    float scale = impulseResponse.mVolume;
+Reverb::Reverb(const AudioChunk& impulseResponse, size_t maxFFTSize,
+               bool useBackgroundThreads, bool normalize, float sampleRate,
+               bool* aAllocationFailure) {
+  MOZ_ASSERT(aAllocationFailure);
+  size_t impulseResponseBufferLength = impulseResponse.mDuration;
+  float scale = impulseResponse.mVolume;
 
-    AutoTArray<const float*,4> irChannels(impulseResponse.ChannelData<float>());
-    AutoTArray<float,1024> tempBuf;
+  AutoTArray<const float*, 4> irChannels(impulseResponse.ChannelData<float>());
+  AutoTArray<float, 1024> tempBuf;
 
-    if (normalize) {
-        scale = calculateNormalizationScale(irChannels, impulseResponseBufferLength, sampleRate);
+  if (normalize) {
+    scale = calculateNormalizationScale(irChannels, impulseResponseBufferLength,
+                                        sampleRate);
+  }
+
+  if (scale != 1.0f) {
+    bool rv = tempBuf.SetLength(
+        irChannels.Length() * impulseResponseBufferLength, mozilla::fallible);
+    *aAllocationFailure = !rv;
+    if (*aAllocationFailure) {
+      return;
     }
 
-    if (scale != 1.0f) {
-        bool rv = tempBuf.SetLength(irChannels.Length()*impulseResponseBufferLength, mozilla::fallible);
-        *aAllocationFailure = !rv;
-        if (*aAllocationFailure) {
-          return;
-        }
-
-        for (uint32_t i = 0; i < irChannels.Length(); ++i) {
-            float* buf = &tempBuf[i*impulseResponseBufferLength];
-            AudioBufferCopyWithScale(irChannels[i], scale, buf,
-                                     impulseResponseBufferLength);
-            irChannels[i] = buf;
-        }
+    for (uint32_t i = 0; i < irChannels.Length(); ++i) {
+      float* buf = &tempBuf[i * impulseResponseBufferLength];
+      AudioBufferCopyWithScale(irChannels[i], scale, buf,
+                               impulseResponseBufferLength);
+      irChannels[i] = buf;
     }
+  }
 
-    initialize(irChannels, impulseResponseBufferLength,
-               maxFFTSize, useBackgroundThreads);
+  initialize(irChannels, impulseResponseBufferLength, maxFFTSize,
+             useBackgroundThreads);
 }
 
-size_t Reverb::sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-{
-    size_t amount = aMallocSizeOf(this);
-    amount += m_convolvers.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    for (size_t i = 0; i < m_convolvers.Length(); i++) {
-        if (m_convolvers[i]) {
-            amount += m_convolvers[i]->sizeOfIncludingThis(aMallocSizeOf);
-        }
+size_t Reverb::sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+  size_t amount = aMallocSizeOf(this);
+  amount += m_convolvers.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (size_t i = 0; i < m_convolvers.Length(); i++) {
+    if (m_convolvers[i]) {
+      amount += m_convolvers[i]->sizeOfIncludingThis(aMallocSizeOf);
     }
+  }
 
-    amount += m_tempBuffer.SizeOfExcludingThis(aMallocSizeOf, false);
-    return amount;
+  amount += m_tempBuffer.SizeOfExcludingThis(aMallocSizeOf, false);
+  return amount;
 }
-
 
 void Reverb::initialize(const nsTArray<const float*>& impulseResponseBuffer,
-                        size_t impulseResponseBufferLength,
-                        size_t maxFFTSize, bool useBackgroundThreads)
-{
-    m_impulseResponseLength = impulseResponseBufferLength;
+                        size_t impulseResponseBufferLength, size_t maxFFTSize,
+                        bool useBackgroundThreads) {
+  m_impulseResponseLength = impulseResponseBufferLength;
 
-    
-    size_t numResponseChannels = impulseResponseBuffer.Length();
-    MOZ_ASSERT(numResponseChannels > 0);
-    
-    
-    
-    
-    size_t numConvolvers = std::max<size_t>(numResponseChannels, 2);
-    m_convolvers.SetCapacity(numConvolvers);
+  
+  
+  size_t numResponseChannels = impulseResponseBuffer.Length();
+  MOZ_ASSERT(numResponseChannels > 0);
+  
+  
+  
+  
+  size_t numConvolvers = std::max<size_t>(numResponseChannels, 2);
+  m_convolvers.SetCapacity(numConvolvers);
 
-    int convolverRenderPhase = 0;
-    for (size_t i = 0; i < numConvolvers; ++i) {
-        size_t channelIndex = i < numResponseChannels ? i : 0;
-        const float* channel = impulseResponseBuffer[channelIndex];
-        size_t length = impulseResponseBufferLength;
+  int convolverRenderPhase = 0;
+  for (size_t i = 0; i < numConvolvers; ++i) {
+    size_t channelIndex = i < numResponseChannels ? i : 0;
+    const float* channel = impulseResponseBuffer[channelIndex];
+    size_t length = impulseResponseBufferLength;
 
-        nsAutoPtr<ReverbConvolver> convolver(new ReverbConvolver(channel, length, maxFFTSize, convolverRenderPhase, useBackgroundThreads));
-        m_convolvers.AppendElement(convolver.forget());
+    nsAutoPtr<ReverbConvolver> convolver(
+        new ReverbConvolver(channel, length, maxFFTSize, convolverRenderPhase,
+                            useBackgroundThreads));
+    m_convolvers.AppendElement(convolver.forget());
 
-        convolverRenderPhase += WEBAUDIO_BLOCK_SIZE;
-    }
+    convolverRenderPhase += WEBAUDIO_BLOCK_SIZE;
+  }
 
-    
-    
-    if (numResponseChannels == 4) {
-        m_tempBuffer.AllocateChannels(2);
-        WriteZeroesToAudioBlock(&m_tempBuffer, 0, WEBAUDIO_BLOCK_SIZE);
-    }
+  
+  
+  
+  if (numResponseChannels == 4) {
+    m_tempBuffer.AllocateChannels(2);
+    WriteZeroesToAudioBlock(&m_tempBuffer, 0, WEBAUDIO_BLOCK_SIZE);
+  }
 }
 
-void Reverb::process(const AudioBlock* sourceBus, AudioBlock* destinationBus)
-{
-    
-    
-    bool isSafeToProcess =
+void Reverb::process(const AudioBlock* sourceBus, AudioBlock* destinationBus) {
+  
+  
+  
+  bool isSafeToProcess =
       sourceBus && destinationBus && sourceBus->ChannelCount() > 0 &&
       destinationBus->mChannelData.Length() > 0 &&
       WEBAUDIO_BLOCK_SIZE <= MaxFrameSize &&
       WEBAUDIO_BLOCK_SIZE <= size_t(sourceBus->GetDuration()) &&
       WEBAUDIO_BLOCK_SIZE <= size_t(destinationBus->GetDuration());
 
-    MOZ_ASSERT(isSafeToProcess);
-    if (!isSafeToProcess)
-        return;
+  MOZ_ASSERT(isSafeToProcess);
+  if (!isSafeToProcess) return;
 
+  
+  MOZ_ASSERT(destinationBus->ChannelCount() <= 2);
+
+  float* destinationChannelL =
+      static_cast<float*>(const_cast<void*>(destinationBus->mChannelData[0]));
+  const float* sourceBusL =
+      static_cast<const float*>(sourceBus->mChannelData[0]);
+
+  
+  size_t numInputChannels = sourceBus->ChannelCount();
+  size_t numOutputChannels = destinationBus->ChannelCount();
+  size_t numReverbChannels = m_convolvers.Length();
+
+  if (numInputChannels == 2 && numReverbChannels == 2 &&
+      numOutputChannels == 2) {
     
-    MOZ_ASSERT(destinationBus->ChannelCount() <= 2);
-
-    float* destinationChannelL = static_cast<float*>(const_cast<void*>(destinationBus->mChannelData[0]));
-    const float* sourceBusL = static_cast<const float*>(sourceBus->mChannelData[0]);
-
+    const float* sourceBusR =
+        static_cast<const float*>(sourceBus->mChannelData[1]);
+    float* destinationChannelR =
+        static_cast<float*>(const_cast<void*>(destinationBus->mChannelData[1]));
+    m_convolvers[0]->process(sourceBusL, destinationChannelL);
+    m_convolvers[1]->process(sourceBusR, destinationChannelR);
+  } else if (numInputChannels == 1 && numOutputChannels == 2 &&
+             numReverbChannels == 2) {
     
-    size_t numInputChannels = sourceBus->ChannelCount();
-    size_t numOutputChannels = destinationBus->ChannelCount();
-    size_t numReverbChannels = m_convolvers.Length();
-
-    if (numInputChannels == 2 && numReverbChannels == 2 && numOutputChannels == 2) {
-        
-        const float* sourceBusR = static_cast<const float*>(sourceBus->mChannelData[1]);
-        float* destinationChannelR = static_cast<float*>(const_cast<void*>(destinationBus->mChannelData[1]));
-        m_convolvers[0]->process(sourceBusL, destinationChannelL);
-        m_convolvers[1]->process(sourceBusR, destinationChannelR);
-    } else  if (numInputChannels == 1 && numOutputChannels == 2 && numReverbChannels == 2) {
-        
-        for (int i = 0; i < 2; ++i) {
-            float* destinationChannel = static_cast<float*>(const_cast<void*>(destinationBus->mChannelData[i]));
-            m_convolvers[i]->process(sourceBusL, destinationChannel);
-        }
-    } else if (numInputChannels == 1 && numOutputChannels == 1) {
-        
-        m_convolvers[0]->process(sourceBusL, destinationChannelL);
-    } else if (numInputChannels == 2 && numReverbChannels == 4 && numOutputChannels == 2) {
-        
-        const float* sourceBusR = static_cast<const float*>(sourceBus->mChannelData[1]);
-        float* destinationChannelR = static_cast<float*>(const_cast<void*>(destinationBus->mChannelData[1]));
-
-        float* tempChannelL = static_cast<float*>(const_cast<void*>(m_tempBuffer.mChannelData[0]));
-        float* tempChannelR = static_cast<float*>(const_cast<void*>(m_tempBuffer.mChannelData[1]));
-
-        
-        m_convolvers[0]->process(sourceBusL, destinationChannelL);
-        m_convolvers[1]->process(sourceBusL, destinationChannelR);
-
-        
-        m_convolvers[2]->process(sourceBusR, tempChannelL);
-        m_convolvers[3]->process(sourceBusR, tempChannelR);
-
-        AudioBufferAddWithScale(tempChannelL, 1.0f, destinationChannelL, sourceBus->GetDuration());
-        AudioBufferAddWithScale(tempChannelR, 1.0f, destinationChannelR, sourceBus->GetDuration());
-    } else if (numInputChannels == 1 && numReverbChannels == 4 && numOutputChannels == 2) {
-        
-        
-        float* destinationChannelR = static_cast<float*>(const_cast<void*>(destinationBus->mChannelData[1]));
-
-        float* tempChannelL = static_cast<float*>(const_cast<void*>(m_tempBuffer.mChannelData[0]));
-        float* tempChannelR = static_cast<float*>(const_cast<void*>(m_tempBuffer.mChannelData[1]));
-
-        
-        m_convolvers[0]->process(sourceBusL, destinationChannelL);
-        m_convolvers[1]->process(sourceBusL, destinationChannelR);
-
-        
-        m_convolvers[2]->process(sourceBusL, tempChannelL);
-        m_convolvers[3]->process(sourceBusL, tempChannelR);
-
-        AudioBufferAddWithScale(tempChannelL, 1.0f, destinationChannelL, sourceBus->GetDuration());
-        AudioBufferAddWithScale(tempChannelR, 1.0f, destinationChannelR, sourceBus->GetDuration());
-    } else {
-        MOZ_ASSERT_UNREACHABLE("Unexpected Reverb configuration");
-        destinationBus->SetNull(destinationBus->GetDuration());
+    for (int i = 0; i < 2; ++i) {
+      float* destinationChannel = static_cast<float*>(
+          const_cast<void*>(destinationBus->mChannelData[i]));
+      m_convolvers[i]->process(sourceBusL, destinationChannel);
     }
+  } else if (numInputChannels == 1 && numOutputChannels == 1) {
+    
+    m_convolvers[0]->process(sourceBusL, destinationChannelL);
+  } else if (numInputChannels == 2 && numReverbChannels == 4 &&
+             numOutputChannels == 2) {
+    
+    const float* sourceBusR =
+        static_cast<const float*>(sourceBus->mChannelData[1]);
+    float* destinationChannelR =
+        static_cast<float*>(const_cast<void*>(destinationBus->mChannelData[1]));
+
+    float* tempChannelL =
+        static_cast<float*>(const_cast<void*>(m_tempBuffer.mChannelData[0]));
+    float* tempChannelR =
+        static_cast<float*>(const_cast<void*>(m_tempBuffer.mChannelData[1]));
+
+    
+    m_convolvers[0]->process(sourceBusL, destinationChannelL);
+    m_convolvers[1]->process(sourceBusL, destinationChannelR);
+
+    
+    m_convolvers[2]->process(sourceBusR, tempChannelL);
+    m_convolvers[3]->process(sourceBusR, tempChannelR);
+
+    AudioBufferAddWithScale(tempChannelL, 1.0f, destinationChannelL,
+                            sourceBus->GetDuration());
+    AudioBufferAddWithScale(tempChannelR, 1.0f, destinationChannelR,
+                            sourceBus->GetDuration());
+  } else if (numInputChannels == 1 && numReverbChannels == 4 &&
+             numOutputChannels == 2) {
+    
+    
+    
+    float* destinationChannelR =
+        static_cast<float*>(const_cast<void*>(destinationBus->mChannelData[1]));
+
+    float* tempChannelL =
+        static_cast<float*>(const_cast<void*>(m_tempBuffer.mChannelData[0]));
+    float* tempChannelR =
+        static_cast<float*>(const_cast<void*>(m_tempBuffer.mChannelData[1]));
+
+    
+    m_convolvers[0]->process(sourceBusL, destinationChannelL);
+    m_convolvers[1]->process(sourceBusL, destinationChannelR);
+
+    
+    m_convolvers[2]->process(sourceBusL, tempChannelL);
+    m_convolvers[3]->process(sourceBusL, tempChannelR);
+
+    AudioBufferAddWithScale(tempChannelL, 1.0f, destinationChannelL,
+                            sourceBus->GetDuration());
+    AudioBufferAddWithScale(tempChannelR, 1.0f, destinationChannelR,
+                            sourceBus->GetDuration());
+  } else {
+    MOZ_ASSERT_UNREACHABLE("Unexpected Reverb configuration");
+    destinationBus->SetNull(destinationBus->GetDuration());
+  }
 }
 
-} 
+}  

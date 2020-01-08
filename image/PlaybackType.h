@@ -17,8 +17,7 @@ namespace image {
 
 
 
-enum class PlaybackType : uint8_t
-{
+enum class PlaybackType : uint8_t {
   eStatic,   
   eAnimated  
              
@@ -28,17 +27,14 @@ enum class PlaybackType : uint8_t
 
 
 
-inline PlaybackType
-ToPlaybackType(uint32_t aWhichFrame)
-{
+inline PlaybackType ToPlaybackType(uint32_t aWhichFrame) {
   MOZ_ASSERT(aWhichFrame == imgIContainer::FRAME_FIRST ||
              aWhichFrame == imgIContainer::FRAME_CURRENT);
-  return aWhichFrame == imgIContainer::FRAME_CURRENT
-       ? PlaybackType::eAnimated
-       : PlaybackType::eStatic;
+  return aWhichFrame == imgIContainer::FRAME_CURRENT ? PlaybackType::eAnimated
+                                                     : PlaybackType::eStatic;
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

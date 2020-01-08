@@ -33,9 +33,7 @@ namespace parent {
 
 const char* gSaveAllRecordingsDirectory = nullptr;
 
-void
-InitializeUIProcess(int aArgc, char** aArgv)
-{
+void InitializeUIProcess(int aArgc, char** aArgv) {
   for (int i = 0; i < aArgc; i++) {
     if (!strcmp(aArgv[i], "--save-recordings") && i + 1 < aArgc) {
       gSaveAllRecordingsDirectory = strdup(aArgv[i + 1]);
@@ -43,9 +41,7 @@ InitializeUIProcess(int aArgc, char** aArgv)
   }
 }
 
-const char*
-SaveAllRecordingsDirectory()
-{
+const char* SaveAllRecordingsDirectory() {
   MOZ_RELEASE_ASSERT(XRE_IsParentProcess());
   return gSaveAllRecordingsDirectory;
 }
@@ -179,31 +175,26 @@ static ChildProcessInfo* gRecordingChild;
 static ChildProcessInfo* gFirstReplayingChild;
 static ChildProcessInfo* gSecondReplayingChild;
 
-void
-Shutdown()
-{
+void Shutdown() {
   delete gRecordingChild;
   delete gFirstReplayingChild;
   delete gSecondReplayingChild;
   _exit(0);
 }
 
-bool
-IsMiddlemanWithRecordingChild()
-{
+bool IsMiddlemanWithRecordingChild() {
   return IsMiddleman() && gRecordingChild;
 }
 
-static ChildProcessInfo*
-OtherReplayingChild(ChildProcessInfo* aChild)
-{
-  MOZ_RELEASE_ASSERT(!aChild->IsRecording() && gFirstReplayingChild && gSecondReplayingChild);
-  return aChild == gFirstReplayingChild ? gSecondReplayingChild : gFirstReplayingChild;
+static ChildProcessInfo* OtherReplayingChild(ChildProcessInfo* aChild) {
+  MOZ_RELEASE_ASSERT(!aChild->IsRecording() && gFirstReplayingChild &&
+                     gSecondReplayingChild);
+  return aChild == gFirstReplayingChild ? gSecondReplayingChild
+                                        : gFirstReplayingChild;
 }
 
-static void
-ForEachReplayingChild(const std::function<void(ChildProcessInfo*)>& aCallback)
-{
+static void ForEachReplayingChild(
+    const std::function<void(ChildProcessInfo*)>& aCallback) {
   if (gFirstReplayingChild) {
     aCallback(gFirstReplayingChild);
   }
@@ -212,14 +203,12 @@ ForEachReplayingChild(const std::function<void(ChildProcessInfo*)>& aCallback)
   }
 }
 
-static void
-PokeChildren()
-{
+static void PokeChildren() {
   ForEachReplayingChild([=](ChildProcessInfo* aChild) {
-      if (aChild->IsPaused()) {
-        aChild->Role()->Poke();
-      }
-    });
+    if (aChild->IsPaused()) {
+      aChild->Role()->Poke();
+    }
+  });
 }
 
 static void RecvHitCheckpoint(const HitCheckpointMessage& aMsg);
@@ -230,12 +219,9 @@ static void RecvAlwaysMarkMajorCheckpoints();
 static void RecvMiddlemanCallRequest(const MiddlemanCallRequestMessage& aMsg);
 
 
-class ChildRoleActive final : public ChildRole
-{
-public:
-  ChildRoleActive()
-    : ChildRole(Active)
-  {}
+class ChildRoleActive final : public ChildRole {
+ public:
+  ChildRoleActive() : ChildRole(Active) {}
 
   void Initialize() override {
     gActiveChild = mProcess;
@@ -251,45 +237,41 @@ public:
 
   void OnIncomingMessage(const Message& aMsg) override {
     switch (aMsg.mType) {
-    case MessageType::Paint:
-      MaybeUpdateGraphicsAtPaint((const PaintMessage&) aMsg);
-      break;
-    case MessageType::HitCheckpoint:
-      RecvHitCheckpoint((const HitCheckpointMessage&) aMsg);
-      break;
-    case MessageType::HitBreakpoint:
-      RecvHitBreakpoint((const HitBreakpointMessage&) aMsg);
-      break;
-    case MessageType::DebuggerResponse:
-      RecvDebuggerResponse((const DebuggerResponseMessage&) aMsg);
-      break;
-    case MessageType::RecordingFlushed:
-      RecvRecordingFlushed();
-      break;
-    case MessageType::AlwaysMarkMajorCheckpoints:
-      RecvAlwaysMarkMajorCheckpoints();
-      break;
-    case MessageType::MiddlemanCallRequest:
-      RecvMiddlemanCallRequest((const MiddlemanCallRequestMessage&) aMsg);
-      break;
-    case MessageType::ResetMiddlemanCalls:
-      ResetMiddlemanCalls();
-      break;
-    default:
-      MOZ_CRASH("Unexpected message");
+      case MessageType::Paint:
+        MaybeUpdateGraphicsAtPaint((const PaintMessage&)aMsg);
+        break;
+      case MessageType::HitCheckpoint:
+        RecvHitCheckpoint((const HitCheckpointMessage&)aMsg);
+        break;
+      case MessageType::HitBreakpoint:
+        RecvHitBreakpoint((const HitBreakpointMessage&)aMsg);
+        break;
+      case MessageType::DebuggerResponse:
+        RecvDebuggerResponse((const DebuggerResponseMessage&)aMsg);
+        break;
+      case MessageType::RecordingFlushed:
+        RecvRecordingFlushed();
+        break;
+      case MessageType::AlwaysMarkMajorCheckpoints:
+        RecvAlwaysMarkMajorCheckpoints();
+        break;
+      case MessageType::MiddlemanCallRequest:
+        RecvMiddlemanCallRequest((const MiddlemanCallRequestMessage&)aMsg);
+        break;
+      case MessageType::ResetMiddlemanCalls:
+        ResetMiddlemanCalls();
+        break;
+      default:
+        MOZ_CRASH("Unexpected message");
     }
   }
 };
 
-bool
-ActiveChildIsRecording()
-{
+bool ActiveChildIsRecording() {
   return gActiveChild && gActiveChild->IsRecording();
 }
 
-ChildProcessInfo*
-ActiveRecordingChild()
-{
+ChildProcessInfo* ActiveRecordingChild() {
   MOZ_RELEASE_ASSERT(ActiveChildIsRecording());
   return gActiveChild;
 }
@@ -300,12 +282,9 @@ static size_t gLastRecordingCheckpoint;
 
 
 
-class ChildRoleStandby final : public ChildRole
-{
-public:
-  ChildRoleStandby()
-    : ChildRole(Standby)
-  {}
+class ChildRoleStandby final : public ChildRole {
+ public:
+  ChildRoleStandby() : ChildRole(Standby) {}
 
   void Initialize() override {
     MOZ_RELEASE_ASSERT(mProcess->IsPausedAtCheckpoint());
@@ -322,12 +301,9 @@ public:
 };
 
 
-class ChildRoleInert final : public ChildRole
-{
-public:
-  ChildRoleInert()
-    : ChildRole(Inert)
-  {}
+class ChildRoleInert final : public ChildRole {
+ public:
+  ChildRoleInert() : ChildRole(Inert) {}
 
   void Initialize() override {
     MOZ_RELEASE_ASSERT(mProcess->IsRecording() && mProcess->IsPaused());
@@ -339,9 +315,9 @@ public:
 };
 
 
-static size_t
-LastMajorCheckpointPreceding(ChildProcessInfo* aChild, size_t aId)
-{
+
+static size_t LastMajorCheckpointPreceding(ChildProcessInfo* aChild,
+                                           size_t aId) {
   size_t last = CheckpointId::Invalid;
   for (size_t majorCheckpoint : aChild->MajorCheckpoints()) {
     if (majorCheckpoint > aId) {
@@ -354,13 +330,14 @@ LastMajorCheckpointPreceding(ChildProcessInfo* aChild, size_t aId)
 
 
 
-static ChildProcessInfo*
-ReplayingChildResponsibleForSavingCheckpoint(size_t aId)
-{
-  MOZ_RELEASE_ASSERT(CanRewind() && gFirstReplayingChild && gSecondReplayingChild);
+static ChildProcessInfo* ReplayingChildResponsibleForSavingCheckpoint(
+    size_t aId) {
+  MOZ_RELEASE_ASSERT(CanRewind() && gFirstReplayingChild &&
+                     gSecondReplayingChild);
   size_t firstMajor = LastMajorCheckpointPreceding(gFirstReplayingChild, aId);
   size_t secondMajor = LastMajorCheckpointPreceding(gSecondReplayingChild, aId);
-  return (firstMajor < secondMajor) ? gSecondReplayingChild : gFirstReplayingChild;
+  return (firstMajor < secondMajor) ? gSecondReplayingChild
+                                    : gFirstReplayingChild;
 }
 
 
@@ -372,11 +349,11 @@ ReplayingChildResponsibleForSavingCheckpoint(size_t aId)
 static Maybe<size_t> ActiveChildTargetCheckpoint();
 
 
-static void
-EnsureMajorCheckpointSaved(ChildProcessInfo* aChild, size_t aCheckpoint)
-{
+static void EnsureMajorCheckpointSaved(ChildProcessInfo* aChild,
+                                       size_t aCheckpoint) {
   
-  bool childShouldSave = aChild->IsMajorCheckpoint(aCheckpoint) || aCheckpoint == CheckpointId::First;
+  bool childShouldSave = aChild->IsMajorCheckpoint(aCheckpoint) ||
+                         aCheckpoint == CheckpointId::First;
   bool childToldToSave = aChild->ShouldSaveCheckpoint(aCheckpoint);
 
   if (childShouldSave != childToldToSave) {
@@ -384,9 +361,7 @@ EnsureMajorCheckpointSaved(ChildProcessInfo* aChild, size_t aCheckpoint)
   }
 }
 
-void
-ChildRoleStandby::Poke()
-{
+void ChildRoleStandby::Poke() {
   MOZ_RELEASE_ASSERT(mProcess->IsPausedAtCheckpoint());
 
   
@@ -405,7 +380,8 @@ ChildRoleStandby::Poke()
 
     
     
-    size_t lastMajorCheckpoint = LastMajorCheckpointPreceding(mProcess, targetCheckpoint.ref());
+    size_t lastMajorCheckpoint =
+        LastMajorCheckpointPreceding(mProcess, targetCheckpoint.ref());
 
     
     if (lastMajorCheckpoint == CheckpointId::Invalid) {
@@ -423,8 +399,8 @@ ChildRoleStandby::Poke()
     
     
     
-    size_t otherMajorCheckpoint =
-      LastMajorCheckpointPreceding(OtherReplayingChild(mProcess), targetCheckpoint.ref());
+    size_t otherMajorCheckpoint = LastMajorCheckpointPreceding(
+        OtherReplayingChild(mProcess), targetCheckpoint.ref());
     if (otherMajorCheckpoint > lastMajorCheckpoint) {
       MOZ_RELEASE_ASSERT(otherMajorCheckpoint <= targetCheckpoint.ref());
       targetCheckpoint.ref() = otherMajorCheckpoint - 1;
@@ -459,7 +435,8 @@ ChildRoleStandby::Poke()
 
     
     if (!mProcess->ShouldSaveCheckpoint(missingCheckpoint.ref())) {
-      mProcess->SendMessage(SetSaveCheckpointMessage(missingCheckpoint.ref(), true));
+      mProcess->SendMessage(
+          SetSaveCheckpointMessage(missingCheckpoint.ref(), true));
     }
 
     
@@ -470,7 +447,8 @@ ChildRoleStandby::Poke()
   
   
   if ((mProcess->LastCheckpoint() < gActiveChild->LastCheckpoint()) &&
-      (!gRecordingChild || mProcess->LastCheckpoint() < gLastRecordingCheckpoint)) {
+      (!gRecordingChild ||
+       mProcess->LastCheckpoint() < gLastRecordingCheckpoint)) {
     EnsureMajorCheckpointSaved(mProcess, mProcess->LastCheckpoint() + 1);
     mProcess->SendMessage(ResumeMessage( true));
   }
@@ -495,30 +473,25 @@ static ChildProcessInfo* gLastAssignedMajorCheckpoint;
 
 static bool gAlwaysMarkMajorCheckpoints;
 
-static void
-RecvAlwaysMarkMajorCheckpoints()
-{
+static void RecvAlwaysMarkMajorCheckpoints() {
   gAlwaysMarkMajorCheckpoints = true;
 }
 
-static void
-AssignMajorCheckpoint(ChildProcessInfo* aChild, size_t aId)
-{
+static void AssignMajorCheckpoint(ChildProcessInfo* aChild, size_t aId) {
   PrintSpew("AssignMajorCheckpoint: Process %d Checkpoint %d\n",
-            (int) aChild->GetId(), (int) aId);
+            (int)aChild->GetId(), (int)aId);
   aChild->AddMajorCheckpoint(aId);
   gLastAssignedMajorCheckpoint = aChild;
 }
 
 static bool MaybeFlushRecording();
 
-static void
-UpdateCheckpointTimes(const HitCheckpointMessage& aMsg)
-{
+static void UpdateCheckpointTimes(const HitCheckpointMessage& aMsg) {
   if (!CanRewind() || (aMsg.mCheckpointId != gCheckpointTimes.length() + 1)) {
     return;
   }
-  gCheckpointTimes.append(TimeDuration::FromMicroseconds(aMsg.mDurationMicroseconds));
+  gCheckpointTimes.append(
+      TimeDuration::FromMicroseconds(aMsg.mDurationMicroseconds));
 
   if (gActiveChild->IsRecording()) {
     gTimeSinceLastFlush += gCheckpointTimes.back();
@@ -526,8 +499,7 @@ UpdateCheckpointTimes(const HitCheckpointMessage& aMsg)
     
     
     if (aMsg.mCheckpointId == CheckpointId::First ||
-        gTimeSinceLastFlush >= TimeDuration::FromSeconds(FlushSeconds))
-    {
+        gTimeSinceLastFlush >= TimeDuration::FromSeconds(FlushSeconds)) {
       if (MaybeFlushRecording()) {
         gTimeSinceLastFlush = 0;
       }
@@ -535,9 +507,9 @@ UpdateCheckpointTimes(const HitCheckpointMessage& aMsg)
   }
 
   gTimeSinceLastMajorCheckpoint += gCheckpointTimes.back();
-  if (gTimeSinceLastMajorCheckpoint >= TimeDuration::FromSeconds(MajorCheckpointSeconds) ||
-      gAlwaysMarkMajorCheckpoints)
-  {
+  if (gTimeSinceLastMajorCheckpoint >=
+          TimeDuration::FromSeconds(MajorCheckpointSeconds) ||
+      gAlwaysMarkMajorCheckpoints) {
     
     
     MOZ_RELEASE_ASSERT(gLastAssignedMajorCheckpoint);
@@ -551,43 +523,39 @@ UpdateCheckpointTimes(const HitCheckpointMessage& aMsg)
 
 
 
-static void
-SpawnRecordingChild(const RecordingProcessData& aRecordingProcessData)
-{
-  MOZ_RELEASE_ASSERT(!gRecordingChild && !gFirstReplayingChild && !gSecondReplayingChild);
-  gRecordingChild =
-    new ChildProcessInfo(MakeUnique<ChildRoleActive>(), Some(aRecordingProcessData));
+static void SpawnRecordingChild(
+    const RecordingProcessData& aRecordingProcessData) {
+  MOZ_RELEASE_ASSERT(!gRecordingChild && !gFirstReplayingChild &&
+                     !gSecondReplayingChild);
+  gRecordingChild = new ChildProcessInfo(MakeUnique<ChildRoleActive>(),
+                                         Some(aRecordingProcessData));
 }
 
-static void
-SpawnSingleReplayingChild()
-{
-  MOZ_RELEASE_ASSERT(!gRecordingChild && !gFirstReplayingChild && !gSecondReplayingChild);
+static void SpawnSingleReplayingChild() {
+  MOZ_RELEASE_ASSERT(!gRecordingChild && !gFirstReplayingChild &&
+                     !gSecondReplayingChild);
   gFirstReplayingChild =
-    new ChildProcessInfo(MakeUnique<ChildRoleActive>(), Nothing());
+      new ChildProcessInfo(MakeUnique<ChildRoleActive>(), Nothing());
 }
 
-static void
-SpawnReplayingChildren()
-{
-  MOZ_RELEASE_ASSERT(CanRewind() && !gFirstReplayingChild && !gSecondReplayingChild);
+static void SpawnReplayingChildren() {
+  MOZ_RELEASE_ASSERT(CanRewind() && !gFirstReplayingChild &&
+                     !gSecondReplayingChild);
   UniquePtr<ChildRole> firstRole;
   if (gRecordingChild) {
     firstRole = MakeUnique<ChildRoleStandby>();
   } else {
     firstRole = MakeUnique<ChildRoleActive>();
   }
-  gFirstReplayingChild =
-    new ChildProcessInfo(std::move(firstRole), Nothing());
+  gFirstReplayingChild = new ChildProcessInfo(std::move(firstRole), Nothing());
   gSecondReplayingChild =
-    new ChildProcessInfo(MakeUnique<ChildRoleStandby>(), Nothing());
+      new ChildProcessInfo(MakeUnique<ChildRoleStandby>(), Nothing());
   AssignMajorCheckpoint(gSecondReplayingChild, CheckpointId::First);
 }
 
 
-static void
-SwitchActiveChild(ChildProcessInfo* aChild, bool aRecoverPosition = true)
-{
+static void SwitchActiveChild(ChildProcessInfo* aChild,
+                              bool aRecoverPosition = true) {
   MOZ_RELEASE_ASSERT(aChild != gActiveChild);
   ChildProcessInfo* oldActiveChild = gActiveChild;
   aChild->WaitUntilPaused();
@@ -606,10 +574,12 @@ SwitchActiveChild(ChildProcessInfo* aChild, bool aRecoverPosition = true)
   if (oldActiveChild->IsRecording()) {
     oldActiveChild->SetRole(MakeUnique<ChildRoleInert>());
   } else {
-    oldActiveChild->RecoverToCheckpoint(oldActiveChild->MostRecentSavedCheckpoint());
+    oldActiveChild->RecoverToCheckpoint(
+        oldActiveChild->MostRecentSavedCheckpoint());
     oldActiveChild->SetRole(MakeUnique<ChildRoleStandby>());
   }
 
+  
   
   if (aChild->IsRecording() != oldActiveChild->IsRecording()) {
     js::DebuggerOnSwitchChild();
@@ -623,15 +593,14 @@ SwitchActiveChild(ChildProcessInfo* aChild, bool aRecoverPosition = true)
 static bool gPreferencesLoaded;
 static bool gRewindingEnabled;
 
-void
-PreferencesLoaded()
-{
+void PreferencesLoaded() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   MOZ_RELEASE_ASSERT(!gPreferencesLoaded);
   gPreferencesLoaded = true;
 
-  gRewindingEnabled = Preferences::GetBool("devtools.recordreplay.enableRewinding");
+  gRewindingEnabled =
+      Preferences::GetBool("devtools.recordreplay.enableRewinding");
 
   
   if (getenv("NO_REWIND")) {
@@ -655,16 +624,12 @@ PreferencesLoaded()
   }
 }
 
-bool
-CanRewind()
-{
+bool CanRewind() {
   MOZ_RELEASE_ASSERT(gPreferencesLoaded);
   return gRewindingEnabled;
 }
 
-bool
-DebuggerRunsInMiddleman()
-{
+bool DebuggerRunsInMiddleman() {
   if (IsRecordingOrReplaying()) {
     
     
@@ -683,17 +648,15 @@ DebuggerRunsInMiddleman()
 
 
 
-static void
-FlushRecording()
-{
+static void FlushRecording() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gActiveChild->IsRecording() && gActiveChild->IsPaused());
 
   
   ForEachReplayingChild([=](ChildProcessInfo* aChild) {
-      aChild->SetPauseNeeded();
-      aChild->WaitUntilPaused();
-    });
+    aChild->SetPauseNeeded();
+    aChild->WaitUntilPaused();
+  });
 
   gActiveChild->SendMessage(FlushRecordingMessage());
   gActiveChild->WaitUntilPaused();
@@ -709,19 +672,18 @@ FlushRecording()
 }
 
 
-static bool
-MaybeFlushRecording()
-{
+
+static bool MaybeFlushRecording() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gActiveChild->IsRecording() && gActiveChild->IsPaused());
 
   bool allPaused = true;
   ForEachReplayingChild([&](ChildProcessInfo* aChild) {
-      if (!aChild->IsPaused()) {
-        aChild->SetPauseNeeded();
-        allPaused = false;
-      }
-    });
+    if (!aChild->IsPaused()) {
+      aChild->SetPauseNeeded();
+      allPaused = false;
+    }
+  });
 
   if (allPaused) {
     FlushRecording();
@@ -730,19 +692,16 @@ MaybeFlushRecording()
   return false;
 }
 
-static void
-RecvRecordingFlushed()
-{
+static void RecvRecordingFlushed() {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-  ForEachReplayingChild([=](ChildProcessInfo* aChild) { aChild->ClearPauseNeeded(); });
+  ForEachReplayingChild(
+      [=](ChildProcessInfo* aChild) { aChild->ClearPauseNeeded(); });
 }
 
 
 
 
-static void
-MaybeCreateCheckpointInRecordingChild()
-{
+static void MaybeCreateCheckpointInRecordingChild() {
   if (gActiveChild->IsRecording() && !gActiveChild->IsPaused()) {
     gActiveChild->SendMessage(CreateCheckpointMessage());
   }
@@ -750,16 +709,15 @@ MaybeCreateCheckpointInRecordingChild()
 
 
 
-static void
-SendMessageToUIProcess(const char* aMessage)
-{
+static void SendMessageToUIProcess(const char* aMessage) {
   AutoSafeJSContext cx;
   auto* cpmm = dom::ContentProcessMessageManager::Get();
   ErrorResult err;
   nsAutoString message;
   message.Append(NS_ConvertUTF8toUTF16(aMessage));
   JS::Rooted<JS::Value> undefined(cx);
-  cpmm->SendAsyncMessage(cx, message, undefined, nullptr, nullptr, undefined, err);
+  cpmm->SendAsyncMessage(cx, message, undefined, nullptr, nullptr, undefined,
+                         err);
   MOZ_RELEASE_ASSERT(!err.Failed());
   err.SuppressException();
 }
@@ -767,9 +725,7 @@ SendMessageToUIProcess(const char* aMessage)
 
 static FileHandle gRecordingFd;
 
-static void
-SaveRecordingInternal(const ipc::FileDescriptor& aFile)
-{
+static void SaveRecordingInternal(const ipc::FileDescriptor& aFile) {
   MOZ_RELEASE_ASSERT(gRecordingChild);
 
   if (gRecordingChild == gActiveChild) {
@@ -782,7 +738,8 @@ SaveRecordingInternal(const ipc::FileDescriptor& aFile)
 
   
   DirectSeekFile(gRecordingFd, 0);
-  ipc::FileDescriptor::UniquePlatformHandle writefd = aFile.ClonePlatformHandle();
+  ipc::FileDescriptor::UniquePlatformHandle writefd =
+      aFile.ClonePlatformHandle();
   char buf[4096];
   while (true) {
     size_t n = DirectRead(gRecordingFd, buf, sizeof(buf));
@@ -796,16 +753,14 @@ SaveRecordingInternal(const ipc::FileDescriptor& aFile)
   SendMessageToUIProcess("SaveRecordingFinished");
 }
 
-void
-SaveRecording(const ipc::FileDescriptor& aFile)
-{
+void SaveRecording(const ipc::FileDescriptor& aFile) {
   MOZ_RELEASE_ASSERT(IsMiddleman());
 
   if (NS_IsMainThread()) {
     SaveRecordingInternal(aFile);
   } else {
-    MainThreadMessageLoop()->PostTask(NewRunnableFunction("SaveRecordingInternal",
-                                                          SaveRecordingInternal, aFile));
+    MainThreadMessageLoop()->PostTask(NewRunnableFunction(
+        "SaveRecordingInternal", SaveRecordingInternal, aFile));
   }
 }
 
@@ -820,9 +775,8 @@ static size_t gLastExplicitPause;
 
 static Maybe<size_t> gTimeWarpTarget;
 
-static bool
-HasSavedCheckpointsInRange(ChildProcessInfo* aChild, size_t aStart, size_t aEnd)
-{
+static bool HasSavedCheckpointsInRange(ChildProcessInfo* aChild, size_t aStart,
+                                       size_t aEnd) {
   for (size_t i = aStart; i <= aEnd; i++) {
     if (!aChild->HasSavedCheckpoint(i)) {
       return false;
@@ -831,9 +785,7 @@ HasSavedCheckpointsInRange(ChildProcessInfo* aChild, size_t aStart, size_t aEnd)
   return true;
 }
 
-void
-MarkActiveChildExplicitPause()
-{
+void MarkActiveChildExplicitPause() {
   MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
   size_t targetCheckpoint = gActiveChild->RewindTargetCheckpoint();
 
@@ -846,23 +798,24 @@ MarkActiveChildExplicitPause()
     
     
     
-    if (gActiveChild == ReplayingChildResponsibleForSavingCheckpoint(targetCheckpoint)) {
-      size_t lastMajorCheckpoint = LastMajorCheckpointPreceding(gActiveChild, targetCheckpoint);
-      if (!HasSavedCheckpointsInRange(gActiveChild, lastMajorCheckpoint, targetCheckpoint)) {
+    if (gActiveChild ==
+        ReplayingChildResponsibleForSavingCheckpoint(targetCheckpoint)) {
+      size_t lastMajorCheckpoint =
+          LastMajorCheckpointPreceding(gActiveChild, targetCheckpoint);
+      if (!HasSavedCheckpointsInRange(gActiveChild, lastMajorCheckpoint,
+                                      targetCheckpoint)) {
         SwitchActiveChild(OtherReplayingChild(gActiveChild));
       }
     }
   }
 
   gLastExplicitPause = targetCheckpoint;
-  PrintSpew("MarkActiveChildExplicitPause %d\n", (int) gLastExplicitPause);
+  PrintSpew("MarkActiveChildExplicitPause %d\n", (int)gLastExplicitPause);
 
   PokeChildren();
 }
 
-static Maybe<size_t>
-ActiveChildTargetCheckpoint()
-{
+static Maybe<size_t> ActiveChildTargetCheckpoint() {
   if (gTimeWarpTarget.isSome()) {
     return gTimeWarpTarget;
   }
@@ -872,9 +825,7 @@ ActiveChildTargetCheckpoint()
   return Nothing();
 }
 
-void
-WaitUntilActiveChildIsPaused()
-{
+void WaitUntilActiveChildIsPaused() {
   if (gActiveChild->IsPaused()) {
     
     
@@ -886,14 +837,12 @@ WaitUntilActiveChildIsPaused()
   }
 }
 
-void
-MaybeSwitchToReplayingChild()
-{
+void MaybeSwitchToReplayingChild() {
   if (gActiveChild->IsRecording() && CanRewind()) {
     FlushRecording();
     size_t checkpoint = gActiveChild->RewindTargetCheckpoint();
-    ChildProcessInfo* child =
-      OtherReplayingChild(ReplayingChildResponsibleForSavingCheckpoint(checkpoint));
+    ChildProcessInfo* child = OtherReplayingChild(
+        ReplayingChildResponsibleForSavingCheckpoint(checkpoint));
     SwitchActiveChild(child);
   }
 }
@@ -905,34 +854,24 @@ MaybeSwitchToReplayingChild()
 
 static MessageLoop* gMainThreadMessageLoop;
 
-MessageLoop*
-MainThreadMessageLoop()
-{
-  return gMainThreadMessageLoop;
-}
+MessageLoop* MainThreadMessageLoop() { return gMainThreadMessageLoop; }
 
 static base::ProcessId gParentPid;
 
-base::ProcessId
-ParentProcessId()
-{
-  return gParentPid;
-}
+base::ProcessId ParentProcessId() { return gParentPid; }
 
-void
-InitializeMiddleman(int aArgc, char* aArgv[], base::ProcessId aParentPid,
-                    const base::SharedMemoryHandle& aPrefsHandle,
-                    const ipc::FileDescriptor& aPrefMapHandle)
-{
+void InitializeMiddleman(int aArgc, char* aArgv[], base::ProcessId aParentPid,
+                         const base::SharedMemoryHandle& aPrefsHandle,
+                         const ipc::FileDescriptor& aPrefMapHandle) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RecordReplay, true);
+  CrashReporter::AnnotateCrashReport(CrashReporter::Annotation::RecordReplay,
+                                     true);
 
   gParentPid = aParentPid;
 
   
-  IntroductionMessage* msg =
-    IntroductionMessage::New(aParentPid, aArgc, aArgv);
+  IntroductionMessage* msg = IntroductionMessage::New(aParentPid, aArgc, aArgv);
   ChildProcessInfo::SetIntroductionMessage(msg);
 
   MOZ_RELEASE_ASSERT(gProcessKind == ProcessKind::MiddlemanRecording ||
@@ -963,22 +902,19 @@ InitializeMiddleman(int aArgc, char* aArgv[], base::ProcessId aParentPid,
 
 static js::CharBuffer* gResponseBuffer;
 
-static void
-RecvDebuggerResponse(const DebuggerResponseMessage& aMsg)
-{
+static void RecvDebuggerResponse(const DebuggerResponseMessage& aMsg) {
   MOZ_RELEASE_ASSERT(gResponseBuffer && gResponseBuffer->empty());
   gResponseBuffer->append(aMsg.Buffer(), aMsg.BufferSize());
 }
 
-void
-SendRequest(const js::CharBuffer& aBuffer, js::CharBuffer* aResponse)
-{
+void SendRequest(const js::CharBuffer& aBuffer, js::CharBuffer* aResponse) {
   MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
 
   MOZ_RELEASE_ASSERT(!gResponseBuffer);
   gResponseBuffer = aResponse;
 
-  DebuggerRequestMessage* msg = DebuggerRequestMessage::New(aBuffer.begin(), aBuffer.length());
+  DebuggerRequestMessage* msg =
+      DebuggerRequestMessage::New(aBuffer.begin(), aBuffer.length());
   gActiveChild->SendMessage(*msg);
   free(msg);
 
@@ -989,9 +925,7 @@ SendRequest(const js::CharBuffer& aBuffer, js::CharBuffer* aResponse)
   gResponseBuffer = nullptr;
 }
 
-void
-AddBreakpoint(const js::BreakpointPosition& aPosition)
-{
+void AddBreakpoint(const js::BreakpointPosition& aPosition) {
   MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
 
   gActiveChild->SendMessage(AddBreakpointMessage(aPosition));
@@ -1004,9 +938,7 @@ AddBreakpoint(const js::BreakpointPosition& aPosition)
   }
 }
 
-void
-ClearBreakpoints()
-{
+void ClearBreakpoints() {
   MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
 
   gActiveChild->SendMessage(ClearBreakpointsMessage());
@@ -1017,9 +949,7 @@ ClearBreakpoints()
   }
 }
 
-static void
-MaybeSendRepaintMessage()
-{
+static void MaybeSendRepaintMessage() {
   
   
   
@@ -1040,25 +970,26 @@ MaybeSendRepaintMessage()
       MOZ_RELEASE_ASSERT(value.isObject());
       JS::RootedObject obj(cx, &value.toObject());
       RootedValue width(cx), height(cx);
-      if (JS_GetProperty(cx, obj, "width", &width) && width.isNumber() && width.toNumber() &&
-          JS_GetProperty(cx, obj, "height", &height) && height.isNumber() && height.toNumber()) {
-        PaintMessage message(CheckpointId::Invalid, width.toNumber(), height.toNumber());
+      if (JS_GetProperty(cx, obj, "width", &width) && width.isNumber() &&
+          width.toNumber() && JS_GetProperty(cx, obj, "height", &height) &&
+          height.isNumber() && height.toNumber()) {
+        PaintMessage message(CheckpointId::Invalid, width.toNumber(),
+                             height.toNumber());
         UpdateGraphicsInUIProcess(&message);
       }
     }
   }
 }
 
-void
-Resume(bool aForward)
-{
+void Resume(bool aForward) {
   MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
 
   MaybeSendRepaintMessage();
 
   
   
-  if (!aForward && !gActiveChild->HasSavedCheckpoint(gActiveChild->RewindTargetCheckpoint())) {
+  if (!aForward && !gActiveChild->HasSavedCheckpoint(
+                       gActiveChild->RewindTargetCheckpoint())) {
     size_t targetCheckpoint = gActiveChild->RewindTargetCheckpoint();
 
     
@@ -1071,15 +1002,16 @@ Resume(bool aForward)
     
     
     
-    ChildProcessInfo* targetChild = ReplayingChildResponsibleForSavingCheckpoint(targetCheckpoint);
+    ChildProcessInfo* targetChild =
+        ReplayingChildResponsibleForSavingCheckpoint(targetCheckpoint);
     MOZ_RELEASE_ASSERT(targetChild != gActiveChild);
 
     
     
     targetChild->WaitUntil([=]() {
-        return targetChild->HasSavedCheckpoint(targetCheckpoint)
-            && targetChild->IsPaused();
-      });
+      return targetChild->HasSavedCheckpoint(targetCheckpoint) &&
+             targetChild->IsPaused();
+    });
 
     SwitchActiveChild(targetChild);
   }
@@ -1096,10 +1028,12 @@ Resume(bool aForward)
       }
 
       
+      
       SwitchActiveChild(gRecordingChild);
     }
 
-    EnsureMajorCheckpointSaved(gActiveChild, gActiveChild->LastCheckpoint() + 1);
+    EnsureMajorCheckpointSaved(gActiveChild,
+                               gActiveChild->LastCheckpoint() + 1);
 
     
     PokeChildren();
@@ -1108,9 +1042,7 @@ Resume(bool aForward)
   gActiveChild->SendMessage(ResumeMessage(aForward));
 }
 
-void
-TimeWarp(const js::ExecutionPoint& aTarget)
-{
+void TimeWarp(const js::ExecutionPoint& aTarget) {
   MOZ_RELEASE_ASSERT(gActiveChild->IsPaused());
 
   
@@ -1122,7 +1054,8 @@ TimeWarp(const js::ExecutionPoint& aTarget)
 
   if (!gActiveChild->HasSavedCheckpoint(aTarget.mCheckpoint)) {
     
-    ChildProcessInfo* targetChild = ReplayingChildResponsibleForSavingCheckpoint(aTarget.mCheckpoint);
+    ChildProcessInfo* targetChild =
+        ReplayingChildResponsibleForSavingCheckpoint(aTarget.mCheckpoint);
 
     if (targetChild == gActiveChild) {
       
@@ -1133,16 +1066,17 @@ TimeWarp(const js::ExecutionPoint& aTarget)
     
     
     targetChild->WaitUntil([=]() {
-        return targetChild->HasSavedCheckpoint(aTarget.mCheckpoint)
-            && targetChild->IsPaused();
-      });
+      return targetChild->HasSavedCheckpoint(aTarget.mCheckpoint) &&
+             targetChild->IsPaused();
+    });
 
     SwitchActiveChild(targetChild,  false);
   }
 
   gTimeWarpTarget.reset();
 
-  if (!gActiveChild->IsPausedAtCheckpoint() || gActiveChild->LastCheckpoint() != aTarget.mCheckpoint) {
+  if (!gActiveChild->IsPausedAtCheckpoint() ||
+      gActiveChild->LastCheckpoint() != aTarget.mCheckpoint) {
     gActiveChild->SendMessage(RestoreCheckpointMessage(aTarget.mCheckpoint));
     gActiveChild->WaitUntilPaused();
   }
@@ -1153,9 +1087,7 @@ TimeWarp(const js::ExecutionPoint& aTarget)
   SendMessageToUIProcess("TimeWarpFinished");
 }
 
-void
-ResumeBeforeWaitingForIPDLReply()
-{
+void ResumeBeforeWaitingForIPDLReply() {
   MOZ_RELEASE_ASSERT(gActiveChild->IsRecording());
 
   
@@ -1166,9 +1098,7 @@ ResumeBeforeWaitingForIPDLReply()
   }
 }
 
-static void
-RecvHitCheckpoint(const HitCheckpointMessage& aMsg)
-{
+static void RecvHitCheckpoint(const HitCheckpointMessage& aMsg) {
   UpdateCheckpointTimes(aMsg);
   MaybeUpdateGraphicsAtCheckpoint(aMsg.mCheckpointId);
 
@@ -1178,13 +1108,12 @@ RecvHitCheckpoint(const HitCheckpointMessage& aMsg)
   if (MainThreadIsWaitingForIPDLReply()) {
     Resume(true);
   } else if (!js::DebuggerOnPause()) {
-    gMainThreadMessageLoop->PostTask(NewRunnableFunction("RecvHitCheckpointResume", Resume, true));
+    gMainThreadMessageLoop->PostTask(
+        NewRunnableFunction("RecvHitCheckpointResume", Resume, true));
   }
 }
 
-static void
-RecvHitBreakpoint(const HitBreakpointMessage& aMsg)
-{
+static void RecvHitBreakpoint(const HitBreakpointMessage& aMsg) {
   
   
   
@@ -1194,18 +1123,17 @@ RecvHitBreakpoint(const HitBreakpointMessage& aMsg)
   if (aMsg.mRecordingEndpoint) {
     Resume(true);
   } else if (!js::DebuggerOnPause()) {
-    gMainThreadMessageLoop->PostTask(NewRunnableFunction("RecvHitBreakpointResume", Resume, true));
+    gMainThreadMessageLoop->PostTask(
+        NewRunnableFunction("RecvHitBreakpointResume", Resume, true));
   }
 }
 
-static void
-RecvMiddlemanCallRequest(const MiddlemanCallRequestMessage& aMsg)
-{
+static void RecvMiddlemanCallRequest(const MiddlemanCallRequestMessage& aMsg) {
   MiddlemanCallResponseMessage* response = ProcessMiddlemanCallMessage(aMsg);
   gActiveChild->SendMessage(*response);
   free(response);
 }
 
-} 
-} 
-} 
+}  
+}  
+}  

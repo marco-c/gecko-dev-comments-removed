@@ -17,23 +17,17 @@
 namespace mozilla {
 namespace net {
 
-class DNSRequestChild final
-  : public PDNSRequestChild
-  , public nsICancelable
-{
-public:
+class DNSRequestChild final : public PDNSRequestChild, public nsICancelable {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSICANCELABLE
 
-  DNSRequestChild(const nsACString& aHost,
-                  const uint16_t& aType,
+  DNSRequestChild(const nsACString& aHost, const uint16_t& aType,
                   const OriginAttributes& aOriginAttributes,
-                  const uint32_t& aFlags,
-                  nsIDNSListener *aListener, nsIEventTarget *target);
+                  const uint32_t& aFlags, nsIDNSListener* aListener,
+                  nsIEventTarget* target);
 
-  void AddIPDLReference() {
-    AddRef();
-  }
+  void AddIPDLReference() { AddRef(); }
   void ReleaseIPDLReference();
 
   
@@ -41,32 +35,34 @@ public:
   void CallOnLookupComplete();
   void CallOnLookupByTypeComplete();
 
-protected:
+ protected:
   friend class CancelDNSRequestEvent;
   friend class ChildDNSService;
   virtual ~DNSRequestChild() {}
 
-  virtual mozilla::ipc::IPCResult RecvLookupCompleted(const DNSRequestResponse& reply) override;
+  virtual mozilla::ipc::IPCResult RecvLookupCompleted(
+      const DNSRequestResponse& reply) override;
   virtual void ActorDestroy(ActorDestroyReason why) override;
 
-  nsCOMPtr<nsIDNSListener>     mListener;
-  nsCOMPtr<nsIEventTarget>     mTarget;
-  nsCOMPtr<nsIDNSRecord>       mResultRecord;
-  nsCOMPtr<nsIDNSByTypeRecord> mResultByTypeRecords; 
-                                                     
-                                                     
-                                                     
-                                                     
-                                                     
-  nsresult                     mResultStatus;
-  nsCString                    mHost;
-  uint16_t                     mType;
-  const OriginAttributes       mOriginAttributes;
-  uint16_t                     mFlags;
-  bool                         mIPCOpen;
+  nsCOMPtr<nsIDNSListener> mListener;
+  nsCOMPtr<nsIEventTarget> mTarget;
+  nsCOMPtr<nsIDNSRecord> mResultRecord;
+  nsCOMPtr<nsIDNSByTypeRecord>
+      mResultByTypeRecords;  
+                             
+                             
+                             
+                             
+                             
+  nsresult mResultStatus;
+  nsCString mHost;
+  uint16_t mType;
+  const OriginAttributes mOriginAttributes;
+  uint16_t mFlags;
+  bool mIPCOpen;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

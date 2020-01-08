@@ -7,19 +7,16 @@
 #ifndef nsHtml5AutoPauseUpdate_h
 #define nsHtml5AutoPauseUpdate_h
 
-class MOZ_RAII nsHtml5AutoPauseUpdate final
-{
-private:
+class MOZ_RAII nsHtml5AutoPauseUpdate final {
+ private:
   RefPtr<nsHtml5DocumentBuilder> mBuilder;
 
-public:
+ public:
   explicit nsHtml5AutoPauseUpdate(nsHtml5DocumentBuilder* aBuilder)
-    : mBuilder(aBuilder)
-  {
+      : mBuilder(aBuilder) {
     mBuilder->EndDocUpdate();
   }
-  ~nsHtml5AutoPauseUpdate()
-  {
+  ~nsHtml5AutoPauseUpdate() {
     
     if (!mBuilder->IsComplete()) {
       mBuilder->BeginDocUpdate();
@@ -27,4 +24,4 @@ public:
   }
 };
 
-#endif 
+#endif  

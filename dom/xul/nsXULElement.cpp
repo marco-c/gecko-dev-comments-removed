@@ -90,62 +90,55 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 #ifdef XUL_PROTOTYPE_ATTRIBUTE_METERING
-uint32_t             nsXULPrototypeAttribute::gNumElements;
-uint32_t             nsXULPrototypeAttribute::gNumAttributes;
-uint32_t             nsXULPrototypeAttribute::gNumCacheTests;
-uint32_t             nsXULPrototypeAttribute::gNumCacheHits;
-uint32_t             nsXULPrototypeAttribute::gNumCacheSets;
-uint32_t             nsXULPrototypeAttribute::gNumCacheFills;
+uint32_t nsXULPrototypeAttribute::gNumElements;
+uint32_t nsXULPrototypeAttribute::gNumAttributes;
+uint32_t nsXULPrototypeAttribute::gNumCacheTests;
+uint32_t nsXULPrototypeAttribute::gNumCacheHits;
+uint32_t nsXULPrototypeAttribute::gNumCacheSets;
+uint32_t nsXULPrototypeAttribute::gNumCacheFills;
 #endif
 
-#define NS_DISPATCH_XUL_COMMAND     (1 << 0)
+#define NS_DISPATCH_XUL_COMMAND (1 << 0)
 
 
 
 
 
 nsXULElement::nsXULElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-    : nsStyledElement(std::move(aNodeInfo)),
-      mBindingParent(nullptr)
-{
-    XUL_PROTOTYPE_ATTRIBUTE_METER(gNumElements);
+    : nsStyledElement(std::move(aNodeInfo)), mBindingParent(nullptr) {
+  XUL_PROTOTYPE_ATTRIBUTE_METER(gNumElements);
 
-    
-    if (IsReadWriteTextElement()) {
-        AddStatesSilently(NS_EVENT_STATE_MOZ_READWRITE);
-        RemoveStatesSilently(NS_EVENT_STATE_MOZ_READONLY);
-    }
+  
+  if (IsReadWriteTextElement()) {
+    AddStatesSilently(NS_EVENT_STATE_MOZ_READWRITE);
+    RemoveStatesSilently(NS_EVENT_STATE_MOZ_READONLY);
+  }
 }
 
-nsXULElement::~nsXULElement()
-{
-}
+nsXULElement::~nsXULElement() {}
 
-void
-nsXULElement::MaybeUpdatePrivateLifetime()
-{
-    if (AttrValueIs(kNameSpaceID_None, nsGkAtoms::windowtype,
-                    NS_LITERAL_STRING("navigator:browser"),
-                    eCaseMatters)) {
-        return;
-    }
+void nsXULElement::MaybeUpdatePrivateLifetime() {
+  if (AttrValueIs(kNameSpaceID_None, nsGkAtoms::windowtype,
+                  NS_LITERAL_STRING("navigator:browser"), eCaseMatters)) {
+    return;
+  }
 
-    nsPIDOMWindowOuter* win = OwnerDoc()->GetWindow();
-    nsCOMPtr<nsIDocShell> docShell = win ? win->GetDocShell() : nullptr;
-    if (docShell) {
-        docShell->SetAffectPrivateSessionLifetime(false);
-    }
+  nsPIDOMWindowOuter* win = OwnerDoc()->GetWindow();
+  nsCOMPtr<nsIDocShell> docShell = win ? win->GetDocShell() : nullptr;
+  if (docShell) {
+    docShell->SetAffectPrivateSessionLifetime(false);
+  }
 }
 
 
-nsXULElement* NS_NewBasicXULElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-{
-    return new nsXULElement(std::move(aNodeInfo));
+nsXULElement* NS_NewBasicXULElement(
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+  return new nsXULElement(std::move(aNodeInfo));
 }
 
- 
-nsXULElement* nsXULElement::Construct(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-{
+
+nsXULElement* nsXULElement::Construct(
+    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo = aNodeInfo;
   if (nodeInfo->Equals(nsGkAtoms::label) ||
       nodeInfo->Equals(nsGkAtoms::description)) {
@@ -181,118 +174,106 @@ nsXULElement* nsXULElement::Construct(already_AddRefed<mozilla::dom::NodeInfo>&&
 }
 
 
-already_AddRefed<nsXULElement>
-nsXULElement::CreateFromPrototype(nsXULPrototypeElement* aPrototype,
-                                  mozilla::dom::NodeInfo *aNodeInfo,
-                                  bool aIsScriptable,
-                                  bool aIsRoot)
-{
-    RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
-    nsCOMPtr<Element> baseElement;
-    NS_NewXULElement(getter_AddRefs(baseElement),
-                     ni.forget(),
-                     dom::FROM_PARSER_NETWORK,
-                     aPrototype->mIsAtom);
+already_AddRefed<nsXULElement> nsXULElement::CreateFromPrototype(
+    nsXULPrototypeElement* aPrototype, mozilla::dom::NodeInfo* aNodeInfo,
+    bool aIsScriptable, bool aIsRoot) {
+  RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
+  nsCOMPtr<Element> baseElement;
+  NS_NewXULElement(getter_AddRefs(baseElement), ni.forget(),
+                   dom::FROM_PARSER_NETWORK, aPrototype->mIsAtom);
 
-    if (baseElement) {
-        nsXULElement* element = FromNode(baseElement);
+  if (baseElement) {
+    nsXULElement* element = FromNode(baseElement);
 
-        if (aPrototype->mHasIdAttribute) {
-            element->SetHasID();
-        }
-        if (aPrototype->mHasClassAttribute) {
-            element->SetMayHaveClass();
-        }
-        if (aPrototype->mHasStyleAttribute) {
-            element->SetMayHaveStyle();
-        }
-
-        element->MakeHeavyweight(aPrototype);
-        if (aIsScriptable) {
-            
-            
-            
-            for (uint32_t i = 0; i < aPrototype->mNumAttributes; ++i) {
-                element->AddListenerFor(aPrototype->mAttributes[i].mName);
-            }
-        }
-
-        if (aIsRoot && aPrototype->mNodeInfo->Equals(nsGkAtoms::window)) {
-            for (uint32_t i = 0; i < aPrototype->mNumAttributes; ++i) {
-                if (aPrototype->mAttributes[i].mName.Equals(nsGkAtoms::windowtype)) {
-                    element->MaybeUpdatePrivateLifetime();
-                }
-            }
-        }
-
-        return baseElement.forget().downcast<nsXULElement>();
+    if (aPrototype->mHasIdAttribute) {
+      element->SetHasID();
+    }
+    if (aPrototype->mHasClassAttribute) {
+      element->SetMayHaveClass();
+    }
+    if (aPrototype->mHasStyleAttribute) {
+      element->SetMayHaveStyle();
     }
 
-    return nullptr;
-}
-
-nsresult
-nsXULElement::CreateFromPrototype(nsXULPrototypeElement* aPrototype,
-                                  nsIDocument* aDocument,
-                                  bool aIsScriptable,
-                                  bool aIsRoot,
-                                  Element** aResult)
-{
-    
-    MOZ_ASSERT(aPrototype != nullptr, "null ptr");
-    if (! aPrototype)
-        return NS_ERROR_NULL_POINTER;
-
-    MOZ_ASSERT(aResult != nullptr, "null ptr");
-    if (! aResult)
-        return NS_ERROR_NULL_POINTER;
-
-    RefPtr<mozilla::dom::NodeInfo> nodeInfo;
-    if (aDocument) {
-        mozilla::dom::NodeInfo* ni = aPrototype->mNodeInfo;
-        nodeInfo = aDocument->NodeInfoManager()->
-          GetNodeInfo(ni->NameAtom(), ni->GetPrefixAtom(), ni->NamespaceID(),
-                      ELEMENT_NODE);
-    } else {
-        nodeInfo = aPrototype->mNodeInfo;
+    element->MakeHeavyweight(aPrototype);
+    if (aIsScriptable) {
+      
+      
+      
+      for (uint32_t i = 0; i < aPrototype->mNumAttributes; ++i) {
+        element->AddListenerFor(aPrototype->mAttributes[i].mName);
+      }
     }
 
-    RefPtr<nsXULElement> element = CreateFromPrototype(aPrototype, nodeInfo,
-                                                       aIsScriptable, aIsRoot);
-    element.forget(aResult);
-
-    return NS_OK;
-}
-
-nsresult
-NS_NewXULElement(Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-                 FromParser aFromParser, nsAtom* aIsAtom,
-                 mozilla::dom::CustomElementDefinition* aDefinition)
-{
-    RefPtr<mozilla::dom::NodeInfo> nodeInfo = aNodeInfo;
-
-    MOZ_ASSERT(nodeInfo, "need nodeinfo for non-proto Create");
-
-    NS_ASSERTION(nodeInfo->NamespaceEquals(kNameSpaceID_XUL),
-                 "Trying to create XUL elements that don't have the XUL namespace");
-
-    nsIDocument* doc = nodeInfo->GetDocument();
-    if (doc && !doc->AllowXULXBL()) {
-        return NS_ERROR_NOT_AVAILABLE;
+    if (aIsRoot && aPrototype->mNodeInfo->Equals(nsGkAtoms::window)) {
+      for (uint32_t i = 0; i < aPrototype->mNumAttributes; ++i) {
+        if (aPrototype->mAttributes[i].mName.Equals(nsGkAtoms::windowtype)) {
+          element->MaybeUpdatePrivateLifetime();
+        }
+      }
     }
 
-    return nsContentUtils::NewXULOrHTMLElement(aResult, nodeInfo, aFromParser, aIsAtom, aDefinition);
+    return baseElement.forget().downcast<nsXULElement>();
+  }
+
+  return nullptr;
 }
 
-void
-NS_TrustedNewXULElement(Element** aResult,
-                        already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-{
-    RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
-    MOZ_ASSERT(ni, "need nodeinfo for non-proto Create");
+nsresult nsXULElement::CreateFromPrototype(nsXULPrototypeElement* aPrototype,
+                                           nsIDocument* aDocument,
+                                           bool aIsScriptable, bool aIsRoot,
+                                           Element** aResult) {
+  
+  MOZ_ASSERT(aPrototype != nullptr, "null ptr");
+  if (!aPrototype) return NS_ERROR_NULL_POINTER;
 
-    
-    NS_ADDREF(*aResult = nsXULElement::Construct(ni.forget()));
+  MOZ_ASSERT(aResult != nullptr, "null ptr");
+  if (!aResult) return NS_ERROR_NULL_POINTER;
+
+  RefPtr<mozilla::dom::NodeInfo> nodeInfo;
+  if (aDocument) {
+    mozilla::dom::NodeInfo* ni = aPrototype->mNodeInfo;
+    nodeInfo = aDocument->NodeInfoManager()->GetNodeInfo(
+        ni->NameAtom(), ni->GetPrefixAtom(), ni->NamespaceID(), ELEMENT_NODE);
+  } else {
+    nodeInfo = aPrototype->mNodeInfo;
+  }
+
+  RefPtr<nsXULElement> element =
+      CreateFromPrototype(aPrototype, nodeInfo, aIsScriptable, aIsRoot);
+  element.forget(aResult);
+
+  return NS_OK;
+}
+
+nsresult NS_NewXULElement(Element** aResult,
+                          already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                          FromParser aFromParser, nsAtom* aIsAtom,
+                          mozilla::dom::CustomElementDefinition* aDefinition) {
+  RefPtr<mozilla::dom::NodeInfo> nodeInfo = aNodeInfo;
+
+  MOZ_ASSERT(nodeInfo, "need nodeinfo for non-proto Create");
+
+  NS_ASSERTION(
+      nodeInfo->NamespaceEquals(kNameSpaceID_XUL),
+      "Trying to create XUL elements that don't have the XUL namespace");
+
+  nsIDocument* doc = nodeInfo->GetDocument();
+  if (doc && !doc->AllowXULXBL()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  return nsContentUtils::NewXULOrHTMLElement(aResult, nodeInfo, aFromParser,
+                                             aIsAtom, aDefinition);
+}
+
+void NS_TrustedNewXULElement(
+    Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+  RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
+  MOZ_ASSERT(ni, "need nodeinfo for non-proto Create");
+
+  
+  NS_ADDREF(*aResult = nsXULElement::Construct(ni.forget()));
 }
 
 
@@ -300,132 +281,122 @@ NS_TrustedNewXULElement(Element** aResult,
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsXULElement)
 
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(nsXULElement,
-                                                  nsStyledElement)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(nsXULElement, nsStyledElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mBindingParent);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(nsXULElement,
-                                                nsStyledElement)
-    
-    tmp->ClearHasID();
-    NS_IMPL_CYCLE_COLLECTION_UNLINK(mBindingParent);
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(nsXULElement, nsStyledElement)
+  
+  tmp->ClearHasID();
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mBindingParent);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_ADDREF_INHERITED(nsXULElement, nsStyledElement)
 NS_IMPL_RELEASE_INHERITED(nsXULElement, nsStyledElement)
 
 NS_INTERFACE_TABLE_HEAD_CYCLE_COLLECTION_INHERITED(nsXULElement)
-    NS_ELEMENT_INTERFACE_TABLE_TO_MAP_SEGUE
+  NS_ELEMENT_INTERFACE_TABLE_TO_MAP_SEGUE
 
-    nsCOMPtr<nsISupports> iface =
+  nsCOMPtr<nsISupports> iface =
       CustomElementRegistry::CallGetCustomInterface(this, aIID);
-    if (iface) {
-      iface->QueryInterface(aIID, aInstancePtr);
-      if (*aInstancePtr) {
-        return NS_OK;
-      }
+  if (iface) {
+    iface->QueryInterface(aIID, aInstancePtr);
+    if (*aInstancePtr) {
+      return NS_OK;
     }
+  }
 
 NS_INTERFACE_MAP_END_INHERITING(nsStyledElement)
 
 
 
 
-nsresult
-nsXULElement::Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult) const
-{
-    *aResult = nullptr;
+nsresult nsXULElement::Clone(mozilla::dom::NodeInfo* aNodeInfo,
+                             nsINode** aResult) const {
+  *aResult = nullptr;
 
-    RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
-    RefPtr<nsXULElement> element = Construct(ni.forget());
+  RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
+  RefPtr<nsXULElement> element = Construct(ni.forget());
 
-    nsresult rv = element->mAttrs.EnsureCapacityToClone(mAttrs);
+  nsresult rv = element->mAttrs.EnsureCapacityToClone(mAttrs);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+
+  uint32_t count = mAttrs.AttrCount();
+  rv = NS_OK;
+  for (uint32_t i = 0; i < count; ++i) {
+    const nsAttrName* originalName = mAttrs.AttrNameAt(i);
+    const nsAttrValue* originalValue = mAttrs.AttrAt(i);
+    nsAttrValue attrValue;
+
+    
+    if (originalValue->Type() == nsAttrValue::eCSSDeclaration) {
+      DeclarationBlock* decl = originalValue->GetCSSDeclarationValue();
+      RefPtr<DeclarationBlock> declClone = decl->Clone();
+
+      nsString stringValue;
+      originalValue->ToString(stringValue);
+
+      attrValue.SetTo(declClone.forget(), &stringValue);
+    } else {
+      attrValue.SetTo(*originalValue);
+    }
+
+    bool oldValueSet;
+    if (originalName->IsAtom()) {
+      rv = element->mAttrs.SetAndSwapAttr(originalName->Atom(), attrValue,
+                                          &oldValueSet);
+    } else {
+      rv = element->mAttrs.SetAndSwapAttr(originalName->NodeInfo(), attrValue,
+                                          &oldValueSet);
+    }
     NS_ENSURE_SUCCESS(rv, rv);
-
-    
-
-    uint32_t count = mAttrs.AttrCount();
-    rv = NS_OK;
-    for (uint32_t i = 0; i < count; ++i) {
-        const nsAttrName* originalName = mAttrs.AttrNameAt(i);
-        const nsAttrValue* originalValue = mAttrs.AttrAt(i);
-        nsAttrValue attrValue;
-
-        
-        if (originalValue->Type() == nsAttrValue::eCSSDeclaration) {
-            DeclarationBlock* decl = originalValue->GetCSSDeclarationValue();
-            RefPtr<DeclarationBlock> declClone = decl->Clone();
-
-            nsString stringValue;
-            originalValue->ToString(stringValue);
-
-            attrValue.SetTo(declClone.forget(), &stringValue);
-        } else {
-            attrValue.SetTo(*originalValue);
-        }
-
-        bool oldValueSet;
-        if (originalName->IsAtom()) {
-           rv = element->mAttrs.SetAndSwapAttr(originalName->Atom(),
-                                               attrValue,
-                                               &oldValueSet);
-        } else {
-            rv = element->mAttrs.SetAndSwapAttr(originalName->NodeInfo(),
-                                                attrValue,
-                                                &oldValueSet);
-        }
-        NS_ENSURE_SUCCESS(rv, rv);
-        element->AddListenerFor(*originalName);
-        if (originalName->Equals(nsGkAtoms::id) &&
-            !originalValue->IsEmptyString()) {
-            element->SetHasID();
-        }
-        if (originalName->Equals(nsGkAtoms::_class)) {
-            element->SetMayHaveClass();
-        }
-        if (originalName->Equals(nsGkAtoms::style)) {
-            element->SetMayHaveStyle();
-        }
+    element->AddListenerFor(*originalName);
+    if (originalName->Equals(nsGkAtoms::id) &&
+        !originalValue->IsEmptyString()) {
+      element->SetHasID();
     }
+    if (originalName->Equals(nsGkAtoms::_class)) {
+      element->SetMayHaveClass();
+    }
+    if (originalName->Equals(nsGkAtoms::style)) {
+      element->SetMayHaveStyle();
+    }
+  }
 
-    element.forget(aResult);
-    return rv;
+  element.forget(aResult);
+  return rv;
 }
 
 
 
-EventListenerManager*
-nsXULElement::GetEventListenerManagerForAttr(nsAtom* aAttrName, bool* aDefer)
-{
-    
-    
-    
-    nsIDocument* doc = OwnerDoc();
+EventListenerManager* nsXULElement::GetEventListenerManagerForAttr(
+    nsAtom* aAttrName, bool* aDefer) {
+  
+  
+  
+  nsIDocument* doc = OwnerDoc();
 
-    nsPIDOMWindowInner *window;
-    Element *root = doc->GetRootElement();
-    if ((!root || root == this) && (window = doc->GetInnerWindow())) {
+  nsPIDOMWindowInner* window;
+  Element* root = doc->GetRootElement();
+  if ((!root || root == this) && (window = doc->GetInnerWindow())) {
+    nsCOMPtr<EventTarget> piTarget = do_QueryInterface(window);
 
-        nsCOMPtr<EventTarget> piTarget = do_QueryInterface(window);
+    *aDefer = false;
+    return piTarget->GetOrCreateListenerManager();
+  }
 
-        *aDefer = false;
-        return piTarget->GetOrCreateListenerManager();
-    }
-
-    return nsStyledElement::GetEventListenerManagerForAttr(aAttrName, aDefer);
+  return nsStyledElement::GetEventListenerManagerForAttr(aAttrName, aDefer);
 }
 
 
-static bool IsNonList(mozilla::dom::NodeInfo* aNodeInfo)
-{
+static bool IsNonList(mozilla::dom::NodeInfo* aNodeInfo) {
   return !aNodeInfo->Equals(nsGkAtoms::tree) &&
          !aNodeInfo->Equals(nsGkAtoms::richlistbox);
 }
 
-bool
-nsXULElement::IsFocusableInternal(int32_t *aTabIndex, bool aWithMouse)
-{
+bool nsXULElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
   
 
 
@@ -460,10 +431,8 @@ nsXULElement::IsFocusableInternal(int32_t *aTabIndex, bool aWithMouse)
   
   
   
-  if (aWithMouse &&
-      IsNonList(mNodeInfo) &&
-      !EventStateManager::IsRemoteTarget(this))
-  {
+  if (aWithMouse && IsNonList(mNodeInfo) &&
+      !EventStateManager::IsRemoteTarget(this)) {
     return false;
   }
 #endif
@@ -474,8 +443,7 @@ nsXULElement::IsFocusableInternal(int32_t *aTabIndex, bool aWithMouse)
     bool disabled;
     xulControl->GetDisabled(&disabled);
     if (disabled) {
-      if (aTabIndex)
-        *aTabIndex = -1;
+      if (aTabIndex) *aTabIndex = -1;
       return false;
     }
     shouldFocus = true;
@@ -514,16 +482,12 @@ nsXULElement::IsFocusableInternal(int32_t *aTabIndex, bool aWithMouse)
   return shouldFocus;
 }
 
-bool
-nsXULElement::HasMenu()
-{
+bool nsXULElement::HasMenu() {
   nsMenuFrame* menu = do_QueryFrame(GetPrimaryFrame());
   return menu != nullptr;
 }
 
-void
-nsXULElement::OpenMenu(bool aOpenFlag)
-{
+void nsXULElement::OpenMenu(bool aOpenFlag) {
   nsMenuFrame* menu = do_QueryFrame(GetPrimaryFrame(FlushType::Frames));
 
   nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
@@ -531,8 +495,7 @@ nsXULElement::OpenMenu(bool aOpenFlag)
     if (aOpenFlag) {
       
       pm->ShowMenu(this, false, false);
-    }
-    else if (menu) {
+    } else if (menu) {
       nsMenuPopupFrame* popupFrame = menu->GetPopup();
       if (popupFrame) {
         pm->HidePopup(popupFrame->GetContent(), false, true, false, false);
@@ -541,152 +504,137 @@ nsXULElement::OpenMenu(bool aOpenFlag)
   }
 }
 
-bool
-nsXULElement::PerformAccesskey(bool aKeyCausesActivation,
-                               bool aIsTrustedEvent)
-{
-    RefPtr<Element> content(this);
+bool nsXULElement::PerformAccesskey(bool aKeyCausesActivation,
+                                    bool aIsTrustedEvent) {
+  RefPtr<Element> content(this);
 
-    if (IsXULElement(nsGkAtoms::label)) {
-        nsAutoString control;
-        GetAttr(kNameSpaceID_None, nsGkAtoms::control, control);
-        if (control.IsEmpty()) {
-            return false;
-        }
-
-        
-        
-        nsCOMPtr<nsIDocument> document = content->GetUncomposedDoc();
-        if (!document) {
-            return false;
-        }
-
-        content = document->GetElementById(control);
-        if (!content) {
-            return false;
-        }
+  if (IsXULElement(nsGkAtoms::label)) {
+    nsAutoString control;
+    GetAttr(kNameSpaceID_None, nsGkAtoms::control, control);
+    if (control.IsEmpty()) {
+      return false;
     }
 
-    nsIFrame* frame = content->GetPrimaryFrame();
-    if (!frame || !frame->IsVisibleConsideringAncestors()) {
-        return false;
+    
+    
+    nsCOMPtr<nsIDocument> document = content->GetUncomposedDoc();
+    if (!document) {
+      return false;
     }
 
-    bool focused = false;
-    nsXULElement* elm = FromNode(content);
-    if (elm) {
-        
-        if (!content->IsXULElement(nsGkAtoms::toolbarbutton)) {
-          nsIFocusManager* fm = nsFocusManager::GetFocusManager();
-          if (fm) {
-            nsCOMPtr<Element> elementToFocus;
-            
-            if (content->IsXULElement(nsGkAtoms::radio)) {
-              nsCOMPtr<nsIDOMXULSelectControlItemElement> controlItem(do_QueryInterface(content));
-              if (controlItem) {
-                bool disabled;
-                controlItem->GetDisabled(&disabled);
-                if (!disabled) {
-                  nsCOMPtr<nsIDOMXULSelectControlElement> selectControl;
-                  controlItem->GetControl(getter_AddRefs(selectControl));
-                  elementToFocus = do_QueryInterface(selectControl);
-                }
-              }
-            } else {
-              elementToFocus = content;
-            }
-            if (elementToFocus) {
-              fm->SetFocus(elementToFocus, nsIFocusManager::FLAG_BYKEY);
-
-              
-              nsPIDOMWindowOuter* window = OwnerDoc()->GetWindow();
-              focused = (window && window->GetFocusedElement());
-            }
-          }
-        }
-        if (aKeyCausesActivation &&
-            !content->IsAnyOfXULElements(nsGkAtoms::textbox, nsGkAtoms::menulist)) {
-          elm->ClickWithInputSource(MouseEvent_Binding::MOZ_SOURCE_KEYBOARD, aIsTrustedEvent);
-        }
-    } else {
-        return content->PerformAccesskey(aKeyCausesActivation, aIsTrustedEvent);
+    content = document->GetElementById(control);
+    if (!content) {
+      return false;
     }
-
-    return focused;
-}
-
-
-
-void
-nsXULElement::AddListenerFor(const nsAttrName& aName)
-{
-    
-    
-    
-    
-    if (aName.IsAtom()) {
-        nsAtom *attr = aName.Atom();
-        MaybeAddPopupListener(attr);
-        if (nsContentUtils::IsEventAttributeName(attr, EventNameType_XUL)) {
-            nsAutoString value;
-            GetAttr(kNameSpaceID_None, attr, value);
-            SetEventHandler(attr, value, true);
-        }
-    }
-}
-
-void
-nsXULElement::MaybeAddPopupListener(nsAtom* aLocalName)
-{
-    
-    
-    
-    if (aLocalName == nsGkAtoms::menu ||
-        aLocalName == nsGkAtoms::contextmenu ||
-        
-        aLocalName == nsGkAtoms::popup ||
-        aLocalName == nsGkAtoms::context) {
-        AddPopupListener(aLocalName);
-    }
-}
-
-
-
-
-
-void
-nsXULElement::UpdateEditableState(bool aNotify)
-{
-    
-    
-    nsIContent *parent = GetParent();
-
-    SetEditableFlag(parent && parent->HasFlag(NODE_IS_EDITABLE));
-    UpdateState(aNotify);
-}
-
-class XULInContentErrorReporter : public Runnable
-{
-public:
-  explicit XULInContentErrorReporter(nsIDocument* aDocument)
-    : mozilla::Runnable("XULInContentErrorReporter")
-    , mDocument(aDocument)
-  {
   }
 
-  NS_IMETHOD Run() override
-  {
+  nsIFrame* frame = content->GetPrimaryFrame();
+  if (!frame || !frame->IsVisibleConsideringAncestors()) {
+    return false;
+  }
+
+  bool focused = false;
+  nsXULElement* elm = FromNode(content);
+  if (elm) {
+    
+    if (!content->IsXULElement(nsGkAtoms::toolbarbutton)) {
+      nsIFocusManager* fm = nsFocusManager::GetFocusManager();
+      if (fm) {
+        nsCOMPtr<Element> elementToFocus;
+        
+        if (content->IsXULElement(nsGkAtoms::radio)) {
+          nsCOMPtr<nsIDOMXULSelectControlItemElement> controlItem(
+              do_QueryInterface(content));
+          if (controlItem) {
+            bool disabled;
+            controlItem->GetDisabled(&disabled);
+            if (!disabled) {
+              nsCOMPtr<nsIDOMXULSelectControlElement> selectControl;
+              controlItem->GetControl(getter_AddRefs(selectControl));
+              elementToFocus = do_QueryInterface(selectControl);
+            }
+          }
+        } else {
+          elementToFocus = content;
+        }
+        if (elementToFocus) {
+          fm->SetFocus(elementToFocus, nsIFocusManager::FLAG_BYKEY);
+
+          
+          nsPIDOMWindowOuter* window = OwnerDoc()->GetWindow();
+          focused = (window && window->GetFocusedElement());
+        }
+      }
+    }
+    if (aKeyCausesActivation &&
+        !content->IsAnyOfXULElements(nsGkAtoms::textbox, nsGkAtoms::menulist)) {
+      elm->ClickWithInputSource(MouseEvent_Binding::MOZ_SOURCE_KEYBOARD,
+                                aIsTrustedEvent);
+    }
+  } else {
+    return content->PerformAccesskey(aKeyCausesActivation, aIsTrustedEvent);
+  }
+
+  return focused;
+}
+
+
+
+void nsXULElement::AddListenerFor(const nsAttrName& aName) {
+  
+  
+  
+  
+  if (aName.IsAtom()) {
+    nsAtom* attr = aName.Atom();
+    MaybeAddPopupListener(attr);
+    if (nsContentUtils::IsEventAttributeName(attr, EventNameType_XUL)) {
+      nsAutoString value;
+      GetAttr(kNameSpaceID_None, attr, value);
+      SetEventHandler(attr, value, true);
+    }
+  }
+}
+
+void nsXULElement::MaybeAddPopupListener(nsAtom* aLocalName) {
+  
+  
+  
+  if (aLocalName == nsGkAtoms::menu || aLocalName == nsGkAtoms::contextmenu ||
+      
+      aLocalName == nsGkAtoms::popup || aLocalName == nsGkAtoms::context) {
+    AddPopupListener(aLocalName);
+  }
+}
+
+
+
+
+
+void nsXULElement::UpdateEditableState(bool aNotify) {
+  
+  
+  nsIContent* parent = GetParent();
+
+  SetEditableFlag(parent && parent->HasFlag(NODE_IS_EDITABLE));
+  UpdateState(aNotify);
+}
+
+class XULInContentErrorReporter : public Runnable {
+ public:
+  explicit XULInContentErrorReporter(nsIDocument* aDocument)
+      : mozilla::Runnable("XULInContentErrorReporter"), mDocument(aDocument) {}
+
+  NS_IMETHOD Run() override {
     mDocument->WarnOnceAbout(nsIDocument::eImportXULIntoContent, false);
     return NS_OK;
   }
 
-private:
+ private:
   nsCOMPtr<nsIDocument> mDocument;
 };
 
-static bool
-NeedTooltipSupport(const nsXULElement& aXULElement)
-{
+static bool NeedTooltipSupport(const nsXULElement& aXULElement) {
   if (aXULElement.NodeInfo()->Equals(nsGkAtoms::treechildren)) {
     
     
@@ -697,14 +645,9 @@ NeedTooltipSupport(const nsXULElement& aXULElement)
          aXULElement.GetBoolAttr(nsGkAtoms::tooltiptext);
 }
 
-nsresult
-nsXULElement::BindToTree(nsIDocument* aDocument,
-                         nsIContent* aParent,
-                         nsIContent* aBindingParent)
-{
-  if (!aBindingParent &&
-      aDocument &&
-      !aDocument->IsLoadedAsInteractiveData() &&
+nsresult nsXULElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
+                                  nsIContent* aBindingParent) {
+  if (!aBindingParent && aDocument && !aDocument->IsLoadedAsInteractiveData() &&
       !aDocument->AllowXULXBL() &&
       !aDocument->HasWarnedAbout(nsIDocument::eImportXULIntoContent)) {
     nsContentUtils::AddScriptRunner(new XULInContentErrorReporter(aDocument));
@@ -725,19 +668,14 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
     
     nsAtom* tag = NodeInfo()->NameAtom();
     MOZ_ASSERT(
-      
-      tag == nsGkAtoms::scrollbar ||
-      tag == nsGkAtoms::scrollbarbutton ||
-      tag == nsGkAtoms::scrollcorner ||
-      tag == nsGkAtoms::slider ||
-      tag == nsGkAtoms::thumb ||
-      
-      tag == nsGkAtoms::datetimebox ||
-      tag == nsGkAtoms::resizer ||
-      tag == nsGkAtoms::label ||
-      tag == nsGkAtoms::videocontrols,
-      "Unexpected XUL element in non-XUL doc"
-    );
+        
+        tag == nsGkAtoms::scrollbar || tag == nsGkAtoms::scrollbarbutton ||
+            tag == nsGkAtoms::scrollcorner || tag == nsGkAtoms::slider ||
+            tag == nsGkAtoms::thumb ||
+            
+            tag == nsGkAtoms::datetimebox || tag == nsGkAtoms::resizer ||
+            tag == nsGkAtoms::label || tag == nsGkAtoms::videocontrols,
+        "Unexpected XUL element in non-XUL doc");
   }
 #endif
 
@@ -747,7 +685,7 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
   }
 
   if (doc && NeedTooltipSupport(*this)) {
-      AddTooltipSupport();
+    AddTooltipSupport();
   }
 
   if (doc && XULBroadcastManager::MayNeedListener(*this)) {
@@ -761,249 +699,244 @@ nsXULElement::BindToTree(nsIDocument* aDocument,
   return rv;
 }
 
-void
-nsXULElement::UnbindFromTree(bool aDeep, bool aNullParent)
-{
-    if (NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
-        nsXBLService::DetachGlobalKeyHandler(this);
-    }
+void nsXULElement::UnbindFromTree(bool aDeep, bool aNullParent) {
+  if (NodeInfo()->Equals(nsGkAtoms::keyset, kNameSpaceID_XUL)) {
+    nsXBLService::DetachGlobalKeyHandler(this);
+  }
 
-    if (NeedTooltipSupport(*this)) {
-        RemoveTooltipSupport();
-    }
+  if (NeedTooltipSupport(*this)) {
+    RemoveTooltipSupport();
+  }
 
-    nsIDocument* doc = GetComposedDoc();
-    if (doc && doc->HasXULBroadcastManager() &&
-        XULBroadcastManager::MayNeedListener(*this)) {
-        RefPtr<XULBroadcastManager> broadcastManager = doc->GetXULBroadcastManager();
-        broadcastManager->RemoveListener(this);
-    }
+  nsIDocument* doc = GetComposedDoc();
+  if (doc && doc->HasXULBroadcastManager() &&
+      XULBroadcastManager::MayNeedListener(*this)) {
+    RefPtr<XULBroadcastManager> broadcastManager =
+        doc->GetXULBroadcastManager();
+    broadcastManager->RemoveListener(this);
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
-    if (slots) {
-        slots->mControllers = nullptr;
-    }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
+  if (slots) {
+    slots->mControllers = nullptr;
+  }
 
-    nsStyledElement::UnbindFromTree(aDeep, aNullParent);
+  nsStyledElement::UnbindFromTree(aDeep, aNullParent);
 }
 
-void
-nsXULElement::UnregisterAccessKey(const nsAString& aOldValue)
-{
-    
-    
-    nsIDocument* doc = GetComposedDoc();
-    if (doc && !aOldValue.IsEmpty()) {
-        nsIPresShell *shell = doc->GetShell();
+void nsXULElement::UnregisterAccessKey(const nsAString& aOldValue) {
+  
+  
+  nsIDocument* doc = GetComposedDoc();
+  if (doc && !aOldValue.IsEmpty()) {
+    nsIPresShell* shell = doc->GetShell();
 
-        if (shell) {
-            Element* element = this;
+    if (shell) {
+      Element* element = this;
 
-            
-            if (mNodeInfo->Equals(nsGkAtoms::label)) {
-                
-                
-                
-                nsIContent* bindingParent = GetBindingParent();
-                element = bindingParent ? bindingParent->AsElement() : nullptr;
-            }
-
-            if (element) {
-                shell->GetPresContext()->EventStateManager()->
-                    UnregisterAccessKey(element, aOldValue.First());
-            }
-        }
-    }
-}
-
-nsresult
-nsXULElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                            const nsAttrValueOrString* aValue, bool aNotify)
-{
-    if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::accesskey &&
-        IsInUncomposedDoc()) {
-        nsAutoString oldValue;
-        if (GetAttr(aNamespaceID, aName, oldValue)) {
-            UnregisterAccessKey(oldValue);
-        }
-    } else if (aNamespaceID == kNameSpaceID_None &&
-               (aName == nsGkAtoms::command || aName == nsGkAtoms::observes) &&
-               IsInUncomposedDoc()) {
-
-        
-        
-        nsAutoString oldValue;
-        GetAttr(kNameSpaceID_None, nsGkAtoms::observes, oldValue);
-        if (oldValue.IsEmpty()) {
-          GetAttr(kNameSpaceID_None, nsGkAtoms::command, oldValue);
-        }
-
-        nsIDocument* doc = GetUncomposedDoc();
-        if (!oldValue.IsEmpty() && doc->HasXULBroadcastManager()) {
-            RefPtr<XULBroadcastManager> broadcastManager = doc->GetXULBroadcastManager();
-            broadcastManager->RemoveListener(this);
-        }
-    } else if (aNamespaceID == kNameSpaceID_None &&
-               aValue &&
-               mNodeInfo->Equals(nsGkAtoms::window) &&
-               aName == nsGkAtoms::chromemargin) {
-      nsAttrValue attrValue;
       
-      if (!attrValue.ParseIntMarginValue(aValue->String())) {
-        return NS_ERROR_INVALID_ARG;
+      if (mNodeInfo->Equals(nsGkAtoms::label)) {
+        
+        
+        
+        nsIContent* bindingParent = GetBindingParent();
+        element = bindingParent ? bindingParent->AsElement() : nullptr;
       }
-    } else if (aNamespaceID == kNameSpaceID_None &&
-               aName == nsGkAtoms::usercontextid) {
-        nsAutoString oldValue;
-        bool hasAttribute = GetAttr(kNameSpaceID_None, nsGkAtoms::usercontextid, oldValue);
-        if (hasAttribute && (!aValue || !aValue->String().Equals(oldValue))) {
-          MOZ_ASSERT(false, "Changing usercontextid is not allowed.");
-          return NS_ERROR_INVALID_ARG;
-        }
-    }
 
-    return nsStyledElement::BeforeSetAttr(aNamespaceID, aName,
-                                          aValue, aNotify);
+      if (element) {
+        shell->GetPresContext()->EventStateManager()->UnregisterAccessKey(
+            element, aOldValue.First());
+      }
+    }
+  }
 }
 
-nsresult
-nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
-                           const nsAttrValue* aValue,
-                           const nsAttrValue* aOldValue,
-                           nsIPrincipal* aSubjectPrincipal,
-                           bool aNotify)
-{
-    if (aNamespaceID == kNameSpaceID_None) {
-        if (aValue) {
-            
-            
-            MaybeAddPopupListener(aName);
-            if (nsContentUtils::IsEventAttributeName(aName, EventNameType_XUL)) {
-                if (aValue->Type() == nsAttrValue::eString) {
-                    SetEventHandler(aName, aValue->GetStringValue(), true);
-                } else {
-                    nsAutoString body;
-                    aValue->ToString(body);
-                    SetEventHandler(aName, body, true);
-                }
-            }
+nsresult nsXULElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                                     const nsAttrValueOrString* aValue,
+                                     bool aNotify) {
+  if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::accesskey &&
+      IsInUncomposedDoc()) {
+    nsAutoString oldValue;
+    if (GetAttr(aNamespaceID, aName, oldValue)) {
+      UnregisterAccessKey(oldValue);
+    }
+  } else if (aNamespaceID == kNameSpaceID_None &&
+             (aName == nsGkAtoms::command || aName == nsGkAtoms::observes) &&
+             IsInUncomposedDoc()) {
+    
+    
+    
+    nsAutoString oldValue;
+    GetAttr(kNameSpaceID_None, nsGkAtoms::observes, oldValue);
+    if (oldValue.IsEmpty()) {
+      GetAttr(kNameSpaceID_None, nsGkAtoms::command, oldValue);
+    }
 
-            nsIDocument* document = GetUncomposedDoc();
+    nsIDocument* doc = GetUncomposedDoc();
+    if (!oldValue.IsEmpty() && doc->HasXULBroadcastManager()) {
+      RefPtr<XULBroadcastManager> broadcastManager =
+          doc->GetXULBroadcastManager();
+      broadcastManager->RemoveListener(this);
+    }
+  } else if (aNamespaceID == kNameSpaceID_None && aValue &&
+             mNodeInfo->Equals(nsGkAtoms::window) &&
+             aName == nsGkAtoms::chromemargin) {
+    nsAttrValue attrValue;
+    
+    if (!attrValue.ParseIntMarginValue(aValue->String())) {
+      return NS_ERROR_INVALID_ARG;
+    }
+  } else if (aNamespaceID == kNameSpaceID_None &&
+             aName == nsGkAtoms::usercontextid) {
+    nsAutoString oldValue;
+    bool hasAttribute =
+        GetAttr(kNameSpaceID_None, nsGkAtoms::usercontextid, oldValue);
+    if (hasAttribute && (!aValue || !aValue->String().Equals(oldValue))) {
+      MOZ_ASSERT(false, "Changing usercontextid is not allowed.");
+      return NS_ERROR_INVALID_ARG;
+    }
+  }
 
-            
-            if (mNodeInfo->Equals(nsGkAtoms::window)) {
-                if (aName == nsGkAtoms::hidechrome) {
-                    HideWindowChrome(
-                      aValue->Equals(NS_LITERAL_STRING("true"), eCaseMatters));
-                } else if (aName == nsGkAtoms::chromemargin) {
-                    SetChromeMargins(aValue);
-                } else if (aName == nsGkAtoms::windowtype &&
-                           document && document->GetRootElement() == this) {
-                    MaybeUpdatePrivateLifetime();
-                }
-            }
-            
-            
-            if (document && document->GetRootElement() == this) {
-                if (aName == nsGkAtoms::title) {
-                    document->NotifyPossibleTitleChange(false);
-                } else if (aName == nsGkAtoms::drawintitlebar) {
-                    SetDrawsInTitlebar(
-                        aValue->Equals(NS_LITERAL_STRING("true"), eCaseMatters));
-                } else if (aName == nsGkAtoms::drawtitle) {
-                    SetDrawsTitle(
-                        aValue->Equals(NS_LITERAL_STRING("true"), eCaseMatters));
-                } else if (aName == nsGkAtoms::localedir) {
-                    
-                    if (document->IsXULDocument()) {
-                        document->AsXULDocument()->ResetDocumentDirection();
-                    }
-                } else if (aName == nsGkAtoms::lwtheme ||
-                         aName == nsGkAtoms::lwthemetextcolor) {
-                    
-                    document->ResetDocumentLWTheme();
-                    UpdateBrightTitlebarForeground(document);
-                } else if (aName == nsGkAtoms::brighttitlebarforeground) {
-                    UpdateBrightTitlebarForeground(document);
-                }
-            }
+  return nsStyledElement::BeforeSetAttr(aNamespaceID, aName, aValue, aNotify);
+}
+
+nsresult nsXULElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
+                                    const nsAttrValue* aValue,
+                                    const nsAttrValue* aOldValue,
+                                    nsIPrincipal* aSubjectPrincipal,
+                                    bool aNotify) {
+  if (aNamespaceID == kNameSpaceID_None) {
+    if (aValue) {
+      
+      
+      MaybeAddPopupListener(aName);
+      if (nsContentUtils::IsEventAttributeName(aName, EventNameType_XUL)) {
+        if (aValue->Type() == nsAttrValue::eString) {
+          SetEventHandler(aName, aValue->GetStringValue(), true);
         } else {
-            if (mNodeInfo->Equals(nsGkAtoms::window)) {
-                if (aName == nsGkAtoms::hidechrome) {
-                    HideWindowChrome(false);
-                } else if (aName == nsGkAtoms::chromemargin) {
-                    ResetChromeMargins();
-                }
-            }
+          nsAutoString body;
+          aValue->ToString(body);
+          SetEventHandler(aName, body, true);
+        }
+      }
 
-            nsIDocument* doc = GetUncomposedDoc();
-            if (doc && doc->GetRootElement() == this) {
-                if (aName == nsGkAtoms::localedir) {
-                    
-                    if (doc->IsXULDocument()) {
-                        doc->AsXULDocument()->ResetDocumentDirection();
-                    }
-                } else if ((aName == nsGkAtoms::lwtheme ||
-                            aName == nsGkAtoms::lwthemetextcolor)) {
-                    
-                    doc->ResetDocumentLWTheme();
-                    UpdateBrightTitlebarForeground(doc);
-                } else if (aName == nsGkAtoms::brighttitlebarforeground) {
-                    UpdateBrightTitlebarForeground(doc);
-                } else if (aName == nsGkAtoms::drawintitlebar) {
-                    SetDrawsInTitlebar(false);
-                } else if (aName == nsGkAtoms::drawtitle) {
-                    SetDrawsTitle(false);
-                }
-            }
-        }
+      nsIDocument* document = GetUncomposedDoc();
 
-        if (aName == nsGkAtoms::tooltip || aName == nsGkAtoms::tooltiptext) {
-            if (!!aValue != !!aOldValue &&
-                IsInComposedDoc() &&
-                !NodeInfo()->Equals(nsGkAtoms::treechildren)) {
-                if (aValue) {
-                    AddTooltipSupport();
-                } else {
-                    RemoveTooltipSupport();
-                }
-            }
+      
+      if (mNodeInfo->Equals(nsGkAtoms::window)) {
+        if (aName == nsGkAtoms::hidechrome) {
+          HideWindowChrome(
+              aValue->Equals(NS_LITERAL_STRING("true"), eCaseMatters));
+        } else if (aName == nsGkAtoms::chromemargin) {
+          SetChromeMargins(aValue);
+        } else if (aName == nsGkAtoms::windowtype && document &&
+                   document->GetRootElement() == this) {
+          MaybeUpdatePrivateLifetime();
         }
-        nsIDocument* doc = GetComposedDoc();
-        if (doc && doc->HasXULBroadcastManager()) {
-            RefPtr<XULBroadcastManager> broadcastManager = doc->GetXULBroadcastManager();
-            broadcastManager->AttributeChanged(this, aNamespaceID, aName);
+      }
+      
+      
+      if (document && document->GetRootElement() == this) {
+        if (aName == nsGkAtoms::title) {
+          document->NotifyPossibleTitleChange(false);
+        } else if (aName == nsGkAtoms::drawintitlebar) {
+          SetDrawsInTitlebar(
+              aValue->Equals(NS_LITERAL_STRING("true"), eCaseMatters));
+        } else if (aName == nsGkAtoms::drawtitle) {
+          SetDrawsTitle(
+              aValue->Equals(NS_LITERAL_STRING("true"), eCaseMatters));
+        } else if (aName == nsGkAtoms::localedir) {
+          
+          
+          if (document->IsXULDocument()) {
+            document->AsXULDocument()->ResetDocumentDirection();
+          }
+        } else if (aName == nsGkAtoms::lwtheme ||
+                   aName == nsGkAtoms::lwthemetextcolor) {
+          
+          
+          document->ResetDocumentLWTheme();
+          UpdateBrightTitlebarForeground(document);
+        } else if (aName == nsGkAtoms::brighttitlebarforeground) {
+          UpdateBrightTitlebarForeground(document);
         }
-        if (doc && XULBroadcastManager::MayNeedListener(*this)) {
-            if (!doc->HasXULBroadcastManager()) {
-                doc->InitializeXULBroadcastManager();
-            }
-            XULBroadcastManager* broadcastManager = doc->GetXULBroadcastManager();
-            broadcastManager->AddListener(this);
+      }
+    } else {
+      if (mNodeInfo->Equals(nsGkAtoms::window)) {
+        if (aName == nsGkAtoms::hidechrome) {
+          HideWindowChrome(false);
+        } else if (aName == nsGkAtoms::chromemargin) {
+          ResetChromeMargins();
         }
+      }
 
-        
-        
+      nsIDocument* doc = GetUncomposedDoc();
+      if (doc && doc->GetRootElement() == this) {
+        if (aName == nsGkAtoms::localedir) {
+          
+          
+          if (doc->IsXULDocument()) {
+            doc->AsXULDocument()->ResetDocumentDirection();
+          }
+        } else if ((aName == nsGkAtoms::lwtheme ||
+                    aName == nsGkAtoms::lwthemetextcolor)) {
+          
+          doc->ResetDocumentLWTheme();
+          UpdateBrightTitlebarForeground(doc);
+        } else if (aName == nsGkAtoms::brighttitlebarforeground) {
+          UpdateBrightTitlebarForeground(doc);
+        } else if (aName == nsGkAtoms::drawintitlebar) {
+          SetDrawsInTitlebar(false);
+        } else if (aName == nsGkAtoms::drawtitle) {
+          SetDrawsTitle(false);
+        }
+      }
     }
 
-    return nsStyledElement::AfterSetAttr(aNamespaceID, aName,
-                                         aValue, aOldValue, aSubjectPrincipal, aNotify);
+    if (aName == nsGkAtoms::tooltip || aName == nsGkAtoms::tooltiptext) {
+      if (!!aValue != !!aOldValue && IsInComposedDoc() &&
+          !NodeInfo()->Equals(nsGkAtoms::treechildren)) {
+        if (aValue) {
+          AddTooltipSupport();
+        } else {
+          RemoveTooltipSupport();
+        }
+      }
+    }
+    nsIDocument* doc = GetComposedDoc();
+    if (doc && doc->HasXULBroadcastManager()) {
+      RefPtr<XULBroadcastManager> broadcastManager =
+          doc->GetXULBroadcastManager();
+      broadcastManager->AttributeChanged(this, aNamespaceID, aName);
+    }
+    if (doc && XULBroadcastManager::MayNeedListener(*this)) {
+      if (!doc->HasXULBroadcastManager()) {
+        doc->InitializeXULBroadcastManager();
+      }
+      XULBroadcastManager* broadcastManager = doc->GetXULBroadcastManager();
+      broadcastManager->AddListener(this);
+    }
+
+    
+    
+  }
+
+  return nsStyledElement::AfterSetAttr(aNamespaceID, aName, aValue, aOldValue,
+                                       aSubjectPrincipal, aNotify);
 }
 
-void
-nsXULElement::AddTooltipSupport()
-{
+void nsXULElement::AddTooltipSupport() {
   nsXULTooltipListener* listener = nsXULTooltipListener::GetInstance();
   if (!listener) {
     return;
@@ -1012,9 +945,7 @@ nsXULElement::AddTooltipSupport()
   listener->AddTooltipSupport(this);
 }
 
-void
-nsXULElement::RemoveTooltipSupport()
-{
+void nsXULElement::RemoveTooltipSupport() {
   nsXULTooltipListener* listener = nsXULTooltipListener::GetInstance();
   if (!listener) {
     return;
@@ -1023,622 +954,533 @@ nsXULElement::RemoveTooltipSupport()
   listener->RemoveTooltipSupport(this);
 }
 
-bool
-nsXULElement::ParseAttribute(int32_t aNamespaceID,
-                             nsAtom* aAttribute,
-                             const nsAString& aValue,
-                             nsIPrincipal* aMaybeScriptedPrincipal,
-                             nsAttrValue& aResult)
-{
-    if (aNamespaceID == kNameSpaceID_None &&
-        aAttribute == nsGkAtoms::tabindex) {
-      return aResult.ParseIntValue(aValue);
-    }
+bool nsXULElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                                  const nsAString& aValue,
+                                  nsIPrincipal* aMaybeScriptedPrincipal,
+                                  nsAttrValue& aResult) {
+  if (aNamespaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::tabindex) {
+    return aResult.ParseIntValue(aValue);
+  }
 
+  
+  if (!nsStyledElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
+                                       aMaybeScriptedPrincipal, aResult)) {
     
-    if (!nsStyledElement::ParseAttribute(aNamespaceID, aAttribute, aValue,
-                                         aMaybeScriptedPrincipal, aResult)) {
-        
-        aResult.ParseStringOrAtom(aValue);
-    }
+    aResult.ParseStringOrAtom(aValue);
+  }
 
-    return true;
+  return true;
 }
 
-void
-nsXULElement::DestroyContent()
-{
-    nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
-    if (slots) {
-        slots->mControllers = nullptr;
-    }
+void nsXULElement::DestroyContent() {
+  nsExtendedDOMSlots* slots = GetExistingExtendedDOMSlots();
+  if (slots) {
+    slots->mControllers = nullptr;
+  }
 
-    nsStyledElement::DestroyContent();
+  nsStyledElement::DestroyContent();
 }
 
 #ifdef DEBUG
-void
-nsXULElement::List(FILE* out, int32_t aIndent) const
-{
-    nsCString prefix("XUL");
-    if (HasSlots()) {
-      prefix.Append('*');
-    }
-    prefix.Append(' ');
+void nsXULElement::List(FILE* out, int32_t aIndent) const {
+  nsCString prefix("XUL");
+  if (HasSlots()) {
+    prefix.Append('*');
+  }
+  prefix.Append(' ');
 
-    nsStyledElement::List(out, aIndent, prefix);
+  nsStyledElement::List(out, aIndent, prefix);
 }
 #endif
 
-bool
-nsXULElement::IsEventStoppedFromAnonymousScrollbar(EventMessage aMessage)
-{
-    return (IsRootOfNativeAnonymousSubtree() &&
-            IsAnyOfXULElements(nsGkAtoms::scrollbar, nsGkAtoms::scrollcorner) &&
-            (aMessage == eMouseClick || aMessage == eMouseDoubleClick ||
-             aMessage == eXULCommand || aMessage == eContextMenu ||
-             aMessage == eDragStart  || aMessage == eMouseAuxClick));
+bool nsXULElement::IsEventStoppedFromAnonymousScrollbar(EventMessage aMessage) {
+  return (IsRootOfNativeAnonymousSubtree() &&
+          IsAnyOfXULElements(nsGkAtoms::scrollbar, nsGkAtoms::scrollcorner) &&
+          (aMessage == eMouseClick || aMessage == eMouseDoubleClick ||
+           aMessage == eXULCommand || aMessage == eContextMenu ||
+           aMessage == eDragStart || aMessage == eMouseAuxClick));
 }
 
-nsresult
-nsXULElement::DispatchXULCommand(const EventChainVisitor& aVisitor,
-                                 nsAutoString& aCommand)
-{
+nsresult nsXULElement::DispatchXULCommand(const EventChainVisitor& aVisitor,
+                                          nsAutoString& aCommand) {
+  
+  nsCOMPtr<nsIDocument> doc = GetUncomposedDoc();
+  NS_ENSURE_STATE(doc);
+  RefPtr<Element> commandElt = doc->GetElementById(aCommand);
+  if (commandElt) {
     
-    nsCOMPtr<nsIDocument> doc = GetUncomposedDoc();
-    NS_ENSURE_STATE(doc);
-    RefPtr<Element> commandElt = doc->GetElementById(aCommand);
-    if (commandElt) {
-        
-        
-        
-        
-        RefPtr<Event> event = aVisitor.mDOMEvent;
-        uint16_t inputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
-        while (event) {
-            NS_ENSURE_STATE(event->GetOriginalTarget() != commandElt);
-            RefPtr<XULCommandEvent> commandEvent = event->AsXULCommandEvent();
-            if (commandEvent) {
-                event = commandEvent->GetSourceEvent();
-                inputSource = commandEvent->InputSource();
-            } else {
-                event = nullptr;
-            }
-        }
-        WidgetInputEvent* orig = aVisitor.mEvent->AsInputEvent();
-        nsContentUtils::DispatchXULCommand(
-          commandElt,
-          orig->IsTrusted(),
-          aVisitor.mDOMEvent,
-          nullptr,
-          orig->IsControl(),
-          orig->IsAlt(),
-          orig->IsShift(),
-          orig->IsMeta(),
-          inputSource);
-    } else {
-        NS_WARNING("A XUL element is attached to a command that doesn't exist!\n");
+    
+    
+    
+    RefPtr<Event> event = aVisitor.mDOMEvent;
+    uint16_t inputSource = MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
+    while (event) {
+      NS_ENSURE_STATE(event->GetOriginalTarget() != commandElt);
+      RefPtr<XULCommandEvent> commandEvent = event->AsXULCommandEvent();
+      if (commandEvent) {
+        event = commandEvent->GetSourceEvent();
+        inputSource = commandEvent->InputSource();
+      } else {
+        event = nullptr;
+      }
     }
-    return NS_OK;
+    WidgetInputEvent* orig = aVisitor.mEvent->AsInputEvent();
+    nsContentUtils::DispatchXULCommand(
+        commandElt, orig->IsTrusted(), aVisitor.mDOMEvent, nullptr,
+        orig->IsControl(), orig->IsAlt(), orig->IsShift(), orig->IsMeta(),
+        inputSource);
+  } else {
+    NS_WARNING("A XUL element is attached to a command that doesn't exist!\n");
+  }
+  return NS_OK;
 }
 
-void
-nsXULElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
-{
-    aVisitor.mForceContentDispatch = true; 
-    if (IsEventStoppedFromAnonymousScrollbar(aVisitor.mEvent->mMessage)) {
-        
-        aVisitor.mCanHandle = true;
-        aVisitor.SetParentTarget(nullptr, false);
-        return;
+void nsXULElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
+  aVisitor.mForceContentDispatch = true;  
+  if (IsEventStoppedFromAnonymousScrollbar(aVisitor.mEvent->mMessage)) {
+    
+    aVisitor.mCanHandle = true;
+    aVisitor.SetParentTarget(nullptr, false);
+    return;
+  }
+  if (aVisitor.mEvent->mMessage == eXULCommand &&
+      aVisitor.mEvent->mClass == eInputEventClass &&
+      aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this) &&
+      !IsXULElement(nsGkAtoms::command)) {
+    
+    
+    
+    
+    nsAutoString command;
+    if (aVisitor.mDOMEvent && aVisitor.mDOMEvent->AsXULCommandEvent() &&
+        GetAttr(kNameSpaceID_None, nsGkAtoms::command, command) &&
+        !command.IsEmpty()) {
+      
+      
+      aVisitor.mCanHandle = false;
+      aVisitor.mAutomaticChromeDispatch = false;
+      
+      
+      aVisitor.mWantsPreHandleEvent = true;
+      aVisitor.mItemFlags |= NS_DISPATCH_XUL_COMMAND;
+      return;
     }
-    if (aVisitor.mEvent->mMessage == eXULCommand &&
-        aVisitor.mEvent->mClass == eInputEventClass &&
-        aVisitor.mEvent->mOriginalTarget == static_cast<nsIContent*>(this) &&
-        !IsXULElement(nsGkAtoms::command)) {
-        
-        
-        
-        
-        nsAutoString command;
-        if (aVisitor.mDOMEvent &&
-            aVisitor.mDOMEvent->AsXULCommandEvent() &&
-            GetAttr(kNameSpaceID_None, nsGkAtoms::command, command) &&
-            !command.IsEmpty()) {
-            
-            
-            aVisitor.mCanHandle = false;
-            aVisitor.mAutomaticChromeDispatch = false;
-            
-            
-            aVisitor.mWantsPreHandleEvent = true;
-            aVisitor.mItemFlags |= NS_DISPATCH_XUL_COMMAND;
-            return;
-        }
-    }
+  }
 
-    nsStyledElement::GetEventTargetParent(aVisitor);
+  nsStyledElement::GetEventTargetParent(aVisitor);
 }
 
-nsresult
-nsXULElement::PreHandleEvent(EventChainVisitor& aVisitor)
-{
-    if (aVisitor.mItemFlags & NS_DISPATCH_XUL_COMMAND) {
-        nsAutoString command;
-        GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
-        MOZ_ASSERT(!command.IsEmpty());
-        return DispatchXULCommand(aVisitor, command);
-    }
-    return nsStyledElement::PreHandleEvent(aVisitor);
+nsresult nsXULElement::PreHandleEvent(EventChainVisitor& aVisitor) {
+  if (aVisitor.mItemFlags & NS_DISPATCH_XUL_COMMAND) {
+    nsAutoString command;
+    GetAttr(kNameSpaceID_None, nsGkAtoms::command, command);
+    MOZ_ASSERT(!command.IsEmpty());
+    return DispatchXULCommand(aVisitor, command);
+  }
+  return nsStyledElement::PreHandleEvent(aVisitor);
 }
 
 
 
 
+nsChangeHint nsXULElement::GetAttributeChangeHint(const nsAtom* aAttribute,
+                                                  int32_t aModType) const {
+  nsChangeHint retval(nsChangeHint(0));
 
-nsChangeHint
-nsXULElement::GetAttributeChangeHint(const nsAtom* aAttribute,
-                                     int32_t aModType) const
-{
-    nsChangeHint retval(nsChangeHint(0));
+  if (aAttribute == nsGkAtoms::value &&
+      (aModType == MutationEvent_Binding::REMOVAL ||
+       aModType == MutationEvent_Binding::ADDITION)) {
+    if (IsAnyOfXULElements(nsGkAtoms::label, nsGkAtoms::description))
+      
+      
+      
+      
+      
+      retval = nsChangeHint_ReconstructFrame;
+  } else {
+    
+    
+    if (nsGkAtoms::left == aAttribute || nsGkAtoms::top == aAttribute ||
+        nsGkAtoms::right == aAttribute || nsGkAtoms::bottom == aAttribute ||
+        nsGkAtoms::start == aAttribute || nsGkAtoms::end == aAttribute)
+      retval = NS_STYLE_HINT_REFLOW;
+  }
 
-    if (aAttribute == nsGkAtoms::value &&
-        (aModType == MutationEvent_Binding::REMOVAL ||
-         aModType == MutationEvent_Binding::ADDITION)) {
-      if (IsAnyOfXULElements(nsGkAtoms::label, nsGkAtoms::description))
-        
-        
-        
-        
-        
-        retval = nsChangeHint_ReconstructFrame;
-    } else {
-        
-        
-        if (nsGkAtoms::left == aAttribute || nsGkAtoms::top == aAttribute ||
-            nsGkAtoms::right == aAttribute || nsGkAtoms::bottom == aAttribute ||
-            nsGkAtoms::start == aAttribute || nsGkAtoms::end == aAttribute)
-            retval = NS_STYLE_HINT_REFLOW;
-    }
-
-    return retval;
+  return retval;
 }
 
 NS_IMETHODIMP_(bool)
-nsXULElement::IsAttributeMapped(const nsAtom* aAttribute) const
-{
-    return false;
+nsXULElement::IsAttributeMapped(const nsAtom* aAttribute) const {
+  return false;
 }
 
-nsIControllers*
-nsXULElement::GetControllers(ErrorResult& rv)
-{
-    if (! Controllers()) {
-        nsExtendedDOMSlots* slots = ExtendedDOMSlots();
+nsIControllers* nsXULElement::GetControllers(ErrorResult& rv) {
+  if (!Controllers()) {
+    nsExtendedDOMSlots* slots = ExtendedDOMSlots();
 
-        slots->mControllers = new nsXULControllers();
-    }
+    slots->mControllers = new nsXULControllers();
+  }
 
-    return Controllers();
+  return Controllers();
 }
 
-already_AddRefed<BoxObject>
-nsXULElement::GetBoxObject(ErrorResult& rv)
-{
-    
-    return OwnerDoc()->GetBoxObjectFor(this, rv);
+already_AddRefed<BoxObject> nsXULElement::GetBoxObject(ErrorResult& rv) {
+  
+  return OwnerDoc()->GetBoxObjectFor(this, rv);
 }
 
-void
-nsXULElement::Click(CallerType aCallerType)
-{
+void nsXULElement::Click(CallerType aCallerType) {
   ClickWithInputSource(MouseEvent_Binding::MOZ_SOURCE_UNKNOWN,
                        aCallerType == CallerType::System);
 }
 
-void
-nsXULElement::ClickWithInputSource(uint16_t aInputSource, bool aIsTrustedEvent)
-{
-    if (BoolAttrIsTrue(nsGkAtoms::disabled))
+void nsXULElement::ClickWithInputSource(uint16_t aInputSource,
+                                        bool aIsTrustedEvent) {
+  if (BoolAttrIsTrue(nsGkAtoms::disabled)) return;
+
+  nsCOMPtr<nsIDocument> doc = GetComposedDoc();  
+  if (doc) {
+    RefPtr<nsPresContext> context = doc->GetPresContext();
+    if (context) {
+      
+
+      WidgetMouseEvent eventDown(aIsTrustedEvent, eMouseDown, nullptr,
+                                 WidgetMouseEvent::eReal);
+      WidgetMouseEvent eventUp(aIsTrustedEvent, eMouseUp, nullptr,
+                               WidgetMouseEvent::eReal);
+      WidgetMouseEvent eventClick(aIsTrustedEvent, eMouseClick, nullptr,
+                                  WidgetMouseEvent::eReal);
+      eventDown.inputSource = eventUp.inputSource = eventClick.inputSource =
+          aInputSource;
+
+      
+      nsEventStatus status = nsEventStatus_eIgnore;
+      EventDispatcher::Dispatch(static_cast<nsIContent*>(this), context,
+                                &eventDown, nullptr, &status);
+
+      
+      status = nsEventStatus_eIgnore;  
+      EventDispatcher::Dispatch(static_cast<nsIContent*>(this), context,
+                                &eventUp, nullptr, &status);
+
+      
+      status = nsEventStatus_eIgnore;  
+      EventDispatcher::Dispatch(static_cast<nsIContent*>(this), context,
+                                &eventClick, nullptr, &status);
+
+      
+      
+      if (status == nsEventStatus_eConsumeNoDefault) {
         return;
-
-    nsCOMPtr<nsIDocument> doc = GetComposedDoc(); 
-    if (doc) {
-        RefPtr<nsPresContext> context = doc->GetPresContext();
-        if (context) {
-            
-
-            WidgetMouseEvent eventDown(aIsTrustedEvent, eMouseDown,
-                                       nullptr, WidgetMouseEvent::eReal);
-            WidgetMouseEvent eventUp(aIsTrustedEvent, eMouseUp,
-                                     nullptr, WidgetMouseEvent::eReal);
-            WidgetMouseEvent eventClick(aIsTrustedEvent, eMouseClick, nullptr,
-                                        WidgetMouseEvent::eReal);
-            eventDown.inputSource = eventUp.inputSource = eventClick.inputSource
-                                  = aInputSource;
-
-            
-            nsEventStatus status = nsEventStatus_eIgnore;
-            EventDispatcher::Dispatch(static_cast<nsIContent*>(this),
-                                      context, &eventDown,  nullptr, &status);
-
-            
-            status = nsEventStatus_eIgnore;  
-            EventDispatcher::Dispatch(static_cast<nsIContent*>(this),
-                                      context, &eventUp, nullptr, &status);
-
-            
-            status = nsEventStatus_eIgnore;  
-            EventDispatcher::Dispatch(static_cast<nsIContent*>(this),
-                                      context, &eventClick, nullptr, &status);
-
-            
-            
-            if (status == nsEventStatus_eConsumeNoDefault) {
-                return;
-            }
-        }
+      }
     }
+  }
 
-    
-    DoCommand();
+  
+  DoCommand();
 }
 
-void
-nsXULElement::DoCommand()
-{
-    nsCOMPtr<nsIDocument> doc = GetComposedDoc(); 
-    if (doc) {
-        nsContentUtils::DispatchXULCommand(this, true);
-    }
+void nsXULElement::DoCommand() {
+  nsCOMPtr<nsIDocument> doc = GetComposedDoc();  
+  if (doc) {
+    nsContentUtils::DispatchXULCommand(this, true);
+  }
 }
 
-bool
-nsXULElement::IsNodeOfType(uint32_t aFlags) const
-{
-    return false;
-}
+bool nsXULElement::IsNodeOfType(uint32_t aFlags) const { return false; }
 
-nsresult
-nsXULElement::AddPopupListener(nsAtom* aName)
-{
-    
-    bool isContext = (aName == nsGkAtoms::context ||
-                        aName == nsGkAtoms::contextmenu);
-    uint32_t listenerFlag = isContext ?
-                            XUL_ELEMENT_HAS_CONTENTMENU_LISTENER :
-                            XUL_ELEMENT_HAS_POPUP_LISTENER;
+nsresult nsXULElement::AddPopupListener(nsAtom* aName) {
+  
+  bool isContext =
+      (aName == nsGkAtoms::context || aName == nsGkAtoms::contextmenu);
+  uint32_t listenerFlag = isContext ? XUL_ELEMENT_HAS_CONTENTMENU_LISTENER
+                                    : XUL_ELEMENT_HAS_POPUP_LISTENER;
 
-    if (HasFlag(listenerFlag)) {
-        return NS_OK;
-    }
+  if (HasFlag(listenerFlag)) {
+    return NS_OK;
+  }
 
-    nsCOMPtr<nsIDOMEventListener> listener =
+  nsCOMPtr<nsIDOMEventListener> listener =
       new nsXULPopupListener(this, isContext);
 
-    
-    EventListenerManager* manager = GetOrCreateListenerManager();
-    SetFlags(listenerFlag);
+  
+  EventListenerManager* manager = GetOrCreateListenerManager();
+  SetFlags(listenerFlag);
 
-    if (isContext) {
-      manager->AddEventListenerByType(listener,
-                                      NS_LITERAL_STRING("contextmenu"),
-                                      TrustedEventsAtSystemGroupBubble());
+  if (isContext) {
+    manager->AddEventListenerByType(listener, NS_LITERAL_STRING("contextmenu"),
+                                    TrustedEventsAtSystemGroupBubble());
+  } else {
+    manager->AddEventListenerByType(listener, NS_LITERAL_STRING("mousedown"),
+                                    TrustedEventsAtSystemGroupBubble());
+  }
+  return NS_OK;
+}
+
+EventStates nsXULElement::IntrinsicState() const {
+  EventStates state = nsStyledElement::IntrinsicState();
+
+  if (IsReadWriteTextElement()) {
+    state |= NS_EVENT_STATE_MOZ_READWRITE;
+    state &= ~NS_EVENT_STATE_MOZ_READONLY;
+  }
+
+  return state;
+}
+
+
+
+nsresult nsXULElement::MakeHeavyweight(nsXULPrototypeElement* aPrototype) {
+  if (!aPrototype) {
+    return NS_OK;
+  }
+
+  uint32_t i;
+  nsresult rv;
+  for (i = 0; i < aPrototype->mNumAttributes; ++i) {
+    nsXULPrototypeAttribute* protoattr = &aPrototype->mAttributes[i];
+    nsAttrValue attrValue;
+
+    
+    if (protoattr->mValue.Type() == nsAttrValue::eCSSDeclaration) {
+      DeclarationBlock* decl = protoattr->mValue.GetCSSDeclarationValue();
+      RefPtr<DeclarationBlock> declClone = decl->Clone();
+
+      nsString stringValue;
+      protoattr->mValue.ToString(stringValue);
+
+      attrValue.SetTo(declClone.forget(), &stringValue);
     } else {
-      manager->AddEventListenerByType(listener,
-                                      NS_LITERAL_STRING("mousedown"),
-                                      TrustedEventsAtSystemGroupBubble());
-    }
-    return NS_OK;
-}
-
-EventStates
-nsXULElement::IntrinsicState() const
-{
-    EventStates state = nsStyledElement::IntrinsicState();
-
-    if (IsReadWriteTextElement()) {
-        state |= NS_EVENT_STATE_MOZ_READWRITE;
-        state &= ~NS_EVENT_STATE_MOZ_READONLY;
+      attrValue.SetTo(protoattr->mValue);
     }
 
-    return state;
-}
-
-
-
-nsresult
-nsXULElement::MakeHeavyweight(nsXULPrototypeElement* aPrototype)
-{
-    if (!aPrototype) {
-        return NS_OK;
-    }
-
-    uint32_t i;
-    nsresult rv;
-    for (i = 0; i < aPrototype->mNumAttributes; ++i) {
-        nsXULPrototypeAttribute* protoattr = &aPrototype->mAttributes[i];
-        nsAttrValue attrValue;
-
-        
-        if (protoattr->mValue.Type() == nsAttrValue::eCSSDeclaration) {
-            DeclarationBlock* decl = protoattr->mValue.GetCSSDeclarationValue();
-            RefPtr<DeclarationBlock> declClone = decl->Clone();
-
-            nsString stringValue;
-            protoattr->mValue.ToString(stringValue);
-
-            attrValue.SetTo(declClone.forget(), &stringValue);
-        } else {
-            attrValue.SetTo(protoattr->mValue);
-        }
-
-        bool oldValueSet;
-        
-        if (protoattr->mName.IsAtom()) {
-            rv = mAttrs.SetAndSwapAttr(protoattr->mName.Atom(),
-                                       attrValue, &oldValueSet);
-        } else {
-            rv = mAttrs.SetAndSwapAttr(protoattr->mName.NodeInfo(),
-                                       attrValue, &oldValueSet);
-        }
-        NS_ENSURE_SUCCESS(rv, rv);
-    }
-    return NS_OK;
-}
-
-nsresult
-nsXULElement::HideWindowChrome(bool aShouldHide)
-{
-    nsIDocument* doc = GetUncomposedDoc();
-    if (!doc || doc->GetRootElement() != this)
-      return NS_ERROR_UNEXPECTED;
-
+    bool oldValueSet;
     
-    if (!doc->IsRootDisplayDocument())
-      return NS_OK;
-
-    nsPresContext* presContext = doc->GetPresContext();
-
-    if (presContext && presContext->IsChrome()) {
-        nsIFrame* frame = GetPrimaryFrame();
-
-        if (frame) {
-            nsView* view = frame->GetClosestView();
-
-            if (view) {
-                nsIWidget* w = view->GetWidget();
-                NS_ENSURE_STATE(w);
-                w->HideWindowChrome(aShouldHide);
-            }
-        }
+    if (protoattr->mName.IsAtom()) {
+      rv = mAttrs.SetAndSwapAttr(protoattr->mName.Atom(), attrValue,
+                                 &oldValueSet);
+    } else {
+      rv = mAttrs.SetAndSwapAttr(protoattr->mName.NodeInfo(), attrValue,
+                                 &oldValueSet);
     }
-
-    return NS_OK;
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+  return NS_OK;
 }
 
-nsIWidget*
-nsXULElement::GetWindowWidget()
-{
-    nsIDocument* doc = GetComposedDoc();
+nsresult nsXULElement::HideWindowChrome(bool aShouldHide) {
+  nsIDocument* doc = GetUncomposedDoc();
+  if (!doc || doc->GetRootElement() != this) return NS_ERROR_UNEXPECTED;
 
-    
-    if (doc && doc->IsRootDisplayDocument()) {
-        nsCOMPtr<nsISupports> container = doc->GetContainer();
-        nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container);
-        if (baseWindow) {
-            nsCOMPtr<nsIWidget> mainWidget;
-            baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
-            return mainWidget;
-        }
+  
+  if (!doc->IsRootDisplayDocument()) return NS_OK;
+
+  nsPresContext* presContext = doc->GetPresContext();
+
+  if (presContext && presContext->IsChrome()) {
+    nsIFrame* frame = GetPrimaryFrame();
+
+    if (frame) {
+      nsView* view = frame->GetClosestView();
+
+      if (view) {
+        nsIWidget* w = view->GetWidget();
+        NS_ENSURE_STATE(w);
+        w->HideWindowChrome(aShouldHide);
+      }
     }
-    return nullptr;
+  }
+
+  return NS_OK;
 }
 
-class SetDrawInTitleBarEvent : public Runnable
-{
-public:
+nsIWidget* nsXULElement::GetWindowWidget() {
+  nsIDocument* doc = GetComposedDoc();
+
+  
+  if (doc && doc->IsRootDisplayDocument()) {
+    nsCOMPtr<nsISupports> container = doc->GetContainer();
+    nsCOMPtr<nsIBaseWindow> baseWindow = do_QueryInterface(container);
+    if (baseWindow) {
+      nsCOMPtr<nsIWidget> mainWidget;
+      baseWindow->GetMainWidget(getter_AddRefs(mainWidget));
+      return mainWidget;
+    }
+  }
+  return nullptr;
+}
+
+class SetDrawInTitleBarEvent : public Runnable {
+ public:
   SetDrawInTitleBarEvent(nsIWidget* aWidget, bool aState)
-    : mozilla::Runnable("SetDrawInTitleBarEvent")
-    , mWidget(aWidget)
-    , mState(aState)
-  {}
+      : mozilla::Runnable("SetDrawInTitleBarEvent"),
+        mWidget(aWidget),
+        mState(aState) {}
 
   NS_IMETHOD Run() override {
-    NS_ASSERTION(mWidget, "You shouldn't call this runnable with a null widget!");
+    NS_ASSERTION(mWidget,
+                 "You shouldn't call this runnable with a null widget!");
 
     mWidget->SetDrawsInTitlebar(mState);
     return NS_OK;
   }
 
-private:
+ private:
   nsCOMPtr<nsIWidget> mWidget;
   bool mState;
 };
 
-void
-nsXULElement::SetDrawsInTitlebar(bool aState)
-{
-    nsIWidget* mainWidget = GetWindowWidget();
-    if (mainWidget) {
-        nsContentUtils::AddScriptRunner(new SetDrawInTitleBarEvent(mainWidget, aState));
-    }
+void nsXULElement::SetDrawsInTitlebar(bool aState) {
+  nsIWidget* mainWidget = GetWindowWidget();
+  if (mainWidget) {
+    nsContentUtils::AddScriptRunner(
+        new SetDrawInTitleBarEvent(mainWidget, aState));
+  }
 }
 
-void
-nsXULElement::SetDrawsTitle(bool aState)
-{
-    nsIWidget* mainWidget = GetWindowWidget();
-    if (mainWidget) {
-        
-        
-        mainWidget->SetDrawsTitle(aState);
-    }
+void nsXULElement::SetDrawsTitle(bool aState) {
+  nsIWidget* mainWidget = GetWindowWidget();
+  if (mainWidget) {
+    
+    
+    mainWidget->SetDrawsTitle(aState);
+  }
 }
 
-void
-nsXULElement::UpdateBrightTitlebarForeground(nsIDocument* aDoc)
-{
-    nsIWidget* mainWidget = GetWindowWidget();
-    if (mainWidget) {
-        
-        
-        mainWidget->SetUseBrightTitlebarForeground(
-          aDoc->GetDocumentLWTheme() == nsIDocument::Doc_Theme_Bright ||
-          aDoc->GetRootElement()->AttrValueIs(kNameSpaceID_None,
-                                              nsGkAtoms::brighttitlebarforeground,
-                                              NS_LITERAL_STRING("true"),
-                                              eCaseMatters));
-    }
+void nsXULElement::UpdateBrightTitlebarForeground(nsIDocument* aDoc) {
+  nsIWidget* mainWidget = GetWindowWidget();
+  if (mainWidget) {
+    
+    
+    mainWidget->SetUseBrightTitlebarForeground(
+        aDoc->GetDocumentLWTheme() == nsIDocument::Doc_Theme_Bright ||
+        aDoc->GetRootElement()->AttrValueIs(
+            kNameSpaceID_None, nsGkAtoms::brighttitlebarforeground,
+            NS_LITERAL_STRING("true"), eCaseMatters));
+  }
 }
 
-class MarginSetter : public Runnable
-{
-public:
+class MarginSetter : public Runnable {
+ public:
   explicit MarginSetter(nsIWidget* aWidget)
-    : mozilla::Runnable("MarginSetter")
-    , mWidget(aWidget)
-    , mMargin(-1, -1, -1, -1)
-  {
-  }
+      : mozilla::Runnable("MarginSetter"),
+        mWidget(aWidget),
+        mMargin(-1, -1, -1, -1) {}
   MarginSetter(nsIWidget* aWidget, const LayoutDeviceIntMargin& aMargin)
-    : mozilla::Runnable("MarginSetter")
-    , mWidget(aWidget)
-    , mMargin(aMargin)
-  {
-  }
+      : mozilla::Runnable("MarginSetter"), mWidget(aWidget), mMargin(aMargin) {}
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     
     
     mWidget->SetNonClientMargins(mMargin);
     return NS_OK;
-    }
+  }
 
-private:
-    nsCOMPtr<nsIWidget> mWidget;
-    LayoutDeviceIntMargin mMargin;
+ private:
+  nsCOMPtr<nsIWidget> mWidget;
+  LayoutDeviceIntMargin mMargin;
 };
 
-void
-nsXULElement::SetChromeMargins(const nsAttrValue* aValue)
-{
-    if (!aValue)
-        return;
+void nsXULElement::SetChromeMargins(const nsAttrValue* aValue) {
+  if (!aValue) return;
 
-    nsIWidget* mainWidget = GetWindowWidget();
-    if (!mainWidget)
-        return;
+  nsIWidget* mainWidget = GetWindowWidget();
+  if (!mainWidget) return;
+
+  
+  nsIntMargin margins;
+  bool gotMargins = false;
+
+  if (aValue->Type() == nsAttrValue::eIntMarginValue) {
+    gotMargins = aValue->GetIntMarginValue(margins);
+  } else {
+    nsAutoString tmp;
+    aValue->ToString(tmp);
+    gotMargins = nsContentUtils::ParseIntMarginValue(tmp, margins);
+  }
+  if (gotMargins) {
+    nsContentUtils::AddScriptRunner(new MarginSetter(
+        mainWidget, LayoutDeviceIntMargin::FromUnknownMargin(margins)));
+  }
+}
+
+void nsXULElement::ResetChromeMargins() {
+  nsIWidget* mainWidget = GetWindowWidget();
+  if (!mainWidget) return;
+  
+  nsContentUtils::AddScriptRunner(new MarginSetter(mainWidget));
+}
+
+bool nsXULElement::BoolAttrIsTrue(nsAtom* aName) const {
+  const nsAttrValue* attr = GetAttrInfo(kNameSpaceID_None, aName).mValue;
+
+  return attr && attr->Type() == nsAttrValue::eAtom &&
+         attr->GetAtomValue() == nsGkAtoms::_true;
+}
+
+void nsXULElement::RecompileScriptEventListeners() {
+  int32_t i, count = mAttrs.AttrCount();
+  for (i = 0; i < count; ++i) {
+    const nsAttrName* name = mAttrs.AttrNameAt(i);
 
     
-    nsIntMargin margins;
-    bool gotMargins = false;
-
-    if (aValue->Type() == nsAttrValue::eIntMarginValue) {
-        gotMargins = aValue->GetIntMarginValue(margins);
-    } else {
-        nsAutoString tmp;
-        aValue->ToString(tmp);
-        gotMargins = nsContentUtils::ParseIntMarginValue(tmp, margins);
+    if (!name->IsAtom()) {
+      continue;
     }
-    if (gotMargins) {
-        nsContentUtils::AddScriptRunner(
-            new MarginSetter(
-                mainWidget, LayoutDeviceIntMargin::FromUnknownMargin(margins)));
+
+    nsAtom* attr = name->Atom();
+    if (!nsContentUtils::IsEventAttributeName(attr, EventNameType_XUL)) {
+      continue;
     }
+
+    nsAutoString value;
+    GetAttr(kNameSpaceID_None, attr, value);
+    SetEventHandler(attr, value, true);
+  }
 }
 
-void
-nsXULElement::ResetChromeMargins()
-{
-    nsIWidget* mainWidget = GetWindowWidget();
-    if (!mainWidget)
-        return;
-    
-    nsContentUtils::AddScriptRunner(new MarginSetter(mainWidget));
-}
-
-bool
-nsXULElement::BoolAttrIsTrue(nsAtom* aName) const
-{
-    const nsAttrValue* attr =
-        GetAttrInfo(kNameSpaceID_None, aName).mValue;
-
-    return attr && attr->Type() == nsAttrValue::eAtom &&
-           attr->GetAtomValue() == nsGkAtoms::_true;
-}
-
-void
-nsXULElement::RecompileScriptEventListeners()
-{
-    int32_t i, count = mAttrs.AttrCount();
-    for (i = 0; i < count; ++i) {
-        const nsAttrName *name = mAttrs.AttrNameAt(i);
-
-        
-        if (!name->IsAtom()) {
-            continue;
-        }
-
-        nsAtom *attr = name->Atom();
-        if (!nsContentUtils::IsEventAttributeName(attr, EventNameType_XUL)) {
-            continue;
-        }
-
-        nsAutoString value;
-        GetAttr(kNameSpaceID_None, attr, value);
-        SetEventHandler(attr, value, true);
-    }
-}
-
-bool
-nsXULElement::IsEventAttributeNameInternal(nsAtom *aName)
-{
+bool nsXULElement::IsEventAttributeNameInternal(nsAtom* aName) {
   return nsContentUtils::IsEventAttributeName(aName, EventNameType_XUL);
 }
 
-JSObject*
-nsXULElement::WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto)
-{
-    return dom::XULElement_Binding::Wrap(aCx, this, aGivenProto);
+JSObject* nsXULElement::WrapNode(JSContext* aCx,
+                                 JS::Handle<JSObject*> aGivenProto) {
+  return dom::XULElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsXULPrototypeNode)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsXULPrototypeNode)
-    if (tmp->mType == nsXULPrototypeNode::eType_Element) {
-        static_cast<nsXULPrototypeElement*>(tmp)->Unlink();
-    } else if (tmp->mType == nsXULPrototypeNode::eType_Script) {
-        static_cast<nsXULPrototypeScript*>(tmp)->UnlinkJSObjects();
-    }
+  if (tmp->mType == nsXULPrototypeNode::eType_Element) {
+    static_cast<nsXULPrototypeElement*>(tmp)->Unlink();
+  } else if (tmp->mType == nsXULPrototypeNode::eType_Script) {
+    static_cast<nsXULPrototypeScript*>(tmp)->UnlinkJSObjects();
+  }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsXULPrototypeNode)
-    if (tmp->mType == nsXULPrototypeNode::eType_Element) {
-        nsXULPrototypeElement *elem =
-            static_cast<nsXULPrototypeElement*>(tmp);
-        NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mNodeInfo");
-        cb.NoteNativeChild(elem->mNodeInfo,
+  if (tmp->mType == nsXULPrototypeNode::eType_Element) {
+    nsXULPrototypeElement* elem = static_cast<nsXULPrototypeElement*>(tmp);
+    NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb, "mNodeInfo");
+    cb.NoteNativeChild(elem->mNodeInfo,
+                       NS_CYCLE_COLLECTION_PARTICIPANT(NodeInfo));
+    uint32_t i;
+    for (i = 0; i < elem->mNumAttributes; ++i) {
+      const nsAttrName& name = elem->mAttributes[i].mName;
+      if (!name.IsAtom()) {
+        NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
+                                           "mAttributes[i].mName.NodeInfo()");
+        cb.NoteNativeChild(name.NodeInfo(),
                            NS_CYCLE_COLLECTION_PARTICIPANT(NodeInfo));
-        uint32_t i;
-        for (i = 0; i < elem->mNumAttributes; ++i) {
-            const nsAttrName& name = elem->mAttributes[i].mName;
-            if (!name.IsAtom()) {
-                NS_CYCLE_COLLECTION_NOTE_EDGE_NAME(cb,
-                    "mAttributes[i].mName.NodeInfo()");
-                cb.NoteNativeChild(name.NodeInfo(),
-                                   NS_CYCLE_COLLECTION_PARTICIPANT(NodeInfo));
-            }
-        }
-        ImplCycleCollectionTraverse(cb, elem->mChildren, "mChildren");
+      }
     }
+    ImplCycleCollectionTraverse(cb, elem->mChildren, "mChildren");
+  }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsXULPrototypeNode)
-    if (tmp->mType == nsXULPrototypeNode::eType_Script) {
-        nsXULPrototypeScript *script =
-            static_cast<nsXULPrototypeScript*>(tmp);
-        script->Trace(aCallbacks, aClosure);
-    }
+  if (tmp->mType == nsXULPrototypeNode::eType_Script) {
+    nsXULPrototypeScript* script = static_cast<nsXULPrototypeScript*>(tmp);
+    script->Trace(aCallbacks, aClosure);
+  }
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 NS_IMPL_CYCLE_COLLECTION_ROOT_NATIVE(nsXULPrototypeNode, AddRef)
@@ -1649,9 +1491,8 @@ NS_IMPL_CYCLE_COLLECTION_UNROOT_NATIVE(nsXULPrototypeNode, Release)
 
 
 
-nsXULPrototypeAttribute::~nsXULPrototypeAttribute()
-{
-    MOZ_COUNT_DTOR(nsXULPrototypeAttribute);
+nsXULPrototypeAttribute::~nsXULPrototypeAttribute() {
+  MOZ_COUNT_DTOR(nsXULPrototypeAttribute);
 }
 
 
@@ -1659,338 +1500,320 @@ nsXULPrototypeAttribute::~nsXULPrototypeAttribute()
 
 
 
+nsresult nsXULPrototypeElement::Serialize(
+    nsIObjectOutputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
+    const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) {
+  nsresult rv;
 
-nsresult
-nsXULPrototypeElement::Serialize(nsIObjectOutputStream* aStream,
-                                 nsXULPrototypeDocument* aProtoDoc,
-                                 const nsTArray<RefPtr<mozilla::dom::NodeInfo>> *aNodeInfos)
-{
-    nsresult rv;
+  
+  rv = aStream->Write32(mType);
 
-    
-    rv = aStream->Write32(mType);
+  
+  int32_t index = aNodeInfos->IndexOf(mNodeInfo);
+  NS_ASSERTION(index >= 0, "unknown mozilla::dom::NodeInfo index");
+  nsresult tmp = aStream->Write32(index);
+  if (NS_FAILED(tmp)) {
+    rv = tmp;
+  }
 
-    
-    int32_t index = aNodeInfos->IndexOf(mNodeInfo);
+  
+  tmp = aStream->Write32(mNumAttributes);
+  if (NS_FAILED(tmp)) {
+    rv = tmp;
+  }
+
+  nsAutoString attributeValue;
+  uint32_t i;
+  for (i = 0; i < mNumAttributes; ++i) {
+    RefPtr<mozilla::dom::NodeInfo> ni;
+    if (mAttributes[i].mName.IsAtom()) {
+      ni = mNodeInfo->NodeInfoManager()->GetNodeInfo(
+          mAttributes[i].mName.Atom(), nullptr, kNameSpaceID_None,
+          nsINode::ATTRIBUTE_NODE);
+      NS_ASSERTION(ni, "the nodeinfo should already exist");
+    } else {
+      ni = mAttributes[i].mName.NodeInfo();
+    }
+
+    index = aNodeInfos->IndexOf(ni);
     NS_ASSERTION(index >= 0, "unknown mozilla::dom::NodeInfo index");
-    nsresult tmp = aStream->Write32(index);
+    tmp = aStream->Write32(index);
     if (NS_FAILED(tmp)) {
       rv = tmp;
     }
 
-    
-    tmp = aStream->Write32(mNumAttributes);
+    mAttributes[i].mValue.ToString(attributeValue);
+    tmp = aStream->WriteWStringZ(attributeValue.get());
     if (NS_FAILED(tmp)) {
       rv = tmp;
+    }
+  }
+
+  
+  tmp = aStream->Write32(uint32_t(mChildren.Length()));
+  if (NS_FAILED(tmp)) {
+    rv = tmp;
+  }
+  for (i = 0; i < mChildren.Length(); i++) {
+    nsXULPrototypeNode* child = mChildren[i].get();
+    switch (child->mType) {
+      case eType_Element:
+      case eType_Text:
+      case eType_PI:
+        tmp = child->Serialize(aStream, aProtoDoc, aNodeInfos);
+        if (NS_FAILED(tmp)) {
+          rv = tmp;
+        }
+        break;
+      case eType_Script:
+        tmp = aStream->Write32(child->mType);
+        if (NS_FAILED(tmp)) {
+          rv = tmp;
+        }
+        nsXULPrototypeScript* script =
+            static_cast<nsXULPrototypeScript*>(child);
+
+        tmp = aStream->Write8(script->mOutOfLine);
+        if (NS_FAILED(tmp)) {
+          rv = tmp;
+        }
+        if (!script->mOutOfLine) {
+          tmp = script->Serialize(aStream, aProtoDoc, aNodeInfos);
+          if (NS_FAILED(tmp)) {
+            rv = tmp;
+          }
+        } else {
+          tmp = aStream->WriteCompoundObject(script->mSrcURI,
+                                             NS_GET_IID(nsIURI), true);
+          if (NS_FAILED(tmp)) {
+            rv = tmp;
+          }
+
+          if (script->HasScriptObject()) {
+            
+            
+            
+            
+            
+            tmp = script->SerializeOutOfLine(aStream, aProtoDoc);
+            if (NS_FAILED(tmp)) {
+              rv = tmp;
+            }
+          }
+        }
+        break;
+    }
+  }
+
+  return rv;
+}
+
+nsresult nsXULPrototypeElement::Deserialize(
+    nsIObjectInputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
+    nsIURI* aDocumentURI,
+    const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) {
+  MOZ_ASSERT(aNodeInfos, "missing nodeinfo array");
+
+  
+  uint32_t number = 0;
+  nsresult rv = aStream->Read32(&number);
+  if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+  mNodeInfo = aNodeInfos->SafeElementAt(number, nullptr);
+  if (!mNodeInfo) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  
+  rv = aStream->Read32(&number);
+  if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+  mNumAttributes = int32_t(number);
+
+  if (mNumAttributes > 0) {
+    mAttributes = new (fallible) nsXULPrototypeAttribute[mNumAttributes];
+    if (!mAttributes) {
+      return NS_ERROR_OUT_OF_MEMORY;
     }
 
     nsAutoString attributeValue;
-    uint32_t i;
-    for (i = 0; i < mNumAttributes; ++i) {
-        RefPtr<mozilla::dom::NodeInfo> ni;
-        if (mAttributes[i].mName.IsAtom()) {
-            ni = mNodeInfo->NodeInfoManager()->
-                GetNodeInfo(mAttributes[i].mName.Atom(), nullptr,
-                            kNameSpaceID_None, nsINode::ATTRIBUTE_NODE);
-            NS_ASSERTION(ni, "the nodeinfo should already exist");
-        } else {
-            ni = mAttributes[i].mName.NodeInfo();
-        }
-
-        index = aNodeInfos->IndexOf(ni);
-        NS_ASSERTION(index >= 0, "unknown mozilla::dom::NodeInfo index");
-        tmp = aStream->Write32(index);
-        if (NS_FAILED(tmp)) {
-          rv = tmp;
-        }
-
-        mAttributes[i].mValue.ToString(attributeValue);
-        tmp = aStream->WriteWStringZ(attributeValue.get());
-        if (NS_FAILED(tmp)) {
-          rv = tmp;
-        }
-    }
-
-    
-    tmp = aStream->Write32(uint32_t(mChildren.Length()));
-    if (NS_FAILED(tmp)) {
-      rv = tmp;
-    }
-    for (i = 0; i < mChildren.Length(); i++) {
-        nsXULPrototypeNode* child = mChildren[i].get();
-        switch (child->mType) {
-        case eType_Element:
-        case eType_Text:
-        case eType_PI:
-            tmp = child->Serialize(aStream, aProtoDoc, aNodeInfos);
-            if (NS_FAILED(tmp)) {
-              rv = tmp;
-            }
-            break;
-        case eType_Script:
-            tmp = aStream->Write32(child->mType);
-            if (NS_FAILED(tmp)) {
-              rv = tmp;
-            }
-            nsXULPrototypeScript* script = static_cast<nsXULPrototypeScript*>(child);
-
-            tmp = aStream->Write8(script->mOutOfLine);
-            if (NS_FAILED(tmp)) {
-              rv = tmp;
-            }
-            if (! script->mOutOfLine) {
-                tmp = script->Serialize(aStream, aProtoDoc, aNodeInfos);
-                if (NS_FAILED(tmp)) {
-                  rv = tmp;
-                }
-            } else {
-                tmp = aStream->WriteCompoundObject(script->mSrcURI,
-                                                   NS_GET_IID(nsIURI),
-                                                   true);
-                if (NS_FAILED(tmp)) {
-                  rv = tmp;
-                }
-
-                if (script->HasScriptObject()) {
-                    
-                    
-                    
-                    
-                    
-                    tmp = script->SerializeOutOfLine(aStream, aProtoDoc);
-                    if (NS_FAILED(tmp)) {
-                      rv = tmp;
-                    }
-                }
-            }
-            break;
-        }
-    }
-
-    return rv;
-}
-
-nsresult
-nsXULPrototypeElement::Deserialize(nsIObjectInputStream* aStream,
-                                   nsXULPrototypeDocument* aProtoDoc,
-                                   nsIURI* aDocumentURI,
-                                   const nsTArray<RefPtr<mozilla::dom::NodeInfo>> *aNodeInfos)
-{
-    MOZ_ASSERT(aNodeInfos, "missing nodeinfo array");
-
-    
-    uint32_t number = 0;
-    nsresult rv = aStream->Read32(&number);
-    if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-    mNodeInfo = aNodeInfos->SafeElementAt(number, nullptr);
-    if (!mNodeInfo) {
+    for (uint32_t i = 0; i < mNumAttributes; ++i) {
+      rv = aStream->Read32(&number);
+      if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+      mozilla::dom::NodeInfo* ni = aNodeInfos->SafeElementAt(number, nullptr);
+      if (!ni) {
         return NS_ERROR_UNEXPECTED;
+      }
+
+      mAttributes[i].mName.SetTo(ni);
+
+      rv = aStream->ReadString(attributeValue);
+      if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+      rv = SetAttrAt(i, attributeValue, aDocumentURI);
+      if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+    }
+  }
+
+  rv = aStream->Read32(&number);
+  if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+  uint32_t numChildren = int32_t(number);
+
+  if (numChildren > 0) {
+    if (!mChildren.SetCapacity(numChildren, fallible)) {
+      return NS_ERROR_OUT_OF_MEMORY;
     }
 
-    
-    rv = aStream->Read32(&number);
-    if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-    mNumAttributes = int32_t(number);
+    for (uint32_t i = 0; i < numChildren; i++) {
+      rv = aStream->Read32(&number);
+      if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+      Type childType = (Type)number;
 
-    if (mNumAttributes > 0) {
-        mAttributes = new (fallible) nsXULPrototypeAttribute[mNumAttributes];
-        if (!mAttributes) {
-            return NS_ERROR_OUT_OF_MEMORY;
+      RefPtr<nsXULPrototypeNode> child;
+
+      switch (childType) {
+        case eType_Element:
+          child = new nsXULPrototypeElement();
+          rv = child->Deserialize(aStream, aProtoDoc, aDocumentURI, aNodeInfos);
+          if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+          break;
+        case eType_Text:
+          child = new nsXULPrototypeText();
+          rv = child->Deserialize(aStream, aProtoDoc, aDocumentURI, aNodeInfos);
+          if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+          break;
+        case eType_PI:
+          child = new nsXULPrototypePI();
+          rv = child->Deserialize(aStream, aProtoDoc, aDocumentURI, aNodeInfos);
+          if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+          break;
+        case eType_Script: {
+          
+          RefPtr<nsXULPrototypeScript> script = new nsXULPrototypeScript(0);
+
+          rv = aStream->ReadBoolean(&script->mOutOfLine);
+          if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+          if (!script->mOutOfLine) {
+            rv = script->Deserialize(aStream, aProtoDoc, aDocumentURI,
+                                     aNodeInfos);
+            if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+          } else {
+            nsCOMPtr<nsISupports> supports;
+            rv = aStream->ReadObject(true, getter_AddRefs(supports));
+            if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+            script->mSrcURI = do_QueryInterface(supports);
+
+            rv = script->DeserializeOutOfLine(aStream, aProtoDoc);
+            if (NS_WARN_IF(NS_FAILED(rv))) return rv;
+          }
+
+          child = script.forget();
+          break;
         }
+        default:
+          MOZ_ASSERT(false, "Unexpected child type!");
+          return NS_ERROR_UNEXPECTED;
+      }
 
-        nsAutoString attributeValue;
-        for (uint32_t i = 0; i < mNumAttributes; ++i) {
-            rv = aStream->Read32(&number);
-            if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-            mozilla::dom::NodeInfo* ni = aNodeInfos->SafeElementAt(number, nullptr);
-            if (!ni) {
-                return NS_ERROR_UNEXPECTED;
-            }
+      MOZ_ASSERT(child, "Don't append null to mChildren");
+      MOZ_ASSERT(child->mType == childType);
+      mChildren.AppendElement(child);
 
-            mAttributes[i].mName.SetTo(ni);
-
-            rv = aStream->ReadString(attributeValue);
-            if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-            rv = SetAttrAt(i, attributeValue, aDocumentURI);
-            if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-        }
+      
+      
+      
+      
+      
+      
+      
+      
+      if (NS_WARN_IF(NS_FAILED(rv))) return rv;
     }
+  }
 
-    rv = aStream->Read32(&number);
-    if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-    uint32_t numChildren = int32_t(number);
-
-    if (numChildren > 0) {
-        if (!mChildren.SetCapacity(numChildren, fallible)) {
-            return NS_ERROR_OUT_OF_MEMORY;
-        }
-
-        for (uint32_t i = 0; i < numChildren; i++) {
-            rv = aStream->Read32(&number);
-            if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-            Type childType = (Type)number;
-
-            RefPtr<nsXULPrototypeNode> child;
-
-            switch (childType) {
-            case eType_Element:
-                child = new nsXULPrototypeElement();
-                rv = child->Deserialize(aStream, aProtoDoc, aDocumentURI,
-                                        aNodeInfos);
-                if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-                break;
-            case eType_Text:
-                child = new nsXULPrototypeText();
-                rv = child->Deserialize(aStream, aProtoDoc, aDocumentURI,
-                                        aNodeInfos);
-                if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-                break;
-            case eType_PI:
-                child = new nsXULPrototypePI();
-                rv = child->Deserialize(aStream, aProtoDoc, aDocumentURI,
-                                        aNodeInfos);
-                if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-                break;
-            case eType_Script: {
-                
-                RefPtr<nsXULPrototypeScript> script = new nsXULPrototypeScript(0);
-
-                rv = aStream->ReadBoolean(&script->mOutOfLine);
-                if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-                if (!script->mOutOfLine) {
-                    rv = script->Deserialize(aStream, aProtoDoc, aDocumentURI,
-                                             aNodeInfos);
-                    if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-                } else {
-                    nsCOMPtr<nsISupports> supports;
-                    rv = aStream->ReadObject(true, getter_AddRefs(supports));
-                    if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-                    script->mSrcURI = do_QueryInterface(supports);
-
-                    rv = script->DeserializeOutOfLine(aStream, aProtoDoc);
-                    if (NS_WARN_IF(NS_FAILED(rv))) return rv;
-                }
-
-                child = script.forget();
-                break;
-            }
-            default:
-                MOZ_ASSERT(false, "Unexpected child type!");
-                return NS_ERROR_UNEXPECTED;
-            }
-
-            MOZ_ASSERT(child, "Don't append null to mChildren");
-            MOZ_ASSERT(child->mType == childType);
-            mChildren.AppendElement(child);
-
-            
-            
-            
-            
-            
-            
-            
-            
-            if (NS_WARN_IF(NS_FAILED(rv)))
-                return rv;
-        }
-    }
-
-    return rv;
+  return rv;
 }
 
-nsresult
-nsXULPrototypeElement::SetAttrAt(uint32_t aPos, const nsAString& aValue,
-                                 nsIURI* aDocumentURI)
-{
-    MOZ_ASSERT(aPos < mNumAttributes, "out-of-bounds");
+nsresult nsXULPrototypeElement::SetAttrAt(uint32_t aPos,
+                                          const nsAString& aValue,
+                                          nsIURI* aDocumentURI) {
+  MOZ_ASSERT(aPos < mNumAttributes, "out-of-bounds");
 
-    
-    
-    
+  
+  
+  
 
-    if (!mNodeInfo->NamespaceEquals(kNameSpaceID_XUL)) {
-        mAttributes[aPos].mValue.ParseStringOrAtom(aValue);
-
-        return NS_OK;
-    }
-
-    if (mAttributes[aPos].mName.Equals(nsGkAtoms::id) &&
-        !aValue.IsEmpty()) {
-        mHasIdAttribute = true;
-        
-        
-        
-        mAttributes[aPos].mValue.ParseAtom(aValue);
-
-        return NS_OK;
-    } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::is)) {
-        
-        mAttributes[aPos].mValue.ParseAtom(aValue);
-        mIsAtom = mAttributes[aPos].mValue.GetAtomValue();
-
-        return NS_OK;
-    } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::_class)) {
-        mHasClassAttribute = true;
-        
-        mAttributes[aPos].mValue.ParseAtomArray(aValue);
-
-        return NS_OK;
-    } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::style)) {
-        mHasStyleAttribute = true;
-        
-
-        
-        nsIPrincipal* principal =
-          mNodeInfo->NodeInfoManager()->DocumentPrincipal();
-        
-        
-        
-        
-        
-        RefPtr<URLExtraData> data =
-          new URLExtraData(aDocumentURI, aDocumentURI, principal,
-                           mozilla::net::RP_Unset);
-        RefPtr<DeclarationBlock> declaration =
-          DeclarationBlock::FromCssText(
-            aValue, data, eCompatibility_FullStandards, nullptr);
-        if (declaration) {
-            mAttributes[aPos].mValue.SetTo(declaration.forget(), &aValue);
-
-            return NS_OK;
-        }
-        
-    } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::tabindex)) {
-        mAttributes[aPos].mValue.ParseIntValue(aValue);
-
-        return NS_OK;
-    }
-
+  if (!mNodeInfo->NamespaceEquals(kNameSpaceID_XUL)) {
     mAttributes[aPos].mValue.ParseStringOrAtom(aValue);
 
     return NS_OK;
-}
+  }
 
-void
-nsXULPrototypeElement::Unlink()
-{
-    mNumAttributes = 0;
-    delete[] mAttributes;
-    mAttributes = nullptr;
-    mChildren.Clear();
-}
+  if (mAttributes[aPos].mName.Equals(nsGkAtoms::id) && !aValue.IsEmpty()) {
+    mHasIdAttribute = true;
+    
+    
+    
+    mAttributes[aPos].mValue.ParseAtom(aValue);
 
-void
-nsXULPrototypeElement::TraceAllScripts(JSTracer* aTrc)
-{
-    for (uint32_t i = 0; i < mChildren.Length(); ++i) {
-        nsXULPrototypeNode* child = mChildren[i];
-        if (child->mType == nsXULPrototypeNode::eType_Element) {
-            static_cast<nsXULPrototypeElement*>(child)->TraceAllScripts(aTrc);
-        } else if (child->mType == nsXULPrototypeNode::eType_Script) {
-            static_cast<nsXULPrototypeScript*>(child)->TraceScriptObject(aTrc);
-        }
+    return NS_OK;
+  } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::is)) {
+    
+    mAttributes[aPos].mValue.ParseAtom(aValue);
+    mIsAtom = mAttributes[aPos].mValue.GetAtomValue();
+
+    return NS_OK;
+  } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::_class)) {
+    mHasClassAttribute = true;
+    
+    mAttributes[aPos].mValue.ParseAtomArray(aValue);
+
+    return NS_OK;
+  } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::style)) {
+    mHasStyleAttribute = true;
+    
+
+    
+    nsIPrincipal* principal = mNodeInfo->NodeInfoManager()->DocumentPrincipal();
+    
+    
+    
+    
+    
+    RefPtr<URLExtraData> data = new URLExtraData(
+        aDocumentURI, aDocumentURI, principal, mozilla::net::RP_Unset);
+    RefPtr<DeclarationBlock> declaration = DeclarationBlock::FromCssText(
+        aValue, data, eCompatibility_FullStandards, nullptr);
+    if (declaration) {
+      mAttributes[aPos].mValue.SetTo(declaration.forget(), &aValue);
+
+      return NS_OK;
     }
+    
+  } else if (mAttributes[aPos].mName.Equals(nsGkAtoms::tabindex)) {
+    mAttributes[aPos].mValue.ParseIntValue(aValue);
+
+    return NS_OK;
+  }
+
+  mAttributes[aPos].mValue.ParseStringOrAtom(aValue);
+
+  return NS_OK;
+}
+
+void nsXULPrototypeElement::Unlink() {
+  mNumAttributes = 0;
+  delete[] mAttributes;
+  mAttributes = nullptr;
+  mChildren.Clear();
+}
+
+void nsXULPrototypeElement::TraceAllScripts(JSTracer* aTrc) {
+  for (uint32_t i = 0; i < mChildren.Length(); ++i) {
+    nsXULPrototypeNode* child = mChildren[i];
+    if (child->mType == nsXULPrototypeNode::eType_Element) {
+      static_cast<nsXULPrototypeElement*>(child)->TraceAllScripts(aTrc);
+    } else if (child->mType == nsXULPrototypeNode::eType_Script) {
+      static_cast<nsXULPrototypeScript*>(child)->TraceScriptObject(aTrc);
+    }
+  }
 }
 
 
@@ -2004,225 +1827,197 @@ nsXULPrototypeScript::nsXULPrototypeScript(uint32_t aLineNo)
       mSrcLoading(false),
       mOutOfLine(true),
       mSrcLoadWaiters(nullptr),
-      mScriptObject(nullptr)
-{
-}
+      mScriptObject(nullptr) {}
 
+nsXULPrototypeScript::~nsXULPrototypeScript() { UnlinkJSObjects(); }
 
-nsXULPrototypeScript::~nsXULPrototypeScript()
-{
-    UnlinkJSObjects();
-}
+nsresult nsXULPrototypeScript::Serialize(
+    nsIObjectOutputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
+    const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) {
+  NS_ENSURE_TRUE(aProtoDoc, NS_ERROR_UNEXPECTED);
 
-nsresult
-nsXULPrototypeScript::Serialize(nsIObjectOutputStream* aStream,
-                                nsXULPrototypeDocument* aProtoDoc,
-                                const nsTArray<RefPtr<mozilla::dom::NodeInfo>> *aNodeInfos)
-{
-    NS_ENSURE_TRUE(aProtoDoc, NS_ERROR_UNEXPECTED);
-
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(xpc::CompilationScope())) {
-        return NS_ERROR_UNEXPECTED;
-    }
-
-    NS_ASSERTION(!mSrcLoading || mSrcLoadWaiters != nullptr ||
-                 !mScriptObject,
-                 "script source still loading when serializing?!");
-    if (!mScriptObject)
-        return NS_ERROR_FAILURE;
-
-    
-    nsresult rv;
-    rv = aStream->Write32(mLineNo);
-    if (NS_FAILED(rv)) return rv;
-    rv = aStream->Write32(0); 
-    if (NS_FAILED(rv)) return rv;
-
-    JSContext* cx = jsapi.cx();
-    JS::Rooted<JSScript*> script(cx, mScriptObject);
-    MOZ_ASSERT(xpc::CompilationScope() == JS::CurrentGlobalOrNull(cx));
-    return nsContentUtils::XPConnect()->WriteScript(aStream, cx, script);
-}
-
-nsresult
-nsXULPrototypeScript::SerializeOutOfLine(nsIObjectOutputStream* aStream,
-                                         nsXULPrototypeDocument* aProtoDoc)
-{
-    nsresult rv = NS_ERROR_NOT_IMPLEMENTED;
-
-    bool isChrome = false;
-    if (NS_FAILED(mSrcURI->SchemeIs("chrome", &isChrome)) || !isChrome)
-       
-       return rv;
-
-    nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
-    if (!cache)
-        return NS_ERROR_OUT_OF_MEMORY;
-
-    NS_ASSERTION(cache->IsEnabled(),
-                 "writing to the cache file, but the XUL cache is off?");
-    bool exists;
-    cache->HasData(mSrcURI, &exists);
-
-    
-
-
-
-
-    if (exists)
-        return NS_OK;
-
-    nsCOMPtr<nsIObjectOutputStream> oos;
-    rv = cache->GetOutputStream(mSrcURI, getter_AddRefs(oos));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsresult tmp = Serialize(oos, aProtoDoc, nullptr);
-    if (NS_FAILED(tmp)) {
-      rv = tmp;
-    }
-    tmp = cache->FinishOutputStream(mSrcURI);
-    if (NS_FAILED(tmp)) {
-      rv = tmp;
-    }
-
-    if (NS_FAILED(rv))
-        cache->AbortCaching();
-    return rv;
-}
-
-
-nsresult
-nsXULPrototypeScript::Deserialize(nsIObjectInputStream* aStream,
-                                  nsXULPrototypeDocument* aProtoDoc,
-                                  nsIURI* aDocumentURI,
-                                  const nsTArray<RefPtr<mozilla::dom::NodeInfo>> *aNodeInfos)
-{
-    nsresult rv;
-    NS_ASSERTION(!mSrcLoading || mSrcLoadWaiters != nullptr ||
-                 !mScriptObject,
-                 "prototype script not well-initialized when deserializing?!");
-
-    
-    rv = aStream->Read32(&mLineNo);
-    if (NS_FAILED(rv)) return rv;
-    uint32_t dummy;
-    rv = aStream->Read32(&dummy); 
-    if (NS_FAILED(rv)) return rv;
-
-    AutoJSAPI jsapi;
-    if (!jsapi.Init(xpc::CompilationScope())) {
-        return NS_ERROR_UNEXPECTED;
-    }
-    JSContext* cx = jsapi.cx();
-
-    JS::Rooted<JSScript*> newScriptObject(cx);
-    rv = nsContentUtils::XPConnect()->ReadScript(aStream, cx,
-                                                 newScriptObject.address());
-    NS_ENSURE_SUCCESS(rv, rv);
-    Set(newScriptObject);
-    return NS_OK;
-}
-
-
-nsresult
-nsXULPrototypeScript::DeserializeOutOfLine(nsIObjectInputStream* aInput,
-                                           nsXULPrototypeDocument* aProtoDoc)
-{
-    
-    
-    nsresult rv = NS_OK;
-    nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
-
-    nsCOMPtr<nsIObjectInputStream> objectInput = aInput;
-    if (cache) {
-        bool useXULCache = true;
-        if (mSrcURI) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            useXULCache = cache->IsEnabled();
-
-            if (useXULCache) {
-                JSScript* newScriptObject =
-                    cache->GetScript(mSrcURI);
-                if (newScriptObject)
-                    Set(newScriptObject);
-            }
-        }
-
-        if (!mScriptObject) {
-            if (mSrcURI) {
-                rv = cache->GetInputStream(mSrcURI, getter_AddRefs(objectInput));
-            }
-            
-            
-
-            
-            
-            
-            
-            
-            
-            if (NS_SUCCEEDED(rv))
-                rv = Deserialize(objectInput, aProtoDoc, nullptr, nullptr);
-
-            if (NS_SUCCEEDED(rv)) {
-                if (useXULCache && mSrcURI) {
-                    bool isChrome = false;
-                    mSrcURI->SchemeIs("chrome", &isChrome);
-                    if (isChrome) {
-                        JS::Rooted<JSScript*> script(RootingCx(), GetScriptObject());
-                        cache->PutScript(mSrcURI, script);
-                    }
-                }
-                cache->FinishInputStream(mSrcURI);
-            } else {
-                
-                
-                
-                
-                if (rv != NS_ERROR_NOT_AVAILABLE)
-                    cache->AbortCaching();
-            }
-        }
-    }
-    return rv;
-}
-
-class NotifyOffThreadScriptCompletedRunnable : public Runnable
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    static StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>> sReceivers;
-    static bool sSetupClearOnShutdown;
-
-    nsIOffThreadScriptReceiver* mReceiver;
-    JS::OffThreadToken* mToken;
-
-public:
-  NotifyOffThreadScriptCompletedRunnable(nsIOffThreadScriptReceiver* aReceiver,
-                                         JS::OffThreadToken* aToken)
-    : mozilla::Runnable("NotifyOffThreadScriptCompletedRunnable")
-    , mReceiver(aReceiver)
-    , mToken(aToken)
-  {
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(xpc::CompilationScope())) {
+    return NS_ERROR_UNEXPECTED;
   }
 
-  static void NoteReceiver(nsIOffThreadScriptReceiver* aReceiver)
-  {
+  NS_ASSERTION(!mSrcLoading || mSrcLoadWaiters != nullptr || !mScriptObject,
+               "script source still loading when serializing?!");
+  if (!mScriptObject) return NS_ERROR_FAILURE;
+
+  
+  nsresult rv;
+  rv = aStream->Write32(mLineNo);
+  if (NS_FAILED(rv)) return rv;
+  rv = aStream->Write32(0);  
+  if (NS_FAILED(rv)) return rv;
+
+  JSContext* cx = jsapi.cx();
+  JS::Rooted<JSScript*> script(cx, mScriptObject);
+  MOZ_ASSERT(xpc::CompilationScope() == JS::CurrentGlobalOrNull(cx));
+  return nsContentUtils::XPConnect()->WriteScript(aStream, cx, script);
+}
+
+nsresult nsXULPrototypeScript::SerializeOutOfLine(
+    nsIObjectOutputStream* aStream, nsXULPrototypeDocument* aProtoDoc) {
+  nsresult rv = NS_ERROR_NOT_IMPLEMENTED;
+
+  bool isChrome = false;
+  if (NS_FAILED(mSrcURI->SchemeIs("chrome", &isChrome)) || !isChrome)
+    
+    return rv;
+
+  nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
+  if (!cache) return NS_ERROR_OUT_OF_MEMORY;
+
+  NS_ASSERTION(cache->IsEnabled(),
+               "writing to the cache file, but the XUL cache is off?");
+  bool exists;
+  cache->HasData(mSrcURI, &exists);
+
+  
+
+
+
+
+  if (exists) return NS_OK;
+
+  nsCOMPtr<nsIObjectOutputStream> oos;
+  rv = cache->GetOutputStream(mSrcURI, getter_AddRefs(oos));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsresult tmp = Serialize(oos, aProtoDoc, nullptr);
+  if (NS_FAILED(tmp)) {
+    rv = tmp;
+  }
+  tmp = cache->FinishOutputStream(mSrcURI);
+  if (NS_FAILED(tmp)) {
+    rv = tmp;
+  }
+
+  if (NS_FAILED(rv)) cache->AbortCaching();
+  return rv;
+}
+
+nsresult nsXULPrototypeScript::Deserialize(
+    nsIObjectInputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
+    nsIURI* aDocumentURI,
+    const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) {
+  nsresult rv;
+  NS_ASSERTION(!mSrcLoading || mSrcLoadWaiters != nullptr || !mScriptObject,
+               "prototype script not well-initialized when deserializing?!");
+
+  
+  rv = aStream->Read32(&mLineNo);
+  if (NS_FAILED(rv)) return rv;
+  uint32_t dummy;
+  rv = aStream->Read32(&dummy);  
+  if (NS_FAILED(rv)) return rv;
+
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(xpc::CompilationScope())) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  JSContext* cx = jsapi.cx();
+
+  JS::Rooted<JSScript*> newScriptObject(cx);
+  rv = nsContentUtils::XPConnect()->ReadScript(aStream, cx,
+                                               newScriptObject.address());
+  NS_ENSURE_SUCCESS(rv, rv);
+  Set(newScriptObject);
+  return NS_OK;
+}
+
+nsresult nsXULPrototypeScript::DeserializeOutOfLine(
+    nsIObjectInputStream* aInput, nsXULPrototypeDocument* aProtoDoc) {
+  
+  
+  nsresult rv = NS_OK;
+  nsXULPrototypeCache* cache = nsXULPrototypeCache::GetInstance();
+
+  nsCOMPtr<nsIObjectInputStream> objectInput = aInput;
+  if (cache) {
+    bool useXULCache = true;
+    if (mSrcURI) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      useXULCache = cache->IsEnabled();
+
+      if (useXULCache) {
+        JSScript* newScriptObject = cache->GetScript(mSrcURI);
+        if (newScriptObject) Set(newScriptObject);
+      }
+    }
+
+    if (!mScriptObject) {
+      if (mSrcURI) {
+        rv = cache->GetInputStream(mSrcURI, getter_AddRefs(objectInput));
+      }
+      
+      
+
+      
+      
+      
+      
+      
+      
+      if (NS_SUCCEEDED(rv))
+        rv = Deserialize(objectInput, aProtoDoc, nullptr, nullptr);
+
+      if (NS_SUCCEEDED(rv)) {
+        if (useXULCache && mSrcURI) {
+          bool isChrome = false;
+          mSrcURI->SchemeIs("chrome", &isChrome);
+          if (isChrome) {
+            JS::Rooted<JSScript*> script(RootingCx(), GetScriptObject());
+            cache->PutScript(mSrcURI, script);
+          }
+        }
+        cache->FinishInputStream(mSrcURI);
+      } else {
+        
+        
+        
+        
+        if (rv != NS_ERROR_NOT_AVAILABLE) cache->AbortCaching();
+      }
+    }
+  }
+  return rv;
+}
+
+class NotifyOffThreadScriptCompletedRunnable : public Runnable {
+  
+  
+  
+  
+  
+  
+  
+  
+  static StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>>
+      sReceivers;
+  static bool sSetupClearOnShutdown;
+
+  nsIOffThreadScriptReceiver* mReceiver;
+  JS::OffThreadToken* mToken;
+
+ public:
+  NotifyOffThreadScriptCompletedRunnable(nsIOffThreadScriptReceiver* aReceiver,
+                                         JS::OffThreadToken* aToken)
+      : mozilla::Runnable("NotifyOffThreadScriptCompletedRunnable"),
+        mReceiver(aReceiver),
+        mToken(aToken) {}
+
+  static void NoteReceiver(nsIOffThreadScriptReceiver* aReceiver) {
     if (!sSetupClearOnShutdown) {
       ClearOnShutdown(&sReceivers);
       sSetupClearOnShutdown = true;
@@ -2232,172 +2027,129 @@ public:
     
     
     sReceivers->AppendElement(aReceiver);
-    }
+  }
 
-    NS_DECL_NSIRUNNABLE
+  NS_DECL_NSIRUNNABLE
 };
 
-StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>> NotifyOffThreadScriptCompletedRunnable::sReceivers;
+StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>>
+    NotifyOffThreadScriptCompletedRunnable::sReceivers;
 bool NotifyOffThreadScriptCompletedRunnable::sSetupClearOnShutdown = false;
 
 NS_IMETHODIMP
-NotifyOffThreadScriptCompletedRunnable::Run()
-{
-    MOZ_ASSERT(NS_IsMainThread());
+NotifyOffThreadScriptCompletedRunnable::Run() {
+  MOZ_ASSERT(NS_IsMainThread());
 
-    JS::Rooted<JSScript*> script(RootingCx());
-    {
-        AutoJSAPI jsapi;
-        if (!jsapi.Init(xpc::CompilationScope())) {
-            
-            
-            return NS_ERROR_UNEXPECTED;
-        }
-        JSContext* cx = jsapi.cx();
-        script = JS::FinishOffThreadScript(cx, mToken);
-    }
-
-    if (!sReceivers) {
-        
-        return NS_OK;
-    }
-
-    auto index = sReceivers->IndexOf(mReceiver);
-    MOZ_RELEASE_ASSERT(index != sReceivers->NoIndex);
-    nsCOMPtr<nsIOffThreadScriptReceiver> receiver = (*sReceivers)[index].forget();
-    sReceivers->RemoveElementAt(index);
-
-    return receiver->OnScriptCompileComplete(script, script ? NS_OK : NS_ERROR_FAILURE);
-}
-
-static void
-OffThreadScriptReceiverCallback(JS::OffThreadToken* aToken, void* aCallbackData)
-{
-    
-    
-    nsIOffThreadScriptReceiver* aReceiver = static_cast<nsIOffThreadScriptReceiver*>(aCallbackData);
-    RefPtr<NotifyOffThreadScriptCompletedRunnable> notify =
-        new NotifyOffThreadScriptCompletedRunnable(aReceiver, aToken);
-    NS_DispatchToMainThread(notify);
-}
-
-nsresult
-nsXULPrototypeScript::Compile(const char16_t* aText,
-                              size_t aTextLength,
-                              JS::SourceOwnership aOwnership,
-                              nsIURI* aURI, uint32_t aLineNo,
-                              nsIDocument* aDocument,
-                              nsIOffThreadScriptReceiver *aOffThreadReceiver )
-{
-    
+  JS::Rooted<JSScript*> script(RootingCx());
+  {
     AutoJSAPI jsapi;
     if (!jsapi.Init(xpc::CompilationScope())) {
-        if (aOwnership == JS::SourceOwnership::TakeOwnership) {
-            
-            
-            js_free(const_cast<char16_t*>(aText));
-        }
-
-        return NS_ERROR_UNEXPECTED;
+      
+      
+      return NS_ERROR_UNEXPECTED;
     }
     JSContext* cx = jsapi.cx();
+    script = JS::FinishOffThreadScript(cx, mToken);
+  }
 
-    JS::SourceText<char16_t> srcBuf;
-    if (NS_WARN_IF(!srcBuf.init(cx, aText, aTextLength, aOwnership))) {
-        return NS_ERROR_FAILURE;
-    }
-
-    nsAutoCString urlspec;
-    nsresult rv = aURI->GetSpec(urlspec);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
+  if (!sReceivers) {
     
-    JS::CompileOptions options(cx);
-    options.setIntroductionType("scriptElement")
-           .setFileAndLine(urlspec.get(), aLineNo);
-    
-    
-    
-    options.setSourceIsLazy(mOutOfLine);
-    JS::Rooted<JSObject*> scope(cx, JS::CurrentGlobalOrNull(cx));
-    if (scope) {
-      JS::ExposeObjectToActiveJS(scope);
-    }
-
-    if (aOffThreadReceiver && JS::CanCompileOffThread(cx, options, aTextLength)) {
-        if (!JS::CompileOffThread(cx, options, srcBuf,
-                                  OffThreadScriptReceiverCallback,
-                                  static_cast<void*>(aOffThreadReceiver))) {
-            return NS_ERROR_OUT_OF_MEMORY;
-        }
-        NotifyOffThreadScriptCompletedRunnable::NoteReceiver(aOffThreadReceiver);
-    } else {
-        JS::Rooted<JSScript*> script(cx);
-        if (!JS::Compile(cx, options, srcBuf, &script))
-            return NS_ERROR_OUT_OF_MEMORY;
-        Set(script);
-    }
     return NS_OK;
+  }
+
+  auto index = sReceivers->IndexOf(mReceiver);
+  MOZ_RELEASE_ASSERT(index != sReceivers->NoIndex);
+  nsCOMPtr<nsIOffThreadScriptReceiver> receiver = (*sReceivers)[index].forget();
+  sReceivers->RemoveElementAt(index);
+
+  return receiver->OnScriptCompileComplete(script,
+                                           script ? NS_OK : NS_ERROR_FAILURE);
 }
 
-void
-nsXULPrototypeScript::UnlinkJSObjects()
-{
-    if (mScriptObject) {
-        mScriptObject = nullptr;
-        mozilla::DropJSObjects(this);
-    }
+static void OffThreadScriptReceiverCallback(JS::OffThreadToken* aToken,
+                                            void* aCallbackData) {
+  
+  
+  nsIOffThreadScriptReceiver* aReceiver =
+      static_cast<nsIOffThreadScriptReceiver*>(aCallbackData);
+  RefPtr<NotifyOffThreadScriptCompletedRunnable> notify =
+      new NotifyOffThreadScriptCompletedRunnable(aReceiver, aToken);
+  NS_DispatchToMainThread(notify);
 }
 
-void
-nsXULPrototypeScript::Set(JSScript* aObject)
-{
-    MOZ_ASSERT(!mScriptObject, "Leaking script object.");
-    if (!aObject) {
-        mScriptObject = nullptr;
-        return;
+nsresult nsXULPrototypeScript::Compile(
+    const char16_t* aText, size_t aTextLength, JS::SourceOwnership aOwnership,
+    nsIURI* aURI, uint32_t aLineNo, nsIDocument* aDocument,
+    nsIOffThreadScriptReceiver* aOffThreadReceiver ) {
+  
+  AutoJSAPI jsapi;
+  if (!jsapi.Init(xpc::CompilationScope())) {
+    if (aOwnership == JS::SourceOwnership::TakeOwnership) {
+      
+      
+      js_free(const_cast<char16_t*>(aText));
     }
 
-    mScriptObject = aObject;
-    mozilla::HoldJSObjects(this);
-}
+    return NS_ERROR_UNEXPECTED;
+  }
+  JSContext* cx = jsapi.cx();
 
+  JS::SourceText<char16_t> srcBuf;
+  if (NS_WARN_IF(!srcBuf.init(cx, aText, aTextLength, aOwnership))) {
+    return NS_ERROR_FAILURE;
+  }
 
-
-
-
-
-nsresult
-nsXULPrototypeText::Serialize(nsIObjectOutputStream* aStream,
-                              nsXULPrototypeDocument* aProtoDoc,
-                              const nsTArray<RefPtr<mozilla::dom::NodeInfo>> *aNodeInfos)
-{
-    nsresult rv;
-
-    
-    rv = aStream->Write32(mType);
-
-    nsresult tmp = aStream->WriteWStringZ(mValue.get());
-    if (NS_FAILED(tmp)) {
-      rv = tmp;
-    }
-
+  nsAutoCString urlspec;
+  nsresult rv = aURI->GetSpec(urlspec);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
+  }
+
+  
+  JS::CompileOptions options(cx);
+  options.setIntroductionType("scriptElement")
+      .setFileAndLine(urlspec.get(), aLineNo);
+  
+  
+  
+  options.setSourceIsLazy(mOutOfLine);
+  JS::Rooted<JSObject*> scope(cx, JS::CurrentGlobalOrNull(cx));
+  if (scope) {
+    JS::ExposeObjectToActiveJS(scope);
+  }
+
+  if (aOffThreadReceiver && JS::CanCompileOffThread(cx, options, aTextLength)) {
+    if (!JS::CompileOffThread(cx, options, srcBuf,
+                              OffThreadScriptReceiverCallback,
+                              static_cast<void*>(aOffThreadReceiver))) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
+    NotifyOffThreadScriptCompletedRunnable::NoteReceiver(aOffThreadReceiver);
+  } else {
+    JS::Rooted<JSScript*> script(cx);
+    if (!JS::Compile(cx, options, srcBuf, &script))
+      return NS_ERROR_OUT_OF_MEMORY;
+    Set(script);
+  }
+  return NS_OK;
 }
 
-nsresult
-nsXULPrototypeText::Deserialize(nsIObjectInputStream* aStream,
-                                nsXULPrototypeDocument* aProtoDoc,
-                                nsIURI* aDocumentURI,
-                                const nsTArray<RefPtr<mozilla::dom::NodeInfo>> *aNodeInfos)
-{
-    nsresult rv = aStream->ReadString(mValue);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-    }
-    return NS_OK;
+void nsXULPrototypeScript::UnlinkJSObjects() {
+  if (mScriptObject) {
+    mScriptObject = nullptr;
+    mozilla::DropJSObjects(this);
+  }
+}
+
+void nsXULPrototypeScript::Set(JSScript* aObject) {
+  MOZ_ASSERT(!mScriptObject, "Leaking script object.");
+  if (!aObject) {
+    mScriptObject = nullptr;
+    return;
+  }
+
+  mScriptObject = aObject;
+  mozilla::HoldJSObjects(this);
 }
 
 
@@ -2405,40 +2157,68 @@ nsXULPrototypeText::Deserialize(nsIObjectInputStream* aStream,
 
 
 
-nsresult
-nsXULPrototypePI::Serialize(nsIObjectOutputStream* aStream,
-                            nsXULPrototypeDocument* aProtoDoc,
-                            const nsTArray<RefPtr<mozilla::dom::NodeInfo>> *aNodeInfos)
-{
-    nsresult rv;
+nsresult nsXULPrototypeText::Serialize(
+    nsIObjectOutputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
+    const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) {
+  nsresult rv;
 
-    
-    rv = aStream->Write32(mType);
+  
+  rv = aStream->Write32(mType);
 
-    nsresult tmp = aStream->WriteWStringZ(mTarget.get());
-    if (NS_FAILED(tmp)) {
-      rv = tmp;
-    }
-    tmp = aStream->WriteWStringZ(mData.get());
-    if (NS_FAILED(tmp)) {
-      rv = tmp;
-    }
+  nsresult tmp = aStream->WriteWStringZ(mValue.get());
+  if (NS_FAILED(tmp)) {
+    rv = tmp;
+  }
 
+  return rv;
+}
+
+nsresult nsXULPrototypeText::Deserialize(
+    nsIObjectInputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
+    nsIURI* aDocumentURI,
+    const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) {
+  nsresult rv = aStream->ReadString(mValue);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
+  }
+  return NS_OK;
 }
 
-nsresult
-nsXULPrototypePI::Deserialize(nsIObjectInputStream* aStream,
-                              nsXULPrototypeDocument* aProtoDoc,
-                              nsIURI* aDocumentURI,
-                              const nsTArray<RefPtr<mozilla::dom::NodeInfo>> *aNodeInfos)
-{
-    nsresult rv;
 
-    rv = aStream->ReadString(mTarget);
-    if (NS_FAILED(rv)) return rv;
-    rv = aStream->ReadString(mData);
-    if (NS_FAILED(rv)) return rv;
 
-    return rv;
+
+
+
+nsresult nsXULPrototypePI::Serialize(
+    nsIObjectOutputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
+    const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) {
+  nsresult rv;
+
+  
+  rv = aStream->Write32(mType);
+
+  nsresult tmp = aStream->WriteWStringZ(mTarget.get());
+  if (NS_FAILED(tmp)) {
+    rv = tmp;
+  }
+  tmp = aStream->WriteWStringZ(mData.get());
+  if (NS_FAILED(tmp)) {
+    rv = tmp;
+  }
+
+  return rv;
+}
+
+nsresult nsXULPrototypePI::Deserialize(
+    nsIObjectInputStream* aStream, nsXULPrototypeDocument* aProtoDoc,
+    nsIURI* aDocumentURI,
+    const nsTArray<RefPtr<mozilla::dom::NodeInfo>>* aNodeInfos) {
+  nsresult rv;
+
+  rv = aStream->ReadString(mTarget);
+  if (NS_FAILED(rv)) return rv;
+  rv = aStream->ReadString(mData);
+  if (NS_FAILED(rv)) return rv;
+
+  return rv;
 }

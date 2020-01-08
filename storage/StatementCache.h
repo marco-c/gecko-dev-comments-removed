@@ -22,9 +22,9 @@ namespace storage {
 
 
 
-template<typename StatementType>
+template <typename StatementType>
 class StatementCache {
-public:
+ public:
   
 
 
@@ -36,9 +36,7 @@ public:
 
 
   explicit StatementCache(nsCOMPtr<mozIStorageConnection>& aConnection)
-  : mConnection(aConnection)
-  {
-  }
+      : mConnection(aConnection) {}
 
   
 
@@ -49,10 +47,8 @@ public:
 
 
 
-  inline
-  already_AddRefed<StatementType>
-  GetCachedStatement(const nsACString& aQuery)
-  {
+  inline already_AddRefed<StatementType> GetCachedStatement(
+      const nsACString& aQuery) {
     nsCOMPtr<StatementType> stmt;
     if (!mCachedStatements.Get(aQuery, getter_AddRefs(stmt))) {
       stmt = CreateStatement(aQuery);
@@ -63,10 +59,9 @@ public:
     return stmt.forget();
   }
 
-  template<int N>
-  MOZ_ALWAYS_INLINE already_AddRefed<StatementType>
-  GetCachedStatement(const char (&aQuery)[N])
-  {
+  template <int N>
+  MOZ_ALWAYS_INLINE already_AddRefed<StatementType> GetCachedStatement(
+      const char (&aQuery)[N]) {
     nsDependentCString query(aQuery, N - 1);
     return GetCachedStatement(query);
   }
@@ -75,10 +70,7 @@ public:
 
 
 
-  inline
-  void
-  FinalizeStatements()
-  {
+  inline void FinalizeStatements() {
     for (auto iter = mCachedStatements.Iter(); !iter.Done(); iter.Next()) {
       (void)iter.Data()->Finalize();
     }
@@ -87,20 +79,18 @@ public:
     (void)mCachedStatements.Clear();
   }
 
-private:
-  inline
-  already_AddRefed<StatementType>
-  CreateStatement(const nsACString& aQuery);
+ private:
+  inline already_AddRefed<StatementType> CreateStatement(
+      const nsACString& aQuery);
 
   nsInterfaceHashtable<nsCStringHashKey, StatementType> mCachedStatements;
   nsCOMPtr<mozIStorageConnection>& mConnection;
 };
 
-template< >
-inline
-already_AddRefed<mozIStorageStatement>
-StatementCache<mozIStorageStatement>::CreateStatement(const nsACString& aQuery)
-{
+template <>
+inline already_AddRefed<mozIStorageStatement>
+StatementCache<mozIStorageStatement>::CreateStatement(
+    const nsACString& aQuery) {
   NS_ENSURE_TRUE(mConnection, nullptr);
 
   nsCOMPtr<mozIStorageStatement> stmt;
@@ -121,11 +111,10 @@ StatementCache<mozIStorageStatement>::CreateStatement(const nsACString& aQuery)
   return stmt.forget();
 }
 
-template< >
-inline
-already_AddRefed<mozIStorageAsyncStatement>
-StatementCache<mozIStorageAsyncStatement>::CreateStatement(const nsACString& aQuery)
-{
+template <>
+inline already_AddRefed<mozIStorageAsyncStatement>
+StatementCache<mozIStorageAsyncStatement>::CreateStatement(
+    const nsACString& aQuery) {
   NS_ENSURE_TRUE(mConnection, nullptr);
 
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
@@ -135,7 +124,7 @@ StatementCache<mozIStorageAsyncStatement>::CreateStatement(const nsACString& aQu
   return stmt.forget();
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

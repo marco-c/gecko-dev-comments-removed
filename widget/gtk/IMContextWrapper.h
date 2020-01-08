@@ -29,506 +29,469 @@ namespace widget {
 
 
 enum class KeyHandlingState {
-    
-    eNotHandled,
-    
-    eHandled,
-    
-    
-    eNotHandledButEventDispatched,
-    
-    
-    eNotHandledButEventConsumed,
+  
+  eNotHandled,
+  
+  eHandled,
+  
+  
+  eNotHandledButEventDispatched,
+  
+  
+  eNotHandledButEventConsumed,
 };
 
-class IMContextWrapper final : public TextEventDispatcherListener
-{
-public:
+class IMContextWrapper final : public TextEventDispatcherListener {
+ public:
+  
+  NS_DECL_ISUPPORTS
+
+  NS_IMETHOD NotifyIME(TextEventDispatcher* aTextEventDispatcher,
+                       const IMENotification& aNotification) override;
+  NS_IMETHOD_(IMENotificationRequests) GetIMENotificationRequests() override;
+  NS_IMETHOD_(void)
+  OnRemovedFrom(TextEventDispatcher* aTextEventDispatcher) override;
+  NS_IMETHOD_(void)
+  WillDispatchKeyboardEvent(TextEventDispatcher* aTextEventDispatcher,
+                            WidgetKeyboardEvent& aKeyboardEvent,
+                            uint32_t aIndexOfKeypress, void* aData) override;
+
+ public:
+  
+  
+  
+  explicit IMContextWrapper(nsWindow* aOwnerWindow);
+
+  
+  static void Shutdown();
+
+  
+  
+  bool IsEnabled() const;
+
+  
+  void OnFocusWindow(nsWindow* aWindow);
+  
+  void OnBlurWindow(nsWindow* aWindow);
+  
+  void OnDestroyWindow(nsWindow* aWindow);
+  
+  void OnFocusChangeInGecko(bool aFocus);
+  
+  
+  void OnSelectionChange(nsWindow* aCaller,
+                         const IMENotification& aIMENotification);
+  
+  static void OnThemeChanged();
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  KeyHandlingState OnKeyEvent(nsWindow* aWindow, GdkEventKey* aEvent,
+                              bool aKeyboardEventWasDispatched = false);
+
+  
+  nsresult EndIMEComposition(nsWindow* aCaller);
+  void SetInputContext(nsWindow* aCaller, const InputContext* aContext,
+                       const InputContextAction* aAction);
+  InputContext GetInputContext();
+  void OnUpdateComposition();
+  void OnLayoutChange();
+
+  TextEventDispatcher* GetTextEventDispatcher();
+
+  
+  
+  
+  enum class IMContextID : uint8_t {
+    eFcitx,
+    eIBus,
+    eIIIMF,
+    eScim,
+    eUim,
+    eUnknown,
+  };
+
+  static const char* GetIMContextIDName(IMContextID aIMContextID) {
+    switch (aIMContextID) {
+      case IMContextID::eFcitx:
+        return "eFcitx";
+      case IMContextID::eIBus:
+        return "eIBus";
+      case IMContextID::eIIIMF:
+        return "eIIIMF";
+      case IMContextID::eScim:
+        return "eScim";
+      case IMContextID::eUim:
+        return "eUim";
+      default:
+        return "eUnknown";
+    }
+  }
+
+  
+
+
+
+  nsDependentCSubstring GetIMName() const;
+
+ protected:
+  ~IMContextWrapper();
+
+  
+  
+  
+  
+  
+  
+  nsWindow* mOwnerWindow;
+
+  
+  nsWindow* mLastFocusedWindow;
+
+  
+  GtkIMContext* mContext;
+
+  
+  
+  
+  
+  GtkIMContext* mSimpleContext;
+
+  
+  
+  
+  GtkIMContext* mDummyContext;
+
+  
+  
+  
+  GtkIMContext* mComposingContext;
+
+  
+  
+  InputContext mInputContext;
+
+  
+  
+  
+  
+  uint32_t mCompositionStart;
+
+  
+  
+  nsString mDispatchedCompositionString;
+
+  
+  
+  nsString mSelectedStringRemovedByComposition;
+
+  
+  
+  GdkEventKey* mProcessingKeyEvent;
+
+  
+
+
+
+
+  class GdkEventKeyQueue final {
+   public:
+    ~GdkEventKeyQueue() { Clear(); }
+
+    void Clear() {
+      if (!mEvents.IsEmpty()) {
+        RemoveEventsAt(0, mEvents.Length());
+      }
+    }
+
     
-    NS_DECL_ISUPPORTS
-
-    NS_IMETHOD NotifyIME(TextEventDispatcher* aTextEventDispatcher,
-                         const IMENotification& aNotification) override;
-    NS_IMETHOD_(IMENotificationRequests) GetIMENotificationRequests() override;
-    NS_IMETHOD_(void) OnRemovedFrom(
-                          TextEventDispatcher* aTextEventDispatcher) override;
-    NS_IMETHOD_(void) WillDispatchKeyboardEvent(
-                          TextEventDispatcher* aTextEventDispatcher,
-                          WidgetKeyboardEvent& aKeyboardEvent,
-                          uint32_t aIndexOfKeypress,
-                          void* aData) override;
-
-public:
-    
-    
-    
-    explicit IMContextWrapper(nsWindow* aOwnerWindow);
-
-    
-    static void Shutdown();
-
-    
-    
-    bool IsEnabled() const;
-
-    
-    void OnFocusWindow(nsWindow* aWindow);
-    
-    void OnBlurWindow(nsWindow* aWindow);
-    
-    void OnDestroyWindow(nsWindow* aWindow);
-    
-    void OnFocusChangeInGecko(bool aFocus);
-    
-    
-    void OnSelectionChange(nsWindow* aCaller,
-                           const IMENotification& aIMENotification);
-    
-    static void OnThemeChanged();
-
-    
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    KeyHandlingState OnKeyEvent(nsWindow* aWindow, GdkEventKey* aEvent,
-                                bool aKeyboardEventWasDispatched = false);
-
-    
-    nsresult EndIMEComposition(nsWindow* aCaller);
-    void SetInputContext(nsWindow* aCaller,
-                         const InputContext* aContext,
-                         const InputContextAction* aAction);
-    InputContext GetInputContext();
-    void OnUpdateComposition();
-    void OnLayoutChange();
-
-    TextEventDispatcher* GetTextEventDispatcher();
-
-    
-    
-    
-    enum class IMContextID : uint8_t
-    {
-        eFcitx,
-        eIBus,
-        eIIIMF,
-        eScim,
-        eUim,
-        eUnknown,
-    };
-
-    static const char* GetIMContextIDName(IMContextID aIMContextID)
-    {
-        switch (aIMContextID) {
-            case IMContextID::eFcitx:
-                return "eFcitx";
-            case IMContextID::eIBus:
-                return "eIBus";
-            case IMContextID::eIIIMF:
-                return "eIIIMF";
-            case IMContextID::eScim:
-                return "eScim";
-            case IMContextID::eUim:
-                return "eUim";
-            default:
-                return "eUnknown";
-        }
+    void PutEvent(const GdkEventKey* aEvent) {
+      GdkEventKey* newEvent = reinterpret_cast<GdkEventKey*>(
+          gdk_event_copy(reinterpret_cast<const GdkEvent*>(aEvent)));
+      newEvent->state &= GDK_MODIFIER_MASK;
+      mEvents.AppendElement(newEvent);
     }
 
     
 
 
 
-    nsDependentCSubstring GetIMName() const;
-
-protected:
-    ~IMContextWrapper();
-
-    
-    
-    
-    
-    
-    
-    nsWindow* mOwnerWindow;
-
-    
-    nsWindow* mLastFocusedWindow;
-
-    
-    GtkIMContext* mContext;
-
-    
-    
-    
-    
-    GtkIMContext* mSimpleContext;
-
-    
-    
-    
-    GtkIMContext* mDummyContext;
-
-    
-    
-    
-    GtkIMContext* mComposingContext;
-
-    
-    
-    InputContext mInputContext;
-
-    
-    
-    
-    
-    uint32_t mCompositionStart;
-
-    
-    
-    nsString mDispatchedCompositionString;
-
-    
-    
-    nsString mSelectedStringRemovedByComposition;
-
-    
-    
-    GdkEventKey* mProcessingKeyEvent;
+    void RemoveEvent(const GdkEventKey* aEvent) {
+      size_t index = IndexOf(aEvent);
+      if (NS_WARN_IF(index == mEvents.NoIndex)) {
+        return;
+      }
+      RemoveEventsAt(0, index + 1);
+    }
 
     
 
 
+    GdkEventKey* GetFirstEvent() const {
+      if (mEvents.IsEmpty()) {
+        return nullptr;
+      }
+      return mEvents[0];
+    }
 
+    bool IsEmpty() const { return mEvents.IsEmpty(); }
 
-    class GdkEventKeyQueue final
-    {
-    public:
-        ~GdkEventKeyQueue() { Clear(); }
+   private:
+    nsTArray<GdkEventKey*> mEvents;
 
-        void Clear()
-        {
-            if (!mEvents.IsEmpty()) {
-                RemoveEventsAt(0, mEvents.Length());
-            }
-        }
+    void RemoveEventsAt(size_t aStart, size_t aCount) {
+      for (size_t i = aStart; i < aStart + aCount; i++) {
+        gdk_event_free(reinterpret_cast<GdkEvent*>(mEvents[i]));
+      }
+      mEvents.RemoveElementsAt(aStart, aCount);
+    }
 
+    size_t IndexOf(const GdkEventKey* aEvent) const {
+      static_assert(!(GDK_MODIFIER_MASK & (1 << 24)),
+                    "We assumes 25th bit is used by some IM, but used by GDK");
+      static_assert(!(GDK_MODIFIER_MASK & (1 << 25)),
+                    "We assumes 26th bit is used by some IM, but used by GDK");
+      for (size_t i = 0; i < mEvents.Length(); i++) {
+        GdkEventKey* event = mEvents[i];
         
-
-
-        void PutEvent(const GdkEventKey* aEvent)
-        {
-            GdkEventKey* newEvent =
-                reinterpret_cast<GdkEventKey*>(
-                    gdk_event_copy(reinterpret_cast<const GdkEvent*>(aEvent)));
-            newEvent->state &= GDK_MODIFIER_MASK;
-            mEvents.AppendElement(newEvent);
-        }
-
         
-
-
-
-        void RemoveEvent(const GdkEventKey* aEvent)
-        {
-            size_t index = IndexOf(aEvent);
-            if (NS_WARN_IF(index == mEvents.NoIndex)) {
-                return;
-            }
-            RemoveEventsAt(0, index + 1);
-        }
-
         
-
-
-        GdkEventKey* GetFirstEvent() const
-        {
-            if (mEvents.IsEmpty()) {
-                return nullptr;
-            }
-            return mEvents[0];
+        if (event->time == aEvent->time) {
+          if (NS_WARN_IF(event->type != aEvent->type) ||
+              NS_WARN_IF(event->keyval != aEvent->keyval) ||
+              NS_WARN_IF(event->state != (aEvent->state & GDK_MODIFIER_MASK))) {
+            continue;
+          }
         }
+        return i;
+      }
+      return mEvents.NoIndex;
+    }
+  };
+  
+  
+  GdkEventKeyQueue mPostingKeyEvents;
 
-        bool IsEmpty() const { return mEvents.IsEmpty(); }
+  struct Range {
+    uint32_t mOffset;
+    uint32_t mLength;
 
-    private:
-        nsTArray<GdkEventKey*> mEvents;
+    Range() : mOffset(UINT32_MAX), mLength(UINT32_MAX) {}
 
-        void RemoveEventsAt(size_t aStart, size_t aCount)
-        {
-            for (size_t i = aStart; i < aStart + aCount; i++) {
-                gdk_event_free(reinterpret_cast<GdkEvent*>(mEvents[i]));
-            }
-            mEvents.RemoveElementsAt(aStart, aCount);
-        }
+    bool IsValid() const { return mOffset != UINT32_MAX; }
+    void Clear() {
+      mOffset = UINT32_MAX;
+      mLength = UINT32_MAX;
+    }
+  };
 
-        size_t IndexOf(const GdkEventKey* aEvent) const
-        {
-            static_assert(!(GDK_MODIFIER_MASK & (1 << 24)),
-                "We assumes 25th bit is used by some IM, but used by GDK");
-            static_assert(!(GDK_MODIFIER_MASK & (1 << 25)),
-                "We assumes 26th bit is used by some IM, but used by GDK");
-            for (size_t i = 0; i < mEvents.Length(); i++) {
-                GdkEventKey* event = mEvents[i];
-                
-                
-                
-                if (event->time == aEvent->time) {
-                    if (NS_WARN_IF(event->type != aEvent->type) ||
-                        NS_WARN_IF(event->keyval != aEvent->keyval) ||
-                        NS_WARN_IF(event->state !=
-                                       (aEvent->state & GDK_MODIFIER_MASK))) {
-                        continue;
-                    }
-                }
-                return i;
-            }
-            return mEvents.NoIndex;
-        }
-    };
-    
-    
-    GdkEventKeyQueue mPostingKeyEvents;
+  
+  Range mCompositionTargetRange;
 
-    struct Range
-    {
-        uint32_t mOffset;
-        uint32_t mLength;
+  
+  enum eCompositionState : uint8_t {
+    eCompositionState_NotComposing,
+    eCompositionState_CompositionStartDispatched,
+    eCompositionState_CompositionChangeEventDispatched
+  };
+  eCompositionState mCompositionState;
 
-        Range()
-            : mOffset(UINT32_MAX)
-            , mLength(UINT32_MAX)
-        {
-        }
+  bool IsComposing() const {
+    return (mCompositionState != eCompositionState_NotComposing);
+  }
 
-        bool IsValid() const { return mOffset != UINT32_MAX; }
-        void Clear()
-        {
-            mOffset = UINT32_MAX;
-            mLength = UINT32_MAX;
-        }
-    };
+  bool IsComposingOn(GtkIMContext* aContext) const {
+    return IsComposing() && mComposingContext == aContext;
+  }
 
-    
-    Range mCompositionTargetRange;
+  bool IsComposingOnCurrentContext() const {
+    return IsComposingOn(GetCurrentContext());
+  }
 
-    
-    enum eCompositionState : uint8_t
-    {
-        eCompositionState_NotComposing,
-        eCompositionState_CompositionStartDispatched,
-        eCompositionState_CompositionChangeEventDispatched
-    };
-    eCompositionState mCompositionState;
+  bool EditorHasCompositionString() {
+    return (mCompositionState ==
+            eCompositionState_CompositionChangeEventDispatched);
+  }
 
-    bool IsComposing() const
-    {
-        return (mCompositionState != eCompositionState_NotComposing);
+  
+
+
+
+
+
+
+
+  bool IsValidContext(GtkIMContext* aContext) const;
+
+  const char* GetCompositionStateName() {
+    switch (mCompositionState) {
+      case eCompositionState_NotComposing:
+        return "NotComposing";
+      case eCompositionState_CompositionStartDispatched:
+        return "CompositionStartDispatched";
+      case eCompositionState_CompositionChangeEventDispatched:
+        return "CompositionChangeEventDispatched";
+      default:
+        return "InvaildState";
+    }
+  }
+
+  
+  
+  IMContextID mIMContextID;
+
+  struct Selection final {
+    nsString mString;
+    uint32_t mOffset;
+    WritingMode mWritingMode;
+
+    Selection() : mOffset(UINT32_MAX) {}
+
+    void Clear() {
+      mString.Truncate();
+      mOffset = UINT32_MAX;
+      mWritingMode = WritingMode();
+    }
+    void CollapseTo(uint32_t aOffset, const WritingMode& aWritingMode) {
+      mWritingMode = aWritingMode;
+      mOffset = aOffset;
+      mString.Truncate();
     }
 
-    bool IsComposingOn(GtkIMContext* aContext) const
-    {
-        return IsComposing() && mComposingContext == aContext;
+    void Assign(const IMENotification& aIMENotification);
+    void Assign(const WidgetQueryContentEvent& aSelectedTextEvent);
+
+    bool IsValid() const { return mOffset != UINT32_MAX; }
+    bool Collapsed() const { return mString.IsEmpty(); }
+    uint32_t Length() const { return mString.Length(); }
+    uint32_t EndOffset() const {
+      if (NS_WARN_IF(!IsValid())) {
+        return UINT32_MAX;
+      }
+      CheckedInt<uint32_t> endOffset =
+          CheckedInt<uint32_t>(mOffset) + mString.Length();
+      if (NS_WARN_IF(!endOffset.isValid())) {
+        return UINT32_MAX;
+      }
+      return endOffset.value();
     }
+  } mSelection;
+  bool EnsureToCacheSelection(nsAString* aSelectedString = nullptr);
 
-    bool IsComposingOnCurrentContext() const
-    {
-        return IsComposingOn(GetCurrentContext());
-    }
+  
+  
+  bool mIsIMFocused;
+  
+  
+  
+  
+  
+  bool mFallbackToKeyEvent;
+  
+  
+  
+  
+  
+  
+  
+  bool mKeyboardEventWasDispatched;
+  
+  
+  bool mKeyboardEventWasConsumed;
+  
+  
+  bool mIsDeletingSurrounding;
+  
+  
+  bool mLayoutChanged;
+  
+  
+  
+  bool mSetCursorPositionOnKeyEvent;
+  
+  
+  
+  
+  
+  
+  bool mPendingResettingIMContext;
+  
+  
+  bool mRetrieveSurroundingSignalReceived;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mMaybeInDeadKeySequence;
+  
+  
+  
+  bool mIsIMInAsyncKeyHandlingMode;
+  
+  
+  bool mIsKeySnooped;
 
-    bool EditorHasCompositionString()
-    {
-        return (mCompositionState ==
-                    eCompositionState_CompositionChangeEventDispatched);
-    }
+  
+  
+  
+  static IMContextWrapper* sLastFocusedContext;
 
-    
+  
+  
+  
+  static bool sUseSimpleContext;
 
-
-
-
-
-
-
-    bool IsValidContext(GtkIMContext* aContext) const;
-
-    const char* GetCompositionStateName()
-    {
-        switch (mCompositionState) {
-            case eCompositionState_NotComposing:
-                return "NotComposing";
-            case eCompositionState_CompositionStartDispatched:
-                return "CompositionStartDispatched";
-            case eCompositionState_CompositionChangeEventDispatched:
-                return "CompositionChangeEventDispatched";
-            default:
-                return "InvaildState";
-        }
-    }
-
-    
-    
-    IMContextID mIMContextID;
-
-    struct Selection final
-    {
-        nsString mString;
-        uint32_t mOffset;
-        WritingMode mWritingMode;
-
-        Selection()
-            : mOffset(UINT32_MAX)
-        {
-        }
-
-        void Clear()
-        {
-            mString.Truncate();
-            mOffset = UINT32_MAX;
-            mWritingMode = WritingMode();
-        }
-        void CollapseTo(uint32_t aOffset,
-                        const WritingMode& aWritingMode)
-        {
-            mWritingMode = aWritingMode;
-            mOffset = aOffset;
-            mString.Truncate();
-        }
-
-        void Assign(const IMENotification& aIMENotification);
-        void Assign(const WidgetQueryContentEvent& aSelectedTextEvent);
-
-        bool IsValid() const { return mOffset != UINT32_MAX; }
-        bool Collapsed() const { return mString.IsEmpty(); }
-        uint32_t Length() const { return mString.Length(); }
-        uint32_t EndOffset() const
-        {
-            if (NS_WARN_IF(!IsValid())) {
-                return UINT32_MAX;
-            }
-            CheckedInt<uint32_t> endOffset =
-                CheckedInt<uint32_t>(mOffset) + mString.Length();
-            if (NS_WARN_IF(!endOffset.isValid())) {
-                return UINT32_MAX;
-            }
-            return endOffset.value();
-        }
-    } mSelection;
-    bool EnsureToCacheSelection(nsAString* aSelectedString = nullptr);
-
-    
-    
-    bool mIsIMFocused;
-    
-    
-    
-    
-    
-    bool mFallbackToKeyEvent;
-    
-    
-    
-    
-    
-    
-    
-    bool mKeyboardEventWasDispatched;
-    
-    
-    bool mKeyboardEventWasConsumed;
-    
-    
-    bool mIsDeletingSurrounding;
-    
-    
-    bool mLayoutChanged;
-    
-    
-    
-    bool mSetCursorPositionOnKeyEvent;
-    
-    
-    
-    
-    
-    
-    bool mPendingResettingIMContext;
-    
-    
-    bool mRetrieveSurroundingSignalReceived;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool mMaybeInDeadKeySequence;
-    
-    
-    
-    bool mIsIMInAsyncKeyHandlingMode;
-    
-    
-    bool mIsKeySnooped;
-
-    
-    
-    
-    static IMContextWrapper* sLastFocusedContext;
-
-    
-    
-    
-    static bool sUseSimpleContext;
-
-    
-    
-    static gboolean OnRetrieveSurroundingCallback(GtkIMContext* aContext,
-                                                  IMContextWrapper* aModule);
-    static gboolean OnDeleteSurroundingCallback(GtkIMContext* aContext,
-                                                gint aOffset,
-                                                gint aNChars,
+  
+  
+  static gboolean OnRetrieveSurroundingCallback(GtkIMContext* aContext,
                                                 IMContextWrapper* aModule);
-    static void OnCommitCompositionCallback(GtkIMContext* aContext,
-                                            const gchar* aString,
-                                            IMContextWrapper* aModule);
-    static void OnChangeCompositionCallback(GtkIMContext* aContext,
-                                            IMContextWrapper* aModule);
-    static void OnStartCompositionCallback(GtkIMContext* aContext,
-                                           IMContextWrapper* aModule);
-    static void OnEndCompositionCallback(GtkIMContext* aContext,
+  static gboolean OnDeleteSurroundingCallback(GtkIMContext* aContext,
+                                              gint aOffset, gint aNChars,
+                                              IMContextWrapper* aModule);
+  static void OnCommitCompositionCallback(GtkIMContext* aContext,
+                                          const gchar* aString,
+                                          IMContextWrapper* aModule);
+  static void OnChangeCompositionCallback(GtkIMContext* aContext,
+                                          IMContextWrapper* aModule);
+  static void OnStartCompositionCallback(GtkIMContext* aContext,
                                          IMContextWrapper* aModule);
+  static void OnEndCompositionCallback(GtkIMContext* aContext,
+                                       IMContextWrapper* aModule);
 
-    
-    gboolean OnRetrieveSurroundingNative(GtkIMContext* aContext);
-    gboolean OnDeleteSurroundingNative(GtkIMContext* aContext,
-                                       gint aOffset,
-                                       gint aNChars);
-    void OnCommitCompositionNative(GtkIMContext* aContext,
-                                   const gchar* aString);
-    void OnChangeCompositionNative(GtkIMContext* aContext);
-    void OnStartCompositionNative(GtkIMContext* aContext);
-    void OnEndCompositionNative(GtkIMContext* aContext);
+  
+  gboolean OnRetrieveSurroundingNative(GtkIMContext* aContext);
+  gboolean OnDeleteSurroundingNative(GtkIMContext* aContext, gint aOffset,
+                                     gint aNChars);
+  void OnCommitCompositionNative(GtkIMContext* aContext, const gchar* aString);
+  void OnChangeCompositionNative(GtkIMContext* aContext);
+  void OnStartCompositionNative(GtkIMContext* aContext);
+  void OnEndCompositionNative(GtkIMContext* aContext);
 
-    
+  
 
 
 
@@ -536,51 +499,49 @@ protected:
 
 
 
-    GtkIMContext* GetCurrentContext() const;
+  GtkIMContext* GetCurrentContext() const;
 
-    
+  
 
 
-    GtkIMContext* GetActiveContext() const
-    {
-        return mComposingContext ? mComposingContext : GetCurrentContext();
-    }
+  GtkIMContext* GetActiveContext() const {
+    return mComposingContext ? mComposingContext : GetCurrentContext();
+  }
 
-    
-    bool IsDestroyed() { return !mOwnerWindow; }
+  
+  bool IsDestroyed() { return !mOwnerWindow; }
 
-    
-    void Focus();
+  
+  void Focus();
 
-    
-    void Blur();
+  
+  void Blur();
 
-    
-    void Init();
+  
+  void Init();
 
-    
+  
 
 
 
 
-    void ResetIME();
+  void ResetIME();
 
-    
-    void GetCompositionString(GtkIMContext* aContext,
-                              nsAString& aCompositionString);
+  
+  void GetCompositionString(GtkIMContext* aContext,
+                            nsAString& aCompositionString);
 
-    
+  
 
 
 
 
 
 
-    already_AddRefed<TextRangeArray>
-        CreateTextRangeArray(GtkIMContext* aContext,
-                             const nsAString& aCompositionString);
+  already_AddRefed<TextRangeArray> CreateTextRangeArray(
+      GtkIMContext* aContext, const nsAString& aCompositionString);
 
-    
+  
 
 
 
@@ -592,30 +553,29 @@ protected:
 
 
 
-    bool SetTextRange(PangoAttrIterator* aPangoAttrIter,
-                      const gchar* aUTF8CompositionString,
-                      uint32_t aUTF16CaretOffset,
-                      TextRange& aTextRange) const;
+  bool SetTextRange(PangoAttrIterator* aPangoAttrIter,
+                    const gchar* aUTF8CompositionString,
+                    uint32_t aUTF16CaretOffset, TextRange& aTextRange) const;
 
-    
+  
 
 
-    static nscolor ToNscolor(PangoAttrColor* aPangoAttrColor);
+  static nscolor ToNscolor(PangoAttrColor* aPangoAttrColor);
 
-    
+  
 
 
 
 
-    void SetCursorPosition(GtkIMContext* aContext);
+  void SetCursorPosition(GtkIMContext* aContext);
 
-    
-    uint32_t GetSelectionOffset(nsWindow* aWindow);
+  
+  uint32_t GetSelectionOffset(nsWindow* aWindow);
 
-    
-    nsresult GetCurrentParagraph(nsAString& aText, uint32_t& aCursorPos);
+  
+  nsresult GetCurrentParagraph(nsAString& aText, uint32_t& aCursorPos);
 
-    
+  
 
 
 
@@ -623,17 +583,16 @@ protected:
 
 
 
-    nsresult DeleteText(GtkIMContext* aContext,
-                        int32_t aOffset,
-                        uint32_t aNChars);
+  nsresult DeleteText(GtkIMContext* aContext, int32_t aOffset,
+                      uint32_t aNChars);
 
-    
-    void InitEvent(WidgetGUIEvent& aEvent);
+  
+  void InitEvent(WidgetGUIEvent& aEvent);
 
-    
-    void PrepareToDestroyContext(GtkIMContext* aContext);
+  
+  void PrepareToDestroyContext(GtkIMContext* aContext);
 
-    
+  
 
 
 
@@ -644,7 +603,7 @@ protected:
 
 
 
-    
+  
 
 
 
@@ -660,18 +619,18 @@ protected:
 
 
 
-    bool MaybeDispatchKeyEventAsProcessedByIME(EventMessage aFollowingEvent);
+  bool MaybeDispatchKeyEventAsProcessedByIME(EventMessage aFollowingEvent);
 
-    
+  
 
 
 
 
 
 
-    bool DispatchCompositionStart(GtkIMContext* aContext);
+  bool DispatchCompositionStart(GtkIMContext* aContext);
 
-    
+  
 
 
 
@@ -679,10 +638,10 @@ protected:
 
 
 
-    bool DispatchCompositionChangeEvent(GtkIMContext* aContext,
-                                        const nsAString& aCompositionString);
+  bool DispatchCompositionChangeEvent(GtkIMContext* aContext,
+                                      const nsAString& aCompositionString);
 
-    
+  
 
 
 
@@ -693,12 +652,11 @@ protected:
 
 
 
-    bool DispatchCompositionCommitEvent(
-             GtkIMContext* aContext,
-             const nsAString* aCommitString = nullptr);
+  bool DispatchCompositionCommitEvent(GtkIMContext* aContext,
+                                      const nsAString* aCommitString = nullptr);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

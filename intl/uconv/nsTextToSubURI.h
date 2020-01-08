@@ -11,22 +11,20 @@
 #include "nsTArray.h"
 #include "mozilla/net/IDNBlocklistUtils.h"
 
-class nsTextToSubURI: public nsITextToSubURI
-{
+class nsTextToSubURI : public nsITextToSubURI {
   NS_DECL_ISUPPORTS
   NS_DECL_NSITEXTTOSUBURI
 
-private:
+ private:
   virtual ~nsTextToSubURI();
 
   
-  nsresult convertURItoUnicode(const nsCString& aCharset,
-                               const nsCString& aURI,
-                               nsAString &_retval);
+  nsresult convertURItoUnicode(const nsCString& aCharset, const nsCString& aURI,
+                               nsAString& _retval);
 
   
   
   nsTArray<mozilla::net::BlocklistRange> mIDNBlocklist;
 };
 
-#endif 
+#endif  

@@ -78,9 +78,8 @@ static HWND gParentWnd = nullptr;
 
 
 
-static nsresult
-GetLocalizedBundle(const char* aPropFileName, nsIStringBundle** aStrBundle)
-{
+static nsresult GetLocalizedBundle(const char* aPropFileName,
+                                   nsIStringBundle** aStrBundle) {
   NS_ENSURE_ARG_POINTER(aPropFileName);
   NS_ENSURE_ARG_POINTER(aStrBundle);
 
@@ -89,7 +88,7 @@ GetLocalizedBundle(const char* aPropFileName, nsIStringBundle** aStrBundle)
 
   
   nsCOMPtr<nsIStringBundleService> stringService =
-    do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv);
+      do_GetService(NS_STRINGBUNDLE_CONTRACTID, &rv);
   if (NS_SUCCEEDED(rv) && stringService) {
     rv = stringService->CreateBundle(aPropFileName, aStrBundle);
   }
@@ -99,11 +98,8 @@ GetLocalizedBundle(const char* aPropFileName, nsIStringBundle** aStrBundle)
 
 
 
-static nsresult
-GetLocalizedString(nsIStringBundle* aStrBundle,
-                   const char* aKey,
-                   nsString& oVal)
-{
+static nsresult GetLocalizedString(nsIStringBundle* aStrBundle,
+                                   const char* aKey, nsString& oVal) {
   NS_ENSURE_ARG_POINTER(aStrBundle);
   NS_ENSURE_ARG_POINTER(aKey);
 
@@ -120,18 +116,15 @@ GetLocalizedString(nsIStringBundle* aStrBundle,
 
 
 
-static void
-SetTextOnWnd(HWND aControl, const nsAString& aStr)
-{
+static void SetTextOnWnd(HWND aControl, const nsAString& aStr) {
   ::SetWindowTextW(aControl,
                    reinterpret_cast<const wchar_t*>(aStr.BeginReading()));
 }
 
 
 
-static void
-SetText(HWND aParent, UINT aId, nsIStringBundle* aStrBundle, const char* aKey)
-{
+static void SetText(HWND aParent, UINT aId, nsIStringBundle* aStrBundle,
+                    const char* aKey) {
   HWND wnd = GetDlgItem(aParent, aId);
   if (!wnd) {
     return;
@@ -144,9 +137,8 @@ SetText(HWND aParent, UINT aId, nsIStringBundle* aStrBundle, const char* aKey)
 }
 
 
-static void
-SetRadio(HWND aParent, UINT aId, bool aIsSet, bool isEnabled = true)
-{
+static void SetRadio(HWND aParent, UINT aId, bool aIsSet,
+                     bool isEnabled = true) {
   HWND wnd = ::GetDlgItem(aParent, aId);
   if (!wnd) {
     return;
@@ -160,35 +152,32 @@ SetRadio(HWND aParent, UINT aId, bool aIsSet, bool isEnabled = true)
 }
 
 
-static void
-SetRadioOfGroup(HWND aDlg, int aRadId)
-{
-  int radioIds[] = { rad4, rad5, rad6 };
+static void SetRadioOfGroup(HWND aDlg, int aRadId) {
+  int radioIds[] = {rad4, rad5, rad6};
   int numRads = 3;
 
   for (int i = 0; i < numRads; i++) {
     HWND radWnd = ::GetDlgItem(aDlg, radioIds[i]);
     if (radWnd != nullptr) {
-      ::SendMessage(
-        radWnd, BM_SETCHECK, (WPARAM)(radioIds[i] == aRadId), (LPARAM)0);
+      ::SendMessage(radWnd, BM_SETCHECK, (WPARAM)(radioIds[i] == aRadId),
+                    (LPARAM)0);
     }
   }
 }
 
 
-typedef struct
-{
+typedef struct {
   const char* mKeyStr;
   long mKeyId;
 } PropKeyInfo;
 
 
 
-static PropKeyInfo gAllPropKeys[] = { { "printFramesTitleWindows", grp3 },
-                                      { "asLaidOutWindows", rad4 },
-                                      { "selectedFrameWindows", rad5 },
-                                      { "separateFramesWindows", rad6 },
-                                      { nullptr, 0 } };
+static PropKeyInfo gAllPropKeys[] = {{"printFramesTitleWindows", grp3},
+                                     {"asLaidOutWindows", rad4},
+                                     {"selectedFrameWindows", rad5},
+                                     {"separateFramesWindows", rad6},
+                                     {nullptr, 0}};
 
 
 
@@ -196,9 +185,7 @@ static PropKeyInfo gAllPropKeys[] = { { "printFramesTitleWindows", grp3 },
 
 
 
-static void
-GetLocalRect(HWND aWnd, RECT& aRect, HWND aParent)
-{
+static void GetLocalRect(HWND aWnd, RECT& aRect, HWND aParent) {
   ::GetWindowRect(aWnd, &aRect);
 
   
@@ -208,9 +195,7 @@ GetLocalRect(HWND aWnd, RECT& aRect, HWND aParent)
 
 
 
-static void
-Show(HWND aWnd, bool bState)
-{
+static void Show(HWND aWnd, bool bState) {
   if (aWnd) {
     ::ShowWindow(aWnd, bState ? SW_SHOW : SW_HIDE);
   }
@@ -218,28 +203,14 @@ Show(HWND aWnd, bool bState)
 
 
 
-static HWND
-CreateControl(LPCWSTR aType,
-              DWORD aStyle,
-              HINSTANCE aHInst,
-              HWND aHdlg,
-              int aId,
-              LPCWSTR aStr,
-              const nsIntRect& aRect)
-{
-  HWND hWnd = ::CreateWindowW(aType,
-                              aStr,
-                              WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | aStyle,
-                              aRect.X(),
-                              aRect.Y(),
-                              aRect.Width(),
-                              aRect.Height(),
-                              (HWND)aHdlg,
-                              (HMENU)(intptr_t)aId,
-                              aHInst,
-                              nullptr);
-  if (hWnd == nullptr)
-    return nullptr;
+static HWND CreateControl(LPCWSTR aType, DWORD aStyle, HINSTANCE aHInst,
+                          HWND aHdlg, int aId, LPCWSTR aStr,
+                          const nsIntRect& aRect) {
+  HWND hWnd = ::CreateWindowW(
+      aType, aStr, WS_CHILD | WS_CLIPSIBLINGS | WS_VISIBLE | aStyle, aRect.X(),
+      aRect.Y(), aRect.Width(), aRect.Height(), (HWND)aHdlg,
+      (HMENU)(intptr_t)aId, aHInst, nullptr);
+  if (hWnd == nullptr) return nullptr;
 
   
   
@@ -252,41 +223,29 @@ CreateControl(LPCWSTR aType,
 
 
 
-static HWND
-CreateRadioBtn(HINSTANCE aHInst,
-               HWND aHdlg,
-               int aId,
-               LPCWSTR aStr,
-               const nsIntRect& aRect)
-{
-  return CreateControl(
-    L"BUTTON", BS_RADIOBUTTON, aHInst, aHdlg, aId, aStr, aRect);
+static HWND CreateRadioBtn(HINSTANCE aHInst, HWND aHdlg, int aId, LPCWSTR aStr,
+                           const nsIntRect& aRect) {
+  return CreateControl(L"BUTTON", BS_RADIOBUTTON, aHInst, aHdlg, aId, aStr,
+                       aRect);
 }
 
 
 
-static HWND
-CreateGroupBox(HINSTANCE aHInst,
-               HWND aHdlg,
-               int aId,
-               LPCWSTR aStr,
-               const nsIntRect& aRect)
-{
+static HWND CreateGroupBox(HINSTANCE aHInst, HWND aHdlg, int aId, LPCWSTR aStr,
+                           const nsIntRect& aRect) {
   return CreateControl(L"BUTTON", BS_GROUPBOX, aHInst, aHdlg, aId, aStr, aRect);
 }
 
 
 
-static void
-InitializeExtendedDialog(HWND hdlg, int16_t aHowToEnableFrameUI)
-{
+static void InitializeExtendedDialog(HWND hdlg, int16_t aHowToEnableFrameUI) {
   MOZ_ASSERT(aHowToEnableFrameUI != nsIPrintSettings::kFrameEnableNone,
              "should not be called");
 
   
   nsCOMPtr<nsIStringBundle> strBundle;
   if (NS_SUCCEEDED(
-        GetLocalizedBundle(PRINTDLG_PROPERTIES, getter_AddRefs(strBundle)))) {
+          GetLocalizedBundle(PRINTDLG_PROPERTIES, getter_AddRefs(strBundle)))) {
     int32_t i = 0;
     while (gAllPropKeys[i].mKeyStr != nullptr) {
       SetText(hdlg, gAllPropKeys[i].mKeyId, strBundle, gAllPropKeys[i].mKeyStr);
@@ -302,7 +261,7 @@ InitializeExtendedDialog(HWND hdlg, int16_t aHowToEnableFrameUI)
     
     gFrameSelectedRadioBtn = rad5;
 
-  } else { 
+  } else {  
     SetRadio(hdlg, rad4, false);
     SetRadio(hdlg, rad5, false, false);
     SetRadio(hdlg, rad6, true);
@@ -313,10 +272,8 @@ InitializeExtendedDialog(HWND hdlg, int16_t aHowToEnableFrameUI)
 
 
 
-static UINT CALLBACK
-PrintHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
-{
-
+static UINT CALLBACK PrintHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam,
+                                   LPARAM lParam) {
   if (uiMsg == WM_COMMAND) {
     UINT id = LOWORD(wParam);
     if (id == rad4 || id == rad5 || id == rad6) {
@@ -326,69 +283,60 @@ PrintHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 
   } else if (uiMsg == WM_INITDIALOG) {
     PRINTDLG* printDlg = (PRINTDLG*)lParam;
-    if (printDlg == nullptr)
-      return 0L;
+    if (printDlg == nullptr) return 0L;
 
     int16_t howToEnableFrameUI = (int16_t)printDlg->lCustData;
     
     
-    if (howToEnableFrameUI == nsIPrintSettings::kFrameEnableNone)
-      return TRUE;
+    if (howToEnableFrameUI == nsIPrintSettings::kFrameEnableNone) return TRUE;
 
     HINSTANCE hInst = (HINSTANCE)::GetWindowLongPtr(hdlg, GWLP_HINSTANCE);
-    if (hInst == nullptr)
-      return 0L;
+    if (hInst == nullptr) return 0L;
 
     
     
     HWND wnd = ::GetDlgItem(hdlg, grp1);
-    if (wnd == nullptr)
-      return 0L;
+    if (wnd == nullptr) return 0L;
     RECT dlgRect;
     GetLocalRect(wnd, dlgRect, hdlg);
 
-    wnd = ::GetDlgItem(hdlg, rad1); 
-    if (wnd == nullptr)
-      return 0L;
+    wnd = ::GetDlgItem(hdlg, rad1);  
+    if (wnd == nullptr) return 0L;
     RECT rad1Rect;
     GetLocalRect(wnd, rad1Rect, hdlg);
 
-    wnd = ::GetDlgItem(hdlg, rad2); 
-    if (wnd == nullptr)
-      return 0L;
+    wnd = ::GetDlgItem(hdlg, rad2);  
+    if (wnd == nullptr) return 0L;
     RECT rad2Rect;
     GetLocalRect(wnd, rad2Rect, hdlg);
 
-    wnd = ::GetDlgItem(hdlg, rad3); 
-    if (wnd == nullptr)
-      return 0L;
+    wnd = ::GetDlgItem(hdlg, rad3);  
+    if (wnd == nullptr) return 0L;
     RECT rad3Rect;
     GetLocalRect(wnd, rad3Rect, hdlg);
 
     HWND okWnd = ::GetDlgItem(hdlg, IDOK);
-    if (okWnd == nullptr)
-      return 0L;
+    if (okWnd == nullptr) return 0L;
     RECT okRect;
     GetLocalRect(okWnd, okRect, hdlg);
 
-    wnd = ::GetDlgItem(hdlg, grp4); 
-    if (wnd == nullptr)
-      return 0L;
+    wnd = ::GetDlgItem(hdlg, grp4);  
+    if (wnd == nullptr) return 0L;
     RECT prtRect;
     GetLocalRect(wnd, prtRect, hdlg);
 
     
 
-    int rbGap = rad3Rect.top - rad1Rect.bottom; 
+    int rbGap = rad3Rect.top - rad1Rect.bottom;  
     int grpBotGap = dlgRect.bottom -
-                    rad2Rect.bottom; 
-    int grpGap = dlgRect.top - prtRect.bottom; 
+                    rad2Rect.bottom;  
+    int grpGap = dlgRect.top - prtRect.bottom;  
     int top = dlgRect.bottom + grpGap;
-    int radHgt = rad1Rect.bottom - rad1Rect.top + 1; 
-    int y = top + (rad1Rect.top - dlgRect.top); 
-    int rbWidth = dlgRect.right - rad1Rect.left -
-                  5; 
-                     
+    int radHgt = rad1Rect.bottom - rad1Rect.top + 1;  
+    int y = top + (rad1Rect.top - dlgRect.top);  
+    int rbWidth =
+        dlgRect.right - rad1Rect.left - 5;  
+                                            
     nsIntRect rect;
 
     
@@ -398,38 +346,37 @@ PrintHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
     
     rect.SetRect(rad1Rect.left, y, rbWidth, radHgt);
     HWND rad4Wnd =
-      CreateRadioBtn(hInst, hdlg, rad4, kAsLaidOutOnScreenStr, rect);
-    if (rad4Wnd == nullptr)
-      return 0L;
+        CreateRadioBtn(hInst, hdlg, rad4, kAsLaidOutOnScreenStr, rect);
+    if (rad4Wnd == nullptr) return 0L;
     y += radHgt + rbGap;
 
     rect.SetRect(rad1Rect.left, y, rbWidth, radHgt);
     HWND rad5Wnd =
-      CreateRadioBtn(hInst, hdlg, rad5, kTheSelectedFrameStr, rect);
+        CreateRadioBtn(hInst, hdlg, rad5, kTheSelectedFrameStr, rect);
     if (rad5Wnd == nullptr) {
-      Show(rad4Wnd, FALSE); 
+      Show(rad4Wnd, FALSE);  
       return 0L;
     }
     y += radHgt + rbGap;
 
     rect.SetRect(rad1Rect.left, y, rbWidth, radHgt);
     HWND rad6Wnd =
-      CreateRadioBtn(hInst, hdlg, rad6, kEachFrameSeparately, rect);
+        CreateRadioBtn(hInst, hdlg, rad6, kEachFrameSeparately, rect);
     if (rad6Wnd == nullptr) {
-      Show(rad4Wnd, FALSE); 
-      Show(rad5Wnd, FALSE); 
+      Show(rad4Wnd, FALSE);  
+      Show(rad5Wnd, FALSE);  
       return 0L;
     }
     y += radHgt + grpBotGap;
 
     
-    rect.SetRect(
-      dlgRect.left, top, dlgRect.right - dlgRect.left + 1, y - top + 1);
+    rect.SetRect(dlgRect.left, top, dlgRect.right - dlgRect.left + 1,
+                 y - top + 1);
     HWND grpBoxWnd = CreateGroupBox(hInst, hdlg, grp3, L"Print Frame", rect);
     if (grpBoxWnd == nullptr) {
-      Show(rad4Wnd, FALSE); 
-      Show(rad5Wnd, FALSE); 
-      Show(rad6Wnd, FALSE); 
+      Show(rad4Wnd, FALSE);  
+      Show(rad5Wnd, FALSE);  
+      Show(rad6Wnd, FALSE);  
       return 0L;
     }
 
@@ -445,11 +392,7 @@ PrintHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
     pr.bottom += (dlgRect.bottom - dlgRect.top) + grpGap + 1 -
                  (dlgHgt - dlgRect.bottom) + bottomGap;
 
-    ::SetWindowPos(hdlg,
-                   nullptr,
-                   pr.left,
-                   pr.top,
-                   pr.right - pr.left + 1,
+    ::SetWindowPos(hdlg, nullptr, pr.left, pr.top, pr.right - pr.left + 1,
                    pr.bottom - pr.top + 1,
                    SWP_NOMOVE | SWP_NOREDRAW | SWP_NOZORDER);
 
@@ -459,27 +402,17 @@ PrintHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 
     
     int okHgt = okRect.bottom - okRect.top + 1;
-    ::SetWindowPos(okWnd,
-                   nullptr,
-                   okRect.left,
-                   dlgHgt - bottomGap - okHgt,
-                   0,
-                   0,
-                   SWP_NOSIZE | SWP_NOREDRAW | SWP_NOZORDER);
+    ::SetWindowPos(okWnd, nullptr, okRect.left, dlgHgt - bottomGap - okHgt, 0,
+                   0, SWP_NOSIZE | SWP_NOREDRAW | SWP_NOZORDER);
 
     HWND cancelWnd = ::GetDlgItem(hdlg, IDCANCEL);
-    if (cancelWnd == nullptr)
-      return 0L;
+    if (cancelWnd == nullptr) return 0L;
 
     RECT cancelRect;
     GetLocalRect(cancelWnd, cancelRect, hdlg);
     int cancelHgt = cancelRect.bottom - cancelRect.top + 1;
-    ::SetWindowPos(cancelWnd,
-                   nullptr,
-                   cancelRect.left,
-                   dlgHgt - bottomGap - cancelHgt,
-                   0,
-                   0,
+    ::SetWindowPos(cancelWnd, nullptr, cancelRect.left,
+                   dlgHgt - bottomGap - cancelHgt, 0, 0,
                    SWP_NOSIZE | SWP_NOREDRAW | SWP_NOZORDER);
 
     
@@ -500,13 +433,12 @@ PrintHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lParam)
 
 
 
-static nsReturnRef<nsHGLOBAL>
-CreateGlobalDevModeAndInit(const nsString& aPrintName, nsIPrintSettings* aPS)
-{
+static nsReturnRef<nsHGLOBAL> CreateGlobalDevModeAndInit(
+    const nsString& aPrintName, nsIPrintSettings* aPS) {
   nsHPRINTER hPrinter = nullptr;
   
   LPWSTR printName =
-    const_cast<wchar_t*>(static_cast<const wchar_t*>(aPrintName.get()));
+      const_cast<wchar_t*>(static_cast<const wchar_t*>(aPrintName.get()));
   BOOL status = ::OpenPrinterW(printName, &hPrinter, nullptr);
   if (!status) {
     return nsReturnRef<nsHGLOBAL>();
@@ -516,15 +448,15 @@ CreateGlobalDevModeAndInit(const nsString& aPrintName, nsIPrintSettings* aPS)
   nsAutoPrinter autoPrinter(hPrinter);
 
   
-  LONG needed =
-    ::DocumentPropertiesW(gParentWnd, hPrinter, printName, nullptr, nullptr, 0);
+  LONG needed = ::DocumentPropertiesW(gParentWnd, hPrinter, printName, nullptr,
+                                      nullptr, 0);
   if (needed < 0) {
     return nsReturnRef<nsHGLOBAL>();
   }
 
   
   nsAutoDevMode newDevMode(
-    (LPDEVMODEW)::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY, needed));
+      (LPDEVMODEW)::HeapAlloc(::GetProcessHeap(), HEAP_ZERO_MEMORY, needed));
   if (!newDevMode) {
     return nsReturnRef<nsHGLOBAL>();
   }
@@ -535,8 +467,8 @@ CreateGlobalDevModeAndInit(const nsString& aPrintName, nsIPrintSettings* aPS)
     return nsReturnRef<nsHGLOBAL>();
   }
 
-  LONG ret = ::DocumentPropertiesW(
-    gParentWnd, hPrinter, printName, newDevMode, nullptr, DM_OUT_BUFFER);
+  LONG ret = ::DocumentPropertiesW(gParentWnd, hPrinter, printName, newDevMode,
+                                   nullptr, DM_OUT_BUFFER);
   if (ret != IDOK) {
     return nsReturnRef<nsHGLOBAL>();
   }
@@ -555,11 +487,7 @@ CreateGlobalDevModeAndInit(const nsString& aPrintName, nsIPrintSettings* aPS)
   psWin->CopyToNative(devMode);
 
   
-  ret = ::DocumentPropertiesW(gParentWnd,
-                              hPrinter,
-                              printName,
-                              devMode,
-                              devMode,
+  ret = ::DocumentPropertiesW(gParentWnd, hPrinter, printName, devMode, devMode,
                               DM_IN_BUFFER | DM_OUT_BUFFER);
   if (ret != IDOK) {
     ::GlobalUnlock(hDevMode);
@@ -573,11 +501,9 @@ CreateGlobalDevModeAndInit(const nsString& aPrintName, nsIPrintSettings* aPS)
 
 
 
-static void
-GetDefaultPrinterNameFromGlobalPrinters(nsAString& printerName)
-{
+static void GetDefaultPrinterNameFromGlobalPrinters(nsAString& printerName) {
   nsCOMPtr<nsIPrinterEnumerator> prtEnum =
-    do_GetService("@mozilla.org/gfx/printerenumerator;1");
+      do_GetService("@mozilla.org/gfx/printerenumerator;1");
   if (prtEnum) {
     prtEnum->GetDefaultPrinterName(printerName);
   }
@@ -585,12 +511,10 @@ GetDefaultPrinterNameFromGlobalPrinters(nsAString& printerName)
 
 
 
-static bool
-ShouldExtendPrintDialog()
-{
+static bool ShouldExtendPrintDialog() {
   nsresult rv;
   nsCOMPtr<nsIPrefService> prefs =
-    do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
+      do_GetService(NS_PREFSERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, true);
   nsCOMPtr<nsIPrefBranch> prefBranch;
   rv = prefs->GetBranch(nullptr, getter_AddRefs(prefBranch));
@@ -604,9 +528,8 @@ ShouldExtendPrintDialog()
 
 
 
-static nsresult
-ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
-{
+static nsresult ShowNativePrintDialog(HWND aHWnd,
+                                      nsIPrintSettings* aPrintSettings) {
   
   NS_ENSURE_ARG_POINTER(aPrintSettings);
 
@@ -621,10 +544,9 @@ ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
     GetDefaultPrinterNameFromGlobalPrinters(printerName);
   } else {
     HANDLE hPrinter = nullptr;
-    if (!::OpenPrinterW(
-          const_cast<wchar_t*>(static_cast<const wchar_t*>(printerName.get())),
-          &hPrinter,
-          nullptr)) {
+    if (!::OpenPrinterW(const_cast<wchar_t*>(
+                            static_cast<const wchar_t*>(printerName.get())),
+                        &hPrinter, nullptr)) {
       
       GetDefaultPrinterNameFromGlobalPrinters(printerName);
     } else {
@@ -636,7 +558,7 @@ ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
 
   uint32_t len = printerName.Length();
   nsHGLOBAL hDevNames =
-    ::GlobalAlloc(GHND, sizeof(wchar_t) * (len + 1) + sizeof(DEVNAMES));
+      ::GlobalAlloc(GHND, sizeof(wchar_t) * (len + 1) + sizeof(DEVNAMES));
   nsAutoGlobalMem autoDevNames(hDevNames);
   if (!hDevNames) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -659,7 +581,7 @@ ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
   
   
   nsAutoGlobalMem autoDevMode(
-    CreateGlobalDevModeAndInit(printerName, aPrintSettings));
+      CreateGlobalDevModeAndInit(printerName, aPrintSettings));
 
   
   PRINTDLGW prntdlg;
@@ -671,7 +593,7 @@ ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
   prntdlg.hDevNames = hDevNames;
   prntdlg.hDC = nullptr;
   prntdlg.Flags =
-    PD_ALLPAGES | PD_RETURNIC | PD_USEDEVMODECOPIESANDCOLLATE | PD_COLLATE;
+      PD_ALLPAGES | PD_RETURNIC | PD_USEDEVMODECOPIESANDCOLLATE | PD_COLLATE;
 
   
   int16_t howToEnableFrameUI = nsIPrintSettings::kFrameEnableNone;
@@ -761,9 +683,7 @@ ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
     psWin->SetDriverName(nsDependentString(driver));
 
 #if defined(DEBUG_rods) || defined(DEBUG_dcone)
-    wprintf(L"printer: driver %s, device %s  flags: %d\n",
-            driver,
-            device,
+    wprintf(L"printer: driver %s, device %s  flags: %d\n", driver, device,
             prntdlg.Flags);
 #endif
     
@@ -778,7 +698,7 @@ ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
       aPrintSettings->SetStartPageRange(prntdlg.nFromPage);
       aPrintSettings->SetEndPageRange(prntdlg.nToPage);
 
-    } else { 
+    } else {  
       aPrintSettings->SetPrintRange(nsIPrintSettings::kRangeAllPages);
     }
 
@@ -796,7 +716,7 @@ ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
           case rad6:
             aPrintSettings->SetPrintFrameType(nsIPrintSettings::kEachFrameSep);
             break;
-        } 
+        }  
       } else {
         
         
@@ -813,7 +733,7 @@ ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
     if (!devMode || !prntdlg.hDC) {
       return NS_ERROR_FAILURE;
     }
-    psWin->SetDevMode(devMode); 
+    psWin->SetDevMode(devMode);  
     psWin->CopyFromNative(prntdlg.hDC, devMode);
     ::GlobalUnlock(prntdlg.hDevMode);
     ::DeleteDC(prntdlg.hDC);
@@ -850,10 +770,8 @@ ShowNativePrintDialog(HWND aHWnd, nsIPrintSettings* aPrintSettings)
 }
 
 
-static void
-PrepareForPrintDialog(nsIWebBrowserPrint* aWebBrowserPrint,
-                      nsIPrintSettings* aPS)
-{
+static void PrepareForPrintDialog(nsIWebBrowserPrint* aWebBrowserPrint,
+                                  nsIPrintSettings* aPS) {
   NS_ASSERTION(aWebBrowserPrint, "Can't be null");
   NS_ASSERTION(aPS, "Can't be null");
 
@@ -886,11 +804,8 @@ PrepareForPrintDialog(nsIWebBrowserPrint* aWebBrowserPrint,
 
 
 
-nsresult
-NativeShowPrintDialog(HWND aHWnd,
-                      nsIWebBrowserPrint* aWebBrowserPrint,
-                      nsIPrintSettings* aPrintSettings)
-{
+nsresult NativeShowPrintDialog(HWND aHWnd, nsIWebBrowserPrint* aWebBrowserPrint,
+                               nsIPrintSettings* aPrintSettings) {
   PrepareForPrintDialog(aWebBrowserPrint, aPrintSettings);
 
   nsresult rv = ShowNativePrintDialog(aHWnd, aPrintSettings);

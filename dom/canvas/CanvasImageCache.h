@@ -13,18 +13,19 @@ namespace mozilla {
 namespace dom {
 class Element;
 class HTMLCanvasElement;
-} 
+}  
 namespace gfx {
 class SourceSurface;
-} 
-} 
+}  
+}  
 class imgIContainer;
 
 namespace mozilla {
 
 class CanvasImageCache {
   typedef mozilla::gfx::SourceSurface SourceSurface;
-public:
+
+ public:
   
 
 
@@ -32,8 +33,7 @@ public:
 
   static void NotifyDrawImage(dom::Element* aImage,
                               dom::HTMLCanvasElement* aCanvas,
-                              SourceSurface* aSource,
-                              const gfx::IntSize& aSize,
+                              SourceSurface* aSource, const gfx::IntSize& aSize,
                               bool aIsAccelerated);
 
   
@@ -53,6 +53,6 @@ public:
                                      bool aIsAccelerated);
 };
 
-} 
+}  
 
 #endif 

@@ -12,17 +12,11 @@
 
 NS_IMPL_ISUPPORTS(nsBidiKeyboard, nsIBidiKeyboard)
 
-nsBidiKeyboard::nsBidiKeyboard() : nsIBidiKeyboard()
-{
-  Reset();
-}
+nsBidiKeyboard::nsBidiKeyboard() : nsIBidiKeyboard() { Reset(); }
 
-nsBidiKeyboard::~nsBidiKeyboard()
-{
-}
+nsBidiKeyboard::~nsBidiKeyboard() {}
 
-NS_IMETHODIMP nsBidiKeyboard::Reset()
-{
+NS_IMETHODIMP nsBidiKeyboard::Reset() {
   mInitialized = false;
   mHaveBidiKeyboards = false;
   mLTRKeyboard[0] = '\0';
@@ -31,50 +25,46 @@ NS_IMETHODIMP nsBidiKeyboard::Reset()
   return NS_OK;
 }
 
-NS_IMETHODIMP nsBidiKeyboard::IsLangRTL(bool *aIsRTL)
-{
+NS_IMETHODIMP nsBidiKeyboard::IsLangRTL(bool* aIsRTL) {
   *aIsRTL = false;
 
   nsresult result = SetupBidiKeyboards();
-  if (NS_FAILED(result))
-    return result;
+  if (NS_FAILED(result)) return result;
 
-  HKL  currentLocale;
- 
+  HKL currentLocale;
+
   currentLocale = ::GetKeyboardLayout(0);
   *aIsRTL = IsRTLLanguage(currentLocale);
+
+  if (!::GetKeyboardLayoutNameW(mCurrentLocaleName)) return NS_ERROR_FAILURE;
+
+  NS_ASSERTION(*mCurrentLocaleName,
+               "GetKeyboardLayoutName return string length == 0");
+  NS_ASSERTION((wcslen(mCurrentLocaleName) < KL_NAMELENGTH),
+               "GetKeyboardLayoutName return string length >= KL_NAMELENGTH");
+
   
-  if (!::GetKeyboardLayoutNameW(mCurrentLocaleName))
-    return NS_ERROR_FAILURE;
-
-  NS_ASSERTION(*mCurrentLocaleName, 
-    "GetKeyboardLayoutName return string length == 0");
-  NS_ASSERTION((wcslen(mCurrentLocaleName) < KL_NAMELENGTH), 
-    "GetKeyboardLayoutName return string length >= KL_NAMELENGTH");
-
   
   if (*aIsRTL) {
     wcsncpy(mRTLKeyboard, mCurrentLocaleName, KL_NAMELENGTH);
-    mRTLKeyboard[KL_NAMELENGTH-1] = '\0'; 
+    mRTLKeyboard[KL_NAMELENGTH - 1] = '\0';  
   } else {
     wcsncpy(mLTRKeyboard, mCurrentLocaleName, KL_NAMELENGTH);
-    mLTRKeyboard[KL_NAMELENGTH-1] = '\0'; 
+    mLTRKeyboard[KL_NAMELENGTH - 1] = '\0';  
   }
 
-  NS_ASSERTION((wcslen(mRTLKeyboard) < KL_NAMELENGTH), 
-    "mLTRKeyboard has string length >= KL_NAMELENGTH");
-  NS_ASSERTION((wcslen(mLTRKeyboard) < KL_NAMELENGTH), 
-    "mRTLKeyboard has string length >= KL_NAMELENGTH");
+  NS_ASSERTION((wcslen(mRTLKeyboard) < KL_NAMELENGTH),
+               "mLTRKeyboard has string length >= KL_NAMELENGTH");
+  NS_ASSERTION((wcslen(mLTRKeyboard) < KL_NAMELENGTH),
+               "mRTLKeyboard has string length >= KL_NAMELENGTH");
   return NS_OK;
 }
 
-NS_IMETHODIMP nsBidiKeyboard::GetHaveBidiKeyboards(bool* aResult)
-{
+NS_IMETHODIMP nsBidiKeyboard::GetHaveBidiKeyboards(bool* aResult) {
   NS_ENSURE_ARG_POINTER(aResult);
 
   nsresult result = SetupBidiKeyboards();
-  if (NS_FAILED(result))
-    return result;
+  if (NS_FAILED(result)) return result;
 
   *aResult = mHaveBidiKeyboards;
   return NS_OK;
@@ -84,10 +74,8 @@ NS_IMETHODIMP nsBidiKeyboard::GetHaveBidiKeyboards(bool* aResult)
 
 
 
-nsresult nsBidiKeyboard::SetupBidiKeyboards()
-{
-  if (mInitialized)
-    return mHaveBidiKeyboards ? NS_OK : NS_ERROR_FAILURE;
+nsresult nsBidiKeyboard::SetupBidiKeyboards() {
+  if (mInitialized) return mHaveBidiKeyboards ? NS_OK : NS_ERROR_FAILURE;
 
   int keyboards;
   HKL far* buf;
@@ -95,16 +83,15 @@ nsresult nsBidiKeyboard::SetupBidiKeyboards()
   wchar_t localeName[KL_NAMELENGTH];
   bool isLTRKeyboardSet = false;
   bool isRTLKeyboardSet = false;
+
   
   
   keyboards = ::GetKeyboardLayoutList(0, nullptr);
-  if (!keyboards)
-    return NS_ERROR_FAILURE;
+  if (!keyboards) return NS_ERROR_FAILURE;
 
   
-  buf = (HKL far*) malloc(keyboards * sizeof(HKL));
-  if (!buf)
-    return NS_ERROR_OUT_OF_MEMORY;
+  buf = (HKL far*)malloc(keyboards * sizeof(HKL));
+  if (!buf) return NS_ERROR_OUT_OF_MEMORY;
 
   
   if (::GetKeyboardLayoutList(keyboards, buf) != keyboards) {
@@ -119,8 +106,7 @@ nsresult nsBidiKeyboard::SetupBidiKeyboards()
       _snwprintf(mRTLKeyboard, KL_NAMELENGTH, L"%.*x", KL_NAMELENGTH - 1,
                  LANGIDFROMLCID((DWORD_PTR)locale));
       isRTLKeyboardSet = true;
-    }
-    else {
+    } else {
       _snwprintf(mLTRKeyboard, KL_NAMELENGTH, L"%.*x", KL_NAMELENGTH - 1,
                  LANGIDFROMLCID((DWORD_PTR)locale));
       isLTRKeyboardSet = true;
@@ -132,35 +118,29 @@ nsresult nsBidiKeyboard::SetupBidiKeyboards()
   
   
   mHaveBidiKeyboards = (isRTLKeyboardSet && isLTRKeyboardSet);
-  if (!mHaveBidiKeyboards)
-    return NS_ERROR_FAILURE;
+  if (!mHaveBidiKeyboards) return NS_ERROR_FAILURE;
 
   
   
   
   
   locale = ::GetKeyboardLayout(0);
-  if (!::GetKeyboardLayoutNameW(localeName))
-    return NS_ERROR_FAILURE;
+  if (!::GetKeyboardLayoutNameW(localeName)) return NS_ERROR_FAILURE;
 
-  NS_ASSERTION(*localeName, 
-    "GetKeyboardLayoutName return string length == 0");
-  NS_ASSERTION((wcslen(localeName) < KL_NAMELENGTH), 
-    "GetKeyboardLayout return string length >= KL_NAMELENGTH");
+  NS_ASSERTION(*localeName, "GetKeyboardLayoutName return string length == 0");
+  NS_ASSERTION((wcslen(localeName) < KL_NAMELENGTH),
+               "GetKeyboardLayout return string length >= KL_NAMELENGTH");
 
   if (IsRTLLanguage(locale)) {
     wcsncpy(mRTLKeyboard, localeName, KL_NAMELENGTH);
-    mRTLKeyboard[KL_NAMELENGTH-1] = '\0'; 
-  }
-  else {
+    mRTLKeyboard[KL_NAMELENGTH - 1] = '\0';  
+  } else {
     wcsncpy(mLTRKeyboard, localeName, KL_NAMELENGTH);
-    mLTRKeyboard[KL_NAMELENGTH-1] = '\0'; 
+    mLTRKeyboard[KL_NAMELENGTH - 1] = '\0';  
   }
 
-  NS_ASSERTION(*mRTLKeyboard, 
-    "mLTRKeyboard has string length == 0");
-  NS_ASSERTION(*mLTRKeyboard, 
-    "mLTRKeyboard has string length == 0");
+  NS_ASSERTION(*mRTLKeyboard, "mLTRKeyboard has string length == 0");
+  NS_ASSERTION(*mLTRKeyboard, "mLTRKeyboard has string length == 0");
 
   return NS_OK;
 }
@@ -169,26 +149,21 @@ nsresult nsBidiKeyboard::SetupBidiKeyboards()
 
 
 
-bool nsBidiKeyboard::IsRTLLanguage(HKL aLocale)
-{
+
+bool nsBidiKeyboard::IsRTLLanguage(HKL aLocale) {
   LOCALESIGNATURE localesig;
   return (::GetLocaleInfoW(PRIMARYLANGID((DWORD_PTR)aLocale),
-                           LOCALE_FONTSIGNATURE,
-                           (LPWSTR)&localesig,
-                           (sizeof(localesig)/sizeof(WCHAR))) &&
+                           LOCALE_FONTSIGNATURE, (LPWSTR)&localesig,
+                           (sizeof(localesig) / sizeof(WCHAR))) &&
           (localesig.lsUsb[3] & 0x08000000));
 }
 
 
-void
-nsBidiKeyboard::OnLayoutChange()
-{
+void nsBidiKeyboard::OnLayoutChange() {
   mozilla::widget::WidgetUtils::SendBidiKeyboardInfoToContent();
 }
 
 
-already_AddRefed<nsIBidiKeyboard>
-nsIWidget::CreateBidiKeyboardInner()
-{
+already_AddRefed<nsIBidiKeyboard> nsIWidget::CreateBidiKeyboardInner() {
   return do_AddRef(new nsBidiKeyboard());
 }

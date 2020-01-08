@@ -79,20 +79,17 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-nsIIOService    *nsScriptSecurityManager::sIOService = nullptr;
-JSContext       *nsScriptSecurityManager::sContext   = nullptr;
+nsIIOService* nsScriptSecurityManager::sIOService = nullptr;
+JSContext* nsScriptSecurityManager::sContext = nullptr;
 bool nsScriptSecurityManager::sStrictFileOriginPolicy = true;
 
 namespace {
 
-class BundleHelper
-{
-public:
+class BundleHelper {
+ public:
   NS_INLINE_DECL_REFCOUNTING(BundleHelper)
 
-  static nsIStringBundle*
-  GetOrCreate()
-  {
+  static nsIStringBundle* GetOrCreate() {
     MOZ_ASSERT(!sShutdown);
 
     
@@ -108,19 +105,15 @@ public:
     return sSelf->GetOrCreateInternal();
   }
 
-  static void
-  Shutdown()
-  {
+  static void Shutdown() {
     sSelf = nullptr;
     sShutdown = true;
   }
 
-private:
+ private:
   ~BundleHelper() = default;
 
-  nsIStringBundle*
-  GetOrCreateInternal()
-  {
+  nsIStringBundle* GetOrCreateInternal() {
     if (!mBundle) {
       nsCOMPtr<nsIStringBundleService> bundleService =
           mozilla::services::GetStringBundleService();
@@ -128,9 +121,9 @@ private:
         return nullptr;
       }
 
-      nsresult rv =
-        bundleService->CreateBundle("chrome://global/locale/security/caps.properties",
-                                    getter_AddRefs(mBundle));
+      nsresult rv = bundleService->CreateBundle(
+          "chrome://global/locale/security/caps.properties",
+          getter_AddRefs(mBundle));
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return nullptr;
       }
@@ -148,34 +141,27 @@ private:
 StaticRefPtr<BundleHelper> BundleHelper::sSelf;
 bool BundleHelper::sShutdown = false;
 
-} 
+}  
 
 
 
 
 
 class nsAutoInPrincipalDomainOriginSetter {
-public:
-    nsAutoInPrincipalDomainOriginSetter() {
-        ++sInPrincipalDomainOrigin;
-    }
-    ~nsAutoInPrincipalDomainOriginSetter() {
-        --sInPrincipalDomainOrigin;
-    }
-    static uint32_t sInPrincipalDomainOrigin;
+ public:
+  nsAutoInPrincipalDomainOriginSetter() { ++sInPrincipalDomainOrigin; }
+  ~nsAutoInPrincipalDomainOriginSetter() { --sInPrincipalDomainOrigin; }
+  static uint32_t sInPrincipalDomainOrigin;
 };
 uint32_t nsAutoInPrincipalDomainOriginSetter::sInPrincipalDomainOrigin;
 
-static
-nsresult
-GetOriginFromURI(nsIURI* aURI, nsACString& aOrigin)
-{
+static nsresult GetOriginFromURI(nsIURI* aURI, nsACString& aOrigin) {
   if (nsAutoInPrincipalDomainOriginSetter::sInPrincipalDomainOrigin > 1) {
-      
-      
-      
-      
-      return NS_ERROR_NOT_AVAILABLE;
+    
+    
+    
+    
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   nsAutoInPrincipalDomainOriginSetter autoSetter;
@@ -191,8 +177,7 @@ GetOriginFromURI(nsIURI* aURI, nsACString& aOrigin)
     rv = uri->GetScheme(scheme);
     NS_ENSURE_SUCCESS(rv, rv);
     aOrigin = scheme + NS_LITERAL_CSTRING("://") + hostPort;
-  }
-  else {
+  } else {
     
     
     rv = uri->GetSpec(aOrigin);
@@ -202,12 +187,8 @@ GetOriginFromURI(nsIURI* aURI, nsACString& aOrigin)
   return NS_OK;
 }
 
-static
-nsresult
-GetPrincipalDomainOrigin(nsIPrincipal* aPrincipal,
-                         nsACString& aOrigin)
-{
-
+static nsresult GetPrincipalDomainOrigin(nsIPrincipal* aPrincipal,
+                                         nsACString& aOrigin) {
   nsCOMPtr<nsIURI> uri;
   aPrincipal->GetDomain(getter_AddRefs(uri));
   if (!uri) {
@@ -218,31 +199,27 @@ GetPrincipalDomainOrigin(nsIPrincipal* aPrincipal,
   return GetOriginFromURI(uri, aOrigin);
 }
 
-inline void SetPendingExceptionASCII(JSContext *cx, const char *aMsg)
-{
-    JS_ReportErrorASCII(cx, "%s", aMsg);
+inline void SetPendingExceptionASCII(JSContext* cx, const char* aMsg) {
+  JS_ReportErrorASCII(cx, "%s", aMsg);
 }
 
-inline void SetPendingException(JSContext *cx, const char16_t *aMsg)
-{
-    NS_ConvertUTF16toUTF8 msg(aMsg);
-    JS_ReportErrorUTF8(cx, "%s", msg.get());
+inline void SetPendingException(JSContext* cx, const char16_t* aMsg) {
+  NS_ConvertUTF16toUTF8 msg(aMsg);
+  JS_ReportErrorUTF8(cx, "%s", msg.get());
 }
 
 
-bool
-nsScriptSecurityManager::SecurityCompareURIs(nsIURI* aSourceURI,
-                                             nsIURI* aTargetURI)
-{
-    return NS_SecurityCompareURIs(aSourceURI, aTargetURI, sStrictFileOriginPolicy);
+bool nsScriptSecurityManager::SecurityCompareURIs(nsIURI* aSourceURI,
+                                                  nsIURI* aTargetURI) {
+  return NS_SecurityCompareURIs(aSourceURI, aTargetURI,
+                                sStrictFileOriginPolicy);
 }
 
 
 
-uint32_t
-nsScriptSecurityManager::SecurityHashURI(nsIURI* aURI)
-{
-    return NS_SecurityHashURI(aURI);
+
+uint32_t nsScriptSecurityManager::SecurityHashURI(nsIURI* aURI) {
+  return NS_SecurityHashURI(aURI);
 }
 
 
@@ -256,23 +233,19 @@ nsScriptSecurityManager::SecurityHashURI(nsIURI* aURI)
 
 NS_IMETHODIMP
 nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
-                                                   nsIPrincipal** aPrincipal)
-{
+                                                   nsIPrincipal** aPrincipal) {
   return GetChannelResultPrincipal(aChannel, aPrincipal,
                                     false);
 }
 
-nsresult
-nsScriptSecurityManager::GetChannelResultPrincipalIfNotSandboxed(nsIChannel* aChannel,
-                                                                 nsIPrincipal** aPrincipal)
-{
+nsresult nsScriptSecurityManager::GetChannelResultPrincipalIfNotSandboxed(
+    nsIChannel* aChannel, nsIPrincipal** aPrincipal) {
   return GetChannelResultPrincipal(aChannel, aPrincipal,
                                     true);
 }
 
-static void
-InheritAndSetCSPOnPrincipalIfNeeded(nsIChannel* aChannel, nsIPrincipal* aPrincipal)
-{
+static void InheritAndSetCSPOnPrincipalIfNeeded(nsIChannel* aChannel,
+                                                nsIPrincipal* aPrincipal) {
   
   
   MOZ_ASSERT(aChannel && aPrincipal, "need a valid channel and principal");
@@ -281,8 +254,8 @@ InheritAndSetCSPOnPrincipalIfNeeded(nsIChannel* aChannel, nsIPrincipal* aPrincip
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
-  if (!loadInfo ||
-      loadInfo->GetExternalContentPolicyType() != nsIContentPolicy::TYPE_SUBDOCUMENT) {
+  if (!loadInfo || loadInfo->GetExternalContentPolicyType() !=
+                       nsIContentPolicy::TYPE_SUBDOCUMENT) {
     return;
   }
 
@@ -301,7 +274,7 @@ InheritAndSetCSPOnPrincipalIfNeeded(nsIChannel* aChannel, nsIPrincipal* aPrincip
   }
 
   nsCOMPtr<nsIPrincipal> principalToInherit =
-    loadInfo->FindPrincipalToInherit(aChannel);
+      loadInfo->FindPrincipalToInherit(aChannel);
 
   nsCOMPtr<nsIContentSecurityPolicy> originalCSP;
   principalToInherit->GetCsp(getter_AddRefs(originalCSP));
@@ -324,18 +297,15 @@ InheritAndSetCSPOnPrincipalIfNeeded(nsIChannel* aChannel, nsIPrincipal* aPrincip
   aPrincipal->SetCsp(originalCSP);
 }
 
-nsresult
-nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
-                                                   nsIPrincipal** aPrincipal,
-                                                   bool aIgnoreSandboxing)
-{
+nsresult nsScriptSecurityManager::GetChannelResultPrincipal(
+    nsIChannel* aChannel, nsIPrincipal** aPrincipal, bool aIgnoreSandboxing) {
   MOZ_ASSERT(aChannel, "Must have channel!");
 
   
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   if (loadInfo && loadInfo->GetForceInheritPrincipalOverruleOwner()) {
     nsCOMPtr<nsIPrincipal> principalToInherit =
-      loadInfo->FindPrincipalToInherit(aChannel);
+        loadInfo->FindPrincipalToInherit(aChannel);
     principalToInherit.forget(aPrincipal);
     return NS_OK;
   }
@@ -352,7 +322,7 @@ nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
   if (loadInfo) {
     if (!aIgnoreSandboxing && loadInfo->GetLoadingSandboxed()) {
       nsCOMPtr<nsIPrincipal> sandboxedLoadingPrincipal =
-        loadInfo->GetSandboxedLoadingPrincipal();
+          loadInfo->GetSandboxedLoadingPrincipal();
       MOZ_ASSERT(sandboxedLoadingPrincipal);
       InheritAndSetCSPOnPrincipalIfNeeded(aChannel, sandboxedLoadingPrincipal);
       sandboxedLoadingPrincipal.forget(aPrincipal);
@@ -364,13 +334,13 @@ nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
       
       
       if (loadInfo->GetLoadingSandboxed() &&
-        loadInfo->GetForceInheritPrincipalDropped()) {
+          loadInfo->GetForceInheritPrincipalDropped()) {
         forceInherit = true;
       }
     }
     if (forceInherit) {
       nsCOMPtr<nsIPrincipal> principalToInherit =
-        loadInfo->FindPrincipalToInherit(aChannel);
+          loadInfo->FindPrincipalToInherit(aChannel);
       principalToInherit.forget(aPrincipal);
       return NS_OK;
     }
@@ -382,19 +352,16 @@ nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
         (securityMode == nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_INHERITS ||
          securityMode == nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_INHERITS ||
          securityMode == nsILoadInfo::SEC_REQUIRE_CORS_DATA_INHERITS)) {
-
       nsCOMPtr<nsIURI> uri;
       nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
       NS_ENSURE_SUCCESS(rv, rv);
 
       nsCOMPtr<nsIPrincipal> principalToInherit =
-        loadInfo->FindPrincipalToInherit(aChannel);
+          loadInfo->FindPrincipalToInherit(aChannel);
       bool inheritForAboutBlank = loadInfo->GetAboutBlankInherits();
 
-      if (nsContentUtils::ChannelShouldInheritPrincipal(principalToInherit,
-                                                        uri,
-                                                        inheritForAboutBlank,
-                                                        false)) {
+      if (nsContentUtils::ChannelShouldInheritPrincipal(
+              principalToInherit, uri, inheritForAboutBlank, false)) {
         principalToInherit.forget(aPrincipal);
         return NS_OK;
       }
@@ -419,43 +386,41 @@ nsScriptSecurityManager::GetChannelResultPrincipal(nsIChannel* aChannel,
 
 NS_IMETHODIMP
 nsScriptSecurityManager::GetChannelURIPrincipal(nsIChannel* aChannel,
-                                                nsIPrincipal** aPrincipal)
-{
-    MOZ_ASSERT(aChannel, "Must have channel!");
+                                                nsIPrincipal** aPrincipal) {
+  MOZ_ASSERT(aChannel, "Must have channel!");
 
-    
-    
-    nsCOMPtr<nsIURI> uri;
-    nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
-    NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(uri));
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCOMPtr<nsILoadInfo> loadInfo;
-    aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
+  nsCOMPtr<nsILoadInfo> loadInfo;
+  aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
 
-    
-    
-    
-    
-    
-    OriginAttributes attrs;
+  
+  
+  
+  
+  
+  OriginAttributes attrs;
 
-    
-    if (loadInfo) {
-      attrs = loadInfo->GetOriginAttributes();
-    }
+  
+  if (loadInfo) {
+    attrs = loadInfo->GetOriginAttributes();
+  }
 
-    nsCOMPtr<nsIPrincipal> prin =
+  nsCOMPtr<nsIPrincipal> prin =
       BasePrincipal::CreateCodebasePrincipal(uri, attrs);
-    prin.forget(aPrincipal);
-    return *aPrincipal ? NS_OK : NS_ERROR_FAILURE;
+  prin.forget(aPrincipal);
+  return *aPrincipal ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
 nsScriptSecurityManager::IsSystemPrincipal(nsIPrincipal* aPrincipal,
-                                           bool* aIsSystem)
-{
-    *aIsSystem = (aPrincipal == mSystemPrincipal);
-    return NS_OK;
+                                           bool* aIsSystem) {
+  *aIsSystem = (aPrincipal == mSystemPrincipal);
+  return NS_OK;
 }
 
 
@@ -465,8 +430,7 @@ nsScriptSecurityManager::IsSystemPrincipal(nsIPrincipal* aPrincipal,
 
 
 
-NS_IMPL_ISUPPORTS(nsScriptSecurityManager,
-                  nsIScriptSecurityManager)
+NS_IMPL_ISUPPORTS(nsScriptSecurityManager, nsIScriptSecurityManager)
 
 
 
@@ -474,777 +438,739 @@ NS_IMPL_ISUPPORTS(nsScriptSecurityManager,
 
 
 
-bool
-nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(JSContext *cx,
-                                                              JS::HandleValue aValue)
-{
-    MOZ_ASSERT(cx == nsContentUtils::GetCurrentJSContext());
-    nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
+bool nsScriptSecurityManager::ContentSecurityPolicyPermitsJSAction(
+    JSContext* cx, JS::HandleValue aValue) {
+  MOZ_ASSERT(cx == nsContentUtils::GetCurrentJSContext());
+  nsCOMPtr<nsIPrincipal> subjectPrincipal = nsContentUtils::SubjectPrincipal();
 
 #if defined(DEBUG) && !defined(ANDROID)
-    if (!(Preferences::GetBool("security.allow_eval_with_system_principal"))) {
-      MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(subjectPrincipal),
+  if (!(Preferences::GetBool("security.allow_eval_with_system_principal"))) {
+    MOZ_ASSERT(!nsContentUtils::IsSystemPrincipal(subjectPrincipal),
                "do not use eval with system privileges");
-    }
+  }
 #endif
 
-    nsCOMPtr<nsIContentSecurityPolicy> csp;
-    nsresult rv = subjectPrincipal->GetCsp(getter_AddRefs(csp));
-    NS_ASSERTION(NS_SUCCEEDED(rv), "CSP: Failed to get CSP from principal.");
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  nsresult rv = subjectPrincipal->GetCsp(getter_AddRefs(csp));
+  NS_ASSERTION(NS_SUCCEEDED(rv), "CSP: Failed to get CSP from principal.");
 
-    
-    if (!csp)
-        return true;
+  
+  if (!csp) return true;
 
-    nsCOMPtr<nsICSPEventListener> cspEventListener;
-    if (!NS_IsMainThread()) {
-      WorkerPrivate* workerPrivate =
+  nsCOMPtr<nsICSPEventListener> cspEventListener;
+  if (!NS_IsMainThread()) {
+    WorkerPrivate* workerPrivate =
         mozilla::dom::GetWorkerPrivateFromContext(cx);
-      if (workerPrivate) {
-        cspEventListener = workerPrivate->CSPEventListener();
+    if (workerPrivate) {
+      cspEventListener = workerPrivate->CSPEventListener();
+    }
+  }
+
+  bool evalOK = true;
+  bool reportViolation = false;
+  rv = csp->GetAllowsEval(&reportViolation, &evalOK);
+
+  if (NS_FAILED(rv)) {
+    NS_WARNING("CSP: failed to get allowsEval");
+    return true;  
+  }
+
+  if (reportViolation) {
+    JS::Rooted<JSString*> jsString(cx, JS::ToString(cx, aValue));
+    if (NS_WARN_IF(!jsString)) {
+      JS_ClearPendingException(cx);
+      return false;
+    }
+
+    nsAutoJSString scriptSample;
+    if (NS_WARN_IF(!scriptSample.init(cx, jsString))) {
+      JS_ClearPendingException(cx);
+      return false;
+    }
+
+    JS::AutoFilename scriptFilename;
+    nsAutoString fileName;
+    unsigned lineNum = 0;
+    unsigned columnNum = 0;
+    if (JS::DescribeScriptedCaller(cx, &scriptFilename, &lineNum, &columnNum)) {
+      if (const char* file = scriptFilename.get()) {
+        CopyUTF8toUTF16(nsDependentCString(file), fileName);
       }
+    } else {
+      MOZ_ASSERT(!JS_IsExceptionPending(cx));
     }
+    csp->LogViolationDetails(nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL,
+                             nullptr,  
+                             cspEventListener, fileName, scriptSample, lineNum,
+                             columnNum, EmptyString(), EmptyString());
+  }
 
-    bool evalOK = true;
-    bool reportViolation = false;
-    rv = csp->GetAllowsEval(&reportViolation, &evalOK);
-
-    if (NS_FAILED(rv))
-    {
-        NS_WARNING("CSP: failed to get allowsEval");
-        return true; 
-    }
-
-    if (reportViolation) {
-        JS::Rooted<JSString*> jsString(cx, JS::ToString(cx, aValue));
-        if (NS_WARN_IF(!jsString)) {
-          JS_ClearPendingException(cx);
-          return false;
-        }
-
-        nsAutoJSString scriptSample;
-        if (NS_WARN_IF(!scriptSample.init(cx, jsString))) {
-          JS_ClearPendingException(cx);
-          return false;
-        }
-
-        JS::AutoFilename scriptFilename;
-        nsAutoString fileName;
-        unsigned lineNum = 0;
-        unsigned columnNum = 0;
-        if (JS::DescribeScriptedCaller(cx, &scriptFilename, &lineNum,
-                                       &columnNum)) {
-            if (const char *file = scriptFilename.get()) {
-                CopyUTF8toUTF16(nsDependentCString(file), fileName);
-            }
-        } else {
-            MOZ_ASSERT(!JS_IsExceptionPending(cx));
-        }
-        csp->LogViolationDetails(nsIContentSecurityPolicy::VIOLATION_TYPE_EVAL,
-                                 nullptr, 
-                                 cspEventListener,
-                                 fileName,
-                                 scriptSample,
-                                 lineNum,
-                                 columnNum,
-                                 EmptyString(),
-                                 EmptyString());
-    }
-
-    return evalOK;
+  return evalOK;
 }
 
 
-bool
-nsScriptSecurityManager::JSPrincipalsSubsume(JSPrincipals *first,
-                                             JSPrincipals *second)
-{
-    return nsJSPrincipals::get(first)->Subsumes(nsJSPrincipals::get(second));
+bool nsScriptSecurityManager::JSPrincipalsSubsume(JSPrincipals* first,
+                                                  JSPrincipals* second) {
+  return nsJSPrincipals::get(first)->Subsumes(nsJSPrincipals::get(second));
 }
 
 NS_IMETHODIMP
 nsScriptSecurityManager::CheckSameOriginURI(nsIURI* aSourceURI,
                                             nsIURI* aTargetURI,
                                             bool reportError,
-                                            bool aFromPrivateWindow)
-{
+                                            bool aFromPrivateWindow) {
   
   
-    if (!SecurityCompareURIs(aSourceURI, aTargetURI))
-    {
-         if (reportError) {
-            ReportError("CheckSameOriginError",
-                        aSourceURI, aTargetURI, aFromPrivateWindow);
-         }
-         return NS_ERROR_DOM_BAD_URI;
+  if (!SecurityCompareURIs(aSourceURI, aTargetURI)) {
+    if (reportError) {
+      ReportError("CheckSameOriginError", aSourceURI, aTargetURI,
+                  aFromPrivateWindow);
     }
-    return NS_OK;
+    return NS_ERROR_DOM_BAD_URI;
+  }
+  return NS_OK;
 }
 
- uint32_t
-nsScriptSecurityManager::HashPrincipalByOrigin(nsIPrincipal* aPrincipal)
-{
-    nsCOMPtr<nsIURI> uri;
-    aPrincipal->GetDomain(getter_AddRefs(uri));
-    if (!uri)
-        aPrincipal->GetURI(getter_AddRefs(uri));
-    return SecurityHashURI(uri);
+ uint32_t nsScriptSecurityManager::HashPrincipalByOrigin(
+    nsIPrincipal* aPrincipal) {
+  nsCOMPtr<nsIURI> uri;
+  aPrincipal->GetDomain(getter_AddRefs(uri));
+  if (!uri) aPrincipal->GetURI(getter_AddRefs(uri));
+  return SecurityHashURI(uri);
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::CheckLoadURIFromScript(JSContext *cx, nsIURI *aURI)
-{
+nsScriptSecurityManager::CheckLoadURIFromScript(JSContext* cx, nsIURI* aURI) {
+  
+  MOZ_ASSERT(cx == nsContentUtils::GetCurrentJSContext());
+  nsIPrincipal* principal = nsContentUtils::SubjectPrincipal();
+  nsresult rv = CheckLoadURIWithPrincipal(principal, aURI,
+                                          nsIScriptSecurityManager::STANDARD);
+  if (NS_SUCCEEDED(rv)) {
     
-    MOZ_ASSERT(cx == nsContentUtils::GetCurrentJSContext());
-    nsIPrincipal* principal = nsContentUtils::SubjectPrincipal();
-    nsresult rv = CheckLoadURIWithPrincipal(principal, aURI,
-                                            nsIScriptSecurityManager::STANDARD);
-    if (NS_SUCCEEDED(rv)) {
-        
-        return NS_OK;
-    }
-
-    
-    nsAutoCString spec;
-    if (NS_FAILED(aURI->GetAsciiSpec(spec)))
-        return NS_ERROR_FAILURE;
-    nsAutoCString msg("Access to '");
-    msg.Append(spec);
-    msg.AppendLiteral("' from script denied");
-    SetPendingExceptionASCII(cx, msg.get());
-    return NS_ERROR_DOM_BAD_URI;
-}
-
-
-
-
-
-
-
-static nsresult
-DenyAccessIfURIHasFlags(nsIURI* aURI, uint32_t aURIFlags)
-{
-    MOZ_ASSERT(aURI, "Must have URI!");
-
-    bool uriHasFlags;
-    nsresult rv =
-        NS_URIChainHasFlags(aURI, aURIFlags, &uriHasFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (uriHasFlags) {
-        return NS_ERROR_DOM_BAD_URI;
-    }
-
     return NS_OK;
+  }
+
+  
+  nsAutoCString spec;
+  if (NS_FAILED(aURI->GetAsciiSpec(spec))) return NS_ERROR_FAILURE;
+  nsAutoCString msg("Access to '");
+  msg.Append(spec);
+  msg.AppendLiteral("' from script denied");
+  SetPendingExceptionASCII(cx, msg.get());
+  return NS_ERROR_DOM_BAD_URI;
 }
 
-static bool
-EqualOrSubdomain(nsIURI* aProbeArg, nsIURI* aBase)
-{
-    nsresult rv;
-    nsCOMPtr<nsIURI> probe = aProbeArg;
 
-    nsCOMPtr<nsIEffectiveTLDService> tldService = do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
-    NS_ENSURE_TRUE(tldService, false);
-    while (true) {
-        if (nsScriptSecurityManager::SecurityCompareURIs(probe, aBase)) {
-            return true;
-        }
 
-        nsAutoCString host, newHost;
-        rv = probe->GetHost(host);
-        NS_ENSURE_SUCCESS(rv, false);
 
-        rv = tldService->GetNextSubDomain(host, newHost);
-        if (rv == NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
-            return false;
-        }
-        NS_ENSURE_SUCCESS(rv, false);
-        rv = NS_MutateURI(probe)
-               .SetHost(newHost)
-               .Finalize(probe);
-        NS_ENSURE_SUCCESS(rv, false);
+
+
+
+static nsresult DenyAccessIfURIHasFlags(nsIURI* aURI, uint32_t aURIFlags) {
+  MOZ_ASSERT(aURI, "Must have URI!");
+
+  bool uriHasFlags;
+  nsresult rv = NS_URIChainHasFlags(aURI, aURIFlags, &uriHasFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (uriHasFlags) {
+    return NS_ERROR_DOM_BAD_URI;
+  }
+
+  return NS_OK;
+}
+
+static bool EqualOrSubdomain(nsIURI* aProbeArg, nsIURI* aBase) {
+  nsresult rv;
+  nsCOMPtr<nsIURI> probe = aProbeArg;
+
+  nsCOMPtr<nsIEffectiveTLDService> tldService =
+      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+  NS_ENSURE_TRUE(tldService, false);
+  while (true) {
+    if (nsScriptSecurityManager::SecurityCompareURIs(probe, aBase)) {
+      return true;
     }
+
+    nsAutoCString host, newHost;
+    rv = probe->GetHost(host);
+    NS_ENSURE_SUCCESS(rv, false);
+
+    rv = tldService->GetNextSubDomain(host, newHost);
+    if (rv == NS_ERROR_INSUFFICIENT_DOMAIN_LEVELS) {
+      return false;
+    }
+    NS_ENSURE_SUCCESS(rv, false);
+    rv = NS_MutateURI(probe).SetHost(newHost).Finalize(probe);
+    NS_ENSURE_SUCCESS(rv, false);
+  }
 }
 
 NS_IMETHODIMP
 nsScriptSecurityManager::CheckLoadURIWithPrincipal(nsIPrincipal* aPrincipal,
-                                                   nsIURI *aTargetURI,
-                                                   uint32_t aFlags)
-{
-    MOZ_ASSERT(aPrincipal, "CheckLoadURIWithPrincipal must have a principal");
+                                                   nsIURI* aTargetURI,
+                                                   uint32_t aFlags) {
+  MOZ_ASSERT(aPrincipal, "CheckLoadURIWithPrincipal must have a principal");
 
-    
-    
-    
-    NS_ENSURE_FALSE(aFlags & ~(nsIScriptSecurityManager::LOAD_IS_AUTOMATIC_DOCUMENT_REPLACEMENT |
-                               nsIScriptSecurityManager::ALLOW_CHROME |
-                               nsIScriptSecurityManager::DISALLOW_SCRIPT |
-                               nsIScriptSecurityManager::DISALLOW_INHERIT_PRINCIPAL |
-                               nsIScriptSecurityManager::DONT_REPORT_ERRORS),
-                    NS_ERROR_UNEXPECTED);
-    NS_ENSURE_ARG_POINTER(aPrincipal);
-    NS_ENSURE_ARG_POINTER(aTargetURI);
+  
+  
+  
+  NS_ENSURE_FALSE(
+      aFlags &
+          ~(nsIScriptSecurityManager::LOAD_IS_AUTOMATIC_DOCUMENT_REPLACEMENT |
+            nsIScriptSecurityManager::ALLOW_CHROME |
+            nsIScriptSecurityManager::DISALLOW_SCRIPT |
+            nsIScriptSecurityManager::DISALLOW_INHERIT_PRINCIPAL |
+            nsIScriptSecurityManager::DONT_REPORT_ERRORS),
+      NS_ERROR_UNEXPECTED);
+  NS_ENSURE_ARG_POINTER(aPrincipal);
+  NS_ENSURE_ARG_POINTER(aTargetURI);
 
-    
-    
-    
-    if (aFlags & nsIScriptSecurityManager::DISALLOW_INHERIT_PRINCIPAL) {
-        nsresult rv =
-            DenyAccessIfURIHasFlags(aTargetURI,
-                                    nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT);
-        NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    if (aPrincipal == mSystemPrincipal) {
-        
-        return NS_OK;
-    }
-
-    nsCOMPtr<nsIURI> sourceURI;
-    aPrincipal->GetURI(getter_AddRefs(sourceURI));
-    if (!sourceURI) {
-        auto* basePrin = BasePrincipal::Cast(aPrincipal);
-        if (basePrin->Is<ExpandedPrincipal>()) {
-            auto expanded = basePrin->As<ExpandedPrincipal>();
-            for (auto& prin : expanded->AllowList()) {
-                nsresult rv = CheckLoadURIWithPrincipal(prin,
-                                                        aTargetURI,
-                                                        aFlags);
-                if (NS_SUCCEEDED(rv)) {
-                    
-                    return NS_OK;
-                }
-            }
-            
-            return NS_ERROR_DOM_BAD_URI;
-        }
-        NS_ERROR("Non-system principals or expanded principal passed to CheckLoadURIWithPrincipal "
-                 "must have a URI!");
-        return NS_ERROR_UNEXPECTED;
-    }
-
-    
-    if (aFlags & nsIScriptSecurityManager::LOAD_IS_AUTOMATIC_DOCUMENT_REPLACEMENT) {
-        nsresult rv =
-            DenyAccessIfURIHasFlags(sourceURI,
-                                    nsIProtocolHandler::URI_FORBIDS_AUTOMATIC_DOCUMENT_REPLACEMENT);
-        NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    
-    nsCOMPtr<nsIURI> sourceBaseURI = NS_GetInnermostURI(sourceURI);
-    nsCOMPtr<nsIURI> targetBaseURI = NS_GetInnermostURI(aTargetURI);
-
-    
-    nsAutoCString targetScheme;
-    nsresult rv = targetBaseURI->GetScheme(targetScheme);
-    if (NS_FAILED(rv)) return rv;
-
-    
-    if ((aFlags & nsIScriptSecurityManager::DISALLOW_SCRIPT) &&
-         targetScheme.EqualsLiteral("javascript"))
-    {
-       return NS_ERROR_DOM_BAD_URI;
-    }
-
-    
-    bool hasFlags;
-    rv = NS_URIChainHasFlags(targetBaseURI,
-                             nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,
-                             &hasFlags);
+  
+  
+  
+  if (aFlags & nsIScriptSecurityManager::DISALLOW_INHERIT_PRINCIPAL) {
+    nsresult rv = DenyAccessIfURIHasFlags(
+        aTargetURI, nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT);
     NS_ENSURE_SUCCESS(rv, rv);
+  }
 
-    if (hasFlags) {
-        
-        
-        rv = CheckLoadURIFlags(sourceURI, aTargetURI, sourceBaseURI,
-                               targetBaseURI, aFlags,
-                               aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0);
-        NS_ENSURE_SUCCESS(rv, rv);
-        
-        return aPrincipal->CheckMayLoad(targetBaseURI, true, false);
-    }
-
+  if (aPrincipal == mSystemPrincipal) {
     
-    nsAutoCString sourceScheme;
-    rv = sourceBaseURI->GetScheme(sourceScheme);
-    if (NS_FAILED(rv)) return rv;
+    return NS_OK;
+  }
 
-    
-    
-    
-    static bool sViewSourceReachableFromInner = false;
-    static bool sCachedViewSourcePref = false;
-    if (!sCachedViewSourcePref) {
-        sCachedViewSourcePref = true;
-        mozilla::Preferences::AddBoolVarCache(&sViewSourceReachableFromInner,
-            "security.view-source.reachable-from-inner-protocol");
-    }
-
-    bool targetIsViewSource = false;
-
-    if (sourceScheme.LowerCaseEqualsLiteral(NS_NULLPRINCIPAL_SCHEME)) {
-        
-        if (sourceURI == aTargetURI) {
-            return NS_OK;
+  nsCOMPtr<nsIURI> sourceURI;
+  aPrincipal->GetURI(getter_AddRefs(sourceURI));
+  if (!sourceURI) {
+    auto* basePrin = BasePrincipal::Cast(aPrincipal);
+    if (basePrin->Is<ExpandedPrincipal>()) {
+      auto expanded = basePrin->As<ExpandedPrincipal>();
+      for (auto& prin : expanded->AllowList()) {
+        nsresult rv = CheckLoadURIWithPrincipal(prin, aTargetURI, aFlags);
+        if (NS_SUCCEEDED(rv)) {
+          
+          return NS_OK;
         }
+      }
+      
+      return NS_ERROR_DOM_BAD_URI;
     }
-    else if (sViewSourceReachableFromInner &&
-             sourceScheme.EqualsIgnoreCase(targetScheme.get()) &&
-             NS_SUCCEEDED(aTargetURI->SchemeIs("view-source", &targetIsViewSource)) &&
-             targetIsViewSource)
-    {
-        
-        return NS_OK;
-    }
-    else if (sourceScheme.EqualsIgnoreCase("file") &&
-             targetScheme.EqualsIgnoreCase("moz-icon"))
-    {
-        
-        
-        
-        
-        return NS_OK;
-    }
+    NS_ERROR(
+        "Non-system principals or expanded principal passed to "
+        "CheckLoadURIWithPrincipal "
+        "must have a URI!");
+    return NS_ERROR_UNEXPECTED;
+  }
 
-    
-    rv = NS_URIChainHasFlags(aTargetURI,
-                             nsIProtocolHandler::URI_LOADABLE_BY_EXTENSIONS,
-                             &hasFlags);
+  
+  if (aFlags &
+      nsIScriptSecurityManager::LOAD_IS_AUTOMATIC_DOCUMENT_REPLACEMENT) {
+    nsresult rv = DenyAccessIfURIHasFlags(
+        sourceURI,
+        nsIProtocolHandler::URI_FORBIDS_AUTOMATIC_DOCUMENT_REPLACEMENT);
     NS_ENSURE_SUCCESS(rv, rv);
+  }
 
-    if (hasFlags && BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
-      return NS_OK;
-    }
+  
+  nsCOMPtr<nsIURI> sourceBaseURI = NS_GetInnermostURI(sourceURI);
+  nsCOMPtr<nsIURI> targetBaseURI = NS_GetInnermostURI(aTargetURI);
 
-    
-    nsCaseInsensitiveCStringComparator stringComparator;
-    nsCOMPtr<nsIURI> currentURI = sourceURI;
-    nsCOMPtr<nsIURI> currentOtherURI = aTargetURI;
+  
+  nsAutoCString targetScheme;
+  nsresult rv = targetBaseURI->GetScheme(targetScheme);
+  if (NS_FAILED(rv)) return rv;
 
-    bool denySameSchemeLinks = false;
-    rv = NS_URIChainHasFlags(aTargetURI, nsIProtocolHandler::URI_SCHEME_NOT_SELF_LINKABLE,
-                             &denySameSchemeLinks);
-    if (NS_FAILED(rv)) return rv;
-
-    while (currentURI && currentOtherURI) {
-        nsAutoCString scheme, otherScheme;
-        currentURI->GetScheme(scheme);
-        currentOtherURI->GetScheme(otherScheme);
-
-        bool schemesMatch = scheme.Equals(otherScheme, stringComparator);
-        bool isSamePage = false;
-        
-        if (scheme.EqualsLiteral("about") && schemesMatch) {
-            nsAutoCString moduleName, otherModuleName;
-            
-            isSamePage =
-              NS_SUCCEEDED(NS_GetAboutModuleName(currentURI, moduleName)) &&
-              NS_SUCCEEDED(NS_GetAboutModuleName(currentOtherURI, otherModuleName)) &&
-              moduleName.Equals(otherModuleName);
-            if (!isSamePage) {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                nsCOMPtr<nsIAboutModule> module, otherModule;
-                bool knowBothModules =
-                    NS_SUCCEEDED(NS_GetAboutModule(currentURI, getter_AddRefs(module))) &&
-                    NS_SUCCEEDED(NS_GetAboutModule(currentOtherURI, getter_AddRefs(otherModule)));
-                uint32_t aboutModuleFlags = 0;
-                uint32_t otherAboutModuleFlags = 0;
-                knowBothModules = knowBothModules &&
-                    NS_SUCCEEDED(module->GetURIFlags(currentURI, &aboutModuleFlags)) &&
-                    NS_SUCCEEDED(otherModule->GetURIFlags(currentOtherURI, &otherAboutModuleFlags));
-                if (knowBothModules) {
-                    isSamePage =
-                        !(aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) &&
-                        (otherAboutModuleFlags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT);
-                    if (isSamePage && otherAboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
-                        
-                        
-                        
-                        
-                        
-                        return NS_OK;
-                    }
-                }
-            }
-        } else {
-            bool equalExceptRef = false;
-            rv = currentURI->EqualsExceptRef(currentOtherURI, &equalExceptRef);
-            isSamePage = NS_SUCCEEDED(rv) && equalExceptRef;
-        }
-
-        
-        
-        
-        
-        
-        if (!schemesMatch || (denySameSchemeLinks && !isSamePage)) {
-            return CheckLoadURIFlags(currentURI, currentOtherURI,
-                                     sourceBaseURI, targetBaseURI, aFlags,
-                                     aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0);
-        }
-        
-        nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(currentURI);
-        nsCOMPtr<nsINestedURI> nestedOtherURI = do_QueryInterface(currentOtherURI);
-
-        
-        if (!nestedURI && !nestedOtherURI) {
-            return NS_OK;
-        }
-        
-        if (!nestedURI != !nestedOtherURI) {
-            return NS_ERROR_DOM_BAD_URI;
-        }
-        
-        nestedURI->GetInnerURI(getter_AddRefs(currentURI));
-        nestedOtherURI->GetInnerURI(getter_AddRefs(currentOtherURI));
-    }
-
-    
+  
+  if ((aFlags & nsIScriptSecurityManager::DISALLOW_SCRIPT) &&
+      targetScheme.EqualsLiteral("javascript")) {
     return NS_ERROR_DOM_BAD_URI;
-}
+  }
 
+  
+  bool hasFlags;
+  rv = NS_URIChainHasFlags(
+      targetBaseURI, nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS, &hasFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-
-
-
-
-
-
-
-
-nsresult
-nsScriptSecurityManager::CheckLoadURIFlags(nsIURI *aSourceURI,
-                                           nsIURI *aTargetURI,
-                                           nsIURI *aSourceBaseURI,
-                                           nsIURI *aTargetBaseURI,
-                                           uint32_t aFlags,
-                                           bool aFromPrivateWindow)
-{
+  if (hasFlags) {
     
     
-    bool reportErrors = !(aFlags & nsIScriptSecurityManager::DONT_REPORT_ERRORS);
-    const char* errorTag = "CheckLoadURIError";
-
-    nsAutoCString targetScheme;
-    nsresult rv = aTargetBaseURI->GetScheme(targetScheme);
-    if (NS_FAILED(rv)) return rv;
-
-    
-    rv = DenyAccessIfURIHasFlags(aTargetURI,
-                                 nsIProtocolHandler::URI_DANGEROUS_TO_LOAD);
-    if (NS_FAILED(rv)) {
-        
-        if (reportErrors) {
-            ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
-        }
-        return rv;
-    }
-
-    
-    bool hasFlags = false;
-    rv = NS_URIChainHasFlags(aTargetURI,
-                             nsIProtocolHandler::URI_IS_UI_RESOURCE,
-                             &hasFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (hasFlags) {
-        if (aFlags & nsIScriptSecurityManager::ALLOW_CHROME) {
-            
-            
-            
-            
-            
-            
-            
-            
-            bool sourceIsUIResource;
-            rv = NS_URIChainHasFlags(aSourceBaseURI,
-                                     nsIProtocolHandler::URI_IS_UI_RESOURCE,
-                                     &sourceIsUIResource);
-            NS_ENSURE_SUCCESS(rv, rv);
-            if (sourceIsUIResource) {
-                return NS_OK;
-            }
-
-            if (targetScheme.EqualsLiteral("resource")) {
-                
-                
-                
-                static bool sSecurityPrefCached = false;
-                static bool sAllResourceUriContentAccessible = false;
-                if (!sSecurityPrefCached) {
-                    sSecurityPrefCached = true;
-                    Preferences::AddBoolVarCache(
-                            &sAllResourceUriContentAccessible,
-                            "security.all_resource_uri_content_accessible",
-                            false);
-                }
-                if (sAllResourceUriContentAccessible) {
-                    return NS_OK;
-                }
-
-                nsCOMPtr<nsIProtocolHandler> ph;
-                rv = sIOService->GetProtocolHandler("resource", getter_AddRefs(ph));
-                NS_ENSURE_SUCCESS(rv, rv);
-                if (!ph) {
-                    return NS_ERROR_DOM_BAD_URI;
-                }
-
-                nsCOMPtr<nsIResProtocolHandler> rph = do_QueryInterface(ph);
-                if (!rph) {
-                    return NS_ERROR_DOM_BAD_URI;
-                }
-
-                bool accessAllowed = false;
-                rph->AllowContentToAccess(aTargetBaseURI, &accessAllowed);
-                if (accessAllowed) {
-                    return NS_OK;
-                }
-            } else if (targetScheme.EqualsLiteral("chrome")) {
-                
-                nsCOMPtr<nsIXULChromeRegistry> reg(
-                        do_GetService(NS_CHROMEREGISTRY_CONTRACTID));
-                if (reg) {
-                    bool accessAllowed = false;
-                    reg->AllowContentToAccess(aTargetBaseURI, &accessAllowed);
-                    if (accessAllowed) {
-                        return NS_OK;
-                    }
-                }
-            }
-        }
-
-        if (reportErrors) {
-            ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
-        }
-        return NS_ERROR_DOM_BAD_URI;
-    }
-
-    
-    rv = NS_URIChainHasFlags(aTargetURI,
-                             nsIProtocolHandler::URI_IS_LOCAL_FILE,
-                             &hasFlags);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (hasFlags) {
-        
-        
-        bool isAllowlisted;
-        MOZ_ALWAYS_SUCCEEDS(InFileURIAllowlist(aSourceURI, &isAllowlisted));
-        if (isAllowlisted) {
-            return NS_OK;
-        }
-
-        
-        bool isChrome = false;
-        if (NS_SUCCEEDED(aSourceBaseURI->SchemeIs("chrome", &isChrome)) && isChrome) {
-            return NS_OK;
-        }
-
-        
-        if (reportErrors) {
-            ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
-        }
-        return NS_ERROR_DOM_BAD_URI;
-    }
-
-    
-    
-    
-    
-    rv = NS_URIChainHasFlags(aTargetBaseURI,
-                             nsIProtocolHandler::URI_LOADABLE_BY_ANYONE,
-                             &hasFlags);
+    rv = CheckLoadURIFlags(
+        sourceURI, aTargetURI, sourceBaseURI, targetBaseURI, aFlags,
+        aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0);
     NS_ENSURE_SUCCESS(rv, rv);
     
-    
-    
-    bool hasSubsumersFlag = false;
-    rv = NS_URIChainHasFlags(aTargetBaseURI,
-                             nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,
-                             &hasSubsumersFlag);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (!hasFlags && !hasSubsumersFlag) {
-        nsCOMPtr<nsIStringBundle> bundle = BundleHelper::GetOrCreate();
-        if (bundle) {
-            nsAutoString message;
-            NS_ConvertASCIItoUTF16 ucsTargetScheme(targetScheme);
-            const char16_t* formatStrings[] = { ucsTargetScheme.get() };
-            rv = bundle->FormatStringFromName("ProtocolFlagError",
-                                              formatStrings,
-                                              ArrayLength(formatStrings),
-                                              message);
-            if (NS_SUCCEEDED(rv)) {
-                nsCOMPtr<nsIConsoleService> console(
-                  do_GetService("@mozilla.org/consoleservice;1"));
-                NS_ENSURE_TRUE(console, NS_ERROR_FAILURE);
+    return aPrincipal->CheckMayLoad(targetBaseURI, true, false);
+  }
 
-                console->LogStringMessage(message.get());
-            }
-        }
+  
+  nsAutoCString sourceScheme;
+  rv = sourceBaseURI->GetScheme(sourceScheme);
+  if (NS_FAILED(rv)) return rv;
+
+  
+  
+  
+  static bool sViewSourceReachableFromInner = false;
+  static bool sCachedViewSourcePref = false;
+  if (!sCachedViewSourcePref) {
+    sCachedViewSourcePref = true;
+    mozilla::Preferences::AddBoolVarCache(
+        &sViewSourceReachableFromInner,
+        "security.view-source.reachable-from-inner-protocol");
+  }
+
+  bool targetIsViewSource = false;
+
+  if (sourceScheme.LowerCaseEqualsLiteral(NS_NULLPRINCIPAL_SCHEME)) {
+    
+    if (sourceURI == aTargetURI) {
+      return NS_OK;
     }
-
+  } else if (sViewSourceReachableFromInner &&
+             sourceScheme.EqualsIgnoreCase(targetScheme.get()) &&
+             NS_SUCCEEDED(
+                 aTargetURI->SchemeIs("view-source", &targetIsViewSource)) &&
+             targetIsViewSource) {
+    
     return NS_OK;
+  } else if (sourceScheme.EqualsIgnoreCase("file") &&
+             targetScheme.EqualsIgnoreCase("moz-icon")) {
+    
+    
+    
+    
+    return NS_OK;
+  }
+
+  
+  rv = NS_URIChainHasFlags(
+      aTargetURI, nsIProtocolHandler::URI_LOADABLE_BY_EXTENSIONS, &hasFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (hasFlags && BasePrincipal::Cast(aPrincipal)->AddonPolicy()) {
+    return NS_OK;
+  }
+
+  
+  
+  nsCaseInsensitiveCStringComparator stringComparator;
+  nsCOMPtr<nsIURI> currentURI = sourceURI;
+  nsCOMPtr<nsIURI> currentOtherURI = aTargetURI;
+
+  bool denySameSchemeLinks = false;
+  rv = NS_URIChainHasFlags(aTargetURI,
+                           nsIProtocolHandler::URI_SCHEME_NOT_SELF_LINKABLE,
+                           &denySameSchemeLinks);
+  if (NS_FAILED(rv)) return rv;
+
+  while (currentURI && currentOtherURI) {
+    nsAutoCString scheme, otherScheme;
+    currentURI->GetScheme(scheme);
+    currentOtherURI->GetScheme(otherScheme);
+
+    bool schemesMatch = scheme.Equals(otherScheme, stringComparator);
+    bool isSamePage = false;
+    
+    if (scheme.EqualsLiteral("about") && schemesMatch) {
+      nsAutoCString moduleName, otherModuleName;
+      
+      isSamePage =
+          NS_SUCCEEDED(NS_GetAboutModuleName(currentURI, moduleName)) &&
+          NS_SUCCEEDED(
+              NS_GetAboutModuleName(currentOtherURI, otherModuleName)) &&
+          moduleName.Equals(otherModuleName);
+      if (!isSamePage) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        nsCOMPtr<nsIAboutModule> module, otherModule;
+        bool knowBothModules =
+            NS_SUCCEEDED(
+                NS_GetAboutModule(currentURI, getter_AddRefs(module))) &&
+            NS_SUCCEEDED(NS_GetAboutModule(currentOtherURI,
+                                           getter_AddRefs(otherModule)));
+        uint32_t aboutModuleFlags = 0;
+        uint32_t otherAboutModuleFlags = 0;
+        knowBothModules =
+            knowBothModules &&
+            NS_SUCCEEDED(module->GetURIFlags(currentURI, &aboutModuleFlags)) &&
+            NS_SUCCEEDED(otherModule->GetURIFlags(currentOtherURI,
+                                                  &otherAboutModuleFlags));
+        if (knowBothModules) {
+          isSamePage = !(aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) &&
+                       (otherAboutModuleFlags &
+                        nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT);
+          if (isSamePage &&
+              otherAboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
+            
+            
+            
+            
+            
+            return NS_OK;
+          }
+        }
+      }
+    } else {
+      bool equalExceptRef = false;
+      rv = currentURI->EqualsExceptRef(currentOtherURI, &equalExceptRef);
+      isSamePage = NS_SUCCEEDED(rv) && equalExceptRef;
+    }
+
+    
+    
+    
+    
+    
+    if (!schemesMatch || (denySameSchemeLinks && !isSamePage)) {
+      return CheckLoadURIFlags(
+          currentURI, currentOtherURI, sourceBaseURI, targetBaseURI, aFlags,
+          aPrincipal->OriginAttributesRef().mPrivateBrowsingId > 0);
+    }
+    
+    nsCOMPtr<nsINestedURI> nestedURI = do_QueryInterface(currentURI);
+    nsCOMPtr<nsINestedURI> nestedOtherURI = do_QueryInterface(currentOtherURI);
+
+    
+    if (!nestedURI && !nestedOtherURI) {
+      return NS_OK;
+    }
+    
+    if (!nestedURI != !nestedOtherURI) {
+      return NS_ERROR_DOM_BAD_URI;
+    }
+    
+    nestedURI->GetInnerURI(getter_AddRefs(currentURI));
+    nestedOtherURI->GetInnerURI(getter_AddRefs(currentOtherURI));
+  }
+
+  
+  return NS_ERROR_DOM_BAD_URI;
 }
 
-nsresult
-nsScriptSecurityManager::ReportError(const char* aMessageTag, nsIURI* aSource,
-                                     nsIURI* aTarget, bool aFromPrivateWindow)
-{
-    nsresult rv;
-    NS_ENSURE_TRUE(aSource && aTarget, NS_ERROR_NULL_POINTER);
 
+
+
+
+
+
+
+
+
+nsresult nsScriptSecurityManager::CheckLoadURIFlags(
+    nsIURI* aSourceURI, nsIURI* aTargetURI, nsIURI* aSourceBaseURI,
+    nsIURI* aTargetBaseURI, uint32_t aFlags, bool aFromPrivateWindow) {
+  
+  
+  bool reportErrors = !(aFlags & nsIScriptSecurityManager::DONT_REPORT_ERRORS);
+  const char* errorTag = "CheckLoadURIError";
+
+  nsAutoCString targetScheme;
+  nsresult rv = aTargetBaseURI->GetScheme(targetScheme);
+  if (NS_FAILED(rv)) return rv;
+
+  
+  rv = DenyAccessIfURIHasFlags(aTargetURI,
+                               nsIProtocolHandler::URI_DANGEROUS_TO_LOAD);
+  if (NS_FAILED(rv)) {
     
-    nsAutoCString sourceSpec;
-    rv = aSource->GetAsciiSpec(sourceSpec);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (reportErrors) {
+      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
+    }
+    return rv;
+  }
 
+  
+  bool hasFlags = false;
+  rv = NS_URIChainHasFlags(aTargetURI, nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                           &hasFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (hasFlags) {
+    if (aFlags & nsIScriptSecurityManager::ALLOW_CHROME) {
+      
+      
+      
+      
+      
+      
+      
+      
+      bool sourceIsUIResource;
+      rv = NS_URIChainHasFlags(aSourceBaseURI,
+                               nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                               &sourceIsUIResource);
+      NS_ENSURE_SUCCESS(rv, rv);
+      if (sourceIsUIResource) {
+        return NS_OK;
+      }
+
+      if (targetScheme.EqualsLiteral("resource")) {
+        
+        
+        
+        static bool sSecurityPrefCached = false;
+        static bool sAllResourceUriContentAccessible = false;
+        if (!sSecurityPrefCached) {
+          sSecurityPrefCached = true;
+          Preferences::AddBoolVarCache(
+              &sAllResourceUriContentAccessible,
+              "security.all_resource_uri_content_accessible", false);
+        }
+        if (sAllResourceUriContentAccessible) {
+          return NS_OK;
+        }
+
+        nsCOMPtr<nsIProtocolHandler> ph;
+        rv = sIOService->GetProtocolHandler("resource", getter_AddRefs(ph));
+        NS_ENSURE_SUCCESS(rv, rv);
+        if (!ph) {
+          return NS_ERROR_DOM_BAD_URI;
+        }
+
+        nsCOMPtr<nsIResProtocolHandler> rph = do_QueryInterface(ph);
+        if (!rph) {
+          return NS_ERROR_DOM_BAD_URI;
+        }
+
+        bool accessAllowed = false;
+        rph->AllowContentToAccess(aTargetBaseURI, &accessAllowed);
+        if (accessAllowed) {
+          return NS_OK;
+        }
+      } else if (targetScheme.EqualsLiteral("chrome")) {
+        
+        nsCOMPtr<nsIXULChromeRegistry> reg(
+            do_GetService(NS_CHROMEREGISTRY_CONTRACTID));
+        if (reg) {
+          bool accessAllowed = false;
+          reg->AllowContentToAccess(aTargetBaseURI, &accessAllowed);
+          if (accessAllowed) {
+            return NS_OK;
+          }
+        }
+      }
+    }
+
+    if (reportErrors) {
+      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
+    }
+    return NS_ERROR_DOM_BAD_URI;
+  }
+
+  
+  rv = NS_URIChainHasFlags(aTargetURI, nsIProtocolHandler::URI_IS_LOCAL_FILE,
+                           &hasFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (hasFlags) {
     
-    nsAutoCString targetSpec;
-    rv = aTarget->GetAsciiSpec(targetSpec);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsCOMPtr<nsIStringBundle> bundle = BundleHelper::GetOrCreate();
-    if (NS_WARN_IF(!bundle)) {
+    
+    bool isAllowlisted;
+    MOZ_ALWAYS_SUCCEEDS(InFileURIAllowlist(aSourceURI, &isAllowlisted));
+    if (isAllowlisted) {
       return NS_OK;
     }
 
     
-    nsAutoString message;
-    NS_ConvertASCIItoUTF16 ucsSourceSpec(sourceSpec);
-    NS_ConvertASCIItoUTF16 ucsTargetSpec(targetSpec);
-    const char16_t *formatStrings[] = { ucsSourceSpec.get(), ucsTargetSpec.get() };
-    rv = bundle->FormatStringFromName(aMessageTag,
-                                      formatStrings,
-                                      ArrayLength(formatStrings),
-                                      message);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    nsCOMPtr<nsIConsoleService> console(do_GetService(NS_CONSOLESERVICE_CONTRACTID));
-    NS_ENSURE_TRUE(console, NS_ERROR_FAILURE);
-    nsCOMPtr<nsIScriptError> error(do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
-    NS_ENSURE_TRUE(error, NS_ERROR_FAILURE);
+    bool isChrome = false;
+    if (NS_SUCCEEDED(aSourceBaseURI->SchemeIs("chrome", &isChrome)) &&
+        isChrome) {
+      return NS_OK;
+    }
 
     
-    rv = error->Init(message, EmptyString(), 
-                     EmptyString(), 0, 0,
-                     nsIScriptError::errorFlag,
-                    "SOP", aFromPrivateWindow);
-    NS_ENSURE_SUCCESS(rv, rv);
-    console->LogMessage(error);
+    if (reportErrors) {
+      ReportError(errorTag, aSourceURI, aTargetURI, aFromPrivateWindow);
+    }
+    return NS_ERROR_DOM_BAD_URI;
+  }
+
+  
+  
+  
+  
+  rv = NS_URIChainHasFlags(
+      aTargetBaseURI, nsIProtocolHandler::URI_LOADABLE_BY_ANYONE, &hasFlags);
+  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  
+  bool hasSubsumersFlag = false;
+  rv = NS_URIChainHasFlags(aTargetBaseURI,
+                           nsIProtocolHandler::URI_LOADABLE_BY_SUBSUMERS,
+                           &hasSubsumersFlag);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (!hasFlags && !hasSubsumersFlag) {
+    nsCOMPtr<nsIStringBundle> bundle = BundleHelper::GetOrCreate();
+    if (bundle) {
+      nsAutoString message;
+      NS_ConvertASCIItoUTF16 ucsTargetScheme(targetScheme);
+      const char16_t* formatStrings[] = {ucsTargetScheme.get()};
+      rv = bundle->FormatStringFromName("ProtocolFlagError", formatStrings,
+                                        ArrayLength(formatStrings), message);
+      if (NS_SUCCEEDED(rv)) {
+        nsCOMPtr<nsIConsoleService> console(
+            do_GetService("@mozilla.org/consoleservice;1"));
+        NS_ENSURE_TRUE(console, NS_ERROR_FAILURE);
+
+        console->LogStringMessage(message.get());
+      }
+    }
+  }
+
+  return NS_OK;
+}
+
+nsresult nsScriptSecurityManager::ReportError(const char* aMessageTag,
+                                              nsIURI* aSource, nsIURI* aTarget,
+                                              bool aFromPrivateWindow) {
+  nsresult rv;
+  NS_ENSURE_TRUE(aSource && aTarget, NS_ERROR_NULL_POINTER);
+
+  
+  nsAutoCString sourceSpec;
+  rv = aSource->GetAsciiSpec(sourceSpec);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  nsAutoCString targetSpec;
+  rv = aTarget->GetAsciiSpec(targetSpec);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIStringBundle> bundle = BundleHelper::GetOrCreate();
+  if (NS_WARN_IF(!bundle)) {
     return NS_OK;
+  }
+
+  
+  nsAutoString message;
+  NS_ConvertASCIItoUTF16 ucsSourceSpec(sourceSpec);
+  NS_ConvertASCIItoUTF16 ucsTargetSpec(targetSpec);
+  const char16_t* formatStrings[] = {ucsSourceSpec.get(), ucsTargetSpec.get()};
+  rv = bundle->FormatStringFromName(aMessageTag, formatStrings,
+                                    ArrayLength(formatStrings), message);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIConsoleService> console(
+      do_GetService(NS_CONSOLESERVICE_CONTRACTID));
+  NS_ENSURE_TRUE(console, NS_ERROR_FAILURE);
+  nsCOMPtr<nsIScriptError> error(do_CreateInstance(NS_SCRIPTERROR_CONTRACTID));
+  NS_ENSURE_TRUE(error, NS_ERROR_FAILURE);
+
+  
+  rv = error->Init(message, EmptyString(), EmptyString(), 0, 0,
+                   nsIScriptError::errorFlag, "SOP", aFromPrivateWindow);
+  NS_ENSURE_SUCCESS(rv, rv);
+  console->LogMessage(error);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::CheckLoadURIStrWithPrincipal(nsIPrincipal* aPrincipal,
-                                                      const nsACString& aTargetURIStr,
-                                                      uint32_t aFlags)
-{
-    nsresult rv;
-    nsCOMPtr<nsIURI> target;
-    rv = NS_NewURI(getter_AddRefs(target), aTargetURIStr,
-                   nullptr, nullptr, sIOService);
+nsScriptSecurityManager::CheckLoadURIStrWithPrincipal(
+    nsIPrincipal* aPrincipal, const nsACString& aTargetURIStr,
+    uint32_t aFlags) {
+  nsresult rv;
+  nsCOMPtr<nsIURI> target;
+  rv = NS_NewURI(getter_AddRefs(target), aTargetURIStr, nullptr, nullptr,
+                 sIOService);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = CheckLoadURIWithPrincipal(aPrincipal, target, aFlags);
+  if (rv == NS_ERROR_DOM_BAD_URI) {
+    
+    
+    return rv;
+  }
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  
+  nsCOMPtr<nsIURIFixup> fixup = do_GetService(NS_URIFIXUP_CONTRACTID);
+  if (!fixup) {
+    return rv;
+  }
+
+  uint32_t flags[] = {nsIURIFixup::FIXUP_FLAG_NONE,
+                      nsIURIFixup::FIXUP_FLAG_FIX_SCHEME_TYPOS,
+                      nsIURIFixup::FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP,
+                      nsIURIFixup::FIXUP_FLAGS_MAKE_ALTERNATE_URI,
+                      nsIURIFixup::FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP |
+                          nsIURIFixup::FIXUP_FLAGS_MAKE_ALTERNATE_URI};
+
+  for (uint32_t i = 0; i < ArrayLength(flags); ++i) {
+    rv = fixup->CreateFixupURI(aTargetURIStr, flags[i], nullptr,
+                               getter_AddRefs(target));
     NS_ENSURE_SUCCESS(rv, rv);
 
     rv = CheckLoadURIWithPrincipal(aPrincipal, target, aFlags);
     if (rv == NS_ERROR_DOM_BAD_URI) {
-        
-        
-        return rv;
+      
+      
+      return rv;
     }
     NS_ENSURE_SUCCESS(rv, rv);
+  }
 
-    
-    
-    
-    nsCOMPtr<nsIURIFixup> fixup = do_GetService(NS_URIFIXUP_CONTRACTID);
-    if (!fixup) {
-        return rv;
-    }
-
-    uint32_t flags[] = {
-        nsIURIFixup::FIXUP_FLAG_NONE,
-        nsIURIFixup::FIXUP_FLAG_FIX_SCHEME_TYPOS,
-        nsIURIFixup::FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP,
-        nsIURIFixup::FIXUP_FLAGS_MAKE_ALTERNATE_URI,
-        nsIURIFixup::FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP |
-        nsIURIFixup::FIXUP_FLAGS_MAKE_ALTERNATE_URI
-    };
-
-    for (uint32_t i = 0; i < ArrayLength(flags); ++i) {
-        rv = fixup->CreateFixupURI(aTargetURIStr, flags[i], nullptr,
-                                   getter_AddRefs(target));
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        rv = CheckLoadURIWithPrincipal(aPrincipal, target, aFlags);
-        if (rv == NS_ERROR_DOM_BAD_URI) {
-            
-            
-            return rv;
-        }
-        NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    return rv;
+  return rv;
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::InFileURIAllowlist(nsIURI* aUri, bool* aResult)
-{
-    MOZ_ASSERT(aUri);
-    MOZ_ASSERT(aResult);
+nsScriptSecurityManager::InFileURIAllowlist(nsIURI* aUri, bool* aResult) {
+  MOZ_ASSERT(aUri);
+  MOZ_ASSERT(aResult);
 
-    *aResult = false;
-    for (nsIURI* uri : EnsureFileURIAllowlist()) {
-        if (EqualOrSubdomain(aUri, uri)) {
-            *aResult = true;
-            return NS_OK;
-        }
+  *aResult = false;
+  for (nsIURI* uri : EnsureFileURIAllowlist()) {
+    if (EqualOrSubdomain(aUri, uri)) {
+      *aResult = true;
+      return NS_OK;
     }
+  }
 
-    return NS_OK;
+  return NS_OK;
 }
 
 
 
 NS_IMETHODIMP
-nsScriptSecurityManager::GetSystemPrincipal(nsIPrincipal **result)
-{
-    NS_ADDREF(*result = mSystemPrincipal);
+nsScriptSecurityManager::GetSystemPrincipal(nsIPrincipal** result) {
+  NS_ADDREF(*result = mSystemPrincipal);
 
-    return NS_OK;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::CreateCodebasePrincipal(nsIURI* aURI, JS::Handle<JS::Value> aOriginAttributes,
-                                                 JSContext* aCx, nsIPrincipal** aPrincipal)
-{
+nsScriptSecurityManager::CreateCodebasePrincipal(
+    nsIURI* aURI, JS::Handle<JS::Value> aOriginAttributes, JSContext* aCx,
+    nsIPrincipal** aPrincipal) {
   OriginAttributes attrs;
   if (!aOriginAttributes.isObject() || !attrs.Init(aCx, aOriginAttributes)) {
-      return NS_ERROR_INVALID_ARG;
+    return NS_ERROR_INVALID_ARG;
   }
-  nsCOMPtr<nsIPrincipal> prin = BasePrincipal::CreateCodebasePrincipal(aURI, attrs);
+  nsCOMPtr<nsIPrincipal> prin =
+      BasePrincipal::CreateCodebasePrincipal(aURI, attrs);
   prin.forget(aPrincipal);
   return *aPrincipal ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::CreateCodebasePrincipalFromOrigin(const nsACString& aOrigin,
-                                                           nsIPrincipal** aPrincipal)
-{
+nsScriptSecurityManager::CreateCodebasePrincipalFromOrigin(
+    const nsACString& aOrigin, nsIPrincipal** aPrincipal) {
   if (StringBeginsWith(aOrigin, NS_LITERAL_CSTRING("["))) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  if (StringBeginsWith(aOrigin, NS_LITERAL_CSTRING(NS_NULLPRINCIPAL_SCHEME ":"))) {
+  if (StringBeginsWith(aOrigin,
+                       NS_LITERAL_CSTRING(NS_NULLPRINCIPAL_SCHEME ":"))) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -1254,12 +1180,12 @@ nsScriptSecurityManager::CreateCodebasePrincipalFromOrigin(const nsACString& aOr
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::CreateNullPrincipal(JS::Handle<JS::Value> aOriginAttributes,
-                                             JSContext* aCx, nsIPrincipal** aPrincipal)
-{
+nsScriptSecurityManager::CreateNullPrincipal(
+    JS::Handle<JS::Value> aOriginAttributes, JSContext* aCx,
+    nsIPrincipal** aPrincipal) {
   OriginAttributes attrs;
   if (!aOriginAttributes.isObject() || !attrs.Init(aCx, aOriginAttributes)) {
-      return NS_ERROR_INVALID_ARG;
+    return NS_ERROR_INVALID_ARG;
   }
   nsCOMPtr<nsIPrincipal> prin = NullPrincipal::Create(attrs);
   prin.forget(aPrincipal);
@@ -1267,468 +1193,425 @@ nsScriptSecurityManager::CreateNullPrincipal(JS::Handle<JS::Value> aOriginAttrib
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::
-  GetLoadContextCodebasePrincipal(nsIURI* aURI,
-                                  nsILoadContext* aLoadContext,
-                                  nsIPrincipal** aPrincipal)
-{
+nsScriptSecurityManager::GetLoadContextCodebasePrincipal(
+    nsIURI* aURI, nsILoadContext* aLoadContext, nsIPrincipal** aPrincipal) {
   NS_ENSURE_STATE(aLoadContext);
   OriginAttributes docShellAttrs;
   aLoadContext->GetOriginAttributes(docShellAttrs);
 
   nsCOMPtr<nsIPrincipal> prin =
-    BasePrincipal::CreateCodebasePrincipal(aURI, docShellAttrs);
+      BasePrincipal::CreateCodebasePrincipal(aURI, docShellAttrs);
   prin.forget(aPrincipal);
   return *aPrincipal ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::GetDocShellCodebasePrincipal(nsIURI* aURI,
-                                                      nsIDocShell* aDocShell,
-                                                      nsIPrincipal** aPrincipal)
-{
-  nsCOMPtr<nsIPrincipal> prin =
-    BasePrincipal::CreateCodebasePrincipal(aURI, nsDocShell::Cast(aDocShell)->GetOriginAttributes());
+nsScriptSecurityManager::GetDocShellCodebasePrincipal(
+    nsIURI* aURI, nsIDocShell* aDocShell, nsIPrincipal** aPrincipal) {
+  nsCOMPtr<nsIPrincipal> prin = BasePrincipal::CreateCodebasePrincipal(
+      aURI, nsDocShell::Cast(aDocShell)->GetOriginAttributes());
   prin.forget(aPrincipal);
   return *aPrincipal ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::CanCreateWrapper(JSContext *cx,
-                                          const nsIID &aIID,
-                                          nsISupports *aObj,
-                                          nsIClassInfo *aClassInfo)
-{
+nsScriptSecurityManager::CanCreateWrapper(JSContext* cx, const nsIID& aIID,
+                                          nsISupports* aObj,
+                                          nsIClassInfo* aClassInfo) {
+  
 
+  
+  JS::Rooted<JS::Realm*> contextRealm(cx, JS::GetCurrentRealmOrNull(cx));
+  MOZ_RELEASE_ASSERT(contextRealm);
+  if (!xpc::AllowContentXBLScope(contextRealm)) {
+    return NS_OK;
+  }
 
-    
-    JS::Rooted<JS::Realm*> contextRealm(cx, JS::GetCurrentRealmOrNull(cx));
-    MOZ_RELEASE_ASSERT(contextRealm);
-    if (!xpc::AllowContentXBLScope(contextRealm)) {
-        return NS_OK;
-    }
+  if (nsContentUtils::IsCallerChrome()) {
+    return NS_OK;
+  }
 
-    if (nsContentUtils::IsCallerChrome()) {
-        return NS_OK;
-    }
+  
+  nsAutoCString originUTF8;
+  nsIPrincipal* subjectPrincipal = nsContentUtils::SubjectPrincipal();
+  GetPrincipalDomainOrigin(subjectPrincipal, originUTF8);
+  NS_ConvertUTF8toUTF16 originUTF16(originUTF8);
+  nsAutoCString classInfoNameUTF8;
+  if (aClassInfo) {
+    aClassInfo->GetClassDescription(classInfoNameUTF8);
+  }
+  if (classInfoNameUTF8.IsEmpty()) {
+    classInfoNameUTF8.AssignLiteral("UnnamedClass");
+  }
 
-    
-    nsAutoCString originUTF8;
-    nsIPrincipal* subjectPrincipal = nsContentUtils::SubjectPrincipal();
-    GetPrincipalDomainOrigin(subjectPrincipal, originUTF8);
-    NS_ConvertUTF8toUTF16 originUTF16(originUTF8);
-    nsAutoCString classInfoNameUTF8;
-    if (aClassInfo) {
-      aClassInfo->GetClassDescription(classInfoNameUTF8);
-    }
-    if (classInfoNameUTF8.IsEmpty()) {
-      classInfoNameUTF8.AssignLiteral("UnnamedClass");
-    }
+  nsCOMPtr<nsIStringBundle> bundle = BundleHelper::GetOrCreate();
+  if (NS_WARN_IF(!bundle)) {
+    return NS_OK;
+  }
 
-    nsCOMPtr<nsIStringBundle> bundle = BundleHelper::GetOrCreate();
-    if (NS_WARN_IF(!bundle)) {
-      return NS_OK;
-    }
+  NS_ConvertUTF8toUTF16 classInfoUTF16(classInfoNameUTF8);
+  nsresult rv;
+  nsAutoString errorMsg;
+  if (originUTF16.IsEmpty()) {
+    const char16_t* formatStrings[] = {classInfoUTF16.get()};
+    rv = bundle->FormatStringFromName("CreateWrapperDenied", formatStrings, 1,
+                                      errorMsg);
+  } else {
+    const char16_t* formatStrings[] = {classInfoUTF16.get(), originUTF16.get()};
+    rv = bundle->FormatStringFromName("CreateWrapperDeniedForOrigin",
+                                      formatStrings, 2, errorMsg);
+  }
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    NS_ConvertUTF8toUTF16 classInfoUTF16(classInfoNameUTF8);
-    nsresult rv;
-    nsAutoString errorMsg;
-    if (originUTF16.IsEmpty()) {
-        const char16_t* formatStrings[] = { classInfoUTF16.get() };
-        rv = bundle->FormatStringFromName("CreateWrapperDenied",
-                                          formatStrings,
-                                          1,
-                                          errorMsg);
-    } else {
-        const char16_t* formatStrings[] = { classInfoUTF16.get(),
-                                            originUTF16.get() };
-        rv = bundle->FormatStringFromName("CreateWrapperDeniedForOrigin",
-                                          formatStrings,
-                                          2,
-                                          errorMsg);
-    }
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    SetPendingException(cx, errorMsg.get());
-    return NS_ERROR_DOM_XPCONNECT_ACCESS_DENIED;
+  SetPendingException(cx, errorMsg.get());
+  return NS_ERROR_DOM_XPCONNECT_ACCESS_DENIED;
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::CanCreateInstance(JSContext *cx,
-                                           const nsCID &aCID)
-{
-    if (nsContentUtils::IsCallerChrome()) {
-        return NS_OK;
-    }
+nsScriptSecurityManager::CanCreateInstance(JSContext* cx, const nsCID& aCID) {
+  if (nsContentUtils::IsCallerChrome()) {
+    return NS_OK;
+  }
 
-    
-    nsAutoCString errorMsg("Permission denied to create instance of class. CID=");
-    char cidStr[NSID_LENGTH];
-    aCID.ToProvidedString(cidStr);
-    errorMsg.Append(cidStr);
-    SetPendingExceptionASCII(cx, errorMsg.get());
-    return NS_ERROR_DOM_XPCONNECT_ACCESS_DENIED;
+  
+  nsAutoCString errorMsg("Permission denied to create instance of class. CID=");
+  char cidStr[NSID_LENGTH];
+  aCID.ToProvidedString(cidStr);
+  errorMsg.Append(cidStr);
+  SetPendingExceptionASCII(cx, errorMsg.get());
+  return NS_ERROR_DOM_XPCONNECT_ACCESS_DENIED;
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::CanGetService(JSContext *cx,
-                                       const nsCID &aCID)
-{
-    if (nsContentUtils::IsCallerChrome()) {
-        return NS_OK;
-    }
+nsScriptSecurityManager::CanGetService(JSContext* cx, const nsCID& aCID) {
+  if (nsContentUtils::IsCallerChrome()) {
+    return NS_OK;
+  }
 
-    
-    nsAutoCString errorMsg("Permission denied to get service. CID=");
-    char cidStr[NSID_LENGTH];
-    aCID.ToProvidedString(cidStr);
-    errorMsg.Append(cidStr);
-    SetPendingExceptionASCII(cx, errorMsg.get());
-    return NS_ERROR_DOM_XPCONNECT_ACCESS_DENIED;
+  
+  nsAutoCString errorMsg("Permission denied to get service. CID=");
+  char cidStr[NSID_LENGTH];
+  aCID.ToProvidedString(cidStr);
+  errorMsg.Append(cidStr);
+  SetPendingExceptionASCII(cx, errorMsg.get());
+  return NS_ERROR_DOM_XPCONNECT_ACCESS_DENIED;
 }
 
 const char sJSEnabledPrefName[] = "javascript.enabled";
 const char sFileOriginPolicyPrefName[] =
     "security.fileuri.strict_origin_policy";
 
-static const char* kObservedPrefs[] = {
-  sJSEnabledPrefName,
-  sFileOriginPolicyPrefName,
-  "capability.policy.",
-  nullptr
-};
-
+static const char* kObservedPrefs[] = {sJSEnabledPrefName,
+                                       sFileOriginPolicyPrefName,
+                                       "capability.policy.", nullptr};
 
 
 
 
 nsScriptSecurityManager::nsScriptSecurityManager(void)
-    : mPrefInitialized(false)
-    , mIsJavaScriptEnabled(false)
-{
-    static_assert(sizeof(intptr_t) == sizeof(void*),
-                  "intptr_t and void* have different lengths on this platform. "
-                  "This may cause a security failure with the SecurityLevel union.");
+    : mPrefInitialized(false), mIsJavaScriptEnabled(false) {
+  static_assert(
+      sizeof(intptr_t) == sizeof(void*),
+      "intptr_t and void* have different lengths on this platform. "
+      "This may cause a security failure with the SecurityLevel union.");
 }
 
-nsresult nsScriptSecurityManager::Init()
-{
-    nsresult rv = CallGetService(NS_IOSERVICE_CONTRACTID, &sIOService);
-    NS_ENSURE_SUCCESS(rv, rv);
+nsresult nsScriptSecurityManager::Init() {
+  nsresult rv = CallGetService(NS_IOSERVICE_CONTRACTID, &sIOService);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-    InitPrefs();
+  InitPrefs();
 
-    
-    RefPtr<SystemPrincipal> system = SystemPrincipal::Create();
+  
+  RefPtr<SystemPrincipal> system = SystemPrincipal::Create();
 
-    mSystemPrincipal = system;
+  mSystemPrincipal = system;
 
-    
-    
-    sContext = danger::GetJSContext();
+  
+  
+  sContext = danger::GetJSContext();
 
-    static const JSSecurityCallbacks securityCallbacks = {
-        ContentSecurityPolicyPermitsJSAction,
-        JSPrincipalsSubsume,
-    };
+  static const JSSecurityCallbacks securityCallbacks = {
+      ContentSecurityPolicyPermitsJSAction,
+      JSPrincipalsSubsume,
+  };
 
-    MOZ_ASSERT(!JS_GetSecurityCallbacks(sContext));
-    JS_SetSecurityCallbacks(sContext, &securityCallbacks);
-    JS_InitDestroyPrincipalsCallback(sContext, nsJSPrincipals::Destroy);
+  MOZ_ASSERT(!JS_GetSecurityCallbacks(sContext));
+  JS_SetSecurityCallbacks(sContext, &securityCallbacks);
+  JS_InitDestroyPrincipalsCallback(sContext, nsJSPrincipals::Destroy);
 
-    JS_SetTrustedPrincipals(sContext, system);
+  JS_SetTrustedPrincipals(sContext, system);
 
-    return NS_OK;
+  return NS_OK;
 }
 
 static StaticRefPtr<nsScriptSecurityManager> gScriptSecMan;
 
-nsScriptSecurityManager::~nsScriptSecurityManager(void)
-{
-    Preferences::UnregisterPrefixCallbacks(
-       PREF_CHANGE_METHOD(nsScriptSecurityManager::ScriptSecurityPrefChanged),
-       kObservedPrefs,
-       this);
-    if (mDomainPolicy) {
-        mDomainPolicy->Deactivate();
-    }
-    
-    
-    
-    MOZ_ASSERT_IF(XRE_IsParentProcess(),
-                  !mDomainPolicy);
+nsScriptSecurityManager::~nsScriptSecurityManager(void) {
+  Preferences::UnregisterPrefixCallbacks(
+      PREF_CHANGE_METHOD(nsScriptSecurityManager::ScriptSecurityPrefChanged),
+      kObservedPrefs, this);
+  if (mDomainPolicy) {
+    mDomainPolicy->Deactivate();
+  }
+  
+  
+  
+  MOZ_ASSERT_IF(XRE_IsParentProcess(), !mDomainPolicy);
 }
 
-void
-nsScriptSecurityManager::Shutdown()
-{
-    if (sContext) {
-        JS_SetSecurityCallbacks(sContext, nullptr);
-        JS_SetTrustedPrincipals(sContext, nullptr);
-        sContext = nullptr;
-    }
+void nsScriptSecurityManager::Shutdown() {
+  if (sContext) {
+    JS_SetSecurityCallbacks(sContext, nullptr);
+    JS_SetTrustedPrincipals(sContext, nullptr);
+    sContext = nullptr;
+  }
 
-    NS_IF_RELEASE(sIOService);
-    BundleHelper::Shutdown();
+  NS_IF_RELEASE(sIOService);
+  BundleHelper::Shutdown();
 }
 
-nsScriptSecurityManager *
-nsScriptSecurityManager::GetScriptSecurityManager()
-{
-    return gScriptSecMan;
+nsScriptSecurityManager* nsScriptSecurityManager::GetScriptSecurityManager() {
+  return gScriptSecMan;
 }
 
- void
-nsScriptSecurityManager::InitStatics()
-{
-    RefPtr<nsScriptSecurityManager> ssManager = new nsScriptSecurityManager();
-    nsresult rv = ssManager->Init();
-    if (NS_FAILED(rv)) {
-        MOZ_CRASH("ssManager->Init() failed");
-    }
+ void nsScriptSecurityManager::InitStatics() {
+  RefPtr<nsScriptSecurityManager> ssManager = new nsScriptSecurityManager();
+  nsresult rv = ssManager->Init();
+  if (NS_FAILED(rv)) {
+    MOZ_CRASH("ssManager->Init() failed");
+  }
 
-    ClearOnShutdown(&gScriptSecMan);
-    gScriptSecMan = ssManager;
+  ClearOnShutdown(&gScriptSecMan);
+  gScriptSecMan = ssManager;
 }
 
 
 
 
 already_AddRefed<SystemPrincipal>
-nsScriptSecurityManager::SystemPrincipalSingletonConstructor()
-{
-    if (gScriptSecMan)
-        return do_AddRef(gScriptSecMan->mSystemPrincipal).downcast<SystemPrincipal>();
-    return nullptr;
+nsScriptSecurityManager::SystemPrincipalSingletonConstructor() {
+  if (gScriptSecMan)
+    return do_AddRef(gScriptSecMan->mSystemPrincipal)
+        .downcast<SystemPrincipal>();
+  return nullptr;
 }
 
 struct IsWhitespace {
-    static bool Test(char aChar) { return NS_IsAsciiWhitespace(aChar); };
+  static bool Test(char aChar) { return NS_IsAsciiWhitespace(aChar); };
 };
 struct IsWhitespaceOrComma {
-    static bool Test(char aChar) { return aChar == ',' || NS_IsAsciiWhitespace(aChar); };
+  static bool Test(char aChar) {
+    return aChar == ',' || NS_IsAsciiWhitespace(aChar);
+  };
 };
 
 template <typename Predicate>
-uint32_t SkipPast(const nsCString& str, uint32_t base)
-{
-    while (base < str.Length() && Predicate::Test(str[base])) {
-        ++base;
-    }
-    return base;
+uint32_t SkipPast(const nsCString& str, uint32_t base) {
+  while (base < str.Length() && Predicate::Test(str[base])) {
+    ++base;
+  }
+  return base;
 }
 
 template <typename Predicate>
-uint32_t SkipUntil(const nsCString& str, uint32_t base)
-{
-    while (base < str.Length() && !Predicate::Test(str[base])) {
-        ++base;
-    }
-    return base;
+uint32_t SkipUntil(const nsCString& str, uint32_t base) {
+  while (base < str.Length() && !Predicate::Test(str[base])) {
+    ++base;
+  }
+  return base;
 }
 
-inline void
-nsScriptSecurityManager::ScriptSecurityPrefChanged(const char* aPref)
-{
-    MOZ_ASSERT(mPrefInitialized);
-    mIsJavaScriptEnabled =
-        Preferences::GetBool(sJSEnabledPrefName, mIsJavaScriptEnabled);
-    sStrictFileOriginPolicy =
-        Preferences::GetBool(sFileOriginPolicyPrefName, false);
-    mFileURIAllowlist.reset();
+inline void nsScriptSecurityManager::ScriptSecurityPrefChanged(
+    const char* aPref) {
+  MOZ_ASSERT(mPrefInitialized);
+  mIsJavaScriptEnabled =
+      Preferences::GetBool(sJSEnabledPrefName, mIsJavaScriptEnabled);
+  sStrictFileOriginPolicy =
+      Preferences::GetBool(sFileOriginPolicyPrefName, false);
+  mFileURIAllowlist.reset();
 }
 
-void
-nsScriptSecurityManager::AddSitesToFileURIAllowlist(const nsCString& aSiteList)
-{
-    for (uint32_t base = SkipPast<IsWhitespace>(aSiteList, 0), bound = 0;
-         base < aSiteList.Length();
-         base = SkipPast<IsWhitespace>(aSiteList, bound))
-    {
-        
-        bound = SkipUntil<IsWhitespace>(aSiteList, base);
-        nsAutoCString site(Substring(aSiteList, base, bound - base));
-
-        
-        nsAutoCString unused;
-        if (NS_FAILED(sIOService->ExtractScheme(site, unused))) {
-            AddSitesToFileURIAllowlist(NS_LITERAL_CSTRING("http://") + site);
-            AddSitesToFileURIAllowlist(NS_LITERAL_CSTRING("https://") + site);
-            continue;
-        }
-
-        
-        nsCOMPtr<nsIURI> uri;
-        nsresult rv = NS_NewURI(getter_AddRefs(uri), site, nullptr, nullptr, sIOService);
-        if (NS_SUCCEEDED(rv)) {
-            mFileURIAllowlist.ref().AppendElement(uri);
-        } else {
-            nsCOMPtr<nsIConsoleService> console(do_GetService("@mozilla.org/consoleservice;1"));
-            if (console) {
-                nsAutoString msg = NS_LITERAL_STRING("Unable to to add site to file:// URI allowlist: ") +
-                                   NS_ConvertASCIItoUTF16(site);
-                console->LogStringMessage(msg.get());
-            }
-        }
-    }
-}
-
-nsresult
-nsScriptSecurityManager::InitPrefs()
-{
-    nsIPrefBranch* branch = Preferences::GetRootBranch();
-    NS_ENSURE_TRUE(branch, NS_ERROR_FAILURE);
-
-    mPrefInitialized = true;
+void nsScriptSecurityManager::AddSitesToFileURIAllowlist(
+    const nsCString& aSiteList) {
+  for (uint32_t base = SkipPast<IsWhitespace>(aSiteList, 0), bound = 0;
+       base < aSiteList.Length();
+       base = SkipPast<IsWhitespace>(aSiteList, bound)) {
+    
+    bound = SkipUntil<IsWhitespace>(aSiteList, base);
+    nsAutoCString site(Substring(aSiteList, base, bound - base));
 
     
-    ScriptSecurityPrefChanged();
-
-    
-    Preferences::RegisterPrefixCallbacks(
-       PREF_CHANGE_METHOD(nsScriptSecurityManager::ScriptSecurityPrefChanged),
-       kObservedPrefs,
-       this);
-
-    OriginAttributes::InitPrefs();
-
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsScriptSecurityManager::GetDomainPolicyActive(bool *aRv)
-{
-    *aRv = !!mDomainPolicy;
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsScriptSecurityManager::ActivateDomainPolicy(nsIDomainPolicy** aRv)
-{
-    if (!XRE_IsParentProcess()) {
-        return NS_ERROR_SERVICE_NOT_AVAILABLE;
+    nsAutoCString unused;
+    if (NS_FAILED(sIOService->ExtractScheme(site, unused))) {
+      AddSitesToFileURIAllowlist(NS_LITERAL_CSTRING("http://") + site);
+      AddSitesToFileURIAllowlist(NS_LITERAL_CSTRING("https://") + site);
+      continue;
     }
 
-    return ActivateDomainPolicyInternal(aRv);
-}
-
-NS_IMETHODIMP
-nsScriptSecurityManager::ActivateDomainPolicyInternal(nsIDomainPolicy** aRv)
-{
     
-    
-    if (mDomainPolicy) {
-        return NS_ERROR_SERVICE_NOT_AVAILABLE;
-    }
-
-    mDomainPolicy = new DomainPolicy();
-    nsCOMPtr<nsIDomainPolicy> ptr = mDomainPolicy;
-    ptr.forget(aRv);
-    return NS_OK;
-}
-
-
-
-void
-nsScriptSecurityManager::DeactivateDomainPolicy()
-{
-    mDomainPolicy = nullptr;
-}
-
-void
-nsScriptSecurityManager::CloneDomainPolicy(DomainPolicyClone* aClone)
-{
-    MOZ_ASSERT(aClone);
-    if (mDomainPolicy) {
-        mDomainPolicy->CloneDomainPolicy(aClone);
+    nsCOMPtr<nsIURI> uri;
+    nsresult rv =
+        NS_NewURI(getter_AddRefs(uri), site, nullptr, nullptr, sIOService);
+    if (NS_SUCCEEDED(rv)) {
+      mFileURIAllowlist.ref().AppendElement(uri);
     } else {
-        aClone->active() = false;
+      nsCOMPtr<nsIConsoleService> console(
+          do_GetService("@mozilla.org/consoleservice;1"));
+      if (console) {
+        nsAutoString msg =
+            NS_LITERAL_STRING(
+                "Unable to to add site to file:// URI allowlist: ") +
+            NS_ConvertASCIItoUTF16(site);
+        console->LogStringMessage(msg.get());
+      }
     }
+  }
+}
+
+nsresult nsScriptSecurityManager::InitPrefs() {
+  nsIPrefBranch* branch = Preferences::GetRootBranch();
+  NS_ENSURE_TRUE(branch, NS_ERROR_FAILURE);
+
+  mPrefInitialized = true;
+
+  
+  ScriptSecurityPrefChanged();
+
+  
+  Preferences::RegisterPrefixCallbacks(
+      PREF_CHANGE_METHOD(nsScriptSecurityManager::ScriptSecurityPrefChanged),
+      kObservedPrefs, this);
+
+  OriginAttributes::InitPrefs();
+
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsScriptSecurityManager::PolicyAllowsScript(nsIURI* aURI, bool *aRv)
-{
-    nsresult rv;
+nsScriptSecurityManager::GetDomainPolicyActive(bool* aRv) {
+  *aRv = !!mDomainPolicy;
+  return NS_OK;
+}
 
-    
-    
-    *aRv = mIsJavaScriptEnabled;
-    if (!mDomainPolicy) {
-        return NS_OK;
-    }
+NS_IMETHODIMP
+nsScriptSecurityManager::ActivateDomainPolicy(nsIDomainPolicy** aRv) {
+  if (!XRE_IsParentProcess()) {
+    return NS_ERROR_SERVICE_NOT_AVAILABLE;
+  }
 
-    
-    
-    
-    nsCOMPtr<nsIDomainSet> exceptions;
-    nsCOMPtr<nsIDomainSet> superExceptions;
-    if (*aRv) {
-        mDomainPolicy->GetBlocklist(getter_AddRefs(exceptions));
-        mDomainPolicy->GetSuperBlocklist(getter_AddRefs(superExceptions));
-    } else {
-        mDomainPolicy->GetAllowlist(getter_AddRefs(exceptions));
-        mDomainPolicy->GetSuperAllowlist(getter_AddRefs(superExceptions));
-    }
+  return ActivateDomainPolicyInternal(aRv);
+}
 
-    bool contains;
-    rv = exceptions->Contains(aURI, &contains);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (contains) {
-        *aRv = !*aRv;
-        return NS_OK;
-    }
-    rv = superExceptions->ContainsSuperDomain(aURI, &contains);
-    NS_ENSURE_SUCCESS(rv, rv);
-    if (contains) {
-        *aRv = !*aRv;
-    }
+NS_IMETHODIMP
+nsScriptSecurityManager::ActivateDomainPolicyInternal(nsIDomainPolicy** aRv) {
+  
+  
+  if (mDomainPolicy) {
+    return NS_ERROR_SERVICE_NOT_AVAILABLE;
+  }
 
+  mDomainPolicy = new DomainPolicy();
+  nsCOMPtr<nsIDomainPolicy> ptr = mDomainPolicy;
+  ptr.forget(aRv);
+  return NS_OK;
+}
+
+
+
+void nsScriptSecurityManager::DeactivateDomainPolicy() {
+  mDomainPolicy = nullptr;
+}
+
+void nsScriptSecurityManager::CloneDomainPolicy(DomainPolicyClone* aClone) {
+  MOZ_ASSERT(aClone);
+  if (mDomainPolicy) {
+    mDomainPolicy->CloneDomainPolicy(aClone);
+  } else {
+    aClone->active() = false;
+  }
+}
+
+NS_IMETHODIMP
+nsScriptSecurityManager::PolicyAllowsScript(nsIURI* aURI, bool* aRv) {
+  nsresult rv;
+
+  
+  
+  *aRv = mIsJavaScriptEnabled;
+  if (!mDomainPolicy) {
     return NS_OK;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIDomainSet> exceptions;
+  nsCOMPtr<nsIDomainSet> superExceptions;
+  if (*aRv) {
+    mDomainPolicy->GetBlocklist(getter_AddRefs(exceptions));
+    mDomainPolicy->GetSuperBlocklist(getter_AddRefs(superExceptions));
+  } else {
+    mDomainPolicy->GetAllowlist(getter_AddRefs(exceptions));
+    mDomainPolicy->GetSuperAllowlist(getter_AddRefs(superExceptions));
+  }
+
+  bool contains;
+  rv = exceptions->Contains(aURI, &contains);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (contains) {
+    *aRv = !*aRv;
+    return NS_OK;
+  }
+  rv = superExceptions->ContainsSuperDomain(aURI, &contains);
+  NS_ENSURE_SUCCESS(rv, rv);
+  if (contains) {
+    *aRv = !*aRv;
+  }
+
+  return NS_OK;
 }
 
 const nsTArray<nsCOMPtr<nsIURI>>&
-nsScriptSecurityManager::EnsureFileURIAllowlist()
-{
-    if (mFileURIAllowlist.isSome()) {
-        return mFileURIAllowlist.ref();
-    }
-
-    
-    
-    
-    
-    
-
-    mFileURIAllowlist.emplace();
-    nsAutoCString policies;
-    mozilla::Preferences::GetCString("capability.policy.policynames", policies);
-    for (uint32_t base = SkipPast<IsWhitespaceOrComma>(policies, 0), bound = 0;
-         base < policies.Length();
-         base = SkipPast<IsWhitespaceOrComma>(policies, bound))
-    {
-        
-        bound = SkipUntil<IsWhitespaceOrComma>(policies, base);
-        auto policyName = Substring(policies, base, bound - base);
-
-        
-        nsCString checkLoadURIPrefName = NS_LITERAL_CSTRING("capability.policy.") +
-                                         policyName +
-                                         NS_LITERAL_CSTRING(".checkloaduri.enabled");
-        nsAutoString value;
-        nsresult rv = Preferences::GetString(checkLoadURIPrefName.get(), value);
-        if (NS_FAILED(rv) || !value.LowerCaseEqualsLiteral("allaccess")) {
-            continue;
-        }
-
-        
-        nsCString domainPrefName = NS_LITERAL_CSTRING("capability.policy.") +
-                                   policyName +
-                                   NS_LITERAL_CSTRING(".sites");
-        nsAutoCString siteList;
-        Preferences::GetCString(domainPrefName.get(), siteList);
-        AddSitesToFileURIAllowlist(siteList);
-    }
-
+nsScriptSecurityManager::EnsureFileURIAllowlist() {
+  if (mFileURIAllowlist.isSome()) {
     return mFileURIAllowlist.ref();
+  }
+
+  
+  
+  
+  
+  
+
+  mFileURIAllowlist.emplace();
+  nsAutoCString policies;
+  mozilla::Preferences::GetCString("capability.policy.policynames", policies);
+  for (uint32_t base = SkipPast<IsWhitespaceOrComma>(policies, 0), bound = 0;
+       base < policies.Length();
+       base = SkipPast<IsWhitespaceOrComma>(policies, bound)) {
+    
+    bound = SkipUntil<IsWhitespaceOrComma>(policies, base);
+    auto policyName = Substring(policies, base, bound - base);
+
+    
+    
+    nsCString checkLoadURIPrefName =
+        NS_LITERAL_CSTRING("capability.policy.") + policyName +
+        NS_LITERAL_CSTRING(".checkloaduri.enabled");
+    nsAutoString value;
+    nsresult rv = Preferences::GetString(checkLoadURIPrefName.get(), value);
+    if (NS_FAILED(rv) || !value.LowerCaseEqualsLiteral("allaccess")) {
+      continue;
+    }
+
+    
+    nsCString domainPrefName = NS_LITERAL_CSTRING("capability.policy.") +
+                               policyName + NS_LITERAL_CSTRING(".sites");
+    nsAutoCString siteList;
+    Preferences::GetCString(domainPrefName.get(), siteList);
+    AddSitesToFileURIAllowlist(siteList);
+  }
+
+  return mFileURIAllowlist.ref();
 }

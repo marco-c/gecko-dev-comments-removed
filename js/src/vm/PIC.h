@@ -13,254 +13,242 @@ namespace js {
 
 class Shape;
 
-template <typename Category> class PICChain;
+template <typename Category>
+class PICChain;
 
 
 
 
 template <typename Category>
-class PICStub
-{
+class PICStub {
   friend class PICChain<Category>;
-  private:
-    typedef typename Category::Stub CatStub;
-    typedef typename Category::Chain CatChain;
 
-  protected:
-    CatStub* next_;
+ private:
+  typedef typename Category::Stub CatStub;
+  typedef typename Category::Chain CatChain;
 
-    PICStub() : next_(nullptr) {}
-    explicit PICStub(const CatStub* next) : next_(next) {
-        MOZ_ASSERT(next_);
-    }
-    explicit PICStub(const CatStub& other) : next_(other.next_) {}
+ protected:
+  CatStub* next_;
 
-  public:
-    CatStub* next() const {
-        return next_;
-    }
+  PICStub() : next_(nullptr) {}
+  explicit PICStub(const CatStub* next) : next_(next) { MOZ_ASSERT(next_); }
+  explicit PICStub(const CatStub& other) : next_(other.next_) {}
 
-  protected:
-    void append(CatStub* stub) {
-        MOZ_ASSERT(!next_);
-        MOZ_ASSERT(!stub->next_);
-        next_ = stub;
-    }
+ public:
+  CatStub* next() const { return next_; }
+
+ protected:
+  void append(CatStub* stub) {
+    MOZ_ASSERT(!next_);
+    MOZ_ASSERT(!stub->next_);
+    next_ = stub;
+  }
 };
 
 
 
 
 template <typename Category>
-class PICChain
-{
-  private:
-    typedef typename Category::Stub CatStub;
-    typedef typename Category::Chain CatChain;
+class PICChain {
+ private:
+  typedef typename Category::Stub CatStub;
+  typedef typename Category::Chain CatChain;
 
-  protected:
-    CatStub* stubs_;
+ protected:
+  CatStub* stubs_;
 
-    PICChain() : stubs_(nullptr) {}
-    
-    PICChain(const PICChain<Category>& other) = delete;
+  PICChain() : stubs_(nullptr) {}
+  
+  PICChain(const PICChain<Category>& other) = delete;
 
-  public:
-    CatStub* stubs() const {
-        return stubs_;
+ public:
+  CatStub* stubs() const { return stubs_; }
+
+  void addStub(CatStub* stub) {
+    MOZ_ASSERT(stub);
+    MOZ_ASSERT(!stub->next());
+    if (!stubs_) {
+      stubs_ = stub;
+      return;
     }
 
-    void addStub(CatStub* stub) {
-        MOZ_ASSERT(stub);
-        MOZ_ASSERT(!stub->next());
-        if (!stubs_) {
-            stubs_ = stub;
-            return;
-        }
-
-        CatStub* cur = stubs_;
-        while (cur->next()) {
-            cur = cur->next();
-        }
-        cur->append(stub);
+    CatStub* cur = stubs_;
+    while (cur->next()) {
+      cur = cur->next();
     }
+    cur->append(stub);
+  }
 
-    unsigned numStubs() const {
-        unsigned count = 0;
-        for (CatStub* stub = stubs_; stub; stub = stub->next()) {
-            count++;
-        }
-        return count;
+  unsigned numStubs() const {
+    unsigned count = 0;
+    for (CatStub* stub = stubs_; stub; stub = stub->next()) {
+      count++;
     }
+    return count;
+  }
 
-    void removeStub(CatStub* stub, CatStub* previous) {
-        if (previous) {
-            MOZ_ASSERT(previous->next() == stub);
-            previous->next_ = stub->next();
-        } else {
-            MOZ_ASSERT(stub == stubs_);
-            stubs_ = stub->next();
-        }
-        js_delete(stub);
+  void removeStub(CatStub* stub, CatStub* previous) {
+    if (previous) {
+      MOZ_ASSERT(previous->next() == stub);
+      previous->next_ = stub->next();
+    } else {
+      MOZ_ASSERT(stub == stubs_);
+      stubs_ = stub->next();
     }
+    js_delete(stub);
+  }
 };
 
 
 
 
-struct ForOfPIC
-{
+struct ForOfPIC {
+  
+  class Stub;
+  class Chain;
+
+  ForOfPIC() = delete;
+  ForOfPIC(const ForOfPIC& other) = delete;
+
+  typedef PICStub<ForOfPIC> BaseStub;
+  typedef PICChain<ForOfPIC> BaseChain;
+
+  
+
+
+
+  class Stub : public BaseStub {
+   private:
     
-    class Stub;
-    class Chain;
+    Shape* shape_;
 
-    ForOfPIC() = delete;
-    ForOfPIC(const ForOfPIC& other) = delete;
-
-    typedef PICStub<ForOfPIC> BaseStub;
-    typedef PICChain<ForOfPIC> BaseChain;
-
-    
-
-
-
-    class Stub : public BaseStub
-    {
-      private:
-        
-        Shape* shape_;
-
-      public:
-        explicit Stub(Shape* shape)
-          : BaseStub(),
-            shape_(shape)
-        {
-            MOZ_ASSERT(shape_);
-        }
-
-        Shape* shape() {
-            return shape_;
-        }
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    class Chain : public BaseChain
-    {
-      private:
-        
-        GCPtrNativeObject arrayProto_;
-        GCPtrNativeObject arrayIteratorProto_;
-
-        
-        
-        GCPtrShape arrayProtoShape_;
-        uint32_t arrayProtoIteratorSlot_;
-        GCPtrValue canonicalIteratorFunc_;
-
-        
-        
-        GCPtrShape arrayIteratorProtoShape_;
-        uint32_t arrayIteratorProtoNextSlot_;
-        GCPtrValue canonicalNextFunc_;
-
-        
-        bool initialized_;
-
-        
-        
-        bool disabled_;
-
-        static const unsigned MAX_STUBS = 10;
-
-      public:
-        Chain()
-          : BaseChain(),
-            arrayProto_(nullptr),
-            arrayIteratorProto_(nullptr),
-            arrayProtoShape_(nullptr),
-            arrayProtoIteratorSlot_(-1),
-            canonicalIteratorFunc_(UndefinedValue()),
-            arrayIteratorProtoShape_(nullptr),
-            arrayIteratorProtoNextSlot_(-1),
-            initialized_(false),
-            disabled_(false)
-        {}
-
-        
-        bool initialize(JSContext* cx);
-
-        
-        bool tryOptimizeArray(JSContext* cx, HandleArrayObject array, bool* optimized);
-
-        
-        
-        bool isArrayStateStillSane();
-
-        
-        inline bool isArrayNextStillSane() {
-            return (arrayIteratorProto_->lastProperty() == arrayIteratorProtoShape_) &&
-                (arrayIteratorProto_->getSlot(arrayIteratorProtoNextSlot_) == canonicalNextFunc_);
-        }
-
-        void trace(JSTracer* trc);
-        void sweep(FreeOp* fop);
-
-      private:
-        
-        bool hasMatchingStub(ArrayObject* obj);
-
-        
-        void reset();
-
-        
-        void eraseChain();
-    };
-
-    
-    static const Class class_;
-
-    static NativeObject* createForOfPICObject(JSContext* cx, Handle<GlobalObject*> global);
-
-    static inline Chain* fromJSObject(NativeObject* obj) {
-        MOZ_ASSERT(obj->getClass() == &ForOfPIC::class_);
-        return (ForOfPIC::Chain*) obj->getPrivate();
+   public:
+    explicit Stub(Shape* shape) : BaseStub(), shape_(shape) {
+      MOZ_ASSERT(shape_);
     }
-    static inline Chain* getOrCreate(JSContext* cx) {
-        NativeObject* obj = cx->global()->getForOfPICObject();
-        if (obj) {
-            return fromJSObject(obj);
-        }
-        return create(cx);
+
+    Shape* shape() { return shape_; }
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  class Chain : public BaseChain {
+   private:
+    
+    GCPtrNativeObject arrayProto_;
+    GCPtrNativeObject arrayIteratorProto_;
+
+    
+    
+    GCPtrShape arrayProtoShape_;
+    uint32_t arrayProtoIteratorSlot_;
+    GCPtrValue canonicalIteratorFunc_;
+
+    
+    
+    GCPtrShape arrayIteratorProtoShape_;
+    uint32_t arrayIteratorProtoNextSlot_;
+    GCPtrValue canonicalNextFunc_;
+
+    
+    bool initialized_;
+
+    
+    
+    bool disabled_;
+
+    static const unsigned MAX_STUBS = 10;
+
+   public:
+    Chain()
+        : BaseChain(),
+          arrayProto_(nullptr),
+          arrayIteratorProto_(nullptr),
+          arrayProtoShape_(nullptr),
+          arrayProtoIteratorSlot_(-1),
+          canonicalIteratorFunc_(UndefinedValue()),
+          arrayIteratorProtoShape_(nullptr),
+          arrayIteratorProtoNextSlot_(-1),
+          initialized_(false),
+          disabled_(false) {}
+
+    
+    bool initialize(JSContext* cx);
+
+    
+    bool tryOptimizeArray(JSContext* cx, HandleArrayObject array,
+                          bool* optimized);
+
+    
+    
+    bool isArrayStateStillSane();
+
+    
+    inline bool isArrayNextStillSane() {
+      return (arrayIteratorProto_->lastProperty() ==
+              arrayIteratorProtoShape_) &&
+             (arrayIteratorProto_->getSlot(arrayIteratorProtoNextSlot_) ==
+              canonicalNextFunc_);
     }
-    static Chain* create(JSContext* cx);
+
+    void trace(JSTracer* trc);
+    void sweep(FreeOp* fop);
+
+   private:
+    
+    bool hasMatchingStub(ArrayObject* obj);
+
+    
+    void reset();
+
+    
+    void eraseChain();
+  };
+
+  
+  static const Class class_;
+
+  static NativeObject* createForOfPICObject(JSContext* cx,
+                                            Handle<GlobalObject*> global);
+
+  static inline Chain* fromJSObject(NativeObject* obj) {
+    MOZ_ASSERT(obj->getClass() == &ForOfPIC::class_);
+    return (ForOfPIC::Chain*)obj->getPrivate();
+  }
+  static inline Chain* getOrCreate(JSContext* cx) {
+    NativeObject* obj = cx->global()->getForOfPICObject();
+    if (obj) {
+      return fromJSObject(obj);
+    }
+    return create(cx);
+  }
+  static Chain* create(JSContext* cx);
 };
 
-
-} 
+}  
 
 #endif 

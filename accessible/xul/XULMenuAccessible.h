@@ -16,9 +16,8 @@ namespace a11y {
 
 
 
-class XULMenuitemAccessible : public AccessibleWrap
-{
-public:
+class XULMenuitemAccessible : public AccessibleWrap {
+ public:
   enum { eAction_Click = 0 };
 
   XULMenuitemAccessible(nsIContent* aContent, DocAccessible* aDoc);
@@ -42,7 +41,7 @@ public:
   virtual bool AreItemsOperable() const override;
   virtual Accessible* ContainerWidget() const override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
@@ -50,9 +49,8 @@ protected:
 
 
 
-class XULMenuSeparatorAccessible : public XULMenuitemAccessible
-{
-public:
+class XULMenuSeparatorAccessible : public XULMenuitemAccessible {
+ public:
   XULMenuSeparatorAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -64,7 +62,7 @@ public:
   virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
   virtual bool DoAction(uint8_t aIndex) const override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
@@ -72,10 +70,8 @@ protected:
 
 
 
-
-class XULMenupopupAccessible : public XULSelectControlAccessible
-{
-public:
+class XULMenupopupAccessible : public XULSelectControlAccessible {
+ public:
   XULMenupopupAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -89,7 +85,7 @@ public:
 
   virtual Accessible* ContainerWidget() const override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
@@ -97,9 +93,8 @@ protected:
 
 
 
-class XULMenubarAccessible : public AccessibleWrap
-{
-public:
+class XULMenubarAccessible : public AccessibleWrap {
+ public:
   XULMenubarAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -111,12 +106,12 @@ public:
   virtual Accessible* CurrentItem() const override;
   virtual void SetCurrentItem(const Accessible* aItem) override;
 
-protected:
+ protected:
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

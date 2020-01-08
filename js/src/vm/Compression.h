@@ -16,88 +16,83 @@
 
 namespace js {
 
-struct CompressedDataHeader
-{
-    uint32_t compressedBytes;
+struct CompressedDataHeader {
+  uint32_t compressedBytes;
 };
 
-class Compressor
-{
-  public:
-    
-    
-    static constexpr size_t CHUNK_SIZE = 64 * 1024;
+class Compressor {
+ public:
+  
+  
+  static constexpr size_t CHUNK_SIZE = 64 * 1024;
 
-  private:
-    
-    static constexpr size_t MAX_INPUT_SIZE = 2 * 1024;
+ private:
+  
+  static constexpr size_t MAX_INPUT_SIZE = 2 * 1024;
 
-    z_stream zs;
-    const unsigned char* inp;
-    size_t inplen;
-    size_t outbytes;
-    bool initialized;
-    bool finished;
+  z_stream zs;
+  const unsigned char* inp;
+  size_t inplen;
+  size_t outbytes;
+  bool initialized;
+  bool finished;
 
-    
-    
-    uint32_t currentChunkSize;
+  
+  
+  uint32_t currentChunkSize;
 
-    
-    
-    js::Vector<uint32_t, 8, SystemAllocPolicy> chunkOffsets;
+  
+  
+  js::Vector<uint32_t, 8, SystemAllocPolicy> chunkOffsets;
 
-  public:
-    enum Status {
-        MOREOUTPUT,
-        DONE,
-        CONTINUE,
-        OOM
-    };
+ public:
+  enum Status { MOREOUTPUT, DONE, CONTINUE, OOM };
 
-    Compressor(const unsigned char* inp, size_t inplen);
-    ~Compressor();
-    bool init();
-    void setOutput(unsigned char* out, size_t outlen);
-    
-    Status compressMore();
-    size_t sizeOfChunkOffsets() const { return chunkOffsets.length() * sizeof(chunkOffsets[0]); }
+  Compressor(const unsigned char* inp, size_t inplen);
+  ~Compressor();
+  bool init();
+  void setOutput(unsigned char* out, size_t outlen);
+  
+  Status compressMore();
+  size_t sizeOfChunkOffsets() const {
+    return chunkOffsets.length() * sizeof(chunkOffsets[0]);
+  }
 
-    
-    
-    size_t totalBytesNeeded() const;
+  
+  
+  size_t totalBytesNeeded() const;
 
-    
-    void finish(char* dest, size_t destBytes);
+  
+  void finish(char* dest, size_t destBytes);
 
-    static void
-    rangeToChunkAndOffset(size_t uncompressedStart, size_t uncompressedLimit,
-                          size_t* firstChunk, size_t* firstChunkOffset, size_t* firstChunkSize,
-                          size_t* lastChunk, size_t* lastChunkSize)
-    {
-        *firstChunk = uncompressedStart / CHUNK_SIZE;
-        *firstChunkOffset = uncompressedStart % CHUNK_SIZE;
-        *firstChunkSize = CHUNK_SIZE - *firstChunkOffset;
+  static void rangeToChunkAndOffset(size_t uncompressedStart,
+                                    size_t uncompressedLimit,
+                                    size_t* firstChunk,
+                                    size_t* firstChunkOffset,
+                                    size_t* firstChunkSize, size_t* lastChunk,
+                                    size_t* lastChunkSize) {
+    *firstChunk = uncompressedStart / CHUNK_SIZE;
+    *firstChunkOffset = uncompressedStart % CHUNK_SIZE;
+    *firstChunkSize = CHUNK_SIZE - *firstChunkOffset;
 
-        MOZ_ASSERT(uncompressedStart < uncompressedLimit,
-                   "subtraction below requires a non-empty range");
+    MOZ_ASSERT(uncompressedStart < uncompressedLimit,
+               "subtraction below requires a non-empty range");
 
-        *lastChunk = (uncompressedLimit - 1) / CHUNK_SIZE;
-        *lastChunkSize = ((uncompressedLimit - 1) % CHUNK_SIZE) + 1;
-    }
+    *lastChunk = (uncompressedLimit - 1) / CHUNK_SIZE;
+    *lastChunkSize = ((uncompressedLimit - 1) % CHUNK_SIZE) + 1;
+  }
 
-    static size_t chunkSize(size_t uncompressedBytes, size_t chunk) {
-        MOZ_ASSERT(uncompressedBytes > 0,
-                   "must have uncompressed data to chunk");
+  static size_t chunkSize(size_t uncompressedBytes, size_t chunk) {
+    MOZ_ASSERT(uncompressedBytes > 0, "must have uncompressed data to chunk");
 
-        size_t startOfChunkBytes = chunk * CHUNK_SIZE;
-        MOZ_ASSERT(startOfChunkBytes < uncompressedBytes,
-                   "chunk must refer to bytes not exceeding "
-                   "|uncompressedBytes|");
+    size_t startOfChunkBytes = chunk * CHUNK_SIZE;
+    MOZ_ASSERT(startOfChunkBytes < uncompressedBytes,
+               "chunk must refer to bytes not exceeding "
+               "|uncompressedBytes|");
 
-        size_t remaining = uncompressedBytes - startOfChunkBytes;
-        return remaining < CHUNK_SIZE ? remaining : CHUNK_SIZE;
-    }
+    size_t remaining = uncompressedBytes - startOfChunkBytes;
+    return remaining < CHUNK_SIZE ? remaining : CHUNK_SIZE;
+  }
 };
 
 

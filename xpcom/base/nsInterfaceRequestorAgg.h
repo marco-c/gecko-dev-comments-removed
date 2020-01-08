@@ -20,19 +20,16 @@ class nsIInterfaceRequestor;
 
 
 
-extern nsresult
-NS_NewInterfaceRequestorAggregation(nsIInterfaceRequestor* aFirst,
-                                    nsIInterfaceRequestor* aSecond,
-                                    nsIInterfaceRequestor** aResult);
+extern nsresult NS_NewInterfaceRequestorAggregation(
+    nsIInterfaceRequestor* aFirst, nsIInterfaceRequestor* aSecond,
+    nsIInterfaceRequestor** aResult);
 
 
 
 
 
-extern nsresult
-NS_NewInterfaceRequestorAggregation(nsIInterfaceRequestor* aFirst,
-                                    nsIInterfaceRequestor* aSecond,
-                                    nsIEventTarget* aTarget,
-                                    nsIInterfaceRequestor** aResult);
+extern nsresult NS_NewInterfaceRequestorAggregation(
+    nsIInterfaceRequestor* aFirst, nsIInterfaceRequestor* aSecond,
+    nsIEventTarget* aTarget, nsIInterfaceRequestor** aResult);
 
-#endif 
+#endif  

@@ -14,26 +14,22 @@ namespace dom {
 
 class ClientSourceParent;
 
-class ClientHandleOpParent final : public PClientHandleOpParent
-{
+class ClientHandleOpParent final : public PClientHandleOpParent {
   MozPromiseRequestHolder<ClientOpPromise> mPromiseRequestHolder;
 
-  ClientSourceParent*
-  GetSource() const;
+  ClientSourceParent* GetSource() const;
 
   
-  void
-  ActorDestroy(ActorDestroyReason aReason) override;
+  void ActorDestroy(ActorDestroyReason aReason) override;
 
-public:
+ public:
   ClientHandleOpParent() = default;
   ~ClientHandleOpParent() = default;
 
-  void
-  Init(const ClientOpConstructorArgs& aArgs);
+  void Init(const ClientOpConstructorArgs& aArgs);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

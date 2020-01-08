@@ -20,13 +20,11 @@ class nsIDocument;
 
 
 
-class txAXMLEventHandler
-{
-public:
-    virtual ~txAXMLEventHandler() {}
+class txAXMLEventHandler {
+ public:
+  virtual ~txAXMLEventHandler() {}
 
-    
-
+  
 
 
 
@@ -34,64 +32,12 @@ public:
 
 
 
-    virtual nsresult attribute(nsAtom* aPrefix, nsAtom* aLocalName,
-                               nsAtom* aLowercaseLocalName, int32_t aNsID,
-                               const nsString& aValue) = 0;
 
-    
+  virtual nsresult attribute(nsAtom* aPrefix, nsAtom* aLocalName,
+                             nsAtom* aLowercaseLocalName, int32_t aNsID,
+                             const nsString& aValue) = 0;
 
-
-
-
-
-
-
-    virtual nsresult attribute(nsAtom* aPrefix,
-                               const nsAString& aLocalName,
-                               const int32_t aNsID,
-                               const nsString& aValue) = 0;
-
-    
-
-
-
-
-
-    virtual nsresult characters(const nsAString& aData, bool aDOE) = 0;
-
-    
-
-
-
-
-    virtual nsresult comment(const nsString& aData) = 0;
-
-    
-
-
-
-    virtual nsresult endDocument(nsresult aResult) = 0;
-
-    
-
-
-    virtual nsresult endElement() = 0;
-
-    
-
-
-
-
-
-    virtual nsresult processingInstruction(const nsString& aTarget,
-                                           const nsString& aData) = 0;
-
-    
-
-
-    virtual nsresult startDocument() = 0;
-
-    
+  
 
 
 
@@ -99,100 +45,138 @@ public:
 
 
 
-    virtual nsresult startElement(nsAtom* aPrefix,
-                                  nsAtom* aLocalName,
-                                  nsAtom* aLowercaseLocalName,
-                                  int32_t aNsID) = 0;
+  virtual nsresult attribute(nsAtom* aPrefix, const nsAString& aLocalName,
+                             const int32_t aNsID, const nsString& aValue) = 0;
 
-    
+  
 
 
 
 
 
+  virtual nsresult characters(const nsAString& aData, bool aDOE) = 0;
+
+  
 
 
-    virtual nsresult startElement(nsAtom* aPrefix,
-                                  const nsAString& aLocalName,
-                                  const int32_t aNsID) = 0;
+
+
+  virtual nsresult comment(const nsString& aData) = 0;
+
+  
+
+
+
+  virtual nsresult endDocument(nsresult aResult) = 0;
+
+  
+
+
+  virtual nsresult endElement() = 0;
+
+  
+
+
+
+
+
+  virtual nsresult processingInstruction(const nsString& aTarget,
+                                         const nsString& aData) = 0;
+
+  
+
+
+  virtual nsresult startDocument() = 0;
+
+  
+
+
+
+
+
+
+
+  virtual nsresult startElement(nsAtom* aPrefix, nsAtom* aLocalName,
+                                nsAtom* aLowercaseLocalName, int32_t aNsID) = 0;
+
+  
+
+
+
+
+
+
+
+  virtual nsresult startElement(nsAtom* aPrefix, const nsAString& aLocalName,
+                                const int32_t aNsID) = 0;
 };
 
-#define TX_DECL_TXAXMLEVENTHANDLER                                           \
-    virtual nsresult attribute(nsAtom* aPrefix, nsAtom* aLocalName,        \
-                               nsAtom* aLowercaseLocalName, int32_t aNsID,  \
-                               const nsString& aValue) override;             \
-    virtual nsresult attribute(nsAtom* aPrefix,                             \
-                               const nsAString& aLocalName,                  \
-                               const int32_t aNsID,                          \
-                               const nsString& aValue) override;             \
-    virtual nsresult characters(const nsAString& aData, bool aDOE) override; \
-    virtual nsresult comment(const nsString& aData) override;                \
-    virtual nsresult endDocument(nsresult aResult = NS_OK) override;         \
-    virtual nsresult endElement() override;                                  \
-    virtual nsresult processingInstruction(const nsString& aTarget,          \
-                                           const nsString& aData) override;  \
-    virtual nsresult startDocument() override;                               \
-    virtual nsresult startElement(nsAtom* aPrefix,                          \
-                                  nsAtom* aLocalName,                       \
-                                  nsAtom* aLowercaseLocalName,              \
-                                  int32_t aNsID) override;                   \
-    virtual nsresult startElement(nsAtom* aPrefix,                          \
-                                  const nsAString& aName,                    \
-                                  const int32_t aNsID) override;
+#define TX_DECL_TXAXMLEVENTHANDLER                                          \
+  virtual nsresult attribute(nsAtom* aPrefix, nsAtom* aLocalName,           \
+                             nsAtom* aLowercaseLocalName, int32_t aNsID,    \
+                             const nsString& aValue) override;              \
+  virtual nsresult attribute(nsAtom* aPrefix, const nsAString& aLocalName,  \
+                             const int32_t aNsID, const nsString& aValue)   \
+      override;                                                             \
+  virtual nsresult characters(const nsAString& aData, bool aDOE) override;  \
+  virtual nsresult comment(const nsString& aData) override;                 \
+  virtual nsresult endDocument(nsresult aResult = NS_OK) override;          \
+  virtual nsresult endElement() override;                                   \
+  virtual nsresult processingInstruction(const nsString& aTarget,           \
+                                         const nsString& aData) override;   \
+  virtual nsresult startDocument() override;                                \
+  virtual nsresult startElement(nsAtom* aPrefix, nsAtom* aLocalName,        \
+                                nsAtom* aLowercaseLocalName, int32_t aNsID) \
+      override;                                                             \
+  virtual nsresult startElement(nsAtom* aPrefix, const nsAString& aName,    \
+                                const int32_t aNsID) override;
 
-
-class txAOutputXMLEventHandler : public txAXMLEventHandler
-{
-public:
-    
+class txAOutputXMLEventHandler : public txAXMLEventHandler {
+ public:
+  
 
 
 
 
-    virtual void getOutputDocument(nsIDocument** aDocument) = 0;
+  virtual void getOutputDocument(nsIDocument** aDocument) = 0;
 };
 
-#define TX_DECL_TXAOUTPUTXMLEVENTHANDLER                        \
-    virtual void getOutputDocument(nsIDocument** aDocument) override;
+#define TX_DECL_TXAOUTPUTXMLEVENTHANDLER \
+  virtual void getOutputDocument(nsIDocument** aDocument) override;
 
 
 
 
-class txAOutputHandlerFactory
-{
-public:
-    virtual ~txAOutputHandlerFactory() {}
+class txAOutputHandlerFactory {
+ public:
+  virtual ~txAOutputHandlerFactory() {}
 
-    
-
+  
 
 
 
-    virtual nsresult
-    createHandlerWith(txOutputFormat* aFormat,
-                      txAXMLEventHandler** aHandler) = 0;
 
-    
+  virtual nsresult createHandlerWith(txOutputFormat* aFormat,
+                                     txAXMLEventHandler** aHandler) = 0;
 
-
+  
 
 
 
 
 
-    virtual nsresult
-    createHandlerWith(txOutputFormat* aFormat,
-                      const nsAString& aName,
-                      int32_t aNsID,
-                      txAXMLEventHandler** aHandler) = 0;
+
+
+  virtual nsresult createHandlerWith(txOutputFormat* aFormat,
+                                     const nsAString& aName, int32_t aNsID,
+                                     txAXMLEventHandler** aHandler) = 0;
 };
 
-#define TX_DECL_TXAOUTPUTHANDLERFACTORY                        \
-    nsresult createHandlerWith(txOutputFormat* aFormat,        \
-                               txAXMLEventHandler** aHandler) override; \
-    nsresult createHandlerWith(txOutputFormat* aFormat,        \
-                               const nsAString& aName,         \
-                               int32_t aNsID,                  \
-                               txAXMLEventHandler** aHandler) override;
+#define TX_DECL_TXAOUTPUTHANDLERFACTORY                                       \
+  nsresult createHandlerWith(txOutputFormat* aFormat,                         \
+                             txAXMLEventHandler** aHandler) override;         \
+  nsresult createHandlerWith(txOutputFormat* aFormat, const nsAString& aName, \
+                             int32_t aNsID, txAXMLEventHandler** aHandler)    \
+      override;
 
 #endif

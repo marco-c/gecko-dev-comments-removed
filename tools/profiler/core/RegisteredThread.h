@@ -17,24 +17,16 @@
 
 
 
-class RacyRegisteredThread final
-{
-public:
+class RacyRegisteredThread final {
+ public:
   explicit RacyRegisteredThread(int aThreadId)
-    : mThreadId(aThreadId)
-    , mSleep(AWAKE)
-    , mIsBeingProfiled(false)
-  {
+      : mThreadId(aThreadId), mSleep(AWAKE), mIsBeingProfiled(false) {
     MOZ_COUNT_CTOR(RacyRegisteredThread);
   }
 
-  ~RacyRegisteredThread()
-  {
-    MOZ_COUNT_DTOR(RacyRegisteredThread);
-  }
+  ~RacyRegisteredThread() { MOZ_COUNT_DTOR(RacyRegisteredThread); }
 
-  void SetIsBeingProfiled(bool aIsBeingProfiled)
-  {
+  void SetIsBeingProfiled(bool aIsBeingProfiled) {
     mIsBeingProfiled = aIsBeingProfiled;
   }
 
@@ -42,18 +34,16 @@ public:
 
   void AddPendingMarker(const char* aMarkerName,
                         mozilla::UniquePtr<ProfilerMarkerPayload> aPayload,
-                        double aTime)
-  {
+                        double aTime) {
     
     
     ProfilerMarker* marker =
-      new ProfilerMarker(aMarkerName, mThreadId, std::move(aPayload), aTime);
+        new ProfilerMarker(aMarkerName, mThreadId, std::move(aPayload), aTime);
     mPendingMarkers.insert(marker);
   }
 
   
-  ProfilerMarkerLinkedList* GetPendingMarkers()
-  {
+  ProfilerMarkerLinkedList* GetPendingMarkers() {
     
     
     
@@ -62,8 +52,7 @@ public:
 
   
   
-  void ReinitializeOnResume()
-  {
+  void ReinitializeOnResume() {
     
     
     
@@ -72,8 +61,7 @@ public:
   }
 
   
-  bool CanDuplicateLastSampleDueToSleep()
-  {
+  bool CanDuplicateLastSampleDueToSleep() {
     if (mSleep == AWAKE) {
       return false;
     }
@@ -87,16 +75,14 @@ public:
 
   
   
-  void SetSleeping()
-  {
+  void SetSleeping() {
     MOZ_ASSERT(mSleep == AWAKE);
     mSleep = SLEEPING_NOT_OBSERVED;
   }
 
   
   
-  void SetAwake()
-  {
+  void SetAwake() {
     MOZ_ASSERT(mSleep != AWAKE);
     mSleep = AWAKE;
   }
@@ -105,10 +91,12 @@ public:
 
   int ThreadId() const { return mThreadId; }
 
-  class ProfilingStack& ProfilingStack() { return mProfilingStack; }
+  class ProfilingStack& ProfilingStack() {
+    return mProfilingStack;
+  }
   const class ProfilingStack& ProfilingStack() const { return mProfilingStack; }
 
-private:
+ private:
   class ProfilingStack mProfilingStack;
 
   
@@ -160,22 +148,25 @@ private:
   
   
   mozilla::Atomic<bool, mozilla::MemoryOrdering::Relaxed,
-                  recordreplay::Behavior::DontPreserve> mIsBeingProfiled;
+                  recordreplay::Behavior::DontPreserve>
+      mIsBeingProfiled;
 };
 
 
 
 
 
-class RegisteredThread final
-{
-public:
-  RegisteredThread(ThreadInfo* aInfo, nsIEventTarget* aThread,
-                   void* aStackTop);
+class RegisteredThread final {
+ public:
+  RegisteredThread(ThreadInfo* aInfo, nsIEventTarget* aThread, void* aStackTop);
   ~RegisteredThread();
 
-  class RacyRegisteredThread& RacyRegisteredThread() { return mRacyRegisteredThread; }
-  const class RacyRegisteredThread& RacyRegisteredThread() const { return mRacyRegisteredThread; }
+  class RacyRegisteredThread& RacyRegisteredThread() {
+    return mRacyRegisteredThread;
+  }
+  const class RacyRegisteredThread& RacyRegisteredThread() const {
+    return mRacyRegisteredThread;
+  }
 
   PlatformData* GetPlatformData() const { return mPlatformData.get(); }
   const void* StackTop() const { return mStackTop; }
@@ -184,8 +175,7 @@ public:
 
   
   
-  void SetJSContext(JSContext* aContext)
-  {
+  void SetJSContext(JSContext* aContext) {
     
 
     MOZ_ASSERT(aContext && !mContext);
@@ -194,13 +184,13 @@ public:
 
     
     
-    js::SetContextProfilingStack(aContext, &RacyRegisteredThread().ProfilingStack());
+    js::SetContextProfilingStack(aContext,
+                                 &RacyRegisteredThread().ProfilingStack());
 
     PollJSSampling();
   }
 
-  void ClearJSContext()
-  {
+  void ClearJSContext() {
     
     mContext = nullptr;
   }
@@ -213,8 +203,7 @@ public:
   
   
   
-  void StartJSSampling(bool aTrackOptimizations)
-  {
+  void StartJSSampling(bool aTrackOptimizations) {
     
 
     MOZ_RELEASE_ASSERT(mJSSampling == INACTIVE ||
@@ -225,8 +214,7 @@ public:
 
   
   
-  void StopJSSampling()
-  {
+  void StopJSSampling() {
     
 
     MOZ_RELEASE_ASSERT(mJSSampling == ACTIVE ||
@@ -235,8 +223,7 @@ public:
   }
 
   
-  void PollJSSampling()
-  {
+  void PollJSSampling() {
     
 
     
@@ -253,8 +240,8 @@ public:
       if (mJSSampling == ACTIVE_REQUESTED) {
         mJSSampling = ACTIVE;
         js::EnableContextProfilingStack(mContext, true);
-        JS_SetGlobalJitCompilerOption(mContext, JSJITCOMPILER_TRACK_OPTIMIZATIONS,
-                                      mJSTrackOptimizations);
+        JS_SetGlobalJitCompilerOption(
+            mContext, JSJITCOMPILER_TRACK_OPTIMIZATIONS, mJSTrackOptimizations);
         js::RegisterContextProfilingEventMarker(mContext, profiler_add_marker);
 
       } else if (mJSSampling == INACTIVE_REQUESTED) {
@@ -264,7 +251,7 @@ public:
     }
   }
 
-private:
+ private:
   class RacyRegisteredThread mRacyRegisteredThread;
 
   const UniquePlatformData mPlatformData;

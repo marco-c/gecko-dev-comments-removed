@@ -19,9 +19,8 @@ class TimeStamp;
 }
 
 
-class ProfilerBacktrace
-{
-public:
+class ProfilerBacktrace {
+ public:
   ProfilerBacktrace(const char* aName, int aThreadId,
                     mozilla::UniquePtr<ProfileBuffer> aBuffer);
   ~ProfilerBacktrace();
@@ -36,7 +35,7 @@ public:
                   const mozilla::TimeStamp& aProcessStartTime,
                   UniqueStacks& aUniqueStacks);
 
-private:
+ private:
   ProfilerBacktrace(const ProfilerBacktrace&);
   ProfilerBacktrace& operator=(const ProfilerBacktrace&);
 
@@ -45,5 +44,4 @@ private:
   mozilla::UniquePtr<ProfileBuffer> mBuffer;
 };
 
-#endif 
-
+#endif  

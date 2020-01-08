@@ -36,11 +36,7 @@ static bool ID_GetNumber(JSContext* aCx, unsigned aArgc, Value* aVp);
 
 enum { kID_Slot0, kID_Slot1, kID_Slot2, kID_Slot3, kID_SlotCount };
 static const js::Class sID_Class = {
-    "nsJSID",
-    JSCLASS_HAS_RESERVED_SLOTS(kID_SlotCount),
-    JS_NULL_CLASS_OPS
-};
-
+    "nsJSID", JSCLASS_HAS_RESERVED_SLOTS(kID_SlotCount), JS_NULL_CLASS_OPS};
 
 
 
@@ -56,11 +52,7 @@ static bool IID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp);
 
 enum { kIID_InfoSlot, kIID_SlotCount };
 static const js::Class sIID_Class = {
-    "nsJSIID",
-    JSCLASS_HAS_RESERVED_SLOTS(kIID_SlotCount),
-    JS_NULL_CLASS_OPS
-};
-
+    "nsJSIID", JSCLASS_HAS_RESERVED_SLOTS(kIID_SlotCount), JS_NULL_CLASS_OPS};
 
 
 
@@ -77,87 +69,278 @@ static bool CID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp);
 
 enum { kCID_ContractSlot, kCID_SlotCount };
 static const js::Class sCID_Class = {
-    "nsJSCID",
-    JSCLASS_HAS_RESERVED_SLOTS(kCID_SlotCount),
-    JS_NULL_CLASS_OPS
-};
+    "nsJSCID", JSCLASS_HAS_RESERVED_SLOTS(kCID_SlotCount), JS_NULL_CLASS_OPS};
 
 
 
 
 
-
-static JSObject*
-GetIDPrototype(JSContext* aCx, const js::Class* aClass)
-{
-    XPCWrappedNativeScope* scope = ObjectScope(CurrentGlobalOrNull(aCx));
-    if (NS_WARN_IF(!scope)) {
-        return nullptr;
-    }
-
-    
-    
-    if (!scope->mIDProto) {
-        MOZ_ASSERT(!scope->mIIDProto && !scope->mCIDProto);
-
-        RootedObject idProto(aCx, JS_NewPlainObject(aCx));
-        RootedObject iidProto(aCx, JS_NewObjectWithGivenProto(aCx, nullptr, idProto));
-        RootedObject cidProto(aCx, JS_NewObjectWithGivenProto(aCx, nullptr, idProto));
-        RootedId hasInstance(aCx, SYMBOL_TO_JSID(GetWellKnownSymbol(aCx, SymbolCode::hasInstance)));
-
-        const uint32_t kFlags = JSPROP_READONLY | JSPROP_ENUMERATE | JSPROP_PERMANENT;
-        const uint32_t kNoEnum = JSPROP_READONLY | JSPROP_PERMANENT;
-
-        bool ok = idProto && iidProto && cidProto &&
-            
-            JS_DefineFunction(aCx, idProto, "equals", ID_Equals, 1, kFlags) &&
-            JS_DefineProperty(aCx, idProto, "number", ID_GetNumber, nullptr, kFlags) &&
-
-            
-            JS_DefineFunctionById(aCx, iidProto, hasInstance, IID_HasInstance, 1, kNoEnum) &&
-            JS_DefineProperty(aCx, iidProto, "name", IID_GetName, nullptr, kFlags) &&
-
-            
-            JS_DefineFunction(aCx, cidProto, "createInstance", CID_CreateInstance, 1, kFlags) &&
-            JS_DefineFunction(aCx, cidProto, "getService", CID_GetService, 1, kFlags) &&
-            JS_DefineProperty(aCx, cidProto, "name", CID_GetName, nullptr, kFlags) &&
-
-            
-            
-            JS_DefineFunction(aCx, idProto, "toString", ID_GetNumber, 0, kFlags) &&
-            JS_DefineFunction(aCx, iidProto, "toString", IID_GetName, 0, kFlags) &&
-            JS_DefineFunction(aCx, cidProto, "toString", CID_GetName, 0, kFlags);
-        if (!ok) {
-            return nullptr;
-        }
-
-        scope->mIDProto = idProto;
-        scope->mIIDProto = iidProto;
-        scope->mCIDProto = cidProto;
-    }
-
-    if (aClass == &sID_Class) {
-        return scope->mIDProto;
-    } else if (aClass == &sIID_Class) {
-        return scope->mIIDProto;
-    } else if (aClass == &sCID_Class) {
-        return scope->mCIDProto;
-    }
-
-    MOZ_CRASH("Unrecognized ID Object Class");
-}
-
-
-static JSObject*
-GetIDObject(HandleValue aVal, const Class* aClass)
-{
-    if (aVal.isObject()) {
-        JSObject* obj = js::CheckedUnwrap(&aVal.toObject());
-        if (obj && js::GetObjectClass(obj) == aClass) {
-            return obj;
-        }
-    }
+static JSObject* GetIDPrototype(JSContext* aCx, const js::Class* aClass) {
+  XPCWrappedNativeScope* scope = ObjectScope(CurrentGlobalOrNull(aCx));
+  if (NS_WARN_IF(!scope)) {
     return nullptr;
+  }
+
+  
+  
+  if (!scope->mIDProto) {
+    MOZ_ASSERT(!scope->mIIDProto && !scope->mCIDProto);
+
+    RootedObject idProto(aCx, JS_NewPlainObject(aCx));
+    RootedObject iidProto(aCx,
+                          JS_NewObjectWithGivenProto(aCx, nullptr, idProto));
+    RootedObject cidProto(aCx,
+                          JS_NewObjectWithGivenProto(aCx, nullptr, idProto));
+    RootedId hasInstance(
+        aCx, SYMBOL_TO_JSID(GetWellKnownSymbol(aCx, SymbolCode::hasInstance)));
+
+    const uint32_t kFlags =
+        JSPROP_READONLY | JSPROP_ENUMERATE | JSPROP_PERMANENT;
+    const uint32_t kNoEnum = JSPROP_READONLY | JSPROP_PERMANENT;
+
+    bool ok =
+        idProto && iidProto && cidProto &&
+        
+        JS_DefineFunction(aCx, idProto, "equals", ID_Equals, 1, kFlags) &&
+        JS_DefineProperty(aCx, idProto, "number", ID_GetNumber, nullptr,
+                          kFlags) &&
+
+        
+        JS_DefineFunctionById(aCx, iidProto, hasInstance, IID_HasInstance, 1,
+                              kNoEnum) &&
+        JS_DefineProperty(aCx, iidProto, "name", IID_GetName, nullptr,
+                          kFlags) &&
+
+        
+        JS_DefineFunction(aCx, cidProto, "createInstance", CID_CreateInstance,
+                          1, kFlags) &&
+        JS_DefineFunction(aCx, cidProto, "getService", CID_GetService, 1,
+                          kFlags) &&
+        JS_DefineProperty(aCx, cidProto, "name", CID_GetName, nullptr,
+                          kFlags) &&
+
+        
+        
+        JS_DefineFunction(aCx, idProto, "toString", ID_GetNumber, 0, kFlags) &&
+        JS_DefineFunction(aCx, iidProto, "toString", IID_GetName, 0, kFlags) &&
+        JS_DefineFunction(aCx, cidProto, "toString", CID_GetName, 0, kFlags);
+    if (!ok) {
+      return nullptr;
+    }
+
+    scope->mIDProto = idProto;
+    scope->mIIDProto = iidProto;
+    scope->mCIDProto = cidProto;
+  }
+
+  if (aClass == &sID_Class) {
+    return scope->mIDProto;
+  } else if (aClass == &sIID_Class) {
+    return scope->mIIDProto;
+  } else if (aClass == &sCID_Class) {
+    return scope->mCIDProto;
+  }
+
+  MOZ_CRASH("Unrecognized ID Object Class");
+}
+
+
+static JSObject* GetIDObject(HandleValue aVal, const Class* aClass) {
+  if (aVal.isObject()) {
+    JSObject* obj = js::CheckedUnwrap(&aVal.toObject());
+    if (obj && js::GetObjectClass(obj) == aClass) {
+      return obj;
+    }
+  }
+  return nullptr;
+}
+
+
+
+
+
+
+
+
+
+Maybe<nsID> JSValue2ID(JSContext* aCx, HandleValue aVal) {
+  if (!aVal.isObject()) {
+    return Nothing();
+  }
+
+  mozilla::Maybe<nsID> id;
+  RootedObject obj(aCx, js::CheckedUnwrap(&aVal.toObject()));
+  if (js::GetObjectClass(obj) == &sID_Class) {
+    
+    uint32_t rawid[] = {js::GetReservedSlot(obj, kID_Slot0).toPrivateUint32(),
+                        js::GetReservedSlot(obj, kID_Slot1).toPrivateUint32(),
+                        js::GetReservedSlot(obj, kID_Slot2).toPrivateUint32(),
+                        js::GetReservedSlot(obj, kID_Slot3).toPrivateUint32()};
+
+    
+    id.emplace();
+    memcpy(id.ptr(), &rawid, sizeof(nsID));
+  } else if (js::GetObjectClass(obj) == &sIID_Class) {
+    
+    auto* info = static_cast<const nsXPTInterfaceInfo*>(
+        js::GetReservedSlot(obj, kIID_InfoSlot).toPrivate());
+    id.emplace(info->IID());
+  } else if (js::GetObjectClass(obj) == &sCID_Class) {
+    
+    JS::UniqueChars contractId = JS_EncodeStringToLatin1(
+        aCx, js::GetReservedSlot(obj, kCID_ContractSlot).toString());
+
+    
+    
+    
+    
+    
+
+    nsCOMPtr<nsIComponentRegistrar> registrar;
+    nsresult rv = NS_GetComponentRegistrar(getter_AddRefs(registrar));
+    if (NS_FAILED(rv) || !registrar) {
+      return Nothing();
+    }
+
+    nsCID* cid = nullptr;
+    if (NS_SUCCEEDED(registrar->ContractIDToCID(contractId.get(), &cid))) {
+      id.emplace(*cid);
+      free(cid);
+    }
+  }
+  return id;
+}
+
+
+
+
+static JSObject* NewIDObjectHelper(JSContext* aCx, const js::Class* aClass) {
+  RootedObject proto(aCx, GetIDPrototype(aCx, aClass));
+  if (proto) {
+    return JS_NewObjectWithGivenProto(aCx, Jsvalify(aClass), proto);
+  }
+  return nullptr;
+}
+
+bool ID2JSValue(JSContext* aCx, const nsID& aId, MutableHandleValue aVal) {
+  RootedObject obj(aCx, NewIDObjectHelper(aCx, &sID_Class));
+  if (!obj) {
+    return false;
+  }
+
+  
+  uint32_t rawid[4];
+  memcpy(&rawid, &aId, sizeof(nsID));
+  static_assert(sizeof(nsID) == sizeof(rawid), "Wrong size of nsID");
+  js::SetReservedSlot(obj, kID_Slot0, PrivateUint32Value(rawid[0]));
+  js::SetReservedSlot(obj, kID_Slot1, PrivateUint32Value(rawid[1]));
+  js::SetReservedSlot(obj, kID_Slot2, PrivateUint32Value(rawid[2]));
+  js::SetReservedSlot(obj, kID_Slot3, PrivateUint32Value(rawid[3]));
+
+  aVal.setObject(*obj);
+  return true;
+}
+
+bool IfaceID2JSValue(JSContext* aCx, const nsXPTInterfaceInfo& aInfo,
+                     MutableHandleValue aVal) {
+  RootedObject obj(aCx, NewIDObjectHelper(aCx, &sIID_Class));
+  if (!obj) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  RootedValue constant(aCx);
+  for (uint16_t i = 0; i < aInfo.ConstantCount(); ++i) {
+    constant.set(aInfo.Constant(i).JSValue());
+    if (!JS_DefineProperty(
+            aCx, obj, aInfo.Constant(i).Name(), constant,
+            JSPROP_READONLY | JSPROP_ENUMERATE | JSPROP_PERMANENT)) {
+      return false;
+    }
+  }
+
+  
+  js::SetReservedSlot(obj, kIID_InfoSlot, PrivateValue((void*)&aInfo));
+  aVal.setObject(*obj);
+  return true;
+}
+
+bool ContractID2JSValue(JSContext* aCx, JSString* aContract,
+                        MutableHandleValue aVal) {
+  RootedString jsContract(aCx, aContract);
+
+  {
+    
+    
+    nsCOMPtr<nsIComponentRegistrar> registrar;
+    NS_GetComponentRegistrar(getter_AddRefs(registrar));
+    if (!registrar) {
+      return false;
+    }
+
+    bool registered = false;
+    JS::UniqueChars contract = JS_EncodeStringToLatin1(aCx, jsContract);
+    registrar->IsContractIDRegistered(contract.get(), &registered);
+    if (!registered) {
+      return false;
+    }
+  }
+
+  RootedObject obj(aCx, NewIDObjectHelper(aCx, &sCID_Class));
+  if (!obj) {
+    return false;
+  }
+
+  
+  js::SetReservedSlot(obj, kCID_ContractSlot, StringValue(jsContract));
+  aVal.setObject(*obj);
+  return true;
+}
+
+
+
+
+
+
+
+static bool ID_GetNumber(JSContext* aCx, unsigned aArgc, Value* aVp) {
+  CallArgs args = CallArgsFromVp(aArgc, aVp);
+
+  Maybe<nsID> id = JSValue2ID(aCx, args.thisv());
+  if (!id) {
+    return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+  }
+
+  char buf[NSID_LENGTH];
+  id->ToProvidedString(buf);
+  JSString* jsnum = JS_NewStringCopyZ(aCx, buf);
+  if (!jsnum) {
+    return Throw(aCx, NS_ERROR_OUT_OF_MEMORY);
+  }
+
+  args.rval().setString(jsnum);
+  return true;
+}
+
+static bool ID_Equals(JSContext* aCx, unsigned aArgc, Value* aVp) {
+  CallArgs args = CallArgsFromVp(aArgc, aVp);
+  if (!args.requireAtLeast(aCx, "nsID.equals", 1)) {
+    return false;
+  }
+
+  Maybe<nsID> id = JSValue2ID(aCx, args.thisv());
+  Maybe<nsID> id2 = JSValue2ID(aCx, args[0]);
+  if (!id || !id2) {
+    return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+  }
+
+  args.rval().setBoolean(id->Equals(*id2));
+  return true;
 }
 
 
@@ -169,413 +352,193 @@ GetIDObject(HandleValue aVal, const Class* aClass)
 
 
 
-Maybe<nsID>
-JSValue2ID(JSContext* aCx, HandleValue aVal)
-{
-    if (!aVal.isObject()) {
-        return Nothing();
+
+
+
+
+
+
+
+
+
+
+static nsresult FindObjectForHasInstance(JSContext* cx, HandleObject objArg,
+                                         MutableHandleObject target) {
+  using namespace mozilla::jsipc;
+  RootedObject obj(cx, objArg), proto(cx);
+  while (true) {
+    
+    JSObject* o = js::IsWrapper(obj) ? js::CheckedUnwrap(obj, false) : obj;
+    if (o && (IS_WN_REFLECTOR(o) || IsDOMObject(o) || IsCPOW(o))) {
+      target.set(o);
+      return NS_OK;
     }
 
-    mozilla::Maybe<nsID> id;
-    RootedObject obj(aCx, js::CheckedUnwrap(&aVal.toObject()));
-    if (js::GetObjectClass(obj) == &sID_Class) {
-        
-        uint32_t rawid[] = {
-            js::GetReservedSlot(obj, kID_Slot0).toPrivateUint32(),
-            js::GetReservedSlot(obj, kID_Slot1).toPrivateUint32(),
-            js::GetReservedSlot(obj, kID_Slot2).toPrivateUint32(),
-            js::GetReservedSlot(obj, kID_Slot3).toPrivateUint32()
-        };
-
-        
-        id.emplace();
-        memcpy(id.ptr(), &rawid, sizeof(nsID));
-    } else if (js::GetObjectClass(obj) == &sIID_Class) {
-        
-        auto* info = static_cast<const nsXPTInterfaceInfo*>(
-            js::GetReservedSlot(obj, kIID_InfoSlot).toPrivate());
-        id.emplace(info->IID());
-    } else if (js::GetObjectClass(obj) == &sCID_Class) {
-        
-        JS::UniqueChars contractId = JS_EncodeStringToLatin1(aCx,
-            js::GetReservedSlot(obj, kCID_ContractSlot).toString());
-
-        
-        
-        
-        
-        
-
-        nsCOMPtr<nsIComponentRegistrar> registrar;
-        nsresult rv = NS_GetComponentRegistrar(getter_AddRefs(registrar));
-        if (NS_FAILED(rv) || !registrar) {
-            return Nothing();
-        }
-
-        nsCID* cid = nullptr;
-        if (NS_SUCCEEDED(registrar->ContractIDToCID(contractId.get(), &cid))) {
-            id.emplace(*cid);
-            free(cid);
-        }
+    
+    
+    if (!js::GetObjectProto(cx, obj, &proto)) {
+      return NS_ERROR_FAILURE;
     }
-    return id;
+    if (!proto) {
+      target.set(nullptr);
+      return NS_OK;
+    }
+    obj = proto;
+  }
 }
 
+nsresult HasInstance(JSContext* cx, HandleObject objArg, const nsID* iid,
+                     bool* bp) {
+  *bp = false;
 
+  RootedObject obj(cx);
+  nsresult rv = FindObjectForHasInstance(cx, objArg, &obj);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return rv;
+  }
 
-
-
-static JSObject*
-NewIDObjectHelper(JSContext* aCx, const js::Class* aClass)
-{
-    RootedObject proto(aCx, GetIDPrototype(aCx, aClass));
-    if (proto) {
-        return JS_NewObjectWithGivenProto(aCx, Jsvalify(aClass), proto);
-    }
-    return nullptr;
-}
-
-bool
-ID2JSValue(JSContext* aCx, const nsID& aId, MutableHandleValue aVal)
-{
-    RootedObject obj(aCx, NewIDObjectHelper(aCx, &sID_Class));
-    if (!obj) {
-        return false;
-    }
-
-    
-    uint32_t rawid[4];
-    memcpy(&rawid, &aId, sizeof(nsID));
-    static_assert(sizeof(nsID) == sizeof(rawid), "Wrong size of nsID");
-    js::SetReservedSlot(obj, kID_Slot0, PrivateUint32Value(rawid[0]));
-    js::SetReservedSlot(obj, kID_Slot1, PrivateUint32Value(rawid[1]));
-    js::SetReservedSlot(obj, kID_Slot2, PrivateUint32Value(rawid[2]));
-    js::SetReservedSlot(obj, kID_Slot3, PrivateUint32Value(rawid[3]));
-
-    aVal.setObject(*obj);
-    return true;
-}
-
-bool
-IfaceID2JSValue(JSContext* aCx, const nsXPTInterfaceInfo& aInfo,
-                MutableHandleValue aVal)
-{
-    RootedObject obj(aCx, NewIDObjectHelper(aCx, &sIID_Class));
-    if (!obj) {
-        return false;
-    }
-
-    
-    
-    
-    
-    
-    
-    RootedValue constant(aCx);
-    for (uint16_t i = 0; i < aInfo.ConstantCount(); ++i) {
-        constant.set(aInfo.Constant(i).JSValue());
-        if (!JS_DefineProperty(aCx, obj, aInfo.Constant(i).Name(), constant,
-                               JSPROP_READONLY | JSPROP_ENUMERATE |
-                               JSPROP_PERMANENT)) {
-            return false;
-        }
-    }
-
-    
-    js::SetReservedSlot(obj, kIID_InfoSlot, PrivateValue((void*)&aInfo));
-    aVal.setObject(*obj);
-    return true;
-}
-
-bool
-ContractID2JSValue(JSContext* aCx, JSString* aContract, MutableHandleValue aVal)
-{
-    RootedString jsContract(aCx, aContract);
-
-    {
-        
-        
-        nsCOMPtr<nsIComponentRegistrar> registrar;
-        NS_GetComponentRegistrar(getter_AddRefs(registrar));
-        if (!registrar) {
-            return false;
-        }
-
-        bool registered = false;
-        JS::UniqueChars contract = JS_EncodeStringToLatin1(aCx, jsContract);
-        registrar->IsContractIDRegistered(contract.get(), &registered);
-        if (!registered) {
-            return false;
-        }
-    }
-
-    RootedObject obj(aCx, NewIDObjectHelper(aCx, &sCID_Class));
-    if (!obj) {
-        return false;
-    }
-
-    
-    js::SetReservedSlot(obj, kCID_ContractSlot, StringValue(jsContract));
-    aVal.setObject(*obj);
-    return true;
-}
-
-
-
-
-
-
-
-
-static bool
-ID_GetNumber(JSContext* aCx, unsigned aArgc, Value* aVp)
-{
-    CallArgs args = CallArgsFromVp(aArgc, aVp);
-
-    Maybe<nsID> id = JSValue2ID(aCx, args.thisv());
-    if (!id) {
-        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
-    }
-
-    char buf[NSID_LENGTH];
-    id->ToProvidedString(buf);
-    JSString* jsnum = JS_NewStringCopyZ(aCx, buf);
-    if (!jsnum) {
-        return Throw(aCx, NS_ERROR_OUT_OF_MEMORY);
-    }
-
-    args.rval().setString(jsnum);
-    return true;
-}
-
-static bool
-ID_Equals(JSContext* aCx, unsigned aArgc, Value* aVp)
-{
-    CallArgs args = CallArgsFromVp(aArgc, aVp);
-    if (!args.requireAtLeast(aCx, "nsID.equals", 1)) {
-        return false;
-    }
-
-    Maybe<nsID> id = JSValue2ID(aCx, args.thisv());
-    Maybe<nsID> id2 = JSValue2ID(aCx, args[0]);
-    if (!id || !id2) {
-        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
-    }
-
-    args.rval().setBoolean(id->Equals(*id2));
-    return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-static nsresult
-FindObjectForHasInstance(JSContext* cx, HandleObject objArg, MutableHandleObject target)
-{
-    using namespace mozilla::jsipc;
-    RootedObject obj(cx, objArg), proto(cx);
-    while (true) {
-        
-        JSObject* o = js::IsWrapper(obj) ? js::CheckedUnwrap(obj, false) : obj;
-        if (o && (IS_WN_REFLECTOR(o) || IsDOMObject(o) || IsCPOW(o))) {
-            target.set(o);
-            return NS_OK;
-        }
-
-        
-        
-        if (!js::GetObjectProto(cx, obj, &proto)) {
-            return NS_ERROR_FAILURE;
-        }
-        if (!proto) {
-            target.set(nullptr);
-            return NS_OK;
-        }
-        obj = proto;
-    }
-}
-
-nsresult
-HasInstance(JSContext* cx, HandleObject objArg, const nsID* iid, bool* bp)
-{
-    *bp = false;
-
-    RootedObject obj(cx);
-    nsresult rv = FindObjectForHasInstance(cx, objArg, &obj);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-    }
-
-    if (!obj) {
-        return NS_OK;
-    }
-
-    if (mozilla::jsipc::IsCPOW(obj)) {
-        return mozilla::jsipc::InstanceOf(obj, iid, bp);
-    }
-
-    nsCOMPtr<nsISupports> identity = UnwrapReflectorToISupports(obj);
-    if (!identity) {
-        return NS_OK;
-    }
-
-    nsCOMPtr<nsISupports> supp;
-    identity->QueryInterface(*iid, getter_AddRefs(supp));
-    *bp = supp;
-
-    
-    
-    
-    
-    
-    if (IS_WN_REFLECTOR(obj)) {
-        (void) XPCWrappedNative::Get(obj)->FindTearOff(*iid);
-    }
-
+  if (!obj) {
     return NS_OK;
+  }
+
+  if (mozilla::jsipc::IsCPOW(obj)) {
+    return mozilla::jsipc::InstanceOf(obj, iid, bp);
+  }
+
+  nsCOMPtr<nsISupports> identity = UnwrapReflectorToISupports(obj);
+  if (!identity) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsISupports> supp;
+  identity->QueryInterface(*iid, getter_AddRefs(supp));
+  *bp = supp;
+
+  
+  
+  
+  
+  
+  if (IS_WN_REFLECTOR(obj)) {
+    (void)XPCWrappedNative::Get(obj)->FindTearOff(*iid);
+  }
+
+  return NS_OK;
 }
 
-static bool
-IID_HasInstance(JSContext* aCx, unsigned aArgc, Value* aVp)
-{
-    CallArgs args = CallArgsFromVp(aArgc, aVp);
-    if (!args.requireAtLeast(aCx, "nsIID[Symbol.hasInstance]", 1)) {
-        return false;
+static bool IID_HasInstance(JSContext* aCx, unsigned aArgc, Value* aVp) {
+  CallArgs args = CallArgsFromVp(aArgc, aVp);
+  if (!args.requireAtLeast(aCx, "nsIID[Symbol.hasInstance]", 1)) {
+    return false;
+  }
+
+  Maybe<nsID> id = JSValue2ID(aCx, args.thisv());
+  if (!id) {
+    return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+  }
+
+  bool hasInstance = false;
+  if (args[0].isObject()) {
+    RootedObject target(aCx, &args[0].toObject());
+    nsresult rv = HasInstance(aCx, target, id.ptr(), &hasInstance);
+    if (NS_FAILED(rv)) {
+      return Throw(aCx, rv);
     }
-
-    Maybe<nsID> id = JSValue2ID(aCx, args.thisv());
-    if (!id) {
-        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
-    }
-
-    bool hasInstance = false;
-    if (args[0].isObject()) {
-        RootedObject target(aCx, &args[0].toObject());
-        nsresult rv = HasInstance(aCx, target, id.ptr(), &hasInstance);
-        if (NS_FAILED(rv)) {
-            return Throw(aCx, rv);
-        }
-    }
-    args.rval().setBoolean(hasInstance);
-    return true;
-}
-
-
-
-static bool
-IID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp)
-{
-    CallArgs args = CallArgsFromVp(aArgc, aVp);
-
-    RootedObject obj(aCx, GetIDObject(args.thisv(), &sIID_Class));
-    if (!obj) {
-        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
-    }
-
-    auto* info = (const nsXPTInterfaceInfo*)
-        js::GetReservedSlot(obj, kIID_InfoSlot).toPrivate();
-
-    
-    JSString* name = JS_NewStringCopyZ(aCx, info->Name());
-    if (!name) {
-        return Throw(aCx, NS_ERROR_OUT_OF_MEMORY);
-    }
-
-    args.rval().setString(name);
-    return true;
-}
-
-
-
-static bool
-CIGSHelper(JSContext* aCx, unsigned aArgc, Value* aVp, bool aGetService)
-{
-    CallArgs args = CallArgsFromVp(aArgc, aVp);
-
-    
-    
-    
-    RootedObject obj(aCx, GetIDObject(args.thisv(), &sCID_Class));
-    if (!obj) {
-        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
-    }
-    JS::UniqueChars contractID = JS_EncodeStringToLatin1(aCx,
-        js::GetReservedSlot(obj, kCID_ContractSlot).toString());
-
-    
-    Maybe<nsIID> iid = args.length() >= 1 ? JSValue2ID(aCx, args[0])
-                                          : Some(NS_GET_IID(nsISupports));
-    if (!iid) {
-        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
-    }
-
-    
-    nsresult rv;
-    nsCOMPtr<nsISupports> result;
-    if (aGetService) {
-        rv = CallGetService(contractID.get(), *iid, getter_AddRefs(result));
-        if (NS_FAILED(rv) || !result) {
-            return Throw(aCx, NS_ERROR_XPC_GS_RETURNED_FAILURE);
-        }
-    } else {
-        rv = CallCreateInstance(contractID.get(), nullptr, *iid,
-                                getter_AddRefs(result));
-        if (NS_FAILED(rv) || !result) {
-            return Throw(aCx, NS_ERROR_XPC_CI_RETURNED_FAILURE);
-        }
-    }
-
-    
-    rv = nsContentUtils::WrapNative(aCx, result, iid.ptr(), args.rval());
-    if (NS_FAILED(rv) || args.rval().isPrimitive()) {
-        return Throw(aCx, NS_ERROR_XPC_CANT_CREATE_WN);
-    }
-    return true;
-}
-
-static bool
-CID_CreateInstance(JSContext* aCx, unsigned aArgc, Value* aVp)
-{
-    return CIGSHelper(aCx, aArgc, aVp,  false);
-}
-
-static bool
-CID_GetService(JSContext* aCx, unsigned aArgc, Value* aVp)
-{
-    return CIGSHelper(aCx, aArgc, aVp,  true);
+  }
+  args.rval().setBoolean(hasInstance);
+  return true;
 }
 
 
 
-static bool
-CID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp)
-{
-    CallArgs args = CallArgsFromVp(aArgc, aVp);
-    RootedObject obj(aCx, GetIDObject(args.thisv(), &sCID_Class));
-    if (!obj) {
-        return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
-    }
+static bool IID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp) {
+  CallArgs args = CallArgsFromVp(aArgc, aVp);
 
-    
-    args.rval().set(js::GetReservedSlot(obj, kCID_ContractSlot));
-    return true;
+  RootedObject obj(aCx, GetIDObject(args.thisv(), &sIID_Class));
+  if (!obj) {
+    return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+  }
+
+  auto* info =
+      (const nsXPTInterfaceInfo*)js::GetReservedSlot(obj, kIID_InfoSlot)
+          .toPrivate();
+
+  
+  JSString* name = JS_NewStringCopyZ(aCx, info->Name());
+  if (!name) {
+    return Throw(aCx, NS_ERROR_OUT_OF_MEMORY);
+  }
+
+  args.rval().setString(name);
+  return true;
 }
 
-} 
+
+static bool CIGSHelper(JSContext* aCx, unsigned aArgc, Value* aVp,
+                       bool aGetService) {
+  CallArgs args = CallArgsFromVp(aArgc, aVp);
+
+  
+  
+  
+  RootedObject obj(aCx, GetIDObject(args.thisv(), &sCID_Class));
+  if (!obj) {
+    return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+  }
+  JS::UniqueChars contractID = JS_EncodeStringToLatin1(
+      aCx, js::GetReservedSlot(obj, kCID_ContractSlot).toString());
+
+  
+  Maybe<nsIID> iid = args.length() >= 1 ? JSValue2ID(aCx, args[0])
+                                        : Some(NS_GET_IID(nsISupports));
+  if (!iid) {
+    return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+  }
+
+  
+  nsresult rv;
+  nsCOMPtr<nsISupports> result;
+  if (aGetService) {
+    rv = CallGetService(contractID.get(), *iid, getter_AddRefs(result));
+    if (NS_FAILED(rv) || !result) {
+      return Throw(aCx, NS_ERROR_XPC_GS_RETURNED_FAILURE);
+    }
+  } else {
+    rv = CallCreateInstance(contractID.get(), nullptr, *iid,
+                            getter_AddRefs(result));
+    if (NS_FAILED(rv) || !result) {
+      return Throw(aCx, NS_ERROR_XPC_CI_RETURNED_FAILURE);
+    }
+  }
+
+  
+  rv = nsContentUtils::WrapNative(aCx, result, iid.ptr(), args.rval());
+  if (NS_FAILED(rv) || args.rval().isPrimitive()) {
+    return Throw(aCx, NS_ERROR_XPC_CANT_CREATE_WN);
+  }
+  return true;
+}
+
+static bool CID_CreateInstance(JSContext* aCx, unsigned aArgc, Value* aVp) {
+  return CIGSHelper(aCx, aArgc, aVp,  false);
+}
+
+static bool CID_GetService(JSContext* aCx, unsigned aArgc, Value* aVp) {
+  return CIGSHelper(aCx, aArgc, aVp,  true);
+}
+
+
+
+static bool CID_GetName(JSContext* aCx, unsigned aArgc, Value* aVp) {
+  CallArgs args = CallArgsFromVp(aArgc, aVp);
+  RootedObject obj(aCx, GetIDObject(args.thisv(), &sCID_Class));
+  if (!obj) {
+    return Throw(aCx, NS_ERROR_XPC_BAD_CONVERT_JS);
+  }
+
+  
+  args.rval().set(js::GetReservedSlot(obj, kCID_ContractSlot));
+  return true;
+}
+
+}  

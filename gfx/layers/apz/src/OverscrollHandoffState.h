@@ -11,8 +11,8 @@
 #include "mozilla/RefPtr.h"   
 #include "nsISupportsImpl.h"  
 #include "APZUtils.h"         
-#include "mozilla/layers/LayersTypes.h" 
-#include "Units.h"            
+#include "mozilla/layers/LayersTypes.h"  
+#include "Units.h"                       
 
 namespace mozilla {
 
@@ -29,12 +29,12 @@ class AsyncPanZoomController;
 
 
 
-class OverscrollHandoffChain
-{
-protected:
+class OverscrollHandoffChain {
+ protected:
   
   ~OverscrollHandoffChain();
-public:
+
+ public:
   
   
   
@@ -43,6 +43,7 @@ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(OverscrollHandoffChain)
 
   
+
 
 
 
@@ -97,7 +98,7 @@ public:
       const InputData& aInput,
       ScrollDirections* aOutAllowedScrollDirections) const;
 
-private:
+ private:
   std::vector<RefPtr<AsyncPanZoomController>> mChain;
 
   typedef void (AsyncPanZoomController::*APZCMethod)();
@@ -113,11 +114,10 @@ struct OverscrollHandoffState {
   OverscrollHandoffState(const OverscrollHandoffChain& aChain,
                          const ScreenPoint& aPanDistance,
                          ScrollSource aScrollSource)
-    : mChain(aChain),
-      mChainIndex(0),
-      mPanDistance(aPanDistance),
-      mScrollSource(aScrollSource)
-  {}
+      : mChain(aChain),
+        mChainIndex(0),
+        mPanDistance(aPanDistance),
+        mScrollSource(aScrollSource) {}
 
   
   
@@ -159,7 +159,7 @@ struct FlingHandoffState {
   RefPtr<const AsyncPanZoomController> mScrolledApzc;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

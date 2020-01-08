@@ -18,26 +18,22 @@ namespace gfx {
 
 
 
-class PrintTargetRecording final : public PrintTarget
-{
-public:
-  static already_AddRefed<PrintTargetRecording>
-  CreateOrNull(const IntSize& aSize);
+class PrintTargetRecording final : public PrintTarget {
+ public:
+  static already_AddRefed<PrintTargetRecording> CreateOrNull(
+      const IntSize& aSize);
 
-  virtual already_AddRefed<DrawTarget>
-  MakeDrawTarget(const IntSize& aSize,
-                 DrawEventRecorder* aRecorder = nullptr) override;
+  virtual already_AddRefed<DrawTarget> MakeDrawTarget(
+      const IntSize& aSize, DrawEventRecorder* aRecorder = nullptr) override;
 
-private:
-  PrintTargetRecording(cairo_surface_t* aCairoSurface,
-                       const IntSize& aSize);
+ private:
+  PrintTargetRecording(cairo_surface_t* aCairoSurface, const IntSize& aSize);
 
-  already_AddRefed<DrawTarget>
-  CreateWrapAndRecordDrawTarget(DrawEventRecorder* aRecorder,
-                                DrawTarget* aDrawTarget);
+  already_AddRefed<DrawTarget> CreateWrapAndRecordDrawTarget(
+      DrawEventRecorder* aRecorder, DrawTarget* aDrawTarget);
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

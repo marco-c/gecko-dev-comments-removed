@@ -44,7 +44,8 @@ void* AllocateMemoryTryAddress(void* aAddress, size_t aSize, MemoryKind aKind);
 
 
 
-void RegisterAllocatedMemory(void* aBaseAddress, size_t aSize, MemoryKind aKind);
+void RegisterAllocatedMemory(void* aBaseAddress, size_t aSize,
+                             MemoryKind aKind);
 
 
 
@@ -82,8 +83,7 @@ void EraseLastSavedDiffMemorySnapshot();
 
 void SetMemoryChangesAllowed(bool aAllowed);
 
-struct MOZ_RAII AutoDisallowMemoryChanges
-{
+struct MOZ_RAII AutoDisallowMemoryChanges {
   AutoDisallowMemoryChanges() { SetMemoryChangesAllowed(false); }
   ~AutoDisallowMemoryChanges() { SetMemoryChangesAllowed(true); }
 };
@@ -113,8 +113,7 @@ void SetAllowIntentionalCrashes(bool aAllowed);
 void StartCountdown(size_t aCount);
 
 
-struct MOZ_RAII AutoCountdown
-{
+struct MOZ_RAII AutoCountdown {
   explicit AutoCountdown(size_t aCount);
   ~AutoCountdown();
 };
@@ -131,7 +130,7 @@ void MemoryMove(void* aDst, const void* aSrc, size_t aSize);
 
 void MemoryZero(void* aDst, size_t aSize);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

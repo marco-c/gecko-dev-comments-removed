@@ -47,57 +47,50 @@ extern LazyLogModule gCertVerifierLog;
 
 static const uint64_t ServerFailureDelaySeconds = 5 * 60;
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
-NSSCertDBTrustDomain::NSSCertDBTrustDomain(SECTrustType certDBTrustType,
-                                           OCSPFetching ocspFetching,
-                                           OCSPCache& ocspCache,
-              void* pinArg,
-                                           TimeDuration ocspTimeoutSoft,
-                                           TimeDuration ocspTimeoutHard,
-                                           uint32_t certShortLifetimeInDays,
-                                           CertVerifier::PinningMode pinningMode,
-                                           unsigned int minRSABits,
-                                           ValidityCheckingMode validityCheckingMode,
-                                           CertVerifier::SHA1Mode sha1Mode,
-                                           NetscapeStepUpPolicy netscapeStepUpPolicy,
-                                           DistrustedCAPolicy distrustedCAPolicy,
-                                           const OriginAttributes& originAttributes,
-                                           UniqueCERTCertList& builtChain,
-                               PinningTelemetryInfo* pinningTelemetryInfo,
-                               const char* hostname)
-  : mCertDBTrustType(certDBTrustType)
-  , mOCSPFetching(ocspFetching)
-  , mOCSPCache(ocspCache)
-  , mPinArg(pinArg)
-  , mOCSPTimeoutSoft(ocspTimeoutSoft)
-  , mOCSPTimeoutHard(ocspTimeoutHard)
-  , mCertShortLifetimeInDays(certShortLifetimeInDays)
-  , mPinningMode(pinningMode)
-  , mMinRSABits(minRSABits)
-  , mValidityCheckingMode(validityCheckingMode)
-  , mSHA1Mode(sha1Mode)
-  , mNetscapeStepUpPolicy(netscapeStepUpPolicy)
-  , mDistrustedCAPolicy(distrustedCAPolicy)
-  , mSawDistrustedCAByPolicyError(false)
-  , mOriginAttributes(originAttributes)
-  , mBuiltChain(builtChain)
-  , mPinningTelemetryInfo(pinningTelemetryInfo)
-  , mHostname(hostname)
-  , mCertBlocklist(do_GetService(NS_CERTBLOCKLIST_CONTRACTID))
-  , mOCSPStaplingStatus(CertVerifier::OCSP_STAPLING_NEVER_CHECKED)
-  , mSCTListFromCertificate()
-  , mSCTListFromOCSPStapling()
-{
-}
+NSSCertDBTrustDomain::NSSCertDBTrustDomain(
+    SECTrustType certDBTrustType, OCSPFetching ocspFetching,
+    OCSPCache& ocspCache,
+     void* pinArg, TimeDuration ocspTimeoutSoft,
+    TimeDuration ocspTimeoutHard, uint32_t certShortLifetimeInDays,
+    CertVerifier::PinningMode pinningMode, unsigned int minRSABits,
+    ValidityCheckingMode validityCheckingMode, CertVerifier::SHA1Mode sha1Mode,
+    NetscapeStepUpPolicy netscapeStepUpPolicy,
+    DistrustedCAPolicy distrustedCAPolicy,
+    const OriginAttributes& originAttributes, UniqueCERTCertList& builtChain,
+     PinningTelemetryInfo* pinningTelemetryInfo,
+     const char* hostname)
+    : mCertDBTrustType(certDBTrustType),
+      mOCSPFetching(ocspFetching),
+      mOCSPCache(ocspCache),
+      mPinArg(pinArg),
+      mOCSPTimeoutSoft(ocspTimeoutSoft),
+      mOCSPTimeoutHard(ocspTimeoutHard),
+      mCertShortLifetimeInDays(certShortLifetimeInDays),
+      mPinningMode(pinningMode),
+      mMinRSABits(minRSABits),
+      mValidityCheckingMode(validityCheckingMode),
+      mSHA1Mode(sha1Mode),
+      mNetscapeStepUpPolicy(netscapeStepUpPolicy),
+      mDistrustedCAPolicy(distrustedCAPolicy),
+      mSawDistrustedCAByPolicyError(false),
+      mOriginAttributes(originAttributes),
+      mBuiltChain(builtChain),
+      mPinningTelemetryInfo(pinningTelemetryInfo),
+      mHostname(hostname),
+      mCertBlocklist(do_GetService(NS_CERTBLOCKLIST_CONTRACTID)),
+      mOCSPStaplingStatus(CertVerifier::OCSP_STAPLING_NEVER_CHECKED),
+      mSCTListFromCertificate(),
+      mSCTListFromOCSPStapling() {}
 
 
 
-static Result
-FindIssuerInner(const UniqueCERTCertList& candidates, bool useRoots,
-                Input encodedIssuerName, TrustDomain::IssuerChecker& checker,
-                 bool& keepGoing)
-{
+static Result FindIssuerInner(const UniqueCERTCertList& candidates,
+                              bool useRoots, Input encodedIssuerName,
+                              TrustDomain::IssuerChecker& checker,
+                               bool& keepGoing) {
   keepGoing = true;
   for (CERTCertListNode* n = CERT_LIST_HEAD(candidates);
        !CERT_LIST_END(n, candidates); n = CERT_LIST_NEXT(n)) {
@@ -108,14 +101,12 @@ FindIssuerInner(const UniqueCERTCertList& candidates, bool useRoots,
     Input certDER;
     Result rv = certDER.Init(n->cert->derCert.data, n->cert->derCert.len);
     if (rv != Success) {
-      continue; 
+      continue;  
     }
 
     const SECItem encodedIssuerNameItem = {
-      siBuffer,
-      const_cast<unsigned char*>(encodedIssuerName.UnsafeGetData()),
-      encodedIssuerName.GetLength()
-    };
+        siBuffer, const_cast<unsigned char*>(encodedIssuerName.UnsafeGetData()),
+        encodedIssuerName.GetLength()};
     ScopedAutoSECItem nameConstraints;
     SECStatus srv = CERT_GetImposedNameConstraints(&encodedIssuerNameItem,
                                                    &nameConstraints);
@@ -129,8 +120,8 @@ FindIssuerInner(const UniqueCERTCertList& candidates, bool useRoots,
     } else {
       
       Input nameConstraintsInput;
-      if (nameConstraintsInput.Init(nameConstraints.data, nameConstraints.len)
-            != Success) {
+      if (nameConstraintsInput.Init(nameConstraints.data,
+                                    nameConstraints.len) != Success) {
         return Result::FATAL_ERROR_LIBRARY_FAILURE;
       }
       rv = checker.Check(certDER, &nameConstraintsInput, keepGoing);
@@ -146,17 +137,13 @@ FindIssuerInner(const UniqueCERTCertList& candidates, bool useRoots,
   return Success;
 }
 
-Result
-NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
-                                 IssuerChecker& checker, Time)
-{
+Result NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
+                                        IssuerChecker& checker, Time) {
   
   
   SECItem encodedIssuerNameItem = UnsafeMapInputToSECItem(encodedIssuerName);
-  UniqueCERTCertList
-    candidates(CERT_CreateSubjectCertList(nullptr, CERT_GetDefaultCertDB(),
-                                          &encodedIssuerNameItem, 0,
-                                          false));
+  UniqueCERTCertList candidates(CERT_CreateSubjectCertList(
+      nullptr, CERT_GetDefaultCertDB(), &encodedIssuerNameItem, 0, false));
   if (candidates) {
     
     bool keepGoing;
@@ -177,12 +164,10 @@ NSSCertDBTrustDomain::FindIssuer(Input encodedIssuerName,
   return Success;
 }
 
-Result
-NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
-                                   const CertPolicyId& policy,
-                                   Input candidateCertDER,
-                                    TrustLevel& trustLevel)
-{
+Result NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
+                                          const CertPolicyId& policy,
+                                          Input candidateCertDER,
+                                           TrustLevel& trustLevel) {
   
   
   
@@ -190,9 +175,8 @@ NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   
   
   SECItem candidateCertDERSECItem = UnsafeMapInputToSECItem(candidateCertDER);
-  UniqueCERTCertificate candidateCert(
-    CERT_NewTempCertificate(CERT_GetDefaultCertDB(), &candidateCertDERSECItem,
-                            nullptr, false, true));
+  UniqueCERTCertificate candidateCert(CERT_NewTempCertificate(
+      CERT_GetDefaultCertDB(), &candidateCertDERSECItem, nullptr, false, true));
   if (!candidateCert) {
     return MapPRErrorCodeToResult(PR_GetError());
   }
@@ -212,21 +196,22 @@ NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
     nsAutoCString encSubject;
     nsAutoCString encPubKey;
 
-    nsresult nsrv = BuildRevocationCheckStrings(candidateCert.get(), encIssuer, encSerial, encSubject, encPubKey);
+    nsresult nsrv = BuildRevocationCheckStrings(
+        candidateCert.get(), encIssuer, encSerial, encSubject, encPubKey);
 
-    if (NS_FAILED(nsrv))  {
+    if (NS_FAILED(nsrv)) {
       return Result::FATAL_ERROR_LIBRARY_FAILURE;
     }
 
-    nsrv = mCertBlocklist->IsCertRevoked(
-      encIssuer, encSerial, encSubject, encPubKey, &isCertRevoked);
+    nsrv = mCertBlocklist->IsCertRevoked(encIssuer, encSerial, encSubject,
+                                         encPubKey, &isCertRevoked);
     if (NS_FAILED(nsrv)) {
       return Result::FATAL_ERROR_LIBRARY_FAILURE;
     }
 
     if (isCertRevoked) {
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: certificate is in blocklist"));
+              ("NSSCertDBTrustDomain: certificate is in blocklist"));
       return Result::ERROR_REVOKED_CERTIFICATE;
     }
   }
@@ -245,11 +230,11 @@ NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
     
     
     
-    uint32_t relevantTrustBit =
-      endEntityOrCA == EndEntityOrCA::MustBeCA ? CERTDB_TRUSTED_CA
-                                               : CERTDB_TRUSTED;
-    if (((flags & (relevantTrustBit|CERTDB_TERMINAL_RECORD)))
-            == CERTDB_TERMINAL_RECORD) {
+    uint32_t relevantTrustBit = endEntityOrCA == EndEntityOrCA::MustBeCA
+                                    ? CERTDB_TRUSTED_CA
+                                    : CERTDB_TRUSTED;
+    if (((flags & (relevantTrustBit | CERTDB_TERMINAL_RECORD))) ==
+        CERTDB_TERMINAL_RECORD) {
       trustLevel = TrustLevel::ActivelyDistrusted;
       return Success;
     }
@@ -277,16 +262,13 @@ NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
   return Success;
 }
 
-Result
-NSSCertDBTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
-                                 uint8_t* digestBuf, size_t digestBufLen)
-{
+Result NSSCertDBTrustDomain::DigestBuf(Input item, DigestAlgorithm digestAlg,
+                                        uint8_t* digestBuf,
+                                       size_t digestBufLen) {
   return DigestBufNSS(item, digestAlg, digestBuf, digestBufLen);
 }
 
-TimeDuration
-NSSCertDBTrustDomain::GetOCSPTimeout() const
-{
+TimeDuration NSSCertDBTrustDomain::GetOCSPTimeout() const {
   switch (mOCSPFetching) {
     case NSSCertDBTrustDomain::FetchOCSPForDVSoftFail:
       return mOCSPTimeoutSoft;
@@ -309,11 +291,9 @@ NSSCertDBTrustDomain::GetOCSPTimeout() const
 
 
 
-static Result
-GetOCSPAuthorityInfoAccessLocation(const UniquePLArenaPool& arena,
-                                   Input aiaExtension,
-                                    nsCString& result)
-{
+static Result GetOCSPAuthorityInfoAccessLocation(const UniquePLArenaPool& arena,
+                                                 Input aiaExtension,
+                                                  nsCString& result) {
   MOZ_ASSERT(arena.get());
   if (!arena.get()) {
     return Result::FATAL_ERROR_INVALID_ARGS;
@@ -322,7 +302,7 @@ GetOCSPAuthorityInfoAccessLocation(const UniquePLArenaPool& arena,
   result.Assign(VoidCString());
   SECItem aiaExtensionSECItem = UnsafeMapInputToSECItem(aiaExtension);
   CERTAuthInfoAccess** aia =
-    CERT_DecodeAuthInfoAccessExtension(arena.get(), &aiaExtensionSECItem);
+      CERT_DecodeAuthInfoAccessExtension(arena.get(), &aiaExtensionSECItem);
   if (!aia) {
     return Result::ERROR_CERT_BAD_ACCESS_LOCATION;
   }
@@ -343,8 +323,7 @@ GetOCSPAuthorityInfoAccessLocation(const UniquePLArenaPool& arena,
             return Result::ERROR_CERT_BAD_ACCESS_LOCATION;
           }
           result.Assign(nsDependentCSubstring(
-                          reinterpret_cast<const char*>(location.data),
-                          location.len));
+              reinterpret_cast<const char*>(location.data), location.len));
           return Success;
         }
         current = CERT_GetNextGeneralName(current);
@@ -355,13 +334,11 @@ GetOCSPAuthorityInfoAccessLocation(const UniquePLArenaPool& arena,
   return Success;
 }
 
-Result
-NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
-                                      const CertID& certID, Time time,
-                                      Duration validityDuration,
-                          const Input* stapledOCSPResponse,
-                          const Input* aiaExtension)
-{
+Result NSSCertDBTrustDomain::CheckRevocation(
+    EndEntityOrCA endEntityOrCA, const CertID& certID, Time time,
+    Duration validityDuration,
+     const Input* stapledOCSPResponse,
+     const Input* aiaExtension) {
   
   
 
@@ -369,7 +346,7 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
   
 
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-         ("NSSCertDBTrustDomain: Top of CheckRevocation\n"));
+          ("NSSCertDBTrustDomain: Top of CheckRevocation\n"));
 
   
   
@@ -394,16 +371,14 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
   if (stapledOCSPResponse) {
     MOZ_ASSERT(endEntityOrCA == EndEntityOrCA::MustBeEndEntity);
     bool expired;
-    stapledOCSPResponseResult =
-      VerifyAndMaybeCacheEncodedOCSPResponse(certID, time,
-                                             maxOCSPLifetimeInDays,
-                                             *stapledOCSPResponse,
-                                             ResponseWasStapled, expired);
+    stapledOCSPResponseResult = VerifyAndMaybeCacheEncodedOCSPResponse(
+        certID, time, maxOCSPLifetimeInDays, *stapledOCSPResponse,
+        ResponseWasStapled, expired);
     if (stapledOCSPResponseResult == Success) {
       
       mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_GOOD;
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: stapled OCSP response: good"));
+              ("NSSCertDBTrustDomain: stapled OCSP response: good"));
       return Success;
     }
     if (stapledOCSPResponseResult == Result::ERROR_OCSP_OLD_RESPONSE ||
@@ -411,11 +386,11 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
       
       mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_EXPIRED;
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: expired stapled OCSP response"));
+              ("NSSCertDBTrustDomain: expired stapled OCSP response"));
     } else if (stapledOCSPResponseResult ==
-                 Result::ERROR_OCSP_TRY_SERVER_LATER ||
+                   Result::ERROR_OCSP_TRY_SERVER_LATER ||
                stapledOCSPResponseResult ==
-                 Result::ERROR_OCSP_INVALID_SIGNING_CERT) {
+                   Result::ERROR_OCSP_INVALID_SIGNING_CERT) {
       
       
       
@@ -427,39 +402,39 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
       
       mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_INVALID;
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: stapled OCSP response: failure"));
+              ("NSSCertDBTrustDomain: stapled OCSP response: failure"));
       return stapledOCSPResponseResult;
     }
   } else if (endEntityOrCA == EndEntityOrCA::MustBeEndEntity) {
     
     mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_NONE;
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("NSSCertDBTrustDomain: no stapled OCSP response"));
+            ("NSSCertDBTrustDomain: no stapled OCSP response"));
   }
 
   Result cachedResponseResult = Success;
   Time cachedResponseValidThrough(Time::uninitialized);
-  bool cachedResponsePresent = mOCSPCache.Get(certID, mOriginAttributes,
-                                              cachedResponseResult,
-                                              cachedResponseValidThrough);
+  bool cachedResponsePresent =
+      mOCSPCache.Get(certID, mOriginAttributes, cachedResponseResult,
+                     cachedResponseValidThrough);
   if (cachedResponsePresent) {
     if (cachedResponseResult == Success && cachedResponseValidThrough >= time) {
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: cached OCSP response: good"));
+              ("NSSCertDBTrustDomain: cached OCSP response: good"));
       return Success;
     }
     
     if (cachedResponseResult == Result::ERROR_REVOKED_CERTIFICATE) {
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: cached OCSP response: revoked"));
+              ("NSSCertDBTrustDomain: cached OCSP response: revoked"));
       return Result::ERROR_REVOKED_CERTIFICATE;
     }
     
     
     
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("NSSCertDBTrustDomain: cached OCSP response: error %d",
-            static_cast<int>(cachedResponseResult)));
+            ("NSSCertDBTrustDomain: cached OCSP response: error %d",
+             static_cast<int>(cachedResponseResult)));
     
     
     
@@ -477,7 +452,7 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
     }
   } else {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("NSSCertDBTrustDomain: no cached OCSP response"));
+            ("NSSCertDBTrustDomain: no cached OCSP response"));
   }
   
   
@@ -498,12 +473,10 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
   
   
   Duration shortLifetime(mCertShortLifetimeInDays * Time::ONE_DAY_IN_SECONDS);
-  if ((mOCSPFetching == NeverFetchOCSP) ||
-      (validityDuration < shortLifetime) ||
+  if ((mOCSPFetching == NeverFetchOCSP) || (validityDuration < shortLifetime) ||
       (endEntityOrCA == EndEntityOrCA::MustBeCA &&
        (mOCSPFetching == FetchOCSPForDVHardFail ||
-        mOCSPFetching == FetchOCSPForDVSoftFail ||
-        blocklistIsFresh))) {
+        mOCSPFetching == FetchOCSPForDVSoftFail || blocklistIsFresh))) {
     
     
     if (cachedResponseResult == Result::ERROR_OCSP_UNKNOWN_CERT) {
@@ -579,14 +552,14 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
     if (!ocspRequest.append(ocspRequestBytes, ocspRequestLength)) {
       return Result::FATAL_ERROR_NO_MEMORY;
     }
-    Result tempRV = DoOCSPRequest(aiaLocation, mOriginAttributes,
-                                  std::move(ocspRequest), GetOCSPTimeout(),
-                                  ocspResponse);
+    Result tempRV =
+        DoOCSPRequest(aiaLocation, mOriginAttributes, std::move(ocspRequest),
+                      GetOCSPTimeout(), ocspResponse);
     if (tempRV != Success) {
       rv = tempRV;
-    } else if (response.Init(ocspResponse.begin(), ocspResponse.length())
-                 != Success) {
-      rv = Result::ERROR_OCSP_MALFORMED_RESPONSE; 
+    } else if (response.Init(ocspResponse.begin(), ocspResponse.length()) !=
+               Success) {
+      rv = Result::ERROR_OCSP_MALFORMED_RESPONSE;  
     }
     attemptedRequest = true;
   } else {
@@ -599,7 +572,7 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
     if (attemptedRequest) {
       Time timeout(time);
       if (timeout.AddSeconds(ServerFailureDelaySeconds) != Success) {
-        return Result::FATAL_ERROR_LIBRARY_FAILURE; 
+        return Result::FATAL_ERROR_LIBRARY_FAILURE;  
       }
       rv = mOCSPCache.Put(certID, mOriginAttributes, error, time, timeout);
       if (rv != Success) {
@@ -608,27 +581,28 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
     }
     if (mOCSPFetching != FetchOCSPForDVSoftFail) {
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: returning SECFailure after "
-              "OCSP request failure"));
+              ("NSSCertDBTrustDomain: returning SECFailure after "
+               "OCSP request failure"));
       return error;
     }
     if (cachedResponseResult == Result::ERROR_OCSP_UNKNOWN_CERT) {
       MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: returning SECFailure from cached "
-              "response after OCSP request failure"));
+              ("NSSCertDBTrustDomain: returning SECFailure from cached "
+               "response after OCSP request failure"));
       return cachedResponseResult;
     }
     if (stapledOCSPResponseResult != Success) {
-      MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-             ("NSSCertDBTrustDomain: returning SECFailure from expired/invalid "
-              "stapled response after OCSP request failure"));
+      MOZ_LOG(
+          gCertVerifierLog, LogLevel::Debug,
+          ("NSSCertDBTrustDomain: returning SECFailure from expired/invalid "
+           "stapled response after OCSP request failure"));
       return stapledOCSPResponseResult;
     }
 
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("NSSCertDBTrustDomain: returning SECSuccess after "
-            "OCSP request failure"));
-    return Success; 
+            ("NSSCertDBTrustDomain: returning SECSuccess after "
+             "OCSP request failure"));
+    return Success;  
   }
 
   
@@ -636,12 +610,12 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
   
   bool expired;
   rv = VerifyAndMaybeCacheEncodedOCSPResponse(certID, time,
-                                              maxOCSPLifetimeInDays,
-                                              response, ResponseIsFromNetwork,
-                                              expired);
+                                              maxOCSPLifetimeInDays, response,
+                                              ResponseIsFromNetwork, expired);
   if (rv == Success || mOCSPFetching != FetchOCSPForDVSoftFail) {
-    MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-      ("NSSCertDBTrustDomain: returning after VerifyEncodedOCSPResponse"));
+    MOZ_LOG(
+        gCertVerifierLog, LogLevel::Debug,
+        ("NSSCertDBTrustDomain: returning after VerifyEncodedOCSPResponse"));
     return rv;
   }
 
@@ -651,23 +625,21 @@ NSSCertDBTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
   }
   if (stapledOCSPResponseResult != Success) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("NSSCertDBTrustDomain: returning SECFailure from expired/invalid "
-            "stapled response after OCSP request verification failure"));
+            ("NSSCertDBTrustDomain: returning SECFailure from expired/invalid "
+             "stapled response after OCSP request verification failure"));
     return stapledOCSPResponseResult;
   }
 
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-         ("NSSCertDBTrustDomain: end of CheckRevocation"));
+          ("NSSCertDBTrustDomain: end of CheckRevocation"));
 
-  return Success; 
+  return Success;  
 }
 
-Result
-NSSCertDBTrustDomain::VerifyAndMaybeCacheEncodedOCSPResponse(
-  const CertID& certID, Time time, uint16_t maxLifetimeInDays,
-  Input encodedResponse, EncodedResponseSource responseSource,
-   bool& expired)
-{
+Result NSSCertDBTrustDomain::VerifyAndMaybeCacheEncodedOCSPResponse(
+    const CertID& certID, Time time, uint16_t maxLifetimeInDays,
+    Input encodedResponse, EncodedResponseSource responseSource,
+     bool& expired) {
   Time thisUpdate(Time::uninitialized);
   Time validThrough(Time::uninitialized);
 
@@ -697,17 +669,16 @@ NSSCertDBTrustDomain::VerifyAndMaybeCacheEncodedOCSPResponse(
       rv != Result::ERROR_OCSP_UNKNOWN_CERT) {
     validThrough = time;
     if (validThrough.AddSeconds(ServerFailureDelaySeconds) != Success) {
-      return Result::FATAL_ERROR_LIBRARY_FAILURE; 
+      return Result::FATAL_ERROR_LIBRARY_FAILURE;  
     }
   }
-  if (responseSource == ResponseIsFromNetwork ||
-      rv == Success ||
+  if (responseSource == ResponseIsFromNetwork || rv == Success ||
       rv == Result::ERROR_REVOKED_CERTIFICATE ||
       rv == Result::ERROR_OCSP_UNKNOWN_CERT) {
     MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-           ("NSSCertDBTrustDomain: caching OCSP response"));
-    Result putRV = mOCSPCache.Put(certID, mOriginAttributes, rv, thisUpdate,
-                                  validThrough);
+            ("NSSCertDBTrustDomain: caching OCSP response"));
+    Result putRV =
+        mOCSPCache.Put(certID, mOriginAttributes, rv, thisUpdate, validThrough);
     if (putRV != Success) {
       return putRV;
     }
@@ -724,9 +695,7 @@ NSSCertDBTrustDomain::VerifyAndMaybeCacheEncodedOCSPResponse(
 
 
 
-static Result
-CheckForStartComOrWoSign(const UniqueCERTCertList& certChain)
-{
+static Result CheckForStartComOrWoSign(const UniqueCERTCertList& certChain) {
   if (CERT_LIST_EMPTY(certChain)) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
@@ -736,8 +705,8 @@ CheckForStartComOrWoSign(const UniqueCERTCertList& certChain)
   }
   PRTime notBefore;
   PRTime notAfter;
-  if (CERT_GetCertTimes(endEntityNode->cert, &notBefore, &notAfter)
-        != SECSuccess) {
+  if (CERT_GetCertTimes(endEntityNode->cert, &notBefore, &notAfter) !=
+      SECSuccess) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
   
@@ -759,16 +728,14 @@ CheckForStartComOrWoSign(const UniqueCERTCertList& certChain)
   return Success;
 }
 
-Result
-NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
-                                   const CertPolicyId& requiredPolicy)
-{
+Result NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
+                                          const CertPolicyId& requiredPolicy) {
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
-         ("NSSCertDBTrustDomain: IsChainValid"));
+          ("NSSCertDBTrustDomain: IsChainValid"));
 
   UniqueCERTCertList certList;
-  SECStatus srv = ConstructCERTCertListFromReversedDERArray(certArray,
-                                                            certList);
+  SECStatus srv =
+      ConstructCERTCertListFromReversedDERArray(certArray, certList);
   if (srv != SECSuccess) {
     return MapPRErrorCodeToResult(PR_GetError());
   }
@@ -787,7 +754,8 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
   UniqueCERTCertList certListCopy = nsNSSCertList::DupCertList(certList);
 
   
-  RefPtr<nsNSSCertList> nssCertList = new nsNSSCertList(std::move(certListCopy));
+  RefPtr<nsNSSCertList> nssCertList =
+      new nsNSSCertList(std::move(certListCopy));
   if (!nssCertList) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
@@ -807,17 +775,17 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
     return Result::FATAL_ERROR_LIBRARY_FAILURE;
   }
   bool skipPinningChecksBecauseOfMITMMode =
-    (!isBuiltInRoot && mPinningMode == CertVerifier::pinningAllowUserCAMITM);
+      (!isBuiltInRoot && mPinningMode == CertVerifier::pinningAllowUserCAMITM);
   
   
   if (mHostname && (mPinningMode != CertVerifier::pinningDisabled) &&
       !skipPinningChecksBecauseOfMITMMode) {
     bool enforceTestMode =
-      (mPinningMode == CertVerifier::pinningEnforceTestMode);
+        (mPinningMode == CertVerifier::pinningEnforceTestMode);
     bool chainHasValidPins;
     nsrv = PublicKeyPinningService::ChainHasValidPins(
-      nssCertList, mHostname, time, enforceTestMode, mOriginAttributes,
-      chainHasValidPins, mPinningTelemetryInfo);
+        nssCertList, mHostname, time, enforceTestMode, mOriginAttributes,
+        chainHasValidPins, mPinningTelemetryInfo);
     if (NS_FAILED(nsrv)) {
       return Result::FATAL_ERROR_LIBRARY_FAILURE;
     }
@@ -834,8 +802,7 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
   if (requiredPolicy == sGlobalSignEVPolicy &&
       CertMatchesStaticData(root.get(), sGlobalSignRootCAR2SubjectBytes,
                             sGlobalSignRootCAR2SPKIBytes)) {
-
-    rootCert = nullptr; 
+    rootCert = nullptr;  
     nsCOMPtr<nsIX509CertList> intCerts;
     nsCOMPtr<nsIX509Cert> eeCert;
 
@@ -850,19 +817,19 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
     bool foundRequiredIntermediate = false;
     RefPtr<nsNSSCertList> intCertList = intCerts->GetCertList();
     nsrv = intCertList->ForEachCertificateInChain(
-      [&foundRequiredIntermediate] (nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
-                                     bool& aContinue) {
-        
-        UniqueCERTCertificate nssCert(aCert->GetCert());
-        if (CertMatchesStaticData(
-            nssCert.get(),
-            sGlobalSignExtendedValidationCASHA256G2SubjectBytes,
-            sGlobalSignExtendedValidationCASHA256G2SPKIBytes)) {
-          foundRequiredIntermediate = true;
-          aContinue = false;
-        }
-        return NS_OK;
-    });
+        [&foundRequiredIntermediate](nsCOMPtr<nsIX509Cert> aCert, bool aHasMore,
+                                      bool& aContinue) {
+          
+          UniqueCERTCertificate nssCert(aCert->GetCert());
+          if (CertMatchesStaticData(
+                  nssCert.get(),
+                  sGlobalSignExtendedValidationCASHA256G2SubjectBytes,
+                  sGlobalSignExtendedValidationCASHA256G2SPKIBytes)) {
+            foundRequiredIntermediate = true;
+            aContinue = false;
+          }
+          return NS_OK;
+        });
 
     if (NS_FAILED(nsrv)) {
       return Result::FATAL_ERROR_LIBRARY_FAILURE;
@@ -882,9 +849,9 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
   
   if (mHostname && CertDNIsInList(root.get(), RootSymantecDNs) &&
       ((mDistrustedCAPolicy & DistrustedCAPolicy::DistrustSymantecRoots) ||
-       (mDistrustedCAPolicy & DistrustedCAPolicy::DistrustSymantecRootsRegardlessOfDate))) {
-
-    rootCert = nullptr; 
+       (mDistrustedCAPolicy &
+        DistrustedCAPolicy::DistrustSymantecRootsRegardlessOfDate))) {
+    rootCert = nullptr;  
     nsCOMPtr<nsIX509CertList> intCerts;
     nsCOMPtr<nsIX509Cert> eeCert;
 
@@ -899,8 +866,9 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
     static const PRTime JUNE_1_2016 = 1464739200000000;
 
     PRTime permitAfterDate = JUNE_1_2016;
-    if (mDistrustedCAPolicy & DistrustedCAPolicy::DistrustSymantecRootsRegardlessOfDate) {
-      permitAfterDate = 0; 
+    if (mDistrustedCAPolicy &
+        DistrustedCAPolicy::DistrustSymantecRootsRegardlessOfDate) {
+      permitAfterDate = 0;  
     }
 
     bool isDistrusted = false;
@@ -920,11 +888,8 @@ NSSCertDBTrustDomain::IsChainValid(const DERArray& certArray, Time time,
   return Success;
 }
 
-Result
-NSSCertDBTrustDomain::CheckSignatureDigestAlgorithm(DigestAlgorithm aAlg,
-                                                    EndEntityOrCA endEntityOrCA,
-                                                    Time notBefore)
-{
+Result NSSCertDBTrustDomain::CheckSignatureDigestAlgorithm(
+    DigestAlgorithm aAlg, EndEntityOrCA endEntityOrCA, Time notBefore) {
   
   static const Time JANUARY_FIRST_2016 = TimeFromEpochInSeconds(1451606400);
 
@@ -933,11 +898,13 @@ NSSCertDBTrustDomain::CheckSignatureDigestAlgorithm(DigestAlgorithm aAlg,
   if (aAlg == DigestAlgorithm::sha1) {
     switch (mSHA1Mode) {
       case CertVerifier::SHA1Mode::Forbidden:
-        MOZ_LOG(gCertVerifierLog, LogLevel::Debug, ("SHA-1 certificate rejected"));
+        MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+                ("SHA-1 certificate rejected"));
         return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
       case CertVerifier::SHA1Mode::ImportedRootOrBefore2016:
         if (JANUARY_FIRST_2016 <= notBefore) {
-          MOZ_LOG(gCertVerifierLog, LogLevel::Debug, ("Post-2015 SHA-1 certificate rejected"));
+          MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
+                  ("Post-2015 SHA-1 certificate rejected"));
           return Result::ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED;
         }
         break;
@@ -957,32 +924,25 @@ NSSCertDBTrustDomain::CheckSignatureDigestAlgorithm(DigestAlgorithm aAlg,
   return Success;
 }
 
-Result
-NSSCertDBTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
-  EndEntityOrCA , unsigned int modulusSizeInBits)
-{
+Result NSSCertDBTrustDomain::CheckRSAPublicKeyModulusSizeInBits(
+    EndEntityOrCA , unsigned int modulusSizeInBits) {
   if (modulusSizeInBits < mMinRSABits) {
     return Result::ERROR_INADEQUATE_KEY_SIZE;
   }
   return Success;
 }
 
-Result
-NSSCertDBTrustDomain::VerifyRSAPKCS1SignedDigest(
-  const SignedDigest& signedDigest,
-  Input subjectPublicKeyInfo)
-{
+Result NSSCertDBTrustDomain::VerifyRSAPKCS1SignedDigest(
+    const SignedDigest& signedDigest, Input subjectPublicKeyInfo) {
   return VerifyRSAPKCS1SignedDigestNSS(signedDigest, subjectPublicKeyInfo,
                                        mPinArg);
 }
 
-Result
-NSSCertDBTrustDomain::CheckECDSACurveIsAcceptable(
-  EndEntityOrCA , NamedCurve curve)
-{
+Result NSSCertDBTrustDomain::CheckECDSACurveIsAcceptable(
+    EndEntityOrCA , NamedCurve curve) {
   switch (curve) {
-    case NamedCurve::secp256r1: 
-    case NamedCurve::secp384r1: 
+    case NamedCurve::secp256r1:  
+    case NamedCurve::secp384r1:  
     case NamedCurve::secp521r1:
       return Success;
   }
@@ -990,19 +950,15 @@ NSSCertDBTrustDomain::CheckECDSACurveIsAcceptable(
   return Result::ERROR_UNSUPPORTED_ELLIPTIC_CURVE;
 }
 
-Result
-NSSCertDBTrustDomain::VerifyECDSASignedDigest(const SignedDigest& signedDigest,
-                                              Input subjectPublicKeyInfo)
-{
+Result NSSCertDBTrustDomain::VerifyECDSASignedDigest(
+    const SignedDigest& signedDigest, Input subjectPublicKeyInfo) {
   return VerifyECDSASignedDigestNSS(signedDigest, subjectPublicKeyInfo,
                                     mPinArg);
 }
 
-Result
-NSSCertDBTrustDomain::CheckValidityIsAcceptable(Time notBefore, Time notAfter,
-                                                EndEntityOrCA endEntityOrCA,
-                                                KeyPurposeId keyPurpose)
-{
+Result NSSCertDBTrustDomain::CheckValidityIsAcceptable(
+    Time notBefore, Time notAfter, EndEntityOrCA endEntityOrCA,
+    KeyPurposeId keyPurpose) {
   if (endEntityOrCA != EndEntityOrCA::MustBeEndEntity) {
     return Success;
   }
@@ -1024,7 +980,8 @@ NSSCertDBTrustDomain::CheckValidityIsAcceptable(Time notBefore, Time notAfter,
       maxValidityDuration = DURATION_27_MONTHS_PLUS_SLOP;
       break;
     default:
-      MOZ_ASSERT_UNREACHABLE("We're not handling every ValidityCheckingMode type");
+      MOZ_ASSERT_UNREACHABLE(
+          "We're not handling every ValidityCheckingMode type");
   }
 
   if (validityDuration > maxValidityDuration) {
@@ -1034,10 +991,9 @@ NSSCertDBTrustDomain::CheckValidityIsAcceptable(Time notBefore, Time notAfter,
   return Success;
 }
 
-Result
-NSSCertDBTrustDomain::NetscapeStepUpMatchesServerAuth(Time notBefore,
-                                                       bool& matches)
-{
+Result NSSCertDBTrustDomain::NetscapeStepUpMatchesServerAuth(
+    Time notBefore,
+     bool& matches) {
   
   static const Time AUGUST_23_2015 = TimeFromEpochInSeconds(1440288000);
   
@@ -1062,18 +1018,14 @@ NSSCertDBTrustDomain::NetscapeStepUpMatchesServerAuth(Time notBefore,
   return Result::FATAL_ERROR_LIBRARY_FAILURE;
 }
 
-void
-NSSCertDBTrustDomain::ResetAccumulatedState()
-{
+void NSSCertDBTrustDomain::ResetAccumulatedState() {
   mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_NEVER_CHECKED;
   mSCTListFromOCSPStapling = nullptr;
   mSCTListFromCertificate = nullptr;
   mSawDistrustedCAByPolicyError = false;
 }
 
-static Input
-SECItemToInput(const UniqueSECItem& item)
-{
+static Input SECItemToInput(const UniqueSECItem& item) {
   Input result;
   if (item) {
     MOZ_ASSERT(item->type == siBuffer);
@@ -1081,33 +1033,25 @@ SECItemToInput(const UniqueSECItem& item)
     
     
     MOZ_ASSERT(rv == Success);
-    Unused << rv; 
+    Unused << rv;  
   }
   return result;
 }
 
-Input
-NSSCertDBTrustDomain::GetSCTListFromCertificate() const
-{
+Input NSSCertDBTrustDomain::GetSCTListFromCertificate() const {
   return SECItemToInput(mSCTListFromCertificate);
 }
 
-Input
-NSSCertDBTrustDomain::GetSCTListFromOCSPStapling() const
-{
+Input NSSCertDBTrustDomain::GetSCTListFromOCSPStapling() const {
   return SECItemToInput(mSCTListFromOCSPStapling);
 }
 
-bool
-NSSCertDBTrustDomain::GetIsErrorDueToDistrustedCAPolicy() const
-{
+bool NSSCertDBTrustDomain::GetIsErrorDueToDistrustedCAPolicy() const {
   return mSawDistrustedCAByPolicyError;
 }
 
-void
-NSSCertDBTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension extension,
-                                             Input extensionData)
-{
+void NSSCertDBTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension extension,
+                                                  Input extensionData) {
   UniqueSECItem* out = nullptr;
   switch (extension) {
     case AuxiliaryExtension::EmbeddedSCTList:
@@ -1125,9 +1069,8 @@ NSSCertDBTrustDomain::NoteAuxiliaryExtension(AuxiliaryExtension extension,
   }
 }
 
-SECStatus
-InitializeNSS(const nsACString& dir, bool readOnly, bool loadPKCS11Modules)
-{
+SECStatus InitializeNSS(const nsACString& dir, bool readOnly,
+                        bool loadPKCS11Modules) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -1147,8 +1090,8 @@ InitializeNSS(const nsACString& dir, bool readOnly, bool loadPKCS11Modules)
   MOZ_LOG(gCertVerifierLog, LogLevel::Debug,
           ("InitializeNSS(%s, %d, %d)", dbTypeAndDirectory.get(), readOnly,
            loadPKCS11Modules));
-  SECStatus srv = NSS_Initialize(dbTypeAndDirectory.get(), "", "",
-                                 SECMOD_DB, flags);
+  SECStatus srv =
+      NSS_Initialize(dbTypeAndDirectory.get(), "", "", SECMOD_DB, flags);
   if (srv != SECSuccess) {
     return srv;
   }
@@ -1171,20 +1114,19 @@ InitializeNSS(const nsACString& dir, bool readOnly, bool loadPKCS11Modules)
   return SECSuccess;
 }
 
-void
-DisableMD5()
-{
-  NSS_SetAlgorithmPolicy(SEC_OID_MD5,
-    0, NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_CMS_SIGNATURE);
-  NSS_SetAlgorithmPolicy(SEC_OID_PKCS1_MD5_WITH_RSA_ENCRYPTION,
-    0, NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_CMS_SIGNATURE);
-  NSS_SetAlgorithmPolicy(SEC_OID_PKCS5_PBE_WITH_MD5_AND_DES_CBC,
-    0, NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_CMS_SIGNATURE);
+void DisableMD5() {
+  NSS_SetAlgorithmPolicy(
+      SEC_OID_MD5, 0,
+      NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_CMS_SIGNATURE);
+  NSS_SetAlgorithmPolicy(
+      SEC_OID_PKCS1_MD5_WITH_RSA_ENCRYPTION, 0,
+      NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_CMS_SIGNATURE);
+  NSS_SetAlgorithmPolicy(
+      SEC_OID_PKCS5_PBE_WITH_MD5_AND_DES_CBC, 0,
+      NSS_USE_ALG_IN_CERT_SIGNATURE | NSS_USE_ALG_IN_CMS_SIGNATURE);
 }
 
-bool
-LoadLoadableRoots(const nsCString& dir)
-{
+bool LoadLoadableRoots(const nsCString& dir) {
   
   
   
@@ -1213,9 +1155,8 @@ LoadLoadableRoots(const nsCString& dir)
   pkcs11ModuleSpec.Append(fullLibraryPath);
   pkcs11ModuleSpec.AppendLiteral("\"");
 
-  UniqueSECMODModule rootsModule(
-    SECMOD_LoadUserModule(const_cast<char*>(pkcs11ModuleSpec.get()), nullptr,
-                          false));
+  UniqueSECMODModule rootsModule(SECMOD_LoadUserModule(
+      const_cast<char*>(pkcs11ModuleSpec.get()), nullptr, false));
   if (!rootsModule) {
     return false;
   }
@@ -1227,9 +1168,7 @@ LoadLoadableRoots(const nsCString& dir)
   return true;
 }
 
-void
-UnloadLoadableRoots()
-{
+void UnloadLoadableRoots() {
   UniqueSECMODModule rootsModule(SECMOD_FindModule(kRootModuleName));
 
   if (rootsModule) {
@@ -1237,10 +1176,8 @@ UnloadLoadableRoots()
   }
 }
 
-nsresult
-DefaultServerNicknameForCert(const CERTCertificate* cert,
-                      nsCString& nickname)
-{
+nsresult DefaultServerNicknameForCert(const CERTCertificate* cert,
+                                       nsCString& nickname) {
   MOZ_ASSERT(cert);
   NS_ENSURE_ARG_POINTER(cert);
 
@@ -1288,26 +1225,23 @@ DefaultServerNicknameForCert(const CERTCertificate* cert,
   return NS_ERROR_FAILURE;
 }
 
-nsresult
-BuildRevocationCheckStrings(const CERTCertificate* cert,
-                     nsCString& encIssuer,
-                     nsCString& encSerial,
-                     nsCString& encSubject,
-                     nsCString& encPubKey)
-{
+nsresult BuildRevocationCheckStrings(const CERTCertificate* cert,
+                                      nsCString& encIssuer,
+                                      nsCString& encSerial,
+                                      nsCString& encSubject,
+                                      nsCString& encPubKey) {
   
   nsDependentCSubstring issuerString(
-    BitwiseCast<char*, uint8_t*>(cert->derIssuer.data),
-    cert->derIssuer.len);
+      BitwiseCast<char*, uint8_t*>(cert->derIssuer.data), cert->derIssuer.len);
   nsDependentCSubstring serialString(
-    BitwiseCast<char*, uint8_t*>(cert->serialNumber.data),
-    cert->serialNumber.len);
+      BitwiseCast<char*, uint8_t*>(cert->serialNumber.data),
+      cert->serialNumber.len);
   nsDependentCSubstring subjectString(
-    BitwiseCast<char*, uint8_t*>(cert->derSubject.data),
-    cert->derSubject.len);
+      BitwiseCast<char*, uint8_t*>(cert->derSubject.data),
+      cert->derSubject.len);
   nsDependentCSubstring pubKeyString(
-    BitwiseCast<char*, uint8_t*>(cert->derPublicKey.data),
-    cert->derPublicKey.len);
+      BitwiseCast<char*, uint8_t*>(cert->derPublicKey.data),
+      cert->derPublicKey.len);
 
   nsresult rv = Base64Encode(issuerString, encIssuer);
   if (NS_FAILED(rv)) {
@@ -1338,9 +1272,7 @@ BuildRevocationCheckStrings(const CERTCertificate* cert,
 
 
 
-void
-SaveIntermediateCerts(const UniqueCERTCertList& certList)
-{
+void SaveIntermediateCerts(const UniqueCERTCertList& certList) {
   if (!certList) {
     return;
   }
@@ -1352,8 +1284,7 @@ SaveIntermediateCerts(const UniqueCERTCertList& certList)
 
   bool isEndEntity = true;
   for (CERTCertListNode* node = CERT_LIST_HEAD(certList);
-        !CERT_LIST_END(node, certList);
-        node = CERT_LIST_NEXT(node)) {
+       !CERT_LIST_END(node, certList); node = CERT_LIST_NEXT(node)) {
     if (isEndEntity) {
       
       isEndEntity = false;
@@ -1395,4 +1326,5 @@ SaveIntermediateCerts(const UniqueCERTCertList& certList)
   }
 }
 
-} } 
+}  
+}  

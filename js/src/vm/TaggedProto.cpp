@@ -12,26 +12,22 @@
 
 namespace js {
 
- void
-InternalBarrierMethods<TaggedProto>::preBarrier(TaggedProto& proto)
-{
-    InternalBarrierMethods<JSObject*>::preBarrier(proto.toObjectOrNull());
+ void InternalBarrierMethods<TaggedProto>::preBarrier(
+    TaggedProto& proto) {
+  InternalBarrierMethods<JSObject*>::preBarrier(proto.toObjectOrNull());
 }
 
- void
-InternalBarrierMethods<TaggedProto>::postBarrier(TaggedProto* vp, TaggedProto prev,
-                                                 TaggedProto next)
-{
-    JSObject* prevObj = prev.isObject() ? prev.toObject() : nullptr;
-    JSObject* nextObj = next.isObject() ? next.toObject() : nullptr;
-    InternalBarrierMethods<JSObject*>::postBarrier(reinterpret_cast<JSObject**>(vp), prevObj,
-                                                   nextObj);
+ void InternalBarrierMethods<TaggedProto>::postBarrier(
+    TaggedProto* vp, TaggedProto prev, TaggedProto next) {
+  JSObject* prevObj = prev.isObject() ? prev.toObject() : nullptr;
+  JSObject* nextObj = next.isObject() ? next.toObject() : nullptr;
+  InternalBarrierMethods<JSObject*>::postBarrier(
+      reinterpret_cast<JSObject**>(vp), prevObj, nextObj);
 }
 
- void
-InternalBarrierMethods<TaggedProto>::readBarrier(const TaggedProto& proto)
-{
-    InternalBarrierMethods<JSObject*>::readBarrier(proto.toObjectOrNull());
+ void InternalBarrierMethods<TaggedProto>::readBarrier(
+    const TaggedProto& proto) {
+  InternalBarrierMethods<JSObject*>::readBarrier(proto.toObjectOrNull());
 }
 
-} 
+}  

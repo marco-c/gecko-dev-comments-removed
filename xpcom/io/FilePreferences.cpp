@@ -21,8 +21,7 @@ namespace FilePreferences {
 static bool sBlockUNCPaths = false;
 typedef nsTArray<nsString> WinPaths;
 
-static WinPaths& PathWhitelist()
-{
+static WinPaths& PathWhitelist() {
   static WinPaths sPaths;
   return sPaths;
 }
@@ -36,8 +35,7 @@ typedef char char_path_t;
 typedef nsTArray<nsTString<char_path_t>> Paths;
 static StaticAutoPtr<Paths> sBlacklist;
 
-static Paths& PathBlacklist()
-{
+static Paths& PathBlacklist() {
   if (!sBlacklist) {
     sBlacklist = new nsTArray<nsTString<char_path_t>>();
     ClearOnShutdown(&sBlacklist);
@@ -45,8 +43,7 @@ static Paths& PathBlacklist()
   return *sBlacklist;
 }
 
-static void AllowUNCDirectory(char const* directory)
-{
+static void AllowUNCDirectory(char const* directory) {
   nsCOMPtr<nsIFile> file;
   NS_GetSpecialDirectory(directory, getter_AddRefs(file));
   if (!file) {
@@ -70,9 +67,9 @@ static void AllowUNCDirectory(char const* directory)
   }
 }
 
-void InitPrefs()
-{
-  sBlockUNCPaths = Preferences::GetBool("network.file.disable_unc_paths", false);
+void InitPrefs() {
+  sBlockUNCPaths =
+      Preferences::GetBool("network.file.disable_unc_paths", false);
 
   PathBlacklist().Clear();
   nsTAutoString<char_path_t> blacklist;
@@ -94,8 +91,7 @@ void InitPrefs()
   }
 }
 
-void InitDirectoriesWhitelist()
-{
+void InitDirectoriesWhitelist() {
   
   AllowUNCDirectory(NS_GRE_DIR);
   
@@ -104,24 +100,19 @@ void InitDirectoriesWhitelist()
   AllowUNCDirectory(NS_APP_USER_PROFILE_LOCAL_50_DIR);
 }
 
-namespace { 
+namespace {  
 
 template <typename TChar>
-class TNormalizer
-  : public TTokenizer<TChar>
-{
+class TNormalizer : public TTokenizer<TChar> {
   typedef TTokenizer<TChar> base;
-public:
+
+ public:
   typedef typename base::Token Token;
 
   TNormalizer(const nsTSubstring<TChar>& aFilePath, const Token& aSeparator)
-    : TTokenizer<TChar>(aFilePath)
-    , mSeparator(aSeparator)
-  {
-  }
+      : TTokenizer<TChar>(aFilePath), mSeparator(aSeparator) {}
 
-  bool Get(nsTSubstring<TChar>& aNormalizedFilePath)
-  {
+  bool Get(nsTSubstring<TChar>& aNormalizedFilePath) {
     aNormalizedFilePath.Truncate();
 
     
@@ -151,10 +142,8 @@ public:
     return true;
   }
 
-
-private:
-  bool ConsumeName()
-  {
+ private:
+  bool ConsumeName() {
     if (base::CheckEOF()) {
       return true;
     }
@@ -174,7 +163,8 @@ private:
     }
 
     nsTDependentSubstring<TChar> name;
-    if (base::ReadUntil(mSeparator, name, base::INCLUDE_LAST) && name.Length() == 1) {
+    if (base::ReadUntil(mSeparator, name, base::INCLUDE_LAST) &&
+        name.Length() == 1) {
       
       return false;
     }
@@ -183,8 +173,7 @@ private:
     return true;
   }
 
-  bool CheckParentDir()
-  {
+  bool CheckParentDir() {
     typename nsTString<TChar>::const_char_iterator cursor = base::mCursor;
     if (base::CheckChar('.') && base::CheckChar('.') && CheckSeparator()) {
       return true;
@@ -194,8 +183,7 @@ private:
     return false;
   }
 
-  bool CheckCurrentDir()
-  {
+  bool CheckCurrentDir() {
     typename nsTString<TChar>::const_char_iterator cursor = base::mCursor;
     if (base::CheckChar('.') && CheckSeparator()) {
       return true;
@@ -205,19 +193,15 @@ private:
     return false;
   }
 
-  bool CheckSeparator()
-  {
-    return base::Check(mSeparator) || base::CheckEOF();
-  }
+  bool CheckSeparator() { return base::Check(mSeparator) || base::CheckEOF(); }
 
   Token const mSeparator;
   nsTArray<nsTDependentSubstring<TChar>> mStack;
 };
 
-} 
+}  
 
-bool IsBlockedUNCPath(const nsAString& aFilePath)
-{
+bool IsBlockedUNCPath(const nsAString& aFilePath) {
   typedef TNormalizer<char16_t> Normalizer;
   if (!sBlockUNCPaths) {
     return false;
@@ -259,8 +243,7 @@ const char kPathSeparator = '\\';
 const char kPathSeparator = '/';
 #endif
 
-bool IsAllowedPath(const nsTSubstring<char_path_t>& aFilePath)
-{
+bool IsAllowedPath(const nsTSubstring<char_path_t>& aFilePath) {
   typedef TNormalizer<char_path_t> Normalizer;
   
   
@@ -273,7 +256,8 @@ bool IsAllowedPath(const nsTSubstring<char_path_t>& aFilePath)
   }
 
   nsTAutoString<char_path_t> normalized;
-  if (!Normalizer(aFilePath, Normalizer::Token::Char(kPathSeparator)).Get(normalized)) {
+  if (!Normalizer(aFilePath, Normalizer::Token::Char(kPathSeparator))
+           .Get(normalized)) {
     
     return false;
   }
@@ -291,22 +275,17 @@ bool IsAllowedPath(const nsTSubstring<char_path_t>& aFilePath)
   return true;
 }
 
-void testing::SetBlockUNCPaths(bool aBlock)
-{
-  sBlockUNCPaths = aBlock;
-}
+void testing::SetBlockUNCPaths(bool aBlock) { sBlockUNCPaths = aBlock; }
 
-void testing::AddDirectoryToWhitelist(nsAString const & aPath)
-{
+void testing::AddDirectoryToWhitelist(nsAString const& aPath) {
   PathWhitelist().AppendElement(aPath);
 }
 
-bool testing::NormalizePath(nsAString const & aPath, nsAString & aNormalized)
-{
+bool testing::NormalizePath(nsAString const& aPath, nsAString& aNormalized) {
   typedef TNormalizer<char16_t> Normalizer;
   Normalizer normalizer(aPath, Normalizer::Token::Char('\\'));
   return normalizer.Get(aNormalized);
 }
 
-} 
-} 
+}  
+}  

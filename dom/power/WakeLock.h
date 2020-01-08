@@ -23,13 +23,11 @@ namespace dom {
 
 class ContentParent;
 
-class WakeLock final
-  : public nsIDOMEventListener
-  , public nsIObserver
-  , public nsSupportsWeakReference
-  , public nsIWakeLock
-{
-public:
+class WakeLock final : public nsIDOMEventListener,
+                       public nsIObserver,
+                       public nsSupportsWeakReference,
+                       public nsIWakeLock {
+ public:
   NS_DECL_NSIDOMEVENTLISTENER
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIWAKELOCK
@@ -46,12 +44,12 @@ public:
   
   
   
-  nsresult Init(const nsAString &aTopic, nsPIDOMWindowInner* aWindow);
+  nsresult Init(const nsAString& aTopic, nsPIDOMWindowInner* aWindow);
 
   
   
   
-  nsresult Init(const nsAString &aTopic, ContentParent* aContentParent);
+  nsresult Init(const nsAString& aTopic, ContentParent* aContentParent);
 
   
 
@@ -61,28 +59,28 @@ public:
 
   void Unlock(ErrorResult& aRv);
 
-private:
+ private:
   virtual ~WakeLock();
 
-  void     DoUnlock();
-  void     DoLock();
-  void     AttachEventListener();
-  void     DetachEventListener();
+  void DoUnlock();
+  void DoLock();
+  void AttachEventListener();
+  void DetachEventListener();
 
-  bool      mLocked;
-  bool      mHidden;
+  bool mLocked;
+  bool mHidden;
 
   
   
   
-  uint64_t  mContentParentID;
-  nsString  mTopic;
+  uint64_t mContentParentID;
+  nsString mTopic;
 
   
   nsWeakPtr mWindow;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

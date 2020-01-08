@@ -14,43 +14,41 @@
 
 class nsIRunnable;
 
-class nsProtectedAuthThread : public nsIProtectedAuthThread
-{
-private:
-    mozilla::Mutex mMutex;
+class nsProtectedAuthThread : public nsIProtectedAuthThread {
+ private:
+  mozilla::Mutex mMutex;
 
-    nsCOMPtr<nsIRunnable> mNotifyObserver;
+  nsCOMPtr<nsIRunnable> mNotifyObserver;
 
-    bool        mIAmRunning;
-    bool        mLoginReady;
+  bool mIAmRunning;
+  bool mLoginReady;
 
-    PRThread    *mThreadHandle;
+  PRThread *mThreadHandle;
 
-    
-    PK11SlotInfo*   mSlot;
+  
+  PK11SlotInfo *mSlot;
 
-    
-    SECStatus       mLoginResult;
+  
+  SECStatus mLoginResult;
 
-public:
+ public:
+  nsProtectedAuthThread();
 
-    nsProtectedAuthThread();
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIPROTECTEDAUTHTHREAD
 
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIPROTECTEDAUTHTHREAD
+  
+  void SetParams(PK11SlotInfo *slot);
 
-    
-    void SetParams(PK11SlotInfo *slot);
+  
+  SECStatus GetResult();
 
-    
-    SECStatus GetResult();
+  void Join(void);
 
-    void Join(void);
+  void Run(void);
 
-    void Run(void);
-
-protected:
-    virtual ~nsProtectedAuthThread();
+ protected:
+  virtual ~nsProtectedAuthThread();
 };
 
-#endif 
+#endif  

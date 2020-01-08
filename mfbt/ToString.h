@@ -18,15 +18,13 @@ namespace mozilla {
 
 
 
-template<typename T>
-std::string
-ToString(const T& aValue)
-{
+template <typename T>
+std::string ToString(const T& aValue) {
   std::ostringstream stream;
   stream << aValue;
   return stream.str();
 }
 
-} 
+}  
 
 #endif 

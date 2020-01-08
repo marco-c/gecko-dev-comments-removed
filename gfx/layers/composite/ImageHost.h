@@ -7,25 +7,25 @@
 #ifndef MOZILLA_GFX_IMAGEHOST_H
 #define MOZILLA_GFX_IMAGEHOST_H
 
-#include <stdio.h>                      
-#include "CompositableHost.h"           
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/MatrixFwd.h"      
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Polygon.h"        
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/gfx/Types.h"          
+#include <stdio.h>                           
+#include "CompositableHost.h"                
+#include "mozilla/Attributes.h"              
+#include "mozilla/RefPtr.h"                  
+#include "mozilla/gfx/MatrixFwd.h"           
+#include "mozilla/gfx/Point.h"               
+#include "mozilla/gfx/Polygon.h"             
+#include "mozilla/gfx/Rect.h"                
+#include "mozilla/gfx/Types.h"               
 #include "mozilla/layers/CompositorTypes.h"  
-#include "mozilla/layers/ImageComposite.h"  
-#include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "mozilla/layers/TextureHost.h"  
-#include "mozilla/mozalloc.h"           
-#include "nsCOMPtr.h"                   
-#include "nsRect.h"                     
-#include "nsRegionFwd.h"                
-#include "nscore.h"                     
+#include "mozilla/layers/ImageComposite.h"   
+#include "mozilla/layers/LayersSurfaces.h"   
+#include "mozilla/layers/LayersTypes.h"      
+#include "mozilla/layers/TextureHost.h"      
+#include "mozilla/mozalloc.h"                
+#include "nsCOMPtr.h"                        
+#include "nsRect.h"                          
+#include "nsRegionFwd.h"                     
+#include "nscore.h"                          
 
 namespace mozilla {
 namespace layers {
@@ -37,44 +37,43 @@ class HostLayerManager;
 
 
 
-class ImageHost : public CompositableHost,
-                  public ImageComposite
-{
-public:
+class ImageHost : public CompositableHost, public ImageComposite {
+ public:
   explicit ImageHost(const TextureInfo& aTextureInfo);
   ~ImageHost();
 
-  virtual CompositableType GetType() override { return mTextureInfo.mCompositableType; }
+  virtual CompositableType GetType() override {
+    return mTextureInfo.mCompositableType;
+  }
   virtual ImageHost* AsImageHost() override { return this; }
 
-  virtual void Composite(Compositor* aCompositor,
-                         LayerComposite* aLayer,
-                         EffectChain& aEffectChain,
-                         float aOpacity,
-                         const gfx::Matrix4x4& aTransform,
-                         const gfx::SamplingFilter aSamplingFilter,
-                         const gfx::IntRect& aClipRect,
-                         const nsIntRegion* aVisibleRegion = nullptr,
-                         const Maybe<gfx::Polygon>& aGeometry = Nothing()) override;
+  virtual void Composite(
+      Compositor* aCompositor, LayerComposite* aLayer,
+      EffectChain& aEffectChain, float aOpacity,
+      const gfx::Matrix4x4& aTransform,
+      const gfx::SamplingFilter aSamplingFilter, const gfx::IntRect& aClipRect,
+      const nsIntRegion* aVisibleRegion = nullptr,
+      const Maybe<gfx::Polygon>& aGeometry = Nothing()) override;
 
   virtual void UseTextureHost(const nsTArray<TimedTexture>& aTextures) override;
 
   virtual void RemoveTextureHost(TextureHost* aTexture) override;
 
-  virtual TextureHost* GetAsTextureHost(gfx::IntRect* aPictureRect = nullptr) override;
+  virtual TextureHost* GetAsTextureHost(
+      gfx::IntRect* aPictureRect = nullptr) override;
 
-  virtual void Attach(Layer* aLayer,
-                      TextureSourceProvider* aProvider,
+  virtual void Attach(Layer* aLayer, TextureSourceProvider* aProvider,
                       AttachFlags aFlags = NO_FLAGS) override;
 
-  virtual void SetTextureSourceProvider(TextureSourceProvider* aProvider) override;
+  virtual void SetTextureSourceProvider(
+      TextureSourceProvider* aProvider) override;
 
   gfx::IntSize GetImageSize() override;
 
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+  virtual void PrintInfo(std::stringstream& aStream,
+                         const char* aPrefix) override;
 
-  virtual void Dump(std::stringstream& aStream,
-                    const char* aPrefix = "",
+  virtual void Dump(std::stringstream& aStream, const char* aPrefix = "",
                     bool aDumpHtml = false) override;
 
   virtual already_AddRefed<gfx::DataSourceSurface> GetAsSurface() override;
@@ -83,7 +82,8 @@ public:
 
   virtual void Unlock() override;
 
-  virtual already_AddRefed<TexturedEffect> GenEffect(const gfx::SamplingFilter aSamplingFilter) override;
+  virtual already_AddRefed<TexturedEffect> GenEffect(
+      const gfx::SamplingFilter aSamplingFilter) override;
 
   void SetCurrentTextureHost(TextureHost* aTexture);
 
@@ -91,18 +91,14 @@ public:
 
   bool IsOpaque();
 
-  uint32_t GetDroppedFrames() override
-  {
-    return GetDroppedFramesAndReset();
-  }
+  uint32_t GetDroppedFrames() override { return GetDroppedFramesAndReset(); }
 
   struct RenderInfo {
     int imageIndex;
     const TimedImage* img;
     RefPtr<TextureHost> host;
 
-    RenderInfo() : imageIndex(-1), img(nullptr)
-    {}
+    RenderInfo() : imageIndex(-1), img(nullptr) {}
   };
 
   
@@ -121,7 +117,7 @@ public:
     return mCurrentTextureHost;
   }
 
-protected:
+ protected:
   
   virtual TimeStamp GetCompositionTime() const override;
 
@@ -138,7 +134,7 @@ protected:
   bool mLocked;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

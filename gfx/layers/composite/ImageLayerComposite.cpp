@@ -5,25 +5,25 @@
 
 
 #include "ImageLayerComposite.h"
-#include "CompositableHost.h"           
-#include "Layers.h"                     
-#include "gfx2DGlue.h"                  
-#include "gfxEnv.h"                     
-#include "gfxRect.h"                    
-#include "mozilla/Assertions.h"         
-#include "mozilla/gfx/Matrix.h"         
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/layers/Compositor.h"  
-#include "mozilla/layers/Effects.h"     
-#include "mozilla/layers/ImageHost.h"   
+#include "CompositableHost.h"            
+#include "Layers.h"                      
+#include "gfx2DGlue.h"                   
+#include "gfxEnv.h"                      
+#include "gfxRect.h"                     
+#include "mozilla/Assertions.h"          
+#include "mozilla/gfx/Matrix.h"          
+#include "mozilla/gfx/Point.h"           
+#include "mozilla/gfx/Rect.h"            
+#include "mozilla/layers/Compositor.h"   
+#include "mozilla/layers/Effects.h"      
+#include "mozilla/layers/ImageHost.h"    
 #include "mozilla/layers/TextureHost.h"  
-#include "mozilla/mozalloc.h"           
+#include "mozilla/mozalloc.h"            
 #include "nsAString.h"
-#include "mozilla/RefPtr.h"                   
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
-#include "nsString.h"                   
+#include "mozilla/RefPtr.h"   
+#include "nsDebug.h"          
+#include "nsISupportsImpl.h"  
+#include "nsString.h"         
 
 namespace mozilla {
 namespace layers {
@@ -31,25 +31,21 @@ namespace layers {
 using namespace mozilla::gfx;
 
 ImageLayerComposite::ImageLayerComposite(LayerManagerComposite* aManager)
-  : ImageLayer(aManager, nullptr)
-  , LayerComposite(aManager)
-  , mImageHost(nullptr)
-{
+    : ImageLayer(aManager, nullptr),
+      LayerComposite(aManager),
+      mImageHost(nullptr) {
   MOZ_COUNT_CTOR(ImageLayerComposite);
   mImplData = static_cast<LayerComposite*>(this);
 }
 
-ImageLayerComposite::~ImageLayerComposite()
-{
+ImageLayerComposite::~ImageLayerComposite() {
   MOZ_COUNT_DTOR(ImageLayerComposite);
   MOZ_ASSERT(mDestroyed);
 
   CleanupResources();
 }
 
-bool
-ImageLayerComposite::SetCompositableHost(CompositableHost* aHost)
-{
+bool ImageLayerComposite::SetCompositableHost(CompositableHost* aHost) {
   switch (aHost->GetType()) {
     case CompositableType::IMAGE:
       mImageHost = static_cast<ImageHost*>(aHost);
@@ -59,21 +55,11 @@ ImageLayerComposite::SetCompositableHost(CompositableHost* aHost)
   }
 }
 
-void
-ImageLayerComposite::Disconnect()
-{
-  Destroy();
-}
+void ImageLayerComposite::Disconnect() { Destroy(); }
 
-Layer*
-ImageLayerComposite::GetLayer()
-{
-  return this;
-}
+Layer* ImageLayerComposite::GetLayer() { return this; }
 
-void
-ImageLayerComposite::SetLayerManager(HostLayerManager* aManager)
-{
+void ImageLayerComposite::SetLayerManager(HostLayerManager* aManager) {
   LayerComposite::SetLayerManager(aManager);
   mManager = aManager;
   if (mImageHost) {
@@ -81,10 +67,8 @@ ImageLayerComposite::SetLayerManager(HostLayerManager* aManager)
   }
 }
 
-void
-ImageLayerComposite::RenderLayer(const IntRect& aClipRect,
-                                 const Maybe<gfx::Polygon>& aGeometry)
-{
+void ImageLayerComposite::RenderLayer(const IntRect& aClipRect,
+                                      const Maybe<gfx::Polygon>& aGeometry) {
   if (!mImageHost || !mImageHost->IsAttached()) {
     return;
   }
@@ -102,25 +86,22 @@ ImageLayerComposite::RenderLayer(const IntRect& aClipRect,
 
   RenderWithAllMasks(this, mCompositor, aClipRect,
                      [&](EffectChain& effectChain, const IntRect& clipRect) {
-    mImageHost->SetTextureSourceProvider(mCompositor);
-    mImageHost->Composite(mCompositor, this, effectChain,
-                          GetEffectiveOpacity(),
-                          GetEffectiveTransformForBuffer(),
-                          GetSamplingFilter(),
-                          clipRect);
-  });
+                       mImageHost->SetTextureSourceProvider(mCompositor);
+                       mImageHost->Composite(mCompositor, this, effectChain,
+                                             GetEffectiveOpacity(),
+                                             GetEffectiveTransformForBuffer(),
+                                             GetSamplingFilter(), clipRect);
+                     });
   mImageHost->BumpFlashCounter();
 }
 
-void
-ImageLayerComposite::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface)
-{
+void ImageLayerComposite::ComputeEffectiveTransforms(
+    const gfx::Matrix4x4& aTransformToSurface) {
   gfx::Matrix4x4 local = GetLocalTransform();
 
   
   gfxRect sourceRect(0, 0, 0, 0);
-  if (mImageHost &&
-      mImageHost->IsAttached()) {
+  if (mImageHost && mImageHost->IsAttached()) {
     IntSize size = mImageHost->GetImageSize();
     sourceRect.SizeTo(size.width, size.height);
   }
@@ -128,9 +109,8 @@ ImageLayerComposite::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransform
   
   
   
-  mEffectiveTransform =
-      SnapTransform(local, sourceRect, nullptr) *
-      SnapTransformTranslation(aTransformToSurface, nullptr);
+  mEffectiveTransform = SnapTransform(local, sourceRect, nullptr) *
+                        SnapTransformTranslation(aTransformToSurface, nullptr);
 
   if (mScaleMode != ScaleMode::SCALE_NONE && !sourceRect.IsZeroArea()) {
     NS_ASSERTION(mScaleMode == ScaleMode::STRETCH,
@@ -148,11 +128,8 @@ ImageLayerComposite::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransform
   ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
 }
 
-bool
-ImageLayerComposite::IsOpaque()
-{
-  if (!mImageHost ||
-      !mImageHost->IsAttached()) {
+bool ImageLayerComposite::IsOpaque() {
+  if (!mImageHost || !mImageHost->IsAttached()) {
     return false;
   }
 
@@ -162,26 +139,23 @@ ImageLayerComposite::IsOpaque()
   return false;
 }
 
-nsIntRegion
-ImageLayerComposite::GetFullyRenderedRegion()
-{
-  if (!mImageHost ||
-      !mImageHost->IsAttached()) {
+nsIntRegion ImageLayerComposite::GetFullyRenderedRegion() {
+  if (!mImageHost || !mImageHost->IsAttached()) {
     return GetShadowVisibleRegion().ToUnknownRegion();
   }
 
   if (mScaleMode == ScaleMode::STRETCH) {
     nsIntRegion shadowVisibleRegion;
-    shadowVisibleRegion.And(GetShadowVisibleRegion().ToUnknownRegion(), nsIntRegion(gfx::IntRect(0, 0, mScaleToSize.width, mScaleToSize.height)));
+    shadowVisibleRegion.And(GetShadowVisibleRegion().ToUnknownRegion(),
+                            nsIntRegion(gfx::IntRect(0, 0, mScaleToSize.width,
+                                                     mScaleToSize.height)));
     return shadowVisibleRegion;
   }
 
   return GetShadowVisibleRegion().ToUnknownRegion();
 }
 
-CompositableHost*
-ImageLayerComposite::GetCompositableHost()
-{
+CompositableHost* ImageLayerComposite::GetCompositableHost() {
   if (mImageHost && mImageHost->IsAttached()) {
     return mImageHost.get();
   }
@@ -189,9 +163,7 @@ ImageLayerComposite::GetCompositableHost()
   return nullptr;
 }
 
-void
-ImageLayerComposite::CleanupResources()
-{
+void ImageLayerComposite::CleanupResources() {
   if (mImageHost) {
     mImageHost->CleanupResources();
     mImageHost->Detach(this);
@@ -199,22 +171,17 @@ ImageLayerComposite::CleanupResources()
   mImageHost = nullptr;
 }
 
-gfx::SamplingFilter
-ImageLayerComposite::GetSamplingFilter()
-{
+gfx::SamplingFilter ImageLayerComposite::GetSamplingFilter() {
   return mSamplingFilter;
 }
 
-void
-ImageLayerComposite::GenEffectChain(EffectChain& aEffect)
-{
+void ImageLayerComposite::GenEffectChain(EffectChain& aEffect) {
   aEffect.mLayerRef = this;
   aEffect.mPrimaryEffect = mImageHost->GenEffect(GetSamplingFilter());
 }
 
-void
-ImageLayerComposite::PrintInfo(std::stringstream& aStream, const char* aPrefix)
-{
+void ImageLayerComposite::PrintInfo(std::stringstream& aStream,
+                                    const char* aPrefix) {
   ImageLayer::PrintInfo(aStream, aPrefix);
   if (mImageHost && mImageHost->IsAttached()) {
     aStream << "\n";
@@ -224,5 +191,5 @@ ImageLayerComposite::PrintInfo(std::stringstream& aStream, const char* aPrefix)
   }
 }
 
-} 
-} 
+}  
+}  

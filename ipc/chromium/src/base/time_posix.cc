@@ -40,7 +40,7 @@ const int64_t Time::kTimeTToMicrosecondsOffset = GG_INT64_C(0);
 
 Time Time::Now() {
   struct timeval tv;
-  struct timezone tz = { 0, 0 };  
+  struct timezone tz = {0, 0};  
   if (gettimeofday(&tv, &tz) != 0) {
     DCHECK(0) << "Could not determine time of day";
   }
@@ -58,23 +58,23 @@ Time Time::NowFromSystemTime() {
 
 Time Time::FromExploded(bool is_local, const Exploded& exploded) {
   struct tm timestruct;
-  timestruct.tm_sec    = exploded.second;
-  timestruct.tm_min    = exploded.minute;
-  timestruct.tm_hour   = exploded.hour;
-  timestruct.tm_mday   = exploded.day_of_month;
-  timestruct.tm_mon    = exploded.month - 1;
-  timestruct.tm_year   = exploded.year - 1900;
-  timestruct.tm_wday   = exploded.day_of_week;  
-  timestruct.tm_yday   = 0;     
-  timestruct.tm_isdst  = -1;    
+  timestruct.tm_sec = exploded.second;
+  timestruct.tm_min = exploded.minute;
+  timestruct.tm_hour = exploded.hour;
+  timestruct.tm_mday = exploded.day_of_month;
+  timestruct.tm_mon = exploded.month - 1;
+  timestruct.tm_year = exploded.year - 1900;
+  timestruct.tm_wday = exploded.day_of_week;  
+  timestruct.tm_yday = 0;                     
+  timestruct.tm_isdst = -1;                   
 #ifndef OS_SOLARIS
-  timestruct.tm_gmtoff = 0;     
-  timestruct.tm_zone   = NULL;  
+  timestruct.tm_gmtoff = 0;   
+  timestruct.tm_zone = NULL;  
 #endif
 
   time_t seconds;
 #ifdef ANDROID
-    seconds = mktime(&timestruct);
+  seconds = mktime(&timestruct);
 #else
   if (is_local)
     seconds = mktime(&timestruct);
@@ -87,8 +87,7 @@ Time Time::FromExploded(bool is_local, const Exploded& exploded) {
   
   
   
-  if (seconds == -1 &&
-      (exploded.year < 1969 || exploded.year > 1970)) {
+  if (seconds == -1 && (exploded.year < 1969 || exploded.year > 1970)) {
     
     
     
@@ -107,13 +106,13 @@ Time Time::FromExploded(bool is_local, const Exploded& exploded) {
     
     if (exploded.year < 1969) {
       int64_t min_seconds = (sizeof(time_t) < sizeof(int64_t))
-                          ? std::numeric_limits<time_t>::min()
-                          : std::numeric_limits<int32_t>::min();
+                                ? std::numeric_limits<time_t>::min()
+                                : std::numeric_limits<int32_t>::min();
       milliseconds = min_seconds * kMillisecondsPerSecond;
     } else {
       int64_t max_seconds = (sizeof(time_t) < sizeof(int64_t))
-                          ? std::numeric_limits<time_t>::max()
-                          : std::numeric_limits<int32_t>::max();
+                                ? std::numeric_limits<time_t>::max()
+                                : std::numeric_limits<int32_t>::max();
       milliseconds = max_seconds * kMillisecondsPerSecond;
       milliseconds += kMillisecondsPerSecond - 1;
     }
@@ -136,14 +135,14 @@ void Time::Explode(bool is_local, Exploded* exploded) const {
   else
     gmtime_r(&seconds, &timestruct);
 
-  exploded->year         = timestruct.tm_year + 1900;
-  exploded->month        = timestruct.tm_mon + 1;
-  exploded->day_of_week  = timestruct.tm_wday;
+  exploded->year = timestruct.tm_year + 1900;
+  exploded->month = timestruct.tm_mon + 1;
+  exploded->day_of_week = timestruct.tm_wday;
   exploded->day_of_month = timestruct.tm_mday;
-  exploded->hour         = timestruct.tm_hour;
-  exploded->minute       = timestruct.tm_min;
-  exploded->second       = timestruct.tm_sec;
-  exploded->millisecond  = milliseconds % kMillisecondsPerSecond;
+  exploded->hour = timestruct.tm_hour;
+  exploded->minute = timestruct.tm_min;
+  exploded->second = timestruct.tm_sec;
+  exploded->millisecond = milliseconds % kMillisecondsPerSecond;
 }
 
 
@@ -177,8 +176,9 @@ TimeTicks TimeTicks::Now() {
   
   
 
-#elif defined(OS_OPENBSD) || defined(OS_POSIX) && \
-      defined(_POSIX_MONOTONIC_CLOCK) && _POSIX_MONOTONIC_CLOCK >= 0
+#elif defined(OS_OPENBSD) || defined(OS_POSIX) &&                   \
+                                 defined(_POSIX_MONOTONIC_CLOCK) && \
+                                 _POSIX_MONOTONIC_CLOCK >= 0
 
   struct timespec ts;
   if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0) {

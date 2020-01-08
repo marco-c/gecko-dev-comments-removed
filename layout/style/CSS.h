@@ -21,25 +21,21 @@ namespace dom {
 class GlobalObject;
 
 class CSS {
-private:
+ private:
   CSS() = delete;
 
-public:
-  static bool Supports(const GlobalObject& aGlobal,
-                       const nsAString& aProperty,
-                       const nsAString& aValue,
-                       ErrorResult& aRv);
+ public:
+  static bool Supports(const GlobalObject& aGlobal, const nsAString& aProperty,
+                       const nsAString& aValue, ErrorResult& aRv);
 
   static bool Supports(const GlobalObject& aGlobal,
-                       const nsAString& aDeclaration,
-                       ErrorResult& aRv);
+                       const nsAString& aDeclaration, ErrorResult& aRv);
 
-  static void Escape(const GlobalObject& aGlobal,
-                     const nsAString& aIdent,
+  static void Escape(const GlobalObject& aGlobal, const nsAString& aIdent,
                      nsAString& aReturn);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

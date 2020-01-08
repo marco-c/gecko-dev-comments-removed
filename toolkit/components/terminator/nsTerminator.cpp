@@ -73,23 +73,20 @@ namespace {
 
 
 
-struct ShutdownStep
-{
+struct ShutdownStep {
   char const* const mTopic;
   int mTicks;
 
-  constexpr explicit ShutdownStep(const char *const topic)
-    : mTopic(topic)
-    , mTicks(-1)
-  {}
+  constexpr explicit ShutdownStep(const char* const topic)
+      : mTopic(topic), mTicks(-1) {}
 };
 
 static ShutdownStep sShutdownSteps[] = {
-  ShutdownStep("quit-application"),
-  ShutdownStep("profile-change-teardown"),
-  ShutdownStep("profile-before-change"),
-  ShutdownStep("xpcom-will-shutdown"),
-  ShutdownStep("xpcom-shutdown"),
+    ShutdownStep("quit-application"),
+    ShutdownStep("profile-change-teardown"),
+    ShutdownStep("profile-before-change"),
+    ShutdownStep("xpcom-will-shutdown"),
+    ShutdownStep("xpcom-shutdown"),
 };
 
 Atomic<bool> sShutdownNotified;
@@ -97,21 +94,19 @@ Atomic<bool> sShutdownNotified;
 
 
 
-PRThread* CreateSystemThread(void (*start)(void* arg),
-                             void* arg)
-{
+PRThread* CreateSystemThread(void (*start)(void* arg), void* arg) {
   PRThread* thread =
-    PR_CreateThread(PR_SYSTEM_THREAD, 
+      PR_CreateThread(PR_SYSTEM_THREAD, 
 
-                    start, arg, PR_PRIORITY_LOW,
-                    PR_GLOBAL_THREAD, 
+                      start, arg, PR_PRIORITY_LOW,
+                      PR_GLOBAL_THREAD, 
 
-                    PR_UNJOINABLE_THREAD, 0 
-  );
-  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(thread); 
+                      PR_UNJOINABLE_THREAD, 0 
+      );
+  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(
+      thread);  
   return thread;
 }
-
 
 
 
@@ -151,9 +146,7 @@ struct Options {
 
 
 
-void
-RunWatchdog(void* arg)
-{
+void RunWatchdog(void* arg) {
   NS_SetCurrentThreadName("Shutdown Hang Terminator");
 
   
@@ -196,8 +189,10 @@ RunWatchdog(void* arg)
 
       if (lastStep) {
         nsCString msg;
-        msg.AppendPrintf("Shutdown hanging at step %s. "
-                         "Something is blocking the main-thread.", lastStep);
+        msg.AppendPrintf(
+            "Shutdown hanging at step %s. "
+            "Something is blocking the main-thread.",
+            lastStep);
         
         MOZ_CRASH_UNSAFE_OOL(strdup(msg.BeginReading()));
       }
@@ -207,9 +202,9 @@ RunWatchdog(void* arg)
 
     
     mozilla::dom::workerinternals::RuntimeService* runtimeService =
-      mozilla::dom::workerinternals::RuntimeService::GetService();
+        mozilla::dom::workerinternals::RuntimeService::GetService();
     if (runtimeService) {
-     runtimeService->CrashIfHanging();
+      runtimeService->CrashIfHanging();
     }
 
     
@@ -230,17 +225,13 @@ RunWatchdog(void* arg)
 
 
 
-class PR_CloseDelete
-{
-public:
+class PR_CloseDelete {
+ public:
   constexpr PR_CloseDelete() = default;
 
   PR_CloseDelete(const PR_CloseDelete& aOther) = default;
 
-  void operator()(PRFileDesc* aPtr) const
-  {
-    PR_Close(aPtr);
-  }
+  void operator()(PRFileDesc* aPtr) const { PR_Close(aPtr); }
 };
 
 
@@ -272,8 +263,7 @@ public:
 Atomic<nsCString*> gWriteData(nullptr);
 PRMonitor* gWriteReady = nullptr;
 
-void RunWriter(void* arg)
-{
+void RunWriter(void* arg) {
   AUTO_PROFILER_REGISTER_THREAD("Shutdown Statistics Writer");
   NS_SetCurrentThreadName("Shutdown Statistics Writer");
 
@@ -327,10 +317,8 @@ void RunWriter(void* arg)
     
     
     
-    UniquePtr<PRFileDesc, PR_CloseDelete>
-      tmpFileDesc(PR_Open(tmpFilePath.get(),
-                          PR_WRONLY | PR_TRUNCATE | PR_CREATE_FILE,
-                          00600));
+    UniquePtr<PRFileDesc, PR_CloseDelete> tmpFileDesc(PR_Open(
+        tmpFilePath.get(), PR_WRONLY | PR_TRUNCATE | PR_CREATE_FILE, 00600));
 
     
     
@@ -357,20 +345,14 @@ void RunWriter(void* arg)
   }
 }
 
-} 
+}  
 
 NS_IMPL_ISUPPORTS(nsTerminator, nsIObserver)
 
-nsTerminator::nsTerminator()
-  : mInitialized(false)
-  , mCurrentStep(-1)
-{
-}
+nsTerminator::nsTerminator() : mInitialized(false), mCurrentStep(-1) {}
 
 
-nsresult
-nsTerminator::SelfInit()
-{
+nsresult nsTerminator::SelfInit() {
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (!os) {
     return NS_ERROR_UNEXPECTED;
@@ -385,9 +367,8 @@ nsTerminator::SelfInit()
 }
 
 
-void
-nsTerminator::Start()
-{
+
+void nsTerminator::Start() {
   MOZ_ASSERT(!mInitialized);
   StartWatchdog();
 #if !defined(NS_FREE_PERMANENT_DATA)
@@ -395,19 +376,17 @@ nsTerminator::Start()
   
   
   StartWriter();
-#endif 
+#endif  
   mInitialized = true;
   sShutdownNotified = false;
 }
 
 
 
-void
-nsTerminator::StartWatchdog()
-{
+void nsTerminator::StartWatchdog() {
   int32_t crashAfterMS =
-    Preferences::GetInt("toolkit.asyncshutdown.crash_timeout",
-                        FALLBACK_ASYNCSHUTDOWN_CRASH_AFTER_MS);
+      Preferences::GetInt("toolkit.asyncshutdown.crash_timeout",
+                          FALLBACK_ASYNCSHUTDOWN_CRASH_AFTER_MS);
   
   if (crashAfterMS <= 0) {
     crashAfterMS = FALLBACK_ASYNCSHUTDOWN_CRASH_AFTER_MS;
@@ -422,7 +401,7 @@ nsTerminator::StartWatchdog()
     crashAfterMS += ADDITIONAL_WAIT_BEFORE_CRASH_MS;
   }
 
-# ifdef MOZ_VALGRIND
+#ifdef MOZ_VALGRIND
   
   
   
@@ -439,7 +418,7 @@ nsTerminator::StartWatchdog()
       crashAfterMS *= scaleUp;
     }
   }
-# endif
+#endif
 
   UniquePtr<Options> options(new Options());
   const PRIntervalTime ticksDuration = PR_MillisecondsToInterval(1000);
@@ -449,17 +428,15 @@ nsTerminator::StartWatchdog()
     options->crashAfterTicks = crashAfterMS / 1000;
   }
 
-  DebugOnly<PRThread*> watchdogThread = CreateSystemThread(RunWatchdog,
-                                                options.release());
+  DebugOnly<PRThread*> watchdogThread =
+      CreateSystemThread(RunWatchdog, options.release());
   MOZ_ASSERT(watchdogThread);
 }
 
 
 
 
-void
-nsTerminator::StartWriter()
-{
+void nsTerminator::StartWriter() {
   if (!Telemetry::CanRecordExtended()) {
     return;
   }
@@ -482,9 +459,9 @@ nsTerminator::StartWriter()
   }
 
   gWriteReady = PR_NewMonitor();
-  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(gWriteReady); 
-  PRThread* writerThread = CreateSystemThread(RunWriter,
-                                              ToNewUTF8String(path));
+  MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(
+      gWriteReady);  
+  PRThread* writerThread = CreateSystemThread(RunWriter, ToNewUTF8String(path));
 
   if (!writerThread) {
     return;
@@ -492,8 +469,7 @@ nsTerminator::StartWriter()
 }
 
 NS_IMETHODIMP
-nsTerminator::Observe(nsISupports *, const char *aTopic, const char16_t *)
-{
+nsTerminator::Observe(nsISupports*, const char* aTopic, const char16_t*) {
   if (strcmp(aTopic, "profile-after-change") == 0) {
     return SelfInit();
   }
@@ -513,7 +489,7 @@ nsTerminator::Observe(nsISupports *, const char *aTopic, const char16_t *)
   
   
   UpdateTelemetry();
-#endif 
+#endif  
   UpdateCrashReport(aTopic);
 
   
@@ -524,9 +500,7 @@ nsTerminator::Observe(nsISupports *, const char *aTopic, const char16_t *)
   return NS_OK;
 }
 
-void
-nsTerminator::UpdateHeartbeat(const char* aTopic)
-{
+void nsTerminator::UpdateHeartbeat(const char* aTopic) {
   
   uint32_t ticks = gHeartbeat.exchange(0);
   if (mCurrentStep > 0) {
@@ -546,9 +520,7 @@ nsTerminator::UpdateHeartbeat(const char* aTopic)
   mCurrentStep = nextStep;
 }
 
-void
-nsTerminator::UpdateTelemetry()
-{
+void nsTerminator::UpdateTelemetry() {
   if (!Telemetry::CanRecordExtended() || !gWriteReady) {
     return;
   }
@@ -582,13 +554,14 @@ nsTerminator::UpdateTelemetry()
 
   if (fields == 0) {
     
-      return;
+    return;
   }
 
   
   
   
-  delete gWriteData.exchange(telemetryData.release()); 
+  delete gWriteData.exchange(
+      telemetryData.release());  
 
   
   PR_EnterMonitor(gWriteReady);
@@ -596,21 +569,17 @@ nsTerminator::UpdateTelemetry()
   PR_ExitMonitor(gWriteReady);
 }
 
-void
-nsTerminator::UpdateCrashReport(const char* aTopic)
-{
+void nsTerminator::UpdateCrashReport(const char* aTopic) {
   
   nsAutoCString report(aTopic);
 
   Unused << CrashReporter::AnnotateCrashReport(
-    CrashReporter::Annotation::ShutdownProgress, report);
+      CrashReporter::Annotation::ShutdownProgress, report);
 }
 
-void
-XPCOMShutdownNotified()
-{
+void XPCOMShutdownNotified() {
   MOZ_DIAGNOSTIC_ASSERT(sShutdownNotified == false);
   sShutdownNotified = true;
 }
 
-} 
+}  

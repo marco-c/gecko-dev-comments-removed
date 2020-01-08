@@ -17,7 +17,7 @@ struct nsID;
 namespace mozilla {
 namespace ipc {
 class AutoIPCStream;
-} 
+}  
 namespace dom {
 namespace cache {
 
@@ -26,71 +26,59 @@ class CacheReadStream;
 
 
 
-class StreamControl
-{
-public:
+class StreamControl {
+ public:
   
-  virtual void
-  SerializeControl(CacheReadStream* aReadStreamOut) = 0;
+  virtual void SerializeControl(CacheReadStream* aReadStreamOut) = 0;
 
-  virtual void
-  SerializeStream(CacheReadStream* aReadStreamOut, nsIInputStream* aStream,
-                  nsTArray<UniquePtr<mozilla::ipc::AutoIPCStream>>& aStreamCleanupList) = 0;
+  virtual void SerializeStream(
+      CacheReadStream* aReadStreamOut, nsIInputStream* aStream,
+      nsTArray<UniquePtr<mozilla::ipc::AutoIPCStream>>& aStreamCleanupList) = 0;
 
-  virtual void
-  OpenStream(const nsID& aId, InputStreamResolver&& aResolver) = 0;
+  virtual void OpenStream(const nsID& aId, InputStreamResolver&& aResolver) = 0;
 
   
 
   
   
   
-  void
-  AddReadStream(ReadStream::Controllable* aReadStream);
+  void AddReadStream(ReadStream::Controllable* aReadStream);
 
   
-  void
-  ForgetReadStream(ReadStream::Controllable* aReadStream);
+  void ForgetReadStream(ReadStream::Controllable* aReadStream);
 
   
-  void
-  NoteClosed(ReadStream::Controllable* aReadStream, const nsID& aId);
+  void NoteClosed(ReadStream::Controllable* aReadStream, const nsID& aId);
 
-protected:
+ protected:
   ~StreamControl();
 
-  void
-  CloseReadStreams(const nsID& aId);
+  void CloseReadStreams(const nsID& aId);
 
-  void
-  CloseAllReadStreams();
+  void CloseAllReadStreams();
 
-  void
-  CloseAllReadStreamsWithoutReporting();
+  void CloseAllReadStreamsWithoutReporting();
 
-  bool
-  HasEverBeenRead() const;
+  bool HasEverBeenRead() const;
 
   
-  virtual void
-  NoteClosedAfterForget(const nsID& aId) = 0;
+  virtual void NoteClosedAfterForget(const nsID& aId) = 0;
 
 #ifdef DEBUG
-  virtual void
-  AssertOwningThread() = 0;
+  virtual void AssertOwningThread() = 0;
 #else
-  void AssertOwningThread() { }
+  void AssertOwningThread() {}
 #endif
 
-private:
+ private:
   
   
   typedef nsTObserverArray<RefPtr<ReadStream::Controllable>> ReadStreamList;
   ReadStreamList mReadStreamList;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

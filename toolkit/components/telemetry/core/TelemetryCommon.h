@@ -18,47 +18,45 @@ namespace Telemetry {
 namespace Common {
 
 enum class RecordedProcessType : uint8_t {
-  Main         = (1 << GeckoProcessType_Default),  
-  Content      = (1 << GeckoProcessType_Content),
-  Gpu          = (1 << GeckoProcessType_GPU),
-  AllChildren  = 0xFF - 1,  
-  All          = 0xFF       
+  Main = (1 << GeckoProcessType_Default),  
+  Content = (1 << GeckoProcessType_Content),
+  Gpu = (1 << GeckoProcessType_GPU),
+  AllChildren = 0xFF - 1,  
+  All = 0xFF               
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RecordedProcessType);
 
 enum class SupportedProduct : uint8_t {
-  Firefox    = (1 << 0),
-  Fennec     = (1 << 1),
-  Geckoview  = (1 << 2),
-  All        = 0xFF       
+  Firefox = (1 << 0),
+  Fennec = (1 << 1),
+  Geckoview = (1 << 2),
+  All = 0xFF  
 };
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(SupportedProduct);
 
-template<class EntryType>
-class AutoHashtable : public nsTHashtable<EntryType>
-{
-public:
-  explicit AutoHashtable(uint32_t initLength =
-                         PLDHashTable::kDefaultInitialLength);
-  typedef bool (*ReflectEntryFunc)(EntryType *entry, JSContext *cx, JS::Handle<JSObject*> obj);
-  bool ReflectIntoJS(ReflectEntryFunc entryFunc, JSContext *cx, JS::Handle<JSObject*> obj);
+template <class EntryType>
+class AutoHashtable : public nsTHashtable<EntryType> {
+ public:
+  explicit AutoHashtable(
+      uint32_t initLength = PLDHashTable::kDefaultInitialLength);
+  typedef bool (*ReflectEntryFunc)(EntryType* entry, JSContext* cx,
+                                   JS::Handle<JSObject*> obj);
+  bool ReflectIntoJS(ReflectEntryFunc entryFunc, JSContext* cx,
+                     JS::Handle<JSObject*> obj);
 };
 
-template<class EntryType>
+template <class EntryType>
 AutoHashtable<EntryType>::AutoHashtable(uint32_t initLength)
-  : nsTHashtable<EntryType>(initLength)
-{
-}
+    : nsTHashtable<EntryType>(initLength) {}
 
 
 
 
 
-template<typename EntryType>
-bool
-AutoHashtable<EntryType>::ReflectIntoJS(ReflectEntryFunc entryFunc,
-                                        JSContext *cx, JS::Handle<JSObject*> obj)
-{
+template <typename EntryType>
+bool AutoHashtable<EntryType>::ReflectIntoJS(ReflectEntryFunc entryFunc,
+                                             JSContext* cx,
+                                             JS::Handle<JSObject*> obj) {
   for (auto iter = this->Iter(); !iter.Done(); iter.Next()) {
     if (!entryFunc(iter.Get(), cx, obj)) {
       return false;
@@ -69,8 +67,10 @@ AutoHashtable<EntryType>::ReflectIntoJS(ReflectEntryFunc entryFunc,
 
 bool IsExpiredVersion(const char* aExpiration);
 bool IsInDataset(uint32_t aDataset, uint32_t aContainingDataset);
-bool CanRecordDataset(uint32_t aDataset, bool aCanRecordBase, bool aCanRecordExtended);
-bool CanRecordInProcess(RecordedProcessType aProcesses, GeckoProcessType aProcess);
+bool CanRecordDataset(uint32_t aDataset, bool aCanRecordBase,
+                      bool aCanRecordExtended);
+bool CanRecordInProcess(RecordedProcessType aProcesses,
+                        GeckoProcessType aProcess);
 bool CanRecordInProcess(RecordedProcessType aProcesses, ProcessID aProcess);
 bool CanRecordProduct(SupportedProduct aProducts);
 
@@ -123,9 +123,9 @@ GeckoProcessType GetGeckoProcessType(ProcessID process);
 
 
 
-bool
-IsValidIdentifierString(const nsACString& aStr, const size_t aMaxLength,
-                        const bool aAllowInfixPeriod, const bool aAllowInfixUnderscore);
+bool IsValidIdentifierString(const nsACString& aStr, const size_t aMaxLength,
+                             const bool aAllowInfixPeriod,
+                             const bool aAllowInfixUnderscore);
 
 
 
@@ -135,8 +135,7 @@ IsValidIdentifierString(const nsACString& aStr, const size_t aMaxLength,
 
 
 
-JSString*
-ToJSString(JSContext* cx, const nsACString& aStr);
+JSString* ToJSString(JSContext* cx, const nsACString& aStr);
 
 
 
@@ -145,8 +144,7 @@ ToJSString(JSContext* cx, const nsACString& aStr);
 
 
 
-JSString*
-ToJSString(JSContext* cx, const nsAString& aStr);
+JSString* ToJSString(JSContext* cx, const nsAString& aStr);
 
 
 
@@ -154,19 +152,17 @@ ToJSString(JSContext* cx, const nsAString& aStr);
 
 
 
-void
-SetCurrentProduct();
+void SetCurrentProduct();
 
 
 
 
 
 
-SupportedProduct
-GetCurrentProduct();
+SupportedProduct GetCurrentProduct();
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

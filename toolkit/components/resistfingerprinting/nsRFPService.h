@@ -22,31 +22,31 @@
 
 
 #ifdef XP_WIN
-#define SPOOFED_UA_OS      "Windows NT 6.1; Win64; x64"
+#define SPOOFED_UA_OS "Windows NT 6.1; Win64; x64"
 #define SPOOFED_APPVERSION "5.0 (Windows)"
-#define SPOOFED_OSCPU      "Windows NT 6.1; Win64; x64"
-#define SPOOFED_PLATFORM   "Win32"
+#define SPOOFED_OSCPU "Windows NT 6.1; Win64; x64"
+#define SPOOFED_PLATFORM "Win32"
 #elif defined(XP_MACOSX)
-#define SPOOFED_UA_OS      "Macintosh; Intel Mac OS X 10.13"
+#define SPOOFED_UA_OS "Macintosh; Intel Mac OS X 10.13"
 #define SPOOFED_APPVERSION "5.0 (Macintosh)"
-#define SPOOFED_OSCPU      "Intel Mac OS X 10.13"
-#define SPOOFED_PLATFORM   "MacIntel"
+#define SPOOFED_OSCPU "Intel Mac OS X 10.13"
+#define SPOOFED_PLATFORM "MacIntel"
 #elif defined(MOZ_WIDGET_ANDROID)
-#define SPOOFED_UA_OS      "Android 6.0; Mobile"
+#define SPOOFED_UA_OS "Android 6.0; Mobile"
 #define SPOOFED_APPVERSION "5.0 (Android 6.0)"
-#define SPOOFED_OSCPU      "Linux armv7l"
-#define SPOOFED_PLATFORM   "Linux armv7l"
+#define SPOOFED_OSCPU "Linux armv7l"
+#define SPOOFED_PLATFORM "Linux armv7l"
 #else
 
 
-#define SPOOFED_UA_OS      "X11; Linux x86_64"
+#define SPOOFED_UA_OS "X11; Linux x86_64"
 #define SPOOFED_APPVERSION "5.0 (X11)"
-#define SPOOFED_OSCPU      "Linux x86_64"
-#define SPOOFED_PLATFORM   "Linux x86_64"
+#define SPOOFED_OSCPU "Linux x86_64"
+#define SPOOFED_PLATFORM "Linux x86_64"
 #endif
 
-#define SPOOFED_APPNAME    "Netscape"
-#define LEGACY_BUILD_ID    "20181001000000"
+#define SPOOFED_APPNAME "Netscape"
+#define LEGACY_BUILD_ID "20181001000000"
 #define LEGACY_UA_GECKO_TRAIL "20100101"
 
 #define SPOOFED_POINTER_INTERFACE MouseEvent_Binding::MOZ_SOURCE_MOUSE
@@ -56,17 +56,13 @@ class LRUCache;
 
 namespace mozilla {
 
-enum KeyboardLang {
-  EN = 0x01
-};
+enum KeyboardLang { EN = 0x01 };
 
 #define RFP_KEYBOARD_LANG_STRING_EN "en"
 
 typedef uint8_t KeyboardLangs;
 
-enum KeyboardRegion {
-  US = 0x01
-};
+enum KeyboardRegion { US = 0x01 };
 
 #define RFP_KEYBOARD_REGION_STRING_US "US"
 
@@ -74,74 +70,52 @@ typedef uint8_t KeyboardRegions;
 
 
 
-struct SpoofingKeyboardCode
-{
+struct SpoofingKeyboardCode {
   CodeNameIndex mCode;
   uint8_t mKeyCode;
   Modifiers mModifierStates;
 };
 
-struct SpoofingKeyboardInfo
-{
+struct SpoofingKeyboardInfo {
   KeyNameIndex mKeyIdx;
   nsString mKey;
   SpoofingKeyboardCode mSpoofingCode;
 };
 
-class KeyboardHashKey : public PLDHashEntryHdr
-{
-public:
+class KeyboardHashKey : public PLDHashEntryHdr {
+ public:
   typedef const KeyboardHashKey& KeyType;
   typedef const KeyboardHashKey* KeyTypePointer;
 
-  KeyboardHashKey(const KeyboardLangs aLang,
-                  const KeyboardRegions aRegion,
-                  const KeyNameIndexType aKeyIdx,
-                  const nsAString &aKey)
-    : mLang(aLang)
-    , mRegion(aRegion)
-    , mKeyIdx(aKeyIdx)
-    , mKey(aKey)
-  {}
+  KeyboardHashKey(const KeyboardLangs aLang, const KeyboardRegions aRegion,
+                  const KeyNameIndexType aKeyIdx, const nsAString& aKey)
+      : mLang(aLang), mRegion(aRegion), mKeyIdx(aKeyIdx), mKey(aKey) {}
 
   explicit KeyboardHashKey(KeyTypePointer aOther)
-    : mLang(aOther->mLang)
-    , mRegion(aOther->mRegion)
-    , mKeyIdx(aOther->mKeyIdx)
-    , mKey(aOther->mKey)
-  {}
+      : mLang(aOther->mLang),
+        mRegion(aOther->mRegion),
+        mKeyIdx(aOther->mKeyIdx),
+        mKey(aOther->mKey) {}
 
   KeyboardHashKey(KeyboardHashKey&& aOther)
-    : PLDHashEntryHdr(std::move(aOther))
-    , mLang(std::move(aOther.mLang))
-    , mRegion(std::move(aOther.mRegion))
-    , mKeyIdx(std::move(aOther.mKeyIdx))
-    , mKey(std::move(aOther.mKey))
-  {}
+      : PLDHashEntryHdr(std::move(aOther)),
+        mLang(std::move(aOther.mLang)),
+        mRegion(std::move(aOther.mRegion)),
+        mKeyIdx(std::move(aOther.mKeyIdx)),
+        mKey(std::move(aOther.mKey)) {}
 
-  ~KeyboardHashKey()
-  {}
+  ~KeyboardHashKey() {}
 
-  bool KeyEquals(KeyTypePointer aOther) const
-  {
-    return mLang == aOther->mLang &&
-           mRegion == aOther->mRegion &&
-           mKeyIdx == aOther->mKeyIdx &&
-           mKey == aOther->mKey;
+  bool KeyEquals(KeyTypePointer aOther) const {
+    return mLang == aOther->mLang && mRegion == aOther->mRegion &&
+           mKeyIdx == aOther->mKeyIdx && mKey == aOther->mKey;
   }
 
-  static KeyTypePointer KeyToPointer(KeyType aKey)
-  {
-    return &aKey;
-  }
+  static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
 
-  static PLDHashNumber HashKey(KeyTypePointer aKey)
-  {
+  static PLDHashNumber HashKey(KeyTypePointer aKey) {
     PLDHashNumber hash = mozilla::HashString(aKey->mKey);
-    return mozilla::AddToHash(hash,
-                              aKey->mRegion,
-                              aKey->mKeyIdx,
-                              aKey->mLang);
+    return mozilla::AddToHash(hash, aKey->mRegion, aKey->mKeyIdx, aKey->mLang);
   }
 
   enum { ALLOW_MEMMOVE = true };
@@ -152,14 +126,10 @@ public:
   nsString mKey;
 };
 
-enum TimerPrecisionType {
-  All = 1,
-  RFPOnly = 2
-};
+enum TimerPrecisionType { All = 1, RFPOnly = 2 };
 
-class nsRFPService final : public nsIObserver
-{
-public:
+class nsRFPService final : public nsIObserver {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -168,42 +138,31 @@ public:
   static bool IsTimerPrecisionReductionEnabled(TimerPrecisionType aType);
   static double TimerResolution();
 
-  enum TimeScale {
-    Seconds      = 1,
-    MilliSeconds = 1000,
-    MicroSeconds = 1000000
-  };
+  enum TimeScale { Seconds = 1, MilliSeconds = 1000, MicroSeconds = 1000000 };
 
   
   static double ReduceTimePrecisionAsUSecs(
-    double aTime,
-    int64_t aContextMixin,
-    TimerPrecisionType aType = TimerPrecisionType::All);
+      double aTime, int64_t aContextMixin,
+      TimerPrecisionType aType = TimerPrecisionType::All);
   static double ReduceTimePrecisionAsMSecs(
-    double aTime,
-    int64_t aContextMixin,
-    TimerPrecisionType aType = TimerPrecisionType::All);
+      double aTime, int64_t aContextMixin,
+      TimerPrecisionType aType = TimerPrecisionType::All);
   static double ReduceTimePrecisionAsSecs(
-    double aTime,
-    int64_t aContextMixin,
-    TimerPrecisionType aType = TimerPrecisionType::All);
+      double aTime, int64_t aContextMixin,
+      TimerPrecisionType aType = TimerPrecisionType::All);
 
   
-  static double ReduceTimePrecisionAsUSecsWrapper(
-    double aTime);
+  static double ReduceTimePrecisionAsUSecsWrapper(double aTime);
 
   
-  static double ReduceTimePrecisionImpl(
-    double aTime,
-    TimeScale aTimeScale,
-    double aResolutionUSec,
-    int64_t aContextMixin,
-    TimerPrecisionType aType);
+  static double ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
+                                        double aResolutionUSec,
+                                        int64_t aContextMixin,
+                                        TimerPrecisionType aType);
   static nsresult RandomMidpoint(long long aClampedTimeUSec,
                                  long long aResolutionUSec,
-                                 int64_t aContextMixin,
-                                 long long* aMidpointOut,
-                                 uint8_t * aSecretSeed = nullptr);
+                                 int64_t aContextMixin, long long* aMidpointOut,
+                                 uint8_t* aSecretSeed = nullptr);
 
   
   
@@ -212,11 +171,13 @@ public:
   
   
   static uint32_t GetSpoofedTotalFrames(double aTime);
-  static uint32_t GetSpoofedDroppedFrames(double aTime, uint32_t aWidth, uint32_t aHeight);
-  static uint32_t GetSpoofedPresentedFrames(double aTime, uint32_t aWidth, uint32_t aHeight);
+  static uint32_t GetSpoofedDroppedFrames(double aTime, uint32_t aWidth,
+                                          uint32_t aHeight);
+  static uint32_t GetSpoofedPresentedFrames(double aTime, uint32_t aWidth,
+                                            uint32_t aHeight);
 
   
-  static nsresult GetSpoofedUserAgent(nsACString &userAgent);
+  static nsresult GetSpoofedUserAgent(nsACString& userAgent);
 
   
 
@@ -228,10 +189,10 @@ public:
 
 
 
-  static bool GetSpoofedModifierStates(const nsIDocument* aDoc,
-                                       const WidgetKeyboardEvent* aKeyboardEvent,
-                                       const Modifiers aModifier,
-                                       bool& aOut);
+
+  static bool GetSpoofedModifierStates(
+      const nsIDocument* aDoc, const WidgetKeyboardEvent* aKeyboardEvent,
+      const Modifiers aModifier, bool& aOut);
 
   
 
@@ -261,7 +222,7 @@ public:
                                 const WidgetKeyboardEvent* aKeyboardEvent,
                                 uint32_t& aOut);
 
-private:
+ private:
   nsresult Init();
 
   nsRFPService() {}
@@ -288,11 +249,12 @@ private:
   static Atomic<bool, Relaxed> sPrivacyResistFingerprinting;
   static Atomic<bool, Relaxed> sPrivacyTimerPrecisionReduction;
 
-  static nsDataHashtable<KeyboardHashKey, const SpoofingKeyboardCode*>* sSpoofingKeyboardCodes;
+  static nsDataHashtable<KeyboardHashKey, const SpoofingKeyboardCode*>*
+      sSpoofingKeyboardCodes;
 
   nsCString mInitialTZValue;
 };
 
-} 
+}  
 
 #endif 

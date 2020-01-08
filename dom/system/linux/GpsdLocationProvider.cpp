@@ -27,39 +27,38 @@ namespace dom {
 
 
 class GpsdLocationProvider::MLSGeolocationUpdate final
-  : public nsIGeolocationUpdate
-{
-public:
+    : public nsIGeolocationUpdate {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIGEOLOCATIONUPDATE
 
   explicit MLSGeolocationUpdate(nsIGeolocationUpdate* aCallback);
 
-protected:
+ protected:
   ~MLSGeolocationUpdate() = default;
 
-private:
+ private:
   nsCOMPtr<nsIGeolocationUpdate> mCallback;
 };
 
 GpsdLocationProvider::MLSGeolocationUpdate::MLSGeolocationUpdate(
-  nsIGeolocationUpdate* aCallback)
-  : mCallback(aCallback)
-{
+    nsIGeolocationUpdate* aCallback)
+    : mCallback(aCallback) {
   MOZ_ASSERT(mCallback);
 }
 
 
 
 
-NS_IMPL_ISUPPORTS(GpsdLocationProvider::MLSGeolocationUpdate, nsIGeolocationUpdate);
+NS_IMPL_ISUPPORTS(GpsdLocationProvider::MLSGeolocationUpdate,
+                  nsIGeolocationUpdate);
 
 
 
 
 NS_IMETHODIMP
-GpsdLocationProvider::MLSGeolocationUpdate::Update(nsIDOMGeoPosition* aPosition)
-{
+GpsdLocationProvider::MLSGeolocationUpdate::Update(
+    nsIDOMGeoPosition* aPosition) {
   nsCOMPtr<nsIDOMGeoPositionCoords> coords;
   aPosition->GetCoords(getter_AddRefs(coords));
   if (!coords) {
@@ -70,8 +69,7 @@ GpsdLocationProvider::MLSGeolocationUpdate::Update(nsIDOMGeoPosition* aPosition)
 }
 
 NS_IMETHODIMP
-GpsdLocationProvider::MLSGeolocationUpdate::NotifyError(uint16_t aError)
-{
+GpsdLocationProvider::MLSGeolocationUpdate::NotifyError(uint16_t aError) {
   return mCallback->NotifyError(aError);
 }
 
@@ -79,15 +77,12 @@ GpsdLocationProvider::MLSGeolocationUpdate::NotifyError(uint16_t aError)
 
 
 
-class GpsdLocationProvider::UpdateRunnable final : public Runnable
-{
-public:
+class GpsdLocationProvider::UpdateRunnable final : public Runnable {
+ public:
   UpdateRunnable(
-    const nsMainThreadPtrHandle<GpsdLocationProvider>& aLocationProvider,
-    nsIDOMGeoPosition* aPosition)
-    : mLocationProvider(aLocationProvider)
-    , mPosition(aPosition)
-  {
+      const nsMainThreadPtrHandle<GpsdLocationProvider>& aLocationProvider,
+      nsIDOMGeoPosition* aPosition)
+      : mLocationProvider(aLocationProvider), mPosition(aPosition) {
     MOZ_ASSERT(mLocationProvider);
     MOZ_ASSERT(mPosition);
   }
@@ -95,13 +90,12 @@ public:
   
   
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     mLocationProvider->Update(mPosition);
     return NS_OK;
   }
 
-private:
+ private:
   nsMainThreadPtrHandle<GpsdLocationProvider> mLocationProvider;
   RefPtr<nsIDOMGeoPosition> mPosition;
 };
@@ -110,28 +104,24 @@ private:
 
 
 
-class GpsdLocationProvider::NotifyErrorRunnable final : public Runnable
-{
-public:
+class GpsdLocationProvider::NotifyErrorRunnable final : public Runnable {
+ public:
   NotifyErrorRunnable(
-    const nsMainThreadPtrHandle<GpsdLocationProvider>& aLocationProvider,
-    int aError)
-    : mLocationProvider(aLocationProvider)
-    , mError(aError)
-  {
+      const nsMainThreadPtrHandle<GpsdLocationProvider>& aLocationProvider,
+      int aError)
+      : mLocationProvider(aLocationProvider), mError(aError) {
     MOZ_ASSERT(mLocationProvider);
   }
 
   
   
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     mLocationProvider->NotifyError(mError);
     return NS_OK;
   }
 
-private:
+ private:
   nsMainThreadPtrHandle<GpsdLocationProvider> mLocationProvider;
   int mError;
 };
@@ -147,37 +137,24 @@ private:
 
 
 
-class GpsdLocationProvider::PollRunnable final : public Runnable
-{
-public:
+class GpsdLocationProvider::PollRunnable final : public Runnable {
+ public:
   PollRunnable(
-    const nsMainThreadPtrHandle<GpsdLocationProvider>& aLocationProvider)
-    : mLocationProvider(aLocationProvider)
-    , mRunning(true)
-  {
+      const nsMainThreadPtrHandle<GpsdLocationProvider>& aLocationProvider)
+      : mLocationProvider(aLocationProvider), mRunning(true) {
     MOZ_ASSERT(mLocationProvider);
   }
 
-  static bool IsSupported()
-  {
-    return GPSD_API_MAJOR_VERSION == 5;
-  }
+  static bool IsSupported() { return GPSD_API_MAJOR_VERSION == 5; }
 
-  bool IsRunning() const
-  {
-    return mRunning;
-  }
+  bool IsRunning() const { return mRunning; }
 
-  void StopRunning()
-  {
-    mRunning = false;
-  }
+  void StopRunning() { mRunning = false; }
 
   
   
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     int err;
 
     switch (GPSD_API_MAJOR_VERSION) {
@@ -191,7 +168,7 @@ public:
 
     if (err) {
       NS_DispatchToMainThread(
-        MakeAndAddRef<NotifyErrorRunnable>(mLocationProvider, err));
+          MakeAndAddRef<NotifyErrorRunnable>(mLocationProvider, err));
     }
 
     mLocationProvider = nullptr;
@@ -199,11 +176,11 @@ public:
     return NS_OK;
   }
 
-protected:
-  int PollLoop5()
-  {
+ protected:
+  int PollLoop5() {
 #if GPSD_API_MAJOR_VERSION == 5
-    static const int GPSD_WAIT_TIMEOUT_US = 1000000; 
+    static const int GPSD_WAIT_TIMEOUT_US =
+        1000000; 
 
     struct gps_data_t gpsData;
 
@@ -228,7 +205,6 @@ protected:
     double speed = UnspecifiedNaN<double>();
 
     while (IsRunning()) {
-
       errno = 0;
       auto hasGpsData = gps_waiting(&gpsData, GPSD_WAIT_TIMEOUT_US);
 
@@ -287,15 +263,13 @@ protected:
           }
           break;
         default:
-          continue; 
+          continue;  
       }
 
-      NS_DispatchToMainThread(
-        MakeAndAddRef<UpdateRunnable>(mLocationProvider,
-                                      new nsGeoPosition(lat, lon, alt,
-                                                        hError, vError,
-                                                        heading, speed,
-                                                        PR_Now() / PR_USEC_PER_MSEC)));
+      NS_DispatchToMainThread(MakeAndAddRef<UpdateRunnable>(
+          mLocationProvider,
+          new nsGeoPosition(lat, lon, alt, hError, vError, heading, speed,
+                            PR_Now() / PR_USEC_PER_MSEC)));
     }
 
     gps_stream(&gpsData, WATCH_DISABLE, NULL);
@@ -304,20 +278,19 @@ protected:
     return err;
 #else
     return PositionError_Binding::POSITION_UNAVAILABLE;
-#endif 
+#endif  
   }
 
-  static int ErrnoToError(int aErrno)
-  {
+  static int ErrnoToError(int aErrno) {
     switch (aErrno) {
       case EACCES:
-          MOZ_FALLTHROUGH;
+        MOZ_FALLTHROUGH;
       case EPERM:
-          MOZ_FALLTHROUGH;
+        MOZ_FALLTHROUGH;
       case EROFS:
         return PositionError_Binding::PERMISSION_DENIED;
       case ETIME:
-          MOZ_FALLTHROUGH;
+        MOZ_FALLTHROUGH;
       case ETIMEDOUT:
         return PositionError_Binding::TIMEOUT;
       default:
@@ -325,7 +298,7 @@ protected:
     }
   }
 
-private:
+ private:
   nsMainThreadPtrHandle<GpsdLocationProvider> mLocationProvider;
   Atomic<bool> mRunning;
 };
@@ -336,17 +309,13 @@ private:
 
 const uint32_t GpsdLocationProvider::GPSD_POLL_THREAD_TIMEOUT_MS = 5000;
 
-GpsdLocationProvider::GpsdLocationProvider()
-{ }
+GpsdLocationProvider::GpsdLocationProvider() {}
 
-GpsdLocationProvider::~GpsdLocationProvider()
-{ }
+GpsdLocationProvider::~GpsdLocationProvider() {}
 
-void
-GpsdLocationProvider::Update(nsIDOMGeoPosition* aPosition)
-{
+void GpsdLocationProvider::Update(nsIDOMGeoPosition* aPosition) {
   if (!mCallback || !mPollRunnable) {
-    return; 
+    return;  
   }
 
   if (mMLSProvider) {
@@ -358,11 +327,9 @@ GpsdLocationProvider::Update(nsIDOMGeoPosition* aPosition)
   mCallback->Update(aPosition);
 }
 
-void
-GpsdLocationProvider::NotifyError(int aError)
-{
+void GpsdLocationProvider::NotifyError(int aError) {
   if (!mCallback) {
-    return; 
+    return;  
   }
 
   if (!mMLSProvider) {
@@ -385,20 +352,18 @@ NS_IMPL_ISUPPORTS(GpsdLocationProvider, nsIGeolocationProvider)
 
 
 NS_IMETHODIMP
-GpsdLocationProvider::Startup()
-{
+GpsdLocationProvider::Startup() {
   if (!PollRunnable::IsSupported()) {
-    return NS_OK; 
+    return NS_OK;  
   }
 
   if (mPollRunnable) {
-    return NS_OK; 
+    return NS_OK;  
   }
 
   RefPtr<PollRunnable> pollRunnable =
-    MakeAndAddRef<PollRunnable>(
-      nsMainThreadPtrHandle<GpsdLocationProvider>(
-        new nsMainThreadPtrHolder<GpsdLocationProvider>(this)));
+      MakeAndAddRef<PollRunnable>(nsMainThreadPtrHandle<GpsdLocationProvider>(
+          new nsMainThreadPtrHolder<GpsdLocationProvider>(this)));
 
   
   RefPtr<LazyIdleThread> pollThread = mPollThread;
@@ -406,9 +371,8 @@ GpsdLocationProvider::Startup()
   
   if (!pollThread) {
     pollThread = MakeAndAddRef<LazyIdleThread>(
-      GPSD_POLL_THREAD_TIMEOUT_MS,
-      NS_LITERAL_CSTRING("Gpsd poll thread"),
-      LazyIdleThread::ManualShutdown);
+        GPSD_POLL_THREAD_TIMEOUT_MS, NS_LITERAL_CSTRING("Gpsd poll thread"),
+        LazyIdleThread::ManualShutdown);
   }
 
   auto rv = pollThread->Dispatch(pollRunnable, NS_DISPATCH_NORMAL);
@@ -424,8 +388,7 @@ GpsdLocationProvider::Startup()
 }
 
 NS_IMETHODIMP
-GpsdLocationProvider::Watch(nsIGeolocationUpdate* aCallback)
-{
+GpsdLocationProvider::Watch(nsIGeolocationUpdate* aCallback) {
   mCallback = aCallback;
 
   
@@ -440,15 +403,14 @@ GpsdLocationProvider::Watch(nsIGeolocationUpdate* aCallback)
 }
 
 NS_IMETHODIMP
-GpsdLocationProvider::Shutdown()
-{
+GpsdLocationProvider::Shutdown() {
   if (mMLSProvider) {
     mMLSProvider->Shutdown();
     mMLSProvider = nullptr;
   }
 
   if (!mPollRunnable) {
-    return NS_OK; 
+    return NS_OK;  
   }
 
   mPollRunnable->StopRunning();
@@ -458,10 +420,7 @@ GpsdLocationProvider::Shutdown()
 }
 
 NS_IMETHODIMP
-GpsdLocationProvider::SetHighAccuracy(bool aHigh)
-{
-  return NS_OK;
-}
+GpsdLocationProvider::SetHighAccuracy(bool aHigh) { return NS_OK; }
 
-} 
-} 
+}  
+}  

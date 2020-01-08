@@ -39,16 +39,12 @@ namespace mozilla {
 
 
 
-template<size_t ArenaSize, size_t Alignment=1>
-class ArenaAllocator
-{
-public:
-  constexpr ArenaAllocator()
-    : mHead()
-    , mCurrent(nullptr)
-  {
-     static_assert(mozilla::tl::FloorLog2<Alignment>::value ==
-                   mozilla::tl::CeilingLog2<Alignment>::value,
+template <size_t ArenaSize, size_t Alignment = 1>
+class ArenaAllocator {
+ public:
+  constexpr ArenaAllocator() : mHead(), mCurrent(nullptr) {
+    static_assert(mozilla::tl::FloorLog2<Alignment>::value ==
+                      mozilla::tl::CeilingLog2<Alignment>::value,
                   "ArenaAllocator alignment must be a power of two");
   }
 
@@ -59,24 +55,19 @@ public:
 
 
 
-  ~ArenaAllocator()
-  {
-    Clear();
-  }
+  ~ArenaAllocator() { Clear(); }
 
   
 
 
 
 
-  MOZ_ALWAYS_INLINE void* Allocate(size_t aSize, const fallible_t&)
-  {
+  MOZ_ALWAYS_INLINE void* Allocate(size_t aSize, const fallible_t&) {
     MOZ_RELEASE_ASSERT(aSize, "Allocation size must be non-zero");
     return InternalAllocate(AlignedSize(aSize));
   }
 
-  void* Allocate(size_t aSize)
-  {
+  void* Allocate(size_t aSize) {
     void* p = Allocate(aSize, fallible);
     if (MOZ_UNLIKELY(!p)) {
       NS_ABORT_OOM(std::max(aSize, ArenaSize));
@@ -91,8 +82,7 @@ public:
 
 
 
-  void Clear()
-  {
+  void Clear() {
     
     auto a = mHead.next;
     while (a) {
@@ -109,13 +99,11 @@ public:
   
 
 
-  static constexpr size_t AlignedSize(size_t aSize)
-  {
+  static constexpr size_t AlignedSize(size_t aSize) {
     return (aSize + (Alignment - 1)) & ~(Alignment - 1);
   }
 
-  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     size_t s = 0;
     for (auto arena = mHead.next; arena; arena = arena->next) {
       s += aMallocSizeOf(arena);
@@ -124,17 +112,14 @@ public:
     return s;
   }
 
-
-  void Check()
-  {
+  void Check() {
     if (mCurrent) {
       mCurrent->canary.Check();
     }
   }
 
-private:
-  struct ArenaHeader
-  {
+ private:
+  struct ArenaHeader {
     
 
 
@@ -145,15 +130,12 @@ private:
     uintptr_t tail;
   };
 
-  struct ArenaChunk
-  {
+  struct ArenaChunk {
     constexpr ArenaChunk() : header{0, 0}, next(nullptr) {}
 
     explicit ArenaChunk(size_t aSize)
-      : header{AlignedSize(uintptr_t(this + 1)), uintptr_t(this) + aSize}
-      , next(nullptr)
-    {
-    }
+        : header{AlignedSize(uintptr_t(this + 1)), uintptr_t(this) + aSize},
+          next(nullptr) {}
 
     CorruptionCanary canary;
     ArenaHeader header;
@@ -162,8 +144,7 @@ private:
     
 
 
-    void* Allocate(size_t aSize)
-    {
+    void* Allocate(size_t aSize) {
       MOZ_ASSERT(aSize <= Available());
       char* p = reinterpret_cast<char*>(header.offset);
       MOZ_RELEASE_ASSERT(p);
@@ -176,16 +157,13 @@ private:
     
 
 
-    size_t Available() const {
-      return header.tail - header.offset;
-    }
+    size_t Available() const { return header.tail - header.offset; }
   };
 
   
 
 
-  ArenaChunk* AllocateChunk(size_t aSize)
-  {
+  ArenaChunk* AllocateChunk(size_t aSize) {
     static const size_t kOffset = AlignedSize(sizeof(ArenaChunk));
     MOZ_ASSERT(kOffset < aSize);
 
@@ -213,8 +191,7 @@ private:
     return arena;
   }
 
-  MOZ_ALWAYS_INLINE void* InternalAllocate(size_t aSize)
-  {
+  MOZ_ALWAYS_INLINE void* InternalAllocate(size_t aSize) {
     static_assert(ArenaSize > AlignedSize(sizeof(ArenaChunk)),
                   "Arena size must be greater than the header size");
 
@@ -233,6 +210,6 @@ private:
   ArenaChunk* mCurrent;
 };
 
-} 
+}  
 
-#endif 
+#endif  

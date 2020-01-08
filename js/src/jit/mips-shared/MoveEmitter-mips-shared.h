@@ -13,64 +13,61 @@
 namespace js {
 namespace jit {
 
-class MoveEmitterMIPSShared
-{
-  protected:
-    uint32_t inCycle_;
-    MacroAssembler& masm;
+class MoveEmitterMIPSShared {
+ protected:
+  uint32_t inCycle_;
+  MacroAssembler& masm;
 
-    
-    uint32_t pushedAtStart_;
+  
+  uint32_t pushedAtStart_;
 
-    
-    
-    
-    int32_t pushedAtCycle_;
-    int32_t pushedAtSpill_;
+  
+  
+  
+  int32_t pushedAtCycle_;
+  int32_t pushedAtSpill_;
 
-    
-    
-    
-    Register spilledReg_;
-    FloatRegister spilledFloatReg_;
+  
+  
+  
+  Register spilledReg_;
+  FloatRegister spilledFloatReg_;
 
-    void assertDone();
-    Register tempReg();
-    FloatRegister tempFloatReg();
-    Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
-    int32_t getAdjustedOffset(const MoveOperand& operand);
-    Address getAdjustedAddress(const MoveOperand& operand);
+  void assertDone();
+  Register tempReg();
+  FloatRegister tempFloatReg();
+  Address cycleSlot(uint32_t slot, uint32_t subslot = 0) const;
+  int32_t getAdjustedOffset(const MoveOperand& operand);
+  Address getAdjustedAddress(const MoveOperand& operand);
 
-    void emitMove(const MoveOperand& from, const MoveOperand& to);
-    void emitInt32Move(const MoveOperand& from, const MoveOperand& to);
-    void emitFloat32Move(const MoveOperand& from, const MoveOperand& to);
-    virtual void emitDoubleMove(const MoveOperand& from, const MoveOperand& to) = 0;
-    virtual void breakCycle(const MoveOperand& from, const MoveOperand& to,
-                    MoveOp::Type type, uint32_t slot) = 0;
-    virtual void completeCycle(const MoveOperand& from, const MoveOperand& to,
-                       MoveOp::Type type, uint32_t slot) = 0;
-    void emit(const MoveOp& move);
+  void emitMove(const MoveOperand& from, const MoveOperand& to);
+  void emitInt32Move(const MoveOperand& from, const MoveOperand& to);
+  void emitFloat32Move(const MoveOperand& from, const MoveOperand& to);
+  virtual void emitDoubleMove(const MoveOperand& from,
+                              const MoveOperand& to) = 0;
+  virtual void breakCycle(const MoveOperand& from, const MoveOperand& to,
+                          MoveOp::Type type, uint32_t slot) = 0;
+  virtual void completeCycle(const MoveOperand& from, const MoveOperand& to,
+                             MoveOp::Type type, uint32_t slot) = 0;
+  void emit(const MoveOp& move);
 
-  public:
-    MoveEmitterMIPSShared(MacroAssembler& masm)
+ public:
+  MoveEmitterMIPSShared(MacroAssembler& masm)
       : inCycle_(0),
         masm(masm),
         pushedAtStart_(masm.framePushed()),
         pushedAtCycle_(-1),
         pushedAtSpill_(-1),
         spilledReg_(InvalidReg),
-        spilledFloatReg_(InvalidFloatReg)
-    { }
-    ~MoveEmitterMIPSShared() {
-        assertDone();
-    }
-    void emit(const MoveResolver& moves);
-    void finish();
+        spilledFloatReg_(InvalidFloatReg) {}
+  ~MoveEmitterMIPSShared() { assertDone(); }
+  void emit(const MoveResolver& moves);
+  void finish();
 
-    void setScratchRegister(Register reg) {}
+  void setScratchRegister(Register reg) {}
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -23,8 +23,10 @@ namespace mozilla {
 
 
 
-template<typename> struct RemoveCV;
-template<typename> struct AddRvalueReference;
+template <typename>
+struct RemoveCV;
+template <typename>
+struct AddRvalueReference;
 
 
 
@@ -34,7 +36,7 @@ template<typename> struct AddRvalueReference;
 
 
 
-template<typename T>
+template <typename T>
 typename AddRvalueReference<T>::Type DeclVal();
 
 
@@ -43,9 +45,8 @@ typename AddRvalueReference<T>::Type DeclVal();
 
 
 
-template<typename T, T Value>
-struct IntegralConstant
-{
+template <typename T, T Value>
+struct IntegralConstant {
   static constexpr T value = Value;
   typedef T ValueType;
   typedef IntegralConstant<T, Value> Type;
@@ -61,13 +62,13 @@ typedef IntegralConstant<bool, false> FalseType;
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct IsVoidHelper : FalseType {};
 
-template<>
+template <>
 struct IsVoidHelper<void> : TrueType {};
 
-} 
+}  
 
 
 
@@ -77,7 +78,7 @@ struct IsVoidHelper<void> : TrueType {};
 
 
 
-template<typename T>
+template <typename T>
 struct IsVoid : detail::IsVoidHelper<typename RemoveCV<T>::Type> {};
 
 namespace detail {
@@ -85,21 +86,36 @@ namespace detail {
 template <typename T>
 struct IsIntegralHelper : FalseType {};
 
-template<> struct IsIntegralHelper<char>               : TrueType {};
-template<> struct IsIntegralHelper<signed char>        : TrueType {};
-template<> struct IsIntegralHelper<unsigned char>      : TrueType {};
-template<> struct IsIntegralHelper<short>              : TrueType {};
-template<> struct IsIntegralHelper<unsigned short>     : TrueType {};
-template<> struct IsIntegralHelper<int>                : TrueType {};
-template<> struct IsIntegralHelper<unsigned int>       : TrueType {};
-template<> struct IsIntegralHelper<long>               : TrueType {};
-template<> struct IsIntegralHelper<unsigned long>      : TrueType {};
-template<> struct IsIntegralHelper<long long>          : TrueType {};
-template<> struct IsIntegralHelper<unsigned long long> : TrueType {};
-template<> struct IsIntegralHelper<bool>               : TrueType {};
-template<> struct IsIntegralHelper<wchar_t>            : TrueType {};
-template<> struct IsIntegralHelper<char16_t>           : TrueType {};
-template<> struct IsIntegralHelper<char32_t>           : TrueType {};
+template <>
+struct IsIntegralHelper<char> : TrueType {};
+template <>
+struct IsIntegralHelper<signed char> : TrueType {};
+template <>
+struct IsIntegralHelper<unsigned char> : TrueType {};
+template <>
+struct IsIntegralHelper<short> : TrueType {};
+template <>
+struct IsIntegralHelper<unsigned short> : TrueType {};
+template <>
+struct IsIntegralHelper<int> : TrueType {};
+template <>
+struct IsIntegralHelper<unsigned int> : TrueType {};
+template <>
+struct IsIntegralHelper<long> : TrueType {};
+template <>
+struct IsIntegralHelper<unsigned long> : TrueType {};
+template <>
+struct IsIntegralHelper<long long> : TrueType {};
+template <>
+struct IsIntegralHelper<unsigned long long> : TrueType {};
+template <>
+struct IsIntegralHelper<bool> : TrueType {};
+template <>
+struct IsIntegralHelper<wchar_t> : TrueType {};
+template <>
+struct IsIntegralHelper<char16_t> : TrueType {};
+template <>
+struct IsIntegralHelper<char32_t> : TrueType {};
 
 } 
 
@@ -112,24 +128,21 @@ template<> struct IsIntegralHelper<char32_t>           : TrueType {};
 
 
 
-template<typename T>
-struct IsIntegral : detail::IsIntegralHelper<typename RemoveCV<T>::Type>
-{};
+template <typename T>
+struct IsIntegral : detail::IsIntegralHelper<typename RemoveCV<T>::Type> {};
 
-template<typename T, typename U>
+template <typename T, typename U>
 struct IsSame;
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct IsFloatingPointHelper
-  : IntegralConstant<bool,
-                     IsSame<T, float>::value ||
-                     IsSame<T, double>::value ||
-                     IsSame<T, long double>::value>
-{};
+    : IntegralConstant<bool, IsSame<T, float>::value ||
+                                 IsSame<T, double>::value ||
+                                 IsSame<T, long double>::value> {};
 
-} 
+}  
 
 
 
@@ -140,23 +153,22 @@ struct IsFloatingPointHelper
 
 
 
-template<typename T>
+template <typename T>
 struct IsFloatingPoint
-  : detail::IsFloatingPointHelper<typename RemoveCV<T>::Type>
-{};
+    : detail::IsFloatingPointHelper<typename RemoveCV<T>::Type> {};
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct IsArrayHelper : FalseType {};
 
-template<typename T, decltype(sizeof(1)) N>
+template <typename T, decltype(sizeof(1)) N>
 struct IsArrayHelper<T[N]> : TrueType {};
 
-template<typename T>
+template <typename T>
 struct IsArrayHelper<T[]> : TrueType {};
 
-} 
+}  
 
 
 
@@ -166,26 +178,21 @@ struct IsArrayHelper<T[]> : TrueType {};
 
 
 
-template<typename T>
-struct IsArray : detail::IsArrayHelper<typename RemoveCV<T>::Type>
-{};
+template <typename T>
+struct IsArray : detail::IsArrayHelper<typename RemoveCV<T>::Type> {};
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct IsFunPtr;
 
-template<typename>
-struct IsFunPtr
-  : public FalseType
-{};
+template <typename>
+struct IsFunPtr : public FalseType {};
 
-template<typename Result, typename... ArgTypes>
-struct IsFunPtr<Result(*)(ArgTypes...)>
-  : public TrueType
-{};
+template <typename Result, typename... ArgTypes>
+struct IsFunPtr<Result (*)(ArgTypes...)> : public TrueType {};
 
-}; 
+};  
 
 
 
@@ -199,20 +206,18 @@ struct IsFunPtr<Result(*)(ArgTypes...)>
 
 
 
-template<typename T>
-struct IsFunction
-  : public detail::IsFunPtr<typename RemoveCV<T>::Type *>
-{};
+template <typename T>
+struct IsFunction : public detail::IsFunPtr<typename RemoveCV<T>::Type*> {};
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct IsPointerHelper : FalseType {};
 
-template<typename T>
+template <typename T>
 struct IsPointerHelper<T*> : TrueType {};
 
-} 
+}  
 
 
 
@@ -229,9 +234,8 @@ struct IsPointerHelper<T*> : TrueType {};
 
 
 
-template<typename T>
-struct IsPointer : detail::IsPointerHelper<typename RemoveCV<T>::Type>
-{};
+template <typename T>
+struct IsPointer : detail::IsPointerHelper<typename RemoveCV<T>::Type> {};
 
 
 
@@ -244,10 +248,10 @@ struct IsPointer : detail::IsPointerHelper<typename RemoveCV<T>::Type>
 
 
 
-template<typename T>
+template <typename T>
 struct IsLvalueReference : FalseType {};
 
-template<typename T>
+template <typename T>
 struct IsLvalueReference<T&> : TrueType {};
 
 
@@ -261,21 +265,19 @@ struct IsLvalueReference<T&> : TrueType {};
 
 
 
-template<typename T>
+template <typename T>
 struct IsRvalueReference : FalseType {};
 
-template<typename T>
+template <typename T>
 struct IsRvalueReference<T&&> : TrueType {};
 
 namespace detail {
 
 
-template<typename T>
-struct IsEnumHelper
-  : IntegralConstant<bool, __is_enum(T)>
-{};
+template <typename T>
+struct IsEnumHelper : IntegralConstant<bool, __is_enum(T)> {};
 
-} 
+}  
 
 
 
@@ -284,10 +286,8 @@ struct IsEnumHelper
 
 
 
-template<typename T>
-struct IsEnum
-  : detail::IsEnumHelper<typename RemoveCV<T>::Type>
-{};
+template <typename T>
+struct IsEnum : detail::IsEnumHelper<typename RemoveCV<T>::Type> {};
 
 namespace detail {
 
@@ -295,12 +295,10 @@ namespace detail {
 
 
 
-template<typename T>
-struct IsClassHelper
-  : IntegralConstant<bool, __is_class(T)>
-{};
+template <typename T>
+struct IsClassHelper : IntegralConstant<bool, __is_class(T)> {};
 
-} 
+}  
 
 
 
@@ -311,10 +309,8 @@ struct IsClassHelper
 
 
 
-template<typename T>
-struct IsClass
-  : detail::IsClassHelper<typename RemoveCV<T>::Type>
-{};
+template <typename T>
+struct IsClass : detail::IsClassHelper<typename RemoveCV<T>::Type> {};
 
 
 
@@ -332,11 +328,9 @@ struct IsClass
 
 
 
-template<typename T>
-struct IsReference
-  : IntegralConstant<bool,
-                     IsLvalueReference<T>::value || IsRvalueReference<T>::value>
-{};
+template <typename T>
+struct IsReference : IntegralConstant<bool, IsLvalueReference<T>::value ||
+                                                IsRvalueReference<T>::value> {};
 
 
 
@@ -346,20 +340,19 @@ struct IsReference
 
 
 
-template<typename T>
-struct IsArithmetic
-  : IntegralConstant<bool, IsIntegral<T>::value || IsFloatingPoint<T>::value>
-{};
+template <typename T>
+struct IsArithmetic : IntegralConstant<bool, IsIntegral<T>::value ||
+                                                 IsFloatingPoint<T>::value> {};
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct IsMemberPointerHelper : FalseType {};
 
-template<typename T, typename U>
+template <typename T, typename U>
 struct IsMemberPointerHelper<T U::*> : TrueType {};
 
-} 
+}  
 
 
 
@@ -368,10 +361,9 @@ struct IsMemberPointerHelper<T U::*> : TrueType {};
 
 
 
-template<typename T>
+template <typename T>
 struct IsMemberPointer
-  : detail::IsMemberPointerHelper<typename RemoveCV<T>::Type>
-{};
+    : detail::IsMemberPointerHelper<typename RemoveCV<T>::Type> {};
 
 
 
@@ -380,11 +372,11 @@ struct IsMemberPointer
 
 
 
-template<typename T>
+template <typename T>
 struct IsScalar
-  : IntegralConstant<bool, IsArithmetic<T>::value || IsEnum<T>::value ||
-                     IsPointer<T>::value || IsMemberPointer<T>::value>
-{};
+    : IntegralConstant<bool, IsArithmetic<T>::value || IsEnum<T>::value ||
+                                 IsPointer<T>::value ||
+                                 IsMemberPointer<T>::value> {};
 
 
 
@@ -395,10 +387,10 @@ struct IsScalar
 
 
 
-template<typename T>
+template <typename T>
 struct IsConst : FalseType {};
 
-template<typename T>
+template <typename T>
 struct IsConst<const T> : TrueType {};
 
 
@@ -408,10 +400,10 @@ struct IsConst<const T> : TrueType {};
 
 
 
-template<typename T>
+template <typename T>
 struct IsVolatile : FalseType {};
 
-template<typename T>
+template <typename T>
 struct IsVolatile<volatile T> : TrueType {};
 
 
@@ -422,26 +414,43 @@ struct IsVolatile<volatile T> : TrueType {};
 
 
 
-template<typename T>
+template <typename T>
 struct IsPod : public FalseType {};
 
-template<> struct IsPod<char>               : TrueType {};
-template<> struct IsPod<signed char>        : TrueType {};
-template<> struct IsPod<unsigned char>      : TrueType {};
-template<> struct IsPod<short>              : TrueType {};
-template<> struct IsPod<unsigned short>     : TrueType {};
-template<> struct IsPod<int>                : TrueType {};
-template<> struct IsPod<unsigned int>       : TrueType {};
-template<> struct IsPod<long>               : TrueType {};
-template<> struct IsPod<unsigned long>      : TrueType {};
-template<> struct IsPod<long long>          : TrueType {};
-template<> struct IsPod<unsigned long long> : TrueType {};
-template<> struct IsPod<bool>               : TrueType {};
-template<> struct IsPod<float>              : TrueType {};
-template<> struct IsPod<double>             : TrueType {};
-template<> struct IsPod<wchar_t>            : TrueType {};
-template<> struct IsPod<char16_t>           : TrueType {};
-template<typename T> struct IsPod<T*>       : TrueType {};
+template <>
+struct IsPod<char> : TrueType {};
+template <>
+struct IsPod<signed char> : TrueType {};
+template <>
+struct IsPod<unsigned char> : TrueType {};
+template <>
+struct IsPod<short> : TrueType {};
+template <>
+struct IsPod<unsigned short> : TrueType {};
+template <>
+struct IsPod<int> : TrueType {};
+template <>
+struct IsPod<unsigned int> : TrueType {};
+template <>
+struct IsPod<long> : TrueType {};
+template <>
+struct IsPod<unsigned long> : TrueType {};
+template <>
+struct IsPod<long long> : TrueType {};
+template <>
+struct IsPod<unsigned long long> : TrueType {};
+template <>
+struct IsPod<bool> : TrueType {};
+template <>
+struct IsPod<float> : TrueType {};
+template <>
+struct IsPod<double> : TrueType {};
+template <>
+struct IsPod<wchar_t> : TrueType {};
+template <>
+struct IsPod<char16_t> : TrueType {};
+template <typename T>
+struct IsPod<T*> : TrueType {};
 
 namespace detail {
 
@@ -449,13 +458,11 @@ namespace detail {
 
 
 
-template<typename T>
+template <typename T>
 struct IsEmptyHelper
-  : IntegralConstant<bool, IsClass<T>::value && __is_empty(T)>
-{};
+    : IntegralConstant<bool, IsClass<T>::value&& __is_empty(T)> {};
 
-} 
-
+}  
 
 
 
@@ -496,34 +503,31 @@ struct IsEmptyHelper
 
 
 
-template<typename T>
-struct IsEmpty : detail::IsEmptyHelper<typename RemoveCV<T>::Type>
-{};
 
+template <typename T>
+struct IsEmpty : detail::IsEmptyHelper<typename RemoveCV<T>::Type> {};
 
 namespace detail {
 
-template<typename T,
-         bool = IsFloatingPoint<T>::value,
-         bool = IsIntegral<T>::value,
-         typename NoCV = typename RemoveCV<T>::Type>
+template <typename T, bool = IsFloatingPoint<T>::value,
+          bool = IsIntegral<T>::value,
+          typename NoCV = typename RemoveCV<T>::Type>
 struct IsSignedHelper;
 
 
-template<typename T, typename NoCV>
+template <typename T, typename NoCV>
 struct IsSignedHelper<T, true, false, NoCV> : TrueType {};
 
 
-template<typename T, typename NoCV>
+template <typename T, typename NoCV>
 struct IsSignedHelper<T, false, true, NoCV>
-  : IntegralConstant<bool, bool(NoCV(-1) < NoCV(1))>
-{};
+    : IntegralConstant<bool, bool(NoCV(-1) < NoCV(1))> {};
 
 
-template<typename T, typename NoCV>
+template <typename T, typename NoCV>
 struct IsSignedHelper<T, false, false, NoCV> : FalseType {};
 
-} 
+}  
 
 
 
@@ -534,33 +538,31 @@ struct IsSignedHelper<T, false, false, NoCV> : FalseType {};
 
 
 
-template<typename T>
+template <typename T>
 struct IsSigned : detail::IsSignedHelper<T> {};
 
 namespace detail {
 
-template<typename T,
-         bool = IsFloatingPoint<T>::value,
-         bool = IsIntegral<T>::value,
-         typename NoCV = typename RemoveCV<T>::Type>
+template <typename T, bool = IsFloatingPoint<T>::value,
+          bool = IsIntegral<T>::value,
+          typename NoCV = typename RemoveCV<T>::Type>
 struct IsUnsignedHelper;
 
 
-template<typename T, typename NoCV>
+template <typename T, typename NoCV>
 struct IsUnsignedHelper<T, true, false, NoCV> : FalseType {};
 
 
-template<typename T, typename NoCV>
+template <typename T, typename NoCV>
 struct IsUnsignedHelper<T, false, true, NoCV>
-  : IntegralConstant<bool,
-                     (IsSame<NoCV, bool>::value || bool(NoCV(1) < NoCV(-1)))>
-{};
+    : IntegralConstant<bool, (IsSame<NoCV, bool>::value ||
+                              bool(NoCV(1) < NoCV(-1)))> {};
 
 
-template<typename T, typename NoCV>
+template <typename T, typename NoCV>
 struct IsUnsignedHelper<T, false, false, NoCV> : FalseType {};
 
-} 
+}  
 
 
 
@@ -570,26 +572,24 @@ struct IsUnsignedHelper<T, false, false, NoCV> : FalseType {};
 
 
 
-template<typename T>
+template <typename T>
 struct IsUnsigned : detail::IsUnsignedHelper<T> {};
 
 namespace detail {
 
-struct DoIsDefaultConstructibleImpl
-{
-  template<typename T, typename = decltype(T())>
+struct DoIsDefaultConstructibleImpl {
+  template <typename T, typename = decltype(T())>
   static TrueType test(int);
-  template<typename T>
+  template <typename T>
   static FalseType test(...);
 };
 
-template<typename T>
-struct IsDefaultConstructibleImpl : public DoIsDefaultConstructibleImpl
-{
+template <typename T>
+struct IsDefaultConstructibleImpl : public DoIsDefaultConstructibleImpl {
   typedef decltype(test<T>(0)) Type;
 };
 
-} 
+}  
 
 
 
@@ -609,28 +609,25 @@ struct IsDefaultConstructibleImpl : public DoIsDefaultConstructibleImpl
 
 
 
-template<typename T>
+template <typename T>
 struct IsDefaultConstructible
-  : public detail::IsDefaultConstructibleImpl<T>::Type
-{};
+    : public detail::IsDefaultConstructibleImpl<T>::Type {};
 
 namespace detail {
 
-struct DoIsDestructibleImpl
-{
-  template<typename T, typename = decltype(DeclVal<T&>().~T())>
+struct DoIsDestructibleImpl {
+  template <typename T, typename = decltype(DeclVal<T&>().~T())>
   static TrueType test(int);
-  template<typename T>
+  template <typename T>
   static FalseType test(...);
 };
 
-template<typename T>
-struct IsDestructibleImpl : public DoIsDestructibleImpl
-{
+template <typename T>
+struct IsDestructibleImpl : public DoIsDestructibleImpl {
   typedef decltype(test<T>(0)) Type;
 };
 
-} 
+}  
 
 
 
@@ -643,7 +640,7 @@ struct IsDestructibleImpl : public DoIsDestructibleImpl
 
 
 
-template<typename T>
+template <typename T>
 struct IsDestructible : public detail::IsDestructibleImpl<T>::Type {};
 
 
@@ -660,17 +657,17 @@ struct IsDestructible : public detail::IsDestructibleImpl<T>::Type {};
 
 
 
-template<typename T, typename U>
+template <typename T, typename U>
 struct IsSame : FalseType {};
 
-template<typename T>
+template <typename T>
 struct IsSame<T, T> : TrueType {};
 
 namespace detail {
 
 #if defined(__GNUC__) || defined(__clang__) || defined(_MSC_VER)
 
-template<class Base, class Derived>
+template <class Base, class Derived>
 struct BaseOfTester : IntegralConstant<bool, __is_base_of(Base, Derived)> {};
 
 #else
@@ -680,47 +677,44 @@ struct BaseOfTester : IntegralConstant<bool, __is_base_of(Base, Derived)> {};
 
 
 
-template<class Base, class Derived>
-struct BaseOfHelper
-{
-public:
+template <class Base, class Derived>
+struct BaseOfHelper {
+ public:
   operator Base*() const;
   operator Derived*();
 };
 
-template<class Base, class Derived>
-struct BaseOfTester
-{
-private:
-  template<class T>
+template <class Base, class Derived>
+struct BaseOfTester {
+ private:
+  template <class T>
   static char test(Derived*, T);
   static int test(Base*, int);
 
-public:
+ public:
   static const bool value =
-    sizeof(test(BaseOfHelper<Base, Derived>(), int())) == sizeof(char);
+      sizeof(test(BaseOfHelper<Base, Derived>(), int())) == sizeof(char);
 };
 
-template<class Base, class Derived>
-struct BaseOfTester<Base, const Derived>
-{
-private:
-  template<class T>
+template <class Base, class Derived>
+struct BaseOfTester<Base, const Derived> {
+ private:
+  template <class T>
   static char test(Derived*, T);
   static int test(Base*, int);
 
-public:
+ public:
   static const bool value =
-    sizeof(test(BaseOfHelper<Base, Derived>(), int())) == sizeof(char);
+      sizeof(test(BaseOfHelper<Base, Derived>(), int())) == sizeof(char);
 };
 
-template<class Base, class Derived>
+template <class Base, class Derived>
 struct BaseOfTester<Base&, Derived&> : FalseType {};
 
-template<class Type>
+template <class Type>
 struct BaseOfTester<Type, Type> : TrueType {};
 
-template<class Type>
+template <class Type>
 struct BaseOfTester<Type, const Type> : TrueType {};
 
 #endif
@@ -740,32 +734,29 @@ struct BaseOfTester<Type, const Type> : TrueType {};
 
 
 
-template<class Base, class Derived>
+template <class Base, class Derived>
 struct IsBaseOf
-  : IntegralConstant<bool, detail::BaseOfTester<Base, Derived>::value>
-{};
+    : IntegralConstant<bool, detail::BaseOfTester<Base, Derived>::value> {};
 
 namespace detail {
 
-template<typename From, typename To>
-struct ConvertibleTester
-{
-private:
-  template<typename To1>
+template <typename From, typename To>
+struct ConvertibleTester {
+ private:
+  template <typename To1>
   static char test_helper(To1);
 
-  template<typename From1, typename To1>
+  template <typename From1, typename To1>
   static decltype(test_helper<To1>(DeclVal<From1>())) test(int);
 
-  template<typename From1, typename To1>
+  template <typename From1, typename To1>
   static int test(...);
 
-public:
-  static const bool value =
-    sizeof(test<From, To>(0)) == sizeof(char);
+ public:
+  static const bool value = sizeof(test<From, To>(0)) == sizeof(char);
 };
 
-} 
+}  
 
 
 
@@ -792,25 +783,18 @@ public:
 
 
 
-template<typename From, typename To>
+template <typename From, typename To>
 struct IsConvertible
-  : IntegralConstant<bool, detail::ConvertibleTester<From, To>::value>
-{};
+    : IntegralConstant<bool, detail::ConvertibleTester<From, To>::value> {};
 
-template<typename B>
-struct IsConvertible<void, B>
-  : IntegralConstant<bool, IsVoid<B>::value>
-{};
+template <typename B>
+struct IsConvertible<void, B> : IntegralConstant<bool, IsVoid<B>::value> {};
 
-template<typename A>
-struct IsConvertible<A, void>
-  : IntegralConstant<bool, IsVoid<A>::value>
-{};
+template <typename A>
+struct IsConvertible<A, void> : IntegralConstant<bool, IsVoid<A>::value> {};
 
-template<>
-struct IsConvertible<void, void>
-  : TrueType
-{};
+template <>
+struct IsConvertible<void, void> : TrueType {};
 
 
 
@@ -824,15 +808,13 @@ struct IsConvertible<void, void>
 
 
 
-template<typename T>
-struct RemoveConst
-{
+template <typename T>
+struct RemoveConst {
   typedef T Type;
 };
 
-template<typename T>
-struct RemoveConst<const T>
-{
+template <typename T>
+struct RemoveConst<const T> {
   typedef T Type;
 };
 
@@ -844,15 +826,13 @@ struct RemoveConst<const T>
 
 
 
-template<typename T>
-struct RemoveVolatile
-{
+template <typename T>
+struct RemoveVolatile {
   typedef T Type;
 };
 
-template<typename T>
-struct RemoveVolatile<volatile T>
-{
+template <typename T>
+struct RemoveVolatile<volatile T> {
   typedef T Type;
 };
 
@@ -864,9 +844,8 @@ struct RemoveVolatile<volatile T>
 
 
 
-template<typename T>
-struct RemoveCV
-{
+template <typename T>
+struct RemoveCV {
   typedef typename RemoveConst<typename RemoveVolatile<T>::Type>::Type Type;
 };
 
@@ -880,47 +859,42 @@ struct RemoveCV
 
 
 
-template<typename T>
-struct RemoveReference
-{
+template <typename T>
+struct RemoveReference {
   typedef T Type;
 };
 
-template<typename T>
-struct RemoveReference<T&>
-{
+template <typename T>
+struct RemoveReference<T&> {
   typedef T Type;
 };
 
-template<typename T>
-struct RemoveReference<T&&>
-{
+template <typename T>
+struct RemoveReference<T&&> {
   typedef T Type;
 };
 
-template<bool Condition, typename A, typename B>
+template <bool Condition, typename A, typename B>
 struct Conditional;
 
 namespace detail {
 
 enum Voidness { TIsVoid, TIsNotVoid };
 
-template<typename T, Voidness V = IsVoid<T>::value ? TIsVoid : TIsNotVoid>
+template <typename T, Voidness V = IsVoid<T>::value ? TIsVoid : TIsNotVoid>
 struct AddLvalueReferenceHelper;
 
-template<typename T>
-struct AddLvalueReferenceHelper<T, TIsVoid>
-{
+template <typename T>
+struct AddLvalueReferenceHelper<T, TIsVoid> {
   typedef void Type;
 };
 
-template<typename T>
-struct AddLvalueReferenceHelper<T, TIsNotVoid>
-{
+template <typename T>
+struct AddLvalueReferenceHelper<T, TIsNotVoid> {
   typedef T& Type;
 };
 
-} 
+}  
 
 
 
@@ -936,29 +910,25 @@ struct AddLvalueReferenceHelper<T, TIsNotVoid>
 
 
 
-template<typename T>
-struct AddLvalueReference
-  : detail::AddLvalueReferenceHelper<T>
-{};
+template <typename T>
+struct AddLvalueReference : detail::AddLvalueReferenceHelper<T> {};
 
 namespace detail {
 
-template<typename T, Voidness V = IsVoid<T>::value ? TIsVoid : TIsNotVoid>
+template <typename T, Voidness V = IsVoid<T>::value ? TIsVoid : TIsNotVoid>
 struct AddRvalueReferenceHelper;
 
-template<typename T>
-struct AddRvalueReferenceHelper<T, TIsVoid>
-{
+template <typename T>
+struct AddRvalueReferenceHelper<T, TIsVoid> {
   typedef void Type;
 };
 
-template<typename T>
-struct AddRvalueReferenceHelper<T, TIsNotVoid>
-{
+template <typename T>
+struct AddRvalueReferenceHelper<T, TIsNotVoid> {
   typedef T&& Type;
 };
 
-} 
+}  
 
 
 
@@ -975,67 +945,69 @@ struct AddRvalueReferenceHelper<T, TIsNotVoid>
 
 
 
-template<typename T>
-struct AddRvalueReference
-  : detail::AddRvalueReferenceHelper<T>
-{};
+template <typename T>
+struct AddRvalueReference : detail::AddRvalueReferenceHelper<T> {};
 
 
 
-template<bool B, typename T = void>
+template <bool B, typename T = void>
 struct EnableIf;
 
 namespace detail {
 
-template<bool MakeConst, typename T>
-struct WithC : Conditional<MakeConst, const T, T>
-{};
+template <bool MakeConst, typename T>
+struct WithC : Conditional<MakeConst, const T, T> {};
 
-template<bool MakeVolatile, typename T>
-struct WithV : Conditional<MakeVolatile, volatile T, T>
-{};
+template <bool MakeVolatile, typename T>
+struct WithV : Conditional<MakeVolatile, volatile T, T> {};
 
+template <bool MakeConst, bool MakeVolatile, typename T>
+struct WithCV : WithC<MakeConst, typename WithV<MakeVolatile, T>::Type> {};
 
-template<bool MakeConst, bool MakeVolatile, typename T>
-struct WithCV : WithC<MakeConst, typename WithV<MakeVolatile, T>::Type>
-{};
-
-template<typename T>
+template <typename T>
 struct CorrespondingSigned;
 
-template<>
-struct CorrespondingSigned<char> { typedef signed char Type; };
-template<>
-struct CorrespondingSigned<unsigned char> { typedef signed char Type; };
-template<>
-struct CorrespondingSigned<unsigned short> { typedef short Type; };
-template<>
-struct CorrespondingSigned<unsigned int> { typedef int Type; };
-template<>
-struct CorrespondingSigned<unsigned long> { typedef long Type; };
-template<>
-struct CorrespondingSigned<unsigned long long> { typedef long long Type; };
+template <>
+struct CorrespondingSigned<char> {
+  typedef signed char Type;
+};
+template <>
+struct CorrespondingSigned<unsigned char> {
+  typedef signed char Type;
+};
+template <>
+struct CorrespondingSigned<unsigned short> {
+  typedef short Type;
+};
+template <>
+struct CorrespondingSigned<unsigned int> {
+  typedef int Type;
+};
+template <>
+struct CorrespondingSigned<unsigned long> {
+  typedef long Type;
+};
+template <>
+struct CorrespondingSigned<unsigned long long> {
+  typedef long long Type;
+};
 
-template<typename T,
-         typename CVRemoved = typename RemoveCV<T>::Type,
-         bool IsSignedIntegerType = IsSigned<CVRemoved>::value &&
-                                    !IsSame<char, CVRemoved>::value>
+template <typename T, typename CVRemoved = typename RemoveCV<T>::Type,
+          bool IsSignedIntegerType =
+              IsSigned<CVRemoved>::value && !IsSame<char, CVRemoved>::value>
 struct MakeSigned;
 
-template<typename T, typename CVRemoved>
-struct MakeSigned<T, CVRemoved, true>
-{
+template <typename T, typename CVRemoved>
+struct MakeSigned<T, CVRemoved, true> {
   typedef T Type;
 };
 
-template<typename T, typename CVRemoved>
+template <typename T, typename CVRemoved>
 struct MakeSigned<T, CVRemoved, false>
-  : WithCV<IsConst<T>::value, IsVolatile<T>::value,
-           typename CorrespondingSigned<CVRemoved>::Type>
-{};
+    : WithCV<IsConst<T>::value, IsVolatile<T>::value,
+             typename CorrespondingSigned<CVRemoved>::Type> {};
 
-} 
-
+}  
 
 
 
@@ -1058,53 +1030,59 @@ struct MakeSigned<T, CVRemoved, false>
 
 
 
-template<typename T>
+
+template <typename T>
 struct MakeSigned
-  : EnableIf<IsIntegral<T>::value &&
-             !IsSame<bool, typename RemoveCV<T>::Type>::value,
-             typename detail::MakeSigned<T>
-            >::Type
-{};
+    : EnableIf<IsIntegral<T>::value &&
+                   !IsSame<bool, typename RemoveCV<T>::Type>::value,
+               typename detail::MakeSigned<T> >::Type {};
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct CorrespondingUnsigned;
 
-template<>
-struct CorrespondingUnsigned<char> { typedef unsigned char Type; };
-template<>
-struct CorrespondingUnsigned<signed char> { typedef unsigned char Type; };
-template<>
-struct CorrespondingUnsigned<short> { typedef unsigned short Type; };
-template<>
-struct CorrespondingUnsigned<int> { typedef unsigned int Type; };
-template<>
-struct CorrespondingUnsigned<long> { typedef unsigned long Type; };
-template<>
-struct CorrespondingUnsigned<long long> { typedef unsigned long long Type; };
+template <>
+struct CorrespondingUnsigned<char> {
+  typedef unsigned char Type;
+};
+template <>
+struct CorrespondingUnsigned<signed char> {
+  typedef unsigned char Type;
+};
+template <>
+struct CorrespondingUnsigned<short> {
+  typedef unsigned short Type;
+};
+template <>
+struct CorrespondingUnsigned<int> {
+  typedef unsigned int Type;
+};
+template <>
+struct CorrespondingUnsigned<long> {
+  typedef unsigned long Type;
+};
+template <>
+struct CorrespondingUnsigned<long long> {
+  typedef unsigned long long Type;
+};
 
-
-template<typename T,
-         typename CVRemoved = typename RemoveCV<T>::Type,
-         bool IsUnsignedIntegerType = IsUnsigned<CVRemoved>::value &&
-                                      !IsSame<char, CVRemoved>::value>
+template <typename T, typename CVRemoved = typename RemoveCV<T>::Type,
+          bool IsUnsignedIntegerType =
+              IsUnsigned<CVRemoved>::value && !IsSame<char, CVRemoved>::value>
 struct MakeUnsigned;
 
-template<typename T, typename CVRemoved>
-struct MakeUnsigned<T, CVRemoved, true>
-{
+template <typename T, typename CVRemoved>
+struct MakeUnsigned<T, CVRemoved, true> {
   typedef T Type;
 };
 
-template<typename T, typename CVRemoved>
+template <typename T, typename CVRemoved>
 struct MakeUnsigned<T, CVRemoved, false>
-  : WithCV<IsConst<T>::value, IsVolatile<T>::value,
-           typename CorrespondingUnsigned<CVRemoved>::Type>
-{};
+    : WithCV<IsConst<T>::value, IsVolatile<T>::value,
+             typename CorrespondingUnsigned<CVRemoved>::Type> {};
 
-} 
-
+}  
 
 
 
@@ -1127,13 +1105,12 @@ struct MakeUnsigned<T, CVRemoved, false>
 
 
 
-template<typename T>
+
+template <typename T>
 struct MakeUnsigned
-  : EnableIf<IsIntegral<T>::value &&
-             !IsSame<bool, typename RemoveCV<T>::Type>::value,
-             typename detail::MakeUnsigned<T>
-            >::Type
-{};
+    : EnableIf<IsIntegral<T>::value &&
+                   !IsSame<bool, typename RemoveCV<T>::Type>::value,
+               typename detail::MakeUnsigned<T> >::Type {};
 
 
 
@@ -1146,21 +1123,18 @@ struct MakeUnsigned
 
 
 
-template<typename T>
-struct RemoveExtent
-{
+template <typename T>
+struct RemoveExtent {
   typedef T Type;
 };
 
-template<typename T>
-struct RemoveExtent<T[]>
-{
+template <typename T>
+struct RemoveExtent<T[]> {
   typedef T Type;
 };
 
-template<typename T, decltype(sizeof(1)) N>
-struct RemoveExtent<T[N]>
-{
+template <typename T, decltype(sizeof(1)) N>
+struct RemoveExtent<T[N]> {
   typedef T Type;
 };
 
@@ -1168,19 +1142,17 @@ struct RemoveExtent<T[N]>
 
 namespace detail {
 
-template<typename T, typename CVRemoved>
-struct RemovePointerHelper
-{
+template <typename T, typename CVRemoved>
+struct RemovePointerHelper {
   typedef T Type;
 };
 
-template<typename T, typename Pointee>
-struct RemovePointerHelper<T, Pointee*>
-{
+template <typename T, typename Pointee>
+struct RemovePointerHelper<T, Pointee*> {
   typedef Pointee Type;
 };
 
-} 
+}  
 
 
 
@@ -1197,10 +1169,9 @@ struct RemovePointerHelper<T, Pointee*>
 
 
 
-template<typename T>
+template <typename T>
 struct RemovePointer
-  : detail::RemovePointerHelper<T, typename RemoveCV<T>::Type>
-{};
+    : detail::RemovePointerHelper<T, typename RemoveCV<T>::Type> {};
 
 
 
@@ -1212,9 +1183,8 @@ struct RemovePointer
 
 
 
-template<typename T>
-struct AddPointer
-{
+template <typename T>
+struct AddPointer {
   typedef typename RemoveReference<T>::Type* Type;
 };
 
@@ -1238,13 +1208,11 @@ struct AddPointer
 
 
 
-template<bool B, typename T>
-struct EnableIf
-{};
+template <bool B, typename T>
+struct EnableIf {};
 
-template<typename T>
-struct EnableIf<true, T>
-{
+template <typename T>
+struct EnableIf<true, T> {
   typedef T Type;
 };
 
@@ -1254,44 +1222,38 @@ struct EnableIf<true, T>
 
 
 
-template<bool Condition, typename A, typename B>
-struct Conditional
-{
+template <bool Condition, typename A, typename B>
+struct Conditional {
   typedef A Type;
 };
 
-template<class A, class B>
-struct Conditional<false, A, B>
-{
+template <class A, class B>
+struct Conditional<false, A, B> {
   typedef B Type;
 };
 
 namespace detail {
 
-template<typename U,
-         bool IsArray = IsArray<U>::value,
-         bool IsFunction = IsFunction<U>::value>
+template <typename U, bool IsArray = IsArray<U>::value,
+          bool IsFunction = IsFunction<U>::value>
 struct DecaySelector;
 
-template<typename U>
-struct DecaySelector<U, false, false>
-{
+template <typename U>
+struct DecaySelector<U, false, false> {
   typedef typename RemoveCV<U>::Type Type;
 };
 
-template<typename U>
-struct DecaySelector<U, true, false>
-{
+template <typename U>
+struct DecaySelector<U, true, false> {
   typedef typename RemoveExtent<U>::Type* Type;
 };
 
-template<typename U>
-struct DecaySelector<U, false, true>
-{
+template <typename U>
+struct DecaySelector<U, false, true> {
   typedef typename AddPointer<U>::Type Type;
 };
 
-}; 
+};  
 
 
 
@@ -1305,10 +1267,8 @@ struct DecaySelector<U, false, true>
 
 
 
-template<typename T>
-class Decay
-  : public detail::DecaySelector<typename RemoveReference<T>::Type>
-{
+template <typename T>
+class Decay : public detail::DecaySelector<typename RemoveReference<T>::Type> {
 };
 
 } 

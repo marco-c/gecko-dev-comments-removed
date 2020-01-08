@@ -36,9 +36,8 @@ namespace hal {
 
 
 
-class WindowIdentifier
-{
-public:
+class WindowIdentifier {
+ public:
   
 
 
@@ -94,7 +93,7 @@ public:
 
   nsPIDOMWindowInner* GetWindow() const;
 
-private:
+ private:
   
 
 
@@ -105,7 +104,7 @@ private:
   bool mIsEmpty;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -22,35 +22,21 @@
 #include "nsString.h"
 #include "nsAttrValue.h"
 
-class MOZ_STACK_CLASS nsAttrValueOrString
-{
-public:
+class MOZ_STACK_CLASS nsAttrValueOrString {
+ public:
   explicit nsAttrValueOrString(const nsAString& aValue)
-    : mAttrValue(nullptr)
-    , mStringPtr(&aValue)
-    , mCheapString(nullptr)
-  { }
+      : mAttrValue(nullptr), mStringPtr(&aValue), mCheapString(nullptr) {}
 
   explicit nsAttrValueOrString(const nsAString* aValue)
-    : mAttrValue(nullptr)
-    , mStringPtr(aValue)
-    , mCheapString(nullptr)
-  { }
+      : mAttrValue(nullptr), mStringPtr(aValue), mCheapString(nullptr) {}
 
   explicit nsAttrValueOrString(const nsAttrValue& aValue)
-    : mAttrValue(&aValue)
-    , mStringPtr(nullptr)
-    , mCheapString(nullptr)
-  { }
+      : mAttrValue(&aValue), mStringPtr(nullptr), mCheapString(nullptr) {}
 
   explicit nsAttrValueOrString(const nsAttrValue* aValue)
-    : mAttrValue(aValue)
-    , mStringPtr(nullptr)
-    , mCheapString(nullptr)
-  { }
+      : mAttrValue(aValue), mStringPtr(nullptr), mCheapString(nullptr) {}
 
-  void ResetToAttrValue(const nsAttrValue& aValue)
-  {
+  void ResetToAttrValue(const nsAttrValue& aValue) {
     mAttrValue = &aValue;
     mStringPtr = nullptr;
     
@@ -70,8 +56,7 @@ public:
 
 
 
-  bool EqualsAsStrings(const nsAttrValue& aOther) const
-  {
+  bool EqualsAsStrings(const nsAttrValue& aOther) const {
     if (mStringPtr) {
       return aOther.Equals(*mStringPtr, eCaseMatters);
     }
@@ -81,8 +66,7 @@ public:
   
 
 
-  bool IsEmpty() const
-  {
+  bool IsEmpty() const {
     if (mStringPtr) {
       return mStringPtr->IsEmpty();
     }
@@ -92,10 +76,10 @@ public:
     return true;
   }
 
-protected:
-  const nsAttrValue*       mAttrValue;
+ protected:
+  const nsAttrValue* mAttrValue;
   mutable const nsAString* mStringPtr;
-  mutable nsCheapString    mCheapString;
+  mutable nsCheapString mCheapString;
 };
 
-#endif 
+#endif  

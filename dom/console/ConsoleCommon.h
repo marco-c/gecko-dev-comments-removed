@@ -14,25 +14,18 @@ namespace dom {
 namespace ConsoleCommon {
 
 
-class MOZ_RAII ClearException
-{
-public:
-  explicit ClearException(JSContext* aCx)
-    : mCx(aCx)
-  {
-  }
+class MOZ_RAII ClearException {
+ public:
+  explicit ClearException(JSContext* aCx) : mCx(aCx) {}
 
-  ~ClearException()
-  {
-    JS_ClearPendingException(mCx);
-  }
+  ~ClearException() { JS_ClearPendingException(mCx); }
 
-private:
+ private:
   JSContext* mCx;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
 #endif 

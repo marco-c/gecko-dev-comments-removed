@@ -13,16 +13,15 @@
 namespace mozilla {
 namespace net {
 class nsSimpleURI;
-} 
-} 
+}  
+}  
 
 
 
 
 
-class gfxFontSrcURI
-{
-public:
+class gfxFontSrcURI {
+ public:
   explicit gfxFontSrcURI(nsIURI* aURI);
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxFontSrcURI)
@@ -37,7 +36,7 @@ public:
   bool InheritsSecurityContext() const { return mInheritsSecurityContext; }
   bool SyncLoadIsOK() const { return mSyncLoadIsOK; }
 
-private:
+ private:
   ~gfxFontSrcURI();
 
   
@@ -64,4 +63,4 @@ private:
   bool mSyncLoadIsOK;
 };
 
-#endif 
+#endif  

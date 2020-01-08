@@ -13,14 +13,12 @@ namespace quota {
 
 class PQuotaParent;
 
-PQuotaParent*
-AllocPQuotaParent();
+PQuotaParent* AllocPQuotaParent();
 
-bool
-DeallocPQuotaParent(PQuotaParent* aActor);
+bool DeallocPQuotaParent(PQuotaParent* aActor);
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

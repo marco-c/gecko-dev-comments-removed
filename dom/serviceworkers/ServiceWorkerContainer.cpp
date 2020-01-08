@@ -42,7 +42,7 @@
 
 
 #ifdef DispatchMessage
-  #undef DispatchMessage
+#undef DispatchMessage
 #endif
 
 namespace mozilla {
@@ -59,9 +59,7 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(ServiceWorkerContainer, DOMEventTargetHelper,
 
 namespace {
 
-bool
-IsInPrivateBrowsing(JSContext* const aCx)
-{
+bool IsInPrivateBrowsing(JSContext* const aCx) {
   if (const nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx)) {
     if (const nsCOMPtr<nsIPrincipal> principal = global->PrincipalOrNull()) {
       return principal->GetPrivateBrowsingId() > 0;
@@ -70,22 +68,21 @@ IsInPrivateBrowsing(JSContext* const aCx)
   return false;
 }
 
-bool
-IsServiceWorkersTestingEnabledInWindow(JSObject* const aGlobal)
-{
-  if (const nsCOMPtr<nsPIDOMWindowInner> innerWindow = Navigator::GetWindowFromGlobal(aGlobal)) {
-    if (const nsCOMPtr<nsPIDOMWindowOuter> outerWindow = innerWindow->GetOuterWindow()) {
+bool IsServiceWorkersTestingEnabledInWindow(JSObject* const aGlobal) {
+  if (const nsCOMPtr<nsPIDOMWindowInner> innerWindow =
+          Navigator::GetWindowFromGlobal(aGlobal)) {
+    if (const nsCOMPtr<nsPIDOMWindowOuter> outerWindow =
+            innerWindow->GetOuterWindow()) {
       return outerWindow->GetServiceWorkersTestingEnabled();
     }
   }
   return false;
 }
 
-}
+}  
 
- bool
-ServiceWorkerContainer::IsEnabled(JSContext* aCx, JSObject* aGlobal)
-{
+ bool ServiceWorkerContainer::IsEnabled(JSContext* aCx,
+                                                    JSObject* aGlobal) {
   MOZ_ASSERT(NS_IsMainThread());
 
   JS::Rooted<JSObject*> global(aCx, aGlobal);
@@ -102,17 +99,19 @@ ServiceWorkerContainer::IsEnabled(JSContext* aCx, JSObject* aGlobal)
     return true;
   }
 
-  const bool isTestingEnabledInWindow = IsServiceWorkersTestingEnabledInWindow(global);
-  const bool isTestingEnabledByPref = StaticPrefs::dom_serviceWorkers_testing_enabled();
-  const bool isTestingEnabled = isTestingEnabledByPref || isTestingEnabledInWindow;
+  const bool isTestingEnabledInWindow =
+      IsServiceWorkersTestingEnabledInWindow(global);
+  const bool isTestingEnabledByPref =
+      StaticPrefs::dom_serviceWorkers_testing_enabled();
+  const bool isTestingEnabled =
+      isTestingEnabledByPref || isTestingEnabledInWindow;
 
   return isTestingEnabled;
 }
 
 
-already_AddRefed<ServiceWorkerContainer>
-ServiceWorkerContainer::Create(nsIGlobalObject* aGlobal)
-{
+already_AddRefed<ServiceWorkerContainer> ServiceWorkerContainer::Create(
+    nsIGlobalObject* aGlobal) {
   RefPtr<Inner> inner;
   if (ServiceWorkerParentInterceptEnabled()) {
     inner = new RemoteServiceWorkerContainerImpl();
@@ -122,15 +121,14 @@ ServiceWorkerContainer::Create(nsIGlobalObject* aGlobal)
   NS_ENSURE_TRUE(inner, nullptr);
 
   RefPtr<ServiceWorkerContainer> ref =
-    new ServiceWorkerContainer(aGlobal, inner.forget());
+      new ServiceWorkerContainer(aGlobal, inner.forget());
   return ref.forget();
 }
 
-ServiceWorkerContainer::ServiceWorkerContainer(nsIGlobalObject* aGlobal,
-                                               already_AddRefed<ServiceWorkerContainer::Inner> aInner)
-  : DOMEventTargetHelper(aGlobal)
-  , mInner(aInner)
-{
+ServiceWorkerContainer::ServiceWorkerContainer(
+    nsIGlobalObject* aGlobal,
+    already_AddRefed<ServiceWorkerContainer::Inner> aInner)
+    : DOMEventTargetHelper(aGlobal), mInner(aInner) {
   mInner->AddContainer(this);
   Maybe<ServiceWorkerDescriptor> controller = aGlobal->GetController();
   if (controller.isSome()) {
@@ -138,22 +136,17 @@ ServiceWorkerContainer::ServiceWorkerContainer(nsIGlobalObject* aGlobal,
   }
 }
 
-ServiceWorkerContainer::~ServiceWorkerContainer()
-{
+ServiceWorkerContainer::~ServiceWorkerContainer() {
   mInner->RemoveContainer(this);
 }
 
-void
-ServiceWorkerContainer::DisconnectFromOwner()
-{
+void ServiceWorkerContainer::DisconnectFromOwner() {
   mControllerWorker = nullptr;
   mReadyPromise = nullptr;
   DOMEventTargetHelper::DisconnectFromOwner();
 }
 
-void
-ServiceWorkerContainer::ControllerChanged(ErrorResult& aRv)
-{
+void ServiceWorkerContainer::ControllerChanged(ErrorResult& aRv) {
   nsCOMPtr<nsIGlobalObject> go = GetParentObject();
   if (!go) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
@@ -168,11 +161,9 @@ using mozilla::dom::ipc::StructuredCloneData;
 
 
 
-struct MOZ_HEAP_CLASS ServiceWorkerContainer::ReceivedMessage
-{
+struct MOZ_HEAP_CLASS ServiceWorkerContainer::ReceivedMessage {
   explicit ReceivedMessage(const ClientPostMessageArgs& aArgs)
-    : mServiceWorker(aArgs.serviceWorker())
-  {
+      : mServiceWorker(aArgs.serviceWorker()) {
     mClonedData.CopyFromClonedMessageDataForBackgroundChild(aArgs.clonedData());
   }
 
@@ -181,13 +172,12 @@ struct MOZ_HEAP_CLASS ServiceWorkerContainer::ReceivedMessage
 
   NS_INLINE_DECL_REFCOUNTING(ReceivedMessage)
 
-private:
+ private:
   ~ReceivedMessage() = default;
 };
 
-void
-ServiceWorkerContainer::ReceiveMessage(const ClientPostMessageArgs& aArgs)
-{
+void ServiceWorkerContainer::ReceiveMessage(
+    const ClientPostMessageArgs& aArgs) {
   RefPtr<ReceivedMessage> message = new ReceivedMessage(aArgs);
   if (mMessagesStarted) {
     EnqueueReceivedMessageDispatch(message.forget());
@@ -196,17 +186,15 @@ ServiceWorkerContainer::ReceiveMessage(const ClientPostMessageArgs& aArgs)
   }
 }
 
-JSObject*
-ServiceWorkerContainer::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
+JSObject* ServiceWorkerContainer::WrapObject(
+    JSContext* aCx, JS::Handle<JSObject*> aGivenProto) {
   return ServiceWorkerContainer_Binding::Wrap(aCx, this, aGivenProto);
 }
 
 namespace {
 
-already_AddRefed<nsIURI>
-GetBaseURIFromGlobal(nsIGlobalObject* aGlobal, ErrorResult& aRv)
-{
+already_AddRefed<nsIURI> GetBaseURIFromGlobal(nsIGlobalObject* aGlobal,
+                                              ErrorResult& aRv) {
   
   
   
@@ -231,13 +219,11 @@ GetBaseURIFromGlobal(nsIGlobalObject* aGlobal, ErrorResult& aRv)
   return baseURI.forget();
 }
 
-} 
+}  
 
-already_AddRefed<Promise>
-ServiceWorkerContainer::Register(const nsAString& aScriptURL,
-                                 const RegistrationOptions& aOptions,
-                                 ErrorResult& aRv)
-{
+already_AddRefed<Promise> ServiceWorkerContainer::Register(
+    const nsAString& aScriptURL, const RegistrationOptions& aOptions,
+    ErrorResult& aRv) {
   
   
   
@@ -273,8 +259,7 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
   
   if (!aOptions.mScope.WasPassed()) {
     NS_NAMED_LITERAL_STRING(defaultScope, "./");
-    rv = NS_NewURI(getter_AddRefs(scopeURI), defaultScope,
-                   nullptr, scriptURI);
+    rv = NS_NewURI(getter_AddRefs(scopeURI), defaultScope, nullptr, scriptURI);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       nsAutoCString spec;
       scriptURI->GetSpec(spec);
@@ -284,8 +269,8 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
     }
   } else {
     
-    rv = NS_NewURI(getter_AddRefs(scopeURI), aOptions.mScope.Value(),
-                   nullptr, baseURI);
+    rv = NS_NewURI(getter_AddRefs(scopeURI), aOptions.mScope.Value(), nullptr,
+                   baseURI);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       nsIURI* uri = baseURI ? baseURI : scriptURI;
       nsAutoCString spec;
@@ -310,8 +295,7 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
   }
   scopeURI = cloneWithoutRef.forget();
 
-  aRv = ServiceWorkerScopeAndScriptAreValid(clientInfo.ref(),
-                                            scopeURI,
+  aRv = ServiceWorkerScopeAndScriptAreValid(clientInfo.ref(), scopeURI,
                                             scriptURI);
   if (aRv.Failed()) {
     return nullptr;
@@ -335,23 +319,21 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
   
   
   
-  nsCOMPtr<nsILoadInfo> secCheckLoadInfo =
-    new mozilla::net::LoadInfo(doc->NodePrincipal(), 
-                               doc->NodePrincipal(), 
-                               doc,                  
-                               nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
-                               nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER);
+  nsCOMPtr<nsILoadInfo> secCheckLoadInfo = new mozilla::net::LoadInfo(
+      doc->NodePrincipal(),  
+      doc->NodePrincipal(),  
+      doc,                   
+      nsILoadInfo::SEC_ONLY_FOR_EXPLICIT_CONTENTSEC_CHECK,
+      nsIContentPolicy::TYPE_INTERNAL_SERVICE_WORKER);
 
   
   int16_t decision = nsIContentPolicy::ACCEPT;
-  rv = NS_CheckContentLoadPolicy(scriptURI,
-                                 secCheckLoadInfo,
+  rv = NS_CheckContentLoadPolicy(scriptURI, secCheckLoadInfo,
                                  NS_LITERAL_CSTRING("application/javascript"),
                                  &decision);
   if (NS_FAILED(rv)) {
     aRv.Throw(NS_ERROR_DOM_SECURITY_ERR);
     return nullptr;
-
   }
   if (NS_WARN_IF(decision != nsIContentPolicy::ACCEPT)) {
     aRv.Throw(NS_ERROR_CONTENT_BLOCKED);
@@ -377,12 +359,11 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
   
   Unused << GetGlobalIfValid(aRv, [&](nsIDocument* aDoc) {
     NS_ConvertUTF8toUTF16 reportScope(cleanedScopeURL);
-    const char16_t* param[] = { reportScope.get() };
-    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                    NS_LITERAL_CSTRING("Service Workers"),
-                                    aDoc, nsContentUtils::eDOM_PROPERTIES,
-                                    "ServiceWorkerRegisterStorageError",
-                                    param, 1);
+    const char16_t* param[] = {reportScope.get()};
+    nsContentUtils::ReportToConsole(
+        nsIScriptError::errorFlag, NS_LITERAL_CSTRING("Service Workers"), aDoc,
+        nsContentUtils::eDOM_PROPERTIES, "ServiceWorkerRegisterStorageError",
+        param, 1);
   });
 
   window->NoteCalledRegisterForServiceWorkerScope(cleanedScopeURL);
@@ -395,34 +376,31 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
   RefPtr<ServiceWorkerContainer> self = this;
 
   mInner->Register(
-    clientInfo.ref(), cleanedScopeURL, cleanedScriptURL, aOptions.mUpdateViaCache,
-    [self, outer] (const ServiceWorkerRegistrationDescriptor& aDesc) {
-      ErrorResult rv;
-      nsIGlobalObject* global = self->GetGlobalIfValid(rv);
-      if (rv.Failed()) {
-        outer->MaybeReject(rv);
-        return;
-      }
-      RefPtr<ServiceWorkerRegistration> reg =
-        global->GetOrCreateServiceWorkerRegistration(aDesc);
-      outer->MaybeResolve(reg);
-    }, [outer] (ErrorResult& aRv) {
-      outer->MaybeReject(aRv);
-    });
+      clientInfo.ref(), cleanedScopeURL, cleanedScriptURL,
+      aOptions.mUpdateViaCache,
+      [self, outer](const ServiceWorkerRegistrationDescriptor& aDesc) {
+        ErrorResult rv;
+        nsIGlobalObject* global = self->GetGlobalIfValid(rv);
+        if (rv.Failed()) {
+          outer->MaybeReject(rv);
+          return;
+        }
+        RefPtr<ServiceWorkerRegistration> reg =
+            global->GetOrCreateServiceWorkerRegistration(aDesc);
+        outer->MaybeResolve(reg);
+      },
+      [outer](ErrorResult& aRv) { outer->MaybeReject(aRv); });
 
   return outer.forget();
 }
 
-already_AddRefed<ServiceWorker>
-ServiceWorkerContainer::GetController()
-{
+already_AddRefed<ServiceWorker> ServiceWorkerContainer::GetController() {
   RefPtr<ServiceWorker> ref = mControllerWorker;
   return ref.forget();
 }
 
-already_AddRefed<Promise>
-ServiceWorkerContainer::GetRegistrations(ErrorResult& aRv)
-{
+already_AddRefed<Promise> ServiceWorkerContainer::GetRegistrations(
+    ErrorResult& aRv) {
   nsIGlobalObject* global = GetGlobalIfValid(aRv, [](nsIDocument* aDoc) {
     nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
                                     NS_LITERAL_CSTRING("Service Workers"), aDoc,
@@ -446,33 +424,32 @@ ServiceWorkerContainer::GetRegistrations(ErrorResult& aRv)
 
   RefPtr<ServiceWorkerContainer> self = this;
 
-  mInner->GetRegistrations(clientInfo.ref(),
-    [self, outer] (const nsTArray<ServiceWorkerRegistrationDescriptor>& aDescList) {
-      ErrorResult rv;
-      nsIGlobalObject* global = self->GetGlobalIfValid(rv);
-      if (rv.Failed()) {
-        outer->MaybeReject(rv);
-        return;
-      }
-      nsTArray<RefPtr<ServiceWorkerRegistration>> regList;
-      for (auto& desc : aDescList) {
-        RefPtr<ServiceWorkerRegistration> reg =
-          global->GetOrCreateServiceWorkerRegistration(desc);
-        if (reg) {
-          regList.AppendElement(std::move(reg));
+  mInner->GetRegistrations(
+      clientInfo.ref(),
+      [self,
+       outer](const nsTArray<ServiceWorkerRegistrationDescriptor>& aDescList) {
+        ErrorResult rv;
+        nsIGlobalObject* global = self->GetGlobalIfValid(rv);
+        if (rv.Failed()) {
+          outer->MaybeReject(rv);
+          return;
         }
-      }
-      outer->MaybeResolve(regList);
-    }, [self, outer] (ErrorResult& aRv) {
-      outer->MaybeReject(aRv);
-    });
+        nsTArray<RefPtr<ServiceWorkerRegistration>> regList;
+        for (auto& desc : aDescList) {
+          RefPtr<ServiceWorkerRegistration> reg =
+              global->GetOrCreateServiceWorkerRegistration(desc);
+          if (reg) {
+            regList.AppendElement(std::move(reg));
+          }
+        }
+        outer->MaybeResolve(regList);
+      },
+      [self, outer](ErrorResult& aRv) { outer->MaybeReject(aRv); });
 
   return outer.forget();
 }
 
-void
-ServiceWorkerContainer::StartMessages()
-{
+void ServiceWorkerContainer::StartMessages() {
   while (!mPendingMessages.IsEmpty()) {
     EnqueueReceivedMessageDispatch(mPendingMessages.ElementAt(0));
     mPendingMessages.RemoveElementAt(0);
@@ -480,10 +457,8 @@ ServiceWorkerContainer::StartMessages()
   mMessagesStarted = true;
 }
 
-already_AddRefed<Promise>
-ServiceWorkerContainer::GetRegistration(const nsAString& aURL,
-                                        ErrorResult& aRv)
-{
+already_AddRefed<Promise> ServiceWorkerContainer::GetRegistration(
+    const nsAString& aURL, ErrorResult& aRv) {
   nsIGlobalObject* global = GetGlobalIfValid(aRv, [](nsIDocument* aDoc) {
     nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
                                     NS_LITERAL_CSTRING("Service Workers"), aDoc,
@@ -524,34 +499,34 @@ ServiceWorkerContainer::GetRegistration(const nsAString& aURL,
 
   RefPtr<ServiceWorkerContainer> self = this;
 
-  mInner->GetRegistration(clientInfo.ref(), spec,
-    [self, outer] (const ServiceWorkerRegistrationDescriptor& aDescriptor) {
-      ErrorResult rv;
-      nsIGlobalObject* global = self->GetGlobalIfValid(rv);
-      if (rv.Failed()) {
-        outer->MaybeReject(rv);
-        return;
-      }
-      RefPtr<ServiceWorkerRegistration> reg =
-        global->GetOrCreateServiceWorkerRegistration(aDescriptor);
-      outer->MaybeResolve(reg);
-    }, [self, outer] (ErrorResult& aRv) {
-      if (!aRv.Failed()) {
-        Unused << self->GetGlobalIfValid(aRv);
-        if (!aRv.Failed()) {
-          outer->MaybeResolveWithUndefined();
+  mInner->GetRegistration(
+      clientInfo.ref(), spec,
+      [self, outer](const ServiceWorkerRegistrationDescriptor& aDescriptor) {
+        ErrorResult rv;
+        nsIGlobalObject* global = self->GetGlobalIfValid(rv);
+        if (rv.Failed()) {
+          outer->MaybeReject(rv);
           return;
         }
-      }
-      outer->MaybeReject(aRv);
-    });
+        RefPtr<ServiceWorkerRegistration> reg =
+            global->GetOrCreateServiceWorkerRegistration(aDescriptor);
+        outer->MaybeResolve(reg);
+      },
+      [self, outer](ErrorResult& aRv) {
+        if (!aRv.Failed()) {
+          Unused << self->GetGlobalIfValid(aRv);
+          if (!aRv.Failed()) {
+            outer->MaybeResolveWithUndefined();
+            return;
+          }
+        }
+        outer->MaybeReject(aRv);
+      });
 
   return outer.forget();
 }
 
-Promise*
-ServiceWorkerContainer::GetReady(ErrorResult& aRv)
-{
+Promise* ServiceWorkerContainer::GetReady(ErrorResult& aRv) {
   if (mReadyPromise) {
     return mReadyPromise;
   }
@@ -576,39 +551,37 @@ ServiceWorkerContainer::GetReady(ErrorResult& aRv)
   RefPtr<ServiceWorkerContainer> self = this;
   RefPtr<Promise> outer = mReadyPromise;
 
-  mInner->GetReady(clientInfo.ref(),
-    [self, outer] (const ServiceWorkerRegistrationDescriptor& aDescriptor) {
-      ErrorResult rv;
-      nsIGlobalObject* global = self->GetGlobalIfValid(rv);
-      if (rv.Failed()) {
-        outer->MaybeReject(rv);
-        return;
-      }
-      RefPtr<ServiceWorkerRegistration> reg =
-        global->GetOrCreateServiceWorkerRegistration(aDescriptor);
-      NS_ENSURE_TRUE_VOID(reg);
+  mInner->GetReady(
+      clientInfo.ref(),
+      [self, outer](const ServiceWorkerRegistrationDescriptor& aDescriptor) {
+        ErrorResult rv;
+        nsIGlobalObject* global = self->GetGlobalIfValid(rv);
+        if (rv.Failed()) {
+          outer->MaybeReject(rv);
+          return;
+        }
+        RefPtr<ServiceWorkerRegistration> reg =
+            global->GetOrCreateServiceWorkerRegistration(aDescriptor);
+        NS_ENSURE_TRUE_VOID(reg);
 
-      
-      
-      
-      reg->WhenVersionReached(aDescriptor.Version(),
-        [outer, reg] (bool aResult) {
-          outer->MaybeResolve(reg);
-        });
-    }, [self, outer] (ErrorResult& aRv) {
-      outer->MaybeReject(aRv);
-    });
+        
+        
+        
+        reg->WhenVersionReached(
+            aDescriptor.Version(),
+            [outer, reg](bool aResult) { outer->MaybeResolve(reg); });
+      },
+      [self, outer](ErrorResult& aRv) { outer->MaybeReject(aRv); });
 
   return mReadyPromise;
 }
 
 
-void
-ServiceWorkerContainer::GetScopeForUrl(const nsAString& aUrl,
-                                       nsString& aScope,
-                                       ErrorResult& aRv)
-{
-  nsCOMPtr<nsIServiceWorkerManager> swm = mozilla::services::GetServiceWorkerManager();
+void ServiceWorkerContainer::GetScopeForUrl(const nsAString& aUrl,
+                                            nsString& aScope,
+                                            ErrorResult& aRv) {
+  nsCOMPtr<nsIServiceWorkerManager> swm =
+      mozilla::services::GetServiceWorkerManager();
   if (!swm) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
@@ -626,14 +599,12 @@ ServiceWorkerContainer::GetScopeForUrl(const nsAString& aUrl,
     return;
   }
 
-  aRv = swm->GetScopeForUrl(doc->NodePrincipal(),
-                            aUrl, aScope);
+  aRv = swm->GetScopeForUrl(doc->NodePrincipal(), aUrl, aScope);
 }
 
-nsIGlobalObject*
-ServiceWorkerContainer::GetGlobalIfValid(ErrorResult& aRv,
-                                         const std::function<void(nsIDocument*)>&& aStorageFailureCB) const
-{
+nsIGlobalObject* ServiceWorkerContainer::GetGlobalIfValid(
+    ErrorResult& aRv,
+    const std::function<void(nsIDocument*)>&& aStorageFailureCB) const {
   
   
   
@@ -672,26 +643,19 @@ ServiceWorkerContainer::GetGlobalIfValid(ErrorResult& aRv,
   return window->AsGlobal();
 }
 
-void
-ServiceWorkerContainer::EnqueueReceivedMessageDispatch(RefPtr<ReceivedMessage> aMessage) {
+void ServiceWorkerContainer::EnqueueReceivedMessageDispatch(
+    RefPtr<ReceivedMessage> aMessage) {
   if (nsPIDOMWindowInner* const window = GetOwner()) {
     if (auto* const target = window->EventTargetFor(TaskCategory::Other)) {
-      target->Dispatch(
-        NewRunnableMethod<RefPtr<ReceivedMessage>>(
-          "ServiceWorkerContainer::DispatchMessage",
-          this,
-          &ServiceWorkerContainer::DispatchMessage,
-          std::move(aMessage)
-        )
-      );
+      target->Dispatch(NewRunnableMethod<RefPtr<ReceivedMessage>>(
+          "ServiceWorkerContainer::DispatchMessage", this,
+          &ServiceWorkerContainer::DispatchMessage, std::move(aMessage)));
     }
   }
 }
 
 template <typename F>
-void
-ServiceWorkerContainer::RunWithJSContext(F&& aCallable)
-{
+void ServiceWorkerContainer::RunWithJSContext(F&& aCallable) {
   nsCOMPtr<nsIGlobalObject> globalObject;
   if (nsPIDOMWindowInner* const window = GetOwner()) {
     globalObject = do_QueryInterface(window);
@@ -707,17 +671,15 @@ ServiceWorkerContainer::RunWithJSContext(F&& aCallable)
   aCallable(jsapi.cx(), globalObject);
 }
 
-void
-ServiceWorkerContainer::DispatchMessage(RefPtr<ReceivedMessage> aMessage)
-{
+void ServiceWorkerContainer::DispatchMessage(RefPtr<ReceivedMessage> aMessage) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
   
   
   
-  RunWithJSContext([this, message = std::move(aMessage)](JSContext* const aCx,
-                                                         nsIGlobalObject* const aGlobal) {
+  RunWithJSContext([this, message = std::move(aMessage)](
+                       JSContext* const aCx, nsIGlobalObject* const aGlobal) {
     ErrorResult result;
     bool deserializationFailed = false;
     RootedDictionary<MessageEventInit> init(aCx);
@@ -733,11 +695,11 @@ ServiceWorkerContainer::DispatchMessage(RefPtr<ReceivedMessage> aMessage)
       }
     }
 
-    RefPtr<MessageEvent> event =
-      MessageEvent::Constructor(this,
-                                deserializationFailed ? NS_LITERAL_STRING("messageerror") :
-                                                        NS_LITERAL_STRING("message"),
-                                init);
+    RefPtr<MessageEvent> event = MessageEvent::Constructor(
+        this,
+        deserializationFailed ? NS_LITERAL_STRING("messageerror")
+                              : NS_LITERAL_STRING("message"),
+        init);
     event->SetTrusted(true);
 
     result = NS_OK;
@@ -750,14 +712,14 @@ ServiceWorkerContainer::DispatchMessage(RefPtr<ReceivedMessage> aMessage)
 
 namespace {
 
-nsresult
-FillInOriginNoSuffix(const ServiceWorkerDescriptor& aServiceWorker, nsString& aOrigin)
-{
+nsresult FillInOriginNoSuffix(const ServiceWorkerDescriptor& aServiceWorker,
+                              nsString& aOrigin) {
   using mozilla::ipc::PrincipalInfoToPrincipal;
 
   nsresult rv;
 
-  nsCOMPtr<nsIPrincipal> principal = PrincipalInfoToPrincipal(aServiceWorker.PrincipalInfo(), &rv);
+  nsCOMPtr<nsIPrincipal> principal =
+      PrincipalInfoToPrincipal(aServiceWorker.PrincipalInfo(), &rv);
   if (NS_FAILED(rv) || !principal) {
     return rv;
   }
@@ -772,23 +734,24 @@ FillInOriginNoSuffix(const ServiceWorkerDescriptor& aServiceWorker, nsString& aO
   return NS_OK;
 }
 
-already_AddRefed<ServiceWorker>
-GetOrCreateServiceWorkerWithoutWarnings(nsIGlobalObject* const aGlobal,
-                                        const ServiceWorkerDescriptor& aDescriptor)
-{
+already_AddRefed<ServiceWorker> GetOrCreateServiceWorkerWithoutWarnings(
+    nsIGlobalObject* const aGlobal,
+    const ServiceWorkerDescriptor& aDescriptor) {
   
   
   
   
   
   if (!ServiceWorkerParentInterceptEnabled()) {
-    const RefPtr<ServiceWorkerManager> serviceWorkerManager = ServiceWorkerManager::GetInstance();
+    const RefPtr<ServiceWorkerManager> serviceWorkerManager =
+        ServiceWorkerManager::GetInstance();
     if (!serviceWorkerManager) {
       return nullptr;
     }
 
     const RefPtr<ServiceWorkerRegistrationInfo> registration =
-      serviceWorkerManager->GetRegistration(aDescriptor.PrincipalInfo(), aDescriptor.Scope());
+        serviceWorkerManager->GetRegistration(aDescriptor.PrincipalInfo(),
+                                              aDescriptor.Scope());
     if (!registration) {
       return nullptr;
     }
@@ -797,15 +760,11 @@ GetOrCreateServiceWorkerWithoutWarnings(nsIGlobalObject* const aGlobal,
   return aGlobal->GetOrCreateServiceWorker(aDescriptor).forget();
 }
 
-}
+}  
 
-bool
-ServiceWorkerContainer::FillInMessageEventInit(JSContext* const aCx,
-                                               nsIGlobalObject* const aGlobal,
-                                               ReceivedMessage& aMessage,
-                                               MessageEventInit& aInit,
-                                               ErrorResult& aRv)
-{
+bool ServiceWorkerContainer::FillInMessageEventInit(
+    JSContext* const aCx, nsIGlobalObject* const aGlobal,
+    ReceivedMessage& aMessage, MessageEventInit& aInit, ErrorResult& aRv) {
   
   
   
@@ -816,12 +775,13 @@ ServiceWorkerContainer::FillInMessageEventInit(JSContext* const aCx,
   
   
   const RefPtr<ServiceWorker> serviceWorkerInstance =
-    GetOrCreateServiceWorkerWithoutWarnings(aGlobal, aMessage.mServiceWorker);
+      GetOrCreateServiceWorkerWithoutWarnings(aGlobal, aMessage.mServiceWorker);
   if (serviceWorkerInstance) {
     aInit.mSource.SetValue().SetAsServiceWorker() = serviceWorkerInstance;
   }
 
-  const nsresult rv = FillInOriginNoSuffix(aMessage.mServiceWorker, aInit.mOrigin);
+  const nsresult rv =
+      FillInOriginNoSuffix(aMessage.mServiceWorker, aInit.mOrigin);
   if (NS_FAILED(rv)) {
     return false;
   }
@@ -842,5 +802,5 @@ ServiceWorkerContainer::FillInMessageEventInit(JSContext* const aCx,
   return true;
 }
 
-} 
-} 
+}  
+}  

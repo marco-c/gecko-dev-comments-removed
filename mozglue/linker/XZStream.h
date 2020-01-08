@@ -12,9 +12,8 @@
 #include "xz.h"
 
 
-class XZStream
-{
-public:
+class XZStream {
+ public:
   
   static bool IsXZ(const void* aBuf, size_t aBufSize);
 
@@ -34,9 +33,10 @@ public:
   
   size_t UncompressedSize() const;
 
-private:
+ private:
   
   size_t ParseIndexSize() const;
+  
   
   size_t ParseUncompressedSize() const;
 
@@ -46,4 +46,4 @@ private:
   xz_dec* mDec;
 };
 
-#endif 
+#endif  

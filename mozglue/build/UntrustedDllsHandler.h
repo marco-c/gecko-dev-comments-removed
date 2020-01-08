@@ -8,10 +8,10 @@
 #define mozilla_glue_UntrustedDllsHandler_h
 
 #include <windows.h>
-#include <winternl.h> 
+#include <winternl.h>  
 
 #include "mozilla/Attributes.h"
-#include "mozilla/glue/WindowsDllServices.h" 
+#include "mozilla/glue/WindowsDllServices.h"  
 #include "mozilla/Vector.h"
 
 namespace mozilla {
@@ -21,14 +21,13 @@ namespace glue {
 
 
 
-class UntrustedDllsHandler
-{
-public:
+class UntrustedDllsHandler {
+ public:
   static void Init();
 
 #ifdef DEBUG
   static void Shutdown();
-#endif 
+#endif  
 
   
 
@@ -64,12 +63,11 @@ public:
 
 
 
-  static bool
-  TakePendingEvents(Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy>& aOut);
+  static bool TakePendingEvents(
+      Vector<ModuleLoadEvent, 0, InfallibleAllocPolicy>& aOut);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

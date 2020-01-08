@@ -11,23 +11,22 @@
 
 namespace mozilla {
 
-class PaintWorkletImpl final : public WorkletImpl
-{
-public:
+class PaintWorkletImpl final : public WorkletImpl {
+ public:
   
 
-  static already_AddRefed<dom::Worklet>
-  CreateWorklet(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
+  static already_AddRefed<dom::Worklet> CreateWorklet(
+      nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
 
-protected:
+ protected:
   
   already_AddRefed<dom::WorkletGlobalScope> ConstructGlobalScope() override;
 
-private:
+ private:
   PaintWorkletImpl(nsPIDOMWindowInner* aWindow, nsIPrincipal* aPrincipal);
   ~PaintWorkletImpl();
 };
 
-} 
+}  
 
-#endif 
+#endif  

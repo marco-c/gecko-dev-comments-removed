@@ -8,13 +8,16 @@
 using namespace JS;
 
 struct BarkWhenTracedClass {
-    static int finalizeCount;
-    static int traceCount;
+  static int finalizeCount;
+  static int traceCount;
 
-    static const JSClass class_;
-    static void finalize(JSFreeOp* fop, JSObject* obj) { finalizeCount++; }
-    static void trace(JSTracer* trc, JSObject* obj) { traceCount++; }
-    static void reset() { finalizeCount = 0; traceCount = 0; }
+  static const JSClass class_;
+  static void finalize(JSFreeOp* fop, JSObject* obj) { finalizeCount++; }
+  static void trace(JSTracer* trc, JSObject* obj) { traceCount++; }
+  static void reset() {
+    finalizeCount = 0;
+    traceCount = 0;
+  }
 };
 
 int BarkWhenTracedClass::finalizeCount;
@@ -31,194 +34,179 @@ static const JSClassOps BarkWhenTracedClassClassOps = {
     nullptr,
     nullptr,
     nullptr,
-    BarkWhenTracedClass::trace
-};
+    BarkWhenTracedClass::trace};
 
-const JSClass BarkWhenTracedClass::class_ = {
-    "BarkWhenTracedClass",
-    JSCLASS_FOREGROUND_FINALIZE,
-    &BarkWhenTracedClassClassOps
-};
+const JSClass BarkWhenTracedClass::class_ = {"BarkWhenTracedClass",
+                                             JSCLASS_FOREGROUND_FINALIZE,
+                                             &BarkWhenTracedClassClassOps};
 
 struct Kennel {
-    PersistentRootedObject obj;
-    Kennel() { }
-    explicit Kennel(JSContext* cx) : obj(cx) { }
-    Kennel(JSContext* cx, const HandleObject& woof) : obj(cx, woof) { }
-    void init(JSContext* cx, const HandleObject& woof) {
-        obj.init(cx, woof);
-    }
-    void clear() {
-        obj = nullptr;
-    }
+  PersistentRootedObject obj;
+  Kennel() {}
+  explicit Kennel(JSContext* cx) : obj(cx) {}
+  Kennel(JSContext* cx, const HandleObject& woof) : obj(cx, woof) {}
+  void init(JSContext* cx, const HandleObject& woof) { obj.init(cx, woof); }
+  void clear() { obj = nullptr; }
 };
 
 
 
 
-MOZ_NEVER_INLINE static Kennel*
-Allocate(JSContext* cx)
-{
-    RootedObject barker(cx, JS_NewObject(cx, &BarkWhenTracedClass::class_));
-    if (!barker) {
-        return nullptr;
-    }
+MOZ_NEVER_INLINE static Kennel* Allocate(JSContext* cx) {
+  RootedObject barker(cx, JS_NewObject(cx, &BarkWhenTracedClass::class_));
+  if (!barker) {
+    return nullptr;
+  }
 
-    return new Kennel(cx, barker);
+  return new Kennel(cx, barker);
 }
 
 
-static bool
-GCFinalizesNBarkers(JSContext* cx, int n)
-{
-    int preGCTrace = BarkWhenTracedClass::traceCount;
-    int preGCFinalize = BarkWhenTracedClass::finalizeCount;
+static bool GCFinalizesNBarkers(JSContext* cx, int n) {
+  int preGCTrace = BarkWhenTracedClass::traceCount;
+  int preGCFinalize = BarkWhenTracedClass::finalizeCount;
 
-    JS_GC(cx);
+  JS_GC(cx);
 
-    return (BarkWhenTracedClass::finalizeCount == preGCFinalize + n &&
-            BarkWhenTracedClass::traceCount > preGCTrace);
+  return (BarkWhenTracedClass::finalizeCount == preGCFinalize + n &&
+          BarkWhenTracedClass::traceCount > preGCTrace);
 }
 
 
-BEGIN_TEST(test_PersistentRooted)
-{
-    BarkWhenTracedClass::reset();
+BEGIN_TEST(test_PersistentRooted) {
+  BarkWhenTracedClass::reset();
 
-    mozilla::UniquePtr<Kennel> kennel(Allocate(cx));
-    CHECK(kennel.get());
+  mozilla::UniquePtr<Kennel> kennel(Allocate(cx));
+  CHECK(kennel.get());
 
-    
-    CHECK(GCFinalizesNBarkers(cx, 0));
+  
+  CHECK(GCFinalizesNBarkers(cx, 0));
 
-    kennel = nullptr;
+  kennel = nullptr;
 
-    
-    JS_GC(cx);
-    CHECK(BarkWhenTracedClass::finalizeCount == 1);
+  
+  JS_GC(cx);
+  CHECK(BarkWhenTracedClass::finalizeCount == 1);
 
-    return true;
+  return true;
 }
 END_TEST(test_PersistentRooted)
 
 
-BEGIN_TEST(test_PersistentRootedNull)
-{
-    BarkWhenTracedClass::reset();
+BEGIN_TEST(test_PersistentRootedNull) {
+  BarkWhenTracedClass::reset();
 
-    Kennel kennel(cx);
-    CHECK(!kennel.obj);
+  Kennel kennel(cx);
+  CHECK(!kennel.obj);
 
-    JS_GC(cx);
-    CHECK(BarkWhenTracedClass::finalizeCount == 0);
+  JS_GC(cx);
+  CHECK(BarkWhenTracedClass::finalizeCount == 0);
 
-    return true;
+  return true;
 }
 END_TEST(test_PersistentRootedNull)
 
 
-BEGIN_TEST(test_PersistentRootedCopy)
-{
-    BarkWhenTracedClass::reset();
+BEGIN_TEST(test_PersistentRootedCopy) {
+  BarkWhenTracedClass::reset();
 
-    mozilla::UniquePtr<Kennel> kennel(Allocate(cx));
-    CHECK(kennel.get());
+  mozilla::UniquePtr<Kennel> kennel(Allocate(cx));
+  CHECK(kennel.get());
 
-    CHECK(GCFinalizesNBarkers(cx, 0));
+  CHECK(GCFinalizesNBarkers(cx, 0));
 
-    
-    mozilla::UniquePtr<Kennel> newKennel(new Kennel(*kennel));
+  
+  mozilla::UniquePtr<Kennel> newKennel(new Kennel(*kennel));
 
-    CHECK(GCFinalizesNBarkers(cx, 0));
+  CHECK(GCFinalizesNBarkers(cx, 0));
 
-    kennel = nullptr;
+  kennel = nullptr;
 
-    CHECK(GCFinalizesNBarkers(cx, 0));
+  CHECK(GCFinalizesNBarkers(cx, 0));
 
-    newKennel = nullptr;
+  newKennel = nullptr;
 
-    
-    
-    JS_GC(cx);
-    CHECK(BarkWhenTracedClass::finalizeCount == 1);
+  
+  
+  JS_GC(cx);
+  CHECK(BarkWhenTracedClass::finalizeCount == 1);
 
-    return true;
+  return true;
 }
 END_TEST(test_PersistentRootedCopy)
 
 
-BEGIN_TEST(test_PersistentRootedAssign)
-{
-    BarkWhenTracedClass::reset();
+BEGIN_TEST(test_PersistentRootedAssign) {
+  BarkWhenTracedClass::reset();
 
-    mozilla::UniquePtr<Kennel> kennel(Allocate(cx));
-    CHECK(kennel.get());
+  mozilla::UniquePtr<Kennel> kennel(Allocate(cx));
+  CHECK(kennel.get());
 
-    CHECK(GCFinalizesNBarkers(cx, 0));
+  CHECK(GCFinalizesNBarkers(cx, 0));
 
-    
-    mozilla::UniquePtr<Kennel> kennel2(new Kennel(cx));
+  
+  mozilla::UniquePtr<Kennel> kennel2(new Kennel(cx));
 
-    
-    *kennel2 = *kennel;
+  
+  *kennel2 = *kennel;
 
-    
-    CHECK(GCFinalizesNBarkers(cx, 0));
+  
+  CHECK(GCFinalizesNBarkers(cx, 0));
 
-    kennel2 = nullptr;
+  kennel2 = nullptr;
 
-    
-    CHECK(GCFinalizesNBarkers(cx, 0));
+  
+  CHECK(GCFinalizesNBarkers(cx, 0));
 
-    
-    kennel2 = mozilla::UniquePtr<Kennel>(Allocate(cx));
-    CHECK(kennel2.get());
+  
+  kennel2 = mozilla::UniquePtr<Kennel>(Allocate(cx));
+  CHECK(kennel2.get());
 
-    *kennel = *kennel2;
+  *kennel = *kennel2;
 
-    
-    CHECK(GCFinalizesNBarkers(cx, 1));
+  
+  CHECK(GCFinalizesNBarkers(cx, 1));
 
-    kennel = nullptr;
-    kennel2 = nullptr;
+  kennel = nullptr;
+  kennel2 = nullptr;
 
-    
-    
-    JS_GC(cx);
-    CHECK(BarkWhenTracedClass::finalizeCount == 2);
+  
+  
+  JS_GC(cx);
+  CHECK(BarkWhenTracedClass::finalizeCount == 2);
 
-    return true;
+  return true;
 }
 END_TEST(test_PersistentRootedAssign)
 
 static PersistentRootedObject gGlobalRoot;
 
 
-BEGIN_TEST(test_GlobalPersistentRooted)
-{
-    BarkWhenTracedClass::reset();
 
-    CHECK(!gGlobalRoot.initialized());
+BEGIN_TEST(test_GlobalPersistentRooted) {
+  BarkWhenTracedClass::reset();
 
-    {
-        RootedObject barker(cx, JS_NewObject(cx, &BarkWhenTracedClass::class_));
-        CHECK(barker);
+  CHECK(!gGlobalRoot.initialized());
 
-        gGlobalRoot.init(cx, barker);
-    }
+  {
+    RootedObject barker(cx, JS_NewObject(cx, &BarkWhenTracedClass::class_));
+    CHECK(barker);
 
-    CHECK(gGlobalRoot.initialized());
+    gGlobalRoot.init(cx, barker);
+  }
 
-    
-    CHECK(GCFinalizesNBarkers(cx, 0));
+  CHECK(gGlobalRoot.initialized());
 
-    gGlobalRoot.reset();
-    CHECK(!gGlobalRoot.initialized());
+  
+  CHECK(GCFinalizesNBarkers(cx, 0));
 
-    
-    JS_GC(cx);
-    CHECK(BarkWhenTracedClass::finalizeCount == 1);
+  gGlobalRoot.reset();
+  CHECK(!gGlobalRoot.initialized());
 
-    return true;
+  
+  JS_GC(cx);
+  CHECK(BarkWhenTracedClass::finalizeCount == 1);
+
+  return true;
 }
 END_TEST(test_GlobalPersistentRooted)

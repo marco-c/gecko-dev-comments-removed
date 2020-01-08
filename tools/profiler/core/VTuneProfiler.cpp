@@ -17,13 +17,13 @@ using namespace std;
 
 VTuneProfiler* VTuneProfiler::mInstance = nullptr;
 
-void
-VTuneProfiler::Initialize()
-{
+void VTuneProfiler::Initialize() {
   
   
   
-  __itt_event testEvent = __itt_event_create("Test event", strlen("Test event"));
+  
+  __itt_event testEvent =
+      __itt_event_create("Test event", strlen("Test event"));
   testEvent = __itt_event_create("Test event 2", strlen("Test event 2"));
 
   if (testEvent) {
@@ -31,14 +31,9 @@ VTuneProfiler::Initialize()
   }
 }
 
-void
-VTuneProfiler::Shutdown()
-{
-}
+void VTuneProfiler::Shutdown() {}
 
-void
-VTuneProfiler::TraceInternal(const char* aName, TracingKind aKind)
-{
+void VTuneProfiler::TraceInternal(const char* aName, TracingKind aKind) {
   string str(aName);
 
   auto iter = mStrings.find(str);
@@ -48,7 +43,7 @@ VTuneProfiler::TraceInternal(const char* aName, TracingKind aKind)
     event = iter->second;
   } else {
     event = __itt_event_create(aName, str.length());
-    mStrings.insert({ str, event });
+    mStrings.insert({str, event});
   }
 
   if (aKind == TRACING_INTERVAL_START || aKind == TRACING_EVENT) {
@@ -60,9 +55,7 @@ VTuneProfiler::TraceInternal(const char* aName, TracingKind aKind)
   }
 }
 
-void
-VTuneProfiler::RegisterThreadInternal(const char* aName)
-{
+void VTuneProfiler::RegisterThreadInternal(const char* aName) {
   string str(aName);
 
   if (!str.compare("GeckoMain")) {

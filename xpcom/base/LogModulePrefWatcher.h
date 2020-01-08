@@ -20,9 +20,8 @@ namespace mozilla {
 
 
 
-class LogModulePrefWatcher : public nsIObserver
-{
-public:
+class LogModulePrefWatcher : public nsIObserver {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -31,12 +30,10 @@ public:
 
   static void RegisterPrefWatcher();
 
-private:
+ private:
   LogModulePrefWatcher();
-  virtual ~LogModulePrefWatcher()
-  {
-  }
+  virtual ~LogModulePrefWatcher() {}
 };
-} 
+}  
 
-#endif 
+#endif  

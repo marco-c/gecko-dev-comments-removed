@@ -21,8 +21,4 @@
 
 
 
-
-void nothing()
-{
-}
-
+void nothing() {}

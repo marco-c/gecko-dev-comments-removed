@@ -17,18 +17,15 @@ namespace net {
 typedef mozilla::Pair<char16_t, char16_t> BlocklistRange;
 
 
-class BlocklistPairToCharComparator
-{
-public:
-  bool Equals(const BlocklistRange& pair, char16_t needle) const
-  {
+class BlocklistPairToCharComparator {
+ public:
+  bool Equals(const BlocklistRange& pair, char16_t needle) const {
     
     
     return pair.first() <= needle && needle <= pair.second();
   }
 
-  bool LessThan(const BlocklistRange& pair, char16_t needle) const
-  {
+  bool LessThan(const BlocklistRange& pair, char16_t needle) const {
     
     
     return pair.second() < needle;
@@ -36,24 +33,20 @@ public:
 };
 
 
-class BlocklistEntryComparator
-{
-public:
-  bool Equals(const BlocklistRange& a, const BlocklistRange& b) const
-  {
+class BlocklistEntryComparator {
+ public:
+  bool Equals(const BlocklistRange& a, const BlocklistRange& b) const {
     return a.first() == b.first() && a.second() == b.second();
   }
 
-  bool LessThan(const BlocklistRange& a, const BlocklistRange& b) const
-  {
+  bool LessThan(const BlocklistRange& a, const BlocklistRange& b) const {
     return a.first() < b.first();
   }
 };
 
 
-inline bool
-CharInBlocklist(char16_t aChar, const nsTArray<BlocklistRange>& aBlocklist)
-{
+inline bool CharInBlocklist(char16_t aChar,
+                            const nsTArray<BlocklistRange>& aBlocklist) {
   return aBlocklist.ContainsSorted(aChar, BlocklistPairToCharComparator());
 }
 
@@ -61,13 +54,12 @@ CharInBlocklist(char16_t aChar, const nsTArray<BlocklistRange>& aBlocklist)
 
 
 
-void
-InitializeBlocklist(nsTArray<BlocklistRange>& aBlocklist);
+void InitializeBlocklist(nsTArray<BlocklistRange>& aBlocklist);
 
-void
-RemoveCharFromBlocklist(char16_t aChar, nsTArray<BlocklistRange>& aBlocklist);
+void RemoveCharFromBlocklist(char16_t aChar,
+                             nsTArray<BlocklistRange>& aBlocklist);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

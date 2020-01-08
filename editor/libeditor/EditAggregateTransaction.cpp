@@ -5,25 +5,20 @@
 
 #include "EditAggregateTransaction.h"
 #include "nsAString.h"
-#include "nsCOMPtr.h"                   
-#include "nsError.h"                    
-#include "nsISupportsUtils.h"           
-#include "nsITransaction.h"             
-#include "nsString.h"                   
+#include "nsCOMPtr.h"          
+#include "nsError.h"           
+#include "nsISupportsUtils.h"  
+#include "nsITransaction.h"    
+#include "nsString.h"          
 
 namespace mozilla {
 
-EditAggregateTransaction::EditAggregateTransaction()
-{
-}
+EditAggregateTransaction::EditAggregateTransaction() {}
 
-EditAggregateTransaction::~EditAggregateTransaction()
-{
-}
+EditAggregateTransaction::~EditAggregateTransaction() {}
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(EditAggregateTransaction,
-                                   EditTransactionBase,
-                                   mChildren)
+                                   EditTransactionBase, mChildren)
 
 NS_IMPL_ADDREF_INHERITED(EditAggregateTransaction, EditTransactionBase)
 NS_IMPL_RELEASE_INHERITED(EditAggregateTransaction, EditTransactionBase)
@@ -31,11 +26,10 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(EditAggregateTransaction)
 NS_INTERFACE_MAP_END_INHERITING(EditTransactionBase)
 
 NS_IMETHODIMP
-EditAggregateTransaction::DoTransaction()
-{
+EditAggregateTransaction::DoTransaction() {
   
   for (uint32_t i = 0, length = mChildren.Length(); i < length; ++i) {
-    nsITransaction *txn = mChildren[i];
+    nsITransaction* txn = mChildren[i];
     if (!txn) {
       return NS_ERROR_NULL_POINTER;
     }
@@ -48,12 +42,11 @@ EditAggregateTransaction::DoTransaction()
 }
 
 NS_IMETHODIMP
-EditAggregateTransaction::UndoTransaction()
-{
+EditAggregateTransaction::UndoTransaction() {
   
   
-  for (uint32_t i = mChildren.Length(); i--; ) {
-    nsITransaction *txn = mChildren[i];
+  for (uint32_t i = mChildren.Length(); i--;) {
+    nsITransaction* txn = mChildren[i];
     if (!txn) {
       return NS_ERROR_NULL_POINTER;
     }
@@ -66,11 +59,10 @@ EditAggregateTransaction::UndoTransaction()
 }
 
 NS_IMETHODIMP
-EditAggregateTransaction::RedoTransaction()
-{
+EditAggregateTransaction::RedoTransaction() {
   
   for (uint32_t i = 0, length = mChildren.Length(); i < length; ++i) {
-    nsITransaction *txn = mChildren[i];
+    nsITransaction* txn = mChildren[i];
     if (!txn) {
       return NS_ERROR_NULL_POINTER;
     }
@@ -83,9 +75,7 @@ EditAggregateTransaction::RedoTransaction()
 }
 
 NS_IMETHODIMP
-EditAggregateTransaction::Merge(nsITransaction* aTransaction,
-                                bool* aDidMerge)
-{
+EditAggregateTransaction::Merge(nsITransaction* aTransaction, bool* aDidMerge) {
   if (aDidMerge) {
     *aDidMerge = false;
   }
@@ -94,7 +84,7 @@ EditAggregateTransaction::Merge(nsITransaction* aTransaction,
   }
   
   
-  nsITransaction *txn = mChildren[0];
+  nsITransaction* txn = mChildren[0];
   if (!txn) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -102,8 +92,7 @@ EditAggregateTransaction::Merge(nsITransaction* aTransaction,
 }
 
 NS_IMETHODIMP
-EditAggregateTransaction::AppendChild(EditTransactionBase* aTransaction)
-{
+EditAggregateTransaction::AppendChild(EditTransactionBase* aTransaction) {
   if (!aTransaction) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -118,8 +107,7 @@ EditAggregateTransaction::AppendChild(EditTransactionBase* aTransaction)
 }
 
 NS_IMETHODIMP
-EditAggregateTransaction::GetName(nsAtom** aName)
-{
+EditAggregateTransaction::GetName(nsAtom** aName) {
   if (aName && mName) {
     *aName = mName;
     NS_ADDREF(*aName);
@@ -128,4 +116,4 @@ EditAggregateTransaction::GetName(nsAtom** aName)
   return NS_ERROR_NULL_POINTER;
 }
 
-} 
+}  

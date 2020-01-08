@@ -18,10 +18,8 @@ class Accessible;
 
 
 
-class TableAccessible
-{
-public:
-
+class TableAccessible {
+ public:
   
 
 
@@ -45,36 +43,40 @@ public:
   
 
 
-  virtual Accessible* CellAt(uint32_t aRowIdx, uint32_t aColIdx) { return nullptr; }
+  virtual Accessible* CellAt(uint32_t aRowIdx, uint32_t aColIdx) {
+    return nullptr;
+  }
 
   
 
 
-  virtual int32_t CellIndexAt(uint32_t aRowIdx, uint32_t aColIdx)
-    { return ColCount() * aRowIdx + aColIdx; }
+  virtual int32_t CellIndexAt(uint32_t aRowIdx, uint32_t aColIdx) {
+    return ColCount() * aRowIdx + aColIdx;
+  }
 
   
 
 
-  virtual int32_t ColIndexAt(uint32_t aCellIdx)
-    { return aCellIdx % ColCount(); }
+  virtual int32_t ColIndexAt(uint32_t aCellIdx) {
+    return aCellIdx % ColCount();
+  }
 
   
 
 
-  virtual int32_t RowIndexAt(uint32_t aCellIdx)
-    { return aCellIdx / ColCount(); }
+  virtual int32_t RowIndexAt(uint32_t aCellIdx) {
+    return aCellIdx / ColCount();
+  }
 
   
 
 
   virtual void RowAndColIndicesAt(uint32_t aCellIdx, int32_t* aRowIdx,
-                                  int32_t* aColIdx)
-    {
-      uint32_t colCount = ColCount();
-      *aRowIdx = aCellIdx / colCount;
-      *aColIdx = aCellIdx % colCount;
-    }
+                                  int32_t* aColIdx) {
+    uint32_t colCount = ColCount();
+    *aRowIdx = aCellIdx / colCount;
+    *aColIdx = aCellIdx % colCount;
+  }
 
   
 
@@ -91,14 +93,16 @@ public:
   
 
 
-  virtual void ColDescription(uint32_t aColIdx, nsString& aDescription)
-    { aDescription.Truncate(); }
+  virtual void ColDescription(uint32_t aColIdx, nsString& aDescription) {
+    aDescription.Truncate();
+  }
 
   
 
 
-  virtual void RowDescription(uint32_t aRowIdx, nsString& aDescription)
-    { aDescription.Truncate(); }
+  virtual void RowDescription(uint32_t aRowIdx, nsString& aDescription) {
+    aDescription.Truncate();
+  }
 
   
 
@@ -113,7 +117,9 @@ public:
   
 
 
-  virtual bool IsCellSelected(uint32_t aRowIdx, uint32_t aColIdx) { return false; }
+  virtual bool IsCellSelected(uint32_t aRowIdx, uint32_t aColIdx) {
+    return false;
+  }
 
   
 
@@ -180,8 +186,7 @@ public:
 
   virtual Accessible* AsAccessible() = 0;
 
-protected:
-
+ protected:
   
 
 
@@ -193,7 +198,7 @@ protected:
   Accessible* CellInRowAt(Accessible* aRow, int32_t aColumn);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

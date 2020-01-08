@@ -50,9 +50,9 @@ class NSCursor;
 
 typedef short Bits16[16];
 struct Cursor {
-  Bits16  data;
-  Bits16  mask;
-  Point   hotSpot;
+  Bits16 data;
+  Bits16 mask;
+  Point hotSpot;
 };
 typedef struct Cursor Cursor;
 
@@ -62,18 +62,18 @@ namespace mac_plugin_interposing {
 
 
 class NSCursorInfo {
-public:
+ public:
   enum Type {
     TypeCustom,
     TypeArrow,
     TypeClosedHand,
-    TypeContextualMenu,   
+    TypeContextualMenu,  
     TypeCrosshair,
     TypeDisappearingItem,
-    TypeDragCopy,         
-    TypeDragLink,         
+    TypeDragCopy,  
+    TypeDragLink,  
     TypeIBeam,
-    TypeNotAllowed,       
+    TypeNotAllowed,  
     TypeOpenHand,
     TypePointingHand,
     TypeResizeDown,
@@ -82,7 +82,7 @@ public:
     TypeResizeRight,
     TypeResizeUp,
     TypeResizeUpDown,
-    TypeTransparent       
+    TypeTransparent  
   };
 
   NSCursorInfo();
@@ -103,7 +103,7 @@ public:
 
   static bool GetNativeCursorsSupported();
 
-private:
+ private:
   NSCursor* GetTransparentCursor() const;
 
   Type mType;
@@ -124,14 +124,14 @@ void OnShowCursor(bool show);
 void OnPushCursor(const NSCursorInfo& cursorInfo);
 void OnPopCursor();
 
-} 
+}  
 
 namespace child {
 
 void SetUpCocoaInterposing();
 
-} 
+}  
 
-} 
+}  
 
 #endif 

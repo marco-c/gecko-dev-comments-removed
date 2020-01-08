@@ -40,60 +40,53 @@
 
 #include <unordered_map>
 #include <tr1/unordered_map>
-namespace std
-{
-  size_t __attribute__((weak))
-  __detail::_Prime_rehash_policy::_M_next_bkt(size_t __n) const
-  {
-    tr1::__detail::_Prime_rehash_policy policy(_M_max_load_factor);
-    size_t ret = policy._M_next_bkt(__n);
-    _M_next_resize = policy._M_next_resize;
-    return ret;
-  }
-
-  pair<bool, size_t> __attribute__((weak))
-  __detail::_Prime_rehash_policy::_M_need_rehash(size_t __n_bkt,
-                                                 size_t __n_elt,
-                                                 size_t __n_ins) const
-  {
-    tr1::__detail::_Prime_rehash_policy policy(_M_max_load_factor);
-    policy._M_next_resize = _M_next_resize;
-    pair<bool, size_t> ret = policy._M_need_rehash(__n_bkt, __n_elt, __n_ins);
-    _M_next_resize = policy._M_next_resize;
-    return ret;
-  }
+namespace std {
+size_t __attribute__((weak))
+__detail::_Prime_rehash_policy::_M_next_bkt(size_t __n) const {
+  tr1::__detail::_Prime_rehash_policy policy(_M_max_load_factor);
+  size_t ret = policy._M_next_bkt(__n);
+  _M_next_resize = policy._M_next_resize;
+  return ret;
 }
+
+pair<bool, size_t> __attribute__((weak))
+__detail::_Prime_rehash_policy::_M_need_rehash(size_t __n_bkt, size_t __n_elt,
+                                               size_t __n_ins) const {
+  tr1::__detail::_Prime_rehash_policy policy(_M_max_load_factor);
+  policy._M_next_resize = _M_next_resize;
+  pair<bool, size_t> ret = policy._M_need_rehash(__n_bkt, __n_elt, __n_ins);
+  _M_next_resize = policy._M_next_resize;
+  return ret;
+}
+}  
 #endif
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 20)
 namespace std {
 
-    
 
-    void __attribute__((weak)) __throw_out_of_range_fmt(char const* fmt, ...)
-    {
-        va_list ap;
-        char buf[1024]; 
 
-        va_start(ap, fmt);
-        vsnprintf(buf, sizeof(buf), fmt, ap);
-        buf[sizeof(buf) - 1] = 0;
-        va_end(ap);
+void __attribute__((weak)) __throw_out_of_range_fmt(char const* fmt, ...) {
+  va_list ap;
+  char buf[1024];  
 
-        __throw_range_error(buf);
-    }
+  va_start(ap, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, ap);
+  buf[sizeof(buf) - 1] = 0;
+  va_end(ap);
 
+  __throw_range_error(buf);
 }
+
+}  
 #endif
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 20)
 
 
 
-extern "C" void __attribute__((weak))
-__cxa_throw_bad_array_new_length()
-{
-    MOZ_CRASH();
+extern "C" void __attribute__((weak)) __cxa_throw_bad_array_new_length() {
+  MOZ_CRASH();
 }
 #endif
 
@@ -103,11 +96,9 @@ __cxa_throw_bad_array_new_length()
 
 
 namespace std {
-    __attribute__((weak)) runtime_error::runtime_error(char const* s)
-    : runtime_error(std::string(s))
-    {
-    }
-}
+__attribute__((weak)) runtime_error::runtime_error(char const* s)
+    : runtime_error(std::string(s)) {}
+}  
 #endif
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 21)
@@ -116,7 +107,6 @@ namespace std {
 #include <thread>
 
 namespace std {
-  
 
 
 
@@ -125,47 +115,40 @@ namespace std {
 
 
 
-  __attribute__((weak))
-  void thread::_M_start_thread(shared_ptr<_Impl_base> impl, void (*)())
-  {
-    _M_start_thread(std::move(impl));
-  }
+
+__attribute__((weak)) void thread::_M_start_thread(shared_ptr<_Impl_base> impl,
+                                                   void (*)()) {
+  _M_start_thread(std::move(impl));
+}
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 22)
-  
 
-  struct StateWrapper: public thread::_Impl_base {
-    unique_ptr<thread::_State> mState;
 
-    StateWrapper(unique_ptr<thread::_State> aState)
-    : mState(std::move(aState))
-    { }
+struct StateWrapper : public thread::_Impl_base {
+  unique_ptr<thread::_State> mState;
 
-    void _M_run() override
-    {
-      mState->_M_run();
-    }
-  };
+  StateWrapper(unique_ptr<thread::_State> aState) : mState(std::move(aState)) {}
 
-  __attribute__((weak))
-  void thread::_M_start_thread(unique_ptr<_State> aState, void (*)())
-  {
-    auto impl = std::make_shared<StateWrapper>(std::move(aState));
-    _M_start_thread(std::move(impl));
-  }
+  void _M_run() override { mState->_M_run(); }
+};
 
-  
-
-  __attribute__((weak)) thread::_State::~_State() = default;
-#endif
+__attribute__((weak)) void thread::_M_start_thread(unique_ptr<_State> aState,
+                                                   void (*)()) {
+  auto impl = std::make_shared<StateWrapper>(std::move(aState));
+  _M_start_thread(std::move(impl));
 }
+
+
+
+__attribute__((weak)) thread::_State::~_State() = default;
+#endif
+}  
 #endif
 
 #if MOZ_LIBSTDCXX_VERSION >= GLIBCXX_VERSION(3, 4, 21)
-namespace std
-{
-  
+namespace std {
 
-  template basic_ios<char, char_traits<char> >::operator bool() const;
-}
+
+template basic_ios<char, char_traits<char> >::operator bool() const;
+}  
 #endif

@@ -18,21 +18,17 @@ class AbortSignalImpl;
 
 
 
-class AbortFollower
-{
-public:
+class AbortFollower {
+ public:
   virtual void Abort() = 0;
 
-  void
-  Follow(AbortSignalImpl* aSignal);
+  void Follow(AbortSignalImpl* aSignal);
 
-  void
-  Unfollow();
+  void Unfollow();
 
-  bool
-  IsFollowing() const;
+  bool IsFollowing() const;
 
-protected:
+ protected:
   virtual ~AbortFollower();
 
   
@@ -42,56 +38,47 @@ protected:
 
 
 
-class AbortSignalImpl : public AbortFollower
-                      , public nsISupports
-{
-public:
+class AbortSignalImpl : public AbortFollower, public nsISupports {
+ public:
   explicit AbortSignalImpl(bool aAborted);
 
-  bool
-  Aborted() const;
+  bool Aborted() const;
 
-  void
-  Abort() override;
+  void Abort() override;
 
-  void
-  AddFollower(AbortFollower* aFollower);
+  void AddFollower(AbortFollower* aFollower);
 
-  void
-  RemoveFollower(AbortFollower* aFollower);
+  void RemoveFollower(AbortFollower* aFollower);
 
-protected:
+ protected:
   virtual ~AbortSignalImpl() = default;
 
-private:
+ private:
   
   nsTObserverArray<AbortFollower*> mFollowers;
 
   bool mAborted;
 };
 
-class AbortSignal final : public DOMEventTargetHelper
-                        , public AbortSignalImpl
-{
-public:
+class AbortSignal final : public DOMEventTargetHelper, public AbortSignalImpl {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(AbortSignal, DOMEventTargetHelper)
 
   AbortSignal(nsIGlobalObject* aGlobalObject, bool aAborted);
 
-  JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   IMPL_EVENT_HANDLER(abort);
 
-  void
-  Abort() override;
+  void Abort() override;
 
-private:
+ private:
   ~AbortSignal() = default;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

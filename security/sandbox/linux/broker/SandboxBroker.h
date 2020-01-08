@@ -35,16 +35,14 @@ class FileDescriptor;
 
 
 
-class SandboxBroker final
-  : private SandboxBrokerCommon
-  , public PlatformThread::Delegate
-{
+class SandboxBroker final : private SandboxBrokerCommon,
+                            public PlatformThread::Delegate {
  public:
   enum Perms {
-    MAY_ACCESS    = 1 << 0,
-    MAY_READ      = 1 << 1,
-    MAY_WRITE     = 1 << 2,
-    MAY_CREATE    = 1 << 3,
+    MAY_ACCESS = 1 << 0,
+    MAY_READ = 1 << 1,
+    MAY_WRITE = 1 << 2,
+    MAY_CREATE = 1 << 3,
     
     
     
@@ -52,9 +50,9 @@ class SandboxBroker final
     CRASH_INSTEAD = 1 << 4,
     
     
-    RECURSIVE     = 1 << 5,
+    RECURSIVE = 1 << 5,
     
-    MAY_CONNECT   = 1 << 6,
+    MAY_CONNECT = 1 << 6,
   };
   
   
@@ -62,7 +60,8 @@ class SandboxBroker final
 
   class Policy {
     PathPermissionMap mMap;
-  public:
+
+   public:
     Policy();
     Policy(const Policy& aOther);
     ~Policy();
@@ -111,7 +110,8 @@ class SandboxBroker final
     int Lookup(const char* aPath) const {
       return Lookup(nsDependentCString(aPath));
     }
-  private:
+
+   private:
     
     
     
@@ -124,9 +124,9 @@ class SandboxBroker final
   
   
   
-  static UniquePtr<SandboxBroker>
-    Create(UniquePtr<const Policy> aPolicy, int aChildPid,
-           ipc::FileDescriptor& aClientFdOut);
+  static UniquePtr<SandboxBroker> Create(UniquePtr<const Policy> aPolicy,
+                                         int aChildPid,
+                                         ipc::FileDescriptor& aClientFdOut);
   virtual ~SandboxBroker();
 
  private:
@@ -139,8 +139,7 @@ class SandboxBroker final
   typedef nsDataHashtable<nsCStringHashKey, nsCString> PathMap;
   PathMap mSymlinkMap;
 
-  SandboxBroker(UniquePtr<const Policy> aPolicy, int aChildPid,
-                int& aClientFd);
+  SandboxBroker(UniquePtr<const Policy> aPolicy, int aChildPid, int& aClientFd);
   void ThreadMain(void) override;
   void AuditPermissive(int aOp, int aFlags, int aPerms, const char* aPath);
   void AuditDenial(int aOp, int aFlags, int aPerms, const char* aPath);
@@ -161,6 +160,6 @@ class SandboxBroker final
   void operator=(const SandboxBroker&) = delete;
 };
 
-} 
+}  
 
-#endif 
+#endif  

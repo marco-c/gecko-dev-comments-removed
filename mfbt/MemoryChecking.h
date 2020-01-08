@@ -49,8 +49,8 @@ extern "C" {
 
 
 
-void MOZ_ASAN_VISIBILITY
-__asan_poison_memory_region(void const volatile *addr, size_t size);
+void MOZ_ASAN_VISIBILITY __asan_poison_memory_region(void const volatile *addr,
+                                                     size_t size);
 void MOZ_ASAN_VISIBILITY
 __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 
@@ -67,9 +67,7 @@ __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 
 
 
-void MOZ_EXPORT
-__lsan_ignore_object(const void *p);
-
+void MOZ_EXPORT __lsan_ignore_object(const void *p);
 }
 #elif defined(MOZ_MSAN)
 #include <stddef.h>
@@ -80,19 +78,14 @@ extern "C" {
 
 
 
-void MOZ_EXPORT
-__msan_poison(void const volatile *addr, size_t size);
-void MOZ_EXPORT
-__msan_unpoison(void const volatile *addr, size_t size);
+void MOZ_EXPORT __msan_poison(void const volatile *addr, size_t size);
+void MOZ_EXPORT __msan_unpoison(void const volatile *addr, size_t size);
 
-#define MOZ_MAKE_MEM_NOACCESS(addr, size) \
-  __msan_poison((addr), (size))
+#define MOZ_MAKE_MEM_NOACCESS(addr, size) __msan_poison((addr), (size))
 
-#define MOZ_MAKE_MEM_UNDEFINED(addr, size) \
-  __msan_poison((addr), (size))
+#define MOZ_MAKE_MEM_UNDEFINED(addr, size) __msan_poison((addr), (size))
 
-#define MOZ_MAKE_MEM_DEFINED(addr, size) \
-  __msan_unpoison((addr), (size))
+#define MOZ_MAKE_MEM_DEFINED(addr, size) __msan_unpoison((addr), (size))
 }
 #elif defined(MOZ_VALGRIND)
 #define MOZ_MAKE_MEM_NOACCESS(addr, size) \
@@ -105,9 +98,15 @@ __msan_unpoison(void const volatile *addr, size_t size);
   VALGRIND_MAKE_MEM_DEFINED((addr), (size))
 #else
 
-#define MOZ_MAKE_MEM_NOACCESS(addr, size) do {} while (0)
-#define MOZ_MAKE_MEM_UNDEFINED(addr, size) do {} while (0)
-#define MOZ_MAKE_MEM_DEFINED(addr, size) do {} while (0)
+#define MOZ_MAKE_MEM_NOACCESS(addr, size) \
+  do {                                    \
+  } while (0)
+#define MOZ_MAKE_MEM_UNDEFINED(addr, size) \
+  do {                                     \
+  } while (0)
+#define MOZ_MAKE_MEM_DEFINED(addr, size) \
+  do {                                   \
+  } while (0)
 
 #endif
 
@@ -120,10 +119,9 @@ __msan_unpoison(void const volatile *addr, size_t size);
 
 
 #if defined(MOZ_ASAN)
-#  define MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(X) __lsan_ignore_object(X)
+#define MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(X) __lsan_ignore_object(X)
 #else
-#  define MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(X)
-#endif 
-
+#define MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(X)
+#endif                                        
 
 #endif 

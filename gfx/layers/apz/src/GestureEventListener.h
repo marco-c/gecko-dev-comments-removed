@@ -7,12 +7,12 @@
 #ifndef mozilla_layers_GestureEventListener_h
 #define mozilla_layers_GestureEventListener_h
 
-#include "InputData.h"                  
+#include "InputData.h"  
 #include "Units.h"
-#include "mozilla/EventForwards.h"      
-#include "mozilla/RefPtr.h"             
+#include "mozilla/EventForwards.h"  
+#include "mozilla/RefPtr.h"         
 #include "nsISupportsImpl.h"
-#include "nsTArray.h"                   
+#include "nsTArray.h"  
 
 namespace mozilla {
 
@@ -35,10 +35,11 @@ class AsyncPanZoomController;
 
 
 class GestureEventListener final {
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GestureEventListener)
 
-  explicit GestureEventListener(AsyncPanZoomController* aAsyncPanZoomController);
+  explicit GestureEventListener(
+      AsyncPanZoomController* aAsyncPanZoomController);
 
   
   
@@ -66,7 +67,7 @@ public:
 
   static void SetLongTapEnabled(bool aLongTapEnabled);
 
-private:
+ private:
   
   ~GestureEventListener();
 
@@ -78,8 +79,10 @@ private:
     
     
     
+    
     GESTURE_NONE,
 
+    
     
     
     
@@ -267,7 +270,7 @@ private:
   Maybe<bool> mSingleTapSent;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

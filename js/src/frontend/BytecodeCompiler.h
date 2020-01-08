@@ -32,27 +32,25 @@ class ParseNode;
 
 #if defined(JS_BUILD_BINAST)
 
-JSScript*
-CompileGlobalBinASTScript(JSContext *cx, LifoAlloc& alloc,
-                          const JS::ReadOnlyCompileOptions& options,
-                          const uint8_t* src, size_t len,
-                          ScriptSourceObject** sourceObjectOut = nullptr);
+JSScript* CompileGlobalBinASTScript(
+    JSContext* cx, LifoAlloc& alloc, const JS::ReadOnlyCompileOptions& options,
+    const uint8_t* src, size_t len,
+    ScriptSourceObject** sourceObjectOut = nullptr);
 
-MOZ_MUST_USE bool
-CompileLazyBinASTFunction(JSContext* cx, Handle<LazyScript*> lazy, const uint8_t* buf, size_t length);
+MOZ_MUST_USE bool CompileLazyBinASTFunction(JSContext* cx,
+                                            Handle<LazyScript*> lazy,
+                                            const uint8_t* buf, size_t length);
 
-#endif 
+#endif  
 
-ModuleObject*
-CompileModule(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-              JS::SourceText<char16_t>& srcBuf);
+ModuleObject* CompileModule(JSContext* cx,
+                            const JS::ReadOnlyCompileOptions& options,
+                            JS::SourceText<char16_t>& srcBuf);
 
-ModuleObject*
-CompileModule(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-              JS::SourceText<char16_t>& srcBuf,
-              ScriptSourceObject** sourceObjectOut);
-
-
+ModuleObject* CompileModule(JSContext* cx,
+                            const JS::ReadOnlyCompileOptions& options,
+                            JS::SourceText<char16_t>& srcBuf,
+                            ScriptSourceObject** sourceObjectOut);
 
 
 
@@ -64,34 +62,32 @@ CompileModule(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
 
 
 
-MOZ_MUST_USE bool
-CompileStandaloneFunction(JSContext* cx, MutableHandleFunction fun,
-                          const JS::ReadOnlyCompileOptions& options,
-                          JS::SourceText<char16_t>& srcBuf,
-                          const mozilla::Maybe<uint32_t>& parameterListEnd,
-                          HandleScope enclosingScope = nullptr);
 
-MOZ_MUST_USE bool
-CompileStandaloneGenerator(JSContext* cx, MutableHandleFunction fun,
-                           const JS::ReadOnlyCompileOptions& options,
-                           JS::SourceText<char16_t>& srcBuf,
-                           const mozilla::Maybe<uint32_t>& parameterListEnd);
 
-MOZ_MUST_USE bool
-CompileStandaloneAsyncFunction(JSContext* cx, MutableHandleFunction fun,
-                               const JS::ReadOnlyCompileOptions& options,
-                               JS::SourceText<char16_t>& srcBuf,
-                               const mozilla::Maybe<uint32_t>& parameterListEnd);
+MOZ_MUST_USE bool CompileStandaloneFunction(
+    JSContext* cx, MutableHandleFunction fun,
+    const JS::ReadOnlyCompileOptions& options, JS::SourceText<char16_t>& srcBuf,
+    const mozilla::Maybe<uint32_t>& parameterListEnd,
+    HandleScope enclosingScope = nullptr);
 
-MOZ_MUST_USE bool
-CompileStandaloneAsyncGenerator(JSContext* cx, MutableHandleFunction fun,
-                                const JS::ReadOnlyCompileOptions& options,
-                                JS::SourceText<char16_t>& srcBuf,
-                                const mozilla::Maybe<uint32_t>& parameterListEnd);
+MOZ_MUST_USE bool CompileStandaloneGenerator(
+    JSContext* cx, MutableHandleFunction fun,
+    const JS::ReadOnlyCompileOptions& options, JS::SourceText<char16_t>& srcBuf,
+    const mozilla::Maybe<uint32_t>& parameterListEnd);
 
-ScriptSourceObject*
-CreateScriptSourceObject(JSContext* cx, const JS::ReadOnlyCompileOptions& options,
-                         const mozilla::Maybe<uint32_t>& parameterListEnd = mozilla::Nothing());
+MOZ_MUST_USE bool CompileStandaloneAsyncFunction(
+    JSContext* cx, MutableHandleFunction fun,
+    const JS::ReadOnlyCompileOptions& options, JS::SourceText<char16_t>& srcBuf,
+    const mozilla::Maybe<uint32_t>& parameterListEnd);
+
+MOZ_MUST_USE bool CompileStandaloneAsyncGenerator(
+    JSContext* cx, MutableHandleFunction fun,
+    const JS::ReadOnlyCompileOptions& options, JS::SourceText<char16_t>& srcBuf,
+    const mozilla::Maybe<uint32_t>& parameterListEnd);
+
+ScriptSourceObject* CreateScriptSourceObject(
+    JSContext* cx, const JS::ReadOnlyCompileOptions& options,
+    const mozilla::Maybe<uint32_t>& parameterListEnd = mozilla::Nothing());
 
 
 
@@ -102,60 +98,50 @@ CreateScriptSourceObject(JSContext* cx, const JS::ReadOnlyCompileOptions& option
 
 
 
-bool
-IsIdentifier(JSLinearString* str);
+bool IsIdentifier(JSLinearString* str);
 
-bool
-IsIdentifierNameOrPrivateName(JSLinearString* str);
+bool IsIdentifierNameOrPrivateName(JSLinearString* str);
 
 
 
 
-bool
-IsIdentifier(const Latin1Char* chars, size_t length);
-bool
-IsIdentifier(const char16_t* chars, size_t length);
+bool IsIdentifier(const Latin1Char* chars, size_t length);
+bool IsIdentifier(const char16_t* chars, size_t length);
 
-bool
-IsIdentifierNameOrPrivateName(const Latin1Char* chars, size_t length);
-bool
-IsIdentifierNameOrPrivateName(const char16_t* chars, size_t length);
+bool IsIdentifierNameOrPrivateName(const Latin1Char* chars, size_t length);
+bool IsIdentifierNameOrPrivateName(const char16_t* chars, size_t length);
 
 
-bool
-IsKeyword(JSLinearString* str);
+bool IsKeyword(JSLinearString* str);
 
 
-void
-TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
+void TraceParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
 #if defined(JS_BUILD_BINAST)
 
 
 
-void
-TraceBinParser(JSTracer* trc, JS::AutoGCRooter* parser);
+void TraceBinParser(JSTracer* trc, JS::AutoGCRooter* parser);
 
-#endif 
+#endif  
 
-class MOZ_STACK_CLASS AutoFrontendTraceLog
-{
+class MOZ_STACK_CLASS AutoFrontendTraceLog {
 #ifdef JS_TRACE_LOGGING
-    TraceLoggerThread* logger_;
-    mozilla::Maybe<TraceLoggerEvent> frontendEvent_;
-    mozilla::Maybe<AutoTraceLog> frontendLog_;
-    mozilla::Maybe<AutoTraceLog> typeLog_;
+  TraceLoggerThread* logger_;
+  mozilla::Maybe<TraceLoggerEvent> frontendEvent_;
+  mozilla::Maybe<AutoTraceLog> frontendLog_;
+  mozilla::Maybe<AutoTraceLog> typeLog_;
 #endif
 
-  public:
-    AutoFrontendTraceLog(JSContext* cx, const TraceLoggerTextId id,
-                         const ErrorReporter& reporter);
+ public:
+  AutoFrontendTraceLog(JSContext* cx, const TraceLoggerTextId id,
+                       const ErrorReporter& reporter);
 
-    AutoFrontendTraceLog(JSContext* cx, const TraceLoggerTextId id,
-                         const ErrorReporter& reporter, FunctionBox* funbox);
+  AutoFrontendTraceLog(JSContext* cx, const TraceLoggerTextId id,
+                       const ErrorReporter& reporter, FunctionBox* funbox);
 
-    AutoFrontendTraceLog(JSContext* cx, const TraceLoggerTextId id,
-                         const ErrorReporter& reporter, ParseNode* pn);
+  AutoFrontendTraceLog(JSContext* cx, const TraceLoggerTextId id,
+                       const ErrorReporter& reporter, ParseNode* pn);
 };
 
 } 

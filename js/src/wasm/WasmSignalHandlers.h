@@ -39,8 +39,7 @@ typedef JS::ProfilingFrameIterator::RegisterState RegisterState;
 
 
 
-void
-EnsureEagerProcessSignalHandlers();
+void EnsureEagerProcessSignalHandlers();
 
 
 
@@ -48,21 +47,19 @@ EnsureEagerProcessSignalHandlers();
 
 
 
-bool
-EnsureFullSignalHandlers(JSContext* cx);
+bool EnsureFullSignalHandlers(JSContext* cx);
 
 
 
 
-bool
-MemoryAccessTraps(const RegisterState& regs, uint8_t* addr, uint32_t numBytes, uint8_t** newPC);
+bool MemoryAccessTraps(const RegisterState& regs, uint8_t* addr,
+                       uint32_t numBytes, uint8_t** newPC);
 
 
 
-bool
-HandleIllegalInstruction(const RegisterState& regs, uint8_t** newPC);
+bool HandleIllegalInstruction(const RegisterState& regs, uint8_t** newPC);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

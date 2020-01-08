@@ -41,13 +41,11 @@ class HTMLInputElement;
 class ShadowRoot final : public DocumentFragment,
                          public DocumentOrShadowRoot,
                          public nsStubMutationObserver,
-                         public nsIRadioGroupContainer
-{
-public:
+                         public nsIRadioGroupContainer {
+ public:
   NS_IMPL_FROMNODE_HELPER(ShadowRoot, IsShadowRoot());
 
-  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ShadowRoot,
-                                           DocumentFragment)
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ShadowRoot, DocumentFragment)
   NS_DECL_ISUPPORTS_INHERITED
 
   NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED
@@ -61,21 +59,15 @@ public:
   void AddSizeOfExcludingThis(nsWindowSizes&, size_t* aNodeSize) const final;
 
   
-  Element* Host() const
-  {
-    MOZ_ASSERT(GetHost(), "ShadowRoot always has a host, how did we create "
-                          "this ShadowRoot?");
+  Element* Host() const {
+    MOZ_ASSERT(GetHost(),
+               "ShadowRoot always has a host, how did we create "
+               "this ShadowRoot?");
     return GetHost();
   }
 
-  ShadowRootMode Mode() const
-  {
-    return mMode;
-  }
-  bool IsClosed() const
-  {
-    return mMode == ShadowRootMode::Closed;
-  }
+  ShadowRootMode Mode() const { return mMode; }
+  bool IsClosed() const { return mMode == ShadowRootMode::Closed; }
 
   void RemoveSheet(StyleSheet* aSheet);
   void RuleAdded(StyleSheet&, css::Rule&);
@@ -83,8 +75,7 @@ public:
   void RuleChanged(StyleSheet&, css::Rule*);
   void StyleSheetApplicableStateChanged(StyleSheet&, bool aApplicable);
 
-  StyleSheetList* StyleSheets()
-  {
+  StyleSheetList* StyleSheets() {
     return &DocumentOrShadowRoot::EnsureDOMStyleSheets();
   }
 
@@ -108,11 +99,10 @@ public:
   
   nsresult Bind();
 
-private:
+ private:
   void InsertSheetIntoAuthorData(size_t aIndex, StyleSheet&);
 
-  void AppendStyleSheet(StyleSheet& aSheet)
-  {
+  void AppendStyleSheet(StyleSheet& aSheet) {
     InsertSheetAt(SheetCount(), aSheet);
   }
 
@@ -125,16 +115,13 @@ private:
   
 
 
-  struct SlotAssignment
-  {
+  struct SlotAssignment {
     HTMLSlotElement* mSlot = nullptr;
     Maybe<uint32_t> mIndex;
 
     SlotAssignment() = default;
     SlotAssignment(HTMLSlotElement* aSlot, const Maybe<uint32_t>& aIndex)
-      : mSlot(aSlot)
-      , mIndex(aIndex)
-    { }
+        : mSlot(aSlot), mIndex(aIndex) {}
   };
 
   
@@ -162,24 +149,21 @@ private:
 
   void InvalidateStyleAndLayoutOnSubtree(Element*);
 
-public:
+ public:
   void AddSlot(HTMLSlotElement* aSlot);
   void RemoveSlot(HTMLSlotElement* aSlot);
   bool HasSlots() const { return !mSlotMap.IsEmpty(); };
 
-  const RawServoAuthorStyles* GetServoStyles() const
-  {
+  const RawServoAuthorStyles* GetServoStyles() const {
     return mServoStyles.get();
   }
 
-  RawServoAuthorStyles* GetServoStyles()
-  {
-    return mServoStyles.get();
-  }
+  RawServoAuthorStyles* GetServoStyles() { return mServoStyles.get(); }
 
   mozilla::ServoStyleRuleMap& ServoStyleRuleMap();
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   void AddToIdTable(Element* aElement, nsAtom* aId);
   void RemoveFromIdTable(Element* aElement, nsAtom* aId);
@@ -196,21 +180,16 @@ public:
 
 
 
-  nsINode* ImportNodeAndAppendChildAt(nsINode& aParentNode,
-                                      nsINode& aNode,
+  nsINode* ImportNodeAndAppendChildAt(nsINode& aParentNode, nsINode& aNode,
                                       bool aDeep, mozilla::ErrorResult& rv);
 
   nsINode* CreateElementAndAppendChildAt(nsINode& aParentNode,
                                          const nsAString& aTagName,
                                          mozilla::ErrorResult& rv);
 
-  bool IsUAWidget() const
-  {
-    return mIsUAWidget;
-  }
+  bool IsUAWidget() const { return mIsUAWidget; }
 
-  void SetIsUAWidget()
-  {
+  void SetIsUAWidget() {
     MOZ_ASSERT(!HasChildren());
     SetFlags(NODE_IS_ROOT_OF_CHROME_ONLY_ACCESS | NODE_CHROME_ONLY_ACCESS);
     mIsUAWidget = true;
@@ -219,61 +198,50 @@ public:
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
   
-  NS_IMETHOD WalkRadioGroup(const nsAString& aName,
-                            nsIRadioVisitor* aVisitor,
-                            bool aFlushContent) override
-  {
+  NS_IMETHOD WalkRadioGroup(const nsAString& aName, nsIRadioVisitor* aVisitor,
+                            bool aFlushContent) override {
     return DocumentOrShadowRoot::WalkRadioGroup(aName, aVisitor, aFlushContent);
   }
-  virtual void
-  SetCurrentRadioButton(const nsAString& aName,
-                        HTMLInputElement* aRadio) override
-  {
+  virtual void SetCurrentRadioButton(const nsAString& aName,
+                                     HTMLInputElement* aRadio) override {
     DocumentOrShadowRoot::SetCurrentRadioButton(aName, aRadio);
   }
-  virtual HTMLInputElement*
-  GetCurrentRadioButton(const nsAString& aName) override
-  {
+  virtual HTMLInputElement* GetCurrentRadioButton(
+      const nsAString& aName) override {
     return DocumentOrShadowRoot::GetCurrentRadioButton(aName);
   }
   NS_IMETHOD
-  GetNextRadioButton(const nsAString& aName,
-                     const bool aPrevious,
+  GetNextRadioButton(const nsAString& aName, const bool aPrevious,
                      HTMLInputElement* aFocusedRadio,
-                     HTMLInputElement** aRadioOut) override
-  {
+                     HTMLInputElement** aRadioOut) override {
     return DocumentOrShadowRoot::GetNextRadioButton(aName, aPrevious,
                                                     aFocusedRadio, aRadioOut);
   }
   virtual void AddToRadioGroup(const nsAString& aName,
-                               HTMLInputElement* aRadio) override
-  {
+                               HTMLInputElement* aRadio) override {
     DocumentOrShadowRoot::AddToRadioGroup(aName, aRadio);
   }
   virtual void RemoveFromRadioGroup(const nsAString& aName,
-                                    HTMLInputElement* aRadio) override
-  {
+                                    HTMLInputElement* aRadio) override {
     DocumentOrShadowRoot::RemoveFromRadioGroup(aName, aRadio);
   }
-  virtual uint32_t GetRequiredRadioCount(const nsAString& aName) const override
-  {
+  virtual uint32_t GetRequiredRadioCount(
+      const nsAString& aName) const override {
     return DocumentOrShadowRoot::GetRequiredRadioCount(aName);
   }
   virtual void RadioRequiredWillChange(const nsAString& aName,
-                                       bool aRequiredAdded) override
-  {
+                                       bool aRequiredAdded) override {
     DocumentOrShadowRoot::RadioRequiredWillChange(aName, aRequiredAdded);
   }
-  virtual bool GetValueMissingState(const nsAString& aName) const override
-  {
+  virtual bool GetValueMissingState(const nsAString& aName) const override {
     return DocumentOrShadowRoot::GetValueMissingState(aName);
   }
-  virtual void SetValueMissingState(const nsAString& aName, bool aValue) override
-  {
+  virtual void SetValueMissingState(const nsAString& aName,
+                                    bool aValue) override {
     return DocumentOrShadowRoot::SetValueMissingState(aName, aValue);
   }
 
-protected:
+ protected:
   
   void ApplicableRulesChanged();
 
@@ -296,7 +264,7 @@ protected:
   nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

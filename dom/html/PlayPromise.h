@@ -15,21 +15,20 @@ namespace dom {
 
 
 
-class PlayPromise : public Promise
-{
-public:
+class PlayPromise : public Promise {
+ public:
   static already_AddRefed<PlayPromise> Create(nsIGlobalObject* aGlobal,
                                               ErrorResult& aRv);
   ~PlayPromise();
   void MaybeResolveWithUndefined();
   void MaybeReject(nsresult aReason);
 
-private:
+ private:
   explicit PlayPromise(nsIGlobalObject* aGlobal);
   bool mFulfilled = false;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

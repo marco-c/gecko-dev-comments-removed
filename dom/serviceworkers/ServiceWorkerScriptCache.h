@@ -20,46 +20,37 @@ class ServiceWorkerRegistrationInfo;
 
 namespace serviceWorkerScriptCache {
 
-nsresult
-PurgeCache(nsIPrincipal* aPrincipal, const nsAString& aCacheName);
+nsresult PurgeCache(nsIPrincipal* aPrincipal, const nsAString& aCacheName);
 
-nsresult
-GenerateCacheName(nsAString& aName);
+nsresult GenerateCacheName(nsAString& aName);
 
-enum class OnFailure : uint8_t {
-    DoNothing,
-    Uninstall
-};
+enum class OnFailure : uint8_t { DoNothing, Uninstall };
 
-class CompareCallback
-{
-public:
-
+class CompareCallback {
+ public:
   
 
 
 
 
 
-  virtual void
-  ComparisonResult(nsresult aStatus,
-                   bool aInCacheAndEqual,
-                   OnFailure aOnFailure,
-                   const nsAString& aNewCacheName,
-                   const nsACString& aMaxScope,
-                   nsLoadFlags aLoadFlags) = 0;
+  virtual void ComparisonResult(nsresult aStatus, bool aInCacheAndEqual,
+                                OnFailure aOnFailure,
+                                const nsAString& aNewCacheName,
+                                const nsACString& aMaxScope,
+                                nsLoadFlags aLoadFlags) = 0;
 
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 };
 
-nsresult
-Compare(ServiceWorkerRegistrationInfo* aRegistration,
-        nsIPrincipal* aPrincipal, const nsAString& aCacheName,
-        const nsAString& aURL, CompareCallback* aCallback, nsILoadGroup* aLoadGroup);
+nsresult Compare(ServiceWorkerRegistrationInfo* aRegistration,
+                 nsIPrincipal* aPrincipal, const nsAString& aCacheName,
+                 const nsAString& aURL, CompareCallback* aCallback,
+                 nsILoadGroup* aLoadGroup);
 
-} 
+}  
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

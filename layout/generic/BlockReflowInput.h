@@ -29,19 +29,18 @@ class BlockReflowInput {
   
   struct Flags {
     Flags()
-      : mHasUnconstrainedBSize(false)
-      , mIsBStartMarginRoot(false)
-      , mIsBEndMarginRoot(false)
-      , mShouldApplyBStartMargin(false)
-      , mIsFirstInflow(false)
-      , mHasLineAdjacentToTop(false)
-      , mBlockNeedsFloatManager(false)
-      , mIsLineLayoutEmpty(false)
-      , mIsOverflowContainer(false)
-      , mIsFloatListInBlockPropertyTable(false)
-      , mFloatFragmentsInsideColumnEnabled(false)
-      , mCanHaveTextOverflow(false)
-    {}
+        : mHasUnconstrainedBSize(false),
+          mIsBStartMarginRoot(false),
+          mIsBEndMarginRoot(false),
+          mShouldApplyBStartMargin(false),
+          mIsFirstInflow(false),
+          mHasLineAdjacentToTop(false),
+          mBlockNeedsFloatManager(false),
+          mIsLineLayoutEmpty(false),
+          mIsOverflowContainer(false),
+          mIsFloatListInBlockPropertyTable(false),
+          mFloatFragmentsInsideColumnEnabled(false),
+          mCanHaveTextOverflow(false) {}
 
     
     
@@ -109,13 +108,11 @@ class BlockReflowInput {
     bool mCanHaveTextOverflow : 1;
   };
 
-public:
-  BlockReflowInput(const ReflowInput& aReflowInput,
-                     nsPresContext* aPresContext,
-                     nsBlockFrame* aFrame,
-                     bool aBStartMarginRoot, bool aBEndMarginRoot,
-                     bool aBlockNeedsFloatManager,
-                     nscoord aConsumedBSize = NS_INTRINSICSIZE);
+ public:
+  BlockReflowInput(const ReflowInput& aReflowInput, nsPresContext* aPresContext,
+                   nsBlockFrame* aFrame, bool aBStartMarginRoot,
+                   bool aBEndMarginRoot, bool aBlockNeedsFloatManager,
+                   nscoord aConsumedBSize = NS_INTRINSICSIZE);
 
   
 
@@ -126,20 +123,22 @@ public:
 
 
 
-  nsFlowAreaRect GetFloatAvailableSpace() const
-    { return GetFloatAvailableSpace(mBCoord); }
-  nsFlowAreaRect GetFloatAvailableSpaceForPlacingFloat(nscoord aBCoord) const
-    { return GetFloatAvailableSpaceWithState(
-        aBCoord, ShapeType::Margin, nullptr); }
-  nsFlowAreaRect GetFloatAvailableSpace(nscoord aBCoord) const
-    { return GetFloatAvailableSpaceWithState(
-        aBCoord, ShapeType::ShapeOutside, nullptr); }
-  nsFlowAreaRect
-    GetFloatAvailableSpaceWithState(nscoord aBCoord, ShapeType aShapeType,
-                                    nsFloatManager::SavedState *aState) const;
-  nsFlowAreaRect
-    GetFloatAvailableSpaceForBSize(nscoord aBCoord, nscoord aBSize,
-                                   nsFloatManager::SavedState *aState) const;
+  nsFlowAreaRect GetFloatAvailableSpace() const {
+    return GetFloatAvailableSpace(mBCoord);
+  }
+  nsFlowAreaRect GetFloatAvailableSpaceForPlacingFloat(nscoord aBCoord) const {
+    return GetFloatAvailableSpaceWithState(aBCoord, ShapeType::Margin, nullptr);
+  }
+  nsFlowAreaRect GetFloatAvailableSpace(nscoord aBCoord) const {
+    return GetFloatAvailableSpaceWithState(aBCoord, ShapeType::ShapeOutside,
+                                           nullptr);
+  }
+  nsFlowAreaRect GetFloatAvailableSpaceWithState(
+      nscoord aBCoord, ShapeType aShapeType,
+      nsFloatManager::SavedState* aState) const;
+  nsFlowAreaRect GetFloatAvailableSpaceForBSize(
+      nscoord aBCoord, nscoord aBSize,
+      nsFloatManager::SavedState* aState) const;
 
   
 
@@ -148,9 +147,8 @@ public:
 
 
 
-  bool AddFloat(nsLineLayout*       aLineLayout,
-                nsIFrame*           aFloat,
-                nscoord             aAvailableISize);
+  bool AddFloat(nsLineLayout* aLineLayout, nsIFrame* aFloat,
+                nscoord aAvailableISize);
 
   bool FlowAndPlaceFloat(nsIFrame* aFloat);
 
@@ -160,8 +158,7 @@ public:
   
   
   nscoord ClearFloats(nscoord aBCoord, mozilla::StyleClear aBreakType,
-                      nsIFrame *aReplacedBlock = nullptr,
-                      uint32_t aFlags = 0);
+                      nsIFrame* aReplacedBlock = nullptr, uint32_t aFlags = 0);
 
   nsFloatManager* FloatManager() const {
     MOZ_ASSERT(mReflowInput.mFloatManager,
@@ -176,7 +173,7 @@ public:
   
   
   bool AdvanceToNextBand(const mozilla::LogicalRect& aFloatAvailableSpace,
-                         nscoord *aBCoord) const {
+                         nscoord* aBCoord) const {
     mozilla::WritingMode wm = mReflowInput.GetWritingMode();
     if (aFloatAvailableSpace.BSize(wm) > 0) {
       
@@ -193,8 +190,9 @@ public:
     return true;
   }
 
-  bool ReplacedBlockFitsInAvailSpace(nsIFrame* aReplacedBlock,
-                            const nsFlowAreaRect& aFloatAvailableSpace) const;
+  bool ReplacedBlockFitsInAvailSpace(
+      nsIFrame* aReplacedBlock,
+      const nsFlowAreaRect& aFloatAvailableSpace) const;
 
   bool IsAdjacentWithTop() const {
     return mBCoord == mBorderPadding.BStart(mReflowInput.GetWritingMode());
@@ -203,9 +201,7 @@ public:
   
 
 
-  const mozilla::LogicalMargin& BorderPadding() const {
-    return mBorderPadding;
-  }
+  const mozilla::LogicalMargin& BorderPadding() const { return mBorderPadding; }
 
   
 
@@ -218,10 +214,9 @@ public:
 
   
   
-  void ComputeReplacedBlockOffsetsForFloats(nsIFrame* aFrame,
-                          const mozilla::LogicalRect& aFloatAvailableSpace,
-                                            nscoord&  aIStartResult,
-                                            nscoord&  aIEndResult) const;
+  void ComputeReplacedBlockOffsetsForFloats(
+      nsIFrame* aFrame, const mozilla::LogicalRect& aFloatAvailableSpace,
+      nscoord& aIStartResult, nscoord& aIEndResult) const;
 
   
   void ComputeBlockAvailSpace(nsIFrame* aFrame,
@@ -309,7 +304,7 @@ public:
   
   
   
-  nsFrameList *mPushedFloats;
+  nsFrameList* mPushedFloats;
   
   
   void SetupPushedFloatList();
@@ -394,6 +389,7 @@ public:
   StyleClear mFloatBreakType;
 
   
+  
   nscoord mConsumedBSize;
 
   
@@ -402,7 +398,7 @@ public:
   
   mozilla::Maybe<nscoord> mLineBSize;
 
-private:
+ private:
   bool CanPlaceFloat(nscoord aFloatISize,
                      const nsFlowAreaRect& aFloatAvailableSpace);
 
@@ -411,6 +407,6 @@ private:
   void RecoverFloats(nsLineList::iterator aLine, nscoord aDeltaBCoord);
 };
 
-}; 
+};  
 
-#endif 
+#endif  

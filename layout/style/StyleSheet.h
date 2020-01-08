@@ -35,7 +35,8 @@ enum class OriginFlags : uint8_t;
 
 typedef MozPromise< bool,
                     bool,
-                    true> StyleSheetParsePromise;
+                    true>
+    StyleSheetParsePromise;
 
 namespace css {
 class GroupRule;
@@ -43,7 +44,7 @@ class Loader;
 class LoaderReusableStyleSheets;
 class Rule;
 class SheetLoadData;
-}
+}  
 
 namespace dom {
 class CSSImportRule;
@@ -52,10 +53,9 @@ class DocumentOrShadowRoot;
 class MediaList;
 class ShadowRoot;
 class SRIMetadata;
-} 
+}  
 
-enum class StyleSheetState : uint8_t
-{
+enum class StyleSheetState : uint8_t {
   
   
   Disabled = 1 << 0,
@@ -77,11 +77,8 @@ enum class StyleSheetState : uint8_t
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(StyleSheetState)
 
-class StyleSheet final : public nsICSSLoaderObserver
-                       , public nsWrapperCache
-{
-  StyleSheet(const StyleSheet& aCopy,
-             StyleSheet* aParentToUse,
+class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
+  StyleSheet(const StyleSheet& aCopy, StyleSheet* aParentToUse,
              dom::CSSImportRule* aOwnerRuleToUse,
              dom::DocumentOrShadowRoot* aDocOrShadowRootToUse,
              nsINode* aOwningNodeToUse);
@@ -90,9 +87,8 @@ class StyleSheet final : public nsICSSLoaderObserver
 
   using State = StyleSheetState;
 
-public:
-  StyleSheet(css::SheetParsingMode aParsingMode,
-             CORSMode aCORSMode,
+ public:
+  StyleSheet(css::SheetParsingMode aParsingMode, CORSMode aCORSMode,
              net::ReferrerPolicy aReferrerPolicy,
              const dom::SRIMetadata& aIntegrity);
 
@@ -106,28 +102,25 @@ public:
 
   
   
-  RefPtr<StyleSheetParsePromise>
-  ParseSheet(css::Loader* aLoader,
-             const nsACString& aBytes,
-             css::SheetLoadData* aLoadData);
+  RefPtr<StyleSheetParsePromise> ParseSheet(css::Loader* aLoader,
+                                            const nsACString& aBytes,
+                                            css::SheetLoadData* aLoadData);
 
   
   
-  void FinishAsyncParse(already_AddRefed<RawServoStyleSheetContents> aSheetContents);
+  void FinishAsyncParse(
+      already_AddRefed<RawServoStyleSheetContents> aSheetContents);
 
   
   
-  void
-  ParseSheetSync(css::Loader* aLoader,
-                 const nsACString& aBytes,
-                 css::SheetLoadData* aLoadData,
-                 uint32_t aLineNumber,
-                 css::LoaderReusableStyleSheets* aReusableSheets = nullptr);
+  void ParseSheetSync(
+      css::Loader* aLoader, const nsACString& aBytes,
+      css::SheetLoadData* aLoadData, uint32_t aLineNumber,
+      css::LoaderReusableStyleSheets* aReusableSheets = nullptr);
 
   nsresult ReparseSheet(const nsAString& aInput);
 
-  const RawServoStyleSheetContents* RawContents() const
-  {
+  const RawServoStyleSheetContents* RawContents() const {
     return Inner().mContents;
   }
 
@@ -164,10 +157,7 @@ public:
     RuleChanged,
   };
 
-  void SetOwningNode(nsINode* aOwningNode)
-  {
-    mOwningNode = aOwningNode;
-  }
+  void SetOwningNode(nsINode* aOwningNode) { mOwningNode = aOwningNode; }
 
   css::SheetParsingMode ParsingMode() const { return mParsingMode; }
   mozilla::dom::CSSStyleSheetParsingMode ParsingModeDOM();
@@ -175,41 +165,23 @@ public:
   
 
 
-  bool IsComplete() const
-  {
-    return bool(mState & State::Complete);
-  }
+  bool IsComplete() const { return bool(mState & State::Complete); }
 
   void SetComplete();
 
-  void SetEnabled(bool aEnabled)
-  {
-    SetDisabled(!aEnabled);
-  }
+  void SetEnabled(bool aEnabled) { SetDisabled(!aEnabled); }
 
   
-  bool IsInline() const
-  {
-    return !GetOriginalURI();
-  }
+  bool IsInline() const { return !GetOriginalURI(); }
 
-  nsIURI* GetSheetURI() const
-  {
-    return Inner().mSheetURI;
-  }
+  nsIURI* GetSheetURI() const { return Inner().mSheetURI; }
 
   
 
 
-  nsIURI* GetOriginalURI() const
-  {
-    return Inner().mOriginalSheetURI;
-  }
+  nsIURI* GetOriginalURI() const { return Inner().mOriginalSheetURI; }
 
-  nsIURI* GetBaseURI() const
-  {
-    return Inner().mBaseURI;
-  }
+  nsIURI* GetBaseURI() const { return Inner().mBaseURI; }
 
   
 
@@ -218,8 +190,7 @@ public:
 
 
 
-  inline void SetURIs(nsIURI* aSheetURI,
-                      nsIURI* aOriginalSheetURI,
+  inline void SetURIs(nsIURI* aSheetURI, nsIURI* aOriginalSheetURI,
                       nsIURI* aBaseURI);
 
   
@@ -228,40 +199,24 @@ public:
 
 
 
-  bool IsApplicable() const
-  {
-    return !Disabled() && IsComplete();
-  }
+  bool IsApplicable() const { return !Disabled() && IsComplete(); }
 
-  already_AddRefed<StyleSheet> Clone(StyleSheet* aCloneParent,
-                                     dom::CSSImportRule* aCloneOwnerRule,
-                                     dom::DocumentOrShadowRoot* aCloneDocumentOrShadowRoot,
-                                     nsINode* aCloneOwningNode) const;
+  already_AddRefed<StyleSheet> Clone(
+      StyleSheet* aCloneParent, dom::CSSImportRule* aCloneOwnerRule,
+      dom::DocumentOrShadowRoot* aCloneDocumentOrShadowRoot,
+      nsINode* aCloneOwningNode) const;
 
-  bool HasForcedUniqueInner() const
-  {
+  bool HasForcedUniqueInner() const {
     return bool(mState & State::ForcedUniqueInner);
   }
 
-  bool HasModifiedRules() const
-  {
-    return bool(mState & State::ModifiedRules);
-  }
+  bool HasModifiedRules() const { return bool(mState & State::ModifiedRules); }
 
-  void ClearModifiedRules()
-  {
-    mState &= ~State::ModifiedRules;
-  }
+  void ClearModifiedRules() { mState &= ~State::ModifiedRules; }
 
-  bool HasUniqueInner() const
-  {
-    return Inner().mSheets.Length() == 1;
-  }
+  bool HasUniqueInner() const { return Inner().mSheets.Length() == 1; }
 
-  void AssertHasUniqueInner() const
-  {
-    MOZ_ASSERT(HasUniqueInner());
-  }
+  void AssertHasUniqueInner() const { MOZ_ASSERT(HasUniqueInner()); }
 
   void EnsureUniqueInner();
 
@@ -277,8 +232,7 @@ public:
     
     NotOwnedByDocumentOrShadowRoot
   };
-  dom::DocumentOrShadowRoot* GetAssociatedDocumentOrShadowRoot() const
-  {
+  dom::DocumentOrShadowRoot* GetAssociatedDocumentOrShadowRoot() const {
     return mDocumentOrShadowRoot;
   }
 
@@ -297,20 +251,13 @@ public:
 
   void SetAssociatedDocumentOrShadowRoot(dom::DocumentOrShadowRoot*,
                                          AssociationMode);
-  void ClearAssociatedDocumentOrShadowRoot()
-  {
+  void ClearAssociatedDocumentOrShadowRoot() {
     SetAssociatedDocumentOrShadowRoot(nullptr, NotOwnedByDocumentOrShadowRoot);
   }
 
-  nsINode* GetOwnerNode() const
-  {
-    return mOwningNode;
-  }
+  nsINode* GetOwnerNode() const { return mOwningNode; }
 
-  StyleSheet* GetParentSheet() const
-  {
-    return mParent;
-  }
+  StyleSheet* GetParentSheet() const { return mParent; }
 
   void SetOwnerRule(dom::CSSImportRule* aOwnerRule) {
     mOwnerRule = aOwnerRule; 
@@ -330,10 +277,7 @@ public:
   }
 
   
-  nsIPrincipal* Principal() const
-  {
-    return Inner().mPrincipal;
-  }
+  nsIPrincipal* Principal() const { return Inner().mPrincipal; }
 
   
 
@@ -343,8 +287,7 @@ public:
 
 
 
-  void SetPrincipal(nsIPrincipal* aPrincipal)
-  {
+  void SetPrincipal(nsIPrincipal* aPrincipal) {
     StyleSheetInfo& info = Inner();
     MOZ_ASSERT(!info.mPrincipalSet, "Should only set principal once");
     if (aPrincipal) {
@@ -359,22 +302,17 @@ public:
   void SetMedia(dom::MediaList* aMedia);
 
   
-  CORSMode GetCORSMode() const
-  {
-    return Inner().mCORSMode;
-  }
+  CORSMode GetCORSMode() const { return Inner().mCORSMode; }
 
   
   void SetReferrerPolicy(net::ReferrerPolicy aReferrerPolicy);
 
   
-  net::ReferrerPolicy GetReferrerPolicy() const
-  {
+  net::ReferrerPolicy GetReferrerPolicy() const {
     return Inner().mReferrerPolicy;
   }
   
-  void GetIntegrity(dom::SRIMetadata& aResult) const
-  {
+  void GetIntegrity(dom::SRIMetadata& aResult) const {
     aResult = Inner().mIntegrity;
   }
 
@@ -387,16 +325,10 @@ public:
   void GetType(nsAString& aType);
   void GetHref(nsAString& aHref, ErrorResult& aRv);
   
-  StyleSheet* GetParentStyleSheet() const
-  {
-    return GetParentSheet();
-  }
+  StyleSheet* GetParentStyleSheet() const { return GetParentSheet(); }
   void GetTitle(nsAString& aTitle);
   dom::MediaList* Media();
-  bool Disabled() const
-  {
-    return bool(mState & State::Disabled);
-  }
+  bool Disabled() const { return bool(mState & State::Disabled); }
   void SetDisabled(bool aDisabled);
   void GetSourceMapURL(nsAString& aTitle);
   void SetSourceMapURL(const nsAString& aSourceMapURL);
@@ -411,10 +343,8 @@ public:
   css::Rule* GetDOMOwnerRule() const;
   dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal, ErrorResult&);
   uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
-                      nsIPrincipal& aSubjectPrincipal,
-                      ErrorResult& aRv);
-  void DeleteRule(uint32_t aIndex,
-                  nsIPrincipal& aSubjectPrincipal,
+                      nsIPrincipal& aSubjectPrincipal, ErrorResult& aRv);
+  void DeleteRule(uint32_t aIndex, nsIPrincipal& aSubjectPrincipal,
                   ErrorResult& aRv);
 
   
@@ -434,30 +364,28 @@ public:
   void DropStyleSet(ServoStyleSet* aStyleSet);
 
   nsresult DeleteRuleFromGroup(css::GroupRule* aGroup, uint32_t aIndex);
-  nsresult InsertRuleIntoGroup(const nsAString& aRule,
-                               css::GroupRule* aGroup, uint32_t aIndex);
+  nsresult InsertRuleIntoGroup(const nsAString& aRule, css::GroupRule* aGroup,
+                               uint32_t aIndex);
 
   
   uint64_t FindOwningWindowInnerID() const;
 
-  template<typename Func>
+  template <typename Func>
   void EnumerateChildSheets(Func aCallback) {
     for (StyleSheet* child = GetFirstChild(); child; child = child->mNext) {
       aCallback(child);
     }
   }
 
-private:
+ private:
   dom::ShadowRoot* GetContainingShadow() const;
 
-  StyleSheetInfo& Inner()
-  {
+  StyleSheetInfo& Inner() {
     MOZ_ASSERT(mInner);
     return *mInner;
   }
 
-  const StyleSheetInfo& Inner() const
-  {
+  const StyleSheetInfo& Inner() const {
     MOZ_ASSERT(mInner);
     return *mInner;
   }
@@ -470,15 +398,13 @@ private:
 
   already_AddRefed<URLExtraData> CreateURLExtraData() const;
 
-protected:
+ protected:
   
-  uint32_t InsertRuleInternal(const nsAString& aRule,
-                              uint32_t aIndex,
+  uint32_t InsertRuleInternal(const nsAString& aRule, uint32_t aIndex,
                               ErrorResult&);
   void DeleteRuleInternal(uint32_t aIndex, ErrorResult&);
   nsresult InsertRuleIntoGroupInternal(const nsAString& aRule,
-                                       css::GroupRule* aGroup,
-                                       uint32_t aIndex);
+                                       css::GroupRule* aGroup, uint32_t aIndex);
 
   
   void FinishParse();
@@ -524,17 +450,19 @@ protected:
   
   void UnlinkInner();
   
-  void TraverseInner(nsCycleCollectionTraversalCallback &);
+  void TraverseInner(nsCycleCollectionTraversalCallback&);
 
   
   static bool RuleHasPendingChildSheet(css::Rule* aRule);
 
-  StyleSheet* mParent;    
+  StyleSheet* mParent;  
 
   nsString mTitle;
-  dom::DocumentOrShadowRoot* mDocumentOrShadowRoot; 
-  nsINode* mOwningNode; 
-  dom::CSSImportRule* mOwnerRule; 
+  dom::DocumentOrShadowRoot*
+      mDocumentOrShadowRoot;       
+                                   
+  nsINode* mOwningNode;            
+  dom::CSSImportRule* mOwnerRule;  
 
   RefPtr<dom::MediaList> mMedia;
 
@@ -573,6 +501,6 @@ protected:
   friend struct mozilla::StyleSheetInfo;
 };
 
-} 
+}  
 
-#endif 
+#endif  

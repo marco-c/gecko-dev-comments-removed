@@ -29,35 +29,37 @@
 
 struct CraneliftCompiler;
 
-extern "C"
-{
-    
-    void cranelift_initialize();
+extern "C" {
 
-    
-    
-    
-    
-    
-    
-    
-    
-    CraneliftCompiler* cranelift_compiler_create(const CraneliftStaticEnvironment* staticEnv,
-                                                 const CraneliftModuleEnvironment* env);
+void cranelift_initialize();
 
-    
-    
-    
-    void cranelift_compiler_destroy(CraneliftCompiler* compiler);
 
-    
-    
-    
-    
-    
-    bool cranelift_compile_function(CraneliftCompiler* compiler,
-                                    const CraneliftFuncCompileInput* data,
-                                    CraneliftCompiledFunc* result);
-} 
 
-#endif 
+
+
+
+
+
+
+
+
+CraneliftCompiler* cranelift_compiler_create(
+    const CraneliftStaticEnvironment* staticEnv,
+    const CraneliftModuleEnvironment* env);
+
+
+
+
+void cranelift_compiler_destroy(CraneliftCompiler* compiler);
+
+
+
+
+
+
+bool cranelift_compile_function(CraneliftCompiler* compiler,
+                                const CraneliftFuncCompileInput* data,
+                                CraneliftCompiledFunc* result);
+}  
+
+#endif  

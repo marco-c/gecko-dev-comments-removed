@@ -14,33 +14,27 @@
 namespace mozilla {
 namespace dom {
 
-
-bool
-ServiceWorkerParentInterceptEnabled()
-{
+bool ServiceWorkerParentInterceptEnabled() {
   static Atomic<bool> sEnabled;
   static Atomic<bool> sInitialized;
   if (!sInitialized) {
     AssertIsOnMainThread();
     sInitialized = true;
-    sEnabled = Preferences::GetBool("dom.serviceWorkers.parent_intercept", false);
+    sEnabled =
+        Preferences::GetBool("dom.serviceWorkers.parent_intercept", false);
   }
   return sEnabled;
 }
 
-bool
-ServiceWorkerRegistrationDataIsValid(const ServiceWorkerRegistrationData& aData)
-{
-  return !aData.scope().IsEmpty() &&
-         !aData.currentWorkerURL().IsEmpty() &&
+bool ServiceWorkerRegistrationDataIsValid(
+    const ServiceWorkerRegistrationData& aData) {
+  return !aData.scope().IsEmpty() && !aData.currentWorkerURL().IsEmpty() &&
          !aData.cacheName().IsEmpty();
 }
 
 namespace {
 
-nsresult
-CheckForSlashEscapedCharsInPath(nsIURI* aURI)
-{
+nsresult CheckForSlashEscapedCharsInPath(nsIURI* aURI) {
   MOZ_ASSERT(aURI);
 
   
@@ -57,21 +51,18 @@ CheckForSlashEscapedCharsInPath(nsIURI* aURI)
   }
 
   ToLowerCase(path);
-  if (path.Find("%2f") != kNotFound ||
-      path.Find("%5c") != kNotFound) {
+  if (path.Find("%2f") != kNotFound || path.Find("%5c") != kNotFound) {
     return NS_ERROR_DOM_TYPE_ERR;
   }
 
   return NS_OK;
 }
 
-} 
+}  
 
-nsresult
-ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
-                                    nsIURI* aScopeURI,
-                                    nsIURI* aScriptURI)
-{
+nsresult ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
+                                             nsIURI* aScopeURI,
+                                             nsIURI* aScriptURI) {
   MOZ_DIAGNOSTIC_ASSERT(aScopeURI);
   MOZ_DIAGNOSTIC_ASSERT(aScriptURI);
 
@@ -108,5 +99,5 @@ ServiceWorkerScopeAndScriptAreValid(const ClientInfo& aClientInfo,
   return NS_OK;
 }
 
-} 
-} 
+}  
+}  

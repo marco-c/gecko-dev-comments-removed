@@ -22,7 +22,7 @@
 #include "prtime.h"
 #include "nsICaptivePortalService.h"
 
-#define NS_N(x) (sizeof(x)/sizeof(*x))
+#define NS_N(x) (sizeof(x) / sizeof(*x))
 
 
 
@@ -30,12 +30,13 @@
 #define NS_IPC_IOSERVICE_SET_OFFLINE_TOPIC "ipc:network:set-offline"
 #define NS_IPC_IOSERVICE_SET_CONNECTIVITY_TOPIC "ipc:network:set-connectivity"
 
-static const char gScheme[][sizeof("moz-safe-about")] =
-    {"chrome", "file", "http", "https", "jar", "data", "about", "moz-safe-about", "resource",
-     "moz-extension", "page-icon", "blob"};
+static const char gScheme[][sizeof("moz-safe-about")] = {
+    "chrome",   "file",          "http",      "https",
+    "jar",      "data",          "about",     "moz-safe-about",
+    "resource", "moz-extension", "page-icon", "blob"};
 
-static const char gForcedExternalSchemes[][sizeof("moz-nullprincipal")] =
-    {"place", "fake-favicon-uri", "favicon", "moz-nullprincipal"};
+static const char gForcedExternalSchemes[][sizeof("moz-nullprincipal")] = {
+    "place", "fake-favicon-uri", "favicon", "moz-nullprincipal"};
 
 class nsINetworkLinkService;
 class nsIPrefBranch;
@@ -48,179 +49,175 @@ namespace net {
 class NeckoChild;
 class nsAsyncRedirectVerifyHelper;
 
-class nsIOService final : public nsIIOService
-                        , public nsIObserver
-                        , public nsINetUtil
-                        , public nsISpeculativeConnect
-                        , public nsSupportsWeakReference
-                        , public nsIIOServiceInternal
-{
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIIOSERVICE
-    NS_DECL_NSIOBSERVER
-    NS_DECL_NSINETUTIL
-    NS_DECL_NSISPECULATIVECONNECT
-    NS_DECL_NSIIOSERVICEINTERNAL
+class nsIOService final : public nsIIOService,
+                          public nsIObserver,
+                          public nsINetUtil,
+                          public nsISpeculativeConnect,
+                          public nsSupportsWeakReference,
+                          public nsIIOServiceInternal {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIIOSERVICE
+  NS_DECL_NSIOBSERVER
+  NS_DECL_NSINETUTIL
+  NS_DECL_NSISPECULATIVECONNECT
+  NS_DECL_NSIIOSERVICEINTERNAL
 
-    
-    
-    static already_AddRefed<nsIOService> GetInstance();
+  
+  
+  static already_AddRefed<nsIOService> GetInstance();
 
-    nsresult Init();
-    nsresult NewURI(const char* aSpec, nsIURI* aBaseURI,
-                                nsIURI* *result,
-                                nsIProtocolHandler* *hdlrResult);
+  nsresult Init();
+  nsresult NewURI(const char* aSpec, nsIURI* aBaseURI, nsIURI** result,
+                  nsIProtocolHandler** hdlrResult);
 
-    
-    
-    nsresult AsyncOnChannelRedirect(nsIChannel* oldChan, nsIChannel* newChan,
-                                    uint32_t flags,
-                                    nsAsyncRedirectVerifyHelper *helper);
+  
+  
+  nsresult AsyncOnChannelRedirect(nsIChannel* oldChan, nsIChannel* newChan,
+                                  uint32_t flags,
+                                  nsAsyncRedirectVerifyHelper* helper);
 
-    bool IsOffline() { return mOffline; }
-    PRIntervalTime LastOfflineStateChange() { return mLastOfflineStateChange; }
-    PRIntervalTime LastConnectivityChange() { return mLastConnectivityChange; }
-    PRIntervalTime LastNetworkLinkChange() { return mLastNetworkLinkChange; }
-    bool IsNetTearingDown() { return mShutdown || mOfflineForProfileChange ||
-                                     mHttpHandlerAlreadyShutingDown; }
-    PRIntervalTime NetTearingDownStarted() { return mNetTearingDownStarted; }
+  bool IsOffline() { return mOffline; }
+  PRIntervalTime LastOfflineStateChange() { return mLastOfflineStateChange; }
+  PRIntervalTime LastConnectivityChange() { return mLastConnectivityChange; }
+  PRIntervalTime LastNetworkLinkChange() { return mLastNetworkLinkChange; }
+  bool IsNetTearingDown() {
+    return mShutdown || mOfflineForProfileChange ||
+           mHttpHandlerAlreadyShutingDown;
+  }
+  PRIntervalTime NetTearingDownStarted() { return mNetTearingDownStarted; }
 
-    
-    
-    
-    
-    
-    void SetHttpHandlerAlreadyShutingDown();
+  
+  
+  
+  
+  
+  void SetHttpHandlerAlreadyShutingDown();
 
-    bool IsLinkUp();
+  bool IsLinkUp();
 
-    static bool IsDataURIUniqueOpaqueOrigin();
-    static bool BlockToplevelDataUriNavigations();
+  static bool IsDataURIUniqueOpaqueOrigin();
+  static bool BlockToplevelDataUriNavigations();
 
-    static bool BlockFTPSubresources();
+  static bool BlockFTPSubresources();
 
-    
-    void IncrementRequestNumber() { mTotalRequests++; }
-    uint32_t GetTotalRequestNumber() { return mTotalRequests; }
-    
-    void IncrementCacheWonRequestNumber() { mCacheWon++; }
-    uint32_t GetCacheWonRequestNumber() { return mCacheWon; }
-    void IncrementNetWonRequestNumber() { mNetWon++; }
-    uint32_t GetNetWonRequestNumber() { return mNetWon; }
+  
+  void IncrementRequestNumber() { mTotalRequests++; }
+  uint32_t GetTotalRequestNumber() { return mTotalRequests; }
+  
+  void IncrementCacheWonRequestNumber() { mCacheWon++; }
+  uint32_t GetCacheWonRequestNumber() { return mCacheWon; }
+  void IncrementNetWonRequestNumber() { mNetWon++; }
+  uint32_t GetNetWonRequestNumber() { return mNetWon; }
 
-    
-    nsresult RecheckCaptivePortal();
-private:
-    
-    
-    
-    nsIOService();
-    ~nsIOService();
-    nsresult SetConnectivityInternal(bool aConnectivity);
+  
+  nsresult RecheckCaptivePortal();
 
-    nsresult OnNetworkLinkEvent(const char *data);
+ private:
+  
+  
+  
+  nsIOService();
+  ~nsIOService();
+  nsresult SetConnectivityInternal(bool aConnectivity);
 
-    nsresult GetCachedProtocolHandler(const char *scheme,
-                                                  nsIProtocolHandler* *hdlrResult,
-                                                  uint32_t start=0,
-                                                  uint32_t end=0);
-    nsresult CacheProtocolHandler(const char *scheme,
-                                              nsIProtocolHandler* hdlr);
+  nsresult OnNetworkLinkEvent(const char* data);
 
-    nsresult InitializeCaptivePortalService();
-    nsresult RecheckCaptivePortalIfLocalRedirect(nsIChannel* newChan);
+  nsresult GetCachedProtocolHandler(const char* scheme,
+                                    nsIProtocolHandler** hdlrResult,
+                                    uint32_t start = 0, uint32_t end = 0);
+  nsresult CacheProtocolHandler(const char* scheme, nsIProtocolHandler* hdlr);
 
-    
-    void PrefsChanged(const char *pref = nullptr);
-    void ParsePortList(const char *pref, bool remove);
+  nsresult InitializeCaptivePortalService();
+  nsresult RecheckCaptivePortalIfLocalRedirect(nsIChannel* newChan);
 
-    nsresult InitializeSocketTransportService();
-    nsresult InitializeNetworkLinkService();
-    nsresult InitializeProtocolProxyService();
+  
+  void PrefsChanged(const char* pref = nullptr);
+  void ParsePortList(const char* pref, bool remove);
 
-    
-    void LookupProxyInfo(nsIURI *aURI, nsIURI *aProxyURI, uint32_t aProxyFlags,
-                         nsCString *aScheme, nsIProxyInfo **outPI);
+  nsresult InitializeSocketTransportService();
+  nsresult InitializeNetworkLinkService();
+  nsresult InitializeProtocolProxyService();
 
-    nsresult NewChannelFromURIWithProxyFlagsInternal(nsIURI* aURI,
-                                                    nsIURI* aProxyURI,
-                                                    uint32_t aProxyFlags,
-                                                    nsINode* aLoadingNode,
-                                                    nsIPrincipal* aLoadingPrincipal,
-                                                    nsIPrincipal* aTriggeringPrincipal,
-                                                    const mozilla::Maybe<mozilla::dom::ClientInfo>& aLoadingClientInfo,
-                                                    const mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController,
-                                                    uint32_t aSecurityFlags,
-                                                    uint32_t aContentPolicyType,
-                                                    nsIChannel** result);
+  
+  void LookupProxyInfo(nsIURI* aURI, nsIURI* aProxyURI, uint32_t aProxyFlags,
+                       nsCString* aScheme, nsIProxyInfo** outPI);
 
-    nsresult NewChannelFromURIWithProxyFlagsInternal(nsIURI* aURI,
-                                                     nsIURI* aProxyURI,
-                                                     uint32_t aProxyFlags,
-                                                     nsILoadInfo* aLoadInfo,
-                                                     nsIChannel** result);
+  nsresult NewChannelFromURIWithProxyFlagsInternal(
+      nsIURI* aURI, nsIURI* aProxyURI, uint32_t aProxyFlags,
+      nsINode* aLoadingNode, nsIPrincipal* aLoadingPrincipal,
+      nsIPrincipal* aTriggeringPrincipal,
+      const mozilla::Maybe<mozilla::dom::ClientInfo>& aLoadingClientInfo,
+      const mozilla::Maybe<mozilla::dom::ServiceWorkerDescriptor>& aController,
+      uint32_t aSecurityFlags, uint32_t aContentPolicyType,
+      nsIChannel** result);
 
-    nsresult SpeculativeConnectInternal(nsIURI *aURI,
-                                        nsIPrincipal *aPrincipal,
-                                        nsIInterfaceRequestor *aCallbacks,
-                                        bool aAnonymous);
+  nsresult NewChannelFromURIWithProxyFlagsInternal(nsIURI* aURI,
+                                                   nsIURI* aProxyURI,
+                                                   uint32_t aProxyFlags,
+                                                   nsILoadInfo* aLoadInfo,
+                                                   nsIChannel** result);
 
-private:
-    bool                                 mOffline;
-    mozilla::Atomic<bool, mozilla::Relaxed>  mOfflineForProfileChange;
-    bool                                 mManageLinkStatus;
-    bool                                 mConnectivity;
-    
-    
-    bool                                 mOfflineMirrorsConnectivity;
+  nsresult SpeculativeConnectInternal(nsIURI* aURI, nsIPrincipal* aPrincipal,
+                                      nsIInterfaceRequestor* aCallbacks,
+                                      bool aAnonymous);
 
-    
-    
-    bool                                 mSettingOffline;
-    bool                                 mSetOfflineValue;
+ private:
+  bool mOffline;
+  mozilla::Atomic<bool, mozilla::Relaxed> mOfflineForProfileChange;
+  bool mManageLinkStatus;
+  bool mConnectivity;
+  
+  
+  bool mOfflineMirrorsConnectivity;
 
-    mozilla::Atomic<bool, mozilla::Relaxed> mShutdown;
-    mozilla::Atomic<bool, mozilla::Relaxed> mHttpHandlerAlreadyShutingDown;
+  
+  
+  bool mSettingOffline;
+  bool mSetOfflineValue;
 
-    nsCOMPtr<nsPISocketTransportService> mSocketTransportService;
-    nsCOMPtr<nsICaptivePortalService>    mCaptivePortalService;
-    nsCOMPtr<nsINetworkLinkService>      mNetworkLinkService;
-    bool                                 mNetworkLinkServiceInitialized;
+  mozilla::Atomic<bool, mozilla::Relaxed> mShutdown;
+  mozilla::Atomic<bool, mozilla::Relaxed> mHttpHandlerAlreadyShutingDown;
 
-    
-    nsWeakPtr                            mWeakHandler[NS_N(gScheme)];
+  nsCOMPtr<nsPISocketTransportService> mSocketTransportService;
+  nsCOMPtr<nsICaptivePortalService> mCaptivePortalService;
+  nsCOMPtr<nsINetworkLinkService> mNetworkLinkService;
+  bool mNetworkLinkServiceInitialized;
 
-    
-    nsCategoryCache<nsIChannelEventSink> mChannelEventSinks;
+  
+  nsWeakPtr mWeakHandler[NS_N(gScheme)];
 
-    nsTArray<int32_t>                    mRestrictedPortList;
+  
+  nsCategoryCache<nsIChannelEventSink> mChannelEventSinks;
 
-    bool                                 mNetworkNotifyChanged;
+  nsTArray<int32_t> mRestrictedPortList;
 
-    static bool                          sIsDataURIUniqueOpaqueOrigin;
-    static bool                          sBlockToplevelDataUriNavigations;
+  bool mNetworkNotifyChanged;
 
-    static bool                          sBlockFTPSubresources;
+  static bool sIsDataURIUniqueOpaqueOrigin;
+  static bool sBlockToplevelDataUriNavigations;
 
-    uint32_t mTotalRequests;
-    uint32_t mCacheWon;
-    uint32_t mNetWon;
+  static bool sBlockFTPSubresources;
 
-    
-    
-    
-    
-    mozilla::Atomic<PRIntervalTime> mLastOfflineStateChange;
-    mozilla::Atomic<PRIntervalTime> mLastConnectivityChange;
-    mozilla::Atomic<PRIntervalTime> mLastNetworkLinkChange;
+  uint32_t mTotalRequests;
+  uint32_t mCacheWon;
+  uint32_t mNetWon;
 
-    
-    mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted;
-public:
-    
-    static uint32_t   gDefaultSegmentSize;
-    static uint32_t   gDefaultSegmentCount;
+  
+  
+  
+  
+  mozilla::Atomic<PRIntervalTime> mLastOfflineStateChange;
+  mozilla::Atomic<PRIntervalTime> mLastConnectivityChange;
+  mozilla::Atomic<PRIntervalTime> mLastNetworkLinkChange;
+
+  
+  mozilla::Atomic<PRIntervalTime> mNetTearingDownStarted;
+
+ public:
+  
+  static uint32_t gDefaultSegmentSize;
+  static uint32_t gDefaultSegmentCount;
 };
 
 
@@ -228,7 +225,7 @@ public:
 
 extern nsIOService* gIOService;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -15,8 +15,7 @@ namespace mozilla {
 
 
 
-struct ServoTraversalStatistics
-{
+struct ServoTraversalStatistics {
   uint32_t mElementsTraversed = 0;
   uint32_t mElementsStyled = 0;
   uint32_t mElementsMatched = 0;
@@ -27,6 +26,6 @@ struct ServoTraversalStatistics
   static ServoTraversalStatistics sSingleton;
 };
 
-} 
+}  
 
-#endif 
+#endif  

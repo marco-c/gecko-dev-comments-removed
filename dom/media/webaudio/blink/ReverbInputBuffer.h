@@ -35,37 +35,38 @@
 namespace WebCore {
 
 
+
 class ReverbInputBuffer {
-public:
-    explicit ReverbInputBuffer(size_t length);
+ public:
+  explicit ReverbInputBuffer(size_t length);
 
-    
-    
-    
-    void write(const float* sourceP, size_t numberOfFrames);
+  
+  
+  
+  
+  void write(const float* sourceP, size_t numberOfFrames);
 
-    
-    size_t writeIndex() const { return m_writeIndex; }
+  
+  size_t writeIndex() const { return m_writeIndex; }
 
-    
-    
-    
-    
-    float* directReadFrom(int* readIndex, size_t numberOfFrames);
+  
+  
+  
+  
+  
+  float* directReadFrom(int* readIndex, size_t numberOfFrames);
 
-    void reset();
+  void reset();
 
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-    {
-        return m_buffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    }
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+    return m_buffer.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  }
 
-
-private:
-    nsTArray<float> m_buffer;
-    size_t m_writeIndex;
+ private:
+  nsTArray<float> m_buffer;
+  size_t m_writeIndex;
 };
 
-} 
+}  
 
-#endif 
+#endif  

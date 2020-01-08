@@ -11,61 +11,57 @@
 #include "nsTArray.h"
 
 class nsMIMEInfoWin : public nsMIMEInfoBase, public nsIPropertyBag {
-    virtual ~nsMIMEInfoWin();
+  virtual ~nsMIMEInfoWin();
 
-  public:
-    explicit nsMIMEInfoWin(const char* aType = "") : nsMIMEInfoBase(aType) {}
-    explicit nsMIMEInfoWin(const nsACString& aMIMEType) : nsMIMEInfoBase(aMIMEType) {}
-    nsMIMEInfoWin(const nsACString& aType, HandlerClass aClass) :
-      nsMIMEInfoBase(aType, aClass) {}
+ public:
+  explicit nsMIMEInfoWin(const char* aType = "") : nsMIMEInfoBase(aType) {}
+  explicit nsMIMEInfoWin(const nsACString& aMIMEType)
+      : nsMIMEInfoBase(aMIMEType) {}
+  nsMIMEInfoWin(const nsACString& aType, HandlerClass aClass)
+      : nsMIMEInfoBase(aType, aClass) {}
 
-    NS_IMETHOD LaunchWithFile(nsIFile* aFile) override;
-    NS_IMETHOD GetHasDefaultHandler(bool * _retval) override;
-    NS_IMETHOD GetPossibleLocalHandlers(nsIArray **_retval) override;
+  NS_IMETHOD LaunchWithFile(nsIFile* aFile) override;
+  NS_IMETHOD GetHasDefaultHandler(bool* _retval) override;
+  NS_IMETHOD GetPossibleLocalHandlers(nsIArray** _retval) override;
 
-    NS_DECL_ISUPPORTS_INHERITED
-    NS_DECL_NSIPROPERTYBAG
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_NSIPROPERTYBAG
 
-    void SetDefaultApplicationHandler(nsIFile* aDefaultApplication) 
-    { 
-      mDefaultApplication = aDefaultApplication; 
-    }
+  void SetDefaultApplicationHandler(nsIFile* aDefaultApplication) {
+    mDefaultApplication = aDefaultApplication;
+  }
 
-  protected:
-    virtual nsresult LoadUriInternal(nsIURI *aURI);
-    virtual nsresult LaunchDefaultWithFile(nsIFile* aFile);
+ protected:
+  virtual nsresult LoadUriInternal(nsIURI* aURI);
+  virtual nsresult LaunchDefaultWithFile(nsIFile* aFile);
 
-  private:
-    nsCOMPtr<nsIFile>      mDefaultApplication;
-    
-    
-    
-    bool GetLocalHandlerApp(const nsAString& aCommandHandler,
-                              nsCOMPtr<nsILocalHandlerApp>& aApp);
+ private:
+  nsCOMPtr<nsIFile> mDefaultApplication;
 
-    
-    
-    bool GetAppsVerbCommandHandler(const nsAString& appExeName,
-                                     nsAString& applicationPath,
-                                     bool bEdit);
+  
+  
+  bool GetLocalHandlerApp(const nsAString& aCommandHandler,
+                          nsCOMPtr<nsILocalHandlerApp>& aApp);
 
-    
-    
-    bool GetProgIDVerbCommandHandler(const nsAString& appProgIDName,
-                                       nsAString& applicationPath,
-                                       bool bEdit);
+  
+  
+  bool GetAppsVerbCommandHandler(const nsAString& appExeName,
+                                 nsAString& applicationPath, bool bEdit);
 
-    
-    
-    bool GetDllLaunchInfo(nsIFile * aDll,
-                            nsIFile * aFile,
-                            nsAString& args, bool bEdit);
+  
+  
+  bool GetProgIDVerbCommandHandler(const nsAString& appProgIDName,
+                                   nsAString& applicationPath, bool bEdit);
 
-    
-    void ProcessPath(nsCOMPtr<nsIMutableArray>& appList,
-                     nsTArray<nsString>& trackList,
-                     const nsAString& appFilesystemCommand);
+  
+  
+  bool GetDllLaunchInfo(nsIFile* aDll, nsIFile* aFile, nsAString& args,
+                        bool bEdit);
 
+  
+  void ProcessPath(nsCOMPtr<nsIMutableArray>& appList,
+                   nsTArray<nsString>& trackList,
+                   const nsAString& appFilesystemCommand);
 };
 
 #endif

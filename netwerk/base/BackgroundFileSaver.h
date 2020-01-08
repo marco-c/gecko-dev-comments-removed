@@ -34,9 +34,8 @@ class DigestOutputStream;
 
 
 
-class BackgroundFileSaver : public nsIBackgroundFileSaver
-{
-public:
+class BackgroundFileSaver : public nsIBackgroundFileSaver {
+ public:
   NS_DECL_NSIBACKGROUNDFILESAVER
 
   BackgroundFileSaver();
@@ -63,8 +62,7 @@ public:
 
   static uint32_t sTelemetryMaxThreadCount;
 
-
-protected:
+ protected:
   virtual ~BackgroundFileSaver();
 
   
@@ -102,7 +100,7 @@ protected:
 
   nsCOMPtr<nsIAsyncInputStream> mPipeInputStream;
 
-private:
+ private:
   friend class NotifyTargetChangeRunnable;
 
   
@@ -244,7 +242,7 @@ private:
 
 
 
-  static void AsyncCopyCallback(void *aClosure, nsresult aStatus);
+  static void AsyncCopyCallback(void* aClosure, nsresult aStatus);
 
   
 
@@ -277,7 +275,7 @@ private:
 
 
 
-  nsresult NotifyTargetChange(nsIFile *aTarget);
+  nsresult NotifyTargetChange(nsIFile* aTarget);
 
   
 
@@ -295,11 +293,10 @@ private:
 
 
 
-class BackgroundFileSaverOutputStream : public BackgroundFileSaver
-                                      , public nsIAsyncOutputStream
-                                      , public nsIOutputStreamCallback
-{
-public:
+class BackgroundFileSaverOutputStream : public BackgroundFileSaver,
+                                        public nsIAsyncOutputStream,
+                                        public nsIOutputStreamCallback {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOUTPUTSTREAM
   NS_DECL_NSIASYNCOUTPUTSTREAM
@@ -307,11 +304,11 @@ public:
 
   BackgroundFileSaverOutputStream();
 
-protected:
+ protected:
   virtual bool HasInfiniteBuffer() override;
   virtual nsAsyncCopyProgressFun GetProgressCallback() override;
 
-private:
+ private:
   ~BackgroundFileSaverOutputStream() = default;
 
   
@@ -324,21 +321,20 @@ private:
 
 
 
-class BackgroundFileSaverStreamListener final : public BackgroundFileSaver
-                                              , public nsIStreamListener
-{
-public:
+class BackgroundFileSaverStreamListener final : public BackgroundFileSaver,
+                                                public nsIStreamListener {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
 
   BackgroundFileSaverStreamListener();
 
-protected:
+ protected:
   virtual bool HasInfiniteBuffer() override;
   virtual nsAsyncCopyProgressFun GetProgressCallback() override;
 
-private:
+ private:
   ~BackgroundFileSaverStreamListener() = default;
 
   
@@ -365,7 +361,7 @@ private:
   
 
 
-  static void AsyncCopyProgressCallback(void *aClosure, uint32_t aCount);
+  static void AsyncCopyProgressCallback(void* aClosure, uint32_t aCount);
 
   
 
@@ -376,15 +372,14 @@ private:
 
 
 
-class DigestOutputStream : public nsIOutputStream
-{
-public:
+class DigestOutputStream : public nsIOutputStream {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOUTPUTSTREAM
   
   DigestOutputStream(nsIOutputStream* outputStream, PK11Context* aContext);
 
-private:
+ private:
   virtual ~DigestOutputStream() = default;
 
   
@@ -396,7 +391,7 @@ private:
   DigestOutputStream(const DigestOutputStream& d) = delete;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

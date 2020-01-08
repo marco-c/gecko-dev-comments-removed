@@ -11,8 +11,7 @@
 class nsIFile;
 class nsIURLParser;
 
-enum netCoalesceFlags
-{
+enum netCoalesceFlags {
   NET_COALESCE_NORMAL = 0,
 
   
@@ -20,13 +19,13 @@ enum netCoalesceFlags
 
 
 
-  NET_COALESCE_ALLOW_RELATIVE_ROOT = 1<<0,
+  NET_COALESCE_ALLOW_RELATIVE_ROOT = 1 << 0,
 
   
 
 
 
-  NET_COALESCE_DOUBLE_SLASH_IS_ROOT = 1<<1
+  NET_COALESCE_DOUBLE_SLASH_IS_ROOT = 1 << 1
 };
 
 
@@ -40,9 +39,9 @@ void net_ShutdownURLHelperOSX();
 #endif
 
 
-nsIURLParser * net_GetAuthURLParser();
-nsIURLParser * net_GetNoAuthURLParser();
-nsIURLParser * net_GetStdURLParser();
+nsIURLParser *net_GetAuthURLParser();
+nsIURLParser *net_GetNoAuthURLParser();
+nsIURLParser *net_GetStdURLParser();
 
 
 
@@ -54,13 +53,12 @@ nsresult net_GetURLSpecFromActualFile(nsIFile *, nsACString &);
 nsresult net_GetFileFromURLSpec(const nsACString &, nsIFile **);
 
 
-nsresult net_ParseFileURL(const nsACString &inURL,
-                                      nsACString &outDirectory,
-                                      nsACString &outFileBaseName,
-                                      nsACString &outFileExtension);
+nsresult net_ParseFileURL(const nsACString &inURL, nsACString &outDirectory,
+                          nsACString &outFileBaseName,
+                          nsACString &outFileExtension);
 
 
-void net_CoalesceDirs(netCoalesceFlags flags, char* path);
+void net_CoalesceDirs(netCoalesceFlags flags, char *path);
 
 
 
@@ -76,8 +74,8 @@ void net_CoalesceDirs(netCoalesceFlags flags, char* path);
 
 
 nsresult net_ResolveRelativePath(const nsACString &relativePath,
-                                             const nsACString &basePath,
-                                             nsACString &result);
+                                 const nsACString &basePath,
+                                 nsACString &result);
 
 
 
@@ -85,7 +83,7 @@ nsresult net_ResolveRelativePath(const nsACString &relativePath,
 
 
 
-bool net_IsAbsoluteURL(const nsACString& inURL);
+bool net_IsAbsoluteURL(const nsACString &inURL);
 
 
 
@@ -93,15 +91,13 @@ bool net_IsAbsoluteURL(const nsACString& inURL);
 
 
 
-nsresult net_ExtractURLScheme(const nsACString &inURI,
-                              nsACString &scheme);
+nsresult net_ExtractURLScheme(const nsACString &inURI, nsACString &scheme);
 
 
 bool net_IsValidScheme(const char *scheme, uint32_t schemeLen);
 
-inline bool net_IsValidScheme(const nsCString& scheme)
-{
-    return net_IsValidScheme(scheme.get(), scheme.Length());
+inline bool net_IsValidScheme(const nsCString &scheme) {
+  return net_IsValidScheme(scheme.get(), scheme.Length());
 }
 
 
@@ -113,7 +109,7 @@ inline bool net_IsValidScheme(const nsCString& scheme)
 
 
 
-void net_FilterURIString(const nsACString& input, nsACString& result);
+void net_FilterURIString(const nsACString &input, nsACString &result);
 
 
 
@@ -125,7 +121,8 @@ void net_FilterURIString(const nsACString& input, nsACString& result);
 
 
 
-nsresult net_FilterAndEscapeURI(const nsACString& aInput, uint32_t aFlags, nsACString& aResult);
+nsresult net_FilterAndEscapeURI(const nsACString &aInput, uint32_t aFlags,
+                                nsACString &aResult);
 
 #if defined(XP_WIN)
 
@@ -141,8 +138,7 @@ nsresult net_FilterAndEscapeURI(const nsACString& aInput, uint32_t aFlags, nsACS
 
 
 
-bool net_NormalizeFileURL(const nsACString &aURL,
-                                        nsCString &aResultBuf);
+bool net_NormalizeFileURL(const nsACString &aURL, nsCString &aResultBuf);
 #endif
 
 
@@ -150,15 +146,15 @@ bool net_NormalizeFileURL(const nsACString &aURL,
 
 
 
-void net_ToLowerCase(char* str, uint32_t length);
-void net_ToLowerCase(char* str);
+void net_ToLowerCase(char *str, uint32_t length);
+void net_ToLowerCase(char *str);
 
 
 
 
 
 
-char * net_FindCharInSet(const char *str, const char *end, const char *set);
+char *net_FindCharInSet(const char *str, const char *end, const char *set);
 
 
 
@@ -166,13 +162,13 @@ char * net_FindCharInSet(const char *str, const char *end, const char *set);
 
 
 
-char * net_FindCharNotInSet(const char *str, const char *end, const char *set);
+char *net_FindCharNotInSet(const char *str, const char *end, const char *set);
 
 
 
 
 
-char * net_RFindCharNotInSet(const char *str, const char *end, const char *set);
+char *net_RFindCharNotInSet(const char *str, const char *end, const char *set);
 
 
 
@@ -186,9 +182,9 @@ char * net_RFindCharNotInSet(const char *str, const char *end, const char *set);
 
 
 void net_ParseRequestContentType(const nsACString &aHeaderStr,
-                                 nsACString       &aContentType,
-                                 nsACString       &aContentCharset,
-                                 bool*          aHadCharset);
+                                 nsACString &aContentType,
+                                 nsACString &aContentCharset,
+                                 bool *aHadCharset);
 
 
 
@@ -199,9 +195,8 @@ void net_ParseRequestContentType(const nsACString &aHeaderStr,
 
 
 void net_ParseContentType(const nsACString &aHeaderStr,
-                          nsACString       &aContentType,
-                          nsACString       &aContentCharset,
-                          bool*          aHadCharset);
+                          nsACString &aContentType, nsACString &aContentCharset,
+                          bool *aHadCharset);
 
 
 
@@ -212,35 +207,30 @@ void net_ParseContentType(const nsACString &aHeaderStr,
 
 
 void net_ParseContentType(const nsACString &aHeaderStr,
-                          nsACString       &aContentType,
-                          nsACString       &aContentCharset,
-                          bool             *aHadCharset,
-                          int32_t          *aCharsetStart,
-                          int32_t          *aCharsetEnd);
+                          nsACString &aContentType, nsACString &aContentCharset,
+                          bool *aHadCharset, int32_t *aCharsetStart,
+                          int32_t *aCharsetEnd);
 
 
 
 
-#define NET_MAX_ADDRESS ((char*)UINTPTR_MAX)
+#define NET_MAX_ADDRESS ((char *)UINTPTR_MAX)
 
-inline char *net_FindCharInSet(const char *str, const char *set)
-{
-    return net_FindCharInSet(str, NET_MAX_ADDRESS, set);
+inline char *net_FindCharInSet(const char *str, const char *set) {
+  return net_FindCharInSet(str, NET_MAX_ADDRESS, set);
 }
-inline char *net_FindCharNotInSet(const char *str, const char *set)
-{
-    return net_FindCharNotInSet(str, NET_MAX_ADDRESS, set);
+inline char *net_FindCharNotInSet(const char *str, const char *set) {
+  return net_FindCharNotInSet(str, NET_MAX_ADDRESS, set);
 }
-inline char *net_RFindCharNotInSet(const char *str, const char *set)
-{
-    return net_RFindCharNotInSet(str, str + strlen(str), set);
+inline char *net_RFindCharNotInSet(const char *str, const char *set) {
+  return net_RFindCharNotInSet(str, str + strlen(str), set);
 }
 
 
 
 
 
-bool net_IsValidHostName(const nsACString& host);
+bool net_IsValidHostName(const nsACString &host);
 
 
 
@@ -256,7 +246,6 @@ bool net_IsValidIPv6Addr(const char *addr, int32_t addrLen);
 
 
 
-
 int32_t net_GetURLMaxLength();
 
-#endif 
+#endif  

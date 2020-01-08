@@ -27,25 +27,22 @@ class SyncObject;
 class WorkerThread;
 
 class JobScheduler {
-public:
+ public:
   
   
-  static MultiThreadedJobQueue* GetDrawingQueue()
-  {
-    return sSingleton->mDrawingQueues[
-      sSingleton->mNextQueue++ % sSingleton->mDrawingQueues.size()
-    ];
+  static MultiThreadedJobQueue* GetDrawingQueue() {
+    return sSingleton->mDrawingQueues[sSingleton->mNextQueue++ %
+                                      sSingleton->mDrawingQueues.size()];
   }
 
   
   
   
   
-  static MultiThreadedJobQueue* GetDrawingQueue(uint32_t aHash)
-  {
-    return sSingleton->mDrawingQueues[
-      aHash % sSingleton->mDrawingQueues.size()
-    ];
+  
+  static MultiThreadedJobQueue* GetDrawingQueue(uint32_t aHash) {
+    return sSingleton
+        ->mDrawingQueues[aHash % sSingleton->mDrawingQueues.size()];
   }
 
   
@@ -64,6 +61,7 @@ public:
   
   static void ShutDown();
 
+  
   
   static bool IsEnabled() { return !!sSingleton; }
 
@@ -86,9 +84,10 @@ public:
   
   
   
+  
   static JobStatus ProcessJob(Job* aJobs);
 
-protected:
+ protected:
   static JobScheduler* sSingleton;
 
   
@@ -101,8 +100,9 @@ protected:
 
 
 class Job {
-public:
-  Job(SyncObject* aStart, SyncObject* aCompletion, WorkerThread* aThread = nullptr);
+ public:
+  Job(SyncObject* aStart, SyncObject* aCompletion,
+      WorkerThread* aThread = nullptr);
 
   virtual ~Job();
 
@@ -116,7 +116,8 @@ public:
 
   WorkerThread* GetWorkerThread() { return mPinToThread; }
 
-protected:
+ protected:
+  
   
   
   
@@ -135,12 +136,11 @@ class EventObject;
 
 
 
-class SetEventJob : public Job
-{
-public:
-  explicit SetEventJob(EventObject* aEvent,
-                        SyncObject* aStart, SyncObject* aCompletion = nullptr,
-                        WorkerThread* aPinToWorker = nullptr);
+class SetEventJob : public Job {
+ public:
+  explicit SetEventJob(EventObject* aEvent, SyncObject* aStart,
+                       SyncObject* aCompletion = nullptr,
+                       WorkerThread* aPinToWorker = nullptr);
 
   ~SetEventJob();
 
@@ -148,7 +148,7 @@ public:
 
   EventObject* GetEvent() { return mEvent; }
 
-protected:
+ protected:
   RefPtr<EventObject> mEvent;
 };
 
@@ -160,11 +160,11 @@ protected:
 
 
 
-
 class SyncObject final : public external::AtomicRefCounted<SyncObject> {
-public:
+ public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(SyncObject)
 
+  
   
   
   
@@ -211,7 +211,7 @@ public:
   
   void FreezePrerequisites();
 
-private:
+ private:
   
   void AddSubsequent(Job* aJob);
   void AddPrerequisite(Job* aJob);
@@ -233,9 +233,8 @@ private:
 };
 
 
-class WorkerThread
-{
-public:
+class WorkerThread {
+ public:
   static WorkerThread* Create(MultiThreadedJobQueue* aJobQueue);
 
   virtual ~WorkerThread() {}
@@ -244,7 +243,7 @@ public:
 
   MultiThreadedJobQueue* GetJobQueue() { return mQueue; }
 
-protected:
+ protected:
   explicit WorkerThread(MultiThreadedJobQueue* aJobQueue);
 
   virtual void SetName(const char* aName) {}
@@ -252,7 +251,7 @@ protected:
   MultiThreadedJobQueue* mQueue;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

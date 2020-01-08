@@ -7,14 +7,14 @@
 #ifndef GFX_PaintedLayerComposite_H
 #define GFX_PaintedLayerComposite_H
 
-#include "Layers.h"                     
+#include "Layers.h"  
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
+#include "mozilla/Attributes.h"                    
+#include "mozilla/RefPtr.h"                        
 #include "mozilla/layers/LayerManagerComposite.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "nsRegion.h"                   
-#include "nscore.h"                     
+#include "mozilla/layers/LayersTypes.h"            
+#include "nsRegion.h"                              
+#include "nscore.h"                                
 
 namespace mozilla {
 namespace layers {
@@ -28,16 +28,14 @@ namespace layers {
 class CompositableHost;
 class ContentHost;
 
-class PaintedLayerComposite : public PaintedLayer,
-                              public LayerComposite
-{
-public:
-  explicit PaintedLayerComposite(LayerManagerComposite *aManager);
+class PaintedLayerComposite : public PaintedLayer, public LayerComposite {
+ public:
+  explicit PaintedLayerComposite(LayerManagerComposite* aManager);
 
-protected:
+ protected:
   virtual ~PaintedLayerComposite();
 
-public:
+ public:
   virtual void Disconnect() override;
 
   CompositableHost* GetCompositableHost() override;
@@ -61,8 +59,7 @@ public:
 
   virtual HostLayer* AsHostLayer() override { return this; }
 
-  virtual void InvalidateRegion(const nsIntRegion& aRegion) override
-  {
+  virtual void InvalidateRegion(const nsIntRegion& aRegion) override {
     MOZ_CRASH("PaintedLayerComposites can't fill invalidated regions");
   }
 
@@ -70,18 +67,20 @@ public:
 
   MOZ_LAYER_DECL_NAME("PaintedLayerComposite", TYPE_PAINTED)
 
-protected:
+ protected:
+  virtual void PrintInfo(std::stringstream& aStream,
+                         const char* aPrefix) override;
 
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+ private:
+  gfx::SamplingFilter GetSamplingFilter() {
+    return gfx::SamplingFilter::LINEAR;
+  }
 
-private:
-  gfx::SamplingFilter GetSamplingFilter() { return gfx::SamplingFilter::LINEAR; }
-
-private:
+ private:
   RefPtr<ContentHost> mBuffer;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

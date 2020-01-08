@@ -18,20 +18,17 @@ class MessageBroadcaster;
 
 
 
-class MessageSender : public MessageListenerManager
-{
-public:
+class MessageSender : public MessageListenerManager {
+ public:
   void InitWithCallback(ipc::MessageManagerCallback* aCallback);
 
-protected:
+ protected:
   MessageSender(ipc::MessageManagerCallback* aCallback,
-                MessageBroadcaster* aParentManager,
-                MessageManagerFlags aFlags)
-    : MessageListenerManager(aCallback, aParentManager, aFlags)
-  {}
+                MessageBroadcaster* aParentManager, MessageManagerFlags aFlags)
+      : MessageListenerManager(aCallback, aParentManager, aFlags) {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

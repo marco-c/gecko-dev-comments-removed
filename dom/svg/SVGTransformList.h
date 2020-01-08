@@ -16,7 +16,7 @@ namespace mozilla {
 
 namespace dom {
 class SVGTransform;
-} 
+}  
 
 
 
@@ -27,13 +27,12 @@ class SVGTransform;
 
 
 
-class SVGTransformList
-{
+class SVGTransformList {
   friend class nsSVGAnimatedTransformList;
   friend class DOMSVGTransformList;
   friend class dom::SVGTransform;
 
-public:
+ public:
   SVGTransformList() {}
   ~SVGTransformList() {}
 
@@ -43,13 +42,9 @@ public:
   
   void GetValueAsString(nsAString& aValue) const;
 
-  bool IsEmpty() const {
-    return mItems.IsEmpty();
-  }
+  bool IsEmpty() const { return mItems.IsEmpty(); }
 
-  uint32_t Length() const {
-    return mItems.Length();
-  }
+  uint32_t Length() const { return mItems.Length(); }
 
   const nsSVGTransform& operator[](uint32_t aIndex) const {
     return mItems[aIndex];
@@ -59,13 +54,9 @@ public:
     return mItems == rhs.mItems;
   }
 
-  bool SetCapacity(uint32_t size) {
-    return mItems.SetCapacity(size, fallible);
-  }
+  bool SetCapacity(uint32_t size) { return mItems.SetCapacity(size, fallible); }
 
-  void Compact() {
-    mItems.Compact();
-  }
+  void Compact() { mItems.Compact(); }
 
   gfxMatrix GetConsolidationMatrix() const;
 
@@ -76,8 +67,7 @@ public:
   
   
 
-protected:
-
+ protected:
   
 
 
@@ -85,9 +75,7 @@ protected:
   nsresult CopyFrom(const SVGTransformList& rhs);
   nsresult CopyFrom(const nsTArray<nsSVGTransform>& aTransformArray);
 
-  nsSVGTransform& operator[](uint32_t aIndex) {
-    return mItems[aIndex];
-  }
+  nsSVGTransform& operator[](uint32_t aIndex) { return mItems[aIndex]; }
 
   
 
@@ -97,17 +85,14 @@ protected:
     return mItems.SetLength(aNumberOfItems, fallible);
   }
 
-private:
-
+ private:
   
   
   
 
   nsresult SetValueFromString(const nsAString& aValue);
 
-  void Clear() {
-    mItems.Clear();
-  }
+  void Clear() { mItems.Clear(); }
 
   bool InsertItem(uint32_t aIndex, const nsSVGTransform& aTransform) {
     if (aIndex >= mItems.Length()) {
@@ -132,14 +117,15 @@ private:
     return !!mItems.AppendElement(aTransform, fallible);
   }
 
-protected:
+ protected:
   
+
 
 
 
   FallibleTArray<nsSVGTransform> mItems;
 };
 
-} 
+}  
 
-#endif 
+#endif  

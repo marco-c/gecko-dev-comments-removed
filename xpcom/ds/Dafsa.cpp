@@ -22,8 +22,7 @@ const int mozilla::Dafsa::kKeyNotFound = -1;
 
 bool GetNextOffset(const unsigned char** pos, const unsigned char* end,
                    const unsigned char** offset) {
-  if (*pos == end)
-    return false;
+  if (*pos == end) return false;
 
   
   
@@ -88,6 +87,7 @@ bool GetReturnValue(const unsigned char* offset, const unsigned char* end,
 
 
 
+
 int LookupString(const unsigned char* graph, size_t length, const char* key,
                  size_t key_length) {
   const unsigned char* pos = graph;
@@ -104,8 +104,7 @@ int LookupString(const unsigned char* graph, size_t length, const char* key,
     bool did_consume = false;
     if (key != key_end && !IsEOL(offset, end)) {
       
-      if (!IsMatch(offset, end, key))
-        continue;
+      if (!IsMatch(offset, end, key)) continue;
       did_consume = true;
       ++offset;
       ++key;
@@ -116,8 +115,7 @@ int LookupString(const unsigned char* graph, size_t length, const char* key,
       
       
       while (!IsEOL(offset, end) && key != key_end) {
-        if (!IsMatch(offset, end, key))
-          return mozilla::Dafsa::kKeyNotFound;
+        if (!IsMatch(offset, end, key)) return mozilla::Dafsa::kKeyNotFound;
         ++key;
         ++offset;
       }
@@ -129,17 +127,14 @@ int LookupString(const unsigned char* graph, size_t length, const char* key,
     
     if (key == key_end) {
       int return_value;
-      if (GetReturnValue(offset, end, &return_value))
-        return return_value;
+      if (GetReturnValue(offset, end, &return_value)) return return_value;
       
       
-      if (did_consume)
-        return mozilla::Dafsa::kKeyNotFound;
+      if (did_consume) return mozilla::Dafsa::kKeyNotFound;
       continue;
     }
     if (!IsEndCharMatch(offset, end, key)) {
-      if (did_consume)
-        return mozilla::Dafsa::kKeyNotFound;  
+      if (did_consume) return mozilla::Dafsa::kKeyNotFound;  
       continue;
     }
     ++key;
@@ -150,10 +145,9 @@ int LookupString(const unsigned char* graph, size_t length, const char* key,
 
 namespace mozilla {
 
-int Dafsa::Lookup(const nsACString& aKey) const
-{
-  return LookupString(mData.Elements(), mData.Length(),
-                      aKey.BeginReading(), aKey.Length());
+int Dafsa::Lookup(const nsACString& aKey) const {
+  return LookupString(mData.Elements(), mData.Length(), aKey.BeginReading(),
+                      aKey.Length());
 }
 
-} 
+}  

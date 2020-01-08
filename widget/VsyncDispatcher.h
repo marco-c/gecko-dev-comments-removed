@@ -14,11 +14,10 @@
 
 namespace mozilla {
 
-class VsyncObserver
-{
+class VsyncObserver {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VsyncObserver)
 
-public:
+ public:
   
   
   
@@ -26,10 +25,10 @@ public:
   
   virtual bool NotifyVsync(TimeStamp aVsyncTimestamp) = 0;
 
-protected:
+ protected:
   VsyncObserver() {}
   virtual ~VsyncObserver() {}
-}; 
+};  
 
 
 
@@ -43,11 +42,10 @@ protected:
 
 
 
-class CompositorVsyncDispatcher final
-{
+class CompositorVsyncDispatcher final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorVsyncDispatcher)
 
-public:
+ public:
   CompositorVsyncDispatcher();
 
   
@@ -57,7 +55,7 @@ public:
   void SetCompositorVsyncObserver(VsyncObserver* aVsyncObserver);
   void Shutdown();
 
-private:
+ private:
   virtual ~CompositorVsyncDispatcher();
   void ObserveVsync(bool aEnable);
 
@@ -67,11 +65,10 @@ private:
 };
 
 
-class RefreshTimerVsyncDispatcher final
-{
+class RefreshTimerVsyncDispatcher final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefreshTimerVsyncDispatcher)
 
-public:
+ public:
   RefreshTimerVsyncDispatcher();
 
   
@@ -88,7 +85,7 @@ public:
   void AddChildRefreshTimer(VsyncObserver* aVsyncObserver);
   void RemoveChildRefreshTimer(VsyncObserver* aVsyncObserver);
 
-private:
+ private:
   virtual ~RefreshTimerVsyncDispatcher();
   void UpdateVsyncStatus();
   bool NeedsVsync();
@@ -98,6 +95,6 @@ private:
   nsTArray<RefPtr<VsyncObserver>> mChildRefreshTimers;
 };
 
-} 
+}  
 
-#endif 
+#endif  

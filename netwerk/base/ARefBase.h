@@ -9,23 +9,23 @@
 
 #include "nscore.h"
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
 
 
 
 
 
-class ARefBase
-{
-public:
+class ARefBase {
+ public:
   ARefBase() = default;
   virtual ~ARefBase() = default;
 
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 };
 
-} 
-} 
+}  
+}  
 
 #endif

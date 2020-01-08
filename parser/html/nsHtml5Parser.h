@@ -27,11 +27,8 @@
 #include "nsWeakReference.h"
 #include "nsHtml5StreamListener.h"
 
-class nsHtml5Parser final
-  : public nsIParser
-  , public nsSupportsWeakReference
-{
-public:
+class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsHtml5Parser, nsIParser)
@@ -129,8 +126,7 @@ public:
 
 
 
-  NS_IMETHOD Parse(nsIURI* aURL,
-                   nsIRequestObserver* aListener = nullptr,
+  NS_IMETHOD Parse(nsIURI* aURL, nsIRequestObserver* aListener = nullptr,
                    void* aKey = 0,
                    nsDTDMode aMode = eDTDMode_autodetect) override;
 
@@ -143,10 +139,8 @@ public:
 
 
 
-  nsresult Parse(const nsAString& aSourceBuffer,
-                 void* aKey,
-                 const nsACString& aContentType,
-                 bool aLastCall,
+  nsresult Parse(const nsAString& aSourceBuffer, void* aKey,
+                 const nsACString& aContentType, bool aLastCall,
                  nsDTDMode aMode = eDTDMode_autodetect);
 
   
@@ -212,22 +206,19 @@ public:
   
   
 
-public:
+ public:
   
 
 
-  virtual nsresult Initialize(nsIDocument* aDoc,
-                              nsIURI* aURI,
-                              nsISupports* aContainer,
-                              nsIChannel* aChannel);
+  virtual nsresult Initialize(nsIDocument* aDoc, nsIURI* aURI,
+                              nsISupports* aContainer, nsIChannel* aChannel);
 
   inline nsHtml5Tokenizer* GetTokenizer() { return mTokenizer; }
 
   void InitializeDocWriteParserState(nsAHtml5TreeBuilderState* aState,
                                      int32_t aLine);
 
-  void DropStreamParser()
-  {
+  void DropStreamParser() {
     if (GetStreamParser()) {
       GetStreamParser()->DropTimer();
       mStreamListener->DropDelegate();
@@ -239,16 +230,14 @@ public:
 
   void ContinueAfterFailedCharsetSwitch();
 
-  nsHtml5StreamParser* GetStreamParser()
-  {
+  nsHtml5StreamParser* GetStreamParser() {
     if (!mStreamListener) {
       return nullptr;
     }
     return mStreamListener->GetDelegate();
   }
 
-  void PermanentlyUndefineInsertionPoint()
-  {
+  void PermanentlyUndefineInsertionPoint() {
     mInsertionPointPermanentlyUndefined = true;
   }
 
@@ -257,7 +246,7 @@ public:
 
   nsresult ParseUntilBlocked();
 
-private:
+ private:
   virtual ~nsHtml5Parser();
 
   
@@ -321,7 +310,7 @@ private:
 
 
 
-  nsHtml5OwningUTF16Buffer* mLastBuffer; 
+  nsHtml5OwningUTF16Buffer* mLastBuffer;  
 
   
 

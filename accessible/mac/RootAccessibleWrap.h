@@ -15,20 +15,19 @@
 namespace mozilla {
 namespace a11y {
 
-class RootAccessibleWrap : public RootAccessible
-{
-public:
+class RootAccessibleWrap : public RootAccessible {
+ public:
   RootAccessibleWrap(nsIDocument* aDocument, nsIPresShell* aPresShell);
   virtual ~RootAccessibleWrap();
 
-    Class GetNativeType ();
+  Class GetNativeType();
 
-    
-    
-    void GetNativeWidget (void **aOutView);
+  
+  
+  void GetNativeWidget(void** aOutView);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

@@ -10,56 +10,51 @@
 
 #include "jsapi-tests/tests.h"
 
-struct MyHeap
-{
-    explicit MyHeap(JSObject* obj) : weak(obj) {}
-    js::WeakRef<JSObject*> weak;
+struct MyHeap {
+  explicit MyHeap(JSObject* obj) : weak(obj) {}
+  js::WeakRef<JSObject*> weak;
 
-    void trace(JSTracer* trc) {
-        js::TraceWeakEdge(trc, &weak, "weak");
-    }
+  void trace(JSTracer* trc) { js::TraceWeakEdge(trc, &weak, "weak"); }
 };
 
-BEGIN_TEST(testGCWeakRef)
-{
-    
-    
-    JS::RootedObject obj(cx, JS_NewPlainObject(cx));
-    CHECK(obj);
-    CHECK(JS_DefineProperty(cx, obj, "x", 42, 0));
+BEGIN_TEST(testGCWeakRef) {
+  
+  
+  JS::RootedObject obj(cx, JS_NewPlainObject(cx));
+  CHECK(obj);
+  CHECK(JS_DefineProperty(cx, obj, "x", 42, 0));
 
-    
-    JS::Rooted<MyHeap> heap(cx, MyHeap(obj));
-    obj = nullptr;
+  
+  JS::Rooted<MyHeap> heap(cx, MyHeap(obj));
+  obj = nullptr;
 
-    cx->runtime()->gc.minorGC(JS::gcreason::API);
+  cx->runtime()->gc.minorGC(JS::gcreason::API);
 
-    
-    
-    
-    CHECK(heap.get().weak.unbarrieredGet() != nullptr);
-    obj = heap.get().weak;
-    JS::RootedValue v(cx);
-    CHECK(JS_GetProperty(cx, obj, "x", &v));
-    CHECK(v.isInt32());
-    CHECK(v.toInt32() == 42);
+  
+  
+  
+  CHECK(heap.get().weak.unbarrieredGet() != nullptr);
+  obj = heap.get().weak;
+  JS::RootedValue v(cx);
+  CHECK(JS_GetProperty(cx, obj, "x", &v));
+  CHECK(v.isInt32());
+  CHECK(v.toInt32() == 42);
 
-    
-    CHECK(obj == heap.get().weak);
-    JS_GC(cx);
-    CHECK(obj == heap.get().weak);
-    v = JS::UndefinedValue();
-    CHECK(JS_GetProperty(cx, obj, "x", &v));
-    CHECK(v.isInt32());
-    CHECK(v.toInt32() == 42);
+  
+  CHECK(obj == heap.get().weak);
+  JS_GC(cx);
+  CHECK(obj == heap.get().weak);
+  v = JS::UndefinedValue();
+  CHECK(JS_GetProperty(cx, obj, "x", &v));
+  CHECK(v.isInt32());
+  CHECK(v.toInt32() == 42);
 
-    
-    
-    obj = nullptr;
-    JS_GC(cx);
-    CHECK(heap.get().weak == nullptr);
+  
+  
+  obj = nullptr;
+  JS_GC(cx);
+  CHECK(heap.get().weak == nullptr);
 
-    return true;
+  return true;
 }
 END_TEST(testGCWeakRef)
-

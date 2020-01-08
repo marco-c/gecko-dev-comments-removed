@@ -27,7 +27,7 @@ class nsITreeView;
 namespace mozilla {
 
 namespace dom {
-  class DOMStringList;
+class DOMStringList;
 }
 
 namespace a11y {
@@ -51,7 +51,7 @@ SelectionManager* SelectionMgr();
 ApplicationAccessible* ApplicationAcc();
 xpcAccessibleApplication* XPCApplicationAcc();
 
-typedef Accessible* (New_Accessible)(Element* aElement, Accessible* aContext);
+typedef Accessible*(New_Accessible)(Element* aElement, Accessible* aContext);
 
 
 struct MarkupAttrInfo {
@@ -86,34 +86,33 @@ void PrefChanged(const char* aPref, void* aClosure);
 
 EPlatformDisabledState ReadPlatformDisabledState();
 
-} 
-} 
+}  
+}  
 
 class nsAccessibilityService final : public mozilla::a11y::DocManager,
                                      public mozilla::a11y::FocusManager,
                                      public mozilla::a11y::SelectionManager,
                                      public nsIListenerChangeListener,
-                                     public nsIObserver
-{
-public:
+                                     public nsIObserver {
+ public:
   typedef mozilla::a11y::Accessible Accessible;
   typedef mozilla::a11y::DocAccessible DocAccessible;
 
   
   NS_IMETHOD ListenersChanged(nsIArray* aEventChanges) override;
 
-protected:
+ protected:
   ~nsAccessibilityService();
 
-public:
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIOBSERVER
 
   Accessible* GetRootDocumentAccessible(nsIPresShell* aPresShell,
                                         bool aCanCreate);
-  already_AddRefed<Accessible>
-    CreatePluginAccessible(nsPluginFrame* aFrame, nsIContent* aContent,
-                           Accessible* aContext);
+  already_AddRefed<Accessible> CreatePluginAccessible(nsPluginFrame* aFrame,
+                                                      nsIContent* aContent,
+                                                      Accessible* aContext);
 
   
 
@@ -132,10 +131,10 @@ public:
   
 
 
-  already_AddRefed<mozilla::dom::DOMStringList>
-    GetStringStates(uint64_t aStates) const;
+  already_AddRefed<mozilla::dom::DOMStringList> GetStringStates(
+      uint64_t aStates) const;
   void GetStringStates(uint32_t aState, uint32_t aExtraState,
-                       nsISupports **aStringStates);
+                       nsISupports** aStringStates);
 
   
 
@@ -164,8 +163,7 @@ public:
 
 
 
-  void ContentRangeInserted(nsIPresShell* aPresShell,
-                            nsIContent* aStartChild,
+  void ContentRangeInserted(nsIPresShell* aPresShell, nsIContent* aStartChild,
                             nsIContent* aEndChild);
 
   
@@ -190,8 +188,7 @@ public:
 
 
   void UpdateListBullet(nsIPresShell* aPresShell,
-                        nsIContent* aHTMLListItemContent,
-                        bool aHasBullet);
+                        nsIContent* aHTMLListItemContent, bool aHasBullet);
 
   
 
@@ -208,7 +205,7 @@ public:
 
 
 
-  void NotifyOfAnchorJumpTo(nsIContent *aTarget);
+  void NotifyOfAnchorJumpTo(nsIContent* aTarget);
 
   
 
@@ -227,10 +224,7 @@ public:
   
 
 
-  static bool IsShutdown()
-  {
-    return gConsumers == 0;
-  };
+  static bool IsShutdown() { return gConsumers == 0; };
 
   
 
@@ -243,10 +237,9 @@ public:
   Accessible* CreateAccessible(nsINode* aNode, Accessible* aContext,
                                bool* aIsSubtreeHidden = nullptr);
 
-  mozilla::a11y::role MarkupRole(const nsIContent* aContent) const
-  {
+  mozilla::a11y::role MarkupRole(const nsIContent* aContent) const {
     const mozilla::a11y::HTMLMarkupMapInfo* markupMap =
-      mHTMLMarkupMap.Get(aContent->NodeInfo()->NameAtom());
+        mHTMLMarkupMap.Get(aContent->NodeInfo()->NameAtom());
     return markupMap ? markupMap->role : mozilla::a11y::roles::NOTHING;
   }
 
@@ -268,21 +261,20 @@ public:
 
 
 
-  enum ServiceConsumer
-  {
-    eXPCOM       = 1 << 0,
+  enum ServiceConsumer {
+    eXPCOM = 1 << 0,
     eMainProcess = 1 << 1,
     ePlatformAPI = 1 << 2,
   };
 
-private:
+ private:
   
   
   nsAccessibilityService();
   nsAccessibilityService(const nsAccessibilityService&);
-  nsAccessibilityService& operator =(const nsAccessibilityService&);
+  nsAccessibilityService& operator=(const nsAccessibilityService&);
 
-private:
+ private:
   
 
 
@@ -296,9 +288,8 @@ private:
   
 
 
-  already_AddRefed<Accessible>
-    CreateAccessibleByFrameType(nsIFrame* aFrame, nsIContent* aContent,
-                                Accessible* aContext);
+  already_AddRefed<Accessible> CreateAccessibleByFrameType(
+      nsIFrame* aFrame, nsIContent* aContent, Accessible* aContext);
 
   
 
@@ -336,9 +327,13 @@ private:
 
   static uint32_t gConsumers;
 
-  nsDataHashtable<nsPtrHashKey<const nsAtom>, const mozilla::a11y::HTMLMarkupMapInfo*> mHTMLMarkupMap;
+  nsDataHashtable<nsPtrHashKey<const nsAtom>,
+                  const mozilla::a11y::HTMLMarkupMapInfo*>
+      mHTMLMarkupMap;
 #ifdef MOZ_XUL
-  nsDataHashtable<nsPtrHashKey<const nsAtom>, const mozilla::a11y::XULMarkupMapInfo*> mXULMarkupMap;
+  nsDataHashtable<nsPtrHashKey<const nsAtom>,
+                  const mozilla::a11y::XULMarkupMapInfo*>
+      mXULMarkupMap;
 #endif
 
   friend nsAccessibilityService* GetAccService();
@@ -348,16 +343,15 @@ private:
   friend mozilla::a11y::FocusManager* mozilla::a11y::FocusMgr();
   friend mozilla::a11y::SelectionManager* mozilla::a11y::SelectionMgr();
   friend mozilla::a11y::ApplicationAccessible* mozilla::a11y::ApplicationAcc();
-  friend mozilla::a11y::xpcAccessibleApplication* mozilla::a11y::XPCApplicationAcc();
+  friend mozilla::a11y::xpcAccessibleApplication*
+  mozilla::a11y::XPCApplicationAcc();
   friend class xpcAccessibilityService;
 };
 
 
 
 
-inline nsAccessibilityService*
-GetAccService()
-{
+inline nsAccessibilityService* GetAccService() {
   return nsAccessibilityService::gAccessibilityService;
 }
 
@@ -365,7 +359,7 @@ GetAccService()
 
 
 nsAccessibilityService* GetOrCreateAccService(
-  uint32_t aNewConsumer = nsAccessibilityService::ePlatformAPI);
+    uint32_t aNewConsumer = nsAccessibilityService::ePlatformAPI);
 
 
 
@@ -375,106 +369,102 @@ void MaybeShutdownAccService(uint32_t aFormerConsumer);
 
 
 
-inline bool
-IPCAccessibilityActive()
-{
-  return XRE_IsContentProcess();
-}
+inline bool IPCAccessibilityActive() { return XRE_IsContentProcess(); }
 
 
 
 
 
 static const char kEventTypeNames[][40] = {
-  "unknown",                                 
-  "show",                                    
-  "hide",                                    
-  "reorder",                                 
-  "active decendent change",                 
-  "focus",                                   
-  "state change",                            
-  "location change",                         
-  "name changed",                            
-  "description change",                      
-  "value change",                            
-  "help change",                             
-  "default action change",                   
-  "action change",                           
-  "accelerator change",                      
-  "selection",                               
-  "selection add",                           
-  "selection remove",                        
-  "selection within",                        
-  "alert",                                   
-  "foreground",                              
-  "menu start",                              
-  "menu end",                                
-  "menupopup start",                         
-  "menupopup end",                           
-  "capture start",                           
-  "capture end",                             
-  "movesize start",                          
-  "movesize end",                            
-  "contexthelp start",                       
-  "contexthelp end",                         
-  "dragdrop start",                          
-  "dragdrop end",                            
-  "dialog start",                            
-  "dialog end",                              
-  "scrolling start",                         
-  "scrolling end",                           
-  "minimize start",                          
-  "minimize end",                            
-  "document load complete",                  
-  "document reload",                         
-  "document load stopped",                   
-  "document attributes changed",             
-  "document content changed",                
-  "property changed",                        
-  "page changed",                           
-  "text attribute changed",                  
-  "text caret moved",                        
-  "text changed",                            
-  "text inserted",                           
-  "text removed",                            
-  "text updated",                            
-  "text selection changed",                  
-  "visible data changed",                    
-  "text column changed",                     
-  "section changed",                         
-  "table caption changed",                   
-  "table model changed",                     
-  "table summary changed",                   
-  "table row description changed",           
-  "table row header changed",                
-  "table row insert",                        
-  "table row delete",                        
-  "table row reorder",                       
-  "table column description changed",        
-  "table column header changed",             
-  "table column insert",                     
-  "table column delete",                     
-  "table column reorder",                    
-  "window activate",                         
-  "window create",                           
-  "window deactivate",                       
-  "window destroy",                          
-  "window maximize",                         
-  "window minimize",                         
-  "window resize",                           
-  "window restore",                          
-  "hyperlink end index changed",             
-  "hyperlink number of anchors changed",     
-  "hyperlink selected link changed",         
-  "hypertext link activated",                
-  "hypertext link selected",                 
-  "hyperlink start index changed",           
-  "hypertext changed",                       
-  "hypertext links count changed",           
-  "object attribute changed",                
-  "virtual cursor changed",                   
-  "text value change",                       
-  "scrolling",                               
+    "unknown",                           
+    "show",                              
+    "hide",                              
+    "reorder",                           
+    "active decendent change",           
+    "focus",                             
+    "state change",                      
+    "location change",                   
+    "name changed",                      
+    "description change",                
+    "value change",                      
+    "help change",                       
+    "default action change",             
+    "action change",                     
+    "accelerator change",                
+    "selection",                         
+    "selection add",                     
+    "selection remove",                  
+    "selection within",                  
+    "alert",                             
+    "foreground",                        
+    "menu start",                        
+    "menu end",                          
+    "menupopup start",                   
+    "menupopup end",                     
+    "capture start",                     
+    "capture end",                       
+    "movesize start",                    
+    "movesize end",                      
+    "contexthelp start",                 
+    "contexthelp end",                   
+    "dragdrop start",                    
+    "dragdrop end",                      
+    "dialog start",                      
+    "dialog end",                        
+    "scrolling start",                   
+    "scrolling end",                     
+    "minimize start",                    
+    "minimize end",                      
+    "document load complete",            
+    "document reload",                   
+    "document load stopped",             
+    "document attributes changed",       
+    "document content changed",          
+    "property changed",                  
+    "page changed",                      
+    "text attribute changed",            
+    "text caret moved",                  
+    "text changed",                      
+    "text inserted",                     
+    "text removed",                      
+    "text updated",                      
+    "text selection changed",            
+    "visible data changed",              
+    "text column changed",               
+    "section changed",                   
+    "table caption changed",             
+    "table model changed",               
+    "table summary changed",             
+    "table row description changed",     
+    "table row header changed",          
+    "table row insert",                  
+    "table row delete",                  
+    "table row reorder",                 
+    "table column description changed",  
+    "table column header changed",       
+    "table column insert",               
+    "table column delete",               
+    "table column reorder",              
+    "window activate",                   
+    "window create",                     
+    "window deactivate",                 
+    "window destroy",                    
+    "window maximize",                   
+    "window minimize",                   
+    "window resize",                     
+    "window restore",                    
+    "hyperlink end index changed",       
+    "hyperlink number of anchors changed",  
+    "hyperlink selected link changed",  
+    "hypertext link activated",         
+    "hypertext link selected",          
+    "hyperlink start index changed",    
+    "hypertext changed",                
+    "hypertext links count changed",    
+    "object attribute changed",         
+    "virtual cursor changed",           
+    "text value change",                
+    "scrolling",                        
 };
 
 #endif

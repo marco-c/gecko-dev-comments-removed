@@ -20,14 +20,16 @@ class MIDIPortInfo;
 
 
 
-class MIDIInput final : public MIDIPort
-{
-public:
-  static MIDIInput* Create(nsPIDOMWindowInner* aWindow, MIDIAccess* aMIDIAccessParent,
-                           const MIDIPortInfo& aPortInfo, const bool aSysexEnabled);
+class MIDIInput final : public MIDIPort {
+ public:
+  static MIDIInput* Create(nsPIDOMWindowInner* aWindow,
+                           MIDIAccess* aMIDIAccessParent,
+                           const MIDIPortInfo& aPortInfo,
+                           const bool aSysexEnabled);
   ~MIDIInput() = default;
 
-  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   
   
@@ -37,14 +39,15 @@ public:
   EventHandlerNonNull* GetOnmidimessage();
   
   void SetOnmidimessage(EventHandlerNonNull* aCallback);
-private:
+
+ private:
   MIDIInput(nsPIDOMWindowInner* aWindow, MIDIAccess* aMIDIAccessParent);
   
   
   void Receive(const nsTArray<MIDIMessage>& aMsgs) override;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

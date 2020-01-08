@@ -17,18 +17,15 @@ class nsCOMArray_base;
 
 
 
-nsresult
-NS_NewArrayEnumerator(nsISimpleEnumerator** aResult,
-                      nsIArray* aArray,
-                      const nsID& aEntryIID = NS_GET_IID(nsISupports));
+nsresult NS_NewArrayEnumerator(nsISimpleEnumerator** aResult, nsIArray* aArray,
+                               const nsID& aEntryIID = NS_GET_IID(nsISupports));
 
 
 
 
 
-nsresult
-NS_NewArrayEnumerator(nsISimpleEnumerator** aResult,
-                      const nsCOMArray_base& aArray,
-                      const nsID& aEntryIID = NS_GET_IID(nsISupports));
+nsresult NS_NewArrayEnumerator(nsISimpleEnumerator** aResult,
+                               const nsCOMArray_base& aArray,
+                               const nsID& aEntryIID = NS_GET_IID(nsISupports));
 
 #endif

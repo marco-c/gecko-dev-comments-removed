@@ -13,13 +13,11 @@
 class nsScrollbarFrame;
 class nsIFrame;
 
-class nsIScrollbarMediator : public nsQueryFrame
-{
-public:
+class nsIScrollbarMediator : public nsQueryFrame {
+ public:
   NS_DECL_QUERYFRAME_TARGET(nsIScrollbarMediator)
 
   
-
 
 
 
@@ -40,7 +38,7 @@ public:
   virtual void ScrollByPage(nsScrollbarFrame* aScrollbar, int32_t aDirection,
                             ScrollSnapMode aSnap = DISABLE_SNAP) = 0;
   virtual void ScrollByWhole(nsScrollbarFrame* aScrollbar, int32_t aDirection,
-                            ScrollSnapMode aSnap = DISABLE_SNAP) = 0;
+                             ScrollSnapMode aSnap = DISABLE_SNAP) = 0;
   virtual void ScrollByLine(nsScrollbarFrame* aScrollbar, int32_t aDirection,
                             ScrollSnapMode aSnap = DISABLE_SNAP) = 0;
   
@@ -57,8 +55,7 @@ public:
 
 
 
-  virtual void ThumbMoved(nsScrollbarFrame* aScrollbar,
-                          nscoord aOldPos,
+  virtual void ThumbMoved(nsScrollbarFrame* aScrollbar, nscoord aOldPos,
                           nscoord aNewPos) = 0;
   
 
@@ -89,4 +86,3 @@ public:
 };
 
 #endif
-

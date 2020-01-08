@@ -17,7 +17,6 @@
 
 class ThreadLocalStorage {
  public:
-
   
   
   
@@ -73,7 +72,7 @@ class ThreadLocalStorage {
 
  private:
   
-  static void **Initialize();
+  static void** Initialize();
 
  private:
   

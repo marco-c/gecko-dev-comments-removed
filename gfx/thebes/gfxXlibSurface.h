@@ -21,96 +21,97 @@
 
 #define XLIB_IMAGE_SIDE_SIZE_LIMIT 0x7fff
 
-
 class gfxXlibSurface final : public gfxASurface {
-public:
-    
-    
-    gfxXlibSurface(Display *dpy, Drawable drawable, Visual *visual);
+ public:
+  
+  
+  gfxXlibSurface(Display* dpy, Drawable drawable, Visual* visual);
 
-    
-    
-    gfxXlibSurface(Display *dpy, Drawable drawable, Visual *visual, const mozilla::gfx::IntSize& size);
+  
+  
+  gfxXlibSurface(Display* dpy, Drawable drawable, Visual* visual,
+                 const mozilla::gfx::IntSize& size);
 
-    
-    
-    gfxXlibSurface(::Screen *screen, Drawable drawable, XRenderPictFormat *format,
-                   const mozilla::gfx::IntSize& size);
+  
+  
+  gfxXlibSurface(::Screen* screen, Drawable drawable, XRenderPictFormat* format,
+                 const mozilla::gfx::IntSize& size);
 
-    explicit gfxXlibSurface(cairo_surface_t *csurf);
+  explicit gfxXlibSurface(cairo_surface_t* csurf);
 
-    
-    
-    
-    
-    static already_AddRefed<gfxXlibSurface>
-    Create(::Screen *screen, Visual *visual, const mozilla::gfx::IntSize& size,
-           Drawable relatedDrawable = X11None);
-    static cairo_surface_t *
-    CreateCairoSurface(::Screen *screen, Visual *visual, const mozilla::gfx::IntSize& size,
-                       Drawable relatedDrawable = X11None);
-    static already_AddRefed<gfxXlibSurface>
-    Create(::Screen* screen, XRenderPictFormat *format, const mozilla::gfx::IntSize& size,
-           Drawable relatedDrawable = X11None);
+  
+  
+  
+  
+  static already_AddRefed<gfxXlibSurface> Create(
+      ::Screen* screen, Visual* visual, const mozilla::gfx::IntSize& size,
+      Drawable relatedDrawable = X11None);
+  static cairo_surface_t* CreateCairoSurface(
+      ::Screen* screen, Visual* visual, const mozilla::gfx::IntSize& size,
+      Drawable relatedDrawable = X11None);
+  static already_AddRefed<gfxXlibSurface> Create(
+      ::Screen* screen, XRenderPictFormat* format,
+      const mozilla::gfx::IntSize& size, Drawable relatedDrawable = X11None);
 
-    virtual ~gfxXlibSurface();
+  virtual ~gfxXlibSurface();
 
-    virtual already_AddRefed<gfxASurface>
-    CreateSimilarSurface(gfxContentType aType,
-                         const mozilla::gfx::IntSize& aSize) override;
-    virtual void Finish() override;
+  virtual already_AddRefed<gfxASurface> CreateSimilarSurface(
+      gfxContentType aType, const mozilla::gfx::IntSize& aSize) override;
+  virtual void Finish() override;
 
-    virtual const mozilla::gfx::IntSize GetSize() const override;
+  virtual const mozilla::gfx::IntSize GetSize() const override;
 
-    Display* XDisplay() { return mDisplay; }
-    ::Screen* XScreen();
-    Drawable XDrawable() { return mDrawable; }
-    XRenderPictFormat* XRenderFormat();
+  Display* XDisplay() { return mDisplay; }
+  ::Screen* XScreen();
+  Drawable XDrawable() { return mDrawable; }
+  XRenderPictFormat* XRenderFormat();
 
-    static int DepthOfVisual(const ::Screen* screen, const Visual* visual);
-    static Visual* FindVisual(::Screen* screen, gfxImageFormat format);
-    static XRenderPictFormat *FindRenderFormat(Display *dpy, gfxImageFormat format);
-    static bool GetColormapAndVisual(cairo_surface_t* aXlibSurface, Colormap* colormap, Visual **visual);
+  static int DepthOfVisual(const ::Screen* screen, const Visual* visual);
+  static Visual* FindVisual(::Screen* screen, gfxImageFormat format);
+  static XRenderPictFormat* FindRenderFormat(Display* dpy,
+                                             gfxImageFormat format);
+  static bool GetColormapAndVisual(cairo_surface_t* aXlibSurface,
+                                   Colormap* colormap, Visual** visual);
 
-    
-    
-    void TakePixmap();
+  
+  
+  void TakePixmap();
 
-    
-    
-    
-    Drawable ReleasePixmap();
+  
+  
+  
+  Drawable ReleasePixmap();
 
-    
-    bool GetColormapAndVisual(Colormap* colormap, Visual **visual);
+  
+  bool GetColormapAndVisual(Colormap* colormap, Visual** visual);
 
-    GLXPixmap GetGLXPixmap();
-    
-    
-    void BindGLXPixmap(GLXPixmap aPixmap);
+  GLXPixmap GetGLXPixmap();
+  
+  
+  void BindGLXPixmap(GLXPixmap aPixmap);
 
+  
+  
+  
+  
+  
+  bool IsPadSlow() {
     
     
-    
-    
-    
-    bool IsPadSlow() {
-        
-        
-        return VendorRelease(mDisplay) >= 60700000 ||
-            VendorRelease(mDisplay) < 10699000;
-    }
+    return VendorRelease(mDisplay) >= 60700000 ||
+           VendorRelease(mDisplay) < 10699000;
+  }
 
-protected:
-    
-    bool mPixmapTaken;
-    
-    Display *mDisplay;
-    Drawable mDrawable;
+ protected:
+  
+  bool mPixmapTaken;
 
-    const mozilla::gfx::IntSize DoSizeQuery();
+  Display* mDisplay;
+  Drawable mDrawable;
 
-    GLXPixmap mGLXPixmap;
+  const mozilla::gfx::IntSize DoSizeQuery();
+
+  GLXPixmap mGLXPixmap;
 };
 
 #endif 

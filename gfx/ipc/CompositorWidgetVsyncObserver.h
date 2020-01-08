@@ -13,12 +13,11 @@
 namespace mozilla {
 namespace gfx {
 class VsyncBridgeChild;
-} 
+}  
 
 namespace widget {
 
-class CompositorWidgetVsyncObserver : public VsyncObserver
-{
+class CompositorWidgetVsyncObserver : public VsyncObserver {
   typedef gfx::VsyncBridgeChild VsyncBridgeChild;
 
  public:
@@ -32,7 +31,7 @@ class CompositorWidgetVsyncObserver : public VsyncObserver
   layers::LayersId mRootLayerTreeId;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

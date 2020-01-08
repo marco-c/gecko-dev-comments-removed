@@ -13,6 +13,6 @@ namespace switches {
 
 
 
-const wchar_t kProcessChannelID[]              = L"channel";
+const wchar_t kProcessChannelID[] = L"channel";
 
 }  

@@ -9,19 +9,18 @@
 
 namespace mozilla {
 
-class LocalCertService final : public nsILocalCertService
-{
-public:
+class LocalCertService final : public nsILocalCertService {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSILOCALCERTSERVICE
 
   LocalCertService();
 
-private:
+ private:
   nsresult LoginToKeySlot();
   ~LocalCertService();
 };
 
-} 
+}  
 
-#endif 
+#endif  

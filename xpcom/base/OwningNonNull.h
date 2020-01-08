@@ -14,39 +14,31 @@
 
 namespace mozilla {
 
-template<class T>
-class MOZ_IS_SMARTPTR_TO_REFCOUNTED OwningNonNull
-{
-public:
+template <class T>
+class MOZ_IS_SMARTPTR_TO_REFCOUNTED OwningNonNull {
+ public:
   OwningNonNull() {}
 
-  MOZ_IMPLICIT OwningNonNull(T& aValue)
-  {
-    init(&aValue);
-  }
+  MOZ_IMPLICIT OwningNonNull(T& aValue) { init(&aValue); }
 
-  template<class U>
-  MOZ_IMPLICIT OwningNonNull(already_AddRefed<U>&& aValue)
-  {
+  template <class U>
+  MOZ_IMPLICIT OwningNonNull(already_AddRefed<U>&& aValue) {
     init(aValue);
   }
 
-  template<class U>
-  MOZ_IMPLICIT OwningNonNull(const OwningNonNull<U>& aValue)
-  {
+  template <class U>
+  MOZ_IMPLICIT OwningNonNull(const OwningNonNull<U>& aValue) {
     init(aValue);
   }
 
   
-  operator T&() const
-  {
+  operator T&() const {
     MOZ_ASSERT(mInited);
     MOZ_ASSERT(mPtr, "OwningNonNull<T> was set to null");
     return *mPtr;
   }
 
-  operator T*() const
-  {
+  operator T*() const {
     MOZ_ASSERT(mInited);
     MOZ_ASSERT(mPtr, "OwningNonNull<T> was set to null");
     return mPtr;
@@ -55,40 +47,30 @@ public:
   
   explicit operator bool() const = delete;
 
-  T*
-  operator->() const
-  {
+  T* operator->() const {
     MOZ_ASSERT(mInited);
     MOZ_ASSERT(mPtr, "OwningNonNull<T> was set to null");
     return mPtr;
   }
 
-  OwningNonNull<T>&
-  operator=(T* aValue)
-  {
+  OwningNonNull<T>& operator=(T* aValue) {
     init(aValue);
     return *this;
   }
 
-  OwningNonNull<T>&
-  operator=(T& aValue)
-  {
+  OwningNonNull<T>& operator=(T& aValue) {
     init(&aValue);
     return *this;
   }
 
-  template<class U>
-  OwningNonNull<T>&
-  operator=(already_AddRefed<U>&& aValue)
-  {
+  template <class U>
+  OwningNonNull<T>& operator=(already_AddRefed<U>&& aValue) {
     init(aValue);
     return *this;
   }
 
-  template<class U>
-  OwningNonNull<T>&
-  operator=(const OwningNonNull<U>& aValue)
-  {
+  template <class U>
+  OwningNonNull<T>& operator=(const OwningNonNull<U>& aValue) {
     init(aValue);
     return *this;
   }
@@ -96,42 +78,36 @@ public:
   
   void operator=(decltype(nullptr)) = delete;
 
-  already_AddRefed<T> forget()
-  {
+  already_AddRefed<T> forget() {
 #ifdef DEBUG
     mInited = false;
 #endif
     return mPtr.forget();
   }
 
-  template<class U>
-  void
-  forget(U** aOther)
-  {
+  template <class U>
+  void forget(U** aOther) {
 #ifdef DEBUG
     mInited = false;
 #endif
     mPtr.forget(aOther);
   }
 
-  T& ref() const
-  {
+  T& ref() const {
     MOZ_ASSERT(mInited);
     MOZ_ASSERT(mPtr);
     return *mPtr;
   }
 
   
-  T* get() const
-  {
+  T* get() const {
     MOZ_ASSERT(mInited);
     MOZ_ASSERT(mPtr);
     return mPtr;
   }
 
-  template<typename U>
-  void swap(U& aOther)
-  {
+  template <typename U>
+  void swap(U& aOther) {
     mPtr.swap(aOther);
 #ifdef DEBUG
     mInited = mPtr;
@@ -141,16 +117,14 @@ public:
   
   
   
-  bool isInitialized() const
-  {
+  bool isInitialized() const {
     MOZ_ASSERT(!!mPtr == mInited, "mInited out of sync with mPtr?");
     return mPtr;
   }
 
-protected:
-  template<typename U>
-  void init(U&& aValue)
-  {
+ protected:
+  template <typename U>
+  void init(U&& aValue) {
     mPtr = aValue;
     MOZ_ASSERT(mPtr);
 #ifdef DEBUG
@@ -164,50 +138,43 @@ protected:
 #endif
 };
 
-template<typename T>
-inline void
-ImplCycleCollectionUnlink(OwningNonNull<T>& aField)
-{
+template <typename T>
+inline void ImplCycleCollectionUnlink(OwningNonNull<T>& aField) {
   RefPtr<T> releaser(aField.forget());
   
 }
 
 template <typename T>
-inline void
-ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            OwningNonNull<T>& aField,
-                            const char* aName,
-                            uint32_t aFlags = 0)
-{
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback, OwningNonNull<T>& aField,
+    const char* aName, uint32_t aFlags = 0) {
   CycleCollectionNoteChild(aCallback, aField.get(), aName, aFlags);
 }
 
-} 
+}  
 
 
-template<class T> template<class U>
+template <class T>
+template <class U>
 nsCOMPtr<T>::nsCOMPtr(const mozilla::OwningNonNull<U>& aOther)
-  : nsCOMPtr(aOther.get())
-{}
+    : nsCOMPtr(aOther.get()) {}
 
-template<class T> template<class U>
-nsCOMPtr<T>&
-nsCOMPtr<T>::operator=(const mozilla::OwningNonNull<U>& aOther)
-{
+template <class T>
+template <class U>
+nsCOMPtr<T>& nsCOMPtr<T>::operator=(const mozilla::OwningNonNull<U>& aOther) {
   return operator=(aOther.get());
 }
 
 
-template<class T> template<class U>
+template <class T>
+template <class U>
 RefPtr<T>::RefPtr(const mozilla::OwningNonNull<U>& aOther)
-  : RefPtr(aOther.get())
-{}
+    : RefPtr(aOther.get()) {}
 
-template<class T> template<class U>
-RefPtr<T>&
-RefPtr<T>::operator=(const mozilla::OwningNonNull<U>& aOther)
-{
+template <class T>
+template <class U>
+RefPtr<T>& RefPtr<T>::operator=(const mozilla::OwningNonNull<U>& aOther) {
   return operator=(aOther.get());
 }
 
-#endif 
+#endif  

@@ -14,14 +14,14 @@ class DirReaderFallback {
  public:
   
   
-  explicit DirReaderFallback(const char* directory_path) { }
+  explicit DirReaderFallback(const char* directory_path) {}
   
   
   bool IsValid() const { return false; }
   
   bool Next() { return false; }
   
-  const char* name() { return 0;}
+  const char* name() { return 0; }
   
   int fd() const { return -1; }
   

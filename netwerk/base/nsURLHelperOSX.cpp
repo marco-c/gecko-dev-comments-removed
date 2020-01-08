@@ -14,8 +14,9 @@
 
 static nsTArray<nsCString> *gVolumeList = nullptr;
 
-static bool pathBeginsWithVolName(const nsACString& path, nsACString& firstPathComponent)
-{
+static bool pathBeginsWithVolName(const nsACString &path,
+                                  nsACString &firstPathComponent) {
+  
   
   
   
@@ -24,7 +25,7 @@ static bool pathBeginsWithVolName(const nsACString& path, nsACString& firstPathC
   if (!gVolumeList) {
     gVolumeList = new nsTArray<nsCString>;
     if (!gVolumeList) {
-      return false; 
+      return false;  
     }
   }
 
@@ -39,8 +40,9 @@ static bool pathBeginsWithVolName(const nsACString& path, nsACString& firstPathC
       err = ::FSGetVolumeInfo(0, volumeIndex, nullptr, kFSVolInfoNone, nullptr,
                               &volName, &rootDirectory);
       if (err == noErr) {
-        NS_ConvertUTF16toUTF8 volNameStr(Substring((char16_t *)volName.unicode,
-                                                   (char16_t *)volName.unicode + volName.length));
+        NS_ConvertUTF16toUTF8 volNameStr(
+            Substring((char16_t *)volName.unicode,
+                      (char16_t *)volName.unicode + volName.length));
         gVolumeList->AppendElement(volNameStr);
         volumeIndex++;
       }
@@ -50,7 +52,7 @@ static bool pathBeginsWithVolName(const nsACString& path, nsACString& firstPathC
   
   nsACString::const_iterator start;
   path.BeginReading(start);
-  start.advance(1); 
+  start.advance(1);  
   nsACString::const_iterator directory_end;
   path.EndReading(directory_end);
   nsACString::const_iterator component_end(start);
@@ -63,44 +65,39 @@ static bool pathBeginsWithVolName(const nsACString& path, nsACString& firstPathC
   return (foundIndex != -1);
 }
 
-void
-net_ShutdownURLHelperOSX()
-{
+void net_ShutdownURLHelperOSX() {
   delete gVolumeList;
   gVolumeList = nullptr;
 }
 
-static nsresult convertHFSPathtoPOSIX(const nsACString& hfsPath, nsACString& posixPath)
-{
+static nsresult convertHFSPathtoPOSIX(const nsACString &hfsPath,
+                                      nsACString &posixPath) {
   
   
   
   
 
-  CFStringRef pathStrRef = CFStringCreateWithCString(nullptr,
-                              PromiseFlatCString(hfsPath).get(),
-                              kCFStringEncodingMacRoman);
-  if (!pathStrRef)
-    return NS_ERROR_FAILURE;
+  CFStringRef pathStrRef = CFStringCreateWithCString(
+      nullptr, PromiseFlatCString(hfsPath).get(), kCFStringEncodingMacRoman);
+  if (!pathStrRef) return NS_ERROR_FAILURE;
 
   nsresult rv = NS_ERROR_FAILURE;
-  CFURLRef urlRef = CFURLCreateWithFileSystemPath(nullptr,
-                              pathStrRef, kCFURLHFSPathStyle, true);
+  CFURLRef urlRef = CFURLCreateWithFileSystemPath(nullptr, pathStrRef,
+                                                  kCFURLHFSPathStyle, true);
   if (urlRef) {
     UInt8 pathBuf[PATH_MAX];
-    if (CFURLGetFileSystemRepresentation(urlRef, true, pathBuf, sizeof(pathBuf))) {
+    if (CFURLGetFileSystemRepresentation(urlRef, true, pathBuf,
+                                         sizeof(pathBuf))) {
       posixPath = (char *)pathBuf;
       rv = NS_OK;
     }
   }
   CFRelease(pathStrRef);
-  if (urlRef)
-    CFRelease(urlRef);
+  if (urlRef) CFRelease(urlRef);
   return rv;
 }
 
-static void SwapSlashColon(char *s)
-{
+static void SwapSlashColon(char *s) {
   while (*s) {
     if (*s == '/')
       *s = ':';
@@ -110,9 +107,7 @@ static void SwapSlashColon(char *s)
   }
 }
 
-nsresult
-net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result)
-{
+nsresult net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result) {
   
 
   nsresult rv;
@@ -120,14 +115,14 @@ net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result)
 
   
   rv = aFile->GetNativePath(ePath);
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
   nsAutoCString escPath;
   NS_NAMED_LITERAL_CSTRING(prefix, "file://");
 
   
-  if (NS_EscapeURL(ePath.get(), ePath.Length(), esc_Directory+esc_Forced, escPath))
+  if (NS_EscapeURL(ePath.get(), ePath.Length(), esc_Directory + esc_Forced,
+                   escPath))
     escPath.Insert(prefix, 0);
   else
     escPath.Assign(prefix + ePath);
@@ -141,9 +136,7 @@ net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result)
   return NS_OK;
 }
 
-nsresult
-net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
-{
+nsresult net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result) {
   
   
 
@@ -151,18 +144,16 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
 
   nsCOMPtr<nsIFile> localFile;
   rv = NS_NewNativeLocalFile(EmptyCString(), true, getter_AddRefs(localFile));
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
   nsAutoCString directory, fileBaseName, fileExtension, path;
   bool bHFSPath = false;
 
   rv = net_ParseFileURL(aURL, directory, fileBaseName, fileExtension);
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
   if (!directory.IsEmpty()) {
-    NS_EscapeURL(directory, esc_Directory|esc_AlwaysCopy, path);
+    NS_EscapeURL(directory, esc_Directory | esc_AlwaysCopy, path);
 
     
     
@@ -177,7 +168,8 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
       
       FSRef testRef;
       possibleVolName.InsertLiteral("/", 0);
-      if (::FSPathMakeRef((UInt8*)possibleVolName.get(), &testRef, nullptr) != noErr)
+      if (::FSPathMakeRef((UInt8 *)possibleVolName.get(), &testRef, nullptr) !=
+          noErr)
         bHFSPath = true;
     }
 
@@ -186,30 +178,27 @@ net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
       
       
       path.ReplaceSubstring("%2F", ":");
-      path.Cut(0, 1); 
+      path.Cut(0, 1);  
       SwapSlashColon((char *)path.get());
       
       
     }
   }
   if (!fileBaseName.IsEmpty())
-    NS_EscapeURL(fileBaseName, esc_FileBaseName|esc_AlwaysCopy, path);
+    NS_EscapeURL(fileBaseName, esc_FileBaseName | esc_AlwaysCopy, path);
   if (!fileExtension.IsEmpty()) {
     path += '.';
-    NS_EscapeURL(fileExtension, esc_FileExtension|esc_AlwaysCopy, path);
+    NS_EscapeURL(fileExtension, esc_FileExtension | esc_AlwaysCopy, path);
   }
 
   NS_UnescapeURL(path);
-  if (path.Length() != strlen(path.get()))
-    return NS_ERROR_FILE_INVALID_PATH;
+  if (path.Length() != strlen(path.get())) return NS_ERROR_FILE_INVALID_PATH;
 
-  if (bHFSPath)
-    convertHFSPathtoPOSIX(path, path);
+  if (bHFSPath) convertHFSPathtoPOSIX(path, path);
 
   
   rv = localFile->InitWithNativePath(path);
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
   localFile.forget(result);
   return NS_OK;

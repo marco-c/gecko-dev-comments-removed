@@ -18,14 +18,8 @@ mozilla::Atomic<void*> g_hidden_pointer;
 
 
 
-MOZ_NEVER_INLINE void setHiddenPointer(void* p)
-{
-    g_hidden_pointer = p;
-}
+MOZ_NEVER_INLINE void setHiddenPointer(void* p) { g_hidden_pointer = p; }
 
 
 
-MOZ_NEVER_INLINE void* getHiddenPointer()
-{
-    return g_hidden_pointer;
-}
+MOZ_NEVER_INLINE void* getHiddenPointer() { return g_hidden_pointer; }

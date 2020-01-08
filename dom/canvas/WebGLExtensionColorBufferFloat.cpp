@@ -11,47 +11,45 @@
 
 namespace mozilla {
 
-WebGLExtensionColorBufferFloat::WebGLExtensionColorBufferFloat(WebGLContext* webgl)
-    : WebGLExtensionBase(webgl)
-{
-    MOZ_ASSERT(IsSupported(webgl), "Don't construct extension if unsupported.");
+WebGLExtensionColorBufferFloat::WebGLExtensionColorBufferFloat(
+    WebGLContext* webgl)
+    : WebGLExtensionBase(webgl) {
+  MOZ_ASSERT(IsSupported(webgl), "Don't construct extension if unsupported.");
 
-    auto& fua = webgl->mFormatUsage;
+  auto& fua = webgl->mFormatUsage;
 
-    auto fnUpdateUsage = [&fua](GLenum sizedFormat, webgl::EffectiveFormat effFormat) {
-        auto usage = fua->EditUsage(effFormat);
-        usage->SetRenderable();
-        fua->AllowRBFormat(sizedFormat, usage);
-    };
+  auto fnUpdateUsage = [&fua](GLenum sizedFormat,
+                              webgl::EffectiveFormat effFormat) {
+    auto usage = fua->EditUsage(effFormat);
+    usage->SetRenderable();
+    fua->AllowRBFormat(sizedFormat, usage);
+  };
 
-#define FOO(x) fnUpdateUsage(LOCAL_GL_ ## x, webgl::EffectiveFormat::x)
+#define FOO(x) fnUpdateUsage(LOCAL_GL_##x, webgl::EffectiveFormat::x)
 
-    
-    FOO(RGBA32F);
+  
+  FOO(RGBA32F);
 
 #undef FOO
 }
 
-WebGLExtensionColorBufferFloat::~WebGLExtensionColorBufferFloat()
-{
+WebGLExtensionColorBufferFloat::~WebGLExtensionColorBufferFloat() {}
+
+bool WebGLExtensionColorBufferFloat::IsSupported(const WebGLContext* webgl) {
+  const auto& gl = webgl->gl;
+  if (gl->IsANGLE()) {
+    
+    
+    
+    
+    return true;
+  }
+
+  return gl->IsSupported(gl::GLFeature::renderbuffer_color_float) &&
+         gl->IsSupported(gl::GLFeature::frag_color_float);
 }
 
-bool
-WebGLExtensionColorBufferFloat::IsSupported(const WebGLContext* webgl)
-{
-    const auto& gl = webgl->gl;
-    if (gl->IsANGLE()) {
-        
-        
-        
-        
-        return true;
-    }
+IMPL_WEBGL_EXTENSION_GOOP(WebGLExtensionColorBufferFloat,
+                          WEBGL_color_buffer_float)
 
-    return gl->IsSupported(gl::GLFeature::renderbuffer_color_float) &&
-           gl->IsSupported(gl::GLFeature::frag_color_float);
-}
-
-IMPL_WEBGL_EXTENSION_GOOP(WebGLExtensionColorBufferFloat, WEBGL_color_buffer_float)
-
-} 
+}  

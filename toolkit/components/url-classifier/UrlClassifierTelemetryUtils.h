@@ -13,12 +13,10 @@ namespace safebrowsing {
 
 
 
-uint8_t
-NetworkErrorToBucket(nsresult rv);
+uint8_t NetworkErrorToBucket(nsresult rv);
 
 
-uint32_t
-HTTPStatusToBucket(uint32_t status);
+uint32_t HTTPStatusToBucket(uint32_t status);
 
 enum UpdateTimeout {
   eNoTimeout = 0,
@@ -26,7 +24,7 @@ enum UpdateTimeout {
   eDownloadTimeout = 2,
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

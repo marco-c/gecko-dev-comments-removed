@@ -7,19 +7,19 @@
 #ifndef GFX_ASYNCCOMPOSITIONMANAGER_H
 #define GFX_ASYNCCOMPOSITIONMANAGER_H
 
-#include "Units.h"                      
+#include "Units.h"                                 
 #include "mozilla/layers/LayerManagerComposite.h"  
-#include "mozilla/Attributes.h"         
-#include "mozilla/RefPtr.h"             
-#include "mozilla/TimeStamp.h"          
-#include "mozilla/gfx/BasePoint.h"      
-#include "mozilla/gfx/Matrix.h"         
-#include "mozilla/HalScreenConfiguration.h" 
-#include "mozilla/layers/FrameUniformityData.h" 
-#include "mozilla/layers/LayersMessages.h"  
-#include "mozilla/RefPtr.h"                   
-#include "nsISupportsImpl.h"            
-#include "CompositorBridgeParent.h"     
+#include "mozilla/Attributes.h"                    
+#include "mozilla/RefPtr.h"                        
+#include "mozilla/TimeStamp.h"                     
+#include "mozilla/gfx/BasePoint.h"                 
+#include "mozilla/gfx/Matrix.h"                    
+#include "mozilla/HalScreenConfiguration.h"        
+#include "mozilla/layers/FrameUniformityData.h"    
+#include "mozilla/layers/LayersMessages.h"         
+#include "mozilla/RefPtr.h"                        
+#include "nsISupportsImpl.h"         
+#include "CompositorBridgeParent.h"  
 
 namespace mozilla {
 namespace layers {
@@ -31,14 +31,12 @@ class CompositorBridgeParent;
 
 
 struct AsyncTransform {
-  explicit AsyncTransform(LayerToParentLayerScale aScale = LayerToParentLayerScale(),
-                          ParentLayerPoint aTranslation = ParentLayerPoint())
-    : mScale(aScale)
-    , mTranslation(aTranslation)
-  {}
+  explicit AsyncTransform(
+      LayerToParentLayerScale aScale = LayerToParentLayerScale(),
+      ParentLayerPoint aTranslation = ParentLayerPoint())
+      : mScale(aScale), mTranslation(aTranslation) {}
 
-  operator AsyncTransformComponentMatrix() const
-  {
+  operator AsyncTransformComponentMatrix() const {
     return AsyncTransformComponentMatrix::Scaling(mScale.scale, mScale.scale, 1)
         .PostTranslate(mTranslation.x, mTranslation.y, 0);
   }
@@ -47,9 +45,7 @@ struct AsyncTransform {
     return mTranslation == rhs.mTranslation && mScale == rhs.mScale;
   }
 
-  bool operator!=(const AsyncTransform& rhs) const {
-    return !(*this == rhs);
-  }
+  bool operator!=(const AsyncTransform& rhs) const { return !(*this == rhs); }
 
   LayerToParentLayerScale mScale;
   ParentLayerPoint mTranslation;
@@ -63,17 +59,18 @@ struct AsyncTransform {
 
 
 
-class AsyncCompositionManager final
-{
+class AsyncCompositionManager final {
   friend class AutoResolveRefLayers;
   ~AsyncCompositionManager();
 
-public:
+ public:
   NS_INLINE_DECL_REFCOUNTING(AsyncCompositionManager)
 
-  explicit AsyncCompositionManager(CompositorBridgeParent* aParent, HostLayerManager* aManager);
+  explicit AsyncCompositionManager(CompositorBridgeParent* aParent,
+                                   HostLayerManager* aManager);
 
   
+
 
 
 
@@ -85,25 +82,22 @@ public:
   
   
   bool TransformShadowTree(
-    TimeStamp aCurrentFrame,
-    TimeDuration aVsyncRate,
-    CompositorBridgeParentBase::TransformsToSkip aSkip =
-      CompositorBridgeParentBase::TransformsToSkip::NoneOfThem);
+      TimeStamp aCurrentFrame, TimeDuration aVsyncRate,
+      CompositorBridgeParentBase::TransformsToSkip aSkip =
+          CompositorBridgeParentBase::TransformsToSkip::NoneOfThem);
 
   
   
   void ComputeRotation();
 
   
-  void Updated(bool isFirstPaint, const TargetConfig& aTargetConfig)
-  {
+  void Updated(bool isFirstPaint, const TargetConfig& aTargetConfig) {
     mIsFirstPaint |= isFirstPaint;
     mLayersUpdated = true;
     mTargetConfig = aTargetConfig;
   }
 
-  bool RequiresReorientation(hal::ScreenOrientation aOrientation) const
-  {
+  bool RequiresReorientation(hal::ScreenOrientation aOrientation) const {
     return mTargetConfig.orientation() != aOrientation;
   }
 
@@ -133,14 +127,13 @@ public:
 
   typedef std::map<Layer*, ClipParts> ClipPartsCache;
 
-private:
+ private:
   
   
   
   
   
-  bool ApplyAsyncContentTransformToTree(Layer* aLayer,
-                                        bool* aOutFoundRoot);
+  bool ApplyAsyncContentTransformToTree(Layer* aLayer, bool* aOutFoundRoot);
   
 
 
@@ -169,13 +162,12 @@ private:
 
 
 
-  void AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoot,
-                                 Layer* aStartTraversalAt,
-                                 ScrollableLayerGuid::ViewID aTransformScrollId,
-                                 const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
-                                 const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
-                                 const ScreenMargin& aFixedLayerMargins,
-                                 ClipPartsCache* aClipPartsCache);
+  void AlignFixedAndStickyLayers(
+      Layer* aTransformedSubtreeRoot, Layer* aStartTraversalAt,
+      ScrollableLayerGuid::ViewID aTransformScrollId,
+      const LayerToParentLayerMatrix4x4& aPreviousTransformForRoot,
+      const LayerToParentLayerMatrix4x4& aCurrentTransformForRoot,
+      const ScreenMargin& aFixedLayerMargins, ClipPartsCache* aClipPartsCache);
 
   
 
@@ -189,8 +181,8 @@ private:
 
 
 
-  void ResolveRefLayers(CompositorBridgeParent* aCompositor, bool* aHasRemoteContent,
-                        bool* aResolvePlugins);
+  void ResolveRefLayers(CompositorBridgeParent* aCompositor,
+                        bool* aHasRemoteContent, bool* aResolvePlugins);
 
   
 
@@ -199,6 +191,7 @@ private:
 
   void DetachRefLayers();
 
+  
   
   void RecordShadowTransforms(Layer* aLayer);
 
@@ -211,8 +204,10 @@ private:
   
   
   
+  
   bool mIsFirstPaint;
 
+  
   
   
   bool mLayersUpdated;
@@ -227,9 +222,10 @@ private:
   MOZ_NON_OWNING_REF CompositorBridgeParent* mCompositorBridge;
 
 #ifdef MOZ_WIDGET_ANDROID
-public:
+ public:
   void SetFixedLayerMargins(ScreenIntCoord aTop, ScreenIntCoord aBottom);
-private:
+
+ private:
   
   
   
@@ -239,33 +235,32 @@ private:
 };
 
 class MOZ_STACK_CLASS AutoResolveRefLayers {
-public:
+ public:
   explicit AutoResolveRefLayers(AsyncCompositionManager* aManager,
                                 CompositorBridgeParent* aCompositor = nullptr,
                                 bool* aHasRemoteContent = nullptr,
-                                bool* aResolvePlugins = nullptr) :
-    mManager(aManager)
-  {
+                                bool* aResolvePlugins = nullptr)
+      : mManager(aManager) {
     if (mManager) {
-      mManager->ResolveRefLayers(aCompositor, aHasRemoteContent, aResolvePlugins);
+      mManager->ResolveRefLayers(aCompositor, aHasRemoteContent,
+                                 aResolvePlugins);
     }
   }
 
-  ~AutoResolveRefLayers()
-  {
+  ~AutoResolveRefLayers() {
     if (mManager) {
       mManager->DetachRefLayers();
     }
   }
 
-private:
+ private:
   AsyncCompositionManager* mManager;
 
   AutoResolveRefLayers(const AutoResolveRefLayers&) = delete;
   AutoResolveRefLayers& operator=(const AutoResolveRefLayers&) = delete;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

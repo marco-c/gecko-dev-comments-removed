@@ -44,8 +44,7 @@ class MachMessageSource {
 
   
   
-  MachMessageSource(mach_port_t port,
-                    MachPortListener* listener,
+  MachMessageSource(mach_port_t port, MachPortListener* listener,
                     bool* success);
   ~MachMessageSource();
 
@@ -58,4 +57,4 @@ class MachMessageSource {
   DISALLOW_COPY_AND_ASSIGN(MachMessageSource);
 };
 
-#endif 
+#endif  

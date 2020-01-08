@@ -9,24 +9,20 @@
 namespace mozilla {
 namespace gfx {
 
-class GPUProcessListener
-{
+class GPUProcessListener {
  public:
-  virtual ~GPUProcessListener()
-  {}
+  virtual ~GPUProcessListener() {}
 
   
   
-  virtual void OnCompositorUnexpectedShutdown()
-  {}
+  virtual void OnCompositorUnexpectedShutdown() {}
 
   
   
-  virtual void OnCompositorDeviceReset()
-  {}
+  virtual void OnCompositorDeviceReset() {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

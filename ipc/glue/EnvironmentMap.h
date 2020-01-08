@@ -49,9 +49,8 @@ typedef std::map<NativeEnvironmentString, NativeEnvironmentString>
 
 
 
-std::unique_ptr<char* []> AlterEnvironment(
-    const char* const* env,
-    const EnvironmentMap& changes);
+std::unique_ptr<char*[]> AlterEnvironment(const char* const* env,
+                                          const EnvironmentMap& changes);
 
 #endif
 

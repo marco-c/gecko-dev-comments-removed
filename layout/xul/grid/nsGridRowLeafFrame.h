@@ -25,32 +25,25 @@
 
 
 
-class nsGridRowLeafFrame : public nsBoxFrame
-{
-public:
+class nsGridRowLeafFrame : public nsBoxFrame {
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsGridRowLeafFrame)
 
   friend nsIFrame* NS_NewGridRowLeafFrame(nsIPresShell* aPresShell,
                                           ComputedStyle* aStyle);
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override
-  {
-      return MakeFrameName(NS_LITERAL_STRING("nsGridRowLeaf"), aResult);
+  virtual nsresult GetFrameName(nsAString& aResult) const override {
+    return MakeFrameName(NS_LITERAL_STRING("nsGridRowLeaf"), aResult);
   }
 #endif
 
-  nsGridRowLeafFrame(ComputedStyle* aStyle,
-                     bool aIsRoot,
-                     nsBoxLayout* aLayoutManager,
-                     ClassID aID = kClassID) :
-    nsBoxFrame(aStyle, aID, aIsRoot, aLayoutManager) {}
+  nsGridRowLeafFrame(ComputedStyle* aStyle, bool aIsRoot,
+                     nsBoxLayout* aLayoutManager, ClassID aID = kClassID)
+      : nsBoxFrame(aStyle, aID, aIsRoot, aLayoutManager) {}
 
   virtual nsresult GetXULBorderAndPadding(nsMargin& aBorderAndPadding) override;
 
-}; 
-
-
+};  
 
 #endif
-

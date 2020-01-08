@@ -26,574 +26,539 @@ bool nsLookAndFeel::mPrefersReducedMotionForTest = false;
 
 static const char16_t UNICODE_BULLET = 0x2022;
 
-nsLookAndFeel::nsLookAndFeel()
-    : nsXPLookAndFeel()
-{
+nsLookAndFeel::nsLookAndFeel() : nsXPLookAndFeel() {}
+
+nsLookAndFeel::~nsLookAndFeel() {}
+
+#define BG_PRELIGHT_COLOR NS_RGB(0xee, 0xee, 0xee)
+#define FG_PRELIGHT_COLOR NS_RGB(0x77, 0x77, 0x77)
+#define BLACK_COLOR NS_RGB(0x00, 0x00, 0x00)
+#define DARK_GRAY_COLOR NS_RGB(0x40, 0x40, 0x40)
+#define GRAY_COLOR NS_RGB(0x80, 0x80, 0x80)
+#define LIGHT_GRAY_COLOR NS_RGB(0xa0, 0xa0, 0xa0)
+#define RED_COLOR NS_RGB(0xff, 0x00, 0x00)
+
+nsresult nsLookAndFeel::GetSystemColors() {
+  if (!AndroidBridge::Bridge()) return NS_ERROR_FAILURE;
+
+  AndroidBridge::Bridge()->GetSystemColors(&mSystemColors);
+
+  return NS_OK;
 }
 
-nsLookAndFeel::~nsLookAndFeel()
-{
-}
-
-#define BG_PRELIGHT_COLOR      NS_RGB(0xee,0xee,0xee)
-#define FG_PRELIGHT_COLOR      NS_RGB(0x77,0x77,0x77)
-#define BLACK_COLOR            NS_RGB(0x00,0x00,0x00)
-#define DARK_GRAY_COLOR        NS_RGB(0x40,0x40,0x40)
-#define GRAY_COLOR             NS_RGB(0x80,0x80,0x80)
-#define LIGHT_GRAY_COLOR       NS_RGB(0xa0,0xa0,0xa0)
-#define RED_COLOR              NS_RGB(0xff,0x00,0x00)
-
-nsresult
-nsLookAndFeel::GetSystemColors()
-{
-    if (!AndroidBridge::Bridge())
-        return NS_ERROR_FAILURE;
-
-    AndroidBridge::Bridge()->GetSystemColors(&mSystemColors);
-
-    return NS_OK;
-}
-
-void
-nsLookAndFeel::NativeInit()
-{
-    EnsureInitSystemColors();
-    EnsureInitShowPassword();
+void nsLookAndFeel::NativeInit() {
+  EnsureInitSystemColors();
+  EnsureInitShowPassword();
 }
 
 
-void
-nsLookAndFeel::RefreshImpl()
-{
-    nsXPLookAndFeel::RefreshImpl();
+void nsLookAndFeel::RefreshImpl() {
+  nsXPLookAndFeel::RefreshImpl();
 
-    mInitializedSystemColors = false;
-    mInitializedShowPassword = false;
+  mInitializedSystemColors = false;
+  mInitializedShowPassword = false;
 }
 
-nsresult
-nsLookAndFeel::NativeGetColor(ColorID aID, nscolor &aColor)
-{
-    nsresult rv = NS_OK;
+nsresult nsLookAndFeel::NativeGetColor(ColorID aID, nscolor& aColor) {
+  nsresult rv = NS_OK;
 
-    EnsureInitSystemColors();
-    if (!mInitializedSystemColors) {
-        
-        aColor = 0;
-        return NS_ERROR_FAILURE;
-    }
-
+  EnsureInitSystemColors();
+  if (!mInitializedSystemColors) {
     
-    
+    aColor = 0;
+    return NS_ERROR_FAILURE;
+  }
 
-    switch (aID) {
-        
-        
-        
+  
+  
+
+  switch (aID) {
+      
+      
+      
     case eColorID_WindowBackground:
-        aColor = NS_RGB(0xFF, 0xFF, 0xFF);
-        break;
+      aColor = NS_RGB(0xFF, 0xFF, 0xFF);
+      break;
     case eColorID_WindowForeground:
-        aColor = mSystemColors.textColorPrimary;
-        break;
+      aColor = mSystemColors.textColorPrimary;
+      break;
     case eColorID_WidgetBackground:
-        aColor = mSystemColors.colorBackground;
-        break;
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_WidgetForeground:
-        aColor = mSystemColors.colorForeground;
-        break;
+      aColor = mSystemColors.colorForeground;
+      break;
     case eColorID_WidgetSelectBackground:
-        aColor = mSystemColors.textColorHighlight;
-        break;
+      aColor = mSystemColors.textColorHighlight;
+      break;
     case eColorID_WidgetSelectForeground:
-        aColor = mSystemColors.textColorPrimaryInverse;
-        break;
+      aColor = mSystemColors.textColorPrimaryInverse;
+      break;
     case eColorID_Widget3DHighlight:
-        aColor = LIGHT_GRAY_COLOR;
-        break;
+      aColor = LIGHT_GRAY_COLOR;
+      break;
     case eColorID_Widget3DShadow:
-        aColor = DARK_GRAY_COLOR;
-        break;
+      aColor = DARK_GRAY_COLOR;
+      break;
     case eColorID_TextBackground:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_TextForeground:
-        
-        aColor = mSystemColors.textColorPrimary;
-        break;
+      
+      aColor = mSystemColors.textColorPrimary;
+      break;
     case eColorID_TextSelectBackground:
     case eColorID_IMESelectedRawTextBackground:
     case eColorID_IMESelectedConvertedTextBackground:
-        
-        aColor = mSystemColors.textColorHighlight;
-        break;
+      
+      aColor = mSystemColors.textColorHighlight;
+      break;
     case eColorID_TextSelectForeground:
     case eColorID_IMESelectedRawTextForeground:
     case eColorID_IMESelectedConvertedTextForeground:
-        
-        aColor = mSystemColors.textColorPrimaryInverse;
-        break;
+      
+      aColor = mSystemColors.textColorPrimaryInverse;
+      break;
     case eColorID_IMERawInputBackground:
     case eColorID_IMEConvertedTextBackground:
-        aColor = NS_TRANSPARENT;
-        break;
+      aColor = NS_TRANSPARENT;
+      break;
     case eColorID_IMERawInputForeground:
     case eColorID_IMEConvertedTextForeground:
-        aColor = NS_SAME_AS_FOREGROUND_COLOR;
-        break;
+      aColor = NS_SAME_AS_FOREGROUND_COLOR;
+      break;
     case eColorID_IMERawInputUnderline:
     case eColorID_IMEConvertedTextUnderline:
-        aColor = NS_SAME_AS_FOREGROUND_COLOR;
-        break;
+      aColor = NS_SAME_AS_FOREGROUND_COLOR;
+      break;
     case eColorID_IMESelectedRawTextUnderline:
     case eColorID_IMESelectedConvertedTextUnderline:
-        aColor = NS_TRANSPARENT;
-        break;
+      aColor = NS_TRANSPARENT;
+      break;
     case eColorID_SpellCheckerUnderline:
       aColor = RED_COLOR;
       break;
 
-        
+      
     case eColorID_activeborder:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_activecaption:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_appworkspace:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_background:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_captiontext:
-        
-        aColor = mSystemColors.colorForeground;
-        break;
+      
+      aColor = mSystemColors.colorForeground;
+      break;
     case eColorID_graytext:
-        
-        aColor = mSystemColors.textColorTertiary;
-        break;
+      
+      aColor = mSystemColors.textColorTertiary;
+      break;
     case eColorID_highlight:
-        
-        aColor = mSystemColors.textColorHighlight;
-        break;
+      
+      aColor = mSystemColors.textColorHighlight;
+      break;
     case eColorID_highlighttext:
-        
-        aColor = mSystemColors.textColorPrimaryInverse;
-        break;
+      
+      aColor = mSystemColors.textColorPrimaryInverse;
+      break;
     case eColorID_inactiveborder:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_inactivecaption:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_inactivecaptiontext:
-        
-        aColor = mSystemColors.textColorTertiary;
-        break;
+      
+      aColor = mSystemColors.textColorTertiary;
+      break;
     case eColorID_infobackground:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_infotext:
-        
-        aColor = mSystemColors.colorForeground;
-        break;
+      
+      aColor = mSystemColors.colorForeground;
+      break;
     case eColorID_menu:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID_menutext:
-        
-        aColor = mSystemColors.colorForeground;
-        break;
+      
+      aColor = mSystemColors.colorForeground;
+      break;
     case eColorID_scrollbar:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
 
     case eColorID_threedface:
     case eColorID_buttonface:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
 
     case eColorID_buttontext:
-        
-        aColor = mSystemColors.colorForeground;
-        break;
+      
+      aColor = mSystemColors.colorForeground;
+      break;
 
     case eColorID_buttonhighlight:
-        
+      
     case eColorID_threedhighlight:
-        
-        aColor = LIGHT_GRAY_COLOR;
-        break;
+      
+      aColor = LIGHT_GRAY_COLOR;
+      break;
 
     case eColorID_threedlightshadow:
-        
-        aColor = mSystemColors.colorBackground;
-        break;
+      
+      aColor = mSystemColors.colorBackground;
+      break;
 
     case eColorID_buttonshadow:
-        
+      
     case eColorID_threedshadow:
-        
-        aColor = GRAY_COLOR;
-        break;
+      
+      aColor = GRAY_COLOR;
+      break;
 
     case eColorID_threeddarkshadow:
-        
-        aColor = BLACK_COLOR;
-        break;
+      
+      aColor = BLACK_COLOR;
+      break;
 
     case eColorID_window:
     case eColorID_windowframe:
-        aColor = mSystemColors.colorBackground;
-        break;
+      aColor = mSystemColors.colorBackground;
+      break;
 
     case eColorID_windowtext:
-        aColor = mSystemColors.textColorPrimary;
-        break;
+      aColor = mSystemColors.textColorPrimary;
+      break;
 
     case eColorID__moz_eventreerow:
     case eColorID__moz_field:
-        aColor = mSystemColors.colorBackground;
-        break;
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID__moz_fieldtext:
-        aColor = mSystemColors.textColorPrimary;
-        break;
+      aColor = mSystemColors.textColorPrimary;
+      break;
     case eColorID__moz_dialog:
-        aColor = mSystemColors.colorBackground;
-        break;
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID__moz_dialogtext:
-        aColor = mSystemColors.colorForeground;
-        break;
+      aColor = mSystemColors.colorForeground;
+      break;
     case eColorID__moz_dragtargetzone:
-        aColor = mSystemColors.textColorHighlight;
-        break;
+      aColor = mSystemColors.textColorHighlight;
+      break;
     case eColorID__moz_buttondefault:
-        
-        aColor = BLACK_COLOR;
-        break;
+      
+      aColor = BLACK_COLOR;
+      break;
     case eColorID__moz_buttonhoverface:
-        aColor = BG_PRELIGHT_COLOR;
-        break;
+      aColor = BG_PRELIGHT_COLOR;
+      break;
     case eColorID__moz_buttonhovertext:
-        aColor = FG_PRELIGHT_COLOR;
-        break;
+      aColor = FG_PRELIGHT_COLOR;
+      break;
     case eColorID__moz_cellhighlight:
     case eColorID__moz_html_cellhighlight:
-        aColor = mSystemColors.textColorHighlight;
-        break;
+      aColor = mSystemColors.textColorHighlight;
+      break;
     case eColorID__moz_cellhighlighttext:
     case eColorID__moz_html_cellhighlighttext:
-        aColor = mSystemColors.textColorPrimaryInverse;
-        break;
+      aColor = mSystemColors.textColorPrimaryInverse;
+      break;
     case eColorID__moz_menuhover:
-        aColor = BG_PRELIGHT_COLOR;
-        break;
+      aColor = BG_PRELIGHT_COLOR;
+      break;
     case eColorID__moz_menuhovertext:
-        aColor = FG_PRELIGHT_COLOR;
-        break;
+      aColor = FG_PRELIGHT_COLOR;
+      break;
     case eColorID__moz_oddtreerow:
-        aColor = NS_TRANSPARENT;
-        break;
+      aColor = NS_TRANSPARENT;
+      break;
     case eColorID__moz_nativehyperlinktext:
-        aColor = NS_SAME_AS_FOREGROUND_COLOR;
-        break;
+      aColor = NS_SAME_AS_FOREGROUND_COLOR;
+      break;
     case eColorID__moz_comboboxtext:
-        aColor = mSystemColors.colorForeground;
-        break;
+      aColor = mSystemColors.colorForeground;
+      break;
     case eColorID__moz_combobox:
-        aColor = mSystemColors.colorBackground;
-        break;
+      aColor = mSystemColors.colorBackground;
+      break;
     case eColorID__moz_menubartext:
-        aColor = mSystemColors.colorForeground;
-        break;
+      aColor = mSystemColors.colorForeground;
+      break;
     case eColorID__moz_menubarhovertext:
-        aColor = FG_PRELIGHT_COLOR;
-        break;
+      aColor = FG_PRELIGHT_COLOR;
+      break;
     default:
-        
-        aColor = 0;
-        rv = NS_ERROR_FAILURE;
+      
+      aColor = 0;
+      rv = NS_ERROR_FAILURE;
+      break;
+  }
+
+  return rv;
+}
+
+nsresult nsLookAndFeel::GetIntImpl(IntID aID, int32_t& aResult) {
+  nsresult rv = nsXPLookAndFeel::GetIntImpl(aID, aResult);
+  if (NS_SUCCEEDED(rv)) return rv;
+
+  rv = NS_OK;
+
+  switch (aID) {
+    case eIntID_CaretBlinkTime:
+      aResult = 500;
+      break;
+
+    case eIntID_CaretWidth:
+      aResult = 1;
+      break;
+
+    case eIntID_ShowCaretDuringSelection:
+      aResult = 0;
+      break;
+
+    case eIntID_SelectTextfieldsOnKeyFocus:
+      
+      
+      aResult = 1;
+      break;
+
+    case eIntID_SubmenuDelay:
+      aResult = 200;
+      break;
+
+    case eIntID_TooltipDelay:
+      aResult = 500;
+      break;
+
+    case eIntID_MenusCanOverlapOSBar:
+      
+      aResult = 1;
+      break;
+
+    case eIntID_ScrollArrowStyle:
+      aResult = eScrollArrowStyle_Single;
+      break;
+
+    case eIntID_ScrollSliderStyle:
+      aResult = eScrollThumbStyle_Proportional;
+      break;
+
+    case eIntID_TouchEnabled:
+      aResult = 1;
+      break;
+
+    case eIntID_WindowsDefaultTheme:
+    case eIntID_WindowsThemeIdentifier:
+    case eIntID_OperatingSystemVersionIdentifier:
+      aResult = 0;
+      rv = NS_ERROR_NOT_IMPLEMENTED;
+      break;
+
+    case eIntID_SpellCheckerUnderlineStyle:
+      aResult = NS_STYLE_TEXT_DECORATION_STYLE_WAVY;
+      break;
+
+    case eIntID_ScrollbarButtonAutoRepeatBehavior:
+      aResult = 0;
+      break;
+
+    case eIntID_ContextMenuOffsetVertical:
+    case eIntID_ContextMenuOffsetHorizontal:
+      aResult = 2;
+      break;
+
+    case eIntID_PrefersReducedMotion:
+      if (mIsInPrefersReducedMotionForTest) {
+        aResult = mPrefersReducedMotionForTest ? 1 : 0;
         break;
-    }
+      }
+      aResult = java::GeckoSystemStateListener::PrefersReducedMotion() ? 1 : 0;
+      break;
 
-    return rv;
+    case eIntID_PrimaryPointerCapabilities:
+      aResult = java::GeckoAppShell::GetPrimaryPointerCapabilities();
+      break;
+    case eIntID_AllPointerCapabilities:
+      aResult = java::GeckoAppShell::GetAllPointerCapabilities();
+      break;
+
+    default:
+      aResult = 0;
+      rv = NS_ERROR_FAILURE;
+  }
+
+  return rv;
 }
 
-nsresult
-nsLookAndFeel::GetIntImpl(IntID aID, int32_t &aResult)
-{
-    nsresult rv = nsXPLookAndFeel::GetIntImpl(aID, aResult);
-    if (NS_SUCCEEDED(rv))
-        return rv;
+nsresult nsLookAndFeel::GetFloatImpl(FloatID aID, float& aResult) {
+  nsresult rv = nsXPLookAndFeel::GetFloatImpl(aID, aResult);
+  if (NS_SUCCEEDED(rv)) return rv;
+  rv = NS_OK;
 
-    rv = NS_OK;
+  switch (aID) {
+    case eFloatID_IMEUnderlineRelativeSize:
+      aResult = 1.0f;
+      break;
 
-    switch (aID) {
-        case eIntID_CaretBlinkTime:
-            aResult = 500;
-            break;
+    case eFloatID_SpellCheckerUnderlineRelativeSize:
+      aResult = 1.0f;
+      break;
 
-        case eIntID_CaretWidth:
-            aResult = 1;
-            break;
-
-        case eIntID_ShowCaretDuringSelection:
-            aResult = 0;
-            break;
-
-        case eIntID_SelectTextfieldsOnKeyFocus:
-            
-            
-            aResult = 1;
-            break;
-
-        case eIntID_SubmenuDelay:
-            aResult = 200;
-            break;
-
-        case eIntID_TooltipDelay:
-            aResult = 500;
-            break;
-
-        case eIntID_MenusCanOverlapOSBar:
-            
-            aResult = 1;
-            break;
-
-        case eIntID_ScrollArrowStyle:
-            aResult = eScrollArrowStyle_Single;
-            break;
-
-        case eIntID_ScrollSliderStyle:
-            aResult = eScrollThumbStyle_Proportional;
-            break;
-
-        case eIntID_TouchEnabled:
-            aResult = 1;
-            break;
-
-        case eIntID_WindowsDefaultTheme:
-        case eIntID_WindowsThemeIdentifier:
-        case eIntID_OperatingSystemVersionIdentifier:
-            aResult = 0;
-            rv = NS_ERROR_NOT_IMPLEMENTED;
-            break;
-
-        case eIntID_SpellCheckerUnderlineStyle:
-            aResult = NS_STYLE_TEXT_DECORATION_STYLE_WAVY;
-            break;
-
-        case eIntID_ScrollbarButtonAutoRepeatBehavior:
-            aResult = 0;
-            break;
-
-        case eIntID_ContextMenuOffsetVertical:
-        case eIntID_ContextMenuOffsetHorizontal:
-            aResult = 2;
-            break;
-
-        case eIntID_PrefersReducedMotion:
-            if (mIsInPrefersReducedMotionForTest) {
-              aResult = mPrefersReducedMotionForTest ? 1 : 0;
-              break;
-            }
-            aResult =
-              java::GeckoSystemStateListener::PrefersReducedMotion() ? 1 : 0;
-            break;
-
-        case eIntID_PrimaryPointerCapabilities:
-            aResult = java::GeckoAppShell::GetPrimaryPointerCapabilities();
-            break;
-        case eIntID_AllPointerCapabilities:
-            aResult = java::GeckoAppShell::GetAllPointerCapabilities();
-            break;
-
-        default:
-            aResult = 0;
-            rv = NS_ERROR_FAILURE;
-    }
-
-    return rv;
-}
-
-nsresult
-nsLookAndFeel::GetFloatImpl(FloatID aID, float &aResult)
-{
-    nsresult rv = nsXPLookAndFeel::GetFloatImpl(aID, aResult);
-    if (NS_SUCCEEDED(rv))
-        return rv;
-    rv = NS_OK;
-
-    switch (aID) {
-        case eFloatID_IMEUnderlineRelativeSize:
-            aResult = 1.0f;
-            break;
-
-        case eFloatID_SpellCheckerUnderlineRelativeSize:
-            aResult = 1.0f;
-            break;
-
-        default:
-            aResult = -1.0;
-            rv = NS_ERROR_FAILURE;
-            break;
-    }
-    return rv;
+    default:
+      aResult = -1.0;
+      rv = NS_ERROR_FAILURE;
+      break;
+  }
+  return rv;
 }
 
 
-bool
-nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
-                           gfxFontStyle& aFontStyle,
-                           float aDevPixPerCSSPixel)
-{
-    aFontName.AssignLiteral("\"Roboto\"");
-    aFontStyle.style = FontSlantStyle::Normal();
-    aFontStyle.weight = FontWeight::Normal();
-    aFontStyle.stretch = FontStretch::Normal();
-    aFontStyle.size = 9.0 * 96.0f / 72.0f * aDevPixPerCSSPixel;
-    aFontStyle.systemFont = true;
-    return true;
+bool nsLookAndFeel::GetFontImpl(FontID aID, nsString& aFontName,
+                                gfxFontStyle& aFontStyle,
+                                float aDevPixPerCSSPixel) {
+  aFontName.AssignLiteral("\"Roboto\"");
+  aFontStyle.style = FontSlantStyle::Normal();
+  aFontStyle.weight = FontWeight::Normal();
+  aFontStyle.stretch = FontStretch::Normal();
+  aFontStyle.size = 9.0 * 96.0f / 72.0f * aDevPixPerCSSPixel;
+  aFontStyle.systemFont = true;
+  return true;
 }
 
 
-bool
-nsLookAndFeel::GetEchoPasswordImpl()
-{
-    EnsureInitShowPassword();
-    return mShowPassword;
+bool nsLookAndFeel::GetEchoPasswordImpl() {
+  EnsureInitShowPassword();
+  return mShowPassword;
 }
 
-uint32_t
-nsLookAndFeel::GetPasswordMaskDelayImpl()
-{
+uint32_t nsLookAndFeel::GetPasswordMaskDelayImpl() {
   
   return 1500;
 }
 
 
-char16_t
-nsLookAndFeel::GetPasswordCharacterImpl()
-{
+char16_t nsLookAndFeel::GetPasswordCharacterImpl() {
   
   return UNICODE_BULLET;
 }
 
-void
-nsLookAndFeel::EnsureInitSystemColors()
-{
-    if (!mInitializedSystemColors) {
-        if (XRE_IsParentProcess()) {
-            nsresult rv = GetSystemColors();
-            mInitializedSystemColors = NS_SUCCEEDED(rv);
-        }
-        
+void nsLookAndFeel::EnsureInitSystemColors() {
+  if (!mInitializedSystemColors) {
+    if (XRE_IsParentProcess()) {
+      nsresult rv = GetSystemColors();
+      mInitializedSystemColors = NS_SUCCEEDED(rv);
     }
+    
+  }
 }
 
-void
-nsLookAndFeel::EnsureInitShowPassword()
-{
-    if (!mInitializedShowPassword) {
-        if (XRE_IsParentProcess()) {
-            mShowPassword = jni::IsAvailable() && java::GeckoAppShell::GetShowPasswordSetting();
-        } else {
-            ContentChild::GetSingleton()->SendGetShowPasswordSetting(&mShowPassword);
-        }
-        mInitializedShowPassword = true;
+void nsLookAndFeel::EnsureInitShowPassword() {
+  if (!mInitializedShowPassword) {
+    if (XRE_IsParentProcess()) {
+      mShowPassword =
+          jni::IsAvailable() && java::GeckoAppShell::GetShowPasswordSetting();
+    } else {
+      ContentChild::GetSingleton()->SendGetShowPasswordSetting(&mShowPassword);
     }
+    mInitializedShowPassword = true;
+  }
 }
 
-nsTArray<LookAndFeelInt>
-nsLookAndFeel::GetIntCacheImpl()
-{
-    MOZ_ASSERT(XRE_IsParentProcess());
-    EnsureInitSystemColors();
-    MOZ_ASSERT(mInitializedSystemColors);
+nsTArray<LookAndFeelInt> nsLookAndFeel::GetIntCacheImpl() {
+  MOZ_ASSERT(XRE_IsParentProcess());
+  EnsureInitSystemColors();
+  MOZ_ASSERT(mInitializedSystemColors);
 
-    nsTArray<LookAndFeelInt> lookAndFeelCache =
-        nsXPLookAndFeel::GetIntCacheImpl();
-    lookAndFeelCache.SetCapacity(sizeof(AndroidSystemColors) / sizeof(nscolor));
+  nsTArray<LookAndFeelInt> lookAndFeelCache =
+      nsXPLookAndFeel::GetIntCacheImpl();
+  lookAndFeelCache.SetCapacity(sizeof(AndroidSystemColors) / sizeof(nscolor));
 
-    LookAndFeelInt laf;
-    laf.id = eColorID_WindowForeground;
-    laf.colorValue = mSystemColors.textColorPrimary;
-    lookAndFeelCache.AppendElement(laf);
+  LookAndFeelInt laf;
+  laf.id = eColorID_WindowForeground;
+  laf.colorValue = mSystemColors.textColorPrimary;
+  lookAndFeelCache.AppendElement(laf);
 
-    laf.id = eColorID_WidgetBackground;
-    laf.colorValue = mSystemColors.colorBackground;
-    lookAndFeelCache.AppendElement(laf);
+  laf.id = eColorID_WidgetBackground;
+  laf.colorValue = mSystemColors.colorBackground;
+  lookAndFeelCache.AppendElement(laf);
 
-    laf.id = eColorID_WidgetForeground;
-    laf.colorValue = mSystemColors.colorForeground;
-    lookAndFeelCache.AppendElement(laf);
+  laf.id = eColorID_WidgetForeground;
+  laf.colorValue = mSystemColors.colorForeground;
+  lookAndFeelCache.AppendElement(laf);
 
-    laf.id = eColorID_WidgetSelectBackground;
-    laf.colorValue = mSystemColors.textColorHighlight;
-    lookAndFeelCache.AppendElement(laf);
+  laf.id = eColorID_WidgetSelectBackground;
+  laf.colorValue = mSystemColors.textColorHighlight;
+  lookAndFeelCache.AppendElement(laf);
 
-    laf.id = eColorID_WidgetSelectForeground;
-    laf.colorValue = mSystemColors.textColorPrimaryInverse;
-    lookAndFeelCache.AppendElement(laf);
+  laf.id = eColorID_WidgetSelectForeground;
+  laf.colorValue = mSystemColors.textColorPrimaryInverse;
+  lookAndFeelCache.AppendElement(laf);
 
-    laf.id = eColorID_inactivecaptiontext;
-    laf.colorValue = mSystemColors.textColorTertiary;
-    lookAndFeelCache.AppendElement(laf);
+  laf.id = eColorID_inactivecaptiontext;
+  laf.colorValue = mSystemColors.textColorTertiary;
+  lookAndFeelCache.AppendElement(laf);
 
-    laf.id = eColorID_windowtext;
-    laf.colorValue = mSystemColors.textColorPrimary;
-    lookAndFeelCache.AppendElement(laf);
+  laf.id = eColorID_windowtext;
+  laf.colorValue = mSystemColors.textColorPrimary;
+  lookAndFeelCache.AppendElement(laf);
 
-    
-    
-    
-    
+  
+  
+  
+  
 
-    return lookAndFeelCache;
+  return lookAndFeelCache;
 }
 
-void
-nsLookAndFeel::SetIntCacheImpl(const nsTArray<LookAndFeelInt>& aLookAndFeelCache)
-{
-    for (auto entry : aLookAndFeelCache) {
-        switch (entry.id) {
-        case eColorID_WindowForeground:
-            mSystemColors.textColorPrimary = entry.colorValue;
-            break;
-        case eColorID_WidgetBackground:
-            mSystemColors.colorBackground = entry.colorValue;
-            break;
-        case eColorID_WidgetForeground:
-            mSystemColors.colorForeground = entry.colorValue;
-            break;
-        case eColorID_WidgetSelectBackground:
-            mSystemColors.textColorHighlight = entry.colorValue;
-            break;
-        case eColorID_WidgetSelectForeground:
-            mSystemColors.textColorPrimaryInverse = entry.colorValue;
-            break;
-        case eColorID_inactivecaptiontext:
-            mSystemColors.textColorTertiary = entry.colorValue;
-            break;
-        case eColorID_windowtext:
-            mSystemColors.textColorPrimary = entry.colorValue;
-            break;
-        default:
-            MOZ_ASSERT(false);
-        }
+void nsLookAndFeel::SetIntCacheImpl(
+    const nsTArray<LookAndFeelInt>& aLookAndFeelCache) {
+  for (auto entry : aLookAndFeelCache) {
+    switch (entry.id) {
+      case eColorID_WindowForeground:
+        mSystemColors.textColorPrimary = entry.colorValue;
+        break;
+      case eColorID_WidgetBackground:
+        mSystemColors.colorBackground = entry.colorValue;
+        break;
+      case eColorID_WidgetForeground:
+        mSystemColors.colorForeground = entry.colorValue;
+        break;
+      case eColorID_WidgetSelectBackground:
+        mSystemColors.textColorHighlight = entry.colorValue;
+        break;
+      case eColorID_WidgetSelectForeground:
+        mSystemColors.textColorPrimaryInverse = entry.colorValue;
+        break;
+      case eColorID_inactivecaptiontext:
+        mSystemColors.textColorTertiary = entry.colorValue;
+        break;
+      case eColorID_windowtext:
+        mSystemColors.textColorPrimary = entry.colorValue;
+        break;
+      default:
+        MOZ_ASSERT(false);
     }
-    mInitializedSystemColors = true;
+  }
+  mInitializedSystemColors = true;
 }

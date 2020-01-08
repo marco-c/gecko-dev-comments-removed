@@ -47,13 +47,12 @@ namespace net {
 
 
 
-class nsSecCheckWrapChannelBase : public nsIHttpChannel
-                                , public nsIHttpChannelInternal
-                                , public nsISecCheckWrapChannel
-                                , public nsIUploadChannel
-                                , public nsIUploadChannel2
-{
-public:
+class nsSecCheckWrapChannelBase : public nsIHttpChannel,
+                                  public nsIHttpChannelInternal,
+                                  public nsISecCheckWrapChannel,
+                                  public nsIUploadChannel,
+                                  public nsIUploadChannel2 {
+ public:
   NS_FORWARD_NSIHTTPCHANNEL(mHttpChannel->)
   NS_FORWARD_NSIHTTPCHANNELINTERNAL(mHttpChannelInternal->)
   NS_FORWARD_NSICHANNEL(mChannel->)
@@ -65,42 +64,41 @@ public:
 
   explicit nsSecCheckWrapChannelBase(nsIChannel* aChannel);
 
-protected:
+ protected:
   virtual ~nsSecCheckWrapChannelBase() = default;
 
-  nsCOMPtr<nsIChannel>             mChannel;
+  nsCOMPtr<nsIChannel> mChannel;
   
-  nsCOMPtr<nsIHttpChannel>         mHttpChannel;
+  nsCOMPtr<nsIHttpChannel> mHttpChannel;
   nsCOMPtr<nsIHttpChannelInternal> mHttpChannelInternal;
-  nsCOMPtr<nsIRequest>             mRequest;
-  nsCOMPtr<nsIUploadChannel>       mUploadChannel;
-  nsCOMPtr<nsIUploadChannel2>      mUploadChannel2;
+  nsCOMPtr<nsIRequest> mRequest;
+  nsCOMPtr<nsIUploadChannel> mUploadChannel;
+  nsCOMPtr<nsIUploadChannel2> mUploadChannel2;
 };
 
 
 
 
 
-class nsSecCheckWrapChannel : public nsSecCheckWrapChannelBase
-{
-public:
-  NS_IMETHOD GetLoadInfo(nsILoadInfo **aLoadInfo) override;
-  NS_IMETHOD SetLoadInfo(nsILoadInfo *aLoadInfo) override;
+class nsSecCheckWrapChannel : public nsSecCheckWrapChannelBase {
+ public:
+  NS_IMETHOD GetLoadInfo(nsILoadInfo** aLoadInfo) override;
+  NS_IMETHOD SetLoadInfo(nsILoadInfo* aLoadInfo) override;
 
-  NS_IMETHOD AsyncOpen2(nsIStreamListener *aListener) override;
+  NS_IMETHOD AsyncOpen2(nsIStreamListener* aListener) override;
   NS_IMETHOD Open2(nsIInputStream** aStream) override;
 
   nsSecCheckWrapChannel(nsIChannel* aChannel, nsILoadInfo* aLoadInfo);
   static already_AddRefed<nsIChannel> MaybeWrap(nsIChannel* aChannel,
                                                 nsILoadInfo* aLoadInfo);
 
-protected:
+ protected:
   virtual ~nsSecCheckWrapChannel() = default;
 
   nsCOMPtr<nsILoadInfo> mLoadInfo;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

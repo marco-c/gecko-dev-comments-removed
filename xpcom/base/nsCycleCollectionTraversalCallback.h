@@ -13,24 +13,23 @@
 
 class nsCycleCollectionParticipant;
 
-class NS_NO_VTABLE nsCycleCollectionTraversalCallback
-{
-public:
+class NS_NO_VTABLE nsCycleCollectionTraversalCallback {
+ public:
   
   
   
   
-  NS_IMETHOD_(void) DescribeRefCountedNode(nsrefcnt aRefcount,
-                                           const char* aObjName) = 0;
+  NS_IMETHOD_(void)
+  DescribeRefCountedNode(nsrefcnt aRefcount, const char* aObjName) = 0;
   
-  NS_IMETHOD_(void) DescribeGCedNode(bool aIsMarked,
-                                     const char* aObjName,
-                                     uint64_t aCompartmentAddress = 0) = 0;
+  NS_IMETHOD_(void)
+  DescribeGCedNode(bool aIsMarked, const char* aObjName,
+                   uint64_t aCompartmentAddress = 0) = 0;
 
   NS_IMETHOD_(void) NoteXPCOMChild(nsISupports* aChild) = 0;
   NS_IMETHOD_(void) NoteJSChild(const JS::GCCellPtr& aThing) = 0;
-  NS_IMETHOD_(void) NoteNativeChild(void* aChild,
-                                    nsCycleCollectionParticipant* aHelper) = 0;
+  NS_IMETHOD_(void)
+  NoteNativeChild(void* aChild, nsCycleCollectionParticipant* aHelper) = 0;
 
   
   
@@ -38,8 +37,7 @@ public:
   
   NS_IMETHOD_(void) NoteNextEdgeName(const char* aName) = 0;
 
-  enum
-  {
+  enum {
     
 
     
@@ -53,10 +51,11 @@ public:
   uint32_t Flags() const { return mFlags; }
   bool WantDebugInfo() const { return (mFlags & WANT_DEBUG_INFO) != 0; }
   bool WantAllTraces() const { return (mFlags & WANT_ALL_TRACES) != 0; }
-protected:
+
+ protected:
   nsCycleCollectionTraversalCallback() : mFlags(0) {}
 
   uint32_t mFlags;
 };
 
-#endif 
+#endif  

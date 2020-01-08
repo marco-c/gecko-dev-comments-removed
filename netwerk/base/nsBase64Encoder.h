@@ -14,19 +14,20 @@
 
 
 class nsBase64Encoder final : public nsIOutputStream {
-  public:
-    nsBase64Encoder() = default;
+ public:
+  nsBase64Encoder() = default;
 
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIOUTPUTSTREAM
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOUTPUTSTREAM
 
-    nsresult Finish(nsACString& _result);
-  private:
-    ~nsBase64Encoder() = default;
+  nsresult Finish(nsACString& _result);
 
-    
-    
-    nsCString mData;
+ private:
+  ~nsBase64Encoder() = default;
+
+  
+  
+  nsCString mData;
 };
 
 #endif

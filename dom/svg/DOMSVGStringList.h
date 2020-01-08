@@ -43,20 +43,16 @@ class SVGStringList;
 
 
 
-class DOMSVGStringList final : public nsISupports
-                             , public nsWrapperCache
-{
+class DOMSVGStringList final : public nsISupports, public nsWrapperCache {
   friend class AutoChangeStringListNotifier;
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGStringList)
 
-  nsSVGElement* GetParentObject() const
-  {
-    return mElement;
-  }
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  nsSVGElement* GetParentObject() const { return mElement; }
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   uint32_t NumberOfItems() const;
   uint32_t Length() const;
@@ -83,37 +79,33 @@ public:
 
 
 
-  static already_AddRefed<DOMSVGStringList>
-    GetDOMWrapper(SVGStringList *aList,
-                  nsSVGElement *aElement,
-                  bool aIsConditionalProcessingAttribute,
-                  uint8_t aAttrEnum);
+  static already_AddRefed<DOMSVGStringList> GetDOMWrapper(
+      SVGStringList* aList, nsSVGElement* aElement,
+      bool aIsConditionalProcessingAttribute, uint8_t aAttrEnum);
 
-private:
+ private:
   
 
 
 
-  DOMSVGStringList(nsSVGElement *aElement,
+  DOMSVGStringList(nsSVGElement* aElement,
                    bool aIsConditionalProcessingAttribute, uint8_t aAttrEnum)
-    : mElement(aElement)
-    , mAttrEnum(aAttrEnum)
-    , mIsConditionalProcessingAttribute(aIsConditionalProcessingAttribute)
-  {
-  }
+      : mElement(aElement),
+        mAttrEnum(aAttrEnum),
+        mIsConditionalProcessingAttribute(aIsConditionalProcessingAttribute) {}
 
   ~DOMSVGStringList();
 
-  SVGStringList &InternalList() const;
+  SVGStringList& InternalList() const;
 
   
   RefPtr<nsSVGElement> mElement;
 
   uint8_t mAttrEnum;
 
-  bool    mIsConditionalProcessingAttribute;
+  bool mIsConditionalProcessingAttribute;
 };
 
-} 
+}  
 
-#endif 
+#endif  

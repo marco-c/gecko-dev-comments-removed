@@ -24,15 +24,15 @@ struct InfoHeaderLength {
     WIN_V5 = 124,
 
     
-    OS2_V2_MIN = 16,    
-    OS2_V2_MAX = 64,    
+    OS2_V2_MIN = 16,  
+    OS2_V2_MAX = 64,  
 
     WIN_ICO = WIN_V3,
   };
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

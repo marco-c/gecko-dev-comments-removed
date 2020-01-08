@@ -41,398 +41,362 @@ namespace mozilla {
 namespace net {
 
 static const char kAllowProxies[] = "network.automatic-ntlm-auth.allow-proxies";
-static const char kAllowNonFqdn[] = "network.automatic-ntlm-auth.allow-non-fqdn";
-static const char kTrustedURIs[]  = "network.automatic-ntlm-auth.trusted-uris";
+static const char kAllowNonFqdn[] =
+    "network.automatic-ntlm-auth.allow-non-fqdn";
+static const char kTrustedURIs[] = "network.automatic-ntlm-auth.trusted-uris";
 static const char kForceGeneric[] = "network.auth.force-generic-ntlm";
 static const char kSSOinPBmode[] = "network.auth.private-browsing-sso";
 
 StaticRefPtr<nsHttpNTLMAuth> nsHttpNTLMAuth::gSingleton;
 
-static bool
-IsNonFqdn(nsIURI *uri)
-{
-    nsAutoCString host;
-    PRNetAddr addr;
+static bool IsNonFqdn(nsIURI *uri) {
+  nsAutoCString host;
+  PRNetAddr addr;
 
-    if (NS_FAILED(uri->GetAsciiHost(host)))
-        return false;
+  if (NS_FAILED(uri->GetAsciiHost(host))) return false;
 
-    
-    return !host.IsEmpty() && !host.Contains('.') &&
-           PR_StringToNetAddr(host.BeginReading(), &addr) != PR_SUCCESS;
+  
+  return !host.IsEmpty() && !host.Contains('.') &&
+         PR_StringToNetAddr(host.BeginReading(), &addr) != PR_SUCCESS;
 }
 
 
-static bool
-ForceGenericNTLM()
-{
-    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    if (!prefs)
-        return false;
-    bool flag = false;
+static bool ForceGenericNTLM() {
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  if (!prefs) return false;
+  bool flag = false;
 
-    if (NS_FAILED(prefs->GetBoolPref(kForceGeneric, &flag)))
-        flag = false;
+  if (NS_FAILED(prefs->GetBoolPref(kForceGeneric, &flag))) flag = false;
 
-    LOG(("Force use of generic ntlm auth module: %d\n", flag));
-    return flag;
+  LOG(("Force use of generic ntlm auth module: %d\n", flag));
+  return flag;
 }
 
 
-static bool
-CanUseDefaultCredentials(nsIHttpAuthenticableChannel *channel,
-                         bool isProxyAuth)
-{
-    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    if (!prefs) {
-        return false;
+static bool CanUseDefaultCredentials(nsIHttpAuthenticableChannel *channel,
+                                     bool isProxyAuth) {
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  if (!prefs) {
+    return false;
+  }
+
+  
+  
+  if (isProxyAuth) {
+    bool val;
+    if (NS_FAILED(prefs->GetBoolPref(kAllowProxies, &val))) val = false;
+    LOG(("Default credentials allowed for proxy: %d\n", val));
+    return val;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIChannel> bareChannel = do_QueryInterface(channel);
+  MOZ_ASSERT(bareChannel);
+
+  if (NS_UsePrivateBrowsing(bareChannel)) {
+    bool ssoInPb;
+    if (NS_SUCCEEDED(prefs->GetBoolPref(kSSOinPBmode, &ssoInPb)) && ssoInPb) {
+      return true;
     }
 
-    
-    
-    if (isProxyAuth) {
-        bool val;
-        if (NS_FAILED(prefs->GetBoolPref(kAllowProxies, &val)))
-            val = false;
-        LOG(("Default credentials allowed for proxy: %d\n", val));
-        return val;
+    bool dontRememberHistory;
+    if (NS_SUCCEEDED(prefs->GetBoolPref("browser.privatebrowsing.autostart",
+                                        &dontRememberHistory)) &&
+        !dontRememberHistory) {
+      return false;
     }
+  }
 
-    
-    
-    
-    nsCOMPtr<nsIChannel> bareChannel = do_QueryInterface(channel);
-    MOZ_ASSERT(bareChannel);
+  nsCOMPtr<nsIURI> uri;
+  Unused << channel->GetURI(getter_AddRefs(uri));
 
-    if (NS_UsePrivateBrowsing(bareChannel)) {
-        bool ssoInPb;
-        if (NS_SUCCEEDED(prefs->GetBoolPref(kSSOinPBmode, &ssoInPb)) &&
-            ssoInPb) {
-            return true;
-        }
+  bool allowNonFqdn;
+  if (NS_FAILED(prefs->GetBoolPref(kAllowNonFqdn, &allowNonFqdn)))
+    allowNonFqdn = false;
+  if (allowNonFqdn && uri && IsNonFqdn(uri)) {
+    LOG(("Host is non-fqdn, default credentials are allowed\n"));
+    return true;
+  }
 
-        bool dontRememberHistory;
-        if (NS_SUCCEEDED(prefs->GetBoolPref("browser.privatebrowsing.autostart",
-                                            &dontRememberHistory)) &&
-            !dontRememberHistory) {
-            return false;
-        }
-    }
-
-    nsCOMPtr<nsIURI> uri;
-    Unused << channel->GetURI(getter_AddRefs(uri));
-
-    bool allowNonFqdn;
-    if (NS_FAILED(prefs->GetBoolPref(kAllowNonFqdn, &allowNonFqdn)))
-        allowNonFqdn = false;
-    if (allowNonFqdn && uri && IsNonFqdn(uri)) {
-        LOG(("Host is non-fqdn, default credentials are allowed\n"));
-        return true;
-    }
-
-    bool isTrustedHost = (uri && auth::URIMatchesPrefPattern(uri, kTrustedURIs));
-    LOG(("Default credentials allowed for host: %d\n", isTrustedHost));
-    return isTrustedHost;
+  bool isTrustedHost = (uri && auth::URIMatchesPrefPattern(uri, kTrustedURIs));
+  LOG(("Default credentials allowed for host: %d\n", isTrustedHost));
+  return isTrustedHost;
 }
 
 
 
-class nsNTLMSessionState final : public nsISupports
-{
-    ~nsNTLMSessionState() = default;
-public:
-    NS_DECL_ISUPPORTS
+class nsNTLMSessionState final : public nsISupports {
+  ~nsNTLMSessionState() = default;
+
+ public:
+  NS_DECL_ISUPPORTS
 };
 NS_IMPL_ISUPPORTS0(nsNTLMSessionState)
 
 
 
-already_AddRefed<nsIHttpAuthenticator>
-nsHttpNTLMAuth::GetOrCreate()
-{
-    nsCOMPtr<nsIHttpAuthenticator> authenticator;
-    if (gSingleton) {
-      authenticator = gSingleton;
-    } else {
-      gSingleton = new nsHttpNTLMAuth();
-      ClearOnShutdown(&gSingleton);
-      authenticator = gSingleton;
-    }
+already_AddRefed<nsIHttpAuthenticator> nsHttpNTLMAuth::GetOrCreate() {
+  nsCOMPtr<nsIHttpAuthenticator> authenticator;
+  if (gSingleton) {
+    authenticator = gSingleton;
+  } else {
+    gSingleton = new nsHttpNTLMAuth();
+    ClearOnShutdown(&gSingleton);
+    authenticator = gSingleton;
+  }
 
-    return authenticator.forget();
+  return authenticator.forget();
 }
 
 NS_IMPL_ISUPPORTS(nsHttpNTLMAuth, nsIHttpAuthenticator)
 
 NS_IMETHODIMP
 nsHttpNTLMAuth::ChallengeReceived(nsIHttpAuthenticableChannel *channel,
-                                  const char     *challenge,
-                                  bool            isProxyAuth,
-                                  nsISupports   **sessionState,
-                                  nsISupports   **continuationState,
-                                  bool           *identityInvalid)
-{
-    LOG(("nsHttpNTLMAuth::ChallengeReceived [ss=%p cs=%p]\n",
-         *sessionState, *continuationState));
+                                  const char *challenge, bool isProxyAuth,
+                                  nsISupports **sessionState,
+                                  nsISupports **continuationState,
+                                  bool *identityInvalid) {
+  LOG(("nsHttpNTLMAuth::ChallengeReceived [ss=%p cs=%p]\n", *sessionState,
+       *continuationState));
+
+  
+  mUseNative = true;
+
+  
+
+  *identityInvalid = false;
+
+  
+  
+  
+  if (PL_strcasecmp(challenge, "NTLM") == 0) {
+    nsCOMPtr<nsIAuthModule> module;
 
     
-    mUseNative = true;
-
-    
-
-    *identityInvalid = false;
-
     
     
     
-    if (PL_strcasecmp(challenge, "NTLM") == 0) {
-        nsCOMPtr<nsIAuthModule> module;
-
+    bool forceGeneric = ForceGenericNTLM();
+    if (!forceGeneric && !*sessionState) {
+      
+      
+      
+      if (!*continuationState &&
+          CanUseDefaultCredentials(channel, isProxyAuth)) {
         
         
         
-        
-        bool forceGeneric = ForceGenericNTLM();
-        if (!forceGeneric && !*sessionState) {
-            
-            
-            
-            if (!*continuationState && CanUseDefaultCredentials(channel, isProxyAuth)) {
-                
-                
-                
-                module = nsIAuthModule::CreateInstance("sys-ntlm");
-            }
+        module = nsIAuthModule::CreateInstance("sys-ntlm");
+      }
 #ifdef XP_WIN
-            else {
-                
-                
-                
-                
-                
-                module = nsIAuthModule::CreateInstance("sys-ntlm");
-                *identityInvalid = true;
-            }
-#endif 
-            if (!module)
-                LOG(("Native sys-ntlm auth module not found.\n"));
-        }
+      else {
+        
+        
+        
+        
+        
+        
+        module = nsIAuthModule::CreateInstance("sys-ntlm");
+        *identityInvalid = true;
+      }
+#endif  
+      if (!module) LOG(("Native sys-ntlm auth module not found.\n"));
+    }
 
 #ifdef XP_WIN
-        
-        if (!forceGeneric && !module)
-            return NS_ERROR_UNEXPECTED;
+    
+    
+    if (!forceGeneric && !module) return NS_ERROR_UNEXPECTED;
 #endif
 
-        
-        if (!module) {
-            if (!*sessionState) {
-                
-                
-                *sessionState = new nsNTLMSessionState();
-                if (!*sessionState)
-                    return NS_ERROR_OUT_OF_MEMORY;
-                NS_ADDREF(*sessionState);
-            }
-
-            
-            
-            LOG(("Trying to fall back on internal ntlm auth.\n"));
-            module = nsIAuthModule::CreateInstance("ntlm");
-
-            mUseNative = false;
-
-            
-            *identityInvalid = true;
-        }
-
-        
-        if (!module) {
-            LOG(("No ntlm auth modules available.\n"));
-            return NS_ERROR_UNEXPECTED;
-        }
-
+    
+    
+    if (!module) {
+      if (!*sessionState) {
         
         
-        module.forget(continuationState);
+        *sessionState = new nsNTLMSessionState();
+        if (!*sessionState) return NS_ERROR_OUT_OF_MEMORY;
+        NS_ADDREF(*sessionState);
+      }
+
+      
+      
+      LOG(("Trying to fall back on internal ntlm auth.\n"));
+      module = nsIAuthModule::CreateInstance("ntlm");
+
+      mUseNative = false;
+
+      
+      *identityInvalid = true;
     }
-    return NS_OK;
+
+    
+    if (!module) {
+      LOG(("No ntlm auth modules available.\n"));
+      return NS_ERROR_UNEXPECTED;
+    }
+
+    
+    
+    module.forget(continuationState);
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsHttpNTLMAuth::GenerateCredentialsAsync(nsIHttpAuthenticableChannel *authChannel,
-                                         nsIHttpAuthenticatorCallback* aCallback,
-                                         const char *challenge,
-                                         bool isProxyAuth,
-                                         const char16_t *domain,
-                                         const char16_t *username,
-                                         const char16_t *password,
-                                         nsISupports *sessionState,
-                                         nsISupports *continuationState,
-                                         nsICancelable **aCancellable)
-{
+nsHttpNTLMAuth::GenerateCredentialsAsync(
+    nsIHttpAuthenticableChannel *authChannel,
+    nsIHttpAuthenticatorCallback *aCallback, const char *challenge,
+    bool isProxyAuth, const char16_t *domain, const char16_t *username,
+    const char16_t *password, nsISupports *sessionState,
+    nsISupports *continuationState, nsICancelable **aCancellable) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
 nsHttpNTLMAuth::GenerateCredentials(nsIHttpAuthenticableChannel *authChannel,
-                                    const char      *challenge,
-                                    bool             isProxyAuth,
+                                    const char *challenge, bool isProxyAuth,
                                     const char16_t *domain,
-                                    const char16_t *user,
-                                    const char16_t *pass,
-                                    nsISupports    **sessionState,
-                                    nsISupports    **continuationState,
-                                    uint32_t       *aFlags,
-                                    char           **creds)
+                                    const char16_t *user, const char16_t *pass,
+                                    nsISupports **sessionState,
+                                    nsISupports **continuationState,
+                                    uint32_t *aFlags, char **creds)
 
 {
-    LOG(("nsHttpNTLMAuth::GenerateCredentials\n"));
+  LOG(("nsHttpNTLMAuth::GenerateCredentials\n"));
 
-    *creds = nullptr;
-    *aFlags = 0;
+  *creds = nullptr;
+  *aFlags = 0;
 
+  
+  
+  
+  
+  if (!user || !pass) *aFlags = USING_INTERNAL_IDENTITY;
+
+  nsresult rv;
+  nsCOMPtr<nsIAuthModule> module = do_QueryInterface(*continuationState, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  void *inBuf, *outBuf;
+  uint32_t inBufLen, outBufLen;
+
+  
+  if (PL_strcasecmp(challenge, "NTLM") == 0) {
+    
+    nsCOMPtr<nsIURI> uri;
+    rv = authChannel->GetURI(getter_AddRefs(uri));
+    if (NS_FAILED(rv)) return rv;
+    nsAutoCString serviceName, host;
+    rv = uri->GetAsciiHost(host);
+    if (NS_FAILED(rv)) return rv;
+    serviceName.AppendLiteral("HTTP@");
+    serviceName.Append(host);
+    
+    uint32_t reqFlags = nsIAuthModule::REQ_DEFAULT;
+    if (isProxyAuth) reqFlags |= nsIAuthModule::REQ_PROXY_AUTH;
+
+    rv = module->Init(serviceName.get(), reqFlags, domain, user, pass);
+    if (NS_FAILED(rv)) return rv;
+
+
+
+
+
+
+
+
+#if defined(XP_WIN) 
     
     
     
     
-    if (!user || !pass)
-        *aFlags = USING_INTERNAL_IDENTITY;
-
-    nsresult rv;
-    nsCOMPtr<nsIAuthModule> module = do_QueryInterface(*continuationState, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    void *inBuf, *outBuf;
-    uint32_t inBufLen, outBufLen;
-
     
-    if (PL_strcasecmp(challenge, "NTLM") == 0) {
-        
-        nsCOMPtr<nsIURI> uri;
-        rv = authChannel->GetURI(getter_AddRefs(uri));
-        if (NS_FAILED(rv))
-            return rv;
-        nsAutoCString serviceName, host;
-        rv = uri->GetAsciiHost(host);
-        if (NS_FAILED(rv))
-            return rv;
-        serviceName.AppendLiteral("HTTP@");
-        serviceName.Append(host);
-        
-        uint32_t reqFlags = nsIAuthModule::REQ_DEFAULT;
-        if (isProxyAuth)
-            reqFlags |= nsIAuthModule::REQ_PROXY_AUTH;
+    
+    
+    nsCOMPtr<nsIChannel> channel = do_QueryInterface(authChannel, &rv);
+    if (NS_FAILED(rv)) return rv;
 
-        rv = module->Init(serviceName.get(), reqFlags, domain, user, pass);
-        if (NS_FAILED(rv))
-            return rv;
+    nsCOMPtr<nsISupports> security;
+    rv = channel->GetSecurityInfo(getter_AddRefs(security));
+    if (NS_FAILED(rv)) return rv;
 
+    nsCOMPtr<nsITransportSecurityInfo> secInfo = do_QueryInterface(security);
 
+    if (mUseNative && secInfo) {
+      nsCOMPtr<nsIX509Cert> cert;
+      rv = secInfo->GetServerCert(getter_AddRefs(cert));
+      if (NS_FAILED(rv)) return rv;
 
+      uint32_t length;
+      uint8_t *certArray;
+      rv = cert->GetRawDER(&length, &certArray);
+      if (NS_FAILED(rv)) return rv;
 
-
-
-
-
-#if defined (XP_WIN) 
-        
-        
-        
-        
-        
-        
-        
-        nsCOMPtr<nsIChannel> channel = do_QueryInterface(authChannel, &rv);
-        if (NS_FAILED(rv))
-            return rv;
-
-        nsCOMPtr<nsISupports> security;
-        rv = channel->GetSecurityInfo(getter_AddRefs(security));
-        if (NS_FAILED(rv))
-            return rv;
-
-        nsCOMPtr<nsITransportSecurityInfo> secInfo =
-            do_QueryInterface(security);
-
-        if (mUseNative && secInfo) {
-            nsCOMPtr<nsIX509Cert> cert;
-            rv = secInfo->GetServerCert(getter_AddRefs(cert));
-            if (NS_FAILED(rv))
-                return rv;
-
-            uint32_t length;
-            uint8_t* certArray;
-            rv = cert->GetRawDER(&length, &certArray);
-            if (NS_FAILED(rv))
-                return rv;
-
-            
-            
-            inBufLen = length;
-            inBuf = certArray;
-        } else {
-            
-            inBufLen = 0;
-            inBuf = nullptr;
-        }
-#else 
-        inBufLen = 0;
-        inBuf = nullptr;
+      
+      
+      inBufLen = length;
+      inBuf = certArray;
+    } else {
+      
+      inBufLen = 0;
+      inBuf = nullptr;
+    }
+#else  
+    inBufLen = 0;
+    inBuf = nullptr;
 #endif
+  } else {
+    
+    
+    int len = strlen(challenge);
+    if (len < 6) return NS_ERROR_UNEXPECTED;  
+    challenge += 5;
+    len -= 5;
+
+    
+    while (challenge[len - 1] == '=') len--;
+
+    
+    rv = Base64Decode(challenge, len, (char **)&inBuf, &inBufLen);
+    if (NS_FAILED(rv)) {
+      return rv;
     }
-    else {
-        
-        
-        int len = strlen(challenge);
-        if (len < 6)
-            return NS_ERROR_UNEXPECTED; 
-        challenge += 5;
-        len -= 5;
+  }
 
-        
-        while (challenge[len - 1] == '=')
-          len--;
+  rv = module->GetNextToken(inBuf, inBufLen, &outBuf, &outBufLen);
+  if (NS_SUCCEEDED(rv)) {
+    
+    CheckedUint32 credsLen = ((CheckedUint32(outBufLen) + 2) / 3) * 4;
+    credsLen += 5;  
+    credsLen += 1;  
 
-        
-        rv = Base64Decode(challenge, len, (char**)&inBuf, &inBufLen);
-        if (NS_FAILED(rv)) {
-            return rv;
-        }
-    }
-
-    rv = module->GetNextToken(inBuf, inBufLen, &outBuf, &outBufLen);
-    if (NS_SUCCEEDED(rv)) {
-        
-        CheckedUint32 credsLen = ((CheckedUint32(outBufLen) + 2) / 3) * 4;
-        credsLen += 5; 
-        credsLen += 1; 
-
-        if (!credsLen.isValid()) {
-          rv = NS_ERROR_FAILURE;
-        } else {
-          *creds = (char *) moz_xmalloc(credsLen.value());
-          memcpy(*creds, "NTLM ", 5);
-          PL_Base64Encode((char *) outBuf, outBufLen, *creds + 5);
-          (*creds)[credsLen.value() - 1] = '\0'; 
-        }
-
-        
-        free(outBuf);
+    if (!credsLen.isValid()) {
+      rv = NS_ERROR_FAILURE;
+    } else {
+      *creds = (char *)moz_xmalloc(credsLen.value());
+      memcpy(*creds, "NTLM ", 5);
+      PL_Base64Encode((char *)outBuf, outBufLen, *creds + 5);
+      (*creds)[credsLen.value() - 1] = '\0';  
     }
 
-    if (inBuf)
-        free(inBuf);
+    
+    free(outBuf);
+  }
 
-    return rv;
+  if (inBuf) free(inBuf);
+
+  return rv;
 }
 
 NS_IMETHODIMP
-nsHttpNTLMAuth::GetAuthFlags(uint32_t *flags)
-{
-    *flags = CONNECTION_BASED | IDENTITY_INCLUDES_DOMAIN | IDENTITY_ENCRYPTED;
-    return NS_OK;
+nsHttpNTLMAuth::GetAuthFlags(uint32_t *flags) {
+  *flags = CONNECTION_BASED | IDENTITY_INCLUDES_DOMAIN | IDENTITY_ENCRYPTED;
+  return NS_OK;
 }
 
-} 
-} 
+}  
+}  

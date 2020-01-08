@@ -14,19 +14,18 @@
 namespace mozilla {
 namespace net {
 
-class nsDNSServiceInfo final : public nsIDNSServiceInfo
-{
-public:
+class nsDNSServiceInfo final : public nsIDNSServiceInfo {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIDNSSERVICEINFO
 
   explicit nsDNSServiceInfo() = default;
   explicit nsDNSServiceInfo(nsIDNSServiceInfo* aServiceInfo);
 
-private:
+ private:
   virtual ~nsDNSServiceInfo() = default;
 
-private:
+ private:
   nsCString mHost;
   nsCString mAddress;
   uint16_t mPort = 0;
@@ -44,7 +43,7 @@ private:
   bool mIsAttributesSet = false;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

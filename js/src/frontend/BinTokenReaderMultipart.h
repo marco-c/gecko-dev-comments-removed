@@ -30,292 +30,292 @@ namespace frontend {
 
 
 
-class MOZ_STACK_CLASS BinTokenReaderMultipart: public BinTokenReaderBase
-{
-  public:
-    class AutoList;
-    class AutoTuple;
-    class AutoTaggedTuple;
+class MOZ_STACK_CLASS BinTokenReaderMultipart : public BinTokenReaderBase {
+ public:
+  class AutoList;
+  class AutoTuple;
+  class AutoTaggedTuple;
 
-    using CharSlice = BinaryASTSupport::CharSlice;
+  using CharSlice = BinaryASTSupport::CharSlice;
+
+  
+  
+  class BinFields {
+   public:
+    explicit BinFields(JSContext*) {}
+  };
+  using Chars = CharSlice;
+
+ public:
+  
+
+
+
+
+  BinTokenReaderMultipart(JSContext* cx, ErrorReporter* er,
+                          const uint8_t* start, const size_t length);
+
+  
+
+
+
+
+  BinTokenReaderMultipart(JSContext* cx, ErrorReporter* er,
+                          const Vector<uint8_t>& chars);
+
+  ~BinTokenReaderMultipart();
+
+  
+
+
+  MOZ_MUST_USE JS::Result<Ok> readHeader();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+
+
+  MOZ_MUST_USE JS::Result<bool> readBool();
+
+  
+
+
+  MOZ_MUST_USE JS::Result<double> readDouble();
+
+  
+
+
+
+
+  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeAtom();
+  MOZ_MUST_USE JS::Result<JSAtom*> readAtom();
+
+  
+
+
+  MOZ_MUST_USE JS::Result<JSAtom*> readMaybeIdentifierName();
+  MOZ_MUST_USE JS::Result<JSAtom*> readIdentifierName();
+
+  
+
+
+  MOZ_MUST_USE JS::Result<JSAtom*> readMaybePropertyKey();
+  MOZ_MUST_USE JS::Result<JSAtom*> readPropertyKey();
+
+  
+
+
+
+
+  MOZ_MUST_USE JS::Result<Ok> readChars(Chars&);
+
+  
+
+
+  MOZ_MUST_USE JS::Result<mozilla::Maybe<BinVariant>> readMaybeVariant();
+  MOZ_MUST_USE JS::Result<BinVariant> readVariant();
+
+  
+
+
+
+
+
+
+  MOZ_MUST_USE JS::Result<SkippableSubTree> readSkippableSubTree();
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE JS::Result<Ok> enterList(uint32_t& length, AutoList& guard);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(
+      BinKind& tag, BinTokenReaderMultipart::BinFields& fields,
+      AutoTaggedTuple& guard);
+
+  
+
+
+
+
+
+
+
+
+
+
+  MOZ_MUST_USE JS::Result<Ok> enterUntaggedTuple(AutoTuple& guard);
+
+  
+
+
+  MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong() {
+    return readInternalUint32();
+  }
+
+ private:
+  
+
+
+  MOZ_MUST_USE JS::Result<uint32_t> readInternalUint32();
+
+ private:
+  
+  
+  js::HashMap<uint32_t, BinVariant, DefaultHasher<uint32_t>, SystemAllocPolicy>
+      variantsTable_;
+
+  enum class MetadataOwnership { Owned, Unowned };
+  MetadataOwnership metadataOwned_;
+  BinASTSourceMetadata* metadata_;
+
+  const uint8_t* posBeforeTree_;
+
+  BinTokenReaderMultipart(const BinTokenReaderMultipart&) = delete;
+  BinTokenReaderMultipart(BinTokenReaderMultipart&&) = delete;
+  BinTokenReaderMultipart& operator=(BinTokenReaderMultipart&) = delete;
+
+ public:
+  void traceMetadata(JSTracer* trc);
+  BinASTSourceMetadata* takeMetadata();
+  MOZ_MUST_USE JS::Result<Ok> initFromScriptSource(ScriptSource* scriptSource);
+
+ public:
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  
+  class MOZ_STACK_CLASS AutoBase {
+   protected:
+    explicit AutoBase(BinTokenReaderMultipart& reader);
+    ~AutoBase();
+
+    
+    MOZ_MUST_USE JS::Result<Ok> checkPosition(const uint8_t* expectedPosition);
+
+    friend BinTokenReaderMultipart;
+    void init();
 
     
     
-    class BinFields {
-      public:
-        explicit BinFields(JSContext*) {}
-    };
-    using Chars = CharSlice;
+    bool initialized_;
+    BinTokenReaderMultipart& reader_;
+  };
 
-  public:
-    
-
-
-
-
-    BinTokenReaderMultipart(JSContext* cx, ErrorReporter* er, const uint8_t* start, const size_t length);
+  
+  class MOZ_STACK_CLASS AutoList : public AutoBase {
+   public:
+    explicit AutoList(BinTokenReaderMultipart& reader);
 
     
+    MOZ_MUST_USE JS::Result<Ok> done();
 
+   protected:
+    friend BinTokenReaderMultipart;
+    void init();
+  };
 
-
-
-    BinTokenReaderMultipart(JSContext* cx, ErrorReporter* er, const Vector<uint8_t>& chars);
-
-    ~BinTokenReaderMultipart();
-
-    
-
-
-    MOZ_MUST_USE JS::Result<Ok> readHeader();
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  class MOZ_STACK_CLASS AutoTaggedTuple : public AutoBase {
+   public:
+    explicit AutoTaggedTuple(BinTokenReaderMultipart& reader);
 
     
+    MOZ_MUST_USE JS::Result<Ok> done();
+  };
 
-
-    MOZ_MUST_USE JS::Result<bool> readBool();
-
-    
-
-
-    MOZ_MUST_USE JS::Result<double> readDouble();
-
-    
-
-
-
-
-    MOZ_MUST_USE JS::Result<JSAtom*> readMaybeAtom();
-    MOZ_MUST_USE JS::Result<JSAtom*> readAtom();
+  
+  class MOZ_STACK_CLASS AutoTuple : public AutoBase {
+   public:
+    explicit AutoTuple(BinTokenReaderMultipart& reader);
 
     
+    MOZ_MUST_USE JS::Result<Ok> done();
+  };
 
-
-    MOZ_MUST_USE JS::Result<JSAtom*> readMaybeIdentifierName();
-    MOZ_MUST_USE JS::Result<JSAtom*> readIdentifierName();
-
-    
-
-
-    MOZ_MUST_USE JS::Result<JSAtom*> readMaybePropertyKey();
-    MOZ_MUST_USE JS::Result<JSAtom*> readPropertyKey();
-
-    
-
-
-
-
-    MOZ_MUST_USE JS::Result<Ok> readChars(Chars&);
-
-    
-
-
-    MOZ_MUST_USE JS::Result<mozilla::Maybe<BinVariant>> readMaybeVariant();
-    MOZ_MUST_USE JS::Result<BinVariant> readVariant();
-
-    
-
-
-
-
-
-
-    MOZ_MUST_USE JS::Result<SkippableSubTree> readSkippableSubTree();
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    MOZ_MUST_USE JS::Result<Ok> enterList(uint32_t& length, AutoList& guard);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    MOZ_MUST_USE JS::Result<Ok> enterTaggedTuple(BinKind& tag, BinTokenReaderMultipart::BinFields& fields, AutoTaggedTuple& guard);
-
-    
-
-
-
-
-
-
-
-
-
-
-    MOZ_MUST_USE JS::Result<Ok> enterUntaggedTuple(AutoTuple& guard);
-
-    
-
-
-    MOZ_MUST_USE JS::Result<uint32_t> readUnsignedLong() {
-        return readInternalUint32();
+  
+  template <size_t N>
+  static bool equals(const Chars& left, const char (&right)[N]) {
+    MOZ_ASSERT(N > 0);
+    MOZ_ASSERT(right[N - 1] == 0);
+    if (left.byteLen_ + 1  != N) {
+      return false;
     }
 
-  private:
-    
-
-
-    MOZ_MUST_USE JS::Result<uint32_t> readInternalUint32();
-
-  private:
-    
-    
-    js::HashMap<uint32_t, BinVariant, DefaultHasher<uint32_t>, SystemAllocPolicy> variantsTable_;
-
-    enum class MetadataOwnership {
-        Owned,
-        Unowned
-    };
-    MetadataOwnership metadataOwned_;
-    BinASTSourceMetadata* metadata_;
-
-    const uint8_t* posBeforeTree_;
-
-    BinTokenReaderMultipart(const BinTokenReaderMultipart&) = delete;
-    BinTokenReaderMultipart(BinTokenReaderMultipart&&) = delete;
-    BinTokenReaderMultipart& operator=(BinTokenReaderMultipart&) = delete;
-
-  public:
-    void traceMetadata(JSTracer* trc);
-    BinASTSourceMetadata* takeMetadata();
-    MOZ_MUST_USE JS::Result<Ok> initFromScriptSource(ScriptSource* scriptSource);
-
-  public:
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-    class MOZ_STACK_CLASS AutoBase
-    {
-      protected:
-        explicit AutoBase(BinTokenReaderMultipart& reader);
-        ~AutoBase();
-
-        
-        MOZ_MUST_USE JS::Result<Ok> checkPosition(const uint8_t* expectedPosition);
-
-        friend BinTokenReaderMultipart;
-        void init();
-
-        
-        
-        bool initialized_;
-        BinTokenReaderMultipart& reader_;
-    };
-
-    
-    class MOZ_STACK_CLASS AutoList : public AutoBase
-    {
-      public:
-        explicit AutoList(BinTokenReaderMultipart& reader);
-
-        
-        MOZ_MUST_USE JS::Result<Ok> done();
-
-      protected:
-        friend BinTokenReaderMultipart;
-        void init();
-    };
-
-    
-    class MOZ_STACK_CLASS AutoTaggedTuple : public AutoBase
-    {
-      public:
-        explicit AutoTaggedTuple(BinTokenReaderMultipart& reader);
-
-        
-        MOZ_MUST_USE JS::Result<Ok> done();
-    };
-
-    
-    class MOZ_STACK_CLASS AutoTuple : public AutoBase
-    {
-      public:
-        explicit AutoTuple(BinTokenReaderMultipart& reader);
-
-        
-        MOZ_MUST_USE JS::Result<Ok> done();
-    };
-
-    
-    template <size_t N>
-    static bool equals(const Chars& left, const char (&right)[N]) {
-        MOZ_ASSERT(N > 0);
-        MOZ_ASSERT(right[N - 1] == 0);
-        if (left.byteLen_ + 1  != N) {
-            return false;
-        }
-
-        if (!std::equal(left.start_, left.start_ + left.byteLen_, right)) {
-          return false;
-        }
-
-        return true;
+    if (!std::equal(left.start_, left.start_ + left.byteLen_, right)) {
+      return false;
     }
 
-    template<size_t N>
-    static JS::Result<Ok, JS::Error&>
-    checkFields(const BinKind kind, const BinFields& actual, const BinField (&expected)[N]) {
-      
-      return Ok();
-    }
+    return true;
+  }
 
-    static JS::Result<Ok, JS::Error&>
-    checkFields0(const BinKind kind, const BinFields& actual) {
-      
-      return Ok();
-    }
+  template <size_t N>
+  static JS::Result<Ok, JS::Error&> checkFields(const BinKind kind,
+                                                const BinFields& actual,
+                                                const BinField (&expected)[N]) {
+    
+    return Ok();
+  }
+
+  static JS::Result<Ok, JS::Error&> checkFields0(const BinKind kind,
+                                                 const BinFields& actual) {
+    
+    return Ok();
+  }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

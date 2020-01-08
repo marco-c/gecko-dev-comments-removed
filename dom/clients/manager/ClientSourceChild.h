@@ -13,44 +13,38 @@ namespace dom {
 
 class ClientSource;
 class ClientSourceConstructorArgs;
-template <typename ActorType> class ClientThing;
+template <typename ActorType>
+class ClientThing;
 
-class ClientSourceChild final : public PClientSourceChild
-{
+class ClientSourceChild final : public PClientSourceChild {
   ClientSource* mSource;
   bool mTeardownStarted;
 
   
-  void
-  ActorDestroy(ActorDestroyReason aReason) override;
+  void ActorDestroy(ActorDestroyReason aReason) override;
 
-  PClientSourceOpChild*
-  AllocPClientSourceOpChild(const ClientOpConstructorArgs& aArgs) override;
+  PClientSourceOpChild* AllocPClientSourceOpChild(
+      const ClientOpConstructorArgs& aArgs) override;
 
-  bool
-  DeallocPClientSourceOpChild(PClientSourceOpChild* aActor) override;
+  bool DeallocPClientSourceOpChild(PClientSourceOpChild* aActor) override;
 
-  mozilla::ipc::IPCResult
-  RecvPClientSourceOpConstructor(PClientSourceOpChild* aActor,
-                                 const ClientOpConstructorArgs& aArgs) override;
+  mozilla::ipc::IPCResult RecvPClientSourceOpConstructor(
+      PClientSourceOpChild* aActor,
+      const ClientOpConstructorArgs& aArgs) override;
 
-public:
+ public:
   explicit ClientSourceChild(const ClientSourceConstructorArgs& aArgs);
 
-  void
-  SetOwner(ClientThing<ClientSourceChild>* aThing);
+  void SetOwner(ClientThing<ClientSourceChild>* aThing);
 
-  void
-  RevokeOwner(ClientThing<ClientSourceChild>* aThing);
+  void RevokeOwner(ClientThing<ClientSourceChild>* aThing);
 
-  ClientSource*
-  GetSource() const;
+  ClientSource* GetSource() const;
 
-  void
-  MaybeStartTeardown();
+  void MaybeStartTeardown();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

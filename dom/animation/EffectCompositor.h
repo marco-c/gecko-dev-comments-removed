@@ -38,22 +38,17 @@ struct NonOwningAnimationTarget;
 namespace dom {
 class Animation;
 class Element;
-}
+}  
 
-class EffectCompositor
-{
-public:
+class EffectCompositor {
+ public:
   explicit EffectCompositor(nsPresContext* aPresContext)
-    : mPresContext(aPresContext)
-  {
-  }
+      : mPresContext(aPresContext) {}
 
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(EffectCompositor)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(EffectCompositor)
 
-  void Disconnect() {
-    mPresContext = nullptr;
-  }
+  void Disconnect() { mPresContext = nullptr; }
 
   
   enum class CascadeLevel : uint32_t {
@@ -66,7 +61,7 @@ public:
   
   
   static const size_t kCascadeLevelCount =
-    static_cast<size_t>(CascadeLevel::Transitions) + 1;
+      static_cast<size_t>(CascadeLevel::Transitions) + 1;
 
   
   nsPresContext* PresContext() const { return mPresContext; }
@@ -92,10 +87,8 @@ public:
   
   
   
-  void RequestRestyle(dom::Element* aElement,
-                      CSSPseudoElementType aPseudoType,
-                      RestyleType aRestyleType,
-                      CascadeLevel aCascadeLevel);
+  void RequestRestyle(dom::Element* aElement, CSSPseudoElementType aPseudoType,
+                      RestyleType aRestyleType, CascadeLevel aCascadeLevel);
 
   
   
@@ -122,27 +115,23 @@ public:
                               dom::Element* aElement,
                               CSSPseudoElementType aPseudoType);
 
-
   
   
   
   
   
   bool GetServoAnimationRule(
-    const dom::Element* aElement,
-    CSSPseudoElementType aPseudoType,
-    CascadeLevel aCascadeLevel,
-    RawServoAnimationValueMapBorrowedMut aAnimationValues);
+      const dom::Element* aElement, CSSPseudoElementType aPseudoType,
+      CascadeLevel aCascadeLevel,
+      RawServoAnimationValueMapBorrowedMut aAnimationValues);
 
   bool HasPendingStyleUpdates() const;
-
 
   static bool HasAnimationsForCompositor(const nsIFrame* aFrame,
                                          nsCSSPropertyID aProperty);
 
-  static nsTArray<RefPtr<dom::Animation>>
-  GetAnimationsForCompositor(const nsIFrame* aFrame,
-                             nsCSSPropertyID aProperty);
+  static nsTArray<RefPtr<dom::Animation>> GetAnimationsForCompositor(
+      const nsIFrame* aFrame, nsCSSPropertyID aProperty);
 
   static void ClearIsRunningOnCompositor(const nsIFrame* aFrame,
                                          nsCSSPropertyID aProperty);
@@ -154,9 +143,8 @@ public:
   
   
   
-  static void
-  MaybeUpdateCascadeResults(dom::Element* aElement,
-                            CSSPseudoElementType aPseudoType);
+  static void MaybeUpdateCascadeResults(dom::Element* aElement,
+                                        CSSPseudoElementType aPseudoType);
 
   
   
@@ -170,10 +158,9 @@ public:
   
   
   
-  static void
-  UpdateCascadeResults(EffectSet& aEffectSet,
-                       dom::Element* aElement,
-                       CSSPseudoElementType aPseudoType);
+  static void UpdateCascadeResults(EffectSet& aEffectSet,
+                                   dom::Element* aElement,
+                                   CSSPseudoElementType aPseudoType);
 
   
   
@@ -184,15 +171,14 @@ public:
   
   
   
-  static Maybe<NonOwningAnimationTarget>
-  GetAnimationElementAndPseudoForFrame(const nsIFrame* aFrame);
+  static Maybe<NonOwningAnimationTarget> GetAnimationElementAndPseudoForFrame(
+      const nsIFrame* aFrame);
 
   
   
   static void SetPerformanceWarning(
-    const nsIFrame* aFrame,
-    nsCSSPropertyID aProperty,
-    const AnimationPerformanceWarning& aWarning);
+      const nsIFrame* aFrame, nsCSSPropertyID aProperty,
+      const AnimationPerformanceWarning& aWarning);
 
   
   
@@ -221,21 +207,18 @@ public:
   
   
   static bool AllowCompositorAnimationsOnFrame(
-    const nsIFrame* aFrame,
-    const EffectSet& aEffects,
-    AnimationPerformanceWarning::Type& aWarning );
+      const nsIFrame* aFrame, const EffectSet& aEffects,
+      AnimationPerformanceWarning::Type& aWarning );
 
-private:
+ private:
   ~EffectCompositor() = default;
 
-
   
   
   
-  static nsCSSPropertyIDSet
-  GetOverriddenProperties(EffectSet& aEffectSet,
-                          dom::Element* aElement,
-                          CSSPseudoElementType aPseudoType);
+  static nsCSSPropertyIDSet GetOverriddenProperties(
+      EffectSet& aEffectSet, dom::Element* aElement,
+      CSSPseudoElementType aPseudoType);
 
   static nsPresContext* GetPresContext(dom::Element* aElement);
 
@@ -248,12 +231,11 @@ private:
   
   EnumeratedArray<CascadeLevel, CascadeLevel(kCascadeLevelCount),
                   nsDataHashtable<PseudoElementHashEntry, bool>>
-                    mElementsToRestyle;
+      mElementsToRestyle;
 
   bool mIsInPreTraverse = false;
-
 };
 
-} 
+}  
 
-#endif 
+#endif  

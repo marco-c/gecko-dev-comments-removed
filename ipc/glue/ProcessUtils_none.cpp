@@ -9,10 +9,7 @@
 namespace mozilla {
 namespace ipc {
 
-void SetThisProcessName(const char *aString)
-{
-  (void)aString;
-}
+void SetThisProcessName(const char *aString) { (void)aString; }
 
-} 
-} 
+}  
+}  

@@ -33,17 +33,15 @@ class TextOverflow final {
 
 
 
-  static Maybe<TextOverflow>
-  WillProcessLines(nsDisplayListBuilder* aBuilder,
-                   nsIFrame*             aBlockFrame);
+  static Maybe<TextOverflow> WillProcessLines(nsDisplayListBuilder* aBuilder,
+                                              nsIFrame* aBlockFrame);
 
   
 
 
 
 
-  TextOverflow(nsDisplayListBuilder* aBuilder,
-               nsIFrame* aBlockFrame);
+  TextOverflow(nsDisplayListBuilder* aBuilder, nsIFrame* aBlockFrame);
 
   TextOverflow() = delete;
   ~TextOverflow() = default;
@@ -57,7 +55,8 @@ class TextOverflow final {
 
 
 
-  void ProcessLine(const nsDisplayListSet& aLists, nsLineBox* aLine, uint32_t aLineNumber);
+  void ProcessLine(const nsDisplayListSet& aLists, nsLineBox* aLine,
+                   uint32_t aLineNumber);
 
   
 
@@ -82,8 +81,7 @@ class TextOverflow final {
 
   struct AlignmentEdges {
     AlignmentEdges() : mIStart(0), mIEnd(0), mAssigned(false) {}
-    void Accumulate(WritingMode aWM, const LogicalRect& aRect)
-    {
+    void Accumulate(WritingMode aWM, const LogicalRect& aRect) {
       if (MOZ_LIKELY(mAssigned)) {
         mIStart = std::min(mIStart, aRect.IStart(aWM));
         mIEnd = std::max(mIEnd, aRect.IEnd(aWM));
@@ -101,12 +99,8 @@ class TextOverflow final {
 
   struct InnerClipEdges {
     InnerClipEdges()
-      : mIStart(0)
-      , mIEnd(0)
-      , mAssignedIStart(false)
-      , mAssignedIEnd(false) {}
-    void AccumulateIStart(WritingMode aWM, const LogicalRect& aRect)
-    {
+        : mIStart(0), mIEnd(0), mAssignedIStart(false), mAssignedIEnd(false) {}
+    void AccumulateIStart(WritingMode aWM, const LogicalRect& aRect) {
       if (MOZ_LIKELY(mAssignedIStart)) {
         mIStart = std::max(mIStart, aRect.IStart(aWM));
       } else {
@@ -114,8 +108,7 @@ class TextOverflow final {
         mAssignedIStart = true;
       }
     }
-    void AccumulateIEnd(WritingMode aWM, const LogicalRect& aRect)
-    {
+    void AccumulateIEnd(WritingMode aWM, const LogicalRect& aRect) {
       if (MOZ_LIKELY(mAssignedIEnd)) {
         mIEnd = std::min(mIEnd, aRect.IEnd(aWM));
       } else {
@@ -129,13 +122,12 @@ class TextOverflow final {
     bool mAssignedIEnd;
   };
 
-  LogicalRect
-    GetLogicalScrollableOverflowRectRelativeToBlock(nsIFrame* aFrame) const
-  {
-    return LogicalRect(mBlockWM,
-                       aFrame->GetScrollableOverflowRect() +
-                         aFrame->GetOffsetTo(mBlock),
-                       mBlockSize);
+  LogicalRect GetLogicalScrollableOverflowRectRelativeToBlock(
+      nsIFrame* aFrame) const {
+    return LogicalRect(
+        mBlockWM,
+        aFrame->GetScrollableOverflowRect() + aFrame->GetOffsetTo(mBlock),
+        mBlockSize);
   }
 
   
@@ -149,8 +141,7 @@ class TextOverflow final {
 
 
 
-  LogicalRect ExamineLineFrames(nsLineBox*      aLine,
-                                FrameHashtable* aFramesToHide,
+  LogicalRect ExamineLineFrames(nsLineBox* aLine, FrameHashtable* aFramesToHide,
                                 AlignmentEdges* aAlignmentEdges);
 
   
@@ -167,12 +158,11 @@ class TextOverflow final {
 
 
 
-  void ExamineFrameSubtree(nsIFrame*       aFrame,
-                           const LogicalRect& aContentArea,
+  void ExamineFrameSubtree(nsIFrame* aFrame, const LogicalRect& aContentArea,
                            const LogicalRect& aInsideMarkersArea,
                            FrameHashtable* aFramesToHide,
                            AlignmentEdges* aAlignmentEdges,
-                           bool*           aFoundVisibleTextOrAtomic,
+                           bool* aFoundVisibleTextOrAtomic,
                            InnerClipEdges* aClippedMarkerEdges);
 
   
@@ -194,8 +184,7 @@ class TextOverflow final {
 
 
 
-  void AnalyzeMarkerEdges(nsIFrame* aFrame,
-                          mozilla::LayoutFrameType aFrameType,
+  void AnalyzeMarkerEdges(nsIFrame* aFrame, mozilla::LayoutFrameType aFrameType,
                           const LogicalRect& aInsideMarkersArea,
                           FrameHashtable* aFramesToHide,
                           AlignmentEdges* aAlignmentEdges,
@@ -223,24 +212,22 @@ class TextOverflow final {
 
 
 
-  void CreateMarkers(const nsLineBox* aLine,
-                     bool aCreateIStart, bool aCreateIEnd,
-                     const LogicalRect& aInsideMarkersArea,
-                     const LogicalRect& aContentArea,
-                     uint32_t aLineNumber);
+  void CreateMarkers(const nsLineBox* aLine, bool aCreateIStart,
+                     bool aCreateIEnd, const LogicalRect& aInsideMarkersArea,
+                     const LogicalRect& aContentArea, uint32_t aLineNumber);
 
-  LogicalRect            mContentArea;
-  nsDisplayListBuilder*  mBuilder;
-  nsIFrame*              mBlock;
-  nsIScrollableFrame*    mScrollableFrame;
-  nsDisplayList          mMarkerList;
-  nsSize                 mBlockSize;
-  WritingMode            mBlockWM;
-  bool                   mCanHaveInlineAxisScrollbar;
-  bool                   mAdjustForPixelSnapping;
+  LogicalRect mContentArea;
+  nsDisplayListBuilder* mBuilder;
+  nsIFrame* mBlock;
+  nsIScrollableFrame* mScrollableFrame;
+  nsDisplayList mMarkerList;
+  nsSize mBlockSize;
+  WritingMode mBlockWM;
+  bool mCanHaveInlineAxisScrollbar;
+  bool mAdjustForPixelSnapping;
 
   class Marker {
-  public:
+   public:
     void Init(const nsStyleTextOverflowSide& aStyle) {
       mInitialized = false;
       mISize = 0;
@@ -255,33 +242,29 @@ class TextOverflow final {
 
     void SetupString(nsIFrame* aFrame);
 
-    bool IsNeeded() const {
-      return mHasOverflow;
-    }
-    void Reset() {
-      mHasOverflow = false;
-    }
+    bool IsNeeded() const { return mHasOverflow; }
+    void Reset() { mHasOverflow = false; }
 
     
-    nscoord                        mISize;
+    nscoord mISize;
     
-    nscoord                        mIntrinsicISize;
+    nscoord mIntrinsicISize;
     
     const nsStyleTextOverflowSide* mStyle;
     
-    bool                           mHasOverflow;
+    bool mHasOverflow;
     
-    bool                           mInitialized;
+    bool mInitialized;
     
     
-    bool                           mActive;
+    bool mActive;
   };
 
-  Marker mIStart; 
-  Marker mIEnd; 
+  Marker mIStart;  
+  Marker mIEnd;    
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

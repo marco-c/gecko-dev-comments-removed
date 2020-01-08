@@ -38,9 +38,8 @@ namespace dom {
 
 
 
-class DocGroup final
-{
-public:
+class DocGroup final {
+ public:
   typedef nsTArray<nsIDocument*>::iterator Iterator;
   friend class TabGroup;
 
@@ -49,27 +48,17 @@ public:
   
   
   
-  static MOZ_MUST_USE nsresult
-  GetKey(nsIPrincipal* aPrincipal, nsACString& aString);
+  static MOZ_MUST_USE nsresult GetKey(nsIPrincipal* aPrincipal,
+                                      nsACString& aString);
 
-  bool MatchesKey(const nsACString& aKey)
-  {
-    return aKey == mKey;
-  }
+  bool MatchesKey(const nsACString& aKey) { return aKey == mKey; }
 
-  PerformanceCounter* GetPerformanceCounter()
-  {
-    return mPerformanceCounter;
-  }
+  PerformanceCounter* GetPerformanceCounter() { return mPerformanceCounter; }
 
   RefPtr<PerformanceInfoPromise> ReportPerformanceInfo();
 
-  TabGroup* GetTabGroup()
-  {
-    return mTabGroup;
-  }
-  mozilla::dom::CustomElementReactionsStack* CustomElementReactionsStack()
-  {
+  TabGroup* GetTabGroup() { return mTabGroup; }
+  mozilla::dom::CustomElementReactionsStack* CustomElementReactionsStack() {
     MOZ_ASSERT(NS_IsMainThread());
     if (!mReactionsStack) {
       mReactionsStack = new mozilla::dom::CustomElementReactionsStack();
@@ -80,13 +69,11 @@ public:
   void RemoveDocument(nsIDocument* aWindow);
 
   
-  Iterator begin()
-  {
+  Iterator begin() {
     MOZ_ASSERT(NS_IsMainThread());
     return mDocuments.begin();
   }
-  Iterator end()
-  {
+  Iterator end() {
     MOZ_ASSERT(NS_IsMainThread());
     return mDocuments.end();
   }
@@ -96,14 +83,10 @@ public:
 
   nsISerialEventTarget* EventTargetFor(TaskCategory aCategory) const;
 
-  AbstractThread*
-  AbstractMainThreadFor(TaskCategory aCategory);
+  AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
 
   
-  void ValidateAccess() const
-  {
-    mTabGroup->ValidateAccess();
-  }
+  void ValidateAccess() const { mTabGroup->ValidateAccess(); }
 
   
   
@@ -122,7 +105,7 @@ public:
   
   bool IsActive() const;
 
-private:
+ private:
   DocGroup(TabGroup* aTabGroup, const nsACString& aKey);
   ~DocGroup();
 
@@ -136,7 +119,7 @@ private:
   RefPtr<mozilla::PerformanceCounter> mPerformanceCounter;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

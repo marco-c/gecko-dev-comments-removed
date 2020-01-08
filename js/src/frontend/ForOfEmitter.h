@@ -38,83 +38,83 @@ class EmitterScope;
 
 
 
-class MOZ_STACK_CLASS ForOfEmitter
-{
-    BytecodeEmitter* bce_;
+class MOZ_STACK_CLASS ForOfEmitter {
+  BytecodeEmitter* bce_;
 
-    
-    unsigned noteIndex_ = 0;
-
-#ifdef DEBUG
-    
-    int32_t loopDepth_ = 0;
-#endif
-
-    bool allowSelfHostedIter_;
-    IteratorKind iterKind_;
-
-    
-    JumpList initialJump_;
-
-    mozilla::Maybe<ForOfLoopControl> loopInfo_;
-
-    
-    
-    const EmitterScope* headLexicalEmitterScope_;
-
-    
-    
-    mozilla::Maybe<TDZCheckCache> tdzCacheForIteratedValue_;
+  
+  unsigned noteIndex_ = 0;
 
 #ifdef DEBUG
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    enum class State {
-        
-        Start,
-
-        
-        Iterated,
-
-        
-        Initialize,
-
-        
-        Body,
-
-        
-        End
-    };
-    State state_ = State::Start;
+  
+  int32_t loopDepth_ = 0;
 #endif
 
-  public:
-    ForOfEmitter(BytecodeEmitter* bce, const EmitterScope* headLexicalEmitterScope,
-                 bool allowSelfHostedIter, IteratorKind iterKind);
+  bool allowSelfHostedIter_;
+  IteratorKind iterKind_;
+
+  
+  JumpList initialJump_;
+
+  mozilla::Maybe<ForOfLoopControl> loopInfo_;
+
+  
+  
+  const EmitterScope* headLexicalEmitterScope_;
+
+  
+  
+  mozilla::Maybe<TDZCheckCache> tdzCacheForIteratedValue_;
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
+    
+    Start,
 
     
+    Iterated,
+
     
+    Initialize,
+
     
+    Body,
+
     
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE bool emitIterated();
-    MOZ_MUST_USE bool emitInitialize(const mozilla::Maybe<uint32_t>& forPos);
-    MOZ_MUST_USE bool emitBody();
-    MOZ_MUST_USE bool emitEnd(const mozilla::Maybe<uint32_t>& iteratedPos);
+    End
+  };
+  State state_ = State::Start;
+#endif
+
+ public:
+  ForOfEmitter(BytecodeEmitter* bce,
+               const EmitterScope* headLexicalEmitterScope,
+               bool allowSelfHostedIter, IteratorKind iterKind);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool emitIterated();
+  MOZ_MUST_USE bool emitInitialize(const mozilla::Maybe<uint32_t>& forPos);
+  MOZ_MUST_USE bool emitBody();
+  MOZ_MUST_USE bool emitEnd(const mozilla::Maybe<uint32_t>& iteratedPos);
 };
 
 } 

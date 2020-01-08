@@ -16,7 +16,8 @@
 
 namespace mozilla {
 
-template <typename> struct IsPixel;
+template <typename>
+struct IsPixel;
 
 namespace gfx {
 
@@ -34,13 +35,13 @@ namespace gfx {
 
 template <class T, class Sub, class Rect>
 struct BaseRectAbsolute {
-protected:
+ protected:
   T left, top, right, bottom;
 
-public:
+ public:
   BaseRectAbsolute() : left(0), top(0), right(0), bottom(0) {}
-  BaseRectAbsolute(T aLeft, T aTop, T aRight, T aBottom) :
-    left(aLeft), top(aTop), right(aRight), bottom(aBottom) {}
+  BaseRectAbsolute(T aLeft, T aTop, T aRight, T aBottom)
+      : left(aLeft), top(aTop), right(aRight), bottom(aBottom) {}
 
   MOZ_ALWAYS_INLINE T X() const { return left; }
   MOZ_ALWAYS_INLINE T Y() const { return top; }
@@ -59,45 +60,32 @@ public:
   T Area() const { return Width() * Height(); }
 
   void Inflate(T aD) { Inflate(aD, aD); }
-  void Inflate(T aDx, T aDy)
-  {
+  void Inflate(T aDx, T aDy) {
     left -= aDx;
     top -= aDy;
     right += aDx;
     bottom += aDy;
   }
 
-  MOZ_ALWAYS_INLINE void SetBox(T aLeft, T aTop, T aRight, T aBottom)
-  {
-    left = aLeft; top = aTop; right = aRight; bottom = aBottom;
-  }
-  void SetLeftEdge(T aLeft)
-  {
+  MOZ_ALWAYS_INLINE void SetBox(T aLeft, T aTop, T aRight, T aBottom) {
     left = aLeft;
-  }
-  void SetRightEdge(T aRight)
-  {
-    right = aRight;
-  }
-  void SetTopEdge(T aTop)
-  {
     top = aTop;
-  }
-  void SetBottomEdge(T aBottom)
-  {
+    right = aRight;
     bottom = aBottom;
   }
+  void SetLeftEdge(T aLeft) { left = aLeft; }
+  void SetRightEdge(T aRight) { right = aRight; }
+  void SetTopEdge(T aTop) { top = aTop; }
+  void SetBottomEdge(T aBottom) { bottom = aBottom; }
 
-  static Sub FromRect(const Rect& aRect)
-  {
+  static Sub FromRect(const Rect& aRect) {
     if (aRect.Overflows()) {
       return Sub();
     }
     return Sub(aRect.x, aRect.y, aRect.XMost(), aRect.YMost());
   }
 
-  MOZ_MUST_USE Sub Intersect(const Sub& aOther) const
-  {
+  MOZ_MUST_USE Sub Intersect(const Sub& aOther) const {
     Sub result;
     result.left = std::max<T>(left, aOther.left);
     result.top = std::max<T>(top, aOther.top);
@@ -109,47 +97,48 @@ public:
     return result;
   }
 
-  bool IsEmpty() const {
-    return right <= left || bottom <= top;
+  bool IsEmpty() const { return right <= left || bottom <= top; }
+
+  bool IsEqualEdges(const Sub& aOther) const {
+    return left == aOther.left && top == aOther.top && right == aOther.right &&
+           bottom == aOther.bottom;
   }
 
-  bool IsEqualEdges(const Sub& aOther) const
-  {
-    return left == aOther.left && top == aOther.top &&
-           right == aOther.right && bottom == aOther.bottom;
-  }
-
-  bool IsEqualInterior(const Sub& aRect) const
-  {
+  bool IsEqualInterior(const Sub& aRect) const {
     return IsEqualEdges(aRect) || (IsEmpty() && aRect.IsEmpty());
   }
 
-  MOZ_ALWAYS_INLINE void MoveBy(T aDx, T aDy) { left += aDx; right += aDx; top += aDy; bottom += aDy; }
-  MOZ_ALWAYS_INLINE void MoveBy(const Point& aPoint) { left += aPoint.x; right += aPoint.x; top += aPoint.y; bottom += aPoint.y; }
-  MOZ_ALWAYS_INLINE void SizeTo(T aWidth, T aHeight) { right = left + aWidth; bottom = top + aHeight; }
-
-  bool Contains(const Sub& aRect) const
-  {
-    return aRect.IsEmpty() ||
-      (left <= aRect.left && aRect.right <= right &&
-       top <= aRect.top && aRect.bottom <= bottom);
+  MOZ_ALWAYS_INLINE void MoveBy(T aDx, T aDy) {
+    left += aDx;
+    right += aDx;
+    top += aDy;
+    bottom += aDy;
   }
-  bool Contains(T aX, T aY) const
-  {
-    return (left <= aX && aX < right &&
-            top <= aY && aY < bottom);
+  MOZ_ALWAYS_INLINE void MoveBy(const Point& aPoint) {
+    left += aPoint.x;
+    right += aPoint.x;
+    top += aPoint.y;
+    bottom += aPoint.y;
   }
-
-  bool Intersects(const Sub& aRect) const
-  {
-    return !IsEmpty() && !aRect.IsEmpty() &&
-      left < aRect.right && aRect.left < right &&
-      top < aRect.bottom && aRect.top < bottom;
+  MOZ_ALWAYS_INLINE void SizeTo(T aWidth, T aHeight) {
+    right = left + aWidth;
+    bottom = top + aHeight;
   }
 
-  void SetEmpty() {
-    left = right = top = bottom = 0;
+  bool Contains(const Sub& aRect) const {
+    return aRect.IsEmpty() || (left <= aRect.left && aRect.right <= right &&
+                               top <= aRect.top && aRect.bottom <= bottom);
   }
+  bool Contains(T aX, T aY) const {
+    return (left <= aX && aX < right && top <= aY && aY < bottom);
+  }
+
+  bool Intersects(const Sub& aRect) const {
+    return !IsEmpty() && !aRect.IsEmpty() && left < aRect.right &&
+           aRect.left < right && top < aRect.bottom && aRect.top < bottom;
+  }
+
+  void SetEmpty() { left = right = top = bottom = 0; }
 
   
   
@@ -157,8 +146,7 @@ public:
   
   
   
-  MOZ_MUST_USE Sub Union(const Sub& aRect) const
-  {
+  MOZ_MUST_USE Sub Union(const Sub& aRect) const {
     if (IsEmpty()) {
       return aRect;
     } else if (aRect.IsEmpty()) {
@@ -172,8 +160,7 @@ public:
   
   
   
-  MOZ_MUST_USE Sub UnionEdges(const Sub& aRect) const
-  {
+  MOZ_MUST_USE Sub UnionEdges(const Sub& aRect) const {
     Sub result;
     result.left = std::min(left, aRect.left);
     result.top = std::min(top, aRect.top);
@@ -185,8 +172,7 @@ public:
   
   void Scale(T aScale) { Scale(aScale, aScale); }
   
-  void Scale(T aXScale, T aYScale)
-  {
+  void Scale(T aXScale, T aYScale) {
     right = XMost() * aXScale;
     bottom = YMost() * aYScale;
     left = left * aXScale;
@@ -195,13 +181,13 @@ public:
   
   
   
+  
   void ScaleRoundOut(double aScale) { ScaleRoundOut(aScale, aScale); }
   
   
   
   
-  void ScaleRoundOut(double aXScale, double aYScale)
-  {
+  void ScaleRoundOut(double aXScale, double aYScale) {
     right = static_cast<T>(ceil(double(XMost()) * aXScale));
     bottom = static_cast<T>(ceil(double(YMost()) * aYScale));
     left = static_cast<T>(floor(double(left) * aXScale));
@@ -209,12 +195,12 @@ public:
   }
   
   
+  
   void ScaleRoundIn(double aScale) { ScaleRoundIn(aScale, aScale); }
   
   
   
-  void ScaleRoundIn(double aXScale, double aYScale)
-  {
+  void ScaleRoundIn(double aXScale, double aYScale) {
     right = static_cast<T>(floor(double(XMost()) * aXScale));
     bottom = static_cast<T>(floor(double(YMost()) * aYScale));
     left = static_cast<T>(ceil(double(left) * aXScale));
@@ -223,13 +209,15 @@ public:
   
   
   
-  void ScaleInverseRoundOut(double aScale) { ScaleInverseRoundOut(aScale, aScale); }
+  
+  void ScaleInverseRoundOut(double aScale) {
+    ScaleInverseRoundOut(aScale, aScale);
+  }
   
   
   
   
-  void ScaleInverseRoundOut(double aXScale, double aYScale)
-  {
+  void ScaleInverseRoundOut(double aXScale, double aYScale) {
     right = static_cast<T>(ceil(double(XMost()) / aXScale));
     bottom = static_cast<T>(ceil(double(YMost()) / aYScale));
     left = static_cast<T>(floor(double(left) / aXScale));
@@ -237,50 +225,56 @@ public:
   }
   
   
-  void ScaleInverseRoundIn(double aScale) { ScaleInverseRoundIn(aScale, aScale); }
+  
+  void ScaleInverseRoundIn(double aScale) {
+    ScaleInverseRoundIn(aScale, aScale);
+  }
   
   
   
-  void ScaleInverseRoundIn(double aXScale, double aYScale)
-  {
+  void ScaleInverseRoundIn(double aXScale, double aYScale) {
     right = static_cast<T>(floor(double(XMost()) / aXScale));
     bottom = static_cast<T>(floor(double(YMost()) / aYScale));
     left = static_cast<T>(ceil(double(left) / aXScale));
     top = static_cast<T>(ceil(double(top) / aYScale));
   }
-
 };
 
 template <class Units>
-struct IntRectAbsoluteTyped :
-    public BaseRectAbsolute<int32_t, IntRectAbsoluteTyped<Units>, IntRectTyped<Units>>,
-    public Units {
+struct IntRectAbsoluteTyped
+    : public BaseRectAbsolute<int32_t, IntRectAbsoluteTyped<Units>,
+                              IntRectTyped<Units>>,
+      public Units {
   static_assert(IsPixel<Units>::value,
                 "'units' must be a coordinate system tag");
-  typedef BaseRectAbsolute<int32_t, IntRectAbsoluteTyped<Units>, IntRectTyped<Units>> Super;
+  typedef BaseRectAbsolute<int32_t, IntRectAbsoluteTyped<Units>,
+                           IntRectTyped<Units>>
+      Super;
   typedef IntParam<int32_t> ToInt;
 
   IntRectAbsoluteTyped() : Super() {}
-  IntRectAbsoluteTyped(ToInt aLeft, ToInt aTop, ToInt aRight, ToInt aBottom) :
-      Super(aLeft.value, aTop.value, aRight.value, aBottom.value) {}
+  IntRectAbsoluteTyped(ToInt aLeft, ToInt aTop, ToInt aRight, ToInt aBottom)
+      : Super(aLeft.value, aTop.value, aRight.value, aBottom.value) {}
 };
 
 template <class Units>
-struct RectAbsoluteTyped :
-    public BaseRectAbsolute<Float, RectAbsoluteTyped<Units>, RectTyped<Units>>,
-    public Units {
+struct RectAbsoluteTyped
+    : public BaseRectAbsolute<Float, RectAbsoluteTyped<Units>,
+                              RectTyped<Units>>,
+      public Units {
   static_assert(IsPixel<Units>::value,
                 "'units' must be a coordinate system tag");
-  typedef BaseRectAbsolute<Float, RectAbsoluteTyped<Units>, RectTyped<Units>> Super;
+  typedef BaseRectAbsolute<Float, RectAbsoluteTyped<Units>, RectTyped<Units>>
+      Super;
 
   RectAbsoluteTyped() : Super() {}
-  RectAbsoluteTyped(Float aLeft, Float aTop, Float aRight, Float aBottom) :
-      Super(aLeft, aTop, aRight, aBottom) {}
+  RectAbsoluteTyped(Float aLeft, Float aTop, Float aRight, Float aBottom)
+      : Super(aLeft, aTop, aRight, aBottom) {}
 };
 
 typedef IntRectAbsoluteTyped<UnknownUnits> IntRectAbsolute;
 
-}
-}
+}  
+}  
 
 #endif 

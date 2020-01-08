@@ -6,7 +6,7 @@
 
 #include "CheckerboardEvent.h"
 
-#include <algorithm> 
+#include <algorithm>  
 
 namespace mozilla {
 namespace layers {
@@ -17,70 +17,46 @@ namespace layers {
 #define LOG_LENGTH_LIMIT (50 * 1024)
 
 const char* CheckerboardEvent::sDescriptions[] = {
-  "page",
-  "painted critical displayport",
-  "painted displayport",
-  "requested displayport",
-  "viewport",
+    "page",
+    "painted critical displayport",
+    "painted displayport",
+    "requested displayport",
+    "viewport",
 };
 
 const char* CheckerboardEvent::sColors[] = {
-  "brown",
-  "darkgreen",
-  "lightgreen",
-  "yellow",
-  "red",
+    "brown", "darkgreen", "lightgreen", "yellow", "red",
 };
 
 CheckerboardEvent::CheckerboardEvent(bool aRecordTrace)
-  : mRecordTrace(aRecordTrace)
-  , mOriginTime(TimeStamp::Now())
-  , mCheckerboardingActive(false)
-  , mLastSampleTime(mOriginTime)
-  , mFrameCount(0)
-  , mTotalPixelMs(0)
-  , mPeakPixels(0)
-  , mRendertraceLock("Rendertrace")
-{
-}
+    : mRecordTrace(aRecordTrace),
+      mOriginTime(TimeStamp::Now()),
+      mCheckerboardingActive(false),
+      mLastSampleTime(mOriginTime),
+      mFrameCount(0),
+      mTotalPixelMs(0),
+      mPeakPixels(0),
+      mRendertraceLock("Rendertrace") {}
 
-uint32_t
-CheckerboardEvent::GetSeverity()
-{
+uint32_t CheckerboardEvent::GetSeverity() {
   
   return (uint32_t)sqrt((double)mTotalPixelMs);
 }
 
-uint32_t
-CheckerboardEvent::GetPeak()
-{
-  return mPeakPixels;
-}
+uint32_t CheckerboardEvent::GetPeak() { return mPeakPixels; }
 
-TimeDuration
-CheckerboardEvent::GetDuration()
-{
-  return mEndTime - mStartTime;
-}
+TimeDuration CheckerboardEvent::GetDuration() { return mEndTime - mStartTime; }
 
-std::string
-CheckerboardEvent::GetLog()
-{
+std::string CheckerboardEvent::GetLog() {
   MonitorAutoLock lock(mRendertraceLock);
   return mRendertraceInfo.str();
 }
 
-bool
-CheckerboardEvent::IsRecordingTrace()
-{
-  return mRecordTrace;
-}
+bool CheckerboardEvent::IsRecordingTrace() { return mRecordTrace; }
 
-void
-CheckerboardEvent::UpdateRendertraceProperty(RendertraceProperty aProperty,
-                                             const CSSRect& aRect,
-                                             const std::string& aExtraInfo)
-{
+void CheckerboardEvent::UpdateRendertraceProperty(
+    RendertraceProperty aProperty, const CSSRect& aRect,
+    const std::string& aExtraInfo) {
   if (!mRecordTrace) {
     return;
   }
@@ -92,13 +68,11 @@ CheckerboardEvent::UpdateRendertraceProperty(RendertraceProperty aProperty,
   }
 }
 
-void
-CheckerboardEvent::LogInfo(RendertraceProperty aProperty,
-                           const TimeStamp& aTimestamp,
-                           const CSSRect& aRect,
-                           const std::string& aExtraInfo,
-                           const MonitorAutoLock& aProofOfLock)
-{
+void CheckerboardEvent::LogInfo(RendertraceProperty aProperty,
+                                const TimeStamp& aTimestamp,
+                                const CSSRect& aRect,
+                                const std::string& aExtraInfo,
+                                const MonitorAutoLock& aProofOfLock) {
   MOZ_ASSERT(mRecordTrace);
   if (mRendertraceInfo.tellp() >= LOG_LENGTH_LIMIT) {
     
@@ -109,20 +83,16 @@ CheckerboardEvent::LogInfo(RendertraceProperty aProperty,
   
   
   
+  
   mRendertraceInfo << "RENDERTRACE "
-      << (aTimestamp - mOriginTime).ToMilliseconds() << " rect "
-      << sColors[aProperty] << " "
-      << aRect.X() << " "
-      << aRect.Y() << " "
-      << aRect.Width() << " "
-      << aRect.Height() << " "
-      << "// " << sDescriptions[aProperty]
-      << aExtraInfo << std::endl;
+                   << (aTimestamp - mOriginTime).ToMilliseconds() << " rect "
+                   << sColors[aProperty] << " " << aRect.X() << " " << aRect.Y()
+                   << " " << aRect.Width() << " " << aRect.Height() << " "
+                   << "// " << sDescriptions[aProperty] << aExtraInfo
+                   << std::endl;
 }
 
-bool
-CheckerboardEvent::RecordFrameInfo(uint32_t aCssPixelsCheckerboarded)
-{
+bool CheckerboardEvent::RecordFrameInfo(uint32_t aCssPixelsCheckerboarded) {
   TimeStamp sampleTime = TimeStamp::Now();
   bool eventEnding = false;
   if (aCssPixelsCheckerboarded > 0) {
@@ -131,7 +101,9 @@ CheckerboardEvent::RecordFrameInfo(uint32_t aCssPixelsCheckerboarded)
     }
     MOZ_ASSERT(mCheckerboardingActive);
     MOZ_ASSERT(sampleTime >= mLastSampleTime);
-    mTotalPixelMs += (uint64_t)((sampleTime - mLastSampleTime).ToMilliseconds() * aCssPixelsCheckerboarded);
+    mTotalPixelMs +=
+        (uint64_t)((sampleTime - mLastSampleTime).ToMilliseconds() *
+                   aCssPixelsCheckerboarded);
     if (aCssPixelsCheckerboarded > mPeakPixels) {
       mPeakPixels = aCssPixelsCheckerboarded;
     }
@@ -147,9 +119,7 @@ CheckerboardEvent::RecordFrameInfo(uint32_t aCssPixelsCheckerboarded)
   return eventEnding;
 }
 
-void
-CheckerboardEvent::StartEvent()
-{
+void CheckerboardEvent::StartEvent() {
   MOZ_ASSERT(!mCheckerboardingActive);
   mCheckerboardingActive = true;
   mStartTime = TimeStamp::Now();
@@ -169,9 +139,7 @@ CheckerboardEvent::StartEvent()
   mRendertraceInfo << " -- checkerboarding starts below --" << std::endl;
 }
 
-void
-CheckerboardEvent::StopEvent()
-{
+void CheckerboardEvent::StopEvent() {
   mCheckerboardingActive = false;
   mEndTime = TimeStamp::Now();
 
@@ -183,13 +151,13 @@ CheckerboardEvent::StopEvent()
     mRendertraceInfo << "[logging aborted due to length limitations]\n";
   }
   mRendertraceInfo << "Checkerboarded for " << mFrameCount << " frames ("
-    << (mEndTime - mStartTime).ToMilliseconds() << " ms), "
-    << mPeakPixels << " peak, " << GetSeverity() << " severity." << std::endl;
+                   << (mEndTime - mStartTime).ToMilliseconds() << " ms), "
+                   << mPeakPixels << " peak, " << GetSeverity() << " severity."
+                   << std::endl;
 }
 
-bool
-CheckerboardEvent::PropertyValue::operator<(const PropertyValue& aOther) const
-{
+bool CheckerboardEvent::PropertyValue::operator<(
+    const PropertyValue& aOther) const {
   if (mTimeStamp < aOther.mTimeStamp) {
     return true;
   } else if (mTimeStamp > aOther.mTimeStamp) {
@@ -198,25 +166,17 @@ CheckerboardEvent::PropertyValue::operator<(const PropertyValue& aOther) const
   return mProperty < aOther.mProperty;
 }
 
-CheckerboardEvent::PropertyBuffer::PropertyBuffer()
-  : mIndex(0)
-{
-}
+CheckerboardEvent::PropertyBuffer::PropertyBuffer() : mIndex(0) {}
 
-void
-CheckerboardEvent::PropertyBuffer::Update(RendertraceProperty aProperty,
-                                          const CSSRect& aRect,
-                                          const std::string& aExtraInfo,
-                                          const MonitorAutoLock& aProofOfLock)
-{
-  mValues[mIndex] = { aProperty, TimeStamp::Now(), aRect, aExtraInfo };
+void CheckerboardEvent::PropertyBuffer::Update(
+    RendertraceProperty aProperty, const CSSRect& aRect,
+    const std::string& aExtraInfo, const MonitorAutoLock& aProofOfLock) {
+  mValues[mIndex] = {aProperty, TimeStamp::Now(), aRect, aExtraInfo};
   mIndex = (mIndex + 1) % BUFFER_SIZE;
 }
 
-void
-CheckerboardEvent::PropertyBuffer::Flush(std::vector<PropertyValue>& aOut,
-                                         const MonitorAutoLock& aProofOfLock)
-{
+void CheckerboardEvent::PropertyBuffer::Flush(
+    std::vector<PropertyValue>& aOut, const MonitorAutoLock& aProofOfLock) {
   for (uint32_t i = 0; i < BUFFER_SIZE; i++) {
     uint32_t ix = (mIndex + i) % BUFFER_SIZE;
     if (!mValues[ix].mTimeStamp.IsNull()) {
@@ -226,5 +186,5 @@ CheckerboardEvent::PropertyBuffer::Flush(std::vector<PropertyValue>& aOut,
   }
 }
 
-} 
-} 
+}  
+}  

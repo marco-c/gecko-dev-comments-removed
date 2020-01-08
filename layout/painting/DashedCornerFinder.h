@@ -81,16 +81,14 @@ namespace mozilla {
 
 
 
-class DashedCornerFinder
-{
+class DashedCornerFinder {
   typedef mozilla::gfx::Bezier Bezier;
   typedef mozilla::gfx::Float Float;
   typedef mozilla::gfx::Point Point;
   typedef mozilla::gfx::Size Size;
 
-public:
-  struct Result
-  {
+ public:
+  struct Result {
     
     
     
@@ -112,10 +110,8 @@ public:
     Bezier innerSectionBezier;
 
     Result(const Bezier& aOuterSectionBezier, const Bezier& aInnerSectionBezier)
-      : outerSectionBezier(aOuterSectionBezier)
-      , innerSectionBezier(aInnerSectionBezier)
-    {
-    }
+        : outerSectionBezier(aOuterSectionBezier),
+          innerSectionBezier(aInnerSectionBezier) {}
   };
 
   
@@ -140,16 +136,14 @@ public:
   
   
   
-  DashedCornerFinder(const Bezier& aOuterBezier,
-                     const Bezier& aInnerBezier,
-                     Float aBorderWidthH,
-                     Float aBorderWidthV,
+  DashedCornerFinder(const Bezier& aOuterBezier, const Bezier& aInnerBezier,
+                     Float aBorderWidthH, Float aBorderWidthV,
                      const Size& aCornerDim);
 
   bool HasMore(void) const;
   Result Next(void);
 
-private:
+ private:
   static const size_t MAX_LOOP = 32;
 
   
@@ -189,8 +183,7 @@ private:
   
   size_t mMaxCount;
 
-  enum
-  {
+  enum {
     
     
     
@@ -267,18 +260,15 @@ private:
   Float FindNext(Float dashLength);
 
   
-  void FindBestDashLength(Float aMinBorderWidth,
-                          Float aMaxBorderWidth,
-                          Float aMinBorderRadius,
-                          Float aMaxBorderRadius);
+  void FindBestDashLength(Float aMinBorderWidth, Float aMaxBorderWidth,
+                          Float aMinBorderRadius, Float aMaxBorderRadius);
 
   
   
-  bool GetCountAndLastDashLength(Float aDashLength,
-                                 size_t* aCount,
+  bool GetCountAndLastDashLength(Float aDashLength, size_t* aCount,
                                  Float* aActualDashLength);
 };
 
-} 
+}  
 
 #endif 

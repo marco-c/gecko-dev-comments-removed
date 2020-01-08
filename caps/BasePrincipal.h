@@ -22,7 +22,7 @@ class ExpandedPrincipal;
 
 namespace mozilla {
 namespace extensions {
-  class WebExtensionPolicy;
+class WebExtensionPolicy;
 }
 
 class BasePrincipal;
@@ -33,11 +33,9 @@ class BasePrincipal;
 
 
 
-class SiteIdentifier
-{
-public:
-  void Init(BasePrincipal* aPrincipal)
-  {
+class SiteIdentifier {
+ public:
+  void Init(BasePrincipal* aPrincipal) {
     MOZ_ASSERT(aPrincipal);
     mPrincipal = aPrincipal;
   }
@@ -46,11 +44,10 @@ public:
 
   bool Equals(const SiteIdentifier& aOther) const;
 
-private:
+ private:
   friend class ::ExpandedPrincipal;
 
-  BasePrincipal* GetPrincipal() const
-  {
+  BasePrincipal* GetPrincipal() const {
     MOZ_ASSERT(IsInitialized());
     return mPrincipal;
   }
@@ -65,9 +62,8 @@ private:
 
 
 
-class BasePrincipal : public nsJSPrincipals
-{
-public:
+class BasePrincipal : public nsJSPrincipals {
+ public:
   enum PrincipalKind {
     eNullPrincipal,
     eCodebasePrincipal,
@@ -77,46 +73,55 @@ public:
 
   explicit BasePrincipal(PrincipalKind aKind);
 
-  template<typename T>
-  bool Is() const
-  {
+  template <typename T>
+  bool Is() const {
     return mKind == T::Kind();
   }
 
-  template<typename T>
-  T* As()
-  {
+  template <typename T>
+  T* As() {
     MOZ_ASSERT(Is<T>());
     return static_cast<T*>(this);
   }
 
-  enum DocumentDomainConsideration { DontConsiderDocumentDomain, ConsiderDocumentDomain};
-  bool Subsumes(nsIPrincipal* aOther, DocumentDomainConsideration aConsideration);
+  enum DocumentDomainConsideration {
+    DontConsiderDocumentDomain,
+    ConsiderDocumentDomain
+  };
+  bool Subsumes(nsIPrincipal* aOther,
+                DocumentDomainConsideration aConsideration);
 
   NS_IMETHOD GetOrigin(nsACString& aOrigin) final;
   NS_IMETHOD GetOriginNoSuffix(nsACString& aOrigin) final;
   NS_IMETHOD Equals(nsIPrincipal* other, bool* _retval) final;
   NS_IMETHOD EqualsConsideringDomain(nsIPrincipal* other, bool* _retval) final;
   NS_IMETHOD Subsumes(nsIPrincipal* other, bool* _retval) final;
-  NS_IMETHOD SubsumesConsideringDomain(nsIPrincipal* other, bool* _retval) final;
-  NS_IMETHOD SubsumesConsideringDomainIgnoringFPD(nsIPrincipal* other, bool* _retval) final;
-  NS_IMETHOD CheckMayLoad(nsIURI* uri, bool report, bool allowIfInheritsPrincipal) final;
+  NS_IMETHOD SubsumesConsideringDomain(nsIPrincipal* other,
+                                       bool* _retval) final;
+  NS_IMETHOD SubsumesConsideringDomainIgnoringFPD(nsIPrincipal* other,
+                                                  bool* _retval) final;
+  NS_IMETHOD CheckMayLoad(nsIURI* uri, bool report,
+                          bool allowIfInheritsPrincipal) final;
   NS_IMETHOD GetAddonPolicy(nsISupports** aResult) final;
   NS_IMETHOD GetCsp(nsIContentSecurityPolicy** aCsp) override;
   NS_IMETHOD SetCsp(nsIContentSecurityPolicy* aCsp) override;
-  NS_IMETHOD EnsureCSP(nsIDocument* aDocument, nsIContentSecurityPolicy** aCSP) override;
+  NS_IMETHOD EnsureCSP(nsIDocument* aDocument,
+                       nsIContentSecurityPolicy** aCSP) override;
   NS_IMETHOD GetPreloadCsp(nsIContentSecurityPolicy** aPreloadCSP) override;
-  NS_IMETHOD EnsurePreloadCSP(nsIDocument* aDocument, nsIContentSecurityPolicy** aCSP) override;
+  NS_IMETHOD EnsurePreloadCSP(nsIDocument* aDocument,
+                              nsIContentSecurityPolicy** aCSP) override;
   NS_IMETHOD GetCspJSON(nsAString& outCSPinJSON) override;
   NS_IMETHOD GetIsNullPrincipal(bool* aResult) override;
   NS_IMETHOD GetIsCodebasePrincipal(bool* aResult) override;
   NS_IMETHOD GetIsExpandedPrincipal(bool* aResult) override;
   NS_IMETHOD GetIsSystemPrincipal(bool* aResult) override;
   NS_IMETHOD GetIsAddonOrExpandedAddonPrincipal(bool* aResult) override;
-  NS_IMETHOD GetOriginAttributes(JSContext* aCx, JS::MutableHandle<JS::Value> aVal) final;
+  NS_IMETHOD GetOriginAttributes(JSContext* aCx,
+                                 JS::MutableHandle<JS::Value> aVal) final;
   NS_IMETHOD GetOriginSuffix(nsACString& aOriginSuffix) final;
   NS_IMETHOD GetAppId(uint32_t* aAppId) final;
-  NS_IMETHOD GetIsInIsolatedMozBrowserElement(bool* aIsInIsolatedMozBrowserElement) final;
+  NS_IMETHOD GetIsInIsolatedMozBrowserElement(
+      bool* aIsInIsolatedMozBrowserElement) final;
   NS_IMETHOD GetUserContextId(uint32_t* aUserContextId) final;
   NS_IMETHOD GetPrivateBrowsingId(uint32_t* aPrivateBrowsingId) final;
   NS_IMETHOD GetSiteOrigin(nsACString& aOrigin) override;
@@ -125,28 +130,37 @@ public:
 
   virtual bool IsCodebasePrincipal() const { return false; };
 
-  static BasePrincipal* Cast(nsIPrincipal* aPrin) { return static_cast<BasePrincipal*>(aPrin); }
+  static BasePrincipal* Cast(nsIPrincipal* aPrin) {
+    return static_cast<BasePrincipal*>(aPrin);
+  }
 
-  static already_AddRefed<BasePrincipal>
-  CreateCodebasePrincipal(const nsACString& aOrigin);
+  static already_AddRefed<BasePrincipal> CreateCodebasePrincipal(
+      const nsACString& aOrigin);
 
   
   
   
 
-  static already_AddRefed<BasePrincipal>
-  CreateCodebasePrincipal(nsIURI* aURI, const OriginAttributes& aAttrs);
+  static already_AddRefed<BasePrincipal> CreateCodebasePrincipal(
+      nsIURI* aURI, const OriginAttributes& aAttrs);
 
-  const OriginAttributes& OriginAttributesRef() final { return mOriginAttributes; }
+  const OriginAttributes& OriginAttributesRef() final {
+    return mOriginAttributes;
+  }
   uint32_t AppId() const { return mOriginAttributes.mAppId; }
   extensions::WebExtensionPolicy* AddonPolicy();
   uint32_t UserContextId() const { return mOriginAttributes.mUserContextId; }
-  uint32_t PrivateBrowsingId() const { return mOriginAttributes.mPrivateBrowsingId; }
-  bool IsInIsolatedMozBrowserElement() const { return mOriginAttributes.mInIsolatedMozBrowser; }
+  uint32_t PrivateBrowsingId() const {
+    return mOriginAttributes.mPrivateBrowsingId;
+  }
+  bool IsInIsolatedMozBrowserElement() const {
+    return mOriginAttributes.mInIsolatedMozBrowser;
+  }
 
   PrincipalKind Kind() const { return mKind; }
 
-  already_AddRefed<BasePrincipal> CloneStrippingUserContextIdAndFirstPartyDomain();
+  already_AddRefed<BasePrincipal>
+  CloneStrippingUserContextIdAndFirstPartyDomain();
 
   
   
@@ -179,8 +193,7 @@ public:
 
 
 
-  bool OverridesCSP(nsIPrincipal* aDocumentPrincipal)
-  {
+  bool OverridesCSP(nsIPrincipal* aDocumentPrincipal) {
     
     if (mKind == eSystemPrincipal) {
       return true;
@@ -202,12 +215,13 @@ public:
 
   virtual nsresult GetSiteIdentifier(SiteIdentifier& aSite) = 0;
 
-protected:
+ protected:
   virtual ~BasePrincipal();
 
   
   
-  virtual bool SubsumesInternal(nsIPrincipal* aOther, DocumentDomainConsideration aConsider) = 0;
+  virtual bool SubsumesInternal(nsIPrincipal* aOther,
+                                DocumentDomainConsideration aConsider) = 0;
 
   
   
@@ -215,11 +229,7 @@ protected:
   virtual bool MayLoadInternal(nsIURI* aURI) = 0;
   friend class ::ExpandedPrincipal;
 
-  void
-  SetHasExplicitDomain()
-  {
-    mHasExplicitDomain = true;
-  }
+  void SetHasExplicitDomain() { mHasExplicitDomain = true; }
 
   
   
@@ -230,13 +240,13 @@ protected:
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
 
-private:
-  static already_AddRefed<BasePrincipal>
-  CreateCodebasePrincipal(nsIURI* aURI, const OriginAttributes& aAttrs,
-                          const nsACString& aOriginNoSuffix);
+ private:
+  static already_AddRefed<BasePrincipal> CreateCodebasePrincipal(
+      nsIURI* aURI, const OriginAttributes& aAttrs,
+      const nsACString& aOriginNoSuffix);
 
-  inline bool FastSubsumesIgnoringFPD(nsIPrincipal* aOther,
-                                      DocumentDomainConsideration aConsideration);
+  inline bool FastSubsumesIgnoringFPD(
+      nsIPrincipal* aOther, DocumentDomainConsideration aConsideration);
 
   RefPtr<nsAtom> mOriginNoSuffix;
   RefPtr<nsAtom> mOriginSuffix;
@@ -247,9 +257,7 @@ private:
   bool mInitialized;
 };
 
-inline bool
-BasePrincipal::FastEquals(nsIPrincipal* aOther)
-{
+inline bool BasePrincipal::FastEquals(nsIPrincipal* aOther) {
   auto other = Cast(aOther);
   if (Kind() != other->Kind()) {
     
@@ -274,9 +282,7 @@ BasePrincipal::FastEquals(nsIPrincipal* aOther)
   return mOriginNoSuffix == other->mOriginNoSuffix;
 }
 
-inline bool
-BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther)
-{
+inline bool BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther) {
   
   
   auto other = Cast(aOther);
@@ -288,9 +294,7 @@ BasePrincipal::FastEqualsConsideringDomain(nsIPrincipal* aOther)
          other->Subsumes(this, ConsiderDocumentDomain);
 }
 
-inline bool
-BasePrincipal::FastSubsumes(nsIPrincipal* aOther)
-{
+inline bool BasePrincipal::FastSubsumes(nsIPrincipal* aOther) {
   
   
   
@@ -307,9 +311,7 @@ BasePrincipal::FastSubsumes(nsIPrincipal* aOther)
   return Subsumes(aOther, DontConsiderDocumentDomain);
 }
 
-inline bool
-BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther)
-{
+inline bool BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther) {
   
   
   
@@ -320,31 +322,26 @@ BasePrincipal::FastSubsumesConsideringDomain(nsIPrincipal* aOther)
   return Subsumes(aOther, ConsiderDocumentDomain);
 }
 
-inline bool
-BasePrincipal::FastSubsumesIgnoringFPD(nsIPrincipal* aOther,
-                                       DocumentDomainConsideration aConsideration)
-{
+inline bool BasePrincipal::FastSubsumesIgnoringFPD(
+    nsIPrincipal* aOther, DocumentDomainConsideration aConsideration) {
   if (Kind() == eCodebasePrincipal &&
       !dom::ChromeUtils::IsOriginAttributesEqualIgnoringFPD(
-            mOriginAttributes, Cast(aOther)->mOriginAttributes)) {
+          mOriginAttributes, Cast(aOther)->mOriginAttributes)) {
     return false;
   }
 
   return SubsumesInternal(aOther, aConsideration);
 }
 
-inline bool
-BasePrincipal::FastSubsumesIgnoringFPD(nsIPrincipal* aOther)
-{
+inline bool BasePrincipal::FastSubsumesIgnoringFPD(nsIPrincipal* aOther) {
   return FastSubsumesIgnoringFPD(aOther, DontConsiderDocumentDomain);
 }
 
-inline bool
-BasePrincipal::FastSubsumesConsideringDomainIgnoringFPD(nsIPrincipal* aOther)
-{
+inline bool BasePrincipal::FastSubsumesConsideringDomainIgnoringFPD(
+    nsIPrincipal* aOther) {
   return FastSubsumesIgnoringFPD(aOther, ConsiderDocumentDomain);
 }
 
-} 
+}  
 
 #endif 

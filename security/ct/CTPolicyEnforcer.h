@@ -11,12 +11,12 @@
 #include "CTVerifyResult.h"
 #include "mozpkix/Result.h"
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
 
-enum class CTPolicyCompliance
-{
+enum class CTPolicyCompliance {
   
   Unknown,
   
@@ -42,9 +42,8 @@ enum class CTPolicyCompliance
 
 
 
-class CTPolicyEnforcer
-{
-public:
+class CTPolicyEnforcer {
+ public:
   
   
   
@@ -60,6 +59,7 @@ public:
                        CTPolicyCompliance& compliance);
 };
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

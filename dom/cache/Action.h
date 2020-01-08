@@ -17,12 +17,10 @@ namespace mozilla {
 namespace dom {
 namespace cache {
 
-class Action
-{
-public:
-  class Resolver
-  {
-  public:
+class Action {
+ public:
+  class Resolver {
+   public:
     
     
     
@@ -35,14 +33,11 @@ public:
   
   
   
-  class Data
-  {
-  public:
-    virtual mozIStorageConnection*
-    GetConnection() const = 0;
+  class Data {
+   public:
+    virtual mozIStorageConnection* GetConnection() const = 0;
 
-    virtual void
-    SetConnection(mozIStorageConnection* aConn) = 0;
+    virtual void SetConnection(mozIStorageConnection* aConn) = 0;
   };
 
   
@@ -71,7 +66,7 @@ public:
 
   
   
-  virtual void CompleteOnInitiatingThread(nsresult aRv) { }
+  virtual void CompleteOnInitiatingThread(nsresult aRv) {}
 
   
   
@@ -79,7 +74,7 @@ public:
 
   NS_INLINE_DECL_REFCOUNTING(cache::Action)
 
-protected:
+ protected:
   Action();
 
   
@@ -89,13 +84,13 @@ protected:
   
   bool IsCanceled() const;
 
-private:
+ private:
   
   Atomic<bool> mCanceled;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

@@ -15,37 +15,33 @@
 #include "nsCOMPtr.h"
 
 
-#define NS_NSSASN1OUTINER_CID  {             \
-   0x4bfaa9f0,                               \
-   0x1dd2,                                   \
-   0x11b2,                                   \
-   {0xaf,0xae,0xa8,0x2c,0xba,0xa0,0xb6,0x06} \
+#define NS_NSSASN1OUTINER_CID                        \
+  {                                                  \
+    0x4bfaa9f0, 0x1dd2, 0x11b2, {                    \
+      0xaf, 0xae, 0xa8, 0x2c, 0xba, 0xa0, 0xb6, 0x06 \
+    }                                                \
   }
 
-
-class nsNSSASN1Tree : public nsIASN1Tree
-{
-public:
+class nsNSSASN1Tree : public nsIASN1Tree {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIASN1TREE
   NS_DECL_NSITREEVIEW
 
   nsNSSASN1Tree();
-protected:
+
+ protected:
   virtual ~nsNSSASN1Tree();
 
-  class myNode
-  {
-  public:
+  class myNode {
+   public:
     nsCOMPtr<nsIASN1Object> obj;
     nsCOMPtr<nsIASN1Sequence> seq;
     myNode *child;
     myNode *next;
     myNode *parent;
 
-    myNode() {
-      child = next = parent = nullptr;
-    }
+    myNode() { child = next = parent = nullptr; }
   };
 
   myNode *mTopNode;
@@ -63,10 +59,10 @@ protected:
   int32_t CountVisibleNodes(myNode *n);
   myNode *FindNodeFromIndex(myNode *n, int32_t wantedIndex,
                             int32_t &index_counter, int32_t &level_counter,
-                            int32_t *optionalOutParentIndex, int32_t *optionalOutLevel);
+                            int32_t *optionalOutParentIndex,
+                            int32_t *optionalOutLevel);
   myNode *FindNodeFromIndex(int32_t wantedIndex,
                             int32_t *optionalOutParentIndex = nullptr,
                             int32_t *optionalOutLevel = nullptr);
-
 };
-#endif 
+#endif  

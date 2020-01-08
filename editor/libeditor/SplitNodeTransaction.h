@@ -6,12 +6,12 @@
 #ifndef SplitNodeTransaction_h
 #define SplitNodeTransaction_h
 
-#include "mozilla/EditorDOMPoint.h"      
-#include "mozilla/EditTransactionBase.h" 
-#include "nsCOMPtr.h"                   
+#include "mozilla/EditorDOMPoint.h"  
+#include "mozilla/EditTransactionBase.h"  
+#include "nsCOMPtr.h"                     
 #include "nsCycleCollectionParticipant.h"
-#include "nsISupportsImpl.h"            
-#include "nscore.h"                     
+#include "nsISupportsImpl.h"  
+#include "nscore.h"           
 
 class nsIContent;
 class nsINode;
@@ -24,14 +24,13 @@ class EditorBase;
 
 
 
-class SplitNodeTransaction final : public EditTransactionBase
-{
-private:
-  template<typename PT, typename CT>
+class SplitNodeTransaction final : public EditTransactionBase {
+ private:
+  template <typename PT, typename CT>
   SplitNodeTransaction(EditorBase& aEditorBase,
                        const EditorDOMPointBase<PT, CT>& aStartOfRightNode);
 
-public:
+ public:
   
 
 
@@ -43,10 +42,10 @@ public:
 
 
 
-  template<typename PT, typename CT>
-  static already_AddRefed<SplitNodeTransaction>
-  Create(EditorBase& aEditorBase,
-         const EditorDOMPointBase<PT, CT>& aStartOfRightNode);
+  template <typename PT, typename CT>
+  static already_AddRefed<SplitNodeTransaction> Create(
+      EditorBase& aEditorBase,
+      const EditorDOMPointBase<PT, CT>& aStartOfRightNode);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SplitNodeTransaction,
@@ -58,7 +57,7 @@ public:
 
   nsIContent* GetNewNode();
 
-protected:
+ protected:
   virtual ~SplitNodeTransaction();
 
   RefPtr<EditorBase> mEditorBase;
@@ -74,6 +73,6 @@ protected:
   nsCOMPtr<nsINode> mParent;
 };
 
-} 
+}  
 
-#endif 
+#endif  

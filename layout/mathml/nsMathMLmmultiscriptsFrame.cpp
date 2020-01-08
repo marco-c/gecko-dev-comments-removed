@@ -4,7 +4,6 @@
 
 
 
-
 #include "nsMathMLmmultiscriptsFrame.h"
 #include "nsPresContext.h"
 #include <algorithm>
@@ -20,36 +19,29 @@ using namespace mozilla;
 
 
 
-nsIFrame*
-NS_NewMathMLmmultiscriptsFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewMathMLmmultiscriptsFrame(nsIPresShell* aPresShell,
+                                         ComputedStyle* aStyle) {
   return new (aPresShell) nsMathMLmmultiscriptsFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmmultiscriptsFrame)
 
-nsMathMLmmultiscriptsFrame::~nsMathMLmmultiscriptsFrame()
-{
-}
+nsMathMLmmultiscriptsFrame::~nsMathMLmmultiscriptsFrame() {}
 
-uint8_t
-nsMathMLmmultiscriptsFrame::ScriptIncrement(nsIFrame* aFrame)
-{
-  if (!aFrame)
-    return 0;
+uint8_t nsMathMLmmultiscriptsFrame::ScriptIncrement(nsIFrame* aFrame) {
+  if (!aFrame) return 0;
   if (mFrames.ContainsFrame(aFrame)) {
     if (mFrames.FirstChild() == aFrame ||
         aFrame->GetContent()->IsMathMLElement(nsGkAtoms::mprescripts_)) {
-      return 0; 
+      return 0;  
     }
     return 1;
   }
-  return 0; 
+  return 0;  
 }
 
 NS_IMETHODIMP
-nsMathMLmmultiscriptsFrame::TransmitAutomaticData()
-{
+nsMathMLmmultiscriptsFrame::TransmitAutomaticData() {
   
   mPresentationData.baseFrame = mFrames.FirstChild();
   GetEmbellishDataFrom(mPresentationData.baseFrame, mEmbellishData);
@@ -84,18 +76,15 @@ nsMathMLmmultiscriptsFrame::TransmitAutomaticData()
   }
   for (int32_t i = subScriptFrames.Length() - 1; i >= 0; i--) {
     childFrame = subScriptFrames[i];
-    PropagatePresentationDataFor(childFrame,
-      NS_MATHML_COMPRESSED, NS_MATHML_COMPRESSED);
+    PropagatePresentationDataFor(childFrame, NS_MATHML_COMPRESSED,
+                                 NS_MATHML_COMPRESSED);
   }
 
   return NS_OK;
 }
 
- nsresult
-nsMathMLmmultiscriptsFrame::Place(DrawTarget*          aDrawTarget,
-                                  bool                 aPlaceOrigin,
-                                  ReflowOutput& aDesiredSize)
-{
+ nsresult nsMathMLmmultiscriptsFrame::Place(
+    DrawTarget* aDrawTarget, bool aPlaceOrigin, ReflowOutput& aDesiredSize) {
   nscoord subScriptShift = 0;
   nscoord supScriptShift = 0;
   float fontSizeInflation = nsLayoutUtils::FontSizeInflationFor(this);
@@ -113,7 +102,8 @@ nsMathMLmmultiscriptsFrame::Place(DrawTarget*          aDrawTarget,
   
   nsAutoString value;
   if (!mContent->IsMathMLElement(nsGkAtoms::msup_)) {
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::subscriptshift_, value);
+    mContent->AsElement()->GetAttr(kNameSpaceID_None,
+                                   nsGkAtoms::subscriptshift_, value);
     if (!value.IsEmpty()) {
       ParseNumericValue(value, &subScriptShift, 0, PresContext(),
                         mComputedStyle, fontSizeInflation);
@@ -131,7 +121,8 @@ nsMathMLmmultiscriptsFrame::Place(DrawTarget*          aDrawTarget,
   
   
   if (!mContent->IsMathMLElement(nsGkAtoms::msub_)) {
-    mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::superscriptshift_, value);
+    mContent->AsElement()->GetAttr(kNameSpaceID_None,
+                                   nsGkAtoms::superscriptshift_, value);
     if (!value.IsEmpty()) {
       ParseNumericValue(value, &supScriptShift, 0, PresContext(),
                         mComputedStyle, fontSizeInflation);
@@ -144,16 +135,11 @@ nsMathMLmmultiscriptsFrame::Place(DrawTarget*          aDrawTarget,
 
 
 
-nsresult
-nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
-                                        DrawTarget*          aDrawTarget,
-                                        bool                 aPlaceOrigin,
-                                        ReflowOutput& aDesiredSize,
-                                        nsMathMLContainerFrame* aFrame,
-                                        nscoord              aUserSubScriptShift,
-                                        nscoord              aUserSupScriptShift,
-                                        float                aFontSizeInflation)
-{
+nsresult nsMathMLmmultiscriptsFrame::PlaceMultiScript(
+    nsPresContext* aPresContext, DrawTarget* aDrawTarget, bool aPlaceOrigin,
+    ReflowOutput& aDesiredSize, nsMathMLContainerFrame* aFrame,
+    nscoord aUserSubScriptShift, nscoord aUserSupScriptShift,
+    float aFontSizeInflation) {
   nsAtom* tag = aFrame->GetContent()->NodeInfo()->NameAtom();
 
   
@@ -188,7 +174,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
   
   const nsStyleFont* font = aFrame->StyleFont();
   RefPtr<nsFontMetrics> fm =
-    nsLayoutUtils::GetFontMetricsForFrame(baseFrame, aFontSizeInflation);
+      nsLayoutUtils::GetFontMetricsForFrame(baseFrame, aFontSizeInflation);
 
   nscoord xHeight = fm->XHeight();
 
@@ -197,8 +183,8 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
   
   nscoord scriptSpace;
   if (mathFont) {
-    scriptSpace = mathFont->MathTable()->
-      Constant(gfxMathTable::SpaceAfterScript, oneDevPixel);
+    scriptSpace = mathFont->MathTable()->Constant(
+        gfxMathTable::SpaceAfterScript, oneDevPixel);
   } else {
     
     scriptSpace = nsPresContext::CSSPointsToAppUnits(0.5f);
@@ -206,10 +192,10 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
 
   
   if (mathFont) {
-    subDrop = mathFont->MathTable()->
-      Constant(gfxMathTable::SubscriptBaselineDropMin, oneDevPixel);
-    supDrop = mathFont->MathTable()->
-      Constant(gfxMathTable::SuperscriptBaselineDropMax, oneDevPixel);
+    subDrop = mathFont->MathTable()->Constant(
+        gfxMathTable::SubscriptBaselineDropMin, oneDevPixel);
+    supDrop = mathFont->MathTable()->Constant(
+        gfxMathTable::SuperscriptBaselineDropMax, oneDevPixel);
   }
 
   
@@ -223,8 +209,8 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
   if (mathFont) {
     
     
-    subScriptShift = mathFont->MathTable()->
-      Constant(gfxMathTable::SubscriptShiftDown, oneDevPixel);
+    subScriptShift = mathFont->MathTable()->Constant(
+        gfxMathTable::SubscriptShiftDown, oneDevPixel);
   } else {
     
     
@@ -232,7 +218,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
     
     nscoord subScriptShift1, subScriptShift2;
     
-    GetSubScriptShifts (fm, subScriptShift1, subScriptShift2);
+    GetSubScriptShifts(fm, subScriptShift1, subScriptShift2);
     if (tag == nsGkAtoms::msub_) {
       subScriptShift = subScriptShift1;
     } else {
@@ -254,11 +240,11 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
   if (mathFont) {
     
     
-    supScriptShift = mathFont->
-      MathTable()->Constant(NS_MATHML_IS_COMPRESSED(presentationData.flags) ?
-                            gfxMathTable::SuperscriptShiftUpCramped :
-                            gfxMathTable::SuperscriptShiftUp,
-                            oneDevPixel);
+    supScriptShift = mathFont->MathTable()->Constant(
+        NS_MATHML_IS_COMPRESSED(presentationData.flags)
+            ? gfxMathTable::SuperscriptShiftUpCramped
+            : gfxMathTable::SuperscriptShiftUp,
+        oneDevPixel);
   } else {
     
     
@@ -268,7 +254,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
     
     nscoord supScriptShift1, supScriptShift2, supScriptShift3;
     
-    GetSupScriptShifts (fm, supScriptShift1, supScriptShift2, supScriptShift3);
+    GetSupScriptShifts(fm, supScriptShift1, supScriptShift2, supScriptShift3);
 
     
     
@@ -309,7 +295,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
   baseFrame = nullptr;
   nsIFrame* subScriptFrame = nullptr;
   nsIFrame* supScriptFrame = nullptr;
-  nsIFrame* prescriptsFrame = nullptr; 
+  nsIFrame* prescriptsFrame = nullptr;  
 
   bool firstPrescriptsPair = false;
   nsBoundingMetrics bmBase, bmSubScript, bmSupScript, bmMultiSub, bmMultiSup;
@@ -388,7 +374,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
       
       boundingMetrics.width = bmBase.width;
       boundingMetrics.rightBearing = bmBase.rightBearing;
-      boundingMetrics.leftBearing = bmBase.leftBearing; 
+      boundingMetrics.leftBearing = bmBase.leftBearing;  
     } else {
       
       if (childFrame->GetContent()->IsMathMLElement(nsGkAtoms::none)) {
@@ -398,25 +384,24 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
       if (isSubScript) {
         
         subScriptFrame = childFrame;
-        GetReflowAndBoundingMetricsFor(subScriptFrame, subScriptSize, bmSubScript);
+        GetReflowAndBoundingMetricsFor(subScriptFrame, subScriptSize,
+                                       bmSubScript);
         if (!mathFont) {
           
-          GetSubDropFromChild (subScriptFrame, subDrop, aFontSizeInflation);
+          GetSubDropFromChild(subScriptFrame, subDrop, aFontSizeInflation);
         }
 
         
         minSubScriptShift = bmBase.descent + subDrop;
-        trySubScriptShift = std::max(minSubScriptShift,subScriptShift);
-        multiSubSize.SetBlockStartAscent(
-           std::max(multiSubSize.BlockStartAscent(),
-                    subScriptSize.BlockStartAscent()));
+        trySubScriptShift = std::max(minSubScriptShift, subScriptShift);
+        multiSubSize.SetBlockStartAscent(std::max(
+            multiSubSize.BlockStartAscent(), subScriptSize.BlockStartAscent()));
         bmMultiSub.ascent = std::max(bmMultiSub.ascent, bmSubScript.ascent);
         bmMultiSub.descent = std::max(bmMultiSub.descent, bmSubScript.descent);
         multiSubSize.Height() =
-          std::max(multiSubSize.Height(),
-                   subScriptSize.Height() - subScriptSize.BlockStartAscent());
-        if (bmSubScript.width)
-          width = bmSubScript.width + scriptSpace;
+            std::max(multiSubSize.Height(),
+                     subScriptSize.Height() - subScriptSize.BlockStartAscent());
+        if (bmSubScript.width) width = bmSubScript.width + scriptSpace;
         rightBearing = bmSubScript.rightBearing;
 
         if (tag == nsGkAtoms::msub_) {
@@ -425,16 +410,15 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
 
           nscoord subscriptTopMax;
           if (mathFont) {
-            subscriptTopMax =
-              mathFont->MathTable()->Constant(gfxMathTable::SubscriptTopMax,
-                                              oneDevPixel);
+            subscriptTopMax = mathFont->MathTable()->Constant(
+                gfxMathTable::SubscriptTopMax, oneDevPixel);
           } else {
             
             
-            subscriptTopMax = NSToCoordRound((4.0f/5.0f) * xHeight);
+            subscriptTopMax = NSToCoordRound((4.0f / 5.0f) * xHeight);
           }
           nscoord minShiftFromXHeight = bmSubScript.ascent - subscriptTopMax;
-          maxSubScriptShift = std::max(trySubScriptShift,minShiftFromXHeight);
+          maxSubScriptShift = std::max(trySubScriptShift, minShiftFromXHeight);
 
           maxSubScriptShift = std::max(maxSubScriptShift, trySubScriptShift);
           trySubScriptShift = subScriptShift;
@@ -442,40 +426,38 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
       } else {
         
         supScriptFrame = childFrame;
-        GetReflowAndBoundingMetricsFor(supScriptFrame, supScriptSize, bmSupScript);
+        GetReflowAndBoundingMetricsFor(supScriptFrame, supScriptSize,
+                                       bmSupScript);
         if (!mathFont) {
           
-          GetSupDropFromChild (supScriptFrame, supDrop, aFontSizeInflation);
+          GetSupDropFromChild(supScriptFrame, supDrop, aFontSizeInflation);
         }
         
         minSupScriptShift = bmBase.ascent - supDrop;
         nscoord superscriptBottomMin;
         if (mathFont) {
-          superscriptBottomMin =
-            mathFont->MathTable()->Constant(gfxMathTable::SuperscriptBottomMin,
-                                            oneDevPixel);
+          superscriptBottomMin = mathFont->MathTable()->Constant(
+              gfxMathTable::SuperscriptBottomMin, oneDevPixel);
         } else {
           
           
           superscriptBottomMin = NSToCoordRound((1.0f / 4.0f) * xHeight);
         }
         minShiftFromXHeight = bmSupScript.descent + superscriptBottomMin;
-        trySupScriptShift = std::max(minSupScriptShift,
-                                     std::max(minShiftFromXHeight,
-                                              supScriptShift));
-        multiSupSize.SetBlockStartAscent(
-          std::max(multiSupSize.BlockStartAscent(),
-                   supScriptSize.BlockStartAscent()));
+        trySupScriptShift = std::max(
+            minSupScriptShift, std::max(minShiftFromXHeight, supScriptShift));
+        multiSupSize.SetBlockStartAscent(std::max(
+            multiSupSize.BlockStartAscent(), supScriptSize.BlockStartAscent()));
         bmMultiSup.ascent = std::max(bmMultiSup.ascent, bmSupScript.ascent);
         bmMultiSup.descent = std::max(bmMultiSup.descent, bmSupScript.descent);
         multiSupSize.Height() =
-          std::max(multiSupSize.Height(),
-                   supScriptSize.Height() - supScriptSize.BlockStartAscent());
+            std::max(multiSupSize.Height(),
+                     supScriptSize.Height() - supScriptSize.BlockStartAscent());
 
         if (bmSupScript.width)
           width = std::max(width, bmSupScript.width + scriptSpace);
 
-        if (!prescriptsFrame) { 
+        if (!prescriptsFrame) {  
           rightBearing = std::max(rightBearing,
                                   italicCorrection + bmSupScript.rightBearing);
           boundingMetrics.rightBearing = boundingMetrics.width + rightBearing;
@@ -485,7 +467,7 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
           if (firstPrescriptsPair) {
             firstPrescriptsPair = false;
             boundingMetrics.leftBearing =
-              std::min(bmSubScript.leftBearing, bmSupScript.leftBearing);
+                std::min(bmSubScript.leftBearing, bmSupScript.leftBearing);
           }
         }
         width = rightBearing = 0;
@@ -493,20 +475,18 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
         
         
         
-        if (tag == nsGkAtoms::mmultiscripts_ ||
-            tag == nsGkAtoms::msubsup_) {
+        if (tag == nsGkAtoms::mmultiscripts_ || tag == nsGkAtoms::msubsup_) {
           nscoord subSuperscriptGapMin;
           if (mathFont) {
-            subSuperscriptGapMin = mathFont->MathTable()->
-              Constant(gfxMathTable::SubSuperscriptGapMin, oneDevPixel);
+            subSuperscriptGapMin = mathFont->MathTable()->Constant(
+                gfxMathTable::SubSuperscriptGapMin, oneDevPixel);
           } else {
             nscoord ruleSize;
             GetRuleThickness(aDrawTarget, fm, ruleSize);
             subSuperscriptGapMin = 4 * ruleSize;
           }
-          nscoord gap =
-            (trySupScriptShift - bmSupScript.descent) -
-            (bmSubScript.ascent - trySubScriptShift);
+          nscoord gap = (trySupScriptShift - bmSupScript.descent) -
+                        (bmSubScript.ascent - trySubScriptShift);
           if (gap < subSuperscriptGapMin) {
             
             trySubScriptShift += subSuperscriptGapMin - gap;
@@ -516,15 +496,14 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
           
           nscoord superscriptBottomMaxWithSubscript;
           if (mathFont) {
-            superscriptBottomMaxWithSubscript = mathFont->MathTable()->
-              Constant(gfxMathTable::SuperscriptBottomMaxWithSubscript,
-                       oneDevPixel);
+            superscriptBottomMaxWithSubscript = mathFont->MathTable()->Constant(
+                gfxMathTable::SuperscriptBottomMaxWithSubscript, oneDevPixel);
           } else {
             superscriptBottomMaxWithSubscript =
-              NSToCoordRound((4.0f / 5.0f) * xHeight);
+                NSToCoordRound((4.0f / 5.0f) * xHeight);
           }
           gap = superscriptBottomMaxWithSubscript -
-            (trySupScriptShift - bmSupScript.descent);
+                (trySupScriptShift - bmSupScript.descent);
           if (gap > 0) {
             trySupScriptShift += gap;
             trySubScriptShift -= gap;
@@ -551,9 +530,9 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
       (!isSubScript && tag == nsGkAtoms::mmultiscripts_)) {
     
     if (aPlaceOrigin) {
-      if ((count != 2 && (tag == nsGkAtoms::msup_ ||
-          tag == nsGkAtoms::msub_)) ||
-          (count != 3 && tag == nsGkAtoms::msubsup_ )) {
+      if ((count != 2 &&
+           (tag == nsGkAtoms::msup_ || tag == nsGkAtoms::msub_)) ||
+          (count != 3 && tag == nsGkAtoms::msubsup_)) {
         aFrame->ReportChildCountError();
       } else if (foundNoneTag && tag != nsGkAtoms::mmultiscripts_) {
         aFrame->ReportInvalidChildError(nsGkAtoms::none);
@@ -572,37 +551,36 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
 
   
   
-  if (!subScriptFrame)
-    maxSubScriptShift = 0;
-  if (!supScriptFrame)
-    maxSupScriptShift = 0;
+  if (!subScriptFrame) maxSubScriptShift = 0;
+  if (!supScriptFrame) maxSupScriptShift = 0;
 
   
   if (tag == nsGkAtoms::msub_) {
-    boundingMetrics.ascent = std::max(bmBase.ascent,
-                                      bmMultiSub.ascent - maxSubScriptShift);
+    boundingMetrics.ascent =
+        std::max(bmBase.ascent, bmMultiSub.ascent - maxSubScriptShift);
   } else {
     boundingMetrics.ascent =
-      std::max(bmBase.ascent, (bmMultiSup.ascent + maxSupScriptShift));
+        std::max(bmBase.ascent, (bmMultiSup.ascent + maxSupScriptShift));
   }
   if (tag == nsGkAtoms::msup_) {
-    boundingMetrics.descent = std::max(bmBase.descent,
-                                       bmMultiSup.descent - maxSupScriptShift);
+    boundingMetrics.descent =
+        std::max(bmBase.descent, bmMultiSup.descent - maxSupScriptShift);
   } else {
     boundingMetrics.descent =
-      std::max(bmBase.descent, (bmMultiSub.descent + maxSubScriptShift));
+        std::max(bmBase.descent, (bmMultiSub.descent + maxSubScriptShift));
   }
   aFrame->SetBoundingMetrics(boundingMetrics);
 
   
   aDesiredSize.SetBlockStartAscent(
-    std::max(baseSize.BlockStartAscent(),
-             std::max(multiSubSize.BlockStartAscent() - maxSubScriptShift,
-                      multiSupSize.BlockStartAscent() + maxSupScriptShift)));
-  aDesiredSize.Height() = aDesiredSize.BlockStartAscent() +
-    std::max(baseSize.Height() - baseSize.BlockStartAscent(),
-             std::max(multiSubSize.Height() + maxSubScriptShift,
-                      multiSupSize.Height() - maxSupScriptShift));
+      std::max(baseSize.BlockStartAscent(),
+               std::max(multiSubSize.BlockStartAscent() - maxSubScriptShift,
+                        multiSupSize.BlockStartAscent() + maxSupScriptShift)));
+  aDesiredSize.Height() =
+      aDesiredSize.BlockStartAscent() +
+      std::max(baseSize.Height() - baseSize.BlockStartAscent(),
+               std::max(multiSubSize.Height() + maxSubScriptShift,
+                        multiSupSize.Height() - maxSupScriptShift));
   aDesiredSize.Width() = boundingMetrics.width;
   aDesiredSize.mBoundingMetrics = boundingMetrics;
 
@@ -628,16 +606,15 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
     childFrame = prescriptsFrame;
     bool isPreScript = true;
     do {
-      if (!childFrame) { 
+      if (!childFrame) {  
         isPreScript = false;
         
         childFrame = baseFrame;
         dy = aDesiredSize.BlockStartAscent() - baseSize.BlockStartAscent();
-        FinishReflowChild (baseFrame, aPresContext, baseSize, nullptr,
-                           aFrame->MirrorIfRTL(aDesiredSize.Width(),
-                                               baseSize.Width(),
-                                               dx),
-                           dy, 0);
+        FinishReflowChild(
+            baseFrame, aPresContext, baseSize, nullptr,
+            aFrame->MirrorIfRTL(aDesiredSize.Width(), baseSize.Width(), dx), dy,
+            0);
         dx += bmBase.width;
       } else if (prescriptsFrame == childFrame) {
         
@@ -648,16 +625,17 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
           subScriptFrame = childFrame;
           count = 1;
         } else if (1 == count) {
-          if (tag != nsGkAtoms::msub_)
-            supScriptFrame = childFrame;
+          if (tag != nsGkAtoms::msub_) supScriptFrame = childFrame;
           count = 0;
 
           
           
           if (subScriptFrame)
-            GetReflowAndBoundingMetricsFor(subScriptFrame, subScriptSize, bmSubScript);
+            GetReflowAndBoundingMetricsFor(subScriptFrame, subScriptSize,
+                                           bmSubScript);
           if (supScriptFrame)
-            GetReflowAndBoundingMetricsFor(supScriptFrame, supScriptSize, bmSupScript);
+            GetReflowAndBoundingMetricsFor(supScriptFrame, supScriptSize,
+                                           bmSupScript);
 
           width = std::max(subScriptSize.Width(), supScriptSize.Width());
 
@@ -665,16 +643,14 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
             nscoord x = dx;
             
             
-            if (isPreScript)
-              x += width - subScriptSize.Width();
-            dy = aDesiredSize.BlockStartAscent() - subScriptSize.BlockStartAscent() +
-              maxSubScriptShift;
-            FinishReflowChild (subScriptFrame, aPresContext, subScriptSize,
-                               nullptr,
-                               aFrame->MirrorIfRTL(aDesiredSize.Width(),
-                                                   subScriptSize.Width(),
-                                                   x),
-                               dy, 0);
+            if (isPreScript) x += width - subScriptSize.Width();
+            dy = aDesiredSize.BlockStartAscent() -
+                 subScriptSize.BlockStartAscent() + maxSubScriptShift;
+            FinishReflowChild(subScriptFrame, aPresContext, subScriptSize,
+                              nullptr,
+                              aFrame->MirrorIfRTL(aDesiredSize.Width(),
+                                                  subScriptSize.Width(), x),
+                              dy, 0);
           }
 
           if (supScriptFrame) {
@@ -685,14 +661,13 @@ nsMathMLmmultiscriptsFrame::PlaceMultiScript(nsPresContext*  aPresContext,
               
               x += italicCorrection;
             }
-            dy = aDesiredSize.BlockStartAscent() - supScriptSize.BlockStartAscent() -
-              maxSupScriptShift;
-            FinishReflowChild (supScriptFrame, aPresContext, supScriptSize,
-                               nullptr,
-                               aFrame->MirrorIfRTL(aDesiredSize.Width(),
-                                                   supScriptSize.Width(),
-                                                   x),
-                               dy, 0);
+            dy = aDesiredSize.BlockStartAscent() -
+                 supScriptSize.BlockStartAscent() - maxSupScriptShift;
+            FinishReflowChild(supScriptFrame, aPresContext, supScriptSize,
+                              nullptr,
+                              aFrame->MirrorIfRTL(aDesiredSize.Width(),
+                                                  supScriptSize.Width(), x),
+                              dy, 0);
           }
           dx += width + scriptSpace;
         }

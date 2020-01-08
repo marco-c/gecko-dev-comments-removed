@@ -38,9 +38,7 @@ class DOMSVGNumber;
 
 
 
-class DOMSVGNumberList final : public nsISupports,
-                               public nsWrapperCache
-{
+class DOMSVGNumberList final : public nsISupports, public nsWrapperCache {
   friend class AutoChangeNumberListNotifier;
   friend class DOMSVGNumber;
 
@@ -49,41 +47,38 @@ class DOMSVGNumberList final : public nsISupports,
     
     
     if (mAList) {
-      ( IsAnimValList() ? mAList->mAnimVal : mAList->mBaseVal ) = nullptr;
+      (IsAnimValList() ? mAList->mAnimVal : mAList->mBaseVal) = nullptr;
     }
   }
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGNumberList)
 
-  DOMSVGNumberList(DOMSVGAnimatedNumberList *aAList,
-                   const SVGNumberList &aInternalList)
-    : mAList(aAList)
-  {
+  DOMSVGNumberList(DOMSVGAnimatedNumberList* aAList,
+                   const SVGNumberList& aInternalList)
+      : mAList(aAList) {
     
     
     
     
 
-    InternalListLengthWillChange(aInternalList.Length()); 
+    InternalListLengthWillChange(aInternalList.Length());  
   }
 
-  virtual JSObject* WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* cx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-  nsISupports* GetParentObject()
-  {
-    return static_cast<nsIContent*>(Element());
-  }
+  nsISupports* GetParentObject() { return static_cast<nsIContent*>(Element()); }
 
   
 
 
 
   uint32_t LengthNoFlush() const {
-    MOZ_ASSERT(mItems.Length() == 0 ||
-               mItems.Length() == InternalList().Length(),
-               "DOM wrapper's list length is out of sync");
+    MOZ_ASSERT(
+        mItems.Length() == 0 || mItems.Length() == InternalList().Length(),
+        "DOM wrapper's list length is out of sync");
     return mItems.Length();
   }
 
@@ -94,9 +89,7 @@ public:
 
 
 
-  bool IsAnimating() const {
-    return mAList->IsAnimating();
-  }
+  bool IsAnimating() const { return mAList->IsAnimating(); }
   
 
 
@@ -104,8 +97,7 @@ public:
     return mAList->mAnimVal && !mAList->IsAnimating();
   }
 
-  uint32_t NumberOfItems() const
-  {
+  uint32_t NumberOfItems() const {
     if (IsAnimValList()) {
       Element()->FlushAnimations();
     }
@@ -118,30 +110,22 @@ public:
   already_AddRefed<DOMSVGNumber> IndexedGetter(uint32_t index, bool& found,
                                                ErrorResult& error);
   already_AddRefed<DOMSVGNumber> InsertItemBefore(DOMSVGNumber& newItem,
-                                                  uint32_t index, ErrorResult& error);
-  already_AddRefed<DOMSVGNumber> ReplaceItem(DOMSVGNumber& newItem, uint32_t index,
+                                                  uint32_t index,
+                                                  ErrorResult& error);
+  already_AddRefed<DOMSVGNumber> ReplaceItem(DOMSVGNumber& newItem,
+                                             uint32_t index,
                                              ErrorResult& error);
-  already_AddRefed<DOMSVGNumber> RemoveItem(uint32_t index,
-                                            ErrorResult& error);
+  already_AddRefed<DOMSVGNumber> RemoveItem(uint32_t index, ErrorResult& error);
   already_AddRefed<DOMSVGNumber> AppendItem(DOMSVGNumber& newItem,
-                                            ErrorResult& error)
-  {
+                                            ErrorResult& error) {
     return InsertItemBefore(newItem, LengthNoFlush(), error);
   }
-  uint32_t Length() const
-  {
-    return NumberOfItems();
-  }
+  uint32_t Length() const { return NumberOfItems(); }
 
-private:
+ private:
+  nsSVGElement* Element() const { return mAList->mElement; }
 
-  nsSVGElement* Element() const {
-    return mAList->mElement;
-  }
-
-  uint8_t AttrEnum() const {
-    return mAList->mAttrEnum;
-  }
+  uint8_t AttrEnum() const { return mAList->mAttrEnum; }
 
   
   bool IsAnimValList() const {
@@ -173,6 +157,6 @@ private:
   RefPtr<DOMSVGAnimatedNumberList> mAList;
 };
 
-} 
+}  
 
-#endif 
+#endif  

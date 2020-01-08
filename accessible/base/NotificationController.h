@@ -27,9 +27,8 @@ class DocAccessible;
 
 
 
-class Notification
-{
-public:
+class Notification {
+ public:
   NS_INLINE_DECL_REFCOUNTING(mozilla::a11y::Notification)
 
   
@@ -37,17 +36,17 @@ public:
 
   virtual void Process() = 0;
 
-protected:
-  Notification() { }
+ protected:
+  Notification() {}
 
   
 
 
-  virtual ~Notification() { }
+  virtual ~Notification() {}
 
-private:
+ private:
   Notification(const Notification&);
-  Notification& operator = (const Notification&);
+  Notification& operator=(const Notification&);
 };
 
 
@@ -57,42 +56,39 @@ private:
 
 
 
+template <class Class, class... Args>
+class TNotification : public Notification {
+ public:
+  typedef void (Class::*Callback)(Args*...);
 
-template<class Class, class ... Args>
-class TNotification : public Notification
-{
-public:
-  typedef void (Class::*Callback)(Args* ...);
-
-  TNotification(Class* aInstance, Callback aCallback, Args* ... aArgs) :
-    mInstance(aInstance), mCallback(aCallback), mArgs(aArgs...) { }
+  TNotification(Class* aInstance, Callback aCallback, Args*... aArgs)
+      : mInstance(aInstance), mCallback(aCallback), mArgs(aArgs...) {}
   virtual ~TNotification() { mInstance = nullptr; }
 
-  virtual void Process() override
-    { ProcessHelper(std::index_sequence_for<Args...>{}); }
+  virtual void Process() override {
+    ProcessHelper(std::index_sequence_for<Args...>{});
+  }
 
-private:
+ private:
   TNotification(const TNotification&);
-  TNotification& operator = (const TNotification&);
+  TNotification& operator=(const TNotification&);
 
   template <size_t... Indices>
-    void ProcessHelper(std::index_sequence<Indices...>)
-  {
-     (mInstance->*mCallback)(Get<Indices>(mArgs)...);
+  void ProcessHelper(std::index_sequence<Indices...>) {
+    (mInstance->*mCallback)(Get<Indices>(mArgs)...);
   }
 
   Class* mInstance;
   Callback mCallback;
-  Tuple<RefPtr<Args> ...> mArgs;
+  Tuple<RefPtr<Args>...> mArgs;
 };
 
 
 
 
 class NotificationController final : public EventQueue,
-                                     public nsARefreshObserver
-{
-public:
+                                     public nsARefreshObserver {
+ public:
   NotificationController(DocAccessible* aDocument, nsIPresShell* aPresShell);
 
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void) override;
@@ -108,8 +104,7 @@ public:
   
 
 
-  void QueueEvent(AccEvent* aEvent)
-  {
+  void QueueEvent(AccEvent* aEvent) {
     if (PushEvent(aEvent)) {
       ScheduleProcessing();
     }
@@ -120,8 +115,7 @@ public:
 
 
 
-  void QueueNameChange(Accessible* aChangeTarget)
-  {
+  void QueueNameChange(Accessible* aChangeTarget) {
     if (PushNameChange(aChangeTarget)) {
       ScheduleProcessing();
     }
@@ -134,10 +128,9 @@ public:
   EventTree* QueueMutation(Accessible* aContainer);
 
   class MoveGuard final {
-  public:
-    explicit MoveGuard(NotificationController* aController) :
-      mController(aController)
-    {
+   public:
+    explicit MoveGuard(NotificationController* aController)
+        : mController(aController) {
 #ifdef DEBUG
       MOZ_ASSERT(!mController->mMoveGuardOnStack,
                  "Move guard is on stack already!");
@@ -152,7 +145,7 @@ public:
       mController->mPrecedingEvents.Clear();
     }
 
-  private:
+   private:
     NotificationController* mController;
   };
 
@@ -179,12 +172,12 @@ public:
   
 
 
-  inline void ScheduleTextUpdate(nsIContent* aTextNode)
-  {
+  inline void ScheduleTextUpdate(nsIContent* aTextNode) {
     
     
     MOZ_ASSERT(aTextNode->GetParentNode(), "A text node is not in DOM");
-    MOZ_ASSERT(aTextNode->GetPrimaryFrame(), "A text node doesn't have a frame");
+    MOZ_ASSERT(aTextNode->GetPrimaryFrame(),
+               "A text node doesn't have a frame");
     MOZ_ASSERT(aTextNode->GetPrimaryFrame()->StyleVisibility()->IsVisible(),
                "A text node is not visible");
 
@@ -201,8 +194,7 @@ public:
   
 
 
-  void ScheduleRelocation(Accessible* aOwner)
-  {
+  void ScheduleRelocation(Accessible* aOwner) {
     if (!mRelocations.Contains(aOwner) && mRelocations.AppendElement(aOwner)) {
       ScheduleProcessing();
     }
@@ -222,14 +214,14 @@ public:
 
 
 
-  template<class Class, class Arg>
-  inline void HandleNotification(Class* aInstance,
-                                 typename TNotification<Class, Arg>::Callback aMethod,
-                                 Arg* aArg)
-  {
+  template <class Class, class Arg>
+  inline void HandleNotification(
+      Class* aInstance, typename TNotification<Class, Arg>::Callback aMethod,
+      Arg* aArg) {
     if (!IsUpdatePending()) {
 #ifdef A11Y_LOG
-      if (mozilla::a11y::logging::IsEnabled(mozilla::a11y::logging::eNotifications))
+      if (mozilla::a11y::logging::IsEnabled(
+              mozilla::a11y::logging::eNotifications))
         mozilla::a11y::logging::Text("sync notification processing");
 #endif
       (aInstance->*aMethod)(aArg);
@@ -237,7 +229,7 @@ public:
     }
 
     RefPtr<Notification> notification =
-      new TNotification<Class, Arg>(aInstance, aMethod, aArg);
+        new TNotification<Class, Arg>(aInstance, aMethod, aArg);
     if (notification && mNotifications.AppendElement(notification))
       ScheduleProcessing();
   }
@@ -248,34 +240,33 @@ public:
 
 
 
-  template<class Class>
-  inline void ScheduleNotification(Class* aInstance,
-                                   typename TNotification<Class>::Callback aMethod)
-  {
+  template <class Class>
+  inline void ScheduleNotification(
+      Class* aInstance, typename TNotification<Class>::Callback aMethod) {
     RefPtr<Notification> notification =
-      new TNotification<Class>(aInstance, aMethod);
+        new TNotification<Class>(aInstance, aMethod);
     if (notification && mNotifications.AppendElement(notification))
       ScheduleProcessing();
   }
 
-  template<class Class, class Arg>
-  inline void ScheduleNotification(Class* aInstance,
-                                   typename TNotification<Class, Arg>::Callback aMethod,
-                                   Arg* aArg)
-  {
+  template <class Class, class Arg>
+  inline void ScheduleNotification(
+      Class* aInstance, typename TNotification<Class, Arg>::Callback aMethod,
+      Arg* aArg) {
     RefPtr<Notification> notification =
-      new TNotification<Class, Arg>(aInstance, aMethod, aArg);
+        new TNotification<Class, Arg>(aInstance, aMethod, aArg);
     if (notification && mNotifications.AppendElement(notification)) {
       ScheduleProcessing();
     }
   }
 
 #ifdef DEBUG
-  bool IsUpdating() const
-    { return mObservingState == eRefreshProcessingForUpdate; }
+  bool IsUpdating() const {
+    return mObservingState == eRefreshProcessingForUpdate;
+  }
 #endif
 
-protected:
+ protected:
   virtual ~NotificationController();
 
   nsCycleCollectingAutoRefCnt mRefCnt;
@@ -292,9 +283,9 @@ protected:
 
   bool WaitingForParent();
 
-private:
+ private:
   NotificationController(const NotificationController&);
-  NotificationController& operator = (const NotificationController&);
+  NotificationController& operator=(const NotificationController&);
 
   
   virtual void WillRefresh(mozilla::TimeStamp aTime) override;
@@ -302,24 +293,21 @@ private:
   
 
 
-  void WithdrawPrecedingEvents(nsTArray<RefPtr<AccHideEvent>>* aEvs)
-  {
+  void WithdrawPrecedingEvents(nsTArray<RefPtr<AccHideEvent>>* aEvs) {
     if (mPrecedingEvents.Length() > 0) {
       aEvs->AppendElements(std::move(mPrecedingEvents));
     }
   }
-  void StorePrecedingEvent(AccHideEvent* aEv)
-  {
+  void StorePrecedingEvent(AccHideEvent* aEv) {
     MOZ_ASSERT(mMoveGuardOnStack, "No move guard on stack!");
     mPrecedingEvents.AppendElement(aEv);
   }
-  void StorePrecedingEvents(nsTArray<RefPtr<AccHideEvent>>&& aEvs)
-  {
+  void StorePrecedingEvents(nsTArray<RefPtr<AccHideEvent>>&& aEvs) {
     MOZ_ASSERT(mMoveGuardOnStack, "No move guard on stack!");
     mPrecedingEvents.InsertElementsAt(0, aEvs);
   }
 
-private:
+ private:
   
 
 
@@ -350,56 +338,54 @@ private:
   
 
 
-  nsTArray<RefPtr<DocAccessible> > mHangingChildDocuments;
+  nsTArray<RefPtr<DocAccessible>> mHangingChildDocuments;
 
   
 
 
-  nsClassHashtable<nsRefPtrHashKey<Accessible>,
-                   nsTArray<nsCOMPtr<nsIContent>>> mContentInsertions;
+  nsClassHashtable<nsRefPtrHashKey<Accessible>, nsTArray<nsCOMPtr<nsIContent>>>
+      mContentInsertions;
 
-  template<class T>
-  class nsCOMPtrHashKey : public PLDHashEntryHdr
-  {
-  public:
+  template <class T>
+  class nsCOMPtrHashKey : public PLDHashEntryHdr {
+   public:
     typedef T* KeyType;
     typedef const T* KeyTypePointer;
 
     explicit nsCOMPtrHashKey(const T* aKey) : mKey(const_cast<T*>(aKey)) {}
     nsCOMPtrHashKey(nsCOMPtrHashKey<T>&& aOther)
-      : PLDHashEntryHdr(std::move(aOther))
-      , mKey(std::move(aOther.mKey))
-    {}
-    ~nsCOMPtrHashKey() { }
+        : PLDHashEntryHdr(std::move(aOther)), mKey(std::move(aOther.mKey)) {}
+    ~nsCOMPtrHashKey() {}
 
     KeyType GetKey() const { return mKey; }
     bool KeyEquals(KeyTypePointer aKey) const { return aKey == mKey; }
 
     static KeyTypePointer KeyToPointer(KeyType aKey) { return aKey; }
-    static PLDHashNumber HashKey(KeyTypePointer aKey)
-      { return NS_PTR_TO_INT32(aKey) >> 2; }
+    static PLDHashNumber HashKey(KeyTypePointer aKey) {
+      return NS_PTR_TO_INT32(aKey) >> 2;
+    }
 
     enum { ALLOW_MEMMOVE = true };
 
    protected:
-     nsCOMPtr<T> mKey;
+    nsCOMPtr<T> mKey;
   };
 
   
 
 
-  nsTHashtable<nsCOMPtrHashKey<nsIContent> > mTextHash;
+  nsTHashtable<nsCOMPtrHashKey<nsIContent>> mTextHash;
 
   
 
 
 
-  nsTArray<RefPtr<Notification> > mNotifications;
+  nsTArray<RefPtr<Notification>> mNotifications;
 
   
 
 
-  nsTArray<RefPtr<Accessible> > mRelocations;
+  nsTArray<RefPtr<Accessible>> mRelocations;
 
   
 
@@ -429,11 +415,9 @@ private:
   
 
 
-  class EventMap
-  {
-  public:
-    enum EventType
-    {
+  class EventMap {
+   public:
+    enum EventType {
       ShowEvent = 0x0,
       HideEvent = 0x1,
       ReorderEvent = 0x2,
@@ -444,7 +428,7 @@ private:
     void RemoveEvent(AccTreeMutationEvent* aEvent);
     void Clear() { mTable.Clear(); }
 
-  private:
+   private:
     EventType GetEventType(AccTreeMutationEvent* aEvent);
 
     nsRefPtrHashtable<nsUint64HashKey, AccTreeMutationEvent> mTable;
@@ -454,7 +438,7 @@ private:
   uint32_t mEventGeneration;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

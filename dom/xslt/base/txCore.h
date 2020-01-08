@@ -11,40 +11,32 @@
 #include "nsISupportsImpl.h"
 #include "nsStringFwd.h"
 
-class txObject
-{
-public:
-    txObject()
-    {
-        MOZ_COUNT_CTOR(txObject);
-    }
+class txObject {
+ public:
+  txObject() { MOZ_COUNT_CTOR(txObject); }
 
-    
+  
 
 
-    virtual ~txObject()
-    {
-        MOZ_COUNT_DTOR(txObject);
-    }
+  virtual ~txObject() { MOZ_COUNT_DTOR(txObject); }
 };
 
 
 
 
-class txDouble
-{
-public:
-    
+class txDouble {
+ public:
+  
 
 
 
-    static void toString(double aValue, nsAString& aDest);
+  static void toString(double aValue, nsAString& aDest);
 
-    
+  
 
 
 
-    static double toDouble(const nsAString& aStr);
+  static double toDouble(const nsAString& aStr);
 };
 
 #endif

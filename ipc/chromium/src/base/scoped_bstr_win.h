@@ -18,8 +18,7 @@
 
 class ScopedBstr {
  public:
-  ScopedBstr() : bstr_(NULL) {
-  }
+  ScopedBstr() : bstr_(NULL) {}
 
   
   
@@ -71,9 +70,7 @@ class ScopedBstr {
   
   uint32_t ByteLength() const;
 
-  operator BSTR() const {
-    return bstr_;
-  }
+  operator BSTR() const { return bstr_; }
 
  protected:
   BSTR bstr_;
@@ -105,15 +102,13 @@ class StackBstrT {
     
     
     
-    DCHECK(lstrlenW(str) == (string_bytes / sizeof(bstr_.str_[0])) - 1) <<
-        "not expecting a string pointer";
+    DCHECK(lstrlenW(str) == (string_bytes / sizeof(bstr_.str_[0])) - 1)
+        << "not expecting a string pointer";
     memcpy(bstr_.str_, str, string_bytes);
     bstr_.len_ = string_bytes - sizeof(wchar_t);
   }
 
-  operator BSTR() {
-    return bstr_.str_;
-  }
+  operator BSTR() { return bstr_.str_; }
 
  protected:
   struct BstrInternal {
@@ -129,8 +124,7 @@ class StackBstrT {
 
 
 
-#define StackBstr(str) \
-  static_cast<BSTR>(StackBstrT<sizeof(str)>(str))
+#define StackBstr(str) static_cast<BSTR>(StackBstrT<sizeof(str)>(str))
 
 
 
@@ -139,7 +133,6 @@ class StackBstrT {
 
 
 
-#define StackBstrVar(str, var) \
-  StackBstrT<sizeof(str)> var(str)
+#define StackBstrVar(str, var) StackBstrT<sizeof(str)> var(str)
 
 #endif  

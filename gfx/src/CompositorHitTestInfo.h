@@ -22,9 +22,9 @@ namespace gfx {
 
 enum class CompositorHitTestFlags : uint8_t {
   
-  eVisibleToHitTest = 0,              
+  eVisibleToHitTest = 0,  
   
-  eDispatchToContent,                 
+  eDispatchToContent,  
 
   
   
@@ -35,20 +35,20 @@ enum class CompositorHitTestFlags : uint8_t {
 
   
   
-  eScrollbar,                         
+  eScrollbar,  
   
   
   
-  eScrollbarThumb,                    
+  eScrollbarThumb,  
   
   
-  eScrollbarVertical,                 
+  eScrollbarVertical,  
 
   
   
   
   
-  eRequiresTargetConfirmation,        
+  eRequiresTargetConfirmation,  
 };
 
 using CompositorHitTestInfo = EnumSet<CompositorHitTestFlags, uint32_t>;
@@ -58,36 +58,34 @@ constexpr CompositorHitTestInfo CompositorHitTestInvisibleToHit;
 
 
 constexpr CompositorHitTestInfo CompositorHitTestTouchActionMask(
-  CompositorHitTestFlags::eTouchActionPanXDisabled,
-  CompositorHitTestFlags::eTouchActionPanYDisabled,
-  CompositorHitTestFlags::eTouchActionPinchZoomDisabled,
-  CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled);
+    CompositorHitTestFlags::eTouchActionPanXDisabled,
+    CompositorHitTestFlags::eTouchActionPanYDisabled,
+    CompositorHitTestFlags::eTouchActionPinchZoomDisabled,
+    CompositorHitTestFlags::eTouchActionDoubleTapZoomDisabled);
 
-} 
+}  
 
 
 
 template <>
-struct MaxEnumValue<::mozilla::gfx::CompositorHitTestFlags>
-{
-  static constexpr unsigned int value = static_cast<unsigned int>(gfx::CompositorHitTestFlags::eRequiresTargetConfirmation);
+struct MaxEnumValue<::mozilla::gfx::CompositorHitTestFlags> {
+  static constexpr unsigned int value = static_cast<unsigned int>(
+      gfx::CompositorHitTestFlags::eRequiresTargetConfirmation);
 };
 
 namespace gfx {
 
 
 template <int N>
-static constexpr bool DoesCompositorHitTestInfoFitIntoBits()
-{
-    if (MaxEnumValue<CompositorHitTestInfo::valueType>::value < N)
-    {
-        return true;
-    }
+static constexpr bool DoesCompositorHitTestInfoFitIntoBits() {
+  if (MaxEnumValue<CompositorHitTestInfo::valueType>::value < N) {
+    return true;
+  }
 
-    return false;
+  return false;
 }
-} 
+}  
 
-} 
+}  
 
 #endif 

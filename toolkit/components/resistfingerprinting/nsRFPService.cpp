@@ -44,19 +44,25 @@
 using namespace mozilla;
 using namespace std;
 
-static mozilla::LazyLogModule gResistFingerprintingLog("nsResistFingerprinting");
+static mozilla::LazyLogModule gResistFingerprintingLog(
+    "nsResistFingerprinting");
 
 #define RESIST_FINGERPRINTING_PREF "privacy.resistFingerprinting"
 #define RFP_TIMER_PREF "privacy.reduceTimerPrecision"
-#define RFP_TIMER_VALUE_PREF "privacy.resistFingerprinting.reduceTimerPrecision.microseconds"
+#define RFP_TIMER_VALUE_PREF \
+  "privacy.resistFingerprinting.reduceTimerPrecision.microseconds"
 #define RFP_TIMER_VALUE_DEFAULT 1000
-#define RFP_JITTER_VALUE_PREF "privacy.resistFingerprinting.reduceTimerPrecision.jitter"
+#define RFP_JITTER_VALUE_PREF \
+  "privacy.resistFingerprinting.reduceTimerPrecision.jitter"
 #define RFP_JITTER_VALUE_DEFAULT true
-#define RFP_SPOOFED_FRAMES_PER_SEC_PREF "privacy.resistFingerprinting.video_frames_per_sec"
-#define RFP_SPOOFED_DROPPED_RATIO_PREF  "privacy.resistFingerprinting.video_dropped_ratio"
-#define RFP_TARGET_VIDEO_RES_PREF "privacy.resistFingerprinting.target_video_res"
+#define RFP_SPOOFED_FRAMES_PER_SEC_PREF \
+  "privacy.resistFingerprinting.video_frames_per_sec"
+#define RFP_SPOOFED_DROPPED_RATIO_PREF \
+  "privacy.resistFingerprinting.video_dropped_ratio"
+#define RFP_TARGET_VIDEO_RES_PREF \
+  "privacy.resistFingerprinting.target_video_res"
 #define RFP_SPOOFED_FRAMES_PER_SEC_DEFAULT 30
-#define RFP_SPOOFED_DROPPED_RATIO_DEFAULT  5
+#define RFP_SPOOFED_DROPPED_RATIO_DEFAULT 5
 #define RFP_TARGET_VIDEO_RES_DEFAULT 480
 #define PROFILE_INITIALIZED_TOPIC "profile-initial-state"
 
@@ -80,19 +86,18 @@ static bool sInitialized = false;
 Atomic<bool, Relaxed> nsRFPService::sPrivacyResistFingerprinting;
 Atomic<bool, Relaxed> nsRFPService::sPrivacyTimerPrecisionReduction;
 
+
 Atomic<uint32_t, Relaxed> sResolutionUSec;
 Atomic<bool, Relaxed> sJitter;
 static uint32_t sVideoFramesPerSec;
 static uint32_t sVideoDroppedRatio;
 static uint32_t sTargetVideoRes;
 nsDataHashtable<KeyboardHashKey, const SpoofingKeyboardCode*>*
-  nsRFPService::sSpoofingKeyboardCodes = nullptr;
+    nsRFPService::sSpoofingKeyboardCodes = nullptr;
 static mozilla::StaticMutex sLock;
 
 
-nsRFPService*
-nsRFPService::GetOrCreate()
-{
+nsRFPService* nsRFPService::GetOrCreate() {
   if (!sInitialized) {
     sRFPService = new nsRFPService();
     nsresult rv = sRFPService->Init();
@@ -110,26 +115,20 @@ nsRFPService::GetOrCreate()
 }
 
 
-double
-nsRFPService::TimerResolution()
-{
-  if(nsRFPService::IsResistFingerprintingEnabled()) {
+double nsRFPService::TimerResolution() {
+  if (nsRFPService::IsResistFingerprintingEnabled()) {
     return max(100000.0, (double)sResolutionUSec);
   }
   return sResolutionUSec;
 }
 
 
-bool
-nsRFPService::IsResistFingerprintingEnabled()
-{
+bool nsRFPService::IsResistFingerprintingEnabled() {
   return sPrivacyResistFingerprinting;
 }
 
 
-bool
-nsRFPService::IsTimerPrecisionReductionEnabled(TimerPrecisionType aType)
-{
+bool nsRFPService::IsTimerPrecisionReductionEnabled(TimerPrecisionType aType) {
   if (aType == TimerPrecisionType::RFPOnly) {
     return IsResistFingerprintingEnabled();
   }
@@ -143,25 +142,20 @@ nsRFPService::IsTimerPrecisionReductionEnabled(TimerPrecisionType aType)
 
 
 
-#define LRU_CACHE_SIZE         (45)
-#define HASH_DIGEST_SIZE_BITS  (256)
+#define LRU_CACHE_SIZE (45)
+#define HASH_DIGEST_SIZE_BITS (256)
 #define HASH_DIGEST_SIZE_BYTES (HASH_DIGEST_SIZE_BITS / 8)
 
-class LRUCache final
-{
-public:
-  LRUCache()
-    : mLock("mozilla.resistFingerprinting.LRUCache")
-  {
+class LRUCache final {
+ public:
+  LRUCache() : mLock("mozilla.resistFingerprinting.LRUCache") {
     this->cache.SetLength(LRU_CACHE_SIZE);
   }
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(LRUCache)
 
-  nsCString
-  Get(long long aKeyPart1, long long aKeyPart2)
-  {
-    for (auto & cacheEntry : this->cache) {
+  nsCString Get(long long aKeyPart1, long long aKeyPart2) {
+    for (auto& cacheEntry : this->cache) {
       
       if (cacheEntry.keyPart1 == aKeyPart1 &&
           cacheEntry.keyPart2 == aKeyPart2) {
@@ -174,14 +168,14 @@ public:
           long long tmp_keyPart1 = cacheEntry.keyPart1;
           long long tmp_keyPart2 = cacheEntry.keyPart2;
           MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-            ("LRU Cache HIT-MISS with %lli != %lli and %lli != %lli",
-              aKeyPart1, tmp_keyPart1, aKeyPart2, tmp_keyPart2));
+                  ("LRU Cache HIT-MISS with %lli != %lli and %lli != %lli",
+                   aKeyPart1, tmp_keyPart1, aKeyPart2, tmp_keyPart2));
           return EmptyCString();
         }
 
         cacheEntry.accessTime = PR_Now();
         MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-          ("LRU Cache HIT with %lli %lli", aKeyPart1, aKeyPart2));
+                ("LRU Cache HIT with %lli %lli", aKeyPart1, aKeyPart2));
         return cacheEntry.data;
       }
     }
@@ -189,19 +183,19 @@ public:
     return EmptyCString();
   }
 
-  void
-  Store(long long aKeyPart1, long long aKeyPart2, const nsCString& aValue)
-  {
+  void Store(long long aKeyPart1, long long aKeyPart2,
+             const nsCString& aValue) {
     MOZ_DIAGNOSTIC_ASSERT(aValue.Length() == HASH_DIGEST_SIZE_BYTES);
     MutexAutoLock lock(mLock);
 
     CacheEntry* lowestKey = &this->cache[0];
-    for (auto & cacheEntry : this->cache) {
+    for (auto& cacheEntry : this->cache) {
       if (MOZ_UNLIKELY(cacheEntry.keyPart1 == aKeyPart1 &&
                        cacheEntry.keyPart2 == aKeyPart2)) {
         
-        MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-          ("LRU Cache DOUBLE STORE with %lli %lli", aKeyPart1, aKeyPart2));
+        MOZ_LOG(
+            gResistFingerprintingLog, LogLevel::Verbose,
+            ("LRU Cache DOUBLE STORE with %lli %lli", aKeyPart1, aKeyPart2));
         return;
       }
       if (cacheEntry.accessTime < lowestKey->accessTime) {
@@ -214,29 +208,25 @@ public:
     lowestKey->data = aValue;
     lowestKey->accessTime = PR_Now();
     MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-      ("LRU Cache STORE with %lli %lli", aKeyPart1, aKeyPart2));
+            ("LRU Cache STORE with %lli %lli", aKeyPart1, aKeyPart2));
   }
 
-
-private:
+ private:
   ~LRUCache() = default;
 
-  struct CacheEntry
-  {
+  struct CacheEntry {
     Atomic<long long, Relaxed> keyPart1;
     Atomic<long long, Relaxed> keyPart2;
     PRTime accessTime = 0;
     nsCString data;
 
-    CacheEntry()
-    {
+    CacheEntry() {
       this->keyPart1 = 0xFFFFFFFFFFFFFFFF;
       this->keyPart2 = 0xFFFFFFFFFFFFFFFF;
       this->accessTime = 0;
       this->data = nullptr;
     }
-    CacheEntry(const CacheEntry &obj)
-    {
+    CacheEntry(const CacheEntry& obj) {
       this->keyPart1.exchange(obj.keyPart1);
       this->keyPart2.exchange(obj.keyPart2);
       this->accessTime = obj.accessTime;
@@ -318,19 +308,18 @@ static StaticRefPtr<LRUCache> sCache;
 
 
 
-nsresult
-nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
-                             long long aResolutionUSec,
-                             int64_t aContextMixin,
-                             long long* aMidpointOut,
-                             uint8_t * aSecretSeed )
-{
+
+nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
+                                      long long aResolutionUSec,
+                                      int64_t aContextMixin,
+                                      long long* aMidpointOut,
+                                      uint8_t* aSecretSeed ) {
   nsresult rv;
   const int kSeedSize = 16;
   const int kClampTimesPerDigest = HASH_DIGEST_SIZE_BITS / 32;
-  static uint8_t * sSecretMidpointSeed = nullptr;
+  static uint8_t* sSecretMidpointSeed = nullptr;
 
-  if(MOZ_UNLIKELY(!aMidpointOut)) {
+  if (MOZ_UNLIKELY(!aMidpointOut)) {
     return NS_ERROR_INVALID_ARG;
   }
 
@@ -340,7 +329,7 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
     cache = sCache;
   }
 
-  if(!cache) {
+  if (!cache) {
     return NS_ERROR_FAILURE;
   }
 
@@ -364,12 +353,16 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
 
 
+
+
   long long reducedResolution = aResolutionUSec * kClampTimesPerDigest;
-  long long extraClampedTime = (aClampedTimeUSec / reducedResolution) * reducedResolution;
+  long long extraClampedTime =
+      (aClampedTimeUSec / reducedResolution) * reducedResolution;
 
   nsCString hashResult = cache->Get(extraClampedTime, aContextMixin);
 
-  if(hashResult.Length() != HASH_DIGEST_SIZE_BYTES) { 
+  if (hashResult.Length() != HASH_DIGEST_SIZE_BYTES) {  
+    
     
     if (aSecretSeed != nullptr) {
       StaticMutexAutoLock lock(sLock);
@@ -381,15 +374,20 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
     }
 
     
-    if(MOZ_UNLIKELY(!sSecretMidpointSeed)) {
+    if (MOZ_UNLIKELY(!sSecretMidpointSeed)) {
       nsCOMPtr<nsIRandomGenerator> randomGenerator =
-        do_GetService("@mozilla.org/security/random-generator;1", &rv);
-      if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+          do_GetService("@mozilla.org/security/random-generator;1", &rv);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
 
       StaticMutexAutoLock lock(sLock);
-      if(MOZ_LIKELY(!sSecretMidpointSeed)) {
-        rv = randomGenerator->GenerateRandomBytes(kSeedSize, &sSecretMidpointSeed);
-        if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
+      if (MOZ_LIKELY(!sSecretMidpointSeed)) {
+        rv = randomGenerator->GenerateRandomBytes(kSeedSize,
+                                                  &sSecretMidpointSeed);
+        if (NS_WARN_IF(NS_FAILED(rv))) {
+          return rv;
+        }
       }
     }
 
@@ -416,39 +414,44 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
 
 
-     
-     nsCOMPtr<nsICryptoHash> hasher = do_CreateInstance("@mozilla.org/security/hash;1", &rv);
-     NS_ENSURE_SUCCESS(rv, rv);
+    
+    nsCOMPtr<nsICryptoHash> hasher =
+        do_CreateInstance("@mozilla.org/security/hash;1", &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-     rv = hasher->Init(nsICryptoHash::SHA256);
-     NS_ENSURE_SUCCESS(rv, rv);
+    rv = hasher->Init(nsICryptoHash::SHA256);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-     rv = hasher->Update(sSecretMidpointSeed, kSeedSize);
-     NS_ENSURE_SUCCESS(rv, rv);
+    rv = hasher->Update(sSecretMidpointSeed, kSeedSize);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-     rv = hasher->Update((const uint8_t *)&aContextMixin, sizeof(aContextMixin));
-     NS_ENSURE_SUCCESS(rv, rv);
+    rv = hasher->Update((const uint8_t*)&aContextMixin, sizeof(aContextMixin));
+    NS_ENSURE_SUCCESS(rv, rv);
 
-     rv = hasher->Update((const uint8_t *)&extraClampedTime, sizeof(extraClampedTime));
-     NS_ENSURE_SUCCESS(rv, rv);
+    rv = hasher->Update((const uint8_t*)&extraClampedTime,
+                        sizeof(extraClampedTime));
+    NS_ENSURE_SUCCESS(rv, rv);
 
-     nsAutoCStringN<HASH_DIGEST_SIZE_BYTES> derivedSecret;
-     rv = hasher->Finish(false, derivedSecret);
-     NS_ENSURE_SUCCESS(rv, rv);
+    nsAutoCStringN<HASH_DIGEST_SIZE_BYTES> derivedSecret;
+    rv = hasher->Finish(false, derivedSecret);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-     
-     cache->Store(extraClampedTime, aContextMixin, derivedSecret);
-     hashResult = derivedSecret;
+    
+    cache->Store(extraClampedTime, aContextMixin, derivedSecret);
+    hashResult = derivedSecret;
   }
 
   
   
   
-  int byteOffset = abs(((aClampedTimeUSec - extraClampedTime) / aResolutionUSec) * 4);
+  
+  int byteOffset =
+      abs(((aClampedTimeUSec - extraClampedTime) / aResolutionUSec) * 4);
   if (MOZ_UNLIKELY(byteOffset > (HASH_DIGEST_SIZE_BYTES - 4))) {
     byteOffset = 0;
   }
-  uint32_t deterministiclyRandomValue = *BitwiseCast<uint32_t*>(PromiseFlatCString(hashResult).get() + byteOffset);
+  uint32_t deterministiclyRandomValue = *BitwiseCast<uint32_t*>(
+      PromiseFlatCString(hashResult).get() + byteOffset);
   deterministiclyRandomValue %= aResolutionUSec;
   *aMidpointOut = deterministiclyRandomValue;
 
@@ -480,18 +483,13 @@ nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
 
 
 
-
-double
-nsRFPService::ReduceTimePrecisionImpl(
-  double aTime,
-  TimeScale aTimeScale,
-  double aResolutionUSec,
-  int64_t aContextMixin,
-  TimerPrecisionType aType)
- {
-   if (!IsTimerPrecisionReductionEnabled(aType) || aResolutionUSec <= 0) {
-     return aTime;
-   }
+double nsRFPService::ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
+                                             double aResolutionUSec,
+                                             int64_t aContextMixin,
+                                             TimerPrecisionType aType) {
+  if (!IsTimerPrecisionReductionEnabled(aType) || aResolutionUSec <= 0) {
+    return aTime;
+  }
 
   
   
@@ -509,14 +507,19 @@ nsRFPService::ReduceTimePrecisionImpl(
   
   
   
-  if (aContextMixin == 0 && aType == TimerPrecisionType::All && timeAsInt < 1204233985000) {
+  if (aContextMixin == 0 && aType == TimerPrecisionType::All &&
+      timeAsInt < 1204233985000) {
     MOZ_LOG(gResistFingerprintingLog, LogLevel::Error,
-      ("About to assert. aTime=%lli<1204233985000 aContextMixin=%" PRId64 " aType=%s",
-        timeAsInt, aContextMixin, (aType == TimerPrecisionType::RFPOnly ? "RFPOnly" : "All")));
-    MOZ_ASSERT(false, "ReduceTimePrecisionImpl was given a relative time "
-                      "with an empty context mix-in (or your clock is 10+ years off.) "
-                      "Run this with MOZ_LOG=nsResistFingerprinting:1 to get more details.");
-}
+            ("About to assert. aTime=%lli<1204233985000 aContextMixin=%" PRId64
+             " aType=%s",
+             timeAsInt, aContextMixin,
+             (aType == TimerPrecisionType::RFPOnly ? "RFPOnly" : "All")));
+    MOZ_ASSERT(
+        false,
+        "ReduceTimePrecisionImpl was given a relative time "
+        "with an empty context mix-in (or your clock is 10+ years off.) "
+        "Run this with MOZ_LOG=nsResistFingerprinting:1 to get more details.");
+  }
 
   
   long long resolutionAsInt = aResolutionUSec;
@@ -531,14 +534,15 @@ nsRFPService::ReduceTimePrecisionImpl(
   
   
   
-  long long clamped = floor(double(timeAsInt) / resolutionAsInt) * resolutionAsInt;
+  
+  long long clamped =
+      floor(double(timeAsInt) / resolutionAsInt) * resolutionAsInt;
 
-
-  long long midpoint = 0,
-            clampedAndJittered = clamped;
+  long long midpoint = 0, clampedAndJittered = clamped;
   if (sJitter) {
-    if(!NS_FAILED(RandomMidpoint(clamped, resolutionAsInt, aContextMixin, &midpoint)) &&
-       timeAsInt >= clamped + midpoint) {
+    if (!NS_FAILED(RandomMidpoint(clamped, resolutionAsInt, aContextMixin,
+                                  &midpoint)) &&
+        timeAsInt >= clamped + midpoint) {
       clampedAndJittered += resolutionAsInt;
     }
   }
@@ -548,84 +552,60 @@ nsRFPService::ReduceTimePrecisionImpl(
 
   bool tmp_jitter = sJitter;
   MOZ_LOG(gResistFingerprintingLog, LogLevel::Verbose,
-    ("Given: (%.*f, Scaled: %.*f, Converted: %lli), Rounding with (%lli, Originally %.*f), "
-    "Intermediate: (%lli), Clamped: (%lli) Jitter: (%i Context: %" PRId64 " Midpoint: %lli) "
-    "Final: (%lli Converted: %.*f)",
-     DBL_DIG-1, aTime, DBL_DIG-1, timeScaled, timeAsInt, resolutionAsInt, DBL_DIG-1, aResolutionUSec,
-    (long long)floor(double(timeAsInt) / resolutionAsInt), clamped, tmp_jitter, aContextMixin, midpoint,
-    clampedAndJittered, DBL_DIG-1, ret));
+          ("Given: (%.*f, Scaled: %.*f, Converted: %lli), Rounding with (%lli, "
+           "Originally %.*f), "
+           "Intermediate: (%lli), Clamped: (%lli) Jitter: (%i Context: %" PRId64
+           " Midpoint: %lli) "
+           "Final: (%lli Converted: %.*f)",
+           DBL_DIG - 1, aTime, DBL_DIG - 1, timeScaled, timeAsInt,
+           resolutionAsInt, DBL_DIG - 1, aResolutionUSec,
+           (long long)floor(double(timeAsInt) / resolutionAsInt), clamped,
+           tmp_jitter, aContextMixin, midpoint, clampedAndJittered, DBL_DIG - 1,
+           ret));
 
   return ret;
 }
 
 
-double
-nsRFPService::ReduceTimePrecisionAsUSecs(
-  double aTime,
-  int64_t aContextMixin,
-  TimerPrecisionType aType )
-{
+double nsRFPService::ReduceTimePrecisionAsUSecs(
+    double aTime, int64_t aContextMixin,
+    TimerPrecisionType aType ) {
   return nsRFPService::ReduceTimePrecisionImpl(
-    aTime,
-    MicroSeconds,
-    TimerResolution(),
-    aContextMixin,
-    aType);
+      aTime, MicroSeconds, TimerResolution(), aContextMixin, aType);
 }
 
 
-double
-nsRFPService::ReduceTimePrecisionAsUSecsWrapper(double aTime)
-{
+double nsRFPService::ReduceTimePrecisionAsUSecsWrapper(double aTime) {
   return nsRFPService::ReduceTimePrecisionImpl(
-    aTime,
-    MicroSeconds,
-    TimerResolution(),
-    0, 
-    TimerPrecisionType::All);
+      aTime, MicroSeconds, TimerResolution(),
+      0, 
+
+      TimerPrecisionType::All);
 }
 
 
-double
-nsRFPService::ReduceTimePrecisionAsMSecs(
-  double aTime,
-  int64_t aContextMixin,
-  TimerPrecisionType aType )
-{
+double nsRFPService::ReduceTimePrecisionAsMSecs(
+    double aTime, int64_t aContextMixin,
+    TimerPrecisionType aType ) {
   return nsRFPService::ReduceTimePrecisionImpl(
-    aTime,
-    MilliSeconds,
-    TimerResolution(),
-    aContextMixin,
-    aType);
+      aTime, MilliSeconds, TimerResolution(), aContextMixin, aType);
 }
 
 
-double
-nsRFPService::ReduceTimePrecisionAsSecs(
-  double aTime,
-  int64_t aContextMixin,
-  TimerPrecisionType aType )
-{
+double nsRFPService::ReduceTimePrecisionAsSecs(
+    double aTime, int64_t aContextMixin,
+    TimerPrecisionType aType ) {
   return nsRFPService::ReduceTimePrecisionImpl(
-    aTime,
-    Seconds,
-    TimerResolution(),
-    aContextMixin,
-    aType);
+      aTime, Seconds, TimerResolution(), aContextMixin, aType);
 }
 
 
-uint32_t
-nsRFPService::CalculateTargetVideoResolution(uint32_t aVideoQuality)
-{
+uint32_t nsRFPService::CalculateTargetVideoResolution(uint32_t aVideoQuality) {
   return aVideoQuality * NSToIntCeil(aVideoQuality * 16 / 9.0);
 }
 
 
-uint32_t
-nsRFPService::GetSpoofedTotalFrames(double aTime)
-{
+uint32_t nsRFPService::GetSpoofedTotalFrames(double aTime) {
   double precision = TimerResolution() / 1000 / 1000;
   double time = floor(aTime / precision) * precision;
 
@@ -633,9 +613,8 @@ nsRFPService::GetSpoofedTotalFrames(double aTime)
 }
 
 
-uint32_t
-nsRFPService::GetSpoofedDroppedFrames(double aTime, uint32_t aWidth, uint32_t aHeight)
-{
+uint32_t nsRFPService::GetSpoofedDroppedFrames(double aTime, uint32_t aWidth,
+                                               uint32_t aHeight) {
   uint32_t targetRes = CalculateTargetVideoResolution(sTargetVideoRes);
 
   
@@ -649,13 +628,13 @@ nsRFPService::GetSpoofedDroppedFrames(double aTime, uint32_t aWidth, uint32_t aH
   
   uint32_t boundedDroppedRatio = min(sVideoDroppedRatio, 100u);
 
-  return NSToIntFloor(time * sVideoFramesPerSec * (boundedDroppedRatio / 100.0));
+  return NSToIntFloor(time * sVideoFramesPerSec *
+                      (boundedDroppedRatio / 100.0));
 }
 
 
-uint32_t
-nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth, uint32_t aHeight)
-{
+uint32_t nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth,
+                                                 uint32_t aHeight) {
   uint32_t targetRes = CalculateTargetVideoResolution(sTargetVideoRes);
 
   
@@ -669,13 +648,12 @@ nsRFPService::GetSpoofedPresentedFrames(double aTime, uint32_t aWidth, uint32_t 
   
   uint32_t boundedDroppedRatio = min(sVideoDroppedRatio, 100u);
 
-  return NSToIntFloor(time * sVideoFramesPerSec * ((100 - boundedDroppedRatio) / 100.0));
+  return NSToIntFloor(time * sVideoFramesPerSec *
+                      ((100 - boundedDroppedRatio) / 100.0));
 }
 
 
-nsresult
-nsRFPService::GetSpoofedUserAgent(nsACString &userAgent)
-{
+nsresult nsRFPService::GetSpoofedUserAgent(nsACString& userAgent) {
   
   
   
@@ -685,7 +663,7 @@ nsRFPService::GetSpoofedUserAgent(nsACString &userAgent)
 
   nsresult rv;
   nsCOMPtr<nsIXULAppInfo> appInfo =
-    do_GetService("@mozilla.org/xre/app-info;1", &rv);
+      do_GetService("@mozilla.org/xre/app-info;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString appVersion;
@@ -703,7 +681,7 @@ nsRFPService::GetSpoofedUserAgent(nsACString &userAgent)
   
   if (!strcmp(NS_STRINGIFY(MOZ_UPDATE_CHANNEL), "esr")) {
     MOZ_ASSERT(((firefoxVersion % 7) == 4),
-      "Please udpate ESR version formula in nsRFPService.cpp");
+               "Please udpate ESR version formula in nsRFPService.cpp");
   }
 
   
@@ -712,23 +690,18 @@ nsRFPService::GetSpoofedUserAgent(nsACString &userAgent)
   
   uint32_t spoofedVersion = firefoxVersion - ((firefoxVersion - 4) % 7);
   userAgent.Assign(nsPrintfCString(
-    "Mozilla/5.0 (%s; rv:%d.0) Gecko/%s Firefox/%d.0",
-    SPOOFED_UA_OS, spoofedVersion, LEGACY_UA_GECKO_TRAIL, spoofedVersion));
+      "Mozilla/5.0 (%s; rv:%d.0) Gecko/%s Firefox/%d.0", SPOOFED_UA_OS,
+      spoofedVersion, LEGACY_UA_GECKO_TRAIL, spoofedVersion));
 
   return rv;
 }
 
 static const char* gCallbackPrefs[] = {
-  RESIST_FINGERPRINTING_PREF,
-  RFP_TIMER_PREF,
-  RFP_TIMER_VALUE_PREF,
-  RFP_JITTER_VALUE_PREF,
-  nullptr,
+    RESIST_FINGERPRINTING_PREF, RFP_TIMER_PREF, RFP_TIMER_VALUE_PREF,
+    RFP_JITTER_VALUE_PREF,      nullptr,
 };
 
-nsresult
-nsRFPService::Init()
-{
+nsresult nsRFPService::Init() {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsresult rv;
@@ -748,14 +721,11 @@ nsRFPService::Init()
                                  gCallbackPrefs, this);
 
   Preferences::AddAtomicBoolVarCache(&sPrivacyTimerPrecisionReduction,
-                                     RFP_TIMER_PREF,
-                                     true);
+                                     RFP_TIMER_PREF, true);
 
-  Preferences::AddAtomicUintVarCache(&sResolutionUSec,
-                                     RFP_TIMER_VALUE_PREF,
+  Preferences::AddAtomicUintVarCache(&sResolutionUSec, RFP_TIMER_VALUE_PREF,
                                      RFP_TIMER_VALUE_DEFAULT);
-  Preferences::AddAtomicBoolVarCache(&sJitter,
-                                     RFP_JITTER_VALUE_PREF,
+  Preferences::AddAtomicBoolVarCache(&sJitter, RFP_JITTER_VALUE_PREF,
                                      RFP_JITTER_VALUE_DEFAULT);
   Preferences::AddUintVarCache(&sVideoFramesPerSec,
                                RFP_SPOOFED_FRAMES_PER_SEC_PREF,
@@ -763,8 +733,7 @@ nsRFPService::Init()
   Preferences::AddUintVarCache(&sVideoDroppedRatio,
                                RFP_SPOOFED_DROPPED_RATIO_PREF,
                                RFP_SPOOFED_DROPPED_RATIO_DEFAULT);
-  Preferences::AddUintVarCache(&sTargetVideoRes,
-                               RFP_TARGET_VIDEO_RES_PREF,
+  Preferences::AddUintVarCache(&sTargetVideoRes, RFP_TARGET_VIDEO_RES_PREF,
                                RFP_TARGET_VIDEO_RES_DEFAULT);
 
   
@@ -778,7 +747,7 @@ nsRFPService::Init()
 
   
   
-  if(!sCache) {
+  if (!sCache) {
     sCache = new LRUCache();
   }
 
@@ -786,13 +755,13 @@ nsRFPService::Init()
 }
 
 
-void
-nsRFPService::UpdateTimers() {
+void nsRFPService::UpdateTimers() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (sPrivacyResistFingerprinting || sPrivacyTimerPrecisionReduction) {
     JS::SetTimeResolutionUsec(TimerResolution(), sJitter);
-    JS::SetReduceMicrosecondTimePrecisionCallback(nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
+    JS::SetReduceMicrosecondTimePrecisionCallback(
+        nsRFPService::ReduceTimePrecisionAsUSecsWrapper);
   } else if (sInitialized) {
     JS::SetTimeResolutionUsec(0, false);
   }
@@ -800,11 +769,10 @@ nsRFPService::UpdateTimers() {
 
 
 
-void
-nsRFPService::UpdateRFPPref()
-{
+void nsRFPService::UpdateRFPPref() {
   MOZ_ASSERT(NS_IsMainThread());
-  sPrivacyResistFingerprinting = Preferences::GetBool(RESIST_FINGERPRINTING_PREF);
+  sPrivacyResistFingerprinting =
+      Preferences::GetBool(RESIST_FINGERPRINTING_PREF);
 
   UpdateTimers();
 
@@ -852,33 +820,27 @@ nsRFPService::UpdateRFPPref()
   nsJSUtils::ResetTimeZone();
 }
 
-void
-nsRFPService::StartShutdown()
-{
+void nsRFPService::StartShutdown() {
   MOZ_ASSERT(NS_IsMainThread());
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
 
   StaticMutexAutoLock lock(sLock);
-  {
-    sCache = nullptr;
-  }
+  { sCache = nullptr; }
 
   if (obs) {
     obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
   }
-  Preferences::UnregisterCallbacks(PREF_CHANGE_METHOD(nsRFPService::PrefChanged),
-                                   gCallbackPrefs, this);
+  Preferences::UnregisterCallbacks(
+      PREF_CHANGE_METHOD(nsRFPService::PrefChanged), gCallbackPrefs, this);
 }
 
 
-void
-nsRFPService::MaybeCreateSpoofingKeyCodes(const KeyboardLangs aLang,
-                                          const KeyboardRegions aRegion)
-{
+void nsRFPService::MaybeCreateSpoofingKeyCodes(const KeyboardLangs aLang,
+                                               const KeyboardRegions aRegion) {
   if (!sSpoofingKeyboardCodes) {
     sSpoofingKeyboardCodes =
-      new nsDataHashtable<KeyboardHashKey, const SpoofingKeyboardCode*>();
+        new nsDataHashtable<KeyboardHashKey, const SpoofingKeyboardCode*>();
   }
 
   if (KeyboardLang::EN == aLang) {
@@ -891,9 +853,7 @@ nsRFPService::MaybeCreateSpoofingKeyCodes(const KeyboardLangs aLang,
 }
 
 
-void
-nsRFPService::MaybeCreateSpoofingKeyCodesForEnUS()
-{
+void nsRFPService::MaybeCreateSpoofingKeyCodesForEnUS() {
   MOZ_ASSERT(sSpoofingKeyboardCodes);
 
   static bool sInitialized = false;
@@ -906,20 +866,20 @@ nsRFPService::MaybeCreateSpoofingKeyCodesForEnUS()
 
   static const SpoofingKeyboardInfo spoofingKeyboardInfoTable[] = {
 #define KEY(key_, _codeNameIdx, _keyCode, _modifier) \
-    { KEY_NAME_INDEX_USE_STRING, NS_LITERAL_STRING(key_), \
-      { CODE_NAME_INDEX_##_codeNameIdx, _keyCode, _modifier } },
+  {KEY_NAME_INDEX_USE_STRING,                        \
+   NS_LITERAL_STRING(key_),                          \
+   {CODE_NAME_INDEX_##_codeNameIdx, _keyCode, _modifier}},
 #define CONTROL(keyNameIdx_, _codeNameIdx, _keyCode) \
-    { KEY_NAME_INDEX_##keyNameIdx_, EmptyString(), \
-      { CODE_NAME_INDEX_##_codeNameIdx, _keyCode, MODIFIER_NONE } },
+  {KEY_NAME_INDEX_##keyNameIdx_,                     \
+   EmptyString(),                                    \
+   {CODE_NAME_INDEX_##_codeNameIdx, _keyCode, MODIFIER_NONE}},
 #include "KeyCodeConsensus_En_US.h"
 #undef CONTROL
 #undef KEY
   };
 
   for (const auto& keyboardInfo : spoofingKeyboardInfoTable) {
-    KeyboardHashKey key(lang, reg,
-                        keyboardInfo.mKeyIdx,
-                        keyboardInfo.mKey);
+    KeyboardHashKey key(lang, reg, keyboardInfo.mKeyIdx, keyboardInfo.mKey);
     MOZ_ASSERT(!sSpoofingKeyboardCodes->Lookup(key),
                "Double-defining key code; fix your KeyCodeConsensus file");
     sSpoofingKeyboardCodes->Put(key, &keyboardInfo.mSpoofingCode);
@@ -929,11 +889,9 @@ nsRFPService::MaybeCreateSpoofingKeyCodesForEnUS()
 }
 
 
-void
-nsRFPService::GetKeyboardLangAndRegion(const nsAString& aLanguage,
-                                       KeyboardLangs& aLocale,
-                                       KeyboardRegions& aRegion)
-{
+void nsRFPService::GetKeyboardLangAndRegion(const nsAString& aLanguage,
+                                            KeyboardLangs& aLocale,
+                                            KeyboardRegions& aRegion) {
   nsAutoString langStr;
   nsAutoString regionStr;
   uint32_t partNum = 0;
@@ -969,11 +927,9 @@ nsRFPService::GetKeyboardLangAndRegion(const nsAString& aLanguage,
 }
 
 
-bool
-nsRFPService::GetSpoofedKeyCodeInfo(const nsIDocument* aDoc,
-                                    const WidgetKeyboardEvent* aKeyboardEvent,
-                                    SpoofingKeyboardCode& aOut)
-{
+bool nsRFPService::GetSpoofedKeyCodeInfo(
+    const nsIDocument* aDoc, const WidgetKeyboardEvent* aKeyboardEvent,
+    SpoofingKeyboardCode& aOut) {
   MOZ_ASSERT(aKeyboardEvent);
 
   KeyboardLangs keyboardLang = RFP_DEFAULT_SPOOFING_KEYBOARD_LANG;
@@ -996,11 +952,9 @@ nsRFPService::GetSpoofedKeyCodeInfo(const nsIDocument* aDoc,
 
     
     
-    if (!language.IsEmpty() &&
-        !language.Contains(char16_t(','))) {
+    if (!language.IsEmpty() && !language.Contains(char16_t(','))) {
       language.StripWhitespace();
-      GetKeyboardLangAndRegion(language, keyboardLang,
-                               keyboardRegion);
+      GetKeyboardLangAndRegion(language, keyboardLang, keyboardRegion);
     }
   }
 
@@ -1025,12 +979,9 @@ nsRFPService::GetSpoofedKeyCodeInfo(const nsIDocument* aDoc,
 }
 
 
-bool
-nsRFPService::GetSpoofedModifierStates(const nsIDocument* aDoc,
-                                       const WidgetKeyboardEvent* aKeyboardEvent,
-                                       const Modifiers aModifier,
-                                       bool& aOut)
-{
+bool nsRFPService::GetSpoofedModifierStates(
+    const nsIDocument* aDoc, const WidgetKeyboardEvent* aKeyboardEvent,
+    const Modifiers aModifier, bool& aOut) {
   MOZ_ASSERT(aKeyboardEvent);
 
   
@@ -1054,11 +1005,9 @@ nsRFPService::GetSpoofedModifierStates(const nsIDocument* aDoc,
 }
 
 
-bool
-nsRFPService::GetSpoofedCode(const nsIDocument* aDoc,
-                             const WidgetKeyboardEvent* aKeyboardEvent,
-                             nsAString& aOut)
-{
+bool nsRFPService::GetSpoofedCode(const nsIDocument* aDoc,
+                                  const WidgetKeyboardEvent* aKeyboardEvent,
+                                  nsAString& aOut) {
   MOZ_ASSERT(aKeyboardEvent);
 
   SpoofingKeyboardCode keyCodeInfo;
@@ -1072,7 +1021,7 @@ nsRFPService::GetSpoofedCode(const nsIDocument* aDoc,
   
   
   if (aKeyboardEvent->mLocation ==
-        dom::KeyboardEvent_Binding::DOM_KEY_LOCATION_RIGHT &&
+          dom::KeyboardEvent_Binding::DOM_KEY_LOCATION_RIGHT &&
       StringEndsWith(aOut, NS_LITERAL_STRING("Left"))) {
     aOut.ReplaceLiteral(aOut.Length() - 4, 4, u"Right");
   }
@@ -1081,11 +1030,9 @@ nsRFPService::GetSpoofedCode(const nsIDocument* aDoc,
 }
 
 
-bool
-nsRFPService::GetSpoofedKeyCode(const nsIDocument* aDoc,
-                                const WidgetKeyboardEvent* aKeyboardEvent,
-                                uint32_t& aOut)
-{
+bool nsRFPService::GetSpoofedKeyCode(const nsIDocument* aDoc,
+                                     const WidgetKeyboardEvent* aKeyboardEvent,
+                                     uint32_t& aOut) {
   MOZ_ASSERT(aKeyboardEvent);
 
   SpoofingKeyboardCode keyCodeInfo;
@@ -1098,17 +1045,14 @@ nsRFPService::GetSpoofedKeyCode(const nsIDocument* aDoc,
   return false;
 }
 
-void
-nsRFPService::PrefChanged(const char* aPref)
-{
+void nsRFPService::PrefChanged(const char* aPref) {
   nsDependentCString pref(aPref);
 
   if (pref.EqualsLiteral(RFP_TIMER_PREF) ||
       pref.EqualsLiteral(RFP_TIMER_VALUE_PREF) ||
       pref.EqualsLiteral(RFP_JITTER_VALUE_PREF)) {
     UpdateTimers();
-  }
-  else if (pref.EqualsLiteral(RESIST_FINGERPRINTING_PREF)) {
+  } else if (pref.EqualsLiteral(RESIST_FINGERPRINTING_PREF)) {
     UpdateRFPPref();
 
 #if defined(XP_WIN)
@@ -1124,8 +1068,7 @@ nsRFPService::PrefChanged(const char* aPref)
 
 NS_IMETHODIMP
 nsRFPService::Observe(nsISupports* aObject, const char* aTopic,
-                      const char16_t* aMessage)
-{
+                      const char16_t* aMessage) {
   if (!strcmp(NS_XPCOM_SHUTDOWN_OBSERVER_ID, aTopic)) {
     StartShutdown();
   }

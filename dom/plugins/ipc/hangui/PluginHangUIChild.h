@@ -25,14 +25,12 @@ namespace plugins {
 
 
 
-class PluginHangUIChild : public MiniShmObserver
-{
-public:
+class PluginHangUIChild : public MiniShmObserver {
+ public:
   PluginHangUIChild();
   virtual ~PluginHangUIChild();
 
-  bool
-  Init(int aArgc, wchar_t* aArgv[]);
+  bool Init(int aArgc, wchar_t* aArgv[]);
 
   
 
@@ -41,8 +39,7 @@ public:
 
 
 
-  bool
-  Show();
+  bool Show();
 
   
 
@@ -51,39 +48,30 @@ public:
 
 
 
-  bool
-  WaitForDismissal();
+  bool WaitForDismissal();
 
-  virtual void
-  OnMiniShmEvent(MiniShmBase* aMiniShmObj) override;
+  virtual void OnMiniShmEvent(MiniShmBase* aMiniShmObj) override;
 
-private:
-  bool
-  RecvShow();
+ private:
+  bool RecvShow();
 
-  bool
-  RecvCancel();
+  bool RecvCancel();
 
-  bool
-  SetMainThread();
+  bool SetMainThread();
 
-  void
-  ResizeButtons();
+  void ResizeButtons();
 
   INT_PTR
   HangUIDlgProc(HWND aDlgHandle, UINT aMsgCode, WPARAM aWParam, LPARAM aLParam);
 
-  static VOID CALLBACK
-  ShowAPC(ULONG_PTR aContext);
+  static VOID CALLBACK ShowAPC(ULONG_PTR aContext);
 
-  static INT_PTR CALLBACK
-  SHangUIDlgProc(HWND aDlgHandle, UINT aMsgCode, WPARAM aWParam,
-                 LPARAM aLParam);
+  static INT_PTR CALLBACK SHangUIDlgProc(HWND aDlgHandle, UINT aMsgCode,
+                                         WPARAM aWParam, LPARAM aLParam);
 
-  static VOID CALLBACK
-  SOnParentProcessExit(PVOID aObject, BOOLEAN aIsTimer);
+  static VOID CALLBACK SOnParentProcessExit(PVOID aObject, BOOLEAN aIsTimer);
 
-  static PluginHangUIChild *sSelf;
+  static PluginHangUIChild* sSelf;
 
   const wchar_t* mMessageText;
   const wchar_t* mWindowTitle;
@@ -101,13 +89,12 @@ private:
 
   static const int kExpectedMinimumArgc;
 
-  typedef HRESULT (WINAPI *SETAPPUSERMODELID)(PCWSTR);
+  typedef HRESULT(WINAPI* SETAPPUSERMODELID)(PCWSTR);
 
   DISALLOW_COPY_AND_ASSIGN(PluginHangUIChild);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

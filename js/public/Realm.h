@@ -13,79 +13,67 @@
 
 namespace js {
 namespace gc {
-JS_PUBLIC_API void TraceRealm(JSTracer* trc, JS::Realm* realm, const char* name);
+JS_PUBLIC_API void TraceRealm(JSTracer* trc, JS::Realm* realm,
+                              const char* name);
 JS_PUBLIC_API bool RealmNeedsSweep(JS::Realm* realm);
-}
-}
+}  
+}  
 
 namespace JS {
 
 
 template <>
-struct GCPolicy<Realm*> : public NonGCPointerPolicy<Realm*>
-{
-    static void trace(JSTracer* trc, Realm** vp, const char* name) {
-        if (*vp) {
-            ::js::gc::TraceRealm(trc, *vp, name);
-        }
+struct GCPolicy<Realm*> : public NonGCPointerPolicy<Realm*> {
+  static void trace(JSTracer* trc, Realm** vp, const char* name) {
+    if (*vp) {
+      ::js::gc::TraceRealm(trc, *vp, name);
     }
-    static bool needsSweep(Realm** vp) {
-        return *vp && ::js::gc::RealmNeedsSweep(*vp);
-    }
+  }
+  static bool needsSweep(Realm** vp) {
+    return *vp && ::js::gc::RealmNeedsSweep(*vp);
+  }
 };
 
 
 
-extern JS_PUBLIC_API Realm*
-GetCurrentRealmOrNull(JSContext* cx);
+extern JS_PUBLIC_API Realm* GetCurrentRealmOrNull(JSContext* cx);
 
 namespace shadow {
 
-class Realm
-{
-  protected:
-    JS::Compartment* compartment_;
+class Realm {
+ protected:
+  JS::Compartment* compartment_;
 
-    explicit Realm(JS::Compartment* comp)
-      : compartment_(comp)
-    {}
+  explicit Realm(JS::Compartment* comp) : compartment_(comp) {}
 
-  public:
-    JS::Compartment* compartment() {
-        return compartment_;
-    }
-    static shadow::Realm* get(JS::Realm* realm) {
-        return reinterpret_cast<shadow::Realm*>(realm);
-    }
+ public:
+  JS::Compartment* compartment() { return compartment_; }
+  static shadow::Realm* get(JS::Realm* realm) {
+    return reinterpret_cast<shadow::Realm*>(realm);
+  }
 };
 
-}; 
+};  
 
 
-inline JS::Compartment*
-GetCompartmentForRealm(Realm* realm)
-{
-    return shadow::Realm::get(realm)->compartment();
+inline JS::Compartment* GetCompartmentForRealm(Realm* realm) {
+  return shadow::Realm::get(realm)->compartment();
 }
 
 
 
 
-extern JS_PUBLIC_API Realm*
-GetObjectRealmOrNull(JSObject* obj);
+extern JS_PUBLIC_API Realm* GetObjectRealmOrNull(JSObject* obj);
 
 
 
 
-extern JS_PUBLIC_API void*
-GetRealmPrivate(Realm* realm);
+extern JS_PUBLIC_API void* GetRealmPrivate(Realm* realm);
 
 
-extern JS_PUBLIC_API void
-SetRealmPrivate(Realm* realm, void* data);
+extern JS_PUBLIC_API void SetRealmPrivate(Realm* realm, void* data);
 
-typedef void
-(* DestroyRealmCallback)(JSFreeOp* fop, Realm* realm);
+typedef void (*DestroyRealmCallback)(JSFreeOp* fop, Realm* realm);
 
 
 
@@ -93,50 +81,41 @@ typedef void
 
 
 
-extern JS_PUBLIC_API void
-SetDestroyRealmCallback(JSContext* cx, DestroyRealmCallback callback);
+extern JS_PUBLIC_API void SetDestroyRealmCallback(
+    JSContext* cx, DestroyRealmCallback callback);
 
-typedef void
-(* RealmNameCallback)(JSContext* cx, Handle<Realm*> realm, char* buf, size_t bufsize);
-
-
-
-extern JS_PUBLIC_API void
-SetRealmNameCallback(JSContext* cx, RealmNameCallback callback);
+typedef void (*RealmNameCallback)(JSContext* cx, Handle<Realm*> realm,
+                                  char* buf, size_t bufsize);
 
 
 
-extern JS_PUBLIC_API JSObject*
-GetRealmGlobalOrNull(Handle<Realm*> realm);
+extern JS_PUBLIC_API void SetRealmNameCallback(JSContext* cx,
+                                               RealmNameCallback callback);
+
+
+
+extern JS_PUBLIC_API JSObject* GetRealmGlobalOrNull(Handle<Realm*> realm);
 
 
 
 
-extern JS_PUBLIC_API bool
-InitRealmStandardClasses(JSContext* cx);
+extern JS_PUBLIC_API bool InitRealmStandardClasses(JSContext* cx);
 
 
 
 
 
 
-extern JS_PUBLIC_API JSObject*
-GetRealmObjectPrototype(JSContext* cx);
+extern JS_PUBLIC_API JSObject* GetRealmObjectPrototype(JSContext* cx);
 
-extern JS_PUBLIC_API JSObject*
-GetRealmFunctionPrototype(JSContext* cx);
+extern JS_PUBLIC_API JSObject* GetRealmFunctionPrototype(JSContext* cx);
 
-extern JS_PUBLIC_API JSObject*
-GetRealmArrayPrototype(JSContext* cx);
+extern JS_PUBLIC_API JSObject* GetRealmArrayPrototype(JSContext* cx);
 
-extern JS_PUBLIC_API JSObject*
-GetRealmErrorPrototype(JSContext* cx);
+extern JS_PUBLIC_API JSObject* GetRealmErrorPrototype(JSContext* cx);
 
-extern JS_PUBLIC_API JSObject*
-GetRealmIteratorPrototype(JSContext* cx);
+extern JS_PUBLIC_API JSObject* GetRealmIteratorPrototype(JSContext* cx);
 
-} 
+}  
 
-#endif 
-
-
+#endif  

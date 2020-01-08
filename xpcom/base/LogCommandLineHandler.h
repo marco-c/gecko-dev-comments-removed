@@ -40,10 +40,10 @@ namespace mozilla {
 
 
 
-void
-LoggingHandleCommandLineArgs(int argc, char const* const* argv,
-                             std::function<void(nsACString const&)> const& consumer);
+void LoggingHandleCommandLineArgs(
+    int argc, char const* const* argv,
+    std::function<void(nsACString const&)> const& consumer);
 
-} 
+}  
 
 #endif

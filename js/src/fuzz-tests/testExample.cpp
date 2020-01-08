@@ -5,7 +5,6 @@
 
 
 
-
 #include "mozilla/ScopeExit.h"
 
 #include "jsapi.h"
@@ -21,33 +20,27 @@ using namespace js;
 extern JS::PersistentRootedObject gGlobal;
 extern JSContext* gCx;
 
-static int
-testExampleInit(int *argc, char ***argv) {
-    
+static int testExampleInit(int* argc, char*** argv) {
+  
 
 
 
-    return 0;
+  return 0;
 }
 
-static int
-testExampleFuzz(const uint8_t* buf, size_t size)
-{
-    
+static int testExampleFuzz(const uint8_t* buf, size_t size) {
+  
 
 
 
 
-    auto gcGuard = mozilla::MakeScopeExit([&] {
-        JS::PrepareForFullGC(gCx);
-        JS::NonIncrementalGC(gCx, GC_NORMAL, JS::gcreason::API);
-    });
 
-    
+  auto gcGuard = mozilla::MakeScopeExit([&] {
+    JS::PrepareForFullGC(gCx);
+    JS::NonIncrementalGC(gCx, GC_NORMAL, JS::gcreason::API);
+  });
 
-
-
-
+  
 
 
 
@@ -55,11 +48,14 @@ testExampleFuzz(const uint8_t* buf, size_t size)
 
 
 
-    return 0;
+
+
+
+
+  return 0;
 }
 
-MOZ_FUZZING_INTERFACE_RAW(
-    testExampleInit, 
-    testExampleFuzz, 
-    Example          
+MOZ_FUZZING_INTERFACE_RAW(testExampleInit, 
+                          testExampleFuzz, 
+                          Example          
 );

@@ -20,9 +20,8 @@ class nsSMILTimeValue;
 
 
 
-class nsSMILTimeContainer
-{
-public:
+class nsSMILTimeContainer {
+ public:
   nsSMILTimeContainer();
   virtual ~nsSMILTimeContainer();
 
@@ -30,11 +29,11 @@ public:
 
 
   enum {
-    PAUSE_BEGIN    =  1, 
-    PAUSE_SCRIPT   =  2, 
-    PAUSE_PAGEHIDE =  4, 
-    PAUSE_USERPREF =  8, 
-    PAUSE_IMAGE    = 16  
+    PAUSE_BEGIN = 1,     
+    PAUSE_SCRIPT = 2,    
+    PAUSE_PAGEHIDE = 4,  
+    PAUSE_USERPREF = 8,  
+    PAUSE_IMAGE = 16     
   };
 
   
@@ -201,18 +200,18 @@ public:
 
 
   bool PopMilestoneElementsAtMilestone(const nsSMILMilestone& aMilestone,
-                                         AnimElemArray& aMatchedElements);
+                                       AnimElemArray& aMatchedElements);
 
   
   void Traverse(nsCycleCollectionTraversalCallback* aCallback);
   void Unlink();
 
-protected:
+ protected:
   
 
 
 
-  virtual void DoSample() { }
+  virtual void DoSample() {}
 
   
 
@@ -222,15 +221,14 @@ protected:
   
 
 
-  virtual nsresult AddChild(nsSMILTimeContainer& aChild)
-  {
+  virtual nsresult AddChild(nsSMILTimeContainer& aChild) {
     return NS_ERROR_FAILURE;
   }
 
   
 
 
-  virtual void RemoveChild(nsSMILTimeContainer& aChild) { }
+  virtual void RemoveChild(nsSMILTimeContainer& aChild) {}
 
   
 
@@ -263,30 +261,27 @@ protected:
   
   bool mNeedsPauseSample;
 
-  bool mNeedsRewind; 
-  bool mIsSeeking; 
+  bool mNeedsRewind;  
+  bool mIsSeeking;    
 
 #ifdef DEBUG
-  bool mHoldingEntries; 
-                        
+  bool mHoldingEntries;  
+                         
 #endif
 
   
   uint32_t mPauseState;
 
-  struct MilestoneEntry
-  {
+  struct MilestoneEntry {
     MilestoneEntry(const nsSMILMilestone& aMilestone,
                    mozilla::dom::SVGAnimationElement& aElement)
-      : mMilestone(aMilestone), mTimebase(&aElement)
-    { }
+        : mMilestone(aMilestone), mTimebase(&aElement) {}
 
-    bool operator<(const MilestoneEntry& aOther) const
-    {
+    bool operator<(const MilestoneEntry& aOther) const {
       return mMilestone < aOther.mMilestone;
     }
 
-    nsSMILMilestone mMilestone; 
+    nsSMILMilestone mMilestone;  
     RefPtr<mozilla::dom::SVGAnimationElement> mTimebase;
   };
 
@@ -298,4 +293,4 @@ protected:
   nsTPriorityQueue<MilestoneEntry> mMilestoneEntries;
 };
 
-#endif 
+#endif  

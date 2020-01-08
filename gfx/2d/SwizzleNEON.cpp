@@ -12,9 +12,8 @@ namespace mozilla {
 namespace gfx {
 
 
-static MOZ_ALWAYS_INLINE uint16x8_t
-LoadRemainder_NEON(const uint8_t* aSrc, size_t aLength)
-{
+static MOZ_ALWAYS_INLINE uint16x8_t LoadRemainder_NEON(const uint8_t* aSrc,
+                                                       size_t aLength) {
   const uint32_t* src32 = reinterpret_cast<const uint32_t*>(aSrc);
   uint32x4_t dst32;
   if (aLength >= 2) {
@@ -32,9 +31,8 @@ LoadRemainder_NEON(const uint8_t* aSrc, size_t aLength)
 }
 
 
-static MOZ_ALWAYS_INLINE void
-StoreRemainder_NEON(uint8_t* aDst, size_t aLength, const uint16x8_t& aSrc)
-{
+static MOZ_ALWAYS_INLINE void StoreRemainder_NEON(uint8_t* aDst, size_t aLength,
+                                                  const uint16x8_t& aSrc) {
   uint32_t* dst32 = reinterpret_cast<uint32_t*>(aDst);
   uint32x4_t src32 = vreinterpretq_u32_u16(aSrc);
   if (aLength >= 2) {
@@ -51,10 +49,9 @@ StoreRemainder_NEON(uint8_t* aDst, size_t aLength, const uint16x8_t& aSrc)
 }
 
 
-template<bool aSwapRB, bool aOpaqueAlpha>
+template <bool aSwapRB, bool aOpaqueAlpha>
 static MOZ_ALWAYS_INLINE uint16x8_t
-PremultiplyVector_NEON(const uint16x8_t& aSrc)
-{
+PremultiplyVector_NEON(const uint16x8_t& aSrc) {
   
   const uint16x8_t mask = vdupq_n_u16(0x00FF);
   uint16x8_t rb = vandq_u16(aSrc, mask);
@@ -88,11 +85,9 @@ PremultiplyVector_NEON(const uint16x8_t& aSrc)
   return vsriq_n_u16(ga, rb, 8);
 }
 
-template<bool aSwapRB, bool aOpaqueAlpha>
-void Premultiply_NEON(const uint8_t* aSrc, int32_t aSrcGap,
-                      uint8_t* aDst, int32_t aDstGap,
-                      IntSize aSize)
-{
+template <bool aSwapRB, bool aOpaqueAlpha>
+void Premultiply_NEON(const uint8_t* aSrc, int32_t aSrcGap, uint8_t* aDst,
+                      int32_t aDstGap, IntSize aSize) {
   int32_t alignedRow = 4 * (aSize.width & ~3);
   int32_t remainder = aSize.width & 3;
   
@@ -122,10 +117,14 @@ void Premultiply_NEON(const uint8_t* aSrc, int32_t aSrcGap,
 }
 
 
-template void Premultiply_NEON<false, false>(const uint8_t*, int32_t, uint8_t*, int32_t, IntSize);
-template void Premultiply_NEON<false, true>(const uint8_t*, int32_t, uint8_t*, int32_t, IntSize);
-template void Premultiply_NEON<true, false>(const uint8_t*, int32_t, uint8_t*, int32_t, IntSize);
-template void Premultiply_NEON<true, true>(const uint8_t*, int32_t, uint8_t*, int32_t, IntSize);
+template void Premultiply_NEON<false, false>(const uint8_t*, int32_t, uint8_t*,
+                                             int32_t, IntSize);
+template void Premultiply_NEON<false, true>(const uint8_t*, int32_t, uint8_t*,
+                                            int32_t, IntSize);
+template void Premultiply_NEON<true, false>(const uint8_t*, int32_t, uint8_t*,
+                                            int32_t, IntSize);
+template void Premultiply_NEON<true, true>(const uint8_t*, int32_t, uint8_t*,
+                                           int32_t, IntSize);
 
 
 
@@ -135,26 +134,32 @@ template void Premultiply_NEON<true, true>(const uint8_t*, int32_t, uint8_t*, in
 
 
 
-#define UNPREMULQ_NEON(x) ((((0xFF00FFU / (x)) & 0xFF8000U) << 1) | ((0xFF00FFU / (x)) & 0x7FFFU))
+#define UNPREMULQ_NEON(x) \
+  ((((0xFF00FFU / (x)) & 0xFF8000U) << 1) | ((0xFF00FFU / (x)) & 0x7FFFU))
 #define UNPREMULQ_NEON_2(x) UNPREMULQ_NEON(x), UNPREMULQ_NEON((x) + 1)
 #define UNPREMULQ_NEON_4(x) UNPREMULQ_NEON_2(x), UNPREMULQ_NEON_2((x) + 2)
 #define UNPREMULQ_NEON_8(x) UNPREMULQ_NEON_4(x), UNPREMULQ_NEON_4((x) + 4)
 #define UNPREMULQ_NEON_16(x) UNPREMULQ_NEON_8(x), UNPREMULQ_NEON_8((x) + 8)
 #define UNPREMULQ_NEON_32(x) UNPREMULQ_NEON_16(x), UNPREMULQ_NEON_16((x) + 16)
-static const uint32_t sUnpremultiplyTable_NEON[256] =
-{
-  0, UNPREMULQ_NEON(1), UNPREMULQ_NEON_2(2), UNPREMULQ_NEON_4(4),
-  UNPREMULQ_NEON_8(8), UNPREMULQ_NEON_16(16), UNPREMULQ_NEON_32(32),
-  UNPREMULQ_NEON_32(64), UNPREMULQ_NEON_32(96), UNPREMULQ_NEON_32(128),
-  UNPREMULQ_NEON_32(160), UNPREMULQ_NEON_32(192), UNPREMULQ_NEON_32(224)
-};
+static const uint32_t sUnpremultiplyTable_NEON[256] = {0,
+                                                       UNPREMULQ_NEON(1),
+                                                       UNPREMULQ_NEON_2(2),
+                                                       UNPREMULQ_NEON_4(4),
+                                                       UNPREMULQ_NEON_8(8),
+                                                       UNPREMULQ_NEON_16(16),
+                                                       UNPREMULQ_NEON_32(32),
+                                                       UNPREMULQ_NEON_32(64),
+                                                       UNPREMULQ_NEON_32(96),
+                                                       UNPREMULQ_NEON_32(128),
+                                                       UNPREMULQ_NEON_32(160),
+                                                       UNPREMULQ_NEON_32(192),
+                                                       UNPREMULQ_NEON_32(224)};
 
 
 
-template<bool aSwapRB>
+template <bool aSwapRB>
 static MOZ_ALWAYS_INLINE uint16x8_t
-UnpremultiplyVector_NEON(const uint16x8_t& aSrc)
-{
+UnpremultiplyVector_NEON(const uint16x8_t& aSrc) {
   
   uint16x8_t rb = vandq_u16(aSrc, vdupq_n_u16(0x00FF));
   
@@ -172,13 +177,16 @@ UnpremultiplyVector_NEON(const uint16x8_t& aSrc)
 
   
   
-  uint16x8_t q1234 =
-    vreinterpretq_u16_u32(
-      vld1q_lane_u32(&sUnpremultiplyTable_NEON[a4],
-        vld1q_lane_u32(&sUnpremultiplyTable_NEON[a3],
-          vld1q_lane_u32(&sUnpremultiplyTable_NEON[a2],
-            vld1q_lane_u32(&sUnpremultiplyTable_NEON[a1],
-                           vdupq_n_u32(0), 0), 1), 2), 3));
+  uint16x8_t q1234 = vreinterpretq_u16_u32(vld1q_lane_u32(
+      &sUnpremultiplyTable_NEON[a4],
+      vld1q_lane_u32(
+          &sUnpremultiplyTable_NEON[a3],
+          vld1q_lane_u32(
+              &sUnpremultiplyTable_NEON[a2],
+              vld1q_lane_u32(&sUnpremultiplyTable_NEON[a1], vdupq_n_u32(0), 0),
+              1),
+          2),
+      3));
   
   
   
@@ -194,33 +202,26 @@ UnpremultiplyVector_NEON(const uint16x8_t& aSrc)
   
   
   
-  rb =
-    vhaddq_u16(
+  rb = vhaddq_u16(
       vmulq_u16(rb, q1234lohi.val[1]),
-      vreinterpretq_u16_s16(
-        vqdmulhq_s16(vreinterpretq_s16_u16(rb),
-                     vreinterpretq_s16_u16(q1234lohi.val[0]))));
+      vreinterpretq_u16_s16(vqdmulhq_s16(
+          vreinterpretq_s16_u16(rb), vreinterpretq_s16_u16(q1234lohi.val[0]))));
 
   
-  ga =
-    vhaddq_u16(
+  ga = vhaddq_u16(
       vmulq_u16(ga, q1234lohi.val[1]),
-      vreinterpretq_u16_s16(
-        vqdmulhq_s16(vreinterpretq_s16_u16(ga),
-                     vreinterpretq_s16_u16(q1234lohi.val[0]))));
+      vreinterpretq_u16_s16(vqdmulhq_s16(
+          vreinterpretq_s16_u16(ga), vreinterpretq_s16_u16(q1234lohi.val[0]))));
 
   
   
-  return vbslq_u16(vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)),
-                   aSrc,
+  return vbslq_u16(vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)), aSrc,
                    vsliq_n_u16(rb, ga, 8));
 }
 
-template<bool aSwapRB>
-void Unpremultiply_NEON(const uint8_t* aSrc, int32_t aSrcGap,
-                        uint8_t* aDst, int32_t aDstGap,
-                        IntSize aSize)
-{
+template <bool aSwapRB>
+void Unpremultiply_NEON(const uint8_t* aSrc, int32_t aSrcGap, uint8_t* aDst,
+                        int32_t aDstGap, IntSize aSize) {
   int32_t alignedRow = 4 * (aSize.width & ~3);
   int32_t remainder = aSize.width & 3;
   
@@ -250,22 +251,22 @@ void Unpremultiply_NEON(const uint8_t* aSrc, int32_t aSrcGap,
 }
 
 
-template void Unpremultiply_NEON<false>(const uint8_t*, int32_t, uint8_t*, int32_t, IntSize);
-template void Unpremultiply_NEON<true>(const uint8_t*, int32_t, uint8_t*, int32_t, IntSize);
+template void Unpremultiply_NEON<false>(const uint8_t*, int32_t, uint8_t*,
+                                        int32_t, IntSize);
+template void Unpremultiply_NEON<true>(const uint8_t*, int32_t, uint8_t*,
+                                       int32_t, IntSize);
 
 
-template<bool aSwapRB, bool aOpaqueAlpha>
-MOZ_ALWAYS_INLINE uint16x8_t
-SwizzleVector_NEON(const uint16x8_t& aSrc)
-{
+template <bool aSwapRB, bool aOpaqueAlpha>
+MOZ_ALWAYS_INLINE uint16x8_t SwizzleVector_NEON(const uint16x8_t& aSrc) {
   
   
   
-  return vbslq_u16(vdupq_n_u16(0x00FF),
-                   vrev32q_u16(aSrc),
-                   aOpaqueAlpha ?
-                     vorrq_u16(aSrc, vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000))) :
-                     aSrc);
+  return vbslq_u16(
+      vdupq_n_u16(0x00FF), vrev32q_u16(aSrc),
+      aOpaqueAlpha
+          ? vorrq_u16(aSrc, vreinterpretq_u16_u32(vdupq_n_u32(0xFF000000)))
+          : aSrc);
 }
 
 #if 0
@@ -289,11 +290,9 @@ SwizzleVector_NEON<false, false>(const uint16x8_t& aSrc)
 }
 #endif
 
-template<bool aSwapRB, bool aOpaqueAlpha>
-void Swizzle_NEON(const uint8_t* aSrc, int32_t aSrcGap,
-                  uint8_t* aDst, int32_t aDstGap,
-                  IntSize aSize)
-{
+template <bool aSwapRB, bool aOpaqueAlpha>
+void Swizzle_NEON(const uint8_t* aSrc, int32_t aSrcGap, uint8_t* aDst,
+                  int32_t aDstGap, IntSize aSize) {
   int32_t alignedRow = 4 * (aSize.width & ~3);
   int32_t remainder = aSize.width & 3;
   
@@ -323,9 +322,10 @@ void Swizzle_NEON(const uint8_t* aSrc, int32_t aSrcGap,
 }
 
 
-template void Swizzle_NEON<true, false>(const uint8_t*, int32_t, uint8_t*, int32_t, IntSize);
-template void Swizzle_NEON<true, true>(const uint8_t*, int32_t, uint8_t*, int32_t, IntSize);
+template void Swizzle_NEON<true, false>(const uint8_t*, int32_t, uint8_t*,
+                                        int32_t, IntSize);
+template void Swizzle_NEON<true, true>(const uint8_t*, int32_t, uint8_t*,
+                                       int32_t, IntSize);
 
-} 
-} 
-
+}  
+}  

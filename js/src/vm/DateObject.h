@@ -13,26 +13,24 @@
 
 namespace js {
 
-class DateObject : public NativeObject
-{
-    static const uint32_t UTC_TIME_SLOT = 0;
-    static const uint32_t TZA_SLOT = 1;
+class DateObject : public NativeObject {
+  static const uint32_t UTC_TIME_SLOT = 0;
+  static const uint32_t TZA_SLOT = 1;
 
-    
-
+  
 
 
 
-    static const uint32_t COMPONENTS_START_SLOT = 2;
 
-    static const uint32_t LOCAL_TIME_SLOT    = COMPONENTS_START_SLOT + 0;
-    static const uint32_t LOCAL_YEAR_SLOT    = COMPONENTS_START_SLOT + 1;
-    static const uint32_t LOCAL_MONTH_SLOT   = COMPONENTS_START_SLOT + 2;
-    static const uint32_t LOCAL_DATE_SLOT    = COMPONENTS_START_SLOT + 3;
-    static const uint32_t LOCAL_DAY_SLOT     = COMPONENTS_START_SLOT + 4;
+  static const uint32_t COMPONENTS_START_SLOT = 2;
 
-    
+  static const uint32_t LOCAL_TIME_SLOT = COMPONENTS_START_SLOT + 0;
+  static const uint32_t LOCAL_YEAR_SLOT = COMPONENTS_START_SLOT + 1;
+  static const uint32_t LOCAL_MONTH_SLOT = COMPONENTS_START_SLOT + 2;
+  static const uint32_t LOCAL_DATE_SLOT = COMPONENTS_START_SLOT + 3;
+  static const uint32_t LOCAL_DAY_SLOT = COMPONENTS_START_SLOT + 4;
 
+  
 
 
 
@@ -40,56 +38,74 @@ class DateObject : public NativeObject
 
 
 
-    static const uint32_t LOCAL_SECONDS_INTO_YEAR_SLOT = COMPONENTS_START_SLOT + 5;
 
-    static const uint32_t RESERVED_SLOTS = LOCAL_SECONDS_INTO_YEAR_SLOT + 1;
+  static const uint32_t LOCAL_SECONDS_INTO_YEAR_SLOT =
+      COMPONENTS_START_SLOT + 5;
 
-  public:
-    static const Class class_;
-    static const Class protoClass_;
+  static const uint32_t RESERVED_SLOTS = LOCAL_SECONDS_INTO_YEAR_SLOT + 1;
 
-    JS::ClippedTime clippedTime() const {
-        double t = getFixedSlot(UTC_TIME_SLOT).toDouble();
-        JS::ClippedTime clipped = JS::TimeClip(t);
-        MOZ_ASSERT(mozilla::NumbersAreIdentical(clipped.toDouble(), t));
-        return clipped;
-    }
+ public:
+  static const Class class_;
+  static const Class protoClass_;
 
-    const js::Value& UTCTime() const {
-        return getFixedSlot(UTC_TIME_SLOT);
-    }
+  JS::ClippedTime clippedTime() const {
+    double t = getFixedSlot(UTC_TIME_SLOT).toDouble();
+    JS::ClippedTime clipped = JS::TimeClip(t);
+    MOZ_ASSERT(mozilla::NumbersAreIdentical(clipped.toDouble(), t));
+    return clipped;
+  }
 
-    
-    void setUTCTime(JS::ClippedTime t);
-    void setUTCTime(JS::ClippedTime t, MutableHandleValue vp);
+  const js::Value& UTCTime() const { return getFixedSlot(UTC_TIME_SLOT); }
 
-    inline double cachedLocalTime();
+  
+  void setUTCTime(JS::ClippedTime t);
+  void setUTCTime(JS::ClippedTime t, MutableHandleValue vp);
 
-    
-    
-    
-    void fillLocalTimeSlots();
+  inline double cachedLocalTime();
 
-    static MOZ_ALWAYS_INLINE bool getTime_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getYear_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getFullYear_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getUTCFullYear_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getMonth_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getUTCMonth_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getDate_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getUTCDate_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getDay_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getUTCDay_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getHours_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getUTCHours_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getMinutes_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getUTCMinutes_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getSeconds_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getUTCSeconds_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getUTCMilliseconds_impl(JSContext* cx, const CallArgs& args);
-    static MOZ_ALWAYS_INLINE bool getTimezoneOffset_impl(JSContext* cx, const CallArgs& args);
+  
+  
+  
+  void fillLocalTimeSlots();
+
+  static MOZ_ALWAYS_INLINE bool getTime_impl(JSContext* cx,
+                                             const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getYear_impl(JSContext* cx,
+                                             const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getFullYear_impl(JSContext* cx,
+                                                 const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getUTCFullYear_impl(JSContext* cx,
+                                                    const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getMonth_impl(JSContext* cx,
+                                              const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getUTCMonth_impl(JSContext* cx,
+                                                 const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getDate_impl(JSContext* cx,
+                                             const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getUTCDate_impl(JSContext* cx,
+                                                const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getDay_impl(JSContext* cx,
+                                            const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getUTCDay_impl(JSContext* cx,
+                                               const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getHours_impl(JSContext* cx,
+                                              const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getUTCHours_impl(JSContext* cx,
+                                                 const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getMinutes_impl(JSContext* cx,
+                                                const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getUTCMinutes_impl(JSContext* cx,
+                                                   const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getSeconds_impl(JSContext* cx,
+                                                const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getUTCSeconds_impl(JSContext* cx,
+                                                   const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getUTCMilliseconds_impl(JSContext* cx,
+                                                        const CallArgs& args);
+  static MOZ_ALWAYS_INLINE bool getTimezoneOffset_impl(JSContext* cx,
+                                                       const CallArgs& args);
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -803,9 +803,10 @@ class MediaDecoderStateMachine::LoopingDecodingState
       mMaster->mAudioDecodedDuration.emplace(mMaster->mDecodedAudioEndTime);
     }
 
-    SLOG("received EOS when seamless looping, starts seeking, "
-         "AudioLoopingOffset=[%" PRId64 "]",
-         mAudioLoopingOffset.ToMicroseconds());
+    SLOG(
+        "received EOS when seamless looping, starts seeking, "
+        "AudioLoopingOffset=[%" PRId64 "]",
+        mAudioLoopingOffset.ToMicroseconds());
     RequestAudioDataFromStartPosition();
   }
 
@@ -817,19 +818,22 @@ class MediaDecoderStateMachine::LoopingDecodingState
         ->Then(OwnerThread(), __func__,
                [this]() -> void {
                  mAudioSeekRequest.Complete();
-                 SLOG("seeking completed, start to request first sample, "
-                      "queueing audio task - queued=%zu, decoder-queued=%zu",
-                      AudioQueue().GetSize(),
-                      Reader()->SizeOfAudioQueueInFrames());
+                 SLOG(
+                     "seeking completed, start to request first sample, "
+                     "queueing audio task - queued=%zu, decoder-queued=%zu",
+                     AudioQueue().GetSize(),
+                     Reader()->SizeOfAudioQueueInFrames());
 
-                 Reader()->RequestAudioData()
+                 Reader()
+                     ->RequestAudioData()
                      ->Then(OwnerThread(), __func__,
                             [this](RefPtr<AudioData> aAudio) {
                               mAudioDataRequest.Complete();
-                              SLOG("got audio decoded sample "
-                                   "[%" PRId64 ",%" PRId64 "]",
-                                   aAudio->mTime.ToMicroseconds(),
-                                   aAudio->GetEndTime().ToMicroseconds());
+                              SLOG(
+                                  "got audio decoded sample "
+                                  "[%" PRId64 ",%" PRId64 "]",
+                                  aAudio->mTime.ToMicroseconds(),
+                                  aAudio->GetEndTime().ToMicroseconds());
                               HandleAudioDecoded(aAudio);
                             },
                             [this](const MediaResult& aError) {
@@ -905,8 +909,7 @@ class MediaDecoderStateMachine::LoopingDecodingState
   bool HasDecodedLastAudioFrame() const {
     
     
-    return mAudioDataRequest.Exists() ||
-           mAudioSeekRequest.Exists() ||
+    return mAudioDataRequest.Exists() || mAudioSeekRequest.Exists() ||
            ShouldDiscardLoopedAudioData();
   }
 

@@ -46,10 +46,12 @@
 #define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(label, category, nsCStr)
 #define AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(label, category, nsStr)
 #define AUTO_PROFILER_LABEL_FAST(label, category, ctx)
-#define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, category, ctx, flags)
+#define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, category, ctx, \
+                                         flags)
 
 #define PROFILER_ADD_MARKER(markerName)
-#define PROFILER_ADD_NETWORK_MARKER(uri, pri, channel, type, start, end, count, cache, timings, redirect)
+#define PROFILER_ADD_NETWORK_MARKER(uri, pri, channel, type, start, end, \
+                                    count, cache, timings, redirect)
 
 #define DECLARE_DOCSHELL_AND_HISTORY_ID(docShell)
 #define PROFILER_TRACING(category, markerName, kind)
@@ -57,7 +59,7 @@
 #define AUTO_PROFILER_TRACING(category, markerName)
 #define AUTO_PROFILER_TRACING_DOCSHELL(category, markerName, docShell)
 
-#else 
+#else  
 
 #include <functional>
 #include <signal.h>
@@ -84,7 +86,7 @@
 
 
 #ifdef min
-# undef min
+#undef min
 #endif
 
 class ProfilerBacktrace;
@@ -94,18 +96,19 @@ namespace mozilla {
 namespace net {
 struct TimingStruct;
 enum CacheDisposition : uint8_t;
-}
-}
+}  
+}  
 class nsIURI;
 
 namespace mozilla {
 class MallocAllocPolicy;
-template <class T, size_t MinInlineCapacity, class AllocPolicy> class Vector;
+template <class T, size_t MinInlineCapacity, class AllocPolicy>
+class Vector;
 class TimeStamp;
-} 
+}  
 
 
-#define PROFILER_RAII_PASTE(id, line) id ## line
+#define PROFILER_RAII_PASTE(id, line) id##line
 #define PROFILER_RAII_EXPAND(id, line) PROFILER_RAII_PASTE(id, line)
 #define PROFILER_RAII PROFILER_RAII_EXPAND(raiiObject, __LINE__)
 
@@ -119,58 +122,57 @@ class TimeStamp;
 
 
 #define PROFILER_FOR_EACH_FEATURE(MACRO)
- \
-  MACRO(0, "java", Java) \
-  \
+                        \
+  MACRO(0, "java", Java)                                         \
+                                                                 \
   /* Get the JS engine to expose the JS stack to the profiler */ \
-  MACRO(1, "js", JS) \
-  \
-  /* Include the C++ leaf node if not stackwalking. */ \
+  MACRO(1, "js", JS)                                             \
+                                                                 \
+  /* Include the C++ leaf node if not stackwalking. */           \
   /* The DevTools profiler doesn't want the native addresses. */ \
-  MACRO(2, "leaf", Leaf) \
-  \
-  /* Add main thread I/O to the profile. */ \
-  MACRO(3, "mainthreadio", MainThreadIO) \
-  \
-  /* Add memory measurements (e.g. RSS). */ \
-  MACRO(4, "memory", Memory) \
-  \
-  /* Do not include user-identifiable information. */ \
-  MACRO(5, "privacy", Privacy) \
-  \
-  /* Collect thread responsiveness information. */ \
-  MACRO(6, "responsiveness", Responsiveness) \
-  \
-  /* Take a snapshot of the window on every composition. */ \
-  MACRO(7, "screenshots", Screenshots) \
-  \
-  /* Disable parallel traversal in styling. */ \
-  MACRO(8, "seqstyle", SequentialStyle) \
-  \
-  /* Walk the C++ stack. Not available on all platforms. */ \
-  MACRO(9, "stackwalk", StackWalk) \
-  \
-  /* Start profiling with feature TaskTracer. */ \
-  MACRO(10, "tasktracer", TaskTracer) \
-  \
-  /* Profile the registered secondary threads. */ \
-  MACRO(11, "threads", Threads) \
-  \
-  /* Have the JavaScript engine track JIT optimizations. */ \
+  MACRO(2, "leaf", Leaf)                                         \
+                                                                 \
+  /* Add main thread I/O to the profile. */                      \
+  MACRO(3, "mainthreadio", MainThreadIO)                         \
+                                                                 \
+  /* Add memory measurements (e.g. RSS). */                      \
+  MACRO(4, "memory", Memory)                                     \
+                                                                 \
+  /* Do not include user-identifiable information. */            \
+  MACRO(5, "privacy", Privacy)                                   \
+                                                                 \
+  /* Collect thread responsiveness information. */               \
+  MACRO(6, "responsiveness", Responsiveness)                     \
+                                                                 \
+  /* Take a snapshot of the window on every composition. */      \
+  MACRO(7, "screenshots", Screenshots)                           \
+                                                                 \
+  /* Disable parallel traversal in styling. */                   \
+  MACRO(8, "seqstyle", SequentialStyle)                          \
+                                                                 \
+  /* Walk the C++ stack. Not available on all platforms. */      \
+  MACRO(9, "stackwalk", StackWalk)                               \
+                                                                 \
+  /* Start profiling with feature TaskTracer. */                 \
+  MACRO(10, "tasktracer", TaskTracer)                            \
+                                                                 \
+  /* Profile the registered secondary threads. */                \
+  MACRO(11, "threads", Threads)                                  \
+                                                                 \
+  /* Have the JavaScript engine track JIT optimizations. */      \
   MACRO(12, "trackopts", TrackOptimizations)
 
-struct ProfilerFeature
-{
-  #define DECLARE(n_, str_, Name_) \
-    static const uint32_t Name_ = (1u << n_); \
-    static bool Has##Name_(uint32_t aFeatures) { return aFeatures & Name_; } \
-    static void Set##Name_(uint32_t& aFeatures) { aFeatures |= Name_; } \
-    static void Clear##Name_(uint32_t& aFeatures) { aFeatures &= ~Name_; }
+struct ProfilerFeature {
+#define DECLARE(n_, str_, Name_)                                           \
+  static const uint32_t Name_ = (1u << n_);                                \
+  static bool Has##Name_(uint32_t aFeatures) { return aFeatures & Name_; } \
+  static void Set##Name_(uint32_t& aFeatures) { aFeatures |= Name_; }      \
+  static void Clear##Name_(uint32_t& aFeatures) { aFeatures &= ~Name_; }
 
   
   PROFILER_FOR_EACH_FEATURE(DECLARE)
 
-  #undef DECLARE
+#undef DECLARE
 };
 
 namespace mozilla {
@@ -185,11 +187,9 @@ namespace detail {
 
 
 
-class RacyFeatures
-{
-public:
-  static void SetActive(uint32_t aFeatures)
-  {
+class RacyFeatures {
+ public:
+  static void SetActive(uint32_t aFeatures) {
     sActiveAndFeatures = Active | aFeatures;
   }
 
@@ -197,50 +197,49 @@ public:
 
   static bool IsActive() { return uint32_t(sActiveAndFeatures) & Active; }
 
-  static bool IsActiveWithFeature(uint32_t aFeature)
-  {
+  static bool IsActiveWithFeature(uint32_t aFeature) {
     uint32_t af = sActiveAndFeatures;  
     return (af & Active) && (af & aFeature);
   }
 
-  static bool IsActiveWithoutPrivacy()
-  {
+  static bool IsActiveWithoutPrivacy() {
     uint32_t af = sActiveAndFeatures;  
     return (af & Active) && !(af & ProfilerFeature::Privacy);
   }
 
-private:
+ private:
   static const uint32_t Active = 1u << 31;
 
-  
-  #define NO_OVERLAP(n_, str_, Name_) \
-    static_assert(ProfilerFeature::Name_ != Active, "bad Active value");
+
+#define NO_OVERLAP(n_, str_, Name_) \
+  static_assert(ProfilerFeature::Name_ != Active, "bad Active value");
 
   PROFILER_FOR_EACH_FEATURE(NO_OVERLAP);
 
-  #undef NO_OVERLAP
+#undef NO_OVERLAP
 
   
   
   
   static mozilla::Atomic<uint32_t, mozilla::MemoryOrdering::Relaxed,
-                         recordreplay::Behavior::DontPreserve> sActiveAndFeatures;
+                         recordreplay::Behavior::DontPreserve>
+      sActiveAndFeatures;
 };
 
 bool IsThreadBeingProfiled();
 
-} 
-} 
-} 
+}  
+}  
+}  
 
 
 
 
 
 #if !defined(ARCH_ARMV6)
-# define PROFILER_DEFAULT_ENTRIES 1000000
+#define PROFILER_DEFAULT_ENTRIES 1000000
 #else
-# define PROFILER_DEFAULT_ENTRIES 100000
+#define PROFILER_DEFAULT_ENTRIES 100000
 #endif
 
 #define PROFILER_DEFAULT_DURATION 20
@@ -252,8 +251,7 @@ bool IsThreadBeingProfiled();
 
 void profiler_init(void* stackTop);
 
-#define AUTO_PROFILER_INIT \
-  mozilla::AutoProfilerInit PROFILER_RAII
+#define AUTO_PROFILER_INIT mozilla::AutoProfilerInit PROFILER_RAII
 
 
 
@@ -276,9 +274,10 @@ void profiler_shutdown();
 
 
 
-void profiler_start(uint32_t aCapacity, double aInterval, uint32_t aFeatures,
-                    const char** aFilters, uint32_t aFilterCount,
-                    const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
+void profiler_start(
+    uint32_t aCapacity, double aInterval, uint32_t aFeatures,
+    const char** aFilters, uint32_t aFilterCount,
+    const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
 
@@ -289,10 +288,10 @@ void profiler_stop();
 
 
 
-void profiler_ensure_started(uint32_t aCapacity, double aInterval,
-                             uint32_t aFeatures, const char** aFilters,
-                             uint32_t aFilterCount,
-                             const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
+void profiler_ensure_started(
+    uint32_t aCapacity, double aInterval, uint32_t aFeatures,
+    const char** aFilters, uint32_t aFilterCount,
+    const mozilla::Maybe<double>& aDuration = mozilla::Nothing());
 
 
 
@@ -300,10 +299,12 @@ void profiler_ensure_started(uint32_t aCapacity, double aInterval,
 
 
 
-#define PROFILER_REGISTER_THREAD(name) \
-  do { char stackTop; profiler_register_thread(name, &stackTop); } while (0)
-#define PROFILER_UNREGISTER_THREAD() \
-  profiler_unregister_thread()
+#define PROFILER_REGISTER_THREAD(name)         \
+  do {                                         \
+    char stackTop;                             \
+    profiler_register_thread(name, &stackTop); \
+  } while (0)
+#define PROFILER_UNREGISTER_THREAD() profiler_unregister_thread()
 ProfilingStack* profiler_register_thread(const char* name, void* guessStackTop);
 void profiler_unregister_thread();
 
@@ -325,10 +326,8 @@ void profiler_unregister_thread();
 
 
 
-void profiler_register_page(const nsID& aDocShellId,
-                            uint32_t aHistoryId,
-                            const nsCString& aUrl,
-                            bool aIsSubFrame);
+void profiler_register_page(const nsID& aDocShellId, uint32_t aHistoryId,
+                            const nsCString& aUrl, bool aIsSubFrame);
 
 
 
@@ -361,8 +360,7 @@ void profiler_thread_wake();
 
 #define AUTO_PROFILER_THREAD_SLEEP \
   mozilla::AutoProfilerThreadSleep PROFILER_RAII
-#define AUTO_PROFILER_THREAD_WAKE \
-  mozilla::AutoProfilerThreadWake PROFILER_RAII
+#define AUTO_PROFILER_THREAD_WAKE mozilla::AutoProfilerThreadWake PROFILER_RAII
 
 
 
@@ -396,15 +394,13 @@ void profiler_clear_js_context();
 
 
 
-inline bool profiler_is_active()
-{
+inline bool profiler_is_active() {
   return mozilla::profiler::detail::RacyFeatures::IsActive();
 }
 
 
 
-inline bool profiler_thread_is_being_profiled()
-{
+inline bool profiler_thread_is_being_profiled() {
   return profiler_is_active() &&
          mozilla::profiler::detail::IsThreadBeingProfiled();
 }
@@ -430,11 +426,10 @@ bool profiler_feature_active(uint32_t aFeature);
 
 
 
-void profiler_get_start_params(int* aEntrySize, mozilla::Maybe<double>* aDuration,
-                               double* aInterval, uint32_t* aFeatures,
-                               mozilla::Vector<const char*, 0,
-                                               mozilla::MallocAllocPolicy>*
-                                 aFilters);
+void profiler_get_start_params(
+    int* aEntrySize, mozilla::Maybe<double>* aDuration, double* aInterval,
+    uint32_t* aFeatures,
+    mozilla::Vector<const char*, 0, mozilla::MallocAllocPolicy>* aFilters);
 
 
 
@@ -445,14 +440,17 @@ int profiler_current_thread_id();
 
 
 
-class ProfilerStackCollector
-{
-public:
+class ProfilerStackCollector {
+ public:
   
   
   
-  virtual mozilla::Maybe<uint64_t> SamplePositionInBuffer() { return mozilla::Nothing(); }
-  virtual mozilla::Maybe<uint64_t> BufferRangeStart() { return mozilla::Nothing(); }
+  virtual mozilla::Maybe<uint64_t> SamplePositionInBuffer() {
+    return mozilla::Nothing();
+  }
+  virtual mozilla::Maybe<uint64_t> BufferRangeStart() {
+    return mozilla::Nothing();
+  }
 
   
   
@@ -469,7 +467,8 @@ public:
 
   virtual void CollectWasmFrame(const char* aLabel) = 0;
 
-  virtual void CollectProfilingStackFrame(const js::ProfilingStackFrame& aFrame) = 0;
+  virtual void CollectProfilingStackFrame(
+      const js::ProfilingStackFrame& aFrame) = 0;
 };
 
 
@@ -480,20 +479,18 @@ void profiler_suspend_and_sample_thread(int aThreadId, uint32_t aFeatures,
                                         ProfilerStackCollector& aCollector,
                                         bool aSampleNative = true);
 
-struct ProfilerBacktraceDestructor
-{
+struct ProfilerBacktraceDestructor {
   void operator()(ProfilerBacktrace*);
 };
 
 using UniqueProfilerBacktrace =
-  mozilla::UniquePtr<ProfilerBacktrace, ProfilerBacktraceDestructor>;
+    mozilla::UniquePtr<ProfilerBacktrace, ProfilerBacktraceDestructor>;
 
 
 
 UniqueProfilerBacktrace profiler_get_backtrace();
 
-struct ProfilerBufferInfo
-{
+struct ProfilerBufferInfo {
   uint64_t mRangeStart;
   uint64_t mRangeEnd;
   uint32_t mEntryCount;
@@ -522,8 +519,8 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #define AUTO_PROFILER_LABEL(label, category) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(label, nullptr, \
-                                           js::ProfilingStackFrame::Category::category)
+  mozilla::AutoProfilerLabel PROFILER_RAII(  \
+      label, nullptr, js::ProfilingStackFrame::Category::category)
 
 
 
@@ -545,8 +542,8 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #define AUTO_PROFILER_LABEL_DYNAMIC_CSTR(label, category, cStr) \
-  mozilla::AutoProfilerLabel \
-    PROFILER_RAII(label, cStr, js::ProfilingStackFrame::Category::category)
+  mozilla::AutoProfilerLabel PROFILER_RAII(                     \
+      label, cStr, js::ProfilingStackFrame::Category::category)
 
 
 
@@ -555,12 +552,12 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 
-#define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(label, category, nsCStr) \
-  mozilla::Maybe<nsAutoCString> autoCStr; \
-  mozilla::Maybe<AutoProfilerLabel> raiiObjectNsCString; \
-  if (profiler_is_active()) { \
-    autoCStr.emplace(nsCStr); \
-    raiiObjectNsCString.emplace(label, autoCStr->get(), \
+#define AUTO_PROFILER_LABEL_DYNAMIC_NSCSTRING(label, category, nsCStr)        \
+  mozilla::Maybe<nsAutoCString> autoCStr;                                     \
+  mozilla::Maybe<AutoProfilerLabel> raiiObjectNsCString;                      \
+  if (profiler_is_active()) {                                                 \
+    autoCStr.emplace(nsCStr);                                                 \
+    raiiObjectNsCString.emplace(label, autoCStr->get(),                       \
                                 js::ProfilingStackFrame::Category::category); \
   }
 
@@ -572,13 +569,13 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 
-#define AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(label, category, nsStr) \
-  mozilla::Maybe<NS_LossyConvertUTF16toASCII> asciiStr; \
-  mozilla::Maybe<AutoProfilerLabel> raiiObjectLossyNsString; \
-  if (profiler_is_active()) { \
-    asciiStr.emplace(nsStr); \
-    raiiObjectLossyNsString.emplace(label, asciiStr->get(), \
-                                    js::ProfilingStackFrame::Category::category); \
+#define AUTO_PROFILER_LABEL_DYNAMIC_LOSSY_NSSTRING(label, category, nsStr)    \
+  mozilla::Maybe<NS_LossyConvertUTF16toASCII> asciiStr;                       \
+  mozilla::Maybe<AutoProfilerLabel> raiiObjectLossyNsString;                  \
+  if (profiler_is_active()) {                                                 \
+    asciiStr.emplace(nsStr);                                                  \
+    raiiObjectLossyNsString.emplace(                                          \
+        label, asciiStr->get(), js::ProfilingStackFrame::Category::category); \
   }
 
 
@@ -588,16 +585,17 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 #define AUTO_PROFILER_LABEL_FAST(label, category, ctx) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(ctx, label, nullptr, \
-                                           js::ProfilingStackFrame::Category::category)
+  mozilla::AutoProfilerLabel PROFILER_RAII(            \
+      ctx, label, nullptr, js::ProfilingStackFrame::Category::category)
 
 
 
 
-#define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, category, ctx, flags) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(ctx, label, dynamicString, \
-                                           js::ProfilingStackFrame::Category::category, \
-                                           flags)
+#define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, category, ctx, \
+                                         flags)                               \
+  mozilla::AutoProfilerLabel PROFILER_RAII(                                   \
+      ctx, label, dynamicString, js::ProfilingStackFrame::Category::category, \
+      flags)
 
 
 
@@ -606,37 +604,29 @@ mozilla::Maybe<ProfilerBufferInfo> profiler_get_buffer_info();
 
 
 
-#define PROFILER_ADD_MARKER(markerName) \
-  profiler_add_marker(markerName)
+#define PROFILER_ADD_MARKER(markerName) profiler_add_marker(markerName)
 void profiler_add_marker(const char* aMarkerName);
 void profiler_add_marker(const char* aMarkerName,
                          mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
 
 
-void profiler_add_marker_for_thread(int aThreadId,
-                                    const char* aMarkerName,
-                                    mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
+void profiler_add_marker_for_thread(
+    int aThreadId, const char* aMarkerName,
+    mozilla::UniquePtr<ProfilerMarkerPayload> aPayload);
 
-enum class NetworkLoadType {
-  LOAD_START,
-  LOAD_STOP,
-  LOAD_REDIRECT
-};
+enum class NetworkLoadType { LOAD_START, LOAD_STOP, LOAD_REDIRECT };
 
-#define PROFILER_ADD_NETWORK_MARKER(uri, pri, channel, type, start, end, count, cache, timings, redirect) \
-  profiler_add_network_marker(uri, pri, channel, type, start, end, count, cache, timings, redirect)
+#define PROFILER_ADD_NETWORK_MARKER(uri, pri, channel, type, start, end,  \
+                                    count, cache, timings, redirect)      \
+  profiler_add_network_marker(uri, pri, channel, type, start, end, count, \
+                              cache, timings, redirect)
 
-void profiler_add_network_marker(nsIURI* aURI,
-                                 int32_t aPriority,
-                                 uint64_t aChannelId,
-                                 NetworkLoadType aType,
-                                 mozilla::TimeStamp aStart,
-                                 mozilla::TimeStamp aEnd,
-                                 int64_t aCount,
-                                 mozilla::net::CacheDisposition aCacheDisposition,
-                                 const mozilla::net::TimingStruct* aTimings = nullptr,
-                                 nsIURI* aRedirectURI = nullptr);
-
+void profiler_add_network_marker(
+    nsIURI* aURI, int32_t aPriority, uint64_t aChannelId, NetworkLoadType aType,
+    mozilla::TimeStamp aStart, mozilla::TimeStamp aEnd, int64_t aCount,
+    mozilla::net::CacheDisposition aCacheDisposition,
+    const mozilla::net::TimingStruct* aTimings = nullptr,
+    nsIURI* aRedirectURI = nullptr);
 
 enum TracingKind {
   TRACING_EVENT,
@@ -645,54 +635,48 @@ enum TracingKind {
 };
 
 
-#define DECLARE_DOCSHELL_AND_HISTORY_ID(docShell)                              \
-  mozilla::Maybe<nsID> docShellId;                                             \
-  mozilla::Maybe<uint32_t> docShellHistoryId;                                  \
-  if (docShell) {                                                              \
-    docShellId = Some(docShell->HistoryID());                                  \
-    uint32_t id;                                                               \
-    nsresult rv = docShell->GetOSHEId(&id);                                    \
-    if (NS_SUCCEEDED(rv)) {                                                    \
-      docShellHistoryId = Some(id);                                            \
-    } else {                                                                   \
-      docShellHistoryId = Nothing();                                           \
-    }                                                                          \
-  } else {                                                                     \
-    docShellId = Nothing();                                                    \
-    docShellHistoryId = Nothing();                                             \
+#define DECLARE_DOCSHELL_AND_HISTORY_ID(docShell) \
+  mozilla::Maybe<nsID> docShellId;                \
+  mozilla::Maybe<uint32_t> docShellHistoryId;     \
+  if (docShell) {                                 \
+    docShellId = Some(docShell->HistoryID());     \
+    uint32_t id;                                  \
+    nsresult rv = docShell->GetOSHEId(&id);       \
+    if (NS_SUCCEEDED(rv)) {                       \
+      docShellHistoryId = Some(id);               \
+    } else {                                      \
+      docShellHistoryId = Nothing();              \
+    }                                             \
+  } else {                                        \
+    docShellId = Nothing();                       \
+    docShellHistoryId = Nothing();                \
   }
 
 
 
-#define PROFILER_TRACING(category, markerName, kind)                           \
+#define PROFILER_TRACING(category, markerName, kind) \
   profiler_tracing(category, markerName, kind)
-#define PROFILER_TRACING_DOCSHELL(category, markerName, kind, docShell)        \
-  DECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                                   \
+#define PROFILER_TRACING_DOCSHELL(category, markerName, kind, docShell) \
+  DECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                            \
   profiler_tracing(category, markerName, kind, docShellId, docShellHistoryId)
-void
-profiler_tracing(
-  const char* aCategory,
-  const char* aMarkerName,
-  TracingKind aKind,
-  const mozilla::Maybe<nsID>& aDocShellId = mozilla::Nothing(),
-  const mozilla::Maybe<uint32_t>& aDocShellHistoryId = mozilla::Nothing());
-void
-profiler_tracing(
-  const char* aCategory,
-  const char* aMarkerName,
-  TracingKind aKind,
-  UniqueProfilerBacktrace aCause,
-  const mozilla::Maybe<nsID>& aDocShellId = mozilla::Nothing(),
-  const mozilla::Maybe<uint32_t>& aDocShellHistoryId = mozilla::Nothing());
+void profiler_tracing(
+    const char* aCategory, const char* aMarkerName, TracingKind aKind,
+    const mozilla::Maybe<nsID>& aDocShellId = mozilla::Nothing(),
+    const mozilla::Maybe<uint32_t>& aDocShellHistoryId = mozilla::Nothing());
+void profiler_tracing(
+    const char* aCategory, const char* aMarkerName, TracingKind aKind,
+    UniqueProfilerBacktrace aCause,
+    const mozilla::Maybe<nsID>& aDocShellId = mozilla::Nothing(),
+    const mozilla::Maybe<uint32_t>& aDocShellHistoryId = mozilla::Nothing());
 
 
-#define AUTO_PROFILER_TRACING(category, markerName)                            \
-  mozilla::AutoProfilerTracing PROFILER_RAII(                                  \
-    category, markerName, mozilla::Nothing(), mozilla::Nothing())
+#define AUTO_PROFILER_TRACING(category, markerName) \
+  mozilla::AutoProfilerTracing PROFILER_RAII(       \
+      category, markerName, mozilla::Nothing(), mozilla::Nothing())
 #define AUTO_PROFILER_TRACING_DOCSHELL(category, markerName, docShell)         \
   DECLARE_DOCSHELL_AND_HISTORY_ID(docShell);                                   \
-  mozilla::AutoProfilerTracing PROFILER_RAII(                                  \
-    category, markerName, docShellId, docShellHistoryId)
+  mozilla::AutoProfilerTracing PROFILER_RAII(category, markerName, docShellId, \
+                                             docShellHistoryId)
 
 
 
@@ -727,80 +711,71 @@ void profiler_save_profile_to_file(const char* aFilename);
 
 namespace mozilla {
 
-class MOZ_RAII AutoProfilerInit
-{
-public:
-  explicit AutoProfilerInit(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM)
-  {
+class MOZ_RAII AutoProfilerInit {
+ public:
+  explicit AutoProfilerInit(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     profiler_init(this);
   }
 
   ~AutoProfilerInit() { profiler_shutdown(); }
 
-private:
+ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 
 
-class MOZ_RAII AutoProfilerRegisterThread final
-{
-public:
-  explicit AutoProfilerRegisterThread(const char* aName
-                                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-  {
+class MOZ_RAII AutoProfilerRegisterThread final {
+ public:
+  explicit AutoProfilerRegisterThread(
+      const char* aName MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     profiler_register_thread(aName, this);
   }
 
   ~AutoProfilerRegisterThread() { profiler_unregister_thread(); }
 
-private:
+ private:
   AutoProfilerRegisterThread(const AutoProfilerRegisterThread&) = delete;
   AutoProfilerRegisterThread& operator=(const AutoProfilerRegisterThread&) =
-    delete;
+      delete;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
-class MOZ_RAII AutoProfilerThreadSleep
-{
-public:
-  explicit AutoProfilerThreadSleep(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM)
-  {
+class MOZ_RAII AutoProfilerThreadSleep {
+ public:
+  explicit AutoProfilerThreadSleep(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     profiler_thread_sleep();
   }
 
   ~AutoProfilerThreadSleep() { profiler_thread_wake(); }
 
-private:
+ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
 
 
-class MOZ_RAII AutoProfilerThreadWake
-{
-public:
+class MOZ_RAII AutoProfilerThreadWake {
+ public:
   explicit AutoProfilerThreadWake(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM)
-    : mIssuedWake(profiler_thread_is_sleeping())
-  {
+      : mIssuedWake(profiler_thread_is_sleeping()) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     if (mIssuedWake) {
       profiler_thread_wake();
     }
   }
 
-  ~AutoProfilerThreadWake()
-  {
+  ~AutoProfilerThreadWake() {
     if (mIssuedWake) {
       MOZ_ASSERT(!profiler_thread_is_sleeping());
       profiler_thread_sleep();
     }
   }
 
-private:
+ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   bool mIssuedWake;
 };
@@ -809,15 +784,12 @@ private:
 
 
 
-class MOZ_RAII AutoProfilerLabel
-{
-public:
+class MOZ_RAII AutoProfilerLabel {
+ public:
   
   AutoProfilerLabel(const char* aLabel, const char* aDynamicString,
                     js::ProfilingStackFrame::Category aCategory,
-                    uint32_t aFlags = 0
-                    MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-  {
+                    uint32_t aFlags = 0 MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
 
     
@@ -827,22 +799,18 @@ public:
   
   
   
-  AutoProfilerLabel(JSContext* aJSContext,
-                    const char* aLabel, const char* aDynamicString,
+  AutoProfilerLabel(JSContext* aJSContext, const char* aLabel,
+                    const char* aDynamicString,
                     js::ProfilingStackFrame::Category aCategory,
-                    uint32_t aFlags
-                    MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-  {
+                    uint32_t aFlags MOZ_GUARD_OBJECT_NOTIFIER_PARAM) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    Push(js::GetContextProfilingStackIfEnabled(aJSContext),
-         aLabel, aDynamicString, aCategory, aFlags);
+    Push(js::GetContextProfilingStackIfEnabled(aJSContext), aLabel,
+         aDynamicString, aCategory, aFlags);
   }
 
-  void Push(ProfilingStack* aProfilingStack,
-            const char* aLabel, const char* aDynamicString,
-            js::ProfilingStackFrame::Category aCategory,
-            uint32_t aFlags = 0)
-  {
+  void Push(ProfilingStack* aProfilingStack, const char* aLabel,
+            const char* aDynamicString,
+            js::ProfilingStackFrame::Category aCategory, uint32_t aFlags = 0) {
     
 
     mProfilingStack = aProfilingStack;
@@ -852,8 +820,7 @@ public:
     }
   }
 
-  ~AutoProfilerLabel()
-  {
+  ~AutoProfilerLabel() {
     
 
     if (mProfilingStack) {
@@ -861,69 +828,53 @@ public:
     }
   }
 
-private:
+ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 
   
   
   ProfilingStack* mProfilingStack;
 
-public:
+ public:
   
   static MOZ_THREAD_LOCAL(ProfilingStack*) sProfilingStack;
 };
 
-class MOZ_RAII AutoProfilerTracing
-{
-public:
-  AutoProfilerTracing(const char* aCategory,
-                      const char* aMarkerName,
+class MOZ_RAII AutoProfilerTracing {
+ public:
+  AutoProfilerTracing(const char* aCategory, const char* aMarkerName,
                       const mozilla::Maybe<nsID>& aDocShellId,
                       const mozilla::Maybe<uint32_t>& aDocShellHistoryId
-                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mCategory(aCategory)
-    , mMarkerName(aMarkerName)
-    , mDocShellId(aDocShellId)
-    , mDocShellHistoryId(aDocShellHistoryId)
-  {
+                          MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mCategory(aCategory),
+        mMarkerName(aMarkerName),
+        mDocShellId(aDocShellId),
+        mDocShellHistoryId(aDocShellHistoryId) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    profiler_tracing(mCategory,
-                     mMarkerName,
-                     TRACING_INTERVAL_START,
-                     mDocShellId,
-                     mDocShellHistoryId);
+    profiler_tracing(mCategory, mMarkerName, TRACING_INTERVAL_START,
+                     mDocShellId, mDocShellHistoryId);
   }
 
-  AutoProfilerTracing(const char* aCategory,
-                      const char* aMarkerName,
+  AutoProfilerTracing(const char* aCategory, const char* aMarkerName,
                       UniqueProfilerBacktrace aBacktrace,
                       const mozilla::Maybe<nsID>& aDocShellId,
                       const mozilla::Maybe<uint32_t>& aDocShellHistoryId
-                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-    : mCategory(aCategory)
-    , mMarkerName(aMarkerName)
-    , mDocShellId(aDocShellId)
-    , mDocShellHistoryId(aDocShellHistoryId)
-  {
+                          MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+      : mCategory(aCategory),
+        mMarkerName(aMarkerName),
+        mDocShellId(aDocShellId),
+        mDocShellHistoryId(aDocShellHistoryId) {
     MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-    profiler_tracing(mCategory,
-                     mMarkerName,
-                     TRACING_INTERVAL_START,
-                     std::move(aBacktrace),
-                     mDocShellId,
+    profiler_tracing(mCategory, mMarkerName, TRACING_INTERVAL_START,
+                     std::move(aBacktrace), mDocShellId, mDocShellHistoryId);
+  }
+
+  ~AutoProfilerTracing() {
+    profiler_tracing(mCategory, mMarkerName, TRACING_INTERVAL_END, mDocShellId,
                      mDocShellHistoryId);
   }
 
-  ~AutoProfilerTracing()
-  {
-    profiler_tracing(mCategory,
-                     mMarkerName,
-                     TRACING_INTERVAL_END,
-                     mDocShellId,
-                     mDocShellHistoryId);
-  }
-
-protected:
+ protected:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   const char* mCategory;
   const char* mMarkerName;
@@ -934,13 +885,13 @@ protected:
 
 
 
-class MOZ_RAII AutoSetProfilerEnvVarsForChildProcess
-{
-public:
-  explicit AutoSetProfilerEnvVarsForChildProcess(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
+class MOZ_RAII AutoSetProfilerEnvVarsForChildProcess {
+ public:
+  explicit AutoSetProfilerEnvVarsForChildProcess(
+      MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
   ~AutoSetProfilerEnvVarsForChildProcess();
 
-private:
+ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   char mSetCapacity[64];
   char mSetInterval[64];
@@ -948,8 +899,8 @@ private:
   char mSetFilters[1024];
 };
 
-} 
+}  
 
-#endif 
+#endif  
 
 #endif  

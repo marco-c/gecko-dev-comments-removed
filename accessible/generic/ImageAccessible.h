@@ -16,9 +16,8 @@ namespace a11y {
 
 
 
-class ImageAccessible : public LinkableAccessible
-{
-public:
+class ImageAccessible : public LinkableAccessible {
+ public:
   ImageAccessible(nsIContent* aContent, DocAccessible* aDoc);
 
   
@@ -35,18 +34,17 @@ public:
   nsIntPoint Position(uint32_t aCoordType);
   nsIntSize Size();
 
-protected:
+ protected:
   virtual ~ImageAccessible();
 
   
   virtual ENameValueFlag NativeName(nsString& aName) const override;
 
-private:
+ private:
   
 
 
-  bool HasLongDesc() const
-  {
+  bool HasLongDesc() const {
     nsCOMPtr<nsIURI> uri = GetLongDescURI();
     return uri;
   }
@@ -68,20 +66,16 @@ private:
 
 
   inline bool IsLongDescIndex(uint8_t aIndex) const;
-
 };
 
 
 
 
-inline ImageAccessible*
-Accessible::AsImage()
-{
+inline ImageAccessible* Accessible::AsImage() {
   return IsImage() ? static_cast<ImageAccessible*>(this) : nullptr;
 }
 
-} 
-} 
+}  
+}  
 
 #endif
-

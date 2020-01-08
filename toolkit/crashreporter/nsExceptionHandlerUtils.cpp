@@ -11,10 +11,9 @@
 
 
 
-bool SimpleNoCLibDtoA(double aValue, char* aBuffer, int aBufferLength)
-{
+bool SimpleNoCLibDtoA(double aValue, char* aBuffer, int aBufferLength) {
   
-  aBuffer[aBufferLength-1] = '\0';
+  aBuffer[aBufferLength - 1] = '\0';
 
   if (aValue < 0) {
     return false;
@@ -24,28 +23,22 @@ bool SimpleNoCLibDtoA(double aValue, char* aBuffer, int aBufferLength)
   bool sign;
   bool ok = true;
   double_conversion::DoubleToStringConverter::DoubleToAscii(
-                                     aValue,
-                                     double_conversion::DoubleToStringConverter::SHORTEST,
-                                     8,
-                                     aBuffer,
-                                     aBufferLength,
-                                     &sign,
-                                     &length,
-                                     &point);
+      aValue, double_conversion::DoubleToStringConverter::SHORTEST, 8, aBuffer,
+      aBufferLength, &sign, &length, &point);
 
   
-  if (length > point && (length+1) < (aBufferLength-1)) {
+  if (length > point && (length + 1) < (aBufferLength - 1)) {
     
     
-    aBuffer[length+1] = '\0';
-    for (i=length; i>point; i-=1) {
-      aBuffer[i] = aBuffer[i-1];
+    aBuffer[length + 1] = '\0';
+    for (i = length; i > point; i -= 1) {
+      aBuffer[i] = aBuffer[i - 1];
     }
-    aBuffer[i] = '.'; 
+    aBuffer[i] = '.';  
   } else if (length < point) {
     
-    for (i=length; i<point; i+=1) {
-      if (i >= aBufferLength-2) {
+    for (i = length; i < point; i += 1) {
+      if (i >= aBufferLength - 2) {
         ok = false;
       }
       aBuffer[i] = '0';

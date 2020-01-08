@@ -16,8 +16,7 @@
 
 namespace mozilla {
 
-enum class CSSEnabledState
-{
+enum class CSSEnabledState {
   
   
   eForAllContent = 0,
@@ -34,6 +33,6 @@ enum class CSSEnabledState
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSEnabledState)
 
-} 
+}  
 
-#endif 
+#endif  

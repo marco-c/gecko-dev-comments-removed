@@ -19,17 +19,16 @@ namespace mozilla {
 class ComputedStyle;
 namespace dom {
 class Element;
-} 
-} 
+}  
+}  
 
 
 
 
 
 
-class nsSMILCSSProperty : public nsISMILAttr
-{
-public:
+class nsSMILCSSProperty : public nsISMILAttr {
+ public:
   
 
 
@@ -39,18 +38,17 @@ public:
 
 
 
-  nsSMILCSSProperty(nsCSSPropertyID aPropID,
-                    mozilla::dom::Element* aElement,
+  nsSMILCSSProperty(nsCSSPropertyID aPropID, mozilla::dom::Element* aElement,
                     mozilla::ComputedStyle* aBaseComputedStyle);
 
   
-  virtual nsresult ValueFromString(const nsAString& aStr,
-                                   const mozilla::dom::SVGAnimationElement* aSrcElement,
-                                   nsSMILValue& aValue,
-                                   bool& aPreventCachingOfSandwich) const override;
+  virtual nsresult ValueFromString(
+      const nsAString& aStr,
+      const mozilla::dom::SVGAnimationElement* aSrcElement, nsSMILValue& aValue,
+      bool& aPreventCachingOfSandwich) const override;
   virtual nsSMILValue GetBaseValue() const override;
-  virtual nsresult    SetAnimValue(const nsSMILValue& aValue) override;
-  virtual void        ClearAnimValue() override;
+  virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
+  virtual void ClearAnimValue() override;
 
   
 
@@ -65,13 +63,13 @@ public:
 
   static bool IsPropertyAnimatable(nsCSSPropertyID aPropID);
 
-protected:
+ protected:
   nsCSSPropertyID mPropID;
   
   
   
   
-  mozilla::dom::Element*   mElement;
+  mozilla::dom::Element* mElement;
 
   
   
@@ -81,4 +79,4 @@ protected:
   mozilla::ComputedStyle* mBaseComputedStyle;
 };
 
-#endif 
+#endif  

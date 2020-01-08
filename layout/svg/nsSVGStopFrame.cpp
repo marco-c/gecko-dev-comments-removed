@@ -17,36 +17,31 @@ using namespace mozilla;
 
 
 
-class nsSVGStopFrame : public nsFrame
-{
-  friend nsIFrame*
-  NS_NewSVGStopFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle);
-protected:
-  explicit nsSVGStopFrame(ComputedStyle* aStyle)
-    : nsFrame(aStyle, kClassID)
-  {
+class nsSVGStopFrame : public nsFrame {
+  friend nsIFrame* NS_NewSVGStopFrame(nsIPresShell* aPresShell,
+                                      ComputedStyle* aStyle);
+
+ protected:
+  explicit nsSVGStopFrame(ComputedStyle* aStyle) : nsFrame(aStyle, kClassID) {
     AddStateBits(NS_FRAME_IS_NONDISPLAY);
   }
 
-public:
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsSVGStopFrame)
 
   
 #ifdef DEBUG
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 #endif
 
-  void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override {}
 
-  virtual nsresult AttributeChanged(int32_t         aNameSpaceID,
-                                    nsAtom*        aAttribute,
-                                    int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
     if (aFlags & eSupportsContainLayoutAndPaint) {
       return false;
     }
@@ -55,8 +50,7 @@ public:
   }
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override
-  {
+  virtual nsresult GetFrameName(nsAString& aResult) const override {
     return MakeFrameName(NS_LITERAL_STRING("SVGStop"), aResult);
   }
 #endif
@@ -71,27 +65,23 @@ NS_IMPL_FRAMEARENA_HELPERS(nsSVGStopFrame)
 
 
 #ifdef DEBUG
-void
-nsSVGStopFrame::Init(nsIContent*       aContent,
-                     nsContainerFrame* aParent,
-                     nsIFrame*         aPrevInFlow)
-{
-  NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::stop), "Content is not a stop element");
+void nsSVGStopFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                          nsIFrame* aPrevInFlow) {
+  NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::stop),
+               "Content is not a stop element");
 
   nsFrame::Init(aContent, aParent, aPrevInFlow);
 }
 #endif 
 
-nsresult
-nsSVGStopFrame::AttributeChanged(int32_t         aNameSpaceID,
-                                 nsAtom*        aAttribute,
-                                 int32_t         aModType)
-{
-  if (aNameSpaceID == kNameSpaceID_None &&
-      aAttribute == nsGkAtoms::offset) {
-    MOZ_ASSERT(GetParent()->IsSVGLinearGradientFrame() ||
-               GetParent()->IsSVGRadialGradientFrame(),
-               "Observers observe the gradient, so that's what we must invalidate");
+nsresult nsSVGStopFrame::AttributeChanged(int32_t aNameSpaceID,
+                                          nsAtom* aAttribute,
+                                          int32_t aModType) {
+  if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::offset) {
+    MOZ_ASSERT(
+        GetParent()->IsSVGLinearGradientFrame() ||
+            GetParent()->IsSVGRadialGradientFrame(),
+        "Observers observe the gradient, so that's what we must invalidate");
     SVGObserverUtils::InvalidateDirectRenderingObservers(GetParent());
   }
 
@@ -102,8 +92,6 @@ nsSVGStopFrame::AttributeChanged(int32_t         aNameSpaceID,
 
 
 
-nsIFrame* NS_NewSVGStopFrame(nsIPresShell*   aPresShell,
-                             ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewSVGStopFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsSVGStopFrame(aStyle);
 }

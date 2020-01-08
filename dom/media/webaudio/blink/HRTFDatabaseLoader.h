@@ -35,115 +35,115 @@
 #include "mozilla/Mutex.h"
 #include "HRTFDatabase.h"
 
-template <class EntryType> class nsTHashtable;
-template <class T> class nsAutoRef;
+template <class EntryType>
+class nsTHashtable;
+template <class T>
+class nsAutoRef;
 
 namespace WebCore {
 
 
 
+
 class HRTFDatabaseLoader {
-public:
-    
-    
-    
-    
-    static already_AddRefed<HRTFDatabaseLoader> createAndLoadAsynchronouslyIfNecessary(float sampleRate);
+ public:
+  
+  
+  
+  static already_AddRefed<HRTFDatabaseLoader>
+  createAndLoadAsynchronouslyIfNecessary(float sampleRate);
 
-    
-    void AddRef()
-    {
+  
+  void AddRef() {
 #if defined(DEBUG) || defined(NS_BUILD_REFCNT_LOGGING)
-        int count =
+    int count =
 #endif
-          ++m_refCnt;
-        MOZ_ASSERT(count > 0, "invalid ref count");
-        NS_LOG_ADDREF(this, count, "HRTFDatabaseLoader", sizeof(*this));
+        ++m_refCnt;
+    MOZ_ASSERT(count > 0, "invalid ref count");
+    NS_LOG_ADDREF(this, count, "HRTFDatabaseLoader", sizeof(*this));
+  }
+
+  void Release() {
+    
+    
+    
+    int count = m_refCnt;
+    MOZ_ASSERT(count > 0, "extra release");
+    
+    
+    if (count != 1 && m_refCnt.compareExchange(count, count - 1)) {
+      NS_LOG_RELEASE(this, count - 1, "HRTFDatabaseLoader");
+      return;
     }
 
-    void Release()
-    {
-        
-        
-        
-        int count = m_refCnt;
-        MOZ_ASSERT(count > 0, "extra release");
-        
-        
-        if (count != 1 && m_refCnt.compareExchange(count, count - 1)) {
-            NS_LOG_RELEASE(this, count - 1, "HRTFDatabaseLoader");
-            return;
-        }
+    ProxyRelease();
+  }
 
-        ProxyRelease();
+  
+  bool isLoaded() const;
+
+  
+  
+  void waitForLoaderThreadCompletion();
+
+  HRTFDatabase* database() { return m_hrtfDatabase.get(); }
+
+  float databaseSampleRate() const { return m_databaseSampleRate; }
+
+  static void shutdown();
+
+  
+  void load();
+
+  
+  static size_t sizeOfLoaders(mozilla::MallocSizeOf aMallocSizeOf);
+
+ private:
+  
+  explicit HRTFDatabaseLoader(float sampleRate);
+  ~HRTFDatabaseLoader();
+
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+
+  void ProxyRelease();       
+  void MainThreadRelease();  
+  class ProxyReleaseEvent;
+
+  
+  
+  
+  void loadAsynchronously();
+
+  
+  class LoaderByRateEntry : public nsFloatHashKey {
+   public:
+    explicit LoaderByRateEntry(KeyTypePointer aKey)
+        : nsFloatHashKey(aKey),
+          mLoader()  
+    {}
+
+    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+      return mLoader ? mLoader->sizeOfIncludingThis(aMallocSizeOf) : 0;
     }
 
     
-    bool isLoaded() const;
+    HRTFDatabaseLoader* MOZ_NON_OWNING_REF mLoader;
+  };
 
-    
-    
-    void waitForLoaderThreadCompletion();
+  
+  static nsTHashtable<LoaderByRateEntry>* s_loaderMap;  
 
-    HRTFDatabase* database() { return m_hrtfDatabase.get(); }
+  mozilla::Atomic<int> m_refCnt;
 
-    float databaseSampleRate() const { return m_databaseSampleRate; }
+  nsAutoRef<HRTFDatabase> m_hrtfDatabase;
 
-    static void shutdown();
+  
+  mozilla::Mutex m_threadLock;
+  PRThread* m_databaseLoaderThread;
 
-    
-    void load();
-
-    
-    static size_t sizeOfLoaders(mozilla::MallocSizeOf aMallocSizeOf);
-
-private:
-    
-    explicit HRTFDatabaseLoader(float sampleRate);
-    ~HRTFDatabaseLoader();
-
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-
-    void ProxyRelease(); 
-    void MainThreadRelease(); 
-    class ProxyReleaseEvent;
-
-    
-    
-    void loadAsynchronously();
-
-    
-    class LoaderByRateEntry : public nsFloatHashKey {
-    public:
-        explicit LoaderByRateEntry(KeyTypePointer aKey)
-            : nsFloatHashKey(aKey)
-            , mLoader() 
-        {
-        }
-
-        size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-        {
-            return mLoader ? mLoader->sizeOfIncludingThis(aMallocSizeOf) : 0;
-        }
-
-        
-        HRTFDatabaseLoader* MOZ_NON_OWNING_REF mLoader;
-    };
-
-    
-    static nsTHashtable<LoaderByRateEntry> *s_loaderMap; 
-
-    mozilla::Atomic<int> m_refCnt;
-
-    nsAutoRef<HRTFDatabase> m_hrtfDatabase;
-
-    
-    mozilla::Mutex m_threadLock;
-    PRThread* m_databaseLoaderThread;
-
-    float m_databaseSampleRate;
+  float m_databaseSampleRate;
 };
 
-} 
+}  
 
 #endif

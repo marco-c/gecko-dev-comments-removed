@@ -10,9 +10,7 @@ namespace mozilla {
 namespace dom {
 namespace cache {
 
-void
-Action::CancelOnInitiatingThread()
-{
+void Action::CancelOnInitiatingThread() {
   NS_ASSERT_OWNINGTHREAD(Action);
   
   
@@ -20,21 +18,12 @@ Action::CancelOnInitiatingThread()
   mCanceled = true;
 }
 
-Action::Action()
-  : mCanceled(false)
-{
-}
+Action::Action() : mCanceled(false) {}
 
-Action::~Action()
-{
-}
+Action::~Action() {}
 
-bool
-Action::IsCanceled() const
-{
-  return mCanceled;
-}
+bool Action::IsCanceled() const { return mCanceled; }
 
-} 
-} 
-} 
+}  
+}  
+}  

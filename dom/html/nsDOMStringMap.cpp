@@ -19,7 +19,7 @@ using namespace mozilla::dom;
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsDOMStringMap)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsDOMStringMap)
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mElement)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mElement)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsDOMStringMap)
@@ -46,14 +46,11 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(nsDOMStringMap)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsDOMStringMap)
 
 nsDOMStringMap::nsDOMStringMap(Element* aElement)
-  : mElement(aElement),
-    mRemovingProp(false)
-{
+    : mElement(aElement), mRemovingProp(false) {
   mElement->AddMutationObserver(this);
 }
 
-nsDOMStringMap::~nsDOMStringMap()
-{
+nsDOMStringMap::~nsDOMStringMap() {
   
   if (mElement) {
     
@@ -62,23 +59,18 @@ nsDOMStringMap::~nsDOMStringMap()
   }
 }
 
-DocGroup*
-nsDOMStringMap::GetDocGroup() const
-{
+DocGroup* nsDOMStringMap::GetDocGroup() const {
   return mElement ? mElement->GetDocGroup() : nullptr;
 }
 
 
-JSObject*
-nsDOMStringMap::WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto)
-{
+JSObject* nsDOMStringMap::WrapObject(JSContext* cx,
+                                     JS::Handle<JSObject*> aGivenProto) {
   return DOMStringMap_Binding::Wrap(cx, this, aGivenProto);
 }
 
-void
-nsDOMStringMap::NamedGetter(const nsAString& aProp, bool& found,
-                            DOMString& aResult) const
-{
+void nsDOMStringMap::NamedGetter(const nsAString& aProp, bool& found,
+                                 DOMString& aResult) const {
   nsAutoString attr;
 
   if (!DataPropToAttr(aProp, attr)) {
@@ -89,11 +81,8 @@ nsDOMStringMap::NamedGetter(const nsAString& aProp, bool& found,
   found = mElement->GetAttr(attr, aResult);
 }
 
-void
-nsDOMStringMap::NamedSetter(const nsAString& aProp,
-                            const nsAString& aValue,
-                            ErrorResult& rv)
-{
+void nsDOMStringMap::NamedSetter(const nsAString& aProp,
+                                 const nsAString& aValue, ErrorResult& rv) {
   nsAutoString attr;
   if (!DataPropToAttr(aProp, attr)) {
     rv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
@@ -115,9 +104,7 @@ nsDOMStringMap::NamedSetter(const nsAString& aProp,
   }
 }
 
-void
-nsDOMStringMap::NamedDeleter(const nsAString& aProp, bool& found)
-{
+void nsDOMStringMap::NamedDeleter(const nsAString& aProp, bool& found) {
   
   if (mRemovingProp) {
     found = false;
@@ -142,9 +129,7 @@ nsDOMStringMap::NamedDeleter(const nsAString& aProp, bool& found)
   }
 }
 
-void
-nsDOMStringMap::GetSupportedNames(nsTArray<nsString>& aNames)
-{
+void nsDOMStringMap::GetSupportedNames(nsTArray<nsString>& aNames) {
   uint32_t attrCount = mElement->GetAttrCount();
 
   
@@ -157,8 +142,7 @@ nsDOMStringMap::GetSupportedNames(nsTArray<nsString>& aNames)
     }
 
     nsAutoString prop;
-    if (!AttrToDataProp(nsDependentAtomString(attrName->LocalName()),
-                        prop)) {
+    if (!AttrToDataProp(nsDependentAtomString(attrName->LocalName()), prop)) {
       continue;
     }
 
@@ -171,8 +155,7 @@ nsDOMStringMap::GetSupportedNames(nsTArray<nsString>& aNames)
 
 
 bool nsDOMStringMap::DataPropToAttr(const nsAString& aProp,
-                                    nsAutoString& aResult)
-{
+                                    nsAutoString& aResult) {
   
   
   
@@ -188,8 +171,8 @@ bool nsDOMStringMap::DataPropToAttr(const nsAString& aProp,
   const char16_t* cur = start;
   for (; cur < end; ++cur) {
     const char16_t* next = cur + 1;
-    if (char16_t('-') == *cur && next < end &&
-        char16_t('a') <= *next && *next <= char16_t('z')) {
+    if (char16_t('-') == *cur && next < end && char16_t('a') <= *next &&
+        *next <= char16_t('z')) {
       
       return false;
     }
@@ -200,7 +183,7 @@ bool nsDOMStringMap::DataPropToAttr(const nsAString& aProp,
       
       aResult.Append(char16_t('-'));
       aResult.Append(*cur - 'A' + 'a');
-      start = next; 
+      start = next;  
     }
   }
 
@@ -214,8 +197,7 @@ bool nsDOMStringMap::DataPropToAttr(const nsAString& aProp,
 
 
 bool nsDOMStringMap::AttrToDataProp(const nsAString& aAttr,
-                                    nsAutoString& aResult)
-{
+                                    nsAutoString& aResult) {
   
   
   if (!StringBeginsWith(aAttr, NS_LITERAL_STRING("data-"))) {
@@ -235,8 +217,8 @@ bool nsDOMStringMap::AttrToDataProp(const nsAString& aAttr,
   
   for (; cur < end; ++cur) {
     const char16_t* next = cur + 1;
-    if (char16_t('-') == *cur && next < end &&
-        char16_t('a') <= *next && *next <= char16_t('z')) {
+    if (char16_t('-') == *cur && next < end && char16_t('a') <= *next &&
+        *next <= char16_t('z')) {
       
       aResult.Append(*next - 'a' + 'A');
       
@@ -250,13 +232,9 @@ bool nsDOMStringMap::AttrToDataProp(const nsAString& aAttr,
   return true;
 }
 
-void
-nsDOMStringMap::AttributeChanged(Element* aElement,
-                                 int32_t aNameSpaceID,
-                                 nsAtom* aAttribute,
-                                 int32_t aModType,
-                                 const nsAttrValue* aOldValue)
-{
+void nsDOMStringMap::AttributeChanged(Element* aElement, int32_t aNameSpaceID,
+                                      nsAtom* aAttribute, int32_t aModType,
+                                      const nsAttrValue* aOldValue) {
   if ((aModType == MutationEvent_Binding::ADDITION ||
        aModType == MutationEvent_Binding::REMOVAL) &&
       aNameSpaceID == kNameSpaceID_None &&

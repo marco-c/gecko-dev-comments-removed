@@ -24,9 +24,8 @@ class nsIPrefBranch;
 
 
 class nsIDNService final : public nsIIDNService,
-                           public nsSupportsWeakReference
-{
-public:
+                           public nsSupportsWeakReference {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIIDNSERVICE
 
@@ -34,10 +33,10 @@ public:
 
   nsresult Init();
 
-protected:
+ protected:
   virtual ~nsIDNService();
 
-private:
+ private:
   enum stringPrepFlag {
     eStringPrepForDNS,
     eStringPrepForUI,
@@ -96,11 +95,10 @@ private:
   nsresult ACEtoUTF8(const nsACString& input, nsACString& _retval,
                      stringPrepFlag flag);
 
-  bool isInWhitelist(const nsACString &host);
-  void prefsChanged(const char *pref);
+  bool isInWhitelist(const nsACString& host);
+  void prefsChanged(const char* pref);
 
-  static void PrefChanged(const char* aPref, nsIDNService* aSelf)
-  {
+  static void PrefChanged(const char* aPref, nsIDNService* aSelf) {
     mozilla::MutexAutoLock lock(aSelf->mLock);
     aSelf->prefsChanged(aPref);
   }
@@ -132,7 +130,7 @@ private:
 
 
 
-  bool isLabelSafe(const nsAString &label);
+  bool isLabelSafe(const nsAString& label);
 
   
 
@@ -190,7 +188,7 @@ private:
 
 
 
-   enum restrictionProfile {
+  enum restrictionProfile {
     eASCIIOnlyProfile,
     eHighlyRestrictiveProfile,
     eModeratelyRestrictiveProfile

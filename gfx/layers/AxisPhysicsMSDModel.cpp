@@ -5,7 +5,7 @@
 
 
 #include "AxisPhysicsMSDModel.h"
-#include <math.h>                       
+#include <math.h>  
 
 namespace mozilla {
 namespace layers {
@@ -32,21 +32,15 @@ AxisPhysicsMSDModel::AxisPhysicsMSDModel(double aInitialPosition,
                                          double aInitialVelocity,
                                          double aSpringConstant,
                                          double aDampingRatio)
-  : AxisPhysicsModel(aInitialPosition, aInitialVelocity)
-  , mDestination(aInitialDestination)
-  , mSpringConstant(aSpringConstant)
-  , mSpringConstantSqrtXTwo(sqrt(mSpringConstant) * 2.0)
-  , mDampingRatio(aDampingRatio)
-{
-}
+    : AxisPhysicsModel(aInitialPosition, aInitialVelocity),
+      mDestination(aInitialDestination),
+      mSpringConstant(aSpringConstant),
+      mSpringConstantSqrtXTwo(sqrt(mSpringConstant) * 2.0),
+      mDampingRatio(aDampingRatio) {}
 
-AxisPhysicsMSDModel::~AxisPhysicsMSDModel()
-{
-}
+AxisPhysicsMSDModel::~AxisPhysicsMSDModel() {}
 
-double
-AxisPhysicsMSDModel::Acceleration(const State &aState)
-{
+double AxisPhysicsMSDModel::Acceleration(const State &aState) {
   
 
   
@@ -56,22 +50,13 @@ AxisPhysicsMSDModel::Acceleration(const State &aState)
   return spring_force + damp_force;
 }
 
+double AxisPhysicsMSDModel::GetDestination() const { return mDestination; }
 
-double
-AxisPhysicsMSDModel::GetDestination() const
-{
-  return mDestination;
-}
-
-void
-AxisPhysicsMSDModel::SetDestination(double aDestination)
-{
+void AxisPhysicsMSDModel::SetDestination(double aDestination) {
   mDestination = aDestination;
 }
 
-bool
-AxisPhysicsMSDModel::IsFinished(double aSmallestVisibleIncrement)
-{
+bool AxisPhysicsMSDModel::IsFinished(double aSmallestVisibleIncrement) {
   
   
   
@@ -85,9 +70,9 @@ AxisPhysicsMSDModel::IsFinished(double aSmallestVisibleIncrement)
   
   const double finishVelocity = aSmallestVisibleIncrement * 2;
 
-  return fabs(mDestination - GetPosition ()) < aSmallestVisibleIncrement
-    && fabs(GetVelocity()) <= finishVelocity;
+  return fabs(mDestination - GetPosition()) < aSmallestVisibleIncrement &&
+         fabs(GetVelocity()) <= finishVelocity;
 }
 
-} 
-} 
+}  
+}  

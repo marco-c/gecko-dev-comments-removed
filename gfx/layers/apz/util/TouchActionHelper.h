@@ -7,7 +7,7 @@
 #ifndef __mozilla_layers_TouchActionHelper_h__
 #define __mozilla_layers_TouchActionHelper_h__
 
-#include "mozilla/layers/LayersTypes.h" 
+#include "mozilla/layers/LayersTypes.h"  
 
 class nsIFrame;
 class nsIWidget;
@@ -19,25 +19,25 @@ namespace layers {
 
 
 
-class TouchActionHelper
-{
-private:
+class TouchActionHelper {
+ private:
   static void UpdateAllowedBehavior(uint32_t aTouchActionValue,
                                     bool aConsiderPanning,
                                     TouchBehaviorFlags& aOutBehavior);
 
-public:
+ public:
   
 
 
 
 
-  static TouchBehaviorFlags GetAllowedTouchBehavior(nsIWidget* aWidget,
-                                                    nsIFrame* aRootFrame,
-                                                    const LayoutDeviceIntPoint& aPoint);
+
+  static TouchBehaviorFlags GetAllowedTouchBehavior(
+      nsIWidget* aWidget, nsIFrame* aRootFrame,
+      const LayoutDeviceIntPoint& aPoint);
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

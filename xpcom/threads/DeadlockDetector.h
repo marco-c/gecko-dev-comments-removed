@@ -61,13 +61,12 @@ namespace mozilla {
 
 
 
-template<typename T>
-class DeadlockDetector
-{
-public:
+template <typename T>
+class DeadlockDetector {
+ public:
   typedef nsTArray<const T*> ResourceAcquisitionArray;
 
-private:
+ private:
   struct OrderingEntry;
   typedef nsTArray<OrderingEntry*> HashEntryArray;
   typedef typename HashEntryArray::index_type index_type;
@@ -81,41 +80,34 @@ private:
 
 
 
-  struct OrderingEntry
-  {
+  struct OrderingEntry {
     explicit OrderingEntry(const T* aResource)
-      : mOrderedLT()        
-      , mExternalRefs()
-      , mResource(aResource)
-    {
-    }
-    ~OrderingEntry()
-    {
-    }
+        : mOrderedLT()  
+          ,
+          mExternalRefs(),
+          mResource(aResource) {}
+    ~OrderingEntry() {}
 
-    size_t
-    SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-    {
+    size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
       size_t n = aMallocSizeOf(this);
       n += mOrderedLT.ShallowSizeOfExcludingThis(aMallocSizeOf);
       n += mExternalRefs.ShallowSizeOfExcludingThis(aMallocSizeOf);
       return n;
     }
 
-    HashEntryArray mOrderedLT; 
-    HashEntryArray mExternalRefs; 
+    HashEntryArray mOrderedLT;     
+    HashEntryArray mExternalRefs;  
     const T* mResource;
   };
 
   
-  struct PRAutoLock
-  {
+  struct PRAutoLock {
     explicit PRAutoLock(PRLock* aLock) : mLock(aLock) { PR_Lock(mLock); }
     ~PRAutoLock() { PR_Unlock(mLock); }
     PRLock* mLock;
   };
 
-public:
+ public:
   static const uint32_t kDefaultNumBuckets;
 
   
@@ -126,8 +118,7 @@ public:
 
 
   explicit DeadlockDetector(uint32_t aNumResourcesGuess = kDefaultNumBuckets)
-    : mOrdering(aNumResourcesGuess)
-  {
+      : mOrdering(aNumResourcesGuess) {
     recordreplay::AutoPassThroughThreadEvents pt;
     mLock = PR_NewLock();
     if (!mLock) {
@@ -140,14 +131,9 @@ public:
 
 
 
-  ~DeadlockDetector()
-  {
-    PR_DestroyLock(mLock);
-  }
+  ~DeadlockDetector() { PR_DestroyLock(mLock); }
 
-  size_t
-  SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     size_t n = aMallocSizeOf(this);
 
     {
@@ -172,14 +158,12 @@ public:
 
 
 
-  void Add(const T* aResource)
-  {
+  void Add(const T* aResource) {
     PRAutoLock _(mLock);
     mOrdering.Put(aResource, new OrderingEntry(aResource));
   }
 
-  void Remove(const T* aResource)
-  {
+  void Remove(const T* aResource) {
     PRAutoLock _(mLock);
 
     OrderingEntry* entry = mOrdering.Get(aResource);
@@ -222,8 +206,7 @@ public:
 
 
   ResourceAcquisitionArray* CheckAcquisition(const T* aLast,
-                                             const T* aProposed)
-  {
+                                             const T* aProposed) {
     if (!aLast) {
       
       return 0;
@@ -281,8 +264,7 @@ public:
 
 
   bool InTransitiveClosure(const OrderingEntry* aStart,
-                           const OrderingEntry* aTarget) const
-  {
+                           const OrderingEntry* aTarget) const {
     
     
     static nsDefaultComparator<const OrderingEntry*, const OrderingEntry*> comp;
@@ -317,8 +299,7 @@ public:
 
 
   ResourceAcquisitionArray* GetDeductionChain(const OrderingEntry* aStart,
-                                              const OrderingEntry* aTarget)
-  {
+                                              const OrderingEntry* aTarget) {
     ResourceAcquisitionArray* chain = new ResourceAcquisitionArray();
     if (!chain) {
       MOZ_CRASH("can't allocate dep. cycle array");
@@ -334,8 +315,7 @@ public:
   
   bool GetDeductionChain_Helper(const OrderingEntry* aStart,
                                 const OrderingEntry* aTarget,
-                                ResourceAcquisitionArray* aChain)
-  {
+                                ResourceAcquisitionArray* aChain) {
     if (aStart->mOrderedLT.BinaryIndexOf(aTarget) != NoIndex) {
       aChain->AppendElement(aTarget->mResource);
       return true;
@@ -359,7 +339,6 @@ public:
 
   nsClassHashtable<nsPtrHashKey<const T>, OrderingEntry> mOrdering;
 
-
   
 
 
@@ -367,17 +346,15 @@ public:
 
   PRLock* mLock;
 
-private:
+ private:
   DeadlockDetector(const DeadlockDetector& aDD) = delete;
   DeadlockDetector& operator=(const DeadlockDetector& aDD) = delete;
 };
 
-
-template<typename T>
+template <typename T>
 
 const uint32_t DeadlockDetector<T>::kDefaultNumBuckets = 32;
 
+}  
 
-} 
-
-#endif 
+#endif  

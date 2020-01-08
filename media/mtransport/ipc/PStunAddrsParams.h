@@ -24,7 +24,7 @@ typedef nsTArray<NrIceStunAddr> NrIceStunAddrArray;
 typedef nsTArray<int> NrIceStunAddrArray;
 #endif
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

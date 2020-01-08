@@ -9,7 +9,6 @@
 
 
 
-
 #ifndef __NSHTMLTOKENIZER
 #define __NSHTMLTOKENIZER
 
@@ -18,18 +17,16 @@
 #include "nsITokenizer.h"
 
 #ifdef _MSC_VER
-#pragma warning( disable : 4275 )
+#pragma warning(disable : 4275)
 #endif
 
 class nsHTMLTokenizer final : public nsITokenizer {
   ~nsHTMLTokenizer() {}
 
-public:
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSITOKENIZER
   nsHTMLTokenizer();
 };
 
 #endif
-
-

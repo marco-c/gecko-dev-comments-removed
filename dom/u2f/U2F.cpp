@@ -18,8 +18,9 @@
 using namespace mozilla::ipc;
 
 
+
 class nsHTMLDocument {
-public:
+ public:
   bool IsRegistrableDomainSuffixOfOrEqualTo(const nsAString& aHostSuffixString,
                                             const nsACString& aOrigHost);
 };
@@ -34,9 +35,10 @@ NS_NAMED_LITERAL_STRING(kGetAssertion, "navigator.id.getAssertion");
 
 
 NS_NAMED_LITERAL_STRING(kGoogleAccountsAppId1,
-  "https://www.gstatic.com/securitykey/origins.json");
-NS_NAMED_LITERAL_STRING(kGoogleAccountsAppId2,
-  "https://www.gstatic.com/securitykey/a/google.com/origins.json");
+                        "https://www.gstatic.com/securitykey/origins.json");
+NS_NAMED_LITERAL_STRING(
+    kGoogleAccountsAppId2,
+    "https://www.gstatic.com/securitykey/a/google.com/origins.json");
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(U2F)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
@@ -53,9 +55,7 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(U2F, mParent)
 
 
 
-static ErrorCode
-ConvertNSResultToErrorCode(const nsresult& aError)
-{
+static ErrorCode ConvertNSResultToErrorCode(const nsresult& aError) {
   if (aError == NS_ERROR_DOM_TIMEOUT_ERR) {
     return ErrorCode::TIMEOUT;
   }
@@ -66,9 +66,8 @@ ConvertNSResultToErrorCode(const nsresult& aError)
   return ErrorCode::OTHER_ERROR;
 }
 
-static uint32_t
-AdjustedTimeoutMillis(const Optional<Nullable<int32_t>>& opt_aSeconds)
-{
+static uint32_t AdjustedTimeoutMillis(
+    const Optional<Nullable<int32_t>>& opt_aSeconds) {
   uint32_t adjustedTimeoutMillis = 30000u;
   if (opt_aSeconds.WasPassed() && !opt_aSeconds.Value().IsNull()) {
     adjustedTimeoutMillis = opt_aSeconds.Value().Value() * 1000u;
@@ -78,14 +77,13 @@ AdjustedTimeoutMillis(const Optional<Nullable<int32_t>>& opt_aSeconds)
   return adjustedTimeoutMillis;
 }
 
-static nsresult
-AssembleClientData(const nsAString& aOrigin, const nsAString& aTyp,
-                   const nsAString& aChallenge,
-                    nsString& aClientData)
-{
+static nsresult AssembleClientData(const nsAString& aOrigin,
+                                   const nsAString& aTyp,
+                                   const nsAString& aChallenge,
+                                    nsString& aClientData) {
   MOZ_ASSERT(NS_IsMainThread());
   U2FClientData clientDataObject;
-  clientDataObject.mTyp.Construct(aTyp); 
+  clientDataObject.mTyp.Construct(aTyp);  
   clientDataObject.mChallenge.Construct(aChallenge);
   clientDataObject.mOrigin.Construct(aOrigin);
 
@@ -96,11 +94,9 @@ AssembleClientData(const nsAString& aOrigin, const nsAString& aTyp,
   return NS_OK;
 }
 
-static void
-RegisteredKeysToScopedCredentialList(const nsAString& aAppId,
-  const nsTArray<RegisteredKey>& aKeys,
-  nsTArray<WebAuthnScopedCredential>& aList)
-{
+static void RegisteredKeysToScopedCredentialList(
+    const nsAString& aAppId, const nsTArray<RegisteredKey>& aKeys,
+    nsTArray<WebAuthnScopedCredential>& aList) {
   for (const RegisteredKey& key : aKeys) {
     
     if (!key.mVersion.WasPassed() || !key.mKeyHandle.WasPassed() ||
@@ -129,8 +125,7 @@ RegisteredKeysToScopedCredentialList(const nsAString& aAppId,
 
 
 
-U2F::~U2F()
-{
+U2F::~U2F() {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mTransaction.isSome()) {
@@ -144,9 +139,7 @@ U2F::~U2F()
   }
 }
 
-void
-U2F::Init(ErrorResult& aRv)
-{
+void U2F::Init(ErrorResult& aRv) {
   MOZ_ASSERT(mParent);
 
   nsCOMPtr<nsIDocument> doc = mParent->GetDoc();
@@ -168,16 +161,13 @@ U2F::Init(ErrorResult& aRv)
   }
 }
 
- JSObject*
-U2F::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
+ JSObject* U2F::WrapObject(JSContext* aCx,
+                                        JS::Handle<JSObject*> aGivenProto) {
   return U2F_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-template<typename T, typename C>
-void
-U2F::ExecuteCallback(T& aResp, nsMainThreadPtrHandle<C>& aCb)
-{
+template <typename T, typename C>
+void U2F::ExecuteCallback(T& aResp, nsMainThreadPtrHandle<C>& aCb) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aCb);
 
@@ -188,17 +178,15 @@ U2F::ExecuteCallback(T& aResp, nsMainThreadPtrHandle<C>& aCb)
   ErrorResult error;
   aCb->Call(aResp, error);
   NS_WARNING_ASSERTION(!error.Failed(), "dom::U2F::Promise callback failed");
-  error.SuppressException(); 
+  error.SuppressException();  
 }
 
-void
-U2F::Register(const nsAString& aAppId,
-              const Sequence<RegisterRequest>& aRegisterRequests,
-              const Sequence<RegisteredKey>& aRegisteredKeys,
-              U2FRegisterCallback& aCallback,
-              const Optional<Nullable<int32_t>>& opt_aTimeoutSeconds,
-              ErrorResult& aRv)
-{
+void U2F::Register(const nsAString& aAppId,
+                   const Sequence<RegisterRequest>& aRegisterRequests,
+                   const Sequence<RegisteredKey>& aRegisteredKeys,
+                   U2FRegisterCallback& aCallback,
+                   const Optional<Nullable<int32_t>>& opt_aTimeoutSeconds,
+                   ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mTransaction.isSome()) {
@@ -206,8 +194,8 @@ U2F::Register(const nsAString& aAppId,
   }
 
   nsMainThreadPtrHandle<U2FRegisterCallback> callback(
-    new nsMainThreadPtrHolder<U2FRegisterCallback>("U2F::Register::callback",
-                                                   &aCallback));
+      new nsMainThreadPtrHolder<U2FRegisterCallback>("U2F::Register::callback",
+                                                     &aCallback));
 
   
   if (NS_WARN_IF(!callback)) {
@@ -218,7 +206,8 @@ U2F::Register(const nsAString& aAppId,
   nsString adjustedAppId(aAppId);
   if (!EvaluateAppID(mParent, mOrigin, U2FOperation::Register, adjustedAppId)) {
     RegisterResponse response;
-    response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::BAD_REQUEST));
+    response.mErrorCode.Construct(
+        static_cast<uint32_t>(ErrorCode::BAD_REQUEST));
     ExecuteCallback(response, callback);
     return;
   }
@@ -246,7 +235,8 @@ U2F::Register(const nsAString& aAppId,
   
   if (clientDataJSON.IsEmpty()) {
     RegisterResponse response;
-    response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::BAD_REQUEST));
+    response.mErrorCode.Construct(
+        static_cast<uint32_t>(ErrorCode::BAD_REQUEST));
     ExecuteCallback(response, callback);
     return;
   }
@@ -258,7 +248,8 @@ U2F::Register(const nsAString& aAppId,
 
   if (!MaybeCreateBackgroundActor()) {
     RegisterResponse response;
-    response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::OTHER_ERROR));
+    response.mErrorCode.Construct(
+        static_cast<uint32_t>(ErrorCode::OTHER_ERROR));
     ExecuteCallback(response, callback);
     return;
   }
@@ -268,12 +259,8 @@ U2F::Register(const nsAString& aAppId,
   NS_ConvertUTF16toUTF8 clientData(clientDataJSON);
   uint32_t adjustedTimeoutMillis = AdjustedTimeoutMillis(opt_aTimeoutSeconds);
 
-  WebAuthnMakeCredentialInfo info(mOrigin,
-                                  adjustedAppId,
-                                  challenge,
-                                  clientData,
-                                  adjustedTimeoutMillis,
-                                  excludeList,
+  WebAuthnMakeCredentialInfo info(mOrigin, adjustedAppId, challenge, clientData,
+                                  adjustedTimeoutMillis, excludeList,
                                   null_t() );
 
   MOZ_ASSERT(mTransaction.isNothing());
@@ -281,10 +268,8 @@ U2F::Register(const nsAString& aAppId,
   mChild->SendRequestRegister(mTransaction.ref().mId, info);
 }
 
-void
-U2F::FinishMakeCredential(const uint64_t& aTransactionId,
-                          const WebAuthnMakeCredentialResult& aResult)
-{
+void U2F::FinishMakeCredential(const uint64_t& aTransactionId,
+                               const WebAuthnMakeCredentialResult& aResult) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -335,20 +320,17 @@ U2F::FinishMakeCredential(const uint64_t& aTransactionId,
 
   
   nsMainThreadPtrHandle<U2FRegisterCallback> callback(
-    mTransaction.ref().GetRegisterCallback());
+      mTransaction.ref().GetRegisterCallback());
 
   ClearTransaction();
   ExecuteCallback(response, callback);
 }
 
-void
-U2F::Sign(const nsAString& aAppId,
-          const nsAString& aChallenge,
-          const Sequence<RegisteredKey>& aRegisteredKeys,
-          U2FSignCallback& aCallback,
-          const Optional<Nullable<int32_t>>& opt_aTimeoutSeconds,
-          ErrorResult& aRv)
-{
+void U2F::Sign(const nsAString& aAppId, const nsAString& aChallenge,
+               const Sequence<RegisteredKey>& aRegisteredKeys,
+               U2FSignCallback& aCallback,
+               const Optional<Nullable<int32_t>>& opt_aTimeoutSeconds,
+               ErrorResult& aRv) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mTransaction.isSome()) {
@@ -356,8 +338,8 @@ U2F::Sign(const nsAString& aAppId,
   }
 
   nsMainThreadPtrHandle<U2FSignCallback> callback(
-    new nsMainThreadPtrHolder<U2FSignCallback>("U2F::Sign::callback",
-                                               &aCallback));
+      new nsMainThreadPtrHolder<U2FSignCallback>("U2F::Sign::callback",
+                                                 &aCallback));
 
   
   if (NS_WARN_IF(!callback)) {
@@ -368,7 +350,8 @@ U2F::Sign(const nsAString& aAppId,
   nsString adjustedAppId(aAppId);
   if (!EvaluateAppID(mParent, mOrigin, U2FOperation::Sign, adjustedAppId)) {
     SignResponse response;
-    response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::BAD_REQUEST));
+    response.mErrorCode.Construct(
+        static_cast<uint32_t>(ErrorCode::BAD_REQUEST));
     ExecuteCallback(response, callback);
     return;
   }
@@ -377,11 +360,12 @@ U2F::Sign(const nsAString& aAppId,
   nsCString cAppId = NS_ConvertUTF16toUTF8(adjustedAppId);
 
   nsAutoString clientDataJSON;
-  nsresult rv = AssembleClientData(mOrigin, kGetAssertion, aChallenge,
-                                   clientDataJSON);
+  nsresult rv =
+      AssembleClientData(mOrigin, kGetAssertion, aChallenge, clientDataJSON);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     SignResponse response;
-    response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::BAD_REQUEST));
+    response.mErrorCode.Construct(
+        static_cast<uint32_t>(ErrorCode::BAD_REQUEST));
     ExecuteCallback(response, callback);
     return;
   }
@@ -389,7 +373,8 @@ U2F::Sign(const nsAString& aAppId,
   CryptoBuffer challenge;
   if (!challenge.Assign(NS_ConvertUTF16toUTF8(aChallenge))) {
     SignResponse response;
-    response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::OTHER_ERROR));
+    response.mErrorCode.Construct(
+        static_cast<uint32_t>(ErrorCode::OTHER_ERROR));
     ExecuteCallback(response, callback);
     return;
   }
@@ -401,7 +386,8 @@ U2F::Sign(const nsAString& aAppId,
 
   if (!MaybeCreateBackgroundActor()) {
     SignResponse response;
-    response.mErrorCode.Construct(static_cast<uint32_t>(ErrorCode::OTHER_ERROR));
+    response.mErrorCode.Construct(
+        static_cast<uint32_t>(ErrorCode::OTHER_ERROR));
     ExecuteCallback(response, callback);
     return;
   }
@@ -414,12 +400,8 @@ U2F::Sign(const nsAString& aAppId,
   NS_ConvertUTF16toUTF8 clientData(clientDataJSON);
   uint32_t adjustedTimeoutMillis = AdjustedTimeoutMillis(opt_aTimeoutSeconds);
 
-  WebAuthnGetAssertionInfo info(mOrigin,
-                                adjustedAppId,
-                                challenge,
-                                clientData,
-                                adjustedTimeoutMillis,
-                                permittedList,
+  WebAuthnGetAssertionInfo info(mOrigin, adjustedAppId, challenge, clientData,
+                                adjustedTimeoutMillis, permittedList,
                                 null_t() );
 
   MOZ_ASSERT(mTransaction.isNothing());
@@ -427,10 +409,8 @@ U2F::Sign(const nsAString& aAppId,
   mChild->SendRequestSign(mTransaction.ref().mId, info);
 }
 
-void
-U2F::FinishGetAssertion(const uint64_t& aTransactionId,
-                        const WebAuthnGetAssertionResult& aResult)
-{
+void U2F::FinishGetAssertion(const uint64_t& aTransactionId,
+                             const WebAuthnGetAssertionResult& aResult) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -476,7 +456,7 @@ U2F::FinishGetAssertion(const uint64_t& aTransactionId,
   nsresult rvKeyHandle = credBuf.ToJwkBase64(keyHandleBase64);
   if (NS_WARN_IF(NS_FAILED(rvClientData)) ||
       NS_WARN_IF(NS_FAILED(rvSignatureData) ||
-      NS_WARN_IF(NS_FAILED(rvKeyHandle)))) {
+                 NS_WARN_IF(NS_FAILED(rvKeyHandle)))) {
     RejectTransaction(NS_ERROR_ABORT);
     return;
   }
@@ -489,15 +469,13 @@ U2F::FinishGetAssertion(const uint64_t& aTransactionId,
 
   
   nsMainThreadPtrHandle<U2FSignCallback> callback(
-    mTransaction.ref().GetSignCallback());
+      mTransaction.ref().GetSignCallback());
 
   ClearTransaction();
   ExecuteCallback(response, callback);
 }
 
-void
-U2F::ClearTransaction()
-{
+void U2F::ClearTransaction() {
   if (!NS_WARN_IF(mTransaction.isNothing())) {
     StopListeningForVisibilityEvents();
   }
@@ -505,9 +483,7 @@ U2F::ClearTransaction()
   mTransaction.reset();
 }
 
-void
-U2F::RejectTransaction(const nsresult& aError)
-{
+void U2F::RejectTransaction(const nsresult& aError) {
   if (NS_WARN_IF(mTransaction.isNothing())) {
     return;
   }
@@ -535,9 +511,7 @@ U2F::RejectTransaction(const nsresult& aError)
   }
 }
 
-void
-U2F::CancelTransaction(const nsresult& aError)
-{
+void U2F::CancelTransaction(const nsresult& aError) {
   if (!NS_WARN_IF(!mChild || mTransaction.isNothing())) {
     mChild->SendRequestCancel(mTransaction.ref().mId);
   }
@@ -545,9 +519,8 @@ U2F::CancelTransaction(const nsresult& aError)
   RejectTransaction(aError);
 }
 
-void
-U2F::RequestAborted(const uint64_t& aTransactionId, const nsresult& aError)
-{
+void U2F::RequestAborted(const uint64_t& aTransactionId,
+                         const nsresult& aError) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mTransaction.isSome() && mTransaction.ref().mId == aTransactionId) {
@@ -555,5 +528,5 @@ U2F::RequestAborted(const uint64_t& aTransactionId, const nsresult& aError)
   }
 }
 
-} 
-} 
+}  
+}  

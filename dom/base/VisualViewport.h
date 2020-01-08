@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_dom_VisualViewport_h
 #define mozilla_dom_VisualViewport_h
 
@@ -17,10 +16,9 @@ namespace mozilla {
 namespace dom {
 
 
-class VisualViewport final: public mozilla::DOMEventTargetHelper
-{
 
-public:
+class VisualViewport final : public mozilla::DOMEventTargetHelper {
+ public:
   explicit VisualViewport(nsPIDOMWindowInner* aWindow);
 
   double OffsetLeft() const;
@@ -31,9 +29,10 @@ public:
   double Height() const;
   double Scale() const;
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
-private:
+ private:
   virtual ~VisualViewport();
 
   CSSSize VisualViewportSize() const;
@@ -42,7 +41,7 @@ private:
   nsIPresShell* GetPresShell() const;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

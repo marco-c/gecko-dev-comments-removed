@@ -53,6 +53,7 @@
 
 
 
+
 #ifndef mozilla_ThreadSafeWeakPtr_h
 #define mozilla_ThreadSafeWeakPtr_h
 
@@ -67,14 +68,18 @@
 
 namespace mozilla {
 
-template<typename T> class ThreadSafeWeakPtr;
-template<typename T> class SupportsThreadSafeWeakPtr;
+template <typename T>
+class ThreadSafeWeakPtr;
+template <typename T>
+class SupportsThreadSafeWeakPtr;
 
 #ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-  #define MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(T) \
-    static const char* threadSafeWeakReferenceTypeName() { return "ThreadSafeWeakReference<" #T ">"; }
+#define MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(T)  \
+  static const char* threadSafeWeakReferenceTypeName() { \
+    return "ThreadSafeWeakReference<" #T ">";            \
+  }
 #else
-  #define MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(T)
+#define MOZ_DECLARE_THREADSAFEWEAKREFERENCE_TYPENAME(T)
 #endif
 
 namespace detail {
@@ -84,18 +89,18 @@ namespace detail {
 
 
 
-class ReadWriteSpinLock
-{
+
+class ReadWriteSpinLock {
+  
   
   typedef int32_t CounterType;
 
-public:
+ public:
   
-  void readLock()
-  {
-    for (;;)
-    {
-      CounterType oldCounter = mCounter & std::numeric_limits<CounterType>::max();
+  void readLock() {
+    for (;;) {
+      CounterType oldCounter =
+          mCounter & std::numeric_limits<CounterType>::max();
       CounterType newCounter = oldCounter + 1;
       if (mCounter.compareExchange(oldCounter, newCounter)) {
         break;
@@ -104,44 +109,33 @@ public:
   }
 
   
-  void readUnlock()
-  {
-    mCounter--;
-  }
+  void readUnlock() { mCounter--; }
 
   
   
-  bool tryWriteLock()
-  {
+  bool tryWriteLock() {
     return mCounter.compareExchange(0, std::numeric_limits<CounterType>::min());
   }
 
   
-  void writeUnlock()
-  {
-    mCounter = 0;
-  }
+  void writeUnlock() { mCounter = 0; }
 
-private:
+ private:
   Atomic<CounterType> mCounter;
 };
 
 
 
-template<typename T>
-class ThreadSafeWeakReference : public external::AtomicRefCounted<ThreadSafeWeakReference<T>>
-{
-public:
+template <typename T>
+class ThreadSafeWeakReference
+    : public external::AtomicRefCounted<ThreadSafeWeakReference<T>> {
+ public:
   typedef T ElementType;
 
-  explicit ThreadSafeWeakReference(T* aPtr)
-  {
-    mPtr = aPtr;
-  }
+  explicit ThreadSafeWeakReference(T* aPtr) { mPtr = aPtr; }
 
 #ifdef MOZ_REFCOUNTED_LEAK_CHECKING
-  const char* typeName() const
-  {
+  const char* typeName() const {
     
     
     return T::threadSafeWeakReferenceTypeName();
@@ -149,23 +143,20 @@ public:
   size_t typeSize() const { return sizeof(*this); }
 #endif
 
-private:
+ private:
   friend class mozilla::SupportsThreadSafeWeakPtr<T>;
-  template<typename U> friend class mozilla::ThreadSafeWeakPtr;
+  template <typename U>
+  friend class mozilla::ThreadSafeWeakPtr;
 
   
-  T* get() const
-  {
-    return mPtr;
-  }
+  T* get() const { return mPtr; }
 
   
   
   
   
   
-  already_AddRefed<T> getRefPtr()
-  {
+  already_AddRefed<T> getRefPtr() {
     mLock.readLock();
     RefPtr<T> result(get());
     mLock.readUnlock();
@@ -177,8 +168,7 @@ private:
   
   
   
-  void tryDetach(const SupportsThreadSafeWeakPtr<T>* aOwner)
-  {
+  void tryDetach(const SupportsThreadSafeWeakPtr<T>* aOwner) {
     if (mLock.tryWriteLock()) {
       if (aOwner->hasOneRef()) {
         mPtr = nullptr;
@@ -191,26 +181,23 @@ private:
   Atomic<T*> mPtr;
 };
 
-} 
+}  
 
-template<typename T>
-class SupportsThreadSafeWeakPtr : public external::AtomicRefCounted<T>
-{
-protected:
+template <typename T>
+class SupportsThreadSafeWeakPtr : public external::AtomicRefCounted<T> {
+ protected:
   typedef external::AtomicRefCounted<T> AtomicRefCounted;
   typedef detail::ThreadSafeWeakReference<T> ThreadSafeWeakReference;
 
-public:
-  ~SupportsThreadSafeWeakPtr()
-  {
+ public:
+  ~SupportsThreadSafeWeakPtr() {
     
     if (ThreadSafeWeakReference* ptr = mRef) {
       ptr->Release();
     }
   }
 
-  void Release() const
-  {
+  void Release() const {
     
     
     
@@ -222,26 +209,29 @@ public:
     }
 
     
+    
     AtomicRefCounted::Release();
   }
 
-private:
-  template<typename U> friend class ThreadSafeWeakPtr;
+ private:
+  template <typename U>
+  friend class ThreadSafeWeakPtr;
 
   
   
   
-  already_AddRefed<ThreadSafeWeakReference> getThreadSafeWeakReference()
-  {
+  already_AddRefed<ThreadSafeWeakReference> getThreadSafeWeakReference() {
     static_assert(IsBaseOf<SupportsThreadSafeWeakPtr<T>, T>::value,
                   "T must derive from SupportsThreadSafeWeakPtr<T>");
 
     if (!mRef) {
-      RefPtr<ThreadSafeWeakReference> ptr(new ThreadSafeWeakReference(static_cast<T*>(this)));
+      RefPtr<ThreadSafeWeakReference> ptr(
+          new ThreadSafeWeakReference(static_cast<T*>(this)));
       
       
       
       if (mRef.compareExchange(nullptr, ptr)) {
+        
         
         Unused << ptr.forget();
       }
@@ -256,41 +246,32 @@ private:
 };
 
 
-template<typename T>
-class ThreadSafeWeakPtr
-{
+template <typename T>
+class ThreadSafeWeakPtr {
+  
   
   typedef typename T::ThreadSafeWeakReference ThreadSafeWeakReference;
 
-public:
-  ThreadSafeWeakPtr()
-  {}
+ public:
+  ThreadSafeWeakPtr() {}
 
-  ThreadSafeWeakPtr& operator=(const ThreadSafeWeakPtr& aOther)
-  {
+  ThreadSafeWeakPtr& operator=(const ThreadSafeWeakPtr& aOther) {
     mRef = aOther.mRef;
     return *this;
   }
 
-  ThreadSafeWeakPtr(const ThreadSafeWeakPtr& aOther)
-    : mRef(aOther.mRef)
-  {
-  }
+  ThreadSafeWeakPtr(const ThreadSafeWeakPtr& aOther) : mRef(aOther.mRef) {}
 
-  ThreadSafeWeakPtr& operator=(ThreadSafeWeakPtr&& aOther)
-  {
+  ThreadSafeWeakPtr& operator=(ThreadSafeWeakPtr&& aOther) {
     mRef = aOther.mRef.forget();
     return *this;
   }
 
-  ThreadSafeWeakPtr(ThreadSafeWeakPtr&& aOther)
-    : mRef(aOther.mRef.forget())
-  {
-  }
+  ThreadSafeWeakPtr(ThreadSafeWeakPtr&& aOther) : mRef(aOther.mRef.forget()) {}
 
-  ThreadSafeWeakPtr& operator=(const RefPtr<T>& aOther)
-  {
+  ThreadSafeWeakPtr& operator=(const RefPtr<T>& aOther) {
     if (aOther) {
+      
       
       mRef = aOther->getThreadSafeWeakReference();
     } else {
@@ -299,85 +280,67 @@ public:
     return *this;
   }
 
-  explicit ThreadSafeWeakPtr(const RefPtr<T>& aOther)
-  {
-    *this = aOther;
-  }
+  explicit ThreadSafeWeakPtr(const RefPtr<T>& aOther) { *this = aOther; }
 
-  ThreadSafeWeakPtr& operator=(decltype(nullptr))
-  {
+  ThreadSafeWeakPtr& operator=(decltype(nullptr)) {
     mRef = nullptr;
     return *this;
   }
 
-  explicit ThreadSafeWeakPtr(decltype(nullptr))
-  {}
+  explicit ThreadSafeWeakPtr(decltype(nullptr)) {}
 
-  explicit operator bool() const
-  {
-    return !!get();
-  }
+  explicit operator bool() const { return !!get(); }
 
-  bool operator==(const ThreadSafeWeakPtr& aOther) const
-  {
+  bool operator==(const ThreadSafeWeakPtr& aOther) const {
     return get() == aOther.get();
   }
 
-  bool operator==(const RefPtr<T>& aOther) const
-  {
+  bool operator==(const RefPtr<T>& aOther) const {
     return get() == aOther.get();
   }
 
-  bool operator==(const T* aOther) const
-  {
-    return get() == aOther;
-  }
+  bool operator==(const T* aOther) const { return get() == aOther; }
 
-  template<typename U>
-  bool operator!=(const U& aOther) const
-  {
+  template <typename U>
+  bool operator!=(const U& aOther) const {
     return !(*this == aOther);
   }
 
   
-  explicit operator RefPtr<T>() const
-  {
-    return getRefPtr();
-  }
+  explicit operator RefPtr<T>() const { return getRefPtr(); }
 
-private:
+ private:
   
-  already_AddRefed<T> getRefPtr() const
-  {
-    static_assert(IsBaseOf<typename ThreadSafeWeakReference::ElementType, T>::value,
-                  "T must derive from ThreadSafeWeakReference::ElementType");
+  already_AddRefed<T> getRefPtr() const {
+    static_assert(
+        IsBaseOf<typename ThreadSafeWeakReference::ElementType, T>::value,
+        "T must derive from ThreadSafeWeakReference::ElementType");
     return mRef ? mRef->getRefPtr().template downcast<T>() : nullptr;
   }
 
   
   
   
-  T* get() const
-  {
-    static_assert(IsBaseOf<typename ThreadSafeWeakReference::ElementType, T>::value,
-                  "T must derive from ThreadSafeWeakReference::ElementType");
+  T* get() const {
+    static_assert(
+        IsBaseOf<typename ThreadSafeWeakReference::ElementType, T>::value,
+        "T must derive from ThreadSafeWeakReference::ElementType");
     return mRef ? static_cast<T*>(mRef->get()) : nullptr;
   }
 
   
   
+  
   RefPtr<ThreadSafeWeakReference> mRef;
 };
 
-} 
+}  
 
-template<typename T>
-inline already_AddRefed<T>
-do_AddRef(const mozilla::ThreadSafeWeakPtr<T>& aObj)
-{
+template <typename T>
+inline already_AddRefed<T> do_AddRef(
+    const mozilla::ThreadSafeWeakPtr<T>& aObj) {
   RefPtr<T> ref(aObj);
   return ref.forget();
 }
 
 #endif 
-

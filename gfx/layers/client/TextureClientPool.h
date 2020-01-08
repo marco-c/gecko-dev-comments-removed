@@ -22,11 +22,11 @@ class ISurfaceAllocator;
 class TextureForwarder;
 class TextureReadLock;
 
-class TextureClientAllocator
-{
-protected:
+class TextureClientAllocator {
+ protected:
   virtual ~TextureClientAllocator() {}
-public:
+
+ public:
   NS_INLINE_DECL_REFCOUNTING(TextureClientAllocator)
 
   virtual already_AddRefed<TextureClient> GetTextureClient() = 0;
@@ -40,22 +40,16 @@ public:
   virtual void ReportClientLost() = 0;
 };
 
-class TextureClientPool final : public TextureClientAllocator
-{
+class TextureClientPool final : public TextureClientAllocator {
   virtual ~TextureClientPool();
 
-public:
-  TextureClientPool(LayersBackend aBackend,
-                    bool aSupportsTextureDirectMapping,
-                    int32_t aMaxTextureSize,
-                    gfx::SurfaceFormat aFormat,
-                    gfx::IntSize aSize,
-                    TextureFlags aFlags,
-                    uint32_t aShrinkTimeoutMsec,
-                    uint32_t aClearTimeoutMsec,
-                    uint32_t aInitialPoolSize,
-                    uint32_t aPoolUnusedSize,
-                    TextureForwarder* aAllocator);
+ public:
+  TextureClientPool(LayersBackend aBackend, bool aSupportsTextureDirectMapping,
+                    int32_t aMaxTextureSize, gfx::SurfaceFormat aFormat,
+                    gfx::IntSize aSize, TextureFlags aFlags,
+                    uint32_t aShrinkTimeoutMsec, uint32_t aClearTimeoutMsec,
+                    uint32_t aInitialPoolSize, uint32_t aPoolUnusedSize,
+                    TextureForwarder *aAllocator);
 
   
 
@@ -112,9 +106,10 @@ public:
   
 
 
+
   void Destroy();
 
-private:
+ private:
   void ReturnUnlockedClients();
 
   
@@ -159,13 +154,13 @@ private:
   
   uint32_t mOutstandingClients;
 
-  std::stack<RefPtr<TextureClient> > mTextureClients;
+  std::stack<RefPtr<TextureClient>> mTextureClients;
 
   std::list<RefPtr<TextureClient>> mTextureClientsDeferred;
   RefPtr<nsITimer> mShrinkTimer;
   RefPtr<nsITimer> mClearTimer;
   
-  TextureForwarder* mSurfaceAllocator;
+  TextureForwarder *mSurfaceAllocator;
 
   
   
@@ -175,7 +170,7 @@ private:
   bool mSupportsTextureDirectMapping;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

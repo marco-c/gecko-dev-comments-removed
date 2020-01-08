@@ -26,22 +26,16 @@ using namespace mozilla;
 
 static LazyLogModule gCspPRLog("CSP");
 
-CSPService::CSPService()
-{
-}
+CSPService::CSPService() {}
 
-CSPService::~CSPService()
-{
-}
+CSPService::~CSPService() {}
 
 NS_IMPL_ISUPPORTS(CSPService, nsIContentPolicy, nsIChannelEventSink)
 
 
-bool
-subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
-
+bool subjectToCSP(nsIURI *aURI, nsContentPolicyType aContentType) {
   nsContentPolicyType contentType =
-    nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
+      nsContentUtils::InternalContentPolicyTypeToExternal(aContentType);
 
   
   
@@ -93,10 +87,10 @@ subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   bool isImgOrStyleOrDTDorXBL =
-    contentType == nsIContentPolicy::TYPE_IMAGE ||
-    contentType == nsIContentPolicy::TYPE_STYLESHEET ||
-    contentType == nsIContentPolicy::TYPE_DTD ||
-    contentType == nsIContentPolicy::TYPE_XBL;
+      contentType == nsIContentPolicy::TYPE_IMAGE ||
+      contentType == nsIContentPolicy::TYPE_STYLESHEET ||
+      contentType == nsIContentPolicy::TYPE_DTD ||
+      contentType == nsIContentPolicy::TYPE_XBL;
   rv = aURI->SchemeIs("resource", &match);
   if (NS_SUCCEEDED(rv) && match && !isImgOrStyleOrDTDorXBL) {
     return true;
@@ -109,7 +103,8 @@ subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   if (NS_SUCCEEDED(rv) && match) {
     return true;
   }
-  rv = NS_URIChainHasFlags(aURI, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE, &match);
+  rv = NS_URIChainHasFlags(aURI, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE,
+                           &match);
   if (NS_SUCCEEDED(rv) && match) {
     return false;
   }
@@ -119,11 +114,8 @@ subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
 
 
 NS_IMETHODIMP
-CSPService::ShouldLoad(nsIURI *aContentLocation,
-                       nsILoadInfo* aLoadInfo,
-                       const nsACString &aMimeTypeGuess,
-                       int16_t *aDecision)
-{
+CSPService::ShouldLoad(nsIURI *aContentLocation, nsILoadInfo *aLoadInfo,
+                       const nsACString &aMimeTypeGuess, int16_t *aDecision) {
   if (!aContentLocation) {
     return NS_ERROR_FAILURE;
   }
@@ -138,13 +130,14 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
   }
 
   nsCOMPtr<nsICSPEventListener> cspEventListener;
-  nsresult rv = aLoadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
+  nsresult rv =
+      aLoadInfo->GetCspEventListener(getter_AddRefs(cspEventListener));
   NS_ENSURE_SUCCESS(rv, rv);
 
   if (MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
     MOZ_LOG(gCspPRLog, LogLevel::Debug,
-           ("CSPService::ShouldLoad called for %s",
-           aContentLocation->GetSpecOrDefault().get()));
+            ("CSPService::ShouldLoad called for %s",
+             aContentLocation->GetSpecOrDefault().get()));
   }
 
   
@@ -166,10 +159,11 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
   
   nsCOMPtr<nsINode> node(do_QueryInterface(requestContext));
   nsCOMPtr<nsIPrincipal> principal;
-  if (!node || (requestPrincipal &&
-                BasePrincipal::Cast(requestPrincipal)->OverridesCSP(node->NodePrincipal()))) {
+  if (!node ||
+      (requestPrincipal && BasePrincipal::Cast(requestPrincipal)
+                               ->OverridesCSP(node->NodePrincipal()))) {
     principal = requestPrincipal;
-  } else  {
+  } else {
     principal = node->NodePrincipal();
   }
   if (!principal) {
@@ -187,15 +181,11 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
 
     if (preloadCsp) {
       
-      rv = preloadCsp->ShouldLoad(contentType,
-                                  cspEventListener,
-                                  aContentLocation,
-                                  requestOrigin,
-                                  requestContext,
-                                  aMimeTypeGuess,
-                                  nullptr, 
-                                  aLoadInfo->GetSendCSPViolationEvents(),
-                                  aDecision);
+      rv = preloadCsp->ShouldLoad(
+          contentType, cspEventListener, aContentLocation, requestOrigin,
+          requestContext, aMimeTypeGuess,
+          nullptr,  
+          aLoadInfo->GetSendCSPViolationEvents(), aDecision);
       NS_ENSURE_SUCCESS(rv, rv);
 
       
@@ -213,26 +203,19 @@ CSPService::ShouldLoad(nsIURI *aContentLocation,
 
   if (csp) {
     
-    rv = csp->ShouldLoad(contentType,
-                         cspEventListener,
-                         aContentLocation,
-                         requestOrigin,
-                         requestContext,
-                         aMimeTypeGuess,
-                         nullptr, 
-                         aLoadInfo->GetSendCSPViolationEvents(),
-                         aDecision);
+    rv = csp->ShouldLoad(contentType, cspEventListener, aContentLocation,
+                         requestOrigin, requestContext, aMimeTypeGuess,
+                         nullptr,  
+                         aLoadInfo->GetSendCSPViolationEvents(), aDecision);
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
 }
 
 NS_IMETHODIMP
-CSPService::ShouldProcess(nsIURI           *aContentLocation,
-                          nsILoadInfo*     aLoadInfo,
+CSPService::ShouldProcess(nsIURI *aContentLocation, nsILoadInfo *aLoadInfo,
                           const nsACString &aMimeTypeGuess,
-                          int16_t          *aDecision)
-{
+                          int16_t *aDecision) {
   if (!aContentLocation) {
     return NS_ERROR_FAILURE;
   }
@@ -241,7 +224,7 @@ CSPService::ShouldProcess(nsIURI           *aContentLocation,
   if (MOZ_LOG_TEST(gCspPRLog, LogLevel::Debug)) {
     MOZ_LOG(gCspPRLog, LogLevel::Debug,
             ("CSPService::ShouldProcess called for %s",
-            aContentLocation->GetSpecOrDefault().get()));
+             aContentLocation->GetSpecOrDefault().get()));
   }
 
   
@@ -250,26 +233,21 @@ CSPService::ShouldProcess(nsIURI           *aContentLocation,
   
   
   uint32_t policyType =
-    nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
+      nsContentUtils::InternalContentPolicyTypeToExternal(contentType);
 
   if (policyType != nsIContentPolicy::TYPE_OBJECT) {
     *aDecision = nsIContentPolicy::ACCEPT;
     return NS_OK;
   }
 
-  return ShouldLoad(aContentLocation,
-                    aLoadInfo,
-                    aMimeTypeGuess,
-                    aDecision);
+  return ShouldLoad(aContentLocation, aLoadInfo, aMimeTypeGuess, aDecision);
 }
 
 
 NS_IMETHODIMP
 CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
-                                   nsIChannel *newChannel,
-                                   uint32_t flags,
-                                   nsIAsyncVerifyRedirectCallback *callback)
-{
+                                   nsIChannel *newChannel, uint32_t flags,
+                                   nsIAsyncVerifyRedirectCallback *callback) {
   net::nsAsyncRedirectAutoCallback autoCallback(callback);
 
   nsCOMPtr<nsIURI> newUri;
@@ -320,7 +298,7 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
 
 
   policyType =
-    nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(policyType);
+      nsContentUtils::InternalContentPolicyTypeToExternalOrWorker(policyType);
 
   int16_t aDecision = nsIContentPolicy::ACCEPT;
   nsCOMPtr<nsISupports> requestContext = loadInfo->GetLoadingContext();
@@ -331,15 +309,16 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
 
     if (preloadCsp) {
       
-      preloadCsp->ShouldLoad(policyType,     
-                             cspEventListener,
-                             newUri,         
-                             nullptr,        
-                             requestContext, 
-                             EmptyCString(), 
-                             originalUri,    
-                             true,           
-                             &aDecision);
+      preloadCsp->ShouldLoad(
+          policyType,  
+          cspEventListener,
+          newUri,          
+          nullptr,         
+          requestContext,  
+          EmptyCString(),  
+          originalUri,     
+          true,            
+          &aDecision);
 
       
       
@@ -357,14 +336,14 @@ CSPService::AsyncOnChannelRedirect(nsIChannel *oldChannel,
 
   if (csp) {
     
-    csp->ShouldLoad(policyType,     
+    csp->ShouldLoad(policyType,  
                     cspEventListener,
-                    newUri,         
-                    nullptr,        
-                    requestContext, 
-                    EmptyCString(), 
-                    originalUri,    
-                    true,           
+                    newUri,          
+                    nullptr,         
+                    requestContext,  
+                    EmptyCString(),  
+                    originalUri,     
+                    true,            
                     &aDecision);
   }
 

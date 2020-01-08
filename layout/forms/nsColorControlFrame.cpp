@@ -16,49 +16,42 @@
 #include "nsIDocument.h"
 
 using namespace mozilla;
+using mozilla::dom::CallerType;
 using mozilla::dom::Element;
 using mozilla::dom::HTMLInputElement;
-using mozilla::dom::CallerType;
 
 nsColorControlFrame::nsColorControlFrame(ComputedStyle* aStyle)
-  : nsHTMLButtonControlFrame(aStyle, kClassID)
-{
-}
+    : nsHTMLButtonControlFrame(aStyle, kClassID) {}
 
-nsIFrame*
-NS_NewColorControlFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewColorControlFrame(nsIPresShell* aPresShell,
+                                  ComputedStyle* aStyle) {
   return new (aPresShell) nsColorControlFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsColorControlFrame)
 
 NS_QUERYFRAME_HEAD(nsColorControlFrame)
-  NS_QUERYFRAME_ENTRY(nsColorControlFrame)
-  NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
+NS_QUERYFRAME_ENTRY(nsColorControlFrame)
+NS_QUERYFRAME_ENTRY(nsIAnonymousContentCreator)
 NS_QUERYFRAME_TAIL_INHERITING(nsHTMLButtonControlFrame)
 
-
-void nsColorControlFrame::DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData)
-{
+void nsColorControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                      PostDestroyData& aPostDestroyData) {
   nsCheckboxRadioFrame::RegUnRegAccessKey(static_cast<nsIFrame*>(this), false);
   aPostDestroyData.AddAnonymousContent(mColorContent.forget());
   nsHTMLButtonControlFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 #ifdef DEBUG_FRAME_DUMP
-nsresult
-nsColorControlFrame::GetFrameName(nsAString& aResult) const
-{
+nsresult nsColorControlFrame::GetFrameName(nsAString& aResult) const {
   return MakeFrameName(NS_LITERAL_STRING("ColorControl"), aResult);
 }
 #endif
 
 
 
-nsresult
-nsColorControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
-{
+nsresult nsColorControlFrame::CreateAnonymousContent(
+    nsTArray<ContentInfo>& aElements) {
   nsCOMPtr<nsIDocument> doc = mContent->GetComposedDoc();
   mColorContent = doc->CreateHTMLElement(nsGkAtoms::div);
   mColorContent->SetPseudoElementType(CSSPseudoElementType::mozColorSwatch);
@@ -76,18 +69,14 @@ nsColorControlFrame::CreateAnonymousContent(nsTArray<ContentInfo>& aElements)
   return NS_OK;
 }
 
-void
-nsColorControlFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
-                                              uint32_t aFilter)
-{
+void nsColorControlFrame::AppendAnonymousContentTo(
+    nsTArray<nsIContent*>& aElements, uint32_t aFilter) {
   if (mColorContent) {
     aElements.AppendElement(mColorContent);
   }
 }
 
-nsresult
-nsColorControlFrame::UpdateColor()
-{
+nsresult nsColorControlFrame::UpdateColor() {
   
   
   nsAutoString color;
@@ -116,11 +105,9 @@ nsColorControlFrame::UpdateColor()
                                  true);
 }
 
-nsresult
-nsColorControlFrame::AttributeChanged(int32_t  aNameSpaceID,
-                                      nsAtom* aAttribute,
-                                      int32_t  aModType)
-{
+nsresult nsColorControlFrame::AttributeChanged(int32_t aNameSpaceID,
+                                               nsAtom* aAttribute,
+                                               int32_t aModType) {
   NS_ASSERTION(mColorContent, "The color div must exist");
 
   
@@ -135,8 +122,6 @@ nsColorControlFrame::AttributeChanged(int32_t  aNameSpaceID,
                                                     aModType);
 }
 
-nsContainerFrame*
-nsColorControlFrame::GetContentInsertionFrame()
-{
+nsContainerFrame* nsColorControlFrame::GetContentInsertionFrame() {
   return this;
 }

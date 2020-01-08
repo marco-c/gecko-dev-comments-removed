@@ -44,8 +44,7 @@ class WorkerPrivate;
 
 
 
-class ClientSource final : public ClientThing<ClientSourceChild>
-{
+class ClientSource final : public ClientThing<ClientSourceChild> {
   friend class ClientManager;
 
   NS_DECL_OWNINGTHREAD
@@ -53,10 +52,9 @@ class ClientSource final : public ClientThing<ClientSourceChild>
   RefPtr<ClientManager> mManager;
   nsCOMPtr<nsISerialEventTarget> mEventTarget;
 
-  Variant<Nothing,
-          RefPtr<nsPIDOMWindowInner>,
-          nsCOMPtr<nsIDocShell>,
-          WorkerPrivate*> mOwner;
+  Variant<Nothing, RefPtr<nsPIDOMWindowInner>, nsCOMPtr<nsIDocShell>,
+          WorkerPrivate*>
+      mOwner;
 
   ClientInfo mClientInfo;
   Maybe<ServiceWorkerDescriptor> mController;
@@ -67,65 +65,48 @@ class ClientSource final : public ClientThing<ClientSourceChild>
   
   AutoTArray<nsCString, 1> mRegisteringScopeList;
 
-  void
-  Shutdown();
+  void Shutdown();
 
-  void
-  ExecutionReady(const ClientSourceExecutionReadyArgs& aArgs);
+  void ExecutionReady(const ClientSourceExecutionReadyArgs& aArgs);
 
-  WorkerPrivate*
-  GetWorkerPrivate() const;
+  WorkerPrivate* GetWorkerPrivate() const;
 
-  nsIDocShell*
-  GetDocShell() const;
+  nsIDocShell* GetDocShell() const;
 
-  nsIGlobalObject*
-  GetGlobal() const;
+  nsIGlobalObject* GetGlobal() const;
 
-  void
-  MaybeCreateInitialDocument();
+  void MaybeCreateInitialDocument();
 
-  nsresult
-  SnapshotWindowState(ClientState* aStateOut);
+  nsresult SnapshotWindowState(ClientState* aStateOut);
 
   
-  ClientSource(ClientManager* aManager,
-               nsISerialEventTarget* aEventTarget,
+  ClientSource(ClientManager* aManager, nsISerialEventTarget* aEventTarget,
                const ClientSourceConstructorArgs& aArgs);
 
-  void
-  Activate(PClientManagerChild* aActor);
+  void Activate(PClientManagerChild* aActor);
 
-public:
+ public:
   ~ClientSource();
 
-  nsPIDOMWindowInner*
-  GetInnerWindow() const;
+  nsPIDOMWindowInner* GetInnerWindow() const;
 
-  void
-  WorkerExecutionReady(WorkerPrivate* aWorkerPrivate);
+  void WorkerExecutionReady(WorkerPrivate* aWorkerPrivate);
 
-  nsresult
-  WindowExecutionReady(nsPIDOMWindowInner* aInnerWindow);
+  nsresult WindowExecutionReady(nsPIDOMWindowInner* aInnerWindow);
 
-  nsresult
-  DocShellExecutionReady(nsIDocShell* aDocShell);
+  nsresult DocShellExecutionReady(nsIDocShell* aDocShell);
 
-  void
-  Freeze();
+  void Freeze();
 
-  void
-  Thaw();
+  void Thaw();
 
-  const ClientInfo&
-  Info() const;
+  const ClientInfo& Info() const;
 
   
   
   
   
-  void
-  WorkerSyncPing(WorkerPrivate* aWorkerPrivate);
+  void WorkerSyncPing(WorkerPrivate* aWorkerPrivate);
 
   
   
@@ -135,78 +116,59 @@ public:
   
   
   
-  void
-  SetController(const ServiceWorkerDescriptor& aServiceWorker);
+  void SetController(const ServiceWorkerDescriptor& aServiceWorker);
 
   
   
-  RefPtr<ClientOpPromise>
-  Control(const ClientControlledArgs& aArgs);
+  RefPtr<ClientOpPromise> Control(const ClientControlledArgs& aArgs);
 
   
   
   
-  void
-  InheritController(const ServiceWorkerDescriptor& aServiceWorker);
+  void InheritController(const ServiceWorkerDescriptor& aServiceWorker);
 
   
   
-  const Maybe<ServiceWorkerDescriptor>&
-  GetController() const;
+  const Maybe<ServiceWorkerDescriptor>& GetController() const;
 
   
   
-  void
-  NoteDOMContentLoaded();
+  void NoteDOMContentLoaded();
 
-  RefPtr<ClientOpPromise>
-  Focus(const ClientFocusArgs& aArgs);
+  RefPtr<ClientOpPromise> Focus(const ClientFocusArgs& aArgs);
 
-  RefPtr<ClientOpPromise>
-  PostMessage(const ClientPostMessageArgs& aArgs);
+  RefPtr<ClientOpPromise> PostMessage(const ClientPostMessageArgs& aArgs);
 
-  RefPtr<ClientOpPromise>
-  Claim(const ClientClaimArgs& aArgs);
+  RefPtr<ClientOpPromise> Claim(const ClientClaimArgs& aArgs);
 
-  RefPtr<ClientOpPromise>
-  GetInfoAndState(const ClientGetInfoAndStateArgs& aArgs);
+  RefPtr<ClientOpPromise> GetInfoAndState(
+      const ClientGetInfoAndStateArgs& aArgs);
 
-  nsresult
-  SnapshotState(ClientState* aStateOut);
+  nsresult SnapshotState(ClientState* aStateOut);
 
-  nsISerialEventTarget*
-  EventTarget() const;
+  nsISerialEventTarget* EventTarget() const;
 
-  void
-  Traverse(nsCycleCollectionTraversalCallback& aCallback,
-           const char* aName,
-           uint32_t aFlags);
+  void Traverse(nsCycleCollectionTraversalCallback& aCallback,
+                const char* aName, uint32_t aFlags);
 
-  void
-  NoteCalledRegisterForServiceWorkerScope(const nsACString& aScope);
+  void NoteCalledRegisterForServiceWorkerScope(const nsACString& aScope);
 
-  bool
-  CalledRegisterForServiceWorkerScope(const nsACString& aScope);
+  bool CalledRegisterForServiceWorkerScope(const nsACString& aScope);
 };
 
-inline void
-ImplCycleCollectionUnlink(UniquePtr<ClientSource>& aField)
-{
+inline void ImplCycleCollectionUnlink(UniquePtr<ClientSource>& aField) {
   aField.reset();
 }
 
-inline void
-ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            UniquePtr<ClientSource>& aField,
-                            const char* aName,
-                            uint32_t aFlags)
-{
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    UniquePtr<ClientSource>& aField, const char* aName, uint32_t aFlags) {
   if (aField) {
     aField->Traverse(aCallback, aName, aFlags);
   }
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

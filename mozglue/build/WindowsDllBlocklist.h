@@ -7,25 +7,25 @@
 #define mozilla_windowsdllblocklist_h
 
 #if (defined(_MSC_VER) || defined(__MINGW32__)) && \
-  (defined(_M_IX86) || defined(_M_X64) || defined(_M_ARM64))
+    (defined(_M_IX86) || defined(_M_X64) || defined(_M_ARM64))
 
 #include <windows.h>
 #ifdef ENABLE_TESTS
 #include <winternl.h>
-#endif 
+#endif  
 #include "mozilla/Attributes.h"
 #include "mozilla/Types.h"
 
 #define HAS_DLL_BLOCKLIST
 
-enum DllBlocklistInitFlags
-{
+enum DllBlocklistInitFlags {
   eDllBlocklistInitFlagDefault = 0,
   eDllBlocklistInitFlagIsChildProcess = 1,
   eDllBlocklistInitFlagWasBootstrapped = 2
 };
 
-MFBT_API void DllBlocklist_Initialize(uint32_t aInitFlags = eDllBlocklistInitFlagDefault);
+MFBT_API void DllBlocklist_Initialize(
+    uint32_t aInitFlags = eDllBlocklistInitFlagDefault);
 MFBT_API void DllBlocklist_WriteNotes(HANDLE file);
 MFBT_API bool DllBlocklist_CheckStatus();
 
@@ -34,27 +34,28 @@ MFBT_API bool DllBlocklist_CheckStatus();
 
 #ifdef DEBUG
 MFBT_API void DllBlocklist_Shutdown();
-#endif 
+#endif  
 
 #ifdef ENABLE_TESTS
 typedef void (*DllLoadHookType)(bool aDllLoaded, NTSTATUS aNtStatus,
                                 HANDLE aDllBase, PUNICODE_STRING aDllName);
 MFBT_API void DllBlocklist_SetDllLoadHook(DllLoadHookType aHook);
-typedef void (*CreateThreadHookType)(bool aWasAllowed, void *aStartAddress);
+typedef void (*CreateThreadHookType)(bool aWasAllowed, void* aStartAddress);
 MFBT_API void DllBlocklist_SetCreateThreadHook(CreateThreadHookType aHook);
 MFBT_API const char* DllBlocklist_TestBlocklistIntegrity();
-#endif 
+#endif  
 
 
 namespace mozilla {
 namespace glue {
 namespace detail {
 class DllServicesBase;
-} 
-} 
-} 
+}  
+}  
+}  
 
-MFBT_API void DllBlocklist_SetDllServices(mozilla::glue::detail::DllServicesBase* aSvc);
+MFBT_API void DllBlocklist_SetDllServices(
+    mozilla::glue::detail::DllServicesBase* aSvc);
 
-#endif 
-#endif 
+#endif  
+#endif  

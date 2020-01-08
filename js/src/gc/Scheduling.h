@@ -312,287 +312,292 @@
 namespace js {
 namespace gc {
 
-enum TriggerKind
-{
-    NoTrigger = 0,
-    IncrementalTrigger,
-    NonIncrementalTrigger
+enum TriggerKind { NoTrigger = 0, IncrementalTrigger, NonIncrementalTrigger };
+
+
+
+
+
+class GCSchedulingTunables {
+  
+
+
+
+
+  UnprotectedData<size_t> gcMaxBytes_;
+
+  
+
+
+
+
+  UnprotectedData<size_t> maxMallocBytes_;
+
+  
+
+
+
+
+  MainThreadData<size_t> gcMaxNurseryBytes_;
+
+  
+
+
+
+
+
+
+  MainThreadOrGCTaskData<size_t> gcZoneAllocThresholdBase_;
+
+  
+
+
+
+
+  UnprotectedData<float> allocThresholdFactor_;
+
+  
+
+
+
+
+  UnprotectedData<float> allocThresholdFactorAvoidInterrupt_;
+
+  
+
+
+
+
+
+  UnprotectedData<size_t> zoneAllocDelayBytes_;
+
+  
+
+
+
+
+
+  MainThreadData<bool> dynamicHeapGrowthEnabled_;
+
+  
+
+
+
+
+
+  MainThreadData<mozilla::TimeDuration> highFrequencyThreshold_;
+
+  
+
+
+
+
+
+
+
+
+  MainThreadData<size_t> highFrequencyLowLimitBytes_;
+  MainThreadData<size_t> highFrequencyHighLimitBytes_;
+  MainThreadData<float> highFrequencyHeapGrowthMax_;
+  MainThreadData<float> highFrequencyHeapGrowthMin_;
+
+  
+
+
+
+
+
+  MainThreadData<float> lowFrequencyHeapGrowth_;
+
+  
+
+
+
+
+  MainThreadData<bool> dynamicMarkSliceEnabled_;
+
+  
+
+
+
+
+
+  UnprotectedData<uint32_t> minEmptyChunkCount_;
+  UnprotectedData<uint32_t> maxEmptyChunkCount_;
+
+  
+
+
+
+
+
+  UnprotectedData<uint32_t> nurseryFreeThresholdForIdleCollection_;
+
+ public:
+  GCSchedulingTunables();
+
+  size_t gcMaxBytes() const { return gcMaxBytes_; }
+  size_t maxMallocBytes() const { return maxMallocBytes_; }
+  size_t gcMaxNurseryBytes() const { return gcMaxNurseryBytes_; }
+  size_t gcZoneAllocThresholdBase() const { return gcZoneAllocThresholdBase_; }
+  double allocThresholdFactor() const { return allocThresholdFactor_; }
+  double allocThresholdFactorAvoidInterrupt() const {
+    return allocThresholdFactorAvoidInterrupt_;
+  }
+  size_t zoneAllocDelayBytes() const { return zoneAllocDelayBytes_; }
+  bool isDynamicHeapGrowthEnabled() const { return dynamicHeapGrowthEnabled_; }
+  const mozilla::TimeDuration& highFrequencyThreshold() const {
+    return highFrequencyThreshold_;
+  }
+  size_t highFrequencyLowLimitBytes() const {
+    return highFrequencyLowLimitBytes_;
+  }
+  size_t highFrequencyHighLimitBytes() const {
+    return highFrequencyHighLimitBytes_;
+  }
+  double highFrequencyHeapGrowthMax() const {
+    return highFrequencyHeapGrowthMax_;
+  }
+  double highFrequencyHeapGrowthMin() const {
+    return highFrequencyHeapGrowthMin_;
+  }
+  double lowFrequencyHeapGrowth() const { return lowFrequencyHeapGrowth_; }
+  bool isDynamicMarkSliceEnabled() const { return dynamicMarkSliceEnabled_; }
+  unsigned minEmptyChunkCount(const AutoLockGC&) const {
+    return minEmptyChunkCount_;
+  }
+  unsigned maxEmptyChunkCount() const { return maxEmptyChunkCount_; }
+  uint32_t nurseryFreeThresholdForIdleCollection() const {
+    return nurseryFreeThresholdForIdleCollection_;
+  }
+
+  MOZ_MUST_USE bool setParameter(JSGCParamKey key, uint32_t value,
+                                 const AutoLockGC& lock);
+  void resetParameter(JSGCParamKey key, const AutoLockGC& lock);
+
+  void setMaxMallocBytes(size_t value);
+
+ private:
+  void setHighFrequencyLowLimit(size_t value);
+  void setHighFrequencyHighLimit(size_t value);
+  void setHighFrequencyHeapGrowthMin(float value);
+  void setHighFrequencyHeapGrowthMax(float value);
+  void setLowFrequencyHeapGrowth(float value);
+  void setMinEmptyChunkCount(uint32_t value);
+  void setMaxEmptyChunkCount(uint32_t value);
+};
+
+class GCSchedulingState {
+  
+
+
+
+
+
+  MainThreadData<bool> inHighFrequencyGCMode_;
+
+ public:
+  GCSchedulingState() : inHighFrequencyGCMode_(false) {}
+
+  bool inHighFrequencyGCMode() const { return inHighFrequencyGCMode_; }
+
+  void updateHighFrequencyMode(const mozilla::TimeStamp& lastGCTime,
+                               const mozilla::TimeStamp& currentTime,
+                               const GCSchedulingTunables& tunables) {
+    inHighFrequencyGCMode_ =
+        tunables.isDynamicHeapGrowthEnabled() && !lastGCTime.IsNull() &&
+        lastGCTime + tunables.highFrequencyThreshold() > currentTime;
+  }
+};
+
+class MemoryCounter {
+  
+  
+  mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      bytes_;
+
+  
+  size_t maxBytes_;
+
+  
+  MainThreadData<size_t> bytesAtStartOfGC_;
+
+  
+  mozilla::Atomic<TriggerKind, mozilla::ReleaseAcquire,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      triggered_;
+
+ public:
+  MemoryCounter();
+
+  size_t bytes() const { return bytes_; }
+  size_t maxBytes() const { return maxBytes_; }
+  TriggerKind triggered() const { return triggered_; }
+
+  void setMax(size_t newMax, const AutoLockGC& lock);
+
+  void update(size_t bytes) { bytes_ += bytes; }
+
+  void adopt(MemoryCounter& other);
+
+  TriggerKind shouldTriggerGC(const GCSchedulingTunables& tunables) const {
+    if (MOZ_LIKELY(bytes_ < maxBytes_ * tunables.allocThresholdFactor())) {
+      return NoTrigger;
+    }
+
+    if (bytes_ < maxBytes_) {
+      return IncrementalTrigger;
+    }
+
+    return NonIncrementalTrigger;
+  }
+
+  bool shouldResetIncrementalGC(const GCSchedulingTunables& tunables) const {
+    return bytes_ > maxBytes_ * tunables.allocThresholdFactorAvoidInterrupt();
+  }
+
+  void recordTrigger(TriggerKind trigger);
+
+  void updateOnGCStart();
+  void updateOnGCEnd(const GCSchedulingTunables& tunables,
+                     const AutoLockGC& lock);
 };
 
 
 
-
-
-class GCSchedulingTunables
-{
-    
-
-
-
-
-    UnprotectedData<size_t> gcMaxBytes_;
-
-    
-
-
-
-
-    UnprotectedData<size_t> maxMallocBytes_;
-
-    
-
-
-
-
-    MainThreadData<size_t> gcMaxNurseryBytes_;
-
-    
-
-
-
-
-
-
-    MainThreadOrGCTaskData<size_t> gcZoneAllocThresholdBase_;
-
-    
-
-
-
-
-    UnprotectedData<float> allocThresholdFactor_;
-
-    
-
-
-
-
-    UnprotectedData<float> allocThresholdFactorAvoidInterrupt_;
-
-    
-
-
-
-
-
-    UnprotectedData<size_t> zoneAllocDelayBytes_;
-
-    
-
-
-
-
-
-    MainThreadData<bool> dynamicHeapGrowthEnabled_;
-
-    
-
-
-
-
-
-    MainThreadData<mozilla::TimeDuration> highFrequencyThreshold_;
-
-    
-
-
-
-
-
-
-
-
-    MainThreadData<size_t> highFrequencyLowLimitBytes_;
-    MainThreadData<size_t> highFrequencyHighLimitBytes_;
-    MainThreadData<float> highFrequencyHeapGrowthMax_;
-    MainThreadData<float> highFrequencyHeapGrowthMin_;
-
-    
-
-
-
-
-
-    MainThreadData<float> lowFrequencyHeapGrowth_;
-
-    
-
-
-
-
-    MainThreadData<bool> dynamicMarkSliceEnabled_;
-
-    
-
-
-
-
-
-    UnprotectedData<uint32_t> minEmptyChunkCount_;
-    UnprotectedData<uint32_t> maxEmptyChunkCount_;
-
-    
-
-
-
-
-
-    UnprotectedData<uint32_t> nurseryFreeThresholdForIdleCollection_;
-
-  public:
-    GCSchedulingTunables();
-
-    size_t gcMaxBytes() const { return gcMaxBytes_; }
-    size_t maxMallocBytes() const { return maxMallocBytes_; }
-    size_t gcMaxNurseryBytes() const { return gcMaxNurseryBytes_; }
-    size_t gcZoneAllocThresholdBase() const { return gcZoneAllocThresholdBase_; }
-    double allocThresholdFactor() const { return allocThresholdFactor_; }
-    double allocThresholdFactorAvoidInterrupt() const { return allocThresholdFactorAvoidInterrupt_; }
-    size_t zoneAllocDelayBytes() const { return zoneAllocDelayBytes_; }
-    bool isDynamicHeapGrowthEnabled() const { return dynamicHeapGrowthEnabled_; }
-    const mozilla::TimeDuration &highFrequencyThreshold() const { return highFrequencyThreshold_; }
-    size_t highFrequencyLowLimitBytes() const { return highFrequencyLowLimitBytes_; }
-    size_t highFrequencyHighLimitBytes() const { return highFrequencyHighLimitBytes_; }
-    double highFrequencyHeapGrowthMax() const { return highFrequencyHeapGrowthMax_; }
-    double highFrequencyHeapGrowthMin() const { return highFrequencyHeapGrowthMin_; }
-    double lowFrequencyHeapGrowth() const { return lowFrequencyHeapGrowth_; }
-    bool isDynamicMarkSliceEnabled() const { return dynamicMarkSliceEnabled_; }
-    unsigned minEmptyChunkCount(const AutoLockGC&) const { return minEmptyChunkCount_; }
-    unsigned maxEmptyChunkCount() const { return maxEmptyChunkCount_; }
-    uint32_t nurseryFreeThresholdForIdleCollection() const {
-        return nurseryFreeThresholdForIdleCollection_;
-    }
-
-    MOZ_MUST_USE bool setParameter(JSGCParamKey key, uint32_t value, const AutoLockGC& lock);
-    void resetParameter(JSGCParamKey key, const AutoLockGC& lock);
-
-    void setMaxMallocBytes(size_t value);
-
-private:
-    void setHighFrequencyLowLimit(size_t value);
-    void setHighFrequencyHighLimit(size_t value);
-    void setHighFrequencyHeapGrowthMin(float value);
-    void setHighFrequencyHeapGrowthMax(float value);
-    void setLowFrequencyHeapGrowth(float value);
-    void setMinEmptyChunkCount(uint32_t value);
-    void setMaxEmptyChunkCount(uint32_t value);
+class ZoneHeapThreshold {
+  
+  GCLockData<float> gcHeapGrowthFactor_;
+
+  
+  mozilla::Atomic<size_t, mozilla::Relaxed,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      gcTriggerBytes_;
+
+ public:
+  ZoneHeapThreshold() : gcHeapGrowthFactor_(3.0f), gcTriggerBytes_(0) {}
+
+  float gcHeapGrowthFactor() const { return gcHeapGrowthFactor_; }
+  size_t gcTriggerBytes() const { return gcTriggerBytes_; }
+  float eagerAllocTrigger(bool highFrequencyGC) const;
+
+  void updateAfterGC(size_t lastBytes, JSGCInvocationKind gckind,
+                     const GCSchedulingTunables& tunables,
+                     const GCSchedulingState& state, const AutoLockGC& lock);
+  void updateForRemovedArena(const GCSchedulingTunables& tunables);
+
+ private:
+  static float computeZoneHeapGrowthFactorForHeapSize(
+      size_t lastBytes, const GCSchedulingTunables& tunables,
+      const GCSchedulingState& state);
+  static size_t computeZoneTriggerBytes(float growthFactor, size_t lastBytes,
+                                        JSGCInvocationKind gckind,
+                                        const GCSchedulingTunables& tunables,
+                                        const AutoLockGC& lock);
 };
 
-class GCSchedulingState
-{
-    
+}  
+}  
 
-
-
-
-
-    MainThreadData<bool> inHighFrequencyGCMode_;
-
-  public:
-    GCSchedulingState()
-      : inHighFrequencyGCMode_(false)
-    {}
-
-    bool inHighFrequencyGCMode() const { return inHighFrequencyGCMode_; }
-
-    void updateHighFrequencyMode(const mozilla::TimeStamp &lastGCTime, const mozilla::TimeStamp &currentTime,
-                                 const GCSchedulingTunables& tunables) {
-        inHighFrequencyGCMode_ =
-            tunables.isDynamicHeapGrowthEnabled() && !lastGCTime.IsNull() &&
-            lastGCTime + tunables.highFrequencyThreshold() > currentTime;
-    }
-};
-
-class MemoryCounter
-{
-    
-    
-    mozilla::Atomic<size_t, mozilla::ReleaseAcquire,
-                    mozilla::recordreplay::Behavior::DontPreserve> bytes_;
-
-    
-    size_t maxBytes_;
-
-    
-    MainThreadData<size_t> bytesAtStartOfGC_;
-
-    
-    mozilla::Atomic<TriggerKind, mozilla::ReleaseAcquire,
-                    mozilla::recordreplay::Behavior::DontPreserve> triggered_;
-
-  public:
-    MemoryCounter();
-
-    size_t bytes() const { return bytes_; }
-    size_t maxBytes() const { return maxBytes_; }
-    TriggerKind triggered() const { return triggered_; }
-
-    void setMax(size_t newMax, const AutoLockGC& lock);
-
-    void update(size_t bytes) {
-        bytes_ += bytes;
-    }
-
-    void adopt(MemoryCounter& other);
-
-    TriggerKind shouldTriggerGC(const GCSchedulingTunables& tunables) const {
-        if (MOZ_LIKELY(bytes_ < maxBytes_ * tunables.allocThresholdFactor())) {
-            return NoTrigger;
-        }
-
-        if (bytes_ < maxBytes_) {
-            return IncrementalTrigger;
-        }
-
-        return NonIncrementalTrigger;
-    }
-
-    bool shouldResetIncrementalGC(const GCSchedulingTunables& tunables) const {
-        return bytes_ > maxBytes_ * tunables.allocThresholdFactorAvoidInterrupt();
-    }
-
-    void recordTrigger(TriggerKind trigger);
-
-    void updateOnGCStart();
-    void updateOnGCEnd(const GCSchedulingTunables& tunables, const AutoLockGC& lock);
-};
-
-
-class ZoneHeapThreshold
-{
-    
-    GCLockData<float> gcHeapGrowthFactor_;
-
-    
-    mozilla::Atomic<size_t, mozilla::Relaxed,
-                    mozilla::recordreplay::Behavior::DontPreserve> gcTriggerBytes_;
-
-  public:
-    ZoneHeapThreshold()
-      : gcHeapGrowthFactor_(3.0f),
-        gcTriggerBytes_(0)
-    {}
-
-    float gcHeapGrowthFactor() const { return gcHeapGrowthFactor_; }
-    size_t gcTriggerBytes() const { return gcTriggerBytes_; }
-    float eagerAllocTrigger(bool highFrequencyGC) const;
-
-    void updateAfterGC(size_t lastBytes, JSGCInvocationKind gckind,
-                       const GCSchedulingTunables& tunables, const GCSchedulingState& state,
-                       const AutoLockGC& lock);
-    void updateForRemovedArena(const GCSchedulingTunables& tunables);
-
-  private:
-    static float computeZoneHeapGrowthFactorForHeapSize(size_t lastBytes,
-                                                        const GCSchedulingTunables& tunables,
-                                                        const GCSchedulingState& state);
-    static size_t computeZoneTriggerBytes(float growthFactor, size_t lastBytes,
-                                          JSGCInvocationKind gckind,
-                                          const GCSchedulingTunables& tunables,
-                                          const AutoLockGC& lock);
-};
-
-} 
-} 
-
-#endif 
+#endif  

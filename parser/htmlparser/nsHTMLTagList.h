@@ -187,7 +187,6 @@ HTML_TAG(xmp, Pre, Pre)
 
 
 
-
 HTML_OTHER(text)
 HTML_OTHER(whitespace)
 HTML_OTHER(newline)

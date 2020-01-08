@@ -19,10 +19,10 @@
 
 
 
-class nsBaseAppShell : public nsIAppShell, public nsIThreadObserver,
-                       public nsIObserver
-{
-public:
+class nsBaseAppShell : public nsIAppShell,
+                       public nsIThreadObserver,
+                       public nsIObserver {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIAPPSHELL
 
@@ -31,7 +31,7 @@ public:
 
   nsBaseAppShell();
 
-protected:
+ protected:
   virtual ~nsBaseAppShell();
 
   
@@ -75,7 +75,7 @@ protected:
   int32_t mSuspendNativeCount;
   uint32_t mEventloopNestingLevel;
 
-private:
+ private:
   bool DoProcessNextNativeEvent(bool mayWait);
 
   bool DispatchDummyEvent(nsIThread* target);
@@ -90,16 +90,17 @@ private:
 
 
 
-  bool *mBlockedWait;
+  bool* mBlockedWait;
   int32_t mFavorPerf;
   mozilla::Atomic<bool> mNativeEventPending;
   PRIntervalTime mStarvationDelay;
   PRIntervalTime mSwitchTime;
   PRIntervalTime mLastNativeEventTime;
   enum EventloopNestingState {
-    eEventloopNone,  
-    eEventloopXPCOM, 
-    eEventloopOther  
+    eEventloopNone,   
+    eEventloopXPCOM,  
+    eEventloopOther   
+                      
   };
   EventloopNestingState mEventloopNestingState;
   bool mRunning;
@@ -132,4 +133,4 @@ private:
   bool mProcessedGeckoEvents;
 };
 
-#endif 
+#endif  

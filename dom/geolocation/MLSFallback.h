@@ -28,10 +28,8 @@ class nsIGeolocationProvider;
 
 
 
-class MLSFallback : public nsITimerCallback
-                  , public nsINamed
-{
-public:
+class MLSFallback : public nsITimerCallback, public nsINamed {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
@@ -40,7 +38,7 @@ public:
   nsresult Startup(nsIGeolocationUpdate* aWatcher);
   nsresult Shutdown();
 
-private:
+ private:
   nsresult CreateMLSFallbackProvider();
   virtual ~MLSFallback();
   nsCOMPtr<nsITimer> mHandoffTimer;
@@ -48,4 +46,3 @@ private:
   nsCOMPtr<nsIGeolocationUpdate> mUpdateWatcher;
   const uint32_t mDelayMs;
 };
-

@@ -20,7 +20,7 @@
 #include "Units.h"
 #include "FrameMetrics.h"
 
-#define NS_DEFAULT_VERTICAL_SCROLL_DISTANCE   3
+#define NS_DEFAULT_VERTICAL_SCROLL_DISTANCE 3
 #define NS_DEFAULT_HORIZONTAL_SCROLL_DISTANCE 5
 
 class gfxContext;
@@ -38,8 +38,8 @@ namespace layers {
 struct ScrollMetadata;
 class Layer;
 class LayerManager;
-} 
-} 
+}  
+}  
 
 
 
@@ -47,7 +47,7 @@ class LayerManager;
 
 
 class nsIScrollableFrame : public nsIScrollbarMediator {
-public:
+ public:
   typedef mozilla::CSSIntPoint CSSIntPoint;
   typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::layers::ScrollSnapInfo ScrollSnapInfo;
@@ -103,10 +103,9 @@ public:
   
 
 
-  virtual nscoord
-  GetNondisappearingScrollbarWidth(nsPresContext* aPresContext,
-                                   gfxContext* aRC,
-                                   mozilla::WritingMode aWM) = 0;
+  virtual nscoord GetNondisappearingScrollbarWidth(
+      nsPresContext* aPresContext, gfxContext* aRC,
+      mozilla::WritingMode aWM) = 0;
   
 
 
@@ -226,8 +225,8 @@ public:
 
   virtual void ScrollTo(nsPoint aScrollPosition, ScrollMode aMode,
                         const nsRect* aRange = nullptr,
-                        nsIScrollbarMediator::ScrollSnapMode aSnap
-                          = nsIScrollbarMediator::DISABLE_SNAP) = 0;
+                        nsIScrollbarMediator::ScrollSnapMode aSnap =
+                            nsIScrollbarMediator::DISABLE_SNAP) = 0;
   
 
 
@@ -245,10 +244,10 @@ public:
 
 
 
-  virtual void ScrollToCSSPixels(const CSSIntPoint& aScrollPosition,
-                                 nsIScrollableFrame::ScrollMode aMode
-                                   = nsIScrollableFrame::INSTANT,
-                                 nsAtom* aOrigin = nullptr) = 0;
+  virtual void ScrollToCSSPixels(
+      const CSSIntPoint& aScrollPosition,
+      nsIScrollableFrame::ScrollMode aMode = nsIScrollableFrame::INSTANT,
+      nsAtom* aOrigin = nullptr) = 0;
   
 
 
@@ -257,8 +256,8 @@ public:
 
 
 
-  virtual void ScrollToCSSPixelsApproximate(const mozilla::CSSPoint& aScrollPosition,
-                                            nsAtom *aOrigin = nullptr) = 0;
+  virtual void ScrollToCSSPixelsApproximate(
+      const mozilla::CSSPoint& aScrollPosition, nsAtom* aOrigin = nullptr) = 0;
 
   
 
@@ -283,13 +282,13 @@ public:
                         nsIntPoint* aOverflow = nullptr,
                         nsAtom* aOrigin = nullptr,
                         ScrollMomentum aMomentum = NOT_MOMENTUM,
-                        nsIScrollbarMediator::ScrollSnapMode aSnap
-                          = nsIScrollbarMediator::DISABLE_SNAP) = 0;
+                        nsIScrollbarMediator::ScrollSnapMode aSnap =
+                            nsIScrollbarMediator::DISABLE_SNAP) = 0;
 
-  virtual void ScrollByCSSPixels(const CSSIntPoint& aDelta,
-                                 nsIScrollableFrame::ScrollMode aMode
-                                   = nsIScrollableFrame::INSTANT,
-                                 nsAtom* aOrigin = nullptr) = 0;
+  virtual void ScrollByCSSPixels(
+      const CSSIntPoint& aDelta,
+      nsIScrollableFrame::ScrollMode aMode = nsIScrollableFrame::INSTANT,
+      nsAtom* aOrigin = nullptr) = 0;
 
   
 
@@ -314,11 +313,13 @@ public:
 
 
 
-  virtual void AddScrollPositionListener(nsIScrollPositionListener* aListener) = 0;
+  virtual void AddScrollPositionListener(
+      nsIScrollPositionListener* aListener) = 0;
   
 
 
-  virtual void RemoveScrollPositionListener(nsIScrollPositionListener* aListener) = 0;
+  virtual void RemoveScrollPositionListener(
+      nsIScrollPositionListener* aListener) = 0;
 
   
 
@@ -375,7 +376,7 @@ public:
 
 
   virtual bool IsRectNearlyVisible(const nsRect& aRect) = 0;
- 
+  
 
 
 
@@ -426,16 +427,16 @@ public:
 
 
   virtual mozilla::Maybe<mozilla::layers::ScrollMetadata> ComputeScrollMetadata(
-    mozilla::layers::LayerManager* aLayerManager,
-    const nsIFrame* aContainerReferenceFrame,
-    const mozilla::Maybe<ContainerLayerParameters>& aParameters,
-    const mozilla::DisplayItemClip* aClip) const = 0;
+      mozilla::layers::LayerManager* aLayerManager,
+      const nsIFrame* aContainerReferenceFrame,
+      const mozilla::Maybe<ContainerLayerParameters>& aParameters,
+      const mozilla::DisplayItemClip* aClip) const = 0;
   
 
 
-  virtual void ClipLayerToDisplayPort(mozilla::layers::Layer* aLayer,
-                                      const mozilla::DisplayItemClip* aClip,
-                                      const ContainerLayerParameters& aParameters) const = 0;
+  virtual void ClipLayerToDisplayPort(
+      mozilla::layers::Layer* aLayer, const mozilla::DisplayItemClip* aClip,
+      const ContainerLayerParameters& aParameters) const = 0;
 
   
 
@@ -482,8 +483,7 @@ public:
 
 
   virtual bool DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
-                                     nsRect* aVisibleRect,
-                                     nsRect* aDirtyRect,
+                                     nsRect* aVisibleRect, nsRect* aDirtyRect,
                                      bool aSetBase) = 0;
 
   
@@ -507,14 +507,16 @@ public:
 
 
 
-  virtual void NotifyApproximateFrameVisibilityUpdate(bool aIgnoreDisplayPort) = 0;
+  virtual void NotifyApproximateFrameVisibilityUpdate(
+      bool aIgnoreDisplayPort) = 0;
 
   
 
 
 
 
-  virtual bool GetDisplayPortAtLastApproximateFrameVisibilityUpdate(nsRect* aDisplayPort) = 0;
+  virtual bool GetDisplayPortAtLastApproximateFrameVisibilityUpdate(
+      nsRect* aDisplayPort) = 0;
 
   
 
@@ -536,8 +538,8 @@ public:
 
   virtual bool DragScroll(mozilla::WidgetEvent* aEvent) = 0;
 
-  virtual void AsyncScrollbarDragInitiated(uint64_t aDragBlockId,
-                                           mozilla::layers::ScrollDirection aDirection) = 0;
+  virtual void AsyncScrollbarDragInitiated(
+      uint64_t aDragBlockId, mozilla::layers::ScrollDirection aDirection) = 0;
   virtual void AsyncScrollbarDragRejected() = 0;
 
   

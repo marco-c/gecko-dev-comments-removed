@@ -13,30 +13,27 @@
 #include "nsIObserver.h"
 #include "nsPIDOMWindow.h"
 
-class nsRemoteService final : public nsIRemoteService,
-                              public nsIObserver
-{
-public:
+class nsRemoteService final : public nsIRemoteService, public nsIObserver {
+ public:
   
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREMOTESERVICE
   NS_DECL_NSIOBSERVER
 
-  static const char*
-  HandleCommandLine(const char* aBuffer, nsIDOMWindow* aWindow,
-                    uint32_t aTimestamp);
+  static const char* HandleCommandLine(const char* aBuffer,
+                                       nsIDOMWindow* aWindow,
+                                       uint32_t aTimestamp);
 
   nsCOMPtr<nsIRemoteService> mDBusRemoteService;
   nsCOMPtr<nsIRemoteService> mGtkRemoteService;
 
-  nsRemoteService()
-    {}
-private:
+  nsRemoteService() {}
+
+ private:
   ~nsRemoteService();
 
-  static void
-  SetDesktopStartupIDOrTimestamp(const nsACString& aDesktopStartupID,
-                                 uint32_t aTimestamp);
+  static void SetDesktopStartupIDOrTimestamp(
+      const nsACString& aDesktopStartupID, uint32_t aTimestamp);
 };
 
-#endif 
+#endif  

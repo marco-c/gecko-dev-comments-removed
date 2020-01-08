@@ -7,24 +7,24 @@
 #ifndef GFX_COPYABLECANVASRENDERER_H
 #define GFX_COPYABLECANVASRENDERER_H
 
-#include <stdint.h>                     
+#include <stdint.h>  
 #include "CanvasRenderer.h"
-#include "GLContextTypes.h"             
-#include "gfxContext.h"                 
+#include "GLContextTypes.h"  
+#include "gfxContext.h"      
 #include "gfxTypes.h"
-#include "gfxPlatform.h"                
-#include "mozilla/Assertions.h"         
-#include "mozilla/Preferences.h"        
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/2D.h"             
-#include "mozilla/mozalloc.h"           
-#include "nsISupportsImpl.h"            
+#include "gfxPlatform.h"          
+#include "mozilla/Assertions.h"   
+#include "mozilla/Preferences.h"  
+#include "mozilla/RefPtr.h"       
+#include "mozilla/gfx/2D.h"       
+#include "mozilla/mozalloc.h"     
+#include "nsISupportsImpl.h"      
 
 namespace mozilla {
 
 namespace gl {
 class SharedSurface;
-} 
+}  
 
 namespace layers {
 
@@ -32,13 +32,12 @@ namespace layers {
 
 
 
-class CopyableCanvasRenderer : public CanvasRenderer
-{
-public:
+class CopyableCanvasRenderer : public CanvasRenderer {
+ public:
   CopyableCanvasRenderer();
   virtual ~CopyableCanvasRenderer();
 
-public:
+ public:
   void Initialize(const CanvasInitializeData& aData) override;
   bool IsDataValid(const CanvasInitializeData& aData) override;
 
@@ -55,7 +54,7 @@ public:
 
   already_AddRefed<gfx::SourceSurface> ReadbackSurface();
 
-protected:
+ protected:
   RefPtr<gl::GLContext> mGLContext;
   RefPtr<PersistentBufferProvider> mBufferProvider;
   UniquePtr<gl::SharedSurface> mGLFrontbuffer;
@@ -72,7 +71,7 @@ protected:
                                          const gfx::SurfaceFormat aFormat);
 };
 
-} 
-} 
+}  
+}  
 
 #endif

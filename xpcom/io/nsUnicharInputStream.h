@@ -12,4 +12,4 @@
 nsresult NS_NewUnicharInputStream(nsIInputStream* aStreamToWrap,
                                   nsIUnicharInputStream** aResult);
 
-#endif 
+#endif  

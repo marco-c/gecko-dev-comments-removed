@@ -19,11 +19,10 @@
 namespace mozilla {
 namespace net {
 
-class NamedPipeService final : public nsINamedPipeService
-                             , public nsIObserver
-                             , public nsIRunnable
-{
-public:
+class NamedPipeService final : public nsINamedPipeService,
+                               public nsIObserver,
+                               public nsIRunnable {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSINAMEDPIPESERVICE
   NS_DECL_NSIOBSERVER
@@ -31,7 +30,7 @@ public:
 
   static already_AddRefed<nsINamedPipeService> GetOrCreate();
 
-private:
+ private:
   explicit NamedPipeService();
   virtual ~NamedPipeService() = default;
 
@@ -40,9 +39,10 @@ private:
   void Shutdown();
   void RemoveRetiredObjects();
 
-  HANDLE mIocp; 
-  Atomic<bool> mIsShutdown; 
-  nsCOMPtr<nsIThread> mThread; 
+  HANDLE mIocp;  
+  Atomic<bool>
+      mIsShutdown;  
+  nsCOMPtr<nsIThread> mThread;  
 
   
 
@@ -52,14 +52,16 @@ private:
 
 
   Mutex mLock;
-  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>> mObservers; 
-  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>> mRetiredObservers; 
-  nsTArray<HANDLE> mRetiredHandles; 
+  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>>
+      mObservers;  
+  nsTArray<nsCOMPtr<nsINamedPipeDataObserver>>
+      mRetiredObservers;             
+  nsTArray<HANDLE> mRetiredHandles;  
 
   static StaticRefPtr<NamedPipeService> gSingleton;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

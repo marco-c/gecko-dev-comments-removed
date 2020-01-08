@@ -20,30 +20,31 @@ namespace dom {
 
 
 
-template<typename Func, typename Arg, typename Resolve, typename Reject>
-void
-StartClientManagerOp(Func aFunc, const Arg& aArg, nsIGlobalObject* aGlobal,
-                     Resolve aResolve, Reject aReject)
-{
+template <typename Func, typename Arg, typename Resolve, typename Reject>
+void StartClientManagerOp(Func aFunc, const Arg& aArg, nsIGlobalObject* aGlobal,
+                          Resolve aResolve, Reject aReject) {
   MOZ_DIAGNOSTIC_ASSERT(aGlobal);
 
   nsCOMPtr<nsISerialEventTarget> target =
-    aGlobal->EventTargetFor(TaskCategory::Other);
+      aGlobal->EventTargetFor(TaskCategory::Other);
 
-  auto holder = MakeRefPtr<DOMMozPromiseRequestHolder<ClientOpPromise>>(aGlobal);
+  auto holder =
+      MakeRefPtr<DOMMozPromiseRequestHolder<ClientOpPromise>>(aGlobal);
 
-  aFunc(aArg, target)->Then(
-    target, __func__,
-    [aResolve, holder](const ClientOpResult& aResult) {
-      holder->Complete();
-      aResolve(aResult);
-    }, [aReject, holder](nsresult aResult) {
-      holder->Complete();
-      aReject(aResult);
-    })->Track(*holder);
+  aFunc(aArg, target)
+      ->Then(target, __func__,
+             [aResolve, holder](const ClientOpResult& aResult) {
+               holder->Complete();
+               aResolve(aResult);
+             },
+             [aReject, holder](nsresult aResult) {
+               holder->Complete();
+               aReject(aResult);
+             })
+      ->Track(*holder);
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

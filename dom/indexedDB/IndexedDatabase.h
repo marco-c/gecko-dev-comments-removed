@@ -13,7 +13,7 @@
 
 namespace JS {
 struct WasmModule;
-} 
+}  
 
 namespace mozilla {
 namespace dom {
@@ -27,8 +27,7 @@ namespace indexedDB {
 class FileInfo;
 class SerializedStructuredCloneReadInfo;
 
-struct StructuredCloneFile
-{
+struct StructuredCloneFile {
   enum FileType {
     eBlob,
     eMutableFile,
@@ -45,56 +44,46 @@ struct StructuredCloneFile
   FileType mType;
 
   
-  inline
-  StructuredCloneFile();
+  inline StructuredCloneFile();
 
   
-  inline
-  ~StructuredCloneFile();
+  inline ~StructuredCloneFile();
 
   
-  inline bool
-  operator==(const StructuredCloneFile& aOther) const;
+  inline bool operator==(const StructuredCloneFile& aOther) const;
 };
 
-struct StructuredCloneReadInfo
-{
+struct StructuredCloneReadInfo {
   JSStructuredCloneData mData;
   nsTArray<StructuredCloneFile> mFiles;
   IDBDatabase* mDatabase;
   bool mHasPreprocessInfo;
 
   
-  inline explicit
-  StructuredCloneReadInfo(JS::StructuredCloneScope aScope);
+  inline explicit StructuredCloneReadInfo(JS::StructuredCloneScope aScope);
 
   
-  inline
-  StructuredCloneReadInfo();
+  inline StructuredCloneReadInfo();
 
   
-  inline
-  ~StructuredCloneReadInfo();
+  inline ~StructuredCloneReadInfo();
 
   
-  inline
-  StructuredCloneReadInfo(StructuredCloneReadInfo&& aOther);
+  inline StructuredCloneReadInfo(StructuredCloneReadInfo&& aOther);
 
   
-  inline StructuredCloneReadInfo&
-  operator=(StructuredCloneReadInfo&& aOther);
+  inline StructuredCloneReadInfo& operator=(StructuredCloneReadInfo&& aOther);
 
   
-  inline
-  MOZ_IMPLICIT StructuredCloneReadInfo(SerializedStructuredCloneReadInfo&& aOther);
+  inline MOZ_IMPLICIT StructuredCloneReadInfo(
+      SerializedStructuredCloneReadInfo&& aOther);
 
   
-  inline
-  size_t Size() const;
+  inline size_t Size() const;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

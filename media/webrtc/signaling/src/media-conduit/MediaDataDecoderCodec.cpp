@@ -8,17 +8,13 @@
 
 namespace mozilla {
 
- WebrtcVideoEncoder*
-MediaDataDecoderCodec::CreateEncoder(
-  webrtc::VideoCodecType aCodecType)
-{
+ WebrtcVideoEncoder* MediaDataDecoderCodec::CreateEncoder(
+    webrtc::VideoCodecType aCodecType) {
   return nullptr;
 }
 
- WebrtcVideoDecoder*
-MediaDataDecoderCodec::CreateDecoder(
-  webrtc::VideoCodecType aCodecType)
-{
+ WebrtcVideoDecoder* MediaDataDecoderCodec::CreateDecoder(
+    webrtc::VideoCodecType aCodecType) {
   switch (aCodecType) {
     case webrtc::VideoCodecType::kVideoCodecVP8:
     case webrtc::VideoCodecType::kVideoCodecVP9:
@@ -37,4 +33,4 @@ MediaDataDecoderCodec::CreateDecoder(
   return new WebrtcMediaDataDecoder();
 }
 
-} 
+}  

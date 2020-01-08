@@ -13,17 +13,16 @@
 
 namespace js {
 
-inline NumberObject*
-NumberObject::create(JSContext* cx, double d, HandleObject proto )
-{
-    NumberObject* obj = NewObjectWithClassProto<NumberObject>(cx, proto);
-    if (!obj) {
-        return nullptr;
-    }
-    obj->setPrimitiveValue(d);
-    return obj;
+inline NumberObject* NumberObject::create(JSContext* cx, double d,
+                                          HandleObject proto ) {
+  NumberObject* obj = NewObjectWithClassProto<NumberObject>(cx, proto);
+  if (!obj) {
+    return nullptr;
+  }
+  obj->setPrimitiveValue(d);
+  return obj;
 }
 
-} 
+}  
 
 #endif 

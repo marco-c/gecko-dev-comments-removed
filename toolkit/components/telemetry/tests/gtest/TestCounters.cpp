@@ -13,15 +13,15 @@
 using namespace mozilla;
 using namespace TelemetryTestHelpers;
 
-TEST_F(TelemetryTestFixture, AutoCounter)
-{
+TEST_F(TelemetryTestFixture, AutoCounter) {
   const uint32_t kExpectedValue = 100;
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  const char* telemetryTestCountName = Telemetry::GetHistogramName(Telemetry::TELEMETRY_TEST_COUNT);
+  const char* telemetryTestCountName =
+      Telemetry::GetHistogramName(Telemetry::TELEMETRY_TEST_COUNT);
 
-  GetAndClearHistogram(cx.GetJSContext(), mTelemetry, NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"),
-                       false);
+  GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
+                       NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"), false);
 
   
   {
@@ -39,7 +39,8 @@ TEST_F(TelemetryTestFixture, AutoCounter)
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
-  GetSnapshots(cx.GetJSContext(), mTelemetry, telemetryTestCountName, &snapshot, false);
+  GetSnapshots(cx.GetJSContext(), mTelemetry, telemetryTestCountName, &snapshot,
+               false);
 
   
   JS::RootedValue histogram(cx.GetJSContext());
@@ -47,23 +48,24 @@ TEST_F(TelemetryTestFixture, AutoCounter)
 
   
   JS::RootedValue sum(cx.GetJSContext());
-  GetProperty(cx.GetJSContext(), "sum", histogram,  &sum);
+  GetProperty(cx.GetJSContext(), "sum", histogram, &sum);
 
   
   uint32_t uSum = 0;
   JS::ToUint32(cx.GetJSContext(), sum, &uSum);
-  ASSERT_EQ(uSum, kExpectedValue) << "The histogram is not returning expected value";
+  ASSERT_EQ(uSum, kExpectedValue)
+      << "The histogram is not returning expected value";
 }
 
-TEST_F(TelemetryTestFixture, AutoCounterUnderflow)
-{
+TEST_F(TelemetryTestFixture, AutoCounterUnderflow) {
   const uint32_t kExpectedValue = 0;
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  const char* telemetryTestCountName = Telemetry::GetHistogramName(Telemetry::TELEMETRY_TEST_COUNT);
+  const char* telemetryTestCountName =
+      Telemetry::GetHistogramName(Telemetry::TELEMETRY_TEST_COUNT);
 
-  GetAndClearHistogram(cx.GetJSContext(), mTelemetry, NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"),
-                       false);
+  GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
+                       NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"), false);
 
   
   {
@@ -73,7 +75,8 @@ TEST_F(TelemetryTestFixture, AutoCounterUnderflow)
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
-  GetSnapshots(cx.GetJSContext(), mTelemetry, telemetryTestCountName, &snapshot, false);
+  GetSnapshots(cx.GetJSContext(), mTelemetry, telemetryTestCountName, &snapshot,
+               false);
 
   
   JS::RootedValue histogram(cx.GetJSContext());
@@ -81,23 +84,24 @@ TEST_F(TelemetryTestFixture, AutoCounterUnderflow)
 
   
   JS::RootedValue sum(cx.GetJSContext());
-  GetProperty(cx.GetJSContext(), "sum", histogram,  &sum);
+  GetProperty(cx.GetJSContext(), "sum", histogram, &sum);
 
   
   uint32_t uSum = 42;
   JS::ToUint32(cx.GetJSContext(), sum, &uSum);
-  ASSERT_EQ(uSum, kExpectedValue) << "The histogram is supposed to return 0 when an underflow occurs.";
+  ASSERT_EQ(uSum, kExpectedValue)
+      << "The histogram is supposed to return 0 when an underflow occurs.";
 }
 
-TEST_F(TelemetryTestFixture, RuntimeAutoCounter)
-{
+TEST_F(TelemetryTestFixture, RuntimeAutoCounter) {
   const uint32_t kExpectedValue = 100;
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  const char* telemetryTestCountName = Telemetry::GetHistogramName(Telemetry::TELEMETRY_TEST_COUNT);
+  const char* telemetryTestCountName =
+      Telemetry::GetHistogramName(Telemetry::TELEMETRY_TEST_COUNT);
 
-  GetAndClearHistogram(cx.GetJSContext(), mTelemetry, NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"),
-                       false);
+  GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
+                       NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"), false);
 
   
   {
@@ -114,7 +118,8 @@ TEST_F(TelemetryTestFixture, RuntimeAutoCounter)
   }
   
   JS::RootedValue snapshot(cx.GetJSContext());
-  GetSnapshots(cx.GetJSContext(), mTelemetry, telemetryTestCountName, &snapshot, false);
+  GetSnapshots(cx.GetJSContext(), mTelemetry, telemetryTestCountName, &snapshot,
+               false);
 
   
   JS::RootedValue histogram(cx.GetJSContext());
@@ -122,33 +127,36 @@ TEST_F(TelemetryTestFixture, RuntimeAutoCounter)
 
   
   JS::RootedValue sum(cx.GetJSContext());
-  GetProperty(cx.GetJSContext(), "sum", histogram,  &sum);
+  GetProperty(cx.GetJSContext(), "sum", histogram, &sum);
 
   
   uint32_t uSum = 0;
   JS::ToUint32(cx.GetJSContext(), sum, &uSum);
-  ASSERT_EQ(uSum, kExpectedValue) << "The histogram is not returning expected value";
+  ASSERT_EQ(uSum, kExpectedValue)
+      << "The histogram is not returning expected value";
 }
 
-TEST_F(TelemetryTestFixture, RuntimeAutoCounterUnderflow)
-{
+TEST_F(TelemetryTestFixture, RuntimeAutoCounterUnderflow) {
   const uint32_t kExpectedValue = 0;
   AutoJSContextWithGlobal cx(mCleanGlobal);
 
-  const char* telemetryTestCountName = Telemetry::GetHistogramName(Telemetry::TELEMETRY_TEST_COUNT);
+  const char* telemetryTestCountName =
+      Telemetry::GetHistogramName(Telemetry::TELEMETRY_TEST_COUNT);
 
-  GetAndClearHistogram(cx.GetJSContext(), mTelemetry, NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"),
-                       false);
+  GetAndClearHistogram(cx.GetJSContext(), mTelemetry,
+                       NS_LITERAL_CSTRING("TELEMETRY_TEST_COUNT"), false);
 
   
   {
-    Telemetry::RuntimeAutoCounter autoCounter(Telemetry::TELEMETRY_TEST_COUNT, kExpectedValue);
+    Telemetry::RuntimeAutoCounter autoCounter(Telemetry::TELEMETRY_TEST_COUNT,
+                                              kExpectedValue);
     autoCounter += -1;
   }
 
   
   JS::RootedValue snapshot(cx.GetJSContext());
-  GetSnapshots(cx.GetJSContext(), mTelemetry, telemetryTestCountName, &snapshot, false);
+  GetSnapshots(cx.GetJSContext(), mTelemetry, telemetryTestCountName, &snapshot,
+               false);
 
   
   JS::RootedValue histogram(cx.GetJSContext());
@@ -156,10 +164,11 @@ TEST_F(TelemetryTestFixture, RuntimeAutoCounterUnderflow)
 
   
   JS::RootedValue sum(cx.GetJSContext());
-  GetProperty(cx.GetJSContext(), "sum", histogram,  &sum);
+  GetProperty(cx.GetJSContext(), "sum", histogram, &sum);
 
   
   uint32_t uSum = 42;
   JS::ToUint32(cx.GetJSContext(), sum, &uSum);
-  ASSERT_EQ(uSum, kExpectedValue) << "The histogram is supposed to return 0 when an underflow occurs.";
+  ASSERT_EQ(uSum, kExpectedValue)
+      << "The histogram is supposed to return 0 when an underflow occurs.";
 }

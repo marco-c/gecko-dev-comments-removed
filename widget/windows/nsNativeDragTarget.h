@@ -11,8 +11,8 @@
 #include <shlobj.h>
 
 #ifndef IDropTargetHelper
-#include <shobjidl.h> 
-#undef LogSeverity // SetupAPI.h #defines this as DWORD
+#include <shobjidl.h>  
+#undef LogSeverity     // SetupAPI.h #defines this as DWORD
 #endif
 
 #include "mozilla/Attributes.h"
@@ -26,10 +26,9 @@ class nsIWidget;
 
 
 
-class nsNativeDragTarget final : public IDropTarget
-{
-public:
-  explicit nsNativeDragTarget(nsIWidget * aWidget);
+class nsNativeDragTarget final : public IDropTarget {
+ public:
+  explicit nsNativeDragTarget(nsIWidget* aWidget);
   ~nsNativeDragTarget();
 
   
@@ -44,8 +43,8 @@ public:
   
   
   
-  STDMETHODIMP DragEnter(LPDATAOBJECT pSource, DWORD grfKeyState,
-                         POINTL point, DWORD* pEffect);
+  STDMETHODIMP DragEnter(LPDATAOBJECT pSource, DWORD grfKeyState, POINTL point,
+                         DWORD* pEffect);
 
   
   
@@ -61,8 +60,8 @@ public:
   
   
   
-  STDMETHODIMP Drop(LPDATAOBJECT pSource, DWORD grfKeyState,
-                    POINTL point, DWORD* pEffect);
+  STDMETHODIMP Drop(LPDATAOBJECT pSource, DWORD grfKeyState, POINTL point,
+                    DWORD* pEffect);
   
 
 
@@ -70,10 +69,9 @@ public:
 
   static void DragImageChanged() { gDragImageChanged = true; }
 
-protected:
-
-  void GetGeckoDragAction(DWORD grfKeyState, LPDWORD pdwEffect, 
-                          uint32_t * aGeckoAction);
+ protected:
+  void GetGeckoDragAction(DWORD grfKeyState, LPDWORD pdwEffect,
+                          uint32_t* aGeckoAction);
   void ProcessDrag(mozilla::EventMessage aEventMessage, DWORD grfKeyState,
                    POINTL pt, DWORD* pdwEffect);
   void DispatchDragDropEvent(mozilla::EventMessage aEventMessage,
@@ -81,26 +79,23 @@ protected:
   void AddLinkSupportIfCanBeGenerated(LPDATAOBJECT aIDataSource);
 
   
-  ULONG            m_cRef;      
-  HWND             mHWnd;
-  DWORD            mEffectsAllowed;
-  DWORD            mEffectsPreferred;
-  bool             mTookOwnRef;
+  ULONG m_cRef;  
+  HWND mHWnd;
+  DWORD mEffectsAllowed;
+  DWORD mEffectsPreferred;
+  bool mTookOwnRef;
 
   
-  nsIWidget      * mWidget;
-  nsIDragService * mDragService;
+  nsIWidget* mWidget;
+  nsIDragService* mDragService;
   
-  IDropTargetHelper * GetDropTargetHelper();
+  IDropTargetHelper* GetDropTargetHelper();
 
-
-private:
+ private:
   
-  IDropTargetHelper * mDropTargetHelper;
+  IDropTargetHelper* mDropTargetHelper;
 
   static bool gDragImageChanged;
 };
 
-#endif 
-
-
+#endif  

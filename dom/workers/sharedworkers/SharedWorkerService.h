@@ -23,55 +23,46 @@ class RemoteWorkerData;
 class SharedWorkerManager;
 class SharedWorkerParent;
 
-class SharedWorkerService final
-{
-public:
+class SharedWorkerService final {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SharedWorkerService);
 
   
-  static already_AddRefed<SharedWorkerService>
-  GetOrCreate();
+  static already_AddRefed<SharedWorkerService> GetOrCreate();
 
   
   
-  static SharedWorkerService*
-  Get();
+  static SharedWorkerService* Get();
 
   
-  void
-  GetOrCreateWorkerManager(SharedWorkerParent* aActor,
-                           const RemoteWorkerData& aData,
-                           uint64_t aWindowID,
-                           const MessagePortIdentifier& aPortIdentifier);
+  void GetOrCreateWorkerManager(SharedWorkerParent* aActor,
+                                const RemoteWorkerData& aData,
+                                uint64_t aWindowID,
+                                const MessagePortIdentifier& aPortIdentifier);
 
-  void
-  GetOrCreateWorkerManagerOnMainThread(nsIEventTarget* aBackgroundEventTarget,
-                                       SharedWorkerParent* aActor,
-                                       const RemoteWorkerData& aData,
-                                       uint64_t aWindowID,
-                                       const MessagePortIdentifier& aPortIdentifier);
+  void GetOrCreateWorkerManagerOnMainThread(
+      nsIEventTarget* aBackgroundEventTarget, SharedWorkerParent* aActor,
+      const RemoteWorkerData& aData, uint64_t aWindowID,
+      const MessagePortIdentifier& aPortIdentifier);
 
   
-  void
-  RemoveWorkerManager(SharedWorkerManager* aManager);
+  void RemoveWorkerManager(SharedWorkerManager* aManager);
 
-  void
-  RemoveWorkerManagerOnMainThread(SharedWorkerManager* aManager);
+  void RemoveWorkerManagerOnMainThread(SharedWorkerManager* aManager);
 
-private:
+ private:
   SharedWorkerService();
   ~SharedWorkerService();
 
-  void
-  ErrorPropagationOnMainThread(nsIEventTarget* aBackgroundEventTarget,
-                               SharedWorkerParent* aActor,
-                               nsresult aError);
+  void ErrorPropagationOnMainThread(nsIEventTarget* aBackgroundEventTarget,
+                                    SharedWorkerParent* aActor,
+                                    nsresult aError);
 
   
   nsTArray<RefPtr<SharedWorkerManager>> mWorkerManagers;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -20,8 +20,7 @@ size_t LabeledEventQueue::sLabeledEventQueueCount;
 SchedulerGroup* LabeledEventQueue::sCurrentSchedulerGroup;
 
 LabeledEventQueue::LabeledEventQueue(EventPriority aPriority)
-  : mPriority(aPriority)
-{
+    : mPriority(aPriority) {
   
   
   
@@ -32,17 +31,14 @@ LabeledEventQueue::LabeledEventQueue(EventPriority aPriority)
   }
 }
 
-LabeledEventQueue::~LabeledEventQueue()
-{
+LabeledEventQueue::~LabeledEventQueue() {
   if (--sLabeledEventQueueCount == 0) {
     delete sSchedulerGroups;
     sSchedulerGroups = nullptr;
   }
 }
 
-static SchedulerGroup*
-GetSchedulerGroup(nsIRunnable* aEvent)
-{
+static SchedulerGroup* GetSchedulerGroup(nsIRunnable* aEvent) {
   RefPtr<SchedulerGroup::Runnable> groupRunnable = do_QueryObject(aEvent);
   if (!groupRunnable) {
     
@@ -52,9 +48,7 @@ GetSchedulerGroup(nsIRunnable* aEvent)
   return groupRunnable->Group();
 }
 
-static bool
-IsReadyToRun(nsIRunnable* aEvent, SchedulerGroup* aEventGroup)
-{
+static bool IsReadyToRun(nsIRunnable* aEvent, SchedulerGroup* aEventGroup) {
   if (!Scheduler::AnyEventRunning()) {
     return true;
   }
@@ -75,11 +69,9 @@ IsReadyToRun(nsIRunnable* aEvent, SchedulerGroup* aEventGroup)
   return labelable->IsReadyToRun();
 }
 
-void
-LabeledEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
-                            EventPriority aPriority,
-                            const MutexAutoLock& aProofOfLock)
-{
+void LabeledEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
+                                 EventPriority aPriority,
+                                 const MutexAutoLock& aProofOfLock) {
   MOZ_ASSERT(aPriority == mPriority);
 
   nsCOMPtr<nsIRunnable> event(aEvent);
@@ -105,7 +97,8 @@ LabeledEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
   mNumEvents++;
   epoch->mNumEvents++;
 
-  RunnableEpochQueue& queue = isLabeled ? group->GetQueue(aPriority) : mUnlabeled;
+  RunnableEpochQueue& queue =
+      isLabeled ? group->GetQueue(aPriority) : mUnlabeled;
   queue.Push(EpochQueueEntry(event.forget(), epoch->mEpochNumber));
 
   if (group && group->EnqueueEvent() == SchedulerGroup::NewlyQueued) {
@@ -119,9 +112,7 @@ LabeledEventQueue::PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
   }
 }
 
-void
-LabeledEventQueue::PopEpoch()
-{
+void LabeledEventQueue::PopEpoch() {
   Epoch& epoch = mEpochs.FirstElement();
   MOZ_ASSERT(epoch.mNumEvents > 0);
   if (epoch.mNumEvents == 1) {
@@ -135,9 +126,8 @@ LabeledEventQueue::PopEpoch()
 
 
 
- SchedulerGroup*
-LabeledEventQueue::NextSchedulerGroup(SchedulerGroup* aGroup)
-{
+ SchedulerGroup* LabeledEventQueue::NextSchedulerGroup(
+    SchedulerGroup* aGroup) {
   SchedulerGroup* result = aGroup->getNext();
   if (!result) {
     result = sSchedulerGroups->getFirst();
@@ -145,10 +135,8 @@ LabeledEventQueue::NextSchedulerGroup(SchedulerGroup* aGroup)
   return result;
 }
 
-already_AddRefed<nsIRunnable>
-LabeledEventQueue::GetEvent(EventPriority* aPriority,
-                            const MutexAutoLock& aProofOfLock)
-{
+already_AddRefed<nsIRunnable> LabeledEventQueue::GetEvent(
+    EventPriority* aPriority, const MutexAutoLock& aProofOfLock) {
   if (mEpochs.IsEmpty()) {
     return nullptr;
   }
@@ -175,8 +163,8 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
   
   
   if (TabChild::HasVisibleTabs() && mAvoidVisibleTabCount <= 0) {
-    for (auto iter = TabChild::GetVisibleTabs().ConstIter();
-         !iter.Done(); iter.Next()) {
+    for (auto iter = TabChild::GetVisibleTabs().ConstIter(); !iter.Done();
+         iter.Next()) {
       SchedulerGroup* group = iter.Get()->GetKey()->TabGroup();
       if (!group->isInList() || group == sCurrentSchedulerGroup) {
         continue;
@@ -205,6 +193,7 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
     RunnableEpochQueue& queue = group->GetQueue(mPriority);
 
     if (queue.IsEmpty()) {
+      
       
       group = NextSchedulerGroup(group);
       continue;
@@ -239,21 +228,15 @@ LabeledEventQueue::GetEvent(EventPriority* aPriority,
   return nullptr;
 }
 
-bool
-LabeledEventQueue::IsEmpty(const MutexAutoLock& aProofOfLock)
-{
+bool LabeledEventQueue::IsEmpty(const MutexAutoLock& aProofOfLock) {
   return mEpochs.IsEmpty();
 }
 
-size_t
-LabeledEventQueue::Count(const MutexAutoLock& aProofOfLock) const
-{
+size_t LabeledEventQueue::Count(const MutexAutoLock& aProofOfLock) const {
   return mNumEvents;
 }
 
-bool
-LabeledEventQueue::HasReadyEvent(const MutexAutoLock& aProofOfLock)
-{
+bool LabeledEventQueue::HasReadyEvent(const MutexAutoLock& aProofOfLock) {
   if (mEpochs.IsEmpty()) {
     return false;
   }

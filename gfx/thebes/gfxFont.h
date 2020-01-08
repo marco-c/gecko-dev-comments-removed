@@ -53,185 +53,181 @@ class gfxShapedWord;
 class gfxSkipChars;
 class gfxMathTable;
 
-#define FONT_MAX_SIZE                  2000.0
+#define FONT_MAX_SIZE 2000.0
 
-#define SMALL_CAPS_SCALE_FACTOR        0.8
+#define SMALL_CAPS_SCALE_FACTOR 0.8
 
 
 
 #ifdef XP_WIN
-#define OBLIQUE_SKEW_FACTOR  0.3f
+#define OBLIQUE_SKEW_FACTOR 0.3f
 #elif defined(MOZ_WIDGET_GTK)
-#define OBLIQUE_SKEW_FACTOR  0.2f
+#define OBLIQUE_SKEW_FACTOR 0.2f
 #else
-#define OBLIQUE_SKEW_FACTOR  0.25f
+#define OBLIQUE_SKEW_FACTOR 0.25f
 #endif
 
 struct gfxTextRunDrawCallbacks;
 
 namespace mozilla {
 class SVGContextPaint;
-} 
+}  
 
 struct gfxFontStyle {
-    typedef mozilla::FontStretch FontStretch;
-    typedef mozilla::FontSlantStyle FontSlantStyle;
-    typedef mozilla::FontWeight FontWeight;
+  typedef mozilla::FontStretch FontStretch;
+  typedef mozilla::FontSlantStyle FontSlantStyle;
+  typedef mozilla::FontWeight FontWeight;
 
-    gfxFontStyle();
-    gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight, FontStretch aStretch,
-                 gfxFloat aSize, nsAtom *aLanguage, bool aExplicitLanguage,
-                 float aSizeAdjust, bool aSystemFont,
-                 bool aPrinterFont,
-                 bool aWeightSynthesis, bool aStyleSynthesis,
-                 uint32_t aLanguageOverride);
+  gfxFontStyle();
+  gfxFontStyle(FontSlantStyle aStyle, FontWeight aWeight, FontStretch aStretch,
+               gfxFloat aSize, nsAtom* aLanguage, bool aExplicitLanguage,
+               float aSizeAdjust, bool aSystemFont, bool aPrinterFont,
+               bool aWeightSynthesis, bool aStyleSynthesis,
+               uint32_t aLanguageOverride);
 
-    
-    
-    
-    RefPtr<nsAtom> language;
+  
+  
+  
+  RefPtr<nsAtom> language;
 
-    
-    
-    
+  
+  
+  
 
-    
-    nsTArray<gfxFontFeature> featureSettings;
+  
+  nsTArray<gfxFontFeature> featureSettings;
 
-    
-    
-    
+  
+  
+  
 
-    
-    nsTArray<gfxAlternateValue> alternateValues;
+  
+  nsTArray<gfxAlternateValue> alternateValues;
 
-    
-    RefPtr<gfxFontFeatureValueSet> featureValueLookup;
+  
+  RefPtr<gfxFontFeatureValueSet> featureValueLookup;
 
-    
-    nsTArray<gfxFontVariation> variationSettings;
+  
+  nsTArray<gfxFontVariation> variationSettings;
 
-    
-    gfxFloat size;
+  
+  gfxFloat size;
 
-    
-    
-    
-    
-    float sizeAdjust;
+  
+  
+  
+  
+  float sizeAdjust;
 
-    
-    float baselineOffset;
+  
+  float baselineOffset;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    uint32_t languageOverride;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint32_t languageOverride;
 
-    
-    
-    nscolor fontSmoothingBackgroundColor;
+  
+  
+  nscolor fontSmoothingBackgroundColor;
 
-    
+  
 
-    
-    FontWeight weight;
+  
+  FontWeight weight;
 
-    
-    FontStretch stretch;
+  
+  FontStretch stretch;
 
-    
-    FontSlantStyle style;
+  
+  FontSlantStyle style;
 
-    
-    
-    
+  
+  
+  
 
-    
-    uint8_t variantCaps : 4; 
+  
+  uint8_t variantCaps : 4;  
 
-    
-    uint8_t variantSubSuper : 4; 
+  
+  uint8_t variantSubSuper : 4;  
 
-    
-    
-    
-    bool systemFont : 1;
+  
+  
+  
+  bool systemFont : 1;
 
-    
-    bool printerFont : 1;
+  
+  bool printerFont : 1;
 
-    
-    bool useGrayscaleAntialiasing : 1;
+  
+  bool useGrayscaleAntialiasing : 1;
 
-    
-    bool allowSyntheticWeight : 1;
-    bool allowSyntheticStyle : 1;
+  
+  bool allowSyntheticWeight : 1;
+  bool allowSyntheticStyle : 1;
 
-    
-    
-    bool noFallbackVariantFeatures : 1;
+  
+  
+  bool noFallbackVariantFeatures : 1;
 
-    
-    
-    bool explicitLanguage : 1;
+  
+  
+  bool explicitLanguage : 1;
 
-    
-    
-    gfxFloat GetAdjustedSize(gfxFloat aspect) const {
-        NS_ASSERTION(sizeAdjust >= 0.0, "Not meant to be called when sizeAdjust = -1.0");
-        gfxFloat adjustedSize = std::max(NS_round(size*(sizeAdjust/aspect)), 1.0);
-        return std::min(adjustedSize, FONT_MAX_SIZE);
-    }
+  
+  
+  gfxFloat GetAdjustedSize(gfxFloat aspect) const {
+    NS_ASSERTION(sizeAdjust >= 0.0,
+                 "Not meant to be called when sizeAdjust = -1.0");
+    gfxFloat adjustedSize =
+        std::max(NS_round(size * (sizeAdjust / aspect)), 1.0);
+    return std::min(adjustedSize, FONT_MAX_SIZE);
+  }
 
-    PLDHashNumber Hash() const;
+  PLDHashNumber Hash() const;
 
-    
-    
-    void AdjustForSubSuperscript(int32_t aAppUnitsPerDevPixel);
+  
+  
+  void AdjustForSubSuperscript(int32_t aAppUnitsPerDevPixel);
 
-    
-    bool NeedsSyntheticBold(gfxFontEntry* aFontEntry) const {
-        return weight.IsBold() &&
-               allowSyntheticWeight &&
-               !aFontEntry->SupportsBold();
-    }
+  
+  bool NeedsSyntheticBold(gfxFontEntry* aFontEntry) const {
+    return weight.IsBold() && allowSyntheticWeight &&
+           !aFontEntry->SupportsBold();
+  }
 
-    bool Equals(const gfxFontStyle& other) const {
-        return
-            (*reinterpret_cast<const uint64_t*>(&size) ==
-             *reinterpret_cast<const uint64_t*>(&other.size)) &&
-            (style == other.style) &&
-            (weight == other.weight) &&
-            (stretch == other.stretch) &&
-            (variantCaps == other.variantCaps) &&
-            (variantSubSuper == other.variantSubSuper) &&
-            (allowSyntheticWeight == other.allowSyntheticWeight) &&
-            (allowSyntheticStyle == other.allowSyntheticStyle) &&
-            (systemFont == other.systemFont) &&
-            (printerFont == other.printerFont) &&
-            (useGrayscaleAntialiasing == other.useGrayscaleAntialiasing) &&
-            (explicitLanguage == other.explicitLanguage) &&
-            (language == other.language) &&
-            (baselineOffset == other.baselineOffset) &&
-            (*reinterpret_cast<const uint32_t*>(&sizeAdjust) ==
-             *reinterpret_cast<const uint32_t*>(&other.sizeAdjust)) &&
-            (featureSettings == other.featureSettings) &&
-            (alternateValues == other.alternateValues) &&
-            (featureValueLookup == other.featureValueLookup) &&
-            (variationSettings == other.variationSettings) &&
-            (languageOverride == other.languageOverride) &&
-            (fontSmoothingBackgroundColor == other.fontSmoothingBackgroundColor);
-    }
+  bool Equals(const gfxFontStyle& other) const {
+    return (*reinterpret_cast<const uint64_t*>(&size) ==
+            *reinterpret_cast<const uint64_t*>(&other.size)) &&
+           (style == other.style) && (weight == other.weight) &&
+           (stretch == other.stretch) && (variantCaps == other.variantCaps) &&
+           (variantSubSuper == other.variantSubSuper) &&
+           (allowSyntheticWeight == other.allowSyntheticWeight) &&
+           (allowSyntheticStyle == other.allowSyntheticStyle) &&
+           (systemFont == other.systemFont) &&
+           (printerFont == other.printerFont) &&
+           (useGrayscaleAntialiasing == other.useGrayscaleAntialiasing) &&
+           (explicitLanguage == other.explicitLanguage) &&
+           (language == other.language) &&
+           (baselineOffset == other.baselineOffset) &&
+           (*reinterpret_cast<const uint32_t*>(&sizeAdjust) ==
+            *reinterpret_cast<const uint32_t*>(&other.sizeAdjust)) &&
+           (featureSettings == other.featureSettings) &&
+           (alternateValues == other.alternateValues) &&
+           (featureValueLookup == other.featureValueLookup) &&
+           (variationSettings == other.variationSettings) &&
+           (languageOverride == other.languageOverride) &&
+           (fontSmoothingBackgroundColor == other.fontSmoothingBackgroundColor);
+  }
 };
-
 
 
 
@@ -259,241 +255,216 @@ struct gfxFontStyle {
 
 
 struct FontCacheSizes {
-    FontCacheSizes()
-        : mFontInstances(0), mShapedWords(0)
-    { }
+  FontCacheSizes() : mFontInstances(0), mShapedWords(0) {}
 
-    size_t mFontInstances; 
-    size_t mShapedWords; 
+  size_t mFontInstances;  
+  size_t mShapedWords;    
 };
 
 class gfxFontCacheExpirationTracker
-    : public ExpirationTrackerImpl<gfxFont, 3,
-                                   ::detail::PlaceholderLock,
-                                   ::detail::PlaceholderAutoLock>
-{
-protected:
-    typedef ::detail::PlaceholderLock Lock;
-    typedef ::detail::PlaceholderAutoLock AutoLock;
+    : public ExpirationTrackerImpl<gfxFont, 3, ::detail::PlaceholderLock,
+                                   ::detail::PlaceholderAutoLock> {
+ protected:
+  typedef ::detail::PlaceholderLock Lock;
+  typedef ::detail::PlaceholderAutoLock AutoLock;
 
-    Lock mLock;
+  Lock mLock;
 
-    AutoLock FakeLock()
-    {
-        return AutoLock(mLock);
-    }
+  AutoLock FakeLock() { return AutoLock(mLock); }
 
-    Lock& GetMutex() override
-    {
-        mozilla::AssertIsMainThreadOrServoFontMetricsLocked();
-        return mLock;
-    }
+  Lock& GetMutex() override {
+    mozilla::AssertIsMainThreadOrServoFontMetricsLocked();
+    return mLock;
+  }
 
-public:
-    enum { FONT_TIMEOUT_SECONDS = 10 };
+ public:
+  enum { FONT_TIMEOUT_SECONDS = 10 };
 
-    gfxFontCacheExpirationTracker(nsIEventTarget* aEventTarget)
-        : ExpirationTrackerImpl<gfxFont, 3, Lock, AutoLock>(
-            FONT_TIMEOUT_SECONDS * 1000, "gfxFontCache", aEventTarget)
-    {
-    }
+  gfxFontCacheExpirationTracker(nsIEventTarget* aEventTarget)
+      : ExpirationTrackerImpl<gfxFont, 3, Lock, AutoLock>(
+            FONT_TIMEOUT_SECONDS * 1000, "gfxFontCache", aEventTarget) {}
 };
 
 class gfxFontCache final : private gfxFontCacheExpirationTracker {
-public:
-    enum { SHAPED_WORD_TIMEOUT_SECONDS = 60 };
+ public:
+  enum { SHAPED_WORD_TIMEOUT_SECONDS = 60 };
 
-    explicit gfxFontCache(nsIEventTarget* aEventTarget);
-    ~gfxFontCache();
+  explicit gfxFontCache(nsIEventTarget* aEventTarget);
+  ~gfxFontCache();
+
+  
+
+
+
+  static gfxFontCache* GetCache() { return gGlobalCache; }
+
+  static nsresult Init();
+  
+  static void Shutdown();
+
+  
+  
+  gfxFont* Lookup(const gfxFontEntry* aFontEntry, const gfxFontStyle* aStyle,
+                  const gfxCharacterMap* aUnicodeRangeMap);
+
+  
+  
+  
+  
+  void AddNew(gfxFont* aFont);
+
+  
+  
+  
+  void NotifyReleased(gfxFont* aFont);
+
+  
+  
+  
+  void Flush() {
+    mFonts.Clear();
+    AgeAllGenerations();
+  }
+
+  void FlushShapedWordCaches();
+  void NotifyGlyphsChanged();
+
+  void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                              FontCacheSizes* aSizes) const;
+  void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                              FontCacheSizes* aSizes) const;
+
+  void AgeAllGenerations() { AgeAllGenerationsLocked(FakeLock()); }
+
+  void RemoveObject(gfxFont* aFont) { RemoveObjectLocked(aFont, FakeLock()); }
+
+ protected:
+  class MemoryReporter final : public nsIMemoryReporter {
+    ~MemoryReporter() {}
+
+   public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIMEMORYREPORTER
+  };
+
+  
+  class Observer final : public nsIObserver {
+    ~Observer() {}
+
+   public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIOBSERVER
+  };
+
+  nsresult AddObject(gfxFont* aFont) {
+    return AddObjectLocked(aFont, FakeLock());
+  }
+
+  
+  
+  virtual void NotifyExpiredLocked(gfxFont* aFont, const AutoLock&) override {
+    NotifyExpired(aFont);
+  }
+
+  void NotifyExpired(gfxFont* aFont);
+
+  void DestroyFont(gfxFont* aFont);
+
+  static gfxFontCache* gGlobalCache;
+
+  struct MOZ_STACK_CLASS Key {
+    const gfxFontEntry* mFontEntry;
+    const gfxFontStyle* mStyle;
+    const gfxCharacterMap* mUnicodeRangeMap;
+    Key(const gfxFontEntry* aFontEntry, const gfxFontStyle* aStyle,
+        const gfxCharacterMap* aUnicodeRangeMap)
+        : mFontEntry(aFontEntry),
+          mStyle(aStyle),
+          mUnicodeRangeMap(aUnicodeRangeMap) {}
+  };
+
+  class HashEntry : public PLDHashEntryHdr {
+   public:
+    typedef const Key& KeyType;
+    typedef const Key* KeyTypePointer;
 
     
+    
+    explicit HashEntry(KeyTypePointer aStr) : mFont(nullptr) {}
+    HashEntry(const HashEntry& toCopy) : mFont(toCopy.mFont) {}
+    ~HashEntry() {}
 
-
-
-    static gfxFontCache* GetCache() {
-        return gGlobalCache;
+    bool KeyEquals(const KeyTypePointer aKey) const;
+    static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
+    static PLDHashNumber HashKey(const KeyTypePointer aKey) {
+      return mozilla::HashGeneric(aKey->mStyle->Hash(), aKey->mFontEntry,
+                                  aKey->mUnicodeRangeMap);
     }
-
-    static nsresult Init();
-    
-    static void Shutdown();
-
-    
-    
-    gfxFont* Lookup(const gfxFontEntry* aFontEntry,
-                    const gfxFontStyle* aStyle,
-                    const gfxCharacterMap* aUnicodeRangeMap);
+    enum { ALLOW_MEMMOVE = true };
 
     
     
     
     
-    void AddNew(gfxFont *aFont);
+    gfxFont* MOZ_UNSAFE_REF("tracking for deferred deletion") mFont;
+  };
 
-    
-    
-    
-    void NotifyReleased(gfxFont *aFont);
+  nsTHashtable<HashEntry> mFonts;
 
-    
-    
-    
-    void Flush() {
-        mFonts.Clear();
-        AgeAllGenerations();
-    }
-
-    void FlushShapedWordCaches();
-    void NotifyGlyphsChanged();
-
-    void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                FontCacheSizes* aSizes) const;
-    void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                FontCacheSizes* aSizes) const;
-
-    void AgeAllGenerations()
-    {
-        AgeAllGenerationsLocked(FakeLock());
-    }
-
-    void RemoveObject(gfxFont* aFont)
-    {
-        RemoveObjectLocked(aFont, FakeLock());
-    }
-
-protected:
-    class MemoryReporter final : public nsIMemoryReporter
-    {
-        ~MemoryReporter() {}
-    public:
-        NS_DECL_ISUPPORTS
-        NS_DECL_NSIMEMORYREPORTER
-    };
-
-    
-    class Observer final
-        : public nsIObserver
-    {
-        ~Observer() {}
-    public:
-        NS_DECL_ISUPPORTS
-        NS_DECL_NSIOBSERVER
-    };
-
-    nsresult AddObject(gfxFont* aFont)
-    {
-        return AddObjectLocked(aFont, FakeLock());
-    }
-
-    
-    
-    virtual void NotifyExpiredLocked(gfxFont* aFont, const AutoLock&) override
-    {
-        NotifyExpired(aFont);
-    }
-
-    void NotifyExpired(gfxFont* aFont);
-
-    void DestroyFont(gfxFont *aFont);
-
-    static gfxFontCache *gGlobalCache;
-
-    struct MOZ_STACK_CLASS Key {
-        const gfxFontEntry* mFontEntry;
-        const gfxFontStyle* mStyle;
-        const gfxCharacterMap* mUnicodeRangeMap;
-        Key(const gfxFontEntry* aFontEntry, const gfxFontStyle* aStyle,
-            const gfxCharacterMap* aUnicodeRangeMap)
-            : mFontEntry(aFontEntry), mStyle(aStyle),
-              mUnicodeRangeMap(aUnicodeRangeMap)
-        {}
-    };
-
-    class HashEntry : public PLDHashEntryHdr {
-    public:
-        typedef const Key& KeyType;
-        typedef const Key* KeyTypePointer;
-
-        
-        
-        explicit HashEntry(KeyTypePointer aStr) : mFont(nullptr) { }
-        HashEntry(const HashEntry& toCopy) : mFont(toCopy.mFont) { }
-        ~HashEntry() { }
-
-        bool KeyEquals(const KeyTypePointer aKey) const;
-        static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
-        static PLDHashNumber HashKey(const KeyTypePointer aKey) {
-            return mozilla::HashGeneric(aKey->mStyle->Hash(), aKey->mFontEntry,
-                                        aKey->mUnicodeRangeMap);
-        }
-        enum { ALLOW_MEMMOVE = true };
-
-        
-        
-        
-        
-        gfxFont* MOZ_UNSAFE_REF("tracking for deferred deletion") mFont;
-    };
-
-    nsTHashtable<HashEntry> mFonts;
-
-    static void WordCacheExpirationTimerCallback(nsITimer* aTimer, void* aCache);
-    nsCOMPtr<nsITimer>      mWordCacheExpirationTimer;
+  static void WordCacheExpirationTimerCallback(nsITimer* aTimer, void* aCache);
+  nsCOMPtr<nsITimer> mWordCacheExpirationTimer;
 };
 
 class gfxTextPerfMetrics {
-public:
+ public:
+  struct TextCounts {
+    uint32_t numContentTextRuns;
+    uint32_t numChromeTextRuns;
+    uint32_t numChars;
+    uint32_t maxTextRunLen;
+    uint32_t wordCacheSpaceRules;
+    uint32_t wordCacheLong;
+    uint32_t wordCacheHit;
+    uint32_t wordCacheMiss;
+    uint32_t fallbackPrefs;
+    uint32_t fallbackSystem;
+    uint32_t textrunConst;
+    uint32_t textrunDestr;
+    uint32_t genericLookups;
+  };
 
-    struct TextCounts {
-        uint32_t    numContentTextRuns;
-        uint32_t    numChromeTextRuns;
-        uint32_t    numChars;
-        uint32_t    maxTextRunLen;
-        uint32_t    wordCacheSpaceRules;
-        uint32_t    wordCacheLong;
-        uint32_t    wordCacheHit;
-        uint32_t    wordCacheMiss;
-        uint32_t    fallbackPrefs;
-        uint32_t    fallbackSystem;
-        uint32_t    textrunConst;
-        uint32_t    textrunDestr;
-        uint32_t    genericLookups;
-    };
+  uint32_t reflowCount;
 
-    uint32_t reflowCount;
+  
+  TextCounts current;
 
-    
-    TextCounts current;
+  
+  TextCounts cumulative;
 
-    
-    TextCounts cumulative;
+  gfxTextPerfMetrics() { memset(this, 0, sizeof(gfxTextPerfMetrics)); }
 
-    gfxTextPerfMetrics() {
-        memset(this, 0, sizeof(gfxTextPerfMetrics));
+  
+  void Accumulate() {
+    if (current.numChars == 0) {
+      return;
     }
-
-    
-    void Accumulate() {
-        if (current.numChars == 0) {
-            return;
-        }
-        cumulative.numContentTextRuns += current.numContentTextRuns;
-        cumulative.numChromeTextRuns += current.numChromeTextRuns;
-        cumulative.numChars += current.numChars;
-        if (current.maxTextRunLen > cumulative.maxTextRunLen) {
-            cumulative.maxTextRunLen = current.maxTextRunLen;
-        }
-        cumulative.wordCacheSpaceRules += current.wordCacheSpaceRules;
-        cumulative.wordCacheLong += current.wordCacheLong;
-        cumulative.wordCacheHit += current.wordCacheHit;
-        cumulative.wordCacheMiss += current.wordCacheMiss;
-        cumulative.fallbackPrefs += current.fallbackPrefs;
-        cumulative.fallbackSystem += current.fallbackSystem;
-        cumulative.textrunConst += current.textrunConst;
-        cumulative.textrunDestr += current.textrunDestr;
-        cumulative.genericLookups += current.genericLookups;
-        memset(&current, 0, sizeof(current));
+    cumulative.numContentTextRuns += current.numContentTextRuns;
+    cumulative.numChromeTextRuns += current.numChromeTextRuns;
+    cumulative.numChars += current.numChars;
+    if (current.maxTextRunLen > cumulative.maxTextRunLen) {
+      cumulative.maxTextRunLen = current.maxTextRunLen;
     }
+    cumulative.wordCacheSpaceRules += current.wordCacheSpaceRules;
+    cumulative.wordCacheLong += current.wordCacheLong;
+    cumulative.wordCacheHit += current.wordCacheHit;
+    cumulative.wordCacheMiss += current.wordCacheMiss;
+    cumulative.fallbackPrefs += current.fallbackPrefs;
+    cumulative.fallbackSystem += current.fallbackSystem;
+    cumulative.textrunConst += current.textrunConst;
+    cumulative.textrunDestr += current.textrunDestr;
+    cumulative.genericLookups += current.genericLookups;
+    memset(&current, 0, sizeof(current));
+  }
 };
 
 namespace mozilla {
@@ -502,76 +473,73 @@ namespace gfx {
 
 
 enum class ShapedTextFlags : uint16_t {
-    
+  
 
 
-    TEXT_IS_RTL                  = 0x0001,
-    
-
-
-
-    TEXT_ENABLE_SPACING          = 0x0002,
-    
+  TEXT_IS_RTL = 0x0001,
+  
 
 
 
-    TEXT_IS_8BIT                 = 0x0004,
-    
+  TEXT_ENABLE_SPACING = 0x0002,
+  
 
 
 
-    TEXT_ENABLE_HYPHEN_BREAKS    = 0x0008,
-    
+  TEXT_IS_8BIT = 0x0004,
+  
 
 
 
-
-
-
-    TEXT_NEED_BOUNDING_BOX       = 0x0010,
-    
-
-
-
-    TEXT_DISABLE_OPTIONAL_LIGATURES = 0x0020,
-    
+  TEXT_ENABLE_HYPHEN_BREAKS = 0x0008,
+  
 
 
 
 
-    TEXT_OPTIMIZE_SPEED          = 0x0040,
-    
+
+
+  TEXT_NEED_BOUNDING_BOX = 0x0010,
+  
 
 
 
-    TEXT_HIDE_CONTROL_CHARACTERS = 0x0080,
-
-    
-
-
-
-
-    TEXT_TRAILING_ARABICCHAR     = 0x0100,
-    
+  TEXT_DISABLE_OPTIONAL_LIGATURES = 0x0020,
+  
 
 
 
 
-    TEXT_INCOMING_ARABICCHAR     = 0x0200,
-
-    
-
-
-    TEXT_USE_MATH_SCRIPT         = 0x0400,
-
-    
+  TEXT_OPTIMIZE_SPEED = 0x0040,
+  
 
 
 
-    
+  TEXT_HIDE_CONTROL_CHARACTERS = 0x0080,
+
+  
 
 
 
+
+  TEXT_TRAILING_ARABICCHAR = 0x0100,
+  
+
+
+
+
+  TEXT_INCOMING_ARABICCHAR = 0x0200,
+
+  
+
+
+  TEXT_USE_MATH_SCRIPT = 0x0400,
+
+  
+
+
+
+  
 
 
 
@@ -586,77 +554,78 @@ enum class ShapedTextFlags : uint16_t {
 
 
 
-    TEXT_ORIENT_MASK                    = 0x7000,
-    TEXT_ORIENT_HORIZONTAL              = 0x0000,
-    TEXT_ORIENT_VERTICAL_UPRIGHT        = 0x1000,
-    TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT = 0x2000,
-    TEXT_ORIENT_VERTICAL_MIXED          = 0x3000,
-    TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT  = 0x4000,
+
+
+
+  TEXT_ORIENT_MASK = 0x7000,
+  TEXT_ORIENT_HORIZONTAL = 0x0000,
+  TEXT_ORIENT_VERTICAL_UPRIGHT = 0x1000,
+  TEXT_ORIENT_VERTICAL_SIDEWAYS_RIGHT = 0x2000,
+  TEXT_ORIENT_VERTICAL_MIXED = 0x3000,
+  TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT = 0x4000,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ShapedTextFlags)
-} 
-} 
+}  
+}  
 
 class gfxTextRunFactory {
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxTextRunFactory)
+
+ public:
+  typedef mozilla::gfx::DrawTarget DrawTarget;
+
+  
+
+
+  struct MOZ_STACK_CLASS Parameters {
     
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(gfxTextRunFactory)
-
-public:
-    typedef mozilla::gfx::DrawTarget DrawTarget;
-
+    DrawTarget* mDrawTarget;
     
-
-
-    struct MOZ_STACK_CLASS Parameters {
-        
-        DrawTarget   *mDrawTarget;
-        
-        void         *mUserData;
-        
-        
-        
-        gfxSkipChars *mSkipChars;
-        
-        
-        uint32_t     *mInitialBreaks;
-        uint32_t      mInitialBreakCount;
-        
-        int32_t       mAppUnitsPerDevUnit;
-    };
-
-protected:
+    void* mUserData;
     
-    virtual ~gfxTextRunFactory();
+    
+    
+    gfxSkipChars* mSkipChars;
+    
+    
+    uint32_t* mInitialBreaks;
+    uint32_t mInitialBreakCount;
+    
+    int32_t mAppUnitsPerDevUnit;
+  };
+
+ protected:
+  
+  virtual ~gfxTextRunFactory();
 };
 
 struct gfxTextRange {
-    enum class MatchType : uint16_t {
-        
-        
-        
-        kGenericMask    = 0x00ff,
+  enum class MatchType : uint16_t {
+    
+    
+    
+    kGenericMask = 0x00ff,
 
-        
-        
-        kFontGroup      = 0x0100,
-        kPrefsFallback  = 0x0200,
-        kSystemFallback = 0x0400
-    };
-    gfxTextRange(uint32_t aStart, uint32_t aEnd,
-                 gfxFont* aFont, MatchType aMatchType,
-                 mozilla::gfx::ShapedTextFlags aOrientation)
-        : start(aStart),
-          end(aEnd),
-          font(aFont),
-          matchType(aMatchType),
-          orientation(aOrientation)
-    { }
-    uint32_t Length() const { return end - start; }
-    uint32_t start, end;
-    RefPtr<gfxFont> font;
-    MatchType matchType;
-    mozilla::gfx::ShapedTextFlags orientation;
+    
+    
+    kFontGroup = 0x0100,
+    kPrefsFallback = 0x0200,
+    kSystemFallback = 0x0400
+  };
+  gfxTextRange(uint32_t aStart, uint32_t aEnd, gfxFont* aFont,
+               MatchType aMatchType, mozilla::gfx::ShapedTextFlags aOrientation)
+      : start(aStart),
+        end(aEnd),
+        font(aFont),
+        matchType(aMatchType),
+        orientation(aOrientation) {}
+  uint32_t Length() const { return end - start; }
+  uint32_t start, end;
+  RefPtr<gfxFont> font;
+  MatchType matchType;
+  mozilla::gfx::ShapedTextFlags orientation;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxTextRange::MatchType)
@@ -680,52 +649,39 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxTextRange::MatchType)
 
 
 class gfxFontShaper {
-public:
-    typedef mozilla::gfx::DrawTarget DrawTarget;
-    typedef mozilla::unicode::Script Script;
+ public:
+  typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::unicode::Script Script;
 
-    enum class RoundingFlags : uint8_t {
-        kRoundX = 0x01,
-        kRoundY = 0x02
-    };
+  enum class RoundingFlags : uint8_t { kRoundX = 0x01, kRoundY = 0x02 };
 
-    explicit gfxFontShaper(gfxFont *aFont)
-        : mFont(aFont)
-    {
-        NS_ASSERTION(aFont, "shaper requires a valid font!");
-    }
+  explicit gfxFontShaper(gfxFont* aFont) : mFont(aFont) {
+    NS_ASSERTION(aFont, "shaper requires a valid font!");
+  }
 
-    virtual ~gfxFontShaper() { }
+  virtual ~gfxFontShaper() {}
 
-    
-    
-    
-    virtual bool ShapeText(DrawTarget     *aDrawTarget,
-                           const char16_t *aText,
-                           uint32_t        aOffset,
-                           uint32_t        aLength,
-                           Script          aScript,
-                           bool            aVertical,
-                           RoundingFlags   aRounding,
-                           gfxShapedText  *aShapedText) = 0;
+  
+  
+  
+  virtual bool ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
+                         uint32_t aOffset, uint32_t aLength, Script aScript,
+                         bool aVertical, RoundingFlags aRounding,
+                         gfxShapedText* aShapedText) = 0;
 
-    gfxFont *GetFont() const { return mFont; }
+  gfxFont* GetFont() const { return mFont; }
 
-    static void
-    MergeFontFeatures(const gfxFontStyle *aStyle,
-                      const nsTArray<gfxFontFeature>& aFontFeatures,
-                      bool aDisableLigatures,
-                      const nsACString& aFamilyName,
-                      bool aAddSmallCaps,
-                      void (*aHandleFeature)(const uint32_t&,
-                                             uint32_t&, void*),
-                      void* aHandleFeatureData);
+  static void MergeFontFeatures(
+      const gfxFontStyle* aStyle, const nsTArray<gfxFontFeature>& aFontFeatures,
+      bool aDisableLigatures, const nsACString& aFamilyName, bool aAddSmallCaps,
+      void (*aHandleFeature)(const uint32_t&, uint32_t&, void*),
+      void* aHandleFeatureData);
 
-protected:
-    
-    
-    
-    gfxFont* MOZ_NON_OWNING_REF mFont;
+ protected:
+  
+  
+  
+  gfxFont* MOZ_NON_OWNING_REF mFont;
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontShaper::RoundingFlags)
@@ -749,21 +705,19 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(gfxFontShaper::RoundingFlags)
 
 
 
-class gfxShapedText
-{
-public:
-    typedef mozilla::unicode::Script Script;
+class gfxShapedText {
+ public:
+  typedef mozilla::unicode::Script Script;
 
-    gfxShapedText(uint32_t aLength, mozilla::gfx::ShapedTextFlags aFlags,
-                  int32_t aAppUnitsPerDevUnit)
-        : mLength(aLength)
-        , mFlags(aFlags)
-        , mAppUnitsPerDevUnit(aAppUnitsPerDevUnit)
-    { }
+  gfxShapedText(uint32_t aLength, mozilla::gfx::ShapedTextFlags aFlags,
+                int32_t aAppUnitsPerDevUnit)
+      : mLength(aLength),
+        mFlags(aFlags),
+        mAppUnitsPerDevUnit(aAppUnitsPerDevUnit) {}
 
-    virtual ~gfxShapedText() { }
+  virtual ~gfxShapedText() {}
 
-    
+  
 
 
 
@@ -778,499 +732,477 @@ public:
 
 
 
-    class CompressedGlyph {
-    public:
-        enum {
-            
-            
-            
-            
-            
-            FLAG_IS_SIMPLE_GLYPH  = 0x80000000U,
+  class CompressedGlyph {
+   public:
+    enum {
+      
+      
+      
+      
+      
+      FLAG_IS_SIMPLE_GLYPH = 0x80000000U,
 
-            
-            
-            
-            FLAGS_CAN_BREAK_BEFORE = 0x60000000U,
+      
+      
+      
+      FLAGS_CAN_BREAK_BEFORE = 0x60000000U,
 
-            FLAGS_CAN_BREAK_SHIFT = 29,
-            FLAG_BREAK_TYPE_NONE   = 0,
-            FLAG_BREAK_TYPE_NORMAL = 1,
-            FLAG_BREAK_TYPE_HYPHEN = 2,
+      FLAGS_CAN_BREAK_SHIFT = 29,
+      FLAG_BREAK_TYPE_NONE = 0,
+      FLAG_BREAK_TYPE_NORMAL = 1,
+      FLAG_BREAK_TYPE_HYPHEN = 2,
 
-            FLAG_CHAR_IS_SPACE     = 0x10000000U,
+      FLAG_CHAR_IS_SPACE = 0x10000000U,
 
-            
-            ADVANCE_MASK  = 0x0FFF0000U,
-            ADVANCE_SHIFT = 16,
+      
+      ADVANCE_MASK = 0x0FFF0000U,
+      ADVANCE_SHIFT = 16,
 
-            GLYPH_MASK = 0x0000FFFFU,
+      GLYPH_MASK = 0x0000FFFFU,
 
-            
-            
-            
+      
+      
+      
 
-            
-            
-            
-            
-            
-            FLAG_NOT_MISSING              = 0x01,
-            FLAG_NOT_CLUSTER_START        = 0x02,
-            FLAG_NOT_LIGATURE_GROUP_START = 0x04,
+      
+      
+      
+      
+      
+      FLAG_NOT_MISSING = 0x01,
+      FLAG_NOT_CLUSTER_START = 0x02,
+      FLAG_NOT_LIGATURE_GROUP_START = 0x04,
 
-            FLAG_CHAR_IS_TAB              = 0x08,
-            FLAG_CHAR_IS_NEWLINE          = 0x10,
-            
-            
-            
-            
-            FLAG_CHAR_NO_EMPHASIS_MARK    = 0x20,
-            
-            
-            
-            FLAG_CHAR_IS_FORMATTING_CONTROL = 0x40,
+      FLAG_CHAR_IS_TAB = 0x08,
+      FLAG_CHAR_IS_NEWLINE = 0x10,
+      
+      
+      
+      
+      FLAG_CHAR_NO_EMPHASIS_MARK = 0x20,
+      
+      
+      
+      FLAG_CHAR_IS_FORMATTING_CONTROL = 0x40,
 
-            CHAR_TYPE_FLAGS_MASK          = 0x78,
+      CHAR_TYPE_FLAGS_MASK = 0x78,
 
-            GLYPH_COUNT_MASK = 0x00FFFF00U,
-            GLYPH_COUNT_SHIFT = 8
-        };
-
-        
-        
-        
-        
-
-        
-        static bool IsSimpleGlyphID(uint32_t aGlyph) {
-            return (aGlyph & GLYPH_MASK) == aGlyph;
-        }
-        
-        
-        static bool IsSimpleAdvance(uint32_t aAdvance) {
-            return (aAdvance & (ADVANCE_MASK >> ADVANCE_SHIFT)) == aAdvance;
-        }
-
-        bool IsSimpleGlyph() const { return (mValue & FLAG_IS_SIMPLE_GLYPH) != 0; }
-        uint32_t GetSimpleAdvance() const { return (mValue & ADVANCE_MASK) >> ADVANCE_SHIFT; }
-        uint32_t GetSimpleGlyph() const { return mValue & GLYPH_MASK; }
-
-        bool IsMissing() const { return (mValue & (FLAG_NOT_MISSING|FLAG_IS_SIMPLE_GLYPH)) == 0; }
-        bool IsClusterStart() const {
-            return (mValue & FLAG_IS_SIMPLE_GLYPH) || !(mValue & FLAG_NOT_CLUSTER_START);
-        }
-        bool IsLigatureGroupStart() const {
-            return (mValue & FLAG_IS_SIMPLE_GLYPH) || !(mValue & FLAG_NOT_LIGATURE_GROUP_START);
-        }
-        bool IsLigatureContinuation() const {
-            return (mValue & FLAG_IS_SIMPLE_GLYPH) == 0 &&
-                (mValue & (FLAG_NOT_LIGATURE_GROUP_START | FLAG_NOT_MISSING)) ==
-                    (FLAG_NOT_LIGATURE_GROUP_START | FLAG_NOT_MISSING);
-        }
-
-        
-        
-        
-        bool CharIsSpace() const {
-            return (mValue & FLAG_CHAR_IS_SPACE) != 0;
-        }
-
-        bool CharIsTab() const {
-            return !IsSimpleGlyph() && (mValue & FLAG_CHAR_IS_TAB) != 0;
-        }
-        bool CharIsNewline() const {
-            return !IsSimpleGlyph() && (mValue & FLAG_CHAR_IS_NEWLINE) != 0;
-        }
-        bool CharMayHaveEmphasisMark() const {
-            return !CharIsSpace() &&
-                (IsSimpleGlyph() || !(mValue & FLAG_CHAR_NO_EMPHASIS_MARK));
-        }
-        bool CharIsFormattingControl() const {
-            return !IsSimpleGlyph() &&
-                (mValue & FLAG_CHAR_IS_FORMATTING_CONTROL) != 0;
-        }
-
-        uint32_t CharTypeFlags() const {
-            return IsSimpleGlyph() ? 0 : (mValue & CHAR_TYPE_FLAGS_MASK);
-        }
-
-        void SetClusterStart(bool aIsClusterStart) {
-            NS_ASSERTION(!IsSimpleGlyph(),
-                         "can't call SetClusterStart on simple glyphs");
-            if (aIsClusterStart) {
-                mValue &= ~FLAG_NOT_CLUSTER_START;
-            } else {
-                mValue |= FLAG_NOT_CLUSTER_START;
-            }
-        }
-
-        uint8_t CanBreakBefore() const {
-            return (mValue & FLAGS_CAN_BREAK_BEFORE) >> FLAGS_CAN_BREAK_SHIFT;
-        }
-        
-        uint32_t SetCanBreakBefore(uint8_t aCanBreakBefore) {
-            NS_ASSERTION(aCanBreakBefore <= 2,
-                         "Bogus break-before value!");
-            uint32_t breakMask = (uint32_t(aCanBreakBefore) << FLAGS_CAN_BREAK_SHIFT);
-            uint32_t toggle = breakMask ^ (mValue & FLAGS_CAN_BREAK_BEFORE);
-            mValue ^= toggle;
-            return toggle;
-        }
-
-        
-        
-        static CompressedGlyph
-        MakeSimpleGlyph(uint32_t aAdvanceAppUnits, uint32_t aGlyph) {
-            NS_ASSERTION(IsSimpleAdvance(aAdvanceAppUnits), "Advance overflow");
-            NS_ASSERTION(IsSimpleGlyphID(aGlyph), "Glyph overflow");
-            CompressedGlyph g;
-            g.mValue = FLAG_IS_SIMPLE_GLYPH |
-                       (aAdvanceAppUnits << ADVANCE_SHIFT) |
-                       aGlyph;
-            return g;
-        }
-
-        
-        
-        CompressedGlyph& SetSimpleGlyph(uint32_t aAdvanceAppUnits,
-                                        uint32_t aGlyph) {
-            NS_ASSERTION(!CharTypeFlags(), "Char type flags lost");
-            mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_CHAR_IS_SPACE)) |
-                MakeSimpleGlyph(aAdvanceAppUnits, aGlyph).mValue;
-            return *this;
-        }
-
-        
-        
-        static CompressedGlyph
-        MakeComplex(bool aClusterStart, bool aLigatureStart,
-                    uint32_t aGlyphCount) {
-            CompressedGlyph g;
-            g.mValue = FLAG_NOT_MISSING |
-                       (aClusterStart ? 0 : FLAG_NOT_CLUSTER_START) |
-                       (aLigatureStart ? 0 : FLAG_NOT_LIGATURE_GROUP_START) |
-                       (aGlyphCount << GLYPH_COUNT_SHIFT);
-            return g;
-        }
-
-        
-        
-        CompressedGlyph& SetComplex(bool aClusterStart, bool aLigatureStart,
-                                    uint32_t aGlyphCount) {
-            mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_CHAR_IS_SPACE)) |
-                CharTypeFlags() |
-                MakeComplex(aClusterStart, aLigatureStart, aGlyphCount).mValue;
-            return *this;
-        }
-
-        
-
-
-
-        CompressedGlyph& SetMissing(uint32_t aGlyphCount) {
-            mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_NOT_CLUSTER_START |
-                                FLAG_CHAR_IS_SPACE)) |
-                CharTypeFlags() |
-                (aGlyphCount << GLYPH_COUNT_SHIFT);
-            return *this;
-        }
-        uint32_t GetGlyphCount() const {
-            NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
-            return (mValue & GLYPH_COUNT_MASK) >> GLYPH_COUNT_SHIFT;
-        }
-
-        void SetIsSpace() {
-            mValue |= FLAG_CHAR_IS_SPACE;
-        }
-        void SetIsTab() {
-            NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
-            mValue |= FLAG_CHAR_IS_TAB;
-        }
-        void SetIsNewline() {
-            NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
-            mValue |= FLAG_CHAR_IS_NEWLINE;
-        }
-        void SetNoEmphasisMark() {
-            NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
-            mValue |= FLAG_CHAR_NO_EMPHASIS_MARK;
-        }
-        void SetIsFormattingControl() {
-            NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
-            mValue |= FLAG_CHAR_IS_FORMATTING_CONTROL;
-        }
-
-    private:
-        uint32_t mValue;
+      GLYPH_COUNT_MASK = 0x00FFFF00U,
+      GLYPH_COUNT_SHIFT = 8
     };
 
     
     
-    virtual const CompressedGlyph *GetCharacterGlyphs() const = 0;
-    virtual CompressedGlyph *GetCharacterGlyphs() = 0;
-
+    
     
 
-
-
-    struct DetailedGlyph {
-        
-        uint32_t mGlyphID;
-        
-        
-        
-        int32_t  mAdvance;
-        
-        
-        
-        
-        mozilla::gfx::Point mOffset;
-    };
-
-    void SetGlyphs(uint32_t aCharIndex, CompressedGlyph aGlyph,
-                   const DetailedGlyph *aGlyphs);
-
-    void SetMissingGlyph(uint32_t aIndex, uint32_t aChar, gfxFont *aFont);
-
-    void SetIsSpace(uint32_t aIndex) {
-        GetCharacterGlyphs()[aIndex].SetIsSpace();
+    
+    
+    static bool IsSimpleGlyphID(uint32_t aGlyph) {
+      return (aGlyph & GLYPH_MASK) == aGlyph;
+    }
+    
+    
+    static bool IsSimpleAdvance(uint32_t aAdvance) {
+      return (aAdvance & (ADVANCE_MASK >> ADVANCE_SHIFT)) == aAdvance;
     }
 
-    bool HasDetailedGlyphs() const {
-        return mDetailedGlyphs != nullptr;
+    bool IsSimpleGlyph() const { return (mValue & FLAG_IS_SIMPLE_GLYPH) != 0; }
+    uint32_t GetSimpleAdvance() const {
+      return (mValue & ADVANCE_MASK) >> ADVANCE_SHIFT;
+    }
+    uint32_t GetSimpleGlyph() const { return mValue & GLYPH_MASK; }
+
+    bool IsMissing() const {
+      return (mValue & (FLAG_NOT_MISSING | FLAG_IS_SIMPLE_GLYPH)) == 0;
+    }
+    bool IsClusterStart() const {
+      return (mValue & FLAG_IS_SIMPLE_GLYPH) ||
+             !(mValue & FLAG_NOT_CLUSTER_START);
+    }
+    bool IsLigatureGroupStart() const {
+      return (mValue & FLAG_IS_SIMPLE_GLYPH) ||
+             !(mValue & FLAG_NOT_LIGATURE_GROUP_START);
+    }
+    bool IsLigatureContinuation() const {
+      return (mValue & FLAG_IS_SIMPLE_GLYPH) == 0 &&
+             (mValue & (FLAG_NOT_LIGATURE_GROUP_START | FLAG_NOT_MISSING)) ==
+                 (FLAG_NOT_LIGATURE_GROUP_START | FLAG_NOT_MISSING);
     }
 
-    bool IsLigatureGroupStart(uint32_t aPos) {
-        NS_ASSERTION(aPos < GetLength(), "aPos out of range");
-        return GetCharacterGlyphs()[aPos].IsLigatureGroupStart();
+    
+    
+    
+    bool CharIsSpace() const { return (mValue & FLAG_CHAR_IS_SPACE) != 0; }
+
+    bool CharIsTab() const {
+      return !IsSimpleGlyph() && (mValue & FLAG_CHAR_IS_TAB) != 0;
+    }
+    bool CharIsNewline() const {
+      return !IsSimpleGlyph() && (mValue & FLAG_CHAR_IS_NEWLINE) != 0;
+    }
+    bool CharMayHaveEmphasisMark() const {
+      return !CharIsSpace() &&
+             (IsSimpleGlyph() || !(mValue & FLAG_CHAR_NO_EMPHASIS_MARK));
+    }
+    bool CharIsFormattingControl() const {
+      return !IsSimpleGlyph() &&
+             (mValue & FLAG_CHAR_IS_FORMATTING_CONTROL) != 0;
+    }
+
+    uint32_t CharTypeFlags() const {
+      return IsSimpleGlyph() ? 0 : (mValue & CHAR_TYPE_FLAGS_MASK);
+    }
+
+    void SetClusterStart(bool aIsClusterStart) {
+      NS_ASSERTION(!IsSimpleGlyph(),
+                   "can't call SetClusterStart on simple glyphs");
+      if (aIsClusterStart) {
+        mValue &= ~FLAG_NOT_CLUSTER_START;
+      } else {
+        mValue |= FLAG_NOT_CLUSTER_START;
+      }
+    }
+
+    uint8_t CanBreakBefore() const {
+      return (mValue & FLAGS_CAN_BREAK_BEFORE) >> FLAGS_CAN_BREAK_SHIFT;
+    }
+    
+    uint32_t SetCanBreakBefore(uint8_t aCanBreakBefore) {
+      NS_ASSERTION(aCanBreakBefore <= 2, "Bogus break-before value!");
+      uint32_t breakMask = (uint32_t(aCanBreakBefore) << FLAGS_CAN_BREAK_SHIFT);
+      uint32_t toggle = breakMask ^ (mValue & FLAGS_CAN_BREAK_BEFORE);
+      mValue ^= toggle;
+      return toggle;
     }
 
     
     
+    static CompressedGlyph MakeSimpleGlyph(uint32_t aAdvanceAppUnits,
+                                           uint32_t aGlyph) {
+      NS_ASSERTION(IsSimpleAdvance(aAdvanceAppUnits), "Advance overflow");
+      NS_ASSERTION(IsSimpleGlyphID(aGlyph), "Glyph overflow");
+      CompressedGlyph g;
+      g.mValue =
+          FLAG_IS_SIMPLE_GLYPH | (aAdvanceAppUnits << ADVANCE_SHIFT) | aGlyph;
+      return g;
+    }
+
     
-    DetailedGlyph *GetDetailedGlyphs(uint32_t aCharIndex) const {
-        NS_ASSERTION(GetCharacterGlyphs() && HasDetailedGlyphs() &&
+    
+    CompressedGlyph& SetSimpleGlyph(uint32_t aAdvanceAppUnits,
+                                    uint32_t aGlyph) {
+      NS_ASSERTION(!CharTypeFlags(), "Char type flags lost");
+      mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_CHAR_IS_SPACE)) |
+               MakeSimpleGlyph(aAdvanceAppUnits, aGlyph).mValue;
+      return *this;
+    }
+
+    
+    
+    static CompressedGlyph MakeComplex(bool aClusterStart, bool aLigatureStart,
+                                       uint32_t aGlyphCount) {
+      CompressedGlyph g;
+      g.mValue = FLAG_NOT_MISSING |
+                 (aClusterStart ? 0 : FLAG_NOT_CLUSTER_START) |
+                 (aLigatureStart ? 0 : FLAG_NOT_LIGATURE_GROUP_START) |
+                 (aGlyphCount << GLYPH_COUNT_SHIFT);
+      return g;
+    }
+
+    
+    
+    CompressedGlyph& SetComplex(bool aClusterStart, bool aLigatureStart,
+                                uint32_t aGlyphCount) {
+      mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_CHAR_IS_SPACE)) |
+               CharTypeFlags() |
+               MakeComplex(aClusterStart, aLigatureStart, aGlyphCount).mValue;
+      return *this;
+    }
+
+    
+
+
+
+    CompressedGlyph& SetMissing(uint32_t aGlyphCount) {
+      mValue = (mValue & (FLAGS_CAN_BREAK_BEFORE | FLAG_NOT_CLUSTER_START |
+                          FLAG_CHAR_IS_SPACE)) |
+               CharTypeFlags() | (aGlyphCount << GLYPH_COUNT_SHIFT);
+      return *this;
+    }
+    uint32_t GetGlyphCount() const {
+      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      return (mValue & GLYPH_COUNT_MASK) >> GLYPH_COUNT_SHIFT;
+    }
+
+    void SetIsSpace() { mValue |= FLAG_CHAR_IS_SPACE; }
+    void SetIsTab() {
+      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      mValue |= FLAG_CHAR_IS_TAB;
+    }
+    void SetIsNewline() {
+      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      mValue |= FLAG_CHAR_IS_NEWLINE;
+    }
+    void SetNoEmphasisMark() {
+      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      mValue |= FLAG_CHAR_NO_EMPHASIS_MARK;
+    }
+    void SetIsFormattingControl() {
+      NS_ASSERTION(!IsSimpleGlyph(), "Expected non-simple-glyph");
+      mValue |= FLAG_CHAR_IS_FORMATTING_CONTROL;
+    }
+
+   private:
+    uint32_t mValue;
+  };
+
+  
+  
+  virtual const CompressedGlyph* GetCharacterGlyphs() const = 0;
+  virtual CompressedGlyph* GetCharacterGlyphs() = 0;
+
+  
+
+
+
+  struct DetailedGlyph {
+    
+    uint32_t mGlyphID;
+    
+    
+    
+    int32_t mAdvance;
+    
+    
+    
+    
+    mozilla::gfx::Point mOffset;
+  };
+
+  void SetGlyphs(uint32_t aCharIndex, CompressedGlyph aGlyph,
+                 const DetailedGlyph* aGlyphs);
+
+  void SetMissingGlyph(uint32_t aIndex, uint32_t aChar, gfxFont* aFont);
+
+  void SetIsSpace(uint32_t aIndex) {
+    GetCharacterGlyphs()[aIndex].SetIsSpace();
+  }
+
+  bool HasDetailedGlyphs() const { return mDetailedGlyphs != nullptr; }
+
+  bool IsLigatureGroupStart(uint32_t aPos) {
+    NS_ASSERTION(aPos < GetLength(), "aPos out of range");
+    return GetCharacterGlyphs()[aPos].IsLigatureGroupStart();
+  }
+
+  
+  
+  
+  DetailedGlyph* GetDetailedGlyphs(uint32_t aCharIndex) const {
+    NS_ASSERTION(GetCharacterGlyphs() && HasDetailedGlyphs() &&
                      !GetCharacterGlyphs()[aCharIndex].IsSimpleGlyph() &&
                      GetCharacterGlyphs()[aCharIndex].GetGlyphCount() > 0,
-                     "invalid use of GetDetailedGlyphs; check the caller!");
-        return mDetailedGlyphs->Get(aCharIndex);
+                 "invalid use of GetDetailedGlyphs; check the caller!");
+    return mDetailedGlyphs->Get(aCharIndex);
+  }
+
+  void AdjustAdvancesForSyntheticBold(float aSynBoldOffset, uint32_t aOffset,
+                                      uint32_t aLength);
+
+  
+  
+  
+  void SetupClusterBoundaries(uint32_t aOffset, const char16_t* aString,
+                              uint32_t aLength);
+  
+  
+  void SetupClusterBoundaries(uint32_t aOffset, const uint8_t* aString,
+                              uint32_t aLength);
+
+  mozilla::gfx::ShapedTextFlags GetFlags() const { return mFlags; }
+
+  bool IsVertical() const {
+    return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_MASK) !=
+           mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL;
+  }
+
+  bool UseCenterBaseline() const {
+    mozilla::gfx::ShapedTextFlags orient =
+        GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_MASK;
+    return orient ==
+               mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
+           orient ==
+               mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT;
+  }
+
+  bool IsRightToLeft() const {
+    return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_IS_RTL) ==
+           mozilla::gfx::ShapedTextFlags::TEXT_IS_RTL;
+  }
+
+  bool IsSidewaysLeft() const {
+    return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_MASK) ==
+           mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT;
+  }
+
+  
+  
+  bool IsInlineReversed() const { return IsSidewaysLeft() != IsRightToLeft(); }
+
+  gfxFloat GetDirection() const { return IsInlineReversed() ? -1.0f : 1.0f; }
+
+  bool DisableLigatures() const {
+    return (GetFlags() &
+            mozilla::gfx::ShapedTextFlags::TEXT_DISABLE_OPTIONAL_LIGATURES) ==
+           mozilla::gfx::ShapedTextFlags::TEXT_DISABLE_OPTIONAL_LIGATURES;
+  }
+
+  bool TextIs8Bit() const {
+    return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT) ==
+           mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT;
+  }
+
+  int32_t GetAppUnitsPerDevUnit() const { return mAppUnitsPerDevUnit; }
+
+  uint32_t GetLength() const { return mLength; }
+
+  bool FilterIfIgnorable(uint32_t aIndex, uint32_t aCh);
+
+ protected:
+  
+  DetailedGlyph* AllocateDetailedGlyphs(uint32_t aCharIndex, uint32_t aCount);
+
+  
+  
+  void EnsureComplexGlyph(uint32_t aIndex, CompressedGlyph& aGlyph) {
+    MOZ_ASSERT(GetCharacterGlyphs() + aIndex == &aGlyph);
+    if (aGlyph.IsSimpleGlyph()) {
+      DetailedGlyph details = {aGlyph.GetSimpleGlyph(),
+                               (int32_t)aGlyph.GetSimpleAdvance(),
+                               mozilla::gfx::Point()};
+      SetGlyphs(aIndex, CompressedGlyph().SetComplex(true, true, 1), &details);
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  class DetailedGlyphStore {
+   public:
+    DetailedGlyphStore() : mLastUsed(0) {}
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    DetailedGlyph* Get(uint32_t aOffset) {
+      NS_ASSERTION(mOffsetToIndex.Length() > 0, "no detailed glyph records!");
+      DetailedGlyph* details = mDetails.Elements();
+      
+      if (mLastUsed < mOffsetToIndex.Length() - 1 &&
+          aOffset == mOffsetToIndex[mLastUsed + 1].mOffset) {
+        ++mLastUsed;
+      } else if (aOffset == mOffsetToIndex[0].mOffset) {
+        mLastUsed = 0;
+      } else if (aOffset == mOffsetToIndex[mLastUsed].mOffset) {
+        
+      } else if (mLastUsed > 0 &&
+                 aOffset == mOffsetToIndex[mLastUsed - 1].mOffset) {
+        --mLastUsed;
+      } else {
+        mLastUsed = mOffsetToIndex.BinaryIndexOf(aOffset, CompareToOffset());
+      }
+      NS_ASSERTION(mLastUsed != nsTArray<DGRec>::NoIndex,
+                   "detailed glyph record missing!");
+      return details + mOffsetToIndex[mLastUsed].mIndex;
     }
 
-    void AdjustAdvancesForSyntheticBold(float aSynBoldOffset,
-                                        uint32_t aOffset, uint32_t aLength);
-
-    
-    
-    
-    void SetupClusterBoundaries(uint32_t         aOffset,
-                                const char16_t *aString,
-                                uint32_t         aLength);
-    
-    
-    void SetupClusterBoundaries(uint32_t       aOffset,
-                                const uint8_t *aString,
-                                uint32_t       aLength);
-
-    mozilla::gfx::ShapedTextFlags GetFlags() const {
-        return mFlags;
+    DetailedGlyph* Allocate(uint32_t aOffset, uint32_t aCount) {
+      uint32_t detailIndex = mDetails.Length();
+      DetailedGlyph* details = mDetails.AppendElements(aCount);
+      
+      
+      
+      
+      if (mOffsetToIndex.Length() == 0 ||
+          aOffset > mOffsetToIndex[mOffsetToIndex.Length() - 1].mOffset) {
+        mOffsetToIndex.AppendElement(DGRec(aOffset, detailIndex));
+      } else {
+        mOffsetToIndex.InsertElementSorted(DGRec(aOffset, detailIndex),
+                                           CompareRecordOffsets());
+      }
+      return details;
     }
 
-    bool IsVertical() const {
-        return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_MASK) !=
-                mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL;
+    size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
+      return aMallocSizeOf(this) +
+             mDetails.ShallowSizeOfExcludingThis(aMallocSizeOf) +
+             mOffsetToIndex.ShallowSizeOfExcludingThis(aMallocSizeOf);
     }
 
-    bool UseCenterBaseline() const {
-        mozilla::gfx::ShapedTextFlags orient =
-            GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_MASK;
-        return orient == mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
-               orient == mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT;
-    }
-
-    bool IsRightToLeft() const {
-        return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_IS_RTL) ==
-               mozilla::gfx::ShapedTextFlags::TEXT_IS_RTL;
-    }
-
-    bool IsSidewaysLeft() const {
-        return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_MASK) ==
-               mozilla::gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_SIDEWAYS_LEFT;
-    }
-
-    
-    
-    bool IsInlineReversed() const {
-        return IsSidewaysLeft() != IsRightToLeft();
-    }
-
-    gfxFloat GetDirection() const {
-        return IsInlineReversed() ? -1.0f : 1.0f;
-    }
-
-    bool DisableLigatures() const {
-        return (GetFlags() &
-                mozilla::gfx::ShapedTextFlags::TEXT_DISABLE_OPTIONAL_LIGATURES) ==
-               mozilla::gfx::ShapedTextFlags::TEXT_DISABLE_OPTIONAL_LIGATURES;
-    }
-
-    bool TextIs8Bit() const {
-        return (GetFlags() & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT) ==
-               mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT;
-    }
-
-    int32_t GetAppUnitsPerDevUnit() const {
-        return mAppUnitsPerDevUnit;
-    }
-
-    uint32_t GetLength() const {
-        return mLength;
-    }
-
-    bool FilterIfIgnorable(uint32_t aIndex, uint32_t aCh);
-
-protected:
-    
-    DetailedGlyph *AllocateDetailedGlyphs(uint32_t aCharIndex,
-                                          uint32_t aCount);
-
-    
-    
-    void EnsureComplexGlyph(uint32_t aIndex, CompressedGlyph& aGlyph)
-    {
-        MOZ_ASSERT(GetCharacterGlyphs() + aIndex == &aGlyph);
-        if (aGlyph.IsSimpleGlyph()) {
-            DetailedGlyph details = {
-                aGlyph.GetSimpleGlyph(),
-                (int32_t) aGlyph.GetSimpleAdvance(),
-                mozilla::gfx::Point()
-            };
-            SetGlyphs(aIndex, CompressedGlyph().SetComplex(true, true, 1),
-                      &details);
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    class DetailedGlyphStore {
-    public:
-        DetailedGlyphStore()
-            : mLastUsed(0)
-        { }
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        DetailedGlyph* Get(uint32_t aOffset) {
-            NS_ASSERTION(mOffsetToIndex.Length() > 0,
-                         "no detailed glyph records!");
-            DetailedGlyph* details = mDetails.Elements();
-            
-            if (mLastUsed < mOffsetToIndex.Length() - 1 &&
-                aOffset == mOffsetToIndex[mLastUsed + 1].mOffset) {
-                ++mLastUsed;
-            } else if (aOffset == mOffsetToIndex[0].mOffset) {
-                mLastUsed = 0;
-            } else if (aOffset == mOffsetToIndex[mLastUsed].mOffset) {
-                
-            } else if (mLastUsed > 0 &&
-                       aOffset == mOffsetToIndex[mLastUsed - 1].mOffset) {
-                --mLastUsed;
-            } else {
-                mLastUsed =
-                    mOffsetToIndex.BinaryIndexOf(aOffset, CompareToOffset());
-            }
-            NS_ASSERTION(mLastUsed != nsTArray<DGRec>::NoIndex,
-                         "detailed glyph record missing!");
-            return details + mOffsetToIndex[mLastUsed].mIndex;
-        }
-
-        DetailedGlyph* Allocate(uint32_t aOffset, uint32_t aCount) {
-            uint32_t detailIndex = mDetails.Length();
-            DetailedGlyph *details = mDetails.AppendElements(aCount);
-            
-            
-            
-            
-            if (mOffsetToIndex.Length() == 0 ||
-                aOffset > mOffsetToIndex[mOffsetToIndex.Length() - 1].mOffset) {
-                mOffsetToIndex.AppendElement(DGRec(aOffset, detailIndex));
-            } else {
-                mOffsetToIndex.InsertElementSorted(DGRec(aOffset, detailIndex),
-                                                   CompareRecordOffsets());
-            }
-            return details;
-        }
-
-        size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
-            return aMallocSizeOf(this) +
-                mDetails.ShallowSizeOfExcludingThis(aMallocSizeOf) +
-                mOffsetToIndex.ShallowSizeOfExcludingThis(aMallocSizeOf);
-        }
-
-    private:
-        struct DGRec {
-            DGRec(const uint32_t& aOffset, const uint32_t& aIndex)
-                : mOffset(aOffset), mIndex(aIndex) { }
-            uint32_t mOffset; 
-            uint32_t mIndex;  
-        };
-
-        struct CompareToOffset {
-            bool Equals(const DGRec& a, const uint32_t& b) const {
-                return a.mOffset == b;
-            }
-            bool LessThan(const DGRec& a, const uint32_t& b) const {
-                return a.mOffset < b;
-            }
-        };
-
-        struct CompareRecordOffsets {
-            bool Equals(const DGRec& a, const DGRec& b) const {
-                return a.mOffset == b.mOffset;
-            }
-            bool LessThan(const DGRec& a, const DGRec& b) const {
-                return a.mOffset < b.mOffset;
-            }
-        };
-
-        
-        
-        
-        nsTArray<DetailedGlyph>     mDetails;
-
-        
-        
-        
-        nsTArray<DGRec>             mOffsetToIndex;
-
-        
-        
-        
-        nsTArray<DGRec>::index_type mLastUsed;
+   private:
+    struct DGRec {
+      DGRec(const uint32_t& aOffset, const uint32_t& aIndex)
+          : mOffset(aOffset), mIndex(aIndex) {}
+      uint32_t mOffset;  
+      uint32_t mIndex;   
     };
 
-    mozilla::UniquePtr<DetailedGlyphStore>   mDetailedGlyphs;
+    struct CompareToOffset {
+      bool Equals(const DGRec& a, const uint32_t& b) const {
+        return a.mOffset == b;
+      }
+      bool LessThan(const DGRec& a, const uint32_t& b) const {
+        return a.mOffset < b;
+      }
+    };
+
+    struct CompareRecordOffsets {
+      bool Equals(const DGRec& a, const DGRec& b) const {
+        return a.mOffset == b.mOffset;
+      }
+      bool LessThan(const DGRec& a, const DGRec& b) const {
+        return a.mOffset < b.mOffset;
+      }
+    };
 
     
-    uint32_t                        mLength;
+    
+    
+    nsTArray<DetailedGlyph> mDetails;
 
     
-    mozilla::gfx::ShapedTextFlags   mFlags;
+    
+    
+    nsTArray<DGRec> mOffsetToIndex;
 
-    uint16_t                        mAppUnitsPerDevUnit;
+    
+    
+    
+    nsTArray<DGRec>::index_type mLastUsed;
+  };
+
+  mozilla::UniquePtr<DetailedGlyphStore> mDetailedGlyphs;
+
+  
+  uint32_t mLength;
+
+  
+  mozilla::gfx::ShapedTextFlags mFlags;
+
+  uint16_t mAppUnitsPerDevUnit;
 };
 
 
@@ -1280,176 +1212,153 @@ protected:
 
 
 
-class gfxShapedWord final : public gfxShapedText
-{
-public:
-    typedef mozilla::unicode::Script Script;
+class gfxShapedWord final : public gfxShapedText {
+ public:
+  typedef mozilla::unicode::Script Script;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static gfxShapedWord* Create(const uint8_t* aText, uint32_t aLength,
+                               Script aRunScript, int32_t aAppUnitsPerDevUnit,
+                               mozilla::gfx::ShapedTextFlags aFlags,
+                               gfxFontShaper::RoundingFlags aRounding) {
+    NS_ASSERTION(aLength <= gfxPlatform::GetPlatform()->WordCacheCharLimit(),
+                 "excessive length for gfxShapedWord!");
 
     
     
-    
-    
-    
-    
-    
-    
-    
-    static gfxShapedWord* Create(const uint8_t *aText, uint32_t aLength,
-                                 Script aRunScript,
-                                 int32_t aAppUnitsPerDevUnit,
-                                 mozilla::gfx::ShapedTextFlags aFlags,
-                                 gfxFontShaper::RoundingFlags aRounding) {
-        NS_ASSERTION(aLength <= gfxPlatform::GetPlatform()->WordCacheCharLimit(),
-                     "excessive length for gfxShapedWord!");
-
-        
-        
-        uint32_t size =
-            offsetof(gfxShapedWord, mCharGlyphsStorage) +
-            aLength * (sizeof(CompressedGlyph) + sizeof(uint8_t));
-        void *storage = malloc(size);
-        if (!storage) {
-            return nullptr;
-        }
-
-        
-        return new (storage) gfxShapedWord(aText, aLength, aRunScript,
-                                           aAppUnitsPerDevUnit, aFlags,
-                                           aRounding);
-    }
-
-    static gfxShapedWord* Create(const char16_t *aText, uint32_t aLength,
-                                 Script aRunScript,
-                                 int32_t aAppUnitsPerDevUnit,
-                                 mozilla::gfx::ShapedTextFlags aFlags,
-                                 gfxFontShaper::RoundingFlags aRounding) {
-        NS_ASSERTION(aLength <= gfxPlatform::GetPlatform()->WordCacheCharLimit(),
-                     "excessive length for gfxShapedWord!");
-
-        
-        
-        
-        if (aFlags & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT) {
-            nsAutoCString narrowText;
-            LossyAppendUTF16toASCII(nsDependentSubstring(aText, aLength),
-                                    narrowText);
-            return Create((const uint8_t*)(narrowText.BeginReading()),
-                          aLength, aRunScript, aAppUnitsPerDevUnit, aFlags,
-                          aRounding);
-        }
-
-        uint32_t size =
-            offsetof(gfxShapedWord, mCharGlyphsStorage) +
-            aLength * (sizeof(CompressedGlyph) + sizeof(char16_t));
-        void *storage = malloc(size);
-        if (!storage) {
-            return nullptr;
-        }
-
-        return new (storage) gfxShapedWord(aText, aLength, aRunScript,
-                                           aAppUnitsPerDevUnit, aFlags,
-                                           aRounding);
+    uint32_t size = offsetof(gfxShapedWord, mCharGlyphsStorage) +
+                    aLength * (sizeof(CompressedGlyph) + sizeof(uint8_t));
+    void* storage = malloc(size);
+    if (!storage) {
+      return nullptr;
     }
 
     
-    
-    void operator delete(void* p) {
-        free(p);
-    }
+    return new (storage) gfxShapedWord(aText, aLength, aRunScript,
+                                       aAppUnitsPerDevUnit, aFlags, aRounding);
+  }
 
-    virtual const CompressedGlyph *GetCharacterGlyphs() const override {
-        return &mCharGlyphsStorage[0];
-    }
-    virtual CompressedGlyph *GetCharacterGlyphs() override {
-        return &mCharGlyphsStorage[0];
-    }
-
-    const uint8_t* Text8Bit() const {
-        NS_ASSERTION(TextIs8Bit(), "invalid use of Text8Bit()");
-        return reinterpret_cast<const uint8_t*>(mCharGlyphsStorage + GetLength());
-    }
-
-    const char16_t* TextUnicode() const {
-        NS_ASSERTION(!TextIs8Bit(), "invalid use of TextUnicode()");
-        return reinterpret_cast<const char16_t*>(mCharGlyphsStorage + GetLength());
-    }
-
-    char16_t GetCharAt(uint32_t aOffset) const {
-        NS_ASSERTION(aOffset < GetLength(), "aOffset out of range");
-        return TextIs8Bit() ?
-            char16_t(Text8Bit()[aOffset]) : TextUnicode()[aOffset];
-    }
-
-    Script GetScript() const {
-        return mScript;
-    }
-
-    gfxFontShaper::RoundingFlags GetRounding() const {
-        return mRounding;
-    }
-
-    void ResetAge() {
-        mAgeCounter = 0;
-    }
-    uint32_t IncrementAge() {
-        return ++mAgeCounter;
-    }
-
-    
-    static uint32_t HashMix(uint32_t aHash, char16_t aCh)
-    {
-        return (aHash >> 28) ^ (aHash << 4) ^ aCh;
-    }
-
-private:
-    
-    friend class gfxTextRun;
-
-    
-    gfxShapedWord(const uint8_t *aText, uint32_t aLength,
-                  Script aRunScript,
-                  int32_t aAppUnitsPerDevUnit,
-                  mozilla::gfx::ShapedTextFlags aFlags,
-                  gfxFontShaper::RoundingFlags aRounding)
-        : gfxShapedText(aLength, aFlags | mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT,
-                        aAppUnitsPerDevUnit)
-        , mScript(aRunScript)
-        , mRounding(aRounding)
-        , mAgeCounter(0)
-    {
-        memset(mCharGlyphsStorage, 0, aLength * sizeof(CompressedGlyph));
-        uint8_t *text = reinterpret_cast<uint8_t*>(&mCharGlyphsStorage[aLength]);
-        memcpy(text, aText, aLength * sizeof(uint8_t));
-    }
-
-    gfxShapedWord(const char16_t *aText, uint32_t aLength,
-                  Script aRunScript,
-                  int32_t aAppUnitsPerDevUnit,
-                  mozilla::gfx::ShapedTextFlags aFlags,
-                  gfxFontShaper::RoundingFlags aRounding)
-        : gfxShapedText(aLength, aFlags, aAppUnitsPerDevUnit)
-        , mScript(aRunScript)
-        , mRounding(aRounding)
-        , mAgeCounter(0)
-    {
-        memset(mCharGlyphsStorage, 0, aLength * sizeof(CompressedGlyph));
-        char16_t *text = reinterpret_cast<char16_t*>(&mCharGlyphsStorage[aLength]);
-        memcpy(text, aText, aLength * sizeof(char16_t));
-        SetupClusterBoundaries(0, aText, aLength);
-    }
-
-    Script           mScript;
-
-    gfxFontShaper::RoundingFlags mRounding;
-
-    uint32_t         mAgeCounter;
+  static gfxShapedWord* Create(const char16_t* aText, uint32_t aLength,
+                               Script aRunScript, int32_t aAppUnitsPerDevUnit,
+                               mozilla::gfx::ShapedTextFlags aFlags,
+                               gfxFontShaper::RoundingFlags aRounding) {
+    NS_ASSERTION(aLength <= gfxPlatform::GetPlatform()->WordCacheCharLimit(),
+                 "excessive length for gfxShapedWord!");
 
     
     
     
-    
-    
-    CompressedGlyph  mCharGlyphsStorage[1];
+    if (aFlags & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT) {
+      nsAutoCString narrowText;
+      LossyAppendUTF16toASCII(nsDependentSubstring(aText, aLength), narrowText);
+      return Create((const uint8_t*)(narrowText.BeginReading()), aLength,
+                    aRunScript, aAppUnitsPerDevUnit, aFlags, aRounding);
+    }
+
+    uint32_t size = offsetof(gfxShapedWord, mCharGlyphsStorage) +
+                    aLength * (sizeof(CompressedGlyph) + sizeof(char16_t));
+    void* storage = malloc(size);
+    if (!storage) {
+      return nullptr;
+    }
+
+    return new (storage) gfxShapedWord(aText, aLength, aRunScript,
+                                       aAppUnitsPerDevUnit, aFlags, aRounding);
+  }
+
+  
+  
+  void operator delete(void* p) { free(p); }
+
+  virtual const CompressedGlyph* GetCharacterGlyphs() const override {
+    return &mCharGlyphsStorage[0];
+  }
+  virtual CompressedGlyph* GetCharacterGlyphs() override {
+    return &mCharGlyphsStorage[0];
+  }
+
+  const uint8_t* Text8Bit() const {
+    NS_ASSERTION(TextIs8Bit(), "invalid use of Text8Bit()");
+    return reinterpret_cast<const uint8_t*>(mCharGlyphsStorage + GetLength());
+  }
+
+  const char16_t* TextUnicode() const {
+    NS_ASSERTION(!TextIs8Bit(), "invalid use of TextUnicode()");
+    return reinterpret_cast<const char16_t*>(mCharGlyphsStorage + GetLength());
+  }
+
+  char16_t GetCharAt(uint32_t aOffset) const {
+    NS_ASSERTION(aOffset < GetLength(), "aOffset out of range");
+    return TextIs8Bit() ? char16_t(Text8Bit()[aOffset])
+                        : TextUnicode()[aOffset];
+  }
+
+  Script GetScript() const { return mScript; }
+
+  gfxFontShaper::RoundingFlags GetRounding() const { return mRounding; }
+
+  void ResetAge() { mAgeCounter = 0; }
+  uint32_t IncrementAge() { return ++mAgeCounter; }
+
+  
+  static uint32_t HashMix(uint32_t aHash, char16_t aCh) {
+    return (aHash >> 28) ^ (aHash << 4) ^ aCh;
+  }
+
+ private:
+  
+  friend class gfxTextRun;
+
+  
+  gfxShapedWord(const uint8_t* aText, uint32_t aLength, Script aRunScript,
+                int32_t aAppUnitsPerDevUnit,
+                mozilla::gfx::ShapedTextFlags aFlags,
+                gfxFontShaper::RoundingFlags aRounding)
+      : gfxShapedText(aLength,
+                      aFlags | mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT,
+                      aAppUnitsPerDevUnit),
+        mScript(aRunScript),
+        mRounding(aRounding),
+        mAgeCounter(0) {
+    memset(mCharGlyphsStorage, 0, aLength * sizeof(CompressedGlyph));
+    uint8_t* text = reinterpret_cast<uint8_t*>(&mCharGlyphsStorage[aLength]);
+    memcpy(text, aText, aLength * sizeof(uint8_t));
+  }
+
+  gfxShapedWord(const char16_t* aText, uint32_t aLength, Script aRunScript,
+                int32_t aAppUnitsPerDevUnit,
+                mozilla::gfx::ShapedTextFlags aFlags,
+                gfxFontShaper::RoundingFlags aRounding)
+      : gfxShapedText(aLength, aFlags, aAppUnitsPerDevUnit),
+        mScript(aRunScript),
+        mRounding(aRounding),
+        mAgeCounter(0) {
+    memset(mCharGlyphsStorage, 0, aLength * sizeof(CompressedGlyph));
+    char16_t* text = reinterpret_cast<char16_t*>(&mCharGlyphsStorage[aLength]);
+    memcpy(text, aText, aLength * sizeof(char16_t));
+    SetupClusterBoundaries(0, aText, aLength);
+  }
+
+  Script mScript;
+
+  gfxFontShaper::RoundingFlags mRounding;
+
+  uint32_t mAgeCounter;
+
+  
+  
+  
+  
+  
+  CompressedGlyph mCharGlyphsStorage[1];
 };
 
 class GlyphBufferAzure;
@@ -1458,898 +1367,828 @@ struct FontDrawParams;
 struct EmphasisMarkDrawParams;
 
 class gfxFont {
+  friend class gfxHarfBuzzShaper;
+  friend class gfxGraphiteShaper;
 
-    friend class gfxHarfBuzzShaper;
-    friend class gfxGraphiteShaper;
+ protected:
+  typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::unicode::Script Script;
+  typedef mozilla::SVGContextPaint SVGContextPaint;
 
-protected:
-    typedef mozilla::gfx::DrawTarget DrawTarget;
-    typedef mozilla::unicode::Script Script;
-    typedef mozilla::SVGContextPaint SVGContextPaint;
+  typedef gfxFontShaper::RoundingFlags RoundingFlags;
 
-    typedef gfxFontShaper::RoundingFlags RoundingFlags;
+ public:
+  typedef mozilla::FontSlantStyle FontSlantStyle;
 
-public:
-    typedef mozilla::FontSlantStyle FontSlantStyle;
-
-    nsrefcnt AddRef(void) {
-        MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
-        if (mExpirationState.IsTracked()) {
-            gfxFontCache::GetCache()->RemoveObject(this);
-        }
-        ++mRefCnt;
-        NS_LOG_ADDREF(this, mRefCnt, "gfxFont", sizeof(*this));
-        return mRefCnt;
+  nsrefcnt AddRef(void) {
+    MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
+    if (mExpirationState.IsTracked()) {
+      gfxFontCache::GetCache()->RemoveObject(this);
     }
-    nsrefcnt Release(void) {
-        MOZ_ASSERT(0 != mRefCnt, "dup release");
-        --mRefCnt;
-        NS_LOG_RELEASE(this, mRefCnt, "gfxFont");
-        if (mRefCnt == 0) {
-            NotifyReleased();
-            
-            return 0;
-        }
-        return mRefCnt;
+    ++mRefCnt;
+    NS_LOG_ADDREF(this, mRefCnt, "gfxFont", sizeof(*this));
+    return mRefCnt;
+  }
+  nsrefcnt Release(void) {
+    MOZ_ASSERT(0 != mRefCnt, "dup release");
+    --mRefCnt;
+    NS_LOG_RELEASE(this, mRefCnt, "gfxFont");
+    if (mRefCnt == 0) {
+      NotifyReleased();
+      
+      return 0;
     }
+    return mRefCnt;
+  }
 
-    int32_t GetRefCount() { return mRefCnt; }
+  int32_t GetRefCount() { return mRefCnt; }
 
-    
-    typedef enum : uint8_t {
-        kAntialiasDefault,
-        kAntialiasNone,
-        kAntialiasGrayscale,
-        kAntialiasSubpixel
-    } AntialiasOption;
+  
+  typedef enum : uint8_t {
+    kAntialiasDefault,
+    kAntialiasNone,
+    kAntialiasGrayscale,
+    kAntialiasSubpixel
+  } AntialiasOption;
 
-protected:
-    nsAutoRefCnt mRefCnt;
-    cairo_scaled_font_t *mScaledFont;
+ protected:
+  nsAutoRefCnt mRefCnt;
+  cairo_scaled_font_t* mScaledFont;
 
-    void NotifyReleased() {
-        gfxFontCache *cache = gfxFontCache::GetCache();
-        if (cache) {
-            
-            
-            cache->NotifyReleased(this);
-        } else {
-            
-            delete this;
-        }
+  void NotifyReleased() {
+    gfxFontCache* cache = gfxFontCache::GetCache();
+    if (cache) {
+      
+      
+      cache->NotifyReleased(this);
+    } else {
+      
+      delete this;
     }
+  }
 
-    gfxFont(const RefPtr<mozilla::gfx::UnscaledFont>& aUnscaledFont,
-            gfxFontEntry *aFontEntry, const gfxFontStyle *aFontStyle,
-            AntialiasOption anAAOption = kAntialiasDefault,
-            cairo_scaled_font_t *aScaledFont = nullptr);
+  gfxFont(const RefPtr<mozilla::gfx::UnscaledFont>& aUnscaledFont,
+          gfxFontEntry* aFontEntry, const gfxFontStyle* aFontStyle,
+          AntialiasOption anAAOption = kAntialiasDefault,
+          cairo_scaled_font_t* aScaledFont = nullptr);
 
-public:
-    virtual ~gfxFont();
+ public:
+  virtual ~gfxFont();
 
-    bool Valid() const {
-        return mIsValid;
+  bool Valid() const { return mIsValid; }
+
+  
+  typedef enum {
+    LOOSE_INK_EXTENTS,
+    
+    
+    
+    TIGHT_INK_EXTENTS,
+    
+    
+    
+    
+    TIGHT_HINTED_OUTLINE_EXTENTS
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  } BoundingBoxType;
+
+  const nsCString& GetName() const { return mFontEntry->Name(); }
+  const gfxFontStyle* GetStyle() const { return &mStyle; }
+
+  cairo_scaled_font_t* GetCairoScaledFont() { return mScaledFont; }
+
+  virtual mozilla::UniquePtr<gfxFont> CopyWithAntialiasOption(
+      AntialiasOption anAAOption) {
+    
+    return nullptr;
+  }
+
+  gfxFloat GetAdjustedSize() const {
+    return mAdjustedSize > 0.0 ? mAdjustedSize
+                               : (mStyle.sizeAdjust == 0.0 ? 0.0 : mStyle.size);
+  }
+
+  float FUnitsToDevUnitsFactor() const {
+    
+    NS_ASSERTION(mFUnitsConvFactor >= 0.0f, "mFUnitsConvFactor not valid");
+    return mFUnitsConvFactor;
+  }
+
+  
+  bool FontCanSupportHarfBuzz() { return mFontEntry->HasCmapTable(); }
+
+  
+  bool FontCanSupportGraphite() { return mFontEntry->HasGraphiteTables(); }
+
+  
+  
+  
+  bool AlwaysNeedsMaskForShadow() {
+    return mFontEntry->TryGetColorGlyphs() || mFontEntry->TryGetSVGData(this) ||
+           mFontEntry->HasFontTable(TRUETYPE_TAG('C', 'B', 'D', 'T')) ||
+           mFontEntry->HasFontTable(TRUETYPE_TAG('s', 'b', 'i', 'x'));
+  }
+
+  
+  
+  bool SupportsFeature(Script aScript, uint32_t aFeatureTag);
+
+  
+  
+  bool SupportsVariantCaps(Script aScript, uint32_t aVariantCaps,
+                           bool& aFallbackToSmallCaps,
+                           bool& aSyntheticLowerToSmallCaps,
+                           bool& aSyntheticUpperToSmallCaps);
+
+  
+  
+  
+  bool SupportsSubSuperscript(uint32_t aSubSuperscript, const uint8_t* aString,
+                              uint32_t aLength, Script aRunScript);
+
+  bool SupportsSubSuperscript(uint32_t aSubSuperscript, const char16_t* aString,
+                              uint32_t aLength, Script aRunScript);
+
+  
+  bool FeatureWillHandleChar(Script aRunScript, uint32_t aFeature,
+                             uint32_t aUnicode);
+
+  
+  
+  
+  virtual bool ProvidesGetGlyph() const { return false; }
+  
+  
+  virtual uint32_t GetGlyph(uint32_t unicode, uint32_t variation_selector) {
+    return 0;
+  }
+  
+  gfxFloat GetGlyphHAdvance(DrawTarget* aDrawTarget, uint16_t aGID);
+
+  gfxFloat SynthesizeSpaceWidth(uint32_t aCh);
+
+  
+  
+  RoundingFlags GetRoundOffsetsToPixels(DrawTarget* aDrawTarget);
+
+  
+  struct Metrics {
+    gfxFloat capHeight;
+    gfxFloat xHeight;
+    gfxFloat strikeoutSize;
+    gfxFloat strikeoutOffset;
+    gfxFloat underlineSize;
+    gfxFloat underlineOffset;
+
+    gfxFloat internalLeading;
+    gfxFloat externalLeading;
+
+    gfxFloat emHeight;
+    gfxFloat emAscent;
+    gfxFloat emDescent;
+    gfxFloat maxHeight;
+    gfxFloat maxAscent;
+    gfxFloat maxDescent;
+    gfxFloat maxAdvance;
+
+    gfxFloat aveCharWidth;
+    gfxFloat spaceWidth;
+    gfxFloat zeroOrAveCharWidth;  
+                                  
+                                  
+  };
+
+  enum Orientation { eHorizontal, eVertical };
+
+  const Metrics& GetMetrics(Orientation aOrientation) {
+    if (aOrientation == eHorizontal) {
+      return GetHorizontalMetrics();
     }
-
-    
-    typedef enum {
-        LOOSE_INK_EXTENTS,
-            
-            
-            
-        TIGHT_INK_EXTENTS,
-            
-            
-            
-            
-        TIGHT_HINTED_OUTLINE_EXTENTS
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-    } BoundingBoxType;
-
-    const nsCString& GetName() const { return mFontEntry->Name(); }
-    const gfxFontStyle *GetStyle() const { return &mStyle; }
-
-    cairo_scaled_font_t* GetCairoScaledFont() { return mScaledFont; }
-
-    virtual mozilla::UniquePtr<gfxFont>
-    CopyWithAntialiasOption(AntialiasOption anAAOption) {
-        
-        return nullptr;
+    if (!mVerticalMetrics) {
+      mVerticalMetrics = CreateVerticalMetrics();
     }
+    return *mVerticalMetrics;
+  }
 
-    gfxFloat GetAdjustedSize() const {
-        return mAdjustedSize > 0.0
-                 ? mAdjustedSize
-                 : (mStyle.sizeAdjust == 0.0 ? 0.0 : mStyle.size);
-    }
+  
 
-    float FUnitsToDevUnitsFactor() const {
-        
-        NS_ASSERTION(mFUnitsConvFactor >= 0.0f, "mFUnitsConvFactor not valid");
-        return mFUnitsConvFactor;
-    }
 
-    
-    bool FontCanSupportHarfBuzz() {
-        return mFontEntry->HasCmapTable();
-    }
 
-    
-    bool FontCanSupportGraphite() {
-        return mFontEntry->HasGraphiteTables();
-    }
 
-    
-    
-    
-    bool AlwaysNeedsMaskForShadow() {
-        return mFontEntry->TryGetColorGlyphs() ||
-               mFontEntry->TryGetSVGData(this) ||
-               mFontEntry->HasFontTable(TRUETYPE_TAG('C','B','D','T')) ||
-               mFontEntry->HasFontTable(TRUETYPE_TAG('s','b','i','x'));
-    }
 
-    
-    
-    bool SupportsFeature(Script aScript, uint32_t aFeatureTag);
 
-    
-    
-    bool SupportsVariantCaps(Script aScript, uint32_t aVariantCaps,
-                             bool& aFallbackToSmallCaps,
-                             bool& aSyntheticLowerToSmallCaps,
-                             bool& aSyntheticUpperToSmallCaps);
 
-    
-    
-    
-    bool SupportsSubSuperscript(uint32_t aSubSuperscript,
-                                const uint8_t *aString,
-                                uint32_t aLength,
-                                Script aRunScript);
+  struct Spacing {
+    gfxFloat mBefore;
+    gfxFloat mAfter;
+  };
+  
 
-    bool SupportsSubSuperscript(uint32_t aSubSuperscript,
-                                const char16_t *aString,
-                                uint32_t aLength,
-                                Script aRunScript);
 
-    
-    bool FeatureWillHandleChar(Script aRunScript, uint32_t aFeature,
-                               uint32_t aUnicode);
+  struct RunMetrics {
+    RunMetrics() { mAdvanceWidth = mAscent = mDescent = 0.0; }
 
-    
-    
-    
-    virtual bool ProvidesGetGlyph() const {
-        return false;
-    }
-    
-    
-    virtual uint32_t GetGlyph(uint32_t unicode, uint32_t variation_selector) {
-        return 0;
-    }
-    
-    gfxFloat GetGlyphHAdvance(DrawTarget* aDrawTarget, uint16_t aGID);
-
-    gfxFloat SynthesizeSpaceWidth(uint32_t aCh);
-
-    
-    
-    RoundingFlags GetRoundOffsetsToPixels(DrawTarget* aDrawTarget);
-
-    
-    struct Metrics {
-        gfxFloat capHeight;
-        gfxFloat xHeight;
-        gfxFloat strikeoutSize;
-        gfxFloat strikeoutOffset;
-        gfxFloat underlineSize;
-        gfxFloat underlineOffset;
-
-        gfxFloat internalLeading;
-        gfxFloat externalLeading;
-
-        gfxFloat emHeight;
-        gfxFloat emAscent;
-        gfxFloat emDescent;
-        gfxFloat maxHeight;
-        gfxFloat maxAscent;
-        gfxFloat maxDescent;
-        gfxFloat maxAdvance;
-
-        gfxFloat aveCharWidth;
-        gfxFloat spaceWidth;
-        gfxFloat zeroOrAveCharWidth;  
-                                      
-                                      
-    };
-
-    enum Orientation {
-        eHorizontal,
-        eVertical
-    };
-
-    const Metrics& GetMetrics(Orientation aOrientation)
-    {
-        if (aOrientation == eHorizontal) {
-            return GetHorizontalMetrics();
-        }
-        if (!mVerticalMetrics) {
-            mVerticalMetrics = CreateVerticalMetrics();
-        }
-        return *mVerticalMetrics;
-    }
-
-    
-
-
-
-
-
-
-
-    struct Spacing {
-        gfxFloat mBefore;
-        gfxFloat mAfter;
-    };
-    
-
-
-    struct RunMetrics {
-        RunMetrics() {
-            mAdvanceWidth = mAscent = mDescent = 0.0;
-        }
-
-        void CombineWith(const RunMetrics& aOther, bool aOtherIsOnLeft);
-
-        
-        
-        
-        
-        gfxFloat mAdvanceWidth;
-        
-        
-        gfxFloat mAscent;  
-        gfxFloat mDescent; 
-        
-        
-        
-        
-        
-        
-        
-        gfxRect  mBoundingBox;
-    };
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    void Draw(const gfxTextRun *aTextRun, uint32_t aStart, uint32_t aEnd,
-              mozilla::gfx::Point* aPt, const TextRunDrawParams& aRunParams,
-              mozilla::gfx::ShapedTextFlags aOrientation);
-
-    
-
-
-
-
-
-    void DrawEmphasisMarks(const gfxTextRun* aShapedText,
-                           mozilla::gfx::Point* aPt,
-                           uint32_t aOffset, uint32_t aCount,
-                           const EmphasisMarkDrawParams& aParams);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    virtual RunMetrics Measure(const gfxTextRun *aTextRun,
-                               uint32_t aStart, uint32_t aEnd,
-                               BoundingBoxType aBoundingBoxType,
-                               DrawTarget* aDrawTargetForTightBoundingBox,
-                               Spacing *aSpacing,
-                               mozilla::gfx::ShapedTextFlags aOrientation);
-    
-
-
-
-
-    bool NotifyLineBreaksChanged(gfxTextRun *aTextRun,
-                                   uint32_t aStart, uint32_t aLength)
-    { return false; }
-
-    
-    nsExpirationState *GetExpirationState() { return &mExpirationState; }
-
-    
-    virtual uint32_t GetSpaceGlyph() = 0;
-
-    gfxGlyphExtents *GetOrCreateGlyphExtents(int32_t aAppUnitsPerDevUnit);
-
-    
-    void SetupGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphID,
-                           bool aNeedTight, gfxGlyphExtents *aExtents);
-
-    
-    virtual bool SetupCairoFont(DrawTarget* aDrawTarget) = 0;
-
-    virtual bool AllowSubpixelAA() { return true; }
-
-    bool IsSyntheticBold() const { return mApplySyntheticBold; }
-
-    float AngleForSyntheticOblique() const;
-    float SkewForSyntheticOblique() const;
+    void CombineWith(const RunMetrics& aOther, bool aOtherIsOnLeft);
 
     
     
     
     
-    gfxFloat GetSyntheticBoldOffset() {
-        gfxFloat size = GetAdjustedSize();
-        const gfxFloat threshold = 48.0;
-        return size < threshold ? (0.25 + 0.75 * size / threshold) :
-                                  (size / threshold);
-    }
+    gfxFloat mAdvanceWidth;
 
-    gfxFontEntry *GetFontEntry() const { return mFontEntry.get(); }
-    bool HasCharacter(uint32_t ch) {
-        if (!mIsValid ||
-            (mUnicodeRangeMap && !mUnicodeRangeMap->test(ch))) {
-            return false;
-        }
-        return mFontEntry->HasCharacter(ch); 
-    }
-
-    const gfxCharacterMap* GetUnicodeRangeMap() const {
-        return mUnicodeRangeMap.get();
-    }
-
-    void SetUnicodeRangeMap(gfxCharacterMap* aUnicodeRangeMap) {
-        mUnicodeRangeMap = aUnicodeRangeMap;
-    }
-
-    uint16_t GetUVSGlyph(uint32_t aCh, uint32_t aVS) {
-        if (!mIsValid) {
-            return 0;
-        }
-        return mFontEntry->GetUVSGlyph(aCh, aVS); 
-    }
-
-    template<typename T>
-    bool InitFakeSmallCapsRun(DrawTarget *aDrawTarget,
-                              gfxTextRun *aTextRun,
-                              const T    *aText,
-                              uint32_t    aOffset,
-                              uint32_t    aLength,
-                              gfxTextRange::MatchType aMatchType,
-                              mozilla::gfx::ShapedTextFlags aOrientation,
-                              Script      aScript,
-                              bool        aSyntheticLower,
-                              bool        aSyntheticUpper);
+    
+    gfxFloat mAscent;   
+    gfxFloat mDescent;  
 
     
     
     
-    template<typename T>
-    bool SplitAndInitTextRun(DrawTarget *aDrawTarget,
-                             gfxTextRun *aTextRun,
-                             const T *aString,
-                             uint32_t aRunStart,
-                             uint32_t aRunLength,
-                             Script aRunScript,
+    
+    
+    
+    gfxRect mBoundingBox;
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
+            mozilla::gfx::Point* aPt, const TextRunDrawParams& aRunParams,
+            mozilla::gfx::ShapedTextFlags aOrientation);
+
+  
+
+
+
+
+
+  void DrawEmphasisMarks(const gfxTextRun* aShapedText,
+                         mozilla::gfx::Point* aPt, uint32_t aOffset,
+                         uint32_t aCount,
+                         const EmphasisMarkDrawParams& aParams);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual RunMetrics Measure(const gfxTextRun* aTextRun, uint32_t aStart,
+                             uint32_t aEnd, BoundingBoxType aBoundingBoxType,
+                             DrawTarget* aDrawTargetForTightBoundingBox,
+                             Spacing* aSpacing,
                              mozilla::gfx::ShapedTextFlags aOrientation);
+  
 
-    
-    
-    template<typename T>
-    gfxShapedWord* GetShapedWord(DrawTarget *aDrawTarget,
-                                 const T *aText,
-                                 uint32_t aLength,
-                                 uint32_t aHash,
-                                 Script aRunScript,
-                                 bool aVertical,
-                                 int32_t aAppUnitsPerDevUnit,
-                                 mozilla::gfx::ShapedTextFlags aFlags,
-                                 RoundingFlags aRounding,
-                                 gfxTextPerfMetrics *aTextPerf);
 
+
+
+  bool NotifyLineBreaksChanged(gfxTextRun* aTextRun, uint32_t aStart,
+                               uint32_t aLength) {
+    return false;
+  }
+
+  
+  nsExpirationState* GetExpirationState() { return &mExpirationState; }
+
+  
+  virtual uint32_t GetSpaceGlyph() = 0;
+
+  gfxGlyphExtents* GetOrCreateGlyphExtents(int32_t aAppUnitsPerDevUnit);
+
+  
+  void SetupGlyphExtents(DrawTarget* aDrawTarget, uint32_t aGlyphID,
+                         bool aNeedTight, gfxGlyphExtents* aExtents);
+
+  
+  virtual bool SetupCairoFont(DrawTarget* aDrawTarget) = 0;
+
+  virtual bool AllowSubpixelAA() { return true; }
+
+  bool IsSyntheticBold() const { return mApplySyntheticBold; }
+
+  float AngleForSyntheticOblique() const;
+  float SkewForSyntheticOblique() const;
+
+  
+  
+  
+  
+  gfxFloat GetSyntheticBoldOffset() {
+    gfxFloat size = GetAdjustedSize();
+    const gfxFloat threshold = 48.0;
+    return size < threshold ? (0.25 + 0.75 * size / threshold)
+                            : (size / threshold);
+  }
+
+  gfxFontEntry* GetFontEntry() const { return mFontEntry.get(); }
+  bool HasCharacter(uint32_t ch) {
+    if (!mIsValid || (mUnicodeRangeMap && !mUnicodeRangeMap->test(ch))) {
+      return false;
+    }
+    return mFontEntry->HasCharacter(ch);
+  }
+
+  const gfxCharacterMap* GetUnicodeRangeMap() const {
+    return mUnicodeRangeMap.get();
+  }
+
+  void SetUnicodeRangeMap(gfxCharacterMap* aUnicodeRangeMap) {
+    mUnicodeRangeMap = aUnicodeRangeMap;
+  }
+
+  uint16_t GetUVSGlyph(uint32_t aCh, uint32_t aVS) {
+    if (!mIsValid) {
+      return 0;
+    }
+    return mFontEntry->GetUVSGlyph(aCh, aVS);
+  }
+
+  template <typename T>
+  bool InitFakeSmallCapsRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
+                            const T* aText, uint32_t aOffset, uint32_t aLength,
+                            gfxTextRange::MatchType aMatchType,
+                            mozilla::gfx::ShapedTextFlags aOrientation,
+                            Script aScript, bool aSyntheticLower,
+                            bool aSyntheticUpper);
+
+  
+  
+  
+  template <typename T>
+  bool SplitAndInitTextRun(DrawTarget* aDrawTarget, gfxTextRun* aTextRun,
+                           const T* aString, uint32_t aRunStart,
+                           uint32_t aRunLength, Script aRunScript,
+                           mozilla::gfx::ShapedTextFlags aOrientation);
+
+  
+  
+  template <typename T>
+  gfxShapedWord* GetShapedWord(DrawTarget* aDrawTarget, const T* aText,
+                               uint32_t aLength, uint32_t aHash,
+                               Script aRunScript, bool aVertical,
+                               int32_t aAppUnitsPerDevUnit,
+                               mozilla::gfx::ShapedTextFlags aFlags,
+                               RoundingFlags aRounding,
+                               gfxTextPerfMetrics* aTextPerf);
+
+  
+  
+  void InitWordCache() {
+    if (!mWordCache) {
+      mWordCache = mozilla::MakeUnique<nsTHashtable<CacheHashEntry>>();
+    }
+  }
+
+  
+  
+  void AgeCachedWords();
+
+  
+  void ClearCachedWords() {
+    if (mWordCache) {
+      mWordCache->Clear();
+    }
+  }
+
+  
+  void NotifyGlyphsChanged();
+
+  virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                      FontCacheSizes* aSizes) const;
+  virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
+                                      FontCacheSizes* aSizes) const;
+
+  typedef enum {
+    FONT_TYPE_DWRITE,
+    FONT_TYPE_GDI,
+    FONT_TYPE_FT2,
+    FONT_TYPE_MAC,
+    FONT_TYPE_OS2,
+    FONT_TYPE_CAIRO,
+    FONT_TYPE_FONTCONFIG
+  } FontType;
+
+  virtual FontType GetType() const = 0;
+
+  const RefPtr<mozilla::gfx::UnscaledFont>& GetUnscaledFont() const {
+    return mUnscaledFont;
+  }
+
+  virtual already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(
+      DrawTarget* aTarget) = 0;
+
+  void InitializeScaledFont();
+
+  bool KerningDisabled() { return mKerningSet && !mKerningEnabled; }
+
+  
+
+
+
+  class GlyphChangeObserver {
+   public:
+    virtual ~GlyphChangeObserver() {
+      if (mFont) {
+        mFont->RemoveGlyphChangeObserver(this);
+      }
+    }
+    
+    void ForgetFont() { mFont = nullptr; }
+    virtual void NotifyGlyphsChanged() = 0;
+
+   protected:
+    explicit GlyphChangeObserver(gfxFont* aFont) : mFont(aFont) {
+      mFont->AddGlyphChangeObserver(this);
+    }
     
     
-    void InitWordCache() {
-        if (!mWordCache) {
-            mWordCache = mozilla::MakeUnique<nsTHashtable<CacheHashEntry>>();
-        }
+    gfxFont* MOZ_NON_OWNING_REF mFont;
+  };
+  friend class GlyphChangeObserver;
+
+  bool GlyphsMayChange() {
+    
+    return mFontEntry->TryGetSVGData(this);
+  }
+
+  static void DestroySingletons() {
+    delete sScriptTagToCode;
+    delete sDefaultFeatures;
+  }
+
+  
+  
+  
+  bool TryGetMathTable();
+  gfxMathTable* MathTable() {
+    MOZ_RELEASE_ASSERT(mMathTable,
+                       "A successful call to TryGetMathTable() must be "
+                       "performed before calling this function");
+    return mMathTable.get();
+  }
+
+  
+  
+  gfxFont* GetSubSuperscriptFont(int32_t aAppUnitsPerDevPixel);
+
+  
+
+
+  static cairo_t* RefCairo(mozilla::gfx::DrawTarget* aDT);
+
+ protected:
+  virtual const Metrics& GetHorizontalMetrics() = 0;
+
+  mozilla::UniquePtr<const Metrics> CreateVerticalMetrics();
+
+  
+  
+  enum class FontComplexityT { SimpleFont, ComplexFont };
+  enum class SpacingT { NoSpacing, HasSpacing };
+
+  
+  
+  
+  template <FontComplexityT FC, SpacingT S>
+  bool DrawGlyphs(const gfxShapedText* aShapedText,
+                  uint32_t aOffset,  
+                  uint32_t aCount,   
+                  mozilla::gfx::Point* aPt, GlyphBufferAzure& aBuffer);
+
+  
+  
+  
+  
+  template <FontComplexityT FC>
+  void DrawOneGlyph(uint32_t aGlyphID, const mozilla::gfx::Point& aPt,
+                    GlyphBufferAzure& aBuffer, bool* aEmittedGlyphs) const;
+
+  
+  
+  bool DrawMissingGlyph(const TextRunDrawParams& aRunParams,
+                        const FontDrawParams& aFontParams,
+                        const gfxShapedText::DetailedGlyph* aDetails,
+                        const mozilla::gfx::Point& aPt);
+
+  
+  
+  void CalculateSubSuperSizeAndOffset(int32_t aAppUnitsPerDevPixel,
+                                      gfxFloat& aSubSuperSizeRatio,
+                                      float& aBaselineOffset);
+
+  
+  
+  
+  gfxFont* GetSmallCapsFont();
+
+  
+  
+  
+  virtual bool ProvidesGlyphWidths() const { return false; }
+
+  
+  
+  virtual int32_t GetGlyphWidth(DrawTarget& aDrawTarget, uint16_t aGID) {
+    return -1;
+  }
+
+  bool IsSpaceGlyphInvisible(DrawTarget* aRefDrawTarget,
+                             const gfxTextRun* aTextRun);
+
+  void AddGlyphChangeObserver(GlyphChangeObserver* aObserver);
+  void RemoveGlyphChangeObserver(GlyphChangeObserver* aObserver);
+
+  
+  bool HasSubstitutionRulesWithSpaceLookups(Script aRunScript);
+
+  
+  bool SpaceMayParticipateInShaping(Script aRunScript);
+
+  
+  bool ShapeText(DrawTarget* aContext, const uint8_t* aText,
+                 uint32_t aOffset,  
+                 uint32_t aLength, Script aScript, bool aVertical,
+                 RoundingFlags aRounding,
+                 gfxShapedText* aShapedText);  
+
+  
+  
+  virtual bool ShapeText(DrawTarget* aContext, const char16_t* aText,
+                         uint32_t aOffset, uint32_t aLength, Script aScript,
+                         bool aVertical, RoundingFlags aRounding,
+                         gfxShapedText* aShapedText);
+
+  
+  
+  
+  void PostShapingFixup(DrawTarget* aContext, const char16_t* aText,
+                        uint32_t aOffset,  
+                        uint32_t aLength, bool aVertical,
+                        gfxShapedText* aShapedText);
+
+  
+  
+  
+  
+  
+  
+  
+  template <typename T>
+  bool ShapeTextWithoutWordCache(DrawTarget* aDrawTarget, const T* aText,
+                                 uint32_t aOffset, uint32_t aLength,
+                                 Script aScript, bool aVertical,
+                                 RoundingFlags aRounding, gfxTextRun* aTextRun);
+
+  
+  
+  
+  
+  
+  template <typename T>
+  bool ShapeFragmentWithoutWordCache(DrawTarget* aDrawTarget, const T* aText,
+                                     uint32_t aOffset, uint32_t aLength,
+                                     Script aScript, bool aVertical,
+                                     RoundingFlags aRounding,
+                                     gfxTextRun* aTextRun);
+
+  void CheckForFeaturesInvolvingSpace();
+
+  
+  
+  bool HasFeatureSet(uint32_t aFeature, bool& aFeatureOn);
+
+  
+  static nsDataHashtable<nsUint32HashKey, Script>* sScriptTagToCode;
+  static nsTHashtable<nsUint32HashKey>* sDefaultFeatures;
+
+  RefPtr<gfxFontEntry> mFontEntry;
+
+  struct CacheHashKey {
+    union {
+      const uint8_t* mSingle;
+      const char16_t* mDouble;
+    } mText;
+    uint32_t mLength;
+    mozilla::gfx::ShapedTextFlags mFlags;
+    Script mScript;
+    int32_t mAppUnitsPerDevUnit;
+    PLDHashNumber mHashKey;
+    bool mTextIs8Bit;
+    RoundingFlags mRounding;
+
+    CacheHashKey(const uint8_t* aText, uint32_t aLength, uint32_t aStringHash,
+                 Script aScriptCode, int32_t aAppUnitsPerDevUnit,
+                 mozilla::gfx::ShapedTextFlags aFlags, RoundingFlags aRounding)
+        : mLength(aLength),
+          mFlags(aFlags),
+          mScript(aScriptCode),
+          mAppUnitsPerDevUnit(aAppUnitsPerDevUnit),
+          mHashKey(aStringHash + static_cast<int32_t>(aScriptCode) +
+                   aAppUnitsPerDevUnit * 0x100 + uint16_t(aFlags) * 0x10000 +
+                   int(aRounding)),
+          mTextIs8Bit(true),
+          mRounding(aRounding) {
+      NS_ASSERTION(aFlags & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT,
+                   "8-bit flag should have been set");
+      mText.mSingle = aText;
     }
 
-    
-    
-    void AgeCachedWords();
+    CacheHashKey(const char16_t* aText, uint32_t aLength, uint32_t aStringHash,
+                 Script aScriptCode, int32_t aAppUnitsPerDevUnit,
+                 mozilla::gfx::ShapedTextFlags aFlags, RoundingFlags aRounding)
+        : mLength(aLength),
+          mFlags(aFlags),
+          mScript(aScriptCode),
+          mAppUnitsPerDevUnit(aAppUnitsPerDevUnit),
+          mHashKey(aStringHash + static_cast<int32_t>(aScriptCode) +
+                   aAppUnitsPerDevUnit * 0x100 + uint16_t(aFlags) * 0x10000 +
+                   int(aRounding)),
+          mTextIs8Bit(false),
+          mRounding(aRounding) {
+      
+      
+      
+      
+      mText.mDouble = aText;
+    }
+  };
+
+  class CacheHashEntry : public PLDHashEntryHdr {
+   public:
+    typedef const CacheHashKey& KeyType;
+    typedef const CacheHashKey* KeyTypePointer;
 
     
-    void ClearCachedWords() {
-        if (mWordCache) {
-            mWordCache->Clear();
-        }
+    
+    explicit CacheHashEntry(KeyTypePointer aKey) {}
+    CacheHashEntry(const CacheHashEntry& toCopy) {
+      NS_ERROR("Should not be called");
+    }
+    ~CacheHashEntry() {}
+
+    bool KeyEquals(const KeyTypePointer aKey) const;
+
+    static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
+
+    static PLDHashNumber HashKey(const KeyTypePointer aKey) {
+      return aKey->mHashKey;
     }
 
-    
-    void NotifyGlyphsChanged();
-
-    virtual void AddSizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                        FontCacheSizes* aSizes) const;
-    virtual void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
-                                        FontCacheSizes* aSizes) const;
-
-    typedef enum {
-        FONT_TYPE_DWRITE,
-        FONT_TYPE_GDI,
-        FONT_TYPE_FT2,
-        FONT_TYPE_MAC,
-        FONT_TYPE_OS2,
-        FONT_TYPE_CAIRO,
-        FONT_TYPE_FONTCONFIG
-    } FontType;
-
-    virtual FontType GetType() const = 0;
-
-    const RefPtr<mozilla::gfx::UnscaledFont>& GetUnscaledFont() const {
-        return mUnscaledFont;
+    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
+      return aMallocSizeOf(mShapedWord.get());
     }
 
-    virtual already_AddRefed<mozilla::gfx::ScaledFont> GetScaledFont(DrawTarget* aTarget) = 0;
-
-    void InitializeScaledFont();
-
-    bool KerningDisabled() {
-        return mKerningSet && !mKerningEnabled;
-    }
-
-    
-
-
-
-    class GlyphChangeObserver {
-    public:
-        virtual ~GlyphChangeObserver()
-        {
-            if (mFont) {
-                mFont->RemoveGlyphChangeObserver(this);
-            }
-        }
-        
-        void ForgetFont() { mFont = nullptr; }
-        virtual void NotifyGlyphsChanged() = 0;
-    protected:
-        explicit GlyphChangeObserver(gfxFont *aFont) : mFont(aFont)
-        {
-            mFont->AddGlyphChangeObserver(this);
-        }
-        
-        
-        gfxFont* MOZ_NON_OWNING_REF mFont;
-    };
-    friend class GlyphChangeObserver;
-
-    bool GlyphsMayChange()
-    {
-        
-        return mFontEntry->TryGetSVGData(this);
-    }
-
-    static void DestroySingletons() {
-        delete sScriptTagToCode;
-        delete sDefaultFeatures;
-    }
-
-    
-    
-    
-    bool          TryGetMathTable();
-    gfxMathTable* MathTable() {
-        MOZ_RELEASE_ASSERT(mMathTable, "A successful call to TryGetMathTable() must be performed before calling this function");
-        return mMathTable.get();
-    }
-
-    
-    
-    gfxFont* GetSubSuperscriptFont(int32_t aAppUnitsPerDevPixel);
-
-    
-
-
-    static cairo_t* RefCairo(mozilla::gfx::DrawTarget* aDT);
-
-protected:
-    virtual const Metrics& GetHorizontalMetrics() = 0;
-
-    mozilla::UniquePtr<const Metrics> CreateVerticalMetrics();
-
-    
-    
-    enum class FontComplexityT {
-        SimpleFont,
-        ComplexFont
-    };
-    enum class SpacingT {
-        NoSpacing,
-        HasSpacing
-    };
-
-    
-    
-    
-    template<FontComplexityT FC, SpacingT S>
-    bool DrawGlyphs(const gfxShapedText*     aShapedText,
-                    uint32_t                 aOffset, 
-                    uint32_t                 aCount, 
-                    mozilla::gfx::Point*     aPt,
-                    GlyphBufferAzure&        aBuffer);
-
-    
-    
-    
-    
-    template<FontComplexityT FC>
-    void DrawOneGlyph(uint32_t                   aGlyphID,
-                      const mozilla::gfx::Point& aPt,
-                      GlyphBufferAzure&          aBuffer,
-                      bool*                      aEmittedGlyphs) const;
-
-    
-    
-    bool DrawMissingGlyph(const TextRunDrawParams&            aRunParams,
-                          const FontDrawParams&               aFontParams,
-                          const gfxShapedText::DetailedGlyph* aDetails,
-                          const mozilla::gfx::Point&          aPt);
-
-    
-    
-    void CalculateSubSuperSizeAndOffset(int32_t aAppUnitsPerDevPixel,
-                                        gfxFloat& aSubSuperSizeRatio,
-                                        float& aBaselineOffset);
-
-    
-    
-    
-    gfxFont* GetSmallCapsFont();
-
-    
-    
-    
-    virtual bool ProvidesGlyphWidths() const {
-        return false;
-    }
-
-    
-    
-    virtual int32_t GetGlyphWidth(DrawTarget& aDrawTarget, uint16_t aGID) {
-        return -1;
-    }
-
-    bool IsSpaceGlyphInvisible(DrawTarget* aRefDrawTarget,
-                               const gfxTextRun* aTextRun);
-
-    void AddGlyphChangeObserver(GlyphChangeObserver *aObserver);
-    void RemoveGlyphChangeObserver(GlyphChangeObserver *aObserver);
-
-    
-    bool HasSubstitutionRulesWithSpaceLookups(Script aRunScript);
-
-    
-    bool SpaceMayParticipateInShaping(Script aRunScript);
-
-    
-    bool ShapeText(DrawTarget    *aContext,
-                   const uint8_t *aText,
-                   uint32_t       aOffset, 
-                   uint32_t       aLength,
-                   Script         aScript,
-                   bool           aVertical,
-                   RoundingFlags  aRounding,
-                   gfxShapedText *aShapedText); 
-
-    
-    
-    virtual bool ShapeText(DrawTarget      *aContext,
-                           const char16_t *aText,
-                           uint32_t         aOffset,
-                           uint32_t         aLength,
-                           Script           aScript,
-                           bool             aVertical,
-                           RoundingFlags    aRounding,
-                           gfxShapedText   *aShapedText);
-
-    
-    
-    
-    void PostShapingFixup(DrawTarget*     aContext,
-                          const char16_t* aText,
-                          uint32_t        aOffset, 
-                          uint32_t        aLength,
-                          bool            aVertical,
-                          gfxShapedText*  aShapedText);
-
-    
-    
-    
-    
-    
-    
-    
-    template<typename T>
-    bool ShapeTextWithoutWordCache(DrawTarget *aDrawTarget,
-                                   const T    *aText,
-                                   uint32_t    aOffset,
-                                   uint32_t    aLength,
-                                   Script      aScript,
-                                   bool        aVertical,
-                                   RoundingFlags aRounding,
-                                   gfxTextRun *aTextRun);
-
-    
-    
-    
-    
-    
-    template<typename T>
-    bool ShapeFragmentWithoutWordCache(DrawTarget *aDrawTarget,
-                                       const T    *aText,
-                                       uint32_t    aOffset,
-                                       uint32_t    aLength,
-                                       Script      aScript,
-                                       bool        aVertical,
-                                       RoundingFlags aRounding,
-                                       gfxTextRun *aTextRun);
-
-    void CheckForFeaturesInvolvingSpace();
-
-    
-    
-    bool HasFeatureSet(uint32_t aFeature, bool& aFeatureOn);
-
-    
-    static nsDataHashtable<nsUint32HashKey,Script> *sScriptTagToCode;
-    static nsTHashtable<nsUint32HashKey>           *sDefaultFeatures;
-
-    RefPtr<gfxFontEntry> mFontEntry;
-
-    struct CacheHashKey {
-        union {
-            const uint8_t   *mSingle;
-            const char16_t *mDouble;
-        }                mText;
-        uint32_t         mLength;
-        mozilla::gfx::ShapedTextFlags mFlags;
-        Script           mScript;
-        int32_t          mAppUnitsPerDevUnit;
-        PLDHashNumber    mHashKey;
-        bool             mTextIs8Bit;
-        RoundingFlags    mRounding;
-
-        CacheHashKey(const uint8_t *aText, uint32_t aLength,
-                     uint32_t aStringHash,
-                     Script aScriptCode, int32_t aAppUnitsPerDevUnit,
-                     mozilla::gfx::ShapedTextFlags aFlags,
-                     RoundingFlags aRounding)
-            : mLength(aLength),
-              mFlags(aFlags),
-              mScript(aScriptCode),
-              mAppUnitsPerDevUnit(aAppUnitsPerDevUnit),
-              mHashKey(aStringHash
-                           + static_cast<int32_t>(aScriptCode)
-                           + aAppUnitsPerDevUnit * 0x100
-                           + uint16_t(aFlags) * 0x10000
-                           + int(aRounding)),
-              mTextIs8Bit(true),
-              mRounding(aRounding)
-        {
-            NS_ASSERTION(aFlags & mozilla::gfx::ShapedTextFlags::TEXT_IS_8BIT,
-                         "8-bit flag should have been set");
-            mText.mSingle = aText;
-        }
-
-        CacheHashKey(const char16_t *aText, uint32_t aLength,
-                     uint32_t aStringHash,
-                     Script aScriptCode, int32_t aAppUnitsPerDevUnit,
-                     mozilla::gfx::ShapedTextFlags aFlags,
-                     RoundingFlags aRounding)
-            : mLength(aLength),
-              mFlags(aFlags),
-              mScript(aScriptCode),
-              mAppUnitsPerDevUnit(aAppUnitsPerDevUnit),
-              mHashKey(aStringHash
-                           + static_cast<int32_t>(aScriptCode)
-                           + aAppUnitsPerDevUnit * 0x100
-                           + uint16_t(aFlags) * 0x10000
-                           + int(aRounding)),
-              mTextIs8Bit(false),
-              mRounding(aRounding)
-        {
-            
-            
-            
-            
-            mText.mDouble = aText;
-        }
-    };
-
-    class CacheHashEntry : public PLDHashEntryHdr {
-    public:
-        typedef const CacheHashKey &KeyType;
-        typedef const CacheHashKey *KeyTypePointer;
-
-        
-        
-        explicit CacheHashEntry(KeyTypePointer aKey) { }
-        CacheHashEntry(const CacheHashEntry& toCopy) { NS_ERROR("Should not be called"); }
-        ~CacheHashEntry() { }
-
-        bool KeyEquals(const KeyTypePointer aKey) const;
-
-        static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
-
-        static PLDHashNumber HashKey(const KeyTypePointer aKey) {
-            return aKey->mHashKey;
-        }
-
-        size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-        {
-            return aMallocSizeOf(mShapedWord.get());
-        }
-
-        enum { ALLOW_MEMMOVE = true };
-
-        mozilla::UniquePtr<gfxShapedWord> mShapedWord;
-    };
-
-    mozilla::UniquePtr<nsTHashtable<CacheHashEntry> > mWordCache;
-
-    static const uint32_t  kShapedWordCacheMaxAge = 3;
-
-    nsTArray<mozilla::UniquePtr<gfxGlyphExtents>> mGlyphExtentsArray;
-    mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<GlyphChangeObserver>>>
-                               mGlyphChangeObservers;
-
-    
-    
-    mozilla::UniquePtr<gfxFont>         mNonAAFont;
-
-    
-    
-    
-    mozilla::UniquePtr<gfxFontShaper>   mHarfBuzzShaper;
-    mozilla::UniquePtr<gfxFontShaper>   mGraphiteShaper;
-
-    
-    
-    RefPtr<gfxCharacterMap> mUnicodeRangeMap;
-
-    RefPtr<mozilla::gfx::UnscaledFont> mUnscaledFont;
-    RefPtr<mozilla::gfx::ScaledFont> mAzureScaledFont;
-
-    
-    mozilla::UniquePtr<const Metrics> mVerticalMetrics;
-
-    
-    mozilla::UniquePtr<gfxMathTable> mMathTable;
-
-    gfxFontStyle               mStyle;
-    gfxFloat                   mAdjustedSize;
-
-    
-    
-    
-    float                      mFUnitsConvFactor;
-
-    nsExpirationState          mExpirationState;
-
-    
-    AntialiasOption            mAntialiasOption;
-
-    bool                       mIsValid;
-
-    
-    
-    bool                       mApplySyntheticBold;
-
-    bool                       mKerningSet;     
-    bool                       mKerningEnabled; 
-
-    bool                       mMathInitialized; 
-
-    
-    
-    
-    
-    
-    
-    
-    
-    bool InitMetricsFromSfntTables(Metrics& aMetrics);
-
-    
-    
-    void CalculateDerivedMetrics(Metrics& aMetrics);
-
-    
-    
-    void SanitizeMetrics(Metrics *aMetrics, bool aIsBadUnderlineFont);
-
-    bool RenderSVGGlyph(gfxContext *aContext, mozilla::gfx::Point aPoint,
-                        uint32_t aGlyphId, SVGContextPaint* aContextPaint) const;
-    bool RenderSVGGlyph(gfxContext *aContext, mozilla::gfx::Point aPoint,
-                        uint32_t aGlyphId, SVGContextPaint* aContextPaint,
-                        gfxTextRunDrawCallbacks *aCallbacks,
-                        bool& aEmittedGlyphs) const;
-
-    bool RenderColorGlyph(DrawTarget* aDrawTarget,
-                          gfxContext* aContext,
-                          mozilla::gfx::ScaledFont* scaledFont,
-                          mozilla::gfx::DrawOptions drawOptions,
-                          const mozilla::gfx::Point& aPoint,
-                          uint32_t aGlyphId) const;
-
-    
-    
-    
-    
-    
-    
-    
-    static mozilla::gfx::Float CalcXScale(DrawTarget* aDrawTarget);
+    enum { ALLOW_MEMMOVE = true };
+
+    mozilla::UniquePtr<gfxShapedWord> mShapedWord;
+  };
+
+  mozilla::UniquePtr<nsTHashtable<CacheHashEntry>> mWordCache;
+
+  static const uint32_t kShapedWordCacheMaxAge = 3;
+
+  nsTArray<mozilla::UniquePtr<gfxGlyphExtents>> mGlyphExtentsArray;
+  mozilla::UniquePtr<nsTHashtable<nsPtrHashKey<GlyphChangeObserver>>>
+      mGlyphChangeObservers;
+
+  
+  
+  mozilla::UniquePtr<gfxFont> mNonAAFont;
+
+  
+  
+  
+  mozilla::UniquePtr<gfxFontShaper> mHarfBuzzShaper;
+  mozilla::UniquePtr<gfxFontShaper> mGraphiteShaper;
+
+  
+  
+  RefPtr<gfxCharacterMap> mUnicodeRangeMap;
+
+  RefPtr<mozilla::gfx::UnscaledFont> mUnscaledFont;
+  RefPtr<mozilla::gfx::ScaledFont> mAzureScaledFont;
+
+  
+  mozilla::UniquePtr<const Metrics> mVerticalMetrics;
+
+  
+  mozilla::UniquePtr<gfxMathTable> mMathTable;
+
+  gfxFontStyle mStyle;
+  gfxFloat mAdjustedSize;
+
+  
+  
+  
+  float mFUnitsConvFactor;
+
+  nsExpirationState mExpirationState;
+
+  
+  AntialiasOption mAntialiasOption;
+
+  bool mIsValid;
+
+  
+  
+  bool mApplySyntheticBold;
+
+  bool mKerningSet;      
+  bool mKerningEnabled;  
+
+  bool mMathInitialized;  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool InitMetricsFromSfntTables(Metrics& aMetrics);
+
+  
+  
+  void CalculateDerivedMetrics(Metrics& aMetrics);
+
+  
+  
+  void SanitizeMetrics(Metrics* aMetrics, bool aIsBadUnderlineFont);
+
+  bool RenderSVGGlyph(gfxContext* aContext, mozilla::gfx::Point aPoint,
+                      uint32_t aGlyphId, SVGContextPaint* aContextPaint) const;
+  bool RenderSVGGlyph(gfxContext* aContext, mozilla::gfx::Point aPoint,
+                      uint32_t aGlyphId, SVGContextPaint* aContextPaint,
+                      gfxTextRunDrawCallbacks* aCallbacks,
+                      bool& aEmittedGlyphs) const;
+
+  bool RenderColorGlyph(DrawTarget* aDrawTarget, gfxContext* aContext,
+                        mozilla::gfx::ScaledFont* scaledFont,
+                        mozilla::gfx::DrawOptions drawOptions,
+                        const mozilla::gfx::Point& aPoint,
+                        uint32_t aGlyphId) const;
+
+  
+  
+  
+  
+  
+  
+  
+  static mozilla::gfx::Float CalcXScale(DrawTarget* aDrawTarget);
 };
 
 
@@ -2360,43 +2199,43 @@ protected:
 
 
 struct MOZ_STACK_CLASS TextRunDrawParams {
-    RefPtr<mozilla::gfx::DrawTarget> dt;
-    gfxContext              *context;
-    gfxFont::Spacing        *spacing;
-    gfxTextRunDrawCallbacks *callbacks;
-    mozilla::SVGContextPaint *runContextPaint;
-    mozilla::gfx::Float      direction;
-    double                   devPerApp;
-    nscolor                  textStrokeColor;
-    gfxPattern              *textStrokePattern;
-    const mozilla::gfx::StrokeOptions *strokeOpts;
-    const mozilla::gfx::DrawOptions   *drawOpts;
-    DrawMode                 drawMode;
-    bool                     isVerticalRun;
-    bool                     isRTL;
-    bool                     paintSVGGlyphs;
+  RefPtr<mozilla::gfx::DrawTarget> dt;
+  gfxContext* context;
+  gfxFont::Spacing* spacing;
+  gfxTextRunDrawCallbacks* callbacks;
+  mozilla::SVGContextPaint* runContextPaint;
+  mozilla::gfx::Float direction;
+  double devPerApp;
+  nscolor textStrokeColor;
+  gfxPattern* textStrokePattern;
+  const mozilla::gfx::StrokeOptions* strokeOpts;
+  const mozilla::gfx::DrawOptions* drawOpts;
+  DrawMode drawMode;
+  bool isVerticalRun;
+  bool isRTL;
+  bool paintSVGGlyphs;
 };
 
 struct MOZ_STACK_CLASS FontDrawParams {
-    RefPtr<mozilla::gfx::ScaledFont>            scaledFont;
-    mozilla::SVGContextPaint *contextPaint;
-    mozilla::gfx::Float       synBoldOnePixelOffset;
-    mozilla::gfx::Float       obliqueSkew;
-    int32_t                   extraStrikes;
-    mozilla::gfx::DrawOptions drawOptions;
-    gfxFloat                  advanceDirection;
-    bool                      isVerticalFont;
-    bool                      haveSVGGlyphs;
-    bool                      haveColorGlyphs;
+  RefPtr<mozilla::gfx::ScaledFont> scaledFont;
+  mozilla::SVGContextPaint* contextPaint;
+  mozilla::gfx::Float synBoldOnePixelOffset;
+  mozilla::gfx::Float obliqueSkew;
+  int32_t extraStrikes;
+  mozilla::gfx::DrawOptions drawOptions;
+  gfxFloat advanceDirection;
+  bool isVerticalFont;
+  bool haveSVGGlyphs;
+  bool haveColorGlyphs;
 };
 
 struct MOZ_STACK_CLASS EmphasisMarkDrawParams {
-    gfxContext* context;
-    gfxFont::Spacing* spacing;
-    gfxTextRun* mark;
-    gfxFloat advance;
-    gfxFloat direction;
-    bool isVertical;
+  gfxContext* context;
+  gfxFont::Spacing* spacing;
+  gfxTextRun* mark;
+  gfxFloat advance;
+  gfxFloat direction;
+  bool isVertical;
 };
 
 #endif

@@ -14,12 +14,11 @@
 
 
 
-class nsSVGDataParser
-{
-public:
+class nsSVGDataParser {
+ public:
   explicit nsSVGDataParser(const nsAString& aValue);
 
-protected:
+ protected:
   static bool IsAlpha(char16_t aCh) {
     
     return (aCh & 0x7f) == aCh && isalpha(aCh);
@@ -35,5 +34,4 @@ protected:
   const mozilla::RangedPtr<const char16_t> mEnd;
 };
 
-
-#endif 
+#endif  

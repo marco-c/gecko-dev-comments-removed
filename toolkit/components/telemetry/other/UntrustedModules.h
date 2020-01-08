@@ -18,10 +18,9 @@ namespace Telemetry {
 
 
 
-nsresult
-GetUntrustedModuleLoadEvents(JSContext *cx, dom::Promise** aPromise);
+nsresult GetUntrustedModuleLoadEvents(JSContext* cx, dom::Promise** aPromise);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

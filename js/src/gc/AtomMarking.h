@@ -19,73 +19,75 @@ class Arena;
 
 
 
-class AtomMarkingRuntime
-{
-    
-    js::GCLockData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
+class AtomMarkingRuntime {
+  
+  js::GCLockData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
 
-    void markChildren(JSContext* cx, JSAtom*) {}
+  void markChildren(JSContext* cx, JSAtom*) {}
 
-    void markChildren(JSContext* cx, JS::Symbol* symbol) {
-        if (JSAtom* description = symbol->description()) {
-            markAtom(cx, description);
-        }
+  void markChildren(JSContext* cx, JS::Symbol* symbol) {
+    if (JSAtom* description = symbol->description()) {
+      markAtom(cx, description);
     }
+  }
 
-  public:
-    
-    
-    mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
-                    mozilla::recordreplay::Behavior::DontPreserve> allocatedWords;
+ public:
+  
+  
+  mozilla::Atomic<size_t, mozilla::SequentiallyConsistent,
+                  mozilla::recordreplay::Behavior::DontPreserve>
+      allocatedWords;
 
-    AtomMarkingRuntime()
-      : allocatedWords(0)
-    {}
+  AtomMarkingRuntime() : allocatedWords(0) {}
 
-    
-    void registerArena(Arena* arena, const AutoLockGC& lock);
+  
+  void registerArena(Arena* arena, const AutoLockGC& lock);
 
-    
-    void unregisterArena(Arena* arena, const AutoLockGC& lock);
+  
+  void unregisterArena(Arena* arena, const AutoLockGC& lock);
 
-    
-    
-    
-    bool computeBitmapFromChunkMarkBits(JSRuntime* runtime, DenseBitmap& bitmap);
+  
+  
+  
+  bool computeBitmapFromChunkMarkBits(JSRuntime* runtime, DenseBitmap& bitmap);
 
-    
-    
-    void refineZoneBitmapForCollectedZone(Zone* zone, const DenseBitmap& bitmap);
+  
+  
+  void refineZoneBitmapForCollectedZone(Zone* zone, const DenseBitmap& bitmap);
 
-    
-    
-    void markAtomsUsedByUncollectedZones(JSRuntime* runtime);
+  
+  
+  void markAtomsUsedByUncollectedZones(JSRuntime* runtime);
 
-    
-    template <typename T> void markAtom(JSContext* cx, T* thing);
+  
+  template <typename T>
+  void markAtom(JSContext* cx, T* thing);
 
-    
-    
-    template <typename T, bool Fallible>
-    MOZ_ALWAYS_INLINE bool inlinedMarkAtomInternal(JSContext* cx, T* thing);
-    template <typename T> MOZ_ALWAYS_INLINE void inlinedMarkAtom(JSContext* cx, T* thing);
-    template <typename T> MOZ_ALWAYS_INLINE bool inlinedMarkAtomFallible(JSContext* cx, T* thing);
+  
+  
+  template <typename T, bool Fallible>
+  MOZ_ALWAYS_INLINE bool inlinedMarkAtomInternal(JSContext* cx, T* thing);
+  template <typename T>
+  MOZ_ALWAYS_INLINE void inlinedMarkAtom(JSContext* cx, T* thing);
+  template <typename T>
+  MOZ_ALWAYS_INLINE bool inlinedMarkAtomFallible(JSContext* cx, T* thing);
 
-    void markId(JSContext* cx, jsid id);
-    void markAtomValue(JSContext* cx, const Value& value);
+  void markId(JSContext* cx, jsid id);
+  void markAtomValue(JSContext* cx, const Value& value);
 
-    
-    void adoptMarkedAtoms(Zone* target, Zone* source);
+  
+  void adoptMarkedAtoms(Zone* target, Zone* source);
 
 #ifdef DEBUG
-    
-    template <typename T> bool atomIsMarked(Zone* zone, T* thing);
-    bool idIsMarked(Zone* zone, jsid id);
-    bool valueIsMarked(Zone* zone, const Value& value);
+  
+  template <typename T>
+  bool atomIsMarked(Zone* zone, T* thing);
+  bool idIsMarked(Zone* zone, jsid id);
+  bool valueIsMarked(Zone* zone, const Value& value);
 #endif
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -20,23 +20,21 @@ namespace js {
 
 
 
-struct MutexId
-{
+struct MutexId {
   const char* name;
   uint32_t order;
 };
 
 #ifndef DEBUG
 
-class Mutex : public mozilla::detail::MutexImpl
-{
-public:
+class Mutex : public mozilla::detail::MutexImpl {
+ public:
   static bool Init() { return true; }
   static void ShutDown() {}
 
   explicit Mutex(const MutexId& id)
-    : mozilla::detail::MutexImpl(mozilla::recordreplay::Behavior::DontPreserve)
-  {}
+      : mozilla::detail::MutexImpl(
+            mozilla::recordreplay::Behavior::DontPreserve) {}
 
   using MutexImpl::lock;
   using MutexImpl::unlock;
@@ -49,16 +47,15 @@ public:
 
 
 
-class Mutex : public mozilla::detail::MutexImpl
-{
-public:
+class Mutex : public mozilla::detail::MutexImpl {
+ public:
   static bool Init();
   static void ShutDown();
 
   explicit Mutex(const MutexId& id)
-    : mozilla::detail::MutexImpl(mozilla::recordreplay::Behavior::DontPreserve),
-      id_(id)
-  {
+      : mozilla::detail::MutexImpl(
+            mozilla::recordreplay::Behavior::DontPreserve),
+        id_(id) {
     MOZ_ASSERT(id_.order != 0);
   }
 
@@ -66,7 +63,7 @@ public:
   void unlock();
   bool ownedByCurrentThread() const;
 
-private:
+ private:
   const MutexId id_;
 
   using MutexVector = mozilla::Vector<const Mutex*>;
@@ -76,6 +73,6 @@ private:
 
 #endif
 
-} 
+}  
 
-#endif 
+#endif  

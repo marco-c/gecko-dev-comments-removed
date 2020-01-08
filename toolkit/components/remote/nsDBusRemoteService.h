@@ -12,31 +12,28 @@
 #include "mozilla/DBusHelpers.h"
 #include "nsString.h"
 
-class nsDBusRemoteService final : public nsIRemoteService
-{
-public:
+class nsDBusRemoteService final : public nsIRemoteService {
+ public:
   
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREMOTESERVICE
 
-  nsDBusRemoteService()
-    : mConnection(nullptr)
-    , mAppName(nullptr)
-    { }
+  nsDBusRemoteService() : mConnection(nullptr), mAppName(nullptr) {}
 
-  DBusHandlerResult HandleDBusMessage(DBusConnection *aConnection, DBusMessage *msg);
+  DBusHandlerResult HandleDBusMessage(DBusConnection *aConnection,
+                                      DBusMessage *msg);
   void UnregisterDBusInterface(DBusConnection *aConnection);
 
-private:
-  ~nsDBusRemoteService() { }
+ private:
+  ~nsDBusRemoteService() {}
 
   DBusHandlerResult OpenURL(DBusMessage *msg);
   DBusHandlerResult Introspect(DBusMessage *msg);
 
   
-  RefPtr<DBusConnection>  mConnection;
-  nsCString               mAppName;
-  nsCString               mPathName;
+  RefPtr<DBusConnection> mConnection;
+  nsCString mAppName;
+  nsCString mPathName;
 };
 
-#endif 
+#endif  

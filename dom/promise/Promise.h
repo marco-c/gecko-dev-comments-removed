@@ -34,25 +34,25 @@ class PromiseInit;
 class PromiseNativeHandler;
 class PromiseDebugging;
 
-#define NS_PROMISE_IID \
-  { 0x1b8d6215, 0x3e67, 0x43ba, \
-    { 0x8a, 0xf9, 0x31, 0x5e, 0x8f, 0xce, 0x75, 0x65 } }
+#define NS_PROMISE_IID                               \
+  {                                                  \
+    0x1b8d6215, 0x3e67, 0x43ba, {                    \
+      0x8a, 0xf9, 0x31, 0x5e, 0x8f, 0xce, 0x75, 0x65 \
+    }                                                \
+  }
 
-class Promise : public nsISupports,
-                public SupportsWeakPtr<Promise>
-{
+class Promise : public nsISupports, public SupportsWeakPtr<Promise> {
   friend class PromiseTask;
   friend class PromiseWorkerProxy;
   friend class PromiseWorkerProxyRunnable;
 
-public:
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PROMISE_IID)
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Promise)
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(Promise)
 
-  enum PropagateUserInteraction
-  {
+  enum PropagateUserInteraction {
     eDontPropagateUserInteraction,
     ePropagateUserInteraction
   };
@@ -64,11 +64,10 @@ public:
   
   
   
-  static already_AddRefed<Promise>
-  Create(nsIGlobalObject* aGlobal,
-         ErrorResult& aRv,
-         PropagateUserInteraction aPropagateUserInteraction =
-           eDontPropagateUserInteraction);
+  static already_AddRefed<Promise> Create(
+      nsIGlobalObject* aGlobal, ErrorResult& aRv,
+      PropagateUserInteraction aPropagateUserInteraction =
+          eDontPropagateUserInteraction);
 
   
   static void ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise);
@@ -76,10 +75,8 @@ public:
   typedef void (Promise::*MaybeFunc)(JSContext* aCx,
                                      JS::Handle<JS::Value> aValue);
 
-  void MaybeResolve(JSContext* aCx,
-                    JS::Handle<JS::Value> aValue);
-  void MaybeReject(JSContext* aCx,
-                   JS::Handle<JS::Value> aValue);
+  void MaybeResolve(JSContext* aCx, JS::Handle<JS::Value> aValue);
+  void MaybeReject(JSContext* aCx, JS::Handle<JS::Value> aValue);
 
   
   
@@ -113,17 +110,14 @@ public:
   
   
   
-  template<typename T>
-  void MaybeRejectBrokenly(const T& aArg); 
-                                           
-                                           
+  template <typename T>
+  void MaybeRejectBrokenly(const T& aArg);  
+                                            
+                                            
 
   
 
-  nsIGlobalObject* GetParentObject() const
-  {
-    return mGlobal;
-  }
+  nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
   
   
@@ -131,53 +125,50 @@ public:
   
   
   
-  static already_AddRefed<Promise>
-  Resolve(nsIGlobalObject* aGlobal, JSContext* aCx,
-          JS::Handle<JS::Value> aValue,
-          ErrorResult& aRv,
-          PropagateUserInteraction aPropagateUserInteraction =
-            eDontPropagateUserInteraction);
-
-  
-  
-  
-  static already_AddRefed<Promise>
-  Reject(nsIGlobalObject* aGlobal, JSContext* aCx,
-         JS::Handle<JS::Value> aValue, ErrorResult& aRv);
-
-  
-  
-  
-  
-  
-  
-  static already_AddRefed<Promise>
-  All(JSContext* aCx, const nsTArray<RefPtr<Promise>>& aPromiseList,
+  static already_AddRefed<Promise> Resolve(
+      nsIGlobalObject* aGlobal, JSContext* aCx, JS::Handle<JS::Value> aValue,
       ErrorResult& aRv,
       PropagateUserInteraction aPropagateUserInteraction =
-        eDontPropagateUserInteraction);
+          eDontPropagateUserInteraction);
 
-  void
-  Then(JSContext* aCx,
-       
-       
-       JS::Handle<JSObject*> aCalleeGlobal,
-       AnyCallback* aResolveCallback, AnyCallback* aRejectCallback,
-       JS::MutableHandle<JS::Value> aRetval,
-       ErrorResult& aRv);
+  
+  
+  
+  static already_AddRefed<Promise> Reject(nsIGlobalObject* aGlobal,
+                                          JSContext* aCx,
+                                          JS::Handle<JS::Value> aValue,
+                                          ErrorResult& aRv);
+
+  
+  
+  
+  
+  
+  
+  static already_AddRefed<Promise> All(
+      JSContext* aCx, const nsTArray<RefPtr<Promise>>& aPromiseList,
+      ErrorResult& aRv,
+      PropagateUserInteraction aPropagateUserInteraction =
+          eDontPropagateUserInteraction);
+
+  void Then(JSContext* aCx,
+            
+            
+            JS::Handle<JSObject*> aCalleeGlobal, AnyCallback* aResolveCallback,
+            AnyCallback* aRejectCallback, JS::MutableHandle<JS::Value> aRetval,
+            ErrorResult& aRv);
 
   template <typename Callback, typename... Args>
   using IsHandlerCallback =
       IsSame<already_AddRefed<Promise>,
-             decltype(DeclVal<Callback>()(
-                (JSContext*)(nullptr),
-                DeclVal<JS::Handle<JS::Value>>(),
-                DeclVal<Args>()...))>;
+             decltype(DeclVal<Callback>()((JSContext*)(nullptr),
+                                          DeclVal<JS::Handle<JS::Value>>(),
+                                          DeclVal<Args>()...))>;
 
   template <typename Callback, typename... Args>
-  using ThenResult = typename EnableIf<
-    IsHandlerCallback<Callback, Args...>::value,
-    Result<RefPtr<Promise>, nsresult>>::Type;
+  using ThenResult =
+      typename EnableIf<IsHandlerCallback<Callback, Args...>::value,
+                        Result<RefPtr<Promise>, nsresult>>::Type;
 
   
   
@@ -195,18 +186,14 @@ public:
   
   
   template <typename Callback, typename... Args>
-  ThenResult<Callback, Args...>
-  ThenWithCycleCollectedArgs(Callback&& aOnResolve, Args&&... aArgs);
+  ThenResult<Callback, Args...> ThenWithCycleCollectedArgs(
+      Callback&& aOnResolve, Args&&... aArgs);
 
-  Result<RefPtr<Promise>, nsresult>
-  ThenWithoutCycleCollection(
-    const std::function<already_AddRefed<Promise>(JSContext*,
-                                                  JS::HandleValue)>& aCallback);
+  Result<RefPtr<Promise>, nsresult> ThenWithoutCycleCollection(
+      const std::function<
+          already_AddRefed<Promise>(JSContext*, JS::HandleValue)>& aCallback);
 
-  JSObject* PromiseObj() const
-  {
-    return mPromiseObj;
-  }
+  JSObject* PromiseObj() const { return mPromiseObj; }
 
   void AppendNativeHandler(PromiseNativeHandler* aRunnable);
 
@@ -219,21 +206,16 @@ public:
   
   
   
-  static already_AddRefed<Promise>
-  CreateFromExisting(nsIGlobalObject* aGlobal,
-                     JS::Handle<JSObject*> aPromiseObj,
-                     PropagateUserInteraction aPropagateUserInteraction =
-                       eDontPropagateUserInteraction);
+  static already_AddRefed<Promise> CreateFromExisting(
+      nsIGlobalObject* aGlobal, JS::Handle<JSObject*> aPromiseObj,
+      PropagateUserInteraction aPropagateUserInteraction =
+          eDontPropagateUserInteraction);
 
-  enum class PromiseState {
-    Pending,
-    Resolved,
-    Rejected
-  };
+  enum class PromiseState { Pending, Resolved, Rejected };
 
   PromiseState State() const;
 
-protected:
+ protected:
   struct PromiseCapability;
 
   
@@ -248,15 +230,14 @@ protected:
   
   
   
-  void CreateWrapper(JS::Handle<JSObject*> aDesiredProto,
-                     ErrorResult& aRv,
+  void CreateWrapper(JS::Handle<JSObject*> aDesiredProto, ErrorResult& aRv,
                      PropagateUserInteraction aPropagateUserInteraction =
-                       eDontPropagateUserInteraction);
+                         eDontPropagateUserInteraction);
 
-private:
+ private:
   template <typename T>
   void MaybeSomething(T&& aArgument, MaybeFunc aFunc) {
-    MOZ_ASSERT(PromiseObj()); 
+    MOZ_ASSERT(PromiseObj());  
 
     AutoEntryScript aes(mGlobal, "Promise resolution or rejection");
     JSContext* cx = aes.cx();
@@ -281,7 +262,7 @@ private:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Promise, NS_PROMISE_IID)
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

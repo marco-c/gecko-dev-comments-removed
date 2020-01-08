@@ -25,50 +25,51 @@ class gfxGdkNativeRenderer
     : private gfxXlibNativeRenderer
 #endif
 {
-public:
+ public:
+  
+
+
+
+
+
+
+
+
+  enum {
     
-
-
-
-
-
-
-
-
-    enum {
-        
-        
-        
-        
-        DRAW_IS_OPAQUE =
+    
+    
+    
+    DRAW_IS_OPAQUE =
 #ifdef MOZ_X11
-            gfxXlibNativeRenderer::DRAW_IS_OPAQUE
+        gfxXlibNativeRenderer::DRAW_IS_OPAQUE
 #else
-            0x1
+        0x1
 #endif
-        
-        
-        , DRAW_SUPPORTS_CLIP_RECT =
+    
+    
+    ,
+    DRAW_SUPPORTS_CLIP_RECT =
 #ifdef MOZ_X11
-            gfxXlibNativeRenderer::DRAW_SUPPORTS_CLIP_RECT
+        gfxXlibNativeRenderer::DRAW_SUPPORTS_CLIP_RECT
 #else
-            0x2
+        0x2
 #endif
-    };
+  };
 
-    
-
-
+  
 
 
 
 
-private:
+
+
+ private:
 #ifdef MOZ_X11
-    
-    virtual nsresult DrawWithXlib(cairo_surface_t* surface,
-                                  nsIntPoint offset,
-                                  mozilla::gfx::IntRect* clipRects, uint32_t numClipRects) override;
+  
+  virtual nsresult DrawWithXlib(cairo_surface_t* surface, nsIntPoint offset,
+                                mozilla::gfx::IntRect* clipRects,
+                                uint32_t numClipRects) override;
 
 #endif
 };

@@ -24,7 +24,7 @@
 
 #include <d3dcommon.h>
 
-#if !defined(D3D_FEATURE_LEVEL_11_1) 
+#if !defined(D3D_FEATURE_LEVEL_11_1)  
 #define D3D_FEATURE_LEVEL_11_1 static_cast<D3D_FEATURE_LEVEL>(0xb100)
 #define D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION 2048
 #define D3D_FL9_3_REQ_TEXTURE2D_U_OR_V_DIMENSION 4096
@@ -39,22 +39,19 @@ class ScopedGfxFeatureReporter;
 namespace layers {
 class DeviceAttachmentsD3D11;
 class MLGDevice;
-} 
+}  
 
 namespace gfx {
 class FeatureState;
 
-class DeviceManagerDx final
-{
-public:
+class DeviceManagerDx final {
+ public:
   static void Init();
   static void Shutdown();
 
   DeviceManagerDx();
 
-  static DeviceManagerDx* Get() {
-    return sInstance;
-  }
+  static DeviceManagerDx* Get() { return sInstance; }
 
   RefPtr<ID3D11Device> GetCompositorDevice();
   RefPtr<ID3D11Device> GetContentDevice();
@@ -88,8 +85,9 @@ public:
   void CreateContentDevices();
   void CreateDirectCompositionDevice();
 
-  void GetCompositorDevices(RefPtr<ID3D11Device>* aOutDevice,
-                            RefPtr<layers::DeviceAttachmentsD3D11>* aOutAttachments);
+  void GetCompositorDevices(
+      RefPtr<ID3D11Device>* aOutDevice,
+      RefPtr<layers::DeviceAttachmentsD3D11>* aOutAttachments);
 
   void ImportDeviceInfo(const D3D11DeviceStatus& aDeviceStatus);
   void ExportDeviceInfo(D3D11DeviceStatus* aOut);
@@ -113,21 +111,20 @@ public:
   
   void ForceDeviceReset(ForcedDeviceResetReason aReason);
 
-private:
+ private:
   
   
   static void PreloadAttachmentsOnCompositorThread();
 
-  IDXGIAdapter1 *GetDXGIAdapter();
+  IDXGIAdapter1* GetDXGIAdapter();
 
   void DisableD3D11AfterCrash();
 
   void CreateCompositorDevice(mozilla::gfx::FeatureState& d3d11);
-  bool CreateCompositorDeviceHelper(
-      mozilla::gfx::FeatureState& aD3d11,
-      IDXGIAdapter1* aAdapter,
-      bool aAttemptVideoSupport,
-      RefPtr<ID3D11Device>& aOutDevice);
+  bool CreateCompositorDeviceHelper(mozilla::gfx::FeatureState& aD3d11,
+                                    IDXGIAdapter1* aAdapter,
+                                    bool aAttemptVideoSupport,
+                                    RefPtr<ID3D11Device>& aOutDevice);
 
   void CreateWARPCompositorDevice();
   void CreateMLGDevice();
@@ -135,10 +132,8 @@ private:
 
   mozilla::gfx::FeatureStatus CreateContentDevice();
 
-  bool CreateDevice(IDXGIAdapter* aAdapter,
-                    D3D_DRIVER_TYPE aDriverType,
-                    UINT aFlags,
-                    HRESULT& aResOut,
+  bool CreateDevice(IDXGIAdapter* aAdapter, D3D_DRIVER_TYPE aDriverType,
+                    UINT aFlags, HRESULT& aResOut,
                     RefPtr<ID3D11Device>& aOutDevice);
 
   bool ContentAdapterIsParentAdapter(ID3D11Device* device);
@@ -151,7 +146,7 @@ private:
   
   bool GetAnyDeviceRemovedReason(DeviceResetReason* aOutReason);
 
-private:
+ private:
   static StaticAutoPtr<DeviceManagerDx> sInstance;
 
   
@@ -183,7 +178,7 @@ private:
   Maybe<DeviceResetReason> mDeviceResetReason;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

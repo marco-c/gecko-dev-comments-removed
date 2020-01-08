@@ -8,9 +8,8 @@
 #include "nscore.h"
 #include "nsHtml5OwningUTF16Buffer.h"
 
-class MOZ_STACK_CLASS nsHtml5DependentUTF16Buffer : public nsHtml5UTF16Buffer
-{
-public:
+class MOZ_STACK_CLASS nsHtml5DependentUTF16Buffer : public nsHtml5UTF16Buffer {
+ public:
   
 
 
@@ -28,4 +27,4 @@ public:
   already_AddRefed<nsHtml5OwningUTF16Buffer> FalliblyCopyAsOwningBuffer();
 };
 
-#endif 
+#endif  

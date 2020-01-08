@@ -36,17 +36,15 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(ModuleTrustFlags);
 
 
 
-class ModuleLoadEvent
-{
-public:
-  class ModuleInfo
-  {
-  public:
+class ModuleLoadEvent {
+ public:
+  class ModuleInfo {
+   public:
     ModuleInfo() = default;
     ModuleInfo(const ModuleInfo&) = default;
     ModuleInfo(ModuleInfo&&) = default;
-    ModuleInfo& operator =(const ModuleInfo&) = default;
-    ModuleInfo& operator =(ModuleInfo&&) = default;
+    ModuleInfo& operator=(const ModuleInfo&) = default;
+    ModuleInfo& operator=(ModuleInfo&&) = default;
 
     
     explicit ModuleInfo(const glue::ModuleLoadEvent::ModuleInfo&);
@@ -54,10 +52,10 @@ public:
     
     uintptr_t mBase;
     nsString mLdrName;
-    nsCOMPtr<nsIFile> mFile; 
+    nsCOMPtr<nsIFile> mFile;  
 
     
-    nsString mFilePathClean; 
+    nsString mFilePathClean;  
     ModuleTrustFlags mTrustFlags;
     nsCString mFileVersion;
   };
@@ -67,17 +65,16 @@ public:
 
   
   
-  enum class CopyOption : int
-  {
-    CopyEverything, 
+  enum class CopyOption : int {
+    CopyEverything,  
     CopyWithoutModules,
   };
 
   ModuleLoadEvent(const ModuleLoadEvent& aOther,
                   CopyOption aOption = CopyOption::CopyEverything);
 
-  ModuleLoadEvent& operator =(ModuleLoadEvent&& aOther) = default;
-  ModuleLoadEvent& operator =(const ModuleLoadEvent& aOther) = delete;
+  ModuleLoadEvent& operator=(ModuleLoadEvent&& aOther) = default;
+  ModuleLoadEvent& operator=(const ModuleLoadEvent& aOther) = delete;
 
   
   explicit ModuleLoadEvent(const glue::ModuleLoadEvent& aOther);
@@ -93,14 +90,13 @@ public:
 };
 
 
-class ModuleEvaluator
-{
-  Maybe<uint64_t> mExeVersion; 
-  nsString mExeDirectory; 
-  nsString mSysDirectory; 
+class ModuleEvaluator {
+  Maybe<uint64_t> mExeVersion;  
+  nsString mExeDirectory;       
+  nsString mSysDirectory;       
   Vector<nsString, 0, InfallibleAllocPolicy> mKeyboardLayoutDlls;
 
-public:
+ public:
   ModuleEvaluator();
 
   
@@ -123,6 +119,6 @@ public:
                               Authenticode* aSvc) const;
 };
 
-} 
+}  
 
-#endif 
+#endif  

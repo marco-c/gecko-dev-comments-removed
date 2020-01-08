@@ -16,7 +16,7 @@ namespace storage {
 
 int RegisterFileSystemModule(sqlite3* aDB, const char* aName);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

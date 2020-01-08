@@ -18,13 +18,11 @@ struct DtoaState;
 
 namespace js {
 
-extern DtoaState*
-NewDtoaState();
+extern DtoaState* NewDtoaState();
 
-extern void
-DestroyDtoaState(DtoaState* state);
+extern void DestroyDtoaState(DtoaState* state);
 
-} 
+}  
 
 
 
@@ -37,8 +35,7 @@ DestroyDtoaState(DtoaState* state);
 
 
 
-double
-js_strtod_harder(DtoaState* state, const char* s00, char** se);
+double js_strtod_harder(DtoaState* state, const char* s00, char** se);
 
 
 
@@ -53,11 +50,14 @@ js_strtod_harder(DtoaState* state, const char* s00, char** se);
 
 
 typedef enum JSDToStrMode {
-    DTOSTR_STANDARD,              
-    DTOSTR_STANDARD_EXPONENTIAL,  
-    DTOSTR_FIXED,                 
-    DTOSTR_EXPONENTIAL,           
-    DTOSTR_PRECISION              
+  DTOSTR_STANDARD, 
+  DTOSTR_STANDARD_EXPONENTIAL, 
+  DTOSTR_FIXED,       
+
+  DTOSTR_EXPONENTIAL, 
+
+  DTOSTR_PRECISION    
+
 } JSDToStrMode;
 
 
@@ -67,7 +67,11 @@ typedef enum JSDToStrMode {
 
 
 
-#define DTOSTR_VARIABLE_BUFFER_SIZE(precision) ((precision)+24 > DTOSTR_STANDARD_BUFFER_SIZE ? (precision)+24 : DTOSTR_STANDARD_BUFFER_SIZE)
+
+#define DTOSTR_VARIABLE_BUFFER_SIZE(precision)    \
+  ((precision) + 24 > DTOSTR_STANDARD_BUFFER_SIZE \
+       ? (precision) + 24                         \
+       : DTOSTR_STANDARD_BUFFER_SIZE)
 
 
 
@@ -85,9 +89,8 @@ typedef enum JSDToStrMode {
 
 
 
-char*
-js_dtostr(DtoaState* state, char* buffer, size_t bufferSize, JSDToStrMode mode, int precision,
-          double dval);
+char* js_dtostr(DtoaState* state, char* buffer, size_t bufferSize,
+                JSDToStrMode mode, int precision, double dval);
 
 
 
@@ -107,7 +110,6 @@ js_dtostr(DtoaState* state, char* buffer, size_t bufferSize, JSDToStrMode mode, 
 
 
 
-char*
-js_dtobasestr(DtoaState* state, int base, double d);
+char* js_dtobasestr(DtoaState* state, int base, double d);
 
 #endif 

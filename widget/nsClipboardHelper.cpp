@@ -24,12 +24,9 @@ NS_IMPL_ISUPPORTS(nsClipboardHelper, nsIClipboardHelper)
 
 
 
-nsClipboardHelper::nsClipboardHelper()
-{
-}
+nsClipboardHelper::nsClipboardHelper() {}
 
-nsClipboardHelper::~nsClipboardHelper()
-{
+nsClipboardHelper::~nsClipboardHelper() {
   
 }
 
@@ -39,13 +36,12 @@ nsClipboardHelper::~nsClipboardHelper()
 
 NS_IMETHODIMP
 nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
-                                         int32_t aClipboardID)
-{
+                                         int32_t aClipboardID) {
   nsresult rv;
 
   
-  nsCOMPtr<nsIClipboard>
-    clipboard(do_GetService("@mozilla.org/widget/clipboard;1", &rv));
+  nsCOMPtr<nsIClipboard> clipboard(
+      do_GetService("@mozilla.org/widget/clipboard;1", &rv));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(clipboard, NS_ERROR_FAILURE);
 
@@ -55,8 +51,7 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
   if (nsIClipboard::kSelectionClipboard == aClipboardID) {
     rv = clipboard->SupportsSelectionClipboard(&clipboardSupported);
     NS_ENSURE_SUCCESS(rv, rv);
-    if (!clipboardSupported)
-      return NS_ERROR_FAILURE;
+    if (!clipboardSupported) return NS_ERROR_FAILURE;
   }
 
   
@@ -64,13 +59,12 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
   if (nsIClipboard::kFindClipboard == aClipboardID) {
     rv = clipboard->SupportsFindClipboard(&clipboardSupported);
     NS_ENSURE_SUCCESS(rv, rv);
-    if (!clipboardSupported)
-      return NS_ERROR_FAILURE;
+    if (!clipboardSupported) return NS_ERROR_FAILURE;
   }
 
   
-  nsCOMPtr<nsITransferable>
-    trans(do_CreateInstance("@mozilla.org/widget/transferable;1", &rv));
+  nsCOMPtr<nsITransferable> trans(
+      do_CreateInstance("@mozilla.org/widget/transferable;1", &rv));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(trans, NS_ERROR_FAILURE);
 
@@ -81,8 +75,8 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  nsCOMPtr<nsISupportsString>
-    data(do_CreateInstance("@mozilla.org/supports-string;1", &rv));
+  nsCOMPtr<nsISupportsString> data(
+      do_CreateInstance("@mozilla.org/supports-string;1", &rv));
   NS_ENSURE_SUCCESS(rv, rv);
   NS_ENSURE_TRUE(data, NS_ERROR_FAILURE);
 
@@ -108,8 +102,7 @@ nsClipboardHelper::CopyStringToClipboard(const nsAString& aString,
 }
 
 NS_IMETHODIMP
-nsClipboardHelper::CopyString(const nsAString& aString)
-{
+nsClipboardHelper::CopyString(const nsAString& aString) {
   nsresult rv;
 
   

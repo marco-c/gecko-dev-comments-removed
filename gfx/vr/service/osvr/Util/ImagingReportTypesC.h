@@ -53,35 +53,35 @@ typedef uint8_t OSVR_ImageDepth;
 typedef unsigned char OSVR_ImageBufferElement;
 
 typedef enum OSVR_ImagingValueType {
-    OSVR_IVT_UNSIGNED_INT = 0,
-    OSVR_IVT_SIGNED_INT = 1,
-    OSVR_IVT_FLOATING_POINT = 2
+  OSVR_IVT_UNSIGNED_INT = 0,
+  OSVR_IVT_SIGNED_INT = 1,
+  OSVR_IVT_FLOATING_POINT = 2
 } OSVR_ImagingValueType;
 
 typedef struct OSVR_ImagingMetadata {
-    
-    OSVR_ImageDimension height;
-    
-    OSVR_ImageDimension width;
-    
-    OSVR_ImageChannels channels;
-    
+  
+  OSVR_ImageDimension height;
+  
+  OSVR_ImageDimension width;
+  
+  OSVR_ImageChannels channels;
+  
 
-    OSVR_ImageDepth depth;
-    
+  OSVR_ImageDepth depth;
+  
 
-    OSVR_ImagingValueType type;
+  OSVR_ImagingValueType type;
 
 } OSVR_ImagingMetadata;
 
 typedef struct OSVR_ImagingState {
-    OSVR_ImagingMetadata metadata;
-    OSVR_ImageBufferElement *data;
+  OSVR_ImagingMetadata metadata;
+  OSVR_ImageBufferElement *data;
 } OSVR_ImagingState;
 
 typedef struct OSVR_ImagingReport {
-    OSVR_ChannelCount sensor;
-    OSVR_ImagingState state;
+  OSVR_ChannelCount sensor;
+  OSVR_ImagingState state;
 } OSVR_ImagingReport;
 
 

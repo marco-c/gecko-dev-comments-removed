@@ -17,16 +17,14 @@
 
 
 
-class nsClipboardHelper : public nsIClipboardHelper
-{
+class nsClipboardHelper : public nsIClipboardHelper {
   virtual ~nsClipboardHelper();
 
-public:
-
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSICLIPBOARDHELPER
 
   nsClipboardHelper();
 };
 
-#endif 
+#endif  

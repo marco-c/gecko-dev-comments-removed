@@ -33,8 +33,8 @@ namespace mozilla {
 namespace dom {
 class Event;
 class EventTarget;
-} 
-} 
+}  
+}  
 
 class nsWebBrowser;
 class ChromeTooltipListener;
@@ -44,11 +44,10 @@ class nsDocShellTreeOwner final : public nsIDocShellTreeOwner,
                                   public nsIInterfaceRequestor,
                                   public nsIWebProgressListener,
                                   public nsIDOMEventListener,
-                                  public nsSupportsWeakReference
-{
+                                  public nsSupportsWeakReference {
   friend class nsWebBrowser;
 
-public:
+ public:
   NS_DECL_ISUPPORTS
 
   NS_DECL_NSIBASEWINDOW
@@ -57,7 +56,7 @@ public:
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSIWEBPROGRESSLISTENER
 
-protected:
+ protected:
   nsDocShellTreeOwner();
   virtual ~nsDocShellTreeOwner();
 
@@ -87,7 +86,7 @@ protected:
   already_AddRefed<nsIEmbeddingSiteWindow> GetOwnerWin();
   already_AddRefed<nsIInterfaceRequestor> GetOwnerRequestor();
 
-protected:
+ protected:
   
   nsWebBrowser* mWebBrowser;
   nsIDocShellTreeOwner* mTreeOwner;
@@ -97,7 +96,7 @@ protected:
   nsIEmbeddingSiteWindow* mOwnerWin;
   nsIInterfaceRequestor* mOwnerRequestor;
 
-  nsWeakPtr mWebBrowserChromeWeak; 
+  nsWeakPtr mWebBrowserChromeWeak;  
 
   
   
@@ -114,16 +113,15 @@ protected:
 
 
 
-
-class ChromeTooltipListener final : public nsIDOMEventListener
-{
-protected:
+class ChromeTooltipListener final : public nsIDOMEventListener {
+ protected:
   virtual ~ChromeTooltipListener();
 
-public:
+ public:
   NS_DECL_ISUPPORTS
 
-  ChromeTooltipListener(nsWebBrowser* aInBrowser, nsIWebBrowserChrome* aInChrome);
+  ChromeTooltipListener(nsWebBrowser* aInBrowser,
+                        nsIWebBrowserChrome* aInChrome);
 
   NS_DECL_NSIDOMEVENTLISTENER
   NS_IMETHOD MouseMove(mozilla::dom::Event* aMouseEvent);
@@ -133,10 +131,9 @@ public:
   NS_IMETHOD AddChromeListeners();
   NS_IMETHOD RemoveChromeListeners();
 
-private:
+ private:
   
-  enum
-  {
+  enum {
     kTooltipAutoHideTime = 5000,    
     kTooltipMouseMoveTolerance = 7  
   };

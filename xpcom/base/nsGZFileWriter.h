@@ -13,17 +13,11 @@
 
 
 
-class nsGZFileWriter final : public nsIGZFileWriter
-{
+class nsGZFileWriter final : public nsIGZFileWriter {
   virtual ~nsGZFileWriter();
 
-public:
-
-  enum Operation {
-    Append,
-    Create
-  };
-
+ public:
+  enum Operation { Append, Create };
 
   explicit nsGZFileWriter(Operation aMode = Create);
 
@@ -35,17 +29,15 @@ public:
 
 
 
-  MOZ_MUST_USE nsresult Write(const char* aStr)
-  {
+  MOZ_MUST_USE nsresult Write(const char* aStr) {
     return nsIGZFileWriter::Write(aStr);
   }
 
-  MOZ_MUST_USE nsresult Write(const char* aStr, uint32_t aLen)
-  {
+  MOZ_MUST_USE nsresult Write(const char* aStr, uint32_t aLen) {
     return nsIGZFileWriter::Write(aStr, aLen);
   }
 
-private:
+ private:
   Operation mMode;
   bool mInitialized;
   bool mFinished;

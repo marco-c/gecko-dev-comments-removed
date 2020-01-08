@@ -7,38 +7,37 @@
 #ifndef MOZILLA_GFX_TEXTURECLIENT_SHAREDSURFACE_H
 #define MOZILLA_GFX_TEXTURECLIENT_SHAREDSURFACE_H
 
-#include <cstddef>                      
-#include <stdint.h>                     
-#include "GLContextTypes.h"             
+#include <cstddef>           
+#include <stdint.h>          
+#include "GLContextTypes.h"  
 #include "TextureClient.h"
-#include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Types.h"          
+#include "mozilla/Assertions.h"              
+#include "mozilla/RefPtr.h"                  
+#include "mozilla/gfx/Point.h"               
+#include "mozilla/gfx/Types.h"               
 #include "mozilla/layers/CompositorTypes.h"  
-#include "mozilla/layers/LayersSurfaces.h"  
+#include "mozilla/layers/LayersSurfaces.h"   
 
 namespace mozilla {
 namespace gl {
 class GLContext;
 class SharedSurface;
 class SurfaceFactory;
-} 
+}  
 
 namespace layers {
 
 class SharedSurfaceTextureClient;
 
-class SharedSurfaceTextureData : public TextureData
-{
-protected:
+class SharedSurfaceTextureData : public TextureData {
+ protected:
   const UniquePtr<gl::SharedSurface> mSurf;
 
   friend class SharedSurfaceTextureClient;
 
   explicit SharedSurfaceTextureData(UniquePtr<gl::SharedSurface> surf);
-public:
 
+ public:
   ~SharedSurfaceTextureData();
 
   virtual bool Lock(OpenMode) override { return false; }
@@ -54,25 +53,24 @@ public:
   gl::SharedSurface* Surf() const { return mSurf.get(); }
 };
 
-class SharedSurfaceTextureClient : public TextureClient
-{
-public:
+class SharedSurfaceTextureClient : public TextureClient {
+ public:
   SharedSurfaceTextureClient(SharedSurfaceTextureData* aData,
-                             TextureFlags aFlags,
-                             LayersIPCChannel* aAllocator);
+                             TextureFlags aFlags, LayersIPCChannel* aAllocator);
 
   ~SharedSurfaceTextureClient();
 
-  static already_AddRefed<SharedSurfaceTextureClient>
-  Create(UniquePtr<gl::SharedSurface> surf, gl::SurfaceFactory* factory,
-         LayersIPCChannel* aAllocator, TextureFlags aFlags);
+  static already_AddRefed<SharedSurfaceTextureClient> Create(
+      UniquePtr<gl::SharedSurface> surf, gl::SurfaceFactory* factory,
+      LayersIPCChannel* aAllocator, TextureFlags aFlags);
 
   gl::SharedSurface* Surf() const {
-    return static_cast<const SharedSurfaceTextureData*>(GetInternalData())->Surf();
+    return static_cast<const SharedSurfaceTextureData*>(GetInternalData())
+        ->Surf();
   }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

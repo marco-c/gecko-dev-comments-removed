@@ -11,11 +11,11 @@
 #ifndef nsNodeInfoManager_h___
 #define nsNodeInfoManager_h___
 
-#include "mozilla/Attributes.h"           
+#include "mozilla/Attributes.h"  
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/MruCache.h"
-#include "nsCOMPtr.h"                     
-#include "nsCycleCollectionParticipant.h" 
+#include "nsCOMPtr.h"                      
+#include "nsCycleCollectionParticipant.h"  
 #include "nsDataHashtable.h"
 #include "nsStringFwd.h"
 
@@ -24,14 +24,14 @@ class nsAtom;
 class nsIDocument;
 class nsIPrincipal;
 class nsWindowSizes;
-template<class T> struct already_AddRefed;
+template <class T>
+struct already_AddRefed;
 
-class nsNodeInfoManager final
-{
-private:
+class nsNodeInfoManager final {
+ private:
   ~nsNodeInfoManager();
 
-public:
+ public:
   nsNodeInfoManager();
 
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_NATIVE_CLASS(nsNodeInfoManager)
@@ -41,7 +41,7 @@ public:
   
 
 
-  nsresult Init(nsIDocument *aDocument);
+  nsresult Init(nsIDocument* aDocument);
 
   
 
@@ -52,13 +52,13 @@ public:
   
 
 
-  already_AddRefed<mozilla::dom::NodeInfo>
-  GetNodeInfo(nsAtom *aName, nsAtom *aPrefix, int32_t aNamespaceID,
-              uint16_t aNodeType, nsAtom* aExtraName = nullptr);
-  nsresult GetNodeInfo(const nsAString& aName, nsAtom *aPrefix,
+  already_AddRefed<mozilla::dom::NodeInfo> GetNodeInfo(
+      nsAtom* aName, nsAtom* aPrefix, int32_t aNamespaceID, uint16_t aNodeType,
+      nsAtom* aExtraName = nullptr);
+  nsresult GetNodeInfo(const nsAString& aName, nsAtom* aPrefix,
                        int32_t aNamespaceID, uint16_t aNodeType,
                        mozilla::dom::NodeInfo** aNodeInfo);
-  nsresult GetNodeInfo(const nsAString& aName, nsAtom *aPrefix,
+  nsresult GetNodeInfo(const nsAString& aName, nsAtom* aPrefix,
                        const nsAString& aNamespaceURI, uint16_t aNodeType,
                        mozilla::dom::NodeInfo** aNodeInfo);
 
@@ -81,72 +81,58 @@ public:
 
 
 
-  nsIDocument* GetDocument() const
-  {
-    return mDocument;
-  }
+  nsIDocument* GetDocument() const { return mDocument; }
 
   
 
 
-  nsIPrincipal *DocumentPrincipal() const {
+  nsIPrincipal* DocumentPrincipal() const {
     NS_ASSERTION(mPrincipal, "How'd that happen?");
     return mPrincipal;
   }
 
-  void RemoveNodeInfo(mozilla::dom::NodeInfo *aNodeInfo);
+  void RemoveNodeInfo(mozilla::dom::NodeInfo* aNodeInfo);
 
-  nsBindingManager* GetBindingManager() const
-  {
-    return mBindingManager;
-  }
+  nsBindingManager* GetBindingManager() const { return mBindingManager; }
 
-  enum Tri
-  {
-    eTriUnset = 0,
-    eTriFalse,
-    eTriTrue
-  };
+  enum Tri { eTriUnset = 0, eTriFalse, eTriTrue };
 
   
 
 
-  bool SVGEnabled()
-  {
+  bool SVGEnabled() {
     return mSVGEnabled == eTriTrue
-             ? true
-             : mSVGEnabled == eTriFalse ? false : InternalSVGEnabled();
+               ? true
+               : mSVGEnabled == eTriFalse ? false : InternalSVGEnabled();
   }
 
   
 
 
-  bool MathMLEnabled()
-  {
+  bool MathMLEnabled() {
     return mMathMLEnabled == eTriTrue
-             ? true
-             : mMathMLEnabled == eTriFalse ? false : InternalMathMLEnabled();
+               ? true
+               : mMathMLEnabled == eTriFalse ? false : InternalMathMLEnabled();
   }
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 
-protected:
+ protected:
   friend class nsIDocument;
   friend class nsXULPrototypeDocument;
 
   
 
 
-  void SetDocumentPrincipal(nsIPrincipal *aPrincipal);
+  void SetDocumentPrincipal(nsIPrincipal* aPrincipal);
 
-private:
+ private:
   bool InternalSVGEnabled();
   bool InternalMathMLEnabled();
 
-  class NodeInfoInnerKey :
-    public nsPtrHashKey<mozilla::dom::NodeInfo::NodeInfoInner>
-  {
-  public:
+  class NodeInfoInnerKey
+      : public nsPtrHashKey<mozilla::dom::NodeInfo::NodeInfoInner> {
+   public:
     explicit NodeInfoInnerKey(KeyTypePointer aKey) : nsPtrHashKey(aKey) {}
     NodeInfoInnerKey(NodeInfoInnerKey&&) = default;
     ~NodeInfoInnerKey() = default;
@@ -154,31 +140,30 @@ private:
     static PLDHashNumber HashKey(KeyTypePointer aKey) { return aKey->Hash(); }
   };
 
-  struct NodeInfoCache : public mozilla::MruCache<
-                              mozilla::dom::NodeInfo::NodeInfoInner,
-                              mozilla::dom::NodeInfo*,
-                              NodeInfoCache>
-  {
+  struct NodeInfoCache
+      : public mozilla::MruCache<mozilla::dom::NodeInfo::NodeInfoInner,
+                                 mozilla::dom::NodeInfo*, NodeInfoCache> {
     static mozilla::HashNumber Hash(
-        const mozilla::dom::NodeInfo::NodeInfoInner& aKey)
-    {
+        const mozilla::dom::NodeInfo::NodeInfoInner& aKey) {
       return aKey.Hash();
     }
     static bool Match(const mozilla::dom::NodeInfo::NodeInfoInner& aKey,
-                      const mozilla::dom::NodeInfo* aVal)
-    {
+                      const mozilla::dom::NodeInfo* aVal) {
       return aKey == aVal->mInner;
     }
   };
 
   nsDataHashtable<NodeInfoInnerKey, mozilla::dom::NodeInfo*> mNodeInfoHash;
-  nsIDocument * MOZ_NON_OWNING_REF mDocument; 
+  nsIDocument* MOZ_NON_OWNING_REF mDocument;  
   uint32_t mNonDocumentNodeInfos;
-  nsCOMPtr<nsIPrincipal> mPrincipal; 
-  nsCOMPtr<nsIPrincipal> mDefaultPrincipal; 
-  mozilla::dom::NodeInfo * MOZ_NON_OWNING_REF mTextNodeInfo; 
-  mozilla::dom::NodeInfo * MOZ_NON_OWNING_REF mCommentNodeInfo; 
-  mozilla::dom::NodeInfo * MOZ_NON_OWNING_REF mDocumentNodeInfo; 
+  nsCOMPtr<nsIPrincipal> mPrincipal;  
+  nsCOMPtr<nsIPrincipal> mDefaultPrincipal;  
+  mozilla::dom::NodeInfo* MOZ_NON_OWNING_REF
+      mTextNodeInfo;  
+  mozilla::dom::NodeInfo* MOZ_NON_OWNING_REF
+      mCommentNodeInfo;  
+  mozilla::dom::NodeInfo* MOZ_NON_OWNING_REF
+      mDocumentNodeInfo;  
   RefPtr<nsBindingManager> mBindingManager;
   NodeInfoCache mRecentlyUsedNodeInfos;
   Tri mSVGEnabled;

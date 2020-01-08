@@ -14,15 +14,14 @@ namespace mozilla {
 
 
 
-nsTArray<RefPtr<PerformanceInfoPromise>>
-CollectPerformanceInfo();
+nsTArray<RefPtr<PerformanceInfoPromise>> CollectPerformanceInfo();
 
 
 
 
-RefPtr<MemoryPromise>
-CollectMemoryInfo(const nsCOMPtr<nsPIDOMWindowOuter>& aWindow,
-                  const RefPtr<AbstractThread>& aEventTarget);
+RefPtr<MemoryPromise> CollectMemoryInfo(
+    const nsCOMPtr<nsPIDOMWindowOuter>& aWindow,
+    const RefPtr<AbstractThread>& aEventTarget);
 
-} 
-#endif 
+}  
+#endif  

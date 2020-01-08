@@ -18,63 +18,63 @@
 namespace js {
 namespace jit {
 
-typedef void * CalleeToken;
+typedef void* CalleeToken;
 
-enum class FrameType
-{
-    
-    
-    IonJS,
+enum class FrameType {
+  
+  
+  
+  IonJS,
 
-    
-    BaselineJS,
+  
+  BaselineJS,
 
-    
-    
-    BaselineStub,
+  
+  
+  BaselineStub,
 
-    
-    
-    CppToJSJit,
+  
+  
+  CppToJSJit,
 
-    
-    
-    Rectifier,
+  
+  
+  Rectifier,
 
-    
-    IonICCall,
+  
+  IonICCall,
 
-    
-    
-    
-    Exit,
+  
+  
+  
+  Exit,
 
-    
-    
-    
-    
-    Bailout,
+  
+  
+  
+  
+  Bailout,
 
-    
-    
-    
-    WasmToJSJit,
+  
+  
+  
+  WasmToJSJit,
 
-    
-    
-    
-    JSJitToWasm,
+  
+  
+  
+  JSJitToWasm,
 };
 
 enum ReadFrameArgsBehavior {
-    
-    ReadFrame_Formals,
+  
+  ReadFrame_Formals,
 
-    
-    ReadFrame_Overflown,
+  
+  ReadFrame_Overflown,
 
-    
-    ReadFrame_Actuals
+  
+  ReadFrame_Actuals
 };
 
 class CommonFrameLayout;
@@ -99,805 +99,743 @@ void AssertJitStackInvariants(JSContext* cx);
 
 
 
-class JSJitFrameIter
-{
-  protected:
-    uint8_t* current_;
-    FrameType type_;
-    uint8_t* returnAddressToFp_;
-    size_t frameSize_;
+class JSJitFrameIter {
+ protected:
+  uint8_t* current_;
+  FrameType type_;
+  uint8_t* returnAddressToFp_;
+  size_t frameSize_;
 
-  private:
-    mutable const SafepointIndex* cachedSafepointIndex_;
-    const JitActivation* activation_;
+ private:
+  mutable const SafepointIndex* cachedSafepointIndex_;
+  const JitActivation* activation_;
 
-    void dumpBaseline() const;
+  void dumpBaseline() const;
 
-  public:
-    
-    explicit JSJitFrameIter(const JitActivation* activation);
+ public:
+  
+  explicit JSJitFrameIter(const JitActivation* activation);
 
-    
-    
-    JSJitFrameIter(const JitActivation* activation, FrameType frameType, uint8_t* fp);
+  
+  
+  JSJitFrameIter(const JitActivation* activation, FrameType frameType,
+                 uint8_t* fp);
 
-    
-    void exchangeReturnAddressIfMatch(uint8_t* oldAddr, uint8_t* newAddr) {
-        if (returnAddressToFp_ == oldAddr) {
-            returnAddressToFp_ = newAddr;
-        }
+  
+  void exchangeReturnAddressIfMatch(uint8_t* oldAddr, uint8_t* newAddr) {
+    if (returnAddressToFp_ == oldAddr) {
+      returnAddressToFp_ = newAddr;
+    }
+  }
+
+  
+  FrameType type() const { return type_; }
+  uint8_t* fp() const { return current_; }
+  const JitActivation* activation() const { return activation_; }
+
+  CommonFrameLayout* current() const { return (CommonFrameLayout*)current_; }
+
+  inline uint8_t* returnAddress() const;
+
+  
+  
+  JitFrameLayout* jsFrame() const;
+
+  inline ExitFrameLayout* exitFrame() const;
+
+  
+  
+  bool checkInvalidation(IonScript** ionScript) const;
+  bool checkInvalidation() const;
+
+  bool isExitFrame() const { return type_ == FrameType::Exit; }
+  bool isScripted() const {
+    return type_ == FrameType::BaselineJS || type_ == FrameType::IonJS ||
+           type_ == FrameType::Bailout;
+  }
+  bool isBaselineJS() const { return type_ == FrameType::BaselineJS; }
+  bool isIonScripted() const {
+    return type_ == FrameType::IonJS || type_ == FrameType::Bailout;
+  }
+  bool isIonJS() const { return type_ == FrameType::IonJS; }
+  bool isIonICCall() const { return type_ == FrameType::IonICCall; }
+  bool isBailoutJS() const { return type_ == FrameType::Bailout; }
+  bool isBaselineStub() const { return type_ == FrameType::BaselineStub; }
+  bool isRectifier() const { return type_ == FrameType::Rectifier; }
+  bool isBareExit() const;
+  template <typename T>
+  bool isExitFrameLayout() const;
+
+  static bool isEntry(FrameType type) {
+    return type == FrameType::CppToJSJit || type == FrameType::WasmToJSJit;
+  }
+  bool isEntry() const { return isEntry(type_); }
+
+  bool isFunctionFrame() const;
+
+  bool isConstructing() const;
+
+  void* calleeToken() const;
+  JSFunction* callee() const;
+  JSFunction* maybeCallee() const;
+  unsigned numActualArgs() const;
+  JSScript* script() const;
+  void baselineScriptAndPc(JSScript** scriptRes, jsbytecode** pcRes) const;
+  Value* actualArgs() const;
+
+  
+  
+  uint8_t* returnAddressToFp() const { return returnAddressToFp_; }
+
+  
+  inline size_t prevFrameLocalSize() const;
+  inline FrameType prevType() const;
+  uint8_t* prevFp() const;
+
+  
+  
+  size_t frameSize() const {
+    MOZ_ASSERT(!isExitFrame());
+    return frameSize_;
+  }
+
+  
+  
+  bool done() const { return isEntry(); }
+  void operator++();
+
+  
+  IonScript* ionScript() const;
+
+  
+  
+  IonScript* ionScriptFromCalleeToken() const;
+
+  
+  
+  const SafepointIndex* safepoint() const;
+
+  
+  
+  const OsiIndex* osiIndex() const;
+
+  
+  
+  SnapshotOffset snapshotOffset() const;
+
+  uintptr_t* spillBase() const;
+  MachineState machineState() const;
+
+  template <class Op>
+  void unaliasedForEachActual(Op op, ReadFrameArgsBehavior behavior) const {
+    MOZ_ASSERT(isBaselineJS());
+
+    unsigned nactual = numActualArgs();
+    unsigned start, end;
+    switch (behavior) {
+      case ReadFrame_Formals:
+        start = 0;
+        end = callee()->nargs();
+        break;
+      case ReadFrame_Overflown:
+        start = callee()->nargs();
+        end = nactual;
+        break;
+      case ReadFrame_Actuals:
+        start = 0;
+        end = nactual;
     }
 
-    
-    FrameType type() const {
-        return type_;
+    Value* argv = actualArgs();
+    for (unsigned i = start; i < end; i++) {
+      op(argv[i]);
     }
-    uint8_t* fp() const {
-        return current_;
-    }
-    const JitActivation* activation() const {
-        return activation_;
-    }
+  }
 
-    CommonFrameLayout* current() const {
-        return (CommonFrameLayout*)current_;
-    }
+  void dump() const;
 
-    inline uint8_t* returnAddress() const;
+  inline BaselineFrame* baselineFrame() const;
 
-    
-    
-    JitFrameLayout* jsFrame() const;
-
-    inline ExitFrameLayout* exitFrame() const;
-
-    
-    
-    bool checkInvalidation(IonScript** ionScript) const;
-    bool checkInvalidation() const;
-
-    bool isExitFrame() const {
-        return type_ == FrameType::Exit;
-    }
-    bool isScripted() const {
-        return type_ == FrameType::BaselineJS || type_ == FrameType::IonJS || type_ == FrameType::Bailout;
-    }
-    bool isBaselineJS() const {
-        return type_ == FrameType::BaselineJS;
-    }
-    bool isIonScripted() const {
-        return type_ == FrameType::IonJS || type_ == FrameType::Bailout;
-    }
-    bool isIonJS() const {
-        return type_ == FrameType::IonJS;
-    }
-    bool isIonICCall() const {
-        return type_ == FrameType::IonICCall;
-    }
-    bool isBailoutJS() const {
-        return type_ == FrameType::Bailout;
-    }
-    bool isBaselineStub() const {
-        return type_ == FrameType::BaselineStub;
-    }
-    bool isRectifier() const {
-        return type_ == FrameType::Rectifier;
-    }
-    bool isBareExit() const;
-    template <typename T> bool isExitFrameLayout() const;
-
-    static bool isEntry(FrameType type) {
-        return type == FrameType::CppToJSJit || type == FrameType::WasmToJSJit;
-    }
-    bool isEntry() const {
-        return isEntry(type_);
-    }
-
-    bool isFunctionFrame() const;
-
-    bool isConstructing() const;
-
-    void* calleeToken() const;
-    JSFunction* callee() const;
-    JSFunction* maybeCallee() const;
-    unsigned numActualArgs() const;
-    JSScript* script() const;
-    void baselineScriptAndPc(JSScript** scriptRes, jsbytecode** pcRes) const;
-    Value* actualArgs() const;
-
-    
-    
-    uint8_t* returnAddressToFp() const {
-        return returnAddressToFp_;
-    }
-
-    
-    inline size_t prevFrameLocalSize() const;
-    inline FrameType prevType() const;
-    uint8_t* prevFp() const;
-
-    
-    
-    size_t frameSize() const {
-        MOZ_ASSERT(!isExitFrame());
-        return frameSize_;
-    }
-
-    
-    
-    bool done() const {
-        return isEntry();
-    }
-    void operator++();
-
-    
-    IonScript* ionScript() const;
-
-    
-    
-    IonScript* ionScriptFromCalleeToken() const;
-
-    
-    
-    const SafepointIndex* safepoint() const;
-
-    
-    
-    const OsiIndex* osiIndex() const;
-
-    
-    
-    SnapshotOffset snapshotOffset() const;
-
-    uintptr_t* spillBase() const;
-    MachineState machineState() const;
-
-    template <class Op>
-    void unaliasedForEachActual(Op op, ReadFrameArgsBehavior behavior) const {
-        MOZ_ASSERT(isBaselineJS());
-
-        unsigned nactual = numActualArgs();
-        unsigned start, end;
-        switch (behavior) {
-          case ReadFrame_Formals:
-            start = 0;
-            end = callee()->nargs();
-            break;
-          case ReadFrame_Overflown:
-            start = callee()->nargs();
-            end = nactual;
-            break;
-          case ReadFrame_Actuals:
-            start = 0;
-            end = nactual;
-        }
-
-        Value* argv = actualArgs();
-        for (unsigned i = start; i < end; i++) {
-            op(argv[i]);
-        }
-    }
-
-    void dump() const;
-
-    inline BaselineFrame* baselineFrame() const;
-
-    
-    
+  
+  
 #ifdef DEBUG
-    bool verifyReturnAddressUsingNativeToBytecodeMap();
+  bool verifyReturnAddressUsingNativeToBytecodeMap();
 #else
-    bool verifyReturnAddressUsingNativeToBytecodeMap() { return true; }
+  bool verifyReturnAddressUsingNativeToBytecodeMap() { return true; }
 #endif
 };
 
 class JitcodeGlobalTable;
 
-class JSJitProfilingFrameIterator
-{
-    uint8_t* fp_;
-    FrameType type_;
-    void* returnAddressToFp_;
+class JSJitProfilingFrameIterator {
+  uint8_t* fp_;
+  FrameType type_;
+  void* returnAddressToFp_;
 
-    inline JitFrameLayout* framePtr();
-    inline JSScript* frameScript();
-    MOZ_MUST_USE bool tryInitWithPC(void* pc);
-    MOZ_MUST_USE bool tryInitWithTable(JitcodeGlobalTable* table, void* pc,
-                                       bool forLastCallSite);
-    void fixBaselineReturnAddress();
+  inline JitFrameLayout* framePtr();
+  inline JSScript* frameScript();
+  MOZ_MUST_USE bool tryInitWithPC(void* pc);
+  MOZ_MUST_USE bool tryInitWithTable(JitcodeGlobalTable* table, void* pc,
+                                     bool forLastCallSite);
+  void fixBaselineReturnAddress();
 
-    void moveToCppEntryFrame();
-    void moveToWasmFrame(CommonFrameLayout* frame);
-    void moveToNextFrame(CommonFrameLayout* frame);
+  void moveToCppEntryFrame();
+  void moveToWasmFrame(CommonFrameLayout* frame);
+  void moveToNextFrame(CommonFrameLayout* frame);
 
-  public:
-    JSJitProfilingFrameIterator(JSContext* cx, void* pc);
-    explicit JSJitProfilingFrameIterator(CommonFrameLayout* exitFP);
+ public:
+  JSJitProfilingFrameIterator(JSContext* cx, void* pc);
+  explicit JSJitProfilingFrameIterator(CommonFrameLayout* exitFP);
 
-    void operator++();
-    bool done() const { return fp_ == nullptr; }
+  void operator++();
+  bool done() const { return fp_ == nullptr; }
 
-    void* fp() const { MOZ_ASSERT(!done()); return fp_; }
-    void* stackAddress() const { return fp(); }
-    FrameType frameType() const { MOZ_ASSERT(!done()); return type_; }
-    void* returnAddressToFp() const { MOZ_ASSERT(!done()); return returnAddressToFp_; }
+  void* fp() const {
+    MOZ_ASSERT(!done());
+    return fp_;
+  }
+  void* stackAddress() const { return fp(); }
+  FrameType frameType() const {
+    MOZ_ASSERT(!done());
+    return type_;
+  }
+  void* returnAddressToFp() const {
+    MOZ_ASSERT(!done());
+    return returnAddressToFp_;
+  }
 };
 
-class RInstructionResults
-{
-    
-    typedef mozilla::Vector<HeapPtr<Value>, 1, SystemAllocPolicy> Values;
-    UniquePtr<Values> results_;
+class RInstructionResults {
+  
+  typedef mozilla::Vector<HeapPtr<Value>, 1, SystemAllocPolicy> Values;
+  UniquePtr<Values> results_;
 
-    
-    
-    JitFrameLayout* fp_;
+  
+  
+  JitFrameLayout* fp_;
 
-    
-    
-    
-    bool initialized_;
+  
+  
+  
+  bool initialized_;
 
-  public:
-    explicit RInstructionResults(JitFrameLayout* fp);
-    RInstructionResults(RInstructionResults&& src);
+ public:
+  explicit RInstructionResults(JitFrameLayout* fp);
+  RInstructionResults(RInstructionResults&& src);
 
-    RInstructionResults& operator=(RInstructionResults&& rhs);
+  RInstructionResults& operator=(RInstructionResults&& rhs);
 
-    ~RInstructionResults();
+  ~RInstructionResults();
 
-    MOZ_MUST_USE bool init(JSContext* cx, uint32_t numResults);
-    bool isInitialized() const;
-    size_t length() const;
+  MOZ_MUST_USE bool init(JSContext* cx, uint32_t numResults);
+  bool isInitialized() const;
+  size_t length() const;
 
-    JitFrameLayout* frame() const;
+  JitFrameLayout* frame() const;
 
-    HeapPtr<Value>& operator[](size_t index);
+  HeapPtr<Value>& operator[](size_t index);
 
-    void trace(JSTracer* trc);
+  void trace(JSTracer* trc);
 };
 
-struct MaybeReadFallback
-{
-    enum NoGCValue {
-        NoGC_UndefinedValue,
-        NoGC_MagicOptimizedOut
-    };
+struct MaybeReadFallback {
+  enum NoGCValue { NoGC_UndefinedValue, NoGC_MagicOptimizedOut };
 
-    enum FallbackConsequence {
-        Fallback_Invalidate,
-        Fallback_DoNothing
-    };
+  enum FallbackConsequence { Fallback_Invalidate, Fallback_DoNothing };
 
-    JSContext* maybeCx;
-    JitActivation* activation;
-    const JSJitFrameIter* frame;
-    const NoGCValue unreadablePlaceholder_;
-    const FallbackConsequence consequence;
+  JSContext* maybeCx;
+  JitActivation* activation;
+  const JSJitFrameIter* frame;
+  const NoGCValue unreadablePlaceholder_;
+  const FallbackConsequence consequence;
 
-    explicit MaybeReadFallback(const Value& placeholder = UndefinedValue())
+  explicit MaybeReadFallback(const Value& placeholder = UndefinedValue())
       : maybeCx(nullptr),
         activation(nullptr),
         frame(nullptr),
         unreadablePlaceholder_(noGCPlaceholder(placeholder)),
-        consequence(Fallback_Invalidate)
-    {
-    }
+        consequence(Fallback_Invalidate) {}
 
-    MaybeReadFallback(JSContext* cx, JitActivation* activation, const JSJitFrameIter* frame,
-                      FallbackConsequence consequence = Fallback_Invalidate)
+  MaybeReadFallback(JSContext* cx, JitActivation* activation,
+                    const JSJitFrameIter* frame,
+                    FallbackConsequence consequence = Fallback_Invalidate)
       : maybeCx(cx),
         activation(activation),
         frame(frame),
         unreadablePlaceholder_(NoGC_UndefinedValue),
-        consequence(consequence)
-    {
-    }
+        consequence(consequence) {}
 
-    bool canRecoverResults() { return maybeCx; }
+  bool canRecoverResults() { return maybeCx; }
 
-    Value unreadablePlaceholder() const {
-        if (unreadablePlaceholder_ == NoGC_MagicOptimizedOut) {
-            return MagicValue(JS_OPTIMIZED_OUT);
-        }
-        return UndefinedValue();
+  Value unreadablePlaceholder() const {
+    if (unreadablePlaceholder_ == NoGC_MagicOptimizedOut) {
+      return MagicValue(JS_OPTIMIZED_OUT);
     }
+    return UndefinedValue();
+  }
 
-    NoGCValue noGCPlaceholder(const Value& v) const {
-        if (v.isMagic(JS_OPTIMIZED_OUT)) {
-            return NoGC_MagicOptimizedOut;
-        }
-        return NoGC_UndefinedValue;
+  NoGCValue noGCPlaceholder(const Value& v) const {
+    if (v.isMagic(JS_OPTIMIZED_OUT)) {
+      return NoGC_MagicOptimizedOut;
     }
+    return NoGC_UndefinedValue;
+  }
 };
 
 class RResumePoint;
 
 
 
-class SnapshotIterator
-{
-  protected:
-    SnapshotReader snapshot_;
-    RecoverReader recover_;
-    JitFrameLayout* fp_;
-    const MachineState* machine_;
-    IonScript* ionScript_;
-    RInstructionResults* instructionResults_;
+class SnapshotIterator {
+ protected:
+  SnapshotReader snapshot_;
+  RecoverReader recover_;
+  JitFrameLayout* fp_;
+  const MachineState* machine_;
+  IonScript* ionScript_;
+  RInstructionResults* instructionResults_;
 
-    enum ReadMethod {
-        
-        RM_Normal          = 1 << 0,
-
-        
-        RM_AlwaysDefault   = 1 << 1,
-
-        
-        
-        RM_NormalOrDefault = RM_Normal | RM_AlwaysDefault,
-    };
-
-  private:
+  enum ReadMethod {
     
-    bool hasRegister(Register reg) const {
-        return machine_->has(reg);
-    }
-    uintptr_t fromRegister(Register reg) const {
-        return machine_->read(reg);
-    }
-
-    bool hasRegister(FloatRegister reg) const {
-        return machine_->has(reg);
-    }
-    double fromRegister(FloatRegister reg) const {
-        return machine_->read(reg);
-    }
+    RM_Normal = 1 << 0,
 
     
-    bool hasStack(int32_t offset) const {
-        return true;
-    }
-    uintptr_t fromStack(int32_t offset) const;
-
-    bool hasInstructionResult(uint32_t index) const {
-        return instructionResults_;
-    }
-    bool hasInstructionResults() const {
-        return instructionResults_;
-    }
-    Value fromInstructionResult(uint32_t index) const;
-
-    Value allocationValue(const RValueAllocation& a, ReadMethod rm = RM_Normal);
-    MOZ_MUST_USE bool allocationReadable(const RValueAllocation& a, ReadMethod rm = RM_Normal);
-    void writeAllocationValuePayload(const RValueAllocation& a, const Value& v);
-    void warnUnreadableAllocation();
-
-  private:
-    const FloatRegisters::RegisterContent* floatAllocationPointer(const RValueAllocation& a) const;
-
-  public:
-    
-    inline RValueAllocation readAllocation() {
-        MOZ_ASSERT(moreAllocations());
-        return snapshot_.readAllocation();
-    }
-    Value skip() {
-        snapshot_.skipAllocation();
-        return UndefinedValue();
-    }
-
-    const RResumePoint* resumePoint() const;
-    const RInstruction* instruction() const {
-        return recover_.instruction();
-    }
-
-    uint32_t numAllocations() const;
-    inline bool moreAllocations() const {
-        return snapshot_.numAllocationsRead() < numAllocations();
-    }
-
-    int32_t readOuterNumActualArgs() const;
+    RM_AlwaysDefault = 1 << 1,
 
     
     
-    void storeInstructionResult(const Value& v);
+    RM_NormalOrDefault = RM_Normal | RM_AlwaysDefault,
+  };
 
-  public:
+ private:
+  
+  bool hasRegister(Register reg) const { return machine_->has(reg); }
+  uintptr_t fromRegister(Register reg) const { return machine_->read(reg); }
+
+  bool hasRegister(FloatRegister reg) const { return machine_->has(reg); }
+  double fromRegister(FloatRegister reg) const { return machine_->read(reg); }
+
+  
+  bool hasStack(int32_t offset) const { return true; }
+  uintptr_t fromStack(int32_t offset) const;
+
+  bool hasInstructionResult(uint32_t index) const {
+    return instructionResults_;
+  }
+  bool hasInstructionResults() const { return instructionResults_; }
+  Value fromInstructionResult(uint32_t index) const;
+
+  Value allocationValue(const RValueAllocation& a, ReadMethod rm = RM_Normal);
+  MOZ_MUST_USE bool allocationReadable(const RValueAllocation& a,
+                                       ReadMethod rm = RM_Normal);
+  void writeAllocationValuePayload(const RValueAllocation& a, const Value& v);
+  void warnUnreadableAllocation();
+
+ private:
+  const FloatRegisters::RegisterContent* floatAllocationPointer(
+      const RValueAllocation& a) const;
+
+ public:
+  
+  inline RValueAllocation readAllocation() {
+    MOZ_ASSERT(moreAllocations());
+    return snapshot_.readAllocation();
+  }
+  Value skip() {
+    snapshot_.skipAllocation();
+    return UndefinedValue();
+  }
+
+  const RResumePoint* resumePoint() const;
+  const RInstruction* instruction() const { return recover_.instruction(); }
+
+  uint32_t numAllocations() const;
+  inline bool moreAllocations() const {
+    return snapshot_.numAllocationsRead() < numAllocations();
+  }
+
+  int32_t readOuterNumActualArgs() const;
+
+  
+  
+  void storeInstructionResult(const Value& v);
+
+ public:
+  
+  uint32_t pcOffset() const;
+  inline MOZ_MUST_USE bool resumeAfter() const {
     
-    uint32_t pcOffset() const;
-    inline MOZ_MUST_USE bool resumeAfter() const {
-        
-        
-        
-        if (moreFrames()) {
-            return false;
+    
+    
+    if (moreFrames()) {
+      return false;
+    }
+    return recover_.resumeAfter();
+  }
+  inline BailoutKind bailoutKind() const { return snapshot_.bailoutKind(); }
+
+ public:
+  
+  
+  inline void nextInstruction() {
+    MOZ_ASSERT(snapshot_.numAllocationsRead() == numAllocations());
+    recover_.nextInstruction();
+    snapshot_.resetNumAllocationsRead();
+  }
+
+  
+  
+  void skipInstruction();
+
+  inline bool moreInstructions() const { return recover_.moreInstructions(); }
+
+  
+  
+  
+  
+  MOZ_MUST_USE bool initInstructionResults(MaybeReadFallback& fallback);
+
+ protected:
+  
+  
+  MOZ_MUST_USE bool computeInstructionResults(
+      JSContext* cx, RInstructionResults* results) const;
+
+ public:
+  
+  void nextFrame();
+  void settleOnFrame();
+
+  inline bool moreFrames() const {
+    
+    
+    return moreInstructions();
+  }
+
+ public:
+  
+  
+
+  SnapshotIterator(const JSJitFrameIter& iter,
+                   const MachineState* machineState);
+  SnapshotIterator();
+
+  Value read() { return allocationValue(readAllocation()); }
+
+  
+  
+  
+  
+  Value readWithDefault(RValueAllocation* alloc) {
+    *alloc = RValueAllocation();
+    RValueAllocation a = readAllocation();
+    if (allocationReadable(a)) {
+      return allocationValue(a);
+    }
+
+    *alloc = a;
+    return allocationValue(a, RM_AlwaysDefault);
+  }
+
+  Value maybeRead(const RValueAllocation& a, MaybeReadFallback& fallback);
+  Value maybeRead(MaybeReadFallback& fallback) {
+    RValueAllocation a = readAllocation();
+    return maybeRead(a, fallback);
+  }
+
+  void traceAllocation(JSTracer* trc);
+
+  template <class Op>
+  void readFunctionFrameArgs(Op& op, ArgumentsObject** argsObj, Value* thisv,
+                             unsigned start, unsigned end, JSScript* script,
+                             MaybeReadFallback& fallback) {
+    
+    if (script->argumentsHasVarBinding()) {
+      if (argsObj) {
+        Value v = read();
+        if (v.isObject()) {
+          *argsObj = &v.toObject().as<ArgumentsObject>();
         }
-        return recover_.resumeAfter();
-    }
-    inline BailoutKind bailoutKind() const {
-        return snapshot_.bailoutKind();
-    }
-
-  public:
-    
-    
-    inline void nextInstruction() {
-        MOZ_ASSERT(snapshot_.numAllocationsRead() == numAllocations());
-        recover_.nextInstruction();
-        snapshot_.resetNumAllocationsRead();
+      } else {
+        skip();
+      }
     }
 
-    
-    
-    void skipInstruction();
-
-    inline bool moreInstructions() const {
-        return recover_.moreInstructions();
+    if (thisv) {
+      *thisv = maybeRead(fallback);
+    } else {
+      skip();
     }
 
-    
-    
-    
-    
-    MOZ_MUST_USE bool initInstructionResults(MaybeReadFallback& fallback);
-
-  protected:
-    
-    
-    MOZ_MUST_USE bool computeInstructionResults(JSContext* cx, RInstructionResults* results) const;
-
-  public:
-    
-    void nextFrame();
-    void settleOnFrame();
-
-    inline bool moreFrames() const {
-        
-        
-        return moreInstructions();
+    unsigned i = 0;
+    if (end < start) {
+      i = start;
     }
 
-  public:
-    
-    
-
-    SnapshotIterator(const JSJitFrameIter& iter, const MachineState* machineState);
-    SnapshotIterator();
-
-    Value read() {
-        return allocationValue(readAllocation());
+    for (; i < start; i++) {
+      skip();
     }
-
-    
-    
-    
-    
-    Value readWithDefault(RValueAllocation* alloc) {
-        *alloc = RValueAllocation();
-        RValueAllocation a = readAllocation();
-        if (allocationReadable(a)) {
-            return allocationValue(a);
-        }
-
-        *alloc = a;
-        return allocationValue(a, RM_AlwaysDefault);
+    for (; i < end; i++) {
+      
+      
+      
+      Value v = maybeRead(fallback);
+      op(v);
     }
+  }
 
-    Value maybeRead(const RValueAllocation& a, MaybeReadFallback& fallback);
-    Value maybeRead(MaybeReadFallback& fallback) {
-        RValueAllocation a = readAllocation();
-        return maybeRead(a, fallback);
-    }
-
-    void traceAllocation(JSTracer* trc);
-
-    template <class Op>
-    void readFunctionFrameArgs(Op& op, ArgumentsObject** argsObj, Value* thisv,
-                               unsigned start, unsigned end, JSScript* script,
-                               MaybeReadFallback& fallback)
-    {
-        
-        if (script->argumentsHasVarBinding()) {
-            if (argsObj) {
-                Value v = read();
-                if (v.isObject()) {
-                    *argsObj = &v.toObject().as<ArgumentsObject>();
-                }
-            } else {
-                skip();
-            }
-        }
-
-        if (thisv) {
-            *thisv = maybeRead(fallback);
-        } else {
-            skip();
-        }
-
-        unsigned i = 0;
-        if (end < start) {
-            i = start;
-        }
-
-        for (; i < start; i++) {
-            skip();
-        }
-        for (; i < end; i++) {
-            
-            
-            
-            Value v = maybeRead(fallback);
-            op(v);
-        }
-    }
-
-    
-    
-    Value maybeReadAllocByIndex(size_t index);
+  
+  
+  Value maybeReadAllocByIndex(size_t index);
 
 #ifdef TRACK_SNAPSHOTS
-    void spewBailingFrom() const {
-        snapshot_.spewBailingFrom();
-    }
+  void spewBailingFrom() const { snapshot_.spewBailingFrom(); }
 #endif
 };
 
 
 
-class InlineFrameIterator
-{
-    const JSJitFrameIter* frame_;
-    SnapshotIterator start_;
-    SnapshotIterator si_;
-    uint32_t framesRead_;
+class InlineFrameIterator {
+  const JSJitFrameIter* frame_;
+  SnapshotIterator start_;
+  SnapshotIterator si_;
+  uint32_t framesRead_;
+
+  
+  
+  
+  
+  uint32_t frameCount_;
+
+  
+  
+  
+  
+  
+  
+  
+  RootedFunction calleeTemplate_;
+  RValueAllocation calleeRVA_;
+
+  RootedScript script_;
+  jsbytecode* pc_;
+  uint32_t numActualArgs_;
+
+  
+  MachineState machine_;
+
+  struct Nop {
+    void operator()(const Value& v) {}
+  };
+
+ private:
+  void findNextFrame();
+  JSObject* computeEnvironmentChain(const Value& envChainValue,
+                                    MaybeReadFallback& fallback,
+                                    bool* hasInitialEnv = nullptr) const;
+
+ public:
+  InlineFrameIterator(JSContext* cx, const JSJitFrameIter* iter);
+  InlineFrameIterator(JSContext* cx, const InlineFrameIterator* iter);
+
+  bool more() const { return frame_ && framesRead_ < frameCount_; }
+
+  
+  
+  
+  
+  
+  
+  
+  JSFunction* calleeTemplate() const {
+    MOZ_ASSERT(isFunctionFrame());
+    return calleeTemplate_;
+  }
+  JSFunction* maybeCalleeTemplate() const { return calleeTemplate_; }
+
+  JSFunction* callee(MaybeReadFallback& fallback) const;
+
+  unsigned numActualArgs() const {
+    
+    
+    
+    
+    
+    if (more()) {
+      return numActualArgs_;
+    }
+
+    return frame_->numActualArgs();
+  }
+
+  template <class ArgOp, class LocalOp>
+  void readFrameArgsAndLocals(JSContext* cx, ArgOp& argOp, LocalOp& localOp,
+                              JSObject** envChain, bool* hasInitialEnv,
+                              Value* rval, ArgumentsObject** argsObj,
+                              Value* thisv, Value* newTarget,
+                              ReadFrameArgsBehavior behavior,
+                              MaybeReadFallback& fallback) const {
+    SnapshotIterator s(si_);
 
     
-    
-    
-    
-    uint32_t frameCount_;
-
-    
-    
-    
-    
-    
-    
-    
-    RootedFunction calleeTemplate_;
-    RValueAllocation calleeRVA_;
-
-    RootedScript script_;
-    jsbytecode* pc_;
-    uint32_t numActualArgs_;
-
-    
-    MachineState machine_;
-
-    struct Nop {
-        void operator()(const Value& v) { }
-    };
-
-  private:
-    void findNextFrame();
-    JSObject* computeEnvironmentChain(const Value& envChainValue, MaybeReadFallback& fallback,
-                                      bool* hasInitialEnv = nullptr) const;
-
-  public:
-    InlineFrameIterator(JSContext* cx, const JSJitFrameIter* iter);
-    InlineFrameIterator(JSContext* cx, const InlineFrameIterator* iter);
-
-    bool more() const {
-        return frame_ && framesRead_ < frameCount_;
+    if (envChain) {
+      Value envChainValue = s.maybeRead(fallback);
+      *envChain =
+          computeEnvironmentChain(envChainValue, fallback, hasInitialEnv);
+    } else {
+      s.skip();
     }
 
     
-    
-    
-    
-    
-    
-    
-    JSFunction* calleeTemplate() const {
-        MOZ_ASSERT(isFunctionFrame());
-        return calleeTemplate_;
-    }
-    JSFunction* maybeCalleeTemplate() const {
-        return calleeTemplate_;
+    if (rval) {
+      *rval = s.maybeRead(fallback);
+    } else {
+      s.skip();
     }
 
-    JSFunction* callee(MaybeReadFallback& fallback) const;
+    if (newTarget) {
+      
+      
+      MOZ_ASSERT(behavior != ReadFrame_Formals);
+      newTarget->setUndefined();
+    }
 
-    unsigned numActualArgs() const {
-        
-        
-        
-        
-        
+    
+    if (isFunctionFrame()) {
+      unsigned nactual = numActualArgs();
+      unsigned nformal = calleeTemplate()->nargs();
+
+      
+      
+      
+      if (behavior != ReadFrame_Overflown) {
+        s.readFunctionFrameArgs(argOp, argsObj, thisv, 0, nformal, script(),
+                                fallback);
+      }
+
+      if (behavior != ReadFrame_Formals) {
         if (more()) {
-            return numActualArgs_;
-        }
+          
+          
+          
+          
 
-        return frame_->numActualArgs();
-    }
+          
+          
+          
+          InlineFrameIterator it(cx, this);
+          ++it;
+          unsigned argsObjAdj = it.script()->argumentsHasVarBinding() ? 1 : 0;
+          bool hasNewTarget = isConstructing();
+          SnapshotIterator parent_s(it.snapshotIterator());
 
-    template <class ArgOp, class LocalOp>
-    void readFrameArgsAndLocals(JSContext* cx, ArgOp& argOp, LocalOp& localOp,
-                                JSObject** envChain, bool* hasInitialEnv,
-                                Value* rval, ArgumentsObject** argsObj,
-                                Value* thisv, Value* newTarget,
-                                ReadFrameArgsBehavior behavior,
-                                MaybeReadFallback& fallback) const
-    {
-        SnapshotIterator s(si_);
+          
+          
+          
+          MOZ_ASSERT(parent_s.numAllocations() >=
+                     nactual + 3 + argsObjAdj + hasNewTarget);
+          unsigned skip = parent_s.numAllocations() - nactual - 3 - argsObjAdj -
+                          hasNewTarget;
+          for (unsigned j = 0; j < skip; j++) {
+            parent_s.skip();
+          }
 
-        
-        if (envChain) {
-            Value envChainValue = s.maybeRead(fallback);
-            *envChain = computeEnvironmentChain(envChainValue, fallback, hasInitialEnv);
+          
+          MaybeReadFallback unusedFallback;
+          parent_s.skip();  
+          parent_s.skip();  
+          parent_s.readFunctionFrameArgs(argOp, nullptr, nullptr, nformal,
+                                         nactual, it.script(), fallback);
+          if (newTarget && isConstructing()) {
+            *newTarget = parent_s.maybeRead(fallback);
+          }
         } else {
-            s.skip();
+          
+          
+          Value* argv = frame_->actualArgs();
+          for (unsigned i = nformal; i < nactual; i++) {
+            argOp(argv[i]);
+          }
+          if (newTarget && isConstructing()) {
+            *newTarget = argv[nactual];
+          }
         }
-
-        
-        if (rval) {
-            *rval = s.maybeRead(fallback);
-        } else {
-            s.skip();
-        }
-
-        if (newTarget) {
-            
-            
-            MOZ_ASSERT(behavior != ReadFrame_Formals);
-            newTarget->setUndefined();
-        }
-
-        
-        if (isFunctionFrame()) {
-            unsigned nactual = numActualArgs();
-            unsigned nformal = calleeTemplate()->nargs();
-
-            
-            
-            
-            if (behavior != ReadFrame_Overflown) {
-                s.readFunctionFrameArgs(argOp, argsObj, thisv, 0, nformal, script(), fallback);
-            }
-
-            if (behavior != ReadFrame_Formals) {
-                if (more()) {
-                    
-                    
-                    
-                    
-
-                    
-                    
-                    
-                    InlineFrameIterator it(cx, this);
-                    ++it;
-                    unsigned argsObjAdj = it.script()->argumentsHasVarBinding() ? 1 : 0;
-                    bool hasNewTarget = isConstructing();
-                    SnapshotIterator parent_s(it.snapshotIterator());
-
-                    
-                    
-                    
-                    MOZ_ASSERT(parent_s.numAllocations() >= nactual + 3 + argsObjAdj + hasNewTarget);
-                    unsigned skip = parent_s.numAllocations() - nactual - 3 - argsObjAdj - hasNewTarget;
-                    for (unsigned j = 0; j < skip; j++) {
-                        parent_s.skip();
-                    }
-
-                    
-                    MaybeReadFallback unusedFallback;
-                    parent_s.skip(); 
-                    parent_s.skip(); 
-                    parent_s.readFunctionFrameArgs(argOp, nullptr, nullptr,
-                                                   nformal, nactual, it.script(),
-                                                   fallback);
-                    if (newTarget && isConstructing()) {
-                        *newTarget = parent_s.maybeRead(fallback);
-                    }
-                } else {
-                    
-                    
-                    Value* argv = frame_->actualArgs();
-                    for (unsigned i = nformal; i < nactual; i++) {
-                        argOp(argv[i]);
-                    }
-                    if (newTarget && isConstructing()) {
-                        *newTarget = argv[nactual];
-                    }
-                }
-            }
-        }
-
-        
-        
-        for (unsigned i = 0; i < script()->nfixed(); i++) {
-            localOp(s.maybeRead(fallback));
-        }
-    }
-
-    template <class Op>
-    void unaliasedForEachActual(JSContext* cx, Op op,
-                                ReadFrameArgsBehavior behavior,
-                                MaybeReadFallback& fallback) const
-    {
-        Nop nop;
-        readFrameArgsAndLocals(cx, op, nop, nullptr, nullptr, nullptr, nullptr,
-                               nullptr, nullptr, behavior, fallback);
-    }
-
-    JSScript* script() const {
-        return script_;
-    }
-    jsbytecode* pc() const {
-        return pc_;
-    }
-    SnapshotIterator snapshotIterator() const {
-        return si_;
-    }
-    bool isFunctionFrame() const;
-    bool isModuleFrame() const;
-    bool isConstructing() const;
-
-    JSObject* environmentChain(MaybeReadFallback& fallback,
-                               bool* hasInitialEnvironment = nullptr) const {
-        SnapshotIterator s(si_);
-
-        
-        Value v = s.maybeRead(fallback);
-        return computeEnvironmentChain(v, fallback, hasInitialEnvironment);
-    }
-
-    Value thisArgument(MaybeReadFallback& fallback) const {
-        SnapshotIterator s(si_);
-
-        
-        s.skip();
-
-        
-        s.skip();
-
-        
-        if (script()->argumentsHasVarBinding()) {
-            s.skip();
-        }
-
-        return s.maybeRead(fallback);
-    }
-
-    InlineFrameIterator& operator++() {
-        findNextFrame();
-        return *this;
-    }
-
-    void dump() const;
-
-    void resetOn(const JSJitFrameIter* iter);
-
-    const JSJitFrameIter& frame() const {
-        return *frame_;
+      }
     }
 
     
-    size_t frameNo() const {
-        return frameCount() - framesRead_;
+    
+    for (unsigned i = 0; i < script()->nfixed(); i++) {
+      localOp(s.maybeRead(fallback));
     }
-    size_t frameCount() const {
-        MOZ_ASSERT(frameCount_ != UINT32_MAX);
-        return frameCount_;
+  }
+
+  template <class Op>
+  void unaliasedForEachActual(JSContext* cx, Op op,
+                              ReadFrameArgsBehavior behavior,
+                              MaybeReadFallback& fallback) const {
+    Nop nop;
+    readFrameArgsAndLocals(cx, op, nop, nullptr, nullptr, nullptr, nullptr,
+                           nullptr, nullptr, behavior, fallback);
+  }
+
+  JSScript* script() const { return script_; }
+  jsbytecode* pc() const { return pc_; }
+  SnapshotIterator snapshotIterator() const { return si_; }
+  bool isFunctionFrame() const;
+  bool isModuleFrame() const;
+  bool isConstructing() const;
+
+  JSObject* environmentChain(MaybeReadFallback& fallback,
+                             bool* hasInitialEnvironment = nullptr) const {
+    SnapshotIterator s(si_);
+
+    
+    Value v = s.maybeRead(fallback);
+    return computeEnvironmentChain(v, fallback, hasInitialEnvironment);
+  }
+
+  Value thisArgument(MaybeReadFallback& fallback) const {
+    SnapshotIterator s(si_);
+
+    
+    s.skip();
+
+    
+    s.skip();
+
+    
+    if (script()->argumentsHasVarBinding()) {
+      s.skip();
     }
 
-  private:
-    InlineFrameIterator() = delete;
-    InlineFrameIterator(const InlineFrameIterator& iter) = delete;
+    return s.maybeRead(fallback);
+  }
+
+  InlineFrameIterator& operator++() {
+    findNextFrame();
+    return *this;
+  }
+
+  void dump() const;
+
+  void resetOn(const JSJitFrameIter* iter);
+
+  const JSJitFrameIter& frame() const { return *frame_; }
+
+  
+  size_t frameNo() const { return frameCount() - framesRead_; }
+  size_t frameCount() const {
+    MOZ_ASSERT(frameCount_ != UINT32_MAX);
+    return frameCount_;
+  }
+
+ private:
+  InlineFrameIterator() = delete;
+  InlineFrameIterator(const InlineFrameIterator& iter) = delete;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

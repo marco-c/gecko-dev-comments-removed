@@ -11,10 +11,8 @@
 namespace mozilla {
 namespace dom {
 
-nsresult
-CBOREncodePublicKeyObj(const CryptoBuffer& aPubKeyBuf,
-                        CryptoBuffer& aPubKeyObj)
-{
+nsresult CBOREncodePublicKeyObj(const CryptoBuffer& aPubKeyBuf,
+                                 CryptoBuffer& aPubKeyObj) {
   mozilla::dom::CryptoBuffer xBuf, yBuf;
   nsresult rv = U2FDecomposeECKey(aPubKeyBuf, xBuf, yBuf);
   if (NS_FAILED(rv)) {
@@ -46,12 +44,10 @@ CBOREncodePublicKeyObj(const CryptoBuffer& aPubKeyBuf,
   return NS_OK;
 }
 
-nsresult
-CBOREncodeFidoU2FAttestationObj(const CryptoBuffer& aAuthDataBuf,
-                                const CryptoBuffer& aAttestationCertBuf,
-                                const CryptoBuffer& aSignatureBuf,
-                                 CryptoBuffer& aAttestationObj)
-{
+nsresult CBOREncodeFidoU2FAttestationObj(
+    const CryptoBuffer& aAuthDataBuf, const CryptoBuffer& aAttestationCertBuf,
+    const CryptoBuffer& aSignatureBuf,
+     CryptoBuffer& aAttestationObj) {
   
 
 
@@ -84,7 +80,8 @@ CBOREncodeFidoU2FAttestationObj(const CryptoBuffer& aAuthDataBuf,
       encoder.write_string("x5c");
       
       encoder.write_array(1);
-      encoder.write_bytes(aAttestationCertBuf.Elements(), aAttestationCertBuf.Length());
+      encoder.write_bytes(aAttestationCertBuf.Elements(),
+                          aAttestationCertBuf.Length());
     }
 
     encoder.write_string("authData");
@@ -97,10 +94,8 @@ CBOREncodeFidoU2FAttestationObj(const CryptoBuffer& aAuthDataBuf,
   return NS_OK;
 }
 
-nsresult
-CBOREncodeNoneAttestationObj(const CryptoBuffer& aAuthDataBuf,
-                              CryptoBuffer& aAttestationObj)
-{
+nsresult CBOREncodeNoneAttestationObj(const CryptoBuffer& aAuthDataBuf,
+                                       CryptoBuffer& aAttestationObj) {
   
 
 
@@ -131,5 +126,5 @@ CBOREncodeNoneAttestationObj(const CryptoBuffer& aAuthDataBuf,
   return NS_OK;
 }
 
-}
-}
+}  
+}  

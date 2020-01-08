@@ -40,11 +40,11 @@ namespace dom {
 class Element;
 class Event;
 struct MozPluginParameter;
-} 
+}  
 namespace widget {
 class PuppetWidget;
-} 
-} 
+}  
+}  
 
 using mozilla::widget::PuppetWidget;
 
@@ -52,13 +52,12 @@ using mozilla::widget::PuppetWidget;
 #include "gfxXlibNativeRenderer.h"
 #endif
 
-class nsPluginInstanceOwner final : public nsIPluginInstanceOwner
-                                  , public nsIDOMEventListener
-                                  , public nsIPrivacyTransitionObserver
-                                  , public nsIKeyEventInPluginCallback
-                                  , public nsSupportsWeakReference
-{
-public:
+class nsPluginInstanceOwner final : public nsIPluginInstanceOwner,
+                                    public nsIDOMEventListener,
+                                    public nsIPrivacyTransitionObserver,
+                                    public nsIKeyEventInPluginCallback,
+                                    public nsSupportsWeakReference {
+ public:
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
   nsPluginInstanceOwner();
@@ -67,24 +66,26 @@ public:
   NS_DECL_NSIPLUGININSTANCEOWNER
   NS_DECL_NSIPRIVACYTRANSITIONOBSERVER
 
-  NS_IMETHOD GetURL(const char *aURL, const char *aTarget,
-                    nsIInputStream *aPostStream,
-                    void *aHeadersData, uint32_t aHeadersDataLen,
+  NS_IMETHOD GetURL(const char* aURL, const char* aTarget,
+                    nsIInputStream* aPostStream, void* aHeadersData,
+                    uint32_t aHeadersDataLen,
                     bool aDoCheckLoadURIChecks) override;
 
-  NPBool     ConvertPoint(double sourceX, double sourceY, NPCoordinateSpace sourceSpace,
-                          double *destX, double *destY, NPCoordinateSpace destSpace) override;
+  NPBool ConvertPoint(double sourceX, double sourceY,
+                      NPCoordinateSpace sourceSpace, double* destX,
+                      double* destY, NPCoordinateSpace destSpace) override;
 
-  NPError InitAsyncSurface(NPSize *size, NPImageFormat format,
-                           void *initData, NPAsyncSurface *surface) override;
-  NPError FinalizeAsyncSurface(NPAsyncSurface *surface) override;
-  void SetCurrentAsyncSurface(NPAsyncSurface *surface, NPRect *changed) override;
+  NPError InitAsyncSurface(NPSize* size, NPImageFormat format, void* initData,
+                           NPAsyncSurface* surface) override;
+  NPError FinalizeAsyncSurface(NPAsyncSurface* surface) override;
+  void SetCurrentAsyncSurface(NPAsyncSurface* surface,
+                              NPRect* changed) override;
 
   
 
 
 
-  NS_IMETHOD GetTagType(nsPluginTagType *aResult);
+  NS_IMETHOD GetTagType(nsPluginTagType* aResult);
 
   void GetParameters(nsTArray<mozilla::dom::MozPluginParameter>& parameters);
   void GetAttributes(nsTArray<mozilla::dom::MozPluginParameter>& attributes);
@@ -112,8 +113,7 @@ public:
   void RenderCoreAnimation(CGContextRef aCGContext, int aWidth, int aHeight);
   void DoCocoaEventDrawRect(const gfxRect& aDrawRect, CGContextRef cgContext);
 #elif defined(MOZ_X11)
-  void Paint(gfxContext* aContext,
-             const gfxRect& aFrameRect,
+  void Paint(gfxContext* aContext, const gfxRect& aFrameRect,
              const gfxRect& aDirtyRect);
 #endif
 
@@ -127,8 +127,8 @@ public:
   nsEventStatus ProcessEvent(const mozilla::WidgetGUIEvent& anEvent);
 
   static void GeneratePluginEvent(
-                const mozilla::WidgetCompositionEvent* aSrcCompositionEvent,
-                mozilla::WidgetCompositionEvent* aDistCompositionEvent);
+      const mozilla::WidgetCompositionEvent* aSrcCompositionEvent,
+      mozilla::WidgetCompositionEvent* aDistCompositionEvent);
 
 #if defined(XP_WIN)
   void SetWidgetWindowAsParent(HWND aWindowToAdopt);
@@ -136,7 +136,7 @@ public:
 #endif
 
 #ifdef XP_MACOSX
-  enum { ePluginPaintEnable, ePluginPaintDisable };
+  enum {ePluginPaintEnable, ePluginPaintDisable};
 
   void WindowFocusMayHaveChanged();
 
@@ -146,7 +146,7 @@ public:
   bool IsRemoteDrawingCoreAnimation();
 
   NPEventModel GetEventModel();
-  static void CARefresh(nsITimer *aTimer, void *aClosure);
+  static void CARefresh(nsITimer* aTimer, void* aClosure);
   void AddToCARefreshTimer();
   void RemoveFromCARefreshTimer();
   
@@ -155,10 +155,10 @@ public:
   
   
   void SetPluginPort();
-#else 
+#else   
   void UpdateWindowPositionAndClipRect(bool aSetWindow);
   void UpdateWindowVisibility(bool aVisible);
-#endif 
+#endif  
 
   void ResolutionMayHaveChanged();
 #if defined(XP_MACOSX) || defined(XP_WIN)
@@ -167,7 +167,7 @@ public:
 
   void UpdateDocumentActiveState(bool aIsActive);
 
-  void SetFrame(nsPluginFrame *aFrame);
+  void SetFrame(nsPluginFrame* aFrame);
   nsPluginFrame* GetFrame();
 
   uint32_t GetLastEventloopNestingLevel() const {
@@ -184,8 +184,7 @@ public:
     }
   }
 
-  const char* GetPluginName()
-  {
+  const char* GetPluginName() {
     if (mInstance && mPluginHost) {
       const char* name = nullptr;
       if (NS_SUCCEEDED(mPluginHost->GetPluginName(mInstance, &name)) && name)
@@ -195,8 +194,7 @@ public:
   }
 
 #ifdef MOZ_X11
-  void GetPluginDescription(nsACString& aDescription)
-  {
+  void GetPluginDescription(nsACString& aDescription) {
     aDescription.Truncate();
     if (mInstance && mPluginHost) {
       nsCOMPtr<nsIPluginTag> pluginTag;
@@ -210,13 +208,12 @@ public:
   }
 #endif
 
-  bool SendNativeEvents()
-  {
+  bool SendNativeEvents() {
 #ifdef XP_WIN
     
     return mPluginWindow->type == NPWindowTypeDrawable &&
-    (MatchPluginName("Shockwave Flash") ||
-     MatchPluginName("Test Plug-in"));
+           (MatchPluginName("Shockwave Flash") ||
+            MatchPluginName("Test Plug-in"));
 #elif defined(MOZ_X11) || defined(XP_MACOSX)
     return true;
 #else
@@ -224,8 +221,7 @@ public:
 #endif
   }
 
-  bool MatchPluginName(const char *aPluginName)
-  {
+  bool MatchPluginName(const char* aPluginName) {
     return strncmp(GetPluginName(), aPluginName, strlen(aPluginName)) == 0;
   }
 
@@ -260,14 +256,13 @@ public:
   bool GetCompositionString(uint32_t aIndex, nsTArray<uint8_t>* aString,
                             int32_t* aLength);
   bool SetCandidateWindow(
-           const mozilla::widget::CandidateWindowPosition& aPosition);
+      const mozilla::widget::CandidateWindowPosition& aPosition);
   bool RequestCommitOrCancel(bool aCommitted);
   bool EnableIME(bool aEnable);
 
   
   virtual void HandledWindowedPluginKeyEvent(
-                 const mozilla::NativeEventData& aKeyEventData,
-                 bool aIsConsumed) override;
+      const mozilla::NativeEventData& aKeyEventData, bool aIsConsumed) override;
 
   
 
@@ -276,64 +271,64 @@ public:
 
 
 
-  void OnWindowedPluginKeyEvent(
-         const mozilla::NativeEventData& aNativeKeyData);
+  void OnWindowedPluginKeyEvent(const mozilla::NativeEventData& aNativeKeyData);
 
-  void GetCSSZoomFactor(float *result);
-private:
+  void GetCSSZoomFactor(float* result);
+
+ private:
   virtual ~nsPluginInstanceOwner();
 
   
-  bool IsUpToDate()
-  {
+  
+  bool IsUpToDate() {
     nsIntSize size;
     return NS_SUCCEEDED(mInstance->GetImageSize(&size)) &&
-    size == nsIntSize(mPluginWindow->width, mPluginWindow->height);
+           size == nsIntSize(mPluginWindow->width, mPluginWindow->height);
   }
 
 #if defined(XP_WIN)
   nsIWidget* GetContainingWidgetIfOffset();
   already_AddRefed<mozilla::TextComposition> GetTextComposition();
   void HandleNoConsumedCompositionMessage(
-    mozilla::WidgetCompositionEvent* aCompositionEvent,
-    const NPEvent* aPluginEvent);
+      mozilla::WidgetCompositionEvent* aCompositionEvent,
+      const NPEvent* aPluginEvent);
   bool mGotCompositionData;
   bool mSentStartComposition;
   bool mPluginDidNotHandleIMEComposition;
 #endif
 
-  nsPluginNativeWindow       *mPluginWindow;
+  nsPluginNativeWindow* mPluginWindow;
   RefPtr<nsNPAPIPluginInstance> mInstance;
-  nsPluginFrame              *mPluginFrame;
-  nsWeakPtr                   mContent; 
-  nsCString                   mDocumentBase;
-  bool                        mWidgetCreationComplete;
-  nsCOMPtr<nsIWidget>         mWidget;
-  RefPtr<nsPluginHost>      mPluginHost;
+  nsPluginFrame* mPluginFrame;
+  nsWeakPtr mContent;  
+  nsCString mDocumentBase;
+  bool mWidgetCreationComplete;
+  nsCOMPtr<nsIWidget> mWidget;
+  RefPtr<nsPluginHost> mPluginHost;
 
 #ifdef XP_MACOSX
-  static mozilla::StaticRefPtr<nsITimer>    sCATimer;
-  static nsTArray<nsPluginInstanceOwner*>  *sCARefreshListeners;
-  bool                                      mSentInitialTopLevelWindowEvent;
-  bool                                      mLastWindowIsActive;
-  bool                                      mLastContentFocused;
+  static mozilla::StaticRefPtr<nsITimer> sCATimer;
+  static nsTArray<nsPluginInstanceOwner*>* sCARefreshListeners;
+  bool mSentInitialTopLevelWindowEvent;
+  bool mLastWindowIsActive;
+  bool mLastContentFocused;
   
-  bool                                      mShouldBlurOnActivate;
+  bool mShouldBlurOnActivate;
 #endif
-  double                                    mLastScaleFactor;
-  double                                    mLastCSSZoomFactor;
+  double mLastScaleFactor;
+  double mLastCSSZoomFactor;
   
   
   
-  uint32_t                    mLastEventloopNestingLevel;
-  bool                        mContentFocused;
-  bool                        mWidgetVisible;    
+  uint32_t mLastEventloopNestingLevel;
+  bool mContentFocused;
+  bool mWidgetVisible;  
 #ifdef MOZ_X11
   
-  bool                        mFlash10Quirks;
+  bool mFlash10Quirks;
 #endif
-  bool                        mPluginWindowVisible;
-  bool                        mPluginDocumentActiveState;
+  bool mPluginWindowVisible;
+  bool mPluginDocumentActiveState;
 
 #ifdef XP_MACOSX
   NPEventModel mEventModel;
@@ -358,30 +353,36 @@ private:
 #endif
 
 #ifdef XP_MACOSX
-  static NPBool ConvertPointPuppet(PuppetWidget *widget, nsPluginFrame* pluginFrame,
-                            double sourceX, double sourceY, NPCoordinateSpace sourceSpace,
-                            double *destX, double *destY, NPCoordinateSpace destSpace);
-  static NPBool ConvertPointNoPuppet(nsIWidget *widget, nsPluginFrame* pluginFrame,
-                            double sourceX, double sourceY, NPCoordinateSpace sourceSpace,
-                            double *destX, double *destY, NPCoordinateSpace destSpace);
+  static NPBool ConvertPointPuppet(PuppetWidget* widget,
+                                   nsPluginFrame* pluginFrame, double sourceX,
+                                   double sourceY,
+                                   NPCoordinateSpace sourceSpace, double* destX,
+                                   double* destY, NPCoordinateSpace destSpace);
+  static NPBool ConvertPointNoPuppet(nsIWidget* widget,
+                                     nsPluginFrame* pluginFrame, double sourceX,
+                                     double sourceY,
+                                     NPCoordinateSpace sourceSpace,
+                                     double* destX, double* destY,
+                                     NPCoordinateSpace destSpace);
   void PerformDelayedBlurs();
-#endif    
+#endif  
 
   int mLastMouseDownButtonType;
 
 #ifdef MOZ_X11
-  class Renderer : public gfxXlibNativeRenderer
-  {
-  public:
+  class Renderer : public gfxXlibNativeRenderer {
+   public:
     Renderer(NPWindow* aWindow, nsPluginInstanceOwner* aInstanceOwner,
              const nsIntSize& aPluginSize, const nsIntRect& aDirtyRect)
-    : mWindow(aWindow), mInstanceOwner(aInstanceOwner),
-    mPluginSize(aPluginSize), mDirtyRect(aDirtyRect)
-    {}
-    virtual nsresult DrawWithXlib(cairo_surface_t* surface,
-                                  nsIntPoint offset,
-                                  nsIntRect* clipRects, uint32_t numClipRects) override;
-  private:
+        : mWindow(aWindow),
+          mInstanceOwner(aInstanceOwner),
+          mPluginSize(aPluginSize),
+          mDirtyRect(aDirtyRect) {}
+    virtual nsresult DrawWithXlib(cairo_surface_t* surface, nsIntPoint offset,
+                                  nsIntRect* clipRects,
+                                  uint32_t numClipRects) override;
+
+   private:
     NPWindow* mWindow;
     nsPluginInstanceOwner* mInstanceOwner;
     const nsIntSize& mPluginSize;
@@ -392,5 +393,4 @@ private:
   bool mWaitingForPaint;
 };
 
-#endif 
-
+#endif  

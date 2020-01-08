@@ -24,26 +24,25 @@
 
 
 
- 
 
-class nsToolkit
-{
-public:
-    nsToolkit();
 
-private:
-    ~nsToolkit();
+class nsToolkit {
+ public:
+  nsToolkit();
 
-public:
-    static nsToolkit* GetToolkit();
+ private:
+  ~nsToolkit();
 
-    static HINSTANCE mDllInstance;
+ public:
+  static nsToolkit* GetToolkit();
 
-    static void Startup(HMODULE hModule);
-    static void Shutdown();
+  static HINSTANCE mDllInstance;
 
-protected:
-    static nsToolkit* gToolkit;
+  static void Startup(HMODULE hModule);
+  static void Shutdown();
+
+ protected:
+  static nsToolkit* gToolkit;
 };
 
 #endif  

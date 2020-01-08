@@ -25,7 +25,7 @@ class SVGLengthList;
 class SVGNumberList;
 class SVGUserUnitList;
 
-} 
+}  
 
 
 
@@ -42,9 +42,8 @@ class SVGUserUnitList;
 
 
 
-class nsSVGDisplayableFrame : public nsQueryFrame
-{
-public:
+class nsSVGDisplayableFrame : public nsQueryFrame {
+ public:
   typedef mozilla::SVGAnimatedNumberList SVGAnimatedNumberList;
   typedef mozilla::SVGNumberList SVGNumberList;
   typedef mozilla::SVGAnimatedLengthList SVGAnimatedLengthList;
@@ -84,8 +83,7 @@ public:
 
 
 
-  virtual void PaintSVG(gfxContext& aContext,
-                        const gfxMatrix& aTransform,
+  virtual void PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                         imgDrawingParams& aImgParams,
                         const nsIntRect* aDirtyRect = nullptr) = 0;
 
@@ -102,8 +100,9 @@ public:
   
   
   
-  virtual void ReflowSVG()=0;
+  virtual void ReflowSVG() = 0;
 
+  
   
   
   
@@ -115,9 +114,9 @@ public:
   
   
   enum SVGChangedFlags {
-    TRANSFORM_CHANGED     = 0x01,
+    TRANSFORM_CHANGED = 0x01,
     COORD_CONTEXT_CHANGED = 0x02,
-    FULL_ZOOM_CHANGED     = 0x04
+    FULL_ZOOM_CHANGED = 0x04
   };
   
 
@@ -128,7 +127,7 @@ public:
 
 
 
-  virtual void NotifySVGChanged(uint32_t aFlags)=0;
+  virtual void NotifySVGChanged(uint32_t aFlags) = 0;
 
   
 
@@ -151,12 +150,11 @@ public:
 
 
 
-  virtual SVGBBox GetBBoxContribution(const mozilla::gfx::Matrix &aToBBoxUserspace,
-                                      uint32_t aFlags) = 0;
+  virtual SVGBBox GetBBoxContribution(
+      const mozilla::gfx::Matrix& aToBBoxUserspace, uint32_t aFlags) = 0;
 
   
-  virtual bool IsDisplayContainer()=0;
+  virtual bool IsDisplayContainer() = 0;
 };
 
-#endif 
-
+#endif  

@@ -13,21 +13,17 @@ using namespace mozilla;
 
 
 
-nsIFrame*
-NS_NewMathMLmrowFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewMathMLmrowFrame(nsIPresShell* aPresShell,
+                                ComputedStyle* aStyle) {
   return new (aPresShell) nsMathMLmrowFrame(aStyle);
 }
 
 NS_IMPL_FRAMEARENA_HELPERS(nsMathMLmrowFrame)
 
-nsMathMLmrowFrame::~nsMathMLmrowFrame()
-{
-}
+nsMathMLmrowFrame::~nsMathMLmrowFrame() {}
 
 NS_IMETHODIMP
-nsMathMLmrowFrame::InheritAutomaticData(nsIFrame* aParent)
-{
+nsMathMLmrowFrame::InheritAutomaticData(nsIFrame* aParent) {
   
   nsMathMLContainerFrame::InheritAutomaticData(aParent);
 
@@ -36,17 +32,15 @@ nsMathMLmrowFrame::InheritAutomaticData(nsIFrame* aParent)
   return NS_OK;
 }
 
-nsresult
-nsMathMLmrowFrame::AttributeChanged(int32_t  aNameSpaceID,
-                                    nsAtom* aAttribute,
-                                    int32_t  aModType)
-{
+nsresult nsMathMLmrowFrame::AttributeChanged(int32_t aNameSpaceID,
+                                             nsAtom* aAttribute,
+                                             int32_t aModType) {
   
   
   
   if (mContent->IsMathMLElement(nsGkAtoms::mtable_)) {
     nsIFrame* frame = mFrames.FirstChild();
-    for ( ; frame; frame = frame->PrincipalChildList().FirstChild()) {
+    for (; frame; frame = frame->PrincipalChildList().FirstChild()) {
       
       if (frame->IsTableWrapperFrame())
         return frame->AttributeChanged(aNameSpaceID, aAttribute, aModType);
@@ -54,12 +48,11 @@ nsMathMLmrowFrame::AttributeChanged(int32_t  aNameSpaceID,
     MOZ_ASSERT_UNREACHABLE("mtable wrapper without the real table frame");
   }
 
-  return nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, aAttribute, aModType);
+  return nsMathMLContainerFrame::AttributeChanged(aNameSpaceID, aAttribute,
+                                                  aModType);
 }
 
- eMathMLFrameType
-nsMathMLmrowFrame::GetMathMLFrameType()
-{
+ eMathMLFrameType nsMathMLmrowFrame::GetMathMLFrameType() {
   if (!IsMrowLike()) {
     nsIMathMLFrame* child = do_QueryFrame(mFrames.FirstChild());
     if (child) {

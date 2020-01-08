@@ -31,125 +31,128 @@
 
 namespace js {
 
-class DenseBitmap
-{
-    using Data = Vector<uintptr_t, 0, SystemAllocPolicy>;
+class DenseBitmap {
+  using Data = Vector<uintptr_t, 0, SystemAllocPolicy>;
 
-    Data data;
+  Data data;
 
-  public:
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
-        return data.sizeOfExcludingThis(mallocSizeOf);
+ public:
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
+    return data.sizeOfExcludingThis(mallocSizeOf);
+  }
+
+  bool ensureSpace(size_t numWords) {
+    MOZ_ASSERT(data.empty());
+    return data.appendN(0, numWords);
+  }
+
+  size_t numWords() const { return data.length(); }
+  uintptr_t word(size_t i) const { return data[i]; }
+  uintptr_t& word(size_t i) { return data[i]; }
+
+  void copyBitsFrom(size_t wordStart, size_t numWords, uintptr_t* source) {
+    MOZ_ASSERT(wordStart + numWords <= data.length());
+    
+    
+    std::copy(source, source + numWords, &data[wordStart]);
+  }
+
+  void bitwiseOrRangeInto(size_t wordStart, size_t numWords,
+                          uintptr_t* target) const {
+    for (size_t i = 0; i < numWords; i++) {
+      target[i] |= data[wordStart + i];
     }
-
-    bool ensureSpace(size_t numWords) {
-        MOZ_ASSERT(data.empty());
-        return data.appendN(0, numWords);
-    }
-
-    size_t numWords() const { return data.length(); }
-    uintptr_t word(size_t i) const { return data[i]; }
-    uintptr_t& word(size_t i) { return data[i]; }
-
-    void copyBitsFrom(size_t wordStart, size_t numWords, uintptr_t* source) {
-        MOZ_ASSERT(wordStart + numWords <= data.length());
-        
-        
-        std::copy(source, source + numWords, &data[wordStart]);
-    }
-
-    void bitwiseOrRangeInto(size_t wordStart, size_t numWords, uintptr_t* target) const {
-        for (size_t i = 0; i < numWords; i++) {
-            target[i] |= data[wordStart + i];
-        }
-    }
+  }
 };
 
-class SparseBitmap
-{
+class SparseBitmap {
+  
+  
+  
+  
+  static const size_t WordsInBlock = 4096 / sizeof(uintptr_t);
+
+  using BitBlock = mozilla::Array<uintptr_t, WordsInBlock>;
+  using Data =
+      HashMap<size_t, BitBlock*, DefaultHasher<size_t>, SystemAllocPolicy>;
+
+  Data data;
+
+  static size_t blockStartWord(size_t word) {
+    return word & ~(WordsInBlock - 1);
+  }
+
+  
+  
+  static size_t wordIntersectCount(size_t blockWord, const DenseBitmap& other) {
+    long count = other.numWords() - blockWord;
+    return std::min<size_t>((size_t)WordsInBlock, std::max<long>(count, 0));
+  }
+
+  BitBlock& createBlock(Data::AddPtr p, size_t blockId,
+                        AutoEnterOOMUnsafeRegion& oomUnsafe);
+
+  BitBlock* createBlock(Data::AddPtr p, size_t blockId);
+
+  MOZ_ALWAYS_INLINE BitBlock* getBlock(size_t blockId) const {
+    Data::Ptr p = data.lookup(blockId);
+    return p ? p->value() : nullptr;
+  }
+
+  MOZ_ALWAYS_INLINE BitBlock& getOrCreateBlock(size_t blockId) {
     
     
-    
-    
-    static const size_t WordsInBlock = 4096 / sizeof(uintptr_t);
-
-    using BitBlock = mozilla::Array<uintptr_t, WordsInBlock>;
-    using Data = HashMap<size_t, BitBlock*, DefaultHasher<size_t>, SystemAllocPolicy>;
-
-    Data data;
-
-    static size_t blockStartWord(size_t word) {
-        return word & ~(WordsInBlock - 1);
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    Data::AddPtr p = data.lookupForAdd(blockId);
+    if (p) {
+      return *p->value();
     }
+    return createBlock(p, blockId, oomUnsafe);
+  }
 
-    
-    
-    static size_t wordIntersectCount(size_t blockWord, const DenseBitmap& other) {
-        long count = other.numWords() - blockWord;
-        return std::min<size_t>((size_t)WordsInBlock, std::max<long>(count, 0));
+  MOZ_ALWAYS_INLINE BitBlock* getOrCreateBlockFallible(size_t blockId) {
+    Data::AddPtr p = data.lookupForAdd(blockId);
+    if (p) {
+      return p->value();
     }
+    return createBlock(p, blockId);
+  }
 
-    BitBlock& createBlock(Data::AddPtr p, size_t blockId, AutoEnterOOMUnsafeRegion& oomUnsafe);
+ public:
+  ~SparseBitmap();
 
-    BitBlock* createBlock(Data::AddPtr p, size_t blockId);
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
-    MOZ_ALWAYS_INLINE BitBlock* getBlock(size_t blockId) const {
-        Data::Ptr p = data.lookup(blockId);
-        return p ? p->value() : nullptr;
+  MOZ_ALWAYS_INLINE void setBit(size_t bit) {
+    size_t word = bit / JS_BITS_PER_WORD;
+    size_t blockWord = blockStartWord(word);
+    BitBlock& block = getOrCreateBlock(blockWord / WordsInBlock);
+    block[word - blockWord] |= uintptr_t(1) << (bit % JS_BITS_PER_WORD);
+  }
+
+  MOZ_ALWAYS_INLINE bool setBitFallible(size_t bit) {
+    size_t word = bit / JS_BITS_PER_WORD;
+    size_t blockWord = blockStartWord(word);
+    BitBlock* block = getOrCreateBlockFallible(blockWord / WordsInBlock);
+    if (!block) {
+      return false;
     }
+    (*block)[word - blockWord] |= uintptr_t(1) << (bit % JS_BITS_PER_WORD);
+    return true;
+  }
 
-    MOZ_ALWAYS_INLINE BitBlock& getOrCreateBlock(size_t blockId) {
-        
-        
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        Data::AddPtr p = data.lookupForAdd(blockId);
-        if (p) {
-            return *p->value();
-        }
-        return createBlock(p, blockId, oomUnsafe);
-    }
+  bool getBit(size_t bit) const;
 
-    MOZ_ALWAYS_INLINE BitBlock* getOrCreateBlockFallible(size_t blockId) {
-        Data::AddPtr p = data.lookupForAdd(blockId);
-        if (p) {
-            return p->value();
-        }
-        return createBlock(p, blockId);
-    }
+  void bitwiseAndWith(const DenseBitmap& other);
+  void bitwiseOrWith(const SparseBitmap& other);
+  void bitwiseOrInto(DenseBitmap& other) const;
 
-  public:
-    ~SparseBitmap();
-
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
-
-    MOZ_ALWAYS_INLINE void setBit(size_t bit) {
-        size_t word = bit / JS_BITS_PER_WORD;
-        size_t blockWord = blockStartWord(word);
-        BitBlock& block = getOrCreateBlock(blockWord / WordsInBlock);
-        block[word - blockWord] |= uintptr_t(1) << (bit % JS_BITS_PER_WORD);
-    }
-
-    MOZ_ALWAYS_INLINE bool setBitFallible(size_t bit) {
-        size_t word = bit / JS_BITS_PER_WORD;
-        size_t blockWord = blockStartWord(word);
-        BitBlock* block = getOrCreateBlockFallible(blockWord / WordsInBlock);
-        if (!block) {
-            return false;
-        }
-        (*block)[word - blockWord] |= uintptr_t(1) << (bit % JS_BITS_PER_WORD);
-        return true;
-    }
-
-    bool getBit(size_t bit) const;
-
-    void bitwiseAndWith(const DenseBitmap& other);
-    void bitwiseOrWith(const SparseBitmap& other);
-    void bitwiseOrInto(DenseBitmap& other) const;
-
-    
-    void bitwiseOrRangeInto(size_t wordStart, size_t numWords, uintptr_t* target) const;
+  
+  
+  void bitwiseOrRangeInto(size_t wordStart, size_t numWords,
+                          uintptr_t* target) const;
 };
 
-} 
+}  
 
-#endif 
+#endif  

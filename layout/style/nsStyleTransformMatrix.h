@@ -32,222 +32,193 @@ struct MotionPathData;
 
 
 namespace nsStyleTransformMatrix {
-  
-  enum class MatrixTransformOperator: uint8_t {
-    Interpolate,
-    Accumulate
-  };
+
+enum class MatrixTransformOperator : uint8_t { Interpolate, Accumulate };
+
+
+
+
+inline void ApplyPerspectiveToMatrix(mozilla::gfx::Matrix4x4& aMatrix,
+                                     float aDepth) {
+  if (aDepth >= std::numeric_limits<float>::epsilon()) {
+    aMatrix.Perspective(aDepth);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class MOZ_STACK_CLASS TransformReferenceBox final {
+ public:
+  typedef nscoord (TransformReferenceBox::*DimensionGetter)();
+
+  explicit TransformReferenceBox()
+      : mFrame(nullptr),
+        mX(0),
+        mY(0),
+        mWidth(0),
+        mHeight(0),
+        mIsCached(false) {}
+
+  explicit TransformReferenceBox(const nsIFrame* aFrame)
+      : mFrame(aFrame), mX(0), mY(0), mWidth(0), mHeight(0), mIsCached(false) {
+    MOZ_ASSERT(mFrame);
+  }
+
+  explicit TransformReferenceBox(const nsIFrame* aFrame,
+                                 const nsSize& aFallbackDimensions)
+      : mX(0), mY(0), mWidth(0), mHeight(0) {
+    mFrame = aFrame;
+    mIsCached = false;
+    if (!mFrame) {
+      Init(aFallbackDimensions);
+    }
+  }
+
+  void Init(const nsIFrame* aFrame) {
+    MOZ_ASSERT(!mFrame && !mIsCached);
+    mFrame = aFrame;
+  }
+
+  void Init(const nsSize& aDimensions);
 
   
-  
-  
-  inline void ApplyPerspectiveToMatrix(mozilla::gfx::Matrix4x4& aMatrix,
-                                       float aDepth)
-  {
-    if (aDepth >= std::numeric_limits<float>::epsilon()) {
-      aMatrix.Perspective(aDepth);
-    }
+
+
+
+
+
+  nscoord X() {
+    EnsureDimensionsAreCached();
+    return mX;
+  }
+  nscoord Y() {
+    EnsureDimensionsAreCached();
+    return mY;
   }
 
   
 
 
+  nscoord Width() {
+    EnsureDimensionsAreCached();
+    return mWidth;
+  }
+  nscoord Height() {
+    EnsureDimensionsAreCached();
+    return mHeight;
+  }
 
+  bool IsEmpty() { return !mFrame; }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  class MOZ_STACK_CLASS TransformReferenceBox final {
-  public:
-    typedef nscoord (TransformReferenceBox::*DimensionGetter)();
-
-    explicit TransformReferenceBox()
-      : mFrame(nullptr)
-      , mX(0)
-      , mY(0)
-      , mWidth(0)
-      , mHeight(0)
-      , mIsCached(false)
-    {}
-
-    explicit TransformReferenceBox(const nsIFrame* aFrame)
-      : mFrame(aFrame)
-      , mX(0)
-      , mY(0)
-      , mWidth(0)
-      , mHeight(0)
-      , mIsCached(false)
-    {
-      MOZ_ASSERT(mFrame);
-    }
-
-    explicit TransformReferenceBox(const nsIFrame* aFrame,
-                                   const nsSize& aFallbackDimensions)
-      : mX(0)
-      , mY(0)
-      , mWidth(0)
-      , mHeight(0)
-    {
-      mFrame = aFrame;
-      mIsCached = false;
-      if (!mFrame) {
-        Init(aFallbackDimensions);
-      }
-    }
-
-    void Init(const nsIFrame* aFrame) {
-      MOZ_ASSERT(!mFrame && !mIsCached);
-      mFrame = aFrame;
-    }
-
-    void Init(const nsSize& aDimensions);
-
-    
-
-
-
-
-
-    nscoord X() {
-      EnsureDimensionsAreCached();
-      return mX;
-    }
-    nscoord Y() {
-      EnsureDimensionsAreCached();
-      return mY;
-    }
-
-    
-
-
-    nscoord Width() {
-      EnsureDimensionsAreCached();
-      return mWidth;
-    }
-    nscoord Height() {
-      EnsureDimensionsAreCached();
-      return mHeight;
-    }
-
-    bool IsEmpty() {
-      return !mFrame;
-    }
-
-  private:
-    
-    
-    
-    TransformReferenceBox(const TransformReferenceBox&) = delete;
-
-    void EnsureDimensionsAreCached();
-
-    const nsIFrame* mFrame;
-    nscoord mX, mY, mWidth, mHeight;
-    bool mIsCached;
-  };
-
-  
-
-
-
-  nsCSSKeyword TransformFunctionOf(const nsCSSValue::Array* aData);
-
-  void SetIdentityMatrix(nsCSSValue::Array* aMatrix);
-
-  float ProcessTranslatePart(const nsCSSValue& aValue,
-                             TransformReferenceBox* aRefBox,
-                             TransformReferenceBox::DimensionGetter aDimensionGetter = nullptr);
-
-  void
-  ProcessInterpolateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
-                           const nsCSSValue::Array* aData,
-                           TransformReferenceBox& aBounds);
-
-  void
-  ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
-                          const nsCSSValue::Array* aData,
-                          TransformReferenceBox& aBounds);
-
-
-  
-
-
-
-
-
-
-
-
-
-  mozilla::gfx::Matrix4x4 ReadTransforms(const nsCSSValueList* aList,
-                                         TransformReferenceBox& aBounds,
-                                         float aAppUnitsPerMatrixUnit);
-
+ private:
   
   
-  mozilla::gfx::Matrix4x4
-  ReadTransforms(const nsCSSValueList* aIndividualTransforms,
-                 const mozilla::Maybe<mozilla::MotionPathData>& aMotion,
-                 const nsCSSValueList* aTransform,
-                 TransformReferenceBox& aRefBox,
-                 float aAppUnitsPerMatrixUnit);
-
   
+  TransformReferenceBox(const TransformReferenceBox&) = delete;
+
+  void EnsureDimensionsAreCached();
+
+  const nsIFrame* mFrame;
+  nscoord mX, mY, mWidth, mHeight;
+  bool mIsCached;
+};
 
 
 
-  mozilla::gfx::Point Convert2DPosition(nsStyleCoord const (&aValue)[2],
-                                        TransformReferenceBox& aRefBox,
-                                        int32_t aAppUnitsPerDevPixel);
-
-  
-  enum class ShearType {
-    XYSHEAR,
-    XZSHEAR,
-    YZSHEAR,
-    Count
-  };
-  using ShearArray =
-    mozilla::EnumeratedArray<ShearType, ShearType::Count, float>;
-
-  
 
 
-  bool Decompose2DMatrix(const mozilla::gfx::Matrix& aMatrix,
-                         mozilla::gfx::Point3D& aScale,
-                         ShearArray& aShear,
-                         gfxQuaternion& aRotate,
-                         mozilla::gfx::Point3D& aTranslate);
-  
+nsCSSKeyword TransformFunctionOf(const nsCSSValue::Array* aData);
+
+void SetIdentityMatrix(nsCSSValue::Array* aMatrix);
+
+float ProcessTranslatePart(
+    const nsCSSValue& aValue, TransformReferenceBox* aRefBox,
+    TransformReferenceBox::DimensionGetter aDimensionGetter = nullptr);
+
+void ProcessInterpolateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
+                              const nsCSSValue::Array* aData,
+                              TransformReferenceBox& aBounds);
+
+void ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
+                             const nsCSSValue::Array* aData,
+                             TransformReferenceBox& aBounds);
 
 
-  bool Decompose3DMatrix(const mozilla::gfx::Matrix4x4& aMatrix,
-                         mozilla::gfx::Point3D& aScale,
-                         ShearArray& aShear,
-                         gfxQuaternion& aRotate,
-                         mozilla::gfx::Point3D& aTranslate,
-                         mozilla::gfx::Point4D& aPerspective);
 
-  mozilla::gfx::Matrix CSSValueArrayTo2DMatrix(nsCSSValue::Array* aArray);
-  mozilla::gfx::Matrix4x4 CSSValueArrayTo3DMatrix(nsCSSValue::Array* aArray);
 
-  mozilla::gfx::Size GetScaleValue(const nsCSSValueSharedList* aList,
-                                   const nsIFrame* aForFrame);
-} 
+
+
+
+
+
+
+
+mozilla::gfx::Matrix4x4 ReadTransforms(const nsCSSValueList* aList,
+                                       TransformReferenceBox& aBounds,
+                                       float aAppUnitsPerMatrixUnit);
+
+
+
+mozilla::gfx::Matrix4x4 ReadTransforms(
+    const nsCSSValueList* aIndividualTransforms,
+    const mozilla::Maybe<mozilla::MotionPathData>& aMotion,
+    const nsCSSValueList* aTransform, TransformReferenceBox& aRefBox,
+    float aAppUnitsPerMatrixUnit);
+
+
+
+
+
+mozilla::gfx::Point Convert2DPosition(nsStyleCoord const (&aValue)[2],
+                                      TransformReferenceBox& aRefBox,
+                                      int32_t aAppUnitsPerDevPixel);
+
+
+enum class ShearType { XYSHEAR, XZSHEAR, YZSHEAR, Count };
+using ShearArray = mozilla::EnumeratedArray<ShearType, ShearType::Count, float>;
+
+
+
+
+bool Decompose2DMatrix(const mozilla::gfx::Matrix& aMatrix,
+                       mozilla::gfx::Point3D& aScale, ShearArray& aShear,
+                       gfxQuaternion& aRotate,
+                       mozilla::gfx::Point3D& aTranslate);
+
+
+
+bool Decompose3DMatrix(const mozilla::gfx::Matrix4x4& aMatrix,
+                       mozilla::gfx::Point3D& aScale, ShearArray& aShear,
+                       gfxQuaternion& aRotate,
+                       mozilla::gfx::Point3D& aTranslate,
+                       mozilla::gfx::Point4D& aPerspective);
+
+mozilla::gfx::Matrix CSSValueArrayTo2DMatrix(nsCSSValue::Array* aArray);
+mozilla::gfx::Matrix4x4 CSSValueArrayTo3DMatrix(nsCSSValue::Array* aArray);
+
+mozilla::gfx::Size GetScaleValue(const nsCSSValueSharedList* aList,
+                                 const nsIFrame* aForFrame);
+}  
 
 #endif

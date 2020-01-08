@@ -7,17 +7,17 @@
 #ifndef MOZILLA_LAYERS_COMPOSITABLEFORWARDER
 #define MOZILLA_LAYERS_COMPOSITABLEFORWARDER
 
-#include <stdint.h>                     
+#include <stdint.h>  
 #include "gfxTypes.h"
-#include "mozilla/Attributes.h"         
+#include "mozilla/Attributes.h"  
 #include "mozilla/UniquePtr.h"
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/ISurfaceAllocator.h"  
-#include "mozilla/layers/LayersTypes.h"  
-#include "mozilla/layers/TextureClient.h"  
-#include "mozilla/layers/TextureForwarder.h"  
-#include "nsRegion.h"                   
+#include "mozilla/layers/LayersTypes.h"        
+#include "mozilla/layers/TextureClient.h"      
+#include "mozilla/layers/TextureForwarder.h"   
+#include "nsRegion.h"                          
 #include "mozilla/gfx/Rect.h"
 #include "nsHashKeys.h"
 #include "nsTHashtable.h"
@@ -46,9 +46,8 @@ class PTextureChild;
 
 
 
-class CompositableForwarder : public KnowsCompositor
-{
-public:
+class CompositableForwarder : public KnowsCompositor {
+ public:
   
 
 
@@ -60,8 +59,9 @@ public:
 
 
 
-  virtual void UseTiledLayerBuffer(CompositableClient* aCompositable,
-                                   const SurfaceDescriptorTiles& aTiledDescriptor) = 0;
+  virtual void UseTiledLayerBuffer(
+      CompositableClient* aCompositable,
+      const SurfaceDescriptorTiles& aTiledDescriptor) = 0;
 
   
 
@@ -110,20 +110,18 @@ public:
 
   virtual bool InForwarderThread() = 0;
 
-  void AssertInForwarderThread() {
-    MOZ_ASSERT(InForwarderThread());
-  }
+  void AssertInForwarderThread() { MOZ_ASSERT(InForwarderThread()); }
 
   static uint32_t GetMaxFileDescriptorsPerMessage();
 
   virtual ShadowLayerForwarder* AsLayerForwarder() { return nullptr; }
 
-protected:
-  nsTArray<RefPtr<TextureClient> > mTexturesToRemove;
+ protected:
+  nsTArray<RefPtr<TextureClient>> mTexturesToRemove;
   nsTArray<RefPtr<CompositableClient>> mCompositableClientsToRemove;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

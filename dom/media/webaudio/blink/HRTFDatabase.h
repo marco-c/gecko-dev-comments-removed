@@ -39,58 +39,66 @@ namespace WebCore {
 class HRTFKernel;
 
 class HRTFDatabase {
-public:
-    static nsReturnRef<HRTFDatabase> create(float sampleRate);
+ public:
+  static nsReturnRef<HRTFDatabase> create(float sampleRate);
 
+  
     
     
     
     
-    
-    
-    void getKernelsFromAzimuthElevation(double azimuthBlend, unsigned azimuthIndex, double elevationAngle, HRTFKernel* &kernelL, HRTFKernel* &kernelR, double& frameDelayL, double& frameDelayR);
+  
+  void getKernelsFromAzimuthElevation(double azimuthBlend,
+                                      unsigned azimuthIndex,
+                                      double elevationAngle,
+                                      HRTFKernel*& kernelL,
+                                      HRTFKernel*& kernelR, double& frameDelayL,
+                                      double& frameDelayR);
 
-    
-    static unsigned numberOfAzimuths() { return HRTFElevation::NumberOfTotalAzimuths; }
+  
+  static unsigned numberOfAzimuths() {
+    return HRTFElevation::NumberOfTotalAzimuths;
+  }
 
-    float sampleRate() const { return m_sampleRate; }
+  float sampleRate() const { return m_sampleRate; }
 
-    
-    static const unsigned NumberOfRawElevations;
+  
+  static const unsigned NumberOfRawElevations;
 
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
-    HRTFDatabase(const HRTFDatabase& other) = delete;
-    void operator=(const HRTFDatabase& other) = delete;
+ private:
+  HRTFDatabase(const HRTFDatabase& other) = delete;
+  void operator=(const HRTFDatabase& other) = delete;
 
-    explicit HRTFDatabase(float sampleRate);
+  explicit HRTFDatabase(float sampleRate);
 
-    
-    static const int MinElevation;
-    static const int MaxElevation;
-    static const unsigned RawElevationAngleSpacing;
+  
+  static const int MinElevation;
+  static const int MaxElevation;
+  static const unsigned RawElevationAngleSpacing;
 
-    
-    static const unsigned InterpolationFactor;
+  
+  
+  static const unsigned InterpolationFactor;
 
-    
-    static const unsigned NumberOfTotalElevations;
+  
+  static const unsigned NumberOfTotalElevations;
 
-    
-    static unsigned indexFromElevationAngle(double);
+  
+  static unsigned indexFromElevationAngle(double);
 
-    nsTArray<nsAutoRef<HRTFElevation> > m_elevations;
-    float m_sampleRate;
+  nsTArray<nsAutoRef<HRTFElevation> > m_elevations;
+  float m_sampleRate;
 };
 
-} 
+}  
 
 template <>
-class nsAutoRefTraits<WebCore::HRTFDatabase> :
-    public nsPointerRefTraits<WebCore::HRTFDatabase> {
-public:
-    static void Release(WebCore::HRTFDatabase* ptr) { delete(ptr); }
+class nsAutoRefTraits<WebCore::HRTFDatabase>
+    : public nsPointerRefTraits<WebCore::HRTFDatabase> {
+ public:
+  static void Release(WebCore::HRTFDatabase* ptr) { delete (ptr); }
 };
 
-#endif 
+#endif  

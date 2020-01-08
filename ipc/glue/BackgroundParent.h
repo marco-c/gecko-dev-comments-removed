@@ -11,7 +11,8 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ipc/Transport.h"
 
-template <class> struct already_AddRefed;
+template <class>
+struct already_AddRefed;
 
 namespace mozilla {
 namespace dom {
@@ -19,18 +20,18 @@ namespace dom {
 class BlobImpl;
 class ContentParent;
 
-} 
+}  
 
 namespace ipc {
 
 class PBackgroundParent;
 
-template<class PFooSide> class Endpoint;
+template <class PFooSide>
+class Endpoint;
 
 
 
-class BackgroundParent final
-{
+class BackgroundParent final {
   friend class mozilla::dom::ContentParent;
 
   typedef base::ProcessId ProcessId;
@@ -38,13 +39,12 @@ class BackgroundParent final
   typedef mozilla::dom::ContentParent ContentParent;
   typedef mozilla::ipc::Transport Transport;
 
-public:
+ public:
   
   
   
   
-  static bool
-  IsOtherProcessActor(PBackgroundParent* aBackgroundActor);
+  static bool IsOtherProcessActor(PBackgroundParent* aBackgroundActor);
 
   
   
@@ -54,55 +54,44 @@ public:
   
   
   
-  static already_AddRefed<ContentParent>
-  GetContentParent(PBackgroundParent* aBackgroundActor);
+  static already_AddRefed<ContentParent> GetContentParent(
+      PBackgroundParent* aBackgroundActor);
 
   
   
   
   
-  static intptr_t
-  GetRawContentParentForComparison(PBackgroundParent* aBackgroundActor);
+  static intptr_t GetRawContentParentForComparison(
+      PBackgroundParent* aBackgroundActor);
 
-  static uint64_t
-  GetChildID(PBackgroundParent* aBackgroundActor);
+  static uint64_t GetChildID(PBackgroundParent* aBackgroundActor);
 
-  static bool
-  GetLiveActorArray(PBackgroundParent* aBackgroundActor,
-                    nsTArray<PBackgroundParent*>& aLiveActorArray);
+  static bool GetLiveActorArray(PBackgroundParent* aBackgroundActor,
+                                nsTArray<PBackgroundParent*>& aLiveActorArray);
 
-private:
+ private:
   
-  static bool
-  Alloc(ContentParent* aContent,
-        Endpoint<PBackgroundParent>&& aEndpoint);
+  static bool Alloc(ContentParent* aContent,
+                    Endpoint<PBackgroundParent>&& aEndpoint);
 };
 
 
-bool
-IsOnBackgroundThread();
+bool IsOnBackgroundThread();
 
 #ifdef DEBUG
 
 
-void
-AssertIsOnBackgroundThread();
+void AssertIsOnBackgroundThread();
 
 #else
 
-inline void
-AssertIsOnBackgroundThread()
-{ }
+inline void AssertIsOnBackgroundThread() {}
 
-#endif 
+#endif  
 
-inline void
-AssertIsInMainProcess()
-{
-  MOZ_ASSERT(XRE_IsParentProcess());
-}
+inline void AssertIsInMainProcess() { MOZ_ASSERT(XRE_IsParentProcess()); }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

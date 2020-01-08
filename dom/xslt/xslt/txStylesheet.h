@@ -21,188 +21,163 @@ class txDecimalFormat;
 class txStripSpaceTest;
 class txXSLKey;
 
-class txStylesheet final
-{
-public:
-    class ImportFrame;
-    class GlobalVariable;
-    friend class txStylesheetCompilerState;
-    
-    friend class ImportFrame;
+class txStylesheet final {
+ public:
+  class ImportFrame;
+  class GlobalVariable;
+  friend class txStylesheetCompilerState;
+  
+  friend class ImportFrame;
 
-    txStylesheet();
-    nsresult init();
+  txStylesheet();
+  nsresult init();
 
-    NS_INLINE_DECL_REFCOUNTING(txStylesheet)
+  NS_INLINE_DECL_REFCOUNTING(txStylesheet)
 
-    nsresult findTemplate(const txXPathNode& aNode,
-                          const txExpandedName& aMode,
-                          txIMatchContext* aContext,
-                          ImportFrame* aImportedBy,
-                          txInstruction** aTemplate,
-                          ImportFrame** aImportFrame);
-    txDecimalFormat* getDecimalFormat(const txExpandedName& aName);
-    txInstruction* getAttributeSet(const txExpandedName& aName);
-    txInstruction* getNamedTemplate(const txExpandedName& aName);
-    txOutputFormat* getOutputFormat();
-    GlobalVariable* getGlobalVariable(const txExpandedName& aName);
-    const txOwningExpandedNameMap<txXSLKey>& getKeyMap();
-    nsresult isStripSpaceAllowed(const txXPathNode& aNode,
-                                 txIMatchContext* aContext,
-                                 bool& aAllowed);
+  nsresult findTemplate(const txXPathNode& aNode, const txExpandedName& aMode,
+                        txIMatchContext* aContext, ImportFrame* aImportedBy,
+                        txInstruction** aTemplate, ImportFrame** aImportFrame);
+  txDecimalFormat* getDecimalFormat(const txExpandedName& aName);
+  txInstruction* getAttributeSet(const txExpandedName& aName);
+  txInstruction* getNamedTemplate(const txExpandedName& aName);
+  txOutputFormat* getOutputFormat();
+  GlobalVariable* getGlobalVariable(const txExpandedName& aName);
+  const txOwningExpandedNameMap<txXSLKey>& getKeyMap();
+  nsresult isStripSpaceAllowed(const txXPathNode& aNode,
+                               txIMatchContext* aContext, bool& aAllowed);
 
-    
+  
 
 
-    nsresult doneCompiling();
+  nsresult doneCompiling();
 
-    
-
-
-    nsresult addKey(const txExpandedName& aName, nsAutoPtr<txPattern> aMatch,
-                    nsAutoPtr<Expr> aUse);
-
-    
+  
 
 
-    nsresult addDecimalFormat(const txExpandedName& aName,
-                              nsAutoPtr<txDecimalFormat>&& aFormat);
+  nsresult addKey(const txExpandedName& aName, nsAutoPtr<txPattern> aMatch,
+                  nsAutoPtr<Expr> aUse);
 
-    struct MatchableTemplate {
-        txInstruction* mFirstInstruction;
-        nsAutoPtr<txPattern> mMatch;
-        double mPriority;
-    };
-
-    
+  
 
 
-    class ImportFrame {
-    public:
-        ImportFrame()
-            : mFirstNotImported(nullptr)
-        {
-        }
-        ~ImportFrame();
+  nsresult addDecimalFormat(const txExpandedName& aName,
+                            nsAutoPtr<txDecimalFormat>&& aFormat);
 
-        
-        txList mToplevelItems;
+  struct MatchableTemplate {
+    txInstruction* mFirstInstruction;
+    nsAutoPtr<txPattern> mMatch;
+    double mPriority;
+  };
 
-        
-        txOwningExpandedNameMap< nsTArray<MatchableTemplate> > mMatchableTemplates;
+  
 
-        
-        ImportFrame* mFirstNotImported;
-    };
 
-    class GlobalVariable : public txObject {
-    public:
-        GlobalVariable(nsAutoPtr<Expr>&& aExpr,
-                       nsAutoPtr<txInstruction>&& aFirstInstruction,
-                       bool aIsParam);
-
-        nsAutoPtr<Expr> mExpr;
-        nsAutoPtr<txInstruction> mFirstInstruction;
-        bool mIsParam;
-    };
-
-private:
-    
-    ~txStylesheet();
-
-    nsresult addTemplate(txTemplateItem* aTemplate, ImportFrame* aImportFrame);
-    nsresult addGlobalVariable(txVariableItem* aVariable);
-    nsresult addFrames(txListIterator& aInsertIter);
-    nsresult addStripSpace(txStripSpaceItem* aStripSpaceItem,
-                           nsTArray<txStripSpaceTest*>& aFrameStripSpaceTests);
-    nsresult addAttributeSet(txAttributeSetItem* aAttributeSetItem);
+  class ImportFrame {
+   public:
+    ImportFrame() : mFirstNotImported(nullptr) {}
+    ~ImportFrame();
 
     
-    txList mImportFrames;
+    txList mToplevelItems;
 
     
-    txOutputFormat mOutputFormat;
+    txOwningExpandedNameMap<nsTArray<MatchableTemplate> > mMatchableTemplates;
 
     
-    
-    txList mTemplateInstructions;
+    ImportFrame* mFirstNotImported;
+  };
 
-    
-    ImportFrame* mRootFrame;
+  class GlobalVariable : public txObject {
+   public:
+    GlobalVariable(nsAutoPtr<Expr>&& aExpr,
+                   nsAutoPtr<txInstruction>&& aFirstInstruction, bool aIsParam);
 
-    
-    txExpandedNameMap<txInstruction> mNamedTemplates;
+    nsAutoPtr<Expr> mExpr;
+    nsAutoPtr<txInstruction> mFirstInstruction;
+    bool mIsParam;
+  };
 
-    
-    txOwningExpandedNameMap<txDecimalFormat> mDecimalFormats;
+ private:
+  
+  ~txStylesheet();
 
-    
-    txExpandedNameMap<txInstruction> mAttributeSets;
+  nsresult addTemplate(txTemplateItem* aTemplate, ImportFrame* aImportFrame);
+  nsresult addGlobalVariable(txVariableItem* aVariable);
+  nsresult addFrames(txListIterator& aInsertIter);
+  nsresult addStripSpace(txStripSpaceItem* aStripSpaceItem,
+                         nsTArray<txStripSpaceTest*>& aFrameStripSpaceTests);
+  nsresult addAttributeSet(txAttributeSetItem* aAttributeSetItem);
 
-    
-    txOwningExpandedNameMap<GlobalVariable> mGlobalVariables;
+  
+  txList mImportFrames;
 
-    
-    txOwningExpandedNameMap<txXSLKey> mKeys;
+  
+  txOutputFormat mOutputFormat;
 
-    
-    nsTArray<nsAutoPtr<txStripSpaceTest> > mStripSpaceTests;
+  
+  
+  txList mTemplateInstructions;
 
-    
-    nsAutoPtr<txInstruction> mContainerTemplate;
-    nsAutoPtr<txInstruction> mCharactersTemplate;
-    nsAutoPtr<txInstruction> mEmptyTemplate;
+  
+  ImportFrame* mRootFrame;
+
+  
+  txExpandedNameMap<txInstruction> mNamedTemplates;
+
+  
+  txOwningExpandedNameMap<txDecimalFormat> mDecimalFormats;
+
+  
+  txExpandedNameMap<txInstruction> mAttributeSets;
+
+  
+  txOwningExpandedNameMap<GlobalVariable> mGlobalVariables;
+
+  
+  txOwningExpandedNameMap<txXSLKey> mKeys;
+
+  
+  nsTArray<nsAutoPtr<txStripSpaceTest> > mStripSpaceTests;
+
+  
+  nsAutoPtr<txInstruction> mContainerTemplate;
+  nsAutoPtr<txInstruction> mCharactersTemplate;
+  nsAutoPtr<txInstruction> mEmptyTemplate;
 };
-
 
 
 
 
 
 class txStripSpaceTest {
-public:
-    txStripSpaceTest(nsAtom* aPrefix, nsAtom* aLocalName, int32_t aNSID,
-                     bool stripSpace)
-        : mNameTest(aPrefix, aLocalName, aNSID, txXPathNodeType::ELEMENT_NODE),
-          mStrips(stripSpace)
-    {
-    }
+ public:
+  txStripSpaceTest(nsAtom* aPrefix, nsAtom* aLocalName, int32_t aNSID,
+                   bool stripSpace)
+      : mNameTest(aPrefix, aLocalName, aNSID, txXPathNodeType::ELEMENT_NODE),
+        mStrips(stripSpace) {}
 
-    nsresult matches(const txXPathNode& aNode, txIMatchContext* aContext,
-                     bool& aMatched)
-    {
-        return mNameTest.matches(aNode, aContext, aMatched);
-    }
+  nsresult matches(const txXPathNode& aNode, txIMatchContext* aContext,
+                   bool& aMatched) {
+    return mNameTest.matches(aNode, aContext, aMatched);
+  }
 
-    bool stripsSpace() {
-        return mStrips;
-    }
+  bool stripsSpace() { return mStrips; }
 
-    double getDefaultPriority() {
-        return mNameTest.getDefaultPriority();
-    }
+  double getDefaultPriority() { return mNameTest.getDefaultPriority(); }
 
-protected:
-    txNameTest mNameTest;
-    bool mStrips;
+ protected:
+  txNameTest mNameTest;
+  bool mStrips;
 };
 
 
 
 
-class txIGlobalParameter
-{
-public:
-    txIGlobalParameter()
-    {
-        MOZ_COUNT_CTOR(txIGlobalParameter);
-    }
-    virtual ~txIGlobalParameter()
-    {
-        MOZ_COUNT_DTOR(txIGlobalParameter);
-    }
-    virtual nsresult getValue(txAExprResult** aValue) = 0;
+class txIGlobalParameter {
+ public:
+  txIGlobalParameter() { MOZ_COUNT_CTOR(txIGlobalParameter); }
+  virtual ~txIGlobalParameter() { MOZ_COUNT_DTOR(txIGlobalParameter); }
+  virtual nsresult getValue(txAExprResult** aValue) = 0;
 };
 
-
-#endif 
+#endif  

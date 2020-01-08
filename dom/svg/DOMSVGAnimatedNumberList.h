@@ -35,11 +35,10 @@ class SVGNumberList;
 
 
 class DOMSVGAnimatedNumberList final : public nsISupports,
-                                       public nsWrapperCache
-{
+                                       public nsWrapperCache {
   friend class DOMSVGNumberList;
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGAnimatedNumberList)
 
@@ -54,18 +53,16 @@ public:
 
 
 
-  static already_AddRefed<DOMSVGAnimatedNumberList>
-    GetDOMWrapper(SVGAnimatedNumberList *aList,
-                  nsSVGElement *aElement,
-                  uint8_t aAttrEnum);
+  static already_AddRefed<DOMSVGAnimatedNumberList> GetDOMWrapper(
+      SVGAnimatedNumberList* aList, nsSVGElement* aElement, uint8_t aAttrEnum);
 
   
 
 
 
 
-  static DOMSVGAnimatedNumberList*
-    GetDOMWrapperIfExists(SVGAnimatedNumberList *aList);
+  static DOMSVGAnimatedNumberList* GetDOMWrapperIfExists(
+      SVGAnimatedNumberList* aList);
 
   
 
@@ -90,24 +87,22 @@ public:
 
   
   nsSVGElement* GetParentObject() const { return mElement; }
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
   
   already_AddRefed<DOMSVGNumberList> BaseVal();
   already_AddRefed<DOMSVGNumberList> AnimVal();
 
-private:
-
+ private:
   
 
 
 
-  DOMSVGAnimatedNumberList(nsSVGElement *aElement, uint8_t aAttrEnum)
-    : mBaseVal(nullptr)
-    , mAnimVal(nullptr)
-    , mElement(aElement)
-    , mAttrEnum(aAttrEnum)
-  {
-  }
+  DOMSVGAnimatedNumberList(nsSVGElement* aElement, uint8_t aAttrEnum)
+      : mBaseVal(nullptr),
+        mAnimVal(nullptr),
+        mElement(aElement),
+        mAttrEnum(aAttrEnum) {}
 
   ~DOMSVGAnimatedNumberList();
 
@@ -118,8 +113,8 @@ private:
   
   
   
-  DOMSVGNumberList *mBaseVal;
-  DOMSVGNumberList *mAnimVal;
+  DOMSVGNumberList* mBaseVal;
+  DOMSVGNumberList* mAnimVal;
 
   
   
@@ -128,6 +123,6 @@ private:
   uint8_t mAttrEnum;
 };
 
-} 
+}  
 
-#endif 
+#endif  

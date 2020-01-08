@@ -45,30 +45,28 @@ namespace detail {
 
 
 
-template<typename T>
+template <typename T>
 struct FloatingPointTrait;
 
-template<>
-struct FloatingPointTrait<float>
-{
-protected:
+template <>
+struct FloatingPointTrait<float> {
+ protected:
   using Bits = uint32_t;
 
   static constexpr unsigned kExponentWidth = 8;
   static constexpr unsigned kSignificandWidth = 23;
 };
 
-template<>
-struct FloatingPointTrait<double>
-{
-protected:
+template <>
+struct FloatingPointTrait<double> {
+ protected:
   using Bits = uint64_t;
 
   static constexpr unsigned kExponentWidth = 11;
   static constexpr unsigned kSignificandWidth = 52;
 };
 
-} 
+}  
 
 
 
@@ -96,13 +94,12 @@ protected:
 
 
 
-template<typename T>
-struct FloatingPoint final : private detail::FloatingPointTrait<T>
-{
-private:
+template <typename T>
+struct FloatingPoint final : private detail::FloatingPointTrait<T> {
+ private:
   using Base = detail::FloatingPointTrait<T>;
 
-public:
+ public:
   
 
 
@@ -117,8 +114,7 @@ public:
   
   using Base::kSignificandWidth;
 
-  static_assert(1 + kExponentWidth + kSignificandWidth ==
-                CHAR_BIT * sizeof(T),
+  static_assert(1 + kExponentWidth + kSignificandWidth == CHAR_BIT * sizeof(T),
                 "sign bit plus bit widths should sum to overall bit width");
 
   
@@ -136,16 +132,16 @@ public:
   static constexpr unsigned kExponentShift = kSignificandWidth;
 
   
-  static constexpr Bits kSignBit =
-    static_cast<Bits>(1) << (CHAR_BIT * sizeof(Bits) - 1);
+  static constexpr Bits kSignBit = static_cast<Bits>(1)
+                                   << (CHAR_BIT * sizeof(Bits) - 1);
 
   
   static constexpr Bits kExponentBits =
-    ((static_cast<Bits>(1) << kExponentWidth) - 1) << kSignificandWidth;
+      ((static_cast<Bits>(1) << kExponentWidth) - 1) << kSignificandWidth;
 
   
   static constexpr Bits kSignificandBits =
-    (static_cast<Bits>(1) << kSignificandWidth) - 1;
+      (static_cast<Bits>(1) << kSignificandWidth) - 1;
 
   static_assert((kSignBit & kExponentBits) == 0,
                 "sign bit shouldn't overlap exponent bits");
@@ -159,25 +155,22 @@ public:
 };
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-IsNaN(T aValue)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool IsNaN(T aValue) {
   
 
 
 
   typedef FloatingPoint<T> Traits;
   typedef typename Traits::Bits Bits;
-  return (BitwiseCast<Bits>(aValue) & Traits::kExponentBits) == Traits::kExponentBits &&
+  return (BitwiseCast<Bits>(aValue) & Traits::kExponentBits) ==
+             Traits::kExponentBits &&
          (BitwiseCast<Bits>(aValue) & Traits::kSignificandBits) != 0;
 }
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-IsInfinite(T aValue)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool IsInfinite(T aValue) {
   
   typedef FloatingPoint<T> Traits;
   typedef typename Traits::Bits Bits;
@@ -186,10 +179,8 @@ IsInfinite(T aValue)
 }
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-IsFinite(T aValue)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool IsFinite(T aValue) {
   
 
 
@@ -204,10 +195,8 @@ IsFinite(T aValue)
 
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-IsNegative(T aValue)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool IsNegative(T aValue) {
   MOZ_ASSERT(!IsNaN(aValue), "NaN does not have a sign");
 
   
@@ -218,10 +207,8 @@ IsNegative(T aValue)
 }
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-IsNegativeZero(T aValue)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool IsNegativeZero(T aValue) {
   
   typedef FloatingPoint<T> Traits;
   typedef typename Traits::Bits Bits;
@@ -230,10 +217,8 @@ IsNegativeZero(T aValue)
 }
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-IsPositiveZero(T aValue)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool IsPositiveZero(T aValue) {
   
   typedef FloatingPoint<T> Traits;
   typedef typename Traits::Bits Bits;
@@ -245,10 +230,8 @@ IsPositiveZero(T aValue)
 
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE T
-ToZeroIfNonfinite(T aValue)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE T ToZeroIfNonfinite(T aValue) {
   return IsFinite(aValue) ? aValue : 0;
 }
 
@@ -258,10 +241,8 @@ ToZeroIfNonfinite(T aValue)
 
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE int_fast16_t
-ExponentComponent(T aValue)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE int_fast16_t ExponentComponent(T aValue) {
   
 
 
@@ -269,15 +250,14 @@ ExponentComponent(T aValue)
   typedef FloatingPoint<T> Traits;
   typedef typename Traits::Bits Bits;
   Bits bits = BitwiseCast<Bits>(aValue);
-  return int_fast16_t((bits & Traits::kExponentBits) >> Traits::kExponentShift) -
+  return int_fast16_t((bits & Traits::kExponentBits) >>
+                      Traits::kExponentShift) -
          int_fast16_t(Traits::kExponentBias);
 }
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE T
-PositiveInfinity()
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE T PositiveInfinity() {
   
 
 
@@ -287,10 +267,8 @@ PositiveInfinity()
 }
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE T
-NegativeInfinity()
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE T NegativeInfinity() {
   
 
 
@@ -303,11 +281,8 @@ NegativeInfinity()
 
 
 
-template<typename T,
-         int SignBit,
-         typename FloatingPoint<T>::Bits Significand>
-struct SpecificNaNBits
-{
+template <typename T, int SignBit, typename FloatingPoint<T>::Bits Significand>
+struct SpecificNaNBits {
   using Traits = FloatingPoint<T>;
 
   static_assert(SignBit == 0 || SignBit == 1, "bad sign bit");
@@ -317,7 +292,7 @@ struct SpecificNaNBits
                 "significand must be nonzero");
 
   static constexpr typename Traits::Bits value =
-    (SignBit * Traits::kSignBit) | Traits::kExponentBits | Significand;
+      (SignBit * Traits::kSignBit) | Traits::kExponentBits | Significand;
 };
 
 
@@ -336,36 +311,31 @@ struct SpecificNaNBits
 
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE void
-SpecificNaN(int signbit, typename FloatingPoint<T>::Bits significand, T* result)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE void SpecificNaN(
+    int signbit, typename FloatingPoint<T>::Bits significand, T* result) {
   typedef FloatingPoint<T> Traits;
   MOZ_ASSERT(signbit == 0 || signbit == 1);
   MOZ_ASSERT((significand & ~Traits::kSignificandBits) == 0);
   MOZ_ASSERT(significand & Traits::kSignificandBits);
 
-  BitwiseCast<T>((signbit ? Traits::kSignBit : 0) |
-                  Traits::kExponentBits |
-                  significand,
-                  result);
+  BitwiseCast<T>(
+      (signbit ? Traits::kSignBit : 0) | Traits::kExponentBits | significand,
+      result);
   MOZ_ASSERT(IsNaN(*result));
 }
 
-template<typename T>
+template <typename T>
 static MOZ_ALWAYS_INLINE T
-SpecificNaN(int signbit, typename FloatingPoint<T>::Bits significand)
-{
+SpecificNaN(int signbit, typename FloatingPoint<T>::Bits significand) {
   T t;
   SpecificNaN(signbit, significand, &t);
   return t;
 }
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE T
-MinNumberValue()
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE T MinNumberValue() {
   typedef FloatingPoint<T> Traits;
   typedef typename Traits::Bits Bits;
   return BitwiseCast<T>(Bits(1));
@@ -373,10 +343,8 @@ MinNumberValue()
 
 namespace detail {
 
-template<typename Float, typename SignedInteger>
-inline bool
-NumberEqualsSignedInteger(Float aValue, SignedInteger* aInteger)
-{
+template <typename Float, typename SignedInteger>
+inline bool NumberEqualsSignedInteger(Float aValue, SignedInteger* aInteger) {
   static_assert(IsSame<Float, float>::value || IsSame<Float, double>::value,
                 "Float must be an IEEE-754 floating point type");
   static_assert(IsSigned<SignedInteger>::value,
@@ -397,9 +365,9 @@ NumberEqualsSignedInteger(Float aValue, SignedInteger* aInteger)
   
 
   constexpr SignedInteger MaxIntValue =
-    std::numeric_limits<SignedInteger>::max(); 
+      std::numeric_limits<SignedInteger>::max();  
   constexpr SignedInteger MinValue =
-    std::numeric_limits<SignedInteger>::min(); 
+      std::numeric_limits<SignedInteger>::min();  
 
   static_assert(IsPowerOfTwo(Abs(MinValue)),
                 "MinValue should be is a small power of two, thus exactly "
@@ -424,19 +392,18 @@ NumberEqualsSignedInteger(Float aValue, SignedInteger* aInteger)
   
   
   constexpr unsigned PrecisionExceededShiftAmount =
-    ExponentShift > SignedIntegerWidth - 1
-    ? 0
-    : SignedIntegerWidth - 2 - ExponentShift;
+      ExponentShift > SignedIntegerWidth - 1
+          ? 0
+          : SignedIntegerWidth - 2 - ExponentShift;
 
   constexpr SignedInteger MaxValue =
-   ExponentShift > SignedIntegerWidth - 1
-    ? MaxIntValue
-    : SignedInteger((uint64_t(1) << (SignedIntegerWidth - 1)) -
-                    (uint64_t(1) << PrecisionExceededShiftAmount));
+      ExponentShift > SignedIntegerWidth - 1
+          ? MaxIntValue
+          : SignedInteger((uint64_t(1) << (SignedIntegerWidth - 1)) -
+                          (uint64_t(1) << PrecisionExceededShiftAmount));
 
   if (static_cast<Float>(MinValue) <= aValue &&
-      aValue <= static_cast<Float>(MaxValue))
-  {
+      aValue <= static_cast<Float>(MaxValue)) {
     auto possible = static_cast<SignedInteger>(aValue);
     if (static_cast<Float>(possible) == aValue) {
       *aInteger = possible;
@@ -447,10 +414,8 @@ NumberEqualsSignedInteger(Float aValue, SignedInteger* aInteger)
   return false;
 }
 
-template<typename Float, typename SignedInteger>
-inline bool
-NumberIsSignedInteger(Float aValue, SignedInteger* aInteger)
-{
+template <typename Float, typename SignedInteger>
+inline bool NumberIsSignedInteger(Float aValue, SignedInteger* aInteger) {
   static_assert(IsSame<Float, float>::value || IsSame<Float, double>::value,
                 "Float must be an IEEE-754 floating point type");
   static_assert(IsSigned<SignedInteger>::value,
@@ -469,7 +434,7 @@ NumberIsSignedInteger(Float aValue, SignedInteger* aInteger)
   return NumberEqualsSignedInteger(aValue, aInteger);
 }
 
-} 
+}  
 
 
 
@@ -479,10 +444,8 @@ NumberIsSignedInteger(Float aValue, SignedInteger* aInteger)
 
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-NumberIsInt32(T aValue, int32_t* aInt32)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool NumberIsInt32(T aValue, int32_t* aInt32) {
   return detail::NumberIsSignedInteger(aValue, aInt32);
 }
 
@@ -494,10 +457,8 @@ NumberIsInt32(T aValue, int32_t* aInt32)
 
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-NumberEqualsInt32(T aValue, int32_t* aInt32)
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool NumberEqualsInt32(T aValue, int32_t* aInt32) {
   return detail::NumberEqualsSignedInteger(aValue, aInt32);
 }
 
@@ -505,10 +466,8 @@ NumberEqualsInt32(T aValue, int32_t* aInt32)
 
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE T
-UnspecifiedNaN()
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE T UnspecifiedNaN() {
   
 
 
@@ -524,10 +483,8 @@ UnspecifiedNaN()
 
 
 
-template<typename T>
-static inline bool
-NumbersAreIdentical(T aValue1, T aValue2)
-{
+template <typename T>
+static inline bool NumbersAreIdentical(T aValue1, T aValue2) {
   typedef FloatingPoint<T> Traits;
   typedef typename Traits::Bits Bits;
   if (IsNaN(aValue1)) {
@@ -538,24 +495,22 @@ NumbersAreIdentical(T aValue1, T aValue2)
 
 namespace detail {
 
-template<typename T>
+template <typename T>
 struct FuzzyEqualsEpsilon;
 
-template<>
-struct FuzzyEqualsEpsilon<float>
-{
+template <>
+struct FuzzyEqualsEpsilon<float> {
   
   static float value() { return 1.0f / (1 << 17); }
 };
 
-template<>
-struct FuzzyEqualsEpsilon<double>
-{
+template <>
+struct FuzzyEqualsEpsilon<double> {
   
   static double value() { return 1.0 / (1LL << 40); }
 };
 
-} 
+}  
 
 
 
@@ -569,11 +524,9 @@ struct FuzzyEqualsEpsilon<double>
 
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-FuzzyEqualsAdditive(T aValue1, T aValue2,
-                    T aEpsilon = detail::FuzzyEqualsEpsilon<T>::value())
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool FuzzyEqualsAdditive(
+    T aValue1, T aValue2, T aEpsilon = detail::FuzzyEqualsEpsilon<T>::value()) {
   static_assert(IsFloatingPoint<T>::value, "floating point type required");
   return Abs(aValue1 - aValue2) <= aEpsilon;
 }
@@ -590,11 +543,9 @@ FuzzyEqualsAdditive(T aValue1, T aValue2,
 
 
 
-template<typename T>
-static MOZ_ALWAYS_INLINE bool
-FuzzyEqualsMultiplicative(T aValue1, T aValue2,
-                          T aEpsilon = detail::FuzzyEqualsEpsilon<T>::value())
-{
+template <typename T>
+static MOZ_ALWAYS_INLINE bool FuzzyEqualsMultiplicative(
+    T aValue1, T aValue2, T aEpsilon = detail::FuzzyEqualsEpsilon<T>::value()) {
   static_assert(IsFloatingPoint<T>::value, "floating point type required");
   
   T smaller = Abs(aValue1) < Abs(aValue2) ? Abs(aValue1) : Abs(aValue2);
@@ -608,8 +559,7 @@ FuzzyEqualsMultiplicative(T aValue1, T aValue2,
 
 
 MOZ_MUST_USE
-extern MFBT_API bool
-IsFloat32Representable(double aValue);
+extern MFBT_API bool IsFloat32Representable(double aValue);
 
 } 
 

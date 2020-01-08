@@ -14,19 +14,13 @@ using namespace gfx;
 namespace layers {
 
 ImageLayerMLGPU::ImageLayerMLGPU(LayerManagerMLGPU* aManager)
-  : ImageLayer(aManager, static_cast<HostLayer*>(this))
-  , TexturedLayerMLGPU(aManager)
-{
-}
+    : ImageLayer(aManager, static_cast<HostLayer*>(this)),
+      TexturedLayerMLGPU(aManager) {}
 
-ImageLayerMLGPU::~ImageLayerMLGPU()
-{
-  CleanupResources();
-}
+ImageLayerMLGPU::~ImageLayerMLGPU() { CleanupResources(); }
 
-void
-ImageLayerMLGPU::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface)
-{
+void ImageLayerMLGPU::ComputeEffectiveTransforms(
+    const gfx::Matrix4x4& aTransformToSurface) {
   Matrix4x4 local = GetLocalTransform();
 
   
@@ -40,15 +34,12 @@ ImageLayerMLGPU::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSu
   
   
   
-  mEffectiveTransform =
-      SnapTransform(local, sourceRect, nullptr) *
-      SnapTransformTranslation(aTransformToSurface, nullptr);
+  mEffectiveTransform = SnapTransform(local, sourceRect, nullptr) *
+                        SnapTransformTranslation(aTransformToSurface, nullptr);
   mEffectiveTransformForBuffer = mEffectiveTransform;
 
-  if (mScaleMode == ScaleMode::STRETCH &&
-      mScaleToSize.width != 0.0 &&
-      mScaleToSize.height != 0.0)
-  {
+  if (mScaleMode == ScaleMode::STRETCH && mScaleToSize.width != 0.0 &&
+      mScaleToSize.height != 0.0) {
     Size scale(sourceRect.Width() / mScaleToSize.width,
                sourceRect.Height() / mScaleToSize.height);
     mScale = Some(scale);
@@ -57,15 +48,11 @@ ImageLayerMLGPU::ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSu
   ComputeEffectiveTransformForMaskLayers(aTransformToSurface);
 }
 
-gfx::SamplingFilter
-ImageLayerMLGPU::GetSamplingFilter()
-{
+gfx::SamplingFilter ImageLayerMLGPU::GetSamplingFilter() {
   return ImageLayer::GetSamplingFilter();
 }
 
-bool
-ImageLayerMLGPU::IsContentOpaque()
-{
+bool ImageLayerMLGPU::IsContentOpaque() {
   if (mPictureRect.Width() == 0 || mPictureRect.Height() == 0) {
     return false;
   }
@@ -75,26 +62,24 @@ ImageLayerMLGPU::IsContentOpaque()
   return false;
 }
 
-void
-ImageLayerMLGPU::SetRenderRegion(LayerIntRegion&& aRegion)
-{
+void ImageLayerMLGPU::SetRenderRegion(LayerIntRegion&& aRegion) {
   switch (mScaleMode) {
-  case ScaleMode::STRETCH:
-    
-    aRegion.AndWith(LayerIntRect(0, 0, mScaleToSize.width, mScaleToSize.height));
-    break;
-  default:
-    
-    MOZ_ASSERT(mScaleMode == ScaleMode::SCALE_NONE);
-    aRegion.AndWith(LayerIntRect(0, 0, mPictureRect.Width(), mPictureRect.Height()));
-    break;
+    case ScaleMode::STRETCH:
+      
+      aRegion.AndWith(
+          LayerIntRect(0, 0, mScaleToSize.width, mScaleToSize.height));
+      break;
+    default:
+      
+      MOZ_ASSERT(mScaleMode == ScaleMode::SCALE_NONE);
+      aRegion.AndWith(
+          LayerIntRect(0, 0, mPictureRect.Width(), mPictureRect.Height()));
+      break;
   }
   LayerMLGPU::SetRenderRegion(std::move(aRegion));
 }
 
-void
-ImageLayerMLGPU::CleanupResources()
-{
+void ImageLayerMLGPU::CleanupResources() {
   if (mHost) {
     mHost->CleanupResources();
     mHost->Detach(this);
@@ -104,9 +89,8 @@ ImageLayerMLGPU::CleanupResources()
   mHost = nullptr;
 }
 
-void
-ImageLayerMLGPU::PrintInfo(std::stringstream& aStream, const char* aPrefix)
-{
+void ImageLayerMLGPU::PrintInfo(std::stringstream& aStream,
+                                const char* aPrefix) {
   ImageLayer::PrintInfo(aStream, aPrefix);
   if (mHost && mHost->IsAttached()) {
     aStream << "\n";
@@ -116,17 +100,9 @@ ImageLayerMLGPU::PrintInfo(std::stringstream& aStream, const char* aPrefix)
   }
 }
 
-void
-ImageLayerMLGPU::Disconnect()
-{
-  CleanupResources();
-}
+void ImageLayerMLGPU::Disconnect() { CleanupResources(); }
 
-void
-ImageLayerMLGPU::ClearCachedResources()
-{
-  CleanupResources();
-}
+void ImageLayerMLGPU::ClearCachedResources() { CleanupResources(); }
 
-} 
-} 
+}  
+}  

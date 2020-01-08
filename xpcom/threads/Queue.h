@@ -19,14 +19,12 @@ namespace mozilla {
 
 
 
-template<class T, size_t RequestedItemsPerPage = 256>
-class Queue
-{
-public:
+template <class T, size_t RequestedItemsPerPage = 256>
+class Queue {
+ public:
   Queue() {}
 
-  ~Queue()
-  {
+  ~Queue() {
     MOZ_ASSERT(IsEmpty());
 
     if (mHead) {
@@ -34,8 +32,7 @@ public:
     }
   }
 
-  T& Push(T&& aElement)
-  {
+  T& Push(T&& aElement) {
     if (!mHead) {
       mHead = NewPage();
       MOZ_ASSERT(mHead);
@@ -59,13 +56,11 @@ public:
     return eltLocation;
   }
 
-  bool IsEmpty() const
-  {
+  bool IsEmpty() const {
     return !mHead || (mHead == mTail && mOffsetHead == mOffsetTail);
   }
 
-  T Pop()
-  {
+  T Pop() {
     MOZ_ASSERT(!IsEmpty());
 
     MOZ_ASSERT(mOffsetHead < ItemsPerPage);
@@ -85,47 +80,40 @@ public:
     return result;
   }
 
-  void FirstElementAssertions() const
-  {
+  void FirstElementAssertions() const {
     MOZ_ASSERT(!IsEmpty());
     MOZ_ASSERT(mOffsetHead < ItemsPerPage);
     MOZ_ASSERT_IF(mHead == mTail, mOffsetHead <= mOffsetTail);
   }
 
-  T& FirstElement()
-  {
+  T& FirstElement() {
     FirstElementAssertions();
     return mHead->mEvents[mOffsetHead];
   }
 
-  const T& FirstElement() const
-  {
+  const T& FirstElement() const {
     FirstElementAssertions();
     return mHead->mEvents[mOffsetHead];
   }
 
-  void LastElementAssertions() const
-  {
+  void LastElementAssertions() const {
     MOZ_ASSERT(!IsEmpty());
     MOZ_ASSERT(mOffsetTail > 0);
     MOZ_ASSERT(mOffsetTail <= ItemsPerPage);
     MOZ_ASSERT_IF(mHead == mTail, mOffsetHead <= mOffsetTail);
   }
 
-  T& LastElement()
-  {
+  T& LastElement() {
     LastElementAssertions();
     return mTail->mEvents[mOffsetTail - 1];
   }
 
-  const T& LastElement() const
-  {
+  const T& LastElement() const {
     LastElementAssertions();
     return mTail->mEvents[mOffsetTail - 1];
   }
 
-  size_t Count() const
-  {
+  size_t Count() const {
     
     if (!mHead) {
       return 0;
@@ -158,8 +146,7 @@ public:
     return count;
   }
 
-  size_t ShallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t ShallowSizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     size_t n = 0;
     if (mHead) {
       for (Page* page = mHead; page != mTail; page = page->mNext) {
@@ -169,14 +156,14 @@ public:
     return n;
   }
 
-  size_t ShallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t ShallowSizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     return aMallocSizeOf(this) + ShallowSizeOfExcludingThis(aMallocSizeOf);
   }
 
-private:
-  static_assert((RequestedItemsPerPage & (RequestedItemsPerPage - 1)) == 0,
-                "RequestedItemsPerPage should be a power of two to avoid heap slop.");
+ private:
+  static_assert(
+      (RequestedItemsPerPage & (RequestedItemsPerPage - 1)) == 0,
+      "RequestedItemsPerPage should be a power of two to avoid heap slop.");
 
   
   
@@ -184,14 +171,12 @@ private:
   static const size_t ItemsPerPage = RequestedItemsPerPage - 1;
 
   
-  struct Page
-  {
+  struct Page {
     struct Page* mNext;
     T mEvents[ItemsPerPage];
   };
 
-  static Page* NewPage()
-  {
+  static Page* NewPage() {
     return static_cast<Page*>(moz_xcalloc(1, sizeof(Page)));
   }
 
@@ -202,6 +187,6 @@ private:
   uint16_t mOffsetTail = 0;  
 };
 
-} 
+}  
 
-#endif 
+#endif  

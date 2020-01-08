@@ -18,19 +18,19 @@ namespace dom {
 
 
 
-class MIDIManagerParent final : public PMIDIManagerParent
-{
-public:
+class MIDIManagerParent final : public PMIDIManagerParent {
+ public:
   NS_INLINE_DECL_REFCOUNTING(MIDIManagerParent);
   MIDIManagerParent() = default;
   mozilla::ipc::IPCResult RecvShutdown() override;
   void Teardown();
   void ActorDestroy(ActorDestroyReason aWhy) override;
-private:
+
+ private:
   ~MIDIManagerParent() = default;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -15,59 +15,55 @@
 namespace mozilla {
 
 class SandboxInfo {
-public:
+ public:
   
-  SandboxInfo(const SandboxInfo& aOther) : mFlags(aOther.mFlags) { }
+  SandboxInfo(const SandboxInfo& aOther) : mFlags(aOther.mFlags) {}
 
   
   static const SandboxInfo& Get() { return sSingleton; }
 
   enum Flags {
     
-    kHasSeccompBPF     = 1 << 0,
+    kHasSeccompBPF = 1 << 0,
     
     
     kEnabledForContent = 1 << 1,
     
-    kEnabledForMedia   = 1 << 2,
+    kEnabledForMedia = 1 << 2,
     
-    kVerbose           = 1 << 3,
+    kVerbose = 1 << 3,
     
-    kHasSeccompTSync   = 1 << 4,
+    kHasSeccompTSync = 1 << 4,
     
     kHasUserNamespaces = 1 << 5,
     
     kHasPrivilegedUserNamespaces = 1 << 6,
     
-    kPermissive        = 1 << 7,
+    kPermissive = 1 << 7,
     
   };
 
   bool Test(Flags aFlag) const { return (mFlags & aFlag) == aFlag; }
 
   
-  bool CanSandboxContent() const
-  {
+  bool CanSandboxContent() const {
     return !Test(kEnabledForContent) || Test(kHasSeccompBPF);
   }
 
   
-  bool CanSandboxMedia() const
-  {
+  bool CanSandboxMedia() const {
     return !Test(kEnabledForMedia) || Test(kHasSeccompBPF);
   }
 
   
-  uint32_t AsInteger() const {
-    return mFlags;
-  }
+  uint32_t AsInteger() const { return mFlags; }
 
-private:
+ private:
   enum Flags mFlags;
   static const MOZ_EXPORT SandboxInfo sSingleton;
   SandboxInfo();
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -16,170 +16,150 @@ using namespace js::frontend;
 using mozilla::Maybe;
 
 NestableControl::NestableControl(BytecodeEmitter* bce, StatementKind kind)
-  : Nestable<NestableControl>(&bce->innermostNestableControl),
-    kind_(kind),
-    emitterScope_(bce->innermostEmitterScopeNoCheck())
-{}
+    : Nestable<NestableControl>(&bce->innermostNestableControl),
+      kind_(kind),
+      emitterScope_(bce->innermostEmitterScopeNoCheck()) {}
 
 BreakableControl::BreakableControl(BytecodeEmitter* bce, StatementKind kind)
-  : NestableControl(bce, kind)
-{
-    MOZ_ASSERT(is<BreakableControl>());
+    : NestableControl(bce, kind) {
+  MOZ_ASSERT(is<BreakableControl>());
 }
 
-bool
-BreakableControl::patchBreaks(BytecodeEmitter* bce)
-{
-    return bce->emitJumpTargetAndPatch(breaks);
+bool BreakableControl::patchBreaks(BytecodeEmitter* bce) {
+  return bce->emitJumpTargetAndPatch(breaks);
 }
 
-LabelControl::LabelControl(BytecodeEmitter* bce, JSAtom* label, ptrdiff_t startOffset)
-  : BreakableControl(bce, StatementKind::Label),
-    label_(bce->cx, label),
-    startOffset_(startOffset)
-{}
+LabelControl::LabelControl(BytecodeEmitter* bce, JSAtom* label,
+                           ptrdiff_t startOffset)
+    : BreakableControl(bce, StatementKind::Label),
+      label_(bce->cx, label),
+      startOffset_(startOffset) {}
 
 LoopControl::LoopControl(BytecodeEmitter* bce, StatementKind loopKind)
-  : BreakableControl(bce, loopKind),
-    tdzCache_(bce)
-{
-    MOZ_ASSERT(is<LoopControl>());
+    : BreakableControl(bce, loopKind), tdzCache_(bce) {
+  MOZ_ASSERT(is<LoopControl>());
 
-    LoopControl* enclosingLoop = findNearest<LoopControl>(enclosing());
+  LoopControl* enclosingLoop = findNearest<LoopControl>(enclosing());
 
-    stackDepth_ = bce->stackDepth;
-    loopDepth_ = enclosingLoop ? enclosingLoop->loopDepth_ + 1 : 1;
+  stackDepth_ = bce->stackDepth;
+  loopDepth_ = enclosingLoop ? enclosingLoop->loopDepth_ + 1 : 1;
 
-    int loopSlots;
-    if (loopKind == StatementKind::Spread) {
-        
-        
-        loopSlots = 4;
-    } else if (loopKind == StatementKind::ForOfLoop) {
-        
-        
-        loopSlots = 3;
-    } else if (loopKind == StatementKind::ForInLoop) {
-        
-        loopSlots = 2;
-    } else {
-        
-        loopSlots = 0;
-    }
-
-    MOZ_ASSERT(loopSlots <= stackDepth_);
-
-    if (enclosingLoop) {
-        canIonOsr_ = (enclosingLoop->canIonOsr_ &&
-                      stackDepth_ == enclosingLoop->stackDepth_ + loopSlots);
-    } else {
-        canIonOsr_ = stackDepth_ == loopSlots;
-    }
-}
-
-bool
-LoopControl::emitContinueTarget(BytecodeEmitter* bce)
-{
-    if (!bce->emitJumpTarget(&continueTarget_)) {
-        return false;
-    }
-    return true;
-}
-
-bool
-LoopControl::emitSpecialBreakForDone(BytecodeEmitter* bce)
-{
+  int loopSlots;
+  if (loopKind == StatementKind::Spread) {
     
     
-    MOZ_ASSERT(bce->stackDepth == stackDepth_);
-    MOZ_ASSERT(bce->innermostNestableControl == this);
+    loopSlots = 4;
+  } else if (loopKind == StatementKind::ForOfLoop) {
+    
+    
+    loopSlots = 3;
+  } else if (loopKind == StatementKind::ForInLoop) {
+    
+    loopSlots = 2;
+  } else {
+    
+    loopSlots = 0;
+  }
 
-    if (!bce->newSrcNote(SRC_BREAK)) {
-        return false;
-    }
-    if (!bce->emitJump(JSOP_GOTO, &breaks)) {
-        return false;
-    }
+  MOZ_ASSERT(loopSlots <= stackDepth_);
 
-    return true;
+  if (enclosingLoop) {
+    canIonOsr_ = (enclosingLoop->canIonOsr_ &&
+                  stackDepth_ == enclosingLoop->stackDepth_ + loopSlots);
+  } else {
+    canIonOsr_ = stackDepth_ == loopSlots;
+  }
 }
 
-bool
-LoopControl::emitEntryJump(BytecodeEmitter* bce)
-{
-    if (!bce->emitJump(JSOP_GOTO, &entryJump_)) {
-        return false;
-    }
-    return true;
+bool LoopControl::emitContinueTarget(BytecodeEmitter* bce) {
+  if (!bce->emitJumpTarget(&continueTarget_)) {
+    return false;
+  }
+  return true;
 }
 
-bool
-LoopControl::emitLoopHead(BytecodeEmitter* bce, const Maybe<uint32_t>& nextPos)
-{
-    if (nextPos) {
-        if (!bce->updateSourceCoordNotes(*nextPos)) {
-            return false;
-        }
-    }
+bool LoopControl::emitSpecialBreakForDone(BytecodeEmitter* bce) {
+  
+  
+  MOZ_ASSERT(bce->stackDepth == stackDepth_);
+  MOZ_ASSERT(bce->innermostNestableControl == this);
 
-    head_ = { bce->offset() };
-    if (!bce->emit1(JSOP_LOOPHEAD)) {
-        return false;
-    }
+  if (!bce->newSrcNote(SRC_BREAK)) {
+    return false;
+  }
+  if (!bce->emitJump(JSOP_GOTO, &breaks)) {
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
-bool
-LoopControl::emitLoopEntry(BytecodeEmitter* bce, const Maybe<uint32_t>& nextPos)
-{
-    if (nextPos) {
-        if (!bce->updateSourceCoordNotes(*nextPos)) {
-            return false;
-        }
-    }
-
-    JumpTarget entry = { bce->offset() };
-    bce->patchJumpsToTarget(entryJump_, entry);
-
-    MOZ_ASSERT(loopDepth_ > 0);
-
-    uint8_t loopDepthAndFlags = PackLoopEntryDepthHintAndFlags(loopDepth_,
-                                                               canIonOsr_);
-    if (!bce->emit2(JSOP_LOOPENTRY, loopDepthAndFlags)) {
-        return false;
-    }
-
-    return true;
+bool LoopControl::emitEntryJump(BytecodeEmitter* bce) {
+  if (!bce->emitJump(JSOP_GOTO, &entryJump_)) {
+    return false;
+  }
+  return true;
 }
 
-bool
-LoopControl::emitLoopEnd(BytecodeEmitter* bce, JSOp op)
-{
-    JumpList beq;
-    if (!bce->emitBackwardJump(op, head_, &beq, &breakTarget_)) {
-        return false;
+bool LoopControl::emitLoopHead(BytecodeEmitter* bce,
+                               const Maybe<uint32_t>& nextPos) {
+  if (nextPos) {
+    if (!bce->updateSourceCoordNotes(*nextPos)) {
+      return false;
     }
+  }
 
-    loopEndOffset_ = beq.offset;
+  head_ = {bce->offset()};
+  if (!bce->emit1(JSOP_LOOPHEAD)) {
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
-bool
-LoopControl::patchBreaksAndContinues(BytecodeEmitter* bce)
-{
-    MOZ_ASSERT(continueTarget_.offset != -1);
-    if (!patchBreaks(bce)) {
-        return false;
+bool LoopControl::emitLoopEntry(BytecodeEmitter* bce,
+                                const Maybe<uint32_t>& nextPos) {
+  if (nextPos) {
+    if (!bce->updateSourceCoordNotes(*nextPos)) {
+      return false;
     }
-    bce->patchJumpsToTarget(continues, continueTarget_);
-    return true;
+  }
+
+  JumpTarget entry = {bce->offset()};
+  bce->patchJumpsToTarget(entryJump_, entry);
+
+  MOZ_ASSERT(loopDepth_ > 0);
+
+  uint8_t loopDepthAndFlags =
+      PackLoopEntryDepthHintAndFlags(loopDepth_, canIonOsr_);
+  if (!bce->emit2(JSOP_LOOPENTRY, loopDepthAndFlags)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool LoopControl::emitLoopEnd(BytecodeEmitter* bce, JSOp op) {
+  JumpList beq;
+  if (!bce->emitBackwardJump(op, head_, &beq, &breakTarget_)) {
+    return false;
+  }
+
+  loopEndOffset_ = beq.offset;
+
+  return true;
+}
+
+bool LoopControl::patchBreaksAndContinues(BytecodeEmitter* bce) {
+  MOZ_ASSERT(continueTarget_.offset != -1);
+  if (!patchBreaks(bce)) {
+    return false;
+  }
+  bce->patchJumpsToTarget(continues, continueTarget_);
+  return true;
 }
 
 TryFinallyControl::TryFinallyControl(BytecodeEmitter* bce, StatementKind kind)
-  : NestableControl(bce, kind),
-    emittingSubroutine_(false)
-{
-    MOZ_ASSERT(is<TryFinallyControl>());
+    : NestableControl(bce, kind), emittingSubroutine_(false) {
+  MOZ_ASSERT(is<TryFinallyControl>());
 }

@@ -86,9 +86,7 @@ NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(CallbackObject)
   NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mIncumbentJSGlobal)
 NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
-void
-CallbackObject::Trace(JSTracer* aTracer)
-{
+void CallbackObject::Trace(JSTracer* aTracer) {
   JS::TraceEdge(aTracer, &mCallback, "CallbackObject.mCallback");
   JS::TraceEdge(aTracer, &mCallbackGlobal, "CallbackObject.mCallbackGlobal");
   JS::TraceEdge(aTracer, &mCreationStack, "CallbackObject.mCreationStack");
@@ -96,9 +94,7 @@ CallbackObject::Trace(JSTracer* aTracer)
                 "CallbackObject.mIncumbentJSGlobal");
 }
 
-void
-CallbackObject::FinishSlowJSInitIfMoreThanOneOwner(JSContext* aCx)
-{
+void CallbackObject::FinishSlowJSInitIfMoreThanOneOwner(JSContext* aCx) {
   MOZ_ASSERT(mRefCnt.get() > 0);
   if (mRefCnt.get() > 1) {
     mozilla::HoldJSObjects(this);
@@ -119,9 +115,7 @@ CallbackObject::FinishSlowJSInitIfMoreThanOneOwner(JSContext* aCx)
   }
 }
 
-JSObject*
-CallbackObject::Callback(JSContext* aCx)
-{
+JSObject* CallbackObject::Callback(JSContext* aCx) {
   JSObject* callback = CallbackOrNull();
   if (!callback) {
     callback = JS_NewDeadWrapper(aCx);
@@ -137,12 +131,11 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
                                      ExceptionHandling aExceptionHandling,
                                      JS::Realm* aRealm,
                                      bool aIsJSImplementedWebIDL)
-  : mCx(nullptr)
-  , mRealm(aRealm)
-  , mErrorResult(aRv)
-  , mExceptionHandling(aExceptionHandling)
-  , mIsMainThread(NS_IsMainThread())
-{
+    : mCx(nullptr),
+      mRealm(aRealm),
+      mErrorResult(aRv),
+      mExceptionHandling(aExceptionHandling),
+      mIsMainThread(NS_IsMainThread()) {
   CycleCollectedJSContext* ccjs = CycleCollectedJSContext::Get();
   if (ccjs) {
     ccjs->EnterMicroTask();
@@ -152,13 +145,16 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   
   nsIPrincipal* webIDLCallerPrincipal = nullptr;
   if (aIsJSImplementedWebIDL) {
-    webIDLCallerPrincipal = nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
+    webIDLCallerPrincipal =
+        nsContentUtils::SubjectPrincipalOrSystemIfNativeCaller();
   }
 
   JSObject* wrappedCallback = aCallback->CallbackPreserveColor();
   if (!wrappedCallback) {
-    aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-      NS_LITERAL_CSTRING("Cannot execute callback from a nuked compartment."));
+    aRv.ThrowDOMException(
+        NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+        NS_LITERAL_CSTRING(
+            "Cannot execute callback from a nuked compartment."));
     return;
   }
 
@@ -174,9 +170,11 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
       
       
       if (!xpc::Scriptability::Get(realCallback).Allowed()) {
-        aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-          NS_LITERAL_CSTRING("Refusing to execute function from global in which "
-                             "script is disabled."));
+        aRv.ThrowDOMException(
+            NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+            NS_LITERAL_CSTRING(
+                "Refusing to execute function from global in which "
+                "script is disabled."));
         return;
       }
     }
@@ -184,15 +182,16 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
     
     
     nsGlobalWindowInner* win = mIsMainThread && !aIsJSImplementedWebIDL
-                            ? xpc::WindowGlobalOrNull(realCallback)
-                            : nullptr;
+                                   ? xpc::WindowGlobalOrNull(realCallback)
+                                   : nullptr;
     if (win) {
       
       
       if (!win->AsInner()->HasActiveDocument()) {
-        aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-          NS_LITERAL_CSTRING("Refusing to execute function from window "
-                             "whose document is no longer active."));
+        aRv.ThrowDOMException(
+            NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+            NS_LITERAL_CSTRING("Refusing to execute function from window "
+                               "whose document is no longer active."));
         return;
       }
       globalObject = win;
@@ -205,9 +204,10 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
 
   
   if (!globalObject->GetGlobalJSObject()) {
-    aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-      NS_LITERAL_CSTRING("Refusing to execute function from global which is "
-                         "being torn down."));
+    aRv.ThrowDOMException(
+        NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+        NS_LITERAL_CSTRING("Refusing to execute function from global which is "
+                           "being torn down."));
     return;
   }
 
@@ -221,9 +221,10 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
     
     
     if (!incumbent->GetGlobalJSObject()) {
-      aRv.ThrowDOMException(NS_ERROR_DOM_NOT_SUPPORTED_ERR,
-        NS_LITERAL_CSTRING("Refusing to execute function because our "
-                           "incumbent global is being torn down."));
+      aRv.ThrowDOMException(
+          NS_ERROR_DOM_NOT_SUPPORTED_ERR,
+          NS_LITERAL_CSTRING("Refusing to execute function because our "
+                             "incumbent global is being torn down."));
       return;
     }
     mAutoIncumbentScript.emplace(incumbent);
@@ -257,9 +258,8 @@ CallbackObject::CallSetup::CallSetup(CallbackObject* aCallback,
   mCx = cx;
 }
 
-bool
-CallbackObject::CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aException)
-{
+bool CallbackObject::CallSetup::ShouldRethrowException(
+    JS::Handle<JS::Value> aException) {
   if (mExceptionHandling == eRethrowExceptions) {
     if (!mRealm) {
       
@@ -279,7 +279,7 @@ CallbackObject::CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aExcepti
     
     
     nsIPrincipal* callerPrincipal =
-      nsJSPrincipals::get(JS::GetRealmPrincipals(mRealm));
+        nsJSPrincipals::get(JS::GetRealmPrincipals(mRealm));
     nsIPrincipal* calleePrincipal = nsContentUtils::SubjectPrincipal();
     if (callerPrincipal->SubsumesConsideringDomain(calleePrincipal)) {
       return true;
@@ -300,8 +300,7 @@ CallbackObject::CallSetup::ShouldRethrowException(JS::Handle<JS::Value> aExcepti
   return js::GetNonCCWObjectRealm(obj) == mRealm;
 }
 
-CallbackObject::CallSetup::~CallSetup()
-{
+CallbackObject::CallSetup::~CallSetup() {
   
   
   
@@ -356,10 +355,8 @@ CallbackObject::CallSetup::~CallSetup()
   }
 }
 
-already_AddRefed<nsISupports>
-CallbackObjectHolderBase::ToXPCOMCallback(CallbackObject* aCallback,
-                                          const nsIID& aIID) const
-{
+already_AddRefed<nsISupports> CallbackObjectHolderBase::ToXPCOMCallback(
+    CallbackObject* aCallback, const nsIID& aIID) const {
   MOZ_ASSERT(NS_IsMainThread());
   if (!aCallback) {
     return nullptr;
@@ -379,8 +376,8 @@ CallbackObjectHolderBase::ToXPCOMCallback(CallbackObject* aCallback,
   JSAutoRealm ar(cx, aCallback->CallbackGlobalOrNull());
 
   RefPtr<nsXPCWrappedJS> wrappedJS;
-  nsresult rv =
-    nsXPCWrappedJS::GetNewOrUsed(cx, callback, aIID, getter_AddRefs(wrappedJS));
+  nsresult rv = nsXPCWrappedJS::GetNewOrUsed(cx, callback, aIID,
+                                             getter_AddRefs(wrappedJS));
   if (NS_FAILED(rv) || !wrappedJS) {
     return nullptr;
   }
@@ -394,5 +391,5 @@ CallbackObjectHolderBase::ToXPCOMCallback(CallbackObject* aCallback,
   return retval.forget();
 }
 
-} 
-} 
+}  
+}  

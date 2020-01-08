@@ -19,11 +19,10 @@ namespace dom {
 namespace constructors {
 namespace id {
 enum ID : uint16_t;
-} 
-} 
+}  
+}  
 
-struct WebIDLNameTableEntry
-{
+struct WebIDLNameTableEntry {
   
   
   
@@ -37,9 +36,8 @@ struct WebIDLNameTableEntry
   ConstructorEnabled mEnabled;
 };
 
-class WebIDLGlobalNameHash
-{
-public:
+class WebIDLGlobalNameHash {
+ public:
   typedef WebIDLNameTableEntry::ConstructorEnabled ConstructorEnabled;
 
   
@@ -61,8 +59,7 @@ public:
   };
   
   static bool GetNames(JSContext* aCx, JS::Handle<JSObject*> aObj,
-                       NameType aNameType,
-                       JS::AutoIdVector& aNames);
+                       NameType aNameType, JS::AutoIdVector& aNames);
 
   
   
@@ -75,7 +72,7 @@ public:
                                        JS::AutoIdVector& aProperties,
                                        bool aEnumerableOnly);
 
-private:
+ private:
   friend struct WebIDLNameTableEntry;
 
   
@@ -96,7 +93,7 @@ private:
   static const char sNames[];
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

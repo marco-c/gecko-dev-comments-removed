@@ -23,10 +23,9 @@ using namespace mozilla::a11y;
 
 
 
-HTMLImageMapAccessible::
-  HTMLImageMapAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-  ImageAccessibleWrap(aContent, aDoc)
-{
+HTMLImageMapAccessible::HTMLImageMapAccessible(nsIContent* aContent,
+                                               DocAccessible* aDoc)
+    : ImageAccessibleWrap(aContent, aDoc) {
   mType = eImageMapType;
 
   UpdateChildAreas(false);
@@ -35,33 +34,21 @@ HTMLImageMapAccessible::
 
 
 
-role
-HTMLImageMapAccessible::NativeRole() const
-{
-  return roles::IMAGE_MAP;
-}
+role HTMLImageMapAccessible::NativeRole() const { return roles::IMAGE_MAP; }
 
 
 
 
-uint32_t
-HTMLImageMapAccessible::AnchorCount()
-{
-  return ChildCount();
-}
+uint32_t HTMLImageMapAccessible::AnchorCount() { return ChildCount(); }
 
-Accessible*
-HTMLImageMapAccessible::AnchorAt(uint32_t aAnchorIndex)
-{
+Accessible* HTMLImageMapAccessible::AnchorAt(uint32_t aAnchorIndex) {
   return GetChildAt(aAnchorIndex);
 }
 
-already_AddRefed<nsIURI>
-HTMLImageMapAccessible::AnchorURIAt(uint32_t aAnchorIndex) const
-{
+already_AddRefed<nsIURI> HTMLImageMapAccessible::AnchorURIAt(
+    uint32_t aAnchorIndex) const {
   Accessible* area = GetChildAt(aAnchorIndex);
-  if (!area)
-    return nullptr;
+  if (!area) return nullptr;
 
   nsIContent* linkContent = area->GetContent();
   return linkContent ? linkContent->GetHrefURI() : nullptr;
@@ -70,23 +57,19 @@ HTMLImageMapAccessible::AnchorURIAt(uint32_t aAnchorIndex) const
 
 
 
-void
-HTMLImageMapAccessible::UpdateChildAreas(bool aDoFireEvents)
-{
+void HTMLImageMapAccessible::UpdateChildAreas(bool aDoFireEvents) {
   nsImageFrame* imageFrame = do_QueryFrame(mContent->GetPrimaryFrame());
 
   
   nsImageMap* imageMapObj = imageFrame->GetExistingImageMap();
-  if (!imageMapObj)
-    return;
+  if (!imageMapObj) return;
 
   TreeMutation mt(this, TreeMutation::kNoEvents & !aDoFireEvents);
 
   
   for (int32_t childIdx = mChildren.Length() - 1; childIdx >= 0; childIdx--) {
     Accessible* area = mChildren.ElementAt(childIdx);
-    if (area->GetContent()->GetPrimaryFrame())
-      continue;
+    if (area->GetContent()->GetPrimaryFrame()) continue;
 
     mt.BeforeRemoval(area);
     RemoveChild(area);
@@ -113,14 +96,12 @@ HTMLImageMapAccessible::UpdateChildAreas(bool aDoFireEvents)
   mt.Done();
 }
 
-Accessible*
-HTMLImageMapAccessible::GetChildAccessibleFor(const nsINode* aNode) const
-{
+Accessible* HTMLImageMapAccessible::GetChildAccessibleFor(
+    const nsINode* aNode) const {
   uint32_t length = mChildren.Length();
   for (uint32_t i = 0; i < length; i++) {
     Accessible* area = mChildren[i];
-    if (area->GetContent() == aNode)
-      return area;
+    if (area->GetContent() == aNode) return area;
   }
 
   return nullptr;
@@ -130,10 +111,9 @@ HTMLImageMapAccessible::GetChildAccessibleFor(const nsINode* aNode) const
 
 
 
-HTMLAreaAccessible::
-  HTMLAreaAccessible(nsIContent* aContent, DocAccessible* aDoc) :
-  HTMLLinkAccessible(aContent, aDoc)
-{
+HTMLAreaAccessible::HTMLAreaAccessible(nsIContent* aContent,
+                                       DocAccessible* aDoc)
+    : HTMLLinkAccessible(aContent, aDoc) {
   
   
   mStateFlags |= eNotNodeMapEntry;
@@ -142,12 +122,9 @@ HTMLAreaAccessible::
 
 
 
-ENameValueFlag
-HTMLAreaAccessible::NativeName(nsString& aName) const
-{
+ENameValueFlag HTMLAreaAccessible::NativeName(nsString& aName) const {
   ENameValueFlag nameFlag = Accessible::NativeName(aName);
-  if (!aName.IsEmpty())
-    return nameFlag;
+  if (!aName.IsEmpty()) return nameFlag;
 
   if (!mContent->AsElement()->GetAttr(kNameSpaceID_None, nsGkAtoms::alt, aName))
     Value(aName);
@@ -155,25 +132,20 @@ HTMLAreaAccessible::NativeName(nsString& aName) const
   return eNameOK;
 }
 
-void
-HTMLAreaAccessible::Description(nsString& aDescription)
-{
+void HTMLAreaAccessible::Description(nsString& aDescription) {
   aDescription.Truncate();
 
   
   RefPtr<dom::HTMLAreaElement> area =
-    dom::HTMLAreaElement::FromNodeOrNull(mContent);
-  if (area)
-    area->GetShape(aDescription);
+      dom::HTMLAreaElement::FromNodeOrNull(mContent);
+  if (area) area->GetShape(aDescription);
 }
 
 
 
 
-Accessible*
-HTMLAreaAccessible::ChildAtPoint(int32_t aX, int32_t aY,
-                                 EWhichChildAtPoint aWhichChild)
-{
+Accessible* HTMLAreaAccessible::ChildAtPoint(int32_t aX, int32_t aY,
+                                             EWhichChildAtPoint aWhichChild) {
   
   return this;
 }
@@ -181,9 +153,7 @@ HTMLAreaAccessible::ChildAtPoint(int32_t aX, int32_t aY,
 
 
 
-uint32_t
-HTMLAreaAccessible::StartOffset()
-{
+uint32_t HTMLAreaAccessible::StartOffset() {
   
   
   
@@ -192,26 +162,18 @@ HTMLAreaAccessible::StartOffset()
   return IndexInParent();
 }
 
-uint32_t
-HTMLAreaAccessible::EndOffset()
-{
-  return IndexInParent() + 1;
-}
+uint32_t HTMLAreaAccessible::EndOffset() { return IndexInParent() + 1; }
 
-nsRect
-HTMLAreaAccessible::RelativeBounds(nsIFrame** aBoundingFrame) const
-{
+nsRect HTMLAreaAccessible::RelativeBounds(nsIFrame** aBoundingFrame) const {
   nsIFrame* frame = GetFrame();
-  if (!frame)
-    return nsRect();
+  if (!frame) return nsRect();
 
   nsImageFrame* imageFrame = do_QueryFrame(frame);
   nsImageMap* map = imageFrame->GetImageMap();
 
   nsRect bounds;
   nsresult rv = map->GetBoundsForAreaContent(mContent, bounds);
-  if (NS_FAILED(rv))
-    return nsRect();
+  if (NS_FAILED(rv)) return nsRect();
 
   
   

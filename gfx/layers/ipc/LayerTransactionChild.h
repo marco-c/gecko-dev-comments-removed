@@ -7,8 +7,8 @@
 #ifndef MOZILLA_LAYERS_LAYERTRANSACTIONCHILD_H
 #define MOZILLA_LAYERS_LAYERTRANSACTIONCHILD_H
 
-#include <stdint.h>                     
-#include "mozilla/Attributes.h"         
+#include <stdint.h>              
+#include "mozilla/Attributes.h"  
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/layers/PLayerTransactionChild.h"
 #include "mozilla/RefPtr.h"
@@ -19,9 +19,8 @@ namespace layers {
 
 class ShadowLayerForwarder;
 
-class LayerTransactionChild : public PLayerTransactionChild
-{
-public:
+class LayerTransactionChild : public PLayerTransactionChild {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(LayerTransactionChild)
   
 
@@ -36,25 +35,18 @@ public:
   bool IPCOpen() const { return mIPCOpen && !mDestroyed; }
   bool IsDestroyed() const { return mDestroyed; }
 
-  void SetForwarder(ShadowLayerForwarder* aForwarder)
-  {
+  void SetForwarder(ShadowLayerForwarder* aForwarder) {
     mForwarder = aForwarder;
   }
 
   LayersId GetId() const { return mId; }
 
-  void MarkDestroyed() {
-    mDestroyed = true;
-  }
+  void MarkDestroyed() { mDestroyed = true; }
 
-protected:
+ protected:
   explicit LayerTransactionChild(const LayersId& aId)
-    : mForwarder(nullptr)
-    , mIPCOpen(false)
-    , mDestroyed(false)
-    , mId(aId)
-  {}
-  ~LayerTransactionChild() { }
+      : mForwarder(nullptr), mIPCOpen(false), mDestroyed(false), mId(aId) {}
+  ~LayerTransactionChild() {}
 
   void ActorDestroy(ActorDestroyReason why) override;
 
@@ -76,7 +68,7 @@ protected:
   LayersId mId;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

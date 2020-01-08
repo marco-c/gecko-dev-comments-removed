@@ -87,8 +87,7 @@ typedef WIErr (*WirelessDetachFunction)(WirelessContextPtr inContext);
 
 typedef UInt16 WINetworkInfoFlags;
 
-struct WirelessNetworkInfo
-{
+struct WirelessNetworkInfo {
   UInt16 channel;            
   SInt16 noise;              
   SInt16 signal;             

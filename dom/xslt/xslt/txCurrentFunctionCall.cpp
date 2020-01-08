@@ -13,51 +13,38 @@
 
 
 
-CurrentFunctionCall::CurrentFunctionCall()
-{
+CurrentFunctionCall::CurrentFunctionCall() {}
+
+
+
+
+
+
+
+nsresult CurrentFunctionCall::evaluate(txIEvalContext* aContext,
+                                       txAExprResult** aResult) {
+  *aResult = nullptr;
+
+  if (!requireParams(0, 0, aContext)) return NS_ERROR_XPATH_BAD_ARGUMENT_COUNT;
+
+  txExecutionState* es =
+      static_cast<txExecutionState*>(aContext->getPrivateContext());
+  if (!es) {
+    NS_ERROR("called xslt extension function \"current\" with wrong context");
+    return NS_ERROR_UNEXPECTED;
+  }
+  return aContext->recycler()->getNodeSet(
+      es->getEvalContext()->getContextNode(), aResult);
 }
 
+Expr::ResultType CurrentFunctionCall::getReturnType() { return NODESET_RESULT; }
 
-
-
-
-
-
-nsresult
-CurrentFunctionCall::evaluate(txIEvalContext* aContext, txAExprResult** aResult)
-{
-    *aResult = nullptr;
-
-    if (!requireParams(0, 0, aContext))
-        return NS_ERROR_XPATH_BAD_ARGUMENT_COUNT;
-
-    txExecutionState* es =
-        static_cast<txExecutionState*>(aContext->getPrivateContext());
-    if (!es) {
-        NS_ERROR(
-            "called xslt extension function \"current\" with wrong context");
-        return NS_ERROR_UNEXPECTED;
-    }
-    return aContext->recycler()->getNodeSet(
-           es->getEvalContext()->getContextNode(), aResult);
-}
-
-Expr::ResultType
-CurrentFunctionCall::getReturnType()
-{
-    return NODESET_RESULT;
-}
-
-bool
-CurrentFunctionCall::isSensitiveTo(ContextSensitivity aContext)
-{
-    return !!(aContext & PRIVATE_CONTEXT);
+bool CurrentFunctionCall::isSensitiveTo(ContextSensitivity aContext) {
+  return !!(aContext & PRIVATE_CONTEXT);
 }
 
 #ifdef TX_TO_STRING
-void
-CurrentFunctionCall::appendName(nsAString& aDest)
-{
-    aDest.Append(nsGkAtoms::current->GetUTF16String());
+void CurrentFunctionCall::appendName(nsAString& aDest) {
+  aDest.Append(nsGkAtoms::current->GetUTF16String());
 }
 #endif

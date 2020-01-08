@@ -12,14 +12,13 @@ namespace dom {
 
 namespace WorkletPrincipal {
 
-JSPrincipals*
-GetWorkletPrincipal();
+JSPrincipals* GetWorkletPrincipal();
 
 static const uint32_t kJSPrincipalsDebugToken = 0x7e2df9f4;
 
-} 
+}  
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

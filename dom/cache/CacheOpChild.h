@@ -21,14 +21,13 @@ class Promise;
 
 namespace cache {
 
-class CacheOpChild final : public PCacheOpChild
-                         , public ActorChild
-                         , public TypeUtils
-{
+class CacheOpChild final : public PCacheOpChild,
+                           public ActorChild,
+                           public TypeUtils {
   friend class CacheChild;
   friend class CacheStorageChild;
 
-private:
+ private:
   
   
   CacheOpChild(CacheWorkerHolder* aWorkerHolder, nsIGlobalObject* aGlobal,
@@ -36,37 +35,29 @@ private:
   ~CacheOpChild();
 
   
-  virtual void
-  ActorDestroy(ActorDestroyReason aReason) override;
+  virtual void ActorDestroy(ActorDestroyReason aReason) override;
 
-  virtual mozilla::ipc::IPCResult
-  Recv__delete__(const ErrorResult& aRv, const CacheOpResult& aResult) override;
-
-  
-  virtual void
-  StartDestroy() override;
+  virtual mozilla::ipc::IPCResult Recv__delete__(
+      const ErrorResult& aRv, const CacheOpResult& aResult) override;
 
   
-  virtual nsIGlobalObject*
-  GetGlobalObject() const override;
+  virtual void StartDestroy() override;
+
+  
+  virtual nsIGlobalObject* GetGlobalObject() const override;
 
 #ifdef DEBUG
-  virtual void
-  AssertOwningThread() const override;
+  virtual void AssertOwningThread() const override;
 #endif
 
-  virtual mozilla::ipc::PBackgroundChild*
-  GetIPCManager() override;
+  virtual mozilla::ipc::PBackgroundChild* GetIPCManager() override;
 
   
-  void
-  HandleResponse(const CacheResponseOrVoid& aResponseOrVoid);
+  void HandleResponse(const CacheResponseOrVoid& aResponseOrVoid);
 
-  void
-  HandleResponseList(const nsTArray<CacheResponse>& aResponseList);
+  void HandleResponseList(const nsTArray<CacheResponse>& aResponseList);
 
-  void
-  HandleRequestList(const nsTArray<CacheRequest>& aRequestList);
+  void HandleRequestList(const nsTArray<CacheRequest>& aRequestList);
 
   nsCOMPtr<nsIGlobalObject> mGlobal;
   
@@ -77,8 +68,8 @@ private:
   NS_DECL_OWNINGTHREAD
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

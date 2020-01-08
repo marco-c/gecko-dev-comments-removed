@@ -24,8 +24,7 @@ using mozilla::gfx::SyncObject;
 
 
 
-void MaybeYieldThread()
-{
+void MaybeYieldThread() {
 #ifndef WIN32
   if (rand() % 5 == 0) {
     sched_yield();
@@ -34,22 +33,21 @@ void MaybeYieldThread()
 }
 
 
+
 struct SanityChecker {
   std::vector<uint64_t> mAdvancements;
   mozilla::gfx::CriticalSection mSection;
 
-  explicit SanityChecker(uint64_t aNumCmdBuffers)
-  {
+  explicit SanityChecker(uint64_t aNumCmdBuffers) {
     for (uint32_t i = 0; i < aNumCmdBuffers; ++i) {
       mAdvancements.push_back(0);
     }
   }
 
-  virtual void Check(uint64_t aJobId, uint64_t aCmdId)
-  {
+  virtual void Check(uint64_t aJobId, uint64_t aCmdId) {
     MaybeYieldThread();
     CriticalSectionAutoEnter lock(&mSection);
-    MOZ_RELEASE_ASSERT(mAdvancements[aJobId] == aCmdId-1);
+    MOZ_RELEASE_ASSERT(mAdvancements[aJobId] == aCmdId - 1);
     mAdvancements[aJobId] = aCmdId;
   }
 };
@@ -59,20 +57,19 @@ struct JoinTestSanityCheck : public SanityChecker {
   bool mSpecialJobHasRun;
 
   explicit JoinTestSanityCheck(uint64_t aNumCmdBuffers)
-  : SanityChecker(aNumCmdBuffers)
-  , mSpecialJobHasRun(false)
-  {}
+      : SanityChecker(aNumCmdBuffers), mSpecialJobHasRun(false) {}
 
-  virtual void Check(uint64_t aJobId, uint64_t aCmdId) override
-  {
+  virtual void Check(uint64_t aJobId, uint64_t aCmdId) override {
     
     if (aCmdId == 0) {
-      MOZ_RELEASE_ASSERT(!mSpecialJobHasRun, "GFX: A special task has been executed.");
+      MOZ_RELEASE_ASSERT(!mSpecialJobHasRun,
+                         "GFX: A special task has been executed.");
       mSpecialJobHasRun = true;
       for (auto advancement : mAdvancements) {
         
         
-        MOZ_RELEASE_ASSERT(advancement == 1, "GFX: task buffer has not run task 1.");
+        MOZ_RELEASE_ASSERT(advancement == 1,
+                           "GFX: task buffer has not run task 1.");
       }
     } else {
       
@@ -85,19 +82,16 @@ struct JoinTestSanityCheck : public SanityChecker {
   }
 };
 
-class TestJob : public Job
-{
-public:
+class TestJob : public Job {
+ public:
   TestJob(uint64_t aCmdId, uint64_t aJobId, SanityChecker* aChecker,
-           SyncObject* aStart, SyncObject* aCompletion)
-  : Job(aStart, aCompletion, nullptr)
-  , mCmdId(aCmdId)
-  , mCmdBufferId(aJobId)
-  , mSanityChecker(aChecker)
-  {}
+          SyncObject* aStart, SyncObject* aCompletion)
+      : Job(aStart, aCompletion, nullptr),
+        mCmdId(aCmdId),
+        mCmdBufferId(aJobId),
+        mSanityChecker(aChecker) {}
 
-  JobStatus Run()
-  {
+  JobStatus Run() {
     MaybeYieldThread();
     mSanityChecker->Check(mCmdBufferId, mCmdId);
     MaybeYieldThread();
@@ -117,14 +111,13 @@ public:
 
 
 
-void TestSchedulerJoin(uint32_t aNumThreads, uint32_t aNumCmdBuffers)
-{
+
+void TestSchedulerJoin(uint32_t aNumThreads, uint32_t aNumCmdBuffers) {
   JoinTestSanityCheck check(aNumCmdBuffers);
 
   RefPtr<SyncObject> beforeFilter = new SyncObject(aNumCmdBuffers);
   RefPtr<SyncObject> afterFilter = new SyncObject();
   RefPtr<SyncObject> completion = new SyncObject(aNumCmdBuffers);
-
 
   for (uint32_t i = 0; i < aNumCmdBuffers; ++i) {
     Job* t1 = new TestJob(1, i, &check, nullptr, beforeFilter);
@@ -134,9 +127,7 @@ void TestSchedulerJoin(uint32_t aNumThreads, uint32_t aNumCmdBuffers)
   beforeFilter->FreezePrerequisites();
 
   
-  JobScheduler::SubmitJob(
-    new TestJob(0, 0, &check, beforeFilter, afterFilter)
-  );
+  JobScheduler::SubmitJob(new TestJob(0, 0, &check, beforeFilter, afterFilter));
   afterFilter->FreezePrerequisites();
 
   for (uint32_t i = 0; i < aNumCmdBuffers; ++i) {
@@ -159,8 +150,7 @@ void TestSchedulerJoin(uint32_t aNumThreads, uint32_t aNumCmdBuffers)
 
 
 
-void TestSchedulerChain(uint32_t aNumThreads, uint32_t aNumCmdBuffers)
-{
+void TestSchedulerChain(uint32_t aNumThreads, uint32_t aNumCmdBuffers) {
   SanityChecker check(aNumCmdBuffers);
 
   RefPtr<SyncObject> completion = new SyncObject(aNumCmdBuffers);
@@ -168,17 +158,15 @@ void TestSchedulerChain(uint32_t aNumThreads, uint32_t aNumCmdBuffers)
   uint32_t numJobs = 10;
 
   for (uint32_t i = 0; i < aNumCmdBuffers; ++i) {
-
     std::vector<RefPtr<SyncObject>> syncs;
     std::vector<Job*> tasks;
     syncs.reserve(numJobs);
     tasks.reserve(numJobs);
 
-    for (uint32_t t = 0; t < numJobs-1; ++t) {
+    for (uint32_t t = 0; t < numJobs - 1; ++t) {
       syncs.push_back(new SyncObject());
-      tasks.push_back(new TestJob(t+1, i, &check, t == 0 ? nullptr
-                                                          : syncs[t-1].get(),
-                                   syncs[t]));
+      tasks.push_back(new TestJob(
+          t + 1, i, &check, t == 0 ? nullptr : syncs[t - 1].get(), syncs[t]));
       syncs.back()->FreezePrerequisites();
     }
 
@@ -192,7 +180,7 @@ void TestSchedulerChain(uint32_t aNumThreads, uint32_t aNumCmdBuffers)
       }
     } else {
       
-      for (int32_t reverse = numJobs-1; reverse >= 0; --reverse) {
+      for (int32_t reverse = numJobs - 1; reverse >= 0; --reverse) {
         JobScheduler::SubmitJob(tasks[reverse]);
         MaybeYieldThread();
       }
@@ -207,7 +195,7 @@ void TestSchedulerChain(uint32_t aNumThreads, uint32_t aNumCmdBuffers)
   }
 }
 
-} 
+}  
 
 #if !defined(MOZ_CODE_COVERAGE) || !defined(XP_WIN)
 TEST(Moz2D, JobScheduler_Shutdown) {

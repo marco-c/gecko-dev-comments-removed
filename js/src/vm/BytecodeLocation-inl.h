@@ -13,18 +13,16 @@
 
 namespace js {
 
-inline bool
-BytecodeLocation::isValid(const JSScript* script) const {
-    
-    
-    return script->contains(*this) ||toRawBytecode() == script->codeEnd();
+inline bool BytecodeLocation::isValid(const JSScript* script) const {
+  
+  
+  return script->contains(*this) || toRawBytecode() == script->codeEnd();
 }
 
-inline bool
-BytecodeLocation::isInBounds(const JSScript* script) const {
-    return script->contains(*this);
+inline bool BytecodeLocation::isInBounds(const JSScript* script) const {
+  return script->contains(*this);
 }
 
-}
+}  
 
 #endif

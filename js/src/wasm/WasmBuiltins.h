@@ -30,15 +30,14 @@ class WasmFrameIter;
 
 
 
-bool
-NeedsBuiltinThunk(SymbolicAddress sym);
+bool NeedsBuiltinThunk(SymbolicAddress sym);
 
 
 
 
 
-bool
-LookupBuiltinThunk(void* pc, const CodeRange** codeRange, uint8_t** codeBase);
+bool LookupBuiltinThunk(void* pc, const CodeRange** codeRange,
+                        uint8_t** codeBase);
 
 
 
@@ -46,22 +45,17 @@ LookupBuiltinThunk(void* pc, const CodeRange** codeRange, uint8_t** codeBase);
 
 
 
-bool
-EnsureBuiltinThunksInitialized();
+bool EnsureBuiltinThunksInitialized();
 
-void*
-HandleThrow(JSContext* cx, WasmFrameIter& iter);
+void* HandleThrow(JSContext* cx, WasmFrameIter& iter);
 
-void*
-SymbolicAddressTarget(SymbolicAddress sym);
+void* SymbolicAddressTarget(SymbolicAddress sym);
 
-void*
-MaybeGetBuiltinThunk(HandleFunction f, const FuncType& funcType);
+void* MaybeGetBuiltinThunk(HandleFunction f, const FuncType& funcType);
 
-void
-ReleaseBuiltinThunks();
+void ReleaseBuiltinThunks();
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

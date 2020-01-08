@@ -14,7 +14,7 @@ namespace mozilla {
 
 namespace ipc {
 class PrincipalInfo;
-} 
+}  
 
 namespace dom {
 
@@ -23,89 +23,73 @@ class IPCClientInfo;
 
 
 
-class ClientInfo final
-{
+class ClientInfo final {
   UniquePtr<IPCClientInfo> mData;
 
-public:
-  ClientInfo(const nsID& aId,
-             ClientType aType,
+ public:
+  ClientInfo(const nsID& aId, ClientType aType,
              const mozilla::ipc::PrincipalInfo& aPrincipalInfo,
              const TimeStamp& aCreationTime);
 
   ClientInfo(const ClientInfo& aRight);
 
-  ClientInfo&
-  operator=(const ClientInfo& aRight);
+  ClientInfo& operator=(const ClientInfo& aRight);
 
   ClientInfo(ClientInfo&& aRight);
 
-  ClientInfo&
-  operator=(ClientInfo&& aRight);
+  ClientInfo& operator=(ClientInfo&& aRight);
 
   explicit ClientInfo(const IPCClientInfo& aData);
 
   ~ClientInfo();
 
-  bool
-  operator==(const ClientInfo& aRight) const;
+  bool operator==(const ClientInfo& aRight) const;
 
   
-  const nsID&
-  Id() const;
+  const nsID& Id() const;
 
   
   
-  ClientType
-  Type() const;
+  ClientType Type() const;
 
   
-  const mozilla::ipc::PrincipalInfo&
-  PrincipalInfo() const;
+  const mozilla::ipc::PrincipalInfo& PrincipalInfo() const;
 
   
-  const TimeStamp&
-  CreationTime() const;
+  const TimeStamp& CreationTime() const;
 
   
   
   
   
-  const nsCString&
-  URL() const;
+  const nsCString& URL() const;
 
   
   
-  void
-  SetURL(const nsACString& aURL);
+  void SetURL(const nsACString& aURL);
 
   
   
   
   
-  mozilla::dom::FrameType
-  FrameType() const;
+  mozilla::dom::FrameType FrameType() const;
 
   
   
-  void
-  SetFrameType(mozilla::dom::FrameType aFrameType);
+  void SetFrameType(mozilla::dom::FrameType aFrameType);
 
   
-  const IPCClientInfo&
-  ToIPC() const;
+  const IPCClientInfo& ToIPC() const;
 
   
-  bool
-  IsPrivateBrowsing() const;
+  bool IsPrivateBrowsing() const;
 
   
   
-  nsCOMPtr<nsIPrincipal>
-  GetPrincipal() const;
+  nsCOMPtr<nsIPrincipal> GetPrincipal() const;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

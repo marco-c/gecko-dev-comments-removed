@@ -17,20 +17,14 @@ using namespace mozilla::a11y;
 
 RootAccessibleWrap::RootAccessibleWrap(nsIDocument* aDocument,
                                        nsIPresShell* aPresShell)
-  : RootAccessible(aDocument, aPresShell)
-  , mOuter(&mInternalUnknown)
-{
-}
+    : RootAccessible(aDocument, aPresShell), mOuter(&mInternalUnknown) {}
 
-RootAccessibleWrap::~RootAccessibleWrap()
-{
-}
+RootAccessibleWrap::~RootAccessibleWrap() {}
 
 
 
 HRESULT
-RootAccessibleWrap::InternalQueryInterface(REFIID aIid, void** aOutInterface)
-{
+RootAccessibleWrap::InternalQueryInterface(REFIID aIid, void** aOutInterface) {
   if (!aOutInterface) {
     return E_INVALIDARG;
   }
@@ -49,21 +43,14 @@ RootAccessibleWrap::InternalQueryInterface(REFIID aIid, void** aOutInterface)
 }
 
 ULONG
-RootAccessibleWrap::InternalAddRef()
-{
-  return DocAccessible::AddRef();
-}
+RootAccessibleWrap::InternalAddRef() { return DocAccessible::AddRef(); }
 
 ULONG
-RootAccessibleWrap::InternalRelease()
-{
-  return DocAccessible::Release();
-}
+RootAccessibleWrap::InternalRelease() { return DocAccessible::Release(); }
 
-already_AddRefed<IUnknown>
-RootAccessibleWrap::Aggregate(IUnknown* aOuter)
-{
-  MOZ_ASSERT(mOuter && (mOuter == &mInternalUnknown || mOuter == aOuter || !aOuter));
+already_AddRefed<IUnknown> RootAccessibleWrap::Aggregate(IUnknown* aOuter) {
+  MOZ_ASSERT(mOuter &&
+             (mOuter == &mInternalUnknown || mOuter == aOuter || !aOuter));
   if (!aOuter) {
     
     
@@ -75,9 +62,7 @@ RootAccessibleWrap::Aggregate(IUnknown* aOuter)
   return GetInternalUnknown();
 }
 
-already_AddRefed<IUnknown>
-RootAccessibleWrap::GetInternalUnknown()
-{
+already_AddRefed<IUnknown> RootAccessibleWrap::GetInternalUnknown() {
   RefPtr<IUnknown> result(&mInternalUnknown);
   return result.forget();
 }
@@ -85,9 +70,7 @@ RootAccessibleWrap::GetInternalUnknown()
 
 
 
-void
-RootAccessibleWrap::DocumentActivated(DocAccessible* aDocument)
-{
+void RootAccessibleWrap::DocumentActivated(DocAccessible* aDocument) {
   
   
   if (Compatibility::IsDolphin() &&
@@ -106,17 +89,16 @@ RootAccessibleWrap::DocumentActivated(DocAccessible* aDocument)
 
 STDMETHODIMP
 RootAccessibleWrap::accNavigate(
-       long navDir,
-       VARIANT varStart,
-       VARIANT __RPC_FAR *pvarEndUpAt)
-{
+     long navDir,
+     VARIANT varStart,
+     VARIANT __RPC_FAR* pvarEndUpAt) {
   
   
   
   
   
-  if (navDir != NAVRELATION_EMBEDS ||
-      varStart.vt != VT_I4  || varStart.lVal != CHILDID_SELF) {
+  if (navDir != NAVRELATION_EMBEDS || varStart.vt != VT_I4 ||
+      varStart.lVal != CHILDID_SELF) {
     
     
     return DocAccessibleWrap::accNavigate(navDir, varStart, pvarEndUpAt);
@@ -153,8 +135,7 @@ RootAccessibleWrap::accNavigate(
 
 STDMETHODIMP
 RootAccessibleWrap::get_accFocus(
-       VARIANT __RPC_FAR *pvarChild)
-{
+     VARIANT __RPC_FAR* pvarChild) {
   HRESULT hr = DocAccessibleWrap::get_accFocus(pvarChild);
   if (FAILED(hr) || pvarChild->vt != VT_EMPTY || !IsWin8OrLater()) {
     

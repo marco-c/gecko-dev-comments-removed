@@ -22,14 +22,11 @@ typedef AutoTArray<RefPtr<dom::Element>, 16> ManualNACArray;
 
 
 
-class ManualNACPtr final
-{
-public:
+class ManualNACPtr final {
+ public:
   ManualNACPtr() {}
   MOZ_IMPLICIT ManualNACPtr(decltype(nullptr)) {}
-  explicit ManualNACPtr(already_AddRefed<Element> aNewNAC)
-    : mPtr(aNewNAC)
-  {
+  explicit ManualNACPtr(already_AddRefed<Element> aNewNAC) : mPtr(aNewNAC) {
     if (!mPtr) {
       return;
     }
@@ -49,8 +46,7 @@ public:
   
   ManualNACPtr(ManualNACPtr&& aOther) : mPtr(aOther.mPtr.forget()) {}
   ManualNACPtr(ManualNACPtr& aOther) = delete;
-  ManualNACPtr& operator=(ManualNACPtr&& aOther)
-  {
+  ManualNACPtr& operator=(ManualNACPtr&& aOther) {
     mPtr = aOther.mPtr.forget();
     return *this;
   }
@@ -58,8 +54,7 @@ public:
 
   ~ManualNACPtr() { Reset(); }
 
-  void Reset()
-  {
+  void Reset() {
     if (!mPtr) {
       return;
     }
@@ -88,30 +83,22 @@ public:
 
   Element* get() const { return mPtr.get(); }
   Element* operator->() const { return get(); }
-  operator Element*() const &
-  {
-    return get();
-  }
+  operator Element*() const& { return get(); }
 
-private:
+ private:
   RefPtr<Element> mPtr;
 };
 
-} 
+}  
 
-inline void
-ImplCycleCollectionUnlink(mozilla::ManualNACPtr& field)
-{
+inline void ImplCycleCollectionUnlink(mozilla::ManualNACPtr& field) {
   field.Reset();
 }
 
-inline void
-ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& callback,
-                            const mozilla::ManualNACPtr& field,
-                            const char* name,
-                            uint32_t flags = 0)
-{
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& callback,
+    const mozilla::ManualNACPtr& field, const char* name, uint32_t flags = 0) {
   CycleCollectionNoteChild(callback, field.get(), name, flags);
 }
 
-#endif 
+#endif  

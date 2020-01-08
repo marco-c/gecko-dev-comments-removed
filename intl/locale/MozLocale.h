@@ -49,116 +49,110 @@ namespace intl {
 
 
 
+
 class Locale {
-  public:
+ public:
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  explicit Locale(const nsACString& aLocale);
+  explicit Locale(const char* aLocale) : Locale(nsDependentCString(aLocale)){};
+
+  const nsCString& GetLanguage() const;
+  const nsCString& GetScript() const;
+  const nsCString& GetRegion() const;
+  const nsTArray<nsCString>& GetVariants() const;
+
+  
+
+
+
+  bool IsWellFormed() const { return mIsWellFormed; }
+
+  
+
+
+  const nsCString AsString() const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool Matches(const Locale& aOther, bool aThisRange, bool aOtherRange) const;
+
+  
+
+
+
+
+
+
+
+  bool AddLikelySubtags();
+
+  
+
+
+  void ClearVariants();
+
+  
+
+
+  void ClearRegion();
+
+  
+
+
+
+  void Invalidate() { mIsWellFormed = false; }
+
+  
+
+
+  bool operator==(const Locale& aOther) {
     
-
-
-
-
-
-
-
-
-
-
-    explicit Locale(const nsACString& aLocale);
-    explicit Locale(const char* aLocale)
-      : Locale(nsDependentCString(aLocale))
-      { };
-
-    const nsCString& GetLanguage() const;
-    const nsCString& GetScript() const;
-    const nsCString& GetRegion() const;
-    const nsTArray<nsCString>& GetVariants() const;
-
     
-
-
-
-    bool IsWellFormed() const {
-      return mIsWellFormed;
-    }
-
     
+    return IsWellFormed() && aOther.IsWellFormed() &&
+           mLanguage.Equals(aOther.mLanguage) &&
+           mScript.Equals(aOther.mScript) && mRegion.Equals(aOther.mRegion) &&
+           mVariants == aOther.mVariants && mPrivateUse == aOther.mPrivateUse;
+  }
 
-
-    const nsCString AsString() const;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool Matches(const Locale& aOther, bool aThisRange, bool aOtherRange) const;
-
-    
-
-
-
-
-
-
-
-    bool AddLikelySubtags();
-
-    
-
-
-    void ClearVariants();
-
-    
-
-
-    void ClearRegion();
-
-    
-
-
-
-    void Invalidate() {
-      mIsWellFormed = false;
-    }
-
-    
-
-
-    bool operator== (const Locale& aOther) {
-      
-      
-      
-      return IsWellFormed() &&
-             aOther.IsWellFormed() &&
-             mLanguage.Equals(aOther.mLanguage) &&
-             mScript.Equals(aOther.mScript) &&
-             mRegion.Equals(aOther.mRegion) &&
-             mVariants == aOther.mVariants &&
-             mPrivateUse == aOther.mPrivateUse;
-    }
-
-  private:
-    nsAutoCStringN<3> mLanguage;
-    nsAutoCStringN<4> mScript;
-    nsAutoCStringN<2> mRegion;
-    nsTArray<nsCString> mVariants;
-    nsTArray<nsCString> mPrivateUse;
-    bool mIsWellFormed = true;
+ private:
+  nsAutoCStringN<3> mLanguage;
+  nsAutoCStringN<4> mScript;
+  nsAutoCStringN<2> mRegion;
+  nsTArray<nsCString> mVariants;
+  nsTArray<nsCString> mPrivateUse;
+  bool mIsWellFormed = true;
 };
 
-} 
-} 
+}  
+}  
 
 DECLARE_USE_COPY_CONSTRUCTORS(mozilla::intl::Locale)
 

@@ -7,15 +7,11 @@
 
 #include "nsHtml5AttributeName.h"
 
-class nsHtml5AttributeEntry final
-{
-public:
-  nsHtml5AttributeEntry(nsHtml5AttributeName* aName,
-                        nsHtml5String aValue,
+class nsHtml5AttributeEntry final {
+ public:
+  nsHtml5AttributeEntry(nsHtml5AttributeName* aName, nsHtml5String aValue,
                         int32_t aLine)
-    : mLine(aLine)
-    , mValue(aValue)
-  {
+      : mLine(aLine), mValue(aValue) {
     
     mLocals[0] = aName->getLocal(0);
     mLocals[1] = aName->getLocal(1);
@@ -30,9 +26,7 @@ public:
 
   
   nsHtml5AttributeEntry(nsAtom* aName, nsHtml5String aValue, int32_t aLine)
-    : mLine(aLine)
-    , mValue(aValue)
-  {
+      : mLine(aLine), mValue(aValue) {
     
     mLocals[0] = aName;
     mLocals[1] = aName;
@@ -57,8 +51,7 @@ public:
 
   inline void ReleaseValue() { mValue.Release(); }
 
-  inline nsHtml5AttributeEntry Clone()
-  {
+  inline nsHtml5AttributeEntry Clone() {
     
     nsHtml5AttributeEntry clone(*this);
     
@@ -66,7 +59,7 @@ public:
     return clone;
   }
 
-private:
+ private:
   RefPtr<nsAtom> mLocals[3];
   RefPtr<nsAtom> mPrefixes[3];
   int32_t mUris[3];
@@ -74,4 +67,4 @@ private:
   nsHtml5String mValue;
 };
 
-#endif 
+#endif  

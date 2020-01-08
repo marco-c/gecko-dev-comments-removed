@@ -51,9 +51,7 @@
 class linked_ptr_internal {
  public:
   
-  void join_new() {
-    next_ = this;
-  }
+  void join_new() { next_ = this; }
 
   
   void join(linked_ptr_internal const* ptr) {
@@ -86,11 +84,18 @@ class linked_ptr {
   ~linked_ptr() { depart(); }
 
   
-  template <typename U> linked_ptr(linked_ptr<U> const& ptr) { copy(&ptr); }
-  linked_ptr(linked_ptr const& ptr) { DCHECK_NE(&ptr, this); copy(&ptr); }
+  template <typename U>
+  linked_ptr(linked_ptr<U> const& ptr) {
+    copy(&ptr);
+  }
+  linked_ptr(linked_ptr const& ptr) {
+    DCHECK_NE(&ptr, this);
+    copy(&ptr);
+  }
 
   
-  template <typename U> linked_ptr& operator=(linked_ptr<U> const& ptr) {
+  template <typename U>
+  linked_ptr& operator=(linked_ptr<U> const& ptr) {
     depart();
     copy(&ptr);
     return *this;
@@ -105,7 +110,10 @@ class linked_ptr {
   }
 
   
-  void reset(T* ptr = NULL) { depart(); capture(ptr); }
+  void reset(T* ptr = NULL) {
+    depart();
+    capture(ptr);
+  }
   T* get() const { return value_; }
   T* operator->() const { return value_; }
   T& operator*() const { return *value_; }
@@ -146,7 +154,8 @@ class linked_ptr {
     link_.join_new();
   }
 
-  template <typename U> void copy(linked_ptr<U> const* ptr) {
+  template <typename U>
+  void copy(linked_ptr<U> const* ptr) {
     value_ = ptr->get();
     if (value_)
       link_.join(&ptr->link_);
@@ -155,13 +164,13 @@ class linked_ptr {
   }
 };
 
-template<typename T> inline
-bool operator==(T* ptr, const linked_ptr<T>& x) {
+template <typename T>
+inline bool operator==(T* ptr, const linked_ptr<T>& x) {
   return ptr == x.get();
 }
 
-template<typename T> inline
-bool operator!=(T* ptr, const linked_ptr<T>& x) {
+template <typename T>
+inline bool operator!=(T* ptr, const linked_ptr<T>& x) {
   return ptr != x.get();
 }
 

@@ -42,7 +42,6 @@ TEST_F(APZCBasicTester, SimpleTransform) {
   EXPECT_EQ(AsyncTransform(), viewTransformOut);
 }
 
-
 TEST_F(APZCBasicTester, ComplexTransform) {
   
   
@@ -65,19 +64,24 @@ TEST_F(APZCBasicTester, ComplexTransform) {
   const char* layerTreeSyntax = "c(c)";
   
   nsIntRegion layerVisibleRegion[] = {
-    nsIntRegion(IntRect(0, 0, 300, 300)),
-    nsIntRegion(IntRect(0, 0, 150, 300)),
+      nsIntRegion(IntRect(0, 0, 300, 300)),
+      nsIntRegion(IntRect(0, 0, 150, 300)),
   };
   Matrix4x4 transforms[] = {
-    Matrix4x4(),
-    Matrix4x4(),
+      Matrix4x4(),
+      Matrix4x4(),
   };
-  transforms[0].PostScale(0.5f, 0.5f, 1.0f); 
-  transforms[1].PostScale(2.0f, 1.0f, 1.0f); 
+  transforms[0].PostScale(
+      0.5f, 0.5f,
+      1.0f);  
+  transforms[1].PostScale(
+      2.0f, 1.0f,
+      1.0f);  
 
   nsTArray<RefPtr<Layer> > layers;
   RefPtr<LayerManager> lm;
-  RefPtr<Layer> root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, transforms, lm, layers);
+  RefPtr<Layer> root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion,
+                                       transforms, lm, layers);
 
   ScrollMetadata metadata;
   FrameMetrics& metrics = metadata.GetMetrics();
@@ -103,44 +107,55 @@ TEST_F(APZCBasicTester, ComplexTransform) {
 
   
   
+  
 
   
   apzc->SetFrameMetrics(metrics);
   apzc->NotifyLayersUpdated(metadata, true, true);
   apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
-  EXPECT_EQ(AsyncTransform(LayerToParentLayerScale(1), ParentLayerPoint()), viewTransformOut);
+  EXPECT_EQ(AsyncTransform(LayerToParentLayerScale(1), ParentLayerPoint()),
+            viewTransformOut);
   EXPECT_EQ(ParentLayerPoint(60, 60), pointOut);
 
   childApzc->SetFrameMetrics(childMetrics);
   childApzc->NotifyLayersUpdated(childMetadata, true, true);
   childApzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
-  EXPECT_EQ(AsyncTransform(LayerToParentLayerScale(1), ParentLayerPoint()), viewTransformOut);
+  EXPECT_EQ(AsyncTransform(LayerToParentLayerScale(1), ParentLayerPoint()),
+            viewTransformOut);
   EXPECT_EQ(ParentLayerPoint(60, 60), pointOut);
 
   
   metrics.ScrollBy(CSSPoint(5, 0));
   apzc->SetFrameMetrics(metrics);
   apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
-  EXPECT_EQ(AsyncTransform(LayerToParentLayerScale(1), ParentLayerPoint(-30, 0)), viewTransformOut);
+  EXPECT_EQ(
+      AsyncTransform(LayerToParentLayerScale(1), ParentLayerPoint(-30, 0)),
+      viewTransformOut);
   EXPECT_EQ(ParentLayerPoint(90, 60), pointOut);
 
   childMetrics.ScrollBy(CSSPoint(5, 0));
   childApzc->SetFrameMetrics(childMetrics);
   childApzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
-  EXPECT_EQ(AsyncTransform(LayerToParentLayerScale(1), ParentLayerPoint(-30, 0)), viewTransformOut);
+  EXPECT_EQ(
+      AsyncTransform(LayerToParentLayerScale(1), ParentLayerPoint(-30, 0)),
+      viewTransformOut);
   EXPECT_EQ(ParentLayerPoint(90, 60), pointOut);
 
   
   metrics.ZoomBy(1.5f);
   apzc->SetFrameMetrics(metrics);
   apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
-  EXPECT_EQ(AsyncTransform(LayerToParentLayerScale(1.5), ParentLayerPoint(-45, 0)), viewTransformOut);
+  EXPECT_EQ(
+      AsyncTransform(LayerToParentLayerScale(1.5), ParentLayerPoint(-45, 0)),
+      viewTransformOut);
   EXPECT_EQ(ParentLayerPoint(135, 90), pointOut);
 
   childMetrics.ZoomBy(1.5f);
   childApzc->SetFrameMetrics(childMetrics);
   childApzc->SampleContentTransformForFrame(&viewTransformOut, pointOut);
-  EXPECT_EQ(AsyncTransform(LayerToParentLayerScale(1.5), ParentLayerPoint(-45, 0)), viewTransformOut);
+  EXPECT_EQ(
+      AsyncTransform(LayerToParentLayerScale(1.5), ParentLayerPoint(-45, 0)),
+      viewTransformOut);
   EXPECT_EQ(ParentLayerPoint(135, 90), pointOut);
 
   childApzc->Destroy();
@@ -156,8 +171,9 @@ TEST_F(APZCBasicTester, Fling) {
   
   Pan(apzc, touchStart, touchEnd);
   ParentLayerPoint lastPoint;
-  for (int i = 1; i < 50; i+=1) {
-    apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut, TimeDuration::FromMilliseconds(1));
+  for (int i = 1; i < 50; i += 1) {
+    apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut,
+                                         TimeDuration::FromMilliseconds(1));
     EXPECT_GT(pointOut.y, lastPoint.y);
     lastPoint = pointOut;
   }
@@ -207,17 +223,49 @@ TEST_F(APZCBasicTester, PanningTransformNotifications) {
   {
     InSequence s;
     EXPECT_CALL(check, Call("Simple pan"));
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eStartTouch,_)).Times(1);
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eTransformBegin,_)).Times(1);
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eStartPanning,_)).Times(1);
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eEndTouch,_)).Times(1);
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eTransformEnd,_)).Times(1);
+    EXPECT_CALL(*mcc,
+                NotifyAPZStateChange(
+                    _, GeckoContentController::APZStateChange::eStartTouch, _))
+        .Times(1);
+    EXPECT_CALL(
+        *mcc,
+        NotifyAPZStateChange(
+            _, GeckoContentController::APZStateChange::eTransformBegin, _))
+        .Times(1);
+    EXPECT_CALL(
+        *mcc, NotifyAPZStateChange(
+                  _, GeckoContentController::APZStateChange::eStartPanning, _))
+        .Times(1);
+    EXPECT_CALL(*mcc,
+                NotifyAPZStateChange(
+                    _, GeckoContentController::APZStateChange::eEndTouch, _))
+        .Times(1);
+    EXPECT_CALL(
+        *mcc, NotifyAPZStateChange(
+                  _, GeckoContentController::APZStateChange::eTransformEnd, _))
+        .Times(1);
     EXPECT_CALL(check, Call("Complex pan"));
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eStartTouch,_)).Times(1);
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eTransformBegin,_)).Times(1);
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eStartPanning,_)).Times(1);
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eEndTouch,_)).Times(1);
-    EXPECT_CALL(*mcc, NotifyAPZStateChange(_,GeckoContentController::APZStateChange::eTransformEnd,_)).Times(1);
+    EXPECT_CALL(*mcc,
+                NotifyAPZStateChange(
+                    _, GeckoContentController::APZStateChange::eStartTouch, _))
+        .Times(1);
+    EXPECT_CALL(
+        *mcc,
+        NotifyAPZStateChange(
+            _, GeckoContentController::APZStateChange::eTransformBegin, _))
+        .Times(1);
+    EXPECT_CALL(
+        *mcc, NotifyAPZStateChange(
+                  _, GeckoContentController::APZStateChange::eStartPanning, _))
+        .Times(1);
+    EXPECT_CALL(*mcc,
+                NotifyAPZStateChange(
+                    _, GeckoContentController::APZStateChange::eEndTouch, _))
+        .Times(1);
+    EXPECT_CALL(
+        *mcc, NotifyAPZStateChange(
+                  _, GeckoContentController::APZStateChange::eTransformEnd, _))
+        .Times(1);
     EXPECT_CALL(check, Call("Done"));
   }
 
@@ -229,16 +277,14 @@ TEST_F(APZCBasicTester, PanningTransformNotifications) {
   check.Call("Done");
 }
 
-void APZCBasicTester::PanIntoOverscroll()
-{
+void APZCBasicTester::PanIntoOverscroll() {
   int touchStart = 500;
   int touchEnd = 10;
   Pan(apzc, touchStart, touchEnd);
   EXPECT_TRUE(apzc->IsOverscrolled());
 }
 
-void APZCBasicTester::TestOverscroll()
-{
+void APZCBasicTester::TestOverscroll() {
   
   PanIntoOverscroll();
 
@@ -246,7 +292,6 @@ void APZCBasicTester::TestOverscroll()
   ParentLayerPoint expectedScrollOffset(0, GetScrollRange().YMost());
   SampleAnimationUntilRecoveredFromOverscroll(expectedScrollOffset);
 }
-
 
 TEST_F(APZCBasicTester, OverScrollPanning) {
   SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
@@ -301,8 +346,10 @@ TEST_F(APZCBasicTester, OverScroll_Bug1152051b) {
   
   
   uint64_t blockId;
-  nsEventStatus status = TouchDown(apzc, ScreenIntPoint(10, 10), mcc->Time(), &blockId);
-  if (gfxPrefs::TouchActionEnabled() && status != nsEventStatus_eConsumeNoDefault) {
+  nsEventStatus status =
+      TouchDown(apzc, ScreenIntPoint(10, 10), mcc->Time(), &blockId);
+  if (gfxPrefs::TouchActionEnabled() &&
+      status != nsEventStatus_eConsumeNoDefault) {
     SetDefaultAllowedTouchBehavior(apzc, blockId);
   }
   TouchUp(apzc, ScreenIntPoint(10, 10), mcc->Time());
@@ -345,7 +392,8 @@ TEST_F(APZCBasicTester, OverScrollAbort) {
 
   
   
-  apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut, TimeDuration::FromMilliseconds(10000));
+  apzc->SampleContentTransformForFrame(&viewTransformOut, pointOut,
+                                       TimeDuration::FromMilliseconds(10000));
   EXPECT_TRUE(apzc->IsOverscrolled());
 
   

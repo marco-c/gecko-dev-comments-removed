@@ -79,10 +79,10 @@ typedef int32_t OSVR_TimeValue_Microseconds;
 
 
 typedef struct OSVR_TimeValue {
-    
-    OSVR_TimeValue_Seconds seconds;
-    
-    OSVR_TimeValue_Microseconds microseconds;
+  
+  OSVR_TimeValue_Seconds seconds;
+  
+  OSVR_TimeValue_Microseconds microseconds;
 } OSVR_TimeValue;
 
 #ifdef OSVR_HAVE_STRUCT_TIMEVAL
@@ -100,9 +100,8 @@ struct timeval;
 
 
 
-OSVR_UTIL_EXPORT void
-osvrTimeValueToStructTimeval(OSVR_OUT struct timeval *dest,
-                             OSVR_IN_PTR const OSVR_TimeValue *src)
+OSVR_UTIL_EXPORT void osvrTimeValueToStructTimeval(
+    OSVR_OUT struct timeval *dest, OSVR_IN_PTR const OSVR_TimeValue *src)
     OSVR_FUNC_NONNULL((1, 2));
 
 
@@ -114,9 +113,8 @@ osvrTimeValueToStructTimeval(OSVR_OUT struct timeval *dest,
 
 
 
-OSVR_UTIL_EXPORT void
-osvrStructTimevalToTimeValue(OSVR_OUT OSVR_TimeValue *dest,
-                             OSVR_IN_PTR const struct timeval *src)
+OSVR_UTIL_EXPORT void osvrStructTimevalToTimeValue(
+    OSVR_OUT OSVR_TimeValue *dest, OSVR_IN_PTR const struct timeval *src)
     OSVR_FUNC_NONNULL((1, 2));
 #endif
 
@@ -155,9 +153,8 @@ OSVR_UTIL_EXPORT void osvrTimeValueSum(OSVR_INOUT_PTR OSVR_TimeValue *tvA,
 
 
 
-OSVR_UTIL_EXPORT void
-osvrTimeValueDifference(OSVR_INOUT_PTR OSVR_TimeValue *tvA,
-                        OSVR_IN_PTR const OSVR_TimeValue *tvB)
+OSVR_UTIL_EXPORT void osvrTimeValueDifference(
+    OSVR_INOUT_PTR OSVR_TimeValue *tvA, OSVR_IN_PTR const OSVR_TimeValue *tvB)
     OSVR_FUNC_NONNULL((1, 2));
 
 
@@ -181,27 +178,27 @@ OSVR_EXTERN_C_END
 
 
 
-OSVR_INLINE double
-osvrTimeValueDurationSeconds(OSVR_IN_PTR const OSVR_TimeValue *tvA,
-                             OSVR_IN_PTR const OSVR_TimeValue *tvB) {
-    OSVR_TimeValue A = *tvA;
-    osvrTimeValueDifference(&A, tvB);
-    double dt = A.seconds + A.microseconds / 1000000.0;
-    return dt;
+OSVR_INLINE double osvrTimeValueDurationSeconds(
+    OSVR_IN_PTR const OSVR_TimeValue *tvA,
+    OSVR_IN_PTR const OSVR_TimeValue *tvB) {
+  OSVR_TimeValue A = *tvA;
+  osvrTimeValueDifference(&A, tvB);
+  double dt = A.seconds + A.microseconds / 1000000.0;
+  return dt;
 }
 
 
 OSVR_INLINE OSVR_CBool
 osvrTimeValueGreater(OSVR_IN_PTR const OSVR_TimeValue *tvA,
                      OSVR_IN_PTR const OSVR_TimeValue *tvB) {
-    if (!tvA || !tvB) {
-        return OSVR_FALSE;
-    }
-    return ((tvA->seconds > tvB->seconds) ||
-            (tvA->seconds == tvB->seconds &&
-             tvA->microseconds > tvB->microseconds))
-               ? OSVR_TRUE
-               : OSVR_FALSE;
+  if (!tvA || !tvB) {
+    return OSVR_FALSE;
+  }
+  return ((tvA->seconds > tvB->seconds) ||
+          (tvA->seconds == tvB->seconds &&
+           tvA->microseconds > tvB->microseconds))
+             ? OSVR_TRUE
+             : OSVR_FALSE;
 }
 
 #ifdef __cplusplus
@@ -212,57 +209,56 @@ osvrTimeValueGreater(OSVR_IN_PTR const OSVR_TimeValue *tvA,
 
 inline bool osvrTimeValueIsNormalized(const OSVR_TimeValue &tv) {
 #ifdef __APPLE__
-    
-    return std::abs(double(tv.microseconds)) < 1000000 &&
+  
+  return std::abs(double(tv.microseconds)) < 1000000 &&
 #else
-    return std::abs(tv.microseconds) < 1000000 &&
+  return std::abs(tv.microseconds) < 1000000 &&
 #endif
-           ((tv.seconds > 0) == (tv.microseconds > 0));
+         ((tv.seconds > 0) == (tv.microseconds > 0));
 }
 
 
 inline bool osvrTimeValueGreater(const OSVR_TimeValue &tvA,
                                  const OSVR_TimeValue &tvB) {
-    assert(osvrTimeValueIsNormalized(tvA) &&
-           "First timevalue argument to comparison was not normalized!");
-    assert(osvrTimeValueIsNormalized(tvB) &&
-           "Second timevalue argument to comparison was not normalized!");
-    return (tvA.seconds > tvB.seconds) ||
-           (tvA.seconds == tvB.seconds && tvA.microseconds > tvB.microseconds);
+  assert(osvrTimeValueIsNormalized(tvA) &&
+         "First timevalue argument to comparison was not normalized!");
+  assert(osvrTimeValueIsNormalized(tvB) &&
+         "Second timevalue argument to comparison was not normalized!");
+  return (tvA.seconds > tvB.seconds) ||
+         (tvA.seconds == tvB.seconds && tvA.microseconds > tvB.microseconds);
 }
 
 
 inline bool operator>(const OSVR_TimeValue &tvA, const OSVR_TimeValue &tvB) {
-    return osvrTimeValueGreater(tvA, tvB);
+  return osvrTimeValueGreater(tvA, tvB);
 }
 
 
 inline bool operator<(const OSVR_TimeValue &tvA, const OSVR_TimeValue &tvB) {
-    
-    return osvrTimeValueGreater(tvB, tvA);
+  
+  return osvrTimeValueGreater(tvB, tvA);
 }
 
 
 inline bool operator==(const OSVR_TimeValue &tvA, const OSVR_TimeValue &tvB) {
-    assert(
-        osvrTimeValueIsNormalized(tvA) &&
-        "First timevalue argument to equality comparison was not normalized!");
-    assert(
-        osvrTimeValueIsNormalized(tvB) &&
-        "Second timevalue argument to equality comparison was not normalized!");
-    return (tvA.seconds == tvB.seconds) &&
-           (tvA.microseconds == tvB.microseconds);
+  assert(osvrTimeValueIsNormalized(tvA) &&
+         "First timevalue argument to equality comparison was not normalized!");
+  assert(
+      osvrTimeValueIsNormalized(tvB) &&
+      "Second timevalue argument to equality comparison was not normalized!");
+  return (tvA.seconds == tvB.seconds) && (tvA.microseconds == tvB.microseconds);
 }
 
 inline bool operator!=(const OSVR_TimeValue &tvA, const OSVR_TimeValue &tvB) {
-    assert(osvrTimeValueIsNormalized(tvA) && "First timevalue argument to "
-                                             "inequality comparison was not "
-                                             "normalized!");
-    assert(osvrTimeValueIsNormalized(tvB) && "Second timevalue argument to "
-                                             "inequality comparison was not "
-                                             "normalized!");
-    return (tvA.seconds != tvB.seconds) ||
-           (tvA.microseconds != tvB.microseconds);
+  assert(osvrTimeValueIsNormalized(tvA) &&
+         "First timevalue argument to "
+         "inequality comparison was not "
+         "normalized!");
+  assert(osvrTimeValueIsNormalized(tvB) &&
+         "Second timevalue argument to "
+         "inequality comparison was not "
+         "normalized!");
+  return (tvA.seconds != tvB.seconds) || (tvA.microseconds != tvB.microseconds);
 }
 #endif
 

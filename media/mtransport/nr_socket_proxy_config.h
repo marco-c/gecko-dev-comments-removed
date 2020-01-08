@@ -12,16 +12,13 @@
 
 class nsIPrincipal;
 
-namespace mozilla
-{
-namespace dom
-{
+namespace mozilla {
+namespace dom {
 class PBrowserOrId;
 }
 
-class NrSocketProxyConfig
-{
-public:
+class NrSocketProxyConfig {
+ public:
   NrSocketProxyConfig(const dom::PBrowserOrId& aBrowser,
                       const nsCString& aAlpn);
   
@@ -34,7 +31,7 @@ public:
   const dom::PBrowserOrId& GetBrowser() const;
   const nsCString& GetAlpn() const;
 
-private:
+ private:
   
   
   
@@ -42,6 +39,6 @@ private:
   std::unique_ptr<Private> mPrivate;
 };
 
-} 
+}  
 
-#endif 
+#endif  

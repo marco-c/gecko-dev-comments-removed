@@ -12,12 +12,11 @@
 
 
 
-class nsIScrollPositionListener {
-public:
 
-	virtual void ScrollPositionWillChange(nscoord aX, nscoord aY) = 0;
-	virtual void ScrollPositionDidChange(nscoord aX, nscoord aY) = 0;
+class nsIScrollPositionListener {
+ public:
+  virtual void ScrollPositionWillChange(nscoord aX, nscoord aY) = 0;
+  virtual void ScrollPositionDidChange(nscoord aX, nscoord aY) = 0;
 };
 
 #endif 
-

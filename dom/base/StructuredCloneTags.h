@@ -75,7 +75,7 @@ enum StructuredCloneTags {
   SCTAG_DOM_STRUCTURED_CLONE_TESTER
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

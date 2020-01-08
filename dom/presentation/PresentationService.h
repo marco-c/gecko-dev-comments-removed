@@ -24,11 +24,10 @@ class PresentationDeviceRequest;
 class PresentationRespondingInfo;
 
 class PresentationService final
-                      : public nsIPresentationService
-                      , public nsIObserver
-                      , public PresentationServiceBase<PresentationSessionInfo>
-{
-public:
+    : public nsIPresentationService,
+      public nsIObserver,
+      public PresentationServiceBase<PresentationSessionInfo> {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIPRESENTATIONSERVICE
@@ -36,11 +35,10 @@ public:
   PresentationService();
   bool Init();
 
-  bool IsSessionAccessible(const nsAString& aSessionId,
-                           const uint8_t aRole,
+  bool IsSessionAccessible(const nsAString& aSessionId, const uint8_t aRole,
                            base::ProcessId aProcessId);
 
-private:
+ private:
   friend class PresentationDeviceRequest;
 
   virtual ~PresentationService();
@@ -52,17 +50,15 @@ private:
   nsresult HandleReconnectRequest(nsIPresentationSessionRequest* aRequest);
 
   
-  already_AddRefed<PresentationSessionInfo>
-  CreateControllingSessionInfo(const nsAString& aUrl,
-                               const nsAString& aSessionId,
-                               uint64_t aWindowId);
+  already_AddRefed<PresentationSessionInfo> CreateControllingSessionInfo(
+      const nsAString& aUrl, const nsAString& aSessionId, uint64_t aWindowId);
 
   
   nsresult UpdateAvailabilityUrlChange(
-                                  const nsTArray<nsString>& aAvailabilityUrls);
+      const nsTArray<nsString>& aAvailabilityUrls);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

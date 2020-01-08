@@ -19,35 +19,26 @@ namespace dom {
 class ServiceWorkerRegistrationListener;
 
 class ServiceWorkerRegistrationInfo final
-  : public nsIServiceWorkerRegistrationInfo
-{
+    : public nsIServiceWorkerRegistrationInfo {
   nsCOMPtr<nsIPrincipal> mPrincipal;
   ServiceWorkerRegistrationDescriptor mDescriptor;
   nsTArray<nsCOMPtr<nsIServiceWorkerRegistrationInfoListener>> mListeners;
   nsTObserverArray<ServiceWorkerRegistrationListener*> mInstanceList;
 
-  struct VersionEntry
-  {
+  struct VersionEntry {
     const ServiceWorkerRegistrationDescriptor mDescriptor;
     TimeStamp mTimeStamp;
 
-    explicit VersionEntry(const ServiceWorkerRegistrationDescriptor& aDescriptor)
-      : mDescriptor(aDescriptor)
-      , mTimeStamp(TimeStamp::Now())
-    {
-    }
+    explicit VersionEntry(
+        const ServiceWorkerRegistrationDescriptor& aDescriptor)
+        : mDescriptor(aDescriptor), mTimeStamp(TimeStamp::Now()) {}
   };
   nsTArray<UniquePtr<VersionEntry>> mVersionList;
 
   uint32_t mControlledClientsCounter;
   uint32_t mDelayMultiplier;
 
-  enum
-  {
-    NoUpdate,
-    NeedTimeCheckAndUpdate,
-    NeedUpdate
-  } mUpdateState;
+  enum { NoUpdate, NeedTimeCheckAndUpdate, NeedUpdate } mUpdateState;
 
   
   PRTime mCreationTime;
@@ -69,7 +60,7 @@ class ServiceWorkerRegistrationInfo final
 
   bool mCorrupt;
 
-public:
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSISERVICEWORKERREGISTRATIONINFO
 
@@ -77,31 +68,22 @@ public:
                                 nsIPrincipal* aPrincipal,
                                 ServiceWorkerUpdateViaCache aUpdateViaCache);
 
-  void
-  AddInstance(ServiceWorkerRegistrationListener* aInstance,
-              const ServiceWorkerRegistrationDescriptor& aDescriptor);
+  void AddInstance(ServiceWorkerRegistrationListener* aInstance,
+                   const ServiceWorkerRegistrationDescriptor& aDescriptor);
 
-  void
-  RemoveInstance(ServiceWorkerRegistrationListener* aInstance);
+  void RemoveInstance(ServiceWorkerRegistrationListener* aInstance);
 
-  const nsCString&
-  Scope() const;
+  const nsCString& Scope() const;
 
-  nsIPrincipal*
-  Principal() const;
+  nsIPrincipal* Principal() const;
 
-  bool
-  IsPendingUninstall() const;
+  bool IsPendingUninstall() const;
 
-  void
-  SetPendingUninstall();
+  void SetPendingUninstall();
 
-  void
-  ClearPendingUninstall();
+  void ClearPendingUninstall();
 
-  already_AddRefed<ServiceWorkerInfo>
-  Newest() const
-  {
+  already_AddRefed<ServiceWorkerInfo> Newest() const {
     RefPtr<ServiceWorkerInfo> newest;
     if (mInstallingWorker) {
       newest = mInstallingWorker;
@@ -114,177 +96,132 @@ public:
     return newest.forget();
   }
 
-  already_AddRefed<ServiceWorkerInfo>
-  GetServiceWorkerInfoById(uint64_t aId);
+  already_AddRefed<ServiceWorkerInfo> GetServiceWorkerInfoById(uint64_t aId);
 
-  void
-  StartControllingClient()
-  {
+  void StartControllingClient() {
     ++mControlledClientsCounter;
     mDelayMultiplier = 0;
   }
 
-  void
-  StopControllingClient()
-  {
+  void StopControllingClient() {
     MOZ_ASSERT(mControlledClientsCounter);
     --mControlledClientsCounter;
   }
 
-  bool
-  IsControllingClients() const
-  {
+  bool IsControllingClients() const {
     return mActiveWorker && mControlledClientsCounter;
   }
 
-  void
-  Clear();
+  void Clear();
 
-  void
-  ClearAsCorrupt();
+  void ClearAsCorrupt();
 
-  bool
-  IsCorrupt() const;
+  bool IsCorrupt() const;
 
-  void
-  TryToActivateAsync();
+  void TryToActivateAsync();
 
-  void
-  TryToActivate();
+  void TryToActivate();
 
-  void
-  Activate();
+  void Activate();
 
-  void
-  FinishActivate(bool aSuccess);
+  void FinishActivate(bool aSuccess);
 
-  void
-  RefreshLastUpdateCheckTime();
+  void RefreshLastUpdateCheckTime();
 
-  bool
-  IsLastUpdateCheckTimeOverOneDay() const;
+  bool IsLastUpdateCheckTimeOverOneDay() const;
 
-  void
-  MaybeScheduleTimeCheckAndUpdate();
+  void MaybeScheduleTimeCheckAndUpdate();
 
-  void
-  MaybeScheduleUpdate();
+  void MaybeScheduleUpdate();
 
-  bool
-  CheckAndClearIfUpdateNeeded();
+  bool CheckAndClearIfUpdateNeeded();
 
-  ServiceWorkerInfo*
-  GetEvaluating() const;
+  ServiceWorkerInfo* GetEvaluating() const;
 
-  ServiceWorkerInfo*
-  GetInstalling() const;
+  ServiceWorkerInfo* GetInstalling() const;
 
-  ServiceWorkerInfo*
-  GetWaiting() const;
+  ServiceWorkerInfo* GetWaiting() const;
 
-  ServiceWorkerInfo*
-  GetActive() const;
+  ServiceWorkerInfo* GetActive() const;
 
-  ServiceWorkerInfo*
-  GetByDescriptor(const ServiceWorkerDescriptor& aDescriptor) const;
+  ServiceWorkerInfo* GetByDescriptor(
+      const ServiceWorkerDescriptor& aDescriptor) const;
 
   
   
-  void
-  SetEvaluating(ServiceWorkerInfo* aServiceWorker);
+  void SetEvaluating(ServiceWorkerInfo* aServiceWorker);
 
   
   
-  void
-  ClearEvaluating();
+  void ClearEvaluating();
 
   
   
-  void
-  ClearInstalling();
+  void ClearInstalling();
 
   
   
-  void
-  TransitionEvaluatingToInstalling();
+  void TransitionEvaluatingToInstalling();
 
   
   
-  void
-  TransitionInstallingToWaiting();
+  void TransitionInstallingToWaiting();
 
   
   
   
   
   
-  void
-  SetActive(ServiceWorkerInfo* aServiceWorker);
+  void SetActive(ServiceWorkerInfo* aServiceWorker);
 
   
   
-  void
-  TransitionWaitingToActive();
+  void TransitionWaitingToActive();
 
   
-  bool
-  IsIdle() const;
+  bool IsIdle() const;
 
-  ServiceWorkerUpdateViaCache
-  GetUpdateViaCache() const;
+  ServiceWorkerUpdateViaCache GetUpdateViaCache() const;
 
-  void
-  SetUpdateViaCache(ServiceWorkerUpdateViaCache aUpdateViaCache);
+  void SetUpdateViaCache(ServiceWorkerUpdateViaCache aUpdateViaCache);
 
-  int64_t
-  GetLastUpdateTime() const;
+  int64_t GetLastUpdateTime() const;
 
-  void
-  SetLastUpdateTime(const int64_t aTime);
+  void SetLastUpdateTime(const int64_t aTime);
 
-  const ServiceWorkerRegistrationDescriptor&
-  Descriptor() const;
+  const ServiceWorkerRegistrationDescriptor& Descriptor() const;
 
-  uint64_t
-  Id() const;
+  uint64_t Id() const;
 
-  uint64_t
-  Version() const;
+  uint64_t Version() const;
 
-  uint32_t
-  GetUpdateDelay();
+  uint32_t GetUpdateDelay();
 
-  void
-  FireUpdateFound();
+  void FireUpdateFound();
 
-  void
-  NotifyRemoved();
+  void NotifyRemoved();
 
-private:
+ private:
   
   
   
-  void
-  UpdateRegistrationState();
+  void UpdateRegistrationState();
 
-  void
-  UpdateRegistrationState(ServiceWorkerUpdateViaCache aUpdateViaCache);
+  void UpdateRegistrationState(ServiceWorkerUpdateViaCache aUpdateViaCache);
 
   
   
   
   
-  void
-  NotifyChromeRegistrationListeners();
+  
+  void NotifyChromeRegistrationListeners();
 
-  static uint64_t
-  GetNextId();
+  static uint64_t GetNextId();
 
-  static uint64_t
-  GetNextVersion();
+  static uint64_t GetNextVersion();
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

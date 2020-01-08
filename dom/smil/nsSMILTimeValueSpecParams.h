@@ -16,24 +16,13 @@
 
 
 
-class nsSMILTimeValueSpecParams
-{
-public:
+class nsSMILTimeValueSpecParams {
+ public:
   nsSMILTimeValueSpecParams()
-    : mType(INDEFINITE)
-    , mSyncBegin(false)
-    , mRepeatIteration(0)
-  { }
+      : mType(INDEFINITE), mSyncBegin(false), mRepeatIteration(0) {}
 
   
-  enum {
-    OFFSET,
-    SYNCBASE,
-    EVENT,
-    REPEAT,
-    WALLCLOCK,
-    INDEFINITE
-  } mType;
+  enum { OFFSET, SYNCBASE, EVENT, REPEAT, WALLCLOCK, INDEFINITE } mType;
 
   
   
@@ -41,7 +30,7 @@ public:
   
   
   
-  nsSMILTimeValue   mOffset;
+  nsSMILTimeValue mOffset;
 
   
   
@@ -55,11 +44,11 @@ public:
   
   
   
-  bool              mSyncBegin;
+  bool mSyncBegin;
 
   
   
   uint32_t mRepeatIteration;
 };
 
-#endif 
+#endif  

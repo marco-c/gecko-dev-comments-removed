@@ -10,17 +10,16 @@
 #include "nsIProtocolHandler.h"
 
 class nsIconProtocolHandler : public nsIProtocolHandler,
-                              public nsSupportsWeakReference
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIPROTOCOLHANDLER
+                              public nsSupportsWeakReference {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIPROTOCOLHANDLER
 
-    
-    nsIconProtocolHandler();
+  
+  nsIconProtocolHandler();
 
-protected:
-    virtual ~nsIconProtocolHandler();
+ protected:
+  virtual ~nsIconProtocolHandler();
 };
 
-#endif 
+#endif  

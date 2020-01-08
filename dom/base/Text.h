@@ -13,22 +13,20 @@
 namespace mozilla {
 namespace dom {
 
-class Text : public CharacterData
-{
-public:
+class Text : public CharacterData {
+ public:
   NS_IMPL_FROMNODE_HELPER(Text, IsText())
 
   explicit Text(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-  : CharacterData(std::move(aNodeInfo))
-  {}
+      : CharacterData(std::move(aNodeInfo)) {}
 
   
   already_AddRefed<Text> SplitText(uint32_t aOffset, ErrorResult& rv);
   void GetWholeText(nsAString& aWholeText, ErrorResult& rv);
 
-  static already_AddRefed<Text>
-  Constructor(const GlobalObject& aGlobal,
-              const nsAString& aData, ErrorResult& aRv);
+  static already_AddRefed<Text> Constructor(const GlobalObject& aGlobal,
+                                            const nsAString& aData,
+                                            ErrorResult& aRv);
 
   
 
@@ -38,29 +36,25 @@ public:
   bool HasTextForTranslation();
 };
 
-} 
-} 
+}  
+}  
 
-inline mozilla::dom::Text* nsINode::GetAsText()
-{
+inline mozilla::dom::Text* nsINode::GetAsText() {
   return IsText() ? AsText() : nullptr;
 }
 
-inline const mozilla::dom::Text* nsINode::GetAsText() const
-{
+inline const mozilla::dom::Text* nsINode::GetAsText() const {
   return IsText() ? AsText() : nullptr;
 }
 
-inline mozilla::dom::Text* nsINode::AsText()
-{
+inline mozilla::dom::Text* nsINode::AsText() {
   MOZ_ASSERT(IsText());
   return static_cast<mozilla::dom::Text*>(this);
 }
 
-inline const mozilla::dom::Text* nsINode::AsText() const
-{
+inline const mozilla::dom::Text* nsINode::AsText() const {
   MOZ_ASSERT(IsText());
   return static_cast<const mozilla::dom::Text*>(this);
 }
 
-#endif 
+#endif  

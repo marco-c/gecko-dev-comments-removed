@@ -29,52 +29,48 @@
 
 class nsTableCellFrame : public nsContainerFrame,
                          public nsITableCellLayout,
-                         public nsIPercentBSizeObserver
-{
+                         public nsIPercentBSizeObserver {
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
 
-  friend nsTableCellFrame* NS_NewTableCellFrame(nsIPresShell*   aPresShell,
+  friend nsTableCellFrame* NS_NewTableCellFrame(nsIPresShell* aPresShell,
                                                 ComputedStyle* aStyle,
                                                 nsTableFrame* aTableFrame);
 
   nsTableCellFrame(ComputedStyle* aStyle, nsTableFrame* aTableFrame)
-    : nsTableCellFrame(aStyle, aTableFrame, kClassID) {}
+      : nsTableCellFrame(aStyle, aTableFrame, kClassID) {}
 
-protected:
+ protected:
   typedef mozilla::WritingMode WritingMode;
   typedef mozilla::LogicalSide LogicalSide;
   typedef mozilla::LogicalMargin LogicalMargin;
 
-public:
+ public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsTableCellFrame)
 
-  nsTableRowFrame* GetTableRowFrame() const
-  {
+  nsTableRowFrame* GetTableRowFrame() const {
     nsIFrame* parent = GetParent();
     MOZ_ASSERT(parent && parent->IsTableRowFrame());
     return static_cast<nsTableRowFrame*>(parent);
   }
 
-  nsTableFrame* GetTableFrame() const
-  {
+  nsTableFrame* GetTableFrame() const {
     return GetTableRowFrame()->GetTableFrame();
   }
 
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
 
 #ifdef ACCESSIBILITY
   virtual mozilla::a11y::AccType AccessibleType() override;
 #endif
 
-  virtual nsresult  AttributeChanged(int32_t         aNameSpaceID,
-                                     nsAtom*        aAttribute,
-                                     int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
   
   virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
@@ -82,13 +78,11 @@ public:
 #ifdef DEBUG
   
   
-  virtual void AppendFrames(ChildListID     aListID,
-                            nsFrameList&    aFrameList) override;
-  virtual void InsertFrames(ChildListID     aListID,
-                            nsIFrame*       aPrevFrame,
-                            nsFrameList&    aFrameList) override;
-  virtual void RemoveFrame(ChildListID     aListID,
-                           nsIFrame*       aOldFrame) override;
+  virtual void AppendFrames(ChildListID aListID,
+                            nsFrameList& aFrameList) override;
+  virtual void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                            nsFrameList& aFrameList) override;
+  virtual void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override;
 #endif
 
   virtual nsContainerFrame* GetContentInsertionFrame() override {
@@ -101,22 +95,21 @@ public:
 
   virtual bool NeedsToObserve(const ReflowInput& aReflowInput) override;
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
   virtual nsresult ProcessBorders(nsTableFrame* aFrame,
                                   nsDisplayListBuilder* aBuilder,
                                   const nsDisplayListSet& aLists);
 
-  virtual nscoord GetMinISize(gfxContext *aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext *aRenderingContext) override;
-  IntrinsicISizeOffsetData IntrinsicISizeOffsets(nscoord aPercentageBasis =
-                                                 NS_UNCONSTRAINEDSIZE) override;
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
+  IntrinsicISizeOffsetData IntrinsicISizeOffsets(
+      nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE) override;
 
-  virtual void Reflow(nsPresContext*      aPresContext,
-                      ReflowOutput& aDesiredSize,
+  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&      aStatus) override;
+                      nsReflowStatus& aStatus) override;
 
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
@@ -135,9 +128,8 @@ public:
     return GetVerticalAlign() == NS_STYLE_VERTICAL_ALIGN_BASELINE;
   }
 
-  bool CellHasVisibleContent(nscoord       aBSize,
-                             nsTableFrame* tableFrame,
-                             nsIFrame*     kidFrame);
+  bool CellHasVisibleContent(nscoord aBSize, nsTableFrame* tableFrame,
+                             nsIFrame* kidFrame);
 
   
 
@@ -151,8 +143,10 @@ public:
 
 
 
+
   int32_t GetRowSpan();
 
+  
   
 
   
@@ -165,11 +159,10 @@ public:
 
 
 
-  NS_IMETHOD GetCellIndexes(int32_t &aRowIndex, int32_t &aColIndex) override;
+  NS_IMETHOD GetCellIndexes(int32_t& aRowIndex, int32_t& aColIndex) override;
 
   
-  uint32_t RowIndex() const
-  {
+  uint32_t RowIndex() const {
     return static_cast<nsTableRowFrame*>(GetParent())->GetRowIndex();
   }
 
@@ -179,16 +172,16 @@ public:
 
 
 
+
   int32_t GetColSpan();
 
   
-  uint32_t ColIndex() const
-  {
+  uint32_t ColIndex() const {
     
     
     
     MOZ_ASSERT(static_cast<nsTableCellFrame*>(FirstContinuation())->mColIndex ==
-               mColIndex,
+                   mColIndex,
                "mColIndex out of sync with first continuation");
     return mColIndex;
   }
@@ -205,7 +198,7 @@ public:
   inline mozilla::LogicalSize GetDesiredSize();
 
   
-  inline void SetDesiredSize(const ReflowOutput & aDesiredSize);
+  inline void SetDesiredSize(const ReflowOutput& aDesiredSize);
 
   bool GetContentEmpty() const;
   void SetContentEmpty(bool aContentEmpty);
@@ -213,49 +206,51 @@ public:
   bool HasPctOverBSize();
   void SetHasPctOverBSize(bool aValue);
 
-  nsTableCellFrame* GetNextCell() const
-  {
+  nsTableCellFrame* GetNextCell() const {
     nsIFrame* sibling = GetNextSibling();
 #ifdef DEBUG
     if (sibling) {
       nsTableCellFrame* cellFrame = do_QueryFrame(sibling);
       MOZ_ASSERT(cellFrame, "How do we have a non-cell sibling?");
     }
-#endif 
+#endif  
     return static_cast<nsTableCellFrame*>(sibling);
   }
 
   virtual LogicalMargin GetBorderWidth(WritingMode aWM) const;
 
-  virtual ImgDrawResult PaintBackground(gfxContext&          aRenderingContext,
-                                     const nsRect&        aDirtyRect,
-                                     nsPoint              aPt,
-                                     uint32_t             aFlags);
+  virtual ImgDrawResult PaintBackground(gfxContext& aRenderingContext,
+                                        const nsRect& aDirtyRect, nsPoint aPt,
+                                        uint32_t aFlags);
 
   void DecorateForSelection(DrawTarget* aDrawTarget, nsPoint aPt);
 
   virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override;
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
     return nsContainerFrame::IsFrameOfType(aFlags & ~(nsIFrame::eTablePart));
   }
 
-  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true) override;
-  virtual void InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true) override;
-  virtual void InvalidateFrameForRemoval() override { InvalidateFrameSubtree(); }
+  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0,
+                               bool aRebuildDisplayItems = true) override;
+  virtual void InvalidateFrameWithRect(
+      const nsRect& aRect, uint32_t aDisplayItemKey = 0,
+      bool aRebuildDisplayItems = true) override;
+  virtual void InvalidateFrameForRemoval() override {
+    InvalidateFrameSubtree();
+  }
 
   bool ShouldPaintBordersAndBackgrounds() const;
 
   bool ShouldPaintBackground(nsDisplayListBuilder* aBuilder);
 
-protected:
+ protected:
   nsTableCellFrame(ComputedStyle* aStyle, nsTableFrame* aTableFrame,
                    ClassID aID);
   ~nsTableCellFrame();
 
-  virtual LogicalSides
-  GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const override;
+  virtual LogicalSides GetLogicalSkipSides(
+      const ReflowInput* aReflowInput = nullptr) const override;
 
   
 
@@ -268,34 +263,34 @@ protected:
 
   friend class nsTableRowFrame;
 
-  uint32_t     mColIndex;             
+  uint32_t mColIndex;  
 
-  nscoord      mPriorAvailISize;      
+  nscoord mPriorAvailISize;           
   mozilla::LogicalSize mDesiredSize;  
 };
 
-inline nscoord nsTableCellFrame::GetPriorAvailISize()
-{ return mPriorAvailISize; }
+inline nscoord nsTableCellFrame::GetPriorAvailISize() {
+  return mPriorAvailISize;
+}
 
-inline void nsTableCellFrame::SetPriorAvailISize(nscoord aPriorAvailISize)
-{ mPriorAvailISize = aPriorAvailISize; }
+inline void nsTableCellFrame::SetPriorAvailISize(nscoord aPriorAvailISize) {
+  mPriorAvailISize = aPriorAvailISize;
+}
 
-inline mozilla::LogicalSize nsTableCellFrame::GetDesiredSize()
-{ return mDesiredSize; }
+inline mozilla::LogicalSize nsTableCellFrame::GetDesiredSize() {
+  return mDesiredSize;
+}
 
-inline void nsTableCellFrame::SetDesiredSize(const ReflowOutput & aDesiredSize)
-{
+inline void nsTableCellFrame::SetDesiredSize(const ReflowOutput& aDesiredSize) {
   mozilla::WritingMode wm = aDesiredSize.GetWritingMode();
   mDesiredSize = aDesiredSize.Size(wm).ConvertTo(GetWritingMode(), wm);
 }
 
-inline bool nsTableCellFrame::GetContentEmpty() const
-{
+inline bool nsTableCellFrame::GetContentEmpty() const {
   return HasAnyStateBits(NS_TABLE_CELL_CONTENT_EMPTY);
 }
 
-inline void nsTableCellFrame::SetContentEmpty(bool aContentEmpty)
-{
+inline void nsTableCellFrame::SetContentEmpty(bool aContentEmpty) {
   if (aContentEmpty) {
     AddStateBits(NS_TABLE_CELL_CONTENT_EMPTY);
   } else {
@@ -303,13 +298,11 @@ inline void nsTableCellFrame::SetContentEmpty(bool aContentEmpty)
   }
 }
 
-inline bool nsTableCellFrame::HasPctOverBSize()
-{
+inline bool nsTableCellFrame::HasPctOverBSize() {
   return HasAnyStateBits(NS_TABLE_CELL_HAS_PCT_OVER_BSIZE);
 }
 
-inline void nsTableCellFrame::SetHasPctOverBSize(bool aValue)
-{
+inline void nsTableCellFrame::SetHasPctOverBSize(bool aValue) {
   if (aValue) {
     AddStateBits(NS_TABLE_CELL_HAS_PCT_OVER_BSIZE);
   } else {
@@ -318,10 +311,10 @@ inline void nsTableCellFrame::SetHasPctOverBSize(bool aValue)
 }
 
 
-class nsBCTableCellFrame final : public nsTableCellFrame
-{
+class nsBCTableCellFrame final : public nsTableCellFrame {
   typedef mozilla::image::ImgDrawResult ImgDrawResult;
-public:
+
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsBCTableCellFrame)
 
   nsBCTableCellFrame(ComputedStyle* aStyle, nsTableFrame* aTableFrame);
@@ -345,13 +338,11 @@ public:
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-  virtual ImgDrawResult PaintBackground(gfxContext&          aRenderingContext,
-                                     const nsRect&        aDirtyRect,
-                                     nsPoint              aPt,
-                                     uint32_t             aFlags) override;
+  virtual ImgDrawResult PaintBackground(gfxContext& aRenderingContext,
+                                        const nsRect& aDirtyRect, nsPoint aPt,
+                                        uint32_t aFlags) override;
 
-private:
-
+ private:
   
   
   BCPixelSize mBStartBorder;
@@ -361,15 +352,14 @@ private:
 };
 
 
-inline nsTableCellFrame* nsTableRowFrame::GetFirstCell() const
-{
+inline nsTableCellFrame* nsTableRowFrame::GetFirstCell() const {
   nsIFrame* firstChild = mFrames.FirstChild();
 #ifdef DEBUG
-    if (firstChild) {
-      nsTableCellFrame* cellFrame = do_QueryFrame(firstChild);
-      MOZ_ASSERT(cellFrame, "How do we have a non-cell sibling?");
-    }
-#endif 
+  if (firstChild) {
+    nsTableCellFrame* cellFrame = do_QueryFrame(firstChild);
+    MOZ_ASSERT(cellFrame, "How do we have a non-cell sibling?");
+  }
+#endif  
   return static_cast<nsTableCellFrame*>(firstChild);
 }
 

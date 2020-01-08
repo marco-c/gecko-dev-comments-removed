@@ -22,48 +22,43 @@ struct Class;
 
 
 template <typename T, AllowGC allowGC = CanGC>
-T*
-Allocate(JSContext* cx);
+T* Allocate(JSContext* cx);
 
 
 
 
 template <typename, AllowGC allowGC = CanGC>
-JSObject*
-Allocate(JSContext* cx, gc::AllocKind kind, size_t nDynamicSlots, gc::InitialHeap heap,
-         const Class* clasp);
+JSObject* Allocate(JSContext* cx, gc::AllocKind kind, size_t nDynamicSlots,
+                   gc::InitialHeap heap, const Class* clasp);
 
 
 template <typename StringAllocT, AllowGC allowGC = CanGC>
-StringAllocT*
-AllocateString(JSContext* cx, gc::InitialHeap heap);
+StringAllocT* AllocateString(JSContext* cx, gc::InitialHeap heap);
 
 
 
 template <typename StringT, AllowGC allowGC = CanGC>
-StringT*
-Allocate(JSContext* cx, gc::InitialHeap heap)
-{
-    return static_cast<StringT*>(js::AllocateString<JSString, allowGC>(cx, heap));
+StringT* Allocate(JSContext* cx, gc::InitialHeap heap) {
+  return static_cast<StringT*>(js::AllocateString<JSString, allowGC>(cx, heap));
 }
 
 
 
 
 template <>
-inline JSFatInlineString*
-Allocate<JSFatInlineString, CanGC>(JSContext* cx, gc::InitialHeap heap)
-{
-    return static_cast<JSFatInlineString*>(js::AllocateString<JSFatInlineString, CanGC>(cx, heap));
+inline JSFatInlineString* Allocate<JSFatInlineString, CanGC>(
+    JSContext* cx, gc::InitialHeap heap) {
+  return static_cast<JSFatInlineString*>(
+      js::AllocateString<JSFatInlineString, CanGC>(cx, heap));
 }
 
 template <>
-inline JSFatInlineString*
-Allocate<JSFatInlineString, NoGC>(JSContext* cx, gc::InitialHeap heap)
-{
-    return static_cast<JSFatInlineString*>(js::AllocateString<JSFatInlineString, NoGC>(cx, heap));
+inline JSFatInlineString* Allocate<JSFatInlineString, NoGC>(
+    JSContext* cx, gc::InitialHeap heap) {
+  return static_cast<JSFatInlineString*>(
+      js::AllocateString<JSFatInlineString, NoGC>(cx, heap));
 }
 
-} 
+}  
 
-#endif 
+#endif  

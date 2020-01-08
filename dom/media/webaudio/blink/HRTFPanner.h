@@ -31,7 +31,7 @@
 
 namespace mozilla {
 class AudioBlock;
-} 
+}  
 
 namespace WebCore {
 
@@ -42,76 +42,79 @@ class HRTFDatabaseLoader;
 using mozilla::AudioBlock;
 
 class HRTFPanner {
-public:
-    HRTFPanner(float sampleRate, already_AddRefed<HRTFDatabaseLoader> databaseLoader);
-    ~HRTFPanner();
+ public:
+  HRTFPanner(float sampleRate,
+             already_AddRefed<HRTFDatabaseLoader> databaseLoader);
+  ~HRTFPanner();
 
-    
-    void pan(double azimuth, double elevation, const AudioBlock* inputBus, AudioBlock* outputBus);
-    void reset();
+  
+  void pan(double azimuth, double elevation, const AudioBlock* inputBus,
+           AudioBlock* outputBus);
+  void reset();
 
-    size_t fftSize() const { return m_convolverL1.fftSize(); }
+  size_t fftSize() const { return m_convolverL1.fftSize(); }
 
-    float sampleRate() const { return m_sampleRate; }
+  float sampleRate() const { return m_sampleRate; }
 
-    int maxTailFrames() const;
+  int maxTailFrames() const;
 
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
-    
-    
-    int calculateDesiredAzimuthIndexAndBlend(double azimuth, double& azimuthBlend);
+ private:
+  
+  
+  
+  int calculateDesiredAzimuthIndexAndBlend(double azimuth,
+                                           double& azimuthBlend);
 
-    RefPtr<HRTFDatabaseLoader> m_databaseLoader;
+  RefPtr<HRTFDatabaseLoader> m_databaseLoader;
 
-    float m_sampleRate;
+  float m_sampleRate;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    
-    enum CrossfadeSelection {
-        CrossfadeSelection1,
-        CrossfadeSelection2
-    };
+  
+  
+  enum CrossfadeSelection { CrossfadeSelection1, CrossfadeSelection2 };
 
-    CrossfadeSelection m_crossfadeSelection;
+  CrossfadeSelection m_crossfadeSelection;
 
-    
-    int m_azimuthIndex1;
-    double m_elevation1;
+  
+  int m_azimuthIndex1;
+  double m_elevation1;
 
-    
-    int m_azimuthIndex2;
-    double m_elevation2;
+  
+  int m_azimuthIndex2;
+  double m_elevation2;
 
-    
-    float m_crossfadeX;
+  
+  float m_crossfadeX;
 
-    
-    float m_crossfadeIncr;
+  
+  float m_crossfadeIncr;
 
-    FFTConvolver m_convolverL1;
-    FFTConvolver m_convolverR1;
-    FFTConvolver m_convolverL2;
-    FFTConvolver m_convolverR2;
+  FFTConvolver m_convolverL1;
+  FFTConvolver m_convolverR1;
+  FFTConvolver m_convolverL2;
+  FFTConvolver m_convolverR2;
 
-    mozilla::DelayBuffer m_delayLine;
+  mozilla::DelayBuffer m_delayLine;
 
-    AudioFloatArray m_tempL1;
-    AudioFloatArray m_tempR1;
-    AudioFloatArray m_tempL2;
-    AudioFloatArray m_tempR2;
+  AudioFloatArray m_tempL1;
+  AudioFloatArray m_tempR1;
+  AudioFloatArray m_tempL2;
+  AudioFloatArray m_tempR2;
 };
 
-} 
+}  
 
-#endif 
+#endif  

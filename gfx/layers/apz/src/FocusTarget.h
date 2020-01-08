@@ -7,11 +7,11 @@
 #ifndef mozilla_layers_FocusTarget_h
 #define mozilla_layers_FocusTarget_h
 
-#include <stdint.h> 
+#include <stdint.h>  
 
-#include "mozilla/DefineEnum.h"  
-#include "mozilla/layers/ScrollableLayerGuid.h" 
-#include "mozilla/Variant.h"     
+#include "mozilla/DefineEnum.h"                  
+#include "mozilla/layers/ScrollableLayerGuid.h"  
+#include "mozilla/Variant.h"                     
 
 class nsIPresShell;
 
@@ -24,28 +24,21 @@ namespace layers {
 
 
 
-class FocusTarget final
-{
-public:
-  struct ScrollTargets
-  {
+class FocusTarget final {
+ public:
+  struct ScrollTargets {
     ScrollableLayerGuid::ViewID mHorizontal;
     ScrollableLayerGuid::ViewID mVertical;
 
-    bool operator==(const ScrollTargets& aRhs) const
-    {
-      return mHorizontal == aRhs.mHorizontal &&
-             mVertical == aRhs.mVertical;
+    bool operator==(const ScrollTargets& aRhs) const {
+      return mHorizontal == aRhs.mHorizontal && mVertical == aRhs.mVertical;
     }
   };
 
   
   
   struct NoFocusTarget {
-    bool operator==(const NoFocusTarget& aRhs) const
-    {
-     return true;
-    }
+    bool operator==(const NoFocusTarget& aRhs) const { return true; }
   };
 
   FocusTarget();
@@ -53,14 +46,13 @@ public:
   
 
 
-  FocusTarget(nsIPresShell* aRootPresShell,
-              uint64_t aFocusSequenceNumber);
+  FocusTarget(nsIPresShell* aRootPresShell, uint64_t aFocusSequenceNumber);
 
   bool operator==(const FocusTarget& aRhs) const;
 
   const char* Type() const;
 
-public:
+ public:
   
   uint64_t mSequenceNumber;
 
@@ -71,7 +63,7 @@ public:
   mozilla::Variant<LayersId, ScrollTargets, NoFocusTarget> mData;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

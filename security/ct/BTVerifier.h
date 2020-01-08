@@ -13,7 +13,8 @@
 #include "mozpkix/pkixder.h"
 #include "mozpkix/pkixtypes.h"
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
 
@@ -21,22 +22,25 @@ namespace mozilla { namespace ct {
 
 
 pkix::Result DecodeAndVerifySignedTreeHead(
-  pkix::Input signerSubjectPublicKeyInfo, pkix::DigestAlgorithm digestAlgorithm,
-  pkix::der::PublicKeyAlgorithm publicKeyAlg, pkix::Input signedTreeHeadInput,
-  SignedTreeHeadDataV2& signedTreeHead);
+    pkix::Input signerSubjectPublicKeyInfo,
+    pkix::DigestAlgorithm digestAlgorithm,
+    pkix::der::PublicKeyAlgorithm publicKeyAlg, pkix::Input signedTreeHeadInput,
+    SignedTreeHeadDataV2& signedTreeHead);
 
 
 
 pkix::Result DecodeInclusionProof(pkix::Input input,
-  InclusionProofDataV2& output);
+                                  InclusionProofDataV2& output);
 
 
 
 
 pkix::Result VerifyInclusionProof(const InclusionProofDataV2& proof,
-  pkix::Input leafEntry, pkix::Input expectedRootHash,
-  pkix::DigestAlgorithm digestAlgorithm);
+                                  pkix::Input leafEntry,
+                                  pkix::Input expectedRootHash,
+                                  pkix::DigestAlgorithm digestAlgorithm);
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

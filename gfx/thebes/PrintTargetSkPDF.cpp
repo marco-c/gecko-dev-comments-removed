@@ -15,16 +15,13 @@ namespace gfx {
 
 PrintTargetSkPDF::PrintTargetSkPDF(const IntSize& aSize,
                                    UniquePtr<SkWStream> aStream)
-  : PrintTarget( nullptr, aSize)
-  , mOStream(std::move(aStream))
-  , mPageCanvas(nullptr)
-  , mRefCanvas(nullptr)
-{
-}
+    : PrintTarget( nullptr, aSize),
+      mOStream(std::move(aStream)),
+      mPageCanvas(nullptr),
+      mRefCanvas(nullptr) {}
 
-PrintTargetSkPDF::~PrintTargetSkPDF()
-{
-  Finish(); 
+PrintTargetSkPDF::~PrintTargetSkPDF() {
+  Finish();  
 
   
   
@@ -32,19 +29,14 @@ PrintTargetSkPDF::~PrintTargetSkPDF()
   mRefPDFDoc = nullptr;
 }
 
- already_AddRefed<PrintTargetSkPDF>
-PrintTargetSkPDF::CreateOrNull(UniquePtr<SkWStream> aStream,
-                               const IntSize& aSizeInPoints)
-{
+ already_AddRefed<PrintTargetSkPDF> PrintTargetSkPDF::CreateOrNull(
+    UniquePtr<SkWStream> aStream, const IntSize& aSizeInPoints) {
   return do_AddRef(new PrintTargetSkPDF(aSizeInPoints, std::move(aStream)));
 }
 
-nsresult
-PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
-                                const nsAString& aPrintToFileName,
-                                int32_t aStartPage,
-                                int32_t aEndPage)
-{
+nsresult PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
+                                         const nsAString& aPrintToFileName,
+                                         int32_t aStartPage, int32_t aEndPage) {
   
   
   
@@ -63,25 +55,19 @@ PrintTargetSkPDF::BeginPrinting(const nsAString& aTitle,
   return mPDFDoc ? NS_OK : NS_ERROR_FAILURE;
 }
 
-nsresult
-PrintTargetSkPDF::BeginPage()
-{
+nsresult PrintTargetSkPDF::BeginPage() {
   mPageCanvas = mPDFDoc->beginPage(mSize.width, mSize.height);
 
   return !mPageCanvas ? NS_ERROR_FAILURE : PrintTarget::BeginPage();
 }
 
-nsresult
-PrintTargetSkPDF::EndPage()
-{
+nsresult PrintTargetSkPDF::EndPage() {
   mPageCanvas = nullptr;
   mPageDT = nullptr;
   return PrintTarget::EndPage();
 }
 
-nsresult
-PrintTargetSkPDF::EndPrinting()
-{
+nsresult PrintTargetSkPDF::EndPrinting() {
   mPDFDoc->close();
   if (mRefPDFDoc) {
     mRefPDFDoc->close();
@@ -91,9 +77,7 @@ PrintTargetSkPDF::EndPrinting()
   return NS_OK;
 }
 
-void
-PrintTargetSkPDF::Finish()
-{
+void PrintTargetSkPDF::Finish() {
   if (mIsFinished) {
     return;
   }
@@ -101,10 +85,8 @@ PrintTargetSkPDF::Finish()
   PrintTarget::Finish();
 }
 
-already_AddRefed<DrawTarget>
-PrintTargetSkPDF::MakeDrawTarget(const IntSize& aSize,
-                                 DrawEventRecorder* aRecorder)
-{
+already_AddRefed<DrawTarget> PrintTargetSkPDF::MakeDrawTarget(
+    const IntSize& aSize, DrawEventRecorder* aRecorder) {
   if (aRecorder) {
     return PrintTarget::MakeDrawTarget(aSize, aRecorder);
   }
@@ -120,9 +102,7 @@ PrintTargetSkPDF::MakeDrawTarget(const IntSize& aSize,
   return do_AddRef(mPageDT);
 }
 
-already_AddRefed<DrawTarget>
-PrintTargetSkPDF::GetReferenceDrawTarget()
-{
+already_AddRefed<DrawTarget> PrintTargetSkPDF::GetReferenceDrawTarget() {
   if (!mRefDT) {
     SkPDF::Metadata metadata;
     
@@ -134,8 +114,7 @@ PrintTargetSkPDF::GetReferenceDrawTarget()
     if (!mRefCanvas) {
       return nullptr;
     }
-    RefPtr<DrawTarget> dt =
-      Factory::CreateDrawTargetWithSkCanvas(mRefCanvas);
+    RefPtr<DrawTarget> dt = Factory::CreateDrawTargetWithSkCanvas(mRefCanvas);
     if (!dt) {
       return nullptr;
     }
@@ -145,5 +124,5 @@ PrintTargetSkPDF::GetReferenceDrawTarget()
   return do_AddRef(mRefDT);
 }
 
-} 
-} 
+}  
+}  

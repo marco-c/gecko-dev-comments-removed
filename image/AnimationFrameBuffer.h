@@ -20,17 +20,15 @@ namespace image {
 
 
 
-class AnimationFrameBuffer
-{
-public:
-  enum class InsertStatus : uint8_t
-  {
-    YIELD, 
-    CONTINUE, 
-    DISCARD_YIELD, 
-                   
-    DISCARD_CONTINUE 
-                     
+class AnimationFrameBuffer {
+ public:
+  enum class InsertStatus : uint8_t {
+    YIELD,            
+    CONTINUE,         
+    DISCARD_YIELD,    
+                      
+    DISCARD_CONTINUE  
+                      
   };
 
   
@@ -44,19 +42,18 @@ public:
 
 
   AnimationFrameBuffer(size_t aBatch, size_t aStartFrame)
-    : mSize(0)
-    , mBatch(aBatch)
-    , mGetIndex(0)
-    , mAdvance(aStartFrame)
-    , mPending(0)
-    , mSizeKnown(false)
-    , mMayDiscard(false)
-    , mRedecodeError(false)
-    , mRecycling(false)
-  {
-    if (mBatch > SIZE_MAX/4) {
+      : mSize(0),
+        mBatch(aBatch),
+        mGetIndex(0),
+        mAdvance(aStartFrame),
+        mPending(0),
+        mSizeKnown(false),
+        mMayDiscard(false),
+        mRedecodeError(false),
+        mRecycling(false) {
+    if (mBatch > SIZE_MAX / 4) {
       
-      mBatch = SIZE_MAX/4;
+      mBatch = SIZE_MAX / 4;
     } else if (mBatch < 1) {
       
       
@@ -65,19 +62,17 @@ public:
   }
 
   AnimationFrameBuffer(const AnimationFrameBuffer& aOther)
-    : mSize(aOther.mSize)
-    , mBatch(aOther.mBatch)
-    , mGetIndex(aOther.mGetIndex)
-    , mAdvance(aOther.mAdvance)
-    , mPending(aOther.mPending)
-    , mSizeKnown(aOther.mSizeKnown)
-    , mMayDiscard(aOther.mMayDiscard)
-    , mRedecodeError(aOther.mRedecodeError)
-    , mRecycling(aOther.mRecycling)
-  { }
+      : mSize(aOther.mSize),
+        mBatch(aOther.mBatch),
+        mGetIndex(aOther.mGetIndex),
+        mAdvance(aOther.mAdvance),
+        mPending(aOther.mPending),
+        mSizeKnown(aOther.mSizeKnown),
+        mMayDiscard(aOther.mMayDiscard),
+        mRedecodeError(aOther.mRedecodeError),
+        mRecycling(aOther.mRecycling) {}
 
-  virtual ~AnimationFrameBuffer()
-  { }
+  virtual ~AnimationFrameBuffer() {}
 
   
 
@@ -89,8 +84,7 @@ public:
 
 
 
-  bool IsRecycling() const
-  {
+  bool IsRecycling() const {
     MOZ_ASSERT_IF(mRecycling, mMayDiscard);
     return mRecycling;
   }
@@ -141,8 +135,7 @@ public:
 
 
 
-  bool Reset()
-  {
+  bool Reset() {
     mGetIndex = 0;
     mAdvance = 0;
     return ResetInternal();
@@ -162,8 +155,7 @@ public:
 
 
 
-  bool AdvanceTo(size_t aExpectedFrame)
-  {
+  bool AdvanceTo(size_t aExpectedFrame) {
     MOZ_ASSERT(mAdvance == 0);
 
     if (++mGetIndex == mSize && mSizeKnown) {
@@ -192,8 +184,7 @@ public:
 
 
 
-  InsertStatus Insert(RefPtr<imgFrame>&& aFrame)
-  {
+  InsertStatus Insert(RefPtr<imgFrame>&& aFrame) {
     MOZ_ASSERT(mPending > 0);
     MOZ_ASSERT(aFrame);
 
@@ -268,13 +259,12 @@ public:
 
 
 
-  virtual RawAccessFrameRef RecycleFrame(gfx::IntRect& aRecycleRect)
-  {
+  virtual RawAccessFrameRef RecycleFrame(gfx::IntRect& aRecycleRect) {
     MOZ_ASSERT(!mRecycling);
     return RawAccessFrameRef();
   }
 
-protected:
+ protected:
   
 
 
@@ -312,6 +302,7 @@ protected:
   size_t mGetIndex;
 
   
+  
   size_t mAdvance;
 
   
@@ -335,10 +326,8 @@ protected:
 
 
 
-class AnimationFrameRetainedBuffer final : public AnimationFrameBuffer
-{
-public:
-
+class AnimationFrameRetainedBuffer final : public AnimationFrameBuffer {
+ public:
   
 
 
@@ -350,7 +339,8 @@ public:
 
 
 
-  AnimationFrameRetainedBuffer(size_t aThreshold, size_t aBatch, size_t aCurrentFrame);
+  AnimationFrameRetainedBuffer(size_t aThreshold, size_t aBatch,
+                               size_t aCurrentFrame);
 
   
 
@@ -371,7 +361,7 @@ public:
   void AddSizeOfExcludingThis(MallocSizeOf aMallocSizeOf,
                               const AddSizeOfCb& aCallback) override;
 
-private:
+ private:
   friend class AnimationFrameDiscardingQueue;
   friend class AnimationFrameRecyclingQueue;
 
@@ -390,9 +380,8 @@ private:
 
 
 
-class AnimationFrameDiscardingQueue : public AnimationFrameBuffer
-{
-public:
+class AnimationFrameDiscardingQueue : public AnimationFrameBuffer {
+ public:
   explicit AnimationFrameDiscardingQueue(AnimationFrameRetainedBuffer&& aQueue);
 
   imgFrame* Get(size_t aFrame, bool aForDisplay) final;
@@ -406,7 +395,7 @@ public:
   const imgFrame* FirstFrame() const { return mFirstFrame; }
   size_t PendingInsert() const { return mInsertIndex; }
 
-protected:
+ protected:
   bool InsertInternal(RefPtr<imgFrame>&& aFrame) override;
   void AdvanceInternal() override;
   bool ResetInternal() override;
@@ -430,9 +419,9 @@ protected:
 
 
 
-class AnimationFrameRecyclingQueue final : public AnimationFrameDiscardingQueue
-{
-public:
+class AnimationFrameRecyclingQueue final
+    : public AnimationFrameDiscardingQueue {
+ public:
   explicit AnimationFrameRecyclingQueue(AnimationFrameRetainedBuffer&& aQueue);
 
   bool MarkComplete(const gfx::IntRect& aFirstFrameRefreshArea) override;
@@ -442,17 +431,13 @@ public:
   RawAccessFrameRef RecycleFrame(gfx::IntRect& aRecycleRect) override;
 
   struct RecycleEntry {
-    explicit RecycleEntry(const gfx::IntRect &aDirtyRect)
-      : mDirtyRect(aDirtyRect)
-    { }
+    explicit RecycleEntry(const gfx::IntRect& aDirtyRect)
+        : mDirtyRect(aDirtyRect) {}
 
     RecycleEntry(RecycleEntry&& aOther)
-      : mFrame(std::move(aOther.mFrame))
-      , mDirtyRect(aOther.mDirtyRect)
-    { }
+        : mFrame(std::move(aOther.mFrame)), mDirtyRect(aOther.mDirtyRect) {}
 
-    RecycleEntry& operator=(RecycleEntry&& aOther)
-    {
+    RecycleEntry& operator=(RecycleEntry&& aOther) {
       mFrame = std::move(aOther.mFrame);
       mDirtyRect = aOther.mDirtyRect;
       return *this;
@@ -461,17 +446,16 @@ public:
     RecycleEntry(const RecycleEntry& aOther) = delete;
     RecycleEntry& operator=(const RecycleEntry& aOther) = delete;
 
-    RefPtr<imgFrame> mFrame;   
-    gfx::IntRect mDirtyRect;   
+    RefPtr<imgFrame> mFrame;  
+    gfx::IntRect mDirtyRect;  
   };
 
   const std::deque<RecycleEntry>& Recycle() const { return mRecycle; }
-  const gfx::IntRect& FirstFrameRefreshArea() const
-  {
+  const gfx::IntRect& FirstFrameRefreshArea() const {
     return mFirstFrameRefreshArea;
   }
 
-protected:
+ protected:
   void AdvanceInternal() override;
   bool ResetInternal() override;
 
@@ -490,7 +474,7 @@ protected:
   bool mForceUseFirstFrameRefreshArea;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

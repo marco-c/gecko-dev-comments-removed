@@ -35,10 +35,9 @@ class nsXBLProtoImplField;
 
 
 
-class nsXBLPrototypeBinding final :
-  public mozilla::SupportsWeakPtr<nsXBLPrototypeBinding>
-{
-public:
+class nsXBLPrototypeBinding final
+    : public mozilla::SupportsWeakPtr<nsXBLPrototypeBinding> {
+ public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsXBLPrototypeBinding)
 
   mozilla::dom::Element* GetBindingElement() const { return mBinding; }
@@ -67,22 +66,22 @@ public:
   void SetInheritsStyle(bool aInheritStyle) { mInheritStyle = aInheritStyle; }
 
   nsXBLPrototypeHandler* GetPrototypeHandlers() { return mPrototypeHandler; }
-  void SetPrototypeHandlers(nsXBLPrototypeHandler* aHandler) { mPrototypeHandler = aHandler; }
+  void SetPrototypeHandlers(nsXBLPrototypeHandler* aHandler) {
+    mPrototypeHandler = aHandler;
+  }
 
   nsXBLProtoImplAnonymousMethod* GetConstructor();
   nsresult SetConstructor(nsXBLProtoImplAnonymousMethod* aConstructor);
   nsXBLProtoImplAnonymousMethod* GetDestructor();
   nsresult SetDestructor(nsXBLProtoImplAnonymousMethod* aDestructor);
 
-  nsXBLProtoImplField* FindField(const nsString& aFieldName) const
-  {
+  nsXBLProtoImplField* FindField(const nsString& aFieldName) const {
     return mImplementation ? mImplementation->FindField(aFieldName) : nullptr;
   }
 
   
   
-  bool ResolveAllFields(JSContext* cx, JS::Handle<JSObject*> obj) const
-  {
+  bool ResolveAllFields(JSContext* cx, JS::Handle<JSObject*> obj) const {
     return !mImplementation || mImplementation->ResolveAllFields(cx, obj);
   }
 
@@ -100,8 +99,7 @@ public:
 
   nsresult InitClass(const nsString& aClassName, JSContext* aContext,
                      JS::Handle<JSObject*> aScriptObject,
-                     JS::MutableHandle<JSObject*> aClassObject,
-                     bool* aNew);
+                     JS::MutableHandle<JSObject*> aClassObject, bool* aNew);
 
   nsresult ConstructInterfaceTable(const nsAString& aImpls);
 
@@ -132,27 +130,22 @@ public:
   bool HasStyleSheets() const;
   void AppendStyleSheetsTo(nsTArray<mozilla::StyleSheet*>& aResult) const;
 
-
-  const RawServoAuthorStyles* GetServoStyles() const
-  {
+  const RawServoAuthorStyles* GetServoStyles() const {
     return mResources ? mResources->GetServoStyles() : nullptr;
   }
 
-  void SyncServoStyles()
-  {
+  void SyncServoStyles() {
     MOZ_ASSERT(mResources);
     mResources->SyncServoStyles();
   }
 
-  RawServoAuthorStyles* GetServoStyles()
-  {
+  RawServoAuthorStyles* GetServoStyles() {
     return mResources
-      ? const_cast<RawServoAuthorStyles*>(mResources->GetServoStyles())
-      : nullptr;
+               ? const_cast<RawServoAuthorStyles*>(mResources->GetServoStyles())
+               : nullptr;
   }
 
-  mozilla::ServoStyleRuleMap* GetServoStyleRuleMap()
-  {
+  mozilla::ServoStyleRuleMap* GetServoStyleRuleMap() {
     return mResources ? mResources->GetServoStyleRuleMap() : nullptr;
   }
 
@@ -169,8 +162,7 @@ public:
 
   nsresult ResolveBaseBinding();
 
-  const nsCOMArray<nsXBLKeyEventHandler>* GetKeyEventHandlers()
-  {
+  const nsCOMArray<nsXBLKeyEventHandler>* GetKeyEventHandlers() {
     if (!mKeyHandlersRegistered) {
       CreateKeyHandlers();
       mKeyHandlersRegistered = true;
@@ -179,11 +171,9 @@ public:
     return &mKeyHandlers;
   }
 
-private:
-  nsresult Read(nsIObjectInputStream* aStream,
-                nsXBLDocumentInfo* aDocInfo,
-                nsIDocument* aDocument,
-                uint8_t aFlags);
+ private:
+  nsresult Read(nsIObjectInputStream* aStream, nsXBLDocumentInfo* aDocInfo,
+                nsIDocument* aDocument, uint8_t aFlags);
 
   
 
@@ -196,11 +186,10 @@ private:
 
 
 
-public:
+ public:
   static nsresult ReadNewBinding(nsIObjectInputStream* aStream,
                                  nsXBLDocumentInfo* aDocInfo,
-                                 nsIDocument* aDocument,
-                                 uint8_t aFlags);
+                                 nsIDocument* aDocument, uint8_t aFlags);
 
   
 
@@ -213,14 +202,10 @@ public:
 
 
   nsresult ReadContentNode(nsIObjectInputStream* aStream,
-                           nsIDocument* aDocument,
-                           nsNodeInfoManager* aNim,
+                           nsIDocument* aDocument, nsNodeInfoManager* aNim,
                            nsIContent** aChild);
 
   
-
-
-
 
 
 
@@ -255,10 +240,11 @@ public:
 
 
 
+
   nsresult ReadNamespace(nsIObjectInputStream* aStream, int32_t& aNameSpaceID);
   nsresult WriteNamespace(nsIObjectOutputStream* aStream, int32_t aNameSpaceID);
 
-public:
+ public:
   nsXBLPrototypeBinding();
   ~nsXBLPrototypeBinding();
 
@@ -266,19 +252,17 @@ public:
   
   
   
-  nsresult Init(const nsACString& aRef,
-                nsXBLDocumentInfo* aInfo,
-                mozilla::dom::Element* aElement,
-                bool aFirstBinding = false);
+  nsresult Init(const nsACString& aRef, nsXBLDocumentInfo* aInfo,
+                mozilla::dom::Element* aElement, bool aFirstBinding = false);
 
-  void Traverse(nsCycleCollectionTraversalCallback &cb) const;
+  void Traverse(nsCycleCollectionTraversalCallback& cb) const;
   void Unlink();
-  void Trace(const TraceCallbacks& aCallbacks, void *aClosure) const;
+  void Trace(const TraceCallbacks& aCallbacks, void* aClosure) const;
 
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-
-public:
+  
+ public:
   
 
 
@@ -293,9 +277,10 @@ public:
   bool SimpleScopeChain() const { return mSimpleScopeChain; }
   bool BindToUntrustedContent() const { return mBindToUntrustedContent; }
 
-  typedef nsClassHashtable<nsRefPtrHashKey<nsAtom>, nsXBLAttributeEntry> InnerAttributeTable;
+  typedef nsClassHashtable<nsRefPtrHashKey<nsAtom>, nsXBLAttributeEntry>
+      InnerAttributeTable;
 
-protected:
+ protected:
   
   void EnsureAttributeTable();
   
@@ -305,21 +290,26 @@ protected:
   void ConstructAttributeTable(mozilla::dom::Element* aElement);
   void CreateKeyHandlers();
 
-private:
+ private:
   void EnsureResources();
 
-
-protected:
+  
+ protected:
   nsCOMPtr<nsIURI> mBindingURI;
-  nsCOMPtr<nsIURI> mAlternateBindingURI; 
-  RefPtr<mozilla::dom::Element> mBinding; 
-  nsAutoPtr<nsXBLPrototypeHandler> mPrototypeHandler; 
+  nsCOMPtr<nsIURI> mAlternateBindingURI;  
+                                          
+  RefPtr<mozilla::dom::Element>
+      mBinding;  
+                 
+  nsAutoPtr<nsXBLPrototypeHandler>
+      mPrototypeHandler;  
 
   
   nsCOMPtr<nsIURI> mBaseBindingURI;
 
-  nsXBLProtoImpl* mImplementation; 
-                                   
+  nsXBLProtoImpl* mImplementation;  
+                                    
+                                    
 
   
   mozilla::WeakPtr<nsXBLPrototypeBinding> mBaseBinding;
@@ -332,58 +322,49 @@ protected:
   
   bool mSimpleScopeChain;
 
-  nsAutoPtr<nsXBLPrototypeResources> mResources; 
+  nsAutoPtr<nsXBLPrototypeResources>
+      mResources;  
 
-  nsXBLDocumentInfo* mXBLDocInfoWeak; 
+  nsXBLDocumentInfo* mXBLDocInfoWeak;  
+                                       
 
   
   
   
-  nsAutoPtr<nsClassHashtable<nsUint32HashKey, InnerAttributeTable>> mAttributeTable;
+  nsAutoPtr<nsClassHashtable<nsUint32HashKey, InnerAttributeTable>>
+      mAttributeTable;
 
-  class IIDHashKey : public PLDHashEntryHdr
-  {
-  public:
+  class IIDHashKey : public PLDHashEntryHdr {
+   public:
     typedef const nsIID& KeyType;
     typedef const nsIID* KeyTypePointer;
 
-    explicit IIDHashKey(const nsIID* aKey)
-      : mKey(*aKey)
-    {}
-    IIDHashKey(const IIDHashKey& aOther)
-      : mKey(aOther.GetKey())
-    {}
-    ~IIDHashKey()
-    {}
+    explicit IIDHashKey(const nsIID* aKey) : mKey(*aKey) {}
+    IIDHashKey(const IIDHashKey& aOther) : mKey(aOther.GetKey()) {}
+    ~IIDHashKey() {}
 
-    KeyType GetKey() const
-    {
-      return mKey;
-    }
-    bool KeyEquals(const KeyTypePointer aKey) const
-    {
+    KeyType GetKey() const { return mKey; }
+    bool KeyEquals(const KeyTypePointer aKey) const {
       return mKey.Equals(*aKey);
     }
 
-    static KeyTypePointer KeyToPointer(KeyType aKey)
-    {
-      return &aKey;
-    }
-    static PLDHashNumber HashKey(const KeyTypePointer aKey)
-    {
+    static KeyTypePointer KeyToPointer(KeyType aKey) { return &aKey; }
+    static PLDHashNumber HashKey(const KeyTypePointer aKey) {
       
       return aKey->m0;
     }
 
     enum { ALLOW_MEMMOVE = true };
 
-  private:
+   private:
     nsIID mKey;
   };
-  nsInterfaceHashtable<IIDHashKey, nsIContent> mInterfaceTable; 
+  nsInterfaceHashtable<IIDHashKey, nsIContent>
+      mInterfaceTable;  
 
-  int32_t mBaseNameSpaceID;    
-  RefPtr<nsAtom> mBaseTag;  
+  int32_t mBaseNameSpaceID;  
+                             
+  RefPtr<nsAtom> mBaseTag;   
 
   nsCOMArray<nsXBLKeyEventHandler> mKeyHandlers;
 };

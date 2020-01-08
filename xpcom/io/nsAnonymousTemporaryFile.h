@@ -26,8 +26,7 @@
 
 
 
-nsresult
-NS_OpenAnonymousTemporaryFile(PRFileDesc** aOutFileDesc);
+nsresult NS_OpenAnonymousTemporaryFile(PRFileDesc** aOutFileDesc);
 
 
 
@@ -36,5 +35,4 @@ NS_OpenAnonymousTemporaryFile(PRFileDesc** aOutFileDesc);
 
 
 
-nsresult
-NS_OpenAnonymousTemporaryNsIFile(nsIFile** aFile);
+nsresult NS_OpenAnonymousTemporaryNsIFile(nsIFile** aFile);

@@ -15,6 +15,6 @@ namespace mozilla {
 
 LauncherVoidResult InitializeDllBlocklistOOP(HANDLE aChildProcess);
 
-} 
+}  
 
-#endif 
+#endif  

@@ -67,9 +67,9 @@
 
 #include "nsThreadUtils.h"
 
+using mozilla::FireAndWaitForTracerEvent;
 using mozilla::TimeDuration;
 using mozilla::TimeStamp;
-using mozilla::FireAndWaitForTracerEvent;
 
 namespace {
 
@@ -91,8 +91,7 @@ struct TracerStartClosure {
 
 
 
-void TracerThread(void *arg)
-{
+void TracerThread(void* arg) {
   AUTO_PROFILER_REGISTER_THREAD("Event Tracer");
   NS_SetCurrentThreadName("Event Tracer");
 
@@ -112,8 +111,7 @@ void TracerThread(void *arg)
   if (envfile) {
     log = fopen(envfile, "w");
   }
-  if (log == nullptr)
-    log = stdout;
+  if (log == nullptr) log = stdout;
 
   char* thresholdenv = PR_GetEnv("MOZ_INSTRUMENT_EVENT_LOOP_THRESHOLD");
   if (thresholdenv && *thresholdenv) {
@@ -148,15 +146,13 @@ void TracerThread(void *arg)
       
       long long now = PR_Now() / PR_USEC_PER_MSEC;
       if (threadArgs->mLogTracing && duration.ToMilliseconds() > threshold) {
-        fprintf(log, "MOZ_EVENT_TRACE sample %llu %lf\n",
-                now,
+        fprintf(log, "MOZ_EVENT_TRACE sample %llu %lf\n", now,
                 duration.ToMilliseconds());
       }
 
       if (next_sleep > duration.ToMilliseconds()) {
         next_sleep -= int(duration.ToMilliseconds());
-      }
-      else {
+      } else {
         
         
         next_sleep = 0;
@@ -173,24 +169,20 @@ void TracerThread(void *arg)
     fprintf(log, "MOZ_EVENT_TRACE stop %llu\n", now);
   }
 
-  if (log != stdout)
-    fclose(log);
+  if (log != stdout) fclose(log);
 
   delete threadArgs;
 }
 
-} 
+}  
 
 namespace mozilla {
 
-bool InitEventTracing(bool aLog)
-{
-  if (sTracerThread)
-    return true;
+bool InitEventTracing(bool aLog) {
+  if (sTracerThread) return true;
 
   
-  if (!InitWidgetTracing())
-    return false;
+  if (!InitWidgetTracing()) return false;
 
   
   TracerStartClosure* args = new TracerStartClosure();
@@ -204,31 +196,24 @@ bool InitEventTracing(bool aLog)
   
   
   MOZ_ASSERT(!sTracerThread, "Event tracing already initialized!");
-  sTracerThread = PR_CreateThread(PR_USER_THREAD,
-                                  TracerThread,
-                                  args,
-                                  PR_PRIORITY_NORMAL,
-                                  PR_GLOBAL_THREAD,
-                                  PR_JOINABLE_THREAD,
-                                  0);
+  sTracerThread =
+      PR_CreateThread(PR_USER_THREAD, TracerThread, args, PR_PRIORITY_NORMAL,
+                      PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
   return sTracerThread != nullptr;
 }
 
-void ShutdownEventTracing()
-{
-  if (!sTracerThread)
-    return;
+void ShutdownEventTracing() {
+  if (!sTracerThread) return;
 
   sExit = true;
   
   SignalTracerThread();
 
-  if (sTracerThread)
-    PR_JoinThread(sTracerThread);
+  if (sTracerThread) PR_JoinThread(sTracerThread);
   sTracerThread = nullptr;
 
   
   CleanUpWidgetTracing();
 }
 
-} 
+}  

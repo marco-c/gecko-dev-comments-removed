@@ -20,28 +20,27 @@ namespace JS {
 
 
 template <typename K, typename V>
-class JS_PUBLIC_API WeakMapPtr
-{
-  public:
-    WeakMapPtr() : ptr(nullptr) {}
-    bool init(JSContext* cx);
-    bool initialized() { return ptr != nullptr; }
-    void destroy();
-    virtual ~WeakMapPtr() { MOZ_ASSERT(!initialized()); }
-    void trace(JSTracer* tracer);
+class JS_PUBLIC_API WeakMapPtr {
+ public:
+  WeakMapPtr() : ptr(nullptr) {}
+  bool init(JSContext* cx);
+  bool initialized() { return ptr != nullptr; }
+  void destroy();
+  virtual ~WeakMapPtr() { MOZ_ASSERT(!initialized()); }
+  void trace(JSTracer* tracer);
 
-    V lookup(const K& key);
-    bool put(JSContext* cx, const K& key, const V& value);
-    V removeValue(const K& key);
+  V lookup(const K& key);
+  bool put(JSContext* cx, const K& key, const V& value);
+  V removeValue(const K& key);
 
-  private:
-    void* ptr;
+ private:
+  void* ptr;
 
-    
-    WeakMapPtr(const WeakMapPtr& wmp) = delete;
-    WeakMapPtr& operator=(const WeakMapPtr& wmp) = delete;
+  
+  WeakMapPtr(const WeakMapPtr& wmp) = delete;
+  WeakMapPtr& operator=(const WeakMapPtr& wmp) = delete;
 };
 
 } 
 
-#endif  
+#endif 

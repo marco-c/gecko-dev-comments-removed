@@ -12,58 +12,56 @@
 namespace js {
 namespace jit {
 
-class LIRGeneratorX86 : public LIRGeneratorX86Shared
-{
-  protected:
-    LIRGeneratorX86(MIRGenerator* gen, MIRGraph& graph, LIRGraph& lirGraph)
-      : LIRGeneratorX86Shared(gen, graph, lirGraph)
-    { }
+class LIRGeneratorX86 : public LIRGeneratorX86Shared {
+ protected:
+  LIRGeneratorX86(MIRGenerator* gen, MIRGraph& graph, LIRGraph& lirGraph)
+      : LIRGeneratorX86Shared(gen, graph, lirGraph) {}
 
-    
-    LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register reg2,
-                               bool useAtStart = false);
+  
+  LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register reg2,
+                             bool useAtStart = false);
 
-    
-    
-    
-    
-    
-    LAllocation useByteOpRegister(MDefinition* mir);
-    LAllocation useByteOpRegisterAtStart(MDefinition* mir);
-    LAllocation useByteOpRegisterOrNonDoubleConstant(MDefinition* mir);
-    LDefinition tempByteOpRegister();
+  
+  
+  
+  
+  
+  LAllocation useByteOpRegister(MDefinition* mir);
+  LAllocation useByteOpRegisterAtStart(MDefinition* mir);
+  LAllocation useByteOpRegisterOrNonDoubleConstant(MDefinition* mir);
+  LDefinition tempByteOpRegister();
 
-    inline LDefinition tempToUnbox() {
-        return LDefinition::BogusTemp();
-    }
+  inline LDefinition tempToUnbox() { return LDefinition::BogusTemp(); }
 
-    bool needTempForPostBarrier() { return true; }
+  bool needTempForPostBarrier() { return true; }
 
-    void lowerUntypedPhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block, size_t lirIndex);
+  void lowerUntypedPhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block,
+                            size_t lirIndex);
 
-    void lowerInt64PhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block, size_t lirIndex);
-    void defineInt64Phi(MPhi* phi, size_t lirIndex);
+  void lowerInt64PhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block,
+                          size_t lirIndex);
+  void defineInt64Phi(MPhi* phi, size_t lirIndex);
 
-    void lowerForALUInt64(LInstructionHelper<INT64_PIECES, 2 * INT64_PIECES, 0>* ins,
-                          MDefinition* mir, MDefinition* lhs, MDefinition* rhs);
-    void lowerForMulInt64(LMulI64* ins, MMul* mir, MDefinition* lhs, MDefinition* rhs);
+  void lowerForALUInt64(
+      LInstructionHelper<INT64_PIECES, 2 * INT64_PIECES, 0>* ins,
+      MDefinition* mir, MDefinition* lhs, MDefinition* rhs);
+  void lowerForMulInt64(LMulI64* ins, MMul* mir, MDefinition* lhs,
+                        MDefinition* rhs);
 
-    void lowerDivI64(MDiv* div);
-    void lowerModI64(MMod* mod);
-    void lowerUDivI64(MDiv* div);
-    void lowerUModI64(MMod* mod);
+  void lowerDivI64(MDiv* div);
+  void lowerModI64(MMod* mod);
+  void lowerUDivI64(MDiv* div);
+  void lowerUModI64(MMod* mod);
 
-    void lowerPhi(MPhi* phi);
+  void lowerPhi(MPhi* phi);
 
-  public:
-    static bool allowTypedElementHoleCheck() {
-        return true;
-    }
+ public:
+  static bool allowTypedElementHoleCheck() { return true; }
 };
 
 typedef LIRGeneratorX86 LIRGeneratorSpecific;
 
-} 
-} 
+}  
+}  
 
 #endif 

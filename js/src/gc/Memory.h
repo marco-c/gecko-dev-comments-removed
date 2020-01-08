@@ -36,7 +36,8 @@ size_t GetPageFaultCount();
 
 
 
-void* AllocateMappedContent(int fd, size_t offset, size_t length, size_t alignment);
+void* AllocateMappedContent(int fd, size_t offset, size_t length,
+                            size_t alignment);
 
 
 void DeallocateMappedContent(void* p, size_t length);
@@ -47,7 +48,7 @@ void ProtectPages(void* p, size_t size);
 void MakePagesReadOnly(void* p, size_t size);
 void UnprotectPages(void* p, size_t size);
 
-} 
-} 
+}  
+}  
 
 #endif 

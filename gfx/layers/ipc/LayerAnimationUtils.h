@@ -17,14 +17,13 @@ namespace layers {
 
 class TimingFunction;
 
-class AnimationUtils
-{
-public:
+class AnimationUtils {
+ public:
   static Maybe<ComputedTimingFunction> TimingFunctionToComputedTimingFunction(
-    const TimingFunction& aTimingFunction);
+      const TimingFunction& aTimingFunction);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

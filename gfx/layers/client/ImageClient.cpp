@@ -6,57 +6,56 @@
 
 #include "ImageClient.h"
 
-#include <stdint.h>                     
+#include <stdint.h>  
 
-#include "ClientLayerManager.h"         
-#include "ImageContainer.h"             
-#include "ImageTypes.h"                 
-#include "GLImages.h"                   
-#include "gfx2DGlue.h"                  
-#include "gfxPlatform.h"                
-#include "mozilla/Assertions.h"         
-#include "mozilla/RefPtr.h"             
+#include "ClientLayerManager.h"  
+#include "ImageContainer.h"      
+#include "ImageTypes.h"          
+#include "GLImages.h"            
+#include "gfx2DGlue.h"           
+#include "gfxPlatform.h"         
+#include "mozilla/Assertions.h"  
+#include "mozilla/RefPtr.h"      
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/BaseSize.h"       
-#include "mozilla/gfx/Point.h"          
-#include "mozilla/gfx/Types.h"          
+#include "mozilla/gfx/BaseSize.h"               
+#include "mozilla/gfx/Point.h"                  
+#include "mozilla/gfx/Types.h"                  
 #include "mozilla/layers/CompositableClient.h"  
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/ISurfaceAllocator.h"
-#include "mozilla/layers/LayersSurfaces.h"  
-#include "mozilla/layers/ShadowLayers.h"  
-#include "mozilla/layers/TextureClient.h"  
+#include "mozilla/layers/LayersSurfaces.h"    
+#include "mozilla/layers/ShadowLayers.h"      
+#include "mozilla/layers/TextureClient.h"     
 #include "mozilla/layers/TextureClientOGL.h"  
-#include "mozilla/mozalloc.h"           
-#include "nsCOMPtr.h"                   
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
-#include "nsRect.h"                     
+#include "mozilla/mozalloc.h"                 
+#include "nsCOMPtr.h"                         
+#include "nsDebug.h"                          
+#include "nsISupportsImpl.h"                  
+#include "nsRect.h"                           
 
 namespace mozilla {
 namespace layers {
 
 using namespace mozilla::gfx;
 
- already_AddRefed<ImageClient>
-ImageClient::CreateImageClient(CompositableType aCompositableHostType,
-                               CompositableForwarder* aForwarder,
-                               TextureFlags aFlags)
-{
+ already_AddRefed<ImageClient> ImageClient::CreateImageClient(
+    CompositableType aCompositableHostType, CompositableForwarder* aForwarder,
+    TextureFlags aFlags) {
   RefPtr<ImageClient> result = nullptr;
   switch (aCompositableHostType) {
-  case CompositableType::IMAGE:
-    result = new ImageClientSingle(aForwarder, aFlags, CompositableType::IMAGE);
-    break;
-  case CompositableType::IMAGE_BRIDGE:
-    result = new ImageClientBridge(aForwarder, aFlags);
-    break;
-  case CompositableType::UNKNOWN:
-    result = nullptr;
-    break;
-  default:
-    MOZ_CRASH("GFX: unhandled program type image");
+    case CompositableType::IMAGE:
+      result =
+          new ImageClientSingle(aForwarder, aFlags, CompositableType::IMAGE);
+      break;
+    case CompositableType::IMAGE_BRIDGE:
+      result = new ImageClientBridge(aForwarder, aFlags);
+      break;
+    case CompositableType::UNKNOWN:
+      result = nullptr;
+      break;
+    default:
+      MOZ_CRASH("GFX: unhandled program type image");
   }
 
   NS_ASSERTION(result, "Failed to create ImageClient");
@@ -64,27 +63,20 @@ ImageClient::CreateImageClient(CompositableType aCompositableHostType,
   return result.forget();
 }
 
-void
-ImageClient::RemoveTexture(TextureClient* aTexture)
-{
+void ImageClient::RemoveTexture(TextureClient* aTexture) {
   GetForwarder()->RemoveTextureFromCompositable(this, aTexture);
 }
 
 ImageClientSingle::ImageClientSingle(CompositableForwarder* aFwd,
                                      TextureFlags aFlags,
                                      CompositableType aType)
-  : ImageClient(aFwd, aFlags, aType)
-{
-}
+    : ImageClient(aFwd, aFlags, aType) {}
 
-TextureInfo ImageClientSingle::GetTextureInfo() const
-{
+TextureInfo ImageClientSingle::GetTextureInfo() const {
   return TextureInfo(CompositableType::IMAGE);
 }
 
-void
-ImageClientSingle::FlushAllImages()
-{
+void ImageClientSingle::FlushAllImages() {
   for (auto& b : mBuffers) {
     RemoveTexture(b.mTextureClient);
   }
@@ -92,8 +84,8 @@ ImageClientSingle::FlushAllImages()
 }
 
  already_AddRefed<TextureClient>
-ImageClient::CreateTextureClientForImage(Image* aImage, KnowsCompositor* aForwarder)
-{
+ImageClient::CreateTextureClientForImage(Image* aImage,
+                                         KnowsCompositor* aForwarder) {
   RefPtr<TextureClient> texture;
   if (aImage->GetFormat() == ImageFormat::PLANAR_YCBCR) {
     PlanarYCbCrImage* ycbcr = static_cast<PlanarYCbCrImage*>(aImage);
@@ -101,13 +93,10 @@ ImageClient::CreateTextureClientForImage(Image* aImage, KnowsCompositor* aForwar
     if (!data) {
       return nullptr;
     }
-    texture = TextureClient::CreateForYCbCr(aForwarder,
-                                            data->mYSize, data->mYStride,
-                                            data->mCbCrSize, data->mCbCrStride,
-                                            data->mStereoMode,
-                                            data->mColorDepth,
-                                            data->mYUVColorSpace,
-                                            TextureFlags::DEFAULT);
+    texture = TextureClient::CreateForYCbCr(
+        aForwarder, data->mYSize, data->mYStride, data->mCbCrSize,
+        data->mCbCrStride, data->mStereoMode, data->mColorDepth,
+        data->mYUVColorSpace, TextureFlags::DEFAULT);
     if (!texture) {
       return nullptr;
     }
@@ -127,14 +116,16 @@ ImageClient::CreateTextureClientForImage(Image* aImage, KnowsCompositor* aForwar
     gfx::IntSize size = aImage->GetSize();
     SurfaceTextureImage* typedImage = aImage->AsSurfaceTextureImage();
     texture = AndroidSurfaceTextureData::CreateTextureClient(
-      typedImage->GetHandle(), size, typedImage->GetContinuous(), typedImage->GetOriginPos(),
-      aForwarder->GetTextureForwarder(), TextureFlags::DEFAULT);
+        typedImage->GetHandle(), size, typedImage->GetContinuous(),
+        typedImage->GetOriginPos(), aForwarder->GetTextureForwarder(),
+        TextureFlags::DEFAULT);
 #endif
   } else {
     RefPtr<gfx::SourceSurface> surface = aImage->GetAsSourceSurface();
     MOZ_ASSERT(surface);
-    texture = TextureClient::CreateForDrawing(aForwarder, surface->GetFormat(), aImage->GetSize(),
-                                              BackendSelector::Content, TextureFlags::DEFAULT);
+    texture = TextureClient::CreateForDrawing(
+        aForwarder, surface->GetFormat(), aImage->GetSize(),
+        BackendSelector::Content, TextureFlags::DEFAULT);
     if (!texture) {
       return nullptr;
     }
@@ -147,13 +138,16 @@ ImageClient::CreateTextureClientForImage(Image* aImage, KnowsCompositor* aForwar
 
     {
       
+      
       DrawTarget* dt = texture->BorrowDrawTarget();
       if (!dt) {
-        gfxWarning() << "ImageClientSingle::UpdateImage failed in BorrowDrawTarget";
+        gfxWarning()
+            << "ImageClientSingle::UpdateImage failed in BorrowDrawTarget";
         return nullptr;
       }
       MOZ_ASSERT(surface.get());
-      dt->CopySurface(surface, IntRect(IntPoint(), surface->GetSize()), IntPoint());
+      dt->CopySurface(surface, IntRect(IntPoint(), surface->GetSize()),
+                      IntPoint());
     }
 
     texture->Unlock();
@@ -161,10 +155,9 @@ ImageClient::CreateTextureClientForImage(Image* aImage, KnowsCompositor* aForwar
   return texture.forget();
 }
 
-bool
-ImageClientSingle::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlags)
-{
-  AutoTArray<ImageContainer::OwningImage,4> images;
+bool ImageClientSingle::UpdateImage(ImageContainer* aContainer,
+                                    uint32_t aContentFlags) {
+  AutoTArray<ImageContainer::OwningImage, 4> images;
   uint32_t generationCounter;
   aContainer->GetCurrentImages(&images, &generationCounter);
 
@@ -194,7 +187,7 @@ ImageClientSingle::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlag
   }
 
   nsTArray<Buffer> newBuffers;
-  AutoTArray<CompositableForwarder::TimedTextureClient,4> textures;
+  AutoTArray<CompositableForwarder::TimedTextureClient, 4> textures;
 
   for (auto& img : images) {
     Image* image = img.mImage;
@@ -205,7 +198,8 @@ ImageClientSingle::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlag
     for (int32_t i = mBuffers.Length() - 1; i >= 0; --i) {
       if (mBuffers[i].mImageSerial == image->GetSerial()) {
         if (hasTextureClient) {
-          MOZ_ASSERT(image->GetTextureClient(GetForwarder()) == mBuffers[i].mTextureClient);
+          MOZ_ASSERT(image->GetTextureClient(GetForwarder()) ==
+                     mBuffers[i].mTextureClient);
         } else {
           texture = mBuffers[i].mTextureClient;
         }
@@ -260,45 +254,33 @@ ImageClientSingle::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlag
   return true;
 }
 
-RefPtr<TextureClient>
-ImageClientSingle::GetForwardedTexture()
-{
+RefPtr<TextureClient> ImageClientSingle::GetForwardedTexture() {
   if (mBuffers.Length() == 0) {
     return nullptr;
   }
   return mBuffers[0].mTextureClient;
 }
 
-bool
-ImageClientSingle::AddTextureClient(TextureClient* aTexture)
-{
+bool ImageClientSingle::AddTextureClient(TextureClient* aTexture) {
   MOZ_ASSERT((mTextureFlags & aTexture->GetFlags()) == mTextureFlags);
   return CompositableClient::AddTextureClient(aTexture);
 }
 
-void
-ImageClientSingle::OnDetach()
-{
-  mBuffers.Clear();
-}
+void ImageClientSingle::OnDetach() { mBuffers.Clear(); }
 
 ImageClient::ImageClient(CompositableForwarder* aFwd, TextureFlags aFlags,
                          CompositableType aType)
-: CompositableClient(aFwd, aFlags)
-, mLayer(nullptr)
-, mType(aType)
-, mLastUpdateGenerationCounter(0)
-{}
+    : CompositableClient(aFwd, aFlags),
+      mLayer(nullptr),
+      mType(aType),
+      mLastUpdateGenerationCounter(0) {}
 
 ImageClientBridge::ImageClientBridge(CompositableForwarder* aFwd,
                                      TextureFlags aFlags)
-: ImageClient(aFwd, aFlags, CompositableType::IMAGE_BRIDGE)
-{
-}
+    : ImageClient(aFwd, aFlags, CompositableType::IMAGE_BRIDGE) {}
 
-bool
-ImageClientBridge::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlags)
-{
+bool ImageClientBridge::UpdateImage(ImageContainer* aContainer,
+                                    uint32_t aContentFlags) {
   if (!GetForwarder() || !mLayer) {
     return false;
   }
@@ -312,9 +294,10 @@ ImageClientBridge::UpdateImage(ImageContainer* aContainer, uint32_t aContentFlag
     return true;
   }
 
-  static_cast<ShadowLayerForwarder*>(GetForwarder())->AttachAsyncCompositable(mAsyncContainerHandle, mLayer);
+  static_cast<ShadowLayerForwarder*>(GetForwarder())
+      ->AttachAsyncCompositable(mAsyncContainerHandle, mLayer);
   return true;
 }
 
-} 
-} 
+}  
+}  

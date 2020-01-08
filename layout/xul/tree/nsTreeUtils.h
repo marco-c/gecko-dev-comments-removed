@@ -18,30 +18,26 @@ namespace mozilla {
 namespace dom {
 class Element;
 }
-}
+}  
 
-class nsTreeUtils
-{
-  public:
-    
-
+class nsTreeUtils {
+ public:
+  
 
 
-    static nsresult
-    TokenizeProperties(const nsAString& aProperties,
-                       mozilla::AtomArray& aPropertiesArray);
 
-    static nsIContent*
-    GetImmediateChild(nsIContent* aContainer, nsAtom* aTag);
+  static nsresult TokenizeProperties(const nsAString& aProperties,
+                                     mozilla::AtomArray& aPropertiesArray);
 
-    static nsIContent*
-    GetDescendantChild(nsIContent* aContainer, nsAtom* aTag);
+  static nsIContent* GetImmediateChild(nsIContent* aContainer, nsAtom* aTag);
 
-    static nsresult
-    UpdateSortIndicators(mozilla::dom::Element* aColumn, const nsAString& aDirection);
+  static nsIContent* GetDescendantChild(nsIContent* aContainer, nsAtom* aTag);
 
-    static nsresult
-    GetColumnIndex(mozilla::dom::Element* aColumn, int32_t* aResult);
+  static nsresult UpdateSortIndicators(mozilla::dom::Element* aColumn,
+                                       const nsAString& aDirection);
+
+  static nsresult GetColumnIndex(mozilla::dom::Element* aColumn,
+                                 int32_t* aResult);
 };
 
-#endif 
+#endif  

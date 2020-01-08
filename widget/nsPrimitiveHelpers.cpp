@@ -18,8 +18,6 @@
 
 
 
-
-
 #include "nsPrimitiveHelpers.h"
 
 #include "mozilla/UniquePtr.h"
@@ -39,34 +37,30 @@
 
 
 
+void nsPrimitiveHelpers ::CreatePrimitiveForData(const nsACString& aFlavor,
+                                                 const void* aDataBuff,
+                                                 uint32_t aDataLen,
+                                                 nsISupports** aPrimitive) {
+  if (!aPrimitive) return;
 
-void
-nsPrimitiveHelpers :: CreatePrimitiveForData ( const nsACString& aFlavor, const void* aDataBuff,
-                                                 uint32_t aDataLen, nsISupports** aPrimitive )
-{
-  if ( !aPrimitive )
-    return;
-
-  if ( aFlavor.EqualsLiteral(kTextMime) ||
-       aFlavor.EqualsLiteral(kNativeHTMLMime) ||
-       aFlavor.EqualsLiteral(kRTFMime) ||
-       aFlavor.EqualsLiteral(kCustomTypesMime)) {
+  if (aFlavor.EqualsLiteral(kTextMime) ||
+      aFlavor.EqualsLiteral(kNativeHTMLMime) ||
+      aFlavor.EqualsLiteral(kRTFMime) ||
+      aFlavor.EqualsLiteral(kCustomTypesMime)) {
     nsCOMPtr<nsISupportsCString> primitive =
         do_CreateInstance(NS_SUPPORTS_CSTRING_CONTRACTID);
-    if ( primitive ) {
-      const char * start = reinterpret_cast<const char*>(aDataBuff);
+    if (primitive) {
+      const char* start = reinterpret_cast<const char*>(aDataBuff);
       primitive->SetData(Substring(start, start + aDataLen));
       NS_ADDREF(*aPrimitive = primitive);
     }
-  }
-  else {
+  } else {
     nsCOMPtr<nsISupportsString> primitive =
         do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID);
-    if (primitive ) {
+    if (primitive) {
       if (aDataLen % 2) {
         auto buffer = mozilla::MakeUnique<char[]>(aDataLen + 1);
-        if (!MOZ_LIKELY(buffer))
-          return;
+        if (!MOZ_LIKELY(buffer)) return;
 
         memcpy(buffer.get(), aDataBuff, aDataLen);
         buffer[aDataLen] = 0;
@@ -82,34 +76,33 @@ nsPrimitiveHelpers :: CreatePrimitiveForData ( const nsACString& aFlavor, const 
     }
   }
 
-} 
+}  
 
 
 
 
 
 
-void
-nsPrimitiveHelpers :: CreatePrimitiveForCFHTML ( const void* aDataBuff,
-                                                 uint32_t* aDataLen, nsISupports** aPrimitive )
-{
-  if (!aPrimitive)
-    return;
+void nsPrimitiveHelpers ::CreatePrimitiveForCFHTML(const void* aDataBuff,
+                                                   uint32_t* aDataLen,
+                                                   nsISupports** aPrimitive) {
+  if (!aPrimitive) return;
 
   nsCOMPtr<nsISupportsString> primitive =
-    do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID);
-  if (!primitive)
-    return;
+      do_CreateInstance(NS_SUPPORTS_STRING_CONTRACTID);
+  if (!primitive) return;
 
   
   
   void* utf8 = moz_xmalloc(*aDataLen);
   memcpy(utf8, aDataBuff, *aDataLen);
   int32_t signedLen = static_cast<int32_t>(*aDataLen);
-  nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(nsDependentCString(kTextMime), &utf8, &signedLen);
+  nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(
+      nsDependentCString(kTextMime), &utf8, &signedLen);
   *aDataLen = signedLen;
 
-  nsAutoString str(NS_ConvertUTF8toUTF16(reinterpret_cast<const char*>(utf8), *aDataLen));
+  nsAutoString str(
+      NS_ConvertUTF8toUTF16(reinterpret_cast<const char*>(utf8), *aDataLen));
   free(utf8);
   *aDataLen = str.Length() * sizeof(char16_t);
   primitive->SetData(str);
@@ -123,37 +116,33 @@ nsPrimitiveHelpers :: CreatePrimitiveForCFHTML ( const void* aDataBuff,
 
 
 
-
-void
-nsPrimitiveHelpers::CreateDataFromPrimitive(const nsACString& aFlavor, nsISupports* aPrimitive,
-                                            void** aDataBuff, uint32_t*  aDataLen)
-{
-  if ( !aDataBuff )
-    return;
+void nsPrimitiveHelpers::CreateDataFromPrimitive(const nsACString& aFlavor,
+                                                 nsISupports* aPrimitive,
+                                                 void** aDataBuff,
+                                                 uint32_t* aDataLen) {
+  if (!aDataBuff) return;
 
   *aDataBuff = nullptr;
   *aDataLen = 0;
 
   if (aFlavor.EqualsLiteral(kTextMime) ||
       aFlavor.EqualsLiteral(kCustomTypesMime)) {
-    nsCOMPtr<nsISupportsCString> plainText ( do_QueryInterface(aPrimitive) );
-    if ( plainText ) {
+    nsCOMPtr<nsISupportsCString> plainText(do_QueryInterface(aPrimitive));
+    if (plainText) {
       nsAutoCString data;
-      plainText->GetData ( data );
+      plainText->GetData(data);
       *aDataBuff = ToNewCString(data);
       *aDataLen = data.Length() * sizeof(char);
     }
-  }
-  else {
-    nsCOMPtr<nsISupportsString> doubleByteText ( do_QueryInterface(aPrimitive) );
-    if ( doubleByteText ) {
+  } else {
+    nsCOMPtr<nsISupportsString> doubleByteText(do_QueryInterface(aPrimitive));
+    if (doubleByteText) {
       nsAutoString data;
-      doubleByteText->GetData ( data );
+      doubleByteText->GetData(data);
       *aDataBuff = ToNewUnicode(data);
       *aDataLen = data.Length() * sizeof(char16_t);
     }
   }
-
 }
 
 
@@ -166,43 +155,38 @@ nsPrimitiveHelpers::CreateDataFromPrimitive(const nsACString& aFlavor, nsISuppor
 
 
 
-
-nsresult
-nsLinebreakHelpers :: ConvertPlatformToDOMLinebreaks ( const nsACString& inFlavor, void** ioData,
-                                                          int32_t* ioLengthInBytes )
-{
-  NS_ASSERTION ( ioData && *ioData && ioLengthInBytes, "Bad Params");
-  if ( !(ioData && *ioData && ioLengthInBytes) )
-    return NS_ERROR_INVALID_ARG;
+nsresult nsLinebreakHelpers ::ConvertPlatformToDOMLinebreaks(
+    const nsACString& inFlavor, void** ioData, int32_t* ioLengthInBytes) {
+  NS_ASSERTION(ioData && *ioData && ioLengthInBytes, "Bad Params");
+  if (!(ioData && *ioData && ioLengthInBytes)) return NS_ERROR_INVALID_ARG;
 
   nsresult retVal = NS_OK;
 
-  if (inFlavor.EqualsLiteral(kTextMime) ||
-      inFlavor.EqualsLiteral(kRTFMime)) {
+  if (inFlavor.EqualsLiteral(kTextMime) || inFlavor.EqualsLiteral(kRTFMime)) {
     char* buffAsChars = reinterpret_cast<char*>(*ioData);
     char* oldBuffer = buffAsChars;
-    retVal = nsLinebreakConverter::ConvertLineBreaksInSitu ( &buffAsChars, nsLinebreakConverter::eLinebreakAny,
-                                                              nsLinebreakConverter::eLinebreakContent,
-                                                              *ioLengthInBytes, ioLengthInBytes );
-    if ( NS_SUCCEEDED(retVal) ) {
-      if ( buffAsChars != oldBuffer )             
-        free ( oldBuffer );
+    retVal = nsLinebreakConverter::ConvertLineBreaksInSitu(
+        &buffAsChars, nsLinebreakConverter::eLinebreakAny,
+        nsLinebreakConverter::eLinebreakContent, *ioLengthInBytes,
+        ioLengthInBytes);
+    if (NS_SUCCEEDED(retVal)) {
+      if (buffAsChars != oldBuffer)  
+        free(oldBuffer);
       *ioData = buffAsChars;
     }
-  }
-  else if (inFlavor.EqualsLiteral("image/jpeg")) {
+  } else if (inFlavor.EqualsLiteral("image/jpeg")) {
     
-  }
-  else {
+  } else {
     char16_t* buffAsUnichar = reinterpret_cast<char16_t*>(*ioData);
     char16_t* oldBuffer = buffAsUnichar;
     int32_t newLengthInChars;
-    retVal = nsLinebreakConverter::ConvertUnicharLineBreaksInSitu ( &buffAsUnichar, nsLinebreakConverter::eLinebreakAny,
-                                                                     nsLinebreakConverter::eLinebreakContent,
-                                                                     *ioLengthInBytes / sizeof(char16_t), &newLengthInChars );
-    if ( NS_SUCCEEDED(retVal) ) {
-      if ( buffAsUnichar != oldBuffer )           
-        free ( oldBuffer );
+    retVal = nsLinebreakConverter::ConvertUnicharLineBreaksInSitu(
+        &buffAsUnichar, nsLinebreakConverter::eLinebreakAny,
+        nsLinebreakConverter::eLinebreakContent,
+        *ioLengthInBytes / sizeof(char16_t), &newLengthInChars);
+    if (NS_SUCCEEDED(retVal)) {
+      if (buffAsUnichar != oldBuffer)  
+        free(oldBuffer);
       *ioData = buffAsUnichar;
       *ioLengthInBytes = newLengthInChars * sizeof(char16_t);
     }
@@ -210,4 +194,4 @@ nsLinebreakHelpers :: ConvertPlatformToDOMLinebreaks ( const nsACString& inFlavo
 
   return retVal;
 
-} 
+}  

@@ -41,78 +41,81 @@ typedef AlignedTArray<float> AlignedAudioFloatArray;
 typedef nsTArray<float> AudioFloatArray;
 
 class PeriodicWave {
-public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebCore::PeriodicWave);
+ public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebCore::PeriodicWave);
 
-    static already_AddRefed<PeriodicWave> createSine(float sampleRate);
-    static already_AddRefed<PeriodicWave> createSquare(float sampleRate);
-    static already_AddRefed<PeriodicWave> createSawtooth(float sampleRate);
-    static already_AddRefed<PeriodicWave> createTriangle(float sampleRate);
+  static already_AddRefed<PeriodicWave> createSine(float sampleRate);
+  static already_AddRefed<PeriodicWave> createSquare(float sampleRate);
+  static already_AddRefed<PeriodicWave> createSawtooth(float sampleRate);
+  static already_AddRefed<PeriodicWave> createTriangle(float sampleRate);
 
-    
-    
-    static already_AddRefed<PeriodicWave> create(float sampleRate,
-                                                 const float* real,
-                                                 const float* imag,
-                                                 size_t numberOfComponents,
-                                                 bool disableNormalization);
+  
+  
+  static already_AddRefed<PeriodicWave> create(float sampleRate,
+                                               const float* real,
+                                               const float* imag,
+                                               size_t numberOfComponents,
+                                               bool disableNormalization);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    void waveDataForFundamentalFrequency(float, float* &lowerWaveData, float* &higherWaveData, float& tableInterpolationFactor);
+  
+  
+  
+  
+  
+  
+  
+  
+  void waveDataForFundamentalFrequency(float, float*& lowerWaveData,
+                                       float*& higherWaveData,
+                                       float& tableInterpolationFactor);
 
-    
-    
-    float rateScale() const { return m_rateScale; }
+  
+  
+  float rateScale() const { return m_rateScale; }
 
-    unsigned periodicWaveSize() const { return m_periodicWaveSize; }
-    float sampleRate() const { return m_sampleRate; }
+  unsigned periodicWaveSize() const { return m_periodicWaveSize; }
+  float sampleRate() const { return m_sampleRate; }
 
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
-    explicit PeriodicWave(float sampleRate, size_t numberOfComponents, bool disableNormalization);
-    ~PeriodicWave() {}
+ private:
+  explicit PeriodicWave(float sampleRate, size_t numberOfComponents,
+                        bool disableNormalization);
+  ~PeriodicWave() {}
 
-    void generateBasicWaveform(mozilla::dom::OscillatorType);
+  void generateBasicWaveform(mozilla::dom::OscillatorType);
 
-    float m_sampleRate;
-    unsigned m_periodicWaveSize;
-    unsigned m_numberOfRanges;
-    float m_centsPerRange;
-    unsigned m_numberOfComponents;
-    nsAutoPtr<AudioFloatArray> m_realComponents;
-    nsAutoPtr<AudioFloatArray> m_imagComponents;
+  float m_sampleRate;
+  unsigned m_periodicWaveSize;
+  unsigned m_numberOfRanges;
+  float m_centsPerRange;
+  unsigned m_numberOfComponents;
+  nsAutoPtr<AudioFloatArray> m_realComponents;
+  nsAutoPtr<AudioFloatArray> m_imagComponents;
 
-    
-    
-    
-    
-    float m_lowestFundamentalFrequency;
+  
+  
+  
+  
+  float m_lowestFundamentalFrequency;
 
-    float m_rateScale;
+  float m_rateScale;
 
-    unsigned numberOfRanges() const { return m_numberOfRanges; }
+  unsigned numberOfRanges() const { return m_numberOfRanges; }
 
-    
-    unsigned maxNumberOfPartials() const;
+  
+  unsigned maxNumberOfPartials() const;
 
-    unsigned numberOfPartialsForRange(unsigned rangeIndex) const;
+  unsigned numberOfPartialsForRange(unsigned rangeIndex) const;
 
-    
-    void createBandLimitedTables(float fundamentalFrequency, unsigned rangeIndex);
-    unsigned m_maxPartialsInBandLimitedTable;
-    float m_normalizationScale;
-    bool m_disableNormalization;
-    nsTArray<nsAutoPtr<AlignedAudioFloatArray> > m_bandLimitedTables;
+  
+  void createBandLimitedTables(float fundamentalFrequency, unsigned rangeIndex);
+  unsigned m_maxPartialsInBandLimitedTable;
+  float m_normalizationScale;
+  bool m_disableNormalization;
+  nsTArray<nsAutoPtr<AlignedAudioFloatArray> > m_bandLimitedTables;
 };
 
-} 
+}  
 
-#endif 
+#endif  

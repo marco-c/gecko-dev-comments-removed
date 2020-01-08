@@ -56,20 +56,20 @@ namespace frontend {
 
 
 struct JumpTarget {
-    ptrdiff_t offset;
+  ptrdiff_t offset;
 };
 
 struct JumpList {
-    JumpList() {}
-    
-    ptrdiff_t offset = -1;
+  JumpList() {}
+  
+  ptrdiff_t offset = -1;
 
-    
-    void push(jsbytecode* code, ptrdiff_t jumpOffset);
+  
+  void push(jsbytecode* code, ptrdiff_t jumpOffset);
 
-    
-    
-    void patchAll(jsbytecode* code, JumpTarget target);
+  
+  
+  void patchAll(jsbytecode* code, JumpTarget target);
 };
 
 } 

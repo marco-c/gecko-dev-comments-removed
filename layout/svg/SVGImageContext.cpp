@@ -5,7 +5,6 @@
 
 
 
-
 #include "SVGImageContext.h"
 
 
@@ -17,21 +16,15 @@
 
 namespace mozilla {
 
- void
-SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
-                                        nsIFrame* aFromFrame,
-                                        imgIContainer* aImgContainer)
-{
-  return MaybeStoreContextPaint(aContext,
-                                aFromFrame->Style(),
-                                aImgContainer);
+ void SVGImageContext::MaybeStoreContextPaint(
+    Maybe<SVGImageContext>& aContext, nsIFrame* aFromFrame,
+    imgIContainer* aImgContainer) {
+  return MaybeStoreContextPaint(aContext, aFromFrame->Style(), aImgContainer);
 }
 
- void
-SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
-                                        ComputedStyle* aFromComputedStyle,
-                                        imgIContainer* aImgContainer)
-{
+ void SVGImageContext::MaybeStoreContextPaint(
+    Maybe<SVGImageContext>& aContext, ComputedStyle* aFromComputedStyle,
+    imgIContainer* aImgContainer) {
   const nsStyleSVG* style = aFromComputedStyle->StyleSVG();
 
   if (!style->ExposesContextProperties()) {
@@ -47,7 +40,8 @@ SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
 
   bool haveContextPaint = false;
 
-  RefPtr<SVGEmbeddingContextPaint> contextPaint = new SVGEmbeddingContextPaint();
+  RefPtr<SVGEmbeddingContextPaint> contextPaint =
+      new SVGEmbeddingContextPaint();
 
   if ((style->mContextPropsBits & NS_STYLE_CONTEXT_PROPERTY_FILL) &&
       style->mFill.Type() == eStyleSVGPaintType_Color) {
@@ -76,4 +70,4 @@ SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
   }
 }
 
-} 
+}  

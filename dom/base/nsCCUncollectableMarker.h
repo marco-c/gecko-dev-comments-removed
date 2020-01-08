@@ -11,8 +11,7 @@
 #include "mozilla/Attributes.h"
 #include "nsIObserver.h"
 
-class nsCCUncollectableMarker final : public nsIObserver
-{
+class nsCCUncollectableMarker final : public nsIObserver {
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -24,20 +23,18 @@ class nsCCUncollectableMarker final : public nsIObserver
   
 
 
-  static bool InGeneration(uint32_t aGeneration)
-  {
+  static bool InGeneration(uint32_t aGeneration) {
     return aGeneration && aGeneration == sGeneration;
   }
 
   template <class CCCallback>
-  static bool InGeneration(CCCallback& aCb, uint32_t aGeneration)
-  {
+  static bool InGeneration(CCCallback& aCb, uint32_t aGeneration) {
     return InGeneration(aGeneration) && !aCb.WantAllTraces();
   }
 
   static uint32_t sGeneration;
 
-private:
+ private:
   nsCCUncollectableMarker() {}
   ~nsCCUncollectableMarker() {}
 };
@@ -45,7 +42,7 @@ private:
 namespace mozilla {
 namespace dom {
 void TraceBlackJS(JSTracer* aTrc, bool aIsShutdownGC);
-} 
-} 
+}  
+}  
 
 #endif

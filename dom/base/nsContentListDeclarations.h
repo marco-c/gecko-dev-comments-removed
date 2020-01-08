@@ -19,8 +19,8 @@ class nsINode;
 namespace mozilla {
 namespace dom {
 class Element;
-} 
-} 
+}  
+}  
 
 
 
@@ -31,8 +31,7 @@ class Element;
 
 
 typedef bool (*nsContentListMatchFunc)(mozilla::dom::Element* aElement,
-                                       int32_t aNamespaceID,
-                                       nsAtom* aAtom,
+                                       int32_t aNamespaceID, nsAtom* aAtom,
                                        void* aData);
 
 typedef void (*nsContentListDestroyFunc)(void* aData);
@@ -50,17 +49,15 @@ typedef void* (*nsFuncStringContentListDataAllocator)(nsINode* aRootNode,
 
 
 
-already_AddRefed<nsContentList>
-NS_GetContentList(nsINode* aRootNode,
-                  int32_t aMatchNameSpaceId,
-                  const nsAString& aTagname);
+already_AddRefed<nsContentList> NS_GetContentList(nsINode* aRootNode,
+                                                  int32_t aMatchNameSpaceId,
+                                                  const nsAString& aTagname);
 
-template<class ListType>
-already_AddRefed<nsContentList>
-GetFuncStringContentList(nsINode* aRootNode,
-                         nsContentListMatchFunc aFunc,
-                         nsContentListDestroyFunc aDestroyFunc,
-                         nsFuncStringContentListDataAllocator aDataAllocator,
-                         const nsAString& aString);
+template <class ListType>
+already_AddRefed<nsContentList> GetFuncStringContentList(
+    nsINode* aRootNode, nsContentListMatchFunc aFunc,
+    nsContentListDestroyFunc aDestroyFunc,
+    nsFuncStringContentListDataAllocator aDataAllocator,
+    const nsAString& aString);
 
-#endif 
+#endif  

@@ -26,27 +26,22 @@ namespace dom {
 
 
 
-class PostMessageEvent final : public Runnable
-                             , public StructuredCloneHolder
-{
-public:
+class PostMessageEvent final : public Runnable, public StructuredCloneHolder {
+ public:
   NS_DECL_NSIRUNNABLE
 
-  PostMessageEvent(nsGlobalWindowOuter* aSource,
-                   const nsAString& aCallerOrigin,
+  PostMessageEvent(nsGlobalWindowOuter* aSource, const nsAString& aCallerOrigin,
                    nsGlobalWindowOuter* aTargetWindow,
                    nsIPrincipal* aProvidedPrincipal,
                    nsIDocument* aSourceDocument);
 
-private:
+ private:
   ~PostMessageEvent();
 
-  void
-  Dispatch(nsGlobalWindowInner* aTargetWindow, Event* aEvent);
+  void Dispatch(nsGlobalWindowInner* aTargetWindow, Event* aEvent);
 
-  void
-  DispatchError(JSContext* aCx, nsGlobalWindowInner* aTargetWindow,
-                mozilla::dom::EventTarget* aEventTarget);
+  void DispatchError(JSContext* aCx, nsGlobalWindowInner* aTargetWindow,
+                     mozilla::dom::EventTarget* aEventTarget);
 
   RefPtr<nsGlobalWindowOuter> mSource;
   nsString mCallerOrigin;
@@ -55,7 +50,7 @@ private:
   nsCOMPtr<nsIDocument> mSourceDocument;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -18,10 +18,9 @@ namespace dom {
 
 class TimeoutManager;
 
-class TimeoutExecutor final : public nsIRunnable
-                            , public nsITimerCallback
-                            , public nsINamed
-{
+class TimeoutExecutor final : public nsIRunnable,
+                              public nsITimerCallback,
+                              public nsINamed {
   TimeoutManager* mOwner;
   nsCOMPtr<nsITimer> mTimer;
   TimeStamp mDeadline;
@@ -35,8 +34,7 @@ class TimeoutExecutor final : public nsIRunnable
   
   
   
-  enum class Mode
-  {
+  enum class Mode {
     
     None,
     
@@ -56,33 +54,27 @@ class TimeoutExecutor final : public nsIRunnable
 
   ~TimeoutExecutor();
 
-  nsresult
-  ScheduleImmediate(const TimeStamp& aDeadline, const TimeStamp& aNow);
+  nsresult ScheduleImmediate(const TimeStamp& aDeadline, const TimeStamp& aNow);
 
-  nsresult
-  ScheduleDelayed(const TimeStamp& aDeadline, const TimeStamp& aNow,
-                  const TimeDuration& aMinDelay);
+  nsresult ScheduleDelayed(const TimeStamp& aDeadline, const TimeStamp& aNow,
+                           const TimeDuration& aMinDelay);
 
-  nsresult
-  Schedule(const TimeStamp& aDeadline, const TimeDuration& aMinDelay);
+  nsresult Schedule(const TimeStamp& aDeadline, const TimeDuration& aMinDelay);
 
-  nsresult
-  MaybeReschedule(const TimeStamp& aDeadline, const TimeDuration& aMinDelay);
+  nsresult MaybeReschedule(const TimeStamp& aDeadline,
+                           const TimeDuration& aMinDelay);
 
-  void
-  MaybeExecute();
+  void MaybeExecute();
 
-public:
+ public:
   explicit TimeoutExecutor(TimeoutManager* aOwner);
 
-  void
-  Shutdown();
+  void Shutdown();
 
-  nsresult
-  MaybeSchedule(const TimeStamp& aDeadline, const TimeDuration& aMinDelay);
+  nsresult MaybeSchedule(const TimeStamp& aDeadline,
+                         const TimeDuration& aMinDelay);
 
-  void
-  Cancel();
+  void Cancel();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIRUNNABLE
@@ -90,7 +82,7 @@ public:
   NS_DECL_NSINAMED
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

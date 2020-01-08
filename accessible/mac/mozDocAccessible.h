@@ -13,8 +13,7 @@
 
 
 
-@interface mozRootAccessible : mozAccessible
-{
+@interface mozRootAccessible : mozAccessible {
   
   
   
@@ -26,6 +25,6 @@
   
   
   
-  id <mozView, mozAccessible> mParallelView; 
+  id<mozView, mozAccessible> mParallelView;  
 }
 @end

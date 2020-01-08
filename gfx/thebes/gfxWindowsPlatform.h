@@ -10,7 +10,6 @@
 
 
 
-
 #include "cairo-win32.h"
 
 #include "gfxCrashReporterUtils.h"
@@ -37,7 +36,7 @@
 
 #include <d3dcommon.h>
 
-#if !defined(D3D_FEATURE_LEVEL_11_1) 
+#if !defined(D3D_FEATURE_LEVEL_11_1)  
 #define D3D_FEATURE_LEVEL_11_1 static_cast<D3D_FEATURE_LEVEL>(0xb100)
 #define D3D_FL9_1_REQ_TEXTURE2D_U_OR_V_DIMENSION 2048
 #define D3D_FL9_3_REQ_TEXTURE2D_U_OR_V_DIMENSION 4096
@@ -48,11 +47,11 @@ namespace gfx {
 class DrawTarget;
 class FeatureState;
 class DeviceManagerDx;
-}
+}  
 namespace layers {
 class ReadbackManagerD3D11;
 }
-}
+}  
 struct IDirect3DDevice9;
 struct ID3D11Device;
 struct IDXGIAdapter1;
@@ -62,206 +61,204 @@ struct IDXGIAdapter1;
 
 
 
-class MOZ_STACK_CLASS DCForMetrics final
-{
-public:
-    explicit DCForMetrics();
+class MOZ_STACK_CLASS DCForMetrics final {
+ public:
+  explicit DCForMetrics();
 
-    ~DCForMetrics() {
-        ReleaseDC(nullptr, mDC);
-    }
+  ~DCForMetrics() { ReleaseDC(nullptr, mDC); }
 
-    operator HDC () {
-        return mDC;
-    }
+  operator HDC() { return mDC; }
 
-private:
-    HDC mDC;
+ private:
+  HDC mDC;
 };
 
 
 struct ClearTypeParameterInfo {
-    ClearTypeParameterInfo() :
-        gamma(-1), pixelStructure(-1), clearTypeLevel(-1), enhancedContrast(-1)
-    { }
+  ClearTypeParameterInfo()
+      : gamma(-1),
+        pixelStructure(-1),
+        clearTypeLevel(-1),
+        enhancedContrast(-1) {}
 
-    nsString    displayName;  
-    int32_t     gamma;
-    int32_t     pixelStructure;
-    int32_t     clearTypeLevel;
-    int32_t     enhancedContrast;
+  nsString displayName;  
+  int32_t gamma;
+  int32_t pixelStructure;
+  int32_t clearTypeLevel;
+  int32_t enhancedContrast;
 };
 
-class gfxWindowsPlatform : public gfxPlatform
-{
+class gfxWindowsPlatform : public gfxPlatform {
   friend class mozilla::gfx::DeviceManagerDx;
 
-public:
-    enum TextRenderingMode {
-        TEXT_RENDERING_NO_CLEARTYPE,
-        TEXT_RENDERING_NORMAL,
-        TEXT_RENDERING_GDI_CLASSIC,
-        TEXT_RENDERING_COUNT
-    };
+ public:
+  enum TextRenderingMode {
+    TEXT_RENDERING_NO_CLEARTYPE,
+    TEXT_RENDERING_NORMAL,
+    TEXT_RENDERING_GDI_CLASSIC,
+    TEXT_RENDERING_COUNT
+  };
 
-    gfxWindowsPlatform();
-    virtual ~gfxWindowsPlatform();
-    static gfxWindowsPlatform *GetPlatform() {
-        return (gfxWindowsPlatform*) gfxPlatform::GetPlatform();
-    }
+  gfxWindowsPlatform();
+  virtual ~gfxWindowsPlatform();
+  static gfxWindowsPlatform* GetPlatform() {
+    return (gfxWindowsPlatform*)gfxPlatform::GetPlatform();
+  }
 
-    virtual gfxPlatformFontList* CreatePlatformFontList() override;
+  virtual gfxPlatformFontList* CreatePlatformFontList() override;
 
-    virtual already_AddRefed<gfxASurface>
-      CreateOffscreenSurface(const IntSize& aSize,
-                             gfxImageFormat aFormat) override;
+  virtual already_AddRefed<gfxASurface> CreateOffscreenSurface(
+      const IntSize& aSize, gfxImageFormat aFormat) override;
 
-    enum RenderMode {
-        
-        RENDER_GDI = 0,
+  enum RenderMode {
+    
+    RENDER_GDI = 0,
 
-        
-        RENDER_IMAGE_STRETCH32,
-
-        
-        RENDER_IMAGE_STRETCH24,
-
-        
-        RENDER_DIRECT2D,
-
-        
-        RENDER_MODE_MAX
-    };
-
-    bool IsDirect2DBackend();
+    
+    RENDER_IMAGE_STRETCH32,
 
     
 
-
-
-    void UpdateRenderMode();
+    RENDER_IMAGE_STRETCH24,
 
     
-
-
-
-
-
-
-    void VerifyD2DDevice(bool aAttemptForce);
-
-    virtual void GetCommonFallbackFonts(uint32_t aCh, uint32_t aNextCh,
-                                        Script aRunScript,
-                                        nsTArray<const char*>& aFontList) override;
-
-    gfxFontGroup*
-    CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
-                    const gfxFontStyle *aStyle,
-                    gfxTextPerfMetrics* aTextPerf,
-                    gfxUserFontSet *aUserFontSet,
-                    gfxFloat aDevToCssSize) override;
-
-    virtual bool CanUseHardwareVideoDecoding() override;
-
-    virtual void CompositorUpdated() override;
-
-    bool DidRenderingDeviceReset(DeviceResetReason* aResetReason = nullptr) override;
-    void SchedulePaintIfDeviceReset() override;
-    void CheckForContentOnlyDeviceReset();
-
-    bool AllowOpenGLCanvas() override;
-
-    mozilla::gfx::BackendType GetContentBackendFor(mozilla::layers::LayersBackend aLayers) override;
-
-    mozilla::gfx::BackendType GetPreferredCanvasBackend() override;
-
-    static void GetDLLVersion(char16ptr_t aDLLPath, nsAString& aVersion);
+    RENDER_DIRECT2D,
 
     
-    static void GetCleartypeParams(nsTArray<ClearTypeParameterInfo>& aParams);
+    RENDER_MODE_MAX
+  };
 
-    virtual void FontsPrefsChanged(const char *aPref) override;
+  bool IsDirect2DBackend();
 
-    void SetupClearTypeParams();
+  
 
-    inline bool DWriteEnabled() const { return !!mozilla::gfx::Factory::GetDWriteFactory(); }
-    inline DWRITE_MEASURING_MODE DWriteMeasuringMode() { return mMeasuringMode; }
 
-    IDWriteRenderingParams *GetRenderingParams(TextRenderingMode aRenderMode)
-    { return mRenderingParams[aRenderMode]; }
 
-public:
-    bool DwmCompositionEnabled();
+  void UpdateRenderMode();
 
-    mozilla::layers::ReadbackManagerD3D11* GetReadbackManager();
+  
 
-    static bool IsOptimus();
 
-    bool SupportsApzWheelInput() const override {
-      return true;
-    }
 
-    
-    
-    bool HandleDeviceReset();
-    void UpdateBackendPrefs();
 
-    virtual already_AddRefed<mozilla::gfx::VsyncSource> CreateHardwareVsyncSource() override;
-    static mozilla::Atomic<size_t> sD3D11SharedTextures;
-    static mozilla::Atomic<size_t> sD3D9SharedTextures;
 
-    bool SupportsPluginDirectBitmapDrawing() override {
-      return true;
-    }
-    bool SupportsPluginDirectDXGIDrawing();
 
-    static void RecordContentDeviceFailure(mozilla::gfx::TelemetryDeviceCode aDevice);
+  void VerifyD2DDevice(bool aAttemptForce);
 
-protected:
-    bool AccelerateLayersByDefault() override {
-      return true;
-    }
-    void GetAcceleratedCompositorBackends(nsTArray<mozilla::layers::LayersBackend>& aBackends) override;
-    virtual void GetPlatformCMSOutputProfile(void* &mem, size_t &size) override;
+  virtual void GetCommonFallbackFonts(
+      uint32_t aCh, uint32_t aNextCh, Script aRunScript,
+      nsTArray<const char*>& aFontList) override;
 
-    void ImportGPUDeviceData(const mozilla::gfx::GPUDeviceData& aData) override;
-    void ImportContentDeviceData(const mozilla::gfx::ContentDeviceData& aData) override;
-    void BuildContentDeviceData(mozilla::gfx::ContentDeviceData* aOut) override;
+  gfxFontGroup* CreateFontGroup(const mozilla::FontFamilyList& aFontFamilyList,
+                                const gfxFontStyle* aStyle,
+                                gfxTextPerfMetrics* aTextPerf,
+                                gfxUserFontSet* aUserFontSet,
+                                gfxFloat aDevToCssSize) override;
 
-    BackendPrefsData GetBackendPrefs() const override;
+  virtual bool CanUseHardwareVideoDecoding() override;
 
-    bool CheckVariationFontSupport() override;
+  virtual void CompositorUpdated() override;
 
-protected:
-    RenderMode mRenderMode;
+  bool DidRenderingDeviceReset(
+      DeviceResetReason* aResetReason = nullptr) override;
+  void SchedulePaintIfDeviceReset() override;
+  void CheckForContentOnlyDeviceReset();
 
-private:
-    bool HasBattery() override;
+  bool AllowOpenGLCanvas() override;
 
-    void Init();
-    void InitAcceleration() override;
-    void InitWebRenderConfig() override;
+  mozilla::gfx::BackendType GetContentBackendFor(
+      mozilla::layers::LayersBackend aLayers) override;
 
-    void InitializeDevices();
-    void InitializeD3D11();
-    void InitializeD2D();
-    bool InitDWriteSupport();
-    bool InitGPUProcessSupport();
+  mozilla::gfx::BackendType GetPreferredCanvasBackend() override;
 
-    void DisableD2D(mozilla::gfx::FeatureStatus aStatus, const char* aMessage,
-                    const nsACString& aFailureId);
+  static void GetDLLVersion(char16ptr_t aDLLPath, nsAString& aVersion);
 
-    void InitializeConfig();
-    void InitializeD3D9Config();
-    void InitializeD3D11Config();
-    void InitializeD2DConfig();
-    void InitializeDirectDrawConfig();
-    void InitializeAdvancedLayersConfig();
+  
+  static void GetCleartypeParams(nsTArray<ClearTypeParameterInfo>& aParams);
 
-    RefPtr<IDWriteRenderingParams> mRenderingParams[TEXT_RENDERING_COUNT];
-    DWRITE_MEASURING_MODE mMeasuringMode;
+  virtual void FontsPrefsChanged(const char* aPref) override;
 
-    RefPtr<mozilla::layers::ReadbackManagerD3D11> mD3D11ReadbackManager;
+  void SetupClearTypeParams();
+
+  inline bool DWriteEnabled() const {
+    return !!mozilla::gfx::Factory::GetDWriteFactory();
+  }
+  inline DWRITE_MEASURING_MODE DWriteMeasuringMode() { return mMeasuringMode; }
+
+  IDWriteRenderingParams* GetRenderingParams(TextRenderingMode aRenderMode) {
+    return mRenderingParams[aRenderMode];
+  }
+
+ public:
+  bool DwmCompositionEnabled();
+
+  mozilla::layers::ReadbackManagerD3D11* GetReadbackManager();
+
+  static bool IsOptimus();
+
+  bool SupportsApzWheelInput() const override { return true; }
+
+  
+  
+  bool HandleDeviceReset();
+  void UpdateBackendPrefs();
+
+  virtual already_AddRefed<mozilla::gfx::VsyncSource>
+  CreateHardwareVsyncSource() override;
+  static mozilla::Atomic<size_t> sD3D11SharedTextures;
+  static mozilla::Atomic<size_t> sD3D9SharedTextures;
+
+  bool SupportsPluginDirectBitmapDrawing() override { return true; }
+  bool SupportsPluginDirectDXGIDrawing();
+
+  static void RecordContentDeviceFailure(
+      mozilla::gfx::TelemetryDeviceCode aDevice);
+
+ protected:
+  bool AccelerateLayersByDefault() override { return true; }
+  void GetAcceleratedCompositorBackends(
+      nsTArray<mozilla::layers::LayersBackend>& aBackends) override;
+  virtual void GetPlatformCMSOutputProfile(void*& mem, size_t& size) override;
+
+  void ImportGPUDeviceData(const mozilla::gfx::GPUDeviceData& aData) override;
+  void ImportContentDeviceData(
+      const mozilla::gfx::ContentDeviceData& aData) override;
+  void BuildContentDeviceData(mozilla::gfx::ContentDeviceData* aOut) override;
+
+  BackendPrefsData GetBackendPrefs() const override;
+
+  bool CheckVariationFontSupport() override;
+
+ protected:
+  RenderMode mRenderMode;
+
+ private:
+  bool HasBattery() override;
+
+  void Init();
+  void InitAcceleration() override;
+  void InitWebRenderConfig() override;
+
+  void InitializeDevices();
+  void InitializeD3D11();
+  void InitializeD2D();
+  bool InitDWriteSupport();
+  bool InitGPUProcessSupport();
+
+  void DisableD2D(mozilla::gfx::FeatureStatus aStatus, const char* aMessage,
+                  const nsACString& aFailureId);
+
+  void InitializeConfig();
+  void InitializeD3D9Config();
+  void InitializeD3D11Config();
+  void InitializeD2DConfig();
+  void InitializeDirectDrawConfig();
+  void InitializeAdvancedLayersConfig();
+
+  RefPtr<IDWriteRenderingParams> mRenderingParams[TEXT_RENDERING_COUNT];
+  DWRITE_MEASURING_MODE mMeasuringMode;
+
+  RefPtr<mozilla::layers::ReadbackManagerD3D11> mD3D11ReadbackManager;
 };
 
 #endif 

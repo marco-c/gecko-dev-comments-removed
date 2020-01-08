@@ -16,11 +16,8 @@ using base::ProcessHandle;
 namespace mozilla {
 namespace ipc {
 
-nsresult
-CreateTransport(base::ProcessId aProcIdOne,
-                TransportDescriptor* aOne,
-                TransportDescriptor* aTwo)
-{
+nsresult CreateTransport(base::ProcessId aProcIdOne, TransportDescriptor* aOne,
+                         TransportDescriptor* aTwo) {
   wstring id = IPC::Channel::GenerateVerifiedChannelID(std::wstring());
   
   Transport t(id, Transport::MODE_SERVER, nullptr);
@@ -38,7 +35,8 @@ CreateTransport(base::ProcessId aProcIdOne,
   HANDLE serverDup;
   DWORD access = 0;
   DWORD options = DUPLICATE_SAME_ACCESS;
-  if (!DuplicateHandle(serverPipe, base::GetCurrentProcId(), &serverDup, access, options)) {
+  if (!DuplicateHandle(serverPipe, base::GetCurrentProcId(), &serverDup, access,
+                       options)) {
     return NS_ERROR_DUPLICATE_HANDLE;
   }
 
@@ -51,8 +49,7 @@ CreateTransport(base::ProcessId aProcIdOne,
 }
 
 HANDLE
-TransferHandleToProcess(HANDLE source, base::ProcessId pid)
-{
+TransferHandleToProcess(HANDLE source, base::ProcessId pid) {
   
 
   if (source == INVALID_HANDLE_VALUE) {
@@ -73,25 +70,22 @@ TransferHandleToProcess(HANDLE source, base::ProcessId pid)
   return handleDup;
 }
 
-UniquePtr<Transport>
-OpenDescriptor(const TransportDescriptor& aTd, Transport::Mode aMode)
-{
+UniquePtr<Transport> OpenDescriptor(const TransportDescriptor& aTd,
+                                    Transport::Mode aMode) {
   if (aTd.mServerPipeHandle != INVALID_HANDLE_VALUE) {
     MOZ_RELEASE_ASSERT(aTd.mDestinationProcessId == base::GetCurrentProcId());
   }
-  return MakeUnique<Transport>(aTd.mPipeName, aTd.mServerPipeHandle, aMode, nullptr);
+  return MakeUnique<Transport>(aTd.mPipeName, aTd.mServerPipeHandle, aMode,
+                               nullptr);
 }
 
-UniquePtr<Transport>
-OpenDescriptor(const FileDescriptor& aFd, Transport::Mode aMode)
-{
+UniquePtr<Transport> OpenDescriptor(const FileDescriptor& aFd,
+                                    Transport::Mode aMode) {
   MOZ_ASSERT_UNREACHABLE("Not implemented!");
   return nullptr;
 }
 
-TransportDescriptor
-DuplicateDescriptor(const TransportDescriptor& aTd)
-{
+TransportDescriptor DuplicateDescriptor(const TransportDescriptor& aTd) {
   
 
   if (aTd.mServerPipeHandle == INVALID_HANDLE_VALUE) {
@@ -113,13 +107,11 @@ DuplicateDescriptor(const TransportDescriptor& aTd)
   return desc;
 }
 
-void
-CloseDescriptor(const TransportDescriptor& aTd)
-{
+void CloseDescriptor(const TransportDescriptor& aTd) {
   
 
   CloseHandle(aTd.mServerPipeHandle);
 }
 
-} 
-} 
+}  
+}  

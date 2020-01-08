@@ -14,7 +14,7 @@ namespace mozilla {
 namespace ipc {
 class PBackgroundParent;
 class PrincipalInfo;
-} 
+}  
 
 namespace dom {
 namespace cache {
@@ -29,37 +29,28 @@ class PCacheStorageParent;
 
 
 
-PCacheChild*
-AllocPCacheChild();
+PCacheChild* AllocPCacheChild();
 
-void
-DeallocPCacheChild(PCacheChild* aActor);
+void DeallocPCacheChild(PCacheChild* aActor);
 
-void
-DeallocPCacheParent(PCacheParent* aActor);
+void DeallocPCacheParent(PCacheParent* aActor);
 
-PCacheStreamControlChild*
-AllocPCacheStreamControlChild();
+PCacheStreamControlChild* AllocPCacheStreamControlChild();
 
-void
-DeallocPCacheStreamControlChild(PCacheStreamControlChild* aActor);
+void DeallocPCacheStreamControlChild(PCacheStreamControlChild* aActor);
 
-void
-DeallocPCacheStreamControlParent(PCacheStreamControlParent* aActor);
+void DeallocPCacheStreamControlParent(PCacheStreamControlParent* aActor);
 
-PCacheStorageParent*
-AllocPCacheStorageParent(mozilla::ipc::PBackgroundParent* aManagingActor,
-                         Namespace aNamespace,
-                         const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
+PCacheStorageParent* AllocPCacheStorageParent(
+    mozilla::ipc::PBackgroundParent* aManagingActor, Namespace aNamespace,
+    const mozilla::ipc::PrincipalInfo& aPrincipalInfo);
 
-void
-DeallocPCacheStorageChild(PCacheStorageChild* aActor);
+void DeallocPCacheStorageChild(PCacheStorageChild* aActor);
 
-void
-DeallocPCacheStorageParent(PCacheStorageParent* aActor);
+void DeallocPCacheStorageParent(PCacheStorageParent* aActor);
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

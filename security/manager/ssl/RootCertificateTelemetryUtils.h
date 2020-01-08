@@ -10,21 +10,21 @@
 #include "mozilla/Telemetry.h"
 #include "certt.h"
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
 
 
 
-#define ROOT_CERTIFICATE_UNKNOWN  0
+#define ROOT_CERTIFICATE_UNKNOWN 0
 #define ROOT_CERTIFICATE_HASH_FAILURE -1
 
-int32_t
-RootCABinNumber(const SECItem* cert);
+int32_t RootCABinNumber(const SECItem* cert);
 
-void
-AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe, const CERTCertificate* cert);
+void AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe,
+                                  const CERTCertificate* cert);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

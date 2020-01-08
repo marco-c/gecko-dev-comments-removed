@@ -63,9 +63,9 @@ using mozilla::BasePrincipal;
 using mozilla::OriginAttributes;
 using mozilla::Preferences;
 using mozilla::TimeStamp;
+using mozilla::intl::LocaleService;
 using mozilla::Telemetry::Accumulate;
 using mozilla::Telemetry::AccumulateCategorical;
-using mozilla::intl::LocaleService;
 using safe_browsing::ClientDownloadRequest;
 using safe_browsing::ClientDownloadRequest_CertificateChain;
 using safe_browsing::ClientDownloadRequest_Resource;
@@ -75,23 +75,34 @@ using safe_browsing::ClientDownloadRequest_SignatureInfo;
 #define PREF_SB_APP_REP_URL "browser.safebrowsing.downloads.remote.url"
 #define PREF_SB_MALWARE_ENABLED "browser.safebrowsing.malware.enabled"
 #define PREF_SB_DOWNLOADS_ENABLED "browser.safebrowsing.downloads.enabled"
-#define PREF_SB_DOWNLOADS_REMOTE_ENABLED "browser.safebrowsing.downloads.remote.enabled"
-#define PREF_SB_DOWNLOADS_REMOTE_TIMEOUT "browser.safebrowsing.downloads.remote.timeout_ms"
+#define PREF_SB_DOWNLOADS_REMOTE_ENABLED \
+  "browser.safebrowsing.downloads.remote.enabled"
+#define PREF_SB_DOWNLOADS_REMOTE_TIMEOUT \
+  "browser.safebrowsing.downloads.remote.timeout_ms"
 #define PREF_DOWNLOAD_BLOCK_TABLE "urlclassifier.downloadBlockTable"
 #define PREF_DOWNLOAD_ALLOW_TABLE "urlclassifier.downloadAllowTable"
 
 
-#define PREF_BLOCK_DANGEROUS            "browser.safebrowsing.downloads.remote.block_dangerous"
-#define PREF_BLOCK_DANGEROUS_HOST       "browser.safebrowsing.downloads.remote.block_dangerous_host"
-#define PREF_BLOCK_POTENTIALLY_UNWANTED "browser.safebrowsing.downloads.remote.block_potentially_unwanted"
-#define PREF_BLOCK_UNCOMMON             "browser.safebrowsing.downloads.remote.block_uncommon"
+#define PREF_BLOCK_DANGEROUS \
+  "browser.safebrowsing.downloads.remote.block_dangerous"
+#define PREF_BLOCK_DANGEROUS_HOST \
+  "browser.safebrowsing.downloads.remote.block_dangerous_host"
+#define PREF_BLOCK_POTENTIALLY_UNWANTED \
+  "browser.safebrowsing.downloads.remote.block_potentially_unwanted"
+#define PREF_BLOCK_UNCOMMON \
+  "browser.safebrowsing.downloads.remote.block_uncommon"
 
 
-mozilla::LazyLogModule ApplicationReputationService::prlog("ApplicationReputation");
-#define LOG(args) MOZ_LOG(ApplicationReputationService::prlog, mozilla::LogLevel::Debug, args)
-#define LOG_ENABLED() MOZ_LOG_TEST(ApplicationReputationService::prlog, mozilla::LogLevel::Debug)
+mozilla::LazyLogModule ApplicationReputationService::prlog(
+    "ApplicationReputation");
+#define LOG(args) \
+  MOZ_LOG(ApplicationReputationService::prlog, mozilla::LogLevel::Debug, args)
+#define LOG_ENABLED() \
+  MOZ_LOG_TEST(ApplicationReputationService::prlog, mozilla::LogLevel::Debug)
 
 enum class LookupType { AllowlistOnly, BlocklistOnly, BothLists };
+
+
 
 
 
@@ -126,9 +137,8 @@ class PendingDBLookup;
 class PendingLookup final : public nsIStreamListener,
                             public nsITimerCallback,
                             public nsIObserver,
-                            public nsSupportsWeakReference
-{
-public:
+                            public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
@@ -146,7 +156,7 @@ public:
   
   nsresult StartLookup();
 
-private:
+ private:
   ~PendingLookup();
 
   friend class PendingDBLookup;
@@ -205,10 +215,12 @@ private:
   nsCString mResponse;
 
   
+  
   PRIntervalTime mTelemetryRemoteRequestStartMs;
 
   
-  ClientDownloadRequest::DownloadType GetDownloadType(const nsACString& aFilename);
+  ClientDownloadRequest::DownloadType GetDownloadType(
+      const nsACString& aFilename);
 
   
   
@@ -216,10 +228,8 @@ private:
 
   
   
-  nsresult OnStopRequestInternal(nsIRequest *aRequest,
-                                 nsISupports *aContext,
-                                 nsresult aResult,
-                                 uint32_t& aVerdict,
+  nsresult OnStopRequestInternal(nsIRequest* aRequest, nsISupports* aContext,
+                                 nsresult aResult, uint32_t& aVerdict,
                                  Reason& aReason);
 
   
@@ -237,13 +247,13 @@ private:
 
   
   
-  nsresult GenerateWhitelistStringsForPair(
-    nsIX509Cert* certificate, nsIX509Cert* issuer);
+  nsresult GenerateWhitelistStringsForPair(nsIX509Cert* certificate,
+                                           nsIX509Cert* issuer);
 
   
   
   nsresult GenerateWhitelistStringsForChain(
-    const ClientDownloadRequest_CertificateChain& aChain);
+      const ClientDownloadRequest_CertificateChain& aChain);
 
   
   
@@ -279,9 +289,8 @@ private:
 
 
 
-class PendingDBLookup final : public nsIUrlClassifierCallback
-{
-public:
+class PendingDBLookup final : public nsIUrlClassifierCallback {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIURLCLASSIFIERCALLBACK
 
@@ -293,7 +302,7 @@ public:
   
   nsresult LookupSpec(const nsACString& aSpec, const LookupType& aLookupType);
 
-private:
+ private:
   ~PendingDBLookup();
 
   
@@ -310,26 +319,20 @@ private:
   nsresult LookupSpecInternal(const nsACString& aSpec);
 };
 
-NS_IMPL_ISUPPORTS(PendingDBLookup,
-                  nsIUrlClassifierCallback)
+NS_IMPL_ISUPPORTS(PendingDBLookup, nsIUrlClassifierCallback)
 
-PendingDBLookup::PendingDBLookup(PendingLookup* aPendingLookup) :
-  mLookupType(LookupType::BothLists),
-  mPendingLookup(aPendingLookup)
-{
+PendingDBLookup::PendingDBLookup(PendingLookup* aPendingLookup)
+    : mLookupType(LookupType::BothLists), mPendingLookup(aPendingLookup) {
   LOG(("Created pending DB lookup [this = %p]", this));
 }
 
-PendingDBLookup::~PendingDBLookup()
-{
+PendingDBLookup::~PendingDBLookup() {
   LOG(("Destroying pending DB lookup [this = %p]", this));
   mPendingLookup = nullptr;
 }
 
-nsresult
-PendingDBLookup::LookupSpec(const nsACString& aSpec,
-                            const LookupType& aLookupType)
-{
+nsresult PendingDBLookup::LookupSpec(const nsACString& aSpec,
+                                     const LookupType& aLookupType) {
   LOG(("Checking principal %s [this=%p]", aSpec.Data(), this));
   mSpec = aSpec;
   mLookupType = aLookupType;
@@ -337,18 +340,16 @@ PendingDBLookup::LookupSpec(const nsACString& aSpec,
   if (NS_FAILED(rv)) {
     nsAutoCString errorName;
     mozilla::GetErrorName(rv, errorName);
-    LOG(("Error in LookupSpecInternal() [rv = %s, this = %p]",
-         errorName.get(), this));
-    return mPendingLookup->LookupNext(); 
+    LOG(("Error in LookupSpecInternal() [rv = %s, this = %p]", errorName.get(),
+         this));
+    return mPendingLookup->LookupNext();  
   }
   
   
   return rv;
 }
 
-nsresult
-PendingDBLookup::LookupSpecInternal(const nsACString& aSpec)
-{
+nsresult PendingDBLookup::LookupSpecInternal(const nsACString& aSpec) {
   nsresult rv;
 
   nsCOMPtr<nsIURI> uri;
@@ -358,7 +359,7 @@ PendingDBLookup::LookupSpecInternal(const nsACString& aSpec)
 
   OriginAttributes attrs;
   nsCOMPtr<nsIPrincipal> principal =
-    BasePrincipal::CreateCodebasePrincipal(uri, attrs);
+      BasePrincipal::CreateCodebasePrincipal(uri, attrs);
   if (!principal) {
     return NS_ERROR_FAILURE;
   }
@@ -367,7 +368,7 @@ PendingDBLookup::LookupSpecInternal(const nsACString& aSpec)
   
   LOG(("Checking DB service for principal %s [this = %p]", mSpec.get(), this));
   nsCOMPtr<nsIUrlClassifierDBService> dbService =
-    do_GetService(NS_URLCLASSIFIERDBSERVICE_CONTRACTID, &rv);
+      do_GetService(NS_URLCLASSIFIERDBSERVICE_CONTRACTID, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString tables;
@@ -388,25 +389,27 @@ PendingDBLookup::LookupSpecInternal(const nsACString& aSpec)
 }
 
 NS_IMETHODIMP
-PendingDBLookup::HandleEvent(const nsACString& tables)
-{
+PendingDBLookup::HandleEvent(const nsACString& tables) {
   
   
   
   
   nsAutoCString blockList;
   Preferences::GetCString(PREF_DOWNLOAD_BLOCK_TABLE, blockList);
-  if ((mLookupType != LookupType::AllowlistOnly) && FindInReadable(blockList, tables)) {
+  if ((mLookupType != LookupType::AllowlistOnly) &&
+      FindInReadable(blockList, tables)) {
     mPendingLookup->mBlocklistCount++;
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_LOCAL, BLOCK_LIST);
     LOG(("Found principal %s on blocklist [this = %p]", mSpec.get(), this));
-    return mPendingLookup->OnComplete(nsIApplicationReputationService::VERDICT_DANGEROUS,
-                                      Reason::LocalBlocklist, NS_OK);
+    return mPendingLookup->OnComplete(
+        nsIApplicationReputationService::VERDICT_DANGEROUS,
+        Reason::LocalBlocklist, NS_OK);
   }
 
   nsAutoCString allowList;
   Preferences::GetCString(PREF_DOWNLOAD_ALLOW_TABLE, allowList);
-  if ((mLookupType != LookupType::BlocklistOnly) && FindInReadable(allowList, tables)) {
+  if ((mLookupType != LookupType::BlocklistOnly) &&
+      FindInReadable(allowList, tables)) {
     mPendingLookup->mAllowlistCount++;
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_LOCAL, ALLOW_LIST);
     LOG(("Found principal %s on allowlist [this = %p]", mSpec.get(), this));
@@ -419,25 +422,20 @@ PendingDBLookup::HandleEvent(const nsACString& tables)
   return mPendingLookup->LookupNext();
 }
 
-NS_IMPL_ISUPPORTS(PendingLookup,
-                  nsIStreamListener,
-                  nsIRequestObserver,
-                  nsIObserver,
-                  nsISupportsWeakReference)
+NS_IMPL_ISUPPORTS(PendingLookup, nsIStreamListener, nsIRequestObserver,
+                  nsIObserver, nsISupportsWeakReference)
 
 PendingLookup::PendingLookup(nsIApplicationReputationQuery* aQuery,
-                             nsIApplicationReputationCallback* aCallback) :
-  mIsBinaryFile(false),
-  mBlocklistCount(0),
-  mAllowlistCount(0),
-  mQuery(aQuery),
-  mCallback(aCallback)
-{
+                             nsIApplicationReputationCallback* aCallback)
+    : mIsBinaryFile(false),
+      mBlocklistCount(0),
+      mAllowlistCount(0),
+      mQuery(aQuery),
+      mCallback(aCallback) {
   LOG(("Created pending lookup [this = %p]", this));
 }
 
-PendingLookup::~PendingLookup()
-{
+PendingLookup::~PendingLookup() {
   LOG(("Destroying pending lookup [this = %p]", this));
 }
 
@@ -448,184 +446,183 @@ static const char* const kBinaryFileExtensions[] = {
     
     
     
-    ".ade", 
-    ".adp", 
-    ".apk", 
-    ".app", 
+    ".ade",  
+    ".adp",  
+    ".apk",  
+    ".app",  
     ".applescript",
-    ".application", 
-    ".appref-ms", 
-    
-    
-    ".as", 
-    ".asp", 
-    ".asx", 
-    
-    
-    ".bas", 
-    ".bash", 
-    ".bat", 
-    
-    
-    ".btapp", 
-    ".btinstall", 
-    ".btkey", 
-    ".btsearch", 
-    ".btskin", 
-    ".bz", 
-    ".bz2", 
-    ".bzip2", 
-    ".cab", 
-    ".cdr", 
-    ".cfg", 
-    ".chi", 
-    ".chm", 
-    ".class", 
-    ".cmd", 
-    ".com", 
-    ".command", 
-    ".cpgz", 
-    
-    ".cpl", 
-    ".crt", 
-    ".crx", 
-    ".csh", 
-    ".dart", 
-    ".dc42", 
-    ".deb", 
-    ".dex", 
-    ".dhtml", 
-    ".dhtm", 
-    ".dht", 
-    ".diskcopy42", 
-    ".dll", 
-    ".dmg", 
-    ".dmgpart", 
-    
-    
-    
-    
-    
-    ".drv", 
-    ".dvdr", 
-    ".efi", 
-    ".eml", 
-    ".exe", 
-    
-    ".fon", 
-    ".fxp", 
-    ".gadget", 
-    ".grp", 
-    ".gz", 
-    ".gzip", 
-    ".hfs", 
-    ".hlp", 
-    ".hqx", 
-    ".hta", 
-    ".htm",
-    ".html",
-    ".htt", 
-    ".img", 
-    ".imgpart", 
-    ".inf", 
-    ".ini", 
-    ".ins", 
-    
-    ".iso", 
-    ".isp", 
-    
-    ".jar", 
-    ".jnlp", 
-    
-    ".js", 
-    ".jse", 
-    ".ksh", 
+    ".application",  
+    ".appref-ms",    
+    
+    
+    ".as",   
+    ".asp",  
+    ".asx",  
+    
+    
+    ".bas",   
+    ".bash",  
+    ".bat",   
+    
+    
+    ".btapp",      
+    ".btinstall",  
+    ".btkey",      
+    ".btsearch",   
+    ".btskin",     
+    ".bz",         
+    ".bz2",        
+    ".bzip2",      
+    ".cab",        
+    ".cdr",        
+    ".cfg",        
+    ".chi",        
+    ".chm",        
+    ".class",      
+    ".cmd",        
+    ".com",        
+    ".command",    
+    ".cpgz",       
+    
+    ".cpl",         
+    ".crt",         
+    ".crx",         
+    ".csh",         
+    ".dart",        
+    ".dc42",        
+    ".deb",         
+    ".dex",         
+    ".dhtml",       
+    ".dhtm",        
+    ".dht",         
+    ".diskcopy42",  
+    ".dll",         
+    ".dmg",         
+    ".dmgpart",     
+    
+    
+    
+    
+    
+    ".drv",   
+    ".dvdr",  
+    ".efi",   
+    ".eml",   
+    ".exe",   
+    
+    ".fon",     
+    ".fxp",     
+    ".gadget",  
+    ".grp",     
+    ".gz",      
+    ".gzip",    
+    ".hfs",     
+    ".hlp",     
+    ".hqx",     
+    ".hta",     
+    ".htm", ".html",
+    ".htt",      
+    ".img",      
+    ".imgpart",  
+    ".inf",      
+    ".ini",      
+    ".ins",      
+    
+    ".iso",  
+    ".isp",  
+    
+    ".jar",   
+    ".jnlp",  
+    
+    ".js",   
+    ".jse",  
+    ".ksh",  
     
-    ".lnk", 
-    ".local", 
+    ".lnk",    
+    ".local",  
     
     
     
     
     
-    ".mad", 
-    ".maf", 
-    ".mag", 
-    ".mam", 
-    ".manifest", 
-    ".maq", 
-    ".mar", 
-    ".mas", 
-    ".mat", 
-    ".mau", 
-    ".mav", 
-    ".maw", 
-    ".mda", 
-    ".mdb", 
-    ".mde", 
-    ".mdt", 
-    ".mdw", 
-    ".mdz", 
-    ".mht", 
-    ".mhtml", 
-    ".mim", 
-    ".mmc", 
-    ".mof", 
-    ".mpkg", 
-    ".msc", 
-    ".msg", 
-    ".msh", 
-    ".msh1", 
-    ".msh1xml", 
-    ".msh2", 
-    ".msh2xml", 
-    ".mshxml", 
-    ".msi", 
-    ".msp", 
-    ".mst", 
-    ".ndif", 
+    ".mad",       
+    ".maf",       
+    ".mag",       
+    ".mam",       
+    ".manifest",  
+    ".maq",       
+    ".mar",       
+    ".mas",       
+    ".mat",       
+    ".mau",       
+    ".mav",       
+    ".maw",       
+    ".mda",       
+    ".mdb",       
+    ".mde",       
+    ".mdt",       
+    ".mdw",       
+    ".mdz",       
+    ".mht",       
+    ".mhtml",     
+    ".mim",       
+    ".mmc",       
+    ".mof",       
+    ".mpkg",      
+    ".msc",       
+    ".msg",       
+    ".msh",       
+    ".msh1",      
+    ".msh1xml",   
+    ".msh2",      
+    ".msh2xml",   
+    ".mshxml",    
+    ".msi",       
+    ".msp",       
+    ".mst",       
+    ".ndif",      
     
-    ".ocx", 
-    ".ops", 
-    ".osas", 
-    ".osax", 
+    ".ocx",   
+    ".ops",   
+    ".osas",  
+    ".osax",  
     
-    ".oxt", 
+    ".oxt",  
     
     
     
     
     
-    ".partial", 
-    ".pax", 
-    ".pcd", 
-    ".pdf", 
+    ".partial",  
+    ".pax",      
+    ".pcd",      
+    ".pdf",      
     
-    ".pet", 
-    ".pif", 
-    ".pkg", 
-    ".pl", 
-    ".plg", 
+    ".pet",  
+    ".pif",  
+    ".pkg",  
+    ".pl",   
+    ".plg",  
     
     
     
     
     
-    ".prf", 
-    ".prg", 
-    ".ps1", 
-    ".ps1xml", 
-    ".ps2", 
-    ".ps2xml", 
-    ".psc1", 
-    ".psc2", 
-    ".pst", 
-    ".pup", 
-    ".py", 
-    ".pyc", 
-    ".pyd", 
-    ".pyo", 
-    ".pyw", 
+    ".prf",     
+    ".prg",     
+    ".ps1",     
+    ".ps1xml",  
+    ".ps2",     
+    ".ps2xml",  
+    ".psc1",    
+    ".psc2",    
+    ".pst",     
+    ".pup",     
+    ".py",      
+    ".pyc",     
+    ".pyd",     
+    ".pyo",     
+    ".pyw",     
     
     
     
@@ -658,174 +655,132 @@ static const char* const kBinaryFileExtensions[] = {
     
     
     
-    ".rb", 
-    ".reg", 
-    ".rels", 
+    ".rb",    
+    ".reg",   
+    ".rels",  
     
-    ".rpm", 
+    ".rpm",  
     
     
-    ".scf", 
-    ".scpt", 
-    ".scptd", 
-    ".scr", 
-    ".sct", 
-    ".search-ms", 
-    ".seplugin", 
-    ".settingcontent-ms", 
-    ".sh", 
-    ".shar", 
-    ".shb", 
-    ".shs", 
-    ".shtml", 
-    ".shtm", 
-    ".sht", 
+    ".scf",                
+    ".scpt",               
+    ".scptd",              
+    ".scr",                
+    ".sct",                
+    ".search-ms",          
+    ".seplugin",           
+    ".settingcontent-ms",  
+    ".sh",                 
+    ".shar",               
+    ".shb",                
+    ".shs",                
+    ".shtml",              
+    ".shtm",               
+    ".sht",                
     
     
-    ".slk", 
-    ".slp", 
-    ".smi", 
-    ".sparsebundle", 
-    ".sparseimage", 
-    ".spl", 
+    ".slk",           
+    ".slp",           
+    ".smi",           
+    ".sparsebundle",  
+    ".sparseimage",   
+    ".spl",           
     
     ".svg",
-    ".swf", 
-    ".swm", 
-    ".sys", 
-    ".tar", 
-    ".taz", 
-    ".tbz", 
-    ".tbz2", 
-    ".tcsh", 
-    ".tgz", 
+    ".swf",   
+    ".swm",   
+    ".sys",   
+    ".tar",   
+    ".taz",   
+    ".tbz",   
+    ".tbz2",  
+    ".tcsh",  
+    ".tgz",   
     
-    ".torrent", 
-    ".tpz", 
-    ".txz", 
-    ".tz", 
+    ".torrent",  
+    ".tpz",      
+    ".txz",      
+    ".tz",       
     
-    ".udf", 
-    ".udif", 
-    ".url", 
-    
-    
-    ".vb", 
-    ".vbe", 
-    ".vbs", 
-    
-    ".vdx", 
-    ".vhd", 
-    ".vhdx", 
-    ".vmdk", 
-    ".vsd", 
-    ".vsdm", 
-    ".vsdx", 
-    ".vsmacros", 
-    ".vss", 
-    ".vssm", 
-    ".vssx", 
-    ".vst", 
-    ".vstm", 
-    ".vstx", 
-    ".vsw", 
-    ".vsx", 
-    ".vtx", 
-    ".website",  
-    ".wim", 
+    ".udf",   
+    ".udif",  
+    ".url",   
     
     
-    ".ws", 
-    ".wsc", 
-    ".wsf", 
-    ".wsh", 
-    ".xar", 
-    ".xbap", 
-    ".xhtml",
-    ".xhtm",
-    ".xht",
-    ".xip", 
+    ".vb",   
+    ".vbe",  
+    ".vbs",  
+    
+    ".vdx",       
+    ".vhd",       
+    ".vhdx",      
+    ".vmdk",      
+    ".vsd",       
+    ".vsdm",      
+    ".vsdx",      
+    ".vsmacros",  
+    ".vss",       
+    ".vssm",      
+    ".vssx",      
+    ".vst",       
+    ".vstm",      
+    ".vstx",      
+    ".vsw",       
+    ".vsx",       
+    ".vtx",       
+    ".website",   
+    ".wim",       
+    
+    
+    ".ws",    
+    ".wsc",   
+    ".wsf",   
+    ".wsh",   
+    ".xar",   
+    ".xbap",  
+    ".xhtml", ".xhtm", ".xht",
+    ".xip",  
     
     
     
     
     ".xml",
-    ".xnk", 
-    ".xrm-ms", 
-    ".xsl", 
+    ".xnk",     
+    ".xrm-ms",  
+    ".xsl",     
     
-    ".xz", 
-    ".z", 
-#ifdef XP_WIN 
-    ".zip", 
+    ".xz",     
+    ".z",      
+#ifdef XP_WIN  
+    ".zip",    
 #endif
-    ".zipx", 
-    
+    ".zipx",  
+              
 };
 
 static const char* const kDmgFileExtensions[] = {
-    ".cdr",
-    ".dart",
-    ".dc42",
-    ".diskcopy42",
-    ".dmg",
-    ".dmgpart",
-    ".dvdr",
-    ".img",
-    ".imgpart",
-    ".iso",
-    ".ndif",
-    ".smi",
-    ".sparsebundle",
-    ".sparseimage",
-    ".toast",
-    ".udif",
+    ".cdr",          ".dart",        ".dc42",  ".diskcopy42",
+    ".dmg",          ".dmgpart",     ".dvdr",  ".img",
+    ".imgpart",      ".iso",         ".ndif",  ".smi",
+    ".sparsebundle", ".sparseimage", ".toast", ".udif",
 };
 
 static const char* const kRarFileExtensions[] = {
-    ".r00",
-    ".r01",
-    ".r02",
-    ".r03",
-    ".r04",
-    ".r05",
-    ".r06",
-    ".r07",
-    ".r08",
-    ".r09",
-    ".r10",
-    ".r11",
-    ".r12",
-    ".r13",
-    ".r14",
-    ".r15",
-    ".r16",
-    ".r17",
-    ".r18",
-    ".r19",
-    ".r20",
-    ".r21",
-    ".r22",
-    ".r23",
-    ".r24",
-    ".r25",
-    ".r26",
-    ".r27",
-    ".r28",
-    ".r29",
-    ".rar",
+    ".r00", ".r01", ".r02", ".r03", ".r04", ".r05", ".r06", ".r07",
+    ".r08", ".r09", ".r10", ".r11", ".r12", ".r13", ".r14", ".r15",
+    ".r16", ".r17", ".r18", ".r19", ".r20", ".r21", ".r22", ".r23",
+    ".r24", ".r25", ".r26", ".r27", ".r28", ".r29", ".rar",
 };
 
 static const char* const kZipFileExtensions[] = {
-    ".zip", 
-    ".zipx", 
+    ".zip",   
+    ".zipx",  
 };
 
 
-static bool
-IsFileType(const nsACString& aFilename, const char* const aFileExtensions[],
-           const size_t aLength)
-{
+static bool IsFileType(const nsACString& aFilename,
+                       const char* const aFileExtensions[],
+                       const size_t aLength) {
   for (size_t i = 0; i < aLength; ++i) {
     if (StringEndsWith(aFilename, nsDependentCString(aFileExtensions[i]))) {
       return true;
@@ -834,11 +789,12 @@ IsFileType(const nsACString& aFilename, const char* const aFileExtensions[],
   return false;
 }
 
-ClientDownloadRequest::DownloadType
-PendingLookup::GetDownloadType(const nsACString& aFilename) {
+ClientDownloadRequest::DownloadType PendingLookup::GetDownloadType(
+    const nsACString& aFilename) {
   MOZ_ASSERT(IsFileType(aFilename, kBinaryFileExtensions,
                         ArrayLength(kBinaryFileExtensions)));
 
+  
   
   if (StringEndsWith(aFilename, NS_LITERAL_CSTRING(".zip"))) {
     return ClientDownloadRequest::ZIPPED_EXECUTABLE;
@@ -872,12 +828,10 @@ PendingLookup::GetDownloadType(const nsACString& aFilename) {
     return ClientDownloadRequest::MAC_EXECUTABLE;
   }
 
-  return ClientDownloadRequest::WIN_EXECUTABLE; 
+  return ClientDownloadRequest::WIN_EXECUTABLE;  
 }
 
-nsresult
-PendingLookup::LookupNext()
-{
+nsresult PendingLookup::LookupNext() {
   
   
   
@@ -894,7 +848,8 @@ PendingLookup::LookupNext()
     RefPtr<PendingDBLookup> lookup(new PendingDBLookup(this));
 
     
-    auto type = mIsBinaryFile ? LookupType::BothLists : LookupType::BlocklistOnly;
+    auto type =
+        mIsBinaryFile ? LookupType::BothLists : LookupType::BlocklistOnly;
     return lookup->LookupSpec(spec, type);
   }
 
@@ -928,24 +883,37 @@ PendingLookup::LookupNext()
   }
 
   if (!mFileName.IsEmpty()) {
-    AccumulateCategorical(mIsBinaryFile ?
-                          mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY::BinaryFile :
-                          mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY::NonBinaryFile);
+    AccumulateCategorical(
+        mIsBinaryFile
+            ? mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY::
+                  BinaryFile
+            : mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY::
+                  NonBinaryFile);
   } else {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY::MissingFilename);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY::
+            MissingFilename);
   }
 
   if (IsFileType(mFileName, kDmgFileExtensions,
                  ArrayLength(kDmgFileExtensions))) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::DmgFile);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::
+            DmgFile);
   } else if (IsFileType(mFileName, kRarFileExtensions,
                         ArrayLength(kRarFileExtensions))) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::RarFile);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::
+            RarFile);
   } else if (IsFileType(mFileName, kZipFileExtensions,
                         ArrayLength(kZipFileExtensions))) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::ZipFile);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::
+            ZipFile);
   } else if (mIsBinaryFile) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::OtherBinaryFile);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_BINARY_ARCHIVE::
+            OtherBinaryFile);
   }
 
   
@@ -964,9 +932,8 @@ PendingLookup::LookupNext()
   return NS_OK;
 }
 
-nsCString
-PendingLookup::EscapeCertificateAttribute(const nsACString& aAttribute)
-{
+nsCString PendingLookup::EscapeCertificateAttribute(
+    const nsACString& aAttribute) {
   
   nsCString escaped;
   escaped.SetCapacity(aAttribute.Length());
@@ -984,9 +951,7 @@ PendingLookup::EscapeCertificateAttribute(const nsACString& aAttribute)
   return escaped;
 }
 
-nsCString
-PendingLookup::EscapeFingerprint(const nsACString& aFingerprint)
-{
+nsCString PendingLookup::EscapeFingerprint(const nsACString& aFingerprint) {
   
   nsCString escaped;
   escaped.SetCapacity(aFingerprint.Length());
@@ -998,11 +963,8 @@ PendingLookup::EscapeFingerprint(const nsACString& aFingerprint)
   return escaped;
 }
 
-nsresult
-PendingLookup::GenerateWhitelistStringsForPair(
-  nsIX509Cert* certificate,
-  nsIX509Cert* issuer)
-{
+nsresult PendingLookup::GenerateWhitelistStringsForPair(
+    nsIX509Cert* certificate, nsIX509Cert* issuer) {
   
   
   
@@ -1010,13 +972,12 @@ PendingLookup::GenerateWhitelistStringsForPair(
   
   
   nsCString whitelistString(
-    "http://sb-ssl.google.com/safebrowsing/csd/certificate/");
+      "http://sb-ssl.google.com/safebrowsing/csd/certificate/");
 
   nsString fingerprint;
   nsresult rv = issuer->GetSha1Fingerprint(fingerprint);
   NS_ENSURE_SUCCESS(rv, rv);
-  whitelistString.Append(
-    EscapeFingerprint(NS_ConvertUTF16toUTF8(fingerprint)));
+  whitelistString.Append(EscapeFingerprint(NS_ConvertUTF16toUTF8(fingerprint)));
 
   nsString commonName;
   rv = certificate->GetCommonName(commonName);
@@ -1024,7 +985,7 @@ PendingLookup::GenerateWhitelistStringsForPair(
   if (!commonName.IsEmpty()) {
     whitelistString.AppendLiteral("/CN=");
     whitelistString.Append(
-      EscapeCertificateAttribute(NS_ConvertUTF16toUTF8(commonName)));
+        EscapeCertificateAttribute(NS_ConvertUTF16toUTF8(commonName)));
   }
 
   nsString organization;
@@ -1033,7 +994,7 @@ PendingLookup::GenerateWhitelistStringsForPair(
   if (!organization.IsEmpty()) {
     whitelistString.AppendLiteral("/O=");
     whitelistString.Append(
-      EscapeCertificateAttribute(NS_ConvertUTF16toUTF8(organization)));
+        EscapeCertificateAttribute(NS_ConvertUTF16toUTF8(organization)));
   }
 
   nsString organizationalUnit;
@@ -1042,7 +1003,7 @@ PendingLookup::GenerateWhitelistStringsForPair(
   if (!organizationalUnit.IsEmpty()) {
     whitelistString.AppendLiteral("/OU=");
     whitelistString.Append(
-      EscapeCertificateAttribute(NS_ConvertUTF16toUTF8(organizationalUnit)));
+        EscapeCertificateAttribute(NS_ConvertUTF16toUTF8(organizationalUnit)));
   }
   LOG(("Whitelisting %s", whitelistString.get()));
 
@@ -1050,10 +1011,8 @@ PendingLookup::GenerateWhitelistStringsForPair(
   return NS_OK;
 }
 
-nsresult
-PendingLookup::GenerateWhitelistStringsForChain(
-  const safe_browsing::ClientDownloadRequest_CertificateChain& aChain)
-{
+nsresult PendingLookup::GenerateWhitelistStringsForChain(
+    const safe_browsing::ClientDownloadRequest_CertificateChain& aChain) {
   
   
   if (aChain.element_size() < 2) {
@@ -1067,8 +1026,8 @@ PendingLookup::GenerateWhitelistStringsForChain(
 
   nsCOMPtr<nsIX509Cert> signer;
   nsDependentCSubstring signerDER(
-    const_cast<char *>(aChain.element(0).certificate().data()),
-    aChain.element(0).certificate().size());
+      const_cast<char*>(aChain.element(0).certificate().data()),
+      aChain.element(0).certificate().size());
   rv = certDB->ConstructX509(signerDER, getter_AddRefs(signer));
   NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1076,8 +1035,8 @@ PendingLookup::GenerateWhitelistStringsForChain(
     
     nsCOMPtr<nsIX509Cert> issuer;
     nsDependentCSubstring issuerDER(
-      const_cast<char *>(aChain.element(i).certificate().data()),
-      aChain.element(i).certificate().size());
+        const_cast<char*>(aChain.element(i).certificate().data()),
+        aChain.element(i).certificate().size());
     rv = certDB->ConstructX509(issuerDER, getter_AddRefs(issuer));
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -1087,20 +1046,16 @@ PendingLookup::GenerateWhitelistStringsForChain(
   return NS_OK;
 }
 
-nsresult
-PendingLookup::GenerateWhitelistStrings()
-{
+nsresult PendingLookup::GenerateWhitelistStrings() {
   for (int i = 0; i < mRequest.signature().certificate_chain_size(); ++i) {
     nsresult rv = GenerateWhitelistStringsForChain(
-      mRequest.signature().certificate_chain(i));
+        mRequest.signature().certificate_chain(i));
     NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
 }
 
-nsresult
-PendingLookup::AddRedirects(nsIArray* aRedirects)
-{
+nsresult PendingLookup::AddRedirects(nsIArray* aRedirects) {
   uint32_t length = 0;
   aRedirects->GetLength(&length);
   LOG(("ApplicationReputation: Got %u redirects", length));
@@ -1117,7 +1072,8 @@ PendingLookup::AddRedirects(nsIArray* aRedirects)
     rv = iter->GetNext(getter_AddRefs(supports));
     NS_ENSURE_SUCCESS(rv, rv);
 
-    nsCOMPtr<nsIRedirectHistoryEntry> redirectEntry = do_QueryInterface(supports, &rv);
+    nsCOMPtr<nsIRedirectHistoryEntry> redirectEntry =
+        do_QueryInterface(supports, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
     nsCOMPtr<nsIPrincipal> principal;
@@ -1147,9 +1103,7 @@ PendingLookup::AddRedirects(nsIArray* aRedirects)
   return NS_OK;
 }
 
-nsresult
-PendingLookup::StartLookup()
-{
+nsresult PendingLookup::StartLookup() {
   mStartTime = TimeStamp::Now();
   nsresult rv = DoLookupInternal();
   if (NS_FAILED(rv)) {
@@ -1159,19 +1113,18 @@ PendingLookup::StartLookup()
   return rv;
 }
 
-nsresult
-PendingLookup::GetSpecHash(nsACString& aSpec, nsACString& hexEncodedHash)
-{
+nsresult PendingLookup::GetSpecHash(nsACString& aSpec,
+                                    nsACString& hexEncodedHash) {
   nsresult rv;
 
   nsCOMPtr<nsICryptoHash> cryptoHash =
-    do_CreateInstance("@mozilla.org/security/hash;1", &rv);
+      do_CreateInstance("@mozilla.org/security/hash;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = cryptoHash->Init(nsICryptoHash::SHA256);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = cryptoHash->Update(reinterpret_cast<const uint8_t*>(aSpec.BeginReading()),
-                          aSpec.Length());
+  rv = cryptoHash->Update(
+      reinterpret_cast<const uint8_t*>(aSpec.BeginReading()), aSpec.Length());
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsAutoCString binaryHash;
@@ -1191,9 +1144,7 @@ PendingLookup::GetSpecHash(nsACString& aSpec, nsACString& hexEncodedHash)
   return NS_OK;
 }
 
-nsresult
-PendingLookup::GetStrippedSpec(nsIURI* aUri, nsACString& escaped)
-{
+nsresult PendingLookup::GetStrippedSpec(nsIURI* aUri, nsACString& escaped) {
   if (NS_WARN_IF(!aUri)) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -1204,7 +1155,9 @@ PendingLookup::GetStrippedSpec(nsIURI* aUri, nsACString& escaped)
 
   if (escaped.EqualsLiteral("blob")) {
     aUri->GetSpec(escaped);
-    LOG(("PendingLookup::GetStrippedSpec(): blob URL left unstripped as '%s' [this = %p]",
+    LOG(
+        ("PendingLookup::GetStrippedSpec(): blob URL left unstripped as '%s' "
+         "[this = %p]",
          PromiseFlatCString(escaped).get(), this));
     return NS_OK;
 
@@ -1223,7 +1176,9 @@ PendingLookup::GetStrippedSpec(nsIURI* aUri, nsACString& escaped)
       }
     }
 
-    LOG(("PendingLookup::GetStrippedSpec(): data URL stripped to '%s' [this = %p]",
+    LOG(
+        ("PendingLookup::GetStrippedSpec(): data URL stripped to '%s' [this = "
+         "%p]",
          PromiseFlatCString(escaped).get(), this));
     return NS_OK;
   }
@@ -1232,7 +1187,9 @@ PendingLookup::GetStrippedSpec(nsIURI* aUri, nsACString& escaped)
   
   nsCOMPtr<nsIURL> url = do_QueryInterface(aUri, &rv);
   if (NS_FAILED(rv)) {
-    LOG(("PendingLookup::GetStrippedSpec(): scheme '%s' is not supported [this = %p]",
+    LOG(
+        ("PendingLookup::GetStrippedSpec(): scheme '%s' is not supported [this "
+         "= %p]",
          PromiseFlatCString(escaped).get(), this));
     return rv;
   }
@@ -1255,9 +1212,7 @@ PendingLookup::GetStrippedSpec(nsIURI* aUri, nsACString& escaped)
   return NS_OK;
 }
 
-nsresult
-PendingLookup::DoLookupInternal()
-{
+nsresult PendingLookup::DoLookupInternal() {
   
   
   nsCOMPtr<nsIURI> uri;
@@ -1295,8 +1250,8 @@ PendingLookup::DoLookupInternal()
   if (NS_SUCCEEDED(rv) && !mFileName.IsEmpty()) {
     mIsBinaryFile = IsFileType(mFileName, kBinaryFileExtensions,
                                ArrayLength(kBinaryFileExtensions));
-    LOG(("Suggested filename: %s [binary = %d, this = %p]",
-         mFileName.get(), mIsBinaryFile, this));
+    LOG(("Suggested filename: %s [binary = %d, this = %p]", mFileName.get(),
+         mIsBinaryFile, this));
   } else {
     nsAutoCString errorName;
     mozilla::GetErrorName(rv, errorName);
@@ -1324,14 +1279,15 @@ PendingLookup::DoLookupInternal()
   return LookupNext();
 }
 
-nsresult
-PendingLookup::OnComplete(uint32_t aVerdict, Reason aReason, nsresult aRv)
-{
+nsresult PendingLookup::OnComplete(uint32_t aVerdict, Reason aReason,
+                                   nsresult aRv) {
   if (NS_FAILED(aRv)) {
     nsAutoCString errorName;
     mozilla::GetErrorName(aRv, errorName);
-    LOG(("Failed sending remote query for application reputation "
-         "[rv = %s, this = %p]", errorName.get(), this));
+    LOG(
+        ("Failed sending remote query for application reputation "
+         "[rv = %s, this = %p]",
+         errorName.get(), this));
   }
 
   if (mTimeoutTimer) {
@@ -1379,7 +1335,7 @@ PendingLookup::OnComplete(uint32_t aVerdict, Reason aReason, nsresult aRv)
        aVerdict, t, this));
   if (shouldBlock) {
     LOG(("Application Reputation check failed, blocking bad binary [this = %p]",
-        this));
+         this));
   } else {
     LOG(("Application Reputation check passed [this = %p]", this));
   }
@@ -1388,9 +1344,7 @@ PendingLookup::OnComplete(uint32_t aVerdict, Reason aReason, nsresult aRv)
   return res;
 }
 
-nsresult
-PendingLookup::ParseCertificates(nsIArray* aSigArray)
-{
+nsresult PendingLookup::ParseCertificates(nsIArray* aSigArray) {
   
   NS_ENSURE_ARG_POINTER(aSigArray);
 
@@ -1414,7 +1368,7 @@ PendingLookup::ParseCertificates(nsIArray* aSigArray)
     NS_ENSURE_SUCCESS(rv, rv);
 
     safe_browsing::ClientDownloadRequest_CertificateChain* certChain =
-      mRequest.mutable_signature()->add_certificate_chain();
+        mRequest.mutable_signature()->add_certificate_chain();
     nsCOMPtr<nsISimpleEnumerator> chainElt;
     rv = certList->GetEnumerator(getter_AddRefs(chainElt));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -1451,24 +1405,20 @@ PendingLookup::ParseCertificates(nsIArray* aSigArray)
   return NS_OK;
 }
 
-nsresult
-PendingLookup::SendRemoteQuery()
-{
+nsresult PendingLookup::SendRemoteQuery() {
   Reason reason = Reason::NotSet;
   nsresult rv = SendRemoteQueryInternal(reason);
   if (NS_FAILED(rv)) {
-    return OnComplete(nsIApplicationReputationService::VERDICT_SAFE,
-                      reason, rv);
+    return OnComplete(nsIApplicationReputationService::VERDICT_SAFE, reason,
+                      rv);
   }
   
   
   return rv;
 }
 
-nsresult
-PendingLookup::SendRemoteQueryInternal(Reason& aReason)
-{
-  auto scopeExit = mozilla::MakeScopeExit([&aReason] () {
+nsresult PendingLookup::SendRemoteQueryInternal(Reason& aReason) {
+  auto scopeExit = mozilla::MakeScopeExit([&aReason]() {
     if (aReason == Reason::NotSet) {
       aReason = Reason::InternalError;
     }
@@ -1489,8 +1439,7 @@ PendingLookup::SendRemoteQueryInternal(Reason& aReason)
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  LOG(("Sending remote query for application reputation [this = %p]",
-       this));
+  LOG(("Sending remote query for application reputation [this = %p]", this));
   
   
   nsCOMPtr<nsIURI> uri;
@@ -1518,34 +1467,52 @@ PendingLookup::SendRemoteQueryInternal(Reason& aReason)
   rv = mQuery->GetSha256Hash(sha256Hash);
   NS_ENSURE_SUCCESS(rv, rv);
   mRequest.mutable_digests()->set_sha256(
-    std::string(sha256Hash.Data(), sha256Hash.Length()));
+      std::string(sha256Hash.Data(), sha256Hash.Length()));
   mRequest.set_file_basename(mFileName.get());
   mRequest.set_download_type(GetDownloadType(mFileName));
 
   if (mRequest.signature().trusted()) {
-    LOG(("Got signed binary for remote application reputation check "
-         "[this = %p]", this));
+    LOG(
+        ("Got signed binary for remote application reputation check "
+         "[this = %p]",
+         this));
   } else {
-    LOG(("Got unsigned binary for remote application reputation check "
-         "[this = %p]", this));
+    LOG(
+        ("Got unsigned binary for remote application reputation check "
+         "[this = %p]",
+         this));
   }
 
   
   const auto originalHashLength = sha256Hash.Length();
   if (originalHashLength == 0) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::OriginalHashEmpty);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
+            OriginalHashEmpty);
   } else if (originalHashLength < 32) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::OriginalHashTooShort);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
+            OriginalHashTooShort);
   } else if (originalHashLength > 32) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::OriginalHashTooLong);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
+            OriginalHashTooLong);
   } else if (!mRequest.has_digests()) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::MissingDigest);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
+            MissingDigest);
   } else if (!mRequest.digests().has_sha256()) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::MissingSha256);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
+            MissingSha256);
   } else if (mRequest.digests().sha256().size() != originalHashLength) {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::InvalidSha256);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
+            InvalidSha256);
   } else {
-    AccumulateCategorical(mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::ValidHash);
+    AccumulateCategorical(
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_HASH_LENGTH::
+            ValidHash);
   }
 
   
@@ -1560,7 +1527,7 @@ PendingLookup::SendRemoteQueryInternal(Reason& aReason)
 
   
   nsCOMPtr<nsIStringInputStream> sstream =
-    do_CreateInstance("@mozilla.org/io/string-input-stream;1", &rv);
+      do_CreateInstance("@mozilla.org/io/string-input-stream;1", &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
   rv = sstream->SetData(serialized.c_str(), serialized.length());
@@ -1568,21 +1535,19 @@ PendingLookup::SendRemoteQueryInternal(Reason& aReason)
 
   
   nsCOMPtr<nsIIOService> ios = do_GetService(NS_IOSERVICE_CONTRACTID, &rv);
-  rv = ios->NewChannel2(serviceUrl,
-                        nullptr,
-                        nullptr,
-                        nullptr, 
+  rv = ios->NewChannel2(serviceUrl, nullptr, nullptr,
+                        nullptr,  
                         nsContentUtils::GetSystemPrincipal(),
-                        nullptr, 
+                        nullptr,  
                         nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_DATA_IS_NULL,
-                        nsIContentPolicy::TYPE_OTHER,
-                        getter_AddRefs(mChannel));
+                        nsIContentPolicy::TYPE_OTHER, getter_AddRefs(mChannel));
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsILoadInfo> loadInfo = mChannel->GetLoadInfo();
   if (loadInfo) {
     mozilla::OriginAttributes attrs;
-    attrs.mFirstPartyDomain.AssignLiteral(NECKO_SAFEBROWSING_FIRST_PARTY_DOMAIN);
+    attrs.mFirstPartyDomain.AssignLiteral(
+        NECKO_SAFEBROWSING_FIRST_PARTY_DOMAIN);
     loadInfo->SetOriginAttributes(attrs);
   }
 
@@ -1594,14 +1559,15 @@ PendingLookup::SendRemoteQueryInternal(Reason& aReason)
   nsCOMPtr<nsIUploadChannel2> uploadChannel = do_QueryInterface(mChannel, &rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = uploadChannel->ExplicitSetUploadStream(sstream,
-    NS_LITERAL_CSTRING("application/octet-stream"), serialized.size(),
-    NS_LITERAL_CSTRING("POST"), false);
+  rv = uploadChannel->ExplicitSetUploadStream(
+      sstream, NS_LITERAL_CSTRING("application/octet-stream"),
+      serialized.size(), NS_LITERAL_CSTRING("POST"), false);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  uint32_t timeoutMs = Preferences::GetUint(PREF_SB_DOWNLOADS_REMOTE_TIMEOUT, 10000);
-  NS_NewTimerWithCallback(getter_AddRefs(mTimeoutTimer),
-                          this, timeoutMs, nsITimer::TYPE_ONE_SHOT);
+  uint32_t timeoutMs =
+      Preferences::GetUint(PREF_SB_DOWNLOADS_REMOTE_TIMEOUT, 10000);
+  NS_NewTimerWithCallback(getter_AddRefs(mTimeoutTimer), this, timeoutMs,
+                          nsITimer::TYPE_ONE_SHOT);
 
   mTelemetryRemoteRequestStartMs = PR_IntervalNow();
 
@@ -1612,12 +1578,11 @@ PendingLookup::SendRemoteQueryInternal(Reason& aReason)
 }
 
 NS_IMETHODIMP
-PendingLookup::Notify(nsITimer* aTimer)
-{
+PendingLookup::Notify(nsITimer* aTimer) {
   LOG(("Remote lookup timed out [this = %p]", this));
   MOZ_ASSERT(aTimer == mTimeoutTimer);
   Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_REMOTE_LOOKUP_TIMEOUT,
-    true);
+             true);
   mChannel->Cancel(NS_ERROR_NET_TIMEOUT);
   mTimeoutTimer->Cancel();
   return NS_OK;
@@ -1626,9 +1591,8 @@ PendingLookup::Notify(nsITimer* aTimer)
 
 
 NS_IMETHODIMP
-PendingLookup::Observe(nsISupports *aSubject, const char *aTopic,
-                       const char16_t *aData)
-{
+PendingLookup::Observe(nsISupports* aSubject, const char* aTopic,
+                       const char16_t* aData) {
   if (!strcmp(aTopic, "quit-application")) {
     if (mTimeoutTimer) {
       mTimeoutTimer->Cancel();
@@ -1643,13 +1607,10 @@ PendingLookup::Observe(nsISupports *aSubject, const char *aTopic,
 
 
 
-static nsresult
-AppendSegmentToString(nsIInputStream* inputStream,
-                      void *closure,
-                      const char *rawSegment,
-                      uint32_t toOffset,
-                      uint32_t count,
-                      uint32_t *writeCount) {
+static nsresult AppendSegmentToString(nsIInputStream* inputStream,
+                                      void* closure, const char* rawSegment,
+                                      uint32_t toOffset, uint32_t count,
+                                      uint32_t* writeCount) {
   nsAutoCString* decodedData = static_cast<nsAutoCString*>(closure);
   decodedData->Append(rawSegment, count);
   *writeCount = count;
@@ -1657,54 +1618,51 @@ AppendSegmentToString(nsIInputStream* inputStream,
 }
 
 NS_IMETHODIMP
-PendingLookup::OnDataAvailable(nsIRequest *aRequest,
-                               nsISupports *aContext,
-                               nsIInputStream *aStream,
-                               uint64_t offset,
+PendingLookup::OnDataAvailable(nsIRequest* aRequest, nsISupports* aContext,
+                               nsIInputStream* aStream, uint64_t offset,
                                uint32_t count) {
   uint32_t read;
   return aStream->ReadSegments(AppendSegmentToString, &mResponse, count, &read);
 }
 
 NS_IMETHODIMP
-PendingLookup::OnStartRequest(nsIRequest *aRequest,
-                              nsISupports *aContext) {
+PendingLookup::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext) {
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PendingLookup::OnStopRequest(nsIRequest *aRequest,
-                             nsISupports *aContext,
+PendingLookup::OnStopRequest(nsIRequest* aRequest, nsISupports* aContext,
                              nsresult aResult) {
   NS_ENSURE_STATE(mCallback);
 
   if (aResult != NS_ERROR_NET_TIMEOUT) {
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_REMOTE_LOOKUP_TIMEOUT,
-      false);
+               false);
 
     MOZ_ASSERT(mTelemetryRemoteRequestStartMs > 0);
-    int32_t msecs =
-      PR_IntervalToMilliseconds(PR_IntervalNow() - mTelemetryRemoteRequestStartMs);
+    int32_t msecs = PR_IntervalToMilliseconds(PR_IntervalNow() -
+                                              mTelemetryRemoteRequestStartMs);
 
     MOZ_ASSERT(msecs >= 0);
     mozilla::Telemetry::Accumulate(
-      mozilla::Telemetry::APPLICATION_REPUTATION_REMOTE_LOOKUP_RESPONSE_TIME, msecs);
+        mozilla::Telemetry::APPLICATION_REPUTATION_REMOTE_LOOKUP_RESPONSE_TIME,
+        msecs);
   }
 
   uint32_t verdict = nsIApplicationReputationService::VERDICT_SAFE;
   Reason reason = Reason::NotSet;
-  nsresult rv = OnStopRequestInternal(aRequest, aContext, aResult, verdict, reason);
+  nsresult rv =
+      OnStopRequestInternal(aRequest, aContext, aResult, verdict, reason);
   OnComplete(verdict, reason, rv);
   return rv;
 }
 
-nsresult
-PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
-                                     nsISupports *aContext,
-                                     nsresult aResult,
-                                     uint32_t& aVerdict,
-                                     Reason& aReason) {
-  auto scopeExit = mozilla::MakeScopeExit([&aReason] () {
+nsresult PendingLookup::OnStopRequestInternal(nsIRequest* aRequest,
+                                              nsISupports* aContext,
+                                              nsresult aResult,
+                                              uint32_t& aVerdict,
+                                              Reason& aReason) {
+  auto scopeExit = mozilla::MakeScopeExit([&aReason]() {
     
     if (aReason == Reason::NotSet) {
       aReason = Reason::NetworkError;
@@ -1713,7 +1671,7 @@ PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
 
   if (NS_FAILED(aResult)) {
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER,
-      SERVER_RESPONSE_FAILED);
+               SERVER_RESPONSE_FAILED);
     AccumulateCategorical(NSErrorToLabel(aResult));
     return aResult;
   }
@@ -1722,9 +1680,10 @@ PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
   nsCOMPtr<nsIHttpChannel> channel = do_QueryInterface(aRequest, &rv);
   if (NS_FAILED(rv)) {
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER,
-      SERVER_RESPONSE_FAILED);
+               SERVER_RESPONSE_FAILED);
     AccumulateCategorical(
-      mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2::FailGetChannel);
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2::
+            FailGetChannel);
     return rv;
   }
 
@@ -1732,15 +1691,16 @@ PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
   rv = channel->GetResponseStatus(&status);
   if (NS_FAILED(rv)) {
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER,
-      SERVER_RESPONSE_FAILED);
+               SERVER_RESPONSE_FAILED);
     AccumulateCategorical(
-      mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2::FailGetResponse);
+        mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2::
+            FailGetResponse);
     return rv;
   }
 
   if (status != 200) {
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER,
-      SERVER_RESPONSE_FAILED);
+               SERVER_RESPONSE_FAILED);
     AccumulateCategorical(HTTPStatusToLabel(status));
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -1748,21 +1708,23 @@ PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
   std::string buf(mResponse.Data(), mResponse.Length());
   safe_browsing::ClientDownloadResponse response;
   if (!response.ParseFromString(buf)) {
-    LOG(("Invalid protocol buffer response [this = %p]: %s", this, buf.c_str()));
+    LOG(("Invalid protocol buffer response [this = %p]: %s", this,
+         buf.c_str()));
     Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER,
-                                   SERVER_RESPONSE_INVALID);
+               SERVER_RESPONSE_INVALID);
     return NS_ERROR_CANNOT_CONVERT_DATA;
   }
 
   Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER,
-    SERVER_RESPONSE_VALID);
+             SERVER_RESPONSE_VALID);
   AccumulateCategorical(
-    mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2::ResponseValid);
+      mozilla::Telemetry::LABELS_APPLICATION_REPUTATION_SERVER_2::
+          ResponseValid);
 
   
   Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SERVER_VERDICT,
-    std::min<uint32_t>(response.verdict(), 7));
-  switch(response.verdict()) {
+             std::min<uint32_t>(response.verdict(), 7));
+  switch (response.verdict()) {
     case safe_browsing::ClientDownloadResponse::DANGEROUS:
       aVerdict = nsIApplicationReputationService::VERDICT_DANGEROUS;
       aReason = Reason::VerdictDangerous;
@@ -1797,15 +1759,13 @@ PendingLookup::OnStopRequestInternal(nsIRequest *aRequest,
   return NS_OK;
 }
 
-NS_IMPL_ISUPPORTS(ApplicationReputationService,
-                  nsIApplicationReputationService)
+NS_IMPL_ISUPPORTS(ApplicationReputationService, nsIApplicationReputationService)
 
 ApplicationReputationService*
-  ApplicationReputationService::gApplicationReputationService = nullptr;
+    ApplicationReputationService::gApplicationReputationService = nullptr;
 
 already_AddRefed<ApplicationReputationService>
-ApplicationReputationService::GetSingleton()
-{
+ApplicationReputationService::GetSingleton() {
   if (!gApplicationReputationService) {
     
     gApplicationReputationService = new ApplicationReputationService();
@@ -1813,8 +1773,7 @@ ApplicationReputationService::GetSingleton()
   return do_AddRef(gApplicationReputationService);
 }
 
-ApplicationReputationService::ApplicationReputationService()
-{
+ApplicationReputationService::ApplicationReputationService() {
   LOG(("Application reputation service started up"));
 }
 
@@ -1834,12 +1793,11 @@ ApplicationReputationService::QueryReputation(
 
   nsresult rv = QueryReputationInternal(aQuery, aCallback);
   if (NS_FAILED(rv)) {
-    Reason reason = rv == NS_ERROR_NOT_AVAILABLE ?
-      Reason::DPDisabled : Reason::InternalError;
+    Reason reason = rv == NS_ERROR_NOT_AVAILABLE ? Reason::DPDisabled
+                                                 : Reason::InternalError;
 
     AccumulateCategorical(reason);
-    Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SHOULD_BLOCK,
-      false);
+    Accumulate(mozilla::Telemetry::APPLICATION_REPUTATION_SHOULD_BLOCK, false);
 
     aCallback->OnComplete(false, rv,
                           nsIApplicationReputationService::VERDICT_SAFE);
@@ -1848,9 +1806,8 @@ ApplicationReputationService::QueryReputation(
 }
 
 nsresult ApplicationReputationService::QueryReputationInternal(
-  nsIApplicationReputationQuery* aQuery,
-  nsIApplicationReputationCallback* aCallback) {
-
+    nsIApplicationReputationQuery* aQuery,
+    nsIApplicationReputationCallback* aCallback) {
   
   if (!Preferences::GetBool(PREF_SB_MALWARE_ENABLED, false)) {
     return NS_ERROR_NOT_AVAILABLE;
@@ -1872,7 +1829,7 @@ nsresult ApplicationReputationService::QueryReputationInternal(
 
   
   nsCOMPtr<nsIObserverService> observerService =
-    mozilla::services::GetObserverService();
+      mozilla::services::GetObserverService();
   if (!observerService) {
     return NS_ERROR_FAILURE;
   }

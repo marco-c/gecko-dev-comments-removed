@@ -23,6 +23,7 @@ void Shutdown();
 
 
 
+
 bool IsProfilingActive();
 
 
@@ -32,22 +33,18 @@ void MarkStub(const js::jit::JitCode* code, const char* name);
 
 void MarkRegExp(const js::jit::JitCode* code, bool match_only);
 
-void MarkScript(const js::jit::JitCode* code,
-                JSScript* script,
+void MarkScript(const js::jit::JitCode* code, JSScript* script,
                 const char* module);
 
-void MarkWasm(unsigned methodId,
-              const char* name,
-              void* start,
-              uintptr_t size);
+void MarkWasm(unsigned methodId, const char* name, void* start, uintptr_t size);
 
 void UnmarkCode(const js::jit::JitCode* code);
 
 void UnmarkBytes(void* bytes, unsigned size);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  
 
-#endif 
+#endif  

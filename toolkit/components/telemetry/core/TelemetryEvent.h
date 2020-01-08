@@ -12,9 +12,9 @@
 
 namespace mozilla {
 namespace Telemetry {
-  struct ChildEventData;
+struct ChildEventData;
 }
-}
+}  
 
 
 
@@ -36,22 +36,24 @@ nsresult RecordEvent(const nsACString& aCategory, const nsACString& aMethod,
                      uint8_t optional_argc);
 
 void SetEventRecordingEnabled(const nsACString& aCategory, bool aEnabled);
-nsresult RegisterEvents(const nsACString& aCategory, JS::Handle<JS::Value> aEventData,
-                        bool aBuiltin, JSContext* cx);
+nsresult RegisterEvents(const nsACString& aCategory,
+                        JS::Handle<JS::Value> aEventData, bool aBuiltin,
+                        JSContext* cx);
 
-nsresult CreateSnapshots(uint32_t aDataset, bool aClear,
-                         uint32_t aEventLimit, JSContext* aCx,
-                         uint8_t optional_argc, JS::MutableHandleValue aResult);
+nsresult CreateSnapshots(uint32_t aDataset, bool aClear, uint32_t aEventLimit,
+                         JSContext* aCx, uint8_t optional_argc,
+                         JS::MutableHandleValue aResult);
 
 
-nsresult RecordChildEvents(mozilla::Telemetry::ProcessID aProcessType,
-                           const nsTArray<mozilla::Telemetry::ChildEventData>& aEvents);
+nsresult RecordChildEvents(
+    mozilla::Telemetry::ProcessID aProcessType,
+    const nsTArray<mozilla::Telemetry::ChildEventData>& aEvents);
 
 
 void ClearEvents();
 
 size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf);
 
-} 
+}  
 
-#endif 
+#endif  

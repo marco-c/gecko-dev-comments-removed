@@ -16,17 +16,15 @@
 
 
 
-inline mozilla::Decimal
-NS_floorModulo(mozilla::Decimal x, mozilla::Decimal y)
-{
+inline mozilla::Decimal NS_floorModulo(mozilla::Decimal x, mozilla::Decimal y) {
   return (x - y * (x / y).floor());
 }
 
 namespace mozilla {
 namespace dom {
 class HTMLInputElement;
-} 
-} 
+}  
+}  
 
 struct DoNotDelete;
 class nsIFrame;
@@ -34,12 +32,11 @@ class nsIFrame;
 
 
 
-class InputType
-{
-public:
-  static mozilla::UniquePtr<InputType, DoNotDelete>
-  Create(mozilla::dom::HTMLInputElement* aInputElement, uint8_t aType,
-         void* aMemory);
+class InputType {
+ public:
+  static mozilla::UniquePtr<InputType, DoNotDelete> Create(
+      mozilla::dom::HTMLInputElement* aInputElement, uint8_t aType,
+      void* aMemory);
 
   virtual ~InputType() {}
 
@@ -61,8 +58,9 @@ public:
   virtual bool HasStepMismatch(bool aUseZeroIfValueNaN) const;
   virtual bool HasBadInput() const;
 
-  nsresult GetValidationMessage(nsAString& aValidationMessage,
-                                nsIConstraintValidation::ValidityStateType aType);
+  nsresult GetValidationMessage(
+      nsAString& aValidationMessage,
+      nsIConstraintValidation::ValidityStateType aType);
   virtual nsresult GetValueMissingMessage(nsAString& aMessage);
   virtual nsresult GetTypeMismatchMessage(nsAString& aMessage);
   virtual nsresult GetRangeOverflowMessage(nsAString& aMessage);
@@ -97,12 +95,12 @@ public:
   virtual bool ConvertNumberToString(mozilla::Decimal aValue,
                                      nsAString& aResultString) const;
 
-protected:
+ protected:
   explicit InputType(mozilla::dom::HTMLInputElement* aInputElement)
-    : mInputElement(aInputElement)
-  {}
+      : mInputElement(aInputElement) {}
 
   
+
 
 
 
@@ -153,12 +151,11 @@ protected:
 
 
 
-  bool ParseDate(const nsAString& aValue,
-                 uint32_t* aYear,
-                 uint32_t* aMonth,
+  bool ParseDate(const nsAString& aValue, uint32_t* aYear, uint32_t* aMonth,
                  uint32_t* aDay) const;
 
   
+
 
 
 
@@ -178,8 +175,7 @@ protected:
 
 
 
-  bool ParseMonth(const nsAString& aValue,
-                  uint32_t* aYear,
+  bool ParseMonth(const nsAString& aValue, uint32_t* aYear,
                   uint32_t* aMonth) const;
 
   
@@ -189,8 +185,7 @@ protected:
 
 
 
-  bool ParseWeek(const nsAString& aValue,
-                 uint32_t* aYear,
+  bool ParseWeek(const nsAString& aValue, uint32_t* aYear,
                  uint32_t* aWeek) const;
 
   
@@ -202,10 +197,8 @@ protected:
 
 
 
-  bool ParseDateTimeLocal(const nsAString& aValue,
-                          uint32_t* aYear,
-                          uint32_t* aMonth,
-                          uint32_t* aDay,
+  bool ParseDateTimeLocal(const nsAString& aValue, uint32_t* aYear,
+                          uint32_t* aMonth, uint32_t* aDay,
                           uint32_t* aTime) const;
 
   
@@ -238,6 +231,8 @@ protected:
 
 
 
-struct DoNotDelete { void operator()(::InputType* p) { p->~InputType(); } };
+struct DoNotDelete {
+  void operator()(::InputType* p) { p->~InputType(); }
+};
 
 #endif 

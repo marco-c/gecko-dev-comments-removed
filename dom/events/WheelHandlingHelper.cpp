@@ -6,7 +6,7 @@
 
 #include "WheelHandlingHelper.h"
 
-#include <utility>                      
+#include <utility>  
 
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventStateManager.h"
@@ -18,7 +18,7 @@
 #include "nsIContent.h"
 #include "nsIContentInlines.h"
 #include "nsIDocument.h"
-#include "nsIDocumentInlines.h"         
+#include "nsIDocumentInlines.h"  
 #include "nsIPresShell.h"
 #include "nsIScrollableFrame.h"
 #include "nsITextControlElement.h"
@@ -36,27 +36,23 @@ namespace mozilla {
 
 
 DeltaValues::DeltaValues(WidgetWheelEvent* aEvent)
-  : deltaX(aEvent->mDeltaX)
-  , deltaY(aEvent->mDeltaY)
-{
+    : deltaX(aEvent->mDeltaX), deltaY(aEvent->mDeltaY) {}
+
+
+
+
+
+ bool WheelHandlingUtils::CanScrollInRange(nscoord aMin,
+                                                       nscoord aValue,
+                                                       nscoord aMax,
+                                                       double aDirection) {
+  return aDirection > 0.0 ? aValue < static_cast<double>(aMax)
+                          : static_cast<double>(aMin) < aValue;
 }
 
-
-
-
-
- bool
-WheelHandlingUtils::CanScrollInRange(nscoord aMin, nscoord aValue, nscoord aMax,
-                                     double aDirection)
-{
-  return aDirection > 0.0 ? aValue < static_cast<double>(aMax) :
-                            static_cast<double>(aMin) < aValue;
-}
-
- bool
-WheelHandlingUtils::CanScrollOn(nsIFrame* aFrame,
-                                double aDirectionX, double aDirectionY)
-{
+ bool WheelHandlingUtils::CanScrollOn(nsIFrame* aFrame,
+                                                  double aDirectionX,
+                                                  double aDirectionY) {
   nsIScrollableFrame* scrollableFrame = do_QueryFrame(aFrame);
   if (scrollableFrame) {
     return CanScrollOn(scrollableFrame, aDirectionX, aDirectionY);
@@ -65,10 +61,8 @@ WheelHandlingUtils::CanScrollOn(nsIFrame* aFrame,
   return pluginFrame && pluginFrame->WantsToHandleWheelEventAsDefaultAction();
 }
 
- bool
-WheelHandlingUtils::CanScrollOn(nsIScrollableFrame* aScrollFrame,
-                                double aDirectionX, double aDirectionY)
-{
+ bool WheelHandlingUtils::CanScrollOn(
+    nsIScrollableFrame* aScrollFrame, double aDirectionX, double aDirectionY) {
   MOZ_ASSERT(aScrollFrame);
   NS_ASSERTION(aDirectionX || aDirectionY,
                "One of the delta values must be non-zero at least");
@@ -78,23 +72,21 @@ WheelHandlingUtils::CanScrollOn(nsIScrollableFrame* aScrollFrame,
   uint32_t directions = aScrollFrame->GetPerceivedScrollingDirections();
 
   return (aDirectionX && (directions & nsIScrollableFrame::HORIZONTAL) &&
-          CanScrollInRange(scrollRange.x, scrollPt.x,
-                           scrollRange.XMost(), aDirectionX)) ||
+          CanScrollInRange(scrollRange.x, scrollPt.x, scrollRange.XMost(),
+                           aDirectionX)) ||
          (aDirectionY && (directions & nsIScrollableFrame::VERTICAL) &&
-          CanScrollInRange(scrollRange.y, scrollPt.y,
-                           scrollRange.YMost(), aDirectionY));
+          CanScrollInRange(scrollRange.y, scrollPt.y, scrollRange.YMost(),
+                           aDirectionY));
 }
 
  Maybe<layers::ScrollDirection>
-WheelHandlingUtils::GetDisregardedWheelScrollDirection(const nsIFrame* aFrame)
-{
+WheelHandlingUtils::GetDisregardedWheelScrollDirection(const nsIFrame* aFrame) {
   nsIContent* content = aFrame->GetContent();
   if (!content) {
     return Nothing();
   }
-  nsCOMPtr<nsITextControlElement> ctrl =
-    do_QueryInterface(content->IsInAnonymousSubtree()
-                      ? content->GetBindingParent() : content);
+  nsCOMPtr<nsITextControlElement> ctrl = do_QueryInterface(
+      content->IsInAnonymousSubtree() ? content->GetBindingParent() : content);
   if (!ctrl || !ctrl->IsSingleLineTextControl()) {
     return Nothing();
   }
@@ -106,8 +98,8 @@ WheelHandlingUtils::GetDisregardedWheelScrollDirection(const nsIFrame* aFrame)
   
   
   return Some(aFrame->GetWritingMode().IsVertical()
-              ? layers::ScrollDirection::eHorizontal
-              : layers::ScrollDirection::eVertical);
+                  ? layers::ScrollDirection::eHorizontal
+                  : layers::ScrollDirection::eVertical);
 }
 
 
@@ -121,23 +113,18 @@ nsITimer* WheelTransaction::sTimer = nullptr;
 int32_t WheelTransaction::sScrollSeriesCounter = 0;
 bool WheelTransaction::sOwnScrollbars = false;
 
- bool
-WheelTransaction::OutOfTime(uint32_t aBaseTime, uint32_t aThreshold)
-{
+ bool WheelTransaction::OutOfTime(uint32_t aBaseTime,
+                                              uint32_t aThreshold) {
   uint32_t now = PR_IntervalToMilliseconds(PR_IntervalNow());
   return (now - aBaseTime > aThreshold);
 }
 
- void
-WheelTransaction::OwnScrollbars(bool aOwn)
-{
+ void WheelTransaction::OwnScrollbars(bool aOwn) {
   sOwnScrollbars = aOwn;
 }
 
- void
-WheelTransaction::BeginTransaction(nsIFrame* aTargetFrame,
-                                   const WidgetWheelEvent* aEvent)
-{
+ void WheelTransaction::BeginTransaction(
+    nsIFrame* aTargetFrame, const WidgetWheelEvent* aEvent) {
   NS_ASSERTION(!sTargetFrame, "previous transaction is not finished!");
   MOZ_ASSERT(aEvent->mMessage == eWheel,
              "Transaction must be started with a wheel event");
@@ -150,17 +137,16 @@ WheelTransaction::BeginTransaction(nsIFrame* aTargetFrame,
   }
 }
 
- bool
-WheelTransaction::UpdateTransaction(const WidgetWheelEvent* aEvent)
-{
+ bool WheelTransaction::UpdateTransaction(
+    const WidgetWheelEvent* aEvent) {
   nsIFrame* scrollToFrame = GetTargetFrame();
   nsIScrollableFrame* scrollableFrame = scrollToFrame->GetScrollTargetFrame();
   if (scrollableFrame) {
     scrollToFrame = do_QueryFrame(scrollableFrame);
   }
 
-  if (!WheelHandlingUtils::CanScrollOn(scrollToFrame,
-                                       aEvent->mDeltaX, aEvent->mDeltaY)) {
+  if (!WheelHandlingUtils::CanScrollOn(scrollToFrame, aEvent->mDeltaX,
+                                       aEvent->mDeltaY)) {
     OnFailToScrollTarget();
     
     
@@ -183,9 +169,7 @@ WheelTransaction::UpdateTransaction(const WidgetWheelEvent* aEvent)
   return true;
 }
 
- void
-WheelTransaction::MayEndTransaction()
-{
+ void WheelTransaction::MayEndTransaction() {
   if (!sOwnScrollbars && ScrollbarsForWheel::IsActive()) {
     ScrollbarsForWheel::OwnWheelTransaction(true);
   } else {
@@ -193,9 +177,7 @@ WheelTransaction::MayEndTransaction()
   }
 }
 
- void
-WheelTransaction::EndTransaction()
-{
+ void WheelTransaction::EndTransaction() {
   if (sTimer) {
     sTimer->Cancel();
   }
@@ -208,10 +190,8 @@ WheelTransaction::EndTransaction()
   }
 }
 
- bool
-WheelTransaction::WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
-                                          AutoWeakFrame& aTargetWeakFrame)
-{
+ bool WheelTransaction::WillHandleDefaultAction(
+    WidgetWheelEvent* aWheelEvent, AutoWeakFrame& aTargetWeakFrame) {
   nsIFrame* lastTargetFrame = GetTargetFrame();
   if (!lastTargetFrame) {
     BeginTransaction(aTargetWeakFrame.GetFrame(), aWheelEvent);
@@ -234,9 +214,7 @@ WheelTransaction::WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
   return true;
 }
 
- void
-WheelTransaction::OnEvent(WidgetEvent* aEvent)
-{
+ void WheelTransaction::OnEvent(WidgetEvent* aEvent) {
   if (!sTargetFrame) {
     return;
   }
@@ -267,8 +245,8 @@ WheelTransaction::OnEvent(WidgetEvent* aEvent)
         
         LayoutDeviceIntPoint pt = GetScreenPoint(mouseEvent);
         auto r = LayoutDeviceIntRect::FromAppUnitsToNearest(
-          sTargetFrame->GetScreenRectInAppUnits(),
-          sTargetFrame->PresContext()->AppUnitsPerDevPixel());
+            sTargetFrame->GetScreenRectInAppUnits(),
+            sTargetFrame->PresContext()->AppUnitsPerDevPixel());
         if (!r.Contains(pt)) {
           EndTransaction();
           return;
@@ -301,24 +279,17 @@ WheelTransaction::OnEvent(WidgetEvent* aEvent)
   }
 }
 
- void
-WheelTransaction::Shutdown()
-{
-  NS_IF_RELEASE(sTimer);
-}
+ void WheelTransaction::Shutdown() { NS_IF_RELEASE(sTimer); }
 
- void
-WheelTransaction::OnFailToScrollTarget()
-{
+ void WheelTransaction::OnFailToScrollTarget() {
   MOZ_ASSERT(sTargetFrame, "We don't have mouse scrolling transaction");
 
   if (Prefs::sTestMouseScroll) {
     
     nsContentUtils::DispatchTrustedEvent(
-                      sTargetFrame->GetContent()->OwnerDoc(),
-                      sTargetFrame->GetContent(),
-                      NS_LITERAL_STRING("MozMouseScrollFailed"),
-                      CanBubble::eYes, Cancelable::eYes);
+        sTargetFrame->GetContent()->OwnerDoc(), sTargetFrame->GetContent(),
+        NS_LITERAL_STRING("MozMouseScrollFailed"), CanBubble::eYes,
+        Cancelable::eYes);
   }
   
   
@@ -327,9 +298,8 @@ WheelTransaction::OnFailToScrollTarget()
   }
 }
 
- void
-WheelTransaction::OnTimeout(nsITimer* aTimer, void* aClosure)
-{
+ void WheelTransaction::OnTimeout(nsITimer* aTimer,
+                                              void* aClosure) {
   if (!sTargetFrame) {
     
     EndTransaction();
@@ -344,16 +314,13 @@ WheelTransaction::OnTimeout(nsITimer* aTimer, void* aClosure)
   if (Prefs::sTestMouseScroll) {
     
     nsContentUtils::DispatchTrustedEvent(
-                      frame->GetContent()->OwnerDoc(),
-                      frame->GetContent(),
-                      NS_LITERAL_STRING("MozMouseScrollTransactionTimeout"),
-                      CanBubble::eYes, Cancelable::eYes);
+        frame->GetContent()->OwnerDoc(), frame->GetContent(),
+        NS_LITERAL_STRING("MozMouseScrollTransactionTimeout"), CanBubble::eYes,
+        Cancelable::eYes);
   }
 }
 
- void
-WheelTransaction::SetTimeout()
-{
+ void WheelTransaction::SetTimeout() {
   if (!sTimer) {
     sTimer = NS_NewTimer().take();
     if (!sTimer) {
@@ -361,28 +328,22 @@ WheelTransaction::SetTimeout()
     }
   }
   sTimer->Cancel();
-  DebugOnly<nsresult> rv =
-    sTimer->InitWithNamedFuncCallback(OnTimeout,
-                                      nullptr,
-                                      GetTimeoutTime(),
-                                      nsITimer::TYPE_ONE_SHOT,
-                                      "WheelTransaction::SetTimeout");
+  DebugOnly<nsresult> rv = sTimer->InitWithNamedFuncCallback(
+      OnTimeout, nullptr, GetTimeoutTime(), nsITimer::TYPE_ONE_SHOT,
+      "WheelTransaction::SetTimeout");
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "nsITimer::InitWithFuncCallback failed");
 }
 
- LayoutDeviceIntPoint
-WheelTransaction::GetScreenPoint(WidgetGUIEvent* aEvent)
-{
+ LayoutDeviceIntPoint WheelTransaction::GetScreenPoint(
+    WidgetGUIEvent* aEvent) {
   NS_ASSERTION(aEvent, "aEvent is null");
   NS_ASSERTION(aEvent->mWidget, "aEvent-mWidget is null");
   return aEvent->mRefPoint + aEvent->mWidget->WidgetToScreenOffset();
 }
 
- DeltaValues
-WheelTransaction::AccelerateWheelDelta(WidgetWheelEvent* aEvent,
-                                       bool aAllowScrollSpeedOverride)
-{
+ DeltaValues WheelTransaction::AccelerateWheelDelta(
+    WidgetWheelEvent* aEvent, bool aAllowScrollSpeedOverride) {
   DeltaValues result(aEvent);
 
   
@@ -407,15 +368,14 @@ WheelTransaction::AccelerateWheelDelta(WidgetWheelEvent* aEvent,
   return result;
 }
 
- double
-WheelTransaction::ComputeAcceleratedWheelDelta(double aDelta, int32_t aFactor)
-{
-  return mozilla::ComputeAcceleratedWheelDelta(aDelta, sScrollSeriesCounter, aFactor);
+ double WheelTransaction::ComputeAcceleratedWheelDelta(
+    double aDelta, int32_t aFactor) {
+  return mozilla::ComputeAcceleratedWheelDelta(aDelta, sScrollSeriesCounter,
+                                               aFactor);
 }
 
- DeltaValues
-WheelTransaction::OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent)
-{
+ DeltaValues WheelTransaction::OverrideSystemScrollSpeed(
+    WidgetWheelEvent* aEvent) {
   MOZ_ASSERT(sTargetFrame, "We don't have mouse scrolling transaction");
   MOZ_ASSERT(aEvent->mDeltaMode == WheelEvent_Binding::DOM_DELTA_LINE);
 
@@ -425,8 +385,7 @@ WheelTransaction::OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent)
     return DeltaValues(aEvent);
   }
 
-  return DeltaValues(aEvent->OverriddenDeltaX(),
-                     aEvent->OverriddenDeltaY());
+  return DeltaValues(aEvent->OverriddenDeltaX(), aEvent->OverriddenDeltaY());
 }
 
 
@@ -434,22 +393,18 @@ WheelTransaction::OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent)
 
 
 const DeltaValues ScrollbarsForWheel::directions[kNumberOfTargets] = {
-  DeltaValues(-1, 0), DeltaValues(+1, 0), DeltaValues(0, -1), DeltaValues(0, +1)
-};
+    DeltaValues(-1, 0), DeltaValues(+1, 0), DeltaValues(0, -1),
+    DeltaValues(0, +1)};
 
 AutoWeakFrame ScrollbarsForWheel::sActiveOwner = nullptr;
 AutoWeakFrame ScrollbarsForWheel::sActivatedScrollTargets[kNumberOfTargets] = {
-  nullptr, nullptr, nullptr, nullptr
-};
+    nullptr, nullptr, nullptr, nullptr};
 
 bool ScrollbarsForWheel::sHadWheelStart = false;
 bool ScrollbarsForWheel::sOwnWheelTransaction = false;
 
- void
-ScrollbarsForWheel::PrepareToScrollText(EventStateManager* aESM,
-                                        nsIFrame* aTargetFrame,
-                                        WidgetWheelEvent* aEvent)
-{
+ void ScrollbarsForWheel::PrepareToScrollText(
+    EventStateManager* aESM, nsIFrame* aTargetFrame, WidgetWheelEvent* aEvent) {
   if (aEvent->mMessage == eWheelOperationStart) {
     WheelTransaction::OwnScrollbars(false);
     if (!IsActive()) {
@@ -461,9 +416,8 @@ ScrollbarsForWheel::PrepareToScrollText(EventStateManager* aESM,
   }
 }
 
- void
-ScrollbarsForWheel::SetActiveScrollTarget(nsIScrollableFrame* aScrollTarget)
-{
+ void ScrollbarsForWheel::SetActiveScrollTarget(
+    nsIScrollableFrame* aScrollTarget) {
   if (!sHadWheelStart) {
     return;
   }
@@ -476,9 +430,7 @@ ScrollbarsForWheel::SetActiveScrollTarget(nsIScrollableFrame* aScrollTarget)
   scrollbarMediator->ScrollbarActivityStarted();
 }
 
- void
-ScrollbarsForWheel::MayInactivate()
-{
+ void ScrollbarsForWheel::MayInactivate() {
   if (!sOwnWheelTransaction && WheelTransaction::GetTargetFrame()) {
     WheelTransaction::OwnScrollbars(true);
   } else {
@@ -486,9 +438,7 @@ ScrollbarsForWheel::MayInactivate()
   }
 }
 
- void
-ScrollbarsForWheel::Inactivate()
-{
+ void ScrollbarsForWheel::Inactivate() {
   nsIScrollbarMediator* scrollbarMediator = do_QueryFrame(sActiveOwner);
   if (scrollbarMediator) {
     scrollbarMediator->ScrollbarActivityStopped();
@@ -502,9 +452,7 @@ ScrollbarsForWheel::Inactivate()
   }
 }
 
- bool
-ScrollbarsForWheel::IsActive()
-{
+ bool ScrollbarsForWheel::IsActive() {
   if (sActiveOwner) {
     return true;
   }
@@ -516,26 +464,20 @@ ScrollbarsForWheel::IsActive()
   return false;
 }
 
- void
-ScrollbarsForWheel::OwnWheelTransaction(bool aOwn)
-{
+ void ScrollbarsForWheel::OwnWheelTransaction(bool aOwn) {
   sOwnWheelTransaction = aOwn;
 }
 
  void
 ScrollbarsForWheel::TemporarilyActivateAllPossibleScrollTargets(
-                      EventStateManager* aESM,
-                      nsIFrame* aTargetFrame,
-                      WidgetWheelEvent* aEvent)
-{
+    EventStateManager* aESM, nsIFrame* aTargetFrame, WidgetWheelEvent* aEvent) {
   for (size_t i = 0; i < kNumberOfTargets; i++) {
-    const DeltaValues *dir = &directions[i];
+    const DeltaValues* dir = &directions[i];
     AutoWeakFrame* scrollTarget = &sActivatedScrollTargets[i];
     MOZ_ASSERT(!*scrollTarget, "scroll target still temporarily activated!");
-    nsIScrollableFrame* target = do_QueryFrame(
-      aESM->ComputeScrollTarget(
-              aTargetFrame, dir->deltaX, dir->deltaY, aEvent,
-              EventStateManager::COMPUTE_DEFAULT_ACTION_TARGET));
+    nsIScrollableFrame* target = do_QueryFrame(aESM->ComputeScrollTarget(
+        aTargetFrame, dir->deltaX, dir->deltaY, aEvent,
+        EventStateManager::COMPUTE_DEFAULT_ACTION_TARGET));
     nsIScrollbarMediator* scrollbarMediator = do_QueryFrame(target);
     if (scrollbarMediator) {
       nsIFrame* targetFrame = do_QueryFrame(target);
@@ -546,8 +488,7 @@ ScrollbarsForWheel::TemporarilyActivateAllPossibleScrollTargets(
 }
 
  void
-ScrollbarsForWheel::DeactivateAllTemporarilyActivatedScrollTargets()
-{
+ScrollbarsForWheel::DeactivateAllTemporarilyActivatedScrollTargets() {
   for (size_t i = 0; i < kNumberOfTargets; i++) {
     AutoWeakFrame* scrollTarget = &sActivatedScrollTargets[i];
     if (*scrollTarget) {
@@ -570,9 +511,7 @@ uint32_t WheelTransaction::Prefs::sMouseWheelTransactionTimeout = 1500;
 uint32_t WheelTransaction::Prefs::sMouseWheelTransactionIgnoreMoveDelay = 100;
 bool WheelTransaction::Prefs::sTestMouseScroll = false;
 
- void
-WheelTransaction::Prefs::InitializeStatics()
-{
+ void WheelTransaction::Prefs::InitializeStatics() {
   static bool sIsInitialized = false;
   if (!sIsInitialized) {
     Preferences::AddIntVarCache(&sMouseWheelAccelerationStart,
@@ -592,9 +531,7 @@ WheelTransaction::Prefs::InitializeStatics()
 
 
 
-void
-WheelDeltaHorizontalizer::Horizontalize()
-{
+void WheelDeltaHorizontalizer::Horizontalize() {
   MOZ_ASSERT(!mWheelEvent.mDeltaValuesHorizontalizedForDefaultHandler,
              "Wheel delta values in one wheel scroll event are being adjusted "
              "a second time");
@@ -620,8 +557,7 @@ WheelDeltaHorizontalizer::Horizontalize()
   mHorizontalized = true;
 }
 
-void WheelDeltaHorizontalizer::CancelHorizontalization()
-{
+void WheelDeltaHorizontalizer::CancelHorizontalization() {
   
   if (mHorizontalized &&
       mWheelEvent.mDeltaValuesHorizontalizedForDefaultHandler) {
@@ -637,8 +573,7 @@ void WheelDeltaHorizontalizer::CancelHorizontalization()
   }
 }
 
-WheelDeltaHorizontalizer::~WheelDeltaHorizontalizer()
-{
+WheelDeltaHorizontalizer::~WheelDeltaHorizontalizer() {
   CancelHorizontalization();
 }
 
@@ -646,9 +581,7 @@ WheelDeltaHorizontalizer::~WheelDeltaHorizontalizer()
 
 
 
-bool
-AutoDirWheelDeltaAdjuster::ShouldBeAdjusted()
-{
+bool AutoDirWheelDeltaAdjuster::ShouldBeAdjusted() {
   
   
   
@@ -672,11 +605,11 @@ AutoDirWheelDeltaAdjuster::ShouldBeAdjusted()
       return false;
     }
     if (IsHorizontalContentRightToLeft()) {
-      mShouldBeAdjusted = mDeltaX > 0 ? CanScrollUpwards()
-                                      : CanScrollDownwards();
+      mShouldBeAdjusted =
+          mDeltaX > 0 ? CanScrollUpwards() : CanScrollDownwards();
     } else {
-      mShouldBeAdjusted = mDeltaX < 0 ? CanScrollUpwards()
-                                      : CanScrollDownwards();
+      mShouldBeAdjusted =
+          mDeltaX < 0 ? CanScrollUpwards() : CanScrollDownwards();
     }
     return mShouldBeAdjusted;
   }
@@ -685,18 +618,16 @@ AutoDirWheelDeltaAdjuster::ShouldBeAdjusted()
     return false;
   }
   if (IsHorizontalContentRightToLeft()) {
-    mShouldBeAdjusted = mDeltaY > 0 ? CanScrollLeftwards()
-                                    : CanScrollRightwards();
+    mShouldBeAdjusted =
+        mDeltaY > 0 ? CanScrollLeftwards() : CanScrollRightwards();
   } else {
-    mShouldBeAdjusted = mDeltaY < 0 ? CanScrollLeftwards()
-                                    : CanScrollRightwards();
+    mShouldBeAdjusted =
+        mDeltaY < 0 ? CanScrollLeftwards() : CanScrollRightwards();
   }
   return mShouldBeAdjusted;
 }
 
-void
-AutoDirWheelDeltaAdjuster::Adjust()
-{
+void AutoDirWheelDeltaAdjuster::Adjust() {
   if (!ShouldBeAdjusted()) {
     return;
   }
@@ -714,15 +645,12 @@ AutoDirWheelDeltaAdjuster::Adjust()
 
 
 ESMAutoDirWheelDeltaAdjuster::ESMAutoDirWheelDeltaAdjuster(
-                                WidgetWheelEvent& aEvent,
-                                nsIFrame& aScrollFrame,
-                                bool aHonoursRoot)
-  : AutoDirWheelDeltaAdjuster(aEvent.mDeltaX, aEvent.mDeltaY)
-  , mLineOrPageDeltaX(aEvent.mLineOrPageDeltaX)
-  , mLineOrPageDeltaY(aEvent.mLineOrPageDeltaY)
-  , mOverflowDeltaX(aEvent.mOverflowDeltaX)
-  , mOverflowDeltaY(aEvent.mOverflowDeltaY)
-{
+    WidgetWheelEvent& aEvent, nsIFrame& aScrollFrame, bool aHonoursRoot)
+    : AutoDirWheelDeltaAdjuster(aEvent.mDeltaX, aEvent.mDeltaY),
+      mLineOrPageDeltaX(aEvent.mLineOrPageDeltaX),
+      mLineOrPageDeltaY(aEvent.mLineOrPageDeltaY),
+      mOverflowDeltaX(aEvent.mOverflowDeltaX),
+      mOverflowDeltaY(aEvent.mOverflowDeltaY) {
   mScrollTargetFrame = aScrollFrame.GetScrollTargetFrame();
   MOZ_ASSERT(mScrollTargetFrame);
 
@@ -760,14 +688,12 @@ ESMAutoDirWheelDeltaAdjuster::ESMAutoDirWheelDeltaAdjuster(
   
   
   mIsHorizontalContentRightToLeft =
-    (blockDir == WritingMode::BlockDir::eBlockRL ||
-     (blockDir == WritingMode::BlockDir::eBlockTB &&
-      inlineDir == WritingMode::InlineDir::eInlineRTL));
+      (blockDir == WritingMode::BlockDir::eBlockRL ||
+       (blockDir == WritingMode::BlockDir::eBlockTB &&
+        inlineDir == WritingMode::InlineDir::eInlineRTL));
 }
 
-void
-ESMAutoDirWheelDeltaAdjuster::OnAdjusted()
-{
+void ESMAutoDirWheelDeltaAdjuster::OnAdjusted() {
   
   
   if (mDeltaX) {
@@ -796,55 +722,41 @@ ESMAutoDirWheelDeltaAdjuster::OnAdjusted()
   }
 }
 
-bool
-ESMAutoDirWheelDeltaAdjuster::CanScrollAlongXAxis() const
-{
+bool ESMAutoDirWheelDeltaAdjuster::CanScrollAlongXAxis() const {
   return mScrollTargetFrame->GetPerceivedScrollingDirections() &
-           nsIScrollableFrame::HORIZONTAL;
+         nsIScrollableFrame::HORIZONTAL;
 }
 
-bool
-ESMAutoDirWheelDeltaAdjuster::CanScrollAlongYAxis() const
-{
+bool ESMAutoDirWheelDeltaAdjuster::CanScrollAlongYAxis() const {
   return mScrollTargetFrame->GetPerceivedScrollingDirections() &
-           nsIScrollableFrame::VERTICAL;
+         nsIScrollableFrame::VERTICAL;
 }
 
-bool
-ESMAutoDirWheelDeltaAdjuster::CanScrollUpwards() const
-{
+bool ESMAutoDirWheelDeltaAdjuster::CanScrollUpwards() const {
   nsPoint scrollPt = mScrollTargetFrame->GetScrollPosition();
   nsRect scrollRange = mScrollTargetFrame->GetScrollRange();
   return static_cast<double>(scrollRange.y) < scrollPt.y;
 }
 
-bool
-ESMAutoDirWheelDeltaAdjuster::CanScrollDownwards() const
-{
+bool ESMAutoDirWheelDeltaAdjuster::CanScrollDownwards() const {
   nsPoint scrollPt = mScrollTargetFrame->GetScrollPosition();
   nsRect scrollRange = mScrollTargetFrame->GetScrollRange();
   return static_cast<double>(scrollRange.YMost()) > scrollPt.y;
 }
 
-bool
-ESMAutoDirWheelDeltaAdjuster::CanScrollLeftwards() const
-{
+bool ESMAutoDirWheelDeltaAdjuster::CanScrollLeftwards() const {
   nsPoint scrollPt = mScrollTargetFrame->GetScrollPosition();
   nsRect scrollRange = mScrollTargetFrame->GetScrollRange();
   return static_cast<double>(scrollRange.x) < scrollPt.x;
 }
 
-bool
-ESMAutoDirWheelDeltaAdjuster::CanScrollRightwards() const
-{
+bool ESMAutoDirWheelDeltaAdjuster::CanScrollRightwards() const {
   nsPoint scrollPt = mScrollTargetFrame->GetScrollPosition();
   nsRect scrollRange = mScrollTargetFrame->GetScrollRange();
   return static_cast<double>(scrollRange.XMost()) > scrollPt.x;
 }
 
-bool
-ESMAutoDirWheelDeltaAdjuster::IsHorizontalContentRightToLeft() const
-{
+bool ESMAutoDirWheelDeltaAdjuster::IsHorizontalContentRightToLeft() const {
   return mIsHorizontalContentRightToLeft;
 }
 
@@ -854,19 +766,16 @@ ESMAutoDirWheelDeltaAdjuster::IsHorizontalContentRightToLeft() const
 
 
 ESMAutoDirWheelDeltaRestorer::ESMAutoDirWheelDeltaRestorer(
-                                WidgetWheelEvent& aEvent)
-  : mEvent(aEvent)
-  , mOldDeltaX(aEvent.mDeltaX)
-  , mOldDeltaY(aEvent.mDeltaY)
-  , mOldLineOrPageDeltaX(aEvent.mLineOrPageDeltaX)
-  , mOldLineOrPageDeltaY(aEvent.mLineOrPageDeltaY)
-  , mOldOverflowDeltaX(aEvent.mOverflowDeltaX)
-  , mOldOverflowDeltaY(aEvent.mOverflowDeltaY)
-{
-}
+    WidgetWheelEvent& aEvent)
+    : mEvent(aEvent),
+      mOldDeltaX(aEvent.mDeltaX),
+      mOldDeltaY(aEvent.mDeltaY),
+      mOldLineOrPageDeltaX(aEvent.mLineOrPageDeltaX),
+      mOldLineOrPageDeltaY(aEvent.mLineOrPageDeltaY),
+      mOldOverflowDeltaX(aEvent.mOverflowDeltaX),
+      mOldOverflowDeltaY(aEvent.mOverflowDeltaY) {}
 
-ESMAutoDirWheelDeltaRestorer::~ESMAutoDirWheelDeltaRestorer()
-{
+ESMAutoDirWheelDeltaRestorer::~ESMAutoDirWheelDeltaRestorer() {
   if (mOldDeltaX == mEvent.mDeltaX || mOldDeltaY == mEvent.mDeltaY) {
     
     
@@ -917,4 +826,4 @@ ESMAutoDirWheelDeltaRestorer::~ESMAutoDirWheelDeltaRestorer()
   }
 }
 
-} 
+}  

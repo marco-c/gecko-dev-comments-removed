@@ -14,8 +14,8 @@
 namespace mozilla {
 namespace dom {
 class DataTransfer;
-} 
-} 
+}  
+}  
 
 
 
@@ -23,10 +23,8 @@ class DataTransfer;
 
 
 
-class nsNativeDragSource final : public IDropSource
-{
-public:
-
+class nsNativeDragSource final : public IDropSource {
+ public:
   
   
   explicit nsNativeDragSource(mozilla::dom::DataTransfer* aDataTransfer);
@@ -53,7 +51,7 @@ public:
 
   bool UserCancelled() { return mUserCancelled; }
 
-protected:
+ protected:
   
   ULONG m_cRef;
 
@@ -67,5 +65,4 @@ protected:
   bool mUserCancelled;
 };
 
-#endif 
-
+#endif  

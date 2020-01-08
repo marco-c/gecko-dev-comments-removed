@@ -19,74 +19,61 @@
 namespace js {
 namespace jit {
 
-static uint32_t
-get_mips_flags()
-{
-    uint32_t flags = HWCAP_MIPS;
+static uint32_t get_mips_flags() {
+  uint32_t flags = HWCAP_MIPS;
 
 #if defined(JS_SIMULATOR_MIPS32) || defined(JS_SIMULATOR_MIPS64)
-    flags |= HWCAP_FPU;
-    flags |= HWCAP_R2;
+  flags |= HWCAP_FPU;
+  flags |= HWCAP_R2;
 #else
-# ifdef __linux__
-    FILE* fp = fopen("/proc/cpuinfo", "r");
-    if (!fp) {
-        return flags;
-    }
-
-    char buf[1024];
-    memset(buf, 0, sizeof(buf));
-    (void)fread(buf, sizeof(char), sizeof(buf) - 1, fp);
-    fclose(fp);
-    if (strstr(buf, "FPU")) {
-        flags |= HWCAP_FPU;
-    }
-    if (strstr(buf, "Loongson")) {
-        flags |= HWCAP_LOONGSON;
-    }
-    if (strstr(buf, "mips32r2") || strstr(buf, "mips64r2")) {
-        flags |= HWCAP_R2;
-    }
-# endif
-#endif 
+#ifdef __linux__
+  FILE* fp = fopen("/proc/cpuinfo", "r");
+  if (!fp) {
     return flags;
+  }
+
+  char buf[1024];
+  memset(buf, 0, sizeof(buf));
+  (void)fread(buf, sizeof(char), sizeof(buf) - 1, fp);
+  fclose(fp);
+  if (strstr(buf, "FPU")) {
+    flags |= HWCAP_FPU;
+  }
+  if (strstr(buf, "Loongson")) {
+    flags |= HWCAP_LOONGSON;
+  }
+  if (strstr(buf, "mips32r2") || strstr(buf, "mips64r2")) {
+    flags |= HWCAP_R2;
+  }
+#endif
+#endif  
+  return flags;
 }
 
-static bool check_fpu()
-{
-    return mips_private::Flags & HWCAP_FPU;
-}
+static bool check_fpu() { return mips_private::Flags & HWCAP_FPU; }
 
-static bool check_loongson()
-{
-    return mips_private::Flags & HWCAP_LOONGSON;
-}
+static bool check_loongson() { return mips_private::Flags & HWCAP_LOONGSON; }
 
-static bool check_r2()
-{
-    return mips_private::Flags & HWCAP_R2;
-}
+static bool check_r2() { return mips_private::Flags & HWCAP_R2; }
 
 namespace mips_private {
-    
-    uint32_t Flags = get_mips_flags();
-    bool hasFPU = check_fpu();;
-    bool isLoongson = check_loongson();
-    bool hasR2 = check_r2();
-}
 
-Registers::Code
-Registers::FromName(const char* name)
-{
-    for (size_t i = 0; i < Total; i++) {
-        if (strcmp(GetName(i), name) == 0) {
-            return Code(i);
-        }
+uint32_t Flags = get_mips_flags();
+bool hasFPU = check_fpu();
+;
+bool isLoongson = check_loongson();
+bool hasR2 = check_r2();
+}  
+
+Registers::Code Registers::FromName(const char* name) {
+  for (size_t i = 0; i < Total; i++) {
+    if (strcmp(GetName(i), name) == 0) {
+      return Code(i);
     }
+  }
 
-    return Invalid;
+  return Invalid;
 }
 
-} 
-} 
-
+}  
+}  

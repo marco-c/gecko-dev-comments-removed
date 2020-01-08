@@ -30,15 +30,14 @@ class nsAtom;
 namespace mozilla {
 namespace dom {
 class SVGAnimationElement;
-} 
-} 
+}  
+}  
 
 
 
 
-class nsSMILTimedElement
-{
-public:
+class nsSMILTimedElement {
+ public:
   nsSMILTimedElement();
   ~nsSMILTimedElement();
 
@@ -106,10 +105,7 @@ public:
 
 
 
-  nsSMILTimeValue GetSimpleDuration() const
-  {
-    return mSimpleDur;
-  }
+  nsSMILTimeValue GetSimpleDuration() const { return mSimpleDur; }
 
   
 
@@ -160,8 +156,7 @@ public:
 
 
   void UpdateInstanceTime(nsSMILInstanceTime* aInstanceTime,
-                          nsSMILTimeValue& aUpdatedTime,
-                          bool aIsBegin);
+                          nsSMILTimeValue& aUpdatedTime, bool aIsBegin);
 
   
 
@@ -350,21 +345,21 @@ public:
 
   typedef bool (*RemovalTestFunction)(nsSMILInstanceTime* aInstance);
 
-protected:
+ protected:
   
   typedef nsTArray<mozilla::UniquePtr<nsSMILTimeValueSpec>> TimeValueSpecList;
-  typedef nsTArray<RefPtr<nsSMILInstanceTime> >   InstanceTimeList;
+  typedef nsTArray<RefPtr<nsSMILInstanceTime>> InstanceTimeList;
   typedef nsTArray<mozilla::UniquePtr<nsSMILInterval>> IntervalList;
   typedef nsPtrHashKey<nsSMILTimeValueSpec> TimeValueSpecPtrKey;
   typedef nsTHashtable<TimeValueSpecPtrKey> TimeValueSpecHashSet;
 
   
   class InstanceTimeComparator {
-    public:
-      bool Equals(const nsSMILInstanceTime* aElem1,
-                    const nsSMILInstanceTime* aElem2) const;
-      bool LessThan(const nsSMILInstanceTime* aElem1,
-                      const nsSMILInstanceTime* aElem2) const;
+   public:
+    bool Equals(const nsSMILInstanceTime* aElem1,
+                const nsSMILInstanceTime* aElem2) const;
+    bool LessThan(const nsSMILInstanceTime* aElem1,
+                  const nsSMILInstanceTime* aElem2) const;
   };
 
   
@@ -375,39 +370,34 @@ protected:
   
   
 
-  nsresult          SetBeginSpec(const nsAString& aBeginSpec,
-                                 Element& aContextElement,
-                                 RemovalTestFunction aRemove);
-  nsresult          SetEndSpec(const nsAString& aEndSpec,
-                               Element& aContextElement,
-                               RemovalTestFunction aRemove);
-  nsresult          SetSimpleDuration(const nsAString& aDurSpec);
-  nsresult          SetMin(const nsAString& aMinSpec);
-  nsresult          SetMax(const nsAString& aMaxSpec);
-  nsresult          SetRestart(const nsAString& aRestartSpec);
-  nsresult          SetRepeatCount(const nsAString& aRepeatCountSpec);
-  nsresult          SetRepeatDur(const nsAString& aRepeatDurSpec);
-  nsresult          SetFillMode(const nsAString& aFillModeSpec);
+  nsresult SetBeginSpec(const nsAString& aBeginSpec, Element& aContextElement,
+                        RemovalTestFunction aRemove);
+  nsresult SetEndSpec(const nsAString& aEndSpec, Element& aContextElement,
+                      RemovalTestFunction aRemove);
+  nsresult SetSimpleDuration(const nsAString& aDurSpec);
+  nsresult SetMin(const nsAString& aMinSpec);
+  nsresult SetMax(const nsAString& aMaxSpec);
+  nsresult SetRestart(const nsAString& aRestartSpec);
+  nsresult SetRepeatCount(const nsAString& aRepeatCountSpec);
+  nsresult SetRepeatDur(const nsAString& aRepeatDurSpec);
+  nsresult SetFillMode(const nsAString& aFillModeSpec);
 
-  void              UnsetBeginSpec(RemovalTestFunction aRemove);
-  void              UnsetEndSpec(RemovalTestFunction aRemove);
-  void              UnsetSimpleDuration();
-  void              UnsetMin();
-  void              UnsetMax();
-  void              UnsetRestart();
-  void              UnsetRepeatCount();
-  void              UnsetRepeatDur();
-  void              UnsetFillMode();
+  void UnsetBeginSpec(RemovalTestFunction aRemove);
+  void UnsetEndSpec(RemovalTestFunction aRemove);
+  void UnsetSimpleDuration();
+  void UnsetMin();
+  void UnsetMax();
+  void UnsetRestart();
+  void UnsetRepeatCount();
+  void UnsetRepeatDur();
+  void UnsetFillMode();
 
-  nsresult          SetBeginOrEndSpec(const nsAString& aSpec,
-                                      Element& aContextElement,
-                                      bool aIsBegin,
-                                      RemovalTestFunction aRemove);
-  void              ClearSpecs(TimeValueSpecList& aSpecs,
-                               InstanceTimeList& aInstances,
-                               RemovalTestFunction aRemove);
-  void              ClearIntervals();
-  void              DoSampleAt(nsSMILTime aContainerTime, bool aEndOnly);
+  nsresult SetBeginOrEndSpec(const nsAString& aSpec, Element& aContextElement,
+                             bool aIsBegin, RemovalTestFunction aRemove);
+  void ClearSpecs(TimeValueSpecList& aSpecs, InstanceTimeList& aInstances,
+                  RemovalTestFunction aRemove);
+  void ClearIntervals();
+  void DoSampleAt(nsSMILTime aContainerTime, bool aEndOnly);
 
   
 
@@ -503,31 +493,31 @@ protected:
 
 
 
-  bool              GetNextInterval(const nsSMILInterval* aPrevInterval,
-                                    const nsSMILInterval* aReplacedInterval,
-                                    const nsSMILInstanceTime* aFixedBeginTime,
-                                    nsSMILInterval& aResult) const;
+  bool GetNextInterval(const nsSMILInterval* aPrevInterval,
+                       const nsSMILInterval* aReplacedInterval,
+                       const nsSMILInstanceTime* aFixedBeginTime,
+                       nsSMILInterval& aResult) const;
   nsSMILInstanceTime* GetNextGreater(const InstanceTimeList& aList,
                                      const nsSMILTimeValue& aBase,
                                      int32_t& aPosition) const;
   nsSMILInstanceTime* GetNextGreaterOrEqual(const InstanceTimeList& aList,
                                             const nsSMILTimeValue& aBase,
                                             int32_t& aPosition) const;
-  nsSMILTimeValue   CalcActiveEnd(const nsSMILTimeValue& aBegin,
-                                  const nsSMILTimeValue& aEnd) const;
-  nsSMILTimeValue   GetRepeatDuration() const;
-  nsSMILTimeValue   ApplyMinAndMax(const nsSMILTimeValue& aDuration) const;
-  nsSMILTime        ActiveTimeToSimpleTime(nsSMILTime aActiveTime,
-                                           uint32_t& aRepeatIteration);
+  nsSMILTimeValue CalcActiveEnd(const nsSMILTimeValue& aBegin,
+                                const nsSMILTimeValue& aEnd) const;
+  nsSMILTimeValue GetRepeatDuration() const;
+  nsSMILTimeValue ApplyMinAndMax(const nsSMILTimeValue& aDuration) const;
+  nsSMILTime ActiveTimeToSimpleTime(nsSMILTime aActiveTime,
+                                    uint32_t& aRepeatIteration);
   nsSMILInstanceTime* CheckForEarlyEnd(
-                        const nsSMILTimeValue& aContainerTime) const;
-  void              UpdateCurrentInterval(bool aForceChangeNotice = false);
-  void              SampleSimpleTime(nsSMILTime aActiveTime);
-  void              SampleFillValue();
-  nsresult          AddInstanceTimeFromCurrentTime(nsSMILTime aCurrentTime,
-                        double aOffsetSeconds, bool aIsBegin);
-  void              RegisterMilestone();
-  bool              GetNextMilestone(nsSMILMilestone& aNextMilestone) const;
+      const nsSMILTimeValue& aContainerTime) const;
+  void UpdateCurrentInterval(bool aForceChangeNotice = false);
+  void SampleSimpleTime(nsSMILTime aActiveTime);
+  void SampleFillValue();
+  nsresult AddInstanceTimeFromCurrentTime(nsSMILTime aCurrentTime,
+                                          double aOffsetSeconds, bool aIsBegin);
+  void RegisterMilestone();
+  bool GetNextMilestone(nsSMILMilestone& aNextMilestone) const;
 
   
   
@@ -535,26 +525,22 @@ protected:
   
   
   
-  void              NotifyNewInterval();
-  void              NotifyChangedInterval(nsSMILInterval* aInterval,
-                                          bool aBeginObjectChanged,
-                                          bool aEndObjectChanged);
+  void NotifyNewInterval();
+  void NotifyChangedInterval(nsSMILInterval* aInterval,
+                             bool aBeginObjectChanged, bool aEndObjectChanged);
 
-  void              FireTimeEventAsync(mozilla::EventMessage aMsg,
-                                       int32_t aDetail);
+  void FireTimeEventAsync(mozilla::EventMessage aMsg, int32_t aDetail);
   const nsSMILInstanceTime* GetEffectiveBeginInstance() const;
   const nsSMILInterval* GetPreviousInterval() const;
-  bool              HasPlayed() const { return !mOldIntervals.IsEmpty(); }
-  bool              HasClientInFillRange() const;
-  bool              EndHasEventConditions() const;
-  bool              AreEndTimesDependentOn(
-                      const nsSMILInstanceTime* aBase) const;
+  bool HasPlayed() const { return !mOldIntervals.IsEmpty(); }
+  bool HasClientInFillRange() const;
+  bool EndHasEventConditions() const;
+  bool AreEndTimesDependentOn(const nsSMILInstanceTime* aBase) const;
 
   
   
   
-  void ResetCurrentInterval()
-  {
+  void ResetCurrentInterval() {
     if (mCurrentInterval) {
       
       auto interval = std::move(mCurrentInterval);
@@ -565,48 +551,43 @@ protected:
   
   
   
-  mozilla::dom::SVGAnimationElement* mAnimationElement; 
-                                                        
-  TimeValueSpecList               mBeginSpecs; 
-  TimeValueSpecList               mEndSpecs; 
+  mozilla::dom::SVGAnimationElement* mAnimationElement;  
+                                                         
+  TimeValueSpecList mBeginSpecs;                         
+  TimeValueSpecList mEndSpecs;                           
 
-  nsSMILTimeValue                 mSimpleDur;
+  nsSMILTimeValue mSimpleDur;
 
-  nsSMILRepeatCount               mRepeatCount;
-  nsSMILTimeValue                 mRepeatDur;
+  nsSMILRepeatCount mRepeatCount;
+  nsSMILTimeValue mRepeatDur;
 
-  nsSMILTimeValue                 mMin;
-  nsSMILTimeValue                 mMax;
+  nsSMILTimeValue mMin;
+  nsSMILTimeValue mMax;
 
-  enum nsSMILFillMode : uint8_t
-  {
-    FILL_REMOVE,
-    FILL_FREEZE
-  };
-  nsSMILFillMode                  mFillMode;
+  enum nsSMILFillMode : uint8_t { FILL_REMOVE, FILL_FREEZE };
+  nsSMILFillMode mFillMode;
   static const nsAttrValue::EnumTable sFillModeTable[];
 
-  enum nsSMILRestartMode : uint8_t
-  {
+  enum nsSMILRestartMode : uint8_t {
     RESTART_ALWAYS,
     RESTART_WHENNOTACTIVE,
     RESTART_NEVER
   };
-  nsSMILRestartMode               mRestartMode;
+  nsSMILRestartMode mRestartMode;
   static const nsAttrValue::EnumTable sRestartModeTable[];
 
-  InstanceTimeList                mBeginInstances;
-  InstanceTimeList                mEndInstances;
-  uint32_t                        mInstanceSerialIndex;
+  InstanceTimeList mBeginInstances;
+  InstanceTimeList mEndInstances;
+  uint32_t mInstanceSerialIndex;
 
-  nsSMILAnimationFunction*        mClient;
+  nsSMILAnimationFunction* mClient;
   mozilla::UniquePtr<nsSMILInterval> mCurrentInterval;
-  IntervalList                    mOldIntervals;
-  uint32_t                        mCurrentRepeatIteration;
-  nsSMILMilestone                 mPrevRegisteredMilestone;
-  static const nsSMILMilestone    sMaxMilestone;
-  static const uint8_t            sMaxNumIntervals;
-  static const uint8_t            sMaxNumInstanceTimes;
+  IntervalList mOldIntervals;
+  uint32_t mCurrentRepeatIteration;
+  nsSMILMilestone mPrevRegisteredMilestone;
+  static const nsSMILMilestone sMaxMilestone;
+  static const uint8_t sMaxNumIntervals;
+  static const uint8_t sMaxNumInstanceTimes;
 
   
   
@@ -620,54 +601,47 @@ protected:
 
 
 
-  enum nsSMILElementState
-  {
+  enum nsSMILElementState {
     STATE_STARTUP,
     STATE_WAITING,
     STATE_ACTIVE,
     STATE_POSTACTIVE
   };
-  nsSMILElementState              mElementState;
+  nsSMILElementState mElementState;
 
-  enum nsSMILSeekState
-  {
+  enum nsSMILSeekState {
     SEEK_NOT_SEEKING,
     SEEK_FORWARD_FROM_ACTIVE,
     SEEK_FORWARD_FROM_INACTIVE,
     SEEK_BACKWARD_FROM_ACTIVE,
     SEEK_BACKWARD_FROM_INACTIVE
   };
-  nsSMILSeekState                 mSeekState;
+  nsSMILSeekState mSeekState;
 
   
   class AutoIntervalUpdateBatcher;
   bool mDeferIntervalUpdates;
-  bool mDoDeferredUpdate; 
-                          
+  bool mDoDeferredUpdate;  
+                           
   bool mIsDisabled;
 
   
   class AutoIntervalUpdater;
 
   
-  uint8_t              mDeleteCount;
-  uint8_t              mUpdateIntervalRecursionDepth;
+  uint8_t mDeleteCount;
+  uint8_t mUpdateIntervalRecursionDepth;
   static const uint8_t sMaxUpdateIntervalRecursionDepth;
 };
 
-inline void
-ImplCycleCollectionUnlink(nsSMILTimedElement& aField)
-{
+inline void ImplCycleCollectionUnlink(nsSMILTimedElement& aField) {
   aField.Unlink();
 }
 
-inline void
-ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            nsSMILTimedElement& aField,
-                            const char* aName,
-                            uint32_t aFlags = 0)
-{
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback, nsSMILTimedElement& aField,
+    const char* aName, uint32_t aFlags = 0) {
   aField.Traverse(&aCallback);
 }
 
-#endif 
+#endif  

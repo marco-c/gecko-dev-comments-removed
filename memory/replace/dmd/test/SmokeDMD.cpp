@@ -28,15 +28,13 @@ using namespace mozilla::dmd;
 
 DMDFuncs::Singleton DMDFuncs::sSingleton;
 
-class FpWriteFunc : public mozilla::JSONWriteFunc
-{
-public:
-  explicit FpWriteFunc(const char* aFilename)
-  {
+class FpWriteFunc : public mozilla::JSONWriteFunc {
+ public:
+  explicit FpWriteFunc(const char* aFilename) {
     mFp = fopen(aFilename, "w");
     if (!mFp) {
-      fprintf(stderr, "SmokeDMD: can't create %s file: %s\n",
-              aFilename, strerror(errno));
+      fprintf(stderr, "SmokeDMD: can't create %s file: %s\n", aFilename,
+              strerror(errno));
       exit(1);
     }
   }
@@ -45,14 +43,12 @@ public:
 
   void Write(const char* aStr) override { fputs(aStr, mFp); }
 
-private:
+ private:
   FILE* mFp;
 };
 
 
-static void
-UseItOrLoseIt(void* aPtr, int aSeven)
-{
+static void UseItOrLoseIt(void* aPtr, int aSeven) {
   char buf[64];
   int n = sprintf(buf, "%p\n", aPtr);
   if (n == 20 + aSeven) {
@@ -62,11 +58,10 @@ UseItOrLoseIt(void* aPtr, int aSeven)
 
 
 
-void Foo(int aSeven)
-{
+void Foo(int aSeven) {
   char* a[6];
   for (int i = 0; i < aSeven - 1; i++) {
-    a[i] = (char*) malloc(128 - 16*i);
+    a[i] = (char*)malloc(128 - 16 * i);
     UseItOrLoseIt(a[i], aSeven);
   }
 
@@ -74,25 +69,23 @@ void Foo(int aSeven)
   
   
 
-  Report(a[2]);                     
+  Report(a[2]);  
 
   UseItOrLoseIt(a[2], aSeven);
 
   for (int i = 0; i < aSeven - 5; i++) {
-    Report(a[i]);                   
+    Report(a[i]);  
     UseItOrLoseIt(a[i], aSeven);
   }
 
   UseItOrLoseIt(a[2], aSeven);
 
-  Report(a[3]);                     
+  Report(a[3]);  
 
   
 }
 
-void
-TestEmpty(const char* aTestName, const char* aMode)
-{
+void TestEmpty(const char* aTestName, const char* aMode) {
   char filename[128];
   sprintf(filename, "complete-%s-%s.json", aTestName, aMode);
   auto f = MakeUnique<FpWriteFunc>(filename);
@@ -105,9 +98,7 @@ TestEmpty(const char* aTestName, const char* aMode)
   Analyze(std::move(f));
 }
 
-void
-TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
-{
+void TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven) {
   char filename[128];
   sprintf(filename, "complete-%s%d-%s.json", aTestName, aNum, aMode);
   auto f = MakeUnique<FpWriteFunc>(filename);
@@ -123,8 +114,8 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
   int i;
   char* a = nullptr;
   for (i = 0; i < aSeven + 3; i++) {
-      a = (char*) malloc(100);
-      UseItOrLoseIt(a, aSeven);
+    a = (char*)malloc(100);
+    UseItOrLoseIt(a, aSeven);
   }
   free(a);
 
@@ -135,24 +126,24 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
   
   
   
-  char* a2 = (char*) malloc(16);
+  char* a2 = (char*)malloc(16);
   Report(a2);
 
   
   
-  char* b = (char*) malloc(10);
+  char* b = (char*)malloc(10);
   ReportOnAlloc(b);
 
   
   
   
-  char* b2 = (char*) malloc(16);
+  char* b2 = (char*)malloc(16);
   ReportOnAlloc(b2);
   free(b2);
 
   
   
-  char* c = (char*) calloc(10, 3);
+  char* c = (char*)calloc(10, 3);
   Report(c);
   for (int i = 0; i < aSeven - 4; i++) {
     Report(c);
@@ -165,29 +156,29 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
   
   
   
-  char* e = (char*) malloc(4096);
-  e = (char*) realloc(e, 7169);
+  char* e = (char*)malloc(4096);
+  e = (char*)realloc(e, 7169);
   Report(e);
 
   
   
   
-  char* e2 = (char*) realloc(nullptr, 1024);
-  e2 = (char*) realloc(e2, 512);
+  char* e2 = (char*)realloc(nullptr, 1024);
+  e2 = (char*)realloc(e2, 512);
   Report(e2);
 
   
   
   
   
-  char* e3 = (char*) realloc(nullptr, 1023);
-
+  char* e3 = (char*)realloc(nullptr, 1023);
+  
   MOZ_ASSERT(e3);
   Report(e3);
 
   
   
-  char* f1 = (char*) malloc(64);
+  char* f1 = (char*)malloc(64);
   UseItOrLoseIt(f1, aSeven);
   free(f1);
 
@@ -201,7 +192,7 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
 
   
   
-  char* g1 = (char*) malloc(77);
+  char* g1 = (char*)malloc(77);
   ReportOnAlloc(g1);
   ReportOnAlloc(g1);
 
@@ -213,13 +204,13 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
 
   
   
-  char* g2 = (char*) malloc(78);
+  char* g2 = (char*)malloc(78);
   Report(g2);
   ReportOnAlloc(g2);
 
   
   
-  char* g3 = (char*) malloc(79);
+  char* g3 = (char*)malloc(79);
   ReportOnAlloc(g3);
   Report(g3);
 
@@ -227,21 +218,21 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
   
   
   
-
-
-
+  
   
 
-
-
-
+  
+  
+  
   
 
-
-
+  
+  
   
 
-
+  
+  
+  
 
   if (aNum == 1) {
     
@@ -258,10 +249,10 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
   free(e);
   Report(e2);
   free(e3);
-
-
-
-
+  
+  
+  
+  
 
   
   for (int i = 0; i < 100; i++) {
@@ -276,9 +267,7 @@ TestFull(const char* aTestName, int aNum, const char* aMode, int aSeven)
   }
 }
 
-void
-TestPartial(const char* aTestName, const char* aMode, int aSeven)
-{
+void TestPartial(const char* aTestName, const char* aMode, int aSeven) {
   char filename[128];
   sprintf(filename, "complete-%s-%s.json", aTestName, aMode);
   auto f = MakeUnique<FpWriteFunc>(filename);
@@ -298,7 +287,7 @@ TestPartial(const char* aTestName, const char* aMode, int aSeven)
   
   
   for (int i = 0; i < kTenThousand; i++) {
-    s = (char*) malloc(16);
+    s = (char*)malloc(16);
     UseItOrLoseIt(s, aSeven);
   }
 
@@ -306,7 +295,7 @@ TestPartial(const char* aTestName, const char* aMode, int aSeven)
   
   
   for (int i = 0; i < kTenThousand; i++) {
-    s = (char*) malloc(128);
+    s = (char*)malloc(128);
     UseItOrLoseIt(s, aSeven);
   }
 
@@ -314,37 +303,33 @@ TestPartial(const char* aTestName, const char* aMode, int aSeven)
   
   
   for (int i = 0; i < kTenThousand; i++) {
-    s = (char*) malloc(1024);
+    s = (char*)malloc(1024);
     UseItOrLoseIt(s, aSeven);
   }
 
   Analyze(std::move(f));
 }
 
-void
-TestScan(int aSeven)
-{
+void TestScan(int aSeven) {
   auto f = MakeUnique<FpWriteFunc>("basic-scan.json");
 
   ResetEverything("--mode=scan");
 
-  uintptr_t* p = (uintptr_t*) malloc(6 * sizeof(uintptr_t*));
+  uintptr_t* p = (uintptr_t*)malloc(6 * sizeof(uintptr_t*));
   UseItOrLoseIt(p, aSeven);
 
   
-  p[0] = 0x123; 
-  p[1] = 0x0; 
-  p[2] = (uintptr_t)((uint8_t*)p - 1); 
-  p[3] = (uintptr_t)p; 
-  p[4] = (uintptr_t)((uint8_t*)p + 1); 
-  p[5] = 0x0; 
+  p[0] = 0x123;                         
+  p[1] = 0x0;                           
+  p[2] = (uintptr_t)((uint8_t*)p - 1);  
+  p[3] = (uintptr_t)p;                  
+  p[4] = (uintptr_t)((uint8_t*)p + 1);  
+  p[5] = 0x0;                           
 
   Analyze(std::move(f));
 }
 
-void
-RunTests()
-{
+void RunTests() {
   
   
   
@@ -355,7 +340,7 @@ RunTests()
 
   
   
-  int *x = (int*)malloc(100);
+  int* x = (int*)malloc(100);
   UseItOrLoseIt(x, seven);
   MOZ_RELEASE_ASSERT(IsRunning());
 
@@ -365,19 +350,18 @@ RunTests()
   TestEmpty("empty", "dark-matter");
   TestEmpty("empty", "cumulative");
 
-  TestFull("full", 1, "live",        seven);
+  TestFull("full", 1, "live", seven);
   TestFull("full", 1, "dark-matter", seven);
 
   TestFull("full", 2, "dark-matter", seven);
-  TestFull("full", 2, "cumulative",  seven);
+  TestFull("full", 2, "cumulative", seven);
 
   TestPartial("partial", "live", seven);
 
   TestScan(seven);
 }
 
-int main()
-{
+int main() {
   RunTests();
 
   return 0;

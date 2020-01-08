@@ -46,9 +46,9 @@
 OSVR_EXTERN_C_BEGIN
 
 #define OSVR_INTERFACE_CALLBACK_METHOD(TYPE)
-         \
-    OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrRegister##TYPE##Callback(        \
-        OSVR_ClientInterface iface, OSVR_##TYPE##Callback cb, void *userdata);
+  \
+  OSVR_CLIENTKIT_EXPORT OSVR_ReturnCode osvrRegister##TYPE##Callback( \
+      OSVR_ClientInterface iface, OSVR_##TYPE##Callback cb, void *userdata);
 
 OSVR_INTERFACE_CALLBACK_METHOD(Pose)
 OSVR_INTERFACE_CALLBACK_METHOD(Position)

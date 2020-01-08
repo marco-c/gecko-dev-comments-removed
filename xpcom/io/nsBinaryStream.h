@@ -13,27 +13,24 @@
 #include "nsIObjectOutputStream.h"
 #include "nsIStreamBufferAccess.h"
 
-#define NS_BINARYOUTPUTSTREAM_CID        \
-{ /* 86c37b9a-74e7-4672-844e-6e7dd83ba484 */         \
-     0x86c37b9a,                                     \
-     0x74e7,                                         \
-     0x4672,                                         \
-    {0x84, 0x4e, 0x6e, 0x7d, 0xd8, 0x3b, 0xa4, 0x84} \
-}
+#define NS_BINARYOUTPUTSTREAM_CID                    \
+  { /* 86c37b9a-74e7-4672-844e-6e7dd83ba484 */       \
+    0x86c37b9a, 0x74e7, 0x4672, {                    \
+      0x84, 0x4e, 0x6e, 0x7d, 0xd8, 0x3b, 0xa4, 0x84 \
+    }                                                \
+  }
 
 #define NS_BINARYOUTPUTSTREAM_CONTRACTID "@mozilla.org/binaryoutputstream;1"
 
 
 
-class nsBinaryOutputStream final : public nsIObjectOutputStream
-{
-public:
-  nsBinaryOutputStream()
-  {
-  }
+class nsBinaryOutputStream final : public nsIObjectOutputStream {
+ public:
+  nsBinaryOutputStream() {}
 
-protected:
-  friend already_AddRefed<nsIObjectOutputStream> NS_NewObjectOutputStream(nsIOutputStream*);
+ protected:
+  friend already_AddRefed<nsIObjectOutputStream> NS_NewObjectOutputStream(
+      nsIOutputStream*);
 
   
   NS_DECL_ISUPPORTS
@@ -50,35 +47,30 @@ protected:
   
   nsresult WriteFully(const char* aBuf, uint32_t aCount);
 
-  nsCOMPtr<nsIOutputStream>       mOutputStream;
+  nsCOMPtr<nsIOutputStream> mOutputStream;
   nsCOMPtr<nsIStreamBufferAccess> mBufferAccess;
 
-private:
+ private:
   
-  virtual ~nsBinaryOutputStream()
-  {
-  }
+  virtual ~nsBinaryOutputStream() {}
 };
 
-#define NS_BINARYINPUTSTREAM_CID        \
-{ /* c521a612-2aad-46db-b6ab-3b821fb150b1 */       \
-   0xc521a612,                                     \
-   0x2aad,                                         \
-   0x46db,                                         \
-  {0xb6, 0xab, 0x3b, 0x82, 0x1f, 0xb1, 0x50, 0xb1} \
-}
+#define NS_BINARYINPUTSTREAM_CID                     \
+  { /* c521a612-2aad-46db-b6ab-3b821fb150b1 */       \
+    0xc521a612, 0x2aad, 0x46db, {                    \
+      0xb6, 0xab, 0x3b, 0x82, 0x1f, 0xb1, 0x50, 0xb1 \
+    }                                                \
+  }
 
 #define NS_BINARYINPUTSTREAM_CONTRACTID "@mozilla.org/binaryinputstream;1"
 
-class nsBinaryInputStream final : public nsIObjectInputStream
-{
-public:
-  nsBinaryInputStream()
-  {
-  }
+class nsBinaryInputStream final : public nsIObjectInputStream {
+ public:
+  nsBinaryInputStream() {}
 
-protected:
-  friend already_AddRefed<nsIObjectInputStream> NS_NewObjectInputStream(nsIInputStream*);
+ protected:
+  friend already_AddRefed<nsIObjectInputStream> NS_NewObjectInputStream(
+      nsIInputStream*);
 
   
   NS_DECL_ISUPPORTS
@@ -92,14 +84,12 @@ protected:
   
   NS_DECL_NSIOBJECTINPUTSTREAM
 
-  nsCOMPtr<nsIInputStream>        mInputStream;
+  nsCOMPtr<nsIInputStream> mInputStream;
   nsCOMPtr<nsIStreamBufferAccess> mBufferAccess;
 
-private:
+ private:
   
-  virtual ~nsBinaryInputStream()
-  {
-  }
+  virtual ~nsBinaryInputStream() {}
 };
 
-#endif 
+#endif  

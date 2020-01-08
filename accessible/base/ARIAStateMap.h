@@ -21,8 +21,7 @@ namespace aria {
 
 
 
-enum EStateRule
-{
+enum EStateRule {
   eARIANone,
   eARIAAutoComplete,
   eARIABusy,
@@ -61,8 +60,8 @@ enum EStateRule
 
 bool MapToState(EStateRule aRule, dom::Element* aElement, uint64_t* aState);
 
-} 
-} 
-} 
+}  
+}  
+}  
 
 #endif

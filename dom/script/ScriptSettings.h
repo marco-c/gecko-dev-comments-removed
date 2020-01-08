@@ -84,6 +84,7 @@ void UnuseEntryScriptProfiling();
 
 
 
+
 nsIGlobalObject* GetEntryGlobal();
 
 
@@ -118,8 +119,7 @@ nsIPrincipal* GetWebIDLCallerPrincipal();
 
 
 
-inline JSObject& IncumbentJSGlobal()
-{
+inline JSObject& IncumbentJSGlobal() {
   return *GetIncumbentGlobal()->GetGlobalJSObject();
 }
 
@@ -135,7 +135,7 @@ namespace danger {
 
 JSContext* GetJSContext();
 
-} 
+}  
 
 JS::RootingContext* RootingCx();
 
@@ -143,7 +143,7 @@ class ScriptSettingsStack;
 class ScriptSettingsStackEntry {
   friend class ScriptSettingsStack;
 
-public:
+ public:
   ~ScriptSettingsStackEntry();
 
   bool NoJSAPI() const { return mType == eNoJSAPI; }
@@ -153,22 +153,16 @@ public:
   bool IsIncumbentCandidate() { return mType != eJSAPI; }
   bool IsIncumbentScript() { return mType == eIncumbentScript; }
 
-protected:
-  enum Type {
-    eEntryScript,
-    eIncumbentScript,
-    eJSAPI,
-    eNoJSAPI
-  };
+ protected:
+  enum Type { eEntryScript, eIncumbentScript, eJSAPI, eNoJSAPI };
 
-  ScriptSettingsStackEntry(nsIGlobalObject *aGlobal,
-                           Type aEntryType);
+  ScriptSettingsStackEntry(nsIGlobalObject* aGlobal, Type aEntryType);
 
   nsCOMPtr<nsIGlobalObject> mGlobalObject;
   Type mType;
 
-private:
-  ScriptSettingsStackEntry *mOlder;
+ private:
+  ScriptSettingsStackEntry* mOlder;
 };
 
 
@@ -201,7 +195,7 @@ private:
 
 
 class MOZ_STACK_CLASS AutoJSAPI : protected ScriptSettingsStackEntry {
-public:
+ public:
   
   
   AutoJSAPI();
@@ -289,24 +283,24 @@ public:
     JS_ClearPendingException(cx());
   }
 
-protected:
+ protected:
   
   
   AutoJSAPI(nsIGlobalObject* aGlobalObject, bool aIsMainThread, Type aType);
 
   mozilla::Maybe<JSAutoNullableRealm> mAutoNullableRealm;
-  JSContext *mCx;
+  JSContext* mCx;
 
   
   bool mIsMainThread;
   Maybe<JS::WarningReporter> mOldWarningReporter;
 
-private:
+ private:
   void InitInternal(nsIGlobalObject* aGlobalObject, JSObject* aGlobal,
                     JSContext* aCx, bool aIsMainThread);
 
   AutoJSAPI(const AutoJSAPI&) = delete;
-  AutoJSAPI& operator= (const AutoJSAPI&) = delete;
+  AutoJSAPI& operator=(const AutoJSAPI&) = delete;
 };
 
 
@@ -317,29 +311,26 @@ private:
 
 
 class MOZ_STACK_CLASS AutoEntryScript : public AutoJSAPI {
-public:
-  AutoEntryScript(nsIGlobalObject* aGlobalObject,
-                  const char *aReason,
+ public:
+  AutoEntryScript(nsIGlobalObject* aGlobalObject, const char* aReason,
                   bool aIsMainThread = NS_IsMainThread());
 
   
   
   
-  AutoEntryScript(JSObject* aObject,
-                  const char *aReason,
+  AutoEntryScript(JSObject* aObject, const char* aReason,
                   bool aIsMainThread = NS_IsMainThread());
 
   ~AutoEntryScript();
 
-  void SetWebIDLCallerPrincipal(nsIPrincipal *aPrincipal) {
+  void SetWebIDLCallerPrincipal(nsIPrincipal* aPrincipal) {
     mWebIDLCallerPrincipal = aPrincipal;
   }
 
-private:
+ private:
   
-  class DocshellEntryMonitor final : public JS::dbg::AutoEntryMonitor
-  {
-  public:
+  class DocshellEntryMonitor final : public JS::dbg::AutoEntryMonitor {
+   public:
     DocshellEntryMonitor(JSContext* aCx, const char* aReason);
 
     
@@ -349,24 +340,21 @@ private:
     
     void Entry(JSContext* aCx, JSFunction* aFunction,
                JS::Handle<JS::Value> aAsyncStack,
-               const char* aAsyncCause) override
-    {
+               const char* aAsyncCause) override {
       Entry(aCx, aFunction, nullptr, aAsyncStack, aAsyncCause);
     }
 
     void Entry(JSContext* aCx, JSScript* aScript,
                JS::Handle<JS::Value> aAsyncStack,
-               const char* aAsyncCause) override
-    {
+               const char* aAsyncCause) override {
       Entry(aCx, nullptr, aScript, aAsyncStack, aAsyncCause);
     }
 
     void Exit(JSContext* aCx) override;
 
-  private:
+   private:
     void Entry(JSContext* aCx, JSFunction* aFunction, JSScript* aScript,
-               JS::Handle<JS::Value> aAsyncStack,
-               const char* aAsyncCause);
+               JS::Handle<JS::Value> aAsyncStack, const char* aAsyncCause);
 
     const char* mReason;
   };
@@ -393,11 +381,11 @@ private:
 
 
 class AutoIncumbentScript : protected ScriptSettingsStackEntry {
-public:
+ public:
   explicit AutoIncumbentScript(nsIGlobalObject* aGlobalObject);
   ~AutoIncumbentScript();
 
-private:
+ private:
   JS::AutoHideScriptedCaller mCallerOverride;
 };
 
@@ -410,12 +398,12 @@ private:
 
 
 class AutoNoJSAPI : protected ScriptSettingsStackEntry {
-public:
+ public:
   explicit AutoNoJSAPI();
   ~AutoNoJSAPI();
 };
 
-} 
+}  
 
 
 
@@ -423,11 +411,11 @@ public:
 
 
 class MOZ_RAII AutoJSContext {
-public:
+ public:
   explicit AutoJSContext(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
   operator JSContext*() const;
 
-protected:
+ protected:
   JSContext* mCx;
   dom::AutoJSAPI mJSAPI;
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
@@ -439,15 +427,13 @@ protected:
 
 
 
-class MOZ_RAII AutoSafeJSContext : public dom::AutoJSAPI {
-public:
-  explicit AutoSafeJSContext(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
-  operator JSContext*() const
-  {
-    return cx();
-  }
 
-private:
+class MOZ_RAII AutoSafeJSContext : public dom::AutoJSAPI {
+ public:
+  explicit AutoSafeJSContext(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
+  operator JSContext*() const { return cx(); }
+
+ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
 
@@ -461,12 +447,12 @@ private:
 
 
 
-class MOZ_RAII AutoSlowOperation
-{
-public:
+class MOZ_RAII AutoSlowOperation {
+ public:
   explicit AutoSlowOperation(MOZ_GUARD_OBJECT_NOTIFIER_ONLY_PARAM);
   void CheckForInterrupt();
-private:
+
+ private:
   MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
   bool mIsMainThread;
   Maybe<xpc::AutoScriptActivity> mScriptActivity;
@@ -475,23 +461,18 @@ private:
 
 
 
-class MOZ_RAII AutoDisableJSInterruptCallback
-{
-public:
+class MOZ_RAII AutoDisableJSInterruptCallback {
+ public:
   explicit AutoDisableJSInterruptCallback(JSContext* aCx)
-    : mCx(aCx)
-    , mOld(JS_DisableInterruptCallback(aCx))
-  { }
+      : mCx(aCx), mOld(JS_DisableInterruptCallback(aCx)) {}
 
-  ~AutoDisableJSInterruptCallback() {
-    JS_ResetInterruptCallback(mCx, mOld);
-  }
+  ~AutoDisableJSInterruptCallback() { JS_ResetInterruptCallback(mCx, mOld); }
 
-private:
+ private:
   JSContext* mCx;
   bool mOld;
 };
 
-} 
+}  
 
-#endif 
+#endif  

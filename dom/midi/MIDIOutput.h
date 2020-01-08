@@ -24,11 +24,12 @@ class MIDIMessage;
 
 
 
-class MIDIOutput final : public MIDIPort
-{
-public:
-  static MIDIOutput* Create(nsPIDOMWindowInner* aWindow, MIDIAccess* aMIDIAccessParent,
-                            const MIDIPortInfo& aPortInfo, const bool aSysexEnabled);
+class MIDIOutput final : public MIDIPort {
+ public:
+  static MIDIOutput* Create(nsPIDOMWindowInner* aWindow,
+                            MIDIAccess* aMIDIAccessParent,
+                            const MIDIPortInfo& aPortInfo,
+                            const bool aSysexEnabled);
   ~MIDIOutput() = default;
 
   JSObject* WrapObject(JSContext* aCx,
@@ -39,11 +40,12 @@ public:
             ErrorResult& aRv);
   
   void Clear();
-private:
+
+ private:
   MIDIOutput(nsPIDOMWindowInner* aWindow, MIDIAccess* aMIDIAccessParent);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

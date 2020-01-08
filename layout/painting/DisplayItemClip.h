@@ -20,14 +20,14 @@ namespace mozilla {
 namespace gfx {
 class DrawTarget;
 class Path;
-} 
+}  
 namespace layers {
 class StackingContextHelper;
-} 
+}  
 namespace wr {
 struct ComplexClipRegion;
-} 
-} 
+}  
+}  
 
 namespace mozilla {
 
@@ -37,55 +37,45 @@ namespace mozilla {
 
 
 
-class DisplayItemClip
-{
+class DisplayItemClip {
   typedef mozilla::gfx::Color Color;
   typedef mozilla::gfx::DrawTarget DrawTarget;
   typedef mozilla::gfx::Path Path;
 
-public:
-  struct RoundedRect
-  {
+ public:
+  struct RoundedRect {
     nsRect mRect;
     
     nscoord mRadii[8];
 
-    RoundedRect operator+(const nsPoint& aOffset) const
-    {
+    RoundedRect operator+(const nsPoint& aOffset) const {
       RoundedRect r = *this;
       r.mRect += aOffset;
       return r;
     }
-    bool operator==(const RoundedRect& aOther) const
-    {
+    bool operator==(const RoundedRect& aOther) const {
       if (!mRect.IsEqualInterior(aOther.mRect)) {
         return false;
       }
 
-      NS_FOR_CSS_HALF_CORNERS(corner)
-      {
+      NS_FOR_CSS_HALF_CORNERS(corner) {
         if (mRadii[corner] != aOther.mRadii[corner]) {
           return false;
         }
       }
       return true;
     }
-    bool operator!=(const RoundedRect& aOther) const
-    {
+    bool operator!=(const RoundedRect& aOther) const {
       return !(*this == aOther);
     }
   };
 
   
-  DisplayItemClip()
-    : mHaveClipRect(false)
-  {
-  }
+  DisplayItemClip() : mHaveClipRect(false) {}
 
   void SetTo(const nsRect& aRect);
   void SetTo(const nsRect& aRect, const nscoord* aRadii);
-  void SetTo(const nsRect& aRect,
-             const nsRect& aRoundedRect,
+  void SetTo(const nsRect& aRect, const nsRect& aRoundedRect,
              const nscoord* aRadii);
   void IntersectWith(const DisplayItemClip& aOther);
 
@@ -98,10 +88,8 @@ public:
   
   
   
-  void ApplyRoundedRectClipsTo(gfxContext* aContext,
-                               int32_t A2DPRInt32,
-                               uint32_t aBegin,
-                               uint32_t aEnd) const;
+  void ApplyRoundedRectClipsTo(gfxContext* aContext, int32_t A2DPRInt32,
+                               uint32_t aBegin, uint32_t aEnd) const;
 
   
   void FillIntersectionOfRoundedRectClips(gfxContext* aContext,
@@ -109,9 +97,8 @@ public:
                                           int32_t aAppUnitsPerDevPixel) const;
   
   already_AddRefed<Path> MakeRoundedRectPath(
-    DrawTarget& aDrawTarget,
-    int32_t A2D,
-    const RoundedRect& aRoundRect) const;
+      DrawTarget& aDrawTarget, int32_t A2D,
+      const RoundedRect& aRoundRect) const;
 
   
   
@@ -133,8 +120,7 @@ public:
 
 
   bool ComputeRegionInClips(const DisplayItemClip* aOldClip,
-                            const nsPoint& aShift,
-                            nsRegion* aCombined) const;
+                            const nsPoint& aShift, nsRegion* aCombined) const;
 
   
   
@@ -145,10 +131,8 @@ public:
   
   
   bool IsRectAffectedByClip(const nsRect& aRect) const;
-  bool IsRectAffectedByClip(const nsIntRect& aRect,
-                            float aXScale,
-                            float aYScale,
-                            int32_t A2D) const;
+  bool IsRectAffectedByClip(const nsIntRect& aRect, float aXScale,
+                            float aYScale, int32_t A2D) const;
 
   
   nsRect NonRoundedIntersection() const;
@@ -168,20 +152,17 @@ public:
                                      const nsRect& aOtherBounds,
                                      nsRegion* aDifference);
 
-  bool operator==(const DisplayItemClip& aOther) const
-  {
+  bool operator==(const DisplayItemClip& aOther) const {
     return mHaveClipRect == aOther.mHaveClipRect &&
            (!mHaveClipRect || mClipRect.IsEqualInterior(aOther.mClipRect)) &&
            mRoundedClipRects == aOther.mRoundedClipRects;
   }
-  bool operator!=(const DisplayItemClip& aOther) const
-  {
+  bool operator!=(const DisplayItemClip& aOther) const {
     return !(*this == aOther);
   }
 
   bool HasClip() const { return mHaveClipRect; }
-  const nsRect& GetClipRect() const
-  {
+  const nsRect& GetClipRect() const {
     NS_ASSERTION(HasClip(), "No clip rect!");
     return mClipRect;
   }
@@ -201,7 +182,7 @@ public:
 
   static void Shutdown();
 
-private:
+ private:
   nsRect mClipRect;
   nsTArray<RoundedRect> mRoundedClipRects;
   
@@ -209,6 +190,6 @@ private:
   bool mHaveClipRect;
 };
 
-} 
+}  
 
 #endif 

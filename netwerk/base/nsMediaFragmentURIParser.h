@@ -21,17 +21,16 @@ class nsIURI;
 
 
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
-enum ClipUnit
-{
+enum ClipUnit {
   eClipUnit_Pixel,
   eClipUnit_Percent,
 };
 
-class nsMediaFragmentURIParser
-{
-public:
+class nsMediaFragmentURIParser {
+ public:
   
   explicit nsMediaFragmentURIParser(nsIURI* aURI);
 
@@ -64,7 +63,7 @@ public:
   
   ClipUnit GetClipUnit() const { return mClipUnit; }
 
-private:
+ private:
   
   
   void Parse(nsACString& aRef);
@@ -88,13 +87,13 @@ private:
   bool ParseMozResolution(nsDependentSubstring aString);
 
   
-  Maybe<double>    mStart;
-  Maybe<double>    mEnd;
+  Maybe<double> mStart;
+  Maybe<double> mEnd;
   Maybe<nsIntRect> mClip;
-  ClipUnit         mClipUnit;
+  ClipUnit mClipUnit;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

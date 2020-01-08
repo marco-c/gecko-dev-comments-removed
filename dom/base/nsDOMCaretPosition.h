@@ -15,8 +15,8 @@
 namespace mozilla {
 namespace dom {
 class DOMRect;
-} 
-} 
+}  
+}  
 
 
 
@@ -26,12 +26,10 @@ class DOMRect;
 
 
 
-class nsDOMCaretPosition : public nsISupports,
-                           public nsWrapperCache
-{
+class nsDOMCaretPosition : public nsISupports, public nsWrapperCache {
   typedef mozilla::dom::DOMRect DOMRect;
 
-public:
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsDOMCaretPosition)
 
@@ -77,19 +75,15 @@ public:
 
 
 
-  void SetAnonymousContentNode(nsINode* aNode)
-  {
+  void SetAnonymousContentNode(nsINode* aNode) {
     mAnonymousContentNode = aNode;
   }
 
-  nsISupports* GetParentObject() const
-  {
-    return GetOffsetNode();
-  }
+  nsISupports* GetParentObject() const { return GetOffsetNode(); }
 
-  JSObject* WrapObject(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) final;
+  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
-protected:
+ protected:
   virtual ~nsDOMCaretPosition();
 
   uint32_t mOffset;

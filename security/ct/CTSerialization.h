@@ -15,11 +15,11 @@
 
 
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
-pkix::Result EncodeDigitallySigned(const DigitallySigned& data,
-                                   Buffer& output);
+pkix::Result EncodeDigitallySigned(const DigitallySigned& data, Buffer& output);
 
 
 
@@ -38,8 +38,7 @@ pkix::Result EncodeLogEntry(const LogEntry& entry, Buffer& output);
 
 pkix::Result EncodeV1SCTSignedData(uint64_t timestamp,
                                    pkix::Input serializedLogEntry,
-                                   pkix::Input extensions,
-                                   Buffer& output);
+                                   pkix::Input extensions, Buffer& output);
 
 
 
@@ -53,13 +52,14 @@ pkix::Result DecodeSCTList(pkix::Input input, pkix::Reader& listReader);
 pkix::Result ReadSCTListItem(pkix::Reader& listReader, pkix::Input& result);
 
 
-pkix::Result DecodeSignedCertificateTimestamp(pkix::Reader& input,
-  SignedCertificateTimestamp& output);
+pkix::Result DecodeSignedCertificateTimestamp(
+    pkix::Reader& input, SignedCertificateTimestamp& output);
 
 
 pkix::Result EncodeSCTList(const std::vector<pkix::Input>& scts,
                            Buffer& output);
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

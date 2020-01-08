@@ -18,28 +18,29 @@
 #include "js/Vector.h"
 
 #define FOR_EACH_NURSERY_PROFILE_TIME(_)
-                                \
-    _(Total,                    "total")                                      \
-    _(CancelIonCompilations,    "canIon")                                     \
-    _(TraceValues,              "mkVals")                                     \
-    _(TraceCells,               "mkClls")                                     \
-    _(TraceSlots,               "mkSlts")                                     \
-    _(TraceWholeCells,          "mcWCll")                                     \
-    _(TraceGenericEntries,      "mkGnrc")                                     \
-    _(CheckHashTables,          "ckTbls")                                     \
-    _(MarkRuntime,              "mkRntm")                                     \
-    _(MarkDebugger,             "mkDbgr")                                     \
-    _(SweepCaches,              "swpCch")                                     \
-    _(CollectToFP,              "collct")                                     \
-    _(ObjectsTenuredCallback,   "tenCB")                                      \
-    _(Sweep,                    "sweep")                                      \
-    _(UpdateJitActivations,     "updtIn")                                     \
-    _(FreeMallocedBuffers,      "frSlts")                                     \
-    _(ClearStoreBuffer,         "clrSB")                                      \
-    _(ClearNursery,             "clear")                                      \
-    _(Pretenure,                "pretnr")
+ \
+  _(Total, "total")                           \
+  _(CancelIonCompilations, "canIon")          \
+  _(TraceValues, "mkVals")                    \
+  _(TraceCells, "mkClls")                     \
+  _(TraceSlots, "mkSlts")                     \
+  _(TraceWholeCells, "mcWCll")                \
+  _(TraceGenericEntries, "mkGnrc")            \
+  _(CheckHashTables, "ckTbls")                \
+  _(MarkRuntime, "mkRntm")                    \
+  _(MarkDebugger, "mkDbgr")                   \
+  _(SweepCaches, "swpCch")                    \
+  _(CollectToFP, "collct")                    \
+  _(ObjectsTenuredCallback, "tenCB")          \
+  _(Sweep, "sweep")                           \
+  _(UpdateJitActivations, "updtIn")           \
+  _(FreeMallocedBuffers, "frSlts")            \
+  _(ClearStoreBuffer, "clrSB")                \
+  _(ClearNursery, "clear")                    \
+  _(Pretenure, "pretnr")
 
-template<typename T> class SharedMem;
+template <typename T>
+class SharedMem;
 
 namespace js {
 
@@ -67,56 +68,59 @@ class TenuredCell;
 
 namespace jit {
 class MacroAssembler;
-} 
+}  
 
-class TenuringTracer : public JSTracer
-{
-    friend class Nursery;
-    Nursery& nursery_;
+class TenuringTracer : public JSTracer {
+  friend class Nursery;
+  Nursery& nursery_;
 
-    
-    size_t tenuredSize;
-    
-    size_t tenuredCells;
+  
+  size_t tenuredSize;
+  
+  size_t tenuredCells;
 
-    
-    
-    
-    gc::RelocationOverlay* objHead;
-    gc::RelocationOverlay** objTail;
-    gc::RelocationOverlay* stringHead;
-    gc::RelocationOverlay** stringTail;
+  
+  
+  
+  gc::RelocationOverlay* objHead;
+  gc::RelocationOverlay** objTail;
+  gc::RelocationOverlay* stringHead;
+  gc::RelocationOverlay** stringTail;
 
-    TenuringTracer(JSRuntime* rt, Nursery* nursery);
+  TenuringTracer(JSRuntime* rt, Nursery* nursery);
 
-  public:
-    Nursery& nursery() { return nursery_; }
+ public:
+  Nursery& nursery() { return nursery_; }
 
-    template <typename T> void traverse(T** thingp);
-    template <typename T> void traverse(T* thingp);
+  template <typename T>
+  void traverse(T** thingp);
+  template <typename T>
+  void traverse(T* thingp);
 
-    
-    void traceObject(JSObject* src);
-    void traceObjectSlots(NativeObject* nobj, uint32_t start, uint32_t length);
-    void traceSlots(JS::Value* vp, uint32_t nslots);
-    void traceString(JSString* src);
+  
+  void traceObject(JSObject* src);
+  void traceObjectSlots(NativeObject* nobj, uint32_t start, uint32_t length);
+  void traceSlots(JS::Value* vp, uint32_t nslots);
+  void traceString(JSString* src);
 
-  private:
-    inline void insertIntoObjectFixupList(gc::RelocationOverlay* entry);
-    inline void insertIntoStringFixupList(gc::RelocationOverlay* entry);
+ private:
+  inline void insertIntoObjectFixupList(gc::RelocationOverlay* entry);
+  inline void insertIntoStringFixupList(gc::RelocationOverlay* entry);
 
-    template <typename T>
-    inline T* allocTenured(JS::Zone* zone, gc::AllocKind kind);
+  template <typename T>
+  inline T* allocTenured(JS::Zone* zone, gc::AllocKind kind);
 
-    inline JSObject* movePlainObjectToTenured(PlainObject* src);
-    JSObject* moveToTenuredSlow(JSObject* src);
-    JSString* moveToTenured(JSString* src);
+  inline JSObject* movePlainObjectToTenured(PlainObject* src);
+  JSObject* moveToTenuredSlow(JSObject* src);
+  JSString* moveToTenured(JSString* src);
 
-    size_t moveElementsToTenured(NativeObject* dst, NativeObject* src, gc::AllocKind dstKind);
-    size_t moveSlotsToTenured(NativeObject* dst, NativeObject* src);
-    size_t moveStringToTenured(JSString* dst, JSString* src, gc::AllocKind dstKind);
+  size_t moveElementsToTenured(NativeObject* dst, NativeObject* src,
+                               gc::AllocKind dstKind);
+  size_t moveSlotsToTenured(NativeObject* dst, NativeObject* src);
+  size_t moveStringToTenured(JSString* dst, JSString* src,
+                             gc::AllocKind dstKind);
 
-    void traceSlots(JS::Value* vp, JS::Value* end);
+  void traceSlots(JS::Value* vp, JS::Value* end);
 };
 
 
@@ -126,360 +130,335 @@ class TenuringTracer : public JSTracer
 
 
 
-inline bool
-CanNurseryAllocateFinalizedClass(const js::Class* const clasp)
-{
-    MOZ_ASSERT(clasp->hasFinalize());
-    return clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE;
+inline bool CanNurseryAllocateFinalizedClass(const js::Class* const clasp) {
+  MOZ_ASSERT(clasp->hasFinalize());
+  return clasp->flags & JSCLASS_SKIP_NURSERY_FINALIZE;
 }
 
-class Nursery
-{
-  public:
-    static const size_t Alignment = gc::ChunkSize;
-    static const size_t ChunkShift = gc::ChunkShift;
+class Nursery {
+ public:
+  static const size_t Alignment = gc::ChunkSize;
+  static const size_t ChunkShift = gc::ChunkShift;
 
-    struct alignas(gc::CellAlignBytes) CellAlignedByte {
-        char byte;
-    };
+  struct alignas(gc::CellAlignBytes) CellAlignedByte {
+    char byte;
+  };
 
-    struct StringLayout {
-        JS::Zone* zone;
-        CellAlignedByte cell;
-    };
+  struct StringLayout {
+    JS::Zone* zone;
+    CellAlignedByte cell;
+  };
 
-    explicit Nursery(JSRuntime* rt);
-    ~Nursery();
+  explicit Nursery(JSRuntime* rt);
+  ~Nursery();
 
-    MOZ_MUST_USE bool init(uint32_t maxNurseryBytes, AutoLockGCBgAlloc& lock);
+  MOZ_MUST_USE bool init(uint32_t maxNurseryBytes, AutoLockGCBgAlloc& lock);
 
-    unsigned chunkCountLimit() const { return chunkCountLimit_; }
+  unsigned chunkCountLimit() const { return chunkCountLimit_; }
 
-    
-    unsigned allocatedChunkCount() const { return chunks_.length(); }
+  
+  unsigned allocatedChunkCount() const { return chunks_.length(); }
 
-    
-    
-    
-    
-    unsigned maxChunkCount() const { return maxChunkCount_; }
+  
+  
+  
+  
+  unsigned maxChunkCount() const { return maxChunkCount_; }
 
-    bool exists() const { return chunkCountLimit() != 0; }
+  bool exists() const { return chunkCountLimit() != 0; }
 
-    void enable();
-    void disable();
-    bool isEnabled() const { return maxChunkCount() != 0; }
+  void enable();
+  void disable();
+  bool isEnabled() const { return maxChunkCount() != 0; }
 
-    void enableStrings();
-    void disableStrings();
-    bool canAllocateStrings() const { return canAllocateStrings_; }
+  void enableStrings();
+  void disableStrings();
+  bool canAllocateStrings() const { return canAllocateStrings_; }
 
-    
-    bool isEmpty() const;
+  
+  bool isEmpty() const;
 
-    
-
+  
 
 
-    MOZ_ALWAYS_INLINE bool isInside(gc::Cell* cellp) const = delete;
-    MOZ_ALWAYS_INLINE bool isInside(const void* p) const {
-        for (auto chunk : chunks_) {
-            if (uintptr_t(p) - uintptr_t(chunk) < gc::ChunkSize) {
-                return true;
-            }
-        }
-        return false;
+
+  MOZ_ALWAYS_INLINE bool isInside(gc::Cell* cellp) const = delete;
+  MOZ_ALWAYS_INLINE bool isInside(const void* p) const {
+    for (auto chunk : chunks_) {
+      if (uintptr_t(p) - uintptr_t(chunk) < gc::ChunkSize) {
+        return true;
+      }
     }
+    return false;
+  }
 
-    template<typename T>
-    inline bool isInside(const SharedMem<T>& p) const;
+  template <typename T>
+  inline bool isInside(const SharedMem<T>& p) const;
 
-    
-
-
-
-    JSObject* allocateObject(JSContext* cx, size_t size, size_t numDynamic, const js::Class* clasp);
-
-    
+  
 
 
 
-    gc::Cell* allocateString(JS::Zone* zone, size_t size, gc::AllocKind kind);
+  JSObject* allocateObject(JSContext* cx, size_t size, size_t numDynamic,
+                           const js::Class* clasp);
 
-    
+  
 
 
-    static JS::Zone* getStringZone(const JSString* str) {
+
+  gc::Cell* allocateString(JS::Zone* zone, size_t size, gc::AllocKind kind);
+
+  
+
+
+  static JS::Zone* getStringZone(const JSString* str) {
 #ifdef DEBUG
-        auto cell = reinterpret_cast<const js::gc::Cell*>(str); 
-        MOZ_ASSERT(js::gc::IsInsideNursery(cell), "getStringZone must be passed a nursery string");
+    auto cell = reinterpret_cast<const js::gc::Cell*>(
+        str);  
+    MOZ_ASSERT(js::gc::IsInsideNursery(cell),
+               "getStringZone must be passed a nursery string");
 #endif
 
-        auto layout = reinterpret_cast<const uint8_t*>(str) - offsetof(StringLayout, cell);
-        return reinterpret_cast<const StringLayout*>(layout)->zone;
+    auto layout =
+        reinterpret_cast<const uint8_t*>(str) - offsetof(StringLayout, cell);
+    return reinterpret_cast<const StringLayout*>(layout)->zone;
+  }
+
+  static size_t stringHeaderSize() { return offsetof(StringLayout, cell); }
+
+  
+  void* allocateBuffer(JS::Zone* zone, size_t nbytes);
+
+  
+
+
+
+  void* allocateBuffer(JSObject* obj, size_t nbytes);
+
+  
+
+
+
+
+  void* allocateBufferSameLocation(JSObject* obj, size_t nbytes);
+
+  
+  void* reallocateBuffer(JSObject* obj, void* oldBuffer, size_t oldBytes,
+                         size_t newBytes);
+
+  
+  void freeBuffer(void* buffer);
+
+  
+  static const size_t MaxNurseryBufferSize = 1024;
+
+  
+  void collect(JS::gcreason::Reason reason);
+
+  
+
+
+
+
+  MOZ_ALWAYS_INLINE MOZ_MUST_USE static bool getForwardedPointer(
+      js::gc::Cell** ref);
+
+  
+  void forwardBufferPointer(HeapSlot** pSlotsElems);
+
+  inline void maybeSetForwardingPointer(JSTracer* trc, void* oldData,
+                                        void* newData, bool direct);
+  inline void setForwardingPointerWhileTenuring(void* oldData, void* newData,
+                                                bool direct);
+
+  
+
+
+
+
+  bool registerMallocedBuffer(void* buffer);
+
+  
+  void removeMallocedBuffer(void* buffer) { mallocedBuffers.remove(buffer); }
+
+  void waitBackgroundFreeEnd();
+
+  MOZ_MUST_USE bool addedUniqueIdToCell(gc::Cell* cell) {
+    MOZ_ASSERT(IsInsideNursery(cell));
+    MOZ_ASSERT(isEnabled());
+    return cellsWithUid_.append(cell);
+  }
+
+  MOZ_MUST_USE bool queueDictionaryModeObjectToSweep(NativeObject* obj);
+
+  size_t sizeOfHeapCommitted() const {
+    return allocatedChunkCount() * gc::ChunkSize;
+  }
+  size_t sizeOfMallocedBuffers(mozilla::MallocSizeOf mallocSizeOf) const {
+    size_t total = 0;
+    for (MallocedBuffersSet::Range r = mallocedBuffers.all(); !r.empty();
+         r.popFront()) {
+      total += mallocSizeOf(r.front());
     }
+    total += mallocedBuffers.shallowSizeOfExcludingThis(mallocSizeOf);
+    return total;
+  }
 
-    static size_t stringHeaderSize() {
-        return offsetof(StringLayout, cell);
-    }
+  
+  
+  
+  
+  size_t spaceToEnd(unsigned chunkCount) const;
 
-    
-    void* allocateBuffer(JS::Zone* zone, size_t nbytes);
-
-    
-
-
-
-    void* allocateBuffer(JSObject* obj, size_t nbytes);
-
-    
-
-
-
-
-    void* allocateBufferSameLocation(JSObject* obj, size_t nbytes);
-
-    
-    void* reallocateBuffer(JSObject* obj, void* oldBuffer,
-                           size_t oldBytes, size_t newBytes);
-
-    
-    void freeBuffer(void* buffer);
-
-    
-    static const size_t MaxNurseryBufferSize = 1024;
-
-    
-    void collect(JS::gcreason::Reason reason);
-
-    
-
-
-
-
-    MOZ_ALWAYS_INLINE MOZ_MUST_USE static bool getForwardedPointer(js::gc::Cell** ref);
-
-    
-    void forwardBufferPointer(HeapSlot** pSlotsElems);
-
-    inline void maybeSetForwardingPointer(JSTracer* trc, void* oldData, void* newData, bool direct);
-    inline void setForwardingPointerWhileTenuring(void* oldData, void* newData, bool direct);
-
-    
-
-
-
-
-    bool registerMallocedBuffer(void* buffer);
-
-    
-    void removeMallocedBuffer(void* buffer) {
-        mallocedBuffers.remove(buffer);
-    }
-
-    void waitBackgroundFreeEnd();
-
-    MOZ_MUST_USE bool addedUniqueIdToCell(gc::Cell* cell) {
-        MOZ_ASSERT(IsInsideNursery(cell));
-        MOZ_ASSERT(isEnabled());
-        return cellsWithUid_.append(cell);
-    }
-
-    MOZ_MUST_USE bool queueDictionaryModeObjectToSweep(NativeObject* obj);
-
-    size_t sizeOfHeapCommitted() const {
-        return allocatedChunkCount() * gc::ChunkSize;
-    }
-    size_t sizeOfMallocedBuffers(mozilla::MallocSizeOf mallocSizeOf) const {
-        size_t total = 0;
-        for (MallocedBuffersSet::Range r = mallocedBuffers.all(); !r.empty(); r.popFront()) {
-            total += mallocSizeOf(r.front());
-        }
-        total += mallocedBuffers.shallowSizeOfExcludingThis(mallocSizeOf);
-        return total;
-    }
-
-    
-    
-    
-    
-    size_t spaceToEnd(unsigned chunkCount) const;
-
-    
-    MOZ_ALWAYS_INLINE size_t freeSpace() const {
-        MOZ_ASSERT(currentEnd_ - position_ <= NurseryChunkUsableSize);
-        return (currentEnd_ - position_) +
-               (maxChunkCount() - currentChunk_ - 1) * NurseryChunkUsableSize;
-    }
+  
+  MOZ_ALWAYS_INLINE size_t freeSpace() const {
+    MOZ_ASSERT(currentEnd_ - position_ <= NurseryChunkUsableSize);
+    return (currentEnd_ - position_) +
+           (maxChunkCount() - currentChunk_ - 1) * NurseryChunkUsableSize;
+  }
 
 #ifdef JS_GC_ZEAL
-    void enterZealMode();
-    void leaveZealMode();
+  void enterZealMode();
+  void leaveZealMode();
 #endif
 
-    
-    void renderProfileJSON(JSONPrinter& json) const;
+  
+  void renderProfileJSON(JSONPrinter& json) const;
 
-    
-    static void printProfileHeader();
+  
+  static void printProfileHeader();
 
-    
-    void printTotalProfileTimes();
+  
+  void printTotalProfileTimes();
 
-    void* addressOfPosition() const { return (void**)&position_; }
-    const void* addressOfCurrentEnd() const { return (void**)&currentEnd_; }
-    const void* addressOfCurrentStringEnd() const {
-        return (void*)&currentStringEnd_;
-    }
+  void* addressOfPosition() const { return (void**)&position_; }
+  const void* addressOfCurrentEnd() const { return (void**)&currentEnd_; }
+  const void* addressOfCurrentStringEnd() const {
+    return (void*)&currentStringEnd_;
+  }
 
-    void requestMinorGC(JS::gcreason::Reason reason) const;
+  void requestMinorGC(JS::gcreason::Reason reason) const;
 
-    bool minorGCRequested() const { return minorGCTriggerReason_ != JS::gcreason::NO_REASON; }
-    JS::gcreason::Reason minorGCTriggerReason() const { return minorGCTriggerReason_; }
-    void clearMinorGCRequest() { minorGCTriggerReason_ = JS::gcreason::NO_REASON; }
+  bool minorGCRequested() const {
+    return minorGCTriggerReason_ != JS::gcreason::NO_REASON;
+  }
+  JS::gcreason::Reason minorGCTriggerReason() const {
+    return minorGCTriggerReason_;
+  }
+  void clearMinorGCRequest() {
+    minorGCTriggerReason_ = JS::gcreason::NO_REASON;
+  }
 
-    bool needIdleTimeCollection() const;
+  bool needIdleTimeCollection() const;
 
-    bool enableProfiling() const { return enableProfiling_; }
+  bool enableProfiling() const { return enableProfiling_; }
 
-    bool addMapWithNurseryMemory(MapObject* obj) {
-        MOZ_ASSERT_IF(!mapsWithNurseryMemory_.empty(),
-                      mapsWithNurseryMemory_.back() != obj);
-        return mapsWithNurseryMemory_.append(obj);
-    }
-    bool addSetWithNurseryMemory(SetObject* obj) {
-        MOZ_ASSERT_IF(!setsWithNurseryMemory_.empty(),
-                      setsWithNurseryMemory_.back() != obj);
-        return setsWithNurseryMemory_.append(obj);
-    }
+  bool addMapWithNurseryMemory(MapObject* obj) {
+    MOZ_ASSERT_IF(!mapsWithNurseryMemory_.empty(),
+                  mapsWithNurseryMemory_.back() != obj);
+    return mapsWithNurseryMemory_.append(obj);
+  }
+  bool addSetWithNurseryMemory(SetObject* obj) {
+    MOZ_ASSERT_IF(!setsWithNurseryMemory_.empty(),
+                  setsWithNurseryMemory_.back() != obj);
+    return setsWithNurseryMemory_.append(obj);
+  }
 
-    
-    static const size_t NurseryChunkUsableSize = gc::ChunkSize - gc::ChunkTrailerSize;
+  
+  static const size_t NurseryChunkUsableSize =
+      gc::ChunkSize - gc::ChunkTrailerSize;
 
-  private:
-    JSRuntime* runtime_;
+ private:
+  JSRuntime* runtime_;
 
-    
-    Vector<NurseryChunk*, 0, SystemAllocPolicy> chunks_;
+  
+  Vector<NurseryChunk*, 0, SystemAllocPolicy> chunks_;
 
-    
-    uintptr_t position_;
+  
+  uintptr_t position_;
 
-    
-
-
-
-
-    unsigned currentStartChunk_;
-    uintptr_t currentStartPosition_;
-
-    
-    uintptr_t currentEnd_;
-
-    
-
-
-
-    uintptr_t currentStringEnd_;
-
-    
-    unsigned currentChunk_;
-
-    
+  
 
 
 
 
-    unsigned maxChunkCount_;
+  unsigned currentStartChunk_;
+  uintptr_t currentStartPosition_;
 
-    
+  
+  uintptr_t currentEnd_;
+
+  
 
 
 
-    unsigned chunkCountLimit_;
+  uintptr_t currentStringEnd_;
 
-    mozilla::TimeDuration timeInChunkAlloc_;
+  
+  unsigned currentChunk_;
 
-    
-    mozilla::TimeDuration profileThreshold_;
-    bool enableProfiling_;
-
-    
-    bool canAllocateStrings_;
-
-    
-    int64_t reportTenurings_;
-
-    
+  
 
 
 
 
-    mutable JS::gcreason::Reason minorGCTriggerReason_;
+  unsigned maxChunkCount_;
 
-    
+  
 
-    enum class ProfileKey
-    {
-#define DEFINE_TIME_KEY(name, text)                                           \
-        name,
-        FOR_EACH_NURSERY_PROFILE_TIME(DEFINE_TIME_KEY)
+
+
+  unsigned chunkCountLimit_;
+
+  mozilla::TimeDuration timeInChunkAlloc_;
+
+  
+  mozilla::TimeDuration profileThreshold_;
+  bool enableProfiling_;
+
+  
+  bool canAllocateStrings_;
+
+  
+  int64_t reportTenurings_;
+
+  
+
+
+
+
+  mutable JS::gcreason::Reason minorGCTriggerReason_;
+
+  
+
+  enum class ProfileKey {
+#define DEFINE_TIME_KEY(name, text) name,
+    FOR_EACH_NURSERY_PROFILE_TIME(DEFINE_TIME_KEY)
 #undef DEFINE_TIME_KEY
         KeyCount
-    };
+  };
 
-    using ProfileTimes =
-        mozilla::EnumeratedArray<ProfileKey, ProfileKey::KeyCount, mozilla::TimeStamp>;
-    using ProfileDurations =
-        mozilla::EnumeratedArray<ProfileKey, ProfileKey::KeyCount, mozilla::TimeDuration>;
+  using ProfileTimes =
+      mozilla::EnumeratedArray<ProfileKey, ProfileKey::KeyCount,
+                               mozilla::TimeStamp>;
+  using ProfileDurations =
+      mozilla::EnumeratedArray<ProfileKey, ProfileKey::KeyCount,
+                               mozilla::TimeDuration>;
 
-    ProfileTimes startTimes_;
-    ProfileDurations profileDurations_;
-    ProfileDurations totalDurations_;
+  ProfileTimes startTimes_;
+  ProfileDurations profileDurations_;
+  ProfileDurations totalDurations_;
 
-    struct {
-        JS::gcreason::Reason reason = JS::gcreason::NO_REASON;
-        size_t nurseryCapacity = 0;
-        size_t nurseryLazyCapacity = 0;
-        size_t nurseryUsedBytes = 0;
-        size_t tenuredBytes = 0;
-        size_t tenuredCells = 0;
-    } previousGC;
+  struct {
+    JS::gcreason::Reason reason = JS::gcreason::NO_REASON;
+    size_t nurseryCapacity = 0;
+    size_t nurseryLazyCapacity = 0;
+    size_t nurseryUsedBytes = 0;
+    size_t tenuredBytes = 0;
+    size_t tenuredCells = 0;
+  } previousGC;
 
-    
-
-
-
-
-
-
-
-    float
-    calcPromotionRate(bool *validForTenuring) const;
-
-    
-
-
-
-
-    typedef HashSet<void*, PointerHasher<void*>, SystemAllocPolicy> MallocedBuffersSet;
-    MallocedBuffersSet mallocedBuffers;
-
-    
-    struct FreeMallocedBuffersTask;
-    FreeMallocedBuffersTask* freeMallocedBuffersTask;
-
-    
-
-
-
-
-
-
-    typedef HashMap<void*, void*, PointerHasher<void*>, SystemAllocPolicy> ForwardedBufferMap;
-    ForwardedBufferMap forwardedBuffers;
-
-    
+  
 
 
 
@@ -487,115 +466,151 @@ class Nursery
 
 
 
+  float calcPromotionRate(bool* validForTenuring) const;
+
+  
 
 
 
 
-    using CellsWithUniqueIdVector = Vector<gc::Cell*, 8, SystemAllocPolicy>;
-    CellsWithUniqueIdVector cellsWithUid_;
+  typedef HashSet<void*, PointerHasher<void*>, SystemAllocPolicy>
+      MallocedBuffersSet;
+  MallocedBuffersSet mallocedBuffers;
 
-    using NativeObjectVector = Vector<NativeObject*, 0, SystemAllocPolicy>;
-    NativeObjectVector dictionaryModeObjects_;
+  
+  struct FreeMallocedBuffersTask;
+  FreeMallocedBuffersTask* freeMallocedBuffersTask;
 
-    
+  
 
 
 
-    Vector<MapObject*, 0, SystemAllocPolicy> mapsWithNurseryMemory_;
-    Vector<SetObject*, 0, SystemAllocPolicy> setsWithNurseryMemory_;
+
+
+
+  typedef HashMap<void*, void*, PointerHasher<void*>, SystemAllocPolicy>
+      ForwardedBufferMap;
+  ForwardedBufferMap forwardedBuffers;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  using CellsWithUniqueIdVector = Vector<gc::Cell*, 8, SystemAllocPolicy>;
+  CellsWithUniqueIdVector cellsWithUid_;
+
+  using NativeObjectVector = Vector<NativeObject*, 0, SystemAllocPolicy>;
+  NativeObjectVector dictionaryModeObjects_;
+
+  
+
+
+
+  Vector<MapObject*, 0, SystemAllocPolicy> mapsWithNurseryMemory_;
+  Vector<SetObject*, 0, SystemAllocPolicy> setsWithNurseryMemory_;
 
 #ifdef JS_GC_ZEAL
-    struct Canary;
-    Canary* lastCanary_;
+  struct Canary;
+  Canary* lastCanary_;
 #endif
 
-    NurseryChunk& chunk(unsigned index) const {
-        return *chunks_[index];
-    }
+  NurseryChunk& chunk(unsigned index) const { return *chunks_[index]; }
 
-    
+  
 
 
 
 
 
 
-    void setCurrentChunk(unsigned chunkno, bool fullPoison = false);
-    void setStartPosition();
+  void setCurrentChunk(unsigned chunkno, bool fullPoison = false);
+  void setStartPosition();
 
-    
-
-
-
-    MOZ_MUST_USE bool allocateNextChunk(unsigned chunkno,
-        AutoLockGCBgAlloc& lock);
-
-    MOZ_ALWAYS_INLINE uintptr_t currentEnd() const;
-
-    uintptr_t position() const { return position_; }
-
-    JSRuntime* runtime() const { return runtime_; }
-    gcstats::Statistics& stats() const;
-
-    
-    void* allocate(size_t size);
-
-    void doCollection(JS::gcreason::Reason reason, gc::TenureCountCache& tenureCounts);
-
-    
+  
 
 
 
-    void collectToFixedPoint(TenuringTracer& trc, gc::TenureCountCache& tenureCounts);
+  MOZ_MUST_USE bool allocateNextChunk(unsigned chunkno,
+                                      AutoLockGCBgAlloc& lock);
 
-    
-    inline void setForwardingPointer(void* oldData, void* newData, bool direct);
+  MOZ_ALWAYS_INLINE uintptr_t currentEnd() const;
 
-    inline void setDirectForwardingPointer(void* oldData, void* newData);
-    void setIndirectForwardingPointer(void* oldData, void* newData);
+  uintptr_t position() const { return position_; }
 
-    inline void setSlotsForwardingPointer(HeapSlot* oldSlots, HeapSlot* newSlots, uint32_t nslots);
-    inline void setElementsForwardingPointer(ObjectElements* oldHeader, ObjectElements* newHeader,
-                                             uint32_t capacity);
+  JSRuntime* runtime() const { return runtime_; }
+  gcstats::Statistics& stats() const;
 
-    
-    void freeMallocedBuffers();
+  
+  void* allocate(size_t size);
 
-    
+  void doCollection(JS::gcreason::Reason reason,
+                    gc::TenureCountCache& tenureCounts);
 
-
-
-    void sweep(JSTracer* trc);
-
-    
+  
 
 
 
-    void clear();
+  void collectToFixedPoint(TenuringTracer& trc,
+                           gc::TenureCountCache& tenureCounts);
 
-    void sweepDictionaryModeObjects();
-    void sweepMapAndSetObjects();
+  
+  inline void setForwardingPointer(void* oldData, void* newData, bool direct);
 
-    
-    void maybeResizeNursery(JS::gcreason::Reason reason);
-    void growAllocableSpace();
-    void shrinkAllocableSpace(unsigned newCount);
-    void minimizeAllocableSpace();
+  inline void setDirectForwardingPointer(void* oldData, void* newData);
+  void setIndirectForwardingPointer(void* oldData, void* newData);
 
-    
-    
-    void freeChunksFrom(unsigned firstFreeChunk);
+  inline void setSlotsForwardingPointer(HeapSlot* oldSlots, HeapSlot* newSlots,
+                                        uint32_t nslots);
+  inline void setElementsForwardingPointer(ObjectElements* oldHeader,
+                                           ObjectElements* newHeader,
+                                           uint32_t capacity);
 
-    
-    void maybeClearProfileDurations();
-    void startProfile(ProfileKey key);
-    void endProfile(ProfileKey key);
-    static void printProfileDurations(const ProfileDurations& times);
+  
+  void freeMallocedBuffers();
 
-    friend class TenuringTracer;
-    friend class gc::MinorCollectionTracer;
-    friend class jit::MacroAssembler;
-    friend struct NurseryChunk;
+  
+
+
+
+  void sweep(JSTracer* trc);
+
+  
+
+
+
+  void clear();
+
+  void sweepDictionaryModeObjects();
+  void sweepMapAndSetObjects();
+
+  
+  void maybeResizeNursery(JS::gcreason::Reason reason);
+  void growAllocableSpace();
+  void shrinkAllocableSpace(unsigned newCount);
+  void minimizeAllocableSpace();
+
+  
+  
+  void freeChunksFrom(unsigned firstFreeChunk);
+
+  
+  void maybeClearProfileDurations();
+  void startProfile(ProfileKey key);
+  void endProfile(ProfileKey key);
+  static void printProfileDurations(const ProfileDurations& times);
+
+  friend class TenuringTracer;
+  friend class gc::MinorCollectionTracer;
+  friend class jit::MacroAssembler;
+  friend struct NurseryChunk;
 };
 
 } 

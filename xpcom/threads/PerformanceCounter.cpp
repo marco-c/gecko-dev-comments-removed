@@ -17,9 +17,7 @@ static mozilla::LazyLogModule sPerformanceCounter("PerformanceCounter");
 
 static Atomic<uint64_t> gNextCounterID(0);
 
-static uint64_t
-NextCounterID()
-{
+static uint64_t NextCounterID() {
   
   
   
@@ -27,62 +25,45 @@ NextCounterID()
 }
 
 
-
-const DispatchCategory DispatchCategory::Worker = DispatchCategory((uint32_t)TaskCategory::Count);
+const DispatchCategory DispatchCategory::Worker =
+    DispatchCategory((uint32_t)TaskCategory::Count);
 
 PerformanceCounter::PerformanceCounter(const nsACString& aName)
-  : mExecutionDuration(0),
-    mTotalDispatchCount(0),
-    mDispatchCounter(),
-    mName(aName),
-    mID(NextCounterID())
-{
+    : mExecutionDuration(0),
+      mTotalDispatchCount(0),
+      mDispatchCounter(),
+      mName(aName),
+      mID(NextCounterID()) {
   LOG(("PerformanceCounter created with ID %" PRIu64, mID));
 }
 
-void
-PerformanceCounter::IncrementDispatchCounter(DispatchCategory aCategory)
-{
+void PerformanceCounter::IncrementDispatchCounter(DispatchCategory aCategory) {
   mDispatchCounter[aCategory.GetValue()] += 1;
   mTotalDispatchCount += 1;
-  LOG(("[%s][%" PRIu64 "] Total dispatch %" PRIu64, mName.get(),
-      GetID(), uint64_t(mTotalDispatchCount)));
+  LOG(("[%s][%" PRIu64 "] Total dispatch %" PRIu64, mName.get(), GetID(),
+       uint64_t(mTotalDispatchCount)));
 }
 
-void
-PerformanceCounter::IncrementExecutionDuration(uint32_t aMicroseconds)
-{
+void PerformanceCounter::IncrementExecutionDuration(uint32_t aMicroseconds) {
   mExecutionDuration += aMicroseconds;
-  LOG(("[%s][%" PRIu64 "] Total duration %" PRIu64, mName.get(),
-      GetID(), uint64_t(mExecutionDuration)));
+  LOG(("[%s][%" PRIu64 "] Total duration %" PRIu64, mName.get(), GetID(),
+       uint64_t(mExecutionDuration)));
 }
 
-const DispatchCounter&
-PerformanceCounter::GetDispatchCounter()
-{
+const DispatchCounter& PerformanceCounter::GetDispatchCounter() {
   return mDispatchCounter;
 }
 
-uint64_t
-PerformanceCounter::GetExecutionDuration()
-{
+uint64_t PerformanceCounter::GetExecutionDuration() {
   return mExecutionDuration;
 }
 
-uint64_t
-PerformanceCounter::GetTotalDispatchCount()
-{
+uint64_t PerformanceCounter::GetTotalDispatchCount() {
   return mTotalDispatchCount;
 }
 
-uint32_t
-PerformanceCounter::GetDispatchCount(DispatchCategory aCategory)
-{
+uint32_t PerformanceCounter::GetDispatchCount(DispatchCategory aCategory) {
   return mDispatchCounter[aCategory.GetValue()];
 }
 
-uint64_t
-PerformanceCounter::GetID() const
-{
-  return mID;
-}
+uint64_t PerformanceCounter::GetID() const { return mID; }

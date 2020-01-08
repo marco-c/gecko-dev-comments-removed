@@ -29,35 +29,38 @@ enum class StyleAppearance : uint8_t;
 namespace layers {
 class StackingContextHelper;
 class WebRenderLayerManager;
-}
+}  
 namespace wr {
 class DisplayListBuilder;
 class IpcResourceUpdateQueue;
-}
-}
+}  
+}  
 
 
 
- #define NS_ITHEME_IID     \
-{ 0x7329f760, 0x08cb, 0x450f, \
-  { 0x82, 0x25, 0xda, 0xe7, 0x29, 0x09, 0x6d, 0xec } }
-
-
-
-
-
-
-
+#define NS_ITHEME_IID                                \
+  {                                                  \
+    0x7329f760, 0x08cb, 0x450f, {                    \
+      0x82, 0x25, 0xda, 0xe7, 0x29, 0x09, 0x6d, 0xec \
+    }                                                \
+  }
 
 
 
 
-class nsITheme: public nsISupports {
-protected:
+
+
+
+
+
+
+
+class nsITheme : public nsISupports {
+ protected:
   using LayoutDeviceIntMargin = mozilla::LayoutDeviceIntMargin;
   using StyleAppearance = mozilla::StyleAppearance;
 
-public:
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ITHEME_IID)
 
   
@@ -68,8 +71,7 @@ public:
 
 
 
-  NS_IMETHOD DrawWidgetBackground(gfxContext* aContext,
-                                  nsIFrame* aFrame,
+  NS_IMETHOD DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
                                   StyleAppearance aWidgetType,
                                   const nsRect& aRect,
                                   const nsRect& aDirtyRect) = 0;
@@ -80,20 +82,21 @@ public:
 
 
 
-  virtual bool CreateWebRenderCommandsForWidget(mozilla::wr::DisplayListBuilder& aBuilder,
-                                                mozilla::wr::IpcResourceUpdateQueue& aResources,
-                                                const mozilla::layers::StackingContextHelper& aSc,
-                                                mozilla::layers::WebRenderLayerManager* aManager,
-                                                nsIFrame* aFrame,
-                                                StyleAppearance aWidgetType,
-                                                const nsRect& aRect) { return false; }
+  virtual bool CreateWebRenderCommandsForWidget(
+      mozilla::wr::DisplayListBuilder& aBuilder,
+      mozilla::wr::IpcResourceUpdateQueue& aResources,
+      const mozilla::layers::StackingContextHelper& aSc,
+      mozilla::layers::WebRenderLayerManager* aManager, nsIFrame* aFrame,
+      StyleAppearance aWidgetType, const nsRect& aRect) {
+    return false;
+  }
 
   
 
 
-  virtual MOZ_MUST_USE LayoutDeviceIntMargin GetWidgetBorder(nsDeviceContext* aContext,
-                                                             nsIFrame* aFrame,
-                                                             StyleAppearance aWidgetType) = 0;
+  virtual MOZ_MUST_USE LayoutDeviceIntMargin
+  GetWidgetBorder(nsDeviceContext* aContext, nsIFrame* aFrame,
+                  StyleAppearance aWidgetType) = 0;
 
   
 
@@ -104,8 +107,7 @@ public:
 
 
 
-  virtual bool GetWidgetPadding(nsDeviceContext* aContext,
-                                nsIFrame* aFrame,
+  virtual bool GetWidgetPadding(nsDeviceContext* aContext, nsIFrame* aFrame,
                                 StyleAppearance aWidgetType,
                                 LayoutDeviceIntMargin* aResult) = 0;
 
@@ -123,11 +125,11 @@ public:
 
 
 
-  virtual bool GetWidgetOverflow(nsDeviceContext* aContext,
-                                 nsIFrame* aFrame,
+  virtual bool GetWidgetOverflow(nsDeviceContext* aContext, nsIFrame* aFrame,
                                  StyleAppearance aWidgetType,
-                                  nsRect* aOverflowRect)
-  { return false; }
+                                  nsRect* aOverflowRect) {
+    return false;
+  }
 
   
 
@@ -135,44 +137,41 @@ public:
 
 
 
-  NS_IMETHOD GetMinimumWidgetSize(nsPresContext* aPresContext,
-                                  nsIFrame* aFrame,
+  NS_IMETHOD GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aFrame,
                                   StyleAppearance aWidgetType,
                                   mozilla::LayoutDeviceIntSize* aResult,
-                                  bool* aIsOverridable)=0;
+                                  bool* aIsOverridable) = 0;
 
-
-  enum Transparency {
-    eOpaque = 0,
-    eTransparent,
-    eUnknownTransparency
-  };
+  enum Transparency { eOpaque = 0, eTransparent, eUnknownTransparency };
 
   
 
 
   virtual Transparency GetWidgetTransparency(nsIFrame* aFrame,
-                                             StyleAppearance aWidgetType)
-  { return eUnknownTransparency; }
+                                             StyleAppearance aWidgetType) {
+    return eUnknownTransparency;
+  }
 
   
 
 
 
 
-  NS_IMETHOD WidgetStateChanged(nsIFrame* aFrame,
-                                StyleAppearance aWidgetType,
+  NS_IMETHOD WidgetStateChanged(nsIFrame* aFrame, StyleAppearance aWidgetType,
                                 nsAtom* aAttribute, bool* aShouldRepaint,
-                                const nsAttrValue* aOldValue)=0;
+                                const nsAttrValue* aOldValue) = 0;
 
-  NS_IMETHOD ThemeChanged()=0;
+  NS_IMETHOD ThemeChanged() = 0;
 
-  virtual bool WidgetAppearanceDependsOnWindowFocus(StyleAppearance aWidgetType)
-  { return false; }
+  virtual bool WidgetAppearanceDependsOnWindowFocus(
+      StyleAppearance aWidgetType) {
+    return false;
+  }
 
   virtual bool NeedToClearBackgroundBehindWidget(nsIFrame* aFrame,
-                                                 StyleAppearance aWidgetType)
-  { return false; }
+                                                 StyleAppearance aWidgetType) {
+    return false;
+  }
 
   
 
@@ -187,9 +186,7 @@ public:
 
 
   typedef uint8_t ThemeGeometryType;
-  enum {
-    eThemeGeometryTypeUnknown = 0
-  };
+  enum { eThemeGeometryTypeUnknown = 0 };
 
   
 
@@ -197,9 +194,10 @@ public:
 
 
 
-  virtual ThemeGeometryType ThemeGeometryTypeForWidget(nsIFrame* aFrame,
-                                                       StyleAppearance aWidgetType)
-  { return eThemeGeometryTypeUnknown; }
+  virtual ThemeGeometryType ThemeGeometryTypeForWidget(
+      nsIFrame* aFrame, StyleAppearance aWidgetType) {
+    return eThemeGeometryTypeUnknown;
+  }
 
   
 
@@ -214,7 +212,7 @@ public:
 
 
   virtual bool ThemeDrawsFocusForWidget(StyleAppearance aWidgetType) = 0;
-  
+
   
 
 

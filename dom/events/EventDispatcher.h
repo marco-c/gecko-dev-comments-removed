@@ -21,13 +21,14 @@
 class nsIContent;
 class nsPresContext;
 
-template<class E> class nsCOMArray;
+template <class E>
+class nsCOMArray;
 
 namespace mozilla {
 namespace dom {
 class Event;
 class EventTarget;
-} 
+}  
 
 
 
@@ -49,25 +50,21 @@ class EventTarget;
 
 
 
-class EventChainVisitor
-{
-public:
-  EventChainVisitor(nsPresContext* aPresContext,
-                    WidgetEvent* aEvent,
+class EventChainVisitor {
+ public:
+  EventChainVisitor(nsPresContext* aPresContext, WidgetEvent* aEvent,
                     dom::Event* aDOMEvent,
                     nsEventStatus aEventStatus = nsEventStatus_eIgnore)
-    : mPresContext(aPresContext)
-    , mEvent(aEvent)
-    , mDOMEvent(aDOMEvent)
-    , mEventStatus(aEventStatus)
-    , mItemFlags(0)
-  {
-  }
+      : mPresContext(aPresContext),
+        mEvent(aEvent),
+        mDOMEvent(aDOMEvent),
+        mEventStatus(aEventStatus),
+        mItemFlags(0) {}
 
   
 
 
-  nsPresContext* const  mPresContext;
+  nsPresContext* const mPresContext;
 
   
 
@@ -78,13 +75,13 @@ public:
 
 
 
-  dom::Event*           mDOMEvent;
+  dom::Event* mDOMEvent;
 
   
 
 
 
-  nsEventStatus         mEventStatus;
+  nsEventStatus mEventStatus;
 
   
 
@@ -96,7 +93,7 @@ public:
 
 
 
-  uint16_t              mItemFlags;
+  uint16_t mItemFlags;
 
   
 
@@ -109,39 +106,33 @@ public:
   nsCOMPtr<nsISupports> mItemData;
 };
 
-class EventChainPreVisitor : public EventChainVisitor
-{
-public:
-  EventChainPreVisitor(nsPresContext* aPresContext,
-                       WidgetEvent* aEvent,
-                       dom::Event* aDOMEvent,
-                       nsEventStatus aEventStatus,
+class EventChainPreVisitor : public EventChainVisitor {
+ public:
+  EventChainPreVisitor(nsPresContext* aPresContext, WidgetEvent* aEvent,
+                       dom::Event* aDOMEvent, nsEventStatus aEventStatus,
                        bool aIsInAnon,
                        dom::EventTarget* aTargetInKnownToBeHandledScope)
-    : EventChainVisitor(aPresContext, aEvent, aDOMEvent, aEventStatus)
-    , mCanHandle(true)
-    , mAutomaticChromeDispatch(true)
-    , mForceContentDispatch(false)
-    , mRelatedTargetIsInAnon(false)
-    , mOriginalTargetIsInAnon(aIsInAnon)
-    , mWantsWillHandleEvent(false)
-    , mMayHaveListenerManager(true)
-    , mWantsPreHandleEvent(false)
-    , mRootOfClosedTree(false)
-    , mItemInShadowTree(false)
-    , mParentIsSlotInClosedTree(false)
-    , mParentIsChromeHandler(false)
-    , mRelatedTargetRetargetedInCurrentScope(false)
-    , mIgnoreBecauseOfShadowDOM(false)
-    , mParentTarget(nullptr)
-    , mEventTargetAtParent(nullptr)
-    , mRetargetedRelatedTarget(nullptr)
-    , mTargetInKnownToBeHandledScope(aTargetInKnownToBeHandledScope)
-  {
-  }
+      : EventChainVisitor(aPresContext, aEvent, aDOMEvent, aEventStatus),
+        mCanHandle(true),
+        mAutomaticChromeDispatch(true),
+        mForceContentDispatch(false),
+        mRelatedTargetIsInAnon(false),
+        mOriginalTargetIsInAnon(aIsInAnon),
+        mWantsWillHandleEvent(false),
+        mMayHaveListenerManager(true),
+        mWantsPreHandleEvent(false),
+        mRootOfClosedTree(false),
+        mItemInShadowTree(false),
+        mParentIsSlotInClosedTree(false),
+        mParentIsChromeHandler(false),
+        mRelatedTargetRetargetedInCurrentScope(false),
+        mIgnoreBecauseOfShadowDOM(false),
+        mParentTarget(nullptr),
+        mEventTargetAtParent(nullptr),
+        mRetargetedRelatedTarget(nullptr),
+        mTargetInKnownToBeHandledScope(aTargetInKnownToBeHandledScope) {}
 
-  void Reset()
-  {
+  void Reset() {
     mItemFlags = 0;
     mItemData = nullptr;
     mCanHandle = true;
@@ -164,21 +155,16 @@ public:
     mRetargetedTouchTargets.reset();
   }
 
-  dom::EventTarget* GetParentTarget()
-  {
-    return mParentTarget;
-  }
+  dom::EventTarget* GetParentTarget() { return mParentTarget; }
 
-  void SetParentTarget(dom::EventTarget* aParentTarget, bool aIsChromeHandler)
-  {
+  void SetParentTarget(dom::EventTarget* aParentTarget, bool aIsChromeHandler) {
     mParentTarget = aParentTarget;
     if (mParentTarget) {
       mParentIsChromeHandler = aIsChromeHandler;
     }
   }
 
-  void IgnoreCurrentTargetBecauseOfShadowDOMRetargeting()
-  {
+  void IgnoreCurrentTargetBecauseOfShadowDOMRetargeting() {
     mCanHandle = false;
     mIgnoreBecauseOfShadowDOM = true;
     SetParentTarget(nullptr, false);
@@ -191,44 +177,44 @@ public:
 
 
 
-  bool                  mCanHandle;
+  bool mCanHandle;
 
   
 
 
 
-  bool                  mAutomaticChromeDispatch;
+  bool mAutomaticChromeDispatch;
 
   
 
 
 
 
-  bool                  mForceContentDispatch;
+  bool mForceContentDispatch;
 
   
 
 
 
-  bool                  mRelatedTargetIsInAnon;
+  bool mRelatedTargetIsInAnon;
 
   
 
 
 
-  bool                  mOriginalTargetIsInAnon;
+  bool mOriginalTargetIsInAnon;
 
   
 
 
 
-  bool                  mWantsWillHandleEvent;
+  bool mWantsWillHandleEvent;
 
   
 
 
 
-  bool                  mMayHaveListenerManager;
+  bool mMayHaveListenerManager;
 
   
 
@@ -271,13 +257,14 @@ public:
 
 
   bool mIgnoreBecauseOfShadowDOM;
-private:
+
+ private:
   
 
 
   dom::EventTarget* mParentTarget;
 
-public:
+ public:
   
 
 
@@ -305,14 +292,11 @@ public:
   dom::EventTarget* mTargetInKnownToBeHandledScope;
 };
 
-class EventChainPostVisitor : public mozilla::EventChainVisitor
-{
-public:
+class EventChainPostVisitor : public mozilla::EventChainVisitor {
+ public:
   explicit EventChainPostVisitor(EventChainVisitor& aOther)
-    : EventChainVisitor(aOther.mPresContext, aOther.mEvent,
-                        aOther.mDOMEvent, aOther.mEventStatus)
-  {
-  }
+      : EventChainVisitor(aOther.mPresContext, aOther.mEvent, aOther.mDOMEvent,
+                          aOther.mEventStatus) {}
 };
 
 
@@ -321,9 +305,8 @@ public:
 
 
 
-class MOZ_STACK_CLASS EventDispatchingCallback
-{
-public:
+class MOZ_STACK_CLASS EventDispatchingCallback {
+ public:
   virtual void HandleEvent(EventChainPostVisitor& aVisitor) = 0;
 };
 
@@ -331,9 +314,8 @@ public:
 
 
 
-class EventDispatcher
-{
-public:
+class EventDispatcher {
+ public:
   
 
 
@@ -350,10 +332,8 @@ public:
 
 
 
-  static nsresult Dispatch(nsISupports* aTarget,
-                           nsPresContext* aPresContext,
-                           WidgetEvent* aEvent,
-                           dom::Event* aDOMEvent = nullptr,
+  static nsresult Dispatch(nsISupports* aTarget, nsPresContext* aPresContext,
+                           WidgetEvent* aEvent, dom::Event* aDOMEvent = nullptr,
                            nsEventStatus* aEventStatus = nullptr,
                            EventDispatchingCallback* aCallback = nullptr,
                            nsTArray<dom::EventTarget*>* aTargets = nullptr);
@@ -366,8 +346,7 @@ public:
 
 
 
-  static nsresult DispatchDOMEvent(nsISupports* aTarget,
-                                   WidgetEvent* aEvent,
+  static nsresult DispatchDOMEvent(nsISupports* aTarget, WidgetEvent* aEvent,
                                    dom::Event* aDOMEvent,
                                    nsPresContext* aPresContext,
                                    nsEventStatus* aEventStatus);
@@ -375,12 +354,10 @@ public:
   
 
 
-  static already_AddRefed<dom::Event> CreateEvent(dom::EventTarget* aOwner,
-                                                  nsPresContext* aPresContext,
-                                                  WidgetEvent* aEvent,
-                                                  const nsAString& aEventType,
-                                                  dom::CallerType aCallerType =
-                                                    dom::CallerType::System);
+  static already_AddRefed<dom::Event> CreateEvent(
+      dom::EventTarget* aOwner, nsPresContext* aPresContext,
+      WidgetEvent* aEvent, const nsAString& aEventType,
+      dom::CallerType aCallerType = dom::CallerType::System);
 
   static void GetComposedPathFor(WidgetEvent* aEvent,
                                  nsTArray<RefPtr<dom::EventTarget>>& aPath);
@@ -391,7 +368,7 @@ public:
   static void Shutdown();
 };
 
-} 
+}  
 
-#endif 
+#endif  
 #endif

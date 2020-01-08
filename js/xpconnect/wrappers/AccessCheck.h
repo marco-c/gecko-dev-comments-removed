@@ -16,92 +16,102 @@ class nsIPrincipal;
 namespace xpc {
 
 class AccessCheck {
-  public:
-    static bool subsumes(JSObject* a, JSObject* b);
-    static bool wrapperSubsumes(JSObject* wrapper);
-    static bool subsumesConsideringDomain(JS::Compartment* a, JS::Compartment* b);
-    static bool subsumesConsideringDomainIgnoringFPD(JS::Compartment* a,
-                                                     JS::Compartment* b);
-    static bool isChrome(JS::Compartment* compartment);
-    static bool isChrome(JSObject* obj);
-    static bool isCrossOriginAccessPermitted(JSContext* cx, JS::HandleObject obj,
-                                             JS::HandleId id, js::Wrapper::Action act);
-    static bool checkPassToPrivilegedCode(JSContext* cx, JS::HandleObject wrapper,
-                                          JS::HandleValue value);
-    static bool checkPassToPrivilegedCode(JSContext* cx, JS::HandleObject wrapper,
-                                          const JS::CallArgs& args);
-    
-    
-    
-    static void reportCrossOriginDenial(JSContext* cx, JS::HandleId id,
-                                        const nsACString& accessType);
+ public:
+  static bool subsumes(JSObject* a, JSObject* b);
+  static bool wrapperSubsumes(JSObject* wrapper);
+  static bool subsumesConsideringDomain(JS::Compartment* a, JS::Compartment* b);
+  static bool subsumesConsideringDomainIgnoringFPD(JS::Compartment* a,
+                                                   JS::Compartment* b);
+  static bool isChrome(JS::Compartment* compartment);
+  static bool isChrome(JSObject* obj);
+  static bool isCrossOriginAccessPermitted(JSContext* cx, JS::HandleObject obj,
+                                           JS::HandleId id,
+                                           js::Wrapper::Action act);
+  static bool checkPassToPrivilegedCode(JSContext* cx, JS::HandleObject wrapper,
+                                        JS::HandleValue value);
+  static bool checkPassToPrivilegedCode(JSContext* cx, JS::HandleObject wrapper,
+                                        const JS::CallArgs& args);
+  
+  
+  
+  static void reportCrossOriginDenial(JSContext* cx, JS::HandleId id,
+                                      const nsACString& accessType);
 };
 
 enum CrossOriginObjectType {
-    CrossOriginWindow,
-    CrossOriginLocation,
-    CrossOriginOpaque
+  CrossOriginWindow,
+  CrossOriginLocation,
+  CrossOriginOpaque
 };
 CrossOriginObjectType IdentifyCrossOriginObject(JSObject* obj);
 
 struct Policy {
-    static bool checkCall(JSContext* cx, JS::HandleObject wrapper, const JS::CallArgs& args) {
-        MOZ_CRASH("As a rule, filtering wrappers are non-callable");
-    }
+  static bool checkCall(JSContext* cx, JS::HandleObject wrapper,
+                        const JS::CallArgs& args) {
+    MOZ_CRASH("As a rule, filtering wrappers are non-callable");
+  }
 };
 
 
+
 struct Opaque : public Policy {
-    static bool check(JSContext* cx, JSObject* wrapper, jsid id, js::Wrapper::Action act) {
-        return false;
-    }
-    static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
-                     bool mayThrow) {
-        return false;
-    }
-    static bool allowNativeCall(JSContext* cx, JS::IsAcceptableThis test, JS::NativeImpl impl) {
-        return false;
-    }
+  static bool check(JSContext* cx, JSObject* wrapper, jsid id,
+                    js::Wrapper::Action act) {
+    return false;
+  }
+  static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
+                   bool mayThrow) {
+    return false;
+  }
+  static bool allowNativeCall(JSContext* cx, JS::IsAcceptableThis test,
+                              JS::NativeImpl impl) {
+    return false;
+  }
 };
 
 
 struct OpaqueWithCall : public Policy {
-    static bool check(JSContext* cx, JSObject* wrapper, jsid id, js::Wrapper::Action act) {
-        return act == js::Wrapper::CALL;
-    }
-    static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
-                     bool mayThrow) {
-        return false;
-    }
-    static bool allowNativeCall(JSContext* cx, JS::IsAcceptableThis test, JS::NativeImpl impl) {
-        return false;
-    }
-    static bool checkCall(JSContext* cx, JS::HandleObject wrapper, const JS::CallArgs& args) {
-        return AccessCheck::checkPassToPrivilegedCode(cx, wrapper, args);
-    }
+  static bool check(JSContext* cx, JSObject* wrapper, jsid id,
+                    js::Wrapper::Action act) {
+    return act == js::Wrapper::CALL;
+  }
+  static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
+                   bool mayThrow) {
+    return false;
+  }
+  static bool allowNativeCall(JSContext* cx, JS::IsAcceptableThis test,
+                              JS::NativeImpl impl) {
+    return false;
+  }
+  static bool checkCall(JSContext* cx, JS::HandleObject wrapper,
+                        const JS::CallArgs& args) {
+    return AccessCheck::checkPassToPrivilegedCode(cx, wrapper, args);
+  }
 };
 
 
 
 struct CrossOriginAccessiblePropertiesOnly : public Policy {
-    static bool check(JSContext* cx, JS::HandleObject wrapper, JS::HandleId id, js::Wrapper::Action act) {
-        return AccessCheck::isCrossOriginAccessPermitted(cx, wrapper, id, act);
+  static bool check(JSContext* cx, JS::HandleObject wrapper, JS::HandleId id,
+                    js::Wrapper::Action act) {
+    return AccessCheck::isCrossOriginAccessPermitted(cx, wrapper, id, act);
+  }
+  static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
+                   bool mayThrow) {
+    
+    if (act == js::Wrapper::ENUMERATE) {
+      return true;
     }
-    static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
-                     bool mayThrow) {
-        
-        if (act == js::Wrapper::ENUMERATE) {
-            return true;
-        }
-        if (mayThrow) {
-            AccessCheck::reportCrossOriginDenial(cx, id,
-                                                 NS_LITERAL_CSTRING("access"));
-        }
-        return false;
+    if (mayThrow) {
+      AccessCheck::reportCrossOriginDenial(cx, id,
+                                           NS_LITERAL_CSTRING("access"));
     }
-    static bool allowNativeCall(JSContext* cx, JS::IsAcceptableThis test, JS::NativeImpl impl) {
-        return false;
-    }
+    return false;
+  }
+  static bool allowNativeCall(JSContext* cx, JS::IsAcceptableThis test,
+                              JS::NativeImpl impl) {
+    return false;
+  }
 };
 
 
@@ -110,17 +120,19 @@ struct CrossOriginAccessiblePropertiesOnly : public Policy {
 
 
 struct OpaqueWithSilentFailing : public Policy {
-    static bool check(JSContext* cx, JS::HandleObject wrapper, JS::HandleId id, js::Wrapper::Action act) {
-        return false;
-    }
+  static bool check(JSContext* cx, JS::HandleObject wrapper, JS::HandleId id,
+                    js::Wrapper::Action act) {
+    return false;
+  }
 
-    static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
-                     bool mayThrow);
-    static bool allowNativeCall(JSContext* cx, JS::IsAcceptableThis test, JS::NativeImpl impl) {
-        return false;
-    }
+  static bool deny(JSContext* cx, js::Wrapper::Action act, JS::HandleId id,
+                   bool mayThrow);
+  static bool allowNativeCall(JSContext* cx, JS::IsAcceptableThis test,
+                              JS::NativeImpl impl) {
+    return false;
+  }
 };
 
-} 
+}  
 
 #endif 

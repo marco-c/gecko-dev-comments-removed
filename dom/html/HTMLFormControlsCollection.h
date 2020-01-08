@@ -7,7 +7,7 @@
 #ifndef mozilla_dom_HTMLFormControlsCollection_h
 #define mozilla_dom_HTMLFormControlsCollection_h
 
-#include "mozilla/dom/Element.h" 
+#include "mozilla/dom/Element.h"  
 #include "nsIHTMLCollection.h"
 #include "nsInterfaceHashtable.h"
 #include "nsTArray.h"
@@ -23,12 +23,12 @@ namespace dom {
 class HTMLFormElement;
 class HTMLImageElement;
 class OwningRadioNodeListOrElement;
-template<typename> struct Nullable;
+template <typename>
+struct Nullable;
 
-class HTMLFormControlsCollection final : public nsIHTMLCollection
-                                       , public nsWrapperCache
-{
-public:
+class HTMLFormControlsCollection final : public nsIHTMLCollection,
+                                         public nsWrapperCache {
+ public:
   explicit HTMLFormControlsCollection(HTMLFormElement* aForm);
 
   void DropFormReference();
@@ -39,17 +39,13 @@ public:
   virtual Element* GetElementAt(uint32_t index) override;
   virtual nsINode* GetParentObject() override;
 
-  virtual Element*
-  GetFirstNamedElement(const nsAString& aName, bool& aFound) override;
+  virtual Element* GetFirstNamedElement(const nsAString& aName,
+                                        bool& aFound) override;
 
-  void
-  NamedGetter(const nsAString& aName,
-              bool& aFound,
-              Nullable<OwningRadioNodeListOrElement>& aResult);
-  void
-  NamedItem(const nsAString& aName,
-            Nullable<OwningRadioNodeListOrElement>& aResult)
-  {
+  void NamedGetter(const nsAString& aName, bool& aFound,
+                   Nullable<OwningRadioNodeListOrElement>& aResult);
+  void NamedItem(const nsAString& aName,
+                 Nullable<OwningRadioNodeListOrElement>& aResult) {
     bool dummy;
     NamedGetter(aName, dummy, aResult);
   }
@@ -61,8 +57,7 @@ public:
                                   const nsAString& aName);
   nsresult RemoveElementFromTable(nsGenericHTMLFormElement* aChild,
                                   const nsAString& aName);
-  nsresult IndexOfControl(nsIFormControl* aControl,
-                          int32_t* aIndex);
+  nsresult IndexOfControl(nsIFormControl* aControl, int32_t* aIndex);
 
   nsISupports* NamedItemInternal(const nsAString& aName, bool aFlushContent);
 
@@ -75,40 +70,43 @@ public:
 
 
 
-  nsresult GetSortedControls(nsTArray<RefPtr<nsGenericHTMLFormElement>>& aControls) const;
+  nsresult GetSortedControls(
+      nsTArray<RefPtr<nsGenericHTMLFormElement>>& aControls) const;
 
   
   using nsWrapperCache::GetWrapperPreserveColor;
   using nsWrapperCache::PreserveWrapper;
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-protected:
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
+
+ protected:
   virtual ~HTMLFormControlsCollection();
-  virtual JSObject* GetWrapperPreserveColorInternal() override
-  {
+  virtual JSObject* GetWrapperPreserveColorInternal() override {
     return nsWrapperCache::GetWrapperPreserveColor();
   }
-  virtual void PreserveWrapperInternal(nsISupports* aScriptObjectHolder) override
-  {
+  virtual void PreserveWrapperInternal(
+      nsISupports* aScriptObjectHolder) override {
     nsWrapperCache::PreserveWrapper(aScriptObjectHolder);
   }
-public:
 
+ public:
   static bool ShouldBeInElements(nsIFormControl* aFormControl);
 
   HTMLFormElement* mForm;  
 
-  nsTArray<nsGenericHTMLFormElement*> mElements;  
+  nsTArray<nsGenericHTMLFormElement*>
+      mElements;  
 
   
   
   
   
 
-  nsTArray<nsGenericHTMLFormElement*> mNotInElements; 
+  nsTArray<nsGenericHTMLFormElement*> mNotInElements;  
 
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(HTMLFormControlsCollection)
 
-protected:
+ protected:
   
   void Clear();
 
@@ -121,10 +119,10 @@ protected:
   
   
 
-  nsInterfaceHashtable<nsStringHashKey,nsISupports> mNameLookupTable;
+  nsInterfaceHashtable<nsStringHashKey, nsISupports> mNameLookupTable;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

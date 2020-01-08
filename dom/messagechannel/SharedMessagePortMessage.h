@@ -16,50 +16,43 @@ class MessagePortChild;
 class MessagePortMessage;
 class MessagePortParent;
 
-class SharedMessagePortMessage final : public ipc::StructuredCloneData
-{
-public:
+class SharedMessagePortMessage final : public ipc::StructuredCloneData {
+ public:
   NS_INLINE_DECL_REFCOUNTING(SharedMessagePortMessage)
 
-  SharedMessagePortMessage()
-    : ipc::StructuredCloneData()
-  {}
+  SharedMessagePortMessage() : ipc::StructuredCloneData() {}
 
   
   
   
   
-  static void
-  FromSharedToMessagesChild(
-                      MessagePortChild* aActor,
-                      const nsTArray<RefPtr<SharedMessagePortMessage>>& aData,
-                      nsTArray<ClonedMessageData>& aArray);
+  static void FromSharedToMessagesChild(
+      MessagePortChild* aActor,
+      const nsTArray<RefPtr<SharedMessagePortMessage>>& aData,
+      nsTArray<ClonedMessageData>& aArray);
 
-  static bool
-  FromMessagesToSharedChild(
-                     nsTArray<ClonedMessageData>& aArray,
-                     FallibleTArray<RefPtr<SharedMessagePortMessage>>& aData);
+  static bool FromMessagesToSharedChild(
+      nsTArray<ClonedMessageData>& aArray,
+      FallibleTArray<RefPtr<SharedMessagePortMessage>>& aData);
 
   
   
   
   
-  static bool
-  FromSharedToMessagesParent(
-                      MessagePortParent* aActor,
-                      const nsTArray<RefPtr<SharedMessagePortMessage>>& aData,
-                      FallibleTArray<ClonedMessageData>& aArray);
+  static bool FromSharedToMessagesParent(
+      MessagePortParent* aActor,
+      const nsTArray<RefPtr<SharedMessagePortMessage>>& aData,
+      FallibleTArray<ClonedMessageData>& aArray);
 
-  static bool
-  FromMessagesToSharedParent(
-                     nsTArray<ClonedMessageData>& aArray,
-                     FallibleTArray<RefPtr<SharedMessagePortMessage>>& aData);
+  static bool FromMessagesToSharedParent(
+      nsTArray<ClonedMessageData>& aArray,
+      FallibleTArray<RefPtr<SharedMessagePortMessage>>& aData);
 
-private:
+ private:
   ~SharedMessagePortMessage() {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

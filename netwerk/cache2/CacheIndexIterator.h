@@ -16,17 +16,16 @@ namespace net {
 class CacheIndex;
 struct CacheIndexRecord;
 
-class CacheIndexIterator
-{
-public:
+class CacheIndexIterator {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheIndexIterator)
 
   CacheIndexIterator(CacheIndex *aIndex, bool aAddNew);
 
-protected:
+ protected:
   virtual ~CacheIndexIterator();
 
-public:
+ public:
   
   
   
@@ -36,7 +35,7 @@ public:
   
   nsresult Close();
 
-protected:
+ protected:
   friend class CacheIndex;
 
   nsresult CloseInternal(nsresult aStatus);
@@ -47,13 +46,13 @@ protected:
   bool ReplaceRecord(CacheIndexRecord *aOldRecord,
                      CacheIndexRecord *aNewRecord);
 
-  nsresult                     mStatus;
-  RefPtr<CacheIndex>           mIndex;
+  nsresult mStatus;
+  RefPtr<CacheIndex> mIndex;
   nsTArray<CacheIndexRecord *> mRecords;
-  bool                         mAddNew;
+  bool mAddNew;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

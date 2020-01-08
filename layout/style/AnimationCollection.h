@@ -27,55 +27,52 @@ namespace mozilla {
 
 
 template <class AnimationType>
-struct AnimationTypeTraits { };
+struct AnimationTypeTraits {};
 
 template <class AnimationType>
 class AnimationCollection
-  : public LinkedListElement<AnimationCollection<AnimationType>>
-{
+    : public LinkedListElement<AnimationCollection<AnimationType>> {
   typedef AnimationCollection<AnimationType> SelfType;
   typedef AnimationTypeTraits<AnimationType> TraitsType;
 
   AnimationCollection(dom::Element* aElement, nsAtom* aElementProperty)
-    : mElement(aElement)
-    , mElementProperty(aElementProperty)
+      : mElement(aElement),
+        mElementProperty(aElementProperty)
 #ifdef DEBUG
-    , mCalledPropertyDtor(false)
+        ,
+        mCalledPropertyDtor(false)
 #endif
   {
     MOZ_COUNT_CTOR(AnimationCollection);
   }
 
-public:
-  ~AnimationCollection()
-  {
+ public:
+  ~AnimationCollection() {
     MOZ_ASSERT(mCalledPropertyDtor,
                "must call destructor through element property dtor");
     MOZ_COUNT_DTOR(AnimationCollection);
     LinkedListElement<SelfType>::remove();
   }
 
-  void Destroy()
-  {
+  void Destroy() {
     
     mElement->DeleteProperty(mElementProperty);
   }
 
-  static void PropertyDtor(void *aObject, nsAtom *aPropertyName,
-                           void *aPropertyValue, void *aData);
+  static void PropertyDtor(void* aObject, nsAtom* aPropertyName,
+                           void* aPropertyValue, void* aData);
 
   
   
-  static AnimationCollection<AnimationType>*
-    GetAnimationCollection(const dom::Element* aElement,
-                           CSSPseudoElementType aPseudoType);
+  static AnimationCollection<AnimationType>* GetAnimationCollection(
+      const dom::Element* aElement, CSSPseudoElementType aPseudoType);
 
   
   
   
   
   static AnimationCollection<AnimationType>* GetAnimationCollection(
-    const nsIFrame* aFrame);
+      const nsIFrame* aFrame);
 
   
   
@@ -83,29 +80,26 @@ public:
   
   
   
-  static AnimationCollection<AnimationType>*
-    GetOrCreateAnimationCollection(dom::Element* aElement,
-                                   CSSPseudoElementType aPseudoType,
-                                   bool* aCreatedCollection);
+  static AnimationCollection<AnimationType>* GetOrCreateAnimationCollection(
+      dom::Element* aElement, CSSPseudoElementType aPseudoType,
+      bool* aCreatedCollection);
 
-  dom::Element *mElement;
+  dom::Element* mElement;
 
   
   
-  nsAtom *mElementProperty;
+  nsAtom* mElementProperty;
 
   InfallibleTArray<RefPtr<AnimationType>> mAnimations;
 
-
-private:
-  static nsAtom* GetPropertyAtomForPseudoType(
-    CSSPseudoElementType aPseudoType);
+ private:
+  static nsAtom* GetPropertyAtomForPseudoType(CSSPseudoElementType aPseudoType);
 
 #ifdef DEBUG
   bool mCalledPropertyDtor;
 #endif
 };
 
-} 
+}  
 
-#endif 
+#endif  

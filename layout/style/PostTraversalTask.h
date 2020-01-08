@@ -15,8 +15,8 @@ namespace mozilla {
 namespace dom {
 class FontFace;
 class FontFaceSet;
-} 
-} 
+}  
+}  
 class gfxUserFontEntry;
 
 namespace mozilla {
@@ -29,19 +29,17 @@ namespace mozilla {
 
 
 
-class PostTraversalTask
-{
-public:
-  static PostTraversalTask ResolveFontFaceLoadedPromise(dom::FontFace* aFontFace)
-  {
+class PostTraversalTask {
+ public:
+  static PostTraversalTask ResolveFontFaceLoadedPromise(
+      dom::FontFace* aFontFace) {
     auto task = PostTraversalTask(Type::ResolveFontFaceLoadedPromise);
     task.mTarget = aFontFace;
     return task;
   }
 
   static PostTraversalTask RejectFontFaceLoadedPromise(dom::FontFace* aFontFace,
-                                                       nsresult aResult)
-  {
+                                                       nsresult aResult) {
     auto task = PostTraversalTask(Type::ResolveFontFaceLoadedPromise);
     task.mTarget = aFontFace;
     task.mResult = aResult;
@@ -49,25 +47,22 @@ public:
   }
 
   static PostTraversalTask DispatchLoadingEventAndReplaceReadyPromise(
-    dom::FontFaceSet* aFontFaceSet)
-  {
+      dom::FontFaceSet* aFontFaceSet) {
     auto task =
-      PostTraversalTask(Type::DispatchLoadingEventAndReplaceReadyPromise);
+        PostTraversalTask(Type::DispatchLoadingEventAndReplaceReadyPromise);
     task.mTarget = aFontFaceSet;
     return task;
   }
 
   static PostTraversalTask DispatchFontFaceSetCheckLoadingFinishedAfterDelay(
-    dom::FontFaceSet* aFontFaceSet)
-  {
-    auto task =
-      PostTraversalTask(Type::DispatchFontFaceSetCheckLoadingFinishedAfterDelay);
+      dom::FontFaceSet* aFontFaceSet) {
+    auto task = PostTraversalTask(
+        Type::DispatchFontFaceSetCheckLoadingFinishedAfterDelay);
     task.mTarget = aFontFaceSet;
     return task;
   }
 
-  static PostTraversalTask LoadFontEntry(gfxUserFontEntry* aFontEntry)
-  {
+  static PostTraversalTask LoadFontEntry(gfxUserFontEntry* aFontEntry) {
     auto task = PostTraversalTask(Type::LoadFontEntry);
     task.mTarget = aFontEntry;
     return task;
@@ -75,12 +70,11 @@ public:
 
   void Run();
 
-private:
+ private:
   
   
   
-  enum class Type
-  {
+  enum class Type {
     
     ResolveFontFaceLoadedPromise,
 
@@ -99,17 +93,13 @@ private:
   };
 
   explicit PostTraversalTask(Type aType)
-    : mType(aType)
-    , mTarget(nullptr)
-    , mResult(NS_OK)
-  {
-  }
+      : mType(aType), mTarget(nullptr), mResult(NS_OK) {}
 
   Type mType;
   void* mTarget;
   nsresult mResult;
 };
 
-} 
+}  
 
-#endif 
+#endif  

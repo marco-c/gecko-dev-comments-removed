@@ -17,7 +17,6 @@
 
 
 
-
 static bool gShuttingDown = false;
 
 namespace mozilla {
@@ -32,29 +31,24 @@ namespace {
 
 
 
-class FinalizationEvent final: public Runnable
-{
-public:
-  FinalizationEvent(const char* aTopic,
-                  const char16_t* aValue)
-    : Runnable("FinalizationEvent")
-    , mTopic(aTopic)
-    , mValue(aValue)
-  { }
+class FinalizationEvent final : public Runnable {
+ public:
+  FinalizationEvent(const char* aTopic, const char16_t* aValue)
+      : Runnable("FinalizationEvent"), mTopic(aTopic), mValue(aValue) {}
 
   NS_IMETHOD Run() override {
     nsCOMPtr<nsIObserverService> observerService =
-      mozilla::services::GetObserverService();
+        mozilla::services::GetObserverService();
     if (!observerService) {
       
       
       return NS_ERROR_NOT_AVAILABLE;
     }
-    (void)observerService->
-      NotifyObservers(nullptr, mTopic.get(), mValue.get());
+    (void)observerService->NotifyObservers(nullptr, mTopic.get(), mValue.get());
     return NS_OK;
   }
-private:
+
+ private:
   
 
 
@@ -70,18 +64,14 @@ private:
   const nsString mValue;
 };
 
-enum {
-  WITNESS_SLOT_EVENT,
-  WITNESS_INSTANCES_SLOTS
-};
+enum { WITNESS_SLOT_EVENT, WITNESS_INSTANCES_SLOTS };
 
 
 
 
 
-already_AddRefed<FinalizationEvent>
-ExtractFinalizationEvent(JSObject *objSelf)
-{
+already_AddRefed<FinalizationEvent> ExtractFinalizationEvent(
+    JSObject* objSelf) {
   JS::Value slotEvent = JS_GetReservedSlot(objSelf, WITNESS_SLOT_EVENT);
   if (slotEvent.isUndefined()) {
     
@@ -99,8 +89,7 @@ ExtractFinalizationEvent(JSObject *objSelf)
 
 
 
-void Finalize(JSFreeOp *fop, JSObject *objSelf)
-{
+void Finalize(JSFreeOp* fop, JSObject* objSelf) {
   RefPtr<FinalizationEvent> event = ExtractFinalizationEvent(objSelf);
   if (event == nullptr || gShuttingDown) {
     
@@ -118,24 +107,22 @@ void Finalize(JSFreeOp *fop, JSObject *objSelf)
 }
 
 static const JSClassOps sWitnessClassOps = {
-  nullptr ,
-  nullptr ,
-  nullptr ,
-  nullptr ,
-  nullptr ,
-  nullptr ,
-  Finalize 
+    nullptr ,
+    nullptr ,
+    nullptr ,
+    nullptr ,
+    nullptr ,
+    nullptr ,
+    Finalize 
 };
 
 static const JSClass sWitnessClass = {
-  "FinalizationWitness",
-  JSCLASS_HAS_RESERVED_SLOTS(WITNESS_INSTANCES_SLOTS) |
-  JSCLASS_FOREGROUND_FINALIZE,
-  &sWitnessClassOps
-};
+    "FinalizationWitness",
+    JSCLASS_HAS_RESERVED_SLOTS(WITNESS_INSTANCES_SLOTS) |
+        JSCLASS_FOREGROUND_FINALIZE,
+    &sWitnessClassOps};
 
-bool IsWitness(JS::Handle<JS::Value> v)
-{
+bool IsWitness(JS::Handle<JS::Value> v) {
   return v.isObject() && JS_GetClass(&v.toObject()) == &sWitnessClass;
 }
 
@@ -147,9 +134,7 @@ bool IsWitness(JS::Handle<JS::Value> v)
 
 
 
-
-bool ForgetImpl(JSContext* cx, const JS::CallArgs& args)
-{
+bool ForgetImpl(JSContext* cx, const JS::CallArgs& args) {
   if (args.length() != 0) {
     JS_ReportErrorASCII(cx, "forget() takes no arguments");
     return false;
@@ -167,20 +152,18 @@ bool ForgetImpl(JSContext* cx, const JS::CallArgs& args)
   return true;
 }
 
-bool Forget(JSContext *cx, unsigned argc, JS::Value *vp)
-{
+bool Forget(JSContext* cx, unsigned argc, JS::Value* vp) {
   JS::CallArgs args = CallArgsFromVp(argc, vp);
   return JS::CallNonGenericMethod<IsWitness, ForgetImpl>(cx, args);
 }
 
 static const JSFunctionSpec sWitnessClassFunctions[] = {
-  JS_FN("forget", Forget, 0, JSPROP_READONLY | JSPROP_PERMANENT),
-  JS_FS_END
-};
+    JS_FN("forget", Forget, 0, JSPROP_READONLY | JSPROP_PERMANENT), JS_FS_END};
 
-} 
+}  
 
-NS_IMPL_ISUPPORTS(FinalizationWitnessService, nsIFinalizationWitnessService, nsIObserver)
+NS_IMPL_ISUPPORTS(FinalizationWitnessService, nsIFinalizationWitnessService,
+                  nsIObserver)
 
 
 
@@ -195,11 +178,9 @@ NS_IMPL_ISUPPORTS(FinalizationWitnessService, nsIFinalizationWitnessService, nsI
 
 
 NS_IMETHODIMP
-FinalizationWitnessService::Make(const char* aTopic,
-                                 const char16_t* aValue,
+FinalizationWitnessService::Make(const char* aTopic, const char16_t* aValue,
                                  JSContext* aCx,
-                                 JS::MutableHandle<JS::Value> aRetval)
-{
+                                 JS::MutableHandle<JS::Value> aRetval) {
   
   
   if (recordreplay::IsRecordingOrReplaying()) {
@@ -225,10 +206,8 @@ FinalizationWitnessService::Make(const char* aTopic,
 }
 
 NS_IMETHODIMP
-FinalizationWitnessService::Observe(nsISupports* aSubject,
-                                    const char* aTopic,
-                                    const char16_t* aValue)
-{
+FinalizationWitnessService::Observe(nsISupports* aSubject, const char* aTopic,
+                                    const char16_t* aValue) {
   MOZ_ASSERT(strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID) == 0);
   gShuttingDown = true;
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -239,9 +218,7 @@ FinalizationWitnessService::Observe(nsISupports* aSubject,
   return NS_OK;
 }
 
-nsresult
-FinalizationWitnessService::Init()
-{
+nsresult FinalizationWitnessService::Init() {
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (!obs) {
     return NS_ERROR_FAILURE;
@@ -250,4 +227,4 @@ FinalizationWitnessService::Init()
   return obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false);
 }
 
-} 
+}  

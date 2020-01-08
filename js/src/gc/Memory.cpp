@@ -14,24 +14,24 @@
 
 #if defined(XP_WIN)
 
-# include "mozilla/Sprintf.h"
-# include "util/Windows.h"
-# include <psapi.h>
+#include "mozilla/Sprintf.h"
+#include "util/Windows.h"
+#include <psapi.h>
 
 #elif defined(SOLARIS)
 
-# include <sys/mman.h>
-# include <unistd.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 #elif defined(XP_UNIX)
 
-# include <algorithm>
-# include <errno.h>
-# include <sys/mman.h>
-# include <sys/resource.h>
-# include <sys/stat.h>
-# include <sys/types.h>
-# include <unistd.h>
+#include <algorithm>
+#include <errno.h>
+#include <sys/mman.h>
+#include <sys/resource.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #endif
 
@@ -47,9 +47,9 @@ static size_t allocGranularity = 0;
 
 #if defined(XP_UNIX)
 
-static mozilla::Atomic<int,
-                       mozilla::Relaxed,
-                       mozilla::recordreplay::Behavior::DontPreserve> growthDirection(0);
+static mozilla::Atomic<int, mozilla::Relaxed,
+                       mozilla::recordreplay::Behavior::DontPreserve>
+    growthDirection(0);
 #endif
 
 
@@ -58,142 +58,124 @@ static mozilla::Atomic<int,
 
 static const int MaxLastDitchAttempts = 32;
 
-static void GetNewChunk(void** aAddress, void** aRetainedAddr, size_t size, size_t alignment);
+static void GetNewChunk(void** aAddress, void** aRetainedAddr, size_t size,
+                        size_t alignment);
 static void* MapAlignedPagesSlow(size_t size, size_t alignment);
 static void* MapAlignedPagesLastDitch(size_t size, size_t alignment);
 
-size_t
-SystemPageSize()
-{
-    return pageSize;
+size_t SystemPageSize() { return pageSize; }
+
+static bool DecommitEnabled() { return pageSize == ArenaSize; }
+
+
+
+
+
+
+
+static inline size_t OffsetFromAligned(void* p, size_t alignment) {
+  return uintptr_t(p) % alignment;
 }
 
-static bool
-DecommitEnabled()
-{
-    return pageSize == ArenaSize;
+void* TestMapAlignedPagesLastDitch(size_t size, size_t alignment) {
+  return MapAlignedPagesLastDitch(size, alignment);
 }
-
-
-
-
-
-
-
-static inline size_t
-OffsetFromAligned(void* p, size_t alignment)
-{
-    return uintptr_t(p) % alignment;
-}
-
-void*
-TestMapAlignedPagesLastDitch(size_t size, size_t alignment)
-{
-    return MapAlignedPagesLastDitch(size, alignment);
-}
-
 
 #if defined(XP_WIN)
 
-void
-InitMemorySubsystem()
-{
-    if (pageSize == 0) {
-        SYSTEM_INFO sysinfo;
-        GetSystemInfo(&sysinfo);
-        pageSize = sysinfo.dwPageSize;
-        allocGranularity = sysinfo.dwAllocationGranularity;
-    }
+void InitMemorySubsystem() {
+  if (pageSize == 0) {
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    pageSize = sysinfo.dwPageSize;
+    allocGranularity = sysinfo.dwAllocationGranularity;
+  }
 }
 
-#  if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 
-static inline void*
-MapMemoryAt(void* desired, size_t length, int flags, int prot = PAGE_READWRITE)
-{
-    return VirtualAlloc(desired, length, flags, prot);
+static inline void* MapMemoryAt(void* desired, size_t length, int flags,
+                                int prot = PAGE_READWRITE) {
+  return VirtualAlloc(desired, length, flags, prot);
 }
 
-static inline void*
-MapMemory(size_t length, int flags, int prot = PAGE_READWRITE)
-{
-    return VirtualAlloc(nullptr, length, flags, prot);
+static inline void* MapMemory(size_t length, int flags,
+                              int prot = PAGE_READWRITE) {
+  return VirtualAlloc(nullptr, length, flags, prot);
 }
 
-void*
-MapAlignedPages(size_t size, size_t alignment)
-{
-    MOZ_ASSERT(size >= alignment);
-    MOZ_ASSERT(size >= allocGranularity);
-    MOZ_ASSERT(size % alignment == 0);
-    MOZ_ASSERT(size % pageSize == 0);
-    MOZ_ASSERT_IF(alignment < allocGranularity, allocGranularity % alignment == 0);
-    MOZ_ASSERT_IF(alignment > allocGranularity, alignment % allocGranularity == 0);
+void* MapAlignedPages(size_t size, size_t alignment) {
+  MOZ_ASSERT(size >= alignment);
+  MOZ_ASSERT(size >= allocGranularity);
+  MOZ_ASSERT(size % alignment == 0);
+  MOZ_ASSERT(size % pageSize == 0);
+  MOZ_ASSERT_IF(alignment < allocGranularity,
+                allocGranularity % alignment == 0);
+  MOZ_ASSERT_IF(alignment > allocGranularity,
+                alignment % allocGranularity == 0);
 
-    void* p = MapMemory(size, MEM_COMMIT | MEM_RESERVE);
+  void* p = MapMemory(size, MEM_COMMIT | MEM_RESERVE);
 
-    
-    if (alignment == allocGranularity) {
-        return p;
-    }
+  
+  if (alignment == allocGranularity) {
+    return p;
+  }
 
+  if (OffsetFromAligned(p, alignment) == 0) {
+    return p;
+  }
+
+  void* retainedAddr;
+  GetNewChunk(&p, &retainedAddr, size, alignment);
+  if (retainedAddr) {
+    UnmapPages(retainedAddr, size);
+  }
+  if (p) {
     if (OffsetFromAligned(p, alignment) == 0) {
-        return p;
+      return p;
     }
+    UnmapPages(p, size);
+  }
 
-    void* retainedAddr;
-    GetNewChunk(&p, &retainedAddr, size, alignment);
-    if (retainedAddr) {
-        UnmapPages(retainedAddr, size);
-    }
-    if (p) {
-        if (OffsetFromAligned(p, alignment) == 0) {
-            return p;
-        }
-        UnmapPages(p, size);
-    }
+  p = MapAlignedPagesSlow(size, alignment);
+  if (!p) {
+    return MapAlignedPagesLastDitch(size, alignment);
+  }
 
-    p = MapAlignedPagesSlow(size, alignment);
+  MOZ_ASSERT(OffsetFromAligned(p, alignment) == 0);
+  return p;
+}
+
+static void* MapAlignedPagesSlow(size_t size, size_t alignment) {
+  
+
+
+
+
+
+  void* p;
+  do {
+    
+
+
+
+
+
+
+
+    size_t reserveSize = size + alignment - pageSize;
+    p = MapMemory(reserveSize, MEM_RESERVE);
     if (!p) {
-        return MapAlignedPagesLastDitch(size, alignment);
+      return nullptr;
     }
+    void* chunkStart = (void*)AlignBytes(uintptr_t(p), alignment);
+    UnmapPages(p, reserveSize);
+    p = MapMemoryAt(chunkStart, size, MEM_COMMIT | MEM_RESERVE);
 
-    MOZ_ASSERT(OffsetFromAligned(p, alignment) == 0);
-    return p;
-}
-
-static void*
-MapAlignedPagesSlow(size_t size, size_t alignment)
-{
     
+  } while (!p);
 
-
-
-
-
-    void* p;
-    do {
-        
-
-
-
-
-
-
-
-        size_t reserveSize = size + alignment - pageSize;
-        p = MapMemory(reserveSize, MEM_RESERVE);
-        if (!p) {
-            return nullptr;
-        }
-        void* chunkStart = (void*)AlignBytes(uintptr_t(p), alignment);
-        UnmapPages(p, reserveSize);
-        p = MapMemoryAt(chunkStart, size, MEM_COMMIT | MEM_RESERVE);
-
-        
-    } while (!p);
-
-    return p;
+  return p;
 }
 
 
@@ -204,35 +186,33 @@ MapAlignedPagesSlow(size_t size, size_t alignment)
 
 
 
-static void*
-MapAlignedPagesLastDitch(size_t size, size_t alignment)
-{
-    void* tempMaps[MaxLastDitchAttempts];
-    int attempt = 0;
-    void* p = MapMemory(size, MEM_COMMIT | MEM_RESERVE);
+static void* MapAlignedPagesLastDitch(size_t size, size_t alignment) {
+  void* tempMaps[MaxLastDitchAttempts];
+  int attempt = 0;
+  void* p = MapMemory(size, MEM_COMMIT | MEM_RESERVE);
+  if (OffsetFromAligned(p, alignment) == 0) {
+    return p;
+  }
+  for (; attempt < MaxLastDitchAttempts; ++attempt) {
+    GetNewChunk(&p, tempMaps + attempt, size, alignment);
     if (OffsetFromAligned(p, alignment) == 0) {
-        return p;
-    }
-    for (; attempt < MaxLastDitchAttempts; ++attempt) {
-        GetNewChunk(&p, tempMaps + attempt, size, alignment);
-        if (OffsetFromAligned(p, alignment) == 0) {
-            if (tempMaps[attempt]) {
-                UnmapPages(tempMaps[attempt], size);
-            }
-            break;
-        }
-        if (!tempMaps[attempt]) {
-            break; 
-        }
-    }
-    if (OffsetFromAligned(p, alignment)) {
-        UnmapPages(p, size);
-        p = nullptr;
-    }
-    while (--attempt >= 0) {
+      if (tempMaps[attempt]) {
         UnmapPages(tempMaps[attempt], size);
+      }
+      break;
     }
-    return p;
+    if (!tempMaps[attempt]) {
+      break; 
+    }
+  }
+  if (OffsetFromAligned(p, alignment)) {
+    UnmapPages(p, size);
+    p = nullptr;
+  }
+  while (--attempt >= 0) {
+    UnmapPages(tempMaps[attempt], size);
+  }
+  return p;
 }
 
 
@@ -240,344 +220,301 @@ MapAlignedPagesLastDitch(size_t size, size_t alignment)
 
 
 
-static void
-GetNewChunk(void** aAddress, void** aRetainedAddr, size_t size, size_t alignment)
-{
-    void* address = *aAddress;
-    void* retainedAddr = nullptr;
-    do {
-        size_t retainedSize;
-        size_t offset = OffsetFromAligned(address, alignment);
-        if (!offset) {
-            break;
-        }
-        UnmapPages(address, size);
-        retainedSize = alignment - offset;
-        retainedAddr = MapMemoryAt(address, retainedSize, MEM_RESERVE);
-        address = MapMemory(size, MEM_COMMIT | MEM_RESERVE);
-        
-    } while (!retainedAddr);
-    *aAddress = address;
-    *aRetainedAddr = retainedAddr;
+static void GetNewChunk(void** aAddress, void** aRetainedAddr, size_t size,
+                        size_t alignment) {
+  void* address = *aAddress;
+  void* retainedAddr = nullptr;
+  do {
+    size_t retainedSize;
+    size_t offset = OffsetFromAligned(address, alignment);
+    if (!offset) {
+      break;
+    }
+    UnmapPages(address, size);
+    retainedSize = alignment - offset;
+    retainedAddr = MapMemoryAt(address, retainedSize, MEM_RESERVE);
+    address = MapMemory(size, MEM_COMMIT | MEM_RESERVE);
+    
+  } while (!retainedAddr);
+  *aAddress = address;
+  *aRetainedAddr = retainedAddr;
 }
 
-void
-UnmapPages(void* p, size_t size)
-{
-    
-    MOZ_MAKE_MEM_UNDEFINED(p, size);
+void UnmapPages(void* p, size_t size) {
+  
+  MOZ_MAKE_MEM_UNDEFINED(p, size);
 
-    MOZ_ALWAYS_TRUE(VirtualFree(p, 0, MEM_RELEASE));
+  MOZ_ALWAYS_TRUE(VirtualFree(p, 0, MEM_RELEASE));
 }
 
-bool
-MarkPagesUnused(void* p, size_t size)
-{
-    MOZ_MAKE_MEM_NOACCESS(p, size);
+bool MarkPagesUnused(void* p, size_t size) {
+  MOZ_MAKE_MEM_NOACCESS(p, size);
 
-    if (!DecommitEnabled()) {
-        return true;
-    }
+  if (!DecommitEnabled()) {
+    return true;
+  }
 
-    MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
-    LPVOID p2 = MapMemoryAt(p, size, MEM_RESET);
-    return p2 == p;
+  MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
+  LPVOID p2 = MapMemoryAt(p, size, MEM_RESET);
+  return p2 == p;
 }
 
-void
-MarkPagesInUse(void* p, size_t size)
-{
-    MOZ_MAKE_MEM_UNDEFINED(p, size);
+void MarkPagesInUse(void* p, size_t size) {
+  MOZ_MAKE_MEM_UNDEFINED(p, size);
 
-    if (!DecommitEnabled()) {
-        return;
-    }
+  if (!DecommitEnabled()) {
+    return;
+  }
 
-    MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
+  MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
 }
 
-size_t
-GetPageFaultCount()
-{
-    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-        return 0;
-    }
-    PROCESS_MEMORY_COUNTERS pmc;
-    if (!GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
-        return 0;
-    }
-    return pmc.PageFaultCount;
+size_t GetPageFaultCount() {
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return 0;
+  }
+  PROCESS_MEMORY_COUNTERS pmc;
+  if (!GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+    return 0;
+  }
+  return pmc.PageFaultCount;
 }
 
-void*
-AllocateMappedContent(int fd, size_t offset, size_t length, size_t alignment)
-{
-    MOZ_ASSERT(length && alignment);
+void* AllocateMappedContent(int fd, size_t offset, size_t length,
+                            size_t alignment) {
+  MOZ_ASSERT(length && alignment);
 
-    
-    
-    
-    if (allocGranularity % alignment != 0 || offset % alignment != 0) {
-        return nullptr;
-    }
+  
+  
+  
+  if (allocGranularity % alignment != 0 || offset % alignment != 0) {
+    return nullptr;
+  }
 
-    HANDLE hFile = reinterpret_cast<HANDLE>(intptr_t(fd));
+  HANDLE hFile = reinterpret_cast<HANDLE>(intptr_t(fd));
 
-    
-    HANDLE hMap = CreateFileMapping(hFile, nullptr, PAGE_READONLY, 0, 0, nullptr);
-    if (!hMap) {
-        return nullptr;
-    }
+  
+  HANDLE hMap = CreateFileMapping(hFile, nullptr, PAGE_READONLY, 0, 0, nullptr);
+  if (!hMap) {
+    return nullptr;
+  }
 
-    size_t alignedOffset = offset - (offset % allocGranularity);
-    size_t alignedLength = length + (offset % allocGranularity);
+  size_t alignedOffset = offset - (offset % allocGranularity);
+  size_t alignedLength = length + (offset % allocGranularity);
 
-    DWORD offsetH = uint32_t(uint64_t(alignedOffset) >> 32);
-    DWORD offsetL = uint32_t(alignedOffset);
+  DWORD offsetH = uint32_t(uint64_t(alignedOffset) >> 32);
+  DWORD offsetL = uint32_t(alignedOffset);
 
-    
-    uint8_t* map = static_cast<uint8_t*>(MapViewOfFile(hMap, FILE_MAP_COPY, offsetH,
-                                                       offsetL, alignedLength));
+  
+  uint8_t* map = static_cast<uint8_t*>(
+      MapViewOfFile(hMap, FILE_MAP_COPY, offsetH, offsetL, alignedLength));
 
-    
-    
-    CloseHandle(hMap);
+  
+  
+  CloseHandle(hMap);
 
-    if (!map) {
-        return nullptr;
-    }
+  if (!map) {
+    return nullptr;
+  }
 
 #ifdef DEBUG
-    
-    if (offset != alignedOffset) {
-        memset(map, 0, offset - alignedOffset);
-    }
-    if (alignedLength % pageSize) {
-        memset(map + alignedLength, 0, pageSize - (alignedLength % pageSize));
-    }
+  
+  if (offset != alignedOffset) {
+    memset(map, 0, offset - alignedOffset);
+  }
+  if (alignedLength % pageSize) {
+    memset(map + alignedLength, 0, pageSize - (alignedLength % pageSize));
+  }
 #endif
 
-    return map + (offset - alignedOffset);
+  return map + (offset - alignedOffset);
 }
 
-void
-DeallocateMappedContent(void* p, size_t )
-{
-    if (!p) {
-        return;
-    }
+void DeallocateMappedContent(void* p, size_t ) {
+  if (!p) {
+    return;
+  }
 
-    
-    
-    
-    
-    uintptr_t map = uintptr_t(p) - (uintptr_t(p) % allocGranularity);
-    MOZ_ALWAYS_TRUE(UnmapViewOfFile(reinterpret_cast<void*>(map)));
+  
+  
+  
+  
+  uintptr_t map = uintptr_t(p) - (uintptr_t(p) % allocGranularity);
+  MOZ_ALWAYS_TRUE(UnmapViewOfFile(reinterpret_cast<void*>(map)));
 }
 
-#  else 
+#else  
 
-void*
-MapAlignedPages(size_t size, size_t alignment)
-{
-    MOZ_ASSERT(size >= alignment);
-    MOZ_ASSERT(size >= allocGranularity);
-    MOZ_ASSERT(size % alignment == 0);
-    MOZ_ASSERT(size % pageSize == 0);
-    MOZ_ASSERT_IF(alignment < allocGranularity, allocGranularity % alignment == 0);
-    MOZ_ASSERT_IF(alignment > allocGranularity, alignment % allocGranularity == 0);
+void* MapAlignedPages(size_t size, size_t alignment) {
+  MOZ_ASSERT(size >= alignment);
+  MOZ_ASSERT(size >= allocGranularity);
+  MOZ_ASSERT(size % alignment == 0);
+  MOZ_ASSERT(size % pageSize == 0);
+  MOZ_ASSERT_IF(alignment < allocGranularity,
+                allocGranularity % alignment == 0);
+  MOZ_ASSERT_IF(alignment > allocGranularity,
+                alignment % allocGranularity == 0);
 
-    void* p = _aligned_malloc(size, alignment);
+  void* p = _aligned_malloc(size, alignment);
 
-    MOZ_ASSERT(OffsetFromAligned(p, alignment) == 0);
-    return p;
+  MOZ_ASSERT(OffsetFromAligned(p, alignment) == 0);
+  return p;
 }
 
-static void*
-MapAlignedPagesLastDitch(size_t size, size_t alignment)
-{
-    return nullptr;
+static void* MapAlignedPagesLastDitch(size_t size, size_t alignment) {
+  return nullptr;
 }
 
-void
-UnmapPages(void* p, size_t size)
-{
-    
-    MOZ_MAKE_MEM_UNDEFINED(p, size);
+void UnmapPages(void* p, size_t size) {
+  
+  MOZ_MAKE_MEM_UNDEFINED(p, size);
 
-    _aligned_free(p);
+  _aligned_free(p);
 }
 
-bool
-MarkPagesUnused(void* p, size_t size)
-{
-    MOZ_MAKE_MEM_NOACCESS(p, size);
-    MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
-    return true;
+bool MarkPagesUnused(void* p, size_t size) {
+  MOZ_MAKE_MEM_NOACCESS(p, size);
+  MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
+  return true;
 }
 
-bool
-MarkPagesInUse(void* p, size_t size)
-{
-    MOZ_MAKE_MEM_UNDEFINED(p, size);
-    MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
+bool MarkPagesInUse(void* p, size_t size) {
+  MOZ_MAKE_MEM_UNDEFINED(p, size);
+  MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
 }
 
-size_t
-GetPageFaultCount()
-{
-    
-    return 0;
+size_t GetPageFaultCount() {
+  
+  return 0;
 }
 
-void*
-AllocateMappedContent(int fd, size_t offset, size_t length, size_t alignment)
-{
-    
-    return nullptr;
+void* AllocateMappedContent(int fd, size_t offset, size_t length,
+                            size_t alignment) {
+  
+  return nullptr;
 }
 
 
-void
-DeallocateMappedContent(void* p, size_t length)
-{
-    
+void DeallocateMappedContent(void* p, size_t length) {
+  
 }
 
-#  endif
+#endif
 
 #elif defined(SOLARIS)
 
 #ifndef MAP_NOSYNC
-# define MAP_NOSYNC 0
+#define MAP_NOSYNC 0
 #endif
 
-void
-InitMemorySubsystem()
-{
-    if (pageSize == 0) {
-        pageSize = allocGranularity = size_t(sysconf(_SC_PAGESIZE));
-    }
+void InitMemorySubsystem() {
+  if (pageSize == 0) {
+    pageSize = allocGranularity = size_t(sysconf(_SC_PAGESIZE));
+  }
 }
 
-void*
-MapAlignedPages(size_t size, size_t alignment)
-{
-    MOZ_ASSERT(size >= alignment);
-    MOZ_ASSERT(size >= allocGranularity);
-    MOZ_ASSERT(size % alignment == 0);
-    MOZ_ASSERT(size % pageSize == 0);
-    MOZ_ASSERT_IF(alignment < allocGranularity, allocGranularity % alignment == 0);
-    MOZ_ASSERT_IF(alignment > allocGranularity, alignment % allocGranularity == 0);
+void* MapAlignedPages(size_t size, size_t alignment) {
+  MOZ_ASSERT(size >= alignment);
+  MOZ_ASSERT(size >= allocGranularity);
+  MOZ_ASSERT(size % alignment == 0);
+  MOZ_ASSERT(size % pageSize == 0);
+  MOZ_ASSERT_IF(alignment < allocGranularity,
+                allocGranularity % alignment == 0);
+  MOZ_ASSERT_IF(alignment > allocGranularity,
+                alignment % allocGranularity == 0);
 
-    int prot = PROT_READ | PROT_WRITE;
-    int flags = MAP_PRIVATE | MAP_ANON | MAP_ALIGN | MAP_NOSYNC;
+  int prot = PROT_READ | PROT_WRITE;
+  int flags = MAP_PRIVATE | MAP_ANON | MAP_ALIGN | MAP_NOSYNC;
 
-    void* p = mmap((caddr_t)alignment, size, prot, flags, -1, 0);
-    if (p == MAP_FAILED) {
-        return nullptr;
-    }
-    return p;
-}
-
-static void*
-MapAlignedPagesLastDitch(size_t size, size_t alignment)
-{
+  void* p = mmap((caddr_t)alignment, size, prot, flags, -1, 0);
+  if (p == MAP_FAILED) {
     return nullptr;
+  }
+  return p;
 }
 
-void
-UnmapPages(void* p, size_t size)
-{
-    
-    MOZ_MAKE_MEM_UNDEFINED(p, size);
-
-    MOZ_ALWAYS_TRUE(0 == munmap((caddr_t)p, size));
+static void* MapAlignedPagesLastDitch(size_t size, size_t alignment) {
+  return nullptr;
 }
 
-bool
-MarkPagesUnused(void* p, size_t size)
-{
-    MOZ_MAKE_MEM_NOACCESS(p, size);
-    MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
-    return true;
+void UnmapPages(void* p, size_t size) {
+  
+  MOZ_MAKE_MEM_UNDEFINED(p, size);
+
+  MOZ_ALWAYS_TRUE(0 == munmap((caddr_t)p, size));
 }
 
-bool
-MarkPagesInUse(void* p, size_t size)
-{
-    MOZ_MAKE_MEM_UNDEFINED(p, size);
-
-    if (!DecommitEnabled()) {
-        return;
-    }
-
-    MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
+bool MarkPagesUnused(void* p, size_t size) {
+  MOZ_MAKE_MEM_NOACCESS(p, size);
+  MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
+  return true;
 }
 
-size_t
-GetPageFaultCount()
-{
-    return 0;
+bool MarkPagesInUse(void* p, size_t size) {
+  MOZ_MAKE_MEM_UNDEFINED(p, size);
+
+  if (!DecommitEnabled()) {
+    return;
+  }
+
+  MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
 }
 
-void*
-AllocateMappedContent(int fd, size_t offset, size_t length, size_t alignment)
-{
-    
-    return nullptr;
+size_t GetPageFaultCount() { return 0; }
+
+void* AllocateMappedContent(int fd, size_t offset, size_t length,
+                            size_t alignment) {
+  
+  return nullptr;
 }
 
 
-void
-DeallocateMappedContent(void* p, size_t length)
-{
-    
+void DeallocateMappedContent(void* p, size_t length) {
+  
 }
 
 #elif defined(XP_UNIX)
 
-void
-InitMemorySubsystem()
-{
-    if (pageSize == 0) {
-        pageSize = allocGranularity = size_t(sysconf(_SC_PAGESIZE));
-    }
+void InitMemorySubsystem() {
+  if (pageSize == 0) {
+    pageSize = allocGranularity = size_t(sysconf(_SC_PAGESIZE));
+  }
 }
 
-static inline void*
-MapMemoryAt(void* desired, size_t length, int prot = PROT_READ | PROT_WRITE,
-            int flags = MAP_PRIVATE | MAP_ANON, int fd = -1, off_t offset = 0)
-{
+static inline void* MapMemoryAt(void* desired, size_t length,
+                                int prot = PROT_READ | PROT_WRITE,
+                                int flags = MAP_PRIVATE | MAP_ANON, int fd = -1,
+                                off_t offset = 0) {
 
-#if defined(__ia64__) || defined(__aarch64__) || \
-    (defined(__sparc__) && defined(__arch64__) && (defined(__NetBSD__) || defined(__linux__)))
-    MOZ_ASSERT((0xffff800000000000ULL & (uintptr_t(desired) + length - 1)) == 0);
+#if defined(__ia64__) || defined(__aarch64__) ||  \
+    (defined(__sparc__) && defined(__arch64__) && \
+     (defined(__NetBSD__) || defined(__linux__)))
+  MOZ_ASSERT((0xffff800000000000ULL & (uintptr_t(desired) + length - 1)) == 0);
 #endif
-    void* region = mmap(desired, length, prot, flags, fd, offset);
-    if (region == MAP_FAILED) {
-        return nullptr;
+  void* region = mmap(desired, length, prot, flags, fd, offset);
+  if (region == MAP_FAILED) {
+    return nullptr;
+  }
+  
+
+
+
+
+  if (region != desired) {
+    if (munmap(region, length)) {
+      MOZ_ASSERT(errno == ENOMEM);
     }
-    
-
-
-
-
-    if (region != desired) {
-        if (munmap(region, length)) {
-            MOZ_ASSERT(errno == ENOMEM);
-        }
-        return nullptr;
-    }
-    return region;
+    return nullptr;
+  }
+  return region;
 }
 
-static inline void*
-MapMemory(size_t length, int prot = PROT_READ | PROT_WRITE,
-          int flags = MAP_PRIVATE | MAP_ANON, int fd = -1, off_t offset = 0)
-{
-#if defined(__ia64__) || (defined(__sparc__) && defined(__arch64__) && defined(__NetBSD__))
-    
+static inline void* MapMemory(size_t length, int prot = PROT_READ | PROT_WRITE,
+                              int flags = MAP_PRIVATE | MAP_ANON, int fd = -1,
+                              off_t offset = 0) {
+#if defined(__ia64__) || \
+    (defined(__sparc__) && defined(__arch64__) && defined(__NetBSD__))
+  
 
 
 
@@ -590,177 +527,177 @@ MapMemory(size_t length, int prot = PROT_READ | PROT_WRITE,
 
 
 
-    void* region = mmap((void*)0x0000070000000000, length, prot, flags, fd, offset);
-    if (region == MAP_FAILED) {
-        return nullptr;
+  void* region =
+      mmap((void*)0x0000070000000000, length, prot, flags, fd, offset);
+  if (region == MAP_FAILED) {
+    return nullptr;
+  }
+  
+
+
+
+  if ((uintptr_t(region) + (length - 1)) & 0xffff800000000000) {
+    if (munmap(region, length)) {
+      MOZ_ASSERT(errno == ENOMEM);
     }
-    
+    return nullptr;
+  }
+  return region;
+#elif defined(__aarch64__) || \
+    (defined(__sparc__) && defined(__arch64__) && defined(__linux__))
+  
 
 
 
-    if ((uintptr_t(region) + (length - 1)) & 0xffff800000000000) {
+
+
+
+
+  const uintptr_t start = UINT64_C(0x0000070000000000);
+  const uintptr_t end = UINT64_C(0x0000800000000000);
+  const uintptr_t step = ChunkSize;
+  
+
+
+
+
+
+
+
+
+  uintptr_t hint;
+  void* region = MAP_FAILED;
+  for (hint = start; region == MAP_FAILED && hint + length <= end;
+       hint += step) {
+    region = mmap((void*)hint, length, prot, flags, fd, offset);
+    if (region != MAP_FAILED) {
+      if ((uintptr_t(region) + (length - 1)) & 0xffff800000000000) {
         if (munmap(region, length)) {
-            MOZ_ASSERT(errno == ENOMEM);
+          MOZ_ASSERT(errno == ENOMEM);
         }
-        return nullptr;
+        region = MAP_FAILED;
+      }
     }
-    return region;
-#elif defined(__aarch64__) || (defined(__sparc__) && defined(__arch64__) && defined(__linux__))
-   
-
-
-
-
-
-
-
-    const uintptr_t start = UINT64_C(0x0000070000000000);
-    const uintptr_t end   = UINT64_C(0x0000800000000000);
-    const uintptr_t step  = ChunkSize;
-   
-
-
-
-
-
-
-
-
-    uintptr_t hint;
-    void* region = MAP_FAILED;
-    for (hint = start; region == MAP_FAILED && hint + length <= end; hint += step) {
-        region = mmap((void*)hint, length, prot, flags, fd, offset);
-        if (region != MAP_FAILED) {
-            if ((uintptr_t(region) + (length - 1)) & 0xffff800000000000) {
-                if (munmap(region, length)) {
-                    MOZ_ASSERT(errno == ENOMEM);
-                }
-                region = MAP_FAILED;
-            }
-        }
-    }
-    return region == MAP_FAILED ? nullptr : region;
+  }
+  return region == MAP_FAILED ? nullptr : region;
 #else
-    void* region = MozTaggedAnonymousMmap(nullptr, length, prot, flags, fd, offset, "js-gc-heap");
-    if (region == MAP_FAILED) {
-        return nullptr;
-    }
-    return region;
+  void* region = MozTaggedAnonymousMmap(nullptr, length, prot, flags, fd,
+                                        offset, "js-gc-heap");
+  if (region == MAP_FAILED) {
+    return nullptr;
+  }
+  return region;
 #endif
 }
 
-void*
-MapAlignedPages(size_t size, size_t alignment)
-{
-    MOZ_ASSERT(size >= alignment);
-    MOZ_ASSERT(size >= allocGranularity);
-    MOZ_ASSERT(size % alignment == 0);
-    MOZ_ASSERT(size % pageSize == 0);
-    MOZ_ASSERT_IF(alignment < allocGranularity, allocGranularity % alignment == 0);
-    MOZ_ASSERT_IF(alignment > allocGranularity, alignment % allocGranularity == 0);
+void* MapAlignedPages(size_t size, size_t alignment) {
+  MOZ_ASSERT(size >= alignment);
+  MOZ_ASSERT(size >= allocGranularity);
+  MOZ_ASSERT(size % alignment == 0);
+  MOZ_ASSERT(size % pageSize == 0);
+  MOZ_ASSERT_IF(alignment < allocGranularity,
+                allocGranularity % alignment == 0);
+  MOZ_ASSERT_IF(alignment > allocGranularity,
+                alignment % allocGranularity == 0);
 
-    void* p = MapMemory(size);
+  void* p = MapMemory(size);
 
-    
-    if (alignment == allocGranularity) {
-        return p;
-    }
-
-    if (OffsetFromAligned(p, alignment) == 0) {
-        return p;
-    }
-
-    void* retainedAddr;
-    GetNewChunk(&p, &retainedAddr, size, alignment);
-    if (retainedAddr) {
-        UnmapPages(retainedAddr, size);
-    }
-    if (p) {
-        if (OffsetFromAligned(p, alignment) == 0) {
-            return p;
-        }
-        UnmapPages(p, size);
-    }
-
-    p = MapAlignedPagesSlow(size, alignment);
-    if (!p) {
-        return MapAlignedPagesLastDitch(size, alignment);
-    }
-
-    MOZ_ASSERT(OffsetFromAligned(p, alignment) == 0);
+  
+  if (alignment == allocGranularity) {
     return p;
-}
+  }
 
-static void*
-MapAlignedPagesSlow(size_t size, size_t alignment)
-{
-    
-    size_t reqSize = size + alignment - pageSize;
-    void* region = MapMemory(reqSize);
-    if (!region) {
-        return nullptr;
-    }
+  if (OffsetFromAligned(p, alignment) == 0) {
+    return p;
+  }
 
-    void* regionEnd = (void*)(uintptr_t(region) + reqSize);
-    void* front;
-    void* end;
-    if (growthDirection <= 0) {
-        size_t offset = OffsetFromAligned(regionEnd, alignment);
-        end = (void*)(uintptr_t(regionEnd) - offset);
-        front = (void*)(uintptr_t(end) - size);
-    } else {
-        size_t offset = OffsetFromAligned(region, alignment);
-        front = (void*)(uintptr_t(region) + (offset ? alignment - offset : 0));
-        end = (void*)(uintptr_t(front) + size);
-    }
-
-    if (front != region) {
-        UnmapPages(region, uintptr_t(front) - uintptr_t(region));
-    }
-    if (end != regionEnd) {
-        UnmapPages(end, uintptr_t(regionEnd) - uintptr_t(end));
-    }
-
-    return front;
-}
-
-
-
-
-
-
-
-
-
-static void*
-MapAlignedPagesLastDitch(size_t size, size_t alignment)
-{
-    void* tempMaps[MaxLastDitchAttempts];
-    int attempt = 0;
-    void* p = MapMemory(size);
+  void* retainedAddr;
+  GetNewChunk(&p, &retainedAddr, size, alignment);
+  if (retainedAddr) {
+    UnmapPages(retainedAddr, size);
+  }
+  if (p) {
     if (OffsetFromAligned(p, alignment) == 0) {
-        return p;
+      return p;
     }
-    for (; attempt < MaxLastDitchAttempts; ++attempt) {
-        GetNewChunk(&p, tempMaps + attempt, size, alignment);
-        if (OffsetFromAligned(p, alignment) == 0) {
-            if (tempMaps[attempt]) {
-                UnmapPages(tempMaps[attempt], size);
-            }
-            break;
-        }
-        if (!tempMaps[attempt]) {
-            break; 
-        }
-    }
-    if (OffsetFromAligned(p, alignment)) {
-        UnmapPages(p, size);
-        p = nullptr;
-    }
-    while (--attempt >= 0) {
+    UnmapPages(p, size);
+  }
+
+  p = MapAlignedPagesSlow(size, alignment);
+  if (!p) {
+    return MapAlignedPagesLastDitch(size, alignment);
+  }
+
+  MOZ_ASSERT(OffsetFromAligned(p, alignment) == 0);
+  return p;
+}
+
+static void* MapAlignedPagesSlow(size_t size, size_t alignment) {
+  
+  size_t reqSize = size + alignment - pageSize;
+  void* region = MapMemory(reqSize);
+  if (!region) {
+    return nullptr;
+  }
+
+  void* regionEnd = (void*)(uintptr_t(region) + reqSize);
+  void* front;
+  void* end;
+  if (growthDirection <= 0) {
+    size_t offset = OffsetFromAligned(regionEnd, alignment);
+    end = (void*)(uintptr_t(regionEnd) - offset);
+    front = (void*)(uintptr_t(end) - size);
+  } else {
+    size_t offset = OffsetFromAligned(region, alignment);
+    front = (void*)(uintptr_t(region) + (offset ? alignment - offset : 0));
+    end = (void*)(uintptr_t(front) + size);
+  }
+
+  if (front != region) {
+    UnmapPages(region, uintptr_t(front) - uintptr_t(region));
+  }
+  if (end != regionEnd) {
+    UnmapPages(end, uintptr_t(regionEnd) - uintptr_t(end));
+  }
+
+  return front;
+}
+
+
+
+
+
+
+
+
+
+static void* MapAlignedPagesLastDitch(size_t size, size_t alignment) {
+  void* tempMaps[MaxLastDitchAttempts];
+  int attempt = 0;
+  void* p = MapMemory(size);
+  if (OffsetFromAligned(p, alignment) == 0) {
+    return p;
+  }
+  for (; attempt < MaxLastDitchAttempts; ++attempt) {
+    GetNewChunk(&p, tempMaps + attempt, size, alignment);
+    if (OffsetFromAligned(p, alignment) == 0) {
+      if (tempMaps[attempt]) {
         UnmapPages(tempMaps[attempt], size);
+      }
+      break;
     }
-    return p;
+    if (!tempMaps[attempt]) {
+      break; 
+    }
+  }
+  if (OffsetFromAligned(p, alignment)) {
+    UnmapPages(p, size);
+    p = nullptr;
+  }
+  while (--attempt >= 0) {
+    UnmapPages(tempMaps[attempt], size);
+  }
+  return p;
 }
 
 
@@ -769,227 +706,213 @@ MapAlignedPagesLastDitch(size_t size, size_t alignment)
 
 
 
-static void
-GetNewChunk(void** aAddress, void** aRetainedAddr, size_t size, size_t alignment)
-{
-    void* address = *aAddress;
-    void* retainedAddr = nullptr;
-    bool addrsGrowDown = growthDirection <= 0;
-    int i = 0;
-    for (; i < 2; ++i) {
-        
-        if (addrsGrowDown) {
-            size_t offset = OffsetFromAligned(address, alignment);
-            void* head = (void*)((uintptr_t)address - offset);
-            void* tail = (void*)((uintptr_t)head + size);
-            if (MapMemoryAt(head, offset)) {
-                UnmapPages(tail, offset);
-                if (growthDirection >= -8) {
-                    --growthDirection;
-                }
-                address = head;
-                break;
-            }
-        } else {
-            size_t offset = alignment - OffsetFromAligned(address, alignment);
-            void* head = (void*)((uintptr_t)address + offset);
-            void* tail = (void*)((uintptr_t)address + size);
-            if (MapMemoryAt(tail, offset)) {
-                UnmapPages(address, offset);
-                if (growthDirection <= 8) {
-                    ++growthDirection;
-                }
-                address = head;
-                break;
-            }
+static void GetNewChunk(void** aAddress, void** aRetainedAddr, size_t size,
+                        size_t alignment) {
+  void* address = *aAddress;
+  void* retainedAddr = nullptr;
+  bool addrsGrowDown = growthDirection <= 0;
+  int i = 0;
+  for (; i < 2; ++i) {
+    
+    if (addrsGrowDown) {
+      size_t offset = OffsetFromAligned(address, alignment);
+      void* head = (void*)((uintptr_t)address - offset);
+      void* tail = (void*)((uintptr_t)head + size);
+      if (MapMemoryAt(head, offset)) {
+        UnmapPages(tail, offset);
+        if (growthDirection >= -8) {
+          --growthDirection;
         }
-        
-        if (growthDirection < -8 || growthDirection > 8) {
-            break;
+        address = head;
+        break;
+      }
+    } else {
+      size_t offset = alignment - OffsetFromAligned(address, alignment);
+      void* head = (void*)((uintptr_t)address + offset);
+      void* tail = (void*)((uintptr_t)address + size);
+      if (MapMemoryAt(tail, offset)) {
+        UnmapPages(address, offset);
+        if (growthDirection <= 8) {
+          ++growthDirection;
         }
-        
-        addrsGrowDown = !addrsGrowDown;
+        address = head;
+        break;
+      }
     }
     
-    if (OffsetFromAligned(address, alignment)) {
-        retainedAddr = address;
-        address = MapMemory(size);
+    if (growthDirection < -8 || growthDirection > 8) {
+      break;
     }
-    *aAddress = address;
-    *aRetainedAddr = retainedAddr;
-}
-
-void
-UnmapPages(void* p, size_t size)
-{
     
-    MOZ_MAKE_MEM_UNDEFINED(p, size);
-
-    if (munmap(p, size)) {
-        MOZ_ASSERT(errno == ENOMEM);
-    }
+    addrsGrowDown = !addrsGrowDown;
+  }
+  
+  if (OffsetFromAligned(address, alignment)) {
+    retainedAddr = address;
+    address = MapMemory(size);
+  }
+  *aAddress = address;
+  *aRetainedAddr = retainedAddr;
 }
 
-bool
-MarkPagesUnused(void* p, size_t size)
-{
-    MOZ_MAKE_MEM_NOACCESS(p, size);
+void UnmapPages(void* p, size_t size) {
+  
+  MOZ_MAKE_MEM_UNDEFINED(p, size);
 
-    if (!DecommitEnabled()) {
-        return false;
-    }
+  if (munmap(p, size)) {
+    MOZ_ASSERT(errno == ENOMEM);
+  }
+}
 
-    MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
+bool MarkPagesUnused(void* p, size_t size) {
+  MOZ_MAKE_MEM_NOACCESS(p, size);
+
+  if (!DecommitEnabled()) {
+    return false;
+  }
+
+  MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
 #if defined(XP_SOLARIS)
-    int result = posix_madvise(p, size, POSIX_MADV_DONTNEED);
+  int result = posix_madvise(p, size, POSIX_MADV_DONTNEED);
 #else
-    int result = madvise(p, size, MADV_DONTNEED);
+  int result = madvise(p, size, MADV_DONTNEED);
 #endif
-    return result != -1;
+  return result != -1;
 }
 
-void
-MarkPagesInUse(void* p, size_t size)
-{
-    MOZ_MAKE_MEM_UNDEFINED(p, size);
+void MarkPagesInUse(void* p, size_t size) {
+  MOZ_MAKE_MEM_UNDEFINED(p, size);
 
-    if (!DecommitEnabled()) {
-        return;
-    }
+  if (!DecommitEnabled()) {
+    return;
+  }
 
-    MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
+  MOZ_ASSERT(OffsetFromAligned(p, pageSize) == 0);
 }
 
-size_t
-GetPageFaultCount()
-{
-    if (mozilla::recordreplay::IsRecordingOrReplaying()) {
-        return 0;
-    }
-    struct rusage usage;
-    int err = getrusage(RUSAGE_SELF, &usage);
-    if (err) {
-        return 0;
-    }
-    return usage.ru_majflt;
+size_t GetPageFaultCount() {
+  if (mozilla::recordreplay::IsRecordingOrReplaying()) {
+    return 0;
+  }
+  struct rusage usage;
+  int err = getrusage(RUSAGE_SELF, &usage);
+  if (err) {
+    return 0;
+  }
+  return usage.ru_majflt;
 }
 
-void*
-AllocateMappedContent(int fd, size_t offset, size_t length, size_t alignment)
-{
-    MOZ_ASSERT(length && alignment);
+void* AllocateMappedContent(int fd, size_t offset, size_t length,
+                            size_t alignment) {
+  MOZ_ASSERT(length && alignment);
 
-    
-    
-    
-    if (allocGranularity % alignment != 0 || offset % alignment != 0) {
-        return nullptr;
-    }
+  
+  
+  
+  if (allocGranularity % alignment != 0 || offset % alignment != 0) {
+    return nullptr;
+  }
 
-    
-    struct stat st;
-    if (fstat(fd, &st) || offset >= uint64_t(st.st_size) || length > uint64_t(st.st_size) - offset) {
-        return nullptr;
-    }
+  
+  struct stat st;
+  if (fstat(fd, &st) || offset >= uint64_t(st.st_size) ||
+      length > uint64_t(st.st_size) - offset) {
+    return nullptr;
+  }
 
-    size_t alignedOffset = offset - (offset % allocGranularity);
-    size_t alignedLength = length + (offset % allocGranularity);
+  size_t alignedOffset = offset - (offset % allocGranularity);
+  size_t alignedLength = length + (offset % allocGranularity);
 
-    uint8_t* map = static_cast<uint8_t*>(MapMemory(alignedLength, PROT_READ | PROT_WRITE,
-                                                   MAP_PRIVATE, fd, alignedOffset));
-    if (!map) {
-        return nullptr;
-    }
+  uint8_t* map = static_cast<uint8_t*>(MapMemory(
+      alignedLength, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, alignedOffset));
+  if (!map) {
+    return nullptr;
+  }
 
 #ifdef DEBUG
-    
-    if (offset != alignedOffset) {
-        memset(map, 0, offset - alignedOffset);
-    }
-    if (alignedLength % pageSize) {
-        memset(map + alignedLength, 0, pageSize - (alignedLength % pageSize));
-    }
+  
+  if (offset != alignedOffset) {
+    memset(map, 0, offset - alignedOffset);
+  }
+  if (alignedLength % pageSize) {
+    memset(map + alignedLength, 0, pageSize - (alignedLength % pageSize));
+  }
 #endif
 
-    return map + (offset - alignedOffset);
+  return map + (offset - alignedOffset);
 }
 
-void
-DeallocateMappedContent(void* p, size_t length)
-{
-    if (!p) {
-        return;
-    }
+void DeallocateMappedContent(void* p, size_t length) {
+  if (!p) {
+    return;
+  }
 
-    
-    
-    
-    
-    uintptr_t map = uintptr_t(p) - (uintptr_t(p) % allocGranularity);
-    size_t alignedLength = length + (uintptr_t(p) % allocGranularity);
-    UnmapPages(reinterpret_cast<void*>(map), alignedLength);
+  
+  
+  
+  
+  uintptr_t map = uintptr_t(p) - (uintptr_t(p) % allocGranularity);
+  size_t alignedLength = length + (uintptr_t(p) % allocGranularity);
+  UnmapPages(reinterpret_cast<void*>(map), alignedLength);
 }
 
 #else
 #error "Memory mapping functions are not defined for your OS."
 #endif
 
-void
-ProtectPages(void* p, size_t size)
-{
-    MOZ_ASSERT(size % pageSize == 0);
-    MOZ_RELEASE_ASSERT(size > 0);
-    MOZ_RELEASE_ASSERT(p);
+void ProtectPages(void* p, size_t size) {
+  MOZ_ASSERT(size % pageSize == 0);
+  MOZ_RELEASE_ASSERT(size > 0);
+  MOZ_RELEASE_ASSERT(p);
 #if defined(XP_WIN)
-    DWORD oldProtect;
-    if (!VirtualProtect(p, size, PAGE_NOACCESS, &oldProtect)) {
-        MOZ_CRASH_UNSAFE_PRINTF("VirtualProtect(PAGE_NOACCESS) failed! Error code: %lu",
-                                GetLastError());
-    }
+  DWORD oldProtect;
+  if (!VirtualProtect(p, size, PAGE_NOACCESS, &oldProtect)) {
+    MOZ_CRASH_UNSAFE_PRINTF(
+        "VirtualProtect(PAGE_NOACCESS) failed! Error code: %lu",
+        GetLastError());
+  }
 #else  
-    if (mprotect(p, size, PROT_NONE)) {
-        MOZ_CRASH("mprotect(PROT_NONE) failed");
-    }
+  if (mprotect(p, size, PROT_NONE)) {
+    MOZ_CRASH("mprotect(PROT_NONE) failed");
+  }
 #endif
 }
 
-void
-MakePagesReadOnly(void* p, size_t size)
-{
-    MOZ_ASSERT(size % pageSize == 0);
-    MOZ_RELEASE_ASSERT(size > 0);
-    MOZ_RELEASE_ASSERT(p);
+void MakePagesReadOnly(void* p, size_t size) {
+  MOZ_ASSERT(size % pageSize == 0);
+  MOZ_RELEASE_ASSERT(size > 0);
+  MOZ_RELEASE_ASSERT(p);
 #if defined(XP_WIN)
-    DWORD oldProtect;
-    if (!VirtualProtect(p, size, PAGE_READONLY, &oldProtect)) {
-        MOZ_CRASH_UNSAFE_PRINTF("VirtualProtect(PAGE_READONLY) failed! Error code: %lu",
-                                GetLastError());
-    }
+  DWORD oldProtect;
+  if (!VirtualProtect(p, size, PAGE_READONLY, &oldProtect)) {
+    MOZ_CRASH_UNSAFE_PRINTF(
+        "VirtualProtect(PAGE_READONLY) failed! Error code: %lu",
+        GetLastError());
+  }
 #else  
-    if (mprotect(p, size, PROT_READ)) {
-        MOZ_CRASH("mprotect(PROT_READ) failed");
-    }
+  if (mprotect(p, size, PROT_READ)) {
+    MOZ_CRASH("mprotect(PROT_READ) failed");
+  }
 #endif
 }
 
-void
-UnprotectPages(void* p, size_t size)
-{
-    MOZ_ASSERT(size % pageSize == 0);
-    MOZ_RELEASE_ASSERT(size > 0);
-    MOZ_RELEASE_ASSERT(p);
+void UnprotectPages(void* p, size_t size) {
+  MOZ_ASSERT(size % pageSize == 0);
+  MOZ_RELEASE_ASSERT(size > 0);
+  MOZ_RELEASE_ASSERT(p);
 #if defined(XP_WIN)
-    DWORD oldProtect;
-    if (!VirtualProtect(p, size, PAGE_READWRITE, &oldProtect)) {
-        MOZ_CRASH_UNSAFE_PRINTF("VirtualProtect(PAGE_READWRITE) failed! Error code: %lu",
-                                GetLastError());
-    }
+  DWORD oldProtect;
+  if (!VirtualProtect(p, size, PAGE_READWRITE, &oldProtect)) {
+    MOZ_CRASH_UNSAFE_PRINTF(
+        "VirtualProtect(PAGE_READWRITE) failed! Error code: %lu",
+        GetLastError());
+  }
 #else  
-    if (mprotect(p, size, PROT_READ | PROT_WRITE)) {
-        MOZ_CRASH("mprotect(PROT_READ | PROT_WRITE) failed");
-    }
+  if (mprotect(p, size, PROT_READ | PROT_WRITE)) {
+    MOZ_CRASH("mprotect(PROT_READ | PROT_WRITE) failed");
+  }
 #endif
 }
 
-} 
-} 
+}  
+}  

@@ -8,53 +8,46 @@
 #ifndef js_MemoryFunctions_h
 #define js_MemoryFunctions_h
 
-#include "mozilla/Assertions.h" 
-#include "mozilla/Attributes.h" 
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
 
-#include <stddef.h> 
+#include <stddef.h>  
 
-#include "jstypes.h" 
+#include "jstypes.h"  
 
 struct JSContext;
 struct JSRuntime;
 
-struct JSFreeOp
-{
-  protected:
-    JSRuntime* runtime_;
+struct JSFreeOp {
+ protected:
+  JSRuntime* runtime_;
 
-    explicit JSFreeOp(JSRuntime* rt)
-      : runtime_(rt)
-    {}
+  explicit JSFreeOp(JSRuntime* rt) : runtime_(rt) {}
 
-  public:
-    JSRuntime* runtime() const {
-        MOZ_ASSERT(runtime_);
-        return runtime_;
-    }
+ public:
+  JSRuntime* runtime() const {
+    MOZ_ASSERT(runtime_);
+    return runtime_;
+  }
 };
 
-extern JS_PUBLIC_API void*
-JS_malloc(JSContext* cx, size_t nbytes);
+extern JS_PUBLIC_API void* JS_malloc(JSContext* cx, size_t nbytes);
 
-extern JS_PUBLIC_API void*
-JS_realloc(JSContext* cx, void* p, size_t oldBytes, size_t newBytes);
-
-
-
-
-
-extern JS_PUBLIC_API void
-JS_free(JSContext* cx, void* p);
+extern JS_PUBLIC_API void* JS_realloc(JSContext* cx, void* p, size_t oldBytes,
+                                      size_t newBytes);
 
 
 
 
 
-extern JS_PUBLIC_API void
-JS_freeop(JSFreeOp* fop, void* p);
+extern JS_PUBLIC_API void JS_free(JSContext* cx, void* p);
 
-extern JS_PUBLIC_API void
-JS_updateMallocCounter(JSContext* cx, size_t nbytes);
+
+
+
+
+extern JS_PUBLIC_API void JS_freeop(JSFreeOp* fop, void* p);
+
+extern JS_PUBLIC_API void JS_updateMallocCounter(JSContext* cx, size_t nbytes);
 
 #endif 

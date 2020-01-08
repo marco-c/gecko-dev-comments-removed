@@ -15,141 +15,129 @@ namespace js {
 namespace frontend {
 
 template <>
-inline bool
-ParseContext::Statement::is<ParseContext::LabelStatement>() const
-{
-    return kind_ == StatementKind::Label;
+inline bool ParseContext::Statement::is<ParseContext::LabelStatement>() const {
+  return kind_ == StatementKind::Label;
 }
 
 template <>
-inline bool
-ParseContext::Statement::is<ParseContext::ClassStatement>() const
-{
-    return kind_ == StatementKind::Class;
+inline bool ParseContext::Statement::is<ParseContext::ClassStatement>() const {
+  return kind_ == StatementKind::Class;
 }
 
 template <typename T>
-inline T&
-ParseContext::Statement::as()
-{
-    MOZ_ASSERT(is<T>());
-    return static_cast<T&>(*this);
+inline T& ParseContext::Statement::as() {
+  MOZ_ASSERT(is<T>());
+  return static_cast<T&>(*this);
 }
 
-inline ParseContext::Scope::BindingIter
-ParseContext::Scope::bindings(ParseContext* pc)
-{
-    
-    
-    
-    return BindingIter(*this, pc->varScope_ == this || pc->functionScope_.ptrOr(nullptr) == this);
+inline ParseContext::Scope::BindingIter ParseContext::Scope::bindings(
+    ParseContext* pc) {
+  
+  
+  
+  return BindingIter(*this, pc->varScope_ == this ||
+                                pc->functionScope_.ptrOr(nullptr) == this);
 }
 
-inline
-ParseContext::Scope::Scope(ParserBase* parser)
-  : Nestable<Scope>(&parser->pc->innermostScope_),
-    declared_(parser->context->frontendCollectionPool()),
-    possibleAnnexBFunctionBoxes_(parser->context->frontendCollectionPool()),
-    id_(parser->usedNames.nextScopeId())
-{ }
+inline ParseContext::Scope::Scope(ParserBase* parser)
+    : Nestable<Scope>(&parser->pc->innermostScope_),
+      declared_(parser->context->frontendCollectionPool()),
+      possibleAnnexBFunctionBoxes_(parser->context->frontendCollectionPool()),
+      id_(parser->usedNames.nextScopeId()) {}
 
-inline
-ParseContext::Scope::Scope(JSContext* cx, ParseContext* pc, UsedNameTracker& usedNames)
-  : Nestable<Scope>(&pc->innermostScope_),
-    declared_(cx->frontendCollectionPool()),
-    possibleAnnexBFunctionBoxes_(cx->frontendCollectionPool()),
-    id_(usedNames.nextScopeId())
-{ }
+inline ParseContext::Scope::Scope(JSContext* cx, ParseContext* pc,
+                                  UsedNameTracker& usedNames)
+    : Nestable<Scope>(&pc->innermostScope_),
+      declared_(cx->frontendCollectionPool()),
+      possibleAnnexBFunctionBoxes_(cx->frontendCollectionPool()),
+      id_(usedNames.nextScopeId()) {}
 
-inline
-ParseContext::VarScope::VarScope(ParserBase* parser)
-  : Scope(parser)
-{
-    useAsVarScope(parser->pc);
+inline ParseContext::VarScope::VarScope(ParserBase* parser) : Scope(parser) {
+  useAsVarScope(parser->pc);
 }
 
-inline
-ParseContext::VarScope::VarScope(JSContext* cx, ParseContext* pc, UsedNameTracker& usedNames)
-  : Scope(cx, pc, usedNames)
-{
-    useAsVarScope(pc);
+inline ParseContext::VarScope::VarScope(JSContext* cx, ParseContext* pc,
+                                        UsedNameTracker& usedNames)
+    : Scope(cx, pc, usedNames) {
+  useAsVarScope(pc);
 }
 
 inline JS::Result<Ok, ParseContext::BreakStatementError>
-ParseContext::checkBreakStatement(PropertyName* label)
-{
-    
-    
-    
-    if (label) {
-        auto hasSameLabel = [&label](ParseContext::LabelStatement* stmt) {
-            MOZ_ASSERT(stmt);
-            return stmt->label() == label;
-        };
+ParseContext::checkBreakStatement(PropertyName* label) {
+  
+  
+  
+  if (label) {
+    auto hasSameLabel = [&label](ParseContext::LabelStatement* stmt) {
+      MOZ_ASSERT(stmt);
+      return stmt->label() == label;
+    };
 
-        if (!findInnermostStatement<ParseContext::LabelStatement>(hasSameLabel)) {
-            return mozilla::Err(ParseContext::BreakStatementError::LabelNotFound);
-        }
-
-    } else {
-        auto isBreakTarget = [](ParseContext::Statement* stmt) {
-            return StatementKindIsUnlabeledBreakTarget(stmt->kind());
-        };
-
-        if (!findInnermostStatement(isBreakTarget)) {
-            return mozilla::Err(ParseContext::BreakStatementError::ToughBreak);
-        }
+    if (!findInnermostStatement<ParseContext::LabelStatement>(hasSameLabel)) {
+      return mozilla::Err(ParseContext::BreakStatementError::LabelNotFound);
     }
 
-    return Ok();
+  } else {
+    auto isBreakTarget = [](ParseContext::Statement* stmt) {
+      return StatementKindIsUnlabeledBreakTarget(stmt->kind());
+    };
+
+    if (!findInnermostStatement(isBreakTarget)) {
+      return mozilla::Err(ParseContext::BreakStatementError::ToughBreak);
+    }
+  }
+
+  return Ok();
 }
 
 inline JS::Result<Ok, ParseContext::ContinueStatementError>
-ParseContext::checkContinueStatement(PropertyName* label)
-{
-    
-    
-    
-    auto isLoop = [](ParseContext::Statement* stmt) {
-        MOZ_ASSERT(stmt);
-        return StatementKindIsLoop(stmt->kind());
-    };
+ParseContext::checkContinueStatement(PropertyName* label) {
+  
+  
+  
+  auto isLoop = [](ParseContext::Statement* stmt) {
+    MOZ_ASSERT(stmt);
+    return StatementKindIsLoop(stmt->kind());
+  };
 
-    if (!label) {
-        
-        
-        if (!findInnermostStatement(isLoop)) {
-            return mozilla::Err(ParseContext::ContinueStatementError::NotInALoop);
-        }
+  if (!label) {
+    
+    
+    if (!findInnermostStatement(isLoop)) {
+      return mozilla::Err(ParseContext::ContinueStatementError::NotInALoop);
+    }
+    return Ok();
+  }
+
+  
+  ParseContext::Statement* stmt = innermostStatement();
+  bool foundLoop = false;  
+
+  for (;;) {
+    stmt = ParseContext::Statement::findNearest(stmt, isLoop);
+    if (!stmt) {
+      return foundLoop
+                 ? mozilla::Err(
+                       ParseContext::ContinueStatementError::LabelNotFound)
+                 : mozilla::Err(
+                       ParseContext::ContinueStatementError::NotInALoop);
+    }
+
+    foundLoop = true;
+
+    
+    stmt = stmt->enclosing();
+    while (stmt && stmt->is<ParseContext::LabelStatement>()) {
+      if (stmt->as<ParseContext::LabelStatement>().label() == label) {
         return Ok();
+      }
+
+      stmt = stmt->enclosing();
     }
-
-    
-    ParseContext::Statement* stmt = innermostStatement();
-    bool foundLoop = false; 
-
-    for (;;) {
-        stmt = ParseContext::Statement::findNearest(stmt, isLoop);
-        if (!stmt) {
-            return foundLoop ? mozilla::Err(ParseContext::ContinueStatementError::LabelNotFound)
-                             : mozilla::Err(ParseContext::ContinueStatementError::NotInALoop);
-        }
-
-        foundLoop = true;
-
-        
-        stmt = stmt->enclosing();
-        while (stmt && stmt->is<ParseContext::LabelStatement>()) {
-            if (stmt->as<ParseContext::LabelStatement>().label() == label) {
-                return Ok();
-            }
-
-            stmt = stmt->enclosing();
-        }
-    }
+  }
 }
 
-}
-}
+}  
+}  
 
-#endif 
+#endif  

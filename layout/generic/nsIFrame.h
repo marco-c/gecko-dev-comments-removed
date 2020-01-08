@@ -68,6 +68,7 @@
 
 
 
+
 class nsAtom;
 class nsPresContext;
 class nsIPresShell;
@@ -112,25 +113,25 @@ class EffectSet;
 namespace layers {
 class Layer;
 class LayerManager;
-} 
+}  
 
 namespace dom {
 class Selection;
-} 
+}  
 
-} 
+}  
 
 
 
-#define NS_SUBTREE_DIRTY(_frame)  \
-  (((_frame)->GetStateBits() &      \
+#define NS_SUBTREE_DIRTY(_frame) \
+  (((_frame)->GetStateBits() &   \
     (NS_FRAME_IS_DIRTY | NS_FRAME_HAS_DIRTY_CHILDREN)) != 0)
 
 
 
 
 
-#define INFINITE_ISIZE_COORD nscoord(NS_MAXSIZE - (1000000*60))
+#define INFINITE_ISIZE_COORD nscoord(NS_MAXSIZE - (1000000 * 60))
 
 
 
@@ -142,27 +143,27 @@ enum class LayoutFrameType : uint8_t {
 #undef FRAME_TYPE
 };
 
-} 
+}  
 
 enum nsSelectionAmount {
-  eSelectCharacter = 0, 
-                        
-                        
-  eSelectCluster   = 1, 
-                        
-                        
-  eSelectWord      = 2,
-  eSelectWordNoSpace = 3, 
-                          
-                          
-  eSelectLine      = 4, 
+  eSelectCharacter = 0,  
+                         
+                         
+  eSelectCluster = 1,    
+                         
+                         
+  eSelectWord = 2,
+  eSelectWordNoSpace = 3,  
+                           
+                           
+  eSelectLine = 4,         
   
   
   
 
   eSelectBeginLine = 5,
-  eSelectEndLine   = 6,
-  eSelectNoAmount  = 7, 
+  eSelectEndLine = 6,
+  eSelectNoAmount = 7,  
   eSelectParagraph = 8  
 };
 
@@ -171,15 +172,14 @@ enum nsSelectionAmount {
 class nsReflowStatus final {
   using StyleClear = mozilla::StyleClear;
 
-public:
+ public:
   nsReflowStatus()
-    : mBreakType(StyleClear::None)
-    , mInlineBreak(InlineBreak::None)
-    , mCompletion(Completion::FullyComplete)
-    , mNextInFlowNeedsReflow(false)
-    , mTruncated(false)
-    , mFirstLetterComplete(false)
-  {}
+      : mBreakType(StyleClear::None),
+        mInlineBreak(InlineBreak::None),
+        mCompletion(Completion::FullyComplete),
+        mNextInFlowNeedsReflow(false),
+        mTruncated(false),
+        mFirstLetterComplete(false) {}
 
   
   void Reset() {
@@ -193,11 +193,8 @@ public:
 
   
   bool IsEmpty() const {
-    return (IsFullyComplete() &&
-            !IsInlineBreak() &&
-            !mNextInFlowNeedsReflow &&
-            !mTruncated &&
-            !mFirstLetterComplete);
+    return (IsFullyComplete() && !IsInlineBreak() && !mNextInFlowNeedsReflow &&
+            !mTruncated && !mFirstLetterComplete);
   }
 
   
@@ -234,12 +231,8 @@ public:
   
   bool IsComplete() const { return !IsIncomplete(); }
 
-  void SetIncomplete() {
-    mCompletion = Completion::Incomplete;
-  }
-  void SetOverflowIncomplete() {
-    mCompletion = Completion::OverflowIncomplete;
-  }
+  void SetIncomplete() { mCompletion = Completion::Incomplete; }
+  void SetOverflowIncomplete() { mCompletion = Completion::OverflowIncomplete; }
 
   
   
@@ -258,17 +251,17 @@ public:
                        const mozilla::ReflowOutput& aMetrics);
 
   
-  void MergeCompletionStatusFrom(const nsReflowStatus& aStatus)
-  {
+  void MergeCompletionStatusFrom(const nsReflowStatus& aStatus) {
     if (mCompletion < aStatus.mCompletion) {
       mCompletion = aStatus.mCompletion;
     }
 
     
     
-    static_assert(Completion::Incomplete > Completion::OverflowIncomplete &&
-                  Completion::OverflowIncomplete > Completion::FullyComplete,
-                  "mCompletion merging won't work without this!");
+    static_assert(
+        Completion::Incomplete > Completion::OverflowIncomplete &&
+            Completion::OverflowIncomplete > Completion::FullyComplete,
+        "mCompletion merging won't work without this!");
 
     mNextInFlowNeedsReflow |= aStatus.mNextInFlowNeedsReflow;
     mTruncated |= aStatus.mTruncated;
@@ -293,9 +286,7 @@ public:
   bool IsInlineBreakBefore() const {
     return mInlineBreak == InlineBreak::Before;
   }
-  bool IsInlineBreakAfter() const {
-    return mInlineBreak == InlineBreak::After;
-  }
+  bool IsInlineBreakAfter() const { return mInlineBreak == InlineBreak::After; }
   StyleClear BreakType() const { return mBreakType; }
 
   
@@ -321,7 +312,7 @@ public:
   bool FirstLetterComplete() const { return mFirstLetterComplete; }
   void SetFirstLetterComplete() { mFirstLetterComplete = true; }
 
-private:
+ private:
   StyleClear mBreakType;
   InlineBreak mInlineBreak;
   Completion mCompletion;
@@ -334,8 +325,7 @@ private:
   aStatus.UpdateTruncated(aReflowInput, aMetrics);
 
 
-std::ostream&
-operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
+std::ostream& operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
 
 
 
@@ -348,14 +338,16 @@ operator<<(std::ostream& aStream, const nsReflowStatus& aStatus);
 
 
 
-#define NS_FRAME_OVERFLOW_DELTA_MAX     0xfe // max delta we can store
+#define NS_FRAME_OVERFLOW_DELTA_MAX 0xfe  // max delta we can store
 
-#define NS_FRAME_OVERFLOW_NONE    0x00000000 // there are no overflow rects;
-                                             
-                                             
+#define NS_FRAME_OVERFLOW_NONE \
+  0x00000000  // there are no overflow rects;
+              
+              
 
-#define NS_FRAME_OVERFLOW_LARGE   0x000000ff // overflow is stored as a
-                                             
+#define NS_FRAME_OVERFLOW_LARGE \
+  0x000000ff  // overflow is stored as a
+              
 
 
 
@@ -392,12 +384,15 @@ typedef uint8_t nsBidiLevel;
 
 
 
+
 #define NSBIDI_DEFAULT_LTR 0xfe
 
 
 
 
+
 #define NSBIDI_DEFAULT_RTL 0xff
+
 
 
 
@@ -426,16 +421,14 @@ enum nsBidiDirection {
 namespace mozilla {
 
 
-enum BaselineSharingGroup
-{
+enum BaselineSharingGroup {
   
   eFirst = 0,
   eLast = 1,
 };
 
 
-enum class AlignmentContext
-{
+enum class AlignmentContext {
   eInline,
   eTable,
   eFlexbox,
@@ -452,28 +445,24 @@ enum class AlignmentContext
 struct IntrinsicSize {
   nsStyleCoord width, height;
 
-  IntrinsicSize()
-    : width(eStyleUnit_None), height(eStyleUnit_None)
-  {}
+  IntrinsicSize() : width(eStyleUnit_None), height(eStyleUnit_None) {}
   IntrinsicSize(const IntrinsicSize& rhs)
-    : width(rhs.width), height(rhs.height)
-  {}
+      : width(rhs.width), height(rhs.height) {}
   IntrinsicSize& operator=(const IntrinsicSize& rhs) {
-    width = rhs.width; height = rhs.height; return *this;
+    width = rhs.width;
+    height = rhs.height;
+    return *this;
   }
   bool operator==(const IntrinsicSize& rhs) {
     return width == rhs.width && height == rhs.height;
   }
-  bool operator!=(const IntrinsicSize& rhs) {
-    return !(*this == rhs);
-  }
+  bool operator!=(const IntrinsicSize& rhs) { return !(*this == rhs); }
 };
 
 
 static const nsBidiLevel kBidiLevelNone = 0xff;
 
-struct FrameBidiData
-{
+struct FrameBidiData {
   nsBidiLevel baseLevel;
   nsBidiLevel embeddingLevel;
   
@@ -482,19 +471,17 @@ struct FrameBidiData
   nsBidiLevel precedingControl;
 };
 
-} 
+}  
 
 
-template<typename T>
-static void DeleteValue(T* aPropertyValue)
-{
+template <typename T>
+static void DeleteValue(T* aPropertyValue) {
   delete aPropertyValue;
 }
 
 
-template<typename T>
-static void ReleaseValue(T* aPropertyValue)
-{
+template <typename T>
+static void ReleaseValue(T* aPropertyValue) {
   aPropertyValue->Release();
 }
 
@@ -521,15 +508,15 @@ static void ReleaseValue(T* aPropertyValue)
 
 
 
-class nsIFrame : public nsQueryFrame
-{
-public:
+class nsIFrame : public nsQueryFrame {
+ public:
   using AlignmentContext = mozilla::AlignmentContext;
   using BaselineSharingGroup = mozilla::BaselineSharingGroup;
-  template <typename T> using Maybe = mozilla::Maybe<T>;
+  template <typename T>
+  using Maybe = mozilla::Maybe<T>;
   using Nothing = mozilla::Nothing;
   using OnNonvisible = mozilla::OnNonvisible;
-  template<typename T=void>
+  template <typename T = void>
   using PropertyDescriptor = const mozilla::FramePropertyDescriptor<T>*;
   using ReflowInput = mozilla::ReflowInput;
   using ReflowOutput = mozilla::ReflowOutput;
@@ -550,46 +537,42 @@ public:
   typedef mozilla::gfx::Matrix4x4Flagged Matrix4x4Flagged;
   typedef mozilla::Sides Sides;
   typedef mozilla::LogicalSides LogicalSides;
-  typedef mozilla::SmallPointerArray<mozilla::DisplayItemData> DisplayItemDataArray;
+  typedef mozilla::SmallPointerArray<mozilla::DisplayItemData>
+      DisplayItemDataArray;
   typedef nsQueryFrame::ClassID ClassID;
 
   NS_DECL_QUERYFRAME_TARGET(nsIFrame)
 
   explicit nsIFrame(ClassID aID)
-    : mRect()
-    , mContent(nullptr)
-    , mComputedStyle(nullptr)
-    , mParent(nullptr)
-    , mNextSibling(nullptr)
-    , mPrevSibling(nullptr)
-    , mState(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY)
-    , mClass(aID)
-    , mMayHaveRoundedCorners(false)
-    , mHasImageRequest(false)
-    , mHasFirstLetterChild(false)
-    , mParentIsWrapperAnonBox(false)
-    , mIsWrapperBoxNeedingRestyle(false)
-    , mReflowRequestedForCharDataChange(false)
-    , mForceDescendIntoIfVisible(false)
-    , mBuiltDisplayList(false)
-    , mFrameIsModified(false)
-    , mHasOverrideDirtyRegion(false)
-    , mMayHaveWillChangeBudget(false)
-    , mIsPrimaryFrame(false)
-    , mMayHaveTransformAnimation(false)
-    , mMayHaveOpacityAnimation(false)
-    , mAllDescendantsAreInvisible(false)
-  {
+      : mRect(),
+        mContent(nullptr),
+        mComputedStyle(nullptr),
+        mParent(nullptr),
+        mNextSibling(nullptr),
+        mPrevSibling(nullptr),
+        mState(NS_FRAME_FIRST_REFLOW | NS_FRAME_IS_DIRTY),
+        mClass(aID),
+        mMayHaveRoundedCorners(false),
+        mHasImageRequest(false),
+        mHasFirstLetterChild(false),
+        mParentIsWrapperAnonBox(false),
+        mIsWrapperBoxNeedingRestyle(false),
+        mReflowRequestedForCharDataChange(false),
+        mForceDescendIntoIfVisible(false),
+        mBuiltDisplayList(false),
+        mFrameIsModified(false),
+        mHasOverrideDirtyRegion(false),
+        mMayHaveWillChangeBudget(false),
+        mIsPrimaryFrame(false),
+        mMayHaveTransformAnimation(false),
+        mMayHaveOpacityAnimation(false),
+        mAllDescendantsAreInvisible(false) {
     mozilla::PodZero(&mOverflow);
   }
 
-  nsPresContext* PresContext() const {
-    return Style()->PresContextForFrame();
-  }
+  nsPresContext* PresContext() const { return Style()->PresContextForFrame(); }
 
-  nsIPresShell* PresShell() const {
-    return PresContext()->PresShell();
-  }
+  nsIPresShell* PresShell() const { return PresContext()->PresShell(); }
 
   
 
@@ -605,15 +588,13 @@ public:
 
 
 
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) = 0;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) = 0;
 
   using PostDestroyData = mozilla::layout::PostFrameDestroyData;
-  struct MOZ_RAII AutoPostDestroyData
-  {
+  struct MOZ_RAII AutoPostDestroyData {
     explicit AutoPostDestroyData(nsPresContext* aPresContext)
-      : mPresContext(aPresContext) {}
+        : mPresContext(aPresContext) {}
     ~AutoPostDestroyData() {
       for (auto& content : mozilla::Reversed(mData.mAnonymousContent)) {
         nsIFrame::DestroyAnonymousContent(mPresContext, content.forget());
@@ -638,6 +619,7 @@ public:
 
   
 
+
   enum FrameSearchResult {
     
     FOUND = 0x00,
@@ -646,14 +628,14 @@ public:
     
     CONTINUE_EMPTY = 0x2 | CONTINUE,
     
+    
     CONTINUE_UNSELECTABLE = 0x4 | CONTINUE,
   };
 
   
 
 
-  struct MOZ_STACK_CLASS PeekOffsetCharacterOptions
-  {
+  struct MOZ_STACK_CLASS PeekOffsetCharacterOptions {
     
     
     
@@ -663,14 +645,11 @@ public:
     bool mIgnoreUserStyleAll;
 
     PeekOffsetCharacterOptions()
-      : mRespectClusters(true)
-      , mIgnoreUserStyleAll(false)
-    {
-    }
+        : mRespectClusters(true), mIgnoreUserStyleAll(false) {}
   };
 
-protected:
-  friend class nsBlockFrame; 
+ protected:
+  friend class nsBlockFrame;  
 
   
 
@@ -687,15 +666,18 @@ protected:
 
 
 
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) = 0;
-  friend class nsFrameList; 
-  friend class nsLineBox;   
-  friend class nsContainerFrame; 
-  friend class nsFrame; 
-  template<class Source> friend class do_QueryFrameHelper; 
-public:
-
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) = 0;
+  friend class nsFrameList;  
+  friend class nsLineBox;    
+  friend class nsContainerFrame;  
+                                  
+  friend class nsFrame;           
+  template <class Source>
+  friend class do_QueryFrameHelper;  
+ public:
   
+
 
 
   nsIContent* GetContent() const { return mContent; }
@@ -725,7 +707,7 @@ public:
 
 
 
-  virtual nsresult GetOffsets(int32_t &start, int32_t &end) const = 0;
+  virtual nsresult GetOffsets(int32_t& start, int32_t& end) const = 0;
 
   
 
@@ -740,13 +722,13 @@ public:
 
   void AssertNewStyleIsSane(ComputedStyle&)
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    ;
+      ;
 #else
-    { }
+  {
+  }
 #endif
 
-  void SetComputedStyle(ComputedStyle* aStyle)
-  {
+  void SetComputedStyle(ComputedStyle* aStyle) {
     if (aStyle != mComputedStyle) {
       AssertNewStyleIsSane(*aStyle);
       RefPtr<ComputedStyle> oldComputedStyle = mComputedStyle.forget();
@@ -761,10 +743,10 @@ public:
 
 
 
-  void SetComputedStyleWithoutNotification(ComputedStyle* aStyle)
-  {
+  void SetComputedStyleWithoutNotification(ComputedStyle* aStyle) {
     if (aStyle != mComputedStyle) {
-      MOZ_DIAGNOSTIC_ASSERT(PresShell() == aStyle->PresContextForFrame()->PresShell());
+      MOZ_DIAGNOSTIC_ASSERT(PresShell() ==
+                            aStyle->PresContextForFrame()->PresShell());
       mComputedStyle = aStyle;
     }
   }
@@ -775,39 +757,40 @@ public:
   
   virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) = 0;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define STYLE_STRUCT(name_)                                          \
+  const nsStyle##name_* Style##name_() const MOZ_NONNULL_RETURN {    \
+    NS_ASSERTION(mComputedStyle, "No style found!");                 \
+    return mComputedStyle->Style##name_();                           \
+  }                                                                  \
+  const nsStyle##name_* Style##name_##WithOptionalParam(             \
+      const nsStyle##name_* aStyleStruct) const MOZ_NONNULL_RETURN { \
+    if (aStyleStruct) {                                              \
+      MOZ_ASSERT(aStyleStruct == Style##name_());                    \
+      return aStyleStruct;                                           \
+    }                                                                \
+    return Style##name_();                                           \
+  }
+#include "nsStyleStructList.h"
+#undef STYLE_STRUCT
+
   
-
-
-
-
-
-
-
-
-
-
-
-
-  #define STYLE_STRUCT(name_)                                         \
-    const nsStyle##name_ * Style##name_ () const MOZ_NONNULL_RETURN { \
-      NS_ASSERTION(mComputedStyle, "No style found!");                \
-      return mComputedStyle->Style##name_ ();                         \
-    }                                                                 \
-    const nsStyle##name_ * Style##name_##WithOptionalParam(           \
-      const nsStyle##name_ * aStyleStruct) const MOZ_NONNULL_RETURN { \
-      if (aStyleStruct) {                                             \
-        MOZ_ASSERT(aStyleStruct == Style##name_());                   \
-        return aStyleStruct;                                          \
-      }                                                               \
-      return Style##name_();                                          \
-    }
-  #include "nsStyleStructList.h"
-  #undef STYLE_STRUCT
-
-  
-  template<typename T, typename S>
-  nscolor GetVisitedDependentColor(T S::* aField)
-    { return mComputedStyle->GetVisitedDependentColor(aField); }
+  template <typename T, typename S>
+  nscolor GetVisitedDependentColor(T S::*aField) {
+    return mComputedStyle->GetVisitedDependentColor(aField);
+  }
 
   
 
@@ -859,6 +842,7 @@ public:
   }
 
   
+
 
 
 
@@ -1036,8 +1020,7 @@ public:
 
 
   void SetSize(mozilla::WritingMode aWritingMode,
-               const mozilla::LogicalSize& aSize)
-  {
+               const mozilla::LogicalSize& aSize) {
     if ((!aWritingMode.IsVertical() && !aWritingMode.IsBidiLTR()) ||
         aWritingMode.IsVerticalRL()) {
       nscoord oldWidth = mRect.Width();
@@ -1074,8 +1057,8 @@ public:
     
     
     
-    SetPosition(aPt.GetPhysicalPoint(aWritingMode,
-                                    aContainerSize - mRect.Size()));
+    SetPosition(
+        aPt.GetPhysicalPoint(aWritingMode, aContainerSize - mRect.Size()));
   }
 
   
@@ -1095,14 +1078,13 @@ public:
 
 
   void MovePositionBy(mozilla::WritingMode aWritingMode,
-                      const mozilla::LogicalPoint& aTranslation)
-  {
+                      const mozilla::LogicalPoint& aTranslation) {
     
     
     
     const nsSize nullContainerSize;
-    MovePositionBy(aTranslation.GetPhysicalPoint(aWritingMode,
-                                                 nullContainerSize));
+    MovePositionBy(
+        aTranslation.GetPhysicalPoint(aWritingMode, nullContainerSize));
   }
 
   
@@ -1117,48 +1099,46 @@ public:
 
   inline nsPoint GetNormalPosition(bool* aHasProperty = nullptr) const;
 
-  mozilla::LogicalPoint
-  GetLogicalNormalPosition(mozilla::WritingMode aWritingMode,
-                           const nsSize& aContainerSize) const
-  {
+  mozilla::LogicalPoint GetLogicalNormalPosition(
+      mozilla::WritingMode aWritingMode, const nsSize& aContainerSize) const {
     
     
     
-    return mozilla::LogicalPoint(aWritingMode,
-                                 GetNormalPosition(),
+    return mozilla::LogicalPoint(aWritingMode, GetNormalPosition(),
                                  aContainerSize - mRect.Size());
   }
 
-  virtual nsPoint GetPositionOfChildIgnoringScrolling(const nsIFrame* aChild)
-  { return aChild->GetPosition(); }
+  virtual nsPoint GetPositionOfChildIgnoringScrolling(const nsIFrame* aChild) {
+    return aChild->GetPosition();
+  }
 
   nsPoint GetPositionIgnoringScrolling() const;
 
   typedef AutoTArray<nsDisplayItem*, 4> DisplayItemArray;
 
-#define NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type, dtor)             \
-  static const mozilla::FramePropertyDescriptor<type>* prop() {           \
-    /* Use of constexpr caused startup crashes with MSVC2015u1 PGO. */    \
-    static const auto descriptor =                                        \
-      mozilla::FramePropertyDescriptor<type>::NewWithDestructor<dtor>();  \
-    return &descriptor;                                                   \
+#define NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type, dtor)              \
+  static const mozilla::FramePropertyDescriptor<type>* prop() {            \
+    /* Use of constexpr caused startup crashes with MSVC2015u1 PGO. */     \
+    static const auto descriptor =                                         \
+        mozilla::FramePropertyDescriptor<type>::NewWithDestructor<dtor>(); \
+    return &descriptor;                                                    \
   }
 
 
-#define NS_DECLARE_FRAME_PROPERTY_WITH_FRAME_IN_DTOR(prop, type, dtor)    \
-  static const mozilla::FramePropertyDescriptor<type>* prop() {           \
-    /* Use of constexpr caused startup crashes with MSVC2015u1 PGO. */    \
-    static const auto descriptor = mozilla::                              \
-      FramePropertyDescriptor<type>::NewWithDestructorWithFrame<dtor>();  \
-    return &descriptor;                                                   \
+#define NS_DECLARE_FRAME_PROPERTY_WITH_FRAME_IN_DTOR(prop, type, dtor) \
+  static const mozilla::FramePropertyDescriptor<type>* prop() {        \
+    /* Use of constexpr caused startup crashes with MSVC2015u1 PGO. */ \
+    static const auto descriptor = mozilla::FramePropertyDescriptor<   \
+        type>::NewWithDestructorWithFrame<dtor>();                     \
+    return &descriptor;                                                \
   }
 
-#define NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(prop, type)                \
-  static const mozilla::FramePropertyDescriptor<type>* prop() {           \
-    /* Use of constexpr caused startup crashes with MSVC2015u1 PGO. */    \
-    static const auto descriptor =                                        \
-      mozilla::FramePropertyDescriptor<type>::NewWithoutDestructor();     \
-    return &descriptor;                                                   \
+#define NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(prop, type)              \
+  static const mozilla::FramePropertyDescriptor<type>* prop() {         \
+    /* Use of constexpr caused startup crashes with MSVC2015u1 PGO. */  \
+    static const auto descriptor =                                      \
+        mozilla::FramePropertyDescriptor<type>::NewWithoutDestructor(); \
+    return &descriptor;                                                 \
   }
 
 #define NS_DECLARE_FRAME_PROPERTY_DELETABLE(prop, type) \
@@ -1167,12 +1147,13 @@ public:
 #define NS_DECLARE_FRAME_PROPERTY_RELEASABLE(prop, type) \
   NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type, ReleaseValue)
 
-#define NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(prop, type)  \
-  static void AssertOnDestroyingProperty##prop(type*) {               \
-    MOZ_ASSERT_UNREACHABLE("Frame property " #prop " should never "   \
-                           "be destroyed by the FrameProperties class");  \
-  }                                                                   \
-  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type,                     \
+#define NS_DECLARE_FRAME_PROPERTY_WITH_DTOR_NEVER_CALLED(prop, type)     \
+  static void AssertOnDestroyingProperty##prop(type*) {                  \
+    MOZ_ASSERT_UNREACHABLE("Frame property " #prop                       \
+                           " should never "                              \
+                           "be destroyed by the FrameProperties class"); \
+  }                                                                      \
+  NS_DECLARE_FRAME_PROPERTY_WITH_DTOR(prop, type,                        \
                                       AssertOnDestroyingProperty##prop)
 
 #define NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(prop, type) \
@@ -1200,7 +1181,8 @@ public:
   
   
   
-  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(DebugInitialOverflowPropertyApplied, bool)
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(DebugInitialOverflowPropertyApplied,
+                                        bool)
 #endif
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(UsedMarginProperty, nsMargin)
@@ -1227,9 +1209,11 @@ public:
 
   NS_DECLARE_FRAME_PROPERTY_DELETABLE(DisplayItems, DisplayItemArray)
 
-  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(BidiDataProperty, mozilla::FrameBidiData)
+  NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(BidiDataProperty,
+                                        mozilla::FrameBidiData)
 
-  NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(PlaceholderFrameProperty, nsPlaceholderFrame)
+  NS_DECLARE_FRAME_PROPERTY_WITHOUT_DTOR(PlaceholderFrameProperty,
+                                         nsPlaceholderFrame)
 
   
   
@@ -1238,8 +1222,7 @@ public:
   
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(HasColumnSpanSiblings, bool)
 
-  mozilla::FrameBidiData GetBidiData() const
-  {
+  mozilla::FrameBidiData GetBidiData() const {
     bool exists;
     mozilla::FrameBidiData bidiData = GetProperty(BidiDataProperty(), &exists);
     if (!exists) {
@@ -1248,15 +1231,9 @@ public:
     return bidiData;
   }
 
-  nsBidiLevel GetBaseLevel() const
-  {
-    return GetBidiData().baseLevel;
-  }
+  nsBidiLevel GetBaseLevel() const { return GetBidiData().baseLevel; }
 
-  nsBidiLevel GetEmbeddingLevel() const
-  {
-    return GetBidiData().embeddingLevel;
-  }
+  nsBidiLevel GetEmbeddingLevel() const { return GetBidiData().embeddingLevel; }
 
   
 
@@ -1270,8 +1247,8 @@ public:
 
 
   virtual nsMargin GetUsedMargin() const;
-  virtual mozilla::LogicalMargin
-  GetLogicalUsedMargin(mozilla::WritingMode aWritingMode) const {
+  virtual mozilla::LogicalMargin GetLogicalUsedMargin(
+      mozilla::WritingMode aWritingMode) const {
     return mozilla::LogicalMargin(aWritingMode, GetUsedMargin());
   }
 
@@ -1287,8 +1264,8 @@ public:
 
 
   virtual nsMargin GetUsedBorder() const;
-  virtual mozilla::LogicalMargin
-  GetLogicalUsedBorder(mozilla::WritingMode aWritingMode) const {
+  virtual mozilla::LogicalMargin GetLogicalUsedBorder(
+      mozilla::WritingMode aWritingMode) const {
     return mozilla::LogicalMargin(aWritingMode, GetUsedBorder());
   }
 
@@ -1298,16 +1275,16 @@ public:
 
 
   virtual nsMargin GetUsedPadding() const;
-  virtual mozilla::LogicalMargin
-  GetLogicalUsedPadding(mozilla::WritingMode aWritingMode) const {
+  virtual mozilla::LogicalMargin GetLogicalUsedPadding(
+      mozilla::WritingMode aWritingMode) const {
     return mozilla::LogicalMargin(aWritingMode, GetUsedPadding());
   }
 
   nsMargin GetUsedBorderAndPadding() const {
     return GetUsedBorder() + GetUsedPadding();
   }
-  mozilla::LogicalMargin
-  GetLogicalUsedBorderAndPadding(mozilla::WritingMode aWritingMode) const {
+  mozilla::LogicalMargin GetLogicalUsedBorderAndPadding(
+      mozilla::WritingMode aWritingMode) const {
     return mozilla::LogicalMargin(aWritingMode, GetUsedBorderAndPadding());
   }
 
@@ -1349,8 +1326,7 @@ public:
 
   static bool ComputeBorderRadii(const nsStyleCorners& aBorderRadius,
                                  const nsSize& aFrameSize,
-                                 const nsSize& aBorderArea,
-                                 Sides aSkipSides,
+                                 const nsSize& aBorderArea, Sides aSkipSides,
                                  nscoord aRadii[8]);
 
   
@@ -1366,8 +1342,8 @@ public:
 
 
 
-  static void InsetBorderRadii(nscoord aRadii[8], const nsMargin &aOffsets);
-  static void OutsetBorderRadii(nscoord aRadii[8], const nsMargin &aOffsets);
+  static void InsetBorderRadii(nscoord aRadii[8], const nsMargin& aOffsets);
+  static void OutsetBorderRadii(nscoord aRadii[8], const nsMargin& aOffsets);
 
   
 
@@ -1380,14 +1356,14 @@ public:
 
 
   virtual bool GetBorderRadii(const nsSize& aFrameSize,
-                              const nsSize& aBorderArea,
-                              Sides aSkipSides,
+                              const nsSize& aBorderArea, Sides aSkipSides,
                               nscoord aRadii[8]) const;
   bool GetBorderRadii(nscoord aRadii[8]) const;
   bool GetMarginBoxBorderRadii(nscoord aRadii[8]) const;
   bool GetPaddingBoxBorderRadii(nscoord aRadii[8]) const;
   bool GetContentBoxBorderRadii(nscoord aRadii[8]) const;
-  bool GetBoxBorderRadii(nscoord aRadii[8], nsMargin aOffset, bool aIsOutset) const;
+  bool GetBoxBorderRadii(nscoord aRadii[8], nsMargin aOffset,
+                         bool aIsOutset) const;
   bool GetShapeBoxBorderRadii(nscoord aRadii[8]) const;
 
   
@@ -1414,8 +1390,7 @@ public:
 
 
   inline nscoord SynthesizeBaselineBOffsetFromMarginBox(
-                   mozilla::WritingMode aWM,
-                   BaselineSharingGroup aGroup) const;
+      mozilla::WritingMode aWM, BaselineSharingGroup aGroup) const;
 
   
 
@@ -1430,8 +1405,7 @@ public:
 
 
   inline nscoord SynthesizeBaselineBOffsetFromBorderBox(
-                   mozilla::WritingMode aWM,
-                   BaselineSharingGroup aGroup) const;
+      mozilla::WritingMode aWM, BaselineSharingGroup aGroup) const;
 
   
 
@@ -1445,9 +1419,10 @@ public:
 
   inline nscoord BaselineBOffset(mozilla::WritingMode aWM,
                                  BaselineSharingGroup aBaselineGroup,
-                                 AlignmentContext     aAlignmentContext) const;
+                                 AlignmentContext aAlignmentContext) const;
 
   
+
 
 
 
@@ -1475,7 +1450,7 @@ public:
 
   virtual bool GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
                                          BaselineSharingGroup aBaselineGroup,
-                                         nscoord*             aBaseline) const {
+                                         nscoord* aBaseline) const {
     return false;
   }
 
@@ -1494,8 +1469,7 @@ public:
   
 
   
-  bool TrackingVisibility() const
-  {
+  bool TrackingVisibility() const {
     return bool(GetStateBits() & NS_FRAME_VISIBILITY_IS_TRACKED);
   }
 
@@ -1517,9 +1491,9 @@ public:
   
   NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(VisibilityStateProperty, uint32_t);
 
-protected:
-
+ protected:
   
+
 
 
 
@@ -1528,6 +1502,7 @@ protected:
   void EnableVisibilityTracking();
 
   
+
 
 
 
@@ -1550,11 +1525,11 @@ protected:
 
 
 
-  virtual void OnVisibilityChange(Visibility aNewVisibility,
-                                  const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
+  virtual void OnVisibilityChange(
+      Visibility aNewVisibility,
+      const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
 
-public:
-
+ public:
   
   
   
@@ -1573,9 +1548,9 @@ public:
 
 
 
-  void DecApproximateVisibleCount(const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
+  void DecApproximateVisibleCount(
+      const Maybe<OnNonvisible>& aNonvisibleAction = Nothing());
   void IncApproximateVisibleCount();
-
 
   
 
@@ -1585,7 +1560,9 @@ public:
 
 
   virtual const nsFrameList& GetChildList(ChildListID aListID) const = 0;
-  const nsFrameList& PrincipalChildList() const { return GetChildList(kPrincipalList); }
+  const nsFrameList& PrincipalChildList() const {
+    return GetChildList(kPrincipalList);
+  }
   virtual void GetChildLists(nsTArray<ChildList>* aLists) const = 0;
 
   
@@ -1600,25 +1577,31 @@ public:
   static const ChildListID kBulletList = mozilla::layout::kBulletList;
   static const ChildListID kCaptionList = mozilla::layout::kCaptionList;
   static const ChildListID kColGroupList = mozilla::layout::kColGroupList;
-  static const ChildListID kExcessOverflowContainersList = mozilla::layout::kExcessOverflowContainersList;
+  static const ChildListID kExcessOverflowContainersList =
+      mozilla::layout::kExcessOverflowContainersList;
   static const ChildListID kFixedList = mozilla::layout::kFixedList;
   static const ChildListID kFloatList = mozilla::layout::kFloatList;
-  static const ChildListID kOverflowContainersList = mozilla::layout::kOverflowContainersList;
+  static const ChildListID kOverflowContainersList =
+      mozilla::layout::kOverflowContainersList;
   static const ChildListID kOverflowList = mozilla::layout::kOverflowList;
-  static const ChildListID kOverflowOutOfFlowList = mozilla::layout::kOverflowOutOfFlowList;
+  static const ChildListID kOverflowOutOfFlowList =
+      mozilla::layout::kOverflowOutOfFlowList;
   static const ChildListID kPopupList = mozilla::layout::kPopupList;
-  static const ChildListID kPushedFloatsList = mozilla::layout::kPushedFloatsList;
+  static const ChildListID kPushedFloatsList =
+      mozilla::layout::kPushedFloatsList;
   static const ChildListID kSelectPopupList = mozilla::layout::kSelectPopupList;
   static const ChildListID kBackdropList = mozilla::layout::kBackdropList;
   
-  static const ChildListID kNoReflowPrincipalList = mozilla::layout::kNoReflowPrincipalList;
+  static const ChildListID kNoReflowPrincipalList =
+      mozilla::layout::kNoReflowPrincipalList;
 
   
 
 
   nsIFrame* GetNextSibling() const { return mNextSibling; }
   void SetNextSibling(nsIFrame* aNextSibling) {
-    NS_ASSERTION(this != aNextSibling, "Creating a circular frame list, this is very bad.");
+    NS_ASSERTION(this != aNextSibling,
+                 "Creating a circular frame list, this is very bad.");
     if (mNextSibling && mNextSibling->GetPrevSibling() == this) {
       mNextSibling->mPrevSibling = nullptr;
     }
@@ -1641,14 +1624,13 @@ public:
 
 
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) {}
   
 
 
 
-  void DisplayCaret(nsDisplayListBuilder* aBuilder,
-                    nsDisplayList*        aList);
+  void DisplayCaret(nsDisplayListBuilder* aBuilder, nsDisplayList* aList);
 
   
 
@@ -1656,7 +1638,6 @@ public:
 
 
   virtual nscolor GetCaretColorAt(int32_t aOffset);
-
 
   bool IsThemed(nsITheme::Transparency* aTransparencyState = nullptr) const {
     return IsThemed(StyleDisplay(), aTransparencyState);
@@ -1669,12 +1650,12 @@ public:
     nsIFrame* mutable_this = const_cast<nsIFrame*>(this);
     nsPresContext* pc = PresContext();
     nsITheme* theme = pc->GetTheme();
-    if(!theme ||
-       !theme->ThemeSupportsWidget(pc, mutable_this, aDisp->mAppearance))
+    if (!theme ||
+        !theme->ThemeSupportsWidget(pc, mutable_this, aDisp->mAppearance))
       return false;
     if (aTransparencyState) {
       *aTransparencyState =
-        theme->GetWidgetTransparency(mutable_this, aDisp->mAppearance);
+          theme->GetWidgetTransparency(mutable_this, aDisp->mAppearance);
     }
     return true;
   }
@@ -1686,9 +1667,9 @@ public:
 
 
 
-  void BuildDisplayListForStackingContext(nsDisplayListBuilder* aBuilder,
-                                          nsDisplayList*        aList,
-                                          bool*                 aCreatedContainerItem = nullptr);
+  void BuildDisplayListForStackingContext(
+      nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
+      bool* aCreatedContainerItem = nullptr);
 
   enum {
     DISPLAY_CHILD_FORCE_PSEUDO_STACKING_CONTEXT = 0x01,
@@ -1704,13 +1685,12 @@ public:
 
 
 
-  void BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
-                                nsIFrame*               aChild,
+  void BuildDisplayListForChild(nsDisplayListBuilder* aBuilder,
+                                nsIFrame* aChild,
                                 const nsDisplayListSet& aLists,
-                                uint32_t                aFlags = 0);
+                                uint32_t aFlags = 0);
 
-  bool RefusedAsyncAnimation() const
-  {
+  bool RefusedAsyncAnimation() const {
     return GetProperty(RefusedAsyncAnimationProperty());
   }
 
@@ -1724,9 +1704,7 @@ public:
 
 
   bool IsTransformed(const nsStyleDisplay* aStyleDisplay) const;
-  bool IsTransformed() const {
-    return IsTransformed(StyleDisplay());
-  }
+  bool IsTransformed() const { return IsTransformed(StyleDisplay()); }
 
   
 
@@ -1748,8 +1726,7 @@ public:
 
 
 
-  bool HasOpacity(mozilla::EffectSet* aEffectSet = nullptr) const
-  {
+  bool HasOpacity(mozilla::EffectSet* aEffectSet = nullptr) const {
     return HasOpacityInternal(1.0f, aEffectSet);
   }
   
@@ -1759,15 +1736,14 @@ public:
 
 
 
-  bool HasVisualOpacity(mozilla::EffectSet* aEffectSet = nullptr) const
-  {
+  bool HasVisualOpacity(mozilla::EffectSet* aEffectSet = nullptr) const {
     
     
     
     return HasOpacityInternal(0.99f, aEffectSet);
   }
 
-   
+  
 
 
   virtual bool HasTransformGetter() const { return false; }
@@ -1781,8 +1757,8 @@ public:
 
 
 
-  virtual bool IsSVGTransformed(Matrix *aOwnTransforms = nullptr,
-                                Matrix *aFromParentTransforms = nullptr) const;
+  virtual bool IsSVGTransformed(Matrix* aOwnTransforms = nullptr,
+                                Matrix* aFromParentTransforms = nullptr) const;
 
   
 
@@ -1810,7 +1786,8 @@ public:
 
 
 
-  bool Combines3DTransformWithAncestors(const nsStyleDisplay* aStyleDisplay) const;
+  bool Combines3DTransformWithAncestors(
+      const nsStyleDisplay* aStyleDisplay) const;
   bool Combines3DTransformWithAncestors() const {
     return Combines3DTransformWithAncestors(StyleDisplay());
   }
@@ -1833,9 +1810,7 @@ public:
   }
 
   bool HasPerspective(const nsStyleDisplay* aStyleDisplay) const;
-  bool HasPerspective() const {
-    return HasPerspective(StyleDisplay());
-  }
+  bool HasPerspective() const { return HasPerspective(StyleDisplay()); }
 
   bool ChildrenHavePerspective(const nsStyleDisplay* aStyleDisplay) const;
   bool ChildrenHavePerspective() const {
@@ -1872,12 +1847,12 @@ public:
 
 
 
-  virtual nsresult  HandleEvent(nsPresContext* aPresContext,
-                                mozilla::WidgetGUIEvent* aEvent,
-                                nsEventStatus* aEventStatus) = 0;
+  virtual nsresult HandleEvent(nsPresContext* aPresContext,
+                               mozilla::WidgetGUIEvent* aEvent,
+                               nsEventStatus* aEventStatus) = 0;
 
-  virtual nsresult  GetContentForEvent(mozilla::WidgetEvent* aEvent,
-                                       nsIContent** aContent) = 0;
+  virtual nsresult GetContentForEvent(mozilla::WidgetEvent* aEvent,
+                                      nsIContent** aContent) = 0;
 
   
   
@@ -1888,11 +1863,11 @@ public:
   
   
   
-  struct MOZ_STACK_CLASS ContentOffsets
-  {
-    ContentOffsets() : offset(0)
-                     , secondaryOffset(0)
-                     , associate(mozilla::CARET_ASSOCIATE_BEFORE) {}
+  struct MOZ_STACK_CLASS ContentOffsets {
+    ContentOffsets()
+        : offset(0),
+          secondaryOffset(0),
+          associate(mozilla::CARET_ASSOCIATE_BEFORE) {}
     bool IsNull() { return !content; }
     
     
@@ -1922,9 +1897,10 @@ public:
   ContentOffsets GetContentOffsetsFromPoint(const nsPoint& aPoint,
                                             uint32_t aFlags = 0);
 
-  virtual ContentOffsets GetContentOffsetsFromPointExternal(const nsPoint& aPoint,
-                                                            uint32_t aFlags = 0)
-  { return GetContentOffsetsFromPoint(aPoint, aFlags); }
+  virtual ContentOffsets GetContentOffsetsFromPointExternal(
+      const nsPoint& aPoint, uint32_t aFlags = 0) {
+    return GetContentOffsetsFromPoint(aPoint, aFlags);
+  }
 
   
 
@@ -1948,24 +1924,21 @@ public:
   
 
 
-  virtual nsresult  GetCursor(const nsPoint&  aPoint,
-                              Cursor&         aCursor) = 0;
+  virtual nsresult GetCursor(const nsPoint& aPoint, Cursor& aCursor) = 0;
 
   
 
 
 
 
-  virtual nsresult  GetPointFromOffset(int32_t                  inOffset,
-                                       nsPoint*                 outPoint) = 0;
+  virtual nsresult GetPointFromOffset(int32_t inOffset, nsPoint* outPoint) = 0;
 
   
 
 
 
-  virtual nsresult  GetCharacterRectsInRange(int32_t aInOffset,
-                                             int32_t aLength,
-                                             nsTArray<nsRect>& aRects) = 0;
+  virtual nsresult GetCharacterRectsInRange(int32_t aInOffset, int32_t aLength,
+                                            nsTArray<nsRect>& aRects) = 0;
 
   
 
@@ -1975,12 +1948,12 @@ public:
 
 
 
-  virtual nsresult GetChildFrameContainingOffset(int32_t    inContentOffset,
-                                                 bool       inHint,
-                                                 int32_t*   outFrameContentOffset,
-                                                 nsIFrame** outChildFrame) = 0;
+  virtual nsresult GetChildFrameContainingOffset(
+      int32_t inContentOffset,
+      bool inHint,  
+      int32_t* outFrameContentOffset, nsIFrame** outChildFrame) = 0;
 
- 
+  
 
 
 
@@ -1998,18 +1971,14 @@ public:
   
 
 
-  bool HasAllStateBits(nsFrameState aBits) const
-  {
+  bool HasAllStateBits(nsFrameState aBits) const {
     return (mState & aBits) == aBits;
   }
 
   
 
 
-  bool HasAnyStateBits(nsFrameState aBits) const
-  {
-    return mState & aBits;
-  }
+  bool HasAnyStateBits(nsFrameState aBits) const { return mState & aBits; }
 
   
 
@@ -2022,7 +1991,7 @@ public:
 
 
 
-  virtual nsresult  CharacterDataChanged(const CharacterDataChangeInfo&) = 0;
+  virtual nsresult CharacterDataChanged(const CharacterDataChangeInfo&) = 0;
 
   
 
@@ -2035,9 +2004,8 @@ public:
 
 
 
-  virtual nsresult  AttributeChanged(int32_t         aNameSpaceID,
-                                     nsAtom*        aAttribute,
-                                     int32_t         aModType) = 0;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) = 0;
 
   
 
@@ -2082,16 +2050,12 @@ public:
   
 
 
-  virtual nsIFrame* FirstInFlow() const {
-    return const_cast<nsIFrame*>(this);
-  }
+  virtual nsIFrame* FirstInFlow() const { return const_cast<nsIFrame*>(this); }
 
   
 
 
-  virtual nsIFrame* LastInFlow() const {
-    return const_cast<nsIFrame*>(this);
-  }
+  virtual nsIFrame* LastInFlow() const { return const_cast<nsIFrame*>(this); }
 
   
 
@@ -2126,7 +2090,7 @@ public:
 
 
 
-  virtual nscoord GetMinISize(gfxContext *aRenderingContext) = 0;
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) = 0;
 
   
 
@@ -2134,7 +2098,7 @@ public:
 
 
 
-  virtual nscoord GetPrefISize(gfxContext *aRenderingContext) = 0;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) = 0;
 
   
 
@@ -2145,13 +2109,12 @@ public:
 
   struct InlineIntrinsicISizeData {
     InlineIntrinsicISizeData()
-      : mLine(nullptr)
-      , mLineContainer(nullptr)
-      , mPrevLines(0)
-      , mCurrentLine(0)
-      , mTrailingWhitespace(0)
-      , mSkipWhitespace(true)
-    {}
+        : mLine(nullptr),
+          mLineContainer(nullptr),
+          mPrevLines(0),
+          mCurrentLine(0),
+          mTrailingWhitespace(0),
+          mSkipWhitespace(true) {}
 
     
     
@@ -2163,13 +2126,12 @@ public:
     
     
     
-  private:
+   private:
     nsIFrame* mLineContainer;
 
     
-  public:
-    void SetLineContainer(nsIFrame* aLineContainer)
-    {
+   public:
+    void SetLineContainer(nsIFrame* aLineContainer) {
       mLineContainer = aLineContainer;
     }
     nsIFrame* LineContainer() const { return mLineContainer; }
@@ -2193,30 +2155,26 @@ public:
 
     
     class FloatInfo {
-    public:
+     public:
       FloatInfo(const nsIFrame* aFrame, nscoord aWidth)
-        : mFrame(aFrame), mWidth(aWidth)
-      { }
+          : mFrame(aFrame), mWidth(aWidth) {}
       const nsIFrame* Frame() const { return mFrame; }
-      nscoord         Width() const { return mWidth; }
+      nscoord Width() const { return mWidth; }
 
-    private:
+     private:
       const nsIFrame* mFrame;
-      nscoord         mWidth;
+      nscoord mWidth;
     };
 
     nsTArray<FloatInfo> mFloats;
   };
 
   struct InlineMinISizeData : public InlineIntrinsicISizeData {
-    InlineMinISizeData()
-      : mAtStartOfLine(true)
-    {}
+    InlineMinISizeData() : mAtStartOfLine(true) {}
 
     
-    void DefaultAddInlineMinISize(nsIFrame* aFrame,
-                                  nscoord   aISize,
-                                  bool      aAllowBreak = true);
+    void DefaultAddInlineMinISize(nsIFrame* aFrame, nscoord aISize,
+                                  bool aAllowBreak = true);
 
     
     
@@ -2237,9 +2195,7 @@ public:
   struct InlinePrefISizeData : public InlineIntrinsicISizeData {
     typedef mozilla::StyleClear StyleClear;
 
-    InlinePrefISizeData()
-      : mLineIsEmpty(true)
-    {}
+    InlinePrefISizeData() : mLineIsEmpty(true) {}
 
     
 
@@ -2285,9 +2241,8 @@ public:
 
 
 
-  virtual void
-  AddInlineMinISize(gfxContext *aRenderingContext,
-                    InlineMinISizeData *aData) = 0;
+  virtual void AddInlineMinISize(gfxContext* aRenderingContext,
+                                 InlineMinISizeData* aData) = 0;
 
   
 
@@ -2299,9 +2254,8 @@ public:
 
 
 
-  virtual void
-  AddInlinePrefISize(gfxContext *aRenderingContext,
-                     InlinePrefISizeData *aData) = 0;
+  virtual void AddInlinePrefISize(gfxContext* aRenderingContext,
+                                  InlinePrefISizeData* aData) = 0;
 
   
 
@@ -2312,12 +2266,10 @@ public:
   struct IntrinsicISizeOffsetData {
     nscoord hPadding, hBorder, hMargin;
 
-    IntrinsicISizeOffsetData()
-      : hPadding(0), hBorder(0), hMargin(0)
-    {}
+    IntrinsicISizeOffsetData() : hPadding(0), hBorder(0), hMargin(0) {}
   };
-  virtual IntrinsicISizeOffsetData
-  IntrinsicISizeOffsets(nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE) = 0;
+  virtual IntrinsicISizeOffsetData IntrinsicISizeOffsets(
+      nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE) = 0;
 
   
 
@@ -2325,8 +2277,8 @@ public:
 
 
 
-  IntrinsicISizeOffsetData
-  IntrinsicBSizeOffsets(nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE);
+  IntrinsicISizeOffsetData IntrinsicBSizeOffsets(
+      nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE);
 
   virtual mozilla::IntrinsicSize GetIntrinsicSize() = 0;
 
@@ -2345,26 +2297,26 @@ public:
 
 
   enum ComputeSizeFlags {
-    eDefault =           0,
+    eDefault = 0,
     
 
 
 
 
-    eShrinkWrap =        1 << 0,
+    eShrinkWrap = 1 << 0,
     
 
 
 
 
-    eUseAutoBSize =      1 << 1,
+    eUseAutoBSize = 1 << 1,
     
 
 
 
 
-    eIClampMarginBoxMinSize = 1 << 2, 
-    eBClampMarginBoxMinSize = 1 << 3, 
+    eIClampMarginBoxMinSize = 1 << 2,  
+    eBClampMarginBoxMinSize = 1 << 3,  
     
 
 
@@ -2372,7 +2324,8 @@ public:
 
 
 
-    eIApplyAutoMinSize = 1 << 4, 
+    eIApplyAutoMinSize =
+        1 << 4,  
   };
 
   
@@ -2415,15 +2368,11 @@ public:
 
 
 
-  virtual mozilla::LogicalSize
-  ComputeSize(gfxContext *aRenderingContext,
-              mozilla::WritingMode aWritingMode,
-              const mozilla::LogicalSize& aCBSize,
-              nscoord aAvailableISize,
-              const mozilla::LogicalSize& aMargin,
-              const mozilla::LogicalSize& aBorder,
-              const mozilla::LogicalSize& aPadding,
-              ComputeSizeFlags aFlags) = 0;
+  virtual mozilla::LogicalSize ComputeSize(
+      gfxContext* aRenderingContext, mozilla::WritingMode aWritingMode,
+      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
+      const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
+      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags) = 0;
 
   
 
@@ -2456,8 +2405,7 @@ public:
 
 
 
-  virtual nsresult GetPrefWidthTightBounds(gfxContext* aContext,
-                                           nscoord* aX,
+  virtual nsresult GetPrefWidthTightBounds(gfxContext* aContext, nscoord* aX,
                                            nscoord* aXMost);
 
   
@@ -2503,10 +2451,9 @@ public:
 
 
 
-  virtual void Reflow(nsPresContext*           aPresContext,
-                      ReflowOutput&     aReflowOutput,
+  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aReflowOutput,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus) = 0;
+                      nsReflowStatus& aStatus) = 0;
 
   
 
@@ -2523,7 +2470,7 @@ public:
 
 
 
-  virtual void DidReflow(nsPresContext*           aPresContext,
+  virtual void DidReflow(nsPresContext* aPresContext,
                          const ReflowInput* aReflowInput) = 0;
 
   
@@ -2577,8 +2524,8 @@ public:
     nsAutoString mString;
     uint32_t mOffsetWithinNodeRenderedText;
     int32_t mOffsetWithinNodeText;
-    RenderedText() : mOffsetWithinNodeRenderedText(0),
-        mOffsetWithinNodeText(0) {}
+    RenderedText()
+        : mOffsetWithinNodeRenderedText(0), mOffsetWithinNodeText(0) {}
   };
   enum class TextOffsetType {
     
@@ -2591,46 +2538,45 @@ public:
     
     DONT_TRIM_TRAILING_WHITESPACE
   };
-  virtual RenderedText GetRenderedText(uint32_t aStartOffset = 0,
-                                       uint32_t aEndOffset = UINT32_MAX,
-                                       TextOffsetType aOffsetType =
-                                           TextOffsetType::OFFSETS_IN_CONTENT_TEXT,
-                                       TrailingWhitespace aTrimTrailingWhitespace =
-                                           TrailingWhitespace::TRIM_TRAILING_WHITESPACE)
-  { return RenderedText(); }
+  virtual RenderedText GetRenderedText(
+      uint32_t aStartOffset = 0, uint32_t aEndOffset = UINT32_MAX,
+      TextOffsetType aOffsetType = TextOffsetType::OFFSETS_IN_CONTENT_TEXT,
+      TrailingWhitespace aTrimTrailingWhitespace =
+          TrailingWhitespace::TRIM_TRAILING_WHITESPACE) {
+    return RenderedText();
+  }
 
   
 
 
 
 
-  virtual bool HasAnyNoncollapsedCharacters()
-  { return false; }
+  virtual bool HasAnyNoncollapsedCharacters() { return false; }
 
   
 
 
 
-  virtual bool OnlySystemGroupDispatch(mozilla::EventMessage aMessage) const
-  { return false; }
+  virtual bool OnlySystemGroupDispatch(mozilla::EventMessage aMessage) const {
+    return false;
+  }
 
   
   
   
   bool HasView() const { return !!(mState & NS_FRAME_HAS_VIEW); }
-protected:
-  virtual nsView* GetViewInternal() const
-  {
+
+ protected:
+  virtual nsView* GetViewInternal() const {
     MOZ_ASSERT_UNREACHABLE("method should have been overridden by subclass");
     return nullptr;
   }
-  virtual void SetViewInternal(nsView* aView)
-  {
+  virtual void SetViewInternal(nsView* aView) {
     MOZ_ASSERT_UNREACHABLE("method should have been overridden by subclass");
   }
-public:
-  nsView* GetView() const
-  {
+
+ public:
+  nsView* GetView() const {
     if (MOZ_LIKELY(!HasView())) {
       return nullptr;
     }
@@ -2762,10 +2708,9 @@ public:
     return sLayoutFrameTypes[uint8_t(mClass)];
   }
 
-#define FRAME_TYPE(name_)                                                      \
-  bool Is##name_##Frame() const                                                \
-  {                                                                            \
-    return Type() == mozilla::LayoutFrameType::name_;                          \
+#define FRAME_TYPE(name_)                             \
+  bool Is##name_##Frame() const {                     \
+    return Type() == mozilla::LayoutFrameType::name_; \
   }
 #include "mozilla/FrameTypeList.h"
 #undef FRAME_TYPE
@@ -2792,53 +2737,53 @@ public:
     STOP_AT_STACKING_CONTEXT_AND_DISPLAY_PORT = 1 << 1
   };
   Matrix4x4Flagged GetTransformMatrix(const nsIFrame* aStopAtAncestor,
-                                      nsIFrame **aOutAncestor,
+                                      nsIFrame** aOutAncestor,
                                       uint32_t aFlags = 0) const;
 
   
 
 
   enum {
-    eMathML =                           1 << 0,
-    eSVG =                              1 << 1,
-    eSVGForeignObject =                 1 << 2,
-    eSVGContainer =                     1 << 3,
-    eSVGGeometry =                      1 << 4,
-    eSVGPaintServer =                   1 << 5,
-    eBidiInlineContainer =              1 << 6,
+    eMathML = 1 << 0,
+    eSVG = 1 << 1,
+    eSVGForeignObject = 1 << 2,
+    eSVGContainer = 1 << 3,
+    eSVGGeometry = 1 << 4,
+    eSVGPaintServer = 1 << 5,
+    eBidiInlineContainer = 1 << 6,
     
-    eReplaced =                         1 << 7,
-    
-    
-    eReplacedContainsBlock =            1 << 8,
+    eReplaced = 1 << 7,
     
     
-    eLineParticipant =                  1 << 9,
-    eXULBox =                           1 << 10,
-    eCanContainOverflowContainers =     1 << 11,
-    eBlockFrame =                       1 << 12,
-    eTablePart =                        1 << 13,
+    eReplacedContainsBlock = 1 << 8,
+    
+    
+    eLineParticipant = 1 << 9,
+    eXULBox = 1 << 10,
+    eCanContainOverflowContainers = 1 << 11,
+    eBlockFrame = 1 << 12,
+    eTablePart = 1 << 13,
     
     
     
-    eExcludesIgnorableWhitespace =      1 << 14,
-    eSupportsCSSTransforms =            1 << 15,
+    eExcludesIgnorableWhitespace = 1 << 14,
+    eSupportsCSSTransforms = 1 << 15,
 
     
     
     
-    eReplacedSizing =                   1 << 16,
+    eReplacedSizing = 1 << 16,
 
     
     
     
-    eSupportsContainLayoutAndPaint =    1 << 17,
+    eSupportsContainLayoutAndPaint = 1 << 17,
 
     
     
     
-    eDEBUGAllFrames =                   1 << 30,
-    eDEBUGNoFrames =                    1 << 31
+    eDEBUGAllFrames = 1 << 30,
+    eDEBUGNoFrames = 1 << 31
   };
 
   
@@ -2848,15 +2793,13 @@ public:
 
 
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const
-  {
+  virtual bool IsFrameOfType(uint32_t aFlags) const {
     return !(aFlags & ~(
 #ifdef DEBUG
-                        nsIFrame::eDEBUGAllFrames |
+                          nsIFrame::eDEBUGAllFrames |
 #endif
-                        nsIFrame::eSupportsCSSTransforms |
-                        nsIFrame::eSupportsContainLayoutAndPaint
-                        ));
+                          nsIFrame::eSupportsCSSTransforms |
+                          nsIFrame::eSupportsContainLayoutAndPaint));
   }
 
   
@@ -2904,8 +2847,7 @@ public:
 
 
 
-  bool IsLeaf() const
-  {
+  bool IsLeaf() const {
     MOZ_ASSERT(uint8_t(mClass) < mozilla::ArrayLength(sFrameClassBits));
     FrameClassBits bits = sFrameClassBits[uint8_t(mClass)];
     if (MOZ_UNLIKELY(bits & eFrameClassBitsDynamicLeaf)) {
@@ -2929,7 +2871,8 @@ public:
 
 
 
-  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true);
+  virtual void InvalidateFrame(uint32_t aDisplayItemKey = 0,
+                               bool aRebuildDisplayItems = true);
 
   
 
@@ -2945,7 +2888,9 @@ public:
 
 
 
-  virtual void InvalidateFrameWithRect(const nsRect& aRect, uint32_t aDisplayItemKey = 0, bool aRebuildDisplayItems = true);
+  virtual void InvalidateFrameWithRect(const nsRect& aRect,
+                                       uint32_t aDisplayItemKey = 0,
+                                       bool aRebuildDisplayItems = true);
 
   
 
@@ -2977,7 +2922,7 @@ public:
   }
   static uint8_t sLayerIsPrerenderedDataKey;
 
-   
+  
 
 
 
@@ -3002,9 +2947,9 @@ public:
 
 
 
-  bool HasInvalidFrameInSubtree()
-  {
-    return HasAnyStateBits(NS_FRAME_NEEDS_PAINT | NS_FRAME_DESCENDANT_NEEDS_PAINT);
+  bool HasInvalidFrameInSubtree() {
+    return HasAnyStateBits(NS_FRAME_NEEDS_PAINT |
+                           NS_FRAME_DESCENDANT_NEEDS_PAINT);
   }
 
   
@@ -3033,17 +2978,19 @@ public:
 
 
 
+
   enum PaintType {
     PAINT_DEFAULT = 0,
     PAINT_COMPOSITE_ONLY,
     PAINT_DELAYED_COMPRESS
   };
-  void SchedulePaint(PaintType aType = PAINT_DEFAULT, bool aFrameChanged = true);
+  void SchedulePaint(PaintType aType = PAINT_DEFAULT,
+                     bool aFrameChanged = true);
 
   
   
   void SchedulePaintWithoutInvalidatingObservers(
-    PaintType aType = PAINT_DEFAULT);
+      PaintType aType = PAINT_DEFAULT);
 
   
 
@@ -3062,9 +3009,7 @@ public:
 
 
 
-  enum {
-    UPDATE_IS_ASYNC = 1 << 0
-  };
+  enum { UPDATE_IS_ASYNC = 1 << 0 };
   Layer* InvalidateLayer(DisplayItemType aDisplayItemKey,
                          const nsIntRect* aDamageRect = nullptr,
                          const nsRect* aFrameDamageRect = nullptr,
@@ -3184,8 +3129,8 @@ public:
 
 
 
-  bool FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas,
-                              nsSize aNewSize, nsSize* aOldSize = nullptr,
+  bool FinishAndStoreOverflow(nsOverflowAreas& aOverflowAreas, nsSize aNewSize,
+                              nsSize* aOldSize = nullptr,
                               const nsStyleDisplay* aStyleDisplay = nullptr);
 
   bool FinishAndStoreOverflow(ReflowOutput* aMetrics,
@@ -3224,8 +3169,8 @@ public:
 
 
   Sides GetSkipSides(const ReflowInput* aReflowInput = nullptr) const;
-  virtual LogicalSides
-  GetLogicalSkipSides(const ReflowInput* aReflowInput = nullptr) const {
+  virtual LogicalSides GetLogicalSkipSides(
+      const ReflowInput* aReflowInput = nullptr) const {
     return LogicalSides();
   }
 
@@ -3233,8 +3178,9 @@ public:
 
 
   bool IsSelected() const {
-    return (GetContent() && GetContent()->IsSelectionDescendant()) ?
-      IsFrameSelected() : false;
+    return (GetContent() && GetContent()->IsSelectionDescendant())
+               ? IsFrameSelected()
+               : false;
   }
 
   
@@ -3254,7 +3200,8 @@ public:
 
 
 
-  virtual nsresult  GetSelectionController(nsPresContext *aPresContext, nsISelectionController **aSelCon) = 0;
+  virtual nsresult GetSelectionController(nsPresContext* aPresContext,
+                                          nsISelectionController** aSelCon) = 0;
 
   
 
@@ -3274,9 +3221,12 @@ public:
 
 
 
-  virtual nsresult PeekOffset(nsPeekOffsetStruct *aPos);
+  virtual nsresult PeekOffset(nsPeekOffsetStruct* aPos);
 
   
+
+
+
 
 
 
@@ -3293,7 +3243,8 @@ public:
                                  bool aJumpLines, bool aScrollViewStop,
                                  bool aForceEditableRegion,
                                  nsIFrame** aOutFrame, int32_t* aOutOffset,
-                                 bool* aOutJumpedLine, bool* aOutMovedOverNonSelectableText);
+                                 bool* aOutJumpedLine,
+                                 bool* aOutMovedOverNonSelectableText);
 
   
 
@@ -3306,7 +3257,11 @@ public:
 
 
 
-  virtual nsresult CheckVisibility(nsPresContext* aContext, int32_t aStartIndex, int32_t aEndIndex, bool aRecurse, bool *aFinished, bool *_retval)=0;
+
+
+  virtual nsresult CheckVisibility(nsPresContext* aContext, int32_t aStartIndex,
+                                   int32_t aEndIndex, bool aRecurse,
+                                   bool* aFinished, bool* _retval) = 0;
 
   
 
@@ -3342,7 +3297,8 @@ public:
 
 
 
-  virtual ComputedStyle* GetParentComputedStyle(nsIFrame** aProviderFrame) const = 0;
+  virtual ComputedStyle* GetParentComputedStyle(
+      nsIFrame** aProviderFrame) const = 0;
 
   
 
@@ -3358,14 +3314,13 @@ public:
 
 
 
-  void UpdateStyleOfOwnedAnonBoxes(mozilla::ServoRestyleState& aRestyleState)
-  {
+  void UpdateStyleOfOwnedAnonBoxes(mozilla::ServoRestyleState& aRestyleState) {
     if (GetStateBits() & NS_FRAME_OWNS_ANON_BOXES) {
       DoUpdateStyleOfOwnedAnonBoxes(aRestyleState);
     }
   }
 
-protected:
+ protected:
   
   
   
@@ -3379,7 +3334,7 @@ protected:
   
   friend class mozilla::ServoRestyleState;
 
-public:
+ public:
   
   
   
@@ -3393,22 +3348,17 @@ public:
   
   
   static nsChangeHint UpdateStyleOfOwnedChildFrame(
-    nsIFrame* aChildFrame,
-    ComputedStyle* aNewComputedStyle,
-    mozilla::ServoRestyleState& aRestyleState,
-    const Maybe<ComputedStyle*>& aContinuationComputedStyle = Nothing());
+      nsIFrame* aChildFrame, ComputedStyle* aNewComputedStyle,
+      mozilla::ServoRestyleState& aRestyleState,
+      const Maybe<ComputedStyle*>& aContinuationComputedStyle = Nothing());
 
-  struct OwnedAnonBox
-  {
-    typedef void (*UpdateStyleFn)(nsIFrame* aOwningFrame,
-                                  nsIFrame* aAnonBox,
+  struct OwnedAnonBox {
+    typedef void (*UpdateStyleFn)(nsIFrame* aOwningFrame, nsIFrame* aAnonBox,
                                   mozilla::ServoRestyleState& aRestyleState);
 
     explicit OwnedAnonBox(nsIFrame* aAnonBoxFrame,
                           UpdateStyleFn aUpdateStyleFn = nullptr)
-      : mAnonBoxFrame(aAnonBoxFrame)
-      , mUpdateStyleFn(aUpdateStyleFn)
-    {}
+        : mAnonBoxFrame(aAnonBoxFrame), mUpdateStyleFn(aUpdateStyleFn) {}
 
     nsIFrame* mAnonBoxFrame;
     UpdateStyleFn mUpdateStyleFn;
@@ -3430,11 +3380,11 @@ public:
     }
   }
 
-protected:
+ protected:
   
   void DoAppendOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult);
 
-public:
+ public:
   
 
 
@@ -3535,55 +3485,45 @@ public:
 
 
 
-  template<typename T>
-  FrameProperties::PropertyType<T>
-  GetProperty(FrameProperties::Descriptor<T> aProperty,
-              bool* aFoundResult = nullptr) const
-  {
+  template <typename T>
+  FrameProperties::PropertyType<T> GetProperty(
+      FrameProperties::Descriptor<T> aProperty,
+      bool* aFoundResult = nullptr) const {
     return mProperties.Get(aProperty, aFoundResult);
   }
 
-  template<typename T>
-  bool HasProperty(FrameProperties::Descriptor<T> aProperty) const
-  {
+  template <typename T>
+  bool HasProperty(FrameProperties::Descriptor<T> aProperty) const {
     return mProperties.Has(aProperty);
   }
 
   
-  template<typename T>
+  template <typename T>
   void SetProperty(FrameProperties::Descriptor<T> aProperty,
-                   FrameProperties::PropertyType<T> aValue)
-  {
+                   FrameProperties::PropertyType<T> aValue) {
     mProperties.Set(aProperty, aValue, this);
   }
 
   
   
-  template<typename T>
+  template <typename T>
   void AddProperty(FrameProperties::Descriptor<T> aProperty,
-                   FrameProperties::PropertyType<T> aValue)
-  {
+                   FrameProperties::PropertyType<T> aValue) {
     mProperties.Add(aProperty, aValue);
   }
 
-  template<typename T>
-  FrameProperties::PropertyType<T>
-  RemoveProperty(FrameProperties::Descriptor<T> aProperty,
-                 bool* aFoundResult = nullptr)
-  {
+  template <typename T>
+  FrameProperties::PropertyType<T> RemoveProperty(
+      FrameProperties::Descriptor<T> aProperty, bool* aFoundResult = nullptr) {
     return mProperties.Remove(aProperty, aFoundResult);
   }
 
-  template<typename T>
-  void DeleteProperty(FrameProperties::Descriptor<T> aProperty)
-  {
+  template <typename T>
+  void DeleteProperty(FrameProperties::Descriptor<T> aProperty) {
     mProperties.Delete(aProperty, this);
   }
 
-  void DeleteAllProperties()
-  {
-    mProperties.DeleteAll(this);
-  }
+  void DeleteAllProperties() { mProperties.DeleteAll(this); }
 
   
   
@@ -3629,28 +3569,17 @@ public:
 
 
 
-  virtual bool IsFocusable(int32_t *aTabIndex = nullptr, bool aWithMouse = false);
+  virtual bool IsFocusable(int32_t* aTabIndex = nullptr,
+                           bool aWithMouse = false);
 
   
   
   
-  bool IsXULBoxFrame() const
-  {
-    return IsFrameOfType(nsIFrame::eXULBox);
-  }
+  bool IsXULBoxFrame() const { return IsFrameOfType(nsIFrame::eXULBox); }
 
-  enum Halignment {
-    hAlign_Left,
-    hAlign_Right,
-    hAlign_Center
-  };
+  enum Halignment { hAlign_Left, hAlign_Right, hAlign_Center };
 
-  enum Valignment {
-    vAlign_Top,
-    vAlign_Middle,
-    vAlign_BaseLine,
-    vAlign_Bottom
-  };
+  enum Valignment { vAlign_Top, vAlign_Middle, vAlign_BaseLine, vAlign_Bottom };
 
   
 
@@ -3677,7 +3606,8 @@ public:
 
 
 
-  virtual nsSize GetXULMinSizeForScrollArea(nsBoxLayoutState& aBoxLayoutState) = 0;
+  virtual nsSize GetXULMinSizeForScrollArea(
+      nsBoxLayoutState& aBoxLayoutState) = 0;
 
   
   uint32_t GetXULOrdinal();
@@ -3690,36 +3620,42 @@ public:
   
   
   
-  virtual void SetXULBounds(nsBoxLayoutState& aBoxLayoutState, const nsRect& aRect,
+  virtual void SetXULBounds(nsBoxLayoutState& aBoxLayoutState,
+                            const nsRect& aRect,
                             bool aRemoveOverflowAreas = false) = 0;
   nsresult XULLayout(nsBoxLayoutState& aBoxLayoutState);
   
   
   virtual nsresult GetXULBorderAndPadding(nsMargin& aBorderAndPadding);
-  virtual nsresult GetXULBorder(nsMargin& aBorder)=0;
-  virtual nsresult GetXULPadding(nsMargin& aBorderAndPadding)=0;
-  virtual nsresult GetXULMargin(nsMargin& aMargin)=0;
-  virtual void SetXULLayoutManager(nsBoxLayout* aLayout) { }
+  virtual nsresult GetXULBorder(nsMargin& aBorder) = 0;
+  virtual nsresult GetXULPadding(nsMargin& aBorderAndPadding) = 0;
+  virtual nsresult GetXULMargin(nsMargin& aMargin) = 0;
+  virtual void SetXULLayoutManager(nsBoxLayout* aLayout) {}
   virtual nsBoxLayout* GetXULLayoutManager() { return nullptr; }
   nsresult GetXULClientRect(nsRect& aContentRect);
 
-  virtual uint32_t GetXULLayoutFlags()
-  { return 0; }
+  virtual uint32_t GetXULLayoutFlags() { return 0; }
 
   
   virtual Valignment GetXULVAlign() const = 0;
   virtual Halignment GetXULHAlign() const = 0;
 
-  bool IsXULHorizontal() const { return (mState & NS_STATE_IS_HORIZONTAL) != 0; }
-  bool IsXULNormalDirection() const { return (mState & NS_STATE_IS_DIRECTION_NORMAL) != 0; }
+  bool IsXULHorizontal() const {
+    return (mState & NS_STATE_IS_HORIZONTAL) != 0;
+  }
+  bool IsXULNormalDirection() const {
+    return (mState & NS_STATE_IS_DIRECTION_NORMAL) != 0;
+  }
 
   nsresult XULRedraw(nsBoxLayoutState& aState);
-  virtual nsresult XULRelayoutChildAtOrdinal(nsIFrame* aChild)=0;
+  virtual nsresult XULRelayoutChildAtOrdinal(nsIFrame* aChild) = 0;
 
-  static bool AddXULPrefSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth, bool& aHeightSet);
+  static bool AddXULPrefSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth,
+                             bool& aHeightSet);
   static bool AddXULMinSize(nsBoxLayoutState& aState, nsIFrame* aBox,
                             nsSize& aSize, bool& aWidth, bool& aHeightSet);
-  static bool AddXULMaxSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth, bool& aHeightSet);
+  static bool AddXULMaxSize(nsIFrame* aBox, nsSize& aSize, bool& aWidth,
+                            bool& aHeightSet);
   static bool AddXULFlex(nsIFrame* aBox, nscoord& aFlex);
 
   
@@ -3737,7 +3673,7 @@ public:
     ~CaretPosition();
 
     nsCOMPtr<nsIContent> mResultContent;
-    int32_t              mContentOffset;
+    int32_t mContentOffset;
   };
 
   
@@ -3770,9 +3706,7 @@ public:
 
 
 
-  void ClearPresShellsFromLastPaint() {
-    PaintedPresShellList()->Clear();
-  }
+  void ClearPresShellsFromLastPaint() { PaintedPresShellList()->Clear(); }
 
   
 
@@ -3798,8 +3732,7 @@ public:
   
 
 
-  bool DidPaintPresShell(nsIPresShell* aShell)
-  {
+  bool DidPaintPresShell(nsIPresShell* aShell) {
     for (nsWeakPtr& item : *PaintedPresShellList()) {
       nsCOMPtr<nsIPresShell> shell = do_QueryReferent(item);
       if (shell == aShell) {
@@ -3812,13 +3745,18 @@ public:
   
 
 
-  bool IsAbsoluteContainer() const { return !!(mState & NS_FRAME_HAS_ABSPOS_CHILDREN); }
+  bool IsAbsoluteContainer() const {
+    return !!(mState & NS_FRAME_HAS_ABSPOS_CHILDREN);
+  }
   bool HasAbsolutelyPositionedChildren() const;
   nsAbsoluteContainingBlock* GetAbsoluteContainingBlock() const;
   void MarkAsAbsoluteContainingBlock();
   void MarkAsNotAbsoluteContainingBlock();
   
-  virtual mozilla::layout::FrameChildListID GetAbsoluteListID() const { return kAbsoluteList; }
+  
+  virtual mozilla::layout::FrameChildListID GetAbsoluteListID() const {
+    return kAbsoluteList;
+  }
 
   
   
@@ -3836,13 +3774,10 @@ public:
   
   
   
-  enum {
-    VISIBILITY_CROSS_CHROME_CONTENT_BOUNDARY = 0x01
-  };
+  enum { VISIBILITY_CROSS_CHROME_CONTENT_BOUNDARY = 0x01 };
   bool IsVisibleConsideringAncestors(uint32_t aFlags = 0) const;
 
-  struct FrameWithDistance
-  {
+  struct FrameWithDistance {
     nsIFrame* mFrame;
     nscoord mXDistance;
     nscoord mYDistance;
@@ -3868,14 +3803,15 @@ public:
 
 
 
-  virtual void FindCloserFrameForSelection(const nsPoint& aPoint,
-                                           FrameWithDistance* aCurrentBestFrame);
+  virtual void FindCloserFrameForSelection(
+      const nsPoint& aPoint, FrameWithDistance* aCurrentBestFrame);
 
   
 
 
   inline bool IsFlexItem() const;
   
+
 
 
   inline bool IsFlexOrGridItem() const;
@@ -3894,7 +3830,8 @@ public:
   inline bool IsAbsPosContainingBlock() const;
   inline bool IsFixedPosContainingBlock() const;
   inline bool IsRelativelyPositioned() const;
-  inline bool IsAbsolutelyPositioned(const nsStyleDisplay* aStyleDisplay = nullptr) const;
+  inline bool IsAbsolutelyPositioned(
+      const nsStyleDisplay* aStyleDisplay = nullptr) const;
 
   
   
@@ -3919,7 +3856,8 @@ public:
   uint8_t VerticalAlignEnum() const;
   enum { eInvalidVerticalAlign = 0xFF };
 
-  void CreateOwnLayerIfNeeded(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
+  void CreateOwnLayerIfNeeded(nsDisplayListBuilder* aBuilder,
+                              nsDisplayList* aList,
                               bool* aCreatedContainerItem = nullptr);
 
   
@@ -3941,14 +3879,14 @@ public:
 
 
 
-  template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
+  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
   static void SortFrameList(nsFrameList& aFrameList);
 
   
 
 
 
-  template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
+  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
   static bool IsFrameListSorted(nsFrameList& aFrameList);
 
   
@@ -3957,7 +3895,7 @@ public:
 
   bool FrameIsNonFirstInIBSplit() const {
     return (GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) &&
-      FirstContinuation()->GetProperty(nsIFrame::IBSplitPrevSibling());
+           FirstContinuation()->GetProperty(nsIFrame::IBSplitPrevSibling());
   }
 
   
@@ -3966,7 +3904,7 @@ public:
 
   bool FrameIsNonLastInIBSplit() const {
     return (GetStateBits() & NS_FRAME_PART_OF_IBSPLIT) &&
-      FirstContinuation()->GetProperty(nsIFrame::IBSplitSibling());
+           FirstContinuation()->GetProperty(nsIFrame::IBSplitSibling());
   }
 
   
@@ -3994,9 +3932,7 @@ public:
     MOZ_ASSERT(aStyleDisplay == StyleDisplay());
     return aStyleDisplay->BackfaceIsHidden();
   }
-  bool BackfaceIsHidden() const {
-    return StyleDisplay()->BackfaceIsHidden();
-  }
+  bool BackfaceIsHidden() const { return StyleDisplay()->BackfaceIsHidden(); }
 
   
 
@@ -4053,18 +3989,10 @@ public:
     mIsWrapperBoxNeedingRestyle = aNeedsRestyle;
   }
 
-  bool MayHaveTransformAnimation() const {
-    return mMayHaveTransformAnimation;
-  }
-  void SetMayHaveTransformAnimation() {
-    mMayHaveTransformAnimation = true;
-  }
-  bool MayHaveOpacityAnimation() const {
-    return mMayHaveOpacityAnimation;
-  }
-  void SetMayHaveOpacityAnimation() {
-    mMayHaveOpacityAnimation = true;
-  }
+  bool MayHaveTransformAnimation() const { return mMayHaveTransformAnimation; }
+  void SetMayHaveTransformAnimation() { mMayHaveTransformAnimation = true; }
+  bool MayHaveOpacityAnimation() const { return mMayHaveOpacityAnimation; }
+  void SetMayHaveOpacityAnimation() { mMayHaveOpacityAnimation = true; }
 
   
   bool IsVisibleOrMayHaveVisibleDescendants() const {
@@ -4079,24 +4007,24 @@ public:
 
 
 
-  virtual bool RenumberFrameAndDescendants(int32_t* aOrdinal,
-                                           int32_t aDepth,
+  virtual bool RenumberFrameAndDescendants(int32_t* aOrdinal, int32_t aDepth,
                                            int32_t aIncrement,
-                                           bool aForCounting) { return false; }
+                                           bool aForCounting) {
+    return false;
+  }
 
   
 
 
-  nscoord ComputeISizeValue(gfxContext*         aRenderingContext,
-                            nscoord             aContainingBlockISize,
-                            nscoord             aContentEdgeToBoxSizing,
-                            nscoord             aBoxSizingToMarginEdge,
+  nscoord ComputeISizeValue(gfxContext* aRenderingContext,
+                            nscoord aContainingBlockISize,
+                            nscoord aContentEdgeToBoxSizing,
+                            nscoord aBoxSizingToMarginEdge,
                             const nsStyleCoord& aCoord,
-                            ComputeSizeFlags    aFlags = eDefault);
+                            ComputeSizeFlags aFlags = eDefault);
 
   DisplayItemDataArray& DisplayItemData() { return mDisplayItemData; }
-  const DisplayItemDataArray& DisplayItemData() const
-  {
+  const DisplayItemDataArray& DisplayItemData() const {
     return mDisplayItemData;
   }
 
@@ -4107,19 +4035,27 @@ public:
   bool HasDisplayItem(nsDisplayItem* aItem);
 
   bool ForceDescendIntoIfVisible() { return mForceDescendIntoIfVisible; }
-  void SetForceDescendIntoIfVisible(bool aForce) { mForceDescendIntoIfVisible = aForce; }
+  void SetForceDescendIntoIfVisible(bool aForce) {
+    mForceDescendIntoIfVisible = aForce;
+  }
 
   bool BuiltDisplayList() { return mBuiltDisplayList; }
   void SetBuiltDisplayList(bool aBuilt) { mBuiltDisplayList = aBuilt; }
 
   bool IsFrameModified() { return mFrameIsModified; }
-  void SetFrameIsModified(bool aFrameIsModified) { mFrameIsModified = aFrameIsModified; }
+  void SetFrameIsModified(bool aFrameIsModified) {
+    mFrameIsModified = aFrameIsModified;
+  }
 
   bool HasOverrideDirtyRegion() { return mHasOverrideDirtyRegion; }
-  void SetHasOverrideDirtyRegion(bool aHasDirtyRegion) { mHasOverrideDirtyRegion = aHasDirtyRegion; }
+  void SetHasOverrideDirtyRegion(bool aHasDirtyRegion) {
+    mHasOverrideDirtyRegion = aHasDirtyRegion;
+  }
 
   bool MayHaveWillChangeBudget() { return mMayHaveWillChangeBudget; }
-  void SetMayHaveWillChangeBudget(bool aHasBudget) { mMayHaveWillChangeBudget = aHasBudget; }
+  void SetMayHaveWillChangeBudget(bool aHasBudget) {
+    mMayHaveWillChangeBudget = aHasBudget;
+  }
 
   
 
@@ -4133,18 +4069,18 @@ public:
 
 
 
-  mozilla::gfx::CompositorHitTestInfo GetCompositorHitTestInfo(nsDisplayListBuilder* aBuilder);
+  mozilla::gfx::CompositorHitTestInfo GetCompositorHitTestInfo(
+      nsDisplayListBuilder* aBuilder);
 
-protected:
+ protected:
   static void DestroyAnonymousContent(nsPresContext* aPresContext,
                                       already_AddRefed<nsIContent>&& aContent);
 
   
 
 
-  void ReparentFrameViewTo(nsViewManager* aViewManager,
-                           nsView*        aNewParentView,
-                           nsView*        aOldParentView);
+  void ReparentFrameViewTo(nsViewManager* aViewManager, nsView* aNewParentView,
+                           nsView* aOldParentView);
 
   
 
@@ -4154,13 +4090,14 @@ protected:
   virtual bool IsLeafDynamic() const { return false; }
 
   
-  nsRect                 mRect;
-  nsCOMPtr<nsIContent>   mContent;
+  nsRect mRect;
+  nsCOMPtr<nsIContent> mContent;
   RefPtr<ComputedStyle> mComputedStyle;
-private:
+
+ private:
   nsContainerFrame* mParent;
-  nsIFrame*        mNextSibling;  
-  nsIFrame*        mPrevSibling;  
+  nsIFrame* mNextSibling;  
+  nsIFrame* mPrevSibling;  
 
   DisplayItemDataArray mDisplayItemData;
 
@@ -4189,7 +4126,7 @@ private:
     return list;
   }
 
-protected:
+ protected:
   
 
 
@@ -4203,12 +4140,12 @@ protected:
     AddStateBits(NS_FRAME_IN_REFLOW);
   }
 
-  nsFrameState     mState;
+  nsFrameState mState;
 
   
 
 
-  FrameProperties  mProperties;
+  FrameProperties mProperties;
 
   
   
@@ -4224,18 +4161,16 @@ protected:
     uint8_t mTop;
     uint8_t mRight;
     uint8_t mBottom;
-    bool operator==(const VisualDeltas& aOther) const
-    {
+    bool operator==(const VisualDeltas& aOther) const {
       return mLeft == aOther.mLeft && mTop == aOther.mTop &&
              mRight == aOther.mRight && mBottom == aOther.mBottom;
     }
-    bool operator!=(const VisualDeltas& aOther) const
-    {
+    bool operator!=(const VisualDeltas& aOther) const {
       return !(*this == aOther);
     }
   };
   union {
-    uint32_t     mType;
+    uint32_t mType;
     VisualDeltas mVisualDeltas;
   } mOverflow;
 
@@ -4243,7 +4178,7 @@ protected:
   mozilla::WritingMode mWritingMode;
 
   
-  ClassID mClass; 
+  ClassID mClass;  
 
   bool mMayHaveRoundedCorners : 1;
 
@@ -4323,7 +4258,7 @@ protected:
 
   bool mMayHaveWillChangeBudget : 1;
 
-private:
+ private:
   
 
 
@@ -4342,8 +4277,7 @@ private:
 
   bool mAllDescendantsAreInvisible : 1;
 
-protected:
-
+ protected:
   
 
   
@@ -4357,7 +4291,9 @@ protected:
 
 
 
-  virtual FrameSearchResult PeekOffsetNoAmount(bool aForward, int32_t* aOffset) = 0;
+
+  virtual FrameSearchResult PeekOffsetNoAmount(bool aForward,
+                                               int32_t* aOffset) = 0;
 
   
 
@@ -4371,14 +4307,15 @@ protected:
 
 
 
-  virtual FrameSearchResult
-  PeekOffsetCharacter(bool aForward, int32_t* aOffset,
-                      PeekOffsetCharacterOptions aOptions =
-                        PeekOffsetCharacterOptions()) = 0;
+
+  virtual FrameSearchResult PeekOffsetCharacter(
+      bool aForward, int32_t* aOffset,
+      PeekOffsetCharacterOptions aOptions = PeekOffsetCharacterOptions()) = 0;
   static_assert(sizeof(PeekOffsetCharacterOptions) <= sizeof(intptr_t),
                 "aOptions should be changed to const reference");
 
   
+
 
 
 
@@ -4402,6 +4339,7 @@ protected:
     bool mAtStart;
     
     
+    
     bool mSawBeforeType;
     
     bool mLastCharWasPunctuation;
@@ -4414,9 +4352,12 @@ protected:
     
     nsAutoString mContext;
 
-    PeekWordState() : mAtStart(true), mSawBeforeType(false),
-        mLastCharWasPunctuation(false), mLastCharWasWhitespace(false),
-        mSeenNonPunctuationSinceWhitespace(false) {}
+    PeekWordState()
+        : mAtStart(true),
+          mSawBeforeType(false),
+          mLastCharWasPunctuation(false),
+          mLastCharWasWhitespace(false),
+          mSeenNonPunctuationSinceWhitespace(false) {}
     void SetSawBeforeType() { mSawBeforeType = true; }
     void Update(bool aAfterPunctuation, bool aAfterWhitespace) {
       mLastCharWasPunctuation = aAfterPunctuation;
@@ -4429,8 +4370,11 @@ protected:
       mAtStart = false;
     }
   };
-  virtual FrameSearchResult PeekOffsetWord(bool aForward, bool aWordSelectEatSpace, bool aIsKeyboardSelect,
-                                int32_t* aOffset, PeekWordState* aState) = 0;
+  virtual FrameSearchResult PeekOffsetWord(bool aForward,
+                                           bool aWordSelectEatSpace,
+                                           bool aIsKeyboardSelect,
+                                           int32_t* aOffset,
+                                           PeekWordState* aState) = 0;
 
   
 
@@ -4438,10 +4382,9 @@ protected:
 
 
 
+  nsresult PeekOffsetParagraph(nsPeekOffsetStruct* aPos);
 
-  nsresult PeekOffsetParagraph(nsPeekOffsetStruct *aPos);
-
-private:
+ private:
   
   nsOverflowAreas* GetOverflowAreasProperty() const {
     MOZ_ASSERT(mOverflow.mType == NS_FRAME_OVERFLOW_LARGE);
@@ -4460,9 +4403,9 @@ private:
     return nsRect(-(int32_t)mOverflow.mVisualDeltas.mLeft,
                   -(int32_t)mOverflow.mVisualDeltas.mTop,
                   mRect.Width() + mOverflow.mVisualDeltas.mRight +
-                                  mOverflow.mVisualDeltas.mLeft,
+                      mOverflow.mVisualDeltas.mLeft,
                   mRect.Height() + mOverflow.mVisualDeltas.mBottom +
-                                   mOverflow.mVisualDeltas.mTop);
+                      mOverflow.mVisualDeltas.mTop);
   }
   
 
@@ -4470,11 +4413,11 @@ private:
   bool SetOverflowAreas(const nsOverflowAreas& aOverflowAreas);
 
   
-  template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
-  static nsIFrame* SortedMerge(nsIFrame *aLeft, nsIFrame *aRight);
+  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
+  static nsIFrame* SortedMerge(nsIFrame* aLeft, nsIFrame* aRight);
 
-  template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
-  static nsIFrame* MergeSort(nsIFrame *aSource);
+  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
+  static nsIFrame* MergeSort(nsIFrame* aSource);
 
   bool HasOpacityInternal(float aThreshold,
                           mozilla::EffectSet* aEffectSet = nullptr) const;
@@ -4486,11 +4429,11 @@ private:
 #include "nsFrameIdList.h"
 #undef FRAME_ID
 #undef ABSTRACT_FRAME_ID
-  0];
+      0];
 
   enum FrameClassBits {
-    eFrameClassBitsNone        = 0x0,
-    eFrameClassBitsLeaf        = 0x1,
+    eFrameClassBitsNone = 0x0,
+    eFrameClassBitsLeaf = 0x1,
     eFrameClassBitsDynamicLeaf = 0x2,
   };
   
@@ -4500,16 +4443,14 @@ private:
 #include "nsFrameIdList.h"
 #undef FRAME_ID
 #undef ABSTRACT_FRAME_ID
-  0];
+      0];
 
 #ifdef DEBUG_FRAME_DUMP
-public:
+ public:
   static void IndentBy(FILE* out, int32_t aIndent) {
     while (--aIndent >= 0) fputs("  ", out);
   }
-  void ListTag(FILE* out) const {
-    ListTag(out, this);
-  }
+  void ListTag(FILE* out) const { ListTag(out, this); }
   static void ListTag(FILE* out, const nsIFrame* aFrame) {
     nsAutoCString t;
     ListTag(t, aFrame);
@@ -4527,21 +4468,21 @@ public:
     return tag;
   }
   static void ListTag(nsACString& aTo, const nsIFrame* aFrame);
-  void ListGeneric(nsACString& aTo, const char* aPrefix = "", uint32_t aFlags = 0) const;
-  enum {
-    TRAVERSE_SUBDOCUMENT_FRAMES = 0x01
-  };
-  virtual void List(FILE* out = stderr, const char* aPrefix = "", uint32_t aFlags = 0) const;
+  void ListGeneric(nsACString& aTo, const char* aPrefix = "",
+                   uint32_t aFlags = 0) const;
+  enum {TRAVERSE_SUBDOCUMENT_FRAMES = 0x01};
+  virtual void List(FILE* out = stderr, const char* aPrefix = "",
+                    uint32_t aFlags = 0) const;
   
 
 
 
-  static void RootFrameList(nsPresContext* aPresContext,
-                            FILE* out = stderr, const char* aPrefix = "");
+  static void RootFrameList(nsPresContext* aPresContext, FILE* out = stderr,
+                            const char* aPrefix = "");
   virtual void DumpFrameTree() const;
   void DumpFrameTreeLimited() const;
 
-  virtual nsresult  GetFrameName(nsAString& aResult) const = 0;
+  virtual nsresult GetFrameName(nsAString& aResult) const = 0;
 #endif
 };
 
@@ -4561,23 +4502,18 @@ public:
 
 
 class WeakFrame;
-class MOZ_NONHEAP_CLASS AutoWeakFrame
-{
-public:
-  explicit AutoWeakFrame()
-    : mPrev(nullptr), mFrame(nullptr) {}
+class MOZ_NONHEAP_CLASS AutoWeakFrame {
+ public:
+  explicit AutoWeakFrame() : mPrev(nullptr), mFrame(nullptr) {}
 
-  AutoWeakFrame(const AutoWeakFrame& aOther)
-    : mPrev(nullptr), mFrame(nullptr)
-  {
+  AutoWeakFrame(const AutoWeakFrame& aOther) : mPrev(nullptr), mFrame(nullptr) {
     Init(aOther.GetFrame());
   }
 
   MOZ_IMPLICIT AutoWeakFrame(const WeakFrame& aOther);
 
   MOZ_IMPLICIT AutoWeakFrame(nsIFrame* aFrame)
-    : mPrev(nullptr), mFrame(nullptr)
-  {
+      : mPrev(nullptr), mFrame(nullptr) {
     Init(aFrame);
   }
 
@@ -4591,15 +4527,9 @@ public:
     return *this;
   }
 
-  nsIFrame* operator->()
-  {
-    return mFrame;
-  }
+  nsIFrame* operator->() { return mFrame; }
 
-  operator nsIFrame*()
-  {
-    return mFrame;
-  }
+  operator nsIFrame*() { return mFrame; }
 
   void Clear(nsIPresShell* aShell) {
     if (aShell) {
@@ -4617,11 +4547,11 @@ public:
 
   void SetPreviousWeakFrame(AutoWeakFrame* aPrev) { mPrev = aPrev; }
 
-  ~AutoWeakFrame()
-  {
+  ~AutoWeakFrame() {
     Clear(mFrame ? mFrame->PresContext()->GetPresShell() : nullptr);
   }
-private:
+
+ private:
   
   void* operator new(size_t) = delete;
   void* operator new[](size_t) = delete;
@@ -4630,42 +4560,33 @@ private:
 
   void Init(nsIFrame* aFrame);
 
-  AutoWeakFrame*  mPrev;
-  nsIFrame*       mFrame;
+  AutoWeakFrame* mPrev;
+  nsIFrame* mFrame;
 };
 
 
-inline do_QueryFrameHelper<nsIFrame>
-do_QueryFrame(AutoWeakFrame& s)
-{
+inline do_QueryFrameHelper<nsIFrame> do_QueryFrame(AutoWeakFrame& s) {
   return do_QueryFrameHelper<nsIFrame>(s.GetFrame());
 }
 
 
 
 
-class MOZ_HEAP_CLASS WeakFrame
-{
-public:
+class MOZ_HEAP_CLASS WeakFrame {
+ public:
   WeakFrame() : mFrame(nullptr) {}
 
-  WeakFrame(const WeakFrame& aOther) : mFrame(nullptr)
-  {
+  WeakFrame(const WeakFrame& aOther) : mFrame(nullptr) {
     Init(aOther.GetFrame());
   }
 
-  MOZ_IMPLICIT WeakFrame(const AutoWeakFrame& aOther) : mFrame(nullptr)
-  {
+  MOZ_IMPLICIT WeakFrame(const AutoWeakFrame& aOther) : mFrame(nullptr) {
     Init(aOther.GetFrame());
   }
 
-  MOZ_IMPLICIT WeakFrame(nsIFrame* aFrame) : mFrame(nullptr)
-  {
-    Init(aFrame);
-  }
+  MOZ_IMPLICIT WeakFrame(nsIFrame* aFrame) : mFrame(nullptr) { Init(aFrame); }
 
-  ~WeakFrame()
-  {
+  ~WeakFrame() {
     Clear(mFrame ? mFrame->PresContext()->GetPresShell() : nullptr);
   }
 
@@ -4692,22 +4613,18 @@ public:
   bool IsAlive() { return !!mFrame; }
   nsIFrame* GetFrame() const { return mFrame; }
 
-private:
+ private:
   void Init(nsIFrame* aFrame);
 
   nsIFrame* mFrame;
 };
 
 
-inline do_QueryFrameHelper<nsIFrame>
-do_QueryFrame(WeakFrame& s)
-{
+inline do_QueryFrameHelper<nsIFrame> do_QueryFrame(WeakFrame& s) {
   return do_QueryFrameHelper<nsIFrame>(s.GetFrame());
 }
 
-inline bool
-nsFrameList::ContinueRemoveFrame(nsIFrame* aFrame)
-{
+inline bool nsFrameList::ContinueRemoveFrame(nsIFrame* aFrame) {
   MOZ_ASSERT(!aFrame->GetPrevSibling() || !aFrame->GetNextSibling(),
              "Forgot to call StartRemoveFrame?");
   if (aFrame == mLastChild) {
@@ -4733,9 +4650,7 @@ nsFrameList::ContinueRemoveFrame(nsIFrame* aFrame)
   return false;
 }
 
-inline bool
-nsFrameList::StartRemoveFrame(nsIFrame* aFrame)
-{
+inline bool nsFrameList::StartRemoveFrame(nsIFrame* aFrame) {
   if (aFrame->GetPrevSibling() && aFrame->GetNextSibling()) {
     UnhookFrameFromSiblings(aFrame);
     return true;
@@ -4743,40 +4658,33 @@ nsFrameList::StartRemoveFrame(nsIFrame* aFrame)
   return ContinueRemoveFrame(aFrame);
 }
 
-inline void
-nsFrameList::Enumerator::Next()
-{
+inline void nsFrameList::Enumerator::Next() {
   NS_ASSERTION(!AtEnd(), "Should have checked AtEnd()!");
   mFrame = mFrame->GetNextSibling();
 }
 
-inline
-nsFrameList::FrameLinkEnumerator::
-FrameLinkEnumerator(const nsFrameList& aList, nsIFrame* aPrevFrame)
-  : Enumerator(aList)
-{
+inline nsFrameList::FrameLinkEnumerator::FrameLinkEnumerator(
+    const nsFrameList& aList, nsIFrame* aPrevFrame)
+    : Enumerator(aList) {
   mPrev = aPrevFrame;
   mFrame = aPrevFrame ? aPrevFrame->GetNextSibling() : aList.FirstChild();
 }
 
-inline void
-nsFrameList::FrameLinkEnumerator::Next()
-{
+inline void nsFrameList::FrameLinkEnumerator::Next() {
   mPrev = mFrame;
   Enumerator::Next();
 }
 
-template<typename Predicate>
-inline void
-nsFrameList::FrameLinkEnumerator::Find(Predicate&& aPredicate)
-{
+template <typename Predicate>
+inline void nsFrameList::FrameLinkEnumerator::Find(Predicate&& aPredicate) {
   static_assert(
-    std::is_same<typename mozilla::FunctionTypeTraits<Predicate>::ReturnType,
-                 bool>::value &&
-    mozilla::FunctionTypeTraits<Predicate>::arity == 1 &&
-    std::is_same<typename mozilla::FunctionTypeTraits<Predicate>::template ParameterType<0>,
-                 nsIFrame*>::value,
-    "aPredicate should be of this function signature: bool(nsIFrame*)");
+      std::is_same<typename mozilla::FunctionTypeTraits<Predicate>::ReturnType,
+                   bool>::value &&
+          mozilla::FunctionTypeTraits<Predicate>::arity == 1 &&
+          std::is_same<typename mozilla::FunctionTypeTraits<
+                           Predicate>::template ParameterType<0>,
+                       nsIFrame*>::value,
+      "aPredicate should be of this function signature: bool(nsIFrame*)");
 
   for (; !AtEnd(); Next()) {
     if (aPredicate(mFrame)) {
@@ -4788,16 +4696,12 @@ nsFrameList::FrameLinkEnumerator::Find(Predicate&& aPredicate)
 
 
 
-inline nsFrameList::Iterator&
-nsFrameList::Iterator::operator++()
-{
+inline nsFrameList::Iterator& nsFrameList::Iterator::operator++() {
   mCurrent = mCurrent->GetNextSibling();
   return *this;
 }
 
-inline nsFrameList::Iterator&
-nsFrameList::Iterator::operator--()
-{
+inline nsFrameList::Iterator& nsFrameList::Iterator::operator--() {
   if (!mCurrent) {
     mCurrent = mList.LastChild();
   } else {
@@ -4809,13 +4713,12 @@ nsFrameList::Iterator::operator--()
 
 
 
-template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
- nsIFrame*
-nsIFrame::SortedMerge(nsIFrame *aLeft, nsIFrame *aRight)
-{
+template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
+ nsIFrame* nsIFrame::SortedMerge(nsIFrame* aLeft,
+                                             nsIFrame* aRight) {
   MOZ_ASSERT(aLeft && aRight, "SortedMerge must have non-empty lists");
 
-  nsIFrame *result;
+  nsIFrame* result;
   
   if (IsLessThanOrEqual(aLeft, aRight)) {
     result = aLeft;
@@ -4824,8 +4727,7 @@ nsIFrame::SortedMerge(nsIFrame *aLeft, nsIFrame *aRight)
       result->SetNextSibling(aRight);
       return result;
     }
-  }
-  else {
+  } else {
     result = aRight;
     aRight = aRight->GetNextSibling();
     if (!aRight) {
@@ -4834,7 +4736,7 @@ nsIFrame::SortedMerge(nsIFrame *aLeft, nsIFrame *aRight)
     }
   }
 
-  nsIFrame *last = result;
+  nsIFrame* last = result;
   for (;;) {
     if (IsLessThanOrEqual(aLeft, aRight)) {
       last->SetNextSibling(aLeft);
@@ -4844,8 +4746,7 @@ nsIFrame::SortedMerge(nsIFrame *aLeft, nsIFrame *aRight)
         last->SetNextSibling(aRight);
         return result;
       }
-    }
-    else {
+    } else {
       last->SetNextSibling(aRight);
       last = aRight;
       aRight = aRight->GetNextSibling();
@@ -4857,23 +4758,20 @@ nsIFrame::SortedMerge(nsIFrame *aLeft, nsIFrame *aRight)
   }
 }
 
-template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
- nsIFrame*
-nsIFrame::MergeSort(nsIFrame *aSource)
-{
+template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
+ nsIFrame* nsIFrame::MergeSort(nsIFrame* aSource) {
   MOZ_ASSERT(aSource, "MergeSort null arg");
 
-  nsIFrame *sorted[32] = { nullptr };
-  nsIFrame **fill = &sorted[0];
-  nsIFrame **left;
-  nsIFrame *rest = aSource;
+  nsIFrame* sorted[32] = {nullptr};
+  nsIFrame** fill = &sorted[0];
+  nsIFrame** left;
+  nsIFrame* rest = aSource;
 
   do {
-    nsIFrame *current = rest;
+    nsIFrame* current = rest;
     rest = rest->GetNextSibling();
     current->SetNextSibling(nullptr);
 
-    
     
     
     
@@ -4885,12 +4783,11 @@ nsIFrame::MergeSort(nsIFrame *aSource)
     
     *left = current;
 
-    if (left == fill)
-      ++fill;
+    if (left == fill) ++fill;
   } while (rest);
 
   
-  nsIFrame *result = nullptr;
+  nsIFrame* result = nullptr;
   for (left = &sorted[0]; left != fill; ++left) {
     if (*left) {
       result = result ? SortedMerge<IsLessThanOrEqual>(*left, result) : *left;
@@ -4899,20 +4796,16 @@ nsIFrame::MergeSort(nsIFrame *aSource)
   return result;
 }
 
-template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
- void
-nsIFrame::SortFrameList(nsFrameList& aFrameList)
-{
+template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
+ void nsIFrame::SortFrameList(nsFrameList& aFrameList) {
   nsIFrame* head = MergeSort<IsLessThanOrEqual>(aFrameList.FirstChild());
   aFrameList = nsFrameList(head, nsLayoutUtils::GetLastSibling(head));
   MOZ_ASSERT(IsFrameListSorted<IsLessThanOrEqual>(aFrameList),
              "After we sort a frame list, it should be in sorted order...");
 }
 
-template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
- bool
-nsIFrame::IsFrameListSorted(nsFrameList& aFrameList)
-{
+template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
+ bool nsIFrame::IsFrameListSorted(nsFrameList& aFrameList) {
   if (aFrameList.IsEmpty()) {
     
     return true;
@@ -4922,7 +4815,7 @@ nsIFrame::IsFrameListSorted(nsFrameList& aFrameList)
   
   nsFrameList::Enumerator trailingIter(aFrameList);
   nsFrameList::Enumerator iter(aFrameList);
-  iter.Next(); 
+  iter.Next();  
 
   
   while (!iter.AtEnd()) {
@@ -4940,9 +4833,7 @@ nsIFrame::IsFrameListSorted(nsFrameList& aFrameList)
 
 
 
-nsPoint
-nsIFrame::GetNormalPosition(bool* aHasProperty) const
-{
+nsPoint nsIFrame::GetNormalPosition(bool* aHasProperty) const {
   nsPoint* normalPosition = GetProperty(NormalPositionProperty());
   if (normalPosition) {
     if (aHasProperty) {

@@ -11,70 +11,55 @@
 #include "txExpr.h"
 #include "txXMLUtils.h"
 
-class txPattern
-{
-public:
-    txPattern()
-    {
-        MOZ_COUNT_CTOR(txPattern);
-    }
-    virtual ~txPattern()
-    {
-        MOZ_COUNT_DTOR(txPattern);
-    }
+class txPattern {
+ public:
+  txPattern() { MOZ_COUNT_CTOR(txPattern); }
+  virtual ~txPattern() { MOZ_COUNT_DTOR(txPattern); }
 
-    
+  
 
 
-    virtual nsresult matches(const txXPathNode& aNode,
-                             txIMatchContext* aContext,
-                             bool& aMatched) = 0;
+  virtual nsresult matches(const txXPathNode& aNode, txIMatchContext* aContext,
+                           bool& aMatched) = 0;
 
-    
+  
 
 
 
 
 
-    virtual double getDefaultPriority() = 0;
+  virtual double getDefaultPriority() = 0;
 
-    
-
-
-    enum Type {
-        STEP_PATTERN,
-        UNION_PATTERN,
-        OTHER_PATTERN
-    };
-    virtual Type getType()
-    {
-      return OTHER_PATTERN;
-    }
-
-    
+  
 
 
-    virtual Expr* getSubExprAt(uint32_t aPos) = 0;
+  enum Type { STEP_PATTERN, UNION_PATTERN, OTHER_PATTERN };
+  virtual Type getType() { return OTHER_PATTERN; }
 
-    
+  
+
+
+  virtual Expr* getSubExprAt(uint32_t aPos) = 0;
+
+  
 
 
 
-    virtual void setSubExprAt(uint32_t aPos, Expr* aExpr) = 0;
+  virtual void setSubExprAt(uint32_t aPos, Expr* aExpr) = 0;
 
-    
-
-
-    virtual txPattern* getSubPatternAt(uint32_t aPos) = 0;
-
-    
+  
 
 
+  virtual txPattern* getSubPatternAt(uint32_t aPos) = 0;
 
-    virtual void setSubPatternAt(uint32_t aPos, txPattern* aPattern) = 0;
+  
+
+
+
+  virtual void setSubPatternAt(uint32_t aPos, txPattern* aPattern) = 0;
 
 #ifdef TX_TO_STRING
-    
+  
 
 
 
@@ -82,168 +67,135 @@ public:
 
 
 
-    virtual void toString(nsAString& aDest) = 0;
+  virtual void toString(nsAString& aDest) = 0;
 #endif
 };
 
-#define TX_DECL_PATTERN_BASE \
-    nsresult matches(const txXPathNode& aNode, txIMatchContext* aContext, \
-                     bool& aMatched) override; \
-    double getDefaultPriority() override; \
-    virtual Expr* getSubExprAt(uint32_t aPos) override; \
-    virtual void setSubExprAt(uint32_t aPos, Expr* aExpr) override; \
-    virtual txPattern* getSubPatternAt(uint32_t aPos) override; \
-    virtual void setSubPatternAt(uint32_t aPos, txPattern* aPattern) override
+#define TX_DECL_PATTERN_BASE                                            \
+  nsresult matches(const txXPathNode& aNode, txIMatchContext* aContext, \
+                   bool& aMatched) override;                            \
+  double getDefaultPriority() override;                                 \
+  virtual Expr* getSubExprAt(uint32_t aPos) override;                   \
+  virtual void setSubExprAt(uint32_t aPos, Expr* aExpr) override;       \
+  virtual txPattern* getSubPatternAt(uint32_t aPos) override;           \
+  virtual void setSubPatternAt(uint32_t aPos, txPattern* aPattern) override
 
 #ifndef TX_TO_STRING
 #define TX_DECL_PATTERN TX_DECL_PATTERN_BASE
 #else
 #define TX_DECL_PATTERN \
-    TX_DECL_PATTERN_BASE; \
-    void toString(nsAString& aDest) override
+  TX_DECL_PATTERN_BASE; \
+  void toString(nsAString& aDest) override
 #endif
 
-#define TX_IMPL_PATTERN_STUBS_NO_SUB_EXPR(_class)             \
-Expr*                                                         \
-_class::getSubExprAt(uint32_t aPos)                           \
-{                                                             \
-    return nullptr;                                            \
-}                                                             \
-void                                                          \
-_class::setSubExprAt(uint32_t aPos, Expr* aExpr)              \
-{                                                             \
-    MOZ_ASSERT_UNREACHABLE("setting bad subexpression index");\
-}
+#define TX_IMPL_PATTERN_STUBS_NO_SUB_EXPR(_class)               \
+  Expr* _class::getSubExprAt(uint32_t aPos) { return nullptr; } \
+  void _class::setSubExprAt(uint32_t aPos, Expr* aExpr) {       \
+    MOZ_ASSERT_UNREACHABLE("setting bad subexpression index");  \
+  }
 
-#define TX_IMPL_PATTERN_STUBS_NO_SUB_PATTERN(_class)          \
-txPattern*                                                    \
-_class::getSubPatternAt(uint32_t aPos)                        \
-{                                                             \
-    return nullptr;                                            \
-}                                                             \
-void                                                          \
-_class::setSubPatternAt(uint32_t aPos, txPattern* aPattern)   \
-{                                                             \
-    MOZ_ASSERT_UNREACHABLE("setting bad subexpression index");\
-}
+#define TX_IMPL_PATTERN_STUBS_NO_SUB_PATTERN(_class)                    \
+  txPattern* _class::getSubPatternAt(uint32_t aPos) { return nullptr; } \
+  void _class::setSubPatternAt(uint32_t aPos, txPattern* aPattern) {    \
+    MOZ_ASSERT_UNREACHABLE("setting bad subexpression index");          \
+  }
 
-class txUnionPattern : public txPattern
-{
-public:
-    nsresult addPattern(txPattern* aPattern)
-    {
-        return mLocPathPatterns.AppendElement(aPattern) ?
-            NS_OK : NS_ERROR_OUT_OF_MEMORY;
-    }
+class txUnionPattern : public txPattern {
+ public:
+  nsresult addPattern(txPattern* aPattern) {
+    return mLocPathPatterns.AppendElement(aPattern) ? NS_OK
+                                                    : NS_ERROR_OUT_OF_MEMORY;
+  }
 
-    TX_DECL_PATTERN;
-    Type getType() override;
+  TX_DECL_PATTERN;
+  Type getType() override;
 
-private:
-    txOwningArray<txPattern> mLocPathPatterns;
+ private:
+  txOwningArray<txPattern> mLocPathPatterns;
 };
 
-class txLocPathPattern : public txPattern
-{
-public:
-    nsresult addStep(txPattern* aPattern, bool isChild);
+class txLocPathPattern : public txPattern {
+ public:
+  nsresult addStep(txPattern* aPattern, bool isChild);
 
-    TX_DECL_PATTERN;
+  TX_DECL_PATTERN;
 
-private:
-    class Step {
-    public:
-        nsAutoPtr<txPattern> pattern;
-        bool isChild;
-    };
+ private:
+  class Step {
+   public:
+    nsAutoPtr<txPattern> pattern;
+    bool isChild;
+  };
 
-    nsTArray<Step> mSteps;
+  nsTArray<Step> mSteps;
 };
 
-class txRootPattern : public txPattern
-{
-public:
+class txRootPattern : public txPattern {
+ public:
 #ifdef TX_TO_STRING
-    txRootPattern()
-        : mSerialize(true)
-    {
-    }
+  txRootPattern() : mSerialize(true) {}
 #endif
 
-    TX_DECL_PATTERN;
+  TX_DECL_PATTERN;
 
 #ifdef TX_TO_STRING
-public:
-    void setSerialize(bool aSerialize)
-    {
-        mSerialize = aSerialize;
-    }
+ public:
+  void setSerialize(bool aSerialize) { mSerialize = aSerialize; }
 
-private:
-    
-    bool mSerialize;
+ private:
+  
+  bool mSerialize;
 #endif
 };
 
-class txIdPattern : public txPattern
-{
-public:
-    explicit txIdPattern(const nsAString& aString);
+class txIdPattern : public txPattern {
+ public:
+  explicit txIdPattern(const nsAString& aString);
 
-    TX_DECL_PATTERN;
+  TX_DECL_PATTERN;
 
-private:
-    nsTArray<RefPtr<nsAtom>> mIds;
+ private:
+  nsTArray<RefPtr<nsAtom>> mIds;
 };
 
-class txKeyPattern : public txPattern
-{
-public:
-    txKeyPattern(nsAtom* aPrefix, nsAtom* aLocalName,
-                 int32_t aNSID, const nsAString& aValue)
-        : mName(aNSID, aLocalName),
+class txKeyPattern : public txPattern {
+ public:
+  txKeyPattern(nsAtom* aPrefix, nsAtom* aLocalName, int32_t aNSID,
+               const nsAString& aValue)
+      : mName(aNSID, aLocalName),
 #ifdef TX_TO_STRING
-          mPrefix(aPrefix),
+        mPrefix(aPrefix),
 #endif
-          mValue(aValue)
-    {
-    }
+        mValue(aValue) {
+  }
 
-    TX_DECL_PATTERN;
+  TX_DECL_PATTERN;
 
-private:
-    txExpandedName mName;
+ private:
+  txExpandedName mName;
 #ifdef TX_TO_STRING
-    RefPtr<nsAtom> mPrefix;
+  RefPtr<nsAtom> mPrefix;
 #endif
-    nsString mValue;
+  nsString mValue;
 };
 
-class txStepPattern : public txPattern,
-                      public PredicateList
-{
-public:
-    txStepPattern(txNodeTest* aNodeTest, bool isAttr)
-        : mNodeTest(aNodeTest), mIsAttr(isAttr)
-    {
-    }
+class txStepPattern : public txPattern, public PredicateList {
+ public:
+  txStepPattern(txNodeTest* aNodeTest, bool isAttr)
+      : mNodeTest(aNodeTest), mIsAttr(isAttr) {}
 
-    TX_DECL_PATTERN;
-    Type getType() override;
+  TX_DECL_PATTERN;
+  Type getType() override;
 
-    txNodeTest* getNodeTest()
-    {
-      return mNodeTest;
-    }
-    void setNodeTest(txNodeTest* aNodeTest)
-    {
-      mNodeTest.forget();
-      mNodeTest = aNodeTest;
-    }
+  txNodeTest* getNodeTest() { return mNodeTest; }
+  void setNodeTest(txNodeTest* aNodeTest) {
+    mNodeTest.forget();
+    mNodeTest = aNodeTest;
+  }
 
-private:
-    nsAutoPtr<txNodeTest> mNodeTest;
-    bool mIsAttr;
+ private:
+  nsAutoPtr<txNodeTest> mNodeTest;
+  bool mIsAttr;
 };
 
-#endif 
+#endif  

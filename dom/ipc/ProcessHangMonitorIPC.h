@@ -18,11 +18,11 @@ namespace mozilla {
 
 namespace dom {
 class ContentParent;
-} 
+}  
 
-void
-CreateHangMonitorChild(ipc::Endpoint<PProcessHangMonitorChild>&& aEndpoint);
+void CreateHangMonitorChild(
+    ipc::Endpoint<PProcessHangMonitorChild>&& aEndpoint);
 
-} 
+}  
 
-#endif 
+#endif  

@@ -16,10 +16,10 @@
 #ifdef MOZ_PHOENIX
 
 
-#define IDD_SPLASH  100
+#define IDD_SPLASH 100
 
 
-#define IDB_SPLASH  101
+#define IDB_SPLASH 101
 
 
 #define ID_DDE_APPLICATION_NAME 102

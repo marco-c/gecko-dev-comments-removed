@@ -16,13 +16,10 @@ namespace dom {
 
 
 CSSPageRuleDeclaration::CSSPageRuleDeclaration(
-  already_AddRefed<RawServoDeclarationBlock> aDecls)
-  : mDecls(new DeclarationBlock(std::move(aDecls)))
-{
-}
+    already_AddRefed<RawServoDeclarationBlock> aDecls)
+    : mDecls(new DeclarationBlock(std::move(aDecls))) {}
 
-CSSPageRuleDeclaration::~CSSPageRuleDeclaration()
-{
+CSSPageRuleDeclaration::~CSSPageRuleDeclaration() {
   mDecls->SetOwningRule(nullptr);
 }
 
@@ -34,161 +31,128 @@ NS_INTERFACE_MAP_BEGIN(CSSPageRuleDeclaration)
   if (aIID.Equals(NS_GET_IID(nsCycleCollectionISupports)) ||
       aIID.Equals(NS_GET_IID(nsXPCOMCycleCollectionParticipant))) {
     return Rule()->QueryInterface(aIID, aInstancePtr);
-  }
-  else
-NS_IMPL_QUERY_TAIL_INHERITING(nsDOMCSSDeclaration)
+  } else
+    NS_IMPL_QUERY_TAIL_INHERITING(nsDOMCSSDeclaration)
 
-NS_IMPL_ADDREF_USING_AGGREGATOR(CSSPageRuleDeclaration, Rule())
-NS_IMPL_RELEASE_USING_AGGREGATOR(CSSPageRuleDeclaration, Rule())
+  NS_IMPL_ADDREF_USING_AGGREGATOR(CSSPageRuleDeclaration, Rule())
+  NS_IMPL_RELEASE_USING_AGGREGATOR(CSSPageRuleDeclaration, Rule())
 
+  
 
+  css::Rule* CSSPageRuleDeclaration::GetParentRule() { return Rule(); }
 
-css::Rule*
-CSSPageRuleDeclaration::GetParentRule()
-{
-  return Rule();
-}
-
-nsINode*
-CSSPageRuleDeclaration::GetParentObject()
-{
-  return Rule()->GetParentObject();
-}
-
-DeclarationBlock*
-CSSPageRuleDeclaration::GetOrCreateCSSDeclaration(Operation aOperation,
-                                                  DeclarationBlock** aCreated)
-{
-  return mDecls;
-}
-
-nsresult
-CSSPageRuleDeclaration::SetCSSDeclaration(DeclarationBlock* aDecl,
-                                          MutationClosureData* aClosureData)
-{
-  MOZ_ASSERT(aDecl, "must be non-null");
-  CSSPageRule* rule = Rule();
-
-  if (aDecl != mDecls) {
-    mDecls->SetOwningRule(nullptr);
-    RefPtr<DeclarationBlock> decls = aDecl;
-    Servo_PageRule_SetStyle(rule->Raw(), decls->Raw());
-    mDecls = decls.forget();
-    mDecls->SetOwningRule(rule);
+  nsINode* CSSPageRuleDeclaration::GetParentObject() {
+    return Rule()->GetParentObject();
   }
 
-  return NS_OK;
-}
-
-nsIDocument*
-CSSPageRuleDeclaration::DocToUpdate()
-{
-  return nullptr;
-}
-
-nsDOMCSSDeclaration::ParsingEnvironment
-CSSPageRuleDeclaration::GetParsingEnvironment(
-  nsIPrincipal* aSubjectPrincipal) const
-{
-  return GetParsingEnvironmentForRule(Rule());
-}
-
-
-
-CSSPageRule::CSSPageRule(RefPtr<RawServoPageRule> aRawRule,
-                         StyleSheet* aSheet,
-                         css::Rule* aParentRule,
-                         uint32_t aLine,
-                         uint32_t aColumn)
-  : css::Rule(aSheet, aParentRule, aLine, aColumn)
-  , mRawRule(std::move(aRawRule))
-  , mDecls(Servo_PageRule_GetStyle(mRawRule).Consume())
-{
-}
-
-NS_IMPL_ADDREF_INHERITED(CSSPageRule, css::Rule)
-NS_IMPL_RELEASE_INHERITED(CSSPageRule, css::Rule)
-
-
-NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CSSPageRule)
-NS_INTERFACE_MAP_END_INHERITING(css::Rule)
-
-NS_IMPL_CYCLE_COLLECTION_CLASS(CSSPageRule)
-
-NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(CSSPageRule, css::Rule)
-  
-
-  
-  
-  
-  tmp->mDecls.TraceWrapper(aCallbacks, aClosure);
-NS_IMPL_CYCLE_COLLECTION_TRACE_END
-
-NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(CSSPageRule, css::Rule)
-  
-
-  
-  
-  
-  tmp->mDecls.ReleaseWrapper(static_cast<nsISupports*>(p));
-  tmp->mDecls.mDecls->SetOwningRule(nullptr);
-NS_IMPL_CYCLE_COLLECTION_UNLINK_END
-
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSPageRule, css::Rule)
-  
-NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
-
-bool
-CSSPageRule::IsCCLeaf() const
-{
-  if (!Rule::IsCCLeaf()) {
-    return false;
+  DeclarationBlock* CSSPageRuleDeclaration::GetOrCreateCSSDeclaration(
+      Operation aOperation, DeclarationBlock * *aCreated) {
+    return mDecls;
   }
 
-  return !mDecls.PreservingWrapper();
-}
+  nsresult CSSPageRuleDeclaration::SetCSSDeclaration(
+      DeclarationBlock * aDecl, MutationClosureData * aClosureData) {
+    MOZ_ASSERT(aDecl, "must be non-null");
+    CSSPageRule* rule = Rule();
 
-size_t
-CSSPageRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-{
+    if (aDecl != mDecls) {
+      mDecls->SetOwningRule(nullptr);
+      RefPtr<DeclarationBlock> decls = aDecl;
+      Servo_PageRule_SetStyle(rule->Raw(), decls->Raw());
+      mDecls = decls.forget();
+      mDecls->SetOwningRule(rule);
+    }
+
+    return NS_OK;
+  }
+
+  nsIDocument* CSSPageRuleDeclaration::DocToUpdate() { return nullptr; }
+
+  nsDOMCSSDeclaration::ParsingEnvironment
+  CSSPageRuleDeclaration::GetParsingEnvironment(nsIPrincipal *
+                                                aSubjectPrincipal) const {
+    return GetParsingEnvironmentForRule(Rule());
+  }
+
   
-  return aMallocSizeOf(this);
-}
+
+  CSSPageRule::CSSPageRule(RefPtr<RawServoPageRule> aRawRule,
+                           StyleSheet * aSheet, css::Rule * aParentRule,
+                           uint32_t aLine, uint32_t aColumn)
+      : css::Rule(aSheet, aParentRule, aLine, aColumn),
+        mRawRule(std::move(aRawRule)),
+        mDecls(Servo_PageRule_GetStyle(mRawRule).Consume()) {}
+
+  NS_IMPL_ADDREF_INHERITED(CSSPageRule, css::Rule)
+  NS_IMPL_RELEASE_INHERITED(CSSPageRule, css::Rule)
+
+  
+  NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CSSPageRule)
+  NS_INTERFACE_MAP_END_INHERITING(css::Rule)
+
+  NS_IMPL_CYCLE_COLLECTION_CLASS(CSSPageRule)
+
+  NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN_INHERITED(CSSPageRule, css::Rule)
+    
+
+    
+    
+    
+    tmp->mDecls.TraceWrapper(aCallbacks, aClosure);
+  NS_IMPL_CYCLE_COLLECTION_TRACE_END
+
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(CSSPageRule, css::Rule)
+    
+
+    
+    
+    
+    tmp->mDecls.ReleaseWrapper(static_cast<nsISupports*>(p));
+    tmp->mDecls.mDecls->SetOwningRule(nullptr);
+  NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(CSSPageRule, css::Rule)
+    
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+  bool CSSPageRule::IsCCLeaf() const {
+    if (!Rule::IsCCLeaf()) {
+      return false;
+    }
+
+    return !mDecls.PreservingWrapper();
+  }
+
+  size_t CSSPageRule::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
+    
+    return aMallocSizeOf(this);
+  }
 
 #ifdef DEBUG
-void
-CSSPageRule::List(FILE* out, int32_t aIndent) const
-{
-  nsAutoCString str;
-  for (int32_t i = 0; i < aIndent; i++) {
-    str.AppendLiteral("  ");
+  void CSSPageRule::List(FILE * out, int32_t aIndent) const {
+    nsAutoCString str;
+    for (int32_t i = 0; i < aIndent; i++) {
+      str.AppendLiteral("  ");
+    }
+    Servo_PageRule_Debug(mRawRule, &str);
+    fprintf_stderr(out, "%s\n", str.get());
   }
-  Servo_PageRule_Debug(mRawRule, &str);
-  fprintf_stderr(out, "%s\n", str.get());
-}
 #endif
 
+  
 
+  void CSSPageRule::GetCssText(nsAString & aCssText) const {
+    Servo_PageRule_GetCssText(mRawRule, &aCssText);
+  }
 
-void
-CSSPageRule::GetCssText(nsAString& aCssText) const
-{
-  Servo_PageRule_GetCssText(mRawRule, &aCssText);
-}
+  
 
+  nsICSSDeclaration* CSSPageRule::Style() { return &mDecls; }
 
+  JSObject* CSSPageRule::WrapObject(JSContext * aCx,
+                                    JS::Handle<JSObject*> aGivenProto) {
+    return CSSPageRule_Binding::Wrap(aCx, this, aGivenProto);
+  }
 
-nsICSSDeclaration*
-CSSPageRule::Style()
-{
-  return &mDecls;
-}
-
-JSObject*
-CSSPageRule::WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto)
-{
-  return CSSPageRule_Binding::Wrap(aCx, this, aGivenProto);
-}
-
-} 
-} 
+}  
+}  

@@ -44,13 +44,10 @@
 namespace mozilla {
 namespace dom {
 
-class WebAuthnTransaction
-{
-public:
+class WebAuthnTransaction {
+ public:
   explicit WebAuthnTransaction(const RefPtr<Promise>& aPromise)
-    : mPromise(aPromise)
-    , mId(NextId())
-  {
+      : mPromise(aPromise), mId(NextId()) {
     MOZ_ASSERT(mId > 0);
   }
 
@@ -60,7 +57,7 @@ public:
   
   uint64_t mId;
 
-private:
+ private:
   
   
   
@@ -70,51 +67,45 @@ private:
   }
 };
 
-class WebAuthnManager final : public WebAuthnManagerBase
-                            , public AbortFollower
-{
-public:
+class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
+ public:
   NS_DECL_ISUPPORTS
 
   explicit WebAuthnManager(nsPIDOMWindowInner* aParent)
-    : WebAuthnManagerBase(aParent)
-  { }
+      : WebAuthnManagerBase(aParent) {}
 
-  already_AddRefed<Promise>
-  MakeCredential(const PublicKeyCredentialCreationOptions& aOptions,
-                 const Optional<OwningNonNull<AbortSignal>>& aSignal);
+  already_AddRefed<Promise> MakeCredential(
+      const PublicKeyCredentialCreationOptions& aOptions,
+      const Optional<OwningNonNull<AbortSignal>>& aSignal);
 
-  already_AddRefed<Promise>
-  GetAssertion(const PublicKeyCredentialRequestOptions& aOptions,
-               const Optional<OwningNonNull<AbortSignal>>& aSignal);
+  already_AddRefed<Promise> GetAssertion(
+      const PublicKeyCredentialRequestOptions& aOptions,
+      const Optional<OwningNonNull<AbortSignal>>& aSignal);
 
-  already_AddRefed<Promise>
-  Store(const Credential& aCredential);
+  already_AddRefed<Promise> Store(const Credential& aCredential);
 
   
 
-  void
-  FinishMakeCredential(const uint64_t& aTransactionId,
-                       const WebAuthnMakeCredentialResult& aResult) override;
+  void FinishMakeCredential(
+      const uint64_t& aTransactionId,
+      const WebAuthnMakeCredentialResult& aResult) override;
 
-  void
-  FinishGetAssertion(const uint64_t& aTransactionId,
-                     const WebAuthnGetAssertionResult& aResult) override;
+  void FinishGetAssertion(const uint64_t& aTransactionId,
+                          const WebAuthnGetAssertionResult& aResult) override;
 
-  void
-  RequestAborted(const uint64_t& aTransactionId,
-                 const nsresult& aError) override;
+  void RequestAborted(const uint64_t& aTransactionId,
+                      const nsresult& aError) override;
 
   
 
   void Abort() override;
 
-protected:
+ protected:
   
   
   void CancelTransaction(const nsresult& aError) override;
 
-private:
+ private:
   virtual ~WebAuthnManager();
 
   
@@ -126,7 +117,7 @@ private:
   Maybe<WebAuthnTransaction> mTransaction;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

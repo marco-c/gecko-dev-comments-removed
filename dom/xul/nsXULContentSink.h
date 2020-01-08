@@ -21,135 +21,124 @@ class nsXULPrototypeDocument;
 class nsXULPrototypeElement;
 class nsXULPrototypeNode;
 
-class XULContentSinkImpl final : public nsIXMLContentSink,
-                                 public nsIExpatSink
-{
-public:
-    XULContentSinkImpl();
+class XULContentSinkImpl final : public nsIXMLContentSink, public nsIExpatSink {
+ public:
+  XULContentSinkImpl();
 
-    
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-    NS_DECL_NSIEXPATSINK
+  
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_NSIEXPATSINK
 
-    NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(XULContentSinkImpl, nsIXMLContentSink)
+  NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(XULContentSinkImpl,
+                                           nsIXMLContentSink)
 
-    
-    NS_IMETHOD WillParse(void) override { return NS_OK; }
-    NS_IMETHOD WillBuildModel(nsDTDMode aDTDMode) override;
-    NS_IMETHOD DidBuildModel(bool aTerminated) override;
-    NS_IMETHOD WillInterrupt(void) override;
-    NS_IMETHOD WillResume(void) override;
-    NS_IMETHOD SetParser(nsParserBase* aParser) override;
-    virtual void FlushPendingNotifications(mozilla::FlushType aType) override { }
-    virtual void SetDocumentCharset(NotNull<const Encoding*> aEncoding) override;
-    virtual nsISupports *GetTarget() override;
+  
+  NS_IMETHOD WillParse(void) override { return NS_OK; }
+  NS_IMETHOD WillBuildModel(nsDTDMode aDTDMode) override;
+  NS_IMETHOD DidBuildModel(bool aTerminated) override;
+  NS_IMETHOD WillInterrupt(void) override;
+  NS_IMETHOD WillResume(void) override;
+  NS_IMETHOD SetParser(nsParserBase* aParser) override;
+  virtual void FlushPendingNotifications(mozilla::FlushType aType) override {}
+  virtual void SetDocumentCharset(NotNull<const Encoding*> aEncoding) override;
+  virtual nsISupports* GetTarget() override;
 
-    
-
+  
 
 
 
-    nsresult Init(nsIDocument* aDocument, nsXULPrototypeDocument* aPrototype);
 
-protected:
-    virtual ~XULContentSinkImpl();
+  nsresult Init(nsIDocument* aDocument, nsXULPrototypeDocument* aPrototype);
 
-    
-    char16_t* mText;
-    int32_t mTextLength;
-    int32_t mTextSize;
-    bool mConstrainSize;
+ protected:
+  virtual ~XULContentSinkImpl();
 
-    nsresult AddAttributes(const char16_t** aAttributes,
-                           const uint32_t aAttrLen,
-                           nsXULPrototypeElement* aElement);
+  
+  char16_t* mText;
+  int32_t mTextLength;
+  int32_t mTextSize;
+  bool mConstrainSize;
 
-    nsresult OpenRoot(const char16_t** aAttributes,
-                      const uint32_t aAttrLen,
-                      mozilla::dom::NodeInfo *aNodeInfo);
+  nsresult AddAttributes(const char16_t** aAttributes, const uint32_t aAttrLen,
+                         nsXULPrototypeElement* aElement);
 
-    nsresult OpenTag(const char16_t** aAttributes,
-                     const uint32_t aAttrLen,
-                     const uint32_t aLineNumber,
-                     mozilla::dom::NodeInfo *aNodeInfo);
+  nsresult OpenRoot(const char16_t** aAttributes, const uint32_t aAttrLen,
+                    mozilla::dom::NodeInfo* aNodeInfo);
 
-    
-    
-    
-    
-    
-    
-    nsresult OpenScript(const char16_t** aAttributes,
-                        const uint32_t aLineNumber);
+  nsresult OpenTag(const char16_t** aAttributes, const uint32_t aAttrLen,
+                   const uint32_t aLineNumber,
+                   mozilla::dom::NodeInfo* aNodeInfo);
 
-    static bool IsDataInBuffer(char16_t* aBuffer, int32_t aLength);
+  
+  
+  
+  
+  
+  
+  nsresult OpenScript(const char16_t** aAttributes, const uint32_t aLineNumber);
 
-    
-    nsresult FlushText(bool aCreateTextNode = true);
-    nsresult AddText(const char16_t* aText, int32_t aLength);
+  static bool IsDataInBuffer(char16_t* aBuffer, int32_t aLength);
 
+  
+  nsresult FlushText(bool aCreateTextNode = true);
+  nsresult AddText(const char16_t* aText, int32_t aLength);
 
-    RefPtr<nsNodeInfoManager> mNodeInfoManager;
+  RefPtr<nsNodeInfoManager> mNodeInfoManager;
 
-    nsresult NormalizeAttributeString(const char16_t *aExpatName,
-                                      nsAttrName &aName);
-    nsresult CreateElement(mozilla::dom::NodeInfo *aNodeInfo,
-                           nsXULPrototypeElement** aResult);
+  nsresult NormalizeAttributeString(const char16_t* aExpatName,
+                                    nsAttrName& aName);
+  nsresult CreateElement(mozilla::dom::NodeInfo* aNodeInfo,
+                         nsXULPrototypeElement** aResult);
 
+ public:
+  enum State { eInProlog, eInDocumentElement, eInScript, eInEpilog };
 
-    public:
-    enum State { eInProlog, eInDocumentElement, eInScript, eInEpilog };
-    protected:
+ protected:
+  State mState;
 
-    State mState;
-
-    
-    class ContextStack {
-    protected:
-        struct Entry {
-            RefPtr<nsXULPrototypeNode> mNode;
-            
-            nsPrototypeArray    mChildren;
-            State               mState;
-            Entry*              mNext;
-            Entry(nsXULPrototypeNode* aNode, State aState, Entry* aNext)
-                : mNode(aNode)
-                , mChildren(8)
-                , mState(aState)
-                , mNext(aNext)
-            {}
-        };
-
-        Entry* mTop;
-        int32_t mDepth;
-
-    public:
-        ContextStack();
-        ~ContextStack();
-
-        int32_t Depth() { return mDepth; }
-
-        nsresult Push(nsXULPrototypeNode* aNode, State aState);
-        nsresult Pop(State* aState);
-
-        nsresult GetTopNode(RefPtr<nsXULPrototypeNode>& aNode);
-        nsresult GetTopChildren(nsPrototypeArray** aChildren);
-
-        void Clear();
-
-        void Traverse(nsCycleCollectionTraversalCallback& aCallback);
+  
+  class ContextStack {
+   protected:
+    struct Entry {
+      RefPtr<nsXULPrototypeNode> mNode;
+      
+      nsPrototypeArray mChildren;
+      State mState;
+      Entry* mNext;
+      Entry(nsXULPrototypeNode* aNode, State aState, Entry* aNext)
+          : mNode(aNode), mChildren(8), mState(aState), mNext(aNext) {}
     };
 
-    friend class ContextStack;
-    ContextStack mContextStack;
+    Entry* mTop;
+    int32_t mDepth;
 
-    nsWeakPtr              mDocument;             
-    nsCOMPtr<nsIURI>       mDocumentURL;          
+   public:
+    ContextStack();
+    ~ContextStack();
 
-    RefPtr<nsXULPrototypeDocument> mPrototype;  
+    int32_t Depth() { return mDepth; }
 
-    RefPtr<nsParserBase> mParser;
-    nsCOMPtr<nsIScriptSecurityManager> mSecMan;
+    nsresult Push(nsXULPrototypeNode* aNode, State aState);
+    nsresult Pop(State* aState);
+
+    nsresult GetTopNode(RefPtr<nsXULPrototypeNode>& aNode);
+    nsresult GetTopChildren(nsPrototypeArray** aChildren);
+
+    void Clear();
+
+    void Traverse(nsCycleCollectionTraversalCallback& aCallback);
+  };
+
+  friend class ContextStack;
+  ContextStack mContextStack;
+
+  nsWeakPtr mDocument;            
+  nsCOMPtr<nsIURI> mDocumentURL;  
+
+  RefPtr<nsXULPrototypeDocument> mPrototype;  
+
+  RefPtr<nsParserBase> mParser;
+  nsCOMPtr<nsIScriptSecurityManager> mSecMan;
 };
 
 #endif 

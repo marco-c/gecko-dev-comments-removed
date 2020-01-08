@@ -15,28 +15,25 @@
 class gfxContext;
 class nsSVGDisplayableFrame;
 
-class nsSVGClipPathFrame final : public nsSVGContainerFrame
-{
-  friend nsIFrame*
-  NS_NewSVGClipPathFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle);
+class nsSVGClipPathFrame final : public nsSVGContainerFrame {
+  friend nsIFrame* NS_NewSVGClipPathFrame(nsIPresShell* aPresShell,
+                                          ComputedStyle* aStyle);
 
   typedef mozilla::gfx::Matrix Matrix;
   typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
-protected:
+ protected:
   explicit nsSVGClipPathFrame(ComputedStyle* aStyle)
-    : nsSVGContainerFrame(aStyle, kClassID)
-    , mIsBeingProcessed(false)
-  {
+      : nsSVGContainerFrame(aStyle, kClassID), mIsBeingProcessed(false) {
     AddStateBits(NS_FRAME_IS_NONDISPLAY);
   }
 
-public:
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsSVGClipPathFrame)
 
   
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override {}
 
   
@@ -53,9 +50,8 @@ public:
 
 
 
-  void ApplyClipPath(gfxContext& aContext,
-                     nsIFrame* aClippedFrame,
-                     const gfxMatrix &aMatrix);
+  void ApplyClipPath(gfxContext& aContext, nsIFrame* aClippedFrame,
+                     const gfxMatrix& aMatrix);
 
   
 
@@ -77,11 +73,11 @@ public:
 
 
 
-  already_AddRefed<SourceSurface>
-  GetClipMask(gfxContext& aReferenceContext, nsIFrame* aClippedFrame,
-              const gfxMatrix& aMatrix, Matrix* aMaskTransform,
-              SourceSurface* aExtraMask = nullptr,
-              const Matrix& aExtraMasksTransform = Matrix());
+  already_AddRefed<SourceSurface> GetClipMask(
+      gfxContext& aReferenceContext, nsIFrame* aClippedFrame,
+      const gfxMatrix& aMatrix, Matrix* aMaskTransform,
+      SourceSurface* aExtraMask = nullptr,
+      const Matrix& aExtraMasksTransform = Matrix());
 
   
 
@@ -98,42 +94,38 @@ public:
 
 
 
-  void
-  PaintClipMask(gfxContext& aMaskContext, nsIFrame* aClippedFrame,
-                const gfxMatrix& aMatrix, Matrix* aMaskTransform,
-                SourceSurface* aExtraMask, const Matrix& aExtraMasksTransform);
+  void PaintClipMask(gfxContext& aMaskContext, nsIFrame* aClippedFrame,
+                     const gfxMatrix& aMatrix, Matrix* aMaskTransform,
+                     SourceSurface* aExtraMask,
+                     const Matrix& aExtraMasksTransform);
 
   
 
 
-  bool PointIsInsideClipPath(nsIFrame* aClippedFrame, const gfxPoint &aPoint);
+  bool PointIsInsideClipPath(nsIFrame* aClippedFrame, const gfxPoint& aPoint);
 
   
   
   
-  bool IsTrivial(nsSVGDisplayableFrame **aSingleChild = nullptr);
+  bool IsTrivial(nsSVGDisplayableFrame** aSingleChild = nullptr);
 
   bool IsValid();
 
   
-  virtual nsresult AttributeChanged(int32_t         aNameSpaceID,
-                                    nsAtom*        aAttribute,
-                                    int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override
-  {
+  virtual nsresult GetFrameName(nsAString& aResult) const override {
     return MakeFrameName(NS_LITERAL_STRING("SVGClipPath"), aResult);
   }
 #endif
 
   SVGBBox GetBBoxForClipPathFrame(const SVGBBox& aBBox,
-                                  const gfxMatrix& aMatrix,
-                                  uint32_t aFlags);
+                                  const gfxMatrix& aMatrix, uint32_t aFlags);
 
   
 
@@ -143,15 +135,14 @@ public:
 
   gfxMatrix GetClipPathTransform(nsIFrame* aClippedFrame);
 
-private:
-
+ private:
   
   virtual gfxMatrix GetCanvasTM() override;
 
   already_AddRefed<DrawTarget> CreateClipMask(gfxContext& aReferenceContext,
                                               mozilla::gfx::IntPoint& aOffset);
 
-  void PaintFrameIntoMask(nsIFrame *aFrame, nsIFrame* aClippedFrame,
+  void PaintFrameIntoMask(nsIFrame* aFrame, nsIFrame* aClippedFrame,
                           gfxContext& aTarget, const gfxMatrix& aMatrix);
 
   

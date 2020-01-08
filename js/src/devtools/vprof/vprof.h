@@ -41,8 +41,12 @@
 
 
 
+
 #ifndef devtools_vprof_vprof_h
 #define devtools_vprof_vprof_h
+
+
+
 
 
 
@@ -59,13 +63,13 @@
 
 
 #if defined(_MSC_VER)
-	#define vprof_align8(t) __declspec(align(8)) t
+#define vprof_align8(t) __declspec(align(8)) t
 #elif defined(__GNUC__)
-	#define vprof_align8(t) t __attribute__ ((aligned (8)))
+#define vprof_align8(t) t __attribute__((aligned(8)))
 #elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-	#define vprof_align8(t) t __attribute__ ((aligned (8)))
+#define vprof_align8(t) t __attribute__((aligned(8)))
 #elif defined(VMCFG_SYMBIAN)
-	#define vprof_align8(t) t __attribute__ ((aligned (8)))
+#define vprof_align8(t) t __attribute__((aligned(8)))
 #endif
 
 #ifdef __cplusplus
@@ -85,20 +89,20 @@ uint64_t readTimestampCounter();
 
 
 #ifndef DOPROF
-#define _nvprof(e,v)
+#define _nvprof(e, v)
 #ifndef VMCFG_SYMBIAN
-#define _vprof(v,...)
-#define _hprof(v,n,...)
-#define _nhprof(e,v,n,...)
+#define _vprof(v, ...)
+#define _hprof(v, n, ...)
+#define _nhprof(e, v, n, ...)
 #define _ntprof_begin(e)
 #define _ntprof_end(e)
-#define _jvprof_init(id,...)
-#define _jnvprof_init(id,e,...)
-#define _jhprof_init(id,n,...)
-#define _jnhprof_init(id,e,n,...)
-#define _jvprof(id,v)
-#define _jhprof(id,v)
-#endif 
+#define _jvprof_init(id, ...)
+#define _jnvprof_init(id, e, ...)
+#define _jhprof_init(id, n, ...)
+#define _jnhprof_init(id, e, n, ...)
+#define _jvprof(id, v)
+#define _jhprof(id, v)
+#endif  
 #else
 
 
@@ -107,147 +111,137 @@ uint64_t readTimestampCounter();
 
 
 
-#define _vprof(v,...) \
-do { \
-    static void* id = 0; \
-    if (id == 0) \
-        initValueProfile(&id, __FILE__, __LINE__, ##__VA_ARGS__, NULL); \
-    profileValue(id, (int64_t) (v)); \
-} while (0)
-
-#define _nvprof(e,v) \
-do { \
-    static void* id = 0; \
-    if (id == 0) \
-        initValueProfile(&id, (char*) (e), -1, NULL); \
-    profileValue(id, (int64_t) (v)); \
-} while (0)
-
-#define _hprof(v,n,...) \
-do { \
-    static void* id = 0; \
-    if (id == 0) \
-        initHistProfile(&id, __FILE__, __LINE__, (int) (n), ##__VA_ARGS__); \
-    histValue(id, (int64_t) (v)); \
-} while (0)
-
-#define _nhprof(e,v,n,...) \
-do { \
-    static void* id = 0; \
-    if (id == 0) \
-        initHistProfile(&id, (char*) (e), -1, (int) (n), ##__VA_ARGS__); \
-    histValue(id, (int64_t) (v)); \
-} while (0)
 
 
+#define _vprof(v, ...)                                                \
+  do {                                                                \
+    static void* id = 0;                                              \
+    if (id == 0)                                                      \
+      initValueProfile(&id, __FILE__, __LINE__, ##__VA_ARGS__, NULL); \
+    profileValue(id, (int64_t)(v));                                   \
+  } while (0)
 
+#define _nvprof(e, v)                                         \
+  do {                                                        \
+    static void* id = 0;                                      \
+    if (id == 0) initValueProfile(&id, (char*)(e), -1, NULL); \
+    profileValue(id, (int64_t)(v));                           \
+  } while (0)
+
+#define _hprof(v, n, ...)                                                \
+  do {                                                                   \
+    static void* id = 0;                                                 \
+    if (id == 0)                                                         \
+      initHistProfile(&id, __FILE__, __LINE__, (int)(n), ##__VA_ARGS__); \
+    histValue(id, (int64_t)(v));                                         \
+  } while (0)
+
+#define _nhprof(e, v, n, ...)                                        \
+  do {                                                               \
+    static void* id = 0;                                             \
+    if (id == 0)                                                     \
+      initHistProfile(&id, (char*)(e), -1, (int)(n), ##__VA_ARGS__); \
+    histValue(id, (int64_t)(v));                                     \
+  } while (0)
 
 
 
-#define _ntprof_begin(e) \
-do { \
-    static void* id = 0; \
-    if (id == 0) \
-        initValueProfile(&id, (char*)(e), -1, NULL); \
-    ((entry_t)id)->i64var[0] = readTimestampCounter(); \
-} while (0)
+
+
+
+#define _ntprof_begin(e)                                      \
+  do {                                                        \
+    static void* id = 0;                                      \
+    if (id == 0) initValueProfile(&id, (char*)(e), -1, NULL); \
+    ((entry_t)id)->i64var[0] = readTimestampCounter();        \
+  } while (0)
 
 
 #define TICKS_PER_USEC 2600
 
-#define _ntprof_end(e) \
-do { \
-    static void* id = 0; \
-    uint64_t stop = readTimestampCounter(); \
-    if (id == 0) \
-        initValueProfile(&id, (char*)(e), -1, NULL); \
-    uint64_t start = ((entry_t)id)->i64var[0]; \
-    uint64_t usecs = (stop - start) / TICKS_PER_USEC; \
-    profileValue(id, usecs); \
-} while (0)
+#define _ntprof_end(e)                                        \
+  do {                                                        \
+    static void* id = 0;                                      \
+    uint64_t stop = readTimestampCounter();                   \
+    if (id == 0) initValueProfile(&id, (char*)(e), -1, NULL); \
+    uint64_t start = ((entry_t)id)->i64var[0];                \
+    uint64_t usecs = (stop - start) / TICKS_PER_USEC;         \
+    profileValue(id, usecs);                                  \
+  } while (0)
 
 
 
 
 
 
-#define _jvprof_init(id,...) \
-    if (*(id) == 0) \
-        initValueProfile((id), __FILE__, __LINE__, ##__VA_ARGS__, NULL)
+#define _jvprof_init(id, ...) \
+  if (*(id) == 0)             \
+  initValueProfile((id), __FILE__, __LINE__, ##__VA_ARGS__, NULL)
 
-#define _jnvprof_init(id,e,...) \
-    if (*(id) == 0) \
-        initValueProfile((id), (char*) (e), -1, ##__VA_ARGS__, NULL)
+#define _jnvprof_init(id, e, ...) \
+  if (*(id) == 0) initValueProfile((id), (char*)(e), -1, ##__VA_ARGS__, NULL)
 
-#define _jhprof_init(id,n,...) \
-    if (*(id) == 0) \
-        initHistProfile((id), __FILE__, __LINE__, (int) (n), ##__VA_ARGS__)
+#define _jhprof_init(id, n, ...) \
+  if (*(id) == 0)                \
+  initHistProfile((id), __FILE__, __LINE__, (int)(n), ##__VA_ARGS__)
 
-#define _jnhprof_init(id,e,n,...) \
-    if (*(id) == 0) \
-        initHistProfile((id), (char*) (e), -1, (int) (n), ##__VA_ARGS__)
+#define _jnhprof_init(id, e, n, ...) \
+  if (*(id) == 0) initHistProfile((id), (char*)(e), -1, (int)(n), ##__VA_ARGS__)
 
 
 
 
-#define _jvprof(id,v) \
-    profileValue((id), (int64_t) (v))
+#define _jvprof(id, v) profileValue((id), (int64_t)(v))
 
-#define _jhprof(id,v) \
-    histValue((id), (int64_t) (v))
+#define _jhprof(id, v) histValue((id), (int64_t)(v))
 
 #endif
 
 #define NUM_EVARS 4
 
-enum {
-    LOCK_IS_FREE = 0,
-    LOCK_IS_TAKEN = 1
-};
+enum { LOCK_IS_FREE = 0, LOCK_IS_TAKEN = 1 };
 
 extern
 #ifdef __cplusplus
-"C"
+    "C"
 #endif
-long _InterlockedCompareExchange (
-   long volatile * Destination,
-   long Exchange,
-   long Comperand
-);
+    long
+    _InterlockedCompareExchange(long volatile* Destination, long Exchange,
+                                long Comperand);
 
 typedef struct hist hist;
 
 typedef struct hist {
-    int nbins;
-    int64_t* lb;
-    int64_t* count;
-} *hist_t;
+  int nbins;
+  int64_t* lb;
+  int64_t* count;
+} * hist_t;
 
 typedef struct entry entry;
 
 typedef struct entry {
-    long lock;
-    char* file;
-    int line;
-    int64_t value;
-    int64_t count;
-    int64_t sum;
-    int64_t min;
-    int64_t max;
-    void (*func)(void*);
-    hist* h;
+  long lock;
+  char* file;
+  int line;
+  int64_t value;
+  int64_t count;
+  int64_t sum;
+  int64_t min;
+  int64_t max;
+  void (*func)(void*);
+  hist* h;
 
-    entry* next;
+  entry* next;
 
-    
-    void* genptr;
-    int ivar[NUM_EVARS];
-    vprof_align8(int64_t) i64var[NUM_EVARS];
-    vprof_align8(double) dvar[NUM_EVARS];
-    
+  
+  void* genptr;
+  int ivar[NUM_EVARS];
+  vprof_align8(int64_t) i64var[NUM_EVARS];
+  vprof_align8(double) dvar[NUM_EVARS];
+  
 
-    char pad[128]; 
-} *entry_t;
+  char pad[128];  
+} * entry_t;
 
 #define _VAL ((entry_t)vprofID)->value
 #define _COUNT ((entry_t)vprofID)->count

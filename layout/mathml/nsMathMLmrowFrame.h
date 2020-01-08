@@ -16,17 +16,15 @@
 
 
 
-class nsMathMLmrowFrame final : public nsMathMLContainerFrame
-{
-public:
+class nsMathMLmrowFrame final : public nsMathMLContainerFrame {
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsMathMLmrowFrame)
 
-  friend nsIFrame* NS_NewMathMLmrowFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle);
+  friend nsIFrame* NS_NewMathMLmrowFrame(nsIPresShell* aPresShell,
+                                         ComputedStyle* aStyle);
 
-  virtual nsresult
-  AttributeChanged(int32_t  aNameSpaceID,
-                   nsAtom* aAttribute,
-                   int32_t  aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
   NS_IMETHOD
   InheritAutomaticData(nsIFrame* aParent) override;
@@ -36,21 +34,18 @@ public:
     return TransmitAutomaticDataForMrowLikeElement();
   }
 
-  virtual eMathMLFrameType
-  GetMathMLFrameType() override;
+  virtual eMathMLFrameType GetMathMLFrameType() override;
 
-  bool
-  IsMrowLike() override {
+  bool IsMrowLike() override {
     
     
     
-    return mFrames.FirstChild() != mFrames.LastChild() ||
-           !mFrames.FirstChild();
+    return mFrames.FirstChild() != mFrames.LastChild() || !mFrames.FirstChild();
   }
 
-protected:
+ protected:
   explicit nsMathMLmrowFrame(ComputedStyle* aStyle)
-    : nsMathMLContainerFrame(aStyle, kClassID) {}
+      : nsMathMLContainerFrame(aStyle, kClassID) {}
   virtual ~nsMathMLmrowFrame();
 };
 

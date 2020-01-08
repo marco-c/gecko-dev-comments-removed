@@ -18,14 +18,14 @@ class EventChainPreVisitor;
 namespace dom {
 
 class HTMLFieldSetElement final : public nsGenericHTMLFormElement,
-                                  public nsIConstraintValidation
-{
-public:
+                                  public nsIConstraintValidation {
+ public:
   using nsGenericHTMLFormElement::GetForm;
   using nsIConstraintValidation::GetValidationMessage;
   using nsIConstraintValidation::SetCustomValidity;
 
-  explicit HTMLFieldSetElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLFieldSetElement(
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLFieldSetElement, fieldset)
 
@@ -40,7 +40,8 @@ public:
                                 nsIPrincipal* aSubjectPrincipal,
                                 bool aNotify) override;
 
-  virtual nsresult InsertChildBefore(nsIContent* aChild, nsIContent* aBeforeThis,
+  virtual nsresult InsertChildBefore(nsIContent* aChild,
+                                     nsIContent* aBeforeThis,
                                      bool aNotify) override;
   virtual void RemoveChildNode(nsIContent* aKid, bool aNotify) override;
 
@@ -60,26 +61,18 @@ public:
                                            nsGenericHTMLFormElement)
 
   
-  bool Disabled() const
-  {
-    return GetBoolAttr(nsGkAtoms::disabled);
-  }
-  void SetDisabled(bool aValue, ErrorResult& aRv)
-  {
+  bool Disabled() const { return GetBoolAttr(nsGkAtoms::disabled); }
+  void SetDisabled(bool aValue, ErrorResult& aRv) {
     SetHTMLBoolAttr(nsGkAtoms::disabled, aValue, aRv);
   }
 
-  void GetName(nsAString& aValue)
-  {
-    GetHTMLAttr(nsGkAtoms::name, aValue);
-  }
+  void GetName(nsAString& aValue) { GetHTMLAttr(nsGkAtoms::name, aValue); }
 
-  void SetName(const nsAString& aValue, ErrorResult& aRv)
-  {
+  void SetName(const nsAString& aValue, ErrorResult& aRv) {
     SetHTMLAttr(nsGkAtoms::name, aValue, aRv);
   }
 
-  void GetType(nsAString & aType) const;
+  void GetType(nsAString& aType) const;
 
   nsIHTMLCollection* Elements();
 
@@ -95,7 +88,6 @@ public:
 
   virtual EventStates IntrinsicState() const override;
 
-
   
 
 
@@ -108,13 +100,13 @@ public:
 
   void UpdateValidity(bool aElementValidityState);
 
-protected:
+ protected:
   virtual ~HTMLFieldSetElement();
 
-  virtual JSObject* WrapNode(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapNode(JSContext* aCx,
+                             JS::Handle<JSObject*> aGivenProto) override;
 
-private:
-
+ private:
   
 
 
@@ -142,7 +134,7 @@ private:
   int32_t mInvalidElementsCount;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

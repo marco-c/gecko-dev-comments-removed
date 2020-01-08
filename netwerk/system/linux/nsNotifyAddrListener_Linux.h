@@ -27,77 +27,75 @@
 
 class nsNotifyAddrListener : public nsINetworkLinkService,
                              public nsIRunnable,
-                             public nsIObserver
-{
-    virtual ~nsNotifyAddrListener();
+                             public nsIObserver {
+  virtual ~nsNotifyAddrListener();
 
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSINETWORKLINKSERVICE
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSINETWORKLINKSERVICE
+  NS_DECL_NSIRUNNABLE
+  NS_DECL_NSIOBSERVER
+
+  nsNotifyAddrListener();
+  nsresult Init(void);
+
+ private:
+  class ChangeEvent : public mozilla::Runnable {
+   public:
     NS_DECL_NSIRUNNABLE
-    NS_DECL_NSIOBSERVER
+    ChangeEvent(nsINetworkLinkService* aService, const char* aEventID)
+        : mozilla::Runnable("nsNotifyAddrListener::ChangeEvent"),
+          mService(aService),
+          mEventID(aEventID) {}
 
-    nsNotifyAddrListener();
-    nsresult Init(void);
+   private:
+    nsCOMPtr<nsINetworkLinkService> mService;
+    const char* mEventID;
+  };
 
-private:
-    class ChangeEvent : public mozilla::Runnable {
-    public:
-        NS_DECL_NSIRUNNABLE
-        ChangeEvent(nsINetworkLinkService* aService, const char* aEventID)
-          : mozilla::Runnable("nsNotifyAddrListener::ChangeEvent")
-          , mService(aService)
-          , mEventID(aEventID)
-        {
-        }
-    private:
-        nsCOMPtr<nsINetworkLinkService> mService;
-        const char *mEventID;
-    };
+  
+  nsresult Shutdown(void);
 
-    
-    nsresult Shutdown(void);
+  
+  nsresult NetworkChanged();
 
-    
-    nsresult NetworkChanged();
+  
+  nsresult SendEvent(const char* aEventID);
 
-    
-    nsresult SendEvent(const char *aEventID);
+  
+  void calculateNetworkId(void);
+  nsCString mNetworkId;
 
-    
-    void calculateNetworkId(void);
-    nsCString mNetworkId;
+  
+  void checkLink(void);
 
-    
-    void checkLink(void);
+  
+  void OnNetlinkMessage(int NetlinkSocket);
 
-    
-    void OnNetlinkMessage(int NetlinkSocket);
+  nsCOMPtr<nsIThread> mThread;
 
-    nsCOMPtr<nsIThread> mThread;
+  
+  bool mLinkUp;
 
-    
-    bool mLinkUp;
+  
+  bool mStatusKnown;
 
-    
-    bool mStatusKnown;
+  
+  int mShutdownPipe[2];
 
-    
-    int mShutdownPipe[2];
+  
+  bool mAllowChangedEvent;
 
-    
-    bool mAllowChangedEvent;
+  
+  bool mCoalescingActive;
 
-    
-    bool mCoalescingActive;
+  
+  mozilla::TimeStamp mChangeTime;
 
-    
-    mozilla::TimeStamp mChangeTime;
-
-    
-    
-    
-     nsClassHashtable<nsCStringHashKey, struct ifaddrmsg> mAddressInfo;
- };
+  
+  
+  
+  nsClassHashtable<nsCStringHashKey, struct ifaddrmsg> mAddressInfo;
+};
 
 #endif 

@@ -10,9 +10,8 @@
 namespace mozilla {
 namespace dom {
 
-class DOMPrefs final
-{
-public:
+class DOMPrefs final {
+ public:
   
   static void Initialize();
 
@@ -26,7 +25,7 @@ public:
 #undef DOM_WEBIDL_PREF
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

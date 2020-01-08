@@ -21,12 +21,12 @@ namespace mozilla {
 namespace dom {
 class Element;
 }
-}
+}  
 
 enum {
-  knsMenuItemNoModifier      = 0,
-  knsMenuItemShiftModifier   = (1 << 0),
-  knsMenuItemAltModifier     = (1 << 1),
+  knsMenuItemNoModifier = 0,
+  knsMenuItemShiftModifier = (1 << 0),
+  knsMenuItemAltModifier = (1 << 1),
   knsMenuItemControlModifier = (1 << 2),
   knsMenuItemCommandModifier = (1 << 3)
 };
@@ -41,42 +41,42 @@ enum EMenuItemType {
 
 
 
-class nsMenuItemX : public nsMenuObjectX,
-                    public nsChangeObserver
-{
-public:
+class nsMenuItemX : public nsMenuObjectX, public nsChangeObserver {
+ public:
   nsMenuItemX();
   virtual ~nsMenuItemX();
 
   NS_DECL_CHANGEOBSERVER
 
   
-  void*             NativeData() override {return (void*)mNativeMenuItem;}
-  nsMenuObjectTypeX MenuObjectType() override {return eMenuItemObjectType;}
+  void* NativeData() override { return (void*)mNativeMenuItem; }
+  nsMenuObjectTypeX MenuObjectType() override { return eMenuItemObjectType; }
 
   
-  nsresult      Create(nsMenuX* aParent, const nsString& aLabel, EMenuItemType aItemType,
-                       nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aNode);
-  nsresult      SetChecked(bool aIsChecked);
+  nsresult Create(nsMenuX* aParent, const nsString& aLabel,
+                  EMenuItemType aItemType, nsMenuGroupOwnerX* aMenuGroupOwner,
+                  nsIContent* aNode);
+  nsresult SetChecked(bool aIsChecked);
   EMenuItemType GetMenuItemType();
-  void          DoCommand();
-  nsresult      DispatchDOMEvent(const nsString &eventName, bool* preventDefaultCalled);
-  void          SetupIcon();
+  void DoCommand();
+  nsresult DispatchDOMEvent(const nsString& eventName,
+                            bool* preventDefaultCalled);
+  void SetupIcon();
 
-protected:
+ protected:
   void UncheckRadioSiblings(nsIContent* inCheckedElement);
   void SetKeyEquiv();
 
-  EMenuItemType                 mType;
+  EMenuItemType mType;
 
   
-  NSMenuItem*                   mNativeMenuItem;      
-  nsMenuX*                      mMenuParent;          
-  nsMenuGroupOwnerX*            mMenuGroupOwner;      
+  NSMenuItem* mNativeMenuItem;         
+  nsMenuX* mMenuParent;                
+  nsMenuGroupOwnerX* mMenuGroupOwner;  
   RefPtr<mozilla::dom::Element> mCommandElement;
   
-  RefPtr<nsMenuItemIconX>       mIcon;
-  bool                          mIsChecked;
+  RefPtr<nsMenuItemIconX> mIcon;
+  bool mIsChecked;
 };
 
-#endif 
+#endif  

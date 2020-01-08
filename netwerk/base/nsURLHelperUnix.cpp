@@ -10,103 +10,93 @@
 #include "nsIFile.h"
 #include "nsNativeCharsetUtils.h"
 
-nsresult
-net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result)
-{
-    nsresult rv;
-    nsAutoCString nativePath, ePath;
-    nsAutoString path;
+nsresult net_GetURLSpecFromActualFile(nsIFile *aFile, nsACString &result) {
+  nsresult rv;
+  nsAutoCString nativePath, ePath;
+  nsAutoString path;
 
-    rv = aFile->GetNativePath(nativePath);
-    if (NS_FAILED(rv)) return rv;
+  rv = aFile->GetNativePath(nativePath);
+  if (NS_FAILED(rv)) return rv;
 
-    
-    NS_CopyNativeToUnicode(nativePath, path);
-    NS_CopyUnicodeToNative(path, ePath);
+  
+  NS_CopyNativeToUnicode(nativePath, path);
+  NS_CopyUnicodeToNative(path, ePath);
 
-    
-    if (nativePath == ePath)
-        CopyUTF16toUTF8(path, ePath);
-    else
-        ePath = nativePath;
+  
+  if (nativePath == ePath)
+    CopyUTF16toUTF8(path, ePath);
+  else
+    ePath = nativePath;
 
-    nsAutoCString escPath;
-    NS_NAMED_LITERAL_CSTRING(prefix, "file://");
+  nsAutoCString escPath;
+  NS_NAMED_LITERAL_CSTRING(prefix, "file://");
 
-    
-    if (NS_EscapeURL(ePath.get(), -1, esc_Directory+esc_Forced, escPath))
-        escPath.Insert(prefix, 0);
-    else
-        escPath.Assign(prefix + ePath);
+  
+  if (NS_EscapeURL(ePath.get(), -1, esc_Directory + esc_Forced, escPath))
+    escPath.Insert(prefix, 0);
+  else
+    escPath.Assign(prefix + ePath);
 
-    
-    
-    
-    escPath.ReplaceSubstring(";", "%3b");
-    result = escPath;
-    return NS_OK;
+  
+  
+  
+  escPath.ReplaceSubstring(";", "%3b");
+  result = escPath;
+  return NS_OK;
 }
 
-nsresult
-net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result)
-{
-    
-    
+nsresult net_GetFileFromURLSpec(const nsACString &aURL, nsIFile **result) {
+  
+  
 
-    nsresult rv;
+  nsresult rv;
 
-    nsCOMPtr<nsIFile> localFile;
-    rv = NS_NewNativeLocalFile(EmptyCString(), true, getter_AddRefs(localFile));
-    if (NS_FAILED(rv))
-      return rv;
+  nsCOMPtr<nsIFile> localFile;
+  rv = NS_NewNativeLocalFile(EmptyCString(), true, getter_AddRefs(localFile));
+  if (NS_FAILED(rv)) return rv;
 
-    nsAutoCString directory, fileBaseName, fileExtension, path;
+  nsAutoCString directory, fileBaseName, fileExtension, path;
 
-    rv = net_ParseFileURL(aURL, directory, fileBaseName, fileExtension);
+  rv = net_ParseFileURL(aURL, directory, fileBaseName, fileExtension);
+  if (NS_FAILED(rv)) return rv;
+
+  if (!directory.IsEmpty()) {
+    rv = NS_EscapeURL(directory, esc_Directory | esc_AlwaysCopy, path,
+                      mozilla::fallible);
     if (NS_FAILED(rv)) return rv;
+  }
+  if (!fileBaseName.IsEmpty()) {
+    rv = NS_EscapeURL(fileBaseName, esc_FileBaseName | esc_AlwaysCopy, path,
+                      mozilla::fallible);
+    if (NS_FAILED(rv)) return rv;
+  }
+  if (!fileExtension.IsEmpty()) {
+    path += '.';
+    rv = NS_EscapeURL(fileExtension, esc_FileExtension | esc_AlwaysCopy, path,
+                      mozilla::fallible);
+    if (NS_FAILED(rv)) return rv;
+  }
 
-    if (!directory.IsEmpty()) {
-        rv = NS_EscapeURL(directory, esc_Directory|esc_AlwaysCopy, path,
-                         mozilla::fallible);
-        if (NS_FAILED(rv))
-          return rv;
-    }
-    if (!fileBaseName.IsEmpty()) {
-        rv = NS_EscapeURL(fileBaseName, esc_FileBaseName|esc_AlwaysCopy, path,
-                          mozilla::fallible);
-        if (NS_FAILED(rv))
-          return rv;
-    }
-    if (!fileExtension.IsEmpty()) {
-        path += '.';
-        rv = NS_EscapeURL(fileExtension, esc_FileExtension|esc_AlwaysCopy, path,
-                          mozilla::fallible);
-        if (NS_FAILED(rv))
-          return rv;
-    }
+  NS_UnescapeURL(path);
+  if (path.Length() != strlen(path.get())) return NS_ERROR_FILE_INVALID_PATH;
 
-    NS_UnescapeURL(path);
-    if (path.Length() != strlen(path.get()))
-        return NS_ERROR_FILE_INVALID_PATH;
-
-    if (IsUTF8(path)) {
-        
-        
-        if (NS_IsNativeUTF8())
-            rv = localFile->InitWithNativePath(path);
-        else
-            rv = localFile->InitWithPath(NS_ConvertUTF8toUTF16(path));
-            
-            
-            
-            
-    }
+  if (IsUTF8(path)) {
+    
+    
+    if (NS_IsNativeUTF8())
+      rv = localFile->InitWithNativePath(path);
     else
-        
-        rv = localFile->InitWithNativePath(path);
+      rv = localFile->InitWithPath(NS_ConvertUTF8toUTF16(path));
+    
+    
+    
+    
+  } else
+    
+    rv = localFile->InitWithNativePath(path);
 
-    if (NS_FAILED(rv)) return rv;
+  if (NS_FAILED(rv)) return rv;
 
-    localFile.forget(result);
-    return NS_OK;
+  localFile.forget(result);
+  return NS_OK;
 }

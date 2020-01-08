@@ -15,10 +15,9 @@
 
 
 
-template<class T, class Compare = nsDefaultComparator<T, T>>
-class nsTPriorityQueue
-{
-public:
+template <class T, class Compare = nsDefaultComparator<T, T>>
+class nsTPriorityQueue {
+ public:
   typedef typename nsTArray<T>::size_type size_type;
 
   
@@ -37,10 +36,7 @@ public:
 
 
   nsTPriorityQueue(const nsTPriorityQueue& aOther)
-    : mElements(aOther.mElements)
-    , mCompare(aOther.mCompare)
-  {
-  }
+      : mElements(aOther.mElements), mCompare(aOther.mCompare) {}
 
   
 
@@ -59,8 +55,7 @@ public:
 
 
 
-  const T& Top() const
-  {
+  const T& Top() const {
     MOZ_ASSERT(!mElements.IsEmpty(), "Empty queue");
     return mElements[0];
   }
@@ -70,8 +65,7 @@ public:
 
 
 
-  bool Push(const T& aElement)
-  {
+  bool Push(const T& aElement) {
     T* elem = mElements.AppendElement(aElement);
     if (!elem) {
       return false;  
@@ -97,8 +91,7 @@ public:
 
 
 
-  T Pop()
-  {
+  T Pop() {
     MOZ_ASSERT(!mElements.IsEmpty(), "Empty queue");
     T pop = mElements[0];
 
@@ -143,19 +136,18 @@ public:
 
   const T* Elements() const { return mElements.Elements(); }
 
-protected:
+ protected:
   
 
 
-  void Swap(size_type aIndexA, size_type aIndexB)
-  {
+  void Swap(size_type aIndexA, size_type aIndexB) {
     T temp = mElements[aIndexA];
     mElements[aIndexA] = mElements[aIndexB];
     mElements[aIndexB] = temp;
   }
 
   nsTArray<T> mElements;
-  Compare mCompare; 
+  Compare mCompare;  
 };
 
-#endif 
+#endif  

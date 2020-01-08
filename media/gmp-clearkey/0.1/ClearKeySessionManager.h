@@ -33,40 +33,30 @@
 #include <set>
 #include <string>
 
-class ClearKeySessionManager final : public RefCounted
-{
-public:
+class ClearKeySessionManager final : public RefCounted {
+ public:
   explicit ClearKeySessionManager(cdm::Host_9* aHost);
 
-  void Init(bool aDistinctiveIdentifierAllowed,
-            bool aPersistentStateAllowed);
+  void Init(bool aDistinctiveIdentifierAllowed, bool aPersistentStateAllowed);
 
-  void CreateSession(uint32_t aPromiseId,
-                     cdm::InitDataType aInitDataType,
-                     const uint8_t* aInitData,
-                     uint32_t aInitDataSize,
+  void CreateSession(uint32_t aPromiseId, cdm::InitDataType aInitDataType,
+                     const uint8_t* aInitData, uint32_t aInitDataSize,
                      cdm::SessionType aSessionType);
 
-  void LoadSession(uint32_t aPromiseId,
-                   const char* aSessionId,
+  void LoadSession(uint32_t aPromiseId, const char* aSessionId,
                    uint32_t aSessionIdLength);
 
-  void UpdateSession(uint32_t aPromiseId,
-                     const char* aSessionId,
-                     uint32_t aSessionIdLength,
-                     const uint8_t* aResponse,
+  void UpdateSession(uint32_t aPromiseId, const char* aSessionId,
+                     uint32_t aSessionIdLength, const uint8_t* aResponse,
                      uint32_t aResponseSize);
 
-  void CloseSession(uint32_t aPromiseId,
-                    const char* aSessionId,
+  void CloseSession(uint32_t aPromiseId, const char* aSessionId,
                     uint32_t aSessionIdLength);
 
-  void RemoveSession(uint32_t aPromiseId,
-                     const char* aSessionId,
+  void RemoveSession(uint32_t aPromiseId, const char* aSessionId,
                      uint32_t aSessionIdLength);
 
-  void SetServerCertificate(uint32_t aPromiseId,
-                            const uint8_t* aServerCert,
+  void SetServerCertificate(uint32_t aPromiseId, const uint8_t* aServerCert,
                             uint32_t aServerCertSize);
 
   cdm::Status Decrypt(const cdm::InputBuffer_1& aBuffer,
@@ -79,7 +69,7 @@ public:
                                    const uint8_t* aKeyData,
                                    uint32_t aKeyDataSize);
 
-private:
+ private:
   ~ClearKeySessionManager();
 
   void ClearInMemorySessionData(ClearKeySession* aSession);
@@ -98,4 +88,4 @@ private:
   std::queue<std::function<void()>> mDeferredInitialize;
 };
 
-#endif 
+#endif  

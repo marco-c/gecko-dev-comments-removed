@@ -20,18 +20,18 @@ namespace dom {
 
 
 
-class ImageCaptureError final : public nsISupports,
-                                public nsWrapperCache
-{
-public:
+class ImageCaptureError final : public nsISupports, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ImageCaptureError)
 
-  ImageCaptureError(nsISupports* aParent, uint16_t aCode, const nsAString& aMessage);
+  ImageCaptureError(nsISupports* aParent, uint16_t aCode,
+                    const nsAString& aMessage);
 
   nsISupports* GetParentObject() const;
 
-  virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   uint16_t Code() const;
 
@@ -44,7 +44,7 @@ public:
 
   void GetMessage(nsAString& retval) const;
 
-private:
+ private:
   ~ImageCaptureError();
 
   nsCOMPtr<nsISupports> mParent;
@@ -52,7 +52,7 @@ private:
   uint16_t mCode;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

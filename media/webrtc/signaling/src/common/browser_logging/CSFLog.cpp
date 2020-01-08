@@ -19,14 +19,15 @@
 
 mozilla::LazyLogModule gSignalingLog("signaling");
 
-void CSFLogV(CSFLogLevel priority, const char* sourceFile, int sourceLine, const char* tag , const char* format, va_list args)
-{
+void CSFLogV(CSFLogLevel priority, const char* sourceFile, int sourceLine,
+             const char* tag, const char* format, va_list args) {
 #ifdef STDOUT_LOGGING
-  printf("%s\n:",tag);
+  printf("%s\n:", tag);
   vprintf(format, args);
 #else
 
-  mozilla::LogLevel level = static_cast<mozilla::LogLevel>(static_cast<unsigned int>(priority));
+  mozilla::LogLevel level =
+      static_cast<mozilla::LogLevel>(static_cast<unsigned int>(priority));
 
   
   if (!MOZ_LOG_TEST(gSignalingLog, level)) {
@@ -34,7 +35,7 @@ void CSFLogV(CSFLogLevel priority, const char* sourceFile, int sourceLine, const
   }
 
   
-  const char *lastSlash = sourceFile;
+  const char* lastSlash = sourceFile;
   while (*sourceFile) {
     if (*sourceFile == '/' || *sourceFile == '\\') {
       lastSlash = sourceFile;
@@ -49,7 +50,7 @@ void CSFLogV(CSFLogLevel priority, const char* sourceFile, int sourceLine, const
 #define MAX_MESSAGE_LENGTH 1024
   char message[MAX_MESSAGE_LENGTH];
 
-  const char *threadName = NULL;
+  const char* threadName = NULL;
 
   
   if (NS_IsMainThread()) {
@@ -64,24 +65,22 @@ void CSFLogV(CSFLogLevel priority, const char* sourceFile, int sourceLine, const
   }
 
   VsprintfLiteral(message, format, args);
-  MOZ_LOG(gSignalingLog, level, ("[%s|%s] %s:%d: %s",
-                                 threadName, tag, sourceFile, sourceLine,
-                                 message));
+  MOZ_LOG(
+      gSignalingLog, level,
+      ("[%s|%s] %s:%d: %s", threadName, tag, sourceFile, sourceLine, message));
 #endif
-
 }
 
-void CSFLog( CSFLogLevel priority, const char* sourceFile, int sourceLine, const char* tag , const char* format, ...)
-{
-	va_list ap;
+void CSFLog(CSFLogLevel priority, const char* sourceFile, int sourceLine,
+            const char* tag, const char* format, ...) {
+  va_list ap;
   va_start(ap, format);
 
   CSFLogV(priority, sourceFile, sourceLine, tag, format, ap);
   va_end(ap);
 }
 
-int CSFLogTestLevel(CSFLogLevel priority)
-{
-  return MOZ_LOG_TEST(gSignalingLog,
-                      static_cast<mozilla::LogLevel>(static_cast<unsigned int>(priority)));
+int CSFLogTestLevel(CSFLogLevel priority) {
+  return MOZ_LOG_TEST(gSignalingLog, static_cast<mozilla::LogLevel>(
+                                         static_cast<unsigned int>(priority)));
 }

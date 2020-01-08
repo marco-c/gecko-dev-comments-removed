@@ -15,17 +15,17 @@ namespace layers {
 class MLGDevice;
 class LayerManagerMLGPU;
 
-class TextureSourceProviderMLGPU final : public TextureSourceProvider
-{
-public:
-  TextureSourceProviderMLGPU(LayerManagerMLGPU* aLayerManager, MLGDevice* aDevice);
+class TextureSourceProviderMLGPU final : public TextureSourceProvider {
+ public:
+  TextureSourceProviderMLGPU(LayerManagerMLGPU* aLayerManager,
+                             MLGDevice* aDevice);
   ~TextureSourceProviderMLGPU() override;
 
-  already_AddRefed<DataTextureSource>
-  CreateDataTextureSource(TextureFlags aFlags) override;
+  already_AddRefed<DataTextureSource> CreateDataTextureSource(
+      TextureFlags aFlags) override;
 
-  already_AddRefed<DataTextureSource>
-  CreateDataTextureSourceAround(gfx::DataSourceSurface* aSurface) override;
+  already_AddRefed<DataTextureSource> CreateDataTextureSourceAround(
+      gfx::DataSourceSurface* aSurface) override;
 
   void UnlockAfterComposition(TextureHost* aTexture) override;
   bool NotifyNotUsedAfterComposition(TextureHost* aTextureHost) override;
@@ -39,20 +39,18 @@ public:
   virtual ID3D11Device* GetD3D11Device() const override;
 #endif
 
-  void ReadUnlockTextures() {
-    TextureSourceProvider::ReadUnlockTextures();
-  }
+  void ReadUnlockTextures() { TextureSourceProvider::ReadUnlockTextures(); }
 
   
   void Destroy() override;
 
-private:
+ private:
   
   LayerManagerMLGPU* mLayerManager;
   RefPtr<MLGDevice> mDevice;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

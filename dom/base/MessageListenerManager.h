@@ -21,20 +21,15 @@ class MessageBroadcaster;
 
 
 class MessageListenerManager : public nsFrameMessageManager,
-                               public nsWrapperCache
-{
-public:
+                               public nsWrapperCache {
+ public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_INHERITED(MessageListenerManager,
                                                          nsFrameMessageManager)
 
-  MessageBroadcaster* GetParentObject()
-  {
-    return mParentManager;
-  }
+  MessageBroadcaster* GetParentObject() { return mParentManager; }
 
-  virtual MessageBroadcaster* GetParentManager() override
-  {
+  virtual MessageBroadcaster* GetParentManager() override {
     return mParentManager;
   }
 
@@ -44,7 +39,7 @@ public:
 
   virtual void ClearParentManager(bool aRemove) override;
 
-protected:
+ protected:
   MessageListenerManager(ipc::MessageManagerCallback* aCallback,
                          MessageBroadcaster* aParentManager,
                          MessageManagerFlags aFlags);
@@ -53,7 +48,7 @@ protected:
   RefPtr<MessageBroadcaster> mParentManager;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

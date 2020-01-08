@@ -28,9 +28,8 @@ class StorageDBBridge;
 
 
 
-class LocalStorageCacheBridge
-{
-public:
+class LocalStorageCacheBridge {
+ public:
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void);
   NS_IMETHOD_(void) Release(void);
 
@@ -63,7 +62,7 @@ public:
   
   virtual void LoadWait() = 0;
 
-protected:
+ protected:
   virtual ~LocalStorageCacheBridge() {}
 
   ThreadSafeAutoRefCnt mRefCnt;
@@ -74,21 +73,13 @@ protected:
 
 
 
-class LocalStorageCache : public LocalStorageCacheBridge
-{
-public:
-  void
-  AssertIsOnOwningThread() const
-  {
-    NS_ASSERT_OWNINGTHREAD(LocalStorage);
-  }
+class LocalStorageCache : public LocalStorageCacheBridge {
+ public:
+  void AssertIsOnOwningThread() const { NS_ASSERT_OWNINGTHREAD(LocalStorage); }
 
-  void
-  SetActor(LocalStorageCacheChild* aActor);
+  void SetActor(LocalStorageCacheChild* aActor);
 
-  void
-  ClearActor()
-  {
+  void ClearActor() {
     AssertIsOnOwningThread();
 
     mActor = nullptr;
@@ -109,6 +100,7 @@ public:
     
     
     
+    
     E10sPropagated
   };
 
@@ -117,10 +109,10 @@ public:
   
   explicit LocalStorageCache(const nsACString* aOriginNoSuffix);
 
-protected:
+ protected:
   virtual ~LocalStorageCache();
 
-public:
+ public:
   void Init(LocalStorageManager* aManager, bool aPersistent,
             nsIPrincipal* aPrincipal, const nsACString& aQuotaOriginScope);
 
@@ -135,17 +127,18 @@ public:
   
   
   nsresult GetLength(const LocalStorage* aStorage, uint32_t* aRetval);
-  nsresult GetKey(const LocalStorage* aStorage, uint32_t index, nsAString& aRetval);
+  nsresult GetKey(const LocalStorage* aStorage, uint32_t index,
+                  nsAString& aRetval);
   nsresult GetItem(const LocalStorage* aStorage, const nsAString& aKey,
                    nsAString& aRetval);
   nsresult SetItem(const LocalStorage* aStorage, const nsAString& aKey,
                    const nsString& aValue, nsString& aOld,
-                   const MutationSource aSource=ContentMutation);
+                   const MutationSource aSource = ContentMutation);
   nsresult RemoveItem(const LocalStorage* aStorage, const nsAString& aKey,
                       nsString& aOld,
-                      const MutationSource aSource=ContentMutation);
+                      const MutationSource aSource = ContentMutation);
   nsresult Clear(const LocalStorage* aStorage,
-                 const MutationSource aSource=ContentMutation);
+                 const MutationSource aSource = ContentMutation);
 
   void GetKeys(const LocalStorage* aStorage, nsTArray<nsString>& aKeys);
 
@@ -163,19 +156,18 @@ public:
   
   
   
-  class Data
-  {
-  public:
+  class Data {
+   public:
     Data() : mOriginQuotaUsage(0) {}
     int64_t mOriginQuotaUsage;
     nsDataHashtable<nsStringHashKey, nsString> mKeys;
   };
 
-public:
+ public:
   
   static const uint32_t kDataSetCount = 3;
 
-private:
+ private:
   
   
   friend class LocalStorageManager;
@@ -184,15 +176,15 @@ private:
   static const uint32_t kUnloadPrivate = 1 << 1;
   static const uint32_t kUnloadSession = 1 << 2;
   static const uint32_t kUnloadComplete =
-    kUnloadDefault | kUnloadPrivate | kUnloadSession;
+      kUnloadDefault | kUnloadPrivate | kUnloadSession;
 
 #ifdef DOM_STORAGE_TESTS
-  static const uint32_t kTestReload    = 1 << 15;
+  static const uint32_t kTestReload = 1 << 15;
 #endif
 
   void UnloadItems(uint32_t aUnloadFlags);
 
-private:
+ private:
   
   void WaitForPreload(mozilla::Telemetry::HistogramID aTelemetryID);
 
@@ -201,10 +193,8 @@ private:
 
   
   
-  void NotifyObservers(const LocalStorage* aStorage,
-                       const nsString& aKey,
-                       const nsString& aOldValue,
-                       const nsString& aNewValue);
+  void NotifyObservers(const LocalStorage* aStorage, const nsString& aKey,
+                       const nsString& aOldValue, const nsString& aNewValue);
 
   
   bool Persist(const LocalStorage* aStorage) const;
@@ -220,11 +210,11 @@ private:
   
   
   bool ProcessUsageDelta(uint32_t aGetDataSetIndex, const int64_t aDelta,
-                         const MutationSource aSource=ContentMutation);
+                         const MutationSource aSource = ContentMutation);
   bool ProcessUsageDelta(const LocalStorage* aStorage, const int64_t aDelta,
-                         const MutationSource aSource=ContentMutation);
+                         const MutationSource aSource = ContentMutation);
 
-private:
+ private:
   
   
   
@@ -290,28 +280,27 @@ private:
 
 
 
-class StorageUsageBridge
-{
-public:
+class StorageUsageBridge {
+ public:
   NS_INLINE_DECL_THREADSAFE_VIRTUAL_REFCOUNTING(StorageUsageBridge)
 
   virtual const nsCString& OriginScope() = 0;
   virtual void LoadUsage(const int64_t aUsage) = 0;
 
-protected:
+ protected:
   
   virtual ~StorageUsageBridge() {}
 };
 
-class StorageUsage : public StorageUsageBridge
-{
-public:
+class StorageUsage : public StorageUsageBridge {
+ public:
   explicit StorageUsage(const nsACString& aOriginScope);
 
-  bool CheckAndSetETLD1UsageDelta(uint32_t aDataSetIndex, int64_t aUsageDelta,
-                                  const LocalStorageCache::MutationSource aSource);
+  bool CheckAndSetETLD1UsageDelta(
+      uint32_t aDataSetIndex, int64_t aUsageDelta,
+      const LocalStorageCache::MutationSource aSource);
 
-private:
+ private:
   const nsCString& OriginScope() override { return mOriginScope; }
   void LoadUsage(const int64_t aUsage) override;
 
@@ -319,7 +308,7 @@ private:
   int64_t mUsage[LocalStorageCache::kDataSetCount];
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

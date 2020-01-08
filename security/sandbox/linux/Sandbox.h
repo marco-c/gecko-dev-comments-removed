@@ -19,7 +19,7 @@ namespace mozilla {
 
 namespace dom {
 class MaybeFileDesc;
-} 
+}  
 
 
 
@@ -45,7 +45,8 @@ struct ContentProcessSandboxParams {
   
   std::vector<int> mSyscallWhitelist;
 
-  static ContentProcessSandboxParams ForThisProcess(const dom::MaybeFileDesc& aBroker);
+  static ContentProcessSandboxParams ForThisProcess(
+      const dom::MaybeFileDesc& aBroker);
 };
 
 
@@ -58,9 +59,9 @@ MOZ_EXPORT bool SetContentProcessSandbox(ContentProcessSandboxParams&& aParams);
 
 
 
-MOZ_EXPORT void SetMediaPluginSandbox(const char *aFilePath);
+MOZ_EXPORT void SetMediaPluginSandbox(const char* aFilePath);
 #endif
 
-} 
+}  
 
-#endif 
+#endif  

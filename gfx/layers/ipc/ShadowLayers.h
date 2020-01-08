@@ -7,23 +7,23 @@
 #ifndef mozilla_layers_ShadowLayers_h
 #define mozilla_layers_ShadowLayers_h 1
 
-#include <stddef.h>                     
-#include <stdint.h>                     
+#include <stddef.h>  
+#include <stdint.h>  
 #include "gfxTypes.h"
-#include "mozilla/Attributes.h"         
+#include "mozilla/Attributes.h"  
 #include "mozilla/gfx/Rect.h"
-#include "mozilla/WidgetUtils.h"        
-#include "mozilla/ipc/SharedMemory.h"   
-#include "mozilla/HalScreenConfiguration.h" 
+#include "mozilla/WidgetUtils.h"             
+#include "mozilla/ipc/SharedMemory.h"        
+#include "mozilla/HalScreenConfiguration.h"  
 #include "mozilla/layers/CompositableForwarder.h"
 #include "mozilla/layers/FocusTarget.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/TextureForwarder.h"
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/CompositorBridgeChild.h"
-#include "nsCOMPtr.h"                   
-#include "nsRegion.h"                   
-#include "nsTArrayForwardDeclare.h"     
+#include "nsCOMPtr.h"                
+#include "nsRegion.h"                
+#include "nsTArrayForwardDeclare.h"  
 #include "nsIWidget.h"
 #include <vector>
 
@@ -117,13 +117,12 @@ class Transaction;
 
 
 
-class ShadowLayerForwarder final : public LayersIPCActor
-                                 , public CompositableForwarder
-                                 , public LegacySurfaceDescriptorAllocator
-{
+class ShadowLayerForwarder final : public LayersIPCActor,
+                                   public CompositableForwarder,
+                                   public LegacySurfaceDescriptorAllocator {
   friend class ClientLayerManager;
 
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ShadowLayerForwarder, override);
 
   
@@ -138,8 +137,7 @@ public:
 
 
 
-  void Attach(CompositableClient* aCompositable,
-              ShadowableLayer* aLayer);
+  void Attach(CompositableClient* aCompositable, ShadowableLayer* aLayer);
 
   
 
@@ -193,13 +191,10 @@ public:
 
 
 
-  void InsertAfter(ShadowableLayer* aContainer,
-                   ShadowableLayer* aChild,
+  void InsertAfter(ShadowableLayer* aContainer, ShadowableLayer* aChild,
                    ShadowableLayer* aAfter = nullptr);
-  void RemoveChild(ShadowableLayer* aContainer,
-                   ShadowableLayer* aChild);
-  void RepositionChild(ShadowableLayer* aContainer,
-                       ShadowableLayer* aChild,
+  void RemoveChild(ShadowableLayer* aContainer, ShadowableLayer* aChild);
+  void RepositionChild(ShadowableLayer* aContainer, ShadowableLayer* aChild,
                        ShadowableLayer* aAfter = nullptr);
 
   
@@ -209,14 +204,14 @@ public:
 
 
 
-  void SetMask(ShadowableLayer* aLayer,
-               ShadowableLayer* aMaskLayer);
+  void SetMask(ShadowableLayer* aLayer, ShadowableLayer* aMaskLayer);
 
   
 
 
-  void UseTiledLayerBuffer(CompositableClient* aCompositable,
-                                   const SurfaceDescriptorTiles& aTileLayerDescriptor) override;
+  void UseTiledLayerBuffer(
+      CompositableClient* aCompositable,
+      const SurfaceDescriptorTiles& aTileLayerDescriptor) override;
 
   void ReleaseCompositable(const CompositableHandle& aHandle) override;
   bool DestroyInTransaction(PTextureChild* aTexture) override;
@@ -236,13 +231,15 @@ public:
   
 
 
-  virtual void UseTextures(CompositableClient* aCompositable,
-                           const nsTArray<TimedTextureClient>& aTextures) override;
-  virtual void UseComponentAlphaTextures(CompositableClient* aCompositable,
-                                         TextureClient* aClientOnBlack,
-                                         TextureClient* aClientOnWhite) override;
+  virtual void UseTextures(
+      CompositableClient* aCompositable,
+      const nsTArray<TimedTextureClient>& aTextures) override;
+  virtual void UseComponentAlphaTextures(
+      CompositableClient* aCompositable, TextureClient* aClientOnBlack,
+      TextureClient* aClientOnWhite) override;
 
   
+
 
 
   void SendPaintTime(TransactionId aId, TimeDuration aPaintTime);
@@ -252,15 +249,12 @@ public:
 
 
 
-  bool EndTransaction(const nsIntRegion& aRegionToClear,
-                      TransactionId aId,
-                      bool aScheduleComposite,
-                      uint32_t aPaintSequenceNumber,
+  bool EndTransaction(const nsIntRegion& aRegionToClear, TransactionId aId,
+                      bool aScheduleComposite, uint32_t aPaintSequenceNumber,
                       bool aIsRepeatTransaction,
                       const mozilla::TimeStamp& aRefreshStart,
                       const mozilla::TimeStamp& aTransactionStart,
-                      const nsCString& aURL,
-                      bool* aSent);
+                      const nsCString& aURL, bool* aSent);
 
   
 
@@ -272,8 +266,8 @@ public:
 
 
 
-  void StorePluginWidgetConfigurations(const nsTArray<nsIWidget::Configuration>&
-                                       aConfigurations);
+  void StorePluginWidgetConfigurations(
+      const nsTArray<nsIWidget::Configuration>& aConfigurations);
 
   void StopReceiveAsyncParentMessge();
 
@@ -285,7 +279,9 @@ public:
 
 
   bool HasShadowManager() const { return !!mShadowManager; }
-  LayerTransactionChild* GetShadowManager() const { return mShadowManager.get(); }
+  LayerTransactionChild* GetShadowManager() const {
+    return mShadowManager.get();
+  }
 
   
   
@@ -342,7 +338,9 @@ public:
   
 
 
-  void SetFocusTarget(const FocusTarget& aFocusTarget) { mFocusTarget = aFocusTarget; }
+  void SetFocusTarget(const FocusTarget& aFocusTarget) {
+    mFocusTarget = aFocusTarget;
+  }
 
   void SetLayersObserverEpoch(LayersObserverEpoch aEpoch);
 
@@ -352,10 +350,9 @@ public:
                                       gfxContentType aContent,
                                       SurfaceDescriptor* aBuffer) override;
 
-  virtual bool AllocSurfaceDescriptorWithCaps(const gfx::IntSize& aSize,
-                                              gfxContentType aContent,
-                                              uint32_t aCaps,
-                                              SurfaceDescriptor* aBuffer) override;
+  virtual bool AllocSurfaceDescriptorWithCaps(
+      const gfx::IntSize& aSize, gfxContentType aContent, uint32_t aCaps,
+      SurfaceDescriptor* aBuffer) override;
 
   virtual void DestroySurfaceDescriptor(SurfaceDescriptor* aSurface) override;
 
@@ -367,13 +364,9 @@ public:
 
   void ReleaseLayer(const LayerHandle& aHandle);
 
-  bool InForwarderThread() override {
-    return NS_IsMainThread();
-  }
+  bool InForwarderThread() override { return NS_IsMainThread(); }
 
-  PaintTiming& GetPaintTiming() {
-    return mPaintTiming;
-  }
+  PaintTiming& GetPaintTiming() { return mPaintTiming; }
 
   ShadowLayerForwarder* AsLayerForwarder() override { return this; }
 
@@ -382,10 +375,14 @@ public:
 
   void SyncWithCompositor() override;
 
-  TextureForwarder* GetTextureForwarder() override { return GetCompositorBridgeChild(); }
+  TextureForwarder* GetTextureForwarder() override {
+    return GetCompositorBridgeChild();
+  }
   LayersIPCActor* GetLayersIPCActor() override { return this; }
 
-  ActiveResourceTracker* GetActiveResourceTracker() override { return mActiveResourceTracker.get(); }
+  ActiveResourceTracker* GetActiveResourceTracker() override {
+    return mActiveResourceTracker.get();
+  }
 
   CompositorBridgeChild* GetCompositorBridgeChild();
 
@@ -395,7 +392,7 @@ public:
 
   virtual RefPtr<KnowsCompositor> GetForMedia() override;
 
-protected:
+ protected:
   virtual ~ShadowLayerForwarder();
 
   explicit ShadowLayerForwarder(ClientLayerManager* aClientLayerManager);
@@ -406,15 +403,15 @@ protected:
   void CheckSurfaceDescriptor(const SurfaceDescriptor* aDescriptor) const {}
 #endif
 
-  RefPtr<CompositableClient> FindCompositable(const CompositableHandle& aHandle);
+  RefPtr<CompositableClient> FindCompositable(
+      const CompositableHandle& aHandle);
 
   bool InWorkerThread();
 
   RefPtr<LayerTransactionChild> mShadowManager;
   RefPtr<CompositorBridgeChild> mCompositorBridgeChild;
 
-private:
-
+ private:
   ClientLayerManager* mClientLayerManager;
   Transaction* mTxn;
   MessageLoop* mMessageLoop;
@@ -444,9 +441,8 @@ class CompositableClient;
 
 
 
-class ShadowableLayer
-{
-public:
+class ShadowableLayer {
+ public:
   virtual ~ShadowableLayer();
 
   virtual Layer* AsLayer() = 0;
@@ -470,15 +466,15 @@ public:
 
   virtual CompositableClient* GetCompositableClient() { return nullptr; }
 
-protected:
+ protected:
   ShadowableLayer() {}
 
-private:
+ private:
   RefPtr<ShadowLayerForwarder> mForwarder;
   LayerHandle mShadow;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

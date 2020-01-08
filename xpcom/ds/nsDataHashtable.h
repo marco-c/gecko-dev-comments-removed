@@ -19,22 +19,17 @@
 
 
 
-template<class KeyClass, class DataType>
-class nsDataHashtable
-  : public nsBaseHashtable<KeyClass, DataType, DataType>
-{
-private:
+template <class KeyClass, class DataType>
+class nsDataHashtable : public nsBaseHashtable<KeyClass, DataType, DataType> {
+ private:
   typedef nsBaseHashtable<KeyClass, DataType, DataType> BaseClass;
 
-public:
-  using typename BaseClass::KeyType;
+ public:
   using typename BaseClass::EntryType;
+  using typename BaseClass::KeyType;
 
   nsDataHashtable() {}
-  explicit nsDataHashtable(uint32_t aInitLength)
-    : BaseClass(aInitLength)
-  {
-  }
+  explicit nsDataHashtable(uint32_t aInitLength) : BaseClass(aInitLength) {}
 
   
 
@@ -43,8 +38,7 @@ public:
 
 
 
-  DataType* GetValue(KeyType aKey)
-  {
+  DataType* GetValue(KeyType aKey) {
     if (EntryType* ent = this->GetEntry(aKey)) {
       return &ent->mData;
     }
@@ -59,8 +53,7 @@ public:
 
 
 
-  mozilla::Maybe<DataType> GetAndRemove(KeyType aKey)
-  {
+  mozilla::Maybe<DataType> GetAndRemove(KeyType aKey) {
     mozilla::Maybe<DataType> value;
     if (EntryType* ent = this->GetEntry(aKey)) {
       value.emplace(std::move(ent->mData));
@@ -70,4 +63,4 @@ public:
   }
 };
 
-#endif 
+#endif  

@@ -14,9 +14,8 @@ class nsISupports;
 
 
 
-class nsNSSDialogHelper
-{
-public:
+class nsNSSDialogHelper {
+ public:
   
 
 
@@ -35,4 +34,4 @@ public:
                              nsISupports* params, bool modal = true);
 };
 
-#endif 
+#endif  

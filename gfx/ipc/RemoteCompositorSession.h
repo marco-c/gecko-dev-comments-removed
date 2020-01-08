@@ -13,11 +13,9 @@
 namespace mozilla {
 namespace layers {
 
-class RemoteCompositorSession final : public CompositorSession
-{
-public:
-  RemoteCompositorSession(nsBaseWidget* aWidget,
-                          CompositorBridgeChild* aChild,
+class RemoteCompositorSession final : public CompositorSession {
+ public:
+  RemoteCompositorSession(nsBaseWidget* aWidget, CompositorBridgeChild* aChild,
                           CompositorWidgetDelegate* aWidgetDelegate,
                           APZCTreeManagerChild* aAPZ,
                           const LayersId& aRootLayerTreeId);
@@ -32,13 +30,13 @@ public:
 
   void NotifySessionLost();
 
-private:
+ private:
   nsBaseWidget* mWidget;
   RefPtr<APZCTreeManagerChild> mAPZ;
   RefPtr<GeckoContentController> mContentController;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

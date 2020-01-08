@@ -15,202 +15,136 @@ class nsIContent;
 
 
 class MOZ_STACK_CLASS nsTreeSanitizer {
+ public:
+  
 
-  public:
 
-    
 
 
+  explicit nsTreeSanitizer(uint32_t aFlags = 0);
 
+  static void InitializeStatics();
+  static void ReleaseStatics();
 
-    explicit nsTreeSanitizer(uint32_t aFlags = 0);
+  
 
-    static void InitializeStatics();
-    static void ReleaseStatics();
 
-    
 
 
+  void Sanitize(mozilla::dom::DocumentFragment* aFragment);
 
+  
 
-    void Sanitize(mozilla::dom::DocumentFragment* aFragment);
 
-    
 
 
 
+  void Sanitize(nsIDocument* aDocument);
 
+ private:
+  
 
-    void Sanitize(nsIDocument* aDocument);
 
-  private:
+  bool mAllowStyles;
 
-    
+  
 
 
-    bool mAllowStyles;
+  bool mAllowComments;
 
-    
+  
 
 
-    bool mAllowComments;
+  bool mDropNonCSSPresentation;
 
-    
+  
 
 
-    bool mDropNonCSSPresentation;
+  bool mDropForms;
 
-    
+  
 
 
-    bool mDropForms;
+  bool mCidEmbedsOnly;
 
-    
+  
 
 
-    bool mCidEmbedsOnly;
+  bool mDropMedia;
 
-    
+  
 
 
-    bool mDropMedia;
+  bool mFullDocument;
 
-    
+  
 
 
-    bool mFullDocument;
+  bool mLogRemovals;
 
-    
+  
 
 
-    bool mLogRemovals;
+  class AtomsTable : public nsTHashtable<nsPtrHashKey<const nsStaticAtom>> {
+   public:
+    explicit AtomsTable(uint32_t aLength)
+        : nsTHashtable<nsPtrHashKey<const nsStaticAtom>>(aLength) {}
 
-    
-
-
-    class AtomsTable : public nsTHashtable<nsPtrHashKey<const nsStaticAtom>>
-    {
-    public:
-        explicit AtomsTable(uint32_t aLength)
-          : nsTHashtable<nsPtrHashKey<const nsStaticAtom>>(aLength)
-        {}
-
-        bool Contains(nsAtom* aAtom)
-        {
-            
-            
-            return aAtom->IsStatic() && GetEntry(aAtom->AsStatic());
-        }
-    };
-
-    void SanitizeChildren(nsINode* aRoot);
-
-    
-
-
-
-
-
-
-    bool MustFlatten(int32_t aNamespace, nsAtom* aLocal);
-
-    
-
-
-
-
-
-
-
-    bool MustPrune(int32_t aNamespace,
-                     nsAtom* aLocal,
-                     mozilla::dom::Element* aElement);
-
-    
-
-
-
-
-
-
-    bool IsURL(const nsStaticAtom* const* aURLs, nsAtom* aLocalName);
-
-    
-
-
-    struct AllowedAttributes
-    {
+    bool Contains(nsAtom* aAtom) {
       
-      AtomsTable* mNames = nullptr;
       
-      const nsStaticAtom* const* mURLs = nullptr;
-      
-      bool mXLink = false;
-      
-      bool mStyle = false;
-      
-      bool mDangerousSrc = false;
-    };
+      return aAtom->IsStatic() && GetEntry(aAtom->AsStatic());
+    }
+  };
 
+  void SanitizeChildren(nsINode* aRoot);
+
+  
+
+
+
+
+
+
+  bool MustFlatten(int32_t aNamespace, nsAtom* aLocal);
+
+  
+
+
+
+
+
+
+
+  bool MustPrune(int32_t aNamespace, nsAtom* aLocal,
+                 mozilla::dom::Element* aElement);
+
+  
+
+
+
+
+
+
+  bool IsURL(const nsStaticAtom* const* aURLs, nsAtom* aLocalName);
+
+  
+
+
+  struct AllowedAttributes {
     
-
-
-
-
-
-
-
-
-    void SanitizeAttributes(mozilla::dom::Element* aElement,
-                            AllowedAttributes aAllowed);
-
+    AtomsTable* mNames = nullptr;
     
-
-
-
-
-
-
-
-
-    bool SanitizeURL(mozilla::dom::Element* aElement,
-                     int32_t aNamespace,
-                     nsAtom* aLocalName);
-
+    const nsStaticAtom* const* mURLs = nullptr;
     
-
-
-
-
-
-
-    bool SanitizeStyleDeclaration(mozilla::DeclarationBlock* aDeclaration);
-
+    bool mXLink = false;
     
-
-
-
-
-
-
-
-
-
-
-
-    bool SanitizeStyleSheet(const nsAString& aOriginal,
-                              nsAString& aSanitized,
-                              nsIDocument* aDocument,
-                              nsIURI* aBaseURI);
-
+    bool mStyle = false;
     
+    bool mDangerousSrc = false;
+  };
 
-
-    void RemoveAllAttributes(mozilla::dom::Element* aElement);
-
-    
-
-
+  
 
 
 
@@ -219,48 +153,103 @@ class MOZ_STACK_CLASS nsTreeSanitizer {
 
 
 
-    void LogMessage(const char* aMessage, nsIDocument* aDoc,
-                    Element* aElement = nullptr, nsAtom* aAttr = nullptr);
+  void SanitizeAttributes(mozilla::dom::Element* aElement,
+                          AllowedAttributes aAllowed);
 
-    
-
-
-    static AtomsTable* sElementsHTML;
-
-    
+  
 
 
-    static AtomsTable* sAttributesHTML;
-
-    
 
 
-    static AtomsTable* sPresAttributesHTML;
-
-    
 
 
-    static AtomsTable* sElementsSVG;
-
-    
 
 
-    static AtomsTable* sAttributesSVG;
+  bool SanitizeURL(mozilla::dom::Element* aElement, int32_t aNamespace,
+                   nsAtom* aLocalName);
 
-    
-
-
-    static AtomsTable* sElementsMathML;
-
-    
+  
 
 
-    static AtomsTable* sAttributesMathML;
-
-    
 
 
-    static nsIPrincipal* sNullPrincipal;
+
+
+  bool SanitizeStyleDeclaration(mozilla::DeclarationBlock* aDeclaration);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool SanitizeStyleSheet(const nsAString& aOriginal, nsAString& aSanitized,
+                          nsIDocument* aDocument, nsIURI* aBaseURI);
+
+  
+
+
+  void RemoveAllAttributes(mozilla::dom::Element* aElement);
+
+  
+
+
+
+
+
+
+
+
+
+
+  void LogMessage(const char* aMessage, nsIDocument* aDoc,
+                  Element* aElement = nullptr, nsAtom* aAttr = nullptr);
+
+  
+
+
+  static AtomsTable* sElementsHTML;
+
+  
+
+
+  static AtomsTable* sAttributesHTML;
+
+  
+
+
+  static AtomsTable* sPresAttributesHTML;
+
+  
+
+
+  static AtomsTable* sElementsSVG;
+
+  
+
+
+  static AtomsTable* sAttributesSVG;
+
+  
+
+
+  static AtomsTable* sElementsMathML;
+
+  
+
+
+  static AtomsTable* sAttributesMathML;
+
+  
+
+
+  static nsIPrincipal* sNullPrincipal;
 };
 
-#endif 
+#endif  

@@ -7,10 +7,10 @@
 
 
 
+
 template <class T, size_t size>
-class StackArray
-{
-public:
+class StackArray {
+ public:
   explicit StackArray(size_t count) {
     if (count > size) {
       mData = new T[count];
@@ -26,7 +26,8 @@ public:
   T& operator[](size_t n) { return mData[n]; }
   const T& operator[](size_t n) const { return mData[n]; }
   T* data() { return mData; };
-private:
+
+ private:
   T mStackData[size];
   T* mData;
 };

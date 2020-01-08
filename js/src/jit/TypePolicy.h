@@ -18,347 +18,351 @@ namespace jit {
 class MInstruction;
 class MDefinition;
 
-extern MDefinition*
-AlwaysBoxAt(TempAllocator& alloc, MInstruction* at, MDefinition* operand);
+extern MDefinition* AlwaysBoxAt(TempAllocator& alloc, MInstruction* at,
+                                MDefinition* operand);
 
 
 
-class TypePolicy
-{
-  public:
-    
-    
-    
-    
-    
-    
-    virtual MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const = 0;
+class TypePolicy {
+ public:
+  
+  
+  
+  
+  
+  
+  virtual MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                         MInstruction* def) const = 0;
 };
 
-struct TypeSpecializationData
-{
-  protected:
-    
-    
-    
-    MIRType specialization_;
+struct TypeSpecializationData {
+ protected:
+  
+  
+  
+  MIRType specialization_;
 
-    MIRType thisTypeSpecialization() {
-        return specialization_;
-    }
+  MIRType thisTypeSpecialization() { return specialization_; }
 
-  public:
-    MIRType specialization() const {
-        return specialization_;
-    }
+ public:
+  MIRType specialization() const { return specialization_; }
 };
 
-#define EMPTY_DATA_                                     \
-    struct Data                                         \
-    {                                                   \
-        static const TypePolicy* thisTypePolicy();      \
-    }
+#define EMPTY_DATA_                            \
+  struct Data {                                \
+    static const TypePolicy* thisTypePolicy(); \
+  }
 
-#define INHERIT_DATA_(DATA_TYPE)                        \
-    struct Data : public DATA_TYPE                      \
-    {                                                   \
-        static const TypePolicy* thisTypePolicy();      \
-    }
+#define INHERIT_DATA_(DATA_TYPE)               \
+  struct Data : public DATA_TYPE {             \
+    static const TypePolicy* thisTypePolicy(); \
+  }
 
 #define SPECIALIZATION_DATA_ INHERIT_DATA_(TypeSpecializationData)
 
-class NoTypePolicy
-{
-  public:
-    struct Data
-    {
-        static const TypePolicy* thisTypePolicy() {
-            return nullptr;
-        }
-    };
+class NoTypePolicy {
+ public:
+  struct Data {
+    static const TypePolicy* thisTypePolicy() { return nullptr; }
+  };
 };
 
-class BoxInputsPolicy final : public TypePolicy
-{
-  public:
-    constexpr BoxInputsPolicy() { }
-    SPECIALIZATION_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class BoxInputsPolicy final : public TypePolicy {
+ public:
+  constexpr BoxInputsPolicy() {}
+  SPECIALIZATION_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
-class ArithPolicy final : public TypePolicy
-{
-  public:
-    constexpr ArithPolicy() { }
-    SPECIALIZATION_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
+class ArithPolicy final : public TypePolicy {
+ public:
+  constexpr ArithPolicy() {}
+  SPECIALIZATION_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
-class AllDoublePolicy final : public TypePolicy
-{
-  public:
-    constexpr AllDoublePolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class AllDoublePolicy final : public TypePolicy {
+ public:
+  constexpr AllDoublePolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
-class BitwisePolicy final : public TypePolicy
-{
-  public:
-    constexpr BitwisePolicy() { }
-    SPECIALIZATION_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
+class BitwisePolicy final : public TypePolicy {
+ public:
+  constexpr BitwisePolicy() {}
+  SPECIALIZATION_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
-class ComparePolicy final : public TypePolicy
-{
-  public:
-    constexpr ComparePolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
+class ComparePolicy final : public TypePolicy {
+ public:
+  constexpr ComparePolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
-class SameValuePolicy final : public TypePolicy
-{
-  public:
-    constexpr SameValuePolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
-};
-
-
-class TestPolicy final : public TypePolicy
-{
-  public:
-    constexpr TestPolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
-};
-
-class TypeBarrierPolicy final : public TypePolicy
-{
-  public:
-    constexpr TypeBarrierPolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
-};
-
-class CallPolicy final : public TypePolicy
-{
-  public:
-    constexpr CallPolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
+class SameValuePolicy final : public TypePolicy {
+ public:
+  constexpr SameValuePolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
 
-class PowPolicy final : public TypePolicy
-{
-  public:
-    constexpr PowPolicy() { }
-    SPECIALIZATION_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
+class TestPolicy final : public TypePolicy {
+ public:
+  constexpr TestPolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override;
+};
+
+class TypeBarrierPolicy final : public TypePolicy {
+ public:
+  constexpr TypeBarrierPolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override;
+};
+
+class CallPolicy final : public TypePolicy {
+ public:
+  constexpr CallPolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
 
-class SignPolicy final : public TypePolicy
-{
-  public:
-    constexpr SignPolicy() { }
-    SPECIALIZATION_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
+class PowPolicy final : public TypePolicy {
+ public:
+  constexpr PowPolicy() {}
+  SPECIALIZATION_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override;
 };
 
 
-template <unsigned Op>
-class StringPolicy final : public TypePolicy
-{
-  public:
-    constexpr StringPolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class SignPolicy final : public TypePolicy {
+ public:
+  constexpr SignPolicy() {}
+  SPECIALIZATION_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override;
 };
 
 
 template <unsigned Op>
-class ConvertToStringPolicy final : public TypePolicy
-{
-  public:
-    constexpr ConvertToStringPolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class StringPolicy final : public TypePolicy {
+ public:
+  constexpr StringPolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
 template <unsigned Op>
-class BooleanPolicy final : private TypePolicy
-{
-  public:
-    constexpr BooleanPolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class ConvertToStringPolicy final : public TypePolicy {
+ public:
+  constexpr ConvertToStringPolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
 template <unsigned Op>
-class UnboxedInt32Policy final : private TypePolicy
-{
-  public:
-    constexpr UnboxedInt32Policy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class BooleanPolicy final : private TypePolicy {
+ public:
+  constexpr BooleanPolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
 template <unsigned Op>
-class ConvertToInt32Policy final : public TypePolicy
-{
-  public:
-    constexpr ConvertToInt32Policy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class UnboxedInt32Policy final : private TypePolicy {
+ public:
+  constexpr UnboxedInt32Policy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
 template <unsigned Op>
-class TruncateToInt32Policy final : public TypePolicy
-{
-  public:
-    constexpr TruncateToInt32Policy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class ConvertToInt32Policy final : public TypePolicy {
+ public:
+  constexpr ConvertToInt32Policy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
 template <unsigned Op>
-class DoublePolicy final : public TypePolicy
-{
-  public:
-    constexpr DoublePolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class TruncateToInt32Policy final : public TypePolicy {
+ public:
+  constexpr TruncateToInt32Policy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
 template <unsigned Op>
-class Float32Policy final : public TypePolicy
-{
-  public:
-    constexpr Float32Policy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class DoublePolicy final : public TypePolicy {
+ public:
+  constexpr DoublePolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
+};
+
+
+template <unsigned Op>
+class Float32Policy final : public TypePolicy {
+ public:
+  constexpr Float32Policy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
 
 template <unsigned Op>
-class FloatingPointPolicy final : public TypePolicy
-{
-  public:
-    constexpr FloatingPointPolicy() { }
-    SPECIALIZATION_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
+class FloatingPointPolicy final : public TypePolicy {
+ public:
+  constexpr FloatingPointPolicy() {}
+  SPECIALIZATION_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
 template <unsigned Op>
-class NoFloatPolicy final : public TypePolicy
-{
-  public:
-    constexpr NoFloatPolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class NoFloatPolicy final : public TypePolicy {
+ public:
+  constexpr NoFloatPolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
 
 template <unsigned FirstOp>
-class NoFloatPolicyAfter final : public TypePolicy
-{
-  public:
-    constexpr NoFloatPolicyAfter() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
+class NoFloatPolicyAfter final : public TypePolicy {
+ public:
+  constexpr NoFloatPolicyAfter() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override;
 };
 
 
-class ToDoublePolicy final : public TypePolicy
-{
-  public:
-    constexpr ToDoublePolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class ToDoublePolicy final : public TypePolicy {
+ public:
+  constexpr ToDoublePolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
-class ToInt32Policy final : public TypePolicy
-{
-  public:
-    constexpr ToInt32Policy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class ToInt32Policy final : public TypePolicy {
+ public:
+  constexpr ToInt32Policy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 
-class ToStringPolicy final : public TypePolicy
-{
-  public:
-    constexpr ToStringPolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* def);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override {
-        return staticAdjustInputs(alloc, def);
-    }
+class ToStringPolicy final : public TypePolicy {
+ public:
+  constexpr ToStringPolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* def);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override {
+    return staticAdjustInputs(alloc, def);
+  }
 };
 
 template <unsigned Op>
-class ObjectPolicy final : public TypePolicy
-{
-  public:
-    constexpr ObjectPolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* ins);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override {
-        return staticAdjustInputs(alloc, ins);
-    }
+class ObjectPolicy final : public TypePolicy {
+ public:
+  constexpr ObjectPolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* ins);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override {
+    return staticAdjustInputs(alloc, ins);
+  }
 };
 
 
@@ -366,150 +370,157 @@ class ObjectPolicy final : public TypePolicy
 typedef ObjectPolicy<0> SingleObjectPolicy;
 
 template <unsigned Op>
-class BoxPolicy final : public TypePolicy
-{
-  public:
-    constexpr BoxPolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* ins);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override {
-        return staticAdjustInputs(alloc, ins);
-    }
+class BoxPolicy final : public TypePolicy {
+ public:
+  constexpr BoxPolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* ins);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override {
+    return staticAdjustInputs(alloc, ins);
+  }
 };
 
 
 template <unsigned Op, MIRType Type>
-class BoxExceptPolicy final : public TypePolicy
-{
-  public:
-    constexpr BoxExceptPolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* ins);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override {
-        return staticAdjustInputs(alloc, ins);
-    }
+class BoxExceptPolicy final : public TypePolicy {
+ public:
+  constexpr BoxExceptPolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* ins);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override {
+    return staticAdjustInputs(alloc, ins);
+  }
 };
 
 
 template <unsigned Op>
-class CacheIdPolicy final : public TypePolicy
-{
-  public:
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* ins);
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override {
-        return staticAdjustInputs(alloc, ins);
-    }
+class CacheIdPolicy final : public TypePolicy {
+ public:
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* ins);
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override {
+    return staticAdjustInputs(alloc, ins);
+  }
 };
 
 
 template <class... Policies>
-class MixPolicy final : public TypePolicy
-{
-    template <class P>
-    static bool staticAdjustInputsHelper(TempAllocator& alloc, MInstruction* ins) {
-        return P::staticAdjustInputs(alloc, ins);
-    }
+class MixPolicy final : public TypePolicy {
+  template <class P>
+  static bool staticAdjustInputsHelper(TempAllocator& alloc,
+                                       MInstruction* ins) {
+    return P::staticAdjustInputs(alloc, ins);
+  }
 
-    template <class P, class... Rest>
-    static typename mozilla::EnableIf<(sizeof...(Rest) > 0), bool>::Type
-    staticAdjustInputsHelper(TempAllocator& alloc, MInstruction* ins) {
-        return P::staticAdjustInputs(alloc, ins) &&
-               MixPolicy::staticAdjustInputsHelper<Rest...>(alloc, ins);
-    }
+  template <class P, class... Rest>
+  static typename mozilla::EnableIf<(sizeof...(Rest) > 0), bool>::Type
+  staticAdjustInputsHelper(TempAllocator& alloc, MInstruction* ins) {
+    return P::staticAdjustInputs(alloc, ins) &&
+           MixPolicy::staticAdjustInputsHelper<Rest...>(alloc, ins);
+  }
 
-  public:
-    constexpr MixPolicy() { }
-    EMPTY_DATA_;
-    static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc, MInstruction* ins) {
-        return MixPolicy::staticAdjustInputsHelper<Policies...>(alloc, ins);
-    }
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override {
-        return staticAdjustInputs(alloc, ins);
-    }
+ public:
+  constexpr MixPolicy() {}
+  EMPTY_DATA_;
+  static MOZ_MUST_USE bool staticAdjustInputs(TempAllocator& alloc,
+                                              MInstruction* ins) {
+    return MixPolicy::staticAdjustInputsHelper<Policies...>(alloc, ins);
+  }
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override {
+    return staticAdjustInputs(alloc, ins);
+  }
 };
 
-class CallSetElementPolicy final : public TypePolicy
-{
-  public:
-    constexpr CallSetElementPolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
+class CallSetElementPolicy final : public TypePolicy {
+ public:
+  constexpr CallSetElementPolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
 
 
-class InstanceOfPolicy final : public TypePolicy
-{
-  public:
-    constexpr InstanceOfPolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
+class InstanceOfPolicy final : public TypePolicy {
+ public:
+  constexpr InstanceOfPolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
 class StoreTypedArrayHolePolicy;
 
-class StoreUnboxedScalarPolicy : public TypePolicy
-{
-  private:
-    constexpr StoreUnboxedScalarPolicy() { }
-    static MOZ_MUST_USE bool adjustValueInput(TempAllocator& alloc, MInstruction* ins,
-                                              Scalar::Type arrayType, MDefinition* value,
-                                              int valueOperand);
+class StoreUnboxedScalarPolicy : public TypePolicy {
+ private:
+  constexpr StoreUnboxedScalarPolicy() {}
+  static MOZ_MUST_USE bool adjustValueInput(TempAllocator& alloc,
+                                            MInstruction* ins,
+                                            Scalar::Type arrayType,
+                                            MDefinition* value,
+                                            int valueOperand);
 
-    friend class StoreTypedArrayHolePolicy;
+  friend class StoreTypedArrayHolePolicy;
 
-  public:
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
+ public:
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override;
 };
 
-class StoreTypedArrayHolePolicy final : public StoreUnboxedScalarPolicy
-{
-  public:
-    constexpr StoreTypedArrayHolePolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
+class StoreTypedArrayHolePolicy final : public StoreUnboxedScalarPolicy {
+ public:
+  constexpr StoreTypedArrayHolePolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override;
 };
 
-class StoreUnboxedObjectOrNullPolicy final : public TypePolicy
-{
-  public:
-    constexpr StoreUnboxedObjectOrNullPolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
+class StoreUnboxedObjectOrNullPolicy final : public TypePolicy {
+ public:
+  constexpr StoreUnboxedObjectOrNullPolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
-class StoreUnboxedStringPolicy final : public TypePolicy
-{
-  public:
-    constexpr StoreUnboxedStringPolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* def) const override;
+class StoreUnboxedStringPolicy final : public TypePolicy {
+ public:
+  constexpr StoreUnboxedStringPolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* def) const override;
 };
 
 
-class ClampPolicy final : public TypePolicy
-{
-  public:
-    constexpr ClampPolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
+class ClampPolicy final : public TypePolicy {
+ public:
+  constexpr ClampPolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override;
 };
 
-class FilterTypeSetPolicy final : public TypePolicy
-{
-  public:
-    constexpr FilterTypeSetPolicy() { }
-    EMPTY_DATA_;
-    MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc, MInstruction* ins) const override;
+class FilterTypeSetPolicy final : public TypePolicy {
+ public:
+  constexpr FilterTypeSetPolicy() {}
+  EMPTY_DATA_;
+  MOZ_MUST_USE bool adjustInputs(TempAllocator& alloc,
+                                 MInstruction* ins) const override;
 };
 
 #undef SPECIALIZATION_DATA_
 #undef INHERIT_DATA_
 #undef EMPTY_DATA_
 
-} 
-} 
+}  
+}  
 
 #endif 

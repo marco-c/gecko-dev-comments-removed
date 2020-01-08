@@ -149,182 +149,182 @@ namespace js {
 
 
 class SavedStacks {
-    friend class SavedFrame;
-    friend bool JS::ubi::ConstructSavedFrameStackSlow(JSContext* cx,
-                                                      JS::ubi::StackFrame& ubiFrame,
-                                                      MutableHandleObject outSavedFrameStack);
+  friend class SavedFrame;
+  friend bool JS::ubi::ConstructSavedFrameStackSlow(
+      JSContext* cx, JS::ubi::StackFrame& ubiFrame,
+      MutableHandleObject outSavedFrameStack);
 
-  public:
-    SavedStacks()
+ public:
+  SavedStacks()
       : frames(),
         bernoulliSeeded(false),
         bernoulli(1.0, 0x59fdad7f6b4cc573, 0x91adf38db96a9354),
-        creatingSavedFrame(false)
-    { }
+        creatingSavedFrame(false) {}
 
-    MOZ_MUST_USE bool saveCurrentStack(JSContext* cx, MutableHandleSavedFrame frame,
-                                       JS::StackCapture&& capture = JS::StackCapture(JS::AllFrames()));
-    MOZ_MUST_USE bool copyAsyncStack(JSContext* cx, HandleObject asyncStack,
-                                     HandleString asyncCause,
-                                     MutableHandleSavedFrame adoptedStack,
-                                     const mozilla::Maybe<size_t>& maxFrameCount);
-    void sweep();
-    void trace(JSTracer* trc);
-    uint32_t count();
-    void clear();
-    void chooseSamplingProbability(JS::Realm* realm);
+  MOZ_MUST_USE bool saveCurrentStack(
+      JSContext* cx, MutableHandleSavedFrame frame,
+      JS::StackCapture&& capture = JS::StackCapture(JS::AllFrames()));
+  MOZ_MUST_USE bool copyAsyncStack(JSContext* cx, HandleObject asyncStack,
+                                   HandleString asyncCause,
+                                   MutableHandleSavedFrame adoptedStack,
+                                   const mozilla::Maybe<size_t>& maxFrameCount);
+  void sweep();
+  void trace(JSTracer* trc);
+  uint32_t count();
+  void clear();
+  void chooseSamplingProbability(JS::Realm* realm);
 
-    
-    
-    
-    void setRNGState(uint64_t state0, uint64_t state1) { bernoulli.setRandomState(state0, state1); }
+  
+  
+  
+  void setRNGState(uint64_t state0, uint64_t state1) {
+    bernoulli.setRandomState(state0, state1);
+  }
 
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf);
 
-    
-    
-    struct MetadataBuilder : public AllocationMetadataBuilder {
-        MetadataBuilder() : AllocationMetadataBuilder() { }
-        virtual JSObject* build(JSContext *cx, HandleObject obj,
-                                AutoEnterOOMUnsafeRegion& oomUnsafe) const override;
-    };
+  
+  
+  struct MetadataBuilder : public AllocationMetadataBuilder {
+    MetadataBuilder() : AllocationMetadataBuilder() {}
+    virtual JSObject* build(JSContext* cx, HandleObject obj,
+                            AutoEnterOOMUnsafeRegion& oomUnsafe) const override;
+  };
 
-    static const MetadataBuilder metadataBuilder;
+  static const MetadataBuilder metadataBuilder;
 
-  private:
-    SavedFrame::Set frames;
-    bool bernoulliSeeded;
-    mozilla::FastBernoulliTrial bernoulli;
-    bool creatingSavedFrame;
+ private:
+  SavedFrame::Set frames;
+  bool bernoulliSeeded;
+  mozilla::FastBernoulliTrial bernoulli;
+  bool creatingSavedFrame;
 
-    
-    
-    
-    struct MOZ_RAII AutoReentrancyGuard {
-        MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
-        SavedStacks& stacks;
+  
+  
+  
+  struct MOZ_RAII AutoReentrancyGuard {
+    MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER;
+    SavedStacks& stacks;
 
-        explicit AutoReentrancyGuard(SavedStacks& stacks MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-            : stacks(stacks)
-        {
-            MOZ_GUARD_OBJECT_NOTIFIER_INIT;
-            stacks.creatingSavedFrame = true;
-        }
+    explicit AutoReentrancyGuard(
+        SavedStacks& stacks MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+        : stacks(stacks) {
+      MOZ_GUARD_OBJECT_NOTIFIER_INIT;
+      stacks.creatingSavedFrame = true;
+    }
 
-        ~AutoReentrancyGuard()
-        {
-            stacks.creatingSavedFrame = false;
-        }
-    };
+    ~AutoReentrancyGuard() { stacks.creatingSavedFrame = false; }
+  };
 
-    MOZ_MUST_USE bool insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
-                                   JS::StackCapture&& capture);
-    MOZ_MUST_USE bool adoptAsyncStack(JSContext* cx, MutableHandleSavedFrame asyncStack,
-                                      HandleAtom asyncCause,
-                                      const mozilla::Maybe<size_t>& maxFrameCount);
-    MOZ_MUST_USE bool checkForEvalInFramePrev(JSContext* cx, SavedFrame::HandleLookup lookup);
-    SavedFrame* getOrCreateSavedFrame(JSContext* cx, SavedFrame::HandleLookup lookup);
-    SavedFrame* createFrameFromLookup(JSContext* cx, SavedFrame::HandleLookup lookup);
+  MOZ_MUST_USE bool insertFrames(JSContext* cx, MutableHandleSavedFrame frame,
+                                 JS::StackCapture&& capture);
+  MOZ_MUST_USE bool adoptAsyncStack(
+      JSContext* cx, MutableHandleSavedFrame asyncStack, HandleAtom asyncCause,
+      const mozilla::Maybe<size_t>& maxFrameCount);
+  MOZ_MUST_USE bool checkForEvalInFramePrev(JSContext* cx,
+                                            SavedFrame::HandleLookup lookup);
+  SavedFrame* getOrCreateSavedFrame(JSContext* cx,
+                                    SavedFrame::HandleLookup lookup);
+  SavedFrame* createFrameFromLookup(JSContext* cx,
+                                    SavedFrame::HandleLookup lookup);
 
-    
+  
 
-    struct PCKey {
-        PCKey(JSScript* script, jsbytecode* pc) : script(script), pc(pc) { }
+  struct PCKey {
+    PCKey(JSScript* script, jsbytecode* pc) : script(script), pc(pc) {}
 
-        HeapPtr<JSScript*> script;
-        jsbytecode* pc;
+    HeapPtr<JSScript*> script;
+    jsbytecode* pc;
 
-        void trace(JSTracer* trc) {  }
-        bool needsSweep() { return IsAboutToBeFinalized(&script); }
-    };
+    void trace(JSTracer* trc) { 
+    }
+    bool needsSweep() { return IsAboutToBeFinalized(&script); }
+  };
 
-  public:
-    struct LocationValue {
-        LocationValue() : source(nullptr), line(0), column(0) { }
-        LocationValue(JSAtom* source, size_t line, uint32_t column)
-            : source(source), line(line), column(column)
-        { }
+ public:
+  struct LocationValue {
+    LocationValue() : source(nullptr), line(0), column(0) {}
+    LocationValue(JSAtom* source, size_t line, uint32_t column)
+        : source(source), line(line), column(column) {}
 
-        void trace(JSTracer* trc) {
-            TraceNullableEdge(trc, &source, "SavedStacks::LocationValue::source");
-        }
+    void trace(JSTracer* trc) {
+      TraceNullableEdge(trc, &source, "SavedStacks::LocationValue::source");
+    }
 
-        bool needsSweep() {
-            
-            
-            
-            MOZ_ASSERT(source);
-            MOZ_ASSERT(!IsAboutToBeFinalized(&source));
-            return true;
-        }
+    bool needsSweep() {
+      
+      
+      
+      MOZ_ASSERT(source);
+      MOZ_ASSERT(!IsAboutToBeFinalized(&source));
+      return true;
+    }
 
-        HeapPtr<JSAtom*> source;
-        size_t line;
-        uint32_t column;
-    };
+    HeapPtr<JSAtom*> source;
+    size_t line;
+    uint32_t column;
+  };
 
-  private:
-    struct PCLocationHasher : public DefaultHasher<PCKey> {
-        using ScriptPtrHasher = DefaultHasher<JSScript*>;
-        using BytecodePtrHasher = DefaultHasher<jsbytecode*>;
+ private:
+  struct PCLocationHasher : public DefaultHasher<PCKey> {
+    using ScriptPtrHasher = DefaultHasher<JSScript*>;
+    using BytecodePtrHasher = DefaultHasher<jsbytecode*>;
 
-        static HashNumber hash(const PCKey& key) {
-            return mozilla::AddToHash(ScriptPtrHasher::hash(key.script),
-                                      BytecodePtrHasher::hash(key.pc));
-        }
+    static HashNumber hash(const PCKey& key) {
+      return mozilla::AddToHash(ScriptPtrHasher::hash(key.script),
+                                BytecodePtrHasher::hash(key.pc));
+    }
 
-        static bool match(const PCKey& l, const PCKey& k) {
-            return ScriptPtrHasher::match(l.script, k.script) &&
-                   BytecodePtrHasher::match(l.pc, k.pc);
-        }
-    };
+    static bool match(const PCKey& l, const PCKey& k) {
+      return ScriptPtrHasher::match(l.script, k.script) &&
+             BytecodePtrHasher::match(l.pc, k.pc);
+    }
+  };
 
-    
-    
-    
-    
-    
-    
-    
-    using PCLocationMap = GCHashMap<PCKey, LocationValue, PCLocationHasher, SystemAllocPolicy>;
-    PCLocationMap pcLocationMap;
+  
+  
+  
+  
+  
+  
+  
+  using PCLocationMap =
+      GCHashMap<PCKey, LocationValue, PCLocationHasher, SystemAllocPolicy>;
+  PCLocationMap pcLocationMap;
 
-    MOZ_MUST_USE bool getLocation(JSContext* cx, const FrameIter& iter,
-                                  MutableHandle<LocationValue> locationp);
+  MOZ_MUST_USE bool getLocation(JSContext* cx, const FrameIter& iter,
+                                MutableHandle<LocationValue> locationp);
 };
 
 template <typename Wrapper>
-struct WrappedPtrOperations<SavedStacks::LocationValue, Wrapper>
-{
-    JSAtom* source() const { return loc().source; }
-    size_t line() const { return loc().line; }
-    uint32_t column() const { return loc().column; }
+struct WrappedPtrOperations<SavedStacks::LocationValue, Wrapper> {
+  JSAtom* source() const { return loc().source; }
+  size_t line() const { return loc().line; }
+  uint32_t column() const { return loc().column; }
 
-  private:
-    const SavedStacks::LocationValue& loc() const {
-        return static_cast<const Wrapper*>(this)->get();
-    }
+ private:
+  const SavedStacks::LocationValue& loc() const {
+    return static_cast<const Wrapper*>(this)->get();
+  }
 };
 
 template <typename Wrapper>
 struct MutableWrappedPtrOperations<SavedStacks::LocationValue, Wrapper>
-    : public WrappedPtrOperations<SavedStacks::LocationValue, Wrapper>
-{
-    void setSource(JSAtom* v) { loc().source = v; }
-    void setLine(size_t v) { loc().line = v; }
-    void setColumn(uint32_t v) { loc().column = v; }
+    : public WrappedPtrOperations<SavedStacks::LocationValue, Wrapper> {
+  void setSource(JSAtom* v) { loc().source = v; }
+  void setLine(size_t v) { loc().line = v; }
+  void setColumn(uint32_t v) { loc().column = v; }
 
-  private:
-    SavedStacks::LocationValue& loc() {
-        return static_cast<Wrapper*>(this)->get();
-    }
+ private:
+  SavedStacks::LocationValue& loc() {
+    return static_cast<Wrapper*>(this)->get();
+  }
 };
 
-JS::UniqueChars
-BuildUTF8StackString(JSContext* cx, JSPrincipals* principals, HandleObject stack);
+JS::UniqueChars BuildUTF8StackString(JSContext* cx, JSPrincipals* principals,
+                                     HandleObject stack);
 
-uint32_t
-FixupColumnForDisplay(uint32_t column);
+uint32_t FixupColumnForDisplay(uint32_t column);
 
 } 
 

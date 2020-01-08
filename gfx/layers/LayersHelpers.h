@@ -21,36 +21,31 @@ class Layer;
 
 
 
-gfx::IntRect
-ComputeBackdropCopyRect(const gfx::Rect& aRect,
-                        const gfx::IntRect& aClipRect,
-                        const gfx::Matrix4x4& aTransform,
-                        const gfx::IntRect& aRenderTargetRect,
-                        gfx::Matrix4x4* aOutTransform,
-                        gfx::Rect* aOutLayerQuad = nullptr);
+gfx::IntRect ComputeBackdropCopyRect(const gfx::Rect& aRect,
+                                     const gfx::IntRect& aClipRect,
+                                     const gfx::Matrix4x4& aTransform,
+                                     const gfx::IntRect& aRenderTargetRect,
+                                     gfx::Matrix4x4* aOutTransform,
+                                     gfx::Rect* aOutLayerQuad = nullptr);
 
 
 template <typename T>
-static inline gfx::Rect
-TextureRectToCoords(const T& aRect, const gfx::IntSize& aSize)
-{
+static inline gfx::Rect TextureRectToCoords(const T& aRect,
+                                            const gfx::IntSize& aSize) {
   return gfx::Rect(
-    float(aRect.X()) / aSize.width,
-    float(aRect.Y()) / aSize.height,
-    float(aRect.Width()) / aSize.width,
-    float(aRect.Height()) / aSize.height);
+      float(aRect.X()) / aSize.width, float(aRect.Y()) / aSize.height,
+      float(aRect.Width()) / aSize.width, float(aRect.Height()) / aSize.height);
 }
 
 
-nsTArray<gfx::TexturedTriangle>
-GenerateTexturedTriangles(const gfx::Polygon& aPolygon,
-                          const gfx::Rect& aRect,
-                          const gfx::Rect& aTexRect);
+nsTArray<gfx::TexturedTriangle> GenerateTexturedTriangles(
+    const gfx::Polygon& aPolygon, const gfx::Rect& aRect,
+    const gfx::Rect& aTexRect);
 
 
 void TransformLayerGeometry(Layer* aLayer, Maybe<gfx::Polygon>& aGeometry);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

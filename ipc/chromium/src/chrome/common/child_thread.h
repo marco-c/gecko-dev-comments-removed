@@ -14,8 +14,7 @@
 class ResourceDispatcher;
 
 
-class ChildThread : public IPC::Channel::Listener,
-                    public base::Thread {
+class ChildThread : public IPC::Channel::Listener, public base::Thread {
  public:
   
   explicit ChildThread(Thread::Options options);

@@ -28,48 +28,47 @@ namespace gc {
 
 
 
-class RelocationOverlay : public Cell
-{
-    
-    
-    
-    
-    
-    
-    uintptr_t dataWithTag_;
+class RelocationOverlay : public Cell {
+  
+  
+  
+  
+  
+  
+  uintptr_t dataWithTag_;
 
-    
-    RelocationOverlay* next_;
+  
+  RelocationOverlay* next_;
 
-  public:
-    static const RelocationOverlay* fromCell(const Cell* cell) {
-        return static_cast<const RelocationOverlay*>(cell);
-    }
+ public:
+  static const RelocationOverlay* fromCell(const Cell* cell) {
+    return static_cast<const RelocationOverlay*>(cell);
+  }
 
-    static RelocationOverlay* fromCell(Cell* cell) {
-        return static_cast<RelocationOverlay*>(cell);
-    }
+  static RelocationOverlay* fromCell(Cell* cell) {
+    return static_cast<RelocationOverlay*>(cell);
+  }
 
-    Cell* forwardingAddress() const {
-        MOZ_ASSERT(isForwarded());
-        uintptr_t newLocation = dataWithTag_ & ~Cell::RESERVED_MASK;
-        return reinterpret_cast<Cell*>(newLocation);
-    }
+  Cell* forwardingAddress() const {
+    MOZ_ASSERT(isForwarded());
+    uintptr_t newLocation = dataWithTag_ & ~Cell::RESERVED_MASK;
+    return reinterpret_cast<Cell*>(newLocation);
+  }
 
-    void forwardTo(Cell* cell);
+  void forwardTo(Cell* cell);
 
-    RelocationOverlay*& nextRef() {
-        MOZ_ASSERT(isForwarded());
-        return next_;
-    }
+  RelocationOverlay*& nextRef() {
+    MOZ_ASSERT(isForwarded());
+    return next_;
+  }
 
-    RelocationOverlay* next() const {
-        MOZ_ASSERT(isForwarded());
-        return next_;
-    }
+  RelocationOverlay* next() const {
+    MOZ_ASSERT(isForwarded());
+    return next_;
+  }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

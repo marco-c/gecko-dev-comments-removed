@@ -25,19 +25,19 @@ class nsWindowSizes;
 
 
 class nsFloatCache {
-public:
+ public:
   nsFloatCache();
 #ifdef NS_BUILD_REFCNT_LOGGING
   ~nsFloatCache();
 #else
-  ~nsFloatCache() { }
+  ~nsFloatCache() {}
 #endif
 
   nsFloatCache* Next() const { return mNext; }
 
-  nsIFrame* mFloat;                     
+  nsIFrame* mFloat;  
 
-protected:
+ protected:
   nsFloatCache* mNext;
 
   friend class nsFloatCacheList;
@@ -47,25 +47,19 @@ protected:
 
 
 class nsFloatCacheList {
-public:
+ public:
 #ifdef NS_BUILD_REFCNT_LOGGING
   nsFloatCacheList();
 #else
-  nsFloatCacheList() : mHead(nullptr) { }
+  nsFloatCacheList() : mHead(nullptr) {}
 #endif
   ~nsFloatCacheList();
 
-  bool IsEmpty() const {
-    return nullptr == mHead;
-  }
+  bool IsEmpty() const { return nullptr == mHead; }
 
-  bool NotEmpty() const {
-    return nullptr != mHead;
-  }
+  bool NotEmpty() const { return nullptr != mHead; }
 
-  nsFloatCache* Head() const {
-    return mHead;
-  }
+  nsFloatCache* Head() const { return mHead; }
 
   nsFloatCache* Tail() const;
 
@@ -81,7 +75,7 @@ public:
   
   void Append(nsFloatCacheFreeList& aList);
 
-protected:
+ protected:
   nsFloatCache* mHead;
 
   
@@ -96,31 +90,23 @@ protected:
 
 
 class nsFloatCacheFreeList : private nsFloatCacheList {
-public:
+ public:
 #ifdef NS_BUILD_REFCNT_LOGGING
   nsFloatCacheFreeList();
   ~nsFloatCacheFreeList();
 #else
-  nsFloatCacheFreeList() : mTail(nullptr) { }
-  ~nsFloatCacheFreeList() { }
+  nsFloatCacheFreeList() : mTail(nullptr) {}
+  ~nsFloatCacheFreeList() {}
 #endif
 
   
-  bool IsEmpty() const {
-    return nullptr == mHead;
-  }
+  bool IsEmpty() const { return nullptr == mHead; }
 
-  nsFloatCache* Head() const {
-    return mHead;
-  }
+  nsFloatCache* Head() const { return mHead; }
 
-  nsFloatCache* Tail() const {
-    return mTail;
-  }
+  nsFloatCache* Tail() const { return mTail; }
 
-  bool NotEmpty() const {
-    return nullptr != mHead;
-  }
+  bool NotEmpty() const { return nullptr != mHead; }
 
   void DeleteAll();
 
@@ -136,7 +122,7 @@ public:
   
   nsFloatCache* Alloc(nsIFrame* aFloat);
 
-protected:
+ protected:
   nsFloatCache* mTail;
 
   friend class nsFloatCacheList;
@@ -181,18 +167,16 @@ class nsLineList_const_reverse_iterator;
 
 
 class nsLineLink {
+ public:
+  friend class nsLineList;
+  friend class nsLineList_iterator;
+  friend class nsLineList_reverse_iterator;
+  friend class nsLineList_const_iterator;
+  friend class nsLineList_const_reverse_iterator;
 
-  public:
-    friend class nsLineList;
-    friend class nsLineList_iterator;
-    friend class nsLineList_reverse_iterator;
-    friend class nsLineList_const_iterator;
-    friend class nsLineList_const_reverse_iterator;
-
-  private:
-    nsLineLink *_mNext; 
-    nsLineLink *_mPrev; 
-
+ private:
+  nsLineLink* _mNext;  
+  nsLineLink* _mPrev;  
 };
 
 
@@ -200,9 +184,8 @@ class nsLineLink {
 
 
 
-
 class nsLineBox final : public nsLineLink {
-private:
+ private:
   nsLineBox(nsIFrame* aFrame, int32_t aCount, bool aIsBlock);
   ~nsLineBox();
 
@@ -211,78 +194,47 @@ private:
   void* operator new(size_t sz, nsIPresShell* aPresShell);
   void operator delete(void* aPtr, size_t sz) = delete;
 
-public:
+ public:
   
   friend nsLineBox* NS_NewLineBox(nsIPresShell* aPresShell, nsIFrame* aFrame,
                                   bool aIsBlock);
-  friend nsLineBox* NS_NewLineBox(nsIPresShell* aPresShell, nsLineBox* aFromLine,
-                                  nsIFrame* aFrame, int32_t aCount);
+  friend nsLineBox* NS_NewLineBox(nsIPresShell* aPresShell,
+                                  nsLineBox* aFromLine, nsIFrame* aFrame,
+                                  int32_t aCount);
   void Destroy(nsIPresShell* aPresShell);
 
   
-  bool IsBlock() const {
-    return mFlags.mBlock;
-  }
-  bool IsInline() const {
-    return !mFlags.mBlock;
-  }
+  bool IsBlock() const { return mFlags.mBlock; }
+  bool IsInline() const { return !mFlags.mBlock; }
 
   
-  void MarkDirty() {
-    mFlags.mDirty = 1;
-  }
-  void ClearDirty() {
-    mFlags.mDirty = 0;
-  }
-  bool IsDirty() const {
-    return mFlags.mDirty;
-  }
+  void MarkDirty() { mFlags.mDirty = 1; }
+  void ClearDirty() { mFlags.mDirty = 0; }
+  bool IsDirty() const { return mFlags.mDirty; }
 
   
-  void MarkPreviousMarginDirty() {
-    mFlags.mPreviousMarginDirty = 1;
-  }
-  void ClearPreviousMarginDirty() {
-    mFlags.mPreviousMarginDirty = 0;
-  }
-  bool IsPreviousMarginDirty() const {
-    return mFlags.mPreviousMarginDirty;
-  }
+  void MarkPreviousMarginDirty() { mFlags.mPreviousMarginDirty = 1; }
+  void ClearPreviousMarginDirty() { mFlags.mPreviousMarginDirty = 0; }
+  bool IsPreviousMarginDirty() const { return mFlags.mPreviousMarginDirty; }
 
   
-  void SetHasClearance() {
-    mFlags.mHasClearance = 1;
-  }
-  void ClearHasClearance() {
-    mFlags.mHasClearance = 0;
-  }
-  bool HasClearance() const {
-    return mFlags.mHasClearance;
-  }
+  void SetHasClearance() { mFlags.mHasClearance = 1; }
+  void ClearHasClearance() { mFlags.mHasClearance = 0; }
+  bool HasClearance() const { return mFlags.mHasClearance; }
 
   
   void SetLineIsImpactedByFloat(bool aValue) {
     mFlags.mImpactedByFloat = aValue;
   }
-  bool IsImpactedByFloat() const {
-    return mFlags.mImpactedByFloat;
-  }
+  bool IsImpactedByFloat() const { return mFlags.mImpactedByFloat; }
 
   
-  void SetLineWrapped(bool aOn) {
-    mFlags.mLineWrapped = aOn;
-  }
-  bool IsLineWrapped() const {
-    return mFlags.mLineWrapped;
-  }
+  void SetLineWrapped(bool aOn) { mFlags.mLineWrapped = aOn; }
+  bool IsLineWrapped() const { return mFlags.mLineWrapped; }
 
   
-  void SetInvalidateTextRuns(bool aOn) {
-    mFlags.mInvalidateTextRuns = aOn;
-  }
-  bool GetInvalidateTextRuns() const {
-    return mFlags.mInvalidateTextRuns;
-  }
+  void SetInvalidateTextRuns(bool aOn) { mFlags.mInvalidateTextRuns = aOn; }
+  bool GetInvalidateTextRuns() const { return mFlags.mInvalidateTextRuns; }
 
   
   void DisableResizeReflowOptimization() {
@@ -304,22 +256,14 @@ public:
     mFlags.mHasBullet = false;
     InvalidateCachedIsEmpty();
   }
-  bool HasBullet() const {
-    return mFlags.mHasBullet;
-  }
+  bool HasBullet() const { return mFlags.mHasBullet; }
 
   
-  void SetHadFloatPushed() {
-    mFlags.mHadFloatPushed = true;
-  }
-  void ClearHadFloatPushed() {
-    mFlags.mHadFloatPushed = false;
-  }
-  bool HadFloatPushed() const {
-    return mFlags.mHadFloatPushed;
-  }
+  void SetHadFloatPushed() { mFlags.mHadFloatPushed = true; }
+  void ClearHadFloatPushed() { mFlags.mHadFloatPushed = false; }
+  bool HadFloatPushed() const { return mFlags.mHadFloatPushed; }
 
-private:
+ private:
   
   static const uint32_t kMinChildCountForHashtable = 200;
 
@@ -337,14 +281,15 @@ private:
 
   void NoteFramesMovedFrom(nsLineBox* aFromLine);
 
-  void SwitchToHashtable()
-  {
+  void SwitchToHashtable() {
     MOZ_ASSERT(!mFlags.mHasHashedFrames);
     uint32_t count = GetChildCount();
     mFlags.mHasHashedFrames = 1;
-    uint32_t minLength = std::max(kMinChildCountForHashtable,
-                                  uint32_t(PLDHashTable::kDefaultInitialLength));
-    mFrames = new nsTHashtable< nsPtrHashKey<nsIFrame> >(std::max(count, minLength));
+    uint32_t minLength =
+        std::max(kMinChildCountForHashtable,
+                 uint32_t(PLDHashTable::kDefaultInitialLength));
+    mFrames =
+        new nsTHashtable<nsPtrHashKey<nsIFrame> >(std::max(count, minLength));
     for (nsIFrame* f = mFirstChild; count-- > 0; f = f->GetNextSibling()) {
       mFrames->PutEntry(f);
     }
@@ -357,9 +302,10 @@ private:
     mChildCount = count;
   }
 
-public:
+ public:
   int32_t GetChildCount() const {
-    return MOZ_UNLIKELY(mFlags.mHasHashedFrames) ? mFrames->Count() : mChildCount;
+    return MOZ_UNLIKELY(mFlags.mHasHashedFrames) ? mFrames->Count()
+                                                 : mChildCount;
   }
 
   
@@ -400,11 +346,10 @@ public:
   }
   void SetBreakTypeBefore(StyleClear aBreakType) {
     MOZ_ASSERT(IsBlock(), "Only blocks have break-before");
-    MOZ_ASSERT(aBreakType == StyleClear::None ||
-               aBreakType == StyleClear::Left ||
-               aBreakType == StyleClear::Right ||
-               aBreakType == StyleClear::Both,
-               "Only float break types are allowed before a line");
+    MOZ_ASSERT(
+        aBreakType == StyleClear::None || aBreakType == StyleClear::Left ||
+            aBreakType == StyleClear::Right || aBreakType == StyleClear::Both,
+        "Only float break types are allowed before a line");
     mFlags.mBreakType = aBreakType;
   }
   StyleClear GetBreakTypeBefore() const {
@@ -419,10 +364,9 @@ public:
     mFlags.mBreakType = aBreakType;
   }
   bool HasFloatBreakAfter() const {
-    return !IsBlock() &&
-           (StyleClear::Left == BreakType() ||
-            StyleClear::Right == BreakType() ||
-            StyleClear::Both == BreakType());
+    return !IsBlock() && (StyleClear::Left == BreakType() ||
+                          StyleClear::Right == BreakType() ||
+                          StyleClear::Both == BreakType());
   }
   StyleClear GetBreakTypeAfter() const {
     return !IsBlock() ? BreakType() : StyleClear::None;
@@ -449,8 +393,7 @@ public:
   void SetOverflowAreas(const nsOverflowAreas& aOverflowAreas);
   mozilla::LogicalRect GetOverflowArea(nsOverflowType aType,
                                        mozilla::WritingMode aWM,
-                                       const nsSize& aContainerSize)
-  {
+                                       const nsSize& aContainerSize) {
     return mozilla::LogicalRect(aWM, GetOverflowArea(aType), aContainerSize);
   }
   nsRect GetOverflowArea(nsOverflowType aType) {
@@ -463,23 +406,23 @@ public:
     nsRect bounds = GetPhysicalBounds();
     return nsOverflowAreas(bounds, bounds);
   }
-  nsRect GetVisualOverflowArea()
-    { return GetOverflowArea(eVisualOverflow); }
-  nsRect GetScrollableOverflowArea()
-    { return GetOverflowArea(eScrollableOverflow); }
+  nsRect GetVisualOverflowArea() { return GetOverflowArea(eVisualOverflow); }
+  nsRect GetScrollableOverflowArea() {
+    return GetOverflowArea(eScrollableOverflow);
+  }
 
   void SlideBy(nscoord aDBCoord, const nsSize& aContainerSize) {
-    NS_ASSERTION(aContainerSize == mContainerSize ||
-                 mContainerSize == nsSize(-1, -1),
-                 "container size doesn't match");
+    NS_ASSERTION(
+        aContainerSize == mContainerSize || mContainerSize == nsSize(-1, -1),
+        "container size doesn't match");
     mContainerSize = aContainerSize;
     mBounds.BStart(mWritingMode) += aDBCoord;
     if (mData) {
       
       const nsSize nullContainerSize;
       nsPoint physicalDelta =
-        mozilla::LogicalPoint(mWritingMode, 0, aDBCoord).
-          GetPhysicalPoint(mWritingMode, nullContainerSize);
+          mozilla::LogicalPoint(mWritingMode, 0, aDBCoord)
+              .GetPhysicalPoint(mWritingMode, nullContainerSize);
       NS_FOR_FRAME_OVERFLOW_TYPES(otype) {
         mData->mOverflowAreas.Overflow(otype) += physicalDelta;
       }
@@ -490,8 +433,7 @@ public:
   
   
   
-  nsSize UpdateContainerSize(const nsSize aNewContainerSize)
-  {
+  nsSize UpdateContainerSize(const nsSize aNewContainerSize) {
     NS_ASSERTION(mContainerSize != nsSize(-1, -1), "container size not set");
     nsSize delta = mContainerSize - aNewContainerSize;
     mContainerSize = aNewContainerSize;
@@ -506,17 +448,17 @@ public:
   }
 
   void IndentBy(nscoord aDICoord, const nsSize& aContainerSize) {
-    NS_ASSERTION(aContainerSize == mContainerSize ||
-                 mContainerSize == nsSize(-1, -1),
-                 "container size doesn't match");
+    NS_ASSERTION(
+        aContainerSize == mContainerSize || mContainerSize == nsSize(-1, -1),
+        "container size doesn't match");
     mContainerSize = aContainerSize;
     mBounds.IStart(mWritingMode) += aDICoord;
   }
 
   void ExpandBy(nscoord aDISize, const nsSize& aContainerSize) {
-    NS_ASSERTION(aContainerSize == mContainerSize ||
-                 mContainerSize == nsSize(-1, -1),
-                 "container size doesn't match");
+    NS_ASSERTION(
+        aContainerSize == mContainerSize || mContainerSize == nsSize(-1, -1),
+        "container size doesn't match");
     mContainerSize = aContainerSize;
     mBounds.ISize(mWritingMode) += aDISize;
   }
@@ -532,24 +474,12 @@ public:
   nscoord GetLogicalAscent() const { return mAscent; }
   void SetLogicalAscent(nscoord aAscent) { mAscent = aAscent; }
 
-  nscoord BStart() const {
-    return mBounds.BStart(mWritingMode);
-  }
-  nscoord BSize() const {
-    return mBounds.BSize(mWritingMode);
-  }
-  nscoord BEnd() const {
-    return mBounds.BEnd(mWritingMode);
-  }
-  nscoord IStart() const {
-    return mBounds.IStart(mWritingMode);
-  }
-  nscoord ISize() const {
-    return mBounds.ISize(mWritingMode);
-  }
-  nscoord IEnd() const {
-    return mBounds.IEnd(mWritingMode);
-  }
+  nscoord BStart() const { return mBounds.BStart(mWritingMode); }
+  nscoord BSize() const { return mBounds.BSize(mWritingMode); }
+  nscoord BEnd() const { return mBounds.BEnd(mWritingMode); }
+  nscoord IStart() const { return mBounds.IStart(mWritingMode); }
+  nscoord ISize() const { return mBounds.ISize(mWritingMode); }
+  nscoord IEnd() const { return mBounds.IEnd(mWritingMode); }
   void SetBoundsEmpty() {
     mBounds.IStart(mWritingMode) = 0;
     mBounds.ISize(mWritingMode) = 0;
@@ -569,29 +499,30 @@ public:
   
   
   static bool RFindLineContaining(nsIFrame* aFrame,
-                                    const nsLineList_iterator& aBegin,
-                                    nsLineList_iterator& aEnd,
-                                    nsIFrame* aLastFrameBeforeEnd,
-                                    int32_t* aFrameIndexInLine);
+                                  const nsLineList_iterator& aBegin,
+                                  nsLineList_iterator& aEnd,
+                                  nsIFrame* aLastFrameBeforeEnd,
+                                  int32_t* aFrameIndexInLine);
 
 #ifdef DEBUG_FRAME_DUMP
   static const char* BreakTypeToString(StyleClear aBreakType);
   char* StateToString(char* aBuf, int32_t aBufSize) const;
 
   void List(FILE* out, int32_t aIndent, uint32_t aFlags = 0) const;
-  void List(FILE* out = stderr, const char* aPrefix = "", uint32_t aFlags = 0) const;
+  void List(FILE* out = stderr, const char* aPrefix = "",
+            uint32_t aFlags = 0) const;
   nsIFrame* LastChild() const;
 #endif
 
   void AddSizeOfExcludingThis(nsWindowSizes& aSizes) const;
 
-private:
+ private:
   int32_t IndexOf(nsIFrame* aFrame) const;
-public:
 
+ public:
   bool Contains(nsIFrame* aFrame) const {
     return MOZ_UNLIKELY(mFlags.mHasHashedFrames) ? mFrames->Contains(aFrame)
-                                                : IndexOf(aFrame) >= 0;
+                                                 : IndexOf(aFrame) >= 0;
   }
 
   
@@ -602,14 +533,10 @@ public:
   
   bool CachedIsEmpty();
 
-  void InvalidateCachedIsEmpty() {
-    mFlags.mEmptyCacheValid = false;
-  }
+  void InvalidateCachedIsEmpty() { mFlags.mEmptyCacheValid = false; }
 
   
-  bool IsValidCachedIsEmpty() {
-    return mFlags.mEmptyCacheValid;
-  }
+  bool IsValidCachedIsEmpty() { return mFlags.mEmptyCacheValid; }
 
 #ifdef DEBUG
   static int32_t GetCtorCount();
@@ -627,8 +554,7 @@ public:
 
  public:
   const mozilla::LogicalRect& GetBounds() { return mBounds; }
-  nsRect GetPhysicalBounds() const
-  {
+  nsRect GetPhysicalBounds() const {
     if (mBounds.IsAllZero()) {
       return nsRect(0, 0, 0, 0);
     }
@@ -637,19 +563,16 @@ public:
                  "mContainerSize not initialized");
     return mBounds.GetPhysicalRect(mWritingMode, mContainerSize);
   }
-  void SetBounds(mozilla::WritingMode aWritingMode,
-                 nscoord aIStart, nscoord aBStart,
-                 nscoord aISize, nscoord aBSize,
-                 const nsSize& aContainerSize)
-  {
+  void SetBounds(mozilla::WritingMode aWritingMode, nscoord aIStart,
+                 nscoord aBStart, nscoord aISize, nscoord aBSize,
+                 const nsSize& aContainerSize) {
     mWritingMode = aWritingMode;
     mContainerSize = aContainerSize;
-    mBounds = mozilla::LogicalRect(aWritingMode, aIStart, aBStart,
-                                   aISize, aBSize);
+    mBounds =
+        mozilla::LogicalRect(aWritingMode, aIStart, aBStart, aISize, aBSize);
   }
-  void SetBounds(mozilla::WritingMode aWritingMode,
-                 nsRect aRect, const nsSize& aContainerSize)
-  {
+  void SetBounds(mozilla::WritingMode aWritingMode, nsRect aRect,
+                 const nsSize& aContainerSize) {
     mWritingMode = aWritingMode;
     mContainerSize = aContainerSize;
     mBounds = mozilla::LogicalRect(aWritingMode, aRect, aContainerSize);
@@ -657,7 +580,7 @@ public:
 
   
   union {
-    nsTHashtable< nsPtrHashKey<nsIFrame> >* mFrames;
+    nsTHashtable<nsPtrHashKey<nsIFrame> >* mFrames;
     uint32_t mChildCount;
   };
 
@@ -667,44 +590,40 @@ public:
     bool mHasClearance : 1;
     bool mBlock : 1;
     bool mImpactedByFloat : 1;
-    bool mLineWrapped: 1;
+    bool mLineWrapped : 1;
     bool mInvalidateTextRuns : 1;
     
     
-    bool mResizeReflowOptimizationDisabled: 1;
-    bool mEmptyCacheValid: 1;
-    bool mEmptyCacheState: 1;
+    bool mResizeReflowOptimizationDisabled : 1;
+    bool mEmptyCacheValid : 1;
+    bool mEmptyCacheState : 1;
     
     
     bool mHasBullet : 1;
     
     
     bool mHadFloatPushed : 1;
-    bool mHasHashedFrames: 1;
+    bool mHasHashedFrames : 1;
     StyleClear mBreakType;
   };
 
   struct ExtraData {
-    explicit ExtraData(const nsRect& aBounds) : mOverflowAreas(aBounds, aBounds) {
-    }
+    explicit ExtraData(const nsRect& aBounds)
+        : mOverflowAreas(aBounds, aBounds) {}
     nsOverflowAreas mOverflowAreas;
   };
 
   struct ExtraBlockData : public ExtraData {
     explicit ExtraBlockData(const nsRect& aBounds)
-      : ExtraData(aBounds),
-        mCarriedOutBEndMargin()
-    {
-    }
+        : ExtraData(aBounds), mCarriedOutBEndMargin() {}
     nsCollapsingMargin mCarriedOutBEndMargin;
   };
 
   struct ExtraInlineData : public ExtraData {
     explicit ExtraInlineData(const nsRect& aBounds)
-      : ExtraData(aBounds)
-      , mFloatEdgeIStart(nscoord_MIN)
-      , mFloatEdgeIEnd(nscoord_MIN)
-    {}
+        : ExtraData(aBounds),
+          mFloatEdgeIStart(nscoord_MIN),
+          mFloatEdgeIEnd(nscoord_MIN) {}
     nscoord mFloatEdgeIStart;
     nscoord mFloatEdgeIEnd;
     nsFloatCacheList mFloats;
@@ -722,8 +641,8 @@ public:
   void SetFloatEdges(nscoord aStart, nscoord aEnd);
   void ClearFloatEdges();
 
-protected:
-  nscoord mAscent;           
+ protected:
+  nscoord mAscent;  
   static_assert(sizeof(FlagBits) <= sizeof(uint32_t),
                 "size of FlagBits should not be larger than size of uint32_t");
   union {
@@ -731,9 +650,7 @@ protected:
     FlagBits mFlags;
   };
 
-  StyleClear BreakType() const {
-    return mFlags.mBreakType;
-  };
+  StyleClear BreakType() const { return mFlags.mBreakType; };
 
   union {
     ExtraData* mData;
@@ -753,1055 +670,925 @@ protected:
 
 
 class nsLineList_iterator {
-  public:
-    friend class nsLineList;
-    friend class nsLineList_reverse_iterator;
-    friend class nsLineList_const_iterator;
-    friend class nsLineList_const_reverse_iterator;
+ public:
+  friend class nsLineList;
+  friend class nsLineList_reverse_iterator;
+  friend class nsLineList_const_iterator;
+  friend class nsLineList_const_reverse_iterator;
 
-    typedef nsLineList_iterator         iterator_self_type;
-    typedef nsLineList_reverse_iterator iterator_reverse_type;
+  typedef nsLineList_iterator iterator_self_type;
+  typedef nsLineList_reverse_iterator iterator_reverse_type;
 
-    typedef nsLineBox&                  reference;
-    typedef const nsLineBox&            const_reference;
+  typedef nsLineBox& reference;
+  typedef const nsLineBox& const_reference;
 
-    typedef nsLineBox*                  pointer;
-    typedef const nsLineBox*            const_pointer;
+  typedef nsLineBox* pointer;
+  typedef const nsLineBox* const_pointer;
 
-    typedef uint32_t                    size_type;
-    typedef int32_t                     difference_type;
+  typedef uint32_t size_type;
+  typedef int32_t difference_type;
 
-    typedef nsLineLink                  link_type;
+  typedef nsLineLink link_type;
 
 #ifdef DEBUG
-    nsLineList_iterator()
-      : mListLink(nullptr)
-    {
-      memset(&mCurrent, 0xcd, sizeof(mCurrent));
-    }
+  nsLineList_iterator() : mListLink(nullptr) {
+    memset(&mCurrent, 0xcd, sizeof(mCurrent));
+  }
 #else
-    
+  
 #endif
-    
+  
 
-    inline iterator_self_type&
-        operator=(const iterator_self_type& aOther);
-    inline iterator_self_type&
-        operator=(const iterator_reverse_type& aOther);
+  inline iterator_self_type& operator=(const iterator_self_type& aOther);
+  inline iterator_self_type& operator=(const iterator_reverse_type& aOther);
 
-    iterator_self_type& operator++()
-    {
-      mCurrent = mCurrent->_mNext;
-      return *this;
-    }
+  iterator_self_type& operator++() {
+    mCurrent = mCurrent->_mNext;
+    return *this;
+  }
 
-    iterator_self_type operator++(int)
-    {
-      iterator_self_type rv(*this);
-      mCurrent = mCurrent->_mNext;
-      return rv;
-    }
+  iterator_self_type operator++(int) {
+    iterator_self_type rv(*this);
+    mCurrent = mCurrent->_mNext;
+    return rv;
+  }
 
-    iterator_self_type& operator--()
-    {
-      mCurrent = mCurrent->_mPrev;
-      return *this;
-    }
+  iterator_self_type& operator--() {
+    mCurrent = mCurrent->_mPrev;
+    return *this;
+  }
 
-    iterator_self_type operator--(int)
-    {
-      iterator_self_type rv(*this);
-      mCurrent = mCurrent->_mPrev;
-      return rv;
-    }
+  iterator_self_type operator--(int) {
+    iterator_self_type rv(*this);
+    mCurrent = mCurrent->_mPrev;
+    return rv;
+  }
 
-    reference operator*()
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return *static_cast<pointer>(mCurrent);
-    }
+  reference operator*() {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return *static_cast<pointer>(mCurrent);
+  }
 
-    pointer operator->()
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<pointer>(mCurrent);
-    }
+  pointer operator->() {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<pointer>(mCurrent);
+  }
 
-    pointer get()
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<pointer>(mCurrent);
-    }
+  pointer get() {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<pointer>(mCurrent);
+  }
 
-    operator pointer()
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<pointer>(mCurrent);
-    }
+  operator pointer() {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<pointer>(mCurrent);
+  }
 
-    const_reference operator*() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return *static_cast<const_pointer>(mCurrent);
-    }
+  const_reference operator*() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return *static_cast<const_pointer>(mCurrent);
+  }
 
-    const_pointer operator->() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  const_pointer operator->() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 
 #ifndef __MWERKS__
-    operator const_pointer() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  operator const_pointer() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 #endif 
 
-    iterator_self_type next()
-    {
-      iterator_self_type copy(*this);
-      return ++copy;
-    }
+  iterator_self_type next() {
+    iterator_self_type copy(*this);
+    return ++copy;
+  }
 
-    const iterator_self_type next() const
-    {
-      iterator_self_type copy(*this);
-      return ++copy;
-    }
+  const iterator_self_type next() const {
+    iterator_self_type copy(*this);
+    return ++copy;
+  }
 
-    iterator_self_type prev()
-    {
-      iterator_self_type copy(*this);
-      return --copy;
-    }
+  iterator_self_type prev() {
+    iterator_self_type copy(*this);
+    return --copy;
+  }
 
-    const iterator_self_type prev() const
-    {
-      iterator_self_type copy(*this);
-      return --copy;
-    }
+  const iterator_self_type prev() const {
+    iterator_self_type copy(*this);
+    return --copy;
+  }
 
-    
-    
-    bool operator==(const iterator_self_type aOther) const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent == aOther.mCurrent;
-    }
-    bool operator!=(const iterator_self_type aOther) const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent != aOther.mCurrent;
-    }
-    bool operator==(const iterator_self_type aOther)
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent == aOther.mCurrent;
-    }
-    bool operator!=(const iterator_self_type aOther)
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent != aOther.mCurrent;
-    }
+  
+  
+  bool operator==(const iterator_self_type aOther) const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mListLink == aOther.mListLink,
+               "comparing iterators over different lists");
+    return mCurrent == aOther.mCurrent;
+  }
+  bool operator!=(const iterator_self_type aOther) const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mListLink == aOther.mListLink,
+               "comparing iterators over different lists");
+    return mCurrent != aOther.mCurrent;
+  }
+  bool operator==(const iterator_self_type aOther) {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mListLink == aOther.mListLink,
+               "comparing iterators over different lists");
+    return mCurrent == aOther.mCurrent;
+  }
+  bool operator!=(const iterator_self_type aOther) {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mListLink == aOther.mListLink,
+               "comparing iterators over different lists");
+    return mCurrent != aOther.mCurrent;
+  }
 
-  private:
-    link_type *mCurrent;
+ private:
+  link_type* mCurrent;
 #ifdef DEBUG
-    link_type *mListLink; 
+  link_type* mListLink;  
 #endif
 };
 
 class nsLineList_reverse_iterator {
+ public:
+  friend class nsLineList;
+  friend class nsLineList_iterator;
+  friend class nsLineList_const_iterator;
+  friend class nsLineList_const_reverse_iterator;
 
-  public:
+  typedef nsLineList_reverse_iterator iterator_self_type;
+  typedef nsLineList_iterator iterator_reverse_type;
 
-    friend class nsLineList;
-    friend class nsLineList_iterator;
-    friend class nsLineList_const_iterator;
-    friend class nsLineList_const_reverse_iterator;
+  typedef nsLineBox& reference;
+  typedef const nsLineBox& const_reference;
 
-    typedef nsLineList_reverse_iterator iterator_self_type;
-    typedef nsLineList_iterator         iterator_reverse_type;
+  typedef nsLineBox* pointer;
+  typedef const nsLineBox* const_pointer;
 
-    typedef nsLineBox&                  reference;
-    typedef const nsLineBox&            const_reference;
+  typedef uint32_t size_type;
+  typedef int32_t difference_type;
 
-    typedef nsLineBox*                  pointer;
-    typedef const nsLineBox*            const_pointer;
-
-    typedef uint32_t                    size_type;
-    typedef int32_t                     difference_type;
-
-    typedef nsLineLink                  link_type;
+  typedef nsLineLink link_type;
 
 #ifdef DEBUG
-    nsLineList_reverse_iterator()
-      : mListLink(nullptr)
-    {
-      memset(&mCurrent, 0xcd, sizeof(mCurrent));
-    }
+  nsLineList_reverse_iterator() : mListLink(nullptr) {
+    memset(&mCurrent, 0xcd, sizeof(mCurrent));
+  }
 #else
-    
+  
 #endif
-    
+  
 
-    inline iterator_self_type&
-        operator=(const iterator_reverse_type& aOther);
-    inline iterator_self_type&
-        operator=(const iterator_self_type& aOther);
+  inline iterator_self_type& operator=(const iterator_reverse_type& aOther);
+  inline iterator_self_type& operator=(const iterator_self_type& aOther);
 
-    iterator_self_type& operator++()
-    {
-      mCurrent = mCurrent->_mPrev;
-      return *this;
-    }
+  iterator_self_type& operator++() {
+    mCurrent = mCurrent->_mPrev;
+    return *this;
+  }
 
-    iterator_self_type operator++(int)
-    {
-      iterator_self_type rv(*this);
-      mCurrent = mCurrent->_mPrev;
-      return rv;
-    }
+  iterator_self_type operator++(int) {
+    iterator_self_type rv(*this);
+    mCurrent = mCurrent->_mPrev;
+    return rv;
+  }
 
-    iterator_self_type& operator--()
-    {
-      mCurrent = mCurrent->_mNext;
-      return *this;
-    }
+  iterator_self_type& operator--() {
+    mCurrent = mCurrent->_mNext;
+    return *this;
+  }
 
-    iterator_self_type operator--(int)
-    {
-      iterator_self_type rv(*this);
-      mCurrent = mCurrent->_mNext;
-      return rv;
-    }
+  iterator_self_type operator--(int) {
+    iterator_self_type rv(*this);
+    mCurrent = mCurrent->_mNext;
+    return rv;
+  }
 
-    reference operator*()
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return *static_cast<pointer>(mCurrent);
-    }
+  reference operator*() {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return *static_cast<pointer>(mCurrent);
+  }
 
-    pointer operator->()
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<pointer>(mCurrent);
-    }
+  pointer operator->() {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<pointer>(mCurrent);
+  }
 
-    pointer get()
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<pointer>(mCurrent);
-    }
+  pointer get() {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<pointer>(mCurrent);
+  }
 
-    operator pointer()
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<pointer>(mCurrent);
-    }
+  operator pointer() {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<pointer>(mCurrent);
+  }
 
-    const_reference operator*() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return *static_cast<const_pointer>(mCurrent);
-    }
+  const_reference operator*() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return *static_cast<const_pointer>(mCurrent);
+  }
 
-    const_pointer operator->() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  const_pointer operator->() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 
 #ifndef __MWERKS__
-    operator const_pointer() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  operator const_pointer() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 #endif 
 
-    
-    
-    bool operator==(const iterator_self_type aOther) const
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent == aOther.mCurrent;
-    }
-    bool operator!=(const iterator_self_type aOther) const
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent != aOther.mCurrent;
-    }
-    bool operator==(const iterator_self_type aOther)
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent == aOther.mCurrent;
-    }
-    bool operator!=(const iterator_self_type aOther)
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent != aOther.mCurrent;
-    }
+  
+  
+  bool operator==(const iterator_self_type aOther) const {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent == aOther.mCurrent;
+  }
+  bool operator!=(const iterator_self_type aOther) const {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent != aOther.mCurrent;
+  }
+  bool operator==(const iterator_self_type aOther) {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent == aOther.mCurrent;
+  }
+  bool operator!=(const iterator_self_type aOther) {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent != aOther.mCurrent;
+  }
 
-  private:
-    link_type *mCurrent;
+ private:
+  link_type* mCurrent;
 #ifdef DEBUG
-    link_type *mListLink; 
+  link_type* mListLink;  
 #endif
 };
 
 class nsLineList_const_iterator {
-  public:
+ public:
+  friend class nsLineList;
+  friend class nsLineList_iterator;
+  friend class nsLineList_reverse_iterator;
+  friend class nsLineList_const_reverse_iterator;
 
-    friend class nsLineList;
-    friend class nsLineList_iterator;
-    friend class nsLineList_reverse_iterator;
-    friend class nsLineList_const_reverse_iterator;
+  typedef nsLineList_const_iterator iterator_self_type;
+  typedef nsLineList_const_reverse_iterator iterator_reverse_type;
+  typedef nsLineList_iterator iterator_nonconst_type;
+  typedef nsLineList_reverse_iterator iterator_nonconst_reverse_type;
 
-    typedef nsLineList_const_iterator           iterator_self_type;
-    typedef nsLineList_const_reverse_iterator   iterator_reverse_type;
-    typedef nsLineList_iterator                 iterator_nonconst_type;
-    typedef nsLineList_reverse_iterator         iterator_nonconst_reverse_type;
+  typedef nsLineBox& reference;
+  typedef const nsLineBox& const_reference;
 
-    typedef nsLineBox&                  reference;
-    typedef const nsLineBox&            const_reference;
+  typedef nsLineBox* pointer;
+  typedef const nsLineBox* const_pointer;
 
-    typedef nsLineBox*                  pointer;
-    typedef const nsLineBox*            const_pointer;
+  typedef uint32_t size_type;
+  typedef int32_t difference_type;
 
-    typedef uint32_t                    size_type;
-    typedef int32_t                     difference_type;
-
-    typedef nsLineLink                  link_type;
+  typedef nsLineLink link_type;
 
 #ifdef DEBUG
-    nsLineList_const_iterator()
-      : mListLink(nullptr)
-    {
-      memset(&mCurrent, 0xcd, sizeof(mCurrent));
-    }
+  nsLineList_const_iterator() : mListLink(nullptr) {
+    memset(&mCurrent, 0xcd, sizeof(mCurrent));
+  }
 #else
-    
+  
 #endif
-    
+  
 
-    inline iterator_self_type&
-        operator=(const iterator_nonconst_type& aOther);
-    inline iterator_self_type&
-        operator=(const iterator_nonconst_reverse_type& aOther);
-    inline iterator_self_type&
-        operator=(const iterator_self_type& aOther);
-    inline iterator_self_type&
-        operator=(const iterator_reverse_type& aOther);
+  inline iterator_self_type& operator=(const iterator_nonconst_type& aOther);
+  inline iterator_self_type& operator=(
+      const iterator_nonconst_reverse_type& aOther);
+  inline iterator_self_type& operator=(const iterator_self_type& aOther);
+  inline iterator_self_type& operator=(const iterator_reverse_type& aOther);
 
-    iterator_self_type& operator++()
-    {
-      mCurrent = mCurrent->_mNext;
-      return *this;
-    }
+  iterator_self_type& operator++() {
+    mCurrent = mCurrent->_mNext;
+    return *this;
+  }
 
-    iterator_self_type operator++(int)
-    {
-      iterator_self_type rv(*this);
-      mCurrent = mCurrent->_mNext;
-      return rv;
-    }
+  iterator_self_type operator++(int) {
+    iterator_self_type rv(*this);
+    mCurrent = mCurrent->_mNext;
+    return rv;
+  }
 
-    iterator_self_type& operator--()
-    {
-      mCurrent = mCurrent->_mPrev;
-      return *this;
-    }
+  iterator_self_type& operator--() {
+    mCurrent = mCurrent->_mPrev;
+    return *this;
+  }
 
-    iterator_self_type operator--(int)
-    {
-      iterator_self_type rv(*this);
-      mCurrent = mCurrent->_mPrev;
-      return rv;
-    }
+  iterator_self_type operator--(int) {
+    iterator_self_type rv(*this);
+    mCurrent = mCurrent->_mPrev;
+    return rv;
+  }
 
-    const_reference operator*() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return *static_cast<const_pointer>(mCurrent);
-    }
+  const_reference operator*() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return *static_cast<const_pointer>(mCurrent);
+  }
 
-    const_pointer operator->() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  const_pointer operator->() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 
-    const_pointer get() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  const_pointer get() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 
 #ifndef __MWERKS__
-    operator const_pointer() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  operator const_pointer() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 #endif 
 
-    const iterator_self_type next() const
-    {
-      iterator_self_type copy(*this);
-      return ++copy;
-    }
+  const iterator_self_type next() const {
+    iterator_self_type copy(*this);
+    return ++copy;
+  }
 
-    const iterator_self_type prev() const
-    {
-      iterator_self_type copy(*this);
-      return --copy;
-    }
+  const iterator_self_type prev() const {
+    iterator_self_type copy(*this);
+    return --copy;
+  }
 
-    
-    
-    bool operator==(const iterator_self_type aOther) const
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent == aOther.mCurrent;
-    }
-    bool operator!=(const iterator_self_type aOther) const
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent != aOther.mCurrent;
-    }
-    bool operator==(const iterator_self_type aOther)
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent == aOther.mCurrent;
-    }
-    bool operator!=(const iterator_self_type aOther)
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent != aOther.mCurrent;
-    }
+  
+  
+  bool operator==(const iterator_self_type aOther) const {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent == aOther.mCurrent;
+  }
+  bool operator!=(const iterator_self_type aOther) const {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent != aOther.mCurrent;
+  }
+  bool operator==(const iterator_self_type aOther) {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent == aOther.mCurrent;
+  }
+  bool operator!=(const iterator_self_type aOther) {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent != aOther.mCurrent;
+  }
 
-  private:
-    const link_type *mCurrent;
+ private:
+  const link_type* mCurrent;
 #ifdef DEBUG
-    const link_type *mListLink; 
+  const link_type* mListLink;  
 #endif
 };
 
 class nsLineList_const_reverse_iterator {
-  public:
+ public:
+  friend class nsLineList;
+  friend class nsLineList_iterator;
+  friend class nsLineList_reverse_iterator;
+  friend class nsLineList_const_iterator;
 
-    friend class nsLineList;
-    friend class nsLineList_iterator;
-    friend class nsLineList_reverse_iterator;
-    friend class nsLineList_const_iterator;
+  typedef nsLineList_const_reverse_iterator iterator_self_type;
+  typedef nsLineList_const_iterator iterator_reverse_type;
+  typedef nsLineList_iterator iterator_nonconst_reverse_type;
+  typedef nsLineList_reverse_iterator iterator_nonconst_type;
 
-    typedef nsLineList_const_reverse_iterator   iterator_self_type;
-    typedef nsLineList_const_iterator           iterator_reverse_type;
-    typedef nsLineList_iterator                 iterator_nonconst_reverse_type;
-    typedef nsLineList_reverse_iterator         iterator_nonconst_type;
+  typedef nsLineBox& reference;
+  typedef const nsLineBox& const_reference;
 
-    typedef nsLineBox&                  reference;
-    typedef const nsLineBox&            const_reference;
+  typedef nsLineBox* pointer;
+  typedef const nsLineBox* const_pointer;
 
-    typedef nsLineBox*                  pointer;
-    typedef const nsLineBox*            const_pointer;
+  typedef uint32_t size_type;
+  typedef int32_t difference_type;
 
-    typedef uint32_t                    size_type;
-    typedef int32_t                     difference_type;
-
-    typedef nsLineLink                  link_type;
+  typedef nsLineLink link_type;
 
 #ifdef DEBUG
-    nsLineList_const_reverse_iterator()
-      : mListLink(nullptr)
-    {
-      memset(&mCurrent, 0xcd, sizeof(mCurrent));
-    }
+  nsLineList_const_reverse_iterator() : mListLink(nullptr) {
+    memset(&mCurrent, 0xcd, sizeof(mCurrent));
+  }
 #else
-    
+  
 #endif
-    
+  
 
-    inline iterator_self_type&
-        operator=(const iterator_nonconst_type& aOther);
-    inline iterator_self_type&
-        operator=(const iterator_nonconst_reverse_type& aOther);
-    inline iterator_self_type&
-        operator=(const iterator_self_type& aOther);
-    inline iterator_self_type&
-        operator=(const iterator_reverse_type& aOther);
+  inline iterator_self_type& operator=(const iterator_nonconst_type& aOther);
+  inline iterator_self_type& operator=(
+      const iterator_nonconst_reverse_type& aOther);
+  inline iterator_self_type& operator=(const iterator_self_type& aOther);
+  inline iterator_self_type& operator=(const iterator_reverse_type& aOther);
 
-    iterator_self_type& operator++()
-    {
-      mCurrent = mCurrent->_mPrev;
-      return *this;
-    }
+  iterator_self_type& operator++() {
+    mCurrent = mCurrent->_mPrev;
+    return *this;
+  }
 
-    iterator_self_type operator++(int)
-    {
-      iterator_self_type rv(*this);
-      mCurrent = mCurrent->_mPrev;
-      return rv;
-    }
+  iterator_self_type operator++(int) {
+    iterator_self_type rv(*this);
+    mCurrent = mCurrent->_mPrev;
+    return rv;
+  }
 
-    iterator_self_type& operator--()
-    {
-      mCurrent = mCurrent->_mNext;
-      return *this;
-    }
+  iterator_self_type& operator--() {
+    mCurrent = mCurrent->_mNext;
+    return *this;
+  }
 
-    iterator_self_type operator--(int)
-    {
-      iterator_self_type rv(*this);
-      mCurrent = mCurrent->_mNext;
-      return rv;
-    }
+  iterator_self_type operator--(int) {
+    iterator_self_type rv(*this);
+    mCurrent = mCurrent->_mNext;
+    return rv;
+  }
 
-    const_reference operator*() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return *static_cast<const_pointer>(mCurrent);
-    }
+  const_reference operator*() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return *static_cast<const_pointer>(mCurrent);
+  }
 
-    const_pointer operator->() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  const_pointer operator->() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 
-    const_pointer get() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  const_pointer get() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 
 #ifndef __MWERKS__
-    operator const_pointer() const
-    {
-      MOZ_ASSERT(mListLink);
-      MOZ_ASSERT(mCurrent != mListLink, "running past end");
-      return static_cast<const_pointer>(mCurrent);
-    }
+  operator const_pointer() const {
+    MOZ_ASSERT(mListLink);
+    MOZ_ASSERT(mCurrent != mListLink, "running past end");
+    return static_cast<const_pointer>(mCurrent);
+  }
 #endif 
 
-    
-    
-    bool operator==(const iterator_self_type aOther) const
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent == aOther.mCurrent;
-    }
-    bool operator!=(const iterator_self_type aOther) const
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent != aOther.mCurrent;
-    }
-    bool operator==(const iterator_self_type aOther)
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent == aOther.mCurrent;
-    }
-    bool operator!=(const iterator_self_type aOther)
-    {
-      MOZ_ASSERT(mListLink);
-      NS_ASSERTION(mListLink == aOther.mListLink, "comparing iterators over different lists");
-      return mCurrent != aOther.mCurrent;
-    }
+  
+  
+  bool operator==(const iterator_self_type aOther) const {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent == aOther.mCurrent;
+  }
+  bool operator!=(const iterator_self_type aOther) const {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent != aOther.mCurrent;
+  }
+  bool operator==(const iterator_self_type aOther) {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent == aOther.mCurrent;
+  }
+  bool operator!=(const iterator_self_type aOther) {
+    MOZ_ASSERT(mListLink);
+    NS_ASSERTION(mListLink == aOther.mListLink,
+                 "comparing iterators over different lists");
+    return mCurrent != aOther.mCurrent;
+  }
 
-
-    const link_type *mCurrent;
+  
+  const link_type* mCurrent;
 #ifdef DEBUG
-    const link_type *mListLink; 
+  const link_type* mListLink;  
 #endif
 };
 
 class nsLineList {
-
-  public:
-
+ public:
   friend class nsLineList_iterator;
   friend class nsLineList_reverse_iterator;
   friend class nsLineList_const_iterator;
   friend class nsLineList_const_reverse_iterator;
 
-  typedef uint32_t                    size_type;
-  typedef int32_t                     difference_type;
+  typedef uint32_t size_type;
+  typedef int32_t difference_type;
 
-  typedef nsLineLink                  link_type;
+  typedef nsLineLink link_type;
 
-  private:
-    link_type mLink;
+ private:
+  link_type mLink;
 
-  public:
-    typedef nsLineList                  self_type;
+ public:
+  typedef nsLineList self_type;
 
-    typedef nsLineBox&                  reference;
-    typedef const nsLineBox&            const_reference;
+  typedef nsLineBox& reference;
+  typedef const nsLineBox& const_reference;
 
-    typedef nsLineBox*                  pointer;
-    typedef const nsLineBox*            const_pointer;
+  typedef nsLineBox* pointer;
+  typedef const nsLineBox* const_pointer;
 
-    typedef nsLineList_iterator         iterator;
-    typedef nsLineList_reverse_iterator reverse_iterator;
-    typedef nsLineList_const_iterator   const_iterator;
-    typedef nsLineList_const_reverse_iterator const_reverse_iterator;
+  typedef nsLineList_iterator iterator;
+  typedef nsLineList_reverse_iterator reverse_iterator;
+  typedef nsLineList_const_iterator const_iterator;
+  typedef nsLineList_const_reverse_iterator const_reverse_iterator;
 
-    nsLineList()
-    {
-      MOZ_COUNT_CTOR(nsLineList);
-      clear();
-    }
+  nsLineList() {
+    MOZ_COUNT_CTOR(nsLineList);
+    clear();
+  }
 
-    ~nsLineList()
-    {
-      MOZ_COUNT_DTOR(nsLineList);
-    }
+  ~nsLineList() { MOZ_COUNT_DTOR(nsLineList); }
 
-    const_iterator begin() const
-    {
-      const_iterator rv;
-      rv.mCurrent = mLink._mNext;
+  const_iterator begin() const {
+    const_iterator rv;
+    rv.mCurrent = mLink._mNext;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
-    }
+    return rv;
+  }
 
-    iterator begin()
-    {
-      iterator rv;
-      rv.mCurrent = mLink._mNext;
+  iterator begin() {
+    iterator rv;
+    rv.mCurrent = mLink._mNext;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
-    }
+    return rv;
+  }
 
-    iterator begin(nsLineBox* aLine)
-    {
-      iterator rv;
-      rv.mCurrent = aLine;
+  iterator begin(nsLineBox* aLine) {
+    iterator rv;
+    rv.mCurrent = aLine;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
-    }
+    return rv;
+  }
 
-    const_iterator end() const
-    {
-      const_iterator rv;
-      rv.mCurrent = &mLink;
+  const_iterator end() const {
+    const_iterator rv;
+    rv.mCurrent = &mLink;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
-    }
+    return rv;
+  }
 
-    iterator end()
-    {
-      iterator rv;
-      rv.mCurrent = &mLink;
+  iterator end() {
+    iterator rv;
+    rv.mCurrent = &mLink;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
-    }
+    return rv;
+  }
 
-    const_reverse_iterator rbegin() const
-    {
-      const_reverse_iterator rv;
-      rv.mCurrent = mLink._mPrev;
+  const_reverse_iterator rbegin() const {
+    const_reverse_iterator rv;
+    rv.mCurrent = mLink._mPrev;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
-    }
+    return rv;
+  }
 
-    reverse_iterator rbegin()
-    {
-      reverse_iterator rv;
-      rv.mCurrent = mLink._mPrev;
+  reverse_iterator rbegin() {
+    reverse_iterator rv;
+    rv.mCurrent = mLink._mPrev;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
-    }
+    return rv;
+  }
 
-    reverse_iterator rbegin(nsLineBox* aLine)
-    {
-      reverse_iterator rv;
-      rv.mCurrent = aLine;
+  reverse_iterator rbegin(nsLineBox* aLine) {
+    reverse_iterator rv;
+    rv.mCurrent = aLine;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
-    }
+    return rv;
+  }
 
-    const_reverse_iterator rend() const
-    {
-      const_reverse_iterator rv;
-      rv.mCurrent = &mLink;
+  const_reverse_iterator rend() const {
+    const_reverse_iterator rv;
+    rv.mCurrent = &mLink;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
-    }
+    return rv;
+  }
 
-    reverse_iterator rend()
-    {
-      reverse_iterator rv;
-      rv.mCurrent = &mLink;
+  reverse_iterator rend() {
+    reverse_iterator rv;
+    rv.mCurrent = &mLink;
 #ifdef DEBUG
-      rv.mListLink = &mLink;
+    rv.mListLink = &mLink;
 #endif
-      return rv;
+    return rv;
+  }
+
+  bool empty() const { return mLink._mNext == &mLink; }
+
+  
+  size_type size() const {
+    size_type count = 0;
+    for (const link_type* cur = mLink._mNext; cur != &mLink;
+         cur = cur->_mNext) {
+      ++count;
+    }
+    return count;
+  }
+
+  pointer front() {
+    NS_ASSERTION(!empty(), "no element to return");
+    return static_cast<pointer>(mLink._mNext);
+  }
+
+  const_pointer front() const {
+    NS_ASSERTION(!empty(), "no element to return");
+    return static_cast<const_pointer>(mLink._mNext);
+  }
+
+  pointer back() {
+    NS_ASSERTION(!empty(), "no element to return");
+    return static_cast<pointer>(mLink._mPrev);
+  }
+
+  const_pointer back() const {
+    NS_ASSERTION(!empty(), "no element to return");
+    return static_cast<const_pointer>(mLink._mPrev);
+  }
+
+  void push_front(pointer aNew) {
+    aNew->_mNext = mLink._mNext;
+    mLink._mNext->_mPrev = aNew;
+    aNew->_mPrev = &mLink;
+    mLink._mNext = aNew;
+  }
+
+  void pop_front()
+  
+  {
+    NS_ASSERTION(!empty(), "no element to pop");
+    link_type* newFirst = mLink._mNext->_mNext;
+    newFirst->_mPrev = &mLink;
+    
+    
+    mLink._mNext = newFirst;
+  }
+
+  void push_back(pointer aNew) {
+    aNew->_mPrev = mLink._mPrev;
+    mLink._mPrev->_mNext = aNew;
+    aNew->_mNext = &mLink;
+    mLink._mPrev = aNew;
+  }
+
+  void pop_back()
+  
+  {
+    NS_ASSERTION(!empty(), "no element to pop");
+    link_type* newLast = mLink._mPrev->_mPrev;
+    newLast->_mNext = &mLink;
+    
+    
+    mLink._mPrev = newLast;
+  }
+
+  
+  iterator before_insert(iterator position, pointer x) {
+    
+    x->_mPrev = position.mCurrent->_mPrev;
+    x->_mNext = position.mCurrent;
+    position.mCurrent->_mPrev->_mNext = x;
+    position.mCurrent->_mPrev = x;
+    return --position;
+  }
+
+  
+  iterator after_insert(iterator position, pointer x) {
+    
+    x->_mNext = position.mCurrent->_mNext;
+    x->_mPrev = position.mCurrent;
+    position.mCurrent->_mNext->_mPrev = x;
+    position.mCurrent->_mNext = x;
+    return ++position;
+  }
+
+  
+  iterator erase(iterator position)
+  
+  {
+    position->_mPrev->_mNext = position->_mNext;
+    position->_mNext->_mPrev = position->_mPrev;
+    return ++position;
+  }
+
+  void swap(self_type& y) {
+    link_type tmp(y.mLink);
+    y.mLink = mLink;
+    mLink = tmp;
+
+    if (!empty()) {
+      mLink._mNext->_mPrev = &mLink;
+      mLink._mPrev->_mNext = &mLink;
     }
 
-    bool empty() const
-    {
-      return mLink._mNext == &mLink;
+    if (!y.empty()) {
+      y.mLink._mNext->_mPrev = &y.mLink;
+      y.mLink._mPrev->_mNext = &y.mLink;
     }
+  }
+
+  void clear()
+  
+  {
+    mLink._mNext = &mLink;
+    mLink._mPrev = &mLink;
+  }
+
+  
+  void splice(iterator position, self_type& x) {
+    
+    position.mCurrent->_mPrev->_mNext = x.mLink._mNext;
+    x.mLink._mNext->_mPrev = position.mCurrent->_mPrev;
+    x.mLink._mPrev->_mNext = position.mCurrent;
+    position.mCurrent->_mPrev = x.mLink._mPrev;
+    x.clear();
+  }
+
+  
+  
+  void splice(iterator position, self_type& x, iterator i) {
+    NS_ASSERTION(!x.empty(), "Can't insert from empty list.");
+    NS_ASSERTION(position != i && position.mCurrent != i->_mNext,
+                 "We don't check for this case.");
 
     
-    size_type size() const
-    {
-      size_type count = 0;
-      for (const link_type *cur = mLink._mNext;
-           cur != &mLink;
-           cur = cur->_mNext)
-      {
-        ++count;
-      }
-      return count;
-    }
-
-    pointer front()
-    {
-      NS_ASSERTION(!empty(), "no element to return");
-      return static_cast<pointer>(mLink._mNext);
-    }
-
-    const_pointer front() const
-    {
-      NS_ASSERTION(!empty(), "no element to return");
-      return static_cast<const_pointer>(mLink._mNext);
-    }
-
-    pointer back()
-    {
-      NS_ASSERTION(!empty(), "no element to return");
-      return static_cast<pointer>(mLink._mPrev);
-    }
-
-    const_pointer back() const
-    {
-      NS_ASSERTION(!empty(), "no element to return");
-      return static_cast<const_pointer>(mLink._mPrev);
-    }
-
-    void push_front(pointer aNew)
-    {
-      aNew->_mNext = mLink._mNext;
-      mLink._mNext->_mPrev = aNew;
-      aNew->_mPrev = &mLink;
-      mLink._mNext = aNew;
-    }
-
-    void pop_front()
-        
-    {
-      NS_ASSERTION(!empty(), "no element to pop");
-      link_type *newFirst = mLink._mNext->_mNext;
-      newFirst->_mPrev = &mLink;
-      
-      
-      mLink._mNext = newFirst;
-    }
-
-    void push_back(pointer aNew)
-    {
-      aNew->_mPrev = mLink._mPrev;
-      mLink._mPrev->_mNext = aNew;
-      aNew->_mNext = &mLink;
-      mLink._mPrev = aNew;
-    }
-
-    void pop_back()
-        
-    {
-      NS_ASSERTION(!empty(), "no element to pop");
-      link_type *newLast = mLink._mPrev->_mPrev;
-      newLast->_mNext = &mLink;
-      
-      
-      mLink._mPrev = newLast;
-    }
-
-    
-    iterator before_insert(iterator position, pointer x)
-    {
-      
-      x->_mPrev = position.mCurrent->_mPrev;
-      x->_mNext = position.mCurrent;
-      position.mCurrent->_mPrev->_mNext = x;
-      position.mCurrent->_mPrev = x;
-      return --position;
-    }
-
-    
-    iterator after_insert(iterator position, pointer x)
-    {
-      
-      x->_mNext = position.mCurrent->_mNext;
-      x->_mPrev = position.mCurrent;
-      position.mCurrent->_mNext->_mPrev = x;
-      position.mCurrent->_mNext = x;
-      return ++position;
-    }
-
-    
-    iterator erase(iterator position)
-        
-    {
-      position->_mPrev->_mNext = position->_mNext;
-      position->_mNext->_mPrev = position->_mPrev;
-      return ++position;
-    }
-
-    void swap(self_type& y)
-    {
-      link_type tmp(y.mLink);
-      y.mLink = mLink;
-      mLink = tmp;
-
-      if (!empty()) {
-        mLink._mNext->_mPrev = &mLink;
-        mLink._mPrev->_mNext = &mLink;
-      }
-
-      if (!y.empty()) {
-        y.mLink._mNext->_mPrev = &y.mLink;
-        y.mLink._mPrev->_mNext = &y.mLink;
-      }
-    }
-
-    void clear()
-        
-    {
-      mLink._mNext = &mLink;
-      mLink._mPrev = &mLink;
-    }
-
-    
-    void splice(iterator position, self_type& x)
-    {
-      
-      position.mCurrent->_mPrev->_mNext = x.mLink._mNext;
-      x.mLink._mNext->_mPrev = position.mCurrent->_mPrev;
-      x.mLink._mPrev->_mNext = position.mCurrent;
-      position.mCurrent->_mPrev = x.mLink._mPrev;
-      x.clear();
-    }
+    i->_mPrev->_mNext = i->_mNext;
+    i->_mNext->_mPrev = i->_mPrev;
 
     
     
-    void splice(iterator position, self_type& x, iterator i)
-    {
-      NS_ASSERTION(!x.empty(), "Can't insert from empty list.");
-      NS_ASSERTION(position != i && position.mCurrent != i->_mNext,
-                   "We don't check for this case.");
+    i->_mPrev = position.mCurrent->_mPrev;
+    position.mCurrent->_mPrev->_mNext = i.get();
 
-      
-      i->_mPrev->_mNext = i->_mNext;
-      i->_mNext->_mPrev = i->_mPrev;
+    
+    i->_mNext = position.mCurrent;
+    position.mCurrent->_mPrev = i.get();
+  }
 
-      
-      
-      i->_mPrev = position.mCurrent->_mPrev;
-      position.mCurrent->_mPrev->_mNext = i.get();
+  
+  
+  void splice(iterator position, self_type& x, iterator first, iterator last) {
+    NS_ASSERTION(!x.empty(), "Can't insert from empty list.");
 
-      
-      i->_mNext = position.mCurrent;
-      position.mCurrent->_mPrev = i.get();
-    }
+    if (first == last) return;
+
+    --last;  
+    
+    first->_mPrev->_mNext = last->_mNext;
+    last->_mNext->_mPrev = first->_mPrev;
 
     
     
-    void splice(iterator position, self_type& x, iterator first,
-                iterator last)
-    {
-      NS_ASSERTION(!x.empty(), "Can't insert from empty list.");
+    first->_mPrev = position.mCurrent->_mPrev;
+    position.mCurrent->_mPrev->_mNext = first.get();
 
-      if (first == last)
-        return;
-
-      --last; 
-      
-      first->_mPrev->_mNext = last->_mNext;
-      last->_mNext->_mPrev = first->_mPrev;
-
-      
-      
-      first->_mPrev = position.mCurrent->_mPrev;
-      position.mCurrent->_mPrev->_mNext = first.get();
-
-      
-      last->_mNext = position.mCurrent;
-      position.mCurrent->_mPrev = last.get();
-    }
-
+    
+    last->_mNext = position.mCurrent;
+    position.mCurrent->_mPrev = last.get();
+  }
 };
 
 
 
 
-
 #ifdef DEBUG
 
-  
-  
-#define ASSIGN_FROM(other_)          \
-  mCurrent = other_.mCurrent;        \
-  mListLink = other_.mListLink;      \
+
+
+#define ASSIGN_FROM(other_)     \
+  mCurrent = other_.mCurrent;   \
+  mListLink = other_.mListLink; \
   return *this;
 
 #else 
 
-#define ASSIGN_FROM(other_)          \
-  mCurrent = other_.mCurrent;        \
+#define ASSIGN_FROM(other_)   \
+  mCurrent = other_.mCurrent; \
   return *this;
 
 #endif 
 
-inline
-nsLineList_iterator&
-nsLineList_iterator::operator=(const nsLineList_iterator& aOther)
-{
+inline nsLineList_iterator& nsLineList_iterator::operator=(
+    const nsLineList_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_iterator&
-nsLineList_iterator::operator=(const nsLineList_reverse_iterator& aOther)
-{
+inline nsLineList_iterator& nsLineList_iterator::operator=(
+    const nsLineList_reverse_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_reverse_iterator&
-nsLineList_reverse_iterator::operator=(const nsLineList_iterator& aOther)
-{
+inline nsLineList_reverse_iterator& nsLineList_reverse_iterator::operator=(
+    const nsLineList_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_reverse_iterator&
-nsLineList_reverse_iterator::operator=(const nsLineList_reverse_iterator& aOther)
-{
+inline nsLineList_reverse_iterator& nsLineList_reverse_iterator::operator=(
+    const nsLineList_reverse_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_const_iterator&
-nsLineList_const_iterator::operator=(const nsLineList_iterator& aOther)
-{
+inline nsLineList_const_iterator& nsLineList_const_iterator::operator=(
+    const nsLineList_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_const_iterator&
-nsLineList_const_iterator::operator=(const nsLineList_reverse_iterator& aOther)
-{
+inline nsLineList_const_iterator& nsLineList_const_iterator::operator=(
+    const nsLineList_reverse_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_const_iterator&
-nsLineList_const_iterator::operator=(const nsLineList_const_iterator& aOther)
-{
+inline nsLineList_const_iterator& nsLineList_const_iterator::operator=(
+    const nsLineList_const_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_const_iterator&
-nsLineList_const_iterator::operator=(const nsLineList_const_reverse_iterator& aOther)
-{
+inline nsLineList_const_iterator& nsLineList_const_iterator::operator=(
+    const nsLineList_const_reverse_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_const_reverse_iterator&
-nsLineList_const_reverse_iterator::operator=(const nsLineList_iterator& aOther)
-{
+inline nsLineList_const_reverse_iterator& nsLineList_const_reverse_iterator::
+operator=(const nsLineList_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_const_reverse_iterator&
-nsLineList_const_reverse_iterator::operator=(const nsLineList_reverse_iterator& aOther)
-{
+inline nsLineList_const_reverse_iterator& nsLineList_const_reverse_iterator::
+operator=(const nsLineList_reverse_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_const_reverse_iterator&
-nsLineList_const_reverse_iterator::operator=(const nsLineList_const_iterator& aOther)
-{
+inline nsLineList_const_reverse_iterator& nsLineList_const_reverse_iterator::
+operator=(const nsLineList_const_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
-inline
-nsLineList_const_reverse_iterator&
-nsLineList_const_reverse_iterator::operator=(const nsLineList_const_reverse_iterator& aOther)
-{
+inline nsLineList_const_reverse_iterator& nsLineList_const_reverse_iterator::
+operator=(const nsLineList_const_reverse_iterator& aOther) {
   ASSIGN_FROM(aOther)
 }
 
 
 
-
-class nsLineIterator final : public nsILineIterator
-{
-public:
+class nsLineIterator final : public nsILineIterator {
+ public:
   nsLineIterator();
   ~nsLineIterator();
 
@@ -1809,25 +1596,22 @@ public:
 
   virtual int32_t GetNumLines() override;
   virtual bool GetDirection() override;
-  NS_IMETHOD GetLine(int32_t aLineNumber,
-                     nsIFrame** aFirstFrameOnLine,
-                     int32_t* aNumFramesOnLine,
-                     nsRect& aLineBounds) override;
-  virtual int32_t FindLineContaining(nsIFrame* aFrame, int32_t aStartLine = 0) override;
-  NS_IMETHOD FindFrameAt(int32_t aLineNumber,
-                         nsPoint aPos,
-                         nsIFrame** aFrameFound,
-                         bool* aPosIsBeforeFirstFrame,
+  NS_IMETHOD GetLine(int32_t aLineNumber, nsIFrame** aFirstFrameOnLine,
+                     int32_t* aNumFramesOnLine, nsRect& aLineBounds) override;
+  virtual int32_t FindLineContaining(nsIFrame* aFrame,
+                                     int32_t aStartLine = 0) override;
+  NS_IMETHOD FindFrameAt(int32_t aLineNumber, nsPoint aPos,
+                         nsIFrame** aFrameFound, bool* aPosIsBeforeFirstFrame,
                          bool* aPosIsAfterLastFrame) override;
 
-  NS_IMETHOD GetNextSiblingOnLine(nsIFrame*& aFrame, int32_t aLineNumber) override;
-  NS_IMETHOD CheckLineOrder(int32_t                  aLine,
-                            bool                     *aIsReordered,
-                            nsIFrame                 **aFirstVisual,
-                            nsIFrame                 **aLastVisual) override;
+  NS_IMETHOD GetNextSiblingOnLine(nsIFrame*& aFrame,
+                                  int32_t aLineNumber) override;
+  NS_IMETHOD CheckLineOrder(int32_t aLine, bool* aIsReordered,
+                            nsIFrame** aFirstVisual,
+                            nsIFrame** aLastVisual) override;
   nsresult Init(nsLineList& aLines, bool aRightToLeft);
 
-private:
+ private:
   nsLineBox* PrevLine() {
     if (0 == mIndex) {
       return nullptr;

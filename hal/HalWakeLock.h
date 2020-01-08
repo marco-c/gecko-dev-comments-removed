@@ -20,7 +20,7 @@ enum WakeLockState {
 
 WakeLockState ComputeWakeLockState(int aNumLocks, int aNumHidden);
 
-} 
-} 
+}  
+}  
 
 #endif 

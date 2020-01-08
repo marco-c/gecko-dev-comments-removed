@@ -20,19 +20,15 @@
 namespace mozilla {
 namespace layers {
 
-static bool
-WillHandleMouseEvent(const WidgetMouseEventBase& aEvent)
-{
-  return aEvent.mMessage == eMouseMove ||
-         aEvent.mMessage == eMouseDown ||
-         aEvent.mMessage == eMouseUp ||
-         aEvent.mMessage == eDragEnd ||
-         (gfxPrefs::TestEventsAsyncEnabled() && aEvent.mMessage == eMouseHitTest);
+static bool WillHandleMouseEvent(const WidgetMouseEventBase& aEvent) {
+  return aEvent.mMessage == eMouseMove || aEvent.mMessage == eMouseDown ||
+         aEvent.mMessage == eMouseUp || aEvent.mMessage == eDragEnd ||
+         (gfxPrefs::TestEventsAsyncEnabled() &&
+          aEvent.mMessage == eMouseHitTest);
 }
 
- Maybe<APZWheelAction>
-APZInputBridge::ActionForWheelEvent(WidgetWheelEvent* aEvent)
-{
+ Maybe<APZWheelAction> APZInputBridge::ActionForWheelEvent(
+    WidgetWheelEvent* aEvent) {
   if (!(aEvent->mDeltaMode == dom::WheelEvent_Binding::DOM_DELTA_LINE ||
         aEvent->mDeltaMode == dom::WheelEvent_Binding::DOM_DELTA_PIXEL ||
         aEvent->mDeltaMode == dom::WheelEvent_Binding::DOM_DELTA_PAGE)) {
@@ -41,12 +37,9 @@ APZInputBridge::ActionForWheelEvent(WidgetWheelEvent* aEvent)
   return EventStateManager::APZWheelActionFor(aEvent);
 }
 
-nsEventStatus
-APZInputBridge::ReceiveInputEvent(
-    WidgetInputEvent& aEvent,
-    ScrollableLayerGuid* aOutTargetGuid,
-    uint64_t* aOutInputBlockId)
-{
+nsEventStatus APZInputBridge::ReceiveInputEvent(
+    WidgetInputEvent& aEvent, ScrollableLayerGuid* aOutTargetGuid,
+    uint64_t* aOutInputBlockId) {
   APZThreadUtils::AssertOnControllerThread();
 
   
@@ -58,7 +51,6 @@ APZInputBridge::ReceiveInputEvent(
   switch (aEvent.mClass) {
     case eMouseEventClass:
     case eDragEventClass: {
-
       WidgetMouseEvent& mouseEvent = *aEvent.AsMouseEvent();
 
       
@@ -76,28 +68,29 @@ APZInputBridge::ReceiveInputEvent(
       }
 
       if (WillHandleMouseEvent(mouseEvent)) {
-
         MouseInput input(mouseEvent);
-        input.mOrigin = ScreenPoint(mouseEvent.mRefPoint.x, mouseEvent.mRefPoint.y);
+        input.mOrigin =
+            ScreenPoint(mouseEvent.mRefPoint.x, mouseEvent.mRefPoint.y);
 
-        nsEventStatus status = ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
+        nsEventStatus status =
+            ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
 
         mouseEvent.mRefPoint.x = input.mOrigin.x;
         mouseEvent.mRefPoint.y = input.mOrigin.y;
         mouseEvent.mFlags.mHandledByAPZ = input.mHandledByAPZ;
         mouseEvent.mFocusSequenceNumber = input.mFocusSequenceNumber;
         return status;
-
       }
 
-      ProcessUnhandledEvent(&mouseEvent.mRefPoint, aOutTargetGuid, &aEvent.mFocusSequenceNumber);
+      ProcessUnhandledEvent(&mouseEvent.mRefPoint, aOutTargetGuid,
+                            &aEvent.mFocusSequenceNumber);
       return nsEventStatus_eIgnore;
     }
     case eTouchEventClass: {
-
       WidgetTouchEvent& touchEvent = *aEvent.AsTouchEvent();
       MultiTouchInput touchInput(touchEvent);
-      nsEventStatus result = ReceiveInputEvent(touchInput, aOutTargetGuid, aOutInputBlockId);
+      nsEventStatus result =
+          ReceiveInputEvent(touchInput, aOutTargetGuid, aOutInputBlockId);
       
       
       
@@ -106,30 +99,30 @@ APZInputBridge::ReceiveInputEvent(
       touchEvent.mTouches.SetCapacity(touchInput.mTouches.Length());
       for (size_t i = 0; i < touchInput.mTouches.Length(); i++) {
         *touchEvent.mTouches.AppendElement() =
-          touchInput.mTouches[i].ToNewDOMTouch();
+            touchInput.mTouches[i].ToNewDOMTouch();
       }
       touchEvent.mFlags.mHandledByAPZ = touchInput.mHandledByAPZ;
       touchEvent.mFocusSequenceNumber = touchInput.mFocusSequenceNumber;
       return result;
-
     }
     case eWheelEventClass: {
       WidgetWheelEvent& wheelEvent = *aEvent.AsWheelEvent();
 
       if (Maybe<APZWheelAction> action = ActionForWheelEvent(&wheelEvent)) {
-
-        ScrollWheelInput::ScrollMode scrollMode = ScrollWheelInput::SCROLLMODE_INSTANT;
+        ScrollWheelInput::ScrollMode scrollMode =
+            ScrollWheelInput::SCROLLMODE_INSTANT;
         if (gfxPrefs::SmoothScrollEnabled() &&
-            ((wheelEvent.mDeltaMode == dom::WheelEvent_Binding::DOM_DELTA_LINE &&
+            ((wheelEvent.mDeltaMode ==
+                  dom::WheelEvent_Binding::DOM_DELTA_LINE &&
               gfxPrefs::WheelSmoothScrollEnabled()) ||
-             (wheelEvent.mDeltaMode == dom::WheelEvent_Binding::DOM_DELTA_PAGE &&
-              gfxPrefs::PageSmoothScrollEnabled())))
-        {
+             (wheelEvent.mDeltaMode ==
+                  dom::WheelEvent_Binding::DOM_DELTA_PAGE &&
+              gfxPrefs::PageSmoothScrollEnabled()))) {
           scrollMode = ScrollWheelInput::SCROLLMODE_SMOOTH;
         }
 
         WheelDeltaAdjustmentStrategy strategy =
-          EventStateManager::GetWheelDeltaAdjustmentStrategy(wheelEvent);
+            EventStateManager::GetWheelDeltaAdjustmentStrategy(wheelEvent);
         
         
         
@@ -144,14 +137,11 @@ APZInputBridge::ReceiveInputEvent(
         
         if (wheelEvent.mDeltaX || wheelEvent.mDeltaY) {
           ScreenPoint origin(wheelEvent.mRefPoint.x, wheelEvent.mRefPoint.y);
-          ScrollWheelInput input(wheelEvent.mTime, wheelEvent.mTimeStamp, 0,
-                                 scrollMode,
-                                 ScrollWheelInput::DeltaTypeForDeltaMode(
-                                                     wheelEvent.mDeltaMode),
-                                 origin,
-                                 wheelEvent.mDeltaX, wheelEvent.mDeltaY,
-                                 wheelEvent.mAllowToOverrideSystemScrollSpeed,
-                                 strategy);
+          ScrollWheelInput input(
+              wheelEvent.mTime, wheelEvent.mTimeStamp, 0, scrollMode,
+              ScrollWheelInput::DeltaTypeForDeltaMode(wheelEvent.mDeltaMode),
+              origin, wheelEvent.mDeltaX, wheelEvent.mDeltaY,
+              wheelEvent.mAllowToOverrideSystemScrollSpeed, strategy);
           input.mAPZAction = action.value();
 
           
@@ -160,11 +150,13 @@ APZInputBridge::ReceiveInputEvent(
           
           
           
-          EventStateManager::GetUserPrefsForWheelEvent(&wheelEvent,
-            &input.mUserDeltaMultiplierX,
-            &input.mUserDeltaMultiplierY);
+          
+          EventStateManager::GetUserPrefsForWheelEvent(
+              &wheelEvent, &input.mUserDeltaMultiplierX,
+              &input.mUserDeltaMultiplierY);
 
-          nsEventStatus status = ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
+          nsEventStatus status =
+              ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
           wheelEvent.mRefPoint.x = input.mOrigin.x;
           wheelEvent.mRefPoint.y = input.mOrigin.y;
           wheelEvent.mFlags.mHandledByAPZ = input.mHandledByAPZ;
@@ -174,27 +166,27 @@ APZInputBridge::ReceiveInputEvent(
       }
 
       UpdateWheelTransaction(aEvent.mRefPoint, aEvent.mMessage);
-      ProcessUnhandledEvent(&aEvent.mRefPoint, aOutTargetGuid, &aEvent.mFocusSequenceNumber);
+      ProcessUnhandledEvent(&aEvent.mRefPoint, aOutTargetGuid,
+                            &aEvent.mFocusSequenceNumber);
       return nsEventStatus_eIgnore;
-
     }
     case eKeyboardEventClass: {
       WidgetKeyboardEvent& keyboardEvent = *aEvent.AsKeyboardEvent();
 
       KeyboardInput input(keyboardEvent);
 
-      nsEventStatus status = ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
+      nsEventStatus status =
+          ReceiveInputEvent(input, aOutTargetGuid, aOutInputBlockId);
 
       keyboardEvent.mFlags.mHandledByAPZ = input.mHandledByAPZ;
       keyboardEvent.mFocusSequenceNumber = input.mFocusSequenceNumber;
       return status;
     }
     default: {
-
       UpdateWheelTransaction(aEvent.mRefPoint, aEvent.mMessage);
-      ProcessUnhandledEvent(&aEvent.mRefPoint, aOutTargetGuid, &aEvent.mFocusSequenceNumber);
+      ProcessUnhandledEvent(&aEvent.mRefPoint, aOutTargetGuid,
+                            &aEvent.mFocusSequenceNumber);
       return nsEventStatus_eIgnore;
-
     }
   }
 
@@ -202,5 +194,5 @@ APZInputBridge::ReceiveInputEvent(
   return nsEventStatus_eConsumeNoDefault;
 }
 
-} 
-} 
+}  
+}  

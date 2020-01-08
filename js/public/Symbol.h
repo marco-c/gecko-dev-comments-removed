@@ -8,12 +8,12 @@
 #ifndef js_Symbol_h
 #define js_Symbol_h
 
-#include <stddef.h> 
-#include <stdint.h> 
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "jstypes.h" 
+#include "jstypes.h"  
 
-#include "js/RootingAPI.h" 
+#include "js/RootingAPI.h"  
 
 struct JSContext;
 class JSString;
@@ -29,8 +29,8 @@ class Symbol;
 
 
 
-extern JS_PUBLIC_API Symbol*
-NewSymbol(JSContext* cx, Handle<JSString*> description);
+extern JS_PUBLIC_API Symbol* NewSymbol(JSContext* cx,
+                                       Handle<JSString*> description);
 
 
 
@@ -39,8 +39,7 @@ NewSymbol(JSContext* cx, Handle<JSString*> description);
 
 
 
-extern JS_PUBLIC_API Symbol*
-GetSymbolFor(JSContext* cx, Handle<JSString*> key);
+extern JS_PUBLIC_API Symbol* GetSymbolFor(JSContext* cx, Handle<JSString*> key);
 
 
 
@@ -48,34 +47,36 @@ GetSymbolFor(JSContext* cx, Handle<JSString*> key);
 
 
 
-extern JS_PUBLIC_API JSString*
-GetSymbolDescription(Handle<Symbol*> symbol);
+extern JS_PUBLIC_API JSString* GetSymbolDescription(Handle<Symbol*> symbol);
 
 
 #define JS_FOR_EACH_WELL_KNOWN_SYMBOL(MACRO) \
-    MACRO(isConcatSpreadable) \
-    MACRO(iterator) \
-    MACRO(match) \
-    MACRO(replace) \
-    MACRO(search) \
-    MACRO(species) \
-    MACRO(hasInstance) \
-    MACRO(split) \
-    MACRO(toPrimitive) \
-    MACRO(toStringTag) \
-    MACRO(unscopables) \
-    MACRO(asyncIterator)
+  MACRO(isConcatSpreadable)                  \
+  MACRO(iterator)                            \
+  MACRO(match)                               \
+  MACRO(replace)                             \
+  MACRO(search)                              \
+  MACRO(species)                             \
+  MACRO(hasInstance)                         \
+  MACRO(split)                               \
+  MACRO(toPrimitive)                         \
+  MACRO(toStringTag)                         \
+  MACRO(unscopables)                         \
+  MACRO(asyncIterator)
 
-enum class SymbolCode : uint32_t
-{
-    
+enum class SymbolCode : uint32_t {
+
 #define JS_DEFINE_SYMBOL_ENUM(name) name,
-    JS_FOR_EACH_WELL_KNOWN_SYMBOL(JS_DEFINE_SYMBOL_ENUM)  
+  JS_FOR_EACH_WELL_KNOWN_SYMBOL(
+      JS_DEFINE_SYMBOL_ENUM)  
 #undef JS_DEFINE_SYMBOL_ENUM
-    Limit,
-    WellKnownAPILimit = 0x80000000, 
-    InSymbolRegistry = 0xfffffffe,  
-    UniqueSymbol = 0xffffffff       
+  Limit,
+  WellKnownAPILimit =
+      0x80000000,  
+                   
+  InSymbolRegistry =
+      0xfffffffe,            
+  UniqueSymbol = 0xffffffff  
 };
 
 
@@ -86,8 +87,7 @@ const size_t WellKnownSymbolLimit = size_t(SymbolCode::Limit);
 
 
 
-extern JS_PUBLIC_API SymbolCode
-GetSymbolCode(Handle<Symbol*> symbol);
+extern JS_PUBLIC_API SymbolCode GetSymbolCode(Handle<Symbol*> symbol);
 
 
 
@@ -95,20 +95,18 @@ GetSymbolCode(Handle<Symbol*> symbol);
 
 
 
-extern JS_PUBLIC_API Symbol*
-GetWellKnownSymbol(JSContext* cx, SymbolCode which);
+extern JS_PUBLIC_API Symbol* GetWellKnownSymbol(JSContext* cx,
+                                                SymbolCode which);
 
 
 
 
 
-inline bool
-PropertySpecNameIsSymbol(const char* name)
-{
-    uintptr_t u = reinterpret_cast<uintptr_t>(name);
-    return u != 0 && u - 1 < WellKnownSymbolLimit;
+inline bool PropertySpecNameIsSymbol(const char* name) {
+  uintptr_t u = reinterpret_cast<uintptr_t>(name);
+  return u != 0 && u - 1 < WellKnownSymbolLimit;
 }
 
-} 
+}  
 
 #endif 

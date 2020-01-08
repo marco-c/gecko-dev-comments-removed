@@ -24,35 +24,28 @@ namespace mozilla {
 namespace css {
 class Declaration;
 class Rule;
-} 
+}  
 
-class DeclarationBlock final
-{
+class DeclarationBlock final {
   DeclarationBlock(const DeclarationBlock& aCopy)
-    : mRaw(Servo_DeclarationBlock_Clone(aCopy.mRaw).Consume())
-    , mImmutable(false)
-    , mIsDirty(false)
-  {
+      : mRaw(Servo_DeclarationBlock_Clone(aCopy.mRaw).Consume()),
+        mImmutable(false),
+        mIsDirty(false) {
     mContainer.mRaw = 0;
   }
 
-public:
+ public:
   explicit DeclarationBlock(already_AddRefed<RawServoDeclarationBlock> aRaw)
-    : mRaw(aRaw)
-    , mImmutable(false)
-    , mIsDirty(false)
-  {
+      : mRaw(aRaw), mImmutable(false), mIsDirty(false) {
     mContainer.mRaw = 0;
   }
 
   DeclarationBlock()
-    : DeclarationBlock(Servo_DeclarationBlock_CreateEmpty().Consume())
-  { }
+      : DeclarationBlock(Servo_DeclarationBlock_CreateEmpty().Consume()) {}
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DeclarationBlock)
 
-  already_AddRefed<DeclarationBlock> Clone() const
-  {
+  already_AddRefed<DeclarationBlock> Clone() const {
     return do_AddRef(new DeclarationBlock(*this));
   }
 
@@ -64,8 +57,7 @@ public:
   
 
 
-  void AssertMutable() const
-  {
+  void AssertMutable() const {
     MOZ_ASSERT(IsMutable(), "someone forgot to call EnsureMutable");
   }
 
@@ -92,8 +84,7 @@ public:
   
 
 
-  already_AddRefed<DeclarationBlock> EnsureMutable()
-  {
+  already_AddRefed<DeclarationBlock> EnsureMutable() {
     if (!IsDirty()) {
       
       
@@ -114,23 +105,20 @@ public:
     return do_AddRef(this);
   }
 
-  void SetOwningRule(css::Rule* aRule)
-  {
+  void SetOwningRule(css::Rule* aRule) {
     MOZ_ASSERT(!mContainer.mOwningRule || !aRule,
                "should never overwrite one rule with another");
     mContainer.mOwningRule = aRule;
   }
 
-  css::Rule* GetOwningRule() const
-  {
+  css::Rule* GetOwningRule() const {
     if (mContainer.mRaw & 0x1) {
       return nullptr;
     }
     return mContainer.mOwningRule;
   }
 
-  void SetHTMLCSSStyleSheet(nsHTMLCSSStyleSheet* aHTMLCSSStyleSheet)
-  {
+  void SetHTMLCSSStyleSheet(nsHTMLCSSStyleSheet* aHTMLCSSStyleSheet) {
     MOZ_ASSERT(!mContainer.mHTMLCSSStyleSheet || !aHTMLCSSStyleSheet,
                "should never overwrite one sheet with another");
     mContainer.mHTMLCSSStyleSheet = aHTMLCSSStyleSheet;
@@ -139,8 +127,7 @@ public:
     }
   }
 
-  nsHTMLCSSStyleSheet* GetHTMLCSSStyleSheet() const
-  {
+  nsHTMLCSSStyleSheet* GetHTMLCSSStyleSheet() const {
     if (!(mContainer.mRaw & 0x1)) {
       return nullptr;
     }
@@ -149,67 +136,57 @@ public:
     return c.mHTMLCSSStyleSheet;
   }
 
-  static already_AddRefed<DeclarationBlock>
-  FromCssText(const nsAString& aCssText, URLExtraData* aExtraData,
-              nsCompatibility aMode, css::Loader* aLoader);
+  static already_AddRefed<DeclarationBlock> FromCssText(
+      const nsAString& aCssText, URLExtraData* aExtraData,
+      nsCompatibility aMode, css::Loader* aLoader);
 
   RawServoDeclarationBlock* Raw() const { return mRaw; }
-  RawServoDeclarationBlock* const* RefRaw() const
-  {
+  RawServoDeclarationBlock* const* RefRaw() const {
     static_assert(sizeof(RefPtr<RawServoDeclarationBlock>) ==
-                  sizeof(RawServoDeclarationBlock*),
+                      sizeof(RawServoDeclarationBlock*),
                   "RefPtr should just be a pointer");
     return reinterpret_cast<RawServoDeclarationBlock* const*>(&mRaw);
   }
 
-  const RawServoDeclarationBlockStrong* RefRawStrong() const
-  {
+  const RawServoDeclarationBlockStrong* RefRawStrong() const {
     static_assert(sizeof(RefPtr<RawServoDeclarationBlock>) ==
-                  sizeof(RawServoDeclarationBlock*),
+                      sizeof(RawServoDeclarationBlock*),
                   "RefPtr should just be a pointer");
-    static_assert(sizeof(RefPtr<RawServoDeclarationBlock>) ==
-                  sizeof(RawServoDeclarationBlockStrong),
-                  "RawServoDeclarationBlockStrong should be the same as RefPtr");
+    static_assert(
+        sizeof(RefPtr<RawServoDeclarationBlock>) ==
+            sizeof(RawServoDeclarationBlockStrong),
+        "RawServoDeclarationBlockStrong should be the same as RefPtr");
     return reinterpret_cast<const RawServoDeclarationBlockStrong*>(&mRaw);
   }
 
-  void ToString(nsAString& aResult) const
-  {
+  void ToString(nsAString& aResult) const {
     Servo_DeclarationBlock_GetCssText(mRaw, &aResult);
   }
 
-  uint32_t Count() const
-  {
-    return Servo_DeclarationBlock_Count(mRaw);
-  }
+  uint32_t Count() const { return Servo_DeclarationBlock_Count(mRaw); }
 
-  bool GetNthProperty(uint32_t aIndex, nsAString& aReturn) const
-  {
+  bool GetNthProperty(uint32_t aIndex, nsAString& aReturn) const {
     aReturn.Truncate();
     return Servo_DeclarationBlock_GetNthProperty(mRaw, aIndex, &aReturn);
   }
 
-  void GetPropertyValue(const nsAString& aProperty, nsAString& aValue) const
-  {
+  void GetPropertyValue(const nsAString& aProperty, nsAString& aValue) const {
     NS_ConvertUTF16toUTF8 property(aProperty);
     Servo_DeclarationBlock_GetPropertyValue(mRaw, &property, &aValue);
   }
 
-  void GetPropertyValueByID(nsCSSPropertyID aPropID, nsAString& aValue) const
-  {
+  void GetPropertyValueByID(nsCSSPropertyID aPropID, nsAString& aValue) const {
     Servo_DeclarationBlock_GetPropertyValueById(mRaw, aPropID, &aValue);
   }
 
-  bool GetPropertyIsImportant(const nsAString& aProperty) const
-  {
+  bool GetPropertyIsImportant(const nsAString& aProperty) const {
     NS_ConvertUTF16toUTF8 property(aProperty);
     return Servo_DeclarationBlock_GetPropertyIsImportant(mRaw, &property);
   }
 
   
   bool RemoveProperty(const nsAString& aProperty,
-                      DeclarationBlockMutationClosure aClosure = { })
-  {
+                      DeclarationBlockMutationClosure aClosure = {}) {
     AssertMutable();
     NS_ConvertUTF16toUTF8 property(aProperty);
     return Servo_DeclarationBlock_RemoveProperty(mRaw, &property, aClosure);
@@ -217,13 +194,12 @@ public:
 
   
   bool RemovePropertyByID(nsCSSPropertyID aProperty,
-                          DeclarationBlockMutationClosure aClosure = { })
-  {
+                          DeclarationBlockMutationClosure aClosure = {}) {
     AssertMutable();
     return Servo_DeclarationBlock_RemovePropertyById(mRaw, aProperty, aClosure);
   }
 
-private:
+ private:
   ~DeclarationBlock() = default;
   union {
     
@@ -261,6 +237,6 @@ private:
   Atomic<bool, MemoryOrdering::Relaxed> mIsDirty;
 };
 
-} 
+}  
 
-#endif 
+#endif  

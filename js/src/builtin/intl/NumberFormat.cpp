@@ -45,838 +45,838 @@ using js::intl::IcuLocale;
 
 using JS::AutoStableStringChars;
 
-const ClassOps NumberFormatObject::classOps_ = {
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    nullptr, 
-    NumberFormatObject::finalize
-};
+const ClassOps NumberFormatObject::classOps_ = {nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                nullptr, 
+                                                NumberFormatObject::finalize};
 
 const Class NumberFormatObject::class_ = {
     js_Object_str,
     JSCLASS_HAS_RESERVED_SLOTS(NumberFormatObject::SLOT_COUNT) |
-    JSCLASS_FOREGROUND_FINALIZE,
-    &NumberFormatObject::classOps_
-};
+        JSCLASS_FOREGROUND_FINALIZE,
+    &NumberFormatObject::classOps_};
 
-static bool
-numberFormat_toSource(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    args.rval().setString(cx->names().NumberFormat);
-    return true;
+static bool numberFormat_toSource(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().setString(cx->names().NumberFormat);
+  return true;
 }
 
 static const JSFunctionSpec numberFormat_static_methods[] = {
-    JS_SELF_HOSTED_FN("supportedLocalesOf", "Intl_NumberFormat_supportedLocalesOf", 1, 0),
-    JS_FS_END
-};
+    JS_SELF_HOSTED_FN("supportedLocalesOf",
+                      "Intl_NumberFormat_supportedLocalesOf", 1, 0),
+    JS_FS_END};
 
 static const JSFunctionSpec numberFormat_methods[] = {
-    JS_SELF_HOSTED_FN("resolvedOptions", "Intl_NumberFormat_resolvedOptions", 0, 0),
+    JS_SELF_HOSTED_FN("resolvedOptions", "Intl_NumberFormat_resolvedOptions", 0,
+                      0),
     JS_SELF_HOSTED_FN("formatToParts", "Intl_NumberFormat_formatToParts", 1, 0),
-    JS_FN(js_toSource_str, numberFormat_toSource, 0, 0),
-    JS_FS_END
-};
+    JS_FN(js_toSource_str, numberFormat_toSource, 0, 0), JS_FS_END};
 
 static const JSPropertySpec numberFormat_properties[] = {
     JS_SELF_HOSTED_GET("format", "Intl_NumberFormat_format_get", 0),
-    JS_STRING_SYM_PS(toStringTag, "Object", JSPROP_READONLY),
-    JS_PS_END
-};
+    JS_STRING_SYM_PS(toStringTag, "Object", JSPROP_READONLY), JS_PS_END};
 
 
 
 
 
 
-static bool
-NumberFormat(JSContext* cx, const CallArgs& args, bool construct)
-{
-    
+static bool NumberFormat(JSContext* cx, const CallArgs& args, bool construct) {
+  
 
-    
-    RootedObject proto(cx);
-    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
-        return false;
-    }
+  
+  RootedObject proto(cx);
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+    return false;
+  }
 
+  if (!proto) {
+    proto = GlobalObject::getOrCreateNumberFormatPrototype(cx, cx->global());
     if (!proto) {
-        proto = GlobalObject::getOrCreateNumberFormatPrototype(cx, cx->global());
-        if (!proto) {
-            return false;
-        }
+      return false;
     }
+  }
 
-    Rooted<NumberFormatObject*> numberFormat(cx);
-    numberFormat = NewObjectWithGivenProto<NumberFormatObject>(cx, proto);
-    if (!numberFormat) {
-        return false;
-    }
+  Rooted<NumberFormatObject*> numberFormat(cx);
+  numberFormat = NewObjectWithGivenProto<NumberFormatObject>(cx, proto);
+  if (!numberFormat) {
+    return false;
+  }
 
-    numberFormat->setReservedSlot(NumberFormatObject::INTERNALS_SLOT, NullValue());
-    numberFormat->setReservedSlot(NumberFormatObject::UNUMBER_FORMAT_SLOT, PrivateValue(nullptr));
+  numberFormat->setReservedSlot(NumberFormatObject::INTERNALS_SLOT,
+                                NullValue());
+  numberFormat->setReservedSlot(NumberFormatObject::UNUMBER_FORMAT_SLOT,
+                                PrivateValue(nullptr));
 
-    RootedValue thisValue(cx, construct ? ObjectValue(*numberFormat) : args.thisv());
-    HandleValue locales = args.get(0);
-    HandleValue options = args.get(1);
+  RootedValue thisValue(cx,
+                        construct ? ObjectValue(*numberFormat) : args.thisv());
+  HandleValue locales = args.get(0);
+  HandleValue options = args.get(1);
 
-    
-    return intl::LegacyInitializeObject(cx, numberFormat, cx->names().InitializeNumberFormat,
-                                        thisValue, locales, options,
-                                        DateTimeFormatOptions::Standard, args.rval());
+  
+  return intl::LegacyInitializeObject(
+      cx, numberFormat, cx->names().InitializeNumberFormat, thisValue, locales,
+      options, DateTimeFormatOptions::Standard, args.rval());
 }
 
-static bool
-NumberFormat(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return NumberFormat(cx, args, args.isConstructing());
+static bool NumberFormat(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return NumberFormat(cx, args, args.isConstructing());
 }
 
-bool
-js::intl_NumberFormat(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    MOZ_ASSERT(args.length() == 2);
-    MOZ_ASSERT(!args.isConstructing());
-    
-    
-    
-    return NumberFormat(cx, args, true);
+bool js::intl_NumberFormat(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 2);
+  MOZ_ASSERT(!args.isConstructing());
+  
+  
+  
+  return NumberFormat(cx, args, true);
 }
 
-void
-js::NumberFormatObject::finalize(FreeOp* fop, JSObject* obj)
-{
-    MOZ_ASSERT(fop->onMainThread());
+void js::NumberFormatObject::finalize(FreeOp* fop, JSObject* obj) {
+  MOZ_ASSERT(fop->onMainThread());
 
-    const Value& slot =
-        obj->as<NumberFormatObject>().getReservedSlot(NumberFormatObject::UNUMBER_FORMAT_SLOT);
-    if (UNumberFormat* nf = static_cast<UNumberFormat*>(slot.toPrivate())) {
-        unum_close(nf);
-    }
+  const Value& slot = obj->as<NumberFormatObject>().getReservedSlot(
+      NumberFormatObject::UNUMBER_FORMAT_SLOT);
+  if (UNumberFormat* nf = static_cast<UNumberFormat*>(slot.toPrivate())) {
+    unum_close(nf);
+  }
 }
 
-JSObject*
-js::CreateNumberFormatPrototype(JSContext* cx, HandleObject Intl, Handle<GlobalObject*> global,
-                                MutableHandleObject constructor)
-{
-    RootedFunction ctor(cx);
-    ctor = GlobalObject::createConstructor(cx, &NumberFormat, cx->names().NumberFormat, 0);
-    if (!ctor) {
-        return nullptr;
-    }
+JSObject* js::CreateNumberFormatPrototype(JSContext* cx, HandleObject Intl,
+                                          Handle<GlobalObject*> global,
+                                          MutableHandleObject constructor) {
+  RootedFunction ctor(cx);
+  ctor = GlobalObject::createConstructor(cx, &NumberFormat,
+                                         cx->names().NumberFormat, 0);
+  if (!ctor) {
+    return nullptr;
+  }
 
-    RootedObject proto(cx, GlobalObject::createBlankPrototype<PlainObject>(cx, global));
-    if (!proto) {
-        return nullptr;
-    }
+  RootedObject proto(
+      cx, GlobalObject::createBlankPrototype<PlainObject>(cx, global));
+  if (!proto) {
+    return nullptr;
+  }
 
-    if (!LinkConstructorAndPrototype(cx, ctor, proto)) {
-        return nullptr;
-    }
+  if (!LinkConstructorAndPrototype(cx, ctor, proto)) {
+    return nullptr;
+  }
 
-    
-    if (!JS_DefineFunctions(cx, ctor, numberFormat_static_methods)) {
-        return nullptr;
-    }
+  
+  if (!JS_DefineFunctions(cx, ctor, numberFormat_static_methods)) {
+    return nullptr;
+  }
 
-    
-    if (!JS_DefineFunctions(cx, proto, numberFormat_methods)) {
-        return nullptr;
-    }
+  
+  if (!JS_DefineFunctions(cx, proto, numberFormat_methods)) {
+    return nullptr;
+  }
 
-    
-    if (!JS_DefineProperties(cx, proto, numberFormat_properties)) {
-        return nullptr;
-    }
+  
+  if (!JS_DefineProperties(cx, proto, numberFormat_properties)) {
+    return nullptr;
+  }
 
-    
-    RootedValue ctorValue(cx, ObjectValue(*ctor));
-    if (!DefineDataProperty(cx, Intl, cx->names().NumberFormat, ctorValue, 0)) {
-        return nullptr;
-    }
+  
+  RootedValue ctorValue(cx, ObjectValue(*ctor));
+  if (!DefineDataProperty(cx, Intl, cx->names().NumberFormat, ctorValue, 0)) {
+    return nullptr;
+  }
 
-    constructor.set(ctor);
-    return proto;
+  constructor.set(ctor);
+  return proto;
 }
 
-bool
-js::intl_NumberFormat_availableLocales(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    MOZ_ASSERT(args.length() == 0);
+bool js::intl_NumberFormat_availableLocales(JSContext* cx, unsigned argc,
+                                            Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 0);
 
-    RootedValue result(cx);
-    if (!GetAvailableLocales(cx, unum_countAvailable, unum_getAvailable, &result)) {
-        return false;
-    }
-    args.rval().set(result);
-    return true;
+  RootedValue result(cx);
+  if (!GetAvailableLocales(cx, unum_countAvailable, unum_getAvailable,
+                           &result)) {
+    return false;
+  }
+  args.rval().set(result);
+  return true;
 }
 
-bool
-js::intl_numberingSystem(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    MOZ_ASSERT(args.length() == 1);
-    MOZ_ASSERT(args[0].isString());
+bool js::intl_numberingSystem(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 1);
+  MOZ_ASSERT(args[0].isString());
 
-    UniqueChars locale = intl::EncodeLocale(cx, args[0].toString());
-    if (!locale) {
-        return false;
-    }
+  UniqueChars locale = intl::EncodeLocale(cx, args[0].toString());
+  if (!locale) {
+    return false;
+  }
 
-    UErrorCode status = U_ZERO_ERROR;
-    UNumberingSystem* numbers = unumsys_open(IcuLocale(locale.get()), &status);
-    if (U_FAILURE(status)) {
-        intl::ReportInternalError(cx);
-        return false;
-    }
+  UErrorCode status = U_ZERO_ERROR;
+  UNumberingSystem* numbers = unumsys_open(IcuLocale(locale.get()), &status);
+  if (U_FAILURE(status)) {
+    intl::ReportInternalError(cx);
+    return false;
+  }
 
-    ScopedICUObject<UNumberingSystem, unumsys_close> toClose(numbers);
+  ScopedICUObject<UNumberingSystem, unumsys_close> toClose(numbers);
 
-    const char* name = unumsys_getName(numbers);
-    if (!name) {
-        intl::ReportInternalError(cx);
-        return false;
-    }
+  const char* name = unumsys_getName(numbers);
+  if (!name) {
+    intl::ReportInternalError(cx);
+    return false;
+  }
 
-    JSString* jsname = NewStringCopyZ<CanGC>(cx, name);
-    if (!jsname) {
-        return false;
-    }
+  JSString* jsname = NewStringCopyZ<CanGC>(cx, name);
+  if (!jsname) {
+    return false;
+  }
 
-    args.rval().setString(jsname);
-    return true;
+  args.rval().setString(jsname);
+  return true;
 }
 
 
 
 
 
-static UNumberFormat*
-NewUNumberFormat(JSContext* cx, Handle<NumberFormatObject*> numberFormat)
-{
-    RootedValue value(cx);
+static UNumberFormat* NewUNumberFormat(
+    JSContext* cx, Handle<NumberFormatObject*> numberFormat) {
+  RootedValue value(cx);
 
-    RootedObject internals(cx, intl::GetInternalsObject(cx, numberFormat));
-    if (!internals) {
-       return nullptr;
+  RootedObject internals(cx, intl::GetInternalsObject(cx, numberFormat));
+  if (!internals) {
+    return nullptr;
+  }
+
+  if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
+    return nullptr;
+  }
+  UniqueChars locale = intl::EncodeLocale(cx, value.toString());
+  if (!locale) {
+    return nullptr;
+  }
+
+  
+  UNumberFormatStyle uStyle = UNUM_DECIMAL;
+  const UChar* uCurrency = nullptr;
+  uint32_t uMinimumIntegerDigits = 1;
+  uint32_t uMinimumFractionDigits = 0;
+  uint32_t uMaximumFractionDigits = 3;
+  int32_t uMinimumSignificantDigits = -1;
+  int32_t uMaximumSignificantDigits = -1;
+  bool uUseGrouping = true;
+
+  
+  RootedString currency(cx);
+  AutoStableStringChars stableChars(cx);
+
+  
+  
+
+  if (!GetProperty(cx, internals, internals, cx->names().style, &value)) {
+    return nullptr;
+  }
+
+  {
+    JSLinearString* style = value.toString()->ensureLinear(cx);
+    if (!style) {
+      return nullptr;
     }
 
-    if (!GetProperty(cx, internals, internals, cx->names().locale, &value)) {
+    if (StringEqualsAscii(style, "currency")) {
+      if (!GetProperty(cx, internals, internals, cx->names().currency,
+                       &value)) {
         return nullptr;
-    }
-    UniqueChars locale = intl::EncodeLocale(cx, value.toString());
-    if (!locale) {
+      }
+      currency = value.toString();
+      MOZ_ASSERT(currency->length() == 3,
+                 "IsWellFormedCurrencyCode permits only length-3 strings");
+      if (!stableChars.initTwoByte(cx, currency)) {
         return nullptr;
-    }
+      }
+      
+      uCurrency = stableChars.twoByteRange().begin().get();
 
-    
-    UNumberFormatStyle uStyle = UNUM_DECIMAL;
-    const UChar* uCurrency = nullptr;
-    uint32_t uMinimumIntegerDigits = 1;
-    uint32_t uMinimumFractionDigits = 0;
-    uint32_t uMaximumFractionDigits = 3;
-    int32_t uMinimumSignificantDigits = -1;
-    int32_t uMaximumSignificantDigits = -1;
-    bool uUseGrouping = true;
-
-    
-    RootedString currency(cx);
-    AutoStableStringChars stableChars(cx);
-
-    
-    
-
-    if (!GetProperty(cx, internals, internals, cx->names().style, &value)) {
+      if (!GetProperty(cx, internals, internals, cx->names().currencyDisplay,
+                       &value)) {
         return nullptr;
-    }
-
-    {
-        JSLinearString* style = value.toString()->ensureLinear(cx);
-        if (!style) {
-            return nullptr;
-        }
-
-        if (StringEqualsAscii(style, "currency")) {
-            if (!GetProperty(cx, internals, internals, cx->names().currency, &value)) {
-                return nullptr;
-            }
-            currency = value.toString();
-            MOZ_ASSERT(currency->length() == 3,
-                       "IsWellFormedCurrencyCode permits only length-3 strings");
-            if (!stableChars.initTwoByte(cx, currency)) {
-                return nullptr;
-            }
-            
-            uCurrency = stableChars.twoByteRange().begin().get();
-
-            if (!GetProperty(cx, internals, internals, cx->names().currencyDisplay, &value)) {
-                return nullptr;
-            }
-            JSLinearString* currencyDisplay = value.toString()->ensureLinear(cx);
-            if (!currencyDisplay) {
-                return nullptr;
-            }
-            if (StringEqualsAscii(currencyDisplay, "code")) {
-                uStyle = UNUM_CURRENCY_ISO;
-            } else if (StringEqualsAscii(currencyDisplay, "symbol")) {
-                uStyle = UNUM_CURRENCY;
-            } else {
-                MOZ_ASSERT(StringEqualsAscii(currencyDisplay, "name"));
-                uStyle = UNUM_CURRENCY_PLURAL;
-            }
-        } else if (StringEqualsAscii(style, "percent")) {
-            uStyle = UNUM_PERCENT;
-        } else {
-            MOZ_ASSERT(StringEqualsAscii(style, "decimal"));
-            uStyle = UNUM_DECIMAL;
-        }
-    }
-
-    bool hasP;
-    if (!HasProperty(cx, internals, cx->names().minimumSignificantDigits, &hasP)) {
+      }
+      JSLinearString* currencyDisplay = value.toString()->ensureLinear(cx);
+      if (!currencyDisplay) {
         return nullptr;
-    }
-
-    if (hasP) {
-        if (!GetProperty(cx, internals, internals, cx->names().minimumSignificantDigits, &value)) {
-            return nullptr;
-        }
-        uMinimumSignificantDigits = value.toInt32();
-
-        if (!GetProperty(cx, internals, internals, cx->names().maximumSignificantDigits, &value)) {
-            return nullptr;
-        }
-        uMaximumSignificantDigits = value.toInt32();
+      }
+      if (StringEqualsAscii(currencyDisplay, "code")) {
+        uStyle = UNUM_CURRENCY_ISO;
+      } else if (StringEqualsAscii(currencyDisplay, "symbol")) {
+        uStyle = UNUM_CURRENCY;
+      } else {
+        MOZ_ASSERT(StringEqualsAscii(currencyDisplay, "name"));
+        uStyle = UNUM_CURRENCY_PLURAL;
+      }
+    } else if (StringEqualsAscii(style, "percent")) {
+      uStyle = UNUM_PERCENT;
     } else {
-        if (!GetProperty(cx, internals, internals, cx->names().minimumIntegerDigits, &value)) {
-            return nullptr;
-        }
-        uMinimumIntegerDigits = AssertedCast<uint32_t>(value.toInt32());
-
-        if (!GetProperty(cx, internals, internals, cx->names().minimumFractionDigits, &value)) {
-            return nullptr;
-        }
-        uMinimumFractionDigits = AssertedCast<uint32_t>(value.toInt32());
-
-        if (!GetProperty(cx, internals, internals, cx->names().maximumFractionDigits, &value)) {
-            return nullptr;
-        }
-        uMaximumFractionDigits = AssertedCast<uint32_t>(value.toInt32());
+      MOZ_ASSERT(StringEqualsAscii(style, "decimal"));
+      uStyle = UNUM_DECIMAL;
     }
+  }
 
-    if (!GetProperty(cx, internals, internals, cx->names().useGrouping, &value)) {
-        return nullptr;
+  bool hasP;
+  if (!HasProperty(cx, internals, cx->names().minimumSignificantDigits,
+                   &hasP)) {
+    return nullptr;
+  }
+
+  if (hasP) {
+    if (!GetProperty(cx, internals, internals,
+                     cx->names().minimumSignificantDigits, &value)) {
+      return nullptr;
     }
-    uUseGrouping = value.toBoolean();
+    uMinimumSignificantDigits = value.toInt32();
 
-    UErrorCode status = U_ZERO_ERROR;
-    UNumberFormat* nf = unum_open(uStyle, nullptr, 0, IcuLocale(locale.get()), nullptr, &status);
+    if (!GetProperty(cx, internals, internals,
+                     cx->names().maximumSignificantDigits, &value)) {
+      return nullptr;
+    }
+    uMaximumSignificantDigits = value.toInt32();
+  } else {
+    if (!GetProperty(cx, internals, internals, cx->names().minimumIntegerDigits,
+                     &value)) {
+      return nullptr;
+    }
+    uMinimumIntegerDigits = AssertedCast<uint32_t>(value.toInt32());
+
+    if (!GetProperty(cx, internals, internals,
+                     cx->names().minimumFractionDigits, &value)) {
+      return nullptr;
+    }
+    uMinimumFractionDigits = AssertedCast<uint32_t>(value.toInt32());
+
+    if (!GetProperty(cx, internals, internals,
+                     cx->names().maximumFractionDigits, &value)) {
+      return nullptr;
+    }
+    uMaximumFractionDigits = AssertedCast<uint32_t>(value.toInt32());
+  }
+
+  if (!GetProperty(cx, internals, internals, cx->names().useGrouping, &value)) {
+    return nullptr;
+  }
+  uUseGrouping = value.toBoolean();
+
+  UErrorCode status = U_ZERO_ERROR;
+  UNumberFormat* nf =
+      unum_open(uStyle, nullptr, 0, IcuLocale(locale.get()), nullptr, &status);
+  if (U_FAILURE(status)) {
+    intl::ReportInternalError(cx);
+    return nullptr;
+  }
+  ScopedICUObject<UNumberFormat, unum_close> toClose(nf);
+
+  if (uCurrency) {
+    unum_setTextAttribute(nf, UNUM_CURRENCY_CODE, uCurrency, 3, &status);
     if (U_FAILURE(status)) {
-        intl::ReportInternalError(cx);
-        return nullptr;
+      intl::ReportInternalError(cx);
+      return nullptr;
     }
-    ScopedICUObject<UNumberFormat, unum_close> toClose(nf);
+  }
+  if (uMinimumSignificantDigits != -1) {
+    unum_setAttribute(nf, UNUM_SIGNIFICANT_DIGITS_USED, true);
+    unum_setAttribute(nf, UNUM_MIN_SIGNIFICANT_DIGITS,
+                      uMinimumSignificantDigits);
+    unum_setAttribute(nf, UNUM_MAX_SIGNIFICANT_DIGITS,
+                      uMaximumSignificantDigits);
+  } else {
+    unum_setAttribute(nf, UNUM_MIN_INTEGER_DIGITS, uMinimumIntegerDigits);
+    unum_setAttribute(nf, UNUM_MIN_FRACTION_DIGITS, uMinimumFractionDigits);
+    unum_setAttribute(nf, UNUM_MAX_FRACTION_DIGITS, uMaximumFractionDigits);
+  }
+  unum_setAttribute(nf, UNUM_GROUPING_USED, uUseGrouping);
+  unum_setAttribute(nf, UNUM_ROUNDING_MODE, UNUM_ROUND_HALFUP);
 
-    if (uCurrency) {
-        unum_setTextAttribute(nf, UNUM_CURRENCY_CODE, uCurrency, 3, &status);
-        if (U_FAILURE(status)) {
-            intl::ReportInternalError(cx);
-            return nullptr;
-        }
-    }
-    if (uMinimumSignificantDigits != -1) {
-        unum_setAttribute(nf, UNUM_SIGNIFICANT_DIGITS_USED, true);
-        unum_setAttribute(nf, UNUM_MIN_SIGNIFICANT_DIGITS, uMinimumSignificantDigits);
-        unum_setAttribute(nf, UNUM_MAX_SIGNIFICANT_DIGITS, uMaximumSignificantDigits);
-    } else {
-        unum_setAttribute(nf, UNUM_MIN_INTEGER_DIGITS, uMinimumIntegerDigits);
-        unum_setAttribute(nf, UNUM_MIN_FRACTION_DIGITS, uMinimumFractionDigits);
-        unum_setAttribute(nf, UNUM_MAX_FRACTION_DIGITS, uMaximumFractionDigits);
-    }
-    unum_setAttribute(nf, UNUM_GROUPING_USED, uUseGrouping);
-    unum_setAttribute(nf, UNUM_ROUNDING_MODE, UNUM_ROUND_HALFUP);
-
-    return toClose.forget();
+  return toClose.forget();
 }
 
-static JSString*
-PartitionNumberPattern(JSContext* cx, UNumberFormat* nf, double* x,
-                       UFieldPositionIterator* fpositer)
-{
-    
-    
-    
-    if (MOZ_UNLIKELY(IsNaN(*x))) {
-        *x = SpecificNaN<double>(0, 1);
-    }
+static JSString* PartitionNumberPattern(JSContext* cx, UNumberFormat* nf,
+                                        double* x,
+                                        UFieldPositionIterator* fpositer) {
+  
+  
+  
+  if (MOZ_UNLIKELY(IsNaN(*x))) {
+    *x = SpecificNaN<double>(0, 1);
+  }
 
-    return CallICU(cx, [nf, d = *x, fpositer](UChar* chars, int32_t size, UErrorCode* status) {
-        return unum_formatDoubleForFields(nf, d, chars, size, fpositer, status);
-    });
+  return CallICU(cx, [nf, d = *x, fpositer](UChar* chars, int32_t size,
+                                            UErrorCode* status) {
+    return unum_formatDoubleForFields(nf, d, chars, size, fpositer, status);
+  });
 }
 
-static bool
-intl_FormatNumber(JSContext* cx, UNumberFormat* nf, double x, MutableHandleValue result)
-{
-    
-    
-    JSString* str = PartitionNumberPattern(cx, nf, &x, nullptr);
-    if (!str) {
-        return false;
-    }
+static bool intl_FormatNumber(JSContext* cx, UNumberFormat* nf, double x,
+                              MutableHandleValue result) {
+  
+  
+  JSString* str = PartitionNumberPattern(cx, nf, &x, nullptr);
+  if (!str) {
+    return false;
+  }
 
-    result.setString(str);
-    return true;
+  result.setString(str);
+  return true;
 }
 
 using FieldType = ImmutablePropertyNamePtr JSAtomState::*;
 
-static FieldType
-GetFieldTypeForNumberField(UNumberFormatFields fieldName, double d)
-{
-    
-    
-    
-    
-    
-    switch (fieldName) {
-      case UNUM_INTEGER_FIELD:
-        if (IsNaN(d)) {
-            return &JSAtomState::nan;
-        }
-        if (!IsFinite(d)) {
-            return &JSAtomState::infinity;
-        }
-        return &JSAtomState::integer;
-
-      case UNUM_GROUPING_SEPARATOR_FIELD:
-        return &JSAtomState::group;
-
-      case UNUM_DECIMAL_SEPARATOR_FIELD:
-        return &JSAtomState::decimal;
-
-      case UNUM_FRACTION_FIELD:
-        return &JSAtomState::fraction;
-
-      case UNUM_SIGN_FIELD: {
-        
-        
-        
-        MOZ_ASSERT(!IsNaN(d),
-                   "ICU appearing not to produce positive-sign among fields, "
-                   "plus our coercing all NaNs to one with sign bit unset "
-                   "(i.e. \"positive\"), means we shouldn't reach here with a "
-                   "NaN value");
-        return IsNegative(d) ? &JSAtomState::minusSign : &JSAtomState::plusSign;
+static FieldType GetFieldTypeForNumberField(UNumberFormatFields fieldName,
+                                            double d) {
+  
+  
+  
+  
+  
+  switch (fieldName) {
+    case UNUM_INTEGER_FIELD:
+      if (IsNaN(d)) {
+        return &JSAtomState::nan;
       }
+      if (!IsFinite(d)) {
+        return &JSAtomState::infinity;
+      }
+      return &JSAtomState::integer;
 
-      case UNUM_PERCENT_FIELD:
-        return &JSAtomState::percentSign;
+    case UNUM_GROUPING_SEPARATOR_FIELD:
+      return &JSAtomState::group;
 
-      case UNUM_CURRENCY_FIELD:
-        return &JSAtomState::currency;
+    case UNUM_DECIMAL_SEPARATOR_FIELD:
+      return &JSAtomState::decimal;
 
-      case UNUM_PERMILL_FIELD:
-        MOZ_ASSERT_UNREACHABLE("unexpected permill field found, even though "
-                               "we don't use any user-defined patterns that "
-                               "would require a permill field");
-        break;
+    case UNUM_FRACTION_FIELD:
+      return &JSAtomState::fraction;
 
-      case UNUM_EXPONENT_SYMBOL_FIELD:
-      case UNUM_EXPONENT_SIGN_FIELD:
-      case UNUM_EXPONENT_FIELD:
-        MOZ_ASSERT_UNREACHABLE("exponent field unexpectedly found in "
-                               "formatted number, even though UNUM_SCIENTIFIC "
-                               "and scientific notation were never requested");
-        break;
+    case UNUM_SIGN_FIELD: {
+      
+      
+      
+      MOZ_ASSERT(!IsNaN(d),
+                 "ICU appearing not to produce positive-sign among fields, "
+                 "plus our coercing all NaNs to one with sign bit unset "
+                 "(i.e. \"positive\"), means we shouldn't reach here with a "
+                 "NaN value");
+      return IsNegative(d) ? &JSAtomState::minusSign : &JSAtomState::plusSign;
+    }
+
+    case UNUM_PERCENT_FIELD:
+      return &JSAtomState::percentSign;
+
+    case UNUM_CURRENCY_FIELD:
+      return &JSAtomState::currency;
+
+    case UNUM_PERMILL_FIELD:
+      MOZ_ASSERT_UNREACHABLE(
+          "unexpected permill field found, even though "
+          "we don't use any user-defined patterns that "
+          "would require a permill field");
+      break;
+
+    case UNUM_EXPONENT_SYMBOL_FIELD:
+    case UNUM_EXPONENT_SIGN_FIELD:
+    case UNUM_EXPONENT_FIELD:
+      MOZ_ASSERT_UNREACHABLE(
+          "exponent field unexpectedly found in "
+          "formatted number, even though UNUM_SCIENTIFIC "
+          "and scientific notation were never requested");
+      break;
 
 #ifndef U_HIDE_DEPRECATED_API
-      case UNUM_FIELD_COUNT:
-        MOZ_ASSERT_UNREACHABLE("format field sentinel value returned by "
-                               "iterator!");
-        break;
+    case UNUM_FIELD_COUNT:
+      MOZ_ASSERT_UNREACHABLE(
+          "format field sentinel value returned by "
+          "iterator!");
+      break;
 #endif
-    }
+  }
 
-    MOZ_ASSERT_UNREACHABLE("unenumerated, undocumented format field returned "
-                           "by iterator");
-    return nullptr;
+  MOZ_ASSERT_UNREACHABLE(
+      "unenumerated, undocumented format field returned "
+      "by iterator");
+  return nullptr;
 }
 
-static bool
-intl_FormatNumberToParts(JSContext* cx, UNumberFormat* nf, double x, MutableHandleValue result)
-{
-    UErrorCode status = U_ZERO_ERROR;
+static bool intl_FormatNumberToParts(JSContext* cx, UNumberFormat* nf, double x,
+                                     MutableHandleValue result) {
+  UErrorCode status = U_ZERO_ERROR;
 
-    UFieldPositionIterator* fpositer = ufieldpositer_open(&status);
-    if (U_FAILURE(status)) {
-        intl::ReportInternalError(cx);
+  UFieldPositionIterator* fpositer = ufieldpositer_open(&status);
+  if (U_FAILURE(status)) {
+    intl::ReportInternalError(cx);
+    return false;
+  }
+
+  MOZ_ASSERT(fpositer);
+  ScopedICUObject<UFieldPositionIterator, ufieldpositer_close> toClose(
+      fpositer);
+
+  RootedString overallResult(cx, PartitionNumberPattern(cx, nf, &x, fpositer));
+  if (!overallResult) {
+    return false;
+  }
+
+  RootedArrayObject partsArray(cx, NewDenseEmptyArray(cx));
+  if (!partsArray) {
+    return false;
+  }
+
+  
+
+  struct Field {
+    uint32_t begin;
+    uint32_t end;
+    FieldType type;
+
+    
+    Field() = default;
+
+    Field(uint32_t begin, uint32_t end, FieldType type)
+        : begin(begin), end(end), type(type) {}
+  };
+
+  using FieldsVector = Vector<Field, 16>;
+  FieldsVector fields(cx);
+
+  int32_t fieldInt, beginIndexInt, endIndexInt;
+  while ((fieldInt = ufieldpositer_next(fpositer, &beginIndexInt,
+                                        &endIndexInt)) >= 0) {
+    MOZ_ASSERT(beginIndexInt >= 0);
+    MOZ_ASSERT(endIndexInt >= 0);
+    MOZ_ASSERT(beginIndexInt < endIndexInt,
+               "erm, aren't fields always non-empty?");
+
+    FieldType type =
+        GetFieldTypeForNumberField(UNumberFormatFields(fieldInt), x);
+    if (!fields.emplaceBack(uint32_t(beginIndexInt), uint32_t(endIndexInt),
+                            type)) {
+      return false;
+    }
+  }
+
+  
+  
+  size_t fieldsLen = fields.length();
+  if (!fields.resizeUninitialized(fieldsLen * 2)) {
+    return false;
+  }
+
+  MOZ_ALWAYS_TRUE(MergeSort(
+      fields.begin(), fieldsLen, fields.begin() + fieldsLen,
+      [](const Field& left, const Field& right, bool* lessOrEqual) {
+        
+        
+        *lessOrEqual = left.begin < right.begin ||
+                       (left.begin == right.begin && left.end > right.end);
+        return true;
+      }));
+
+  
+  if (!fields.resize(fieldsLen)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  struct Part {
+    uint32_t end;
+    FieldType type;
+  };
+
+  class PartGenerator {
+    
+    const FieldsVector& fields;
+
+    
+    
+    
+    size_t index;
+
+    
+    
+    uint32_t lastEnd;
+
+    
+    const uint32_t limit;
+
+    Vector<size_t, 4> enclosingFields;
+
+    void popEnclosingFieldsEndingAt(uint32_t end) {
+      MOZ_ASSERT_IF(enclosingFields.length() > 0,
+                    fields[enclosingFields.back()].end >= end);
+
+      while (enclosingFields.length() > 0 &&
+             fields[enclosingFields.back()].end == end) {
+        enclosingFields.popBack();
+      }
+    }
+
+    bool nextPartInternal(Part* part) {
+      size_t len = fields.length();
+      MOZ_ASSERT(index <= len);
+
+      
+      
+      
+      if (index == len) {
+        if (enclosingFields.length() > 0) {
+          const auto& enclosing = fields[enclosingFields.popCopy()];
+          part->end = enclosing.end;
+          part->type = enclosing.type;
+
+          
+          
+          popEnclosingFieldsEndingAt(part->end);
+        } else {
+          part->end = limit;
+          part->type = &JSAtomState::literal;
+        }
+
+        return true;
+      }
+
+      
+      const Field* current = &fields[index];
+      MOZ_ASSERT(lastEnd <= current->begin);
+      MOZ_ASSERT(current->begin < current->end);
+
+      
+      if (lastEnd < current->begin) {
+        if (enclosingFields.length() > 0) {
+          
+          
+          
+          
+          const auto& enclosing = fields[enclosingFields.back()];
+          part->end = std::min(enclosing.end, current->begin);
+          part->type = enclosing.type;
+          popEnclosingFieldsEndingAt(part->end);
+        } else {
+          
+          part->end = current->begin;
+          part->type = &JSAtomState::literal;
+        }
+
+        return true;
+      }
+
+      
+      
+      const Field* next;
+      do {
+        current = &fields[index];
+
+        
+        if (++index == len) {
+          part->end = current->end;
+          part->type = current->type;
+          return true;
+        }
+
+        next = &fields[index];
+        MOZ_ASSERT(current->begin <= next->begin);
+        MOZ_ASSERT(current->begin < next->end);
+
+        
+        
+        
+        if (current->end > next->begin) {
+          if (!enclosingFields.append(index - 1)) {
+            return false;
+          }
+        }
+
+        
+      } while (current->begin == next->begin);
+
+      part->type = current->type;
+
+      if (current->end <= next->begin) {
+        
+        
+        part->end = current->end;
+        popEnclosingFieldsEndingAt(part->end);
+      } else {
+        
+        
+        part->end = next->begin;
+      }
+
+      return true;
+    }
+
+   public:
+    PartGenerator(JSContext* cx, const FieldsVector& vec, uint32_t limit)
+        : fields(vec),
+          index(0),
+          lastEnd(0),
+          limit(limit),
+          enclosingFields(cx) {}
+
+    bool nextPart(bool* hasPart, Part* part) {
+      
+      if (lastEnd == limit) {
+        MOZ_ASSERT(enclosingFields.length() == 0);
+        *hasPart = false;
+        return true;
+      }
+
+      if (!nextPartInternal(part)) {
         return false;
+      }
+
+      *hasPart = true;
+      lastEnd = part->end;
+      return true;
+    }
+  };
+
+  
+  size_t lastEndIndex = 0;
+  uint32_t partIndex = 0;
+  RootedObject singlePart(cx);
+  RootedValue propVal(cx);
+
+  PartGenerator gen(cx, fields, overallResult->length());
+  do {
+    bool hasPart;
+    Part part;
+    if (!gen.nextPart(&hasPart, &part)) {
+      return false;
     }
 
-    MOZ_ASSERT(fpositer);
-    ScopedICUObject<UFieldPositionIterator, ufieldpositer_close> toClose(fpositer);
-
-    RootedString overallResult(cx, PartitionNumberPattern(cx, nf, &x, fpositer));
-    if (!overallResult) {
-        return false;
+    if (!hasPart) {
+      break;
     }
 
-    RootedArrayObject partsArray(cx, NewDenseEmptyArray(cx));
-    if (!partsArray) {
-        return false;
+    FieldType type = part.type;
+    size_t endIndex = part.end;
+
+    MOZ_ASSERT(lastEndIndex < endIndex);
+
+    singlePart = NewBuiltinClassInstance<PlainObject>(cx);
+    if (!singlePart) {
+      return false;
     }
 
-    
-
-    struct Field
-    {
-        uint32_t begin;
-        uint32_t end;
-        FieldType type;
-
-        
-        Field() = default;
-
-        Field(uint32_t begin, uint32_t end, FieldType type)
-          : begin(begin), end(end), type(type)
-        {}
-    };
-
-    using FieldsVector = Vector<Field, 16>;
-    FieldsVector fields(cx);
-
-    int32_t fieldInt, beginIndexInt, endIndexInt;
-    while ((fieldInt = ufieldpositer_next(fpositer, &beginIndexInt, &endIndexInt)) >= 0) {
-        MOZ_ASSERT(beginIndexInt >= 0);
-        MOZ_ASSERT(endIndexInt >= 0);
-        MOZ_ASSERT(beginIndexInt < endIndexInt,
-                   "erm, aren't fields always non-empty?");
-
-        FieldType type = GetFieldTypeForNumberField(UNumberFormatFields(fieldInt), x);
-        if (!fields.emplaceBack(uint32_t(beginIndexInt), uint32_t(endIndexInt), type)) {
-            return false;
-        }
+    propVal.setString(cx->names().*type);
+    if (!DefineDataProperty(cx, singlePart, cx->names().type, propVal)) {
+      return false;
     }
 
-    
-    
-    size_t fieldsLen = fields.length();
-    if (!fields.resizeUninitialized(fieldsLen * 2)) {
-        return false;
+    JSLinearString* partSubstr = NewDependentString(
+        cx, overallResult, lastEndIndex, endIndex - lastEndIndex);
+    if (!partSubstr) {
+      return false;
     }
 
-    MOZ_ALWAYS_TRUE(MergeSort(fields.begin(), fieldsLen, fields.begin() + fieldsLen,
-                              [](const Field& left, const Field& right,
-                                 bool* lessOrEqual)
-                              {
-                                  
-                                  
-                                  *lessOrEqual = left.begin < right.begin ||
-                                                 (left.begin == right.begin &&
-                                                  left.end > right.end);
-                                  return true;
-                              }));
-
-    
-    if (!fields.resize(fieldsLen)) {
-        return false;
+    propVal.setString(partSubstr);
+    if (!DefineDataProperty(cx, singlePart, cx->names().value, propVal)) {
+      return false;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    struct Part
-    {
-        uint32_t end;
-        FieldType type;
-    };
+    propVal.setObject(*singlePart);
+    if (!DefineDataElement(cx, partsArray, partIndex, propVal)) {
+      return false;
+    }
 
-    class PartGenerator
-    {
-        
-        const FieldsVector& fields;
+    lastEndIndex = endIndex;
+    partIndex++;
+  } while (true);
 
-        
-        
-        
-        size_t index;
+  MOZ_ASSERT(lastEndIndex == overallResult->length(),
+             "result array must partition the entire string");
 
-        
-        
-        uint32_t lastEnd;
-
-        
-        const uint32_t limit;
-
-        Vector<size_t, 4> enclosingFields;
-
-        void popEnclosingFieldsEndingAt(uint32_t end) {
-            MOZ_ASSERT_IF(enclosingFields.length() > 0,
-                          fields[enclosingFields.back()].end >= end);
-
-            while (enclosingFields.length() > 0 && fields[enclosingFields.back()].end == end) {
-                enclosingFields.popBack();
-            }
-        }
-
-        bool nextPartInternal(Part* part) {
-            size_t len = fields.length();
-            MOZ_ASSERT(index <= len);
-
-            
-            
-            
-            if (index == len) {
-                if (enclosingFields.length() > 0) {
-                    const auto& enclosing = fields[enclosingFields.popCopy()];
-                    part->end = enclosing.end;
-                    part->type = enclosing.type;
-
-                    
-                    
-                    popEnclosingFieldsEndingAt(part->end);
-                } else {
-                    part->end = limit;
-                    part->type = &JSAtomState::literal;
-                }
-
-                return true;
-            }
-
-            
-            const Field* current = &fields[index];
-            MOZ_ASSERT(lastEnd <= current->begin);
-            MOZ_ASSERT(current->begin < current->end);
-
-            
-            if (lastEnd < current->begin) {
-                if (enclosingFields.length() > 0) {
-                    
-                    
-                    
-                    
-                    const auto& enclosing = fields[enclosingFields.back()];
-                    part->end = std::min(enclosing.end, current->begin);
-                    part->type = enclosing.type;
-                    popEnclosingFieldsEndingAt(part->end);
-                } else {
-                    
-                    part->end = current->begin;
-                    part->type = &JSAtomState::literal;
-                }
-
-                return true;
-            }
-
-            
-            
-            const Field* next;
-            do {
-                current = &fields[index];
-
-                
-                if (++index == len) {
-                    part->end = current->end;
-                    part->type = current->type;
-                    return true;
-                }
-
-                next = &fields[index];
-                MOZ_ASSERT(current->begin <= next->begin);
-                MOZ_ASSERT(current->begin < next->end);
-
-                
-                
-                
-                if (current->end > next->begin) {
-                    if (!enclosingFields.append(index - 1)) {
-                        return false;
-                    }
-                }
-
-                
-            } while (current->begin == next->begin);
-
-            part->type = current->type;
-
-            if (current->end <= next->begin) {
-                
-                
-                part->end = current->end;
-                popEnclosingFieldsEndingAt(part->end);
-            } else {
-                
-                
-                part->end = next->begin;
-            }
-
-            return true;
-        }
-
-      public:
-        PartGenerator(JSContext* cx, const FieldsVector& vec, uint32_t limit)
-          : fields(vec), index(0), lastEnd(0), limit(limit), enclosingFields(cx)
-        {}
-
-        bool nextPart(bool* hasPart, Part* part) {
-            
-            if (lastEnd == limit) {
-                MOZ_ASSERT(enclosingFields.length() == 0);
-                *hasPart = false;
-                return true;
-            }
-
-            if (!nextPartInternal(part)) {
-                return false;
-            }
-
-            *hasPart = true;
-            lastEnd = part->end;
-            return true;
-        }
-    };
-
-    
-    size_t lastEndIndex = 0;
-    uint32_t partIndex = 0;
-    RootedObject singlePart(cx);
-    RootedValue propVal(cx);
-
-    PartGenerator gen(cx, fields, overallResult->length());
-    do {
-        bool hasPart;
-        Part part;
-        if (!gen.nextPart(&hasPart, &part)) {
-            return false;
-        }
-
-        if (!hasPart) {
-            break;
-        }
-
-        FieldType type = part.type;
-        size_t endIndex = part.end;
-
-        MOZ_ASSERT(lastEndIndex < endIndex);
-
-        singlePart = NewBuiltinClassInstance<PlainObject>(cx);
-        if (!singlePart) {
-            return false;
-        }
-
-        propVal.setString(cx->names().*type);
-        if (!DefineDataProperty(cx, singlePart, cx->names().type, propVal)) {
-            return false;
-        }
-
-        JSLinearString* partSubstr =
-            NewDependentString(cx, overallResult, lastEndIndex, endIndex - lastEndIndex);
-        if (!partSubstr) {
-            return false;
-        }
-
-        propVal.setString(partSubstr);
-        if (!DefineDataProperty(cx, singlePart, cx->names().value, propVal)) {
-            return false;
-        }
-
-        propVal.setObject(*singlePart);
-        if (!DefineDataElement(cx, partsArray, partIndex, propVal)) {
-            return false;
-        }
-
-        lastEndIndex = endIndex;
-        partIndex++;
-    } while (true);
-
-    MOZ_ASSERT(lastEndIndex == overallResult->length(),
-               "result array must partition the entire string");
-
-    result.setObject(*partsArray);
-    return true;
+  result.setObject(*partsArray);
+  return true;
 }
 
-bool
-js::intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    MOZ_ASSERT(args.length() == 3);
-    MOZ_ASSERT(args[0].isObject());
-    MOZ_ASSERT(args[1].isNumber());
-    MOZ_ASSERT(args[2].isBoolean());
+bool js::intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  MOZ_ASSERT(args.length() == 3);
+  MOZ_ASSERT(args[0].isObject());
+  MOZ_ASSERT(args[1].isNumber());
+  MOZ_ASSERT(args[2].isBoolean());
 
-    Rooted<NumberFormatObject*> numberFormat(cx, &args[0].toObject().as<NumberFormatObject>());
+  Rooted<NumberFormatObject*> numberFormat(
+      cx, &args[0].toObject().as<NumberFormatObject>());
 
-    
-    void* priv =
-        numberFormat->getReservedSlot(NumberFormatObject::UNUMBER_FORMAT_SLOT).toPrivate();
-    UNumberFormat* nf = static_cast<UNumberFormat*>(priv);
+  
+  void* priv =
+      numberFormat->getReservedSlot(NumberFormatObject::UNUMBER_FORMAT_SLOT)
+          .toPrivate();
+  UNumberFormat* nf = static_cast<UNumberFormat*>(priv);
+  if (!nf) {
+    nf = NewUNumberFormat(cx, numberFormat);
     if (!nf) {
-        nf = NewUNumberFormat(cx, numberFormat);
-        if (!nf) {
-            return false;
-        }
-        numberFormat->setReservedSlot(NumberFormatObject::UNUMBER_FORMAT_SLOT, PrivateValue(nf));
+      return false;
     }
+    numberFormat->setReservedSlot(NumberFormatObject::UNUMBER_FORMAT_SLOT,
+                                  PrivateValue(nf));
+  }
 
-    
-    if (args[2].toBoolean()) {
-        return intl_FormatNumberToParts(cx, nf, args[1].toNumber(), args.rval());
-    }
+  
+  if (args[2].toBoolean()) {
+    return intl_FormatNumberToParts(cx, nf, args[1].toNumber(), args.rval());
+  }
 
-    return intl_FormatNumber(cx, nf, args[1].toNumber(), args.rval());
+  return intl_FormatNumber(cx, nf, args[1].toNumber(), args.rval());
 }

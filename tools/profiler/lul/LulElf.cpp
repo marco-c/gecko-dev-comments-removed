@@ -67,10 +67,9 @@
 #include "LulElfInt.h"
 #include "LulMainInt.h"
 
-
 #if defined(GP_PLAT_arm_android) && !defined(SHT_ARM_EXIDX)
 
-# define SHT_ARM_EXIDX (SHT_LOPROC + 1)
+#define SHT_ARM_EXIDX (SHT_LOPROC + 1)
 #endif
 
 
@@ -86,12 +85,12 @@ using lul::FindElfSectionByName;
 using lul::GetOffset;
 using lul::IsValidElf;
 using lul::Module;
-using lul::UniqueStringUniverse;
 using lul::scoped_ptr;
 using lul::Summariser;
+using lul::UniqueStringUniverse;
+using std::set;
 using std::string;
 using std::vector;
-using std::set;
 
 
 
@@ -100,20 +99,17 @@ using std::set;
 
 class FDWrapper {
  public:
-  explicit FDWrapper(int fd) :
-    fd_(fd) {}
+  explicit FDWrapper(int fd) : fd_(fd) {}
   ~FDWrapper() {
-    if (fd_ != -1)
-      close(fd_);
+    if (fd_ != -1) close(fd_);
   }
-  int get() {
-    return fd_;
-  }
+  int get() { return fd_; }
   int release() {
     int fd = fd_;
     fd_ = -1;
     return fd;
   }
+
  private:
   int fd_;
 };
@@ -125,14 +121,14 @@ class FDWrapper {
 
 class MmapWrapper {
  public:
-  MmapWrapper() : is_set_(false), base_(NULL), size_(0){}
+  MmapWrapper() : is_set_(false), base_(NULL), size_(0) {}
   ~MmapWrapper() {
     if (is_set_ && base_ != NULL) {
       MOZ_ASSERT(size_ > 0);
       munmap(base_, size_);
     }
   }
-  void set(void *mapped_address, size_t mapped_size) {
+  void set(void* mapped_address, size_t mapped_size) {
     is_set_ = true;
     base_ = mapped_address;
     size_ = mapped_size;
@@ -146,7 +142,7 @@ class MmapWrapper {
 
  private:
   bool is_set_;
-  void *base_;
+  void* base_;
   size_t size_;
 };
 
@@ -154,8 +150,7 @@ class MmapWrapper {
 
 
 
-
-template<typename ElfClass>
+template <typename ElfClass>
 bool DwarfCFIRegisterNames(const typename ElfClass::Ehdr* elf_header,
                            unsigned int* num_dw_regnames) {
   switch (elf_header->e_machine) {
@@ -180,35 +175,31 @@ bool DwarfCFIRegisterNames(const typename ElfClass::Ehdr* elf_header,
   }
 }
 
-template<typename ElfClass>
+template <typename ElfClass>
 bool LoadDwarfCFI(const string& dwarf_filename,
                   const typename ElfClass::Ehdr* elf_header,
                   const char* section_name,
-                  const typename ElfClass::Shdr* section,
-                  const bool eh_frame,
+                  const typename ElfClass::Shdr* section, const bool eh_frame,
                   const typename ElfClass::Shdr* got_section,
                   const typename ElfClass::Shdr* text_section,
-                  const bool big_endian,
-                  SecMap* smap,
-                  uintptr_t text_bias,
-                  UniqueStringUniverse* usu,
-                  void (*log)(const char*)) {
+                  const bool big_endian, SecMap* smap, uintptr_t text_bias,
+                  UniqueStringUniverse* usu, void (*log)(const char*)) {
   
   
   unsigned int num_dw_regs = 0;
   if (!DwarfCFIRegisterNames<ElfClass>(elf_header, &num_dw_regs)) {
-    fprintf(stderr, "%s: unrecognized ELF machine architecture '%d';"
+    fprintf(stderr,
+            "%s: unrecognized ELF machine architecture '%d';"
             " cannot convert DWARF call frame information\n",
             dwarf_filename.c_str(), elf_header->e_machine);
     return false;
   }
 
-  const lul::Endianness endianness
-    = big_endian ? lul::ENDIANNESS_BIG : lul::ENDIANNESS_LITTLE;
+  const lul::Endianness endianness =
+      big_endian ? lul::ENDIANNESS_BIG : lul::ENDIANNESS_LITTLE;
 
   
-  const char* cfi =
-      GetOffset<ElfClass, char>(elf_header, section->sh_offset);
+  const char* cfi = GetOffset<ElfClass, char>(elf_header, section->sh_offset);
   size_t cfi_size = section->sh_size;
 
   
@@ -226,15 +217,12 @@ bool LoadDwarfCFI(const string& dwarf_filename,
   
   
   reader.SetCFIDataBase(section->sh_addr, cfi);
-  if (got_section)
-    reader.SetDataBase(got_section->sh_addr);
-  if (text_section)
-    reader.SetTextBase(text_section->sh_addr);
+  if (got_section) reader.SetDataBase(got_section->sh_addr);
+  if (text_section) reader.SetTextBase(text_section->sh_addr);
 
   lul::CallFrameInfo::Reporter dwarf_reporter(log, dwarf_filename,
                                               section_name);
-  lul::CallFrameInfo parser(cfi, cfi_size,
-                            &reader, &handler, &dwarf_reporter,
+  lul::CallFrameInfo parser(cfi, cfi_size, &reader, &handler, &dwarf_reporter,
                             eh_frame);
   parser.Start();
 
@@ -245,25 +233,24 @@ bool LoadELF(const string& obj_file, MmapWrapper* map_wrapper,
              void** elf_header) {
   int obj_fd = open(obj_file.c_str(), O_RDONLY);
   if (obj_fd < 0) {
-    fprintf(stderr, "Failed to open ELF file '%s': %s\n",
-            obj_file.c_str(), strerror(errno));
+    fprintf(stderr, "Failed to open ELF file '%s': %s\n", obj_file.c_str(),
+            strerror(errno));
     return false;
   }
   FDWrapper obj_fd_wrapper(obj_fd);
   struct stat st;
   if (fstat(obj_fd, &st) != 0 && st.st_size <= 0) {
-    fprintf(stderr, "Unable to fstat ELF file '%s': %s\n",
-            obj_file.c_str(), strerror(errno));
+    fprintf(stderr, "Unable to fstat ELF file '%s': %s\n", obj_file.c_str(),
+            strerror(errno));
     return false;
   }
   
   
   
-  void *obj_base = mmap(nullptr, st.st_size,
-                        PROT_READ, MAP_PRIVATE, obj_fd, 0);
+  void* obj_base = mmap(nullptr, st.st_size, PROT_READ, MAP_PRIVATE, obj_fd, 0);
   if (obj_base == MAP_FAILED) {
-    fprintf(stderr, "Failed to mmap ELF file '%s': %s\n",
-            obj_file.c_str(), strerror(errno));
+    fprintf(stderr, "Failed to mmap ELF file '%s': %s\n", obj_file.c_str(),
+            strerror(errno));
     return false;
   }
   map_wrapper->set(obj_base, st.st_size);
@@ -276,7 +263,7 @@ bool LoadELF(const string& obj_file, MmapWrapper* map_wrapper,
 }
 
 
-template<typename ElfClass>
+template <typename ElfClass>
 bool ElfEndianness(const typename ElfClass::Ehdr* elf_header,
                    bool* big_endian) {
   if (elf_header->e_ident[EI_DATA] == ELFDATA2LSB) {
@@ -300,47 +287,42 @@ bool ElfEndianness(const typename ElfClass::Ehdr* elf_header,
 
 
 
-template<typename ElfClass>
+template <typename ElfClass>
 class LoadSymbolsInfo {
  public:
   typedef typename ElfClass::Addr Addr;
 
-  explicit LoadSymbolsInfo(const vector<string>& dbg_dirs) :
-    debug_dirs_(dbg_dirs),
-    has_loading_addr_(false) {}
+  explicit LoadSymbolsInfo(const vector<string>& dbg_dirs)
+      : debug_dirs_(dbg_dirs), has_loading_addr_(false) {}
 
   
   
-  void LoadedSection(const string &section) {
+  void LoadedSection(const string& section) {
     if (loaded_sections_.count(section) == 0) {
       loaded_sections_.insert(section);
     } else {
-      fprintf(stderr, "Section %s has already been loaded.\n",
-              section.c_str());
+      fprintf(stderr, "Section %s has already been loaded.\n", section.c_str());
     }
   }
 
-  string debuglink_file() const {
-    return debuglink_file_;
-  }
+  string debuglink_file() const { return debuglink_file_; }
 
  private:
-  const vector<string>& debug_dirs_; 
-                                     
+  const vector<string>& debug_dirs_;  
+                                      
 
-  string debuglink_file_; 
+  string debuglink_file_;  
 
-  bool has_loading_addr_; 
+  bool has_loading_addr_;  
 
-  set<string> loaded_sections_; 
-                                
+  set<string> loaded_sections_;  
+                                 
 };
 
 
-template<typename ElfClass>
+template <typename ElfClass>
 typename ElfClass::Addr GetLoadingAddress(
-    const typename ElfClass::Phdr* program_headers,
-    int nheader) {
+    const typename ElfClass::Phdr* program_headers, int nheader) {
   typedef typename ElfClass::Phdr Phdr;
 
   
@@ -350,28 +332,24 @@ typename ElfClass::Addr GetLoadingAddress(
   
   for (int i = 0; i < nheader; ++i) {
     const Phdr& header = program_headers[i];
-    if (header.p_type == PT_LOAD)
-      return header.p_vaddr;
+    if (header.p_type == PT_LOAD) return header.p_vaddr;
   }
   return 0;
 }
 
-template<typename ElfClass>
-bool LoadSymbols(const string& obj_file,
-                 const bool big_endian,
+template <typename ElfClass>
+bool LoadSymbols(const string& obj_file, const bool big_endian,
                  const typename ElfClass::Ehdr* elf_header,
                  const bool read_gnu_debug_link,
-                 LoadSymbolsInfo<ElfClass>* info,
-                 SecMap* smap,
-                 void* rx_avma, size_t rx_size,
-                 UniqueStringUniverse* usu,
+                 LoadSymbolsInfo<ElfClass>* info, SecMap* smap, void* rx_avma,
+                 size_t rx_size, UniqueStringUniverse* usu,
                  void (*log)(const char*)) {
   typedef typename ElfClass::Phdr Phdr;
   typedef typename ElfClass::Shdr Shdr;
 
   char buf[500];
   SprintfLiteral(buf, "LoadSymbols: BEGIN   %s\n", obj_file.c_str());
-  buf[sizeof(buf)-1] = 0;
+  buf[sizeof(buf) - 1] = 0;
   log(buf);
 
   
@@ -380,11 +358,10 @@ bool LoadSymbols(const string& obj_file,
       GetOffset<ElfClass, Phdr>(elf_header, elf_header->e_phoff),
       elf_header->e_phnum);
   uintptr_t text_bias = ((uintptr_t)rx_avma) - loading_addr;
-  SprintfLiteral(buf,
-           "LoadSymbols:   rx_avma=%llx, text_bias=%llx",
-           (unsigned long long int)(uintptr_t)rx_avma,
-           (unsigned long long int)text_bias);
-  buf[sizeof(buf)-1] = 0;
+  SprintfLiteral(buf, "LoadSymbols:   rx_avma=%llx, text_bias=%llx",
+                 (unsigned long long int)(uintptr_t)rx_avma,
+                 (unsigned long long int)text_bias);
+  buf[sizeof(buf) - 1] = 0;
   log(buf);
   
 
@@ -393,60 +370,49 @@ bool LoadSymbols(const string& obj_file,
   const Shdr* section_names = sections + elf_header->e_shstrndx;
   const char* names =
       GetOffset<ElfClass, char>(elf_header, section_names->sh_offset);
-  const char *names_end = names + section_names->sh_size;
+  const char* names_end = names + section_names->sh_size;
   bool found_usable_info = false;
 
   
   
   const Shdr* dwarf_cfi_section =
-      FindElfSectionByName<ElfClass>(".debug_frame", SHT_PROGBITS,
-                                     sections, names, names_end,
-                                     elf_header->e_shnum);
+      FindElfSectionByName<ElfClass>(".debug_frame", SHT_PROGBITS, sections,
+                                     names, names_end, elf_header->e_shnum);
   if (dwarf_cfi_section) {
     
     
     
     info->LoadedSection(".debug_frame");
-    bool result =
-        LoadDwarfCFI<ElfClass>(obj_file, elf_header, ".debug_frame",
-                               dwarf_cfi_section, false, 0, 0, big_endian,
-                               smap, text_bias, usu, log);
+    bool result = LoadDwarfCFI<ElfClass>(obj_file, elf_header, ".debug_frame",
+                                         dwarf_cfi_section, false, 0, 0,
+                                         big_endian, smap, text_bias, usu, log);
     found_usable_info = found_usable_info || result;
-    if (result)
-      log("LoadSymbols:   read CFI from .debug_frame");
+    if (result) log("LoadSymbols:   read CFI from .debug_frame");
   }
 
   
   
   const Shdr* eh_frame_section =
-      FindElfSectionByName<ElfClass>(".eh_frame", SHT_PROGBITS,
-                                     sections, names, names_end,
-                                     elf_header->e_shnum);
+      FindElfSectionByName<ElfClass>(".eh_frame", SHT_PROGBITS, sections, names,
+                                     names_end, elf_header->e_shnum);
   if (eh_frame_section) {
     
     
-    const Shdr* got_section =
-        FindElfSectionByName<ElfClass>(".got", SHT_PROGBITS,
-                                       sections, names, names_end,
-                                       elf_header->e_shnum);
-    const Shdr* text_section =
-        FindElfSectionByName<ElfClass>(".text", SHT_PROGBITS,
-                                       sections, names, names_end,
-                                       elf_header->e_shnum);
+    const Shdr* got_section = FindElfSectionByName<ElfClass>(
+        ".got", SHT_PROGBITS, sections, names, names_end, elf_header->e_shnum);
+    const Shdr* text_section = FindElfSectionByName<ElfClass>(
+        ".text", SHT_PROGBITS, sections, names, names_end, elf_header->e_shnum);
     info->LoadedSection(".eh_frame");
     
-    bool result =
-        LoadDwarfCFI<ElfClass>(obj_file, elf_header, ".eh_frame",
-                               eh_frame_section, true,
-                               got_section, text_section, big_endian,
-                               smap, text_bias, usu, log);
+    bool result = LoadDwarfCFI<ElfClass>(
+        obj_file, elf_header, ".eh_frame", eh_frame_section, true, got_section,
+        text_section, big_endian, smap, text_bias, usu, log);
     found_usable_info = found_usable_info || result;
-    if (result)
-      log("LoadSymbols:   read CFI from .eh_frame");
+    if (result) log("LoadSymbols:   read CFI from .eh_frame");
   }
 
   SprintfLiteral(buf, "LoadSymbols: END     %s\n", obj_file.c_str());
-  buf[sizeof(buf)-1] = 0;
+  buf[sizeof(buf) - 1] = 0;
   log(buf);
 
   return found_usable_info;
@@ -454,22 +420,33 @@ bool LoadSymbols(const string& obj_file,
 
 
 
-template<typename ElfClass>
+template <typename ElfClass>
 const char* ElfArchitecture(const typename ElfClass::Ehdr* elf_header) {
   typedef typename ElfClass::Half Half;
   Half arch = elf_header->e_machine;
   switch (arch) {
-    case EM_386:        return "x86";
-    case EM_ARM:        return "arm";
-    case EM_AARCH64:    return "arm64";
-    case EM_MIPS:       return "mips";
-    case EM_PPC64:      return "ppc64";
-    case EM_PPC:        return "ppc";
-    case EM_S390:       return "s390";
-    case EM_SPARC:      return "sparc";
-    case EM_SPARCV9:    return "sparcv9";
-    case EM_X86_64:     return "x86_64";
-    default: return NULL;
+    case EM_386:
+      return "x86";
+    case EM_ARM:
+      return "arm";
+    case EM_AARCH64:
+      return "arm64";
+    case EM_MIPS:
+      return "mips";
+    case EM_PPC64:
+      return "ppc64";
+    case EM_PPC:
+      return "ppc";
+    case EM_S390:
+      return "s390";
+    case EM_SPARC:
+      return "sparc";
+    case EM_SPARCV9:
+      return "sparcv9";
+    case EM_X86_64:
+      return "x86_64";
+    default:
+      return NULL;
   }
 }
 
@@ -477,14 +454,11 @@ const char* ElfArchitecture(const typename ElfClass::Ehdr* elf_header) {
 
 string FormatIdentifier(unsigned char identifier[16]) {
   char identifier_str[40];
-  lul::FileID::ConvertIdentifierToString(
-      identifier,
-      identifier_str,
-      sizeof(identifier_str));
+  lul::FileID::ConvertIdentifierToString(identifier, identifier_str,
+                                         sizeof(identifier_str));
   string id_no_dash;
   for (int i = 0; identifier_str[i] != '\0'; ++i)
-    if (identifier_str[i] != '-')
-      id_no_dash += identifier_str[i];
+    if (identifier_str[i] != '-') id_no_dash += identifier_str[i];
   
   
   
@@ -494,32 +468,31 @@ string FormatIdentifier(unsigned char identifier[16]) {
 
 
 
-string BaseFileName(const string &filename) {
+string BaseFileName(const string& filename) {
   
-  char *c_filename = strdup(filename.c_str());
+  char* c_filename = strdup(filename.c_str());
   string base = basename(c_filename);
   free(c_filename);
   return base;
 }
 
-template<typename ElfClass>
+template <typename ElfClass>
 bool ReadSymbolDataElfClass(const typename ElfClass::Ehdr* elf_header,
                             const string& obj_filename,
-                            const vector<string>& debug_dirs,
-                            SecMap* smap, void* rx_avma, size_t rx_size,
+                            const vector<string>& debug_dirs, SecMap* smap,
+                            void* rx_avma, size_t rx_size,
                             UniqueStringUniverse* usu,
                             void (*log)(const char*)) {
   typedef typename ElfClass::Ehdr Ehdr;
 
   unsigned char identifier[16];
-  if (!lul
-      ::FileID::ElfFileIdentifierFromMappedFile(elf_header, identifier)) {
+  if (!lul ::FileID::ElfFileIdentifierFromMappedFile(elf_header, identifier)) {
     fprintf(stderr, "%s: unable to generate file identifier\n",
             obj_filename.c_str());
     return false;
   }
 
-  const char *architecture = ElfArchitecture<ElfClass>(elf_header);
+  const char* architecture = ElfArchitecture<ElfClass>(elf_header);
   if (!architecture) {
     fprintf(stderr, "%s: unrecognized ELF machine architecture: %d\n",
             obj_filename.c_str(), elf_header->e_machine);
@@ -528,8 +501,7 @@ bool ReadSymbolDataElfClass(const typename ElfClass::Ehdr* elf_header,
 
   
   bool big_endian;
-  if (!ElfEndianness<ElfClass>(elf_header, &big_endian))
-    return false;
+  if (!ElfEndianness<ElfClass>(elf_header, &big_endian)) return false;
 
   string name = BaseFileName(obj_filename);
   string os = "Linux";
@@ -537,11 +509,10 @@ bool ReadSymbolDataElfClass(const typename ElfClass::Ehdr* elf_header,
 
   LoadSymbolsInfo<ElfClass> info(debug_dirs);
   if (!LoadSymbols<ElfClass>(obj_filename, big_endian, elf_header,
-                             !debug_dirs.empty(), &info,
-                             smap, rx_avma, rx_size, usu, log)) {
+                             !debug_dirs.empty(), &info, smap, rx_avma, rx_size,
+                             usu, log)) {
     const string debuglink_file = info.debuglink_file();
-    if (debuglink_file.empty())
-      return false;
+    if (debuglink_file.empty()) return false;
 
     
     fprintf(stderr, "Found debugging info in %s\n", debuglink_file.c_str());
@@ -551,7 +522,7 @@ bool ReadSymbolDataElfClass(const typename ElfClass::Ehdr* elf_header,
                  reinterpret_cast<void**>(&debug_elf_header)))
       return false;
     
-    const char *debug_architecture =
+    const char* debug_architecture =
         ElfArchitecture<ElfClass>(debug_elf_header);
     if (!debug_architecture) {
       fprintf(stderr, "%s: unrecognized ELF machine architecture: %d\n",
@@ -559,10 +530,11 @@ bool ReadSymbolDataElfClass(const typename ElfClass::Ehdr* elf_header,
       return false;
     }
     if (strcmp(architecture, debug_architecture)) {
-      fprintf(stderr, "%s with ELF machine architecture %s does not match "
+      fprintf(stderr,
+              "%s with ELF machine architecture %s does not match "
               "%s with ELF architecture %s\n",
-              debuglink_file.c_str(), debug_architecture,
-              obj_filename.c_str(), architecture);
+              debuglink_file.c_str(), debug_architecture, obj_filename.c_str(),
+              architecture);
       return false;
     }
 
@@ -576,8 +548,8 @@ bool ReadSymbolDataElfClass(const typename ElfClass::Ehdr* elf_header,
     }
 
     if (!LoadSymbols<ElfClass>(debuglink_file, debug_big_endian,
-                               debug_elf_header, false, &info,
-                               smap, rx_avma, rx_size, usu, log)) {
+                               debug_elf_header, false, &info, smap, rx_avma,
+                               rx_size, usu, log)) {
       return false;
     }
   }
@@ -587,16 +559,13 @@ bool ReadSymbolDataElfClass(const typename ElfClass::Ehdr* elf_header,
 
 }  
 
-
 namespace lul {
 
-bool ReadSymbolDataInternal(const uint8_t* obj_file,
-                            const string& obj_filename,
-                            const vector<string>& debug_dirs,
-                            SecMap* smap, void* rx_avma, size_t rx_size,
+bool ReadSymbolDataInternal(const uint8_t* obj_file, const string& obj_filename,
+                            const vector<string>& debug_dirs, SecMap* smap,
+                            void* rx_avma, size_t rx_size,
                             UniqueStringUniverse* usu,
                             void (*log)(const char*)) {
-
   if (!IsValidElf(obj_file)) {
     fprintf(stderr, "Not a valid ELF file: %s\n", obj_filename.c_str());
     return false;
@@ -605,42 +574,36 @@ bool ReadSymbolDataInternal(const uint8_t* obj_file,
   int elfclass = ElfClass(obj_file);
   if (elfclass == ELFCLASS32) {
     return ReadSymbolDataElfClass<ElfClass32>(
-        reinterpret_cast<const Elf32_Ehdr*>(obj_file),
-        obj_filename, debug_dirs, smap, rx_avma, rx_size, usu, log);
+        reinterpret_cast<const Elf32_Ehdr*>(obj_file), obj_filename, debug_dirs,
+        smap, rx_avma, rx_size, usu, log);
   }
   if (elfclass == ELFCLASS64) {
     return ReadSymbolDataElfClass<ElfClass64>(
-        reinterpret_cast<const Elf64_Ehdr*>(obj_file),
-        obj_filename, debug_dirs, smap, rx_avma, rx_size, usu, log);
+        reinterpret_cast<const Elf64_Ehdr*>(obj_file), obj_filename, debug_dirs,
+        smap, rx_avma, rx_size, usu, log);
   }
 
   return false;
 }
 
-bool ReadSymbolData(const string& obj_file,
-                    const vector<string>& debug_dirs,
+bool ReadSymbolData(const string& obj_file, const vector<string>& debug_dirs,
                     SecMap* smap, void* rx_avma, size_t rx_size,
-                    UniqueStringUniverse* usu,
-                    void (*log)(const char*)) {
+                    UniqueStringUniverse* usu, void (*log)(const char*)) {
   MmapWrapper map_wrapper;
   void* elf_header = NULL;
-  if (!LoadELF(obj_file, &map_wrapper, &elf_header))
-    return false;
+  if (!LoadELF(obj_file, &map_wrapper, &elf_header)) return false;
 
   return ReadSymbolDataInternal(reinterpret_cast<uint8_t*>(elf_header),
-                                obj_file, debug_dirs,
-                                smap, rx_avma, rx_size, usu, log);
+                                obj_file, debug_dirs, smap, rx_avma, rx_size,
+                                usu, log);
 }
-
 
 namespace {
 
-template<typename ElfClass>
-void FindElfClassSection(const char *elf_base,
-                         const char *section_name,
+template <typename ElfClass>
+void FindElfClassSection(const char* elf_base, const char* section_name,
                          typename ElfClass::Word section_type,
-                         const void **section_start,
-                         int *section_size) {
+                         const void** section_start, int* section_size) {
   typedef typename ElfClass::Ehdr Ehdr;
   typedef typename ElfClass::Shdr Shdr;
 
@@ -654,16 +617,15 @@ void FindElfClassSection(const char *elf_base,
   MOZ_ASSERT(elf_header->e_ident[EI_CLASS] == ElfClass::kClass);
 
   const Shdr* sections =
-    GetOffset<ElfClass,Shdr>(elf_header, elf_header->e_shoff);
+      GetOffset<ElfClass, Shdr>(elf_header, elf_header->e_shoff);
   const Shdr* section_names = sections + elf_header->e_shstrndx;
   const char* names =
-    GetOffset<ElfClass,char>(elf_header, section_names->sh_offset);
-  const char *names_end = names + section_names->sh_size;
+      GetOffset<ElfClass, char>(elf_header, section_names->sh_offset);
+  const char* names_end = names + section_names->sh_size;
 
   const Shdr* section =
-    FindElfSectionByName<ElfClass>(section_name, section_type,
-                                   sections, names, names_end,
-                                   elf_header->e_shnum);
+      FindElfSectionByName<ElfClass>(section_name, section_type, sections,
+                                     names, names_end, elf_header->e_shnum);
 
   if (section != NULL && section->sh_size > 0) {
     *section_start = elf_base + section->sh_offset;
@@ -671,11 +633,10 @@ void FindElfClassSection(const char *elf_base,
   }
 }
 
-template<typename ElfClass>
-void FindElfClassSegment(const char *elf_base,
+template <typename ElfClass>
+void FindElfClassSegment(const char* elf_base,
                          typename ElfClass::Word segment_type,
-                         const void **segment_start,
-                         int *segment_size) {
+                         const void** segment_start, int* segment_size) {
   typedef typename ElfClass::Ehdr Ehdr;
   typedef typename ElfClass::Phdr Phdr;
 
@@ -689,7 +650,7 @@ void FindElfClassSegment(const char *elf_base,
   MOZ_ASSERT(elf_header->e_ident[EI_CLASS] == ElfClass::kClass);
 
   const Phdr* phdrs =
-    GetOffset<ElfClass,Phdr>(elf_header, elf_header->e_phoff);
+      GetOffset<ElfClass, Phdr>(elf_header, elf_header->e_phoff);
 
   for (int i = 0; i < elf_header->e_phnum; ++i) {
     if (phdrs[i].p_type == segment_type) {
@@ -703,23 +664,18 @@ void FindElfClassSegment(const char *elf_base,
 }  
 
 bool IsValidElf(const void* elf_base) {
-  return strncmp(reinterpret_cast<const char*>(elf_base),
-                 ELFMAG, SELFMAG) == 0;
+  return strncmp(reinterpret_cast<const char*>(elf_base), ELFMAG, SELFMAG) == 0;
 }
 
 int ElfClass(const void* elf_base) {
-  const ElfW(Ehdr)* elf_header =
-    reinterpret_cast<const ElfW(Ehdr)*>(elf_base);
+  const ElfW(Ehdr)* elf_header = reinterpret_cast<const ElfW(Ehdr)*>(elf_base);
 
   return elf_header->e_ident[EI_CLASS];
 }
 
-bool FindElfSection(const void *elf_mapped_base,
-                    const char *section_name,
-                    uint32_t section_type,
-                    const void **section_start,
-                    int *section_size,
-                    int *elfclass) {
+bool FindElfSection(const void* elf_mapped_base, const char* section_name,
+                    uint32_t section_type, const void** section_start,
+                    int* section_size, int* elfclass) {
   MOZ_ASSERT(elf_mapped_base);
   MOZ_ASSERT(section_start);
   MOZ_ASSERT(section_size);
@@ -727,16 +683,14 @@ bool FindElfSection(const void *elf_mapped_base,
   *section_start = NULL;
   *section_size = 0;
 
-  if (!IsValidElf(elf_mapped_base))
-    return false;
+  if (!IsValidElf(elf_mapped_base)) return false;
 
   int cls = ElfClass(elf_mapped_base);
   if (elfclass) {
     *elfclass = cls;
   }
 
-  const char* elf_base =
-    static_cast<const char*>(elf_mapped_base);
+  const char* elf_base = static_cast<const char*>(elf_mapped_base);
 
   if (cls == ELFCLASS32) {
     FindElfClassSection<ElfClass32>(elf_base, section_name, section_type,
@@ -751,11 +705,9 @@ bool FindElfSection(const void *elf_mapped_base,
   return false;
 }
 
-bool FindElfSegment(const void *elf_mapped_base,
-                    uint32_t segment_type,
-                    const void **segment_start,
-                    int *segment_size,
-                    int *elfclass) {
+bool FindElfSegment(const void* elf_mapped_base, uint32_t segment_type,
+                    const void** segment_start, int* segment_size,
+                    int* elfclass) {
   MOZ_ASSERT(elf_mapped_base);
   MOZ_ASSERT(segment_start);
   MOZ_ASSERT(segment_size);
@@ -763,24 +715,22 @@ bool FindElfSegment(const void *elf_mapped_base,
   *segment_start = NULL;
   *segment_size = 0;
 
-  if (!IsValidElf(elf_mapped_base))
-    return false;
+  if (!IsValidElf(elf_mapped_base)) return false;
 
   int cls = ElfClass(elf_mapped_base);
   if (elfclass) {
     *elfclass = cls;
   }
 
-  const char* elf_base =
-    static_cast<const char*>(elf_mapped_base);
+  const char* elf_base = static_cast<const char*>(elf_mapped_base);
 
   if (cls == ELFCLASS32) {
-    FindElfClassSegment<ElfClass32>(elf_base, segment_type,
-                                    segment_start, segment_size);
+    FindElfClassSegment<ElfClass32>(elf_base, segment_type, segment_start,
+                                    segment_size);
     return *segment_start != NULL;
   } else if (cls == ELFCLASS64) {
-    FindElfClassSegment<ElfClass64>(elf_base, segment_type,
-                                    segment_start, segment_size);
+    FindElfClassSegment<ElfClass64>(elf_base, segment_type, segment_start,
+                                    segment_size);
     return *segment_start != NULL;
   }
 
@@ -794,34 +744,32 @@ bool FindElfSegment(const void *elf_mapped_base,
 
 
 
-
 #define NOTE_PADDING(a) ((a + 3) & ~3)
 
 
 
 
-template<typename ElfClass>
-static bool ElfClassBuildIDNoteIdentifier(const void *section, int length,
+template <typename ElfClass>
+static bool ElfClassBuildIDNoteIdentifier(const void* section, int length,
                                           uint8_t identifier[kMDGUIDSize]) {
   typedef typename ElfClass::Nhdr Nhdr;
 
   const void* section_end = reinterpret_cast<const char*>(section) + length;
   const Nhdr* note_header = reinterpret_cast<const Nhdr*>(section);
-  while (reinterpret_cast<const void *>(note_header) < section_end) {
-    if (note_header->n_type == NT_GNU_BUILD_ID)
-      break;
+  while (reinterpret_cast<const void*>(note_header) < section_end) {
+    if (note_header->n_type == NT_GNU_BUILD_ID) break;
     note_header = reinterpret_cast<const Nhdr*>(
-                  reinterpret_cast<const char*>(note_header) + sizeof(Nhdr) +
-                  NOTE_PADDING(note_header->n_namesz) +
-                  NOTE_PADDING(note_header->n_descsz));
+        reinterpret_cast<const char*>(note_header) + sizeof(Nhdr) +
+        NOTE_PADDING(note_header->n_namesz) +
+        NOTE_PADDING(note_header->n_descsz));
   }
-  if (reinterpret_cast<const void *>(note_header) >= section_end ||
+  if (reinterpret_cast<const void*>(note_header) >= section_end ||
       note_header->n_descsz == 0) {
     return false;
   }
 
   const char* build_id = reinterpret_cast<const char*>(note_header) +
-    sizeof(Nhdr) + NOTE_PADDING(note_header->n_namesz);
+                         sizeof(Nhdr) + NOTE_PADDING(note_header->n_namesz);
   
   
   memset(identifier, 0, kMDGUIDSize);
@@ -833,16 +781,16 @@ static bool ElfClassBuildIDNoteIdentifier(const void *section, int length,
 
 
 
-static bool FindElfBuildIDNote(const void *elf_mapped_base,
+static bool FindElfBuildIDNote(const void* elf_mapped_base,
                                uint8_t identifier[kMDGUIDSize]) {
   void* note_section;
   int note_size, elfclass;
-  if ((!FindElfSegment(elf_mapped_base, PT_NOTE,
-                       (const void**)&note_section, &note_size, &elfclass) ||
-      note_size == 0)  &&
+  if ((!FindElfSegment(elf_mapped_base, PT_NOTE, (const void**)&note_section,
+                       &note_size, &elfclass) ||
+       note_size == 0) &&
       (!FindElfSection(elf_mapped_base, ".note.gnu.build-id", SHT_NOTE,
                        (const void**)&note_section, &note_size, &elfclass) ||
-      note_size == 0)) {
+       note_size == 0)) {
     return false;
   }
 
@@ -859,7 +807,7 @@ static bool FindElfBuildIDNote(const void *elf_mapped_base,
 
 
 
-static bool HashElfTextSection(const void *elf_mapped_base,
+static bool HashElfTextSection(const void* elf_mapped_base,
                                uint8_t identifier[kMDGUIDSize]) {
   void* text_section;
   int text_size;
@@ -873,8 +821,7 @@ static bool HashElfTextSection(const void *elf_mapped_base,
   const uint8_t* ptr = reinterpret_cast<const uint8_t*>(text_section);
   const uint8_t* ptr_end = ptr + std::min(text_size, 4096);
   while (ptr < ptr_end) {
-    for (unsigned i = 0; i < kMDGUIDSize; i++)
-      identifier[i] ^= ptr[i];
+    for (unsigned i = 0; i < kMDGUIDSize; i++) identifier[i] ^= ptr[i];
     ptr += kMDGUIDSize;
   }
   return true;
@@ -884,8 +831,7 @@ static bool HashElfTextSection(const void *elf_mapped_base,
 bool FileID::ElfFileIdentifierFromMappedFile(const void* base,
                                              uint8_t identifier[kMDGUIDSize]) {
   
-  if (FindElfBuildIDNote(base, identifier))
-    return true;
+  if (FindElfBuildIDNote(base, identifier)) return true;
 
   
   return HashElfTextSection(base, identifier);
@@ -907,8 +853,7 @@ void FileID::ConvertIdentifierToString(const uint8_t identifier[kMDGUIDSize],
 
   int buffer_idx = 0;
   for (unsigned int idx = 0;
-       (buffer_idx < buffer_length) && (idx < kMDGUIDSize);
-       ++idx) {
+       (buffer_idx < buffer_length) && (idx < kMDGUIDSize); ++idx) {
     int hi = (identifier_swapped[idx] >> 4) & 0x0F;
     int lo = (identifier_swapped[idx]) & 0x0F;
 

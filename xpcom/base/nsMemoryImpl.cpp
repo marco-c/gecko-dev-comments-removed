@@ -29,18 +29,17 @@ static nsMemoryImpl sGlobalMemory;
 NS_IMPL_QUERY_INTERFACE(nsMemoryImpl, nsIMemory)
 
 NS_IMETHODIMP
-nsMemoryImpl::HeapMinimize(bool aImmediate)
-{
+nsMemoryImpl::HeapMinimize(bool aImmediate) {
   return FlushMemory(u"heap-minimize", aImmediate);
 }
 
 NS_IMETHODIMP
-nsMemoryImpl::IsLowMemoryPlatform(bool* aResult)
-{
+nsMemoryImpl::IsLowMemoryPlatform(bool* aResult) {
 #ifdef ANDROID
-  static int sLowMemory = -1; 
+  static int sLowMemory =
+      -1;  
   if (sLowMemory == -1) {
-    sLowMemory = 0; 
+    sLowMemory = 0;  
     *aResult = false;
 
     
@@ -65,18 +64,15 @@ nsMemoryImpl::IsLowMemoryPlatform(bool* aResult)
   return NS_OK;
 }
 
- nsresult
-nsMemoryImpl::Create(nsISupports* aOuter, const nsIID& aIID, void** aResult)
-{
+ nsresult nsMemoryImpl::Create(nsISupports* aOuter, const nsIID& aIID,
+                                         void** aResult) {
   if (NS_WARN_IF(aOuter)) {
     return NS_ERROR_NO_AGGREGATION;
   }
   return sGlobalMemory.QueryInterface(aIID, aResult);
 }
 
-nsresult
-nsMemoryImpl::FlushMemory(const char16_t* aReason, bool aImmediate)
-{
+nsresult nsMemoryImpl::FlushMemory(const char16_t* aReason, bool aImmediate) {
   nsresult rv = NS_OK;
 
   if (aImmediate) {
@@ -112,12 +108,9 @@ nsMemoryImpl::FlushMemory(const char16_t* aReason, bool aImmediate)
   return rv;
 }
 
-nsresult
-nsMemoryImpl::RunFlushers(const char16_t* aReason)
-{
+nsresult nsMemoryImpl::RunFlushers(const char16_t* aReason) {
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
-
     
     
     
@@ -150,35 +143,23 @@ nsMemoryImpl::RunFlushers(const char16_t* aReason)
 
 
 NS_IMETHODIMP_(MozExternalRefCountType)
-nsMemoryImpl::FlushEvent::AddRef()
-{
-  return 2;
-}
+nsMemoryImpl::FlushEvent::AddRef() { return 2; }
 NS_IMETHODIMP_(MozExternalRefCountType)
-nsMemoryImpl::FlushEvent::Release()
-{
-  return 1;
-}
+nsMemoryImpl::FlushEvent::Release() { return 1; }
 NS_IMPL_QUERY_INTERFACE(nsMemoryImpl::FlushEvent, nsIRunnable)
 
 NS_IMETHODIMP
-nsMemoryImpl::FlushEvent::Run()
-{
+nsMemoryImpl::FlushEvent::Run() {
   sGlobalMemory.RunFlushers(mReason);
   return NS_OK;
 }
 
-mozilla::Atomic<bool>
-nsMemoryImpl::sIsFlushing;
+mozilla::Atomic<bool> nsMemoryImpl::sIsFlushing;
 
-PRIntervalTime
-nsMemoryImpl::sLastFlushTime = 0;
+PRIntervalTime nsMemoryImpl::sLastFlushTime = 0;
 
-nsMemoryImpl::FlushEvent
-nsMemoryImpl::sFlushEvent;
+nsMemoryImpl::FlushEvent nsMemoryImpl::sFlushEvent;
 
-nsresult
-NS_GetMemoryManager(nsIMemory** aResult)
-{
+nsresult NS_GetMemoryManager(nsIMemory** aResult) {
   return sGlobalMemory.QueryInterface(NS_GET_IID(nsIMemory), (void**)aResult);
 }

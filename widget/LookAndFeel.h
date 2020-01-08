@@ -16,8 +16,7 @@
 
 struct gfxFontStyle;
 
-struct LookAndFeelInt
-{
+struct LookAndFeelInt {
   int32_t id;
   union {
     int32_t value;
@@ -27,9 +26,8 @@ struct LookAndFeelInt
 
 namespace mozilla {
 
-class LookAndFeel
-{
-public:
+class LookAndFeel {
+ public:
   
   
   enum ColorID : uint8_t {
@@ -323,7 +321,7 @@ public:
 
     eIntID_MacGraphiteTheme,
 
-   
+    
 
 
 
@@ -331,7 +329,7 @@ public:
 
 
 
-   eIntID_MacYosemiteTheme,
+    eIntID_MacYosemiteTheme,
 
     
 
@@ -395,90 +393,90 @@ public:
 
     eIntID_SwipeAnimationEnabled,
 
-     
+    
 
 
 
-     eIntID_ScrollbarDisplayOnMouseMove,
+    eIntID_ScrollbarDisplayOnMouseMove,
 
-     
-
-
-     eIntID_ScrollbarFadeBeginDelay,
-     eIntID_ScrollbarFadeDuration,
-      
-     
+    
 
 
+    eIntID_ScrollbarFadeBeginDelay,
+    eIntID_ScrollbarFadeDuration,
 
-     eIntID_ContextMenuOffsetVertical,
-     eIntID_ContextMenuOffsetHorizontal,
-
-     
+    
 
 
 
-     eIntID_GTKCSDAvailable,
+    eIntID_ContextMenuOffsetVertical,
+    eIntID_ContextMenuOffsetHorizontal,
 
-     
-
-
-
-     eIntID_GTKCSDTransparentBackground,
-
-     
+    
 
 
 
-     eIntID_GTKCSDMinimizeButton,
+    eIntID_GTKCSDAvailable,
 
-     
-
-
-
-     eIntID_GTKCSDMaximizeButton,
-
-     
+    
 
 
 
-     eIntID_GTKCSDCloseButton,
+    eIntID_GTKCSDTransparentBackground,
 
-     
-
-
-
-     eIntID_SystemUsesDarkTheme,
-
-     
+    
 
 
 
+    eIntID_GTKCSDMinimizeButton,
+
+    
 
 
 
-     eIntID_PrefersReducedMotion,
-     
+    eIntID_GTKCSDMaximizeButton,
+
+    
+
+
+
+    eIntID_GTKCSDCloseButton,
+
+    
+
+
+
+    eIntID_SystemUsesDarkTheme,
+
+    
 
 
 
 
 
 
-     eIntID_PrimaryPointerCapabilities,
-     
+    eIntID_PrefersReducedMotion,
+    
 
 
 
 
-     eIntID_AllPointerCapabilities,
+
+
+    eIntID_PrimaryPointerCapabilities,
+    
+
+
+
+
+    eIntID_AllPointerCapabilities,
   };
 
   
 
 
   enum WindowsTheme {
-    eWindowsTheme_Generic = 0, 
+    eWindowsTheme_Generic = 0,  
     eWindowsTheme_Classic,
     eWindowsTheme_Aero,
     eWindowsTheme_LunaBlue,
@@ -510,23 +508,20 @@ public:
   enum {
     
     eScrollArrowStyle_Single =
-      eScrollArrow_StartBackward | eScrollArrow_EndForward,
+        eScrollArrow_StartBackward | eScrollArrow_EndForward,
     
     eScrollArrowStyle_BothAtBottom =
-      eScrollArrow_EndBackward | eScrollArrow_EndForward,
+        eScrollArrow_EndBackward | eScrollArrow_EndForward,
     
     eScrollArrowStyle_BothAtEachEnd =
-      eScrollArrow_EndBackward | eScrollArrow_EndForward |
-      eScrollArrow_StartBackward | eScrollArrow_StartForward,
+        eScrollArrow_EndBackward | eScrollArrow_EndForward |
+        eScrollArrow_StartBackward | eScrollArrow_StartForward,
     
     eScrollArrowStyle_BothAtTop =
-      eScrollArrow_StartBackward | eScrollArrow_StartForward
+        eScrollArrow_StartBackward | eScrollArrow_StartForward
   };
 
-  enum {
-    eScrollThumbStyle_Normal,
-    eScrollThumbStyle_Proportional
-  };
+  enum { eScrollThumbStyle_Normal, eScrollThumbStyle_Proportional };
 
   
   
@@ -542,7 +537,7 @@ public:
   
   
   enum FontID {
-    eFont_Caption = 1,     
+    eFont_Caption = 1,  
     FontID_MINIMUM = eFont_Caption,
     eFont_Icon,
     eFont_Menu,
@@ -550,7 +545,7 @@ public:
     eFont_SmallCaption,
     eFont_StatusBar,
 
-    eFont_Window,          
+    eFont_Window,  
     eFont_Document,
     eFont_Workspace,
     eFont_Desktop,
@@ -561,7 +556,7 @@ public:
     eFont_List,
     eFont_Field,
 
-    eFont_Tooltips,        
+    eFont_Tooltips,  
     eFont_Widget,
     FontID_MAXIMUM = eFont_Widget
   };
@@ -583,7 +578,7 @@ public:
 
   static nsresult GetColor(ColorID aID, nscolor* aResult);
 
-   
+  
 
 
 
@@ -603,8 +598,7 @@ public:
   static nsresult GetInt(IntID aID, int32_t* aResult);
   static nsresult GetFloat(FloatID aID, float* aResult);
 
-  static nscolor GetColor(ColorID aID, nscolor aDefault = NS_RGB(0, 0, 0))
-  {
+  static nscolor GetColor(ColorID aID, nscolor aDefault = NS_RGB(0, 0, 0)) {
     nscolor result = NS_RGB(0, 0, 0);
     if (NS_FAILED(GetColor(aID, &result))) {
       return aDefault;
@@ -613,19 +607,17 @@ public:
   }
 
   static nscolor GetColorUsingStandins(ColorID aID,
-                                       nscolor aDefault = NS_RGB(0, 0, 0))
-  {
+                                       nscolor aDefault = NS_RGB(0, 0, 0)) {
     nscolor result = NS_RGB(0, 0, 0);
     if (NS_FAILED(GetColor(aID,
-                           true, 
+                           true,  
                            &result))) {
       return aDefault;
     }
     return result;
   }
 
-  static int32_t GetInt(IntID aID, int32_t aDefault = 0)
-  {
+  static int32_t GetInt(IntID aID, int32_t aDefault = 0) {
     int32_t result;
     if (NS_FAILED(GetInt(aID, &result))) {
       return aDefault;
@@ -633,8 +625,7 @@ public:
     return result;
   }
 
-  static float GetFloat(FloatID aID, float aDefault = 0.0f)
-  {
+  static float GetFloat(FloatID aID, float aDefault = 0.0f) {
     float result;
     if (NS_FAILED(GetFloat(aID, &result))) {
       return aDefault;
@@ -703,13 +694,13 @@ public:
   static void SetShouldRetainCacheForTest(bool aValue);
 };
 
-} 
+}  
 
 
 
 
 
-#define NS_DONT_CHANGE_COLOR 	NS_RGB(0x01, 0x01, 0x01)
+#define NS_DONT_CHANGE_COLOR NS_RGB(0x01, 0x01, 0x01)
 
 
 
@@ -722,21 +713,21 @@ public:
 
 
 
-#define NS_TRANSPARENT                NS_RGBA(0x01, 0x00, 0x00, 0x00)
+#define NS_TRANSPARENT NS_RGBA(0x01, 0x00, 0x00, 0x00)
 
-#define NS_SAME_AS_FOREGROUND_COLOR   NS_RGBA(0x02, 0x00, 0x00, 0x00)
+#define NS_SAME_AS_FOREGROUND_COLOR NS_RGBA(0x02, 0x00, 0x00, 0x00)
 #define NS_40PERCENT_FOREGROUND_COLOR NS_RGBA(0x03, 0x00, 0x00, 0x00)
 
-#define NS_IS_SELECTION_SPECIAL_COLOR(c) ((c) == NS_TRANSPARENT || \
-                                          (c) == NS_SAME_AS_FOREGROUND_COLOR || \
-                                          (c) == NS_40PERCENT_FOREGROUND_COLOR)
+#define NS_IS_SELECTION_SPECIAL_COLOR(c)                          \
+  ((c) == NS_TRANSPARENT || (c) == NS_SAME_AS_FOREGROUND_COLOR || \
+   (c) == NS_40PERCENT_FOREGROUND_COLOR)
 
 
 
 
 
 #define NS_ALERT_HORIZONTAL 1
-#define NS_ALERT_LEFT       2
-#define NS_ALERT_TOP        4
+#define NS_ALERT_LEFT 2
+#define NS_ALERT_TOP 4
 
 #endif 

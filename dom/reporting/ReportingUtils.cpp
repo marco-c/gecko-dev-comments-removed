@@ -13,21 +13,17 @@
 namespace mozilla {
 namespace dom {
 
- void
-ReportingUtils::Report(nsPIDOMWindowInner* aWindow,
-                       nsAtom* aType,
-                       const nsAString& aURL,
-                       ReportBody* aBody)
-{
+ void ReportingUtils::Report(nsPIDOMWindowInner* aWindow,
+                                         nsAtom* aType, const nsAString& aURL,
+                                         ReportBody* aBody) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aWindow);
   MOZ_ASSERT(aBody);
 
-  RefPtr<mozilla::dom::Report> report =
-    new mozilla::dom::Report(aWindow, nsDependentAtomString(aType), aURL,
-                             aBody);
+  RefPtr<mozilla::dom::Report> report = new mozilla::dom::Report(
+      aWindow, nsDependentAtomString(aType), aURL, aBody);
   aWindow->BroadcastReport(report);
 }
 
-} 
-} 
+}  
+}  

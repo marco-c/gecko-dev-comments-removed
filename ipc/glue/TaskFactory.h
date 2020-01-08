@@ -23,68 +23,58 @@
 namespace mozilla {
 namespace ipc {
 
-template<class T>
-class TaskFactory : public RevocableStore
-{
-private:
-  template<class TaskType>
-  class TaskWrapper : public TaskType
-  {
-  public:
-    template<typename... Args>
+template <class T>
+class TaskFactory : public RevocableStore {
+ private:
+  template <class TaskType>
+  class TaskWrapper : public TaskType {
+   public:
+    template <typename... Args>
     explicit TaskWrapper(RevocableStore* store, Args&&... args)
-      : TaskType(std::forward<Args>(args)...)
-      , revocable_(store)
-    {
-    }
+        : TaskType(std::forward<Args>(args)...), revocable_(store) {}
 
     NS_IMETHOD Run() override {
-      if (!revocable_.revoked())
-        TaskType::Run();
+      if (!revocable_.revoked()) TaskType::Run();
       return NS_OK;
     }
 
-  private:
+   private:
     Revocable revocable_;
   };
 
-public:
-  explicit TaskFactory(T* object) : object_(object) { }
+ public:
+  explicit TaskFactory(T* object) : object_(object) {}
 
   template <typename TaskParamType, typename... Args>
-  inline already_AddRefed<TaskParamType> NewTask(Args&&... args)
-  {
+  inline already_AddRefed<TaskParamType> NewTask(Args&&... args) {
     typedef TaskWrapper<TaskParamType> TaskWrapper;
     RefPtr<TaskWrapper> task =
-      new TaskWrapper(this, std::forward<Args>(args)...);
+        new TaskWrapper(this, std::forward<Args>(args)...);
     return task.forget();
   }
 
   template <class Method, typename... Args>
-  inline already_AddRefed<Runnable>
-  NewRunnableMethod(Method method, Args&&... args) {
+  inline already_AddRefed<Runnable> NewRunnableMethod(Method method,
+                                                      Args&&... args) {
     typedef decltype(base::MakeTuple(std::forward<Args>(args)...)) ArgTuple;
     typedef RunnableMethod<Method, ArgTuple> RunnableMethod;
     typedef TaskWrapper<RunnableMethod> TaskWrapper;
 
-    RefPtr<TaskWrapper> task =
-      new TaskWrapper(this, object_, method,
-                      base::MakeTuple(std::forward<Args>(args)...));
+    RefPtr<TaskWrapper> task = new TaskWrapper(
+        this, object_, method, base::MakeTuple(std::forward<Args>(args)...));
 
     return task.forget();
   }
 
-protected:
+ protected:
   template <class Method, class Params>
   class RunnableMethod : public Runnable {
    public:
-     RunnableMethod(T* obj, Method meth, const Params& params)
-       : Runnable("ipc::TaskFactory::RunnableMethod")
-       , obj_(obj)
-       , meth_(meth)
-       , params_(params)
-     {
-    }
+    RunnableMethod(T* obj, Method meth, const Params& params)
+        : Runnable("ipc::TaskFactory::RunnableMethod"),
+          obj_(obj),
+          meth_(meth),
+          params_(params) {}
 
     NS_IMETHOD Run() override {
       DispatchToMethod(obj_, meth_, params_);
@@ -97,11 +87,11 @@ protected:
     Params params_;
   };
 
-private:
+ private:
   T* object_;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

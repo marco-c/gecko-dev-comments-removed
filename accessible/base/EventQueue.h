@@ -16,10 +16,9 @@ class DocAccessible;
 
 
 
-class EventQueue
-{
-protected:
-  explicit EventQueue(DocAccessible* aDocument) : mDocument(aDocument) { }
+class EventQueue {
+ protected:
+  explicit EventQueue(DocAccessible* aDocument) : mDocument(aDocument) {}
 
   
 
@@ -36,9 +35,9 @@ protected:
 
   void ProcessEventQueue();
 
-private:
+ private:
   EventQueue(const EventQueue&) = delete;
-  EventQueue& operator = (const EventQueue&) = delete;
+  EventQueue& operator=(const EventQueue&) = delete;
 
   
   
@@ -58,7 +57,7 @@ private:
                                AccSelChangeEvent* aThisEvent,
                                uint32_t aThisIndex);
 
-protected:
+ protected:
   
 
 
@@ -71,7 +70,7 @@ protected:
   nsTArray<RefPtr<AccEvent>> mEvents;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

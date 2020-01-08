@@ -19,37 +19,35 @@ namespace plugins {
 
 
 class PluginProcessChild : public mozilla::ipc::ProcessChild {
-protected:
-    typedef mozilla::ipc::ProcessChild ProcessChild;
+ protected:
+  typedef mozilla::ipc::ProcessChild ProcessChild;
 
-public:
-    explicit PluginProcessChild(ProcessId aParentPid)
-      : ProcessChild(aParentPid), mPlugin(true)
-    { }
+ public:
+  explicit PluginProcessChild(ProcessId aParentPid)
+      : ProcessChild(aParentPid), mPlugin(true) {}
 
-    virtual ~PluginProcessChild()
-    { }
+  virtual ~PluginProcessChild() {}
 
-    virtual bool Init(int aArgc, char* aArgv[]) override;
-    virtual void CleanUp() override;
+  virtual bool Init(int aArgc, char* aArgv[]) override;
+  virtual void CleanUp() override;
 
-protected:
-    static PluginProcessChild* current() {
-        return static_cast<PluginProcessChild*>(ProcessChild::current());
-    }
+ protected:
+  static PluginProcessChild* current() {
+    return static_cast<PluginProcessChild*>(ProcessChild::current());
+  }
 
-private:
+ private:
 #if defined(XP_WIN)
-    
+  
 
-    mozilla::mscom::MainThreadRuntime mCOMRuntime;
+  mozilla::mscom::MainThreadRuntime mCOMRuntime;
 #endif
-    PluginModuleChild mPlugin;
+  PluginModuleChild mPlugin;
 
-    DISALLOW_EVIL_CONSTRUCTORS(PluginProcessChild);
+  DISALLOW_EVIL_CONSTRUCTORS(PluginProcessChild);
 };
 
-} 
-} 
+}  
+}  
 
 #endif  

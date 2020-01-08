@@ -19,75 +19,73 @@ class ScriptFrameIter;
 
 namespace jit {
 class JitFrameLayout;
-} 
+}  
 
 
 
 
-class RareArgumentsData
-{
-    
-    
-    
-    size_t deletedBits_[1];
+class RareArgumentsData {
+  
+  
+  
+  size_t deletedBits_[1];
 
-    RareArgumentsData() = default;
-    RareArgumentsData(const RareArgumentsData&) = delete;
-    void operator=(const RareArgumentsData&) = delete;
+  RareArgumentsData() = default;
+  RareArgumentsData(const RareArgumentsData&) = delete;
+  void operator=(const RareArgumentsData&) = delete;
 
-  public:
-    static RareArgumentsData* create(JSContext* cx, ArgumentsObject* obj);
-    static size_t bytesRequired(size_t numActuals);
+ public:
+  static RareArgumentsData* create(JSContext* cx, ArgumentsObject* obj);
+  static size_t bytesRequired(size_t numActuals);
 
-    bool isAnyElementDeleted(size_t len) const {
-        return IsAnyBitArrayElementSet(deletedBits_, len);
-    }
-    bool isElementDeleted(size_t len, size_t i) const {
-        MOZ_ASSERT(i < len);
-        return IsBitArrayElementSet(deletedBits_, len, i);
-    }
-    void markElementDeleted(size_t len, size_t i) {
-        MOZ_ASSERT(i < len);
-        SetBitArrayElement(deletedBits_, len, i);
-    }
+  bool isAnyElementDeleted(size_t len) const {
+    return IsAnyBitArrayElementSet(deletedBits_, len);
+  }
+  bool isElementDeleted(size_t len, size_t i) const {
+    MOZ_ASSERT(i < len);
+    return IsBitArrayElementSet(deletedBits_, len, i);
+  }
+  void markElementDeleted(size_t len, size_t i) {
+    MOZ_ASSERT(i < len);
+    SetBitArrayElement(deletedBits_, len, i);
+  }
 };
 
 
 
 
 
-struct ArgumentsData
-{
-    
+struct ArgumentsData {
+  
 
 
 
-    uint32_t    numArgs;
+  uint32_t numArgs;
 
-    RareArgumentsData* rareData;
+  RareArgumentsData* rareData;
 
-    
-
-
-
+  
 
 
 
 
-    GCPtrValue args[1];
 
-    
-    static ptrdiff_t offsetOfArgs() { return offsetof(ArgumentsData, args); }
 
-    
-    GCPtrValue* begin() { return args; }
-    const GCPtrValue* begin() const { return args; }
-    GCPtrValue* end() { return args + numArgs; }
-    const GCPtrValue* end() const { return args + numArgs; }
 
-    static size_t bytesRequired(size_t numArgs) {
-        return offsetof(ArgumentsData, args) + numArgs * sizeof(Value);
-    }
+  GCPtrValue args[1];
+
+  
+  static ptrdiff_t offsetOfArgs() { return offsetof(ArgumentsData, args); }
+
+  
+  GCPtrValue* begin() { return args; }
+  const GCPtrValue* begin() const { return args; }
+  GCPtrValue* end() { return args + numArgs; }
+  const GCPtrValue* end() const { return args + numArgs; }
+
+  static size_t bytesRequired(size_t numArgs) {
+    return offsetof(ArgumentsData, args) + numArgs * sizeof(Value);
+  }
 };
 
 
@@ -143,315 +141,326 @@ static const unsigned ARGS_LENGTH_MAX = 500 * 1000;
 
 
 
-class ArgumentsObject : public NativeObject
-{
-  protected:
-    static const uint32_t INITIAL_LENGTH_SLOT = 0;
-    static const uint32_t DATA_SLOT = 1;
-    static const uint32_t MAYBE_CALL_SLOT = 2;
-    static const uint32_t CALLEE_SLOT = 3;
+class ArgumentsObject : public NativeObject {
+ protected:
+  static const uint32_t INITIAL_LENGTH_SLOT = 0;
+  static const uint32_t DATA_SLOT = 1;
+  static const uint32_t MAYBE_CALL_SLOT = 2;
+  static const uint32_t CALLEE_SLOT = 3;
 
-  public:
-    static const uint32_t LENGTH_OVERRIDDEN_BIT = 0x1;
-    static const uint32_t ITERATOR_OVERRIDDEN_BIT = 0x2;
-    static const uint32_t ELEMENT_OVERRIDDEN_BIT = 0x4;
-    static const uint32_t CALLEE_OVERRIDDEN_BIT = 0x8;
-    static const uint32_t PACKED_BITS_COUNT = 4;
+ public:
+  static const uint32_t LENGTH_OVERRIDDEN_BIT = 0x1;
+  static const uint32_t ITERATOR_OVERRIDDEN_BIT = 0x2;
+  static const uint32_t ELEMENT_OVERRIDDEN_BIT = 0x4;
+  static const uint32_t CALLEE_OVERRIDDEN_BIT = 0x8;
+  static const uint32_t PACKED_BITS_COUNT = 4;
 
-    static_assert(ARGS_LENGTH_MAX <= (UINT32_MAX >> PACKED_BITS_COUNT),
-                  "Max arguments length must fit in available bits");
+  static_assert(ARGS_LENGTH_MAX <= (UINT32_MAX >> PACKED_BITS_COUNT),
+                "Max arguments length must fit in available bits");
 
-  protected:
-    template <typename CopyArgs>
-    static ArgumentsObject* create(JSContext* cx, HandleFunction callee, unsigned numActuals,
-                                   CopyArgs& copy);
+ protected:
+  template <typename CopyArgs>
+  static ArgumentsObject* create(JSContext* cx, HandleFunction callee,
+                                 unsigned numActuals, CopyArgs& copy);
 
-    ArgumentsData* data() const {
-        return reinterpret_cast<ArgumentsData*>(getFixedSlot(DATA_SLOT).toPrivate());
+  ArgumentsData* data() const {
+    return reinterpret_cast<ArgumentsData*>(
+        getFixedSlot(DATA_SLOT).toPrivate());
+  }
+
+  RareArgumentsData* maybeRareData() const { return data()->rareData; }
+
+  MOZ_MUST_USE bool createRareData(JSContext* cx);
+
+  RareArgumentsData* getOrCreateRareData(JSContext* cx) {
+    if (!data()->rareData && !createRareData(cx)) {
+      return nullptr;
     }
+    return data()->rareData;
+  }
 
-    RareArgumentsData* maybeRareData() const {
-        return data()->rareData;
+  static bool obj_delProperty(JSContext* cx, HandleObject obj, HandleId id,
+                              ObjectOpResult& result);
+
+  static bool obj_mayResolve(const JSAtomState& names, jsid id, JSObject*);
+
+ public:
+  static const uint32_t RESERVED_SLOTS = 4;
+  static const gc::AllocKind FINALIZE_KIND = gc::AllocKind::OBJECT4_BACKGROUND;
+
+  
+  static ArgumentsObject* createExpected(JSContext* cx, AbstractFramePtr frame);
+
+  
+
+
+
+
+
+  static ArgumentsObject* createUnexpected(JSContext* cx,
+                                           ScriptFrameIter& iter);
+  static ArgumentsObject* createUnexpected(JSContext* cx,
+                                           AbstractFramePtr frame);
+  static ArgumentsObject* createForIon(JSContext* cx,
+                                       jit::JitFrameLayout* frame,
+                                       HandleObject scopeChain);
+
+  
+
+
+
+  static ArgumentsObject* finishForIonPure(JSContext* cx,
+                                           jit::JitFrameLayout* frame,
+                                           JSObject* scopeChain,
+                                           ArgumentsObject* obj);
+
+  static ArgumentsObject* createTemplateObject(JSContext* cx, bool mapped);
+
+  
+
+
+
+  uint32_t initialLength() const {
+    uint32_t argc = uint32_t(getFixedSlot(INITIAL_LENGTH_SLOT).toInt32()) >>
+                    PACKED_BITS_COUNT;
+    MOZ_ASSERT(argc <= ARGS_LENGTH_MAX);
+    return argc;
+  }
+
+  
+  bool hasOverriddenLength() const {
+    const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
+    return v.toInt32() & LENGTH_OVERRIDDEN_BIT;
+  }
+
+  void markLengthOverridden() {
+    uint32_t v =
+        getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | LENGTH_OVERRIDDEN_BIT;
+    setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
+  }
+
+  
+
+
+  static bool reifyLength(JSContext* cx, Handle<ArgumentsObject*> obj);
+
+  
+
+  bool hasOverriddenIterator() const {
+    const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
+    return v.toInt32() & ITERATOR_OVERRIDDEN_BIT;
+  }
+
+  void markIteratorOverridden() {
+    uint32_t v =
+        getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | ITERATOR_OVERRIDDEN_BIT;
+    setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
+  }
+
+  
+
+
+  static bool reifyIterator(JSContext* cx, Handle<ArgumentsObject*> obj);
+
+  
+
+  bool hasOverriddenElement() const {
+    const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
+    return v.toInt32() & ELEMENT_OVERRIDDEN_BIT;
+  }
+
+  void markElementOverridden() {
+    uint32_t v =
+        getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | ELEMENT_OVERRIDDEN_BIT;
+    setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool isElementDeleted(uint32_t i) const {
+    MOZ_ASSERT(i < data()->numArgs);
+    if (i >= initialLength()) {
+      return false;
     }
+    return maybeRareData() &&
+           maybeRareData()->isElementDeleted(initialLength(), i);
+  }
 
-    MOZ_MUST_USE bool createRareData(JSContext* cx);
+  bool isAnyElementDeleted() const {
+    return maybeRareData() &&
+           maybeRareData()->isAnyElementDeleted(initialLength());
+  }
 
-    RareArgumentsData* getOrCreateRareData(JSContext* cx) {
-        if (!data()->rareData && !createRareData(cx)) {
-            return nullptr;
-        }
-        return data()->rareData;
+  bool markElementDeleted(JSContext* cx, uint32_t i);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const Value& element(uint32_t i) const;
+
+  inline void setElement(JSContext* cx, uint32_t i, const Value& v);
+
+  const Value& arg(unsigned i) const {
+    MOZ_ASSERT(i < data()->numArgs);
+    const Value& v = data()->args[i];
+    MOZ_ASSERT(!v.isMagic());
+    return v;
+  }
+
+  void setArg(unsigned i, const Value& v) {
+    MOZ_ASSERT(i < data()->numArgs);
+    GCPtrValue& lhs = data()->args[i];
+    MOZ_ASSERT(!lhs.isMagic());
+    lhs = v;
+  }
+
+  
+
+
+
+
+
+
+
+
+  bool maybeGetElement(uint32_t i, MutableHandleValue vp) {
+    if (i >= initialLength() || isElementDeleted(i)) {
+      return false;
     }
+    vp.set(element(i));
+    return true;
+  }
 
-    static bool obj_delProperty(JSContext* cx, HandleObject obj, HandleId id,
-                                ObjectOpResult& result);
+  inline bool maybeGetElements(uint32_t start, uint32_t count, js::Value* vp);
 
-    static bool obj_mayResolve(const JSAtomState& names, jsid id, JSObject*);
+  
 
-  public:
-    static const uint32_t RESERVED_SLOTS = 4;
-    static const gc::AllocKind FINALIZE_KIND = gc::AllocKind::OBJECT4_BACKGROUND;
 
+
+  size_t sizeOfMisc(mozilla::MallocSizeOf mallocSizeOf) const {
+    if (!data()) {  
+      return 0;
+    }
+    return mallocSizeOf(data()) + mallocSizeOf(maybeRareData());
+  }
+  size_t sizeOfData() const {
+    return ArgumentsData::bytesRequired(data()->numArgs) +
+           (maybeRareData() ? RareArgumentsData::bytesRequired(initialLength())
+                            : 0);
+  }
+
+  static void finalize(FreeOp* fop, JSObject* obj);
+  static void trace(JSTracer* trc, JSObject* obj);
+  static size_t objectMoved(JSObject* dst, JSObject* src);
+
+  
+  static size_t getDataSlotOffset() { return getFixedSlotOffset(DATA_SLOT); }
+  static size_t getInitialLengthSlotOffset() {
+    return getFixedSlotOffset(INITIAL_LENGTH_SLOT);
+  }
+
+  static Value MagicEnvSlotValue(uint32_t slot) {
     
-    static ArgumentsObject* createExpected(JSContext* cx, AbstractFramePtr frame);
-
     
-
-
-
-
-
-    static ArgumentsObject* createUnexpected(JSContext* cx, ScriptFrameIter& iter);
-    static ArgumentsObject* createUnexpected(JSContext* cx, AbstractFramePtr frame);
-    static ArgumentsObject* createForIon(JSContext* cx, jit::JitFrameLayout* frame,
-                                         HandleObject scopeChain);
-
     
-
-
-
-    static ArgumentsObject* finishForIonPure(JSContext* cx, jit::JitFrameLayout* frame,
-                                         JSObject* scopeChain, ArgumentsObject* obj);
-
-    static ArgumentsObject* createTemplateObject(JSContext* cx, bool mapped);
-
     
-
-
-
-    uint32_t initialLength() const {
-        uint32_t argc = uint32_t(getFixedSlot(INITIAL_LENGTH_SLOT).toInt32()) >> PACKED_BITS_COUNT;
-        MOZ_ASSERT(argc <= ARGS_LENGTH_MAX);
-        return argc;
-    }
-
     
-    bool hasOverriddenLength() const {
-        const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
-        return v.toInt32() & LENGTH_OVERRIDDEN_BIT;
-    }
-
-    void markLengthOverridden() {
-        uint32_t v = getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | LENGTH_OVERRIDDEN_BIT;
-        setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
-    }
-
     
-
-
-    static bool reifyLength(JSContext* cx, Handle<ArgumentsObject*> obj);
-
     
+    JS_STATIC_ASSERT(UINT32_MAX - JS_WHY_MAGIC_COUNT > ARGS_LENGTH_MAX);
+    return JS::MagicValueUint32(slot + JS_WHY_MAGIC_COUNT);
+  }
+  static uint32_t SlotFromMagicScopeSlotValue(const Value& v) {
+    JS_STATIC_ASSERT(UINT32_MAX - JS_WHY_MAGIC_COUNT > ARGS_LENGTH_MAX);
+    return v.magicUint32() - JS_WHY_MAGIC_COUNT;
+  }
+  static bool IsMagicScopeSlotValue(const Value& v) {
+    return v.isMagic() && v.magicUint32() > JS_WHY_MAGIC_COUNT;
+  }
 
-    bool hasOverriddenIterator() const {
-        const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
-        return v.toInt32() & ITERATOR_OVERRIDDEN_BIT;
-    }
-
-    void markIteratorOverridden() {
-        uint32_t v = getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | ITERATOR_OVERRIDDEN_BIT;
-        setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
-    }
-
-    
-
-
-    static bool reifyIterator(JSContext* cx, Handle<ArgumentsObject*> obj);
-
-    
-
-    bool hasOverriddenElement() const {
-        const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
-        return v.toInt32() & ELEMENT_OVERRIDDEN_BIT;
-    }
-
-    void markElementOverridden() {
-        uint32_t v = getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | ELEMENT_OVERRIDDEN_BIT;
-        setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool isElementDeleted(uint32_t i) const {
-        MOZ_ASSERT(i < data()->numArgs);
-        if (i >= initialLength()) {
-            return false;
-        }
-        return maybeRareData() && maybeRareData()->isElementDeleted(initialLength(), i);
-    }
-
-    bool isAnyElementDeleted() const {
-        return maybeRareData() && maybeRareData()->isAnyElementDeleted(initialLength());
-    }
-
-    bool markElementDeleted(JSContext* cx, uint32_t i);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    const Value& element(uint32_t i) const;
-
-    inline void setElement(JSContext* cx, uint32_t i, const Value& v);
-
-    const Value& arg(unsigned i) const {
-        MOZ_ASSERT(i < data()->numArgs);
-        const Value& v = data()->args[i];
-        MOZ_ASSERT(!v.isMagic());
-        return v;
-    }
-
-    void setArg(unsigned i, const Value& v) {
-        MOZ_ASSERT(i < data()->numArgs);
-        GCPtrValue& lhs = data()->args[i];
-        MOZ_ASSERT(!lhs.isMagic());
-        lhs = v;
-    }
-
-    
-
-
-
-
-
-
-
-
-    bool maybeGetElement(uint32_t i, MutableHandleValue vp) {
-        if (i >= initialLength() || isElementDeleted(i)) {
-            return false;
-        }
-        vp.set(element(i));
-        return true;
-    }
-
-    inline bool maybeGetElements(uint32_t start, uint32_t count, js::Value* vp);
-
-    
-
-
-
-    size_t sizeOfMisc(mozilla::MallocSizeOf mallocSizeOf) const {
-        if (!data()) { 
-            return 0;
-        }
-        return mallocSizeOf(data()) + mallocSizeOf(maybeRareData());
-    }
-    size_t sizeOfData() const {
-        return ArgumentsData::bytesRequired(data()->numArgs) +
-               (maybeRareData() ? RareArgumentsData::bytesRequired(initialLength()) : 0);
-    }
-
-    static void finalize(FreeOp* fop, JSObject* obj);
-    static void trace(JSTracer* trc, JSObject* obj);
-    static size_t objectMoved(JSObject* dst, JSObject* src);
-
-    
-    static size_t getDataSlotOffset() {
-        return getFixedSlotOffset(DATA_SLOT);
-    }
-    static size_t getInitialLengthSlotOffset() {
-        return getFixedSlotOffset(INITIAL_LENGTH_SLOT);
-    }
-
-    static Value MagicEnvSlotValue(uint32_t slot) {
-        
-        
-        
-        
-        
-        
-        
-        JS_STATIC_ASSERT(UINT32_MAX - JS_WHY_MAGIC_COUNT > ARGS_LENGTH_MAX);
-        return JS::MagicValueUint32(slot + JS_WHY_MAGIC_COUNT);
-    }
-    static uint32_t SlotFromMagicScopeSlotValue(const Value& v) {
-        JS_STATIC_ASSERT(UINT32_MAX - JS_WHY_MAGIC_COUNT > ARGS_LENGTH_MAX);
-        return v.magicUint32() - JS_WHY_MAGIC_COUNT;
-    }
-    static bool IsMagicScopeSlotValue(const Value& v) {
-        return v.isMagic() && v.magicUint32() > JS_WHY_MAGIC_COUNT;
-    }
-
-    static void MaybeForwardToCallObject(AbstractFramePtr frame, ArgumentsObject* obj,
-                                         ArgumentsData* data);
-    static void MaybeForwardToCallObject(jit::JitFrameLayout* frame, HandleObject callObj,
-                                         ArgumentsObject* obj, ArgumentsData* data);
+  static void MaybeForwardToCallObject(AbstractFramePtr frame,
+                                       ArgumentsObject* obj,
+                                       ArgumentsData* data);
+  static void MaybeForwardToCallObject(jit::JitFrameLayout* frame,
+                                       HandleObject callObj,
+                                       ArgumentsObject* obj,
+                                       ArgumentsData* data);
 };
 
-class MappedArgumentsObject : public ArgumentsObject
-{
-    static const ClassOps classOps_;
-    static const ClassExtension classExt_;
-    static const ObjectOps objectOps_;
+class MappedArgumentsObject : public ArgumentsObject {
+  static const ClassOps classOps_;
+  static const ClassExtension classExt_;
+  static const ObjectOps objectOps_;
 
-  public:
-    static const Class class_;
+ public:
+  static const Class class_;
 
-    JSFunction& callee() const {
-        return getFixedSlot(CALLEE_SLOT).toObject().as<JSFunction>();
-    }
+  JSFunction& callee() const {
+    return getFixedSlot(CALLEE_SLOT).toObject().as<JSFunction>();
+  }
 
-    bool hasOverriddenCallee() const {
-        const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
-        return v.toInt32() & CALLEE_OVERRIDDEN_BIT;
-    }
+  bool hasOverriddenCallee() const {
+    const Value& v = getFixedSlot(INITIAL_LENGTH_SLOT);
+    return v.toInt32() & CALLEE_OVERRIDDEN_BIT;
+  }
 
-    void markCalleeOverridden() {
-        uint32_t v = getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | CALLEE_OVERRIDDEN_BIT;
-        setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
-    }
+  void markCalleeOverridden() {
+    uint32_t v =
+        getFixedSlot(INITIAL_LENGTH_SLOT).toInt32() | CALLEE_OVERRIDDEN_BIT;
+    setFixedSlot(INITIAL_LENGTH_SLOT, Int32Value(v));
+  }
 
-  private:
-    static bool obj_enumerate(JSContext* cx, HandleObject obj);
-    static bool obj_resolve(JSContext* cx, HandleObject obj, HandleId id, bool* resolvedp);
-    static bool obj_defineProperty(JSContext* cx, HandleObject obj, HandleId id,
-                                   Handle<JS::PropertyDescriptor> desc, ObjectOpResult& result);
+ private:
+  static bool obj_enumerate(JSContext* cx, HandleObject obj);
+  static bool obj_resolve(JSContext* cx, HandleObject obj, HandleId id,
+                          bool* resolvedp);
+  static bool obj_defineProperty(JSContext* cx, HandleObject obj, HandleId id,
+                                 Handle<JS::PropertyDescriptor> desc,
+                                 ObjectOpResult& result);
 };
 
-class UnmappedArgumentsObject : public ArgumentsObject
-{
-    static const ClassOps classOps_;
-    static const ClassExtension classExt_;
+class UnmappedArgumentsObject : public ArgumentsObject {
+  static const ClassOps classOps_;
+  static const ClassExtension classExt_;
 
-  public:
-    static const Class class_;
+ public:
+  static const Class class_;
 
-  private:
-    static bool obj_enumerate(JSContext* cx, HandleObject obj);
-    static bool obj_resolve(JSContext* cx, HandleObject obj, HandleId id, bool* resolvedp);
+ private:
+  static bool obj_enumerate(JSContext* cx, HandleObject obj);
+  static bool obj_resolve(JSContext* cx, HandleObject obj, HandleId id,
+                          bool* resolvedp);
 };
 
-} 
+}  
 
-template<>
-inline bool
-JSObject::is<js::ArgumentsObject>() const
-{
-    return is<js::MappedArgumentsObject>() || is<js::UnmappedArgumentsObject>();
+template <>
+inline bool JSObject::is<js::ArgumentsObject>() const {
+  return is<js::MappedArgumentsObject>() || is<js::UnmappedArgumentsObject>();
 }
 
 #endif 

@@ -42,6 +42,6 @@ enum class TaskCategory {
   Count
 };
 
-} 
+}  
 
-#endif 
+#endif  

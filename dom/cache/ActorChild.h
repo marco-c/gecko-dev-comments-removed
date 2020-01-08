@@ -15,34 +15,28 @@ namespace cache {
 
 class CacheWorkerHolder;
 
-class ActorChild
-{
-public:
-  virtual void
-  StartDestroy() = 0;
+class ActorChild {
+ public:
+  virtual void StartDestroy() = 0;
 
-  void
-  SetWorkerHolder(CacheWorkerHolder* aWorkerHolder);
+  void SetWorkerHolder(CacheWorkerHolder* aWorkerHolder);
 
-  void
-  RemoveWorkerHolder();
+  void RemoveWorkerHolder();
 
-  CacheWorkerHolder*
-  GetWorkerHolder() const;
+  CacheWorkerHolder* GetWorkerHolder() const;
 
-  bool
-  WorkerHolderNotified() const;
+  bool WorkerHolderNotified() const;
 
-protected:
+ protected:
   ActorChild();
   ~ActorChild();
 
-private:
+ private:
   RefPtr<CacheWorkerHolder> mWorkerHolder;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef mozilla_image_ICOFileHeaders_h
 #define mozilla_image_ICOFileHeaders_h
 
@@ -18,21 +17,20 @@ namespace image {
 
 
 
-struct IconFileHeader
-{
+struct IconFileHeader {
   
 
 
-  uint16_t   mReserved;
+  uint16_t mReserved;
   
 
 
 
-  uint16_t   mType;
+  uint16_t mType;
   
 
 
-  uint16_t   mCount;
+  uint16_t mCount;
 };
 
 
@@ -41,41 +39,39 @@ struct IconFileHeader
 
 
 
-struct IconDirEntry
-{
-  uint8_t   mWidth;
-  uint8_t   mHeight;
+struct IconDirEntry {
+  uint8_t mWidth;
+  uint8_t mHeight;
   
 
 
 
-  uint8_t   mColorCount;
+  uint8_t mColorCount;
   
 
 
-  uint8_t   mReserved;
+  uint8_t mReserved;
   union {
-    uint16_t mPlanes;   
-    uint16_t mXHotspot; 
+    uint16_t mPlanes;    
+    uint16_t mXHotspot;  
   };
   union {
-    uint16_t mBitCount; 
-    uint16_t mYHotspot; 
+    uint16_t mBitCount;  
+    uint16_t mYHotspot;  
   };
   
 
 
 
-  uint32_t  mBytesInRes;
+  uint32_t mBytesInRes;
   
 
 
 
-  uint32_t  mImageOffset;
+  uint32_t mImageOffset;
 };
 
+}  
+}  
 
-} 
-} 
-
-#endif 
+#endif  

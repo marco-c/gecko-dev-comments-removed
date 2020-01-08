@@ -16,15 +16,18 @@ namespace mozilla {
 
 namespace dom {
 class Link;
-} 
+}  
 
 
-#define IHISTORY_IID \
-  {0x0057c9d3, 0xb98e, 0x4933, {0xbd, 0xc5, 0x02, 0x75, 0xd0, 0x67, 0x05, 0xe1}}
+#define IHISTORY_IID                                 \
+  {                                                  \
+    0x0057c9d3, 0xb98e, 0x4933, {                    \
+      0xbd, 0xc5, 0x02, 0x75, 0xd0, 0x67, 0x05, 0xe1 \
+    }                                                \
+  }
 
-class IHistory : public nsISupports
-{
-public:
+class IHistory : public nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(IHISTORY_IID)
 
   
@@ -65,8 +68,7 @@ public:
 
   NS_IMETHOD UnregisterVisitedCallback(nsIURI* aURI, dom::Link* aLink) = 0;
 
-  enum VisitFlags
-  {
+  enum VisitFlags {
     
 
 
@@ -110,9 +112,7 @@ public:
 
 
 
-  NS_IMETHOD VisitURI(nsIWidget* aWidget,
-                      nsIURI* aURI,
-                      nsIURI* aLastVisitedURI,
+  NS_IMETHOD VisitURI(nsIWidget* aWidget, nsIURI* aURI, nsIURI* aLastVisitedURI,
                       uint32_t aFlags) = 0;
 
   
@@ -138,18 +138,16 @@ public:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(IHistory, IHISTORY_IID)
 
-#define NS_DECL_IHISTORY \
-  NS_IMETHOD RegisterVisitedCallback(nsIURI* aURI, \
-                                     mozilla::dom::Link* aContent) override; \
-  NS_IMETHOD UnregisterVisitedCallback(nsIURI* aURI, \
+#define NS_DECL_IHISTORY                                                       \
+  NS_IMETHOD RegisterVisitedCallback(nsIURI* aURI,                             \
+                                     mozilla::dom::Link* aContent) override;   \
+  NS_IMETHOD UnregisterVisitedCallback(nsIURI* aURI,                           \
                                        mozilla::dom::Link* aContent) override; \
-  NS_IMETHOD VisitURI(nsIWidget* aWidget, \
-                      nsIURI* aURI, \
-                      nsIURI* aLastVisitedURI, \
-                      uint32_t aFlags) override; \
-  NS_IMETHOD SetURITitle(nsIURI* aURI, const nsAString& aTitle) override; \
+  NS_IMETHOD VisitURI(nsIWidget* aWidget, nsIURI* aURI,                        \
+                      nsIURI* aLastVisitedURI, uint32_t aFlags) override;      \
+  NS_IMETHOD SetURITitle(nsIURI* aURI, const nsAString& aTitle) override;      \
   NS_IMETHOD NotifyVisited(nsIURI* aURI) override;
 
-} 
+}  
 
-#endif 
+#endif  

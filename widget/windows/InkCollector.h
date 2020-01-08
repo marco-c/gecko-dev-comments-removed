@@ -11,16 +11,14 @@
 #include <msinkaut.h>
 #include "mozilla/StaticPtr.h"
 
-#define MOZ_WM_PEN_LEAVES_HOVER_OF_DIGITIZER  WM_USER + 0x83
+#define MOZ_WM_PEN_LEAVES_HOVER_OF_DIGITIZER WM_USER + 0x83
 
-class InkCollectorEvent final : public _IInkCollectorEvents
-{
-public:
+class InkCollectorEvent final : public _IInkCollectorEvents {
+ public:
   
-  HRESULT __stdcall QueryInterface(REFIID aRiid, void **aObject);
+  HRESULT __stdcall QueryInterface(REFIID aRiid, void** aObject);
   virtual ULONG STDMETHODCALLTYPE AddRef() { return ++mRefCount; }
-  virtual ULONG STDMETHODCALLTYPE Release()
-  {
+  virtual ULONG STDMETHODCALLTYPE Release() {
     MOZ_ASSERT(mRefCount);
     if (!--mRefCount) {
       delete this;
@@ -29,30 +27,33 @@ public:
     return mRefCount;
   }
 
-protected:
+ protected:
   
   STDMETHOD(GetTypeInfoCount)(UINT* aInfo) { return E_NOTIMPL; }
-  STDMETHOD(GetTypeInfo)(UINT aInfo, LCID aId, ITypeInfo** aTInfo) { return E_NOTIMPL; }
-  STDMETHOD(GetIDsOfNames)(REFIID aRiid, LPOLESTR* aStrNames, UINT aNames,
-                           LCID aId, DISPID* aDispId) { return E_NOTIMPL; }
-  STDMETHOD(Invoke)(DISPID aDispIdMember, REFIID aRiid,
-                    LCID aId, WORD wFlags,
-                    DISPPARAMS* aDispParams, VARIANT* aVarResult,
-                    EXCEPINFO* aExcepInfo, UINT* aArgErr);
+  STDMETHOD(GetTypeInfo)(UINT aInfo, LCID aId, ITypeInfo** aTInfo) {
+    return E_NOTIMPL;
+  }
+  STDMETHOD(GetIDsOfNames)
+  (REFIID aRiid, LPOLESTR* aStrNames, UINT aNames, LCID aId, DISPID* aDispId) {
+    return E_NOTIMPL;
+  }
+  STDMETHOD(Invoke)
+  (DISPID aDispIdMember, REFIID aRiid, LCID aId, WORD wFlags,
+   DISPPARAMS* aDispParams, VARIANT* aVarResult, EXCEPINFO* aExcepInfo,
+   UINT* aArgErr);
 
   
   void CursorOutOfRange(IInkCursor* aCursor) const;
   bool IsHardProximityTablet(IInkTablet* aTablet) const;
 
-private:
-  uint32_t  mRefCount = 0;
+ private:
+  uint32_t mRefCount = 0;
 
   ~InkCollectorEvent() = default;
 };
 
-class InkCollector
-{
-public:
+class InkCollector {
+ public:
   ~InkCollector();
   void Shutdown();
 
@@ -60,27 +61,27 @@ public:
   void SetTarget(HWND aTargetWindow);
   void ClearTarget();
 
-  uint16_t GetPointerId(); 
+  uint16_t GetPointerId();  
   void SetPointerId(uint16_t aPointerId);
   void ClearPointerId();
 
   static mozilla::StaticAutoPtr<InkCollector> sInkCollector;
 
-protected:
+ protected:
   void Initialize();
   void OnInitialize();
   void Enable(bool aNewState);
 
-private:
-  RefPtr<IUnknown>          mMarshaller;
-  RefPtr<IInkCollector>     mInkCollector;
-  RefPtr<IConnectionPoint>  mConnectionPoint;
+ private:
+  RefPtr<IUnknown> mMarshaller;
+  RefPtr<IInkCollector> mInkCollector;
+  RefPtr<IConnectionPoint> mConnectionPoint;
   RefPtr<InkCollectorEvent> mInkCollectorEvent;
 
-  HWND                        mTargetWindow     = 0;
-  DWORD                       mCookie           = 0;
-  bool                        mComInitialized   = false;
-  bool                        mEnabled          = false;
+  HWND mTargetWindow = 0;
+  DWORD mCookie = 0;
+  bool mComInitialized = false;
+  bool mEnabled = false;
 
   
   
@@ -97,4 +98,4 @@ private:
   uint16_t mPointerId = 0;
 };
 
-#endif 
+#endif  

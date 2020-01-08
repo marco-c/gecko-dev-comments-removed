@@ -16,7 +16,8 @@
 #include "mozpkix/Result.h"
 #include "mozpkix/pkix.h"
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 
 
@@ -25,9 +26,8 @@ namespace mozilla { namespace ct {
 
 
 
-class CTLogVerifier
-{
-public:
+class CTLogVerifier {
+ public:
   CTLogVerifier();
 
   
@@ -40,8 +40,7 @@ public:
   
   
   pkix::Result Init(pkix::Input subjectPublicKeyInfo,
-                    CTLogOperatorId operatorId,
-                    CTLogStatus logStatus,
+                    CTLogOperatorId operatorId, CTLogStatus logStatus,
                     uint64_t disqualificationTime);
 
   
@@ -61,7 +60,7 @@ public:
   
   bool SignatureParametersMatch(const DigitallySigned& signature);
 
-private:
+ private:
   
   
   
@@ -83,6 +82,7 @@ private:
   uint64_t mDisqualificationTime;
 };
 
-} } 
+}  
+}  
 
-#endif 
+#endif  

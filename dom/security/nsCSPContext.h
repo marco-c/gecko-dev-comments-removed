@@ -21,10 +21,13 @@
 #include "nsXPCOM.h"
 
 #define NS_CSPCONTEXT_CONTRACTID "@mozilla.org/cspcontext;1"
- 
-#define NS_CSPCONTEXT_CID \
-{ 0x09d9ed1a, 0xe5d4, 0x4004, \
-  { 0xbf, 0xe0, 0x27, 0xce, 0xb9, 0x23, 0xd9, 0xac } }
+
+#define NS_CSPCONTEXT_CID                            \
+  {                                                  \
+    0x09d9ed1a, 0xe5d4, 0x4004, {                    \
+      0xbf, 0xe0, 0x27, 0xce, 0xb9, 0x23, 0xd9, 0xac \
+    }                                                \
+  }
 
 class nsINetworkInterceptController;
 class nsIEventTarget;
@@ -34,40 +37,33 @@ namespace mozilla {
 namespace dom {
 class Element;
 }
-}
+}  
 
-class nsCSPContext : public nsIContentSecurityPolicy
-{
-  public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSICONTENTSECURITYPOLICY
-    NS_DECL_NSISERIALIZABLE
+class nsCSPContext : public nsIContentSecurityPolicy {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSICONTENTSECURITYPOLICY
+  NS_DECL_NSISERIALIZABLE
 
-  protected:
-    virtual ~nsCSPContext();
+ protected:
+  virtual ~nsCSPContext();
 
-  public:
-    nsCSPContext();
+ public:
+  nsCSPContext();
 
-    
-
+  
 
 
 
-    void flushConsoleMessages();
 
-    void logToConsole(const char* aName,
-                      const char16_t** aParams,
-                      uint32_t aParamsLength,
-                      const nsAString& aSourceName,
-                      const nsAString& aSourceLine,
-                      uint32_t aLineNumber,
-                      uint32_t aColumnNumber,
-                      uint32_t aSeverityFlag);
+  void flushConsoleMessages();
 
+  void logToConsole(const char* aName, const char16_t** aParams,
+                    uint32_t aParamsLength, const nsAString& aSourceName,
+                    const nsAString& aSourceLine, uint32_t aLineNumber,
+                    uint32_t aColumnNumber, uint32_t aSeverityFlag);
 
-
-    
+  
 
 
 
@@ -87,144 +83,123 @@ class nsCSPContext : public nsIContentSecurityPolicy
 
 
 
-    nsresult GatherSecurityPolicyViolationEventData(
-      nsIURI* aBlockedURI,
-      const nsACString& aBlockedString,
-      nsIURI* aOriginalURI,
-      nsAString& aViolatedDirective,
-      uint32_t aViolatedPolicyIndex,
-      nsAString& aSourceFile,
-      nsAString& aScriptSample,
-      uint32_t aLineNum,
-      uint32_t aColumnNum,
+  nsresult GatherSecurityPolicyViolationEventData(
+      nsIURI* aBlockedURI, const nsACString& aBlockedString,
+      nsIURI* aOriginalURI, nsAString& aViolatedDirective,
+      uint32_t aViolatedPolicyIndex, nsAString& aSourceFile,
+      nsAString& aScriptSample, uint32_t aLineNum, uint32_t aColumnNum,
       mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit);
 
-    nsresult SendReports(
+  nsresult SendReports(
       const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit,
       uint32_t aViolatedPolicyIndex);
 
-    nsresult FireViolationEvent(
+  nsresult FireViolationEvent(
       mozilla::dom::Element* aTriggeringElement,
       nsICSPEventListener* aCSPEventListener,
-      const mozilla::dom::SecurityPolicyViolationEventInit& aViolationEventInit);
+      const mozilla::dom::SecurityPolicyViolationEventInit&
+          aViolationEventInit);
 
-    enum BlockedContentSource
-    {
-      eUnknown,
-      eInline,
-      eEval,
-      eSelf,
-    };
+  enum BlockedContentSource {
+    eUnknown,
+    eInline,
+    eEval,
+    eSelf,
+  };
 
-    nsresult AsyncReportViolation(mozilla::dom::Element* aTriggeringElement,
-                                  nsICSPEventListener* aCSPEventListener,
-                                  nsIURI* aBlockedURI,
-                                  BlockedContentSource aBlockedContentSource,
-                                  nsIURI* aOriginalURI,
-                                  const nsAString& aViolatedDirective,
-                                  uint32_t aViolatedPolicyIndex,
-                                  const nsAString& aObserverSubject,
-                                  const nsAString& aSourceFile,
-                                  const nsAString& aScriptSample,
-                                  uint32_t aLineNum,
-                                  uint32_t aColumnNum);
+  nsresult AsyncReportViolation(
+      mozilla::dom::Element* aTriggeringElement,
+      nsICSPEventListener* aCSPEventListener, nsIURI* aBlockedURI,
+      BlockedContentSource aBlockedContentSource, nsIURI* aOriginalURI,
+      const nsAString& aViolatedDirective, uint32_t aViolatedPolicyIndex,
+      const nsAString& aObserverSubject, const nsAString& aSourceFile,
+      const nsAString& aScriptSample, uint32_t aLineNum, uint32_t aColumnNum);
 
-    
-    
-    
-    void clearLoadingPrincipal() {
-      mLoadingPrincipal = nullptr;
-    }
+  
+  
+  
+  void clearLoadingPrincipal() { mLoadingPrincipal = nullptr; }
 
-    nsWeakPtr GetLoadingContext(){
-      return mLoadingContext;
-    }
+  nsWeakPtr GetLoadingContext() { return mLoadingContext; }
 
-    static uint32_t ScriptSampleMaxLength()
-    {
-      return std::max(
+  static uint32_t ScriptSampleMaxLength() {
+    return std::max(
         mozilla::StaticPrefs::security_csp_reporting_script_sample_max_length(),
         0);
-    }
+  }
 
-  private:
-    bool permitsInternal(CSPDirective aDir,
-                         mozilla::dom::Element* aTriggeringElement,
-                         nsICSPEventListener* aCSPEventListener,
-                         nsIURI* aContentLocation,
-                         nsIURI* aOriginalURIIfRedirect,
-                         const nsAString& aNonce,
-                         bool aIsPreload,
-                         bool aSpecific,
-                         bool aSendViolationReports,
-                         bool aSendContentLocationInViolationReports,
-                         bool aParserCreated);
+ private:
+  bool permitsInternal(CSPDirective aDir,
+                       mozilla::dom::Element* aTriggeringElement,
+                       nsICSPEventListener* aCSPEventListener,
+                       nsIURI* aContentLocation, nsIURI* aOriginalURIIfRedirect,
+                       const nsAString& aNonce, bool aIsPreload, bool aSpecific,
+                       bool aSendViolationReports,
+                       bool aSendContentLocationInViolationReports,
+                       bool aParserCreated);
 
-    
-    void reportInlineViolation(nsContentPolicyType aContentType,
-                               mozilla::dom::Element* aTriggeringElement,
-                               nsICSPEventListener* aCSPEventListener,
-                               const nsAString& aNonce,
-                               const nsAString& aContent,
-                               const nsAString& aViolatedDirective,
-                               uint32_t aViolatedPolicyIndex,
-                               uint32_t aLineNumber,
-                               uint32_t aColumnNumber);
+  
+  void reportInlineViolation(nsContentPolicyType aContentType,
+                             mozilla::dom::Element* aTriggeringElement,
+                             nsICSPEventListener* aCSPEventListener,
+                             const nsAString& aNonce, const nsAString& aContent,
+                             const nsAString& aViolatedDirective,
+                             uint32_t aViolatedPolicyIndex,
+                             uint32_t aLineNumber, uint32_t aColumnNumber);
 
-    nsString                                   mReferrer;
-    uint64_t                                   mInnerWindowID; 
-    nsTArray<nsCSPPolicy*>                     mPolicies;
-    nsCOMPtr<nsIURI>                           mSelfURI;
-    nsCOMPtr<nsILoadGroup>                     mCallingChannelLoadGroup;
-    nsWeakPtr                                  mLoadingContext;
-    
-    
-    
-    nsIPrincipal*                              mLoadingPrincipal;
+  nsString mReferrer;
+  uint64_t mInnerWindowID;  
+  nsTArray<nsCSPPolicy*> mPolicies;
+  nsCOMPtr<nsIURI> mSelfURI;
+  nsCOMPtr<nsILoadGroup> mCallingChannelLoadGroup;
+  nsWeakPtr mLoadingContext;
+  
+  
+  
+  nsIPrincipal* mLoadingPrincipal;
 
-    
-    
-    nsTArray<ConsoleMsgQueueElem>              mConsoleMsgQueue;
-    bool                                       mQueueUpMessages;
-    nsCOMPtr<nsIEventTarget>                   mEventTarget;
+  
+  
+  nsTArray<ConsoleMsgQueueElem> mConsoleMsgQueue;
+  bool mQueueUpMessages;
+  nsCOMPtr<nsIEventTarget> mEventTarget;
 };
 
 
-class CSPViolationReportListener : public nsIStreamListener
-{
-  public:
-    NS_DECL_NSISTREAMLISTENER
-    NS_DECL_NSIREQUESTOBSERVER
-    NS_DECL_ISUPPORTS
+class CSPViolationReportListener : public nsIStreamListener {
+ public:
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSIREQUESTOBSERVER
+  NS_DECL_ISUPPORTS
 
-  public:
-    CSPViolationReportListener();
+ public:
+  CSPViolationReportListener();
 
-  protected:
-    virtual ~CSPViolationReportListener();
+ protected:
+  virtual ~CSPViolationReportListener();
 };
 
 
 
 
 class CSPReportRedirectSink final : public nsIChannelEventSink,
-                                    public nsIInterfaceRequestor
-{
-  public:
-    NS_DECL_NSICHANNELEVENTSINK
-    NS_DECL_NSIINTERFACEREQUESTOR
-    NS_DECL_ISUPPORTS
+                                    public nsIInterfaceRequestor {
+ public:
+  NS_DECL_NSICHANNELEVENTSINK
+  NS_DECL_NSIINTERFACEREQUESTOR
+  NS_DECL_ISUPPORTS
 
-  public:
-    CSPReportRedirectSink();
+ public:
+  CSPReportRedirectSink();
 
-    void SetInterceptController(nsINetworkInterceptController* aInterceptController);
+  void SetInterceptController(
+      nsINetworkInterceptController* aInterceptController);
 
-  protected:
-    virtual ~CSPReportRedirectSink();
+ protected:
+  virtual ~CSPReportRedirectSink();
 
-  private:
-    nsCOMPtr<nsINetworkInterceptController> mInterceptController;
+ private:
+  nsCOMPtr<nsINetworkInterceptController> mInterceptController;
 };
 
 #endif 

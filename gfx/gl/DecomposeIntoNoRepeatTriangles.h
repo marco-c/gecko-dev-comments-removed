@@ -17,39 +17,35 @@ namespace gl {
 
 
 class RectTriangles {
-public:
-    typedef struct { GLfloat x,y; } coord;
+ public:
+  typedef struct {
+    GLfloat x, y;
+  } coord;
 
-    
-    
-    
-    void addRect(GLfloat x0, GLfloat y0, GLfloat x1, GLfloat y1,
-                 GLfloat tx0, GLfloat ty0, GLfloat tx1, GLfloat ty1,
-                 bool flip_y = false);
+  
+  
+  
+  void addRect(GLfloat x0, GLfloat y0, GLfloat x1, GLfloat y1, GLfloat tx0,
+               GLfloat ty0, GLfloat tx1, GLfloat ty1, bool flip_y = false);
 
-    
-
+  
 
 
 
-    InfallibleTArray<coord>& vertCoords() {
-        return mVertexCoords;
-    }
 
-    InfallibleTArray<coord>& texCoords() {
-        return mTexCoords;
-    }
+  InfallibleTArray<coord>& vertCoords() { return mVertexCoords; }
 
-    unsigned int elements() {
-        return mVertexCoords.Length();
-    }
-private:
-    
-    AutoTArray<coord, 6> mVertexCoords;
-    AutoTArray<coord, 6> mTexCoords;
+  InfallibleTArray<coord>& texCoords() { return mTexCoords; }
 
-    static void
-    AppendRectToCoordArray(InfallibleTArray<coord>& array, GLfloat x0, GLfloat y0, GLfloat x1, GLfloat y1);
+  unsigned int elements() { return mVertexCoords.Length(); }
+
+ private:
+  
+  AutoTArray<coord, 6> mVertexCoords;
+  AutoTArray<coord, 6> mTexCoords;
+
+  static void AppendRectToCoordArray(InfallibleTArray<coord>& array, GLfloat x0,
+                                     GLfloat y0, GLfloat x1, GLfloat y1);
 };
 
 
@@ -68,10 +64,9 @@ private:
 
 void DecomposeIntoNoRepeatTriangles(const gfx::IntRect& aTexCoordRect,
                                     const gfx::IntSize& aTexSize,
-                                    RectTriangles& aRects,
-                                    bool aFlipY = false);
+                                    RectTriangles& aRects, bool aFlipY = false);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

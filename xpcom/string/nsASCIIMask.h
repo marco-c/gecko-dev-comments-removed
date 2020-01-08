@@ -24,9 +24,8 @@ namespace mozilla {
 
 
 
-class ASCIIMask
-{
-public:
+class ASCIIMask {
+ public:
   
   
   
@@ -37,8 +36,8 @@ public:
   static const ASCIIMaskArray& MaskCRLFTab();
   static const ASCIIMaskArray& MaskWhitespace();
 
-  static MOZ_ALWAYS_INLINE bool IsMasked(const ASCIIMaskArray& aMask, uint32_t aChar)
-  {
+  static MOZ_ALWAYS_INLINE bool IsMasked(const ASCIIMaskArray& aMask,
+                                         uint32_t aChar) {
     return aChar < 128 && aMask[aChar];
   }
 };
@@ -52,22 +51,19 @@ public:
 
 
 
-
-namespace details
-{
-template<typename F, size_t... Indices>
-constexpr std::array<bool, 128> CreateASCIIMask(F fun, std::index_sequence<Indices...>)
-{
-  return {{ fun(Indices)... }};
+namespace details {
+template <typename F, size_t... Indices>
+constexpr std::array<bool, 128> CreateASCIIMask(
+    F fun, std::index_sequence<Indices...>) {
+  return {{fun(Indices)...}};
 }
-} 
+}  
 
-template<typename F>
-constexpr std::array<bool, 128> CreateASCIIMask(F fun)
-{
+template <typename F>
+constexpr std::array<bool, 128> CreateASCIIMask(F fun) {
   return details::CreateASCIIMask(fun, std::make_index_sequence<128>{});
 }
 
-} 
+}  
 
-#endif 
+#endif  

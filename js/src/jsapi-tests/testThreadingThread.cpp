@@ -14,71 +14,74 @@
 #include "jsapi-tests/tests.h"
 #include "threading/Thread.h"
 
-BEGIN_TEST(testThreadingThreadJoin)
-{
-    bool flag = false;
-    js::Thread thread;
-    CHECK(thread.init([](bool* flagp){*flagp = true;}, &flag));
-    CHECK(thread.joinable());
-    thread.join();
-    CHECK(flag);
-    CHECK(!thread.joinable());
-    return true;
+BEGIN_TEST(testThreadingThreadJoin) {
+  bool flag = false;
+  js::Thread thread;
+  CHECK(thread.init([](bool* flagp) { *flagp = true; }, &flag));
+  CHECK(thread.joinable());
+  thread.join();
+  CHECK(flag);
+  CHECK(!thread.joinable());
+  return true;
 }
 END_TEST(testThreadingThreadJoin)
 
-BEGIN_TEST(testThreadingThreadDetach)
-{
-    
-    
-    bool* flag = js_new<bool>(false);
-    js::Thread thread;
-    CHECK(thread.init([](bool* flag){*flag = true; js_delete(flag);}, std::move(flag)));
-    CHECK(thread.joinable());
-    thread.detach();
-    CHECK(!thread.joinable());
+BEGIN_TEST(testThreadingThreadDetach) {
+  
+  
+  
+  bool* flag = js_new<bool>(false);
+  js::Thread thread;
+  CHECK(thread.init(
+      [](bool* flag) {
+        *flag = true;
+        js_delete(flag);
+      },
+      std::move(flag)));
+  CHECK(thread.joinable());
+  thread.detach();
+  CHECK(!thread.joinable());
 
-    return true;
+  return true;
 }
 END_TEST(testThreadingThreadDetach)
 
-BEGIN_TEST(testThreadingThreadSetName)
-{
-    js::Thread thread;
-    CHECK(thread.init([](){js::ThisThread::SetName("JSAPI Test Thread");}));
-    thread.detach();
-    return true;
+BEGIN_TEST(testThreadingThreadSetName) {
+  js::Thread thread;
+  CHECK(thread.init([]() { js::ThisThread::SetName("JSAPI Test Thread"); }));
+  thread.detach();
+  return true;
 }
 END_TEST(testThreadingThreadSetName)
 
-BEGIN_TEST(testThreadingThreadId)
-{
-    CHECK(js::Thread::Id() == js::Thread::Id());
-    js::Thread::Id fromOther;
-    js::Thread thread;
-    CHECK(thread.init([](js::Thread::Id* idp){*idp = js::ThisThread::GetId();}, &fromOther));
-    js::Thread::Id fromMain = thread.get_id();
-    thread.join();
-    CHECK(fromOther == fromMain);
-    return true;
+BEGIN_TEST(testThreadingThreadId) {
+  CHECK(js::Thread::Id() == js::Thread::Id());
+  js::Thread::Id fromOther;
+  js::Thread thread;
+  CHECK(thread.init([](js::Thread::Id* idp) { *idp = js::ThisThread::GetId(); },
+                    &fromOther));
+  js::Thread::Id fromMain = thread.get_id();
+  thread.join();
+  CHECK(fromOther == fromMain);
+  return true;
 }
 END_TEST(testThreadingThreadId)
 
-BEGIN_TEST(testThreadingThreadVectorMoveConstruct)
-{
-    const static size_t N = 10;
-    mozilla::Atomic<int> count(0);
-    mozilla::Vector<js::Thread, 0, js::SystemAllocPolicy> v;
-    for (auto i : mozilla::IntegerRange(N)) {
-        CHECK(v.emplaceBack());
-        CHECK(v.back().init([](mozilla::Atomic<int>* countp){(*countp)++;}, &count));
-        CHECK(v.length() == i + 1);
-    }
-    for (auto& th : v) {
-        th.join();
-    }
-    CHECK(count == 10);
-    return true;
+BEGIN_TEST(testThreadingThreadVectorMoveConstruct) {
+  const static size_t N = 10;
+  mozilla::Atomic<int> count(0);
+  mozilla::Vector<js::Thread, 0, js::SystemAllocPolicy> v;
+  for (auto i : mozilla::IntegerRange(N)) {
+    CHECK(v.emplaceBack());
+    CHECK(v.back().init([](mozilla::Atomic<int>* countp) { (*countp)++; },
+                        &count));
+    CHECK(v.length() == i + 1);
+  }
+  for (auto& th : v) {
+    th.join();
+  }
+  CHECK(count == 10);
+  return true;
 }
 END_TEST(testThreadingThreadVectorMoveConstruct)
 
@@ -89,15 +92,14 @@ END_TEST(testThreadingThreadVectorMoveConstruct)
 
 
 
-BEGIN_TEST(testThreadingThreadArgCopy)
-{
-    for (size_t i = 0; i < 10000; ++i) {
-        bool b = true;
-        js::Thread thread;
-        CHECK(thread.init([](bool bb){MOZ_RELEASE_ASSERT(bb);}, b));
-        b = false;
-        thread.join();
-    }
-    return true;
+BEGIN_TEST(testThreadingThreadArgCopy) {
+  for (size_t i = 0; i < 10000; ++i) {
+    bool b = true;
+    js::Thread thread;
+    CHECK(thread.init([](bool bb) { MOZ_RELEASE_ASSERT(bb); }, b));
+    b = false;
+    thread.join();
+  }
+  return true;
 }
 END_TEST(testThreadingThreadArgCopy)

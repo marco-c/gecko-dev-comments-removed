@@ -28,7 +28,7 @@ struct ThreadState {
   
   
   
-  jmp_buf mRegisters; 
+  jmp_buf mRegisters;  
   uint32_t mPadding;
 
   
@@ -42,6 +42,7 @@ struct ThreadState {
   size_t mStackTopBytes;
 
   
+  
   uint8_t* mStackContents;
 
   
@@ -53,11 +54,9 @@ struct ThreadState {
 
 static ThreadState* gThreadState;
 
-void
-InitializeThreadSnapshots(size_t aNumThreads)
-{
-  gThreadState = (ThreadState*) AllocateMemory(aNumThreads * sizeof(ThreadState),
-                                               MemoryKind::ThreadSnapshot);
+void InitializeThreadSnapshots(size_t aNumThreads) {
+  gThreadState = (ThreadState*)AllocateMemory(aNumThreads * sizeof(ThreadState),
+                                              MemoryKind::ThreadSnapshot);
 
   jmp_buf buf;
   if (setjmp(buf) == 0) {
@@ -66,11 +65,10 @@ InitializeThreadSnapshots(size_t aNumThreads)
   ThreadYield();
 }
 
-static void
-ClearThreadState(ThreadState* aInfo)
-{
+static void ClearThreadState(ThreadState* aInfo) {
   MOZ_RELEASE_ASSERT(aInfo->mShouldRestore);
-  DeallocateMemory(aInfo->mStackContents, aInfo->mStackBytes, MemoryKind::ThreadSnapshot);
+  DeallocateMemory(aInfo->mStackContents, aInfo->mStackBytes,
+                   MemoryKind::ThreadSnapshot);
   aInfo->mShouldRestore = false;
   aInfo->mStackContents = nullptr;
   aInfo->mStackBytes = 0;
@@ -78,9 +76,9 @@ ClearThreadState(ThreadState* aInfo)
 
 extern "C" {
 
-extern int
-SaveThreadStateOrReturnFromRestore(ThreadState* aInfo, int (*aSetjmpArg)(jmp_buf),
-                                   int* aStackSeparator);
+extern int SaveThreadStateOrReturnFromRestore(ThreadState* aInfo,
+                                              int (*aSetjmpArg)(jmp_buf),
+                                              int* aStackSeparator);
 
 #define THREAD_REGISTERS_OFFSET 8
 #define THREAD_STACK_POINTER_OFFSET 160
@@ -175,63 +173,62 @@ __asm(
   "ret;"
 );
 
-} 
+}  
 
-bool
-SaveThreadState(size_t aId, int* aStackSeparator)
-{
-  static_assert(offsetof(ThreadState, mRegisters) == THREAD_REGISTERS_OFFSET &&
-                offsetof(ThreadState, mStackPointer) == THREAD_STACK_POINTER_OFFSET &&
-                offsetof(ThreadState, mStackTop) == THREAD_STACK_TOP_OFFSET &&
-                offsetof(ThreadState, mStackTopBytes) == THREAD_STACK_TOP_BYTES_OFFSET &&
-                offsetof(ThreadState, mStackContents) == THREAD_STACK_CONTENTS_OFFSET &&
-                offsetof(ThreadState, mStackBytes) == THREAD_STACK_BYTES_OFFSET,
-                "Incorrect ThreadState offsets");
+bool SaveThreadState(size_t aId, int* aStackSeparator) {
+  static_assert(
+      offsetof(ThreadState, mRegisters) == THREAD_REGISTERS_OFFSET &&
+          offsetof(ThreadState, mStackPointer) == THREAD_STACK_POINTER_OFFSET &&
+          offsetof(ThreadState, mStackTop) == THREAD_STACK_TOP_OFFSET &&
+          offsetof(ThreadState, mStackTopBytes) ==
+              THREAD_STACK_TOP_BYTES_OFFSET &&
+          offsetof(ThreadState, mStackContents) ==
+              THREAD_STACK_CONTENTS_OFFSET &&
+          offsetof(ThreadState, mStackBytes) == THREAD_STACK_BYTES_OFFSET,
+      "Incorrect ThreadState offsets");
 
   ThreadState* info = &gThreadState[aId];
   MOZ_RELEASE_ASSERT(!info->mShouldRestore);
-  bool res = SaveThreadStateOrReturnFromRestore(info, setjmp, aStackSeparator) == 0;
+  bool res =
+      SaveThreadStateOrReturnFromRestore(info, setjmp, aStackSeparator) == 0;
   if (!res) {
     ClearThreadState(info);
   }
   return res;
 }
 
-void
-RestoreThreadStack(size_t aId)
-{
+void RestoreThreadStack(size_t aId) {
   ThreadState* info = &gThreadState[aId];
   longjmp(info->mRegisters, 1);
-  MOZ_CRASH(); 
+  MOZ_CRASH();  
 }
 
-static void
-SaveThreadStack(SavedThreadStack& aStack, size_t aId)
-{
+static void SaveThreadStack(SavedThreadStack& aStack, size_t aId) {
   Thread* thread = Thread::GetById(aId);
 
   ThreadState& info = gThreadState[aId];
   aStack.mStackPointer = info.mStackPointer;
   MemoryMove(aStack.mRegisters, info.mRegisters, sizeof(jmp_buf));
 
-  uint8_t* stackPointer = (uint8_t*) info.mStackPointer;
+  uint8_t* stackPointer = (uint8_t*)info.mStackPointer;
   uint8_t* stackTop = thread->StackBase() + thread->StackSize();
   MOZ_RELEASE_ASSERT(stackTop >= stackPointer);
   size_t stackBytes = stackTop - stackPointer;
 
   MOZ_RELEASE_ASSERT(stackBytes >= info.mStackTopBytes);
 
-  aStack.mStack = (uint8_t*) AllocateMemory(stackBytes, MemoryKind::ThreadSnapshot);
+  aStack.mStack =
+      (uint8_t*)AllocateMemory(stackBytes, MemoryKind::ThreadSnapshot);
   aStack.mStackBytes = stackBytes;
 
   MemoryMove(aStack.mStack, info.mStackTop, info.mStackTopBytes);
   MemoryMove(aStack.mStack + info.mStackTopBytes,
-             stackPointer + info.mStackTopBytes, stackBytes - info.mStackTopBytes);
+             stackPointer + info.mStackTopBytes,
+             stackBytes - info.mStackTopBytes);
 }
 
-static void
-RestoreStackForLoadingByThread(const SavedThreadStack& aStack, size_t aId)
-{
+static void RestoreStackForLoadingByThread(const SavedThreadStack& aStack,
+                                           size_t aId) {
   ThreadState& info = gThreadState[aId];
   MOZ_RELEASE_ASSERT(!info.mShouldRestore);
 
@@ -241,24 +238,20 @@ RestoreStackForLoadingByThread(const SavedThreadStack& aStack, size_t aId)
   info.mStackBytes = aStack.mStackBytes;
 
   uint8_t* stackContents =
-    (uint8_t*) AllocateMemory(info.mStackBytes, MemoryKind::ThreadSnapshot);
+      (uint8_t*)AllocateMemory(info.mStackBytes, MemoryKind::ThreadSnapshot);
   MemoryMove(stackContents, aStack.mStack, aStack.mStackBytes);
   info.mStackContents = stackContents;
   info.mShouldRestore = true;
 }
 
-bool
-ShouldRestoreThreadStack(size_t aId)
-{
+bool ShouldRestoreThreadStack(size_t aId) {
   return gThreadState[aId].mShouldRestore;
 }
 
-bool
-SaveAllThreads(SavedCheckpoint& aSaved)
-{
+bool SaveAllThreads(SavedCheckpoint& aSaved) {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
 
-  AutoPassThroughThreadEvents pt; 
+  AutoPassThroughThreadEvents pt;  
   AutoDisallowMemoryChanges disallow;
 
   int stackSeparator = 0;
@@ -273,9 +266,7 @@ SaveAllThreads(SavedCheckpoint& aSaved)
   return true;
 }
 
-void
-RestoreAllThreads(const SavedCheckpoint& aSaved)
-{
+void RestoreAllThreads(const SavedCheckpoint& aSaved) {
   MOZ_RELEASE_ASSERT(Thread::CurrentIsMainThread());
 
   
@@ -292,9 +283,8 @@ RestoreAllThreads(const SavedCheckpoint& aSaved)
   Unreachable();
 }
 
-void
-WaitForIdleThreadsToRestoreTheirStacks()
-{
+void WaitForIdleThreadsToRestoreTheirStacks() {
+  
   
   while (true) {
     bool done = true;
@@ -311,5 +301,5 @@ WaitForIdleThreadsToRestoreTheirStacks()
   }
 }
 
-} 
-} 
+}  
+}  

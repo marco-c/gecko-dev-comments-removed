@@ -17,7 +17,7 @@ namespace net {
 
 typedef nsTArray<NetAddr> NetAddrArray;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

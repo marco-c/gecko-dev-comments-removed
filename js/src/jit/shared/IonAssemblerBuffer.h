@@ -16,170 +16,145 @@ namespace js {
 namespace jit {
 
 
-class BufferOffset
-{
-    int offset;
+class BufferOffset {
+  int offset;
 
-  public:
-    friend BufferOffset nextOffset();
+ public:
+  friend BufferOffset nextOffset();
 
-    BufferOffset()
-      : offset(INT_MIN)
-    { }
+  BufferOffset() : offset(INT_MIN) {}
 
-    explicit BufferOffset(int offset_)
-      : offset(offset_)
-    {
-        MOZ_ASSERT(offset >= 0);
+  explicit BufferOffset(int offset_) : offset(offset_) {
+    MOZ_ASSERT(offset >= 0);
+  }
+
+  explicit BufferOffset(Label* l) : offset(l->offset()) {
+    MOZ_ASSERT(offset >= 0);
+  }
+
+  explicit BufferOffset(RepatchLabel* l) : offset(l->offset()) {
+    MOZ_ASSERT(offset >= 0);
+  }
+
+  int getOffset() const { return offset; }
+  bool assigned() const { return offset != INT_MIN; }
+
+  
+  
+  
+  
+  
+  template <class BOffImm>
+  BOffImm diffB(BufferOffset other) const {
+    if (!BOffImm::IsInRange(offset - other.offset)) {
+      return BOffImm();
     }
+    return BOffImm(offset - other.offset);
+  }
 
-    explicit BufferOffset(Label* l)
-      : offset(l->offset())
-    {
-        MOZ_ASSERT(offset >= 0);
+  template <class BOffImm>
+  BOffImm diffB(Label* other) const {
+    MOZ_ASSERT(other->bound());
+    if (!BOffImm::IsInRange(offset - other->offset())) {
+      return BOffImm();
     }
-
-    explicit BufferOffset(RepatchLabel* l)
-      : offset(l->offset())
-    {
-        MOZ_ASSERT(offset >= 0);
-    }
-
-    int getOffset() const { return offset; }
-    bool assigned() const { return offset != INT_MIN; }
-
-    
-    
-    
-    
-    
-    template <class BOffImm>
-    BOffImm diffB(BufferOffset other) const {
-        if (!BOffImm::IsInRange(offset - other.offset)) {
-            return BOffImm();
-        }
-        return BOffImm(offset - other.offset);
-    }
-
-    template <class BOffImm>
-    BOffImm diffB(Label* other) const {
-        MOZ_ASSERT(other->bound());
-        if (!BOffImm::IsInRange(offset - other->offset())) {
-            return BOffImm();
-        }
-        return BOffImm(offset - other->offset());
-    }
+    return BOffImm(offset - other->offset());
+  }
 };
 
-inline bool
-operator<(BufferOffset a, BufferOffset b)
-{
-    return a.getOffset() < b.getOffset();
+inline bool operator<(BufferOffset a, BufferOffset b) {
+  return a.getOffset() < b.getOffset();
 }
 
-inline bool
-operator>(BufferOffset a, BufferOffset b)
-{
-    return a.getOffset() > b.getOffset();
+inline bool operator>(BufferOffset a, BufferOffset b) {
+  return a.getOffset() > b.getOffset();
 }
 
-inline bool
-operator<=(BufferOffset a, BufferOffset b)
-{
-    return a.getOffset() <= b.getOffset();
+inline bool operator<=(BufferOffset a, BufferOffset b) {
+  return a.getOffset() <= b.getOffset();
 }
 
-inline bool
-operator>=(BufferOffset a, BufferOffset b)
-{
-    return a.getOffset() >= b.getOffset();
+inline bool operator>=(BufferOffset a, BufferOffset b) {
+  return a.getOffset() >= b.getOffset();
 }
 
-inline bool
-operator==(BufferOffset a, BufferOffset b)
-{
-    return a.getOffset() == b.getOffset();
+inline bool operator==(BufferOffset a, BufferOffset b) {
+  return a.getOffset() == b.getOffset();
 }
 
-inline bool
-operator!=(BufferOffset a, BufferOffset b)
-{
-    return a.getOffset() != b.getOffset();
+inline bool operator!=(BufferOffset a, BufferOffset b) {
+  return a.getOffset() != b.getOffset();
 }
 
-template<int SliceSize>
-class BufferSlice
-{
-  protected:
-    BufferSlice<SliceSize>* prev_;
-    BufferSlice<SliceSize>* next_;
+template <int SliceSize>
+class BufferSlice {
+ protected:
+  BufferSlice<SliceSize>* prev_;
+  BufferSlice<SliceSize>* next_;
 
-    size_t bytelength_;
+  size_t bytelength_;
 
-  public:
-    mozilla::Array<uint8_t, SliceSize> instructions;
+ public:
+  mozilla::Array<uint8_t, SliceSize> instructions;
 
-  public:
-    explicit BufferSlice()
-      : prev_(nullptr), next_(nullptr), bytelength_(0)
-    { }
+ public:
+  explicit BufferSlice() : prev_(nullptr), next_(nullptr), bytelength_(0) {}
 
-    size_t length() const { return bytelength_; }
-    static inline size_t Capacity() { return SliceSize; }
+  size_t length() const { return bytelength_; }
+  static inline size_t Capacity() { return SliceSize; }
 
-    BufferSlice* getNext() const { return next_; }
-    BufferSlice* getPrev() const { return prev_; }
+  BufferSlice* getNext() const { return next_; }
+  BufferSlice* getPrev() const { return prev_; }
 
-    void setNext(BufferSlice<SliceSize>* next) {
-        MOZ_ASSERT(next_ == nullptr);
-        MOZ_ASSERT(next->prev_ == nullptr);
-        next_ = next;
-        next->prev_ = this;
+  void setNext(BufferSlice<SliceSize>* next) {
+    MOZ_ASSERT(next_ == nullptr);
+    MOZ_ASSERT(next->prev_ == nullptr);
+    next_ = next;
+    next->prev_ = this;
+  }
+
+  void putBytes(size_t numBytes, const void* source) {
+    MOZ_ASSERT(bytelength_ + numBytes <= SliceSize);
+    if (source) {
+      memcpy(&instructions[length()], source, numBytes);
     }
+    bytelength_ += numBytes;
+  }
 
-    void putBytes(size_t numBytes, const void* source) {
-        MOZ_ASSERT(bytelength_ + numBytes <= SliceSize);
-        if (source) {
-            memcpy(&instructions[length()], source, numBytes);
-        }
-        bytelength_ += numBytes;
-    }
-
-    MOZ_ALWAYS_INLINE
-    void putU32Aligned(uint32_t value) {
-        MOZ_ASSERT(bytelength_ + 4 <= SliceSize);
-        MOZ_ASSERT((bytelength_ & 3) == 0);
-        MOZ_ASSERT((uintptr_t(&instructions[0]) & 3) == 0);
-        *reinterpret_cast<uint32_t*>(&instructions[bytelength_]) = value;
-        bytelength_ += 4;
-    }
+  MOZ_ALWAYS_INLINE
+  void putU32Aligned(uint32_t value) {
+    MOZ_ASSERT(bytelength_ + 4 <= SliceSize);
+    MOZ_ASSERT((bytelength_ & 3) == 0);
+    MOZ_ASSERT((uintptr_t(&instructions[0]) & 3) == 0);
+    *reinterpret_cast<uint32_t*>(&instructions[bytelength_]) = value;
+    bytelength_ += 4;
+  }
 };
 
-template<int SliceSize, class Inst>
-class AssemblerBuffer
-{
-  protected:
-    typedef BufferSlice<SliceSize> Slice;
+template <int SliceSize, class Inst>
+class AssemblerBuffer {
+ protected:
+  typedef BufferSlice<SliceSize> Slice;
 
-    
-    Slice* head;
-    Slice* tail;
+  
+  Slice* head;
+  Slice* tail;
 
-    bool m_oom;
-    bool m_bail;
+  bool m_oom;
+  bool m_bail;
 
-    
-    
-    uint32_t bufferSize;
+  
+  
+  uint32_t bufferSize;
 
-    
-    Slice* finger;
-    int finger_offset;
+  
+  Slice* finger;
+  int finger_offset;
 
-    LifoAlloc lifoAlloc_;
+  LifoAlloc lifoAlloc_;
 
-  public:
-    explicit AssemblerBuffer()
+ public:
+  explicit AssemblerBuffer()
       : head(nullptr),
         tail(nullptr),
         m_oom(false),
@@ -187,277 +162,271 @@ class AssemblerBuffer
         bufferSize(0),
         finger(nullptr),
         finger_offset(0),
-        lifoAlloc_(8192)
-    { }
+        lifoAlloc_(8192) {}
 
-  public:
-    bool isAligned(size_t alignment) const {
-        MOZ_ASSERT(mozilla::IsPowerOfTwo(alignment));
-        return !(size() & (alignment - 1));
+ public:
+  bool isAligned(size_t alignment) const {
+    MOZ_ASSERT(mozilla::IsPowerOfTwo(alignment));
+    return !(size() & (alignment - 1));
+  }
+
+ private:
+  Slice* newSlice(LifoAlloc& a) {
+    if (size() > MaxCodeBytesPerProcess - sizeof(Slice)) {
+      fail_oom();
+      return nullptr;
+    }
+    Slice* tmp = static_cast<Slice*>(a.alloc(sizeof(Slice)));
+    if (!tmp) {
+      fail_oom();
+      return nullptr;
+    }
+    return new (tmp) Slice;
+  }
+
+ public:
+  bool ensureSpace(size_t size) {
+    
+    if (tail && tail->length() + size <= tail->Capacity()) {
+      
+      if (js::oom::ShouldFailWithOOM()) {
+        return fail_oom();
+      }
+
+      return true;
     }
 
-  private:
-    Slice* newSlice(LifoAlloc& a) {
-        if (size() > MaxCodeBytesPerProcess - sizeof(Slice)) {
-            fail_oom();
-            return nullptr;
-        }
-        Slice* tmp = static_cast<Slice*>(a.alloc(sizeof(Slice)));
-        if (!tmp) {
-            fail_oom();
-            return nullptr;
-        }
-        return new (tmp) Slice;
+    
+    Slice* slice = newSlice(lifoAlloc_);
+    if (slice == nullptr) {
+      return fail_oom();
     }
 
-  public:
-    bool ensureSpace(size_t size) {
-        
-        if (tail && tail->length() + size <= tail->Capacity()) {
-            
-            if (js::oom::ShouldFailWithOOM()) {
-                return fail_oom();
-            }
-
-            return true;
-        }
-
-        
-        Slice* slice = newSlice(lifoAlloc_);
-        if (slice == nullptr) {
-            return fail_oom();
-        }
-
-        
-        if (!head) {
-            head = slice;
-            finger = slice;
-            finger_offset = 0;
-        }
-
-        
-        if (tail) {
-            bufferSize += tail->length();
-            tail->setNext(slice);
-        }
-        tail = slice;
-
-        return true;
+    
+    if (!head) {
+      head = slice;
+      finger = slice;
+      finger_offset = 0;
     }
 
-    BufferOffset putByte(uint8_t value) {
-        return putBytes(sizeof(value), &value);
+    
+    if (tail) {
+      bufferSize += tail->length();
+      tail->setNext(slice);
+    }
+    tail = slice;
+
+    return true;
+  }
+
+  BufferOffset putByte(uint8_t value) {
+    return putBytes(sizeof(value), &value);
+  }
+
+  BufferOffset putShort(uint16_t value) {
+    return putBytes(sizeof(value), &value);
+  }
+
+  BufferOffset putInt(uint32_t value) {
+    return putBytes(sizeof(value), &value);
+  }
+
+  MOZ_ALWAYS_INLINE
+  BufferOffset putU32Aligned(uint32_t value) {
+    if (!ensureSpace(sizeof(value))) {
+      return BufferOffset();
     }
 
-    BufferOffset putShort(uint16_t value) {
-        return putBytes(sizeof(value), &value);
+    BufferOffset ret = nextOffset();
+    tail->putU32Aligned(value);
+    return ret;
+  }
+
+  
+  
+  BufferOffset putBytes(size_t numBytes, const void* inst) {
+    if (!ensureSpace(numBytes)) {
+      return BufferOffset();
     }
 
-    BufferOffset putInt(uint32_t value) {
-        return putBytes(sizeof(value), &value);
-    }
+    BufferOffset ret = nextOffset();
+    tail->putBytes(numBytes, inst);
+    return ret;
+  }
 
-    MOZ_ALWAYS_INLINE
-    BufferOffset putU32Aligned(uint32_t value) {
-        if (!ensureSpace(sizeof(value))) {
-            return BufferOffset();
+  
+  
+  
+  BufferOffset putBytesLarge(size_t numBytes, const void* data) {
+    BufferOffset ret = nextOffset();
+    while (numBytes > 0) {
+      if (!ensureSpace(1)) {
+        return BufferOffset();
+      }
+      size_t avail = tail->Capacity() - tail->length();
+      size_t xfer = numBytes < avail ? numBytes : avail;
+      MOZ_ASSERT(xfer > 0, "ensureSpace should have allocated a slice");
+      tail->putBytes(xfer, data);
+      data = (const uint8_t*)data + xfer;
+      numBytes -= xfer;
+    }
+    return ret;
+  }
+
+  unsigned int size() const {
+    if (tail) {
+      return bufferSize + tail->length();
+    }
+    return bufferSize;
+  }
+  BufferOffset nextOffset() const { return BufferOffset(size()); }
+
+  bool oom() const { return m_oom || m_bail; }
+  bool bail() const { return m_bail; }
+
+  bool fail_oom() {
+    m_oom = true;
+    return false;
+  }
+  bool fail_bail() {
+    m_bail = true;
+    return false;
+  }
+
+ private:
+  void update_finger(Slice* finger_, int fingerOffset_) {
+    finger = finger_;
+    finger_offset = fingerOffset_;
+  }
+
+  static const unsigned SliceDistanceRequiringFingerUpdate = 3;
+
+  Inst* getInstForwards(BufferOffset off, Slice* start, int startOffset,
+                        bool updateFinger = false) {
+    const int offset = off.getOffset();
+
+    int cursor = startOffset;
+    unsigned slicesSkipped = 0;
+
+    MOZ_ASSERT(offset >= cursor);
+
+    for (Slice* slice = start; slice != nullptr; slice = slice->getNext()) {
+      const int slicelen = slice->length();
+
+      
+      if (offset < cursor + slicelen) {
+        if (updateFinger ||
+            slicesSkipped >= SliceDistanceRequiringFingerUpdate) {
+          update_finger(slice, cursor);
         }
 
-        BufferOffset ret = nextOffset();
-        tail->putU32Aligned(value);
-        return ret;
+        MOZ_ASSERT(offset - cursor < (int)slice->length());
+        return (Inst*)&slice->instructions[offset - cursor];
+      }
+
+      cursor += slicelen;
+      slicesSkipped++;
+    }
+
+    MOZ_CRASH("Invalid instruction cursor.");
+  }
+
+  Inst* getInstBackwards(BufferOffset off, Slice* start, int startOffset,
+                         bool updateFinger = false) {
+    const int offset = off.getOffset();
+
+    int cursor = startOffset;  
+    unsigned slicesSkipped = 0;
+
+    MOZ_ASSERT(offset < int(cursor + start->length()));
+
+    for (Slice* slice = start; slice != nullptr;) {
+      
+      if (offset >= cursor) {
+        if (updateFinger ||
+            slicesSkipped >= SliceDistanceRequiringFingerUpdate) {
+          update_finger(slice, cursor);
+        }
+
+        MOZ_ASSERT(offset - cursor < (int)slice->length());
+        return (Inst*)&slice->instructions[offset - cursor];
+      }
+
+      
+      Slice* prev = slice->getPrev();
+      cursor -= prev->length();
+
+      slice = prev;
+      slicesSkipped++;
+    }
+
+    MOZ_CRASH("Invalid instruction cursor.");
+  }
+
+ public:
+  Inst* getInstOrNull(BufferOffset off) {
+    if (!off.assigned()) {
+      return nullptr;
+    }
+    return getInst(off);
+  }
+
+  
+  
+  Inst* getInst(BufferOffset off) {
+    const int offset = off.getOffset();
+    
+    MOZ_ASSERT(off.assigned() && offset >= 0 && unsigned(offset) < size());
+
+    
+    if (offset >= int(bufferSize)) {
+      return (Inst*)&tail->instructions[offset - bufferSize];
     }
 
     
     
-    BufferOffset putBytes(size_t numBytes, const void* inst) {
-        if (!ensureSpace(numBytes)) {
-            return BufferOffset();
-        }
+    
+    int finger_dist = abs(offset - finger_offset);
+    if (finger_dist < Min(offset, int(bufferSize - offset))) {
+      if (finger_offset < offset) {
+        return getInstForwards(off, finger, finger_offset, true);
+      }
+      return getInstBackwards(off, finger, finger_offset, true);
+    }
 
-        BufferOffset ret = nextOffset();
-        tail->putBytes(numBytes, inst);
-        return ret;
+    
+    if (offset < int(bufferSize - offset)) {
+      return getInstForwards(off, head, 0);
     }
 
     
     
-    
-    BufferOffset putBytesLarge(size_t numBytes, const void* data)
-    {
-        BufferOffset ret = nextOffset();
-        while (numBytes > 0) {
-            if (!ensureSpace(1)) {
-                return BufferOffset();
-            }
-            size_t avail = tail->Capacity() - tail->length();
-            size_t xfer = numBytes < avail ? numBytes : avail;
-            MOZ_ASSERT(xfer > 0, "ensureSpace should have allocated a slice");
-            tail->putBytes(xfer, data);
-            data = (const uint8_t*)data + xfer;
-            numBytes -= xfer;
-        }
-        return ret;
+    Slice* prev = tail->getPrev();
+    return getInstBackwards(off, prev, bufferSize - prev->length());
+  }
+
+  typedef AssemblerBuffer<SliceSize, Inst> ThisClass;
+
+  class AssemblerBufferInstIterator {
+    BufferOffset bo_;
+    ThisClass* buffer_;
+
+   public:
+    explicit AssemblerBufferInstIterator(BufferOffset bo, ThisClass* buffer)
+        : bo_(bo), buffer_(buffer) {}
+    void advance(int offset) { bo_ = BufferOffset(bo_.getOffset() + offset); }
+    Inst* next() {
+      advance(cur()->size());
+      return cur();
     }
-
-    unsigned int size() const {
-        if (tail) {
-            return bufferSize + tail->length();
-        }
-        return bufferSize;
+    Inst* peek() {
+      return buffer_->getInst(BufferOffset(bo_.getOffset() + cur()->size()));
     }
-    BufferOffset nextOffset() const {
-        return BufferOffset(size());
-    }
-
-    bool oom() const { return m_oom || m_bail; }
-    bool bail() const { return m_bail; }
-
-    bool fail_oom() {
-        m_oom = true;
-        return false;
-    }
-    bool fail_bail() {
-        m_bail = true;
-        return false;
-    }
-
-  private:
-    void update_finger(Slice* finger_, int fingerOffset_) {
-        finger = finger_;
-        finger_offset = fingerOffset_;
-    }
-
-    static const unsigned SliceDistanceRequiringFingerUpdate = 3;
-
-    Inst* getInstForwards(BufferOffset off, Slice* start, int startOffset, bool updateFinger = false) {
-        const int offset = off.getOffset();
-
-        int cursor = startOffset;
-        unsigned slicesSkipped = 0;
-
-        MOZ_ASSERT(offset >= cursor);
-
-        for (Slice *slice = start; slice != nullptr; slice = slice->getNext()) {
-            const int slicelen = slice->length();
-
-            
-            if (offset < cursor + slicelen) {
-                if (updateFinger || slicesSkipped >= SliceDistanceRequiringFingerUpdate) {
-                    update_finger(slice, cursor);
-                }
-
-                MOZ_ASSERT(offset - cursor < (int)slice->length());
-                return (Inst*)&slice->instructions[offset - cursor];
-            }
-
-            cursor += slicelen;
-            slicesSkipped++;
-        }
-
-        MOZ_CRASH("Invalid instruction cursor.");
-    }
-
-    Inst* getInstBackwards(BufferOffset off, Slice* start, int startOffset, bool updateFinger = false) {
-        const int offset = off.getOffset();
-
-        int cursor = startOffset; 
-        unsigned slicesSkipped = 0;
-
-        MOZ_ASSERT(offset < int(cursor + start->length()));
-
-        for (Slice* slice = start; slice != nullptr; ) {
-            
-            if (offset >= cursor) {
-                if (updateFinger || slicesSkipped >= SliceDistanceRequiringFingerUpdate) {
-                    update_finger(slice, cursor);
-                }
-
-                MOZ_ASSERT(offset - cursor < (int)slice->length());
-                return (Inst*)&slice->instructions[offset - cursor];
-            }
-
-            
-            Slice* prev = slice->getPrev();
-            cursor -= prev->length();
-
-            slice = prev;
-            slicesSkipped++;
-        }
-
-        MOZ_CRASH("Invalid instruction cursor.");
-    }
-
-  public:
-    Inst* getInstOrNull(BufferOffset off) {
-        if (!off.assigned()) {
-            return nullptr;
-        }
-        return getInst(off);
-    }
-
-    
-    
-    Inst* getInst(BufferOffset off) {
-        const int offset = off.getOffset();
-        
-        MOZ_ASSERT(off.assigned() && offset >= 0 && unsigned(offset) < size());
-
-        
-        if (offset >= int(bufferSize)) {
-            return (Inst*)&tail->instructions[offset - bufferSize];
-        }
-
-        
-        
-        
-        int finger_dist = abs(offset - finger_offset);
-        if (finger_dist < Min(offset, int(bufferSize - offset))) {
-            if (finger_offset < offset) {
-                return getInstForwards(off, finger, finger_offset, true);
-            }
-            return getInstBackwards(off, finger, finger_offset, true);
-        }
-
-        
-        if (offset < int(bufferSize - offset)) {
-            return getInstForwards(off, head, 0);
-        }
-
-        
-        
-        Slice* prev = tail->getPrev();
-        return getInstBackwards(off, prev, bufferSize - prev->length());
-    }
-
-    typedef AssemblerBuffer<SliceSize, Inst> ThisClass;
-
-    class AssemblerBufferInstIterator
-    {
-        BufferOffset bo_;
-        ThisClass* buffer_;
-
-      public:
-        explicit AssemblerBufferInstIterator(BufferOffset bo, ThisClass* buffer)
-          : bo_(bo), buffer_(buffer)
-        { }
-        void advance(int offset) {
-            bo_ = BufferOffset(bo_.getOffset() + offset);
-        }
-        Inst* next() {
-            advance(cur()->size());
-            return cur();
-        }
-        Inst* peek() {
-            return buffer_->getInst(BufferOffset(bo_.getOffset() + cur()->size()));
-        }
-        Inst* cur() const {
-            return buffer_->getInst(bo_);
-        }
-    };
+    Inst* cur() const { return buffer_->getInst(bo_); }
+  };
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

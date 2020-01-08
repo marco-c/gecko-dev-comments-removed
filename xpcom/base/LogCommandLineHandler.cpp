@@ -11,24 +11,24 @@
 
 namespace mozilla {
 
-void LoggingHandleCommandLineArgs(int argc, char const* const* argv,
-                                  std::function<void(nsACString const&)> const& consumer)
-{
+void LoggingHandleCommandLineArgs(
+    int argc, char const* const* argv,
+    std::function<void(nsACString const&)> const& consumer) {
   
   
   
   nsAutoCString env;
 
-  auto const names = {
-    NS_LITERAL_CSTRING("MOZ_LOG"),
-    NS_LITERAL_CSTRING("MOZ_LOG_FILE")
-  };
+  auto const names = {NS_LITERAL_CSTRING("MOZ_LOG"),
+                      NS_LITERAL_CSTRING("MOZ_LOG_FILE")};
 
   for (int arg = 1; arg < argc; ++arg) {
     Tokenizer p(argv[arg]);
 
     if (!env.IsEmpty() && p.CheckChar('-')) {
-      NS_WARNING("Expects value after -MOZ_LOG(_FILE) argument, but another argument found");
+      NS_WARNING(
+          "Expects value after -MOZ_LOG(_FILE) argument, but another argument "
+          "found");
 
       
       p.Rollback();
@@ -88,4 +88,4 @@ void LoggingHandleCommandLineArgs(int argc, char const* const* argv,
   }
 }
 
-} 
+}  

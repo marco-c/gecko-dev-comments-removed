@@ -17,7 +17,7 @@ class nsGlobalWindowInner;
 namespace mozilla {
 namespace gfx {
 class VRManagerChild;
-} 
+}  
 namespace dom {
 
 class EventTarget;
@@ -25,8 +25,7 @@ class Gamepad;
 class GamepadChangeEvent;
 class GamepadEventChannelChild;
 
-class GamepadManager final : public nsIObserver
-{
+class GamepadManager final : public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -47,9 +46,11 @@ class GamepadManager final : public nsIObserver
   void RemoveListener(nsGlobalWindowInner* aWindow);
 
   
-  void AddGamepad(uint32_t aIndex, const nsAString& aID, GamepadMappingType aMapping,
-                  GamepadHand aHand, GamepadServiceType aServiceType, uint32_t aDisplayID,
-                  uint32_t aNumButtons, uint32_t aNumAxes, uint32_t aNumHaptics);
+  void AddGamepad(uint32_t aIndex, const nsAString& aID,
+                  GamepadMappingType aMapping, GamepadHand aHand,
+                  GamepadServiceType aServiceType, uint32_t aDisplayID,
+                  uint32_t aNumButtons, uint32_t aNumAxes,
+                  uint32_t aNumHaptics);
 
   
   void RemoveGamepad(uint32_t aIndex, GamepadServiceType aServiceType);
@@ -60,22 +61,25 @@ class GamepadManager final : public nsIObserver
   
   already_AddRefed<Gamepad> GetGamepad(uint32_t aIndex) const;
 
-    
-  already_AddRefed<Gamepad> GetGamepad(uint32_t aGamepadId, GamepadServiceType aServiceType) const;
+  
+  already_AddRefed<Gamepad> GetGamepad(uint32_t aGamepadId,
+                                       GamepadServiceType aServiceType) const;
 
   
   void Update(const GamepadChangeEvent& aGamepadEvent);
 
   
-  already_AddRefed<Promise> VibrateHaptic(uint32_t aControllerIdx, uint32_t aHapticIndex,
+  already_AddRefed<Promise> VibrateHaptic(uint32_t aControllerIdx,
+                                          uint32_t aHapticIndex,
                                           double aIntensity, double aDuration,
-                                          nsIGlobalObject* aGlobal, ErrorResult& aRv);
+                                          nsIGlobalObject* aGlobal,
+                                          ErrorResult& aRv);
   
   void StopHaptics();
 
  protected:
   GamepadManager();
-  ~GamepadManager() {};
+  ~GamepadManager(){};
 
   
   
@@ -83,22 +87,17 @@ class GamepadManager final : public nsIObserver
   void NewConnectionEvent(uint32_t aIndex, bool aConnected);
 
   
-  void FireAxisMoveEvent(EventTarget* aTarget,
-                         Gamepad* aGamepad,
-                         uint32_t axis,
+  void FireAxisMoveEvent(EventTarget* aTarget, Gamepad* aGamepad, uint32_t axis,
                          double value);
 
   
   
-  void FireButtonEvent(EventTarget* aTarget,
-                       Gamepad* aGamepad,
-                       uint32_t aButton,
-                       double aValue);
+  void FireButtonEvent(EventTarget* aTarget, Gamepad* aGamepad,
+                       uint32_t aButton, double aValue);
 
   
   
-  void FireConnectionEvent(EventTarget* aTarget,
-                           Gamepad* aGamepad,
+  void FireConnectionEvent(EventTarget* aTarget, Gamepad* aGamepad,
                            bool aConnected);
 
   
@@ -112,10 +111,9 @@ class GamepadManager final : public nsIObserver
   
   
   
-  nsTArray<GamepadEventChannelChild *> mChannelChildren;
+  nsTArray<GamepadEventChannelChild*> mChannelChildren;
 
  private:
-
   nsresult Init();
 
   void MaybeConvertToNonstandardGamepadEvent(const GamepadChangeEvent& aEvent,
@@ -129,13 +127,15 @@ class GamepadManager final : public nsIObserver
   
   
   
-  bool WindowHasSeenGamepad(nsGlobalWindowInner* aWindow, uint32_t aIndex) const;
+  bool WindowHasSeenGamepad(nsGlobalWindowInner* aWindow,
+                            uint32_t aIndex) const;
   
   void SetWindowHasSeenGamepad(nsGlobalWindowInner* aWindow, uint32_t aIndex,
                                bool aHasSeen = true);
   
   
-  uint32_t GetGamepadIndexWithServiceType(uint32_t aIndex, GamepadServiceType aServiceType) const;
+  uint32_t GetGamepadIndexWithServiceType(
+      uint32_t aIndex, GamepadServiceType aServiceType) const;
 
   
   
@@ -146,7 +146,7 @@ class GamepadManager final : public nsIObserver
   uint32_t mPromiseID;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

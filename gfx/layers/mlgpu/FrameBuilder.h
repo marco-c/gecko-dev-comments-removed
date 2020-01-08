@@ -34,9 +34,8 @@ class MLGSwapChain;
 class RenderViewMLGPU;
 struct ItemInfo;
 
-class FrameBuilder final
-{
-public:
+class FrameBuilder final {
+ public:
   FrameBuilder(LayerManagerMLGPU* aManager, MLGSwapChain* aSwapChain);
   ~FrameBuilder();
 
@@ -45,12 +44,8 @@ public:
 
   bool AddLayerToConstantBuffer(ItemInfo& aItem);
 
-  LayerManagerMLGPU* GetManager() const {
-    return mManager;
-  }
-  MLGDevice* GetDevice() const {
-    return mDevice;
-  }
+  LayerManagerMLGPU* GetManager() const { return mManager; }
+  MLGDevice* GetDevice() const { return mDevice; }
   const ConstantBufferSection& GetDefaultMaskInfo() const {
     return mDefaultMaskInfo;
   }
@@ -71,14 +66,12 @@ public:
   
   void RetainTemporaryLayer(LayerMLGPU* aLayer);
 
-private:
-  void AssignLayer(Layer* aLayer,
-                   RenderViewMLGPU* aView,
+ private:
+  void AssignLayer(Layer* aLayer, RenderViewMLGPU* aView,
                    const RenderTargetIntRect& aClipRect,
                    Maybe<gfx::Polygon>&& aGeometry);
 
-  void ProcessChildList(ContainerLayer* aContainer,
-                        RenderViewMLGPU* aView,
+  void ProcessChildList(ContainerLayer* aContainer, RenderViewMLGPU* aView,
                         const RenderTargetIntRect& aParentClipRect,
                         const Maybe<gfx::Polygon>& aParentGeometry);
 
@@ -89,12 +82,11 @@ private:
 
   
   
-  bool ProcessContainerLayer(ContainerLayer* aLayer,
-                             RenderViewMLGPU* aView,
+  bool ProcessContainerLayer(ContainerLayer* aLayer, RenderViewMLGPU* aView,
                              const RenderTargetIntRect& aClipRect,
                              Maybe<gfx::Polygon>& aGeometry);
 
-private:
+ private:
   RefPtr<LayerManagerMLGPU> mManager;
   RefPtr<MLGDevice> mDevice;
   RefPtr<MLGSwapChain> mSwapChain;
@@ -118,14 +110,15 @@ private:
   ConstantBufferSection mDefaultMaskInfo;
 
   
-  nsRefPtrHashtable<nsRefPtrHashKey<TextureSource>, MaskOperation> mSingleTextureMasks;
+  nsRefPtrHashtable<nsRefPtrHashKey<TextureSource>, MaskOperation>
+      mSingleTextureMasks;
   std::map<MaskTextureList, RefPtr<MaskCombineOperation>> mCombinedTextureMasks;
 
   
   std::vector<RefPtr<Layer>> mTemporaryLayers;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

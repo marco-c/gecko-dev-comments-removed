@@ -23,156 +23,150 @@ class ScriptSourceObject;
 
 namespace coverage {
 
-class LCovSource
-{
-  public:
-    LCovSource(LifoAlloc* alloc, JS::UniqueChars name);
-    LCovSource(LCovSource&& src);
-    ~LCovSource() = default;
+class LCovSource {
+ public:
+  LCovSource(LifoAlloc* alloc, JS::UniqueChars name);
+  LCovSource(LCovSource&& src);
+  ~LCovSource() = default;
 
-    
-    bool match(const char* name) const {
-        return strcmp(name_.get(), name) == 0;
-    }
+  
+  bool match(const char* name) const { return strcmp(name_.get(), name) == 0; }
 
-    
-    bool isComplete() const {
-        return hasTopLevelScript_;
-    }
+  
+  bool isComplete() const { return hasTopLevelScript_; }
 
-    
-    
-    bool writeScript(JSScript* script);
+  
+  
+  bool writeScript(JSScript* script);
 
-    
-    
-    void exportInto(GenericPrinter& out);
+  
+  
+  void exportInto(GenericPrinter& out);
 
-  private:
-    
-    bool writeScriptName(LSprinter& out, JSScript* script);
+ private:
+  
+  bool writeScriptName(LSprinter& out, JSScript* script);
 
-  private:
-    
-    JS::UniqueChars name_;
+ private:
+  
+  JS::UniqueChars name_;
 
-    
-    
-    LSprinter outFN_;
-    LSprinter outFNDA_;
-    size_t numFunctionsFound_;
-    size_t numFunctionsHit_;
+  
+  
+  LSprinter outFN_;
+  LSprinter outFNDA_;
+  size_t numFunctionsFound_;
+  size_t numFunctionsHit_;
 
-    
-    LSprinter outBRDA_;
-    size_t numBranchesFound_;
-    size_t numBranchesHit_;
+  
+  LSprinter outBRDA_;
+  size_t numBranchesFound_;
+  size_t numBranchesHit_;
 
-    
-    
-    
-    
-    HashMap<size_t, uint64_t, DefaultHasher<size_t>, SystemAllocPolicy> linesHit_;
-    size_t numLinesInstrumented_;
-    size_t numLinesHit_;
-    size_t maxLineHit_;
+  
+  
+  
+  
+  HashMap<size_t, uint64_t, DefaultHasher<size_t>, SystemAllocPolicy> linesHit_;
+  size_t numLinesInstrumented_;
+  size_t numLinesHit_;
+  size_t maxLineHit_;
 
-    
-    bool hasTopLevelScript_ : 1;
+  
+  bool hasTopLevelScript_ : 1;
 };
 
-class LCovRealm
-{
-  public:
-    LCovRealm();
-    ~LCovRealm();
+class LCovRealm {
+ public:
+  LCovRealm();
+  ~LCovRealm();
 
-    
-    void collectCodeCoverageInfo(JS::Realm* realm, JSScript* topLevel, const char* name);
+  
+  void collectCodeCoverageInfo(JS::Realm* realm, JSScript* topLevel,
+                               const char* name);
 
-    
-    
-    void exportInto(GenericPrinter& out, bool* isEmpty) const;
+  
+  
+  void exportInto(GenericPrinter& out, bool* isEmpty) const;
 
-  private:
-    
-    bool writeRealmName(JS::Realm* realm);
+ private:
+  
+  bool writeRealmName(JS::Realm* realm);
 
-    
-    LCovSource* lookupOrAdd(JS::Realm* realm, const char* name);
+  
+  LCovSource* lookupOrAdd(JS::Realm* realm, const char* name);
 
-  private:
-    typedef mozilla::Vector<LCovSource, 16, LifoAllocPolicy<Fallible>> LCovSourceVector;
+ private:
+  typedef mozilla::Vector<LCovSource, 16, LifoAllocPolicy<Fallible>>
+      LCovSourceVector;
 
-    
-    
-    LifoAlloc alloc_;
+  
+  
+  LifoAlloc alloc_;
 
-    
-    LSprinter outTN_;
+  
+  LSprinter outTN_;
 
-    
-    LCovSourceVector* sources_;
+  
+  LCovSourceVector* sources_;
 };
 
-class LCovRuntime
-{
-  public:
-    LCovRuntime();
-    ~LCovRuntime();
+class LCovRuntime {
+ public:
+  LCovRuntime();
+  ~LCovRuntime();
 
-    
-    
-    
-    
-    
-    
-    
-    void init();
+  
+  
+  
+  
+  
+  
+  
+  void init();
 
-    
-    bool isEnabled() const {
-      static bool isEnabled_ = ([](){
-        const char* outDir = getenv("JS_CODE_COVERAGE_OUTPUT_DIR");
-        return outDir && *outDir != 0;
-      })();
-      return isEnabled_;
-    }
+  
+  bool isEnabled() const {
+    static bool isEnabled_ = ([]() {
+      const char* outDir = getenv("JS_CODE_COVERAGE_OUTPUT_DIR");
+      return outDir && *outDir != 0;
+    })();
+    return isEnabled_;
+  }
 
-    
-    
-    void writeLCovResult(LCovRealm& realm);
+  
+  
+  void writeLCovResult(LCovRealm& realm);
 
-  private:
-    
-    
-    
-    void maybeReopenAfterFork();
+ private:
+  
+  
+  
+  void maybeReopenAfterFork();
 
-    
-    
-    bool fillWithFilename(char *name, size_t length);
+  
+  
+  bool fillWithFilename(char* name, size_t length);
 
-    
-    
-    void finishFile();
+  
+  
+  void finishFile();
 
-  private:
-    
-    Fprinter out_;
+ private:
+  
+  Fprinter out_;
 
-    
-    
-    uint32_t pid_;
+  
+  
+  uint32_t pid_;
 
-    
-    
-    
-    bool isEmpty_;
+  
+  
+  
+  bool isEmpty_;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

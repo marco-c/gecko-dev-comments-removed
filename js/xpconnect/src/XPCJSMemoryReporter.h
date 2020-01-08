@@ -18,16 +18,14 @@ typedef nsDataHashtable<nsUint64HashKey, nsCString> WindowPaths;
 
 
 
-class JSReporter
-{
-public:
-    static void CollectReports(WindowPaths* windowPaths,
-                               WindowPaths* topWindowPaths,
-                               nsIHandleReportCallback* handleReport,
-                               nsISupports* data,
-                               bool anonymize);
+class JSReporter {
+ public:
+  static void CollectReports(WindowPaths* windowPaths,
+                             WindowPaths* topWindowPaths,
+                             nsIHandleReportCallback* handleReport,
+                             nsISupports* data, bool anonymize);
 };
 
-} 
+}  
 
 #endif

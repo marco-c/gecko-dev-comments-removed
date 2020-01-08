@@ -16,7 +16,8 @@
 #include "nsPKCS11Slot.h"
 #include "nsServiceManagerUtils.h"
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
 NS_IMPL_ISUPPORTS(PKCS11ModuleDB, nsIPKCS11ModuleDB)
 
@@ -24,12 +25,11 @@ NS_IMPL_ISUPPORTS(PKCS11ModuleDB, nsIPKCS11ModuleDB)
 
 
 
-static nsresult
-NormalizeModuleNameIn(const nsAString& moduleNameIn, nsCString& moduleNameOut)
-{
+static nsresult NormalizeModuleNameIn(const nsAString& moduleNameIn,
+                                      nsCString& moduleNameOut) {
   nsAutoString localizedRootModuleName;
-  nsresult rv = GetPIPNSSBundleString("RootCertModuleName",
-                                      localizedRootModuleName);
+  nsresult rv =
+      GetPIPNSSBundleString("RootCertModuleName", localizedRootModuleName);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -43,8 +43,7 @@ NormalizeModuleNameIn(const nsAString& moduleNameIn, nsCString& moduleNameOut)
 
 
 NS_IMETHODIMP
-PKCS11ModuleDB::DeleteModule(const nsAString& aModuleName)
-{
+PKCS11ModuleDB::DeleteModule(const nsAString& aModuleName) {
   if (aModuleName.IsEmpty()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -73,10 +72,8 @@ PKCS11ModuleDB::DeleteModule(const nsAString& aModuleName)
 
 
 
-void
-GetModuleNameForTelemetry( const SECMODModule* module,
-                          nsString& result)
-{
+void GetModuleNameForTelemetry( const SECMODModule* module,
+                                nsString& result) {
   result.Truncate();
   if (module->dllName) {
     result.AssignASCII(module->dllName);
@@ -96,9 +93,7 @@ GetModuleNameForTelemetry( const SECMODModule* module,
 NS_IMETHODIMP
 PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
                           const nsAString& aLibraryFullPath,
-                          int32_t aCryptoMechanismFlags,
-                          int32_t aCipherFlags)
-{
+                          int32_t aCryptoMechanismFlags, int32_t aCipherFlags) {
   if (aModuleName.IsEmpty()) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -157,8 +152,7 @@ PKCS11ModuleDB::AddModule(const nsAString& aModuleName,
 }
 
 NS_IMETHODIMP
-PKCS11ModuleDB::ListModules(nsISimpleEnumerator** _retval)
-{
+PKCS11ModuleDB::ListModules(nsISimpleEnumerator** _retval) {
   NS_ENSURE_ARG_POINTER(_retval);
 
   nsresult rv = BlockUntilLoadableRootsLoaded();
@@ -196,18 +190,15 @@ PKCS11ModuleDB::ListModules(nsISimpleEnumerator** _retval)
 }
 
 NS_IMETHODIMP
-PKCS11ModuleDB::GetCanToggleFIPS(bool* aCanToggleFIPS)
-{
+PKCS11ModuleDB::GetCanToggleFIPS(bool* aCanToggleFIPS) {
   NS_ENSURE_ARG_POINTER(aCanToggleFIPS);
 
   *aCanToggleFIPS = SECMOD_CanDeleteInternalModule();
   return NS_OK;
 }
 
-
 NS_IMETHODIMP
-PKCS11ModuleDB::ToggleFIPSMode()
-{
+PKCS11ModuleDB::ToggleFIPSMode() {
   
   
   
@@ -231,12 +222,12 @@ PKCS11ModuleDB::ToggleFIPSMode()
 }
 
 NS_IMETHODIMP
-PKCS11ModuleDB::GetIsFIPSEnabled(bool* aIsFIPSEnabled)
-{
+PKCS11ModuleDB::GetIsFIPSEnabled(bool* aIsFIPSEnabled) {
   NS_ENSURE_ARG_POINTER(aIsFIPSEnabled);
 
   *aIsFIPSEnabled = PK11_IsFIPS();
   return NS_OK;
 }
 
-} } 
+}  
+}  

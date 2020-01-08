@@ -28,6 +28,7 @@ typedef uint8_t XBLBindingSerializeDetails;
 #define XBLBinding_Serialize_ChromeOnlyContent (1 << 2)
 
 
+
 #define XBLBinding_Serialize_BindToUntrustedContent (1 << 3)
 
 
@@ -41,7 +42,8 @@ typedef uint8_t XBLBindingSerializeDetails;
 
 
 
-#define XBLBinding_Serialize_NoMoreItems 0 // appears at the end of the members list
+#define XBLBinding_Serialize_NoMoreItems \
+  0  // appears at the end of the members list
 #define XBLBinding_Serialize_Field 1
 #define XBLBinding_Serialize_GetterProperty 2
 #define XBLBinding_Serialize_SetterProperty 3
@@ -83,12 +85,10 @@ typedef uint8_t XBLBindingSerializeDetails;
 static_assert(XBLBinding_Serialize_CustomNamespace >= kNameSpaceID_LastBuiltin,
               "The custom namespace should not be in use as a real namespace");
 
-nsresult
-XBL_SerializeFunction(nsIObjectOutputStream* aStream,
-                      JS::Handle<JSObject*> aFunctionObject);
+nsresult XBL_SerializeFunction(nsIObjectOutputStream* aStream,
+                               JS::Handle<JSObject*> aFunctionObject);
 
-nsresult
-XBL_DeserializeFunction(nsIObjectInputStream* aStream,
-                        JS::MutableHandle<JSObject*> aFunctionObject);
+nsresult XBL_DeserializeFunction(nsIObjectInputStream* aStream,
+                                 JS::MutableHandle<JSObject*> aFunctionObject);
 
-#endif 
+#endif  

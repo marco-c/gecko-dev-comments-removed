@@ -19,27 +19,27 @@ namespace js {
 
 class FreeOp;
 
-class NumberFormatObject : public NativeObject
-{
-  public:
-    static const Class class_;
+class NumberFormatObject : public NativeObject {
+ public:
+  static const Class class_;
 
-    static constexpr uint32_t INTERNALS_SLOT = 0;
-    static constexpr uint32_t UNUMBER_FORMAT_SLOT = 1;
-    static constexpr uint32_t SLOT_COUNT = 2;
+  static constexpr uint32_t INTERNALS_SLOT = 0;
+  static constexpr uint32_t UNUMBER_FORMAT_SLOT = 1;
+  static constexpr uint32_t SLOT_COUNT = 2;
 
-    static_assert(INTERNALS_SLOT == INTL_INTERNALS_OBJECT_SLOT,
-                  "INTERNALS_SLOT must match self-hosting define for internals object slot");
+  static_assert(INTERNALS_SLOT == INTL_INTERNALS_OBJECT_SLOT,
+                "INTERNALS_SLOT must match self-hosting define for internals "
+                "object slot");
 
-  private:
-    static const ClassOps classOps_;
+ private:
+  static const ClassOps classOps_;
 
-    static void finalize(FreeOp* fop, JSObject* obj);
+  static void finalize(FreeOp* fop, JSObject* obj);
 };
 
-extern JSObject*
-CreateNumberFormatPrototype(JSContext* cx, HandleObject Intl, Handle<GlobalObject*> global,
-                            MutableHandleObject constructor);
+extern JSObject* CreateNumberFormatPrototype(JSContext* cx, HandleObject Intl,
+                                             Handle<GlobalObject*> global,
+                                             MutableHandleObject constructor);
 
 
 
@@ -48,29 +48,8 @@ CreateNumberFormatPrototype(JSContext* cx, HandleObject Intl, Handle<GlobalObjec
 
 
 
-extern MOZ_MUST_USE bool
-intl_NumberFormat(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
-
-
-
-
-
-extern MOZ_MUST_USE bool
-intl_NumberFormat_availableLocales(JSContext* cx, unsigned argc, Value* vp);
-
-
-
-
-
-
-
-
-extern MOZ_MUST_USE bool
-intl_numberingSystem(JSContext* cx, unsigned argc, Value* vp);
+extern MOZ_MUST_USE bool intl_NumberFormat(JSContext* cx, unsigned argc,
+                                           Value* vp);
 
 
 
@@ -80,9 +59,31 @@ intl_numberingSystem(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-extern MOZ_MUST_USE bool
-intl_FormatNumber(JSContext* cx, unsigned argc, Value* vp);
+extern MOZ_MUST_USE bool intl_NumberFormat_availableLocales(JSContext* cx,
+                                                            unsigned argc,
+                                                            Value* vp);
 
-} 
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool intl_numberingSystem(JSContext* cx, unsigned argc,
+                                              Value* vp);
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool intl_FormatNumber(JSContext* cx, unsigned argc,
+                                           Value* vp);
+
+}  
 
 #endif 

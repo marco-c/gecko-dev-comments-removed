@@ -45,15 +45,13 @@ class MaybeCloseWindowHelper;
 
 
 
-class nsExternalHelperAppService
-: public nsIExternalHelperAppService,
-  public nsPIExternalAppLauncher,
-  public nsIExternalProtocolService,
-  public nsIMIMEService,
-  public nsIObserver,
-  public nsSupportsWeakReference
-{
-public:
+class nsExternalHelperAppService : public nsIExternalHelperAppService,
+                                   public nsPIExternalAppLauncher,
+                                   public nsIExternalProtocolService,
+                                   public nsIMIMEService,
+                                   public nsIObserver,
+                                   public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIEXTERNALHELPERAPPSERVICE
   NS_DECL_NSPIEXTERNALAPPLAUNCHER
@@ -68,25 +66,6 @@ public:
 
 
   MOZ_MUST_USE nsresult Init();
- 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  virtual already_AddRefed<nsIMIMEInfo> GetMIMEInfoFromOS(const nsACString& aMIMEType,
-                                                          const nsACString& aFileExt,
-                                                          bool       * aFound) = 0;
 
   
 
@@ -102,11 +81,30 @@ public:
 
 
 
-  virtual nsresult GetFileTokenForPath(const char16_t * platformAppPath,
-                                       nsIFile ** aFile);
 
-  virtual nsresult OSProtocolHandlerExists(const char *aScheme,
-                                                       bool *aExists) = 0;
+  virtual already_AddRefed<nsIMIMEInfo> GetMIMEInfoFromOS(
+      const nsACString& aMIMEType, const nsACString& aFileExt,
+      bool* aFound) = 0;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  virtual nsresult GetFileTokenForPath(const char16_t* platformAppPath,
+                                       nsIFile** aFile);
+
+  virtual nsresult OSProtocolHandlerExists(const char* aScheme,
+                                           bool* aExists) = 0;
 
   
 
@@ -117,7 +115,7 @@ public:
   virtual bool GetMIMETypeFromOSForExtension(const nsACString& aExtension,
                                              nsACString& aMIMEType);
 
-protected:
+ protected:
   virtual ~nsExternalHelperAppService();
 
   
@@ -128,8 +126,8 @@ protected:
 
 
 
-  nsresult FillMIMEInfoForMimeTypeFromExtras(
-    const nsACString& aContentType, nsIMIMEInfo * aMIMEInfo);
+  nsresult FillMIMEInfoForMimeTypeFromExtras(const nsACString& aContentType,
+                                             nsIMIMEInfo* aMIMEInfo);
   
 
 
@@ -138,8 +136,8 @@ protected:
 
 
 
-  nsresult FillMIMEInfoForExtensionFromExtras(
-    const nsACString& aExtension, nsIMIMEInfo * aMIMEInfo);
+  nsresult FillMIMEInfoForExtensionFromExtras(const nsACString& aExtension,
+                                              nsIMIMEInfo* aMIMEInfo);
 
   
 
@@ -147,8 +145,7 @@ protected:
 
 
 
-  bool GetTypeFromExtras(const nsACString& aExtension,
-                                       nsACString& aMIMEType);
+  bool GetTypeFromExtras(const nsACString& aExtension, nsACString& aMIMEType);
 
   
 
@@ -163,12 +160,13 @@ protected:
   
 
 
-  static void ExpungeTemporaryFilesHelper(nsCOMArray<nsIFile> &fileList);
+  static void ExpungeTemporaryFilesHelper(nsCOMArray<nsIFile>& fileList);
   
 
 
+
   static nsresult DeleteTemporaryFileHelper(nsIFile* aTemporaryFile,
-                                            nsCOMArray<nsIFile> &aFileList);
+                                            nsCOMArray<nsIFile>& aFileList);
   
 
 
@@ -191,13 +189,13 @@ protected:
 
   nsCOMArray<nsIFile> mTemporaryPrivateFilesList;
 
-private:
+ private:
   nsresult DoContentContentProcessHelper(const nsACString& aMimeContentType,
-                                         nsIRequest *aRequest,
-                                         nsIInterfaceRequestor *aContentContext,
+                                         nsIRequest* aRequest,
+                                         nsIInterfaceRequestor* aContentContext,
                                          bool aForceSave,
-                                         nsIInterfaceRequestor *aWindowContext,
-                                         nsIStreamListener ** aStreamListener);
+                                         nsIInterfaceRequestor* aWindowContext,
+                                         nsIStreamListener** aStreamListener);
 };
 
 
@@ -211,9 +209,8 @@ private:
 class nsExternalAppHandler final : public nsIStreamListener,
                                    public nsIHelperAppLauncher,
                                    public nsIBackgroundFileSaverObserver,
-                                   public nsINamed
-{
-public:
+                                   public nsINamed {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIREQUESTOBSERVER
@@ -237,22 +234,22 @@ public:
 
 
 
-  nsExternalAppHandler(nsIMIMEInfo * aMIMEInfo, const nsACString& aFileExtension,
-                       nsIInterfaceRequestor * aContentContext,
-                       nsIInterfaceRequestor * aWindowContext,
-                       nsExternalHelperAppService * aExtProtSvc,
-                       const nsAString& aFilename,
-                       uint32_t aReason, bool aForceSave);
+  nsExternalAppHandler(nsIMIMEInfo* aMIMEInfo, const nsACString& aFileExtension,
+                       nsIInterfaceRequestor* aContentContext,
+                       nsIInterfaceRequestor* aWindowContext,
+                       nsExternalHelperAppService* aExtProtSvc,
+                       const nsAString& aFilename, uint32_t aReason,
+                       bool aForceSave);
 
   
 
 
-  void DidDivertRequest(nsIRequest *request);
+  void DidDivertRequest(nsIRequest* request);
 
   
 
 
-  void MaybeApplyDecodingForExtension(nsIRequest *request);
+  void MaybeApplyDecodingForExtension(nsIRequest* request);
 
   
 
@@ -266,7 +263,7 @@ public:
     mContentContext = context;
   }
 
-protected:
+ protected:
   ~nsExternalAppHandler();
 
   nsCOMPtr<nsIFile> mTempFile;
@@ -309,7 +306,7 @@ protected:
 
 
   bool mForceSave;
-  
+
   
 
 
@@ -319,7 +316,7 @@ protected:
   
 
 
-  bool mStopRequestIssued; 
+  bool mStopRequestIssued;
 
   bool mIsFileChannel;
 
@@ -338,6 +335,7 @@ protected:
   PRTime mTimeDownloadStarted;
   int64_t mContentLength;
   int64_t mProgress; 
+
 
   
 
@@ -373,14 +371,14 @@ protected:
 
 
 
-  nsresult SetUpTempFile(nsIChannel * aChannel);
+  nsresult SetUpTempFile(nsIChannel* aChannel);
   
 
 
 
 
 
-  void RetargetLoadNotifications(nsIRequest *request);
+  void RetargetLoadNotifications(nsIRequest* request);
   
 
 
@@ -443,7 +441,7 @@ protected:
   
 
 
-  bool GetNeverAskFlagFromPref(const char * prefName, const char * aContentType);
+  bool GetNeverAskFlagFromPref(const char* prefName, const char* aContentType);
 
   
 
@@ -456,7 +454,8 @@ protected:
   
 
 
-  void SendStatusChange(ErrorType type, nsresult aStatus, nsIRequest *aRequest, const nsString& path);
+  void SendStatusChange(ErrorType type, nsresult aStatus, nsIRequest* aRequest,
+                        const nsString& path);
 
   
 
@@ -470,6 +469,7 @@ protected:
   nsCOMPtr<nsITransfer> mTransfer;
 
   nsCOMPtr<nsIChannel> mOriginalChannel; 
+
   nsCOMPtr<nsIHelperAppLauncherDialog> mDialog;
 
   
@@ -483,4 +483,4 @@ protected:
   RefPtr<nsExternalHelperAppService> mExtProtSvc;
 };
 
-#endif 
+#endif  

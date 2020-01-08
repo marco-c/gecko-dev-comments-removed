@@ -22,75 +22,60 @@ class nsINode;
 namespace mozilla {
 namespace dom {
 
-class TreeWalker final : public nsISupports, public nsTraversal
-{
-    virtual ~TreeWalker();
+class TreeWalker final : public nsISupports, public nsTraversal {
+  virtual ~TreeWalker();
 
-public:
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+ public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
-    TreeWalker(nsINode *aRoot,
-               uint32_t aWhatToShow,
-               NodeFilter* aFilter);
+  TreeWalker(nsINode* aRoot, uint32_t aWhatToShow, NodeFilter* aFilter);
 
-    NS_DECL_CYCLE_COLLECTION_CLASS(TreeWalker)
+  NS_DECL_CYCLE_COLLECTION_CLASS(TreeWalker)
 
-    
-    nsINode* Root() const
-    {
-        return mRoot;
-    }
-    uint32_t WhatToShow() const
-    {
-        return mWhatToShow;
-    }
-    NodeFilter* GetFilter()
-    {
-        return mFilter;
-    }
-    nsINode* CurrentNode() const
-    {
-        return mCurrentNode;
-    }
-    void SetCurrentNode(nsINode& aNode, ErrorResult& aResult);
-    
-    
-    already_AddRefed<nsINode> ParentNode(ErrorResult& aResult);
-    already_AddRefed<nsINode> FirstChild(ErrorResult& aResult);
-    already_AddRefed<nsINode> LastChild(ErrorResult& aResult);
-    already_AddRefed<nsINode> PreviousSibling(ErrorResult& aResult);
-    already_AddRefed<nsINode> NextSibling(ErrorResult& aResult);
-    already_AddRefed<nsINode> PreviousNode(ErrorResult& aResult);
-    already_AddRefed<nsINode> NextNode(ErrorResult& aResult);
+  
+  nsINode* Root() const { return mRoot; }
+  uint32_t WhatToShow() const { return mWhatToShow; }
+  NodeFilter* GetFilter() { return mFilter; }
+  nsINode* CurrentNode() const { return mCurrentNode; }
+  void SetCurrentNode(nsINode& aNode, ErrorResult& aResult);
+  
+  
+  already_AddRefed<nsINode> ParentNode(ErrorResult& aResult);
+  already_AddRefed<nsINode> FirstChild(ErrorResult& aResult);
+  already_AddRefed<nsINode> LastChild(ErrorResult& aResult);
+  already_AddRefed<nsINode> PreviousSibling(ErrorResult& aResult);
+  already_AddRefed<nsINode> NextSibling(ErrorResult& aResult);
+  already_AddRefed<nsINode> PreviousNode(ErrorResult& aResult);
+  already_AddRefed<nsINode> NextNode(ErrorResult& aResult);
 
-    bool WrapObject(JSContext *aCx, JS::Handle<JSObject*> aGivenProto, JS::MutableHandle<JSObject*> aReflector);
+  bool WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
+                  JS::MutableHandle<JSObject*> aReflector);
 
-private:
-    nsCOMPtr<nsINode> mCurrentNode;
+ private:
+  nsCOMPtr<nsINode> mCurrentNode;
 
-    
+  
 
 
 
 
 
 
-    already_AddRefed<nsINode> FirstChildInternal(bool aReversed,
-                                                 ErrorResult& aResult);
+  already_AddRefed<nsINode> FirstChildInternal(bool aReversed,
+                                               ErrorResult& aResult);
 
-    
-
-
+  
 
 
 
 
-    already_AddRefed<nsINode> NextSiblingInternal(bool aReversed,
-                                                  ErrorResult& aResult);
+
+
+  already_AddRefed<nsINode> NextSiblingInternal(bool aReversed,
+                                                ErrorResult& aResult);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

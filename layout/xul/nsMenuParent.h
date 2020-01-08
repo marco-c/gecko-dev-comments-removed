@@ -17,11 +17,11 @@ class nsMenuFrame;
 
 
 
-class nsMenuParent {
 
-public:
+class nsMenuParent {
+ public:
   
-  virtual nsMenuFrame *GetCurrentMenuItem() = 0;
+  virtual nsMenuFrame* GetCurrentMenuItem() = 0;
   
   NS_IMETHOD SetCurrentMenuItem(nsMenuFrame* aMenuItem) = 0;
   
@@ -33,12 +33,12 @@ public:
   
   
   
-  NS_IMETHOD ChangeMenuItem(nsMenuFrame* aMenuItem,
-                            bool aSelectFirstItem,
+  NS_IMETHOD ChangeMenuItem(nsMenuFrame* aMenuItem, bool aSelectFirstItem,
                             bool aFromKey) = 0;
 
   
   virtual bool IsOpen() = 0;
+  
   
   virtual bool IsActive() = 0;
   
@@ -67,4 +67,3 @@ public:
 };
 
 #endif
-

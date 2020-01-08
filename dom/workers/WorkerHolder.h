@@ -31,8 +31,7 @@ class WorkerPrivate;
 
 
 
-enum WorkerStatus
-{
+enum WorkerStatus {
   
   Pending = 0,
 
@@ -59,9 +58,8 @@ enum WorkerStatus
   Dead
 };
 
-class WorkerHolder
-{
-public:
+class WorkerHolder {
+ public:
   enum Behavior {
     AllowIdleShutdownStart,
     PreventIdleShutdownStart,
@@ -78,18 +76,14 @@ public:
 
   Behavior GetBehavior() const;
 
-  const char*
-  Name() const
-  {
-    return mName;
-  }
+  const char* Name() const { return mName; }
 
-protected:
+ protected:
   void ReleaseWorkerInternal();
 
   WorkerPrivate* MOZ_NON_OWNING_REF mWorkerPrivate;
 
-private:
+ private:
   void AssertIsOwningThread() const;
 
   const Behavior mBehavior;
@@ -99,7 +93,7 @@ private:
   const char* mName;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

@@ -79,7 +79,6 @@
 
 
 
-
 namespace JS {
 namespace ubi {
 
@@ -88,150 +87,145 @@ struct Census;
 class CountBase;
 
 struct CountDeleter {
-    JS_PUBLIC_API void operator()(CountBase*);
+  JS_PUBLIC_API void operator()(CountBase*);
 };
 
 using CountBasePtr = js::UniquePtr<CountBase, CountDeleter>;
 
 
 struct CountType {
-    explicit CountType() { }
-    virtual ~CountType() { }
+  explicit CountType() {}
+  virtual ~CountType() {}
 
-    
-    virtual void destructCount(CountBase& count) = 0;
+  
+  virtual void destructCount(CountBase& count) = 0;
 
-    
-    
-    virtual CountBasePtr makeCount() = 0;
+  
+  
+  virtual CountBasePtr makeCount() = 0;
 
-    
-    virtual void traceCount(CountBase& count, JSTracer* trc) = 0;
+  
+  virtual void traceCount(CountBase& count, JSTracer* trc) = 0;
 
-    
-    
-    virtual MOZ_MUST_USE bool count(CountBase& count,
-                                    mozilla::MallocSizeOf mallocSizeOf,
-                                    const Node& node) = 0;
+  
+  
+  virtual MOZ_MUST_USE bool count(CountBase& count,
+                                  mozilla::MallocSizeOf mallocSizeOf,
+                                  const Node& node) = 0;
 
-    
-    
-    virtual MOZ_MUST_USE bool report(JSContext* cx, CountBase& count,
-                                     MutableHandleValue report) = 0;
+  
+  
+  virtual MOZ_MUST_USE bool report(JSContext* cx, CountBase& count,
+                                   MutableHandleValue report) = 0;
 };
 
 using CountTypePtr = js::UniquePtr<CountType>;
 
 
 class CountBase {
-    
-    
-    
-    
-    CountType& type;
+  
+  
+  
+  
+  CountType& type;
 
-  protected:
-    ~CountBase() { }
+ protected:
+  ~CountBase() {}
 
-  public:
-    explicit CountBase(CountType& type)
-      : type(type)
-      , total_(0)
-      , smallestNodeIdCounted_(SIZE_MAX)
-    { }
+ public:
+  explicit CountBase(CountType& type)
+      : type(type), total_(0), smallestNodeIdCounted_(SIZE_MAX) {}
 
-    
-    MOZ_MUST_USE bool count(mozilla::MallocSizeOf mallocSizeOf, const Node& node) {
-        total_++;
+  
+  MOZ_MUST_USE bool count(mozilla::MallocSizeOf mallocSizeOf,
+                          const Node& node) {
+    total_++;
 
-        auto id = node.identifier();
-        if (id < smallestNodeIdCounted_) {
-            smallestNodeIdCounted_ = id;
-        }
+    auto id = node.identifier();
+    if (id < smallestNodeIdCounted_) {
+      smallestNodeIdCounted_ = id;
+    }
 
 #ifdef DEBUG
-        size_t oldTotal = total_;
+    size_t oldTotal = total_;
 #endif
 
-        bool ret = type.count(*this, mallocSizeOf, node);
+    bool ret = type.count(*this, mallocSizeOf, node);
 
-        MOZ_ASSERT(total_ == oldTotal,
-                   "CountType::count should not increment total_, CountBase::count handles that");
+    MOZ_ASSERT(total_ == oldTotal,
+               "CountType::count should not increment total_, CountBase::count "
+               "handles that");
 
-        return ret;
-    }
+    return ret;
+  }
 
-    
-    
-    
-    MOZ_MUST_USE bool report(JSContext* cx, MutableHandleValue report) {
-        return type.report(cx, *this, report);
-    }
+  
+  
+  
+  MOZ_MUST_USE bool report(JSContext* cx, MutableHandleValue report) {
+    return type.report(cx, *this, report);
+  }
 
-    
-    
-    void destruct() { return type.destructCount(*this); }
+  
+  
+  void destruct() { return type.destructCount(*this); }
 
-    
-    void trace(JSTracer* trc) { type.traceCount(*this, trc); }
+  
+  void trace(JSTracer* trc) { type.traceCount(*this, trc); }
 
-    size_t total_;
+  size_t total_;
 
-    
-    
-    Node::Id smallestNodeIdCounted_;
+  
+  
+  Node::Id smallestNodeIdCounted_;
 };
 
 class RootedCount : JS::CustomAutoRooter {
-    CountBasePtr count;
+  CountBasePtr count;
 
-    void trace(JSTracer* trc) override { count->trace(trc); }
+  void trace(JSTracer* trc) override { count->trace(trc); }
 
-  public:
-    RootedCount(JSContext* cx, CountBasePtr&& count)
-        : CustomAutoRooter(cx),
-          count(std::move(count))
-          { }
-    CountBase* operator->() const { return count.get(); }
-    explicit operator bool() const { return count.get(); }
-    operator CountBasePtr&() { return count; }
+ public:
+  RootedCount(JSContext* cx, CountBasePtr&& count)
+      : CustomAutoRooter(cx), count(std::move(count)) {}
+  CountBase* operator->() const { return count.get(); }
+  explicit operator bool() const { return count.get(); }
+  operator CountBasePtr&() { return count; }
 };
 
 
 struct Census {
-    JSContext* const cx;
-    
-    
-    
-    JS::ZoneSet targetZones;
+  JSContext* const cx;
+  
+  
+  
+  JS::ZoneSet targetZones;
 
-    explicit Census(JSContext* cx) : cx(cx) { }
+  explicit Census(JSContext* cx) : cx(cx) {}
 };
 
 
 
 class CensusHandler {
-    Census& census;
-    CountBasePtr& rootCount;
-    mozilla::MallocSizeOf mallocSizeOf;
+  Census& census;
+  CountBasePtr& rootCount;
+  mozilla::MallocSizeOf mallocSizeOf;
 
-  public:
-    CensusHandler(Census& census, CountBasePtr& rootCount, mozilla::MallocSizeOf mallocSizeOf)
-      : census(census),
-        rootCount(rootCount),
-        mallocSizeOf(mallocSizeOf)
-    { }
+ public:
+  CensusHandler(Census& census, CountBasePtr& rootCount,
+                mozilla::MallocSizeOf mallocSizeOf)
+      : census(census), rootCount(rootCount), mallocSizeOf(mallocSizeOf) {}
 
-    MOZ_MUST_USE bool report(JSContext* cx, MutableHandleValue report) {
-        return rootCount->report(cx, report);
-    }
+  MOZ_MUST_USE bool report(JSContext* cx, MutableHandleValue report) {
+    return rootCount->report(cx, report);
+  }
 
-    
-    class NodeData { };
+  
+  class NodeData {};
 
-    MOZ_MUST_USE JS_PUBLIC_API bool operator() (BreadthFirst<CensusHandler>& traversal,
-                                                Node origin, const Edge& edge,
-                                                NodeData* referentData, bool first);
+  MOZ_MUST_USE JS_PUBLIC_API bool operator()(
+      BreadthFirst<CensusHandler>& traversal, Node origin, const Edge& edge,
+      NodeData* referentData, bool first);
 };
 
 using CensusTraversal = BreadthFirst<CensusHandler>;
@@ -239,16 +233,17 @@ using CensusTraversal = BreadthFirst<CensusHandler>;
 
 
 MOZ_MUST_USE JS_PUBLIC_API bool ParseCensusOptions(JSContext* cx,
-                                                   Census& census, HandleObject options,
+                                                   Census& census,
+                                                   HandleObject options,
                                                    CountTypePtr& outResult);
 
 
 
 
-JS_PUBLIC_API CountTypePtr ParseBreakdown(JSContext* cx, HandleValue breakdownValue);
+JS_PUBLIC_API CountTypePtr ParseBreakdown(JSContext* cx,
+                                          HandleValue breakdownValue);
 
+}  
+}  
 
-} 
-} 
-
-#endif 
+#endif  

@@ -32,20 +32,18 @@ class IMEStateManager;
 
 
 
-class TextComposition final
-{
+class TextComposition final {
   friend class IMEStateManager;
 
   NS_INLINE_DECL_REFCOUNTING(TextComposition)
 
-public:
+ public:
   typedef dom::TabParent TabParent;
   typedef dom::Text Text;
 
   static bool IsHandlingSelectionEvent() { return sHandlingSelectionEvent; }
 
-  TextComposition(nsPresContext* aPresContext,
-                  nsINode* aNode,
+  TextComposition(nsPresContext* aPresContext, nsINode* aNode,
                   TabParent* aTabParent,
                   WidgetCompositionEvent* aCompositionEvent);
 
@@ -75,21 +73,16 @@ public:
   
   TextRangeArray* GetRanges() const { return mRanges; }
   
-  nsIWidget* GetWidget() const
-  {
+  nsIWidget* GetWidget() const {
     return mPresContext ? mPresContext->GetRootWidget() : nullptr;
   }
   
-  TabParent* GetTabParent() const
-  {
-    return mTabParent;
-  }
+  TabParent* GetTabParent() const { return mTabParent; }
   
   
   bool IsSynthesizedForTests() const { return mIsSynthesizedForTests; }
 
-  const widget::NativeIMEContext& GetNativeIMEContext() const
-  {
+  const widget::NativeIMEContext& GetNativeIMEContext() const {
     return mNativeContext;
   }
 
@@ -108,8 +101,7 @@ public:
 
 
 
-  bool IsRequestingCommitOrCancelComposition() const
-  {
+  bool IsRequestingCommitOrCancelComposition() const {
     return mIsRequestingCancel || mIsRequestingCommit;
   }
 
@@ -122,16 +114,14 @@ public:
   
 
 
-  uint32_t NativeOffsetOfStartComposition() const
-  {
+  uint32_t NativeOffsetOfStartComposition() const {
     return mCompositionStartOffset;
   }
 
   
 
 
-  uint32_t NativeOffsetOfTargetClause() const
-  {
+  uint32_t NativeOffsetOfTargetClause() const {
     return mCompositionStartOffset + mTargetClauseOffsetInComposition;
   }
 
@@ -139,8 +129,7 @@ public:
 
 
 
-  uint32_t XPOffsetInTextNode() const
-  {
+  uint32_t XPOffsetInTextNode() const {
     return mCompositionStartOffsetInTextNode;
   }
 
@@ -148,18 +137,17 @@ public:
 
 
 
-  uint32_t XPLengthInTextNode() const
-  {
-    return mCompositionLengthInTextNode == UINT32_MAX ?
-             0 : mCompositionLengthInTextNode;
+  uint32_t XPLengthInTextNode() const {
+    return mCompositionLengthInTextNode == UINT32_MAX
+               ? 0
+               : mCompositionLengthInTextNode;
   }
 
   
 
 
 
-  uint32_t XPEndOffsetInTextNode() const
-  {
+  uint32_t XPEndOffsetInTextNode() const {
     if (mCompositionStartOffsetInTextNode == UINT32_MAX ||
         mCompositionLengthInTextNode == UINT32_MAX) {
       return UINT32_MAX;
@@ -177,18 +165,14 @@ public:
 
 
 
-  bool IsEditorHandlingEvent() const
-  {
-    return mIsEditorHandlingEvent;
-  }
+  bool IsEditorHandlingEvent() const { return mIsEditorHandlingEvent; }
 
   
 
 
 
 
-  bool IsMovingToNewTextNode() const
-  {
+  bool IsMovingToNewTextNode() const {
     return !mContainerTextNode && mCompositionLengthInTextNode &&
            mCompositionLengthInTextNode != UINT32_MAX;
   }
@@ -212,28 +196,25 @@ public:
 
 
 
-  class MOZ_STACK_CLASS CompositionChangeEventHandlingMarker
-  {
-  public:
+  class MOZ_STACK_CLASS CompositionChangeEventHandlingMarker {
+   public:
     CompositionChangeEventHandlingMarker(
-      TextComposition* aComposition,
-      const WidgetCompositionEvent* aCompositionChangeEvent)
-      : mComposition(aComposition)
-    {
+        TextComposition* aComposition,
+        const WidgetCompositionEvent* aCompositionChangeEvent)
+        : mComposition(aComposition) {
       mComposition->EditorWillHandleCompositionChangeEvent(
-                      aCompositionChangeEvent);
+          aCompositionChangeEvent);
     }
 
-    ~CompositionChangeEventHandlingMarker()
-    {
+    ~CompositionChangeEventHandlingMarker() {
       mComposition->EditorDidHandleCompositionChangeEvent();
     }
 
-  private:
+   private:
     RefPtr<TextComposition> mComposition;
     CompositionChangeEventHandlingMarker();
     CompositionChangeEventHandlingMarker(
-      const CompositionChangeEventHandlingMarker& aOther);
+        const CompositionChangeEventHandlingMarker& aOther);
   };
 
   
@@ -250,24 +231,22 @@ public:
 
 
   void OnCreateCompositionTransaction(const nsAString& aStringToInsert,
-                                      Text* aTextNode,
-                                      uint32_t aOffset)
-  {
+                                      Text* aTextNode, uint32_t aOffset) {
     if (!mContainerTextNode) {
       mContainerTextNode = aTextNode;
       mCompositionStartOffsetInTextNode = aOffset;
       NS_WARNING_ASSERTION(mCompositionStartOffsetInTextNode != UINT32_MAX,
-        "The text node is really too long.");
+                           "The text node is really too long.");
     }
 #ifdef DEBUG
     else {
       MOZ_ASSERT(aTextNode == mContainerTextNode);
       MOZ_ASSERT(aOffset == mCompositionStartOffsetInTextNode);
     }
-#endif 
+#endif  
     mCompositionLengthInTextNode = aStringToInsert.Length();
     NS_WARNING_ASSERTION(mCompositionLengthInTextNode != UINT32_MAX,
-      "The string to insert is really too long.");
+                         "The string to insert is really too long.");
   }
 
   
@@ -275,18 +254,16 @@ public:
 
 
 
-  void OnTextNodeRemoved()
-  {
+  void OnTextNodeRemoved() {
     mContainerTextNode = nullptr;
     
     
     
   }
 
-private:
+ private:
   
-  ~TextComposition()
-  {
+  ~TextComposition() {
     
   }
 
@@ -394,23 +371,22 @@ private:
 
   
   TextComposition()
-    : mPresContext(nullptr)
-    , mNativeContext(nullptr)
-    , mCompositionStartOffset(0)
-    , mTargetClauseOffsetInComposition(0)
-    , mCompositionStartOffsetInTextNode(UINT32_MAX)
-    , mCompositionLengthInTextNode(UINT32_MAX)
-    , mIsSynthesizedForTests(false)
-    , mIsComposing(false)
-    , mIsEditorHandlingEvent(false)
-    , mIsRequestingCommit(false)
-    , mIsRequestingCancel(false)
-    , mRequestedToCommitOrCancel(false)
-    , mHasReceivedCommitEvent(false)
-    , mWasNativeCompositionEndEventDiscarded(false)
-    , mAllowControlCharacters(false)
-    , mWasCompositionStringEmpty(true)
-  {}
+      : mPresContext(nullptr),
+        mNativeContext(nullptr),
+        mCompositionStartOffset(0),
+        mTargetClauseOffsetInComposition(0),
+        mCompositionStartOffsetInTextNode(UINT32_MAX),
+        mCompositionLengthInTextNode(UINT32_MAX),
+        mIsSynthesizedForTests(false),
+        mIsComposing(false),
+        mIsEditorHandlingEvent(false),
+        mIsRequestingCommit(false),
+        mIsRequestingCancel(false),
+        mRequestedToCommitOrCancel(false),
+        mHasReceivedCommitEvent(false),
+        mWasNativeCompositionEndEventDiscarded(false),
+        mAllowControlCharacters(false),
+        mWasCompositionStringEmpty(true) {}
   TextComposition(const TextComposition& aOther);
 
   
@@ -421,8 +397,7 @@ private:
 
 
 
-  bool CanRequsetIMEToCommitOrCancelComposition() const
-  {
+  bool CanRequsetIMEToCommitOrCancelComposition() const {
     return !mIsRequestingCommit && !mIsRequestingCancel &&
            !mRequestedToCommitOrCancel && !mHasReceivedCommitEvent;
   }
@@ -443,7 +418,7 @@ private:
 
 
   void EditorWillHandleCompositionChangeEvent(
-         const WidgetCompositionEvent* aCompositionChangeEvent);
+      const WidgetCompositionEvent* aCompositionChangeEvent);
 
   
 
@@ -475,14 +450,13 @@ private:
   void DispatchEvent(WidgetCompositionEvent* aDispatchEvent,
                      nsEventStatus* aStatus,
                      EventDispatchingCallback* aCallback,
-                     const WidgetCompositionEvent *aOriginalEvent = nullptr);
+                     const WidgetCompositionEvent* aOriginalEvent = nullptr);
 
   
 
 
 
-  void HandleSelectionEvent(WidgetSelectionEvent* aSelectionEvent)
-  {
+  void HandleSelectionEvent(WidgetSelectionEvent* aSelectionEvent) {
     HandleSelectionEvent(mPresContext, mTabParent, aSelectionEvent);
   }
   static void HandleSelectionEvent(nsPresContext* aPresContext,
@@ -496,7 +470,7 @@ private:
 
 
   bool MaybeDispatchCompositionUpdate(
-         const WidgetCompositionEvent* aCompositionEvent);
+      const WidgetCompositionEvent* aCompositionEvent);
 
   
 
@@ -505,17 +479,15 @@ private:
 
 
   BaseEventFlags CloneAndDispatchAs(
-                   const WidgetCompositionEvent* aCompositionEvent,
-                   EventMessage aMessage,
-                   nsEventStatus* aStatus = nullptr,
-                   EventDispatchingCallback* aCallBack = nullptr);
+      const WidgetCompositionEvent* aCompositionEvent, EventMessage aMessage,
+      nsEventStatus* aStatus = nullptr,
+      EventDispatchingCallback* aCallBack = nullptr);
 
   
 
 
 
-  bool WasNativeCompositionEndEventDiscarded() const
-  {
+  bool WasNativeCompositionEndEventDiscarded() const {
     return mWasNativeCompositionEndEventDiscarded;
   }
 
@@ -531,7 +503,7 @@ private:
 
 
   void OnCompositionEventDispatched(
-         const WidgetCompositionEvent* aDispatchEvent);
+      const WidgetCompositionEvent* aDispatchEvent);
 
   
 
@@ -539,7 +511,7 @@ private:
 
 
   void MaybeNotifyIMEOfCompositionEventHandled(
-         const WidgetCompositionEvent* aCompositionEvent);
+      const WidgetCompositionEvent* aCompositionEvent);
 
   
 
@@ -561,9 +533,8 @@ private:
 
 
 
-  class CompositionEventDispatcher : public Runnable
-  {
-  public:
+  class CompositionEventDispatcher : public Runnable {
+   public:
     CompositionEventDispatcher(TextComposition* aTextComposition,
                                nsINode* aEventTarget,
                                EventMessage aEventMessage,
@@ -571,7 +542,7 @@ private:
                                bool aIsSynthesizedEvent = false);
     NS_IMETHOD Run() override;
 
-  private:
+   private:
     RefPtr<TextComposition> mTextComposition;
     nsCOMPtr<nsINode> mEventTarget;
     nsString mData;
@@ -579,9 +550,9 @@ private:
     bool mIsSynthesizedEvent;
 
     CompositionEventDispatcher()
-      : Runnable("TextComposition::CompositionEventDispatcher")
-      , mEventMessage(eVoidEvent)
-      , mIsSynthesizedEvent(false){};
+        : Runnable("TextComposition::CompositionEventDispatcher"),
+          mEventMessage(eVoidEvent),
+          mIsSynthesizedEvent(false){};
   };
 
   
@@ -612,17 +583,16 @@ private:
 
 
 
-class TextCompositionArray final :
-  public AutoTArray<RefPtr<TextComposition>, 2>
-{
-public:
+class TextCompositionArray final
+    : public AutoTArray<RefPtr<TextComposition>, 2> {
+ public:
   
   index_type IndexOf(const widget::NativeIMEContext& aNativeIMEContext);
   index_type IndexOf(nsIWidget* aWidget);
 
   TextComposition* GetCompositionFor(nsIWidget* aWidget);
   TextComposition* GetCompositionFor(
-                     const WidgetCompositionEvent* aCompositionEvent);
+      const WidgetCompositionEvent* aCompositionEvent);
 
   
   index_type IndexOf(nsPresContext* aPresContext);
@@ -635,6 +605,6 @@ public:
                                            nsIContent* aContent);
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -20,12 +20,12 @@ namespace mozilla {
 
 
 
-template<typename T>
+template <typename T>
 struct IsNullPointer : FalseType {};
 
-template<>
+template <>
 struct IsNullPointer<decltype(nullptr)> : TrueType {};
 
-} 
+}  
 
 #endif 

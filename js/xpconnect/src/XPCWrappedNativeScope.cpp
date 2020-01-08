@@ -27,9 +27,8 @@ using namespace JS;
 XPCWrappedNativeScope* XPCWrappedNativeScope::gScopes = nullptr;
 XPCWrappedNativeScope* XPCWrappedNativeScope::gDyingScopes = nullptr;
 
-static bool
-RemoteXULForbidsXBLScope(nsIPrincipal* aPrincipal, HandleObject aGlobal)
-{
+static bool RemoteXULForbidsXBLScope(nsIPrincipal* aPrincipal,
+                                     HandleObject aGlobal) {
   MOZ_ASSERT(aPrincipal);
 
   
@@ -37,711 +36,657 @@ RemoteXULForbidsXBLScope(nsIPrincipal* aPrincipal, HandleObject aGlobal)
   
   
   if (IsSandbox(aGlobal)) {
-      return false;
+    return false;
   }
 
   
   
   MOZ_ASSERT(nsContentUtils::IsInitialized());
   if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
-      return false;
+    return false;
   }
 
   
   if (!nsContentUtils::AllowXULXBLForPrincipal(aPrincipal)) {
-      return false;
+    return false;
   }
 
   
   return !Preferences::GetBool("dom.use_xbl_scopes_for_remote_xul", false);
 }
 
-XPCWrappedNativeScope::XPCWrappedNativeScope(JSContext* cx,
-                                             JS::HandleObject aGlobal,
-                                             const mozilla::SiteIdentifier& aSite)
-      : mWrappedNativeMap(Native2WrappedNativeMap::newMap(XPC_NATIVE_MAP_LENGTH)),
-        mWrappedNativeProtoMap(ClassInfo2WrappedNativeProtoMap::newMap(XPC_NATIVE_PROTO_MAP_LENGTH)),
-        mComponents(nullptr),
-        mNext(nullptr),
-        mGlobalJSObject(aGlobal)
-{
-    
-    {
-        MOZ_ASSERT(aGlobal);
-        DebugOnly<const js::Class*> clasp = js::GetObjectClass(aGlobal);
-        MOZ_ASSERT(clasp->flags & (JSCLASS_PRIVATE_IS_NSISUPPORTS |
-                                   JSCLASS_HAS_PRIVATE) ||
-                   mozilla::dom::IsDOMClass(clasp));
+XPCWrappedNativeScope::XPCWrappedNativeScope(
+    JSContext* cx, JS::HandleObject aGlobal,
+    const mozilla::SiteIdentifier& aSite)
+    : mWrappedNativeMap(Native2WrappedNativeMap::newMap(XPC_NATIVE_MAP_LENGTH)),
+      mWrappedNativeProtoMap(
+          ClassInfo2WrappedNativeProtoMap::newMap(XPC_NATIVE_PROTO_MAP_LENGTH)),
+      mComponents(nullptr),
+      mNext(nullptr),
+      mGlobalJSObject(aGlobal) {
+  
+  {
+    MOZ_ASSERT(aGlobal);
+    DebugOnly<const js::Class*> clasp = js::GetObjectClass(aGlobal);
+    MOZ_ASSERT(clasp->flags &
+                   (JSCLASS_PRIVATE_IS_NSISUPPORTS | JSCLASS_HAS_PRIVATE) ||
+               mozilla::dom::IsDOMClass(clasp));
 #ifdef DEBUG
-        for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
-            MOZ_ASSERT(aGlobal != cur->GetGlobalJSObjectPreserveColor(), "dup object");
-        }
+    for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+      MOZ_ASSERT(aGlobal != cur->GetGlobalJSObjectPreserveColor(),
+                 "dup object");
+    }
 #endif
 
-        mNext = gScopes;
-        gScopes = this;
-    }
+    mNext = gScopes;
+    gScopes = this;
+  }
 
-    MOZ_COUNT_CTOR(XPCWrappedNativeScope);
+  MOZ_COUNT_CTOR(XPCWrappedNativeScope);
 
-    nsIPrincipal* principal = GetPrincipal();
+  nsIPrincipal* principal = GetPrincipal();
 
-    
-    JS::Compartment* c = js::GetObjectCompartment(aGlobal);
-    MOZ_ASSERT(!JS_GetCompartmentPrivate(c));
-    CompartmentPrivate* priv =
-        new CompartmentPrivate(c, BasePrincipal::Cast(principal), aSite);
-    JS_SetCompartmentPrivate(c, priv);
+  
+  JS::Compartment* c = js::GetObjectCompartment(aGlobal);
+  MOZ_ASSERT(!JS_GetCompartmentPrivate(c));
+  CompartmentPrivate* priv =
+      new CompartmentPrivate(c, BasePrincipal::Cast(principal), aSite);
+  JS_SetCompartmentPrivate(c, priv);
 
-    
-    Realm* realm = JS::GetObjectRealmOrNull(aGlobal);
-    RealmPrivate* realmPriv = new RealmPrivate(realm);
-    realmPriv->scope = this;
-    JS::SetRealmPrivate(realm, realmPriv);
+  
+  Realm* realm = JS::GetObjectRealmOrNull(aGlobal);
+  RealmPrivate* realmPriv = new RealmPrivate(realm);
+  realmPriv->scope = this;
+  JS::SetRealmPrivate(realm, realmPriv);
 
-    
-    
-    
-    mAllowContentXBLScope = !RemoteXULForbidsXBLScope(principal, aGlobal);
+  
+  
+  
+  mAllowContentXBLScope = !RemoteXULForbidsXBLScope(principal, aGlobal);
 
-    
-    mUseContentXBLScope = mAllowContentXBLScope;
-    if (mUseContentXBLScope) {
-        const js::Class* clasp = js::GetObjectClass(mGlobalJSObject);
-        mUseContentXBLScope = !strcmp(clasp->name, "Window");
-    }
-    if (mUseContentXBLScope) {
-        mUseContentXBLScope = principal && !nsContentUtils::IsSystemPrincipal(principal);
-    }
+  
+  mUseContentXBLScope = mAllowContentXBLScope;
+  if (mUseContentXBLScope) {
+    const js::Class* clasp = js::GetObjectClass(mGlobalJSObject);
+    mUseContentXBLScope = !strcmp(clasp->name, "Window");
+  }
+  if (mUseContentXBLScope) {
+    mUseContentXBLScope =
+        principal && !nsContentUtils::IsSystemPrincipal(principal);
+  }
 }
 
 
-bool
-XPCWrappedNativeScope::IsDyingScope(XPCWrappedNativeScope* scope)
-{
-    for (XPCWrappedNativeScope* cur = gDyingScopes; cur; cur = cur->mNext) {
-        if (scope == cur) {
-            return true;
-        }
+bool XPCWrappedNativeScope::IsDyingScope(XPCWrappedNativeScope* scope) {
+  for (XPCWrappedNativeScope* cur = gDyingScopes; cur; cur = cur->mNext) {
+    if (scope == cur) {
+      return true;
     }
+  }
+  return false;
+}
+
+bool XPCWrappedNativeScope::GetComponentsJSObject(JS::MutableHandleObject obj) {
+  AutoJSContext cx;
+  if (!mComponents) {
+    nsIPrincipal* p = GetPrincipal();
+    bool system = nsXPConnect::SecurityManager()->IsSystemPrincipal(p);
+    mComponents =
+        system ? new nsXPCComponents(this) : new nsXPCComponentsBase(this);
+  }
+
+  RootedValue val(cx);
+  xpcObjectHelper helper(mComponents);
+  bool ok = XPCConvert::NativeInterface2JSObject(&val, helper, nullptr, false,
+                                                 nullptr);
+  if (NS_WARN_IF(!ok)) {
     return false;
+  }
+
+  if (NS_WARN_IF(!val.isObject())) {
+    return false;
+  }
+
+  
+  
+  obj.set(&val.toObject());
+  if (NS_WARN_IF(!JS_WrapObject(cx, obj))) {
+    return false;
+  }
+  return true;
 }
 
-bool
-XPCWrappedNativeScope::GetComponentsJSObject(JS::MutableHandleObject obj)
-{
-    AutoJSContext cx;
-    if (!mComponents) {
-        nsIPrincipal* p = GetPrincipal();
-        bool system = nsXPConnect::SecurityManager()->IsSystemPrincipal(p);
-        mComponents = system ? new nsXPCComponents(this)
-                             : new nsXPCComponentsBase(this);
-    }
+void XPCWrappedNativeScope::ForcePrivilegedComponents() {
+  nsCOMPtr<nsIXPCComponents> c = do_QueryInterface(mComponents);
+  if (!c) {
+    mComponents = new nsXPCComponents(this);
+  }
+}
 
-    RootedValue val(cx);
-    xpcObjectHelper helper(mComponents);
-    bool ok = XPCConvert::NativeInterface2JSObject(&val, helper, nullptr,
-                                                   false, nullptr);
-    if (NS_WARN_IF(!ok)) {
-        return false;
-    }
+static bool DefineSubcomponentProperty(JSContext* aCx, HandleObject aGlobal,
+                                       nsISupports* aSubcomponent,
+                                       const nsID* aIID,
+                                       unsigned int aStringIndex) {
+  RootedValue subcompVal(aCx);
+  xpcObjectHelper helper(aSubcomponent);
+  if (!XPCConvert::NativeInterface2JSObject(&subcompVal, helper, aIID, false,
+                                            nullptr))
+    return false;
+  if (NS_WARN_IF(!subcompVal.isObject())) {
+    return false;
+  }
+  RootedId id(aCx, XPCJSContext::Get()->GetStringID(aStringIndex));
+  return JS_DefinePropertyById(aCx, aGlobal, id, subcompVal, 0);
+}
 
-    if (NS_WARN_IF(!val.isObject())) {
-        return false;
-    }
+bool XPCWrappedNativeScope::AttachComponentsObject(JSContext* aCx) {
+  RootedObject components(aCx);
+  if (!GetComponentsJSObject(&components)) {
+    return false;
+  }
 
-    
-    
-    obj.set(&val.toObject());
-    if (NS_WARN_IF(!JS_WrapObject(cx, obj))) {
-        return false;
-    }
+  RootedObject global(aCx, GetGlobalJSObject());
+  MOZ_ASSERT(js::IsObjectInContextCompartment(global, aCx));
+
+  
+  
+  
+  unsigned attrs = JSPROP_READONLY | JSPROP_RESOLVING;
+  nsCOMPtr<nsIXPCComponents> c = do_QueryInterface(mComponents);
+  if (c) {
+    attrs |= JSPROP_PERMANENT;
+  }
+
+  RootedId id(aCx,
+              XPCJSContext::Get()->GetStringID(XPCJSContext::IDX_COMPONENTS));
+  if (!JS_DefinePropertyById(aCx, global, id, components, attrs)) {
+    return false;
+  }
+
+
+#define DEFINE_SUBCOMPONENT_PROPERTY(_comp, _type, _iid, _id)                 \
+  nsCOMPtr<nsIXPCComponents_##_type> obj##_type;                              \
+  if (NS_FAILED(_comp->Get##_type(getter_AddRefs(obj##_type)))) return false; \
+  if (!DefineSubcomponentProperty(aCx, global, obj##_type, _iid,              \
+                                  XPCJSContext::IDX_##_id))                   \
+    return false;
+
+  DEFINE_SUBCOMPONENT_PROPERTY(mComponents, Interfaces, nullptr, CI)
+  DEFINE_SUBCOMPONENT_PROPERTY(mComponents, Results, nullptr, CR)
+
+  if (!c) {
     return true;
-}
+  }
 
-void
-XPCWrappedNativeScope::ForcePrivilegedComponents()
-{
-    nsCOMPtr<nsIXPCComponents> c = do_QueryInterface(mComponents);
-    if (!c) {
-        mComponents = new nsXPCComponents(this);
-    }
-}
-
-static bool
-DefineSubcomponentProperty(JSContext* aCx,
-                           HandleObject aGlobal,
-                           nsISupports* aSubcomponent,
-                           const nsID* aIID,
-                           unsigned int aStringIndex)
-{
-    RootedValue subcompVal(aCx);
-    xpcObjectHelper helper(aSubcomponent);
-    if (!XPCConvert::NativeInterface2JSObject(&subcompVal, helper,
-                                              aIID, false, nullptr))
-        return false;
-    if (NS_WARN_IF(!subcompVal.isObject())) {
-        return false;
-    }
-    RootedId id(aCx, XPCJSContext::Get()->GetStringID(aStringIndex));
-    return JS_DefinePropertyById(aCx, aGlobal, id, subcompVal, 0);
-}
-
-bool
-XPCWrappedNativeScope::AttachComponentsObject(JSContext* aCx)
-{
-    RootedObject components(aCx);
-    if (!GetComponentsJSObject(&components)) {
-        return false;
-    }
-
-    RootedObject global(aCx, GetGlobalJSObject());
-    MOZ_ASSERT(js::IsObjectInContextCompartment(global, aCx));
-
-    
-    
-    
-    unsigned attrs = JSPROP_READONLY | JSPROP_RESOLVING;
-    nsCOMPtr<nsIXPCComponents> c = do_QueryInterface(mComponents);
-    if (c) {
-        attrs |= JSPROP_PERMANENT;
-    }
-
-    RootedId id(aCx, XPCJSContext::Get()->GetStringID(XPCJSContext::IDX_COMPONENTS));
-    if (!JS_DefinePropertyById(aCx, global, id, components, attrs)) {
-        return false;
-    }
-
-
-#define DEFINE_SUBCOMPONENT_PROPERTY(_comp, _type, _iid, _id)                     \
-    nsCOMPtr<nsIXPCComponents_ ## _type> obj ## _type;                            \
-    if (NS_FAILED(_comp->Get ## _type(getter_AddRefs( obj ## _type ))))           \
-        return false;                                                             \
-    if (!DefineSubcomponentProperty(aCx, global, obj ## _type, _iid,              \
-                                    XPCJSContext::IDX_ ## _id))                   \
-        return false;
-
-    DEFINE_SUBCOMPONENT_PROPERTY(mComponents, Interfaces, nullptr, CI)
-    DEFINE_SUBCOMPONENT_PROPERTY(mComponents, Results, nullptr, CR)
-
-    if (!c) {
-        return true;
-    }
-
-    DEFINE_SUBCOMPONENT_PROPERTY(c, Classes, nullptr, CC)
-    DEFINE_SUBCOMPONENT_PROPERTY(c, Utils, &NS_GET_IID(nsIXPCComponents_Utils), CU)
+  DEFINE_SUBCOMPONENT_PROPERTY(c, Classes, nullptr, CC)
+  DEFINE_SUBCOMPONENT_PROPERTY(c, Utils, &NS_GET_IID(nsIXPCComponents_Utils),
+                               CU)
 
 #undef DEFINE_SUBCOMPONENT_PROPERTY
 
-    return true;
+  return true;
 }
 
-JSObject*
-XPCWrappedNativeScope::EnsureContentXBLScope(JSContext* cx)
-{
-    JS::RootedObject global(cx, GetGlobalJSObject());
-    MOZ_ASSERT(js::IsObjectInContextCompartment(global, cx));
-    MOZ_ASSERT(!IsContentXBLScope());
-    MOZ_ASSERT(strcmp(js::GetObjectClass(global)->name,
-                      "nsXBLPrototypeScript compilation scope"));
+JSObject* XPCWrappedNativeScope::EnsureContentXBLScope(JSContext* cx) {
+  JS::RootedObject global(cx, GetGlobalJSObject());
+  MOZ_ASSERT(js::IsObjectInContextCompartment(global, cx));
+  MOZ_ASSERT(!IsContentXBLScope());
+  MOZ_ASSERT(strcmp(js::GetObjectClass(global)->name,
+                    "nsXBLPrototypeScript compilation scope"));
 
-    
-    if (mContentXBLScope) {
-        return mContentXBLScope;
-    }
-
-    
-    if (!mUseContentXBLScope) {
-        return global;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    SandboxOptions options;
-    options.wantXrays = false;
-    options.wantComponents = false;
-    options.proto = global;
-    options.sameZoneAs = global;
-    options.isContentXBLScope = true;
-
-    
-    nsIPrincipal* principal = GetPrincipal();
-    MOZ_ASSERT(!nsContentUtils::IsExpandedPrincipal(principal));
-    nsTArray<nsCOMPtr<nsIPrincipal>> principalAsArray(1);
-    principalAsArray.AppendElement(principal);
-    RefPtr<ExpandedPrincipal> ep =
-        ExpandedPrincipal::Create(principalAsArray,
-                                  principal->OriginAttributesRef());
-
-    
-    RootedValue v(cx);
-    nsresult rv = CreateSandboxObject(cx, &v,
-                                      static_cast<nsIExpandedPrincipal*>(ep),
-                                      options);
-    NS_ENSURE_SUCCESS(rv, nullptr);
-    mContentXBLScope = &v.toObject();
-
-    MOZ_ASSERT(xpc::IsInContentXBLScope(js::UncheckedUnwrap(mContentXBLScope)));
-
-    
+  
+  if (mContentXBLScope) {
     return mContentXBLScope;
+  }
+
+  
+  if (!mUseContentXBLScope) {
+    return global;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  SandboxOptions options;
+  options.wantXrays = false;
+  options.wantComponents = false;
+  options.proto = global;
+  options.sameZoneAs = global;
+  options.isContentXBLScope = true;
+
+  
+  nsIPrincipal* principal = GetPrincipal();
+  MOZ_ASSERT(!nsContentUtils::IsExpandedPrincipal(principal));
+  nsTArray<nsCOMPtr<nsIPrincipal>> principalAsArray(1);
+  principalAsArray.AppendElement(principal);
+  RefPtr<ExpandedPrincipal> ep = ExpandedPrincipal::Create(
+      principalAsArray, principal->OriginAttributesRef());
+
+  
+  RootedValue v(cx);
+  nsresult rv = CreateSandboxObject(
+      cx, &v, static_cast<nsIExpandedPrincipal*>(ep), options);
+  NS_ENSURE_SUCCESS(rv, nullptr);
+  mContentXBLScope = &v.toObject();
+
+  MOZ_ASSERT(xpc::IsInContentXBLScope(js::UncheckedUnwrap(mContentXBLScope)));
+
+  
+  return mContentXBLScope;
 }
 
-bool
-XPCWrappedNativeScope::AllowContentXBLScope()
-{
-    
-    MOZ_ASSERT_IF(!mAllowContentXBLScope,
-                  nsContentUtils::AllowXULXBLForPrincipal(GetPrincipal()));
-    return mAllowContentXBLScope;
+bool XPCWrappedNativeScope::AllowContentXBLScope() {
+  
+  MOZ_ASSERT_IF(!mAllowContentXBLScope,
+                nsContentUtils::AllowXULXBLForPrincipal(GetPrincipal()));
+  return mAllowContentXBLScope;
 }
 
 namespace xpc {
-JSObject*
-GetXBLScope(JSContext* cx, JSObject* contentScopeArg)
-{
-    JS::RootedObject contentScope(cx, contentScopeArg);
-    JSAutoRealm ar(cx, contentScope);
-    XPCWrappedNativeScope* nativeScope = RealmPrivate::Get(contentScope)->scope;
+JSObject* GetXBLScope(JSContext* cx, JSObject* contentScopeArg) {
+  JS::RootedObject contentScope(cx, contentScopeArg);
+  JSAutoRealm ar(cx, contentScope);
+  XPCWrappedNativeScope* nativeScope = RealmPrivate::Get(contentScope)->scope;
 
-    RootedObject scope(cx, nativeScope->EnsureContentXBLScope(cx));
-    NS_ENSURE_TRUE(scope, nullptr); 
+  RootedObject scope(cx, nativeScope->EnsureContentXBLScope(cx));
+  NS_ENSURE_TRUE(scope, nullptr);  
 
-    scope = js::UncheckedUnwrap(scope);
-    JS::ExposeObjectToActiveJS(scope);
-    return scope;
+  scope = js::UncheckedUnwrap(scope);
+  JS::ExposeObjectToActiveJS(scope);
+  return scope;
 }
 
-JSObject*
-GetUAWidgetScope(JSContext* cx, JSObject* contentScopeArg)
-{
-    JS::RootedObject contentScope(cx, contentScopeArg);
-    JSAutoRealm ar(cx, contentScope);
-    nsIPrincipal* principal = GetObjectPrincipal(contentScope);
+JSObject* GetUAWidgetScope(JSContext* cx, JSObject* contentScopeArg) {
+  JS::RootedObject contentScope(cx, contentScopeArg);
+  JSAutoRealm ar(cx, contentScope);
+  nsIPrincipal* principal = GetObjectPrincipal(contentScope);
 
-    if (nsContentUtils::IsSystemPrincipal(principal)) {
-        return JS::GetNonCCWObjectGlobal(contentScope);
-    }
+  if (nsContentUtils::IsSystemPrincipal(principal)) {
+    return JS::GetNonCCWObjectGlobal(contentScope);
+  }
 
-    return GetUAWidgetScope(cx, principal);
+  return GetUAWidgetScope(cx, principal);
 }
 
-JSObject*
-GetUAWidgetScope(JSContext* cx, nsIPrincipal* principal)
-{
-    RootedObject scope(cx, XPCJSRuntime::Get()->GetUAWidgetScope(cx, principal));
-    NS_ENSURE_TRUE(scope, nullptr); 
+JSObject* GetUAWidgetScope(JSContext* cx, nsIPrincipal* principal) {
+  RootedObject scope(cx, XPCJSRuntime::Get()->GetUAWidgetScope(cx, principal));
+  NS_ENSURE_TRUE(scope, nullptr);  
 
-    scope = js::UncheckedUnwrap(scope);
-    JS::ExposeObjectToActiveJS(scope);
-    return scope;
+  scope = js::UncheckedUnwrap(scope);
+  JS::ExposeObjectToActiveJS(scope);
+  return scope;
 }
 
-bool
-AllowContentXBLScope(JS::Realm* realm)
-{
-    XPCWrappedNativeScope* scope = RealmPrivate::Get(realm)->scope;
-    return scope && scope->AllowContentXBLScope();
+bool AllowContentXBLScope(JS::Realm* realm) {
+  XPCWrappedNativeScope* scope = RealmPrivate::Get(realm)->scope;
+  return scope && scope->AllowContentXBLScope();
 }
 
-bool
-UseContentXBLScope(JS::Realm* realm)
-{
-    XPCWrappedNativeScope* scope = RealmPrivate::Get(realm)->scope;
-    return scope && scope->UseContentXBLScope();
+bool UseContentXBLScope(JS::Realm* realm) {
+  XPCWrappedNativeScope* scope = RealmPrivate::Get(realm)->scope;
+  return scope && scope->UseContentXBLScope();
 }
 
-void
-ClearContentXBLScope(JSObject* global)
-{
-    RealmPrivate::Get(global)->scope->ClearContentXBLScope();
+void ClearContentXBLScope(JSObject* global) {
+  RealmPrivate::Get(global)->scope->ClearContentXBLScope();
 }
 
 } 
 
-XPCWrappedNativeScope::~XPCWrappedNativeScope()
-{
-    MOZ_COUNT_DTOR(XPCWrappedNativeScope);
+XPCWrappedNativeScope::~XPCWrappedNativeScope() {
+  MOZ_COUNT_DTOR(XPCWrappedNativeScope);
 
-    
+  
 
-    MOZ_ASSERT(0 == mWrappedNativeMap->Count(), "scope has non-empty map");
-    delete mWrappedNativeMap;
+  MOZ_ASSERT(0 == mWrappedNativeMap->Count(), "scope has non-empty map");
+  delete mWrappedNativeMap;
 
-    MOZ_ASSERT(0 == mWrappedNativeProtoMap->Count(), "scope has non-empty map");
-    delete mWrappedNativeProtoMap;
+  MOZ_ASSERT(0 == mWrappedNativeProtoMap->Count(), "scope has non-empty map");
+  delete mWrappedNativeProtoMap;
 
-    
-    
-    if (mComponents) {
-        mComponents->mScope = nullptr;
+  
+  
+  if (mComponents) {
+    mComponents->mScope = nullptr;
+  }
+
+  
+  
+  mComponents = nullptr;
+
+  if (mXrayExpandos.initialized()) {
+    mXrayExpandos.destroy();
+  }
+
+  JSContext* cx = dom::danger::GetJSContext();
+  mIDProto.finalize(cx);
+  mIIDProto.finalize(cx);
+  mCIDProto.finalize(cx);
+  mGlobalJSObject.finalize(cx);
+}
+
+
+void XPCWrappedNativeScope::TraceWrappedNativesInAllScopes(JSTracer* trc) {
+  
+  
+  for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+    for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
+      auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
+      XPCWrappedNative* wrapper = entry->value;
+      if (wrapper->HasExternalReference() && !wrapper->IsWrapperExpired()) {
+        wrapper->TraceSelf(trc);
+      }
     }
+  }
+}
 
-    
-    
-    mComponents = nullptr;
 
-    if (mXrayExpandos.initialized()) {
-        mXrayExpandos.destroy();
+void XPCWrappedNativeScope::SuspectAllWrappers(
+    nsCycleCollectionNoteRootCallback& cb) {
+  for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+    for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
+      static_cast<Native2WrappedNativeMap::Entry*>(i.Get())->value->Suspect(cb);
     }
+  }
+}
 
+
+void XPCWrappedNativeScope::UpdateWeakPointersInAllScopesAfterGC() {
+  
+  
+  
+  
+  MOZ_ASSERT(!gDyingScopes, "JSGC_MARK_END without JSGC_FINALIZE_END");
+
+  XPCWrappedNativeScope** scopep = &gScopes;
+  while (*scopep) {
+    XPCWrappedNativeScope* cur = *scopep;
+    cur->UpdateWeakPointersAfterGC();
+    if (cur->mGlobalJSObject) {
+      scopep = &cur->mNext;
+    } else {
+      
+      *scopep = cur->mNext;
+      cur->mNext = gDyingScopes;
+      gDyingScopes = cur;
+    }
+  }
+}
+
+static inline void AssertSameCompartment(DebugOnly<JS::Compartment*>& comp,
+                                         JSObject* obj) {
+  MOZ_ASSERT_IF(obj, js::GetObjectCompartment(obj) == comp);
+}
+
+static inline void AssertSameCompartment(DebugOnly<JS::Compartment*>& comp,
+                                         const JS::ObjectPtr& obj) {
+#ifdef DEBUG
+  AssertSameCompartment(comp, obj.unbarrieredGet());
+#endif
+}
+
+void XPCWrappedNativeScope::UpdateWeakPointersAfterGC() {
+  
+  if (mWaiverWrapperMap) {
+    mWaiverWrapperMap->Sweep();
+  }
+
+  if (!js::IsObjectZoneSweepingOrCompacting(mGlobalJSObject.unbarrieredGet())) {
+    return;
+  }
+
+  
+  
+  mGlobalJSObject.updateWeakPointerAfterGC();
+  if (!mGlobalJSObject) {
     JSContext* cx = dom::danger::GetJSContext();
-    mIDProto.finalize(cx);
-    mIIDProto.finalize(cx);
-    mCIDProto.finalize(cx);
-    mGlobalJSObject.finalize(cx);
-}
+    mContentXBLScope.finalize(cx);
+    GetWrappedNativeMap()->Clear();
+    mWrappedNativeProtoMap->Clear();
+    return;
+  }
 
-
-void
-XPCWrappedNativeScope::TraceWrappedNativesInAllScopes(JSTracer* trc)
-{
-    
-    
-    for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
-        for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
-            auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
-            XPCWrappedNative* wrapper = entry->value;
-            if (wrapper->HasExternalReference() && !wrapper->IsWrapperExpired()) {
-                wrapper->TraceSelf(trc);
-            }
-        }
-    }
-}
-
-
-void
-XPCWrappedNativeScope::SuspectAllWrappers(nsCycleCollectionNoteRootCallback& cb)
-{
-    for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
-        for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
-            static_cast<Native2WrappedNativeMap::Entry*>(i.Get())->value->Suspect(cb);
-        }
-    }
-}
-
-
-void
-XPCWrappedNativeScope::UpdateWeakPointersInAllScopesAfterGC()
-{
-    
-    
-    
-    
-    MOZ_ASSERT(!gDyingScopes, "JSGC_MARK_END without JSGC_FINALIZE_END");
-
-    XPCWrappedNativeScope** scopep = &gScopes;
-    while (*scopep) {
-        XPCWrappedNativeScope* cur = *scopep;
-        cur->UpdateWeakPointersAfterGC();
-        if (cur->mGlobalJSObject) {
-            scopep = &cur->mNext;
-        } else {
-            
-            *scopep = cur->mNext;
-            cur->mNext = gDyingScopes;
-            gDyingScopes = cur;
-        }
-    }
-}
-
-static inline void
-AssertSameCompartment(DebugOnly<JS::Compartment*>& comp, JSObject* obj)
-{
-    MOZ_ASSERT_IF(obj, js::GetObjectCompartment(obj) == comp);
-}
-
-static inline void
-AssertSameCompartment(DebugOnly<JS::Compartment*>& comp, const JS::ObjectPtr& obj)
-{
-#ifdef DEBUG
-    AssertSameCompartment(comp, obj.unbarrieredGet());
-#endif
-}
-
-void
-XPCWrappedNativeScope::UpdateWeakPointersAfterGC()
-{
-    
-    if (mWaiverWrapperMap) {
-        mWaiverWrapperMap->Sweep();
-    }
-
-    if (!js::IsObjectZoneSweepingOrCompacting(mGlobalJSObject.unbarrieredGet())) {
-        return;
-    }
-
-    
-    
-    mGlobalJSObject.updateWeakPointerAfterGC();
-    if (!mGlobalJSObject) {
-        JSContext* cx = dom::danger::GetJSContext();
-        mContentXBLScope.finalize(cx);
-        GetWrappedNativeMap()->Clear();
-        mWrappedNativeProtoMap->Clear();
-        return;
-    }
-
-    DebugOnly<JS::Compartment*> comp =
-        js::GetObjectCompartment(mGlobalJSObject.unbarrieredGet());
+  DebugOnly<JS::Compartment*> comp =
+      js::GetObjectCompartment(mGlobalJSObject.unbarrieredGet());
 
 #ifdef DEBUG
-    
-    if (mContentXBLScope) {
-        JSObject* prev = mContentXBLScope.unbarrieredGet();
-        mContentXBLScope.updateWeakPointerAfterGC();
-        MOZ_ASSERT(prev == mContentXBLScope.unbarrieredGet());
-        AssertSameCompartment(comp, mContentXBLScope);
-    }
+  
+  if (mContentXBLScope) {
+    JSObject* prev = mContentXBLScope.unbarrieredGet();
+    mContentXBLScope.updateWeakPointerAfterGC();
+    MOZ_ASSERT(prev == mContentXBLScope.unbarrieredGet());
+    AssertSameCompartment(comp, mContentXBLScope);
+  }
 #endif
 
-    
-    
-    for (auto iter = GetWrappedNativeMap()->Iter(); !iter.Done(); iter.Next()) {
-        auto entry = static_cast<Native2WrappedNativeMap::Entry*>(iter.Get());
-        XPCWrappedNative* wrapper = entry->value;
-        JSObject* obj = wrapper->GetFlatJSObjectPreserveColor();
-        JS_UpdateWeakPointerAfterGCUnbarriered(&obj);
-        MOZ_ASSERT(!obj || obj == wrapper->GetFlatJSObjectPreserveColor());
-        AssertSameCompartment(comp, obj);
-        if (!obj) {
-            iter.Remove();
-        }
+  
+  
+  for (auto iter = GetWrappedNativeMap()->Iter(); !iter.Done(); iter.Next()) {
+    auto entry = static_cast<Native2WrappedNativeMap::Entry*>(iter.Get());
+    XPCWrappedNative* wrapper = entry->value;
+    JSObject* obj = wrapper->GetFlatJSObjectPreserveColor();
+    JS_UpdateWeakPointerAfterGCUnbarriered(&obj);
+    MOZ_ASSERT(!obj || obj == wrapper->GetFlatJSObjectPreserveColor());
+    AssertSameCompartment(comp, obj);
+    if (!obj) {
+      iter.Remove();
     }
+  }
 
-    
-    
-    for (auto i = mWrappedNativeProtoMap->Iter(); !i.Done(); i.Next()) {
-        auto entry = static_cast<ClassInfo2WrappedNativeProtoMap::Entry*>(i.Get());
-        JSObject* obj = entry->value->GetJSProtoObjectPreserveColor();
-        JS_UpdateWeakPointerAfterGCUnbarriered(&obj);
-        AssertSameCompartment(comp, obj);
-        MOZ_ASSERT(!obj || obj == entry->value->GetJSProtoObjectPreserveColor());
-        if (!obj) {
-            i.Remove();
-        }
+  
+  
+  for (auto i = mWrappedNativeProtoMap->Iter(); !i.Done(); i.Next()) {
+    auto entry = static_cast<ClassInfo2WrappedNativeProtoMap::Entry*>(i.Get());
+    JSObject* obj = entry->value->GetJSProtoObjectPreserveColor();
+    JS_UpdateWeakPointerAfterGCUnbarriered(&obj);
+    AssertSameCompartment(comp, obj);
+    MOZ_ASSERT(!obj || obj == entry->value->GetJSProtoObjectPreserveColor());
+    if (!obj) {
+      i.Remove();
     }
+  }
 }
 
 
-void
-XPCWrappedNativeScope::SweepAllWrappedNativeTearOffs()
-{
-    for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
-        for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
-            auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
-            entry->value->SweepTearOffs();
-        }
+void XPCWrappedNativeScope::SweepAllWrappedNativeTearOffs() {
+  for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+    for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
+      auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
+      entry->value->SweepTearOffs();
     }
+  }
 }
 
 
-void
-XPCWrappedNativeScope::KillDyingScopes()
-{
-    XPCWrappedNativeScope* cur = gDyingScopes;
-    while (cur) {
-        XPCWrappedNativeScope* next = cur->mNext;
-        if (cur->mGlobalJSObject) {
-            RealmPrivate::Get(cur->mGlobalJSObject)->scope = nullptr;
-        }
-        delete cur;
-        cur = next;
+void XPCWrappedNativeScope::KillDyingScopes() {
+  XPCWrappedNativeScope* cur = gDyingScopes;
+  while (cur) {
+    XPCWrappedNativeScope* next = cur->mNext;
+    if (cur->mGlobalJSObject) {
+      RealmPrivate::Get(cur->mGlobalJSObject)->scope = nullptr;
     }
-    gDyingScopes = nullptr;
+    delete cur;
+    cur = next;
+  }
+  gDyingScopes = nullptr;
 }
 
 
-void
-XPCWrappedNativeScope::SystemIsBeingShutDown()
-{
-    int liveScopeCount = 0;
+void XPCWrappedNativeScope::SystemIsBeingShutDown() {
+  int liveScopeCount = 0;
 
-    XPCWrappedNativeScope* cur;
+  XPCWrappedNativeScope* cur;
 
+  
+
+  cur = gScopes;
+  while (cur) {
+    XPCWrappedNativeScope* next = cur->mNext;
+    cur->mNext = gDyingScopes;
+    gDyingScopes = cur;
+    cur = next;
+    liveScopeCount++;
+  }
+  gScopes = nullptr;
+
+  
+  
+  
+
+  for (cur = gDyingScopes; cur; cur = cur->mNext) {
     
-
-    cur = gScopes;
-    while (cur) {
-        XPCWrappedNativeScope* next = cur->mNext;
-        cur->mNext = gDyingScopes;
-        gDyingScopes = cur;
-        cur = next;
-        liveScopeCount++;
-    }
-    gScopes = nullptr;
-
-    
-    
-    
-
-    for (cur = gDyingScopes; cur; cur = cur->mNext) {
-        
-        if (cur->mComponents) {
-            cur->mComponents->SystemIsBeingShutDown();
-        }
-
-        
-        
-        for (auto i = cur->mWrappedNativeProtoMap->Iter(); !i.Done(); i.Next()) {
-            auto entry = static_cast<ClassInfo2WrappedNativeProtoMap::Entry*>(i.Get());
-            entry->value->SystemIsBeingShutDown();
-            i.Remove();
-        }
-        for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
-            auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
-            XPCWrappedNative* wrapper = entry->value;
-            if (wrapper->IsValid()) {
-                wrapper->SystemIsBeingShutDown();
-            }
-            i.Remove();
-        }
-
-        CompartmentPrivate* priv = CompartmentPrivate::Get(cur->Compartment());
-        priv->SystemIsBeingShutDown();
+    if (cur->mComponents) {
+      cur->mComponents->SystemIsBeingShutDown();
     }
 
     
-    KillDyingScopes();
+    
+    for (auto i = cur->mWrappedNativeProtoMap->Iter(); !i.Done(); i.Next()) {
+      auto entry =
+          static_cast<ClassInfo2WrappedNativeProtoMap::Entry*>(i.Get());
+      entry->value->SystemIsBeingShutDown();
+      i.Remove();
+    }
+    for (auto i = cur->mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
+      auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
+      XPCWrappedNative* wrapper = entry->value;
+      if (wrapper->IsValid()) {
+        wrapper->SystemIsBeingShutDown();
+      }
+      i.Remove();
+    }
+
+    CompartmentPrivate* priv = CompartmentPrivate::Get(cur->Compartment());
+    priv->SystemIsBeingShutDown();
+  }
+
+  
+  KillDyingScopes();
 }
 
 
 
-
-JSObject*
-XPCWrappedNativeScope::GetExpandoChain(HandleObject target)
-{
-    MOZ_ASSERT(ObjectScope(target) == this);
-    if (!mXrayExpandos.initialized()) {
-        return nullptr;
-    }
-    return mXrayExpandos.lookup(target);
+JSObject* XPCWrappedNativeScope::GetExpandoChain(HandleObject target) {
+  MOZ_ASSERT(ObjectScope(target) == this);
+  if (!mXrayExpandos.initialized()) {
+    return nullptr;
+  }
+  return mXrayExpandos.lookup(target);
 }
 
-JSObject*
-XPCWrappedNativeScope::DetachExpandoChain(HandleObject target)
-{
-    MOZ_ASSERT(ObjectScope(target) == this);
-    if (!mXrayExpandos.initialized()) {
-        return nullptr;
-    }
-    return mXrayExpandos.removeValue(target);
+JSObject* XPCWrappedNativeScope::DetachExpandoChain(HandleObject target) {
+  MOZ_ASSERT(ObjectScope(target) == this);
+  if (!mXrayExpandos.initialized()) {
+    return nullptr;
+  }
+  return mXrayExpandos.removeValue(target);
 }
 
-bool
-XPCWrappedNativeScope::SetExpandoChain(JSContext* cx, HandleObject target,
-                                       HandleObject chain)
-{
-    MOZ_ASSERT(ObjectScope(target) == this);
-    MOZ_ASSERT(js::IsObjectInContextCompartment(target, cx));
-    MOZ_ASSERT_IF(chain, ObjectScope(chain) == this);
-    if (!mXrayExpandos.initialized() && !mXrayExpandos.init(cx)) {
-        return false;
-    }
-    return mXrayExpandos.put(cx, target, chain);
+bool XPCWrappedNativeScope::SetExpandoChain(JSContext* cx, HandleObject target,
+                                            HandleObject chain) {
+  MOZ_ASSERT(ObjectScope(target) == this);
+  MOZ_ASSERT(js::IsObjectInContextCompartment(target, cx));
+  MOZ_ASSERT_IF(chain, ObjectScope(chain) == this);
+  if (!mXrayExpandos.initialized() && !mXrayExpandos.init(cx)) {
+    return false;
+  }
+  return mXrayExpandos.put(cx, target, chain);
 }
 
 
 
 
-
-void
-XPCWrappedNativeScope::DebugDumpAllScopes(int16_t depth)
-{
+void XPCWrappedNativeScope::DebugDumpAllScopes(int16_t depth) {
 #ifdef DEBUG
-    depth-- ;
+  depth--;
 
-    
-    int count = 0;
-    XPCWrappedNativeScope* cur;
+  
+  int count = 0;
+  XPCWrappedNativeScope* cur;
+  for (cur = gScopes; cur; cur = cur->mNext) {
+    count++;
+  }
+
+  XPC_LOG_ALWAYS(("chain of %d XPCWrappedNativeScope(s)", count));
+  XPC_LOG_INDENT();
+  XPC_LOG_ALWAYS(("gDyingScopes @ %p", gDyingScopes));
+  if (depth) {
     for (cur = gScopes; cur; cur = cur->mNext) {
-        count++ ;
+      cur->DebugDump(depth);
     }
-
-    XPC_LOG_ALWAYS(("chain of %d XPCWrappedNativeScope(s)", count));
-    XPC_LOG_INDENT();
-        XPC_LOG_ALWAYS(("gDyingScopes @ %p", gDyingScopes));
-        if (depth) {
-            for (cur = gScopes; cur; cur = cur->mNext) {
-                cur->DebugDump(depth);
-            }
-        }
-    XPC_LOG_OUTDENT();
+  }
+  XPC_LOG_OUTDENT();
 #endif
 }
 
-void
-XPCWrappedNativeScope::DebugDump(int16_t depth)
-{
+void XPCWrappedNativeScope::DebugDump(int16_t depth) {
 #ifdef DEBUG
-    depth-- ;
-    XPC_LOG_ALWAYS(("XPCWrappedNativeScope @ %p", this));
+  depth--;
+  XPC_LOG_ALWAYS(("XPCWrappedNativeScope @ %p", this));
+  XPC_LOG_INDENT();
+  XPC_LOG_ALWAYS(("mNext @ %p", mNext));
+  XPC_LOG_ALWAYS(("mComponents @ %p", mComponents.get()));
+  XPC_LOG_ALWAYS(("mGlobalJSObject @ %p", mGlobalJSObject.get()));
+
+  XPC_LOG_ALWAYS(("mWrappedNativeMap @ %p with %d wrappers(s)",
+                  mWrappedNativeMap, mWrappedNativeMap->Count()));
+  
+  if (depth && mWrappedNativeMap->Count()) {
     XPC_LOG_INDENT();
-        XPC_LOG_ALWAYS(("mNext @ %p", mNext));
-        XPC_LOG_ALWAYS(("mComponents @ %p", mComponents.get()));
-        XPC_LOG_ALWAYS(("mGlobalJSObject @ %p", mGlobalJSObject.get()));
-
-        XPC_LOG_ALWAYS(("mWrappedNativeMap @ %p with %d wrappers(s)",
-                        mWrappedNativeMap, mWrappedNativeMap->Count()));
-        
-        if (depth && mWrappedNativeMap->Count()) {
-            XPC_LOG_INDENT();
-            for (auto i = mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
-                auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
-                entry->value->DebugDump(depth);
-            }
-            XPC_LOG_OUTDENT();
-        }
-
-        XPC_LOG_ALWAYS(("mWrappedNativeProtoMap @ %p with %d protos(s)",
-                        mWrappedNativeProtoMap,
-                        mWrappedNativeProtoMap->Count()));
-        
-        if (depth && mWrappedNativeProtoMap->Count()) {
-            XPC_LOG_INDENT();
-            for (auto i = mWrappedNativeProtoMap->Iter(); !i.Done(); i.Next()) {
-                auto entry = static_cast<ClassInfo2WrappedNativeProtoMap::Entry*>(i.Get());
-                entry->value->DebugDump(depth);
-            }
-            XPC_LOG_OUTDENT();
-        }
+    for (auto i = mWrappedNativeMap->Iter(); !i.Done(); i.Next()) {
+      auto entry = static_cast<Native2WrappedNativeMap::Entry*>(i.Get());
+      entry->value->DebugDump(depth);
+    }
     XPC_LOG_OUTDENT();
+  }
+
+  XPC_LOG_ALWAYS(("mWrappedNativeProtoMap @ %p with %d protos(s)",
+                  mWrappedNativeProtoMap, mWrappedNativeProtoMap->Count()));
+  
+  if (depth && mWrappedNativeProtoMap->Count()) {
+    XPC_LOG_INDENT();
+    for (auto i = mWrappedNativeProtoMap->Iter(); !i.Done(); i.Next()) {
+      auto entry =
+          static_cast<ClassInfo2WrappedNativeProtoMap::Entry*>(i.Get());
+      entry->value->DebugDump(depth);
+    }
+    XPC_LOG_OUTDENT();
+  }
+  XPC_LOG_OUTDENT();
 #endif
 }
 
-void
-XPCWrappedNativeScope::AddSizeOfAllScopesIncludingThis(ScopeSizeInfo* scopeSizeInfo)
-{
-    for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
-        cur->AddSizeOfIncludingThis(scopeSizeInfo);
-    }
+void XPCWrappedNativeScope::AddSizeOfAllScopesIncludingThis(
+    ScopeSizeInfo* scopeSizeInfo) {
+  for (XPCWrappedNativeScope* cur = gScopes; cur; cur = cur->mNext) {
+    cur->AddSizeOfIncludingThis(scopeSizeInfo);
+  }
 }
 
-void
-XPCWrappedNativeScope::AddSizeOfIncludingThis(ScopeSizeInfo* scopeSizeInfo)
-{
-    scopeSizeInfo->mScopeAndMapSize += scopeSizeInfo->mMallocSizeOf(this);
-    scopeSizeInfo->mScopeAndMapSize +=
-        mWrappedNativeMap->SizeOfIncludingThis(scopeSizeInfo->mMallocSizeOf);
-    scopeSizeInfo->mScopeAndMapSize +=
-        mWrappedNativeProtoMap->SizeOfIncludingThis(scopeSizeInfo->mMallocSizeOf);
+void XPCWrappedNativeScope::AddSizeOfIncludingThis(
+    ScopeSizeInfo* scopeSizeInfo) {
+  scopeSizeInfo->mScopeAndMapSize += scopeSizeInfo->mMallocSizeOf(this);
+  scopeSizeInfo->mScopeAndMapSize +=
+      mWrappedNativeMap->SizeOfIncludingThis(scopeSizeInfo->mMallocSizeOf);
+  scopeSizeInfo->mScopeAndMapSize +=
+      mWrappedNativeProtoMap->SizeOfIncludingThis(scopeSizeInfo->mMallocSizeOf);
 
-    if (dom::HasProtoAndIfaceCache(mGlobalJSObject)) {
-        dom::ProtoAndIfaceCache* cache = dom::GetProtoAndIfaceCache(mGlobalJSObject);
-        scopeSizeInfo->mProtoAndIfaceCacheSize +=
-            cache->SizeOfIncludingThis(scopeSizeInfo->mMallocSizeOf);
-    }
+  if (dom::HasProtoAndIfaceCache(mGlobalJSObject)) {
+    dom::ProtoAndIfaceCache* cache =
+        dom::GetProtoAndIfaceCache(mGlobalJSObject);
+    scopeSizeInfo->mProtoAndIfaceCacheSize +=
+        cache->SizeOfIncludingThis(scopeSizeInfo->mMallocSizeOf);
+  }
 
-    
-    
-    
+  
+  
+  
 }

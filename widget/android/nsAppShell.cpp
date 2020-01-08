@@ -73,15 +73,17 @@
 #include "WebExecutorSupport.h"
 
 #ifdef DEBUG_ANDROID_EVENTS
-#define EVLOG(args...)  ALOG(args)
+#define EVLOG(args...) ALOG(args)
 #else
-#define EVLOG(args...) do { } while (0)
+#define EVLOG(args...) \
+  do {                 \
+  } while (0)
 #endif
 
 using namespace mozilla;
 using namespace mozilla::widget;
 
-nsIGeolocationUpdate *gLocationCallback = nullptr;
+nsIGeolocationUpdate* gLocationCallback = nullptr;
 
 nsAppShell* nsAppShell::sAppShell;
 StaticAutoPtr<Mutex> nsAppShell::sAppShellLock;
@@ -92,10 +94,10 @@ uint64_t nsAppShell::Queue::sLatencyTime[];
 NS_IMPL_ISUPPORTS_INHERITED(nsAppShell, nsBaseAppShell, nsIObserver)
 
 class WakeLockListener final : public nsIDOMMozWakeLockListener {
-private:
+ private:
   ~WakeLockListener() {}
 
-public:
+ public:
   NS_DECL_ISUPPORTS;
 
   nsresult Callback(const nsAString& topic, const nsAString& state) override {
@@ -108,719 +110,666 @@ NS_IMPL_ISUPPORTS(WakeLockListener, nsIDOMMozWakeLockListener)
 nsCOMPtr<nsIPowerManagerService> sPowerManagerService = nullptr;
 StaticRefPtr<WakeLockListener> sWakeLockListener;
 
-
 class GeckoThreadSupport final
-    : public java::GeckoThread::Natives<GeckoThreadSupport>
-{
+    : public java::GeckoThread::Natives<GeckoThreadSupport> {
+  
+  
+  static int32_t sPauseCount;
+
+ public:
+  static void SpeculativeConnect(jni::String::Param aUriStr) {
+    if (!NS_IsMainThread()) {
+      
+      
+      
+      
+      return;
+    }
+
+    nsCOMPtr<nsIIOService> ioServ = do_GetIOService();
+    nsCOMPtr<nsISpeculativeConnect> specConn = do_QueryInterface(ioServ);
+    if (!specConn) {
+      return;
+    }
+
+    nsCOMPtr<nsIURI> uri = nsAppShell::ResolveURI(aUriStr->ToCString());
+    if (!uri) {
+      return;
+    }
+
+    OriginAttributes attrs;
+    nsCOMPtr<nsIPrincipal> principal =
+        BasePrincipal::CreateCodebasePrincipal(uri, attrs);
+    specConn->SpeculativeConnect2(uri, principal, nullptr);
+  }
+
+  static void WaitOnGecko() {
+    struct NoOpRunnable : Runnable {
+      NoOpRunnable() : Runnable("NoOpRunnable") {}
+      NS_IMETHOD Run() override { return NS_OK; }
+    };
+
+    struct NoOpEvent : nsAppShell::Event {
+      void Run() override {
+        
+        
+        
+        
+        NS_DispatchToMainThread(do_AddRef(new NoOpRunnable()),
+                                NS_DISPATCH_SYNC);
+      }
+    };
+    nsAppShell::SyncRunEvent(NoOpEvent());
+  }
+
+  static void OnPause() {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    sPauseCount++;
     
     
-    static int32_t sPauseCount;
-
-public:
-    static void SpeculativeConnect(jni::String::Param aUriStr)
-    {
-        if (!NS_IsMainThread()) {
-            
-            
-            
-            
-            return;
-        }
-
-        nsCOMPtr<nsIIOService> ioServ = do_GetIOService();
-        nsCOMPtr<nsISpeculativeConnect> specConn = do_QueryInterface(ioServ);
-        if (!specConn) {
-            return;
-        }
-
-        nsCOMPtr<nsIURI> uri = nsAppShell::ResolveURI(aUriStr->ToCString());
-        if (!uri) {
-            return;
-        }
-
-        OriginAttributes attrs;
-        nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateCodebasePrincipal(uri, attrs);
-        specConn->SpeculativeConnect2(uri, principal, nullptr);
+    if (sPauseCount != 1) {
+      return;
     }
 
-    static void WaitOnGecko()
-    {
-        struct NoOpRunnable : Runnable
-        {
-            NoOpRunnable() : Runnable("NoOpRunnable") {}
-            NS_IMETHOD Run() override { return NS_OK; }
-        };
+    nsCOMPtr<nsIObserverService> obsServ =
+        mozilla::services::GetObserverService();
+    obsServ->NotifyObservers(nullptr, "application-background", nullptr);
 
-        struct NoOpEvent : nsAppShell::Event
-        {
-            void Run() override
-            {
-                
-                
-                
-                
-                NS_DispatchToMainThread(do_AddRef(new NoOpRunnable()),
-                                        NS_DISPATCH_SYNC);
-            }
-        };
-        nsAppShell::SyncRunEvent(NoOpEvent());
+    obsServ->NotifyObservers(nullptr, "memory-pressure", u"heap-minimize");
+
+    
+    
+    
+    if (nsCacheService::GlobalInstance()) {
+      nsCacheService::GlobalInstance()->Shutdown();
     }
 
-    static void OnPause()
-    {
-        MOZ_ASSERT(NS_IsMainThread());
+    
+    
+    
+    Preferences* prefs = static_cast<Preferences*>(Preferences::GetService());
+    if (prefs) {
+      
+      prefs->SavePrefFileBlocking();
+    }
+  }
 
-        sPauseCount++;
-        
-        
-        if (sPauseCount != 1) {
-            return;
-        }
+  static void OnResume() {
+    MOZ_ASSERT(NS_IsMainThread());
 
-        nsCOMPtr<nsIObserverService> obsServ =
-            mozilla::services::GetObserverService();
-        obsServ->NotifyObservers(nullptr, "application-background", nullptr);
-
-        obsServ->NotifyObservers(nullptr, "memory-pressure", u"heap-minimize");
-
-        
-        
-        
-        if (nsCacheService::GlobalInstance()) {
-            nsCacheService::GlobalInstance()->Shutdown();
-        }
-
-        
-        
-        
-        Preferences* prefs = static_cast<Preferences *>(Preferences::GetService());
-        if (prefs) {
-            
-            prefs->SavePrefFileBlocking();
-        }
+    sPauseCount--;
+    
+    
+    if (sPauseCount != 0) {
+      return;
     }
 
-    static void OnResume()
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-
-        sPauseCount--;
-        
-        
-        if (sPauseCount != 0) {
-            return;
-        }
-
-        
-        
-        
-        if (nsCacheService::GlobalInstance()) {
-            nsCacheService::GlobalInstance()->Init();
-        }
-
-        
-        
-        nsCOMPtr<nsIObserverService> obsServ =
-            mozilla::services::GetObserverService();
-        obsServ->NotifyObservers(nullptr, "application-foreground", nullptr);
+    
+    
+    
+    if (nsCacheService::GlobalInstance()) {
+      nsCacheService::GlobalInstance()->Init();
     }
 
-    static void CreateServices(jni::String::Param aCategory, jni::String::Param aData)
-    {
-        MOZ_ASSERT(NS_IsMainThread());
+    
+    
+    nsCOMPtr<nsIObserverService> obsServ =
+        mozilla::services::GetObserverService();
+    obsServ->NotifyObservers(nullptr, "application-foreground", nullptr);
+  }
 
-        nsCString category(aCategory->ToCString());
+  static void CreateServices(jni::String::Param aCategory,
+                             jni::String::Param aData) {
+    MOZ_ASSERT(NS_IsMainThread());
 
-        NS_CreateServicesFromCategory(
-                category.get(),
-                nullptr, 
-                category.get(),
-                aData ? aData->ToString().get() : nullptr);
+    nsCString category(aCategory->ToCString());
+
+    NS_CreateServicesFromCategory(category.get(),
+                                  nullptr,  
+                                  category.get(),
+                                  aData ? aData->ToString().get() : nullptr);
+  }
+
+  static int64_t RunUiThreadCallback() { return RunAndroidUiTasks(); }
+
+  static void ForceQuit() {
+    nsCOMPtr<nsIAppStartup> appStartup =
+        do_GetService(NS_APPSTARTUP_CONTRACTID);
+
+    if (appStartup) {
+      appStartup->Quit(nsIAppStartup::eForceQuit);
     }
+  }
 
-    static int64_t RunUiThreadCallback()
-    {
-        return RunAndroidUiTasks();
-    }
-
-    static void ForceQuit()
-    {
-        nsCOMPtr<nsIAppStartup> appStartup =
-            do_GetService(NS_APPSTARTUP_CONTRACTID);
-
-        if (appStartup) {
-            appStartup->Quit(nsIAppStartup::eForceQuit);
-        }
-
-    }
-
-    static void Crash()
-    {
-        printf_stderr("Intentionally crashing...\n");
-        MOZ_CRASH("intentional crash");
-    }
+  static void Crash() {
+    printf_stderr("Intentionally crashing...\n");
+    MOZ_CRASH("intentional crash");
+  }
 };
 
 int32_t GeckoThreadSupport::sPauseCount;
 
-
 class GeckoAppShellSupport final
-    : public java::GeckoAppShell::Natives<GeckoAppShellSupport>
-{
-public:
-    static void ReportJavaCrash(const jni::Class::LocalRef& aCls,
-                                jni::Throwable::Param aException,
-                                jni::String::Param aStack)
-    {
-        if (!jni::ReportException(aCls.Env(), aException.Get(), aStack.Get())) {
-            
-            
-            
-            return;
-        }
-
-        MOZ_CRASH("Uncaught Java exception");
+    : public java::GeckoAppShell::Natives<GeckoAppShellSupport> {
+ public:
+  static void ReportJavaCrash(const jni::Class::LocalRef& aCls,
+                              jni::Throwable::Param aException,
+                              jni::String::Param aStack) {
+    if (!jni::ReportException(aCls.Env(), aException.Get(), aStack.Get())) {
+      
+      
+      
+      return;
     }
 
-    static void NotifyObservers(jni::String::Param aTopic,
-                                jni::String::Param aData)
-    {
-        MOZ_ASSERT(NS_IsMainThread());
-        MOZ_ASSERT(aTopic);
+    MOZ_CRASH("Uncaught Java exception");
+  }
 
-        nsCOMPtr<nsIObserverService> obsServ = services::GetObserverService();
-        if (!obsServ) {
-            return;
-        }
+  static void NotifyObservers(jni::String::Param aTopic,
+                              jni::String::Param aData) {
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(aTopic);
 
-        obsServ->NotifyObservers(nullptr, aTopic->ToCString().get(),
-                                 aData ? aData->ToString().get() : nullptr);
+    nsCOMPtr<nsIObserverService> obsServ = services::GetObserverService();
+    if (!obsServ) {
+      return;
     }
 
-    static void OnSensorChanged(int32_t aType, float aX, float aY, float aZ,
-                                float aW, int64_t aTime)
-    {
-        AutoTArray<float, 4> values;
+    obsServ->NotifyObservers(nullptr, aTopic->ToCString().get(),
+                             aData ? aData->ToString().get() : nullptr);
+  }
 
-        switch (aType) {
-        
-        
-        
-        case hal::SENSOR_ORIENTATION:
-            values.AppendElement(360.0f - aX);
-            values.AppendElement(-aY);
-            values.AppendElement(-aZ);
-            break;
+  static void OnSensorChanged(int32_t aType, float aX, float aY, float aZ,
+                              float aW, int64_t aTime) {
+    AutoTArray<float, 4> values;
 
-        case hal::SENSOR_LINEAR_ACCELERATION:
-        case hal::SENSOR_ACCELERATION:
-        case hal::SENSOR_GYROSCOPE:
-        case hal::SENSOR_PROXIMITY:
-            values.AppendElement(aX);
-            values.AppendElement(aY);
-            values.AppendElement(aZ);
-            break;
+    switch (aType) {
+      
+      
+      
+      case hal::SENSOR_ORIENTATION:
+        values.AppendElement(360.0f - aX);
+        values.AppendElement(-aY);
+        values.AppendElement(-aZ);
+        break;
 
-        case hal::SENSOR_LIGHT:
-            values.AppendElement(aX);
-            break;
+      case hal::SENSOR_LINEAR_ACCELERATION:
+      case hal::SENSOR_ACCELERATION:
+      case hal::SENSOR_GYROSCOPE:
+      case hal::SENSOR_PROXIMITY:
+        values.AppendElement(aX);
+        values.AppendElement(aY);
+        values.AppendElement(aZ);
+        break;
 
-        case hal::SENSOR_ROTATION_VECTOR:
-        case hal::SENSOR_GAME_ROTATION_VECTOR:
-            values.AppendElement(aX);
-            values.AppendElement(aY);
-            values.AppendElement(aZ);
-            values.AppendElement(aW);
-            break;
+      case hal::SENSOR_LIGHT:
+        values.AppendElement(aX);
+        break;
 
-        default:
-            __android_log_print(ANDROID_LOG_ERROR, "Gecko",
-                                "Unknown sensor type %d", aType);
-        }
+      case hal::SENSOR_ROTATION_VECTOR:
+      case hal::SENSOR_GAME_ROTATION_VECTOR:
+        values.AppendElement(aX);
+        values.AppendElement(aY);
+        values.AppendElement(aZ);
+        values.AppendElement(aW);
+        break;
 
-        hal::SensorData sdata(hal::SensorType(aType), aTime, values);
-        hal::NotifySensorChange(sdata);
+      default:
+        __android_log_print(ANDROID_LOG_ERROR, "Gecko",
+                            "Unknown sensor type %d", aType);
     }
 
-    static void OnLocationChanged(double aLatitude, double aLongitude,
-                                  double aAltitude, float aAccuracy,
-                                  float aAltitudeAccuracy,
-                                  float aHeading, float aSpeed, int64_t aTime)
-    {
-        if (!gLocationCallback) {
-            return;
-        }
+    hal::SensorData sdata(hal::SensorType(aType), aTime, values);
+    hal::NotifySensorChange(sdata);
+  }
 
-        RefPtr<nsIDOMGeoPosition> geoPosition(
-                new nsGeoPosition(aLatitude, aLongitude, aAltitude, aAccuracy,
-                                  aAltitudeAccuracy, aHeading, aSpeed, aTime));
-        gLocationCallback->Update(geoPosition);
+  static void OnLocationChanged(double aLatitude, double aLongitude,
+                                double aAltitude, float aAccuracy,
+                                float aAltitudeAccuracy, float aHeading,
+                                float aSpeed, int64_t aTime) {
+    if (!gLocationCallback) {
+      return;
     }
 
-    static void NotifyUriVisited(jni::String::Param aUri)
-    {
+    RefPtr<nsIDOMGeoPosition> geoPosition(
+        new nsGeoPosition(aLatitude, aLongitude, aAltitude, aAccuracy,
+                          aAltitudeAccuracy, aHeading, aSpeed, aTime));
+    gLocationCallback->Update(geoPosition);
+  }
+
+  static void NotifyUriVisited(jni::String::Param aUri) {
 #ifdef MOZ_ANDROID_HISTORY
-        nsCOMPtr<IHistory> history = services::GetHistoryService();
-        nsCOMPtr<nsIURI> visitedURI;
-        if (history &&
-            NS_SUCCEEDED(NS_NewURI(getter_AddRefs(visitedURI),
-                                   aUri->ToString()))) {
-            history->NotifyVisited(visitedURI);
-        }
+    nsCOMPtr<IHistory> history = services::GetHistoryService();
+    nsCOMPtr<nsIURI> visitedURI;
+    if (history &&
+        NS_SUCCEEDED(NS_NewURI(getter_AddRefs(visitedURI), aUri->ToString()))) {
+      history->NotifyVisited(visitedURI);
+    }
 #endif
+  }
+
+  static void NotifyAlertListener(jni::String::Param aName,
+                                  jni::String::Param aTopic,
+                                  jni::String::Param aCookie) {
+    if (!aName || !aTopic || !aCookie) {
+      return;
     }
 
-    static void NotifyAlertListener(jni::String::Param aName,
-                                    jni::String::Param aTopic,
-                                    jni::String::Param aCookie)
-    {
-        if (!aName || !aTopic || !aCookie) {
-            return;
-        }
-
-        widget::AndroidAlerts::NotifyListener(
-                aName->ToString(), aTopic->ToCString().get(),
-                aCookie->ToString().get());
-    }
+    widget::AndroidAlerts::NotifyListener(aName->ToString(),
+                                          aTopic->ToCString().get(),
+                                          aCookie->ToString().get());
+  }
 };
 
-
 class BrowserLocaleManagerSupport final
-  : public java::BrowserLocaleManager::Natives<BrowserLocaleManagerSupport>
-{
-public:
-  static void RefreshLocales()
-  {
+    : public java::BrowserLocaleManager::Natives<BrowserLocaleManagerSupport> {
+ public:
+  static void RefreshLocales() {
     intl::OSPreferences::GetInstance()->Refresh();
   }
 };
 
-
 nsAppShell::nsAppShell()
     : mSyncRunFinished(*(sAppShellLock = new Mutex("nsAppShell")),
-                       "nsAppShell.SyncRun")
-    , mSyncRunQuit(false)
-{
-    {
-        MutexAutoLock lock(*sAppShellLock);
-        sAppShell = this;
-    }
+                       "nsAppShell.SyncRun"),
+      mSyncRunQuit(false) {
+  {
+    MutexAutoLock lock(*sAppShellLock);
+    sAppShell = this;
+  }
 
-    hal::Init();
+  hal::Init();
 
-    if (!XRE_IsParentProcess()) {
-        if (jni::IsAvailable()) {
-            GeckoThreadSupport::Init();
-            GeckoAppShellSupport::Init();
-            mozilla::GeckoSystemStateListener::Init();
-            mozilla::widget::Telemetry::Init();
-
-            
-            java::GeckoThread::SetState(java::GeckoThread::State::RUNNING());
-        }
-        return;
-    }
-
+  if (!XRE_IsParentProcess()) {
     if (jni::IsAvailable()) {
-        ScreenManager& screenManager = ScreenManager::GetSingleton();
-        screenManager.SetHelper(mozilla::MakeUnique<ScreenHelperAndroid>());
+      GeckoThreadSupport::Init();
+      GeckoAppShellSupport::Init();
+      mozilla::GeckoSystemStateListener::Init();
+      mozilla::widget::Telemetry::Init();
 
-        
-        AndroidBridge::ConstructBridge();
-        GeckoAppShellSupport::Init();
-        GeckoThreadSupport::Init();
-        mozilla::GeckoBatteryManager::Init();
-        mozilla::GeckoNetworkManager::Init();
-        mozilla::GeckoProcessManager::Init();
-        mozilla::GeckoScreenOrientation::Init();
-        mozilla::GeckoSystemStateListener::Init();
-        mozilla::PrefsHelper::Init();
-        mozilla::widget::Telemetry::Init();
-        mozilla::widget::WebExecutorSupport::Init();
-        nsWindow::InitNatives();
+      
+      java::GeckoThread::SetState(java::GeckoThread::State::RUNNING());
+    }
+    return;
+  }
 
-        if (jni::IsFennec()) {
-            BrowserLocaleManagerSupport::Init();
-            mozilla::ANRReporter::Init();
-            mozilla::MemoryMonitor::Init();
-            mozilla::ThumbnailHelper::Init();
-        }
+  if (jni::IsAvailable()) {
+    ScreenManager& screenManager = ScreenManager::GetSingleton();
+    screenManager.SetHelper(mozilla::MakeUnique<ScreenHelperAndroid>());
 
-        java::GeckoThread::SetState(java::GeckoThread::State::JNI_READY());
+    
+    AndroidBridge::ConstructBridge();
+    GeckoAppShellSupport::Init();
+    GeckoThreadSupport::Init();
+    mozilla::GeckoBatteryManager::Init();
+    mozilla::GeckoNetworkManager::Init();
+    mozilla::GeckoProcessManager::Init();
+    mozilla::GeckoScreenOrientation::Init();
+    mozilla::GeckoSystemStateListener::Init();
+    mozilla::PrefsHelper::Init();
+    mozilla::widget::Telemetry::Init();
+    mozilla::widget::WebExecutorSupport::Init();
+    nsWindow::InitNatives();
 
-        CreateAndroidUiThread();
+    if (jni::IsFennec()) {
+      BrowserLocaleManagerSupport::Init();
+      mozilla::ANRReporter::Init();
+      mozilla::MemoryMonitor::Init();
+      mozilla::ThumbnailHelper::Init();
     }
 
-    sPowerManagerService = do_GetService(POWERMANAGERSERVICE_CONTRACTID);
+    java::GeckoThread::SetState(java::GeckoThread::State::JNI_READY());
 
-    if (sPowerManagerService) {
-        sWakeLockListener = new WakeLockListener();
-    } else {
-        NS_WARNING("Failed to retrieve PowerManagerService, wakelocks will be broken!");
-    }
+    CreateAndroidUiThread();
+  }
+
+  sPowerManagerService = do_GetService(POWERMANAGERSERVICE_CONTRACTID);
+
+  if (sPowerManagerService) {
+    sWakeLockListener = new WakeLockListener();
+  } else {
+    NS_WARNING(
+        "Failed to retrieve PowerManagerService, wakelocks will be broken!");
+  }
 }
 
-nsAppShell::~nsAppShell()
-{
-    {
-        
-        MutexAutoLock lock(*sAppShellLock);
-        sAppShell = nullptr;
-        mSyncRunFinished.NotifyAll();
-    }
+nsAppShell::~nsAppShell() {
+  {
+    
+    MutexAutoLock lock(*sAppShellLock);
+    sAppShell = nullptr;
+    mSyncRunFinished.NotifyAll();
+  }
 
-    while (mEventQueue.Pop( false)) {
-        NS_WARNING("Discarded event on shutdown");
-    }
+  while (mEventQueue.Pop( false)) {
+    NS_WARNING("Discarded event on shutdown");
+  }
 
-    if (sPowerManagerService) {
-        sPowerManagerService->RemoveWakeLockListener(sWakeLockListener);
+  if (sPowerManagerService) {
+    sPowerManagerService->RemoveWakeLockListener(sWakeLockListener);
 
-        sPowerManagerService = nullptr;
-        sWakeLockListener = nullptr;
-    }
+    sPowerManagerService = nullptr;
+    sWakeLockListener = nullptr;
+  }
 
-    hal::Shutdown();
+  hal::Shutdown();
 
-    if (jni::IsAvailable() && XRE_IsParentProcess()) {
-        DestroyAndroidUiThread();
-        AndroidBridge::DeconstructBridge();
-    }
+  if (jni::IsAvailable() && XRE_IsParentProcess()) {
+    DestroyAndroidUiThread();
+    AndroidBridge::DeconstructBridge();
+  }
 }
 
-void
-nsAppShell::NotifyNativeEvent()
-{
-    mEventQueue.Signal();
-}
+void nsAppShell::NotifyNativeEvent() { mEventQueue.Signal(); }
 
-void
-nsAppShell::RecordLatencies()
-{
-    if (!mozilla::Telemetry::CanRecordExtended()) {
-        return;
+void nsAppShell::RecordLatencies() {
+  if (!mozilla::Telemetry::CanRecordExtended()) {
+    return;
+  }
+
+  const mozilla::Telemetry::HistogramID timeIDs[] = {
+      mozilla::Telemetry::HistogramID::FENNEC_LOOP_UI_LATENCY,
+      mozilla::Telemetry::HistogramID::FENNEC_LOOP_OTHER_LATENCY};
+
+  static_assert(ArrayLength(Queue::sLatencyCount) == Queue::LATENCY_COUNT,
+                "Count array length mismatch");
+  static_assert(ArrayLength(Queue::sLatencyTime) == Queue::LATENCY_COUNT,
+                "Time array length mismatch");
+  static_assert(ArrayLength(timeIDs) == Queue::LATENCY_COUNT,
+                "Time ID array length mismatch");
+
+  for (size_t i = 0; i < Queue::LATENCY_COUNT; i++) {
+    if (!Queue::sLatencyCount[i]) {
+      continue;
     }
 
-    const mozilla::Telemetry::HistogramID timeIDs[] = {
-        mozilla::Telemetry::HistogramID::FENNEC_LOOP_UI_LATENCY,
-        mozilla::Telemetry::HistogramID::FENNEC_LOOP_OTHER_LATENCY
-    };
-
-    static_assert(ArrayLength(Queue::sLatencyCount) == Queue::LATENCY_COUNT,
-                  "Count array length mismatch");
-    static_assert(ArrayLength(Queue::sLatencyTime) == Queue::LATENCY_COUNT,
-                  "Time array length mismatch");
-    static_assert(ArrayLength(timeIDs) == Queue::LATENCY_COUNT,
-                  "Time ID array length mismatch");
-
-    for (size_t i = 0; i < Queue::LATENCY_COUNT; i++) {
-        if (!Queue::sLatencyCount[i]) {
-            continue;
-        }
-
-        const uint64_t time = Queue::sLatencyTime[i] / 1000ull /
-                              Queue::sLatencyCount[i];
-        if (time) {
-            mozilla::Telemetry::Accumulate(
-                    timeIDs[i], uint32_t(std::min<uint64_t>(UINT32_MAX, time)));
-        }
-
-        
-        Queue::sLatencyCount[i] = 0;
-        Queue::sLatencyTime[i] = 0;
+    const uint64_t time =
+        Queue::sLatencyTime[i] / 1000ull / Queue::sLatencyCount[i];
+    if (time) {
+      mozilla::Telemetry::Accumulate(
+          timeIDs[i], uint32_t(std::min<uint64_t>(UINT32_MAX, time)));
     }
+
+    
+    Queue::sLatencyCount[i] = 0;
+    Queue::sLatencyTime[i] = 0;
+  }
 }
 
 #define PREFNAME_COALESCE_TOUCHES "dom.event.touch.coalescing.enabled"
-static const char* kObservedPrefs[] = {
-  PREFNAME_COALESCE_TOUCHES,
-  nullptr
-};
+static const char* kObservedPrefs[] = {PREFNAME_COALESCE_TOUCHES, nullptr};
 
-nsresult
-nsAppShell::Init()
-{
-    nsresult rv = nsBaseAppShell::Init();
-    nsCOMPtr<nsIObserverService> obsServ =
-        mozilla::services::GetObserverService();
-    if (obsServ) {
-        obsServ->AddObserver(this, "browser-delayed-startup-finished", false);
-        obsServ->AddObserver(this, "profile-after-change", false);
-        obsServ->AddObserver(this, "quit-application", false);
-        obsServ->AddObserver(this, "quit-application-granted", false);
-        obsServ->AddObserver(this, "xpcom-shutdown", false);
+nsresult nsAppShell::Init() {
+  nsresult rv = nsBaseAppShell::Init();
+  nsCOMPtr<nsIObserverService> obsServ =
+      mozilla::services::GetObserverService();
+  if (obsServ) {
+    obsServ->AddObserver(this, "browser-delayed-startup-finished", false);
+    obsServ->AddObserver(this, "profile-after-change", false);
+    obsServ->AddObserver(this, "quit-application", false);
+    obsServ->AddObserver(this, "quit-application-granted", false);
+    obsServ->AddObserver(this, "xpcom-shutdown", false);
 
-        if (XRE_IsParentProcess()) {
-            obsServ->AddObserver(this, "chrome-document-loaded", false);
-        } else {
-            obsServ->AddObserver(this, "content-document-global-created", false);
-            obsServ->AddObserver(this, "geckoview-content-global-transferred", false);
-        }
+    if (XRE_IsParentProcess()) {
+      obsServ->AddObserver(this, "chrome-document-loaded", false);
+    } else {
+      obsServ->AddObserver(this, "content-document-global-created", false);
+      obsServ->AddObserver(this, "geckoview-content-global-transferred", false);
     }
+  }
 
-    if (sPowerManagerService)
-        sPowerManagerService->AddWakeLockListener(sWakeLockListener);
+  if (sPowerManagerService)
+    sPowerManagerService->AddWakeLockListener(sWakeLockListener);
 
-    Preferences::AddStrongObservers(this, kObservedPrefs);
-    mAllowCoalescingTouches = Preferences::GetBool(PREFNAME_COALESCE_TOUCHES, true);
-    return rv;
+  Preferences::AddStrongObservers(this, kObservedPrefs);
+  mAllowCoalescingTouches =
+      Preferences::GetBool(PREFNAME_COALESCE_TOUCHES, true);
+  return rv;
 }
 
 NS_IMETHODIMP
-nsAppShell::Observe(nsISupports* aSubject,
-                    const char* aTopic,
-                    const char16_t* aData)
-{
-    bool removeObserver = false;
+nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
+                    const char16_t* aData) {
+  bool removeObserver = false;
 
-    if (!strcmp(aTopic, "xpcom-shutdown")) {
-        {
-            
-            mozilla::MutexAutoLock shellLock(*sAppShellLock);
-            mSyncRunQuit = true;
-            mSyncRunFinished.NotifyAll();
-        }
-        
-        
-        mObserversHash.Clear();
-        return nsBaseAppShell::Observe(aSubject, aTopic, aData);
-
-    } else if (!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) &&
-               aData &&
-               nsDependentString(aData).Equals(NS_LITERAL_STRING(PREFNAME_COALESCE_TOUCHES))) {
-        mAllowCoalescingTouches = Preferences::GetBool(PREFNAME_COALESCE_TOUCHES, true);
-        return NS_OK;
-
-    } else if (!strcmp(aTopic, "browser-delayed-startup-finished")) {
-        NS_CreateServicesFromCategory("browser-delayed-startup-finished", nullptr,
-                                      "browser-delayed-startup-finished");
-
-    } else if (!strcmp(aTopic, "profile-after-change")) {
-        if (jni::IsAvailable()) {
-            java::GeckoThread::SetState(
-                    java::GeckoThread::State::PROFILE_READY());
-
-            
-            
-            
-            
-            
-            nsCOMPtr<nsIAppStartup> appStartup =
-                do_GetService(NS_APPSTARTUP_CONTRACTID);
-            if (appStartup) {
-                appStartup->EnterLastWindowClosingSurvivalArea();
-            }
-        }
-        removeObserver = true;
-
-    } else if (!strcmp(aTopic, "chrome-document-loaded")) {
-        
-        
-        nsCOMPtr<nsIDocument> doc = do_QueryInterface(aSubject);
-        MOZ_ASSERT(doc);
-        if (const RefPtr<nsWindow> window = nsWindow::From(doc->GetWindow())) {
-            if (jni::IsAvailable()) {
-                
-                
-                java::GeckoThread::CheckAndSetState(
-                        java::GeckoThread::State::PROFILE_READY(),
-                        java::GeckoThread::State::RUNNING());
-            }
-            window->OnGeckoViewReady();
-        }
-    } else if (!strcmp(aTopic, "quit-application")) {
-        if (jni::IsAvailable()) {
-            const bool restarting =
-                    aData && NS_LITERAL_STRING("restart").Equals(aData);
-            java::GeckoThread::SetState(
-                    restarting ?
-                    java::GeckoThread::State::RESTARTING() :
-                    java::GeckoThread::State::EXITING());
-        }
-        removeObserver = true;
-
-    } else if (!strcmp(aTopic, "quit-application-granted")) {
-        if (jni::IsAvailable()) {
-            
-            
-            
-            nsCOMPtr<nsIAppStartup> appStartup =
-                do_GetService(NS_APPSTARTUP_CONTRACTID);
-            if (appStartup) {
-                appStartup->ExitLastWindowClosingSurvivalArea();
-            }
-        }
-        removeObserver = true;
-
-    } else if (!strcmp(aTopic, "nsPref:changed")) {
-        if (jni::IsAvailable()) {
-            mozilla::PrefsHelper::OnPrefChange(aData);
-        }
-
-    } else if (!strcmp(aTopic, "content-document-global-created")) {
-        
-        
-        MOZ_ASSERT(!XRE_IsParentProcess());
-
-        nsCOMPtr<mozIDOMWindowProxy> domWindow = do_QueryInterface(aSubject);
-        MOZ_ASSERT(domWindow);
-        nsCOMPtr<nsIWidget> domWidget = widget::WidgetUtils::DOMWindowToWidget(
-                nsPIDOMWindowOuter::From(domWindow));
-        NS_ENSURE_TRUE(domWidget, NS_OK);
-
-        widget::GeckoEditableSupport::SetOnTabChild(
-                domWidget->GetOwningTabChild());
-
-    } else if (!strcmp(aTopic, "geckoview-content-global-transferred")) {
-        
-        
-        nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aSubject);
-        widget::GeckoEditableSupport::SetOnTabChild(
-                dom::TabChild::GetFrom(docShell));
-    }
-
-    if (removeObserver) {
-        nsCOMPtr<nsIObserverService> obsServ =
-            mozilla::services::GetObserverService();
-        if (obsServ) {
-            obsServ->RemoveObserver(this, aTopic);
-        }
-    }
-    return NS_OK;
-}
-
-bool
-nsAppShell::ProcessNextNativeEvent(bool mayWait)
-{
-    EVLOG("nsAppShell::ProcessNextNativeEvent %d", mayWait);
-
-    AUTO_PROFILER_LABEL("nsAppShell::ProcessNextNativeEvent", OTHER);
-
-    mozilla::UniquePtr<Event> curEvent;
-
+  if (!strcmp(aTopic, "xpcom-shutdown")) {
     {
-        curEvent = mEventQueue.Pop( false);
-
-        if (!curEvent && mayWait) {
-            
-            
-            
-            
-            
-            if (jni::IsAvailable() && XRE_IsParentProcess() &&
-                    AndroidBridge::Bridge()->PumpMessageLoop()) {
-                return true;
-            }
-
-            AUTO_PROFILER_LABEL("nsAppShell::ProcessNextNativeEvent:Wait",
-                                IDLE);
-            mozilla::BackgroundHangMonitor().NotifyWait();
-
-            AUTO_PROFILER_THREAD_SLEEP;
-            curEvent = mEventQueue.Pop( true);
-        }
+      
+      mozilla::MutexAutoLock shellLock(*sAppShellLock);
+      mSyncRunQuit = true;
+      mSyncRunFinished.NotifyAll();
     }
-
-    if (!curEvent)
-        return false;
-
-    mozilla::BackgroundHangMonitor().NotifyActivity();
-
-    curEvent->Run();
-    return true;
-}
-
-void
-nsAppShell::SyncRunEvent(Event&& event,
-                         UniquePtr<Event>(*eventFactory)(UniquePtr<Event>&&))
-{
     
     
-    MOZ_ASSERT(!NS_IsMainThread());
+    mObserversHash.Clear();
+    return nsBaseAppShell::Observe(aSubject, aTopic, aData);
 
-    
-    
-    mozilla::MutexAutoLock shellLock(*sAppShellLock);
-    nsAppShell* const appShell = sAppShell;
-
-    if (MOZ_UNLIKELY(!appShell)) {
-        
-        return;
-    }
-
-    bool finished = false;
-    auto runAndNotify = [&event, &finished] {
-        nsAppShell* const appShell = nsAppShell::Get();
-        if (MOZ_UNLIKELY(!appShell || appShell->mSyncRunQuit)) {
-            return;
-        }
-        event.Run();
-        finished = true;
-        mozilla::MutexAutoLock shellLock(*sAppShellLock);
-        appShell->mSyncRunFinished.NotifyAll();
-    };
-
-    UniquePtr<Event> runAndNotifyEvent = mozilla::MakeUnique<
-            LambdaEvent<decltype(runAndNotify)>>(std::move(runAndNotify));
-
-    if (eventFactory) {
-        runAndNotifyEvent = (*eventFactory)(std::move(runAndNotifyEvent));
-    }
-
-    appShell->mEventQueue.Post(std::move(runAndNotifyEvent));
-
-    while (!finished && MOZ_LIKELY(sAppShell && !sAppShell->mSyncRunQuit)) {
-        appShell->mSyncRunFinished.Wait();
-    }
-}
-
-already_AddRefed<nsIURI>
-nsAppShell::ResolveURI(const nsCString& aUriStr)
-{
-    nsCOMPtr<nsIIOService> ioServ = do_GetIOService();
-    nsCOMPtr<nsIURI> uri;
-
-    if (NS_SUCCEEDED(ioServ->NewURI(aUriStr, nullptr,
-                                    nullptr, getter_AddRefs(uri)))) {
-        return uri.forget();
-    }
-
-    nsCOMPtr<nsIURIFixup> fixup = do_GetService(NS_URIFIXUP_CONTRACTID);
-    if (fixup && NS_SUCCEEDED(
-            fixup->CreateFixupURI(aUriStr, 0, nullptr, getter_AddRefs(uri)))) {
-        return uri.forget();
-    }
-    return nullptr;
-}
-
-nsresult
-nsAppShell::AddObserver(const nsAString &aObserverKey, nsIObserver *aObserver)
-{
-    NS_ASSERTION(aObserver != nullptr, "nsAppShell::AddObserver: aObserver is null!");
-    mObserversHash.Put(aObserverKey, aObserver);
+  } else if (!strcmp(aTopic, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID) && aData &&
+             nsDependentString(aData).Equals(
+                 NS_LITERAL_STRING(PREFNAME_COALESCE_TOUCHES))) {
+    mAllowCoalescingTouches =
+        Preferences::GetBool(PREFNAME_COALESCE_TOUCHES, true);
     return NS_OK;
+
+  } else if (!strcmp(aTopic, "browser-delayed-startup-finished")) {
+    NS_CreateServicesFromCategory("browser-delayed-startup-finished", nullptr,
+                                  "browser-delayed-startup-finished");
+
+  } else if (!strcmp(aTopic, "profile-after-change")) {
+    if (jni::IsAvailable()) {
+      java::GeckoThread::SetState(java::GeckoThread::State::PROFILE_READY());
+
+      
+      
+      
+      
+      
+      nsCOMPtr<nsIAppStartup> appStartup =
+          do_GetService(NS_APPSTARTUP_CONTRACTID);
+      if (appStartup) {
+        appStartup->EnterLastWindowClosingSurvivalArea();
+      }
+    }
+    removeObserver = true;
+
+  } else if (!strcmp(aTopic, "chrome-document-loaded")) {
+    
+    
+    nsCOMPtr<nsIDocument> doc = do_QueryInterface(aSubject);
+    MOZ_ASSERT(doc);
+    if (const RefPtr<nsWindow> window = nsWindow::From(doc->GetWindow())) {
+      if (jni::IsAvailable()) {
+        
+        
+        java::GeckoThread::CheckAndSetState(
+            java::GeckoThread::State::PROFILE_READY(),
+            java::GeckoThread::State::RUNNING());
+      }
+      window->OnGeckoViewReady();
+    }
+  } else if (!strcmp(aTopic, "quit-application")) {
+    if (jni::IsAvailable()) {
+      const bool restarting =
+          aData && NS_LITERAL_STRING("restart").Equals(aData);
+      java::GeckoThread::SetState(restarting
+                                      ? java::GeckoThread::State::RESTARTING()
+                                      : java::GeckoThread::State::EXITING());
+    }
+    removeObserver = true;
+
+  } else if (!strcmp(aTopic, "quit-application-granted")) {
+    if (jni::IsAvailable()) {
+      
+      
+      
+      nsCOMPtr<nsIAppStartup> appStartup =
+          do_GetService(NS_APPSTARTUP_CONTRACTID);
+      if (appStartup) {
+        appStartup->ExitLastWindowClosingSurvivalArea();
+      }
+    }
+    removeObserver = true;
+
+  } else if (!strcmp(aTopic, "nsPref:changed")) {
+    if (jni::IsAvailable()) {
+      mozilla::PrefsHelper::OnPrefChange(aData);
+    }
+
+  } else if (!strcmp(aTopic, "content-document-global-created")) {
+    
+    
+    MOZ_ASSERT(!XRE_IsParentProcess());
+
+    nsCOMPtr<mozIDOMWindowProxy> domWindow = do_QueryInterface(aSubject);
+    MOZ_ASSERT(domWindow);
+    nsCOMPtr<nsIWidget> domWidget = widget::WidgetUtils::DOMWindowToWidget(
+        nsPIDOMWindowOuter::From(domWindow));
+    NS_ENSURE_TRUE(domWidget, NS_OK);
+
+    widget::GeckoEditableSupport::SetOnTabChild(domWidget->GetOwningTabChild());
+
+  } else if (!strcmp(aTopic, "geckoview-content-global-transferred")) {
+    
+    
+    nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(aSubject);
+    widget::GeckoEditableSupport::SetOnTabChild(
+        dom::TabChild::GetFrom(docShell));
+  }
+
+  if (removeObserver) {
+    nsCOMPtr<nsIObserverService> obsServ =
+        mozilla::services::GetObserverService();
+    if (obsServ) {
+      obsServ->RemoveObserver(this, aTopic);
+    }
+  }
+  return NS_OK;
+}
+
+bool nsAppShell::ProcessNextNativeEvent(bool mayWait) {
+  EVLOG("nsAppShell::ProcessNextNativeEvent %d", mayWait);
+
+  AUTO_PROFILER_LABEL("nsAppShell::ProcessNextNativeEvent", OTHER);
+
+  mozilla::UniquePtr<Event> curEvent;
+
+  {
+    curEvent = mEventQueue.Pop( false);
+
+    if (!curEvent && mayWait) {
+      
+      
+      
+      
+      
+      if (jni::IsAvailable() && XRE_IsParentProcess() &&
+          AndroidBridge::Bridge()->PumpMessageLoop()) {
+        return true;
+      }
+
+      AUTO_PROFILER_LABEL("nsAppShell::ProcessNextNativeEvent:Wait", IDLE);
+      mozilla::BackgroundHangMonitor().NotifyWait();
+
+      AUTO_PROFILER_THREAD_SLEEP;
+      curEvent = mEventQueue.Pop( true);
+    }
+  }
+
+  if (!curEvent) return false;
+
+  mozilla::BackgroundHangMonitor().NotifyActivity();
+
+  curEvent->Run();
+  return true;
+}
+
+void nsAppShell::SyncRunEvent(
+    Event&& event, UniquePtr<Event> (*eventFactory)(UniquePtr<Event>&&)) {
+  
+  
+  MOZ_ASSERT(!NS_IsMainThread());
+
+  
+  
+  mozilla::MutexAutoLock shellLock(*sAppShellLock);
+  nsAppShell* const appShell = sAppShell;
+
+  if (MOZ_UNLIKELY(!appShell)) {
+    
+    return;
+  }
+
+  bool finished = false;
+  auto runAndNotify = [&event, &finished] {
+    nsAppShell* const appShell = nsAppShell::Get();
+    if (MOZ_UNLIKELY(!appShell || appShell->mSyncRunQuit)) {
+      return;
+    }
+    event.Run();
+    finished = true;
+    mozilla::MutexAutoLock shellLock(*sAppShellLock);
+    appShell->mSyncRunFinished.NotifyAll();
+  };
+
+  UniquePtr<Event> runAndNotifyEvent =
+      mozilla::MakeUnique<LambdaEvent<decltype(runAndNotify)>>(
+          std::move(runAndNotify));
+
+  if (eventFactory) {
+    runAndNotifyEvent = (*eventFactory)(std::move(runAndNotifyEvent));
+  }
+
+  appShell->mEventQueue.Post(std::move(runAndNotifyEvent));
+
+  while (!finished && MOZ_LIKELY(sAppShell && !sAppShell->mSyncRunQuit)) {
+    appShell->mSyncRunFinished.Wait();
+  }
+}
+
+already_AddRefed<nsIURI> nsAppShell::ResolveURI(const nsCString& aUriStr) {
+  nsCOMPtr<nsIIOService> ioServ = do_GetIOService();
+  nsCOMPtr<nsIURI> uri;
+
+  if (NS_SUCCEEDED(
+          ioServ->NewURI(aUriStr, nullptr, nullptr, getter_AddRefs(uri)))) {
+    return uri.forget();
+  }
+
+  nsCOMPtr<nsIURIFixup> fixup = do_GetService(NS_URIFIXUP_CONTRACTID);
+  if (fixup && NS_SUCCEEDED(fixup->CreateFixupURI(aUriStr, 0, nullptr,
+                                                  getter_AddRefs(uri)))) {
+    return uri.forget();
+  }
+  return nullptr;
+}
+
+nsresult nsAppShell::AddObserver(const nsAString& aObserverKey,
+                                 nsIObserver* aObserver) {
+  NS_ASSERTION(aObserver != nullptr,
+               "nsAppShell::AddObserver: aObserver is null!");
+  mObserversHash.Put(aObserverKey, aObserver);
+  return NS_OK;
 }
 
 
 namespace mozilla {
 
-bool ProcessNextEvent()
-{
-    nsAppShell* const appShell = nsAppShell::Get();
-    if (!appShell) {
-        return false;
-    }
+bool ProcessNextEvent() {
+  nsAppShell* const appShell = nsAppShell::Get();
+  if (!appShell) {
+    return false;
+  }
 
-    return appShell->ProcessNextNativeEvent(true) ? true : false;
+  return appShell->ProcessNextNativeEvent(true) ? true : false;
 }
 
-void NotifyEvent()
-{
-    nsAppShell* const appShell = nsAppShell::Get();
-    if (!appShell) {
-        return;
-    }
-    appShell->NotifyNativeEvent();
+void NotifyEvent() {
+  nsAppShell* const appShell = nsAppShell::Get();
+  if (!appShell) {
+    return;
+  }
+  appShell->NotifyNativeEvent();
 }
 
-}
+}  

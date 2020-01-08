@@ -16,18 +16,17 @@ namespace a11y {
 
 
 
-class TextLeafAccessibleWrap : public TextLeafAccessible
-{
-public:
-  TextLeafAccessibleWrap(nsIContent* aContent, DocAccessible* aDoc) :
-    TextLeafAccessible(aContent, aDoc) { }
+class TextLeafAccessibleWrap : public TextLeafAccessible {
+ public:
+  TextLeafAccessibleWrap(nsIContent* aContent, DocAccessible* aDoc)
+      : TextLeafAccessible(aContent, aDoc) {}
   virtual ~TextLeafAccessibleWrap() {}
 
   
   DECL_IUNKNOWN_INHERITED
 };
 
-} 
-} 
+}  
+}  
 
 #endif

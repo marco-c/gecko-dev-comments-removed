@@ -23,54 +23,50 @@ union UnwindCode {
   struct {
     uint8_t offset_in_prolog;
     uint8_t unwind_operation_code : 4;
-    uint8_t operation_info        : 4;
+    uint8_t operation_info : 4;
   };
   USHORT frame_offset;
 };
 
 enum UnwindOperationCodes {
-  UWOP_PUSH_NONVOL = 0,     
-  UWOP_ALLOC_LARGE = 1,     
-  UWOP_ALLOC_SMALL = 2,     
-  UWOP_SET_FPREG = 3,       
-  UWOP_SAVE_NONVOL = 4,     
-  UWOP_SAVE_NONVOL_FAR = 5, 
-  UWOP_SAVE_XMM = 6,        
-  UWOP_EPILOG = 6,          
-  UWOP_SAVE_XMM_FAR = 7,    
-  UWOP_SPARE = 7,           
-  UWOP_SAVE_XMM128 = 8,     
-  UWOP_SAVE_XMM128_FAR = 9, 
-  UWOP_PUSH_MACHFRAME = 10  
+  UWOP_PUSH_NONVOL = 0,      
+  UWOP_ALLOC_LARGE = 1,      
+  UWOP_ALLOC_SMALL = 2,      
+  UWOP_SET_FPREG = 3,        
+  UWOP_SAVE_NONVOL = 4,      
+  UWOP_SAVE_NONVOL_FAR = 5,  
+  UWOP_SAVE_XMM = 6,         
+  UWOP_EPILOG = 6,           
+  UWOP_SAVE_XMM_FAR = 7,     
+  UWOP_SPARE = 7,            
+  UWOP_SAVE_XMM128 = 8,      
+  UWOP_SAVE_XMM128_FAR = 9,  
+  UWOP_PUSH_MACHFRAME = 10   
 };
 
 struct UnwindInfo {
-  uint8_t version       : 3;
-  uint8_t flags         : 5;
+  uint8_t version : 3;
+  uint8_t flags : 5;
   uint8_t size_of_prolog;
   uint8_t count_of_codes;
   uint8_t frame_register : 4;
-  uint8_t frame_offset   : 4;
+  uint8_t frame_offset : 4;
   UnwindCode unwind_code[1];
 };
 
-ModuleUnwindParser::~ModuleUnwindParser()
-{
+ModuleUnwindParser::~ModuleUnwindParser() {
   if (mImg) {
     ImageUnload(mImg);
   }
 }
 
-void*
-ModuleUnwindParser::RvaToVa(ULONG aRva)
-{
-  return ImageRvaToVa(
-    mImg->FileHeader, mImg->MappedAddress, aRva, &mImg->LastRvaSection);
+void* ModuleUnwindParser::RvaToVa(ULONG aRva) {
+  return ImageRvaToVa(mImg->FileHeader, mImg->MappedAddress, aRva,
+                      &mImg->LastRvaSection);
 }
 
 ModuleUnwindParser::ModuleUnwindParser(const std::string& aPath)
-  : mPath(aPath)
-{
+    : mPath(aPath) {
   
   
   std::string code_file = UTF8ToMBCS(aPath);
@@ -85,11 +81,12 @@ ModuleUnwindParser::ModuleUnwindParser(const std::string& aPath)
     return;
   }
 
-  DWORD exception_rva = optional_header->
-    DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].VirtualAddress;
+  DWORD exception_rva =
+      optional_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION]
+          .VirtualAddress;
 
-  DWORD exception_size = optional_header->
-    DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size;
+  DWORD exception_size =
+      optional_header->DataDirectory[IMAGE_DIRECTORY_ENTRY_EXCEPTION].Size;
 
   auto funcs = (PIMAGE_RUNTIME_FUNCTION_ENTRY)RvaToVa(exception_rva);
   if (!funcs) {
@@ -101,10 +98,8 @@ ModuleUnwindParser::ModuleUnwindParser(const std::string& aPath)
   }
 }
 
-bool
-ModuleUnwindParser::GenerateCFIForFunction(IMAGE_RUNTIME_FUNCTION_ENTRY& aFunc,
-                                           UnwindCFI& aRet)
-{
+bool ModuleUnwindParser::GenerateCFIForFunction(
+    IMAGE_RUNTIME_FUNCTION_ENTRY& aFunc, UnwindCFI& aRet) {
   DWORD unwind_rva = aFunc.UnwindInfoAddress;
   
   
@@ -133,7 +128,7 @@ ModuleUnwindParser::GenerateCFIForFunction(IMAGE_RUNTIME_FUNCTION_ENTRY& aFunc,
     return false;
   }
 
-  DWORD stack_size = 8; 
+  DWORD stack_size = 8;  
   DWORD rip_offset = 8;
   do {
     for (uint8_t c = 0; c < unwind_info->count_of_codes; c++) {
@@ -169,15 +164,15 @@ ModuleUnwindParser::GenerateCFIForFunction(IMAGE_RUNTIME_FUNCTION_ENTRY& aFunc,
           
           return false;
         case UWOP_SAVE_NONVOL:
-        case UWOP_SAVE_XMM: 
+        case UWOP_SAVE_XMM:  
         case UWOP_SAVE_XMM128: {
-          c++; 
+          c++;  
           break;
         }
         case UWOP_SAVE_NONVOL_FAR:
-        case UWOP_SAVE_XMM_FAR: 
+        case UWOP_SAVE_XMM_FAR:  
         case UWOP_SAVE_XMM128_FAR: {
-          c += 2; 
+          c += 2;  
           break;
         }
         case UWOP_PUSH_MACHFRAME: {
@@ -189,19 +184,16 @@ ModuleUnwindParser::GenerateCFIForFunction(IMAGE_RUNTIME_FUNCTION_ENTRY& aFunc,
           rip_offset += 80;
           break;
         }
-        default: {
-          return false;
-        }
+        default: { return false; }
       }
     }
 
     if (unwind_info->flags & UNW_FLAG_CHAININFO) {
-      auto chained_func = (PIMAGE_RUNTIME_FUNCTION_ENTRY)(
-            (unwind_info->unwind_code +
-            ((unwind_info->count_of_codes + 1) & ~1)));
+      auto chained_func = (PIMAGE_RUNTIME_FUNCTION_ENTRY)((
+          unwind_info->unwind_code + ((unwind_info->count_of_codes + 1) & ~1)));
 
       if (visited.end() != visited.find(chained_func->UnwindInfoAddress)) {
-        return false; 
+        return false;  
       }
 
       visited.insert(chained_func->UnwindInfoAddress);
@@ -229,13 +221,11 @@ ModuleUnwindParser::GetAnyOffsetAddr() const {
   return mUnwindMap.begin()->first;
 }
 
-bool
-ModuleUnwindParser::GetCFI(DWORD aAddress, UnwindCFI& aRet)
-{
+bool ModuleUnwindParser::GetCFI(DWORD aAddress, UnwindCFI& aRet) {
   
   auto itUW = mUnwindMap.lower_bound(aAddress + 1);
   if (itUW == mUnwindMap.begin()) {
-   return false; 
+    return false;  
   }
   --itUW;
 
@@ -261,6 +251,6 @@ ModuleUnwindParser::GetCFI(DWORD aAddress, UnwindCFI& aRet)
   return true;
 }
 
-} 
+}  
 
-#endif 
+#endif  

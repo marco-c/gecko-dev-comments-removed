@@ -18,32 +18,31 @@ namespace dom {
 
 class TabChild;
 
-class ExternalHelperAppChild : public PExternalHelperAppChild
-                             , public nsIStreamListener
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSISTREAMLISTENER
-    NS_DECL_NSIREQUESTOBSERVER
+class ExternalHelperAppChild : public PExternalHelperAppChild,
+                               public nsIStreamListener {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSISTREAMLISTENER
+  NS_DECL_NSIREQUESTOBSERVER
 
-    ExternalHelperAppChild();
+  ExternalHelperAppChild();
 
-    
-    
-    void SetHandler(nsExternalAppHandler *handler) { mHandler = handler; }
+  
+  
+  void SetHandler(nsExternalAppHandler *handler) { mHandler = handler; }
 
-    virtual mozilla::ipc::IPCResult RecvCancel(const nsresult& aStatus) override;
-private:
-    virtual ~ExternalHelperAppChild();
-    MOZ_MUST_USE nsresult DivertToParent(nsIDivertableChannel *divertable,
-                                         nsIRequest *request,
-                                         TabChild *tabChild);
+  virtual mozilla::ipc::IPCResult RecvCancel(const nsresult &aStatus) override;
 
-    RefPtr<nsExternalAppHandler> mHandler;
-    nsresult mStatus;
+ private:
+  virtual ~ExternalHelperAppChild();
+  MOZ_MUST_USE nsresult DivertToParent(nsIDivertableChannel *divertable,
+                                       nsIRequest *request, TabChild *tabChild);
+
+  RefPtr<nsExternalAppHandler> mHandler;
+  nsresult mStatus;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

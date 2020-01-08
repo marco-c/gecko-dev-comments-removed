@@ -31,62 +31,53 @@ static const uint32_t BITMAPINFOSIZE = bmp::InfoHeaderLength::WIN_ICO;
 
 
 
-uint16_t
-nsICODecoder::GetNumColors()
-{
+uint16_t nsICODecoder::GetNumColors() {
   uint16_t numColors = 0;
   if (mBPP <= 8) {
     switch (mBPP) {
-    case 1:
-      numColors = 2;
-      break;
-    case 4:
-      numColors = 16;
-      break;
-    case 8:
-      numColors = 256;
-      break;
-    default:
-      numColors = (uint16_t)-1;
+      case 1:
+        numColors = 2;
+        break;
+      case 4:
+        numColors = 16;
+        break;
+      case 8:
+        numColors = 256;
+        break;
+      default:
+        numColors = (uint16_t)-1;
     }
   }
   return numColors;
 }
 
 nsICODecoder::nsICODecoder(RasterImage* aImage)
-  : Decoder(aImage)
-  , mLexer(Transition::To(ICOState::HEADER, ICOHEADERSIZE),
-           Transition::TerminateSuccess())
-  , mDirEntry(nullptr)
-  , mNumIcons(0)
-  , mCurrIcon(0)
-  , mBPP(0)
-  , mMaskRowSize(0)
-  , mCurrMaskLine(0)
-  , mIsCursor(false)
-  , mHasMaskAlpha(false)
-{ }
+    : Decoder(aImage),
+      mLexer(Transition::To(ICOState::HEADER, ICOHEADERSIZE),
+             Transition::TerminateSuccess()),
+      mDirEntry(nullptr),
+      mNumIcons(0),
+      mCurrIcon(0),
+      mBPP(0),
+      mMaskRowSize(0),
+      mCurrMaskLine(0),
+      mIsCursor(false),
+      mHasMaskAlpha(false) {}
 
-nsresult
-nsICODecoder::FinishInternal()
-{
+nsresult nsICODecoder::FinishInternal() {
   
   MOZ_ASSERT(!HasError(), "Shouldn't call FinishInternal after error!");
 
   return GetFinalStateFromContainedDecoder();
 }
 
-nsresult
-nsICODecoder::FinishWithErrorInternal()
-{
+nsresult nsICODecoder::FinishWithErrorInternal() {
   
   
   return GetFinalStateFromContainedDecoder();
 }
 
-nsresult
-nsICODecoder::GetFinalStateFromContainedDecoder()
-{
+nsresult nsICODecoder::GetFinalStateFromContainedDecoder() {
   if (!mContainedDecoder) {
     return NS_OK;
   }
@@ -108,17 +99,14 @@ nsICODecoder::GetFinalStateFromContainedDecoder()
   }
 
   
-  nsresult rv = HasError() || mContainedDecoder->HasError()
-              ? NS_ERROR_FAILURE
-              : NS_OK;
+  nsresult rv =
+      HasError() || mContainedDecoder->HasError() ? NS_ERROR_FAILURE : NS_OK;
 
   MOZ_ASSERT(NS_FAILED(rv) || !mCurrentFrame || mCurrentFrame->IsFinished());
   return rv;
 }
 
-LexerTransition<ICOState>
-nsICODecoder::ReadHeader(const char* aData)
-{
+LexerTransition<ICOState> nsICODecoder::ReadHeader(const char* aData) {
   
   if ((aData[2] != 1) && (aData[2] != 2)) {
     return Transition::TerminateFailure();
@@ -128,7 +116,7 @@ nsICODecoder::ReadHeader(const char* aData)
   
   mNumIcons = LittleEndian::readUint16(aData + 4);
   if (mNumIcons == 0) {
-    return Transition::TerminateSuccess(); 
+    return Transition::TerminateSuccess();  
   }
 
   
@@ -142,9 +130,7 @@ nsICODecoder::ReadHeader(const char* aData)
   return Transition::To(ICOState::DIR_ENTRY, ICODIRENTRYSIZE);
 }
 
-size_t
-nsICODecoder::FirstResourceOffset() const
-{
+size_t nsICODecoder::FirstResourceOffset() const {
   MOZ_ASSERT(mNumIcons > 0,
              "Calling FirstResourceOffset before processing header");
 
@@ -153,9 +139,7 @@ nsICODecoder::FirstResourceOffset() const
   return ICOHEADERSIZE + mNumIcons * ICODIRENTRYSIZE;
 }
 
-LexerTransition<ICOState>
-nsICODecoder::ReadDirEntry(const char* aData)
-{
+LexerTransition<ICOState> nsICODecoder::ReadDirEntry(const char* aData) {
   mCurrIcon++;
 
   
@@ -163,15 +147,15 @@ nsICODecoder::ReadDirEntry(const char* aData)
   if (offset >= FirstResourceOffset()) {
     
     IconDirEntryEx e;
-    e.mWidth       = aData[0];
-    e.mHeight      = aData[1];
-    e.mColorCount  = aData[2];
-    e.mReserved    = aData[3];
-    e.mPlanes      = LittleEndian::readUint16(aData + 4);
-    e.mBitCount    = LittleEndian::readUint16(aData + 6);
-    e.mBytesInRes  = LittleEndian::readUint32(aData + 8);
+    e.mWidth = aData[0];
+    e.mHeight = aData[1];
+    e.mColorCount = aData[2];
+    e.mReserved = aData[3];
+    e.mPlanes = LittleEndian::readUint16(aData + 4);
+    e.mBitCount = LittleEndian::readUint16(aData + 6);
+    e.mBytesInRes = LittleEndian::readUint32(aData + 8);
     e.mImageOffset = offset;
-    e.mSize        = IntSize(e.mWidth, e.mHeight);
+    e.mSize = IntSize(e.mWidth, e.mHeight);
 
     
     
@@ -194,9 +178,7 @@ nsICODecoder::ReadDirEntry(const char* aData)
   return Transition::To(ICOState::DIR_ENTRY, ICODIRENTRYSIZE);
 }
 
-LexerTransition<ICOState>
-nsICODecoder::IterateUnsizedDirEntry()
-{
+LexerTransition<ICOState> nsICODecoder::IterateUnsizedDirEntry() {
   MOZ_ASSERT(!mUnsizedDirEntries.IsEmpty());
 
   if (!mDirEntry) {
@@ -241,13 +223,10 @@ nsICODecoder::IterateUnsizedDirEntry()
   mDirEntry = &mUnsizedDirEntries[0];
   size_t offsetToResource = mDirEntry->mImageOffset - FirstResourceOffset();
   return Transition::ToUnbuffered(ICOState::FOUND_RESOURCE,
-                                  ICOState::SKIP_TO_RESOURCE,
-                                  offsetToResource);
+                                  ICOState::SKIP_TO_RESOURCE, offsetToResource);
 }
 
-LexerTransition<ICOState>
-nsICODecoder::FinishDirEntry()
-{
+LexerTransition<ICOState> nsICODecoder::FinishDirEntry() {
   MOZ_ASSERT(!mDirEntry);
 
   if (mDirEntries.IsEmpty()) {
@@ -271,7 +250,7 @@ nsICODecoder::FinishDirEntry()
     if (!biggestEntry ||
         (e.mBitCount >= biggestEntry->mBitCount &&
          e.mSize.width * e.mSize.height >=
-           biggestEntry->mSize.width * biggestEntry->mSize.height)) {
+             biggestEntry->mSize.width * biggestEntry->mSize.height)) {
       biggestEntry = &e;
 
       if (!desiredSize) {
@@ -290,10 +269,9 @@ nsICODecoder::FinishDirEntry()
       
       int32_t delta = std::min(e.mSize.width - desiredSize->width,
                                e.mSize.height - desiredSize->height);
-      if (!mDirEntry ||
-          (e.mBitCount >= mDirEntry->mBitCount &&
-           ((bestDelta < 0 && delta >= bestDelta) ||
-            (delta >= 0 && delta <= bestDelta)))) {
+      if (!mDirEntry || (e.mBitCount >= mDirEntry->mBitCount &&
+                         ((bestDelta < 0 && delta >= bestDelta) ||
+                          (delta >= 0 && delta <= bestDelta)))) {
         mDirEntry = &e;
         bestDelta = delta;
       }
@@ -306,8 +284,7 @@ nsICODecoder::FinishDirEntry()
   
   
   if (mIsCursor) {
-    mImageMetadata.SetHotspot(biggestEntry->mXHotspot,
-                              biggestEntry->mYHotspot);
+    mImageMetadata.SetHotspot(biggestEntry->mXHotspot, biggestEntry->mYHotspot);
   }
 
   
@@ -332,13 +309,10 @@ nsICODecoder::FinishDirEntry()
 
   size_t offsetToResource = mDirEntry->mImageOffset - FirstResourceOffset();
   return Transition::ToUnbuffered(ICOState::FOUND_RESOURCE,
-                                  ICOState::SKIP_TO_RESOURCE,
-                                  offsetToResource);
+                                  ICOState::SKIP_TO_RESOURCE, offsetToResource);
 }
 
-LexerTransition<ICOState>
-nsICODecoder::SniffResource(const char* aData)
-{
+LexerTransition<ICOState> nsICODecoder::SniffResource(const char* aData) {
   MOZ_ASSERT(mDirEntry);
 
   
@@ -352,8 +326,8 @@ nsICODecoder::SniffResource(const char* aData)
 
   
   
-  bool isPNG = !memcmp(aData, nsPNGDecoder::pngSignatureBytes,
-                       PNGSIGNATURESIZE);
+  bool isPNG =
+      !memcmp(aData, nsPNGDecoder::pngSignatureBytes, PNGSIGNATURESIZE);
   if (isPNG) {
     if (mDirEntry->mBytesInRes <= BITMAPINFOSIZE) {
       return Transition::TerminateFailure();
@@ -361,28 +335,24 @@ nsICODecoder::SniffResource(const char* aData)
 
     
     
-    Maybe<SourceBufferIterator> containedIterator
-      = mLexer.Clone(*mIterator, mDirEntry->mBytesInRes);
+    Maybe<SourceBufferIterator> containedIterator =
+        mLexer.Clone(*mIterator, mDirEntry->mBytesInRes);
     if (containedIterator.isNothing()) {
       return Transition::TerminateFailure();
     }
 
     
     bool metadataDecode = mReturnIterator.isSome();
-    Maybe<IntSize> expectedSize = metadataDecode ? Nothing()
-                                                 : Some(mDirEntry->mSize);
-    mContainedDecoder =
-      DecoderFactory::CreateDecoderForICOResource(DecoderType::PNG,
-                                                  std::move(containedIterator.ref()),
-                                                  WrapNotNull(this),
-                                                  metadataDecode,
-                                                  expectedSize);
+    Maybe<IntSize> expectedSize =
+        metadataDecode ? Nothing() : Some(mDirEntry->mSize);
+    mContainedDecoder = DecoderFactory::CreateDecoderForICOResource(
+        DecoderType::PNG, std::move(containedIterator.ref()), WrapNotNull(this),
+        metadataDecode, expectedSize);
 
     
     size_t toRead = mDirEntry->mBytesInRes - BITMAPINFOSIZE;
     return Transition::ToUnbuffered(ICOState::FINISHED_RESOURCE,
-                                    ICOState::READ_RESOURCE,
-                                    toRead);
+                                    ICOState::READ_RESOURCE, toRead);
   } else {
     
     int32_t bihSize = LittleEndian::readUint32(aData);
@@ -395,9 +365,7 @@ nsICODecoder::SniffResource(const char* aData)
   }
 }
 
-LexerTransition<ICOState>
-nsICODecoder::ReadResource()
-{
+LexerTransition<ICOState> nsICODecoder::ReadResource() {
   if (!FlushContainedDecoder()) {
     return Transition::TerminateFailure();
   }
@@ -405,9 +373,7 @@ nsICODecoder::ReadResource()
   return Transition::ContinueUnbuffered(ICOState::READ_RESOURCE);
 }
 
-LexerTransition<ICOState>
-nsICODecoder::ReadBIH(const char* aData)
-{
+LexerTransition<ICOState> nsICODecoder::ReadBIH(const char* aData) {
   MOZ_ASSERT(mDirEntry);
 
   
@@ -427,12 +393,13 @@ nsICODecoder::ReadBIH(const char* aData)
   
   
   
-  uint32_t dataOffset = bmp::FILE_HEADER_LENGTH + BITMAPINFOSIZE + 4 * numColors;
+  uint32_t dataOffset =
+      bmp::FILE_HEADER_LENGTH + BITMAPINFOSIZE + 4 * numColors;
 
   
   
-  Maybe<SourceBufferIterator> containedIterator
-    = mLexer.Clone(*mIterator, mDirEntry->mBytesInRes);
+  Maybe<SourceBufferIterator> containedIterator =
+      mLexer.Clone(*mIterator, mDirEntry->mBytesInRes);
   if (containedIterator.isNothing()) {
     return Transition::TerminateFailure();
   }
@@ -440,18 +407,14 @@ nsICODecoder::ReadBIH(const char* aData)
   
   
   bool metadataDecode = mReturnIterator.isSome();
-  Maybe<IntSize> expectedSize = metadataDecode ? Nothing()
-                                               : Some(mDirEntry->mSize);
-  mContainedDecoder =
-    DecoderFactory::CreateDecoderForICOResource(DecoderType::BMP,
-                                                std::move(containedIterator.ref()),
-                                                WrapNotNull(this),
-                                                metadataDecode,
-                                                expectedSize,
-                                                Some(dataOffset));
+  Maybe<IntSize> expectedSize =
+      metadataDecode ? Nothing() : Some(mDirEntry->mSize);
+  mContainedDecoder = DecoderFactory::CreateDecoderForICOResource(
+      DecoderType::BMP, std::move(containedIterator.ref()), WrapNotNull(this),
+      metadataDecode, expectedSize, Some(dataOffset));
 
   RefPtr<nsBMPDecoder> bmpDecoder =
-    static_cast<nsBMPDecoder*>(mContainedDecoder.get());
+      static_cast<nsBMPDecoder*>(mContainedDecoder.get());
 
   
   if (!FlushContainedDecoder()) {
@@ -467,18 +430,15 @@ nsICODecoder::ReadBIH(const char* aData)
   
   uint32_t bmpDataLength = bmpDecoder->GetCompressedImageSize() + 4 * numColors;
   bool hasANDMask = (BITMAPINFOSIZE + bmpDataLength) < mDirEntry->mBytesInRes;
-  ICOState afterBMPState = hasANDMask ? ICOState::PREPARE_FOR_MASK
-                                      : ICOState::FINISHED_RESOURCE;
+  ICOState afterBMPState =
+      hasANDMask ? ICOState::PREPARE_FOR_MASK : ICOState::FINISHED_RESOURCE;
 
   
-  return Transition::ToUnbuffered(afterBMPState,
-                                  ICOState::READ_RESOURCE,
+  return Transition::ToUnbuffered(afterBMPState, ICOState::READ_RESOURCE,
                                   bmpDataLength);
 }
 
-LexerTransition<ICOState>
-nsICODecoder::PrepareForMask()
-{
+LexerTransition<ICOState> nsICODecoder::PrepareForMask() {
   MOZ_ASSERT(mDirEntry);
   MOZ_ASSERT(mContainedDecoder->GetDecodeDone());
 
@@ -491,26 +451,25 @@ nsICODecoder::PrepareForMask()
   MOZ_ASSERT(mContainedDecoder->GetDecodeDone());
 
   RefPtr<nsBMPDecoder> bmpDecoder =
-    static_cast<nsBMPDecoder*>(mContainedDecoder.get());
+      static_cast<nsBMPDecoder*>(mContainedDecoder.get());
 
   uint16_t numColors = GetNumColors();
   MOZ_ASSERT(numColors != uint16_t(-1));
 
   
   uint32_t bmpLengthWithHeader =
-    BITMAPINFOSIZE + bmpDecoder->GetCompressedImageSize() + 4 * numColors;
+      BITMAPINFOSIZE + bmpDecoder->GetCompressedImageSize() + 4 * numColors;
   MOZ_ASSERT(bmpLengthWithHeader < mDirEntry->mBytesInRes);
   uint32_t maskLength = mDirEntry->mBytesInRes - bmpLengthWithHeader;
 
   
   if (bmpDecoder->HasTransparency()) {
     return Transition::ToUnbuffered(ICOState::FINISHED_RESOURCE,
-                                    ICOState::SKIP_MASK,
-                                    maskLength);
+                                    ICOState::SKIP_MASK, maskLength);
   }
 
   
-  mMaskRowSize = ((mDirEntry->mSize.width + 31) / 32) * 4; 
+  mMaskRowSize = ((mDirEntry->mSize.width + 31) / 32) * 4;  
 
   
   
@@ -524,14 +483,13 @@ nsICODecoder::PrepareForMask()
   
   if (mDownscaler) {
     MOZ_ASSERT(bmpDecoder->GetImageDataLength() ==
-                 mDownscaler->TargetSize().width *
-                 mDownscaler->TargetSize().height *
-                 sizeof(uint32_t));
+               mDownscaler->TargetSize().width *
+                   mDownscaler->TargetSize().height * sizeof(uint32_t));
     mMaskBuffer = MakeUnique<uint8_t[]>(bmpDecoder->GetImageDataLength());
-    nsresult rv = mDownscaler->BeginFrame(mDirEntry->mSize, Nothing(),
-                                          mMaskBuffer.get(),
-                                           true,
-                                           true);
+    nsresult rv =
+        mDownscaler->BeginFrame(mDirEntry->mSize, Nothing(), mMaskBuffer.get(),
+                                 true,
+                                 true);
     if (NS_FAILED(rv)) {
       return Transition::TerminateFailure();
     }
@@ -541,10 +499,7 @@ nsICODecoder::PrepareForMask()
   return Transition::To(ICOState::READ_MASK_ROW, mMaskRowSize);
 }
 
-
-LexerTransition<ICOState>
-nsICODecoder::ReadMaskRow(const char* aData)
-{
+LexerTransition<ICOState> nsICODecoder::ReadMaskRow(const char* aData) {
   MOZ_ASSERT(mDirEntry);
 
   mCurrMaskLine--;
@@ -560,12 +515,13 @@ nsICODecoder::ReadMaskRow(const char* aData)
   uint32_t* decoded = nullptr;
   if (mDownscaler) {
     
-    memset(mDownscaler->RowBuffer(), 0xFF, mDirEntry->mSize.width * sizeof(uint32_t));
+    memset(mDownscaler->RowBuffer(), 0xFF,
+           mDirEntry->mSize.width * sizeof(uint32_t));
 
     decoded = reinterpret_cast<uint32_t*>(mDownscaler->RowBuffer());
   } else {
     RefPtr<nsBMPDecoder> bmpDecoder =
-      static_cast<nsBMPDecoder*>(mContainedDecoder.get());
+        static_cast<nsBMPDecoder*>(mContainedDecoder.get());
     uint32_t* imageData = bmpDecoder->GetImageData();
     if (!imageData) {
       return Transition::TerminateFailure();
@@ -607,15 +563,13 @@ nsICODecoder::ReadMaskRow(const char* aData)
   return Transition::To(ICOState::READ_MASK_ROW, mMaskRowSize);
 }
 
-LexerTransition<ICOState>
-nsICODecoder::FinishMask()
-{
+LexerTransition<ICOState> nsICODecoder::FinishMask() {
   
   
   if (mDownscaler) {
     
     RefPtr<nsBMPDecoder> bmpDecoder =
-      static_cast<nsBMPDecoder*>(mContainedDecoder.get());
+        static_cast<nsBMPDecoder*>(mContainedDecoder.get());
     uint8_t* imageData = reinterpret_cast<uint8_t*>(bmpDecoder->GetImageData());
     if (!imageData) {
       return Transition::TerminateFailure();
@@ -624,24 +578,23 @@ nsICODecoder::FinishMask()
     
     MOZ_ASSERT(mMaskBuffer);
     MOZ_ASSERT(bmpDecoder->GetImageDataLength() > 0);
-    for (size_t i = 3 ; i < bmpDecoder->GetImageDataLength() ; i += 4) {
+    for (size_t i = 3; i < bmpDecoder->GetImageDataLength(); i += 4) {
       imageData[i] = mMaskBuffer[i];
     }
     int32_t stride = mDownscaler->TargetSize().width * sizeof(uint32_t);
     DebugOnly<bool> ret =
-    
-    
-      PremultiplyData(imageData, stride, SurfaceFormat::B8G8R8A8,
-        imageData, stride, SurfaceFormat::B8G8R8A8, mDownscaler->TargetSize());
+        
+        
+        PremultiplyData(imageData, stride, SurfaceFormat::B8G8R8A8, imageData,
+                        stride, SurfaceFormat::B8G8R8A8,
+                        mDownscaler->TargetSize());
     MOZ_ASSERT(ret);
   }
 
   return Transition::To(ICOState::FINISHED_RESOURCE, 0);
 }
 
-LexerTransition<ICOState>
-nsICODecoder::FinishResource()
-{
+LexerTransition<ICOState> nsICODecoder::FinishResource() {
   MOZ_ASSERT(mDirEntry);
 
   
@@ -674,49 +627,47 @@ nsICODecoder::FinishResource()
   return Transition::TerminateSuccess();
 }
 
-LexerResult
-nsICODecoder::DoDecode(SourceBufferIterator& aIterator, IResumable* aOnResume)
-{
+LexerResult nsICODecoder::DoDecode(SourceBufferIterator& aIterator,
+                                   IResumable* aOnResume) {
   MOZ_ASSERT(!HasError(), "Shouldn't call DoDecode after error!");
 
-  return mLexer.Lex(aIterator, aOnResume,
-                    [=](ICOState aState, const char* aData, size_t aLength) {
-    switch (aState) {
-      case ICOState::HEADER:
-        return ReadHeader(aData);
-      case ICOState::DIR_ENTRY:
-        return ReadDirEntry(aData);
-      case ICOState::FINISHED_DIR_ENTRY:
-        return FinishDirEntry();
-      case ICOState::ITERATE_UNSIZED_DIR_ENTRY:
-        return IterateUnsizedDirEntry();
-      case ICOState::SKIP_TO_RESOURCE:
-        return Transition::ContinueUnbuffered(ICOState::SKIP_TO_RESOURCE);
-      case ICOState::FOUND_RESOURCE:
-        return Transition::To(ICOState::SNIFF_RESOURCE, BITMAPINFOSIZE);
-      case ICOState::SNIFF_RESOURCE:
-        return SniffResource(aData);
-      case ICOState::READ_RESOURCE:
-        return ReadResource();
-      case ICOState::PREPARE_FOR_MASK:
-        return PrepareForMask();
-      case ICOState::READ_MASK_ROW:
-        return ReadMaskRow(aData);
-      case ICOState::FINISH_MASK:
-        return FinishMask();
-      case ICOState::SKIP_MASK:
-        return Transition::ContinueUnbuffered(ICOState::SKIP_MASK);
-      case ICOState::FINISHED_RESOURCE:
-        return FinishResource();
-      default:
-        MOZ_CRASH("Unknown ICOState");
-    }
-  });
+  return mLexer.Lex(
+      aIterator, aOnResume,
+      [=](ICOState aState, const char* aData, size_t aLength) {
+        switch (aState) {
+          case ICOState::HEADER:
+            return ReadHeader(aData);
+          case ICOState::DIR_ENTRY:
+            return ReadDirEntry(aData);
+          case ICOState::FINISHED_DIR_ENTRY:
+            return FinishDirEntry();
+          case ICOState::ITERATE_UNSIZED_DIR_ENTRY:
+            return IterateUnsizedDirEntry();
+          case ICOState::SKIP_TO_RESOURCE:
+            return Transition::ContinueUnbuffered(ICOState::SKIP_TO_RESOURCE);
+          case ICOState::FOUND_RESOURCE:
+            return Transition::To(ICOState::SNIFF_RESOURCE, BITMAPINFOSIZE);
+          case ICOState::SNIFF_RESOURCE:
+            return SniffResource(aData);
+          case ICOState::READ_RESOURCE:
+            return ReadResource();
+          case ICOState::PREPARE_FOR_MASK:
+            return PrepareForMask();
+          case ICOState::READ_MASK_ROW:
+            return ReadMaskRow(aData);
+          case ICOState::FINISH_MASK:
+            return FinishMask();
+          case ICOState::SKIP_MASK:
+            return Transition::ContinueUnbuffered(ICOState::SKIP_MASK);
+          case ICOState::FINISHED_RESOURCE:
+            return FinishResource();
+          default:
+            MOZ_CRASH("Unknown ICOState");
+        }
+      });
 }
 
-bool
-nsICODecoder::FlushContainedDecoder()
-{
+bool nsICODecoder::FlushContainedDecoder() {
   MOZ_ASSERT(mContainedDecoder);
 
   bool succeeded = true;
@@ -744,5 +695,5 @@ nsICODecoder::FlushContainedDecoder()
   return succeeded;
 }
 
-} 
-} 
+}  
+}  

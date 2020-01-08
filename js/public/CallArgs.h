@@ -73,8 +73,7 @@
 #include "js/Value.h"
 
 
-typedef bool
-(* JSNative)(JSContext* cx, unsigned argc, JS::Value* vp);
+typedef bool (*JSNative)(JSContext* cx, unsigned argc, JS::Value* vp);
 
 namespace JS {
 
@@ -86,161 +85,152 @@ namespace detail {
 
 
 
-extern JS_PUBLIC_API bool
-ComputeThis(JSContext* cx, JS::Value* vp, MutableHandleObject thisObject);
+extern JS_PUBLIC_API bool ComputeThis(JSContext* cx, JS::Value* vp,
+                                      MutableHandleObject thisObject);
 
 #ifdef JS_DEBUG
-extern JS_PUBLIC_API void
-CheckIsValidConstructible(const Value& v);
+extern JS_PUBLIC_API void CheckIsValidConstructible(const Value& v);
 #endif
 
-class MOZ_STACK_CLASS IncludeUsedRval
-{
-    mutable bool usedRval_;
+class MOZ_STACK_CLASS IncludeUsedRval {
+  mutable bool usedRval_;
 
-  public:
-    bool usedRval() const { return usedRval_; }
-    void setUsedRval() const { usedRval_ = true; }
-    void clearUsedRval() const { usedRval_ = false; }
-    void assertUnusedRval() const { MOZ_ASSERT(!usedRval_); }
+ public:
+  bool usedRval() const { return usedRval_; }
+  void setUsedRval() const { usedRval_ = true; }
+  void clearUsedRval() const { usedRval_ = false; }
+  void assertUnusedRval() const { MOZ_ASSERT(!usedRval_); }
 };
 
-class MOZ_STACK_CLASS NoUsedRval
-{
-  public:
-    bool usedRval() const { return false; }
-    void setUsedRval() const {}
-    void clearUsedRval() const {}
-    void assertUnusedRval() const {}
+class MOZ_STACK_CLASS NoUsedRval {
+ public:
+  bool usedRval() const { return false; }
+  void setUsedRval() const {}
+  void clearUsedRval() const {}
+  void assertUnusedRval() const {}
 };
 
-template<class WantUsedRval>
-class MOZ_STACK_CLASS CallArgsBase
-{
-    static_assert(mozilla::IsSame<WantUsedRval, IncludeUsedRval>::value ||
-                  mozilla::IsSame<WantUsedRval, NoUsedRval>::value,
-                  "WantUsedRval can only be IncludeUsedRval or NoUsedRval");
+template <class WantUsedRval>
+class MOZ_STACK_CLASS CallArgsBase {
+  static_assert(mozilla::IsSame<WantUsedRval, IncludeUsedRval>::value ||
+                    mozilla::IsSame<WantUsedRval, NoUsedRval>::value,
+                "WantUsedRval can only be IncludeUsedRval or NoUsedRval");
 
-  protected:
-    Value* argv_;
-    unsigned argc_;
-    bool constructing_:1;
+ protected:
+  Value* argv_;
+  unsigned argc_;
+  bool constructing_ : 1;
 
-    
-    bool ignoresReturnValue_:1;
+  
+  bool ignoresReturnValue_ : 1;
 
 #ifdef JS_DEBUG
-    WantUsedRval wantUsedRval_;
-    bool usedRval() const { return wantUsedRval_.usedRval(); }
-    void setUsedRval() const { wantUsedRval_.setUsedRval(); }
-    void clearUsedRval() const { wantUsedRval_.clearUsedRval(); }
-    void assertUnusedRval() const { wantUsedRval_.assertUnusedRval(); }
+  WantUsedRval wantUsedRval_;
+  bool usedRval() const { return wantUsedRval_.usedRval(); }
+  void setUsedRval() const { wantUsedRval_.setUsedRval(); }
+  void clearUsedRval() const { wantUsedRval_.clearUsedRval(); }
+  void assertUnusedRval() const { wantUsedRval_.assertUnusedRval(); }
 #else
-    bool usedRval() const { return false; }
-    void setUsedRval() const {}
-    void clearUsedRval() const {}
-    void assertUnusedRval() const {}
+  bool usedRval() const { return false; }
+  void setUsedRval() const {}
+  void clearUsedRval() const {}
+  void assertUnusedRval() const {}
 #endif
 
-  public:
-    
+ public:
+  
 
-    
+  
 
 
 
-    HandleValue calleev() const {
-        this->assertUnusedRval();
-        return HandleValue::fromMarkedLocation(&argv_[-2]);
+  HandleValue calleev() const {
+    this->assertUnusedRval();
+    return HandleValue::fromMarkedLocation(&argv_[-2]);
+  }
+
+  
+
+
+
+  JSObject& callee() const { return calleev().toObject(); }
+
+  
+
+  bool isConstructing() const {
+    if (!argv_[-1].isMagic()) {
+      return false;
     }
-
-    
-
-
-
-    JSObject& callee() const {
-        return calleev().toObject();
-    }
-
-    
-
-    bool isConstructing() const {
-        if (!argv_[-1].isMagic()) {
-            return false;
-        }
 
 #ifdef JS_DEBUG
-        if (!this->usedRval()) {
-            CheckIsValidConstructible(calleev());
-        }
+    if (!this->usedRval()) {
+      CheckIsValidConstructible(calleev());
+    }
 #endif
 
-        return true;
+    return true;
+  }
+
+  bool ignoresReturnValue() const { return ignoresReturnValue_; }
+
+  MutableHandleValue newTarget() const {
+    MOZ_ASSERT(constructing_);
+    return MutableHandleValue::fromMarkedLocation(&this->argv_[argc_]);
+  }
+
+  
+
+
+
+
+
+  HandleValue thisv() const {
+    
+    
+    
+    return HandleValue::fromMarkedLocation(&argv_[-1]);
+  }
+
+  bool computeThis(JSContext* cx, MutableHandleObject thisObject) const {
+    if (thisv().isObject()) {
+      thisObject.set(&thisv().toObject());
+      return true;
     }
 
-    bool ignoresReturnValue() const {
-        return ignoresReturnValue_;
-    }
+    return ComputeThis(cx, base(), thisObject);
+  }
 
-    MutableHandleValue newTarget() const {
-        MOZ_ASSERT(constructing_);
-        return MutableHandleValue::fromMarkedLocation(&this->argv_[argc_]);
-    }
+  
 
-    
+  
+  unsigned length() const { return argc_; }
 
+  
+  MutableHandleValue operator[](unsigned i) const {
+    MOZ_ASSERT(i < argc_);
+    return MutableHandleValue::fromMarkedLocation(&this->argv_[i]);
+  }
 
-
-
-
-    HandleValue thisv() const {
-        
-        
-        
-        return HandleValue::fromMarkedLocation(&argv_[-1]);
-    }
-
-    bool computeThis(JSContext* cx, MutableHandleObject thisObject) const {
-        if (thisv().isObject()) {
-            thisObject.set(&thisv().toObject());
-            return true;
-        }
-
-        return ComputeThis(cx, base(), thisObject);
-    }
-
-    
-
-        
-    unsigned length() const { return argc_; }
-
-    
-    MutableHandleValue operator[](unsigned i) const {
-        MOZ_ASSERT(i < argc_);
-        return MutableHandleValue::fromMarkedLocation(&this->argv_[i]);
-    }
-
-    
+  
 
 
 
-    HandleValue get(unsigned i) const {
-        return i < length()
-               ? HandleValue::fromMarkedLocation(&this->argv_[i])
-               : UndefinedHandleValue;
-    }
+  HandleValue get(unsigned i) const {
+    return i < length() ? HandleValue::fromMarkedLocation(&this->argv_[i])
+                        : UndefinedHandleValue;
+  }
 
-    
-
+  
 
 
-    bool hasDefined(unsigned i) const {
-        return i < argc_ && !this->argv_[i].isUndefined();
-    }
 
-    
+  bool hasDefined(unsigned i) const {
+    return i < argc_ && !this->argv_[i].isUndefined();
+  }
 
-    
+  
+
+  
 
 
 
@@ -251,102 +241,97 @@ class MOZ_STACK_CLASS CallArgsBase
 
 
 
-    MutableHandleValue rval() const {
-        this->setUsedRval();
-        return MutableHandleValue::fromMarkedLocation(&argv_[-2]);
-    }
+  MutableHandleValue rval() const {
+    this->setUsedRval();
+    return MutableHandleValue::fromMarkedLocation(&argv_[-2]);
+  }
 
-  public:
-    
-    
-    
+ public:
+  
+  
+  
 
-    void setCallee(const Value& aCalleev) const {
-        this->clearUsedRval();
-        argv_[-2] = aCalleev;
-    }
+  void setCallee(const Value& aCalleev) const {
+    this->clearUsedRval();
+    argv_[-2] = aCalleev;
+  }
 
-    void setThis(const Value& aThisv) const {
-        argv_[-1] = aThisv;
-    }
+  void setThis(const Value& aThisv) const { argv_[-1] = aThisv; }
 
-    MutableHandleValue mutableThisv() const {
-        return MutableHandleValue::fromMarkedLocation(&argv_[-1]);
-    }
+  MutableHandleValue mutableThisv() const {
+    return MutableHandleValue::fromMarkedLocation(&argv_[-1]);
+  }
 
-  public:
-    
-    
-    
+ public:
+  
+  
+  
 
-    Value* array() const { return argv_; }
-    Value* end() const { return argv_ + argc_ + constructing_; }
+  Value* array() const { return argv_; }
+  Value* end() const { return argv_ + argc_ + constructing_; }
 
-  public:
-    
-    
+ public:
+  
+  
 
-    Value* base() const { return argv_ - 2; }
+  Value* base() const { return argv_ - 2; }
 
-    Value* spAfterCall() const {
-        this->setUsedRval();
-        return argv_ - 1;
-    }
+  Value* spAfterCall() const {
+    this->setUsedRval();
+    return argv_ - 1;
+  }
 };
 
-} 
+}  
 
-class MOZ_STACK_CLASS CallArgs : public detail::CallArgsBase<detail::IncludeUsedRval>
-{
-  private:
-    friend CallArgs CallArgsFromVp(unsigned argc, Value* vp);
-    friend CallArgs CallArgsFromSp(unsigned stackSlots, Value* sp, bool constructing,
-                                   bool ignoresReturnValue);
+class MOZ_STACK_CLASS CallArgs
+    : public detail::CallArgsBase<detail::IncludeUsedRval> {
+ private:
+  friend CallArgs CallArgsFromVp(unsigned argc, Value* vp);
+  friend CallArgs CallArgsFromSp(unsigned stackSlots, Value* sp,
+                                 bool constructing, bool ignoresReturnValue);
 
-    static CallArgs create(unsigned argc, Value* argv, bool constructing,
-                           bool ignoresReturnValue = false) {
-        CallArgs args;
-        args.clearUsedRval();
-        args.argv_ = argv;
-        args.argc_ = argc;
-        args.constructing_ = constructing;
-        args.ignoresReturnValue_ = ignoresReturnValue;
+  static CallArgs create(unsigned argc, Value* argv, bool constructing,
+                         bool ignoresReturnValue = false) {
+    CallArgs args;
+    args.clearUsedRval();
+    args.argv_ = argv;
+    args.argc_ = argc;
+    args.constructing_ = constructing;
+    args.ignoresReturnValue_ = ignoresReturnValue;
 #ifdef DEBUG
-        MOZ_ASSERT(ValueIsNotGray(args.thisv()));
-        MOZ_ASSERT(ValueIsNotGray(args.calleev()));
-        for (unsigned i = 0; i < argc; ++i) {
-            MOZ_ASSERT(ValueIsNotGray(argv[i]));
-        }
-#endif
-        return args;
+    MOZ_ASSERT(ValueIsNotGray(args.thisv()));
+    MOZ_ASSERT(ValueIsNotGray(args.calleev()));
+    for (unsigned i = 0; i < argc; ++i) {
+      MOZ_ASSERT(ValueIsNotGray(argv[i]));
     }
+#endif
+    return args;
+  }
 
-  public:
-    
+ public:
+  
 
 
 
-    JS_PUBLIC_API bool requireAtLeast(JSContext* cx, const char* fnname, unsigned required) const;
-
+  JS_PUBLIC_API bool requireAtLeast(JSContext* cx, const char* fnname,
+                                    unsigned required) const;
 };
 
-MOZ_ALWAYS_INLINE CallArgs
-CallArgsFromVp(unsigned argc, Value* vp)
-{
-    return CallArgs::create(argc, vp + 2, vp[1].isMagic(JS_IS_CONSTRUCTING));
+MOZ_ALWAYS_INLINE CallArgs CallArgsFromVp(unsigned argc, Value* vp) {
+  return CallArgs::create(argc, vp + 2, vp[1].isMagic(JS_IS_CONSTRUCTING));
 }
 
 
 
 
-MOZ_ALWAYS_INLINE CallArgs
-CallArgsFromSp(unsigned stackSlots, Value* sp, bool constructing = false,
-               bool ignoresReturnValue = false)
-{
-    return CallArgs::create(stackSlots - constructing, sp - stackSlots, constructing,
-                            ignoresReturnValue);
+MOZ_ALWAYS_INLINE CallArgs CallArgsFromSp(unsigned stackSlots, Value* sp,
+                                          bool constructing = false,
+                                          bool ignoresReturnValue = false) {
+  return CallArgs::create(stackSlots - constructing, sp - stackSlots,
+                          constructing, ignoresReturnValue);
 }
 
-} 
+}  
 
 #endif 

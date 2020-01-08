@@ -11,9 +11,7 @@
 
 
 template <typename T>
-typename nsTSubstringTuple<T>::size_type
-nsTSubstringTuple<T>::Length() const
-{
+typename nsTSubstringTuple<T>::size_type nsTSubstringTuple<T>::Length() const {
   mozilla::CheckedInt<size_type> len;
   if (mHead) {
     len = mHead->Length();
@@ -32,11 +30,8 @@ nsTSubstringTuple<T>::Length() const
 
 
 
-
 template <typename T>
-void
-nsTSubstringTuple<T>::WriteTo(char_type* aBuf, uint32_t aBufLen) const
-{
+void nsTSubstringTuple<T>::WriteTo(char_type* aBuf, uint32_t aBufLen) const {
   MOZ_RELEASE_ASSERT(aBufLen >= mFragB->Length(), "buffer too small");
   uint32_t headLen = aBufLen - mFragB->Length();
   if (mHead) {
@@ -54,12 +49,9 @@ nsTSubstringTuple<T>::WriteTo(char_type* aBuf, uint32_t aBufLen) const
 
 
 
-
 template <typename T>
-bool
-nsTSubstringTuple<T>::IsDependentOn(const char_type* aStart,
-                                    const char_type* aEnd) const
-{
+bool nsTSubstringTuple<T>::IsDependentOn(const char_type* aStart,
+                                         const char_type* aEnd) const {
   
 
   if (mFragB->IsDependentOn(aStart, aEnd)) {

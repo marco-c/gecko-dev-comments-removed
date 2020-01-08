@@ -19,7 +19,7 @@
 
 
 #define MALLOC_DECL(name, return_type, ...) \
-  MOZ_MEMORY_API return_type name ## _impl(__VA_ARGS__);
+  MOZ_MEMORY_API return_type name##_impl(__VA_ARGS__);
 #define MALLOC_FUNCS MALLOC_FUNCS_MALLOC
 #include "malloc_decls.h"
 #else
@@ -35,41 +35,37 @@
 
 
 
-#pragma warning(disable: 4273)
+#pragma warning(disable : 4273)
 
 MFBT_API
 LPVOID WINAPI HeapAlloc(_In_ HANDLE hHeap, _In_ DWORD dwFlags,
-                        _In_ SIZE_T dwBytes)
-{
-    if (dwFlags & HEAP_ZERO_MEMORY) {
-        return calloc_impl(1, dwBytes);
-    }
-    return malloc_impl(dwBytes);
+                        _In_ SIZE_T dwBytes) {
+  if (dwFlags & HEAP_ZERO_MEMORY) {
+    return calloc_impl(1, dwBytes);
+  }
+  return malloc_impl(dwBytes);
 }
 
 MFBT_API
 LPVOID WINAPI HeapReAlloc(_In_ HANDLE hHeap, _In_ DWORD dwFlags,
-                          _In_ LPVOID lpMem, _In_ SIZE_T dwBytes)
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (dwFlags & (HEAP_REALLOC_IN_PLACE_ONLY | HEAP_ZERO_MEMORY)) {
-        return NULL;
-    }
-    return realloc_impl(lpMem, dwBytes);
+                          _In_ LPVOID lpMem, _In_ SIZE_T dwBytes) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (dwFlags & (HEAP_REALLOC_IN_PLACE_ONLY | HEAP_ZERO_MEMORY)) {
+    return NULL;
+  }
+  return realloc_impl(lpMem, dwBytes);
 }
 
 MFBT_API
-BOOL WINAPI HeapFree(_In_ HANDLE hHeap, _In_ DWORD dwFlags,
-                     _In_ LPVOID lpMem)
-{
-    free_impl(lpMem);
-    return true;
+BOOL WINAPI HeapFree(_In_ HANDLE hHeap, _In_ DWORD dwFlags, _In_ LPVOID lpMem) {
+  free_impl(lpMem);
+  return true;
 }

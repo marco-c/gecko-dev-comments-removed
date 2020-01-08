@@ -5,13 +5,10 @@
 
 
 template <typename T>
-void
-nsTString<T>::Rebind(const char_type* data, size_type length)
-{
+void nsTString<T>::Rebind(const char_type* data, size_type length) {
   
   this->Finalize();
 
   this->SetData(const_cast<char_type*>(data), length, DataFlags::TERMINATED);
   this->AssertValidDependentString();
 }
-

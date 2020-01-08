@@ -11,13 +11,13 @@
 #include <unistd.h>
 
 extern "C" {
-  
 
 
 
 
-  void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid = 0);
-  bool LaunchElevatedUpdate(int aArgc, char** aArgv, pid_t* aPid = 0);
+
+void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid = 0);
+bool LaunchElevatedUpdate(int aArgc, char** aArgv, pid_t* aPid = 0);
 }
 
 #endif

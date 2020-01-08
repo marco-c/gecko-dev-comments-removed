@@ -49,23 +49,25 @@ enum JournalMode {
   JOURNAL_DELETE = 0
   
   
-, JOURNAL_TRUNCATE
+  ,
+  JOURNAL_TRUNCATE
   
-, JOURNAL_MEMORY
+  ,
+  JOURNAL_MEMORY
   
-, JOURNAL_WAL
+  ,
+  JOURNAL_WAL
 };
 
 class ClientsShutdownBlocker;
 class ConnectionShutdownBlocker;
 
-class Database final : public nsIObserver
-                     , public nsSupportsWeakReference
-{
+class Database final : public nsIObserver, public nsSupportsWeakReference {
   typedef mozilla::storage::StatementCache<mozIStorageStatement> StatementCache;
-  typedef mozilla::storage::StatementCache<mozIStorageAsyncStatement> AsyncStatementCache;
+  typedef mozilla::storage::StatementCache<mozIStorageAsyncStatement>
+      AsyncStatementCache;
 
-public:
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -80,9 +82,11 @@ public:
   
 
 
+
   already_AddRefed<nsIAsyncShutdownClient> GetClientsShutdown();
 
   
+
 
 
   already_AddRefed<nsIAsyncShutdownClient> GetConnectionShutdown();
@@ -109,8 +113,7 @@ public:
 
 
 
-  uint16_t GetDatabaseStatus()
-  {
+  uint16_t GetDatabaseStatus() {
     mozilla::Unused << EnsureConnection();
     return mDatabaseStatus;
   }
@@ -120,8 +123,7 @@ public:
 
 
 
-  mozIStorageConnection* MainConn()
-  {
+  mozIStorageConnection* MainConn() {
     mozilla::Unused << EnsureConnection();
     return mMainConn;
   }
@@ -133,8 +135,7 @@ public:
 
 
 
-  void DispatchToAsyncThread(nsIRunnable* aEvent)
-  {
+  void DispatchToAsyncThread(nsIRunnable* aEvent) {
     if (mClosed || NS_FAILED(EnsureConnection())) {
       return;
     }
@@ -156,10 +157,8 @@ public:
 
 
 
-  template<int N>
-  already_AddRefed<mozIStorageStatement>
-  GetStatement(const char (&aQuery)[N])
-  {
+  template <int N>
+  already_AddRefed<mozIStorageStatement> GetStatement(const char (&aQuery)[N]) {
     nsDependentCString query(aQuery, N - 1);
     return GetStatement(query);
   }
@@ -173,7 +172,7 @@ public:
 
 
 
-  already_AddRefed<mozIStorageStatement>  GetStatement(const nsACString& aQuery);
+  already_AddRefed<mozIStorageStatement> GetStatement(const nsACString& aQuery);
 
   
 
@@ -184,10 +183,9 @@ public:
 
 
 
-  template<int N>
-  already_AddRefed<mozIStorageAsyncStatement>
-  GetAsyncStatement(const char (&aQuery)[N])
-  {
+  template <int N>
+  already_AddRefed<mozIStorageAsyncStatement> GetAsyncStatement(
+      const char (&aQuery)[N]) {
     nsDependentCString query(aQuery, N - 1);
     return GetAsyncStatement(query);
   }
@@ -201,7 +199,8 @@ public:
 
 
 
-  already_AddRefed<mozIStorageAsyncStatement> GetAsyncStatement(const nsACString& aQuery);
+  already_AddRefed<mozIStorageAsyncStatement> GetAsyncStatement(
+      const nsACString& aQuery);
 
   uint32_t MaxUrlLength();
 
@@ -230,7 +229,7 @@ public:
     return mMobileRootId;
   }
 
-protected:
+ protected:
   
 
 
@@ -245,7 +244,8 @@ protected:
 
 
 
-  nsresult EnsureFaviconsDatabaseAttached(const nsCOMPtr<mozIStorageService>& aStorage);
+  nsresult EnsureFaviconsDatabaseAttached(
+      const nsCOMPtr<mozIStorageService>& aStorage);
 
   
 
@@ -273,8 +273,9 @@ protected:
 
 
 
-  nsresult TryToCloneTablesFromCorruptDatabase(const nsCOMPtr<mozIStorageService>& aStorage,
-                                               const nsCOMPtr<nsIFile>& aDatabaseFile);
+  nsresult TryToCloneTablesFromCorruptDatabase(
+      const nsCOMPtr<mozIStorageService>& aStorage,
+      const nsCOMPtr<nsIFile>& aDatabaseFile);
 
   
 
@@ -353,7 +354,7 @@ protected:
                             nsTArray<int64_t>& aItemIds);
   nsresult DeleteBookmarkItem(int32_t aItemId);
 
-private:
+ private:
   ~Database();
 
   
@@ -414,7 +415,7 @@ private:
   int64_t mMobileRootId;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

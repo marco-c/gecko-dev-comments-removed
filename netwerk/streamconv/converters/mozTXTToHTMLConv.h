@@ -7,6 +7,7 @@
 
 
 
+
 #ifndef _mozTXTToHTMLConv_h__
 #define _mozTXTToHTMLConv_h__
 
@@ -16,14 +17,12 @@
 
 class nsIIOService;
 
-class mozTXTToHTMLConv : public mozITXTToHTMLConv
-{
-
+class mozTXTToHTMLConv : public mozITXTToHTMLConv {
   virtual ~mozTXTToHTMLConv() = default;
 
-
-public:
-
+  
+ public:
+  
 
   mozTXTToHTMLConv() = default;
   NS_DECL_ISUPPORTS
@@ -33,53 +32,53 @@ public:
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSISTREAMCONVERTER
 
+  
 
 
+  void ScanTXT(const char16_t* aInString, int32_t aInStringLength,
+               uint32_t whattodo, nsString& aOutString);
 
-  void ScanTXT(const char16_t * aInString, int32_t aInStringLength, uint32_t whattodo, nsString& aOutString);
-
-
-
-
-  void ScanHTML(nsString& aInString, uint32_t whattodo, nsString &aOutString);
+  
 
 
+  void ScanHTML(nsString& aInString, uint32_t whattodo, nsString& aOutString);
+
+  
 
 
-  int32_t CiteLevelTXT(const char16_t * line,uint32_t& logLineStart);
+  int32_t CiteLevelTXT(const char16_t* line, uint32_t& logLineStart);
 
-
-
-protected:
-
-  nsCOMPtr<nsIIOService> mIOService; 
-
-
-
-
-
-
+  
+ protected:
+  
+  nsCOMPtr<nsIIOService>
+      mIOService;  
+                   
 
 
 
 
 
-  void CompleteAbbreviatedURL(const char16_t * aInString, int32_t aInLength,
+
+
+
+
+
+  void CompleteAbbreviatedURL(const char16_t* aInString, int32_t aInLength,
                               const uint32_t pos, nsString& aOutString);
 
+  
+ private:
+  
 
-
-private:
-
-
-  enum LIMTYPE
-  {
+  enum LIMTYPE {
     LT_IGNORE,     
     LT_DELIMITER,  
     LT_ALPHA,      
     LT_DIGIT
   };
 
+  
 
 
 
@@ -91,18 +90,19 @@ private:
 
 
 
+  bool ItMatchesDelimited(const char16_t* aInString, int32_t aInLength,
+                          const char16_t* rep, int32_t aRepLen, LIMTYPE before,
+                          LIMTYPE after);
 
-  bool ItMatchesDelimited(const char16_t * aInString, int32_t aInLength,
-      const char16_t * rep, int32_t aRepLen, LIMTYPE before, LIMTYPE after);
-
-
-
-
-
-  uint32_t NumberOfMatches(const char16_t * aInString, int32_t aInStringLength,
-      const char16_t* rep, int32_t aRepLen, LIMTYPE before, LIMTYPE after);
+  
 
 
+
+  uint32_t NumberOfMatches(const char16_t* aInString, int32_t aInStringLength,
+                           const char16_t* rep, int32_t aRepLen, LIMTYPE before,
+                           LIMTYPE after);
+
+  
 
 
 
@@ -115,21 +115,29 @@ private:
   void EscapeChar(const char16_t ch, nsString& aStringToAppendto,
                   bool inAttribute);
 
-
+  
 
 
   void EscapeStr(nsString& aInString, bool inAttribute);
 
+  
 
 
 
 
 
 
-
-  void UnescapeStr(const char16_t * aInString, int32_t aStartPos,
+  void UnescapeStr(const char16_t* aInString, int32_t aStartPos,
                    int32_t aLength, nsString& aOutString);
 
+  
+
+
+
+
+
+
+  
 
 
 
@@ -145,60 +153,56 @@ private:
 
 
 
-
-
-
-
-
-
-
-
-  bool FindURL(const char16_t * aInString, int32_t aInLength, const uint32_t pos,
-          const uint32_t whathasbeendone,
-          nsString& outputHTML, int32_t& replaceBefore, int32_t& replaceAfter);
+  bool FindURL(const char16_t* aInString, int32_t aInLength, const uint32_t pos,
+               const uint32_t whathasbeendone, nsString& outputHTML,
+               int32_t& replaceBefore, int32_t& replaceAfter);
 
   enum modetype {
-         unknown,
-         RFC1738,          
+    unknown,
+    RFC1738,    
 
-         RFC2396E,         
-
-
-
-
-         freetext,         
+    RFC2396E,   
 
 
 
 
+    freetext,   
 
 
-         abbreviated       
 
 
-      
+
+
+    abbreviated 
+
+
+                
 
   };
 
+  
 
 
 
 
 
 
+  bool FindURLStart(const char16_t* aInString, int32_t aInLength,
+                    const uint32_t pos, const modetype check, uint32_t& start);
 
-  bool FindURLStart(const char16_t * aInString, int32_t aInLength, const uint32_t pos,
-            	               const modetype check, uint32_t& start);
+  
 
 
 
 
 
 
+  bool FindURLEnd(const char16_t* aInString, int32_t aInStringLength,
+                  const uint32_t pos, const modetype check,
+                  const uint32_t start, uint32_t& end);
 
+  
 
-  bool FindURLEnd(const char16_t * aInString, int32_t aInStringLength, const uint32_t pos,
-           const modetype check, const uint32_t start, uint32_t& end);
 
 
 
@@ -207,23 +211,26 @@ private:
 
 
 
+  void CalculateURLBoundaries(const char16_t* aInString,
+                              int32_t aInStringLength, const uint32_t pos,
+                              const uint32_t whathasbeendone,
+                              const modetype check, const uint32_t start,
+                              const uint32_t end, nsString& txtURL,
+                              nsString& desc, int32_t& replaceBefore,
+                              int32_t& replaceAfter);
 
+  
 
 
-  void CalculateURLBoundaries(const char16_t * aInString, int32_t aInStringLength,
-     const uint32_t pos, const uint32_t whathasbeendone,
-     const modetype check, const uint32_t start, const uint32_t end,
-     nsString& txtURL, nsString& desc,
-     int32_t& replaceBefore, int32_t& replaceAfter);
 
 
+  bool CheckURLAndCreateHTML(const nsString& txtURL, const nsString& desc,
+                             const modetype mode, nsString& outputHTML);
 
+  
 
 
 
-  bool CheckURLAndCreateHTML(
-       const nsString& txtURL, const nsString& desc, const modetype mode,
-       nsString& outputHTML);
 
 
 
@@ -238,29 +245,29 @@ private:
 
 
 
+  bool StructPhraseHit(const char16_t* aInString, int32_t aInStringLength,
+                       bool col0, const char16_t* tagTXT, int32_t aTagTxtLen,
+                       const char* tagHTML, const char* attributeHTML,
+                       nsString& aOutputString, uint32_t& openTags);
 
+  
 
 
 
 
-  bool StructPhraseHit(const char16_t * aInString, int32_t aInStringLength, bool col0,
-     const char16_t* tagTXT,
-     int32_t aTagTxtLen,
-     const char* tagHTML, const char* attributeHTML,
-     nsString& aOutputString, uint32_t& openTags);
 
 
 
+  bool SmilyHit(const char16_t* aInString, int32_t aLength, bool col0,
+                const char* tagTXT, const char* imageName, nsString& outputHTML,
+                int32_t& glyphTextLen);
 
+  
 
 
 
 
 
-  bool
-         SmilyHit(const char16_t * aInString, int32_t aLength, bool col0,
-         const char* tagTXT, const char* imageName,
-         nsString& outputHTML, int32_t& glyphTextLen);
 
 
 
@@ -270,17 +277,10 @@ private:
 
 
 
+  bool GlyphHit(const char16_t* aInString, int32_t aInLength, bool col0,
+                nsString& aOutString, int32_t& glyphTextLen);
 
-
-
-
-
-
-
-  bool GlyphHit(const char16_t * aInString, int32_t aInLength, bool col0,
-       nsString& aOutString, int32_t& glyphTextLen);
-
-
+  
 
 
 
@@ -289,7 +289,7 @@ private:
 
 
 const int32_t mozTXTToHTMLConv_lastMode = 4;
-	                        
+
 const int32_t mozTXTToHTMLConv_numberOfModes = 4;  
 
 #endif

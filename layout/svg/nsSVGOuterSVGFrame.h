@@ -19,17 +19,17 @@ class nsSVGForeignObjectFrame;
 
 
 
-class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame
-                               , public nsISVGSVGFrame
-{
+class nsSVGOuterSVGFrame final : public nsSVGDisplayContainerFrame,
+                                 public nsISVGSVGFrame {
   typedef mozilla::image::imgDrawingParams imgDrawingParams;
 
-  friend nsContainerFrame*
-  NS_NewSVGOuterSVGFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle);
-protected:
+  friend nsContainerFrame* NS_NewSVGOuterSVGFrame(nsIPresShell* aPresShell,
+                                                  ComputedStyle* aStyle);
+
+ protected:
   explicit nsSVGOuterSVGFrame(ComputedStyle* aStyle);
 
-public:
+ public:
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsSVGOuterSVGFrame)
 
@@ -41,61 +41,53 @@ public:
 #endif
 
   
-  virtual nscoord GetMinISize(gfxContext *aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext *aRenderingContext) override;
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
   virtual mozilla::IntrinsicSize GetIntrinsicSize() override;
-  virtual nsSize  GetIntrinsicRatio() override;
+  virtual nsSize GetIntrinsicRatio() override;
 
-  virtual mozilla::LogicalSize
-  ComputeSize(gfxContext *aRenderingContext,
-              mozilla::WritingMode aWritingMode,
-              const mozilla::LogicalSize& aCBSize,
-              nscoord aAvailableISize,
-              const mozilla::LogicalSize& aMargin,
-              const mozilla::LogicalSize& aBorder,
-              const mozilla::LogicalSize& aPadding,
-              ComputeSizeFlags aFlags) override;
+  virtual mozilla::LogicalSize ComputeSize(
+      gfxContext* aRenderingContext, mozilla::WritingMode aWritingMode,
+      const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
+      const mozilla::LogicalSize& aMargin, const mozilla::LogicalSize& aBorder,
+      const mozilla::LogicalSize& aPadding, ComputeSizeFlags aFlags) override;
 
-  virtual void Reflow(nsPresContext*           aPresContext,
-                      ReflowOutput&     aDesiredSize,
+  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus) override;
+                      nsReflowStatus& aStatus) override;
 
-  virtual void DidReflow(nsPresContext*   aPresContext,
-                         const ReflowInput*  aReflowInput) override;
+  virtual void DidReflow(nsPresContext* aPresContext,
+                         const ReflowInput* aReflowInput) override;
 
   virtual void UnionChildOverflow(nsOverflowAreas& aOverflowAreas) override;
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 
-  bool IsFrameOfType(uint32_t aFlags) const override
-  {
+  bool IsFrameOfType(uint32_t aFlags) const override {
     return nsSVGDisplayContainerFrame::IsFrameOfType(
-      aFlags & ~eSupportsContainLayoutAndPaint);
+        aFlags & ~eSupportsContainLayoutAndPaint);
   }
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override
-  {
+  virtual nsresult GetFrameName(nsAString& aResult) const override {
     return MakeFrameName(NS_LITERAL_STRING("SVGOuterSVG"), aResult);
   }
 #endif
 
-  virtual nsresult  AttributeChanged(int32_t         aNameSpaceID,
-                                     nsAtom*        aAttribute,
-                                     int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
   virtual nsContainerFrame* GetContentInsertionFrame() override {
     
-    MOZ_ASSERT(PrincipalChildList().FirstChild() &&
-               PrincipalChildList().FirstChild()->IsSVGOuterSVGAnonChildFrame(),
-               "Where is our anonymous child?");
+    MOZ_ASSERT(
+        PrincipalChildList().FirstChild() &&
+            PrincipalChildList().FirstChild()->IsSVGOuterSVGAnonChildFrame(),
+        "Where is our anonymous child?");
     return PrincipalChildList().FirstChild()->GetContentInsertionFrame();
   }
 
@@ -109,11 +101,10 @@ public:
   virtual void NotifyViewportOrTransformChanged(uint32_t aFlags) override;
 
   
-  virtual void PaintSVG(gfxContext& aContext,
-                        const gfxMatrix& aTransform,
+  virtual void PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
                         imgDrawingParams& aImgParams,
                         const nsIntRect* aDirtyRect = nullptr) override;
-  virtual SVGBBox GetBBoxContribution(const Matrix &aToBBoxUserspace,
+  virtual SVGBBox GetBBoxContribution(const Matrix& aToBBoxUserspace,
                                       uint32_t aFlags) override;
 
   
@@ -131,7 +122,7 @@ public:
   void RegisterForeignObject(nsSVGForeignObjectFrame* aFrame);
   void UnregisterForeignObject(nsSVGForeignObjectFrame* aFrame);
 
-  virtual bool HasChildrenOnlyTransform(Matrix *aTransform) const override {
+  virtual bool HasChildrenOnlyTransform(Matrix* aTransform) const override {
     
     
     
@@ -145,12 +136,9 @@ public:
 
   bool VerticalScrollbarNotNeeded() const;
 
-  bool IsCallingReflowSVG() const {
-    return mCallingReflowSVG;
-  }
+  bool IsCallingReflowSVG() const { return mCallingReflowSVG; }
 
-  void InvalidateSVG(const nsRegion& aRegion)
-  {
+  void InvalidateSVG(const nsRegion& aRegion) {
     if (!aRegion.IsEmpty()) {
       mInvalidRegion.Or(mInvalidRegion, aRegion);
       InvalidateFrame();
@@ -169,15 +157,14 @@ public:
 
   nsRegion FindInvalidatedForeignObjectFrameChildren(nsIFrame* aFrame);
 
-protected:
-
+ protected:
   bool mCallingReflowSVG;
 
   
 
 
 
-  bool IsRootOfReplacedElementSubDoc(nsIFrame **aEmbeddingFrame = nullptr);
+  bool IsRootOfReplacedElementSubDoc(nsIFrame** aEmbeddingFrame = nullptr);
 
   
 
@@ -189,7 +176,8 @@ protected:
   
   
   
-  nsAutoPtr<nsTHashtable<nsPtrHashKey<nsSVGForeignObjectFrame> > > mForeignObjectHash;
+  nsAutoPtr<nsTHashtable<nsPtrHashKey<nsSVGForeignObjectFrame> > >
+      mForeignObjectHash;
 
   nsRegion mInvalidRegion;
 
@@ -225,26 +213,22 @@ protected:
 
 
 
-class nsSVGOuterSVGAnonChildFrame final : public nsSVGDisplayContainerFrame
-{
-  friend nsContainerFrame*
-  NS_NewSVGOuterSVGAnonChildFrame(nsIPresShell* aPresShell,
-                                  ComputedStyle* aStyle);
+class nsSVGOuterSVGAnonChildFrame final : public nsSVGDisplayContainerFrame {
+  friend nsContainerFrame* NS_NewSVGOuterSVGAnonChildFrame(
+      nsIPresShell* aPresShell, ComputedStyle* aStyle);
 
   explicit nsSVGOuterSVGAnonChildFrame(ComputedStyle* aStyle)
-    : nsSVGDisplayContainerFrame(aStyle, kClassID)
-  {}
+      : nsSVGDisplayContainerFrame(aStyle, kClassID) {}
 
-public:
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsSVGOuterSVGAnonChildFrame)
 
 #ifdef DEBUG
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 #endif
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
 #ifdef DEBUG_FRAME_DUMP
@@ -253,8 +237,8 @@ public:
   }
 #endif
 
-  bool IsSVGTransformed(Matrix *aOwnTransform,
-                        Matrix *aFromParentTransform) const override;
+  bool IsSVGTransformed(Matrix* aOwnTransform,
+                        Matrix* aFromParentTransform) const override;
 
   
   virtual gfxMatrix GetCanvasTM() override {

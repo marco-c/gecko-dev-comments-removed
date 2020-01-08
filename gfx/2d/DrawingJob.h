@@ -38,19 +38,17 @@ class CommandBufferBuilder;
 
 
 
-class CommandBuffer : public external::AtomicRefCounted<CommandBuffer>
-{
-public:
+class CommandBuffer : public external::AtomicRefCounted<CommandBuffer> {
+ public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(CommandBuffer)
 
   ~CommandBuffer();
 
   const DrawingCommand* GetDrawingCommand(ptrdiff_t aId);
 
-protected:
+ protected:
   explicit CommandBuffer(size_t aSize = 256)
-  : mStorage(IterableArena::GROWABLE, aSize)
-  {}
+      : mStorage(IterableArena::GROWABLE, aSize) {}
 
   IterableArena mStorage;
   friend class CommandBufferBuilder;
@@ -60,18 +58,16 @@ protected:
 
 
 
-class CommandBufferBuilder
-{
-public:
+class CommandBufferBuilder {
+ public:
   void BeginCommandBuffer(size_t aBufferSize = 256);
 
   already_AddRefed<CommandBuffer> EndCommandBuffer();
 
   
   
-  template<typename T, typename... Args>
-  ptrdiff_t AddCommand(Args&&... aArgs)
-  {
+  template <typename T, typename... Args>
+  ptrdiff_t AddCommand(Args&&... aArgs) {
     static_assert(IsBaseOf<DrawingCommand, T>::value,
                   "T must derive from DrawingCommand");
     return mCommands->mStorage.Alloc<T>(std::forward<Args>(aArgs)...);
@@ -79,23 +75,20 @@ public:
 
   bool HasCommands() const { return !!mCommands; }
 
-protected:
+ protected:
   RefPtr<CommandBuffer> mCommands;
 };
 
 
 class DrawingJob : public Job {
-public:
+ public:
   ~DrawingJob();
 
   virtual JobStatus Run() override;
 
-protected:
-  DrawingJob(DrawTarget* aTarget,
-              IntPoint aOffset,
-              SyncObject* aStart,
-              SyncObject* aCompletion,
-              WorkerThread* aPinToWorker = nullptr);
+ protected:
+  DrawingJob(DrawTarget* aTarget, IntPoint aOffset, SyncObject* aStart,
+             SyncObject* aCompletion, WorkerThread* aPinToWorker = nullptr);
 
   
   void Clear();
@@ -115,7 +108,7 @@ protected:
 
 
 class DrawingJobBuilder {
-public:
+ public:
   DrawingJobBuilder();
 
   ~DrawingJobBuilder();
@@ -124,14 +117,11 @@ public:
   
   
   void BeginDrawingJob(DrawTarget* aTarget, IntPoint aOffset,
-                        SyncObject* aStart = nullptr);
+                       SyncObject* aStart = nullptr);
 
   
   
-  void AddCommand(ptrdiff_t offset)
-  {
-    mCommandOffsets.push_back(offset);
-  }
+  void AddCommand(ptrdiff_t offset) { mCommandOffsets.push_back(offset); }
 
   
   
@@ -140,20 +130,20 @@ public:
   
   
   DrawingJob* EndDrawingJob(CommandBuffer* aCmdBuffer,
-                              SyncObject* aCompletion = nullptr,
-                              WorkerThread* aPinToWorker = nullptr);
+                            SyncObject* aCompletion = nullptr,
+                            WorkerThread* aPinToWorker = nullptr);
 
   
   bool HasDrawingJob() const { return !!mDrawTarget; }
 
-protected:
+ protected:
   std::vector<ptrdiff_t> mCommandOffsets;
   RefPtr<DrawTarget> mDrawTarget;
   IntPoint mOffset;
   RefPtr<SyncObject> mStart;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

@@ -34,18 +34,16 @@ namespace mozilla {
 
 
 
-class SHA1Sum
-{
-  union
-  {
+class SHA1Sum {
+  union {
     uint32_t mW[16]; 
     uint8_t mB[64];
   } mU;
-  uint64_t mSize; 
+  uint64_t mSize;  
   unsigned mH[22]; 
   bool mDone;
 
-public:
+ public:
   MFBT_API SHA1Sum();
 
   static const size_t kHashSize = 20;

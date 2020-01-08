@@ -22,7 +22,7 @@ enum class DocumentMatchingFunction {
   MediaDocument,
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

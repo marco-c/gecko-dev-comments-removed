@@ -25,7 +25,7 @@
 namespace mozilla {
 namespace net {
 
-static NS_DEFINE_CID(kSimpleURICID,     NS_SIMPLEURI_CID);
+static NS_DEFINE_CID(kSimpleURICID, NS_SIMPLEURI_CID);
 static NS_DEFINE_CID(kNestedAboutURICID, NS_NESTEDABOUTURI_CID);
 
 static bool IsSafeForUntrustedContent(nsIAboutModule *aModule, nsIURI *aURI) {
@@ -36,445 +36,415 @@ static bool IsSafeForUntrustedContent(nsIAboutModule *aModule, nsIURI *aURI) {
   return (flags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT) != 0;
 }
 
-static bool IsSafeToLinkForUntrustedContent(nsIAboutModule *aModule, nsIURI *aURI) {
+static bool IsSafeToLinkForUntrustedContent(nsIAboutModule *aModule,
+                                            nsIURI *aURI) {
   uint32_t flags;
   nsresult rv = aModule->GetURIFlags(aURI, &flags);
   NS_ENSURE_SUCCESS(rv, false);
 
-  return (flags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT) && (flags & nsIAboutModule::MAKE_LINKABLE);
+  return (flags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT) &&
+         (flags & nsIAboutModule::MAKE_LINKABLE);
 }
 
 
 NS_IMPL_ISUPPORTS(nsAboutProtocolHandler, nsIProtocolHandler,
-    nsIProtocolHandlerWithDynamicFlags, nsISupportsWeakReference)
+                  nsIProtocolHandlerWithDynamicFlags, nsISupportsWeakReference)
 
 
 
 
 NS_IMETHODIMP
-nsAboutProtocolHandler::GetScheme(nsACString &result)
-{
-    result.AssignLiteral("about");
-    return NS_OK;
+nsAboutProtocolHandler::GetScheme(nsACString &result) {
+  result.AssignLiteral("about");
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsAboutProtocolHandler::GetDefaultPort(int32_t *result)
-{
-    *result = -1;        
-    return NS_OK;
+nsAboutProtocolHandler::GetDefaultPort(int32_t *result) {
+  *result = -1;  
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsAboutProtocolHandler::GetProtocolFlags(uint32_t *result)
-{
-    *result = URI_NORELATIVE | URI_NOAUTH | URI_DANGEROUS_TO_LOAD | URI_SCHEME_NOT_SELF_LINKABLE;
-    return NS_OK;
+nsAboutProtocolHandler::GetProtocolFlags(uint32_t *result) {
+  *result = URI_NORELATIVE | URI_NOAUTH | URI_DANGEROUS_TO_LOAD |
+            URI_SCHEME_NOT_SELF_LINKABLE;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsAboutProtocolHandler::GetFlagsForURI(nsIURI* aURI, uint32_t* aFlags)
-{
+nsAboutProtocolHandler::GetFlagsForURI(nsIURI *aURI, uint32_t *aFlags) {
+  
+  GetProtocolFlags(aFlags);
+
+  
+  nsCOMPtr<nsIAboutModule> aboutMod;
+  nsresult rv = NS_GetAboutModule(aURI, getter_AddRefs(aboutMod));
+  if (NS_FAILED(rv)) {
     
-    GetProtocolFlags(aFlags);
+    return NS_OK;
+  }
+  uint32_t aboutModuleFlags = 0;
+  rv = aboutMod->GetURIFlags(aURI, &aboutModuleFlags);
+  
+  NS_ENSURE_SUCCESS(rv, rv);
 
+  
+  
+  if (aboutModuleFlags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT) {
+    *aFlags |= URI_IS_POTENTIALLY_TRUSTWORTHY;
     
-    nsCOMPtr<nsIAboutModule> aboutMod;
-    nsresult rv = NS_GetAboutModule(aURI, getter_AddRefs(aboutMod));
-    if (NS_FAILED(rv)) {
+    
+    if (aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
       
-      return NS_OK;
+      *aFlags &= ~URI_DANGEROUS_TO_LOAD;
+      *aFlags |= URI_LOADABLE_BY_ANYONE;
     }
-    uint32_t aboutModuleFlags = 0;
-    rv = aboutMod->GetURIFlags(aURI, &aboutModuleFlags);
-    
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    
-    
-    if (aboutModuleFlags & nsIAboutModule::URI_SAFE_FOR_UNTRUSTED_CONTENT) {
-        *aFlags |= URI_IS_POTENTIALLY_TRUSTWORTHY;
-        
-        
-        if (aboutModuleFlags & nsIAboutModule::MAKE_LINKABLE) {
-            
-            *aFlags &= ~URI_DANGEROUS_TO_LOAD;
-            *aFlags |= URI_LOADABLE_BY_ANYONE;
-        }
-    }
-    return NS_OK;
+  }
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 nsAboutProtocolHandler::NewURI(const nsACString &aSpec,
-                               const char *aCharset, 
-                               nsIURI *aBaseURI,
-                               nsIURI **result)
-{
-    *result = nullptr;
-    nsresult rv;
+                               const char *aCharset,  
+                               nsIURI *aBaseURI, nsIURI **result) {
+  *result = nullptr;
+  nsresult rv;
 
+  
+  nsCOMPtr<nsIURI> url;
+  rv = NS_MutateURI(new nsSimpleURI::Mutator()).SetSpec(aSpec).Finalize(url);
 
-    
-    nsCOMPtr<nsIURI> url;
-    rv = NS_MutateURI(new nsSimpleURI::Mutator())
-           .SetSpec(aSpec)
-           .Finalize(url);
-
-    if (NS_FAILED(rv)) {
-        return rv;
-    }
-
-    
-    
-    
-    bool isSafe = false;
-
-    nsCOMPtr<nsIAboutModule> aboutMod;
-    rv = NS_GetAboutModule(url, getter_AddRefs(aboutMod));
-    if (NS_SUCCEEDED(rv)) {
-        isSafe = IsSafeToLinkForUntrustedContent(aboutMod, url);
-    }
-
-    if (isSafe) {
-        
-        
-        
-        
-        nsAutoCString spec;
-        rv = url->GetPathQueryRef(spec);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        spec.InsertLiteral("moz-safe-about:", 0);
-
-        nsCOMPtr<nsIURI> inner;
-        rv = NS_NewURI(getter_AddRefs(inner), spec);
-        NS_ENSURE_SUCCESS(rv, rv);
-
-        nsCOMPtr<nsIURI> base(aBaseURI);
-        rv = NS_MutateURI(new nsNestedAboutURI::Mutator())
-               .Apply(NS_MutatorMethod(&nsINestedAboutURIMutator::InitWithBase,
-                                       inner, base))
-               .SetSpec(aSpec)
-               .Finalize(url);
-        NS_ENSURE_SUCCESS(rv, rv);
-    }
-
-    url.swap(*result);
-    return NS_OK;
-}
-
-NS_IMETHODIMP
-nsAboutProtocolHandler::NewChannel2(nsIURI* uri,
-                                    nsILoadInfo* aLoadInfo,
-                                    nsIChannel** result)
-{
-    NS_ENSURE_ARG_POINTER(uri);
-
-    
-    nsCOMPtr<nsIAboutModule> aboutMod;
-    nsresult rv = NS_GetAboutModule(uri, getter_AddRefs(aboutMod));
-
-    bool aboutPageAllowed = true;
-    nsAutoCString path;
-    nsresult rv2 = NS_GetAboutModuleName(uri, path);
-    if (NS_SUCCEEDED(rv2)) {
-        if (path.EqualsLiteral("srcdoc")) {
-            
-            
-            
-            
-            rv = NS_ERROR_FACTORY_NOT_REGISTERED;
-        } else if (!path.EqualsLiteral("blank") &&
-                   !path.EqualsLiteral("neterror") &&
-                   !path.EqualsLiteral("home") &&
-                   !path.EqualsLiteral("welcome") &&
-                   !path.EqualsLiteral("newtab") &&
-                   !path.EqualsLiteral("certerror")) {
-            nsCOMPtr<nsIEnterprisePolicies> policyManager =
-                do_GetService("@mozilla.org/browser/enterprisepolicies;1", &rv2);
-            if (NS_SUCCEEDED(rv2)) {
-                nsAutoCString normalizedURL;
-                normalizedURL.AssignLiteral("about:");
-                normalizedURL.Append(path);
-                rv2 = policyManager->IsAllowed(normalizedURL, &aboutPageAllowed);
-                if (NS_FAILED(rv2)) {
-                    aboutPageAllowed = false;
-                }
-            }
-        }
-    }
-
-    if (NS_SUCCEEDED(rv)) {
-        
-        rv = aboutMod->NewChannel(uri, aLoadInfo, result);
-        if (NS_SUCCEEDED(rv)) {
-            
-            
-            
-            
-            nsCOMPtr<nsILoadInfo> loadInfo = (*result)->GetLoadInfo();
-            if (aLoadInfo != loadInfo) {
-                if (loadInfo) {
-                    NS_ASSERTION(false,
-                        "nsIAboutModule->newChannel(aURI, aLoadInfo) needs to set LoadInfo");
-                    const char16_t* params[] = {
-                        u"nsIAboutModule->newChannel(aURI)",
-                        u"nsIAboutModule->newChannel(aURI, aLoadInfo)"
-                    };
-                    nsContentUtils::ReportToConsole(
-                        nsIScriptError::warningFlag,
-                        NS_LITERAL_CSTRING("Security by Default"),
-                        nullptr, 
-                        nsContentUtils::eNECKO_PROPERTIES,
-                        "APIDeprecationWarning",
-                        params, mozilla::ArrayLength(params));
-                }
-                (*result)->SetLoadInfo(aLoadInfo);
-            }
-
-            
-            
-            
-            
-            
-            if (IsSafeForUntrustedContent(aboutMod, uri)) {
-                (*result)->SetOwner(nullptr);
-            }
-
-            RefPtr<nsNestedAboutURI> aboutURI;
-            nsresult rv2 = uri->QueryInterface(kNestedAboutURICID,
-                                               getter_AddRefs(aboutURI));
-            if (NS_SUCCEEDED(rv2) && aboutURI->GetBaseURI()) {
-                nsCOMPtr<nsIWritablePropertyBag2> writableBag =
-                    do_QueryInterface(*result);
-                if (writableBag) {
-                    writableBag->
-                        SetPropertyAsInterface(NS_LITERAL_STRING("baseURI"),
-                                               aboutURI->GetBaseURI());
-                }
-            }
-            if (!aboutPageAllowed) {
-                (*result)->Cancel(NS_ERROR_BLOCKED_BY_POLICY);
-            }
-        }
-        return rv;
-    }
-
-    
-
-    if (rv == NS_ERROR_FACTORY_NOT_REGISTERED) {
-        
-        
-        rv = NS_ERROR_MALFORMED_URI;
-    }
-
+  if (NS_FAILED(rv)) {
     return rv;
-}
+  }
 
-NS_IMETHODIMP
-nsAboutProtocolHandler::NewChannel(nsIURI* uri, nsIChannel* *result)
-{
-    return NewChannel2(uri, nullptr, result);
-}
+  
+  
+  
+  bool isSafe = false;
 
-NS_IMETHODIMP
-nsAboutProtocolHandler::AllowPort(int32_t port, const char *scheme, bool *_retval)
-{
+  nsCOMPtr<nsIAboutModule> aboutMod;
+  rv = NS_GetAboutModule(url, getter_AddRefs(aboutMod));
+  if (NS_SUCCEEDED(rv)) {
+    isSafe = IsSafeToLinkForUntrustedContent(aboutMod, url);
+  }
+
+  if (isSafe) {
     
-    *_retval = false;
-    return NS_OK;
+    
+    
+    
+    nsAutoCString spec;
+    rv = url->GetPathQueryRef(spec);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    spec.InsertLiteral("moz-safe-about:", 0);
+
+    nsCOMPtr<nsIURI> inner;
+    rv = NS_NewURI(getter_AddRefs(inner), spec);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    nsCOMPtr<nsIURI> base(aBaseURI);
+    rv = NS_MutateURI(new nsNestedAboutURI::Mutator())
+             .Apply(NS_MutatorMethod(&nsINestedAboutURIMutator::InitWithBase,
+                                     inner, base))
+             .SetSpec(aSpec)
+             .Finalize(url);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  url.swap(*result);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAboutProtocolHandler::NewChannel2(nsIURI *uri, nsILoadInfo *aLoadInfo,
+                                    nsIChannel **result) {
+  NS_ENSURE_ARG_POINTER(uri);
+
+  
+  nsCOMPtr<nsIAboutModule> aboutMod;
+  nsresult rv = NS_GetAboutModule(uri, getter_AddRefs(aboutMod));
+
+  bool aboutPageAllowed = true;
+  nsAutoCString path;
+  nsresult rv2 = NS_GetAboutModuleName(uri, path);
+  if (NS_SUCCEEDED(rv2)) {
+    if (path.EqualsLiteral("srcdoc")) {
+      
+      
+      
+      
+      rv = NS_ERROR_FACTORY_NOT_REGISTERED;
+    } else if (!path.EqualsLiteral("blank") &&
+               !path.EqualsLiteral("neterror") && !path.EqualsLiteral("home") &&
+               !path.EqualsLiteral("welcome") &&
+               !path.EqualsLiteral("newtab") &&
+               !path.EqualsLiteral("certerror")) {
+      nsCOMPtr<nsIEnterprisePolicies> policyManager =
+          do_GetService("@mozilla.org/browser/enterprisepolicies;1", &rv2);
+      if (NS_SUCCEEDED(rv2)) {
+        nsAutoCString normalizedURL;
+        normalizedURL.AssignLiteral("about:");
+        normalizedURL.Append(path);
+        rv2 = policyManager->IsAllowed(normalizedURL, &aboutPageAllowed);
+        if (NS_FAILED(rv2)) {
+          aboutPageAllowed = false;
+        }
+      }
+    }
+  }
+
+  if (NS_SUCCEEDED(rv)) {
+    
+    rv = aboutMod->NewChannel(uri, aLoadInfo, result);
+    if (NS_SUCCEEDED(rv)) {
+      
+      
+      
+      
+      nsCOMPtr<nsILoadInfo> loadInfo = (*result)->GetLoadInfo();
+      if (aLoadInfo != loadInfo) {
+        if (loadInfo) {
+          NS_ASSERTION(false,
+                       "nsIAboutModule->newChannel(aURI, aLoadInfo) needs to "
+                       "set LoadInfo");
+          const char16_t *params[] = {
+              u"nsIAboutModule->newChannel(aURI)",
+              u"nsIAboutModule->newChannel(aURI, aLoadInfo)"};
+          nsContentUtils::ReportToConsole(
+              nsIScriptError::warningFlag,
+              NS_LITERAL_CSTRING("Security by Default"),
+              nullptr,  
+              nsContentUtils::eNECKO_PROPERTIES, "APIDeprecationWarning",
+              params, mozilla::ArrayLength(params));
+        }
+        (*result)->SetLoadInfo(aLoadInfo);
+      }
+
+      
+      
+      
+      
+      
+      if (IsSafeForUntrustedContent(aboutMod, uri)) {
+        (*result)->SetOwner(nullptr);
+      }
+
+      RefPtr<nsNestedAboutURI> aboutURI;
+      nsresult rv2 =
+          uri->QueryInterface(kNestedAboutURICID, getter_AddRefs(aboutURI));
+      if (NS_SUCCEEDED(rv2) && aboutURI->GetBaseURI()) {
+        nsCOMPtr<nsIWritablePropertyBag2> writableBag =
+            do_QueryInterface(*result);
+        if (writableBag) {
+          writableBag->SetPropertyAsInterface(NS_LITERAL_STRING("baseURI"),
+                                              aboutURI->GetBaseURI());
+        }
+      }
+      if (!aboutPageAllowed) {
+        (*result)->Cancel(NS_ERROR_BLOCKED_BY_POLICY);
+      }
+    }
+    return rv;
+  }
+
+  
+
+  if (rv == NS_ERROR_FACTORY_NOT_REGISTERED) {
+    
+    
+    rv = NS_ERROR_MALFORMED_URI;
+  }
+
+  return rv;
+}
+
+NS_IMETHODIMP
+nsAboutProtocolHandler::NewChannel(nsIURI *uri, nsIChannel **result) {
+  return NewChannel2(uri, nullptr, result);
+}
+
+NS_IMETHODIMP
+nsAboutProtocolHandler::AllowPort(int32_t port, const char *scheme,
+                                  bool *_retval) {
+  
+  *_retval = false;
+  return NS_OK;
 }
 
 
 
 
-NS_IMPL_ISUPPORTS(nsSafeAboutProtocolHandler, nsIProtocolHandler, nsISupportsWeakReference)
+NS_IMPL_ISUPPORTS(nsSafeAboutProtocolHandler, nsIProtocolHandler,
+                  nsISupportsWeakReference)
 
 
 
 NS_IMETHODIMP
-nsSafeAboutProtocolHandler::GetScheme(nsACString &result)
-{
-    result.AssignLiteral("moz-safe-about");
-    return NS_OK;
+nsSafeAboutProtocolHandler::GetScheme(nsACString &result) {
+  result.AssignLiteral("moz-safe-about");
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsSafeAboutProtocolHandler::GetDefaultPort(int32_t *result)
-{
-    *result = -1;        
-    return NS_OK;
+nsSafeAboutProtocolHandler::GetDefaultPort(int32_t *result) {
+  *result = -1;  
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsSafeAboutProtocolHandler::GetProtocolFlags(uint32_t *result)
-{
-    *result = URI_NORELATIVE | URI_NOAUTH | URI_LOADABLE_BY_ANYONE | URI_IS_POTENTIALLY_TRUSTWORTHY;
-    return NS_OK;
+nsSafeAboutProtocolHandler::GetProtocolFlags(uint32_t *result) {
+  *result = URI_NORELATIVE | URI_NOAUTH | URI_LOADABLE_BY_ANYONE |
+            URI_IS_POTENTIALLY_TRUSTWORTHY;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
 nsSafeAboutProtocolHandler::NewURI(const nsACString &aSpec,
-                                   const char *aCharset, 
-                                   nsIURI *aBaseURI,
-                                   nsIURI **result)
-{
-    nsresult rv = NS_MutateURI(new nsSimpleURI::Mutator())
-                    .SetSpec(aSpec)
-                    .Finalize(result);
-    if (NS_FAILED(rv)) {
-        return rv;
-    }
+                                   const char *aCharset,  
+                                   nsIURI *aBaseURI, nsIURI **result) {
+  nsresult rv =
+      NS_MutateURI(new nsSimpleURI::Mutator()).SetSpec(aSpec).Finalize(result);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
-    return NS_OK;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsSafeAboutProtocolHandler::NewChannel2(nsIURI* uri,
-                                        nsILoadInfo* aLoadInfo,
-                                        nsIChannel** result)
-{
-    *result = nullptr;
-    return NS_ERROR_NOT_AVAILABLE;
+nsSafeAboutProtocolHandler::NewChannel2(nsIURI *uri, nsILoadInfo *aLoadInfo,
+                                        nsIChannel **result) {
+  *result = nullptr;
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
 NS_IMETHODIMP
-nsSafeAboutProtocolHandler::NewChannel(nsIURI* uri, nsIChannel* *result)
-{
-    *result = nullptr;
-    return NS_ERROR_NOT_AVAILABLE;
+nsSafeAboutProtocolHandler::NewChannel(nsIURI *uri, nsIChannel **result) {
+  *result = nullptr;
+  return NS_ERROR_NOT_AVAILABLE;
 }
 
 NS_IMETHODIMP
-nsSafeAboutProtocolHandler::AllowPort(int32_t port, const char *scheme, bool *_retval)
-{
-    
-    *_retval = false;
-    return NS_OK;
+nsSafeAboutProtocolHandler::AllowPort(int32_t port, const char *scheme,
+                                      bool *_retval) {
+  
+  *_retval = false;
+  return NS_OK;
 }
 
 
 
 NS_INTERFACE_MAP_BEGIN(nsNestedAboutURI)
   if (aIID.Equals(kNestedAboutURICID))
-      foundInterface = static_cast<nsIURI*>(this);
+    foundInterface = static_cast<nsIURI *>(this);
   else
 NS_INTERFACE_MAP_END_INHERITING(nsSimpleNestedURI)
 
 
 
 NS_IMETHODIMP
-nsNestedAboutURI::Read(nsIObjectInputStream *aStream)
-{
-    MOZ_ASSERT_UNREACHABLE("Use nsIURIMutator.read() instead");
-    return NS_ERROR_NOT_IMPLEMENTED;
+nsNestedAboutURI::Read(nsIObjectInputStream *aStream) {
+  MOZ_ASSERT_UNREACHABLE("Use nsIURIMutator.read() instead");
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-nsresult
-nsNestedAboutURI::ReadPrivate(nsIObjectInputStream *aStream)
-{
-    nsresult rv = nsSimpleNestedURI::ReadPrivate(aStream);
+nsresult nsNestedAboutURI::ReadPrivate(nsIObjectInputStream *aStream) {
+  nsresult rv = nsSimpleNestedURI::ReadPrivate(aStream);
+  if (NS_FAILED(rv)) return rv;
+
+  bool haveBase;
+  rv = aStream->ReadBoolean(&haveBase);
+  if (NS_FAILED(rv)) return rv;
+
+  if (haveBase) {
+    nsCOMPtr<nsISupports> supports;
+    rv = aStream->ReadObject(true, getter_AddRefs(supports));
     if (NS_FAILED(rv)) return rv;
 
-    bool haveBase;
-    rv = aStream->ReadBoolean(&haveBase);
+    mBaseURI = do_QueryInterface(supports, &rv);
     if (NS_FAILED(rv)) return rv;
+  }
 
-    if (haveBase) {
-        nsCOMPtr<nsISupports> supports;
-        rv = aStream->ReadObject(true, getter_AddRefs(supports));
-        if (NS_FAILED(rv)) return rv;
-
-        mBaseURI = do_QueryInterface(supports, &rv);
-        if (NS_FAILED(rv)) return rv;
-    }
-
-    return NS_OK;
+  return NS_OK;
 }
 
 NS_IMETHODIMP
-nsNestedAboutURI::Write(nsIObjectOutputStream* aStream)
-{
-    nsresult rv = nsSimpleNestedURI::Write(aStream);
+nsNestedAboutURI::Write(nsIObjectOutputStream *aStream) {
+  nsresult rv = nsSimpleNestedURI::Write(aStream);
+  if (NS_FAILED(rv)) return rv;
+
+  rv = aStream->WriteBoolean(mBaseURI != nullptr);
+  if (NS_FAILED(rv)) return rv;
+
+  if (mBaseURI) {
+    
+    
+    
+    
+    
+    
+    
+    
+    rv = aStream->WriteCompoundObject(mBaseURI, NS_GET_IID(nsISupports), true);
     if (NS_FAILED(rv)) return rv;
+  }
 
-    rv = aStream->WriteBoolean(mBaseURI != nullptr);
-    if (NS_FAILED(rv)) return rv;
-
-    if (mBaseURI) {
-        
-        
-        
-        
-        
-        
-        
-        
-        rv = aStream->WriteCompoundObject(mBaseURI, NS_GET_IID(nsISupports),
-                                          true);
-        if (NS_FAILED(rv)) return rv;
-    }
-
-    return NS_OK;
+  return NS_OK;
 }
 
 
- nsSimpleURI*
-nsNestedAboutURI::StartClone(nsSimpleURI::RefHandlingEnum aRefHandlingMode,
-                             const nsACString& aNewRef)
-{
-    
-    
-    
-    NS_ENSURE_TRUE(mInnerURI, nullptr);
+ nsSimpleURI *nsNestedAboutURI::StartClone(
+    nsSimpleURI::RefHandlingEnum aRefHandlingMode, const nsACString &aNewRef) {
+  
+  
+  
+  NS_ENSURE_TRUE(mInnerURI, nullptr);
 
-    nsCOMPtr<nsIURI> innerClone;
-    nsresult rv = NS_OK;
-    if (aRefHandlingMode == eHonorRef) {
-        innerClone = mInnerURI;
-    } else if (aRefHandlingMode == eReplaceRef) {
-        rv = NS_GetURIWithNewRef(mInnerURI, aNewRef, getter_AddRefs(innerClone));
-    } else {
-        rv = NS_GetURIWithoutRef(mInnerURI, getter_AddRefs(innerClone));
-    }
+  nsCOMPtr<nsIURI> innerClone;
+  nsresult rv = NS_OK;
+  if (aRefHandlingMode == eHonorRef) {
+    innerClone = mInnerURI;
+  } else if (aRefHandlingMode == eReplaceRef) {
+    rv = NS_GetURIWithNewRef(mInnerURI, aNewRef, getter_AddRefs(innerClone));
+  } else {
+    rv = NS_GetURIWithoutRef(mInnerURI, getter_AddRefs(innerClone));
+  }
 
-    if (NS_FAILED(rv)) {
-        return nullptr;
-    }
+  if (NS_FAILED(rv)) {
+    return nullptr;
+  }
 
-    nsNestedAboutURI* url = new nsNestedAboutURI(innerClone, mBaseURI);
-    SetRefOnClone(url, aRefHandlingMode, aNewRef);
+  nsNestedAboutURI *url = new nsNestedAboutURI(innerClone, mBaseURI);
+  SetRefOnClone(url, aRefHandlingMode, aNewRef);
 
-    return url;
+  return url;
 }
 
 
-NS_IMPL_NSIURIMUTATOR_ISUPPORTS(nsNestedAboutURI::Mutator,
-                                nsIURISetters,
-                                nsIURIMutator,
-                                nsISerializable,
+NS_IMPL_NSIURIMUTATOR_ISUPPORTS(nsNestedAboutURI::Mutator, nsIURISetters,
+                                nsIURIMutator, nsISerializable,
                                 nsINestedAboutURIMutator)
 
 NS_IMETHODIMP
-nsNestedAboutURI::Mutate(nsIURIMutator** aMutator)
-{
-    RefPtr<nsNestedAboutURI::Mutator> mutator = new nsNestedAboutURI::Mutator();
-    nsresult rv = mutator->InitFromURI(this);
-    if (NS_FAILED(rv)) {
-        return rv;
-    }
-    mutator.forget(aMutator);
-    return NS_OK;
+nsNestedAboutURI::Mutate(nsIURIMutator **aMutator) {
+  RefPtr<nsNestedAboutURI::Mutator> mutator = new nsNestedAboutURI::Mutator();
+  nsresult rv = mutator->InitFromURI(this);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  mutator.forget(aMutator);
+  return NS_OK;
 }
 
 
 NS_IMETHODIMP
-nsNestedAboutURI::GetClassIDNoAlloc(nsCID *aClassIDNoAlloc)
-{
-    *aClassIDNoAlloc = kNestedAboutURICID;
-    return NS_OK;
+nsNestedAboutURI::GetClassIDNoAlloc(nsCID *aClassIDNoAlloc) {
+  *aClassIDNoAlloc = kNestedAboutURICID;
+  return NS_OK;
 }
 
-} 
-} 
+}  
+}  

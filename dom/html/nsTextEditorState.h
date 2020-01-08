@@ -34,8 +34,9 @@ class TextInputListener;
 
 namespace dom {
 class HTMLInputElement;
-} 
-} 
+}  
+}  
+
 
 
 
@@ -132,19 +133,17 @@ class HTMLInputElement;
 class RestoreSelectionState;
 
 class nsTextEditorState : public mozilla::SupportsWeakPtr<nsTextEditorState> {
-public:
+ public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(nsTextEditorState)
   explicit nsTextEditorState(nsITextControlElement* aOwningElement);
-  static nsTextEditorState*
-  Construct(nsITextControlElement* aOwningElement,
-            nsTextEditorState** aReusedState);
+  static nsTextEditorState* Construct(nsITextControlElement* aOwningElement,
+                                      nsTextEditorState** aReusedState);
   ~nsTextEditorState();
 
   void Traverse(nsCycleCollectionTraversalCallback& cb);
   void Unlink();
 
-  void PrepareForReuse()
-  {
+  void PrepareForReuse() {
     Unlink();
     mValue.reset();
     mValueBeingSet.Truncate();
@@ -159,20 +158,19 @@ public:
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void UnbindFromFrame(nsTextControlFrame* aFrame);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsresult PrepareEditor(const nsAString *aValue = nullptr);
+  nsresult PrepareEditor(const nsAString* aValue = nullptr);
   void InitializeKeyboardEventListeners();
 
-  enum SetValueFlags
-  {
+  enum SetValueFlags {
     
-    eSetValue_Internal              = 0,
+    eSetValue_Internal = 0,
     
-    eSetValue_BySetUserInput        = 1 << 0,
+    eSetValue_BySetUserInput = 1 << 0,
     
     
-    eSetValue_ByContent             = 1 << 1,
+    eSetValue_ByContent = 1 << 1,
     
-    eSetValue_Notify                = 1 << 2,
+    eSetValue_Notify = 1 << 2,
     
     
     
@@ -182,16 +180,13 @@ public:
     
     
     
-    eSetValue_ForXUL                = 1 << 4,
+    eSetValue_ForXUL = 1 << 4,
   };
   MOZ_CAN_RUN_SCRIPT
   MOZ_MUST_USE bool SetValue(const nsAString& aValue,
-                             const nsAString* aOldValue,
-                             uint32_t aFlags);
+                             const nsAString* aOldValue, uint32_t aFlags);
   MOZ_CAN_RUN_SCRIPT
-  MOZ_MUST_USE bool SetValue(const nsAString& aValue,
-                             uint32_t aFlags)
-  {
+  MOZ_MUST_USE bool SetValue(const nsAString& aValue, uint32_t aFlags) {
     return SetValue(aValue, nullptr, aFlags);
   }
   void GetValue(nsAString& aValue, bool aIgnoreWrap) const;
@@ -200,7 +195,9 @@ public:
   
   
   
-  void EmptyValue() { if (mValue) mValue->Truncate(); }
+  void EmptyValue() {
+    if (mValue) mValue->Truncate();
+  }
   bool IsEmpty() const { return mValue ? mValue->IsEmpty() : true; }
 
   mozilla::dom::Element* GetRootNode();
@@ -209,35 +206,23 @@ public:
   bool IsSingleLineTextControl() const {
     return mTextCtrlElement->IsSingleLineTextControl();
   }
-  bool IsTextArea() const {
-    return mTextCtrlElement->IsTextArea();
-  }
+  bool IsTextArea() const { return mTextCtrlElement->IsTextArea(); }
   bool IsPasswordTextControl() const {
     return mTextCtrlElement->IsPasswordTextControl();
   }
-  int32_t GetCols() {
-    return mTextCtrlElement->GetCols();
-  }
-  int32_t GetWrapCols() {
-    return mTextCtrlElement->GetWrapCols();
-  }
-  int32_t GetRows() {
-    return mTextCtrlElement->GetRows();
-  }
+  int32_t GetCols() { return mTextCtrlElement->GetCols(); }
+  int32_t GetWrapCols() { return mTextCtrlElement->GetWrapCols(); }
+  int32_t GetRows() { return mTextCtrlElement->GetRows(); }
 
   void UpdateOverlayTextVisibility(bool aNotify);
 
   
-  bool GetPlaceholderVisibility() {
-    return mPlaceholderVisibility;
-  }
+  bool GetPlaceholderVisibility() { return mPlaceholderVisibility; }
 
   
   void SetPreviewText(const nsAString& aValue, bool aNotify);
   void GetPreviewText(nsAString& aValue);
-  bool GetPreviewVisibility() {
-    return mPreviewVisibility;
-  }
+  bool GetPreviewVisibility() { return mPreviewVisibility; }
 
   
 
@@ -249,55 +234,39 @@ public:
   void HideSelectionIfBlurred();
 
   struct SelectionProperties {
-    public:
-      SelectionProperties() : mStart(0), mEnd(0),
-        mDirection(nsITextControlFrame::eForward) {}
-      bool IsDefault() const
-      {
-        return mStart == 0 && mEnd == 0 &&
-               mDirection == nsITextControlFrame::eForward;
-      }
-      uint32_t GetStart() const
-      {
-        return mStart;
-      }
-      void SetStart(uint32_t value)
-      {
-        mIsDirty = true;
-        mStart = value;
-      }
-      uint32_t GetEnd() const
-      {
-        return mEnd;
-      }
-      void SetEnd(uint32_t value)
-      {
-        mIsDirty = true;
-        mEnd = value;
-      }
-      nsITextControlFrame::SelectionDirection GetDirection() const
-      {
-        return mDirection;
-      }
-      void SetDirection(nsITextControlFrame::SelectionDirection value)
-      {
-        mIsDirty = true;
-        mDirection = value;
-      }
-      
-      
-      bool IsDirty() const
-      {
-        return mIsDirty;
-      }
-      void SetIsDirty()
-      {
-        mIsDirty = true;
-      }
-    private:
-      uint32_t mStart, mEnd;
-      bool mIsDirty = false;
-      nsITextControlFrame::SelectionDirection mDirection;
+   public:
+    SelectionProperties()
+        : mStart(0), mEnd(0), mDirection(nsITextControlFrame::eForward) {}
+    bool IsDefault() const {
+      return mStart == 0 && mEnd == 0 &&
+             mDirection == nsITextControlFrame::eForward;
+    }
+    uint32_t GetStart() const { return mStart; }
+    void SetStart(uint32_t value) {
+      mIsDirty = true;
+      mStart = value;
+    }
+    uint32_t GetEnd() const { return mEnd; }
+    void SetEnd(uint32_t value) {
+      mIsDirty = true;
+      mEnd = value;
+    }
+    nsITextControlFrame::SelectionDirection GetDirection() const {
+      return mDirection;
+    }
+    void SetDirection(nsITextControlFrame::SelectionDirection value) {
+      mIsDirty = true;
+      mDirection = value;
+    }
+    
+    
+    bool IsDirty() const { return mIsDirty; }
+    void SetIsDirty() { mIsDirty = true; }
+
+   private:
+    uint32_t mStart, mEnd;
+    bool mIsDirty = false;
+    nsITextControlFrame::SelectionDirection mDirection;
   };
 
   bool IsSelectionCached() const;
@@ -316,8 +285,8 @@ public:
                          mozilla::ErrorResult& aRv);
 
   
-  nsITextControlFrame::SelectionDirection
-    GetSelectionDirection(mozilla::ErrorResult& aRv);
+  nsITextControlFrame::SelectionDirection GetSelectionDirection(
+      mozilla::ErrorResult& aRv);
 
   
   
@@ -338,8 +307,7 @@ public:
   
   
   
-  void SetSelectionRange(uint32_t aSelectionStart,
-                         uint32_t aSelectionEnd,
+  void SetSelectionRange(uint32_t aSelectionStart, uint32_t aSelectionEnd,
                          const mozilla::dom::Optional<nsAString>& aDirection,
                          mozilla::ErrorResult& aRv);
 
@@ -372,13 +340,11 @@ public:
   void SetRangeText(const nsAString& aReplacement, mozilla::ErrorResult& aRv);
   
   
-  void SetRangeText(const nsAString& aReplacement, uint32_t aStart,
-                    uint32_t aEnd, mozilla::dom::SelectionMode aSelectMode,
-                    mozilla::ErrorResult& aRv,
-                    const mozilla::Maybe<uint32_t>& aSelectionStart =
-                      mozilla::Nothing(),
-                    const mozilla::Maybe<uint32_t>& aSelectionEnd =
-                      mozilla::Nothing());
+  void SetRangeText(
+      const nsAString& aReplacement, uint32_t aStart, uint32_t aEnd,
+      mozilla::dom::SelectionMode aSelectMode, mozilla::ErrorResult& aRv,
+      const mozilla::Maybe<uint32_t>& aSelectionStart = mozilla::Nothing(),
+      const mozilla::Maybe<uint32_t>& aSelectionEnd = mozilla::Nothing());
 
   void UpdateEditableState(bool aNotify) {
     if (auto* root = GetRootNode()) {
@@ -386,13 +352,13 @@ public:
     }
   }
 
-private:
+ private:
   friend class RestoreSelectionState;
 
   
   nsTextEditorState(const nsTextEditorState&);
   
-  void operator= (const nsTextEditorState&);
+  void operator=(const nsTextEditorState&);
 
   void ValueWasChanged(bool aNotify);
 
@@ -408,11 +374,9 @@ private:
   bool EditorHasComposition();
 
   class InitializationGuard {
-  public:
-    explicit InitializationGuard(nsTextEditorState& aState) :
-      mState(aState),
-      mGuardSet(false)
-    {
+   public:
+    explicit InitializationGuard(nsTextEditorState& aState)
+        : mState(aState), mGuardSet(false) {
       if (!mState.mInitializing) {
         mGuardSet = true;
         mState.mInitializing = true;
@@ -423,10 +387,9 @@ private:
         mState.mInitializing = false;
       }
     }
-    bool IsInitializingRecursively() const {
-      return !mGuardSet;
-    }
-  private:
+    bool IsInitializingRecursively() const { return !mGuardSet; }
+
+   private:
     nsTextEditorState& mState;
     bool mGuardSet;
   };
@@ -448,29 +411,26 @@ private:
   
   nsString mValueBeingSet;
   SelectionProperties mSelectionProperties;
-  bool mEverInited; 
+  bool mEverInited;  
   bool mEditorInitialized;
-  bool mInitializing; 
-  bool mValueTransferInProgress; 
-  bool mSelectionCached; 
-  mutable bool mSelectionRestoreEagerInit; 
+  bool mInitializing;  
+  bool mValueTransferInProgress;  
+                                  
+  bool mSelectionCached;          
+  mutable bool mSelectionRestoreEagerInit;  
+                                            
   bool mPlaceholderVisibility;
   bool mPreviewVisibility;
   bool mIsCommittingComposition;
 };
 
-inline void
-ImplCycleCollectionUnlink(nsTextEditorState& aField)
-{
+inline void ImplCycleCollectionUnlink(nsTextEditorState& aField) {
   aField.Unlink();
 }
 
-inline void
-ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
-                            nsTextEditorState& aField,
-                            const char* aName,
-                            uint32_t aFlags = 0)
-{
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback, nsTextEditorState& aField,
+    const char* aName, uint32_t aFlags = 0) {
   aField.Traverse(aCallback);
 }
 

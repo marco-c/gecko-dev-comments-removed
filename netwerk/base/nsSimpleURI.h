@@ -19,146 +19,132 @@ namespace mozilla {
 namespace net {
 
 #define NS_THIS_SIMPLEURI_IMPLEMENTATION_CID         \
-{ /* 0b9bb0c2-fee6-470b-b9b9-9fd9462b5e19 */         \
-    0x0b9bb0c2,                                      \
-    0xfee6,                                          \
-    0x470b,                                          \
-    {0xb9, 0xb9, 0x9f, 0xd9, 0x46, 0x2b, 0x5e, 0x19} \
-}
+  { /* 0b9bb0c2-fee6-470b-b9b9-9fd9462b5e19 */       \
+    0x0b9bb0c2, 0xfee6, 0x470b, {                    \
+      0xb9, 0xb9, 0x9f, 0xd9, 0x46, 0x2b, 0x5e, 0x19 \
+    }                                                \
+  }
 
-class nsSimpleURI
-    : public nsIURI
-    , public nsISerializable
-    , public nsIClassInfo
-    , public nsISizeOf
-    , public nsIIPCSerializableURI
-{
-protected:
-    nsSimpleURI();
-    virtual ~nsSimpleURI() = default;
+class nsSimpleURI : public nsIURI,
+                    public nsISerializable,
+                    public nsIClassInfo,
+                    public nsISizeOf,
+                    public nsIIPCSerializableURI {
+ protected:
+  nsSimpleURI();
+  virtual ~nsSimpleURI() = default;
 
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIURI
-    NS_DECL_NSISERIALIZABLE
-    NS_DECL_NSICLASSINFO
-    NS_DECL_NSIIPCSERIALIZABLEURI
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIURI
+  NS_DECL_NSISERIALIZABLE
+  NS_DECL_NSICLASSINFO
+  NS_DECL_NSIIPCSERIALIZABLEURI
 
-    static already_AddRefed<nsSimpleURI> From(nsIURI* aURI);
+  static already_AddRefed<nsSimpleURI> From(nsIURI *aURI);
 
-    
+  
 
-    bool Equals(nsSimpleURI* aOther)
-    {
-      return EqualsInternal(aOther, eHonorRef);
+  bool Equals(nsSimpleURI *aOther) { return EqualsInternal(aOther, eHonorRef); }
+
+  
+  
+  
+  
+  
+  
+  
+  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
+  virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
+
+ protected:
+  
+  enum RefHandlingEnum { eIgnoreRef, eHonorRef, eReplaceRef };
+
+  virtual nsresult Clone(nsIURI **aURI);
+  virtual nsresult SetSpecInternal(const nsACString &input);
+  virtual nsresult SetScheme(const nsACString &input);
+  virtual nsresult SetUserPass(const nsACString &input);
+  nsresult SetUsername(const nsACString &input);
+  virtual nsresult SetPassword(const nsACString &input);
+  virtual nsresult SetHostPort(const nsACString &aValue);
+  virtual nsresult SetHost(const nsACString &input);
+  virtual nsresult SetPort(int32_t port);
+  virtual nsresult SetPathQueryRef(const nsACString &input);
+  virtual nsresult SetRef(const nsACString &input);
+  virtual nsresult SetFilePath(const nsACString &input);
+  virtual nsresult SetQuery(const nsACString &input);
+  virtual nsresult SetQueryWithEncoding(const nsACString &input,
+                                        const Encoding *encoding);
+  nsresult ReadPrivate(nsIObjectInputStream *stream);
+
+  
+  virtual nsresult EqualsInternal(nsIURI *other,
+                                  RefHandlingEnum refHandlingMode,
+                                  bool *result);
+
+  
+  
+  
+  bool EqualsInternal(nsSimpleURI *otherUri, RefHandlingEnum refHandlingMode);
+
+  
+  
+  void SetRefOnClone(nsSimpleURI *url, RefHandlingEnum refHandlingMode,
+                     const nsACString &newRef);
+
+  
+  
+  
+  virtual nsSimpleURI *StartClone(RefHandlingEnum refHandlingMode,
+                                  const nsACString &newRef);
+
+  
+  virtual nsresult CloneInternal(RefHandlingEnum refHandlingMode,
+                                 const nsACString &newRef, nsIURI **clone);
+
+  nsresult SetPathQueryRefEscaped(const nsACString &aPath, bool aNeedsEscape);
+
+  bool Deserialize(const mozilla::ipc::URIParams &);
+
+  nsCString mScheme;
+  nsCString mPath;  
+  nsCString mRef;   
+  nsCString
+      mQuery;  
+  bool mMutable;
+  bool mIsRefValid;    
+  bool mIsQueryValid;  
+
+ public:
+  class Mutator final : public nsIURIMutator,
+                        public BaseURIMutator<nsSimpleURI>,
+                        public nsISerializable {
+    NS_DECL_ISUPPORTS
+    NS_FORWARD_SAFE_NSIURISETTERS_RET(mURI)
+    NS_DEFINE_NSIMUTATOR_COMMON
+
+    NS_IMETHOD
+    Write(nsIObjectOutputStream *aOutputStream) override {
+      return NS_ERROR_NOT_IMPLEMENTED;
     }
 
-    
-    
-    
-    
-    
-    
-    
-    virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
-    virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
+    MOZ_MUST_USE NS_IMETHOD Read(nsIObjectInputStream *aStream) override {
+      return InitFromInputStream(aStream);
+    }
 
-protected:
-    
-    enum RefHandlingEnum {
-        eIgnoreRef,
-        eHonorRef,
-        eReplaceRef
-    };
+    explicit Mutator() = default;
 
-    virtual nsresult Clone(nsIURI** aURI);
-    virtual nsresult SetSpecInternal(const nsACString &input);
-    virtual nsresult SetScheme(const nsACString &input);
-    virtual nsresult SetUserPass(const nsACString &input);
-    nsresult SetUsername(const nsACString &input);
-    virtual nsresult SetPassword(const nsACString &input);
-    virtual nsresult SetHostPort(const nsACString &aValue);
-    virtual nsresult SetHost(const nsACString &input);
-    virtual nsresult SetPort(int32_t port);
-    virtual nsresult SetPathQueryRef(const nsACString &input);
-    virtual nsresult SetRef(const nsACString &input);
-    virtual nsresult SetFilePath(const nsACString &input);
-    virtual nsresult SetQuery(const nsACString &input);
-    virtual nsresult SetQueryWithEncoding(const nsACString &input, const Encoding* encoding);
-    nsresult ReadPrivate(nsIObjectInputStream *stream);
+   private:
+    virtual ~Mutator() = default;
 
-    
-    virtual nsresult EqualsInternal(nsIURI* other,
-                                    RefHandlingEnum refHandlingMode,
-                                    bool* result);
+    friend class nsSimpleURI;
+  };
 
-    
-    
-    
-    bool EqualsInternal(nsSimpleURI* otherUri, RefHandlingEnum refHandlingMode);
-
-    
-    
-    void SetRefOnClone(nsSimpleURI* url, RefHandlingEnum refHandlingMode,
-                       const nsACString& newRef);
-
-    
-    
-    
-    virtual nsSimpleURI* StartClone(RefHandlingEnum refHandlingMode,
-                                    const nsACString& newRef);
-
-    
-    virtual nsresult CloneInternal(RefHandlingEnum refHandlingMode,
-                                   const nsACString &newRef,
-                                   nsIURI** clone);
-
-    nsresult SetPathQueryRefEscaped(const nsACString &aPath, bool aNeedsEscape);
-
-    bool Deserialize(const mozilla::ipc::URIParams&);
-
-    nsCString mScheme;
-    nsCString mPath; 
-    nsCString mRef;  
-    nsCString mQuery;  
-    bool mMutable;
-    bool mIsRefValid; 
-    bool mIsQueryValid; 
-
-
-public:
-    class Mutator final
-        : public nsIURIMutator
-        , public BaseURIMutator<nsSimpleURI>
-        , public nsISerializable
-    {
-        NS_DECL_ISUPPORTS
-        NS_FORWARD_SAFE_NSIURISETTERS_RET(mURI)
-        NS_DEFINE_NSIMUTATOR_COMMON
-
-        NS_IMETHOD
-        Write(nsIObjectOutputStream *aOutputStream) override
-        {
-            return NS_ERROR_NOT_IMPLEMENTED;
-        }
-
-        MOZ_MUST_USE NS_IMETHOD
-        Read(nsIObjectInputStream* aStream) override
-        {
-            return InitFromInputStream(aStream);
-        }
-
-        explicit Mutator() = default;
-    private:
-        virtual ~Mutator() = default;
-
-        friend class nsSimpleURI;
-    };
-
-    friend BaseURIMutator<nsSimpleURI>;
+  friend BaseURIMutator<nsSimpleURI>;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

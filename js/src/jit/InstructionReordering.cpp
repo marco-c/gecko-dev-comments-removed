@@ -10,195 +10,190 @@
 using namespace js;
 using namespace js::jit;
 
-static void
-MoveBefore(MBasicBlock* block, MInstruction* at, MInstruction* ins)
-{
-    if (at == ins) {
-        return;
-    }
+static void MoveBefore(MBasicBlock* block, MInstruction* at,
+                       MInstruction* ins) {
+  if (at == ins) {
+    return;
+  }
 
-    
-    for (MInstructionIterator iter(block->begin(at)); *iter != ins; iter++) {
-        MOZ_ASSERT(iter->id() < ins->id());
-        iter->setId(iter->id() + 1);
-    }
-    ins->setId(at->id() - 1);
-    block->moveBefore(at, ins);
+  
+  for (MInstructionIterator iter(block->begin(at)); *iter != ins; iter++) {
+    MOZ_ASSERT(iter->id() < ins->id());
+    iter->setId(iter->id() + 1);
+  }
+  ins->setId(at->id() - 1);
+  block->moveBefore(at, ins);
 }
 
-static bool
-IsLastUse(MDefinition* ins, MDefinition* input, MBasicBlock* loopHeader)
-{
+static bool IsLastUse(MDefinition* ins, MDefinition* input,
+                      MBasicBlock* loopHeader) {
+  
+  
+  if (loopHeader && input->block()->id() < loopHeader->id()) {
+    return false;
+  }
+  for (MUseDefIterator iter(input); iter; iter++) {
     
     
-    if (loopHeader && input->block()->id() < loopHeader->id()) {
+    if (iter.def()->block()->id() > ins->block()->id()) {
+      return false;
+    }
+    if (iter.def()->id() > ins->id()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool jit::ReorderInstructions(MIRGraph& graph) {
+  
+  size_t nextId = 0;
+
+  
+  Vector<MBasicBlock*, 4, SystemAllocPolicy> loopHeaders;
+
+  for (ReversePostorderIterator block(graph.rpoBegin());
+       block != graph.rpoEnd(); block++) {
+    
+    for (MPhiIterator iter(block->phisBegin()); iter != block->phisEnd();
+         iter++) {
+      iter->setId(nextId++);
+    }
+
+    for (MInstructionIterator iter(block->begin()); iter != block->end();
+         iter++) {
+      iter->setId(nextId++);
+    }
+
+    
+    
+    if (*block == graph.entryBlock() || *block == graph.osrBlock()) {
+      continue;
+    }
+
+    if (block->isLoopHeader()) {
+      if (!loopHeaders.append(*block)) {
         return false;
+      }
     }
-    for (MUseDefIterator iter(input); iter; iter++) {
-        
-        
-        if (iter.def()->block()->id() > ins->block()->id()) {
+
+    MBasicBlock* innerLoop = loopHeaders.empty() ? nullptr : loopHeaders.back();
+
+    MInstruction* top = block->safeInsertTop();
+    MInstructionReverseIterator rtop = ++block->rbegin(top);
+    for (MInstructionIterator iter(block->begin(top)); iter != block->end();) {
+      MInstruction* ins = *iter;
+
+      
+      if (ins->isEffectful() || !ins->isMovable() || ins->resumePoint() ||
+          ins == block->lastIns()) {
+        iter++;
+        continue;
+      }
+
+      
+      
+      
+      
+      
+      if (ins->isConstant() && ins->hasOneUse() &&
+          ins->usesBegin()->consumer()->block() == *block &&
+          !IsFloatingPointType(ins->type())) {
+        iter++;
+        MInstructionIterator targetIter = block->begin();
+        while (targetIter->isConstant() || targetIter->isInterruptCheck()) {
+          if (*targetIter == ins) {
+            break;
+          }
+          targetIter++;
+        }
+        MoveBefore(*block, *targetIter, ins);
+        continue;
+      }
+
+      
+      
+      
+      
+      
+      Vector<MDefinition*, 4, SystemAllocPolicy> lastUsedInputs;
+      for (size_t i = 0; i < ins->numOperands(); i++) {
+        MDefinition* input = ins->getOperand(i);
+        if (!input->isConstant() && IsLastUse(ins, input, innerLoop)) {
+          if (!lastUsedInputs.append(input)) {
             return false;
+          }
         }
-        if (iter.def()->id() > ins->id()) {
-            return false;
-        }
-    }
-    return true;
-}
+      }
 
-bool
-jit::ReorderInstructions(MIRGraph& graph)
-{
-    
-    size_t nextId = 0;
+      
+      
+      if (lastUsedInputs.length() < 2) {
+        iter++;
+        continue;
+      }
 
-    
-    Vector<MBasicBlock*, 4, SystemAllocPolicy> loopHeaders;
-
-    for (ReversePostorderIterator block(graph.rpoBegin()); block != graph.rpoEnd(); block++) {
-        
-        for (MPhiIterator iter(block->phisBegin()); iter != block->phisEnd(); iter++) {
-            iter->setId(nextId++);
-        }
-
-        for (MInstructionIterator iter(block->begin()); iter != block->end(); iter++) {
-            iter->setId(nextId++);
+      MInstruction* target = ins;
+      for (MInstructionReverseIterator riter = ++block->rbegin(ins);
+           riter != rtop; riter++) {
+        MInstruction* prev = *riter;
+        if (prev->isInterruptCheck()) {
+          break;
         }
 
         
-        if (*block == graph.entryBlock() || *block == graph.osrBlock()) {
-            continue;
+        bool isUse = false;
+        for (size_t i = 0; i < ins->numOperands(); i++) {
+          if (ins->getOperand(i) == prev) {
+            isUse = true;
+            break;
+          }
+        }
+        if (isUse) {
+          break;
         }
 
-        if (block->isLoopHeader()) {
-            if (!loopHeaders.append(*block)) {
-                return false;
-            }
+        
+        
+        if (prev->isEffectful() &&
+            (ins->getAliasSet().flags() & prev->getAliasSet().flags()) &&
+            ins->mightAlias(prev) != MDefinition::AliasType::NoAlias) {
+          break;
         }
 
-        MBasicBlock* innerLoop = loopHeaders.empty() ? nullptr : loopHeaders.back();
-
-        MInstruction* top = block->safeInsertTop();
-        MInstructionReverseIterator rtop = ++block->rbegin(top);
-        for (MInstructionIterator iter(block->begin(top)); iter != block->end(); ) {
-            MInstruction* ins = *iter;
-
-            
-            if (ins->isEffectful() ||
-                !ins->isMovable() ||
-                ins->resumePoint() ||
-                ins == block->lastIns())
-            {
-                iter++;
-                continue;
+        
+        
+        for (size_t i = 0; i < lastUsedInputs.length();) {
+          bool found = false;
+          for (size_t j = 0; j < prev->numOperands(); j++) {
+            if (prev->getOperand(j) == lastUsedInputs[i]) {
+              found = true;
+              break;
             }
-
-            
-            
-            
-            
-            
-            if (ins->isConstant() &&
-                ins->hasOneUse() &&
-                ins->usesBegin()->consumer()->block() == *block &&
-                !IsFloatingPointType(ins->type()))
-            {
-                iter++;
-                MInstructionIterator targetIter = block->begin();
-                while (targetIter->isConstant() || targetIter->isInterruptCheck()) {
-                    if (*targetIter == ins) {
-                        break;
-                    }
-                    targetIter++;
-                }
-                MoveBefore(*block, *targetIter, ins);
-                continue;
-            }
-
-            
-            
-            
-            
-            
-            Vector<MDefinition*, 4, SystemAllocPolicy> lastUsedInputs;
-            for (size_t i = 0; i < ins->numOperands(); i++) {
-                MDefinition* input = ins->getOperand(i);
-                if (!input->isConstant() && IsLastUse(ins, input, innerLoop)) {
-                    if (!lastUsedInputs.append(input)) {
-                        return false;
-                    }
-                }
-            }
-
-            
-            
-            if (lastUsedInputs.length() < 2) {
-                iter++;
-                continue;
-            }
-
-            MInstruction* target = ins;
-            for (MInstructionReverseIterator riter = ++block->rbegin(ins); riter != rtop; riter++) {
-                MInstruction* prev = *riter;
-                if (prev->isInterruptCheck()) {
-                    break;
-                }
-
-                
-                bool isUse = false;
-                for (size_t i = 0; i < ins->numOperands(); i++) {
-                    if (ins->getOperand(i) == prev) {
-                        isUse = true;
-                        break;
-                    }
-                }
-                if (isUse) {
-                    break;
-                }
-
-                
-                
-                if (prev->isEffectful() &&
-                    (ins->getAliasSet().flags() & prev->getAliasSet().flags()) &&
-                    ins->mightAlias(prev) != MDefinition::AliasType::NoAlias)
-                {
-                    break;
-                }
-
-                
-                
-                for (size_t i = 0; i < lastUsedInputs.length(); ) {
-                    bool found = false;
-                    for (size_t j = 0; j < prev->numOperands(); j++) {
-                        if (prev->getOperand(j) == lastUsedInputs[i]) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found) {
-                        lastUsedInputs[i] = lastUsedInputs.back();
-                        lastUsedInputs.popBack();
-                    } else {
-                        i++;
-                    }
-                }
-                if (lastUsedInputs.length() < 2) {
-                    break;
-                }
-
-                
-                target = prev;
-            }
-
-            iter++;
-            MoveBefore(*block, target, ins);
+          }
+          if (found) {
+            lastUsedInputs[i] = lastUsedInputs.back();
+            lastUsedInputs.popBack();
+          } else {
+            i++;
+          }
+        }
+        if (lastUsedInputs.length() < 2) {
+          break;
         }
 
-        if (block->isLoopBackedge()) {
-            loopHeaders.popBack();
-        }
+        
+        target = prev;
+      }
+
+      iter++;
+      MoveBefore(*block, target, ins);
     }
 
-    return true;
+    if (block->isLoopBackedge()) {
+      loopHeaders.popBack();
+    }
+  }
+
+  return true;
 }

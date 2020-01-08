@@ -15,13 +15,10 @@
 #include "nsXBLMaybeCompiled.h"
 #include "nsXBLProtoImplMember.h"
 
-class nsXBLProtoImplProperty: public nsXBLProtoImplMember
-{
-public:
-  nsXBLProtoImplProperty(const char16_t* aName,
-                         const char16_t* aGetter,
-                         const char16_t* aSetter,
-                         const char16_t* aReadOnly,
+class nsXBLProtoImplProperty : public nsXBLProtoImplMember {
+ public:
+  nsXBLProtoImplProperty(const char16_t* aName, const char16_t* aGetter,
+                         const char16_t* aSetter, const char16_t* aReadOnly,
                          uint32_t aLineNumber);
 
   nsXBLProtoImplProperty(const char16_t* aName, const bool aIsReadOnly);
@@ -34,18 +31,19 @@ public:
   void SetGetterLineNumber(uint32_t aLineNumber);
   void SetSetterLineNumber(uint32_t aLineNumber);
 
-  virtual nsresult InstallMember(JSContext* aCx,
-                                 JS::Handle<JSObject*> aTargetClassObject) override;
-  virtual nsresult CompileMember(mozilla::dom::AutoJSAPI& jsapi, const nsString& aClassStr,
+  virtual nsresult InstallMember(
+      JSContext* aCx, JS::Handle<JSObject*> aTargetClassObject) override;
+  virtual nsresult CompileMember(mozilla::dom::AutoJSAPI& jsapi,
+                                 const nsString& aClassStr,
                                  JS::Handle<JSObject*> aClassObject) override;
 
-  virtual void Trace(const TraceCallbacks& aCallback, void *aClosure) override;
+  virtual void Trace(const TraceCallbacks& aCallback, void* aClosure) override;
 
   nsresult Read(nsIObjectInputStream* aStream,
                 XBLBindingSerializeDetails aType);
   virtual nsresult Write(nsIObjectOutputStream* aStream) override;
 
-protected:
+ protected:
   typedef JS::Heap<nsXBLMaybeCompiled<nsXBLTextWithLineNumber> > PropertyOp;
 
   void EnsureUncompiledText(PropertyOp& aPropertyOp);
@@ -57,10 +55,11 @@ protected:
   PropertyOp mSetter;
 
   unsigned mJSAttributes;  
+                           
 
 #ifdef DEBUG
   bool mIsCompiled;
 #endif
 };
 
-#endif 
+#endif  

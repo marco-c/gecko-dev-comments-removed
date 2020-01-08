@@ -11,7 +11,7 @@
 #include "mozilla/RelativeLuminanceUtils.h"
 #include "mozilla/StaticPrefs.h"
 #include "mozilla/WindowsVersion.h"
-#include "mozilla/gfx/Types.h" 
+#include "mozilla/gfx/Types.h"  
 #include "nsColor.h"
 #include "nsDeviceContext.h"
 #include "nsRect.h"
@@ -52,26 +52,20 @@ extern mozilla::LazyLogModule gWindowsLog;
 
 NS_IMPL_ISUPPORTS_INHERITED(nsNativeThemeWin, nsNativeTheme, nsITheme)
 
-nsNativeThemeWin::nsNativeThemeWin() :
-  mProgressDeterminateTimeStamp(TimeStamp::Now()),
-  mProgressIndeterminateTimeStamp(TimeStamp::Now()),
-  mBorderCacheValid(),
-  mMinimumWidgetSizeCacheValid(),
-  mGutterSizeCacheValid(false)
-{
+nsNativeThemeWin::nsNativeThemeWin()
+    : mProgressDeterminateTimeStamp(TimeStamp::Now()),
+      mProgressIndeterminateTimeStamp(TimeStamp::Now()),
+      mBorderCacheValid(),
+      mMinimumWidgetSizeCacheValid(),
+      mGutterSizeCacheValid(false) {
   
   
   
 }
 
-nsNativeThemeWin::~nsNativeThemeWin()
-{
-  nsUXThemeData::Invalidate();
-}
+nsNativeThemeWin::~nsNativeThemeWin() { nsUXThemeData::Invalidate(); }
 
-static int32_t
-GetTopLevelWindowActiveState(nsIFrame *aFrame)
-{
+static int32_t GetTopLevelWindowActiveState(nsIFrame* aFrame) {
   
   
   
@@ -85,9 +79,8 @@ GetTopLevelWindowActiveState(nsIFrame *aFrame)
   
   
   nsIWidget* widget = aFrame->GetNearestWidget();
-  nsWindowBase * window = static_cast<nsWindowBase*>(widget);
-  if (!window)
-    return mozilla::widget::themeconst::FS_INACTIVE;
+  nsWindowBase* window = static_cast<nsWindowBase*>(widget);
+  if (!window) return mozilla::widget::themeconst::FS_INACTIVE;
   if (widget && !window->IsTopLevelWidget() &&
       !(window = window->GetParentWindowBase(false)))
     return mozilla::widget::themeconst::FS_INACTIVE;
@@ -97,9 +90,8 @@ GetTopLevelWindowActiveState(nsIFrame *aFrame)
   return mozilla::widget::themeconst::FS_INACTIVE;
 }
 
-static int32_t
-GetWindowFrameButtonState(nsIFrame* aFrame, EventStates eventState)
-{
+static int32_t GetWindowFrameButtonState(nsIFrame* aFrame,
+                                         EventStates eventState) {
   if (GetTopLevelWindowActiveState(aFrame) ==
       mozilla::widget::themeconst::FS_INACTIVE) {
     if (eventState.HasState(NS_EVENT_STATE_HOVER))
@@ -115,131 +107,116 @@ GetWindowFrameButtonState(nsIFrame* aFrame, EventStates eventState)
   return mozilla::widget::themeconst::BS_NORMAL;
 }
 
-static int32_t
-GetClassicWindowFrameButtonState(EventStates eventState)
-{
+static int32_t GetClassicWindowFrameButtonState(EventStates eventState) {
   if (eventState.HasState(NS_EVENT_STATE_ACTIVE) &&
       eventState.HasState(NS_EVENT_STATE_HOVER))
-    return DFCS_BUTTONPUSH|DFCS_PUSHED;
+    return DFCS_BUTTONPUSH | DFCS_PUSHED;
   return DFCS_BUTTONPUSH;
 }
 
-static bool
-IsTopLevelMenu(nsIFrame *aFrame)
-{
+static bool IsTopLevelMenu(nsIFrame* aFrame) {
   bool isTopLevel(false);
-  nsMenuFrame *menuFrame = do_QueryFrame(aFrame);
+  nsMenuFrame* menuFrame = do_QueryFrame(aFrame);
   if (menuFrame) {
     isTopLevel = menuFrame->IsOnMenuBar();
   }
   return isTopLevel;
 }
 
-static MARGINS
-GetCheckboxMargins(HANDLE theme, HDC hdc)
-{
-    MARGINS checkboxContent = {0};
-    GetThemeMargins(theme, hdc, MENU_POPUPCHECK, MCB_NORMAL,
-                    TMT_CONTENTMARGINS, nullptr, &checkboxContent);
-    return checkboxContent;
+static MARGINS GetCheckboxMargins(HANDLE theme, HDC hdc) {
+  MARGINS checkboxContent = {0};
+  GetThemeMargins(theme, hdc, MENU_POPUPCHECK, MCB_NORMAL, TMT_CONTENTMARGINS,
+                  nullptr, &checkboxContent);
+  return checkboxContent;
 }
 
-static COLORREF
-GetTextfieldFillColor(HANDLE theme, int32_t part, int32_t state)
-{
-    COLORREF color = {0};
-    GetThemeColor(theme, part, state, TMT_FILLCOLOR, &color);
-    return color;
+static COLORREF GetTextfieldFillColor(HANDLE theme, int32_t part,
+                                      int32_t state) {
+  COLORREF color = {0};
+  GetThemeColor(theme, part, state, TMT_FILLCOLOR, &color);
+  return color;
 }
 
-static SIZE
-GetCheckboxBGSize(HANDLE theme, HDC hdc)
-{
-    SIZE checkboxSize;
-    GetThemePartSize(theme, hdc, MENU_POPUPCHECK, MC_CHECKMARKNORMAL,
-                     nullptr, TS_TRUE, &checkboxSize);
+static SIZE GetCheckboxBGSize(HANDLE theme, HDC hdc) {
+  SIZE checkboxSize;
+  GetThemePartSize(theme, hdc, MENU_POPUPCHECK, MC_CHECKMARKNORMAL, nullptr,
+                   TS_TRUE, &checkboxSize);
 
-    MARGINS checkboxMargins = GetCheckboxMargins(theme, hdc);
+  MARGINS checkboxMargins = GetCheckboxMargins(theme, hdc);
 
-    int leftMargin = checkboxMargins.cxLeftWidth;
-    int rightMargin = checkboxMargins.cxRightWidth;
-    int topMargin = checkboxMargins.cyTopHeight;
-    int bottomMargin = checkboxMargins.cyBottomHeight;
+  int leftMargin = checkboxMargins.cxLeftWidth;
+  int rightMargin = checkboxMargins.cxRightWidth;
+  int topMargin = checkboxMargins.cyTopHeight;
+  int bottomMargin = checkboxMargins.cyBottomHeight;
 
-    int width = leftMargin + checkboxSize.cx + rightMargin;
-    int height = topMargin + checkboxSize.cy + bottomMargin;
-    SIZE ret;
-    ret.cx = width;
-    ret.cy = height;
-    return ret;
+  int width = leftMargin + checkboxSize.cx + rightMargin;
+  int height = topMargin + checkboxSize.cy + bottomMargin;
+  SIZE ret;
+  ret.cx = width;
+  ret.cy = height;
+  return ret;
 }
 
-static SIZE
-GetCheckboxBGBounds(HANDLE theme, HDC hdc)
-{
-    MARGINS checkboxBGSizing = {0};
-    MARGINS checkboxBGContent = {0};
-    GetThemeMargins(theme, hdc, MENU_POPUPCHECKBACKGROUND, MCB_NORMAL,
-                    TMT_SIZINGMARGINS, nullptr, &checkboxBGSizing);
-    GetThemeMargins(theme, hdc, MENU_POPUPCHECKBACKGROUND, MCB_NORMAL,
-                    TMT_CONTENTMARGINS, nullptr, &checkboxBGContent);
+static SIZE GetCheckboxBGBounds(HANDLE theme, HDC hdc) {
+  MARGINS checkboxBGSizing = {0};
+  MARGINS checkboxBGContent = {0};
+  GetThemeMargins(theme, hdc, MENU_POPUPCHECKBACKGROUND, MCB_NORMAL,
+                  TMT_SIZINGMARGINS, nullptr, &checkboxBGSizing);
+  GetThemeMargins(theme, hdc, MENU_POPUPCHECKBACKGROUND, MCB_NORMAL,
+                  TMT_CONTENTMARGINS, nullptr, &checkboxBGContent);
 
 #define posdx(d) ((d) > 0 ? d : 0)
 
-    int dx = posdx(checkboxBGContent.cxRightWidth -
-                   checkboxBGSizing.cxRightWidth) +
-             posdx(checkboxBGContent.cxLeftWidth -
-                   checkboxBGSizing.cxLeftWidth);
-    int dy = posdx(checkboxBGContent.cyTopHeight -
-                   checkboxBGSizing.cyTopHeight) +
-             posdx(checkboxBGContent.cyBottomHeight -
-                   checkboxBGSizing.cyBottomHeight);
+  int dx =
+      posdx(checkboxBGContent.cxRightWidth - checkboxBGSizing.cxRightWidth) +
+      posdx(checkboxBGContent.cxLeftWidth - checkboxBGSizing.cxLeftWidth);
+  int dy =
+      posdx(checkboxBGContent.cyTopHeight - checkboxBGSizing.cyTopHeight) +
+      posdx(checkboxBGContent.cyBottomHeight - checkboxBGSizing.cyBottomHeight);
 
 #undef posdx
 
-    SIZE ret(GetCheckboxBGSize(theme, hdc));
-    ret.cx += dx;
-    ret.cy += dy;
-    return ret;
+  SIZE ret(GetCheckboxBGSize(theme, hdc));
+  ret.cx += dx;
+  ret.cy += dy;
+  return ret;
 }
 
-static SIZE
-GetGutterSize(HANDLE theme, HDC hdc)
-{
-    SIZE gutterSize;
-    GetThemePartSize(theme, hdc, MENU_POPUPGUTTER, 0, nullptr, TS_TRUE, &gutterSize);
+static SIZE GetGutterSize(HANDLE theme, HDC hdc) {
+  SIZE gutterSize;
+  GetThemePartSize(theme, hdc, MENU_POPUPGUTTER, 0, nullptr, TS_TRUE,
+                   &gutterSize);
 
-    SIZE checkboxBGSize(GetCheckboxBGBounds(theme, hdc));
+  SIZE checkboxBGSize(GetCheckboxBGBounds(theme, hdc));
 
-    SIZE itemSize;
-    GetThemePartSize(theme, hdc, MENU_POPUPITEM, MPI_NORMAL, nullptr, TS_TRUE, &itemSize);
+  SIZE itemSize;
+  GetThemePartSize(theme, hdc, MENU_POPUPITEM, MPI_NORMAL, nullptr, TS_TRUE,
+                   &itemSize);
 
-    
-    
-    double scaleFactor = WinUtils::SystemScaleFactor();
-    int iconDevicePixels = NSToIntRound(16 * scaleFactor);
-    SIZE iconSize = {
-      iconDevicePixels, iconDevicePixels
-    };
-    
-    MARGINS margins = {0};
-    GetThemeMargins(theme, hdc, MENU_POPUPCHECKBACKGROUND, MCB_NORMAL,
-                    TMT_CONTENTMARGINS, nullptr, &margins);
-    iconSize.cx += margins.cxLeftWidth + margins.cxRightWidth;
-    iconSize.cy += margins.cyTopHeight + margins.cyBottomHeight;
+  
+  
+  double scaleFactor = WinUtils::SystemScaleFactor();
+  int iconDevicePixels = NSToIntRound(16 * scaleFactor);
+  SIZE iconSize = {iconDevicePixels, iconDevicePixels};
+  
+  
+  MARGINS margins = {0};
+  GetThemeMargins(theme, hdc, MENU_POPUPCHECKBACKGROUND, MCB_NORMAL,
+                  TMT_CONTENTMARGINS, nullptr, &margins);
+  iconSize.cx += margins.cxLeftWidth + margins.cxRightWidth;
+  iconSize.cy += margins.cyTopHeight + margins.cyBottomHeight;
 
-    int width = std::max(itemSize.cx, std::max(iconSize.cx, checkboxBGSize.cx) + gutterSize.cx);
-    int height = std::max(itemSize.cy, std::max(iconSize.cy, checkboxBGSize.cy));
+  int width = std::max(
+      itemSize.cx, std::max(iconSize.cx, checkboxBGSize.cx) + gutterSize.cx);
+  int height = std::max(itemSize.cy, std::max(iconSize.cy, checkboxBGSize.cy));
 
-    SIZE ret;
-    ret.cx = width;
-    ret.cy = height;
-    return ret;
+  SIZE ret;
+  ret.cx = width;
+  ret.cy = height;
+  return ret;
 }
 
-SIZE
-nsNativeThemeWin::GetCachedGutterSize(HANDLE theme)
-{
+SIZE nsNativeThemeWin::GetCachedGutterSize(HANDLE theme) {
   if (mGutterSizeCacheValid) {
     return mGutterSizeCache;
   }
@@ -269,19 +246,17 @@ nsNativeThemeWin::GetCachedGutterSize(HANDLE theme)
 
 
 
-static HRESULT
-DrawThemeBGRTLAware(HANDLE aTheme, HDC aHdc, int aPart, int aState,
-                    const RECT *aWidgetRect, const RECT *aClipRect,
-                    bool aIsRtl)
-{
+static HRESULT DrawThemeBGRTLAware(HANDLE aTheme, HDC aHdc, int aPart,
+                                   int aState, const RECT* aWidgetRect,
+                                   const RECT* aClipRect, bool aIsRtl) {
   NS_ASSERTION(aTheme, "Bad theme handle.");
   NS_ASSERTION(aHdc, "Bad hdc.");
   NS_ASSERTION(aWidgetRect, "Bad rect.");
   NS_ASSERTION(aClipRect, "Bad clip rect.");
 
   if (!aIsRtl) {
-    return DrawThemeBackground(aTheme, aHdc, aPart, aState,
-                               aWidgetRect, aClipRect);
+    return DrawThemeBackground(aTheme, aHdc, aPart, aState, aWidgetRect,
+                               aClipRect);
   }
 
   HGDIOBJ hObj = GetCurrentObject(aHdc, OBJ_BITMAP);
@@ -291,17 +266,17 @@ DrawThemeBGRTLAware(HANDLE aTheme, HDC aHdc, int aPart, int aState,
   if (hObj && GetObject(hObj, sizeof(bitmap), &bitmap) &&
       GetViewportOrgEx(aHdc, &vpOrg)) {
     RECT newWRect(*aWidgetRect);
-    newWRect.left = bitmap.bmWidth - (aWidgetRect->right + 2*vpOrg.x);
-    newWRect.right = bitmap.bmWidth - (aWidgetRect->left + 2*vpOrg.x);
+    newWRect.left = bitmap.bmWidth - (aWidgetRect->right + 2 * vpOrg.x);
+    newWRect.right = bitmap.bmWidth - (aWidgetRect->left + 2 * vpOrg.x);
 
     RECT newCRect;
-    RECT *newCRectPtr = nullptr;
+    RECT* newCRectPtr = nullptr;
 
     if (aClipRect) {
       newCRect.top = aClipRect->top;
       newCRect.bottom = aClipRect->bottom;
-      newCRect.left = bitmap.bmWidth - (aClipRect->right + 2*vpOrg.x);
-      newCRect.right = bitmap.bmWidth - (aClipRect->left + 2*vpOrg.x);
+      newCRect.left = bitmap.bmWidth - (aClipRect->right + 2 * vpOrg.x);
+      newCRect.right = bitmap.bmWidth - (aClipRect->left + 2 * vpOrg.x);
       newCRectPtr = &newCRect;
     }
 
@@ -313,8 +288,8 @@ DrawThemeBGRTLAware(HANDLE aTheme, HDC aHdc, int aPart, int aState,
       return hr;
     }
   }
-  return DrawThemeBackground(aTheme, aHdc, aPart, aState,
-                             aWidgetRect, aClipRect);
+  return DrawThemeBackground(aTheme, aHdc, aPart, aState, aWidgetRect,
+                             aClipRect);
 }
 
 
@@ -361,22 +336,13 @@ struct CaptionButtonPadding {
 
 
 static CaptionButtonPadding buttonData[3] = {
-  { 
-    { { 1, 2, 0, 1 }, { 0, 2, 1, 1 }, { 1, 2, 2, 1 } }
-  },
-  { 
-    { { 1, 2, 0, 2 }, { 0, 2, 1, 2 }, { 1, 2, 2, 2 } }
-  },
-  { 
-    { { 0, 2, 0, 2 }, { 0, 2, 1, 2 }, { 1, 2, 2, 2 } }
-  }
-};
+    {{{1, 2, 0, 1}, {0, 2, 1, 1}, {1, 2, 2, 1}}},
+    {{{1, 2, 0, 2}, {0, 2, 1, 2}, {1, 2, 2, 2}}},
+    {{{0, 2, 0, 2}, {0, 2, 1, 2}, {1, 2, 2, 2}}}};
 
 
-static void
-AddPaddingRect(LayoutDeviceIntSize* aSize, CaptionButton button) {
-  if (!aSize)
-    return;
+static void AddPaddingRect(LayoutDeviceIntSize* aSize, CaptionButton button) {
+  if (!aSize) return;
   RECT offset;
   if (!IsAppThemed())
     offset = buttonData[CAPTION_CLASSIC].hotPadding[button];
@@ -388,8 +354,7 @@ AddPaddingRect(LayoutDeviceIntSize* aSize, CaptionButton button) {
 
 
 
-static void
-OffsetBackgroundRect(RECT& rect, CaptionButton button) {
+static void OffsetBackgroundRect(RECT& rect, CaptionButton button) {
   RECT offset;
   if (!IsAppThemed())
     offset = buttonData[CAPTION_CLASSIC].hotPadding[button];
@@ -437,11 +402,15 @@ OffsetBackgroundRect(RECT& rect, CaptionButton button) {
 static const double kProgressDeterminateTimeSpan = 3.0;
 static const double kProgressIndeterminateTimeSpan = 5.0;
 
+
 static const int32_t kProgressHorizontalOverlaySize = 120;
+
 
 static const int32_t kProgressVerticalOverlaySize = 45;
 
+
 static const int32_t kProgressVerticalIndeterminateOverlaySize = 60;
+
 
 static const int32_t kProgressClassicOverlaySize = 40;
 
@@ -449,9 +418,7 @@ static const int32_t kProgressClassicOverlaySize = 40;
 
 
 
-static int32_t
-GetProgressOverlayStyle(bool aIsVertical)
-{
+static int32_t GetProgressOverlayStyle(bool aIsVertical) {
   return aIsVertical ? PP_MOVEOVERLAYVERT : PP_MOVEOVERLAY;
 }
 
@@ -460,9 +427,7 @@ GetProgressOverlayStyle(bool aIsVertical)
 
 
 
-static int32_t
-GetProgressOverlaySize(bool aIsVertical, bool aIsIndeterminate)
-{
+static int32_t GetProgressOverlaySize(bool aIsVertical, bool aIsIndeterminate) {
   if (aIsVertical) {
     return aIsIndeterminate ? kProgressVerticalIndeterminateOverlaySize
                             : kProgressVerticalOverlaySize;
@@ -474,9 +439,7 @@ GetProgressOverlaySize(bool aIsVertical, bool aIsIndeterminate)
 
 
 
-static bool
-IsProgressMeterFilled(nsIFrame* aFrame)
-{
+static bool IsProgressMeterFilled(nsIFrame* aFrame) {
   NS_ENSURE_TRUE(aFrame, false);
   nsIFrame* parentFrame = aFrame->GetParent();
   NS_ENSURE_TRUE(parentFrame, false);
@@ -490,13 +453,11 @@ IsProgressMeterFilled(nsIFrame* aFrame)
 
 
 
-RECT
-nsNativeThemeWin::CalculateProgressOverlayRect(nsIFrame* aFrame,
-                                               RECT* aWidgetRect,
-                                               bool aIsVertical,
-                                               bool aIsIndeterminate,
-                                               bool aIsClassic)
-{
+RECT nsNativeThemeWin::CalculateProgressOverlayRect(nsIFrame* aFrame,
+                                                    RECT* aWidgetRect,
+                                                    bool aIsVertical,
+                                                    bool aIsIndeterminate,
+                                                    bool aIsClassic) {
   NS_ASSERTION(aFrame, "bad frame pointer");
   NS_ASSERTION(aWidgetRect, "bad rect pointer");
 
@@ -509,14 +470,14 @@ nsNativeThemeWin::CalculateProgressOverlayRect(nsIFrame* aFrame,
                                  : kProgressDeterminateTimeSpan;
   TimeDuration period;
   if (!aIsIndeterminate) {
-    if (TimeStamp::Now() > (mProgressDeterminateTimeStamp +
-                            TimeDuration::FromSeconds(span))) {
+    if (TimeStamp::Now() >
+        (mProgressDeterminateTimeStamp + TimeDuration::FromSeconds(span))) {
       mProgressDeterminateTimeStamp = TimeStamp::Now();
     }
     period = TimeStamp::Now() - mProgressDeterminateTimeStamp;
   } else {
-    if (TimeStamp::Now() > (mProgressIndeterminateTimeStamp +
-                            TimeDuration::FromSeconds(span))) {
+    if (TimeStamp::Now() >
+        (mProgressIndeterminateTimeStamp + TimeDuration::FromSeconds(span))) {
       mProgressIndeterminateTimeStamp = TimeStamp::Now();
     }
     period = TimeStamp::Now() - mProgressIndeterminateTimeStamp;
@@ -524,8 +485,7 @@ nsNativeThemeWin::CalculateProgressOverlayRect(nsIFrame* aFrame,
 
   double percent = period / TimeDuration::FromSeconds(span);
 
-  if (!aIsVertical && IsFrameRTL(aFrame))
-    percent = 1 - percent;
+  if (!aIsVertical && IsFrameRTL(aFrame)) percent = 1 - percent;
 
   RECT overlayRect = *aWidgetRect;
   int32_t overlaySize;
@@ -533,7 +493,7 @@ nsNativeThemeWin::CalculateProgressOverlayRect(nsIFrame* aFrame,
     overlaySize = GetProgressOverlaySize(aIsVertical, aIsIndeterminate);
   } else {
     overlaySize = kProgressClassicOverlaySize;
-  } 
+  }
 
   
   
@@ -544,12 +504,12 @@ nsNativeThemeWin::CalculateProgressOverlayRect(nsIFrame* aFrame,
   int trackWidth = frameSize > overlaySize ? frameSize : overlaySize;
   if (!aIsVertical) {
     int xPos = aWidgetRect->left - trackWidth;
-    xPos += (int)ceil(((double)(trackWidth*2) * percent));
+    xPos += (int)ceil(((double)(trackWidth * 2) * percent));
     overlayRect.left = xPos;
     overlayRect.right = xPos + overlaySize;
   } else {
     int yPos = aWidgetRect->bottom + trackWidth;
-    yPos -= (int)ceil(((double)(trackWidth*2) * percent));
+    yPos -= (int)ceil(((double)(trackWidth * 2) * percent));
     overlayRect.bottom = yPos;
     overlayRect.top = yPos - overlaySize;
   }
@@ -571,15 +531,10 @@ nsNativeThemeWin::CalculateProgressOverlayRect(nsIFrame* aFrame,
 
 
 
-void
-nsNativeThemeWin::DrawThemedProgressMeter(nsIFrame* aFrame,
-                                          StyleAppearance aAppearance,
-                                          HANDLE aTheme, HDC aHdc,
-                                          int aPart, int aState,
-                                          RECT* aWidgetRect, RECT* aClipRect)
-{
-  if (!aFrame || !aTheme || !aHdc)
-    return;
+void nsNativeThemeWin::DrawThemedProgressMeter(
+    nsIFrame* aFrame, StyleAppearance aAppearance, HANDLE aTheme, HDC aHdc,
+    int aPart, int aState, RECT* aWidgetRect, RECT* aClipRect) {
+  if (!aFrame || !aTheme || !aHdc) return;
 
   NS_ASSERTION(aWidgetRect, "bad rect pointer");
   NS_ASSERTION(aClipRect, "bad clip rect pointer");
@@ -602,8 +557,8 @@ nsNativeThemeWin::DrawThemedProgressMeter(nsIFrame* aFrame,
 
   
   
-  DrawThemeBackground(aTheme, aHdc, aPart, aState,
-                      &adjWidgetRect, &adjClipRect);
+  DrawThemeBackground(aTheme, aHdc, aPart, aState, &adjWidgetRect,
+                      &adjClipRect);
   if (!IsProgressMeterFilled(aFrame)) {
     animate = true;
   }
@@ -611,9 +566,8 @@ nsNativeThemeWin::DrawThemedProgressMeter(nsIFrame* aFrame,
   if (animate) {
     
     int32_t overlayPart = GetProgressOverlayStyle(vertical);
-    RECT overlayRect =
-      CalculateProgressOverlayRect(aFrame, &adjWidgetRect, vertical,
-                                   indeterminate, false);
+    RECT overlayRect = CalculateProgressOverlayRect(
+        aFrame, &adjWidgetRect, vertical, indeterminate, false);
     DrawThemeBackground(aTheme, aHdc, overlayPart, aState, &overlayRect,
                         &adjClipRect);
 
@@ -623,13 +577,9 @@ nsNativeThemeWin::DrawThemedProgressMeter(nsIFrame* aFrame,
   }
 }
 
-LayoutDeviceIntMargin
-nsNativeThemeWin::GetCachedWidgetBorder(HTHEME aTheme,
-                                        nsUXThemeClass aThemeClass,
-                                        StyleAppearance aAppearance,
-                                        int32_t aPart,
-                                        int32_t aState)
-{
+LayoutDeviceIntMargin nsNativeThemeWin::GetCachedWidgetBorder(
+    HTHEME aTheme, nsUXThemeClass aThemeClass, StyleAppearance aAppearance,
+    int32_t aPart, int32_t aState) {
   int32_t cacheIndex = aThemeClass * THEME_PART_DISTINCT_VALUE_COUNT + aPart;
   int32_t cacheBitIndex = cacheIndex / 8;
   uint8_t cacheBit = 1u << (cacheIndex % 8);
@@ -639,11 +589,12 @@ nsNativeThemeWin::GetCachedWidgetBorder(HTHEME aTheme,
   }
 
   
-  RECT outerRect; 
+  RECT outerRect;  
   outerRect.top = outerRect.left = 100;
   outerRect.right = outerRect.bottom = 200;
   RECT contentRect(outerRect);
-  HRESULT res = GetThemeBackgroundContentRect(aTheme, nullptr, aPart, aState, &outerRect, &contentRect);
+  HRESULT res = GetThemeBackgroundContentRect(aTheme, nullptr, aPart, aState,
+                                              &outerRect, &contentRect);
 
   if (FAILED(res)) {
     return LayoutDeviceIntMargin();
@@ -663,12 +614,10 @@ nsNativeThemeWin::GetCachedWidgetBorder(HTHEME aTheme,
   return result;
 }
 
-nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(nsIFrame * aFrame, HANDLE aTheme,
-                                                      nsUXThemeClass aThemeClass,
-                                                      StyleAppearance aAppearance,
-                                                      int32_t aPart, int32_t aState, THEMESIZE aSizeReq,
-                                                      mozilla::LayoutDeviceIntSize * aResult)
-{
+nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(
+    nsIFrame* aFrame, HANDLE aTheme, nsUXThemeClass aThemeClass,
+    StyleAppearance aAppearance, int32_t aPart, int32_t aState,
+    THEMESIZE aSizeReq, mozilla::LayoutDeviceIntSize* aResult) {
   int32_t cachePart = aPart;
 
   if (aAppearance == StyleAppearance::Button && aSizeReq == TS_MIN) {
@@ -680,7 +629,8 @@ nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(nsIFrame * aFrame, HANDLE 
   }
 
   MOZ_ASSERT(aPart < THEME_PART_DISTINCT_VALUE_COUNT);
-  int32_t cacheIndex = aThemeClass * THEME_PART_DISTINCT_VALUE_COUNT + cachePart;
+  int32_t cacheIndex =
+      aThemeClass * THEME_PART_DISTINCT_VALUE_COUNT + cachePart;
   int32_t cacheBitIndex = cacheIndex / 8;
   uint8_t cacheBit = 1u << (cacheIndex % 8);
 
@@ -707,8 +657,7 @@ nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(nsIFrame * aFrame, HANDLE 
       aResult->height = aResult->height / 2 + 1;
       break;
 
-    case StyleAppearance::Menuseparator:
-    {
+    case StyleAppearance::Menuseparator: {
       SIZE gutterSize(GetGutterSize(aTheme, hdc));
       aResult->width += gutterSize.cx;
       break;
@@ -732,8 +681,8 @@ nsresult nsNativeThemeWin::GetCachedMinimumWidgetSize(nsIFrame * aFrame, HANDLE 
   return NS_OK;
 }
 
-mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(StyleAppearance aAppearance)
-{
+mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(
+    StyleAppearance aAppearance) {
   switch (aAppearance) {
     case StyleAppearance::Button:
     case StyleAppearance::Radio:
@@ -843,8 +792,7 @@ mozilla::Maybe<nsUXThemeClass> nsNativeThemeWin::GetThemeClass(StyleAppearance a
 }
 
 HANDLE
-nsNativeThemeWin::GetTheme(StyleAppearance aAppearance)
-{
+nsNativeThemeWin::GetTheme(StyleAppearance aAppearance) {
   mozilla::Maybe<nsUXThemeClass> themeClass = GetThemeClass(aAppearance);
   if (themeClass.isNothing()) {
     return nullptr;
@@ -852,26 +800,21 @@ nsNativeThemeWin::GetTheme(StyleAppearance aAppearance)
   return nsUXThemeData::GetTheme(themeClass.value());
 }
 
-int32_t
-nsNativeThemeWin::StandardGetState(nsIFrame* aFrame,
-                                   StyleAppearance aAppearance,
-                                   bool wantFocused)
-{
+int32_t nsNativeThemeWin::StandardGetState(nsIFrame* aFrame,
+                                           StyleAppearance aAppearance,
+                                           bool wantFocused) {
   EventStates eventState = GetContentState(aFrame, aAppearance);
   if (eventState.HasAllStates(NS_EVENT_STATE_HOVER | NS_EVENT_STATE_ACTIVE))
     return TS_ACTIVE;
-  if (eventState.HasState(NS_EVENT_STATE_HOVER))
-    return TS_HOVER;
+  if (eventState.HasState(NS_EVENT_STATE_HOVER)) return TS_HOVER;
   if (wantFocused && eventState.HasState(NS_EVENT_STATE_FOCUS))
     return TS_FOCUSED;
 
   return TS_NORMAL;
 }
 
-bool
-nsNativeThemeWin::IsMenuActive(nsIFrame *aFrame,
-                               StyleAppearance aAppearance)
-{
+bool nsNativeThemeWin::IsMenuActive(nsIFrame* aFrame,
+                                    StyleAppearance aAppearance) {
   nsIContent* content = aFrame->GetContent();
   if (content->IsXULElement() &&
       content->NodeInfo()->Equals(nsGkAtoms::richlistitem))
@@ -887,11 +830,10 @@ nsNativeThemeWin::IsMenuActive(nsIFrame *aFrame,
 
 
 
-nsresult 
-nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
-                                       StyleAppearance aAppearance, 
-                                       int32_t& aPart, int32_t& aState)
-{
+nsresult nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
+                                                StyleAppearance aAppearance,
+                                                int32_t& aPart,
+                                                int32_t& aState) {
   if (aAppearance == StyleAppearance::MenulistButton &&
       StaticPrefs::layout_css_webkit_appearance_enabled()) {
     aAppearance = StyleAppearance::Menulist;
@@ -909,18 +851,16 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       if (IsDisabled(aFrame, eventState)) {
         aState = TS_DISABLED;
         return NS_OK;
-      } else if (IsOpenButton(aFrame) ||
-                 IsCheckedButton(aFrame)) {
+      } else if (IsOpenButton(aFrame) || IsCheckedButton(aFrame)) {
         aState = TS_ACTIVE;
         return NS_OK;
       }
 
       aState = StandardGetState(aFrame, aAppearance, true);
+
       
       
-      
-      if (aState == TS_NORMAL && IsDefaultButton(aFrame))
-        aState = TS_FOCUSED;
+      if (aState == TS_NORMAL && IsDefaultButton(aFrame)) aState = TS_FOCUSED;
       return NS_OK;
     }
     case StyleAppearance::Checkbox:
@@ -928,9 +868,7 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       bool isCheckbox = (aAppearance == StyleAppearance::Checkbox);
       aPart = isCheckbox ? BP_CHECKBOX : BP_RADIO;
 
-      enum InputState {
-        UNCHECKED = 0, CHECKED, INDETERMINATE
-      };
+      enum InputState { UNCHECKED = 0, CHECKED, INDETERMINATE };
       InputState inputState = UNCHECKED;
       bool isXULCheckboxRadio = false;
 
@@ -939,13 +877,13 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       } else {
         if (GetCheckedOrSelected(aFrame, !isCheckbox)) {
           inputState = CHECKED;
-        } if (isCheckbox && GetIndeterminate(aFrame)) {
+        }
+        if (isCheckbox && GetIndeterminate(aFrame)) {
           inputState = INDETERMINATE;
         }
 
-        EventStates eventState =
-          GetContentState(isXULCheckboxRadio ? aFrame->GetParent() : aFrame,
-                          aAppearance);
+        EventStates eventState = GetContentState(
+            isXULCheckboxRadio ? aFrame->GetParent() : aFrame, aAppearance);
         if (IsDisabled(aFrame, eventState)) {
           aState = TS_DISABLED;
         } else {
@@ -993,7 +931,8 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
 
         if (content && content->IsXULElement() && IsFocused(aFrame))
           aState = TFS_EDITBORDER_FOCUSED;
-        else if (eventState.HasAtLeastOneOfStates(NS_EVENT_STATE_ACTIVE | NS_EVENT_STATE_FOCUS))
+        else if (eventState.HasAtLeastOneOfStates(NS_EVENT_STATE_ACTIVE |
+                                                  NS_EVENT_STATE_FOCUS))
           aState = TFS_EDITBORDER_FOCUSED;
         else if (eventState.HasState(NS_EVENT_STATE_HOVER))
           aState = TFS_EDITBORDER_HOVER;
@@ -1005,8 +944,8 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
     }
     case StyleAppearance::FocusOutline: {
       
-      aPart = TFP_TEXTFIELD; 
-      aState = TS_FOCUSED; 
+      aPart = TFP_TEXTFIELD;  
+      aState = TS_FOCUSED;    
       return NS_OK;
     }
     case StyleAppearance::Tooltip: {
@@ -1060,14 +999,13 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
           aState = TB_HOVER_CHECKED;
         else
           aState = TS_HOVER;
-      }
-      else {
+      } else {
         if (IsCheckedButton(aFrame))
           aState = TB_CHECKED;
         else
           aState = TS_NORMAL;
       }
-     
+
       return NS_OK;
     }
     case StyleAppearance::Separator: {
@@ -1080,22 +1018,25 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
     case StyleAppearance::ScrollbarbuttonLeft:
     case StyleAppearance::ScrollbarbuttonRight: {
       aPart = SP_BUTTON;
-      aState = (int(aAppearance) - int(StyleAppearance::ScrollbarbuttonUp))*4;
+      aState = (int(aAppearance) - int(StyleAppearance::ScrollbarbuttonUp)) * 4;
       EventStates eventState = GetContentState(aFrame, aAppearance);
       if (!aFrame)
         aState += TS_NORMAL;
       else if (IsDisabled(aFrame, eventState))
         aState += TS_DISABLED;
       else {
-        nsIFrame *parent = aFrame->GetParent();
+        nsIFrame* parent = aFrame->GetParent();
         EventStates parentState =
-          GetContentState(parent, parent->StyleDisplay()->mAppearance);
-        if (eventState.HasAllStates(NS_EVENT_STATE_HOVER | NS_EVENT_STATE_ACTIVE))
+            GetContentState(parent, parent->StyleDisplay()->mAppearance);
+        if (eventState.HasAllStates(NS_EVENT_STATE_HOVER |
+                                    NS_EVENT_STATE_ACTIVE))
           aState += TS_ACTIVE;
         else if (eventState.HasState(NS_EVENT_STATE_HOVER))
           aState += TS_HOVER;
         else if (parentState.HasState(NS_EVENT_STATE_HOVER))
-          aState = (int(aAppearance) - int(StyleAppearance::ScrollbarbuttonUp)) + SP_BUTTON_IMPLICIT_HOVER_BASE;
+          aState =
+              (int(aAppearance) - int(StyleAppearance::ScrollbarbuttonUp)) +
+              SP_BUTTON_IMPLICIT_HOVER_BASE;
         else
           aState += TS_NORMAL;
       }
@@ -1103,28 +1044,32 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
     }
     case StyleAppearance::ScrollbarHorizontal:
     case StyleAppearance::ScrollbarVertical: {
-      aPart = (aAppearance == StyleAppearance::ScrollbarHorizontal) ?
-              SP_TRACKSTARTHOR : SP_TRACKSTARTVERT;
+      aPart = (aAppearance == StyleAppearance::ScrollbarHorizontal)
+                  ? SP_TRACKSTARTHOR
+                  : SP_TRACKSTARTVERT;
       aState = TS_NORMAL;
       return NS_OK;
     }
     case StyleAppearance::ScrollbarthumbHorizontal:
     case StyleAppearance::ScrollbarthumbVertical: {
-      aPart = (aAppearance == StyleAppearance::ScrollbarthumbHorizontal) ?
-              SP_THUMBHOR : SP_THUMBVERT;
+      aPart = (aAppearance == StyleAppearance::ScrollbarthumbHorizontal)
+                  ? SP_THUMBHOR
+                  : SP_THUMBVERT;
       EventStates eventState = GetContentState(aFrame, aAppearance);
       if (!aFrame)
         aState = TS_NORMAL;
       else if (IsDisabled(aFrame, eventState))
         aState = TS_DISABLED;
       else {
-        if (eventState.HasState(NS_EVENT_STATE_ACTIVE)) 
-                                                        
-                                                        
+        if (eventState.HasState(
+                NS_EVENT_STATE_ACTIVE))  
+                                         
+                                         
+                                         
           aState = TS_ACTIVE;
         else if (eventState.HasState(NS_EVENT_STATE_HOVER))
           aState = TS_HOVER;
-        else 
+        else
           aState = TS_NORMAL;
       }
       return NS_OK;
@@ -1153,19 +1098,21 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
           aPart = IsFrameRTL(aFrame) ? TKP_THUMBLEFT : TKP_THUMBRIGHT;
         }
       } else {
-        aPart = (aAppearance == StyleAppearance::ScalethumbHorizontal) ?
-                TKP_THUMB : TKP_THUMBVERT;
+        aPart = (aAppearance == StyleAppearance::ScalethumbHorizontal)
+                    ? TKP_THUMB
+                    : TKP_THUMBVERT;
       }
       EventStates eventState = GetContentState(aFrame, aAppearance);
       if (!aFrame)
         aState = TS_NORMAL;
       else if (IsDisabled(aFrame, eventState)) {
         aState = TKP_DISABLED;
-      }
-      else {
-        if (eventState.HasState(NS_EVENT_STATE_ACTIVE)) 
-                                                        
-                                                        
+      } else {
+        if (eventState.HasState(
+                NS_EVENT_STATE_ACTIVE))  
+                                         
+                                         
+                                         
           aState = TS_ACTIVE;
         else if (eventState.HasState(NS_EVENT_STATE_FOCUS))
           aState = TKP_FOCUSED;
@@ -1179,8 +1126,8 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
     case StyleAppearance::InnerSpinButton:
     case StyleAppearance::SpinnerUpbutton:
     case StyleAppearance::SpinnerDownbutton: {
-      aPart = (aAppearance == StyleAppearance::SpinnerUpbutton) ?
-              SPNP_UP : SPNP_DOWN;
+      aPart = (aAppearance == StyleAppearance::SpinnerUpbutton) ? SPNP_UP
+                                                                : SPNP_DOWN;
       EventStates eventState = GetContentState(aFrame, aAppearance);
       if (!aFrame)
         aState = TS_NORMAL;
@@ -1188,7 +1135,7 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
         aState = TS_DISABLED;
       else
         aState = StandardGetState(aFrame, aAppearance, false);
-      return NS_OK;    
+      return NS_OK;
     }
     case StyleAppearance::Toolbox:
     case StyleAppearance::MozWinMediaToolbox:
@@ -1222,12 +1169,18 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
     case StyleAppearance::Resizerpanel:
     case StyleAppearance::Resizer: {
       switch (aAppearance) {
-      case StyleAppearance::Statusbarpanel: aPart = 1; break;
-      case StyleAppearance::Resizerpanel: aPart = 2; break;
-      case StyleAppearance::Resizer: aPart = 3; break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("Oops, we're missing a case");
-        aPart = 1; 
+        case StyleAppearance::Statusbarpanel:
+          aPart = 1;
+          break;
+        case StyleAppearance::Resizerpanel:
+          aPart = 2;
+          break;
+        case StyleAppearance::Resizer:
+          aPart = 3;
+          break;
+        default:
+          MOZ_ASSERT_UNREACHABLE("Oops, we're missing a case");
+          aPart = 1;  
       }
       aState = TS_NORMAL;
       return NS_OK;
@@ -1263,11 +1216,10 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
 
       if (IsSelectedTab(aFrame)) {
         aPart = TABP_TAB_SELECTED;
-        aState = TS_ACTIVE; 
-      }
-      else
+        aState = TS_ACTIVE;  
+      } else
         aState = StandardGetState(aFrame, aAppearance, true);
-      
+
       return NS_OK;
     }
     case StyleAppearance::Treeheadersortarrow: {
@@ -1282,9 +1234,9 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
         aState = TS_NORMAL;
         return NS_OK;
       }
-      
+
       aState = StandardGetState(aFrame, aAppearance, true);
-      
+
       return NS_OK;
     }
     case StyleAppearance::Menulist: {
@@ -1307,9 +1259,11 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       } else if (IsOpenButton(aFrame)) {
         aState = TS_ACTIVE;
       } else {
-        if (useDropBorder && (eventState.HasState(NS_EVENT_STATE_FOCUS) || IsFocused(aFrame)))
+        if (useDropBorder &&
+            (eventState.HasState(NS_EVENT_STATE_FOCUS) || IsFocused(aFrame)))
           aState = TS_ACTIVE;
-        else if (eventState.HasAllStates(NS_EVENT_STATE_HOVER | NS_EVENT_STATE_ACTIVE))
+        else if (eventState.HasAllStates(NS_EVENT_STATE_HOVER |
+                                         NS_EVENT_STATE_ACTIVE))
           aState = TS_ACTIVE;
         else if (eventState.HasState(NS_EVENT_STATE_HOVER))
           aState = TS_HOVER;
@@ -1327,8 +1281,8 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       bool isOpen = false;
 
       
-      if (isHTML || isMenulist)
-        aFrame = parentFrame;
+      
+      if (isHTML || isMenulist) aFrame = parentFrame;
 
       EventStates eventState = GetContentState(aFrame, aAppearance);
       aPart = CBP_DROPMARKER_VISTA;
@@ -1336,7 +1290,8 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       
       
       
-      if (isHTML && IsWidgetStyled(aFrame->PresContext(), aFrame, StyleAppearance::Menulist))
+      if (isHTML && IsWidgetStyled(aFrame->PresContext(), aFrame,
+                                   StyleAppearance::Menulist))
         aPart = CBP_DROPMARKER;
 
       if (IsDisabled(aFrame, eventState)) {
@@ -1347,8 +1302,7 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       if (isHTML) {
         nsComboboxControlFrame* ccf = do_QueryFrame(aFrame);
         isOpen = (ccf && ccf->IsDroppedDownOrHasParentPopup());
-      }
-      else
+      } else
         isOpen = IsOpenButton(aFrame);
 
       if (isHTML) {
@@ -1382,8 +1336,7 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
           return NS_OK;
         }
         aState = TS_ACTIVE;
-      }
-      else if (eventState.HasState(NS_EVENT_STATE_HOVER)) {
+      } else if (eventState.HasState(NS_EVENT_STATE_HOVER)) {
         
         
         if (isOpen) {
@@ -1401,18 +1354,17 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       return NS_OK;
     }
     case StyleAppearance::Menuitem:
-    case StyleAppearance::Checkmenuitem: 
+    case StyleAppearance::Checkmenuitem:
     case StyleAppearance::Radiomenuitem: {
       bool isTopLevel = false;
       bool isOpen = false;
       bool isHover = false;
-      nsMenuFrame *menuFrame = do_QueryFrame(aFrame);
+      nsMenuFrame* menuFrame = do_QueryFrame(aFrame);
       EventStates eventState = GetContentState(aFrame, aAppearance);
 
       isTopLevel = IsTopLevelMenu(aFrame);
 
-      if (menuFrame)
-        isOpen = menuFrame->IsOpen();
+      if (menuFrame) isOpen = menuFrame->IsOpen();
 
       isHover = IsMenuActive(aFrame, aAppearance);
 
@@ -1427,8 +1379,7 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
           aState = MBI_NORMAL;
 
         
-        if (IsDisabled(aFrame, eventState))
-          aState += 3;
+        if (IsDisabled(aFrame, eventState)) aState += 3;
       } else {
         aPart = MENU_POPUPITEM;
 
@@ -1438,8 +1389,7 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
           aState = MPI_NORMAL;
 
         
-        if (IsDisabled(aFrame, eventState))
-          aState += 2;
+        if (IsDisabled(aFrame, eventState)) aState += 2;
       }
 
       return NS_OK;
@@ -1448,31 +1398,27 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       aPart = MENU_POPUPSEPARATOR;
       aState = 0;
       return NS_OK;
-    case StyleAppearance::Menuarrow:
-      {
-        aPart = MENU_POPUPSUBMENU;
-        EventStates eventState = GetContentState(aFrame, aAppearance);
-        aState = IsDisabled(aFrame, eventState) ? MSM_DISABLED : MSM_NORMAL;
-        return NS_OK;
-      }
+    case StyleAppearance::Menuarrow: {
+      aPart = MENU_POPUPSUBMENU;
+      EventStates eventState = GetContentState(aFrame, aAppearance);
+      aState = IsDisabled(aFrame, eventState) ? MSM_DISABLED : MSM_NORMAL;
+      return NS_OK;
+    }
     case StyleAppearance::Menucheckbox:
-    case StyleAppearance::Menuradio:
-      {
-        EventStates eventState = GetContentState(aFrame, aAppearance);
+    case StyleAppearance::Menuradio: {
+      EventStates eventState = GetContentState(aFrame, aAppearance);
 
-        aPart = MENU_POPUPCHECK;
-        aState = MC_CHECKMARKNORMAL;
+      aPart = MENU_POPUPCHECK;
+      aState = MC_CHECKMARKNORMAL;
 
-        
-        if (aAppearance == StyleAppearance::Menuradio)
-          aState += 2;
+      
+      if (aAppearance == StyleAppearance::Menuradio) aState += 2;
 
-        
-        if (IsDisabled(aFrame, eventState))
-          aState += 1;
+      
+      if (IsDisabled(aFrame, eventState)) aState += 1;
 
-        return NS_OK;
-      }
+      return NS_OK;
+    }
     case StyleAppearance::Menuitemtext:
     case StyleAppearance::Menuimage:
       aPart = -1;
@@ -1501,19 +1447,23 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
       return NS_OK;
     case StyleAppearance::MozWindowButtonClose:
       aPart = mozilla::widget::themeconst::WP_CLOSEBUTTON;
-      aState = GetWindowFrameButtonState(aFrame, GetContentState(aFrame, aAppearance));
+      aState = GetWindowFrameButtonState(aFrame,
+                                         GetContentState(aFrame, aAppearance));
       return NS_OK;
     case StyleAppearance::MozWindowButtonMinimize:
       aPart = mozilla::widget::themeconst::WP_MINBUTTON;
-      aState = GetWindowFrameButtonState(aFrame, GetContentState(aFrame, aAppearance));
+      aState = GetWindowFrameButtonState(aFrame,
+                                         GetContentState(aFrame, aAppearance));
       return NS_OK;
     case StyleAppearance::MozWindowButtonMaximize:
       aPart = mozilla::widget::themeconst::WP_MAXBUTTON;
-      aState = GetWindowFrameButtonState(aFrame, GetContentState(aFrame, aAppearance));
+      aState = GetWindowFrameButtonState(aFrame,
+                                         GetContentState(aFrame, aAppearance));
       return NS_OK;
     case StyleAppearance::MozWindowButtonRestore:
       aPart = mozilla::widget::themeconst::WP_RESTOREBUTTON;
-      aState = GetWindowFrameButtonState(aFrame, GetContentState(aFrame, aAppearance));
+      aState = GetWindowFrameButtonState(aFrame,
+                                         GetContentState(aFrame, aAppearance));
       return NS_OK;
     case StyleAppearance::MozWindowButtonBox:
     case StyleAppearance::MozWindowButtonBoxMaximized:
@@ -1529,9 +1479,8 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame,
   }
 }
 
-static bool
-AssumeThemePartAndStateAreTransparent(int32_t aPart, int32_t aState)
-{
+static bool AssumeThemePartAndStateAreTransparent(int32_t aPart,
+                                                  int32_t aState) {
   if (!(IsWin8Point1OrLater() && nsUXThemeData::IsHighContrastOn()) &&
       aPart == MENU_POPUPITEM && aState == MBI_NORMAL) {
     return true;
@@ -1543,9 +1492,7 @@ AssumeThemePartAndStateAreTransparent(int32_t aPart, int32_t aState)
 
 
 
-static inline double
-GetThemeDpiScaleFactor(nsIFrame* aFrame)
-{
+static inline double GetThemeDpiScaleFactor(nsIFrame* aFrame) {
   if (WinUtils::IsPerMonitorDPIAware() ||
       nsIWidget::DefaultScaleOverride() > 0.0) {
     nsIWidget* rootWidget = aFrame->PresContext()->GetRootWidget();
@@ -1557,34 +1504,26 @@ GetThemeDpiScaleFactor(nsIFrame* aFrame)
   return 1.0;
 }
 
-static bool
-IsScrollbarWidthThin(ComputedStyle* aStyle)
-{
+static bool IsScrollbarWidthThin(ComputedStyle* aStyle) {
   auto scrollbarWidth = aStyle->StyleUIReset()->mScrollbarWidth;
   return scrollbarWidth == StyleScrollbarWidth::Thin;
 }
 
-static bool
-IsScrollbarWidthThin(nsIFrame* aFrame)
-{
+static bool IsScrollbarWidthThin(nsIFrame* aFrame) {
   ComputedStyle* style = nsLayoutUtils::StyleForScrollbar(aFrame);
   return IsScrollbarWidthThin(style);
 }
 
-static bool
-ShouldDrawCustomScrollbar(ComputedStyle* aStyle)
-{
+static bool ShouldDrawCustomScrollbar(ComputedStyle* aStyle) {
   return aStyle->StyleUI()->HasCustomScrollbars() ||
-    IsScrollbarWidthThin(aStyle);
+         IsScrollbarWidthThin(aStyle);
 }
 
 NS_IMETHODIMP
-nsNativeThemeWin::DrawWidgetBackground(gfxContext* aContext,
-                                       nsIFrame* aFrame,
+nsNativeThemeWin::DrawWidgetBackground(gfxContext* aContext, nsIFrame* aFrame,
                                        StyleAppearance aAppearance,
                                        const nsRect& aRect,
-                                       const nsRect& aDirtyRect)
-{
+                                       const nsRect& aDirtyRect) {
   if (aAppearance == StyleAppearance::MenulistButton &&
       StaticPrefs::layout_css_webkit_appearance_enabled()) {
     aAppearance = StyleAppearance::Menulist;
@@ -1593,15 +1532,15 @@ nsNativeThemeWin::DrawWidgetBackground(gfxContext* aContext,
   if (IsWidgetScrollbarPart(aAppearance)) {
     ComputedStyle* style = nsLayoutUtils::StyleForScrollbar(aFrame);
     if (ShouldDrawCustomScrollbar(style)) {
-      return DrawCustomScrollbarPart(aContext, aFrame, style,
-                                     aAppearance, aRect, aDirtyRect);
+      return DrawCustomScrollbarPart(aContext, aFrame, style, aAppearance,
+                                     aRect, aDirtyRect);
     }
   }
 
   HANDLE theme = GetTheme(aAppearance);
   if (!theme)
-    return ClassicDrawWidgetBackground(aContext, aFrame, aAppearance,
-                                       aRect, aDirtyRect); 
+    return ClassicDrawWidgetBackground(aContext, aFrame, aAppearance, aRect,
+                                       aDirtyRect);
 
   
   if (nsUXThemeData::CheckForCompositor()) {
@@ -1637,8 +1576,7 @@ nsNativeThemeWin::DrawWidgetBackground(gfxContext* aContext,
 
   int32_t part, state;
   nsresult rv = GetThemePartAndState(aFrame, aAppearance, part, state);
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
   if (AssumeThemePartAndStateAreTransparent(part, state)) {
     return NS_OK;
@@ -1656,18 +1594,19 @@ nsNativeThemeWin::DrawWidgetBackground(gfxContext* aContext,
   RECT widgetRect;
   RECT clipRect;
   gfxRect tr(aRect.X(), aRect.Y(), aRect.Width(), aRect.Height()),
-          dr(aDirtyRect.X(), aDirtyRect.Y(), aDirtyRect.Width(), aDirtyRect.Height());
+      dr(aDirtyRect.X(), aDirtyRect.Y(), aDirtyRect.Width(),
+         aDirtyRect.Height());
 
   tr.Scale(1.0 / (p2a * themeScale));
   dr.Scale(1.0 / (p2a * themeScale));
 
-  gfxWindowsNativeDrawing nativeDrawing(ctx, dr, GetWidgetNativeDrawingFlags(aAppearance));
+  gfxWindowsNativeDrawing nativeDrawing(
+      ctx, dr, GetWidgetNativeDrawingFlags(aAppearance));
 
 RENDER_AGAIN:
 
   HDC hdc = nativeDrawing.BeginNativeDrawing();
-  if (!hdc)
-    return NS_ERROR_FAILURE;
+  if (!hdc) return NS_ERROR_FAILURE;
 
   nativeDrawing.TransformToNativeRect(tr, widgetRect);
   nativeDrawing.TransformToNativeRect(dr, clipRect);
@@ -1705,26 +1644,26 @@ RENDER_AGAIN:
       
       
       int32_t edgeSize = 2;
-    
+
+      
       
       
       
       if (isLeft)
         
+        
         widgetRect.right += edgeSize;
       else
         
+        
         widgetRect.left -= edgeSize;
     }
-  }
-  else if (aAppearance == StyleAppearance::MozWindowButtonMinimize) {
+  } else if (aAppearance == StyleAppearance::MozWindowButtonMinimize) {
     OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_MINIMIZE);
-  }
-  else if (aAppearance == StyleAppearance::MozWindowButtonMaximize ||
-           aAppearance == StyleAppearance::MozWindowButtonRestore) {
+  } else if (aAppearance == StyleAppearance::MozWindowButtonMaximize ||
+             aAppearance == StyleAppearance::MozWindowButtonRestore) {
     OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_RESTORE);
-  }
-  else if (aAppearance == StyleAppearance::MozWindowButtonClose) {
+  } else if (aAppearance == StyleAppearance::MozWindowButtonClose) {
     OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_CLOSE);
   }
 
@@ -1735,7 +1674,8 @@ RENDER_AGAIN:
       aAppearance == StyleAppearance::ScaleHorizontal ||
       aAppearance == StyleAppearance::ScaleVertical) {
     RECT contentRect;
-    GetThemeBackgroundContentRect(theme, hdc, part, state, &widgetRect, &contentRect);
+    GetThemeBackgroundContentRect(theme, hdc, part, state, &widgetRect,
+                                  &contentRect);
 
     SIZE siz;
     GetThemePartSize(theme, hdc, part, state, &widgetRect, TS_TRUE, &siz);
@@ -1746,63 +1686,62 @@ RENDER_AGAIN:
         (aAppearance == StyleAppearance::Range && IsRangeHorizontal(aFrame))) {
       contentRect.top += (contentRect.bottom - contentRect.top - siz.cy) / 2;
       contentRect.bottom = contentRect.top + siz.cy;
-    }
-    else {
+    } else {
       if (!IsFrameRTL(aFrame)) {
         contentRect.left += (contentRect.right - contentRect.left - siz.cx) / 2;
         contentRect.right = contentRect.left + siz.cx;
       } else {
-        contentRect.right -= (contentRect.right - contentRect.left - siz.cx) / 2;
+        contentRect.right -=
+            (contentRect.right - contentRect.left - siz.cx) / 2;
         contentRect.left = contentRect.right - siz.cx;
       }
     }
 
     DrawThemeBackground(theme, hdc, part, state, &contentRect, &clipRect);
-  }
-  else if (aAppearance == StyleAppearance::Menucheckbox ||
-           aAppearance == StyleAppearance::Menuradio)
-  {
-      bool isChecked = false;
-      isChecked = CheckBooleanAttr(aFrame, nsGkAtoms::checked);
+  } else if (aAppearance == StyleAppearance::Menucheckbox ||
+             aAppearance == StyleAppearance::Menuradio) {
+    bool isChecked = false;
+    isChecked = CheckBooleanAttr(aFrame, nsGkAtoms::checked);
 
-      if (isChecked)
-      {
-        int bgState = MCB_NORMAL;
-        EventStates eventState = GetContentState(aFrame, aAppearance);
+    if (isChecked) {
+      int bgState = MCB_NORMAL;
+      EventStates eventState = GetContentState(aFrame, aAppearance);
 
-        
-        if (IsDisabled(aFrame, eventState))
-          bgState += 1;
+      
+      if (IsDisabled(aFrame, eventState)) bgState += 1;
 
-        SIZE checkboxBGSize(GetCheckboxBGSize(theme, hdc));
+      SIZE checkboxBGSize(GetCheckboxBGSize(theme, hdc));
 
-        RECT checkBGRect = widgetRect;
-        if (IsFrameRTL(aFrame)) {
-          checkBGRect.left = checkBGRect.right-checkboxBGSize.cx;
-        } else {
-          checkBGRect.right = checkBGRect.left+checkboxBGSize.cx;
-        }
-
-        
-        checkBGRect.top += (checkBGRect.bottom - checkBGRect.top)/2 - checkboxBGSize.cy/2;
-        checkBGRect.bottom = checkBGRect.top + checkboxBGSize.cy;
-
-        DrawThemeBackground(theme, hdc, MENU_POPUPCHECKBACKGROUND, bgState, &checkBGRect, &clipRect);
-
-        MARGINS checkMargins = GetCheckboxMargins(theme, hdc);
-        RECT checkRect = checkBGRect;
-        checkRect.left += checkMargins.cxLeftWidth;
-        checkRect.right -= checkMargins.cxRightWidth;
-        checkRect.top += checkMargins.cyTopHeight;
-        checkRect.bottom -= checkMargins.cyBottomHeight;
-        DrawThemeBackground(theme, hdc, MENU_POPUPCHECK, state, &checkRect, &clipRect);
+      RECT checkBGRect = widgetRect;
+      if (IsFrameRTL(aFrame)) {
+        checkBGRect.left = checkBGRect.right - checkboxBGSize.cx;
+      } else {
+        checkBGRect.right = checkBGRect.left + checkboxBGSize.cx;
       }
-  }
-  else if (aAppearance == StyleAppearance::Menupopup)
-  {
-    DrawThemeBackground(theme, hdc, MENU_POPUPBORDERS,  0, &widgetRect, &clipRect);
+
+      
+      checkBGRect.top +=
+          (checkBGRect.bottom - checkBGRect.top) / 2 - checkboxBGSize.cy / 2;
+      checkBGRect.bottom = checkBGRect.top + checkboxBGSize.cy;
+
+      DrawThemeBackground(theme, hdc, MENU_POPUPCHECKBACKGROUND, bgState,
+                          &checkBGRect, &clipRect);
+
+      MARGINS checkMargins = GetCheckboxMargins(theme, hdc);
+      RECT checkRect = checkBGRect;
+      checkRect.left += checkMargins.cxLeftWidth;
+      checkRect.right -= checkMargins.cxRightWidth;
+      checkRect.top += checkMargins.cyTopHeight;
+      checkRect.bottom -= checkMargins.cyBottomHeight;
+      DrawThemeBackground(theme, hdc, MENU_POPUPCHECK, state, &checkRect,
+                          &clipRect);
+    }
+  } else if (aAppearance == StyleAppearance::Menupopup) {
+    DrawThemeBackground(theme, hdc, MENU_POPUPBORDERS,  0,
+                        &widgetRect, &clipRect);
     SIZE borderSize;
-    GetThemePartSize(theme, hdc, MENU_POPUPBORDERS, 0, nullptr, TS_TRUE, &borderSize);
+    GetThemePartSize(theme, hdc, MENU_POPUPBORDERS, 0, nullptr, TS_TRUE,
+                     &borderSize);
 
     RECT bgRect = widgetRect;
     bgRect.top += borderSize.cy;
@@ -1810,7 +1749,8 @@ RENDER_AGAIN:
     bgRect.left += borderSize.cx;
     bgRect.right -= borderSize.cx;
 
-    DrawThemeBackground(theme, hdc, MENU_POPUPBACKGROUND,  0, &bgRect, &clipRect);
+    DrawThemeBackground(theme, hdc, MENU_POPUPBACKGROUND,  0,
+                        &bgRect, &clipRect);
 
     SIZE gutterSize(GetGutterSize(theme, hdc));
 
@@ -1819,18 +1759,16 @@ RENDER_AGAIN:
     gutterRect.bottom = bgRect.bottom;
     if (IsFrameRTL(aFrame)) {
       gutterRect.right = bgRect.right;
-      gutterRect.left = gutterRect.right-gutterSize.cx;
+      gutterRect.left = gutterRect.right - gutterSize.cx;
     } else {
       gutterRect.left = bgRect.left;
-      gutterRect.right = gutterRect.left+gutterSize.cx;
+      gutterRect.right = gutterRect.left + gutterSize.cx;
     }
 
     DrawThemeBGRTLAware(theme, hdc, MENU_POPUPGUTTER,  0,
                         &gutterRect, &clipRect, IsFrameRTL(aFrame));
-  }
-  else if (aAppearance == StyleAppearance::Menuseparator)
-  {
-    SIZE gutterSize(GetGutterSize(theme,hdc));
+  } else if (aAppearance == StyleAppearance::Menuseparator) {
+    SIZE gutterSize(GetGutterSize(theme, hdc));
 
     RECT sepRect = widgetRect;
     if (IsFrameRTL(aFrame))
@@ -1838,10 +1776,9 @@ RENDER_AGAIN:
     else
       sepRect.left += gutterSize.cx;
 
-    DrawThemeBackground(theme, hdc, MENU_POPUPSEPARATOR,  0, &sepRect, &clipRect);
-  }
-  else if (aAppearance == StyleAppearance::Menuarrow)
-  {
+    DrawThemeBackground(theme, hdc, MENU_POPUPSEPARATOR,  0,
+                        &sepRect, &clipRect);
+  } else if (aAppearance == StyleAppearance::Menuarrow) {
     
     
     
@@ -1878,15 +1815,13 @@ RENDER_AGAIN:
   
   else if (aAppearance == StyleAppearance::Resizer ||
            aAppearance == StyleAppearance::MenulistButton ||
-           aAppearance == StyleAppearance::MozMenulistButton)
-  {
-    DrawThemeBGRTLAware(theme, hdc, part, state,
-                        &widgetRect, &clipRect, IsFrameRTL(aFrame));
-  }
-  else if (aAppearance == StyleAppearance::MenulistTextfield ||
-           aAppearance == StyleAppearance::NumberInput ||
-           aAppearance == StyleAppearance::Textfield ||
-           aAppearance == StyleAppearance::Textarea) {
+           aAppearance == StyleAppearance::MozMenulistButton) {
+    DrawThemeBGRTLAware(theme, hdc, part, state, &widgetRect, &clipRect,
+                        IsFrameRTL(aFrame));
+  } else if (aAppearance == StyleAppearance::MenulistTextfield ||
+             aAppearance == StyleAppearance::NumberInput ||
+             aAppearance == StyleAppearance::Textfield ||
+             aAppearance == StyleAppearance::Textarea) {
     if (aAppearance == StyleAppearance::MenulistTextfield &&
         state != TFS_EDITBORDER_FOCUSED) {
       
@@ -1902,11 +1837,10 @@ RENDER_AGAIN:
 
     if (state == TFS_EDITBORDER_DISABLED) {
       InflateRect(&widgetRect, -1, -1);
-      ::FillRect(hdc, &widgetRect, reinterpret_cast<HBRUSH>(COLOR_BTNFACE+1));
+      ::FillRect(hdc, &widgetRect, reinterpret_cast<HBRUSH>(COLOR_BTNFACE + 1));
     }
-  }
-  else if (aAppearance == StyleAppearance::ProgressBar ||
-           aAppearance == StyleAppearance::ProgressbarVertical) {
+  } else if (aAppearance == StyleAppearance::ProgressBar ||
+             aAppearance == StyleAppearance::ProgressbarVertical) {
     
     
     
@@ -1914,29 +1848,23 @@ RENDER_AGAIN:
     color = GetPixel(hdc, widgetRect.left, widgetRect.top);
     DrawThemeBackground(theme, hdc, part, state, &widgetRect, &clipRect);
     SetPixel(hdc, widgetRect.left, widgetRect.top, color);
-    SetPixel(hdc, widgetRect.right-1, widgetRect.top, color);
-    SetPixel(hdc, widgetRect.right-1, widgetRect.bottom-1, color);
-    SetPixel(hdc, widgetRect.left, widgetRect.bottom-1, color);
-  }
-  else if (aAppearance == StyleAppearance::Progresschunk) {
+    SetPixel(hdc, widgetRect.right - 1, widgetRect.top, color);
+    SetPixel(hdc, widgetRect.right - 1, widgetRect.bottom - 1, color);
+    SetPixel(hdc, widgetRect.left, widgetRect.bottom - 1, color);
+  } else if (aAppearance == StyleAppearance::Progresschunk) {
     DrawThemedProgressMeter(aFrame, aAppearance, theme, hdc, part, state,
                             &widgetRect, &clipRect);
-  }
-  else if (aAppearance == StyleAppearance::FocusOutline) {
+  } else if (aAppearance == StyleAppearance::FocusOutline) {
     
-    LayoutDeviceIntMargin border =
-      GetWidgetBorder(aFrame->PresContext()->DeviceContext(),
-                      aFrame, aAppearance);
+    LayoutDeviceIntMargin border = GetWidgetBorder(
+        aFrame->PresContext()->DeviceContext(), aFrame, aAppearance);
     widgetRect.left -= border.left;
     widgetRect.right += border.right;
     widgetRect.top -= border.top;
     widgetRect.bottom += border.bottom;
 
-    DTBGOPTS opts = {
-      sizeof(DTBGOPTS),
-      DTBG_OMITCONTENT | DTBG_CLIPRECT,
-      clipRect
-    };
+    DTBGOPTS opts = {sizeof(DTBGOPTS), DTBG_OMITCONTENT | DTBG_CLIPRECT,
+                     clipRect};
     DrawThemeBackgroundEx(theme, hdc, part, state, &widgetRect, &opts);
   }
   
@@ -1950,67 +1878,67 @@ RENDER_AGAIN:
   if (aAppearance == StyleAppearance::Range ||
       aAppearance == StyleAppearance::ScaleHorizontal ||
       aAppearance == StyleAppearance::ScaleVertical) {
-      EventStates contentState = GetContentState(aFrame, aAppearance);
+    EventStates contentState = GetContentState(aFrame, aAppearance);
 
-      if (contentState.HasState(NS_EVENT_STATE_FOCUS)) {
-        POINT vpOrg;
-        HPEN hPen = nullptr;
+    if (contentState.HasState(NS_EVENT_STATE_FOCUS)) {
+      POINT vpOrg;
+      HPEN hPen = nullptr;
 
-        uint8_t id = SaveDC(hdc);
+      uint8_t id = SaveDC(hdc);
 
-        ::SelectClipRgn(hdc, nullptr);
-        ::GetViewportOrgEx(hdc, &vpOrg);
-        ::SetBrushOrgEx(hdc, vpOrg.x + widgetRect.left, vpOrg.y + widgetRect.top, nullptr);
-        ::SetTextColor(hdc, 0);
-        ::DrawFocusRect(hdc, &widgetRect);
-        ::RestoreDC(hdc, id);
-        if (hPen) {
-          ::DeleteObject(hPen);
-        }
+      ::SelectClipRgn(hdc, nullptr);
+      ::GetViewportOrgEx(hdc, &vpOrg);
+      ::SetBrushOrgEx(hdc, vpOrg.x + widgetRect.left, vpOrg.y + widgetRect.top,
+                      nullptr);
+      ::SetTextColor(hdc, 0);
+      ::DrawFocusRect(hdc, &widgetRect);
+      ::RestoreDC(hdc, id);
+      if (hPen) {
+        ::DeleteObject(hPen);
       }
-  }
-  else if (aAppearance == StyleAppearance::Toolbar && state == 0) {
+    }
+  } else if (aAppearance == StyleAppearance::Toolbar && state == 0) {
+    
     
     
     theme = GetTheme(StyleAppearance::Toolbox);
-    if (!theme)
-      return NS_ERROR_FAILURE;
+    if (!theme) return NS_ERROR_FAILURE;
 
     widgetRect.bottom = widgetRect.top + TB_SEPARATOR_HEIGHT;
-    DrawThemeEdge(theme, hdc, RP_BAND, 0, &widgetRect, EDGE_ETCHED, BF_TOP, nullptr);
-  }
-  else if (aAppearance == StyleAppearance::ScrollbarthumbHorizontal ||
-           aAppearance == StyleAppearance::ScrollbarthumbVertical)
-  {
+    DrawThemeEdge(theme, hdc, RP_BAND, 0, &widgetRect, EDGE_ETCHED, BF_TOP,
+                  nullptr);
+  } else if (aAppearance == StyleAppearance::ScrollbarthumbHorizontal ||
+             aAppearance == StyleAppearance::ScrollbarthumbVertical) {
     
 
     SIZE gripSize;
     MARGINS thumbMgns;
-    int gripPart = (aAppearance == StyleAppearance::ScrollbarthumbHorizontal) ?
-                   SP_GRIPPERHOR : SP_GRIPPERVERT;
+    int gripPart = (aAppearance == StyleAppearance::ScrollbarthumbHorizontal)
+                       ? SP_GRIPPERHOR
+                       : SP_GRIPPERVERT;
 
-    if (GetThemePartSize(theme, hdc, gripPart, state, nullptr, TS_TRUE, &gripSize) == S_OK &&
-        GetThemeMargins(theme, hdc, part, state, TMT_CONTENTMARGINS, nullptr, &thumbMgns) == S_OK &&
-        gripSize.cx + thumbMgns.cxLeftWidth + thumbMgns.cxRightWidth <= widgetRect.right - widgetRect.left &&
-        gripSize.cy + thumbMgns.cyTopHeight + thumbMgns.cyBottomHeight <= widgetRect.bottom - widgetRect.top)
-    {
+    if (GetThemePartSize(theme, hdc, gripPart, state, nullptr, TS_TRUE,
+                         &gripSize) == S_OK &&
+        GetThemeMargins(theme, hdc, part, state, TMT_CONTENTMARGINS, nullptr,
+                        &thumbMgns) == S_OK &&
+        gripSize.cx + thumbMgns.cxLeftWidth + thumbMgns.cxRightWidth <=
+            widgetRect.right - widgetRect.left &&
+        gripSize.cy + thumbMgns.cyTopHeight + thumbMgns.cyBottomHeight <=
+            widgetRect.bottom - widgetRect.top) {
       DrawThemeBackground(theme, hdc, gripPart, state, &widgetRect, &clipRect);
     }
   }
 
   nativeDrawing.EndNativeDrawing();
 
-  if (nativeDrawing.ShouldRenderAgain())
-    goto RENDER_AGAIN;
+  if (nativeDrawing.ShouldRenderAgain()) goto RENDER_AGAIN;
 
   nativeDrawing.PaintToContext();
 
   return NS_OK;
 }
 
-static void
-ScaleForFrameDPI(LayoutDeviceIntMargin* aMargin, nsIFrame* aFrame)
-{
+static void ScaleForFrameDPI(LayoutDeviceIntMargin* aMargin, nsIFrame* aFrame) {
   double themeScale = GetThemeDpiScaleFactor(aFrame);
   if (themeScale != 1.0) {
     aMargin->top = NSToIntRound(aMargin->top * themeScale);
@@ -2020,9 +1948,7 @@ ScaleForFrameDPI(LayoutDeviceIntMargin* aMargin, nsIFrame* aFrame)
   }
 }
 
-static void
-ScaleForFrameDPI(LayoutDeviceIntSize* aSize, nsIFrame* aFrame)
-{
+static void ScaleForFrameDPI(LayoutDeviceIntSize* aSize, nsIFrame* aFrame) {
   double themeScale = GetThemeDpiScaleFactor(aFrame);
   if (themeScale != 1.0) {
     aSize->width = NSToIntRound(aSize->width * themeScale);
@@ -2030,11 +1956,8 @@ ScaleForFrameDPI(LayoutDeviceIntSize* aSize, nsIFrame* aFrame)
   }
 }
 
-LayoutDeviceIntMargin
-nsNativeThemeWin::GetWidgetBorder(nsDeviceContext* aContext, 
-                                  nsIFrame* aFrame,
-                                  StyleAppearance aAppearance)
-{
+LayoutDeviceIntMargin nsNativeThemeWin::GetWidgetBorder(
+    nsDeviceContext* aContext, nsIFrame* aFrame, StyleAppearance aAppearance) {
   LayoutDeviceIntMargin result;
   mozilla::Maybe<nsUXThemeClass> themeClass = GetThemeClass(aAppearance);
   HTHEME theme = NULL;
@@ -2048,11 +1971,11 @@ nsNativeThemeWin::GetWidgetBorder(nsDeviceContext* aContext,
   }
 
   if (!WidgetIsContainer(aAppearance) ||
-      aAppearance == StyleAppearance::Toolbox || 
+      aAppearance == StyleAppearance::Toolbox ||
       aAppearance == StyleAppearance::MozWinMediaToolbox ||
       aAppearance == StyleAppearance::MozWinCommunicationsToolbox ||
       aAppearance == StyleAppearance::MozWinBrowsertabbarToolbox ||
-      aAppearance == StyleAppearance::Statusbar || 
+      aAppearance == StyleAppearance::Statusbar ||
       aAppearance == StyleAppearance::Resizer ||
       aAppearance == StyleAppearance::Tabpanel ||
       aAppearance == StyleAppearance::ScrollbarHorizontal ||
@@ -2069,22 +1992,20 @@ nsNativeThemeWin::GetWidgetBorder(nsDeviceContext* aContext,
       aAppearance == StyleAppearance::MozWindowTitlebarMaximized ||
       aAppearance == StyleAppearance::MozWinGlass ||
       aAppearance == StyleAppearance::MozWinBorderlessGlass)
-    return result; 
+    return result;  
 
   int32_t part, state;
   nsresult rv = GetThemePartAndState(aFrame, aAppearance, part, state);
-  if (NS_FAILED(rv))
-    return result;
+  if (NS_FAILED(rv)) return result;
 
   if (aAppearance == StyleAppearance::Toolbar) {
     
-    if (state == 0)
-      result.top = TB_SEPARATOR_HEIGHT;
+    if (state == 0) result.top = TB_SEPARATOR_HEIGHT;
     return result;
   }
 
-  result = GetCachedWidgetBorder(theme, themeClass.value(), aAppearance,
-                                 part, state);
+  result = GetCachedWidgetBorder(theme, themeClass.value(), aAppearance, part,
+                                 state);
 
   
   if (aAppearance == StyleAppearance::Tab) {
@@ -2115,12 +2036,10 @@ nsNativeThemeWin::GetWidgetBorder(nsDeviceContext* aContext,
   return result;
 }
 
-bool
-nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext, 
-                                   nsIFrame* aFrame,
-                                   StyleAppearance aAppearance,
-                                   LayoutDeviceIntMargin* aResult)
-{
+bool nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
+                                        nsIFrame* aFrame,
+                                        StyleAppearance aAppearance,
+                                        LayoutDeviceIntMargin* aResult) {
   if (aAppearance == StyleAppearance::MenulistButton &&
       StaticPrefs::layout_css_webkit_appearance_enabled()) {
     aAppearance = StyleAppearance::Menulist;
@@ -2145,8 +2064,7 @@ nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
     aResult->SizeTo(0, 0, 0, 0);
 
     
-    if (nsUXThemeData::CheckForCompositor())
-      return true;
+    if (nsUXThemeData::CheckForCompositor()) return true;
 
     
     if (aAppearance == StyleAppearance::MozWindowButtonBox) {
@@ -2170,11 +2088,11 @@ nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
       }
       if (rootWidget) {
         double dpi = rootWidget->GetDPI();
-        aResult->top = WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi)
-                     + WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
+        aResult->top = WinUtils::GetSystemMetricsForDpi(SM_CXFRAME, dpi) +
+                       WinUtils::GetSystemMetricsForDpi(SM_CXPADDEDBORDER, dpi);
       } else {
-        aResult->top = GetSystemMetrics(SM_CXFRAME)
-                     + GetSystemMetrics(SM_CXPADDEDBORDER);
+        aResult->top =
+            GetSystemMetrics(SM_CXFRAME) + GetSystemMetrics(SM_CXPADDEDBORDER);
       }
     }
     return ok;
@@ -2187,10 +2105,10 @@ nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
     return ok;
   }
 
-  if (aAppearance == StyleAppearance::Menupopup)
-  {
+  if (aAppearance == StyleAppearance::Menupopup) {
     SIZE popupSize;
-    GetThemePartSize(theme, nullptr, MENU_POPUPBORDERS,  0, nullptr, TS_TRUE, &popupSize);
+    GetThemePartSize(theme, nullptr, MENU_POPUPBORDERS,  0, nullptr,
+                     TS_TRUE, &popupSize);
     aResult->top = aResult->bottom = popupSize.cy;
     aResult->left = aResult->right = popupSize.cx;
     ScaleForFrameDPI(aResult, aFrame);
@@ -2201,11 +2119,11 @@ nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
       aAppearance == StyleAppearance::NumberInput ||
       aAppearance == StyleAppearance::Textfield ||
       aAppearance == StyleAppearance::Textarea ||
-      aAppearance == StyleAppearance::Menulist)
-  {
+      aAppearance == StyleAppearance::Menulist) {
     
     
-    if (aFrame->PresContext()->HasAuthorSpecifiedRules(aFrame, NS_AUTHOR_SPECIFIED_PADDING))
+    if (aFrame->PresContext()->HasAuthorSpecifiedRules(
+            aFrame, NS_AUTHOR_SPECIFIED_PADDING))
       return false;
   }
 
@@ -2237,44 +2155,38 @@ nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
 
   int32_t right, left, top, bottom;
   right = left = top = bottom = 0;
-  switch (aAppearance)
-  {
+  switch (aAppearance) {
     case StyleAppearance::Menuimage:
-        right = 8;
-        left = 3;
-        break;
+      right = 8;
+      left = 3;
+      break;
     case StyleAppearance::Menucheckbox:
     case StyleAppearance::Menuradio:
-        right = 8;
-        left = 0;
-        break;
+      right = 8;
+      left = 0;
+      break;
     case StyleAppearance::Menuitemtext:
-        
-        
-        {
-          SIZE size(GetGutterSize(theme, nullptr));
-          left = size.cx + 2;
-        }
-        break;
-    case StyleAppearance::Menuseparator:
-        {
-          SIZE size(GetGutterSize(theme, nullptr));
-          left = size.cx + 5;
-          top = 10;
-          bottom = 7;
-        }
-        break;
+      
+      
+      {
+        SIZE size(GetGutterSize(theme, nullptr));
+        left = size.cx + 2;
+      }
+      break;
+    case StyleAppearance::Menuseparator: {
+      SIZE size(GetGutterSize(theme, nullptr));
+      left = size.cx + 5;
+      top = 10;
+      bottom = 7;
+    } break;
     default:
-        return false;
+      return false;
   }
 
-  if (IsFrameRTL(aFrame))
-  {
+  if (IsFrameRTL(aFrame)) {
     aResult->right = left;
     aResult->left = right;
-  }
-  else
-  {
+  } else {
     aResult->right = right;
     aResult->left = left;
   }
@@ -2283,13 +2195,12 @@ nsNativeThemeWin::GetWidgetPadding(nsDeviceContext* aContext,
   return ok;
 }
 
-bool
-nsNativeThemeWin::GetWidgetOverflow(nsDeviceContext* aContext, 
-                                    nsIFrame* aFrame,
-                                    StyleAppearance aAppearance,
-                                    nsRect* aOverflowRect)
-{
+bool nsNativeThemeWin::GetWidgetOverflow(nsDeviceContext* aContext,
+                                         nsIFrame* aFrame,
+                                         StyleAppearance aAppearance,
+                                         nsRect* aOverflowRect) {
   
+
 
 
 
@@ -2319,7 +2230,7 @@ nsNativeThemeWin::GetWidgetOverflow(nsDeviceContext* aContext,
 
   if (aAppearance == StyleAppearance::FocusOutline) {
     LayoutDeviceIntMargin border =
-      GetWidgetBorder(aContext, aFrame, aAppearance);
+        GetWidgetBorder(aContext, aFrame, aAppearance);
     int32_t p2a = aContext->AppUnitsPerDevPixel();
     nsMargin m(NSIntPixelsToAppUnits(border.top, p2a),
                NSIntPixelsToAppUnits(border.right, p2a),
@@ -2333,10 +2244,11 @@ nsNativeThemeWin::GetWidgetOverflow(nsDeviceContext* aContext,
 }
 
 NS_IMETHODIMP
-nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aFrame,
+nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext,
+                                       nsIFrame* aFrame,
                                        StyleAppearance aAppearance,
-                                       LayoutDeviceIntSize* aResult, bool* aIsOverridable)
-{
+                                       LayoutDeviceIntSize* aResult,
+                                       bool* aIsOverridable) {
   if (aAppearance == StyleAppearance::MenulistButton &&
       StaticPrefs::layout_css_webkit_appearance_enabled()) {
     aAppearance = StyleAppearance::Menulist;
@@ -2377,20 +2289,19 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
     case StyleAppearance::Menuitemtext:
     case StyleAppearance::MozWinGlass:
     case StyleAppearance::MozWinBorderlessGlass:
-      return NS_OK; 
+      return NS_OK;  
     default:
       break;
   }
 
-  if (aAppearance == StyleAppearance::Menuitem &&
-      IsTopLevelMenu(aFrame)) {
-    return NS_OK; 
+  if (aAppearance == StyleAppearance::Menuitem && IsTopLevelMenu(aFrame)) {
+    return NS_OK;  
   }
 
   
   
   
-  THEMESIZE sizeReq = TS_TRUE; 
+  THEMESIZE sizeReq = TS_TRUE;  
   switch (aAppearance) {
     case StyleAppearance::ScrollbarthumbVertical:
     case StyleAppearance::ScrollbarthumbHorizontal:
@@ -2410,8 +2321,7 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
     case StyleAppearance::Menuitem:
     case StyleAppearance::Checkmenuitem:
     case StyleAppearance::Radiomenuitem:
-      if(!IsTopLevelMenu(aFrame))
-      {
+      if (!IsTopLevelMenu(aFrame)) {
         SIZE gutterSize(GetCachedGutterSize(theme));
         aResult->width = gutterSize.cx;
         aResult->height = gutterSize.cy;
@@ -2422,15 +2332,14 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
 
     case StyleAppearance::Menuimage:
     case StyleAppearance::Menucheckbox:
-    case StyleAppearance::Menuradio:
-      {
-        SIZE boxSize(GetCachedGutterSize(theme));
-        aResult->width = boxSize.cx+2;
-        aResult->height = boxSize.cy;
-        *aIsOverridable = false;
-        ScaleForFrameDPI(aResult, aFrame);
-        return rv;
-      }
+    case StyleAppearance::Menuradio: {
+      SIZE boxSize(GetCachedGutterSize(theme));
+      aResult->width = boxSize.cx + 2;
+      aResult->height = boxSize.cy;
+      *aIsOverridable = false;
+      ScaleForFrameDPI(aResult, aFrame);
+      return rv;
+    }
 
     case StyleAppearance::Menuitemtext:
       return NS_OK;
@@ -2440,7 +2349,7 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
       
       
       
-      sizeReq = TS_MIN; 
+      sizeReq = TS_MIN;
       break;
 
     case StyleAppearance::Resizer:
@@ -2449,8 +2358,7 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
 
     case StyleAppearance::RangeThumb:
     case StyleAppearance::ScalethumbHorizontal:
-    case StyleAppearance::ScalethumbVertical:
-    {
+    case StyleAppearance::ScalethumbVertical: {
       *aIsOverridable = false;
       
       
@@ -2468,10 +2376,9 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
     }
 
     case StyleAppearance::Scrollbar:
-    case StyleAppearance::Scrollcorner:
-    {
-      if (nsLookAndFeel::GetInt(
-            nsLookAndFeel::eIntID_UseOverlayScrollbars) != 0) {
+    case StyleAppearance::Scrollcorner: {
+      if (nsLookAndFeel::GetInt(nsLookAndFeel::eIntID_UseOverlayScrollbars) !=
+          0) {
         aResult->SizeTo(::GetSystemMetrics(SM_CXHSCROLL),
                         ::GetSystemMetrics(SM_CYVSCROLL));
         ScaleForFrameDPI(aResult, aFrame);
@@ -2502,22 +2409,28 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
       
       
       
-      aResult->width = nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_RESTORE).cx;
-      aResult->height = nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_RESTORE).cy;
+      aResult->width =
+          nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_RESTORE).cx;
+      aResult->height =
+          nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_RESTORE).cy;
       AddPaddingRect(aResult, CAPTIONBUTTON_RESTORE);
       *aIsOverridable = false;
       return rv;
 
     case StyleAppearance::MozWindowButtonMinimize:
-      aResult->width = nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_MINIMIZE).cx;
-      aResult->height = nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_MINIMIZE).cy;
+      aResult->width =
+          nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_MINIMIZE).cx;
+      aResult->height =
+          nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_MINIMIZE).cy;
       AddPaddingRect(aResult, CAPTIONBUTTON_MINIMIZE);
       *aIsOverridable = false;
       return rv;
 
     case StyleAppearance::MozWindowButtonClose:
-      aResult->width = nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_CLOSE).cx;
-      aResult->height = nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_CLOSE).cy;
+      aResult->width =
+          nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_CLOSE).cx;
+      aResult->height =
+          nsUXThemeData::GetCommandButtonMetrics(CMDBUTTONIDX_CLOSE).cy;
       AddPaddingRect(aResult, CAPTIONBUTTON_CLOSE);
       *aIsOverridable = false;
       return rv;
@@ -2543,9 +2456,9 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
     case StyleAppearance::MozWindowButtonBoxMaximized:
       if (nsUXThemeData::CheckForCompositor()) {
         aResult->width = nsUXThemeData::GetCommandButtonBoxMetrics().cx;
-        aResult->height = nsUXThemeData::GetCommandButtonBoxMetrics().cy
-                          - GetSystemMetrics(SM_CYFRAME)
-                          - GetSystemMetrics(SM_CXPADDEDBORDER);
+        aResult->height = nsUXThemeData::GetCommandButtonBoxMetrics().cy -
+                          GetSystemMetrics(SM_CYFRAME) -
+                          GetSystemMetrics(SM_CXPADDEDBORDER);
         if (aAppearance == StyleAppearance::MozWindowButtonBoxMaximized) {
           aResult->width += 1;
           aResult->height -= 2;
@@ -2569,12 +2482,10 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
 
   int32_t part, state;
   rv = GetThemePartAndState(aFrame, aAppearance, part, state);
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
   rv = GetCachedMinimumWidgetSize(aFrame, theme, themeClass.value(),
-                                  aAppearance, part,
-                                  state, sizeReq, aResult);
+                                  aAppearance, part, state, sizeReq, aResult);
 
   ScaleForFrameDPI(aResult, aFrame);
   return rv;
@@ -2582,10 +2493,9 @@ nsNativeThemeWin::GetMinimumWidgetSize(nsPresContext* aPresContext, nsIFrame* aF
 
 NS_IMETHODIMP
 nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame,
-                                     StyleAppearance aAppearance, 
+                                     StyleAppearance aAppearance,
                                      nsAtom* aAttribute, bool* aShouldRepaint,
-                                     const nsAttrValue* aOldValue)
-{
+                                     const nsAttrValue* aOldValue) {
   if (aAppearance == StyleAppearance::MenulistButton &&
       StaticPrefs::layout_css_webkit_appearance_enabled()) {
     aAppearance = StyleAppearance::Menulist;
@@ -2634,8 +2544,7 @@ nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame,
   if ((aAppearance == StyleAppearance::Menulist ||
        aAppearance == StyleAppearance::MenulistButton ||
        aAppearance == StyleAppearance::MozMenulistButton) &&
-      IsHTMLContent(aFrame))
-  {
+      IsHTMLContent(aFrame)) {
     *aShouldRepaint = true;
     return NS_OK;
   }
@@ -2646,19 +2555,15 @@ nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame,
   if (!aAttribute) {
     
     *aShouldRepaint = true;
-  }
-  else {
+  } else {
     
     
     *aShouldRepaint = false;
-    if (aAttribute == nsGkAtoms::disabled ||
-        aAttribute == nsGkAtoms::checked ||
+    if (aAttribute == nsGkAtoms::disabled || aAttribute == nsGkAtoms::checked ||
         aAttribute == nsGkAtoms::selected ||
         aAttribute == nsGkAtoms::visuallyselected ||
-        aAttribute == nsGkAtoms::readonly ||
-        aAttribute == nsGkAtoms::open ||
-        aAttribute == nsGkAtoms::menuactive ||
-        aAttribute == nsGkAtoms::focused)
+        aAttribute == nsGkAtoms::readonly || aAttribute == nsGkAtoms::open ||
+        aAttribute == nsGkAtoms::menuactive || aAttribute == nsGkAtoms::focused)
       *aShouldRepaint = true;
   }
 
@@ -2666,8 +2571,7 @@ nsNativeThemeWin::WidgetStateChanged(nsIFrame* aFrame,
 }
 
 NS_IMETHODIMP
-nsNativeThemeWin::ThemeChanged()
-{
+nsNativeThemeWin::ThemeChanged() {
   nsUXThemeData::Invalidate();
   memset(mBorderCacheValid, 0, sizeof(mBorderCacheValid));
   memset(mMinimumWidgetSizeCacheValid, 0, sizeof(mMinimumWidgetSizeCacheValid));
@@ -2675,11 +2579,9 @@ nsNativeThemeWin::ThemeChanged()
   return NS_OK;
 }
 
-bool 
-nsNativeThemeWin::ThemeSupportsWidget(nsPresContext* aPresContext,
-                                      nsIFrame* aFrame,
-                                      StyleAppearance aAppearance)
-{
+bool nsNativeThemeWin::ThemeSupportsWidget(nsPresContext* aPresContext,
+                                           nsIFrame* aFrame,
+                                           StyleAppearance aAppearance) {
   
   
 
@@ -2695,8 +2597,7 @@ nsNativeThemeWin::ThemeSupportsWidget(nsPresContext* aPresContext,
   else
     theme = GetTheme(aAppearance);
 
-  if (theme && aAppearance == StyleAppearance::Resizer)
-    return true;
+  if (theme && aAppearance == StyleAppearance::Resizer) return true;
 
   if ((theme) || (!theme && ClassicThemeSupportsWidget(aFrame, aAppearance)))
     
@@ -2705,38 +2606,29 @@ nsNativeThemeWin::ThemeSupportsWidget(nsPresContext* aPresContext,
   return false;
 }
 
-bool 
-nsNativeThemeWin::WidgetIsContainer(StyleAppearance aAppearance)
-{
+bool nsNativeThemeWin::WidgetIsContainer(StyleAppearance aAppearance) {
   if (aAppearance == StyleAppearance::MenulistButton &&
       StaticPrefs::layout_css_webkit_appearance_enabled()) {
     aAppearance = StyleAppearance::Menulist;
   }
 
   
-  if (aAppearance == StyleAppearance::MenulistButton || 
-      aAppearance == StyleAppearance::MozMenulistButton || 
+  if (aAppearance == StyleAppearance::MenulistButton ||
+      aAppearance == StyleAppearance::MozMenulistButton ||
       aAppearance == StyleAppearance::Radio ||
       aAppearance == StyleAppearance::Checkbox)
     return false;
   return true;
 }
 
-bool
-nsNativeThemeWin::ThemeDrawsFocusForWidget(StyleAppearance aAppearance)
-{
+bool nsNativeThemeWin::ThemeDrawsFocusForWidget(StyleAppearance aAppearance) {
   return false;
 }
 
-bool
-nsNativeThemeWin::ThemeNeedsComboboxDropmarker()
-{
-  return true;
-}
+bool nsNativeThemeWin::ThemeNeedsComboboxDropmarker() { return true; }
 
-bool
-nsNativeThemeWin::WidgetAppearanceDependsOnWindowFocus(StyleAppearance aAppearance)
-{
+bool nsNativeThemeWin::WidgetAppearanceDependsOnWindowFocus(
+    StyleAppearance aAppearance) {
   switch (aAppearance) {
     case StyleAppearance::MozWindowTitlebar:
     case StyleAppearance::MozWindowTitlebarMaximized:
@@ -2753,10 +2645,8 @@ nsNativeThemeWin::WidgetAppearanceDependsOnWindowFocus(StyleAppearance aAppearan
   }
 }
 
-nsITheme::ThemeGeometryType
-nsNativeThemeWin::ThemeGeometryTypeForWidget(nsIFrame* aFrame,
-                                             StyleAppearance aAppearance)
-{
+nsITheme::ThemeGeometryType nsNativeThemeWin::ThemeGeometryTypeForWidget(
+    nsIFrame* aFrame, StyleAppearance aAppearance) {
   switch (aAppearance) {
     case StyleAppearance::MozWindowButtonBox:
     case StyleAppearance::MozWindowButtonBoxMaximized:
@@ -2766,10 +2656,8 @@ nsNativeThemeWin::ThemeGeometryTypeForWidget(nsIFrame* aFrame,
   }
 }
 
-nsITheme::Transparency
-nsNativeThemeWin::GetWidgetTransparency(nsIFrame* aFrame,
-                                        StyleAppearance aAppearance)
-{
+nsITheme::Transparency nsNativeThemeWin::GetWidgetTransparency(
+    nsIFrame* aFrame, StyleAppearance aAppearance) {
   if (IsWidgetScrollbarPart(aAppearance)) {
     ComputedStyle* style = nsLayoutUtils::StyleForScrollbar(aFrame);
     if (ShouldDrawCustomScrollbar(style)) {
@@ -2794,26 +2682,26 @@ nsNativeThemeWin::GetWidgetTransparency(nsIFrame* aFrame,
   }
 
   switch (aAppearance) {
-  case StyleAppearance::ScrollbarSmall:
-  case StyleAppearance::Scrollbar:
-  case StyleAppearance::Scrollcorner:
-  case StyleAppearance::Statusbar:
-    
-    
-    
-    
-    return eOpaque;
-  case StyleAppearance::MozWinGlass:
-  case StyleAppearance::MozWinBorderlessGlass:
-  case StyleAppearance::ScaleHorizontal:
-  case StyleAppearance::ScaleVertical:
-  case StyleAppearance::ProgressBar:
-  case StyleAppearance::ProgressbarVertical:
-  case StyleAppearance::Progresschunk:
-  case StyleAppearance::Range:
-    return eTransparent;
-  default:
-    break;
+    case StyleAppearance::ScrollbarSmall:
+    case StyleAppearance::Scrollbar:
+    case StyleAppearance::Scrollcorner:
+    case StyleAppearance::Statusbar:
+      
+      
+      
+      
+      return eOpaque;
+    case StyleAppearance::MozWinGlass:
+    case StyleAppearance::MozWinBorderlessGlass:
+    case StyleAppearance::ScaleHorizontal:
+    case StyleAppearance::ScaleVertical:
+    case StyleAppearance::ProgressBar:
+    case StyleAppearance::ProgressbarVertical:
+    case StyleAppearance::Progresschunk:
+    case StyleAppearance::Range:
+      return eTransparent;
+    default:
+      break;
   }
 
   HANDLE theme = GetTheme(aAppearance);
@@ -2845,13 +2733,10 @@ nsNativeThemeWin::GetWidgetTransparency(nsIFrame* aFrame,
 
 
 
-bool
-nsNativeThemeWin::ClassicThemeSupportsWidget(nsIFrame* aFrame,
-                                             StyleAppearance aAppearance)
-{
+bool nsNativeThemeWin::ClassicThemeSupportsWidget(nsIFrame* aFrame,
+                                                  StyleAppearance aAppearance) {
   switch (aAppearance) {
-    case StyleAppearance::Resizer:
-    {
+    case StyleAppearance::Resizer: {
       
       
       
@@ -2861,8 +2746,7 @@ nsNativeThemeWin::ClassicThemeSupportsWidget(nsIFrame* aFrame,
     case StyleAppearance::Menubar:
     case StyleAppearance::Menupopup:
       
-      if (!nsUXThemeData::sFlatMenus)
-        return false;
+      if (!nsUXThemeData::sFlatMenus) return false;
     case StyleAppearance::Button:
     case StyleAppearance::NumberInput:
     case StyleAppearance::Textfield:
@@ -2932,11 +2816,8 @@ nsNativeThemeWin::ClassicThemeSupportsWidget(nsIFrame* aFrame,
   }
 }
 
-LayoutDeviceIntMargin
-nsNativeThemeWin::ClassicGetWidgetBorder(nsDeviceContext* aContext, 
-                                         nsIFrame* aFrame,
-                                         StyleAppearance aAppearance)
-{
+LayoutDeviceIntMargin nsNativeThemeWin::ClassicGetWidgetBorder(
+    nsDeviceContext* aContext, nsIFrame* aFrame, StyleAppearance aAppearance) {
   if (aAppearance == StyleAppearance::MenulistButton &&
       StaticPrefs::layout_css_webkit_appearance_enabled()) {
     aAppearance = StyleAppearance::Menulist;
@@ -2991,12 +2872,10 @@ nsNativeThemeWin::ClassicGetWidgetBorder(nsDeviceContext* aContext,
   return result;
 }
 
-bool
-nsNativeThemeWin::ClassicGetWidgetPadding(nsDeviceContext* aContext,
-                                   nsIFrame* aFrame,
-                                   StyleAppearance aAppearance,
-                                   LayoutDeviceIntMargin* aResult)
-{
+bool nsNativeThemeWin::ClassicGetWidgetPadding(nsDeviceContext* aContext,
+                                               nsIFrame* aFrame,
+                                               StyleAppearance aAppearance,
+                                               LayoutDeviceIntMargin* aResult) {
   switch (aAppearance) {
     case StyleAppearance::Menuitem:
     case StyleAppearance::Checkmenuitem:
@@ -3004,21 +2883,20 @@ nsNativeThemeWin::ClassicGetWidgetPadding(nsDeviceContext* aContext,
       int32_t part, state;
       bool focused;
 
-      if (NS_FAILED(ClassicGetThemePartAndState(aFrame, aAppearance,
-                                                part, state, focused)))
+      if (NS_FAILED(ClassicGetThemePartAndState(aFrame, aAppearance, part,
+                                                state, focused)))
         return false;
 
-      if (part == 1) { 
+      if (part == 1) {  
         if (nsUXThemeData::sFlatMenus || !(state & DFCS_PUSHED)) {
-          (*aResult).top = (*aResult).bottom = (*aResult).left = (*aResult).right = 2;
-        }
-        else {
+          (*aResult).top = (*aResult).bottom = (*aResult).left =
+              (*aResult).right = 2;
+        } else {
           
           (*aResult).top = (*aResult).left = 3;
           (*aResult).bottom = (*aResult).right = 1;
         }
-      }
-      else {
+      } else {
         (*aResult).top = 0;
         (*aResult).bottom = (*aResult).left = (*aResult).right = 2;
       }
@@ -3026,19 +2904,17 @@ nsNativeThemeWin::ClassicGetWidgetPadding(nsDeviceContext* aContext,
     }
     case StyleAppearance::ProgressBar:
     case StyleAppearance::ProgressbarVertical:
-      (*aResult).top = (*aResult).left = (*aResult).bottom = (*aResult).right = 1;
+      (*aResult).top = (*aResult).left = (*aResult).bottom = (*aResult).right =
+          1;
       return true;
     default:
       return false;
   }
 }
 
-nsresult
-nsNativeThemeWin::ClassicGetMinimumWidgetSize(nsIFrame* aFrame,
-                                              StyleAppearance aAppearance,
-                                              LayoutDeviceIntSize* aResult,
-                                              bool* aIsOverridable)
-{
+nsresult nsNativeThemeWin::ClassicGetMinimumWidgetSize(
+    nsIFrame* aFrame, StyleAppearance aAppearance, LayoutDeviceIntSize* aResult,
+    bool* aIsOverridable) {
   if (aAppearance == StyleAppearance::MenulistButton &&
       StaticPrefs::layout_css_webkit_appearance_enabled()) {
     aAppearance = StyleAppearance::Menulist;
@@ -3061,7 +2937,7 @@ nsNativeThemeWin::ClassicGetMinimumWidgetSize(nsIFrame* aFrame,
     case StyleAppearance::SpinnerUpbutton:
     case StyleAppearance::SpinnerDownbutton:
       (*aResult).width = ::GetSystemMetrics(SM_CXVSCROLL);
-      (*aResult).height = 8; 
+      (*aResult).height = 8;  
       *aIsOverridable = false;
       break;
     case StyleAppearance::ScrollbarbuttonUp:
@@ -3087,10 +2963,9 @@ nsNativeThemeWin::ClassicGetMinimumWidgetSize(nsIFrame* aFrame,
       
       
 
-        
+      
       break;
-    case StyleAppearance::ScrollbarNonDisappearing:
-    {
+    case StyleAppearance::ScrollbarNonDisappearing: {
       aResult->SizeTo(::GetSystemMetrics(SM_CXHSCROLL),
                       ::GetSystemMetrics(SM_CYVSCROLL));
       break;
@@ -3128,9 +3003,9 @@ nsNativeThemeWin::ClassicGetMinimumWidgetSize(nsIFrame* aFrame,
     case StyleAppearance::NumberInput:
     case StyleAppearance::Textfield:
     case StyleAppearance::Textarea:
-    case StyleAppearance::MenulistTextfield:      
+    case StyleAppearance::MenulistTextfield:
     case StyleAppearance::Statusbar:
-    case StyleAppearance::Statusbarpanel:      
+    case StyleAppearance::Statusbarpanel:
     case StyleAppearance::Resizerpanel:
     case StyleAppearance::Progresschunk:
     case StyleAppearance::Tooltip:
@@ -3141,51 +3016,51 @@ nsNativeThemeWin::ClassicGetMinimumWidgetSize(nsIFrame* aFrame,
     case StyleAppearance::Tabpanels:
       
       break;
-    case StyleAppearance::Resizer: {     
+    case StyleAppearance::Resizer: {
       NONCLIENTMETRICS nc;
       nc.cbSize = sizeof(nc);
       if (SystemParametersInfo(SPI_GETNONCLIENTMETRICS, sizeof(nc), &nc, 0))
-        (*aResult).width = (*aResult).height = abs(nc.lfStatusFont.lfHeight) + 4;
+        (*aResult).width = (*aResult).height =
+            abs(nc.lfStatusFont.lfHeight) + 4;
       else
         (*aResult).width = (*aResult).height = 15;
       *aIsOverridable = false;
       break;
-    case StyleAppearance::ScrollbarthumbVertical:
-      (*aResult).width = ::GetSystemMetrics(SM_CXVSCROLL);
-      (*aResult).height = ::GetSystemMetrics(SM_CYVTHUMB);
-      
-      
-      if (!GetTheme(aAppearance)) {
-        (*aResult).height >>= 1;
-      }
-      
-      
-      if (IsScrollbarWidthThin(aFrame)) {
-        aResult->width >>= 1;
-      }
-      *aIsOverridable = false;
-      break;
-    case StyleAppearance::ScrollbarthumbHorizontal:
-      (*aResult).width = ::GetSystemMetrics(SM_CXHTHUMB);
-      (*aResult).height = ::GetSystemMetrics(SM_CYHSCROLL);
-      
-      
-      if (!GetTheme(aAppearance)) {
-        (*aResult).width >>= 1;
-      }
-      
-      
-      if (IsScrollbarWidthThin(aFrame)) {
-        aResult->height >>= 1;
-      }
-      *aIsOverridable = false;
-      break;
-    case StyleAppearance::ScrollbarHorizontal:
-      (*aResult).width = ::GetSystemMetrics(SM_CXHTHUMB) << 1;
-      break;
+      case StyleAppearance::ScrollbarthumbVertical:
+        (*aResult).width = ::GetSystemMetrics(SM_CXVSCROLL);
+        (*aResult).height = ::GetSystemMetrics(SM_CYVTHUMB);
+        
+        
+        if (!GetTheme(aAppearance)) {
+          (*aResult).height >>= 1;
+        }
+        
+        
+        if (IsScrollbarWidthThin(aFrame)) {
+          aResult->width >>= 1;
+        }
+        *aIsOverridable = false;
+        break;
+      case StyleAppearance::ScrollbarthumbHorizontal:
+        (*aResult).width = ::GetSystemMetrics(SM_CXHTHUMB);
+        (*aResult).height = ::GetSystemMetrics(SM_CYHSCROLL);
+        
+        
+        if (!GetTheme(aAppearance)) {
+          (*aResult).width >>= 1;
+        }
+        
+        
+        if (IsScrollbarWidthThin(aFrame)) {
+          aResult->height >>= 1;
+        }
+        *aIsOverridable = false;
+        break;
+      case StyleAppearance::ScrollbarHorizontal:
+        (*aResult).width = ::GetSystemMetrics(SM_CXHTHUMB) << 1;
+        break;
     }
-    case StyleAppearance::Menuseparator:
-    {
+    case StyleAppearance::Menuseparator: {
       aResult->width = 0;
       aResult->height = 10;
       break;
@@ -3196,17 +3071,17 @@ nsNativeThemeWin::ClassicGetMinimumWidgetSize(nsIFrame* aFrame,
       aResult->height = GetSystemMetrics(SM_CYCAPTION);
       aResult->height += GetSystemMetrics(SM_CYFRAME);
       aResult->width = 0;
-    break;
+      break;
     case StyleAppearance::MozWindowFrameLeft:
     case StyleAppearance::MozWindowFrameRight:
       aResult->width = GetSystemMetrics(SM_CXFRAME);
       aResult->height = 0;
-    break;
+      break;
 
     case StyleAppearance::MozWindowFrameBottom:
       aResult->height = GetSystemMetrics(SM_CYFRAME);
       aResult->width = 0;
-    break;
+      break;
 
     case StyleAppearance::MozWindowButtonClose:
     case StyleAppearance::MozWindowButtonMinimize:
@@ -3220,29 +3095,23 @@ nsNativeThemeWin::ClassicGetMinimumWidgetSize(nsIFrame* aFrame,
       aResult->height -= 4;
       if (aAppearance == StyleAppearance::MozWindowButtonMinimize) {
         AddPaddingRect(aResult, CAPTIONBUTTON_MINIMIZE);
-      }
-      else if (aAppearance == StyleAppearance::MozWindowButtonMaximize ||
-               aAppearance == StyleAppearance::MozWindowButtonRestore) {
+      } else if (aAppearance == StyleAppearance::MozWindowButtonMaximize ||
+                 aAppearance == StyleAppearance::MozWindowButtonRestore) {
         AddPaddingRect(aResult, CAPTIONBUTTON_RESTORE);
-      }
-      else if (aAppearance == StyleAppearance::MozWindowButtonClose) {
+      } else if (aAppearance == StyleAppearance::MozWindowButtonClose) {
         AddPaddingRect(aResult, CAPTIONBUTTON_CLOSE);
       }
-    break;
+      break;
 
     default:
       return NS_ERROR_FAILURE;
-  }  
+  }
   return NS_OK;
 }
 
-
-nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
-                                                       StyleAppearance aAppearance,
-                                                       int32_t& aPart,
-                                                       int32_t& aState,
-                                                       bool& aFocused)
-{  
+nsresult nsNativeThemeWin::ClassicGetThemePartAndState(
+    nsIFrame* aFrame, StyleAppearance aAppearance, int32_t& aPart,
+    int32_t& aState, bool& aFocused) {
   if (aAppearance == StyleAppearance::MenulistButton &&
       StaticPrefs::layout_css_webkit_appearance_enabled()) {
     aAppearance = StyleAppearance::Menulist;
@@ -3265,13 +3134,13 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
       else if (IsCheckedButton(aFrame))
         aState |= DFCS_CHECKED;
       else {
-        if (contentState.HasAllStates(NS_EVENT_STATE_ACTIVE | NS_EVENT_STATE_HOVER)) {
+        if (contentState.HasAllStates(NS_EVENT_STATE_ACTIVE |
+                                      NS_EVENT_STATE_HOVER)) {
           aState |= DFCS_PUSHED;
-          const nsStyleUI *uiData = aFrame->StyleUI();
+          const nsStyleUI* uiData = aFrame->StyleUI();
           
           if (uiData->mUserFocus == StyleUserFocus::Normal) {
-            if (!aFrame->GetContent()->IsHTMLElement())
-              aState |= DFCS_FLAT;
+            if (!aFrame->GetContent()->IsHTMLElement()) aState |= DFCS_FLAT;
 
             aFocused = true;
           }
@@ -3280,7 +3149,6 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
             (aState == DFCS_BUTTONPUSH && IsDefaultButton(aFrame))) {
           aFocused = true;
         }
-
       }
 
       return NS_OK;
@@ -3331,7 +3199,7 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
     case StyleAppearance::Radiomenuitem: {
       bool isTopLevel = false;
       bool isOpen = false;
-      nsMenuFrame *menuFrame = do_QueryFrame(aFrame);
+      nsMenuFrame* menuFrame = do_QueryFrame(aFrame);
       EventStates eventState = GetContentState(aFrame, aAppearance);
 
       
@@ -3348,17 +3216,14 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
         isOpen = menuFrame->IsOpen();
       }
 
-      if (IsDisabled(aFrame, eventState))
-        aState |= DFCS_INACTIVE;
+      if (IsDisabled(aFrame, eventState)) aState |= DFCS_INACTIVE;
 
       if (isTopLevel) {
         aPart = 1;
-        if (isOpen)
-          aState |= DFCS_PUSHED;
+        if (isOpen) aState |= DFCS_PUSHED;
       }
 
-      if (IsMenuActive(aFrame, aAppearance))
-        aState |= DFCS_HOT;
+      if (IsMenuActive(aFrame, aAppearance)) aState |= DFCS_HOT;
 
       return NS_OK;
     }
@@ -3368,17 +3233,14 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
       aState = 0;
       EventStates eventState = GetContentState(aFrame, aAppearance);
 
-      if (IsDisabled(aFrame, eventState))
-        aState |= DFCS_INACTIVE;
-      if (IsMenuActive(aFrame, aAppearance))
-        aState |= DFCS_HOT;
+      if (IsDisabled(aFrame, eventState)) aState |= DFCS_INACTIVE;
+      if (IsMenuActive(aFrame, aAppearance)) aState |= DFCS_HOT;
 
       if (aAppearance == StyleAppearance::Menucheckbox ||
           aAppearance == StyleAppearance::Menuradio) {
-        if (IsCheckedButton(aFrame))
-          aState |= DFCS_CHECKED;
+        if (IsCheckedButton(aFrame)) aState |= DFCS_CHECKED;
       } else if (IsFrameRTL(aFrame)) {
-          aState |= DFCS_RTL;
+        aState |= DFCS_RTL;
       }
       return NS_OK;
     }
@@ -3393,9 +3255,9 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
     case StyleAppearance::Range:
     case StyleAppearance::RangeThumb:
     case StyleAppearance::ScrollbarthumbVertical:
-    case StyleAppearance::ScrollbarthumbHorizontal:     
+    case StyleAppearance::ScrollbarthumbHorizontal:
     case StyleAppearance::ScrollbarVertical:
-    case StyleAppearance::ScrollbarHorizontal:      
+    case StyleAppearance::ScrollbarHorizontal:
     case StyleAppearance::Scrollcorner:
     case StyleAppearance::ScaleHorizontal:
     case StyleAppearance::ScaleVertical:
@@ -3418,7 +3280,6 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
       return NS_OK;
     case StyleAppearance::MenulistButton:
     case StyleAppearance::MozMenulistButton: {
-
       aPart = DFC_SCROLL;
       aState = DFCS_SCROLLCOMBOBOX;
 
@@ -3428,8 +3289,8 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
       bool isOpen = false;
 
       
-      if (isHTML || isMenulist)
-        aFrame = parentFrame;
+      
+      if (isHTML || isMenulist) aFrame = parentFrame;
 
       EventStates eventState = GetContentState(aFrame, aAppearance);
 
@@ -3441,14 +3302,12 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
       if (isHTML) {
         nsComboboxControlFrame* ccf = do_QueryFrame(aFrame);
         isOpen = (ccf && ccf->IsDroppedDownOrHasParentPopup());
-      }
-      else
+      } else
         isOpen = IsOpenButton(aFrame);
 
       
       
-      if (isOpen && (isHTML || isMenulist))
-        return NS_OK;
+      if (isOpen && (isHTML || isMenulist)) return NS_OK;
 
       
       if (eventState.HasState(NS_EVENT_STATE_ACTIVE))
@@ -3483,7 +3342,8 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
       if (IsDisabled(aFrame, contentState))
         aState |= DFCS_INACTIVE;
       else {
-        if (contentState.HasAllStates(NS_EVENT_STATE_HOVER | NS_EVENT_STATE_ACTIVE))
+        if (contentState.HasAllStates(NS_EVENT_STATE_HOVER |
+                                      NS_EVENT_STATE_ACTIVE))
           aState |= DFCS_PUSHED | DFCS_FLAT;
       }
 
@@ -3510,16 +3370,17 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
       if (IsDisabled(aFrame, contentState))
         aState |= DFCS_INACTIVE;
       else {
-        if (contentState.HasAllStates(NS_EVENT_STATE_HOVER | NS_EVENT_STATE_ACTIVE))
+        if (contentState.HasAllStates(NS_EVENT_STATE_HOVER |
+                                      NS_EVENT_STATE_ACTIVE))
           aState |= DFCS_PUSHED;
       }
 
-      return NS_OK;    
+      return NS_OK;
     }
-    case StyleAppearance::Resizer:    
+    case StyleAppearance::Resizer:
       aPart = DFC_SCROLL;
-      aState = (IsFrameRTL(aFrame)) ?
-               DFCS_SCROLLSIZEGRIPRIGHT : DFCS_SCROLLSIZEGRIP;
+      aState =
+          (IsFrameRTL(aFrame)) ? DFCS_SCROLLSIZEGRIPRIGHT : DFCS_SCROLLSIZEGRIP;
       return NS_OK;
     case StyleAppearance::Menuseparator:
       aPart = 0;
@@ -3547,27 +3408,23 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
       return NS_OK;
     case StyleAppearance::MozWindowButtonClose:
       aPart = DFC_CAPTION;
-      aState = DFCS_CAPTIONCLOSE |
-               GetClassicWindowFrameButtonState(GetContentState(aFrame,
-                                                                aAppearance));
+      aState = DFCS_CAPTIONCLOSE | GetClassicWindowFrameButtonState(
+                                       GetContentState(aFrame, aAppearance));
       return NS_OK;
     case StyleAppearance::MozWindowButtonMinimize:
       aPart = DFC_CAPTION;
-      aState = DFCS_CAPTIONMIN |
-               GetClassicWindowFrameButtonState(GetContentState(aFrame,
-                                                                aAppearance));
+      aState = DFCS_CAPTIONMIN | GetClassicWindowFrameButtonState(
+                                     GetContentState(aFrame, aAppearance));
       return NS_OK;
     case StyleAppearance::MozWindowButtonMaximize:
       aPart = DFC_CAPTION;
-      aState = DFCS_CAPTIONMAX |
-               GetClassicWindowFrameButtonState(GetContentState(aFrame,
-                                                                aAppearance));
+      aState = DFCS_CAPTIONMAX | GetClassicWindowFrameButtonState(
+                                     GetContentState(aFrame, aAppearance));
       return NS_OK;
     case StyleAppearance::MozWindowButtonRestore:
       aPart = DFC_CAPTION;
-      aState = DFCS_CAPTIONRESTORE |
-               GetClassicWindowFrameButtonState(GetContentState(aFrame,
-                                                                aAppearance));
+      aState = DFCS_CAPTIONRESTORE | GetClassicWindowFrameButtonState(
+                                         GetContentState(aFrame, aAppearance));
       return NS_OK;
     default:
       return NS_ERROR_FAILURE;
@@ -3577,9 +3434,8 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame,
 
 
 static void DrawTab(HDC hdc, const RECT& R, int32_t aPosition, bool aSelected,
-                    bool aDrawLeft, bool aDrawRight)
-{
-  int32_t leftFlag, topFlag, rightFlag, lightFlag, shadeFlag;  
+                    bool aDrawLeft, bool aDrawRight) {
+  int32_t leftFlag, topFlag, rightFlag, lightFlag, shadeFlag;
   RECT topRect, sideRect, bottomRect, lightRect, shadeRect;
   int32_t selectedOffset, lOffset, rOffset;
 
@@ -3590,84 +3446,87 @@ static void DrawTab(HDC hdc, const RECT& R, int32_t aPosition, bool aSelected,
   
   switch (aPosition) {
     case BF_LEFT:
-      leftFlag = BF_TOP; topFlag = BF_LEFT;
+      leftFlag = BF_TOP;
+      topFlag = BF_LEFT;
       rightFlag = BF_BOTTOM;
       lightFlag = BF_DIAGONAL_ENDTOPRIGHT;
       shadeFlag = BF_DIAGONAL_ENDBOTTOMRIGHT;
 
-      ::SetRect(&topRect, R.left, R.top+lOffset, R.right, R.bottom-rOffset);
-      ::SetRect(&sideRect, R.left+2, R.top, R.right-2+selectedOffset, R.bottom);
-      ::SetRect(&bottomRect, R.right-2, R.top, R.right, R.bottom);
-      ::SetRect(&lightRect, R.left, R.top, R.left+3, R.top+3);
-      ::SetRect(&shadeRect, R.left+1, R.bottom-2, R.left+2, R.bottom-1);
+      ::SetRect(&topRect, R.left, R.top + lOffset, R.right, R.bottom - rOffset);
+      ::SetRect(&sideRect, R.left + 2, R.top, R.right - 2 + selectedOffset,
+                R.bottom);
+      ::SetRect(&bottomRect, R.right - 2, R.top, R.right, R.bottom);
+      ::SetRect(&lightRect, R.left, R.top, R.left + 3, R.top + 3);
+      ::SetRect(&shadeRect, R.left + 1, R.bottom - 2, R.left + 2, R.bottom - 1);
       break;
-    case BF_TOP:    
-      leftFlag = BF_LEFT; topFlag = BF_TOP;
+    case BF_TOP:
+      leftFlag = BF_LEFT;
+      topFlag = BF_TOP;
       rightFlag = BF_RIGHT;
       lightFlag = BF_DIAGONAL_ENDTOPRIGHT;
       shadeFlag = BF_DIAGONAL_ENDBOTTOMRIGHT;
 
-      ::SetRect(&topRect, R.left+lOffset, R.top, R.right-rOffset, R.bottom);
-      ::SetRect(&sideRect, R.left, R.top+2, R.right, R.bottom-1+selectedOffset);
-      ::SetRect(&bottomRect, R.left, R.bottom-1, R.right, R.bottom);
-      ::SetRect(&lightRect, R.left, R.top, R.left+3, R.top+3);      
-      ::SetRect(&shadeRect, R.right-2, R.top+1, R.right-1, R.top+2);      
+      ::SetRect(&topRect, R.left + lOffset, R.top, R.right - rOffset, R.bottom);
+      ::SetRect(&sideRect, R.left, R.top + 2, R.right,
+                R.bottom - 1 + selectedOffset);
+      ::SetRect(&bottomRect, R.left, R.bottom - 1, R.right, R.bottom);
+      ::SetRect(&lightRect, R.left, R.top, R.left + 3, R.top + 3);
+      ::SetRect(&shadeRect, R.right - 2, R.top + 1, R.right - 1, R.top + 2);
       break;
-    case BF_RIGHT:    
-      leftFlag = BF_TOP; topFlag = BF_RIGHT;
+    case BF_RIGHT:
+      leftFlag = BF_TOP;
+      topFlag = BF_RIGHT;
       rightFlag = BF_BOTTOM;
       lightFlag = BF_DIAGONAL_ENDTOPLEFT;
       shadeFlag = BF_DIAGONAL_ENDBOTTOMLEFT;
 
-      ::SetRect(&topRect, R.left, R.top+lOffset, R.right, R.bottom-rOffset);
-      ::SetRect(&sideRect, R.left+2-selectedOffset, R.top, R.right-2, R.bottom);
-      ::SetRect(&bottomRect, R.left, R.top, R.left+2, R.bottom);
-      ::SetRect(&lightRect, R.right-3, R.top, R.right-1, R.top+2);
-      ::SetRect(&shadeRect, R.right-2, R.bottom-3, R.right, R.bottom-1);
+      ::SetRect(&topRect, R.left, R.top + lOffset, R.right, R.bottom - rOffset);
+      ::SetRect(&sideRect, R.left + 2 - selectedOffset, R.top, R.right - 2,
+                R.bottom);
+      ::SetRect(&bottomRect, R.left, R.top, R.left + 2, R.bottom);
+      ::SetRect(&lightRect, R.right - 3, R.top, R.right - 1, R.top + 2);
+      ::SetRect(&shadeRect, R.right - 2, R.bottom - 3, R.right, R.bottom - 1);
       break;
-    case BF_BOTTOM:    
-      leftFlag = BF_LEFT; topFlag = BF_BOTTOM;
+    case BF_BOTTOM:
+      leftFlag = BF_LEFT;
+      topFlag = BF_BOTTOM;
       rightFlag = BF_RIGHT;
       lightFlag = BF_DIAGONAL_ENDTOPLEFT;
       shadeFlag = BF_DIAGONAL_ENDBOTTOMLEFT;
 
-      ::SetRect(&topRect, R.left+lOffset, R.top, R.right-rOffset, R.bottom);
-      ::SetRect(&sideRect, R.left, R.top+2-selectedOffset, R.right, R.bottom-2);
-      ::SetRect(&bottomRect, R.left, R.top, R.right, R.top+2);
-      ::SetRect(&lightRect, R.left, R.bottom-3, R.left+2, R.bottom-1);
-      ::SetRect(&shadeRect, R.right-2, R.bottom-3, R.right, R.bottom-1);
+      ::SetRect(&topRect, R.left + lOffset, R.top, R.right - rOffset, R.bottom);
+      ::SetRect(&sideRect, R.left, R.top + 2 - selectedOffset, R.right,
+                R.bottom - 2);
+      ::SetRect(&bottomRect, R.left, R.top, R.right, R.top + 2);
+      ::SetRect(&lightRect, R.left, R.bottom - 3, R.left + 2, R.bottom - 1);
+      ::SetRect(&shadeRect, R.right - 2, R.bottom - 3, R.right, R.bottom - 1);
       break;
     default:
       MOZ_CRASH();
   }
 
   
-  ::FillRect(hdc, &R, (HBRUSH) (COLOR_3DFACE+1) );
+  ::FillRect(hdc, &R, (HBRUSH)(COLOR_3DFACE + 1));
 
   
   ::DrawEdge(hdc, &topRect, EDGE_RAISED, BF_SOFT | topFlag);
 
   
-  if (!aSelected)
-    ::DrawEdge(hdc, &bottomRect, EDGE_RAISED, BF_SOFT | topFlag);
+  if (!aSelected) ::DrawEdge(hdc, &bottomRect, EDGE_RAISED, BF_SOFT | topFlag);
 
   
-  if (!aDrawLeft)
-    leftFlag = 0;
-  if (!aDrawRight)
-    rightFlag = 0;
+  if (!aDrawLeft) leftFlag = 0;
+  if (!aDrawRight) rightFlag = 0;
   ::DrawEdge(hdc, &sideRect, EDGE_RAISED, BF_SOFT | leftFlag | rightFlag);
 
   
-  if (aDrawLeft)
-    ::DrawEdge(hdc, &lightRect, EDGE_RAISED, BF_SOFT | lightFlag);
+  if (aDrawLeft) ::DrawEdge(hdc, &lightRect, EDGE_RAISED, BF_SOFT | lightFlag);
 
-  if (aDrawRight)
-    ::DrawEdge(hdc, &shadeRect, EDGE_RAISED, BF_SOFT | shadeFlag);
+  if (aDrawRight) ::DrawEdge(hdc, &shadeRect, EDGE_RAISED, BF_SOFT | shadeFlag);
 }
 
-static void DrawMenuImage(HDC hdc, const RECT& rc, int32_t aComponent, uint32_t aColor)
-{
+static void DrawMenuImage(HDC hdc, const RECT& rc, int32_t aComponent,
+                          uint32_t aColor) {
   
   
   
@@ -3680,17 +3539,13 @@ static void DrawMenuImage(HDC hdc, const RECT& rc, int32_t aComponent, uint32_t 
 
     HBITMAP hMonoBitmap = ::CreateBitmap(checkW, checkH, 1, 1, nullptr);
     if (hMonoBitmap) {
-
-      HBITMAP hPrevBitmap = (HBITMAP) ::SelectObject(hMemoryDC, hMonoBitmap);
+      HBITMAP hPrevBitmap = (HBITMAP)::SelectObject(hMemoryDC, hMonoBitmap);
       if (hPrevBitmap) {
-
         
         
-        RECT imgRect = { 0, 0, checkW, checkH };
-        POINT imgPos = {
-              rc.left + (rc.right  - rc.left - checkW) / 2,
-              rc.top  + (rc.bottom - rc.top  - checkH) / 2
-            };
+        RECT imgRect = {0, 0, checkW, checkH};
+        POINT imgPos = {rc.left + (rc.right - rc.left - checkW) / 2,
+                        rc.top + (rc.bottom - rc.top - checkH) / 2};
 
         
         if (aComponent == DFCS_MENUCHECK || aComponent == DFCS_MENUBULLET)
@@ -3699,10 +3554,12 @@ static void DrawMenuImage(HDC hdc, const RECT& rc, int32_t aComponent, uint32_t 
         ::DrawFrameControl(hMemoryDC, &imgRect, DFC_MENU, aComponent);
         COLORREF oldTextCol = ::SetTextColor(hdc, 0x00000000);
         COLORREF oldBackCol = ::SetBkColor(hdc, 0x00FFFFFF);
-        ::BitBlt(hdc, imgPos.x, imgPos.y, checkW, checkH, hMemoryDC, 0, 0, SRCAND);
+        ::BitBlt(hdc, imgPos.x, imgPos.y, checkW, checkH, hMemoryDC, 0, 0,
+                 SRCAND);
         ::SetTextColor(hdc, ::GetSysColor(aColor));
         ::SetBkColor(hdc, 0x00000000);
-        ::BitBlt(hdc, imgPos.x, imgPos.y, checkW, checkH, hMemoryDC, 0, 0, SRCPAINT);
+        ::BitBlt(hdc, imgPos.x, imgPos.y, checkW, checkH, hMemoryDC, 0, 0,
+                 SRCPAINT);
         ::SetTextColor(hdc, oldTextCol);
         ::SetBkColor(hdc, oldBackCol);
         ::SelectObject(hMemoryDC, hPrevBitmap);
@@ -3713,17 +3570,14 @@ static void DrawMenuImage(HDC hdc, const RECT& rc, int32_t aComponent, uint32_t 
   }
 }
 
-void nsNativeThemeWin::DrawCheckedRect(HDC hdc, const RECT& rc, int32_t fore, int32_t back,
-                                       HBRUSH defaultBack)
-{
-  static WORD patBits[8] = {
-    0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55
-  };
-        
+void nsNativeThemeWin::DrawCheckedRect(HDC hdc, const RECT& rc, int32_t fore,
+                                       int32_t back, HBRUSH defaultBack) {
+  static WORD patBits[8] = {0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55};
+
   HBITMAP patBmp = ::CreateBitmap(8, 8, 1, 1, patBits);
   if (patBmp) {
-    HBRUSH brush = (HBRUSH) ::CreatePatternBrush(patBmp);
-    if (brush) {        
+    HBRUSH brush = (HBRUSH)::CreatePatternBrush(patBmp);
+    if (brush) {
       COLORREF oldForeColor = ::SetTextColor(hdc, ::GetSysColor(fore));
       COLORREF oldBackColor = ::SetBkColor(hdc, ::GetSysColor(back));
       POINT vpOrg;
@@ -3731,32 +3585,27 @@ void nsNativeThemeWin::DrawCheckedRect(HDC hdc, const RECT& rc, int32_t fore, in
       ::UnrealizeObject(brush);
       ::GetViewportOrgEx(hdc, &vpOrg);
       ::SetBrushOrgEx(hdc, vpOrg.x + rc.left, vpOrg.y + rc.top, nullptr);
-      HBRUSH oldBrush = (HBRUSH) ::SelectObject(hdc, brush);
+      HBRUSH oldBrush = (HBRUSH)::SelectObject(hdc, brush);
       ::FillRect(hdc, &rc, brush);
       ::SetTextColor(hdc, oldForeColor);
       ::SetBkColor(hdc, oldBackColor);
       ::SelectObject(hdc, oldBrush);
-      ::DeleteObject(brush);          
-    }
-    else
+      ::DeleteObject(brush);
+    } else
       ::FillRect(hdc, &rc, defaultBack);
-  
+
     ::DeleteObject(patBmp);
   }
 }
 
-nsresult nsNativeThemeWin::ClassicDrawWidgetBackground(gfxContext* aContext,
-                                  nsIFrame* aFrame,
-                                  StyleAppearance aAppearance,
-                                  const nsRect& aRect,
-                                  const nsRect& aDirtyRect)
-{
+nsresult nsNativeThemeWin::ClassicDrawWidgetBackground(
+    gfxContext* aContext, nsIFrame* aFrame, StyleAppearance aAppearance,
+    const nsRect& aRect, const nsRect& aDirtyRect) {
   int32_t part, state;
   bool focused;
   nsresult rv;
   rv = ClassicGetThemePartAndState(aFrame, aAppearance, part, state, focused);
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
   if (AssumeThemePartAndStateAreTransparent(part, state)) {
     return NS_OK;
@@ -3765,33 +3614,33 @@ nsresult nsNativeThemeWin::ClassicDrawWidgetBackground(gfxContext* aContext,
   gfxFloat p2a = gfxFloat(aFrame->PresContext()->AppUnitsPerDevPixel());
   RECT widgetRect;
   gfxRect tr(aRect.X(), aRect.Y(), aRect.Width(), aRect.Height()),
-          dr(aDirtyRect.X(), aDirtyRect.Y(), aDirtyRect.Width(), aDirtyRect.Height());
+      dr(aDirtyRect.X(), aDirtyRect.Y(), aDirtyRect.Width(),
+         aDirtyRect.Height());
 
   tr.Scale(1.0 / p2a);
   dr.Scale(1.0 / p2a);
 
   RefPtr<gfxContext> ctx = aContext;
 
-  gfxWindowsNativeDrawing nativeDrawing(ctx, dr, GetWidgetNativeDrawingFlags(aAppearance));
+  gfxWindowsNativeDrawing nativeDrawing(
+      ctx, dr, GetWidgetNativeDrawingFlags(aAppearance));
 
 RENDER_AGAIN:
 
   HDC hdc = nativeDrawing.BeginNativeDrawing();
-  if (!hdc)
-    return NS_ERROR_FAILURE;
+  if (!hdc) return NS_ERROR_FAILURE;
 
   nativeDrawing.TransformToNativeRect(tr, widgetRect);
 
   rv = NS_OK;
-  switch (aAppearance) { 
+  switch (aAppearance) {
     
     case StyleAppearance::Button: {
       if (focused) {
         
-        HBRUSH brush;        
+        HBRUSH brush;
         brush = ::GetSysColorBrush(COLOR_3DDKSHADOW);
-        if (brush)
-          ::FrameRect(hdc, &widgetRect, brush);
+        if (brush) ::FrameRect(hdc, &widgetRect, brush);
         InflateRect(&widgetRect, -1, -1);
       }
       
@@ -3833,11 +3682,10 @@ RENDER_AGAIN:
 
       
       if (IsDisabled(aFrame, eventState) ||
-          (aFrame->GetContent()->IsXULElement() &&
-           IsReadOnly(aFrame)))
-        ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_BTNFACE+1));
+          (aFrame->GetContent()->IsXULElement() && IsReadOnly(aFrame)))
+        ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_BTNFACE + 1));
       else
-        ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_WINDOW+1));
+        ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_WINDOW + 1));
 
       break;
     }
@@ -3846,7 +3694,7 @@ RENDER_AGAIN:
       ::DrawEdge(hdc, &widgetRect, EDGE_SUNKEN, BF_RECT | BF_ADJUST);
 
       
-      ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_WINDOW+1));
+      ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_WINDOW + 1));
 
       break;
     }
@@ -3859,7 +3707,7 @@ RENDER_AGAIN:
       break;
     case StyleAppearance::Groupbox:
       ::DrawEdge(hdc, &widgetRect, EDGE_ETCHED, BF_RECT | BF_ADJUST);
-      ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_BTNFACE+1));
+      ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_BTNFACE + 1));
       break;
     
     case StyleAppearance::ProgressBar:
@@ -3871,14 +3719,14 @@ RENDER_AGAIN:
     case StyleAppearance::Tabpanel:
     case StyleAppearance::Statusbar:
     case StyleAppearance::Resizerpanel: {
-      ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_BTNFACE+1));
+      ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_BTNFACE + 1));
 
       break;
     }
     
     case StyleAppearance::Statusbarpanel: {
       if (aFrame->GetNextSibling())
-        widgetRect.right -= 2; 
+        widgetRect.right -= 2;  
 
       ::DrawEdge(hdc, &widgetRect, BDR_SUNKENOUTER, BF_RECT | BF_MIDDLE);
 
@@ -3895,10 +3743,11 @@ RENDER_AGAIN:
     case StyleAppearance::ScalethumbHorizontal: {
       EventStates eventState = GetContentState(aFrame, aAppearance);
 
-      ::DrawEdge(hdc, &widgetRect, EDGE_RAISED, BF_RECT | BF_SOFT | BF_MIDDLE | BF_ADJUST);
+      ::DrawEdge(hdc, &widgetRect, EDGE_RAISED,
+                 BF_RECT | BF_SOFT | BF_MIDDLE | BF_ADJUST);
       if (IsDisabled(aFrame, eventState)) {
         DrawCheckedRect(hdc, widgetRect, COLOR_3DFACE, COLOR_3DHILIGHT,
-                        (HBRUSH) COLOR_3DHILIGHT);
+                        (HBRUSH)COLOR_3DHILIGHT);
       }
 
       break;
@@ -3906,22 +3755,20 @@ RENDER_AGAIN:
     
     case StyleAppearance::ScrollbarVertical:
     case StyleAppearance::ScrollbarHorizontal: {
-
       
       
       DWORD color3D, colorScrollbar, colorWindow;
 
-      color3D = ::GetSysColor(COLOR_3DFACE);      
+      color3D = ::GetSysColor(COLOR_3DFACE);
       colorWindow = ::GetSysColor(COLOR_WINDOW);
       colorScrollbar = ::GetSysColor(COLOR_SCROLLBAR);
-      
+
       if ((color3D != colorScrollbar) && (colorWindow != colorScrollbar))
         
-        ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_SCROLLBAR+1));
-      else
-      {
+        ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_SCROLLBAR + 1));
+      else {
         DrawCheckedRect(hdc, widgetRect, COLOR_3DHILIGHT, COLOR_3DFACE,
-                        (HBRUSH) COLOR_SCROLLBAR+1);
+                        (HBRUSH)COLOR_SCROLLBAR + 1);
       }
       
       
@@ -3929,33 +3776,35 @@ RENDER_AGAIN:
       break;
     }
     case StyleAppearance::Scrollcorner: {
-      ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_SCROLLBAR + 1));
+      ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_SCROLLBAR + 1));
     }
     
     case StyleAppearance::Range:
     case StyleAppearance::ScaleVertical:
-    case StyleAppearance::ScaleHorizontal: { 
+    case StyleAppearance::ScaleHorizontal: {
       const int32_t trackWidth = 4;
       
       
       if (aAppearance == StyleAppearance::ScaleHorizontal ||
-          (aAppearance == StyleAppearance::Range && IsRangeHorizontal(aFrame))) {
+          (aAppearance == StyleAppearance::Range &&
+           IsRangeHorizontal(aFrame))) {
         widgetRect.top += (widgetRect.bottom - widgetRect.top - trackWidth) / 2;
         widgetRect.bottom = widgetRect.top + trackWidth;
-      }
-      else {
+      } else {
         if (!IsFrameRTL(aFrame)) {
-          widgetRect.left += (widgetRect.right - widgetRect.left - trackWidth) / 2;
+          widgetRect.left +=
+              (widgetRect.right - widgetRect.left - trackWidth) / 2;
           widgetRect.right = widgetRect.left + trackWidth;
         } else {
-          widgetRect.right -= (widgetRect.right - widgetRect.left - trackWidth) / 2;
+          widgetRect.right -=
+              (widgetRect.right - widgetRect.left - trackWidth) / 2;
           widgetRect.left = widgetRect.right - trackWidth;
         }
       }
 
       ::DrawEdge(hdc, &widgetRect, EDGE_SUNKEN, BF_RECT | BF_ADJUST);
-      ::FillRect(hdc, &widgetRect, (HBRUSH) GetStockObject(GRAY_BRUSH));
- 
+      ::FillRect(hdc, &widgetRect, (HBRUSH)GetStockObject(GRAY_BRUSH));
+
       break;
     }
     case StyleAppearance::Progresschunk: {
@@ -3967,15 +3816,14 @@ RENDER_AGAIN:
 
       nsIContent* content = aFrame->GetContent();
       if (!indeterminate || !content) {
-        ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_HIGHLIGHT+1));
+        ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_HIGHLIGHT + 1));
         break;
       }
 
-      RECT overlayRect =
-        CalculateProgressOverlayRect(aFrame, &widgetRect, vertical,
-                                     indeterminate, true);
+      RECT overlayRect = CalculateProgressOverlayRect(
+          aFrame, &widgetRect, vertical, indeterminate, true);
 
-      ::FillRect(hdc, &overlayRect, (HBRUSH) (COLOR_HIGHLIGHT+1));
+      ::FillRect(hdc, &overlayRect, (HBRUSH)(COLOR_HIGHLIGHT + 1));
 
       if (!QueueAnimatedContentForRefresh(aFrame->GetContent(), 30)) {
         NS_WARNING("unable to animate progress widget!");
@@ -3985,24 +3833,23 @@ RENDER_AGAIN:
 
     
     case StyleAppearance::Tab: {
-      DrawTab(hdc, widgetRect,
-        IsBottomTab(aFrame) ? BF_BOTTOM : BF_TOP, 
-        IsSelectedTab(aFrame),
-        !IsRightToSelectedTab(aFrame),
-        !IsLeftToSelectedTab(aFrame));
+      DrawTab(hdc, widgetRect, IsBottomTab(aFrame) ? BF_BOTTOM : BF_TOP,
+              IsSelectedTab(aFrame), !IsRightToSelectedTab(aFrame),
+              !IsLeftToSelectedTab(aFrame));
 
       break;
     }
     case StyleAppearance::Tabpanels:
-      ::DrawEdge(hdc, &widgetRect, EDGE_RAISED, BF_SOFT | BF_MIDDLE |
-          BF_LEFT | BF_RIGHT | BF_BOTTOM);
+      ::DrawEdge(hdc, &widgetRect, EDGE_RAISED,
+                 BF_SOFT | BF_MIDDLE | BF_LEFT | BF_RIGHT | BF_BOTTOM);
 
       break;
     case StyleAppearance::Menubar:
       break;
     case StyleAppearance::Menupopup:
-      NS_ASSERTION(nsUXThemeData::sFlatMenus, "Classic menus are styled entirely through CSS");
-      ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_MENU+1));
+      NS_ASSERTION(nsUXThemeData::sFlatMenus,
+                   "Classic menus are styled entirely through CSS");
+      ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_MENU + 1));
       ::FrameRect(hdc, &widgetRect, ::GetSysColorBrush(COLOR_BTNSHADOW));
       break;
     case StyleAppearance::Menuitem:
@@ -4013,7 +3860,7 @@ RENDER_AGAIN:
       if (nsUXThemeData::sFlatMenus) {
         
         if ((state & (DFCS_HOT | DFCS_PUSHED)) != 0) {
-          ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_MENUHILIGHT+1));
+          ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_MENUHILIGHT + 1));
           ::FrameRect(hdc, &widgetRect, ::GetSysColorBrush(COLOR_HIGHLIGHT));
         }
       } else {
@@ -4027,28 +3874,27 @@ RENDER_AGAIN:
           }
         } else {
           if ((state & (DFCS_HOT | DFCS_PUSHED)) != 0) {
-            ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_HIGHLIGHT+1));
+            ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_HIGHLIGHT + 1));
           }
         }
       }
       break;
     case StyleAppearance::Menucheckbox:
     case StyleAppearance::Menuradio:
-      if (!(state & DFCS_CHECKED))
-        break; 
+      if (!(state & DFCS_CHECKED)) break;  
     case StyleAppearance::Menuarrow: {
       uint32_t color = COLOR_MENUTEXT;
       if ((state & DFCS_INACTIVE))
         color = COLOR_GRAYTEXT;
       else if ((state & DFCS_HOT))
         color = COLOR_HIGHLIGHTTEXT;
-      
+
       if (aAppearance == StyleAppearance::Menucheckbox)
         DrawMenuImage(hdc, widgetRect, DFCS_MENUCHECK, color);
       else if (aAppearance == StyleAppearance::Menuradio)
         DrawMenuImage(hdc, widgetRect, DFCS_MENUBULLET, color);
       else if (aAppearance == StyleAppearance::Menuarrow)
-        DrawMenuImage(hdc, widgetRect, 
+        DrawMenuImage(hdc, widgetRect,
                       (state & DFCS_RTL) ? DFCS_MENUARROWRIGHT : DFCS_MENUARROW,
                       color);
       break;
@@ -4061,22 +3907,21 @@ RENDER_AGAIN:
       
       widgetRect.top += 4;
       
-      widgetRect.bottom = widgetRect.top+1;
-      ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_3DSHADOW+1));
+      widgetRect.bottom = widgetRect.top + 1;
+      ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_3DSHADOW + 1));
       widgetRect.top++;
       widgetRect.bottom++;
-      ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_3DHILIGHT+1));
+      ::FillRect(hdc, &widgetRect, (HBRUSH)(COLOR_3DHILIGHT + 1));
       break;
     }
 
     case StyleAppearance::MozWindowTitlebar:
-    case StyleAppearance::MozWindowTitlebarMaximized:
-    {
+    case StyleAppearance::MozWindowTitlebarMaximized: {
       RECT rect = widgetRect;
       int32_t offset = GetSystemMetrics(SM_CXFRAME);
 
       
-      FillRect(hdc, &rect, (HBRUSH)(COLOR_3DFACE+1));
+      FillRect(hdc, &rect, (HBRUSH)(COLOR_3DFACE + 1));
 
       
       rect.top += offset;
@@ -4086,9 +3931,9 @@ RENDER_AGAIN:
       SystemParametersInfo(SPI_GETGRADIENTCAPTIONS, 0, &bFlag, 0);
       if (!bFlag) {
         if (state == mozilla::widget::themeconst::FS_ACTIVE)
-          FillRect(hdc, &rect, (HBRUSH)(COLOR_ACTIVECAPTION+1));
+          FillRect(hdc, &rect, (HBRUSH)(COLOR_ACTIVECAPTION + 1));
         else
-          FillRect(hdc, &rect, (HBRUSH)(COLOR_INACTIVECAPTION+1));
+          FillRect(hdc, &rect, (HBRUSH)(COLOR_INACTIVECAPTION + 1));
       } else {
         DWORD startColor, endColor;
         if (state == mozilla::widget::themeconst::FS_ACTIVE) {
@@ -4100,22 +3945,22 @@ RENDER_AGAIN:
         }
 
         TRIVERTEX vertex[2];
-        vertex[0].x     = rect.left;
-        vertex[0].y     = rect.top;
-        vertex[0].Red   = GetRValue(startColor) << 8;
+        vertex[0].x = rect.left;
+        vertex[0].y = rect.top;
+        vertex[0].Red = GetRValue(startColor) << 8;
         vertex[0].Green = GetGValue(startColor) << 8;
-        vertex[0].Blue  = GetBValue(startColor) << 8;
+        vertex[0].Blue = GetBValue(startColor) << 8;
         vertex[0].Alpha = 0;
 
-        vertex[1].x     = rect.right;
-        vertex[1].y     = rect.bottom; 
-        vertex[1].Red   = GetRValue(endColor) << 8;
+        vertex[1].x = rect.right;
+        vertex[1].y = rect.bottom;
+        vertex[1].Red = GetRValue(endColor) << 8;
         vertex[1].Green = GetGValue(endColor) << 8;
-        vertex[1].Blue  = GetBValue(endColor) << 8;
+        vertex[1].Blue = GetBValue(endColor) << 8;
         vertex[1].Alpha = 0;
 
         GRADIENT_RECT gRect;
-        gRect.UpperLeft  = 0;
+        gRect.UpperLeft = 0;
         gRect.LowerRight = 1;
         
         GradientFill(hdc, vertex, 2, &gRect, 1, GRADIENT_FILL_RECT_H);
@@ -4143,16 +3988,13 @@ RENDER_AGAIN:
     case StyleAppearance::MozWindowButtonClose:
     case StyleAppearance::MozWindowButtonMinimize:
     case StyleAppearance::MozWindowButtonMaximize:
-    case StyleAppearance::MozWindowButtonRestore:
-    {
+    case StyleAppearance::MozWindowButtonRestore: {
       if (aAppearance == StyleAppearance::MozWindowButtonMinimize) {
         OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_MINIMIZE);
-      }
-      else if (aAppearance == StyleAppearance::MozWindowButtonMaximize ||
-               aAppearance == StyleAppearance::MozWindowButtonRestore) {
+      } else if (aAppearance == StyleAppearance::MozWindowButtonMaximize ||
+                 aAppearance == StyleAppearance::MozWindowButtonRestore) {
         OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_RESTORE);
-      }
-      else if (aAppearance == StyleAppearance::MozWindowButtonClose) {
+      } else if (aAppearance == StyleAppearance::MozWindowButtonClose) {
         OffsetBackgroundRect(widgetRect, CAPTIONBUTTON_CLOSE);
       }
       int32_t oldTA = SetTextAlign(hdc, TA_TOP | TA_LEFT | TA_NOUPDATECP);
@@ -4168,20 +4010,17 @@ RENDER_AGAIN:
 
   nativeDrawing.EndNativeDrawing();
 
-  if (NS_FAILED(rv))
-    return rv;
+  if (NS_FAILED(rv)) return rv;
 
-  if (nativeDrawing.ShouldRenderAgain())
-    goto RENDER_AGAIN;
+  if (nativeDrawing.ShouldRenderAgain()) goto RENDER_AGAIN;
 
   nativeDrawing.PaintToContext();
 
   return rv;
 }
 
-uint32_t
-nsNativeThemeWin::GetWidgetNativeDrawingFlags(StyleAppearance aAppearance)
-{
+uint32_t nsNativeThemeWin::GetWidgetNativeDrawingFlags(
+    StyleAppearance aAppearance) {
   switch (aAppearance) {
     case StyleAppearance::Button:
     case StyleAppearance::NumberInput:
@@ -4191,10 +4030,9 @@ nsNativeThemeWin::GetWidgetNativeDrawingFlags(StyleAppearance aAppearance)
 
     case StyleAppearance::Menulist:
     case StyleAppearance::MenulistTextfield:
-      return
-        gfxWindowsNativeDrawing::CANNOT_DRAW_TO_COLOR_ALPHA |
-        gfxWindowsNativeDrawing::CAN_AXIS_ALIGNED_SCALE |
-        gfxWindowsNativeDrawing::CANNOT_COMPLEX_TRANSFORM;
+      return gfxWindowsNativeDrawing::CANNOT_DRAW_TO_COLOR_ALPHA |
+             gfxWindowsNativeDrawing::CAN_AXIS_ALIGNED_SCALE |
+             gfxWindowsNativeDrawing::CANNOT_COMPLEX_TRANSFORM;
 
     
     
@@ -4210,23 +4048,20 @@ nsNativeThemeWin::GetWidgetNativeDrawingFlags(StyleAppearance aAppearance)
     case StyleAppearance::Menucheckbox:
     case StyleAppearance::Menuradio:
     case StyleAppearance::Menuarrow:
-      return
-        gfxWindowsNativeDrawing::CANNOT_DRAW_TO_COLOR_ALPHA |
-        gfxWindowsNativeDrawing::CANNOT_AXIS_ALIGNED_SCALE |
-        gfxWindowsNativeDrawing::CANNOT_COMPLEX_TRANSFORM;
+      return gfxWindowsNativeDrawing::CANNOT_DRAW_TO_COLOR_ALPHA |
+             gfxWindowsNativeDrawing::CANNOT_AXIS_ALIGNED_SCALE |
+             gfxWindowsNativeDrawing::CANNOT_COMPLEX_TRANSFORM;
 
     
     default:
-      return
-        gfxWindowsNativeDrawing::CANNOT_DRAW_TO_COLOR_ALPHA |
-        gfxWindowsNativeDrawing::CANNOT_AXIS_ALIGNED_SCALE |
-        gfxWindowsNativeDrawing::CANNOT_COMPLEX_TRANSFORM;
+      return gfxWindowsNativeDrawing::CANNOT_DRAW_TO_COLOR_ALPHA |
+             gfxWindowsNativeDrawing::CANNOT_AXIS_ALIGNED_SCALE |
+             gfxWindowsNativeDrawing::CANNOT_COMPLEX_TRANSFORM;
   }
 }
 
-static nscolor
-GetScrollbarButtonColor(nscolor aTrackColor, EventStates aStates)
-{
+static nscolor GetScrollbarButtonColor(nscolor aTrackColor,
+                                       EventStates aStates) {
   
   
 
@@ -4253,9 +4088,7 @@ GetScrollbarButtonColor(nscolor aTrackColor, EventStates aStates)
   return RelativeLuminanceUtils::Adjust(aTrackColor, luminance);
 }
 
-static nscolor
-GetScrollbarArrowColor(nscolor aButtonColor)
-{
+static nscolor GetScrollbarArrowColor(nscolor aButtonColor) {
   
   
   
@@ -4288,9 +4121,8 @@ GetScrollbarArrowColor(nscolor aButtonColor)
   return NS_RGBA(255, 255, 255, NS_GET_A(aButtonColor));
 }
 
-static nscolor
-AdjustScrollbarFaceColor(nscolor aFaceColor, EventStates aStates)
-{
+static nscolor AdjustScrollbarFaceColor(nscolor aFaceColor,
+                                        EventStates aStates) {
   
   
   
@@ -4324,29 +4156,24 @@ AdjustScrollbarFaceColor(nscolor aFaceColor, EventStates aStates)
 }
 
 
-nsresult
-nsNativeThemeWin::DrawCustomScrollbarPart(gfxContext* aContext,
-                                          nsIFrame* aFrame,
-                                          ComputedStyle* aStyle,
-                                          StyleAppearance aAppearance,
-                                          const nsRect& aRect,
-                                          const nsRect& aClipRect)
-{
+nsresult nsNativeThemeWin::DrawCustomScrollbarPart(
+    gfxContext* aContext, nsIFrame* aFrame, ComputedStyle* aStyle,
+    StyleAppearance aAppearance, const nsRect& aRect, const nsRect& aClipRect) {
   EventStates eventStates = GetContentState(aFrame, aAppearance);
 
   gfxContextAutoSaveRestore autoSave(aContext);
   RefPtr<gfxContext> ctx = aContext;
   gfxFloat p2a = gfxFloat(aFrame->PresContext()->AppUnitsPerDevPixel());
-  gfxRect clipRect =
-    ThebesRect(LayoutDevicePixel::FromAppUnits(aClipRect, p2a).ToUnknownRect());
+  gfxRect clipRect = ThebesRect(
+      LayoutDevicePixel::FromAppUnits(aClipRect, p2a).ToUnknownRect());
   ctx->Clip(clipRect);
   gfxRect rect =
-    ThebesRect(LayoutDevicePixel::FromAppUnits(aRect, p2a).ToUnknownRect());
+      ThebesRect(LayoutDevicePixel::FromAppUnits(aRect, p2a).ToUnknownRect());
 
   const nsStyleUI* ui = aStyle->StyleUI();
   nscolor trackColor = ui->mScrollbarTrackColor.IsAuto()
-    ? NS_RGB(240, 240, 240)
-    : ui->mScrollbarTrackColor.CalcColor(aStyle);
+                           ? NS_RGB(240, 240, 240)
+                           : ui->mScrollbarTrackColor.CalcColor(aStyle);
   switch (aAppearance) {
     case StyleAppearance::ScrollbarHorizontal:
     case StyleAppearance::ScrollbarVertical:
@@ -4382,8 +4209,8 @@ nsNativeThemeWin::DrawCustomScrollbarPart(gfxContext* aContext,
     case StyleAppearance::ScrollbarthumbVertical:
     case StyleAppearance::ScrollbarthumbHorizontal: {
       nscolor faceColor = ui->mScrollbarFaceColor.IsAuto()
-        ? NS_RGB(205, 205, 205)
-        : ui->mScrollbarFaceColor.CalcColor(aStyle);
+                              ? NS_RGB(205, 205, 205)
+                              : ui->mScrollbarFaceColor.CalcColor(aStyle);
       faceColor = AdjustScrollbarFaceColor(faceColor, eventStates);
       ctx->SetColor(Color::FromABGR(faceColor));
       ctx->Rectangle(bgRect);
@@ -4457,11 +4284,8 @@ nsNativeThemeWin::DrawCustomScrollbarPart(gfxContext* aContext,
 
 extern bool gDisableNativeTheme;
 
-already_AddRefed<nsITheme>
-do_GetNativeTheme()
-{
-  if (gDisableNativeTheme)
-    return nullptr;
+already_AddRefed<nsITheme> do_GetNativeTheme() {
+  if (gDisableNativeTheme) return nullptr;
 
   static nsCOMPtr<nsITheme> inst;
 

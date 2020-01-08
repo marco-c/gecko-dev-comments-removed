@@ -39,7 +39,7 @@ class SharedMemory {
   
   
   SharedMemory(SharedMemoryHandle init_handle, bool read_only)
-    : SharedMemory() {
+      : SharedMemory() {
     SetHandle(init_handle, read_only);
   }
 
@@ -83,7 +83,7 @@ class SharedMemory {
 
   
   
-  void *memory() const { return memory_; }
+  void* memory() const { return memory_; }
 
   
   
@@ -111,8 +111,7 @@ class SharedMemory {
   
   
   
-  bool GiveToProcess(ProcessId target_pid,
-                     SharedMemoryHandle* new_handle) {
+  bool GiveToProcess(ProcessId target_pid, SharedMemoryHandle* new_handle) {
     return ShareToProcessCommon(target_pid, new_handle, true);
   }
 
@@ -126,20 +125,19 @@ class SharedMemory {
 
  private:
   bool ShareToProcessCommon(ProcessId target_pid,
-                            SharedMemoryHandle* new_handle,
-                            bool close_self);
+                            SharedMemoryHandle* new_handle, bool close_self);
 
 #if defined(OS_WIN)
   
   
   bool external_section_;
-  HANDLE             mapped_file_;
+  HANDLE mapped_file_;
 #elif defined(OS_POSIX)
-  int                mapped_file_;
+  int mapped_file_;
 #endif
-  void*              memory_;
-  bool               read_only_;
-  size_t             max_size_;
+  void* memory_;
+  bool read_only_;
+  size_t max_size_;
 
   DISALLOW_EVIL_CONSTRUCTORS(SharedMemory);
 };

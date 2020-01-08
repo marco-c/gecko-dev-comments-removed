@@ -37,26 +37,23 @@ class mozIStorageService;
 
 
 
-
 class nsNotifyDoomListener : public mozilla::Runnable {
-public:
-  nsNotifyDoomListener(nsICacheListener* listener, nsresult status)
-    : mozilla::Runnable("nsNotifyDoomListener")
-    , mListener(listener) 
-    , mStatus(status)
-  {
-  }
+ public:
+  nsNotifyDoomListener(nsICacheListener *listener, nsresult status)
+      : mozilla::Runnable("nsNotifyDoomListener"),
+        mListener(listener)  
+        ,
+        mStatus(status) {}
 
-  NS_IMETHOD Run() override
-  {
+  NS_IMETHOD Run() override {
     mListener->OnCacheEntryDoomed(mStatus);
     NS_RELEASE(mListener);
     return NS_OK;
-    }
+  }
 
-private:
-    nsICacheListener *mListener;
-    nsresult          mStatus;
+ private:
+  nsICacheListener *mListener;
+  nsresult mStatus;
 };
 
 
@@ -64,308 +61,291 @@ private:
 
 
 class nsCacheService final : public nsICacheServiceInternal,
-                             public nsIMemoryReporter
-{
-    virtual ~nsCacheService();
+                             public nsIMemoryReporter {
+  virtual ~nsCacheService();
 
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSICACHESERVICE
-    NS_DECL_NSICACHESERVICEINTERNAL
-    NS_DECL_NSIMEMORYREPORTER
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSICACHESERVICE
+  NS_DECL_NSICACHESERVICEINTERNAL
+  NS_DECL_NSIMEMORYREPORTER
 
-    nsCacheService();
+  nsCacheService();
 
-    
-    static nsresult
-    Create(nsISupports* outer, const nsIID& iid, void* *result);
+  
+  static nsresult Create(nsISupports *outer, const nsIID &iid, void **result);
 
-
-    
+  
 
 
-    static nsresult  OpenCacheEntry(nsCacheSession *           session,
-                                    const nsACString &         key,
-                                    nsCacheAccessMode          accessRequested,
-                                    bool                       blockingMode,
-                                    nsICacheListener *         listener,
-                                    nsICacheEntryDescriptor ** result);
+  static nsresult OpenCacheEntry(nsCacheSession *session, const nsACString &key,
+                                 nsCacheAccessMode accessRequested,
+                                 bool blockingMode, nsICacheListener *listener,
+                                 nsICacheEntryDescriptor **result);
 
-    static nsresult  EvictEntriesForSession(nsCacheSession *   session);
+  static nsresult EvictEntriesForSession(nsCacheSession *session);
 
-    static nsresult  IsStorageEnabledForPolicy(nsCacheStoragePolicy  storagePolicy,
-                                               bool *              result);
+  static nsresult IsStorageEnabledForPolicy(nsCacheStoragePolicy storagePolicy,
+                                            bool *result);
 
-    static nsresult  DoomEntry(nsCacheSession   *session,
-                               const nsACString &key,
-                               nsICacheListener *listener);
+  static nsresult DoomEntry(nsCacheSession *session, const nsACString &key,
+                            nsICacheListener *listener);
 
-    
+  
 
 
 
-    static void      CloseDescriptor(nsCacheEntryDescriptor * descriptor);
+  static void CloseDescriptor(nsCacheEntryDescriptor *descriptor);
 
-    static nsresult  GetFileForEntry(nsCacheEntry *         entry,
-                                     nsIFile **             result);
+  static nsresult GetFileForEntry(nsCacheEntry *entry, nsIFile **result);
 
-    static nsresult  OpenInputStreamForEntry(nsCacheEntry *     entry,
-                                             nsCacheAccessMode  mode,
-                                             uint32_t           offset,
-                                             nsIInputStream **  result);
+  static nsresult OpenInputStreamForEntry(nsCacheEntry *entry,
+                                          nsCacheAccessMode mode,
+                                          uint32_t offset,
+                                          nsIInputStream **result);
 
-    static nsresult  OpenOutputStreamForEntry(nsCacheEntry *     entry,
-                                              nsCacheAccessMode  mode,
-                                              uint32_t           offset,
-                                              nsIOutputStream ** result);
+  static nsresult OpenOutputStreamForEntry(nsCacheEntry *entry,
+                                           nsCacheAccessMode mode,
+                                           uint32_t offset,
+                                           nsIOutputStream **result);
 
-    static nsresult  OnDataSizeChange(nsCacheEntry * entry, int32_t deltaSize);
+  static nsresult OnDataSizeChange(nsCacheEntry *entry, int32_t deltaSize);
 
-    static nsresult  SetCacheElement(nsCacheEntry * entry, nsISupports * element);
+  static nsresult SetCacheElement(nsCacheEntry *entry, nsISupports *element);
 
-    static nsresult  ValidateEntry(nsCacheEntry * entry);
+  static nsresult ValidateEntry(nsCacheEntry *entry);
 
-    static int32_t   CacheCompressionLevel();
+  static int32_t CacheCompressionLevel();
 
-    static bool      GetClearingEntries();
+  static bool GetClearingEntries();
 
-    static void      GetCacheBaseDirectoty(nsIFile ** result);
-    static void      GetDiskCacheDirectory(nsIFile ** result);
-    static void      GetAppCacheDirectory(nsIFile ** result);
+  static void GetCacheBaseDirectoty(nsIFile **result);
+  static void GetDiskCacheDirectory(nsIFile **result);
+  static void GetAppCacheDirectory(nsIFile **result);
 
-    
-
-
-
-    static
-    nsCacheService * GlobalInstance()   { return gService; }
-
-    static nsresult  DoomEntry(nsCacheEntry * entry);
-
-    static bool      IsStorageEnabledForPolicy_Locked(nsCacheStoragePolicy policy);
-
-    
-
-
-    static void      MarkStartingFresh();
-
-    
+  
 
 
 
-    nsresult GetOfflineDevice(nsOfflineCacheDevice ** aDevice);
+  static nsCacheService *GlobalInstance() { return gService; }
 
-    
+  static nsresult DoomEntry(nsCacheEntry *entry);
+
+  static bool IsStorageEnabledForPolicy_Locked(nsCacheStoragePolicy policy);
+
+  
+
+
+  static void MarkStartingFresh();
+
+  
+
+
+
+  nsresult GetOfflineDevice(nsOfflineCacheDevice **aDevice);
+
+  
 
 
 
 
-    nsresult GetCustomOfflineDevice(nsIFile *aProfileDir,
-                                    int32_t aQuota,
-                                    nsOfflineCacheDevice **aDevice);
+  nsresult GetCustomOfflineDevice(nsIFile *aProfileDir, int32_t aQuota,
+                                  nsOfflineCacheDevice **aDevice);
 
-    
-    
-    
-    
-    
-    static void      ReleaseObject_Locked(nsISupports *    object,
-                                          nsIEventTarget * target = nullptr);
+  
+  
+  
+  
+  
+  static void ReleaseObject_Locked(nsISupports *object,
+                                   nsIEventTarget *target = nullptr);
 
-    static nsresult DispatchToCacheIOThread(nsIRunnable* event);
+  static nsresult DispatchToCacheIOThread(nsIRunnable *event);
 
-    
-    
-    
-    static nsresult SyncWithCacheIOThread();
+  
+  
+  
+  static nsresult SyncWithCacheIOThread();
 
-
-    
+  
 
 
-    static void      OnProfileShutdown();
-    static void      OnProfileChanged();
+  static void OnProfileShutdown();
+  static void OnProfileChanged();
 
-    static void      SetDiskCacheEnabled(bool    enabled);
-    
-    static void      SetDiskCacheCapacity(int32_t  capacity);
-    
-    
-    static void      SetDiskCacheMaxEntrySize(int32_t  maxSize);
-    
-    
-    static void      SetMemoryCacheMaxEntrySize(int32_t  maxSize);
+  static void SetDiskCacheEnabled(bool enabled);
+  
+  static void SetDiskCacheCapacity(int32_t capacity);
+  
+  
+  static void SetDiskCacheMaxEntrySize(int32_t maxSize);
+  
+  
+  static void SetMemoryCacheMaxEntrySize(int32_t maxSize);
 
-    static void      SetOfflineCacheEnabled(bool    enabled);
-    
-    static void      SetOfflineCacheCapacity(int32_t  capacity);
+  static void SetOfflineCacheEnabled(bool enabled);
+  
+  static void SetOfflineCacheCapacity(int32_t capacity);
 
-    static void      SetMemoryCache();
+  static void SetMemoryCache();
 
-    static void      SetCacheCompressionLevel(int32_t level);
+  static void SetCacheCompressionLevel(int32_t level);
 
-    
-    static nsresult  SetDiskSmartSize();
+  
+  static nsresult SetDiskSmartSize();
 
-    static void      MoveOrRemoveDiskCache(nsIFile *aOldCacheDir,
-                                           nsIFile *aNewCacheDir,
-                                           const char *aCacheSubdir);
+  static void MoveOrRemoveDiskCache(nsIFile *aOldCacheDir,
+                                    nsIFile *aNewCacheDir,
+                                    const char *aCacheSubdir);
 
-    nsresult         Init();
-    void             Shutdown();
+  nsresult Init();
+  void Shutdown();
 
-    static bool      IsInitialized()
-    {
-      if (!gService) {
-          return false;
-      }
-      return gService->mInitialized;
+  static bool IsInitialized() {
+    if (!gService) {
+      return false;
     }
+    return gService->mInitialized;
+  }
 
-    static void      AssertOwnsLock()
-    { gService->mLock.AssertCurrentThreadOwns(); }
+  static void AssertOwnsLock() { gService->mLock.AssertCurrentThreadOwns(); }
 
-    static void      LeavePrivateBrowsing();
-    bool             IsDoomListEmpty();
+  static void LeavePrivateBrowsing();
+  bool IsDoomListEmpty();
 
-    typedef bool (*DoomCheckFn)(nsCacheEntry* entry);
+  typedef bool (*DoomCheckFn)(nsCacheEntry *entry);
 
-    
-    nsresult CreateSessionInternal(const char *          clientID,
-                                   nsCacheStoragePolicy  storagePolicy,
-                                   bool                  streamBased,
-                                   nsICacheSession     **result);
-    nsresult VisitEntriesInternal(nsICacheVisitor *visitor);
-    nsresult EvictEntriesInternal(nsCacheStoragePolicy storagePolicy);
+  
+  nsresult CreateSessionInternal(const char *clientID,
+                                 nsCacheStoragePolicy storagePolicy,
+                                 bool streamBased, nsICacheSession **result);
+  nsresult VisitEntriesInternal(nsICacheVisitor *visitor);
+  nsresult EvictEntriesInternal(nsCacheStoragePolicy storagePolicy);
 
-private:
-    friend class nsCacheServiceAutoLock;
-    friend class nsOfflineCacheDevice;
-    friend class nsProcessRequestEvent;
-    friend class nsSetSmartSizeEvent;
-    friend class nsBlockOnCacheThreadEvent;
-    friend class nsSetDiskSmartSizeCallback;
-    friend class nsDoomEvent;
-    friend class nsDisableOldMaxSmartSizePrefEvent;
-    friend class nsDiskCacheMap;
-    friend class nsAsyncDoomEvent;
-    friend class nsCacheEntryDescriptor;
+ private:
+  friend class nsCacheServiceAutoLock;
+  friend class nsOfflineCacheDevice;
+  friend class nsProcessRequestEvent;
+  friend class nsSetSmartSizeEvent;
+  friend class nsBlockOnCacheThreadEvent;
+  friend class nsSetDiskSmartSizeCallback;
+  friend class nsDoomEvent;
+  friend class nsDisableOldMaxSmartSizePrefEvent;
+  friend class nsDiskCacheMap;
+  friend class nsAsyncDoomEvent;
+  friend class nsCacheEntryDescriptor;
 
-    
-
-
-
-    static void      Lock();
-    static void      Lock(::mozilla::Telemetry::HistogramID mainThreadLockerID);
-    static void      Unlock();
-    void             LockAcquired();
-    void             LockReleased();
-
-    nsresult         CreateDiskDevice();
-    nsresult         CreateOfflineDevice();
-    nsresult         CreateCustomOfflineDevice(nsIFile *aProfileDir,
-                                               int32_t aQuota,
-                                               nsOfflineCacheDevice **aDevice);
-    nsresult         CreateMemoryDevice();
-
-    nsresult         RemoveCustomOfflineDevice(nsOfflineCacheDevice *aDevice);
-
-    nsresult         CreateRequest(nsCacheSession *   session,
-                                   const nsACString & clientKey,
-                                   nsCacheAccessMode  accessRequested,
-                                   bool               blockingMode,
-                                   nsICacheListener * listener,
-                                   nsCacheRequest **  request);
-
-    nsresult         DoomEntry_Internal(nsCacheEntry * entry,
-                                        bool doProcessPendingRequests);
-
-    nsresult         EvictEntriesForClient(const char *          clientID,
-                                           nsCacheStoragePolicy  storagePolicy);
-
-    
-    
-    
-    nsresult         NotifyListener(nsCacheRequest *          request,
-                                    nsICacheEntryDescriptor * descriptor,
-                                    nsCacheAccessMode         accessGranted,
-                                    nsresult                  error);
-
-    nsresult         ActivateEntry(nsCacheRequest * request,
-                                   nsCacheEntry ** entry,
-                                   nsCacheEntry ** doomedEntry);
-
-    nsCacheDevice *  EnsureEntryHasDevice(nsCacheEntry * entry);
-
-    nsCacheEntry *   SearchCacheDevices(nsCString * key, nsCacheStoragePolicy policy, bool *collision);
-
-    void             DeactivateEntry(nsCacheEntry * entry);
-
-    nsresult         ProcessRequest(nsCacheRequest *           request,
-                                    bool                       calledFromOpenCacheEntry,
-                                    nsICacheEntryDescriptor ** result);
-
-    nsresult         ProcessPendingRequests(nsCacheEntry * entry);
-
-    void             ClearDoomList(void);
-    void             DoomActiveEntries(DoomCheckFn check);
-    void             CloseAllStreams();
-    void             FireClearNetworkCacheStoredAnywhereNotification();
-
-    void LogCacheStatistics();
-
-    nsresult         SetDiskSmartSize_Locked();
-
-    
+  
 
 
 
-    static nsCacheService *         gService;  
+  static void Lock();
+  static void Lock(::mozilla::Telemetry::HistogramID mainThreadLockerID);
+  static void Unlock();
+  void LockAcquired();
+  void LockReleased();
 
-    nsCOMPtr<mozIStorageService>    mStorageService;
+  nsresult CreateDiskDevice();
+  nsresult CreateOfflineDevice();
+  nsresult CreateCustomOfflineDevice(nsIFile *aProfileDir, int32_t aQuota,
+                                     nsOfflineCacheDevice **aDevice);
+  nsresult CreateMemoryDevice();
 
-    nsCacheProfilePrefObserver *    mObserver;
+  nsresult RemoveCustomOfflineDevice(nsOfflineCacheDevice *aDevice);
 
-    mozilla::Mutex                  mLock;
-    mozilla::CondVar                mCondVar;
-    bool                            mNotified;
+  nsresult CreateRequest(nsCacheSession *session, const nsACString &clientKey,
+                         nsCacheAccessMode accessRequested, bool blockingMode,
+                         nsICacheListener *listener, nsCacheRequest **request);
 
-    mozilla::Mutex                  mTimeStampLock;
-    mozilla::TimeStamp              mLockAcquiredTimeStamp;
+  nsresult DoomEntry_Internal(nsCacheEntry *entry,
+                              bool doProcessPendingRequests);
 
-    nsCOMPtr<nsIThread>             mCacheIOThread;
+  nsresult EvictEntriesForClient(const char *clientID,
+                                 nsCacheStoragePolicy storagePolicy);
 
-    nsTArray<nsISupports*>          mDoomedObjects;
-    nsCOMPtr<nsITimer>              mSmartSizeTimer;
+  
+  
+  
+  nsresult NotifyListener(nsCacheRequest *request,
+                          nsICacheEntryDescriptor *descriptor,
+                          nsCacheAccessMode accessGranted, nsresult error);
 
-    bool                            mInitialized;
-    bool                            mClearingEntries;
+  nsresult ActivateEntry(nsCacheRequest *request, nsCacheEntry **entry,
+                         nsCacheEntry **doomedEntry);
 
-    bool                            mEnableMemoryDevice;
-    bool                            mEnableDiskDevice;
-    bool                            mEnableOfflineDevice;
+  nsCacheDevice *EnsureEntryHasDevice(nsCacheEntry *entry);
 
-    nsMemoryCacheDevice *           mMemoryDevice;
-    nsDiskCacheDevice *             mDiskDevice;
-    nsOfflineCacheDevice *          mOfflineDevice;
+  nsCacheEntry *SearchCacheDevices(nsCString *key, nsCacheStoragePolicy policy,
+                                   bool *collision);
 
-    nsRefPtrHashtable<nsStringHashKey, nsOfflineCacheDevice> mCustomOfflineDevices;
+  void DeactivateEntry(nsCacheEntry *entry);
 
-    nsCacheEntryHashTable           mActiveEntries;
-    PRCList                         mDoomedEntries;
+  nsresult ProcessRequest(nsCacheRequest *request,
+                          bool calledFromOpenCacheEntry,
+                          nsICacheEntryDescriptor **result);
 
-    
+  nsresult ProcessPendingRequests(nsCacheEntry *entry);
 
-    uint32_t                        mTotalEntries;
-    uint32_t                        mCacheHits;
-    uint32_t                        mCacheMisses;
-    uint32_t                        mMaxKeyLength;
-    uint32_t                        mMaxDataSize;
-    uint32_t                        mMaxMetaSize;
+  void ClearDoomList(void);
+  void DoomActiveEntries(DoomCheckFn check);
+  void CloseAllStreams();
+  void FireClearNetworkCacheStoredAnywhereNotification();
 
-    
-    uint32_t                        mDeactivateFailures;
-    uint32_t                        mDeactivatedUnboundEntries;
+  void LogCacheStatistics();
+
+  nsresult SetDiskSmartSize_Locked();
+
+  
+
+
+
+  static nsCacheService *gService;  
+
+  nsCOMPtr<mozIStorageService> mStorageService;
+
+  nsCacheProfilePrefObserver *mObserver;
+
+  mozilla::Mutex mLock;
+  mozilla::CondVar mCondVar;
+  bool mNotified;
+
+  mozilla::Mutex mTimeStampLock;
+  mozilla::TimeStamp mLockAcquiredTimeStamp;
+
+  nsCOMPtr<nsIThread> mCacheIOThread;
+
+  nsTArray<nsISupports *> mDoomedObjects;
+  nsCOMPtr<nsITimer> mSmartSizeTimer;
+
+  bool mInitialized;
+  bool mClearingEntries;
+
+  bool mEnableMemoryDevice;
+  bool mEnableDiskDevice;
+  bool mEnableOfflineDevice;
+
+  nsMemoryCacheDevice *mMemoryDevice;
+  nsDiskCacheDevice *mDiskDevice;
+  nsOfflineCacheDevice *mOfflineDevice;
+
+  nsRefPtrHashtable<nsStringHashKey, nsOfflineCacheDevice>
+      mCustomOfflineDevices;
+
+  nsCacheEntryHashTable mActiveEntries;
+  PRCList mDoomedEntries;
+
+  
+
+  uint32_t mTotalEntries;
+  uint32_t mCacheHits;
+  uint32_t mCacheMisses;
+  uint32_t mMaxKeyLength;
+  uint32_t mMaxDataSize;
+  uint32_t mMaxMetaSize;
+
+  
+  uint32_t mDeactivateFailures;
+  uint32_t mDeactivatedUnboundEntries;
 };
 
 
@@ -378,16 +358,13 @@ private:
 
 
 class nsCacheServiceAutoLock {
-public:
-    nsCacheServiceAutoLock() {
-        nsCacheService::Lock();
-    }
-    explicit nsCacheServiceAutoLock(mozilla::Telemetry::HistogramID mainThreadLockerID) {
-        nsCacheService::Lock(mainThreadLockerID);
-    }
-    ~nsCacheServiceAutoLock() {
-        nsCacheService::Unlock();
-    }
+ public:
+  nsCacheServiceAutoLock() { nsCacheService::Lock(); }
+  explicit nsCacheServiceAutoLock(
+      mozilla::Telemetry::HistogramID mainThreadLockerID) {
+    nsCacheService::Lock(mainThreadLockerID);
+  }
+  ~nsCacheServiceAutoLock() { nsCacheService::Unlock(); }
 };
 
-#endif 
+#endif  

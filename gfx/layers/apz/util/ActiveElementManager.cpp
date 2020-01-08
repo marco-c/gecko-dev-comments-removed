@@ -23,10 +23,7 @@ static int32_t sActivationDelayMs = 100;
 static bool sActivationDelayMsSet = false;
 
 ActiveElementManager::ActiveElementManager()
-  : mCanBePan(false),
-    mCanBePanSet(false),
-    mSetActiveTask(nullptr)
-{
+    : mCanBePan(false), mCanBePanSet(false), mSetActiveTask(nullptr) {
   if (!sActivationDelayMsSet) {
     Preferences::AddIntVarCache(&sActivationDelayMs,
                                 "ui.touch_activation.delay_ms",
@@ -37,9 +34,7 @@ ActiveElementManager::ActiveElementManager()
 
 ActiveElementManager::~ActiveElementManager() {}
 
-void
-ActiveElementManager::SetTargetElement(dom::EventTarget* aTarget)
-{
+void ActiveElementManager::SetTargetElement(dom::EventTarget* aTarget) {
   if (mTarget) {
     
     AEM_LOG("Multiple fingers on-screen, clearing target element\n");
@@ -54,9 +49,7 @@ ActiveElementManager::SetTargetElement(dom::EventTarget* aTarget)
   TriggerElementActivation();
 }
 
-void
-ActiveElementManager::HandleTouchStart(bool aCanBePan)
-{
+void ActiveElementManager::HandleTouchStart(bool aCanBePan) {
   AEM_LOG("Touch start, aCanBePan: %d\n", aCanBePan);
   if (mCanBePanSet) {
     
@@ -72,9 +65,7 @@ ActiveElementManager::HandleTouchStart(bool aCanBePan)
   TriggerElementActivation();
 }
 
-void
-ActiveElementManager::TriggerElementActivation()
-{
+void ActiveElementManager::TriggerElementActivation() {
   
   
   
@@ -87,33 +78,27 @@ ActiveElementManager::TriggerElementActivation()
   if (!mCanBePan) {
     SetActive(mTarget);
   } else {
-    CancelTask();   
-                    
+    CancelTask();  
+                   
     MOZ_ASSERT(mSetActiveTask == nullptr);
 
     RefPtr<CancelableRunnable> task =
-      NewCancelableRunnableMethod<nsCOMPtr<dom::Element>>(
-        "layers::ActiveElementManager::SetActiveTask",
-        this,
-        &ActiveElementManager::SetActiveTask,
-        mTarget);
+        NewCancelableRunnableMethod<nsCOMPtr<dom::Element>>(
+            "layers::ActiveElementManager::SetActiveTask", this,
+            &ActiveElementManager::SetActiveTask, mTarget);
     mSetActiveTask = task;
     MessageLoop::current()->PostDelayedTask(task.forget(), sActivationDelayMs);
     AEM_LOG("Scheduling mSetActiveTask %p\n", mSetActiveTask);
   }
 }
 
-void
-ActiveElementManager::ClearActivation()
-{
+void ActiveElementManager::ClearActivation() {
   AEM_LOG("Clearing element activation\n");
   CancelTask();
   ResetActive();
 }
 
-void
-ActiveElementManager::HandleTouchEndEvent(bool aWasClick)
-{
+void ActiveElementManager::HandleTouchEndEvent(bool aWasClick) {
   AEM_LOG("Touch end event, aWasClick: %d\n", aWasClick);
 
   
@@ -137,16 +122,12 @@ ActiveElementManager::HandleTouchEndEvent(bool aWasClick)
   ResetTouchBlockState();
 }
 
-void
-ActiveElementManager::HandleTouchEnd()
-{
+void ActiveElementManager::HandleTouchEnd() {
   AEM_LOG("Touch end, clearing pan state\n");
   mCanBePanSet = false;
 }
 
-static nsPresContext*
-GetPresContextFor(nsIContent* aContent)
-{
+static nsPresContext* GetPresContextFor(nsIContent* aContent) {
   if (!aContent) {
     return nullptr;
   }
@@ -157,9 +138,7 @@ GetPresContextFor(nsIContent* aContent)
   return shell->GetPresContext();
 }
 
-void
-ActiveElementManager::SetActive(dom::Element* aTarget)
-{
+void ActiveElementManager::SetActive(dom::Element* aTarget) {
   AEM_LOG("Setting active %p\n", aTarget);
 
   if (nsPresContext* pc = GetPresContextFor(aTarget)) {
@@ -167,9 +146,7 @@ ActiveElementManager::SetActive(dom::Element* aTarget)
   }
 }
 
-void
-ActiveElementManager::ResetActive()
-{
+void ActiveElementManager::ResetActive() {
   AEM_LOG("Resetting active from %p\n", mTarget.get());
 
   
@@ -182,16 +159,13 @@ ActiveElementManager::ResetActive()
   }
 }
 
-void
-ActiveElementManager::ResetTouchBlockState()
-{
+void ActiveElementManager::ResetTouchBlockState() {
   mTarget = nullptr;
   mCanBePanSet = false;
 }
 
-void
-ActiveElementManager::SetActiveTask(const nsCOMPtr<dom::Element>& aTarget)
-{
+void ActiveElementManager::SetActiveTask(
+    const nsCOMPtr<dom::Element>& aTarget) {
   AEM_LOG("mSetActiveTask %p running\n", mSetActiveTask);
 
   
@@ -201,9 +175,7 @@ ActiveElementManager::SetActiveTask(const nsCOMPtr<dom::Element>& aTarget)
   SetActive(aTarget);
 }
 
-void
-ActiveElementManager::CancelTask()
-{
+void ActiveElementManager::CancelTask() {
   AEM_LOG("Cancelling task %p\n", mSetActiveTask);
 
   if (mSetActiveTask) {
@@ -212,5 +184,5 @@ ActiveElementManager::CancelTask()
   }
 }
 
-} 
-} 
+}  
+}  

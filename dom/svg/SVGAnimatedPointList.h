@@ -20,7 +20,7 @@ namespace mozilla {
 
 namespace dom {
 class SVGAnimationElement;
-} 
+}  
 
 
 
@@ -37,13 +37,12 @@ class SVGAnimationElement;
 
 
 
-class SVGAnimatedPointList
-{
+class SVGAnimatedPointList {
   
   friend class DOMSVGPoint;
   friend class DOMSVGPointList;
 
-public:
+ public:
   SVGAnimatedPointList() {}
 
   
@@ -52,9 +51,7 @@ public:
 
 
 
-  const SVGPointList& GetBaseValue() const {
-    return mBaseVal;
-  }
+  const SVGPointList& GetBaseValue() const { return mBaseVal; }
 
   nsresult SetBaseValueString(const nsAString& aValue);
 
@@ -67,30 +64,22 @@ public:
     return mAnimVal ? *mAnimVal : mBaseVal;
   }
 
-  nsresult SetAnimValue(const SVGPointList& aValue,
-                        nsSVGElement *aElement);
+  nsresult SetAnimValue(const SVGPointList& aValue, nsSVGElement* aElement);
 
-  void ClearAnimValue(nsSVGElement *aElement);
+  void ClearAnimValue(nsSVGElement* aElement);
 
   
 
 
 
-  void *GetBaseValKey() const {
-    return (void*)&mBaseVal;
-  }
-  void *GetAnimValKey() const {
-    return (void*)&mAnimVal;
-  }
+  void* GetBaseValKey() const { return (void*)&mBaseVal; }
+  void* GetAnimValKey() const { return (void*)&mAnimVal; }
 
-  bool IsAnimating() const {
-    return !!mAnimVal;
-  }
+  bool IsAnimating() const { return !!mAnimVal; }
 
   UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aElement);
 
-private:
-
+ private:
   
   
   
@@ -99,32 +88,27 @@ private:
   SVGPointList mBaseVal;
   nsAutoPtr<SVGPointList> mAnimVal;
 
-  struct SMILAnimatedPointList : public nsISMILAttr
-  {
-  public:
-    SMILAnimatedPointList(SVGAnimatedPointList* aVal,
-                          nsSVGElement* aElement)
-      : mVal(aVal)
-      , mElement(aElement)
-    {}
+  struct SMILAnimatedPointList : public nsISMILAttr {
+   public:
+    SMILAnimatedPointList(SVGAnimatedPointList* aVal, nsSVGElement* aElement)
+        : mVal(aVal), mElement(aElement) {}
 
     
     
     
-    SVGAnimatedPointList *mVal;
-    nsSVGElement *mElement;
+    SVGAnimatedPointList* mVal;
+    nsSVGElement* mElement;
 
     
-    virtual nsresult ValueFromString(const nsAString& aStr,
-                                     const dom::SVGAnimationElement* aSrcElement,
-                                     nsSMILValue& aValue,
-                                     bool& aPreventCachingOfSandwich) const override;
+    virtual nsresult ValueFromString(
+        const nsAString& aStr, const dom::SVGAnimationElement* aSrcElement,
+        nsSMILValue& aValue, bool& aPreventCachingOfSandwich) const override;
     virtual nsSMILValue GetBaseValue() const override;
     virtual void ClearAnimValue() override;
     virtual nsresult SetAnimValue(const nsSMILValue& aValue) override;
   };
 };
 
-} 
+}  
 
-#endif 
+#endif  

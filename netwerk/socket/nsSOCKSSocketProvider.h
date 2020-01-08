@@ -10,26 +10,22 @@
 #include "nsISocketProvider.h"
 
 
-enum {
-    NS_SOCKS_VERSION_4 = 4,
-    NS_SOCKS_VERSION_5 = 5
-};
+enum { NS_SOCKS_VERSION_4 = 4, NS_SOCKS_VERSION_5 = 5 };
 
-class nsSOCKSSocketProvider : public nsISocketProvider
-{
-public:
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSISOCKETPROVIDER
+class nsSOCKSSocketProvider : public nsISocketProvider {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSISOCKETPROVIDER
 
-    explicit nsSOCKSSocketProvider(uint32_t version) : mVersion(version) {}
+  explicit nsSOCKSSocketProvider(uint32_t version) : mVersion(version) {}
 
-    static nsresult CreateV4(nsISupports *, REFNSIID aIID, void **aResult);
-    static nsresult CreateV5(nsISupports *, REFNSIID aIID, void **aResult);
+  static nsresult CreateV4(nsISupports *, REFNSIID aIID, void **aResult);
+  static nsresult CreateV5(nsISupports *, REFNSIID aIID, void **aResult);
 
-private:
-    virtual ~nsSOCKSSocketProvider() = default;
+ private:
+  virtual ~nsSOCKSSocketProvider() = default;
 
-    uint32_t mVersion; 
+  uint32_t mVersion;  
 };
 
 #endif 

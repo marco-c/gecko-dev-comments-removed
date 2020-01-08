@@ -7,27 +7,28 @@
 #ifndef GFX_REPAINTREQUEST_H
 #define GFX_REPAINTREQUEST_H
 
-#include <stdint.h>                     
+#include <stdint.h>  
 
-#include "FrameMetrics.h"               
-#include "mozilla/DefineEnum.h"         
-#include "mozilla/gfx/BasePoint.h"      
-#include "mozilla/gfx/Rect.h"           
-#include "mozilla/gfx/ScaleFactor.h"    
-#include "mozilla/TimeStamp.h"          
-#include "Units.h"                      
+#include "FrameMetrics.h"             
+#include "mozilla/DefineEnum.h"       
+#include "mozilla/gfx/BasePoint.h"    
+#include "mozilla/gfx/Rect.h"         
+#include "mozilla/gfx/ScaleFactor.h"  
+#include "mozilla/TimeStamp.h"        
+#include "Units.h"                    
 
 namespace IPC {
-template <typename T> struct ParamTraits;
-} 
+template <typename T>
+struct ParamTraits;
+}  
 
 namespace mozilla {
 namespace layers {
 
 struct RepaintRequest {
   friend struct IPC::ParamTraits<mozilla::layers::RepaintRequest>;
-public:
 
+ public:
   
   MOZ_DEFINE_ENUM_WITH_BASE_AT_CLASS_SCOPE(
     ScrollOffsetUpdateType, uint8_t, (
@@ -37,51 +38,47 @@ public:
   
 
   RepaintRequest()
-    : mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID)
-    , mPresShellResolution(1)
-    , mCompositionBounds(0, 0, 0, 0)
-    , mCumulativeResolution()
-    , mDevPixelsPerCSSPixel(1)
-    , mScrollOffset(0, 0)
-    , mZoom()
-    , mScrollGeneration(0)
-    , mDisplayPortMargins(0, 0, 0, 0)
-    , mPresShellId(-1)
-    , mViewport(0, 0, 0, 0)
-    , mExtraResolution()
-    , mPaintRequestTime()
-    , mScrollUpdateType(eNone)
-    , mIsRootContent(false)
-    , mUseDisplayPortMargins(false)
-    , mIsScrollInfoLayer(false)
-  {
-  }
+      : mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID),
+        mPresShellResolution(1),
+        mCompositionBounds(0, 0, 0, 0),
+        mCumulativeResolution(),
+        mDevPixelsPerCSSPixel(1),
+        mScrollOffset(0, 0),
+        mZoom(),
+        mScrollGeneration(0),
+        mDisplayPortMargins(0, 0, 0, 0),
+        mPresShellId(-1),
+        mViewport(0, 0, 0, 0),
+        mExtraResolution(),
+        mPaintRequestTime(),
+        mScrollUpdateType(eNone),
+        mIsRootContent(false),
+        mUseDisplayPortMargins(false),
+        mIsScrollInfoLayer(false) {}
 
-  RepaintRequest(const FrameMetrics& aOther, const ScrollOffsetUpdateType aScrollUpdateType)
-    : mScrollId(aOther.GetScrollId())
-    , mPresShellResolution(aOther.GetPresShellResolution())
-    , mCompositionBounds(aOther.GetCompositionBounds())
-    , mCumulativeResolution(aOther.GetCumulativeResolution())
-    , mDevPixelsPerCSSPixel(aOther.GetDevPixelsPerCSSPixel())
-    , mScrollOffset(aOther.GetScrollOffset())
-    , mZoom(aOther.GetZoom())
-    , mScrollGeneration(aOther.GetScrollGeneration())
-    , mDisplayPortMargins(aOther.GetDisplayPortMargins())
-    , mPresShellId(aOther.GetPresShellId())
-    , mViewport(aOther.GetViewport())
-    , mExtraResolution(aOther.GetExtraResolution())
-    , mPaintRequestTime(aOther.GetPaintRequestTime())
-    , mScrollUpdateType(aScrollUpdateType)
-    , mIsRootContent(aOther.IsRootContent())
-    , mUseDisplayPortMargins(aOther.GetUseDisplayPortMargins())
-    , mIsScrollInfoLayer(aOther.IsScrollInfoLayer())
-  {
-  }
+  RepaintRequest(const FrameMetrics& aOther,
+                 const ScrollOffsetUpdateType aScrollUpdateType)
+      : mScrollId(aOther.GetScrollId()),
+        mPresShellResolution(aOther.GetPresShellResolution()),
+        mCompositionBounds(aOther.GetCompositionBounds()),
+        mCumulativeResolution(aOther.GetCumulativeResolution()),
+        mDevPixelsPerCSSPixel(aOther.GetDevPixelsPerCSSPixel()),
+        mScrollOffset(aOther.GetScrollOffset()),
+        mZoom(aOther.GetZoom()),
+        mScrollGeneration(aOther.GetScrollGeneration()),
+        mDisplayPortMargins(aOther.GetDisplayPortMargins()),
+        mPresShellId(aOther.GetPresShellId()),
+        mViewport(aOther.GetViewport()),
+        mExtraResolution(aOther.GetExtraResolution()),
+        mPaintRequestTime(aOther.GetPaintRequestTime()),
+        mScrollUpdateType(aScrollUpdateType),
+        mIsRootContent(aOther.IsRootContent()),
+        mUseDisplayPortMargins(aOther.GetUseDisplayPortMargins()),
+        mIsScrollInfoLayer(aOther.IsScrollInfoLayer()) {}
 
   
 
-  bool operator==(const RepaintRequest& aOther) const
-  {
+  bool operator==(const RepaintRequest& aOther) const {
     
     return mScrollId == aOther.mScrollId &&
            mPresShellResolution == aOther.mPresShellResolution &&
@@ -102,13 +99,11 @@ public:
            mIsScrollInfoLayer == aOther.mIsScrollInfoLayer;
   }
 
-  bool operator!=(const RepaintRequest& aOther) const
-  {
+  bool operator!=(const RepaintRequest& aOther) const {
     return !operator==(aOther);
   }
 
-  CSSToScreenScale2D DisplayportPixelsPerCSSPixel() const
-  {
+  CSSToScreenScale2D DisplayportPixelsPerCSSPixel() const {
     
     
     
@@ -119,132 +114,86 @@ public:
     return mZoom * ParentLayerToLayerScale(1.0f) / mExtraResolution;
   }
 
-  CSSToLayerScale2D LayersPixelsPerCSSPixel() const
-  {
+  CSSToLayerScale2D LayersPixelsPerCSSPixel() const {
     return mDevPixelsPerCSSPixel * mCumulativeResolution;
   }
 
   
-  LayerToParentLayerScale GetAsyncZoom() const
-  {
+  LayerToParentLayerScale GetAsyncZoom() const {
     
     
     return (mZoom / LayersPixelsPerCSSPixel()).ToScaleFactor();
   }
 
-  CSSSize CalculateCompositedSizeInCssPixels() const
-  {
+  CSSSize CalculateCompositedSizeInCssPixels() const {
     if (GetZoom() == CSSToParentLayerScale2D(0, 0)) {
       return CSSSize();  
     }
     return mCompositionBounds.Size() / GetZoom();
   }
 
-  float GetPresShellResolution() const
-  {
-    return mPresShellResolution;
-  }
+  float GetPresShellResolution() const { return mPresShellResolution; }
 
-  const ParentLayerRect& GetCompositionBounds() const
-  {
+  const ParentLayerRect& GetCompositionBounds() const {
     return mCompositionBounds;
   }
 
-  const LayoutDeviceToLayerScale2D& GetCumulativeResolution() const
-  {
+  const LayoutDeviceToLayerScale2D& GetCumulativeResolution() const {
     return mCumulativeResolution;
   }
 
-  const CSSToLayoutDeviceScale& GetDevPixelsPerCSSPixel() const
-  {
+  const CSSToLayoutDeviceScale& GetDevPixelsPerCSSPixel() const {
     return mDevPixelsPerCSSPixel;
   }
 
-  bool IsRootContent() const
-  {
-    return mIsRootContent;
-  }
+  bool IsRootContent() const { return mIsRootContent; }
 
-  const CSSPoint& GetScrollOffset() const
-  {
-    return mScrollOffset;
-  }
+  const CSSPoint& GetScrollOffset() const { return mScrollOffset; }
 
-  const CSSToParentLayerScale2D& GetZoom() const
-  {
-    return mZoom;
-  }
+  const CSSToParentLayerScale2D& GetZoom() const { return mZoom; }
 
-  ScrollOffsetUpdateType GetScrollUpdateType() const
-  {
+  ScrollOffsetUpdateType GetScrollUpdateType() const {
     return mScrollUpdateType;
   }
 
-  bool GetScrollOffsetUpdated() const
-  {
-    return mScrollUpdateType != eNone;
-  }
+  bool GetScrollOffsetUpdated() const { return mScrollUpdateType != eNone; }
 
-  uint32_t GetScrollGeneration() const
-  {
-    return mScrollGeneration;
-  }
+  uint32_t GetScrollGeneration() const { return mScrollGeneration; }
 
-  ScrollableLayerGuid::ViewID GetScrollId() const
-  {
-    return mScrollId;
-  }
+  ScrollableLayerGuid::ViewID GetScrollId() const { return mScrollId; }
 
-  const ScreenMargin& GetDisplayPortMargins() const
-  {
+  const ScreenMargin& GetDisplayPortMargins() const {
     return mDisplayPortMargins;
   }
 
-  bool GetUseDisplayPortMargins() const
-  {
-    return mUseDisplayPortMargins;
-  }
+  bool GetUseDisplayPortMargins() const { return mUseDisplayPortMargins; }
 
-  uint32_t GetPresShellId() const
-  {
-    return mPresShellId;
-  }
+  uint32_t GetPresShellId() const { return mPresShellId; }
 
-  const CSSRect& GetViewport() const
-  {
-    return mViewport;
-  }
+  const CSSRect& GetViewport() const { return mViewport; }
 
-  const ScreenToLayerScale2D& GetExtraResolution() const
-  {
+  const ScreenToLayerScale2D& GetExtraResolution() const {
     return mExtraResolution;
   }
 
-  const TimeStamp& GetPaintRequestTime() const {
-    return mPaintRequestTime;
-  }
+  const TimeStamp& GetPaintRequestTime() const { return mPaintRequestTime; }
 
-  bool IsScrollInfoLayer() const {
-    return mIsScrollInfoLayer;
-  }
+  bool IsScrollInfoLayer() const { return mIsScrollInfoLayer; }
 
-protected:
-  void SetIsRootContent(bool aIsRootContent)
-  {
+ protected:
+  void SetIsRootContent(bool aIsRootContent) {
     mIsRootContent = aIsRootContent;
   }
 
-  void SetUseDisplayPortMargins(bool aValue)
-  {
+  void SetUseDisplayPortMargins(bool aValue) {
     mUseDisplayPortMargins = aValue;
   }
 
-  void SetIsScrollInfoLayer(bool aIsScrollInfoLayer)
-  {
+  void SetIsScrollInfoLayer(bool aIsScrollInfoLayer) {
     mIsScrollInfoLayer = aIsScrollInfoLayer;
   }
 
-private:
+ private:
   
   ScrollableLayerGuid::ViewID mScrollId;
 
@@ -310,6 +259,7 @@ private:
   
   
   
+  
   CSSToParentLayerScale2D mZoom;
 
   
@@ -343,17 +293,17 @@ private:
   ScrollOffsetUpdateType mScrollUpdateType;
 
   
-  bool mIsRootContent:1;
+  bool mIsRootContent : 1;
 
   
   
-  bool mUseDisplayPortMargins:1;
+  bool mUseDisplayPortMargins : 1;
 
   
-  bool mIsScrollInfoLayer:1;
+  bool mIsScrollInfoLayer : 1;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

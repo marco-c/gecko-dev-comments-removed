@@ -1102,8 +1102,7 @@ class GetUserMediaStreamRunnable : public Runnable {
 
   ~GetUserMediaStreamRunnable() {
     mHolder.RejectIfExists(
-        MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
-        __func__);
+        MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError), __func__);
   }
 
   class TracksCreatedListener : public MediaStreamTrackListener {
@@ -1125,8 +1124,7 @@ class GetUserMediaStreamRunnable : public Runnable {
 
     ~TracksCreatedListener() {
       mHolder.RejectIfExists(
-          MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError),
-          __func__);
+          MakeRefPtr<MediaMgrError>(MediaMgrError::Name::AbortError), __func__);
     }
 
     void NotifyOutput(MediaStreamGraph* aGraph,
@@ -4113,14 +4111,16 @@ SourceListener::InitializeAsync() {
                  state->mTrackEnabled = true;
                  state->mTrackEnabledTime = TimeStamp::Now();
 
-          if (state->mDevice->GetMediaSource() !=
-              MediaSourceEnum::AudioCapture) {
-            
-            
-            mStream->SetPullingEnabled(
-                state == mAudioDeviceState.get() ? kAudioTrack : kVideoTrack,
-                true);
-          }
+                 if (state->mDevice->GetMediaSource() !=
+                     MediaSourceEnum::AudioCapture) {
+                   
+                   
+                   
+                   mStream->SetPullingEnabled(state == mAudioDeviceState.get()
+                                                  ? kAudioTrack
+                                                  : kVideoTrack,
+                                              true);
+                 }
                }
                return SourceListenerPromise::CreateAndResolve(true, __func__);
              },

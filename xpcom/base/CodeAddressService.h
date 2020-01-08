@@ -29,11 +29,8 @@ namespace mozilla {
 
 
 
-template <class StringTable,
-          class StringAlloc,
-          class DescribeCodeAddressLock>
-class CodeAddressService
-{
+template <class StringTable, class StringAlloc, class DescribeCodeAddressLock>
+class CodeAddressService {
   
   
   
@@ -54,33 +51,34 @@ class CodeAddressService
 
   StringTable mLibraryStrings;
 
-  struct Entry
-  {
+  struct Entry {
     const void* mPc;
-    char*       mFunction;  
-    const char* mLibrary;   
-                            
-    ptrdiff_t   mLOffset;
-    char*       mFileName;  
-    uint32_t    mLineNo:31;
-    uint32_t    mInUse:1;   
+    char* mFunction;       
+    const char* mLibrary;  
+                           
+    ptrdiff_t mLOffset;
+    char* mFileName;  
+    uint32_t mLineNo : 31;
+    uint32_t mInUse : 1;  
 
     Entry()
-      : mPc(0), mFunction(nullptr), mLibrary(nullptr), mLOffset(0),
-        mFileName(nullptr), mLineNo(0), mInUse(0)
-    {}
+        : mPc(0),
+          mFunction(nullptr),
+          mLibrary(nullptr),
+          mLOffset(0),
+          mFileName(nullptr),
+          mLineNo(0),
+          mInUse(0) {}
 
-    ~Entry()
-    {
+    ~Entry() {
       
       StringAlloc::free(mFunction);
       StringAlloc::free(mFileName);
     }
 
-    void Replace(const void* aPc, const char* aFunction,
-                 const char* aLibrary, ptrdiff_t aLOffset,
-                 const char* aFileName, unsigned long aLineNo)
-    {
+    void Replace(const void* aPc, const char* aFunction, const char* aLibrary,
+                 ptrdiff_t aLOffset, const char* aFileName,
+                 unsigned long aLineNo) {
       mPc = aPc;
 
       
@@ -96,8 +94,7 @@ class CodeAddressService
       mInUse = 1;
     }
 
-    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-    {
+    size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
       
       size_t n = 0;
       n += aMallocSizeOf(mFunction);
@@ -119,15 +116,11 @@ class CodeAddressService
   size_t mNumCacheHits;
   size_t mNumCacheMisses;
 
-public:
-  CodeAddressService()
-    : mEntries(), mNumCacheHits(0), mNumCacheMisses(0)
-  {
-  }
+ public:
+  CodeAddressService() : mEntries(), mNumCacheHits(0), mNumCacheMisses(0) {}
 
   void GetLocation(uint32_t aFrameNumber, const void* aPc, char* aBuf,
-                   size_t aBufLen)
-  {
+                   size_t aBufLen) {
     MOZ_ASSERT(DescribeCodeAddressLock::IsLocked());
 
     uint32_t index = HashGeneric(aPc) & kMask;
@@ -164,8 +157,7 @@ public:
                          entry.mFileName, entry.mLineNo);
   }
 
-  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-  {
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     size_t n = aMallocSizeOf(this);
     for (uint32_t i = 0; i < kNumEntries; i++) {
       n += mEntries[i].SizeOfExcludingThis(aMallocSizeOf);
@@ -178,8 +170,7 @@ public:
 
   size_t CacheCapacity() const { return kNumEntries; }
 
-  size_t CacheCount() const
-  {
+  size_t CacheCount() const {
     size_t n = 0;
     for (size_t i = 0; i < kNumEntries; i++) {
       if (mEntries[i].mInUse) {
@@ -189,10 +180,10 @@ public:
     return n;
   }
 
-  size_t NumCacheHits()   const { return mNumCacheHits; }
+  size_t NumCacheHits() const { return mNumCacheHits; }
   size_t NumCacheMisses() const { return mNumCacheMisses; }
 };
 
-} 
+}  
 
-#endif 
+#endif  

@@ -28,9 +28,8 @@ class RenderViewMLGPU;
 class TexturedLayerMLGPU;
 class TextureSource;
 
-class LayerMLGPU : public HostLayer
-{
-public:
+class LayerMLGPU : public HostLayer {
+ public:
   LayerMLGPU* AsLayerMLGPU() override { return this; }
   virtual PaintedLayerMLGPU* AsPaintedLayerMLGPU() { return nullptr; }
   virtual ImageLayerMLGPU* AsImageLayerMLGPU() { return nullptr; }
@@ -44,20 +43,15 @@ public:
 
   
   
-  bool PrepareToRender(FrameBuilder* aBuilder, const RenderTargetIntRect& aClipRect);
+  bool PrepareToRender(FrameBuilder* aBuilder,
+                       const RenderTargetIntRect& aClipRect);
 
-  Layer::LayerType GetType() {
-    return GetLayer()->GetType();
-  }
+  Layer::LayerType GetType() { return GetLayer()->GetType(); }
   const RenderTargetIntRect& GetComputedClipRect() const {
     return mComputedClipRect;
   }
-  MaskOperation* GetMask() const {
-    return mMask;
-  }
-  float GetComputedOpacity() const {
-    return mComputedOpacity;
-  }
+  MaskOperation* GetMask() const { return mMask; }
+  float GetComputedOpacity() const { return mComputedOpacity; }
 
   
   
@@ -67,9 +61,7 @@ public:
   
   
   
-  bool IsPrepared() const {
-    return mFrameKey == sFrameKey && mPrepared;
-  }
+  bool IsPrepared() const { return mFrameKey == sFrameKey && mPrepared; }
 
   
   
@@ -77,9 +69,7 @@ public:
 
   
   
-  const LayerIntRegion& GetRenderRegion() const {
-    return mRenderRegion;
-  }
+  const LayerIntRegion& GetRenderRegion() const { return mRenderRegion; }
 
   
   
@@ -88,27 +78,21 @@ public:
   
   virtual void SetRenderRegion(LayerIntRegion&& aRegion);
 
-  virtual void AssignToView(FrameBuilder* aBuilder,
-                            RenderViewMLGPU* aView,
+  virtual void AssignToView(FrameBuilder* aBuilder, RenderViewMLGPU* aView,
                             Maybe<gfx::Polygon>&& aGeometry);
 
   
   
-  virtual bool OnPrepareToRender(FrameBuilder* aBuilder) {
-    return true;
-  }
+  virtual bool OnPrepareToRender(FrameBuilder* aBuilder) { return true; }
 
   virtual void ClearCachedResources() {}
-  virtual CompositableHost* GetCompositableHost() override {
-    return nullptr;
-  }
+  virtual CompositableHost* GetCompositableHost() override { return nullptr; }
 
-protected:
+ protected:
   LayerMLGPU(LayerManagerMLGPU* aManager);
   LayerManagerMLGPU* GetManager();
 
-  void AddBoundsToView(FrameBuilder* aBuilder,
-                       RenderViewMLGPU* aView,
+  void AddBoundsToView(FrameBuilder* aBuilder, RenderViewMLGPU* aView,
                        Maybe<gfx::Polygon>&& aGeometry);
 
   void MarkPrepared();
@@ -118,12 +102,12 @@ protected:
   void SetLayerManager(HostLayerManager* aManager) override;
   virtual void OnLayerManagerChange(LayerManagerMLGPU* aManager) {}
 
-private:
+ private:
   
   
   static uint64_t sFrameKey;
 
-protected:
+ protected:
   
   RenderTargetIntRect mComputedClipRect;
   RefPtr<MaskOperation> mMask;
@@ -133,10 +117,8 @@ protected:
   LayerIntRegion mRenderRegion;
 };
 
-class RefLayerMLGPU final : public RefLayer
-                          , public LayerMLGPU
-{
-public:
+class RefLayerMLGPU final : public RefLayer, public LayerMLGPU {
+ public:
   explicit RefLayerMLGPU(LayerManagerMLGPU* aManager);
   ~RefLayerMLGPU() override;
 
@@ -146,8 +128,8 @@ public:
   Layer* GetLayer() override { return this; }
 
   
-  void ComputeEffectiveTransforms(const gfx::Matrix4x4& aTransformToSurface) override
-  {
+  void ComputeEffectiveTransforms(
+      const gfx::Matrix4x4& aTransformToSurface) override {
     DefaultComputeEffectiveTransforms(aTransformToSurface);
   }
 
@@ -156,17 +138,13 @@ public:
   MOZ_LAYER_DECL_NAME("RefLayerMLGPU", TYPE_REF)
 };
 
-class ColorLayerMLGPU final : public ColorLayer
-                            , public LayerMLGPU
-{
-public:
+class ColorLayerMLGPU final : public ColorLayer, public LayerMLGPU {
+ public:
   explicit ColorLayerMLGPU(LayerManagerMLGPU* aManager);
   ~ColorLayerMLGPU() override;
 
   
-  bool IsContentOpaque() override {
-    return mColor.a >= 1.0f;
-  }
+  bool IsContentOpaque() override { return mColor.a >= 1.0f; }
 
   
   HostLayer* AsHostLayer() override { return this; }
@@ -176,7 +154,7 @@ public:
   MOZ_LAYER_DECL_NAME("ColorLayerMLGPU", TYPE_COLOR)
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

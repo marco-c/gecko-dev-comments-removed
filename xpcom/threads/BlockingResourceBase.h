@@ -4,7 +4,6 @@
 
 
 
-
 #ifndef mozilla_BlockingResourceBase_h
 #define mozilla_BlockingResourceBase_h
 
@@ -38,7 +37,8 @@
 namespace mozilla {
 
 #ifdef DEBUG
-template <class T> class DeadlockDetector;
+template <class T>
+class DeadlockDetector;
 #endif
 
 
@@ -46,11 +46,15 @@ template <class T> class DeadlockDetector;
 
 
 
-class BlockingResourceBase
-{
-public:
+class BlockingResourceBase {
+ public:
   
-  enum BlockingResourceType { eMutex, eReentrantMonitor, eCondVar, eRecursiveMutex };
+  enum BlockingResourceType {
+    eMutex,
+    eReentrantMonitor,
+    eCondVar,
+    eRecursiveMutex
+  };
 
   
 
@@ -58,11 +62,9 @@ public:
 
   static const char* const kResourceTypeName[];
 
-
 #ifdef DEBUG
 
-  static size_t
-  SizeOfDeadlockDetector(MallocSizeOf aMallocSizeOf);
+  static size_t SizeOfDeadlockDetector(MallocSizeOf aMallocSizeOf);
 
   
 
@@ -83,9 +85,7 @@ public:
 
   bool Print(nsACString& aOut) const;
 
-  size_t
-  SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const
-  {
+  size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
     
     
     
@@ -96,7 +96,7 @@ public:
   
   typedef DeadlockDetector<BlockingResourceBase> DDT;
 
-protected:
+ protected:
 #ifdef MOZ_CALLSTACK_DISABLED
   typedef bool AcquisitionState;
 #else
@@ -130,7 +130,7 @@ protected:
 
 
 
-  void Acquire(); 
+  void Acquire();  
 
   
 
@@ -141,7 +141,7 @@ protected:
 
 
 
-  void Release();             
+  void Release();  
 
   
 
@@ -151,10 +151,9 @@ protected:
 
 
 
-  static BlockingResourceBase* ResourceChainFront()
-  {
-    return
-      (BlockingResourceBase*)PR_GetThreadPrivate(sResourceAcqnChainFrontTPI);
+  static BlockingResourceBase* ResourceChainFront() {
+    return (BlockingResourceBase*)PR_GetThreadPrivate(
+        sResourceAcqnChainFrontTPI);
   }
 
   
@@ -163,10 +162,9 @@ protected:
 
 
   static BlockingResourceBase* ResourceChainPrev(
-      const BlockingResourceBase* aResource)
-  {
+      const BlockingResourceBase* aResource) {
     return aResource->mChainPrev;
-  } 
+  }  
 
   
 
@@ -175,11 +173,10 @@ protected:
 
 
 
-  void ResourceChainAppend(BlockingResourceBase* aPrev)
-  {
+  void ResourceChainAppend(BlockingResourceBase* aPrev) {
     mChainPrev = aPrev;
     PR_SetThreadPrivate(sResourceAcqnChainFrontTPI, this);
-  } 
+  }  
 
   
 
@@ -187,11 +184,10 @@ protected:
 
 
 
-  void ResourceChainRemove()
-  {
+  void ResourceChainRemove() {
     NS_ASSERTION(this == ResourceChainFront(), "not at chain front");
     PR_SetThreadPrivate(sResourceAcqnChainFrontTPI, mChainPrev);
-  } 
+  }  
 
   
 
@@ -199,10 +195,7 @@ protected:
 
 
 
-  AcquisitionState GetAcquisitionState()
-  {
-    return mAcquired;
-  }
+  AcquisitionState GetAcquisitionState() { return mAcquired; }
 
   
 
@@ -210,8 +203,7 @@ protected:
 
 
 
-  void SetAcquisitionState(const AcquisitionState& aAcquisitionState)
-  {
+  void SetAcquisitionState(const AcquisitionState& aAcquisitionState) {
     mAcquired = aAcquisitionState;
   }
 
@@ -221,8 +213,7 @@ protected:
 
 
 
-  void ClearAcquisitionState()
-  {
+  void ClearAcquisitionState() {
 #ifdef MOZ_CALLSTACK_DISABLED
     mAcquired = false;
 #else
@@ -236,8 +227,7 @@ protected:
 
 
 
-  bool IsAcquired() const
-  {
+  bool IsAcquired() const {
 #ifdef MOZ_CALLSTACK_DISABLED
     return mAcquired;
 #else
@@ -253,7 +243,7 @@ protected:
 
   BlockingResourceBase* mChainPrev;
 
-private:
+ private:
   
 
 
@@ -319,14 +309,14 @@ private:
 
   static void Shutdown();
 
-  static void StackWalkCallback(uint32_t aFrameNumber, void* aPc,
-                                void* aSp, void* aClosure);
+  static void StackWalkCallback(uint32_t aFrameNumber, void* aPc, void* aSp,
+                                void* aClosure);
   static void GetStackTrace(AcquisitionState& aState);
 
-#  ifdef MOZILLA_INTERNAL_API
+#ifdef MOZILLA_INTERNAL_API
   
   friend void LogTerm();
-#  endif  
+#endif  
 
 #else  
 
@@ -337,8 +327,6 @@ private:
 #endif
 };
 
+}  
 
-} 
-
-
-#endif 
+#endif  

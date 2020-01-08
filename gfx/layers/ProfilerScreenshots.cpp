@@ -19,28 +19,23 @@ using namespace mozilla;
 using namespace mozilla::layers;
 
 ProfilerScreenshots::ProfilerScreenshots()
-  : mMutex("ProfilerScreenshots::mMutex")
-  , mLiveSurfaceCount(0)
-{
-}
+    : mMutex("ProfilerScreenshots::mMutex"), mLiveSurfaceCount(0) {}
 
-ProfilerScreenshots::~ProfilerScreenshots()
-{
+ProfilerScreenshots::~ProfilerScreenshots() {
   if (mThread) {
     
     
     
     
-    SystemGroup::Dispatch(TaskCategory::Other,
-                          NewRunnableMethod("ProfilerScreenshots::~ProfilerScreenshots",
-                                            mThread, &nsIThread::Shutdown));
+    SystemGroup::Dispatch(
+        TaskCategory::Other,
+        NewRunnableMethod("ProfilerScreenshots::~ProfilerScreenshots", mThread,
+                          &nsIThread::Shutdown));
     mThread = nullptr;
   }
 }
 
- bool
-ProfilerScreenshots::IsEnabled()
-{
+ bool ProfilerScreenshots::IsEnabled() {
 #ifdef MOZ_GECKO_PROFILER
   return profiler_feature_active(ProfilerFeature::Screenshots);
 #else
@@ -48,13 +43,10 @@ ProfilerScreenshots::IsEnabled()
 #endif
 }
 
-void
-ProfilerScreenshots::SubmitScreenshot(uintptr_t aWindowIdentifier,
-                                      const gfx::IntSize& aOriginalSize,
-                                      const IntSize& aScaledSize,
-                                      const TimeStamp& aTimeStamp,
-                                      const std::function<bool(DataSourceSurface*)>& aPopulateSurface)
-{
+void ProfilerScreenshots::SubmitScreenshot(
+    uintptr_t aWindowIdentifier, const gfx::IntSize& aOriginalSize,
+    const IntSize& aScaledSize, const TimeStamp& aTimeStamp,
+    const std::function<bool(DataSourceSurface*)>& aPopulateSurface) {
 #ifdef MOZ_GECKO_PROFILER
   RefPtr<DataSourceSurface> backingSurface = TakeNextSurface();
   if (!backingSurface) {
@@ -66,16 +58,18 @@ ProfilerScreenshots::SubmitScreenshot(uintptr_t aWindowIdentifier,
   bool succeeded = aPopulateSurface(backingSurface);
 
   if (!succeeded) {
-    PROFILER_ADD_MARKER("NoCompositorScreenshot because aPopulateSurface callback failed");
+    PROFILER_ADD_MARKER(
+        "NoCompositorScreenshot because aPopulateSurface callback failed");
     ReturnSurface(backingSurface);
     return;
   }
 
   if (!mThread) {
-    nsresult rv =
-      NS_NewNamedThread("ProfScreenshot", getter_AddRefs(mThread));
+    nsresult rv = NS_NewNamedThread("ProfScreenshot", getter_AddRefs(mThread));
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      PROFILER_ADD_MARKER("NoCompositorScreenshot because ProfilerScreenshots thread creation failed");
+      PROFILER_ADD_MARKER(
+          "NoCompositorScreenshot because ProfilerScreenshots thread creation "
+          "failed");
       ReturnSurface(backingSurface);
       return;
     }
@@ -87,44 +81,42 @@ ProfilerScreenshots::SubmitScreenshot(uintptr_t aWindowIdentifier,
   IntSize scaledSize = aScaledSize;
   TimeStamp timeStamp = aTimeStamp;
 
-  mThread->Dispatch(
-    NS_NewRunnableFunction("ProfilerScreenshots::SubmitScreenshot",
-                           [this, backingSurface, sourceThread, windowIdentifier,
-                            originalSize, scaledSize, timeStamp]() {
-    
-    
-    {
-      DataSourceSurface::ScopedMap scopedMap(backingSurface, DataSourceSurface::READ);
-      RefPtr<DataSourceSurface> surf =
-        Factory::CreateWrappingDataSourceSurface(
-          scopedMap.GetData(), scopedMap.GetStride(), scaledSize, SurfaceFormat::B8G8R8A8);
-
-      
-      nsCString dataURL;
-      nsresult rv =
-        gfxUtils::EncodeSourceSurface(surf, NS_LITERAL_CSTRING("image/jpeg"),
-                                      NS_LITERAL_STRING("quality=85"),
-                                      gfxUtils::eDataURIEncode,
-                                      nullptr, &dataURL);
-      if (NS_SUCCEEDED(rv)) {
+  mThread->Dispatch(NS_NewRunnableFunction(
+      "ProfilerScreenshots::SubmitScreenshot",
+      [this, backingSurface, sourceThread, windowIdentifier, originalSize,
+       scaledSize, timeStamp]() {
         
-        profiler_add_marker_for_thread(
-          sourceThread,
-          "CompositorScreenshot",
-          MakeUnique<ScreenshotPayload>(timeStamp, std::move(dataURL),
-                                        originalSize, windowIdentifier));
-      }
-    }
+        
+        {
+          DataSourceSurface::ScopedMap scopedMap(backingSurface,
+                                                 DataSourceSurface::READ);
+          RefPtr<DataSourceSurface> surf =
+              Factory::CreateWrappingDataSourceSurface(
+                  scopedMap.GetData(), scopedMap.GetStride(), scaledSize,
+                  SurfaceFormat::B8G8R8A8);
 
-    
-    ReturnSurface(backingSurface);
-  }));
+          
+          nsCString dataURL;
+          nsresult rv = gfxUtils::EncodeSourceSurface(
+              surf, NS_LITERAL_CSTRING("image/jpeg"),
+              NS_LITERAL_STRING("quality=85"), gfxUtils::eDataURIEncode,
+              nullptr, &dataURL);
+          if (NS_SUCCEEDED(rv)) {
+            
+            profiler_add_marker_for_thread(
+                sourceThread, "CompositorScreenshot",
+                MakeUnique<ScreenshotPayload>(timeStamp, std::move(dataURL),
+                                              originalSize, windowIdentifier));
+          }
+        }
+
+        
+        ReturnSurface(backingSurface);
+      }));
 #endif
 }
 
-already_AddRefed<DataSourceSurface>
-ProfilerScreenshots::TakeNextSurface()
-{
+already_AddRefed<DataSourceSurface> ProfilerScreenshots::TakeNextSurface() {
   MutexAutoLock mon(mMutex);
   if (!mAvailableSurfaces.IsEmpty()) {
     RefPtr<DataSourceSurface> surf = mAvailableSurfaces[0];
@@ -132,7 +124,8 @@ ProfilerScreenshots::TakeNextSurface()
     return surf.forget();
   }
   if (mLiveSurfaceCount >= 8) {
-    NS_WARNING("already 8 surfaces in flight, skipping capture for this composite");
+    NS_WARNING(
+        "already 8 surfaces in flight, skipping capture for this composite");
     return nullptr;
   }
   mLiveSurfaceCount++;
@@ -140,9 +133,7 @@ ProfilerScreenshots::TakeNextSurface()
                                           SurfaceFormat::B8G8R8A8);
 }
 
-void
-ProfilerScreenshots::ReturnSurface(DataSourceSurface* aSurface)
-{
+void ProfilerScreenshots::ReturnSurface(DataSourceSurface* aSurface) {
   MutexAutoLock mon(this->mMutex);
   mAvailableSurfaces.AppendElement(aSurface);
 }

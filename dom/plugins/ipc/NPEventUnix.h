@@ -18,13 +18,12 @@ namespace mozilla {
 namespace plugins {
 
 struct NPRemoteEvent {
-    NPEvent event;
+  NPEvent event;
 };
 
-}
+}  
 
-}
-
+}  
 
 
 
@@ -46,51 +45,46 @@ struct NPRemoteEvent {
 namespace IPC {
 
 template <>
-struct ParamTraits<mozilla::plugins::NPRemoteEvent>     
+struct ParamTraits<mozilla::plugins::NPRemoteEvent>  
 {
-    typedef mozilla::plugins::NPRemoteEvent paramType;
+  typedef mozilla::plugins::NPRemoteEvent paramType;
 
-    static void Write(Message* aMsg, const paramType& aParam)
-    {
-        aMsg->WriteBytes(&aParam, sizeof(paramType));
+  static void Write(Message* aMsg, const paramType& aParam) {
+    aMsg->WriteBytes(&aParam, sizeof(paramType));
+  }
+
+  static bool Read(const Message* aMsg, PickleIterator* aIter,
+                   paramType* aResult) {
+    if (!aMsg->ReadBytesInto(aIter, aResult, sizeof(paramType))) {
+      return false;
     }
 
-    static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult)
-    {
-        if (!aMsg->ReadBytesInto(aIter, aResult, sizeof(paramType))) {
-            return false;
-        }
-
 #ifdef MOZ_X11
-        SetXDisplay(aResult->event);
+    SetXDisplay(aResult->event);
 #endif
-        return true;
-    }
+    return true;
+  }
 
-    static void Log(const paramType& aParam, std::wstring* aLog)
-    {
-        
-        aLog->append(L"(XEvent)");
-    }
+  static void Log(const paramType& aParam, std::wstring* aLog) {
+    
+    aLog->append(L"(XEvent)");
+  }
 
 #ifdef MOZ_X11
-private:
-    static void SetXDisplay(XEvent& ev)
-    {
-        Display* display = mozilla::DefaultXDisplay();
-        if (ev.type >= KeyPress) {
-            ev.xany.display = display;
-        }
-        else {
-            
-            
-            ev.xerror.display = display;
-        }
+ private:
+  static void SetXDisplay(XEvent& ev) {
+    Display* display = mozilla::DefaultXDisplay();
+    if (ev.type >= KeyPress) {
+      ev.xany.display = display;
+    } else {
+      
+      
+      ev.xerror.display = display;
     }
+  }
 #endif
 };
 
-} 
+}  
 
-
-#endif 
+#endif  

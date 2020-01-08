@@ -16,106 +16,95 @@ namespace js {
 namespace jit {
 
 
+
 static const size_t ICStackValueOffset = 0;
 
-inline void
-EmitRestoreTailCallReg(MacroAssembler& masm)
-{
-    
+inline void EmitRestoreTailCallReg(MacroAssembler& masm) {
+  
 }
 
-inline void
-EmitRepushTailCallReg(MacroAssembler& masm)
-{
-    
+inline void EmitRepushTailCallReg(MacroAssembler& masm) {
+  
 }
 
-inline void
-EmitCallIC(MacroAssembler& masm, const ICEntry* entry, CodeOffset* callOffset)
-{
-    
-    masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
-                 ICStubReg);
+inline void EmitCallIC(MacroAssembler& masm, const ICEntry* entry,
+                       CodeOffset* callOffset) {
+  
+  masm.loadPtr(AbsoluteAddress(entry).offset(ICEntry::offsetOfFirstStub()),
+               ICStubReg);
 
-    
-    
-    MOZ_ASSERT(R2 == ValueOperand(r0));
-    masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
+  
+  
+  MOZ_ASSERT(R2 == ValueOperand(r0));
+  masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
 
-    
-    masm.Blr(x0);
-    *callOffset = CodeOffset(masm.currentOffset());
+  
+  masm.Blr(x0);
+  *callOffset = CodeOffset(masm.currentOffset());
 }
 
-inline void
-EmitEnterTypeMonitorIC(MacroAssembler& masm,
-                       size_t monitorStubOffset = ICMonitoredStub::offsetOfFirstMonitorStub())
-{
-    
-    
-    masm.loadPtr(Address(ICStubReg, (uint32_t) monitorStubOffset), ICStubReg);
+inline void EmitEnterTypeMonitorIC(
+    MacroAssembler& masm,
+    size_t monitorStubOffset = ICMonitoredStub::offsetOfFirstMonitorStub()) {
+  
+  
+  masm.loadPtr(Address(ICStubReg, (uint32_t)monitorStubOffset), ICStubReg);
 
-    
-    
-    MOZ_ASSERT(R2 == ValueOperand(r0));
-    masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
+  
+  
+  MOZ_ASSERT(R2 == ValueOperand(r0));
+  masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
 
-    
-    masm.Br(x0);
+  
+  masm.Br(x0);
 }
 
-inline void
-EmitReturnFromIC(MacroAssembler& masm)
-{
-    masm.abiret(); 
+inline void EmitReturnFromIC(MacroAssembler& masm) {
+  masm.abiret();  
 }
 
-inline void
-EmitBaselineLeaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false)
-{
-    vixl::UseScratchRegisterScope temps(&masm.asVIXL());
-    const ARMRegister scratch64 = temps.AcquireX();
+inline void EmitBaselineLeaveStubFrame(MacroAssembler& masm,
+                                       bool calledIntoIon = false) {
+  vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+  const ARMRegister scratch64 = temps.AcquireX();
 
-    
-    
-    
-    
-    if (calledIntoIon) {
-        masm.pop(scratch64.asUnsized());
-        masm.Lsr(scratch64, scratch64, FRAMESIZE_SHIFT);
-        masm.Add(masm.GetStackPointer64(), masm.GetStackPointer64(), scratch64);
-    } else {
-        masm.Mov(masm.GetStackPointer64(), BaselineFrameReg64);
-    }
+  
+  
+  
+  
+  if (calledIntoIon) {
+    masm.pop(scratch64.asUnsized());
+    masm.Lsr(scratch64, scratch64, FRAMESIZE_SHIFT);
+    masm.Add(masm.GetStackPointer64(), masm.GetStackPointer64(), scratch64);
+  } else {
+    masm.Mov(masm.GetStackPointer64(), BaselineFrameReg64);
+  }
 
-    
-    masm.pop(BaselineFrameReg, ICStubReg, ICTailCallReg, scratch64.asUnsized());
+  
+  masm.pop(BaselineFrameReg, ICStubReg, ICTailCallReg, scratch64.asUnsized());
 
-    
-    masm.checkStackAlignment();
+  
+  masm.checkStackAlignment();
 }
 
 template <typename AddrType>
-inline void
-EmitPreBarrier(MacroAssembler& masm, const AddrType& addr, MIRType type)
-{
-    
-    masm.push(lr);
-    masm.guardedCallPreBarrier(addr, type);
-    masm.pop(lr);
+inline void EmitPreBarrier(MacroAssembler& masm, const AddrType& addr,
+                           MIRType type) {
+  
+  masm.push(lr);
+  masm.guardedCallPreBarrier(addr, type);
+  masm.pop(lr);
 }
 
-inline void
-EmitStubGuardFailure(MacroAssembler& masm)
-{
-    
-    masm.loadPtr(Address(ICStubReg, ICStub::offsetOfNext()), ICStubReg);
+inline void EmitStubGuardFailure(MacroAssembler& masm) {
+  
+  masm.loadPtr(Address(ICStubReg, ICStub::offsetOfNext()), ICStubReg);
 
-    
-    masm.jump(Address(ICStubReg, ICStub::offsetOfStubCode()));
+  
+  masm.jump(Address(ICStubReg, ICStub::offsetOfStubCode()));
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

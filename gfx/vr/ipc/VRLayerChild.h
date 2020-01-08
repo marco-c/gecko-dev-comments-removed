@@ -31,16 +31,17 @@ namespace gfx {
 class VRLayerChild : public PVRLayerChild {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(VRLayerChild)
 
-public:
+ public:
   static PVRLayerChild* CreateIPDLActor();
   static bool DestroyIPDLActor(PVRLayerChild* actor);
 
   void Initialize(dom::HTMLCanvasElement* aCanvasElement,
-                  const gfx::Rect& aLeftEyeRect, const gfx::Rect& aRightEyeRect);
+                  const gfx::Rect& aLeftEyeRect,
+                  const gfx::Rect& aRightEyeRect);
   void SubmitFrame(const VRDisplayInfo& aDisplayInfo);
   bool IsIPCOpen();
 
-private:
+ private:
   VRLayerChild();
   virtual ~VRLayerChild();
   void ClearSurfaces();
@@ -49,6 +50,7 @@ private:
   RefPtr<dom::HTMLCanvasElement> mCanvasElement;
   bool mIPCOpen;
 
+  
   
   
   
@@ -65,7 +67,7 @@ private:
   uint64_t mLastSubmittedFrameId;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

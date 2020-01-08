@@ -27,27 +27,23 @@ class GPUChild;
 
 
 
-class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost
-{
+class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   friend class GPUChild;
 
-public:
+ public:
   class Listener {
-  public:
-    virtual void OnProcessLaunchComplete(GPUProcessHost* aHost)
-    {}
+   public:
+    virtual void OnProcessLaunchComplete(GPUProcessHost* aHost) {}
 
     
     
     
-    virtual void OnProcessUnexpectedShutdown(GPUProcessHost* aHost)
-    {}
+    virtual void OnProcessUnexpectedShutdown(GPUProcessHost* aHost) {}
 
-    virtual void OnRemoteProcessDeviceReset(GPUProcessHost* aHost)
-    {}
+    virtual void OnRemoteProcessDeviceReset(GPUProcessHost* aHost) {}
   };
 
-public:
+ public:
   explicit GPUProcessHost(Listener* listener);
   ~GPUProcessHost();
 
@@ -71,29 +67,24 @@ public:
   
   
   
+  
   void Shutdown();
 
   
   
-  GPUChild* GetActor() const {
-    return mGPUChild.get();
-  }
+  GPUChild* GetActor() const { return mGPUChild.get(); }
 
   
   
   uint64_t GetProcessToken() const;
 
-  bool IsConnected() const {
-    return !!mGPUChild;
-  }
+  bool IsConnected() const { return !!mGPUChild; }
 
   
   
   
   
-  TimeStamp GetLaunchTime() const {
-    return mLaunchTime;
-  }
+  TimeStamp GetLaunchTime() const { return mLaunchTime; }
 
   
   void OnChannelConnected(int32_t peer_pid) override;
@@ -104,7 +95,7 @@ public:
   
   void KillProcess();
 
-private:
+ private:
   
   void OnChannelConnectedTask();
   void OnChannelErrorTask();
@@ -120,17 +111,13 @@ private:
 
   void DestroyProcess();
 
-private:
+ private:
   DISALLOW_COPY_AND_ASSIGN(GPUProcessHost);
 
   Listener* mListener;
   mozilla::ipc::TaskFactory<GPUProcessHost> mTaskFactory;
 
-  enum class LaunchPhase {
-    Unlaunched,
-    Waiting,
-    Complete
-  };
+  enum class LaunchPhase { Unlaunched, Waiting, Complete };
   LaunchPhase mLaunchPhase;
 
   UniquePtr<GPUChild> mGPUChild;
@@ -142,7 +129,7 @@ private:
   TimeStamp mLaunchTime;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -21,7 +21,7 @@ namespace ipc {
 
 class PBackgroundChild;
 
-} 
+}  
 
 namespace hal {
 class BatteryInformation;
@@ -33,11 +33,9 @@ namespace quota {
 class QuotaChild;
 class QuotaManager;
 
-class QuotaManagerService final
-  : public nsIQuotaManagerService
-  , public nsIObserver
-  , public hal::BatteryObserver
-{
+class QuotaManagerService final : public nsIQuotaManagerService,
+                                  public nsIObserver,
+                                  public hal::BatteryObserver {
   typedef mozilla::ipc::PBackgroundChild PBackgroundChild;
 
   class BackgroundCreateCallback;
@@ -53,69 +51,54 @@ class QuotaManagerService final
   bool mBackgroundActorFailed;
   bool mIdleObserverRegistered;
 
-public:
+ public:
   
-  static QuotaManagerService*
-  GetOrCreate();
-
-  
-  static QuotaManagerService*
-  Get();
+  static QuotaManagerService* GetOrCreate();
 
   
-  static already_AddRefed<QuotaManagerService>
-  FactoryCreate();
+  static QuotaManagerService* Get();
 
-  void
-  ClearBackgroundActor();
+  
+  static already_AddRefed<QuotaManagerService> FactoryCreate();
 
-  void
-  NoteLiveManager(QuotaManager* aManager);
+  void ClearBackgroundActor();
 
-  void
-  NoteShuttingDownManager();
+  void NoteLiveManager(QuotaManager* aManager);
+
+  void NoteShuttingDownManager();
 
   
   
-  void
-  AbortOperationsForProcess(ContentParentId aContentParentId);
+  void AbortOperationsForProcess(ContentParentId aContentParentId);
 
-private:
+ private:
   QuotaManagerService();
   ~QuotaManagerService();
 
-  nsresult
-  Init();
+  nsresult Init();
 
-  void
-  Destroy();
+  void Destroy();
 
-  nsresult
-  InitiateRequest(nsAutoPtr<PendingRequestInfo>& aInfo);
+  nsresult InitiateRequest(nsAutoPtr<PendingRequestInfo>& aInfo);
 
-  nsresult
-  BackgroundActorCreated(PBackgroundChild* aBackgroundActor);
+  nsresult BackgroundActorCreated(PBackgroundChild* aBackgroundActor);
 
-  void
-  BackgroundActorFailed();
+  void BackgroundActorFailed();
 
-  void
-  PerformIdleMaintenance();
+  void PerformIdleMaintenance();
 
-  void
-  RemoveIdleObserver();
+  void RemoveIdleObserver();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIQUOTAMANAGERSERVICE
   NS_DECL_NSIOBSERVER
 
   
-  void
-  Notify(const hal::BatteryInformation& aBatteryInfo) override;
+  void Notify(const hal::BatteryInformation& aBatteryInfo) override;
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
 #endif 

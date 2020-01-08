@@ -46,12 +46,10 @@ class DocGroup;
 class TabChild;
 
 class TabGroup final : public SchedulerGroup,
-                       public LinkedListElement<TabGroup>
-{
-private:
-  class HashEntry : public nsCStringHashKey
-  {
-  public:
+                       public LinkedListElement<TabGroup> {
+ private:
+  class HashEntry : public nsCStringHashKey {
+   public:
     
     
     DocGroup* mDocGroup;
@@ -60,15 +58,14 @@ private:
 
   typedef nsTHashtable<HashEntry> DocGroupMap;
 
-public:
+ public:
   typedef DocGroupMap::Iterator Iterator;
 
   friend class DocGroup;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TabGroup, override)
 
-  static TabGroup*
-  GetChromeTabGroup();
+  static TabGroup* GetChromeTabGroup();
 
   
   
@@ -82,23 +79,19 @@ public:
 
   
   
-  already_AddRefed<DocGroup>
-  GetDocGroup(const nsACString& aKey);
+  already_AddRefed<DocGroup> GetDocGroup(const nsACString& aKey);
 
-  already_AddRefed<DocGroup>
-  AddDocument(const nsACString& aKey, nsIDocument* aDocument);
+  already_AddRefed<DocGroup> AddDocument(const nsACString& aKey,
+                                         nsIDocument* aDocument);
 
   
   
-  static already_AddRefed<TabGroup>
-  Join(nsPIDOMWindowOuter* aWindow, TabGroup* aTabGroup);
+  static already_AddRefed<TabGroup> Join(nsPIDOMWindowOuter* aWindow,
+                                         TabGroup* aTabGroup);
 
   void Leave(nsPIDOMWindowOuter* aWindow);
 
-  Iterator Iter()
-  {
-    return mDocGroups.Iter();
-  }
+  Iterator Iter() { return mDocGroups.Iter(); }
 
   
   
@@ -115,11 +108,10 @@ public:
   
   
   
-  nsresult
-  FindItemWithName(const nsAString& aName,
-                   nsIDocShellTreeItem* aRequestor,
-                   nsIDocShellTreeItem* aOriginalRequestor,
-                   nsIDocShellTreeItem** aFoundItem);
+  nsresult FindItemWithName(const nsAString& aName,
+                            nsIDocShellTreeItem* aRequestor,
+                            nsIDocShellTreeItem* aOriginalRequestor,
+                            nsIDocShellTreeItem** aFoundItem);
 
   nsTArray<nsPIDOMWindowOuter*> GetTopLevelWindows() const;
   const nsTArray<nsPIDOMWindowOuter*>& GetWindows() { return mWindows; }
@@ -136,29 +128,24 @@ public:
 
   
   
-  Atomic<uint32_t>& IndexedDBTransactionCounter()
-  {
+  Atomic<uint32_t>& IndexedDBTransactionCounter() {
     return mNumOfIndexedDBTransactions;
   }
 
-  Atomic<uint32_t>& IndexedDBDatabaseCounter()
-  {
+  Atomic<uint32_t>& IndexedDBDatabaseCounter() {
     return mNumOfIndexedDBDatabases;
   }
 
-  static LinkedList<TabGroup>* GetTabGroupList()
-  {
-    return sTabGroups;
-  }
+  static LinkedList<TabGroup>* GetTabGroupList() { return sTabGroups; }
 
   
   
   
   static bool HasOnlyThrottableTabs();
 
-private:
-  virtual AbstractThread*
-  AbstractMainThreadForImpl(TaskCategory aCategory) override;
+ private:
+  virtual AbstractThread* AbstractMainThreadForImpl(
+      TaskCategory aCategory) override;
 
   TabGroup* AsTabGroup() override { return this; }
 
@@ -181,7 +168,7 @@ private:
   static LinkedList<TabGroup>* sTabGroups;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

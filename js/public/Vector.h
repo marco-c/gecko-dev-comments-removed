@@ -17,23 +17,20 @@ class TempAllocPolicy;
 namespace detail {
 
 template <typename T>
-struct TypeIsGCThing : mozilla::FalseType
-{};
+struct TypeIsGCThing : mozilla::FalseType {};
 
 template <>
-struct TypeIsGCThing<JS::Value> : mozilla::TrueType
-{};
+struct TypeIsGCThing<JS::Value> : mozilla::TrueType {};
 
-} 
+}  
 
-template <typename T,
-          size_t MinInlineCapacity = 0,
+template <typename T, size_t MinInlineCapacity = 0,
           class AllocPolicy = TempAllocPolicy,
-         
-         typename = typename mozilla::EnableIf<!detail::TypeIsGCThing<T>::value>::Type
-         >
+          
+          typename = typename mozilla::EnableIf<
+              !detail::TypeIsGCThing<T>::value>::Type>
 using Vector = mozilla::Vector<T, MinInlineCapacity, AllocPolicy>;
 
-} 
+}  
 
 #endif 

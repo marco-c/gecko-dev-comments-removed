@@ -14,36 +14,33 @@
 
 class nsIFile;
 
-class nsDirectoryIndexStream final : public nsIInputStream
-{
-private:
-    nsCString mBuf;
-    int32_t mOffset;
-    nsresult mStatus;
+class nsDirectoryIndexStream final : public nsIInputStream {
+ private:
+  nsCString mBuf;
+  int32_t mOffset;
+  nsresult mStatus;
 
-    int32_t             mPos;   
-    nsCOMArray<nsIFile> mArray; 
+  int32_t mPos;                
+  nsCOMArray<nsIFile> mArray;  
 
-    nsDirectoryIndexStream();
-    
-
-
-    nsresult Init(nsIFile* aDir);
-    ~nsDirectoryIndexStream();
-
-public:
-    
+  nsDirectoryIndexStream();
+  
 
 
-    static nsresult
-    Create(nsIFile* aDir, nsIInputStream** aStreamResult);
+  nsresult Init(nsIFile* aDir);
+  ~nsDirectoryIndexStream();
 
-    
-    NS_DECL_THREADSAFE_ISUPPORTS
+ public:
+  
 
-    
-    NS_DECL_NSIINPUTSTREAM
+
+  static nsresult Create(nsIFile* aDir, nsIInputStream** aStreamResult);
+
+  
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+  
+  NS_DECL_NSIINPUTSTREAM
 };
 
-#endif 
-
+#endif  

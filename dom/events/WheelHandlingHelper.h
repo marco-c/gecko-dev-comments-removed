@@ -25,19 +25,11 @@ class EventStateManager;
 
 
 
-struct DeltaValues
-{
-  DeltaValues()
-    : deltaX(0.0)
-    , deltaY(0.0)
-  {
-  }
+struct DeltaValues {
+  DeltaValues() : deltaX(0.0), deltaY(0.0) {}
 
   DeltaValues(double aDeltaX, double aDeltaY)
-    : deltaX(aDeltaX)
-    , deltaY(aDeltaY)
-  {
-  }
+      : deltaX(aDeltaX), deltaY(aDeltaY) {}
 
   explicit DeltaValues(WidgetWheelEvent* aEvent);
 
@@ -50,31 +42,30 @@ struct DeltaValues
 
 
 
-class WheelHandlingUtils
-{
-public:
+class WheelHandlingUtils {
+ public:
   
 
 
 
 
 
-  static bool CanScrollOn(nsIFrame* aFrame,
-                          double aDirectionX, double aDirectionY);
+  static bool CanScrollOn(nsIFrame* aFrame, double aDirectionX,
+                          double aDirectionY);
   
 
 
 
-  static bool CanScrollOn(nsIScrollableFrame* aScrollFrame,
-                          double aDirectionX, double aDirectionY);
+  static bool CanScrollOn(nsIScrollableFrame* aScrollFrame, double aDirectionX,
+                          double aDirectionY);
 
   
   
   
-  static Maybe<layers::ScrollDirection>
-  GetDisregardedWheelScrollDirection(const nsIFrame* aFrame);
+  static Maybe<layers::ScrollDirection> GetDisregardedWheelScrollDirection(
+      const nsIFrame* aFrame);
 
-private:
+ private:
   static bool CanScrollInRange(nscoord aMin, nscoord aValue, nscoord aMax,
                                double aDirection);
 };
@@ -86,9 +77,8 @@ private:
 
 
 
-class ScrollbarsForWheel
-{
-public:
+class ScrollbarsForWheel {
+ public:
   static void PrepareToScrollText(EventStateManager* aESM,
                                   nsIFrame* aTargetFrame,
                                   WidgetWheelEvent* aEvent);
@@ -99,7 +89,7 @@ public:
   static bool IsActive();
   static void OwnWheelTransaction(bool aOwn);
 
-protected:
+ protected:
   static const size_t kNumberOfTargets = 4;
   static const DeltaValues directions[kNumberOfTargets];
   static AutoWeakFrame sActiveOwner;
@@ -107,15 +97,13 @@ protected:
   static bool sHadWheelStart;
   static bool sOwnWheelTransaction;
 
-
   
 
 
 
   static void TemporarilyActivateAllPossibleScrollTargets(
-                EventStateManager* aESM,
-                nsIFrame* aTargetFrame,
-                WidgetWheelEvent* aEvent);
+      EventStateManager* aESM, nsIFrame* aTargetFrame,
+      WidgetWheelEvent* aEvent);
   static void DeactivateAllTemporarilyActivatedScrollTargets();
 };
 
@@ -127,9 +115,8 @@ protected:
 
 
 
-class WheelTransaction
-{
-public:
+class WheelTransaction {
+ public:
   static nsIFrame* GetTargetFrame() { return sTargetFrame; }
   static void EndTransaction();
   
@@ -142,15 +129,13 @@ public:
   static bool WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
                                       AutoWeakFrame& aTargetWeakFrame);
   static bool WillHandleDefaultAction(WidgetWheelEvent* aWheelEvent,
-                                      nsIFrame* aTargetFrame)
-  {
+                                      nsIFrame* aTargetFrame) {
     AutoWeakFrame targetWeakFrame(aTargetFrame);
     return WillHandleDefaultAction(aWheelEvent, targetWeakFrame);
   }
   static void OnEvent(WidgetEvent* aEvent);
   static void Shutdown();
-  static uint32_t GetTimeoutTime()
-  {
+  static uint32_t GetTimeoutTime() {
     return Prefs::sMouseWheelTransactionTimeout;
   }
 
@@ -158,12 +143,9 @@ public:
 
   static DeltaValues AccelerateWheelDelta(WidgetWheelEvent* aEvent,
                                           bool aAllowScrollSpeedOverride);
-  static void InitializeStatics()
-  {
-    Prefs::InitializeStatics();
-  }
+  static void InitializeStatics() { Prefs::InitializeStatics(); }
 
-protected:
+ protected:
   static void BeginTransaction(nsIFrame* aTargetFrame,
                                const WidgetWheelEvent* aEvent);
   
@@ -175,16 +157,13 @@ protected:
   static void OnFailToScrollTarget();
   static void OnTimeout(nsITimer* aTimer, void* aClosure);
   static void SetTimeout();
-  static uint32_t GetIgnoreMoveDelayTime()
-  {
+  static uint32_t GetIgnoreMoveDelayTime() {
     return Prefs::sMouseWheelTransactionIgnoreMoveDelay;
   }
-  static int32_t GetAccelerationStart()
-  {
+  static int32_t GetAccelerationStart() {
     return Prefs::sMouseWheelAccelerationStart;
   }
-  static int32_t GetAccelerationFactor()
-  {
+  static int32_t GetAccelerationFactor() {
     return Prefs::sMouseWheelAccelerationFactor;
   }
   static DeltaValues OverrideSystemScrollSpeed(WidgetWheelEvent* aEvent);
@@ -192,15 +171,14 @@ protected:
   static bool OutOfTime(uint32_t aBaseTime, uint32_t aThreshold);
 
   static AutoWeakFrame sTargetFrame;
-  static uint32_t sTime; 
-  static uint32_t sMouseMoved; 
+  static uint32_t sTime;        
+  static uint32_t sMouseMoved;  
   static nsITimer* sTimer;
   static int32_t sScrollSeriesCounter;
   static bool sOwnScrollbars;
 
-  class Prefs
-  {
-  public:
+  class Prefs {
+   public:
     static void InitializeStatics();
     static int32_t sMouseWheelAccelerationStart;
     static int32_t sMouseWheelAccelerationFactor;
@@ -216,8 +194,7 @@ protected:
 
 
 
-enum class WheelDeltaAdjustmentStrategy : uint8_t
-{
+enum class WheelDeltaAdjustmentStrategy : uint8_t {
   
   eNone,
   
@@ -271,22 +248,19 @@ enum class WheelDeltaAdjustmentStrategy : uint8_t
 
 
 
-class MOZ_STACK_CLASS WheelDeltaHorizontalizer final
-{
-public:
+class MOZ_STACK_CLASS WheelDeltaHorizontalizer final {
+ public:
   
 
 
 
   explicit WheelDeltaHorizontalizer(WidgetWheelEvent& aWheelEvent)
-    : mWheelEvent(aWheelEvent)
-    , mOldDeltaX(0.0)
-    , mOldDeltaZ(0.0)
-    , mOldOverflowDeltaX(0.0)
-    , mOldLineOrPageDeltaX(0)
-    , mHorizontalized(false)
-  {
-  }
+      : mWheelEvent(aWheelEvent),
+        mOldDeltaX(0.0),
+        mOldDeltaZ(0.0),
+        mOldOverflowDeltaX(0.0),
+        mOldLineOrPageDeltaX(0),
+        mHorizontalized(false) {}
   
 
 
@@ -295,7 +269,7 @@ public:
   ~WheelDeltaHorizontalizer();
   void CancelHorizontalization();
 
-private:
+ private:
   WidgetWheelEvent& mWheelEvent;
   double mOldDeltaX;
   double mOldDeltaZ;
@@ -314,25 +288,21 @@ private:
 
 
 
-class MOZ_STACK_CLASS AutoDirWheelDeltaAdjuster
-{
-protected:
+class MOZ_STACK_CLASS AutoDirWheelDeltaAdjuster {
+ protected:
   
 
 
 
 
 
-  AutoDirWheelDeltaAdjuster(double& aDeltaX,
-                            double& aDeltaY)
-    : mDeltaX(aDeltaX)
-    , mDeltaY(aDeltaY)
-    , mCheckedIfShouldBeAdjusted(false)
-    , mShouldBeAdjusted(false)
-  {
-  }
+  AutoDirWheelDeltaAdjuster(double& aDeltaX, double& aDeltaY)
+      : mDeltaX(aDeltaX),
+        mDeltaY(aDeltaY),
+        mCheckedIfShouldBeAdjusted(false),
+        mShouldBeAdjusted(false) {}
 
-public:
+ public:
   
 
 
@@ -348,13 +318,11 @@ public:
 
   void Adjust();
 
-private:
+ private:
   
 
 
-  virtual void OnAdjusted()
-  {
-  }
+  virtual void OnAdjusted() {}
 
   virtual bool CanScrollAlongXAxis() const = 0;
   virtual bool CanScrollAlongYAxis() const = 0;
@@ -377,11 +345,11 @@ private:
 
   virtual bool IsHorizontalContentRightToLeft() const = 0;
 
-protected:
+ protected:
   double& mDeltaX;
   double& mDeltaY;
 
-private:
+ private:
   bool mCheckedIfShouldBeAdjusted;
   bool mShouldBeAdjusted;
 };
@@ -393,9 +361,8 @@ private:
 
 
 class MOZ_STACK_CLASS ESMAutoDirWheelDeltaAdjuster final
-                        : public AutoDirWheelDeltaAdjuster
-{
-public:
+    : public AutoDirWheelDeltaAdjuster {
+ public:
   
 
 
@@ -405,11 +372,10 @@ public:
 
 
 
-  ESMAutoDirWheelDeltaAdjuster(WidgetWheelEvent& aEvent,
-                               nsIFrame& aScrollFrame,
+  ESMAutoDirWheelDeltaAdjuster(WidgetWheelEvent& aEvent, nsIFrame& aScrollFrame,
                                bool aHonoursRoot);
 
-private:
+ private:
   virtual void OnAdjusted() override;
   virtual bool CanScrollAlongXAxis() const override;
   virtual bool CanScrollAlongYAxis() const override;
@@ -435,16 +401,15 @@ private:
 
 
 
-class MOZ_STACK_CLASS ESMAutoDirWheelDeltaRestorer final
-{
-public:
+class MOZ_STACK_CLASS ESMAutoDirWheelDeltaRestorer final {
+ public:
   
 
 
   explicit ESMAutoDirWheelDeltaRestorer(WidgetWheelEvent& aEvent);
   ~ESMAutoDirWheelDeltaRestorer();
 
-private:
+ private:
   WidgetWheelEvent& mEvent;
   double mOldDeltaX;
   double mOldDeltaY;
@@ -454,6 +419,6 @@ private:
   double mOldOverflowDeltaY;
 };
 
-} 
+}  
 
-#endif 
+#endif  

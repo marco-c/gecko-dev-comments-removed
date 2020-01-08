@@ -72,8 +72,8 @@ typedef OSVR_Vec3 OSVR_LinearVelocityState;
 
 
 typedef struct OSVR_IncrementalQuaternion {
-    OSVR_Quaternion incrementalRotation;
-    double dt;
+  OSVR_Quaternion incrementalRotation;
+  double dt;
 } OSVR_IncrementalQuaternion;
 
 
@@ -84,15 +84,15 @@ typedef OSVR_IncrementalQuaternion OSVR_AngularVelocityState;
 
 
 typedef struct OSVR_VelocityState {
-    OSVR_LinearVelocityState linearVelocity;
-    
+  OSVR_LinearVelocityState linearVelocity;
+  
 
-    OSVR_CBool linearVelocityValid;
+  OSVR_CBool linearVelocityValid;
 
-    OSVR_AngularVelocityState angularVelocity;
-    
+  OSVR_AngularVelocityState angularVelocity;
+  
 
-    OSVR_CBool angularVelocityValid;
+  OSVR_CBool angularVelocityValid;
 } OSVR_VelocityState;
 
 
@@ -104,15 +104,15 @@ typedef OSVR_IncrementalQuaternion OSVR_AngularAccelerationState;
 
 
 typedef struct OSVR_AccelerationState {
-    OSVR_LinearAccelerationState linearAcceleration;
-    
+  OSVR_LinearAccelerationState linearAcceleration;
+  
 
-    OSVR_CBool linearAccelerationValid;
+  OSVR_CBool linearAccelerationValid;
 
-    OSVR_AngularAccelerationState angularAcceleration;
-    
+  OSVR_AngularAccelerationState angularAcceleration;
+  
 
-    OSVR_CBool angularAccelerationValid;
+  OSVR_CBool angularAccelerationValid;
 } OSVR_AccelerationState;
 
 
@@ -134,107 +134,107 @@ typedef double OSVR_AnalogState;
 
 
 typedef struct OSVR_PositionReport {
-    
-    int32_t sensor;
-    
-    OSVR_PositionState xyz;
+  
+  int32_t sensor;
+  
+  OSVR_PositionState xyz;
 } OSVR_PositionReport;
 
 
 typedef struct OSVR_OrientationReport {
-    
-    int32_t sensor;
-    
-    OSVR_OrientationState rotation;
+  
+  int32_t sensor;
+  
+  OSVR_OrientationState rotation;
 } OSVR_OrientationReport;
 
 
 
 
 typedef struct OSVR_PoseReport {
-    
-    int32_t sensor;
-    
+  
+  int32_t sensor;
+  
 
 
-    OSVR_PoseState pose;
+  OSVR_PoseState pose;
 } OSVR_PoseReport;
 
 
 
 
 typedef struct OSVR_VelocityReport {
-    
-    int32_t sensor;
-    
+  
+  int32_t sensor;
+  
 
 
-    OSVR_VelocityState state;
+  OSVR_VelocityState state;
 } OSVR_VelocityReport;
 
 
 
 typedef struct OSVR_LinearVelocityReport {
-    
-    int32_t sensor;
-    
-    OSVR_LinearVelocityState state;
+  
+  int32_t sensor;
+  
+  OSVR_LinearVelocityState state;
 } OSVR_LinearVelocityReport;
 
 
 
 typedef struct OSVR_AngularVelocityReport {
-    
-    int32_t sensor;
-    
-    OSVR_AngularVelocityState state;
+  
+  int32_t sensor;
+  
+  OSVR_AngularVelocityState state;
 } OSVR_AngularVelocityReport;
 
 
 
 
 typedef struct OSVR_AccelerationReport {
-    
-    int32_t sensor;
-    
+  
+  int32_t sensor;
+  
 
 
-    OSVR_AccelerationState state;
+  OSVR_AccelerationState state;
 } OSVR_AccelerationReport;
 
 
 
 typedef struct OSVR_LinearAccelerationReport {
-    
-    int32_t sensor;
-    
-    OSVR_LinearAccelerationState state;
+  
+  int32_t sensor;
+  
+  OSVR_LinearAccelerationState state;
 } OSVR_LinearAccelerationReport;
 
 
 
 
 typedef struct OSVR_AngularAccelerationReport {
-    
-    int32_t sensor;
-    
-    OSVR_AngularAccelerationState state;
+  
+  int32_t sensor;
+  
+  OSVR_AngularAccelerationState state;
 } OSVR_AngularAccelerationReport;
 
 
 typedef struct OSVR_ButtonReport {
-    
-    int32_t sensor;
-    
-    OSVR_ButtonState state;
+  
+  int32_t sensor;
+  
+  OSVR_ButtonState state;
 } OSVR_ButtonReport;
 
 
 typedef struct OSVR_AnalogReport {
-    
-    int32_t sensor;
-    
-    OSVR_AnalogState state;
+  
+  int32_t sensor;
+  
+  OSVR_AnalogState state;
 } OSVR_AnalogReport;
 
 
@@ -244,8 +244,8 @@ typedef OSVR_Vec2 OSVR_Location2DState;
 
 
 typedef struct OSVR_Location2DReport {
-    OSVR_ChannelCount sensor;
-    OSVR_Location2DState location;
+  OSVR_ChannelCount sensor;
+  OSVR_Location2DState location;
 } OSVR_Location2DReport;
 
 
@@ -253,8 +253,8 @@ typedef OSVR_Vec3 OSVR_DirectionState;
 
 
 typedef struct OSVR_DirectionReport {
-    OSVR_ChannelCount sensor;
-    OSVR_DirectionState direction;
+  OSVR_ChannelCount sensor;
+  OSVR_DirectionState direction;
 } OSVR_DirectionReport;
 
 
@@ -277,16 +277,16 @@ typedef OSVR_DirectionState OSVR_EyeGazeDirectionState;
 
 
 typedef struct OSVR_EyeTracker3DState {
-    OSVR_CBool directionValid;
-    OSVR_DirectionState direction;
-    OSVR_CBool basePointValid;
-    OSVR_PositionState basePoint;
+  OSVR_CBool directionValid;
+  OSVR_DirectionState direction;
+  OSVR_CBool basePointValid;
+  OSVR_PositionState basePoint;
 } OSVR_EyeTracker3DState;
 
 
 typedef struct OSVR_EyeTracker3DReport {
-    OSVR_ChannelCount sensor;
-    OSVR_EyeTracker3DState state;
+  OSVR_ChannelCount sensor;
+  OSVR_EyeTracker3DState state;
 } OSVR_EyeTracker3DReport;
 
 
@@ -294,8 +294,8 @@ typedef OSVR_Location2DState OSVR_EyeTracker2DState;
 
 
 typedef struct OSVR_EyeTracker2DReport {
-    OSVR_ChannelCount sensor;
-    OSVR_EyeTracker2DState state;
+  OSVR_ChannelCount sensor;
+  OSVR_EyeTracker2DState state;
 } OSVR_EyeTracker2DReport;
 
 
@@ -310,8 +310,8 @@ typedef OSVR_ButtonState OSVR_EyeTrackerBlinkState;
 
 
 typedef struct OSVR_EyeTrackerBlinkReport {
-    OSVR_ChannelCount sensor;
-    OSVR_EyeTrackerBlinkState state;
+  OSVR_ChannelCount sensor;
+  OSVR_EyeTrackerBlinkState state;
 } OSVR_EyeTrackerBlinkReport;
 
 
@@ -326,18 +326,18 @@ typedef OSVR_Vec2 OSVR_NaviPositionState;
 
 
 typedef struct OSVR_NaviVelocityReport {
-    OSVR_ChannelCount sensor;
-    
-    OSVR_NaviVelocityState state;
+  OSVR_ChannelCount sensor;
+  
+  OSVR_NaviVelocityState state;
 } OSVR_NaviVelocityReport;
 
 
 
 typedef struct OSVR_NaviPositionReport {
-    OSVR_ChannelCount sensor;
-    
+  OSVR_ChannelCount sensor;
+  
 
-    OSVR_NaviPositionState state;
+  OSVR_NaviPositionState state;
 } OSVR_NaviPositionReport;
 
 

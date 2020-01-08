@@ -17,9 +17,8 @@ namespace widget {
 
 
 
-class InProcessWinCompositorWidget final : public WinCompositorWidget
-{
-public:
+class InProcessWinCompositorWidget final : public WinCompositorWidget {
+ public:
   InProcessWinCompositorWidget(const WinCompositorWidgetInitData& aInitData,
                                const layers::CompositorOptions& aOptions,
                                nsWindow* aWindow);
@@ -31,11 +30,11 @@ public:
   void ObserveVsync(VsyncObserver* aObserver) override;
   nsIWidget* RealWidget() override;
 
-private:
+ private:
   nsWindow* mWindow;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

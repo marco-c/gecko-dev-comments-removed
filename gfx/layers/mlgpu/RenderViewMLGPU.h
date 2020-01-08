@@ -20,38 +20,28 @@ class FrameBuilder;
 class ContainerLayerMLGPU;
 class MLGRenderTarget;
 
-class RenderViewMLGPU
-{
-public:
+class RenderViewMLGPU {
+ public:
   NS_INLINE_DECL_REFCOUNTING(RenderViewMLGPU)
 
   
-  RenderViewMLGPU(FrameBuilder* aBuilder,
-                  MLGRenderTarget* aTarget,
+  RenderViewMLGPU(FrameBuilder* aBuilder, MLGRenderTarget* aTarget,
                   const nsIntRegion& aInvalidRegion);
 
   
-  RenderViewMLGPU(FrameBuilder* aBuilder,
-                  ContainerLayerMLGPU* aContainer,
+  RenderViewMLGPU(FrameBuilder* aBuilder, ContainerLayerMLGPU* aContainer,
                   RenderViewMLGPU* aParent);
 
   void Prepare();
   void Render();
   void AddChild(RenderViewMLGPU* aParent);
-  void AddItem(LayerMLGPU* aItem,
-               const gfx::IntRect& aBounds,
+  void AddItem(LayerMLGPU* aItem, const gfx::IntRect& aBounds,
                Maybe<gfx::Polygon>&& aGeometry);
   void FinishBuilding();
 
-  const gfx::IntPoint& GetTargetOffset() const {
-    return mTargetOffset;
-  }
-  RenderViewMLGPU* GetParent() const {
-    return mParent;
-  }
-  bool HasDepthBuffer() const {
-    return mUseDepthBuffer;
-  }
+  const gfx::IntPoint& GetTargetOffset() const { return mTargetOffset; }
+  RenderViewMLGPU* GetParent() const { return mParent; }
+  bool HasDepthBuffer() const { return mUseDepthBuffer; }
 
   
   
@@ -64,11 +54,9 @@ public:
   MLGRenderTarget* GetRenderTarget() const;
   gfx::IntSize GetSize() const;
 
-  gfx::IntRect GetInvalidRect() const {
-    return mInvalidBounds;
-  }
+  gfx::IntRect GetInvalidRect() const { return mInvalidBounds; }
 
-private:
+ private:
   RenderViewMLGPU(FrameBuilder* aBuilder, RenderViewMLGPU* aParent);
   ~RenderViewMLGPU();
 
@@ -86,7 +74,7 @@ private:
   
   int32_t PrepareDepthBuffer();
 
-private:
+ private:
   std::deque<RefPtr<RenderPassMLGPU>> mFrontToBack;
   std::deque<RefPtr<RenderPassMLGPU>> mBackToFront;
 
@@ -109,6 +97,7 @@ private:
   
   RefPtr<MLGRenderTarget> mTarget;
 
+  
   
   ContainerLayerMLGPU* mContainer;
 
@@ -141,7 +130,7 @@ private:
   bool mDepthBufferNeedsClear;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

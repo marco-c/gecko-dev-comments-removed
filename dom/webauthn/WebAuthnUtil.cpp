@@ -14,17 +14,16 @@ namespace dom {
 
 
 NS_NAMED_LITERAL_STRING(kGoogleAccountsAppId1,
-  "https://www.gstatic.com/securitykey/origins.json");
-NS_NAMED_LITERAL_STRING(kGoogleAccountsAppId2,
-  "https://www.gstatic.com/securitykey/a/google.com/origins.json");
+                        "https://www.gstatic.com/securitykey/origins.json");
+NS_NAMED_LITERAL_STRING(
+    kGoogleAccountsAppId2,
+    "https://www.gstatic.com/securitykey/a/google.com/origins.json");
 
-const uint8_t FLAG_TUP = 0x01; 
-const uint8_t FLAG_AT = 0x40; 
+const uint8_t FLAG_TUP = 0x01;  
+const uint8_t FLAG_AT = 0x40;   
 
-bool
-EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
-              const U2FOperation& aOp,  nsString& aAppId)
-{
+bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
+                   const U2FOperation& aOp,  nsString& aAppId) {
   
   nsAutoCString facetString = NS_ConvertUTF16toUTF8(aOrigin);
   nsCOMPtr<nsIURI> facetUri;
@@ -86,7 +85,7 @@ EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
   
   
   nsCOMPtr<nsIEffectiveTLDService> tldService =
-    do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
+      do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
   if (!tldService) {
     return false;
   }
@@ -96,13 +95,14 @@ EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
     return false;
   }
 
-  if (html->IsRegistrableDomainSuffixOfOrEqualTo(NS_ConvertUTF8toUTF16(lowestFacetHost),
-                                                 appIdHost)) {
+  if (html->IsRegistrableDomainSuffixOfOrEqualTo(
+          NS_ConvertUTF8toUTF16(lowestFacetHost), appIdHost)) {
     return true;
   }
 
   
-  if (aOp == U2FOperation::Sign && lowestFacetHost.EqualsLiteral("google.com") &&
+  if (aOp == U2FOperation::Sign &&
+      lowestFacetHost.EqualsLiteral("google.com") &&
       (aAppId.Equals(kGoogleAccountsAppId1) ||
        aAppId.Equals(kGoogleAccountsAppId2))) {
     return true;
@@ -111,11 +111,8 @@ EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
   return false;
 }
 
-
-nsresult
-ReadToCryptoBuffer(pkix::Reader& aSrc,  CryptoBuffer& aDest,
-                   uint32_t aLen)
-{
+nsresult ReadToCryptoBuffer(pkix::Reader& aSrc,  CryptoBuffer& aDest,
+                            uint32_t aLen) {
   if (aSrc.EnsureLength(aLen) != pkix::Success) {
     return NS_ERROR_DOM_UNKNOWN_ERR;
   }
@@ -143,15 +140,13 @@ ReadToCryptoBuffer(pkix::Reader& aSrc,  CryptoBuffer& aDest,
 
 
 
-nsresult
-AssembleAuthenticatorData(const CryptoBuffer& rpIdHashBuf,
-                          const uint8_t flags,
-                          const CryptoBuffer& counterBuf,
-                          const CryptoBuffer& attestationDataBuf,
-                           CryptoBuffer& authDataBuf)
-{
-  if (NS_WARN_IF(!authDataBuf.SetCapacity(32 + 1 + 4 + attestationDataBuf.Length(),
-                                          mozilla::fallible))) {
+nsresult AssembleAuthenticatorData(const CryptoBuffer& rpIdHashBuf,
+                                   const uint8_t flags,
+                                   const CryptoBuffer& counterBuf,
+                                   const CryptoBuffer& attestationDataBuf,
+                                    CryptoBuffer& authDataBuf) {
+  if (NS_WARN_IF(!authDataBuf.SetCapacity(
+          32 + 1 + 4 + attestationDataBuf.Length(), mozilla::fallible))) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
   if (rpIdHashBuf.Length() != 32 || counterBuf.Length() != 4) {
@@ -170,16 +165,13 @@ AssembleAuthenticatorData(const CryptoBuffer& rpIdHashBuf,
 
 
 
-nsresult
-AssembleAttestationData(const CryptoBuffer& aaguidBuf,
-                        const CryptoBuffer& keyHandleBuf,
-                        const CryptoBuffer& pubKeyObj,
-                         CryptoBuffer& attestationDataBuf)
-{
-  if (NS_WARN_IF(!attestationDataBuf.SetCapacity(aaguidBuf.Length() + 2 +
-                                                 keyHandleBuf.Length() +
-                                                 pubKeyObj.Length(),
-                                                 mozilla::fallible))) {
+nsresult AssembleAttestationData(const CryptoBuffer& aaguidBuf,
+                                 const CryptoBuffer& keyHandleBuf,
+                                 const CryptoBuffer& pubKeyObj,
+                                  CryptoBuffer& attestationDataBuf) {
+  if (NS_WARN_IF(!attestationDataBuf.SetCapacity(
+          aaguidBuf.Length() + 2 + keyHandleBuf.Length() + pubKeyObj.Length(),
+          mozilla::fallible))) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
   if (keyHandleBuf.Length() > 0xFFFF) {
@@ -196,15 +188,13 @@ AssembleAttestationData(const CryptoBuffer& aaguidBuf,
   return NS_OK;
 }
 
-nsresult
-AssembleAttestationObject(const CryptoBuffer& aRpIdHash,
-                          const CryptoBuffer& aPubKeyBuf,
-                          const CryptoBuffer& aKeyHandleBuf,
-                          const CryptoBuffer& aAttestationCertBuf,
-                          const CryptoBuffer& aSignatureBuf,
-                          bool aForceNoneAttestation,
-                           CryptoBuffer& aAttestationObjBuf)
-{
+nsresult AssembleAttestationObject(const CryptoBuffer& aRpIdHash,
+                                   const CryptoBuffer& aPubKeyBuf,
+                                   const CryptoBuffer& aKeyHandleBuf,
+                                   const CryptoBuffer& aAttestationCertBuf,
+                                   const CryptoBuffer& aSignatureBuf,
+                                   bool aForceNoneAttestation,
+                                    CryptoBuffer& aAttestationObjBuf) {
   
   CryptoBuffer pubKeyObj;
   nsresult rv = CBOREncodePublicKeyObj(aPubKeyBuf, pubKeyObj);
@@ -219,7 +209,7 @@ AssembleAttestationObject(const CryptoBuffer& aRpIdHash,
 
   
   
-  for (int i=0; i<16; i++) {
+  for (int i = 0; i < 16; i++) {
     aaguidBuf.AppendElement(0x00, mozilla::fallible);
   }
 
@@ -264,12 +254,10 @@ AssembleAttestationObject(const CryptoBuffer& aRpIdHash,
   return rv;
 }
 
-nsresult
-U2FDecomposeSignResponse(const CryptoBuffer& aResponse,
-                          uint8_t& aFlags,
-                          CryptoBuffer& aCounterBuf,
-                          CryptoBuffer& aSignatureBuf)
-{
+nsresult U2FDecomposeSignResponse(const CryptoBuffer& aResponse,
+                                   uint8_t& aFlags,
+                                   CryptoBuffer& aCounterBuf,
+                                   CryptoBuffer& aSignatureBuf) {
   if (aResponse.Length() < 5) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -282,21 +270,20 @@ U2FDecomposeSignResponse(const CryptoBuffer& aResponse,
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  if (NS_WARN_IF(!aSignatureBuf.AppendElements(rspView.From(5),
-                                               mozilla::fallible))) {
+  if (NS_WARN_IF(
+          !aSignatureBuf.AppendElements(rspView.From(5), mozilla::fallible))) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
   return NS_OK;
 }
 
-nsresult
-U2FDecomposeRegistrationResponse(const CryptoBuffer& aResponse,
-                                  CryptoBuffer& aPubKeyBuf,
-                                  CryptoBuffer& aKeyHandleBuf,
-                                  CryptoBuffer& aAttestationCertBuf,
-                                  CryptoBuffer& aSignatureBuf)
-{
+nsresult U2FDecomposeRegistrationResponse(
+    const CryptoBuffer& aResponse,
+     CryptoBuffer& aPubKeyBuf,
+     CryptoBuffer& aKeyHandleBuf,
+     CryptoBuffer& aAttestationCertBuf,
+     CryptoBuffer& aSignatureBuf) {
   
   
   
@@ -339,8 +326,8 @@ U2FDecomposeRegistrationResponse(const CryptoBuffer& aResponse,
   
   
   pkix::Input cert;
-  if (pkix::der::ExpectTagAndGetTLV(input, pkix::der::SEQUENCE, cert)
-      != pkix::Success) {
+  if (pkix::der::ExpectTagAndGetTLV(input, pkix::der::SEQUENCE, cert) !=
+      pkix::Success) {
     return NS_ERROR_DOM_UNKNOWN_ERR;
   }
 
@@ -363,11 +350,9 @@ U2FDecomposeRegistrationResponse(const CryptoBuffer& aResponse,
   return NS_OK;
 }
 
-nsresult
-U2FDecomposeECKey(const CryptoBuffer& aPubKeyBuf,
-                   CryptoBuffer& aXcoord,
-                   CryptoBuffer& aYcoord)
-{
+nsresult U2FDecomposeECKey(const CryptoBuffer& aPubKeyBuf,
+                            CryptoBuffer& aXcoord,
+                            CryptoBuffer& aYcoord) {
   pkix::Input pubKey;
   pubKey.Init(aPubKeyBuf.Elements(), aPubKeyBuf.Length());
 
@@ -394,11 +379,8 @@ U2FDecomposeECKey(const CryptoBuffer& aPubKeyBuf,
   return NS_OK;
 }
 
-static nsresult
-HashCString(nsICryptoHash* aHashService,
-            const nsACString& aIn,
-             CryptoBuffer& aOut)
-{
+static nsresult HashCString(nsICryptoHash* aHashService, const nsACString& aIn,
+                             CryptoBuffer& aOut) {
   MOZ_ASSERT(aHashService);
 
   nsresult rv = aHashService->Init(nsICryptoHash::SHA256);
@@ -407,7 +389,7 @@ HashCString(nsICryptoHash* aHashService,
   }
 
   rv = aHashService->Update(
-    reinterpret_cast<const uint8_t*>(aIn.BeginReading()), aIn.Length());
+      reinterpret_cast<const uint8_t*>(aIn.BeginReading()), aIn.Length());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -427,12 +409,10 @@ HashCString(nsICryptoHash* aHashService,
   return NS_OK;
 }
 
-nsresult
-HashCString(const nsACString& aIn,  CryptoBuffer& aOut)
-{
+nsresult HashCString(const nsACString& aIn,  CryptoBuffer& aOut) {
   nsresult srv;
   nsCOMPtr<nsICryptoHash> hashService =
-    do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &srv);
+      do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &srv);
   if (NS_FAILED(srv)) {
     return srv;
   }
@@ -445,15 +425,13 @@ HashCString(const nsACString& aIn,  CryptoBuffer& aOut)
   return NS_OK;
 }
 
-nsresult
-BuildTransactionHashes(const nsCString& aRpId,
-                       const nsCString& aClientDataJSON,
-                        CryptoBuffer& aRpIdHash,
-                        CryptoBuffer& aClientDataHash)
-{
+nsresult BuildTransactionHashes(const nsCString& aRpId,
+                                const nsCString& aClientDataJSON,
+                                 CryptoBuffer& aRpIdHash,
+                                 CryptoBuffer& aClientDataHash) {
   nsresult srv;
   nsCOMPtr<nsICryptoHash> hashService =
-    do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &srv);
+      do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &srv);
   if (NS_FAILED(srv)) {
     return srv;
   }
@@ -477,6 +455,5 @@ BuildTransactionHashes(const nsCString& aRpId,
   return NS_OK;
 }
 
-
-}
-}
+}  
+}  

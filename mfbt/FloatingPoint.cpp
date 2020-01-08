@@ -8,13 +8,11 @@
 
 #include "mozilla/FloatingPoint.h"
 
-#include <cfloat> 
+#include <cfloat>  
 
 namespace mozilla {
 
-bool
-IsFloat32Representable(double aValue)
-{
+bool IsFloat32Representable(double aValue) {
   
   if (!IsFinite(aValue)) {
     return true;

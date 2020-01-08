@@ -15,13 +15,12 @@ namespace plugins {
 
 
 
-class AStream
-{
-public:
+class AStream {
+ public:
   virtual bool IsBrowserStream() = 0;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

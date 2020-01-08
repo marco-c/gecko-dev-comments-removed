@@ -21,7 +21,7 @@ namespace Telemetry {
 
 
 class CombinedStacks {
-public:
+ public:
   explicit CombinedStacks();
   explicit CombinedStacks(size_t aMaxStacksCount);
 
@@ -39,7 +39,7 @@ public:
   void Clear();
 #endif
 
-private:
+ private:
   std::vector<Telemetry::ProcessedStack::Module> mModules;
   
   std::vector<Stack> mStacks;
@@ -52,10 +52,9 @@ private:
 
 
 
-JSObject *
-CreateJSStackObject(JSContext *cx, const CombinedStacks &stacks);
+JSObject* CreateJSStackObject(JSContext* cx, const CombinedStacks& stacks);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

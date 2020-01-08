@@ -51,7 +51,7 @@ nsresult convertResultCode(int aSQLiteResultCode);
 
 
 
-void checkAndLogStatementPerformance(sqlite3_stmt *aStatement);
+void checkAndLogStatementPerformance(sqlite3_stmt* aStatement);
 
 
 
@@ -65,7 +65,7 @@ void checkAndLogStatementPerformance(sqlite3_stmt *aStatement);
 
 
 
-nsIVariant *convertJSValToVariant(JSContext *aCtx, const JS::Value& aValue);
+nsIVariant* convertJSValToVariant(JSContext* aCtx, const JS::Value& aValue);
 
 
 
@@ -75,7 +75,7 @@ nsIVariant *convertJSValToVariant(JSContext *aCtx, const JS::Value& aValue);
 
 
 
-Variant_base *convertVariantToStorageVariant(nsIVariant *aVariant);
+Variant_base* convertVariantToStorageVariant(nsIVariant* aVariant);
 
 
 
@@ -85,23 +85,20 @@ Variant_base *convertVariantToStorageVariant(nsIVariant *aVariant);
 
 
 already_AddRefed<nsIRunnable> newCompletionEvent(
-  mozIStorageCompletionCallback *aCallback
-);
+    mozIStorageCompletionCallback* aCallback);
 
 
 
 
 
-template<class T, class V>
-nsresult
-DoGetBlobAsString(T* aThis, uint32_t aIndex, V& aValue)
-{
+template <class T, class V>
+nsresult DoGetBlobAsString(T* aThis, uint32_t aIndex, V& aValue) {
   typedef typename V::char_type char_type;
 
   uint32_t size;
   char_type* blob;
   nsresult rv =
-    aThis->GetBlob(aIndex, &size, reinterpret_cast<uint8_t**>(&blob));
+      aThis->GetBlob(aIndex, &size, reinterpret_cast<uint8_t**>(&blob));
   NS_ENSURE_SUCCESS(rv, rv);
 
   aValue.Assign(blob, size / sizeof(char_type));
@@ -113,31 +110,28 @@ DoGetBlobAsString(T* aThis, uint32_t aIndex, V& aValue)
 
 
 
-template<class T, class V>
-nsresult
-DoBindStringAsBlobByName(T* aThis, const nsACString& aName, const V& aValue)
-{
+template <class T, class V>
+nsresult DoBindStringAsBlobByName(T* aThis, const nsACString& aName,
+                                  const V& aValue) {
   typedef typename V::char_type char_type;
-  return aThis->BindBlobByName(aName,
-                        reinterpret_cast<const uint8_t*>(aValue.BeginReading()),
-                        aValue.Length() * sizeof(char_type));
+  return aThis->BindBlobByName(
+      aName, reinterpret_cast<const uint8_t*>(aValue.BeginReading()),
+      aValue.Length() * sizeof(char_type));
 }
 
 
 
 
 
-template<class T, class V>
-nsresult
-DoBindStringAsBlobByIndex(T* aThis, uint32_t aIndex, const V& aValue)
-{
+template <class T, class V>
+nsresult DoBindStringAsBlobByIndex(T* aThis, uint32_t aIndex, const V& aValue) {
   typedef typename V::char_type char_type;
-  return aThis->BindBlobByIndex(aIndex,
-                        reinterpret_cast<const uint8_t*>(aValue.BeginReading()),
-                        aValue.Length() * sizeof(char_type));
+  return aThis->BindBlobByIndex(
+      aIndex, reinterpret_cast<const uint8_t*>(aValue.BeginReading()),
+      aValue.Length() * sizeof(char_type));
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

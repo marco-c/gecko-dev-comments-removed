@@ -28,13 +28,12 @@
 
 
 
-void
-deserializeAndVerify(const nsCString &serializedSecInfo,
-                     bool hasFailedCertChain,
-                     size_t failedCertChainLength = 0)
-{
+void deserializeAndVerify(const nsCString &serializedSecInfo,
+                          bool hasFailedCertChain,
+                          size_t failedCertChainLength = 0) {
   nsCOMPtr<nsISupports> secInfo;
-  nsresult rv = NS_DeserializeObject(serializedSecInfo, getter_AddRefs(secInfo));
+  nsresult rv =
+      NS_DeserializeObject(serializedSecInfo, getter_AddRefs(secInfo));
   ASSERT_EQ(NS_OK, rv);
   ASSERT_TRUE(secInfo);
 
@@ -49,7 +48,7 @@ deserializeAndVerify(const nsCString &serializedSecInfo,
   nsCOMPtr<nsIX509CertList> failedChain;
   rv = securityInfo->GetFailedCertChain(getter_AddRefs(failedChain));
   ASSERT_EQ(NS_OK, rv);
- 
+
   if (hasFailedCertChain) {
     ASSERT_TRUE(failedChain);
     nsCOMPtr<nsISimpleEnumerator> enumerator;
@@ -75,8 +74,7 @@ deserializeAndVerify(const nsCString &serializedSecInfo,
   }
 }
 
-TEST(psm_DeserializeCert, gecko33)
-{
+TEST(psm_DeserializeCert, gecko33) {
   
   
   
@@ -110,8 +108,7 @@ TEST(psm_DeserializeCert, gecko33)
   deserializeAndVerify(base64Serialization, false);
 }
 
-TEST(psm_DeserializeCert, gecko46)
-{
+TEST(psm_DeserializeCert, gecko46) {
   
   
   
@@ -145,8 +142,7 @@ TEST(psm_DeserializeCert, gecko46)
   deserializeAndVerify(base64Serialization, false);
 }
 
-TEST(psm_DeserializeCert, preSSLStatusConsolidation)
-{
+TEST(psm_DeserializeCert, preSSLStatusConsolidation) {
   
   
   
@@ -194,8 +190,7 @@ TEST(psm_DeserializeCert, preSSLStatusConsolidation)
   deserializeAndVerify(base64Serialization, false);
 }
 
-TEST(psm_DeserializeCert, preSSLStatusConsolidationFailedCertChain)
-{
+TEST(psm_DeserializeCert, preSSLStatusConsolidationFailedCertChain) {
   
   
   
@@ -261,4 +256,3 @@ TEST(psm_DeserializeCert, preSSLStatusConsolidationFailedCertChain)
 
   deserializeAndVerify(base64Serialization, true, 2);
 }
-

@@ -16,16 +16,14 @@ namespace mozilla {
 bool RunAsLauncherProcess(int& argc, wchar_t* argv[]);
 int LauncherMain(int argc, wchar_t* argv[]);
 
-enum class LauncherFlags : uint32_t
-{
+enum class LauncherFlags : uint32_t {
   eNone = 0,
-  eWaitForBrowser = (1 << 0), 
-  eNoDeelevate = (1 << 1),    
+  eWaitForBrowser = (1 << 0),  
+  eNoDeelevate = (1 << 1),     
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LauncherFlags)
 
-} 
+}  
 
-#endif 
-
+#endif  

@@ -164,8 +164,8 @@ NS_EVENT_MESSAGE(eLegacyNodeRemovedFromDocument)
 NS_EVENT_MESSAGE(eLegacyNodeInsertedIntoDocument)
 NS_EVENT_MESSAGE(eLegacyAttrModified)
 NS_EVENT_MESSAGE(eLegacyCharacterDataModified)
-NS_EVENT_MESSAGE_FIRST_LAST(eLegacyMutationEvent,
-  eLegacySubtreeModified, eLegacyCharacterDataModified)
+NS_EVENT_MESSAGE_FIRST_LAST(eLegacyMutationEvent, eLegacySubtreeModified,
+                            eLegacyCharacterDataModified)
 
 NS_EVENT_MESSAGE(eUnidentifiedEvent)
 
@@ -446,8 +446,8 @@ NS_EVENT_MESSAGE(eGamepadButtonUp)
 NS_EVENT_MESSAGE(eGamepadAxisMove)
 NS_EVENT_MESSAGE(eGamepadConnected)
 NS_EVENT_MESSAGE(eGamepadDisconnected)
-NS_EVENT_MESSAGE_FIRST_LAST(eGamepadEvent,
-                            eGamepadButtonDown, eGamepadDisconnected)
+NS_EVENT_MESSAGE_FIRST_LAST(eGamepadEvent, eGamepadButtonDown,
+                            eGamepadDisconnected)
 
 
 NS_EVENT_MESSAGE(eEditorInput)

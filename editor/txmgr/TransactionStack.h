@@ -14,9 +14,8 @@ namespace mozilla {
 
 class TransactionItem;
 
-class TransactionStack : private nsDeque
-{
-public:
+class TransactionStack : private nsDeque {
+ public:
   enum Type { FOR_UNDO, FOR_REDO };
 
   explicit TransactionStack(Type aType);
@@ -33,12 +32,12 @@ public:
   bool IsEmpty() const { return GetSize() == 0; }
 
   void DoUnlink() { Clear(); }
-  void DoTraverse(nsCycleCollectionTraversalCallback &cb);
+  void DoTraverse(nsCycleCollectionTraversalCallback& cb);
 
-private:
+ private:
   const Type mType;
 };
 
-} 
+}  
 
-#endif 
+#endif  

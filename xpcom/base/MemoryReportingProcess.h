@@ -13,33 +13,30 @@
 namespace mozilla {
 namespace dom {
 class MaybeFileDesc;
-} 
+}  
 
 
 
-class MemoryReportingProcess
-{
-public:
+class MemoryReportingProcess {
+ public:
   NS_IMETHOD_(MozExternalRefCountType) AddRef() = 0;
   NS_IMETHOD_(MozExternalRefCountType) Release() = 0;
 
-  virtual ~MemoryReportingProcess()
-  {}
+  virtual ~MemoryReportingProcess() {}
 
   
   virtual bool IsAlive() const = 0;
 
   
   
-  virtual bool SendRequestMemoryReport(
-    const uint32_t& aGeneration,
-    const bool& aAnonymize,
-    const bool& aMinimizeMemoryUsage,
-    const dom::MaybeFileDesc& aDMDFile) = 0;
+  virtual bool SendRequestMemoryReport(const uint32_t& aGeneration,
+                                       const bool& aAnonymize,
+                                       const bool& aMinimizeMemoryUsage,
+                                       const dom::MaybeFileDesc& aDMDFile) = 0;
 
   virtual int32_t Pid() const = 0;
 };
 
-} 
+}  
 
-#endif 
+#endif  

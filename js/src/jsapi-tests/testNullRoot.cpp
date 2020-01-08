@@ -7,16 +7,15 @@
 
 #include "jsapi-tests/tests.h"
 
-BEGIN_TEST(testNullRoot)
-{
-    obj.init(cx, nullptr);
-    str.init(cx, nullptr);
-    script.init(cx, nullptr);
+BEGIN_TEST(testNullRoot) {
+  obj.init(cx, nullptr);
+  str.init(cx, nullptr);
+  script.init(cx, nullptr);
 
-    
-    JS_GC(cx);
+  
+  JS_GC(cx);
 
-    return true;
+  return true;
 }
 
 JS::PersistentRootedObject obj;

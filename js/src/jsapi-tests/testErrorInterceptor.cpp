@@ -6,144 +6,142 @@
 
 
 
-
 namespace {
 static JS::PersistentRootedString gLatestMessage;
 
 
-struct SimpleInterceptor: JSErrorInterceptor {
-    virtual void interceptError(JSContext* cx, JS::HandleValue val) override {
-        js::StringBuffer buffer(cx);
-        if (!ValueToStringBuffer(cx, val, buffer)) {
-            MOZ_CRASH("Could not convert to string buffer");
-        }
-        gLatestMessage = buffer.finishString();
-        if (!gLatestMessage) {
-            MOZ_CRASH("Could not convert to string");
-        }
+struct SimpleInterceptor : JSErrorInterceptor {
+  virtual void interceptError(JSContext* cx, JS::HandleValue val) override {
+    js::StringBuffer buffer(cx);
+    if (!ValueToStringBuffer(cx, val, buffer)) {
+      MOZ_CRASH("Could not convert to string buffer");
     }
+    gLatestMessage = buffer.finishString();
+    if (!gLatestMessage) {
+      MOZ_CRASH("Could not convert to string");
+    }
+  }
 };
 
 bool equalStrings(JSContext* cx, JSString* a, JSString* b) {
-    int32_t result = 0;
-    if (!JS_CompareStrings(cx, a, b, &result)) {
-        MOZ_CRASH("Could not compare strings");
-    }
-    return result == 0;
+  int32_t result = 0;
+  if (!JS_CompareStrings(cx, a, b, &result)) {
+    MOZ_CRASH("Could not compare strings");
+  }
+  return result == 0;
 }
-}
+}  
 
-BEGIN_TEST(testErrorInterceptor)
-{
-    
-    const char* SAMPLES[] = {
-        "throw new Error('I am an Error')",
-        "throw new TypeError('I am a TypeError')",
-        "throw new ReferenceError('I am a ReferenceError')",
-        "throw new SyntaxError('I am a SyntaxError')",
-        "throw 5",
-        "undefined[0]",
-        "foo[0]",
-        "b[",
-    };
-    
-    const char* TO_STRING[] = {
-        "Error: I am an Error",
-        "TypeError: I am a TypeError",
-        "ReferenceError: I am a ReferenceError",
-        "SyntaxError: I am a SyntaxError",
-        "5",
-        "TypeError: can't access property 0 of undefined",
-        "ReferenceError: foo is not defined",
-        "SyntaxError: expected expression, got end of script",
-    };
-    MOZ_ASSERT(mozilla::ArrayLength(SAMPLES) == mozilla::ArrayLength(TO_STRING));
+BEGIN_TEST(testErrorInterceptor) {
+  
+  const char* SAMPLES[] = {
+      "throw new Error('I am an Error')",
+      "throw new TypeError('I am a TypeError')",
+      "throw new ReferenceError('I am a ReferenceError')",
+      "throw new SyntaxError('I am a SyntaxError')",
+      "throw 5",
+      "undefined[0]",
+      "foo[0]",
+      "b[",
+  };
+  
+  const char* TO_STRING[] = {
+      "Error: I am an Error",
+      "TypeError: I am a TypeError",
+      "ReferenceError: I am a ReferenceError",
+      "SyntaxError: I am a SyntaxError",
+      "5",
+      "TypeError: can't access property 0 of undefined",
+      "ReferenceError: foo is not defined",
+      "SyntaxError: expected expression, got end of script",
+  };
+  MOZ_ASSERT(mozilla::ArrayLength(SAMPLES) == mozilla::ArrayLength(TO_STRING));
 
+  
+  JSErrorInterceptor* original = JS_GetErrorInterceptorCallback(cx->runtime());
+  gLatestMessage.init(cx);
 
-    
-    JSErrorInterceptor* original = JS_GetErrorInterceptorCallback(cx->runtime());
-    gLatestMessage.init(cx);
+  
+  JS_SetErrorInterceptorCallback(cx->runtime(), nullptr);
+  CHECK(gLatestMessage == nullptr);
 
-    
-    JS_SetErrorInterceptorCallback(cx->runtime(), nullptr);
+  for (auto sample : SAMPLES) {
+    if (execDontReport(sample, __FILE__, __LINE__)) {
+      MOZ_CRASH("This sample should have failed");
+    }
+    CHECK(JS_IsExceptionPending(cx));
     CHECK(gLatestMessage == nullptr);
+    JS_ClearPendingException(cx);
+  }
 
-    for (auto sample: SAMPLES) {
-        if (execDontReport(sample, __FILE__, __LINE__)) {
-            MOZ_CRASH("This sample should have failed");
-        }
-        CHECK(JS_IsExceptionPending(cx));
-        CHECK(gLatestMessage == nullptr);
-        JS_ClearPendingException(cx);
+  
+  SimpleInterceptor simpleInterceptor;
+  JS_SetErrorInterceptorCallback(cx->runtime(), &simpleInterceptor);
+
+  
+  CHECK_EQUAL(JS_GetErrorInterceptorCallback(cx->runtime()),
+              &simpleInterceptor);
+
+  
+  EXEC("function bar() {}");
+  CHECK(gLatestMessage == nullptr);
+
+  
+  for (size_t i = 0; i < mozilla::ArrayLength(SAMPLES); ++i) {
+    
+    if (execDontReport(SAMPLES[i], __FILE__, __LINE__)) {
+      MOZ_CRASH("This sample should have failed");
     }
+    CHECK(JS_IsExceptionPending(cx));
 
     
-    SimpleInterceptor simpleInterceptor;
-    JS_SetErrorInterceptorCallback(cx->runtime(), &simpleInterceptor);
+    CHECK(gLatestMessage != nullptr);
+    CHECK(js::StringEqualsAscii(&gLatestMessage->asLinear(), TO_STRING[i]));
 
     
-    CHECK_EQUAL(JS_GetErrorInterceptorCallback(cx->runtime()), &simpleInterceptor);
-
-    
-    EXEC("function bar() {}");
-    CHECK(gLatestMessage == nullptr);
-
-    
-    for (size_t i = 0; i < mozilla::ArrayLength(SAMPLES); ++i) {
-        
-        if (execDontReport(SAMPLES[i], __FILE__, __LINE__)) {
-            MOZ_CRASH("This sample should have failed");
-        }
-        CHECK(JS_IsExceptionPending(cx));
-
-        
-        CHECK(gLatestMessage != nullptr);
-        CHECK(js::StringEqualsAscii(&gLatestMessage->asLinear(), TO_STRING[i]));
-
-        
-        JS::RootedValue exn(cx);
-        CHECK(JS_GetPendingException(cx, &exn));
-        JS_ClearPendingException(cx);
-
-        js::StringBuffer buffer(cx);
-        CHECK(ValueToStringBuffer(cx, exn, buffer));
-        JS::Rooted<JSFlatString*> flat(cx, buffer.finishString());
-        CHECK(equalStrings(cx, flat, gLatestMessage));
-
-        
-        gLatestMessage = nullptr;
-    }
-
-    
-    JS_SetErrorInterceptorCallback(cx->runtime(), nullptr);
-    for (size_t i = 0; i < mozilla::ArrayLength(SAMPLES); ++i) {
-        if (execDontReport(SAMPLES[i], __FILE__, __LINE__)) {
-            MOZ_CRASH("This sample should have failed");
-        }
-        CHECK(JS_IsExceptionPending(cx));
-
-        
-        CHECK(gLatestMessage == nullptr);
-
-        
-        JS::RootedValue exn(cx);
-        CHECK(JS_GetPendingException(cx, &exn));
-        JS_ClearPendingException(cx);
-
-        js::StringBuffer buffer(cx);
-        CHECK(ValueToStringBuffer(cx, exn, buffer));
-        JS::Rooted<JSFlatString*> flat(cx, buffer.finishString());
-        CHECK(js::StringEqualsAscii(flat, TO_STRING[i]));
-
-        
-        gLatestMessage = nullptr;
-    }
-
-    
-    JS_SetErrorInterceptorCallback(cx->runtime(), original);
-    gLatestMessage = nullptr;
+    JS::RootedValue exn(cx);
+    CHECK(JS_GetPendingException(cx, &exn));
     JS_ClearPendingException(cx);
 
-    return true;
+    js::StringBuffer buffer(cx);
+    CHECK(ValueToStringBuffer(cx, exn, buffer));
+    JS::Rooted<JSFlatString*> flat(cx, buffer.finishString());
+    CHECK(equalStrings(cx, flat, gLatestMessage));
+
+    
+    gLatestMessage = nullptr;
+  }
+
+  
+  JS_SetErrorInterceptorCallback(cx->runtime(), nullptr);
+  for (size_t i = 0; i < mozilla::ArrayLength(SAMPLES); ++i) {
+    if (execDontReport(SAMPLES[i], __FILE__, __LINE__)) {
+      MOZ_CRASH("This sample should have failed");
+    }
+    CHECK(JS_IsExceptionPending(cx));
+
+    
+    CHECK(gLatestMessage == nullptr);
+
+    
+    JS::RootedValue exn(cx);
+    CHECK(JS_GetPendingException(cx, &exn));
+    JS_ClearPendingException(cx);
+
+    js::StringBuffer buffer(cx);
+    CHECK(ValueToStringBuffer(cx, exn, buffer));
+    JS::Rooted<JSFlatString*> flat(cx, buffer.finishString());
+    CHECK(js::StringEqualsAscii(flat, TO_STRING[i]));
+
+    
+    gLatestMessage = nullptr;
+  }
+
+  
+  JS_SetErrorInterceptorCallback(cx->runtime(), original);
+  gLatestMessage = nullptr;
+  JS_ClearPendingException(cx);
+
+  return true;
 }
 END_TEST(testErrorInterceptor)

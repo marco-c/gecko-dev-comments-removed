@@ -15,32 +15,29 @@
 
 namespace js {
 
-template<typename T, void (Delete)(T*)>
-class ScopedICUObject
-{
-    T* ptr_;
+template <typename T, void(Delete)(T*)>
+class ScopedICUObject {
+  T* ptr_;
 
-  public:
-    explicit ScopedICUObject(T* ptr)
-      : ptr_(ptr)
-    {}
+ public:
+  explicit ScopedICUObject(T* ptr) : ptr_(ptr) {}
 
-    ~ScopedICUObject() {
-        if (ptr_) {
-            Delete(ptr_);
-        }
+  ~ScopedICUObject() {
+    if (ptr_) {
+      Delete(ptr_);
     }
+  }
 
-    
-    
-    
-    T* forget() {
-        T* tmp = ptr_;
-        ptr_ = nullptr;
-        return tmp;
-    }
+  
+  
+  
+  T* forget() {
+    T* tmp = ptr_;
+    ptr_ = nullptr;
+    return tmp;
+  }
 };
 
-} 
+}  
 
 #endif 

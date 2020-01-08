@@ -23,6 +23,6 @@ typedef void (*SandboxCrashFunc)(int, siginfo_t*, void*);
 extern MOZ_EXPORT SandboxCrashFunc gSandboxCrashFunc;
 extern const sock_fprog* gSetSandboxFilter;
 
-} 
+}  
 
-#endif 
+#endif  

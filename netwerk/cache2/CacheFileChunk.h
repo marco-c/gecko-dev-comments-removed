@@ -15,32 +15,31 @@
 namespace mozilla {
 namespace net {
 
-#define kChunkSize        (256 * 1024)
-#define kEmptyChunkHash   0x1826
+#define kChunkSize (256 * 1024)
+#define kEmptyChunkHash 0x1826
 
 class CacheFileChunk;
 class CacheFile;
 
-class CacheFileChunkBuffer
-{
-public:
+class CacheFileChunkBuffer {
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CacheFileChunkBuffer)
 
   explicit CacheFileChunkBuffer(CacheFileChunk *aChunk);
 
   nsresult EnsureBufSize(uint32_t aSize);
-  void     CopyFrom(CacheFileChunkBuffer *aOther);
+  void CopyFrom(CacheFileChunkBuffer *aOther);
   nsresult FillInvalidRanges(CacheFileChunkBuffer *aOther,
                              CacheFileUtils::ValidityMap *aMap);
-  size_t   SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
-  char *   Buf() const { return mBuf; }
-  void     SetDataSize(uint32_t aDataSize);
+  char *Buf() const { return mBuf; }
+  void SetDataSize(uint32_t aDataSize);
   uint32_t DataSize() const { return mDataSize; }
   uint32_t ReadHandlesCount() const { return mReadHandlesCount; }
-  bool     WriteHandleExists() const { return mWriteHandleExists; }
+  bool WriteHandleExists() const { return mWriteHandleExists; }
 
-private:
+ private:
   friend class CacheFileChunkHandle;
   friend class CacheFileChunkReadHandle;
   friend class CacheFileChunkWriteHandle;
@@ -57,35 +56,32 @@ private:
   
   
   CacheFileChunk *mChunk;
-  char           *mBuf;
-  uint32_t        mBufSize;
-  uint32_t        mDataSize;
-  uint32_t        mReadHandlesCount;
-  bool            mWriteHandleExists;
+  char *mBuf;
+  uint32_t mBufSize;
+  uint32_t mDataSize;
+  uint32_t mReadHandlesCount;
+  bool mWriteHandleExists;
 };
 
-class CacheFileChunkHandle
-{
-public:
+class CacheFileChunkHandle {
+ public:
   uint32_t DataSize();
   uint32_t Offset();
 
-protected:
+ protected:
   RefPtr<CacheFileChunkBuffer> mBuf;
 };
 
-class CacheFileChunkReadHandle : public CacheFileChunkHandle
-{
-public:
+class CacheFileChunkReadHandle : public CacheFileChunkHandle {
+ public:
   explicit CacheFileChunkReadHandle(CacheFileChunkBuffer *aBuf);
   ~CacheFileChunkReadHandle();
 
   const char *Buf();
 };
 
-class CacheFileChunkWriteHandle : public CacheFileChunkHandle
-{
-public:
+class CacheFileChunkWriteHandle : public CacheFileChunkHandle {
+ public:
   explicit CacheFileChunkWriteHandle(CacheFileChunkBuffer *aBuf);
   ~CacheFileChunkWriteHandle();
 
@@ -93,17 +89,15 @@ public:
   void UpdateDataSize(uint32_t aOffset, uint32_t aLen);
 };
 
-#define CACHEFILECHUNKLISTENER_IID \
-{ /* baf16149-2ab5-499c-a9c2-5904eb95c288 */       \
-  0xbaf16149,                                      \
-  0x2ab5,                                          \
-  0x499c,                                          \
-  {0xa9, 0xc2, 0x59, 0x04, 0xeb, 0x95, 0xc2, 0x88} \
-}
+#define CACHEFILECHUNKLISTENER_IID                   \
+  { /* baf16149-2ab5-499c-a9c2-5904eb95c288 */       \
+    0xbaf16149, 0x2ab5, 0x499c, {                    \
+      0xa9, 0xc2, 0x59, 0x04, 0xeb, 0x95, 0xc2, 0x88 \
+    }                                                \
+  }
 
-class CacheFileChunkListener : public nsISupports
-{
-public:
+class CacheFileChunkListener : public nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(CACHEFILECHUNKLISTENER_IID)
 
   NS_IMETHOD OnChunkRead(nsresult aResult, CacheFileChunk *aChunk) = 0;
@@ -116,70 +110,67 @@ public:
 NS_DEFINE_STATIC_IID_ACCESSOR(CacheFileChunkListener,
                               CACHEFILECHUNKLISTENER_IID)
 
-
 class ChunkListenerItem {
-public:
-  ChunkListenerItem()  { MOZ_COUNT_CTOR(ChunkListenerItem); }
+ public:
+  ChunkListenerItem() { MOZ_COUNT_CTOR(ChunkListenerItem); }
   ~ChunkListenerItem() { MOZ_COUNT_DTOR(ChunkListenerItem); }
 
-  nsCOMPtr<nsIEventTarget>         mTarget;
+  nsCOMPtr<nsIEventTarget> mTarget;
   nsCOMPtr<CacheFileChunkListener> mCallback;
 };
 
 class ChunkListeners {
-public:
-  ChunkListeners()  { MOZ_COUNT_CTOR(ChunkListeners); }
+ public:
+  ChunkListeners() { MOZ_COUNT_CTOR(ChunkListeners); }
   ~ChunkListeners() { MOZ_COUNT_DTOR(ChunkListeners); }
 
   nsTArray<ChunkListenerItem *> mItems;
 };
 
-class CacheFileChunk final
-  : public CacheFileIOListener
-  , public CacheMemoryConsumer
-{
-public:
+class CacheFileChunk final : public CacheFileIOListener,
+                             public CacheMemoryConsumer {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   bool DispatchRelease();
 
   CacheFileChunk(CacheFile *aFile, uint32_t aIndex, bool aInitByWriter);
 
-  void     InitNew();
+  void InitNew();
   nsresult Read(CacheFileHandle *aHandle, uint32_t aLen,
-                CacheHash::Hash16_t aHash,
-                CacheFileChunkListener *aCallback);
+                CacheHash::Hash16_t aHash, CacheFileChunkListener *aCallback);
   nsresult Write(CacheFileHandle *aHandle, CacheFileChunkListener *aCallback);
-  void     WaitForUpdate(CacheFileChunkListener *aCallback);
+  void WaitForUpdate(CacheFileChunkListener *aCallback);
   nsresult CancelWait(CacheFileChunkListener *aCallback);
   nsresult NotifyUpdateListeners();
 
-  uint32_t            Index() const;
+  uint32_t Index() const;
   CacheHash::Hash16_t Hash() const;
-  uint32_t            DataSize() const;
+  uint32_t DataSize() const;
 
   NS_IMETHOD OnFileOpened(CacheFileHandle *aHandle, nsresult aResult) override;
   NS_IMETHOD OnDataWritten(CacheFileHandle *aHandle, const char *aBuf,
                            nsresult aResult) override;
-  NS_IMETHOD OnDataRead(CacheFileHandle *aHandle, char *aBuf, nsresult aResult) override;
+  NS_IMETHOD OnDataRead(CacheFileHandle *aHandle, char *aBuf,
+                        nsresult aResult) override;
   NS_IMETHOD OnFileDoomed(CacheFileHandle *aHandle, nsresult aResult) override;
   NS_IMETHOD OnEOFSet(CacheFileHandle *aHandle, nsresult aResult) override;
   NS_IMETHOD OnFileRenamed(CacheFileHandle *aHandle, nsresult aResult) override;
   virtual bool IsKilled() override;
 
-  bool   IsReady() const;
-  bool   IsDirty() const;
+  bool IsReady() const;
+  bool IsDirty() const;
 
   nsresult GetStatus();
-  void     SetError(nsresult aStatus);
+  void SetError(nsresult aStatus);
 
-  CacheFileChunkReadHandle  GetReadHandle();
+  CacheFileChunkReadHandle GetReadHandle();
   CacheFileChunkWriteHandle GetWriteHandle(uint32_t aEnsuredBufSize);
 
   
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
-private:
+ private:
   friend class CacheFileChunkBuffer;
   friend class CacheFileChunkWriteHandle;
   friend class CacheFileInputStream;
@@ -196,29 +187,24 @@ private:
   bool CanAllocate(uint32_t aSize) const;
   void BuffersAllocationChanged(uint32_t aFreed, uint32_t aAllocated);
 
-  mozilla::Atomic<uint32_t, ReleaseAcquire>& ChunksMemoryUsage() const;
+  mozilla::Atomic<uint32_t, ReleaseAcquire> &ChunksMemoryUsage() const;
 
-  enum EState {
-    INITIAL = 0,
-    READING = 1,
-    WRITING = 2,
-    READY   = 3
-  };
+  enum EState { INITIAL = 0, READING = 1, WRITING = 2, READY = 3 };
 
   uint32_t mIndex;
-  EState   mState;
+  EState mState;
   nsresult mStatus;
 
-  Atomic<bool> mActiveChunk; 
-                             
-                             
-                             
+  Atomic<bool> mActiveChunk;  
+                              
+                              
+                              
   bool mIsDirty : 1;
   bool mDiscardedChunk : 1;
 
-  uint32_t   mBuffersSize;
-  bool const mLimitAllocation : 1; 
-                                   
+  uint32_t mBuffersSize;
+  bool const mLimitAllocation : 1;  
+                                    
   bool const mIsPriority : 1;
 
   
@@ -237,17 +223,16 @@ private:
   
   
   RefPtr<CacheFileChunkBuffer> mReadingStateBuf;
-  CacheHash::Hash16_t          mExpectedHash;
+  CacheHash::Hash16_t mExpectedHash;
 
-  RefPtr<CacheFile>                mFile; 
-                                          
+  RefPtr<CacheFile> mFile;  
+                            
   nsCOMPtr<CacheFileChunkListener> mListener;
-  nsTArray<ChunkListenerItem *>    mUpdateListeners;
-  CacheFileUtils::ValidityMap      mValidityMap;
+  nsTArray<ChunkListenerItem *> mUpdateListeners;
+  CacheFileUtils::ValidityMap mValidityMap;
 };
 
-
-} 
-} 
+}  
+}  
 
 #endif

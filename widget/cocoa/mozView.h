@@ -11,10 +11,10 @@
 class nsIWidget;
 
 namespace mozilla {
-namespace widget{
+namespace widget {
 class TextInputHandler;
-} 
-} 
+}  
+}  
 
 
 
@@ -22,27 +22,27 @@ class TextInputHandler;
 
 @protocol mozView
 
-  
-  
-  
+
+
+
 - (void)installTextInputHandler:(mozilla::widget::TextInputHandler*)aHandler;
 - (void)uninstallTextInputHandler;
 
-  
+
 - (nsIWidget*)widget;
 
-  
+
 - (NSMenu*)contextMenu;
 
-  
+
 - (void)widgetDestroyed;
 
 - (BOOL)isDragInProgress;
 
-  
+
 - (BOOL)isFirstResponder;
 
-  
+
 - (void)maybeInitContextMenuTracking;
 
 @end
@@ -52,11 +52,11 @@ class TextInputHandler;
 
 
 
-@interface NSObject(mozWindow)
+@interface NSObject (mozWindow)
 
 - (BOOL)suppressMakeKeyFront;
 - (void)setSuppressMakeKeyFront:(BOOL)inSuppress;
 
 @end
 
-#endif 
+#endif  

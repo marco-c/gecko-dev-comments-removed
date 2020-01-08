@@ -43,42 +43,38 @@ static mozilla::LazyLogModule gWin32ClipboardLog("nsClipboard");
 
 
 UINT nsClipboard::CF_HTML = ::RegisterClipboardFormatW(L"HTML Format");
-UINT nsClipboard::CF_CUSTOMTYPES = ::RegisterClipboardFormatW(L"application/x-moz-custom-clipdata");
+UINT nsClipboard::CF_CUSTOMTYPES =
+    ::RegisterClipboardFormatW(L"application/x-moz-custom-clipdata");
 
 
 
 
 
 
-
-nsClipboard::nsClipboard() : nsBaseClipboard()
-{
+nsClipboard::nsClipboard() : nsBaseClipboard() {
   mIgnoreEmptyNotification = false;
-  mWindow         = nullptr;
+  mWindow = nullptr;
 
   
- 
+  
   nsCOMPtr<nsIObserverService> observerService =
-    do_GetService("@mozilla.org/observer-service;1");
+      do_GetService("@mozilla.org/observer-service;1");
   if (observerService) {
-    observerService->AddObserver(this, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID, PR_FALSE);
+    observerService->AddObserver(this, NS_XPCOM_WILL_SHUTDOWN_OBSERVER_ID,
+                                 PR_FALSE);
   }
 }
 
 
 
 
-nsClipboard::~nsClipboard()
-{
-
-}
+nsClipboard::~nsClipboard() {}
 
 NS_IMPL_ISUPPORTS_INHERITED(nsClipboard, nsBaseClipboard, nsIObserver)
 
 NS_IMETHODIMP
-nsClipboard::Observe(nsISupports *aSubject, const char *aTopic,
-                     const char16_t *aData)
-{
+nsClipboard::Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) {
   
   ::OleFlushClipboard();
   ::CloseClipboard();
@@ -87,36 +83,28 @@ nsClipboard::Observe(nsISupports *aSubject, const char *aTopic,
 }
 
 
-UINT nsClipboard::GetFormat(const char* aMimeStr, bool aMapHTMLMime)
-{
+UINT nsClipboard::GetFormat(const char* aMimeStr, bool aMapHTMLMime) {
   UINT format;
 
   if (strcmp(aMimeStr, kTextMime) == 0) {
     format = CF_TEXT;
-  }
-  else if (strcmp(aMimeStr, kUnicodeMime) == 0) {
+  } else if (strcmp(aMimeStr, kUnicodeMime) == 0) {
     format = CF_UNICODETEXT;
-  }
-  else if (strcmp(aMimeStr, kRTFMime) == 0) {
+  } else if (strcmp(aMimeStr, kRTFMime) == 0) {
     format = ::RegisterClipboardFormat(L"Rich Text Format");
-  }
-  else if (strcmp(aMimeStr, kJPEGImageMime) == 0 ||
-           strcmp(aMimeStr, kJPGImageMime) == 0 ||
-           strcmp(aMimeStr, kPNGImageMime) == 0) {
+  } else if (strcmp(aMimeStr, kJPEGImageMime) == 0 ||
+             strcmp(aMimeStr, kJPGImageMime) == 0 ||
+             strcmp(aMimeStr, kPNGImageMime) == 0) {
     format = CF_DIBV5;
-  }
-  else if (strcmp(aMimeStr, kFileMime) == 0 ||
-           strcmp(aMimeStr, kFilePromiseMime) == 0) {
+  } else if (strcmp(aMimeStr, kFileMime) == 0 ||
+             strcmp(aMimeStr, kFilePromiseMime) == 0) {
     format = CF_HDROP;
-  }
-  else if ((strcmp(aMimeStr, kNativeHTMLMime) == 0) ||
-           (aMapHTMLMime && strcmp(aMimeStr, kHTMLMime) == 0)) {
+  } else if ((strcmp(aMimeStr, kNativeHTMLMime) == 0) ||
+             (aMapHTMLMime && strcmp(aMimeStr, kHTMLMime) == 0)) {
     format = CF_HTML;
-  }
-  else if (strcmp(aMimeStr, kCustomTypesMime) == 0) {
+  } else if (strcmp(aMimeStr, kCustomTypesMime) == 0) {
     format = CF_CUSTOMTYPES;
-  }
-  else {
+  } else {
     format = ::RegisterClipboardFormatW(NS_ConvertASCIItoUTF16(aMimeStr).get());
   }
 
@@ -124,15 +112,16 @@ UINT nsClipboard::GetFormat(const char* aMimeStr, bool aMapHTMLMime)
 }
 
 
-nsresult nsClipboard::CreateNativeDataObject(nsITransferable * aTransferable, IDataObject ** aDataObj, nsIURI * uri)
-{
+nsresult nsClipboard::CreateNativeDataObject(nsITransferable* aTransferable,
+                                             IDataObject** aDataObj,
+                                             nsIURI* uri) {
   if (nullptr == aTransferable) {
     return NS_ERROR_FAILURE;
   }
 
   
   
-  nsDataObj * dataObj = new nsDataObj(uri);
+  nsDataObj* dataObj = new nsDataObj(uri);
 
   if (!dataObj) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -143,7 +132,7 @@ nsresult nsClipboard::CreateNativeDataObject(nsITransferable * aTransferable, ID
   
   nsresult res = SetupNativeDataObject(aTransferable, dataObj);
   if (NS_OK == res) {
-    *aDataObj = dataObj; 
+    *aDataObj = dataObj;
   } else {
     delete dataObj;
   }
@@ -151,13 +140,13 @@ nsresult nsClipboard::CreateNativeDataObject(nsITransferable * aTransferable, ID
 }
 
 
-nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDataObject * aDataObj)
-{
+nsresult nsClipboard::SetupNativeDataObject(nsITransferable* aTransferable,
+                                            IDataObject* aDataObj) {
   if (nullptr == aTransferable || nullptr == aDataObj) {
     return NS_ERROR_FAILURE;
   }
 
-  nsDataObj * dObj = static_cast<nsDataObj *>(aDataObj);
+  nsDataObj* dObj = static_cast<nsDataObj*>(aDataObj);
 
   
   
@@ -174,6 +163,7 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
 
     
     
+    
     UINT format = GetFormat(flavorStr.get(), false);
 
     
@@ -181,7 +171,7 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
     FORMATETC fe;
     SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
     dObj->AddDataFlavor(flavorStr.get(), &fe);
-    
+
     
     
     
@@ -191,35 +181,39 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
       FORMATETC textFE;
       SET_FORMATETC(textFE, CF_TEXT, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
       dObj->AddDataFlavor(kTextMime, &textFE);
-    }
-    else if (flavorStr.EqualsLiteral(kHTMLMime)) {
+    } else if (flavorStr.EqualsLiteral(kHTMLMime)) {
       
       
       FORMATETC htmlFE;
       SET_FORMATETC(htmlFE, CF_HTML, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
-      dObj->AddDataFlavor(kHTMLMime, &htmlFE);     
-    }
-    else if (flavorStr.EqualsLiteral(kURLMime)) {
+      dObj->AddDataFlavor(kHTMLMime, &htmlFE);
+    } else if (flavorStr.EqualsLiteral(kURLMime)) {
       
       
       
       FORMATETC shortcutFE;
-      SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
-      dObj->AddDataFlavor(kURLMime, &shortcutFE);      
-      SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
-      dObj->AddDataFlavor(kURLMime, &shortcutFE);      
-      SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_FILECONTENTS), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
-      dObj->AddDataFlavor(kURLMime, &shortcutFE);  
-      SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_INETURLA), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
-      dObj->AddDataFlavor(kURLMime, &shortcutFE);      
-      SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_INETURLW), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
-      dObj->AddDataFlavor(kURLMime, &shortcutFE);      
-    }
-    else if (flavorStr.EqualsLiteral(kPNGImageMime) ||
-             flavorStr.EqualsLiteral(kJPEGImageMime) ||
-             flavorStr.EqualsLiteral(kJPGImageMime) ||
-             flavorStr.EqualsLiteral(kGIFImageMime) ||
-             flavorStr.EqualsLiteral(kNativeImageMime)) {
+      SET_FORMATETC(shortcutFE,
+                    ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA), 0,
+                    DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
+      dObj->AddDataFlavor(kURLMime, &shortcutFE);
+      SET_FORMATETC(shortcutFE,
+                    ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW), 0,
+                    DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
+      dObj->AddDataFlavor(kURLMime, &shortcutFE);
+      SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_FILECONTENTS),
+                    0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
+      dObj->AddDataFlavor(kURLMime, &shortcutFE);
+      SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_INETURLA), 0,
+                    DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
+      dObj->AddDataFlavor(kURLMime, &shortcutFE);
+      SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_INETURLW), 0,
+                    DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
+      dObj->AddDataFlavor(kURLMime, &shortcutFE);
+    } else if (flavorStr.EqualsLiteral(kPNGImageMime) ||
+               flavorStr.EqualsLiteral(kJPEGImageMime) ||
+               flavorStr.EqualsLiteral(kJPGImageMime) ||
+               flavorStr.EqualsLiteral(kGIFImageMime) ||
+               flavorStr.EqualsLiteral(kNativeImageMime)) {
       
       FORMATETC imageFE;
       
@@ -228,23 +222,24 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
       
       SET_FORMATETC(imageFE, CF_DIB, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
       dObj->AddDataFlavor(flavorStr.get(), &imageFE);
-    }
-    else if (flavorStr.EqualsLiteral(kFilePromiseMime)) {
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
-       
+    } else if (flavorStr.EqualsLiteral(kFilePromiseMime)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
       FORMATETC shortcutFE;
-      SET_FORMATETC(shortcutFE, ::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT), 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
+      SET_FORMATETC(shortcutFE,
+                    ::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT), 0,
+                    DVASPECT_CONTENT, -1, TYMED_HGLOBAL)
       dObj->AddDataFlavor(kFilePromiseMime, &shortcutFE);
     }
   }
@@ -253,8 +248,7 @@ nsresult nsClipboard::SetupNativeDataObject(nsITransferable * aTransferable, IDa
 }
 
 
-NS_IMETHODIMP nsClipboard::SetNativeClipboardData ( int32_t aWhichClipboard )
-{
+NS_IMETHODIMP nsClipboard::SetNativeClipboardData(int32_t aWhichClipboard) {
   if (aWhichClipboard != kGlobalClipboard) {
     return NS_ERROR_FAILURE;
   }
@@ -266,8 +260,9 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData ( int32_t aWhichClipboard )
     return NS_ERROR_FAILURE;
   }
 
-  IDataObject * dataObj;
-  if ( NS_SUCCEEDED(CreateNativeDataObject(mTransferable, &dataObj, nullptr)) ) { 
+  IDataObject* dataObj;
+  if (NS_SUCCEEDED(CreateNativeDataObject(mTransferable, &dataObj,
+                                          nullptr))) {  
     ::OleSetClipboard(dataObj);
     dataObj->Release();
   } else {
@@ -281,21 +276,21 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData ( int32_t aWhichClipboard )
 }
 
 
-
-nsresult nsClipboard::GetGlobalData(HGLOBAL aHGBL, void ** aData, uint32_t * aLen)
-{
+nsresult nsClipboard::GetGlobalData(HGLOBAL aHGBL, void** aData,
+                                    uint32_t* aLen) {
   
   
   
   
-  nsresult  result = NS_ERROR_FAILURE;
+  nsresult result = NS_ERROR_FAILURE;
   if (aHGBL != nullptr) {
-    LPSTR lpStr = (LPSTR) GlobalLock(aHGBL);
+    LPSTR lpStr = (LPSTR)GlobalLock(aHGBL);
     DWORD allocSize = GlobalSize(aHGBL);
     char* data = static_cast<char*>(malloc(allocSize + sizeof(char16_t)));
-    if ( data ) {    
-      memcpy ( data, lpStr, allocSize );
-      data[allocSize] = data[allocSize + 1] = '\0';     
+    if (data) {
+      memcpy(data, lpStr, allocSize);
+      data[allocSize] = data[allocSize + 1] =
+          '\0';  
 
       GlobalUnlock(aHGBL);
       *aData = data;
@@ -307,92 +302,79 @@ nsresult nsClipboard::GetGlobalData(HGLOBAL aHGBL, void ** aData, uint32_t * aLe
     
     
     *aData = nullptr;
-    *aLen  = 0;
+    *aLen = 0;
     LPVOID lpMsgBuf;
 
-    FormatMessageW( 
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
-        nullptr,
+    FormatMessageW(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, nullptr,
         GetLastError(),
-        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
-        (LPWSTR) &lpMsgBuf,
-        0,
-        nullptr 
-    );
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  
+        (LPWSTR)&lpMsgBuf, 0, nullptr);
 
     
-    MessageBoxW( nullptr, (LPCWSTR) lpMsgBuf, L"GetLastError",
-                 MB_OK | MB_ICONINFORMATION );
+    MessageBoxW(nullptr, (LPCWSTR)lpMsgBuf, L"GetLastError",
+                MB_OK | MB_ICONINFORMATION);
 
     
-    LocalFree( lpMsgBuf );    
+    LocalFree(lpMsgBuf);
   }
 
   return result;
 }
 
 
-nsresult nsClipboard::GetNativeDataOffClipboard(nsIWidget * aWidget, UINT , UINT aFormat, void ** aData, uint32_t * aLen)
-{
-  HGLOBAL   hglb; 
-  nsresult  result = NS_ERROR_FAILURE;
+nsresult nsClipboard::GetNativeDataOffClipboard(nsIWidget* aWidget,
+                                                UINT , UINT aFormat,
+                                                void** aData, uint32_t* aLen) {
+  HGLOBAL hglb;
+  nsresult result = NS_ERROR_FAILURE;
 
   HWND nativeWin = nullptr;
-  if (::OpenClipboard(nativeWin)) { 
-    hglb = ::GetClipboardData(aFormat); 
+  if (::OpenClipboard(nativeWin)) {
+    hglb = ::GetClipboardData(aFormat);
     result = GetGlobalData(hglb, aData, aLen);
     ::CloseClipboard();
   }
   return result;
 }
 
-static void DisplayErrCode(HRESULT hres) 
-{
+static void DisplayErrCode(HRESULT hres) {
 #if defined(DEBUG_rods) || defined(DEBUG_pinkerton)
   if (hres == E_INVALIDARG) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("E_INVALIDARG\n"));
-  } else
-  if (hres == E_UNEXPECTED) {
+  } else if (hres == E_UNEXPECTED) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("E_UNEXPECTED\n"));
-  } else
-  if (hres == E_OUTOFMEMORY) {
+  } else if (hres == E_OUTOFMEMORY) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("E_OUTOFMEMORY\n"));
-  } else
-  if (hres == DV_E_LINDEX ) {
+  } else if (hres == DV_E_LINDEX) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("DV_E_LINDEX\n"));
-  } else
-  if (hres == DV_E_FORMATETC) {
+  } else if (hres == DV_E_FORMATETC) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("DV_E_FORMATETC\n"));
-  }  else
-  if (hres == DV_E_TYMED) {
+  } else if (hres == DV_E_TYMED) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("DV_E_TYMED\n"));
-  }  else
-  if (hres == DV_E_DVASPECT) {
+  } else if (hres == DV_E_DVASPECT) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("DV_E_DVASPECT\n"));
-  }  else
-  if (hres == OLE_E_NOTRUNNING) {
+  } else if (hres == OLE_E_NOTRUNNING) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("OLE_E_NOTRUNNING\n"));
-  }  else
-  if (hres == STG_E_MEDIUMFULL) {
+  } else if (hres == STG_E_MEDIUMFULL) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("STG_E_MEDIUMFULL\n"));
-  }  else
-  if (hres == DV_E_CLIPFORMAT) {
+  } else if (hres == DV_E_CLIPFORMAT) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("DV_E_CLIPFORMAT\n"));
-  }  else
-  if (hres == S_OK) {
+  } else if (hres == S_OK) {
     MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, ("S_OK\n"));
   } else {
-    MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, 
-           ("****** DisplayErrCode 0x%X\n", hres));
+    MOZ_LOG(gWin32ClipboardLog, LogLevel::Info,
+            ("****** DisplayErrCode 0x%X\n", hres));
   }
 #endif
 }
 
 
-static HRESULT FillSTGMedium(IDataObject * aDataObject, UINT aFormat, LPFORMATETC pFE, LPSTGMEDIUM pSTM, DWORD aTymed)
-{
+static HRESULT FillSTGMedium(IDataObject* aDataObject, UINT aFormat,
+                             LPFORMATETC pFE, LPSTGMEDIUM pSTM, DWORD aTymed) {
   SET_FORMATETC(*pFE, aFormat, 0, DVASPECT_CONTENT, -1, aTymed);
 
+  
   
   HRESULT hres = S_FALSE;
   hres = aDataObject->QueryGetData(pFE);
@@ -408,9 +390,10 @@ static HRESULT FillSTGMedium(IDataObject * aDataObject, UINT aFormat, LPFORMATET
 
 
 
-
-nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject * aDataObject, UINT aIndex, UINT aFormat, const char * aMIMEImageFormat, void ** aData, uint32_t * aLen)
-{
+nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject* aDataObject,
+                                                UINT aIndex, UINT aFormat,
+                                                const char* aMIMEImageFormat,
+                                                void** aData, uint32_t* aLen) {
   nsresult result = NS_ERROR_FAILURE;
   *aData = nullptr;
   *aLen = 0;
@@ -419,8 +402,8 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject * aDataObject, UINT 
     return result;
   }
 
-  UINT    format = aFormat;
-  HRESULT hres   = S_FALSE;
+  UINT format = aFormat;
+  HRESULT hres = S_FALSE;
 
   
   
@@ -432,170 +415,180 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject * aDataObject, UINT 
   
   
   if (S_OK == hres) {
-    static CLIPFORMAT fileDescriptorFlavorA = ::RegisterClipboardFormat( CFSTR_FILEDESCRIPTORA ); 
-    static CLIPFORMAT fileDescriptorFlavorW = ::RegisterClipboardFormat( CFSTR_FILEDESCRIPTORW ); 
-    static CLIPFORMAT fileFlavor = ::RegisterClipboardFormat( CFSTR_FILECONTENTS ); 
-    static CLIPFORMAT preferredDropEffect = ::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
+    static CLIPFORMAT fileDescriptorFlavorA =
+        ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORA);
+    static CLIPFORMAT fileDescriptorFlavorW =
+        ::RegisterClipboardFormat(CFSTR_FILEDESCRIPTORW);
+    static CLIPFORMAT fileFlavor =
+        ::RegisterClipboardFormat(CFSTR_FILECONTENTS);
+    static CLIPFORMAT preferredDropEffect =
+        ::RegisterClipboardFormat(CFSTR_PREFERREDDROPEFFECT);
 
     switch (stm.tymed) {
-     case TYMED_HGLOBAL: 
-        {
-          switch (fe.cfFormat) {
-            case CF_TEXT:
-              {
-                
-                
-                
-                
-                
-                
-                
-                uint32_t allocLen = 0;
-                if ( NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen)) ) {
-                  *aLen = strlen ( reinterpret_cast<char*>(*aData) );
-                  result = NS_OK;
+      case TYMED_HGLOBAL: {
+        switch (fe.cfFormat) {
+          case CF_TEXT: {
+            
+            
+            
+            
+            
+            
+            
+            uint32_t allocLen = 0;
+            if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
+              *aLen = strlen(reinterpret_cast<char*>(*aData));
+              result = NS_OK;
+            }
+          } break;
+
+          case CF_UNICODETEXT: {
+            
+            
+            
+            
+            
+            
+            
+            uint32_t allocLen = 0;
+            if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
+              *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) * 2;
+              result = NS_OK;
+            }
+          } break;
+
+          case CF_DIBV5:
+            if (aMIMEImageFormat) {
+              uint32_t allocLen = 0;
+              const char* clipboardData;
+              if (NS_SUCCEEDED(GetGlobalData(
+                      stm.hGlobal, (void**)&clipboardData, &allocLen))) {
+                nsCOMPtr<imgIContainer> container;
+                nsCOMPtr<imgITools> imgTools =
+                    do_CreateInstance("@mozilla.org/image/tools;1");
+                result = imgTools->DecodeImageFromBuffer(
+                    clipboardData, allocLen,
+                    NS_LITERAL_CSTRING(IMAGE_BMP_MS_CLIPBOARD),
+                    getter_AddRefs(container));
+                if (NS_FAILED(result)) {
+                  break;
                 }
-              } break;
 
-            case CF_UNICODETEXT:
-              {
-                
-                
-                
-                
-                
-                
-                
-                uint32_t allocLen = 0;
-                if ( NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen)) ) {
-                  *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) * 2;
-                  result = NS_OK;
+                nsAutoCString mimeType;
+                if (strcmp(aMIMEImageFormat, kJPGImageMime) == 0) {
+                  mimeType.Assign(IMAGE_JPEG);
+                } else {
+                  mimeType.Assign(aMIMEImageFormat);
                 }
-              } break;
 
-            case CF_DIBV5:
-              if (aMIMEImageFormat)
-              {
-                uint32_t allocLen = 0;
-                const char* clipboardData;
-                if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, (void **)&clipboardData, &allocLen)))
-                {
-                  nsCOMPtr<imgIContainer> container;
-                  nsCOMPtr<imgITools> imgTools = do_CreateInstance("@mozilla.org/image/tools;1");
-                  result = imgTools->DecodeImageFromBuffer(clipboardData, allocLen,
-                                                           NS_LITERAL_CSTRING(IMAGE_BMP_MS_CLIPBOARD),
-                                                           getter_AddRefs(container));
-                  if (NS_FAILED(result)) {
-                    break;
-                  }
-
-                  nsAutoCString mimeType;
-                  if (strcmp(aMIMEImageFormat, kJPGImageMime) == 0) {
-                    mimeType.Assign(IMAGE_JPEG);
-                  } else {
-                    mimeType.Assign(aMIMEImageFormat);
-                  }
-
-                  nsCOMPtr<nsIInputStream> inputStream;
-                  result = imgTools->EncodeImage(container, mimeType, EmptyString(),
-                                                 getter_AddRefs(inputStream));
-                  if (NS_FAILED(result)) {
-                    break;
-                  }
-
-                  if (!inputStream) {
-                    result = NS_ERROR_FAILURE;
-                    break;
-                  }
-
-                  *aData = inputStream.forget().take();
-                  *aLen = sizeof(nsIInputStream*);
+                nsCOMPtr<nsIInputStream> inputStream;
+                result =
+                    imgTools->EncodeImage(container, mimeType, EmptyString(),
+                                          getter_AddRefs(inputStream));
+                if (NS_FAILED(result)) {
+                  break;
                 }
-              } break;
 
-            case CF_HDROP : 
-              {
-                
-                
-                
-                
-                HDROP dropFiles = (HDROP) GlobalLock(stm.hGlobal);
-
-                UINT numFiles = ::DragQueryFileW(dropFiles, 0xFFFFFFFF, nullptr, 0);
-                NS_ASSERTION ( numFiles > 0, "File drop flavor, but no files...hmmmm" );
-                NS_ASSERTION ( aIndex < numFiles, "Asked for a file index out of range of list" );
-                if (numFiles > 0) {
-                  UINT fileNameLen = ::DragQueryFileW(dropFiles, aIndex, nullptr, 0);
-                  wchar_t* buffer = reinterpret_cast<wchar_t*>(moz_xmalloc((fileNameLen + 1) * sizeof(wchar_t)));
-                  ::DragQueryFileW(dropFiles, aIndex, buffer, fileNameLen + 1);
-                  *aData = buffer;
-                  *aLen = fileNameLen * sizeof(char16_t);
-                  result = NS_OK;
+                if (!inputStream) {
+                  result = NS_ERROR_FAILURE;
+                  break;
                 }
-                GlobalUnlock (stm.hGlobal) ;
 
-              } break;
-
-            default: {
-              if ( fe.cfFormat == fileDescriptorFlavorA || fe.cfFormat == fileDescriptorFlavorW || fe.cfFormat == fileFlavor ) {
-                NS_WARNING ( "Mozilla doesn't yet understand how to read this type of file flavor" );
-              } 
-              else
-              {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                uint32_t allocLen = 0;
-                if ( NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen)) ) {
-                  if ( fe.cfFormat == CF_HTML ) {
-                    
-                    
-                    
-                    
-                    
-                    *aLen = allocLen;
-                  } else if (fe.cfFormat == CF_CUSTOMTYPES) {
-                    
-                    *aLen = allocLen;
-                  } else if (fe.cfFormat == preferredDropEffect) {
-                    
-                    
-                    
-                    NS_ASSERTION(allocLen == sizeof(DWORD),
-                      "CFSTR_PREFERREDDROPEFFECT should return a DWORD");
-                    *aLen = allocLen;
-                  } else {
-                    *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) * 
-                            sizeof(char16_t);
-                  }
-                  result = NS_OK;
-                }
+                *aData = inputStream.forget().take();
+                *aLen = sizeof(nsIInputStream*);
               }
-            } break;
-          } 
-        } break;
+            }
+            break;
 
-      case TYMED_GDI: 
-        {
+          case CF_HDROP: {
+            
+            
+            
+            
+            HDROP dropFiles = (HDROP)GlobalLock(stm.hGlobal);
+
+            UINT numFiles = ::DragQueryFileW(dropFiles, 0xFFFFFFFF, nullptr, 0);
+            NS_ASSERTION(numFiles > 0,
+                         "File drop flavor, but no files...hmmmm");
+            NS_ASSERTION(aIndex < numFiles,
+                         "Asked for a file index out of range of list");
+            if (numFiles > 0) {
+              UINT fileNameLen =
+                  ::DragQueryFileW(dropFiles, aIndex, nullptr, 0);
+              wchar_t* buffer = reinterpret_cast<wchar_t*>(
+                  moz_xmalloc((fileNameLen + 1) * sizeof(wchar_t)));
+              ::DragQueryFileW(dropFiles, aIndex, buffer, fileNameLen + 1);
+              *aData = buffer;
+              *aLen = fileNameLen * sizeof(char16_t);
+              result = NS_OK;
+            }
+            GlobalUnlock(stm.hGlobal);
+
+          } break;
+
+          default: {
+            if (fe.cfFormat == fileDescriptorFlavorA ||
+                fe.cfFormat == fileDescriptorFlavorW ||
+                fe.cfFormat == fileFlavor) {
+              NS_WARNING(
+                  "Mozilla doesn't yet understand how to read this type of "
+                  "file flavor");
+            } else {
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              
+              uint32_t allocLen = 0;
+              if (NS_SUCCEEDED(GetGlobalData(stm.hGlobal, aData, &allocLen))) {
+                if (fe.cfFormat == CF_HTML) {
+                  
+                  
+                  
+                  
+                  
+                  *aLen = allocLen;
+                } else if (fe.cfFormat == CF_CUSTOMTYPES) {
+                  
+                  *aLen = allocLen;
+                } else if (fe.cfFormat == preferredDropEffect) {
+                  
+                  
+                  
+                  
+                  NS_ASSERTION(
+                      allocLen == sizeof(DWORD),
+                      "CFSTR_PREFERREDDROPEFFECT should return a DWORD");
+                  *aLen = allocLen;
+                } else {
+                  *aLen = NS_strlen(reinterpret_cast<char16_t*>(*aData)) *
+                          sizeof(char16_t);
+                }
+                result = NS_OK;
+              }
+            }
+          } break;
+        }  
+      } break;
+
+      case TYMED_GDI: {
 #ifdef DEBUG
-          MOZ_LOG(gWin32ClipboardLog, LogLevel::Info, 
-                 ("*********************** TYMED_GDI\n"));
+        MOZ_LOG(gWin32ClipboardLog, LogLevel::Info,
+                ("*********************** TYMED_GDI\n"));
 #endif
-        } break;
+      } break;
 
       default:
         break;
-    } 
-    
+    }  
+
     ReleaseStgMedium(&stm);
   }
 
@@ -603,12 +596,9 @@ nsresult nsClipboard::GetNativeDataOffClipboard(IDataObject * aDataObject, UINT 
 }
 
 
-
-nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
-                                            UINT              anIndex,
-                                            nsIWidget       * aWindow,
-                                            nsITransferable * aTransferable)
-{
+nsresult nsClipboard::GetDataFromDataObject(IDataObject* aDataObject,
+                                            UINT anIndex, nsIWidget* aWindow,
+                                            nsITransferable* aTransferable) {
   
   if (!aTransferable) {
     return NS_ERROR_INVALID_ARG;
@@ -625,6 +615,7 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
   }
 
   
+  
   for (uint32_t i = 0; i < flavors.Length(); i++) {
     nsCString& flavorStr = flavors[i];
     UINT format = GetFormat(flavorStr.get());
@@ -635,12 +626,14 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
     uint32_t dataLen = 0;
     bool dataFound = false;
     if (nullptr != aDataObject) {
-      if (NS_SUCCEEDED(GetNativeDataOffClipboard(aDataObject, anIndex, format, flavorStr.get(), &data, &dataLen))) {
+      if (NS_SUCCEEDED(GetNativeDataOffClipboard(aDataObject, anIndex, format,
+                                                 flavorStr.get(), &data,
+                                                 &dataLen))) {
         dataFound = true;
       }
-    } 
-    else if (nullptr != aWindow) {
-      if (NS_SUCCEEDED(GetNativeDataOffClipboard(aWindow, anIndex, format, &data, &dataLen))) {
+    } else if (nullptr != aWindow) {
+      if (NS_SUCCEEDED(GetNativeDataOffClipboard(aWindow, anIndex, format,
+                                                 &data, &dataLen))) {
         dataFound = true;
       }
     }
@@ -648,78 +641,78 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
     
     
     
-    if ( !dataFound ) {
+    if (!dataFound) {
       if (flavorStr.EqualsLiteral(kUnicodeMime)) {
-        dataFound = FindUnicodeFromPlainText(aDataObject, anIndex, &data, &dataLen);
-      }
-      else if (flavorStr.EqualsLiteral(kURLMime)) {
+        dataFound =
+            FindUnicodeFromPlainText(aDataObject, anIndex, &data, &dataLen);
+      } else if (flavorStr.EqualsLiteral(kURLMime)) {
         
         
-        dataFound = FindURLFromNativeURL ( aDataObject, anIndex, &data, &dataLen );
+        dataFound = FindURLFromNativeURL(aDataObject, anIndex, &data, &dataLen);
         if (!dataFound) {
-          dataFound = FindURLFromLocalFile(aDataObject, anIndex, &data, &dataLen);
+          dataFound =
+              FindURLFromLocalFile(aDataObject, anIndex, &data, &dataLen);
         }
       }
-    } 
+    }  
 
     
-    if ( dataFound ) {
+    if (dataFound) {
       nsCOMPtr<nsISupports> genericDataWrapper;
-        if (flavorStr.EqualsLiteral(kFileMime)) {
-          
-          nsDependentString filepath(reinterpret_cast<char16_t*>(data));
-          nsCOMPtr<nsIFile> file;
-          if (NS_SUCCEEDED(NS_NewLocalFile(filepath, false, getter_AddRefs(file)))) {
-            genericDataWrapper = do_QueryInterface(file);
-          }
-          free(data);
+      if (flavorStr.EqualsLiteral(kFileMime)) {
+        
+        nsDependentString filepath(reinterpret_cast<char16_t*>(data));
+        nsCOMPtr<nsIFile> file;
+        if (NS_SUCCEEDED(
+                NS_NewLocalFile(filepath, false, getter_AddRefs(file)))) {
+          genericDataWrapper = do_QueryInterface(file);
         }
-      else if (flavorStr.EqualsLiteral(kNativeHTMLMime)) {
+        free(data);
+      } else if (flavorStr.EqualsLiteral(kNativeHTMLMime)) {
         uint32_t dummy;
         
         
         
         if (FindPlatformHTML(aDataObject, anIndex, &data, &dummy, &dataLen)) {
-          nsPrimitiveHelpers::CreatePrimitiveForData(flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper));
-        }
-        else
-        {
+          nsPrimitiveHelpers::CreatePrimitiveForData(
+              flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper));
+        } else {
           free(data);
-          continue;     
+          continue;  
+                     
         }
         free(data);
-      }
-      else if (flavorStr.EqualsLiteral(kHTMLMime)) {
+      } else if (flavorStr.EqualsLiteral(kHTMLMime)) {
         uint32_t startOfData = 0;
         
         
         
-        if ( FindPlatformHTML(aDataObject, anIndex, &data, &startOfData, &dataLen) ) {
+        if (FindPlatformHTML(aDataObject, anIndex, &data, &startOfData,
+                             &dataLen)) {
           dataLen -= startOfData;
-          nsPrimitiveHelpers::CreatePrimitiveForCFHTML ( static_cast<char*>(data) + startOfData,
-                                                         &dataLen, getter_AddRefs(genericDataWrapper) );
-        }
-        else
-        {
+          nsPrimitiveHelpers::CreatePrimitiveForCFHTML(
+              static_cast<char*>(data) + startOfData, &dataLen,
+              getter_AddRefs(genericDataWrapper));
+        } else {
           free(data);
-          continue;     
+          continue;  
+                     
         }
         free(data);
-      }
-      else if (flavorStr.EqualsLiteral(kJPEGImageMime) ||
-               flavorStr.EqualsLiteral(kJPGImageMime) ||
-               flavorStr.EqualsLiteral(kPNGImageMime)) {
-        nsIInputStream * imageStream = reinterpret_cast<nsIInputStream*>(data);
+      } else if (flavorStr.EqualsLiteral(kJPEGImageMime) ||
+                 flavorStr.EqualsLiteral(kJPGImageMime) ||
+                 flavorStr.EqualsLiteral(kPNGImageMime)) {
+        nsIInputStream* imageStream = reinterpret_cast<nsIInputStream*>(data);
         genericDataWrapper = do_QueryInterface(imageStream);
         NS_IF_RELEASE(imageStream);
-      }
-      else {
+      } else {
         
         if (!flavorStr.EqualsLiteral(kCustomTypesMime)) {
           
           
           int32_t signedLen = static_cast<int32_t>(dataLen);
-          nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(flavorStr, &data, &signedLen);
+          nsLinebreakHelpers::ConvertPlatformToDOMLinebreaks(flavorStr, &data,
+                                                             &signedLen);
           dataLen = signedLen;
 
           if (flavorStr.EqualsLiteral(kRTFMime)) {
@@ -730,21 +723,22 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
           }
         }
 
-        nsPrimitiveHelpers::CreatePrimitiveForData(flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper));
+        nsPrimitiveHelpers::CreatePrimitiveForData(
+            flavorStr, data, dataLen, getter_AddRefs(genericDataWrapper));
         free(data);
       }
-      
-      NS_ASSERTION ( genericDataWrapper, "About to put null data into the transferable" );
+
+      NS_ASSERTION(genericDataWrapper,
+                   "About to put null data into the transferable");
       aTransferable->SetTransferData(flavorStr.get(), genericDataWrapper);
       res = NS_OK;
 
       
       break;
     }
-  } 
+  }  
 
   return res;
-
 }
 
 
@@ -753,12 +747,9 @@ nsresult nsClipboard::GetDataFromDataObject(IDataObject     * aDataObject,
 
 
 
-
-bool
-nsClipboard :: FindPlatformHTML ( IDataObject* inDataObject, UINT inIndex,
-                                  void** outData, uint32_t* outStartOfData,
-                                  uint32_t* outDataLen )
-{
+bool nsClipboard ::FindPlatformHTML(IDataObject* inDataObject, UINT inIndex,
+                                    void** outData, uint32_t* outStartOfData,
+                                    uint32_t* outDataLen) {
   
   
   
@@ -771,11 +762,12 @@ nsClipboard :: FindPlatformHTML ( IDataObject* inDataObject, UINT inIndex,
     return false;
   }
 
-  char version[8] = { 0 };
+  char version[8] = {0};
   int32_t startOfData = 0;
   int32_t endOfData = 0;
-  int numFound = sscanf((char*)*outData, "Version:%7s\nStartHTML:%d\nEndHTML:%d", 
-                        version, &startOfData, &endOfData);
+  int numFound =
+      sscanf((char*)*outData, "Version:%7s\nStartHTML:%d\nEndHTML:%d", version,
+             &startOfData, &endOfData);
 
   if (numFound != 3 || startOfData < -1 || endOfData < -1) {
     return false;
@@ -792,11 +784,11 @@ nsClipboard :: FindPlatformHTML ( IDataObject* inDataObject, UINT inIndex,
   
   
   
-  if (!endOfData || startOfData >= endOfData || 
+  if (!endOfData || startOfData >= endOfData ||
       static_cast<uint32_t>(endOfData) > *outDataLen) {
     return false;
   }
-  
+
   
   
   
@@ -814,20 +806,23 @@ nsClipboard :: FindPlatformHTML ( IDataObject* inDataObject, UINT inIndex,
 
 
 
-
-bool
-nsClipboard :: FindUnicodeFromPlainText ( IDataObject* inDataObject, UINT inIndex, void** outData, uint32_t* outDataLen )
-{
+bool nsClipboard ::FindUnicodeFromPlainText(IDataObject* inDataObject,
+                                            UINT inIndex, void** outData,
+                                            uint32_t* outDataLen) {
   
   
-  nsresult rv = GetNativeDataOffClipboard(inDataObject, inIndex, GetFormat(kTextMime), nullptr, outData, outDataLen);
+  
+  nsresult rv =
+      GetNativeDataOffClipboard(inDataObject, inIndex, GetFormat(kTextMime),
+                                nullptr, outData, outDataLen);
   if (NS_FAILED(rv) || !*outData) {
     return false;
   }
 
   const char* castedText = static_cast<char*>(*outData);
   nsAutoString tmp;
-  rv = NS_CopyNativeToUnicode(nsDependentCSubstring(castedText, *outDataLen), tmp);
+  rv = NS_CopyNativeToUnicode(nsDependentCSubstring(castedText, *outDataLen),
+                              tmp);
   if (NS_FAILED(rv)) {
     return false;
   }
@@ -839,7 +834,7 @@ nsClipboard :: FindUnicodeFromPlainText ( IDataObject* inDataObject, UINT inInde
 
   return true;
 
-} 
+}  
 
 
 
@@ -849,14 +844,15 @@ nsClipboard :: FindUnicodeFromPlainText ( IDataObject* inDataObject, UINT inInde
 
 
 
-
-bool
-nsClipboard :: FindURLFromLocalFile ( IDataObject* inDataObject, UINT inIndex, void** outData, uint32_t* outDataLen )
-{
+bool nsClipboard ::FindURLFromLocalFile(IDataObject* inDataObject, UINT inIndex,
+                                        void** outData, uint32_t* outDataLen) {
   bool dataFound = false;
 
-  nsresult loadResult = GetNativeDataOffClipboard(inDataObject, inIndex, GetFormat(kFileMime), nullptr, outData, outDataLen);
-  if ( NS_SUCCEEDED(loadResult) && *outData ) {
+  nsresult loadResult =
+      GetNativeDataOffClipboard(inDataObject, inIndex, GetFormat(kFileMime),
+                                nullptr, outData, outDataLen);
+  if (NS_SUCCEEDED(loadResult) && *outData) {
+    
     
     const nsDependentString filepath(static_cast<char16_t*>(*outData));
     nsCOMPtr<nsIFile> file;
@@ -866,11 +862,11 @@ nsClipboard :: FindURLFromLocalFile ( IDataObject* inDataObject, UINT inIndex, v
       return dataFound;
     }
 
-    if ( IsInternetShortcut(filepath) ) {
+    if (IsInternetShortcut(filepath)) {
       free(*outData);
       nsAutoCString url;
-      ResolveShortcut( file, url );
-      if ( !url.IsEmpty() ) {
+      ResolveShortcut(file, url);
+      if (!url.IsEmpty()) {
         
         NS_ConvertUTF8toUTF16 urlString(url);
         
@@ -883,12 +879,12 @@ nsClipboard :: FindURLFromLocalFile ( IDataObject* inDataObject, UINT inIndex, v
           title = urlString;
         }
         *outData = ToNewUnicode(urlString + NS_LITERAL_STRING("\n") + title);
-        *outDataLen = NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
+        *outDataLen =
+            NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
 
         dataFound = true;
       }
-    }
-    else {
+    } else {
       
       nsAutoCString urlSpec;
       NS_GetURLSpecFromFile(file, urlSpec);
@@ -896,13 +892,14 @@ nsClipboard :: FindURLFromLocalFile ( IDataObject* inDataObject, UINT inIndex, v
       
       free(*outData);
       *outData = UTF8ToNewUnicode(urlSpec);
-      *outDataLen = NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
+      *outDataLen =
+          NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
       dataFound = true;
-    } 
+    }  
   }
 
   return dataFound;
-} 
+}  
 
 
 
@@ -911,60 +908,65 @@ nsClipboard :: FindURLFromLocalFile ( IDataObject* inDataObject, UINT inIndex, v
 
 
 
-bool
-nsClipboard :: FindURLFromNativeURL ( IDataObject* inDataObject, UINT inIndex, void** outData, uint32_t* outDataLen )
-{
+bool nsClipboard ::FindURLFromNativeURL(IDataObject* inDataObject, UINT inIndex,
+                                        void** outData, uint32_t* outDataLen) {
   bool dataFound = false;
 
   void* tempOutData = nullptr;
   uint32_t tempDataLen = 0;
 
-  nsresult loadResult = GetNativeDataOffClipboard(inDataObject, inIndex, ::RegisterClipboardFormat(CFSTR_INETURLW), nullptr, &tempOutData, &tempDataLen);
-  if ( NS_SUCCEEDED(loadResult) && tempOutData ) {
+  nsresult loadResult = GetNativeDataOffClipboard(
+      inDataObject, inIndex, ::RegisterClipboardFormat(CFSTR_INETURLW), nullptr,
+      &tempOutData, &tempDataLen);
+  if (NS_SUCCEEDED(loadResult) && tempOutData) {
     nsDependentString urlString(static_cast<char16_t*>(tempOutData));
     
     
     
     *outData = ToNewUnicode(urlString + NS_LITERAL_STRING("\n") + urlString);
-    *outDataLen = NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
+    *outDataLen =
+        NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
     free(tempOutData);
     dataFound = true;
-  }
-  else {
-    loadResult = GetNativeDataOffClipboard(inDataObject, inIndex, ::RegisterClipboardFormat(CFSTR_INETURLA), nullptr, &tempOutData, &tempDataLen);
-    if ( NS_SUCCEEDED(loadResult) && tempOutData ) {
+  } else {
+    loadResult = GetNativeDataOffClipboard(
+        inDataObject, inIndex, ::RegisterClipboardFormat(CFSTR_INETURLA),
+        nullptr, &tempOutData, &tempDataLen);
+    if (NS_SUCCEEDED(loadResult) && tempOutData) {
       
       
       nsCString urlUnescapedA;
-      bool unescaped = NS_UnescapeURL(static_cast<char*>(tempOutData), tempDataLen, esc_OnlyNonASCII | esc_SkipControl, urlUnescapedA);
+      bool unescaped =
+          NS_UnescapeURL(static_cast<char*>(tempOutData), tempDataLen,
+                         esc_OnlyNonASCII | esc_SkipControl, urlUnescapedA);
 
       nsString urlString;
       if (unescaped) {
         NS_CopyNativeToUnicode(urlUnescapedA, urlString);
-      }
-      else {
-        NS_CopyNativeToUnicode(nsDependentCString(static_cast<char*>(tempOutData), tempDataLen), urlString);
+      } else {
+        NS_CopyNativeToUnicode(
+            nsDependentCString(static_cast<char*>(tempOutData), tempDataLen),
+            urlString);
       }
 
       
       
       
       *outData = ToNewUnicode(urlString + NS_LITERAL_STRING("\n") + urlString);
-      *outDataLen = NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
+      *outDataLen =
+          NS_strlen(static_cast<char16_t*>(*outData)) * sizeof(char16_t);
       free(tempOutData);
       dataFound = true;
     }
   }
 
   return dataFound;
-} 
+}  
 
 
 
 
-void
-nsClipboard :: ResolveShortcut ( nsIFile* aFile, nsACString& outURL )
-{
+void nsClipboard ::ResolveShortcut(nsIFile* aFile, nsACString& outURL) {
   nsCOMPtr<nsIFileProtocolHandler> fph;
   nsresult rv = NS_GetFileProtocolHandler(getter_AddRefs(fph));
   if (NS_FAILED(rv)) {
@@ -978,50 +980,44 @@ nsClipboard :: ResolveShortcut ( nsIFile* aFile, nsACString& outURL )
   }
 
   uri->GetSpec(outURL);
-} 
+}  
 
 
 
 
 
 
-
-bool
-nsClipboard :: IsInternetShortcut ( const nsAString& inFileName ) 
-{
-  return StringEndsWith(inFileName, NS_LITERAL_STRING(".url"), nsCaseInsensitiveStringComparator());
-} 
+bool nsClipboard ::IsInternetShortcut(const nsAString& inFileName) {
+  return StringEndsWith(inFileName, NS_LITERAL_STRING(".url"),
+                        nsCaseInsensitiveStringComparator());
+}  
 
 
-
-NS_IMETHODIMP 
-nsClipboard::GetNativeClipboardData ( nsITransferable * aTransferable, int32_t aWhichClipboard )
-{
+NS_IMETHODIMP
+nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable,
+                                    int32_t aWhichClipboard) {
   
-  if ( !aTransferable || aWhichClipboard != kGlobalClipboard ) {
+  if (!aTransferable || aWhichClipboard != kGlobalClipboard) {
     return NS_ERROR_FAILURE;
   }
 
   nsresult res;
 
   
-  IDataObject * dataObj;
+  IDataObject* dataObj;
   if (S_OK == ::OleGetClipboard(&dataObj)) {
     
     res = GetDataFromDataObject(dataObj, 0, nullptr, aTransferable);
     dataObj->Release();
-  } 
-  else {
+  } else {
     
     res = GetDataFromDataObject(nullptr, 0, mWindow, aTransferable);
   }
   return res;
-
 }
 
 NS_IMETHODIMP
-nsClipboard::EmptyClipboard(int32_t aWhichClipboard)
-{
+nsClipboard::EmptyClipboard(int32_t aWhichClipboard) {
   
   
   
@@ -1037,8 +1033,7 @@ nsClipboard::EmptyClipboard(int32_t aWhichClipboard)
 NS_IMETHODIMP nsClipboard::HasDataMatchingFlavors(const char** aFlavorList,
                                                   uint32_t aLength,
                                                   int32_t aWhichClipboard,
-                                                  bool *_retval)
-{
+                                                  bool* _retval) {
   *_retval = false;
   if (aWhichClipboard != kGlobalClipboard || !aFlavorList) {
     return NS_OK;
@@ -1047,7 +1042,9 @@ NS_IMETHODIMP nsClipboard::HasDataMatchingFlavors(const char** aFlavorList,
   for (uint32_t i = 0; i < aLength; ++i) {
 #ifdef DEBUG
     if (strcmp(aFlavorList[i], kTextMime) == 0) {
-      NS_WARNING("DO NOT USE THE text/plain DATA FLAVOR ANY MORE. USE text/unicode INSTEAD");
+      NS_WARNING(
+          "DO NOT USE THE text/plain DATA FLAVOR ANY MORE. USE text/unicode "
+          "INSTEAD");
     }
 #endif
 
@@ -1055,11 +1052,11 @@ NS_IMETHODIMP nsClipboard::HasDataMatchingFlavors(const char** aFlavorList,
     if (IsClipboardFormatAvailable(format)) {
       *_retval = true;
       break;
-    }
-    else {
+    } else {
       
       
       if (strcmp(aFlavorList[i], kUnicodeMime) == 0) {
+        
         
         
         if (IsClipboardFormatAvailable(GetFormat(kTextMime))) {

@@ -7,13 +7,13 @@
 #ifndef mozilla_layers_KeyboardMap_h
 #define mozilla_layers_KeyboardMap_h
 
-#include <stdint.h> 
+#include <stdint.h>  
 
-#include "InputData.h"          
-#include "nsIScrollableFrame.h" 
-#include "nsTArray.h"           
-#include "mozilla/Maybe.h"      
-#include "KeyboardScrollAction.h" 
+#include "InputData.h"             
+#include "nsIScrollableFrame.h"    
+#include "nsTArray.h"              
+#include "mozilla/Maybe.h"         
+#include "KeyboardScrollAction.h"  
 
 namespace mozilla {
 
@@ -26,9 +26,8 @@ class KeyboardMap;
 
 
 
-class KeyboardShortcut final
-{
-public:
+class KeyboardShortcut final {
+ public:
   KeyboardShortcut();
 
   
@@ -36,9 +35,7 @@ public:
 
 
   KeyboardShortcut(KeyboardInput::KeyboardEventType aEventType,
-                   uint32_t aKeyCode,
-                   uint32_t aCharCode,
-                   Modifiers aModifiers,
+                   uint32_t aKeyCode, uint32_t aCharCode, Modifiers aModifiers,
                    Modifiers aModifiersMask,
                    const KeyboardScrollAction& aAction);
 
@@ -47,9 +44,7 @@ public:
 
 
   KeyboardShortcut(KeyboardInput::KeyboardEventType aEventType,
-                   uint32_t aKeyCode,
-                   uint32_t aCharCode,
-                   Modifiers aModifiers,
+                   uint32_t aKeyCode, uint32_t aCharCode, Modifiers aModifiers,
                    Modifiers aModifiersMask);
 
   
@@ -59,20 +54,19 @@ public:
 
   static void AppendHardcodedShortcuts(nsTArray<KeyboardShortcut>& aShortcuts);
 
-protected:
+ protected:
   friend mozilla::layers::KeyboardMap;
 
-  bool Matches(const KeyboardInput& aInput,
-               const IgnoreModifierState& aIgnore,
+  bool Matches(const KeyboardInput& aInput, const IgnoreModifierState& aIgnore,
                uint32_t aOverrideCharCode = 0) const;
 
-private:
+ private:
   bool MatchesKey(const KeyboardInput& aInput,
                   uint32_t aOverrideCharCode) const;
   bool MatchesModifiers(const KeyboardInput& aInput,
                         const IgnoreModifierState& aIgnore) const;
 
-public:
+ public:
   
   
   KeyboardScrollAction mAction;
@@ -97,9 +91,8 @@ public:
 
 
 
-class KeyboardMap final
-{
-public:
+class KeyboardMap final {
+ public:
   KeyboardMap();
   explicit KeyboardMap(nsTArray<KeyboardShortcut>&& aShortcuts);
 
@@ -108,17 +101,18 @@ public:
   
 
 
+
   Maybe<KeyboardShortcut> FindMatch(const KeyboardInput& aEvent) const;
 
-private:
-  Maybe<KeyboardShortcut> FindMatchInternal(const KeyboardInput& aEvent,
-                                            const IgnoreModifierState& aIgnore,
-                                            uint32_t aOverrideCharCode = 0) const;
+ private:
+  Maybe<KeyboardShortcut> FindMatchInternal(
+      const KeyboardInput& aEvent, const IgnoreModifierState& aIgnore,
+      uint32_t aOverrideCharCode = 0) const;
 
   nsTArray<KeyboardShortcut> mShortcuts;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

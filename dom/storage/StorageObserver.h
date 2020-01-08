@@ -20,12 +20,11 @@ class StorageObserver;
 
 
 
-class StorageObserverSink
-{
-public:
+class StorageObserverSink {
+ public:
   virtual ~StorageObserverSink() {}
 
-private:
+ private:
   friend class StorageObserver;
   virtual nsresult Observe(const char* aTopic,
                            const nsAString& aOriginAttributesPattern,
@@ -34,10 +33,8 @@ private:
 
 
 
-class StorageObserver : public nsIObserver
-                      , public nsSupportsWeakReference
-{
-public:
+class StorageObserver : public nsIObserver, public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -51,15 +48,12 @@ public:
               const nsAString& aOriginAttributesPattern = EmptyString(),
               const nsACString& aOriginScope = EmptyCString());
 
-  void
-  NoteBackgroundThread(nsIEventTarget* aBackgroundThread);
+  void NoteBackgroundThread(nsIEventTarget* aBackgroundThread);
 
-private:
+ private:
   virtual ~StorageObserver() {}
 
-  nsresult
-  ClearMatchingOrigin(const char16_t* aData,
-                      nsACString& aOriginScope);
+  nsresult ClearMatchingOrigin(const char16_t* aData, nsACString& aOriginScope);
 
   static void TestingPrefChanged(const char* aPrefName, void* aClosure);
 
@@ -72,7 +66,7 @@ private:
   nsCOMPtr<nsITimer> mDBThreadStartDelayTimer;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

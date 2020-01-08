@@ -17,34 +17,30 @@ class nsIInputStream;
 class nsILoadGroup;
 class nsIStreamListener;
 
-class nsInputStreamPump final : public nsIInputStreamPump
-                              , public nsIInputStreamCallback
-                              , public nsIThreadRetargetableRequest
-{
-    ~nsInputStreamPump() = default;
+class nsInputStreamPump final : public nsIInputStreamPump,
+                                public nsIInputStreamCallback,
+                                public nsIThreadRetargetableRequest {
+  ~nsInputStreamPump() = default;
 
-public:
-    typedef mozilla::RecursiveMutexAutoLock RecursiveMutexAutoLock;
-    typedef mozilla::RecursiveMutexAutoUnlock RecursiveMutexAutoUnlock;
-    NS_DECL_THREADSAFE_ISUPPORTS
-    NS_DECL_NSIREQUEST
-    NS_DECL_NSIINPUTSTREAMPUMP
-    NS_DECL_NSIINPUTSTREAMCALLBACK
-    NS_DECL_NSITHREADRETARGETABLEREQUEST
+ public:
+  typedef mozilla::RecursiveMutexAutoLock RecursiveMutexAutoLock;
+  typedef mozilla::RecursiveMutexAutoUnlock RecursiveMutexAutoUnlock;
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIREQUEST
+  NS_DECL_NSIINPUTSTREAMPUMP
+  NS_DECL_NSIINPUTSTREAMCALLBACK
+  NS_DECL_NSITHREADRETARGETABLEREQUEST
 
-    nsInputStreamPump();
+  nsInputStreamPump();
 
-    static nsresult
-                      Create(nsInputStreamPump  **result,
-                             nsIInputStream      *stream,
-                             uint32_t             segsize = 0,
-                             uint32_t             segcount = 0,
-                             bool                 closeWhenDone = false,
-                             nsIEventTarget      *mainThreadTarget = nullptr);
+  static nsresult Create(nsInputStreamPump **result, nsIInputStream *stream,
+                         uint32_t segsize = 0, uint32_t segcount = 0,
+                         bool closeWhenDone = false,
+                         nsIEventTarget *mainThreadTarget = nullptr);
 
-    typedef void (*PeekSegmentFun)(void *closure, const uint8_t *buf,
-                                   uint32_t bufLen);
-    
+  typedef void (*PeekSegmentFun)(void *closure, const uint8_t *buf,
+                                 uint32_t bufLen);
+  
 
 
 
@@ -54,55 +50,49 @@ public:
 
 
 
-    nsresult PeekStream(PeekSegmentFun callback, void *closure);
+  nsresult PeekStream(PeekSegmentFun callback, void *closure);
 
-    
+  
 
 
 
-    nsresult CallOnStateStop();
+  nsresult CallOnStateStop();
 
-protected:
+ protected:
+  enum { STATE_IDLE, STATE_START, STATE_TRANSFER, STATE_STOP };
 
-    enum {
-        STATE_IDLE,
-        STATE_START,
-        STATE_TRANSFER,
-        STATE_STOP
-    };
+  nsresult EnsureWaiting();
+  uint32_t OnStateStart();
+  uint32_t OnStateTransfer();
+  uint32_t OnStateStop();
+  nsresult CreateBufferedStreamIfNeeded();
 
-    nsresult EnsureWaiting();
-    uint32_t OnStateStart();
-    uint32_t OnStateTransfer();
-    uint32_t OnStateStop();
-    nsresult CreateBufferedStreamIfNeeded();
-
-    uint32_t                      mState;
-    nsCOMPtr<nsILoadGroup>        mLoadGroup;
-    nsCOMPtr<nsIStreamListener>   mListener;
-    nsCOMPtr<nsISupports>         mListenerContext;
-    nsCOMPtr<nsIEventTarget>      mTargetThread;
-    nsCOMPtr<nsIEventTarget>      mLabeledMainThreadTarget;
-    nsCOMPtr<nsIInputStream>      mStream;
-    nsCOMPtr<nsIAsyncInputStream> mAsyncStream;
-    uint64_t                      mStreamOffset;
-    uint64_t                      mStreamLength;
-    uint32_t                      mSegSize;
-    uint32_t                      mSegCount;
-    nsresult                      mStatus;
-    uint32_t                      mSuspendCount;
-    uint32_t                      mLoadFlags;
-    bool                          mIsPending;
-    
-    
-    bool                          mProcessingCallbacks;
-    
-    bool                          mWaitingForInputStreamReady;
-    bool                          mCloseWhenDone;
-    bool                          mRetargeting;
-    bool                          mAsyncStreamIsBuffered;
-    
-    mozilla::RecursiveMutex       mMutex;
+  uint32_t mState;
+  nsCOMPtr<nsILoadGroup> mLoadGroup;
+  nsCOMPtr<nsIStreamListener> mListener;
+  nsCOMPtr<nsISupports> mListenerContext;
+  nsCOMPtr<nsIEventTarget> mTargetThread;
+  nsCOMPtr<nsIEventTarget> mLabeledMainThreadTarget;
+  nsCOMPtr<nsIInputStream> mStream;
+  nsCOMPtr<nsIAsyncInputStream> mAsyncStream;
+  uint64_t mStreamOffset;
+  uint64_t mStreamLength;
+  uint32_t mSegSize;
+  uint32_t mSegCount;
+  nsresult mStatus;
+  uint32_t mSuspendCount;
+  uint32_t mLoadFlags;
+  bool mIsPending;
+  
+  
+  bool mProcessingCallbacks;
+  
+  bool mWaitingForInputStreamReady;
+  bool mCloseWhenDone;
+  bool mRetargeting;
+  bool mAsyncStreamIsBuffered;
+  
+  mozilla::RecursiveMutex mMutex;
 };
 
-#endif 
+#endif  

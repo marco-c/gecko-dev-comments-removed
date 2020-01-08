@@ -15,33 +15,21 @@ nsEventStatus InputAPZContext::sApzResponse = nsEventStatus_eIgnore;
 bool InputAPZContext::sPendingLayerization = false;
 bool InputAPZContext::sRoutedToChildProcess = false;
 
- ScrollableLayerGuid
-InputAPZContext::GetTargetLayerGuid()
-{
+ ScrollableLayerGuid InputAPZContext::GetTargetLayerGuid() {
   return sGuid;
 }
 
- uint64_t
-InputAPZContext::GetInputBlockId()
-{
-  return sBlockId;
-}
+ uint64_t InputAPZContext::GetInputBlockId() { return sBlockId; }
 
- nsEventStatus
-InputAPZContext::GetApzResponse()
-{
+ nsEventStatus InputAPZContext::GetApzResponse() {
   return sApzResponse;
 }
 
- bool
-InputAPZContext::HavePendingLayerization()
-{
+ bool InputAPZContext::HavePendingLayerization() {
   return sPendingLayerization;
 }
 
- bool
-InputAPZContext::WasRoutedToChildProcess()
-{
+ bool InputAPZContext::WasRoutedToChildProcess() {
   return sRoutedToChildProcess;
 }
 
@@ -49,12 +37,11 @@ InputAPZContext::InputAPZContext(const ScrollableLayerGuid& aGuid,
                                  const uint64_t& aBlockId,
                                  const nsEventStatus& aApzResponse,
                                  bool aPendingLayerization)
-  : mOldGuid(sGuid)
-  , mOldBlockId(sBlockId)
-  , mOldApzResponse(sApzResponse)
-  , mOldPendingLayerization(sPendingLayerization)
-  , mOldRoutedToChildProcess(sRoutedToChildProcess)
-{
+    : mOldGuid(sGuid),
+      mOldBlockId(sBlockId),
+      mOldApzResponse(sApzResponse),
+      mOldPendingLayerization(sPendingLayerization),
+      mOldRoutedToChildProcess(sRoutedToChildProcess) {
   sGuid = aGuid;
   sBlockId = aBlockId;
   sApzResponse = aApzResponse;
@@ -62,8 +49,7 @@ InputAPZContext::InputAPZContext(const ScrollableLayerGuid& aGuid,
   sRoutedToChildProcess = false;
 }
 
-InputAPZContext::~InputAPZContext()
-{
+InputAPZContext::~InputAPZContext() {
   sGuid = mOldGuid;
   sBlockId = mOldBlockId;
   sApzResponse = mOldApzResponse;
@@ -71,11 +57,9 @@ InputAPZContext::~InputAPZContext()
   sRoutedToChildProcess = mOldRoutedToChildProcess;
 }
 
- void
-InputAPZContext::SetRoutedToChildProcess()
-{
+ void InputAPZContext::SetRoutedToChildProcess() {
   sRoutedToChildProcess = true;
 }
 
-} 
-} 
+}  
+}  

@@ -45,283 +45,253 @@ namespace gc {
 
 
 
-void
-AtomMarkingRuntime::registerArena(Arena* arena, const AutoLockGC& lock)
-{
-    MOZ_ASSERT(arena->getThingSize() != 0);
-    MOZ_ASSERT(arena->getThingSize() % CellAlignBytes == 0);
-    MOZ_ASSERT(arena->zone->isAtomsZone());
+void AtomMarkingRuntime::registerArena(Arena* arena, const AutoLockGC& lock) {
+  MOZ_ASSERT(arena->getThingSize() != 0);
+  MOZ_ASSERT(arena->getThingSize() % CellAlignBytes == 0);
+  MOZ_ASSERT(arena->zone->isAtomsZone());
 
-    
+  
 
-    
-    if (freeArenaIndexes.ref().length()) {
-        arena->atomBitmapStart() = freeArenaIndexes.ref().popCopy();
-        return;
-    }
+  
+  if (freeArenaIndexes.ref().length()) {
+    arena->atomBitmapStart() = freeArenaIndexes.ref().popCopy();
+    return;
+  }
 
-    
-    arena->atomBitmapStart() = allocatedWords;
-    allocatedWords += ArenaBitmapWords;
+  
+  arena->atomBitmapStart() = allocatedWords;
+  allocatedWords += ArenaBitmapWords;
 }
 
-void
-AtomMarkingRuntime::unregisterArena(Arena* arena, const AutoLockGC& lock)
-{
-    MOZ_ASSERT(arena->zone->isAtomsZone());
+void AtomMarkingRuntime::unregisterArena(Arena* arena, const AutoLockGC& lock) {
+  MOZ_ASSERT(arena->zone->isAtomsZone());
 
-    
-    mozilla::Unused << freeArenaIndexes.ref().emplaceBack(arena->atomBitmapStart());
+  
+  mozilla::Unused << freeArenaIndexes.ref().emplaceBack(
+      arena->atomBitmapStart());
 }
 
-bool
-AtomMarkingRuntime::computeBitmapFromChunkMarkBits(JSRuntime* runtime, DenseBitmap& bitmap)
-{
-    MOZ_ASSERT(CurrentThreadIsPerformingGC());
-    MOZ_ASSERT(!runtime->hasHelperThreadZones());
+bool AtomMarkingRuntime::computeBitmapFromChunkMarkBits(JSRuntime* runtime,
+                                                        DenseBitmap& bitmap) {
+  MOZ_ASSERT(CurrentThreadIsPerformingGC());
+  MOZ_ASSERT(!runtime->hasHelperThreadZones());
 
-    if (!bitmap.ensureSpace(allocatedWords)) {
-        return false;
+  if (!bitmap.ensureSpace(allocatedWords)) {
+    return false;
+  }
+
+  Zone* atomsZone = runtime->unsafeAtomsZone();
+  for (auto thingKind : AllAllocKinds()) {
+    for (ArenaIter aiter(atomsZone, thingKind); !aiter.done(); aiter.next()) {
+      Arena* arena = aiter.get();
+      uintptr_t* chunkWords = arena->chunk()->bitmap.arenaBits(arena);
+      bitmap.copyBitsFrom(arena->atomBitmapStart(), ArenaBitmapWords,
+                          chunkWords);
     }
+  }
 
-    Zone* atomsZone = runtime->unsafeAtomsZone();
-    for (auto thingKind : AllAllocKinds()) {
-        for (ArenaIter aiter(atomsZone, thingKind); !aiter.done(); aiter.next()) {
-            Arena* arena = aiter.get();
-            uintptr_t* chunkWords = arena->chunk()->bitmap.arenaBits(arena);
-            bitmap.copyBitsFrom(arena->atomBitmapStart(), ArenaBitmapWords, chunkWords);
-        }
-    }
-
-    return true;
+  return true;
 }
 
-void
-AtomMarkingRuntime::refineZoneBitmapForCollectedZone(Zone* zone, const DenseBitmap& bitmap)
-{
-    MOZ_ASSERT(zone->isCollectingFromAnyThread());
+void AtomMarkingRuntime::refineZoneBitmapForCollectedZone(
+    Zone* zone, const DenseBitmap& bitmap) {
+  MOZ_ASSERT(zone->isCollectingFromAnyThread());
 
-    if (zone->isAtomsZone()) {
-        return;
-    }
+  if (zone->isAtomsZone()) {
+    return;
+  }
 
-    
-    
-    
-    zone->markedAtoms().bitwiseAndWith(bitmap);
+  
+  
+  
+  zone->markedAtoms().bitwiseAndWith(bitmap);
 }
 
 
 template <typename Bitmap>
-static void
-BitwiseOrIntoChunkMarkBits(JSRuntime* runtime, Bitmap& bitmap)
-{
-    
-    
-    static_assert(ArenaBitmapBits == ArenaBitmapWords * JS_BITS_PER_WORD,
-                  "ArenaBitmapWords must evenly divide ArenaBitmapBits");
+static void BitwiseOrIntoChunkMarkBits(JSRuntime* runtime, Bitmap& bitmap) {
+  
+  
+  static_assert(ArenaBitmapBits == ArenaBitmapWords * JS_BITS_PER_WORD,
+                "ArenaBitmapWords must evenly divide ArenaBitmapBits");
 
-    Zone* atomsZone = runtime->unsafeAtomsZone();
-    for (auto thingKind : AllAllocKinds()) {
-        for (ArenaIter aiter(atomsZone, thingKind); !aiter.done(); aiter.next()) {
-            Arena* arena = aiter.get();
-            uintptr_t* chunkWords = arena->chunk()->bitmap.arenaBits(arena);
-            bitmap.bitwiseOrRangeInto(arena->atomBitmapStart(), ArenaBitmapWords, chunkWords);
-        }
+  Zone* atomsZone = runtime->unsafeAtomsZone();
+  for (auto thingKind : AllAllocKinds()) {
+    for (ArenaIter aiter(atomsZone, thingKind); !aiter.done(); aiter.next()) {
+      Arena* arena = aiter.get();
+      uintptr_t* chunkWords = arena->chunk()->bitmap.arenaBits(arena);
+      bitmap.bitwiseOrRangeInto(arena->atomBitmapStart(), ArenaBitmapWords,
+                                chunkWords);
     }
+  }
 }
 
-void
-AtomMarkingRuntime::markAtomsUsedByUncollectedZones(JSRuntime* runtime)
-{
-    MOZ_ASSERT(CurrentThreadIsPerformingGC());
-    MOZ_ASSERT(!runtime->hasHelperThreadZones());
+void AtomMarkingRuntime::markAtomsUsedByUncollectedZones(JSRuntime* runtime) {
+  MOZ_ASSERT(CurrentThreadIsPerformingGC());
+  MOZ_ASSERT(!runtime->hasHelperThreadZones());
 
-    
-    
-    
-    DenseBitmap markedUnion;
-    if (markedUnion.ensureSpace(allocatedWords)) {
-        for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
-            
-            
-            
-            if (!zone->isCollectingFromAnyThread()) {
-                zone->markedAtoms().bitwiseOrInto(markedUnion);
-            }
-        }
-        BitwiseOrIntoChunkMarkBits(runtime, markedUnion);
-    } else {
-        for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
-            if (!zone->isCollectingFromAnyThread()) {
-                BitwiseOrIntoChunkMarkBits(runtime, zone->markedAtoms());
-            }
-        }
+  
+  
+  
+  DenseBitmap markedUnion;
+  if (markedUnion.ensureSpace(allocatedWords)) {
+    for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
+      
+      
+      
+      if (!zone->isCollectingFromAnyThread()) {
+        zone->markedAtoms().bitwiseOrInto(markedUnion);
+      }
     }
+    BitwiseOrIntoChunkMarkBits(runtime, markedUnion);
+  } else {
+    for (ZonesIter zone(runtime, SkipAtoms); !zone.done(); zone.next()) {
+      if (!zone->isCollectingFromAnyThread()) {
+        BitwiseOrIntoChunkMarkBits(runtime, zone->markedAtoms());
+      }
+    }
+  }
 }
 
 template <typename T>
-void
-AtomMarkingRuntime::markAtom(JSContext* cx, T* thing)
-{
-    return inlinedMarkAtom(cx, thing);
+void AtomMarkingRuntime::markAtom(JSContext* cx, T* thing) {
+  return inlinedMarkAtom(cx, thing);
 }
 
 template void AtomMarkingRuntime::markAtom(JSContext* cx, JSAtom* thing);
 template void AtomMarkingRuntime::markAtom(JSContext* cx, JS::Symbol* thing);
 
-void
-AtomMarkingRuntime::markId(JSContext* cx, jsid id)
-{
-    if (JSID_IS_ATOM(id)) {
-        markAtom(cx, JSID_TO_ATOM(id));
-        return;
-    }
-    if (JSID_IS_SYMBOL(id)) {
-        markAtom(cx, JSID_TO_SYMBOL(id));
-        return;
-    }
-    MOZ_ASSERT(!JSID_IS_GCTHING(id));
+void AtomMarkingRuntime::markId(JSContext* cx, jsid id) {
+  if (JSID_IS_ATOM(id)) {
+    markAtom(cx, JSID_TO_ATOM(id));
+    return;
+  }
+  if (JSID_IS_SYMBOL(id)) {
+    markAtom(cx, JSID_TO_SYMBOL(id));
+    return;
+  }
+  MOZ_ASSERT(!JSID_IS_GCTHING(id));
 }
 
-void
-AtomMarkingRuntime::markAtomValue(JSContext* cx, const Value& value)
-{
-    if (value.isString()) {
-        if (value.toString()->isAtom()) {
-            markAtom(cx, &value.toString()->asAtom());
-        }
-        return;
+void AtomMarkingRuntime::markAtomValue(JSContext* cx, const Value& value) {
+  if (value.isString()) {
+    if (value.toString()->isAtom()) {
+      markAtom(cx, &value.toString()->asAtom());
     }
-    if (value.isSymbol()) {
-        markAtom(cx, value.toSymbol());
-        return;
-    }
-    MOZ_ASSERT_IF(value.isGCThing(),
-                  value.isObject() ||
-                  value.isPrivateGCThing() ||
-                  IF_BIGINT(value.isBigInt(), false));
+    return;
+  }
+  if (value.isSymbol()) {
+    markAtom(cx, value.toSymbol());
+    return;
+  }
+  MOZ_ASSERT_IF(value.isGCThing(), value.isObject() ||
+                                       value.isPrivateGCThing() ||
+                                       IF_BIGINT(value.isBigInt(), false));
 }
 
-void
-AtomMarkingRuntime::adoptMarkedAtoms(Zone* target, Zone* source)
-{
-    MOZ_ASSERT(CurrentThreadCanAccessZone(source));
-    MOZ_ASSERT(CurrentThreadCanAccessZone(target));
-    target->markedAtoms().bitwiseOrWith(source->markedAtoms());
+void AtomMarkingRuntime::adoptMarkedAtoms(Zone* target, Zone* source) {
+  MOZ_ASSERT(CurrentThreadCanAccessZone(source));
+  MOZ_ASSERT(CurrentThreadCanAccessZone(target));
+  target->markedAtoms().bitwiseOrWith(source->markedAtoms());
 }
 
 #ifdef DEBUG
 template <typename T>
-bool
-AtomMarkingRuntime::atomIsMarked(Zone* zone, T* thing)
-{
-    static_assert(mozilla::IsSame<T, JSAtom>::value ||
-                  mozilla::IsSame<T, JS::Symbol>::value,
-                  "Should only be called with JSAtom* or JS::Symbol* argument");
+bool AtomMarkingRuntime::atomIsMarked(Zone* zone, T* thing) {
+  static_assert(mozilla::IsSame<T, JSAtom>::value ||
+                    mozilla::IsSame<T, JS::Symbol>::value,
+                "Should only be called with JSAtom* or JS::Symbol* argument");
 
-    MOZ_ASSERT(thing);
-    MOZ_ASSERT(!IsInsideNursery(thing));
-    MOZ_ASSERT(thing->zoneFromAnyThread()->isAtomsZone());
+  MOZ_ASSERT(thing);
+  MOZ_ASSERT(!IsInsideNursery(thing));
+  MOZ_ASSERT(thing->zoneFromAnyThread()->isAtomsZone());
 
-    if (!zone->runtimeFromAnyThread()->permanentAtomsPopulated()) {
-        return true;
-    }
+  if (!zone->runtimeFromAnyThread()->permanentAtomsPopulated()) {
+    return true;
+  }
 
-    if (ThingIsPermanent(thing)) {
-        return true;
-    }
+  if (ThingIsPermanent(thing)) {
+    return true;
+  }
 
-    size_t bit = GetAtomBit(&thing->asTenured());
-    return zone->markedAtoms().getBit(bit);
+  size_t bit = GetAtomBit(&thing->asTenured());
+  return zone->markedAtoms().getBit(bit);
 }
 
 template bool AtomMarkingRuntime::atomIsMarked(Zone* zone, JSAtom* thing);
 template bool AtomMarkingRuntime::atomIsMarked(Zone* zone, JS::Symbol* thing);
 
-template<>
-bool
-AtomMarkingRuntime::atomIsMarked(Zone* zone, TenuredCell* thing)
-{
-    if (!thing) {
-        return true;
-    }
-
-    if (thing->is<JSString>()) {
-        JSString* str = thing->as<JSString>();
-        if (!str->isAtom()) {
-            return true;
-        }
-        return atomIsMarked(zone, &str->asAtom());
-    }
-
-    if (thing->is<JS::Symbol>()) {
-        return atomIsMarked(zone, thing->as<JS::Symbol>());
-    }
-
+template <>
+bool AtomMarkingRuntime::atomIsMarked(Zone* zone, TenuredCell* thing) {
+  if (!thing) {
     return true;
+  }
+
+  if (thing->is<JSString>()) {
+    JSString* str = thing->as<JSString>();
+    if (!str->isAtom()) {
+      return true;
+    }
+    return atomIsMarked(zone, &str->asAtom());
+  }
+
+  if (thing->is<JS::Symbol>()) {
+    return atomIsMarked(zone, thing->as<JS::Symbol>());
+  }
+
+  return true;
 }
 
-bool
-AtomMarkingRuntime::idIsMarked(Zone* zone, jsid id)
-{
-    if (JSID_IS_ATOM(id)) {
-        return atomIsMarked(zone, JSID_TO_ATOM(id));
-    }
+bool AtomMarkingRuntime::idIsMarked(Zone* zone, jsid id) {
+  if (JSID_IS_ATOM(id)) {
+    return atomIsMarked(zone, JSID_TO_ATOM(id));
+  }
 
-    if (JSID_IS_SYMBOL(id)) {
-        return atomIsMarked(zone, JSID_TO_SYMBOL(id));
-    }
+  if (JSID_IS_SYMBOL(id)) {
+    return atomIsMarked(zone, JSID_TO_SYMBOL(id));
+  }
 
-    MOZ_ASSERT(!JSID_IS_GCTHING(id));
-    return true;
+  MOZ_ASSERT(!JSID_IS_GCTHING(id));
+  return true;
 }
 
-bool
-AtomMarkingRuntime::valueIsMarked(Zone* zone, const Value& value)
-{
-    if (value.isString()) {
-        if (value.toString()->isAtom()) {
-            return atomIsMarked(zone, &value.toString()->asAtom());
-        }
-        return true;
+bool AtomMarkingRuntime::valueIsMarked(Zone* zone, const Value& value) {
+  if (value.isString()) {
+    if (value.toString()->isAtom()) {
+      return atomIsMarked(zone, &value.toString()->asAtom());
     }
-
-    if (value.isSymbol()) {
-        return atomIsMarked(zone, value.toSymbol());
-    }
-
-    MOZ_ASSERT_IF(value.isGCThing(),
-                  value.isObject() ||
-                  value.isPrivateGCThing() ||
-                  IF_BIGINT(value.isBigInt(), false));
     return true;
+  }
+
+  if (value.isSymbol()) {
+    return atomIsMarked(zone, value.toSymbol());
+  }
+
+  MOZ_ASSERT_IF(value.isGCThing(), value.isObject() ||
+                                       value.isPrivateGCThing() ||
+                                       IF_BIGINT(value.isBigInt(), false));
+  return true;
 }
 
-#endif 
+#endif  
 
-} 
+}  
 
 #ifdef DEBUG
 
-bool
-AtomIsMarked(Zone* zone, JSAtom* atom)
-{
-    return zone->runtimeFromAnyThread()->gc.atomMarking.atomIsMarked(zone, atom);
+bool AtomIsMarked(Zone* zone, JSAtom* atom) {
+  return zone->runtimeFromAnyThread()->gc.atomMarking.atomIsMarked(zone, atom);
 }
 
-bool
-AtomIsMarked(Zone* zone, jsid id)
-{
-    return zone->runtimeFromAnyThread()->gc.atomMarking.idIsMarked(zone, id);
+bool AtomIsMarked(Zone* zone, jsid id) {
+  return zone->runtimeFromAnyThread()->gc.atomMarking.idIsMarked(zone, id);
 }
 
-bool
-AtomIsMarked(Zone* zone, const Value& value)
-{
-    return zone->runtimeFromAnyThread()->gc.atomMarking.valueIsMarked(zone, value);
+bool AtomIsMarked(Zone* zone, const Value& value) {
+  return zone->runtimeFromAnyThread()->gc.atomMarking.valueIsMarked(zone,
+                                                                    value);
 }
 
-#endif 
+#endif  
 
-} 
+}  

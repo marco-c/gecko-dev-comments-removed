@@ -14,9 +14,8 @@ namespace a11y {
 
 
 
-class XULComboboxAccessible : public AccessibleWrap
-{
-public:
+class XULComboboxAccessible : public AccessibleWrap {
+ public:
   enum { eAction_Click = 0 };
 
   XULComboboxAccessible(nsIContent* aContent, DocAccessible* aDoc);
@@ -37,7 +36,7 @@ public:
   virtual bool AreItemsOperable() const override;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

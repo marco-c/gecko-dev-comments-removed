@@ -27,7 +27,7 @@ enum nsFramesetUnit {
 
 struct nsFramesetSpec {
   nsFramesetUnit mUnit;
-  nscoord        mValue;
+  nscoord mValue;
 };
 
 
@@ -43,15 +43,14 @@ namespace dom {
 
 class OnBeforeUnloadEventHandlerNonNull;
 
-class HTMLFrameSetElement final : public nsGenericHTMLElement
-{
-public:
-  explicit HTMLFrameSetElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-    : nsGenericHTMLElement(std::move(aNodeInfo)),
-      mNumRows(0),
-      mNumCols(0),
-      mCurrentRowColHint(NS_STYLE_HINT_REFLOW)
-  {
+class HTMLFrameSetElement final : public nsGenericHTMLElement {
+ public:
+  explicit HTMLFrameSetElement(
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      : nsGenericHTMLElement(std::move(aNodeInfo)),
+        mNumRows(0),
+        mNumCols(0),
+        mCurrentRowColHint(NS_STYLE_HINT_REFLOW) {
     SetHasWeirdParserInsertionMode();
   }
 
@@ -61,107 +60,98 @@ public:
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLFrameSetElement,
                                        nsGenericHTMLElement)
 
-  void GetCols(DOMString& aCols)
-  {
-    GetHTMLAttr(nsGkAtoms::cols, aCols);
-  }
-  void SetCols(const nsAString& aCols, ErrorResult& aError)
-  {
+  void GetCols(DOMString& aCols) { GetHTMLAttr(nsGkAtoms::cols, aCols); }
+  void SetCols(const nsAString& aCols, ErrorResult& aError) {
     SetHTMLAttr(nsGkAtoms::cols, aCols, aError);
   }
-  void GetRows(DOMString& aRows)
-  {
-    GetHTMLAttr(nsGkAtoms::rows, aRows);
-  }
-  void SetRows(const nsAString& aRows, ErrorResult& aError)
-  {
+  void GetRows(DOMString& aRows) { GetHTMLAttr(nsGkAtoms::rows, aRows); }
+  void SetRows(const nsAString& aRows, ErrorResult& aError) {
     SetHTMLAttr(nsGkAtoms::rows, aRows, aError);
   }
 
-  virtual bool IsEventAttributeNameInternal(nsAtom *aName) override;
+  virtual bool IsEventAttributeNameInternal(nsAtom* aName) override;
 
   
   
-#define EVENT(name_, id_, type_, struct_)
-#define WINDOW_EVENT_HELPER(name_, type_)                               \
-  type_* GetOn##name_();                                                \
+#define EVENT(name_, id_, type_, \
+              struct_)
+#define WINDOW_EVENT_HELPER(name_, type_) \
+  type_* GetOn##name_();                  \
   void SetOn##name_(type_* handler);
-#define WINDOW_EVENT(name_, id_, type_, struct_)                        \
+#define WINDOW_EVENT(name_, id_, type_, struct_) \
   WINDOW_EVENT_HELPER(name_, EventHandlerNonNull)
-#define BEFOREUNLOAD_EVENT(name_, id_, type_, struct_)                  \
+#define BEFOREUNLOAD_EVENT(name_, id_, type_, struct_) \
   WINDOW_EVENT_HELPER(name_, OnBeforeUnloadEventHandlerNonNull)
-#include "mozilla/EventNameList.h" // IWYU pragma: keep
+#include "mozilla/EventNameList.h"  // IWYU pragma: keep
 #undef BEFOREUNLOAD_EVENT
 #undef WINDOW_EVENT
 #undef WINDOW_EVENT_HELPER
 #undef EVENT
 
-   
+  
 
 
 
 
 
 
-  nsresult GetRowSpec(int32_t *aNumValues, const nsFramesetSpec** aSpecs);
-   
+  nsresult GetRowSpec(int32_t* aNumValues, const nsFramesetSpec** aSpecs);
+  
 
 
 
 
 
 
-  nsresult GetColSpec(int32_t *aNumValues, const nsFramesetSpec** aSpecs);
+  nsresult GetColSpec(int32_t* aNumValues, const nsFramesetSpec** aSpecs);
 
-
-  virtual bool ParseAttribute(int32_t aNamespaceID,
-                                nsAtom* aAttribute,
-                                const nsAString& aValue,
-                                nsIPrincipal* aMaybeScriptedPrincipal,
-                                nsAttrValue& aResult) override;
+  virtual bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
+                              const nsAString& aValue,
+                              nsIPrincipal* aMaybeScriptedPrincipal,
+                              nsAttrValue& aResult) override;
   virtual nsChangeHint GetAttributeChangeHint(const nsAtom* aAttribute,
                                               int32_t aModType) const override;
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
-protected:
+ protected:
   virtual ~HTMLFrameSetElement();
 
-  virtual JSObject* WrapNode(JSContext *aCx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapNode(JSContext* aCx,
+                             JS::Handle<JSObject*> aGivenProto) override;
 
   virtual nsresult BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                  const nsAttrValueOrString* aValue,
                                  bool aNotify) override;
 
-private:
-  nsresult ParseRowCol(const nsAString& aValue,
-                       int32_t& aNumSpecs,
+ private:
+  nsresult ParseRowCol(const nsAString& aValue, int32_t& aNumSpecs,
                        UniquePtr<nsFramesetSpec[]>* aSpecs);
 
   
 
 
-  int32_t          mNumRows;
+  int32_t mNumRows;
   
 
 
-  int32_t          mNumCols;
+  int32_t mNumCols;
   
 
 
 
-  nsChangeHint      mCurrentRowColHint;
+  nsChangeHint mCurrentRowColHint;
   
 
 
-  UniquePtr<nsFramesetSpec[]>  mRowSpecs; 
+  UniquePtr<nsFramesetSpec[]> mRowSpecs;  
   
 
 
-  UniquePtr<nsFramesetSpec[]>  mColSpecs; 
+  UniquePtr<nsFramesetSpec[]> mColSpecs;  
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

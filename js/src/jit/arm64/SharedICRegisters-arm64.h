@@ -14,7 +14,7 @@ namespace jit {
 
 
 static constexpr Register BaselineFrameReg = r23;
-static constexpr ARMRegister BaselineFrameReg64 = { BaselineFrameReg, 64 };
+static constexpr ARMRegister BaselineFrameReg64 = {BaselineFrameReg, 64};
 
 
 
@@ -29,6 +29,7 @@ static constexpr Register R2_ = r0;
 static constexpr ValueOperand R0(R0_);
 static constexpr ValueOperand R1(R1_);
 static constexpr ValueOperand R2(R2_);
+
 
 
 static constexpr Register ICTailCallReg = r30;
@@ -49,10 +50,12 @@ static constexpr Register ExtractTemp1 = r25;
 
 
 
-static constexpr FloatRegister FloatReg0 = { FloatRegisters::d0, FloatRegisters::Double };
-static constexpr FloatRegister FloatReg1 = { FloatRegisters::d1, FloatRegisters::Double };
+static constexpr FloatRegister FloatReg0 = {FloatRegisters::d0,
+                                            FloatRegisters::Double};
+static constexpr FloatRegister FloatReg1 = {FloatRegisters::d1,
+                                            FloatRegisters::Double};
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

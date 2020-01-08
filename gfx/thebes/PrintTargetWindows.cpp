@@ -14,18 +14,14 @@ namespace mozilla {
 namespace gfx {
 
 PrintTargetWindows::PrintTargetWindows(cairo_surface_t* aCairoSurface,
-                                       const IntSize& aSize,
-                                       HDC aDC)
-  : PrintTarget(aCairoSurface, aSize)
-  , mDC(aDC)
-{
+                                       const IntSize& aSize, HDC aDC)
+    : PrintTarget(aCairoSurface, aSize), mDC(aDC) {
   
   
 }
 
  already_AddRefed<PrintTargetWindows>
-PrintTargetWindows::CreateOrNull(HDC aDC)
-{
+PrintTargetWindows::CreateOrNull(HDC aDC) {
   
   
   
@@ -33,9 +29,10 @@ PrintTargetWindows::CreateOrNull(HDC aDC)
   
   int32_t heightDPI = ::GetDeviceCaps(aDC, LOGPIXELSY);
   float width =
-    (::GetDeviceCaps(aDC, PHYSICALWIDTH) * POINTS_PER_INCH_FLOAT) / heightDPI;
+      (::GetDeviceCaps(aDC, PHYSICALWIDTH) * POINTS_PER_INCH_FLOAT) / heightDPI;
   float height =
-    (::GetDeviceCaps(aDC, PHYSICALHEIGHT) * POINTS_PER_INCH_FLOAT) / heightDPI;
+      (::GetDeviceCaps(aDC, PHYSICALHEIGHT) * POINTS_PER_INCH_FLOAT) /
+      heightDPI;
   IntSize size = IntSize::Truncate(width, height);
 
   if (!Factory::CheckSurfaceSize(size)) {
@@ -50,17 +47,15 @@ PrintTargetWindows::CreateOrNull(HDC aDC)
 
   
   RefPtr<PrintTargetWindows> target =
-    new PrintTargetWindows(surface, size, aDC);
+      new PrintTargetWindows(surface, size, aDC);
 
   return target.forget();
 }
 
-nsresult
-PrintTargetWindows::BeginPrinting(const nsAString& aTitle,
-                                  const nsAString& aPrintToFileName,
-                                  int32_t aStartPage,
-                                  int32_t aEndPage)
-{
+nsresult PrintTargetWindows::BeginPrinting(const nsAString& aTitle,
+                                           const nsAString& aPrintToFileName,
+                                           int32_t aStartPage,
+                                           int32_t aEndPage) {
   const uint32_t DOC_TITLE_LENGTH = MAX_PATH - 1;
 
   DOCINFOW docinfo;
@@ -73,7 +68,8 @@ PrintTargetWindows::BeginPrinting(const nsAString& aTitle,
 
   nsString docName(aPrintToFileName);
   docinfo.cbSize = sizeof(docinfo);
-  docinfo.lpszDocName = titleStr.Length() > 0 ? titleStr.get() : L"Mozilla Document";
+  docinfo.lpszDocName =
+      titleStr.Length() > 0 ? titleStr.get() : L"Mozilla Document";
   docinfo.lpszOutput = docName.Length() > 0 ? docName.get() : nullptr;
   docinfo.lpszDatatype = nullptr;
   docinfo.fwType = 0;
@@ -96,37 +92,29 @@ PrintTargetWindows::BeginPrinting(const nsAString& aTitle,
   return NS_OK;
 }
 
-nsresult
-PrintTargetWindows::EndPrinting()
-{
+nsresult PrintTargetWindows::EndPrinting() {
   int result = ::EndDoc(mDC);
   return (result <= 0) ? NS_ERROR_FAILURE : NS_OK;
 }
 
-nsresult
-PrintTargetWindows::AbortPrinting()
-{
+nsresult PrintTargetWindows::AbortPrinting() {
   PrintTarget::AbortPrinting();
   int result = ::AbortDoc(mDC);
   return (result <= 0) ? NS_ERROR_FAILURE : NS_OK;
 }
 
-nsresult
-PrintTargetWindows::BeginPage()
-{
+nsresult PrintTargetWindows::BeginPage() {
   PrintTarget::BeginPage();
   int result = ::StartPage(mDC);
   return (result <= 0) ? NS_ERROR_FAILURE : NS_OK;
 }
 
-nsresult
-PrintTargetWindows::EndPage()
-{
+nsresult PrintTargetWindows::EndPage() {
   cairo_surface_show_page(mCairoSurface);
   PrintTarget::EndPage();
   int result = ::EndPage(mDC);
   return (result <= 0) ? NS_ERROR_FAILURE : NS_OK;
 }
 
-} 
-} 
+}  
+}  

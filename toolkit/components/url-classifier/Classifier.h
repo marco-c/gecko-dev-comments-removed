@@ -24,16 +24,17 @@ namespace safebrowsing {
 
 
 class Classifier {
-public:
+ public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(Classifier);
 
   Classifier();
 
   nsresult Open(nsIFile& aCacheDirectory);
   void Close();
-  void Reset(); 
+  void Reset();  
 
   
+
 
 
 
@@ -58,8 +59,7 @@ public:
   
 
 
-  nsresult Check(const nsACString& aSpec,
-                 const nsACString& tables,
+  nsresult Check(const nsACString& aSpec, const nsACString& tables,
                  LookupResultArray& aResults);
 
   
@@ -87,10 +87,8 @@ public:
 
 
 
-  nsresult ReadNoiseEntries(const Prefix& aPrefix,
-                            const nsACString& aTableName,
-                            uint32_t aCount,
-                            PrefixArray& aNoiseEntries);
+  nsresult ReadNoiseEntries(const Prefix& aPrefix, const nsACString& aTableName,
+                            uint32_t aCount, PrefixArray& aNoiseEntries);
 
 #ifdef MOZ_SAFEBROWSING_DUMP_FAILED_UPDATES
   nsresult DumpRawTableUpdates(const nsACString& aRawUpdates);
@@ -123,7 +121,7 @@ public:
   void GetCacheInfo(const nsACString& aTable,
                     nsIUrlClassifierCacheInfo** aCache);
 
-private:
+ private:
   ~Classifier();
 
   void DropStores();
@@ -134,10 +132,11 @@ private:
   nsresult RecoverBackups();
   nsresult CleanToDelete();
   nsresult CopyInUseDirForUpdate();
-  nsresult CopyDirectoryInterruptible(nsCOMPtr<nsIFile>& aDestDir, nsCOMPtr<nsIFile>& aSourceDir);
+  nsresult CopyDirectoryInterruptible(nsCOMPtr<nsIFile>& aDestDir,
+                                      nsCOMPtr<nsIFile>& aSourceDir);
   nsresult RegenActiveTables();
 
-  void MergeNewLookupCaches(); 
+  void MergeNewLookupCaches();  
 
   void CopyAndInvalidateFullHashCache();
 
@@ -155,8 +154,7 @@ private:
   nsresult UpdateHashStore(TableUpdateArray& aUpdates,
                            const nsACString& aTable);
 
-  nsresult UpdateTableV4(TableUpdateArray& aUpdates,
-                         const nsACString& aTable);
+  nsresult UpdateTableV4(TableUpdateArray& aUpdates, const nsACString& aTable);
 
   nsresult UpdateCache(RefPtr<const TableUpdate> aUpdates);
 
@@ -168,9 +166,7 @@ private:
                                          LookupCacheArray& aLookupCaches,
                                          nsIFile* aRootStoreDirectory);
 
-
-  bool CheckValidUpdate(TableUpdateArray& aUpdates,
-                        const nsACString& aTable);
+  bool CheckValidUpdate(TableUpdateArray& aUpdates, const nsACString& aTable);
 
   nsresult LoadMetadata(nsIFile* aDirectory, nsACString& aResult);
 
@@ -204,9 +200,9 @@ private:
   nsCOMPtr<nsIFile> mRootStoreDirectory;
   
   nsCOMPtr<nsIFile> mBackupDirectory;
-  nsCOMPtr<nsIFile> mUpdatingDirectory; 
+  nsCOMPtr<nsIFile> mUpdatingDirectory;  
   nsCOMPtr<nsIFile> mToDeleteDirectory;
-  LookupCacheArray mLookupCaches; 
+  LookupCacheArray mLookupCaches;  
   nsTArray<nsCString> mActiveTablesCache;
   uint32_t mHashKey;
 
@@ -223,7 +219,7 @@ private:
 
   bool mUpdateInterrupted;
 
-  nsCOMPtr<nsIThread> mUpdateThread; 
+  nsCOMPtr<nsIThread> mUpdateThread;  
 
   
   
@@ -231,10 +227,10 @@ private:
   
   nsCOMPtr<nsIFile> mRootStoreDirectoryForUpdate;
 
-  bool mIsClosed; 
+  bool mIsClosed;  
 };
 
-} 
-} 
+}  
+}  
 
 #endif

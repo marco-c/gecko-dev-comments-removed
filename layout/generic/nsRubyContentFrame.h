@@ -11,9 +11,8 @@
 
 #include "nsInlineFrame.h"
 
-class nsRubyContentFrame : public nsInlineFrame
-{
-public:
+class nsRubyContentFrame : public nsInlineFrame {
+ public:
   NS_DECL_ABSTRACT_FRAME(nsRubyContentFrame)
 
   
@@ -26,10 +25,9 @@ public:
   
   bool IsIntraLevelWhitespace() const;
 
-protected:
+ protected:
   nsRubyContentFrame(ComputedStyle* aStyle, ClassID aID)
-    : nsInlineFrame(aStyle, aID)
-  {}
+      : nsInlineFrame(aStyle, aID) {}
 };
 
 #endif 

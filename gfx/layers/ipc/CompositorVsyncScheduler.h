@@ -7,17 +7,16 @@
 #ifndef mozilla_layers_CompositorVsyncScheduler_h
 #define mozilla_layers_CompositorVsyncScheduler_h
 
-#include <stdint.h>                     
+#include <stdint.h>  
 
-#include "mozilla/Attributes.h"         
-#include "mozilla/Monitor.h"            
-#include "mozilla/RefPtr.h"             
-#include "mozilla/TimeStamp.h"          
-#include "mozilla/gfx/Point.h"          
+#include "mozilla/Attributes.h"  
+#include "mozilla/Monitor.h"     
+#include "mozilla/RefPtr.h"      
+#include "mozilla/TimeStamp.h"   
+#include "mozilla/gfx/Point.h"   
 #include "mozilla/VsyncDispatcher.h"
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsISupportsImpl.h"
-
 
 namespace mozilla {
 
@@ -26,7 +25,7 @@ class Runnable;
 
 namespace gfx {
 class DrawTarget;
-} 
+}  
 
 namespace layers {
 
@@ -37,13 +36,13 @@ class CompositorVsyncSchedulerOwner;
 
 
 
-class CompositorVsyncScheduler
-{
+class CompositorVsyncScheduler {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorVsyncScheduler)
 
-public:
-  explicit CompositorVsyncScheduler(CompositorVsyncSchedulerOwner* aVsyncSchedulerOwner,
-                                    widget::CompositorWidget* aWidget);
+ public:
+  explicit CompositorVsyncScheduler(
+      CompositorVsyncSchedulerOwner* aVsyncSchedulerOwner,
+      widget::CompositorWidget* aWidget);
 
   
 
@@ -78,7 +77,8 @@ public:
 
 
 
-  void ForceComposeToTarget(gfx::DrawTarget* aTarget, const gfx::IntRect* aRect);
+  void ForceComposeToTarget(gfx::DrawTarget* aTarget,
+                            const gfx::IntRect* aRect);
 
   
 
@@ -97,9 +97,10 @@ public:
 
 
 
+
   void UpdateLastComposeTime();
 
-private:
+ private:
   virtual ~CompositorVsyncScheduler();
 
   
@@ -122,13 +123,13 @@ private:
 
   void DispatchVREvents(TimeStamp aVsyncTimestamp);
 
-  class Observer final : public VsyncObserver
-  {
-  public:
+  class Observer final : public VsyncObserver {
+   public:
     explicit Observer(CompositorVsyncScheduler* aOwner);
     virtual bool NotifyVsync(TimeStamp aVsyncTimestamp) override;
     void Destroy();
-  private:
+
+   private:
     virtual ~Observer();
 
     Mutex mMutex;
@@ -153,7 +154,7 @@ private:
   RefPtr<Runnable> mCurrentVRTask;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

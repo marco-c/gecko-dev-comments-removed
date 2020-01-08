@@ -33,120 +33,105 @@ class ConsoleRunnable;
 class ConsoleCallDataRunnable;
 class ConsoleProfileRunnable;
 
-class Console final : public nsIObserver
-                    , public nsSupportsWeakReference
-{
-public:
+class Console final : public nsIObserver, public nsSupportsWeakReference {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS_AMBIGUOUS(Console, nsIObserver)
   NS_DECL_NSIOBSERVER
 
-  static already_AddRefed<Console>
-  Create(JSContext* aCx, nsPIDOMWindowInner* aWindow, ErrorResult& aRv);
+  static already_AddRefed<Console> Create(JSContext* aCx,
+                                          nsPIDOMWindowInner* aWindow,
+                                          ErrorResult& aRv);
 
-  static already_AddRefed<Console>
-  CreateForWorklet(JSContext* aCx, nsIGlobalObject* aGlobal,
-                   uint64_t aOuterWindowID, uint64_t aInnerWindowID,
-                   ErrorResult& aRv);
+  static already_AddRefed<Console> CreateForWorklet(JSContext* aCx,
+                                                    nsIGlobalObject* aGlobal,
+                                                    uint64_t aOuterWindowID,
+                                                    uint64_t aInnerWindowID,
+                                                    ErrorResult& aRv);
 
-  static void
-  Log(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Log(const GlobalObject& aGlobal,
+                  const Sequence<JS::Value>& aData);
 
-  static void
-  Info(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Info(const GlobalObject& aGlobal,
+                   const Sequence<JS::Value>& aData);
 
-  static void
-  Warn(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Warn(const GlobalObject& aGlobal,
+                   const Sequence<JS::Value>& aData);
 
-  static void
-  Error(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Error(const GlobalObject& aGlobal,
+                    const Sequence<JS::Value>& aData);
 
-  static void
-  Exception(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Exception(const GlobalObject& aGlobal,
+                        const Sequence<JS::Value>& aData);
 
-  static void
-  Debug(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Debug(const GlobalObject& aGlobal,
+                    const Sequence<JS::Value>& aData);
 
-  static void
-  Table(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Table(const GlobalObject& aGlobal,
+                    const Sequence<JS::Value>& aData);
 
-  static void
-  Trace(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Trace(const GlobalObject& aGlobal,
+                    const Sequence<JS::Value>& aData);
 
-  static void
-  Dir(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Dir(const GlobalObject& aGlobal,
+                  const Sequence<JS::Value>& aData);
 
-  static void
-  Dirxml(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Dirxml(const GlobalObject& aGlobal,
+                     const Sequence<JS::Value>& aData);
 
-  static void
-  Group(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Group(const GlobalObject& aGlobal,
+                    const Sequence<JS::Value>& aData);
 
-  static void
-  GroupCollapsed(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void GroupCollapsed(const GlobalObject& aGlobal,
+                             const Sequence<JS::Value>& aData);
 
-  static void
-  GroupEnd(const GlobalObject& aGlobal);
+  static void GroupEnd(const GlobalObject& aGlobal);
 
-  static void
-  Time(const GlobalObject& aGlobal, const nsAString& aLabel);
+  static void Time(const GlobalObject& aGlobal, const nsAString& aLabel);
 
-  static void
-  TimeLog(const GlobalObject& aGlobal, const nsAString& aLabel,
-          const Sequence<JS::Value>& aData);
+  static void TimeLog(const GlobalObject& aGlobal, const nsAString& aLabel,
+                      const Sequence<JS::Value>& aData);
 
-  static void
-  TimeEnd(const GlobalObject& aGlobal, const nsAString& aLabel);
+  static void TimeEnd(const GlobalObject& aGlobal, const nsAString& aLabel);
 
-  static void
-  TimeStamp(const GlobalObject& aGlobal, const JS::Handle<JS::Value> aData);
+  static void TimeStamp(const GlobalObject& aGlobal,
+                        const JS::Handle<JS::Value> aData);
 
-  static void
-  Profile(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void Profile(const GlobalObject& aGlobal,
+                      const Sequence<JS::Value>& aData);
 
-  static void
-  ProfileEnd(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  static void ProfileEnd(const GlobalObject& aGlobal,
+                         const Sequence<JS::Value>& aData);
 
-  static void
-  Assert(const GlobalObject& aGlobal, bool aCondition,
-         const Sequence<JS::Value>& aData);
+  static void Assert(const GlobalObject& aGlobal, bool aCondition,
+                     const Sequence<JS::Value>& aData);
 
-  static void
-  Count(const GlobalObject& aGlobal, const nsAString& aLabel);
+  static void Count(const GlobalObject& aGlobal, const nsAString& aLabel);
 
-  static void
-  CountReset(const GlobalObject& aGlobal, const nsAString& aLabel);
+  static void CountReset(const GlobalObject& aGlobal, const nsAString& aLabel);
 
-  static void
-  Clear(const GlobalObject& aGlobal);
+  static void Clear(const GlobalObject& aGlobal);
 
-  static already_AddRefed<ConsoleInstance>
-  CreateInstance(const GlobalObject& aGlobal,
-                 const ConsoleInstanceOptions& aOptions);
+  static already_AddRefed<ConsoleInstance> CreateInstance(
+      const GlobalObject& aGlobal, const ConsoleInstanceOptions& aOptions);
 
-  void
-  ClearStorage();
+  void ClearStorage();
 
-  void
-  RetrieveConsoleEvents(JSContext* aCx, nsTArray<JS::Value>& aEvents,
-                        ErrorResult& aRv);
+  void RetrieveConsoleEvents(JSContext* aCx, nsTArray<JS::Value>& aEvents,
+                             ErrorResult& aRv);
 
-  void
-  SetConsoleEventHandler(AnyCallback* aHandler);
+  void SetConsoleEventHandler(AnyCallback* aHandler);
 
-private:
-  Console(JSContext* aCx, nsIGlobalObject* aGlobal,
-          uint64_t aOuterWindowID, uint64_t aInnerWIndowID);
+ private:
+  Console(JSContext* aCx, nsIGlobalObject* aGlobal, uint64_t aOuterWindowID,
+          uint64_t aInnerWIndowID);
   ~Console();
 
-  void
-  Initialize(ErrorResult& aRv);
+  void Initialize(ErrorResult& aRv);
 
-  void
-  Shutdown();
+  void Shutdown();
 
-  enum MethodName
-  {
+  enum MethodName {
     MethodLog,
     MethodInfo,
     MethodWarn,
@@ -172,60 +157,51 @@ private:
     MethodProfileEnd,
   };
 
-  static already_AddRefed<Console>
-  GetConsole(const GlobalObject& aGlobal);
+  static already_AddRefed<Console> GetConsole(const GlobalObject& aGlobal);
 
-  static already_AddRefed<Console>
-  GetConsoleInternal(const GlobalObject& aGlobal, ErrorResult &aRv);
+  static already_AddRefed<Console> GetConsoleInternal(
+      const GlobalObject& aGlobal, ErrorResult& aRv);
 
-  static void
-  ProfileMethod(const GlobalObject& aGlobal, MethodName aName,
-                const nsAString& aAction, const Sequence<JS::Value>& aData);
+  static void ProfileMethod(const GlobalObject& aGlobal, MethodName aName,
+                            const nsAString& aAction,
+                            const Sequence<JS::Value>& aData);
 
-  void
-  ProfileMethodInternal(JSContext* aCx, MethodName aName,
-                        const nsAString& aAction,
-                        const Sequence<JS::Value>& aData);
+  void ProfileMethodInternal(JSContext* aCx, MethodName aName,
+                             const nsAString& aAction,
+                             const Sequence<JS::Value>& aData);
 
-  static void
-  Method(const GlobalObject& aGlobal, MethodName aName,
-         const nsAString& aString, const Sequence<JS::Value>& aData);
+  static void Method(const GlobalObject& aGlobal, MethodName aName,
+                     const nsAString& aString,
+                     const Sequence<JS::Value>& aData);
 
-  void
-  MethodInternal(JSContext* aCx, MethodName aName,
-                 const nsAString& aString, const Sequence<JS::Value>& aData);
+  void MethodInternal(JSContext* aCx, MethodName aName,
+                      const nsAString& aString,
+                      const Sequence<JS::Value>& aData);
 
-  static void
-  StringMethod(const GlobalObject& aGlobal, const nsAString& aLabel,
-               const Sequence<JS::Value>& aData, MethodName aMethodName,
-               const nsAString& aMethodString);
+  static void StringMethod(const GlobalObject& aGlobal, const nsAString& aLabel,
+                           const Sequence<JS::Value>& aData,
+                           MethodName aMethodName,
+                           const nsAString& aMethodString);
 
-  void
-  StringMethodInternal(JSContext* aCx, const nsAString& aLabel,
-                       const Sequence<JS::Value>& aData,
-                       MethodName aMethodName, const nsAString& aMethodString);
+  void StringMethodInternal(JSContext* aCx, const nsAString& aLabel,
+                            const Sequence<JS::Value>& aData,
+                            MethodName aMethodName,
+                            const nsAString& aMethodString);
 
   
-  void
-  ProcessCallData(JSContext* aCx,
-                  ConsoleCallData* aData,
-                  const Sequence<JS::Value>& aArguments);
+  void ProcessCallData(JSContext* aCx, ConsoleCallData* aData,
+                       const Sequence<JS::Value>& aArguments);
 
-  void
-  StoreCallData(ConsoleCallData* aData);
+  void StoreCallData(ConsoleCallData* aData);
 
-  void
-  UnstoreCallData(ConsoleCallData* aData);
+  void UnstoreCallData(ConsoleCallData* aData);
 
   
-  void
-  ReleaseCallData(ConsoleCallData* aCallData);
+  void ReleaseCallData(ConsoleCallData* aCallData);
 
   
-  void
-  NotifyHandler(JSContext* aCx,
-                const Sequence<JS::Value>& aArguments,
-                ConsoleCallData* aData);
+  void NotifyHandler(JSContext* aCx, const Sequence<JS::Value>& aArguments,
+                     ConsoleCallData* aData);
 
   
   
@@ -238,12 +214,10 @@ private:
   
   
   
-  bool
-  PopulateConsoleNotificationInTheTargetScope(JSContext* aCx,
-                                              const Sequence<JS::Value>& aArguments,
-                                              JS::Handle<JSObject*> aTargetScope,
-                                              JS::MutableHandle<JS::Value> aValue,
-                                              ConsoleCallData* aData);
+  bool PopulateConsoleNotificationInTheTargetScope(
+      JSContext* aCx, const Sequence<JS::Value>& aArguments,
+      JS::Handle<JSObject*> aTargetScope, JS::MutableHandle<JS::Value> aValue,
+      ConsoleCallData* aData);
 
   
   
@@ -263,25 +237,22 @@ private:
   
   
   
-  bool
-  ProcessArguments(JSContext* aCx, const Sequence<JS::Value>& aData,
-                   Sequence<JS::Value>& aSequence,
-                   Sequence<nsString>& aStyles) const;
+  bool ProcessArguments(JSContext* aCx, const Sequence<JS::Value>& aData,
+                        Sequence<JS::Value>& aSequence,
+                        Sequence<nsString>& aStyles) const;
 
-  void
-  MakeFormatString(nsCString& aFormat, int32_t aInteger, int32_t aMantissa,
-                   char aCh) const;
+  void MakeFormatString(nsCString& aFormat, int32_t aInteger, int32_t aMantissa,
+                        char aCh) const;
 
   
   
-  void
-  ComposeAndStoreGroupName(JSContext* aCx, const Sequence<JS::Value>& aData,
-                           nsAString& aName);
+  void ComposeAndStoreGroupName(JSContext* aCx,
+                                const Sequence<JS::Value>& aData,
+                                nsAString& aName);
 
   
   
-  bool
-  UnstoreGroupName(nsAString& aName);
+  bool UnstoreGroupName(nsAString& aName);
 
   enum TimerStatus {
     eTimerUnknown,
@@ -292,9 +263,8 @@ private:
     eTimerMaxReached,
   };
 
-  JS::Value
-  CreateTimerError(JSContext* aCx, const nsAString& aTimerLabel,
-                   TimerStatus aStatus) const;
+  JS::Value CreateTimerError(JSContext* aCx, const nsAString& aTimerLabel,
+                             TimerStatus aStatus) const;
 
   
   
@@ -306,11 +276,9 @@ private:
   
   
   
-  TimerStatus
-  StartTimer(JSContext* aCx, const JS::Value& aName,
-             DOMHighResTimeStamp aTimestamp,
-             nsAString& aTimerLabel,
-             DOMHighResTimeStamp* aTimerValue);
+  TimerStatus StartTimer(JSContext* aCx, const JS::Value& aName,
+                         DOMHighResTimeStamp aTimestamp, nsAString& aTimerLabel,
+                         DOMHighResTimeStamp* aTimerValue);
 
   
   
@@ -319,44 +287,8 @@ private:
   
   
   
-  JS::Value
-  CreateStartTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
-                        TimerStatus aTimerStatus) const;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  TimerStatus
-  LogTimer(JSContext* aCx, const JS::Value& aName,
-           DOMHighResTimeStamp aTimestamp,
-           nsAString& aTimerLabel,
-           double* aTimerDuration,
-           bool aCancelTimer);
-
-  
-  
-  
-  
-  
-  
-  JS::Value
-  CreateLogOrEndTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
-                           double aTimerDuration,
-                           TimerStatus aTimerStatus) const;
-
-  
-  bool
-  ArgumentsToValueList(const Sequence<JS::Value>& aData,
-                       Sequence<JS::Value>& aSequence) const;
+  JS::Value CreateStartTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
+                                  TimerStatus aTimerStatus) const;
 
   
   
@@ -368,9 +300,26 @@ private:
   
   
   
-  uint32_t
-  IncreaseCounter(JSContext* aCx, const Sequence<JS::Value>& aData,
-                  nsAString& aCountLabel);
+  
+  
+  TimerStatus LogTimer(JSContext* aCx, const JS::Value& aName,
+                       DOMHighResTimeStamp aTimestamp, nsAString& aTimerLabel,
+                       double* aTimerDuration, bool aCancelTimer);
+
+  
+  
+  
+  
+  
+  
+  JS::Value CreateLogOrEndTimerValue(JSContext* aCx,
+                                     const nsAString& aTimerLabel,
+                                     double aTimerDuration,
+                                     TimerStatus aTimerStatus) const;
+
+  
+  bool ArgumentsToValueList(const Sequence<JS::Value>& aData,
+                            Sequence<JS::Value>& aSequence) const;
 
   
   
@@ -382,9 +331,8 @@ private:
   
   
   
-  uint32_t
-  ResetCounter(JSContext* aCx, const Sequence<JS::Value>& aData,
-               nsAString& aCountLabel);
+  uint32_t IncreaseCounter(JSContext* aCx, const Sequence<JS::Value>& aData,
+                           nsAString& aCountLabel);
 
   
   
@@ -393,52 +341,53 @@ private:
   
   
   
-  JS::Value
-  CreateCounterOrResetCounterValue(JSContext* aCx, const nsAString& aCountLabel,
-                                   uint32_t aCountValue) const;
+  
+  
+  
+  uint32_t ResetCounter(JSContext* aCx, const Sequence<JS::Value>& aData,
+                        nsAString& aCountLabel);
 
-  bool
-  ShouldIncludeStackTrace(MethodName aMethodName) const;
+  
+  
+  
+  
+  
+  
+  
+  JS::Value CreateCounterOrResetCounterValue(JSContext* aCx,
+                                             const nsAString& aCountLabel,
+                                             uint32_t aCountValue) const;
 
-  JSObject*
-  GetOrCreateSandbox(JSContext* aCx, nsIPrincipal* aPrincipal);
+  bool ShouldIncludeStackTrace(MethodName aMethodName) const;
 
-  void
-  AssertIsOnOwningThread() const;
+  JSObject* GetOrCreateSandbox(JSContext* aCx, nsIPrincipal* aPrincipal);
 
-  bool
-  IsShuttingDown() const;
+  void AssertIsOnOwningThread() const;
 
-  bool
-  MonotonicTimer(JSContext* aCx, MethodName aMethodName,
-                 const Sequence<JS::Value>& aData,
-                 DOMHighResTimeStamp* aTimeStamp);
+  bool IsShuttingDown() const;
 
-  void
-  MaybeExecuteDumpFunction(JSContext* aCx, const nsAString& aMethodName,
-                           const Sequence<JS::Value>& aData,
-                           nsIStackFrame* aStack);
+  bool MonotonicTimer(JSContext* aCx, MethodName aMethodName,
+                      const Sequence<JS::Value>& aData,
+                      DOMHighResTimeStamp* aTimeStamp);
 
-  void
-  MaybeExecuteDumpFunctionForTime(JSContext* aCx, MethodName aMethodName,
-                                  const nsAString& aMethodString,
-                                  uint64_t aMonotonicTimer,
-                                  const JS::Value& aData);
+  void MaybeExecuteDumpFunction(JSContext* aCx, const nsAString& aMethodName,
+                                const Sequence<JS::Value>& aData,
+                                nsIStackFrame* aStack);
 
-  void
-  ExecuteDumpFunction(const nsAString& aMessage);
+  void MaybeExecuteDumpFunctionForTime(JSContext* aCx, MethodName aMethodName,
+                                       const nsAString& aMethodString,
+                                       uint64_t aMonotonicTimer,
+                                       const JS::Value& aData);
 
-  bool
-  IsEnabled(JSContext* aCx) const;
+  void ExecuteDumpFunction(const nsAString& aMessage);
 
-  bool
-  ShouldProceed(MethodName aName) const;
+  bool IsEnabled(JSContext* aCx) const;
 
-  uint32_t
-  WebIDLLogLevelToInteger(ConsoleLogLevel aLevel) const;
+  bool ShouldProceed(MethodName aName) const;
 
-  uint32_t
-  InternalLogLevelToInteger(MethodName aName) const;
+  uint32_t WebIDLLogLevelToInteger(ConsoleLogLevel aLevel) const;
+
+  uint32_t InternalLogLevelToInteger(MethodName aName) const;
 
   
   nsCOMPtr<nsIGlobalObject> mGlobal;
@@ -480,11 +429,7 @@ private:
   bool mChromeInstance;
   ConsoleLogLevel mMaxLogLevel;
 
-  enum {
-    eUnknown,
-    eInitialized,
-    eShuttingDown
-  } mStatus;
+  enum { eUnknown, eInitialized, eShuttingDown } mStatus;
 
   
   
@@ -500,7 +445,7 @@ private:
   friend class ConsoleWorkletRunnable;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

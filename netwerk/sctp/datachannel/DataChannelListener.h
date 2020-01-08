@@ -16,16 +16,16 @@ namespace mozilla {
 
 
 class DataChannelListener {
-public:
+ public:
   virtual ~DataChannelListener() = default;
 
   
   virtual nsresult OnMessageAvailable(nsISupports *aContext,
-                                      const nsACString& message) = 0;
+                                      const nsACString &message) = 0;
 
   
   virtual nsresult OnBinaryMessageAvailable(nsISupports *aContext,
-                                            const nsACString& message) = 0;
+                                            const nsACString &message) = 0;
 
   
   virtual nsresult OnChannelConnected(nsISupports *aContext) = 0;
@@ -40,6 +40,6 @@ public:
   virtual nsresult NotBuffered(nsISupports *aContext) = 0;
 };
 
-}
+}  
 
 #endif

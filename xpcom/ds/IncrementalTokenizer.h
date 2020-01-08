@@ -16,9 +16,8 @@ class nsIInputStream;
 
 namespace mozilla {
 
-class IncrementalTokenizer : public TokenizerBase<char>
-{
-public:
+class IncrementalTokenizer : public TokenizerBase<char> {
+ public:
   
 
 
@@ -29,7 +28,8 @@ public:
 
 
 
-  typedef std::function<nsresult(Token const&, IncrementalTokenizer& i)> Consumer;
+  typedef std::function<nsresult(Token const&, IncrementalTokenizer& i)>
+      Consumer;
 
   
 
@@ -49,6 +49,7 @@ public:
                                 uint32_t aRawMinBuffered = 1024);
 
   
+
 
 
 
@@ -94,17 +95,19 @@ public:
 
   void Rollback();
 
-private:
+ private:
+  
   
   nsresult Process();
 
 #ifdef DEBUG
   
   bool mConsuming;
-#endif 
+#endif  
   
   
   bool mNeedMoreInput;
+  
   
   
   bool mRollback;
@@ -112,11 +115,12 @@ private:
   nsCString mInput;
   
   
+  
   nsCString::index_type mInputCursor;
   
   Consumer mConsumer;
 };
 
-} 
+}  
 
 #endif

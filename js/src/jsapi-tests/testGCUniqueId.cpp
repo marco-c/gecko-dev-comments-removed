@@ -12,118 +12,115 @@
 
 #include "gc/Zone-inl.h"
 
-static void
-MinimizeHeap(JSContext* cx)
-{
-    
-    
-    JS_GC(cx);
-    JS_GC(cx);
-    js::gc::FinishGC(cx);
+static void MinimizeHeap(JSContext* cx) {
+  
+  
+  JS_GC(cx);
+  JS_GC(cx);
+  js::gc::FinishGC(cx);
 }
 
-BEGIN_TEST(testGCUID)
-{
+BEGIN_TEST(testGCUID) {
 #ifdef JS_GC_ZEAL
-    AutoLeaveZeal nozeal(cx);
+  AutoLeaveZeal nozeal(cx);
 #endif 
 
-    uint64_t uid = 0;
-    uint64_t tmp = 0;
+  uint64_t uid = 0;
+  uint64_t tmp = 0;
 
-    
-    MinimizeHeap(cx);
+  
+  MinimizeHeap(cx);
 
-    JS::RootedObject obj(cx, JS_NewPlainObject(cx));
-    uintptr_t nurseryAddr = uintptr_t(obj.get());
-    CHECK(obj);
-    CHECK(js::gc::IsInsideNursery(obj));
+  JS::RootedObject obj(cx, JS_NewPlainObject(cx));
+  uintptr_t nurseryAddr = uintptr_t(obj.get());
+  CHECK(obj);
+  CHECK(js::gc::IsInsideNursery(obj));
 
-    
-    CHECK(!obj->zone()->hasUniqueId(obj));
+  
+  CHECK(!obj->zone()->hasUniqueId(obj));
 
-    
-    CHECK(obj->zone()->getOrCreateUniqueId(obj, &uid));
-    CHECK(uid > js::gc::LargestTaggedNullCellPointer);
+  
+  CHECK(obj->zone()->getOrCreateUniqueId(obj, &uid));
+  CHECK(uid > js::gc::LargestTaggedNullCellPointer);
 
-    
-    CHECK(obj->zone()->hasUniqueId(obj));
+  
+  CHECK(obj->zone()->hasUniqueId(obj));
 
-    
-    CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
-    CHECK(uid == tmp);
+  
+  CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
+  CHECK(uid == tmp);
 
-    
-    MinimizeHeap(cx);
-    uintptr_t tenuredAddr = uintptr_t(obj.get());
-    CHECK(tenuredAddr != nurseryAddr);
-    CHECK(!js::gc::IsInsideNursery(obj));
-    CHECK(obj->zone()->hasUniqueId(obj));
-    CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
-    CHECK(uid == tmp);
+  
+  MinimizeHeap(cx);
+  uintptr_t tenuredAddr = uintptr_t(obj.get());
+  CHECK(tenuredAddr != nurseryAddr);
+  CHECK(!js::gc::IsInsideNursery(obj));
+  CHECK(obj->zone()->hasUniqueId(obj));
+  CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
+  CHECK(uid == tmp);
 
-    
-    
+  
+  
+  obj = JS_NewPlainObject(cx);
+  CHECK(obj);
+  CHECK(uintptr_t(obj.get()) == nurseryAddr);
+  CHECK(!obj->zone()->hasUniqueId(obj));
+
+  
+  
+  obj = nullptr;
+  MinimizeHeap(cx);
+  obj = JS_NewPlainObject(cx);
+  MinimizeHeap(cx);
+  CHECK(uintptr_t(obj.get()) == tenuredAddr);
+  CHECK(!obj->zone()->hasUniqueId(obj));
+  CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
+  CHECK(uid != tmp);
+  uid = tmp;
+
+  
+  const static size_t N = 2049;
+  using ObjectVector = JS::GCVector<JSObject*>;
+  JS::Rooted<ObjectVector> vec(cx, ObjectVector(cx));
+  for (size_t i = 0; i < N; ++i) {
     obj = JS_NewPlainObject(cx);
     CHECK(obj);
-    CHECK(uintptr_t(obj.get()) == nurseryAddr);
-    CHECK(!obj->zone()->hasUniqueId(obj));
+    CHECK(vec.append(obj));
+  }
 
-    
-    
-    obj = nullptr;
-    MinimizeHeap(cx);
-    obj = JS_NewPlainObject(cx);
-    MinimizeHeap(cx);
-    CHECK(uintptr_t(obj.get()) == tenuredAddr);
-    CHECK(!obj->zone()->hasUniqueId(obj));
-    CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
-    CHECK(uid != tmp);
-    uid = tmp;
+  
+  MinimizeHeap(cx);
 
-    
-    const static size_t N = 2049;
-    using ObjectVector = JS::GCVector<JSObject*>;
-    JS::Rooted<ObjectVector> vec(cx, ObjectVector(cx));
-    for (size_t i = 0; i < N; ++i) {
-        obj = JS_NewPlainObject(cx);
-        CHECK(obj);
-        CHECK(vec.append(obj));
+  
+  JS::Rooted<ObjectVector> vec2(cx, ObjectVector(cx));
+  for (size_t i = 0; i < N; ++i) {
+    if (i % 2 == 1) {
+      CHECK(vec2.append(vec[i]));
     }
+  }
+  vec.clear();
 
-    
-    MinimizeHeap(cx);
+  
+  obj = vec2.back();
+  CHECK(obj);
+  CHECK(!js::gc::IsInsideNursery(obj));
+  tenuredAddr = uintptr_t(obj.get());
+  CHECK(obj->zone()->getOrCreateUniqueId(obj, &uid));
 
-    
-    JS::Rooted<ObjectVector> vec2(cx, ObjectVector(cx));
-    for (size_t i = 0; i < N; ++i) {
-        if (i % 2 == 1) {
-            CHECK(vec2.append(vec[i]));
-        }
-    }
-    vec.clear();
+  
+  
+  JS::PrepareForFullGC(cx);
+  JS::NonIncrementalGC(cx, GC_SHRINK, JS::gcreason::API);
 
-    
-    obj = vec2.back();
-    CHECK(obj);
-    CHECK(!js::gc::IsInsideNursery(obj));
-    tenuredAddr = uintptr_t(obj.get());
-    CHECK(obj->zone()->getOrCreateUniqueId(obj, &uid));
+  
+  
+  
+  
+  CHECK(uintptr_t(obj.get()) != tenuredAddr);
+  CHECK(obj->zone()->hasUniqueId(obj));
+  CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
+  CHECK(uid == tmp);
 
-    
-    
-    JS::PrepareForFullGC(cx);
-    JS::NonIncrementalGC(cx, GC_SHRINK, JS::gcreason::API);
-
-    
-    
-    
-    
-    CHECK(uintptr_t(obj.get()) != tenuredAddr);
-    CHECK(obj->zone()->hasUniqueId(obj));
-    CHECK(obj->zone()->getOrCreateUniqueId(obj, &tmp));
-    CHECK(uid == tmp);
-
-    return true;
+  return true;
 }
 END_TEST(testGCUID)

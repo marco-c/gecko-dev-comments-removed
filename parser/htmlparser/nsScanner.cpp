@@ -15,22 +15,23 @@
 #include "nsReadableUtils.h"
 #include "nsIInputStream.h"
 #include "nsIFile.h"
-#include "nsUTF8Utils.h" 
+#include "nsUTF8Utils.h"  
 #include "nsCRT.h"
 #include "nsParser.h"
 #include "nsCharsetSource.h"
 
-nsReadEndCondition::nsReadEndCondition(const char16_t* aTerminateChars) :
-  mChars(aTerminateChars), mFilter(char16_t(~0)) 
+nsReadEndCondition::nsReadEndCondition(const char16_t* aTerminateChars)
+    : mChars(aTerminateChars),
+      mFilter(char16_t(~0))  
 {
   
   
   
   
   
+
   
-  
-  const char16_t *current = aTerminateChars;
+  const char16_t* current = aTerminateChars;
   char16_t terminalChar = *current;
   while (terminalChar) {
     mFilter &= ~terminalChar;
@@ -48,8 +49,7 @@ nsReadEndCondition::nsReadEndCondition(const char16_t* aTerminateChars) :
 
 
 
-nsScanner::nsScanner(const nsAString& anHTMLString)
-{
+nsScanner::nsScanner(const nsAString& anHTMLString) {
   MOZ_COUNT_CTOR(nsScanner);
 
   mSlidingBuffer = nullptr;
@@ -72,8 +72,7 @@ nsScanner::nsScanner(const nsAString& anHTMLString)
 
 
 nsScanner::nsScanner(nsString& aFilename, bool aCreateStream)
-  : mFilename(aFilename)
-{
+    : mFilename(aFilename) {
   MOZ_COUNT_CTOR(nsScanner);
   NS_ASSERTION(!aCreateStream, "This is always true.");
 
@@ -97,16 +96,15 @@ nsScanner::nsScanner(nsString& aFilename, bool aCreateStream)
 }
 
 nsresult nsScanner::SetDocumentCharset(NotNull<const Encoding*> aEncoding,
-                                       int32_t aSource)
-{
-  if (aSource < mCharsetSource) 
+                                       int32_t aSource) {
+  if (aSource < mCharsetSource)  
     return NS_OK;
 
   mCharsetSource = aSource;
   nsCString charsetName;
   aEncoding->Name(charsetName);
   if (!mCharset.IsEmpty() && charsetName.Equals(mCharset)) {
-    return NS_OK; 
+    return NS_OK;  
   }
 
   
@@ -125,9 +123,7 @@ nsresult nsScanner::SetDocumentCharset(NotNull<const Encoding*> aEncoding,
 
 
 
-
 nsScanner::~nsScanner() {
-
   delete mSlidingBuffer;
 
   MOZ_COUNT_DTOR(nsScanner);
@@ -143,12 +139,11 @@ nsScanner::~nsScanner() {
 
 
 
-void nsScanner::RewindToMark(void){
+void nsScanner::RewindToMark(void) {
   if (mSlidingBuffer) {
     mCurrentPosition = mMarkPosition;
   }
 }
-
 
 
 
@@ -187,10 +182,11 @@ bool nsScanner::UngetReadable(const nsAString& aBuffer) {
     return false;
   }
 
-  mSlidingBuffer->UngetReadable(aBuffer,mCurrentPosition);
-  mSlidingBuffer->BeginReading(mCurrentPosition); 
+  mSlidingBuffer->UngetReadable(aBuffer, mCurrentPosition);
+  mSlidingBuffer->BeginReading(
+      mCurrentPosition);  
   mSlidingBuffer->EndReading(mEndPosition);
- 
+
   return true;
 }
 
@@ -202,8 +198,7 @@ bool nsScanner::UngetReadable(const nsAString& aBuffer) {
 
 
 nsresult nsScanner::Append(const nsAString& aBuffer) {
-  if (!AppendToBuffer(aBuffer))
-    return NS_ERROR_OUT_OF_MEMORY;
+  if (!AppendToBuffer(aBuffer)) return NS_ERROR_OUT_OF_MEMORY;
   return NS_OK;
 }
 
@@ -214,32 +209,31 @@ nsresult nsScanner::Append(const nsAString& aBuffer) {
 
 
 
-nsresult nsScanner::Append(const char* aBuffer, uint32_t aLen)
-{
+nsresult nsScanner::Append(const char* aBuffer, uint32_t aLen) {
   nsresult res = NS_OK;
   if (mUnicodeDecoder) {
     CheckedInt<size_t> needed = mUnicodeDecoder->MaxUTF16BufferLength(aLen);
     if (!needed.isValid()) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
-    CheckedInt<uint32_t> allocLen(1); 
+    CheckedInt<uint32_t> allocLen(1);  
     allocLen += needed.value();
     if (!allocLen.isValid()) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
     nsScannerString::Buffer* buffer =
-      nsScannerString::AllocBuffer(allocLen.value());
-    NS_ENSURE_TRUE(buffer,NS_ERROR_OUT_OF_MEMORY);
-    char16_t *unichars = buffer->DataStart();
+        nsScannerString::AllocBuffer(allocLen.value());
+    NS_ENSURE_TRUE(buffer, NS_ERROR_OUT_OF_MEMORY);
+    char16_t* unichars = buffer->DataStart();
 
     uint32_t result;
     size_t read;
     size_t written;
     Tie(result, read, written) =
-      mUnicodeDecoder->DecodeToUTF16WithoutReplacement(
-        AsBytes(MakeSpan(aBuffer, aLen)),
-        MakeSpan(unichars, needed.value()),
-        false); 
+        mUnicodeDecoder->DecodeToUTF16WithoutReplacement(
+            AsBytes(MakeSpan(aBuffer, aLen)),
+            MakeSpan(unichars, needed.value()),
+            false);  
     MOZ_ASSERT(result != kOutputFull);
     MOZ_ASSERT(read <= aLen);
     MOZ_ASSERT(written <= needed.value());
@@ -254,11 +248,9 @@ nsresult nsScanner::Append(const char* aBuffer, uint32_t aLen)
     
     
     
-    res = NS_OK; 
-    if (!AppendToBuffer(buffer))
-      res = NS_ERROR_OUT_OF_MEMORY;
-  }
-  else {
+    res = NS_OK;
+    if (!AppendToBuffer(buffer)) res = NS_ERROR_OUT_OF_MEMORY;
+  } else {
     NS_WARNING("No decoder found.");
     res = NS_ERROR_FAILURE;
   }
@@ -284,23 +276,21 @@ nsresult nsScanner::GetChar(char16_t& aChar) {
   return NS_OK;
 }
 
-void nsScanner::BindSubstring(nsScannerSubstring& aSubstring, const nsScannerIterator& aStart, const nsScannerIterator& aEnd)
-{
+void nsScanner::BindSubstring(nsScannerSubstring& aSubstring,
+                              const nsScannerIterator& aStart,
+                              const nsScannerIterator& aEnd) {
   aSubstring.Rebind(*mSlidingBuffer, aStart, aEnd);
 }
 
-void nsScanner::CurrentPosition(nsScannerIterator& aPosition)
-{
+void nsScanner::CurrentPosition(nsScannerIterator& aPosition) {
   aPosition = mCurrentPosition;
 }
 
-void nsScanner::EndReading(nsScannerIterator& aPosition)
-{
+void nsScanner::EndReading(nsScannerIterator& aPosition) {
   aPosition = mEndPosition;
 }
- 
-void nsScanner::SetPosition(nsScannerIterator& aPosition, bool aTerminate)
-{
+
+void nsScanner::SetPosition(nsScannerIterator& aPosition, bool aTerminate) {
   if (mSlidingBuffer) {
     mCurrentPosition = aPosition;
     if (aTerminate && (mCurrentPosition == mEndPosition)) {
@@ -310,17 +300,14 @@ void nsScanner::SetPosition(nsScannerIterator& aPosition, bool aTerminate)
   }
 }
 
-bool nsScanner::AppendToBuffer(nsScannerString::Buffer* aBuf)
-{
+bool nsScanner::AppendToBuffer(nsScannerString::Buffer* aBuf) {
   if (!mSlidingBuffer) {
     mSlidingBuffer = new nsScannerString(aBuf);
-    if (!mSlidingBuffer)
-      return false;
+    if (!mSlidingBuffer) return false;
     mSlidingBuffer->BeginReading(mCurrentPosition);
     mMarkPosition = mCurrentPosition;
     mSlidingBuffer->EndReading(mEndPosition);
-  }
-  else {
+  } else {
     mSlidingBuffer->AppendBuffer(aBuf);
     if (mCurrentPosition == mEndPosition) {
       mSlidingBuffer->BeginReading(mCurrentPosition);
@@ -360,9 +347,7 @@ bool nsScanner::CopyUnusedData(nsString& aCopyBuffer) {
 
 
 
-nsString& nsScanner::GetFilename(void) {
-  return mFilename;
-}
+nsString& nsScanner::GetFilename(void) { return mFilename; }
 
 
 

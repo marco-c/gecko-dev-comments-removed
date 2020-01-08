@@ -2,7 +2,6 @@
 
 
 
-
 #ifndef NSAUTHINFORMATIONHOLDER_H_
 #define NSAUTHINFORMATIONHOLDER_H_
 
@@ -10,39 +9,36 @@
 #include "nsString.h"
 
 class nsAuthInformationHolder : public nsIAuthInformation {
+ protected:
+  virtual ~nsAuthInformationHolder() = default;
 
-protected:
-    virtual ~nsAuthInformationHolder() = default;
+ public:
+  
+  nsAuthInformationHolder(uint32_t aFlags, const nsString& aRealm,
+                          const nsCString& aAuthType)
+      : mFlags(aFlags), mRealm(aRealm), mAuthType(aAuthType) {}
 
-public:
-    
-    nsAuthInformationHolder(uint32_t aFlags, const nsString& aRealm,
-                            const nsCString& aAuthType)
-        : mFlags(aFlags), mRealm(aRealm), mAuthType(aAuthType) {}
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIAUTHINFORMATION
 
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIAUTHINFORMATION
+  const nsString& User() const { return mUser; }
+  const nsString& Password() const { return mPassword; }
+  const nsString& Domain() const { return mDomain; }
 
-    const nsString& User() const { return mUser; }
-    const nsString& Password() const { return mPassword; }
-    const nsString& Domain() const { return mDomain; }
-
-    
-
+  
 
 
-    void SetUserInternal(const nsString& aUsername) {
-      mUser = aUsername;
-    }
-private:
-    nsString mUser;
-    nsString mPassword;
-    nsString mDomain;
 
-    uint32_t mFlags;
-    nsString mRealm;
-    nsCString mAuthType;
+  void SetUserInternal(const nsString& aUsername) { mUser = aUsername; }
+
+ private:
+  nsString mUser;
+  nsString mPassword;
+  nsString mDomain;
+
+  uint32_t mFlags;
+  nsString mRealm;
+  nsCString mAuthType;
 };
-
 
 #endif

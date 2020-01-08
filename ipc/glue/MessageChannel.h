@@ -19,7 +19,7 @@
 #include "mozilla/Vector.h"
 #if defined(OS_WIN)
 #include "mozilla/ipc/Neutering.h"
-#endif 
+#endif  
 #include "mozilla/ipc/Transport.h"
 #include "MessageLink.h"
 #include "nsILabelableRunnable.h"
@@ -40,843 +40,807 @@ namespace ipc {
 class MessageChannel;
 class IToplevelProtocol;
 
-class RefCountedMonitor : public Monitor
-{
-  public:
-    RefCountedMonitor()
-        : Monitor("mozilla.ipc.MessageChannel.mMonitor")
-    {}
+class RefCountedMonitor : public Monitor {
+ public:
+  RefCountedMonitor() : Monitor("mozilla.ipc.MessageChannel.mMonitor") {}
 
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefCountedMonitor)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(RefCountedMonitor)
 
-  private:
-    ~RefCountedMonitor() {}
+ private:
+  ~RefCountedMonitor() {}
 };
 
 enum class SyncSendError {
-    SendSuccess,
-    PreviousTimeout,
-    SendingCPOWWhileDispatchingSync,
-    SendingCPOWWhileDispatchingUrgent,
-    NotConnectedBeforeSend,
-    DisconnectedDuringSend,
-    CancelledBeforeSend,
-    CancelledAfterSend,
-    TimedOut,
-    ReplyError,
+  SendSuccess,
+  PreviousTimeout,
+  SendingCPOWWhileDispatchingSync,
+  SendingCPOWWhileDispatchingUrgent,
+  NotConnectedBeforeSend,
+  DisconnectedDuringSend,
+  CancelledBeforeSend,
+  CancelledAfterSend,
+  TimedOut,
+  ReplyError,
 };
 
 enum class ResponseRejectReason {
-    SendError,
-    ChannelClosed,
-    HandlerRejected,
-    ActorDestroyed,
-    EndGuard_,
+  SendError,
+  ChannelClosed,
+  HandlerRejected,
+  ActorDestroyed,
+  EndGuard_,
 };
 
-template<typename T>
-using ResolveCallback = std::function<void (T&&)>;
+template <typename T>
+using ResolveCallback = std::function<void(T&&)>;
 
-using RejectCallback = std::function<void (ResponseRejectReason)>;
+using RejectCallback = std::function<void(ResponseRejectReason)>;
 
 enum ChannelState {
-    ChannelClosed,
-    ChannelOpening,
-    ChannelConnected,
-    ChannelTimeout,
-    ChannelClosing,
-    ChannelError
+  ChannelClosed,
+  ChannelOpening,
+  ChannelConnected,
+  ChannelTimeout,
+  ChannelClosing,
+  ChannelError
 };
 
 class AutoEnterTransaction;
 
-class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver
-{
-    friend class ProcessLink;
-    friend class ThreadLink;
+class MessageChannel : HasResultCodes, MessageLoop::DestructionObserver {
+  friend class ProcessLink;
+  friend class ThreadLink;
 #ifdef FUZZING
-    friend class ProtocolFuzzerHelper;
+  friend class ProtocolFuzzerHelper;
 #endif
 
-    class CxxStackFrame;
-    class InterruptFrame;
+  class CxxStackFrame;
+  class InterruptFrame;
 
-    typedef mozilla::Monitor Monitor;
+  typedef mozilla::Monitor Monitor;
 
+  
+  
+  
+  typedef void* ActorIdType;
+
+ public:
+  struct UntypedCallbackHolder {
+    UntypedCallbackHolder(ActorIdType aActorId, RejectCallback&& aReject)
+        : mActorId(aActorId), mReject(std::move(aReject)) {}
+
+    virtual ~UntypedCallbackHolder() {}
+
+    void Reject(ResponseRejectReason aReason) { mReject(aReason); }
+
+    ActorIdType mActorId;
+    RejectCallback mReject;
+  };
+
+  template <typename Value>
+  struct CallbackHolder : public UntypedCallbackHolder {
+    CallbackHolder(ActorIdType aActorId, ResolveCallback<Value>&& aResolve,
+                   RejectCallback&& aReject)
+        : UntypedCallbackHolder(aActorId, std::move(aReject)),
+          mResolve(std::move(aResolve)) {}
+
+    void Resolve(Value&& aReason) { mResolve(std::move(aReason)); }
+
+    ResolveCallback<Value> mResolve;
+  };
+
+ private:
+  static Atomic<size_t> gUnresolvedResponses;
+  friend class PendingResponseReporter;
+
+ public:
+  static const int32_t kNoTimeout;
+
+  typedef IPC::Message Message;
+  typedef IPC::MessageInfo MessageInfo;
+  typedef mozilla::ipc::Transport Transport;
+
+  explicit MessageChannel(const char* aName, IToplevelProtocol* aListener);
+  ~MessageChannel();
+
+  IToplevelProtocol* Listener() const { return mListener; }
+
+  
+  
+  
+  
+  
+  bool Open(Transport* aTransport, MessageLoop* aIOLoop = 0,
+            Side aSide = UnknownSide);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool Open(MessageChannel* aTargetChan, nsIEventTarget* aEventTarget,
+            Side aSide);
+
+  
+  void Close();
+
+  
+  
+  void CloseWithError();
+
+  void CloseWithTimeout();
+
+  void SetAbortOnError(bool abort) { mAbortOnError = abort; }
+
+  
+  
+  
+  void PeekMessages(const std::function<bool(const Message& aMsg)>& aInvoke);
+
+  
+  enum ChannelFlags {
+    REQUIRE_DEFAULT = 0,
     
     
     
-    typedef void* ActorIdType;
+    
+    
+    REQUIRE_DEFERRED_MESSAGE_PROTECTION = 1 << 0,
+    
+    
+    
+    
+    REQUIRE_A11Y_REENTRY = 1 << 1,
+  };
+  void SetChannelFlags(ChannelFlags aFlags) { mFlags = aFlags; }
+  ChannelFlags GetChannelFlags() { return mFlags; }
 
-public:
-    struct UntypedCallbackHolder
-    {
-        UntypedCallbackHolder(ActorIdType aActorId,
-                              RejectCallback&& aReject)
-            : mActorId(aActorId)
-            , mReject(std::move(aReject))
-        {}
+  
+  bool Send(Message* aMsg);
 
-        virtual ~UntypedCallbackHolder() {}
-
-        void Reject(ResponseRejectReason aReason) {
-            mReject(aReason);
-        }
-
-        ActorIdType mActorId;
-        RejectCallback mReject;
-    };
-
-    template<typename Value>
-    struct CallbackHolder : public UntypedCallbackHolder
-    {
-        CallbackHolder(ActorIdType aActorId,
-                       ResolveCallback<Value>&& aResolve,
-                       RejectCallback&& aReject)
-            : UntypedCallbackHolder(aActorId, std::move(aReject))
-            , mResolve(std::move(aResolve))
-        {}
-
-        void Resolve(Value&& aReason) {
-            mResolve(std::move(aReason));
-        }
-
-        ResolveCallback<Value> mResolve;
-    };
-
-private:
-    static Atomic<size_t> gUnresolvedResponses;
-    friend class PendingResponseReporter;
-
-  public:
-    static const int32_t kNoTimeout;
-
-    typedef IPC::Message Message;
-    typedef IPC::MessageInfo MessageInfo;
-    typedef mozilla::ipc::Transport Transport;
-
-    explicit MessageChannel(const char *aName,
-                            IToplevelProtocol *aListener);
-    ~MessageChannel();
-
-    IToplevelProtocol *Listener() const {
-        return mListener;
+  
+  
+  template <typename Value>
+  void Send(Message* aMsg, ActorIdType aActorId,
+            ResolveCallback<Value>&& aResolve, RejectCallback&& aReject) {
+    int32_t seqno = NextSeqno();
+    aMsg->set_seqno(seqno);
+    if (!Send(aMsg)) {
+      aReject(ResponseRejectReason::SendError);
+      return;
     }
 
-    
-    
-    
-    
-    
-    bool Open(Transport* aTransport, MessageLoop* aIOLoop=0, Side aSide=UnknownSide);
+    UniquePtr<UntypedCallbackHolder> callback =
+        MakeUnique<CallbackHolder<Value>>(aActorId, std::move(aResolve),
+                                          std::move(aReject));
+    mPendingResponses.insert(std::make_pair(seqno, std::move(callback)));
+    gUnresolvedResponses++;
+  }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    bool Open(MessageChannel *aTargetChan, nsIEventTarget *aEventTarget, Side aSide);
+  bool SendBuildIDsMatchMessage(const char* aParentBuildI);
+  bool DoBuildIDsMatch() { return mBuildIDsConfirmedMatch; }
 
-    
-    void Close();
+  
+  
+  bool Echo(Message* aMsg);
 
-    
-    
-    void CloseWithError();
+  
+  bool Send(Message* aMsg, Message* aReply);
 
-    void CloseWithTimeout();
+  
+  bool Call(Message* aMsg, Message* aReply);
 
-    void SetAbortOnError(bool abort)
-    {
-        mAbortOnError = abort;
-    }
+  
+  bool WaitForIncomingMessage();
 
-    
-    
-    
-    void PeekMessages(const std::function<bool(const Message& aMsg)>& aInvoke);
+  bool CanSend() const;
 
-    
-    enum ChannelFlags {
-      REQUIRE_DEFAULT                         = 0,
-      
-      
-      
-      
-      
-      REQUIRE_DEFERRED_MESSAGE_PROTECTION     = 1 << 0,
-      
-      
-      
-      
-      REQUIRE_A11Y_REENTRY                    = 1 << 1,
-    };
-    void SetChannelFlags(ChannelFlags aFlags) { mFlags = aFlags; }
-    ChannelFlags GetChannelFlags() { return mFlags; }
+  
+  UniquePtr<UntypedCallbackHolder> PopCallback(const Message& aMsg);
 
-    
-    bool Send(Message* aMsg);
+  
+  
+  void RejectPendingResponsesForActor(ActorIdType aActorId);
 
-    
-    
-    template<typename Value>
-    void Send(Message* aMsg,
-              ActorIdType aActorId,
-              ResolveCallback<Value>&& aResolve,
-              RejectCallback&& aReject) {
-        int32_t seqno = NextSeqno();
-        aMsg->set_seqno(seqno);
-        if (!Send(aMsg)) {
-            aReject(ResponseRejectReason::SendError);
-            return;
-        }
+  
+  
+  SyncSendError LastSendError() const {
+    AssertWorkerThread();
+    return mLastSendError;
+  }
 
-        UniquePtr<UntypedCallbackHolder> callback =
-            MakeUnique<CallbackHolder<Value>>(
-                aActorId, std::move(aResolve), std::move(aReject));
-        mPendingResponses.insert(std::make_pair(seqno, std::move(callback)));
-        gUnresolvedResponses++;
-    }
+  
+  ChannelState GetChannelState__TotallyRacy() const { return mChannelState; }
 
-    bool SendBuildIDsMatchMessage(const char* aParentBuildI);
-    bool DoBuildIDsMatch() { return mBuildIDsConfirmedMatch; }
+  void SetReplyTimeoutMs(int32_t aTimeoutMs);
 
-    
-    
-    bool Echo(Message* aMsg);
+  bool IsOnCxxStack() const { return !mCxxStackFrames.empty(); }
 
-    
-    bool Send(Message* aMsg, Message* aReply);
+  bool IsInTransaction() const;
+  void CancelCurrentTransaction();
 
-    
-    bool Call(Message* aMsg, Message* aReply);
+  
+  
+  
+  
+  
+  void BeginPostponingSends();
 
-    
-    bool WaitForIncomingMessage();
+  
+  
+  
+  
+  
+  
+  
+  void StopPostponingSends();
 
-    bool CanSend() const;
-
-    
-    UniquePtr<UntypedCallbackHolder> PopCallback(const Message& aMsg);
-
-    
-    
-    void RejectPendingResponsesForActor(ActorIdType aActorId);
-
-    
-    
-    SyncSendError LastSendError() const {
-        AssertWorkerThread();
-        return mLastSendError;
-    }
-
-    
-    ChannelState GetChannelState__TotallyRacy() const {
-        return mChannelState;
-    }
-
-    void SetReplyTimeoutMs(int32_t aTimeoutMs);
-
-    bool IsOnCxxStack() const {
-        return !mCxxStackFrames.empty();
-    }
-
-    bool IsInTransaction() const;
-    void CancelCurrentTransaction();
-
-    
-    
-    
-    
-    
-    void BeginPostponingSends();
-
-    
-    
-    
-    
-    
-    
-    
-    void StopPostponingSends();
-
-    
+  
 
 
 
 
 
-    int32_t GetTopmostMessageRoutingId() const;
+  int32_t GetTopmostMessageRoutingId() const;
 
-    
-    
-    
-    
-    
-    
-    bool Unsound_IsClosed() const {
-        return mLink ? mLink->Unsound_IsClosed() : true;
-    }
-    uint32_t Unsound_NumQueuedMessages() const {
-        return mLink ? mLink->Unsound_NumQueuedMessages() : 0;
-    }
+  
+  
+  
+  
+  
+  
+  bool Unsound_IsClosed() const {
+    return mLink ? mLink->Unsound_IsClosed() : true;
+  }
+  uint32_t Unsound_NumQueuedMessages() const {
+    return mLink ? mLink->Unsound_NumQueuedMessages() : 0;
+  }
 
-    static bool IsPumpingMessages() {
-        return sIsPumpingMessages;
-    }
-    static void SetIsPumpingMessages(bool aIsPumping) {
-        sIsPumpingMessages = aIsPumping;
-    }
+  static bool IsPumpingMessages() { return sIsPumpingMessages; }
+  static void SetIsPumpingMessages(bool aIsPumping) {
+    sIsPumpingMessages = aIsPumping;
+  }
 
 #ifdef OS_WIN
-    struct MOZ_STACK_CLASS SyncStackFrame
-    {
-        SyncStackFrame(MessageChannel* channel, bool interrupt);
-        ~SyncStackFrame();
+  struct MOZ_STACK_CLASS SyncStackFrame {
+    SyncStackFrame(MessageChannel* channel, bool interrupt);
+    ~SyncStackFrame();
 
-        bool mInterrupt;
-        bool mSpinNestedEvents;
-        bool mListenerNotified;
-        MessageChannel* mChannel;
+    bool mInterrupt;
+    bool mSpinNestedEvents;
+    bool mListenerNotified;
+    MessageChannel* mChannel;
 
-        
-        SyncStackFrame* mPrev;
+    
+    SyncStackFrame* mPrev;
 
-        
-        SyncStackFrame* mStaticPrev;
-    };
-    friend struct MessageChannel::SyncStackFrame;
+    
+    SyncStackFrame* mStaticPrev;
+  };
+  friend struct MessageChannel::SyncStackFrame;
 
-    static bool IsSpinLoopActive() {
-        for (SyncStackFrame* frame = sStaticTopFrame; frame; frame = frame->mPrev) {
-            if (frame->mSpinNestedEvents)
-                return true;
-        }
-        return false;
+  static bool IsSpinLoopActive() {
+    for (SyncStackFrame* frame = sStaticTopFrame; frame; frame = frame->mPrev) {
+      if (frame->mSpinNestedEvents) return true;
+    }
+    return false;
+  }
+
+ protected:
+  
+  SyncStackFrame* mTopFrame;
+
+  bool mIsSyncWaitingOnNonMainThread;
+
+  
+  static SyncStackFrame* sStaticTopFrame;
+
+ public:
+  void ProcessNativeEventsInInterruptCall();
+  static void NotifyGeckoEventDispatch();
+
+ private:
+  void SpinInternalEventLoop();
+#if defined(ACCESSIBILITY)
+  bool WaitForSyncNotifyWithA11yReentry();
+#endif  
+#endif  
+
+ private:
+  void CommonThreadOpenInit(MessageChannel* aTargetChan, Side aSide);
+  void OnOpenAsSlave(MessageChannel* aTargetChan, Side aSide);
+
+  void PostErrorNotifyTask();
+  void OnNotifyMaybeChannelError();
+  void ReportConnectionError(const char* aChannelName,
+                             Message* aMsg = nullptr) const;
+  void ReportMessageRouteError(const char* channelName) const;
+  bool MaybeHandleError(Result code, const Message& aMsg,
+                        const char* channelName);
+
+  void Clear();
+
+  
+  void DispatchOnChannelConnected();
+
+  bool InterruptEventOccurred();
+  bool HasPendingEvents();
+
+  void ProcessPendingRequests(AutoEnterTransaction& aTransaction);
+  bool ProcessPendingRequest(Message&& aUrgent);
+
+  void MaybeUndeferIncall();
+  void EnqueuePendingMessages();
+
+  
+  void DispatchMessage(Message&& aMsg);
+
+  
+  
+  void DispatchSyncMessage(const Message& aMsg, Message*& aReply);
+  void DispatchUrgentMessage(const Message& aMsg);
+  void DispatchAsyncMessage(const Message& aMsg);
+  void DispatchRPCMessage(const Message& aMsg);
+  void DispatchInterruptMessage(Message&& aMsg, size_t aStackDepth);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool WaitForSyncNotify(bool aHandleWindowsMessages);
+  bool WaitForInterruptNotify();
+
+  bool WaitResponse(bool aWaitTimedOut);
+
+  bool ShouldContinueFromTimeout();
+
+  void EndTimeout();
+  void CancelTransaction(int transaction);
+
+  void RepostAllMessages();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t RemoteViewOfStackDepth(size_t stackDepth) const {
+    AssertWorkerThread();
+    return stackDepth - mOutOfTurnReplies.size();
+  }
+
+  int32_t NextSeqno() {
+    AssertWorkerThread();
+    return (mSide == ChildSide) ? --mNextSeqno : ++mNextSeqno;
+  }
+
+  
+  
+  
+  void EnteredCxxStack();
+  void ExitedCxxStack();
+
+  void EnteredCall();
+  void ExitedCall();
+
+  void EnteredSyncSend();
+  void ExitedSyncSend();
+
+  void DebugAbort(const char* file, int line, const char* cond, const char* why,
+                  bool reply = false);
+
+  
+  
+  void DumpInterruptStack(const char* const pfx = "") const;
+
+ private:
+  
+  size_t InterruptStackDepth() const {
+    mMonitor->AssertCurrentThreadOwns();
+    return mInterruptStack.size();
+  }
+
+  bool AwaitingInterruptReply() const {
+    mMonitor->AssertCurrentThreadOwns();
+    return !mInterruptStack.empty();
+  }
+  bool AwaitingIncomingMessage() const {
+    mMonitor->AssertCurrentThreadOwns();
+    return mIsWaitingForIncoming;
+  }
+
+  class MOZ_STACK_CLASS AutoEnterWaitForIncoming {
+   public:
+    explicit AutoEnterWaitForIncoming(MessageChannel& aChannel)
+        : mChannel(aChannel) {
+      aChannel.mMonitor->AssertCurrentThreadOwns();
+      aChannel.mIsWaitingForIncoming = true;
     }
 
-  protected:
-    
-    SyncStackFrame* mTopFrame;
+    ~AutoEnterWaitForIncoming() { mChannel.mIsWaitingForIncoming = false; }
 
-    bool mIsSyncWaitingOnNonMainThread;
+   private:
+    MessageChannel& mChannel;
+  };
+  friend class AutoEnterWaitForIncoming;
 
-    
-    static SyncStackFrame* sStaticTopFrame;
+  
+  bool DispatchingAsyncMessage() const {
+    AssertWorkerThread();
+    return mDispatchingAsyncMessage;
+  }
 
-  public:
-    void ProcessNativeEventsInInterruptCall();
-    static void NotifyGeckoEventDispatch();
+  int DispatchingAsyncMessageNestedLevel() const {
+    AssertWorkerThread();
+    return mDispatchingAsyncMessageNestedLevel;
+  }
 
-  private:
-    void SpinInternalEventLoop();
-#if defined(ACCESSIBILITY)
-    bool WaitForSyncNotifyWithA11yReentry();
-#endif 
-#endif 
+  bool Connected() const;
 
-  private:
-    void CommonThreadOpenInit(MessageChannel *aTargetChan, Side aSide);
-    void OnOpenAsSlave(MessageChannel *aTargetChan, Side aSide);
+ private:
+  
+  void NotifyWorkerThread();
 
-    void PostErrorNotifyTask();
-    void OnNotifyMaybeChannelError();
-    void ReportConnectionError(const char* aChannelName, Message* aMsg = nullptr) const;
-    void ReportMessageRouteError(const char* channelName) const;
-    bool MaybeHandleError(Result code, const Message& aMsg, const char* channelName);
+  
+  
+  bool MaybeInterceptSpecialIOMessage(const Message& aMsg);
 
+  void OnChannelConnected(int32_t peer_id);
+
+  
+  void SynchronouslyClose();
+
+  
+  
+  
+  static bool IsAlwaysDeferred(const Message& aMsg);
+
+  
+  
+  void SendMessageToLink(Message* aMsg);
+
+  bool WasTransactionCanceled(int transaction);
+  bool ShouldDeferMessage(const Message& aMsg);
+  bool ShouldDeferInterruptMessage(const Message& aMsg, size_t aStackDepth);
+  void OnMessageReceivedFromLink(Message&& aMsg);
+  void OnChannelErrorFromLink();
+
+ private:
+  
+  void NotifyChannelClosed();
+  void NotifyMaybeChannelError();
+
+ private:
+  
+  void AssertWorkerThread() const {
+    MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
+    MOZ_RELEASE_ASSERT(mWorkerThread == GetCurrentVirtualThread(),
+                       "not on worker thread!");
+  }
+
+  
+  
+  
+  void AssertLinkThread() const {
+    MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
+    MOZ_RELEASE_ASSERT(mWorkerThread != GetCurrentVirtualThread(),
+                       "on worker thread but should not be!");
+  }
+
+ private:
+  class MessageTask : public CancelableRunnable,
+                      public LinkedListElement<RefPtr<MessageTask>>,
+                      public nsIRunnablePriority,
+                      public nsILabelableRunnable {
+   public:
+    explicit MessageTask(MessageChannel* aChannel, Message&& aMessage);
+
+    NS_DECL_ISUPPORTS_INHERITED
+
+    NS_IMETHOD Run() override;
+    nsresult Cancel() override;
+    NS_IMETHOD GetPriority(uint32_t* aPriority) override;
+    void Post();
     void Clear();
 
-    
-    void DispatchOnChannelConnected();
+    bool IsScheduled() const { return mScheduled; }
 
-    bool InterruptEventOccurred();
-    bool HasPendingEvents();
+    Message& Msg() { return mMessage; }
+    const Message& Msg() const { return mMessage; }
 
-    void ProcessPendingRequests(AutoEnterTransaction& aTransaction);
-    bool ProcessPendingRequest(Message &&aUrgent);
+    bool GetAffectedSchedulerGroups(SchedulerGroupSet& aGroups) override;
 
-    void MaybeUndeferIncall();
-    void EnqueuePendingMessages();
+   private:
+    MessageTask() = delete;
+    MessageTask(const MessageTask&) = delete;
+    ~MessageTask() {}
 
-    
-    void DispatchMessage(Message &&aMsg);
+    MessageChannel* mChannel;
+    Message mMessage;
+    bool mScheduled : 1;
+  };
 
-    
-    
-    void DispatchSyncMessage(const Message &aMsg, Message*& aReply);
-    void DispatchUrgentMessage(const Message &aMsg);
-    void DispatchAsyncMessage(const Message &aMsg);
-    void DispatchRPCMessage(const Message &aMsg);
-    void DispatchInterruptMessage(Message &&aMsg, size_t aStackDepth);
+  bool ShouldRunMessage(const Message& aMsg);
+  void RunMessage(MessageTask& aTask);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool WaitForSyncNotify(bool aHandleWindowsMessages);
-    bool WaitForInterruptNotify();
+  typedef LinkedList<RefPtr<MessageTask>> MessageQueue;
+  typedef std::map<size_t, Message> MessageMap;
+  typedef std::map<size_t, UniquePtr<UntypedCallbackHolder>> CallbackMap;
+  typedef IPC::Message::msgid_t msgid_t;
 
-    bool WaitResponse(bool aWaitTimedOut);
+  void WillDestroyCurrentMessageLoop() override;
 
-    bool ShouldContinueFromTimeout();
+ private:
+  
+  const char* mName;
 
-    void EndTimeout();
-    void CancelTransaction(int transaction);
+  
+  
+  IToplevelProtocol* mListener;
+  ChannelState mChannelState;
+  RefPtr<RefCountedMonitor> mMonitor;
+  Side mSide;
+  bool mIsCrossProcess;
+  MessageLink* mLink;
+  MessageLoop* mWorkerLoop;  
+  RefPtr<CancelableRunnable>
+      mChannelErrorTask;  
 
-    void RepostAllMessages();
+  
+  
+  PRThread* mWorkerThread;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    size_t RemoteViewOfStackDepth(size_t stackDepth) const {
-        AssertWorkerThread();
-        return stackDepth - mOutOfTurnReplies.size();
+  
+  
+  
+  
+  int32_t mTimeoutMs;
+  bool mInTimeoutSecondHalf;
+
+  
+  
+  int32_t mNextSeqno;
+
+  static bool sIsPumpingMessages;
+
+  
+  SyncSendError mLastSendError;
+
+  template <class T>
+  class AutoSetValue {
+   public:
+    explicit AutoSetValue(T& var, const T& newValue)
+        : mVar(var), mPrev(var), mNew(newValue) {
+      mVar = newValue;
+    }
+    ~AutoSetValue() {
+      
+      
+      
+      if (mVar == mNew) {
+        mVar = mPrev;
+      }
     }
 
-    int32_t NextSeqno() {
-        AssertWorkerThread();
-        return (mSide == ChildSide) ? --mNextSeqno : ++mNextSeqno;
-    }
+   private:
+    T& mVar;
+    T mPrev;
+    T mNew;
+  };
 
-    
-    
-    
-    void EnteredCxxStack();
-    void ExitedCxxStack();
+  bool mDispatchingAsyncMessage;
+  int mDispatchingAsyncMessageNestedLevel;
 
-    void EnteredCall();
-    void ExitedCall();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    void EnteredSyncSend();
-    void ExitedSyncSend();
+  friend class AutoEnterTransaction;
+  AutoEnterTransaction* mTransactionStack;
 
-    void DebugAbort(const char* file, int line, const char* cond,
-                    const char* why,
-                    bool reply=false);
+  int32_t CurrentNestedInsideSyncTransaction() const;
 
-    
-    
-    void DumpInterruptStack(const char* const pfx="") const;
+  bool AwaitingSyncReply() const;
+  int AwaitingSyncReplyNestedLevel() const;
 
-  private:
-    
-    size_t InterruptStackDepth() const {
-        mMonitor->AssertCurrentThreadOwns();
-        return mInterruptStack.size();
-    }
-
-    bool AwaitingInterruptReply() const {
-        mMonitor->AssertCurrentThreadOwns();
-        return !mInterruptStack.empty();
-    }
-    bool AwaitingIncomingMessage() const {
-        mMonitor->AssertCurrentThreadOwns();
-        return mIsWaitingForIncoming;
-    }
-
-    class MOZ_STACK_CLASS AutoEnterWaitForIncoming
-    {
-    public:
-        explicit AutoEnterWaitForIncoming(MessageChannel& aChannel)
-            : mChannel(aChannel)
-        {
-            aChannel.mMonitor->AssertCurrentThreadOwns();
-            aChannel.mIsWaitingForIncoming = true;
-        }
-
-        ~AutoEnterWaitForIncoming()
-        {
-            mChannel.mIsWaitingForIncoming = false;
-        }
-
-    private:
-        MessageChannel& mChannel;
-    };
-    friend class AutoEnterWaitForIncoming;
-
-    
-    bool DispatchingAsyncMessage() const {
-        AssertWorkerThread();
-        return mDispatchingAsyncMessage;
-    }
-
-    int DispatchingAsyncMessageNestedLevel() const {
-        AssertWorkerThread();
-        return mDispatchingAsyncMessageNestedLevel;
-    }
-
-    bool Connected() const;
-
-  private:
-    
-    void NotifyWorkerThread();
-
-    
-    
-    bool MaybeInterceptSpecialIOMessage(const Message& aMsg);
-
-    void OnChannelConnected(int32_t peer_id);
-
-    
-    void SynchronouslyClose();
-
-    
-    
-    
-    static bool IsAlwaysDeferred(const Message& aMsg);
-
-    
-    
-    void SendMessageToLink(Message* aMsg);
-
-    bool WasTransactionCanceled(int transaction);
-    bool ShouldDeferMessage(const Message& aMsg);
-    bool ShouldDeferInterruptMessage(const Message& aMsg, size_t aStackDepth);
-    void OnMessageReceivedFromLink(Message&& aMsg);
-    void OnChannelErrorFromLink();
-
-  private:
-    
-    void NotifyChannelClosed();
-    void NotifyMaybeChannelError();
-
-  private:
-    
-    void AssertWorkerThread() const
-    {
-        MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
-        MOZ_RELEASE_ASSERT(mWorkerThread == GetCurrentVirtualThread(),
-                           "not on worker thread!");
-    }
-
-    
-    
-    
-    void AssertLinkThread() const
-    {
-        MOZ_ASSERT(mWorkerThread, "Channel hasn't been opened yet");
-        MOZ_RELEASE_ASSERT(mWorkerThread != GetCurrentVirtualThread(),
-                           "on worker thread but should not be!");
-    }
-
-  private:
-    class MessageTask :
-        public CancelableRunnable,
-        public LinkedListElement<RefPtr<MessageTask>>,
-        public nsIRunnablePriority,
-        public nsILabelableRunnable
-    {
-    public:
-        explicit MessageTask(MessageChannel* aChannel, Message&& aMessage);
-
-        NS_DECL_ISUPPORTS_INHERITED
-
-        NS_IMETHOD Run() override;
-        nsresult Cancel() override;
-        NS_IMETHOD GetPriority(uint32_t* aPriority) override;
-        void Post();
-        void Clear();
-
-        bool IsScheduled() const { return mScheduled; }
-
-        Message& Msg() { return mMessage; }
-        const Message& Msg() const { return mMessage; }
-
-        bool GetAffectedSchedulerGroups(SchedulerGroupSet& aGroups) override;
-
-    private:
-        MessageTask() = delete;
-        MessageTask(const MessageTask&) = delete;
-        ~MessageTask() {}
-
-        MessageChannel* mChannel;
-        Message mMessage;
-        bool mScheduled : 1;
-    };
-
-    bool ShouldRunMessage(const Message& aMsg);
-    void RunMessage(MessageTask& aTask);
-
-    typedef LinkedList<RefPtr<MessageTask>> MessageQueue;
-    typedef std::map<size_t, Message> MessageMap;
-    typedef std::map<size_t, UniquePtr<UntypedCallbackHolder>> CallbackMap;
-    typedef IPC::Message::msgid_t msgid_t;
-
-    void WillDestroyCurrentMessageLoop() override;
-
-  private:
-    
-    const char* mName;
-
-    
-    
-    IToplevelProtocol* mListener;
-    ChannelState mChannelState;
-    RefPtr<RefCountedMonitor> mMonitor;
-    Side mSide;
-    bool mIsCrossProcess;
-    MessageLink* mLink;
-    MessageLoop* mWorkerLoop;           
-    RefPtr<CancelableRunnable> mChannelErrorTask;  
-
-    
-    
-    PRThread* mWorkerThread;
-
-    
-    
-    
-    
-    int32_t mTimeoutMs;
-    bool mInTimeoutSecondHalf;
-
-    
-    
-    int32_t mNextSeqno;
-
-    static bool sIsPumpingMessages;
-
-    
-    SyncSendError mLastSendError;
-
-    template<class T>
-    class AutoSetValue {
-      public:
-        explicit AutoSetValue(T &var, const T &newValue)
-          : mVar(var), mPrev(var), mNew(newValue)
-        {
-            mVar = newValue;
-        }
-        ~AutoSetValue() {
-            
-            
-            
-            if (mVar == mNew) {
-                mVar = mPrev;
-            }
-        }
-      private:
-        T& mVar;
-        T mPrev;
-        T mNew;
-    };
-
-    bool mDispatchingAsyncMessage;
-    int mDispatchingAsyncMessageNestedLevel;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    friend class AutoEnterTransaction;
-    AutoEnterTransaction *mTransactionStack;
-
-    int32_t CurrentNestedInsideSyncTransaction() const;
-
-    bool AwaitingSyncReply() const;
-    int AwaitingSyncReplyNestedLevel() const;
-
-    bool DispatchingSyncMessage() const;
-    int DispatchingSyncMessageNestedLevel() const;
+  bool DispatchingSyncMessage() const;
+  int DispatchingSyncMessageNestedLevel() const;
 
 #ifdef DEBUG
-    void AssertMaybeDeferredCountCorrect();
+  void AssertMaybeDeferredCountCorrect();
 #else
-    void AssertMaybeDeferredCountCorrect() {}
+  void AssertMaybeDeferredCountCorrect() {}
 #endif
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    int32_t mTimedOutMessageSeqno;
-    int mTimedOutMessageNestedLevel;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int32_t mTimedOutMessageSeqno;
+  int mTimedOutMessageNestedLevel;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MessageQueue mPending;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MessageQueue mPending;
 
-    
-    
-    
-    size_t mMaybeDeferredPendingCount;
+  
+  
+  
+  size_t mMaybeDeferredPendingCount;
 
-    
-    
-    
-    
-    std::stack<MessageInfo> mInterruptStack;
+  
+  
+  
+  
+  std::stack<MessageInfo> mInterruptStack;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    size_t mRemoteStackDepthGuess;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t mRemoteStackDepthGuess;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    mozilla::Vector<InterruptFrame> mCxxStackFrames;
+  
+  
+  
+  
+  
+  
+  
+  
+  mozilla::Vector<InterruptFrame> mCxxStackFrames;
 
-    
-    
-    bool mSawInterruptOutMsg;
+  
+  
+  bool mSawInterruptOutMsg;
 
-    
-    
-    
-    bool mIsWaitingForIncoming;
+  
+  
+  
+  bool mIsWaitingForIncoming;
 
-    
-    
-    
-    MessageMap mOutOfTurnReplies;
+  
+  
+  
+  MessageMap mOutOfTurnReplies;
 
-    
-    CallbackMap mPendingResponses;
+  
+  CallbackMap mPendingResponses;
 
-    
-    
-    std::stack<Message> mDeferred;
+  
+  
+  std::stack<Message> mDeferred;
 
 #ifdef OS_WIN
-    HANDLE mEvent;
+  HANDLE mEvent;
 #endif
 
-    
-    
-    bool mAbortOnError;
+  
+  
+  bool mAbortOnError;
 
-    
-    
-    bool mNotifiedChannelDone;
+  
+  
+  bool mNotifiedChannelDone;
 
-    
-    ChannelFlags mFlags;
+  
+  ChannelFlags mFlags;
 
-    
-    
-    
-    RefPtr<CancelableRunnable> mOnChannelConnectedTask;
-    bool mPeerPidSet;
-    int32_t mPeerPid;
+  
+  
+  
+  RefPtr<CancelableRunnable> mOnChannelConnectedTask;
+  bool mPeerPidSet;
+  int32_t mPeerPid;
 
-    
-    
-    bool mIsPostponingSends;
-    std::vector<UniquePtr<Message>> mPostponedSends;
+  
+  
+  bool mIsPostponingSends;
+  std::vector<UniquePtr<Message>> mPostponedSends;
 
-    bool mBuildIDsConfirmedMatch;
+  bool mBuildIDsConfirmedMatch;
 };
 
-void
-CancelCPOWs();
+void CancelCPOWs();
 
-} 
-} 
+}  
+}  
 
 namespace IPC {
 template <>
 struct ParamTraits<mozilla::ipc::ResponseRejectReason>
-    : public ContiguousEnumSerializer<mozilla::ipc::ResponseRejectReason,
-                                      mozilla::ipc::ResponseRejectReason::SendError,
-                                      mozilla::ipc::ResponseRejectReason::EndGuard_>
-{ };
-} 
+    : public ContiguousEnumSerializer<
+          mozilla::ipc::ResponseRejectReason,
+          mozilla::ipc::ResponseRejectReason::SendError,
+          mozilla::ipc::ResponseRejectReason::EndGuard_> {};
+}  
 
 #endif  

@@ -12,134 +12,112 @@
 
 static const char kNegotiateAuthSSPI[] = "network.auth.use-sspi";
 
-nsAuthSASL::nsAuthSASL()
-{
-    mSASLReady = false;
-}
+nsAuthSASL::nsAuthSASL() { mSASLReady = false; }
 
-void nsAuthSASL::Reset()
-{
-    mSASLReady = false;
-}
+void nsAuthSASL::Reset() { mSASLReady = false; }
 
 
 NS_IMPL_ISUPPORTS(nsAuthSASL, nsIAuthModule)
 
 NS_IMETHODIMP
-nsAuthSASL::Init(const char *serviceName,
-                 uint32_t    serviceFlags,
-                 const char16_t *domain,
-                 const char16_t *username,
-                 const char16_t *password)
-{
-    nsresult rv;
+nsAuthSASL::Init(const char *serviceName, uint32_t serviceFlags,
+                 const char16_t *domain, const char16_t *username,
+                 const char16_t *password) {
+  nsresult rv;
 
-    NS_ASSERTION(username, "SASL requires a username");
-    NS_ASSERTION(!domain && !password, "unexpected credentials");
+  NS_ASSERTION(username, "SASL requires a username");
+  NS_ASSERTION(!domain && !password, "unexpected credentials");
 
-    mUsername = username;
+  mUsername = username;
+
+  
+  serviceFlags |= REQ_MUTUAL_AUTH;
+
+  
+  const char *authType = "kerb-gss";
+
+  nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+  if (prefs) {
+    bool val;
+    rv = prefs->GetBoolPref(kNegotiateAuthSSPI, &val);
+    if (NS_SUCCEEDED(rv) && val) authType = "kerb-sspi";
+  }
+
+  MOZ_ALWAYS_TRUE(mInnerModule = nsIAuthModule::CreateInstance(authType));
+
+  mInnerModule->Init(serviceName, serviceFlags, nullptr, nullptr, nullptr);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsAuthSASL::GetNextToken(const void *inToken, uint32_t inTokenLen,
+                         void **outToken, uint32_t *outTokenLen) {
+  nsresult rv;
+  void *unwrappedToken;
+  char *message;
+  uint32_t unwrappedTokenLen, messageLen;
+  nsAutoCString userbuf;
+
+  if (!mInnerModule) return NS_ERROR_NOT_INITIALIZED;
+
+  if (mSASLReady) {
+    
+    
+    
+    if (inTokenLen == 0) {
+      *outToken = nullptr;
+      *outTokenLen = 0;
+      return NS_OK;
+    }
+    
+    
 
     
-    serviceFlags |= REQ_MUTUAL_AUTH;
+    rv = mInnerModule->Unwrap(inToken, inTokenLen, &unwrappedToken,
+                              &unwrappedTokenLen);
+    if (NS_FAILED(rv)) {
+      Reset();
+      return rv;
+    }
 
     
-    const char *authType = "kerb-gss";
+    
+    
+    free(unwrappedToken);
 
-    nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
-    if (prefs) {
-        bool val;
-        rv = prefs->GetBoolPref(kNegotiateAuthSSPI, &val);
-        if (NS_SUCCEEDED(rv) && val)
-            authType = "kerb-sspi";
-    }
-
-    MOZ_ALWAYS_TRUE(mInnerModule = nsIAuthModule::CreateInstance(authType));
-
-    mInnerModule->Init(serviceName, serviceFlags, nullptr, nullptr, nullptr);
-
-    return NS_OK;
+    NS_CopyUnicodeToNative(mUsername, userbuf);
+    messageLen = userbuf.Length() + 4 + 1;
+    message = (char *)moz_xmalloc(messageLen);
+    message[0] = 0x01;  
+    message[1] = 0x00;
+    message[2] = 0x00;
+    message[3] = 0x00;  
+    strcpy(message + 4, userbuf.get());
+    
+    
+    rv = mInnerModule->Wrap((void *)message, messageLen - 1, false, outToken,
+                            outTokenLen);
+    free(message);
+    Reset();  
+    return NS_SUCCEEDED(rv) ? NS_SUCCESS_AUTH_FINISHED : rv;
+  }
+  rv = mInnerModule->GetNextToken(inToken, inTokenLen, outToken, outTokenLen);
+  if (rv == NS_SUCCESS_AUTH_FINISHED) {
+    mSASLReady = true;
+    rv = NS_OK;
+  }
+  return rv;
 }
 
 NS_IMETHODIMP
-nsAuthSASL::GetNextToken(const void *inToken,
-                         uint32_t    inTokenLen,
-                         void      **outToken,
-                         uint32_t   *outTokenLen)
-{
-    nsresult rv;
-    void *unwrappedToken;
-    char *message;
-    uint32_t unwrappedTokenLen, messageLen;
-    nsAutoCString userbuf;
-
-    if (!mInnerModule)
-        return NS_ERROR_NOT_INITIALIZED;
-
-    if (mSASLReady) {
-        
-        
-        
-        if (inTokenLen == 0) {
-            *outToken = nullptr;
-            *outTokenLen = 0;
-            return NS_OK;
-        }
-        
-        
-
-        
-        rv = mInnerModule->Unwrap(inToken, inTokenLen, &unwrappedToken,
-                                  &unwrappedTokenLen);
-        if (NS_FAILED(rv)) {
-            Reset();
-            return rv;
-        }
-
-        
-        
-        
-        free(unwrappedToken);
-
-        NS_CopyUnicodeToNative(mUsername, userbuf);
-        messageLen = userbuf.Length() + 4 + 1;
-        message = (char *)moz_xmalloc(messageLen);
-        message[0] = 0x01; 
-        message[1] = 0x00;
-        message[2] = 0x00;
-        message[3] = 0x00; 
-        strcpy(message+4, userbuf.get());
-        
-        
-        rv = mInnerModule->Wrap((void *) message, messageLen-1, false,
-                                outToken, outTokenLen);
-        free(message);
-        Reset(); 
-        return NS_SUCCEEDED(rv) ? NS_SUCCESS_AUTH_FINISHED : rv;
-    }
-    rv = mInnerModule->GetNextToken(inToken, inTokenLen, outToken,
-                                    outTokenLen);
-    if (rv == NS_SUCCESS_AUTH_FINISHED) {
-        mSASLReady = true;
-        rv = NS_OK;
-    }
-    return rv;
+nsAuthSASL::Unwrap(const void *inToken, uint32_t inTokenLen, void **outToken,
+                   uint32_t *outTokenLen) {
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
-nsAuthSASL::Unwrap(const void *inToken,
-                   uint32_t    inTokenLen,
-                   void      **outToken,
-                   uint32_t   *outTokenLen)
-{
-    return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
-nsAuthSASL::Wrap(const void *inToken,
-                 uint32_t    inTokenLen,
-                 bool        confidential,
-                 void      **outToken,
-                 uint32_t   *outTokenLen)
-{
-    return NS_ERROR_NOT_IMPLEMENTED;
+nsAuthSASL::Wrap(const void *inToken, uint32_t inTokenLen, bool confidential,
+                 void **outToken, uint32_t *outTokenLen) {
+  return NS_ERROR_NOT_IMPLEMENTED;
 }

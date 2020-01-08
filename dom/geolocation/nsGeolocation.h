@@ -38,10 +38,13 @@ class nsGeolocationRequest;
 namespace mozilla {
 namespace dom {
 class Geolocation;
-typedef CallbackObjectHolder<PositionCallback, nsIDOMGeoPositionCallback> GeoPositionCallback;
-typedef CallbackObjectHolder<PositionErrorCallback, nsIDOMGeoPositionErrorCallback> GeoPositionErrorCallback;
-} 
-} 
+typedef CallbackObjectHolder<PositionCallback, nsIDOMGeoPositionCallback>
+    GeoPositionCallback;
+typedef CallbackObjectHolder<PositionErrorCallback,
+                             nsIDOMGeoPositionErrorCallback>
+    GeoPositionErrorCallback;
+}  
+}  
 
 struct CachedPositionAndAccuracy {
   nsCOMPtr<nsIDOMGeoPosition> position;
@@ -52,10 +55,8 @@ struct CachedPositionAndAccuracy {
 
 
 class nsGeolocationService final : public nsIGeolocationUpdate,
-                                   public nsIObserver
-{
-public:
-
+                                   public nsIObserver {
+ public:
   static already_AddRefed<nsGeolocationService> GetGeolocationService();
   static mozilla::StaticRefPtr<nsGeolocationService> sService;
 
@@ -63,9 +64,7 @@ public:
   NS_DECL_NSIGEOLOCATIONUPDATE
   NS_DECL_NSIOBSERVER
 
-  nsGeolocationService() {
-      mHigherAccuracy = false;
-  }
+  nsGeolocationService() { mHigherAccuracy = false; }
 
   nsresult Init();
 
@@ -80,17 +79,16 @@ public:
   nsresult StartDevice(nsIPrincipal* aPrincipal);
 
   
-  void     StopDevice();
+  void StopDevice();
 
   
-  void     SetDisconnectTimer();
+  void SetDisconnectTimer();
 
   
-  void     UpdateAccuracy(bool aForceHigh = false);
-  bool     HighAccuracyRequested();
+  void UpdateAccuracy(bool aForceHigh = false);
+  bool HighAccuracyRequested();
 
-private:
-
+ private:
   ~nsGeolocationService();
 
   
@@ -119,11 +117,8 @@ namespace dom {
 
 
 
-class Geolocation final : public nsIGeolocationUpdate,
-                          public nsWrapperCache
-{
-public:
-
+class Geolocation final : public nsIGeolocationUpdate, public nsWrapperCache {
+ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Geolocation)
 
@@ -134,18 +129,17 @@ public:
   nsresult Init(nsPIDOMWindowInner* aContentDom = nullptr);
 
   nsPIDOMWindowInner* GetParentObject() const;
-  virtual JSObject* WrapObject(JSContext *aCtx, JS::Handle<JSObject*> aGivenProto) override;
+  virtual JSObject* WrapObject(JSContext* aCtx,
+                               JS::Handle<JSObject*> aGivenProto) override;
 
   int32_t WatchPosition(PositionCallback& aCallback,
                         PositionErrorCallback* aErrorCallback,
-                        const PositionOptions& aOptions,
-                        CallerType aCallerType,
+                        const PositionOptions& aOptions, CallerType aCallerType,
                         ErrorResult& aRv);
   void GetCurrentPosition(PositionCallback& aCallback,
                           PositionErrorCallback* aErrorCallback,
                           const PositionOptions& aOptions,
-                          CallerType aCallerType,
-                          ErrorResult& aRv);
+                          CallerType aCallerType, ErrorResult& aRv);
   void ClearWatch(int32_t aWatchId);
 
   
@@ -182,10 +176,10 @@ public:
   bool HighAccuracyRequested();
 
   
+  
   static already_AddRefed<Geolocation> NonWindowSingleton();
 
-private:
-
+ private:
   ~Geolocation();
 
   nsresult GetCurrentPosition(GeoPositionCallback aCallback,
@@ -195,8 +189,7 @@ private:
   int32_t WatchPosition(GeoPositionCallback aCallback,
                         GeoPositionErrorCallback aErrorCallback,
                         UniquePtr<PositionOptions>&& aOptions,
-                        CallerType aCallerType,
-                        ErrorResult& aRv);
+                        CallerType aCallerType, ErrorResult& aRv);
 
   bool RegisterRequestWithPrompt(nsGeolocationRequest* request);
 
@@ -227,7 +220,7 @@ private:
   nsCOMPtr<nsIPrincipal> mPrincipal;
 
   
-  enum class ProtocolType: uint8_t { OTHER, HTTP, HTTPS };
+  enum class ProtocolType : uint8_t { OTHER, HTTP, HTTPS };
 
   
   ProtocolType mProtocolType;
@@ -248,7 +241,7 @@ private:
   static mozilla::StaticRefPtr<Geolocation> sNonWindowSingleton;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

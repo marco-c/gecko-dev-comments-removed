@@ -27,10 +27,8 @@ namespace mscom {
 
 
 
-bool
-StripHandlerFromOBJREF(NotNull<IStream*> aStream,
-                       const uint64_t aStart,
-                       const uint64_t aEnd);
+bool StripHandlerFromOBJREF(NotNull<IStream*> aStream, const uint64_t aStart,
+                            const uint64_t aEnd);
 
 
 
@@ -39,8 +37,7 @@ StripHandlerFromOBJREF(NotNull<IStream*> aStream,
 
 
 
-uint32_t
-GetOBJREFSize(NotNull<IStream*> aStream);
+uint32_t GetOBJREFSize(NotNull<IStream*> aStream);
 
 
 
@@ -48,11 +45,9 @@ GetOBJREFSize(NotNull<IStream*> aStream);
 
 
 
-bool
-SetIID(NotNull<IStream*> aStream, const uint64_t aStart, REFIID aNewIid);
+bool SetIID(NotNull<IStream*> aStream, const uint64_t aStart, REFIID aNewIid);
 
-} 
-} 
+}  
+}  
 
-#endif 
-
+#endif  

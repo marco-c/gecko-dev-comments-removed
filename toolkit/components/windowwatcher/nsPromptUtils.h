@@ -20,10 +20,8 @@
 
 
 
-inline void
-NS_SetAuthInfo(nsIAuthInformation* aAuthInfo, const nsString& aUser,
-               const nsString& aPassword)
-{
+inline void NS_SetAuthInfo(nsIAuthInformation* aAuthInfo, const nsString& aUser,
+                           const nsString& aPassword) {
   uint32_t flags;
   aAuthInfo->GetFlags(&flags);
   if (flags & nsIAuthInformation::NEED_DOMAIN) {
@@ -54,10 +52,10 @@ NS_SetAuthInfo(nsIAuthInformation* aAuthInfo, const nsString& aUser,
 
 
 
-inline void
-NS_GetAuthHostPort(nsIChannel* aChannel, nsIAuthInformation* aAuthInfo,
-                   bool aMachineProcessing, nsCString& aHost, int32_t* aPort)
-{
+inline void NS_GetAuthHostPort(nsIChannel* aChannel,
+                               nsIAuthInformation* aAuthInfo,
+                               bool aMachineProcessing, nsCString& aHost,
+                               int32_t* aPort) {
   nsCOMPtr<nsIURI> uri;
   nsresult rv = aChannel->GetURI(getter_AddRefs(uri));
   if (NS_FAILED(rv)) {
@@ -81,7 +79,7 @@ NS_GetAuthHostPort(nsIChannel* aChannel, nsIAuthInformation* aAuthInfo,
 
     if (aMachineProcessing) {
       nsCOMPtr<nsIIDNService> idnService =
-        do_GetService(NS_IDNSERVICE_CONTRACTID);
+          do_GetService(NS_IDNSERVICE_CONTRACTID);
       if (idnService) {
         idnService->ConvertUTF8toACE(idnhost, aHost);
       } else {
@@ -107,10 +105,8 @@ NS_GetAuthHostPort(nsIChannel* aChannel, nsIAuthInformation* aAuthInfo,
 
 
 
-inline void
-NS_GetAuthKey(nsIChannel* aChannel, nsIAuthInformation* aAuthInfo,
-              nsCString& aKey)
-{
+inline void NS_GetAuthKey(nsIChannel* aChannel, nsIAuthInformation* aAuthInfo,
+                          nsCString& aKey) {
   
   nsCOMPtr<nsIHttpChannel> http(do_QueryInterface(aChannel));
   if (!http) {

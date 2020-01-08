@@ -21,10 +21,8 @@ using namespace mozilla;
 
 already_AddRefed<nsBoxLayout> NS_NewGridRowGroupLayout();
 
-nsIFrame*
-NS_NewGridRowGroupFrame(nsIPresShell* aPresShell,
-                        ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewGridRowGroupFrame(nsIPresShell* aPresShell,
+                                  ComputedStyle* aStyle) {
   nsCOMPtr<nsBoxLayout> layout = NS_NewGridRowGroupLayout();
   return new (aPresShell) nsGridRowGroupFrame(aStyle, layout);
 }
@@ -35,25 +33,19 @@ NS_IMPL_FRAMEARENA_HELPERS(nsGridRowGroupFrame)
 
 
 
-
-nscoord
-nsGridRowGroupFrame::GetXULFlex()
-{
+nscoord nsGridRowGroupFrame::GetXULFlex() {
   
   
   
 
-  if (!DoesNeedRecalc(mFlex))
-     return mFlex;
+  if (!DoesNeedRecalc(mFlex)) return mFlex;
 
-  if (nsBoxFrame::GetXULFlex() == 0)
-    return 0;
+  if (nsBoxFrame::GetXULFlex() == 0) return 0;
 
   
   nscoord totalFlex = 0;
   nsIFrame* child = nsBox::GetChildXULBox(this);
-  while (child)
-  {
+  while (child) {
     totalFlex += child->GetXULFlex();
     child = GetNextXULBox(child);
   }
@@ -62,5 +54,3 @@ nsGridRowGroupFrame::GetXULFlex()
 
   return totalFlex;
 }
-
-

@@ -40,22 +40,20 @@ class nsTextNode;
 namespace mozilla {
 namespace gfx {
 class DrawTarget;
-} 
-} 
+}  
+}  
 
 class nsComboboxControlFrame final : public nsBlockFrame,
                                      public nsIFormControlFrame,
                                      public nsIAnonymousContentCreator,
                                      public nsISelectControlFrame,
                                      public nsIRollupListener,
-                                     public nsIStatefulFrame
-{
+                                     public nsIStatefulFrame {
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
-public:
-  friend nsComboboxControlFrame* NS_NewComboboxControlFrame(nsIPresShell* aPresShell,
-                                                            ComputedStyle* aStyle,
-                                                            nsFrameState aFlags);
+ public:
+  friend nsComboboxControlFrame* NS_NewComboboxControlFrame(
+      nsIPresShell* aPresShell, ComputedStyle* aStyle, nsFrameState aFlags);
   friend class nsComboboxDisplayFrame;
 
   explicit nsComboboxControlFrame(ComputedStyle* aStyle);
@@ -65,7 +63,8 @@ public:
   NS_DECL_FRAMEARENA_HELPERS(nsComboboxControlFrame)
 
   
-  virtual nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
+  virtual nsresult CreateAnonymousContent(
+      nsTArray<ContentInfo>& aElements) override;
   virtual void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
                                         uint32_t aFilter) override;
 
@@ -76,28 +75,26 @@ public:
   virtual mozilla::a11y::AccType AccessibleType() override;
 #endif
 
-  virtual nscoord GetMinISize(gfxContext *aRenderingContext) override;
+  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
 
-  virtual nscoord GetPrefISize(gfxContext *aRenderingContext) override;
+  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
 
-  virtual void Reflow(nsPresContext*           aCX,
-                      ReflowOutput&     aDesiredSize,
+  virtual void Reflow(nsPresContext* aCX, ReflowOutput& aDesiredSize,
                       const ReflowInput& aReflowInput,
-                      nsReflowStatus&          aStatus) override;
+                      nsReflowStatus& aStatus) override;
 
   virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus) override;
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                 const nsDisplayListSet& aLists) override;
 
   void PaintFocus(DrawTarget& aDrawTarget, nsPoint aPt);
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override
-  {
-    return nsBlockFrame::IsFrameOfType(aFlags &
-      ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
+  virtual bool IsFrameOfType(uint32_t aFlags) const override {
+    return nsBlockFrame::IsFrameOfType(
+        aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedContainsBlock));
   }
 
   virtual nsIScrollableFrame* GetScrollTargetFrame() override {
@@ -107,9 +104,10 @@ public:
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
-  virtual void SetInitialChildList(ChildListID     aListID,
-                                   nsFrameList&    aChildList) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
+  virtual void SetInitialChildList(ChildListID aListID,
+                                   nsFrameList& aChildList) override;
   virtual const nsFrameList& GetChildList(ChildListID aListID) const override;
   virtual void GetChildLists(nsTArray<ChildList>* aLists) const override;
 
@@ -119,8 +117,10 @@ public:
   void AppendDirectlyOwnedAnonBoxes(nsTArray<OwnedAnonBox>& aResult) override;
 
   
-  virtual nsresult SetFormProperty(nsAtom* aName, const nsAString& aValue) override;
+  virtual nsresult SetFormProperty(nsAtom* aName,
+                                   const nsAString& aValue) override;
   
+
 
 
 
@@ -149,8 +149,7 @@ public:
 
 
 
-  void GetAvailableDropdownSpace(mozilla::WritingMode aWM,
-                                 nscoord* aBefore,
+  void GetAvailableDropdownSpace(mozilla::WritingMode aWM, nscoord* aBefore,
                                  nscoord* aAfter,
                                  mozilla::LogicalPoint* aTranslation);
   int32_t GetIndexOfDisplayArea();
@@ -161,18 +160,13 @@ public:
   int32_t UpdateRecentIndex(int32_t aIndex);
   void OnContentReset();
 
+  bool IsOpenInParentProcess() { return mIsOpenInParentProcess; }
 
-  bool IsOpenInParentProcess()
-  {
-    return mIsOpenInParentProcess;
+  void SetOpenInParentProcess(bool aVal) { mIsOpenInParentProcess = aVal; }
+
+  bool IsDroppedDownOrHasParentPopup() {
+    return IsDroppedDown() || IsOpenInParentProcess();
   }
-
-  void SetOpenInParentProcess(bool aVal)
-  {
-    mIsOpenInParentProcess = aVal;
-  }
-
-  bool IsDroppedDownOrHasParentPopup() { return IsDroppedDown() || IsOpenInParentProcess(); }
 
   
   NS_IMETHOD AddOption(int32_t index) override;
@@ -186,48 +180,46 @@ public:
 
 
 
-  virtual bool Rollup(uint32_t aCount, bool aFlush,
-                      const nsIntPoint* pos, nsIContent** aLastRolledUp) override;
+  virtual bool Rollup(uint32_t aCount, bool aFlush, const nsIntPoint* pos,
+                      nsIContent** aLastRolledUp) override;
   virtual void NotifyGeometryChange() override;
 
   
 
 
 
-  virtual bool ShouldRollupOnMouseWheelEvent() override
-    { return true; }
+  virtual bool ShouldRollupOnMouseWheelEvent() override { return true; }
 
-  virtual bool ShouldConsumeOnMouseWheelEvent() override
-    { return false; }
+  virtual bool ShouldConsumeOnMouseWheelEvent() override { return false; }
 
   
 
 
 
-  virtual bool ShouldRollupOnMouseActivate() override
-    { return false; }
+  virtual bool ShouldRollupOnMouseActivate() override { return false; }
 
-  virtual uint32_t GetSubmenuWidgetChain(nsTArray<nsIWidget*> *aWidgetChain) override
-    { return 0; }
+  virtual uint32_t GetSubmenuWidgetChain(
+      nsTArray<nsIWidget*>* aWidgetChain) override {
+    return 0;
+  }
 
   virtual nsIWidget* GetRollupWidget() override;
 
   
   mozilla::UniquePtr<mozilla::PresState> SaveState() override;
   NS_IMETHOD RestoreState(mozilla::PresState* aState) override;
-  NS_IMETHOD GenerateStateKey(nsIContent* aContent,
-                              nsIDocument* aDocument,
+  NS_IMETHOD GenerateStateKey(nsIContent* aContent, nsIDocument* aDocument,
                               nsACString& aKey) override;
 
   static bool ToolkitHasNativePopup();
 
-protected:
+ protected:
   friend class RedisplayTextEvent;
   friend class nsAsyncResize;
   friend class nsResizeDropdownAtFinalPosition;
 
   
-  void ReflowDropdown(nsPresContext*          aPresContext,
+  void ReflowDropdown(nsPresContext* aPresContext,
                       const ReflowInput& aReflowInput);
 
   
@@ -248,16 +240,15 @@ protected:
                             nsLayoutUtils::IntrinsicISizeType aType);
 
   class RedisplayTextEvent : public mozilla::Runnable {
-  public:
+   public:
     NS_DECL_NSIRUNNABLE
     explicit RedisplayTextEvent(nsComboboxControlFrame* c)
-      : mozilla::Runnable("nsComboboxControlFrame::RedisplayTextEvent")
-      , mControlFrame(c)
-    {
-    }
+        : mozilla::Runnable("nsComboboxControlFrame::RedisplayTextEvent"),
+          mControlFrame(c) {}
     void Revoke() { mControlFrame = nullptr; }
-  private:
-    nsComboboxControlFrame *mControlFrame;
+
+   private:
+    nsComboboxControlFrame* mControlFrame;
   };
 
   
@@ -279,19 +270,20 @@ protected:
   void HandleRedisplayTextEvent();
   void ActuallyDisplayText(bool aNotify);
 
-private:
+ private:
   
   
   nsPoint GetCSSTransformTranslation();
 
-protected:
-  nsFrameList              mPopupFrames;             
-  RefPtr<nsTextNode>       mDisplayContent;          
-  RefPtr<Element>     mButtonContent;                
-  nsContainerFrame*        mDisplayFrame;            
-  nsIFrame*                mButtonFrame;             
-  nsIFrame*                mDropdownFrame;           
-  nsListControlFrame*      mListControlFrame;        
+ protected:
+  nsFrameList mPopupFrames;            
+  RefPtr<nsTextNode> mDisplayContent;  
+                                       
+  RefPtr<Element> mButtonContent;      
+  nsContainerFrame* mDisplayFrame;     
+  nsIFrame* mButtonFrame;              
+  nsIFrame* mDropdownFrame;            
+  nsListControlFrame* mListControlFrame;  
 
   
   
@@ -299,9 +291,9 @@ protected:
 
   nsRevocableEventPtr<RedisplayTextEvent> mRedisplayTextEvent;
 
-  int32_t               mRecentSelectedIndex;
-  int32_t               mDisplayedIndex;
-  nsString              mDisplayedOptionTextOrPreview;
+  int32_t mRecentSelectedIndex;
+  int32_t mDisplayedIndex;
+  nsString mDisplayedOptionTextOrPreview;
 
   
   
@@ -312,16 +304,16 @@ protected:
   
   
   
-  nscoord               mLastDropDownBeforeScreenBCoord;
-  nscoord               mLastDropDownAfterScreenBCoord;
+  nscoord mLastDropDownBeforeScreenBCoord;
+  nscoord mLastDropDownAfterScreenBCoord;
   
-  bool                  mDroppedDown;
+  bool mDroppedDown;
   
-  bool                  mInRedisplayText;
+  bool mInRedisplayText;
   
-  bool                  mDelayedShowDropDown;
+  bool mDelayedShowDropDown;
 
-  bool                  mIsOpenInParentProcess;
+  bool mIsOpenInParentProcess;
 
   
   

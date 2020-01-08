@@ -21,25 +21,20 @@ namespace dom {
 class GlobalObject;
 struct KeyboardEventInit;
 
-class FuzzingFunctions final
-{
-public:
-  static void
-  GarbageCollect(const GlobalObject&);
+class FuzzingFunctions final {
+ public:
+  static void GarbageCollect(const GlobalObject&);
 
-  static void
-  CycleCollect(const GlobalObject&);
+  static void CycleCollect(const GlobalObject&);
 
-  static void
-  EnableAccessibility(const GlobalObject&, ErrorResult& aRv);
+  static void EnableAccessibility(const GlobalObject&, ErrorResult& aRv);
 
-  static void
-  SynthesizeKeyboardEvents(const GlobalObject& aGlobalObject,
-                           const nsAString& aKeyValue,
-                           const KeyboardEventInit& aKeyboardEvent,
-                           ErrorResult& aRv);
+  static void SynthesizeKeyboardEvents(const GlobalObject& aGlobalObject,
+                                       const nsAString& aKeyValue,
+                                       const KeyboardEventInit& aKeyboardEvent,
+                                       ErrorResult& aRv);
 
-private:
+ private:
   
 
 
@@ -51,9 +46,9 @@ private:
 
 
 
-  static Modifiers
-  ActivateModifiers(TextInputProcessor* aTextInputProcessor,
-                    Modifiers aModifiers, nsIWidget* aWidget, ErrorResult& aRv);
+  static Modifiers ActivateModifiers(TextInputProcessor* aTextInputProcessor,
+                                     Modifiers aModifiers, nsIWidget* aWidget,
+                                     ErrorResult& aRv);
 
   
 
@@ -66,13 +61,12 @@ private:
 
 
 
-  static Modifiers
-  InactivateModifiers(TextInputProcessor* aTextInputProcessor,
-                      Modifiers aModifiers, nsIWidget* aWidget,
-                      ErrorResult& aRv);
+  static Modifiers InactivateModifiers(TextInputProcessor* aTextInputProcessor,
+                                       Modifiers aModifiers, nsIWidget* aWidget,
+                                       ErrorResult& aRv);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

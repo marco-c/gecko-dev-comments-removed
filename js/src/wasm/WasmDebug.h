@@ -37,107 +37,109 @@ struct MetadataTier;
 
 
 
-struct ExprLoc
-{
-    uint32_t lineno;
-    uint32_t column;
-    uint32_t offset;
-    ExprLoc() : lineno(0), column(0), offset(0) {}
-    ExprLoc(uint32_t lineno_, uint32_t column_, uint32_t offset_)
-      : lineno(lineno_), column(column_), offset(offset_)
-    {}
+struct ExprLoc {
+  uint32_t lineno;
+  uint32_t column;
+  uint32_t offset;
+  ExprLoc() : lineno(0), column(0), offset(0) {}
+  ExprLoc(uint32_t lineno_, uint32_t column_, uint32_t offset_)
+      : lineno(lineno_), column(column_), offset(offset_) {}
 };
 
-typedef HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy> StepModeCounters;
-typedef HashMap<uint32_t, WasmBreakpointSite*, DefaultHasher<uint32_t>, SystemAllocPolicy>
+typedef HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy>
+    StepModeCounters;
+typedef HashMap<uint32_t, WasmBreakpointSite*, DefaultHasher<uint32_t>,
+                SystemAllocPolicy>
     WasmBreakpointSiteMap;
 
-class DebugState
-{
-    const SharedCode         code_;
-    const SharedModule       module_;
+class DebugState {
+  const SharedCode code_;
+  const SharedModule module_;
 
-    
-    
-    
+  
+  
+  
 
-    bool                     enterFrameTrapsEnabled_;
-    uint32_t                 enterAndLeaveFrameTrapsCounter_;
-    WasmBreakpointSiteMap    breakpointSites_;
-    StepModeCounters         stepModeCounters_;
+  bool enterFrameTrapsEnabled_;
+  uint32_t enterAndLeaveFrameTrapsCounter_;
+  WasmBreakpointSiteMap breakpointSites_;
+  StepModeCounters stepModeCounters_;
 
-    void toggleDebugTrap(uint32_t offset, bool enabled);
+  void toggleDebugTrap(uint32_t offset, bool enabled);
 
-  public:
-    DebugState(const Code& code, const Module& module);
+ public:
+  DebugState(const Code& code, const Module& module);
 
-    const Bytes& bytecode() const { return module_->debugBytecode(); }
+  const Bytes& bytecode() const { return module_->debugBytecode(); }
 
-    bool getLineOffsets(JSContext* cx, size_t lineno, Vector<uint32_t>* offsets);
-    bool getAllColumnOffsets(JSContext* cx, Vector<ExprLoc>* offsets);
-    bool getOffsetLocation(uint32_t offset, size_t* lineno, size_t* column);
+  bool getLineOffsets(JSContext* cx, size_t lineno, Vector<uint32_t>* offsets);
+  bool getAllColumnOffsets(JSContext* cx, Vector<ExprLoc>* offsets);
+  bool getOffsetLocation(uint32_t offset, size_t* lineno, size_t* column);
 
-    
-    
-    
+  
+  
+  
 
-    void adjustEnterAndLeaveFrameTrapsState(JSContext* cx, bool enabled);
-    void ensureEnterFrameTrapsState(JSContext* cx, bool enabled);
-    bool enterFrameTrapsEnabled() const { return enterFrameTrapsEnabled_; }
+  void adjustEnterAndLeaveFrameTrapsState(JSContext* cx, bool enabled);
+  void ensureEnterFrameTrapsState(JSContext* cx, bool enabled);
+  bool enterFrameTrapsEnabled() const { return enterFrameTrapsEnabled_; }
 
-    
-    
+  
+  
 
-    bool hasBreakpointTrapAtOffset(uint32_t offset);
-    void toggleBreakpointTrap(JSRuntime* rt, uint32_t offset, bool enabled);
-    WasmBreakpointSite* getOrCreateBreakpointSite(JSContext* cx, uint32_t offset);
-    bool hasBreakpointSite(uint32_t offset);
-    void destroyBreakpointSite(FreeOp* fop, uint32_t offset);
-    void clearBreakpointsIn(FreeOp* fp, WasmInstanceObject* instance, js::Debugger* dbg,
-                            JSObject* handler);
-    void clearAllBreakpoints(FreeOp* fp, WasmInstanceObject* instance);
+  bool hasBreakpointTrapAtOffset(uint32_t offset);
+  void toggleBreakpointTrap(JSRuntime* rt, uint32_t offset, bool enabled);
+  WasmBreakpointSite* getOrCreateBreakpointSite(JSContext* cx, uint32_t offset);
+  bool hasBreakpointSite(uint32_t offset);
+  void destroyBreakpointSite(FreeOp* fop, uint32_t offset);
+  void clearBreakpointsIn(FreeOp* fp, WasmInstanceObject* instance,
+                          js::Debugger* dbg, JSObject* handler);
+  void clearAllBreakpoints(FreeOp* fp, WasmInstanceObject* instance);
 
-    
-    
+  
+  
 
-    bool stepModeEnabled(uint32_t funcIndex) const;
-    bool incrementStepModeCount(JSContext* cx, uint32_t funcIndex);
-    bool decrementStepModeCount(FreeOp* fop, uint32_t funcIndex);
+  bool stepModeEnabled(uint32_t funcIndex) const;
+  bool incrementStepModeCount(JSContext* cx, uint32_t funcIndex);
+  bool decrementStepModeCount(FreeOp* fop, uint32_t funcIndex);
 
-    
+  
 
-    bool debugGetLocalTypes(uint32_t funcIndex, ValTypeVector* locals, size_t* argsLength);
-    ExprType debugGetResultType(uint32_t funcIndex);
-    bool getGlobal(Instance& instance, uint32_t globalIndex, MutableHandleValue vp);
+  bool debugGetLocalTypes(uint32_t funcIndex, ValTypeVector* locals,
+                          size_t* argsLength);
+  ExprType debugGetResultType(uint32_t funcIndex);
+  bool getGlobal(Instance& instance, uint32_t globalIndex,
+                 MutableHandleValue vp);
 
-    
+  
 
-    bool getSourceMappingURL(JSContext* cx, MutableHandleString result) const;
+  bool getSourceMappingURL(JSContext* cx, MutableHandleString result) const;
 
-    
+  
 
-    const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
-    const Metadata& metadata() const { return code_->metadata(); }
-    const CodeRangeVector& codeRanges(Tier t) const { return metadata(t).codeRanges; }
-    const CallSiteVector& callSites(Tier t) const { return metadata(t).callSites; }
+  const MetadataTier& metadata(Tier t) const { return code_->metadata(t); }
+  const Metadata& metadata() const { return code_->metadata(); }
+  const CodeRangeVector& codeRanges(Tier t) const {
+    return metadata(t).codeRanges;
+  }
+  const CallSiteVector& callSites(Tier t) const {
+    return metadata(t).callSites;
+  }
 
-    uint32_t funcToCodeRangeIndex(uint32_t funcIndex) const {
-        return metadata(Tier::Debug).funcToCodeRange[funcIndex];
-    }
+  uint32_t funcToCodeRangeIndex(uint32_t funcIndex) const {
+    return metadata(Tier::Debug).funcToCodeRange[funcIndex];
+  }
 
-    
+  
 
-    void addSizeOfMisc(MallocSizeOf mallocSizeOf,
-                       Metadata::SeenSet* seenMetadata,
-                       ShareableBytes::SeenSet* seenBytes,
-                       Code::SeenSet* seenCode,
-                       size_t* code,
-                       size_t* data) const;
+  void addSizeOfMisc(MallocSizeOf mallocSizeOf, Metadata::SeenSet* seenMetadata,
+                     ShareableBytes::SeenSet* seenBytes,
+                     Code::SeenSet* seenCode, size_t* code, size_t* data) const;
 };
 
 typedef UniquePtr<DebugState> UniqueDebugState;
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -13,7 +13,7 @@ namespace mozilla {
 namespace dom {
 class ContentParent;
 class TabParent;
-} 
+}  
 
 
 
@@ -28,9 +28,8 @@ class TabParent;
 
 
 
-class ProcessPriorityManager final
-{
-public:
+class ProcessPriorityManager final {
+ public:
   
 
 
@@ -71,11 +70,11 @@ public:
 
   static void TabActivityChanged(dom::TabParent* aTabParent, bool aIsActive);
 
-private:
+ private:
   ProcessPriorityManager();
   DISALLOW_EVIL_CONSTRUCTORS(ProcessPriorityManager);
 };
 
-} 
+}  
 
 #endif

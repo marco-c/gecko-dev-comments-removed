@@ -57,48 +57,38 @@ bool IsIPCWrite(int aFd, const struct stat& aBuf);
 
 
 
-class MacIOAutoObservation : public IOInterposeObserver::Observation
-{
-public:
+class MacIOAutoObservation : public IOInterposeObserver::Observation {
+ public:
   MacIOAutoObservation(IOInterposeObserver::Operation aOp, int aFd)
-    : IOInterposeObserver::Observation(aOp, sReference, sIsEnabled &&
-                                       !IsDebugFile(aFd))
-    , mFd(aFd)
-    , mHasQueriedFilename(false)
-  {
-  }
+      : IOInterposeObserver::Observation(aOp, sReference,
+                                         sIsEnabled && !IsDebugFile(aFd)),
+        mFd(aFd),
+        mHasQueriedFilename(false) {}
 
   MacIOAutoObservation(IOInterposeObserver::Operation aOp, int aFd,
                        const void* aBuf, size_t aCount)
-    : IOInterposeObserver::Observation(aOp, sReference, sIsEnabled &&
-                                       !IsDebugFile(aFd) &&
-                                       IsValidWrite(aFd, aBuf, aCount))
-    , mFd(aFd)
-    , mHasQueriedFilename(false)
-  {
-  }
+      : IOInterposeObserver::Observation(
+            aOp, sReference,
+            sIsEnabled && !IsDebugFile(aFd) && IsValidWrite(aFd, aBuf, aCount)),
+        mFd(aFd),
+        mHasQueriedFilename(false) {}
 
   
   void Filename(nsAString& aFilename) override;
 
-  ~MacIOAutoObservation()
-  {
-    Report();
-  }
+  ~MacIOAutoObservation() { Report(); }
 
-private:
-  int                 mFd;
-  bool                mHasQueriedFilename;
-  nsString            mFilename;
-  static const char*  sReference;
+ private:
+  int mFd;
+  bool mHasQueriedFilename;
+  nsString mFilename;
+  static const char* sReference;
 };
 
 const char* MacIOAutoObservation::sReference = "PoisonIOInterposer";
 
 
-void
-MacIOAutoObservation::Filename(nsAString& aFilename)
-{
+void MacIOAutoObservation::Filename(nsAString& aFilename) {
   
   if (mHasQueriedFilename) {
     aFilename = mFilename;
@@ -120,9 +110,7 @@ MacIOAutoObservation::Filename(nsAString& aFilename)
 
 
 
-bool
-IsIPCWrite(int aFd, const struct stat& aBuf)
-{
+bool IsIPCWrite(int aFd, const struct stat& aBuf) {
   if ((aBuf.st_mode & S_IFMT) == S_IFIFO) {
     return true;
   }
@@ -134,16 +122,14 @@ IsIPCWrite(int aFd, const struct stat& aBuf)
   sockaddr_storage address;
   socklen_t len = sizeof(address);
   if (getsockname(aFd, (sockaddr*)&address, &len) != 0) {
-    return true; 
+    return true;  
   }
 
   return address.ss_family == AF_UNIX;
 }
 
 
-bool
-IsValidWrite(int aFd, const void* aWbuf, size_t aCount)
-{
+bool IsValidWrite(int aFd, const void* aWbuf, size_t aCount) {
   
   if (aCount == 0) {
     return false;
@@ -204,24 +190,20 @@ IsValidWrite(int aFd, const void* aWbuf, size_t aCount)
 
 
 
-struct FuncData
-{
-  const char* Name;      
-  const void* Wrapper;   
-  void* Function;        
-  void* Buffer;          
-                         
+struct FuncData {
+  const char* Name;     
+  const void* Wrapper;  
+  void* Function;       
+  void* Buffer;         
+                        
 };
 
 
 typedef ssize_t (*aio_write_t)(struct aiocb* aAioCbp);
 ssize_t wrap_aio_write(struct aiocb* aAioCbp);
-FuncData aio_write_data = { 0, (void*)wrap_aio_write, (void*)aio_write };
-ssize_t
-wrap_aio_write(struct aiocb* aAioCbp)
-{
-  MacIOAutoObservation timer(IOInterposeObserver::OpWrite,
-                             aAioCbp->aio_fildes);
+FuncData aio_write_data = {0, (void*)wrap_aio_write, (void*)aio_write};
+ssize_t wrap_aio_write(struct aiocb* aAioCbp) {
+  MacIOAutoObservation timer(IOInterposeObserver::OpWrite, aAioCbp->aio_fildes);
 
   aio_write_t old_write = (aio_write_t)aio_write_data.Buffer;
   return old_write(aAioCbp);
@@ -231,18 +213,17 @@ wrap_aio_write(struct aiocb* aAioCbp)
 
 typedef ssize_t (*pwrite_t)(int aFd, const void* buf, size_t aNumBytes,
                             off_t aOffset);
-template<FuncData& foo>
-ssize_t
-wrap_pwrite_temp(int aFd, const void* aBuf, size_t aNumBytes, off_t aOffset)
-{
+template <FuncData& foo>
+ssize_t wrap_pwrite_temp(int aFd, const void* aBuf, size_t aNumBytes,
+                         off_t aOffset) {
   MacIOAutoObservation timer(IOInterposeObserver::OpWrite, aFd);
   pwrite_t old_write = (pwrite_t)foo.Buffer;
   return old_write(aFd, aBuf, aNumBytes, aOffset);
 }
 
 
-#define DEFINE_PWRITE_DATA(X, NAME)                                        \
-FuncData X ## _data = { NAME, (void*) wrap_pwrite_temp<X ## _data> };      \
+#define DEFINE_PWRITE_DATA(X, NAME) \
+  FuncData X##_data = {NAME, (void*)wrap_pwrite_temp<X##_data>};
 
 
 DEFINE_PWRITE_DATA(pwrite, "pwrite")
@@ -252,12 +233,9 @@ DEFINE_PWRITE_DATA(pwrite_UNIX2003, "pwrite$UNIX2003");
 
 DEFINE_PWRITE_DATA(pwrite_NOCANCEL, "pwrite$NOCANCEL");
 
-
 typedef ssize_t (*writev_t)(int aFd, const struct iovec* aIov, int aIovCount);
-template<FuncData& foo>
-ssize_t
-wrap_writev_temp(int aFd, const struct iovec* aIov, int aIovCount)
-{
+template <FuncData& foo>
+ssize_t wrap_writev_temp(int aFd, const struct iovec* aIov, int aIovCount) {
   MacIOAutoObservation timer(IOInterposeObserver::OpWrite, aFd, nullptr,
                              aIovCount);
   writev_t old_write = (writev_t)foo.Buffer;
@@ -265,8 +243,8 @@ wrap_writev_temp(int aFd, const struct iovec* aIov, int aIovCount)
 }
 
 
-#define DEFINE_WRITEV_DATA(X, NAME)                                   \
-FuncData X ## _data = { NAME, (void*) wrap_writev_temp<X ## _data> }; \
+#define DEFINE_WRITEV_DATA(X, NAME) \
+  FuncData X##_data = {NAME, (void*)wrap_writev_temp<X##_data>};
 
 
 DEFINE_WRITEV_DATA(writev, "writev");
@@ -277,18 +255,16 @@ DEFINE_WRITEV_DATA(writev_UNIX2003, "writev$UNIX2003");
 DEFINE_WRITEV_DATA(writev_NOCANCEL, "writev$NOCANCEL");
 
 typedef ssize_t (*write_t)(int aFd, const void* aBuf, size_t aCount);
-template<FuncData& foo>
-ssize_t
-wrap_write_temp(int aFd, const void* aBuf, size_t aCount)
-{
+template <FuncData& foo>
+ssize_t wrap_write_temp(int aFd, const void* aBuf, size_t aCount) {
   MacIOAutoObservation timer(IOInterposeObserver::OpWrite, aFd, aBuf, aCount);
   write_t old_write = (write_t)foo.Buffer;
   return old_write(aFd, aBuf, aCount);
 }
 
 
-#define DEFINE_WRITE_DATA(X, NAME)                                   \
-FuncData X ## _data = { NAME, (void*) wrap_write_temp<X ## _data> }; \
+#define DEFINE_WRITE_DATA(X, NAME) \
+  FuncData X##_data = {NAME, (void*)wrap_write_temp<X##_data>};
 
 
 DEFINE_WRITE_DATA(write, "write");
@@ -298,36 +274,26 @@ DEFINE_WRITE_DATA(write_UNIX2003, "write$UNIX2003");
 
 DEFINE_WRITE_DATA(write_NOCANCEL, "write$NOCANCEL");
 
-FuncData* Functions[] = {
-  &aio_write_data,
+FuncData* Functions[] = {&aio_write_data,
 
-  &pwrite_data,
-  &pwrite_NOCANCEL_UNIX2003_data,
-  &pwrite_UNIX2003_data,
-  &pwrite_NOCANCEL_data,
+                         &pwrite_data,          &pwrite_NOCANCEL_UNIX2003_data,
+                         &pwrite_UNIX2003_data, &pwrite_NOCANCEL_data,
 
-  &write_data,
-  &write_NOCANCEL_UNIX2003_data,
-  &write_UNIX2003_data,
-  &write_NOCANCEL_data,
+                         &write_data,           &write_NOCANCEL_UNIX2003_data,
+                         &write_UNIX2003_data,  &write_NOCANCEL_data,
 
-  &writev_data,
-  &writev_NOCANCEL_UNIX2003_data,
-  &writev_UNIX2003_data,
-  &writev_NOCANCEL_data
-};
+                         &writev_data,          &writev_NOCANCEL_UNIX2003_data,
+                         &writev_UNIX2003_data, &writev_NOCANCEL_data};
 
 const int NumFunctions = ArrayLength(Functions);
 
-} 
+}  
 
 
 
 namespace mozilla {
 
-void
-InitPoisonIOInterposer()
-{
+void InitPoisonIOInterposer() {
   
   sIsEnabled = true;
 
@@ -358,24 +324,18 @@ InitPoisonIOInterposer()
     if (!d->Function) {
       continue;
     }
-    DebugOnly<mach_error_t> t = mach_override_ptr(d->Function, d->Wrapper,
-                                                  &d->Buffer);
+    DebugOnly<mach_error_t> t =
+        mach_override_ptr(d->Function, d->Wrapper, &d->Buffer);
     MOZ_ASSERT(t == err_none);
   }
 }
 
-void
-OnlyReportDirtyWrites()
-{
-  sOnlyReportDirtyWrites = true;
-}
+void OnlyReportDirtyWrites() { sOnlyReportDirtyWrites = true; }
 
-void
-ClearPoisonIOInterposer()
-{
+void ClearPoisonIOInterposer() {
   
   
   sIsEnabled = false;
 }
 
-} 
+}  

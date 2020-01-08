@@ -12,9 +12,8 @@
 namespace mozilla {
 namespace a11y {
 
-class DocAccessibleWrap : public DocAccessible
-{
-public:
+class DocAccessibleWrap : public DocAccessible {
+ public:
   DocAccessibleWrap(nsIDocument* aDocument, nsIPresShell* aPresShell);
   virtual ~DocAccessibleWrap();
 
@@ -23,8 +22,7 @@ public:
   
 
 
-  void AddID(uint32_t aID, AccessibleWrap* aAcc)
-  {
+  void AddID(uint32_t aID, AccessibleWrap* aAcc) {
     mIDToAccessibleMap.Put(aID, aAcc);
   }
   void RemoveID(uint32_t aID) { mIDToAccessibleMap.Remove(aID); }
@@ -40,7 +38,7 @@ public:
     eBatch_BoundsUpdate = 2,
   };
 
-protected:
+ protected:
   
 
 
@@ -48,7 +46,7 @@ protected:
 
   virtual void DoInitialUpdate() override;
 
-private:
+ private:
   void CacheViewport();
 
   void UpdateFocusPathBounds();
@@ -60,7 +58,7 @@ private:
   AccessibleHashtable mFocusPath;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

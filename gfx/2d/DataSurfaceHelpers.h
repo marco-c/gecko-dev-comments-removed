@@ -14,30 +14,24 @@
 namespace mozilla {
 namespace gfx {
 
-int32_t
-StrideForFormatAndWidth(SurfaceFormat aFormat, int32_t aWidth);
+int32_t StrideForFormatAndWidth(SurfaceFormat aFormat, int32_t aWidth);
 
 
 
 
 
 
-already_AddRefed<DataSourceSurface>
-CreateDataSourceSurfaceFromData(const IntSize& aSize,
-                                SurfaceFormat aFormat,
-                                const uint8_t* aData,
-                                int32_t aDataStride);
+already_AddRefed<DataSourceSurface> CreateDataSourceSurfaceFromData(
+    const IntSize& aSize, SurfaceFormat aFormat, const uint8_t* aData,
+    int32_t aDataStride);
 
 
 
 
 
-already_AddRefed<DataSourceSurface>
-CreateDataSourceSurfaceWithStrideFromData(const IntSize &aSize,
-                                          SurfaceFormat aFormat,
-                                          int32_t aStride,
-                                          const uint8_t* aData,
-                                          int32_t aDataStride);
+already_AddRefed<DataSourceSurface> CreateDataSourceSurfaceWithStrideFromData(
+    const IntSize& aSize, SurfaceFormat aFormat, int32_t aStride,
+    const uint8_t* aData, int32_t aDataStride);
 
 
 
@@ -45,15 +39,14 @@ CreateDataSourceSurfaceWithStrideFromData(const IntSize &aSize,
 
 
 
-void
-CopySurfaceDataToPackedArray(uint8_t* aSrc, uint8_t* aDst, IntSize aSrcSize,
-                             int32_t aSrcStride, int32_t aBytesPerPixel);
+void CopySurfaceDataToPackedArray(uint8_t* aSrc, uint8_t* aDst,
+                                  IntSize aSrcSize, int32_t aSrcStride,
+                                  int32_t aBytesPerPixel);
 
 
 
 
-UniquePtr<uint8_t[]>
-SurfaceToPackedBGRA(DataSourceSurface *aSurface);
+UniquePtr<uint8_t[]> SurfaceToPackedBGRA(DataSourceSurface* aSurface);
 
 
 
@@ -65,8 +58,7 @@ SurfaceToPackedBGRA(DataSourceSurface *aSurface);
 
 
 
-uint8_t*
-SurfaceToPackedBGR(DataSourceSurface *aSurface);
+uint8_t* SurfaceToPackedBGR(DataSourceSurface* aSurface);
 
 
 
@@ -74,8 +66,7 @@ SurfaceToPackedBGR(DataSourceSurface *aSurface);
 
 
 
-void
-ClearDataSourceSurface(DataSourceSurface *aSurface);
+void ClearDataSourceSurface(DataSourceSurface* aSurface);
 
 
 
@@ -88,10 +79,8 @@ ClearDataSourceSurface(DataSourceSurface *aSurface);
 
 
 
-size_t
-BufferSizeFromStrideAndHeight(int32_t aStride,
-                              int32_t aHeight,
-                              int32_t aExtraBytes = 0);
+size_t BufferSizeFromStrideAndHeight(int32_t aStride, int32_t aHeight,
+                                     int32_t aExtraBytes = 0);
 
 
 
@@ -104,18 +93,14 @@ BufferSizeFromStrideAndHeight(int32_t aStride,
 
 
 
-size_t
-BufferSizeFromDimensions(int32_t aWidth,
-                         int32_t aHeight,
-                         int32_t aDepth,
-                         int32_t aExtraBytes = 0);
+size_t BufferSizeFromDimensions(int32_t aWidth, int32_t aHeight, int32_t aDepth,
+                                int32_t aExtraBytes = 0);
 
 
 
 
-bool
-CopyRect(DataSourceSurface* aSrc, DataSourceSurface* aDest,
-         IntRect aSrcRect, IntPoint aDestPoint);
+bool CopyRect(DataSourceSurface* aSrc, DataSourceSurface* aDest,
+              IntRect aSrcRect, IntPoint aDestPoint);
 
 
 
@@ -123,26 +108,24 @@ CopyRect(DataSourceSurface* aSrc, DataSourceSurface* aDest,
 
 
 
-already_AddRefed<DataSourceSurface>
-CreateDataSourceSurfaceByCloning(DataSourceSurface* aSource);
+already_AddRefed<DataSourceSurface> CreateDataSourceSurfaceByCloning(
+    DataSourceSurface* aSource);
 
 
 
 
-uint8_t*
-DataAtOffset(DataSourceSurface* aSurface,
-             const DataSourceSurface::MappedSurface* aMap,
-             IntPoint aPoint);
+uint8_t* DataAtOffset(DataSourceSurface* aSurface,
+                      const DataSourceSurface::MappedSurface* aMap,
+                      IntPoint aPoint);
 
 
 
 
 
 
-bool
-SurfaceContainsPoint(SourceSurface* aSurface, const IntPoint& aPoint);
+bool SurfaceContainsPoint(SourceSurface* aSurface, const IntPoint& aPoint);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

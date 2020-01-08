@@ -25,17 +25,18 @@
 #include "mozilla/Attributes.h"
 
 nsIFrame* NS_NewMenuFrame(nsIPresShell* aPresShell, mozilla::ComputedStyle*);
-nsIFrame* NS_NewMenuItemFrame(nsIPresShell* aPresShell, mozilla::ComputedStyle*);
+nsIFrame* NS_NewMenuItemFrame(nsIPresShell* aPresShell,
+                              mozilla::ComputedStyle*);
 
 class nsIContent;
 
 namespace mozilla {
 namespace dom {
 class Element;
-} 
-} 
+}  
+}  
 
-#define NS_STATE_ACCELTEXT_IS_DERIVED  NS_STATE_BOX_CHILD_RESERVED
+#define NS_STATE_ACCELTEXT_IS_DERIVED NS_STATE_BOX_CHILD_RESERVED
 
 
 enum nsMenuType {
@@ -57,10 +58,8 @@ class nsMenuFrame;
 
 
 
-class nsMenuTimerMediator final : public nsITimerCallback,
-                                  public nsINamed
-{
-public:
+class nsMenuTimerMediator final : public nsITimerCallback, public nsINamed {
+ public:
   explicit nsMenuTimerMediator(nsMenuFrame* aFrame);
 
   NS_DECL_ISUPPORTS
@@ -69,17 +68,15 @@ public:
 
   void ClearFrame();
 
-private:
+ private:
   ~nsMenuTimerMediator();
 
   
   nsMenuFrame* mFrame;
 };
 
-class nsMenuFrame final : public nsBoxFrame
-                        , public nsIReflowCallback
-{
-public:
+class nsMenuFrame final : public nsBoxFrame, public nsIReflowCallback {
+ public:
   explicit nsMenuFrame(ComputedStyle* aStyle);
 
   NS_DECL_QUERYFRAME
@@ -89,35 +86,33 @@ public:
   virtual nsSize GetXULMinSize(nsBoxLayoutState& aBoxLayoutState) override;
   virtual nsSize GetXULPrefSize(nsBoxLayoutState& aBoxLayoutState) override;
 
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 
   
   
   
   virtual const nsFrameList& GetChildList(ChildListID aList) const override;
   virtual void GetChildLists(nsTArray<ChildList>* aLists) const override;
-  virtual void DestroyFrom(nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
 
   
-  virtual void BuildDisplayListForChildren(nsDisplayListBuilder*   aBuilder,
-                                           const nsDisplayListSet& aLists) override;
+  virtual void BuildDisplayListForChildren(
+      nsDisplayListBuilder* aBuilder, const nsDisplayListSet& aLists) override;
 
   
   virtual nsresult HandleEvent(nsPresContext* aPresContext,
                                mozilla::WidgetGUIEvent* aEvent,
                                nsEventStatus* aEventStatus) override;
 
-  virtual void SetInitialChildList(ChildListID  aListID,
+  virtual void SetInitialChildList(ChildListID aListID,
                                    nsFrameList& aChildList) override;
-  virtual void AppendFrames(ChildListID     aListID,
-                            nsFrameList&    aFrameList) override;
-  virtual void InsertFrames(ChildListID     aListID,
-                            nsIFrame*       aPrevFrame,
-                            nsFrameList&    aFrameList) override;
-  virtual void RemoveFrame(ChildListID     aListID,
-                           nsIFrame*       aOldFrame) override;
+  virtual void AppendFrames(ChildListID aListID,
+                            nsFrameList& aFrameList) override;
+  virtual void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
+                            nsFrameList& aFrameList) override;
+  virtual void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override;
 
   NS_IMETHOD SelectMenu(bool aActivateFlag);
 
@@ -157,21 +152,17 @@ public:
   
 
 
-  bool HasPopup() const
-  {
+  bool HasPopup() const {
     return (GetStateBits() & NS_STATE_MENU_HAS_POPUP_LIST) != 0;
   }
 
-
   
 
-  bool IsOnMenuBar() const
-  {
+  bool IsOnMenuBar() const {
     nsMenuParent* menuParent = GetMenuParent();
     return menuParent && menuParent->IsMenuBar();
   }
-  bool IsOnActiveMenuBar() const
-  {
+  bool IsOnActiveMenuBar() const {
     nsMenuParent* menuParent = GetMenuParent();
     return menuParent && menuParent->IsMenuBar() && menuParent->IsActive();
   }
@@ -193,17 +184,15 @@ public:
 
   
   
-  bool IsOnMenu() const
-  {
+  bool IsOnMenu() const {
     nsMenuParent* menuParent = GetMenuParent();
     return menuParent && menuParent->IsMenu();
   }
   void SetIsMenu(bool aIsMenu) { mIsMenu = aIsMenu; }
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override
-  {
-      return MakeFrameName(NS_LITERAL_STRING("Menu"), aResult);
+  virtual nsresult GetFrameName(nsAString& aResult) const override {
+    return MakeFrameName(NS_LITERAL_STRING("Menu"), aResult);
   }
 #endif
 
@@ -213,7 +202,7 @@ public:
   virtual bool ReflowFinished() override;
   virtual void ReflowCallbackCanceled() override;
 
-protected:
+ protected:
   friend class nsMenuTimerMediator;
   friend class nsASyncMenuInitialization;
   friend class nsMenuAttributeChangedEvent;
@@ -246,13 +235,12 @@ protected:
   void BuildAcceleratorText(bool aNotify);
 
   
-  void Execute(mozilla::WidgetGUIEvent *aEvent);
+  void Execute(mozilla::WidgetGUIEvent* aEvent);
 
   
-  virtual nsresult AttributeChanged(int32_t aNameSpaceID,
-                                    nsAtom* aAttribute,
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                     int32_t aModType) override;
-  virtual ~nsMenuFrame() { }
+  virtual ~nsMenuFrame() {}
 
   bool SizeToPopup(nsBoxLayoutState& aState, nsSize& aSize);
 
@@ -263,12 +251,13 @@ protected:
                               bool aFlipChecked);
   void PassMenuCommandEventToPopupManager();
 
-protected:
+ protected:
   nsresult Notify(nsITimer* aTimer);
 
-  bool mIsMenu; 
-  bool mChecked;              
-  bool mIgnoreAccelTextChange; 
+  bool mIsMenu;   
+  bool mChecked;  
+  bool mIgnoreAccelTextChange;  
+                                
   bool mReflowCallbackPosted;
   nsMenuType mType;
 
@@ -278,11 +267,11 @@ protected:
   nsCOMPtr<nsITimer> mOpenTimer;
   nsCOMPtr<nsITimer> mBlinkTimer;
 
-  uint8_t mBlinkState; 
+  uint8_t mBlinkState;  
   RefPtr<nsXULMenuCommandEvent> mDelayedMenuCommandEvent;
 
   nsString mGroupName;
 
-}; 
+};  
 
 #endif

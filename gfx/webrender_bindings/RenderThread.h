@@ -7,9 +7,9 @@
 #ifndef MOZILLA_LAYERS_RENDERTHREAD_H
 #define MOZILLA_LAYERS_RENDERTHREAD_H
 
-#include "base/basictypes.h"            
-#include "base/platform_thread.h"       
-#include "base/thread.h"                
+#include "base/basictypes.h"       
+#include "base/platform_thread.h"  
+#include "base/thread.h"           
 #include "base/message_loop.h"
 #include "nsISupportsImpl.h"
 #include "ThreadSafeRefcountingWithMainThreadDestruction.h"
@@ -36,50 +36,52 @@ class RenderTextureHost;
 class RenderThread;
 
 
+
 class WebRenderThreadPool {
-public:
+ public:
   WebRenderThreadPool();
 
   ~WebRenderThreadPool();
 
   wr::WrThreadPool* Raw() { return mThreadPool; }
 
-protected:
+ protected:
   wr::WrThreadPool* mThreadPool;
 };
 
 class WebRenderProgramCache {
-public:
+ public:
   explicit WebRenderProgramCache(wr::WrThreadPool* aThreadPool);
 
   ~WebRenderProgramCache();
 
   wr::WrProgramCache* Raw() { return mProgramCache; }
 
-protected:
+ protected:
   wr::WrProgramCache* mProgramCache;
 };
 
 class WebRenderShaders {
-public:
+ public:
   WebRenderShaders(gl::GLContext* gl, WebRenderProgramCache* programCache);
   ~WebRenderShaders();
 
   wr::WrShaders* RawShaders() { return mShaders; }
 
-protected:
+ protected:
   RefPtr<gl::GLContext> mGL;
   wr::WrShaders* mShaders;
 };
 
 class WebRenderPipelineInfo {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WebRenderPipelineInfo);
-public:
+
+ public:
   explicit WebRenderPipelineInfo(wr::WrPipelineInfo aPipelineInfo);
 
   const wr::WrPipelineInfo& Raw() { return mPipelineInfo; }
 
-protected:
+ protected:
   ~WebRenderPipelineInfo();
 
   const wr::WrPipelineInfo mPipelineInfo;
@@ -89,9 +91,8 @@ protected:
 
 
 
-class RendererEvent
-{
-public:
+class RendererEvent {
+ public:
   virtual ~RendererEvent() {}
   virtual void Run(RenderThread& aRenderThread, wr::WindowId aWindow) = 0;
 };
@@ -113,11 +114,11 @@ public:
 
 
 
-class RenderThread final
-{
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(RenderThread)
+class RenderThread final {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(
+      RenderThread)
 
-public:
+ public:
   
   static RenderThread* Get();
 
@@ -139,7 +140,8 @@ public:
   
   
   
-  static RefPtr<MemoryReportPromise> AccumulateMemoryReport(MemoryReport aInitial);
+  static RefPtr<MemoryReportPromise> AccumulateMemoryReport(
+      MemoryReport aInitial);
 
   
   void AddRenderer(wr::WindowId aWindowId, UniquePtr<RendererOGL> aRenderer);
@@ -159,16 +161,15 @@ public:
   void WakeUp(wr::WindowId aWindowId);
 
   
-  void PipelineSizeChanged(wr::WindowId aWindowId, uint64_t aPipelineId, float aWidth, float aHeight);
+  void PipelineSizeChanged(wr::WindowId aWindowId, uint64_t aPipelineId,
+                           float aWidth, float aHeight);
 
   
   void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aCallBack);
 
   
-  void UpdateAndRender(wr::WindowId aWindowId,
-                       const TimeStamp& aStartTime,
-                       bool aRender,
-                       const Maybe<gfx::IntSize>& aReadbackSize,
+  void UpdateAndRender(wr::WindowId aWindowId, const TimeStamp& aStartTime,
+                       bool aRender, const Maybe<gfx::IntSize>& aReadbackSize,
                        const Maybe<Range<uint8_t>>& aReadbackBuffer,
                        bool aHadSlowFrame);
 
@@ -176,13 +177,15 @@ public:
   bool Resume(wr::WindowId aWindowId);
 
   
-  void RegisterExternalImage(uint64_t aExternalImageId, already_AddRefed<RenderTextureHost> aTexture);
+  void RegisterExternalImage(uint64_t aExternalImageId,
+                             already_AddRefed<RenderTextureHost> aTexture);
 
   
   void UnregisterExternalImage(uint64_t aExternalImageId);
 
   
-  void UpdateRenderTextureHost(uint64_t aSrcExternalImageId, uint64_t aWrappedExternalImageId);
+  void UpdateRenderTextureHost(uint64_t aSrcExternalImageId,
+                               uint64_t aWrappedExternalImageId);
 
   
   void UnregisterExternalImageDuringShutdown(uint64_t aExternalImageId);
@@ -197,7 +200,8 @@ public:
   
   bool TooManyPendingFrames(wr::WindowId aWindowId);
   
-  void IncPendingFrameCount(wr::WindowId aWindowId, const TimeStamp& aStartTime);
+  void IncPendingFrameCount(wr::WindowId aWindowId,
+                            const TimeStamp& aStartTime);
   
   void DecPendingFrameCount(wr::WindowId aWindowId);
   
@@ -230,14 +234,15 @@ public:
 
   size_t RendererCount();
 
-private:
+ private:
   explicit RenderThread(base::Thread* aThread);
 
   void DeferredRenderTextureHostDestroy();
   void ShutDownTask(layers::SynchronousTask* aTask);
   void InitDeviceTask();
 
-  void DoAccumulateMemoryReport(MemoryReport, const RefPtr<MemoryReportPromise::Private>&);
+  void DoAccumulateMemoryReport(MemoryReport,
+                                const RefPtr<MemoryReportPromise::Private>&);
 
   ~RenderThread();
 
@@ -272,13 +277,14 @@ private:
   
   
   
+  
   std::list<RefPtr<RenderTextureHost>> mRenderTexturesDeferred;
   bool mHasShutdown;
 
   bool mHandlingDeviceReset;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

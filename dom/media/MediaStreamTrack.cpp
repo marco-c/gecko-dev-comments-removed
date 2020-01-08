@@ -368,7 +368,7 @@ already_AddRefed<Promise> MediaStreamTrack::ApplyConstraints(
           [this, self, promise, aConstraints](bool aDummy) {
             nsPIDOMWindowInner* window = mOwningStream->GetParentObject();
             if (!window || !window->IsCurrentInnerWindow()) {
-               return;  
+              return;  
             }
             mConstraints = aConstraints;
             promise->MaybeResolve(false);
@@ -376,7 +376,7 @@ already_AddRefed<Promise> MediaStreamTrack::ApplyConstraints(
           [this, self, promise](const RefPtr<MediaMgrError>& aError) {
             nsPIDOMWindowInner* window = mOwningStream->GetParentObject();
             if (!window || !window->IsCurrentInnerWindow()) {
-               return;  
+              return;  
             }
             promise->MaybeReject(MakeRefPtr<MediaStreamError>(window, *aError));
           });

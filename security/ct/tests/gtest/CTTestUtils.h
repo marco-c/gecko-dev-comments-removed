@@ -14,7 +14,8 @@
 #include "seccomon.h"
 #include "SignedCertificateTimestamp.h"
 
-namespace mozilla { namespace ct {
+namespace mozilla {
+namespace ct {
 
 Buffer HexToBytes(const char* hexData);
 
@@ -120,11 +121,9 @@ void ExtractEmbeddedSCTList(const Buffer& cert, Buffer& result);
 
 
 
-void ExtractSCTListFromOCSPResponse(pkix::Input cert,
-                                    pkix::Input issuerSPKI,
+void ExtractSCTListFromOCSPResponse(pkix::Input cert, pkix::Input issuerSPKI,
                                     pkix::Input encodedResponse,
-                                    pkix::Time time,
-                                    Buffer& result);
+                                    pkix::Time time, Buffer& result);
 
 
 pkix::Input InputForBuffer(const Buffer& buffer);
@@ -132,6 +131,7 @@ pkix::Input InputForBuffer(const Buffer& buffer);
 
 pkix::Input InputForSECItem(const SECItem& item);
 
-} } 
+}  
+}  
 
 #endif  

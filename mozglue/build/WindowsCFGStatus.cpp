@@ -14,28 +14,120 @@
 
 
 
+
 jmp_buf env;
 
-#pragma optimize("", off )
+#pragma optimize("", off)
 void not_entry_point() {
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
-  __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop(); __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
+  __nop();
 
   longjmp(env, 1);
   return;
 }
-#pragma optimize("", on )
+#pragma optimize("", on)
 
 typedef void (*fn_ptr)();
 
@@ -56,9 +148,7 @@ typedef void (*fn_ptr)();
 
 
 
-MFBT_API bool
-CFG_DisabledOrCrash()
-{
+MFBT_API bool CFG_DisabledOrCrash() {
   
   
   int val = setjmp(env);

@@ -22,55 +22,52 @@ class nsILoadContext;
 namespace mozilla {
 namespace dom {
 class Selection;
-} 
-} 
+}  
+}  
 
-class nsCopySupport
-{
+class nsCopySupport {
   
-  public:
-    static nsresult ClearSelectionCache();
+ public:
+  static nsresult ClearSelectionCache();
   static nsresult HTMLCopy(mozilla::dom::Selection* aSel, nsIDocument* aDoc,
                            int16_t aClipboardID, bool aWithRubyAnnotation);
 
-    
-    
-    
-    static nsresult GetContents(const nsACString& aMimeType, uint32_t aFlags,
-                                mozilla::dom::Selection* aSel,
-                                nsIDocument *aDoc, nsAString& outdata);
+  
+  
+  
+  static nsresult GetContents(const nsACString& aMimeType, uint32_t aFlags,
+                              mozilla::dom::Selection* aSel, nsIDocument* aDoc,
+                              nsAString& outdata);
 
-    static nsresult ImageCopy(nsIImageLoadingContent* aImageElement,
-                              nsILoadContext* aLoadContext,
-                              int32_t aCopyFlags);
+  static nsresult ImageCopy(nsIImageLoadingContent* aImageElement,
+                            nsILoadContext* aLoadContext, int32_t aCopyFlags);
 
-    
-    
-  static nsresult GetTransferableForSelection(mozilla::dom::Selection* aSelection,
-                                              nsIDocument* aDocument,
-                                              nsITransferable** aTransferable);
+  
+  
+  static nsresult GetTransferableForSelection(
+      mozilla::dom::Selection* aSelection, nsIDocument* aDocument,
+      nsITransferable** aTransferable);
 
-    
-    MOZ_CAN_RUN_SCRIPT_BOUNDARY
-    static nsresult GetTransferableForNode(nsINode* aNode,
-                                           nsIDocument* aDoc,
-                                           nsITransferable** aTransferable);
-    
+  
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  static nsresult GetTransferableForNode(nsINode* aNode, nsIDocument* aDoc,
+                                         nsITransferable** aTransferable);
+  
 
 
 
 
 
-    static nsIContent* GetSelectionForCopy(nsIDocument* aDocument,
-                                           mozilla::dom::Selection** aSelection);
+  static nsIContent* GetSelectionForCopy(nsIDocument* aDocument,
+                                         mozilla::dom::Selection** aSelection);
 
-    
+  
 
 
 
-    static bool CanCopy(nsIDocument* aDocument);
+  static bool CanCopy(nsIDocument* aDocument);
 
-    
+  
 
 
 
@@ -96,11 +93,11 @@ class nsCopySupport
 
 
 
-    static bool FireClipboardEvent(mozilla::EventMessage aEventMessage,
-                                   int32_t aClipboardType,
-                                   nsIPresShell* aPresShell,
-                                   mozilla::dom::Selection* aSelection,
-                                   bool* aActionTaken = nullptr);
+  static bool FireClipboardEvent(mozilla::EventMessage aEventMessage,
+                                 int32_t aClipboardType,
+                                 nsIPresShell* aPresShell,
+                                 mozilla::dom::Selection* aSelection,
+                                 bool* aActionTaken = nullptr);
 };
 
 #endif

@@ -16,41 +16,41 @@ struct nsStyleText;
 
 #define BIG_TEXT_NODE_SIZE 4096
 
-#define CH_NBSP   160
-#define CH_SHY    173
-#define CH_CJKSP  12288 // U+3000 IDEOGRAPHIC SPACE (CJK Full-Width Space)
+#define CH_NBSP 160
+#define CH_SHY 173
+#define CH_CJKSP 12288  // U+3000 IDEOGRAPHIC SPACE (CJK Full-Width Space)
 
 class nsTextFrameUtils {
-public:
+ public:
   
   enum class Flags : uint16_t {
     
 
     
-    TEXT_HAS_TAB             = 0x01,
+    TEXT_HAS_TAB = 0x01,
     
-    TEXT_HAS_SHY             = 0x02,
-    TEXT_UNUSED_FLAGS        = 0x0C,
+    TEXT_HAS_SHY = 0x02,
+    TEXT_UNUSED_FLAGS = 0x0C,
 
     
 
-    TEXT_IS_SIMPLE_FLOW      = 0x10,
+    TEXT_IS_SIMPLE_FLOW = 0x10,
     TEXT_INCOMING_WHITESPACE = 0x20,
     TEXT_TRAILING_WHITESPACE = 0x40,
     TEXT_COMPRESSED_LEADING_WHITESPACE = 0x80,
-    TEXT_NO_BREAKS           = 0x100,
-    TEXT_IS_TRANSFORMED      = 0x200,
+    TEXT_NO_BREAKS = 0x100,
+    TEXT_IS_TRANSFORMED = 0x200,
     
     
     
     
-    TEXT_HAS_TRAILING_BREAK  = 0x400,
+    TEXT_HAS_TRAILING_BREAK = 0x400,
 
     
     
     
     
-    TEXT_IS_SINGLE_CHAR_MI   = 0x800,
+    TEXT_IS_SINGLE_CHAR_MI = 0x800,
 
     
     TEXT_MIGHT_HAVE_GLYPH_CHANGES = 0x1000,
@@ -60,7 +60,7 @@ public:
     
     
     
-    TEXT_RUN_SIZE_ACCOUNTED      = 0x2000,
+    TEXT_RUN_SIZE_ACCOUNTED = 0x2000,
 
     
     
@@ -74,11 +74,7 @@ public:
 
   
   
-  enum {
-    INCOMING_NONE       = 0,
-    INCOMING_WHITESPACE = 1,
-    INCOMING_ARABICCHAR = 2
-  };
+  enum { INCOMING_NONE = 0, INCOMING_WHITESPACE = 1, INCOMING_ARABICCHAR = 2 };
 
   
 
@@ -86,17 +82,15 @@ public:
 
 
 
-  static bool
-  IsSpaceCombiningSequenceTail(const char16_t* aChars, int32_t aLength) {
+  static bool IsSpaceCombiningSequenceTail(const char16_t* aChars,
+                                           int32_t aLength) {
     return aLength > 0 &&
-      (mozilla::unicode::IsClusterExtender(aChars[0]) ||
-       (IsBidiControl(aChars[0]) &&
-        IsSpaceCombiningSequenceTail(aChars + 1, aLength - 1)
-       )
-      );
+           (mozilla::unicode::IsClusterExtender(aChars[0]) ||
+            (IsBidiControl(aChars[0]) &&
+             IsSpaceCombiningSequenceTail(aChars + 1, aLength - 1)));
   }
-  static bool
-  IsSpaceCombiningSequenceTail(const uint8_t* aChars, int32_t aLength) {
+  static bool IsSpaceCombiningSequenceTail(const uint8_t* aChars,
+                                           int32_t aLength) {
     return false;
   }
 
@@ -121,12 +115,10 @@ public:
 
 
 
-  template<class CharT>
+  template <class CharT>
   static CharT* TransformText(const CharT* aText, uint32_t aLength,
-                              CharT* aOutput,
-                              CompressionMode aCompression,
-                              uint8_t* aIncomingFlags,
-                              gfxSkipChars* aSkipChars,
+                              CharT* aOutput, CompressionMode aCompression,
+                              uint8_t* aIncomingFlags, gfxSkipChars* aSkipChars,
                               nsTextFrameUtils::Flags* aAnalysisFlags);
 
   
@@ -136,37 +128,36 @@ public:
 
 
 
-  template<class CharT>
+  template <class CharT>
   static bool IsSkippableCharacterForTransformText(CharT aChar);
 
-  static void
-  AppendLineBreakOffset(nsTArray<uint32_t>* aArray, uint32_t aOffset)
-  {
+  static void AppendLineBreakOffset(nsTArray<uint32_t>* aArray,
+                                    uint32_t aOffset) {
     if (aArray->Length() > 0 && (*aArray)[aArray->Length() - 1] == aOffset)
       return;
     aArray->AppendElement(aOffset);
   }
 
-  static uint32_t
-  ComputeApproximateLengthWithWhitespaceCompression(nsIContent *aContent,
-                                                    const nsStyleText*
-                                                      aStyleText);
+  static uint32_t ComputeApproximateLengthWithWhitespaceCompression(
+      nsIContent* aContent, const nsStyleText* aStyleText);
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsTextFrameUtils::Flags)
 
 class nsSkipCharsRunIterator {
-public:
+ public:
   enum LengthMode {
-    LENGTH_UNSKIPPED_ONLY   = false,
+    LENGTH_UNSKIPPED_ONLY = false,
     LENGTH_INCLUDES_SKIPPED = true
   };
   nsSkipCharsRunIterator(const gfxSkipCharsIterator& aStart,
-      LengthMode aLengthIncludesSkipped, uint32_t aLength)
-    : mIterator(aStart), mRemainingLength(aLength), mRunLength(0),
-      mSkipped(false), mVisitSkipped(false),
-      mLengthIncludesSkipped(aLengthIncludesSkipped) {
-  }
+                         LengthMode aLengthIncludesSkipped, uint32_t aLength)
+      : mIterator(aStart),
+        mRemainingLength(aLength),
+        mRunLength(0),
+        mSkipped(false),
+        mVisitSkipped(false),
+        mLengthIncludesSkipped(aLengthIncludesSkipped) {}
   void SetVisitSkipped() { mVisitSkipped = true; }
   void SetOriginalOffset(int32_t aOffset) {
     mIterator.SetOriginalOffset(aOffset);
@@ -184,13 +175,13 @@ public:
   int32_t GetOriginalOffset() const { return mIterator.GetOriginalOffset(); }
   uint32_t GetSkippedOffset() const { return mIterator.GetSkippedOffset(); }
 
-private:
+ private:
   gfxSkipCharsIterator mIterator;
-  int32_t              mRemainingLength;
-  int32_t              mRunLength;
-  bool                 mSkipped;
-  bool                 mVisitSkipped;
-  bool                 mLengthIncludesSkipped;
+  int32_t mRemainingLength;
+  int32_t mRunLength;
+  bool mSkipped;
+  bool mVisitSkipped;
+  bool mLengthIncludesSkipped;
 };
 
 #endif 

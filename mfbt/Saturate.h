@@ -35,12 +35,9 @@ namespace detail {
 
 
 template <typename T>
-class SaturateOp
-{
-public:
-  explicit SaturateOp(T& aValue)
-    : mValue(aValue)
-  {
+class SaturateOp {
+ public:
+  explicit SaturateOp(T& aValue) : mValue(aValue) {
     
     
     
@@ -50,20 +47,13 @@ public:
 
   
 
-  T operator+(const T& aRhs) const
-  {
-    return T(mValue) += aRhs;
-  }
+  T operator+(const T& aRhs) const { return T(mValue) += aRhs; }
 
-  T operator-(const T& aRhs) const
-  {
-    return T(mValue) -= aRhs;
-  }
+  T operator-(const T& aRhs) const { return T(mValue) -= aRhs; }
 
   
 
-  const T& operator+=(const T& aRhs) const
-  {
+  const T& operator+=(const T& aRhs) const {
     const T min = std::numeric_limits<T>::min();
     const T max = std::numeric_limits<T>::max();
 
@@ -75,8 +65,7 @@ public:
     return mValue;
   }
 
-  const T& operator-=(const T& aRhs) const
-  {
+  const T& operator-=(const T& aRhs) const {
     const T min = std::numeric_limits<T>::min();
     const T max = std::numeric_limits<T>::max();
 
@@ -90,31 +79,31 @@ public:
 
   
 
-  const T& operator++() const 
+  const T& operator++() const  
   {
     return operator+=(static_cast<T>(1));
   }
 
-  T operator++(int) const 
+  T operator++(int) const  
   {
     const T value(mValue);
     operator++();
     return value;
   }
 
-  const T& operator--() const 
+  const T& operator--() const  
   {
     return operator-=(static_cast<T>(1));
   }
 
-  T operator--(int) const 
+  T operator--(int) const  
   {
     const T value(mValue);
     operator--();
     return value;
   }
 
-private:
+ private:
   SaturateOp(const SaturateOp<T>&) = delete;
   SaturateOp(SaturateOp<T>&&) = delete;
   SaturateOp& operator=(const SaturateOp<T>&) = delete;
@@ -128,139 +117,113 @@ private:
 
 
 template <typename T>
-class Saturate
-{
-public:
+class Saturate {
+ public:
   Saturate() = default;
   MOZ_IMPLICIT Saturate(const Saturate<T>&) = default;
 
-  MOZ_IMPLICIT Saturate(Saturate<T>&& aValue)
-  {
+  MOZ_IMPLICIT Saturate(Saturate<T>&& aValue) {
     mValue = std::move(aValue.mValue);
   }
 
-  explicit Saturate(const T& aValue)
-    : mValue(aValue)
-  { }
+  explicit Saturate(const T& aValue) : mValue(aValue) {}
 
-  const T& value() const
-  {
-    return mValue;
-  }
+  const T& value() const { return mValue; }
 
   
 
-  bool operator==(const Saturate<T>& aRhs) const
-  {
+  bool operator==(const Saturate<T>& aRhs) const {
     return mValue == aRhs.mValue;
   }
 
-  bool operator!=(const Saturate<T>& aRhs) const
-  {
-    return !operator==(aRhs);
-  }
+  bool operator!=(const Saturate<T>& aRhs) const { return !operator==(aRhs); }
 
-  bool operator==(const T& aRhs) const
-  {
-    return mValue == aRhs;
-  }
+  bool operator==(const T& aRhs) const { return mValue == aRhs; }
 
-  bool operator!=(const T& aRhs) const
-  {
-    return !operator==(aRhs);
-  }
+  bool operator!=(const T& aRhs) const { return !operator==(aRhs); }
 
   
 
   Saturate<T>& operator=(const Saturate<T>&) = default;
 
-  Saturate<T>& operator=(Saturate<T>&& aRhs)
-  {
+  Saturate<T>& operator=(Saturate<T>&& aRhs) {
     mValue = std::move(aRhs.mValue);
     return *this;
   }
 
   
 
-  Saturate<T> operator+(const Saturate<T>& aRhs) const
-  {
+  Saturate<T> operator+(const Saturate<T>& aRhs) const {
     Saturate<T> lhs(mValue);
     return lhs += aRhs.mValue;
   }
 
-  Saturate<T> operator+(const T& aRhs) const
-  {
+  Saturate<T> operator+(const T& aRhs) const {
     Saturate<T> lhs(mValue);
     return lhs += aRhs;
   }
 
-  Saturate<T> operator-(const Saturate<T>& aRhs) const
-  {
+  Saturate<T> operator-(const Saturate<T>& aRhs) const {
     Saturate<T> lhs(mValue);
     return lhs -= aRhs.mValue;
   }
 
-  Saturate<T> operator-(const T& aRhs) const
-  {
+  Saturate<T> operator-(const T& aRhs) const {
     Saturate<T> lhs(mValue);
     return lhs -= aRhs;
   }
 
   
 
-  Saturate<T>& operator+=(const Saturate<T>& aRhs)
-  {
+  Saturate<T>& operator+=(const Saturate<T>& aRhs) {
     SaturateOp<T>(mValue) += aRhs.mValue;
     return *this;
   }
 
-  Saturate<T>& operator+=(const T& aRhs)
-  {
+  Saturate<T>& operator+=(const T& aRhs) {
     SaturateOp<T>(mValue) += aRhs;
     return *this;
   }
 
-  Saturate<T>& operator-=(const Saturate<T>& aRhs)
-  {
+  Saturate<T>& operator-=(const Saturate<T>& aRhs) {
     SaturateOp<T>(mValue) -= aRhs.mValue;
     return *this;
   }
 
-  Saturate<T>& operator-=(const T& aRhs)
-  {
+  Saturate<T>& operator-=(const T& aRhs) {
     SaturateOp<T>(mValue) -= aRhs;
     return *this;
   }
 
   
 
-  Saturate<T>& operator++() 
+  Saturate<T>& operator++()  
   {
     ++SaturateOp<T>(mValue);
     return *this;
   }
 
-  Saturate<T> operator++(int) 
+  Saturate<T> operator++(int)  
   {
     return Saturate<T>(SaturateOp<T>(mValue)++);
   }
 
-  Saturate<T>& operator--() 
+  Saturate<T>& operator--()  
   {
     --SaturateOp<T>(mValue);
     return *this;
   }
 
-  Saturate<T> operator--(int) 
+  Saturate<T> operator--(int)  
   {
     return Saturate<T>(SaturateOp<T>(mValue)--);
   }
 
-private:
+ private:
   T mValue;
 };
 
-} 
+}  
 
 typedef detail::Saturate<int8_t> SaturateInt8;
 typedef detail::Saturate<int16_t> SaturateInt16;
@@ -269,20 +232,16 @@ typedef detail::Saturate<uint8_t> SaturateUint8;
 typedef detail::Saturate<uint16_t> SaturateUint16;
 typedef detail::Saturate<uint32_t> SaturateUint32;
 
-} 
+}  
 
-template<typename LhsT, typename RhsT>
-bool
-operator==(LhsT aLhs, const mozilla::detail::Saturate<RhsT>& aRhs)
-{
+template <typename LhsT, typename RhsT>
+bool operator==(LhsT aLhs, const mozilla::detail::Saturate<RhsT>& aRhs) {
   return aRhs.operator==(static_cast<RhsT>(aLhs));
 }
 
-template<typename LhsT, typename RhsT>
-bool
-operator!=(LhsT aLhs, const mozilla::detail::Saturate<RhsT>& aRhs)
-{
+template <typename LhsT, typename RhsT>
+bool operator!=(LhsT aLhs, const mozilla::detail::Saturate<RhsT>& aRhs) {
   return !(aLhs == aRhs);
 }
 
-#endif 
+#endif  

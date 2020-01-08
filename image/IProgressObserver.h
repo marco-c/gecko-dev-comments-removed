@@ -27,9 +27,8 @@ namespace image {
 
 
 
-class IProgressObserver : public SupportsWeakPtr<IProgressObserver>
-{
-public:
+class IProgressObserver : public SupportsWeakPtr<IProgressObserver> {
+ public:
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(IProgressObserver)
 
   
@@ -46,16 +45,15 @@ public:
   virtual void MarkPendingNotify() = 0;
   virtual void ClearPendingNotify() = 0;
 
-  virtual already_AddRefed<nsIEventTarget> GetEventTarget() const
-  {
+  virtual already_AddRefed<nsIEventTarget> GetEventTarget() const {
     return nullptr;
   }
 
-protected:
-  virtual ~IProgressObserver() { }
+ protected:
+  virtual ~IProgressObserver() {}
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

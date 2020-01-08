@@ -5,35 +5,32 @@
 
 
 #include "ReadbackProcessor.h"
-#include <sys/types.h>                  
-#include "Layers.h"                     
-#include "ReadbackLayer.h"              
-#include "UnitTransforms.h"             
-#include "Units.h"                      
-#include "gfxContext.h"                 
+#include <sys/types.h>       
+#include "Layers.h"          
+#include "ReadbackLayer.h"   
+#include "UnitTransforms.h"  
+#include "Units.h"           
+#include "gfxContext.h"      
 #include "gfxUtils.h"
-#include "gfxRect.h"                    
+#include "gfxRect.h"  
 #include "mozilla/gfx/2D.h"
-#include "mozilla/gfx/BasePoint.h"      
-#include "mozilla/gfx/BaseRect.h"       
-#include "mozilla/gfx/Point.h"          
-#include "nsDebug.h"                    
-#include "nsISupportsImpl.h"            
-#include "nsPoint.h"                    
-#include "nsRegion.h"                   
+#include "mozilla/gfx/BasePoint.h"  
+#include "mozilla/gfx/BaseRect.h"   
+#include "mozilla/gfx/Point.h"      
+#include "nsDebug.h"                
+#include "nsISupportsImpl.h"        
+#include "nsPoint.h"                
+#include "nsRegion.h"               
 
 using namespace mozilla::gfx;
 
 namespace mozilla {
 namespace layers {
 
-void
-ReadbackProcessor::BuildUpdates(ContainerLayer* aContainer)
-{
+void ReadbackProcessor::BuildUpdates(ContainerLayer* aContainer) {
   NS_ASSERTION(mAllUpdates.IsEmpty(), "Some updates not processed?");
 
-  if (!aContainer->mMayHaveReadbackChild)
-    return;
+  if (!aContainer->mMayHaveReadbackChild) return;
 
   aContainer->mMayHaveReadbackChild = false;
   
@@ -46,9 +43,7 @@ ReadbackProcessor::BuildUpdates(ContainerLayer* aContainer)
   }
 }
 
-static Layer*
-FindBackgroundLayer(ReadbackLayer* aLayer, nsIntPoint* aOffset)
-{
+static Layer* FindBackgroundLayer(ReadbackLayer* aLayer, nsIntPoint* aOffset) {
   gfx::Matrix transform;
   if (!aLayer->GetTransform().Is2D(&transform) ||
       transform.HasNonIntegerTranslation())
@@ -61,26 +56,26 @@ FindBackgroundLayer(ReadbackLayer* aLayer, nsIntPoint* aOffset)
         gfx::ThebesMatrix(backgroundTransform).HasNonIntegerTranslation())
       return nullptr;
 
-    nsIntPoint backgroundOffset(int32_t(backgroundTransform._31), int32_t(backgroundTransform._32));
-    IntRect rectInBackground(transformOffset - backgroundOffset, aLayer->GetSize());
-    const nsIntRegion visibleRegion = l->GetLocalVisibleRegion().ToUnknownRegion();
-    if (!visibleRegion.Intersects(rectInBackground))
-      continue;
+    nsIntPoint backgroundOffset(int32_t(backgroundTransform._31),
+                                int32_t(backgroundTransform._32));
+    IntRect rectInBackground(transformOffset - backgroundOffset,
+                             aLayer->GetSize());
+    const nsIntRegion visibleRegion =
+        l->GetLocalVisibleRegion().ToUnknownRegion();
+    if (!visibleRegion.Intersects(rectInBackground)) continue;
     
     
-    if (!visibleRegion.Contains(rectInBackground))
-      return nullptr;
+    if (!visibleRegion.Contains(rectInBackground)) return nullptr;
 
-    if (l->GetEffectiveOpacity() != 1.0 ||
-        l->HasMaskLayers() ||
-        !(l->GetContentFlags() & Layer::CONTENT_OPAQUE))
-    {
+    if (l->GetEffectiveOpacity() != 1.0 || l->HasMaskLayers() ||
+        !(l->GetContentFlags() & Layer::CONTENT_OPAQUE)) {
       return nullptr;
     }
 
     
     const Maybe<ParentLayerIntRect>& clipRect = l->GetLocalClipRect();
-    if (clipRect && !clipRect->Contains(ViewAs<ParentLayerPixel>(IntRect(transformOffset, aLayer->GetSize()))))
+    if (clipRect && !clipRect->Contains(ViewAs<ParentLayerPixel>(
+                        IntRect(transformOffset, aLayer->GetSize()))))
       return nullptr;
 
     Layer::LayerType type = l->GetType();
@@ -94,11 +89,8 @@ FindBackgroundLayer(ReadbackLayer* aLayer, nsIntPoint* aOffset)
   return nullptr;
 }
 
-void
-ReadbackProcessor::BuildUpdatesForLayer(ReadbackLayer* aLayer)
-{
-  if (!aLayer->mSink)
-    return;
+void ReadbackProcessor::BuildUpdatesForLayer(ReadbackLayer* aLayer) {
+  if (!aLayer->mSink) return;
 
   nsIntPoint offset;
   Layer* newBackground = FindBackgroundLayer(aLayer, &offset);
@@ -114,9 +106,8 @@ ReadbackProcessor::BuildUpdatesForLayer(ReadbackLayer* aLayer)
       aLayer->mBackgroundColor = colorLayer->GetColor();
       NS_ASSERTION(aLayer->mBackgroundColor.a == 1.f,
                    "Color layer said it was opaque!");
-      RefPtr<DrawTarget> dt =
-          aLayer->mSink->BeginUpdate(aLayer->GetRect(),
-                                     aLayer->AllocateSequenceNumber());
+      RefPtr<DrawTarget> dt = aLayer->mSink->BeginUpdate(
+          aLayer->GetRect(), aLayer->AllocateSequenceNumber());
       if (dt) {
         ColorPattern color(ToDeviceColor(aLayer->mBackgroundColor));
         IntSize size = aLayer->GetSize();
@@ -141,16 +132,14 @@ ReadbackProcessor::BuildUpdatesForLayer(ReadbackLayer* aLayer)
       updateRect = invalid.GetBounds();
     }
 
-    Update update = { aLayer, updateRect, aLayer->AllocateSequenceNumber() };
+    Update update = {aLayer, updateRect, aLayer->AllocateSequenceNumber()};
     mAllUpdates.AppendElement(update);
   }
 }
 
-void
-ReadbackProcessor::GetPaintedLayerUpdates(PaintedLayer* aLayer,
-                                         nsTArray<Update>* aUpdates,
-                                         nsIntRegion* aUpdateRegion)
-{
+void ReadbackProcessor::GetPaintedLayerUpdates(PaintedLayer* aLayer,
+                                               nsTArray<Update>* aUpdates,
+                                               nsIntRegion* aUpdateRegion) {
   
   
   aLayer->SetUsedForReadback(false);
@@ -173,8 +162,7 @@ ReadbackProcessor::GetPaintedLayerUpdates(PaintedLayer* aLayer,
   }
 }
 
-ReadbackProcessor::~ReadbackProcessor()
-{
+ReadbackProcessor::~ReadbackProcessor() {
   for (uint32_t i = mAllUpdates.Length(); i > 0; --i) {
     const Update& update = mAllUpdates[i - 1];
     
@@ -183,5 +171,5 @@ ReadbackProcessor::~ReadbackProcessor()
   }
 }
 
-} 
-} 
+}  
+}  

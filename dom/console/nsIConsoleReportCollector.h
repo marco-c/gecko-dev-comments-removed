@@ -15,14 +15,17 @@
 class nsIDocument;
 
 
-#define NS_NSICONSOLEREPORTCOLLECTOR_IID \
-  {0xdd98a481, 0xd2c4, 0x4203, {0x8d, 0xfa, 0x85, 0xbf, 0xd7, 0xdc, 0xd7, 0x05}}
+#define NS_NSICONSOLEREPORTCOLLECTOR_IID             \
+  {                                                  \
+    0xdd98a481, 0xd2c4, 0x4203, {                    \
+      0x8d, 0xfa, 0x85, 0xbf, 0xd7, 0xdc, 0xd7, 0x05 \
+    }                                                \
+  }
 
 
 
-class NS_NO_VTABLE nsIConsoleReportCollector : public nsISupports
-{
-public:
+class NS_NO_VTABLE nsIConsoleReportCollector : public nsISupports {
+ public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_NSICONSOLEREPORTCOLLECTOR_IID)
 
   
@@ -41,24 +44,23 @@ public:
   
   
   
-  virtual void
-  AddConsoleReport(uint32_t aErrorFlags, const nsACString& aCategory,
-                   nsContentUtils::PropertiesFile aPropertiesFile,
-                   const nsACString& aSourceFileURI, uint32_t aLineNumber,
-                   uint32_t aColumnNumber, const nsACString& aMessageName,
-                   const nsTArray<nsString>& aStringParams) = 0;
+  virtual void AddConsoleReport(uint32_t aErrorFlags,
+                                const nsACString& aCategory,
+                                nsContentUtils::PropertiesFile aPropertiesFile,
+                                const nsACString& aSourceFileURI,
+                                uint32_t aLineNumber, uint32_t aColumnNumber,
+                                const nsACString& aMessageName,
+                                const nsTArray<nsString>& aStringParams) = 0;
 
   
   
   
-  template<typename... Params>
-  void
-  AddConsoleReport(uint32_t aErrorFlags, const nsACString& aCategory,
-                   nsContentUtils::PropertiesFile aPropertiesFile,
-                   const nsACString& aSourceFileURI, uint32_t aLineNumber,
-                   uint32_t aColumnNumber, const nsACString& aMessageName,
-                   Params&&... aParams)
-  {
+  template <typename... Params>
+  void AddConsoleReport(uint32_t aErrorFlags, const nsACString& aCategory,
+                        nsContentUtils::PropertiesFile aPropertiesFile,
+                        const nsACString& aSourceFileURI, uint32_t aLineNumber,
+                        uint32_t aColumnNumber, const nsACString& aMessageName,
+                        Params&&... aParams) {
     nsTArray<nsString> params;
     mozilla::dom::StringArrayAppender::Append(params, sizeof...(Params),
                                               std::forward<Params>(aParams)...);
@@ -69,35 +71,19 @@ public:
   
   
   
-  enum class ReportAction {
-    Forget,
-    Save
-  };
+  enum class ReportAction { Forget, Save };
 
   
   
   
   
   
-  virtual void
-  FlushReportsToConsole(uint64_t aInnerWindowID,
-                        ReportAction aAction = ReportAction::Forget) = 0;
+  virtual void FlushReportsToConsole(
+      uint64_t aInnerWindowID, ReportAction aAction = ReportAction::Forget) = 0;
 
-  virtual void
-  FlushReportsToConsoleForServiceWorkerScope(const nsACString& aScope,
-                                             ReportAction aAction = ReportAction::Forget) = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual void
-  FlushConsoleReports(nsIDocument* aDocument,
-                      ReportAction aAction = ReportAction::Forget) = 0;
+  virtual void FlushReportsToConsoleForServiceWorkerScope(
+      const nsACString& aScope,
+      ReportAction aAction = ReportAction::Forget) = 0;
 
   
   
@@ -107,24 +93,33 @@ public:
   
   
   
-  virtual void
-  FlushConsoleReports(nsILoadGroup* aLoadGroup,
-                      ReportAction aAction = ReportAction::Forget) = 0;
-
+  virtual void FlushConsoleReports(
+      nsIDocument* aDocument, ReportAction aAction = ReportAction::Forget) = 0;
 
   
   
   
   
   
-  virtual void
-  FlushConsoleReports(nsIConsoleReportCollector* aCollector) = 0;
+  
+  
+  
+  virtual void FlushConsoleReports(
+      nsILoadGroup* aLoadGroup,
+      ReportAction aAction = ReportAction::Forget) = 0;
 
   
-  virtual void
-  ClearConsoleReports() = 0;
+  
+  
+  
+  
+  virtual void FlushConsoleReports(nsIConsoleReportCollector* aCollector) = 0;
+
+  
+  virtual void ClearConsoleReports() = 0;
 };
 
-NS_DEFINE_STATIC_IID_ACCESSOR(nsIConsoleReportCollector, NS_NSICONSOLEREPORTCOLLECTOR_IID)
+NS_DEFINE_STATIC_IID_ACCESSOR(nsIConsoleReportCollector,
+                              NS_NSICONSOLEREPORTCOLLECTOR_IID)
 
-#endif 
+#endif  

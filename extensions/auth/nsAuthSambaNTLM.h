@@ -23,30 +23,29 @@
 
 
 
-class nsAuthSambaNTLM final : public nsIAuthModule
-{
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIAUTHMODULE
+class nsAuthSambaNTLM final : public nsIAuthModule {
+ public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIAUTHMODULE
 
-    nsAuthSambaNTLM();
+  nsAuthSambaNTLM();
 
-    
-    
-    
-    
-    nsresult SpawnNTLMAuthHelper();
+  
+  
+  
+  
+  nsresult SpawnNTLMAuthHelper();
 
-private:
-    ~nsAuthSambaNTLM();
+ private:
+  ~nsAuthSambaNTLM();
 
-    void Shutdown();
+  void Shutdown();
 
-    uint8_t*    mInitialMessage; 
-    uint32_t    mInitialMessageLen;
-    PRProcess*  mChildPID;
-    PRFileDesc* mFromChildFD;
-    PRFileDesc* mToChildFD;
+  uint8_t* mInitialMessage; 
+  uint32_t mInitialMessageLen;
+  PRProcess* mChildPID;
+  PRFileDesc* mFromChildFD;
+  PRFileDesc* mToChildFD;
 };
 
 #endif 

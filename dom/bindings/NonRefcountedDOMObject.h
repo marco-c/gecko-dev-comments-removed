@@ -18,31 +18,22 @@ namespace dom {
 
 
 
-class NonRefcountedDOMObject
-{
-protected:
-  NonRefcountedDOMObject()
-  {
-    MOZ_COUNT_CTOR(NonRefcountedDOMObject);
-  }
+class NonRefcountedDOMObject {
+ protected:
+  NonRefcountedDOMObject() { MOZ_COUNT_CTOR(NonRefcountedDOMObject); }
 
-  ~NonRefcountedDOMObject()
-  {
-    MOZ_COUNT_DTOR(NonRefcountedDOMObject);
-  }
+  ~NonRefcountedDOMObject() { MOZ_COUNT_DTOR(NonRefcountedDOMObject); }
 
   NonRefcountedDOMObject(const NonRefcountedDOMObject& aOther)
-    : NonRefcountedDOMObject()
-  {}
+      : NonRefcountedDOMObject() {}
 
-  NonRefcountedDOMObject& operator=(const NonRefcountedDOMObject& aOther)
-  {
+  NonRefcountedDOMObject& operator=(const NonRefcountedDOMObject& aOther) {
     NonRefcountedDOMObject();
     return *this;
   }
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

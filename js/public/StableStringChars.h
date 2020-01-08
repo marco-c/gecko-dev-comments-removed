@@ -11,29 +11,27 @@
 #ifndef js_StableStringChars_h
 #define js_StableStringChars_h
 
-#include "mozilla/Assertions.h" 
-#include "mozilla/Attributes.h" 
-#include "mozilla/Maybe.h" 
-#include "mozilla/Range.h" 
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"  
+#include "mozilla/Maybe.h"  
+#include "mozilla/Range.h"  
 
-#include <stddef.h> 
-#include <stdint.h> 
+#include <stddef.h>  
+#include <stdint.h>  
 
-#include "jstypes.h" 
+#include "jstypes.h"  
 
-#include "js/HeapAPI.h" 
-#include "js/RootingAPI.h" 
-#include "js/TypeDecls.h" 
-#include "js/Vector.h" 
+#include "js/HeapAPI.h"     
+#include "js/RootingAPI.h"  
+#include "js/TypeDecls.h"   
+#include "js/Vector.h"      
 
 class JSLinearString;
 
 namespace JS {
 
-MOZ_ALWAYS_INLINE size_t
-GetStringLength(JSString* s)
-{
-    return reinterpret_cast<shadow::String*>(s)->length();
+MOZ_ALWAYS_INLINE size_t GetStringLength(JSString* s) {
+  return reinterpret_cast<shadow::String*>(s)->length();
 }
 
 
@@ -45,80 +43,79 @@ GetStringLength(JSString* s)
 
 
 
-class MOZ_STACK_CLASS JS_FRIEND_API AutoStableStringChars final
-{
-    
+class MOZ_STACK_CLASS JS_FRIEND_API AutoStableStringChars final {
+  
 
 
 
 
-    static const size_t InlineCapacity = 24;
+  static const size_t InlineCapacity = 24;
 
-    
-    Rooted<JSString*> s_;
-    union MOZ_INIT_OUTSIDE_CTOR {
-        const char16_t* twoByteChars_;
-        const Latin1Char* latin1Chars_;
-    };
-    mozilla::Maybe<js::Vector<uint8_t, InlineCapacity>> ownChars_;
-    enum State { Uninitialized, Latin1, TwoByte };
-    State state_;
+  
+  Rooted<JSString*> s_;
+  union MOZ_INIT_OUTSIDE_CTOR {
+    const char16_t* twoByteChars_;
+    const Latin1Char* latin1Chars_;
+  };
+  mozilla::Maybe<js::Vector<uint8_t, InlineCapacity>> ownChars_;
+  enum State { Uninitialized, Latin1, TwoByte };
+  State state_;
 
-  public:
-    explicit AutoStableStringChars(JSContext* cx)
-      : s_(cx), state_(Uninitialized)
-    {}
+ public:
+  explicit AutoStableStringChars(JSContext* cx)
+      : s_(cx), state_(Uninitialized) {}
 
-    MOZ_MUST_USE bool init(JSContext* cx, JSString* s);
+  MOZ_MUST_USE bool init(JSContext* cx, JSString* s);
 
-    
-    MOZ_MUST_USE bool initTwoByte(JSContext* cx, JSString* s);
+  
+  MOZ_MUST_USE bool initTwoByte(JSContext* cx, JSString* s);
 
-    bool isLatin1() const { return state_ == Latin1; }
-    bool isTwoByte() const { return state_ == TwoByte; }
+  bool isLatin1() const { return state_ == Latin1; }
+  bool isTwoByte() const { return state_ == TwoByte; }
 
-    const Latin1Char* latin1Chars() const {
-        MOZ_ASSERT(state_ == Latin1);
-        return latin1Chars_;
+  const Latin1Char* latin1Chars() const {
+    MOZ_ASSERT(state_ == Latin1);
+    return latin1Chars_;
+  }
+  const char16_t* twoByteChars() const {
+    MOZ_ASSERT(state_ == TwoByte);
+    return twoByteChars_;
+  }
+
+  mozilla::Range<const Latin1Char> latin1Range() const {
+    MOZ_ASSERT(state_ == Latin1);
+    return mozilla::Range<const Latin1Char>(latin1Chars_, GetStringLength(s_));
+  }
+
+  mozilla::Range<const char16_t> twoByteRange() const {
+    MOZ_ASSERT(state_ == TwoByte);
+    return mozilla::Range<const char16_t>(twoByteChars_, GetStringLength(s_));
+  }
+
+  
+  bool maybeGiveOwnershipToCaller() {
+    MOZ_ASSERT(state_ != Uninitialized);
+    if (!ownChars_.isSome() || !ownChars_->extractRawBuffer()) {
+      return false;
     }
-    const char16_t* twoByteChars() const {
-        MOZ_ASSERT(state_ == TwoByte);
-        return twoByteChars_;
-    }
+    state_ = Uninitialized;
+    ownChars_.reset();
+    return true;
+  }
 
-    mozilla::Range<const Latin1Char> latin1Range() const {
-        MOZ_ASSERT(state_ == Latin1);
-        return mozilla::Range<const Latin1Char>(latin1Chars_, GetStringLength(s_));
-    }
+ private:
+  AutoStableStringChars(const AutoStableStringChars& other) = delete;
+  void operator=(const AutoStableStringChars& other) = delete;
 
-    mozilla::Range<const char16_t> twoByteRange() const {
-        MOZ_ASSERT(state_ == TwoByte);
-        return mozilla::Range<const char16_t>(twoByteChars_,
-                                              GetStringLength(s_));
-    }
-
-    
-    bool maybeGiveOwnershipToCaller() {
-        MOZ_ASSERT(state_ != Uninitialized);
-        if (!ownChars_.isSome() || !ownChars_->extractRawBuffer()) {
-            return false;
-        }
-        state_ = Uninitialized;
-        ownChars_.reset();
-        return true;
-    }
-
-  private:
-    AutoStableStringChars(const AutoStableStringChars& other) = delete;
-    void operator=(const AutoStableStringChars& other) = delete;
-
-    bool baseIsInline(Handle<JSLinearString*> linearString);
-    template <typename T> T* allocOwnChars(JSContext* cx, size_t count);
-    bool copyLatin1Chars(JSContext* cx, Handle<JSLinearString*> linearString);
-    bool copyTwoByteChars(JSContext* cx, Handle<JSLinearString*> linearString);
-    bool copyAndInflateLatin1Chars(JSContext*, Handle<JSLinearString*> linearString);
+  bool baseIsInline(Handle<JSLinearString*> linearString);
+  template <typename T>
+  T* allocOwnChars(JSContext* cx, size_t count);
+  bool copyLatin1Chars(JSContext* cx, Handle<JSLinearString*> linearString);
+  bool copyTwoByteChars(JSContext* cx, Handle<JSLinearString*> linearString);
+  bool copyAndInflateLatin1Chars(JSContext*,
+                                 Handle<JSLinearString*> linearString);
 };
 
-} 
+}  
 
 #endif 

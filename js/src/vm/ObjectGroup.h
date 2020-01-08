@@ -32,35 +32,35 @@ class ObjectGroupRealm;
 
 namespace gc {
 void MergeRealms(JS::Realm* source, JS::Realm* target);
-} 
+}  
 
 
 
 
 
 enum NewObjectKind {
-    
-    GenericObject,
+  
+  GenericObject,
 
-    
-
-
-
-
-    SingletonObject,
-
-    
-
-
-
-    NurseryAllocatedProxy,
-
-    
+  
 
 
 
 
-    TenuredObject
+  SingletonObject,
+
+  
+
+
+
+  NurseryAllocatedProxy,
+
+  
+
+
+
+
+  TenuredObject
 };
 
 
@@ -85,676 +85,660 @@ enum NewObjectKind {
 
 
 
-class ObjectGroup : public gc::TenuredCell
-{
-  public:
-    class Property;
+class ObjectGroup : public gc::TenuredCell {
+ public:
+  class Property;
 
-  private:
+ private:
+  
+  const Class* clasp_;  
+
+  
+  GCPtr<TaggedProto> proto_;  
+
+  
+  JS::Realm* realm_;
+  ;  
+
+  
+  ObjectGroupFlags flags_;  
+
+  
+  
+  void* addendum_ = nullptr;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  Property** propertySet = nullptr;
+
+  
+
+ private:
+  static inline uint32_t offsetOfClasp() {
+    return offsetof(ObjectGroup, clasp_);
+  }
+
+  static inline uint32_t offsetOfProto() {
+    return offsetof(ObjectGroup, proto_);
+  }
+
+  static inline uint32_t offsetOfRealm() {
+    return offsetof(ObjectGroup, realm_);
+  }
+
+  static inline uint32_t offsetOfFlags() {
+    return offsetof(ObjectGroup, flags_);
+  }
+
+  static inline uint32_t offsetOfAddendum() {
+    return offsetof(ObjectGroup, addendum_);
+  }
+
+  friend class gc::GCRuntime;
+  friend class gc::GCTrace;
+
+  
+  friend class js::jit::MacroAssembler;
+
+ public:
+  const Class* clasp() const { return clasp_; }
+
+  void setClasp(const Class* clasp) {
+    MOZ_ASSERT(JS::StringIsASCII(clasp->name));
+    MOZ_ASSERT(hasUncacheableClass());
+    clasp_ = clasp;
+  }
+
+  
+  
+  
+  
+  
+  bool hasUncacheableClass() const { return clasp_->isNative(); }
+
+  bool hasDynamicPrototype() const { return proto_.isDynamic(); }
+
+  const GCPtr<TaggedProto>& proto() const { return proto_; }
+
+  GCPtr<TaggedProto>& proto() { return proto_; }
+
+  void setProto(TaggedProto proto);
+  void setProtoUnchecked(TaggedProto proto);
+
+  bool hasUncacheableProto() const {
     
-    const Class* clasp_; 
-
-    
-    GCPtr<TaggedProto> proto_; 
-
-    
-    JS::Realm* realm_;; 
-
-    
-    ObjectGroupFlags flags_; 
-
     
     
-    void* addendum_ = nullptr;
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    Property** propertySet = nullptr;
-
-    
-
-  private:
-    static inline uint32_t offsetOfClasp() {
-        return offsetof(ObjectGroup, clasp_);
-    }
-
-    static inline uint32_t offsetOfProto() {
-        return offsetof(ObjectGroup, proto_);
-    }
-
-    static inline uint32_t offsetOfRealm() {
-        return offsetof(ObjectGroup, realm_);
-    }
-
-    static inline uint32_t offsetOfFlags() {
-        return offsetof(ObjectGroup, flags_);
-    }
-
-    static inline uint32_t offsetOfAddendum() {
-        return offsetof(ObjectGroup, addendum_);
-    }
-
-    friend class gc::GCRuntime;
-    friend class gc::GCTrace;
-
-    
-    friend class js::jit::MacroAssembler;
-
-  public:
-    const Class* clasp() const {
-        return clasp_;
-    }
-
-    void setClasp(const Class* clasp) {
-        MOZ_ASSERT(JS::StringIsASCII(clasp->name));
-        MOZ_ASSERT(hasUncacheableClass());
-        clasp_ = clasp;
-    }
-
-    
-    
-    
-    
-    
-    bool hasUncacheableClass() const {
-        return clasp_->isNative();
-    }
-
-    bool hasDynamicPrototype() const {
-        return proto_.isDynamic();
-    }
-
-    const GCPtr<TaggedProto>& proto() const {
-        return proto_;
-    }
-
-    GCPtr<TaggedProto>& proto() {
-        return proto_;
-    }
-
-    void setProto(TaggedProto proto);
-    void setProtoUnchecked(TaggedProto proto);
-
-    bool hasUncacheableProto() const {
-        
-        
-        
-        MOZ_ASSERT(!hasDynamicPrototype());
-        return singleton();
-    }
-
-    bool singleton() const {
-        return flagsDontCheckGeneration() & OBJECT_FLAG_SINGLETON;
-    }
-
-    bool lazy() const {
-        bool res = flagsDontCheckGeneration() & OBJECT_FLAG_LAZY_SINGLETON;
-        MOZ_ASSERT_IF(res, singleton());
-        return res;
-    }
-
-    JS::Compartment* compartment() const { return JS::GetCompartmentForRealm(realm_); }
-    JS::Compartment* maybeCompartment() const { return compartment(); }
-    JS::Realm* realm() const { return realm_; }
-
-  public:
-    
-    enum AddendumKind {
-        Addendum_None,
-
-        
-        
-        Addendum_InterpretedFunction,
-
-        
-        
-        Addendum_NewScript,
-
-        
-        Addendum_PreliminaryObjects,
-
-        
-        
-        
-        Addendum_UnboxedLayout,
-
-        
-        
-        
-        Addendum_OriginalUnboxedGroup,
-
-        
-        Addendum_TypeDescr
-    };
-
-  private:
-    void setAddendum(AddendumKind kind, void* addendum, bool writeBarrier = true);
-
-    AddendumKind addendumKind() const {
-        return (AddendumKind)
-            ((flags_ & OBJECT_FLAG_ADDENDUM_MASK) >> OBJECT_FLAG_ADDENDUM_SHIFT);
-    }
-
-    TypeNewScript* newScriptDontCheckGeneration() const {
-        if (addendumKind() == Addendum_NewScript) {
-            return reinterpret_cast<TypeNewScript*>(addendum_);
-        }
-        return nullptr;
-    }
-
-    TypeNewScript* anyNewScript(const AutoSweepObjectGroup& sweep);
-    void detachNewScript(bool writeBarrier, ObjectGroup* replacement);
-
-    ObjectGroupFlags flagsDontCheckGeneration() const {
-        return flags_;
-    }
-
-  public:
-
-    inline ObjectGroupFlags flags(const AutoSweepObjectGroup&);
-    inline void addFlags(const AutoSweepObjectGroup&, ObjectGroupFlags flags);
-    inline void clearFlags(const AutoSweepObjectGroup&, ObjectGroupFlags flags);
-    inline TypeNewScript* newScript(const AutoSweepObjectGroup& sweep);
-
-    void setNewScript(TypeNewScript* newScript) {
-        MOZ_ASSERT(newScript);
-        setAddendum(Addendum_NewScript, newScript);
-    }
-    void detachNewScript() {
-        setAddendum(Addendum_None, nullptr);
-    }
-
-    inline PreliminaryObjectArrayWithTemplate*
-    maybePreliminaryObjects(const AutoSweepObjectGroup& sweep);
-
-    PreliminaryObjectArrayWithTemplate* maybePreliminaryObjectsDontCheckGeneration() {
-        if (addendumKind() == Addendum_PreliminaryObjects) {
-            return reinterpret_cast<PreliminaryObjectArrayWithTemplate*>(addendum_);
-        }
-        return nullptr;
-    }
-
-    void setPreliminaryObjects(PreliminaryObjectArrayWithTemplate* preliminaryObjects) {
-        setAddendum(Addendum_PreliminaryObjects, preliminaryObjects);
-    }
-
-    void detachPreliminaryObjects() {
-        MOZ_ASSERT(maybePreliminaryObjectsDontCheckGeneration());
-        setAddendum(Addendum_None, nullptr);
-    }
-
-    inline bool hasUnanalyzedPreliminaryObjects();
-
-    inline UnboxedLayout* maybeUnboxedLayout(const AutoSweepObjectGroup& sweep);
-    inline UnboxedLayout& unboxedLayout(const AutoSweepObjectGroup& sweep);
-
-    UnboxedLayout* maybeUnboxedLayoutDontCheckGeneration() const {
-        if (addendumKind() == Addendum_UnboxedLayout) {
-            return &unboxedLayoutDontCheckGeneration();
-        }
-        return nullptr;
-    }
-
-    UnboxedLayout& unboxedLayoutDontCheckGeneration() const {
-        MOZ_ASSERT(addendumKind() == Addendum_UnboxedLayout);
-        return *reinterpret_cast<UnboxedLayout*>(addendum_);
-    }
-
-    void setUnboxedLayout(UnboxedLayout* layout) {
-        setAddendum(Addendum_UnboxedLayout, layout);
-    }
-
-    ObjectGroup* maybeOriginalUnboxedGroup() const {
-        if (addendumKind() == Addendum_OriginalUnboxedGroup) {
-            return reinterpret_cast<ObjectGroup*>(addendum_);
-        }
-        return nullptr;
-    }
-
-    void setOriginalUnboxedGroup(ObjectGroup* group) {
-        setAddendum(Addendum_OriginalUnboxedGroup, group);
-    }
-
-    TypeDescr* maybeTypeDescr() {
-        
-        
-        if (addendumKind() == Addendum_TypeDescr) {
-            return &typeDescr();
-        }
-        return nullptr;
-    }
-
-    TypeDescr& typeDescr() {
-        MOZ_ASSERT(addendumKind() == Addendum_TypeDescr);
-        return *reinterpret_cast<TypeDescr*>(addendum_);
-    }
-
-    void setTypeDescr(TypeDescr* descr) {
-        setAddendum(Addendum_TypeDescr, descr);
-    }
-
-    JSFunction* maybeInterpretedFunction() {
-        
-        
-        if (addendumKind() == Addendum_InterpretedFunction) {
-            return reinterpret_cast<JSFunction*>(addendum_);
-        }
-        return nullptr;
-    }
-
-    void setInterpretedFunction(JSFunction* fun) {
-        setAddendum(Addendum_InterpretedFunction, fun);
-    }
-
-    class Property
-    {
-      public:
-        
-        
-        
-        GCPtrId id;
-
-        
-        HeapTypeSet types;
-
-        explicit Property(jsid id)
-          : id(id)
-        {}
-
-        Property(const Property& o)
-          : id(o.id.get()), types(o.types)
-        {}
-
-        static uint32_t keyBits(jsid id) { return uint32_t(JSID_BITS(id)); }
-        static jsid getKey(Property* p) { return p->id; }
-    };
-
-  public:
-
-    inline ObjectGroup(const Class* clasp, TaggedProto proto, JS::Realm* realm,
-                       ObjectGroupFlags initialFlags);
-
-    inline bool hasAnyFlags(const AutoSweepObjectGroup& sweep, ObjectGroupFlags flags);
-    inline bool hasAllFlags(const AutoSweepObjectGroup& sweep, ObjectGroupFlags flags);
-
-    bool hasAllFlagsDontCheckGeneration(ObjectGroupFlags flags) {
-        MOZ_ASSERT((flags & OBJECT_FLAG_DYNAMIC_MASK) == flags);
-        return (this->flagsDontCheckGeneration() & flags) == flags;
-    }
-
-    inline bool unknownProperties(const AutoSweepObjectGroup& sweep);
-
-    bool unknownPropertiesDontCheckGeneration() {
-        MOZ_ASSERT_IF(flagsDontCheckGeneration() & OBJECT_FLAG_UNKNOWN_PROPERTIES,
-                      hasAllFlagsDontCheckGeneration(OBJECT_FLAG_DYNAMIC_MASK));
-        return !!(flagsDontCheckGeneration() & OBJECT_FLAG_UNKNOWN_PROPERTIES);
-    }
-
-    inline bool shouldPreTenure(const AutoSweepObjectGroup& sweep);
-
-    gc::InitialHeap initialHeap(CompilerConstraintList* constraints);
-
-    inline bool canPreTenure(const AutoSweepObjectGroup& sweep);
-    inline bool fromAllocationSite(const AutoSweepObjectGroup& sweep);
-    inline void setShouldPreTenure(const AutoSweepObjectGroup& sweep, JSContext* cx);
-
-    
-
-
-
-    inline HeapTypeSet* getProperty(const AutoSweepObjectGroup& sweep, JSContext* cx,
-                                    JSObject* obj, jsid id);
-
-    
-    MOZ_ALWAYS_INLINE HeapTypeSet* maybeGetProperty(const AutoSweepObjectGroup& sweep, jsid id);
-    MOZ_ALWAYS_INLINE HeapTypeSet* maybeGetPropertyDontCheckGeneration(jsid id);
-
-    
-
-
-
-
-    inline unsigned getPropertyCount(const AutoSweepObjectGroup& sweep);
-    inline Property* getProperty(const AutoSweepObjectGroup& sweep, unsigned i);
-
-    
-
-    void updateNewPropertyTypes(const AutoSweepObjectGroup& sweep, JSContext* cx, JSObject* obj,
-                                jsid id, HeapTypeSet* types);
-    void addDefiniteProperties(JSContext* cx, Shape* shape);
-    bool matchDefiniteProperties(HandleObject obj);
-    void markPropertyNonData(JSContext* cx, JSObject* obj, jsid id);
-    void markPropertyNonWritable(JSContext* cx, JSObject* obj, jsid id);
-    void markStateChange(const AutoSweepObjectGroup& sweep, JSContext* cx);
-    void setFlags(const AutoSweepObjectGroup& sweep, JSContext* cx, ObjectGroupFlags flags);
-    void markUnknown(const AutoSweepObjectGroup& sweep, JSContext* cx);
-    void maybeClearNewScriptOnOOM();
-    void clearNewScript(JSContext* cx, ObjectGroup* replacement = nullptr);
-
-    void print(const AutoSweepObjectGroup& sweep);
-
-    inline void clearProperties(const AutoSweepObjectGroup& sweep);
-    void traceChildren(JSTracer* trc);
-
-    inline bool needsSweep();
-    void sweep(const AutoSweepObjectGroup& sweep);
-
-  private:
-    uint32_t generation() {
-        return (flags_ & OBJECT_FLAG_GENERATION_MASK) >> OBJECT_FLAG_GENERATION_SHIFT;
-    }
-
-  public:
-    void setGeneration(uint32_t generation) {
-        MOZ_ASSERT(generation <= (OBJECT_FLAG_GENERATION_MASK >> OBJECT_FLAG_GENERATION_SHIFT));
-        flags_ &= ~OBJECT_FLAG_GENERATION_MASK;
-        flags_ |= generation << OBJECT_FLAG_GENERATION_SHIFT;
-    }
-
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-
-    void finalize(FreeOp* fop);
-
-    static const JS::TraceKind TraceKind = JS::TraceKind::ObjectGroup;
-
-  public:
-    const ObjectGroupFlags* addressOfFlags() const {
-        return &flags_;
-    }
+    MOZ_ASSERT(!hasDynamicPrototype());
+    return singleton();
+  }
+
+  bool singleton() const {
+    return flagsDontCheckGeneration() & OBJECT_FLAG_SINGLETON;
+  }
+
+  bool lazy() const {
+    bool res = flagsDontCheckGeneration() & OBJECT_FLAG_LAZY_SINGLETON;
+    MOZ_ASSERT_IF(res, singleton());
+    return res;
+  }
+
+  JS::Compartment* compartment() const {
+    return JS::GetCompartmentForRealm(realm_);
+  }
+  JS::Compartment* maybeCompartment() const { return compartment(); }
+  JS::Realm* realm() const { return realm_; }
+
+ public:
+  
+  enum AddendumKind {
+    Addendum_None,
 
     
     
-    static inline int32_t addendumOriginalUnboxedGroupValue() {
-        return Addendum_OriginalUnboxedGroup << OBJECT_FLAG_ADDENDUM_SHIFT;
+    Addendum_InterpretedFunction,
+
+    
+    
+    Addendum_NewScript,
+
+    
+    
+    Addendum_PreliminaryObjects,
+
+    
+    
+    
+    Addendum_UnboxedLayout,
+
+    
+    
+    
+    Addendum_OriginalUnboxedGroup,
+
+    
+    Addendum_TypeDescr
+  };
+
+ private:
+  void setAddendum(AddendumKind kind, void* addendum, bool writeBarrier = true);
+
+  AddendumKind addendumKind() const {
+    return (AddendumKind)((flags_ & OBJECT_FLAG_ADDENDUM_MASK) >>
+                          OBJECT_FLAG_ADDENDUM_SHIFT);
+  }
+
+  TypeNewScript* newScriptDontCheckGeneration() const {
+    if (addendumKind() == Addendum_NewScript) {
+      return reinterpret_cast<TypeNewScript*>(addendum_);
     }
+    return nullptr;
+  }
 
-    inline uint32_t basePropertyCount(const AutoSweepObjectGroup& sweep);
-    inline uint32_t basePropertyCountDontCheckGeneration();
+  TypeNewScript* anyNewScript(const AutoSweepObjectGroup& sweep);
+  void detachNewScript(bool writeBarrier, ObjectGroup* replacement);
 
-  private:
-    inline void setBasePropertyCount(const AutoSweepObjectGroup& sweep, uint32_t count);
+  ObjectGroupFlags flagsDontCheckGeneration() const { return flags_; }
 
-    static void staticAsserts() {
-        JS_STATIC_ASSERT(offsetof(ObjectGroup, proto_) == offsetof(js::shadow::ObjectGroup, proto));
+ public:
+  inline ObjectGroupFlags flags(const AutoSweepObjectGroup&);
+  inline void addFlags(const AutoSweepObjectGroup&, ObjectGroupFlags flags);
+  inline void clearFlags(const AutoSweepObjectGroup&, ObjectGroupFlags flags);
+  inline TypeNewScript* newScript(const AutoSweepObjectGroup& sweep);
+
+  void setNewScript(TypeNewScript* newScript) {
+    MOZ_ASSERT(newScript);
+    setAddendum(Addendum_NewScript, newScript);
+  }
+  void detachNewScript() { setAddendum(Addendum_None, nullptr); }
+
+  inline PreliminaryObjectArrayWithTemplate* maybePreliminaryObjects(
+      const AutoSweepObjectGroup& sweep);
+
+  PreliminaryObjectArrayWithTemplate*
+  maybePreliminaryObjectsDontCheckGeneration() {
+    if (addendumKind() == Addendum_PreliminaryObjects) {
+      return reinterpret_cast<PreliminaryObjectArrayWithTemplate*>(addendum_);
     }
+    return nullptr;
+  }
 
-  public:
+  void setPreliminaryObjects(
+      PreliminaryObjectArrayWithTemplate* preliminaryObjects) {
+    setAddendum(Addendum_PreliminaryObjects, preliminaryObjects);
+  }
+
+  void detachPreliminaryObjects() {
+    MOZ_ASSERT(maybePreliminaryObjectsDontCheckGeneration());
+    setAddendum(Addendum_None, nullptr);
+  }
+
+  inline bool hasUnanalyzedPreliminaryObjects();
+
+  inline UnboxedLayout* maybeUnboxedLayout(const AutoSweepObjectGroup& sweep);
+  inline UnboxedLayout& unboxedLayout(const AutoSweepObjectGroup& sweep);
+
+  UnboxedLayout* maybeUnboxedLayoutDontCheckGeneration() const {
+    if (addendumKind() == Addendum_UnboxedLayout) {
+      return &unboxedLayoutDontCheckGeneration();
+    }
+    return nullptr;
+  }
+
+  UnboxedLayout& unboxedLayoutDontCheckGeneration() const {
+    MOZ_ASSERT(addendumKind() == Addendum_UnboxedLayout);
+    return *reinterpret_cast<UnboxedLayout*>(addendum_);
+  }
+
+  void setUnboxedLayout(UnboxedLayout* layout) {
+    setAddendum(Addendum_UnboxedLayout, layout);
+  }
+
+  ObjectGroup* maybeOriginalUnboxedGroup() const {
+    if (addendumKind() == Addendum_OriginalUnboxedGroup) {
+      return reinterpret_cast<ObjectGroup*>(addendum_);
+    }
+    return nullptr;
+  }
+
+  void setOriginalUnboxedGroup(ObjectGroup* group) {
+    setAddendum(Addendum_OriginalUnboxedGroup, group);
+  }
+
+  TypeDescr* maybeTypeDescr() {
     
-    static bool useSingletonForClone(JSFunction* fun);
+    
+    if (addendumKind() == Addendum_TypeDescr) {
+      return &typeDescr();
+    }
+    return nullptr;
+  }
+
+  TypeDescr& typeDescr() {
+    MOZ_ASSERT(addendumKind() == Addendum_TypeDescr);
+    return *reinterpret_cast<TypeDescr*>(addendum_);
+  }
+
+  void setTypeDescr(TypeDescr* descr) {
+    setAddendum(Addendum_TypeDescr, descr);
+  }
+
+  JSFunction* maybeInterpretedFunction() {
+    
+    
+    if (addendumKind() == Addendum_InterpretedFunction) {
+      return reinterpret_cast<JSFunction*>(addendum_);
+    }
+    return nullptr;
+  }
+
+  void setInterpretedFunction(JSFunction* fun) {
+    setAddendum(Addendum_InterpretedFunction, fun);
+  }
+
+  class Property {
+   public:
+    
+    
+    
+    GCPtrId id;
 
     
-    static bool useSingletonForNewObject(JSContext* cx, JSScript* script, jsbytecode* pc);
+    HeapTypeSet types;
 
-    
-    static bool useSingletonForAllocationSite(JSScript* script, jsbytecode* pc,
-                                              JSProtoKey key);
-    static bool useSingletonForAllocationSite(JSScript* script, jsbytecode* pc,
-                                              const Class* clasp);
+    explicit Property(jsid id) : id(id) {}
 
-    
+    Property(const Property& o) : id(o.id.get()), types(o.types) {}
 
-    static ObjectGroup* defaultNewGroup(JSContext* cx, const Class* clasp,
-                                        TaggedProto proto,
-                                        JSObject* associated = nullptr);
-    static ObjectGroup* lazySingletonGroup(JSContext* cx, ObjectGroup* oldGroup,
-                                           const Class* clasp, TaggedProto proto);
+    static uint32_t keyBits(jsid id) { return uint32_t(JSID_BITS(id)); }
+    static jsid getKey(Property* p) { return p->id; }
+  };
 
-    static void setDefaultNewGroupUnknown(JSContext* cx, ObjectGroupRealm& realm,
-                                          const js::Class* clasp, JS::HandleObject obj);
+ public:
+  inline ObjectGroup(const Class* clasp, TaggedProto proto, JS::Realm* realm,
+                     ObjectGroupFlags initialFlags);
+
+  inline bool hasAnyFlags(const AutoSweepObjectGroup& sweep,
+                          ObjectGroupFlags flags);
+  inline bool hasAllFlags(const AutoSweepObjectGroup& sweep,
+                          ObjectGroupFlags flags);
+
+  bool hasAllFlagsDontCheckGeneration(ObjectGroupFlags flags) {
+    MOZ_ASSERT((flags & OBJECT_FLAG_DYNAMIC_MASK) == flags);
+    return (this->flagsDontCheckGeneration() & flags) == flags;
+  }
+
+  inline bool unknownProperties(const AutoSweepObjectGroup& sweep);
+
+  bool unknownPropertiesDontCheckGeneration() {
+    MOZ_ASSERT_IF(flagsDontCheckGeneration() & OBJECT_FLAG_UNKNOWN_PROPERTIES,
+                  hasAllFlagsDontCheckGeneration(OBJECT_FLAG_DYNAMIC_MASK));
+    return !!(flagsDontCheckGeneration() & OBJECT_FLAG_UNKNOWN_PROPERTIES);
+  }
+
+  inline bool shouldPreTenure(const AutoSweepObjectGroup& sweep);
+
+  gc::InitialHeap initialHeap(CompilerConstraintList* constraints);
+
+  inline bool canPreTenure(const AutoSweepObjectGroup& sweep);
+  inline bool fromAllocationSite(const AutoSweepObjectGroup& sweep);
+  inline void setShouldPreTenure(const AutoSweepObjectGroup& sweep,
+                                 JSContext* cx);
+
+  
+
+
+
+  inline HeapTypeSet* getProperty(const AutoSweepObjectGroup& sweep,
+                                  JSContext* cx, JSObject* obj, jsid id);
+
+  
+  MOZ_ALWAYS_INLINE HeapTypeSet* maybeGetProperty(
+      const AutoSweepObjectGroup& sweep, jsid id);
+  MOZ_ALWAYS_INLINE HeapTypeSet* maybeGetPropertyDontCheckGeneration(jsid id);
+
+  
+
+
+
+
+  inline unsigned getPropertyCount(const AutoSweepObjectGroup& sweep);
+  inline Property* getProperty(const AutoSweepObjectGroup& sweep, unsigned i);
+
+  
+
+  void updateNewPropertyTypes(const AutoSweepObjectGroup& sweep, JSContext* cx,
+                              JSObject* obj, jsid id, HeapTypeSet* types);
+  void addDefiniteProperties(JSContext* cx, Shape* shape);
+  bool matchDefiniteProperties(HandleObject obj);
+  void markPropertyNonData(JSContext* cx, JSObject* obj, jsid id);
+  void markPropertyNonWritable(JSContext* cx, JSObject* obj, jsid id);
+  void markStateChange(const AutoSweepObjectGroup& sweep, JSContext* cx);
+  void setFlags(const AutoSweepObjectGroup& sweep, JSContext* cx,
+                ObjectGroupFlags flags);
+  void markUnknown(const AutoSweepObjectGroup& sweep, JSContext* cx);
+  void maybeClearNewScriptOnOOM();
+  void clearNewScript(JSContext* cx, ObjectGroup* replacement = nullptr);
+
+  void print(const AutoSweepObjectGroup& sweep);
+
+  inline void clearProperties(const AutoSweepObjectGroup& sweep);
+  void traceChildren(JSTracer* trc);
+
+  inline bool needsSweep();
+  void sweep(const AutoSweepObjectGroup& sweep);
+
+ private:
+  uint32_t generation() {
+    return (flags_ & OBJECT_FLAG_GENERATION_MASK) >>
+           OBJECT_FLAG_GENERATION_SHIFT;
+  }
+
+ public:
+  void setGeneration(uint32_t generation) {
+    MOZ_ASSERT(generation <=
+               (OBJECT_FLAG_GENERATION_MASK >> OBJECT_FLAG_GENERATION_SHIFT));
+    flags_ &= ~OBJECT_FLAG_GENERATION_MASK;
+    flags_ |= generation << OBJECT_FLAG_GENERATION_SHIFT;
+  }
+
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+
+  void finalize(FreeOp* fop);
+
+  static const JS::TraceKind TraceKind = JS::TraceKind::ObjectGroup;
+
+ public:
+  const ObjectGroupFlags* addressOfFlags() const { return &flags_; }
+
+  
+  
+  static inline int32_t addendumOriginalUnboxedGroupValue() {
+    return Addendum_OriginalUnboxedGroup << OBJECT_FLAG_ADDENDUM_SHIFT;
+  }
+
+  inline uint32_t basePropertyCount(const AutoSweepObjectGroup& sweep);
+  inline uint32_t basePropertyCountDontCheckGeneration();
+
+ private:
+  inline void setBasePropertyCount(const AutoSweepObjectGroup& sweep,
+                                   uint32_t count);
+
+  static void staticAsserts() {
+    JS_STATIC_ASSERT(offsetof(ObjectGroup, proto_) ==
+                     offsetof(js::shadow::ObjectGroup, proto));
+  }
+
+ public:
+  
+  static bool useSingletonForClone(JSFunction* fun);
+
+  
+  static bool useSingletonForNewObject(JSContext* cx, JSScript* script,
+                                       jsbytecode* pc);
+
+  
+  static bool useSingletonForAllocationSite(JSScript* script, jsbytecode* pc,
+                                            JSProtoKey key);
+  static bool useSingletonForAllocationSite(JSScript* script, jsbytecode* pc,
+                                            const Class* clasp);
+
+  
+
+  static ObjectGroup* defaultNewGroup(JSContext* cx, const Class* clasp,
+                                      TaggedProto proto,
+                                      JSObject* associated = nullptr);
+  static ObjectGroup* lazySingletonGroup(JSContext* cx, ObjectGroup* oldGroup,
+                                         const Class* clasp, TaggedProto proto);
+
+  static void setDefaultNewGroupUnknown(JSContext* cx, ObjectGroupRealm& realm,
+                                        const js::Class* clasp,
+                                        JS::HandleObject obj);
 
 #ifdef DEBUG
-    static bool hasDefaultNewGroup(JSObject* proto, const Class* clasp, ObjectGroup* group);
+  static bool hasDefaultNewGroup(JSObject* proto, const Class* clasp,
+                                 ObjectGroup* group);
 #endif
 
-    
+  
+  
 
-    enum class NewArrayKind {
-        Normal,       
-        CopyOnWrite,  
-        UnknownIndex  
-    };
+  enum class NewArrayKind {
+    Normal,       
+    CopyOnWrite,  
+    UnknownIndex  
+  };
 
-    
-    
-    static ArrayObject* newArrayObject(JSContext* cx, const Value* vp, size_t length,
-                                       NewObjectKind newKind,
-                                       NewArrayKind arrayKind = NewArrayKind::Normal);
+  
+  
+  static ArrayObject* newArrayObject(
+      JSContext* cx, const Value* vp, size_t length, NewObjectKind newKind,
+      NewArrayKind arrayKind = NewArrayKind::Normal);
 
-    
-    
-    static JSObject* newPlainObject(JSContext* cx,
-                                    IdValuePair* properties, size_t nproperties,
-                                    NewObjectKind newKind);
+  
+  
+  static JSObject* newPlainObject(JSContext* cx, IdValuePair* properties,
+                                  size_t nproperties, NewObjectKind newKind);
 
-    
+  
 
-    
-    
-    static ObjectGroup* allocationSiteGroup(JSContext* cx, JSScript* script, jsbytecode* pc,
-                                            JSProtoKey key, HandleObject proto = nullptr);
+  
+  
+  static ObjectGroup* allocationSiteGroup(JSContext* cx, JSScript* script,
+                                          jsbytecode* pc, JSProtoKey key,
+                                          HandleObject proto = nullptr);
 
-    
-    static ObjectGroup* callingAllocationSiteGroup(JSContext* cx, JSProtoKey key,
-                                                   HandleObject proto = nullptr);
+  
+  static ObjectGroup* callingAllocationSiteGroup(JSContext* cx, JSProtoKey key,
+                                                 HandleObject proto = nullptr);
 
-    
-    static bool
-    setAllocationSiteObjectGroup(JSContext* cx, HandleScript script, jsbytecode* pc,
-                                 HandleObject obj, bool singleton);
+  
+  
+  static bool setAllocationSiteObjectGroup(JSContext* cx, HandleScript script,
+                                           jsbytecode* pc, HandleObject obj,
+                                           bool singleton);
 
-    static ArrayObject* getOrFixupCopyOnWriteObject(JSContext* cx, HandleScript script,
-                                                    jsbytecode* pc);
-    static ArrayObject* getCopyOnWriteObject(JSScript* script, jsbytecode* pc);
+  static ArrayObject* getOrFixupCopyOnWriteObject(JSContext* cx,
+                                                  HandleScript script,
+                                                  jsbytecode* pc);
+  static ArrayObject* getCopyOnWriteObject(JSScript* script, jsbytecode* pc);
 
-    
-    static bool findAllocationSite(JSContext* cx, const ObjectGroup* group,
-                                   JSScript** script, uint32_t* offset);
+  
+  static bool findAllocationSite(JSContext* cx, const ObjectGroup* group,
+                                 JSScript** script, uint32_t* offset);
 
-  private:
-    static ObjectGroup* defaultNewGroup(JSContext* cx, JSProtoKey key);
+ private:
+  static ObjectGroup* defaultNewGroup(JSContext* cx, JSProtoKey key);
 };
 
 
-class ObjectGroupRealm
-{
-  private:
-    class NewTable;
+class ObjectGroupRealm {
+ private:
+  class NewTable;
 
-    struct ArrayObjectKey;
-    using ArrayObjectTable = js::GCRekeyableHashMap<ArrayObjectKey,
-                                                    ReadBarrieredObjectGroup,
-                                                    ArrayObjectKey,
-                                                    SystemAllocPolicy>;
+  struct ArrayObjectKey;
+  using ArrayObjectTable =
+      js::GCRekeyableHashMap<ArrayObjectKey, ReadBarrieredObjectGroup,
+                             ArrayObjectKey, SystemAllocPolicy>;
 
-    struct PlainObjectKey;
-    struct PlainObjectEntry;
-    struct PlainObjectTableSweepPolicy {
-        static bool needsSweep(PlainObjectKey* key, PlainObjectEntry* entry);
-    };
-    using PlainObjectTable = JS::GCHashMap<PlainObjectKey,
-                                           PlainObjectEntry,
-                                           PlainObjectKey,
-                                           SystemAllocPolicy,
-                                           PlainObjectTableSweepPolicy>;
+  struct PlainObjectKey;
+  struct PlainObjectEntry;
+  struct PlainObjectTableSweepPolicy {
+    static bool needsSweep(PlainObjectKey* key, PlainObjectEntry* entry);
+  };
+  using PlainObjectTable =
+      JS::GCHashMap<PlainObjectKey, PlainObjectEntry, PlainObjectKey,
+                    SystemAllocPolicy, PlainObjectTableSweepPolicy>;
 
-    class AllocationSiteTable;
+  class AllocationSiteTable;
 
-  private:
-    
-    NewTable* defaultNewTable = nullptr;
-    NewTable* lazyTable = nullptr;
+ private:
+  
+  NewTable* defaultNewTable = nullptr;
+  NewTable* lazyTable = nullptr;
 
-    
-    class DefaultNewGroupCache
-    {
-        ObjectGroup* group_;
-        JSObject* associated_;
+  
+  class DefaultNewGroupCache {
+    ObjectGroup* group_;
+    JSObject* associated_;
 
-      public:
-        DefaultNewGroupCache()
-          : associated_(nullptr)
-        {
-            purge();
-        }
+   public:
+    DefaultNewGroupCache() : associated_(nullptr) { purge(); }
 
-        void purge() {
-            group_ = nullptr;
-        }
-        void put(ObjectGroup* group, JSObject* associated) {
-            group_ = group;
-            associated_ = associated;
-        }
-
-        MOZ_ALWAYS_INLINE ObjectGroup* lookup(const Class* clasp, TaggedProto proto,
-                                              JSObject* associated);
-    } defaultNewGroupCache = {};
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    ArrayObjectTable* arrayObjectTable = nullptr;
-    PlainObjectTable* plainObjectTable = nullptr;
-
-    
-    AllocationSiteTable* allocationSiteTable = nullptr;
-
-    
-    
-    
-    
-    
-    
-    ReadBarrieredObjectGroup stringSplitStringGroup = {};
-
-  public:
-    
-    mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
-
-    
-
-  private:
-    friend class ObjectGroup;
-
-    struct AllocationSiteKey;
-
-  public:
-    struct NewEntry;
-
-    ObjectGroupRealm() = default;
-    ~ObjectGroupRealm();
-
-    ObjectGroupRealm(ObjectGroupRealm&) = delete;
-    void operator=(ObjectGroupRealm&) = delete;
-
-    static ObjectGroupRealm& get(const ObjectGroup* group);
-    static ObjectGroupRealm& getForNewObject(JSContext* cx);
-
-    void replaceAllocationSiteGroup(JSScript* script, jsbytecode* pc,
-                                    JSProtoKey kind, ObjectGroup* group);
-
-    void removeDefaultNewGroup(const Class* clasp, TaggedProto proto, JSObject* associated);
-    void replaceDefaultNewGroup(const Class* clasp, TaggedProto proto, JSObject* associated,
-                                ObjectGroup* group);
-
-    static ObjectGroup* makeGroup(JSContext* cx, JS::Realm* realm, const Class* clasp,
-                                  Handle<TaggedProto> proto,
-                                  ObjectGroupFlags initialFlags = 0);
-
-    static ObjectGroup* getStringSplitStringGroup(JSContext* cx);
-
-    void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
-                                size_t* allocationSiteTables,
-                                size_t* arrayGroupTables,
-                                size_t* plainObjectGroupTables,
-                                size_t* realmTables);
-
-    void clearTables();
-
-    void sweep();
-
-    void purge() {
-        defaultNewGroupCache.purge();
+    void purge() { group_ = nullptr; }
+    void put(ObjectGroup* group, JSObject* associated) {
+      group_ = group;
+      associated_ = associated;
     }
+
+    MOZ_ALWAYS_INLINE ObjectGroup* lookup(const Class* clasp, TaggedProto proto,
+                                          JSObject* associated);
+  } defaultNewGroupCache = {};
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ArrayObjectTable* arrayObjectTable = nullptr;
+  PlainObjectTable* plainObjectTable = nullptr;
+
+  
+  AllocationSiteTable* allocationSiteTable = nullptr;
+
+  
+  
+  
+  
+  
+  
+  ReadBarrieredObjectGroup stringSplitStringGroup = {};
+
+ public:
+  
+  mozilla::LinkedList<js::UnboxedLayout> unboxedLayouts;
+
+  
+
+ private:
+  friend class ObjectGroup;
+
+  struct AllocationSiteKey;
+
+ public:
+  struct NewEntry;
+
+  ObjectGroupRealm() = default;
+  ~ObjectGroupRealm();
+
+  ObjectGroupRealm(ObjectGroupRealm&) = delete;
+  void operator=(ObjectGroupRealm&) = delete;
+
+  static ObjectGroupRealm& get(const ObjectGroup* group);
+  static ObjectGroupRealm& getForNewObject(JSContext* cx);
+
+  void replaceAllocationSiteGroup(JSScript* script, jsbytecode* pc,
+                                  JSProtoKey kind, ObjectGroup* group);
+
+  void removeDefaultNewGroup(const Class* clasp, TaggedProto proto,
+                             JSObject* associated);
+  void replaceDefaultNewGroup(const Class* clasp, TaggedProto proto,
+                              JSObject* associated, ObjectGroup* group);
+
+  static ObjectGroup* makeGroup(JSContext* cx, JS::Realm* realm,
+                                const Class* clasp, Handle<TaggedProto> proto,
+                                ObjectGroupFlags initialFlags = 0);
+
+  static ObjectGroup* getStringSplitStringGroup(JSContext* cx);
+
+  void addSizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf,
+                              size_t* allocationSiteTables,
+                              size_t* arrayGroupTables,
+                              size_t* plainObjectGroupTables,
+                              size_t* realmTables);
+
+  void clearTables();
+
+  void sweep();
+
+  void purge() { defaultNewGroupCache.purge(); }
 
 #ifdef JSGC_HASH_TABLE_CHECKS
-    void checkTablesAfterMovingGC() {
-        checkNewTableAfterMovingGC(defaultNewTable);
-        checkNewTableAfterMovingGC(lazyTable);
-    }
+  void checkTablesAfterMovingGC() {
+    checkNewTableAfterMovingGC(defaultNewTable);
+    checkNewTableAfterMovingGC(lazyTable);
+  }
 #endif
 
-    void fixupTablesAfterMovingGC() {
-        fixupNewTableAfterMovingGC(defaultNewTable);
-        fixupNewTableAfterMovingGC(lazyTable);
-    }
+  void fixupTablesAfterMovingGC() {
+    fixupNewTableAfterMovingGC(defaultNewTable);
+    fixupNewTableAfterMovingGC(lazyTable);
+  }
 
-  private:
+ private:
 #ifdef JSGC_HASH_TABLE_CHECKS
-    void checkNewTableAfterMovingGC(NewTable* table);
+  void checkNewTableAfterMovingGC(NewTable* table);
 #endif
 
-    void fixupNewTableAfterMovingGC(NewTable* table);
+  void fixupNewTableAfterMovingGC(NewTable* table);
 };
 
-PlainObject*
-NewPlainObjectWithProperties(JSContext* cx, IdValuePair* properties, size_t nproperties,
-                             NewObjectKind newKind);
+PlainObject* NewPlainObjectWithProperties(JSContext* cx,
+                                          IdValuePair* properties,
+                                          size_t nproperties,
+                                          NewObjectKind newKind);
 
-bool
-CombineArrayElementTypes(JSContext* cx, JSObject* newObj,
-                         const Value* compare, size_t ncompare);
+bool CombineArrayElementTypes(JSContext* cx, JSObject* newObj,
+                              const Value* compare, size_t ncompare);
 
-bool
-CombinePlainObjectPropertyTypes(JSContext* cx, JSObject* newObj,
-                                const Value* compare, size_t ncompare);
+bool CombinePlainObjectPropertyTypes(JSContext* cx, JSObject* newObj,
+                                     const Value* compare, size_t ncompare);
 
-} 
+}  
 
 #endif 

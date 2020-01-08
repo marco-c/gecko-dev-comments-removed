@@ -26,209 +26,186 @@ class LifoAlloc;
 
 
 
-class GenericPrinter
-{
-  protected:
-    bool                  hadOOM_;     
+class GenericPrinter {
+ protected:
+  bool hadOOM_;  
 
-    constexpr GenericPrinter()
-      : hadOOM_(false)
-    {}
+  constexpr GenericPrinter() : hadOOM_(false) {}
 
-  public:
-    
-    
-    virtual bool put(const char* s, size_t len) = 0;
-    virtual void flush() {  }
+ public:
+  
+  
+  virtual bool put(const char* s, size_t len) = 0;
+  virtual void flush() { 
+  }
 
-    inline bool put(const char* s) {
-        return put(s, strlen(s));
-    }
-    inline bool putChar(const char c) {
-        return put(&c, 1);
-    }
+  inline bool put(const char* s) { return put(s, strlen(s)); }
+  inline bool putChar(const char c) { return put(&c, 1); }
 
-    
-    bool printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
-    bool vprintf(const char* fmt, va_list ap) MOZ_FORMAT_PRINTF(2, 0);
+  
+  bool printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+  bool vprintf(const char* fmt, va_list ap) MOZ_FORMAT_PRINTF(2, 0);
 
-    
-    virtual void reportOutOfMemory();
+  
+  virtual void reportOutOfMemory();
 
-    
-    virtual bool hadOutOfMemory() const;
+  
+  virtual bool hadOutOfMemory() const;
 };
 
 
-class Sprinter final : public GenericPrinter
-{
-  public:
-    struct InvariantChecker
-    {
-        const Sprinter* parent;
+class Sprinter final : public GenericPrinter {
+ public:
+  struct InvariantChecker {
+    const Sprinter* parent;
 
-        explicit InvariantChecker(const Sprinter* p) : parent(p) {
-            parent->checkInvariants();
-        }
+    explicit InvariantChecker(const Sprinter* p) : parent(p) {
+      parent->checkInvariants();
+    }
 
-        ~InvariantChecker() {
-            parent->checkInvariants();
-        }
-    };
+    ~InvariantChecker() { parent->checkInvariants(); }
+  };
 
-    JSContext*            context;          
+  JSContext* context;  
 
-  private:
-    static const size_t   DefaultSize;
+ private:
+  static const size_t DefaultSize;
 #ifdef DEBUG
-    bool                  initialized;      
+  bool initialized;  
 #endif
-    bool                  shouldReportOOM;  
-    char*                 base;             
-    size_t                size;             
-    ptrdiff_t             offset;           
+  bool shouldReportOOM;  
+  char* base;            
+  size_t size;           
+  ptrdiff_t offset;      
 
-    MOZ_MUST_USE bool realloc_(size_t newSize);
+  MOZ_MUST_USE bool realloc_(size_t newSize);
 
-  public:
-    explicit Sprinter(JSContext* cx, bool shouldReportOOM = true);
-    ~Sprinter();
+ public:
+  explicit Sprinter(JSContext* cx, bool shouldReportOOM = true);
+  ~Sprinter();
 
-    
-    MOZ_MUST_USE bool init();
+  
+  MOZ_MUST_USE bool init();
 
-    void checkInvariants() const;
+  void checkInvariants() const;
 
-    const char* string() const { return base; }
-    const char* stringEnd() const { return base + offset; }
-    JS::UniqueChars release();
+  const char* string() const { return base; }
+  const char* stringEnd() const { return base + offset; }
+  JS::UniqueChars release();
 
-    
-    char* stringAt(ptrdiff_t off) const;
-    
-    char& operator[](size_t off);
+  
+  char* stringAt(ptrdiff_t off) const;
+  
+  char& operator[](size_t off);
 
-    
-    
-    
-    char* reserve(size_t len);
+  
+  
+  
+  
+  char* reserve(size_t len);
 
-    
-    
-    virtual bool put(const char* s, size_t len) override;
-    using GenericPrinter::put; 
+  
+  
+  virtual bool put(const char* s, size_t len) override;
+  using GenericPrinter::put;  
 
-    
-    
-    
-    MOZ_MUST_USE bool jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+  
+  
+  
+  MOZ_MUST_USE bool jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
 
-    bool putString(JSString* str);
+  bool putString(JSString* str);
 
-    ptrdiff_t getOffset() const;
+  ptrdiff_t getOffset() const;
 
-    
-    
-    
-    virtual void reportOutOfMemory() override;
+  
+  
+  
+  virtual void reportOutOfMemory() override;
 };
 
 
-class Fprinter final : public GenericPrinter
-{
-  private:
-    FILE*                   file_;
-    bool                    init_;
+class Fprinter final : public GenericPrinter {
+ private:
+  FILE* file_;
+  bool init_;
 
-  public:
-    explicit Fprinter(FILE* fp);
+ public:
+  explicit Fprinter(FILE* fp);
 
-    constexpr Fprinter()
-      : file_(nullptr),
-        init_(false)
-    {}
+  constexpr Fprinter() : file_(nullptr), init_(false) {}
 
 #ifdef DEBUG
-    ~Fprinter();
+  ~Fprinter();
 #endif
 
-    
-    MOZ_MUST_USE bool init(const char* path);
-    void init(FILE* fp);
-    bool isInitialized() const {
-        return file_ != nullptr;
-    }
-    void flush() override;
-    void finish();
+  
+  MOZ_MUST_USE bool init(const char* path);
+  void init(FILE* fp);
+  bool isInitialized() const { return file_ != nullptr; }
+  void flush() override;
+  void finish();
 
-    
-    
-    virtual bool put(const char* s, size_t len) override;
-    using GenericPrinter::put; 
+  
+  
+  virtual bool put(const char* s, size_t len) override;
+  using GenericPrinter::put;  
 };
 
 
 
 
-class LSprinter final : public GenericPrinter
-{
-  private:
-    struct Chunk
-    {
-        Chunk* next;
-        size_t length;
+class LSprinter final : public GenericPrinter {
+ private:
+  struct Chunk {
+    Chunk* next;
+    size_t length;
 
-        char* chars() {
-            return reinterpret_cast<char*>(this + 1);
-        }
-        char* end() {
-            return chars() + length;
-        }
-    };
+    char* chars() { return reinterpret_cast<char*>(this + 1); }
+    char* end() { return chars() + length; }
+  };
 
-  private:
-    LifoAlloc*              alloc_;          
-    Chunk*                  head_;
-    Chunk*                  tail_;
-    size_t                  unused_;
+ private:
+  LifoAlloc* alloc_;  
+  Chunk* head_;
+  Chunk* tail_;
+  size_t unused_;
 
-  public:
-    explicit LSprinter(LifoAlloc* lifoAlloc);
-    ~LSprinter();
+ public:
+  explicit LSprinter(LifoAlloc* lifoAlloc);
+  ~LSprinter();
 
-    
-    
-    void exportInto(GenericPrinter& out) const;
+  
+  
+  void exportInto(GenericPrinter& out) const;
 
-    
-    void clear();
+  
+  void clear();
 
-    
-    
-    virtual bool put(const char* s, size_t len) override;
-    using GenericPrinter::put; 
+  
+  
+  virtual bool put(const char* s, size_t len) override;
+  using GenericPrinter::put;  
 };
 
 
-extern const char       js_EscapeMap[];
+extern const char js_EscapeMap[];
 
 
 
 
 
 
-extern JS::UniqueChars
-QuoteString(JSContext* cx, JSString* str, char quote = '\0');
+extern JS::UniqueChars QuoteString(JSContext* cx, JSString* str,
+                                   char quote = '\0');
 
 
 
-extern bool
-QuoteString(Sprinter* sp, JSString* str, char quote = '\0');
+extern bool QuoteString(Sprinter* sp, JSString* str, char quote = '\0');
 
 
-extern bool
-JSONQuoteString(Sprinter* sp, JSString* str);
+extern bool JSONQuoteString(Sprinter* sp, JSString* str);
 
-} 
+}  
 
-#endif 
+#endif  

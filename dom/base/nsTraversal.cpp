@@ -16,20 +16,16 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-nsTraversal::nsTraversal(nsINode *aRoot,
-                         uint32_t aWhatToShow,
-                         NodeFilter* aFilter) :
-    mRoot(aRoot),
-    mWhatToShow(aWhatToShow),
-    mFilter(aFilter),
-    mInAcceptNode(false)
-{
-    NS_ASSERTION(aRoot, "invalid root in call to nsTraversal constructor");
+nsTraversal::nsTraversal(nsINode* aRoot, uint32_t aWhatToShow,
+                         NodeFilter* aFilter)
+    : mRoot(aRoot),
+      mWhatToShow(aWhatToShow),
+      mFilter(aFilter),
+      mInAcceptNode(false) {
+  NS_ASSERTION(aRoot, "invalid root in call to nsTraversal constructor");
 }
 
-nsTraversal::~nsTraversal()
-{
-    
+nsTraversal::~nsTraversal() { 
 }
 
 
@@ -39,29 +35,27 @@ nsTraversal::~nsTraversal()
 
 
 
-int16_t
-nsTraversal::TestNode(nsINode* aNode, mozilla::ErrorResult& aResult)
-{
-    if (mInAcceptNode) {
-        aResult.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
-        return 0;
-    }
+int16_t nsTraversal::TestNode(nsINode* aNode, mozilla::ErrorResult& aResult) {
+  if (mInAcceptNode) {
+    aResult.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
+    return 0;
+  }
 
-    uint16_t nodeType = aNode->NodeType();
+  uint16_t nodeType = aNode->NodeType();
 
-    if (nodeType <= 12 && !((1 << (nodeType-1)) & mWhatToShow)) {
-        return NodeFilter_Binding::FILTER_SKIP;
-    }
+  if (nodeType <= 12 && !((1 << (nodeType - 1)) & mWhatToShow)) {
+    return NodeFilter_Binding::FILTER_SKIP;
+  }
 
-    if (!mFilter) {
-        
-        return NodeFilter_Binding::FILTER_ACCEPT;
-    }
-
-    AutoRestore<bool> inAcceptNode(mInAcceptNode);
-    mInAcceptNode = true;
+  if (!mFilter) {
     
-    
-    return mFilter->AcceptNode(*aNode, aResult, nullptr,
-                               CallbackObject::eRethrowExceptions);
+    return NodeFilter_Binding::FILTER_ACCEPT;
+  }
+
+  AutoRestore<bool> inAcceptNode(mInAcceptNode);
+  mInAcceptNode = true;
+  
+  
+  return mFilter->AcceptNode(*aNode, aResult, nullptr,
+                             CallbackObject::eRethrowExceptions);
 }

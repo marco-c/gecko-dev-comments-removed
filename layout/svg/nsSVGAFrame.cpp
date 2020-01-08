@@ -16,32 +16,28 @@
 
 using namespace mozilla;
 
-class nsSVGAFrame final : public nsSVGDisplayContainerFrame
-{
-  friend nsIFrame*
-  NS_NewSVGAFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle);
-protected:
-  explicit nsSVGAFrame(ComputedStyle* aStyle)
-    : nsSVGDisplayContainerFrame(aStyle, kClassID)
-  {}
+class nsSVGAFrame final : public nsSVGDisplayContainerFrame {
+  friend nsIFrame* NS_NewSVGAFrame(nsIPresShell* aPresShell,
+                                   ComputedStyle* aStyle);
 
-public:
+ protected:
+  explicit nsSVGAFrame(ComputedStyle* aStyle)
+      : nsSVGDisplayContainerFrame(aStyle, kClassID) {}
+
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsSVGAFrame)
 
 #ifdef DEBUG
-  virtual void Init(nsIContent*       aContent,
-                    nsContainerFrame* aParent,
-                    nsIFrame*         aPrevInFlow) override;
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
 #endif
 
   
-  virtual nsresult  AttributeChanged(int32_t         aNameSpaceID,
-                                     nsAtom*        aAttribute,
-                                     int32_t         aModType) override;
+  virtual nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                    int32_t aModType) override;
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult GetFrameName(nsAString& aResult) const override
-  {
+  virtual nsresult GetFrameName(nsAString& aResult) const override {
     return MakeFrameName(NS_LITERAL_STRING("SVGA"), aResult);
   }
 #endif
@@ -50,9 +46,7 @@ public:
 
 
 
-nsIFrame*
-NS_NewSVGAFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle)
-{
+nsIFrame* NS_NewSVGAFrame(nsIPresShell* aPresShell, ComputedStyle* aStyle) {
   return new (aPresShell) nsSVGAFrame(aStyle);
 }
 
@@ -61,11 +55,8 @@ NS_IMPL_FRAMEARENA_HELPERS(nsSVGAFrame)
 
 
 #ifdef DEBUG
-void
-nsSVGAFrame::Init(nsIContent*       aContent,
-                  nsContainerFrame* aParent,
-                  nsIFrame*         aPrevInFlow)
-{
+void nsSVGAFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
+                       nsIFrame* aPrevInFlow) {
   NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::a),
                "Trying to construct an SVGAFrame for a "
                "content element that doesn't support the right interfaces");
@@ -74,13 +65,9 @@ nsSVGAFrame::Init(nsIContent*       aContent,
 }
 #endif 
 
-nsresult
-nsSVGAFrame::AttributeChanged(int32_t         aNameSpaceID,
-                              nsAtom*        aAttribute,
-                              int32_t         aModType)
-{
-  if (aNameSpaceID == kNameSpaceID_None &&
-      aAttribute == nsGkAtoms::transform) {
+nsresult nsSVGAFrame::AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                       int32_t aModType) {
+  if (aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::transform) {
     
     
     
@@ -95,7 +82,6 @@ nsSVGAFrame::AttributeChanged(int32_t         aNameSpaceID,
       aAttribute == nsGkAtoms::href &&
       (aNameSpaceID == kNameSpaceID_None ||
        aNameSpaceID == kNameSpaceID_XLink)) {
-
     dom::SVGAElement* content = static_cast<dom::SVGAElement*>(GetContent());
 
     
@@ -103,5 +89,5 @@ nsSVGAFrame::AttributeChanged(int32_t         aNameSpaceID,
     content->ResetLinkState(true, content->ElementHasHref());
   }
 
- return NS_OK;
+  return NS_OK;
 }

@@ -196,15 +196,13 @@ namespace mozilla {
 
 
 
-template<typename T>
-inline void
-Swap(T& aX, T& aY)
-{
+template <typename T>
+inline void Swap(T& aX, T& aY) {
   T tmp(std::move(aX));
   aX = std::move(aY);
   aY = std::move(tmp);
 }
 
-} 
+}  
 
 #endif 

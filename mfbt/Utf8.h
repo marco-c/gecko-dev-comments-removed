@@ -12,15 +12,15 @@
 #ifndef mozilla_Utf8_h
 #define mozilla_Utf8_h
 
-#include "mozilla/Casting.h" 
-#include "mozilla/Likely.h" 
-#include "mozilla/Maybe.h" 
-#include "mozilla/TextUtils.h" 
-#include "mozilla/Types.h" 
+#include "mozilla/Casting.h"    
+#include "mozilla/Likely.h"     
+#include "mozilla/Maybe.h"      
+#include "mozilla/TextUtils.h"  
+#include "mozilla/Types.h"      
 
-#include <limits.h> 
-#include <stddef.h> 
-#include <stdint.h> 
+#include <limits.h>  
+#include <stddef.h>  
+#include <stdint.h>  
 
 namespace mozilla {
 
@@ -37,9 +37,8 @@ static_assert(CHAR_BIT == 8,
 
 
 
-union Utf8Unit
-{
-private:
+union Utf8Unit {
+ private:
   
   
   
@@ -148,47 +147,39 @@ private:
   
   char mValue;
 
-public:
-  explicit constexpr Utf8Unit(char aUnit)
-    : mValue(aUnit)
-  {}
+ public:
+  explicit constexpr Utf8Unit(char aUnit) : mValue(aUnit) {}
 
   explicit constexpr Utf8Unit(unsigned char aUnit)
-    : mValue(static_cast<char>(aUnit))
-  {
+      : mValue(static_cast<char>(aUnit)) {
     
     
     
   }
 
-  constexpr bool operator==(const Utf8Unit& aOther) const
-  {
+  constexpr bool operator==(const Utf8Unit& aOther) const {
     return mValue == aOther.mValue;
   }
 
-  constexpr bool operator!=(const Utf8Unit& aOther) const
-  {
+  constexpr bool operator!=(const Utf8Unit& aOther) const {
     return !(*this == aOther);
   }
 
   
-  constexpr char toChar() const
-  {
+  constexpr char toChar() const {
     
     
     return mValue;
   }
 
   
-  constexpr unsigned char toUnsignedChar() const
-  {
+  constexpr unsigned char toUnsignedChar() const {
     
     return static_cast<unsigned char>(mValue);
   }
 
   
-  constexpr uint8_t toUint8() const
-  {
+  constexpr uint8_t toUint8() const {
     
     return static_cast<uint8_t>(mValue);
   }
@@ -208,9 +199,7 @@ public:
 
 
 
-inline const unsigned char*
-Utf8AsUnsignedChars(const Utf8Unit* aUnits)
-{
+inline const unsigned char* Utf8AsUnsignedChars(const Utf8Unit* aUnits) {
   static_assert(sizeof(Utf8Unit) == sizeof(unsigned char),
                 "sizes must match to permissibly reinterpret_cast<>");
   static_assert(alignof(Utf8Unit) == alignof(unsigned char),
@@ -233,10 +222,8 @@ Utf8AsUnsignedChars(const Utf8Unit* aUnits)
 }
 
 
-template<>
-inline bool
-IsAscii<Utf8Unit>(Utf8Unit aUnit)
-{
+template <>
+inline bool IsAscii<Utf8Unit>(Utf8Unit aUnit) {
   return IsAscii(aUnit.toUint8());
 }
 
@@ -248,16 +235,13 @@ IsAscii<Utf8Unit>(Utf8Unit aUnit)
 
 
 
-extern MFBT_API bool
-IsValidUtf8(const void* aCodeUnits, size_t aCount);
+extern MFBT_API bool IsValidUtf8(const void* aCodeUnits, size_t aCount);
 
 
 
 
 
-inline bool
-IsTrailingUnit(Utf8Unit aUnit)
-{
+inline bool IsTrailingUnit(Utf8Unit aUnit) {
   return (aUnit.toUint8() & 0b1100'0000) == 0b1000'0000;
 }
 
@@ -291,22 +275,14 @@ IsTrailingUnit(Utf8Unit aUnit)
 
 
 
-template<typename Iter,
-         typename EndIter,
-         class OnBadLeadUnit,
-         class OnNotEnoughUnits,
-         class OnBadTrailingUnit,
-         class OnBadCodePoint,
-         class OnNotShortestForm>
-MOZ_ALWAYS_INLINE Maybe<char32_t>
-DecodeOneUtf8CodePointInline(const Utf8Unit aLeadUnit,
-                             Iter* aIter, const EndIter& aEnd,
-                             OnBadLeadUnit aOnBadLeadUnit,
-                             OnNotEnoughUnits aOnNotEnoughUnits,
-                             OnBadTrailingUnit aOnBadTrailingUnit,
-                             OnBadCodePoint aOnBadCodePoint,
-                             OnNotShortestForm aOnNotShortestForm)
-{
+template <typename Iter, typename EndIter, class OnBadLeadUnit,
+          class OnNotEnoughUnits, class OnBadTrailingUnit, class OnBadCodePoint,
+          class OnNotShortestForm>
+MOZ_ALWAYS_INLINE Maybe<char32_t> DecodeOneUtf8CodePointInline(
+    const Utf8Unit aLeadUnit, Iter* aIter, const EndIter& aEnd,
+    OnBadLeadUnit aOnBadLeadUnit, OnNotEnoughUnits aOnNotEnoughUnits,
+    OnBadTrailingUnit aOnBadTrailingUnit, OnBadCodePoint aOnBadCodePoint,
+    OnNotShortestForm aOnNotShortestForm) {
   MOZ_ASSERT(Utf8Unit((*aIter)[-1]) == aLeadUnit);
 
   char32_t n = aLeadUnit.toUint8();
@@ -383,26 +359,17 @@ DecodeOneUtf8CodePointInline(const Utf8Unit aLeadUnit,
 
 
 
-template<typename Iter,
-         typename EndIter,
-         class OnBadLeadUnit,
-         class OnNotEnoughUnits,
-         class OnBadTrailingUnit,
-         class OnBadCodePoint,
-         class OnNotShortestForm>
-inline Maybe<char32_t>
-DecodeOneUtf8CodePoint(const Utf8Unit aLeadUnit,
-                       Iter* aIter, const EndIter& aEnd,
-                       OnBadLeadUnit aOnBadLeadUnit,
-                       OnNotEnoughUnits aOnNotEnoughUnits,
-                       OnBadTrailingUnit aOnBadTrailingUnit,
-                       OnBadCodePoint aOnBadCodePoint,
-                       OnNotShortestForm aOnNotShortestForm)
-{
-  return DecodeOneUtf8CodePointInline(aLeadUnit, aIter, aEnd,
-                                      aOnBadLeadUnit, aOnNotEnoughUnits,
-                                      aOnBadTrailingUnit, aOnBadCodePoint,
-                                      aOnNotShortestForm);
+template <typename Iter, typename EndIter, class OnBadLeadUnit,
+          class OnNotEnoughUnits, class OnBadTrailingUnit, class OnBadCodePoint,
+          class OnNotShortestForm>
+inline Maybe<char32_t> DecodeOneUtf8CodePoint(
+    const Utf8Unit aLeadUnit, Iter* aIter, const EndIter& aEnd,
+    OnBadLeadUnit aOnBadLeadUnit, OnNotEnoughUnits aOnNotEnoughUnits,
+    OnBadTrailingUnit aOnBadTrailingUnit, OnBadCodePoint aOnBadCodePoint,
+    OnNotShortestForm aOnNotShortestForm) {
+  return DecodeOneUtf8CodePointInline(aLeadUnit, aIter, aEnd, aOnBadLeadUnit,
+                                      aOnNotEnoughUnits, aOnBadTrailingUnit,
+                                      aOnBadCodePoint, aOnNotShortestForm);
 }
 
 
@@ -412,11 +379,9 @@ DecodeOneUtf8CodePoint(const Utf8Unit aLeadUnit,
 
 
 
-template<typename Iter, typename EndIter>
-MOZ_ALWAYS_INLINE Maybe<char32_t>
-DecodeOneUtf8CodePointInline(const Utf8Unit aLeadUnit,
-                             Iter* aIter, const EndIter& aEnd)
-{
+template <typename Iter, typename EndIter>
+MOZ_ALWAYS_INLINE Maybe<char32_t> DecodeOneUtf8CodePointInline(
+    const Utf8Unit aLeadUnit, Iter* aIter, const EndIter& aEnd) {
   
   
   
@@ -452,26 +417,25 @@ DecodeOneUtf8CodePointInline(const Utf8Unit aLeadUnit,
   
   
   
-  auto onNotShortestForm = [](char32_t aBadCodePoint, uint8_t aUnitsObserved) {};
+  auto onNotShortestForm = [](char32_t aBadCodePoint, uint8_t aUnitsObserved) {
+  };
 
-  return DecodeOneUtf8CodePointInline(aLeadUnit, aIter, aEnd,
-                                      onBadLeadUnit, onNotEnoughUnits,
-                                      onBadTrailingUnit, onBadCodePoint,
-                                      onNotShortestForm);
+  return DecodeOneUtf8CodePointInline(aLeadUnit, aIter, aEnd, onBadLeadUnit,
+                                      onNotEnoughUnits, onBadTrailingUnit,
+                                      onBadCodePoint, onNotShortestForm);
 }
 
 
 
 
 
-template<typename Iter, typename EndIter>
-inline Maybe<char32_t>
-DecodeOneUtf8CodePoint(const Utf8Unit aLeadUnit,
-                       Iter* aIter, const EndIter& aEnd)
-{
+template <typename Iter, typename EndIter>
+inline Maybe<char32_t> DecodeOneUtf8CodePoint(const Utf8Unit aLeadUnit,
+                                              Iter* aIter,
+                                              const EndIter& aEnd) {
   return DecodeOneUtf8CodePointInline(aLeadUnit, aIter, aEnd);
 }
 
-} 
+}  
 
 #endif 

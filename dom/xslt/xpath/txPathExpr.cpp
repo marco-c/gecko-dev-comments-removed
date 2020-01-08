@@ -10,246 +10,222 @@
 #include "txXMLUtils.h"
 #include "txXPathTreeWalker.h"
 
-  
- 
 
 
 
 
 
 
-nsresult
-PathExpr::addExpr(Expr* aExpr, PathOperator aPathOp)
-{
-    NS_ASSERTION(!mItems.IsEmpty() || aPathOp == RELATIVE_OP,
-                 "First step has to be relative in PathExpr");
-    PathExprItem* pxi = mItems.AppendElement();
-    if (!pxi) {
-        return NS_ERROR_OUT_OF_MEMORY;
-    }
-    pxi->expr = aExpr;
-    pxi->pathOp = aPathOp;
 
-    return NS_OK;
+
+nsresult PathExpr::addExpr(Expr* aExpr, PathOperator aPathOp) {
+  NS_ASSERTION(!mItems.IsEmpty() || aPathOp == RELATIVE_OP,
+               "First step has to be relative in PathExpr");
+  PathExprItem* pxi = mItems.AppendElement();
+  if (!pxi) {
+    return NS_ERROR_OUT_OF_MEMORY;
+  }
+  pxi->expr = aExpr;
+  pxi->pathOp = aPathOp;
+
+  return NS_OK;
 }
 
-    
+
+
+
+
+
+
+
+
+
+
+
+nsresult PathExpr::evaluate(txIEvalContext* aContext, txAExprResult** aResult) {
+  *aResult = nullptr;
+
   
+  
+  
+  RefPtr<txAExprResult> res;
+  nsresult rv = mItems[0].expr->evaluate(aContext, getter_AddRefs(res));
+  NS_ENSURE_SUCCESS(rv, rv);
 
+  NS_ENSURE_TRUE(res->getResultType() == txAExprResult::NODESET,
+                 NS_ERROR_XSLT_NODESET_EXPECTED);
 
+  RefPtr<txNodeSet> nodes =
+      static_cast<txNodeSet*>(static_cast<txAExprResult*>(res));
+  if (nodes->isEmpty()) {
+    res.forget(aResult);
 
+    return NS_OK;
+  }
+  res = nullptr;  
 
+  
+  uint32_t i, len = mItems.Length();
+  for (i = 1; i < len; ++i) {
+    PathExprItem& pxi = mItems[i];
+    RefPtr<txNodeSet> tmpNodes;
+    txNodeSetContext eContext(nodes, aContext);
+    while (eContext.hasNext()) {
+      eContext.next();
 
+      RefPtr<txNodeSet> resNodes;
+      if (pxi.pathOp == DESCENDANT_OP) {
+        rv = aContext->recycler()->getNodeSet(getter_AddRefs(resNodes));
+        NS_ENSURE_SUCCESS(rv, rv);
 
+        rv = evalDescendants(pxi.expr, eContext.getContextNode(), &eContext,
+                             resNodes);
+        NS_ENSURE_SUCCESS(rv, rv);
+      } else {
+        RefPtr<txAExprResult> res;
+        rv = pxi.expr->evaluate(&eContext, getter_AddRefs(res));
+        NS_ENSURE_SUCCESS(rv, rv);
 
+        if (res->getResultType() != txAExprResult::NODESET) {
+          
+          return NS_ERROR_XSLT_NODESET_EXPECTED;
+        }
+        resNodes = static_cast<txNodeSet*>(static_cast<txAExprResult*>(res));
+      }
 
+      if (tmpNodes) {
+        if (!resNodes->isEmpty()) {
+          RefPtr<txNodeSet> oldSet;
+          oldSet.swap(tmpNodes);
+          rv = aContext->recycler()->getNonSharedNodeSet(
+              oldSet, getter_AddRefs(tmpNodes));
+          NS_ENSURE_SUCCESS(rv, rv);
 
-nsresult
-PathExpr::evaluate(txIEvalContext* aContext, txAExprResult** aResult)
-{
-    *aResult = nullptr;
+          oldSet.swap(resNodes);
+          rv = aContext->recycler()->getNonSharedNodeSet(
+              oldSet, getter_AddRefs(resNodes));
+          NS_ENSURE_SUCCESS(rv, rv);
 
-    
-    
-    
-    RefPtr<txAExprResult> res;
-    nsresult rv = mItems[0].expr->evaluate(aContext, getter_AddRefs(res));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    NS_ENSURE_TRUE(res->getResultType() == txAExprResult::NODESET,
-                   NS_ERROR_XSLT_NODESET_EXPECTED);
-
-    RefPtr<txNodeSet> nodes = static_cast<txNodeSet*>
-                                           (static_cast<txAExprResult*>
-                                                       (res));
+          tmpNodes->addAndTransfer(resNodes);
+        }
+      } else {
+        tmpNodes = resNodes;
+      }
+    }
+    nodes = tmpNodes;
     if (nodes->isEmpty()) {
-        res.forget(aResult);
-
-        return NS_OK;
+      break;
     }
-    res = nullptr; 
+  }
 
+  *aResult = nodes;
+  NS_ADDREF(*aResult);
+
+  return NS_OK;
+}  
+
+
+
+
+
+nsresult PathExpr::evalDescendants(Expr* aStep, const txXPathNode& aNode,
+                                   txIMatchContext* aContext,
+                                   txNodeSet* resNodes) {
+  txSingleNodeContext eContext(aNode, aContext);
+  RefPtr<txAExprResult> res;
+  nsresult rv = aStep->evaluate(&eContext, getter_AddRefs(res));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (res->getResultType() != txAExprResult::NODESET) {
     
-    uint32_t i, len = mItems.Length();
-    for (i = 1; i < len; ++i) {
-        PathExprItem& pxi = mItems[i];
-        RefPtr<txNodeSet> tmpNodes;
-        txNodeSetContext eContext(nodes, aContext);
-        while (eContext.hasNext()) {
-            eContext.next();
+    return NS_ERROR_XSLT_NODESET_EXPECTED;
+  }
 
-            RefPtr<txNodeSet> resNodes;
-            if (pxi.pathOp == DESCENDANT_OP) {
-                rv = aContext->recycler()->getNodeSet(getter_AddRefs(resNodes));
-                NS_ENSURE_SUCCESS(rv, rv);
+  txNodeSet* oldSet = static_cast<txNodeSet*>(static_cast<txAExprResult*>(res));
+  RefPtr<txNodeSet> newSet;
+  rv =
+      aContext->recycler()->getNonSharedNodeSet(oldSet, getter_AddRefs(newSet));
+  NS_ENSURE_SUCCESS(rv, rv);
 
-                rv = evalDescendants(pxi.expr, eContext.getContextNode(),
-                                     &eContext, resNodes);
-                NS_ENSURE_SUCCESS(rv, rv);
-            }
-            else {
-                RefPtr<txAExprResult> res;
-                rv = pxi.expr->evaluate(&eContext, getter_AddRefs(res));
-                NS_ENSURE_SUCCESS(rv, rv);
+  resNodes->addAndTransfer(newSet);
 
-                if (res->getResultType() != txAExprResult::NODESET) {
-                    
-                    return NS_ERROR_XSLT_NODESET_EXPECTED;
-                }
-                resNodes = static_cast<txNodeSet*>
-                                      (static_cast<txAExprResult*>
-                                                  (res));
-            }
+  bool filterWS;
+  rv = aContext->isStripSpaceAllowed(aNode, filterWS);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-            if (tmpNodes) {
-                if (!resNodes->isEmpty()) {
-                    RefPtr<txNodeSet> oldSet;
-                    oldSet.swap(tmpNodes);
-                    rv = aContext->recycler()->
-                        getNonSharedNodeSet(oldSet, getter_AddRefs(tmpNodes));
-                    NS_ENSURE_SUCCESS(rv, rv);
-
-                    oldSet.swap(resNodes);
-                    rv = aContext->recycler()->
-                        getNonSharedNodeSet(oldSet, getter_AddRefs(resNodes));
-                    NS_ENSURE_SUCCESS(rv, rv);
-
-                    tmpNodes->addAndTransfer(resNodes);
-                }
-            }
-            else {
-                tmpNodes = resNodes;
-            }
-        }
-        nodes = tmpNodes;
-        if (nodes->isEmpty()) {
-            break;
-        }
-    }
-
-    *aResult = nodes;
-    NS_ADDREF(*aResult);
-
+  txXPathTreeWalker walker(aNode);
+  if (!walker.moveToFirstChild()) {
     return NS_OK;
-} 
+  }
 
-
-
-
-
-nsresult
-PathExpr::evalDescendants(Expr* aStep, const txXPathNode& aNode,
-                          txIMatchContext* aContext, txNodeSet* resNodes)
-{
-    txSingleNodeContext eContext(aNode, aContext);
-    RefPtr<txAExprResult> res;
-    nsresult rv = aStep->evaluate(&eContext, getter_AddRefs(res));
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    if (res->getResultType() != txAExprResult::NODESET) {
-        
-        return NS_ERROR_XSLT_NODESET_EXPECTED;
+  do {
+    const txXPathNode& node = walker.getCurrentPosition();
+    if (!(filterWS && txXPathNodeUtils::isText(node) &&
+          txXPathNodeUtils::isWhitespace(node))) {
+      rv = evalDescendants(aStep, node, aContext, resNodes);
+      NS_ENSURE_SUCCESS(rv, rv);
     }
+  } while (walker.moveToNextSibling());
 
-    txNodeSet* oldSet = static_cast<txNodeSet*>
-                                   (static_cast<txAExprResult*>(res));
-    RefPtr<txNodeSet> newSet;
-    rv = aContext->recycler()->getNonSharedNodeSet(oldSet,
-                                                   getter_AddRefs(newSet));
-    NS_ENSURE_SUCCESS(rv, rv);
+  return NS_OK;
+}  
 
-    resNodes->addAndTransfer(newSet);
-
-    bool filterWS;
-    rv = aContext->isStripSpaceAllowed(aNode, filterWS);
-    NS_ENSURE_SUCCESS(rv, rv);
-
-    txXPathTreeWalker walker(aNode);
-    if (!walker.moveToFirstChild()) {
-        return NS_OK;
-    }
-
-    do {
-        const txXPathNode& node = walker.getCurrentPosition();
-        if (!(filterWS && txXPathNodeUtils::isText(node) &&
-              txXPathNodeUtils::isWhitespace(node))) {
-            rv = evalDescendants(aStep, node, aContext, resNodes);
-            NS_ENSURE_SUCCESS(rv, rv);
-        }
-    } while (walker.moveToNextSibling());
-
-    return NS_OK;
-} 
-
-Expr::ExprType
-PathExpr::getType()
-{
-  return PATH_EXPR;
-}
+Expr::ExprType PathExpr::getType() { return PATH_EXPR; }
 
 TX_IMPL_EXPR_STUBS_BASE(PathExpr, NODESET_RESULT)
 
-Expr*
-PathExpr::getSubExprAt(uint32_t aPos)
-{
-    return aPos < mItems.Length() ? mItems[aPos].expr.get() : nullptr;
+Expr* PathExpr::getSubExprAt(uint32_t aPos) {
+  return aPos < mItems.Length() ? mItems[aPos].expr.get() : nullptr;
 }
-void
-PathExpr::setSubExprAt(uint32_t aPos, Expr* aExpr)
-{
-    NS_ASSERTION(aPos < mItems.Length(), "setting bad subexpression index");
-    mItems[aPos].expr.forget();
-    mItems[aPos].expr = aExpr;
+void PathExpr::setSubExprAt(uint32_t aPos, Expr* aExpr) {
+  NS_ASSERTION(aPos < mItems.Length(), "setting bad subexpression index");
+  mItems[aPos].expr.forget();
+  mItems[aPos].expr = aExpr;
 }
 
+bool PathExpr::isSensitiveTo(ContextSensitivity aContext) {
+  if (mItems[0].expr->isSensitiveTo(aContext)) {
+    return true;
+  }
 
-bool
-PathExpr::isSensitiveTo(ContextSensitivity aContext)
-{
-    if (mItems[0].expr->isSensitiveTo(aContext)) {
-        return true;
-    }
-
-    
-    Expr::ContextSensitivity context =
-        aContext & ~(Expr::NODE_CONTEXT | Expr::NODESET_CONTEXT);
-    if (context == NO_CONTEXT) {
-        return false;
-    }
-
-    uint32_t i, len = mItems.Length();
-    for (i = 0; i < len; ++i) {
-        NS_ASSERTION(!mItems[i].expr->isSensitiveTo(Expr::NODESET_CONTEXT),
-                     "Step cannot depend on nodeset-context");
-        if (mItems[i].expr->isSensitiveTo(context)) {
-            return true;
-        }
-    }
-
+  
+  Expr::ContextSensitivity context =
+      aContext & ~(Expr::NODE_CONTEXT | Expr::NODESET_CONTEXT);
+  if (context == NO_CONTEXT) {
     return false;
+  }
+
+  uint32_t i, len = mItems.Length();
+  for (i = 0; i < len; ++i) {
+    NS_ASSERTION(!mItems[i].expr->isSensitiveTo(Expr::NODESET_CONTEXT),
+                 "Step cannot depend on nodeset-context");
+    if (mItems[i].expr->isSensitiveTo(context)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 #ifdef TX_TO_STRING
-void
-PathExpr::toString(nsAString& dest)
-{
-    if (!mItems.IsEmpty()) {
-        NS_ASSERTION(mItems[0].pathOp == RELATIVE_OP,
-                     "First step should be relative");
-        mItems[0].expr->toString(dest);
-    }
+void PathExpr::toString(nsAString& dest) {
+  if (!mItems.IsEmpty()) {
+    NS_ASSERTION(mItems[0].pathOp == RELATIVE_OP,
+                 "First step should be relative");
+    mItems[0].expr->toString(dest);
+  }
 
-    uint32_t i, len = mItems.Length();
-    for (i = 1; i < len; ++i) {
-        switch (mItems[i].pathOp) {
-            case DESCENDANT_OP:
-                dest.AppendLiteral("//");
-                break;
-            case RELATIVE_OP:
-                dest.Append(char16_t('/'));
-                break;
-        }
-        mItems[i].expr->toString(dest);
+  uint32_t i, len = mItems.Length();
+  for (i = 1; i < len; ++i) {
+    switch (mItems[i].pathOp) {
+      case DESCENDANT_OP:
+        dest.AppendLiteral("//");
+        break;
+      case RELATIVE_OP:
+        dest.Append(char16_t('/'));
+        break;
     }
+    mItems[i].expr->toString(dest);
+  }
 }
 #endif

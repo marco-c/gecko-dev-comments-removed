@@ -24,9 +24,8 @@ class CompositorScreenshotGrabberImpl;
 
 
 
-class CompositorScreenshotGrabber final
-{
-public:
+class CompositorScreenshotGrabber final {
+ public:
   CompositorScreenshotGrabber();
   ~CompositorScreenshotGrabber();
 
@@ -49,12 +48,12 @@ public:
   
   void Destroy();
 
-private:
+ private:
   
   UniquePtr<CompositorScreenshotGrabberImpl> mImpl;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

@@ -7,25 +7,25 @@
 #include "RootCertificateTelemetryUtils.h"
 
 #include "mozilla/Logging.h"
-#include "RootHashes.inc" 
+#include "RootHashes.inc"  
 #include "ScopedNSSTypes.h"
 #include "mozilla/ArrayUtils.h"
 
-namespace mozilla { namespace psm {
+namespace mozilla {
+namespace psm {
 
-mozilla::LazyLogModule gPublicKeyPinningTelemetryLog("PublicKeyPinningTelemetryService");
-
-
-
-
+mozilla::LazyLogModule gPublicKeyPinningTelemetryLog(
+    "PublicKeyPinningTelemetryService");
 
 
-class BinaryHashSearchArrayComparator
-{
-public:
+
+
+
+
+class BinaryHashSearchArrayComparator {
+ public:
   explicit BinaryHashSearchArrayComparator(const uint8_t* aTarget, size_t len)
-    : mTarget(aTarget)
-  {
+      : mTarget(aTarget) {
     MOZ_ASSERT(len == HASH_LEN, "Hashes should be of the same length.");
   }
 
@@ -33,15 +33,13 @@ public:
     return memcmp(mTarget, val.hash, HASH_LEN);
   }
 
-private:
+ private:
   const uint8_t* mTarget;
 };
 
 
 
-int32_t
-RootCABinNumber(const SECItem* cert)
-{
+int32_t RootCABinNumber(const SECItem* cert) {
   Digest digest;
 
   
@@ -53,19 +51,20 @@ RootCABinNumber(const SECItem* cert)
   
   size_t idx;
 
-  MOZ_LOG(gPublicKeyPinningTelemetryLog, LogLevel::Debug,
-           ("pkpinTelem: First bytes %02x %02x %02x %02x\n",
-            digest.get().data[0], digest.get().data[1], digest.get().data[2], digest.get().data[3]));
+  MOZ_LOG(
+      gPublicKeyPinningTelemetryLog, LogLevel::Debug,
+      ("pkpinTelem: First bytes %02x %02x %02x %02x\n", digest.get().data[0],
+       digest.get().data[1], digest.get().data[2], digest.get().data[3]));
 
-  if (mozilla::BinarySearchIf(ROOT_TABLE, 0, ArrayLength(ROOT_TABLE),
-        BinaryHashSearchArrayComparator(static_cast<uint8_t*>(digest.get().data),
-                                        digest.get().len),
-        &idx)) {
-
+  if (mozilla::BinarySearchIf(
+          ROOT_TABLE, 0, ArrayLength(ROOT_TABLE),
+          BinaryHashSearchArrayComparator(
+              static_cast<uint8_t*>(digest.get().data), digest.get().len),
+          &idx)) {
     MOZ_LOG(gPublicKeyPinningTelemetryLog, LogLevel::Debug,
-          ("pkpinTelem: Telemetry index was %zu, bin is %d\n",
-           idx, ROOT_TABLE[idx].binNumber));
-    return (int32_t) ROOT_TABLE[idx].binNumber;
+            ("pkpinTelem: Telemetry index was %zu, bin is %d\n", idx,
+             ROOT_TABLE[idx].binNumber));
+    return (int32_t)ROOT_TABLE[idx].binNumber;
   }
 
   
@@ -74,11 +73,8 @@ RootCABinNumber(const SECItem* cert)
 
 
 
-
-void
-AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe,
-  const CERTCertificate* cert)
-{
+void AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe,
+                                  const CERTCertificate* cert) {
   int32_t binId = RootCABinNumber(&cert->derCert);
 
   if (binId != ROOT_CERTIFICATE_HASH_FAILURE) {
@@ -86,5 +82,5 @@ AccumulateTelemetryForRootCA(mozilla::Telemetry::HistogramID probe,
   }
 }
 
-} 
-} 
+}  
+}  

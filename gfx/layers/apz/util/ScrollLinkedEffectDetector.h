@@ -22,23 +22,22 @@ namespace layers {
 
 
 
-class MOZ_STACK_CLASS ScrollLinkedEffectDetector
-{
-private:
+class MOZ_STACK_CLASS ScrollLinkedEffectDetector {
+ private:
   static uint32_t sDepth;
   static bool sFoundScrollLinkedEffect;
 
-public:
+ public:
   static void PositioningPropertyMutated();
 
   explicit ScrollLinkedEffectDetector(nsIDocument* aDoc);
   ~ScrollLinkedEffectDetector();
 
-private:
+ private:
   RefPtr<nsIDocument> mDocument;
 };
 
-} 
-} 
+}  
+}  
 
 #endif 

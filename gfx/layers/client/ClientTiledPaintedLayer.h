@@ -7,11 +7,11 @@
 #ifndef GFX_CLIENTTILEDPAINTEDLAYER_H
 #define GFX_CLIENTTILEDPAINTEDLAYER_H
 
-#include "ClientLayerManager.h"         
-#include "Layers.h"                     
-#include "mozilla/RefPtr.h"             
+#include "ClientLayerManager.h"  
+#include "Layers.h"              
+#include "mozilla/RefPtr.h"      
 #include "mozilla/layers/TiledContentClient.h"
-#include "nsRegion.h"                   
+#include "nsRegion.h"  
 
 namespace mozilla {
 namespace layers {
@@ -34,21 +34,21 @@ class SpecificLayerAttributes;
 
 
 
-class ClientTiledPaintedLayer : public PaintedLayer,
-                                public ClientLayer
-{
+class ClientTiledPaintedLayer : public PaintedLayer, public ClientLayer {
   typedef PaintedLayer Base;
 
-public:
+ public:
   explicit ClientTiledPaintedLayer(ClientLayerManager* const aManager,
-                                  ClientLayerManager::PaintedLayerCreationHint aCreationHint = LayerManager::NONE);
+                                   ClientLayerManager::PaintedLayerCreationHint
+                                       aCreationHint = LayerManager::NONE);
 
-protected:
+ protected:
   ~ClientTiledPaintedLayer();
 
-  virtual void PrintInfo(std::stringstream& aStream, const char* aPrefix) override;
+  virtual void PrintInfo(std::stringstream& aStream,
+                         const char* aPrefix) override;
 
-public:
+ public:
   
   virtual const char* Name() const override { return "TiledPaintedLayer"; }
 
@@ -72,8 +72,7 @@ public:
 
   virtual void ClearCachedResources() override;
 
-  virtual void HandleMemoryPressure() override
-  {
+  virtual void HandleMemoryPressure() override {
     if (mContentClient) {
       mContentClient->HandleMemoryPressure();
     }
@@ -88,11 +87,11 @@ public:
                          LayerMetricsWrapper* aOutDisplayPortAncestor,
                          bool* aOutHasTransformAnimation);
 
-  virtual bool IsOptimizedFor(LayerManager::PaintedLayerCreationHint aCreationHint) override;
+  virtual bool IsOptimizedFor(
+      LayerManager::PaintedLayerCreationHint aCreationHint) override;
 
-private:
-  ClientLayerManager* ClientManager()
-  {
+ private:
+  ClientLayerManager* ClientManager() {
     return static_cast<ClientLayerManager*>(mManager);
   }
 
@@ -146,7 +145,7 @@ private:
   BasicTiledLayerPaintData mPaintData;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

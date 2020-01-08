@@ -53,6 +53,7 @@ void InitializeForwarding();
 void Shutdown();
 
 
+
 static Monitor* gMonitor;
 
 
@@ -124,14 +125,10 @@ bool InRepaintStressMode();
 
 
 
-class ChildRole
-{
-public:
+class ChildRole {
+ public:
   
-#define ForEachRoleType(Macro)                      \
-  Macro(Active)                                     \
-  Macro(Standby)                                    \
-  Macro(Inert)
+#define ForEachRoleType(Macro) Macro(Active) Macro(Standby) Macro(Inert)
 
   enum Type {
 #define DefineType(Name) Name,
@@ -141,22 +138,22 @@ public:
 
   static const char* TypeString(Type aType) {
     switch (aType) {
-#define GetTypeString(Name) case Name: return #Name;
-    ForEachRoleType(GetTypeString)
+#define GetTypeString(Name) \
+  case Name:                \
+    return #Name;
+      ForEachRoleType(GetTypeString)
 #undef GetTypeString
-    default: MOZ_CRASH("Bad ChildRole type");
+          default : MOZ_CRASH("Bad ChildRole type");
     }
   }
 
-protected:
+ protected:
   ChildProcessInfo* mProcess;
   Type mType;
 
-  explicit ChildRole(Type aType)
-    : mProcess(nullptr), mType(aType)
-  {}
+  explicit ChildRole(Type aType) : mProcess(nullptr), mType(aType) {}
 
-public:
+ public:
   void SetProcess(ChildProcessInfo* aProcess) {
     MOZ_RELEASE_ASSERT(!mProcess);
     mProcess = aProcess;
@@ -186,22 +183,18 @@ extern ipc::GeckoChildProcessHost* gRecordingProcess;
 
 
 
-struct RecordingProcessData
-{
+struct RecordingProcessData {
   
   const base::SharedMemoryHandle& mPrefsHandle;
   const ipc::FileDescriptor& mPrefMapHandle;
 
   RecordingProcessData(const base::SharedMemoryHandle& aPrefsHandle,
                        const ipc::FileDescriptor& aPrefMapHandle)
-    : mPrefsHandle(aPrefsHandle)
-    , mPrefMapHandle(aPrefMapHandle)
-  {}
+      : mPrefsHandle(aPrefsHandle), mPrefMapHandle(aPrefMapHandle) {}
 };
 
 
-class ChildProcessInfo
-{
+class ChildProcessInfo {
   
   Channel* mChannel;
 
@@ -297,9 +290,10 @@ class ChildProcessInfo
                Message** aMessages, size_t aNumMessages);
 
   void OnCrash(const char* aWhy);
-  void LaunchSubprocess(const Maybe<RecordingProcessData>& aRecordingProcessData);
+  void LaunchSubprocess(
+      const Maybe<RecordingProcessData>& aRecordingProcessData);
 
-public:
+ public:
   ChildProcessInfo(UniquePtr<ChildRole> aRole,
                    const Maybe<RecordingProcessData>& aRecordingProcessData);
   ~ChildProcessInfo();
@@ -310,34 +304,38 @@ public:
   size_t LastCheckpoint() { return mLastCheckpoint; }
   bool IsRecovering() { return mRecoveryStage != RecoveryStage::None; }
   bool PauseNeeded() { return mPauseNeeded; }
-  const InfallibleVector<size_t>& MajorCheckpoints() { return mMajorCheckpoints; }
+  const InfallibleVector<size_t>& MajorCheckpoints() {
+    return mMajorCheckpoints;
+  }
 
   bool IsPaused() { return mPaused; }
   bool IsPausedAtCheckpoint();
   bool IsPausedAtRecordingEndpoint();
 
   
-  void GetInstalledBreakpoints(InfallibleVector<AddBreakpointMessage*>& aBreakpoints);
+  void GetInstalledBreakpoints(
+      InfallibleVector<AddBreakpointMessage*>& aBreakpoints);
 
   typedef std::function<bool(js::BreakpointPosition::Kind)> BreakpointFilter;
 
   
   
   size_t MostRecentCheckpoint() {
-    return (GetDisposition() == BeforeLastCheckpoint) ? mLastCheckpoint - 1 : mLastCheckpoint;
+    return (GetDisposition() == BeforeLastCheckpoint) ? mLastCheckpoint - 1
+                                                      : mLastCheckpoint;
   }
 
   
   
   size_t RewindTargetCheckpoint() {
     switch (GetDisposition()) {
-    case BeforeLastCheckpoint:
-    case AtLastCheckpoint:
-      
-      
-      return LastCheckpoint() - 1;
-    case AfterLastCheckpoint:
-      return LastCheckpoint();
+      case BeforeLastCheckpoint:
+      case AtLastCheckpoint:
+        
+        
+        return LastCheckpoint() - 1;
+      case AfterLastCheckpoint:
+        return LastCheckpoint();
     }
   }
 
@@ -361,9 +359,7 @@ public:
     return id;
   }
 
-  void SetPauseNeeded() {
-    mPauseNeeded = true;
-  }
+  void SetPauseNeeded() { mPauseNeeded = true; }
 
   void ClearPauseNeeded() {
     MOZ_RELEASE_ASSERT(IsPaused());
@@ -385,15 +381,17 @@ public:
   
   void WaitUntil(const std::function<bool()>& aCallback);
 
-  void WaitUntilPaused() { WaitUntil([=]() { return IsPaused(); }); }
+  void WaitUntilPaused() {
+    WaitUntil([=]() { return IsPaused(); });
+  }
 
   static bool MaybeProcessPendingMessage(ChildProcessInfo* aProcess);
 
   static void SetIntroductionMessage(IntroductionMessage* aMessage);
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

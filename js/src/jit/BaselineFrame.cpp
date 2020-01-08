@@ -17,153 +17,143 @@
 using namespace js;
 using namespace js::jit;
 
-static void
-TraceLocals(BaselineFrame* frame, JSTracer* trc, unsigned start, unsigned end)
-{
-    if (start < end) {
-        
-        Value* last = frame->valueSlot(end - 1);
-        TraceRootRange(trc, end - start, last, "baseline-stack");
-    }
+static void TraceLocals(BaselineFrame* frame, JSTracer* trc, unsigned start,
+                        unsigned end) {
+  if (start < end) {
+    
+    Value* last = frame->valueSlot(end - 1);
+    TraceRootRange(trc, end - start, last, "baseline-stack");
+  }
 }
 
-void
-BaselineFrame::trace(JSTracer* trc, const JSJitFrameIter& frameIterator)
-{
-    replaceCalleeToken(TraceCalleeToken(trc, calleeToken()));
+void BaselineFrame::trace(JSTracer* trc, const JSJitFrameIter& frameIterator) {
+  replaceCalleeToken(TraceCalleeToken(trc, calleeToken()));
+
+  
+  if (isFunctionFrame()) {
+    TraceRoot(trc, &thisArgument(), "baseline-this");
+
+    unsigned numArgs = js::Max(numActualArgs(), numFormalArgs());
+    TraceRootRange(trc, numArgs + isConstructing(), argv(), "baseline-args");
+  }
+
+  
+  if (envChain_) {
+    TraceRoot(trc, &envChain_, "baseline-envchain");
+  }
+
+  
+  if (hasReturnValue()) {
+    TraceRoot(trc, returnValue().address(), "baseline-rval");
+  }
+
+  if (isEvalFrame() && script()->isDirectEvalInFunction()) {
+    TraceRoot(trc, evalNewTargetAddress(), "baseline-evalNewTarget");
+  }
+
+  if (hasArgsObj()) {
+    TraceRoot(trc, &argsObj_, "baseline-args-obj");
+  }
+
+  
+  JSScript* script = this->script();
+  size_t nfixed = script->nfixed();
+  jsbytecode* pc;
+  frameIterator.baselineScriptAndPc(nullptr, &pc);
+  size_t nlivefixed = script->calculateLiveFixed(pc);
+
+  
+  
+  if (numValueSlots() == 0) {
+    return;
+  }
+
+  MOZ_ASSERT(nfixed <= numValueSlots());
+
+  if (nfixed == nlivefixed) {
+    
+    TraceLocals(this, trc, 0, numValueSlots());
+  } else {
+    
+    TraceLocals(this, trc, nfixed, numValueSlots());
 
     
-    if (isFunctionFrame()) {
-        TraceRoot(trc, &thisArgument(), "baseline-this");
-
-        unsigned numArgs = js::Max(numActualArgs(), numFormalArgs());
-        TraceRootRange(trc, numArgs + isConstructing(), argv(), "baseline-args");
+    while (nfixed > nlivefixed) {
+      unaliasedLocal(--nfixed).setUndefined();
     }
 
     
-    if (envChain_) {
-        TraceRoot(trc, &envChain_, "baseline-envchain");
-    }
+    TraceLocals(this, trc, 0, nlivefixed);
+  }
 
-    
-    if (hasReturnValue()) {
-        TraceRoot(trc, returnValue().address(), "baseline-rval");
-    }
-
-    if (isEvalFrame() && script()->isDirectEvalInFunction()) {
-        TraceRoot(trc, evalNewTargetAddress(), "baseline-evalNewTarget");
-    }
-
-    if (hasArgsObj()) {
-        TraceRoot(trc, &argsObj_, "baseline-args-obj");
-    }
-
-    
-    JSScript* script = this->script();
-    size_t nfixed = script->nfixed();
-    jsbytecode* pc;
-    frameIterator.baselineScriptAndPc(nullptr, &pc);
-    size_t nlivefixed = script->calculateLiveFixed(pc);
-
-    
-    
-    if (numValueSlots() == 0) {
-        return;
-    }
-
-    MOZ_ASSERT(nfixed <= numValueSlots());
-
-    if (nfixed == nlivefixed) {
-        
-        TraceLocals(this, trc, 0, numValueSlots());
-    } else {
-        
-        TraceLocals(this, trc, nfixed, numValueSlots());
-
-        
-        while (nfixed > nlivefixed) {
-            unaliasedLocal(--nfixed).setUndefined();
-        }
-
-        
-        TraceLocals(this, trc, 0, nlivefixed);
-    }
-
-    if (auto* debugEnvs = script->realm()->debugEnvs()) {
-        debugEnvs->traceLiveFrame(trc, this);
-    }
+  if (auto* debugEnvs = script->realm()->debugEnvs()) {
+    debugEnvs->traceLiveFrame(trc, this);
+  }
 }
 
-bool
-BaselineFrame::isNonGlobalEvalFrame() const
-{
-    return isEvalFrame() && script()->enclosingScope()->as<EvalScope>().isNonGlobal();
+bool BaselineFrame::isNonGlobalEvalFrame() const {
+  return isEvalFrame() &&
+         script()->enclosingScope()->as<EvalScope>().isNonGlobal();
 }
 
-bool
-BaselineFrame::initFunctionEnvironmentObjects(JSContext* cx)
-{
-    return js::InitFunctionEnvironmentObjects(cx, this);
+bool BaselineFrame::initFunctionEnvironmentObjects(JSContext* cx) {
+  return js::InitFunctionEnvironmentObjects(cx, this);
 }
 
-bool
-BaselineFrame::pushVarEnvironment(JSContext* cx, HandleScope scope)
-{
-    return js::PushVarEnvironmentObject(cx, scope, this);
+bool BaselineFrame::pushVarEnvironment(JSContext* cx, HandleScope scope) {
+  return js::PushVarEnvironmentObject(cx, scope, this);
 }
 
-bool
-BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues)
-{
-    mozilla::PodZero(this);
+bool BaselineFrame::initForOsr(InterpreterFrame* fp, uint32_t numStackValues) {
+  mozilla::PodZero(this);
 
-    envChain_ = fp->environmentChain();
+  envChain_ = fp->environmentChain();
 
-    if (fp->hasInitialEnvironmentUnchecked()) {
-        flags_ |= BaselineFrame::HAS_INITIAL_ENV;
+  if (fp->hasInitialEnvironmentUnchecked()) {
+    flags_ |= BaselineFrame::HAS_INITIAL_ENV;
+  }
+
+  if (fp->script()->needsArgsObj() && fp->hasArgsObj()) {
+    flags_ |= BaselineFrame::HAS_ARGS_OBJ;
+    argsObj_ = &fp->argsObj();
+  }
+
+  if (fp->hasReturnValue()) {
+    setReturnValue(fp->returnValue());
+  }
+
+  frameSize_ = BaselineFrame::FramePointerOffset + BaselineFrame::Size() +
+               numStackValues * sizeof(Value);
+
+  MOZ_ASSERT(numValueSlots() == numStackValues);
+
+  for (uint32_t i = 0; i < numStackValues; i++) {
+    *valueSlot(i) = fp->slots()[i];
+  }
+
+  if (fp->isDebuggee()) {
+    JSContext* cx = TlsContext.get();
+
+    
+    
+
+    
+    
+    
+    
+    JSJitFrameIter frame(cx->activation()->asJit());
+    MOZ_ASSERT(frame.returnAddress() == nullptr);
+    BaselineScript* baseline = fp->script()->baselineScript();
+    uint8_t* retAddr =
+        baseline->returnAddressForEntry(baseline->retAddrEntry(0));
+    frame.current()->setReturnAddress(retAddr);
+
+    if (!Debugger::handleBaselineOsr(cx, fp, this)) {
+      return false;
     }
 
-    if (fp->script()->needsArgsObj() && fp->hasArgsObj()) {
-        flags_ |= BaselineFrame::HAS_ARGS_OBJ;
-        argsObj_ = &fp->argsObj();
-    }
+    setIsDebuggee();
+  }
 
-    if (fp->hasReturnValue()) {
-        setReturnValue(fp->returnValue());
-    }
-
-    frameSize_ = BaselineFrame::FramePointerOffset +
-        BaselineFrame::Size() +
-        numStackValues * sizeof(Value);
-
-    MOZ_ASSERT(numValueSlots() == numStackValues);
-
-    for (uint32_t i = 0; i < numStackValues; i++) {
-        *valueSlot(i) = fp->slots()[i];
-    }
-
-    if (fp->isDebuggee()) {
-        JSContext* cx = TlsContext.get();
-
-        
-        
-
-        
-        
-        
-        
-        JSJitFrameIter frame(cx->activation()->asJit());
-        MOZ_ASSERT(frame.returnAddress() == nullptr);
-        BaselineScript* baseline = fp->script()->baselineScript();
-        uint8_t* retAddr = baseline->returnAddressForEntry(baseline->retAddrEntry(0));
-        frame.current()->setReturnAddress(retAddr);
-
-        if (!Debugger::handleBaselineOsr(cx, fp, this)) {
-            return false;
-        }
-
-        setIsDebuggee();
-    }
-
-    return true;
+  return true;
 }

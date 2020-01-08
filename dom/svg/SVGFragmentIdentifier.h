@@ -15,18 +15,17 @@ namespace mozilla {
 
 namespace dom {
 class SVGSVGElement;
-} 
+}  
 
 
 
 
 
-class SVGFragmentIdentifier
-{
+class SVGFragmentIdentifier {
   
   SVGFragmentIdentifier() = delete;
 
-public:
+ public:
   
 
 
@@ -36,14 +35,15 @@ public:
   static bool ProcessFragmentIdentifier(nsIDocument *aDocument,
                                         const nsAString &aAnchorName);
 
-private:
- 
+ private:
+  
 
 
 
-  static bool ProcessSVGViewSpec(const nsAString &aViewSpec, dom::SVGSVGElement *root);
+  static bool ProcessSVGViewSpec(const nsAString &aViewSpec,
+                                 dom::SVGSVGElement *root);
 };
 
-} 
+}  
 
-#endif 
+#endif  

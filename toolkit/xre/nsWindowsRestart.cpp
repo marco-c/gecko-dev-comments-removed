@@ -6,7 +6,8 @@
 
 
 #ifdef nsWindowsRestart_cpp
-#error "nsWindowsRestart.cpp is not a header file, and must only be included once."
+#error \
+    "nsWindowsRestart.cpp is not a header file, and must only be included once."
 #else
 #define nsWindowsRestart_cpp
 #endif
@@ -26,42 +27,35 @@
 
 
 
-static char16_t*
-AllocConvertUTF8toUTF16(const char *arg)
-{
+static char16_t *AllocConvertUTF8toUTF16(const char *arg) {
   
   size_t len = strlen(arg);
   char16_t *s = new char16_t[(len + 1) * sizeof(char16_t)];
-  if (!s)
-    return nullptr;
+  if (!s) return nullptr;
 
-  size_t dstLen = ::MultiByteToWideChar(
-    CP_UTF8, 0, arg, len, reinterpret_cast<wchar_t*>(s), len);
+  size_t dstLen = ::MultiByteToWideChar(CP_UTF8, 0, arg, len,
+                                        reinterpret_cast<wchar_t *>(s), len);
   s[dstLen] = 0;
 
   return s;
 }
 
-static void
-FreeAllocStrings(int argc, wchar_t **argv)
-{
+static void FreeAllocStrings(int argc, wchar_t **argv) {
   while (argc) {
     --argc;
-    delete [] argv[argc];
+    delete[] argv[argc];
   }
 
-  delete [] argv;
+  delete[] argv;
 }
 
-static wchar_t**
-AllocConvertUTF8toUTF16Strings(int argc, char **argv)
-{
-  wchar_t **argvConverted = new wchar_t*[argc];
-  if (!argvConverted)
-    return nullptr;
+static wchar_t **AllocConvertUTF8toUTF16Strings(int argc, char **argv) {
+  wchar_t **argvConverted = new wchar_t *[argc];
+  if (!argvConverted) return nullptr;
 
   for (int i = 0; i < argc; ++i) {
-    argvConverted[i] = reinterpret_cast<wchar_t*>(AllocConvertUTF8toUTF16(argv[i]));
+    argvConverted[i] =
+        reinterpret_cast<wchar_t *>(AllocConvertUTF8toUTF16(argv[i]));
     if (!argvConverted[i]) {
       FreeAllocStrings(i, argvConverted);
       return nullptr;
@@ -76,35 +70,21 @@ AllocConvertUTF8toUTF16Strings(int argc, char **argv)
 
 
 
+BOOL WinLaunchChild(const wchar_t *exePath, int argc, wchar_t **argv,
+                    HANDLE userToken = nullptr, HANDLE *hProcess = nullptr);
 
-BOOL
-WinLaunchChild(const wchar_t *exePath,
-               int argc, wchar_t **argv,
-               HANDLE userToken = nullptr,
-               HANDLE *hProcess = nullptr);
-
-BOOL
-WinLaunchChild(const wchar_t *exePath,
-               int argc, char **argv,
-               HANDLE userToken,
-               HANDLE *hProcess)
-{
+BOOL WinLaunchChild(const wchar_t *exePath, int argc, char **argv,
+                    HANDLE userToken, HANDLE *hProcess) {
   wchar_t **argvConverted = AllocConvertUTF8toUTF16Strings(argc, argv);
-  if (!argvConverted)
-    return FALSE;
+  if (!argvConverted) return FALSE;
 
   BOOL ok = WinLaunchChild(exePath, argc, argvConverted, userToken, hProcess);
   FreeAllocStrings(argc, argvConverted);
   return ok;
 }
 
-BOOL
-WinLaunchChild(const wchar_t *exePath,
-               int argc,
-               wchar_t **argv,
-               HANDLE userToken,
-               HANDLE *hProcess)
-{
+BOOL WinLaunchChild(const wchar_t *exePath, int argc, wchar_t **argv,
+                    HANDLE userToken, HANDLE *hProcess) {
   BOOL ok;
 
   mozilla::UniquePtr<wchar_t[]> cl(mozilla::MakeCommandLine(argc, argv));
@@ -118,16 +98,14 @@ WinLaunchChild(const wchar_t *exePath,
   PROCESS_INFORMATION pi = {0};
 
   if (userToken == nullptr) {
-    ok = CreateProcessW(exePath,
-                        cl.get(),
+    ok = CreateProcessW(exePath, cl.get(),
                         nullptr,  
                         nullptr,  
-                        FALSE, 
-                        0,     
+                        FALSE,    
+                        0,        
                         nullptr,  
                         nullptr,  
-                        &si,
-                        &pi);
+                        &si, &pi);
   } else {
     
     
@@ -136,17 +114,14 @@ WinLaunchChild(const wchar_t *exePath,
       environmentBlock = nullptr;
     }
 
-    ok = CreateProcessAsUserW(userToken,
-                              exePath,
-                              cl.get(),
+    ok = CreateProcessAsUserW(userToken, exePath, cl.get(),
                               nullptr,  
                               nullptr,  
                               FALSE,    
                               0,        
                               environmentBlock,
                               nullptr,  
-                              &si,
-                              &pi);
+                              &si, &pi);
 
     if (environmentBlock) {
       DestroyEnvironmentBlock(environmentBlock);
@@ -155,25 +130,21 @@ WinLaunchChild(const wchar_t *exePath,
 
   if (ok) {
     if (hProcess) {
-      *hProcess = pi.hProcess; 
+      *hProcess = pi.hProcess;  
     } else {
       CloseHandle(pi.hProcess);
     }
     CloseHandle(pi.hThread);
   } else {
     LPVOID lpMsgBuf = nullptr;
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                  FORMAT_MESSAGE_FROM_SYSTEM |
-                  FORMAT_MESSAGE_IGNORE_INSERTS,
-                  nullptr,
-                  GetLastError(),
-                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  (LPTSTR) &lpMsgBuf,
-                  0,
-                  nullptr);
-    wprintf(L"Error restarting: %s\n", lpMsgBuf ? static_cast<const wchar_t*>(lpMsgBuf) : L"(null)");
-    if (lpMsgBuf)
-      LocalFree(lpMsgBuf);
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+                      FORMAT_MESSAGE_IGNORE_INSERTS,
+                  nullptr, GetLastError(),
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&lpMsgBuf,
+                  0, nullptr);
+    wprintf(L"Error restarting: %s\n",
+            lpMsgBuf ? static_cast<const wchar_t *>(lpMsgBuf) : L"(null)");
+    if (lpMsgBuf) LocalFree(lpMsgBuf);
   }
 
   return ok;

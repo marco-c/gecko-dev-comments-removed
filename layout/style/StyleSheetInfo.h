@@ -23,18 +23,15 @@ struct URLExtraData;
 
 
 
-struct StyleSheetInfo final
-{
+struct StyleSheetInfo final {
   typedef net::ReferrerPolicy ReferrerPolicy;
 
-  StyleSheetInfo(CORSMode aCORSMode,
-                 ReferrerPolicy aReferrerPolicy,
+  StyleSheetInfo(CORSMode aCORSMode, ReferrerPolicy aReferrerPolicy,
                  const dom::SRIMetadata& aIntegrity,
                  css::SheetParsingMode aParsingMode);
 
   
   StyleSheetInfo(StyleSheetInfo& aCopy, StyleSheet* aPrimarySheet);
-
 
   ~StyleSheetInfo();
 
@@ -47,15 +44,15 @@ struct StyleSheetInfo final
 
   
   
-  nsCOMPtr<nsIURI>       mSheetURI; 
-  nsCOMPtr<nsIURI>       mOriginalSheetURI;  
-  nsCOMPtr<nsIURI>       mBaseURI; 
+  nsCOMPtr<nsIURI> mSheetURI;          
+  nsCOMPtr<nsIURI> mOriginalSheetURI;  
+  nsCOMPtr<nsIURI> mBaseURI;           
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  CORSMode               mCORSMode;
+  CORSMode mCORSMode;
   
   
-  ReferrerPolicy         mReferrerPolicy;
-  dom::SRIMetadata       mIntegrity;
+  ReferrerPolicy mReferrerPolicy;
+  dom::SRIMetadata mIntegrity;
 
   
   
@@ -90,10 +87,10 @@ struct StyleSheetInfo final
   RefPtr<URLExtraData> mURLData;
 
 #ifdef DEBUG
-  bool                   mPrincipalSet;
+  bool mPrincipalSet;
 #endif
 };
 
-} 
+}  
 
-#endif 
+#endif  

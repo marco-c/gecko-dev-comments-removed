@@ -14,29 +14,27 @@
 
 namespace mozilla {
 namespace gl {
-    class GLContext;
-    class TextureImage;
-} 
+class GLContext;
+class TextureImage;
+}  
 namespace layers {
 
 class CompositorOGL;
 
-class GLBlitTextureImageHelper final
-{
-    
-    CompositorOGL* mCompositor;
+class GLBlitTextureImageHelper final {
+  
+  CompositorOGL* mCompositor;
 
-    
-    GLuint mBlitProgram, mBlitFramebuffer;
-    void UseBlitProgram();
-    void SetBlitFramebufferForDestTexture(GLuint aTexture);
+  
+  GLuint mBlitProgram, mBlitFramebuffer;
+  void UseBlitProgram();
+  void SetBlitFramebufferForDestTexture(GLuint aTexture);
 
-public:
+ public:
+  explicit GLBlitTextureImageHelper(CompositorOGL* gl);
+  ~GLBlitTextureImageHelper();
 
-    explicit GLBlitTextureImageHelper(CompositorOGL *gl);
-    ~GLBlitTextureImageHelper();
-
-    
+  
 
 
 
@@ -62,11 +60,11 @@ public:
 
 
 
-    void BlitTextureImage(gl::TextureImage *aSrc, const gfx::IntRect& aSrcRect,
-                          gl::TextureImage *aDst, const gfx::IntRect& aDstRect);
+  void BlitTextureImage(gl::TextureImage* aSrc, const gfx::IntRect& aSrcRect,
+                        gl::TextureImage* aDst, const gfx::IntRect& aDstRect);
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

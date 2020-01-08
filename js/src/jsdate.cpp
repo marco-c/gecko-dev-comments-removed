@@ -52,8 +52,8 @@
 
 using namespace js;
 
-using mozilla::Atomic;
 using mozilla::ArrayLength;
+using mozilla::Atomic;
 using mozilla::BitwiseCast;
 using mozilla::IsAsciiAlpha;
 using mozilla::IsFinite;
@@ -70,9 +70,12 @@ using JS::ToInteger;
 
 static Atomic<uint32_t, Relaxed> sResolutionUsec;
 
+
 static Atomic<bool, Relaxed> sJitter;
 
-static Atomic<JS::ReduceMicrosecondTimePrecisionCallback, Relaxed> sReduceMicrosecondTimePrecisionCallback;
+
+static Atomic<JS::ReduceMicrosecondTimePrecisionCallback, Relaxed>
+    sReduceMicrosecondTimePrecisionCallback;
 
 
 
@@ -122,419 +125,355 @@ static Atomic<JS::ReduceMicrosecondTimePrecisionCallback, Relaxed> sReduceMicros
 
 
 
+namespace {
 
-namespace
-{
-
-class DateTimeHelper
-{
-  private:
+class DateTimeHelper {
+ private:
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
-    static double localTZA(double t, DateTimeInfo::TimeZoneOffset offset);
+  static double localTZA(double t, DateTimeInfo::TimeZoneOffset offset);
 #else
-    static int equivalentYearForDST(int year);
-    static bool isRepresentableAsTime32(double t);
-    static double daylightSavingTA(double t);
-    static double adjustTime(double date);
-    static PRMJTime toPRMJTime(double localTime, double utcTime);
+  static int equivalentYearForDST(int year);
+  static bool isRepresentableAsTime32(double t);
+  static double daylightSavingTA(double t);
+  static double adjustTime(double date);
+  static PRMJTime toPRMJTime(double localTime, double utcTime);
 #endif
 
-  public:
-    static double localTime(double t);
-    static double UTC(double t);
-    static JSString* timeZoneComment(JSContext* cx, double utcTime, double localTime);
+ public:
+  static double localTime(double t);
+  static double UTC(double t);
+  static JSString* timeZoneComment(JSContext* cx, double utcTime,
+                                   double localTime);
 #if !ENABLE_INTL_API || MOZ_SYSTEM_ICU
-    static size_t formatTime(char* buf, size_t buflen, const char* fmt, double utcTime, double localTime);
+  static size_t formatTime(char* buf, size_t buflen, const char* fmt,
+                           double utcTime, double localTime);
 #endif
 };
 
+}  
+
+
+
+static inline double PositiveModulo(double dividend, double divisor) {
+  MOZ_ASSERT(divisor > 0);
+  MOZ_ASSERT(IsFinite(divisor));
+
+  double result = fmod(dividend, divisor);
+  if (result < 0) {
+    result += divisor;
+  }
+  return result + (+0.0);
+}
+
+static inline double Day(double t) { return floor(t / msPerDay); }
+
+static double TimeWithinDay(double t) { return PositiveModulo(t, msPerDay); }
+
+
+static inline bool IsLeapYear(double year) {
+  MOZ_ASSERT(ToInteger(year) == year);
+  return fmod(year, 4) == 0 && (fmod(year, 100) != 0 || fmod(year, 400) == 0);
+}
+
+static inline double DaysInYear(double year) {
+  if (!IsFinite(year)) {
+    return GenericNaN();
+  }
+  return IsLeapYear(year) ? 366 : 365;
+}
+
+static inline double DayFromYear(double y) {
+  return 365 * (y - 1970) + floor((y - 1969) / 4.0) -
+         floor((y - 1901) / 100.0) + floor((y - 1601) / 400.0);
+}
+
+static inline double TimeFromYear(double y) {
+  return DayFromYear(y) * msPerDay;
+}
+
+static double YearFromTime(double t) {
+  if (!IsFinite(t)) {
+    return GenericNaN();
+  }
+
+  MOZ_ASSERT(ToInteger(t) == t);
+
+  double y = floor(t / (msPerDay * 365.2425)) + 1970;
+  double t2 = TimeFromYear(y);
+
+  
+
+
+
+
+  if (t2 > t) {
+    y--;
+  } else {
+    if (t2 + msPerDay * DaysInYear(y) <= t) {
+      y++;
+    }
+  }
+  return y;
+}
+
+static inline int DaysInFebruary(double year) {
+  return IsLeapYear(year) ? 29 : 28;
 }
 
 
-
-static inline double
-PositiveModulo(double dividend, double divisor)
-{
-    MOZ_ASSERT(divisor > 0);
-    MOZ_ASSERT(IsFinite(divisor));
-
-    double result = fmod(dividend, divisor);
-    if (result < 0) {
-        result += divisor;
-    }
-    return result + (+0.0);
+static inline double DayWithinYear(double t, double year) {
+  MOZ_ASSERT_IF(IsFinite(t), YearFromTime(t) == year);
+  return Day(t) - DayFromYear(year);
 }
 
-static inline double
-Day(double t)
-{
-    return floor(t / msPerDay);
-}
+static double MonthFromTime(double t) {
+  if (!IsFinite(t)) {
+    return GenericNaN();
+  }
 
-static double
-TimeWithinDay(double t)
-{
-    return PositiveModulo(t, msPerDay);
-}
+  double year = YearFromTime(t);
+  double d = DayWithinYear(t, year);
 
-
-static inline bool
-IsLeapYear(double year)
-{
-    MOZ_ASSERT(ToInteger(year) == year);
-    return fmod(year, 4) == 0 && (fmod(year, 100) != 0 || fmod(year, 400) == 0);
-}
-
-static inline double
-DaysInYear(double year)
-{
-    if (!IsFinite(year)) {
-        return GenericNaN();
-    }
-    return IsLeapYear(year) ? 366 : 365;
-}
-
-static inline double
-DayFromYear(double y)
-{
-    return 365 * (y - 1970) +
-           floor((y - 1969) / 4.0) -
-           floor((y - 1901) / 100.0) +
-           floor((y - 1601) / 400.0);
-}
-
-static inline double
-TimeFromYear(double y)
-{
-    return DayFromYear(y) * msPerDay;
-}
-
-static double
-YearFromTime(double t)
-{
-    if (!IsFinite(t)) {
-        return GenericNaN();
-    }
-
-    MOZ_ASSERT(ToInteger(t) == t);
-
-    double y = floor(t / (msPerDay * 365.2425)) + 1970;
-    double t2 = TimeFromYear(y);
-
-    
-
-
-
-
-    if (t2 > t) {
-        y--;
-    } else {
-        if (t2 + msPerDay * DaysInYear(y) <= t) {
-            y++;
-        }
-    }
-    return y;
-}
-
-static inline int
-DaysInFebruary(double year)
-{
-    return IsLeapYear(year) ? 29 : 28;
+  int step;
+  if (d < (step = 31)) {
+    return 0;
+  }
+  if (d < (step += DaysInFebruary(year))) {
+    return 1;
+  }
+  if (d < (step += 31)) {
+    return 2;
+  }
+  if (d < (step += 30)) {
+    return 3;
+  }
+  if (d < (step += 31)) {
+    return 4;
+  }
+  if (d < (step += 30)) {
+    return 5;
+  }
+  if (d < (step += 31)) {
+    return 6;
+  }
+  if (d < (step += 31)) {
+    return 7;
+  }
+  if (d < (step += 30)) {
+    return 8;
+  }
+  if (d < (step += 31)) {
+    return 9;
+  }
+  if (d < (step += 30)) {
+    return 10;
+  }
+  return 11;
 }
 
 
-static inline double
-DayWithinYear(double t, double year)
-{
-    MOZ_ASSERT_IF(IsFinite(t), YearFromTime(t) == year);
-    return Day(t) - DayFromYear(year);
-}
+static double DateFromTime(double t) {
+  if (!IsFinite(t)) {
+    return GenericNaN();
+  }
 
-static double
-MonthFromTime(double t)
-{
-    if (!IsFinite(t)) {
-        return GenericNaN();
-    }
+  double year = YearFromTime(t);
+  double d = DayWithinYear(t, year);
 
-    double year = YearFromTime(t);
-    double d = DayWithinYear(t, year);
-
-    int step;
-    if (d < (step = 31)) {
-        return 0;
-    }
-    if (d < (step += DaysInFebruary(year))) {
-        return 1;
-    }
-    if (d < (step += 31)) {
-        return 2;
-    }
-    if (d < (step += 30)) {
-        return 3;
-    }
-    if (d < (step += 31)) {
-        return 4;
-    }
-    if (d < (step += 30)) {
-        return 5;
-    }
-    if (d < (step += 31)) {
-        return 6;
-    }
-    if (d < (step += 31)) {
-        return 7;
-    }
-    if (d < (step += 30)) {
-        return 8;
-    }
-    if (d < (step += 31)) {
-        return 9;
-    }
-    if (d < (step += 30)) {
-        return 10;
-    }
-    return 11;
-}
-
-
-static double
-DateFromTime(double t)
-{
-    if (!IsFinite(t)) {
-        return GenericNaN();
-    }
-
-    double year = YearFromTime(t);
-    double d = DayWithinYear(t, year);
-
-    int next;
-    if (d <= (next = 30)) {
-        return d + 1;
-    }
-    int step = next;
-    if (d <= (next += DaysInFebruary(year))) {
-        return d - step;
-    }
-    step = next;
-    if (d <= (next += 31)) {
-        return d - step;
-    }
-    step = next;
-    if (d <= (next += 30)) {
-        return d - step;
-    }
-    step = next;
-    if (d <= (next += 31)) {
-        return d - step;
-    }
-    step = next;
-    if (d <= (next += 30)) {
-        return d - step;
-    }
-    step = next;
-    if (d <= (next += 31)) {
-        return d - step;
-    }
-    step = next;
-    if (d <= (next += 31)) {
-        return d - step;
-    }
-    step = next;
-    if (d <= (next += 30)) {
-        return d - step;
-    }
-    step = next;
-    if (d <= (next += 31)) {
-        return d - step;
-    }
-    step = next;
-    if (d <= (next += 30)) {
-        return d - step;
-    }
-    step = next;
+  int next;
+  if (d <= (next = 30)) {
+    return d + 1;
+  }
+  int step = next;
+  if (d <= (next += DaysInFebruary(year))) {
     return d - step;
+  }
+  step = next;
+  if (d <= (next += 31)) {
+    return d - step;
+  }
+  step = next;
+  if (d <= (next += 30)) {
+    return d - step;
+  }
+  step = next;
+  if (d <= (next += 31)) {
+    return d - step;
+  }
+  step = next;
+  if (d <= (next += 30)) {
+    return d - step;
+  }
+  step = next;
+  if (d <= (next += 31)) {
+    return d - step;
+  }
+  step = next;
+  if (d <= (next += 31)) {
+    return d - step;
+  }
+  step = next;
+  if (d <= (next += 30)) {
+    return d - step;
+  }
+  step = next;
+  if (d <= (next += 31)) {
+    return d - step;
+  }
+  step = next;
+  if (d <= (next += 30)) {
+    return d - step;
+  }
+  step = next;
+  return d - step;
 }
 
 
-static int
-WeekDay(double t)
-{
-    
+static int WeekDay(double t) {
+  
 
 
 
-    MOZ_ASSERT(ToInteger(t) == t);
-    int result = (int(Day(t)) + 4) % 7;
-    if (result < 0) {
-        result += 7;
-    }
-    return result;
+  MOZ_ASSERT(ToInteger(t) == t);
+  int result = (int(Day(t)) + 4) % 7;
+  if (result < 0) {
+    result += 7;
+  }
+  return result;
 }
 
-static inline int
-DayFromMonth(int month, bool isLeapYear)
-{
-    
+static inline int DayFromMonth(int month, bool isLeapYear) {
+  
 
 
 
-    static const int firstDayOfMonth[2][13] = {
-        {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365},
-        {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}
-    };
+  static const int firstDayOfMonth[2][13] = {
+      {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365},
+      {0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366}};
 
-    MOZ_ASSERT(0 <= month && month <= 12);
-    return firstDayOfMonth[isLeapYear][month];
+  MOZ_ASSERT(0 <= month && month <= 12);
+  return firstDayOfMonth[isLeapYear][month];
 }
 
-template<typename T>
-static inline int
-DayFromMonth(T month, bool isLeapYear) = delete;
+template <typename T>
+static inline int DayFromMonth(T month, bool isLeapYear) = delete;
 
 
-static double
-MakeDay(double year, double month, double date)
-{
-    
-    if (!IsFinite(year) || !IsFinite(month) || !IsFinite(date)) {
-        return GenericNaN();
-    }
+static double MakeDay(double year, double month, double date) {
+  
+  if (!IsFinite(year) || !IsFinite(month) || !IsFinite(date)) {
+    return GenericNaN();
+  }
 
-    
-    double y = ToInteger(year);
-    double m = ToInteger(month);
-    double dt = ToInteger(date);
+  
+  double y = ToInteger(year);
+  double m = ToInteger(month);
+  double dt = ToInteger(date);
 
-    
-    double ym = y + floor(m / 12);
+  
+  double ym = y + floor(m / 12);
 
-    
-    int mn = int(PositiveModulo(m, 12));
+  
+  int mn = int(PositiveModulo(m, 12));
 
-    
-    bool leap = IsLeapYear(ym);
+  
+  bool leap = IsLeapYear(ym);
 
-    double yearday = floor(TimeFromYear(ym) / msPerDay);
-    double monthday = DayFromMonth(mn, leap);
+  double yearday = floor(TimeFromYear(ym) / msPerDay);
+  double monthday = DayFromMonth(mn, leap);
 
-    return yearday + monthday + dt - 1;
+  return yearday + monthday + dt - 1;
 }
 
 
-static inline double
-MakeDate(double day, double time)
-{
-    
-    if (!IsFinite(day) || !IsFinite(time)) {
-        return GenericNaN();
-    }
+static inline double MakeDate(double day, double time) {
+  
+  if (!IsFinite(day) || !IsFinite(time)) {
+    return GenericNaN();
+  }
 
-    
-    return day * msPerDay + time;
+  
+  return day * msPerDay + time;
 }
 
-JS_PUBLIC_API double
-JS::MakeDate(double year, unsigned month, unsigned day)
-{
-    MOZ_ASSERT(month <= 11);
-    MOZ_ASSERT(day >= 1 && day <= 31);
+JS_PUBLIC_API double JS::MakeDate(double year, unsigned month, unsigned day) {
+  MOZ_ASSERT(month <= 11);
+  MOZ_ASSERT(day >= 1 && day <= 31);
 
-    return ::MakeDate(MakeDay(year, month, day), 0);
+  return ::MakeDate(MakeDay(year, month, day), 0);
 }
 
-JS_PUBLIC_API double
-JS::MakeDate(double year, unsigned month, unsigned day, double time)
-{
-    MOZ_ASSERT(month <= 11);
-    MOZ_ASSERT(day >= 1 && day <= 31);
+JS_PUBLIC_API double JS::MakeDate(double year, unsigned month, unsigned day,
+                                  double time) {
+  MOZ_ASSERT(month <= 11);
+  MOZ_ASSERT(day >= 1 && day <= 31);
 
-    return ::MakeDate(MakeDay(year, month, day), time);
+  return ::MakeDate(MakeDay(year, month, day), time);
 }
 
-JS_PUBLIC_API double
-JS::YearFromTime(double time)
-{
-    return ::YearFromTime(time);
+JS_PUBLIC_API double JS::YearFromTime(double time) {
+  return ::YearFromTime(time);
 }
 
-JS_PUBLIC_API double
-JS::MonthFromTime(double time)
-{
-    return ::MonthFromTime(time);
+JS_PUBLIC_API double JS::MonthFromTime(double time) {
+  return ::MonthFromTime(time);
 }
 
-JS_PUBLIC_API double
-JS::DayFromTime(double time)
-{
-    return DateFromTime(time);
+JS_PUBLIC_API double JS::DayFromTime(double time) { return DateFromTime(time); }
+
+JS_PUBLIC_API double JS::DayFromYear(double year) {
+  return ::DayFromYear(year);
 }
 
-JS_PUBLIC_API double
-JS::DayFromYear(double year)
-{
-    return ::DayFromYear(year);
+JS_PUBLIC_API double JS::DayWithinYear(double time, double year) {
+  return ::DayWithinYear(time, year);
 }
 
-JS_PUBLIC_API double
-JS::DayWithinYear(double time, double year)
-{
-    return ::DayWithinYear(time, year);
+JS_PUBLIC_API void JS::SetReduceMicrosecondTimePrecisionCallback(
+    JS::ReduceMicrosecondTimePrecisionCallback callback) {
+  sReduceMicrosecondTimePrecisionCallback = callback;
 }
 
-JS_PUBLIC_API void
-JS::SetReduceMicrosecondTimePrecisionCallback(JS::ReduceMicrosecondTimePrecisionCallback callback)
-{
-    sReduceMicrosecondTimePrecisionCallback = callback;
-}
-
-JS_PUBLIC_API void
-JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter)
-{
-    sResolutionUsec = resolution;
-    sJitter = jitter;
+JS_PUBLIC_API void JS::SetTimeResolutionUsec(uint32_t resolution, bool jitter) {
+  sResolutionUsec = resolution;
+  sJitter = jitter;
 }
 
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
 
 
-double
-DateTimeHelper::localTZA(double t, DateTimeInfo::TimeZoneOffset offset)
-{
-    MOZ_ASSERT(IsFinite(t));
+double DateTimeHelper::localTZA(double t, DateTimeInfo::TimeZoneOffset offset) {
+  MOZ_ASSERT(IsFinite(t));
 
-    int64_t milliseconds = static_cast<int64_t>(t);
-    int32_t offsetMilliseconds = DateTimeInfo::getOffsetMilliseconds(milliseconds, offset);
-    return static_cast<double>(offsetMilliseconds);
+  int64_t milliseconds = static_cast<int64_t>(t);
+  int32_t offsetMilliseconds =
+      DateTimeInfo::getOffsetMilliseconds(milliseconds, offset);
+  return static_cast<double>(offsetMilliseconds);
 }
 
 
 
-double
-DateTimeHelper::localTime(double t)
-{
-    if (!IsFinite(t)) {
-        return GenericNaN();
-    }
+double DateTimeHelper::localTime(double t) {
+  if (!IsFinite(t)) {
+    return GenericNaN();
+  }
 
-    MOZ_ASSERT(StartOfTime <= t && t <= EndOfTime);
-    return t + localTZA(t, DateTimeInfo::TimeZoneOffset::UTC);
+  MOZ_ASSERT(StartOfTime <= t && t <= EndOfTime);
+  return t + localTZA(t, DateTimeInfo::TimeZoneOffset::UTC);
 }
 
 
 
-double
-DateTimeHelper::UTC(double t)
-{
-    if (!IsFinite(t)) {
-        return GenericNaN();
-    }
+double DateTimeHelper::UTC(double t) {
+  if (!IsFinite(t)) {
+    return GenericNaN();
+  }
 
-    if (t < (StartOfTime - msPerDay) || t > (EndOfTime + msPerDay)) {
-        return GenericNaN();
-    }
+  if (t < (StartOfTime - msPerDay) || t > (EndOfTime + msPerDay)) {
+    return GenericNaN();
+  }
 
-    return t - localTZA(t, DateTimeInfo::TimeZoneOffset::Local);
+  return t - localTZA(t, DateTimeInfo::TimeZoneOffset::Local);
 }
 #else
 
@@ -544,10 +483,8 @@ DateTimeHelper::UTC(double t)
 
 
 
-int
-DateTimeHelper::equivalentYearForDST(int year)
-{
-    
+int DateTimeHelper::equivalentYearForDST(int year) {
+  
 
 
 
@@ -559,149 +496,113 @@ DateTimeHelper::equivalentYearForDST(int year)
 
 
 
-    static const int pastYearStartingWith[2][7] = {
-        {1978, 1973, 1974, 1975, 1981, 1971, 1977},
-        {1984, 1996, 1980, 1992, 1976, 1988, 1972}
-    };
-    static const int futureYearStartingWith[2][7] = {
-        {2034, 2035, 2030, 2031, 2037, 2027, 2033},
-        {2012, 2024, 2036, 2020, 2032, 2016, 2028}
-    };
+  static const int pastYearStartingWith[2][7] = {
+      {1978, 1973, 1974, 1975, 1981, 1971, 1977},
+      {1984, 1996, 1980, 1992, 1976, 1988, 1972}};
+  static const int futureYearStartingWith[2][7] = {
+      {2034, 2035, 2030, 2031, 2037, 2027, 2033},
+      {2012, 2024, 2036, 2020, 2032, 2016, 2028}};
 
-    int day = int(DayFromYear(year) + 4) % 7;
-    if (day < 0) {
-        day += 7;
-    }
+  int day = int(DayFromYear(year) + 4) % 7;
+  if (day < 0) {
+    day += 7;
+  }
 
-    const auto& yearStartingWith = year < 1970 ? pastYearStartingWith : futureYearStartingWith;
-    return yearStartingWith[IsLeapYear(year)][day];
+  const auto& yearStartingWith =
+      year < 1970 ? pastYearStartingWith : futureYearStartingWith;
+  return yearStartingWith[IsLeapYear(year)][day];
 }
 
 
 
-bool
-DateTimeHelper::isRepresentableAsTime32(double t)
-{
-    return 0.0 <= t && t < 2145916800000.0;
+bool DateTimeHelper::isRepresentableAsTime32(double t) {
+  return 0.0 <= t && t < 2145916800000.0;
 }
 
 
-double
-DateTimeHelper::daylightSavingTA(double t)
-{
-    if (!IsFinite(t)) {
-        return GenericNaN();
-    }
+double DateTimeHelper::daylightSavingTA(double t) {
+  if (!IsFinite(t)) {
+    return GenericNaN();
+  }
 
-    
+  
 
 
 
-    if (!isRepresentableAsTime32(t)) {
-        int year = equivalentYearForDST(int(YearFromTime(t)));
-        double day = MakeDay(year, MonthFromTime(t), DateFromTime(t));
-        t = MakeDate(day, TimeWithinDay(t));
-    }
+  if (!isRepresentableAsTime32(t)) {
+    int year = equivalentYearForDST(int(YearFromTime(t)));
+    double day = MakeDay(year, MonthFromTime(t), DateFromTime(t));
+    t = MakeDate(day, TimeWithinDay(t));
+  }
 
-    int64_t utcMilliseconds = static_cast<int64_t>(t);
-    int32_t offsetMilliseconds = DateTimeInfo::getDSTOffsetMilliseconds(utcMilliseconds);
-    return static_cast<double>(offsetMilliseconds);
+  int64_t utcMilliseconds = static_cast<int64_t>(t);
+  int32_t offsetMilliseconds =
+      DateTimeInfo::getDSTOffsetMilliseconds(utcMilliseconds);
+  return static_cast<double>(offsetMilliseconds);
 }
 
-double
-DateTimeHelper::adjustTime(double date)
-{
-    double localTZA = DateTimeInfo::localTZA();
-    double t = daylightSavingTA(date) + localTZA;
-    t = (localTZA >= 0) ? fmod(t, msPerDay) : -fmod(msPerDay - t, msPerDay);
-    return t;
+double DateTimeHelper::adjustTime(double date) {
+  double localTZA = DateTimeInfo::localTZA();
+  double t = daylightSavingTA(date) + localTZA;
+  t = (localTZA >= 0) ? fmod(t, msPerDay) : -fmod(msPerDay - t, msPerDay);
+  return t;
 }
 
 
-double
-DateTimeHelper::localTime(double t)
-{
-    return t + adjustTime(t);
-}
+double DateTimeHelper::localTime(double t) { return t + adjustTime(t); }
 
-double
-DateTimeHelper::UTC(double t)
-{
-    
-    
-    
-    
-    
-    
+double DateTimeHelper::UTC(double t) {
+  
+  
+  
+  
+  
+  
 
-    return t - adjustTime(t - DateTimeInfo::localTZA() - msPerHour);
+  return t - adjustTime(t - DateTimeInfo::localTZA() - msPerHour);
 }
 #endif 
 
-static double
-LocalTime(double t)
-{
-    return DateTimeHelper::localTime(t);
+static double LocalTime(double t) { return DateTimeHelper::localTime(t); }
+
+static double UTC(double t) { return DateTimeHelper::UTC(t); }
+
+
+static double HourFromTime(double t) {
+  return PositiveModulo(floor(t / msPerHour), HoursPerDay);
 }
 
-static double
-UTC(double t)
-{
-    return DateTimeHelper::UTC(t);
+static double MinFromTime(double t) {
+  return PositiveModulo(floor(t / msPerMinute), MinutesPerHour);
 }
 
-
-static double
-HourFromTime(double t)
-{
-    return PositiveModulo(floor(t/msPerHour), HoursPerDay);
+static double SecFromTime(double t) {
+  return PositiveModulo(floor(t / msPerSecond), SecondsPerMinute);
 }
 
-static double
-MinFromTime(double t)
-{
-    return PositiveModulo(floor(t / msPerMinute), MinutesPerHour);
-}
-
-static double
-SecFromTime(double t)
-{
-    return PositiveModulo(floor(t / msPerSecond), SecondsPerMinute);
-}
-
-static double
-msFromTime(double t)
-{
-    return PositiveModulo(t, msPerSecond);
-}
+static double msFromTime(double t) { return PositiveModulo(t, msPerSecond); }
 
 
-static double
-MakeTime(double hour, double min, double sec, double ms)
-{
-    
-    if (!IsFinite(hour) ||
-        !IsFinite(min) ||
-        !IsFinite(sec) ||
-        !IsFinite(ms))
-    {
-        return GenericNaN();
-    }
+static double MakeTime(double hour, double min, double sec, double ms) {
+  
+  if (!IsFinite(hour) || !IsFinite(min) || !IsFinite(sec) || !IsFinite(ms)) {
+    return GenericNaN();
+  }
 
-    
-    double h = ToInteger(hour);
+  
+  double h = ToInteger(hour);
 
-    
-    double m = ToInteger(min);
+  
+  double m = ToInteger(min);
 
-    
-    double s = ToInteger(sec);
+  
+  double s = ToInteger(sec);
 
-    
-    double milli = ToInteger(ms);
+  
+  double milli = ToInteger(ms);
 
-    
-    return h * msPerHour + m * msPerMinute + s * msPerSecond + milli;
+  
+  return h * msPerHour + m * msPerMinute + s * msPerSecond + milli;
 }
 
 
@@ -739,203 +640,195 @@ static const int ttb[] = {
 };
 
 template <typename CharT>
-static bool
-RegionMatches(const char* s1, int s1off, const CharT* s2, int s2off, int count)
-{
-    while (count > 0 && s1[s1off] && s2[s2off]) {
-        if (unicode::ToLowerCase(s1[s1off]) != unicode::ToLowerCase(s2[s2off])) {
-            break;
-        }
-
-        s1off++;
-        s2off++;
-        count--;
+static bool RegionMatches(const char* s1, int s1off, const CharT* s2, int s2off,
+                          int count) {
+  while (count > 0 && s1[s1off] && s2[s2off]) {
+    if (unicode::ToLowerCase(s1[s1off]) != unicode::ToLowerCase(s2[s2off])) {
+      break;
     }
 
-    return count == 0;
+    s1off++;
+    s2off++;
+    count--;
+  }
+
+  return count == 0;
 }
 
 
 
 
-static bool
-date_UTC(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+static bool date_UTC(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
 
-    
-    double y;
-    if (!ToNumber(cx, args.get(0), &y)) {
-        return false;
-    }
-
-    
-    double m;
-    if (args.length() >= 2) {
-        if (!ToNumber(cx, args[1], &m)) {
-            return false;
-        }
-    } else {
-        m = 0;
-    }
-
-    
-    double dt;
-    if (args.length() >= 3) {
-        if (!ToNumber(cx, args[2], &dt)) {
-            return false;
-        }
-    } else {
-        dt = 1;
-    }
-
-    
-    double h;
-    if (args.length() >= 4) {
-        if (!ToNumber(cx, args[3], &h)) {
-            return false;
-        }
-    } else {
-        h = 0;
-    }
-
-    
-    double min;
-    if (args.length() >= 5) {
-        if (!ToNumber(cx, args[4], &min)) {
-            return false;
-        }
-    } else {
-        min = 0;
-    }
-
-    
-    double s;
-    if (args.length() >= 6) {
-        if (!ToNumber(cx, args[5], &s)) {
-            return false;
-        }
-    } else {
-        s = 0;
-    }
-
-    
-    double milli;
-    if (args.length() >= 7) {
-        if (!ToNumber(cx, args[6], &milli)) {
-            return false;
-        }
-    } else {
-        milli = 0;
-    }
-
-    
-    double yr = y;
-    if (!IsNaN(y)) {
-        double yint = ToInteger(y);
-        if (0 <= yint && yint <= 99) {
-            yr = 1900 + yint;
-        }
-    }
-
-    
-    ClippedTime time = TimeClip(MakeDate(MakeDay(yr, m, dt), MakeTime(h, min, s, milli)));
-    args.rval().set(TimeValue(time));
-    return true;
-}
-
-
-
-
-
-
-
-
-template <typename CharT>
-static bool
-ParseDigits(size_t* result, const CharT* s, size_t* i, size_t limit)
-{
-    size_t init = *i;
-    *result = 0;
-    while (*i < limit && ('0' <= s[*i] && s[*i] <= '9')) {
-        *result *= 10;
-        *result += (s[*i] - '0');
-        ++(*i);
-    }
-    return *i != init;
-}
-
-
-
-
-
-
-
-
-
-template <typename CharT>
-static bool
-ParseFractional(double* result, const CharT* s, size_t* i, size_t limit)
-{
-    double factor = 0.1;
-    size_t init = *i;
-    *result = 0.0;
-    while (*i < limit && ('0' <= s[*i] && s[*i] <= '9')) {
-        *result += (s[*i] - '0') * factor;
-        factor *= 0.1;
-        ++(*i);
-    }
-    return *i != init;
-}
-
-
-
-
-
-
-
-
-template <typename CharT>
-static bool
-ParseDigitsN(size_t n, size_t* result, const CharT* s, size_t* i, size_t limit)
-{
-    size_t init = *i;
-
-    if (ParseDigits(result, s, i, Min(limit, init + n))) {
-        return (*i - init) == n;
-    }
-
-    *i = init;
+  
+  double y;
+  if (!ToNumber(cx, args.get(0), &y)) {
     return false;
-}
+  }
 
-
-
-
-
-
-
-
-template <typename CharT>
-static bool
-ParseDigitsNOrLess(size_t n, size_t* result, const CharT* s, size_t* i, size_t limit)
-{
-    size_t init = *i;
-
-    if (ParseDigits(result, s, i, Min(limit, init + n))) {
-        return ((*i - init) > 0) && ((*i - init) <= n);
+  
+  double m;
+  if (args.length() >= 2) {
+    if (!ToNumber(cx, args[1], &m)) {
+      return false;
     }
+  } else {
+    m = 0;
+  }
 
-    *i = init;
-    return false;
+  
+  double dt;
+  if (args.length() >= 3) {
+    if (!ToNumber(cx, args[2], &dt)) {
+      return false;
+    }
+  } else {
+    dt = 1;
+  }
+
+  
+  double h;
+  if (args.length() >= 4) {
+    if (!ToNumber(cx, args[3], &h)) {
+      return false;
+    }
+  } else {
+    h = 0;
+  }
+
+  
+  double min;
+  if (args.length() >= 5) {
+    if (!ToNumber(cx, args[4], &min)) {
+      return false;
+    }
+  } else {
+    min = 0;
+  }
+
+  
+  double s;
+  if (args.length() >= 6) {
+    if (!ToNumber(cx, args[5], &s)) {
+      return false;
+    }
+  } else {
+    s = 0;
+  }
+
+  
+  double milli;
+  if (args.length() >= 7) {
+    if (!ToNumber(cx, args[6], &milli)) {
+      return false;
+    }
+  } else {
+    milli = 0;
+  }
+
+  
+  double yr = y;
+  if (!IsNaN(y)) {
+    double yint = ToInteger(y);
+    if (0 <= yint && yint <= 99) {
+      yr = 1900 + yint;
+    }
+  }
+
+  
+  ClippedTime time =
+      TimeClip(MakeDate(MakeDay(yr, m, dt), MakeTime(h, min, s, milli)));
+  args.rval().set(TimeValue(time));
+  return true;
 }
 
-static int
-DaysInMonth(int year, int month)
-{
-    bool leap = IsLeapYear(year);
-    int result = int(DayFromMonth(month, leap) - DayFromMonth(month - 1, leap));
-    return result;
+
+
+
+
+
+
+
+template <typename CharT>
+static bool ParseDigits(size_t* result, const CharT* s, size_t* i,
+                        size_t limit) {
+  size_t init = *i;
+  *result = 0;
+  while (*i < limit && ('0' <= s[*i] && s[*i] <= '9')) {
+    *result *= 10;
+    *result += (s[*i] - '0');
+    ++(*i);
+  }
+  return *i != init;
+}
+
+
+
+
+
+
+
+
+
+template <typename CharT>
+static bool ParseFractional(double* result, const CharT* s, size_t* i,
+                            size_t limit) {
+  double factor = 0.1;
+  size_t init = *i;
+  *result = 0.0;
+  while (*i < limit && ('0' <= s[*i] && s[*i] <= '9')) {
+    *result += (s[*i] - '0') * factor;
+    factor *= 0.1;
+    ++(*i);
+  }
+  return *i != init;
+}
+
+
+
+
+
+
+
+
+template <typename CharT>
+static bool ParseDigitsN(size_t n, size_t* result, const CharT* s, size_t* i,
+                         size_t limit) {
+  size_t init = *i;
+
+  if (ParseDigits(result, s, i, Min(limit, init + n))) {
+    return (*i - init) == n;
+  }
+
+  *i = init;
+  return false;
+}
+
+
+
+
+
+
+
+
+template <typename CharT>
+static bool ParseDigitsNOrLess(size_t n, size_t* result, const CharT* s,
+                               size_t* i, size_t limit) {
+  size_t init = *i;
+
+  if (ParseDigits(result, s, i, Min(limit, init + n))) {
+    return ((*i - init) > 0) && ((*i - init) <= n);
+  }
+
+  *i = init;
+  return false;
+}
+
+static int DaysInMonth(int year, int month) {
+  bool leap = IsLeapYear(year);
+  int result = int(DayFromMonth(month, leap) - DayFromMonth(month - 1, leap));
+  return result;
 }
 
 
@@ -1006,127 +899,137 @@ DaysInMonth(int year, int month)
 
 
 template <typename CharT>
-static bool
-ParseISOStyleDate(const CharT* s, size_t length, ClippedTime* result)
-{
-    size_t i = 0;
-    int tzMul = 1;
-    int dateMul = 1;
-    size_t year = 1970;
-    size_t month = 1;
-    size_t day = 1;
-    size_t hour = 0;
-    size_t min = 0;
-    size_t sec = 0;
-    double frac = 0;
-    bool isLocalTime = false;
-    size_t tzHour = 0;
-    size_t tzMin = 0;
+static bool ParseISOStyleDate(const CharT* s, size_t length,
+                              ClippedTime* result) {
+  size_t i = 0;
+  int tzMul = 1;
+  int dateMul = 1;
+  size_t year = 1970;
+  size_t month = 1;
+  size_t day = 1;
+  size_t hour = 0;
+  size_t min = 0;
+  size_t sec = 0;
+  double frac = 0;
+  bool isLocalTime = false;
+  size_t tzHour = 0;
+  size_t tzMin = 0;
 
 #define PEEK(ch) (i < length && s[i] == ch)
 
-#define NEED(ch)                                                               \
-    if (i >= length || s[i] != ch) { return false; } else { ++i; }
+#define NEED(ch)                   \
+  if (i >= length || s[i] != ch) { \
+    return false;                  \
+  } else {                         \
+    ++i;                           \
+  }
 
-#define DONE_DATE_UNLESS(ch)                                                   \
-    if (i >= length || s[i] != ch) { goto done_date; } else { ++i; }
+#define DONE_DATE_UNLESS(ch)       \
+  if (i >= length || s[i] != ch) { \
+    goto done_date;                \
+  } else {                         \
+    ++i;                           \
+  }
 
-#define DONE_UNLESS(ch)                                                        \
-    if (i >= length || s[i] != ch) { goto done; } else { ++i; }
+#define DONE_UNLESS(ch)            \
+  if (i >= length || s[i] != ch) { \
+    goto done;                     \
+  } else {                         \
+    ++i;                           \
+  }
 
-#define NEED_NDIGITS(n, field)                                                 \
-    if (!ParseDigitsN(n, &field, s, &i, length)) { return false; }
+#define NEED_NDIGITS(n, field)                   \
+  if (!ParseDigitsN(n, &field, s, &i, length)) { \
+    return false;                                \
+  }
 
-#define NEED_NDIGITS_OR_LESS(n, field)                                         \
-    if (!ParseDigitsNOrLess(n, &field, s, &i, length)) { return false; }
+#define NEED_NDIGITS_OR_LESS(n, field)                 \
+  if (!ParseDigitsNOrLess(n, &field, s, &i, length)) { \
+    return false;                                      \
+  }
 
-    if (PEEK('+') || PEEK('-')) {
-        if (PEEK('-')) {
-            dateMul = -1;
-        }
-        ++i;
-        NEED_NDIGITS(6, year);
-    } else if (!PEEK('T')) {
-        NEED_NDIGITS(4, year);
+  if (PEEK('+') || PEEK('-')) {
+    if (PEEK('-')) {
+      dateMul = -1;
     }
-    DONE_DATE_UNLESS('-');
-    NEED_NDIGITS_OR_LESS(2, month);
-    DONE_DATE_UNLESS('-');
-    NEED_NDIGITS_OR_LESS(2, day);
+    ++i;
+    NEED_NDIGITS(6, year);
+  } else if (!PEEK('T')) {
+    NEED_NDIGITS(4, year);
+  }
+  DONE_DATE_UNLESS('-');
+  NEED_NDIGITS_OR_LESS(2, month);
+  DONE_DATE_UNLESS('-');
+  NEED_NDIGITS_OR_LESS(2, day);
 
- done_date:
-    if (PEEK('T') || PEEK(' ')) {
-        i++;
-    } else {
-        goto done;
+done_date:
+  if (PEEK('T') || PEEK(' ')) {
+    i++;
+  } else {
+    goto done;
+  }
+
+  NEED_NDIGITS_OR_LESS(2, hour);
+  NEED(':');
+  NEED_NDIGITS_OR_LESS(2, min);
+
+  if (PEEK(':')) {
+    ++i;
+    NEED_NDIGITS_OR_LESS(2, sec);
+    if (PEEK('.')) {
+      ++i;
+      if (!ParseFractional(&frac, s, &i, length)) {
+        return false;
+      }
     }
+  }
 
-    NEED_NDIGITS_OR_LESS(2, hour);
-    NEED(':');
-    NEED_NDIGITS_OR_LESS(2, min);
+  if (PEEK('Z')) {
+    ++i;
+  } else if (PEEK('+') || PEEK('-')) {
+    if (PEEK('-')) {
+      tzMul = -1;
+    }
+    ++i;
+    NEED_NDIGITS(2, tzHour);
+    
+
+
 
     if (PEEK(':')) {
-        ++i;
-        NEED_NDIGITS_OR_LESS(2, sec);
-        if (PEEK('.')) {
-            ++i;
-            if (!ParseFractional(&frac, s, &i, length)) {
-                return false;
-            }
-        }
+      ++i;
     }
+    NEED_NDIGITS(2, tzMin);
+  } else {
+    isLocalTime = true;
+  }
 
-    if (PEEK('Z')) {
-        ++i;
-    } else if (PEEK('+') || PEEK('-')) {
-        if (PEEK('-')) {
-            tzMul = -1;
-        }
-        ++i;
-        NEED_NDIGITS(2, tzHour);
-        
+done:
+  if (year > 275943  
+      || (month == 0 || month > 12) ||
+      (day == 0 || day > size_t(DaysInMonth(year, month))) || hour > 24 ||
+      ((hour == 24) && (min > 0 || sec > 0 || frac > 0)) || min > 59 ||
+      sec > 59 || tzHour > 23 || tzMin > 59) {
+    return false;
+  }
 
+  if (i != length) {
+    return false;
+  }
 
+  month -= 1; 
 
-        if (PEEK(':')) {
-            ++i;
-        }
-        NEED_NDIGITS(2, tzMin);
-    } else {
-        isLocalTime = true;
-    }
+  double msec = MakeDate(MakeDay(dateMul * double(year), month, day),
+                         MakeTime(hour, min, sec, frac * 1000.0));
 
- done:
-    if (year > 275943 
-        || (month == 0 || month > 12)
-        || (day == 0 || day > size_t(DaysInMonth(year,month)))
-        || hour > 24
-        || ((hour == 24) && (min > 0 || sec > 0 || frac > 0))
-        || min > 59
-        || sec > 59
-        || tzHour > 23
-        || tzMin > 59)
-    {
-        return false;
-    }
+  if (isLocalTime) {
+    msec = UTC(msec);
+  } else {
+    msec -= tzMul * (tzHour * msPerHour + tzMin * msPerMinute);
+  }
 
-    if (i != length) {
-        return false;
-    }
-
-    month -= 1; 
-
-    double msec = MakeDate(MakeDay(dateMul * double(year), month, day),
-                           MakeTime(hour, min, sec, frac * 1000.0));
-
-    if (isLocalTime) {
-        msec = UTC(msec);
-    } else {
-        msec -= tzMul * (tzHour * msPerHour + tzMin * msPerMinute);
-    }
-
-    *result = TimeClip(msec);
-    return NumbersAreIdentical(msec, result->toDouble());
+  *result = TimeClip(msec);
+  return NumbersAreIdentical(msec, result->toDouble());
 
 #undef PEEK
 #undef NEED
@@ -1135,2492 +1038,2294 @@ ParseISOStyleDate(const CharT* s, size_t length, ClippedTime* result)
 }
 
 template <typename CharT>
-static bool
-ParseDate(const CharT* s, size_t length, ClippedTime* result)
-{
-    if (ParseISOStyleDate(s, length, result)) {
-        return true;
+static bool ParseDate(const CharT* s, size_t length, ClippedTime* result) {
+  if (ParseISOStyleDate(s, length, result)) {
+    return true;
+  }
+
+  if (length == 0) {
+    return false;
+  }
+
+  int year = -1;
+  int mon = -1;
+  int mday = -1;
+  int hour = -1;
+  int min = -1;
+  int sec = -1;
+  int tzOffset = -1;
+
+  
+  int prevc = 0;
+
+  bool seenPlusMinus = false;
+  bool seenMonthName = false;
+  bool seenFullYear = false;
+  bool negativeYear = false;
+
+  size_t i = 0;
+  while (i < length) {
+    int c = s[i];
+    i++;
+    if (c <= ' ' || c == ',' || c == '-') {
+      if (c == '-' && '0' <= s[i] && s[i] <= '9') {
+        prevc = c;
+      }
+      continue;
     }
-
-    if (length == 0) {
-        return false;
-    }
-
-    int year = -1;
-    int mon = -1;
-    int mday = -1;
-    int hour = -1;
-    int min = -1;
-    int sec = -1;
-    int tzOffset = -1;
-
-    
-    int prevc = 0;
-
-    bool seenPlusMinus = false;
-    bool seenMonthName = false;
-    bool seenFullYear = false;
-    bool negativeYear = false;
-
-    size_t i = 0;
-    while (i < length) {
-        int c = s[i];
+    if (c == '(') { 
+      int depth = 1;
+      while (i < length) {
+        c = s[i];
         i++;
-        if (c <= ' ' || c == ',' || c == '-') {
-            if (c == '-' && '0' <= s[i] && s[i] <= '9') {
-                prevc = c;
-            }
-            continue;
+        if (c == '(') {
+          depth++;
+        } else if (c == ')') {
+          if (--depth <= 0) {
+            break;
+          }
         }
-        if (c == '(') { 
-            int depth = 1;
-            while (i < length) {
-                c = s[i];
-                i++;
-                if (c == '(') {
-                    depth++;
-                } else if (c == ')') {
-                    if (--depth <= 0) {
-                        break;
-                    }
-                }
-            }
-            continue;
+      }
+      continue;
+    }
+    if ('0' <= c && c <= '9') {
+      size_t partStart = i - 1;
+      uint32_t u = c - '0';
+      while (i < length && '0' <= (c = s[i]) && c <= '9') {
+        u = u * 10 + (c - '0');
+        i++;
+      }
+      size_t partLength = i - partStart;
+
+      int n = int(u);
+
+      
+
+
+
+
+
+
+
+      if (prevc == '-' && (tzOffset != 0 || seenPlusMinus) && partLength >= 4 &&
+          year < 0) {
+        
+        
+        
+        
+        
+        
+        year = n;
+        seenFullYear = true;
+        negativeYear = true;
+      } else if ((prevc == '+' || prevc == '-') ) {
+        
+        seenPlusMinus = true;
+
+        
+        if (n < 24) {
+          n = n * 60; 
+        } else {
+          n = n % 100 + n / 100 * 60; 
         }
-        if ('0' <= c && c <= '9') {
-            size_t partStart = i - 1;
-            uint32_t u = c - '0';
-            while (i < length && '0' <= (c = s[i]) && c <= '9') {
-                u = u * 10 + (c - '0');
-                i++;
-            }
-            size_t partLength = i - partStart;
 
-            int n = int(u);
+        if (prevc == '+') 
+          n = -n;
 
-            
+        
+        
+        if (tzOffset != 0 && tzOffset != -1) {
+          return false;
+        }
 
-
-
-
-
-
-
-            if (prevc == '-' && (tzOffset != 0 || seenPlusMinus) && partLength >= 4 && year < 0) {
-                
-                
-                
-                
-                
-                
-                year = n;
-                seenFullYear = true;
-                negativeYear = true;
-            } else if ((prevc == '+' || prevc == '-')) {
-                
-                seenPlusMinus = true;
-
-                
-                if (n < 24) {
-                    n = n * 60; 
-                } else {
-                    n = n % 100 + n / 100 * 60; 
-                }
-
-                if (prevc == '+')       
-                    n = -n;
-
-                
-                
-                if (tzOffset != 0 && tzOffset != -1) {
-                    return false;
-                }
-
-                tzOffset = n;
-            } else if (prevc == '/' && mon >= 0 && mday >= 0 && year < 0) {
-                if (c <= ' ' || c == ',' || c == '/' || i >= length) {
-                    year = n;
-                } else {
-                    return false;
-                }
-            } else if (c == ':') {
-                if (hour < 0) {
-                    hour =  n;
-                } else if (min < 0) {
-                    min =  n;
-                } else {
-                    return false;
-                }
-            } else if (c == '/') {
-                
+        tzOffset = n;
+      } else if (prevc == '/' && mon >= 0 && mday >= 0 && year < 0) {
+        if (c <= ' ' || c == ',' || c == '/' || i >= length) {
+          year = n;
+        } else {
+          return false;
+        }
+      } else if (c == ':') {
+        if (hour < 0) {
+          hour =  n;
+        } else if (min < 0) {
+          min =  n;
+        } else {
+          return false;
+        }
+      } else if (c == '/') {
+        
 
 
 
-                if (mon < 0) {
-                    mon =  n;
-                } else if (mday < 0) {
-                    mday =  n;
-                } else {
-                    return false;
-                }
-            } else if (i < length && c != ',' && c > ' ' && c != '-' && c != '(') {
+        if (mon < 0) {
+          mon =  n;
+        } else if (mday < 0) {
+          mday =  n;
+        } else {
+          return false;
+        }
+      } else if (i < length && c != ',' && c > ' ' && c != '-' && c != '(') {
+        return false;
+      } else if (seenPlusMinus && n < 60) { 
+        if (tzOffset < 0) {
+          tzOffset -= n;
+        } else {
+          tzOffset += n;
+        }
+      } else if (hour >= 0 && min < 0) {
+        min =  n;
+      } else if (prevc == ':' && min >= 0 && sec < 0) {
+        sec =  n;
+      } else if (mon < 0) {
+        mon =  n;
+      } else if (mon >= 0 && mday < 0) {
+        mday =  n;
+      } else if (mon >= 0 && mday >= 0 && year < 0) {
+        year = n;
+        seenFullYear = partLength >= 4;
+      } else {
+        return false;
+      }
+      prevc = 0;
+    } else if (c == '/' || c == ':' || c == '+' || c == '-') {
+      prevc = c;
+    } else {
+      size_t st = i - 1;
+      while (i < length) {
+        c = s[i];
+        if (!IsAsciiAlpha(c)) {
+          break;
+        }
+        i++;
+      }
+
+      if (i <= st + 1) {
+        return false;
+      }
+
+      int k;
+      for (k = ArrayLength(wtb); --k >= 0;) {
+        if (RegionMatches(wtb[k], 0, s, st, i - st)) {
+          int action = ttb[k];
+          if (action != 0) {
+            if (action < 0) {
+              
+
+
+
+              MOZ_ASSERT(action == -1 || action == -2);
+              if (hour > 12 || hour < 0) {
                 return false;
-            } else if (seenPlusMinus && n < 60) {  
-                if (tzOffset < 0) {
-                    tzOffset -= n;
-                } else {
-                    tzOffset += n;
-                }
-            } else if (hour >= 0 && min < 0) {
-                min =  n;
-            } else if (prevc == ':' && min >= 0 && sec < 0) {
-                sec =  n;
-            } else if (mon < 0) {
-                mon = n;
-            } else if (mon >= 0 && mday < 0) {
-                mday =  n;
-            } else if (mon >= 0 && mday >= 0 && year < 0) {
-                year = n;
-                seenFullYear = partLength >= 4;
+              }
+
+              if (action == -1 && hour == 12) 
+                hour = 0;
+              else if (action == -2 && hour != 12) 
+                hour += 12;
+            } else if (action <= 13) { 
+              
+
+
+
+              if (seenMonthName) {
+                return false;
+              }
+
+              seenMonthName = true;
+              int temp =  (action - 2) + 1;
+
+              if (mon < 0) {
+                mon = temp;
+              } else if (mday < 0) {
+                mday = mon;
+                mon = temp;
+              } else if (year < 0) {
+                year = mon;
+                mon = temp;
+              } else {
+                return false;
+              }
             } else {
-                return false;
+              tzOffset = action - 10000;
             }
-            prevc = 0;
-        } else if (c == '/' || c == ':' || c == '+' || c == '-') {
-            prevc = c;
-        } else {
-            size_t st = i - 1;
-            while (i < length) {
-                c = s[i];
-                if (!IsAsciiAlpha(c)) {
-                    break;
-                }
-                i++;
-            }
-
-            if (i <= st + 1) {
-                return false;
-            }
-
-            int k;
-            for (k = ArrayLength(wtb); --k >= 0;) {
-                if (RegionMatches(wtb[k], 0, s, st, i - st)) {
-                    int action = ttb[k];
-                    if (action != 0) {
-                        if (action < 0) {
-                            
-
-
-
-                            MOZ_ASSERT(action == -1 || action == -2);
-                            if (hour > 12 || hour < 0) {
-                                return false;
-                            }
-
-                            if (action == -1 && hour == 12) 
-                                hour = 0;
-                            else if (action == -2 && hour != 12) 
-                                hour += 12;
-                        } else if (action <= 13) { 
-                            
-
-
-
-                            if (seenMonthName) {
-                                return false;
-                            }
-
-                            seenMonthName = true;
-                            int temp =  (action - 2) + 1;
-
-                            if (mon < 0) {
-                                mon = temp;
-                            } else if (mday < 0) {
-                                mday = mon;
-                                mon = temp;
-                            } else if (year < 0) {
-                                year = mon;
-                                mon = temp;
-                            } else {
-                                return false;
-                            }
-                        } else {
-                            tzOffset = action - 10000;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (k < 0) {
-                return false;
-            }
-
-            prevc = 0;
+          }
+          break;
         }
-    }
+      }
 
-    if (year < 0 || mon < 0 || mday < 0) {
+      if (k < 0) {
         return false;
+      }
+
+      prevc = 0;
+    }
+  }
+
+  if (year < 0 || mon < 0 || mday < 0) {
+    return false;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  if (seenMonthName) {
+    if (mday >= 100 && mon >= 100) {
+      return false;
     }
 
+    if (year > 0 && (mday == 0 || mday > year) && !seenFullYear) {
+      int temp = year;
+      year = mday;
+      mday = temp;
+    }
+
+    if (mday <= 0 || mday > 31) {
+      return false;
+    }
+
+  } else if (0 < mon && mon <= 12 && 0 < mday && mday <= 31) {
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    if (seenMonthName) {
-        if (mday >= 100 && mon >= 100) {
-            return false;
-        }
-
-        if (year > 0 && (mday == 0 || mday > year) && !seenFullYear) {
-            int temp = year;
-            year = mday;
-            mday = temp;
-        }
-
-        if (mday <= 0 || mday > 31) {
-            return false;
-        }
-
-    } else if (0 < mon && mon <= 12 && 0 < mday && mday <= 31) {
-        
+  } else {
+    
+    if (mon > 31 && mday <= 12 && year <= 31 && !seenFullYear) {
+      int temp = year;
+      year = mon;
+      mon = mday;
+      mday = temp;
     } else {
-        
-        if (mon > 31 && mday <= 12 && year <= 31 && !seenFullYear) {
-            int temp = year;
-            year = mon;
-            mon = mday;
-            mday = temp;
-        } else {
-            return false;
-        }
+      return false;
     }
+  }
 
-    
-    
-    
-    
-    if (!seenFullYear) {
-        if (year < 50) {
-            year += 2000;
-        } else if (year >= 50 && year < 100) {
-            year += 1900;
-        }
+  
+  
+  
+  
+  if (!seenFullYear) {
+    if (year < 50) {
+      year += 2000;
+    } else if (year >= 50 && year < 100) {
+      year += 1900;
     }
+  }
 
-    if (negativeYear) {
-        year = -year;
-    }
+  if (negativeYear) {
+    year = -year;
+  }
 
-    mon -= 1; 
-    if (sec < 0) {
-        sec = 0;
-    }
-    if (min < 0) {
-        min = 0;
-    }
-    if (hour < 0) {
-        hour = 0;
-    }
+  mon -= 1; 
+  if (sec < 0) {
+    sec = 0;
+  }
+  if (min < 0) {
+    min = 0;
+  }
+  if (hour < 0) {
+    hour = 0;
+  }
 
-    double msec = MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, 0));
+  double msec = MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, 0));
 
-    if (tzOffset == -1) { 
-        msec = UTC(msec);
-    } else {
-        msec += tzOffset * msPerMinute;
-    }
+  if (tzOffset == -1) { 
+    msec = UTC(msec);
+  } else {
+    msec += tzOffset * msPerMinute;
+  }
 
-    *result = TimeClip(msec);
+  *result = TimeClip(msec);
+  return true;
+}
+
+static bool ParseDate(JSLinearString* s, ClippedTime* result) {
+  AutoCheckCannotGC nogc;
+  return s->hasLatin1Chars()
+             ? ParseDate(s->latin1Chars(nogc), s->length(), result)
+             : ParseDate(s->twoByteChars(nogc), s->length(), result);
+}
+
+static bool date_parse(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  if (args.length() == 0) {
+    args.rval().setNaN();
     return true;
-}
+  }
 
-static bool
-ParseDate(JSLinearString* s, ClippedTime* result)
-{
-    AutoCheckCannotGC nogc;
-    return s->hasLatin1Chars()
-           ? ParseDate(s->latin1Chars(nogc), s->length(), result)
-           : ParseDate(s->twoByteChars(nogc), s->length(), result);
-}
+  JSString* str = ToString<CanGC>(cx, args[0]);
+  if (!str) {
+    return false;
+  }
 
-static bool
-date_parse(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    if (args.length() == 0) {
-        args.rval().setNaN();
-        return true;
-    }
+  JSLinearString* linearStr = str->ensureLinear(cx);
+  if (!linearStr) {
+    return false;
+  }
 
-    JSString* str = ToString<CanGC>(cx, args[0]);
-    if (!str) {
-        return false;
-    }
-
-    JSLinearString* linearStr = str->ensureLinear(cx);
-    if (!linearStr) {
-        return false;
-    }
-
-    ClippedTime result;
-    if (!ParseDate(linearStr, &result)) {
-        args.rval().setNaN();
-        return true;
-    }
-
-    args.rval().set(TimeValue(result));
+  ClippedTime result;
+  if (!ParseDate(linearStr, &result)) {
+    args.rval().setNaN();
     return true;
+  }
+
+  args.rval().set(TimeValue(result));
+  return true;
 }
 
-static ClippedTime
-NowAsMillis(JSContext* cx)
-{
-    double now = PRMJ_Now();
-    bool clampAndJitter = cx->realm()->creationOptions().clampAndJitterTime();
-    if (clampAndJitter && sReduceMicrosecondTimePrecisionCallback) {
-        now = sReduceMicrosecondTimePrecisionCallback(now);
+static ClippedTime NowAsMillis(JSContext* cx) {
+  double now = PRMJ_Now();
+  bool clampAndJitter = cx->realm()->creationOptions().clampAndJitterTime();
+  if (clampAndJitter && sReduceMicrosecondTimePrecisionCallback) {
+    now = sReduceMicrosecondTimePrecisionCallback(now);
+  } else if (clampAndJitter && sResolutionUsec) {
+    double clamped = floor(now / sResolutionUsec) * sResolutionUsec;
+
+    if (sJitter) {
+      
+      
+      
+      
+      
+      
+      
+
+      uint64_t midpoint = BitwiseCast<uint64_t>(clamped);
+      midpoint ^= 0x0F00DD1E2BAD2DED;  
+      
+      
+      midpoint ^= midpoint >> 33;
+      midpoint *= uint64_t{0xFF51AFD7ED558CCD};
+      midpoint ^= midpoint >> 33;
+      midpoint *= uint64_t{0xC4CEB9FE1A85EC53};
+      midpoint ^= midpoint >> 33;
+      midpoint %= sResolutionUsec;
+
+      if (now > clamped + midpoint) {  
+        now = clamped + sResolutionUsec;
+      } else {  
+        now = clamped;
+      }
+    } else {  
+      now = clamped;
     }
-    else if (clampAndJitter && sResolutionUsec) {
-        double clamped = floor(now / sResolutionUsec) * sResolutionUsec;
+  }
 
-        if (sJitter) {
-            
-            
-            
-            
-            
-            
-
-            uint64_t midpoint = BitwiseCast<uint64_t>(clamped);
-            midpoint ^= 0x0F00DD1E2BAD2DED; 
-            
-            
-            midpoint ^= midpoint >> 33;
-            midpoint *= uint64_t{0xFF51AFD7ED558CCD};
-            midpoint ^= midpoint >> 33;
-            midpoint *= uint64_t{0xC4CEB9FE1A85EC53};
-            midpoint ^= midpoint >> 33;
-            midpoint %= sResolutionUsec;
-
-            if (now > clamped + midpoint) { 
-                now = clamped + sResolutionUsec;
-            } else { 
-                now = clamped;
-            }
-        } else { 
-            now = clamped;
-        }
-    }
-
-    return TimeClip(now / PRMJ_USEC_PER_MSEC);
+  return TimeClip(now / PRMJ_USEC_PER_MSEC);
 }
 
-bool
-js::date_now(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    args.rval().set(TimeValue(NowAsMillis(cx)));
-    return true;
+bool js::date_now(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  args.rval().set(TimeValue(NowAsMillis(cx)));
+  return true;
 }
 
-void
-DateObject::setUTCTime(ClippedTime t)
-{
+void DateObject::setUTCTime(ClippedTime t) {
+  for (size_t ind = COMPONENTS_START_SLOT; ind < RESERVED_SLOTS; ind++) {
+    setReservedSlot(ind, UndefinedValue());
+  }
+
+  setFixedSlot(UTC_TIME_SLOT, TimeValue(t));
+}
+
+void DateObject::setUTCTime(ClippedTime t, MutableHandleValue vp) {
+  setUTCTime(t);
+  vp.set(TimeValue(t));
+}
+
+void DateObject::fillLocalTimeSlots() {
+  const int32_t localTZA = DateTimeInfo::localTZA();
+
+  
+  if (!getReservedSlot(LOCAL_TIME_SLOT).isUndefined() &&
+      getReservedSlot(TZA_SLOT).toInt32() == localTZA) {
+    return;
+  }
+
+  
+  setReservedSlot(TZA_SLOT, Int32Value(localTZA));
+
+  double utcTime = UTCTime().toNumber();
+
+  if (!IsFinite(utcTime)) {
     for (size_t ind = COMPONENTS_START_SLOT; ind < RESERVED_SLOTS; ind++) {
-        setReservedSlot(ind, UndefinedValue());
+      setReservedSlot(ind, DoubleValue(utcTime));
     }
+    return;
+  }
 
-    setFixedSlot(UTC_TIME_SLOT, TimeValue(t));
+  double localTime = LocalTime(utcTime);
+
+  setReservedSlot(LOCAL_TIME_SLOT, DoubleValue(localTime));
+
+  int year = (int)floor(localTime / (msPerDay * 365.2425)) + 1970;
+  double yearStartTime = TimeFromYear(year);
+
+  
+  int yearDays;
+  if (yearStartTime > localTime) {
+    year--;
+    yearStartTime -= (msPerDay * DaysInYear(year));
+    yearDays = DaysInYear(year);
+  } else {
+    yearDays = DaysInYear(year);
+    double nextStart = yearStartTime + (msPerDay * yearDays);
+    if (nextStart <= localTime) {
+      year++;
+      yearStartTime = nextStart;
+      yearDays = DaysInYear(year);
+    }
+  }
+
+  setReservedSlot(LOCAL_YEAR_SLOT, Int32Value(year));
+
+  uint64_t yearTime = uint64_t(localTime - yearStartTime);
+  int yearSeconds = uint32_t(yearTime / 1000);
+
+  int day = yearSeconds / int(SecondsPerDay);
+
+  int step = -1, next = 30;
+  int month;
+
+  do {
+    if (day <= next) {
+      month = 0;
+      break;
+    }
+    step = next;
+    next += ((yearDays == 366) ? 29 : 28);
+    if (day <= next) {
+      month = 1;
+      break;
+    }
+    step = next;
+    if (day <= (next += 31)) {
+      month = 2;
+      break;
+    }
+    step = next;
+    if (day <= (next += 30)) {
+      month = 3;
+      break;
+    }
+    step = next;
+    if (day <= (next += 31)) {
+      month = 4;
+      break;
+    }
+    step = next;
+    if (day <= (next += 30)) {
+      month = 5;
+      break;
+    }
+    step = next;
+    if (day <= (next += 31)) {
+      month = 6;
+      break;
+    }
+    step = next;
+    if (day <= (next += 31)) {
+      month = 7;
+      break;
+    }
+    step = next;
+    if (day <= (next += 30)) {
+      month = 8;
+      break;
+    }
+    step = next;
+    if (day <= (next += 31)) {
+      month = 9;
+      break;
+    }
+    step = next;
+    if (day <= (next += 30)) {
+      month = 10;
+      break;
+    }
+    step = next;
+    month = 11;
+  } while (0);
+
+  setReservedSlot(LOCAL_MONTH_SLOT, Int32Value(month));
+  setReservedSlot(LOCAL_DATE_SLOT, Int32Value(day - step));
+
+  int weekday = WeekDay(localTime);
+  setReservedSlot(LOCAL_DAY_SLOT, Int32Value(weekday));
+
+  setReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT, Int32Value(yearSeconds));
 }
 
-void
-DateObject::setUTCTime(ClippedTime t, MutableHandleValue vp)
-{
-    setUTCTime(t);
-    vp.set(TimeValue(t));
+inline double DateObject::cachedLocalTime() {
+  fillLocalTimeSlots();
+  return getReservedSlot(LOCAL_TIME_SLOT).toDouble();
 }
 
-void
-DateObject::fillLocalTimeSlots()
-{
-    const int32_t localTZA = DateTimeInfo::localTZA();
+MOZ_ALWAYS_INLINE bool IsDate(HandleValue v) {
+  return v.isObject() && v.toObject().is<DateObject>();
+}
 
+
+
+
+ MOZ_ALWAYS_INLINE bool DateObject::getTime_impl(
+    JSContext* cx, const CallArgs& args) {
+  args.rval().set(args.thisv().toObject().as<DateObject>().UTCTime());
+  return true;
+}
+
+static bool date_getTime(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getTime_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getYear_impl(
+    JSContext* cx, const CallArgs& args) {
+  DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
+  dateObj->fillLocalTimeSlots();
+
+  Value yearVal = dateObj->getReservedSlot(LOCAL_YEAR_SLOT);
+  if (yearVal.isInt32()) {
     
-    if (!getReservedSlot(LOCAL_TIME_SLOT).isUndefined() &&
-        getReservedSlot(TZA_SLOT).toInt32() == localTZA)
-    {
-        return;
-    }
+    int year = yearVal.toInt32() - 1900;
+    args.rval().setInt32(year);
+  } else {
+    args.rval().set(yearVal);
+  }
 
-    
-    setReservedSlot(TZA_SLOT, Int32Value(localTZA));
-
-    double utcTime = UTCTime().toNumber();
-
-    if (!IsFinite(utcTime)) {
-        for (size_t ind = COMPONENTS_START_SLOT; ind < RESERVED_SLOTS; ind++) {
-            setReservedSlot(ind, DoubleValue(utcTime));
-        }
-        return;
-    }
-
-    double localTime = LocalTime(utcTime);
-
-    setReservedSlot(LOCAL_TIME_SLOT, DoubleValue(localTime));
-
-    int year = (int) floor(localTime /(msPerDay * 365.2425)) + 1970;
-    double yearStartTime = TimeFromYear(year);
-
-    
-    int yearDays;
-    if (yearStartTime > localTime) {
-        year--;
-        yearStartTime -= (msPerDay * DaysInYear(year));
-        yearDays = DaysInYear(year);
-    } else {
-        yearDays = DaysInYear(year);
-        double nextStart = yearStartTime + (msPerDay * yearDays);
-        if (nextStart <= localTime) {
-            year++;
-            yearStartTime = nextStart;
-            yearDays = DaysInYear(year);
-        }
-    }
-
-    setReservedSlot(LOCAL_YEAR_SLOT, Int32Value(year));
-
-    uint64_t yearTime = uint64_t(localTime - yearStartTime);
-    int yearSeconds = uint32_t(yearTime / 1000);
-
-    int day = yearSeconds / int(SecondsPerDay);
-
-    int step = -1, next = 30;
-    int month;
-
-    do {
-        if (day <= next) {
-            month = 0;
-            break;
-        }
-        step = next;
-        next += ((yearDays == 366) ? 29 : 28);
-        if (day <= next) {
-            month = 1;
-            break;
-        }
-        step = next;
-        if (day <= (next += 31)) {
-            month = 2;
-            break;
-        }
-        step = next;
-        if (day <= (next += 30)) {
-            month = 3;
-            break;
-        }
-        step = next;
-        if (day <= (next += 31)) {
-            month = 4;
-            break;
-        }
-        step = next;
-        if (day <= (next += 30)) {
-            month = 5;
-            break;
-        }
-        step = next;
-        if (day <= (next += 31)) {
-            month = 6;
-            break;
-        }
-        step = next;
-        if (day <= (next += 31)) {
-            month = 7;
-            break;
-        }
-        step = next;
-        if (day <= (next += 30)) {
-            month = 8;
-            break;
-        }
-        step = next;
-        if (day <= (next += 31)) {
-            month = 9;
-            break;
-        }
-        step = next;
-        if (day <= (next += 30)) {
-            month = 10;
-            break;
-        }
-        step = next;
-        month = 11;
-    } while (0);
-
-    setReservedSlot(LOCAL_MONTH_SLOT, Int32Value(month));
-    setReservedSlot(LOCAL_DATE_SLOT, Int32Value(day - step));
-
-    int weekday = WeekDay(localTime);
-    setReservedSlot(LOCAL_DAY_SLOT, Int32Value(weekday));
-
-    setReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT, Int32Value(yearSeconds));
+  return true;
 }
 
-inline double
-DateObject::cachedLocalTime()
-{
-    fillLocalTimeSlots();
-    return getReservedSlot(LOCAL_TIME_SLOT).toDouble();
+static bool date_getYear(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getYear_impl>(cx, args);
 }
 
-MOZ_ALWAYS_INLINE bool
-IsDate(HandleValue v)
-{
-    return v.isObject() && v.toObject().is<DateObject>();
+ MOZ_ALWAYS_INLINE bool DateObject::getFullYear_impl(
+    JSContext* cx, const CallArgs& args) {
+  DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
+  dateObj->fillLocalTimeSlots();
+
+  args.rval().set(dateObj->getReservedSlot(LOCAL_YEAR_SLOT));
+  return true;
+}
+
+static bool date_getFullYear(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getFullYear_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getUTCFullYear_impl(
+    JSContext* cx, const CallArgs& args) {
+  double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  if (IsFinite(result)) {
+    result = YearFromTime(result);
+  }
+
+  args.rval().setNumber(result);
+  return true;
+}
+
+static bool date_getUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getUTCFullYear_impl>(cx,
+                                                                       args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getMonth_impl(
+    JSContext* cx, const CallArgs& args) {
+  DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
+  dateObj->fillLocalTimeSlots();
+
+  args.rval().set(dateObj->getReservedSlot(LOCAL_MONTH_SLOT));
+  return true;
+}
+
+static bool date_getMonth(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getMonth_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getUTCMonth_impl(
+    JSContext* cx, const CallArgs& args) {
+  double d = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  args.rval().setNumber(MonthFromTime(d));
+  return true;
+}
+
+static bool date_getUTCMonth(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getUTCMonth_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getDate_impl(
+    JSContext* cx, const CallArgs& args) {
+  DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
+  dateObj->fillLocalTimeSlots();
+
+  args.rval().set(dateObj->getReservedSlot(LOCAL_DATE_SLOT));
+  return true;
+}
+
+static bool date_getDate(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getDate_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getUTCDate_impl(
+    JSContext* cx, const CallArgs& args) {
+  double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  if (IsFinite(result)) {
+    result = DateFromTime(result);
+  }
+
+  args.rval().setNumber(result);
+  return true;
+}
+
+static bool date_getUTCDate(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getUTCDate_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getDay_impl(
+    JSContext* cx, const CallArgs& args) {
+  DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
+  dateObj->fillLocalTimeSlots();
+
+  args.rval().set(dateObj->getReservedSlot(LOCAL_DAY_SLOT));
+  return true;
+}
+
+static bool date_getDay(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getDay_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getUTCDay_impl(
+    JSContext* cx, const CallArgs& args) {
+  double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  if (IsFinite(result)) {
+    result = WeekDay(result);
+  }
+
+  args.rval().setNumber(result);
+  return true;
+}
+
+static bool date_getUTCDay(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getUTCDay_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getHours_impl(
+    JSContext* cx, const CallArgs& args) {
+  DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
+  dateObj->fillLocalTimeSlots();
+
+  
+  
+  Value yearSeconds = dateObj->getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
+  if (yearSeconds.isDouble()) {
+    MOZ_ASSERT(IsNaN(yearSeconds.toDouble()));
+    args.rval().set(yearSeconds);
+  } else {
+    args.rval().setInt32((yearSeconds.toInt32() / int(SecondsPerHour)) %
+                         int(HoursPerDay));
+  }
+  return true;
+}
+
+static bool date_getHours(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getHours_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getUTCHours_impl(
+    JSContext* cx, const CallArgs& args) {
+  double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  if (IsFinite(result)) {
+    result = HourFromTime(result);
+  }
+
+  args.rval().setNumber(result);
+  return true;
+}
+
+static bool date_getUTCHours(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getUTCHours_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getMinutes_impl(
+    JSContext* cx, const CallArgs& args) {
+  DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
+  dateObj->fillLocalTimeSlots();
+
+  
+  
+  Value yearSeconds = dateObj->getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
+  if (yearSeconds.isDouble()) {
+    MOZ_ASSERT(IsNaN(yearSeconds.toDouble()));
+    args.rval().set(yearSeconds);
+  } else {
+    args.rval().setInt32((yearSeconds.toInt32() / int(SecondsPerMinute)) %
+                         int(MinutesPerHour));
+  }
+  return true;
+}
+
+static bool date_getMinutes(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getMinutes_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getUTCMinutes_impl(
+    JSContext* cx, const CallArgs& args) {
+  double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  if (IsFinite(result)) {
+    result = MinFromTime(result);
+  }
+
+  args.rval().setNumber(result);
+  return true;
+}
+
+static bool date_getUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getUTCMinutes_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getSeconds_impl(
+    JSContext* cx, const CallArgs& args) {
+  DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
+  dateObj->fillLocalTimeSlots();
+
+  
+  
+  Value yearSeconds = dateObj->getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
+  if (yearSeconds.isDouble()) {
+    MOZ_ASSERT(IsNaN(yearSeconds.toDouble()));
+    args.rval().set(yearSeconds);
+  } else {
+    args.rval().setInt32(yearSeconds.toInt32() % int(SecondsPerMinute));
+  }
+  return true;
+}
+
+static bool date_getSeconds(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getSeconds_impl>(cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getUTCSeconds_impl(
+    JSContext* cx, const CallArgs& args) {
+  double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  if (IsFinite(result)) {
+    result = SecFromTime(result);
+  }
+
+  args.rval().setNumber(result);
+  return true;
+}
+
+static bool date_getUTCSeconds(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getUTCSeconds_impl>(cx, args);
 }
 
 
 
 
- MOZ_ALWAYS_INLINE bool
-DateObject::getTime_impl(JSContext* cx, const CallArgs& args)
-{
-    args.rval().set(args.thisv().toObject().as<DateObject>().UTCTime());
+
+
+
+
+
+
+
+
+ MOZ_ALWAYS_INLINE bool DateObject::getUTCMilliseconds_impl(
+    JSContext* cx, const CallArgs& args) {
+  double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  if (IsFinite(result)) {
+    result = msFromTime(result);
+  }
+
+  args.rval().setNumber(result);
+  return true;
+}
+
+static bool date_getUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getUTCMilliseconds_impl>(
+      cx, args);
+}
+
+ MOZ_ALWAYS_INLINE bool DateObject::getTimezoneOffset_impl(
+    JSContext* cx, const CallArgs& args) {
+  DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
+  double utctime = dateObj->UTCTime().toNumber();
+  double localtime = dateObj->cachedLocalTime();
+
+  
+
+
+
+
+  double result = (utctime - localtime) / msPerMinute;
+  args.rval().setNumber(result);
+  return true;
+}
+
+static bool date_getTimezoneOffset(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, DateObject::getTimezoneOffset_impl>(cx,
+                                                                          args);
+}
+
+MOZ_ALWAYS_INLINE bool date_setTime_impl(JSContext* cx, const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  if (args.length() == 0) {
+    dateObj->setUTCTime(ClippedTime::invalid(), args.rval());
     return true;
+  }
+
+  double result;
+  if (!ToNumber(cx, args[0], &result)) {
+    return false;
+  }
+
+  dateObj->setUTCTime(TimeClip(result), args.rval());
+  return true;
 }
 
-static bool
-date_getTime(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getTime_impl>(cx, args);
+static bool date_setTime(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setTime_impl>(cx, args);
 }
 
- MOZ_ALWAYS_INLINE bool
-DateObject::getYear_impl(JSContext* cx, const CallArgs& args)
-{
-    DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
-    dateObj->fillLocalTimeSlots();
-
-    Value yearVal = dateObj->getReservedSlot(LOCAL_YEAR_SLOT);
-    if (yearVal.isInt32()) {
-        
-        int year = yearVal.toInt32() - 1900;
-        args.rval().setInt32(year);
-    } else {
-        args.rval().set(yearVal);
-    }
-
+static bool GetMsecsOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
+                              double t, double* millis) {
+  if (args.length() <= i) {
+    *millis = msFromTime(t);
     return true;
+  }
+  return ToNumber(cx, args[i], millis);
 }
 
-static bool
-date_getYear(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getYear_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getFullYear_impl(JSContext* cx, const CallArgs& args)
-{
-    DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
-    dateObj->fillLocalTimeSlots();
-
-    args.rval().set(dateObj->getReservedSlot(LOCAL_YEAR_SLOT));
+static bool GetSecsOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
+                             double t, double* sec) {
+  if (args.length() <= i) {
+    *sec = SecFromTime(t);
     return true;
+  }
+  return ToNumber(cx, args[i], sec);
 }
 
-static bool
-date_getFullYear(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getFullYear_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getUTCFullYear_impl(JSContext* cx, const CallArgs& args)
-{
-    double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    if (IsFinite(result)) {
-        result = YearFromTime(result);
-    }
-
-    args.rval().setNumber(result);
+static bool GetMinsOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
+                             double t, double* mins) {
+  if (args.length() <= i) {
+    *mins = MinFromTime(t);
     return true;
+  }
+  return ToNumber(cx, args[i], mins);
 }
 
-static bool
-date_getUTCFullYear(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getUTCFullYear_impl>(cx, args);
+
+MOZ_ALWAYS_INLINE bool date_setMilliseconds_impl(JSContext* cx,
+                                                 const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = LocalTime(dateObj->UTCTime().toNumber());
+
+  
+  double ms;
+  if (!ToNumber(cx, args.get(0), &ms)) {
+    return false;
+  }
+
+  
+  double time = MakeTime(HourFromTime(t), MinFromTime(t), SecFromTime(t), ms);
+
+  
+  ClippedTime u = TimeClip(UTC(MakeDate(Day(t), time)));
+
+  
+  dateObj->setUTCTime(u, args.rval());
+  return true;
 }
 
- MOZ_ALWAYS_INLINE bool
-DateObject::getMonth_impl(JSContext* cx, const CallArgs& args)
-{
-    DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
-    dateObj->fillLocalTimeSlots();
+static bool date_setMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setMilliseconds_impl>(cx, args);
+}
 
-    args.rval().set(dateObj->getReservedSlot(LOCAL_MONTH_SLOT));
+
+MOZ_ALWAYS_INLINE bool date_setUTCMilliseconds_impl(JSContext* cx,
+                                                    const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = dateObj->UTCTime().toNumber();
+
+  
+  double milli;
+  if (!ToNumber(cx, args.get(0), &milli)) {
+    return false;
+  }
+  double time =
+      MakeTime(HourFromTime(t), MinFromTime(t), SecFromTime(t), milli);
+
+  
+  ClippedTime v = TimeClip(MakeDate(Day(t), time));
+
+  
+  dateObj->setUTCTime(v, args.rval());
+  return true;
+}
+
+static bool date_setUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setUTCMilliseconds_impl>(cx, args);
+}
+
+
+MOZ_ALWAYS_INLINE bool date_setSeconds_impl(JSContext* cx,
+                                            const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = LocalTime(dateObj->UTCTime().toNumber());
+
+  
+  double s;
+  if (!ToNumber(cx, args.get(0), &s)) {
+    return false;
+  }
+
+  
+  double milli;
+  if (!GetMsecsOrDefault(cx, args, 1, t, &milli)) {
+    return false;
+  }
+
+  
+  double date =
+      MakeDate(Day(t), MakeTime(HourFromTime(t), MinFromTime(t), s, milli));
+
+  
+  ClippedTime u = TimeClip(UTC(date));
+
+  
+  dateObj->setUTCTime(u, args.rval());
+  return true;
+}
+
+
+static bool date_setSeconds(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setSeconds_impl>(cx, args);
+}
+
+MOZ_ALWAYS_INLINE bool date_setUTCSeconds_impl(JSContext* cx,
+                                               const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = dateObj->UTCTime().toNumber();
+
+  
+  double s;
+  if (!ToNumber(cx, args.get(0), &s)) {
+    return false;
+  }
+
+  
+  double milli;
+  if (!GetMsecsOrDefault(cx, args, 1, t, &milli)) {
+    return false;
+  }
+
+  
+  double date =
+      MakeDate(Day(t), MakeTime(HourFromTime(t), MinFromTime(t), s, milli));
+
+  
+  ClippedTime v = TimeClip(date);
+
+  
+  dateObj->setUTCTime(v, args.rval());
+  return true;
+}
+
+
+static bool date_setUTCSeconds(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setUTCSeconds_impl>(cx, args);
+}
+
+MOZ_ALWAYS_INLINE bool date_setMinutes_impl(JSContext* cx,
+                                            const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = LocalTime(dateObj->UTCTime().toNumber());
+
+  
+  double m;
+  if (!ToNumber(cx, args.get(0), &m)) {
+    return false;
+  }
+
+  
+  double s;
+  if (!GetSecsOrDefault(cx, args, 1, t, &s)) {
+    return false;
+  }
+
+  
+  double milli;
+  if (!GetMsecsOrDefault(cx, args, 2, t, &milli)) {
+    return false;
+  }
+
+  
+  double date = MakeDate(Day(t), MakeTime(HourFromTime(t), m, s, milli));
+
+  
+  ClippedTime u = TimeClip(UTC(date));
+
+  
+  dateObj->setUTCTime(u, args.rval());
+  return true;
+}
+
+
+static bool date_setMinutes(JSContext* cx, unsigned argc, Value* vp) {
+  
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setMinutes_impl>(cx, args);
+}
+
+MOZ_ALWAYS_INLINE bool date_setUTCMinutes_impl(JSContext* cx,
+                                               const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = dateObj->UTCTime().toNumber();
+
+  
+  double m;
+  if (!ToNumber(cx, args.get(0), &m)) {
+    return false;
+  }
+
+  
+  double s;
+  if (!GetSecsOrDefault(cx, args, 1, t, &s)) {
+    return false;
+  }
+
+  
+  double milli;
+  if (!GetMsecsOrDefault(cx, args, 2, t, &milli)) {
+    return false;
+  }
+
+  
+  double date = MakeDate(Day(t), MakeTime(HourFromTime(t), m, s, milli));
+
+  
+  ClippedTime v = TimeClip(date);
+
+  
+  dateObj->setUTCTime(v, args.rval());
+  return true;
+}
+
+
+static bool date_setUTCMinutes(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setUTCMinutes_impl>(cx, args);
+}
+
+MOZ_ALWAYS_INLINE bool date_setHours_impl(JSContext* cx, const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = LocalTime(dateObj->UTCTime().toNumber());
+
+  
+  double h;
+  if (!ToNumber(cx, args.get(0), &h)) {
+    return false;
+  }
+
+  
+  double m;
+  if (!GetMinsOrDefault(cx, args, 1, t, &m)) {
+    return false;
+  }
+
+  
+  double s;
+  if (!GetSecsOrDefault(cx, args, 2, t, &s)) {
+    return false;
+  }
+
+  
+  double milli;
+  if (!GetMsecsOrDefault(cx, args, 3, t, &milli)) {
+    return false;
+  }
+
+  
+  double date = MakeDate(Day(t), MakeTime(h, m, s, milli));
+
+  
+  ClippedTime u = TimeClip(UTC(date));
+
+  
+  dateObj->setUTCTime(u, args.rval());
+  return true;
+}
+
+
+static bool date_setHours(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setHours_impl>(cx, args);
+}
+
+MOZ_ALWAYS_INLINE bool date_setUTCHours_impl(JSContext* cx,
+                                             const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = dateObj->UTCTime().toNumber();
+
+  
+  double h;
+  if (!ToNumber(cx, args.get(0), &h)) {
+    return false;
+  }
+
+  
+  double m;
+  if (!GetMinsOrDefault(cx, args, 1, t, &m)) {
+    return false;
+  }
+
+  
+  double s;
+  if (!GetSecsOrDefault(cx, args, 2, t, &s)) {
+    return false;
+  }
+
+  
+  double milli;
+  if (!GetMsecsOrDefault(cx, args, 3, t, &milli)) {
+    return false;
+  }
+
+  
+  double newDate = MakeDate(Day(t), MakeTime(h, m, s, milli));
+
+  
+  ClippedTime v = TimeClip(newDate);
+
+  
+  dateObj->setUTCTime(v, args.rval());
+  return true;
+}
+
+
+static bool date_setUTCHours(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setUTCHours_impl>(cx, args);
+}
+
+MOZ_ALWAYS_INLINE bool date_setDate_impl(JSContext* cx, const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = LocalTime(dateObj->UTCTime().toNumber());
+
+  
+  double date;
+  if (!ToNumber(cx, args.get(0), &date)) {
+    return false;
+  }
+
+  
+  double newDate = MakeDate(MakeDay(YearFromTime(t), MonthFromTime(t), date),
+                            TimeWithinDay(t));
+
+  
+  ClippedTime u = TimeClip(UTC(newDate));
+
+  
+  dateObj->setUTCTime(u, args.rval());
+  return true;
+}
+
+
+static bool date_setDate(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setDate_impl>(cx, args);
+}
+
+MOZ_ALWAYS_INLINE bool date_setUTCDate_impl(JSContext* cx,
+                                            const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = dateObj->UTCTime().toNumber();
+
+  
+  double date;
+  if (!ToNumber(cx, args.get(0), &date)) {
+    return false;
+  }
+
+  
+  double newDate = MakeDate(MakeDay(YearFromTime(t), MonthFromTime(t), date),
+                            TimeWithinDay(t));
+
+  
+  ClippedTime v = TimeClip(newDate);
+
+  
+  dateObj->setUTCTime(v, args.rval());
+  return true;
+}
+
+static bool date_setUTCDate(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setUTCDate_impl>(cx, args);
+}
+
+static bool GetDateOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
+                             double t, double* date) {
+  if (args.length() <= i) {
+    *date = DateFromTime(t);
     return true;
+  }
+  return ToNumber(cx, args[i], date);
 }
 
-static bool
-date_getMonth(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getMonth_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getUTCMonth_impl(JSContext* cx, const CallArgs& args)
-{
-    double d = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    args.rval().setNumber(MonthFromTime(d));
+static bool GetMonthOrDefault(JSContext* cx, const CallArgs& args, unsigned i,
+                              double t, double* month) {
+  if (args.length() <= i) {
+    *month = MonthFromTime(t);
     return true;
+  }
+  return ToNumber(cx, args[i], month);
 }
 
-static bool
-date_getUTCMonth(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getUTCMonth_impl>(cx, args);
+
+MOZ_ALWAYS_INLINE bool date_setMonth_impl(JSContext* cx, const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = LocalTime(dateObj->UTCTime().toNumber());
+
+  
+  double m;
+  if (!ToNumber(cx, args.get(0), &m)) {
+    return false;
+  }
+
+  
+  double date;
+  if (!GetDateOrDefault(cx, args, 1, t, &date)) {
+    return false;
+  }
+
+  
+  double newDate =
+      MakeDate(MakeDay(YearFromTime(t), m, date), TimeWithinDay(t));
+
+  
+  ClippedTime u = TimeClip(UTC(newDate));
+
+  
+  dateObj->setUTCTime(u, args.rval());
+  return true;
 }
 
- MOZ_ALWAYS_INLINE bool
-DateObject::getDate_impl(JSContext* cx, const CallArgs& args)
-{
-    DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
-    dateObj->fillLocalTimeSlots();
+static bool date_setMonth(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setMonth_impl>(cx, args);
+}
 
-    args.rval().set(dateObj->getReservedSlot(LOCAL_DATE_SLOT));
+
+MOZ_ALWAYS_INLINE bool date_setUTCMonth_impl(JSContext* cx,
+                                             const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = dateObj->UTCTime().toNumber();
+
+  
+  double m;
+  if (!ToNumber(cx, args.get(0), &m)) {
+    return false;
+  }
+
+  
+  double date;
+  if (!GetDateOrDefault(cx, args, 1, t, &date)) {
+    return false;
+  }
+
+  
+  double newDate =
+      MakeDate(MakeDay(YearFromTime(t), m, date), TimeWithinDay(t));
+
+  
+  ClippedTime v = TimeClip(newDate);
+
+  
+  dateObj->setUTCTime(v, args.rval());
+  return true;
+}
+
+static bool date_setUTCMonth(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setUTCMonth_impl>(cx, args);
+}
+
+static double ThisLocalTimeOrZero(Handle<DateObject*> dateObj) {
+  double t = dateObj->UTCTime().toNumber();
+  if (IsNaN(t)) {
+    return +0;
+  }
+  return LocalTime(t);
+}
+
+static double ThisUTCTimeOrZero(Handle<DateObject*> dateObj) {
+  double t = dateObj->as<DateObject>().UTCTime().toNumber();
+  return IsNaN(t) ? +0 : t;
+}
+
+
+MOZ_ALWAYS_INLINE bool date_setFullYear_impl(JSContext* cx,
+                                             const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = ThisLocalTimeOrZero(dateObj);
+
+  
+  double y;
+  if (!ToNumber(cx, args.get(0), &y)) {
+    return false;
+  }
+
+  
+  double m;
+  if (!GetMonthOrDefault(cx, args, 1, t, &m)) {
+    return false;
+  }
+
+  
+  double date;
+  if (!GetDateOrDefault(cx, args, 2, t, &date)) {
+    return false;
+  }
+
+  
+  double newDate = MakeDate(MakeDay(y, m, date), TimeWithinDay(t));
+
+  
+  ClippedTime u = TimeClip(UTC(newDate));
+
+  
+  dateObj->setUTCTime(u, args.rval());
+  return true;
+}
+
+static bool date_setFullYear(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setFullYear_impl>(cx, args);
+}
+
+
+MOZ_ALWAYS_INLINE bool date_setUTCFullYear_impl(JSContext* cx,
+                                                const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = ThisUTCTimeOrZero(dateObj);
+
+  
+  double y;
+  if (!ToNumber(cx, args.get(0), &y)) {
+    return false;
+  }
+
+  
+  double m;
+  if (!GetMonthOrDefault(cx, args, 1, t, &m)) {
+    return false;
+  }
+
+  
+  double date;
+  if (!GetDateOrDefault(cx, args, 2, t, &date)) {
+    return false;
+  }
+
+  
+  double newDate = MakeDate(MakeDay(y, m, date), TimeWithinDay(t));
+
+  
+  ClippedTime v = TimeClip(newDate);
+
+  
+  dateObj->setUTCTime(v, args.rval());
+  return true;
+}
+
+static bool date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setUTCFullYear_impl>(cx, args);
+}
+
+
+MOZ_ALWAYS_INLINE bool date_setYear_impl(JSContext* cx, const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+
+  
+  double t = ThisLocalTimeOrZero(dateObj);
+
+  
+  double y;
+  if (!ToNumber(cx, args.get(0), &y)) {
+    return false;
+  }
+
+  
+  if (IsNaN(y)) {
+    dateObj->setUTCTime(ClippedTime::invalid(), args.rval());
     return true;
+  }
+
+  
+  double yint = ToInteger(y);
+  if (0 <= yint && yint <= 99) {
+    yint += 1900;
+  }
+
+  
+  double day = MakeDay(yint, MonthFromTime(t), DateFromTime(t));
+
+  
+  double u = UTC(MakeDate(day, TimeWithinDay(t)));
+
+  
+  dateObj->setUTCTime(TimeClip(u), args.rval());
+  return true;
 }
 
-static bool
-date_getDate(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getDate_impl>(cx, args);
+static bool date_setYear(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_setYear_impl>(cx, args);
 }
 
- MOZ_ALWAYS_INLINE bool
-DateObject::getUTCDate_impl(JSContext* cx, const CallArgs& args)
-{
-    double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    if (IsFinite(result)) {
-        result = DateFromTime(result);
-    }
 
-    args.rval().setNumber(result);
+static const char* const days[] = {"Sun", "Mon", "Tue", "Wed",
+                                   "Thu", "Fri", "Sat"};
+static const char* const months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                                     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+
+
+MOZ_ALWAYS_INLINE bool date_toGMTString_impl(JSContext* cx,
+                                             const CallArgs& args) {
+  double utctime =
+      args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  if (!IsFinite(utctime)) {
+    args.rval().setString(cx->names().InvalidDate);
     return true;
+  }
+
+  char buf[100];
+  SprintfLiteral(buf, "%s, %.2d %s %.4d %.2d:%.2d:%.2d GMT",
+                 days[int(WeekDay(utctime))], int(DateFromTime(utctime)),
+                 months[int(MonthFromTime(utctime))],
+                 int(YearFromTime(utctime)), int(HourFromTime(utctime)),
+                 int(MinFromTime(utctime)), int(SecFromTime(utctime)));
+
+  JSString* str = NewStringCopyZ<CanGC>(cx, buf);
+  if (!str) {
+    return false;
+  }
+
+  args.rval().setString(str);
+  return true;
 }
 
-static bool
-date_getUTCDate(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getUTCDate_impl>(cx, args);
+static bool date_toGMTString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_toGMTString_impl>(cx, args);
 }
 
- MOZ_ALWAYS_INLINE bool
-DateObject::getDay_impl(JSContext* cx, const CallArgs& args)
-{
-    DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
-    dateObj->fillLocalTimeSlots();
 
-    args.rval().set(dateObj->getReservedSlot(LOCAL_DAY_SLOT));
+MOZ_ALWAYS_INLINE bool date_toISOString_impl(JSContext* cx,
+                                             const CallArgs& args) {
+  double utctime =
+      args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
+  if (!IsFinite(utctime)) {
+    JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                              JSMSG_INVALID_DATE);
+    return false;
+  }
+
+  char buf[100];
+  int year = int(YearFromTime(utctime));
+  if (year < 0 || year > 9999) {
+    SprintfLiteral(buf, "%+.6d-%.2d-%.2dT%.2d:%.2d:%.2d.%.3dZ",
+                   int(YearFromTime(utctime)), int(MonthFromTime(utctime)) + 1,
+                   int(DateFromTime(utctime)), int(HourFromTime(utctime)),
+                   int(MinFromTime(utctime)), int(SecFromTime(utctime)),
+                   int(msFromTime(utctime)));
+  } else {
+    SprintfLiteral(buf, "%.4d-%.2d-%.2dT%.2d:%.2d:%.2d.%.3dZ",
+                   int(YearFromTime(utctime)), int(MonthFromTime(utctime)) + 1,
+                   int(DateFromTime(utctime)), int(HourFromTime(utctime)),
+                   int(MinFromTime(utctime)), int(SecFromTime(utctime)),
+                   int(msFromTime(utctime)));
+  }
+
+  JSString* str = NewStringCopyZ<CanGC>(cx, buf);
+  if (!str) {
+    return false;
+  }
+  args.rval().setString(str);
+  return true;
+}
+
+static bool date_toISOString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_toISOString_impl>(cx, args);
+}
+
+
+static bool date_toJSON(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedObject obj(cx, ToObject(cx, args.thisv()));
+  if (!obj) {
+    return false;
+  }
+
+  
+  RootedValue tv(cx, ObjectValue(*obj));
+  if (!ToPrimitive(cx, JSTYPE_NUMBER, &tv)) {
+    return false;
+  }
+
+  
+  if (tv.isDouble() && !IsFinite(tv.toDouble())) {
+    args.rval().setNull();
     return true;
-}
-
-static bool
-date_getDay(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getDay_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getUTCDay_impl(JSContext* cx, const CallArgs& args)
-{
-    double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    if (IsFinite(result)) {
-        result = WeekDay(result);
-    }
-
-    args.rval().setNumber(result);
-    return true;
-}
-
-static bool
-date_getUTCDay(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getUTCDay_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getHours_impl(JSContext* cx, const CallArgs& args)
-{
-    DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
-    dateObj->fillLocalTimeSlots();
-
-    
-    
-    Value yearSeconds = dateObj->getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
-    if (yearSeconds.isDouble()) {
-        MOZ_ASSERT(IsNaN(yearSeconds.toDouble()));
-        args.rval().set(yearSeconds);
-    } else {
-        args.rval().setInt32((yearSeconds.toInt32() / int(SecondsPerHour)) % int(HoursPerDay));
-    }
-    return true;
-}
-
-static bool
-date_getHours(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getHours_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getUTCHours_impl(JSContext* cx, const CallArgs& args)
-{
-    double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    if (IsFinite(result)) {
-        result = HourFromTime(result);
-    }
-
-    args.rval().setNumber(result);
-    return true;
-}
-
-static bool
-date_getUTCHours(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getUTCHours_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getMinutes_impl(JSContext* cx, const CallArgs& args)
-{
-    DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
-    dateObj->fillLocalTimeSlots();
-
-    
-    
-    Value yearSeconds = dateObj->getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
-    if (yearSeconds.isDouble()) {
-        MOZ_ASSERT(IsNaN(yearSeconds.toDouble()));
-        args.rval().set(yearSeconds);
-    } else {
-        args.rval().setInt32((yearSeconds.toInt32() / int(SecondsPerMinute)) % int(MinutesPerHour));
-    }
-    return true;
-}
-
-static bool
-date_getMinutes(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getMinutes_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getUTCMinutes_impl(JSContext* cx, const CallArgs& args)
-{
-    double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    if (IsFinite(result)) {
-        result = MinFromTime(result);
-    }
-
-    args.rval().setNumber(result);
-    return true;
-}
-
-static bool
-date_getUTCMinutes(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getUTCMinutes_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getSeconds_impl(JSContext* cx, const CallArgs& args)
-{
-    DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
-    dateObj->fillLocalTimeSlots();
-
-    
-    
-    Value yearSeconds = dateObj->getReservedSlot(LOCAL_SECONDS_INTO_YEAR_SLOT);
-    if (yearSeconds.isDouble()) {
-        MOZ_ASSERT(IsNaN(yearSeconds.toDouble()));
-        args.rval().set(yearSeconds);
-    } else {
-        args.rval().setInt32(yearSeconds.toInt32() % int(SecondsPerMinute));
-    }
-    return true;
-}
-
-static bool
-date_getSeconds(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getSeconds_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getUTCSeconds_impl(JSContext* cx, const CallArgs& args)
-{
-    double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    if (IsFinite(result)) {
-        result = SecFromTime(result);
-    }
-
-    args.rval().setNumber(result);
-    return true;
-}
-
-static bool
-date_getUTCSeconds(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getUTCSeconds_impl>(cx, args);
-}
-
-
-
-
-
-
-
-
-
-
-
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getUTCMilliseconds_impl(JSContext* cx, const CallArgs& args)
-{
-    double result = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    if (IsFinite(result)) {
-        result = msFromTime(result);
-    }
-
-    args.rval().setNumber(result);
-    return true;
-}
-
-static bool
-date_getUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getUTCMilliseconds_impl>(cx, args);
-}
-
- MOZ_ALWAYS_INLINE bool
-DateObject::getTimezoneOffset_impl(JSContext* cx, const CallArgs& args)
-{
-    DateObject* dateObj = &args.thisv().toObject().as<DateObject>();
-    double utctime = dateObj->UTCTime().toNumber();
-    double localtime = dateObj->cachedLocalTime();
-
-    
-
-
-
-
-    double result = (utctime - localtime) / msPerMinute;
-    args.rval().setNumber(result);
-    return true;
-}
-
-static bool
-date_getTimezoneOffset(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, DateObject::getTimezoneOffset_impl>(cx, args);
-}
-
-MOZ_ALWAYS_INLINE bool
-date_setTime_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-    if (args.length() == 0) {
-        dateObj->setUTCTime(ClippedTime::invalid(), args.rval());
-        return true;
-    }
-
-    double result;
-    if (!ToNumber(cx, args[0], &result)) {
-        return false;
-    }
-
-    dateObj->setUTCTime(TimeClip(result), args.rval());
-    return true;
-}
-
-static bool
-date_setTime(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setTime_impl>(cx, args);
-}
-
-static bool
-GetMsecsOrDefault(JSContext* cx, const CallArgs& args, unsigned i, double t, double* millis)
-{
-    if (args.length() <= i) {
-        *millis = msFromTime(t);
-        return true;
-    }
-    return ToNumber(cx, args[i], millis);
-}
-
-static bool
-GetSecsOrDefault(JSContext* cx, const CallArgs& args, unsigned i, double t, double* sec)
-{
-    if (args.length() <= i) {
-        *sec = SecFromTime(t);
-        return true;
-    }
-    return ToNumber(cx, args[i], sec);
-}
-
-static bool
-GetMinsOrDefault(JSContext* cx, const CallArgs& args, unsigned i, double t, double* mins)
-{
-    if (args.length() <= i) {
-        *mins = MinFromTime(t);
-        return true;
-    }
-    return ToNumber(cx, args[i], mins);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_setMilliseconds_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = LocalTime(dateObj->UTCTime().toNumber());
-
-    
-    double ms;
-    if (!ToNumber(cx, args.get(0), &ms)) {
-        return false;
-    }
-
-    
-    double time = MakeTime(HourFromTime(t), MinFromTime(t), SecFromTime(t), ms);
-
-    
-    ClippedTime u = TimeClip(UTC(MakeDate(Day(t), time)));
-
-    
-    dateObj->setUTCTime(u, args.rval());
-    return true;
-}
-
-static bool
-date_setMilliseconds(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setMilliseconds_impl>(cx, args);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_setUTCMilliseconds_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = dateObj->UTCTime().toNumber();
-
-    
-    double milli;
-    if (!ToNumber(cx, args.get(0), &milli)) {
-        return false;
-    }
-    double time = MakeTime(HourFromTime(t), MinFromTime(t), SecFromTime(t), milli);
-
-    
-    ClippedTime v = TimeClip(MakeDate(Day(t), time));
-
-    
-    dateObj->setUTCTime(v, args.rval());
-    return true;
-}
-
-static bool
-date_setUTCMilliseconds(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setUTCMilliseconds_impl>(cx, args);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_setSeconds_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = LocalTime(dateObj->UTCTime().toNumber());
-
-    
-    double s;
-    if (!ToNumber(cx, args.get(0), &s)) {
-        return false;
-    }
-
-    
-    double milli;
-    if (!GetMsecsOrDefault(cx, args, 1, t, &milli)) {
-        return false;
-    }
-
-    
-    double date = MakeDate(Day(t), MakeTime(HourFromTime(t), MinFromTime(t), s, milli));
-
-    
-    ClippedTime u = TimeClip(UTC(date));
-
-    
-    dateObj->setUTCTime(u, args.rval());
-    return true;
-}
-
-
-static bool
-date_setSeconds(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setSeconds_impl>(cx, args);
-}
-
-MOZ_ALWAYS_INLINE bool
-date_setUTCSeconds_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = dateObj->UTCTime().toNumber();
-
-    
-    double s;
-    if (!ToNumber(cx, args.get(0), &s)) {
-        return false;
-    }
-
-    
-    double milli;
-    if (!GetMsecsOrDefault(cx, args, 1, t, &milli)) {
-        return false;
-    }
-
-    
-    double date = MakeDate(Day(t), MakeTime(HourFromTime(t), MinFromTime(t), s, milli));
-
-    
-    ClippedTime v = TimeClip(date);
-
-    
-    dateObj->setUTCTime(v, args.rval());
-    return true;
-}
-
-
-static bool
-date_setUTCSeconds(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setUTCSeconds_impl>(cx, args);
-}
-
-MOZ_ALWAYS_INLINE bool
-date_setMinutes_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = LocalTime(dateObj->UTCTime().toNumber());
-
-    
-    double m;
-    if (!ToNumber(cx, args.get(0), &m)) {
-        return false;
-    }
-
-    
-    double s;
-    if (!GetSecsOrDefault(cx, args, 1, t, &s)) {
-        return false;
-    }
-
-    
-    double milli;
-    if (!GetMsecsOrDefault(cx, args, 2, t, &milli)) {
-        return false;
-    }
-
-    
-    double date = MakeDate(Day(t), MakeTime(HourFromTime(t), m, s, milli));
-
-    
-    ClippedTime u = TimeClip(UTC(date));
-
-    
-    dateObj->setUTCTime(u, args.rval());
-    return true;
-}
-
-
-static bool
-date_setMinutes(JSContext* cx, unsigned argc, Value* vp)
-{
-    
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setMinutes_impl>(cx, args);
-}
-
-MOZ_ALWAYS_INLINE bool
-date_setUTCMinutes_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = dateObj->UTCTime().toNumber();
-
-    
-    double m;
-    if (!ToNumber(cx, args.get(0), &m)) {
-        return false;
-    }
-
-    
-    double s;
-    if (!GetSecsOrDefault(cx, args, 1, t, &s)) {
-        return false;
-    }
-
-    
-    double milli;
-    if (!GetMsecsOrDefault(cx, args, 2, t, &milli)) {
-        return false;
-    }
-
-    
-    double date = MakeDate(Day(t), MakeTime(HourFromTime(t), m, s, milli));
-
-    
-    ClippedTime v = TimeClip(date);
-
-    
-    dateObj->setUTCTime(v, args.rval());
-    return true;
-}
-
-
-static bool
-date_setUTCMinutes(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setUTCMinutes_impl>(cx, args);
-}
-
-MOZ_ALWAYS_INLINE bool
-date_setHours_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = LocalTime(dateObj->UTCTime().toNumber());
-
-    
-    double h;
-    if (!ToNumber(cx, args.get(0), &h)) {
-        return false;
-    }
-
-    
-    double m;
-    if (!GetMinsOrDefault(cx, args, 1, t, &m)) {
-        return false;
-    }
-
-    
-    double s;
-    if (!GetSecsOrDefault(cx, args, 2, t, &s)) {
-        return false;
-    }
-
-    
-    double milli;
-    if (!GetMsecsOrDefault(cx, args, 3, t, &milli)) {
-        return false;
-    }
-
-    
-    double date = MakeDate(Day(t), MakeTime(h, m, s, milli));
-
-    
-    ClippedTime u = TimeClip(UTC(date));
-
-    
-    dateObj->setUTCTime(u, args.rval());
-    return true;
-}
-
-
-static bool
-date_setHours(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setHours_impl>(cx, args);
-}
-
-MOZ_ALWAYS_INLINE bool
-date_setUTCHours_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = dateObj->UTCTime().toNumber();
-
-    
-    double h;
-    if (!ToNumber(cx, args.get(0), &h)) {
-        return false;
-    }
-
-    
-    double m;
-    if (!GetMinsOrDefault(cx, args, 1, t, &m)) {
-        return false;
-    }
-
-    
-    double s;
-    if (!GetSecsOrDefault(cx, args, 2, t, &s)) {
-        return false;
-    }
-
-    
-    double milli;
-    if (!GetMsecsOrDefault(cx, args, 3, t, &milli)) {
-        return false;
-    }
-
-    
-    double newDate = MakeDate(Day(t), MakeTime(h, m, s, milli));
-
-    
-    ClippedTime v = TimeClip(newDate);
-
-    
-    dateObj->setUTCTime(v, args.rval());
-    return true;
-}
-
-
-static bool
-date_setUTCHours(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setUTCHours_impl>(cx, args);
-}
-
-MOZ_ALWAYS_INLINE bool
-date_setDate_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = LocalTime(dateObj->UTCTime().toNumber());
-
-    
-    double date;
-    if (!ToNumber(cx, args.get(0), &date)) {
-        return false;
-    }
-
-    
-    double newDate = MakeDate(MakeDay(YearFromTime(t), MonthFromTime(t), date), TimeWithinDay(t));
-
-    
-    ClippedTime u = TimeClip(UTC(newDate));
-
-    
-    dateObj->setUTCTime(u, args.rval());
-    return true;
-}
-
-
-static bool
-date_setDate(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setDate_impl>(cx, args);
-}
-
-MOZ_ALWAYS_INLINE bool
-date_setUTCDate_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = dateObj->UTCTime().toNumber();
-
-    
-    double date;
-    if (!ToNumber(cx, args.get(0), &date)) {
-        return false;
-    }
-
-    
-    double newDate = MakeDate(MakeDay(YearFromTime(t), MonthFromTime(t), date), TimeWithinDay(t));
-
-    
-    ClippedTime v = TimeClip(newDate);
-
-    
-    dateObj->setUTCTime(v, args.rval());
-    return true;
-}
-
-static bool
-date_setUTCDate(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setUTCDate_impl>(cx, args);
-}
-
-static bool
-GetDateOrDefault(JSContext* cx, const CallArgs& args, unsigned i, double t, double* date)
-{
-    if (args.length() <= i) {
-        *date = DateFromTime(t);
-        return true;
-    }
-    return ToNumber(cx, args[i], date);
-}
-
-static bool
-GetMonthOrDefault(JSContext* cx, const CallArgs& args, unsigned i, double t, double* month)
-{
-    if (args.length() <= i) {
-        *month = MonthFromTime(t);
-        return true;
-    }
-    return ToNumber(cx, args[i], month);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_setMonth_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = LocalTime(dateObj->UTCTime().toNumber());
-
-    
-    double m;
-    if (!ToNumber(cx, args.get(0), &m)) {
-        return false;
-    }
-
-    
-    double date;
-    if (!GetDateOrDefault(cx, args, 1, t, &date)) {
-        return false;
-    }
-
-    
-    double newDate = MakeDate(MakeDay(YearFromTime(t), m, date), TimeWithinDay(t));
-
-    
-    ClippedTime u = TimeClip(UTC(newDate));
-
-    
-    dateObj->setUTCTime(u, args.rval());
-    return true;
-}
-
-static bool
-date_setMonth(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setMonth_impl>(cx, args);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_setUTCMonth_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = dateObj->UTCTime().toNumber();
-
-    
-    double m;
-    if (!ToNumber(cx, args.get(0), &m)) {
-        return false;
-    }
-
-    
-    double date;
-    if (!GetDateOrDefault(cx, args, 1, t, &date)) {
-        return false;
-    }
-
-    
-    double newDate = MakeDate(MakeDay(YearFromTime(t), m, date), TimeWithinDay(t));
-
-    
-    ClippedTime v = TimeClip(newDate);
-
-    
-    dateObj->setUTCTime(v, args.rval());
-    return true;
-}
-
-static bool
-date_setUTCMonth(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setUTCMonth_impl>(cx, args);
-}
-
-static double
-ThisLocalTimeOrZero(Handle<DateObject*> dateObj)
-{
-    double t = dateObj->UTCTime().toNumber();
-    if (IsNaN(t)) {
-        return +0;
-    }
-    return LocalTime(t);
-}
-
-static double
-ThisUTCTimeOrZero(Handle<DateObject*> dateObj)
-{
-    double t = dateObj->as<DateObject>().UTCTime().toNumber();
-    return IsNaN(t) ? +0 : t;
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_setFullYear_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = ThisLocalTimeOrZero(dateObj);
-
-    
-    double y;
-    if (!ToNumber(cx, args.get(0), &y)) {
-        return false;
-    }
-
-    
-    double m;
-    if (!GetMonthOrDefault(cx, args, 1, t, &m)) {
-        return false;
-    }
-
-    
-    double date;
-    if (!GetDateOrDefault(cx, args, 2, t, &date)) {
-        return false;
-    }
-
-    
-    double newDate = MakeDate(MakeDay(y, m, date), TimeWithinDay(t));
-
-    
-    ClippedTime u = TimeClip(UTC(newDate));
-
-    
-    dateObj->setUTCTime(u, args.rval());
-    return true;
-}
-
-static bool
-date_setFullYear(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setFullYear_impl>(cx, args);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_setUTCFullYear_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = ThisUTCTimeOrZero(dateObj);
-
-    
-    double y;
-    if (!ToNumber(cx, args.get(0), &y)) {
-        return false;
-    }
-
-    
-    double m;
-    if (!GetMonthOrDefault(cx, args, 1, t, &m)) {
-        return false;
-    }
-
-    
-    double date;
-    if (!GetDateOrDefault(cx, args, 2, t, &date)) {
-        return false;
-    }
-
-    
-    double newDate = MakeDate(MakeDay(y, m, date), TimeWithinDay(t));
-
-    
-    ClippedTime v = TimeClip(newDate);
-
-    
-    dateObj->setUTCTime(v, args.rval());
-    return true;
-}
-
-static bool
-date_setUTCFullYear(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setUTCFullYear_impl>(cx, args);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_setYear_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-
-    
-    double t = ThisLocalTimeOrZero(dateObj);
-
-    
-    double y;
-    if (!ToNumber(cx, args.get(0), &y)) {
-        return false;
-    }
-
-    
-    if (IsNaN(y)) {
-        dateObj->setUTCTime(ClippedTime::invalid(), args.rval());
-        return true;
-    }
-
-    
-    double yint = ToInteger(y);
-    if (0 <= yint && yint <= 99) {
-        yint += 1900;
-    }
-
-    
-    double day = MakeDay(yint, MonthFromTime(t), DateFromTime(t));
-
-    
-    double u = UTC(MakeDate(day, TimeWithinDay(t)));
-
-    
-    dateObj->setUTCTime(TimeClip(u), args.rval());
-    return true;
-}
-
-static bool
-date_setYear(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_setYear_impl>(cx, args);
-}
-
-
-static const char * const days[] =
-{
-   "Sun","Mon","Tue","Wed","Thu","Fri","Sat"
-};
-static const char * const months[] =
-{
-   "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-};
-
-
-MOZ_ALWAYS_INLINE bool
-date_toGMTString_impl(JSContext* cx, const CallArgs& args)
-{
-    double utctime = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    if (!IsFinite(utctime)) {
-        args.rval().setString(cx->names().InvalidDate);
-        return true;
-    }
-
-    char buf[100];
-    SprintfLiteral(buf, "%s, %.2d %s %.4d %.2d:%.2d:%.2d GMT",
-                   days[int(WeekDay(utctime))],
-                   int(DateFromTime(utctime)),
-                   months[int(MonthFromTime(utctime))],
-                   int(YearFromTime(utctime)),
-                   int(HourFromTime(utctime)),
-                   int(MinFromTime(utctime)),
-                   int(SecFromTime(utctime)));
-
-    JSString* str = NewStringCopyZ<CanGC>(cx, buf);
-    if (!str) {
-        return false;
-    }
-
-    args.rval().setString(str);
-    return true;
-}
-
-static bool
-date_toGMTString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_toGMTString_impl>(cx, args);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_toISOString_impl(JSContext* cx, const CallArgs& args)
-{
-    double utctime = args.thisv().toObject().as<DateObject>().UTCTime().toNumber();
-    if (!IsFinite(utctime)) {
-        JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr, JSMSG_INVALID_DATE);
-        return false;
-    }
-
-    char buf[100];
-    int year = int(YearFromTime(utctime));
-    if (year < 0 || year > 9999) {
-        SprintfLiteral(buf, "%+.6d-%.2d-%.2dT%.2d:%.2d:%.2d.%.3dZ",
-                       int(YearFromTime(utctime)),
-                       int(MonthFromTime(utctime)) + 1,
-                       int(DateFromTime(utctime)),
-                       int(HourFromTime(utctime)),
-                       int(MinFromTime(utctime)),
-                       int(SecFromTime(utctime)),
-                       int(msFromTime(utctime)));
-    } else {
-        SprintfLiteral(buf, "%.4d-%.2d-%.2dT%.2d:%.2d:%.2d.%.3dZ",
-                       int(YearFromTime(utctime)),
-                       int(MonthFromTime(utctime)) + 1,
-                       int(DateFromTime(utctime)),
-                       int(HourFromTime(utctime)),
-                       int(MinFromTime(utctime)),
-                       int(SecFromTime(utctime)),
-                       int(msFromTime(utctime)));
-    }
-
-    JSString* str = NewStringCopyZ<CanGC>(cx, buf);
-    if (!str) {
-        return false;
-    }
-    args.rval().setString(str);
-    return true;
-
-}
-
-static bool
-date_toISOString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_toISOString_impl>(cx, args);
-}
-
-
-static bool
-date_toJSON(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    
-    RootedObject obj(cx, ToObject(cx, args.thisv()));
-    if (!obj) {
-        return false;
-    }
-
-    
-    RootedValue tv(cx, ObjectValue(*obj));
-    if (!ToPrimitive(cx, JSTYPE_NUMBER, &tv)) {
-        return false;
-    }
-
-    
-    if (tv.isDouble() && !IsFinite(tv.toDouble())) {
-        args.rval().setNull();
-        return true;
-    }
-
-    
-    RootedValue toISO(cx);
-    if (!GetProperty(cx, obj, obj, cx->names().toISOString, &toISO)) {
-        return false;
-    }
-
-    
-    if (!IsCallable(toISO)) {
-        JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr, JSMSG_BAD_TOISOSTRING_PROP);
-        return false;
-    }
-
-    
-    return Call(cx, toISO, obj, args.rval());
+  }
+
+  
+  RootedValue toISO(cx);
+  if (!GetProperty(cx, obj, obj, cx->names().toISOString, &toISO)) {
+    return false;
+  }
+
+  
+  if (!IsCallable(toISO)) {
+    JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                              JSMSG_BAD_TOISOSTRING_PROP);
+    return false;
+  }
+
+  
+  return Call(cx, toISO, obj, args.rval());
 }
 
 #if ENABLE_INTL_API && !MOZ_SYSTEM_ICU
-JSString*
-DateTimeHelper::timeZoneComment(JSContext* cx, double utcTime, double localTime)
-{
-    const char* locale = cx->runtime()->getDefaultLocale();
-    if (!locale) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEFAULT_LOCALE_ERROR);
-        return nullptr;
-    }
+JSString* DateTimeHelper::timeZoneComment(JSContext* cx, double utcTime,
+                                          double localTime) {
+  const char* locale = cx->runtime()->getDefaultLocale();
+  if (!locale) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_DEFAULT_LOCALE_ERROR);
+    return nullptr;
+  }
 
-    char16_t tzbuf[100];
-    tzbuf[0] = ' ';
-    tzbuf[1] = '(';
+  char16_t tzbuf[100];
+  tzbuf[0] = ' ';
+  tzbuf[1] = '(';
 
-    char16_t* timeZoneStart = tzbuf + 2;
-    constexpr size_t remainingSpace = mozilla::ArrayLength(tzbuf) - 2 - 1; 
+  char16_t* timeZoneStart = tzbuf + 2;
+  constexpr size_t remainingSpace =
+      mozilla::ArrayLength(tzbuf) - 2 - 1;  
 
-    int64_t utcMilliseconds = static_cast<int64_t>(utcTime);
-    if (!DateTimeInfo::timeZoneDisplayName(timeZoneStart, remainingSpace, utcMilliseconds, locale)) {
+  int64_t utcMilliseconds = static_cast<int64_t>(utcTime);
+  if (!DateTimeInfo::timeZoneDisplayName(timeZoneStart, remainingSpace,
+                                         utcMilliseconds, locale)) {
     {
-        JS_ReportOutOfMemory(cx);
+      JS_ReportOutOfMemory(cx);
     }
-        return nullptr;
-    }
+    return nullptr;
+  }
 
-    
-    size_t len = js_strlen(timeZoneStart);
-    if (len == 0) {
-        return cx->names().empty;
-    }
+  
+  size_t len = js_strlen(timeZoneStart);
+  if (len == 0) {
+    return cx->names().empty;
+  }
 
-    
-    timeZoneStart[len] = ')';
+  
+  timeZoneStart[len] = ')';
 
-    return NewStringCopyN<CanGC>(cx, tzbuf, 2 + len + 1);
+  return NewStringCopyN<CanGC>(cx, tzbuf, 2 + len + 1);
 }
 #else
 
-PRMJTime
-DateTimeHelper::toPRMJTime(double localTime, double utcTime)
-{
-    double year = YearFromTime(localTime);
+PRMJTime DateTimeHelper::toPRMJTime(double localTime, double utcTime) {
+  double year = YearFromTime(localTime);
 
-    PRMJTime prtm;
-    prtm.tm_usec = int32_t(msFromTime(localTime)) * 1000;
-    prtm.tm_sec = int8_t(SecFromTime(localTime));
-    prtm.tm_min = int8_t(MinFromTime(localTime));
-    prtm.tm_hour = int8_t(HourFromTime(localTime));
-    prtm.tm_mday = int8_t(DateFromTime(localTime));
-    prtm.tm_mon = int8_t(MonthFromTime(localTime));
-    prtm.tm_wday = int8_t(WeekDay(localTime));
-    prtm.tm_year = year;
-    prtm.tm_yday = int16_t(DayWithinYear(localTime, year));
-    prtm.tm_isdst = (daylightSavingTA(utcTime) != 0);
+  PRMJTime prtm;
+  prtm.tm_usec = int32_t(msFromTime(localTime)) * 1000;
+  prtm.tm_sec = int8_t(SecFromTime(localTime));
+  prtm.tm_min = int8_t(MinFromTime(localTime));
+  prtm.tm_hour = int8_t(HourFromTime(localTime));
+  prtm.tm_mday = int8_t(DateFromTime(localTime));
+  prtm.tm_mon = int8_t(MonthFromTime(localTime));
+  prtm.tm_wday = int8_t(WeekDay(localTime));
+  prtm.tm_year = year;
+  prtm.tm_yday = int16_t(DayWithinYear(localTime, year));
+  prtm.tm_isdst = (daylightSavingTA(utcTime) != 0);
 
-    return prtm;
+  return prtm;
 }
 
-size_t
-DateTimeHelper::formatTime(char* buf, size_t buflen, const char* fmt, double utcTime, double localTime)
-{
-    PRMJTime prtm = toPRMJTime(localTime, utcTime);
+size_t DateTimeHelper::formatTime(char* buf, size_t buflen, const char* fmt,
+                                  double utcTime, double localTime) {
+  PRMJTime prtm = toPRMJTime(localTime, utcTime);
 
-    
-    
-    
-    int timeZoneYear = isRepresentableAsTime32(utcTime)
-                       ? prtm.tm_year
-                       : equivalentYearForDST(prtm.tm_year);
-    int offsetInSeconds = (int) floor((localTime - utcTime) / msPerSecond);
+  
+  
+  
+  int timeZoneYear = isRepresentableAsTime32(utcTime)
+                         ? prtm.tm_year
+                         : equivalentYearForDST(prtm.tm_year);
+  int offsetInSeconds = (int)floor((localTime - utcTime) / msPerSecond);
 
-    return PRMJ_FormatTime(buf, buflen, fmt, &prtm, timeZoneYear, offsetInSeconds);
+  return PRMJ_FormatTime(buf, buflen, fmt, &prtm, timeZoneYear,
+                         offsetInSeconds);
 }
 
-JSString*
-DateTimeHelper::timeZoneComment(JSContext* cx, double utcTime, double localTime)
-{
-    char tzbuf[100];
+JSString* DateTimeHelper::timeZoneComment(JSContext* cx, double utcTime,
+                                          double localTime) {
+  char tzbuf[100];
 
-    size_t tzlen = formatTime(tzbuf, sizeof tzbuf, " (%Z)", utcTime, localTime);
-    if (tzlen != 0) {
-        
-        
-        
-        
-        
-        bool usetz = true;
-        for (size_t i = 0; i < tzlen; i++) {
-            char16_t c = tzbuf[i];
-            if (c > 127 || !isprint(c)) {
-                usetz = false;
-                break;
-            }
-        }
-
-        
-        if (tzbuf[0] != ' ' || tzbuf[1] != '(' || tzbuf[2] == ')') {
-            usetz = false;
-        }
-
-        if (usetz) {
-            return NewStringCopyN<CanGC>(cx, tzbuf, tzlen);
-        }
+  size_t tzlen = formatTime(tzbuf, sizeof tzbuf, " (%Z)", utcTime, localTime);
+  if (tzlen != 0) {
+    
+    
+    
+    
+    
+    bool usetz = true;
+    for (size_t i = 0; i < tzlen; i++) {
+      char16_t c = tzbuf[i];
+      if (c > 127 || !isprint(c)) {
+        usetz = false;
+        break;
+      }
     }
 
-    return cx->names().empty;
+    
+    if (tzbuf[0] != ' ' || tzbuf[1] != '(' || tzbuf[2] == ')') {
+      usetz = false;
+    }
+
+    if (usetz) {
+      return NewStringCopyN<CanGC>(cx, tzbuf, tzlen);
+    }
+  }
+
+  return cx->names().empty;
 }
 #endif 
 
-static JSString*
-TimeZoneComment(JSContext* cx, double utcTime, double localTime)
-{
-    return DateTimeHelper::timeZoneComment(cx, utcTime, localTime);
+static JSString* TimeZoneComment(JSContext* cx, double utcTime,
+                                 double localTime) {
+  return DateTimeHelper::timeZoneComment(cx, utcTime, localTime);
 }
 
-enum class FormatSpec {
-    DateTime,
-    Date,
-    Time
-};
+enum class FormatSpec { DateTime, Date, Time };
 
-static bool
-FormatDate(JSContext* cx, double utcTime, FormatSpec format, MutableHandleValue rval)
-{
-    if (!IsFinite(utcTime)) {
-        rval.setString(cx->names().InvalidDate);
-        return true;
-    }
+static bool FormatDate(JSContext* cx, double utcTime, FormatSpec format,
+                       MutableHandleValue rval) {
+  if (!IsFinite(utcTime)) {
+    rval.setString(cx->names().InvalidDate);
+    return true;
+  }
 
-    MOZ_ASSERT(NumbersAreIdentical(TimeClip(utcTime).toDouble(), utcTime));
+  MOZ_ASSERT(NumbersAreIdentical(TimeClip(utcTime).toDouble(), utcTime));
 
-    double localTime = LocalTime(utcTime);
+  double localTime = LocalTime(utcTime);
 
-    int offset = 0;
-    RootedString timeZoneComment(cx);
-    if (format == FormatSpec::DateTime || format == FormatSpec::Time) {
-        
-        
-        int minutes = (int) trunc((localTime - utcTime) / msPerMinute);
-
-        
-        offset = (minutes / 60) * 100 + minutes % 60;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        timeZoneComment = TimeZoneComment(cx, utcTime, localTime);
-        if (!timeZoneComment) {
-            return false;
-        }
-    }
-
-    char buf[100];
-    switch (format) {
-      case FormatSpec::DateTime:
-        
-        SprintfLiteral(buf, "%s %s %.2d %.4d %.2d:%.2d:%.2d GMT%+.4d",
-                       days[int(WeekDay(localTime))],
-                       months[int(MonthFromTime(localTime))],
-                       int(DateFromTime(localTime)),
-                       int(YearFromTime(localTime)),
-                       int(HourFromTime(localTime)),
-                       int(MinFromTime(localTime)),
-                       int(SecFromTime(localTime)),
-                       offset);
-        break;
-      case FormatSpec::Date:
-        
-        SprintfLiteral(buf, "%s %s %.2d %.4d",
-                       days[int(WeekDay(localTime))],
-                       months[int(MonthFromTime(localTime))],
-                       int(DateFromTime(localTime)),
-                       int(YearFromTime(localTime)));
-        break;
-      case FormatSpec::Time:
-        
-        SprintfLiteral(buf, "%.2d:%.2d:%.2d GMT%+.4d",
-                       int(HourFromTime(localTime)),
-                       int(MinFromTime(localTime)),
-                       int(SecFromTime(localTime)),
-                       offset);
-        break;
-    }
-
-    RootedString str(cx, NewStringCopyZ<CanGC>(cx, buf));
-    if (!str) {
-        return false;
-    }
+  int offset = 0;
+  RootedString timeZoneComment(cx);
+  if (format == FormatSpec::DateTime || format == FormatSpec::Time) {
+    
+    
+    int minutes = (int)trunc((localTime - utcTime) / msPerMinute);
 
     
-    if (timeZoneComment && !timeZoneComment->empty()) {
-        str = js::ConcatStrings<CanGC>(cx, str, timeZoneComment);
-        if (!str) {
-            return false;
-        }
-    }
+    offset = (minutes / 60) * 100 + minutes % 60;
 
-    rval.setString(str);
-    return true;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    timeZoneComment = TimeZoneComment(cx, utcTime, localTime);
+    if (!timeZoneComment) {
+      return false;
+    }
+  }
+
+  char buf[100];
+  switch (format) {
+    case FormatSpec::DateTime:
+      
+      SprintfLiteral(buf, "%s %s %.2d %.4d %.2d:%.2d:%.2d GMT%+.4d",
+                     days[int(WeekDay(localTime))],
+                     months[int(MonthFromTime(localTime))],
+                     int(DateFromTime(localTime)), int(YearFromTime(localTime)),
+                     int(HourFromTime(localTime)), int(MinFromTime(localTime)),
+                     int(SecFromTime(localTime)), offset);
+      break;
+    case FormatSpec::Date:
+      
+      SprintfLiteral(buf, "%s %s %.2d %.4d", days[int(WeekDay(localTime))],
+                     months[int(MonthFromTime(localTime))],
+                     int(DateFromTime(localTime)),
+                     int(YearFromTime(localTime)));
+      break;
+    case FormatSpec::Time:
+      
+      SprintfLiteral(buf, "%.2d:%.2d:%.2d GMT%+.4d",
+                     int(HourFromTime(localTime)), int(MinFromTime(localTime)),
+                     int(SecFromTime(localTime)), offset);
+      break;
+  }
+
+  RootedString str(cx, NewStringCopyZ<CanGC>(cx, buf));
+  if (!str) {
+    return false;
+  }
+
+  
+  if (timeZoneComment && !timeZoneComment->empty()) {
+    str = js::ConcatStrings<CanGC>(cx, str, timeZoneComment);
+    if (!str) {
+      return false;
+    }
+  }
+
+  rval.setString(str);
+  return true;
 }
 
 #if !EXPOSE_INTL_API
-static bool
-ToLocaleFormatHelper(JSContext* cx, HandleObject obj, const char* format, MutableHandleValue rval)
-{
-    double utcTime = obj->as<DateObject>().UTCTime().toNumber();
+static bool ToLocaleFormatHelper(JSContext* cx, HandleObject obj,
+                                 const char* format, MutableHandleValue rval) {
+  double utcTime = obj->as<DateObject>().UTCTime().toNumber();
 
-    char buf[100];
-    if (!IsFinite(utcTime)) {
-        strcpy(buf, js_InvalidDate_str);
-    } else {
-        double localTime = LocalTime(utcTime);
+  char buf[100];
+  if (!IsFinite(utcTime)) {
+    strcpy(buf, js_InvalidDate_str);
+  } else {
+    double localTime = LocalTime(utcTime);
 
-        
-        size_t result_len = DateTimeHelper::formatTime(buf, sizeof buf, format, utcTime, localTime);
-
-        
-        if (result_len == 0) {
-            return FormatDate(cx, utcTime, FormatSpec::DateTime, rval);
-        }
-
-        
-        if (strcmp(format, "%x") == 0 && result_len >= 6 &&
-            
-
-            !isdigit(buf[result_len - 3]) &&
-            isdigit(buf[result_len - 2]) && isdigit(buf[result_len - 1]) &&
-            
-            !(isdigit(buf[0]) && isdigit(buf[1]) &&
-              isdigit(buf[2]) && isdigit(buf[3])))
-        {
-            int year = int(YearFromTime(localTime));
-            snprintf(buf + (result_len - 2), (sizeof buf) - (result_len - 2), "%d", year);
-        }
-
-    }
-
-    if (cx->runtime()->localeCallbacks && cx->runtime()->localeCallbacks->localeToUnicode) {
-        return cx->runtime()->localeCallbacks->localeToUnicode(cx, buf, rval);
-    }
-
-    JSString* str = NewStringCopyZ<CanGC>(cx, buf);
-    if (!str) {
-        return false;
-    }
-    rval.setString(str);
-    return true;
-}
-
-
-
-MOZ_ALWAYS_INLINE bool
-date_toLocaleString_impl(JSContext* cx, const CallArgs& args)
-{
     
+    size_t result_len =
+        DateTimeHelper::formatTime(buf, sizeof buf, format, utcTime, localTime);
 
-
-
-    static const char format[] =
-#if defined(_WIN32) && !defined(__MWERKS__)
-                                   "%#c"
-#else
-                                   "%c"
-#endif
-                                   ;
-
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-    return ToLocaleFormatHelper(cx, dateObj, format, args.rval());
-}
-
-static bool
-date_toLocaleString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_toLocaleString_impl>(cx, args);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_toLocaleDateString_impl(JSContext* cx, const CallArgs& args)
-{
     
+    if (result_len == 0) {
+      return FormatDate(cx, utcTime, FormatSpec::DateTime, rval);
+    }
+
+    
+    if (strcmp(format, "%x") == 0 && result_len >= 6 &&
+        
+
+        !isdigit(buf[result_len - 3]) && isdigit(buf[result_len - 2]) &&
+        isdigit(buf[result_len - 1]) &&
+        
+        !(isdigit(buf[0]) && isdigit(buf[1]) && isdigit(buf[2]) &&
+          isdigit(buf[3]))) {
+      int year = int(YearFromTime(localTime));
+      snprintf(buf + (result_len - 2), (sizeof buf) - (result_len - 2), "%d",
+               year);
+    }
+  }
+
+  if (cx->runtime()->localeCallbacks &&
+      cx->runtime()->localeCallbacks->localeToUnicode) {
+    return cx->runtime()->localeCallbacks->localeToUnicode(cx, buf, rval);
+  }
+
+  JSString* str = NewStringCopyZ<CanGC>(cx, buf);
+  if (!str) {
+    return false;
+  }
+  rval.setString(str);
+  return true;
+}
+
+
+MOZ_ALWAYS_INLINE bool date_toLocaleString_impl(JSContext* cx,
+                                                const CallArgs& args) {
+  
 
 
 
-    static const char format[] =
+  static const char format[] =
 #if defined(_WIN32) && !defined(__MWERKS__)
-                                   "%#x"
+      "%#c"
 #else
-                                   "%x"
+      "%c"
 #endif
-                                   ;
+      ;
 
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-    return ToLocaleFormatHelper(cx, dateObj, format, args.rval());
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  return ToLocaleFormatHelper(cx, dateObj, format, args.rval());
 }
 
-static bool
-date_toLocaleDateString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_toLocaleDateString_impl>(cx, args);
+static bool date_toLocaleString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_toLocaleString_impl>(cx, args);
 }
 
 
-MOZ_ALWAYS_INLINE bool
-date_toLocaleTimeString_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-    return ToLocaleFormatHelper(cx, dateObj, "%X", args.rval());
+MOZ_ALWAYS_INLINE bool date_toLocaleDateString_impl(JSContext* cx,
+                                                    const CallArgs& args) {
+  
+
+
+
+  static const char format[] =
+#if defined(_WIN32) && !defined(__MWERKS__)
+      "%#x"
+#else
+      "%x"
+#endif
+      ;
+
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  return ToLocaleFormatHelper(cx, dateObj, format, args.rval());
 }
 
-static bool
-date_toLocaleTimeString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_toLocaleTimeString_impl>(cx, args);
+static bool date_toLocaleDateString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_toLocaleDateString_impl>(cx, args);
+}
+
+
+MOZ_ALWAYS_INLINE bool date_toLocaleTimeString_impl(JSContext* cx,
+                                                    const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  return ToLocaleFormatHelper(cx, dateObj, "%X", args.rval());
+}
+
+static bool date_toLocaleTimeString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_toLocaleTimeString_impl>(cx, args);
 }
 #endif 
 
 
-MOZ_ALWAYS_INLINE bool
-date_toTimeString_impl(JSContext* cx, const CallArgs& args)
-{
-    return FormatDate(cx, args.thisv().toObject().as<DateObject>().UTCTime().toNumber(),
-                      FormatSpec::Time, args.rval());
+MOZ_ALWAYS_INLINE bool date_toTimeString_impl(JSContext* cx,
+                                              const CallArgs& args) {
+  return FormatDate(
+      cx, args.thisv().toObject().as<DateObject>().UTCTime().toNumber(),
+      FormatSpec::Time, args.rval());
 }
 
-static bool
-date_toTimeString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_toTimeString_impl>(cx, args);
-}
-
-
-MOZ_ALWAYS_INLINE bool
-date_toDateString_impl(JSContext* cx, const CallArgs& args)
-{
-    return FormatDate(cx, args.thisv().toObject().as<DateObject>().UTCTime().toNumber(),
-                      FormatSpec::Date, args.rval());
-}
-
-static bool
-date_toDateString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_toDateString_impl>(cx, args);
-}
-
-MOZ_ALWAYS_INLINE bool
-date_toSource_impl(JSContext* cx, const CallArgs& args)
-{
-    StringBuffer sb(cx);
-    if (!sb.append("(new Date(") ||
-        !NumberValueToStringBuffer(cx, args.thisv().toObject().as<DateObject>().UTCTime(), sb) ||
-        !sb.append("))"))
-    {
-        return false;
-    }
-
-    JSString* str = sb.finishString();
-    if (!str) {
-        return false;
-    }
-    args.rval().setString(str);
-    return true;
-}
-
-static bool
-date_toSource(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_toSource_impl>(cx, args);
+static bool date_toTimeString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_toTimeString_impl>(cx, args);
 }
 
 
-MOZ_ALWAYS_INLINE bool
-date_toString_impl(JSContext* cx, const CallArgs& args)
-{
-    
-    return FormatDate(cx, args.thisv().toObject().as<DateObject>().UTCTime().toNumber(),
-                      FormatSpec::DateTime, args.rval());
+MOZ_ALWAYS_INLINE bool date_toDateString_impl(JSContext* cx,
+                                              const CallArgs& args) {
+  return FormatDate(
+      cx, args.thisv().toObject().as<DateObject>().UTCTime().toNumber(),
+      FormatSpec::Date, args.rval());
 }
 
-bool
-date_toString(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_toString_impl>(cx, args);
+static bool date_toDateString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_toDateString_impl>(cx, args);
 }
 
-MOZ_ALWAYS_INLINE bool
-date_valueOf_impl(JSContext* cx, const CallArgs& args)
-{
-    Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
-    args.rval().set(dateObj->UTCTime());
-    return true;
+MOZ_ALWAYS_INLINE bool date_toSource_impl(JSContext* cx, const CallArgs& args) {
+  StringBuffer sb(cx);
+  if (!sb.append("(new Date(") ||
+      !NumberValueToStringBuffer(
+          cx, args.thisv().toObject().as<DateObject>().UTCTime(), sb) ||
+      !sb.append("))")) {
+    return false;
+  }
+
+  JSString* str = sb.finishString();
+  if (!str) {
+    return false;
+  }
+  args.rval().setString(str);
+  return true;
 }
 
-bool
-js::date_valueOf(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsDate, date_valueOf_impl>(cx, args);
+static bool date_toSource(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_toSource_impl>(cx, args);
 }
 
 
-static bool
-date_toPrimitive(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
+MOZ_ALWAYS_INLINE bool date_toString_impl(JSContext* cx, const CallArgs& args) {
+  
+  return FormatDate(
+      cx, args.thisv().toObject().as<DateObject>().UTCTime().toNumber(),
+      FormatSpec::DateTime, args.rval());
+}
 
-    
-    if (!args.thisv().isObject()) {
-        ReportIncompatible(cx, args);
-        return false;
-    }
+bool date_toString(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_toString_impl>(cx, args);
+}
 
-    
-    JSType hint;
-    if (!GetFirstArgumentAsTypeHint(cx, args, &hint)) {
-        return false;
-    }
-    if (hint == JSTYPE_UNDEFINED) {
-        hint = JSTYPE_STRING;
-    }
+MOZ_ALWAYS_INLINE bool date_valueOf_impl(JSContext* cx, const CallArgs& args) {
+  Rooted<DateObject*> dateObj(cx, &args.thisv().toObject().as<DateObject>());
+  args.rval().set(dateObj->UTCTime());
+  return true;
+}
 
-    args.rval().set(args.thisv());
-    RootedObject obj(cx, &args.thisv().toObject());
-    return OrdinaryToPrimitive(cx, obj, hint, args.rval());
+bool js::date_valueOf(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  return CallNonGenericMethod<IsDate, date_valueOf_impl>(cx, args);
+}
+
+
+static bool date_toPrimitive(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  if (!args.thisv().isObject()) {
+    ReportIncompatible(cx, args);
+    return false;
+  }
+
+  
+  JSType hint;
+  if (!GetFirstArgumentAsTypeHint(cx, args, &hint)) {
+    return false;
+  }
+  if (hint == JSTYPE_UNDEFINED) {
+    hint = JSTYPE_STRING;
+  }
+
+  args.rval().set(args.thisv());
+  RootedObject obj(cx, &args.thisv().toObject());
+  return OrdinaryToPrimitive(cx, obj, hint, args.rval());
 }
 
 static const JSFunctionSpec date_static_methods[] = {
-    JS_FN("UTC",                 date_UTC,                7,0),
-    JS_FN("parse",               date_parse,              1,0),
-    JS_FN("now",                 date_now,                0,0),
-    JS_FS_END
-};
+    JS_FN("UTC", date_UTC, 7, 0), JS_FN("parse", date_parse, 1, 0),
+    JS_FN("now", date_now, 0, 0), JS_FS_END};
 
 static const JSFunctionSpec date_methods[] = {
-    JS_FN("getTime",             date_getTime,            0,0),
-    JS_FN("getTimezoneOffset",   date_getTimezoneOffset,  0,0),
-    JS_FN("getYear",             date_getYear,            0,0),
-    JS_FN("getFullYear",         date_getFullYear,        0,0),
-    JS_FN("getUTCFullYear",      date_getUTCFullYear,     0,0),
-    JS_FN("getMonth",            date_getMonth,           0,0),
-    JS_FN("getUTCMonth",         date_getUTCMonth,        0,0),
-    JS_FN("getDate",             date_getDate,            0,0),
-    JS_FN("getUTCDate",          date_getUTCDate,         0,0),
-    JS_FN("getDay",              date_getDay,             0,0),
-    JS_FN("getUTCDay",           date_getUTCDay,          0,0),
-    JS_FN("getHours",            date_getHours,           0,0),
-    JS_FN("getUTCHours",         date_getUTCHours,        0,0),
-    JS_FN("getMinutes",          date_getMinutes,         0,0),
-    JS_FN("getUTCMinutes",       date_getUTCMinutes,      0,0),
-    JS_FN("getSeconds",          date_getSeconds,         0,0),
-    JS_FN("getUTCSeconds",       date_getUTCSeconds,      0,0),
-    JS_FN("getMilliseconds",     date_getUTCMilliseconds, 0,0),
-    JS_FN("getUTCMilliseconds",  date_getUTCMilliseconds, 0,0),
-    JS_FN("setTime",             date_setTime,            1,0),
-    JS_FN("setYear",             date_setYear,            1,0),
-    JS_FN("setFullYear",         date_setFullYear,        3,0),
-    JS_FN("setUTCFullYear",      date_setUTCFullYear,     3,0),
-    JS_FN("setMonth",            date_setMonth,           2,0),
-    JS_FN("setUTCMonth",         date_setUTCMonth,        2,0),
-    JS_FN("setDate",             date_setDate,            1,0),
-    JS_FN("setUTCDate",          date_setUTCDate,         1,0),
-    JS_FN("setHours",            date_setHours,           4,0),
-    JS_FN("setUTCHours",         date_setUTCHours,        4,0),
-    JS_FN("setMinutes",          date_setMinutes,         3,0),
-    JS_FN("setUTCMinutes",       date_setUTCMinutes,      3,0),
-    JS_FN("setSeconds",          date_setSeconds,         2,0),
-    JS_FN("setUTCSeconds",       date_setUTCSeconds,      2,0),
-    JS_FN("setMilliseconds",     date_setMilliseconds,    1,0),
-    JS_FN("setUTCMilliseconds",  date_setUTCMilliseconds, 1,0),
-    JS_FN("toUTCString",         date_toGMTString,        0,0),
+    JS_FN("getTime", date_getTime, 0, 0),
+    JS_FN("getTimezoneOffset", date_getTimezoneOffset, 0, 0),
+    JS_FN("getYear", date_getYear, 0, 0),
+    JS_FN("getFullYear", date_getFullYear, 0, 0),
+    JS_FN("getUTCFullYear", date_getUTCFullYear, 0, 0),
+    JS_FN("getMonth", date_getMonth, 0, 0),
+    JS_FN("getUTCMonth", date_getUTCMonth, 0, 0),
+    JS_FN("getDate", date_getDate, 0, 0),
+    JS_FN("getUTCDate", date_getUTCDate, 0, 0),
+    JS_FN("getDay", date_getDay, 0, 0),
+    JS_FN("getUTCDay", date_getUTCDay, 0, 0),
+    JS_FN("getHours", date_getHours, 0, 0),
+    JS_FN("getUTCHours", date_getUTCHours, 0, 0),
+    JS_FN("getMinutes", date_getMinutes, 0, 0),
+    JS_FN("getUTCMinutes", date_getUTCMinutes, 0, 0),
+    JS_FN("getSeconds", date_getSeconds, 0, 0),
+    JS_FN("getUTCSeconds", date_getUTCSeconds, 0, 0),
+    JS_FN("getMilliseconds", date_getUTCMilliseconds, 0, 0),
+    JS_FN("getUTCMilliseconds", date_getUTCMilliseconds, 0, 0),
+    JS_FN("setTime", date_setTime, 1, 0),
+    JS_FN("setYear", date_setYear, 1, 0),
+    JS_FN("setFullYear", date_setFullYear, 3, 0),
+    JS_FN("setUTCFullYear", date_setUTCFullYear, 3, 0),
+    JS_FN("setMonth", date_setMonth, 2, 0),
+    JS_FN("setUTCMonth", date_setUTCMonth, 2, 0),
+    JS_FN("setDate", date_setDate, 1, 0),
+    JS_FN("setUTCDate", date_setUTCDate, 1, 0),
+    JS_FN("setHours", date_setHours, 4, 0),
+    JS_FN("setUTCHours", date_setUTCHours, 4, 0),
+    JS_FN("setMinutes", date_setMinutes, 3, 0),
+    JS_FN("setUTCMinutes", date_setUTCMinutes, 3, 0),
+    JS_FN("setSeconds", date_setSeconds, 2, 0),
+    JS_FN("setUTCSeconds", date_setUTCSeconds, 2, 0),
+    JS_FN("setMilliseconds", date_setMilliseconds, 1, 0),
+    JS_FN("setUTCMilliseconds", date_setUTCMilliseconds, 1, 0),
+    JS_FN("toUTCString", date_toGMTString, 0, 0),
 #if EXPOSE_INTL_API
-    JS_SELF_HOSTED_FN(js_toLocaleString_str, "Date_toLocaleString", 0,0),
-    JS_SELF_HOSTED_FN("toLocaleDateString", "Date_toLocaleDateString", 0,0),
-    JS_SELF_HOSTED_FN("toLocaleTimeString", "Date_toLocaleTimeString", 0,0),
+    JS_SELF_HOSTED_FN(js_toLocaleString_str, "Date_toLocaleString", 0, 0),
+    JS_SELF_HOSTED_FN("toLocaleDateString", "Date_toLocaleDateString", 0, 0),
+    JS_SELF_HOSTED_FN("toLocaleTimeString", "Date_toLocaleTimeString", 0, 0),
 #else
-    JS_FN(js_toLocaleString_str, date_toLocaleString,     0,0),
-    JS_FN("toLocaleDateString",  date_toLocaleDateString, 0,0),
-    JS_FN("toLocaleTimeString",  date_toLocaleTimeString, 0,0),
+    JS_FN(js_toLocaleString_str, date_toLocaleString, 0, 0),
+    JS_FN("toLocaleDateString", date_toLocaleDateString, 0, 0),
+    JS_FN("toLocaleTimeString", date_toLocaleTimeString, 0, 0),
 #endif
-    JS_FN("toDateString",        date_toDateString,       0,0),
-    JS_FN("toTimeString",        date_toTimeString,       0,0),
-    JS_FN("toISOString",         date_toISOString,        0,0),
-    JS_FN(js_toJSON_str,         date_toJSON,             1,0),
-    JS_FN(js_toSource_str,       date_toSource,           0,0),
-    JS_FN(js_toString_str,       date_toString,           0,0),
-    JS_FN(js_valueOf_str,        date_valueOf,            0,0),
-    JS_SYM_FN(toPrimitive,       date_toPrimitive,        1,JSPROP_READONLY),
-    JS_FS_END
-};
+    JS_FN("toDateString", date_toDateString, 0, 0),
+    JS_FN("toTimeString", date_toTimeString, 0, 0),
+    JS_FN("toISOString", date_toISOString, 0, 0),
+    JS_FN(js_toJSON_str, date_toJSON, 1, 0),
+    JS_FN(js_toSource_str, date_toSource, 0, 0),
+    JS_FN(js_toString_str, date_toString, 0, 0),
+    JS_FN(js_valueOf_str, date_valueOf, 0, 0),
+    JS_SYM_FN(toPrimitive, date_toPrimitive, 1, JSPROP_READONLY),
+    JS_FS_END};
 
-static bool
-NewDateObject(JSContext* cx, const CallArgs& args, ClippedTime t)
-{
-    MOZ_ASSERT(args.isConstructing());
+static bool NewDateObject(JSContext* cx, const CallArgs& args, ClippedTime t) {
+  MOZ_ASSERT(args.isConstructing());
 
-    RootedObject proto(cx);
-    if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+  RootedObject proto(cx);
+  if (!GetPrototypeFromBuiltinConstructor(cx, args, &proto)) {
+    return false;
+  }
+
+  JSObject* obj = NewDateObjectMsec(cx, t, proto);
+  if (!obj) {
+    return false;
+  }
+
+  args.rval().setObject(*obj);
+  return true;
+}
+
+static bool ToDateString(JSContext* cx, const CallArgs& args, ClippedTime t) {
+  return FormatDate(cx, t.toDouble(), FormatSpec::DateTime, args.rval());
+}
+
+static bool DateNoArguments(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(args.length() == 0);
+
+  ClippedTime now = NowAsMillis(cx);
+
+  if (args.isConstructing()) {
+    return NewDateObject(cx, args, now);
+  }
+
+  return ToDateString(cx, args, now);
+}
+
+static bool DateOneArgument(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(args.length() == 1);
+
+  if (args.isConstructing()) {
+    if (args[0].isObject()) {
+      RootedObject obj(cx, &args[0].toObject());
+
+      ESClass cls;
+      if (!GetBuiltinClass(cx, obj, &cls)) {
         return false;
+      }
+
+      if (cls == ESClass::Date) {
+        RootedValue unboxed(cx);
+        if (!Unbox(cx, obj, &unboxed)) {
+          return false;
+        }
+
+        return NewDateObject(cx, args, TimeClip(unboxed.toNumber()));
+      }
     }
 
-    JSObject* obj = NewDateObjectMsec(cx, t, proto);
-    if (!obj) {
+    if (!ToPrimitive(cx, args[0])) {
+      return false;
+    }
+
+    ClippedTime t;
+    if (args[0].isString()) {
+      JSLinearString* linearStr = args[0].toString()->ensureLinear(cx);
+      if (!linearStr) {
         return false;
+      }
+
+      if (!ParseDate(linearStr, &t)) {
+        t = ClippedTime::invalid();
+      }
+    } else {
+      double d;
+      if (!ToNumber(cx, args[0], &d)) {
+        return false;
+      }
+      t = TimeClip(d);
     }
 
-    args.rval().setObject(*obj);
-    return true;
+    return NewDateObject(cx, args, t);
+  }
+
+  return ToDateString(cx, args, NowAsMillis(cx));
 }
 
-static bool
-ToDateString(JSContext* cx, const CallArgs& args, ClippedTime t)
-{
-    return FormatDate(cx, t.toDouble(), FormatSpec::DateTime, args.rval());
-}
+static bool DateMultipleArguments(JSContext* cx, const CallArgs& args) {
+  MOZ_ASSERT(args.length() >= 2);
 
-static bool
-DateNoArguments(JSContext* cx, const CallArgs& args)
-{
-    MOZ_ASSERT(args.length() == 0);
-
-    ClippedTime now = NowAsMillis(cx);
-
-    if (args.isConstructing()) {
-        return NewDateObject(cx, args, now);
+  
+  if (args.isConstructing()) {
+    
+    double y;
+    if (!ToNumber(cx, args[0], &y)) {
+      return false;
     }
-
-    return ToDateString(cx, args, now);
-}
-
-static bool
-DateOneArgument(JSContext* cx, const CallArgs& args)
-{
-    MOZ_ASSERT(args.length() == 1);
-
-    if (args.isConstructing()) {
-        if (args[0].isObject()) {
-            RootedObject obj(cx, &args[0].toObject());
-
-            ESClass cls;
-            if (!GetBuiltinClass(cx, obj, &cls)) {
-                return false;
-            }
-
-            if (cls == ESClass::Date) {
-                RootedValue unboxed(cx);
-                if (!Unbox(cx, obj, &unboxed)) {
-                    return false;
-                }
-
-                return NewDateObject(cx, args, TimeClip(unboxed.toNumber()));
-            }
-        }
-
-        if (!ToPrimitive(cx, args[0])) {
-            return false;
-        }
-
-        ClippedTime t;
-        if (args[0].isString()) {
-            JSLinearString* linearStr = args[0].toString()->ensureLinear(cx);
-            if (!linearStr) {
-                return false;
-            }
-
-            if (!ParseDate(linearStr, &t)) {
-                t = ClippedTime::invalid();
-            }
-        } else {
-            double d;
-            if (!ToNumber(cx, args[0], &d)) {
-                return false;
-            }
-            t = TimeClip(d);
-        }
-
-        return NewDateObject(cx, args, t);
-    }
-
-    return ToDateString(cx, args, NowAsMillis(cx));
-}
-
-static bool
-DateMultipleArguments(JSContext* cx, const CallArgs& args)
-{
-    MOZ_ASSERT(args.length() >= 2);
 
     
-    if (args.isConstructing()) {
-        
-        double y;
-        if (!ToNumber(cx, args[0], &y)) {
-            return false;
-        }
-
-        
-        double m;
-        if (!ToNumber(cx, args[1], &m)) {
-            return false;
-        }
-
-        
-        double dt;
-        if (args.length() >= 3) {
-            if (!ToNumber(cx, args[2], &dt)) {
-                return false;
-            }
-        } else {
-            dt = 1;
-        }
-
-        
-        double h;
-        if (args.length() >= 4) {
-            if (!ToNumber(cx, args[3], &h)) {
-                return false;
-            }
-        } else {
-            h = 0;
-        }
-
-        
-        double min;
-        if (args.length() >= 5) {
-            if (!ToNumber(cx, args[4], &min)) {
-                return false;
-            }
-        } else {
-            min = 0;
-        }
-
-        
-        double s;
-        if (args.length() >= 6) {
-            if (!ToNumber(cx, args[5], &s)) {
-                return false;
-            }
-        } else {
-            s = 0;
-        }
-
-        
-        double milli;
-        if (args.length() >= 7) {
-            if (!ToNumber(cx, args[6], &milli)) {
-                return false;
-            }
-        } else {
-            milli = 0;
-        }
-
-        
-        double yr = y;
-        if (!IsNaN(y)) {
-            double yint = ToInteger(y);
-            if (0 <= yint && yint <= 99) {
-                yr = 1900 + yint;
-            }
-        }
-
-        
-        double finalDate = MakeDate(MakeDay(yr, m, dt), MakeTime(h, min, s, milli));
-
-        
-        return NewDateObject(cx, args, TimeClip(UTC(finalDate)));
+    double m;
+    if (!ToNumber(cx, args[1], &m)) {
+      return false;
     }
 
-    return ToDateString(cx, args, NowAsMillis(cx));
-}
-
-static bool
-DateConstructor(JSContext* cx, unsigned argc, Value* vp)
-{
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    if (args.length() == 0) {
-        return DateNoArguments(cx, args);
-    }
-
-    if (args.length() == 1) {
-        return DateOneArgument(cx, args);
-    }
-
-    return DateMultipleArguments(cx, args);
-}
-
-static bool
-FinishDateClassInit(JSContext* cx, HandleObject ctor, HandleObject proto)
-{
     
+    double dt;
+    if (args.length() >= 3) {
+      if (!ToNumber(cx, args[2], &dt)) {
+        return false;
+      }
+    } else {
+      dt = 1;
+    }
+
+    
+    double h;
+    if (args.length() >= 4) {
+      if (!ToNumber(cx, args[3], &h)) {
+        return false;
+      }
+    } else {
+      h = 0;
+    }
+
+    
+    double min;
+    if (args.length() >= 5) {
+      if (!ToNumber(cx, args[4], &min)) {
+        return false;
+      }
+    } else {
+      min = 0;
+    }
+
+    
+    double s;
+    if (args.length() >= 6) {
+      if (!ToNumber(cx, args[5], &s)) {
+        return false;
+      }
+    } else {
+      s = 0;
+    }
+
+    
+    double milli;
+    if (args.length() >= 7) {
+      if (!ToNumber(cx, args[6], &milli)) {
+        return false;
+      }
+    } else {
+      milli = 0;
+    }
+
+    
+    double yr = y;
+    if (!IsNaN(y)) {
+      double yint = ToInteger(y);
+      if (0 <= yint && yint <= 99) {
+        yr = 1900 + yint;
+      }
+    }
+
+    
+    double finalDate = MakeDate(MakeDay(yr, m, dt), MakeTime(h, min, s, milli));
+
+    
+    return NewDateObject(cx, args, TimeClip(UTC(finalDate)));
+  }
+
+  return ToDateString(cx, args, NowAsMillis(cx));
+}
+
+static bool DateConstructor(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (args.length() == 0) {
+    return DateNoArguments(cx, args);
+  }
+
+  if (args.length() == 1) {
+    return DateOneArgument(cx, args);
+  }
+
+  return DateMultipleArguments(cx, args);
+}
+
+static bool FinishDateClassInit(JSContext* cx, HandleObject ctor,
+                                HandleObject proto) {
+  
 
 
 
-    RootedValue toUTCStringFun(cx);
-    RootedId toUTCStringId(cx, NameToId(cx->names().toUTCString));
-    RootedId toGMTStringId(cx, NameToId(cx->names().toGMTString));
-    return NativeGetProperty(cx, proto.as<NativeObject>(), toUTCStringId, &toUTCStringFun) &&
-           NativeDefineDataProperty(cx, proto.as<NativeObject>(), toGMTStringId, toUTCStringFun,
-                                    0);
+  RootedValue toUTCStringFun(cx);
+  RootedId toUTCStringId(cx, NameToId(cx->names().toUTCString));
+  RootedId toGMTStringId(cx, NameToId(cx->names().toGMTString));
+  return NativeGetProperty(cx, proto.as<NativeObject>(), toUTCStringId,
+                           &toUTCStringFun) &&
+         NativeDefineDataProperty(cx, proto.as<NativeObject>(), toGMTStringId,
+                                  toUTCStringFun, 0);
 }
 
 static const ClassSpec DateObjectClassSpec = {
@@ -3630,84 +3335,74 @@ static const ClassSpec DateObjectClassSpec = {
     nullptr,
     date_methods,
     nullptr,
-    FinishDateClassInit
-};
+    FinishDateClassInit};
 
-const Class DateObject::class_ = {
-    js_Date_str,
-    JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS) |
-    JSCLASS_HAS_CACHED_PROTO(JSProto_Date),
-    JS_NULL_CLASS_OPS,
-    &DateObjectClassSpec
-};
+const Class DateObject::class_ = {js_Date_str,
+                                  JSCLASS_HAS_RESERVED_SLOTS(RESERVED_SLOTS) |
+                                      JSCLASS_HAS_CACHED_PROTO(JSProto_Date),
+                                  JS_NULL_CLASS_OPS, &DateObjectClassSpec};
 
-const Class DateObject::protoClass_ = {
-    js_Object_str,
-    JSCLASS_HAS_CACHED_PROTO(JSProto_Date),
-    JS_NULL_CLASS_OPS,
-    &DateObjectClassSpec
-};
+const Class DateObject::protoClass_ = {js_Object_str,
+                                       JSCLASS_HAS_CACHED_PROTO(JSProto_Date),
+                                       JS_NULL_CLASS_OPS, &DateObjectClassSpec};
 
-JSObject*
-js::NewDateObjectMsec(JSContext* cx, ClippedTime t, HandleObject proto )
-{
-    DateObject* obj = NewObjectWithClassProto<DateObject>(cx, proto);
-    if (!obj) {
-        return nullptr;
-    }
-    obj->setUTCTime(t);
-    return obj;
+JSObject* js::NewDateObjectMsec(JSContext* cx, ClippedTime t,
+                                HandleObject proto ) {
+  DateObject* obj = NewObjectWithClassProto<DateObject>(cx, proto);
+  if (!obj) {
+    return nullptr;
+  }
+  obj->setUTCTime(t);
+  return obj;
 }
 
-JS_FRIEND_API JSObject*
-js::NewDateObject(JSContext* cx, int year, int mon, int mday,
-                  int hour, int min, int sec)
-{
-    MOZ_ASSERT(mon < 12);
-    double msec_time = MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, 0.0));
-    return NewDateObjectMsec(cx, TimeClip(UTC(msec_time)));
+JS_FRIEND_API JSObject* js::NewDateObject(JSContext* cx, int year, int mon,
+                                          int mday, int hour, int min,
+                                          int sec) {
+  MOZ_ASSERT(mon < 12);
+  double msec_time =
+      MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, 0.0));
+  return NewDateObjectMsec(cx, TimeClip(UTC(msec_time)));
 }
 
-JS_FRIEND_API bool
-js::DateIsValid(JSContext* cx, HandleObject obj, bool* isValid)
-{
-    ESClass cls;
-    if (!GetBuiltinClass(cx, obj, &cls)) {
-        return false;
-    }
+JS_FRIEND_API bool js::DateIsValid(JSContext* cx, HandleObject obj,
+                                   bool* isValid) {
+  ESClass cls;
+  if (!GetBuiltinClass(cx, obj, &cls)) {
+    return false;
+  }
 
-    if (cls != ESClass::Date) {
-        *isValid = false;
-        return true;
-    }
-
-    RootedValue unboxed(cx);
-    if (!Unbox(cx, obj, &unboxed)) {
-        return false;
-    }
-
-    *isValid = !IsNaN(unboxed.toNumber());
+  if (cls != ESClass::Date) {
+    *isValid = false;
     return true;
+  }
+
+  RootedValue unboxed(cx);
+  if (!Unbox(cx, obj, &unboxed)) {
+    return false;
+  }
+
+  *isValid = !IsNaN(unboxed.toNumber());
+  return true;
 }
 
-JS_FRIEND_API bool
-js::DateGetMsecSinceEpoch(JSContext* cx, HandleObject obj, double* msecsSinceEpoch)
-{
-    ESClass cls;
-    if (!GetBuiltinClass(cx, obj, &cls)) {
-        return false;
-    }
+JS_FRIEND_API bool js::DateGetMsecSinceEpoch(JSContext* cx, HandleObject obj,
+                                             double* msecsSinceEpoch) {
+  ESClass cls;
+  if (!GetBuiltinClass(cx, obj, &cls)) {
+    return false;
+  }
 
-    if (cls != ESClass::Date) {
-        *msecsSinceEpoch = 0;
-        return true;
-    }
-
-    RootedValue unboxed(cx);
-    if (!Unbox(cx, obj, &unboxed)) {
-        return false;
-    }
-
-    *msecsSinceEpoch = unboxed.toNumber();
+  if (cls != ESClass::Date) {
+    *msecsSinceEpoch = 0;
     return true;
+  }
+
+  RootedValue unboxed(cx);
+  if (!Unbox(cx, obj, &unboxed)) {
+    return false;
+  }
+
+  *msecsSinceEpoch = unboxed.toNumber();
+  return true;
 }

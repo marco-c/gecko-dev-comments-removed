@@ -17,31 +17,25 @@ namespace mozilla {
 
 
 
-class JsepTrackEncoding
-{
-public:
+class JsepTrackEncoding {
+ public:
   JsepTrackEncoding() = default;
-  JsepTrackEncoding(const JsepTrackEncoding& orig) :
-    mConstraints(orig.mConstraints),
-    mRid(orig.mRid)
-  {
+  JsepTrackEncoding(const JsepTrackEncoding& orig)
+      : mConstraints(orig.mConstraints), mRid(orig.mRid) {
     for (const auto& codec : orig.mCodecs) {
       mCodecs.emplace_back(codec->Clone());
     }
   }
 
-  const std::vector<UniquePtr<JsepCodecDescription>>& GetCodecs() const
-  {
+  const std::vector<UniquePtr<JsepCodecDescription>>& GetCodecs() const {
     return mCodecs;
   }
 
-  void AddCodec(const JsepCodecDescription& codec)
-  {
+  void AddCodec(const JsepCodecDescription& codec) {
     mCodecs.emplace_back(codec.Clone());
   }
 
-  bool HasFormat(const std::string& format) const
-  {
+  bool HasFormat(const std::string& format) const {
     for (const auto& codec : mCodecs) {
       if (codec->mDefaultPt == format) {
         return true;
@@ -53,9 +47,9 @@ public:
   EncodingConstraints mConstraints;
   std::string mRid;
 
-private:
+ private:
   std::vector<UniquePtr<JsepCodecDescription>> mCodecs;
 };
-}
+}  
 
-#endif 
+#endif  

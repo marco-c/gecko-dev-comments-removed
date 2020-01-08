@@ -34,24 +34,23 @@ class TransportLayerIce : public TransportLayer {
 
   virtual ~TransportLayerIce();
 
-  void SetParameters(RefPtr<NrIceMediaStream> stream,
-                     int component);
+  void SetParameters(RefPtr<NrIceMediaStream> stream, int component);
 
-  void ResetOldStream(); 
-  void RestoreOldStream(); 
-
-  
-  TransportResult SendPacket(MediaPacket& packet) override;
+  void ResetOldStream();    
+  void RestoreOldStream();  
 
   
-  void IceCandidate(NrIceMediaStream *stream, const std::string&);
+  TransportResult SendPacket(MediaPacket &packet) override;
+
+  
+  void IceCandidate(NrIceMediaStream *stream, const std::string &);
   void IceReady(NrIceMediaStream *stream);
   void IceFailed(NrIceMediaStream *stream);
   void IcePacketReceived(NrIceMediaStream *stream, int component,
                          const unsigned char *data, int len);
 
   
-  sigslot::signal2<TransportLayer*, MediaPacket&> SignalPacketSending;
+  sigslot::signal2<TransportLayer *, MediaPacket &> SignalPacketSending;
 
   TRANSPORT_LAYER_ID("ice")
 

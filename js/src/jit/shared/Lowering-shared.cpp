@@ -15,291 +15,275 @@
 using namespace js;
 using namespace jit;
 
-bool
-LIRGeneratorShared::ShouldReorderCommutative(MDefinition* lhs, MDefinition* rhs, MInstruction* ins)
-{
-    
-    MOZ_ASSERT(lhs->hasDefUses());
-    MOZ_ASSERT(rhs->hasDefUses());
+bool LIRGeneratorShared::ShouldReorderCommutative(MDefinition* lhs,
+                                                  MDefinition* rhs,
+                                                  MInstruction* ins) {
+  
+  MOZ_ASSERT(lhs->hasDefUses());
+  MOZ_ASSERT(rhs->hasDefUses());
 
-    
-    if (rhs->isConstant()) {
-        return false;
-    }
-    if (lhs->isConstant()) {
-        return true;
-    }
-
-    
-    
-    
-    
-    bool rhsSingleUse = rhs->hasOneDefUse();
-    bool lhsSingleUse = lhs->hasOneDefUse();
-    if (rhsSingleUse) {
-        if (!lhsSingleUse) {
-            return true;
-        }
-    } else {
-        if (lhsSingleUse) {
-            return false;
-        }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    if (rhsSingleUse &&
-        rhs->isPhi() &&
-        rhs->block()->isLoopHeader() &&
-        ins == rhs->toPhi()->getLoopBackedgeOperand())
-    {
-        return true;
-    }
-
+  
+  if (rhs->isConstant()) {
     return false;
-}
+  }
+  if (lhs->isConstant()) {
+    return true;
+  }
 
-void
-LIRGeneratorShared::ReorderCommutative(MDefinition** lhsp, MDefinition** rhsp, MInstruction* ins)
-{
-    MDefinition* lhs = *lhsp;
-    MDefinition* rhs = *rhsp;
-
-    if (ShouldReorderCommutative(lhs, rhs, ins)) {
-        *rhsp = lhs;
-        *lhsp = rhs;
+  
+  
+  
+  
+  bool rhsSingleUse = rhs->hasOneDefUse();
+  bool lhsSingleUse = lhs->hasOneDefUse();
+  if (rhsSingleUse) {
+    if (!lhsSingleUse) {
+      return true;
     }
+  } else {
+    if (lhsSingleUse) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (rhsSingleUse && rhs->isPhi() && rhs->block()->isLoopHeader() &&
+      ins == rhs->toPhi()->getLoopBackedgeOperand()) {
+    return true;
+  }
+
+  return false;
 }
 
-void
-LIRGeneratorShared::definePhiOneRegister(MPhi* phi, size_t lirIndex)
-{
-    LPhi* lir = current->getPhi(lirIndex);
+void LIRGeneratorShared::ReorderCommutative(MDefinition** lhsp,
+                                            MDefinition** rhsp,
+                                            MInstruction* ins) {
+  MDefinition* lhs = *lhsp;
+  MDefinition* rhs = *rhsp;
 
-    uint32_t vreg = getVirtualRegister();
+  if (ShouldReorderCommutative(lhs, rhs, ins)) {
+    *rhsp = lhs;
+    *lhsp = rhs;
+  }
+}
 
-    phi->setVirtualRegister(vreg);
-    lir->setDef(0, LDefinition(vreg, LDefinition::TypeFrom(phi->type())));
-    annotate(lir);
+void LIRGeneratorShared::definePhiOneRegister(MPhi* phi, size_t lirIndex) {
+  LPhi* lir = current->getPhi(lirIndex);
+
+  uint32_t vreg = getVirtualRegister();
+
+  phi->setVirtualRegister(vreg);
+  lir->setDef(0, LDefinition(vreg, LDefinition::TypeFrom(phi->type())));
+  annotate(lir);
 }
 
 #ifdef JS_NUNBOX32
-void
-LIRGeneratorShared::definePhiTwoRegisters(MPhi* phi, size_t lirIndex)
-{
-    LPhi* type = current->getPhi(lirIndex + VREG_TYPE_OFFSET);
-    LPhi* payload = current->getPhi(lirIndex + VREG_DATA_OFFSET);
+void LIRGeneratorShared::definePhiTwoRegisters(MPhi* phi, size_t lirIndex) {
+  LPhi* type = current->getPhi(lirIndex + VREG_TYPE_OFFSET);
+  LPhi* payload = current->getPhi(lirIndex + VREG_DATA_OFFSET);
 
-    uint32_t typeVreg = getVirtualRegister();
-    phi->setVirtualRegister(typeVreg);
+  uint32_t typeVreg = getVirtualRegister();
+  phi->setVirtualRegister(typeVreg);
 
-    uint32_t payloadVreg = getVirtualRegister();
-    MOZ_ASSERT(typeVreg + 1 == payloadVreg);
+  uint32_t payloadVreg = getVirtualRegister();
+  MOZ_ASSERT(typeVreg + 1 == payloadVreg);
 
-    type->setDef(0, LDefinition(typeVreg, LDefinition::TYPE));
-    payload->setDef(0, LDefinition(payloadVreg, LDefinition::PAYLOAD));
-    annotate(type);
-    annotate(payload);
+  type->setDef(0, LDefinition(typeVreg, LDefinition::TYPE));
+  payload->setDef(0, LDefinition(payloadVreg, LDefinition::PAYLOAD));
+  annotate(type);
+  annotate(payload);
 }
 #endif
 
-void
-LIRGeneratorShared::lowerTypedPhiInput(MPhi* phi, uint32_t inputPosition, LBlock* block, size_t lirIndex)
-{
-    MDefinition* operand = phi->getOperand(inputPosition);
-    LPhi* lir = block->getPhi(lirIndex);
-    lir->setOperand(inputPosition, LUse(operand->virtualRegister(), LUse::ANY));
+void LIRGeneratorShared::lowerTypedPhiInput(MPhi* phi, uint32_t inputPosition,
+                                            LBlock* block, size_t lirIndex) {
+  MDefinition* operand = phi->getOperand(inputPosition);
+  LPhi* lir = block->getPhi(lirIndex);
+  lir->setOperand(inputPosition, LUse(operand->virtualRegister(), LUse::ANY));
 }
 
-LRecoverInfo*
-LIRGeneratorShared::getRecoverInfo(MResumePoint* rp)
-{
-    if (cachedRecoverInfo_ && cachedRecoverInfo_->mir() == rp) {
-        return cachedRecoverInfo_;
-    }
+LRecoverInfo* LIRGeneratorShared::getRecoverInfo(MResumePoint* rp) {
+  if (cachedRecoverInfo_ && cachedRecoverInfo_->mir() == rp) {
+    return cachedRecoverInfo_;
+  }
 
-    LRecoverInfo* recoverInfo = LRecoverInfo::New(gen, rp);
-    if (!recoverInfo) {
-        return nullptr;
-    }
+  LRecoverInfo* recoverInfo = LRecoverInfo::New(gen, rp);
+  if (!recoverInfo) {
+    return nullptr;
+  }
 
-    cachedRecoverInfo_ = recoverInfo;
-    return recoverInfo;
+  cachedRecoverInfo_ = recoverInfo;
+  return recoverInfo;
 }
 
 #ifdef DEBUG
-bool
-LRecoverInfo::OperandIter::canOptimizeOutIfUnused()
-{
-    MDefinition* ins = **this;
+bool LRecoverInfo::OperandIter::canOptimizeOutIfUnused() {
+  MDefinition* ins = **this;
 
-    
-    
-    
-    if ((ins->isUnused() || ins->type() == MIRType::MagicOptimizedOut) &&
-        (*it_)->isResumePoint())
-    {
-        return !(*it_)->toResumePoint()->isObservableOperand(op_);
-    }
+  
+  
+  
+  if ((ins->isUnused() || ins->type() == MIRType::MagicOptimizedOut) &&
+      (*it_)->isResumePoint()) {
+    return !(*it_)->toResumePoint()->isObservableOperand(op_);
+  }
 
-    return true;
+  return true;
 }
 #endif
 
 #ifdef JS_NUNBOX32
-LSnapshot*
-LIRGeneratorShared::buildSnapshot(LInstruction* ins, MResumePoint* rp, BailoutKind kind)
-{
-    LRecoverInfo* recoverInfo = getRecoverInfo(rp);
-    if (!recoverInfo) {
-        return nullptr;
+LSnapshot* LIRGeneratorShared::buildSnapshot(LInstruction* ins,
+                                             MResumePoint* rp,
+                                             BailoutKind kind) {
+  LRecoverInfo* recoverInfo = getRecoverInfo(rp);
+  if (!recoverInfo) {
+    return nullptr;
+  }
+
+  LSnapshot* snapshot = LSnapshot::New(gen, recoverInfo, kind);
+  if (!snapshot) {
+    return nullptr;
+  }
+
+  size_t index = 0;
+  for (LRecoverInfo::OperandIter it(recoverInfo); !it; ++it) {
+    
+    MOZ_ASSERT(it.canOptimizeOutIfUnused());
+
+    MDefinition* ins = *it;
+
+    if (ins->isRecoveredOnBailout()) {
+      continue;
     }
 
-    LSnapshot* snapshot = LSnapshot::New(gen, recoverInfo, kind);
-    if (!snapshot) {
-        return nullptr;
+    LAllocation* type = snapshot->typeOfSlot(index);
+    LAllocation* payload = snapshot->payloadOfSlot(index);
+    ++index;
+
+    if (ins->isBox()) {
+      ins = ins->toBox()->getOperand(0);
     }
 
-    size_t index = 0;
-    for (LRecoverInfo::OperandIter it(recoverInfo); !it; ++it) {
-        
-        MOZ_ASSERT(it.canOptimizeOutIfUnused());
+    
+    MOZ_ASSERT_IF(ins->isUnused(), !ins->isGuard());
 
-        MDefinition* ins = *it;
+    
+    
+    
+    MOZ_ASSERT_IF(!ins->isConstant(), !ins->isEmittedAtUses());
 
-        if (ins->isRecoveredOnBailout()) {
-            continue;
-        }
-
-        LAllocation* type = snapshot->typeOfSlot(index);
-        LAllocation* payload = snapshot->payloadOfSlot(index);
-        ++index;
-
-        if (ins->isBox()) {
-            ins = ins->toBox()->getOperand(0);
-        }
-
-        
-        MOZ_ASSERT_IF(ins->isUnused(), !ins->isGuard());
-
-        
-        
-        
-        MOZ_ASSERT_IF(!ins->isConstant(), !ins->isEmittedAtUses());
-
-        
-        
-        
-        
-        
-        if (ins->isConstant() || ins->isUnused()) {
-            *type = LAllocation();
-            *payload = LAllocation();
-        } else if (ins->type() != MIRType::Value) {
-            *type = LAllocation();
-            *payload = use(ins, LUse(LUse::KEEPALIVE));
-        } else {
-            *type = useType(ins, LUse::KEEPALIVE);
-            *payload = usePayload(ins, LUse::KEEPALIVE);
-        }
+    
+    
+    
+    
+    
+    if (ins->isConstant() || ins->isUnused()) {
+      *type = LAllocation();
+      *payload = LAllocation();
+    } else if (ins->type() != MIRType::Value) {
+      *type = LAllocation();
+      *payload = use(ins, LUse(LUse::KEEPALIVE));
+    } else {
+      *type = useType(ins, LUse::KEEPALIVE);
+      *payload = usePayload(ins, LUse::KEEPALIVE);
     }
+  }
 
-    return snapshot;
+  return snapshot;
 }
 
 #elif JS_PUNBOX64
 
-LSnapshot*
-LIRGeneratorShared::buildSnapshot(LInstruction* ins, MResumePoint* rp, BailoutKind kind)
-{
-    LRecoverInfo* recoverInfo = getRecoverInfo(rp);
-    if (!recoverInfo) {
-        return nullptr;
+LSnapshot* LIRGeneratorShared::buildSnapshot(LInstruction* ins,
+                                             MResumePoint* rp,
+                                             BailoutKind kind) {
+  LRecoverInfo* recoverInfo = getRecoverInfo(rp);
+  if (!recoverInfo) {
+    return nullptr;
+  }
+
+  LSnapshot* snapshot = LSnapshot::New(gen, recoverInfo, kind);
+  if (!snapshot) {
+    return nullptr;
+  }
+
+  size_t index = 0;
+  for (LRecoverInfo::OperandIter it(recoverInfo); !it; ++it) {
+    
+    MOZ_ASSERT(it.canOptimizeOutIfUnused());
+
+    MDefinition* def = *it;
+
+    if (def->isRecoveredOnBailout()) {
+      continue;
     }
 
-    LSnapshot* snapshot = LSnapshot::New(gen, recoverInfo, kind);
-    if (!snapshot) {
-        return nullptr;
+    if (def->isBox()) {
+      def = def->toBox()->getOperand(0);
     }
 
-    size_t index = 0;
-    for (LRecoverInfo::OperandIter it(recoverInfo); !it; ++it) {
-        
-        MOZ_ASSERT(it.canOptimizeOutIfUnused());
+    
+    MOZ_ASSERT_IF(def->isUnused(), !def->isGuard());
 
-        MDefinition* def = *it;
+    
+    
+    
+    MOZ_ASSERT_IF(!def->isConstant(), !def->isEmittedAtUses());
 
-        if (def->isRecoveredOnBailout()) {
-            continue;
-        }
+    LAllocation* a = snapshot->getEntry(index++);
 
-        if (def->isBox()) {
-            def = def->toBox()->getOperand(0);
-        }
-
-        
-        MOZ_ASSERT_IF(def->isUnused(), !def->isGuard());
-
-        
-        
-        
-        MOZ_ASSERT_IF(!def->isConstant(), !def->isEmittedAtUses());
-
-        LAllocation* a = snapshot->getEntry(index++);
-
-        if (def->isUnused()) {
-            *a = LAllocation();
-            continue;
-        }
-
-        *a = useKeepaliveOrConstant(def);
+    if (def->isUnused()) {
+      *a = LAllocation();
+      continue;
     }
 
-    return snapshot;
+    *a = useKeepaliveOrConstant(def);
+  }
+
+  return snapshot;
 }
 #endif
 
-void
-LIRGeneratorShared::assignSnapshot(LInstruction* ins, BailoutKind kind)
-{
-    
-    
-    MOZ_ASSERT(ins->id() == 0);
+void LIRGeneratorShared::assignSnapshot(LInstruction* ins, BailoutKind kind) {
+  
+  
+  MOZ_ASSERT(ins->id() == 0);
 
-    LSnapshot* snapshot = buildSnapshot(ins, lastResumePoint_, kind);
-    if (!snapshot) {
-        abort(AbortReason::Alloc, "buildSnapshot failed");
-        return;
-    }
+  LSnapshot* snapshot = buildSnapshot(ins, lastResumePoint_, kind);
+  if (!snapshot) {
+    abort(AbortReason::Alloc, "buildSnapshot failed");
+    return;
+  }
 
-    ins->assignSnapshot(snapshot);
+  ins->assignSnapshot(snapshot);
 }
 
-void
-LIRGeneratorShared::assignSafepoint(LInstruction* ins, MInstruction* mir, BailoutKind kind)
-{
-    MOZ_ASSERT(!osiPoint_);
-    MOZ_ASSERT(!ins->safepoint());
+void LIRGeneratorShared::assignSafepoint(LInstruction* ins, MInstruction* mir,
+                                         BailoutKind kind) {
+  MOZ_ASSERT(!osiPoint_);
+  MOZ_ASSERT(!ins->safepoint());
 
-    ins->initSafepoint(alloc());
+  ins->initSafepoint(alloc());
 
-    MResumePoint* mrp = mir->resumePoint() ? mir->resumePoint() : lastResumePoint_;
-    LSnapshot* postSnapshot = buildSnapshot(ins, mrp, kind);
-    if (!postSnapshot) {
-        abort(AbortReason::Alloc, "buildSnapshot failed");
-        return;
-    }
+  MResumePoint* mrp =
+      mir->resumePoint() ? mir->resumePoint() : lastResumePoint_;
+  LSnapshot* postSnapshot = buildSnapshot(ins, mrp, kind);
+  if (!postSnapshot) {
+    abort(AbortReason::Alloc, "buildSnapshot failed");
+    return;
+  }
 
-    osiPoint_ = new(alloc()) LOsiPoint(ins->safepoint(), postSnapshot);
+  osiPoint_ = new (alloc()) LOsiPoint(ins->safepoint(), postSnapshot);
 
-    if (!lirGraph_.noteNeedsSafepoint(ins)) {
-        abort(AbortReason::Alloc, "noteNeedsSafepoint failed");
-        return;
-    }
+  if (!lirGraph_.noteNeedsSafepoint(ins)) {
+    abort(AbortReason::Alloc, "noteNeedsSafepoint failed");
+    return;
+  }
 }
-

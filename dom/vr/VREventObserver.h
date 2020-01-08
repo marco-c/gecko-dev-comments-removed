@@ -8,16 +8,15 @@
 #define mozilla_dom_VREventObserver_h
 
 #include "mozilla/dom/VRDisplayEventBinding.h"
-#include "nsISupportsImpl.h" 
+#include "nsISupportsImpl.h"  
 
 class nsGlobalWindowInner;
 
 namespace mozilla {
 namespace dom {
 
-class VREventObserver final
-{
-public:
+class VREventObserver final {
+ public:
   NS_INLINE_DECL_REFCOUNTING(VREventObserver)
   explicit VREventObserver(nsGlobalWindowInner* aGlobalWindow);
 
@@ -37,7 +36,7 @@ public:
   void StopActivity();
   bool GetStopActivityStatus();
 
-private:
+ private:
   ~VREventObserver();
 
   RefPtr<nsGlobalWindowInner> mWindow;
@@ -49,7 +48,7 @@ private:
   bool mStopActivity;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

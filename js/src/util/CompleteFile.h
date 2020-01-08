@@ -7,13 +7,13 @@
 #ifndef util_CompleteFile_h
 #define util_CompleteFile_h
 
-#include "mozilla/Assertions.h" 
+#include "mozilla/Assertions.h"  
 
-#include <stdint.h> 
-#include <stdio.h> 
+#include <stdint.h>  
+#include <stdio.h>   
 
-#include "js/AllocPolicy.h" 
-#include "js/Vector.h" 
+#include "js/AllocPolicy.h"  
+#include "js/Vector.h"       
 
 struct JSContext;
 
@@ -21,34 +21,30 @@ namespace js {
 
 using FileContents = Vector<uint8_t, 8, TempAllocPolicy>;
 
-extern bool
-ReadCompleteFile(JSContext* cx, FILE* fp, FileContents& buffer);
+extern bool ReadCompleteFile(JSContext* cx, FILE* fp, FileContents& buffer);
 
-class AutoFile
-{
-    FILE* fp_ = nullptr;
+class AutoFile {
+  FILE* fp_ = nullptr;
 
-  public:
-    AutoFile() {}
+ public:
+  AutoFile() {}
 
-    ~AutoFile()
-    {
-        if (fp_ && fp_ != stdin) {
-            fclose(fp_);
-        }
+  ~AutoFile() {
+    if (fp_ && fp_ != stdin) {
+      fclose(fp_);
     }
+  }
 
-    FILE* fp() const { return fp_; }
+  FILE* fp() const { return fp_; }
 
-    bool open(JSContext* cx, const char* filename);
+  bool open(JSContext* cx, const char* filename);
 
-    bool readAll(JSContext* cx, FileContents& buffer)
-    {
-        MOZ_ASSERT(fp_);
-        return ReadCompleteFile(cx, fp_, buffer);
-    }
+  bool readAll(JSContext* cx, FileContents& buffer) {
+    MOZ_ASSERT(fp_);
+    return ReadCompleteFile(cx, fp_, buffer);
+  }
 };
 
-} 
+}  
 
 #endif 

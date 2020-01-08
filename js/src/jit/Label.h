@@ -12,63 +12,57 @@
 namespace js {
 namespace jit {
 
-struct LabelBase
-{
-  private:
-    
-    
-    uint32_t bound_ : 1;
+struct LabelBase {
+ private:
+  
+  
+  uint32_t bound_ : 1;
 
-    
-    
-    uint32_t offset_ : 31;
+  
+  
+  uint32_t offset_ : 31;
 
-    void operator=(const LabelBase& label) = delete;
+  void operator=(const LabelBase& label) = delete;
 
 #if defined(JS_CODEGEN_MIPS32) || defined(JS_CODEGEN_MIPS64)
-  public:
+ public:
 #endif
-    static const uint32_t INVALID_OFFSET = 0x7fffffff; 
+  static const uint32_t INVALID_OFFSET = 0x7fffffff;  
 
-  public:
-    LabelBase() : bound_(false), offset_(INVALID_OFFSET)
-    { }
+ public:
+  LabelBase() : bound_(false), offset_(INVALID_OFFSET) {}
 
-    
-    
-    bool bound() const {
-        return bound_;
-    }
-    int32_t offset() const {
-        MOZ_ASSERT(bound() || used());
-        return offset_;
-    }
-    
-    bool used() const {
-        return !bound() && offset_ < INVALID_OFFSET;
-    }
-    
-    void bind(int32_t offset) {
-        MOZ_ASSERT(!bound());
-        MOZ_ASSERT(offset >= 0);
-        MOZ_ASSERT(uint32_t(offset) < INVALID_OFFSET);
-        offset_ = offset;
-        bound_ = true;
-        MOZ_ASSERT(offset_ == offset, "offset fits in 31 bits");
-    }
-    
-    void reset() {
-        offset_ = INVALID_OFFSET;
-        bound_ = false;
-    }
-    
-    void use(int32_t offset) {
-        MOZ_ASSERT(!bound());
-        MOZ_ASSERT(offset >= 0);
-        MOZ_ASSERT(uint32_t(offset) < INVALID_OFFSET);
-        offset_ = offset;
-        MOZ_ASSERT(offset_ == offset, "offset fits in 31 bits");
-    }
+  
+  
+  bool bound() const { return bound_; }
+  int32_t offset() const {
+    MOZ_ASSERT(bound() || used());
+    return offset_;
+  }
+  
+  bool used() const { return !bound() && offset_ < INVALID_OFFSET; }
+  
+  void bind(int32_t offset) {
+    MOZ_ASSERT(!bound());
+    MOZ_ASSERT(offset >= 0);
+    MOZ_ASSERT(uint32_t(offset) < INVALID_OFFSET);
+    offset_ = offset;
+    bound_ = true;
+    MOZ_ASSERT(offset_ == offset, "offset fits in 31 bits");
+  }
+  
+  void reset() {
+    offset_ = INVALID_OFFSET;
+    bound_ = false;
+  }
+  
+  void use(int32_t offset) {
+    MOZ_ASSERT(!bound());
+    MOZ_ASSERT(offset >= 0);
+    MOZ_ASSERT(uint32_t(offset) < INVALID_OFFSET);
+    offset_ = offset;
+    MOZ_ASSERT(offset_ == offset, "offset fits in 31 bits");
+  }
 };
 
 
@@ -79,40 +73,38 @@ struct LabelBase
 
 
 
-class Label : public LabelBase
-{
-  public:
-    ~Label()
-    {
+class Label : public LabelBase {
+ public:
+  ~Label() {
 #ifdef DEBUG
-        
-        JitContext* context = MaybeGetJitContext();
-        bool hadError = js::oom::HadSimulatedOOM() ||
-                        (context && context->runtime && context->runtime->hadOutOfMemory());
-        MOZ_ASSERT_IF(!hadError, !used());
+    
+    JitContext* context = MaybeGetJitContext();
+    bool hadError =
+        js::oom::HadSimulatedOOM() ||
+        (context && context->runtime && context->runtime->hadOutOfMemory());
+    MOZ_ASSERT_IF(!hadError, !used());
 #endif
-    }
+  }
 };
 
-static_assert(sizeof(Label) == sizeof(uint32_t), "Label should have same size as uint32_t");
+static_assert(sizeof(Label) == sizeof(uint32_t),
+              "Label should have same size as uint32_t");
 
 
 
 
-class NonAssertingLabel : public Label
-{
-  public:
-    ~NonAssertingLabel()
-    {
+class NonAssertingLabel : public Label {
+ public:
+  ~NonAssertingLabel() {
 #ifdef DEBUG
-        if (used()) {
-            bind(0);
-        }
-#endif
+    if (used()) {
+      bind(0);
     }
+#endif
+  }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

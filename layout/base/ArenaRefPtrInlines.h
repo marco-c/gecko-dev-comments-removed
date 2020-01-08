@@ -19,10 +19,8 @@
 
 namespace mozilla {
 
-template<typename T>
-void
-ArenaRefPtr<T>::AssertValidType()
-{
+template <typename T>
+void ArenaRefPtr<T>::AssertValidType() {
   
   
   static_assert(IsSame<T, ComputedStyle>::value,
@@ -31,15 +29,12 @@ ArenaRefPtr<T>::AssertValidType()
                 "nsPresArena.cpp");
 }
 
-} 
+}  
 
-template<typename T>
-void
-nsPresArena::RegisterArenaRefPtr(mozilla::ArenaRefPtr<T>* aPtr)
-{
+template <typename T>
+void nsPresArena::RegisterArenaRefPtr(mozilla::ArenaRefPtr<T>* aPtr) {
   MOZ_ASSERT(!mArenaRefPtrs.Contains(aPtr));
   mArenaRefPtrs.Put(aPtr, T::ArenaObjectID());
 }
-
 
 #endif

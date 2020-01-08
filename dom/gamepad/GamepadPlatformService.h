@@ -29,8 +29,7 @@ class GamepadEventChannelParent;
 
 
 
-class GamepadPlatformService final
-{
+class GamepadPlatformService final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(GamepadPlatformService)
  public:
   
@@ -81,7 +80,8 @@ class GamepadPlatformService final
  private:
   GamepadPlatformService();
   ~GamepadPlatformService();
-  template<class T> void NotifyGamepadChange(uint32_t aIndex, const T& aInfo);
+  template <class T>
+  void NotifyGamepadChange(uint32_t aIndex, const T& aInfo);
 
   
   
@@ -106,7 +106,7 @@ class GamepadPlatformService final
   nsTArray<GamepadChangeEvent> mPendingEvents;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

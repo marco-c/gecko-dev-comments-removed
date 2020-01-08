@@ -15,28 +15,22 @@ namespace dom {
 namespace indexedDB {
 
 
-class ScriptErrorHelper
-{
-public:
-  static void Dump(const nsAString& aMessage,
-                   const nsAString& aFilename,
-                   uint32_t aLineNumber,
-                   uint32_t aColumnNumber,
+class ScriptErrorHelper {
+ public:
+  static void Dump(const nsAString& aMessage, const nsAString& aFilename,
+                   uint32_t aLineNumber, uint32_t aColumnNumber,
                    uint32_t aSeverityFlag, 
-                   bool aIsChrome,
-                   uint64_t aInnerWindowID);
+                   bool aIsChrome, uint64_t aInnerWindowID);
 
-  static void DumpLocalizedMessage(const nsACString& aMessageName,
-                                   const nsAString& aFilename,
-                                   uint32_t aLineNumber,
-                                   uint32_t aColumnNumber,
-                                   uint32_t aSeverityFlag, 
-                                   bool aIsChrome,
-                                   uint64_t aInnerWindowID);
+  static void DumpLocalizedMessage(
+      const nsACString& aMessageName, const nsAString& aFilename,
+      uint32_t aLineNumber, uint32_t aColumnNumber,
+      uint32_t aSeverityFlag, 
+      bool aIsChrome, uint64_t aInnerWindowID);
 };
 
-} 
-} 
-} 
+}  
+}  
+}  
 
-#endif 
+#endif  

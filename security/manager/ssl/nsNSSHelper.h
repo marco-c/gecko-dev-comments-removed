@@ -12,24 +12,21 @@
 #include "pk11func.h"
 
 
-class PipUIContext : public nsIInterfaceRequestor
-{
-public:
+class PipUIContext : public nsIInterfaceRequestor {
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINTERFACEREQUESTOR
 
   PipUIContext();
 
-protected:
+ protected:
   virtual ~PipUIContext();
 };
 
 
-nsresult
-getNSSDialogs(void **_result, REFNSIID aIID, const char *contract);
+nsresult getNSSDialogs(void** _result, REFNSIID aIID, const char* contract);
 
 
-nsresult
-setPassword(PK11SlotInfo* slot, nsIInterfaceRequestor* ctx);
+nsresult setPassword(PK11SlotInfo* slot, nsIInterfaceRequestor* ctx);
 
-#endif 
+#endif  

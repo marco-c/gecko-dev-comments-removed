@@ -16,26 +16,25 @@ namespace mozilla {
 namespace ipc {
 
 
-class BrowserProcessSubThread : public base::Thread
-{
-public:
+class BrowserProcessSubThread : public base::Thread {
+ public:
   
   enum ID {
-      IO,
-      
-      
-      
+    IO,
+  
+  
+  
 #if defined(OS_LINUX) || defined(OS_SOLARIS)
-      
-      
-      
-      BACKGROUND_X11,
+    
+    
+    
+    BACKGROUND_X11,
 #endif
 
-      
-      
-      
-      ID_COUNT
+    
+    
+    
+    ID_COUNT
   };
 
   explicit BrowserProcessSubThread(ID aId);
@@ -43,11 +42,11 @@ public:
 
   static MessageLoop* GetMessageLoop(ID identifier);
 
-protected:
+ protected:
   virtual void Init() override;
   virtual void CleanUp() override;
 
-private:
+ private:
   
   
   ID mIdentifier;
@@ -64,13 +63,12 @@ private:
   static BrowserProcessSubThread* sBrowserThreads[ID_COUNT];
 };
 
-inline void AssertIOThread()
-{
+inline void AssertIOThread() {
   NS_ASSERTION(MessageLoop::TYPE_IO == MessageLoop::current()->type(),
                "should be on the IO thread!");
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

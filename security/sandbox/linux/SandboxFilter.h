@@ -16,7 +16,7 @@ namespace sandbox {
 namespace bpf_dsl {
 class Policy;
 }
-}
+}  
 
 namespace mozilla {
 
@@ -24,17 +24,18 @@ namespace mozilla {
 class SandboxBrokerClient;
 struct ContentProcessSandboxParams;
 
-UniquePtr<sandbox::bpf_dsl::Policy> GetContentSandboxPolicy(SandboxBrokerClient* aMaybeBroker,
-                                                            ContentProcessSandboxParams&& aParams);
+UniquePtr<sandbox::bpf_dsl::Policy> GetContentSandboxPolicy(
+    SandboxBrokerClient* aMaybeBroker, ContentProcessSandboxParams&& aParams);
 #endif
 
 #ifdef MOZ_GMP_SANDBOX
 class SandboxOpenedFiles;
 
 
-UniquePtr<sandbox::bpf_dsl::Policy> GetMediaSandboxPolicy(const SandboxOpenedFiles* aFiles);
+UniquePtr<sandbox::bpf_dsl::Policy> GetMediaSandboxPolicy(
+    const SandboxOpenedFiles* aFiles);
 #endif
 
-} 
+}  
 
 #endif

@@ -20,24 +20,19 @@ static mozilla::LazyLogModule gGtkTaskbarProgressLog("nsIGtkTaskbarProgress");
 
 NS_IMPL_ISUPPORTS(TaskbarProgress, nsIGtkTaskbarProgress, nsITaskbarProgress)
 
-TaskbarProgress::TaskbarProgress()
-    : mPrimaryWindow(nullptr)
-{
+TaskbarProgress::TaskbarProgress() : mPrimaryWindow(nullptr) {
   MOZ_LOG(gGtkTaskbarProgressLog, LogLevel::Info,
           ("%p TaskbarProgress()", this));
 }
 
-TaskbarProgress::~TaskbarProgress()
-{
+TaskbarProgress::~TaskbarProgress() {
   MOZ_LOG(gGtkTaskbarProgressLog, LogLevel::Info,
           ("%p ~TaskbarProgress()", this));
 }
 
 NS_IMETHODIMP
 TaskbarProgress::SetProgressState(nsTaskbarProgressState aState,
-                                  uint64_t               aCurrentValue,
-                                  uint64_t               aMaxValue)
-{
+                                  uint64_t aCurrentValue, uint64_t aMaxValue) {
 #ifdef MOZ_X11
   NS_ENSURE_ARG_RANGE(aState, 0, STATE_PAUSED);
 
@@ -61,7 +56,7 @@ TaskbarProgress::SetProgressState(nsTaskbarProgressState aState,
   } else {
     
     
-    progress = (gulong) (((double)aCurrentValue / aMaxValue) * 100.0);
+    progress = (gulong)(((double)aCurrentValue / aMaxValue) * 100.0);
   }
 
   
@@ -83,12 +78,12 @@ TaskbarProgress::SetProgressState(nsTaskbarProgressState aState,
 }
 
 NS_IMETHODIMP
-TaskbarProgress::SetPrimaryWindow(mozIDOMWindowProxy* aWindow)
-{
+TaskbarProgress::SetPrimaryWindow(mozIDOMWindowProxy* aWindow) {
   NS_ENSURE_TRUE(aWindow != nullptr, NS_ERROR_ILLEGAL_VALUE);
 
   auto* parent = nsPIDOMWindowOuter::From(aWindow);
-  RefPtr<nsIWidget> widget = mozilla::widget::WidgetUtils::DOMWindowToWidget(parent);
+  RefPtr<nsIWidget> widget =
+      mozilla::widget::WidgetUtils::DOMWindowToWidget(parent);
 
   
   
@@ -102,10 +97,12 @@ TaskbarProgress::SetPrimaryWindow(mozIDOMWindowProxy* aWindow)
   
   
   
+  
   mCurrentProgress = 0;
 
   MOZ_LOG(gGtkTaskbarProgressLog, LogLevel::Debug,
-          ("GtkTaskbarProgress::SetPrimaryWindow window: %p", mPrimaryWindow.get()));
+          ("GtkTaskbarProgress::SetPrimaryWindow window: %p",
+           mPrimaryWindow.get()));
 
   return NS_OK;
 }

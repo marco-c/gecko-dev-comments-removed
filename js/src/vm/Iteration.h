@@ -22,408 +22,376 @@ namespace js {
 
 class PropertyIteratorObject;
 
-struct NativeIterator
-{
-  private:
+struct NativeIterator {
+ private:
+  
+  
+  GCPtrObject objectBeingIterated_ = {};
+
+  
+  JSObject* iterObj_ = nullptr;
+
+  
+  
+  
+  
+  HeapReceiverGuard* guardsEnd_;  
+
+  
+  
+  
+  
+  GCPtrFlatString* propertyCursor_;  
+
+  
+  
+  
+  
+  GCPtrFlatString* propertiesEnd_;  
+
+  uint32_t guardKey_;  
+
+ public:
+  
+  
+  struct Flags {
     
     
-    GCPtrObject objectBeingIterated_ = {};
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    static constexpr uint32_t Initialized = 0x1;
 
     
-    JSObject* iterObj_ = nullptr;
-
     
-    
-    
-    
-    HeapReceiverGuard* guardsEnd_; 
-
-    
-    
-    
-    
-    GCPtrFlatString* propertyCursor_; 
-
-    
-    
-    
-    
-    GCPtrFlatString* propertiesEnd_; 
-
-    uint32_t guardKey_; 
-
-  public:
-    
-    
-    struct Flags
-    {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        static constexpr uint32_t Initialized = 0x1;
-
-        
-        
-        static constexpr uint32_t Active = 0x2;
-
-        
-        
-        
-        
-        static constexpr uint32_t HasUnvisitedPropertyDeletion = 0x4;
-
-        
-        
-        
-        
-        static constexpr uint32_t NotReusable = Active | HasUnvisitedPropertyDeletion;
-    };
-
-  private:
-    uint32_t flags_ = 0; 
-
-    
-    NativeIterator* next_ = nullptr;
-    NativeIterator* prev_ = nullptr;
-
-    
+    static constexpr uint32_t Active = 0x2;
 
     
     
     
     
-
-  public:
-    
-
-
-
-
-
-
-
-    NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> propIter,
-                   Handle<JSObject*> objBeingIterated, const AutoIdVector& props,
-                   uint32_t numGuards, uint32_t guardKey, bool* hadError);
+    static constexpr uint32_t HasUnvisitedPropertyDeletion = 0x4;
 
     
-    NativeIterator();
+    
+    
+    
+    static constexpr uint32_t NotReusable =
+        Active | HasUnvisitedPropertyDeletion;
+  };
 
-    JSObject* objectBeingIterated() const {
-        return objectBeingIterated_;
+ private:
+  uint32_t flags_ = 0;  
+
+  
+  NativeIterator* next_ = nullptr;
+  NativeIterator* prev_ = nullptr;
+
+  
+
+  
+  
+  
+  
+
+ public:
+  
+
+
+
+
+
+
+
+  NativeIterator(JSContext* cx, Handle<PropertyIteratorObject*> propIter,
+                 Handle<JSObject*> objBeingIterated, const AutoIdVector& props,
+                 uint32_t numGuards, uint32_t guardKey, bool* hadError);
+
+  
+  NativeIterator();
+
+  JSObject* objectBeingIterated() const { return objectBeingIterated_; }
+
+  void changeObjectBeingIterated(JSObject& obj) { objectBeingIterated_ = &obj; }
+
+  HeapReceiverGuard* guardsBegin() const {
+    static_assert(alignof(HeapReceiverGuard) <= alignof(NativeIterator),
+                  "NativeIterator must be aligned to begin storing "
+                  "HeapReceiverGuards immediately after it with no "
+                  "required padding");
+    const NativeIterator* immediatelyAfter = this + 1;
+    auto* afterNonConst = const_cast<NativeIterator*>(immediatelyAfter);
+    return reinterpret_cast<HeapReceiverGuard*>(afterNonConst);
+  }
+
+  HeapReceiverGuard* guardsEnd() const { return guardsEnd_; }
+
+  uint32_t guardCount() const {
+    return mozilla::PointerRangeSize(guardsBegin(), guardsEnd());
+  }
+
+  GCPtrFlatString* propertiesBegin() const {
+    static_assert(alignof(HeapReceiverGuard) >= alignof(GCPtrFlatString),
+                  "GCPtrFlatStrings for properties must be able to appear "
+                  "directly after any HeapReceiverGuards after this "
+                  "NativeIterator, with no padding space required for "
+                  "correct alignment");
+    static_assert(alignof(NativeIterator) >= alignof(GCPtrFlatString),
+                  "GCPtrFlatStrings for properties must be able to appear "
+                  "directly after this NativeIterator when no "
+                  "HeapReceiverGuards are present, with no padding space "
+                  "required for correct alignment");
+
+    
+    
+    
+    
+    MOZ_ASSERT(isInitialized(),
+               "NativeIterator must be initialized, or else |guardsEnd_| "
+               "isn't necessarily the start of properties and instead "
+               "|propertyCursor_| instead is");
+
+    return reinterpret_cast<GCPtrFlatString*>(guardsEnd_);
+  }
+
+  GCPtrFlatString* propertiesEnd() const { return propertiesEnd_; }
+
+  GCPtrFlatString* nextProperty() const { return propertyCursor_; }
+
+  MOZ_ALWAYS_INLINE JS::Value nextIteratedValueAndAdvance() {
+    if (propertyCursor_ >= propertiesEnd_) {
+      MOZ_ASSERT(propertyCursor_ == propertiesEnd_);
+      return JS::MagicValue(JS_NO_ITER_VALUE);
     }
 
-    void changeObjectBeingIterated(JSObject& obj) {
-        objectBeingIterated_ = &obj;
-    }
+    JSFlatString* str = *propertyCursor_;
+    incCursor();
+    return JS::StringValue(str);
+  }
 
-    HeapReceiverGuard* guardsBegin() const {
-        static_assert(alignof(HeapReceiverGuard) <= alignof(NativeIterator),
-                      "NativeIterator must be aligned to begin storing "
-                      "HeapReceiverGuards immediately after it with no "
-                      "required padding");
-        const NativeIterator* immediatelyAfter = this + 1;
-        auto* afterNonConst = const_cast<NativeIterator*>(immediatelyAfter);
-        return reinterpret_cast<HeapReceiverGuard*>(afterNonConst);
-    }
+  void resetPropertyCursorForReuse() {
+    MOZ_ASSERT(isInitialized());
 
-    HeapReceiverGuard* guardsEnd() const {
-        return guardsEnd_;
-    }
+    
+    
+    
+    
 
-    uint32_t guardCount() const {
-        return mozilla::PointerRangeSize(guardsBegin(), guardsEnd());
-    }
+    
+    
+    propertyCursor_ = propertiesBegin();
+  }
 
-    GCPtrFlatString* propertiesBegin() const {
-        static_assert(alignof(HeapReceiverGuard) >= alignof(GCPtrFlatString),
-                      "GCPtrFlatStrings for properties must be able to appear "
-                      "directly after any HeapReceiverGuards after this "
-                      "NativeIterator, with no padding space required for "
-                      "correct alignment");
-        static_assert(alignof(NativeIterator) >= alignof(GCPtrFlatString),
-                      "GCPtrFlatStrings for properties must be able to appear "
-                      "directly after this NativeIterator when no "
-                      "HeapReceiverGuards are present, with no padding space "
-                      "required for correct alignment");
+  bool previousPropertyWas(JS::Handle<JSFlatString*> str) {
+    MOZ_ASSERT(isInitialized());
+    return propertyCursor_ > propertiesBegin() && propertyCursor_[-1] == str;
+  }
 
-        
-        
-        
-        
-        MOZ_ASSERT(isInitialized(),
-                   "NativeIterator must be initialized, or else |guardsEnd_| "
-                   "isn't necessarily the start of properties and instead "
-                   "|propertyCursor_| instead is");
+  size_t numKeys() const {
+    return mozilla::PointerRangeSize(propertiesBegin(), propertiesEnd());
+  }
 
-        return reinterpret_cast<GCPtrFlatString*>(guardsEnd_);
-    }
+  void trimLastProperty() {
+    MOZ_ASSERT(isInitialized());
 
-    GCPtrFlatString* propertiesEnd() const {
-        return propertiesEnd_;
-    }
+    propertiesEnd_--;
 
-    GCPtrFlatString* nextProperty() const {
-        return propertyCursor_;
-    }
+    
+    
+    
+    *propertiesEnd_ = nullptr;
+  }
 
-    MOZ_ALWAYS_INLINE JS::Value nextIteratedValueAndAdvance() {
-        if (propertyCursor_ >= propertiesEnd_) {
-            MOZ_ASSERT(propertyCursor_ == propertiesEnd_);
-            return JS::MagicValue(JS_NO_ITER_VALUE);
-        }
+  JSObject* iterObj() const { return iterObj_; }
+  GCPtrFlatString* currentProperty() const {
+    MOZ_ASSERT(propertyCursor_ < propertiesEnd());
+    return propertyCursor_;
+  }
 
-        JSFlatString* str = *propertyCursor_;
-        incCursor();
-        return JS::StringValue(str);
-    }
+  NativeIterator* next() { return next_; }
 
-    void resetPropertyCursorForReuse() {
-        MOZ_ASSERT(isInitialized());
+  void incCursor() {
+    MOZ_ASSERT(isInitialized());
+    propertyCursor_++;
+  }
 
-        
-        
-        
-        
+  uint32_t guardKey() const { return guardKey_; }
 
-        
-        
-        propertyCursor_ = propertiesBegin();
-    }
+  bool isInitialized() const { return flags_ & Flags::Initialized; }
 
-    bool previousPropertyWas(JS::Handle<JSFlatString*> str) {
-        MOZ_ASSERT(isInitialized());
-        return propertyCursor_ > propertiesBegin() && propertyCursor_[-1] == str;
-    }
+ private:
+  void markInitialized() {
+    MOZ_ASSERT(flags_ == 0);
+    flags_ = Flags::Initialized;
+  }
 
-    size_t numKeys() const {
-        return mozilla::PointerRangeSize(propertiesBegin(), propertiesEnd());
-    }
+ public:
+  bool isActive() const {
+    MOZ_ASSERT(isInitialized());
 
-    void trimLastProperty() {
-        MOZ_ASSERT(isInitialized());
+    return flags_ & Flags::Active;
+  }
 
-        propertiesEnd_--;
+  void markActive() {
+    MOZ_ASSERT(isInitialized());
 
-        
-        
-        
-        *propertiesEnd_ = nullptr;
-    }
+    flags_ |= Flags::Active;
+  }
 
-    JSObject* iterObj() const {
-        return iterObj_;
-    }
-    GCPtrFlatString* currentProperty() const {
-        MOZ_ASSERT(propertyCursor_ < propertiesEnd());
-        return propertyCursor_;
-    }
+  void markInactive() {
+    MOZ_ASSERT(isInitialized());
 
-    NativeIterator* next() {
-        return next_;
-    }
+    flags_ &= ~Flags::Active;
+  }
 
-    void incCursor() {
-        MOZ_ASSERT(isInitialized());
-        propertyCursor_++;
-    }
+  bool isReusable() const {
+    MOZ_ASSERT(isInitialized());
 
-    uint32_t guardKey() const {
-        return guardKey_;
-    }
+    
+    
+    
+    
+    
+    return flags_ == Flags::Initialized;
+  }
 
-    bool isInitialized() const {
-        return flags_ & Flags::Initialized;
-    }
+  void markHasUnvisitedPropertyDeletion() {
+    MOZ_ASSERT(isInitialized());
 
-  private:
-    void markInitialized() {
-        MOZ_ASSERT(flags_ == 0);
-        flags_ = Flags::Initialized;
-    }
+    flags_ |= Flags::HasUnvisitedPropertyDeletion;
+  }
 
-  public:
-    bool isActive() const {
-        MOZ_ASSERT(isInitialized());
+  void link(NativeIterator* other) {
+    
+    
+    
+    MOZ_ASSERT(isInitialized());
 
-        return flags_ & Flags::Active;
-    }
+    
+    MOZ_ASSERT(!next_ && !prev_);
 
-    void markActive() {
-        MOZ_ASSERT(isInitialized());
+    this->next_ = other;
+    this->prev_ = other->prev_;
+    other->prev_->next_ = this;
+    other->prev_ = this;
+  }
+  void unlink() {
+    MOZ_ASSERT(isInitialized());
 
-        flags_ |= Flags::Active;
-    }
+    next_->prev_ = prev_;
+    prev_->next_ = next_;
+    next_ = nullptr;
+    prev_ = nullptr;
+  }
 
-    void markInactive() {
-        MOZ_ASSERT(isInitialized());
+  static NativeIterator* allocateSentinel(JSContext* cx);
 
-        flags_ &= ~Flags::Active;
-    }
+  void trace(JSTracer* trc);
 
-    bool isReusable() const {
-        MOZ_ASSERT(isInitialized());
+  static constexpr size_t offsetOfObjectBeingIterated() {
+    return offsetof(NativeIterator, objectBeingIterated_);
+  }
 
-        
-        
-        
-        
-        
-        return flags_ == Flags::Initialized;
-    }
+  static constexpr size_t offsetOfGuardsEnd() {
+    return offsetof(NativeIterator, guardsEnd_);
+  }
 
-    void markHasUnvisitedPropertyDeletion() {
-        MOZ_ASSERT(isInitialized());
+  static constexpr size_t offsetOfPropertyCursor() {
+    return offsetof(NativeIterator, propertyCursor_);
+  }
 
-        flags_ |= Flags::HasUnvisitedPropertyDeletion;
-    }
+  static constexpr size_t offsetOfPropertiesEnd() {
+    return offsetof(NativeIterator, propertiesEnd_);
+  }
 
-    void link(NativeIterator* other) {
-        
-        
-        
-        MOZ_ASSERT(isInitialized());
+  static constexpr size_t offsetOfFlags() {
+    return offsetof(NativeIterator, flags_);
+  }
 
-        
-        MOZ_ASSERT(!next_ && !prev_);
+  static constexpr size_t offsetOfNext() {
+    return offsetof(NativeIterator, next_);
+  }
 
-        this->next_ = other;
-        this->prev_ = other->prev_;
-        other->prev_->next_ = this;
-        other->prev_ = this;
-    }
-    void unlink() {
-        MOZ_ASSERT(isInitialized());
-
-        next_->prev_ = prev_;
-        prev_->next_ = next_;
-        next_ = nullptr;
-        prev_ = nullptr;
-    }
-
-    static NativeIterator* allocateSentinel(JSContext* cx);
-
-    void trace(JSTracer* trc);
-
-    static constexpr size_t offsetOfObjectBeingIterated() {
-        return offsetof(NativeIterator, objectBeingIterated_);
-    }
-
-    static constexpr size_t offsetOfGuardsEnd() {
-        return offsetof(NativeIterator, guardsEnd_);
-    }
-
-    static constexpr size_t offsetOfPropertyCursor() {
-        return offsetof(NativeIterator, propertyCursor_);
-    }
-
-    static constexpr size_t offsetOfPropertiesEnd() {
-        return offsetof(NativeIterator, propertiesEnd_);
-    }
-
-    static constexpr size_t offsetOfFlags() {
-        return offsetof(NativeIterator, flags_);
-    }
-
-    static constexpr size_t offsetOfNext() {
-        return offsetof(NativeIterator, next_);
-    }
-
-    static constexpr size_t offsetOfPrev() {
-        return offsetof(NativeIterator, prev_);
-    }
+  static constexpr size_t offsetOfPrev() {
+    return offsetof(NativeIterator, prev_);
+  }
 };
 
-class PropertyIteratorObject : public NativeObject
-{
-    static const ClassOps classOps_;
+class PropertyIteratorObject : public NativeObject {
+  static const ClassOps classOps_;
 
-  public:
-    static const Class class_;
+ public:
+  static const Class class_;
 
-    NativeIterator* getNativeIterator() const {
-        return static_cast<js::NativeIterator*>(getPrivate());
-    }
-    void setNativeIterator(js::NativeIterator* ni) {
-        setPrivate(ni);
-    }
+  NativeIterator* getNativeIterator() const {
+    return static_cast<js::NativeIterator*>(getPrivate());
+  }
+  void setNativeIterator(js::NativeIterator* ni) { setPrivate(ni); }
 
-    size_t sizeOfMisc(mozilla::MallocSizeOf mallocSizeOf) const;
+  size_t sizeOfMisc(mozilla::MallocSizeOf mallocSizeOf) const;
 
-  private:
-    static void trace(JSTracer* trc, JSObject* obj);
-    static void finalize(FreeOp* fop, JSObject* obj);
+ private:
+  static void trace(JSTracer* trc, JSObject* obj);
+  static void finalize(FreeOp* fop, JSObject* obj);
 };
 
-class ArrayIteratorObject : public NativeObject
-{
-  public:
-    static const Class class_;
+class ArrayIteratorObject : public NativeObject {
+ public:
+  static const Class class_;
 };
 
-ArrayIteratorObject*
-NewArrayIteratorObject(JSContext* cx, NewObjectKind newKind = GenericObject);
+ArrayIteratorObject* NewArrayIteratorObject(
+    JSContext* cx, NewObjectKind newKind = GenericObject);
 
-class StringIteratorObject : public NativeObject
-{
-  public:
-    static const Class class_;
+class StringIteratorObject : public NativeObject {
+ public:
+  static const Class class_;
 };
 
-StringIteratorObject*
-NewStringIteratorObject(JSContext* cx, NewObjectKind newKind = GenericObject);
+StringIteratorObject* NewStringIteratorObject(
+    JSContext* cx, NewObjectKind newKind = GenericObject);
 
-JSObject*
-GetIterator(JSContext* cx, HandleObject obj);
+JSObject* GetIterator(JSContext* cx, HandleObject obj);
 
-PropertyIteratorObject*
-LookupInIteratorCache(JSContext* cx, HandleObject obj);
+PropertyIteratorObject* LookupInIteratorCache(JSContext* cx, HandleObject obj);
 
-JSObject*
-EnumeratedIdVectorToIterator(JSContext* cx, HandleObject obj, AutoIdVector& props);
+JSObject* EnumeratedIdVectorToIterator(JSContext* cx, HandleObject obj,
+                                       AutoIdVector& props);
 
-JSObject*
-NewEmptyPropertyIterator(JSContext* cx);
+JSObject* NewEmptyPropertyIterator(JSContext* cx);
 
-JSObject*
-ValueToIterator(JSContext* cx, HandleValue vp);
+JSObject* ValueToIterator(JSContext* cx, HandleValue vp);
 
-void
-CloseIterator(JSObject* obj);
+void CloseIterator(JSObject* obj);
 
-bool
-IteratorCloseForException(JSContext* cx, HandleObject obj);
+bool IteratorCloseForException(JSContext* cx, HandleObject obj);
 
-void
-UnwindIteratorForUncatchableException(JSObject* obj);
+void UnwindIteratorForUncatchableException(JSObject* obj);
 
-extern bool
-SuppressDeletedProperty(JSContext* cx, HandleObject obj, jsid id);
+extern bool SuppressDeletedProperty(JSContext* cx, HandleObject obj, jsid id);
 
-extern bool
-SuppressDeletedElement(JSContext* cx, HandleObject obj, uint32_t index);
+extern bool SuppressDeletedElement(JSContext* cx, HandleObject obj,
+                                   uint32_t index);
 
 
 
 
 
-extern bool
-IteratorMore(JSContext* cx, HandleObject iterobj, MutableHandleValue rval);
+extern bool IteratorMore(JSContext* cx, HandleObject iterobj,
+                         MutableHandleValue rval);
 
 
 
 
 
-extern JSObject*
-CreateIterResultObject(JSContext* cx, HandleValue value, bool done);
+extern JSObject* CreateIterResultObject(JSContext* cx, HandleValue value,
+                                        bool done);
 
 enum class IteratorKind { Sync, Async };
 

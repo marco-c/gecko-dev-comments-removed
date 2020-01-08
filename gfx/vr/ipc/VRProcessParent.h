@@ -17,9 +17,8 @@ namespace gfx {
 
 class VRChild;
 
-class VRProcessParent final : public mozilla::ipc::GeckoChildProcessHost
-{
-public:
+class VRProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
+ public:
   explicit VRProcessParent();
   ~VRProcessParent();
 
@@ -35,11 +34,9 @@ public:
   void OnChannelClosed();
 
   base::ProcessId OtherPid();
-  VRChild* GetActor() const {
-    return mVRChild.get();
-  }
+  VRChild* GetActor() const { return mVRChild.get(); }
 
-private:
+ private:
   DISALLOW_COPY_AND_ASSIGN(VRProcessParent);
 
   void InitAfterConnect(bool aSucceeded);
@@ -51,7 +48,7 @@ private:
   bool mChannelClosed;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

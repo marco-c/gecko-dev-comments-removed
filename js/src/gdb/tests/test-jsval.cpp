@@ -31,7 +31,8 @@ FRAGMENT(jsval, simple) {
   global.setObject(*CurrentGlobalOrNull(cx));
 
   
-  RootedValue onehundredthirtysevenonehundredtwentyeighths(cx, DoubleValue(137.0 / 128.0));
+  RootedValue onehundredthirtysevenonehundredtwentyeighths(
+      cx, DoubleValue(137.0 / 128.0));
 
   breakpoint();
 

@@ -23,13 +23,13 @@
 
 
 class IdleListener {
-public:
+ public:
   nsCOMPtr<nsIObserver> observer;
   uint32_t reqIdleTime;
   bool isIdle;
 
-  IdleListener(nsIObserver* obs, uint32_t reqIT, bool aIsIdle = false) :
-    observer(obs), reqIdleTime(reqIT), isIdle(aIsIdle) {}
+  IdleListener(nsIObserver* obs, uint32_t reqIT, bool aIsIdle = false)
+      : observer(obs), reqIdleTime(reqIT), isIdle(aIsIdle) {}
   ~IdleListener() {}
 };
 
@@ -39,10 +39,8 @@ class nsIdleService;
 
 
 
-class nsIdleServiceDaily : public nsIObserver,
-                           public nsSupportsWeakReference
-{
-public:
+class nsIdleServiceDaily : public nsIObserver, public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -55,7 +53,7 @@ public:
 
   void Init();
 
-private:
+ private:
   virtual ~nsIdleServiceDaily();
 
   
@@ -112,14 +110,13 @@ private:
   int32_t mIdleDailyTriggerWait;
 };
 
-class nsIdleService : public nsIIdleServiceInternal
-{
-public:
+class nsIdleService : public nsIIdleServiceInternal {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIIDLESERVICE
   NS_DECL_NSIIDLESERVICEINTERNAL
 
-protected:
+ protected:
   static already_AddRefed<nsIdleService> GetInstance();
 
   nsIdleService();
@@ -150,7 +147,7 @@ protected:
 
   virtual bool UsePollMode();
 
-private:
+ private:
   
 
 
@@ -202,7 +199,6 @@ private:
 
   mozilla::TimeStamp mLastUserInteraction;
 
-
   
 
 
@@ -222,4 +218,4 @@ private:
   void IdleTimerCallback(void);
 };
 
-#endif 
+#endif  

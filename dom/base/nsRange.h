@@ -33,14 +33,13 @@ class DOMRect;
 class DOMRectList;
 class InspectorFontFace;
 class Selection;
-} 
-} 
+}  
+}  
 
 class nsRange final : public nsStubMutationObserver,
                       public nsWrapperCache,
                       
-                      public mozilla::LinkedListElement<nsRange>
-{
+                      public mozilla::LinkedListElement<nsRange> {
   typedef mozilla::ErrorResult ErrorResult;
   typedef mozilla::dom::DocGroup DocGroup;
   typedef mozilla::dom::DOMRect DOMRect;
@@ -50,84 +49,49 @@ class nsRange final : public nsStubMutationObserver,
 
   virtual ~nsRange();
 
-public:
+ public:
   explicit nsRange(nsINode* aNode);
 
-  static nsresult CreateRange(nsINode* aStartContainer,
-                              uint32_t aStartOffset,
-                              nsINode* aEndContainer,
-                              uint32_t aEndOffset,
+  static nsresult CreateRange(nsINode* aStartContainer, uint32_t aStartOffset,
+                              nsINode* aEndContainer, uint32_t aEndOffset,
                               nsRange** aRange);
   static nsresult CreateRange(const RawRangeBoundary& aStart,
-                              const RawRangeBoundary& aEnd,
-                              nsRange** aRange);
+                              const RawRangeBoundary& aEnd, nsRange** aRange);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsRange)
 
-  nsrefcnt GetRefCount() const
-  {
-    return mRefCnt;
-  }
+  nsrefcnt GetRefCount() const { return mRefCnt; }
 
-  nsINode* GetRoot() const
-  {
-    return mRoot;
-  }
+  nsINode* GetRoot() const { return mRoot; }
 
-  const RangeBoundary& StartRef() const
-  {
-    return mStart;
-  }
+  const RangeBoundary& StartRef() const { return mStart; }
 
-  nsINode* GetStartContainer() const
-  {
-    return mStart.Container();
-  }
+  nsINode* GetStartContainer() const { return mStart.Container(); }
 
-  const RangeBoundary& EndRef() const
-  {
-    return mEnd;
-  }
+  const RangeBoundary& EndRef() const { return mEnd; }
 
-  nsINode* GetEndContainer() const
-  {
-    return mEnd.Container();
-  }
+  nsINode* GetEndContainer() const { return mEnd.Container(); }
 
-  uint32_t StartOffset() const
-  {
+  uint32_t StartOffset() const {
     return static_cast<uint32_t>(mStart.Offset());
   }
 
-  uint32_t EndOffset() const
-  {
-    return static_cast<uint32_t>(mEnd.Offset());
-  }
+  uint32_t EndOffset() const { return static_cast<uint32_t>(mEnd.Offset()); }
 
-  nsIContent* GetChildAtStartOffset() const
-  {
+  nsIContent* GetChildAtStartOffset() const {
     return mStart.GetChildAtOffset();
   }
 
-  nsIContent* GetChildAtEndOffset() const
-  {
-    return mEnd.GetChildAtOffset();
-  }
+  nsIContent* GetChildAtEndOffset() const { return mEnd.GetChildAtOffset(); }
 
-  bool IsPositioned() const
-  {
-    return mIsPositioned;
-  }
+  bool IsPositioned() const { return mIsPositioned; }
 
   
 
 
 
-  bool IsInSelection() const
-  {
-    return !!mSelection;
-  }
+  bool IsInSelection() const { return !!mSelection; }
 
   
 
@@ -143,10 +107,7 @@ public:
 
 
 
-  bool IsGenerated() const
-  {
-    return mIsGenerated;
-  }
+  bool IsGenerated() const { return mIsGenerated; }
 
   
 
@@ -155,10 +116,7 @@ public:
 
 
 
-  void SetIsGenerated(bool aIsGenerated)
-  {
-    mIsGenerated = aIsGenerated;
-  }
+  void SetIsGenerated(bool aIsGenerated) { mIsGenerated = aIsGenerated; }
 
   nsINode* GetCommonAncestor() const;
   void Reset();
@@ -169,8 +127,7 @@ public:
 
 
 
-  void ResetTemporarily()
-  {
+  void ResetTemporarily() {
     DoSetRange(RawRangeBoundary(), RawRangeBoundary(), mRoot);
   }
 
@@ -180,14 +137,12 @@ public:
 
 
 
-  nsresult SetStart(nsINode* aContainer, uint32_t aOffset)
-  {
+  nsresult SetStart(nsINode* aContainer, uint32_t aOffset) {
     ErrorResult error;
     SetStart(RawRangeBoundary(aContainer, aOffset), error);
     return error.StealNSResult();
   }
-  nsresult SetEnd(nsINode* aContainer, uint32_t aOffset)
-  {
+  nsresult SetEnd(nsINode* aContainer, uint32_t aOffset) {
     ErrorResult error;
     SetEnd(RawRangeBoundary(aContainer, aOffset), error);
     return error.StealNSResult();
@@ -204,8 +159,7 @@ public:
 
 
   nsresult SetStartAndEnd(nsINode* aStartContainer, uint32_t aStartOffset,
-                          nsINode* aEndContainer, uint32_t aEndOffset)
-  {
+                          nsINode* aEndContainer, uint32_t aEndOffset) {
     return SetStartAndEnd(RawRangeBoundary(aStartContainer, aStartOffset),
                           RawRangeBoundary(aEndContainer, aEndOffset));
   }
@@ -220,22 +174,18 @@ public:
 
 
 
-  void
-  SelectNodesInContainer(nsINode* aContainer,
-                         nsIContent* aStartContent,
-                         nsIContent* aEndContent);
+  void SelectNodesInContainer(nsINode* aContainer, nsIContent* aStartContent,
+                              nsIContent* aEndContent);
 
   
 
 
 
 
-  nsresult CollapseTo(nsINode* aContainer, uint32_t aOffset)
-  {
+  nsresult CollapseTo(nsINode* aContainer, uint32_t aOffset) {
     return CollapseTo(RawRangeBoundary(aContainer, aOffset));
   }
-  nsresult CollapseTo(const RawRangeBoundary& aPoint)
-  {
+  nsresult CollapseTo(const RawRangeBoundary& aPoint) {
     return SetStartAndEnd(aPoint, aPoint);
   }
 
@@ -243,8 +193,8 @@ public:
 
 
 
-  static nsINode* GetContainerAndOffsetAfter(nsINode* aNode, uint32_t* aOffset)
-  {
+  static nsINode* GetContainerAndOffsetAfter(nsINode* aNode,
+                                             uint32_t* aOffset) {
     MOZ_ASSERT(aNode);
     MOZ_ASSERT(aOffset);
     *aOffset = 0;
@@ -259,8 +209,8 @@ public:
     *aOffset = static_cast<uint32_t>(indexInParent) + 1;
     return parentNode;
   }
-  static nsINode* GetContainerAndOffsetBefore(nsINode* aNode, uint32_t* aOffset)
-  {
+  static nsINode* GetContainerAndOffsetBefore(nsINode* aNode,
+                                              uint32_t* aOffset) {
     MOZ_ASSERT(aNode);
     MOZ_ASSERT(aOffset);
     *aOffset = 0;
@@ -281,8 +231,7 @@ public:
   
   nsresult GetUsedFontFaces(
       nsTArray<nsAutoPtr<mozilla::dom::InspectorFontFace>>& aResult,
-      uint32_t aMaxRanges,
-      bool aSkipCollapsedWhitespace);
+      uint32_t aMaxRanges, bool aSkipCollapsedWhitespace);
 
   
   NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED
@@ -292,30 +241,27 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
 
   
-  static already_AddRefed<nsRange>
-  Constructor(const mozilla::dom::GlobalObject& global,
-              mozilla::ErrorResult& aRv);
+  static already_AddRefed<nsRange> Constructor(
+      const mozilla::dom::GlobalObject& global, mozilla::ErrorResult& aRv);
 
-  bool Collapsed() const
-  {
+  bool Collapsed() const {
     return mIsPositioned && mStart.Container() == mEnd.Container() &&
            mStart.Offset() == mEnd.Offset();
   }
-  already_AddRefed<mozilla::dom::DocumentFragment>
-  CreateContextualFragment(const nsAString& aString, ErrorResult& aError);
-  already_AddRefed<mozilla::dom::DocumentFragment>
-  CloneContents(ErrorResult& aErr);
+  already_AddRefed<mozilla::dom::DocumentFragment> CreateContextualFragment(
+      const nsAString& aString, ErrorResult& aError);
+  already_AddRefed<mozilla::dom::DocumentFragment> CloneContents(
+      ErrorResult& aErr);
   int16_t CompareBoundaryPoints(uint16_t aHow, nsRange& aOther,
                                 ErrorResult& aErr);
   int16_t ComparePoint(nsINode& aContainer, uint32_t aOffset,
-                       ErrorResult& aErr)
-  {
+                       ErrorResult& aErr) {
     return ComparePoint(RawRangeBoundary(&aContainer, aOffset), aErr);
   }
   int16_t ComparePoint(const RawRangeBoundary& aPoint, ErrorResult& aErr);
   void DeleteContents(ErrorResult& aRv);
-  already_AddRefed<mozilla::dom::DocumentFragment>
-    ExtractContents(ErrorResult& aErr);
+  already_AddRefed<mozilla::dom::DocumentFragment> ExtractContents(
+      ErrorResult& aErr);
   nsINode* GetCommonAncestorContainer(ErrorResult& aRv) const;
   nsINode* GetStartContainer(ErrorResult& aRv) const;
   uint32_t GetStartOffset(ErrorResult& aRv) const;
@@ -323,8 +269,8 @@ public:
   uint32_t GetEndOffset(ErrorResult& aRv) const;
   void InsertNode(nsINode& aNode, ErrorResult& aErr);
   bool IntersectsNode(nsINode& aNode, ErrorResult& aRv);
-  bool IsPointInRange(nsINode& aContainer, uint32_t aOffset, ErrorResult& aErr)
-  {
+  bool IsPointInRange(nsINode& aContainer, uint32_t aOffset,
+                      ErrorResult& aErr) {
     return IsPointInRange(RawRangeBoundary(&aContainer, aOffset), aErr);
   }
   bool IsPointInRange(const RawRangeBoundary& aPoint, ErrorResult& aErr);
@@ -349,9 +295,8 @@ public:
                                                   bool aFlushLayout = true);
   already_AddRefed<DOMRectList> GetClientRects(bool aClampToEdge = true,
                                                bool aFlushLayout = true);
-  void GetClientRectsAndTexts(
-    mozilla::dom::ClientRectsAndTexts& aResult,
-    ErrorResult& aErr);
+  void GetClientRectsAndTexts(mozilla::dom::ClientRectsAndTexts& aResult,
+                              ErrorResult& aErr);
 
   
   void SelectNode(nsINode& aNode, ErrorResult& aErr);
@@ -374,7 +319,7 @@ public:
   JSObject* WrapObject(JSContext* cx, JS::Handle<JSObject*> aGivenProto) final;
   DocGroup* GetDocGroup() const;
 
-private:
+ private:
   
   nsRange(const nsRange&);
   nsRange& operator=(const nsRange&);
@@ -385,10 +330,10 @@ private:
 
 
 
+
   nsresult CutContents(mozilla::dom::DocumentFragment** frag);
 
-  static nsresult CloneParentsBetween(nsINode* aAncestor,
-                                      nsINode* aNode,
+  static nsresult CloneParentsBetween(nsINode* aAncestor, nsINode* aNode,
                                       nsINode** aClosestAncestor,
                                       nsINode** aFarthestAncestor);
 
@@ -397,7 +342,7 @@ private:
 
   bool CanAccess(const nsINode&) const;
 
-public:
+ public:
   
 
 
@@ -414,7 +359,7 @@ public:
   static bool IsValidPoints(nsINode* aStartContainer, uint32_t aStartOffset,
                             nsINode* aEndContainer, uint32_t aEndOffset);
 
-
+  
 
 
 
@@ -422,8 +367,7 @@ public:
 
 
   static nsresult CompareNodeToRange(nsINode* aNode, nsRange* aRange,
-                                     bool *outNodeBefore,
-                                     bool *outNodeAfter);
+                                     bool* outNodeBefore, bool* outNodeAfter);
 
   
 
@@ -440,14 +384,11 @@ public:
 
 
 
-  static void CollectClientRectsAndText(nsLayoutUtils::RectCallback* aCollector,
-                                        mozilla::dom::Sequence<nsString>* aTextList,
-                                        nsRange* aRange,
-                                        nsINode* aStartContainer,
-                                        uint32_t aStartOffset,
-                                        nsINode* aEndContainer,
-                                        uint32_t aEndOffset,
-                                        bool aClampToEdge, bool aFlushLayout);
+  static void CollectClientRectsAndText(
+      nsLayoutUtils::RectCallback* aCollector,
+      mozilla::dom::Sequence<nsString>* aTextList, nsRange* aRange,
+      nsINode* aStartContainer, uint32_t aStartOffset, nsINode* aEndContainer,
+      uint32_t aEndOffset, bool aClampToEdge, bool aFlushLayout);
 
   
 
@@ -467,13 +408,12 @@ public:
 
   MOZ_CAN_RUN_SCRIPT void NotifySelectionListenersAfterRangeSet();
 
-  typedef nsTHashtable<nsPtrHashKey<nsRange> > RangeHashTable;
-protected:
+  typedef nsTHashtable<nsPtrHashKey<nsRange>> RangeHashTable;
 
+ protected:
   void RegisterCommonAncestor(nsINode* aNode);
   void UnregisterCommonAncestor(nsINode* aNode, bool aIsUnlinking);
-  nsINode* IsValidBoundary(nsINode* aNode) const
-  {
+  nsINode* IsValidBoundary(nsINode* aNode) const {
     return ComputeRootNode(aNode);
   }
 
@@ -483,10 +423,7 @@ protected:
 
 
 
-  static bool IsValidOffset(uint32_t aOffset)
-  {
-    return aOffset <= INT32_MAX;
-  }
+  static bool IsValidOffset(uint32_t aOffset) { return aOffset <= INT32_MAX; }
   static bool IsValidOffset(nsINode* aNode, uint32_t aOffset);
 
   
@@ -495,8 +432,8 @@ protected:
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void DoSetRange(const RawRangeBoundary& lowerBound,
-                  const RawRangeBoundary& upperBound,
-                  nsINode* aRoot, bool aNotInsertedYet = false);
+                  const RawRangeBoundary& upperBound, nsINode* aRoot,
+                  bool aNotInsertedYet = false);
 
   
 
@@ -509,42 +446,32 @@ protected:
   nsINode* GetRegisteredCommonAncestor();
 
   
-  static bool IsNodeInSortedRanges(nsINode* aNode,
-                                   uint32_t aStartOffset,
+  static bool IsNodeInSortedRanges(nsINode* aNode, uint32_t aStartOffset,
                                    uint32_t aEndOffset,
                                    const nsTArray<const nsRange*>& aRanges,
-                                   size_t aRangeStart,
-                                   size_t aRangeEnd);
+                                   size_t aRangeStart, size_t aRangeEnd);
 
   
   
   
-  class MOZ_RAII AutoCalledByJSRestore final
-  {
-  private:
+  class MOZ_RAII AutoCalledByJSRestore final {
+   private:
     nsRange& mRange;
     bool mOldValue;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 
-  public:
-    explicit AutoCalledByJSRestore(nsRange& aRange
-                                   MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
-      : mRange(aRange)
-      , mOldValue(aRange.mCalledByJS)
-    {
+   public:
+    explicit AutoCalledByJSRestore(
+        nsRange& aRange MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
+        : mRange(aRange), mOldValue(aRange.mCalledByJS) {
       MOZ_GUARD_OBJECT_NOTIFIER_INIT;
     }
-    ~AutoCalledByJSRestore()
-    {
-      mRange.mCalledByJS = mOldValue;
-    }
+    ~AutoCalledByJSRestore() { mRange.mCalledByJS = mOldValue; }
     bool SavedValue() const { return mOldValue; }
   };
 
-  struct MOZ_STACK_CLASS AutoInvalidateSelection
-  {
-    explicit AutoInvalidateSelection(nsRange* aRange) : mRange(aRange)
-    {
+  struct MOZ_STACK_CLASS AutoInvalidateSelection {
+    explicit AutoInvalidateSelection(nsRange* aRange) : mRange(aRange) {
       if (!mRange->IsInSelection() || sIsNested) {
         return;
       }

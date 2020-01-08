@@ -9,8 +9,7 @@
 
 #include "nscore.h"
 
-enum MemoryPressureState
-{
+enum MemoryPressureState {
   
 
 
@@ -58,8 +57,7 @@ enum MemoryPressureState
 
 
 
-MemoryPressureState
-NS_GetPendingMemoryPressure();
+MemoryPressureState NS_GetPendingMemoryPressure();
 
 
 
@@ -70,8 +68,7 @@ NS_GetPendingMemoryPressure();
 
 
 
-void
-NS_DispatchEventualMemoryPressure(MemoryPressureState aState);
+void NS_DispatchEventualMemoryPressure(MemoryPressureState aState);
 
 
 
@@ -82,7 +79,6 @@ NS_DispatchEventualMemoryPressure(MemoryPressureState aState);
 
 
 
-nsresult
-NS_DispatchMemoryPressure(MemoryPressureState aState);
+nsresult NS_DispatchMemoryPressure(MemoryPressureState aState);
 
-#endif 
+#endif  

@@ -10,7 +10,7 @@
 #include "mozilla/AnimationCollection.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/dom/Animation.h"
-#include "mozilla/Attributes.h" 
+#include "mozilla/Attributes.h"  
 #include "mozilla/Assertions.h"
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/Nullable.h"
@@ -27,11 +27,9 @@ class Element;
 
 template <class AnimationType>
 class CommonAnimationManager {
-public:
-  explicit CommonAnimationManager(nsPresContext *aPresContext)
-    : mPresContext(aPresContext)
-  {
-  }
+ public:
+  explicit CommonAnimationManager(nsPresContext* aPresContext)
+      : mPresContext(aPresContext) {}
 
   
   nsPresContext* PresContext() const { return mPresContext; }
@@ -39,8 +37,7 @@ public:
   
 
 
-  void Disconnect()
-  {
+  void Disconnect() {
     
     RemoveAllElementCollections();
 
@@ -53,12 +50,11 @@ public:
 
 
   void StopAnimationsForElement(dom::Element* aElement,
-                                CSSPseudoElementType aPseudoType)
-  {
+                                CSSPseudoElementType aPseudoType) {
     MOZ_ASSERT(aElement);
     AnimationCollection<AnimationType>* collection =
-      AnimationCollection<AnimationType>::GetAnimationCollection(aElement,
-                                                                 aPseudoType);
+        AnimationCollection<AnimationType>::GetAnimationCollection(aElement,
+                                                                   aPseudoType);
     if (!collection) {
       return;
     }
@@ -67,26 +63,23 @@ public:
     collection->Destroy();
   }
 
-protected:
-  virtual ~CommonAnimationManager()
-  {
+ protected:
+  virtual ~CommonAnimationManager() {
     MOZ_ASSERT(!mPresContext, "Disconnect should have been called");
   }
 
-  void AddElementCollection(AnimationCollection<AnimationType>* aCollection)
-  {
+  void AddElementCollection(AnimationCollection<AnimationType>* aCollection) {
     mElementCollections.insertBack(aCollection);
   }
-  void RemoveAllElementCollections()
-  {
+  void RemoveAllElementCollections() {
     while (AnimationCollection<AnimationType>* head =
-           mElementCollections.getFirst()) {
-      head->Destroy(); 
+               mElementCollections.getFirst()) {
+      head->Destroy();  
     }
   }
 
   LinkedList<AnimationCollection<AnimationType>> mElementCollections;
-  nsPresContext *mPresContext; 
+  nsPresContext* mPresContext;  
 };
 
 
@@ -103,68 +96,58 @@ protected:
 
 
 
-class OwningElementRef final
-{
-public:
+class OwningElementRef final {
+ public:
   OwningElementRef() = default;
 
   explicit OwningElementRef(const NonOwningAnimationTarget& aTarget)
-    : mTarget(aTarget)
-  { }
+      : mTarget(aTarget) {}
 
-  OwningElementRef(dom::Element& aElement,
-                   CSSPseudoElementType aPseudoType)
-    : mTarget(&aElement, aPseudoType)
-  { }
+  OwningElementRef(dom::Element& aElement, CSSPseudoElementType aPseudoType)
+      : mTarget(&aElement, aPseudoType) {}
 
-  bool Equals(const OwningElementRef& aOther) const
-  {
+  bool Equals(const OwningElementRef& aOther) const {
     return mTarget == aOther.mTarget;
   }
 
   bool LessThan(int32_t& aChildIndex, const OwningElementRef& aOther,
-                int32_t& aOtherChildIndex) const
-  {
+                int32_t& aOtherChildIndex) const {
     MOZ_ASSERT(mTarget.mElement && aOther.mTarget.mElement,
                "Elements to compare should not be null");
 
     if (mTarget.mElement != aOther.mTarget.mElement) {
       return nsContentUtils::PositionIsBefore(mTarget.mElement,
                                               aOther.mTarget.mElement,
-                                              &aChildIndex,
-                                              &aOtherChildIndex);
+                                              &aChildIndex, &aOtherChildIndex);
     }
 
     return mTarget.mPseudoType == CSSPseudoElementType::NotPseudo ||
-          (mTarget.mPseudoType == CSSPseudoElementType::before &&
-           aOther.mTarget.mPseudoType == CSSPseudoElementType::after);
+           (mTarget.mPseudoType == CSSPseudoElementType::before &&
+            aOther.mTarget.mPseudoType == CSSPseudoElementType::after);
   }
 
   bool IsSet() const { return !!mTarget.mElement; }
 
   void GetElement(dom::Element*& aElement,
-                  CSSPseudoElementType& aPseudoType) const
-  {
+                  CSSPseudoElementType& aPseudoType) const {
     aElement = mTarget.mElement;
     aPseudoType = mTarget.mPseudoType;
   }
 
   const NonOwningAnimationTarget& Target() const { return mTarget; }
 
-  nsPresContext* GetPresContext() const
-  {
+  nsPresContext* GetPresContext() const {
     return nsContentUtils::GetContextForContent(mTarget.mElement);
   }
 
-private:
+ private:
   NonOwningAnimationTarget mTarget;
 };
 
 
 
 template <typename PhaseType>
-PhaseType GetAnimationPhaseWithoutEffect(const dom::Animation& aAnimation)
-{
+PhaseType GetAnimationPhaseWithoutEffect(const dom::Animation& aAnimation) {
   MOZ_ASSERT(!aAnimation.GetEffect(),
              "Should only be called when we do not have an effect");
 
@@ -181,30 +164,22 @@ PhaseType GetAnimationPhaseWithoutEffect(const dom::Animation& aAnimation)
 
   
   
-  return currentTime.Value() < TimeDuration()
-         ? PhaseType::Before
-         : PhaseType::After;
+  return currentTime.Value() < TimeDuration() ? PhaseType::Before
+                                              : PhaseType::After;
 };
 
-inline TimingParams
-TimingParamsFromCSSParams(float aDuration, float aDelay,
-                          float aIterationCount,
-                          dom::PlaybackDirection aDirection,
-                          dom::FillMode aFillMode)
-{
+inline TimingParams TimingParamsFromCSSParams(float aDuration, float aDelay,
+                                              float aIterationCount,
+                                              dom::PlaybackDirection aDirection,
+                                              dom::FillMode aFillMode) {
   MOZ_ASSERT(aIterationCount >= 0.0 && !IsNaN(aIterationCount),
              "aIterations should be nonnegative & finite, as ensured by "
              "CSSParser");
 
-  return TimingParams {
-    aDuration,
-    aDelay,
-    aIterationCount,
-    aDirection,
-    aFillMode
-  };
+  return TimingParams{aDuration, aDelay, aIterationCount, aDirection,
+                      aFillMode};
 }
 
-} 
+}  
 
 #endif 

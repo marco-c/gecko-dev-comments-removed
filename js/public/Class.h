@@ -38,7 +38,7 @@ class Shape;
 
 extern JS_FRIEND_DATA const js::Class* const FunctionClassPtr;
 
-} 
+}  
 
 namespace JS {
 
@@ -46,352 +46,324 @@ namespace JS {
 
 
 
-enum class IsArrayAnswer
-{
-    Array,
-    NotArray,
-    RevokedProxy
+enum class IsArrayAnswer { Array, NotArray, RevokedProxy };
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool IsArray(JSContext* cx, HandleObject obj,
+                                  bool* isArray);
+
+
+
+
+
+
+
+
+
+extern JS_PUBLIC_API bool IsArray(JSContext* cx, HandleObject obj,
+                                  IsArrayAnswer* answer);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class ObjectOpResult {
+ private:
+  
+
+
+
+
+
+
+
+
+  uintptr_t code_;
+
+ public:
+  enum SpecialCodes : uintptr_t { OkCode = 0, Uninitialized = uintptr_t(-1) };
+
+  static const uintptr_t SoftFailBit = uintptr_t(1)
+                                       << (sizeof(uintptr_t) * 8 - 1);
+
+  ObjectOpResult() : code_(Uninitialized) {}
+
+  
+  bool ok() const {
+    MOZ_ASSERT(code_ != Uninitialized);
+    return code_ == OkCode || (code_ & SoftFailBit);
+  }
+
+  explicit operator bool() const { return ok(); }
+
+  
+  bool reallyOk() const {
+    MOZ_ASSERT(code_ != Uninitialized);
+    return code_ == OkCode;
+  }
+
+  
+  bool succeed() {
+    code_ = OkCode;
+    return true;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  bool fail(uint32_t msg) {
+    MOZ_ASSERT(msg != OkCode);
+    MOZ_ASSERT((msg & SoftFailBit) == 0);
+    code_ = msg;
+    return true;
+  }
+
+  
+
+
+
+
+
+
+
+
+  bool failSoft(uint32_t msg) {
+    
+    code_ = msg | SoftFailBit;
+    return true;
+  }
+
+  JS_PUBLIC_API bool failCantRedefineProp();
+  JS_PUBLIC_API bool failReadOnly();
+  JS_PUBLIC_API bool failGetterOnly();
+  JS_PUBLIC_API bool failCantDelete();
+
+  JS_PUBLIC_API bool failCantSetInterposed();
+  JS_PUBLIC_API bool failCantDefineWindowElement();
+  JS_PUBLIC_API bool failCantDeleteWindowElement();
+  JS_PUBLIC_API bool failCantDeleteWindowNamedProperty();
+  JS_PUBLIC_API bool failCantPreventExtensions();
+  JS_PUBLIC_API bool failCantSetProto();
+  JS_PUBLIC_API bool failNoNamedSetter();
+  JS_PUBLIC_API bool failNoIndexedSetter();
+  JS_PUBLIC_API bool failNotDataDescriptor();
+
+  
+  JS_PUBLIC_API bool failCantDefineWindowNonConfigurable();
+
+  uint32_t failureCode() const {
+    MOZ_ASSERT(!ok());
+    return uint32_t(code_);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  bool checkStrictErrorOrWarning(JSContext* cx, HandleObject obj, HandleId id,
+                                 bool strict) {
+    if (ok()) {
+      return true;
+    }
+    return reportStrictErrorOrWarning(cx, obj, id, strict);
+  }
+
+  
+
+
+
+
+
+  bool checkStrictErrorOrWarning(JSContext* cx, HandleObject obj, bool strict) {
+    return ok() || reportStrictErrorOrWarning(cx, obj, strict);
+  }
+
+  
+  bool reportError(JSContext* cx, HandleObject obj, HandleId id) {
+    return reportStrictErrorOrWarning(cx, obj, id, true);
+  }
+
+  
+
+
+
+  bool reportError(JSContext* cx, HandleObject obj) {
+    return reportStrictErrorOrWarning(cx, obj, true);
+  }
+
+  
+  JS_PUBLIC_API bool reportStrictErrorOrWarning(JSContext* cx, HandleObject obj,
+                                                HandleId id, bool strict);
+  JS_PUBLIC_API bool reportStrictErrorOrWarning(JSContext* cx, HandleObject obj,
+                                                bool strict);
+
+  
+
+
+
+  bool checkStrict(JSContext* cx, HandleObject obj, HandleId id) {
+    return checkStrictErrorOrWarning(cx, obj, id, true);
+  }
+
+  
+
+
+
+  bool checkStrict(JSContext* cx, HandleObject obj) {
+    return checkStrictErrorOrWarning(cx, obj, true);
+  }
 };
 
+class PropertyResult {
+  union {
+    js::Shape* shape_;
+    uintptr_t bits_;
+  };
 
+  static const uintptr_t NotFound = 0;
+  static const uintptr_t NonNativeProperty = 1;
+  static const uintptr_t DenseOrTypedArrayElement = 1;
 
+ public:
+  PropertyResult() : bits_(NotFound) {}
 
+  explicit PropertyResult(js::Shape* propertyShape) : shape_(propertyShape) {
+    MOZ_ASSERT(!isFound() || isNativeProperty());
+  }
 
+  explicit operator bool() const { return isFound(); }
 
+  bool isFound() const { return bits_ != NotFound; }
 
+  bool isNonNativeProperty() const { return bits_ == NonNativeProperty; }
 
+  bool isDenseOrTypedArrayElement() const {
+    return bits_ == DenseOrTypedArrayElement;
+  }
 
+  bool isNativeProperty() const { return isFound() && !isNonNativeProperty(); }
 
+  js::Shape* maybeShape() const {
+    MOZ_ASSERT(!isNonNativeProperty());
+    return isFound() ? shape_ : nullptr;
+  }
 
+  js::Shape* shape() const {
+    MOZ_ASSERT(isNativeProperty());
+    return shape_;
+  }
 
+  void setNotFound() { bits_ = NotFound; }
 
-extern JS_PUBLIC_API bool
-IsArray(JSContext* cx, HandleObject obj, bool* isArray);
+  void setNativeProperty(js::Shape* propertyShape) {
+    shape_ = propertyShape;
+    MOZ_ASSERT(isNativeProperty());
+  }
 
+  void setNonNativeProperty() { bits_ = NonNativeProperty; }
 
+  void setDenseOrTypedArrayElement() { bits_ = DenseOrTypedArrayElement; }
 
-
-
-
-
-
-
-extern JS_PUBLIC_API bool
-IsArray(JSContext* cx, HandleObject obj, IsArrayAnswer* answer);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ObjectOpResult
-{
-  private:
-    
-
-
-
-
-
-
-
-
-    uintptr_t code_;
-
-  public:
-    enum SpecialCodes : uintptr_t {
-        OkCode = 0,
-        Uninitialized = uintptr_t(-1)
-    };
-
-    static const uintptr_t SoftFailBit = uintptr_t(1) << (sizeof(uintptr_t) * 8 - 1);
-
-    ObjectOpResult() : code_(Uninitialized) {}
-
-    
-    bool ok() const {
-        MOZ_ASSERT(code_ != Uninitialized);
-        return code_ == OkCode || (code_ & SoftFailBit);
-    }
-
-    explicit operator bool() const { return ok(); }
-
-    
-    bool reallyOk() const {
-        MOZ_ASSERT(code_ != Uninitialized);
-        return code_ == OkCode;
-    }
-
-    
-    bool succeed() {
-        code_ = OkCode;
-        return true;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    bool fail(uint32_t msg) {
-        MOZ_ASSERT(msg != OkCode);
-        MOZ_ASSERT((msg & SoftFailBit) == 0);
-        code_ = msg;
-        return true;
-    }
-
-    
-
-
-
-
-
-
-
-
-    bool failSoft(uint32_t msg) {
-        
-        code_ = msg | SoftFailBit;
-        return true;
-    }
-
-    JS_PUBLIC_API bool failCantRedefineProp();
-    JS_PUBLIC_API bool failReadOnly();
-    JS_PUBLIC_API bool failGetterOnly();
-    JS_PUBLIC_API bool failCantDelete();
-
-    JS_PUBLIC_API bool failCantSetInterposed();
-    JS_PUBLIC_API bool failCantDefineWindowElement();
-    JS_PUBLIC_API bool failCantDeleteWindowElement();
-    JS_PUBLIC_API bool failCantDeleteWindowNamedProperty();
-    JS_PUBLIC_API bool failCantPreventExtensions();
-    JS_PUBLIC_API bool failCantSetProto();
-    JS_PUBLIC_API bool failNoNamedSetter();
-    JS_PUBLIC_API bool failNoIndexedSetter();
-    JS_PUBLIC_API bool failNotDataDescriptor();
-
-    
-    JS_PUBLIC_API bool failCantDefineWindowNonConfigurable();
-
-    uint32_t failureCode() const {
-        MOZ_ASSERT(!ok());
-        return uint32_t(code_);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool checkStrictErrorOrWarning(JSContext* cx, HandleObject obj, HandleId id, bool strict) {
-        if (ok()) {
-            return true;
-        }
-        return reportStrictErrorOrWarning(cx, obj, id, strict);
-    }
-
-    
-
-
-
-
-
-    bool checkStrictErrorOrWarning(JSContext* cx, HandleObject obj, bool strict) {
-        return ok() || reportStrictErrorOrWarning(cx, obj, strict);
-    }
-
-    
-    bool reportError(JSContext* cx, HandleObject obj, HandleId id) {
-        return reportStrictErrorOrWarning(cx, obj, id, true);
-    }
-
-    
-
-
-
-    bool reportError(JSContext* cx, HandleObject obj) {
-        return reportStrictErrorOrWarning(cx, obj, true);
-    }
-
-    
-    JS_PUBLIC_API bool reportStrictErrorOrWarning(JSContext* cx, HandleObject obj, HandleId id, bool strict);
-    JS_PUBLIC_API bool reportStrictErrorOrWarning(JSContext* cx, HandleObject obj, bool strict);
-
-    
-
-
-
-    bool checkStrict(JSContext* cx, HandleObject obj, HandleId id) {
-        return checkStrictErrorOrWarning(cx, obj, id, true);
-    }
-
-    
-
-
-
-    bool checkStrict(JSContext* cx, HandleObject obj) {
-        return checkStrictErrorOrWarning(cx, obj, true);
-    }
+  void trace(JSTracer* trc);
 };
 
-class PropertyResult
-{
-    union {
-        js::Shape* shape_;
-        uintptr_t bits_;
-    };
-
-    static const uintptr_t NotFound = 0;
-    static const uintptr_t NonNativeProperty = 1;
-    static const uintptr_t DenseOrTypedArrayElement = 1;
-
-  public:
-    PropertyResult() : bits_(NotFound) {}
-
-    explicit PropertyResult(js::Shape* propertyShape)
-      : shape_(propertyShape)
-    {
-        MOZ_ASSERT(!isFound() || isNativeProperty());
-    }
-
-    explicit operator bool() const {
-        return isFound();
-    }
-
-    bool isFound() const {
-        return bits_ != NotFound;
-    }
-
-    bool isNonNativeProperty() const {
-        return bits_ == NonNativeProperty;
-    }
-
-    bool isDenseOrTypedArrayElement() const {
-        return bits_ == DenseOrTypedArrayElement;
-    }
-
-    bool isNativeProperty() const {
-        return isFound() && !isNonNativeProperty();
-    }
-
-    js::Shape* maybeShape() const {
-        MOZ_ASSERT(!isNonNativeProperty());
-        return isFound() ? shape_ : nullptr;
-    }
-
-    js::Shape* shape() const {
-        MOZ_ASSERT(isNativeProperty());
-        return shape_;
-    }
-
-    void setNotFound() {
-        bits_ = NotFound;
-    }
-
-    void setNativeProperty(js::Shape* propertyShape) {
-        shape_ = propertyShape;
-        MOZ_ASSERT(isNativeProperty());
-    }
-
-    void setNonNativeProperty() {
-        bits_ = NonNativeProperty;
-    }
-
-    void setDenseOrTypedArrayElement() {
-        bits_ = DenseOrTypedArrayElement;
-    }
-
-    void trace(JSTracer* trc);
-};
-
-} 
+}  
 
 namespace js {
 
 template <class Wrapper>
-class WrappedPtrOperations<JS::PropertyResult, Wrapper>
-{
-    const JS::PropertyResult& value() const { return static_cast<const Wrapper*>(this)->get(); }
+class WrappedPtrOperations<JS::PropertyResult, Wrapper> {
+  const JS::PropertyResult& value() const {
+    return static_cast<const Wrapper*>(this)->get();
+  }
 
-  public:
-    bool isFound() const { return value().isFound(); }
-    explicit operator bool() const { return bool(value()); }
-    js::Shape* maybeShape() const { return value().maybeShape(); }
-    js::Shape* shape() const { return value().shape(); }
-    bool isNativeProperty() const { return value().isNativeProperty(); }
-    bool isNonNativeProperty() const { return value().isNonNativeProperty(); }
-    bool isDenseOrTypedArrayElement() const { return value().isDenseOrTypedArrayElement(); }
-    js::Shape* asTaggedShape() const { return value().asTaggedShape(); }
+ public:
+  bool isFound() const { return value().isFound(); }
+  explicit operator bool() const { return bool(value()); }
+  js::Shape* maybeShape() const { return value().maybeShape(); }
+  js::Shape* shape() const { return value().shape(); }
+  bool isNativeProperty() const { return value().isNativeProperty(); }
+  bool isNonNativeProperty() const { return value().isNonNativeProperty(); }
+  bool isDenseOrTypedArrayElement() const {
+    return value().isDenseOrTypedArrayElement();
+  }
+  js::Shape* asTaggedShape() const { return value().asTaggedShape(); }
 };
 
 template <class Wrapper>
 class MutableWrappedPtrOperations<JS::PropertyResult, Wrapper>
-  : public WrappedPtrOperations<JS::PropertyResult, Wrapper>
-{
-    JS::PropertyResult& value() { return static_cast<Wrapper*>(this)->get(); }
+    : public WrappedPtrOperations<JS::PropertyResult, Wrapper> {
+  JS::PropertyResult& value() { return static_cast<Wrapper*>(this)->get(); }
 
-  public:
-    void setNotFound() {
-        value().setNotFound();
-    }
-    void setNativeProperty(js::Shape* shape) {
-        value().setNativeProperty(shape);
-    }
-    void setNonNativeProperty() {
-        value().setNonNativeProperty();
-    }
-    void setDenseOrTypedArrayElement() {
-        value().setDenseOrTypedArrayElement();
-    }
+ public:
+  void setNotFound() { value().setNotFound(); }
+  void setNativeProperty(js::Shape* shape) { value().setNativeProperty(shape); }
+  void setNonNativeProperty() { value().setNonNativeProperty(); }
+  void setDenseOrTypedArrayElement() { value().setDenseOrTypedArrayElement(); }
 };
 
-} 
+}  
 
 
 
@@ -400,22 +372,20 @@ class MutableWrappedPtrOperations<JS::PropertyResult, Wrapper>
 
 
 
-typedef bool
-(* JSGetterOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-               JS::MutableHandleValue vp);
+typedef bool (*JSGetterOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
+                           JS::MutableHandleValue vp);
 
 
-typedef bool
-(* JSAddPropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id, JS::HandleValue v);
+typedef bool (*JSAddPropertyOp)(JSContext* cx, JS::HandleObject obj,
+                                JS::HandleId id, JS::HandleValue v);
 
 
 
 
 
 
-typedef bool
-(* JSSetterOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-               JS::HandleValue v, JS::ObjectOpResult& result);
+typedef bool (*JSSetterOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
+                           JS::HandleValue v, JS::ObjectOpResult& result);
 
 
 
@@ -432,9 +402,8 @@ typedef bool
 
 
 
-typedef bool
-(* JSDeletePropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                       JS::ObjectOpResult& result);
+typedef bool (*JSDeletePropertyOp)(JSContext* cx, JS::HandleObject obj,
+                                   JS::HandleId id, JS::ObjectOpResult& result);
 
 
 
@@ -449,24 +418,23 @@ typedef bool
 
 
 
-typedef bool
-(* JSNewEnumerateOp)(JSContext* cx, JS::HandleObject obj, JS::AutoIdVector& properties,
-                     bool enumerableOnly);
+typedef bool (*JSNewEnumerateOp)(JSContext* cx, JS::HandleObject obj,
+                                 JS::AutoIdVector& properties,
+                                 bool enumerableOnly);
 
 
 
 
 
-typedef bool
-(* JSEnumerateOp)(JSContext* cx, JS::HandleObject obj);
+typedef bool (*JSEnumerateOp)(JSContext* cx, JS::HandleObject obj);
 
 
 
 
 
 
-typedef JSString*
-(* JSFunToStringOp)(JSContext* cx, JS::HandleObject obj, bool isToSource);
+typedef JSString* (*JSFunToStringOp)(JSContext* cx, JS::HandleObject obj,
+                                     bool isToSource);
 
 
 
@@ -477,9 +445,8 @@ typedef JSString*
 
 
 
-typedef bool
-(* JSResolveOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                bool* resolvedp);
+typedef bool (*JSResolveOp)(JSContext* cx, JS::HandleObject obj,
+                            JS::HandleId id, bool* resolvedp);
 
 
 
@@ -492,25 +459,23 @@ typedef bool
 
 
 
-typedef bool
-(* JSMayResolveOp)(const JSAtomState& names, jsid id, JSObject* maybeObj);
+typedef bool (*JSMayResolveOp)(const JSAtomState& names, jsid id,
+                               JSObject* maybeObj);
 
 
 
 
 
 
-typedef void
-(* JSFinalizeOp)(JSFreeOp* fop, JSObject* obj);
+typedef void (*JSFinalizeOp)(JSFreeOp* fop, JSObject* obj);
 
 
 
 
 
 
-typedef bool
-(* JSHasInstanceOp)(JSContext* cx, JS::HandleObject obj, JS::MutableHandleValue vp,
-                    bool* bp);
+typedef bool (*JSHasInstanceOp)(JSContext* cx, JS::HandleObject obj,
+                                JS::MutableHandleValue vp, bool* bp);
 
 
 
@@ -526,139 +491,151 @@ typedef bool
 
 
 
-typedef void
-(* JSTraceOp)(JSTracer* trc, JSObject* obj);
+typedef void (*JSTraceOp)(JSTracer* trc, JSObject* obj);
 
-typedef JSObject*
-(* JSWeakmapKeyDelegateOp)(JSObject* obj);
+typedef JSObject* (*JSWeakmapKeyDelegateOp)(JSObject* obj);
 
-typedef size_t
-(* JSObjectMovedOp)(JSObject* obj, JSObject* old);
+typedef size_t (*JSObjectMovedOp)(JSObject* obj, JSObject* old);
 
 
 
 namespace js {
 
-typedef bool
-(* LookupPropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                     JS::MutableHandleObject objp, JS::MutableHandle<JS::PropertyResult> propp);
-typedef bool
-(* DefinePropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                     JS::Handle<JS::PropertyDescriptor> desc,
-                     JS::ObjectOpResult& result);
-typedef bool
-(* HasPropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id, bool* foundp);
-typedef bool
-(* GetPropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleValue receiver, JS::HandleId id,
-                  JS::MutableHandleValue vp);
-typedef bool
-(* SetPropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id, JS::HandleValue v,
-                  JS::HandleValue receiver, JS::ObjectOpResult& result);
-typedef bool
-(* GetOwnPropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                     JS::MutableHandle<JS::PropertyDescriptor> desc);
-typedef bool
-(* DeletePropertyOp)(JSContext* cx, JS::HandleObject obj, JS::HandleId id,
-                     JS::ObjectOpResult& result);
+typedef bool (*LookupPropertyOp)(JSContext* cx, JS::HandleObject obj,
+                                 JS::HandleId id, JS::MutableHandleObject objp,
+                                 JS::MutableHandle<JS::PropertyResult> propp);
+typedef bool (*DefinePropertyOp)(JSContext* cx, JS::HandleObject obj,
+                                 JS::HandleId id,
+                                 JS::Handle<JS::PropertyDescriptor> desc,
+                                 JS::ObjectOpResult& result);
+typedef bool (*HasPropertyOp)(JSContext* cx, JS::HandleObject obj,
+                              JS::HandleId id, bool* foundp);
+typedef bool (*GetPropertyOp)(JSContext* cx, JS::HandleObject obj,
+                              JS::HandleValue receiver, JS::HandleId id,
+                              JS::MutableHandleValue vp);
+typedef bool (*SetPropertyOp)(JSContext* cx, JS::HandleObject obj,
+                              JS::HandleId id, JS::HandleValue v,
+                              JS::HandleValue receiver,
+                              JS::ObjectOpResult& result);
+typedef bool (*GetOwnPropertyOp)(
+    JSContext* cx, JS::HandleObject obj, JS::HandleId id,
+    JS::MutableHandle<JS::PropertyDescriptor> desc);
+typedef bool (*DeletePropertyOp)(JSContext* cx, JS::HandleObject obj,
+                                 JS::HandleId id, JS::ObjectOpResult& result);
 
-class JS_FRIEND_API ElementAdder
-{
-  public:
-    enum GetBehavior {
-        
-        
-        CheckHasElemPreserveHoles,
-
-        
-        GetElement
-    };
-
-  private:
+class JS_FRIEND_API ElementAdder {
+ public:
+  enum GetBehavior {
     
-    JS::RootedObject resObj_;
-    JS::Value* vp_;
+    
+    CheckHasElemPreserveHoles,
 
-    uint32_t index_;
+    
+    GetElement
+  };
+
+ private:
+  
+  JS::RootedObject resObj_;
+  JS::Value* vp_;
+
+  uint32_t index_;
 #ifdef DEBUG
-    uint32_t length_;
+  uint32_t length_;
 #endif
-    GetBehavior getBehavior_;
+  GetBehavior getBehavior_;
 
-  public:
-    ElementAdder(JSContext* cx, JSObject* obj, uint32_t length, GetBehavior behavior)
-      : resObj_(cx, obj), vp_(nullptr), index_(0),
+ public:
+  ElementAdder(JSContext* cx, JSObject* obj, uint32_t length,
+               GetBehavior behavior)
+      : resObj_(cx, obj),
+        vp_(nullptr),
+        index_(0),
 #ifdef DEBUG
         length_(length),
 #endif
-        getBehavior_(behavior)
-    {}
-    ElementAdder(JSContext* cx, JS::Value* vp, uint32_t length, GetBehavior behavior)
-      : resObj_(cx), vp_(vp), index_(0),
+        getBehavior_(behavior) {
+  }
+  ElementAdder(JSContext* cx, JS::Value* vp, uint32_t length,
+               GetBehavior behavior)
+      : resObj_(cx),
+        vp_(vp),
+        index_(0),
 #ifdef DEBUG
         length_(length),
 #endif
-        getBehavior_(behavior)
-    {}
+        getBehavior_(behavior) {
+  }
 
-    GetBehavior getBehavior() const { return getBehavior_; }
+  GetBehavior getBehavior() const { return getBehavior_; }
 
-    bool append(JSContext* cx, JS::HandleValue v);
-    void appendHole();
+  bool append(JSContext* cx, JS::HandleValue v);
+  void appendHole();
 };
 
-typedef bool
-(* GetElementsOp)(JSContext* cx, JS::HandleObject obj, uint32_t begin, uint32_t end,
-                  ElementAdder* adder);
+typedef bool (*GetElementsOp)(JSContext* cx, JS::HandleObject obj,
+                              uint32_t begin, uint32_t end,
+                              ElementAdder* adder);
 
-typedef void
-(* FinalizeOp)(FreeOp* fop, JSObject* obj);
-
+typedef void (*FinalizeOp)(FreeOp* fop, JSObject* obj);
 
 
 
-#define JS_CLASS_MEMBERS(ClassOpsType, FreeOpType) \
-    const char* name; \
-    uint32_t flags; \
-    const ClassOpsType* cOps; \
-    \
-    JSAddPropertyOp    getAddProperty() const { return cOps ? cOps->addProperty : nullptr; } \
-    JSDeletePropertyOp getDelProperty() const { return cOps ? cOps->delProperty : nullptr; } \
-    JSEnumerateOp      getEnumerate()   const { return cOps ? cOps->enumerate   : nullptr; } \
-    JSNewEnumerateOp   getNewEnumerate()const { return cOps ? cOps->newEnumerate: nullptr; } \
-    JSResolveOp        getResolve()     const { return cOps ? cOps->resolve     : nullptr; } \
-    JSMayResolveOp     getMayResolve()  const { return cOps ? cOps->mayResolve  : nullptr; } \
-    JSNative           getCall()        const { return cOps ? cOps->call        : nullptr; } \
-    JSHasInstanceOp    getHasInstance() const { return cOps ? cOps->hasInstance : nullptr; } \
-    JSNative           getConstruct()   const { return cOps ? cOps->construct   : nullptr; } \
-    \
-    bool hasFinalize() const { return cOps && cOps->finalize; } \
-    bool hasTrace()    const { return cOps && cOps->trace;    } \
-    \
-    bool isTrace(JSTraceOp trace) const { return cOps && cOps->trace == trace; } \
-    \
-    void doFinalize(FreeOpType* fop, JSObject* obj) const { \
-        MOZ_ASSERT(cOps && cOps->finalize); \
-        cOps->finalize(fop, obj); \
-    } \
-    void doTrace(JSTracer* trc, JSObject* obj) const { \
-        MOZ_ASSERT(cOps && cOps->trace); \
-        cOps->trace(trc, obj); \
-    }
 
-struct MOZ_STATIC_CLASS ClassOps
-{
-    
-    JSAddPropertyOp     addProperty;
-    JSDeletePropertyOp  delProperty;
-    JSEnumerateOp       enumerate;
-    JSNewEnumerateOp    newEnumerate;
-    JSResolveOp         resolve;
-    JSMayResolveOp      mayResolve;
-    FinalizeOp          finalize;
-    JSNative            call;
-    JSHasInstanceOp     hasInstance;
-    JSNative            construct;
-    JSTraceOp           trace;
+#define JS_CLASS_MEMBERS(ClassOpsType, FreeOpType)                             \
+  const char* name;                                                            \
+  uint32_t flags;                                                              \
+  const ClassOpsType* cOps;                                                    \
+                                                                               \
+  JSAddPropertyOp getAddProperty() const {                                     \
+    return cOps ? cOps->addProperty : nullptr;                                 \
+  }                                                                            \
+  JSDeletePropertyOp getDelProperty() const {                                  \
+    return cOps ? cOps->delProperty : nullptr;                                 \
+  }                                                                            \
+  JSEnumerateOp getEnumerate() const {                                         \
+    return cOps ? cOps->enumerate : nullptr;                                   \
+  }                                                                            \
+  JSNewEnumerateOp getNewEnumerate() const {                                   \
+    return cOps ? cOps->newEnumerate : nullptr;                                \
+  }                                                                            \
+  JSResolveOp getResolve() const { return cOps ? cOps->resolve : nullptr; }    \
+  JSMayResolveOp getMayResolve() const {                                       \
+    return cOps ? cOps->mayResolve : nullptr;                                  \
+  }                                                                            \
+  JSNative getCall() const { return cOps ? cOps->call : nullptr; }             \
+  JSHasInstanceOp getHasInstance() const {                                     \
+    return cOps ? cOps->hasInstance : nullptr;                                 \
+  }                                                                            \
+  JSNative getConstruct() const { return cOps ? cOps->construct : nullptr; }   \
+                                                                               \
+  bool hasFinalize() const { return cOps && cOps->finalize; }                  \
+  bool hasTrace() const { return cOps && cOps->trace; }                        \
+                                                                               \
+  bool isTrace(JSTraceOp trace) const { return cOps && cOps->trace == trace; } \
+                                                                               \
+  void doFinalize(FreeOpType* fop, JSObject* obj) const {                      \
+    MOZ_ASSERT(cOps && cOps->finalize);                                        \
+    cOps->finalize(fop, obj);                                                  \
+  }                                                                            \
+  void doTrace(JSTracer* trc, JSObject* obj) const {                           \
+    MOZ_ASSERT(cOps && cOps->trace);                                           \
+    cOps->trace(trc, obj);                                                     \
+  }
+
+struct MOZ_STATIC_CLASS ClassOps {
+  
+  JSAddPropertyOp addProperty;
+  JSDeletePropertyOp delProperty;
+  JSEnumerateOp enumerate;
+  JSNewEnumerateOp newEnumerate;
+  JSResolveOp resolve;
+  JSMayResolveOp mayResolve;
+  FinalizeOp finalize;
+  JSNative call;
+  JSHasInstanceOp hasInstance;
+  JSNative construct;
+  JSTraceOp trace;
 };
 
 
@@ -673,46 +650,44 @@ typedef bool (*FinishClassInitOp)(JSContext* cx, JS::HandleObject ctor,
 
 const size_t JSCLASS_CACHED_PROTO_WIDTH = 6;
 
-struct MOZ_STATIC_CLASS ClassSpec
-{
-    ClassObjectCreationOp createConstructor;
-    ClassObjectCreationOp createPrototype;
-    const JSFunctionSpec* constructorFunctions;
-    const JSPropertySpec* constructorProperties;
-    const JSFunctionSpec* prototypeFunctions;
-    const JSPropertySpec* prototypeProperties;
-    FinishClassInitOp finishInit;
-    uintptr_t flags;
+struct MOZ_STATIC_CLASS ClassSpec {
+  ClassObjectCreationOp createConstructor;
+  ClassObjectCreationOp createPrototype;
+  const JSFunctionSpec* constructorFunctions;
+  const JSPropertySpec* constructorProperties;
+  const JSFunctionSpec* prototypeFunctions;
+  const JSPropertySpec* prototypeProperties;
+  FinishClassInitOp finishInit;
+  uintptr_t flags;
 
-    static const size_t ProtoKeyWidth = JSCLASS_CACHED_PROTO_WIDTH;
+  static const size_t ProtoKeyWidth = JSCLASS_CACHED_PROTO_WIDTH;
 
-    static const uintptr_t ProtoKeyMask = (1 << ProtoKeyWidth) - 1;
-    static const uintptr_t DontDefineConstructor = 1 << ProtoKeyWidth;
+  static const uintptr_t ProtoKeyMask = (1 << ProtoKeyWidth) - 1;
+  static const uintptr_t DontDefineConstructor = 1 << ProtoKeyWidth;
 
-    bool defined() const { return !!createConstructor; }
+  bool defined() const { return !!createConstructor; }
+
+  
+  JSProtoKey inheritanceProtoKey() const {
+    MOZ_ASSERT(defined());
+    static_assert(JSProto_Null == 0, "zeroed key must be null");
 
     
-    JSProtoKey inheritanceProtoKey() const {
-        MOZ_ASSERT(defined());
-        static_assert(JSProto_Null == 0, "zeroed key must be null");
-
-        
-        if (!(flags & ProtoKeyMask)) {
-            return JSProto_Object;
-        }
-
-        return JSProtoKey(flags & ProtoKeyMask);
+    if (!(flags & ProtoKeyMask)) {
+      return JSProto_Object;
     }
 
-    bool shouldDefineConstructor() const {
-        MOZ_ASSERT(defined());
-        return !(flags & DontDefineConstructor);
-    }
+    return JSProtoKey(flags & ProtoKeyMask);
+  }
+
+  bool shouldDefineConstructor() const {
+    MOZ_ASSERT(defined());
+    return !(flags & DontDefineConstructor);
+  }
 };
 
-struct MOZ_STATIC_CLASS ClassExtension
-{
-    
+struct MOZ_STATIC_CLASS ClassExtension {
+  
 
 
 
@@ -723,11 +698,9 @@ struct MOZ_STATIC_CLASS ClassExtension
 
 
 
-    JSWeakmapKeyDelegateOp weakmapKeyDelegateOp;
+  JSWeakmapKeyDelegateOp weakmapKeyDelegateOp;
 
-    
-
-
+  
 
 
 
@@ -743,55 +716,55 @@ struct MOZ_STATIC_CLASS ClassExtension
 
 
 
-    JSObjectMovedOp objectMovedOp;
+
+
+  JSObjectMovedOp objectMovedOp;
 };
 
-#define JS_NULL_CLASS_SPEC  nullptr
-#define JS_NULL_CLASS_EXT   nullptr
+#define JS_NULL_CLASS_SPEC nullptr
+#define JS_NULL_CLASS_EXT nullptr
 
-struct MOZ_STATIC_CLASS ObjectOps
-{
-    LookupPropertyOp lookupProperty;
-    DefinePropertyOp defineProperty;
-    HasPropertyOp    hasProperty;
-    GetPropertyOp    getProperty;
-    SetPropertyOp    setProperty;
-    GetOwnPropertyOp getOwnPropertyDescriptor;
-    DeletePropertyOp deleteProperty;
-    GetElementsOp    getElements;
-    JSFunToStringOp  funToString;
+struct MOZ_STATIC_CLASS ObjectOps {
+  LookupPropertyOp lookupProperty;
+  DefinePropertyOp defineProperty;
+  HasPropertyOp hasProperty;
+  GetPropertyOp getProperty;
+  SetPropertyOp setProperty;
+  GetOwnPropertyOp getOwnPropertyDescriptor;
+  DeletePropertyOp deleteProperty;
+  GetElementsOp getElements;
+  JSFunToStringOp funToString;
 };
 
 #define JS_NULL_OBJECT_OPS nullptr
 
-} 
+}  
 
 
 
 typedef void (*JSClassInternal)();
 
-struct MOZ_STATIC_CLASS JSClassOps
-{
-    
-    JSAddPropertyOp     addProperty;
-    JSDeletePropertyOp  delProperty;
-    JSEnumerateOp       enumerate;
-    JSNewEnumerateOp    newEnumerate;
-    JSResolveOp         resolve;
-    JSMayResolveOp      mayResolve;
-    JSFinalizeOp        finalize;
-    JSNative            call;
-    JSHasInstanceOp     hasInstance;
-    JSNative            construct;
-    JSTraceOp           trace;
+struct MOZ_STATIC_CLASS JSClassOps {
+  
+  JSAddPropertyOp addProperty;
+  JSDeletePropertyOp delProperty;
+  JSEnumerateOp enumerate;
+  JSNewEnumerateOp newEnumerate;
+  JSResolveOp resolve;
+  JSMayResolveOp mayResolve;
+  JSFinalizeOp finalize;
+  JSNative call;
+  JSHasInstanceOp hasInstance;
+  JSNative construct;
+  JSTraceOp trace;
 };
 
 #define JS_NULL_CLASS_OPS nullptr
 
 struct JSClass {
-    JS_CLASS_MEMBERS(JSClassOps, JSFreeOp);
+  JS_CLASS_MEMBERS(JSClassOps, JSFreeOp);
 
-    void* reserved[3];
+  void* reserved[3];
 };
 
 
@@ -831,30 +804,37 @@ static const uintptr_t JSCLASS_RESERVED_SLOTS_SHIFT = 8;
 
 static const uint32_t JSCLASS_RESERVED_SLOTS_WIDTH = 8;
 
-static const uint32_t JSCLASS_RESERVED_SLOTS_MASK = JS_BITMASK(JSCLASS_RESERVED_SLOTS_WIDTH);
+static const uint32_t JSCLASS_RESERVED_SLOTS_MASK =
+    JS_BITMASK(JSCLASS_RESERVED_SLOTS_WIDTH);
 
-#define JSCLASS_HAS_RESERVED_SLOTS(n)   (((n) & JSCLASS_RESERVED_SLOTS_MASK)  \
-                                         << JSCLASS_RESERVED_SLOTS_SHIFT)
-#define JSCLASS_RESERVED_SLOTS(clasp)   (((clasp)->flags                      \
-                                          >> JSCLASS_RESERVED_SLOTS_SHIFT)    \
-                                         & JSCLASS_RESERVED_SLOTS_MASK)
+#define JSCLASS_HAS_RESERVED_SLOTS(n) \
+  (((n)&JSCLASS_RESERVED_SLOTS_MASK) << JSCLASS_RESERVED_SLOTS_SHIFT)
+#define JSCLASS_RESERVED_SLOTS(clasp)                 \
+  (((clasp)->flags >> JSCLASS_RESERVED_SLOTS_SHIFT) & \
+   JSCLASS_RESERVED_SLOTS_MASK)
 
-#define JSCLASS_HIGH_FLAGS_SHIFT        (JSCLASS_RESERVED_SLOTS_SHIFT +       \
-                                         JSCLASS_RESERVED_SLOTS_WIDTH)
+#define JSCLASS_HIGH_FLAGS_SHIFT \
+  (JSCLASS_RESERVED_SLOTS_SHIFT + JSCLASS_RESERVED_SLOTS_WIDTH)
 
-static const uint32_t JSCLASS_IS_ANONYMOUS =            1 << (JSCLASS_HIGH_FLAGS_SHIFT + 0);
-static const uint32_t JSCLASS_IS_GLOBAL =               1 << (JSCLASS_HIGH_FLAGS_SHIFT + 1);
-static const uint32_t JSCLASS_INTERNAL_FLAG2 =          1 << (JSCLASS_HIGH_FLAGS_SHIFT + 2);
-static const uint32_t JSCLASS_INTERNAL_FLAG3 =          1 << (JSCLASS_HIGH_FLAGS_SHIFT + 3);
-static const uint32_t JSCLASS_IS_PROXY =                1 << (JSCLASS_HIGH_FLAGS_SHIFT + 4);
-static const uint32_t JSCLASS_SKIP_NURSERY_FINALIZE =   1 << (JSCLASS_HIGH_FLAGS_SHIFT + 5);
+static const uint32_t JSCLASS_IS_ANONYMOUS = 1
+                                             << (JSCLASS_HIGH_FLAGS_SHIFT + 0);
+static const uint32_t JSCLASS_IS_GLOBAL = 1 << (JSCLASS_HIGH_FLAGS_SHIFT + 1);
+static const uint32_t JSCLASS_INTERNAL_FLAG2 =
+    1 << (JSCLASS_HIGH_FLAGS_SHIFT + 2);
+static const uint32_t JSCLASS_INTERNAL_FLAG3 =
+    1 << (JSCLASS_HIGH_FLAGS_SHIFT + 3);
+static const uint32_t JSCLASS_IS_PROXY = 1 << (JSCLASS_HIGH_FLAGS_SHIFT + 4);
+static const uint32_t JSCLASS_SKIP_NURSERY_FINALIZE =
+    1 << (JSCLASS_HIGH_FLAGS_SHIFT + 5);
 
 
-static const uint32_t JSCLASS_USERBIT2 =                1 << (JSCLASS_HIGH_FLAGS_SHIFT + 6);
-static const uint32_t JSCLASS_USERBIT3 =                1 << (JSCLASS_HIGH_FLAGS_SHIFT + 7);
+static const uint32_t JSCLASS_USERBIT2 = 1 << (JSCLASS_HIGH_FLAGS_SHIFT + 6);
+static const uint32_t JSCLASS_USERBIT3 = 1 << (JSCLASS_HIGH_FLAGS_SHIFT + 7);
 
-static const uint32_t JSCLASS_BACKGROUND_FINALIZE =     1 << (JSCLASS_HIGH_FLAGS_SHIFT + 8);
-static const uint32_t JSCLASS_FOREGROUND_FINALIZE =     1 << (JSCLASS_HIGH_FLAGS_SHIFT + 9);
+static const uint32_t JSCLASS_BACKGROUND_FINALIZE =
+    1 << (JSCLASS_HIGH_FLAGS_SHIFT + 8);
+static const uint32_t JSCLASS_FOREGROUND_FINALIZE =
+    1 << (JSCLASS_HIGH_FLAGS_SHIFT + 9);
 
 
 
@@ -876,134 +856,153 @@ static const uint32_t JSCLASS_GLOBAL_APPLICATION_SLOTS = 5;
 static const uint32_t JSCLASS_GLOBAL_SLOT_COUNT =
     JSCLASS_GLOBAL_APPLICATION_SLOTS + JSProto_LIMIT * 2 + 37;
 
-#define JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(n)                              \
-    (JSCLASS_IS_GLOBAL | JSCLASS_HAS_RESERVED_SLOTS(JSCLASS_GLOBAL_SLOT_COUNT + (n)))
-#define JSCLASS_GLOBAL_FLAGS                                                  \
-    JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(0)
-#define JSCLASS_HAS_GLOBAL_FLAG_AND_SLOTS(clasp)                              \
-  (((clasp)->flags & JSCLASS_IS_GLOBAL)                                       \
-   && JSCLASS_RESERVED_SLOTS(clasp) >= JSCLASS_GLOBAL_SLOT_COUNT)
+#define JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(n) \
+  (JSCLASS_IS_GLOBAL |                     \
+   JSCLASS_HAS_RESERVED_SLOTS(JSCLASS_GLOBAL_SLOT_COUNT + (n)))
+#define JSCLASS_GLOBAL_FLAGS JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(0)
+#define JSCLASS_HAS_GLOBAL_FLAG_AND_SLOTS(clasp) \
+  (((clasp)->flags & JSCLASS_IS_GLOBAL) &&       \
+   JSCLASS_RESERVED_SLOTS(clasp) >= JSCLASS_GLOBAL_SLOT_COUNT)
 
 
-static const uint32_t JSCLASS_CACHED_PROTO_SHIFT = JSCLASS_HIGH_FLAGS_SHIFT + 10;
-static const uint32_t JSCLASS_CACHED_PROTO_MASK = JS_BITMASK(js::JSCLASS_CACHED_PROTO_WIDTH);
+static const uint32_t JSCLASS_CACHED_PROTO_SHIFT =
+    JSCLASS_HIGH_FLAGS_SHIFT + 10;
+static const uint32_t JSCLASS_CACHED_PROTO_MASK =
+    JS_BITMASK(js::JSCLASS_CACHED_PROTO_WIDTH);
 
-#define JSCLASS_HAS_CACHED_PROTO(key)   (uint32_t(key) << JSCLASS_CACHED_PROTO_SHIFT)
-#define JSCLASS_CACHED_PROTO_KEY(clasp) ((JSProtoKey)                         \
-                                         (((clasp)->flags                     \
-                                           >> JSCLASS_CACHED_PROTO_SHIFT)     \
-                                          & JSCLASS_CACHED_PROTO_MASK))
+#define JSCLASS_HAS_CACHED_PROTO(key) \
+  (uint32_t(key) << JSCLASS_CACHED_PROTO_SHIFT)
+#define JSCLASS_CACHED_PROTO_KEY(clasp)                          \
+  ((JSProtoKey)(((clasp)->flags >> JSCLASS_CACHED_PROTO_SHIFT) & \
+                JSCLASS_CACHED_PROTO_MASK))
 
 
-#define JSCLASS_NO_INTERNAL_MEMBERS     {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}
-#define JSCLASS_NO_OPTIONAL_MEMBERS     0,0,0,0,0,JSCLASS_NO_INTERNAL_MEMBERS
+#define JSCLASS_NO_INTERNAL_MEMBERS \
+  { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+#define JSCLASS_NO_OPTIONAL_MEMBERS 0, 0, 0, 0, 0, JSCLASS_NO_INTERNAL_MEMBERS
 
 namespace js {
 
-struct MOZ_STATIC_CLASS Class
-{
-    JS_CLASS_MEMBERS(js::ClassOps, FreeOp);
-    const ClassSpec* spec;
-    const ClassExtension* ext;
-    const ObjectOps* oOps;
+struct MOZ_STATIC_CLASS Class {
+  JS_CLASS_MEMBERS(js::ClassOps, FreeOp);
+  const ClassSpec* spec;
+  const ClassExtension* ext;
+  const ObjectOps* oOps;
 
-    
-
+  
 
 
 
 
 
-    static const uint32_t NON_NATIVE = JSCLASS_INTERNAL_FLAG2;
 
-    bool isNative() const {
-        return !(flags & NON_NATIVE);
-    }
+  static const uint32_t NON_NATIVE = JSCLASS_INTERNAL_FLAG2;
 
-    bool hasPrivate() const {
-        return !!(flags & JSCLASS_HAS_PRIVATE);
-    }
+  bool isNative() const { return !(flags & NON_NATIVE); }
 
-    bool emulatesUndefined() const {
-        return flags & JSCLASS_EMULATES_UNDEFINED;
-    }
+  bool hasPrivate() const { return !!(flags & JSCLASS_HAS_PRIVATE); }
 
-    bool isJSFunction() const {
-        return this == js::FunctionClassPtr;
-    }
+  bool emulatesUndefined() const { return flags & JSCLASS_EMULATES_UNDEFINED; }
 
-    bool nonProxyCallable() const {
-        MOZ_ASSERT(!isProxy());
-        return isJSFunction() || getCall();
-    }
+  bool isJSFunction() const { return this == js::FunctionClassPtr; }
 
-    bool isProxy() const {
-        return flags & JSCLASS_IS_PROXY;
-    }
+  bool nonProxyCallable() const {
+    MOZ_ASSERT(!isProxy());
+    return isJSFunction() || getCall();
+  }
 
-    bool isDOMClass() const {
-        return flags & JSCLASS_IS_DOMJSCLASS;
-    }
+  bool isProxy() const { return flags & JSCLASS_IS_PROXY; }
 
-    bool shouldDelayMetadataBuilder() const {
-        return flags & JSCLASS_DELAY_METADATA_BUILDER;
-    }
+  bool isDOMClass() const { return flags & JSCLASS_IS_DOMJSCLASS; }
 
-    bool isWrappedNative() const {
-        return flags & JSCLASS_IS_WRAPPED_NATIVE;
-    }
+  bool shouldDelayMetadataBuilder() const {
+    return flags & JSCLASS_DELAY_METADATA_BUILDER;
+  }
 
-    static size_t offsetOfFlags() { return offsetof(Class, flags); }
+  bool isWrappedNative() const { return flags & JSCLASS_IS_WRAPPED_NATIVE; }
 
-    bool specDefined()         const { return spec ? spec->defined()   : false; }
-    JSProtoKey specInheritanceProtoKey()
-                               const { return spec ? spec->inheritanceProtoKey() : JSProto_Null; }
-    bool specShouldDefineConstructor()
-                               const { return spec ? spec->shouldDefineConstructor() : true; }
-    ClassObjectCreationOp specCreateConstructorHook()
-                               const { return spec ? spec->createConstructor        : nullptr; }
-    ClassObjectCreationOp specCreatePrototypeHook()
-                               const { return spec ? spec->createPrototype          : nullptr; }
-    const JSFunctionSpec* specConstructorFunctions()
-                               const { return spec ? spec->constructorFunctions     : nullptr; }
-    const JSPropertySpec* specConstructorProperties()
-                               const { return spec ? spec->constructorProperties    : nullptr; }
-    const JSFunctionSpec* specPrototypeFunctions()
-                               const { return spec ? spec->prototypeFunctions       : nullptr; }
-    const JSPropertySpec* specPrototypeProperties()
-                               const { return spec ? spec->prototypeProperties      : nullptr; }
-    FinishClassInitOp specFinishInitHook()
-                               const { return spec ? spec->finishInit               : nullptr; }
+  static size_t offsetOfFlags() { return offsetof(Class, flags); }
 
-    JSWeakmapKeyDelegateOp extWeakmapKeyDelegateOp()
-                               const { return ext ? ext->weakmapKeyDelegateOp        : nullptr; }
-    JSObjectMovedOp extObjectMovedOp()
-                               const { return ext ? ext->objectMovedOp               : nullptr; }
+  bool specDefined() const { return spec ? spec->defined() : false; }
+  JSProtoKey specInheritanceProtoKey() const {
+    return spec ? spec->inheritanceProtoKey() : JSProto_Null;
+  }
+  bool specShouldDefineConstructor() const {
+    return spec ? spec->shouldDefineConstructor() : true;
+  }
+  ClassObjectCreationOp specCreateConstructorHook() const {
+    return spec ? spec->createConstructor : nullptr;
+  }
+  ClassObjectCreationOp specCreatePrototypeHook() const {
+    return spec ? spec->createPrototype : nullptr;
+  }
+  const JSFunctionSpec* specConstructorFunctions() const {
+    return spec ? spec->constructorFunctions : nullptr;
+  }
+  const JSPropertySpec* specConstructorProperties() const {
+    return spec ? spec->constructorProperties : nullptr;
+  }
+  const JSFunctionSpec* specPrototypeFunctions() const {
+    return spec ? spec->prototypeFunctions : nullptr;
+  }
+  const JSPropertySpec* specPrototypeProperties() const {
+    return spec ? spec->prototypeProperties : nullptr;
+  }
+  FinishClassInitOp specFinishInitHook() const {
+    return spec ? spec->finishInit : nullptr;
+  }
 
-    LookupPropertyOp getOpsLookupProperty() const { return oOps ? oOps->lookupProperty : nullptr; }
-    DefinePropertyOp getOpsDefineProperty() const { return oOps ? oOps->defineProperty : nullptr; }
-    HasPropertyOp    getOpsHasProperty()    const { return oOps ? oOps->hasProperty    : nullptr; }
-    GetPropertyOp    getOpsGetProperty()    const { return oOps ? oOps->getProperty    : nullptr; }
-    SetPropertyOp    getOpsSetProperty()    const { return oOps ? oOps->setProperty    : nullptr; }
-    GetOwnPropertyOp getOpsGetOwnPropertyDescriptor()
-                                            const { return oOps ? oOps->getOwnPropertyDescriptor
-                                                                                     : nullptr; }
-    DeletePropertyOp getOpsDeleteProperty() const { return oOps ? oOps->deleteProperty : nullptr; }
-    GetElementsOp    getOpsGetElements()    const { return oOps ? oOps->getElements    : nullptr; }
-    JSFunToStringOp  getOpsFunToString()    const { return oOps ? oOps->funToString    : nullptr; }
+  JSWeakmapKeyDelegateOp extWeakmapKeyDelegateOp() const {
+    return ext ? ext->weakmapKeyDelegateOp : nullptr;
+  }
+  JSObjectMovedOp extObjectMovedOp() const {
+    return ext ? ext->objectMovedOp : nullptr;
+  }
+
+  LookupPropertyOp getOpsLookupProperty() const {
+    return oOps ? oOps->lookupProperty : nullptr;
+  }
+  DefinePropertyOp getOpsDefineProperty() const {
+    return oOps ? oOps->defineProperty : nullptr;
+  }
+  HasPropertyOp getOpsHasProperty() const {
+    return oOps ? oOps->hasProperty : nullptr;
+  }
+  GetPropertyOp getOpsGetProperty() const {
+    return oOps ? oOps->getProperty : nullptr;
+  }
+  SetPropertyOp getOpsSetProperty() const {
+    return oOps ? oOps->setProperty : nullptr;
+  }
+  GetOwnPropertyOp getOpsGetOwnPropertyDescriptor() const {
+    return oOps ? oOps->getOwnPropertyDescriptor : nullptr;
+  }
+  DeletePropertyOp getOpsDeleteProperty() const {
+    return oOps ? oOps->deleteProperty : nullptr;
+  }
+  GetElementsOp getOpsGetElements() const {
+    return oOps ? oOps->getElements : nullptr;
+  }
+  JSFunToStringOp getOpsFunToString() const {
+    return oOps ? oOps->funToString : nullptr;
+  }
 };
 
-static_assert(offsetof(JSClassOps, addProperty) == offsetof(ClassOps, addProperty),
+static_assert(offsetof(JSClassOps, addProperty) ==
+                  offsetof(ClassOps, addProperty),
               "ClassOps and JSClassOps must be consistent");
-static_assert(offsetof(JSClassOps, delProperty) == offsetof(ClassOps, delProperty),
+static_assert(offsetof(JSClassOps, delProperty) ==
+                  offsetof(ClassOps, delProperty),
               "ClassOps and JSClassOps must be consistent");
 static_assert(offsetof(JSClassOps, enumerate) == offsetof(ClassOps, enumerate),
               "ClassOps and JSClassOps must be consistent");
-static_assert(offsetof(JSClassOps, newEnumerate) == offsetof(ClassOps, newEnumerate),
+static_assert(offsetof(JSClassOps, newEnumerate) ==
+                  offsetof(ClassOps, newEnumerate),
               "ClassOps and JSClassOps must be consistent");
 static_assert(offsetof(JSClassOps, resolve) == offsetof(ClassOps, resolve),
               "ClassOps and JSClassOps must be consistent");
-static_assert(offsetof(JSClassOps, mayResolve) == offsetof(ClassOps, mayResolve),
+static_assert(offsetof(JSClassOps, mayResolve) ==
+                  offsetof(ClassOps, mayResolve),
               "ClassOps and JSClassOps must be consistent");
 static_assert(offsetof(JSClassOps, finalize) == offsetof(ClassOps, finalize),
               "ClassOps and JSClassOps must be consistent");
@@ -1011,7 +1010,8 @@ static_assert(offsetof(JSClassOps, call) == offsetof(ClassOps, call),
               "ClassOps and JSClassOps must be consistent");
 static_assert(offsetof(JSClassOps, construct) == offsetof(ClassOps, construct),
               "ClassOps and JSClassOps must be consistent");
-static_assert(offsetof(JSClassOps, hasInstance) == offsetof(ClassOps, hasInstance),
+static_assert(offsetof(JSClassOps, hasInstance) ==
+                  offsetof(ClassOps, hasInstance),
               "ClassOps and JSClassOps must be consistent");
 static_assert(offsetof(JSClassOps, trace) == offsetof(ClassOps, trace),
               "ClassOps and JSClassOps must be consistent");
@@ -1027,16 +1027,12 @@ static_assert(offsetof(JSClass, cOps) == offsetof(Class, cOps),
 static_assert(sizeof(JSClass) == sizeof(Class),
               "Class and JSClass must be consistent");
 
-static MOZ_ALWAYS_INLINE const JSClass*
-Jsvalify(const Class* c)
-{
-    return (const JSClass*)c;
+static MOZ_ALWAYS_INLINE const JSClass* Jsvalify(const Class* c) {
+  return (const JSClass*)c;
 }
 
-static MOZ_ALWAYS_INLINE const Class*
-Valueify(const JSClass* c)
-{
-    return (const Class*)c;
+static MOZ_ALWAYS_INLINE const Class* Valueify(const JSClass* c) {
+  return (const Class*)c;
 }
 
 
@@ -1044,39 +1040,37 @@ Valueify(const JSClass* c)
 
 
 enum class ESClass {
-    Object,
-    Array,
-    Number,
-    String,
-    Boolean,
-    RegExp,
-    ArrayBuffer,
-    SharedArrayBuffer,
-    Date,
-    Set,
-    Map,
-    Promise,
-    MapIterator,
-    SetIterator,
-    Arguments,
-    Error,
+  Object,
+  Array,
+  Number,
+  String,
+  Boolean,
+  RegExp,
+  ArrayBuffer,
+  SharedArrayBuffer,
+  Date,
+  Set,
+  Map,
+  Promise,
+  MapIterator,
+  SetIterator,
+  Arguments,
+  Error,
 #ifdef ENABLE_BIGINT
-    BigInt,
+  BigInt,
 #endif
 
-    
-    Other
+  
+  Other
 };
 
 
-bool
-Unbox(JSContext* cx, JS::HandleObject obj, JS::MutableHandleValue vp);
+bool Unbox(JSContext* cx, JS::HandleObject obj, JS::MutableHandleValue vp);
 
 #ifdef DEBUG
-JS_FRIEND_API bool
-HasObjectMovedOp(JSObject* obj);
+JS_FRIEND_API bool HasObjectMovedOp(JSObject* obj);
 #endif
 
-}  
+} 
 
-#endif  
+#endif 

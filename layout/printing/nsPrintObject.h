@@ -21,52 +21,47 @@ class nsIDocument;
 class nsPresContext;
 
 
-enum PrintObjectType  {eDoc = 0, eFrame = 1, eIFrame = 2, eFrameSet = 3};
+enum PrintObjectType { eDoc = 0, eFrame = 1, eIFrame = 2, eFrameSet = 3 };
 
 
 
 
-class nsPrintObject
-{
-
-public:
+class nsPrintObject {
+ public:
   nsPrintObject();
-  ~nsPrintObject(); 
+  ~nsPrintObject();  
 
   
   nsresult Init(nsIDocShell* aDocShell, nsIDocument* aDoc, bool aPrintPreview);
 
-  bool IsPrintable()  { return !mDontPrint; }
-  void   DestroyPresentation();
+  bool IsPrintable() { return !mDontPrint; }
+  void DestroyPresentation();
 
   
-  nsCOMPtr<nsIDocShell>    mDocShell;
+  nsCOMPtr<nsIDocShell> mDocShell;
   nsCOMPtr<nsIDocShellTreeOwner> mTreeOwner;
-  nsCOMPtr<nsIDocument>    mDocument;
+  nsCOMPtr<nsIDocument> mDocument;
 
-  RefPtr<nsPresContext>  mPresContext;
-  nsCOMPtr<nsIPresShell>   mPresShell;
+  RefPtr<nsPresContext> mPresContext;
+  nsCOMPtr<nsIPresShell> mPresShell;
   RefPtr<nsViewManager> mViewManager;
 
-  nsCOMPtr<nsIContent>     mContent;
-  PrintObjectType  mFrameType;
+  nsCOMPtr<nsIContent> mContent;
+  PrintObjectType mFrameType;
 
   nsTArray<mozilla::UniquePtr<nsPrintObject>> mKids;
-  nsPrintObject*   mParent; 
-  bool             mHasBeenPrinted;
-  bool             mDontPrint;
-  bool             mPrintAsIs;
-  bool             mInvisible;        
-  bool             mPrintPreview;
-  bool             mDidCreateDocShell;
-  float            mShrinkRatio;
-  float            mZoomRatio;
+  nsPrintObject* mParent;  
+  bool mHasBeenPrinted;
+  bool mDontPrint;
+  bool mPrintAsIs;
+  bool mInvisible;  
+  bool mPrintPreview;
+  bool mDidCreateDocShell;
+  float mShrinkRatio;
+  float mZoomRatio;
 
-private:
+ private:
   nsPrintObject& operator=(const nsPrintObject& aOther) = delete;
 };
 
-
-
 #endif 
-

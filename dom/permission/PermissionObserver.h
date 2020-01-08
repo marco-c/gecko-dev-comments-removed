@@ -21,11 +21,9 @@ class PermissionStatus;
 
 
 
-class PermissionObserver final
-  : public nsIObserver
-  , public nsSupportsWeakReference
-{
-public:
+class PermissionObserver final : public nsIObserver,
+                                 public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
@@ -34,7 +32,7 @@ public:
   void AddSink(PermissionStatus* aObs);
   void RemoveSink(PermissionStatus* aObs);
 
-private:
+ private:
   PermissionObserver();
   virtual ~PermissionObserver();
 
@@ -43,7 +41,7 @@ private:
   nsTArray<PermissionStatus*> mSinks;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

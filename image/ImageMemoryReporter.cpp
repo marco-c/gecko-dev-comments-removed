@@ -14,34 +14,29 @@ namespace mozilla {
 namespace image {
 
 ImageMemoryReporter::WebRenderReporter* ImageMemoryReporter::sWrReporter;
- 
-class ImageMemoryReporter::WebRenderReporter final : public nsIMemoryReporter
-{
-public:
+
+class ImageMemoryReporter::WebRenderReporter final : public nsIMemoryReporter {
+ public:
   NS_DECL_ISUPPORTS
 
-  WebRenderReporter()
-  { }
+  WebRenderReporter() {}
 
   NS_IMETHOD CollectReports(nsIHandleReportCallback* aHandleReport,
-                            nsISupports* aData, bool aAnonymize) override
-  {
+                            nsISupports* aData, bool aAnonymize) override {
     layers::SharedSurfacesMemoryReport report;
     layers::SharedSurfacesParent::AccumulateMemoryReport(report);
-    ReportSharedSurfaces(aHandleReport, aData,  true, report);
+    ReportSharedSurfaces(aHandleReport, aData,  true,
+                         report);
     return NS_OK;
   }
 
-private:
-  virtual ~WebRenderReporter()
-  { }
+ private:
+  virtual ~WebRenderReporter() {}
 };
 
 NS_IMPL_ISUPPORTS(ImageMemoryReporter::WebRenderReporter, nsIMemoryReporter)
 
- void
-ImageMemoryReporter::InitForWebRender()
-{
+ void ImageMemoryReporter::InitForWebRender() {
   MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsGPUProcess());
   if (!sWrReporter) {
     sWrReporter = new WebRenderReporter();
@@ -49,9 +44,7 @@ ImageMemoryReporter::InitForWebRender()
   }
 }
 
- void
-ImageMemoryReporter::ShutdownForWebRender()
-{
+ void ImageMemoryReporter::ShutdownForWebRender() {
   MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsGPUProcess());
   if (sWrReporter) {
     UnregisterStrongMemoryReporter(sWrReporter);
@@ -59,39 +52,32 @@ ImageMemoryReporter::ShutdownForWebRender()
   }
 }
 
- void
-ImageMemoryReporter::ReportSharedSurfaces(nsIHandleReportCallback* aHandleReport,
-                                          nsISupports* aData,
-                                          const layers::SharedSurfacesMemoryReport& aSharedSurfaces)
-{
+ void ImageMemoryReporter::ReportSharedSurfaces(
+    nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+    const layers::SharedSurfacesMemoryReport& aSharedSurfaces) {
   ReportSharedSurfaces(aHandleReport, aData,
-                        false,
-                       aSharedSurfaces);
+                        false, aSharedSurfaces);
 }
 
- void
-ImageMemoryReporter::ReportSharedSurfaces(nsIHandleReportCallback* aHandleReport,
-                                          nsISupports* aData,
-                                          bool aIsForCompositor,
-                                          const layers::SharedSurfacesMemoryReport& aSharedSurfaces)
-{
+ void ImageMemoryReporter::ReportSharedSurfaces(
+    nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+    bool aIsForCompositor,
+    const layers::SharedSurfacesMemoryReport& aSharedSurfaces) {
   MOZ_ASSERT_IF(aIsForCompositor, XRE_IsParentProcess() || XRE_IsGPUProcess());
   MOZ_ASSERT_IF(!aIsForCompositor,
                 XRE_IsParentProcess() || XRE_IsContentProcess());
 
   for (auto i = aSharedSurfaces.mSurfaces.begin();
-    i != aSharedSurfaces.mSurfaces.end(); ++i) {
-    ReportSharedSurface(aHandleReport, aData, aIsForCompositor, i->first, i->second);
+       i != aSharedSurfaces.mSurfaces.end(); ++i) {
+    ReportSharedSurface(aHandleReport, aData, aIsForCompositor, i->first,
+                        i->second);
   }
 }
 
- void
-ImageMemoryReporter::ReportSharedSurface(nsIHandleReportCallback* aHandleReport,
-                                         nsISupports* aData,
-                                         bool aIsForCompositor,
-                                         uint64_t aExternalId,
-                                         const layers::SharedSurfacesMemoryReport::SurfaceEntry& aEntry)
-{
+ void ImageMemoryReporter::ReportSharedSurface(
+    nsIHandleReportCallback* aHandleReport, nsISupports* aData,
+    bool aIsForCompositor, uint64_t aExternalId,
+    const layers::SharedSurfacesMemoryReport::SurfaceEntry& aEntry) {
   nsAutoCString path;
   if (aIsForCompositor) {
     path.AppendLiteral("gfx/webrender/images/mapped_from_owner/");
@@ -120,29 +106,26 @@ ImageMemoryReporter::ReportSharedSurface(nsIHandleReportCallback* aHandleReport,
   path.AppendInt(aEntry.mCreatorRef);
   path.AppendLiteral(")/decoded-nonheap");
 
-  size_t surfaceSize =
-    mozilla::ipc::SharedMemory::PageAlignedSize(aEntry.mSize.height *
-                                                aEntry.mStride);
+  size_t surfaceSize = mozilla::ipc::SharedMemory::PageAlignedSize(
+      aEntry.mSize.height * aEntry.mStride);
 
   
   
   
   bool sameProcess = aEntry.mCreatorPid == base::GetCurrentProcId();
   int32_t kind = aIsForCompositor && !sameProcess
-               ? nsIMemoryReporter::KIND_NONHEAP
-               : nsIMemoryReporter::KIND_OTHER;
+                     ? nsIMemoryReporter::KIND_NONHEAP
+                     : nsIMemoryReporter::KIND_OTHER;
 
   NS_NAMED_LITERAL_CSTRING(desc, "Decoded image data stored in shared memory.");
   aHandleReport->Callback(EmptyCString(), path, kind,
-                          nsIMemoryReporter::UNITS_BYTES,
-                          surfaceSize, desc, aData);
+                          nsIMemoryReporter::UNITS_BYTES, surfaceSize, desc,
+                          aData);
 }
 
- void
-ImageMemoryReporter::AppendSharedSurfacePrefix(nsACString& aPathPrefix,
-                                               const SurfaceMemoryCounter& aCounter,
-                                               layers::SharedSurfacesMemoryReport& aSharedSurfaces)
-{
+ void ImageMemoryReporter::AppendSharedSurfacePrefix(
+    nsACString& aPathPrefix, const SurfaceMemoryCounter& aCounter,
+    layers::SharedSurfacesMemoryReport& aSharedSurfaces) {
   uint64_t extId = aCounter.Values().ExternalId();
   if (extId) {
     auto gpuEntry = aSharedSurfaces.mSurfaces.find(extId);
@@ -165,10 +148,9 @@ ImageMemoryReporter::AppendSharedSurfacePrefix(nsACString& aPathPrefix,
   }
 }
 
- void
-ImageMemoryReporter::TrimSharedSurfaces(const ImageMemoryCounter& aCounter,
-                                        layers::SharedSurfacesMemoryReport& aSharedSurfaces)
-{
+ void ImageMemoryReporter::TrimSharedSurfaces(
+    const ImageMemoryCounter& aCounter,
+    layers::SharedSurfacesMemoryReport& aSharedSurfaces) {
   if (aSharedSurfaces.mSurfaces.empty()) {
     return;
   }
@@ -185,5 +167,5 @@ ImageMemoryReporter::TrimSharedSurfaces(const ImageMemoryCounter& aCounter,
   }
 }
 
-} 
-} 
+}  
+}  

@@ -14,14 +14,15 @@ namespace mozilla {
 static LazyLogModule sAccessibleCaretLog("AccessibleCaret");
 
 #ifndef AC_LOG_BASE
-#define AC_LOG_BASE(...) MOZ_LOG(sAccessibleCaretLog, mozilla::LogLevel::Debug, (__VA_ARGS__));
+#define AC_LOG_BASE(...) \
+  MOZ_LOG(sAccessibleCaretLog, mozilla::LogLevel::Debug, (__VA_ARGS__));
 #endif
 
 #ifndef AC_LOGV_BASE
-#define AC_LOGV_BASE(...)                                                      \
+#define AC_LOGV_BASE(...) \
   MOZ_LOG(sAccessibleCaretLog, LogLevel::Verbose, (__VA_ARGS__));
 #endif
 
-} 
+}  
 
-#endif 
+#endif  

@@ -16,10 +16,9 @@
 
 namespace mozilla {
 
-class SnappyCompressOutputStream final : public nsIOutputStream
-                                       , protected detail::SnappyFrameUtils
-{
-public:
+class SnappyCompressOutputStream final : public nsIOutputStream,
+                                         protected detail::SnappyFrameUtils {
+ public:
   
   static const size_t kMaxBlockSize;
 
@@ -34,7 +33,7 @@ public:
   
   size_t BlockSize() const;
 
-private:
+ private:
   virtual ~SnappyCompressOutputStream();
 
   nsresult FlushToBaseStream();
@@ -59,11 +58,11 @@ private:
   
   bool mStreamIdentifierWritten;
 
-public:
+ public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIOUTPUTSTREAM
 };
 
-} 
+}  
 
-#endif 
+#endif  

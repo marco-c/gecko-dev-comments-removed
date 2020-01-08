@@ -10,13 +10,14 @@
 #include "nscore.h"
 #include "prio.h"
 
-namespace mozilla { namespace net {
+namespace mozilla {
+namespace net {
 
 
 
 extern nsresult AttachShutdownLayer(PRFileDesc *fd);
 
-} 
-} 
+}  
+}  
 
 #endif 

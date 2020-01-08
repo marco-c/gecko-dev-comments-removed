@@ -12,22 +12,23 @@
 
 
 
-#include <stdint.h>                     
-#include <sys/types.h>                  
-#include "LayersLogging.h"              
+#include <stdint.h>         
+#include <sys/types.h>      
+#include "LayersLogging.h"  
 #include "mozilla/gfx/gfxVars.h"
-#include "mozilla/gfx/Logging.h"        
-#include "mozilla/layers/LayersTypes.h" 
-#include "nsDebug.h"                    
-#include "nsPoint.h"                    
-#include "nsRect.h"                     
-#include "nsRegion.h"                   
-#include "nsTArray.h"                   
+#include "mozilla/gfx/Logging.h"         
+#include "mozilla/layers/LayersTypes.h"  
+#include "nsDebug.h"                     
+#include "nsPoint.h"                     
+#include "nsRect.h"                      
+#include "nsRegion.h"                    
+#include "nsTArray.h"                    
 
 namespace mozilla {
 
 struct TileCoordUnit {};
-template<> struct IsPixel<TileCoordUnit> : mozilla::TrueType {};
+template <>
+struct IsPixel<TileCoordUnit> : mozilla::TrueType {};
 
 namespace layers {
 
@@ -36,17 +37,16 @@ namespace layers {
 #define ENABLE_TILING_LOG 0
 
 #if ENABLE_TILING_LOG
-#  define TILING_LOG(...) printf_stderr(__VA_ARGS__);
+#define TILING_LOG(...) printf_stderr(__VA_ARGS__);
 #else
-#  define TILING_LOG(...)
+#define TILING_LOG(...)
 #endif
 
 
 
-static inline int floor_div(int a, int b)
-{
+static inline int floor_div(int a, int b) {
   int rem = a % b;
-  int div = a/b;
+  int div = a / b;
   if (rem == 0) {
     return div;
   } else {
@@ -54,8 +54,8 @@ static inline int floor_div(int a, int b)
     int sub;
     sub = a ^ b;
     
-    sub >>= 8*sizeof(int)-1;
-    return div+sub;
+    sub >>= 8 * sizeof(int) - 1;
+    return div + sub;
   }
 }
 
@@ -94,32 +94,24 @@ typedef gfx::IntPointTyped<TileCoordUnit> TileCoordIntPoint;
 
 
 
-struct TilesPlacement
-{
+struct TilesPlacement {
   TileCoordIntPoint mFirst;
   TileCoordIntSize mSize;
 
-  TilesPlacement(int aFirstX, int aFirstY,
-                 int aRetainedWidth, int aRetainedHeight)
-  : mFirst(aFirstX, aFirstY)
-  , mSize(aRetainedWidth, aRetainedHeight)
-  { }
+  TilesPlacement(int aFirstX, int aFirstY, int aRetainedWidth,
+                 int aRetainedHeight)
+      : mFirst(aFirstX, aFirstY), mSize(aRetainedWidth, aRetainedHeight) {}
 
-  int TileIndex(TileCoordIntPoint aCoord) const
-  {
+  int TileIndex(TileCoordIntPoint aCoord) const {
     return (aCoord.x - mFirst.x) * mSize.height + aCoord.y - mFirst.y;
   }
 
-  TileCoordIntPoint TileCoord(size_t aIndex) const
-  {
-    return TileCoordIntPoint(
-      mFirst.x + aIndex / mSize.height,
-      mFirst.y + aIndex % mSize.height
-    );
+  TileCoordIntPoint TileCoord(size_t aIndex) const {
+    return TileCoordIntPoint(mFirst.x + aIndex / mSize.height,
+                             mFirst.y + aIndex % mSize.height);
   }
 
-  bool HasTile(TileCoordIntPoint aCoord) const
-  {
+  bool HasTile(TileCoordIntPoint aCoord) const {
     return aCoord.x >= mFirst.x && aCoord.x < mFirst.x + mSize.width &&
            aCoord.y >= mFirst.y && aCoord.y < mFirst.y + mSize.height;
   }
@@ -127,40 +119,40 @@ struct TilesPlacement
 
 
 
-inline int GetTileStart(int i, int aTileLength)
-{
+inline int GetTileStart(int i, int aTileLength) {
   return (i >= 0) ? (i % aTileLength)
-                  : ((aTileLength - (-i % aTileLength)) %
-                     aTileLength);
+                  : ((aTileLength - (-i % aTileLength)) % aTileLength);
 }
 
 
-inline int RoundDownToTileEdge(int aX, int aTileLength) { return aX - GetTileStart(aX, aTileLength); }
+inline int RoundDownToTileEdge(int aX, int aTileLength) {
+  return aX - GetTileStart(aX, aTileLength);
+}
 
-template<typename Derived, typename Tile>
-class TiledLayerBuffer
-{
-public:
+template <typename Derived, typename Tile>
+class TiledLayerBuffer {
+ public:
   TiledLayerBuffer()
-    : mTiles(0, 0, 0, 0)
-    , mResolution(1)
-    , mTileSize(mozilla::gfx::gfxVars::TileSize())
-  {}
+      : mTiles(0, 0, 0, 0),
+        mResolution(1),
+        mTileSize(mozilla::gfx::gfxVars::TileSize()) {}
 
   ~TiledLayerBuffer() {}
 
-  gfx::IntPoint GetTileOffset(TileCoordIntPoint aPosition) const
-  {
+  gfx::IntPoint GetTileOffset(TileCoordIntPoint aPosition) const {
     gfx::IntSize scaledTileSize = GetScaledTileSize();
     return gfx::IntPoint(aPosition.x * scaledTileSize.width,
-                         aPosition.y * scaledTileSize.height) + mTileOrigin;
+                         aPosition.y * scaledTileSize.height) +
+           mTileOrigin;
   }
 
   const TilesPlacement& GetPlacement() const { return mTiles; }
 
   const gfx::IntSize& GetTileSize() const { return mTileSize; }
 
-  gfx::IntSize GetScaledTileSize() const { return gfx::IntSize::Round(gfx::Size(mTileSize) / mResolution); }
+  gfx::IntSize GetScaledTileSize() const {
+    return gfx::IntSize::Round(gfx::Size(mTileSize) / mResolution);
+  }
 
   unsigned int GetTileCount() const { return mRetainedTiles.Length(); }
 
@@ -179,9 +171,8 @@ public:
   void Dump(std::stringstream& aStream, const char* aPrefix, bool aDumpHtml,
             TextureDumpMode aCompress);
 
-protected:
-
-  nsIntRegion     mValidRegion;
+ protected:
+  nsIntRegion mValidRegion;
 
   
 
@@ -191,25 +182,24 @@ protected:
 
 
 
-  nsTArray<Tile>  mRetainedTiles;
-  TilesPlacement  mTiles;
-  float           mResolution;
-  gfx::IntSize    mTileSize;
-  gfx::IntPoint   mTileOrigin;
+  nsTArray<Tile> mRetainedTiles;
+  TilesPlacement mTiles;
+  float mResolution;
+  gfx::IntSize mTileSize;
+  gfx::IntPoint mTileOrigin;
 };
 
-template<typename Derived, typename Tile> void
-TiledLayerBuffer<Derived, Tile>::Dump(std::stringstream& aStream,
-                                      const char* aPrefix,
-                                      bool aDumpHtml,
-                                      TextureDumpMode aCompress)
-{
+template <typename Derived, typename Tile>
+void TiledLayerBuffer<Derived, Tile>::Dump(std::stringstream& aStream,
+                                           const char* aPrefix, bool aDumpHtml,
+                                           TextureDumpMode aCompress) {
   for (size_t i = 0; i < mRetainedTiles.Length(); ++i) {
     const TileCoordIntPoint tileCoord = mTiles.TileCoord(i);
     gfx::IntPoint tileOffset = GetTileOffset(tileCoord);
 
-    aStream << "\n" << aPrefix << "Tile (x=" <<
-      tileOffset.x << ", y=" << tileOffset.y << "): ";
+    aStream << "\n"
+            << aPrefix << "Tile (x=" << tileOffset.x << ", y=" << tileOffset.y
+            << "): ";
     if (!mRetainedTiles[i].IsPlaceholderTile()) {
       mRetainedTiles[i].DumpTexture(aStream, aCompress);
     } else {
@@ -218,7 +208,7 @@ TiledLayerBuffer<Derived, Tile>::Dump(std::stringstream& aStream,
   }
 }
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

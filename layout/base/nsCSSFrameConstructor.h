@@ -51,12 +51,11 @@ class CharacterData;
 class Text;
 class FlattenedChildIterator;
 
-} 
-} 
+}  
+}  
 
-class nsCSSFrameConstructor final : public nsFrameManager
-{
-public:
+class nsCSSFrameConstructor final : public nsFrameManager {
+ public:
   typedef mozilla::ComputedStyle ComputedStyle;
   typedef mozilla::CSSPseudoElementType CSSPseudoElementType;
   typedef mozilla::dom::Element Element;
@@ -66,20 +65,18 @@ public:
   friend class mozilla::RestyleManager;
 
   nsCSSFrameConstructor(nsIDocument* aDocument, nsIPresShell* aPresShell);
-  ~nsCSSFrameConstructor() {
-    MOZ_ASSERT(mFCItemsInUse == 0);
-  }
+  ~nsCSSFrameConstructor() { MOZ_ASSERT(mFCItemsInUse == 0); }
 
   
   static void GetAlternateTextFor(Element* aContent,
                                   nsAtom* aTag,  
                                   nsAString& aAltText);
 
-private:
+ private:
   nsCSSFrameConstructor(const nsCSSFrameConstructor& aCopy) = delete;
   nsCSSFrameConstructor& operator=(const nsCSSFrameConstructor& aCopy) = delete;
 
-public:
+ public:
   
 
 
@@ -92,27 +89,21 @@ public:
 
 
 
-  enum class InsertionKind
-  {
+  enum class InsertionKind {
     Sync,
     Async,
   };
 
-  mozilla::RestyleManager* RestyleManager() const
-    { return mPresShell->GetPresContext()->RestyleManager(); }
+  mozilla::RestyleManager* RestyleManager() const {
+    return mPresShell->GetPresContext()->RestyleManager();
+  }
 
   nsIFrame* ConstructRootFrame();
 
   void ReconstructDocElementHierarchy(InsertionKind);
 
-
-private:
-
-
-  enum Operation {
-    CONTENTAPPEND,
-    CONTENTINSERT
-  };
+ private:
+  enum Operation { CONTENTAPPEND, CONTENTINSERT };
 
   
   
@@ -127,23 +118,16 @@ private:
   
   
   void IssueSingleInsertNofications(nsIContent* aStartChild,
-                                    nsIContent* aEndChild,
-                                    InsertionKind);
+                                    nsIContent* aEndChild, InsertionKind);
 
   
 
 
-  struct InsertionPoint
-  {
-    InsertionPoint()
-      : mParentFrame(nullptr)
-      , mContainer(nullptr)
-    {}
+  struct InsertionPoint {
+    InsertionPoint() : mParentFrame(nullptr), mContainer(nullptr) {}
 
     InsertionPoint(nsContainerFrame* aParentFrame, nsIContent* aContainer)
-      : mParentFrame(aParentFrame)
-      , mContainer(aContainer)
-    {}
+        : mParentFrame(aParentFrame), mContainer(aContainer) {}
 
     
 
@@ -178,12 +162,11 @@ private:
 
 
   InsertionPoint GetRangeInsertionPoint(nsIContent* aStartChild,
-                                        nsIContent* aEndChild,
-                                        InsertionKind);
+                                        nsIContent* aEndChild, InsertionKind);
 
   
-  bool MaybeRecreateForFrameset(nsIFrame* aParentFrame,
-                                nsIContent* aStartChild,
+  
+  bool MaybeRecreateForFrameset(nsIFrame* aParentFrame, nsIContent* aStartChild,
                                 nsIContent* aEndChild);
 
   
@@ -206,7 +189,7 @@ private:
 
   void StyleNewChildRange(nsIContent* aStartChild, nsIContent* aEndChild);
 
-public:
+ public:
   
 
 
@@ -257,8 +240,7 @@ public:
 
   
   
-  void ContentInserted(nsIContent* aChild,
-                       nsILayoutHistoryState* aFrameState,
+  void ContentInserted(nsIContent* aChild, nsILayoutHistoryState* aFrameState,
                        InsertionKind aInsertionKind);
 
   
@@ -268,8 +250,7 @@ public:
   
   
   
-  void ContentRangeInserted(nsIContent* aStartChild,
-                            nsIContent* aEndChild,
+  void ContentRangeInserted(nsIContent* aStartChild, nsIContent* aEndChild,
                             nsILayoutHistoryState* aFrameState,
                             InsertionKind aInsertionKind);
 
@@ -294,8 +275,7 @@ public:
 
 
 
-  bool ContentRemoved(nsIContent* aChild,
-                      nsIContent* aOldNextSibling,
+  bool ContentRemoved(nsIContent* aChild, nsIContent* aOldNextSibling,
                       RemoveFlags aFlags);
 
   void CharacterDataChanged(nsIContent* aContent,
@@ -307,7 +287,8 @@ public:
   
   
   
-  bool EnsureFrameForTextNodeIsCreatedAfterFlush(mozilla::dom::CharacterData* aContent);
+  bool EnsureFrameForTextNodeIsCreatedAfterFlush(
+      mozilla::dom::CharacterData* aContent);
 
   
   void GenerateChildFrames(nsContainerFrame* aFrame);
@@ -334,10 +315,9 @@ public:
   bool DestroyFramesFor(Element* aElement);
 
   
-  nsIFrame* CreateContinuingFrame(nsPresContext*    aPresContext,
-                                  nsIFrame*         aFrame,
+  nsIFrame* CreateContinuingFrame(nsPresContext* aPresContext, nsIFrame* aFrame,
                                   nsContainerFrame* aParentFrame,
-                                  bool              aIsFluid = true);
+                                  bool aIsFluid = true);
 
   
   nsresult ReplicateFixedFrames(nsPageContentFrame* aParentFrame);
@@ -363,25 +343,24 @@ public:
   nsIFrame* GetPageSequenceFrame() { return mPageSequenceFrame; }
 
   
-  nsContainerFrame* GetDocElementContainingBlock()
-    { return mDocElementContainingBlock; }
+  nsContainerFrame* GetDocElementContainingBlock() {
+    return mDocElementContainingBlock;
+  }
 
   void AddSizeOfIncludingThis(nsWindowSizes& aSizes) const;
 
-private:
+ private:
   struct FrameConstructionItem;
   class FrameConstructionItemList;
 
-  nsContainerFrame* ConstructPageFrame(nsIPresShell*      aPresShell,
-                                       nsContainerFrame*  aParentFrame,
-                                       nsIFrame*          aPrevPageFrame,
+  nsContainerFrame* ConstructPageFrame(nsIPresShell* aPresShell,
+                                       nsContainerFrame* aParentFrame,
+                                       nsIFrame* aPrevPageFrame,
                                        nsContainerFrame*& aCanvasFrame);
 
-  void InitAndRestoreFrame (const nsFrameConstructorState& aState,
-                            nsIContent*                    aContent,
-                            nsContainerFrame*              aParentFrame,
-                            nsIFrame*                      aNewFrame,
-                            bool                           aAllowCounters = true);
+  void InitAndRestoreFrame(const nsFrameConstructorState& aState,
+                           nsIContent* aContent, nsContainerFrame* aParentFrame,
+                           nsIFrame* aNewFrame, bool aAllowCounters = true);
 
   already_AddRefed<ComputedStyle> ResolveComputedStyle(nsIContent* aContent);
 
@@ -391,9 +370,9 @@ private:
   
   
   void AddFrameConstructionItems(nsFrameConstructorState& aState,
-                                 nsIContent*              aContent,
-                                 bool                     aSuppressWhiteSpaceOptimizations,
-                                 const InsertionPoint&    aInsertion,
+                                 nsIContent* aContent,
+                                 bool aSuppressWhiteSpaceOptimizations,
+                                 const InsertionPoint& aInsertion,
                                  FrameConstructionItemList& aItems);
 
   
@@ -415,8 +394,8 @@ private:
   
   
   
-  nsIFrame* ConstructDocElementFrame(Element*                 aDocElement,
-                                     nsILayoutHistoryState*   aFrameState);
+  nsIFrame* ConstructDocElementFrame(Element* aDocElement,
+                                     nsILayoutHistoryState* aFrameState);
 
   
   
@@ -438,22 +417,18 @@ private:
 
 
   void CreateAttributeContent(const Element& aParentContent,
-                              nsIFrame* aParentFrame,
-                              int32_t aAttrNamespace,
-                              nsAtom* aAttrName,
-                              ComputedStyle* aComputedStyle,
+                              nsIFrame* aParentFrame, int32_t aAttrNamespace,
+                              nsAtom* aAttrName, ComputedStyle* aComputedStyle,
                               nsCOMArray<nsIContent>& aGeneratedContent,
-                              nsIContent** aNewContent,
-                              nsIFrame** aNewFrame);
+                              nsIContent** aNewContent, nsIFrame** aNewFrame);
 
   
 
 
 
-  already_AddRefed<nsIContent> CreateGenConTextNode(nsFrameConstructorState& aState,
-                                                    const nsString& aString,
-                                                    RefPtr<nsTextNode>* aText,
-                                                    nsGenConInitializer* aInitializer);
+  already_AddRefed<nsIContent> CreateGenConTextNode(
+      nsFrameConstructorState& aState, const nsString& aString,
+      RefPtr<nsTextNode>* aText, nsGenConInitializer* aInitializer);
 
   
 
@@ -463,16 +438,14 @@ private:
 
 
 
-  already_AddRefed<nsIContent> CreateGeneratedContent(nsFrameConstructorState& aState,
-                                                      const Element& aOriginatingElement,
-                                                      ComputedStyle& aComputedStyle,
-                                                      uint32_t aContentIndex);
+  already_AddRefed<nsIContent> CreateGeneratedContent(
+      nsFrameConstructorState& aState, const Element& aOriginatingElement,
+      ComputedStyle& aComputedStyle, uint32_t aContentIndex);
 
   
   void CreateGeneratedContentItem(nsFrameConstructorState& aState,
                                   nsContainerFrame* aParentFrame,
-                                  Element& aOriginatingElement,
-                                  ComputedStyle&,
+                                  Element& aOriginatingElement, ComputedStyle&,
                                   CSSPseudoElementType aPseudoElement,
                                   FrameConstructionItemList& aItems);
 
@@ -481,11 +454,10 @@ private:
   
   
   
-  void AppendFramesToParent(nsFrameConstructorState&       aState,
-                            nsContainerFrame*              aParentFrame,
-                            nsFrameItems&                  aFrameList,
-                            nsIFrame*                      aPrevSibling,
-                            bool                           aIsRecursiveCall = false);
+  void AppendFramesToParent(nsFrameConstructorState& aState,
+                            nsContainerFrame* aParentFrame,
+                            nsFrameItems& aFrameList, nsIFrame* aPrevSibling,
+                            bool aIsRecursiveCall = false);
 
   
   
@@ -493,39 +465,39 @@ private:
 
 
   nsIFrame* ConstructTable(nsFrameConstructorState& aState,
-                           FrameConstructionItem&   aItem,
-                           nsContainerFrame*        aParentFrame,
-                           const nsStyleDisplay*    aDisplay,
-                           nsFrameItems&            aFrameItems);
+                           FrameConstructionItem& aItem,
+                           nsContainerFrame* aParentFrame,
+                           const nsStyleDisplay* aDisplay,
+                           nsFrameItems& aFrameItems);
 
   
 
 
   nsIFrame* ConstructTableRowOrRowGroup(nsFrameConstructorState& aState,
-                                        FrameConstructionItem&   aItem,
-                                        nsContainerFrame*        aParentFrame,
-                                        const nsStyleDisplay*    aStyleDisplay,
-                                        nsFrameItems&            aFrameItems);
+                                        FrameConstructionItem& aItem,
+                                        nsContainerFrame* aParentFrame,
+                                        const nsStyleDisplay* aStyleDisplay,
+                                        nsFrameItems& aFrameItems);
 
   
 
 
   nsIFrame* ConstructTableCol(nsFrameConstructorState& aState,
-                              FrameConstructionItem&   aItem,
-                              nsContainerFrame*        aParentFrame,
-                              const nsStyleDisplay*    aStyleDisplay,
-                              nsFrameItems&            aFrameItems);
+                              FrameConstructionItem& aItem,
+                              nsContainerFrame* aParentFrame,
+                              const nsStyleDisplay* aStyleDisplay,
+                              nsFrameItems& aFrameItems);
 
   
 
 
   nsIFrame* ConstructTableCell(nsFrameConstructorState& aState,
-                               FrameConstructionItem&   aItem,
-                               nsContainerFrame*        aParentFrame,
-                               const nsStyleDisplay*    aStyleDisplay,
-                               nsFrameItems&            aFrameItems);
+                               FrameConstructionItem& aItem,
+                               nsContainerFrame* aParentFrame,
+                               const nsStyleDisplay* aStyleDisplay,
+                               nsFrameItems& aFrameItems);
 
-private:
+ private:
   
 
   enum ParentType {
@@ -546,10 +518,10 @@ private:
 #define FCDATA_PARENT_TYPE_OFFSET 28
   
 
-#define FCDATA_DESIRED_PARENT_TYPE(_bits)           \
+#define FCDATA_DESIRED_PARENT_TYPE(_bits) \
   ParentType((_bits) >> FCDATA_PARENT_TYPE_OFFSET)
   
-#define FCDATA_DESIRED_PARENT_TYPE_TO_BITS(_type)     \
+#define FCDATA_DESIRED_PARENT_TYPE_TO_BITS(_type) \
   (((uint32_t)(_type)) << FCDATA_PARENT_TYPE_OFFSET)
 
   
@@ -561,18 +533,15 @@ private:
   static ParentType GetParentType(mozilla::LayoutFrameType aFrameType);
 
   static bool IsRubyParentType(ParentType aParentType) {
-    return (aParentType == eTypeRuby ||
-            aParentType == eTypeRubyBase ||
+    return (aParentType == eTypeRuby || aParentType == eTypeRubyBase ||
             aParentType == eTypeRubyBaseContainer ||
             aParentType == eTypeRubyText ||
             aParentType == eTypeRubyTextContainer);
   }
 
   static bool IsTableParentType(ParentType aParentType) {
-    return (aParentType == eTypeTable ||
-            aParentType == eTypeRow ||
-            aParentType == eTypeRowGroup ||
-            aParentType == eTypeColGroup);
+    return (aParentType == eTypeTable || aParentType == eTypeRow ||
+            aParentType == eTypeRowGroup || aParentType == eTypeColGroup);
   }
 
   
@@ -582,9 +551,11 @@ private:
 
 
 
-  typedef nsIFrame* (* FrameCreationFunc)(nsIPresShell*, ComputedStyle*);
-  typedef nsContainerFrame* (* ContainerFrameCreationFunc)(nsIPresShell*, ComputedStyle*);
-  typedef nsBlockFrame* (* BlockFrameCreationFunc)(nsIPresShell*, ComputedStyle*);
+  typedef nsIFrame* (*FrameCreationFunc)(nsIPresShell*, ComputedStyle*);
+  typedef nsContainerFrame* (*ContainerFrameCreationFunc)(nsIPresShell*,
+                                                          ComputedStyle*);
+  typedef nsBlockFrame* (*BlockFrameCreationFunc)(nsIPresShell*,
+                                                  ComputedStyle*);
 
   
 
@@ -593,8 +564,8 @@ private:
 
 
   struct FrameConstructionData;
-  typedef const FrameConstructionData*
-    (* FrameConstructionDataGetter)(const Element&, ComputedStyle&);
+  typedef const FrameConstructionData* (*FrameConstructionDataGetter)(
+      const Element&, ComputedStyle&);
 
   
 
@@ -616,12 +587,10 @@ private:
 
 
 
-  typedef nsIFrame*
-    (nsCSSFrameConstructor::* FrameFullConstructor)(nsFrameConstructorState& aState,
-                                                    FrameConstructionItem& aItem,
-                                                    nsContainerFrame* aParentFrame,
-                                                    const nsStyleDisplay* aStyleDisplay,
-                                                    nsFrameItems& aFrameItems);
+  typedef nsIFrame* (nsCSSFrameConstructor::*FrameFullConstructor)(
+      nsFrameConstructorState& aState, FrameConstructionItem& aItem,
+      nsContainerFrame* aParentFrame, const nsStyleDisplay* aStyleDisplay,
+      nsFrameItems& aFrameItems);
 
   
 
@@ -793,8 +762,7 @@ private:
   
   
   
-  struct MOZ_STACK_CLASS XBLBindingLoadInfo
-  {
+  struct MOZ_STACK_CLASS XBLBindingLoadInfo {
     RefPtr<ComputedStyle> mStyle;
     mozilla::UniquePtr<PendingBinding> mPendingBinding;
     nsAtom* mTag = nullptr;
@@ -812,12 +780,10 @@ private:
   };
 
   
-  XBLBindingLoadInfo LoadXBLBindingIfNeeded(nsIContent&,
-                                            ComputedStyle&,
+  XBLBindingLoadInfo LoadXBLBindingIfNeeded(nsIContent&, ComputedStyle&,
                                             uint32_t aFlags);
 
-  const FrameConstructionData* FindDataForContent(nsIContent&,
-                                                  ComputedStyle&,
+  const FrameConstructionData* FindDataForContent(nsIContent&, ComputedStyle&,
                                                   nsIFrame* aParentFrame,
                                                   nsAtom* aTag,
                                                   uint32_t aFlags);
@@ -825,11 +791,9 @@ private:
   
   static const FrameConstructionData* FindTextData(const Text&,
                                                    nsIFrame* aParentFrame);
-  const FrameConstructionData* FindElementData(const Element&,
-                                               ComputedStyle&,
+  const FrameConstructionData* FindElementData(const Element&, ComputedStyle&,
                                                nsIFrame* aParentFrame,
-                                               nsAtom* aTag,
-                                               uint32_t aFlags);
+                                               nsAtom* aTag, uint32_t aFlags);
   const FrameConstructionData* FindElementTagData(const Element&,
                                                   ComputedStyle&,
                                                   nsIFrame* aParentFrame,
@@ -841,12 +805,9 @@ private:
 
 
 
-  static const FrameConstructionData*
-    FindDataByInt(int32_t aInt,
-                  const Element&,
-                  ComputedStyle&,
-                  const FrameConstructionDataByInt* aDataPtr,
-                  uint32_t aDataLength);
+  static const FrameConstructionData* FindDataByInt(
+      int32_t aInt, const Element&, ComputedStyle&,
+      const FrameConstructionDataByInt* aDataPtr, uint32_t aDataLength);
 
   
 
@@ -857,28 +818,27 @@ private:
 
 
 
-  static const FrameConstructionData*
-    FindDataByTag(nsAtom* aTag,
-                  const Element& aElement,
-                  ComputedStyle& aComputedStyle,
-                  const FrameConstructionDataByTag* aDataPtr,
-                  uint32_t aDataLength);
+  static const FrameConstructionData* FindDataByTag(
+      nsAtom* aTag, const Element& aElement, ComputedStyle& aComputedStyle,
+      const FrameConstructionDataByTag* aDataPtr, uint32_t aDataLength);
 
   
 
 
-  class FrameConstructionItemList
-  {
-  public:
-    void Reset(nsCSSFrameConstructor* aFCtor)
-    {
+  class FrameConstructionItemList {
+   public:
+    void Reset(nsCSSFrameConstructor* aFCtor) {
       Destroy(aFCtor);
       this->~FrameConstructionItemList();
       new (this) FrameConstructionItemList();
     }
 
-    void SetLineBoundaryAtStart(bool aBoundary) { mLineBoundaryAtStart = aBoundary; }
-    void SetLineBoundaryAtEnd(bool aBoundary) { mLineBoundaryAtEnd = aBoundary; }
+    void SetLineBoundaryAtStart(bool aBoundary) {
+      mLineBoundaryAtStart = aBoundary;
+    }
+    void SetLineBoundaryAtEnd(bool aBoundary) {
+      mLineBoundaryAtEnd = aBoundary;
+    }
     void SetParentHasNoXBLChildren(bool aHasNoXBLChildren) {
       mParentHasNoXBLChildren = aHasNoXBLChildren;
     }
@@ -897,17 +857,14 @@ private:
     
     
     
-    FrameConstructionItem* AppendItem(nsCSSFrameConstructor* aFCtor,
-                                      const FrameConstructionData* aFCData,
-                                      nsIContent* aContent,
-                                      PendingBinding* aPendingBinding,
-                                      already_AddRefed<ComputedStyle>&& aComputedStyle,
-                                      bool aSuppressWhiteSpaceOptimizations)
-    {
-      FrameConstructionItem* item =
-        new (aFCtor) FrameConstructionItem(aFCData, aContent,
-                                           aPendingBinding, std::move(aComputedStyle),
-                                           aSuppressWhiteSpaceOptimizations);
+    FrameConstructionItem* AppendItem(
+        nsCSSFrameConstructor* aFCtor, const FrameConstructionData* aFCData,
+        nsIContent* aContent, PendingBinding* aPendingBinding,
+        already_AddRefed<ComputedStyle>&& aComputedStyle,
+        bool aSuppressWhiteSpaceOptimizations) {
+      FrameConstructionItem* item = new (aFCtor) FrameConstructionItem(
+          aFCData, aContent, aPendingBinding, std::move(aComputedStyle),
+          aSuppressWhiteSpaceOptimizations);
       mItems.insertBack(item);
       ++mItemCount;
       ++mDesiredParentCounts[item->DesiredParentType()];
@@ -915,17 +872,14 @@ private:
     }
 
     
-    FrameConstructionItem* PrependItem(nsCSSFrameConstructor* aFCtor,
-                                       const FrameConstructionData* aFCData,
-                                       nsIContent* aContent,
-                                       PendingBinding* aPendingBinding,
-                                       already_AddRefed<ComputedStyle>&& aComputedStyle,
-                                       bool aSuppressWhiteSpaceOptimizations)
-    {
-      FrameConstructionItem* item =
-        new (aFCtor) FrameConstructionItem(aFCData, aContent,
-                                           aPendingBinding, std::move(aComputedStyle),
-                                           aSuppressWhiteSpaceOptimizations);
+    FrameConstructionItem* PrependItem(
+        nsCSSFrameConstructor* aFCtor, const FrameConstructionData* aFCData,
+        nsIContent* aContent, PendingBinding* aPendingBinding,
+        already_AddRefed<ComputedStyle>&& aComputedStyle,
+        bool aSuppressWhiteSpaceOptimizations) {
+      FrameConstructionItem* item = new (aFCtor) FrameConstructionItem(
+          aFCData, aContent, aPendingBinding, std::move(aComputedStyle),
+          aSuppressWhiteSpaceOptimizations);
       mItems.insertFront(item);
       ++mItemCount;
       ++mDesiredParentCounts[item->DesiredParentType()];
@@ -937,15 +891,11 @@ private:
     void LineParticipantItemAdded() { ++mLineParticipantCount; }
 
     class Iterator {
-    public:
+     public:
       explicit Iterator(FrameConstructionItemList& aList)
-        : mCurrent(aList.mItems.getFirst())
-        , mList(aList)
-      {}
-      Iterator(const Iterator& aOther) :
-        mCurrent(aOther.mCurrent),
-        mList(aOther.mList)
-      {}
+          : mCurrent(aList.mItems.getFirst()), mList(aList) {}
+      Iterator(const Iterator& aOther)
+          : mCurrent(aOther.mCurrent), mList(aOther.mList) {}
 
       bool operator==(const Iterator& aOther) const {
         MOZ_ASSERT(&mList == &aOther.mList, "Iterators for different lists?");
@@ -960,9 +910,7 @@ private:
         return *this;
       }
 
-      FrameConstructionItemList* List() {
-        return &mList;
-      }
+      FrameConstructionItemList* List() { return &mList; }
 
       FrameConstructionItem& item() {
         MOZ_ASSERT(!IsDone(), "Should have checked IsDone()!");
@@ -1000,15 +948,13 @@ private:
       
       
       inline bool SkipItemsThatNeedAnonFlexOrGridItem(
-        const nsFrameConstructorState& aState,
-        bool aIsWebkitBox);
+          const nsFrameConstructorState& aState, bool aIsWebkitBox);
 
       
       
       
       inline bool SkipItemsThatDontNeedAnonFlexOrGridItem(
-        const nsFrameConstructorState& aState,
-        bool aIsWebkitBox);
+          const nsFrameConstructorState& aState, bool aIsWebkitBox);
 
       
       
@@ -1032,8 +978,8 @@ private:
       
       
       
-      void AppendItemsToList(nsCSSFrameConstructor*     aFCtor,
-                             const Iterator&            aEnd,
+      void AppendItemsToList(nsCSSFrameConstructor* aFCtor,
+                             const Iterator& aEnd,
                              FrameConstructionItemList& aTargetList);
 
       
@@ -1050,27 +996,25 @@ private:
       
       void DeleteItemsTo(nsCSSFrameConstructor* aFCtor, const Iterator& aEnd);
 
-    private:
+     private:
       FrameConstructionItem* mCurrent;
       FrameConstructionItemList& mList;
     };
 
-  protected:
-    FrameConstructionItemList() :
-      mInlineCount(0),
-      mBlockCount(0),
-      mLineParticipantCount(0),
-      mItemCount(0),
-      mLineBoundaryAtStart(false),
-      mLineBoundaryAtEnd(false),
-      mParentHasNoXBLChildren(false)
-    {
+   protected:
+    FrameConstructionItemList()
+        : mInlineCount(0),
+          mBlockCount(0),
+          mLineParticipantCount(0),
+          mItemCount(0),
+          mLineBoundaryAtStart(false),
+          mLineBoundaryAtEnd(false),
+          mParentHasNoXBLChildren(false) {
       MOZ_COUNT_CTOR(FrameConstructionItemList);
       memset(mDesiredParentCounts, 0, sizeof(mDesiredParentCounts));
     }
 
-    void Destroy(nsCSSFrameConstructor* aFCtor)
-    {
+    void Destroy(nsCSSFrameConstructor* aFCtor) {
       while (FrameConstructionItem* item = mItems.popFirst()) {
         item->Delete(aFCtor);
       }
@@ -1078,16 +1022,16 @@ private:
 
     
     friend struct FrameConstructionItem;
-    ~FrameConstructionItemList()
-    {
+    ~FrameConstructionItemList() {
       MOZ_COUNT_DTOR(FrameConstructionItemList);
       MOZ_ASSERT(mItems.isEmpty(), "leaking");
     }
-  private:
+
+   private:
     
     void* operator new(size_t) = delete;
     void* operator new[](size_t) = delete;
-#ifdef _MSC_VER  
+#ifdef _MSC_VER 
     void operator delete(void*) { MOZ_CRASH("FrameConstructionItemList::del"); }
 #else
     void operator delete(void*) = delete;
@@ -1097,11 +1041,10 @@ private:
     void* operator new(size_t, void* aPtr) { return aPtr; }
 
     struct UndisplayedItem {
-      UndisplayedItem(nsIContent* aContent, ComputedStyle* aComputedStyle) :
-        mContent(aContent), mComputedStyle(aComputedStyle)
-      {}
+      UndisplayedItem(nsIContent* aContent, ComputedStyle* aComputedStyle)
+          : mContent(aContent), mComputedStyle(aComputedStyle) {}
 
-      nsIContent * const mContent;
+      nsIContent* const mContent;
       RefPtr<ComputedStyle> mComputedStyle;
     };
 
@@ -1127,15 +1070,17 @@ private:
 
   
   struct MOZ_RAII AutoFrameConstructionItemList final
-    : public FrameConstructionItemList
-  {
-    template<typename... Args>
-    explicit AutoFrameConstructionItemList(nsCSSFrameConstructor* aFCtor, Args&&... args)
-      : FrameConstructionItemList(std::forward<Args>(args)...)
-      , mFCtor(aFCtor)
-    { MOZ_ASSERT(mFCtor); }
+      : public FrameConstructionItemList {
+    template <typename... Args>
+    explicit AutoFrameConstructionItemList(nsCSSFrameConstructor* aFCtor,
+                                           Args&&... args)
+        : FrameConstructionItemList(std::forward<Args>(args)...),
+          mFCtor(aFCtor) {
+      MOZ_ASSERT(mFCtor);
+    }
     ~AutoFrameConstructionItemList() { Destroy(mFCtor); }
-  private:
+
+   private:
     nsCSSFrameConstructor* const mFCtor;
   };
 
@@ -1147,30 +1092,32 @@ private:
 
 
   struct FrameConstructionItem final
-    : public mozilla::LinkedListElement<FrameConstructionItem>
-  {
+      : public mozilla::LinkedListElement<FrameConstructionItem> {
     FrameConstructionItem(const FrameConstructionData* aFCData,
-                          nsIContent* aContent,
-                          PendingBinding* aPendingBinding,
+                          nsIContent* aContent, PendingBinding* aPendingBinding,
                           already_AddRefed<ComputedStyle>&& aComputedStyle,
                           bool aSuppressWhiteSpaceOptimizations)
-    : mFCData(aFCData), mContent(aContent),
-      mPendingBinding(aPendingBinding), mComputedStyle(std::move(aComputedStyle)),
-      mSuppressWhiteSpaceOptimizations(aSuppressWhiteSpaceOptimizations),
-      mIsText(false), mIsGeneratedContent(false),
-      mIsAnonymousContentCreatorContent(false),
-      mIsRootPopupgroup(false), mIsAllInline(false), mIsBlock(false),
-      mIsPopup(false),
-      mIsLineParticipant(false)
-    {
+        : mFCData(aFCData),
+          mContent(aContent),
+          mPendingBinding(aPendingBinding),
+          mComputedStyle(std::move(aComputedStyle)),
+          mSuppressWhiteSpaceOptimizations(aSuppressWhiteSpaceOptimizations),
+          mIsText(false),
+          mIsGeneratedContent(false),
+          mIsAnonymousContentCreatorContent(false),
+          mIsRootPopupgroup(false),
+          mIsAllInline(false),
+          mIsBlock(false),
+          mIsPopup(false),
+          mIsLineParticipant(false) {
       MOZ_COUNT_CTOR(FrameConstructionItem);
     }
 
-    void* operator new(size_t, nsCSSFrameConstructor* aFCtor)
-    { return aFCtor->AllocateFCItem(); }
+    void* operator new(size_t, nsCSSFrameConstructor* aFCtor) {
+      return aFCtor->AllocateFCItem();
+    }
 
-    void Delete(nsCSSFrameConstructor* aFCtor)
-    {
+    void Delete(nsCSSFrameConstructor* aFCtor) {
       mChildItems.Destroy(aFCtor);
       if (mIsGeneratedContent) {
         mContent->UnbindFromTree();
@@ -1221,48 +1168,48 @@ private:
     RefPtr<ComputedStyle> mComputedStyle;
     
     
-    bool mSuppressWhiteSpaceOptimizations:1;
+    bool mSuppressWhiteSpaceOptimizations : 1;
     
-    bool mIsText:1;
-    
-    
-    bool mIsGeneratedContent:1;
-    
-    bool mIsAnonymousContentCreatorContent:1;
-    
-    bool mIsRootPopupgroup:1;
+    bool mIsText : 1;
     
     
+    bool mIsGeneratedContent : 1;
     
+    bool mIsAnonymousContentCreatorContent : 1;
     
-    bool mIsAllInline:1;
+    bool mIsRootPopupgroup : 1;
     
     
     
     
+    bool mIsAllInline : 1;
     
-    bool mIsBlock:1;
     
     
-    bool mIsPopup:1;
     
-    bool mIsLineParticipant:1;
+    
+    bool mIsBlock : 1;
+    
+    
+    bool mIsPopup : 1;
+    
+    bool mIsLineParticipant : 1;
 
-  private:
+   private:
     
     
     void* operator new(size_t) = delete;
     void* operator new[](size_t) = delete;
-#ifdef _MSC_VER  
+#ifdef _MSC_VER 
     void operator delete(void*) { MOZ_CRASH("FrameConstructionItem::delete"); }
 #else
     void operator delete(void*) = delete;
 #endif
     void operator delete[](void*) = delete;
-    FrameConstructionItem(const FrameConstructionItem& aOther) = delete; 
+    FrameConstructionItem(const FrameConstructionItem& aOther) =
+        delete; 
     
-    ~FrameConstructionItem()
-    {
+    ~FrameConstructionItem() {
       MOZ_COUNT_DTOR(FrameConstructionItem);
       MOZ_ASSERT(mChildItems.IsEmpty(), "leaking");
     }
@@ -1275,16 +1222,19 @@ private:
 
 
 
-  struct MOZ_RAII AutoFrameConstructionItem final
-  {
-    template<typename... Args>
-    explicit AutoFrameConstructionItem(nsCSSFrameConstructor* aFCtor, Args&&... args)
-      : mFCtor(aFCtor)
-      , mItem(new (aFCtor) FrameConstructionItem(std::forward<Args>(args)...))
-    { MOZ_ASSERT(mFCtor); }
+  struct MOZ_RAII AutoFrameConstructionItem final {
+    template <typename... Args>
+    explicit AutoFrameConstructionItem(nsCSSFrameConstructor* aFCtor,
+                                       Args&&... args)
+        : mFCtor(aFCtor),
+          mItem(new (aFCtor)
+                    FrameConstructionItem(std::forward<Args>(args)...)) {
+      MOZ_ASSERT(mFCtor);
+    }
     ~AutoFrameConstructionItem() { mItem->Delete(mFCtor); }
     operator FrameConstructionItem&() { return *mItem; }
-  private:
+
+   private:
     nsCSSFrameConstructor* const mFCtor;
     FrameConstructionItem* const mItem;
   };
@@ -1300,8 +1250,7 @@ private:
                                        FrameConstructionItemList& aItems,
                                        nsIFrame* aParentFrame);
 
-  enum RubyWhitespaceType
-  {
+  enum RubyWhitespaceType {
     eRubyNotWhitespace,
     eRubyInterLevelWhitespace,
     
@@ -1314,15 +1263,15 @@ private:
 
 
   static inline RubyWhitespaceType ComputeRubyWhitespaceType(
-    mozilla::StyleDisplay aPrevDisplay, mozilla::StyleDisplay aNextDisplay);
+      mozilla::StyleDisplay aPrevDisplay, mozilla::StyleDisplay aNextDisplay);
 
   
 
 
 
   static inline RubyWhitespaceType InterpretRubyWhitespace(
-    nsFrameConstructorState& aState,
-    const FCItemIterator& aStartIter, const FCItemIterator& aEndIter);
+      nsFrameConstructorState& aState, const FCItemIterator& aStartIter,
+      const FCItemIterator& aEndIter);
 
   
 
@@ -1337,21 +1286,21 @@ private:
 
 
   inline void WrapItemsInPseudoRubyLevelContainer(
-    nsFrameConstructorState& aState, FCItemIterator& aIter,
-    ComputedStyle* aParentStyle, nsIContent* aParentContent);
+      nsFrameConstructorState& aState, FCItemIterator& aIter,
+      ComputedStyle* aParentStyle, nsIContent* aParentContent);
 
   
 
 
   inline void TrimLeadingAndTrailingWhitespaces(
-    nsFrameConstructorState& aState, FrameConstructionItemList& aItems);
+      nsFrameConstructorState& aState, FrameConstructionItemList& aItems);
 
   
 
 
   inline void CreateNeededPseudoInternalRubyBoxes(
-    nsFrameConstructorState& aState,
-    FrameConstructionItemList& aItems, nsIFrame* aParentFrame);
+      nsFrameConstructorState& aState, FrameConstructionItemList& aItems,
+      nsIFrame* aParentFrame);
 
   
 
@@ -1390,41 +1339,41 @@ private:
   
   
   
-  void AdjustParentFrame(nsContainerFrame**           aParentFrame,
+  void AdjustParentFrame(nsContainerFrame** aParentFrame,
                          const FrameConstructionData* aFCData,
-                         ComputedStyle*              aComputedStyle);
+                         ComputedStyle* aComputedStyle);
 
   
 
-protected:
-  static nsIFrame* CreatePlaceholderFrameFor(nsIPresShell*     aPresShell,
-                                             nsIContent*       aContent,
-                                             nsIFrame*         aFrame,
+ protected:
+  static nsIFrame* CreatePlaceholderFrameFor(nsIPresShell* aPresShell,
+                                             nsIContent* aContent,
+                                             nsIFrame* aFrame,
                                              nsContainerFrame* aParentFrame,
-                                             nsIFrame*         aPrevInFlow,
-                                             nsFrameState      aTypeBit);
+                                             nsIFrame* aPrevInFlow,
+                                             nsFrameState aTypeBit);
 
   static nsIFrame* CreateBackdropFrameFor(nsIPresShell* aPresShell,
                                           nsIContent* aContent,
                                           nsIFrame* aFrame,
                                           nsContainerFrame* aParentFrame);
 
-private:
+ private:
   
   
   nsIFrame* ConstructSelectFrame(nsFrameConstructorState& aState,
-                                 FrameConstructionItem&   aItem,
-                                 nsContainerFrame*        aParentFrame,
-                                 const nsStyleDisplay*    aStyleDisplay,
-                                 nsFrameItems&            aFrameItems);
+                                 FrameConstructionItem& aItem,
+                                 nsContainerFrame* aParentFrame,
+                                 const nsStyleDisplay* aStyleDisplay,
+                                 nsFrameItems& aFrameItems);
 
   
   
   nsIFrame* ConstructFieldSetFrame(nsFrameConstructorState& aState,
-                                   FrameConstructionItem&   aItem,
-                                   nsContainerFrame*        aParentFrame,
-                                   const nsStyleDisplay*    aStyleDisplay,
-                                   nsFrameItems&            aFrameItems);
+                                   FrameConstructionItem& aItem,
+                                   nsContainerFrame* aParentFrame,
+                                   const nsStyleDisplay* aStyleDisplay,
+                                   nsFrameItems& aFrameItems);
 
   
   
@@ -1435,11 +1384,10 @@ private:
                                   nsFrameItems& aFrameItems);
 
   void ConstructTextFrame(const FrameConstructionData* aData,
-                          nsFrameConstructorState& aState,
-                          nsIContent*              aContent,
-                          nsContainerFrame*        aParentFrame,
-                          ComputedStyle*          aComputedStyle,
-                          nsFrameItems&            aFrameItems);
+                          nsFrameConstructorState& aState, nsIContent* aContent,
+                          nsContainerFrame* aParentFrame,
+                          ComputedStyle* aComputedStyle,
+                          nsFrameItems& aFrameItems);
 
   
   
@@ -1463,12 +1411,18 @@ private:
                                                    nsIFrame* aParentFrame,
                                                    ComputedStyle&);
   
-  static const FrameConstructionData* FindImgData(const Element&, ComputedStyle&);
-  static const FrameConstructionData* FindGeneratedImageData(const Element&, ComputedStyle&);
-  static const FrameConstructionData* FindImgControlData(const Element&, ComputedStyle&);
-  static const FrameConstructionData* FindInputData(const Element&, ComputedStyle&);
-  static const FrameConstructionData* FindObjectData(const Element&, ComputedStyle&);
-  static const FrameConstructionData* FindCanvasData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindImgData(const Element&,
+                                                  ComputedStyle&);
+  static const FrameConstructionData* FindGeneratedImageData(const Element&,
+                                                             ComputedStyle&);
+  static const FrameConstructionData* FindImgControlData(const Element&,
+                                                         ComputedStyle&);
+  static const FrameConstructionData* FindInputData(const Element&,
+                                                    ComputedStyle&);
+  static const FrameConstructionData* FindObjectData(const Element&,
+                                                     ComputedStyle&);
+  static const FrameConstructionData* FindCanvasData(const Element&,
+                                                     ComputedStyle&);
 
   
 
@@ -1504,11 +1458,11 @@ private:
   
   
   void AddFrameConstructionItemsInternal(nsFrameConstructorState& aState,
-                                         nsIContent*              aContent,
-                                         nsContainerFrame*        aParentFrame,
-                                         bool                     aSuppressWhiteSpaceOptimizations,
-                                         ComputedStyle*           aComputedStyle,
-                                         uint32_t                 aFlags,
+                                         nsIContent* aContent,
+                                         nsContainerFrame* aParentFrame,
+                                         bool aSuppressWhiteSpaceOptimizations,
+                                         ComputedStyle* aComputedStyle,
+                                         uint32_t aFlags,
                                          FrameConstructionItemList& aItems);
 
   
@@ -1526,11 +1480,11 @@ private:
                                nsFrameItems& aFrameItems);
   static bool AtLineBoundary(FCItemIterator& aIter);
 
-  nsresult GetAnonymousContent(nsIContent* aParent,
-                               nsIFrame* aParentFrame,
-                               nsTArray<nsIAnonymousContentCreator::ContentInfo>& aAnonContent);
+  nsresult GetAnonymousContent(
+      nsIContent* aParent, nsIFrame* aParentFrame,
+      nsTArray<nsIAnonymousContentCreator::ContentInfo>& aAnonContent);
 
-
+  
   
 
 
@@ -1544,7 +1498,8 @@ private:
 
   
   
-  static const FrameConstructionData* FindMathMLData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindMathMLData(const Element&,
+                                                     ComputedStyle&);
 
   
   
@@ -1556,13 +1511,17 @@ private:
                                                      ComputedStyle&);
   
 #ifdef MOZ_XUL
-  static const FrameConstructionData* FindPopupGroupData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindPopupGroupData(const Element&,
+                                                         ComputedStyle&);
   
   static const FrameConstructionData sXULTextBoxData;
-  static const FrameConstructionData* FindXULLabelData(const Element&, ComputedStyle&);
-  static const FrameConstructionData* FindXULDescriptionData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindXULLabelData(const Element&,
+                                                       ComputedStyle&);
+  static const FrameConstructionData* FindXULDescriptionData(const Element&,
+                                                             ComputedStyle&);
 #ifdef XP_MACOSX
-  static const FrameConstructionData* FindXULMenubarData(const Element&, ComputedStyle&);
+  static const FrameConstructionData* FindXULMenubarData(const Element&,
+                                                         ComputedStyle&);
 #endif 
 #endif 
 
@@ -1581,32 +1540,29 @@ private:
 
 
   nsContainerFrame* ConstructFrameWithAnonymousChild(
-                                  nsFrameConstructorState& aState,
-                                  FrameConstructionItem&   aItem,
-                                  nsContainerFrame*        aParentFrame,
-                                  nsFrameItems&            aFrameItems,
-                                  ContainerFrameCreationFunc aConstructor,
-                                  ContainerFrameCreationFunc aInnerConstructor,
-                                  nsCSSAnonBoxPseudoStaticAtom* aInnerPseudo,
-                                  bool                     aCandidateRootFrame);
+      nsFrameConstructorState& aState, FrameConstructionItem& aItem,
+      nsContainerFrame* aParentFrame, nsFrameItems& aFrameItems,
+      ContainerFrameCreationFunc aConstructor,
+      ContainerFrameCreationFunc aInnerConstructor,
+      nsCSSAnonBoxPseudoStaticAtom* aInnerPseudo, bool aCandidateRootFrame);
 
   
 
 
   nsIFrame* ConstructOuterSVG(nsFrameConstructorState& aState,
-                              FrameConstructionItem&   aItem,
-                              nsContainerFrame*        aParentFrame,
-                              const nsStyleDisplay*    aDisplay,
-                              nsFrameItems&            aFrameItems);
+                              FrameConstructionItem& aItem,
+                              nsContainerFrame* aParentFrame,
+                              const nsStyleDisplay* aDisplay,
+                              nsFrameItems& aFrameItems);
 
   
 
 
   nsIFrame* ConstructMarker(nsFrameConstructorState& aState,
-                            FrameConstructionItem&   aItem,
-                            nsContainerFrame*        aParentFrame,
-                            const nsStyleDisplay*    aDisplay,
-                            nsFrameItems&            aFrameItems);
+                            FrameConstructionItem& aItem,
+                            nsContainerFrame* aParentFrame,
+                            const nsStyleDisplay* aDisplay,
+                            nsFrameItems& aFrameItems);
 
   static const FrameConstructionData* FindSVGData(const Element&,
                                                   nsIFrame* aParentFrame,
@@ -1623,43 +1579,37 @@ private:
 
 
   nsIFrame* ConstructScrollableBlock(nsFrameConstructorState& aState,
-                                     FrameConstructionItem&   aItem,
-                                     nsContainerFrame*        aParentFrame,
-                                     const nsStyleDisplay*    aDisplay,
-                                     nsFrameItems&            aFrameItems);
+                                     FrameConstructionItem& aItem,
+                                     nsContainerFrame* aParentFrame,
+                                     const nsStyleDisplay* aDisplay,
+                                     nsFrameItems& aFrameItems);
 
   
 
 
 
   nsIFrame* ConstructScrollableBlockWithConstructor(
-    nsFrameConstructorState& aState,
-    FrameConstructionItem& aItem,
-    nsContainerFrame* aParentFrame,
-    const nsStyleDisplay* aDisplay,
-    nsFrameItems& aFrameItems,
-    BlockFrameCreationFunc aConstructor);
+      nsFrameConstructorState& aState, FrameConstructionItem& aItem,
+      nsContainerFrame* aParentFrame, const nsStyleDisplay* aDisplay,
+      nsFrameItems& aFrameItems, BlockFrameCreationFunc aConstructor);
 
   
 
 
   nsIFrame* ConstructNonScrollableBlock(nsFrameConstructorState& aState,
-                                        FrameConstructionItem&   aItem,
-                                        nsContainerFrame*        aParentFrame,
-                                        const nsStyleDisplay*    aDisplay,
-                                        nsFrameItems&            aFrameItems);
+                                        FrameConstructionItem& aItem,
+                                        nsContainerFrame* aParentFrame,
+                                        const nsStyleDisplay* aDisplay,
+                                        nsFrameItems& aFrameItems);
 
   
 
 
 
   nsIFrame* ConstructNonScrollableBlockWithConstructor(
-    nsFrameConstructorState& aState,
-    FrameConstructionItem& aItem,
-    nsContainerFrame* aParentFrame,
-    const nsStyleDisplay* aDisplay,
-    nsFrameItems& aFrameItems,
-    BlockFrameCreationFunc aConstructor);
+      nsFrameConstructorState& aState, FrameConstructionItem& aItem,
+      nsContainerFrame* aParentFrame, const nsStyleDisplay* aDisplay,
+      nsFrameItems& aFrameItems, BlockFrameCreationFunc aConstructor);
 
   
 
@@ -1667,11 +1617,9 @@ private:
 
 
   void AddFCItemsForAnonymousContent(
-            nsFrameConstructorState& aState,
-            nsContainerFrame* aFrame,
-            const nsTArray<nsIAnonymousContentCreator::ContentInfo>& aAnonymousItems,
-            FrameConstructionItemList& aItemsToConstruct,
-            uint32_t aExtraFlags = 0);
+      nsFrameConstructorState& aState, nsContainerFrame* aFrame,
+      const nsTArray<nsIAnonymousContentCreator::ContentInfo>& aAnonymousItems,
+      FrameConstructionItemList& aItemsToConstruct, uint32_t aExtraFlags = 0);
 
   
 
@@ -1704,15 +1652,13 @@ private:
 
 
 
-  void ProcessChildren(nsFrameConstructorState& aState,
-                       nsIContent*              aContent,
-                       ComputedStyle*           aComputedStyle,
-                       nsContainerFrame*        aParentFrame,
-                       const bool               aCanHaveGeneratedContent,
-                       nsFrameItems&            aFrameItems,
-                       const bool               aAllowBlockStyles,
-                       PendingBinding*          aPendingBinding,
-                       nsIFrame*                aPossiblyLeafFrame = nullptr);
+  void ProcessChildren(nsFrameConstructorState& aState, nsIContent* aContent,
+                       ComputedStyle* aComputedStyle,
+                       nsContainerFrame* aParentFrame,
+                       const bool aCanHaveGeneratedContent,
+                       nsFrameItems& aFrameItems, const bool aAllowBlockStyles,
+                       PendingBinding* aPendingBinding,
+                       nsIFrame* aPossiblyLeafFrame = nullptr);
 
   
 
@@ -1722,65 +1668,53 @@ private:
 
 
 
-public:
-  enum ContainingBlockType {
-    ABS_POS,
-    FIXED_POS
-  };
+ public:
+  enum ContainingBlockType { ABS_POS, FIXED_POS };
   nsContainerFrame* GetAbsoluteContainingBlock(nsIFrame* aFrame,
                                                ContainingBlockType aType);
   nsContainerFrame* GetFloatContainingBlock(nsIFrame* aFrame);
 
-private:
+ private:
   
   
   
   
-  void
-  BuildScrollFrame(nsFrameConstructorState& aState,
-                   nsIContent*              aContent,
-                   ComputedStyle*           aContentStyle,
-                   nsIFrame*                aScrolledFrame,
-                   nsContainerFrame*        aParentFrame,
-                   nsContainerFrame*&       aNewFrame);
+  
+  void BuildScrollFrame(nsFrameConstructorState& aState, nsIContent* aContent,
+                        ComputedStyle* aContentStyle, nsIFrame* aScrolledFrame,
+                        nsContainerFrame* aParentFrame,
+                        nsContainerFrame*& aNewFrame);
 
   
-  already_AddRefed<ComputedStyle>
-  BeginBuildingScrollFrame(nsFrameConstructorState& aState,
-                           nsIContent*              aContent,
-                           ComputedStyle*           aContentStyle,
-                           nsContainerFrame*        aParentFrame,
-                           nsAtom*                  aScrolledPseudo,
-                           bool                     aIsRoot,
-                           nsContainerFrame*&       aNewFrame);
-
-  
-  
-  void
-  FinishBuildingScrollFrame(nsContainerFrame* aScrollFrame,
-                            nsIFrame* aScrolledFrame);
+  already_AddRefed<ComputedStyle> BeginBuildingScrollFrame(
+      nsFrameConstructorState& aState, nsIContent* aContent,
+      ComputedStyle* aContentStyle, nsContainerFrame* aParentFrame,
+      nsAtom* aScrolledPseudo, bool aIsRoot, nsContainerFrame*& aNewFrame);
 
   
   
   
-  void
-  InitializeSelectFrame(nsFrameConstructorState& aState,
-                        nsContainerFrame*        aScrollFrame,
-                        nsContainerFrame*        aScrolledFrame,
-                        nsIContent*              aContent,
-                        nsContainerFrame*        aParentFrame,
-                        ComputedStyle*           aComputedStyle,
-                        bool                     aBuildCombobox,
-                        PendingBinding*          aPendingBinding,
-                        nsFrameItems&            aFrameItems);
+  void FinishBuildingScrollFrame(nsContainerFrame* aScrollFrame,
+                                 nsIFrame* aScrolledFrame);
 
+  
+  
+  
+  void InitializeSelectFrame(nsFrameConstructorState& aState,
+                             nsContainerFrame* aScrollFrame,
+                             nsContainerFrame* aScrolledFrame,
+                             nsIContent* aContent,
+                             nsContainerFrame* aParentFrame,
+                             ComputedStyle* aComputedStyle, bool aBuildCombobox,
+                             PendingBinding* aPendingBinding,
+                             nsFrameItems& aFrameItems);
 
   
 
 
 
 
-  void RecreateFramesForContent(nsIContent*   aContent,
+  void RecreateFramesForContent(nsIContent* aContent,
                                 InsertionKind aInsertionKind);
 
   
@@ -1796,28 +1730,28 @@ private:
   
   bool MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame);
 
-  nsIFrame* CreateContinuingOuterTableFrame(nsIPresShell*     aPresShell,
-                                            nsPresContext*    aPresContext,
-                                            nsIFrame*         aFrame,
+  nsIFrame* CreateContinuingOuterTableFrame(nsIPresShell* aPresShell,
+                                            nsPresContext* aPresContext,
+                                            nsIFrame* aFrame,
                                             nsContainerFrame* aParentFrame,
-                                            nsIContent*       aContent,
-                                            ComputedStyle*    aComputedStyle);
+                                            nsIContent* aContent,
+                                            ComputedStyle* aComputedStyle);
 
-  nsIFrame* CreateContinuingTableFrame(nsIPresShell*     aPresShell,
-                                       nsIFrame*         aFrame,
+  nsIFrame* CreateContinuingTableFrame(nsIPresShell* aPresShell,
+                                       nsIFrame* aFrame,
                                        nsContainerFrame* aParentFrame,
-                                       nsIContent*       aContent,
-                                       ComputedStyle*    aComputedStyle);
+                                       nsIContent* aContent,
+                                       ComputedStyle* aComputedStyle);
 
   
 
   
 
-  already_AddRefed<ComputedStyle>
-  GetFirstLetterStyle(nsIContent* aContent, ComputedStyle* aComputedStyle);
+  already_AddRefed<ComputedStyle> GetFirstLetterStyle(
+      nsIContent* aContent, ComputedStyle* aComputedStyle);
 
-  already_AddRefed<ComputedStyle>
-  GetFirstLineStyle(nsIContent* aContent, ComputedStyle* aComputedStyle);
+  already_AddRefed<ComputedStyle> GetFirstLineStyle(
+      nsIContent* aContent, ComputedStyle* aComputedStyle);
 
   bool ShouldHaveFirstLetterStyle(nsIContent* aContent,
                                   ComputedStyle* aComputedStyle);
@@ -1829,11 +1763,10 @@ private:
   bool ShouldHaveFirstLineStyle(nsIContent* aContent,
                                 ComputedStyle* aComputedStyle);
 
-  void ShouldHaveSpecialBlockStyle(nsIContent*    aContent,
+  void ShouldHaveSpecialBlockStyle(nsIContent* aContent,
                                    ComputedStyle* aComputedStyle,
-                                   bool*          aHaveFirstLetterStyle,
-                                   bool*          aHaveFirstLineStyle);
-
+                                   bool* aHaveFirstLetterStyle,
+                                   bool* aHaveFirstLineStyle);
 
   
   
@@ -1847,11 +1780,9 @@ private:
   
   
   nsContainerFrame* InitAndWrapInColumnSetFrameIfNeeded(
-    nsFrameConstructorState& aState,
-    nsIContent* aContent,
-    nsContainerFrame* aParentFrame,
-    nsContainerFrame* aBlockFrame,
-    ComputedStyle* aComputedStyle);
+      nsFrameConstructorState& aState, nsIContent* aContent,
+      nsContainerFrame* aParentFrame, nsContainerFrame* aBlockFrame,
+      ComputedStyle* aComputedStyle);
 
   
   
@@ -1869,15 +1800,13 @@ private:
   
   
   
-  void ConstructBlock(nsFrameConstructorState& aState,
-                      nsIContent*              aContent,
-                      nsContainerFrame*        aParentFrame,
-                      nsContainerFrame*        aContentParentFrame,
-                      ComputedStyle*           aComputedStyle,
-                      nsContainerFrame**       aNewFrame,
-                      nsFrameItems&            aFrameItems,
-                      nsIFrame*                aPositionedFrameForAbsPosContainer,
-                      PendingBinding*          aPendingBinding);
+  void ConstructBlock(nsFrameConstructorState& aState, nsIContent* aContent,
+                      nsContainerFrame* aParentFrame,
+                      nsContainerFrame* aContentParentFrame,
+                      ComputedStyle* aComputedStyle,
+                      nsContainerFrame** aNewFrame, nsFrameItems& aFrameItems,
+                      nsIFrame* aPositionedFrameForAbsPosContainer,
+                      PendingBinding* aPendingBinding);
 
   void CreateBulletFrameForListItemIfNeeded(nsBlockFrame* aBlockFrame);
 
@@ -1955,10 +1884,10 @@ private:
                                         nsIFrame* aPositionedFrame);
 
   nsIFrame* ConstructInline(nsFrameConstructorState& aState,
-                            FrameConstructionItem&   aItem,
-                            nsContainerFrame*        aParentFrame,
-                            const nsStyleDisplay*    aDisplay,
-                            nsFrameItems&            aFrameItems);
+                            FrameConstructionItem& aItem,
+                            nsContainerFrame* aParentFrame,
+                            const nsStyleDisplay* aDisplay,
+                            nsFrameItems& aFrameItems);
 
   
 
@@ -1979,10 +1908,8 @@ private:
 
 
   void CreateIBSiblings(nsFrameConstructorState& aState,
-                        nsContainerFrame* aInitialInline,
-                        bool aIsPositioned,
-                        nsFrameItems& aChildItems,
-                        nsFrameItems& aSiblings);
+                        nsContainerFrame* aInitialInline, bool aIsPositioned,
+                        nsFrameItems& aChildItems, nsFrameItems& aSiblings);
 
   
 
@@ -2004,10 +1931,8 @@ private:
   
   
   bool WipeContainingBlock(nsFrameConstructorState& aState,
-                           nsIFrame* aContainingBlock,
-                           nsIFrame* aFrame,
-                           FrameConstructionItemList& aItems,
-                           bool aIsAppend,
+                           nsIFrame* aContainingBlock, nsIFrame* aFrame,
+                           FrameConstructionItemList& aItems, bool aIsAppend,
                            nsIFrame* aPrevSibling);
 
   void ReframeContainingBlock(nsIFrame* aFrame);
@@ -2016,23 +1941,19 @@ private:
 
   
 
-  nsFirstLetterFrame*
-  CreateFloatingLetterFrame(nsFrameConstructorState& aState,
-                            nsIContent*              aTextContent,
-                            nsIFrame*                aTextFrame,
-                            nsContainerFrame*        aParentFrame,
-                            ComputedStyle*           aParentComputedStyle,
-                            ComputedStyle*           aComputedStyle,
-                            nsFrameItems&            aResult);
+  nsFirstLetterFrame* CreateFloatingLetterFrame(
+      nsFrameConstructorState& aState, nsIContent* aTextContent,
+      nsIFrame* aTextFrame, nsContainerFrame* aParentFrame,
+      ComputedStyle* aParentComputedStyle, ComputedStyle* aComputedStyle,
+      nsFrameItems& aResult);
 
-  void CreateLetterFrame(nsContainerFrame*        aBlockFrame,
-                         nsContainerFrame*        aBlockContinuation,
-                         nsIContent*              aTextContent,
-                         nsContainerFrame*        aParentFrame,
-                         nsFrameItems&            aResult);
+  void CreateLetterFrame(nsContainerFrame* aBlockFrame,
+                         nsContainerFrame* aBlockContinuation,
+                         nsIContent* aTextContent,
+                         nsContainerFrame* aParentFrame, nsFrameItems& aResult);
 
   void WrapFramesInFirstLetterFrame(nsContainerFrame* aBlockFrame,
-                                    nsFrameItems&     aBlockFrames);
+                                    nsFrameItems& aBlockFrames);
 
   
 
@@ -2053,31 +1974,27 @@ private:
 
 
 
-  void WrapFramesInFirstLetterFrame(nsContainerFrame*  aBlockFrame,
-                                    nsContainerFrame*  aBlockContinuation,
-                                    nsContainerFrame*  aParentFrame,
-                                    nsIFrame*          aParentFrameList,
-                                    nsContainerFrame** aModifiedParent,
-                                    nsIFrame**         aTextFrame,
-                                    nsIFrame**         aPrevFrame,
-                                    nsFrameItems&      aLetterFrames,
-                                    bool*              aStopLooking);
+  void WrapFramesInFirstLetterFrame(
+      nsContainerFrame* aBlockFrame, nsContainerFrame* aBlockContinuation,
+      nsContainerFrame* aParentFrame, nsIFrame* aParentFrameList,
+      nsContainerFrame** aModifiedParent, nsIFrame** aTextFrame,
+      nsIFrame** aPrevFrame, nsFrameItems& aLetterFrames, bool* aStopLooking);
 
   void RecoverLetterFrames(nsContainerFrame* aBlockFrame);
 
   
-  void RemoveLetterFrames(nsIPresShell*     aPresShell,
+  void RemoveLetterFrames(nsIPresShell* aPresShell,
                           nsContainerFrame* aBlockFrame);
 
   
-  void RemoveFirstLetterFrames(nsIPresShell*     aPresShell,
+  void RemoveFirstLetterFrames(nsIPresShell* aPresShell,
                                nsContainerFrame* aFrame,
                                nsContainerFrame* aBlockFrame,
-                               bool*             aStopLooking);
+                               bool* aStopLooking);
 
   
-  void RemoveFloatingFirstLetterFrames(nsIPresShell*    aPresShell,
-                                       nsIFrame*        aBlockFrame);
+  void RemoveFloatingFirstLetterFrames(nsIPresShell* aPresShell,
+                                       nsIFrame* aBlockFrame);
 
   
   
@@ -2096,17 +2013,17 @@ private:
   
   
   void WrapFramesInFirstLineFrame(nsFrameConstructorState& aState,
-                                  nsIContent*              aBlockContent,
-                                  nsContainerFrame*        aBlockFrame,
-                                  nsFirstLineFrame*        aLineFrame,
-                                  nsFrameItems&            aFrameItems);
+                                  nsIContent* aBlockContent,
+                                  nsContainerFrame* aBlockFrame,
+                                  nsFirstLineFrame* aLineFrame,
+                                  nsFrameItems& aFrameItems);
 
   
   
   void AppendFirstLineFrames(nsFrameConstructorState& aState,
-                             nsIContent*              aContent,
-                             nsContainerFrame*        aBlockFrame,
-                             nsFrameItems&            aFrameItems);
+                             nsIContent* aContent,
+                             nsContainerFrame* aBlockFrame,
+                             nsFrameItems& aFrameItems);
 
   
 
@@ -2129,8 +2046,7 @@ private:
   nsIFrame* FindNextSiblingForAppend(const InsertionPoint&);
 
   
-  enum class SiblingDirection
-  {
+  enum class SiblingDirection {
     Forward,
     Backward,
   };
@@ -2148,39 +2064,37 @@ private:
 
 
 
-  template<SiblingDirection>
-  nsIFrame* FindSibling(const mozilla::dom::FlattenedChildIterator& aIter,
-                        mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+  template <SiblingDirection>
+  nsIFrame* FindSibling(
+      const mozilla::dom::FlattenedChildIterator& aIter,
+      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
 
   
   
   
-  template<SiblingDirection>
+  template <SiblingDirection>
   nsIFrame* FindSiblingInternal(
-    mozilla::dom::FlattenedChildIterator&,
-    nsIContent* aTargetContent,
-    mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+      mozilla::dom::FlattenedChildIterator&, nsIContent* aTargetContent,
+      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
 
   
-  nsIFrame* FindNextSibling(const mozilla::dom::FlattenedChildIterator& aIter,
-                            mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
+  nsIFrame* FindNextSibling(
+      const mozilla::dom::FlattenedChildIterator& aIter,
+      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
   
-  nsIFrame* FindPreviousSibling(const mozilla::dom::FlattenedChildIterator& aIter,
-                                mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
-
-  
-  
-  
-  
-  nsIFrame* AdjustSiblingFrame(nsIFrame* aSibling,
-                               nsIContent* aTargetContent,
-                               mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay,
-                               SiblingDirection aDirection);
+  nsIFrame* FindPreviousSibling(
+      const mozilla::dom::FlattenedChildIterator& aIter,
+      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay);
 
   
   
   
   
+  nsIFrame* AdjustSiblingFrame(
+      nsIFrame* aSibling, nsIContent* aTargetContent,
+      mozilla::Maybe<mozilla::StyleDisplay>& aTargetContentDisplay,
+      SiblingDirection aDirection);
+
   
   
   
@@ -2190,19 +2104,21 @@ private:
   
   
   
-  nsIFrame* GetInsertionPrevSibling(InsertionPoint* aInsertion, 
-                                    nsIContent* aChild,
-                                    bool* aIsAppend,
+  
+  
+  
+  
+  nsIFrame* GetInsertionPrevSibling(InsertionPoint* aInsertion,  
+                                    nsIContent* aChild, bool* aIsAppend,
                                     bool* aIsRangeInsertSafe,
                                     nsIContent* aStartSkipChild = nullptr,
-                                    nsIContent *aEndSkipChild = nullptr);
+                                    nsIContent* aEndSkipChild = nullptr);
 
   
   
   
   
-  bool IsValidSibling(nsIFrame*              aSibling,
-                      nsIContent*            aContent,
+  bool IsValidSibling(nsIFrame* aSibling, nsIContent* aContent,
                       mozilla::Maybe<mozilla::StyleDisplay>& aDisplay);
 
   void QuotesDirty();
@@ -2213,46 +2129,47 @@ private:
                                           nsIFrame* aFrame,
                                           nsIContent* aDocElement);
 
-public:
-
+ public:
   friend class nsFrameConstructorState;
 
-private:
+ private:
   
   friend struct FrameConstructionItem;
   void* AllocateFCItem();
   void FreeFCItem(FrameConstructionItem*);
 
-  nsIDocument*        mDocument;  
+  nsIDocument* mDocument;  
 
   
   
 
   
-  nsContainerFrame*   mRootElementFrame;
+  nsContainerFrame* mRootElementFrame;
   
-  nsIFrame*           mRootElementStyleFrame;
+  nsIFrame* mRootElementStyleFrame;
   
   
-  nsContainerFrame*   mDocElementContainingBlock;
-  nsIFrame*           mPageSequenceFrame;
+  nsContainerFrame* mDocElementContainingBlock;
+  nsIFrame* mPageSequenceFrame;
 
   
   mozilla::ArenaAllocator<4096, 8> mFCItemPool;
-  struct FreeFCItemLink { FreeFCItemLink* mNext; };
+  struct FreeFCItemLink {
+    FreeFCItemLink* mNext;
+  };
   FreeFCItemLink* mFirstFreeFCItem;
   size_t mFCItemsInUse;
 
-  nsQuoteList         mQuoteList;
-  nsCounterManager    mCounterManager;
+  nsQuoteList mQuoteList;
+  nsCounterManager mCounterManager;
   
-  uint16_t            mCurrentDepth;
-  bool                mQuotesDirty : 1;
-  bool                mCountersDirty : 1;
-  bool                mIsDestroyingFrameTree : 1;
+  uint16_t mCurrentDepth;
+  bool mQuotesDirty : 1;
+  bool mCountersDirty : 1;
+  bool mIsDestroyingFrameTree : 1;
   
-  bool                mHasRootAbsPosContainingBlock : 1;
-  bool                mAlwaysCreateFramesForIgnorableWhitespace : 1;
+  bool mHasRootAbsPosContainingBlock : 1;
+  bool mAlwaysCreateFramesForIgnorableWhitespace : 1;
 
   nsCOMPtr<nsILayoutHistoryState> mTempFrameTreeState;
 };

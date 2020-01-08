@@ -29,7 +29,7 @@ class WorkerThread;
 
 
 class PosixCondVar {
-public:
+ public:
   PosixCondVar() {
     DebugOnly<int> err = pthread_cond_init(&mCond, nullptr);
     MOZ_ASSERT(!err);
@@ -50,7 +50,7 @@ public:
     MOZ_ASSERT(!err);
   }
 
-protected:
+ protected:
   pthread_cond_t mCond;
 };
 
@@ -58,13 +58,9 @@ protected:
 
 
 
-
 class MultiThreadedJobQueue {
-public:
-  enum AccessType {
-    BLOCKING,
-    NON_BLOCKING
-  };
+ public:
+  enum AccessType { BLOCKING, NON_BLOCKING };
 
   
   MultiThreadedJobQueue();
@@ -96,8 +92,7 @@ public:
   
   void UnregisterThread();
 
-protected:
-
+ protected:
   std::list<Job*> mJobs;
   CriticalSection mMutex;
   PosixCondVar mAvailableCondvar;
@@ -110,9 +105,8 @@ protected:
 
 
 
-class EventObject : public external::AtomicRefCounted<EventObject>
-{
-public:
+class EventObject : public external::AtomicRefCounted<EventObject> {
+ public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(EventObject)
 
   EventObject();
@@ -128,14 +122,14 @@ public:
   
   void Set();
 
-protected:
+ protected:
   CriticalSection mMutex;
   PosixCondVar mCond;
   bool mIsSet;
 };
 
-} 
-} 
+}  
+}  
 
 #include "JobScheduler.h"
 

@@ -30,8 +30,8 @@ namespace mozilla {
 namespace dom {
 class Element;
 class TabParent;
-}
-}
+}  
+}  
 
 struct nsDelayedBlurOrFocusEvent;
 
@@ -42,12 +42,10 @@ struct nsDelayedBlurOrFocusEvent;
 
 class nsFocusManager final : public nsIFocusManager,
                              public nsIObserver,
-                             public nsSupportsWeakReference
-{
+                             public nsSupportsWeakReference {
   typedef mozilla::widget::InputContextAction InputContextAction;
 
-public:
-
+ public:
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsFocusManager, nsIFocusManager)
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_NSIOBSERVER
@@ -99,16 +97,14 @@ public:
   
 
 
-  already_AddRefed<nsIDocument>
-    SetMouseButtonHandlingDocument(nsIDocument* aDocument)
-  {
+  already_AddRefed<nsIDocument> SetMouseButtonHandlingDocument(
+      nsIDocument* aDocument) {
     nsCOMPtr<nsIDocument> handlingDocument = mMouseButtonEventHandlingDocument;
     mMouseButtonEventHandlingDocument = aDocument;
     return handlingDocument.forget();
   }
 
-  void NeedsFlushBeforeEventHandling(mozilla::dom::Element* aElement)
-  {
+  void NeedsFlushBeforeEventHandling(mozilla::dom::Element* aElement) {
     if (mFocusedElement == aElement) {
       mEventHandlingNeedsFlush = true;
     }
@@ -116,8 +112,7 @@ public:
 
   bool CanSkipFocus(nsIContent* aContent);
 
-  void FlushBeforeEventHandlingIfNeeded(nsIContent* aContent)
-  {
+  void FlushBeforeEventHandlingIfNeeded(nsIContent* aContent) {
     if (mEventHandlingNeedsFlush) {
       nsCOMPtr<nsIDocument> doc = aContent->GetComposedDoc();
       if (doc) {
@@ -142,8 +137,7 @@ public:
 
 
 
-  enum SearchRange
-  {
+  enum SearchRange {
     
     eOnlyCurrentWindow,
     
@@ -151,10 +145,9 @@ public:
     
     eIncludeVisibleDescendants,
   };
-  static mozilla::dom::Element*
-  GetFocusedDescendant(nsPIDOMWindowOuter* aWindow,
-                       SearchRange aSearchRange,
-                       nsPIDOMWindowOuter** aFocusedWindow);
+  static mozilla::dom::Element* GetFocusedDescendant(
+      nsPIDOMWindowOuter* aWindow, SearchRange aSearchRange,
+      nsPIDOMWindowOuter** aFocusedWindow);
 
   
 
@@ -176,8 +169,8 @@ public:
   static bool sMouseFocusesFormControl;
 
   static void MarkUncollectableForCCGeneration(uint32_t aGeneration);
-protected:
 
+ protected:
   nsFocusManager();
   ~nsFocusManager();
 
@@ -217,8 +210,8 @@ protected:
 
 
 
-  already_AddRefed<nsPIDOMWindowOuter>
-  GetCommonAncestor(nsPIDOMWindowOuter* aWindow1, nsPIDOMWindowOuter* aWindow2);
+  already_AddRefed<nsPIDOMWindowOuter> GetCommonAncestor(
+      nsPIDOMWindowOuter* aWindow1, nsPIDOMWindowOuter* aWindow2);
 
   
 
@@ -281,10 +274,8 @@ protected:
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   bool Blur(nsPIDOMWindowOuter* aWindowToClear,
-            nsPIDOMWindowOuter* aAncestorWindowToFocus,
-            bool aIsLeavingDocument,
-            bool aAdjustWidget,
-            nsIContent* aContentToFocus = nullptr);
+            nsPIDOMWindowOuter* aAncestorWindowToFocus, bool aIsLeavingDocument,
+            bool aAdjustWidget, nsIContent* aContentToFocus = nullptr);
 
   
 
@@ -312,13 +303,9 @@ protected:
 
 
 
-  void Focus(nsPIDOMWindowOuter* aWindow,
-             mozilla::dom::Element* aContent,
-             uint32_t aFlags,
-             bool aIsNewDocument,
-             bool aFocusChanged,
-             bool aWindowRaised,
-             bool aAdjustWidget,
+  void Focus(nsPIDOMWindowOuter* aWindow, mozilla::dom::Element* aContent,
+             uint32_t aFlags, bool aIsNewDocument, bool aFocusChanged,
+             bool aWindowRaised, bool aAdjustWidget,
              nsIContent* aContentLostFocus = nullptr);
 
   
@@ -330,14 +317,11 @@ protected:
 
 
 
-  void SendFocusOrBlurEvent(mozilla::EventMessage aEventMessage,
-                            nsIPresShell* aPresShell,
-                            nsIDocument* aDocument,
-                            nsISupports* aTarget,
-                            uint32_t aFocusMethod,
-                            bool aWindowRaised,
-                            bool aIsRefocus = false,
-                            mozilla::dom::EventTarget* aRelatedTarget = nullptr);
+  void SendFocusOrBlurEvent(
+      mozilla::EventMessage aEventMessage, nsIPresShell* aPresShell,
+      nsIDocument* aDocument, nsISupports* aTarget, uint32_t aFocusMethod,
+      bool aWindowRaised, bool aIsRefocus = false,
+      mozilla::dom::EventTarget* aRelatedTarget = nullptr);
 
   
 
@@ -347,12 +331,10 @@ protected:
 
 
 
-  void FireFocusOrBlurEvent(mozilla::EventMessage aEventMessage,
-                            nsIPresShell* aPresShell,
-                            nsISupports* aTarget,
-                            bool aWindowRaised,
-                            bool aIsRefocus = false,
-                            mozilla::dom::EventTarget* aRelatedTarget = nullptr);
+  void FireFocusOrBlurEvent(
+      mozilla::EventMessage aEventMessage, nsIPresShell* aPresShell,
+      nsISupports* aTarget, bool aWindowRaised, bool aIsRefocus = false,
+      mozilla::dom::EventTarget* aRelatedTarget = nullptr);
 
   
 
@@ -371,18 +353,16 @@ protected:
 
 
 
-  void FireFocusInOrOutEvent(mozilla::EventMessage aEventMessage,
-                             nsIPresShell* aPresShell,
-                             nsISupports* aTarget,
-                             nsPIDOMWindowOuter* aCurrentFocusedWindow,
-                             nsIContent* aCurrentFocusedContent,
-                             mozilla::dom::EventTarget* aRelatedTarget = nullptr);
+  void FireFocusInOrOutEvent(
+      mozilla::EventMessage aEventMessage, nsIPresShell* aPresShell,
+      nsISupports* aTarget, nsPIDOMWindowOuter* aCurrentFocusedWindow,
+      nsIContent* aCurrentFocusedContent,
+      mozilla::dom::EventTarget* aRelatedTarget = nullptr);
 
   
 
 
-  void ScrollIntoView(nsIPresShell* aPresShell,
-                      nsIContent* aContent,
+  void ScrollIntoView(nsIPresShell* aPresShell, nsIContent* aContent,
                       uint32_t aFlags);
 
   
@@ -398,8 +378,7 @@ protected:
 
 
 
-  void UpdateCaret(bool aMoveCaretToFocus,
-                   bool aUpdateVisibility,
+  void UpdateCaret(bool aMoveCaretToFocus, bool aUpdateVisibility,
                    nsIContent* aContent);
 
   
@@ -410,10 +389,8 @@ protected:
   
 
 
-  nsresult SetCaretVisible(nsIPresShell* aPresShell,
-                           bool aVisible,
+  nsresult SetCaretVisible(nsIPresShell* aPresShell, bool aVisible,
                            nsIContent* aContent);
-
 
   
 
@@ -423,8 +400,8 @@ protected:
 
   nsresult GetSelectionLocation(nsIDocument* aDocument,
                                 nsIPresShell* aPresShell,
-                                nsIContent **aStartContent,
-                                nsIContent **aEndContent);
+                                nsIContent** aStartContent,
+                                nsIContent** aEndContent);
 
   
 
@@ -439,8 +416,8 @@ protected:
 
 
   nsresult DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
-                                       nsIContent* aStart,
-                                       int32_t aType, bool aNoParentTraversal,
+                                       nsIContent* aStart, int32_t aType,
+                                       bool aNoParentTraversal,
                                        nsIContent** aNextContent);
 
   
@@ -455,7 +432,6 @@ protected:
   bool IsHostOrSlot(nsIContent* aContent);
 
   
-
 
 
 
@@ -493,14 +469,11 @@ protected:
 
 
 
-  nsIContent* GetNextTabbableContentInScope(nsIContent* aOwner,
-                                            nsIContent* aStartContent,
-                                            nsIContent* aOriginalStartContent,
-                                            bool aForward,
-                                            int32_t aCurrentTabIndex,
-                                            bool aIgnoreTabIndex,
-                                            bool aForDocumentNavigation,
-                                            bool aSkipOwner);
+  nsIContent* GetNextTabbableContentInScope(
+      nsIContent* aOwner, nsIContent* aStartContent,
+      nsIContent* aOriginalStartContent, bool aForward,
+      int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
+      bool aForDocumentNavigation, bool aSkipOwner);
 
   
 
@@ -533,12 +506,10 @@ protected:
 
 
 
-  nsIContent* GetNextTabbableContentInAncestorScopes(nsIContent** aStartContent,
-                                                     nsIContent* aOriginalStartContent,
-                                                     bool aForward,
-                                                     int32_t* aCurrentTabIndex,
-                                                     bool aIgnoreTabIndex,
-                                                     bool aForDocumentNavigation);
+  nsIContent* GetNextTabbableContentInAncestorScopes(
+      nsIContent** aStartContent, nsIContent* aOriginalStartContent,
+      bool aForward, int32_t* aCurrentTabIndex, bool aIgnoreTabIndex,
+      bool aForDocumentNavigation);
 
   
 
@@ -568,15 +539,11 @@ protected:
 
 
 
-  nsresult GetNextTabbableContent(nsIPresShell* aPresShell,
-                                  nsIContent* aRootContent,
-                                  nsIContent* aOriginalStartContent,
-                                  nsIContent* aStartContent,
-                                  bool aForward,
-                                  int32_t aCurrentTabIndex,
-                                  bool aIgnoreTabIndex,
-                                  bool aForDocumentNavigation,
-                                  nsIContent** aResultContent);
+  nsresult GetNextTabbableContent(
+      nsIPresShell* aPresShell, nsIContent* aRootContent,
+      nsIContent* aOriginalStartContent, nsIContent* aStartContent,
+      bool aForward, int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
+      bool aForDocumentNavigation, nsIContent** aResultContent);
 
   
 
@@ -590,8 +557,7 @@ protected:
 
 
 
-  nsIContent* GetNextTabbableMapArea(bool aForward,
-                                     int32_t aCurrentTabIndex,
+  nsIContent* GetNextTabbableMapArea(bool aForward, int32_t aCurrentTabIndex,
                                      mozilla::dom::Element* aImageContent,
                                      nsIContent* aStartContent);
 
@@ -600,8 +566,7 @@ protected:
 
 
 
-  int32_t GetNextTabIndex(nsIContent* aParent,
-                          int32_t aCurrentTabIndex,
+  int32_t GetNextTabIndex(nsIContent* aParent, int32_t aCurrentTabIndex,
                           bool aForward);
 
   
@@ -609,7 +574,8 @@ protected:
 
 
 
-  nsresult FocusFirst(mozilla::dom::Element* aRootContent, nsIContent** aNextContent);
+  nsresult FocusFirst(mozilla::dom::Element* aRootContent,
+                      nsIContent** aNextContent);
 
   
 
@@ -644,7 +610,7 @@ protected:
                            nsIContent* aEndSelection,
                            nsIContent** aFocusedContent);
 
-private:
+ private:
   
   
   
@@ -666,8 +632,7 @@ private:
 
   bool TryToMoveFocusToSubDocument(nsIContent* aCurrentContent,
                                    nsIContent* aOriginalStartContent,
-                                   bool aForward,
-                                   bool aForDocumentNavigation,
+                                   bool aForward, bool aForDocumentNavigation,
                                    nsIContent** aResultContent);
 
   
@@ -716,7 +681,6 @@ private:
   static nsFocusManager* sInstance;
 };
 
-nsresult
-NS_NewFocusManager(nsIFocusManager** aResult);
+nsresult NS_NewFocusManager(nsIFocusManager** aResult);
 
 #endif

@@ -67,12 +67,10 @@ namespace intl {
 
 
 
-
 class LocaleService final : public mozILocaleService,
                             public nsIObserver,
-                            public nsSupportsWeakReference
-{
-public:
+                            public nsSupportsWeakReference {
+ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
   NS_DECL_MOZILOCALESERVICE
@@ -102,8 +100,7 @@ public:
 
 
 
-  static already_AddRefed<LocaleService> GetInstanceAddRefed()
-  {
+  static already_AddRefed<LocaleService> GetInstanceAddRefed() {
     return RefPtr<LocaleService>(GetInstance()).forget();
   }
 
@@ -145,10 +142,9 @@ public:
 
   bool IsServer();
 
-private:
+ private:
   void FilterMatches(const nsTArray<nsCString>& aRequested,
-                     const nsTArray<nsCString>& aAvailable,
-                     int32_t aStrategy,
+                     const nsTArray<nsCString>& aAvailable, int32_t aStrategy,
                      nsTArray<nsCString>& aRetVal);
 
   void NegotiateAppLocales(nsTArray<nsCString>& aRetVal);
@@ -157,7 +153,7 @@ private:
 
   virtual ~LocaleService();
 
-  nsAutoCStringN<16>  mDefaultLocale;
+  nsAutoCStringN<16> mDefaultLocale;
   nsTArray<nsCString> mAppLocales;
   nsTArray<nsCString> mRequestedLocales;
   nsTArray<nsCString> mAvailableLocales;
@@ -166,7 +162,7 @@ private:
 
   static StaticRefPtr<LocaleService> sInstance;
 };
-} 
-} 
+}  
+}  
 
 #endif 

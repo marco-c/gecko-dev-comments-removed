@@ -28,168 +28,165 @@ struct already_AddRefed;
 
 
 class gfxASurface {
-public:
+ public:
 #ifdef MOZILLA_INTERNAL_API
-    nsrefcnt AddRef(void);
-    nsrefcnt Release(void);
+  nsrefcnt AddRef(void);
+  nsrefcnt Release(void);
 #else
-    virtual nsrefcnt AddRef(void);
-    virtual nsrefcnt Release(void);
+  virtual nsrefcnt AddRef(void);
+  virtual nsrefcnt Release(void);
 #endif
 
-public:
-
-    
-
-
-    static already_AddRefed<gfxASurface> Wrap(cairo_surface_t *csurf, const mozilla::gfx::IntSize& aSize = mozilla::gfx::IntSize(-1, -1));
-
-    
-    cairo_surface_t *CairoSurface() {
-        return mSurface;
-    }
-
-    gfxSurfaceType GetType() const;
-
-    gfxContentType GetContentType() const;
-
-    void SetDeviceOffset(const gfxPoint& offset);
-    gfxPoint GetDeviceOffset() const;
-
-    void Flush() const;
-    void MarkDirty();
-    void MarkDirty(const gfxRect& r);
-
-    
-    virtual nsresult BeginPrinting(const nsAString& aTitle, const nsAString& aPrintToFileName);
-    virtual nsresult EndPrinting();
-    virtual nsresult AbortPrinting();
-    virtual nsresult BeginPage();
-    virtual nsresult EndPage();
-
-    void SetData(const cairo_user_data_key_t *key,
-                 void *user_data,
-                 thebes_destroy_func_t destroy);
-    void *GetData(const cairo_user_data_key_t *key);
-
-    virtual void Finish();
-
-    
+ public:
+  
 
 
+  static already_AddRefed<gfxASurface> Wrap(
+      cairo_surface_t *csurf,
+      const mozilla::gfx::IntSize &aSize = mozilla::gfx::IntSize(-1, -1));
 
+  
+  cairo_surface_t *CairoSurface() { return mSurface; }
 
-    virtual already_AddRefed<gfxASurface> CreateSimilarSurface(gfxContentType aType,
-                                                               const mozilla::gfx::IntSize& aSize);
+  gfxSurfaceType GetType() const;
 
-    
+  gfxContentType GetContentType() const;
+
+  void SetDeviceOffset(const gfxPoint &offset);
+  gfxPoint GetDeviceOffset() const;
+
+  void Flush() const;
+  void MarkDirty();
+  void MarkDirty(const gfxRect &r);
+
+  
+  virtual nsresult BeginPrinting(const nsAString &aTitle,
+                                 const nsAString &aPrintToFileName);
+  virtual nsresult EndPrinting();
+  virtual nsresult AbortPrinting();
+  virtual nsresult BeginPage();
+  virtual nsresult EndPage();
+
+  void SetData(const cairo_user_data_key_t *key, void *user_data,
+               thebes_destroy_func_t destroy);
+  void *GetData(const cairo_user_data_key_t *key);
+
+  virtual void Finish();
+
+  
 
 
 
 
-    virtual already_AddRefed<gfxImageSurface> GetAsImageSurface();
+  virtual already_AddRefed<gfxASurface> CreateSimilarSurface(
+      gfxContentType aType, const mozilla::gfx::IntSize &aSize);
 
-    
-
-
-
-    already_AddRefed<gfxImageSurface> CopyToARGB32ImageSurface();
-
-    int CairoStatus();
-
-    static gfxContentType ContentFromFormat(gfxImageFormat format);
-
-    
-
-
-
-    static void RecordMemoryUsedForSurfaceType(gfxSurfaceType aType,
-                                               int32_t aBytes);
-
-    
+  
 
 
 
 
+  virtual already_AddRefed<gfxImageSurface> GetAsImageSurface();
 
-    void RecordMemoryUsed(int32_t aBytes);
-    void RecordMemoryFreed();
+  
 
-    virtual int32_t KnownMemoryUsed() { return mBytesRecorded; }
 
-    virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-    virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-    
-    
-    
-    
-    
-    
-    
-    virtual bool SizeOfIsMeasured() const { return false; }
 
-    static int32_t BytePerPixelFromFormat(gfxImageFormat format);
+  already_AddRefed<gfxImageSurface> CopyToARGB32ImageSurface();
 
-    virtual const mozilla::gfx::IntSize GetSize() const;
+  int CairoStatus();
 
-    virtual mozilla::gfx::SurfaceFormat GetSurfaceFormat() const;
+  static gfxContentType ContentFromFormat(gfxImageFormat format);
 
-    void SetOpaqueRect(const gfxRect& aRect);
+  
 
-    const gfxRect& GetOpaqueRect() {
-        if (!!mOpaqueRect)
-            return *mOpaqueRect;
-        return GetEmptyOpaqueRect();
-    }
 
-    static uint8_t BytesPerPixel(gfxImageFormat aImageFormat);
 
-protected:
-    gfxASurface();
+  static void RecordMemoryUsedForSurfaceType(gfxSurfaceType aType,
+                                             int32_t aBytes);
 
-    static gfxASurface* GetSurfaceWrapper(cairo_surface_t *csurf);
-    static void SetSurfaceWrapper(cairo_surface_t *csurf, gfxASurface *asurf);
+  
 
-    
-    
-    
-    void Init(cairo_surface_t *surface, bool existingSurface = false);
 
-    
-    
-    static const gfxRect& GetEmptyOpaqueRect();
 
-    virtual ~gfxASurface();
 
-    cairo_surface_t *mSurface;
-    mozilla::UniquePtr<gfxRect> mOpaqueRect;
 
-private:
-    static void SurfaceDestroyFunc(void *data);
+  void RecordMemoryUsed(int32_t aBytes);
+  void RecordMemoryFreed();
 
-    int32_t mFloatingRefs;
-    int32_t mBytesRecorded;
+  virtual int32_t KnownMemoryUsed() { return mBytesRecorded; }
 
-protected:
-    bool mSurfaceValid;
+  virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  virtual size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  
+  
+  
+  
+  
+  
+  
+  virtual bool SizeOfIsMeasured() const { return false; }
+
+  static int32_t BytePerPixelFromFormat(gfxImageFormat format);
+
+  virtual const mozilla::gfx::IntSize GetSize() const;
+
+  virtual mozilla::gfx::SurfaceFormat GetSurfaceFormat() const;
+
+  void SetOpaqueRect(const gfxRect &aRect);
+
+  const gfxRect &GetOpaqueRect() {
+    if (!!mOpaqueRect) return *mOpaqueRect;
+    return GetEmptyOpaqueRect();
+  }
+
+  static uint8_t BytesPerPixel(gfxImageFormat aImageFormat);
+
+ protected:
+  gfxASurface();
+
+  static gfxASurface *GetSurfaceWrapper(cairo_surface_t *csurf);
+  static void SetSurfaceWrapper(cairo_surface_t *csurf, gfxASurface *asurf);
+
+  
+  
+  
+  void Init(cairo_surface_t *surface, bool existingSurface = false);
+
+  
+  
+  static const gfxRect &GetEmptyOpaqueRect();
+
+  virtual ~gfxASurface();
+
+  cairo_surface_t *mSurface;
+  mozilla::UniquePtr<gfxRect> mOpaqueRect;
+
+ private:
+  static void SurfaceDestroyFunc(void *data);
+
+  int32_t mFloatingRefs;
+  int32_t mBytesRecorded;
+
+ protected:
+  bool mSurfaceValid;
 };
 
 
 
 
 class gfxUnknownSurface : public gfxASurface {
-public:
-    gfxUnknownSurface(cairo_surface_t *surf, const mozilla::gfx::IntSize& aSize)
-        : mSize(aSize)
-    {
-        Init(surf, true);
-    }
+ public:
+  gfxUnknownSurface(cairo_surface_t *surf, const mozilla::gfx::IntSize &aSize)
+      : mSize(aSize) {
+    Init(surf, true);
+  }
 
-    virtual ~gfxUnknownSurface() { }
-    virtual const mozilla::gfx::IntSize GetSize() const override { return mSize; }
+  virtual ~gfxUnknownSurface() {}
+  virtual const mozilla::gfx::IntSize GetSize() const override { return mSize; }
 
-private:
-    mozilla::gfx::IntSize mSize;
+ private:
+  mozilla::gfx::IntSize mSize;
 };
 
 #endif 

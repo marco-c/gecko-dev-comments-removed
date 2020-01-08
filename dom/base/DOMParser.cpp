@@ -29,19 +29,16 @@ using namespace mozilla::dom;
 
 DOMParser::DOMParser(nsIGlobalObject* aOwner, nsIPrincipal* aDocPrincipal,
                      nsIURI* aDocumentURI, nsIURI* aBaseURI)
-  : mOwner(aOwner)
-  , mPrincipal(aDocPrincipal)
-  , mDocumentURI(aDocumentURI)
-  , mBaseURI(aBaseURI)
-  , mForceEnableXULXBL(false)
-{
+    : mOwner(aOwner),
+      mPrincipal(aDocPrincipal),
+      mDocumentURI(aDocumentURI),
+      mBaseURI(aBaseURI),
+      mForceEnableXULXBL(false) {
   MOZ_ASSERT(aDocPrincipal);
   MOZ_ASSERT(aDocumentURI);
 }
 
-DOMParser::~DOMParser()
-{
-}
+DOMParser::~DOMParser() {}
 
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(DOMParser)
@@ -54,16 +51,13 @@ NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(DOMParser, mOwner)
 NS_IMPL_CYCLE_COLLECTING_ADDREF(DOMParser)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(DOMParser)
 
-static const char*
-StringFromSupportedType(SupportedType aType)
-{
+static const char* StringFromSupportedType(SupportedType aType) {
   return SupportedTypeValues::strings[static_cast<int>(aType)].value;
 }
 
-already_AddRefed<nsIDocument>
-DOMParser::ParseFromString(const nsAString& aStr, SupportedType aType,
-                           ErrorResult& aRv)
-{
+already_AddRefed<nsIDocument> DOMParser::ParseFromString(const nsAString& aStr,
+                                                         SupportedType aType,
+                                                         ErrorResult& aRv) {
   if (aType == SupportedType::Text_html) {
     nsCOMPtr<nsIDocument> document = SetUpDocument(DocumentFlavorHTML, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
@@ -93,35 +87,31 @@ DOMParser::ParseFromString(const nsAString& aStr, SupportedType aType,
 
   
   nsCOMPtr<nsIInputStream> stream;
-  nsresult rv = NS_NewByteInputStream(getter_AddRefs(stream),
-                                      utf8str.get(), utf8str.Length(),
-                                      NS_ASSIGNMENT_DEPEND);
+  nsresult rv = NS_NewByteInputStream(getter_AddRefs(stream), utf8str.get(),
+                                      utf8str.Length(), NS_ASSIGNMENT_DEPEND);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
     return nullptr;
   }
 
-  return ParseFromStream(stream,  NS_LITERAL_STRING("UTF-8"),
-                         utf8str.Length(), aType, aRv);
+  return ParseFromStream(stream, NS_LITERAL_STRING("UTF-8"), utf8str.Length(),
+                         aType, aRv);
 }
 
-already_AddRefed<nsIDocument>
-DOMParser::ParseFromBuffer(const Uint8Array& aBuf, SupportedType aType,
-                           ErrorResult& aRv)
-{
+already_AddRefed<nsIDocument> DOMParser::ParseFromBuffer(const Uint8Array& aBuf,
+                                                         SupportedType aType,
+                                                         ErrorResult& aRv) {
   aBuf.ComputeLengthAndData();
   return ParseFromBuffer(MakeSpan(aBuf.Data(), aBuf.Length()), aType, aRv);
 }
 
-already_AddRefed<nsIDocument>
-DOMParser::ParseFromBuffer(Span<const uint8_t> aBuf, SupportedType aType,
-                           ErrorResult& aRv)
-{
+already_AddRefed<nsIDocument> DOMParser::ParseFromBuffer(
+    Span<const uint8_t> aBuf, SupportedType aType, ErrorResult& aRv) {
   
   nsCOMPtr<nsIInputStream> stream;
-  nsresult rv = NS_NewByteInputStream(getter_AddRefs(stream),
-                                      reinterpret_cast<const char *>(aBuf.Elements()),
-                                      aBuf.Length(), NS_ASSIGNMENT_DEPEND);
+  nsresult rv = NS_NewByteInputStream(
+      getter_AddRefs(stream), reinterpret_cast<const char*>(aBuf.Elements()),
+      aBuf.Length(), NS_ASSIGNMENT_DEPEND);
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
     return nullptr;
@@ -130,14 +120,9 @@ DOMParser::ParseFromBuffer(Span<const uint8_t> aBuf, SupportedType aType,
   return ParseFromStream(stream, VoidString(), aBuf.Length(), aType, aRv);
 }
 
-
-already_AddRefed<nsIDocument>
-DOMParser::ParseFromStream(nsIInputStream* aStream,
-                           const nsAString& aCharset,
-                           int32_t aContentLength,
-                           SupportedType aType,
-                           ErrorResult& aRv)
-{
+already_AddRefed<nsIDocument> DOMParser::ParseFromStream(
+    nsIInputStream* aStream, const nsAString& aCharset, int32_t aContentLength,
+    SupportedType aType, ErrorResult& aRv) {
   bool svg = (aType == SupportedType::Image_svg_xml);
 
   
@@ -145,8 +130,7 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
   
   if (aType != SupportedType::Text_xml &&
       aType != SupportedType::Application_xml &&
-      aType != SupportedType::Application_xhtml_xml &&
-      !svg) {
+      aType != SupportedType::Application_xhtml_xml && !svg) {
     aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
     return nullptr;
   }
@@ -156,7 +140,7 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
   if (!NS_InputStreamIsBuffered(stream)) {
     nsCOMPtr<nsIInputStream> bufferedStream;
     nsresult rv = NS_NewBufferedInputStream(getter_AddRefs(bufferedStream),
-                                   stream.forget(), 4096);
+                                            stream.forget(), 4096);
     if (NS_WARN_IF(NS_FAILED(rv))) {
       aRv.Throw(rv);
       return nullptr;
@@ -166,18 +150,16 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
   }
 
   nsCOMPtr<nsIDocument> document =
-    SetUpDocument(svg ? DocumentFlavorSVG : DocumentFlavorLegacyGuess, aRv);
+      SetUpDocument(svg ? DocumentFlavorSVG : DocumentFlavorLegacyGuess, aRv);
   if (NS_WARN_IF(aRv.Failed())) {
     return nullptr;
   }
 
   
   nsCOMPtr<nsIChannel> parserChannel;
-  NS_NewInputStreamChannel(getter_AddRefs(parserChannel),
-                           mDocumentURI,
-                           nullptr, 
-                           mPrincipal,
-                           nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
+  NS_NewInputStreamChannel(getter_AddRefs(parserChannel), mDocumentURI,
+                           nullptr,  
+                           mPrincipal, nsILoadInfo::SEC_FORCE_INHERIT_PRINCIPAL,
                            nsIContentPolicy::TYPE_OTHER,
                            nsDependentCString(StringFromSupportedType(aType)));
   if (NS_WARN_IF(!parserChannel)) {
@@ -200,10 +182,9 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
   
   
   
-  nsresult rv = document->StartDocumentLoad(kLoadAsData, parserChannel,
-                                            nullptr, nullptr,
-                                            getter_AddRefs(listener),
-                                            false);
+  nsresult rv =
+      document->StartDocumentLoad(kLoadAsData, parserChannel, nullptr, nullptr,
+                                  getter_AddRefs(listener), false);
 
   if (NS_FAILED(rv) || !listener) {
     aRv.Throw(NS_ERROR_FAILURE);
@@ -214,15 +195,13 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
   nsresult status;
 
   rv = listener->OnStartRequest(parserChannel, nullptr);
-  if (NS_FAILED(rv))
-    parserChannel->Cancel(rv);
+  if (NS_FAILED(rv)) parserChannel->Cancel(rv);
   parserChannel->GetStatus(&status);
 
   if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(status)) {
     rv = listener->OnDataAvailable(parserChannel, nullptr, stream, 0,
                                    aContentLength);
-    if (NS_FAILED(rv))
-      parserChannel->Cancel(rv);
+    if (NS_FAILED(rv)) parserChannel->Cancel(rv);
     parserChannel->GetStatus(&status);
   }
 
@@ -238,10 +217,8 @@ DOMParser::ParseFromStream(nsIInputStream* aStream,
   return document.forget();
 }
 
-already_AddRefed<DOMParser>
-DOMParser::Constructor(const GlobalObject& aOwner,
-                       ErrorResult& rv)
-{
+ already_AddRefed<DOMParser> DOMParser::Constructor(
+    const GlobalObject& aOwner, ErrorResult& rv) {
   MOZ_ASSERT(NS_IsMainThread());
   nsCOMPtr<nsIPrincipal> docPrincipal = aOwner.GetSubjectPrincipal();
   nsCOMPtr<nsIURI> documentURI;
@@ -252,7 +229,8 @@ DOMParser::Constructor(const GlobalObject& aOwner,
   } else {
     
     
-    nsCOMPtr<nsPIDOMWindowInner> window = do_QueryInterface(aOwner.GetAsSupports());
+    nsCOMPtr<nsPIDOMWindowInner> window =
+        do_QueryInterface(aOwner.GetAsSupports());
     if (!window) {
       rv.Throw(NS_ERROR_UNEXPECTED);
       return nullptr;
@@ -269,17 +247,15 @@ DOMParser::Constructor(const GlobalObject& aOwner,
 
   nsCOMPtr<nsIGlobalObject> global = do_QueryInterface(aOwner.GetAsSupports());
   MOZ_ASSERT(global);
-  RefPtr<DOMParser> domParser = new DOMParser(global, docPrincipal,
-                                              documentURI, baseURI);
+  RefPtr<DOMParser> domParser =
+      new DOMParser(global, docPrincipal, documentURI, baseURI);
   return domParser.forget();
 }
 
 
-already_AddRefed<DOMParser>
-DOMParser::CreateWithoutGlobal(ErrorResult& aRv)
-{
+already_AddRefed<DOMParser> DOMParser::CreateWithoutGlobal(ErrorResult& aRv) {
   nsCOMPtr<nsIPrincipal> docPrincipal =
-    NullPrincipal::CreateWithoutOriginAttributes();
+      NullPrincipal::CreateWithoutOriginAttributes();
   nsCOMPtr<nsIURI> documentURI;
   docPrincipal->GetURI(getter_AddRefs(documentURI));
 
@@ -288,30 +264,29 @@ DOMParser::CreateWithoutGlobal(ErrorResult& aRv)
     return nullptr;
   }
 
-  RefPtr<DOMParser> domParser = new DOMParser(nullptr, docPrincipal,
-                                              documentURI, nullptr);
+  RefPtr<DOMParser> domParser =
+      new DOMParser(nullptr, docPrincipal, documentURI, nullptr);
   return domParser.forget();
 }
 
-already_AddRefed<nsIDocument>
-DOMParser::SetUpDocument(DocumentFlavor aFlavor, ErrorResult& aRv)
-{
+already_AddRefed<nsIDocument> DOMParser::SetUpDocument(DocumentFlavor aFlavor,
+                                                       ErrorResult& aRv) {
   
   
   
   
   
   nsCOMPtr<nsIScriptGlobalObject> scriptHandlingObject =
-    do_QueryInterface(mOwner);
+      do_QueryInterface(mOwner);
 
   
   NS_ASSERTION(mPrincipal, "Must have principal by now");
   NS_ASSERTION(mDocumentURI, "Must have document URI by now");
 
   nsCOMPtr<nsIDocument> doc;
-  nsresult rv = NS_NewDOMDocument(getter_AddRefs(doc), EmptyString(), EmptyString(),
-                                  nullptr, mDocumentURI, mBaseURI, mPrincipal,
-                                  true, scriptHandlingObject, aFlavor);
+  nsresult rv = NS_NewDOMDocument(
+      getter_AddRefs(doc), EmptyString(), EmptyString(), nullptr, mDocumentURI,
+      mBaseURI, mPrincipal, true, scriptHandlingObject, aFlavor);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     aRv.Throw(rv);
     return nullptr;

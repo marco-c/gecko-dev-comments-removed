@@ -27,24 +27,22 @@ using std::string;
 namespace CrashReporter {
 
 struct UUID {
-    uint32_t m0;
-    uint16_t m1;
-    uint16_t m2;
-    uint8_t  m3[8];
+  uint32_t m0;
+  uint16_t m1;
+  uint16_t m2;
+  uint8_t m3[8];
 };
 
 
-static string
-GenerateUUID()
-{
+static string GenerateUUID() {
   UUID id = {};
 
-#if defined(XP_WIN) 
+#if defined(XP_WIN)  
   HRESULT hr = CoCreateGuid((GUID*)&id);
   if (FAILED(hr)) {
     return "";
   }
-#elif defined(XP_MACOSX) 
+#elif defined(XP_MACOSX)            
   CFUUIDRef uuid = CFUUIDCreate(kCFAllocatorDefault);
   if (!uuid) {
     return "";
@@ -54,9 +52,9 @@ GenerateUUID()
   memcpy(&id, &bytes, sizeof(UUID));
 
   CFRelease(uuid);
-#elif defined(HAVE_ARC4RANDOM_BUF) 
+#elif defined(HAVE_ARC4RANDOM_BUF)  
   arc4random_buf(id, sizeof(UUID));
-#else 
+#else                               
   int fd = open("/dev/urandom", O_RDONLY);
 
   if (fd == -1) {
@@ -80,13 +78,13 @@ GenerateUUID()
   id.m3[0] |= 0x80;
 
   const char* kUUIDFormatString =
-    "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x";
+      "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x";
   const size_t kUUIDFormatStringLength = 36;
-  char str[kUUIDFormatStringLength + 1] = { '\0' };
+  char str[kUUIDFormatStringLength + 1] = {'\0'};
 
-  int num = snprintf(str, kUUIDFormatStringLength + 1, kUUIDFormatString,
-                     id.m0, id.m1, id.m2, id.m3[0], id.m3[1], id.m3[2],
-                     id.m3[3], id.m3[4], id.m3[5], id.m3[6], id.m3[7]);
+  int num = snprintf(str, kUUIDFormatStringLength + 1, kUUIDFormatString, id.m0,
+                     id.m1, id.m2, id.m3[0], id.m3[1], id.m3[2], id.m3[3],
+                     id.m3[4], id.m3[5], id.m3[6], id.m3[7]);
 
   if (num != kUUIDFormatStringLength) {
     return "";
@@ -102,26 +100,22 @@ const char kISO8601DateHours[] = "%FT%H:00:00.000Z";
 
 
 
-static string
-CurrentDate(string format)
-{
+static string CurrentDate(string format) {
   time_t now;
   time(&now);
-  char buf[64]; 
+  char buf[64];  
   strftime(buf, sizeof buf, format.c_str(), gmtime(&now));
   return buf;
 }
 
-const char kTelemetryClientId[]  = "TelemetryClientId";
-const char kTelemetryUrl[]       = "TelemetryServerURL";
+const char kTelemetryClientId[] = "TelemetryClientId";
+const char kTelemetryUrl[] = "TelemetryServerURL";
 const char kTelemetrySessionId[] = "TelemetrySessionId";
-const int  kTelemetryVersion     = 4;
+const int kTelemetryVersion = 4;
 
 
 
-static Json::Value
-CreateMetadataNode(StringTable& strings)
-{
+static Json::Value CreateMetadataNode(StringTable& strings) {
   Json::Value node;
 
   for (auto line : strings) {
@@ -138,10 +132,8 @@ CreateMetadataNode(StringTable& strings)
 }
 
 
-static Json::Value
-CreatePayloadNode(StringTable& strings, const string& aHash,
-                  const string& aSessionId)
-{
+static Json::Value CreatePayloadNode(StringTable& strings, const string& aHash,
+                                     const string& aSessionId) {
   Json::Value payload;
 
   payload["sessionId"] = aSessionId;
@@ -151,7 +143,7 @@ CreatePayloadNode(StringTable& strings, const string& aHash,
   payload["hasCrashEnvironment"] = true;
   payload["crashId"] = GetDumpLocalID();
   payload["minidumpSha256Hash"] = aHash;
-  payload["processType"] = "main"; 
+  payload["processType"] = "main";  
 
   
   Json::Value stackTracesValue;
@@ -169,13 +161,11 @@ CreatePayloadNode(StringTable& strings, const string& aHash,
 }
 
 
-static Json::Value
-CreateApplicationNode(const string& aVendor, const string& aName,
-                      const string& aVersion, const string& aDisplayVersion,
-                      const string& aPlatformVersion, const string& aChannel,
-                      const string& aBuildId, const string& aArchitecture,
-                      const string& aXpcomAbi)
-{
+static Json::Value CreateApplicationNode(
+    const string& aVendor, const string& aName, const string& aVersion,
+    const string& aDisplayVersion, const string& aPlatformVersion,
+    const string& aChannel, const string& aBuildId, const string& aArchitecture,
+    const string& aXpcomAbi) {
   Json::Value application;
 
   application["vendor"] = aVendor;
@@ -196,14 +186,14 @@ CreateApplicationNode(const string& aVendor, const string& aName,
 }
 
 
-static Json::Value
-CreateRootNode(StringTable& strings, const string& aUuid, const string& aHash,
-               const string& aClientId, const string& aSessionId,
-               const string& aName, const string& aVersion,
-               const string& aChannel, const string& aBuildId)
-{
+static Json::Value CreateRootNode(StringTable& strings, const string& aUuid,
+                                  const string& aHash, const string& aClientId,
+                                  const string& aSessionId, const string& aName,
+                                  const string& aVersion,
+                                  const string& aChannel,
+                                  const string& aBuildId) {
   Json::Value root;
-  root["type"] = "crash"; 
+  root["type"] = "crash";  
   root["id"] = aUuid;
   root["version"] = kTelemetryVersion;
   root["creationDate"] = CurrentDate(kISO8601DateHours);
@@ -227,10 +217,12 @@ CreateRootNode(StringTable& strings, const string& aUuid, const string& aHash,
       if (build.isMember("xpcomAbi") && build["xpcomAbi"].isString()) {
         xpcomAbi = build["xpcomAbi"].asString();
       }
-      if (build.isMember("displayVersion") && build["displayVersion"].isString()) {
+      if (build.isMember("displayVersion") &&
+          build["displayVersion"].isString()) {
         displayVersion = build["displayVersion"].asString();
       }
-      if (build.isMember("platformVersion") && build["platformVersion"].isString()) {
+      if (build.isMember("platformVersion") &&
+          build["platformVersion"].isString()) {
         platformVersion = build["platformVersion"].asString();
       }
     }
@@ -239,21 +231,17 @@ CreateRootNode(StringTable& strings, const string& aUuid, const string& aHash,
   }
 
   root["payload"] = CreatePayloadNode(strings, aHash, aSessionId);
-  root["application"] = CreateApplicationNode(strings["Vendor"], aName,
-                                              aVersion, displayVersion,
-                                              platformVersion,
-                                              aChannel, aBuildId,
-                                              architecture, xpcomAbi);
+  root["application"] = CreateApplicationNode(
+      strings["Vendor"], aName, aVersion, displayVersion, platformVersion,
+      aChannel, aBuildId, architecture, xpcomAbi);
 
   return root;
 }
 
 
-string
-GenerateSubmissionUrl(const string& aUrl, const string& aId,
-                      const string& aName, const string& aVersion,
-                      const string& aChannel, const string& aBuildId)
-{
+string GenerateSubmissionUrl(const string& aUrl, const string& aId,
+                             const string& aName, const string& aVersion,
+                             const string& aChannel, const string& aBuildId) {
   return aUrl + "/submit/telemetry/" + aId + "/crash/" + aName + "/" +
          aVersion + "/" + aChannel + "/" + aBuildId +
          "?v=" + std::to_string(kTelemetryVersion);
@@ -262,9 +250,7 @@ GenerateSubmissionUrl(const string& aUrl, const string& aId,
 
 
 
-static bool
-WritePing(const string& aPath, const string& aPing)
-{
+static bool WritePing(const string& aPath, const string& aPing) {
   ofstream* f = UIOpenWrite(aPath.c_str());
   bool success = false;
 
@@ -288,26 +274,24 @@ WritePing(const string& aPath, const string& aPing)
 
 
 
-bool
-SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid,
-              const string& pingDir)
-{
-  string clientId    = strings[kTelemetryClientId];
-  string serverUrl   = strings[kTelemetryUrl];
-  string sessionId   = strings[kTelemetrySessionId];
+bool SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid,
+                   const string& pingDir) {
+  string clientId = strings[kTelemetryClientId];
+  string serverUrl = strings[kTelemetryUrl];
+  string sessionId = strings[kTelemetrySessionId];
 
   
   strings.erase(kTelemetryClientId);
   strings.erase(kTelemetryUrl);
   strings.erase(kTelemetrySessionId);
 
-  string buildId     = strings["BuildID"];
-  string channel     = strings["ReleaseChannel"];
-  string name        = strings["ProductName"];
-  string version     = strings["Version"];
-  string uuid        = GenerateUUID();
-  string url         = GenerateSubmissionUrl(serverUrl, uuid, name, version,
-                                             channel, buildId);
+  string buildId = strings["BuildID"];
+  string channel = strings["ReleaseChannel"];
+  string name = strings["ProductName"];
+  string version = strings["Version"];
+  string uuid = GenerateUUID();
+  string url =
+      GenerateSubmissionUrl(serverUrl, uuid, name, version, channel, buildId);
 
   if (serverUrl.empty() || uuid.empty()) {
     return false;
@@ -326,7 +310,7 @@ SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid,
   }
 
   
-  vector<string> args = { url, pingPath };
+  vector<string> args = {url, pingPath};
   if (UIRunProgram(GetProgramPath(UI_PING_SENDER_FILENAME), args)) {
     pingUuid = uuid;
     return true;
@@ -335,5 +319,4 @@ SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid,
   }
 }
 
-} 
-
+}  

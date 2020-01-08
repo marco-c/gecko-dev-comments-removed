@@ -16,9 +16,8 @@
 
 
 
-class FileMgr final
-{
-public:
+class FileMgr final {
+ public:
   
 
 
@@ -33,7 +32,7 @@ public:
   bool getline(std::string& aLine);
   int getlinenum() const { return mLineNum; }
 
-private:
+ private:
   mozilla::Result<mozilla::Ok, nsresult> Open(const nsACString& aPath);
 
   mozilla::Result<mozilla::Ok, nsresult> ReadLine(nsACString& aLine);
@@ -43,4 +42,4 @@ private:
   nsLineBuffer<char> mLineBuffer;
 };
 
-#endif 
+#endif  

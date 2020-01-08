@@ -14,12 +14,13 @@
 #include "mozilla/DefineEnum.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/TimeStamp.h"
-#include "mozilla/WheelHandlingHelper.h"   
+#include "mozilla/WheelHandlingHelper.h"  
 #include "mozilla/gfx/MatrixFwd.h"
 #include "mozilla/layers/APZUtils.h"
 #include "mozilla/layers/KeyboardScrollAction.h"
 
-template<class E> struct already_AddRefed;
+template <class E>
+struct already_AddRefed;
 class nsIWidget;
 
 namespace mozilla {
@@ -27,11 +28,11 @@ namespace mozilla {
 namespace layers {
 class APZInputBridgeChild;
 class PAPZInputBridgeParent;
-}
+}  
 
 namespace dom {
 class Touch;
-} 
+}  
 
 
 MOZ_DEFINE_ENUM(
@@ -58,22 +59,19 @@ class KeyboardInput;
 
 
 
-#define INPUTDATA_AS_CHILD_TYPE(type, enumID) \
-  const type& As##type() const \
-  { \
+#define INPUTDATA_AS_CHILD_TYPE(type, enumID)                       \
+  const type& As##type() const {                                    \
     MOZ_ASSERT(mInputType == enumID, "Invalid cast of InputData."); \
-    return (const type&) *this; \
-  } \
-  type& As##type() \
-  { \
+    return (const type&)*this;                                      \
+  }                                                                 \
+  type& As##type() {                                                \
     MOZ_ASSERT(mInputType == enumID, "Invalid cast of InputData."); \
-    return (type&) *this; \
+    return (type&)*this;                                            \
   }
 
 
-class InputData
-{
-public:
+class InputData {
+ public:
   
   
   InputType mInputType;
@@ -104,7 +102,7 @@ public:
   virtual ~InputData();
   explicit InputData(InputType aInputType);
 
-protected:
+ protected:
   InputData(InputType aInputType, uint32_t aTime, TimeStamp aTimeStamp,
             Modifiers aModifiers);
 };
@@ -124,26 +122,20 @@ protected:
 
 
 
-class SingleTouchData
-{
-public:
+class SingleTouchData {
+ public:
   
   
-  SingleTouchData(int32_t aIdentifier,
-                  ScreenIntPoint aScreenPoint,
-                  ScreenSize aRadius,
-                  float aRotationAngle,
-                  float aForce);
+  SingleTouchData(int32_t aIdentifier, ScreenIntPoint aScreenPoint,
+                  ScreenSize aRadius, float aRotationAngle, float aForce);
 
   
   
   
   
-  SingleTouchData(int32_t aIdentifier,
-                  ParentLayerPoint aLocalScreenPoint,
-                  ScreenSize aRadius,
-                  float aRotationAngle,
-                  float aForce);
+  
+  SingleTouchData(int32_t aIdentifier, ParentLayerPoint aLocalScreenPoint,
+                  ScreenSize aRadius, float aRotationAngle, float aForce);
 
   SingleTouchData();
 
@@ -152,6 +144,7 @@ public:
   
   
 
+  
   
   
   int32_t mIdentifier;
@@ -187,9 +180,8 @@ public:
 
 
 
-class MultiTouchInput : public InputData
-{
-public:
+class MultiTouchInput : public InputData {
+ public:
   
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     MultiTouchType, (
@@ -230,16 +222,14 @@ public:
   bool mHandledByAPZ;
 };
 
-class MouseInput : public InputData
-{
-protected:
+class MouseInput : public InputData {
+ protected:
   friend mozilla::layers::APZInputBridgeChild;
   friend mozilla::layers::PAPZInputBridgeParent;
 
   MouseInput();
 
-public:
-
+ public:
   
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     MouseType, (
@@ -288,15 +278,14 @@ public:
 
 
 
-class PanGestureInput : public InputData
-{
-protected:
+class PanGestureInput : public InputData {
+ protected:
   friend mozilla::layers::APZInputBridgeChild;
   friend mozilla::layers::PAPZInputBridgeParent;
 
   PanGestureInput();
 
-public:
+ public:
   
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     PanGestureType, (
@@ -345,12 +334,9 @@ public:
   ));
   
 
-  PanGestureInput(PanGestureType aType,
-                  uint32_t aTime,
-                  TimeStamp aTimeStamp,
+  PanGestureInput(PanGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
                   const ScreenPoint& aPanStartPoint,
-                  const ScreenPoint& aPanDisplacement,
-                  Modifiers aModifiers);
+                  const ScreenPoint& aPanDisplacement, Modifiers aModifiers);
 
   bool IsMomentum() const;
 
@@ -410,15 +396,14 @@ public:
 
 
 
-class PinchGestureInput : public InputData
-{
-protected:
+class PinchGestureInput : public InputData {
+ protected:
   friend mozilla::layers::APZInputBridgeChild;
   friend mozilla::layers::PAPZInputBridgeParent;
 
   PinchGestureInput();
 
-public:
+ public:
   
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     PinchGestureType, (
@@ -435,14 +420,15 @@ public:
   
   
   
-  PinchGestureInput(PinchGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
-                    const ScreenPoint& aFocusPoint,
+  PinchGestureInput(PinchGestureType aType, uint32_t aTime,
+                    TimeStamp aTimeStamp, const ScreenPoint& aFocusPoint,
                     ParentLayerCoord aCurrentSpan,
                     ParentLayerCoord aPreviousSpan, Modifiers aModifiers);
 
   
   
-  PinchGestureInput(PinchGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
+  PinchGestureInput(PinchGestureType aType, uint32_t aTime,
+                    TimeStamp aTimeStamp,
                     const ParentLayerPoint& aLocalFocusPoint,
                     ParentLayerCoord aCurrentSpan,
                     ParentLayerCoord aPreviousSpan, Modifiers aModifiers);
@@ -495,15 +481,14 @@ public:
 
 
 
-class TapGestureInput : public InputData
-{
-protected:
+class TapGestureInput : public InputData {
+ protected:
   friend mozilla::layers::APZInputBridgeChild;
   friend mozilla::layers::PAPZInputBridgeParent;
 
   TapGestureInput();
 
-public:
+ public:
   
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     TapGestureType, (
@@ -544,9 +529,8 @@ public:
 
 
 
-class ScrollWheelInput : public InputData
-{
-protected:
+class ScrollWheelInput : public InputData {
+ protected:
   friend mozilla::layers::APZInputBridgeChild;
   friend mozilla::layers::PAPZInputBridgeParent;
 
@@ -554,7 +538,7 @@ protected:
 
   ScrollWheelInput();
 
-public:
+ public:
   
   MOZ_DEFINE_ENUM_AT_CLASS_SCOPE(
     ScrollDeltaType, (
@@ -582,7 +566,8 @@ public:
 
   static ScrollDeltaType DeltaTypeForDeltaMode(uint32_t aDeltaMode);
   static uint32_t DeltaModeForDeltaType(ScrollDeltaType aDeltaType);
-  static nsIScrollableFrame::ScrollUnit ScrollUnitForDeltaType(ScrollDeltaType aDeltaType);
+  static nsIScrollableFrame::ScrollUnit ScrollUnitForDeltaType(
+      ScrollDeltaType aDeltaType);
 
   WidgetWheelEvent ToWidgetWheelEvent(nsIWidget* aWidget) const;
   bool TransformToLocal(const ScreenToParentLayerMatrix4x4& aTransform);
@@ -591,8 +576,7 @@ public:
 
   
   
-  bool IsAutoDir() const
-  {
+  bool IsAutoDir() const {
     switch (mWheelDeltaAdjustmentStrategy) {
       case WheelDeltaAdjustmentStrategy::eAutoDir:
       case WheelDeltaAdjustmentStrategy::eAutoDirWithRootHonour:
@@ -611,10 +595,9 @@ public:
   
   
   
-  bool HonoursRoot() const
-  {
+  bool HonoursRoot() const {
     return WheelDeltaAdjustmentStrategy::eAutoDirWithRootHonour ==
-             mWheelDeltaAdjustmentStrategy;
+           mWheelDeltaAdjustmentStrategy;
   }
 
   
@@ -663,17 +646,15 @@ public:
   APZWheelAction mAPZAction;
 };
 
-class KeyboardInput : public InputData
-{
-public:
+class KeyboardInput : public InputData {
+ public:
   typedef mozilla::layers::KeyboardScrollAction KeyboardScrollAction;
 
   
   
   
   
-  enum KeyboardEventType
-  {
+  enum KeyboardEventType {
     KEY_DOWN,
     KEY_PRESS,
     KEY_UP,
@@ -700,13 +681,13 @@ public:
   
   KeyboardScrollAction mAction;
 
-protected:
+ protected:
   friend mozilla::layers::APZInputBridgeChild;
   friend mozilla::layers::PAPZInputBridgeParent;
 
   KeyboardInput();
 };
 
-} 
+}  
 
-#endif 
+#endif  

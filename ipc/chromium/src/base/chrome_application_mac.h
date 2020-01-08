@@ -17,16 +17,13 @@
 - (void)hookForEvent:(NSEvent*)theEvent;
 @end
 
-
 @interface CrApplication : NSApplication {
  @private
   BOOL handlingSendEvent_;
- 
+  
   scoped_nsobject<NSMutableArray> eventHooks_;
 }
-@property(readonly,
-          getter=isHandlingSendEvent,
-          nonatomic) BOOL handlingSendEvent;
+@property(readonly, getter=isHandlingSendEvent, nonatomic) BOOL handlingSendEvent;
 
 
 

@@ -16,9 +16,10 @@
 class nsStyleCoord;
 
 namespace mozilla {
-template <class T> class LinkedList;
+template <class T>
+class LinkedList;
 class LogicalPoint;
-} 
+}  
 
 nsContainerFrame* NS_NewFlexContainerFrame(nsIPresShell* aPresShell,
                                            mozilla::ComputedStyle* aStyle);
@@ -30,8 +31,7 @@ nsContainerFrame* NS_NewFlexContainerFrame(nsIPresShell* aPresShell,
 
 
 
-struct ComputedFlexItemInfo
-{
+struct ComputedFlexItemInfo {
   nsCOMPtr<nsINode> mNode;
   nsRect mFrameRect;
   
@@ -58,8 +58,7 @@ struct ComputedFlexItemInfo
   mozilla::dom::FlexItemClampState mClampState;
 };
 
-struct ComputedFlexLineInfo
-{
+struct ComputedFlexLineInfo {
   nsTArray<ComputedFlexItemInfo> mItems;
   nscoord mCrossStart;
   nscoord mCrossSize;
@@ -68,8 +67,7 @@ struct ComputedFlexLineInfo
   mozilla::dom::FlexLineGrowthState mGrowthState;
 };
 
-struct ComputedFlexContainerInfo
-{
+struct ComputedFlexContainerInfo {
   nsTArray<ComputedFlexLineInfo> mLines;
   mozilla::dom::FlexPhysicalDirection mMainAxisDirection;
   mozilla::dom::FlexPhysicalDirection mCrossAxisDirection;
@@ -94,9 +92,8 @@ struct ComputedFlexContainerInfo
 
 
 
-class nsFlexContainerFrame final : public nsContainerFrame
-{
-public:
+class nsFlexContainerFrame final : public nsContainerFrame {
+ public:
   NS_DECL_FRAMEARENA_HELPERS(nsFlexContainerFrame)
   NS_DECL_QUERYFRAME
 
@@ -112,17 +109,15 @@ public:
   class CachedMeasuringReflowResult;
 
   
-  void Init(nsIContent*       aContent,
-            nsContainerFrame* aParent,
-            nsIFrame*         aPrevInFlow) override;
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 
-  void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+  void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;
 
   void MarkIntrinsicISizesDirty() override;
 
-  void Reflow(nsPresContext* aPresContext,
-              ReflowOutput& aDesiredSize,
+  void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;
 
@@ -138,27 +133,27 @@ public:
   nscoord GetLogicalBaseline(mozilla::WritingMode aWM) const override;
 
   bool GetVerticalAlignBaseline(mozilla::WritingMode aWM,
-                                nscoord* aBaseline) const override
-  {
-    return GetNaturalBaselineBOffset(aWM, BaselineSharingGroup::eFirst, aBaseline);
+                                nscoord* aBaseline) const override {
+    return GetNaturalBaselineBOffset(aWM, BaselineSharingGroup::eFirst,
+                                     aBaseline);
   }
 
   bool GetNaturalBaselineBOffset(mozilla::WritingMode aWM,
                                  BaselineSharingGroup aBaselineGroup,
-                                 nscoord*             aBaseline) const override
-  {
+                                 nscoord* aBaseline) const override {
     if (HasAnyStateBits(NS_STATE_FLEX_SYNTHESIZE_BASELINE)) {
       return false;
     }
-    *aBaseline = aBaselineGroup == BaselineSharingGroup::eFirst ?
-                   mBaselineFromLastReflow : mLastBaselineFromLastReflow;
+    *aBaseline = aBaselineGroup == BaselineSharingGroup::eFirst
+                     ? mBaselineFromLastReflow
+                     : mLastBaselineFromLastReflow;
     return true;
   }
 
   
   uint16_t CSSAlignmentForAbsPosChild(
-            const ReflowInput& aChildRI,
-            mozilla::LogicalAxis aLogicalAxis) const override;
+      const ReflowInput& aChildRI,
+      mozilla::LogicalAxis aLogicalAxis) const override;
 
   
 
@@ -183,14 +178,14 @@ public:
 
 
 
-  NS_DECLARE_FRAME_PROPERTY_DELETABLE(FlexContainerInfo, ComputedFlexContainerInfo)
+  NS_DECLARE_FRAME_PROPERTY_DELETABLE(FlexContainerInfo,
+                                      ComputedFlexContainerInfo)
   
 
 
 
 
-  const ComputedFlexContainerInfo* GetFlexContainerInfo()
-  {
+  const ComputedFlexContainerInfo* GetFlexContainerInfo() {
     const ComputedFlexContainerInfo* info = GetProperty(FlexContainerInfo());
     MOZ_ASSERT(info, "Property generation wasn't requested.");
     return info;
@@ -235,15 +230,14 @@ public:
 
   static void MarkCachedFlexMeasurementsDirty(nsIFrame* aItemFrame);
 
-protected:
+ protected:
   
   explicit nsFlexContainerFrame(ComputedStyle* aStyle)
-    : nsContainerFrame(aStyle, kClassID)
-    , mCachedMinISize(NS_INTRINSIC_WIDTH_UNKNOWN)
-    , mCachedPrefISize(NS_INTRINSIC_WIDTH_UNKNOWN)
-    , mBaselineFromLastReflow(NS_INTRINSIC_WIDTH_UNKNOWN)
-    , mLastBaselineFromLastReflow(NS_INTRINSIC_WIDTH_UNKNOWN)
-  {}
+      : nsContainerFrame(aStyle, kClassID),
+        mCachedMinISize(NS_INTRINSIC_WIDTH_UNKNOWN),
+        mCachedPrefISize(NS_INTRINSIC_WIDTH_UNKNOWN),
+        mBaselineFromLastReflow(NS_INTRINSIC_WIDTH_UNKNOWN),
+        mLastBaselineFromLastReflow(NS_INTRINSIC_WIDTH_UNKNOWN) {}
 
   virtual ~nsFlexContainerFrame();
 
@@ -261,16 +255,13 @@ protected:
 
 
 
-  void DoFlexLayout(nsPresContext*           aPresContext,
-                    ReflowOutput&     aDesiredSize,
-                    const ReflowInput& aReflowInput,
-                    nsReflowStatus&          aStatus,
+  void DoFlexLayout(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
+                    const ReflowInput& aReflowInput, nsReflowStatus& aStatus,
                     nscoord aContentBoxMainSize,
                     nscoord aAvailableBSizeForContent,
                     nsTArray<StrutInfo>& aStruts,
                     const FlexboxAxisTracker& aAxisTracker,
-                    nscoord aMainGapSize,
-                    nscoord aCrossGapSize);
+                    nscoord aMainGapSize, nscoord aCrossGapSize);
 
   
 
@@ -281,13 +272,13 @@ protected:
 
 
 
-  template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
+  template <bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
   bool SortChildrenIfNeeded();
 
   
 #ifdef DEBUG
   void SanityCheckAnonymousFlexItems() const;
-#endif 
+#endif  
 
   
 
@@ -300,10 +291,10 @@ protected:
 
 
 
-  mozilla::UniquePtr<FlexItem> GenerateFlexItemForChild(nsPresContext* aPresContext,
-                                     nsIFrame* aChildFrame,
-                                     const ReflowInput& aParentReflowInput,
-                                     const FlexboxAxisTracker& aAxisTracker);
+  mozilla::UniquePtr<FlexItem> GenerateFlexItemForChild(
+      nsPresContext* aPresContext, nsIFrame* aChildFrame,
+      const ReflowInput& aParentReflowInput,
+      const FlexboxAxisTracker& aAxisTracker);
 
   
 
@@ -313,9 +304,8 @@ protected:
 
 
   const CachedMeasuringReflowResult& MeasureAscentAndBSizeForFlexItem(
-    FlexItem& aItem,
-    nsPresContext* aPresContext,
-    ReflowInput& aChildReflowInput);
+      FlexItem& aItem, nsPresContext* aPresContext,
+      ReflowInput& aChildReflowInput);
 
   
 
@@ -375,14 +365,12 @@ protected:
   nscoord ComputeCrossSize(const ReflowInput& aReflowInput,
                            const FlexboxAxisTracker& aAxisTracker,
                            nscoord aSumLineCrossSizes,
-                           nscoord aAvailableBSizeForContent,
-                           bool* aIsDefinite,
+                           nscoord aAvailableBSizeForContent, bool* aIsDefinite,
                            nsReflowStatus& aStatus);
 
   void SizeItemInCrossAxis(nsPresContext* aPresContext,
                            const FlexboxAxisTracker& aAxisTracker,
-                           ReflowInput& aChildReflowInput,
-                           FlexItem& aItem);
+                           ReflowInput& aChildReflowInput, FlexItem& aItem);
 
   
 
@@ -418,8 +406,7 @@ protected:
 
   void ReflowFlexItem(nsPresContext* aPresContext,
                       const FlexboxAxisTracker& aAxisTracker,
-                      const ReflowInput& aReflowInput,
-                      const FlexItem& aItem,
+                      const ReflowInput& aReflowInput, const FlexItem& aItem,
                       mozilla::LogicalPoint& aFramePos,
                       const nsSize& aContainerSize);
 

@@ -16,303 +16,269 @@ using namespace js::frontend;
 using mozilla::Maybe;
 
 BranchEmitterBase::BranchEmitterBase(BytecodeEmitter* bce, Kind kind)
-  : bce_(bce),
-    kind_(kind)
-{}
+    : bce_(bce), kind_(kind) {}
 
 IfEmitter::IfEmitter(BytecodeEmitter* bce, Kind kind)
-  : BranchEmitterBase(bce, kind)
-{}
+    : BranchEmitterBase(bce, kind) {}
 
 IfEmitter::IfEmitter(BytecodeEmitter* bce)
-  : IfEmitter(bce, Kind::MayContainLexicalAccessInBranch)
-{}
+    : IfEmitter(bce, Kind::MayContainLexicalAccessInBranch) {}
 
-bool
-BranchEmitterBase::emitThenInternal(SrcNoteType type)
-{
-    
-    if (kind_ == Kind::MayContainLexicalAccessInBranch) {
-        tdzCache_.reset();
-    }
+bool BranchEmitterBase::emitThenInternal(SrcNoteType type) {
+  
+  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+    tdzCache_.reset();
+  }
 
-    
-    if (!bce_->newSrcNote(type)) {
-        return false;
-    }
-    if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_)) {
-        return false;
-    }
+  
+  if (!bce_->newSrcNote(type)) {
+    return false;
+  }
+  if (!bce_->emitJump(JSOP_IFEQ, &jumpAroundThen_)) {
+    return false;
+  }
 
-    
+  
 #ifdef DEBUG
-    
-    thenDepth_ = bce_->stackDepth;
+  
+  thenDepth_ = bce_->stackDepth;
 #else
-    if (type == SRC_COND || type == SRC_IF_ELSE) {
-        thenDepth_ = bce_->stackDepth;
-    }
+  if (type == SRC_COND || type == SRC_IF_ELSE) {
+    thenDepth_ = bce_->stackDepth;
+  }
 #endif
 
-    
-    if (kind_ == Kind::MayContainLexicalAccessInBranch) {
-        tdzCache_.emplace(bce_);
-    }
+  
+  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+    tdzCache_.emplace(bce_);
+  }
 
-    return true;
+  return true;
 }
 
-void
-BranchEmitterBase::calculateOrCheckPushed()
-{
+void BranchEmitterBase::calculateOrCheckPushed() {
 #ifdef DEBUG
-    if (!calculatedPushed_) {
-        pushed_ = bce_->stackDepth - thenDepth_;
-        calculatedPushed_ = true;
-    } else {
-        MOZ_ASSERT(pushed_ == bce_->stackDepth - thenDepth_);
-    }
+  if (!calculatedPushed_) {
+    pushed_ = bce_->stackDepth - thenDepth_;
+    calculatedPushed_ = true;
+  } else {
+    MOZ_ASSERT(pushed_ == bce_->stackDepth - thenDepth_);
+  }
 #endif
 }
 
-bool
-BranchEmitterBase::emitElseInternal()
-{
-    calculateOrCheckPushed();
+bool BranchEmitterBase::emitElseInternal() {
+  calculateOrCheckPushed();
 
-    
-    if (kind_ == Kind::MayContainLexicalAccessInBranch) {
-        MOZ_ASSERT(tdzCache_.isSome());
-        tdzCache_.reset();
-    }
+  
+  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+    MOZ_ASSERT(tdzCache_.isSome());
+    tdzCache_.reset();
+  }
 
-    
-    
-    
-    if (!bce_->emitJump(JSOP_GOTO, &jumpsAroundElse_)) {
-        return false;
-    }
+  
+  
+  
+  if (!bce_->emitJump(JSOP_GOTO, &jumpsAroundElse_)) {
+    return false;
+  }
 
+  
+  if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_)) {
+    return false;
+  }
+
+  
+  jumpAroundThen_ = JumpList();
+
+  
+  bce_->stackDepth = thenDepth_;
+
+  
+  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+    tdzCache_.emplace(bce_);
+  }
+
+  return true;
+}
+
+bool BranchEmitterBase::emitEndInternal() {
+  
+  if (kind_ == Kind::MayContainLexicalAccessInBranch) {
+    MOZ_ASSERT(tdzCache_.isSome());
+    tdzCache_.reset();
+  }
+
+  calculateOrCheckPushed();
+
+  if (jumpAroundThen_.offset != -1) {
+    
     
     if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_)) {
-        return false;
+      return false;
     }
+  }
 
-    
-    jumpAroundThen_ = JumpList();
+  
+  if (!bce_->emitJumpTargetAndPatch(jumpsAroundElse_)) {
+    return false;
+  }
 
-    
-    bce_->stackDepth = thenDepth_;
-
-    
-    if (kind_ == Kind::MayContainLexicalAccessInBranch) {
-        tdzCache_.emplace(bce_);
-    }
-
-    return true;
+  return true;
 }
 
-bool
-BranchEmitterBase::emitEndInternal()
-{
+bool IfEmitter::emitIf(const Maybe<uint32_t>& ifPos) {
+  MOZ_ASSERT(state_ == State::Start);
+
+  if (ifPos) {
     
-    if (kind_ == Kind::MayContainLexicalAccessInBranch) {
-        MOZ_ASSERT(tdzCache_.isSome());
-        tdzCache_.reset();
-    }
-
-    calculateOrCheckPushed();
-
-    if (jumpAroundThen_.offset != -1) {
-        
-        
-        if (!bce_->emitJumpTargetAndPatch(jumpAroundThen_)) {
-            return false;
-        }
-    }
-
     
-    if (!bce_->emitJumpTargetAndPatch(jumpsAroundElse_)) {
-        return false;
+    if (!bce_->updateSourceCoordNotes(*ifPos)) {
+      return false;
     }
-
-    return true;
-}
-
-bool
-IfEmitter::emitIf(const Maybe<uint32_t>& ifPos)
-{
-    MOZ_ASSERT(state_ == State::Start);
-
-    if (ifPos) {
-        
-        
-        if (!bce_->updateSourceCoordNotes(*ifPos)) {
-            return false;
-        }
-    }
+  }
 
 #ifdef DEBUG
-    state_ = State::If;
+  state_ = State::If;
 #endif
-    return true;
+  return true;
 }
 
-bool
-IfEmitter::emitThen()
-{
-    MOZ_ASSERT(state_ == State::If || state_ == State::ElseIf);
-    MOZ_ASSERT_IF(state_ == State::ElseIf, tdzCache_.isSome());
-    MOZ_ASSERT_IF(state_ != State::ElseIf, tdzCache_.isNothing());
+bool IfEmitter::emitThen() {
+  MOZ_ASSERT(state_ == State::If || state_ == State::ElseIf);
+  MOZ_ASSERT_IF(state_ == State::ElseIf, tdzCache_.isSome());
+  MOZ_ASSERT_IF(state_ != State::ElseIf, tdzCache_.isNothing());
 
-    if (!emitThenInternal(SRC_IF)) {
-        return false;
-    }
+  if (!emitThenInternal(SRC_IF)) {
+    return false;
+  }
 
 #ifdef DEBUG
-    state_ = State::Then;
+  state_ = State::Then;
 #endif
-    return true;
+  return true;
 }
 
-bool
-IfEmitter::emitThenElse()
-{
-    MOZ_ASSERT(state_ == State::If || state_ == State::ElseIf);
-    MOZ_ASSERT_IF(state_ == State::ElseIf, tdzCache_.isSome());
-    MOZ_ASSERT_IF(state_ != State::ElseIf, tdzCache_.isNothing());
+bool IfEmitter::emitThenElse() {
+  MOZ_ASSERT(state_ == State::If || state_ == State::ElseIf);
+  MOZ_ASSERT_IF(state_ == State::ElseIf, tdzCache_.isSome());
+  MOZ_ASSERT_IF(state_ != State::ElseIf, tdzCache_.isNothing());
 
-    if (!emitThenInternal(SRC_IF_ELSE)) {
-        return false;
-    }
+  if (!emitThenInternal(SRC_IF_ELSE)) {
+    return false;
+  }
 
 #ifdef DEBUG
-    state_ = State::ThenElse;
+  state_ = State::ThenElse;
 #endif
-    return true;
+  return true;
 }
 
-bool
-IfEmitter::emitElseIf(const Maybe<uint32_t>& ifPos)
-{
-    MOZ_ASSERT(state_ == State::ThenElse);
+bool IfEmitter::emitElseIf(const Maybe<uint32_t>& ifPos) {
+  MOZ_ASSERT(state_ == State::ThenElse);
 
-    if (!emitElseInternal()) {
-        return false;
-    }
+  if (!emitElseInternal()) {
+    return false;
+  }
 
-    if (ifPos) {
-        
-        
-        if (!bce_->updateSourceCoordNotes(*ifPos)) {
-            return false;
-        }
-    }
-
-#ifdef DEBUG
-    state_ = State::ElseIf;
-#endif
-    return true;
-}
-
-bool
-IfEmitter::emitElse()
-{
-    MOZ_ASSERT(state_ == State::ThenElse);
-
-    if (!emitElseInternal()) {
-        return false;
-    }
-
-#ifdef DEBUG
-    state_ = State::Else;
-#endif
-    return true;
-}
-
-bool
-IfEmitter::emitEnd()
-{
-    MOZ_ASSERT(state_ == State::Then || state_ == State::Else);
+  if (ifPos) {
     
     
-    MOZ_ASSERT_IF(state_ == State::Then, jumpAroundThen_.offset != -1);
-    MOZ_ASSERT_IF(state_ == State::Else, jumpAroundThen_.offset == -1);
-
-    if (!emitEndInternal()) {
-        return false;
+    if (!bce_->updateSourceCoordNotes(*ifPos)) {
+      return false;
     }
+  }
 
 #ifdef DEBUG
-    state_ = State::End;
+  state_ = State::ElseIf;
 #endif
-    return true;
+  return true;
+}
+
+bool IfEmitter::emitElse() {
+  MOZ_ASSERT(state_ == State::ThenElse);
+
+  if (!emitElseInternal()) {
+    return false;
+  }
+
+#ifdef DEBUG
+  state_ = State::Else;
+#endif
+  return true;
+}
+
+bool IfEmitter::emitEnd() {
+  MOZ_ASSERT(state_ == State::Then || state_ == State::Else);
+  
+  
+  MOZ_ASSERT_IF(state_ == State::Then, jumpAroundThen_.offset != -1);
+  MOZ_ASSERT_IF(state_ == State::Else, jumpAroundThen_.offset == -1);
+
+  if (!emitEndInternal()) {
+    return false;
+  }
+
+#ifdef DEBUG
+  state_ = State::End;
+#endif
+  return true;
 }
 
 InternalIfEmitter::InternalIfEmitter(BytecodeEmitter* bce)
-  : IfEmitter(bce, Kind::NoLexicalAccessInBranch)
-{
+    : IfEmitter(bce, Kind::NoLexicalAccessInBranch) {
 #ifdef DEBUG
-    
-    state_ = State::If;
+  
+  state_ = State::If;
 #endif
 }
 
 CondEmitter::CondEmitter(BytecodeEmitter* bce)
-  : BranchEmitterBase(bce, Kind::MayContainLexicalAccessInBranch)
-{}
+    : BranchEmitterBase(bce, Kind::MayContainLexicalAccessInBranch) {}
 
-bool
-CondEmitter::emitCond()
-{
-    MOZ_ASSERT(state_ == State::Start);
+bool CondEmitter::emitCond() {
+  MOZ_ASSERT(state_ == State::Start);
 #ifdef DEBUG
-    state_ = State::Cond;
+  state_ = State::Cond;
 #endif
-    return true;
+  return true;
 }
 
-bool
-CondEmitter::emitThenElse()
-{
-    MOZ_ASSERT(state_ == State::Cond);
-    if (!emitThenInternal(SRC_COND)) {
-        return false;
-    }
+bool CondEmitter::emitThenElse() {
+  MOZ_ASSERT(state_ == State::Cond);
+  if (!emitThenInternal(SRC_COND)) {
+    return false;
+  }
 
 #ifdef DEBUG
-    state_ = State::ThenElse;
+  state_ = State::ThenElse;
 #endif
-    return true;
+  return true;
 }
 
-bool
-CondEmitter::emitElse()
-{
-    MOZ_ASSERT(state_ == State::ThenElse);
+bool CondEmitter::emitElse() {
+  MOZ_ASSERT(state_ == State::ThenElse);
 
-    if (!emitElseInternal()) {
-        return false;
-    }
+  if (!emitElseInternal()) {
+    return false;
+  }
 
 #ifdef DEBUG
-    state_ = State::Else;
+  state_ = State::Else;
 #endif
-    return true;
+  return true;
 }
 
-bool
-CondEmitter::emitEnd()
-{
-    MOZ_ASSERT(state_ == State::Else);
-    MOZ_ASSERT(jumpAroundThen_.offset == -1);
+bool CondEmitter::emitEnd() {
+  MOZ_ASSERT(state_ == State::Else);
+  MOZ_ASSERT(jumpAroundThen_.offset == -1);
 
-    if (!emitEndInternal()) {
-        return false;
-    }
+  if (!emitEndInternal()) {
+    return false;
+  }
 
 #ifdef DEBUG
-    state_ = State::End;
+  state_ = State::End;
 #endif
-    return true;
+  return true;
 }

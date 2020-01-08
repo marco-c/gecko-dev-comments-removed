@@ -51,143 +51,139 @@ class EmitterScope;
 
 
 
-class MOZ_STACK_CLASS CForEmitter
-{
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  public:
-    enum class Cond {
-        Missing,
-        Present
-    };
-    enum class Update {
-        Missing,
-        Present
-    };
+class MOZ_STACK_CLASS CForEmitter {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+ public:
+  enum class Cond { Missing, Present };
+  enum class Update { Missing, Present };
 
-  private:
-    BytecodeEmitter* bce_;
+ private:
+  BytecodeEmitter* bce_;
 
-    
-    unsigned noteIndex_ = 0;
+  
+  unsigned noteIndex_ = 0;
 
-    
-    
-    ptrdiff_t condOffset_ = 0;
+  
+  
+  ptrdiff_t condOffset_ = 0;
 
-    
-    ptrdiff_t biasedTop_ = 0;
+  
+  ptrdiff_t biasedTop_ = 0;
 
-    
-    Cond cond_ = Cond::Missing;
-    Update update_ = Update::Missing;
+  
+  Cond cond_ = Cond::Missing;
+  Update update_ = Update::Missing;
 
-    mozilla::Maybe<LoopControl> loopInfo_;
+  mozilla::Maybe<LoopControl> loopInfo_;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const EmitterScope* headLexicalEmitterScopeForLet_;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const EmitterScope* headLexicalEmitterScopeForLet_;
 
-    mozilla::Maybe<TDZCheckCache> tdzCache_;
+  mozilla::Maybe<TDZCheckCache> tdzCache_;
 
 #ifdef DEBUG
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class State {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    enum class State {
-        
-        Start,
+    Start,
 
-        
-        Init,
+    
+    Init,
 
-        
-        Body,
+    
+    Body,
 
-        
-        Update,
+    
+    Update,
 
-        
-        Cond,
+    
+    Cond,
 
-        
-        End
-    };
-    State state_ = State::Start;
+    
+    End
+  };
+  State state_ = State::Start;
 #endif
 
-  public:
-    CForEmitter(BytecodeEmitter* bce, const EmitterScope* headLexicalEmitterScopeForLet);
+ public:
+  CForEmitter(BytecodeEmitter* bce,
+              const EmitterScope* headLexicalEmitterScopeForLet);
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_MUST_USE bool emitInit(const mozilla::Maybe<uint32_t>& initPos);
-    MOZ_MUST_USE bool emitBody(Cond cond, const mozilla::Maybe<uint32_t>& bodyPos);
-    MOZ_MUST_USE bool emitUpdate(Update update, const mozilla::Maybe<uint32_t>& updatePos);
-    MOZ_MUST_USE bool emitCond(const mozilla::Maybe<uint32_t>& forPos,
-                               const mozilla::Maybe<uint32_t>& condPos,
-                               const mozilla::Maybe<uint32_t>& endPos);
-    MOZ_MUST_USE bool emitEnd();
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_MUST_USE bool emitInit(const mozilla::Maybe<uint32_t>& initPos);
+  MOZ_MUST_USE bool emitBody(Cond cond,
+                             const mozilla::Maybe<uint32_t>& bodyPos);
+  MOZ_MUST_USE bool emitUpdate(Update update,
+                               const mozilla::Maybe<uint32_t>& updatePos);
+  MOZ_MUST_USE bool emitCond(const mozilla::Maybe<uint32_t>& forPos,
+                             const mozilla::Maybe<uint32_t>& condPos,
+                             const mozilla::Maybe<uint32_t>& endPos);
+  MOZ_MUST_USE bool emitEnd();
 };
 
 } 

@@ -9,20 +9,18 @@
 
 
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <windows.h>
 #include <dbghelp.h>
 
-int wmain(int argc, wchar_t** argv)
-{
+int wmain(int argc, wchar_t** argv) {
   if (argc != 3) {
     fprintf(stderr, "Usage: minidumpwriter <PID> <DUMP_FILE>\n");
     return 1;
   }
 
-  DWORD pid = (DWORD) _wtoi(argv[1]);
+  DWORD pid = (DWORD)_wtoi(argv[1]);
 
   if (pid <= 0) {
     fprintf(stderr, "Usage: minidumpwriter <PID> <DUMP_FILE>\n");
@@ -31,8 +29,8 @@ int wmain(int argc, wchar_t** argv)
 
   wchar_t* dumpfile = argv[2];
   int rv = 1;
-  HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                                0, pid);
+  HANDLE hProcess =
+      OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, 0, pid);
   if (!hProcess) {
     fprintf(stderr, "Couldn't get handle for %lu\n", pid);
     return rv;
@@ -47,8 +45,8 @@ int wmain(int argc, wchar_t** argv)
   }
 
   rv = 0;
-  if (!MiniDumpWriteDump(hProcess, pid, file, MiniDumpNormal,
-                         nullptr, nullptr, nullptr)) {
+  if (!MiniDumpWriteDump(hProcess, pid, file, MiniDumpNormal, nullptr, nullptr,
+                         nullptr)) {
     fprintf(stderr, "Error 0x%lX in MiniDumpWriteDump\n", GetLastError());
     rv = 1;
   }

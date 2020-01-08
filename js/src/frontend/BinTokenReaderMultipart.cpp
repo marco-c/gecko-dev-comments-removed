@@ -37,7 +37,6 @@ const char COMPRESSION_IDENTITY[] = "identity;";
 
 
 
-
 const uint32_t MAX_NUMBER_OF_STRINGS = 32768;
 
 using AutoList = BinTokenReaderMultipart::AutoList;
@@ -46,358 +45,342 @@ using AutoTuple = BinTokenReaderMultipart::AutoTuple;
 using CharSlice = BinaryASTSupport::CharSlice;
 using Chars = BinTokenReaderMultipart::Chars;
 
-BinTokenReaderMultipart::BinTokenReaderMultipart(JSContext* cx, ErrorReporter* er, const uint8_t* start, const size_t length)
-  : BinTokenReaderBase(cx, er, start, length)
-  , metadata_(nullptr)
-  , posBeforeTree_(nullptr)
-{
-    MOZ_ASSERT(er);
+BinTokenReaderMultipart::BinTokenReaderMultipart(JSContext* cx,
+                                                 ErrorReporter* er,
+                                                 const uint8_t* start,
+                                                 const size_t length)
+    : BinTokenReaderBase(cx, er, start, length),
+      metadata_(nullptr),
+      posBeforeTree_(nullptr) {
+  MOZ_ASSERT(er);
 }
 
-BinTokenReaderMultipart::~BinTokenReaderMultipart()
-{
-    if (metadata_ && metadataOwned_ == MetadataOwnership::Owned) {
-        UniqueBinASTSourceMetadataPtr ptr(metadata_);
-    }
+BinTokenReaderMultipart::~BinTokenReaderMultipart() {
+  if (metadata_ && metadataOwned_ == MetadataOwnership::Owned) {
+    UniqueBinASTSourceMetadataPtr ptr(metadata_);
+  }
 }
 
-BinASTSourceMetadata*
-BinTokenReaderMultipart::takeMetadata()
-{
-    MOZ_ASSERT(metadataOwned_ == MetadataOwnership::Owned);
-    metadataOwned_ = MetadataOwnership::Unowned;
-    return metadata_;
+BinASTSourceMetadata* BinTokenReaderMultipart::takeMetadata() {
+  MOZ_ASSERT(metadataOwned_ == MetadataOwnership::Owned);
+  metadataOwned_ = MetadataOwnership::Unowned;
+  return metadata_;
 }
 
-JS::Result<Ok>
-BinTokenReaderMultipart::initFromScriptSource(ScriptSource* scriptSource)
-{
-    metadata_ = scriptSource->binASTSourceMetadata();
-    metadataOwned_ = MetadataOwnership::Unowned;
+JS::Result<Ok> BinTokenReaderMultipart::initFromScriptSource(
+    ScriptSource* scriptSource) {
+  metadata_ = scriptSource->binASTSourceMetadata();
+  metadataOwned_ = MetadataOwnership::Unowned;
 
-    return Ok();
+  return Ok();
 }
 
-JS::Result<Ok>
-BinTokenReaderMultipart::readHeader()
-{
-    
-    MOZ_ASSERT(!posBeforeTree_);
+JS::Result<Ok> BinTokenReaderMultipart::readHeader() {
+  
+  MOZ_ASSERT(!posBeforeTree_);
 
-    
-    MOZ_TRY(readConst(MAGIC_HEADER));
-    BINJS_MOZ_TRY_DECL(version, readInternalUint32());
+  
+  MOZ_TRY(readConst(MAGIC_HEADER));
+  BINJS_MOZ_TRY_DECL(version, readInternalUint32());
 
-    
-    
-    
-    if (version != MAGIC_FORMAT_VERSION) {
-        return raiseError("Format version not implemented");
+  
+  
+  
+  if (version != MAGIC_FORMAT_VERSION) {
+    return raiseError("Format version not implemented");
+  }
+
+  
+  MOZ_TRY(readConst(SECTION_HEADER_GRAMMAR));
+  MOZ_TRY(readConst(COMPRESSION_IDENTITY));  
+                                             
+  BINJS_MOZ_TRY_DECL(grammarByteLen, readInternalUint32());
+  const auto posBeforeGrammar = current_;
+
+  if (posBeforeGrammar + grammarByteLen > stop_ ||
+      posBeforeGrammar + grammarByteLen < current_) {  
+    return raiseError("Invalid byte length in grammar table");
+  }
+
+  BINJS_MOZ_TRY_DECL(grammarNumberOfEntries, readInternalUint32());
+  if (grammarNumberOfEntries > BINKIND_LIMIT) {  
+    return raiseError("Invalid number of entries in grammar table");
+  }
+
+  
+  
+  Vector<BinKind> grammarTable_(cx_);
+  if (!grammarTable_.reserve(grammarNumberOfEntries)) {
+    return raiseOOM();
+  }
+
+  for (uint32_t i = 0; i < grammarNumberOfEntries; ++i) {
+    BINJS_MOZ_TRY_DECL(byteLen, readInternalUint32());
+    if (current_ + byteLen > stop_) {
+      return raiseError("Invalid byte length in grammar table");
+    }
+    if (current_ + byteLen < current_) {  
+      return raiseError("Invalid byte length in grammar table");
+    }
+    CharSlice name((const char*)current_, byteLen);
+    current_ += byteLen;
+
+    BINJS_MOZ_TRY_DECL(kind, cx_->runtime()->binast().binKind(cx_, name));
+    if (!kind) {
+      return raiseError("Invalid entry in grammar table");
+    }
+
+    grammarTable_.infallibleAppend(
+        *kind);  
+  }
+  if (current_ != grammarByteLen + posBeforeGrammar) {
+    return raiseError(
+        "The length of the grammar table didn't match its contents.");
+  }
+
+  
+  MOZ_TRY(readConst(SECTION_HEADER_STRINGS));
+  MOZ_TRY(readConst(COMPRESSION_IDENTITY));  
+                                             
+  BINJS_MOZ_TRY_DECL(stringsByteLen, readInternalUint32());
+  const auto posBeforeStrings = current_;
+
+  if (posBeforeStrings + stringsByteLen > stop_ ||
+      posBeforeStrings + stringsByteLen < current_) {  
+    return raiseError("Invalid byte length in strings table");
+  }
+
+  BINJS_MOZ_TRY_DECL(stringsNumberOfEntries, readInternalUint32());
+  if (stringsNumberOfEntries > MAX_NUMBER_OF_STRINGS) {  
+    return raiseError("Too many entries in strings table");
+  }
+
+  BinASTSourceMetadata* metadata =
+      BinASTSourceMetadata::Create(grammarTable_, stringsNumberOfEntries);
+  if (!metadata) {
+    return raiseOOM();
+  }
+
+  
+  
+  auto se = mozilla::MakeScopeExit([metadata]() { js_free(metadata); });
+
+  RootedAtom atom(cx_);
+  for (uint32_t i = 0; i < stringsNumberOfEntries; ++i) {
+    BINJS_MOZ_TRY_DECL(byteLen, readInternalUint32());
+    if (current_ + byteLen > stop_ || current_ + byteLen < current_) {
+      return raiseError("Invalid byte length in individual string");
     }
 
     
-    MOZ_TRY(readConst(SECTION_HEADER_GRAMMAR));
-    MOZ_TRY(readConst(COMPRESSION_IDENTITY)); 
-    BINJS_MOZ_TRY_DECL(grammarByteLen, readInternalUint32());
-    const auto posBeforeGrammar = current_;
-
-    if (posBeforeGrammar + grammarByteLen > stop_ || posBeforeGrammar + grammarByteLen < current_) { 
-        return raiseError("Invalid byte length in grammar table");
+    if (byteLen == 2 && *current_ == 255 && *(current_ + 1) == 0) {
+      atom = nullptr;
+    } else {
+      BINJS_TRY_VAR(atom,
+                    AtomizeWTF8Chars(cx_, (const char*)current_, byteLen));
     }
 
-    BINJS_MOZ_TRY_DECL(grammarNumberOfEntries, readInternalUint32());
-    if (grammarNumberOfEntries > BINKIND_LIMIT) { 
-        return raiseError("Invalid number of entries in grammar table");
-    }
+    metadata->getAtom(i) = atom;
 
     
-    
-    Vector<BinKind> grammarTable_(cx_);
-    if (!grammarTable_.reserve(grammarNumberOfEntries)) {
-        return raiseOOM();
-    }
+    new (&metadata->getSlice(i)) Chars((const char*)current_, byteLen);
 
-    for (uint32_t i = 0; i < grammarNumberOfEntries; ++i) {
-        BINJS_MOZ_TRY_DECL(byteLen, readInternalUint32());
-        if (current_ + byteLen > stop_) {
-            return raiseError("Invalid byte length in grammar table");
-        }
-        if (current_ + byteLen < current_) { 
-            return raiseError("Invalid byte length in grammar table");
-        }
-        CharSlice name((const char*)current_, byteLen);
-        current_ += byteLen;
+    current_ += byteLen;
+  }
 
-        BINJS_MOZ_TRY_DECL(kind, cx_->runtime()->binast().binKind(cx_, name));
-        if (!kind) {
-            return raiseError("Invalid entry in grammar table");
-        }
+  if (posBeforeStrings + stringsByteLen != current_) {
+    return raiseError(
+        "The length of the strings table didn't match its contents.");
+  }
 
-        grammarTable_.infallibleAppend(*kind); 
-    }
-    if (current_ != grammarByteLen + posBeforeGrammar) {
-        return raiseError("The length of the grammar table didn't match its contents.");
-    }
+  MOZ_ASSERT(!metadata_);
+  se.release();
+  metadata_ = metadata;
+  metadataOwned_ = MetadataOwnership::Owned;
 
-    
-    MOZ_TRY(readConst(SECTION_HEADER_STRINGS));
-    MOZ_TRY(readConst(COMPRESSION_IDENTITY)); 
-    BINJS_MOZ_TRY_DECL(stringsByteLen, readInternalUint32());
-    const auto posBeforeStrings = current_;
+  
+  MOZ_TRY(readConst(SECTION_HEADER_TREE));
+  MOZ_TRY(readConst(COMPRESSION_IDENTITY));  
+                                             
+  posBeforeTree_ = current_;
 
-    if (posBeforeStrings + stringsByteLen > stop_ || posBeforeStrings + stringsByteLen < current_) { 
-        return raiseError("Invalid byte length in strings table");
-    }
+  BINJS_MOZ_TRY_DECL(treeByteLen, readInternalUint32());
 
-    BINJS_MOZ_TRY_DECL(stringsNumberOfEntries, readInternalUint32());
-    if (stringsNumberOfEntries > MAX_NUMBER_OF_STRINGS) { 
-        return raiseError("Too many entries in strings table");
-    }
+  if (posBeforeTree_ + treeByteLen > stop_ ||
+      posBeforeTree_ + treeByteLen < posBeforeTree_) {  
+    return raiseError("Invalid byte length in tree table");
+  }
 
-    BinASTSourceMetadata* metadata = BinASTSourceMetadata::Create(grammarTable_, stringsNumberOfEntries);
-    if (!metadata) {
-        return raiseOOM();
-    }
-
-    
-    
-    auto se = mozilla::MakeScopeExit([metadata](){ js_free(metadata); });
-
-    RootedAtom atom(cx_);
-    for (uint32_t i = 0; i < stringsNumberOfEntries; ++i) {
-        BINJS_MOZ_TRY_DECL(byteLen, readInternalUint32());
-        if (current_ + byteLen > stop_ || current_ + byteLen < current_) {
-            return raiseError("Invalid byte length in individual string");
-        }
-
-        
-        if (byteLen == 2 && *current_ == 255 && *(current_ + 1) == 0) {
-            atom = nullptr;
-        } else {
-            BINJS_TRY_VAR(atom, AtomizeWTF8Chars(cx_, (const char*)current_, byteLen));
-        }
-
-        metadata->getAtom(i) = atom;
-
-        
-        new (&metadata->getSlice(i)) Chars((const char*)current_, byteLen);
-
-        current_ += byteLen;
-    }
-
-    if (posBeforeStrings + stringsByteLen != current_) {
-        return raiseError("The length of the strings table didn't match its contents.");
-    }
-
-    MOZ_ASSERT(!metadata_);
-    se.release();
-    metadata_ = metadata;
-    metadataOwned_ = MetadataOwnership::Owned;
-
-    
-    MOZ_TRY(readConst(SECTION_HEADER_TREE));
-    MOZ_TRY(readConst(COMPRESSION_IDENTITY)); 
-    posBeforeTree_ = current_;
-
-    BINJS_MOZ_TRY_DECL(treeByteLen, readInternalUint32());
-
-    if (posBeforeTree_ + treeByteLen > stop_ || posBeforeTree_ + treeByteLen < posBeforeTree_) { 
-        return raiseError("Invalid byte length in tree table");
-    }
-
-    
-    return Ok();
+  
+  return Ok();
 }
 
-void
-BinTokenReaderMultipart::traceMetadata(JSTracer* trc)
-{
-    if (metadata_) {
-        metadata_->trace(trc);
-    }
+void BinTokenReaderMultipart::traceMetadata(JSTracer* trc) {
+  if (metadata_) {
+    metadata_->trace(trc);
+  }
 }
 
-JS::Result<bool>
-BinTokenReaderMultipart::readBool()
-{
-    updateLatestKnownGood();
-    BINJS_MOZ_TRY_DECL(byte, readByte());
+JS::Result<bool> BinTokenReaderMultipart::readBool() {
+  updateLatestKnownGood();
+  BINJS_MOZ_TRY_DECL(byte, readByte());
 
-    switch (byte) {
-      case 0:
-        return false;
-      case 1:
-        return true;
-      case 2:
-        return raiseError("Not implemented: null boolean value");
-      default:
-        return raiseError("Invalid boolean value");
-    }
-}
-
-
-
-
-
-JS::Result<double>
-BinTokenReaderMultipart::readDouble()
-{
-    updateLatestKnownGood();
-
-    uint8_t bytes[8];
-    MOZ_ASSERT(sizeof(bytes) == sizeof(double));
-    MOZ_TRY(readBuf(reinterpret_cast<uint8_t*>(bytes), mozilla::ArrayLength(bytes)));
-
-    
-    const uint64_t asInt = mozilla::LittleEndian::readUint64(bytes);
-
-    if (asInt == NULL_FLOAT_REPRESENTATION) {
-        return raiseError("Not implemented: null double value");
-    }
-
-    
-    
-    return JS::CanonicalizeNaN(mozilla::BitwiseCast<double>(asInt));
+  switch (byte) {
+    case 0:
+      return false;
+    case 1:
+      return true;
+    case 2:
+      return raiseError("Not implemented: null boolean value");
+    default:
+      return raiseError("Invalid boolean value");
+  }
 }
 
 
 
-JS::Result<JSAtom*>
-BinTokenReaderMultipart::readMaybeAtom()
-{
-    updateLatestKnownGood();
-    BINJS_MOZ_TRY_DECL(index, readInternalUint32());
 
-    if (index >= metadata_->numStrings()) {
-        return raiseError("Invalid index to strings table");
-    }
-    return metadata_->getAtom(index);
+
+JS::Result<double> BinTokenReaderMultipart::readDouble() {
+  updateLatestKnownGood();
+
+  uint8_t bytes[8];
+  MOZ_ASSERT(sizeof(bytes) == sizeof(double));
+  MOZ_TRY(
+      readBuf(reinterpret_cast<uint8_t*>(bytes), mozilla::ArrayLength(bytes)));
+
+  
+  const uint64_t asInt = mozilla::LittleEndian::readUint64(bytes);
+
+  if (asInt == NULL_FLOAT_REPRESENTATION) {
+    return raiseError("Not implemented: null double value");
+  }
+
+  
+  
+  return JS::CanonicalizeNaN(mozilla::BitwiseCast<double>(asInt));
 }
 
-JS::Result<JSAtom*>
-BinTokenReaderMultipart::readAtom()
-{
-    BINJS_MOZ_TRY_DECL(maybe, readMaybeAtom());
 
-    if (!maybe) {
-        return raiseError("Empty string");
-    }
+JS::Result<JSAtom*> BinTokenReaderMultipart::readMaybeAtom() {
+  updateLatestKnownGood();
+  BINJS_MOZ_TRY_DECL(index, readInternalUint32());
 
-    return maybe;
+  if (index >= metadata_->numStrings()) {
+    return raiseError("Invalid index to strings table");
+  }
+  return metadata_->getAtom(index);
 }
 
-JS::Result<JSAtom*>
-BinTokenReaderMultipart::readMaybeIdentifierName() {
-    return readMaybeAtom();
+JS::Result<JSAtom*> BinTokenReaderMultipart::readAtom() {
+  BINJS_MOZ_TRY_DECL(maybe, readMaybeAtom());
+
+  if (!maybe) {
+    return raiseError("Empty string");
+  }
+
+  return maybe;
 }
 
-JS::Result<JSAtom*>
-BinTokenReaderMultipart::readIdentifierName() {
-    return readAtom();
+JS::Result<JSAtom*> BinTokenReaderMultipart::readMaybeIdentifierName() {
+  return readMaybeAtom();
 }
 
-JS::Result<JSAtom*>
-BinTokenReaderMultipart::readMaybePropertyKey() {
-    return readMaybeAtom();
+JS::Result<JSAtom*> BinTokenReaderMultipart::readIdentifierName() {
+  return readAtom();
 }
 
-JS::Result<JSAtom*>
-BinTokenReaderMultipart::readPropertyKey() {
-    return readAtom();
+JS::Result<JSAtom*> BinTokenReaderMultipart::readMaybePropertyKey() {
+  return readMaybeAtom();
 }
 
-JS::Result<Ok>
-BinTokenReaderMultipart::readChars(Chars& out)
-{
-    updateLatestKnownGood();
-    BINJS_MOZ_TRY_DECL(index, readInternalUint32());
-
-    if (index >= metadata_->numStrings()) {
-        return raiseError("Invalid index to strings table for string enum");
-    }
-
-    out = metadata_->getSlice(index);
-    return Ok();
+JS::Result<JSAtom*> BinTokenReaderMultipart::readPropertyKey() {
+  return readAtom();
 }
 
-JS::Result<BinVariant>
-BinTokenReaderMultipart::readVariant()
-{
-    updateLatestKnownGood();
-    BINJS_MOZ_TRY_DECL(index, readInternalUint32());
+JS::Result<Ok> BinTokenReaderMultipart::readChars(Chars& out) {
+  updateLatestKnownGood();
+  BINJS_MOZ_TRY_DECL(index, readInternalUint32());
 
-    if (index >= metadata_->numStrings()) {
-        return raiseError("Invalid index to strings table for string enum");
-    }
+  if (index >= metadata_->numStrings()) {
+    return raiseError("Invalid index to strings table for string enum");
+  }
 
-    auto variantsPtr = variantsTable_.lookupForAdd(index);
-    if (variantsPtr) {
-        return variantsPtr->value();
-    }
+  out = metadata_->getSlice(index);
+  return Ok();
+}
 
-    
-    
+JS::Result<BinVariant> BinTokenReaderMultipart::readVariant() {
+  updateLatestKnownGood();
+  BINJS_MOZ_TRY_DECL(index, readInternalUint32());
 
-    
-    
-    
-    Chars slice = metadata_->getSlice(index); 
-    BINJS_MOZ_TRY_DECL(variant, cx_->runtime()->binast().binVariant(cx_, slice));
+  if (index >= metadata_->numStrings()) {
+    return raiseError("Invalid index to strings table for string enum");
+  }
 
-    if (!variant) {
-        return raiseError("Invalid string enum variant");
-    }
+  auto variantsPtr = variantsTable_.lookupForAdd(index);
+  if (variantsPtr) {
+    return variantsPtr->value();
+  }
 
-    if (!variantsTable_.add(variantsPtr, index, *variant)) {
-        return raiseOOM();
-    }
+  
+  
 
-    return *variant;
+  
+  
+  
+  Chars slice = metadata_->getSlice(index);  
+  BINJS_MOZ_TRY_DECL(variant, cx_->runtime()->binast().binVariant(cx_, slice));
+
+  if (!variant) {
+    return raiseError("Invalid string enum variant");
+  }
+
+  if (!variantsTable_.add(variantsPtr, index, *variant)) {
+    return raiseOOM();
+  }
+
+  return *variant;
 }
 
 JS::Result<BinTokenReaderBase::SkippableSubTree>
-BinTokenReaderMultipart::readSkippableSubTree()
-{
-    updateLatestKnownGood();
-    BINJS_MOZ_TRY_DECL(byteLen, readInternalUint32());
+BinTokenReaderMultipart::readSkippableSubTree() {
+  updateLatestKnownGood();
+  BINJS_MOZ_TRY_DECL(byteLen, readInternalUint32());
 
-    if (current_ + byteLen > stop_ || current_ + byteLen < current_) {
-        return raiseError("Invalid byte length in readSkippableSubTree");
-    }
+  if (current_ + byteLen > stop_ || current_ + byteLen < current_) {
+    return raiseError("Invalid byte length in readSkippableSubTree");
+  }
 
-    const auto start = offset();
+  const auto start = offset();
 
-    current_ += byteLen;
+  current_ += byteLen;
 
-    return BinTokenReaderBase::SkippableSubTree(start, byteLen);
+  return BinTokenReaderBase::SkippableSubTree(start, byteLen);
 }
 
 
 
-JS::Result<Ok>
-BinTokenReaderMultipart::enterUntaggedTuple(AutoTuple& guard)
-{
-    guard.init();
-    return Ok();
+JS::Result<Ok> BinTokenReaderMultipart::enterUntaggedTuple(AutoTuple& guard) {
+  guard.init();
+  return Ok();
 }
 
 
 
 
+JS::Result<Ok> BinTokenReaderMultipart::enterTaggedTuple(
+    BinKind& tag, BinTokenReaderMultipart::BinFields&, AutoTaggedTuple& guard) {
+  BINJS_MOZ_TRY_DECL(index, readInternalUint32());
+  if (index >= metadata_->numBinKinds()) {
+    return raiseError("Invalid index to grammar table");
+  }
 
-JS::Result<Ok>
-BinTokenReaderMultipart::enterTaggedTuple(BinKind& tag, BinTokenReaderMultipart::BinFields&, AutoTaggedTuple& guard)
-{
-    BINJS_MOZ_TRY_DECL(index, readInternalUint32());
-    if (index >= metadata_->numBinKinds()) {
-        return raiseError("Invalid index to grammar table");
-    }
+  tag = metadata_->getBinKind(index);
 
-    tag = metadata_->getBinKind(index);
-
-    
-    guard.init();
-    return Ok();
+  
+  guard.init();
+  return Ok();
 }
 
 
@@ -406,141 +389,115 @@ BinTokenReaderMultipart::enterTaggedTuple(BinKind& tag, BinTokenReaderMultipart:
 
 
 
-JS::Result<Ok>
-BinTokenReaderMultipart::enterList(uint32_t& items, AutoList& guard)
-{
-    guard.init();
 
-    MOZ_TRY_VAR(items, readInternalUint32());
+JS::Result<Ok> BinTokenReaderMultipart::enterList(uint32_t& items,
+                                                  AutoList& guard) {
+  guard.init();
 
-    return Ok();
+  MOZ_TRY_VAR(items, readInternalUint32());
+
+  return Ok();
 }
 
-void
-BinTokenReaderMultipart::AutoBase::init()
-{
-    initialized_ = true;
-}
+void BinTokenReaderMultipart::AutoBase::init() { initialized_ = true; }
 
 BinTokenReaderMultipart::AutoBase::AutoBase(BinTokenReaderMultipart& reader)
-    : initialized_(false)
-    , reader_(reader)
-{ }
+    : initialized_(false), reader_(reader) {}
 
-BinTokenReaderMultipart::AutoBase::~AutoBase()
-{
-    
-    
-    
-    MOZ_ASSERT_IF(initialized_, reader_.hasRaisedError());
+BinTokenReaderMultipart::AutoBase::~AutoBase() {
+  
+  
+  
+  MOZ_ASSERT_IF(initialized_, reader_.hasRaisedError());
 }
 
-JS::Result<Ok>
-BinTokenReaderMultipart::AutoBase::checkPosition(const uint8_t* expectedEnd)
-{
-    if (reader_.current_ != expectedEnd) {
-        return reader_.raiseError("Caller did not consume the expected set of bytes");
-    }
+JS::Result<Ok> BinTokenReaderMultipart::AutoBase::checkPosition(
+    const uint8_t* expectedEnd) {
+  if (reader_.current_ != expectedEnd) {
+    return reader_.raiseError(
+        "Caller did not consume the expected set of bytes");
+  }
 
-    return Ok();
+  return Ok();
 }
-
-
 
 BinTokenReaderMultipart::AutoList::AutoList(BinTokenReaderMultipart& reader)
-    : AutoBase(reader)
-{ }
+    : AutoBase(reader) {}
 
-void
-BinTokenReaderMultipart::AutoList::init()
-{
-    AutoBase::init();
+void BinTokenReaderMultipart::AutoList::init() { AutoBase::init(); }
+
+JS::Result<Ok> BinTokenReaderMultipart::AutoList::done() {
+  MOZ_ASSERT(initialized_);
+  initialized_ = false;
+  if (reader_.hasRaisedError()) {
+    
+    return reader_.cx_->alreadyReportedError();
+  }
+
+  return Ok();
 }
-
-JS::Result<Ok>
-BinTokenReaderMultipart::AutoList::done()
-{
-    MOZ_ASSERT(initialized_);
-    initialized_ = false;
-    if (reader_.hasRaisedError()) {
-        
-        return reader_.cx_->alreadyReportedError();
-    }
-
-    return Ok();
-}
-
 
 
 
 
 
 MOZ_MUST_USE JS::Result<uint32_t>
-BinTokenReaderMultipart::readInternalUint32()
-{
-    uint32_t result = 0;
-    uint32_t shift  = 0;
-    while (true) {
-        MOZ_ASSERT(shift < 32);
-        uint32_t byte;
-        MOZ_TRY_VAR(byte, readByte());
+BinTokenReaderMultipart::readInternalUint32() {
+  uint32_t result = 0;
+  uint32_t shift = 0;
+  while (true) {
+    MOZ_ASSERT(shift < 32);
+    uint32_t byte;
+    MOZ_TRY_VAR(byte, readByte());
 
-        const uint32_t newResult = result | (byte >> 1) << shift;
-        if (newResult < result) {
-            return raiseError("Overflow during readInternalUint32");
-        }
-
-        result = newResult;
-        shift += 7;
-
-        if ((byte & 1) == 0) {
-            return result;
-        }
-
-        if (shift >= 32) {
-            return raiseError("Overflow during readInternalUint32");
-        }
+    const uint32_t newResult = result | (byte >> 1) << shift;
+    if (newResult < result) {
+      return raiseError("Overflow during readInternalUint32");
     }
+
+    result = newResult;
+    shift += 7;
+
+    if ((byte & 1) == 0) {
+      return result;
+    }
+
+    if (shift >= 32) {
+      return raiseError("Overflow during readInternalUint32");
+    }
+  }
 }
 
+BinTokenReaderMultipart::AutoTaggedTuple::AutoTaggedTuple(
+    BinTokenReaderMultipart& reader)
+    : AutoBase(reader) {}
 
-BinTokenReaderMultipart::AutoTaggedTuple::AutoTaggedTuple(BinTokenReaderMultipart& reader)
-    : AutoBase(reader)
-{ }
+JS::Result<Ok> BinTokenReaderMultipart::AutoTaggedTuple::done() {
+  MOZ_ASSERT(initialized_);
+  initialized_ = false;
+  if (reader_.hasRaisedError()) {
+    
+    return reader_.cx_->alreadyReportedError();
+  }
 
-JS::Result<Ok>
-BinTokenReaderMultipart::AutoTaggedTuple::done()
-{
-    MOZ_ASSERT(initialized_);
-    initialized_ = false;
-    if (reader_.hasRaisedError()) {
-        
-        return reader_.cx_->alreadyReportedError();
-    }
-
-    return Ok();
+  return Ok();
 }
 
 BinTokenReaderMultipart::AutoTuple::AutoTuple(BinTokenReaderMultipart& reader)
-    : AutoBase(reader)
-{ }
+    : AutoBase(reader) {}
 
-JS::Result<Ok>
-BinTokenReaderMultipart::AutoTuple::done()
-{
-    MOZ_ASSERT(initialized_);
-    initialized_ = false;
-    if (reader_.hasRaisedError()) {
-        
-        return reader_.cx_->alreadyReportedError();
-    }
-
+JS::Result<Ok> BinTokenReaderMultipart::AutoTuple::done() {
+  MOZ_ASSERT(initialized_);
+  initialized_ = false;
+  if (reader_.hasRaisedError()) {
     
-    return Ok();
+    return reader_.cx_->alreadyReportedError();
+  }
+
+  
+  return Ok();
 }
 
-} 
+}  
 
-
-} 
-
+}  

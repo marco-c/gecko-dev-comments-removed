@@ -15,24 +15,20 @@ namespace gfx {
 void* ThreadCallback(void* threadData);
 
 class WorkerThreadPosix : public WorkerThread {
-public:
+ public:
   explicit WorkerThreadPosix(MultiThreadedJobQueue* aJobQueue)
-  : WorkerThread(aJobQueue)
-  {
-    pthread_create(&mThread, nullptr, ThreadCallback, static_cast<WorkerThread*>(this));
+      : WorkerThread(aJobQueue) {
+    pthread_create(&mThread, nullptr, ThreadCallback,
+                   static_cast<WorkerThread*>(this));
   }
 
-  ~WorkerThreadPosix() override
-  {
-    pthread_join(mThread, nullptr);
-  }
+  ~WorkerThreadPosix() override { pthread_join(mThread, nullptr); }
 
-  void SetName(const char*) override
-  {
-
-
-
-
+  void SetName(const char*) override {
+    
+    
+    
+    
 
 
 
@@ -46,42 +42,30 @@ public:
 
   }
 
-protected:
+ protected:
   pthread_t mThread;
 };
 
-void* ThreadCallback(void* threadData)
-{
+void* ThreadCallback(void* threadData) {
   WorkerThread* thread = static_cast<WorkerThread*>(threadData);
   thread->Run();
   return nullptr;
 }
 
-WorkerThread*
-WorkerThread::Create(MultiThreadedJobQueue* aJobQueue)
-{
+WorkerThread* WorkerThread::Create(MultiThreadedJobQueue* aJobQueue) {
   return new WorkerThreadPosix(aJobQueue);
 }
 
 MultiThreadedJobQueue::MultiThreadedJobQueue()
-: mThreadsCount(0)
-, mShuttingDown(false)
-{}
+    : mThreadsCount(0), mShuttingDown(false) {}
 
-MultiThreadedJobQueue::~MultiThreadedJobQueue()
-{
-  MOZ_ASSERT(mJobs.empty());
-}
+MultiThreadedJobQueue::~MultiThreadedJobQueue() { MOZ_ASSERT(mJobs.empty()); }
 
-bool
-MultiThreadedJobQueue::WaitForJob(Job*& aOutJob)
-{
+bool MultiThreadedJobQueue::WaitForJob(Job*& aOutJob) {
   return PopJob(aOutJob, BLOCKING);
 }
 
-bool
-MultiThreadedJobQueue::PopJob(Job*& aOutJobs, AccessType aAccess)
-{
+bool MultiThreadedJobQueue::PopJob(Job*& aOutJobs, AccessType aAccess) {
   for (;;) {
     CriticalSectionAutoEnter lock(&mMutex);
 
@@ -110,32 +94,24 @@ MultiThreadedJobQueue::PopJob(Job*& aOutJobs, AccessType aAccess)
   }
 }
 
-void
-MultiThreadedJobQueue::SubmitJob(Job* aJobs)
-{
+void MultiThreadedJobQueue::SubmitJob(Job* aJobs) {
   MOZ_ASSERT(aJobs);
   CriticalSectionAutoEnter lock(&mMutex);
   mJobs.push_back(aJobs);
   mAvailableCondvar.Broadcast();
 }
 
-size_t
-MultiThreadedJobQueue::NumJobs()
-{
+size_t MultiThreadedJobQueue::NumJobs() {
   CriticalSectionAutoEnter lock(&mMutex);
   return mJobs.size();
 }
 
-bool
-MultiThreadedJobQueue::IsEmpty()
-{
+bool MultiThreadedJobQueue::IsEmpty() {
   CriticalSectionAutoEnter lock(&mMutex);
   return mJobs.empty();
 }
 
-void
-MultiThreadedJobQueue::ShutDown()
-{
+void MultiThreadedJobQueue::ShutDown() {
   CriticalSectionAutoEnter lock(&mMutex);
   mShuttingDown = true;
   while (mThreadsCount) {
@@ -144,15 +120,9 @@ MultiThreadedJobQueue::ShutDown()
   }
 }
 
-void
-MultiThreadedJobQueue::RegisterThread()
-{
-  mThreadsCount += 1;
-}
+void MultiThreadedJobQueue::RegisterThread() { mThreadsCount += 1; }
 
-void
-MultiThreadedJobQueue::UnregisterThread()
-{
+void MultiThreadedJobQueue::UnregisterThread() {
   CriticalSectionAutoEnter lock(&mMutex);
   mThreadsCount -= 1;
   if (mThreadsCount == 0) {
@@ -160,22 +130,16 @@ MultiThreadedJobQueue::UnregisterThread()
   }
 }
 
-EventObject::EventObject()
-: mIsSet(false)
-{}
+EventObject::EventObject() : mIsSet(false) {}
 
 EventObject::~EventObject() = default;
 
-bool
-EventObject::Peak()
-{
+bool EventObject::Peak() {
   CriticalSectionAutoEnter lock(&mMutex);
   return mIsSet;
 }
 
-void
-EventObject::Set()
-{
+void EventObject::Set() {
   CriticalSectionAutoEnter lock(&mMutex);
   if (!mIsSet) {
     mIsSet = true;
@@ -183,9 +147,7 @@ EventObject::Set()
   }
 }
 
-void
-EventObject::Wait()
-{
+void EventObject::Wait() {
   CriticalSectionAutoEnter lock(&mMutex);
   if (mIsSet) {
     return;
@@ -193,5 +155,5 @@ EventObject::Wait()
   mCond.Wait(&mMutex);
 }
 
-} 
-} 
+}  
+}  

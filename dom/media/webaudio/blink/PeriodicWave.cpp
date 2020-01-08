@@ -32,192 +32,185 @@
 #include <limits>
 #include "mozilla/FFTBlock.h"
 
-const unsigned MinPeriodicWaveSize = 4096; 
-const unsigned MaxPeriodicWaveSize = 8192; 
-const float CentsPerRange = 1200 / 3; 
+const unsigned MinPeriodicWaveSize = 4096;  
+const unsigned MaxPeriodicWaveSize = 8192;  
+const float CentsPerRange = 1200 / 3;       
 
 using namespace mozilla;
 using mozilla::dom::OscillatorType;
 
 namespace WebCore {
 
-already_AddRefed<PeriodicWave>
-PeriodicWave::create(float sampleRate,
-                     const float* real,
-                     const float* imag,
-                     size_t numberOfComponents,
-                     bool disableNormalization)
-{
-    bool isGood = real && imag && numberOfComponents > 0;
-    MOZ_ASSERT(isGood);
-    if (isGood) {
-        RefPtr<PeriodicWave> periodicWave =
-            new PeriodicWave(sampleRate, numberOfComponents,
-                             disableNormalization);
-
-        
-        
-        size_t halfSize = periodicWave->m_periodicWaveSize / 2;
-        numberOfComponents = std::min(numberOfComponents, halfSize);
-        periodicWave->m_numberOfComponents = numberOfComponents;
-        periodicWave->m_realComponents = new AudioFloatArray(numberOfComponents);
-        periodicWave->m_imagComponents = new AudioFloatArray(numberOfComponents);
-        memcpy(periodicWave->m_realComponents->Elements(), real,
-               numberOfComponents * sizeof(float));
-        memcpy(periodicWave->m_imagComponents->Elements(), imag,
-               numberOfComponents * sizeof(float));
-
-        return periodicWave.forget();
-    }
-    return nullptr;
-}
-
-already_AddRefed<PeriodicWave>
-PeriodicWave::createSine(float sampleRate)
-{
+already_AddRefed<PeriodicWave> PeriodicWave::create(float sampleRate,
+                                                    const float* real,
+                                                    const float* imag,
+                                                    size_t numberOfComponents,
+                                                    bool disableNormalization) {
+  bool isGood = real && imag && numberOfComponents > 0;
+  MOZ_ASSERT(isGood);
+  if (isGood) {
     RefPtr<PeriodicWave> periodicWave =
-        new PeriodicWave(sampleRate, MinPeriodicWaveSize, false);
-    periodicWave->generateBasicWaveform(OscillatorType::Sine);
+        new PeriodicWave(sampleRate, numberOfComponents, disableNormalization);
+
+    
+    
+    size_t halfSize = periodicWave->m_periodicWaveSize / 2;
+    numberOfComponents = std::min(numberOfComponents, halfSize);
+    periodicWave->m_numberOfComponents = numberOfComponents;
+    periodicWave->m_realComponents = new AudioFloatArray(numberOfComponents);
+    periodicWave->m_imagComponents = new AudioFloatArray(numberOfComponents);
+    memcpy(periodicWave->m_realComponents->Elements(), real,
+           numberOfComponents * sizeof(float));
+    memcpy(periodicWave->m_imagComponents->Elements(), imag,
+           numberOfComponents * sizeof(float));
+
     return periodicWave.forget();
+  }
+  return nullptr;
 }
 
-already_AddRefed<PeriodicWave>
-PeriodicWave::createSquare(float sampleRate)
-{
-    RefPtr<PeriodicWave> periodicWave =
-        new PeriodicWave(sampleRate, MinPeriodicWaveSize, false);
-    periodicWave->generateBasicWaveform(OscillatorType::Square);
-    return periodicWave.forget();
+already_AddRefed<PeriodicWave> PeriodicWave::createSine(float sampleRate) {
+  RefPtr<PeriodicWave> periodicWave =
+      new PeriodicWave(sampleRate, MinPeriodicWaveSize, false);
+  periodicWave->generateBasicWaveform(OscillatorType::Sine);
+  return periodicWave.forget();
 }
 
-already_AddRefed<PeriodicWave>
-PeriodicWave::createSawtooth(float sampleRate)
-{
-    RefPtr<PeriodicWave> periodicWave =
-        new PeriodicWave(sampleRate, MinPeriodicWaveSize, false);
-    periodicWave->generateBasicWaveform(OscillatorType::Sawtooth);
-    return periodicWave.forget();
+already_AddRefed<PeriodicWave> PeriodicWave::createSquare(float sampleRate) {
+  RefPtr<PeriodicWave> periodicWave =
+      new PeriodicWave(sampleRate, MinPeriodicWaveSize, false);
+  periodicWave->generateBasicWaveform(OscillatorType::Square);
+  return periodicWave.forget();
 }
 
-already_AddRefed<PeriodicWave>
-PeriodicWave::createTriangle(float sampleRate)
-{
-    RefPtr<PeriodicWave> periodicWave =
-        new PeriodicWave(sampleRate, MinPeriodicWaveSize, false);
-    periodicWave->generateBasicWaveform(OscillatorType::Triangle);
-    return periodicWave.forget();
+already_AddRefed<PeriodicWave> PeriodicWave::createSawtooth(float sampleRate) {
+  RefPtr<PeriodicWave> periodicWave =
+      new PeriodicWave(sampleRate, MinPeriodicWaveSize, false);
+  periodicWave->generateBasicWaveform(OscillatorType::Sawtooth);
+  return periodicWave.forget();
 }
 
-PeriodicWave::PeriodicWave(float sampleRate, size_t numberOfComponents, bool disableNormalization)
-    : m_sampleRate(sampleRate)
-    , m_centsPerRange(CentsPerRange)
-    , m_maxPartialsInBandLimitedTable(0)
-    , m_normalizationScale(1.0f)
-    , m_disableNormalization(disableNormalization)
-{
-    float nyquist = 0.5 * m_sampleRate;
+already_AddRefed<PeriodicWave> PeriodicWave::createTriangle(float sampleRate) {
+  RefPtr<PeriodicWave> periodicWave =
+      new PeriodicWave(sampleRate, MinPeriodicWaveSize, false);
+  periodicWave->generateBasicWaveform(OscillatorType::Triangle);
+  return periodicWave.forget();
+}
 
-    if (numberOfComponents <= MinPeriodicWaveSize) {
-        m_periodicWaveSize = MinPeriodicWaveSize;
-    } else {
-        unsigned npow2 = powf(2.0f, floorf(logf(numberOfComponents - 1.0)/logf(2.0f) + 1.0f));
-        m_periodicWaveSize = std::min(MaxPeriodicWaveSize, npow2);
+PeriodicWave::PeriodicWave(float sampleRate, size_t numberOfComponents,
+                           bool disableNormalization)
+    : m_sampleRate(sampleRate),
+      m_centsPerRange(CentsPerRange),
+      m_maxPartialsInBandLimitedTable(0),
+      m_normalizationScale(1.0f),
+      m_disableNormalization(disableNormalization) {
+  float nyquist = 0.5 * m_sampleRate;
+
+  if (numberOfComponents <= MinPeriodicWaveSize) {
+    m_periodicWaveSize = MinPeriodicWaveSize;
+  } else {
+    unsigned npow2 =
+        powf(2.0f, floorf(logf(numberOfComponents - 1.0) / logf(2.0f) + 1.0f));
+    m_periodicWaveSize = std::min(MaxPeriodicWaveSize, npow2);
+  }
+
+  m_numberOfRanges = (unsigned)(3.0f * logf(m_periodicWaveSize) / logf(2.0f));
+  m_bandLimitedTables.SetLength(m_numberOfRanges);
+  m_lowestFundamentalFrequency = nyquist / maxNumberOfPartials();
+  m_rateScale = m_periodicWaveSize / m_sampleRate;
+}
+
+size_t PeriodicWave::sizeOfIncludingThis(
+    mozilla::MallocSizeOf aMallocSizeOf) const {
+  size_t amount = aMallocSizeOf(this);
+
+  amount += m_bandLimitedTables.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (size_t i = 0; i < m_bandLimitedTables.Length(); i++) {
+    if (m_bandLimitedTables[i]) {
+      amount +=
+          m_bandLimitedTables[i]->ShallowSizeOfIncludingThis(aMallocSizeOf);
+    }
+  }
+
+  return amount;
+}
+
+void PeriodicWave::waveDataForFundamentalFrequency(
+    float fundamentalFrequency, float*& lowerWaveData, float*& higherWaveData,
+    float& tableInterpolationFactor) {
+  
+  
+  fundamentalFrequency = fabsf(fundamentalFrequency);
+
+  
+  
+  
+  unsigned numberOfPartials = numberOfPartialsForRange(0);
+  float nyquist = 0.5 * m_sampleRate;
+  if (fundamentalFrequency != 0.0) {
+    numberOfPartials =
+        std::min(numberOfPartials, (unsigned)(nyquist / fundamentalFrequency));
+  }
+  if (numberOfPartials > m_maxPartialsInBandLimitedTable) {
+    for (unsigned rangeIndex = 0; rangeIndex < m_numberOfRanges; ++rangeIndex) {
+      m_bandLimitedTables[rangeIndex] = 0;
     }
 
-    m_numberOfRanges = (unsigned)(3.0f*logf(m_periodicWaveSize)/logf(2.0f));
-    m_bandLimitedTables.SetLength(m_numberOfRanges);
-    m_lowestFundamentalFrequency = nyquist / maxNumberOfPartials();
-    m_rateScale = m_periodicWaveSize / m_sampleRate;
+    
+    
+    createBandLimitedTables(fundamentalFrequency, 0);
+    m_maxPartialsInBandLimitedTable = numberOfPartials;
+  }
+
+  
+  float ratio = fundamentalFrequency > 0
+                    ? fundamentalFrequency / m_lowestFundamentalFrequency
+                    : 0.5;
+  float centsAboveLowestFrequency = logf(ratio) / logf(2.0f) * 1200;
+
+  
+  
+  float pitchRange = 1 + centsAboveLowestFrequency / m_centsPerRange;
+
+  pitchRange = std::max(pitchRange, 0.0f);
+  pitchRange = std::min(pitchRange, static_cast<float>(m_numberOfRanges - 1));
+
+  
+  
+  
+  
+  unsigned rangeIndex1 = static_cast<unsigned>(pitchRange);
+  unsigned rangeIndex2 =
+      rangeIndex1 < m_numberOfRanges - 1 ? rangeIndex1 + 1 : rangeIndex1;
+
+  if (!m_bandLimitedTables[rangeIndex1].get())
+    createBandLimitedTables(fundamentalFrequency, rangeIndex1);
+
+  if (!m_bandLimitedTables[rangeIndex2].get())
+    createBandLimitedTables(fundamentalFrequency, rangeIndex2);
+
+  lowerWaveData = m_bandLimitedTables[rangeIndex2]->Elements();
+  higherWaveData = m_bandLimitedTables[rangeIndex1]->Elements();
+
+  
+  tableInterpolationFactor = rangeIndex2 - pitchRange;
 }
 
-size_t PeriodicWave::sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const
-{
-    size_t amount = aMallocSizeOf(this);
-
-    amount += m_bandLimitedTables.ShallowSizeOfExcludingThis(aMallocSizeOf);
-    for (size_t i = 0; i < m_bandLimitedTables.Length(); i++) {
-        if (m_bandLimitedTables[i]) {
-            amount += m_bandLimitedTables[i]->ShallowSizeOfIncludingThis(aMallocSizeOf);
-        }
-    }
-
-    return amount;
+unsigned PeriodicWave::maxNumberOfPartials() const {
+  return m_periodicWaveSize / 2;
 }
 
-void PeriodicWave::waveDataForFundamentalFrequency(float fundamentalFrequency, float* &lowerWaveData, float* &higherWaveData, float& tableInterpolationFactor)
-{
+unsigned PeriodicWave::numberOfPartialsForRange(unsigned rangeIndex) const {
+  
+  float centsToCull = rangeIndex * m_centsPerRange;
 
-    
-    
-    fundamentalFrequency = fabsf(fundamentalFrequency);
+  
+  float cullingScale = pow(2, -centsToCull / 1200);
 
-    
-    
-    
-    unsigned numberOfPartials = numberOfPartialsForRange(0);
-    float nyquist = 0.5 * m_sampleRate;
-    if (fundamentalFrequency != 0.0) {
-        numberOfPartials = std::min(numberOfPartials, (unsigned)(nyquist / fundamentalFrequency));
-    }
-    if (numberOfPartials > m_maxPartialsInBandLimitedTable) {
-        for (unsigned rangeIndex = 0; rangeIndex < m_numberOfRanges; ++rangeIndex) {
-            m_bandLimitedTables[rangeIndex] = 0;
-        }
+  
+  unsigned numberOfPartials = cullingScale * maxNumberOfPartials();
 
-        
-        
-        createBandLimitedTables(fundamentalFrequency, 0);
-        m_maxPartialsInBandLimitedTable = numberOfPartials;
-    }
-
-    
-    float ratio = fundamentalFrequency > 0 ? fundamentalFrequency / m_lowestFundamentalFrequency : 0.5;
-    float centsAboveLowestFrequency = logf(ratio)/logf(2.0f) * 1200;
-
-    
-    
-    float pitchRange = 1 + centsAboveLowestFrequency / m_centsPerRange;
-
-    pitchRange = std::max(pitchRange, 0.0f);
-    pitchRange = std::min(pitchRange, static_cast<float>(m_numberOfRanges - 1));
-
-    
-    
-    
-    
-    unsigned rangeIndex1 = static_cast<unsigned>(pitchRange);
-    unsigned rangeIndex2 = rangeIndex1 < m_numberOfRanges - 1 ? rangeIndex1 + 1 : rangeIndex1;
-
-    if (!m_bandLimitedTables[rangeIndex1].get())
-        createBandLimitedTables(fundamentalFrequency, rangeIndex1);
-
-    if (!m_bandLimitedTables[rangeIndex2].get())
-        createBandLimitedTables(fundamentalFrequency, rangeIndex2);
-
-    lowerWaveData = m_bandLimitedTables[rangeIndex2]->Elements();
-    higherWaveData = m_bandLimitedTables[rangeIndex1]->Elements();
-
-    
-    tableInterpolationFactor = rangeIndex2 - pitchRange;
-}
-
-unsigned PeriodicWave::maxNumberOfPartials() const
-{
-    return m_periodicWaveSize / 2;
-}
-
-unsigned PeriodicWave::numberOfPartialsForRange(unsigned rangeIndex) const
-{
-    
-    float centsToCull = rangeIndex * m_centsPerRange;
-
-    
-    float cullingScale = pow(2, -centsToCull / 1200);
-
-    
-    unsigned numberOfPartials = cullingScale * maxNumberOfPartials();
-
-    return numberOfPartials;
+  return numberOfPartials;
 }
 
 
@@ -225,136 +218,135 @@ unsigned PeriodicWave::numberOfPartialsForRange(unsigned rangeIndex) const
 
 
 void PeriodicWave::createBandLimitedTables(float fundamentalFrequency,
-                                           unsigned rangeIndex)
-{
-    unsigned fftSize = m_periodicWaveSize;
-    unsigned i;
+                                           unsigned rangeIndex) {
+  unsigned fftSize = m_periodicWaveSize;
+  unsigned i;
 
-    const float *realData = m_realComponents->Elements();
-    const float *imagData = m_imagComponents->Elements();
+  const float* realData = m_realComponents->Elements();
+  const float* imagData = m_imagComponents->Elements();
 
-    
-    FFTBlock frame(fftSize);
+  
+  FFTBlock frame(fftSize);
 
-    
-    
-    
-    unsigned numberOfPartials = numberOfPartialsForRange(rangeIndex);
-    
-    numberOfPartials = std::min(numberOfPartials, m_numberOfComponents - 1);
+  
+  
+  
+  unsigned numberOfPartials = numberOfPartialsForRange(rangeIndex);
+  
+  numberOfPartials = std::min(numberOfPartials, m_numberOfComponents - 1);
 
-    
-    float nyquist = 0.5 * m_sampleRate;
-    if (fundamentalFrequency != 0.0) {
-        numberOfPartials = std::min(numberOfPartials,
-                                    (unsigned)(nyquist / fundamentalFrequency));
-    }
+  
+  float nyquist = 0.5 * m_sampleRate;
+  if (fundamentalFrequency != 0.0) {
+    numberOfPartials =
+        std::min(numberOfPartials, (unsigned)(nyquist / fundamentalFrequency));
+  }
 
-    
-    
-    
-    
-    for (i = 0; i < numberOfPartials + 1; ++i) {
-        frame.RealData(i) = realData[i];
-        frame.ImagData(i) = -imagData[i];
-    }
+  
+  
+  
+  
+  for (i = 0; i < numberOfPartials + 1; ++i) {
+    frame.RealData(i) = realData[i];
+    frame.ImagData(i) = -imagData[i];
+  }
 
-    
-    frame.RealData(0) = 0;
-    
-    frame.ImagData(0) = 0;
+  
+  frame.RealData(0) = 0;
+  
+  frame.ImagData(0) = 0;
 
-    
-    AlignedAudioFloatArray* table = new AlignedAudioFloatArray(m_periodicWaveSize);
-    m_bandLimitedTables[rangeIndex] = table;
+  
+  AlignedAudioFloatArray* table =
+      new AlignedAudioFloatArray(m_periodicWaveSize);
+  m_bandLimitedTables[rangeIndex] = table;
 
-    
-    float* data = m_bandLimitedTables[rangeIndex]->Elements();
-    frame.GetInverseWithoutScaling(data);
+  
+  float* data = m_bandLimitedTables[rangeIndex]->Elements();
+  frame.GetInverseWithoutScaling(data);
 
+  
+  
+  if (m_disableNormalization) {
     
     
-    if (m_disableNormalization) {
-      
-      
-      m_normalizationScale = 0.5;
-    } else if (!rangeIndex) {
-        float maxValue;
-        maxValue = AudioBufferPeakValue(data, m_periodicWaveSize);
+    m_normalizationScale = 0.5;
+  } else if (!rangeIndex) {
+    float maxValue;
+    maxValue = AudioBufferPeakValue(data, m_periodicWaveSize);
 
-        if (maxValue)
-            m_normalizationScale = 1.0f / maxValue;
-    }
+    if (maxValue) m_normalizationScale = 1.0f / maxValue;
+  }
 
-    
-    AudioBufferInPlaceScale(data, m_normalizationScale, m_periodicWaveSize);
+  
+  AudioBufferInPlaceScale(data, m_normalizationScale, m_periodicWaveSize);
 }
 
-void PeriodicWave::generateBasicWaveform(OscillatorType shape)
-{
-    const float piFloat = float(M_PI);
-    unsigned fftSize = periodicWaveSize();
-    unsigned halfSize = fftSize / 2;
+void PeriodicWave::generateBasicWaveform(OscillatorType shape) {
+  const float piFloat = float(M_PI);
+  unsigned fftSize = periodicWaveSize();
+  unsigned halfSize = fftSize / 2;
 
-    m_numberOfComponents = halfSize;
-    m_realComponents = new AudioFloatArray(halfSize);
-    m_imagComponents = new AudioFloatArray(halfSize);
-    float* realP = m_realComponents->Elements();
-    float* imagP = m_imagComponents->Elements();
+  m_numberOfComponents = halfSize;
+  m_realComponents = new AudioFloatArray(halfSize);
+  m_imagComponents = new AudioFloatArray(halfSize);
+  float* realP = m_realComponents->Elements();
+  float* imagP = m_imagComponents->Elements();
+
+  
+  realP[0] = 0;
+  imagP[0] = 0;
+
+  for (unsigned n = 1; n < halfSize; ++n) {
+    float omega = 2 * piFloat * n;
+    float invOmega = 1 / omega;
 
     
-    realP[0] = 0;
-    imagP[0] = 0;
+    float a;  
+    float b;  
 
-    for (unsigned n = 1; n < halfSize; ++n) {
-        float omega = 2 * piFloat * n;
-        float invOmega = 1 / omega;
-
+    
+    
+    
+    switch (shape) {
+      case OscillatorType::Sine:
         
-        float a; 
-        float b; 
-
+        a = 0;
+        b = (n == 1) ? 1 : 0;
+        break;
+      case OscillatorType::Square:
         
         
+        a = 0;
+        b = invOmega * ((n & 1) ? 2 : 0);
+        break;
+      case OscillatorType::Sawtooth:
         
-        switch (shape) {
-        case OscillatorType::Sine:
-            
-            a = 0;
-            b = (n == 1) ? 1 : 0;
-            break;
-        case OscillatorType::Square:
-            
-            
-            a = 0;
-            b = invOmega * ((n & 1) ? 2 : 0);
-            break;
-        case OscillatorType::Sawtooth:
-            
-            
-            a = 0;
-            b = -invOmega * cos(0.5 * omega);
-            break;
-        case OscillatorType::Triangle:
-            
-            
-            a = 0;
-            if (n & 1) {
-              b = 2 * (2 / (n * piFloat) * 2 / (n * piFloat)) * ((((n - 1) >> 1) & 1) ? -1 : 1);
-            } else {
-              b = 0;
-            }
-            break;
-        default:
-            MOZ_ASSERT_UNREACHABLE("invalid oscillator type");
-            a = 0;
-            b = 0;
-            break;
+        
+        a = 0;
+        b = -invOmega * cos(0.5 * omega);
+        break;
+      case OscillatorType::Triangle:
+        
+        
+        a = 0;
+        if (n & 1) {
+          b = 2 * (2 / (n * piFloat) * 2 / (n * piFloat)) *
+              ((((n - 1) >> 1) & 1) ? -1 : 1);
+        } else {
+          b = 0;
         }
-
-        realP[n] = a;
-        imagP[n] = b;
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("invalid oscillator type");
+        a = 0;
+        b = 0;
+        break;
     }
+
+    realP[n] = a;
+    imagP[n] = b;
+  }
 }
 
-} 
+}  

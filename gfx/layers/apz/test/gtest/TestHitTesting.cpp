@@ -10,12 +10,14 @@
 #include "InputUtils.h"
 
 class APZHitTestingTester : public APZCTreeManagerTester {
-protected:
+ protected:
   ScreenToParentLayerMatrix4x4 transformToApzc;
   ParentLayerToScreenMatrix4x4 transformToGecko;
 
-  already_AddRefed<AsyncPanZoomController> GetTargetAPZC(const ScreenPoint& aPoint) {
-    RefPtr<AsyncPanZoomController> hit = manager->GetTargetAPZC(aPoint, nullptr);
+  already_AddRefed<AsyncPanZoomController> GetTargetAPZC(
+      const ScreenPoint& aPoint) {
+    RefPtr<AsyncPanZoomController> hit =
+        manager->GetTargetAPZC(aPoint, nullptr);
     if (hit) {
       transformToApzc = manager->GetScreenToApzcTransform(hit.get());
       transformToGecko = manager->GetApzcToGeckoTransform(hit.get());
@@ -23,40 +25,47 @@ protected:
     return hit.forget();
   }
 
-protected:
+ protected:
   void CreateHitTesting1LayerTree() {
     const char* layerTreeSyntax = "c(tttt)";
     
     nsIntRegion layerVisibleRegion[] = {
-      nsIntRegion(IntRect(0,0,100,100)),
-      nsIntRegion(IntRect(0,0,100,100)),
-      nsIntRegion(IntRect(10,10,20,20)),
-      nsIntRegion(IntRect(10,10,20,20)),
-      nsIntRegion(IntRect(5,5,20,20)),
+        nsIntRegion(IntRect(0, 0, 100, 100)),
+        nsIntRegion(IntRect(0, 0, 100, 100)),
+        nsIntRegion(IntRect(10, 10, 20, 20)),
+        nsIntRegion(IntRect(10, 10, 20, 20)),
+        nsIntRegion(IntRect(5, 5, 20, 20)),
     };
-    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm, layers);
+    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm,
+                           layers);
   }
 
   void CreateHitTesting2LayerTree() {
     const char* layerTreeSyntax = "c(tc(t))";
     
     nsIntRegion layerVisibleRegion[] = {
-      nsIntRegion(IntRect(0,0,100,100)),
-      nsIntRegion(IntRect(10,10,40,40)),
-      nsIntRegion(IntRect(10,60,40,40)),
-      nsIntRegion(IntRect(10,60,40,40)),
+        nsIntRegion(IntRect(0, 0, 100, 100)),
+        nsIntRegion(IntRect(10, 10, 40, 40)),
+        nsIntRegion(IntRect(10, 60, 40, 40)),
+        nsIntRegion(IntRect(10, 60, 40, 40)),
     };
     Matrix4x4 transforms[] = {
-      Matrix4x4(),
-      Matrix4x4(),
-      Matrix4x4::Scaling(2, 1, 1),
-      Matrix4x4(),
+        Matrix4x4(),
+        Matrix4x4(),
+        Matrix4x4::Scaling(2, 1, 1),
+        Matrix4x4(),
     };
-    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, transforms, lm, layers);
+    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, transforms, lm,
+                           layers);
 
-    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID, CSSRect(0, 0, 200, 200));
-    SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1, CSSRect(0, 0, 80, 80));
-    SetScrollableFrameMetrics(layers[3], ScrollableLayerGuid::START_SCROLL_ID + 2, CSSRect(0, 0, 80, 80));
+    SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
+                              CSSRect(0, 0, 200, 200));
+    SetScrollableFrameMetrics(layers[1],
+                              ScrollableLayerGuid::START_SCROLL_ID + 1,
+                              CSSRect(0, 0, 80, 80));
+    SetScrollableFrameMetrics(layers[3],
+                              ScrollableLayerGuid::START_SCROLL_ID + 2,
+                              CSSRect(0, 0, 80, 80));
   }
 
   void DisableApzOn(Layer* aLayer) {
@@ -69,35 +78,53 @@ protected:
     const char* layerTreeSyntax = "c(tc(t)tc(c(t)tt))";
     
     nsIntRegion layerVisibleRegion[] = {
-      nsIntRegion(IntRect(0,0,300,400)),      
-      nsIntRegion(IntRect(0,0,100,100)),      
-      nsIntRegion(IntRect(50,50,200,300)),    
-      nsIntRegion(IntRect(50,50,200,300)),    
-      nsIntRegion(IntRect(0,200,100,100)),    
-      nsIntRegion(IntRect(200,0,100,400)),    
-      nsIntRegion(IntRect(200,0,100,200)),    
-      nsIntRegion(IntRect(200,0,100,200)),    
-      nsIntRegion(IntRect(200,200,100,100)),  
-      nsIntRegion(IntRect(200,300,100,100)),  
+        nsIntRegion(IntRect(0, 0, 300, 400)),  
+        nsIntRegion(IntRect(0, 0, 100, 100)),  
+        nsIntRegion(
+            IntRect(50, 50, 200, 300)),  
+        nsIntRegion(
+            IntRect(50, 50, 200,
+                    300)),  
+        nsIntRegion(IntRect(0, 200, 100, 100)),  
+        nsIntRegion(
+            IntRect(200, 0, 100,
+                    400)),  
+        nsIntRegion(
+            IntRect(200, 0, 100, 200)),  
+                                         
+        nsIntRegion(
+            IntRect(200, 0, 100,
+                    200)),  
+        nsIntRegion(IntRect(200, 200, 100,
+                            100)),  
+        nsIntRegion(IntRect(200, 300, 100,
+                            100)),  
     };
-    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm, layers);
+    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm,
+                           layers);
     SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID);
     SetScrollableFrameMetrics(layers[2], ScrollableLayerGuid::START_SCROLL_ID);
-    SetScrollableFrameMetrics(layers[4], ScrollableLayerGuid::START_SCROLL_ID + 1);
-    SetScrollableFrameMetrics(layers[6], ScrollableLayerGuid::START_SCROLL_ID + 1);
-    SetScrollableFrameMetrics(layers[7], ScrollableLayerGuid::START_SCROLL_ID + 2);
-    SetScrollableFrameMetrics(layers[8], ScrollableLayerGuid::START_SCROLL_ID + 1);
-    SetScrollableFrameMetrics(layers[9], ScrollableLayerGuid::START_SCROLL_ID + 3);
+    SetScrollableFrameMetrics(layers[4],
+                              ScrollableLayerGuid::START_SCROLL_ID + 1);
+    SetScrollableFrameMetrics(layers[6],
+                              ScrollableLayerGuid::START_SCROLL_ID + 1);
+    SetScrollableFrameMetrics(layers[7],
+                              ScrollableLayerGuid::START_SCROLL_ID + 2);
+    SetScrollableFrameMetrics(layers[8],
+                              ScrollableLayerGuid::START_SCROLL_ID + 1);
+    SetScrollableFrameMetrics(layers[9],
+                              ScrollableLayerGuid::START_SCROLL_ID + 3);
   }
 
   void CreateBug1148350LayerTree() {
     const char* layerTreeSyntax = "c(t)";
     
     nsIntRegion layerVisibleRegion[] = {
-      nsIntRegion(IntRect(0,0,200,200)),
-      nsIntRegion(IntRect(0,0,200,200)),
+        nsIntRegion(IntRect(0, 0, 200, 200)),
+        nsIntRegion(IntRect(0, 0, 200, 200)),
     };
-    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm, layers);
+    root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm,
+                           layers);
     SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID);
   }
 };
@@ -120,22 +147,29 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
   
   SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID);
-  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, paintSequenceNumber++);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0},
+                                paintSequenceNumber++);
   hit = GetTargetAPZC(ScreenPoint(15, 15));
   EXPECT_EQ(ApzcOf(root), hit.get());
   
-  EXPECT_EQ(ParentLayerPoint(15, 15), transformToApzc.TransformPoint(ScreenPoint(15, 15)));
-  EXPECT_EQ(ScreenPoint(15, 15), transformToGecko.TransformPoint(ParentLayerPoint(15, 15)));
+  EXPECT_EQ(ParentLayerPoint(15, 15),
+            transformToApzc.TransformPoint(ScreenPoint(15, 15)));
+  EXPECT_EQ(ScreenPoint(15, 15),
+            transformToGecko.TransformPoint(ParentLayerPoint(15, 15)));
 
   
-  SetScrollableFrameMetrics(layers[3], ScrollableLayerGuid::START_SCROLL_ID + 1);
-  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, paintSequenceNumber++);
+  SetScrollableFrameMetrics(layers[3],
+                            ScrollableLayerGuid::START_SCROLL_ID + 1);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0},
+                                paintSequenceNumber++);
   EXPECT_NE(ApzcOf(root), ApzcOf(layers[3]));
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(ApzcOf(layers[3]), hit.get());
   
-  EXPECT_EQ(ParentLayerPoint(25, 25), transformToApzc.TransformPoint(ScreenPoint(25, 25)));
-  EXPECT_EQ(ScreenPoint(25, 25), transformToGecko.TransformPoint(ParentLayerPoint(25, 25)));
+  EXPECT_EQ(ParentLayerPoint(25, 25),
+            transformToApzc.TransformPoint(ScreenPoint(25, 25)));
+  EXPECT_EQ(ScreenPoint(25, 25),
+            transformToGecko.TransformPoint(ParentLayerPoint(25, 25)));
 
   
   
@@ -143,20 +177,26 @@ TEST_F(APZHitTestingTester, HitTesting1) {
   EXPECT_EQ(ApzcOf(root), hit.get());
 
   
-  SetScrollableFrameMetrics(layers[4], ScrollableLayerGuid::START_SCROLL_ID + 2);
-  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, paintSequenceNumber++);
+  SetScrollableFrameMetrics(layers[4],
+                            ScrollableLayerGuid::START_SCROLL_ID + 2);
+  manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0},
+                                paintSequenceNumber++);
   hit = GetTargetAPZC(ScreenPoint(15, 15));
   EXPECT_EQ(ApzcOf(layers[4]), hit.get());
   
-  EXPECT_EQ(ParentLayerPoint(15, 15), transformToApzc.TransformPoint(ScreenPoint(15, 15)));
-  EXPECT_EQ(ScreenPoint(15, 15), transformToGecko.TransformPoint(ParentLayerPoint(15, 15)));
+  EXPECT_EQ(ParentLayerPoint(15, 15),
+            transformToApzc.TransformPoint(ScreenPoint(15, 15)));
+  EXPECT_EQ(ScreenPoint(15, 15),
+            transformToGecko.TransformPoint(ParentLayerPoint(15, 15)));
 
   
   hit = GetTargetAPZC(ScreenPoint(90, 90));
   EXPECT_EQ(ApzcOf(root), hit.get());
   
-  EXPECT_EQ(ParentLayerPoint(90, 90), transformToApzc.TransformPoint(ScreenPoint(90, 90)));
-  EXPECT_EQ(ScreenPoint(90, 90), transformToGecko.TransformPoint(ParentLayerPoint(90, 90)));
+  EXPECT_EQ(ParentLayerPoint(90, 90),
+            transformToApzc.TransformPoint(ScreenPoint(90, 90)));
+  EXPECT_EQ(ScreenPoint(90, 90),
+            transformToGecko.TransformPoint(ParentLayerPoint(90, 90)));
 
   
   hit = GetTargetAPZC(ScreenPoint(1000, 10));
@@ -172,7 +212,8 @@ TEST_F(APZHitTestingTester, HitTesting1) {
 
 TEST_F(APZHitTestingTester, HitTesting2) {
   SCOPED_GFX_VAR(UseWebRender, bool, false);
-  SCOPED_GFX_PREF(APZVelocityBias, float, 0.0); 
+  SCOPED_GFX_PREF(APZVelocityBias, float,
+                  0.0);  
 
   CreateHitTesting2LayerTree();
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
@@ -194,10 +235,13 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   TestAsyncPanZoomController* apzc3 = ApzcOf(layers[3]);
 
   
+  
   RefPtr<AsyncPanZoomController> hit = GetTargetAPZC(ScreenPoint(75, 25));
   EXPECT_EQ(apzcroot, hit.get());
-  EXPECT_EQ(ParentLayerPoint(75, 25), transformToApzc.TransformPoint(ScreenPoint(75, 25)));
-  EXPECT_EQ(ScreenPoint(75, 25), transformToGecko.TransformPoint(ParentLayerPoint(75, 25)));
+  EXPECT_EQ(ParentLayerPoint(75, 25),
+            transformToApzc.TransformPoint(ScreenPoint(75, 25)));
+  EXPECT_EQ(ScreenPoint(75, 25),
+            transformToGecko.TransformPoint(ParentLayerPoint(75, 25)));
 
   
   
@@ -208,31 +252,39 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   
   hit = GetTargetAPZC(ScreenPoint(15, 75));
   EXPECT_EQ(apzcroot, hit.get());
-  EXPECT_EQ(ParentLayerPoint(15, 75), transformToApzc.TransformPoint(ScreenPoint(15, 75)));
-  EXPECT_EQ(ScreenPoint(15, 75), transformToGecko.TransformPoint(ParentLayerPoint(15, 75)));
+  EXPECT_EQ(ParentLayerPoint(15, 75),
+            transformToApzc.TransformPoint(ScreenPoint(15, 75)));
+  EXPECT_EQ(ScreenPoint(15, 75),
+            transformToGecko.TransformPoint(ParentLayerPoint(15, 75)));
 
   
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(apzc1, hit.get());
-  EXPECT_EQ(ParentLayerPoint(25, 25), transformToApzc.TransformPoint(ScreenPoint(25, 25)));
-  EXPECT_EQ(ScreenPoint(25, 25), transformToGecko.TransformPoint(ParentLayerPoint(25, 25)));
+  EXPECT_EQ(ParentLayerPoint(25, 25),
+            transformToApzc.TransformPoint(ScreenPoint(25, 25)));
+  EXPECT_EQ(ScreenPoint(25, 25),
+            transformToGecko.TransformPoint(ParentLayerPoint(25, 25)));
 
   
   hit = GetTargetAPZC(ScreenPoint(25, 75));
   EXPECT_EQ(apzc3, hit.get());
   
-  EXPECT_EQ(ParentLayerPoint(12.5, 75), transformToApzc.TransformPoint(ScreenPoint(25, 75)));
+  EXPECT_EQ(ParentLayerPoint(12.5, 75),
+            transformToApzc.TransformPoint(ScreenPoint(25, 75)));
   
-  EXPECT_EQ(ScreenPoint(25, 75), transformToGecko.TransformPoint(ParentLayerPoint(12.5, 75)));
+  EXPECT_EQ(ScreenPoint(25, 75),
+            transformToGecko.TransformPoint(ParentLayerPoint(12.5, 75)));
 
   
   
   hit = GetTargetAPZC(ScreenPoint(75, 75));
   EXPECT_EQ(apzc3, hit.get());
   
-  EXPECT_EQ(ParentLayerPoint(37.5, 75), transformToApzc.TransformPoint(ScreenPoint(75, 75)));
+  EXPECT_EQ(ParentLayerPoint(37.5, 75),
+            transformToApzc.TransformPoint(ScreenPoint(75, 75)));
   
-  EXPECT_EQ(ScreenPoint(75, 75), transformToGecko.TransformPoint(ParentLayerPoint(37.5, 75)));
+  EXPECT_EQ(ScreenPoint(75, 75),
+            transformToGecko.TransformPoint(ParentLayerPoint(37.5, 75)));
 
   
   
@@ -248,21 +300,25 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   hit = GetTargetAPZC(ScreenPoint(75, 75));
   EXPECT_EQ(apzcroot, hit.get());
   
-  EXPECT_EQ(ParentLayerPoint(75, 75), transformToApzc.TransformPoint(ScreenPoint(75, 75)));
+  EXPECT_EQ(ParentLayerPoint(75, 75),
+            transformToApzc.TransformPoint(ScreenPoint(75, 75)));
   
   
   
-  EXPECT_EQ(ScreenPoint(75, 75), transformToGecko.TransformPoint(ParentLayerPoint(75, 75)));
+  EXPECT_EQ(ScreenPoint(75, 75),
+            transformToGecko.TransformPoint(ParentLayerPoint(75, 75)));
 
   
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(apzc3, hit.get());
   
   
-  EXPECT_EQ(ParentLayerPoint(12.5, 75), transformToApzc.TransformPoint(ScreenPoint(25, 25)));
+  EXPECT_EQ(ParentLayerPoint(12.5, 75),
+            transformToApzc.TransformPoint(ScreenPoint(25, 25)));
   
   
-  EXPECT_EQ(ScreenPoint(25, 25), transformToGecko.TransformPoint(ParentLayerPoint(12.5, 75)));
+  EXPECT_EQ(ScreenPoint(25, 25),
+            transformToGecko.TransformPoint(ParentLayerPoint(12.5, 75)));
 
   
   EXPECT_CALL(*mcc, RequestContentRepaint(_)).Times(1);
@@ -272,17 +328,21 @@ TEST_F(APZHitTestingTester, HitTesting2) {
   hit = GetTargetAPZC(ScreenPoint(75, 75));
   EXPECT_EQ(apzcroot, hit.get());
   
-  EXPECT_EQ(ParentLayerPoint(75, 75), transformToApzc.TransformPoint(ScreenPoint(75, 75)));
+  EXPECT_EQ(ParentLayerPoint(75, 75),
+            transformToApzc.TransformPoint(ScreenPoint(75, 75)));
   
-  EXPECT_EQ(ScreenPoint(75, 75), transformToGecko.TransformPoint(ParentLayerPoint(75, 75)));
+  EXPECT_EQ(ScreenPoint(75, 75),
+            transformToGecko.TransformPoint(ParentLayerPoint(75, 75)));
 
   
   hit = GetTargetAPZC(ScreenPoint(25, 25));
   EXPECT_EQ(apzcroot, hit.get());
   
-  EXPECT_EQ(ParentLayerPoint(25, 25), transformToApzc.TransformPoint(ScreenPoint(25, 25)));
+  EXPECT_EQ(ParentLayerPoint(25, 25),
+            transformToApzc.TransformPoint(ScreenPoint(25, 25)));
   
-  EXPECT_EQ(ScreenPoint(25, 25), transformToGecko.TransformPoint(ParentLayerPoint(25, 25)));
+  EXPECT_EQ(ScreenPoint(25, 25),
+            transformToGecko.TransformPoint(ParentLayerPoint(25, 25)));
 }
 
 TEST_F(APZHitTestingTester, HitTesting3) {
@@ -290,18 +350,16 @@ TEST_F(APZHitTestingTester, HitTesting3) {
 
   const char* layerTreeSyntax = "c(t)";
   
-  nsIntRegion layerVisibleRegions[] = {
-      nsIntRegion(IntRect(0,0,200,200)),
-      nsIntRegion(IntRect(0,0,50,50))
-  };
-  Matrix4x4 transforms[] = {
-      Matrix4x4(),
-      Matrix4x4::Scaling(2, 2, 1)
-  };
-  root = CreateLayerTree(layerTreeSyntax, layerVisibleRegions, transforms, lm, layers);
+  nsIntRegion layerVisibleRegions[] = {nsIntRegion(IntRect(0, 0, 200, 200)),
+                                       nsIntRegion(IntRect(0, 0, 50, 50))};
+  Matrix4x4 transforms[] = {Matrix4x4(), Matrix4x4::Scaling(2, 2, 1)};
+  root = CreateLayerTree(layerTreeSyntax, layerVisibleRegions, transforms, lm,
+                         layers);
   
-  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID, CSSRect(0, 0, 200, 200));
-  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1, CSSRect(0, 0, 50, 50));
+  SetScrollableFrameMetrics(root, ScrollableLayerGuid::START_SCROLL_ID,
+                            CSSRect(0, 0, 200, 200));
+  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID + 1,
+                            CSSRect(0, 0, 50, 50));
 
   ScopedLayerTreeRegistration registration(manager, LayersId{0}, root, mcc);
 
@@ -411,6 +469,7 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
 
   
   
+  
 
   MockFunction<void(std::string checkPointName)> check;
 
@@ -426,14 +485,18 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   }
 
   
+  
   Pan(apzcroot, 100, 50, PanOptions::NoFling);
 
   
   ScreenIntPoint touchPoint(50, 50);
-  MultiTouchInput mti = CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
-  mti.mTouches.AppendElement(SingleTouchData(0, touchPoint, ScreenSize(0, 0), 0, 0));
+  MultiTouchInput mti =
+      CreateMultiTouchInput(MultiTouchInput::MULTITOUCH_START, mcc->Time());
+  mti.mTouches.AppendElement(
+      SingleTouchData(0, touchPoint, ScreenSize(0, 0), 0, 0));
 
-  EXPECT_EQ(nsEventStatus_eConsumeDoDefault, manager->ReceiveInputEvent(mti, nullptr, nullptr));
+  EXPECT_EQ(nsEventStatus_eConsumeDoDefault,
+            manager->ReceiveInputEvent(mti, nullptr, nullptr));
   EXPECT_EQ(touchPoint, mti.mTouches[0].mScreenPoint);
   check.Call("post-first-touch-start");
 
@@ -449,6 +512,7 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   
   
   
+  
   Pan(apzcroot, 100, 50, PanOptions::NoFling);
   check.Call("post-second-fling");
   Pan(apzcroot, 100, 50, PanOptions::NoFling);
@@ -456,12 +520,14 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnNewInputBlock) {
   
   
   mti.mType = MultiTouchInput::MULTITOUCH_START;
-  EXPECT_EQ(nsEventStatus_eConsumeDoDefault, manager->ReceiveInputEvent(mti, nullptr, nullptr));
+  EXPECT_EQ(nsEventStatus_eConsumeDoDefault,
+            manager->ReceiveInputEvent(mti, nullptr, nullptr));
   EXPECT_EQ(touchPoint, mti.mTouches[0].mScreenPoint);
   check.Call("post-second-touch-start");
 
   mti.mType = MultiTouchInput::MULTITOUCH_END;
-  EXPECT_EQ(nsEventStatus_eConsumeDoDefault, manager->ReceiveInputEvent(mti, nullptr, nullptr));
+  EXPECT_EQ(nsEventStatus_eConsumeDoDefault,
+            manager->ReceiveInputEvent(mti, nullptr, nullptr));
   EXPECT_EQ(touchPoint, mti.mTouches[0].mScreenPoint);
 }
 
@@ -478,9 +544,11 @@ TEST_F(APZHitTestingTester, TestRepaintFlushOnWheelEvents) {
   ScreenPoint origin(100, 50);
   for (int i = 0; i < 3; i++) {
     ScrollWheelInput swi(MillisecondsSinceStartup(mcc->Time()), mcc->Time(), 0,
-      ScrollWheelInput::SCROLLMODE_INSTANT, ScrollWheelInput::SCROLLDELTA_PIXEL,
-      origin, 0, 10, false, WheelDeltaAdjustmentStrategy::eNone);
-    EXPECT_EQ(nsEventStatus_eConsumeDoDefault, manager->ReceiveInputEvent(swi, nullptr, nullptr));
+                         ScrollWheelInput::SCROLLMODE_INSTANT,
+                         ScrollWheelInput::SCROLLDELTA_PIXEL, origin, 0, 10,
+                         false, WheelDeltaAdjustmentStrategy::eNone);
+    EXPECT_EQ(nsEventStatus_eConsumeDoDefault,
+              manager->ReceiveInputEvent(swi, nullptr, nullptr));
     EXPECT_EQ(origin, swi.mOrigin);
 
     AsyncTransform viewTransform;
@@ -504,9 +572,11 @@ TEST_F(APZHitTestingTester, TestForceDisableApz) {
 
   ScreenPoint origin(100, 50);
   ScrollWheelInput swi(MillisecondsSinceStartup(mcc->Time()), mcc->Time(), 0,
-    ScrollWheelInput::SCROLLMODE_INSTANT, ScrollWheelInput::SCROLLDELTA_PIXEL,
-    origin, 0, 10, false, WheelDeltaAdjustmentStrategy::eNone);
-  EXPECT_EQ(nsEventStatus_eConsumeDoDefault, manager->ReceiveInputEvent(swi, nullptr, nullptr));
+                       ScrollWheelInput::SCROLLMODE_INSTANT,
+                       ScrollWheelInput::SCROLLDELTA_PIXEL, origin, 0, 10,
+                       false, WheelDeltaAdjustmentStrategy::eNone);
+  EXPECT_EQ(nsEventStatus_eConsumeDoDefault,
+            manager->ReceiveInputEvent(swi, nullptr, nullptr));
   EXPECT_EQ(origin, swi.mOrigin);
 
   AsyncTransform viewTransform;
@@ -518,8 +588,10 @@ TEST_F(APZHitTestingTester, TestForceDisableApz) {
   EXPECT_EQ(10, point.y);
   EXPECT_EQ(0, viewTransform.mTranslation.x);
   EXPECT_EQ(-10, viewTransform.mTranslation.y);
-  viewTransform = apzcroot->GetCurrentAsyncTransform(AsyncPanZoomController::eForCompositing);
-  point = apzcroot->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForCompositing);
+  viewTransform = apzcroot->GetCurrentAsyncTransform(
+      AsyncPanZoomController::eForCompositing);
+  point = apzcroot->GetCurrentAsyncScrollOffset(
+      AsyncPanZoomController::eForCompositing);
   EXPECT_EQ(0, point.x);
   EXPECT_EQ(0, point.y);
   EXPECT_EQ(0, viewTransform.mTranslation.x);
@@ -531,9 +603,11 @@ TEST_F(APZHitTestingTester, TestForceDisableApz) {
   
   
   swi = ScrollWheelInput(MillisecondsSinceStartup(mcc->Time()), mcc->Time(), 0,
-    ScrollWheelInput::SCROLLMODE_INSTANT, ScrollWheelInput::SCROLLDELTA_PIXEL,
-    origin, 0, 0, false, WheelDeltaAdjustmentStrategy::eNone);
-  EXPECT_EQ(nsEventStatus_eConsumeDoDefault, manager->ReceiveInputEvent(swi, nullptr, nullptr));
+                         ScrollWheelInput::SCROLLMODE_INSTANT,
+                         ScrollWheelInput::SCROLLDELTA_PIXEL, origin, 0, 0,
+                         false, WheelDeltaAdjustmentStrategy::eNone);
+  EXPECT_EQ(nsEventStatus_eConsumeDoDefault,
+            manager->ReceiveInputEvent(swi, nullptr, nullptr));
   EXPECT_EQ(origin, swi.mOrigin);
 }
 
@@ -545,9 +619,15 @@ TEST_F(APZHitTestingTester, Bug1148350) {
   MockFunction<void(std::string checkPointName)> check;
   {
     InSequence s;
-    EXPECT_CALL(*mcc, HandleTap(TapType::eSingleTap, LayoutDevicePoint(100, 100), 0, ApzcOf(layers[1])->GetGuid(), _)).Times(1);
+    EXPECT_CALL(*mcc,
+                HandleTap(TapType::eSingleTap, LayoutDevicePoint(100, 100), 0,
+                          ApzcOf(layers[1])->GetGuid(), _))
+        .Times(1);
     EXPECT_CALL(check, Call("Tapped without transform"));
-    EXPECT_CALL(*mcc, HandleTap(TapType::eSingleTap, LayoutDevicePoint(100, 100), 0, ApzcOf(layers[1])->GetGuid(), _)).Times(1);
+    EXPECT_CALL(*mcc,
+                HandleTap(TapType::eSingleTap, LayoutDevicePoint(100, 100), 0,
+                          ApzcOf(layers[1])->GetGuid(), _))
+        .Times(1);
     EXPECT_CALL(check, Call("Tapped with interleaved transform"));
   }
 
@@ -562,7 +642,7 @@ TEST_F(APZHitTestingTester, Bug1148350) {
   }
   mcc->AdvanceByMillis(100);
 
-  layers[0]->SetVisibleRegion(LayerIntRegion(LayerIntRect(0,50,200,150)));
+  layers[0]->SetVisibleRegion(LayerIntRegion(LayerIntRect(0, 50, 200, 150)));
   layers[0]->SetBaseTransform(Matrix4x4::Translation(0, 50, 0));
   manager->UpdateHitTestingTree(LayersId{0}, root, false, LayersId{0}, 0);
 
@@ -575,15 +655,15 @@ TEST_F(APZHitTestingTester, HitTestingRespectsScrollClip_Bug1257288) {
   
   const char* layerTreeSyntax = "c(tt)";
   
-  nsIntRegion layerVisibleRegion[] = {
-    nsIntRegion(IntRect(0,0,200,200)),
-    nsIntRegion(IntRect(0,0,200,200)),
-    nsIntRegion(IntRect(0,0,200,100))
-  };
-  root = CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm, layers);
+  nsIntRegion layerVisibleRegion[] = {nsIntRegion(IntRect(0, 0, 200, 200)),
+                                      nsIntRegion(IntRect(0, 0, 200, 200)),
+                                      nsIntRegion(IntRect(0, 0, 200, 100))};
+  root =
+      CreateLayerTree(layerTreeSyntax, layerVisibleRegion, nullptr, lm, layers);
 
   
-  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID, CSSRect(0,0,200,200));
+  SetScrollableFrameMetrics(layers[1], ScrollableLayerGuid::START_SCROLL_ID,
+                            CSSRect(0, 0, 200, 200));
 
   
   
@@ -591,14 +671,15 @@ TEST_F(APZHitTestingTester, HitTestingRespectsScrollClip_Bug1257288) {
   
   
   ScrollMetadata rootMetadata = BuildScrollMetadata(
-      ScrollableLayerGuid::START_SCROLL_ID, CSSRect(0,0,200,200),
-      ParentLayerRect(0,0,200,200));
+      ScrollableLayerGuid::START_SCROLL_ID, CSSRect(0, 0, 200, 200),
+      ParentLayerRect(0, 0, 200, 200));
   ScrollMetadata subframeMetadata = BuildScrollMetadata(
-      ScrollableLayerGuid::START_SCROLL_ID + 1, CSSRect(0,0,200,200),
-      ParentLayerRect(0,0,200,100));
-  subframeMetadata.SetScrollClip(Some(LayerClip(ParentLayerIntRect(0,0,200,100))));
+      ScrollableLayerGuid::START_SCROLL_ID + 1, CSSRect(0, 0, 200, 200),
+      ParentLayerRect(0, 0, 200, 100));
+  subframeMetadata.SetScrollClip(
+      Some(LayerClip(ParentLayerIntRect(0, 0, 200, 100))));
   layers[2]->SetScrollMetadata({subframeMetadata, rootMetadata});
-  layers[2]->SetClipRect(Some(ParentLayerIntRect(0,0,200,200)));
+  layers[2]->SetClipRect(Some(ParentLayerIntRect(0, 0, 200, 200)));
   SetEventRegionsBasedOnBottommostMetrics(layers[2]);
 
   
@@ -610,5 +691,6 @@ TEST_F(APZHitTestingTester, HitTestingRespectsScrollClip_Bug1257288) {
   Pan(manager, 120, 110);
 
   
-  EXPECT_EQ(CSSPoint(0,0), ApzcOf(layers[2], 0)->GetFrameMetrics().GetScrollOffset());
+  EXPECT_EQ(CSSPoint(0, 0),
+            ApzcOf(layers[2], 0)->GetFrameMetrics().GetScrollOffset());
 }

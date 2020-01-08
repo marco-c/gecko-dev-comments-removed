@@ -28,23 +28,17 @@ class InfallibleAllocPolicy;
 
 namespace mozilla {
 
-template<typename AllocPolicy>
-class BufferList : private AllocPolicy
-{
+template <typename AllocPolicy>
+class BufferList : private AllocPolicy {
   
   
-  struct Segment
-  {
+  struct Segment {
     char* mData;
     size_t mSize;
     size_t mCapacity;
 
     Segment(char* aData, size_t aSize, size_t aCapacity)
-     : mData(aData),
-       mSize(aSize),
-       mCapacity(aCapacity)
-    {
-    }
+        : mData(aData), mSize(aSize), mCapacity(aCapacity) {}
 
     Segment(const Segment&) = delete;
     Segment& operator=(const Segment&) = delete;
@@ -56,7 +50,7 @@ class BufferList : private AllocPolicy
     char* End() const { return mData + mSize; }
   };
 
-  template<typename OtherAllocPolicy>
+  template <typename OtherAllocPolicy>
   friend class BufferList;
 
  public:
@@ -74,21 +68,19 @@ class BufferList : private AllocPolicy
   
   
   
-  BufferList(size_t aInitialSize,
-             size_t aInitialCapacity,
-             size_t aStandardCapacity,
-             AllocPolicy aAP = AllocPolicy())
-   : AllocPolicy(aAP),
-     mOwning(true),
-     mSegments(aAP),
-     mSize(0),
-     mStandardCapacity(aStandardCapacity)
-  {
+  BufferList(size_t aInitialSize, size_t aInitialCapacity,
+             size_t aStandardCapacity, AllocPolicy aAP = AllocPolicy())
+      : AllocPolicy(aAP),
+        mOwning(true),
+        mSegments(aAP),
+        mSize(0),
+        mStandardCapacity(aStandardCapacity) {
     MOZ_ASSERT(aInitialCapacity % kSegmentAlignment == 0);
     MOZ_ASSERT(aStandardCapacity % kSegmentAlignment == 0);
 
     if (aInitialCapacity) {
-      MOZ_ASSERT((aInitialSize == 0 || IsSame<AllocPolicy, InfallibleAllocPolicy>::value),
+      MOZ_ASSERT((aInitialSize == 0 ||
+                  IsSame<AllocPolicy, InfallibleAllocPolicy>::value),
                  "BufferList may only be constructed with an initial size when "
                  "using an infallible alloc policy");
 
@@ -99,19 +91,17 @@ class BufferList : private AllocPolicy
   BufferList(const BufferList& aOther) = delete;
 
   BufferList(BufferList&& aOther)
-   : mOwning(aOther.mOwning),
-     mSegments(std::move(aOther.mSegments)),
-     mSize(aOther.mSize),
-     mStandardCapacity(aOther.mStandardCapacity)
-  {
+      : mOwning(aOther.mOwning),
+        mSegments(std::move(aOther.mSegments)),
+        mSize(aOther.mSize),
+        mStandardCapacity(aOther.mStandardCapacity) {
     aOther.mSegments.clear();
     aOther.mSize = 0;
   }
 
   BufferList& operator=(const BufferList& aOther) = delete;
 
-  BufferList& operator=(BufferList&& aOther)
-  {
+  BufferList& operator=(BufferList&& aOther) {
     Clear();
 
     mOwning = aOther.mOwning;
@@ -126,8 +116,7 @@ class BufferList : private AllocPolicy
 
   
   
-  bool Init(size_t aInitialSize, size_t aInitialCapacity)
-  {
+  bool Init(size_t aInitialSize, size_t aInitialCapacity) {
     MOZ_ASSERT(mSegments.empty());
     MOZ_ASSERT(aInitialCapacity != 0);
     MOZ_ASSERT(aInitialCapacity % kSegmentAlignment == 0);
@@ -135,15 +124,15 @@ class BufferList : private AllocPolicy
     return AllocateSegment(aInitialSize, aInitialCapacity);
   }
 
-  bool CopyFrom(const BufferList& aOther)
-  {
+  bool CopyFrom(const BufferList& aOther) {
     MOZ_ASSERT(mOwning);
 
     Clear();
 
     
     
-    if (!Init(aOther.mSize, (aOther.mSize + kSegmentAlignment - 1) & ~(kSegmentAlignment - 1))) {
+    if (!Init(aOther.mSize, (aOther.mSize + kSegmentAlignment - 1) &
+                                ~(kSegmentAlignment - 1))) {
       return false;
     }
 
@@ -160,8 +149,7 @@ class BufferList : private AllocPolicy
   
   size_t Size() const { return mSize; }
 
-  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf)
-  {
+  size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) {
     size_t size = mSegments.sizeOfExcludingThis(aMallocSizeOf);
     for (Segment& segment : mSegments) {
       size += aMallocSizeOf(segment.Start());
@@ -169,8 +157,7 @@ class BufferList : private AllocPolicy
     return size;
   }
 
-  void Clear()
-  {
+  void Clear() {
     if (mOwning) {
       for (Segment& segment : mSegments) {
         this->free_(segment.mData, segment.mCapacity);
@@ -183,8 +170,7 @@ class BufferList : private AllocPolicy
 
   
   
-  class IterImpl
-  {
+  class IterImpl {
     
     
     
@@ -195,12 +181,9 @@ class BufferList : private AllocPolicy
 
     friend class BufferList;
 
-  public:
+   public:
     explicit IterImpl(const BufferList& aBuffers)
-     : mSegment(0),
-       mData(nullptr),
-       mDataEnd(nullptr)
-    {
+        : mSegment(0), mData(nullptr), mDataEnd(nullptr) {
       if (!aBuffers.mSegments.empty()) {
         mData = aBuffers.mSegments[0].Start();
         mDataEnd = aBuffers.mSegments[0].End();
@@ -209,30 +192,26 @@ class BufferList : private AllocPolicy
 
     
     
-    char* Data() const
-    {
+    char* Data() const {
       MOZ_RELEASE_ASSERT(!Done());
       return mData;
     }
 
     
     
-    bool HasRoomFor(size_t aBytes) const
-    {
+    bool HasRoomFor(size_t aBytes) const {
       MOZ_RELEASE_ASSERT(mData <= mDataEnd);
       return size_t(mDataEnd - mData) >= aBytes;
     }
 
     
     
-    size_t RemainingInSegment() const
-    {
+    size_t RemainingInSegment() const {
       MOZ_RELEASE_ASSERT(mData <= mDataEnd);
       return mDataEnd - mData;
     }
 
-    bool HasBytesAvailable(const BufferList& aBuffers, uint32_t aBytes) const
-    {
+    bool HasBytesAvailable(const BufferList& aBuffers, uint32_t aBytes) const {
       if (RemainingInSegment() >= aBytes) {
         return true;
       }
@@ -251,8 +230,7 @@ class BufferList : private AllocPolicy
     
     
     
-    void Advance(const BufferList& aBuffers, size_t aBytes)
-    {
+    void Advance(const BufferList& aBuffers, size_t aBytes) {
       const Segment& segment = aBuffers.mSegments[mSegment];
       MOZ_RELEASE_ASSERT(segment.Start() <= mData);
       MOZ_RELEASE_ASSERT(mData <= mDataEnd);
@@ -273,8 +251,7 @@ class BufferList : private AllocPolicy
     
     
     
-    bool AdvanceAcrossSegments(const BufferList& aBuffers, size_t aBytes)
-    {
+    bool AdvanceAcrossSegments(const BufferList& aBuffers, size_t aBytes) {
       size_t bytes = aBytes;
       while (bytes) {
         size_t toAdvance = std::min(bytes, RemainingInSegment());
@@ -288,21 +265,19 @@ class BufferList : private AllocPolicy
     }
 
     
-    bool Done() const
-    {
-      return mData == mDataEnd;
-    }
+    bool Done() const { return mData == mDataEnd; }
 
    private:
-
     
-    size_t BytesUntil(const BufferList& aBuffers, const IterImpl& aTarget) const {
+    size_t BytesUntil(const BufferList& aBuffers,
+                      const IterImpl& aTarget) const {
       size_t offset = 0;
 
       MOZ_ASSERT(aTarget.IsIn(aBuffers));
 
       char* data = mData;
-      for (uintptr_t segment = mSegment; segment < aTarget.mSegment; segment++) {
+      for (uintptr_t segment = mSegment; segment < aTarget.mSegment;
+           segment++) {
         offset += aBuffers.mSegments[segment].End() - data;
         data = aBuffers.mSegments[segment].mData;
       }
@@ -322,8 +297,7 @@ class BufferList : private AllocPolicy
   };
 
   
-  char* Start()
-  {
+  char* Start() {
     MOZ_RELEASE_ASSERT(!mSegments.empty());
     return mSegments[0].mData;
   }
@@ -351,9 +325,10 @@ class BufferList : private AllocPolicy
   
   
   
-  template<typename BorrowingAllocPolicy>
-  BufferList<BorrowingAllocPolicy> Borrow(IterImpl& aIter, size_t aSize, bool* aSuccess,
-                                          BorrowingAllocPolicy aAP = BorrowingAllocPolicy()) const;
+  template <typename BorrowingAllocPolicy>
+  BufferList<BorrowingAllocPolicy> Borrow(
+      IterImpl& aIter, size_t aSize, bool* aSuccess,
+      BorrowingAllocPolicy aAP = BorrowingAllocPolicy()) const;
 
   
   
@@ -361,8 +336,9 @@ class BufferList : private AllocPolicy
   
   
   
-  template<typename OtherAllocPolicy>
-  BufferList<OtherAllocPolicy> MoveFallible(bool* aSuccess, OtherAllocPolicy aAP = OtherAllocPolicy());
+  template <typename OtherAllocPolicy>
+  BufferList<OtherAllocPolicy> MoveFallible(
+      bool* aSuccess, OtherAllocPolicy aAP = OtherAllocPolicy());
 
   
   
@@ -382,8 +358,7 @@ class BufferList : private AllocPolicy
   }
 
   
-  void* WriteBytesZeroCopy(char *aData, size_t aSize, size_t aCapacity)
-  {
+  void* WriteBytesZeroCopy(char* aData, size_t aSize, size_t aCapacity) {
     MOZ_ASSERT(aCapacity != 0);
     MOZ_ASSERT(aSize <= aCapacity);
     MOZ_ASSERT(mOwning);
@@ -396,17 +371,11 @@ class BufferList : private AllocPolicy
     return aData;
   }
 
-private:
+ private:
   explicit BufferList(AllocPolicy aAP)
-   : AllocPolicy(aAP),
-     mOwning(false),
-     mSize(0),
-     mStandardCapacity(0)
-  {
-  }
+      : AllocPolicy(aAP), mOwning(false), mSize(0), mStandardCapacity(0) {}
 
-  char* AllocateSegment(size_t aSize, size_t aCapacity)
-  {
+  char* AllocateSegment(size_t aSize, size_t aCapacity) {
     MOZ_RELEASE_ASSERT(mOwning);
     MOZ_ASSERT(aCapacity != 0);
     MOZ_ASSERT(aSize <= aCapacity);
@@ -429,10 +398,8 @@ private:
   size_t mStandardCapacity;
 };
 
-template<typename AllocPolicy>
-bool
-BufferList<AllocPolicy>::WriteBytes(const char* aData, size_t aSize)
-{
+template <typename AllocPolicy>
+bool BufferList<AllocPolicy>::WriteBytes(const char* aData, size_t aSize) {
   MOZ_RELEASE_ASSERT(mOwning);
   MOZ_RELEASE_ASSERT(mStandardCapacity);
 
@@ -450,10 +417,8 @@ BufferList<AllocPolicy>::WriteBytes(const char* aData, size_t aSize)
   return true;
 }
 
-template<typename AllocPolicy>
-char*
-BufferList<AllocPolicy>::AllocateBytes(size_t aMaxSize, size_t* aSize)
-{
+template <typename AllocPolicy>
+char* BufferList<AllocPolicy>::AllocateBytes(size_t aMaxSize, size_t* aSize) {
   MOZ_RELEASE_ASSERT(mOwning);
   MOZ_RELEASE_ASSERT(mStandardCapacity);
 
@@ -481,10 +446,9 @@ BufferList<AllocPolicy>::AllocateBytes(size_t aMaxSize, size_t* aSize)
   return data;
 }
 
-template<typename AllocPolicy>
-bool
-BufferList<AllocPolicy>::ReadBytes(IterImpl& aIter, char* aData, size_t aSize) const
-{
+template <typename AllocPolicy>
+bool BufferList<AllocPolicy>::ReadBytes(IterImpl& aIter, char* aData,
+                                        size_t aSize) const {
   size_t copied = 0;
   size_t remaining = aSize;
   while (remaining) {
@@ -503,18 +467,20 @@ BufferList<AllocPolicy>::ReadBytes(IterImpl& aIter, char* aData, size_t aSize) c
   return true;
 }
 
-template<typename AllocPolicy> template<typename BorrowingAllocPolicy>
-BufferList<BorrowingAllocPolicy>
-BufferList<AllocPolicy>::Borrow(IterImpl& aIter, size_t aSize, bool* aSuccess,
-                                BorrowingAllocPolicy aAP) const
-{
+template <typename AllocPolicy>
+template <typename BorrowingAllocPolicy>
+BufferList<BorrowingAllocPolicy> BufferList<AllocPolicy>::Borrow(
+    IterImpl& aIter, size_t aSize, bool* aSuccess,
+    BorrowingAllocPolicy aAP) const {
   BufferList<BorrowingAllocPolicy> result(aAP);
 
   size_t size = aSize;
   while (size) {
     size_t toAdvance = std::min(size, aIter.RemainingInSegment());
 
-    if (!toAdvance || !result.mSegments.append(typename BufferList<BorrowingAllocPolicy>::Segment(aIter.mData, toAdvance, toAdvance))) {
+    if (!toAdvance || !result.mSegments.append(
+                          typename BufferList<BorrowingAllocPolicy>::Segment(
+                              aIter.mData, toAdvance, toAdvance))) {
       *aSuccess = false;
       return result;
     }
@@ -527,17 +493,19 @@ BufferList<AllocPolicy>::Borrow(IterImpl& aIter, size_t aSize, bool* aSuccess,
   return result;
 }
 
-template<typename AllocPolicy> template<typename OtherAllocPolicy>
-BufferList<OtherAllocPolicy>
-BufferList<AllocPolicy>::MoveFallible(bool* aSuccess, OtherAllocPolicy aAP)
-{
+template <typename AllocPolicy>
+template <typename OtherAllocPolicy>
+BufferList<OtherAllocPolicy> BufferList<AllocPolicy>::MoveFallible(
+    bool* aSuccess, OtherAllocPolicy aAP) {
   BufferList<OtherAllocPolicy> result(0, 0, mStandardCapacity, aAP);
 
   IterImpl iter = Iter();
   while (!iter.Done()) {
     size_t toAdvance = iter.RemainingInSegment();
 
-    if (!toAdvance || !result.mSegments.append(typename BufferList<OtherAllocPolicy>::Segment(iter.mData, toAdvance, toAdvance))) {
+    if (!toAdvance ||
+        !result.mSegments.append(typename BufferList<OtherAllocPolicy>::Segment(
+            iter.mData, toAdvance, toAdvance))) {
       *aSuccess = false;
       result.mSegments.clear();
       return result;
@@ -552,10 +520,10 @@ BufferList<AllocPolicy>::MoveFallible(bool* aSuccess, OtherAllocPolicy aAP)
   return result;
 }
 
-template<typename AllocPolicy>
-BufferList<AllocPolicy>
-BufferList<AllocPolicy>::Extract(IterImpl& aIter, size_t aSize, bool* aSuccess)
-{
+template <typename AllocPolicy>
+BufferList<AllocPolicy> BufferList<AllocPolicy>::Extract(IterImpl& aIter,
+                                                         size_t aSize,
+                                                         bool* aSuccess) {
   MOZ_RELEASE_ASSERT(aSize);
   MOZ_RELEASE_ASSERT(mOwning);
   MOZ_ASSERT(aSize % kSegmentAlignment == 0);
@@ -630,10 +598,9 @@ BufferList<AllocPolicy>::Extract(IterImpl& aIter, size_t aSize, bool* aSuccess)
     
     size_t segmentsToCopy = segmentsNeeded - lastSegmentSize.isSome();
     for (size_t i = 0; i < segmentsToCopy; ++i) {
-      result.mSegments.infallibleAppend(
-        Segment(mSegments[aIter.mSegment].mData,
-                mSegments[aIter.mSegment].mSize,
-                mSegments[aIter.mSegment].mCapacity));
+      result.mSegments.infallibleAppend(Segment(
+          mSegments[aIter.mSegment].mData, mSegments[aIter.mSegment].mSize,
+          mSegments[aIter.mSegment].mCapacity));
       aIter.Advance(*this, aIter.RemainingInSegment());
     }
     
@@ -642,8 +609,8 @@ BufferList<AllocPolicy>::Extract(IterImpl& aIter, size_t aSize, bool* aSuccess)
     
     
     MOZ_RELEASE_ASSERT(
-      (aIter.mSegment == copyStart + segmentsToCopy) ||
-      (aIter.Done() && aIter.mSegment == copyStart + segmentsToCopy - 1));
+        (aIter.mSegment == copyStart + segmentsToCopy) ||
+        (aIter.Done() && aIter.mSegment == copyStart + segmentsToCopy - 1));
     mSegments.erase(mSegments.begin() + copyStart,
                     mSegments.begin() + copyStart + segmentsToCopy);
 
@@ -653,7 +620,7 @@ BufferList<AllocPolicy>::Extract(IterImpl& aIter, size_t aSize, bool* aSuccess)
     if (lastSegmentSize.isSome()) {
       
       result.mSegments.infallibleAppend(
-        Segment(finalSegment, 0, mStandardCapacity));
+          Segment(finalSegment, 0, mStandardCapacity));
       bool r = result.WriteBytes(aIter.Data(), *lastSegmentSize);
       MOZ_RELEASE_ASSERT(r);
       aIter.Advance(*this, *lastSegmentSize);
@@ -667,6 +634,6 @@ BufferList<AllocPolicy>::Extract(IterImpl& aIter, size_t aSize, bool* aSuccess)
   return result;
 }
 
-} 
+}  
 
 #endif 

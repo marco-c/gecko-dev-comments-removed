@@ -18,9 +18,8 @@ namespace a11y {
 
 
 
-class GeckoCustom final : public IGeckoCustom
-{
-public:
+class GeckoCustom final : public IGeckoCustom {
+ public:
   explicit GeckoCustom(AccessibleWrap* aAcc) : mAcc(aAcc) {}
 
   
@@ -34,20 +33,20 @@ public:
   virtual STDMETHODIMP get_minimumIncrement(double* aIncrement);
   virtual STDMETHODIMP get_mozState(uint64_t* aState);
 
-private:
+ private:
   GeckoCustom() = delete;
-  GeckoCustom& operator =(const GeckoCustom&) = delete;
+  GeckoCustom& operator=(const GeckoCustom&) = delete;
   GeckoCustom(const GeckoCustom&) = delete;
   GeckoCustom(GeckoCustom&&) = delete;
   GeckoCustom& operator=(GeckoCustom&&) = delete;
 
-  ~GeckoCustom() { }
+  ~GeckoCustom() {}
 
-protected:
+ protected:
   RefPtr<AccessibleWrap> mAcc;
 };
 
-} 
-} 
+}  
+}  
 
 #endif

@@ -8,12 +8,11 @@
 #define LulMainInt_h
 
 #include "PlatformMacros.h"
-#include "LulMain.h" 
+#include "LulMain.h"  
 
 #include <vector>
 
 #include "mozilla/Assertions.h"
-
 
 
 
@@ -37,7 +36,7 @@ enum DW_REG_NUMBER {
   DW_REG_CFA = -1,
 #if defined(GP_ARCH_arm)
   
-  DW_REG_ARM_R7  = 7,
+  DW_REG_ARM_R7 = 7,
   DW_REG_ARM_R11 = 11,
   DW_REG_ARM_R12 = 12,
   DW_REG_ARM_R13 = 13,
@@ -47,7 +46,7 @@ enum DW_REG_NUMBER {
   
   DW_REG_AARCH64_X29 = 29,
   DW_REG_AARCH64_X30 = 30,
-  DW_REG_AARCH64_SP  = 31,
+  DW_REG_AARCH64_SP = 31,
 #elif defined(GP_ARCH_amd64)
   
   
@@ -63,10 +62,9 @@ enum DW_REG_NUMBER {
   DW_REG_MIPS_FP = 30,
   DW_REG_MIPS_PC = 34,
 #else
-# error "Unknown arch"
+#error "Unknown arch"
 #endif
 };
-
 
 
 
@@ -89,18 +87,13 @@ enum PfxExprOp {
 
 struct PfxInstr {
   PfxInstr(PfxExprOp opcode, int32_t operand)
-    : mOpcode(opcode)
-    , mOperand(operand)
-  {}
-  explicit PfxInstr(PfxExprOp opcode)
-    : mOpcode(opcode)
-    , mOperand(0)
-  {}
+      : mOpcode(opcode), mOperand(operand) {}
+  explicit PfxInstr(PfxExprOp opcode) : mOpcode(opcode), mOperand(0) {}
   bool operator==(const PfxInstr& other) const {
     return mOpcode == other.mOpcode && mOperand == other.mOperand;
   }
   PfxExprOp mOpcode;
-  int32_t   mOperand;
+  int32_t mOperand;
 };
 
 static_assert(sizeof(PfxInstr) <= 8, "PfxInstr size changed unexpectedly");
@@ -110,8 +103,7 @@ static_assert(sizeof(PfxInstr) <= 8, "PfxInstr size changed unexpectedly");
 
 
 
-TaggedUWord EvaluatePfxExpr(int32_t start,
-                            const UnwindRegs* aOldRegs,
+TaggedUWord EvaluatePfxExpr(int32_t start, const UnwindRegs* aOldRegs,
                             TaggedUWord aCFA, const StackImage* aStackImg,
                             const vector<PfxInstr>& aPfxInstrs);
 
@@ -127,66 +119,67 @@ TaggedUWord EvaluatePfxExpr(int32_t start,
 
 
 
-
 enum LExprHow {
-  UNKNOWN=0, 
-  NODEREF,   
-  DEREF,     
-  PFXEXPR    
+  UNKNOWN = 0,  
+  NODEREF,      
+  DEREF,        
+  PFXEXPR       
 };
 
 inline static const char* NameOf_LExprHow(LExprHow how) {
   switch (how) {
-    case UNKNOWN: return "UNKNOWN";
-    case NODEREF: return "NODEREF";
-    case DEREF:   return "DEREF";
-    case PFXEXPR: return "PFXEXPR";
-    default:      return "LExpr-??";
+    case UNKNOWN:
+      return "UNKNOWN";
+    case NODEREF:
+      return "NODEREF";
+    case DEREF:
+      return "DEREF";
+    case PFXEXPR:
+      return "PFXEXPR";
+    default:
+      return "LExpr-??";
   }
 }
 
-
 struct LExpr {
   
-  LExpr()
-    : mHow(UNKNOWN)
-    , mReg(0)
-    , mOffset(0)
-  {}
+  LExpr() : mHow(UNKNOWN), mReg(0), mOffset(0) {}
 
   
   LExpr(LExprHow how, int16_t reg, int32_t offset)
-    : mHow(how)
-    , mReg(reg)
-    , mOffset(offset)
-  {
+      : mHow(how), mReg(reg), mOffset(offset) {
     switch (how) {
-      case UNKNOWN: MOZ_ASSERT(reg == 0 && offset == 0); break;
-      case NODEREF: break;
-      case DEREF:   break;
-      case PFXEXPR: MOZ_ASSERT(reg == 0 && offset >= 0); break;
-      default:      MOZ_ASSERT(0, "LExpr::LExpr: invalid how");
+      case UNKNOWN:
+        MOZ_ASSERT(reg == 0 && offset == 0);
+        break;
+      case NODEREF:
+        break;
+      case DEREF:
+        break;
+      case PFXEXPR:
+        MOZ_ASSERT(reg == 0 && offset >= 0);
+        break;
+      default:
+        MOZ_ASSERT(0, "LExpr::LExpr: invalid how");
     }
   }
 
   
-  LExpr add_delta(long delta)
-  {
+  LExpr add_delta(long delta) {
     MOZ_ASSERT(mHow == NODEREF);
     
     
     
-    return (mHow == NODEREF) ? LExpr(mHow, mReg, mOffset+delta)
-                             : LExpr(); 
+    return (mHow == NODEREF) ? LExpr(mHow, mReg, mOffset + delta)
+                             : LExpr();  
   }
 
   
-  LExpr deref()
-  {
+  LExpr deref() {
     MOZ_ASSERT(mHow == NODEREF);
     
     return (mHow == NODEREF) ? LExpr(DEREF, mReg, mOffset)
-                             : LExpr(); 
+                             : LExpr();  
   }
 
   
@@ -200,16 +193,16 @@ struct LExpr {
   
   
   
-  TaggedUWord EvaluateExpr(const UnwindRegs* aOldRegs,
-                           TaggedUWord aCFA, const StackImage* aStackImg,
+  TaggedUWord EvaluateExpr(const UnwindRegs* aOldRegs, TaggedUWord aCFA,
+                           const StackImage* aStackImg,
                            const vector<PfxInstr>* aPfxInstrs) const;
 
   
   
   
-  LExprHow mHow:8;
-  int16_t  mReg;    
-  int32_t  mOffset; 
+  LExprHow mHow : 8;
+  int16_t mReg;     
+  int32_t mOffset;  
 };
 
 static_assert(sizeof(LExpr) <= 8, "LExpr size changed unexpectedly");
@@ -258,11 +251,10 @@ static_assert(sizeof(LExpr) <= 8, "LExpr size changed unexpectedly");
 
 
 
-
 class RuleSet {
-public:
+ public:
   RuleSet();
-  void   Print(void(*aLog)(const char*)) const;
+  void Print(void (*aLog)(const char*)) const;
 
   
   LExpr* ExprForRegno(DW_REG_NUMBER aRegno);
@@ -270,30 +262,30 @@ public:
   uintptr_t mAddr;
   uintptr_t mLen;
   
-  LExpr  mCfaExpr;
+  LExpr mCfaExpr;
   
   
 #if defined(GP_ARCH_amd64) || defined(GP_ARCH_x86)
-  LExpr  mXipExpr; 
-  LExpr  mXspExpr;
-  LExpr  mXbpExpr;
+  LExpr mXipExpr;  
+  LExpr mXspExpr;
+  LExpr mXbpExpr;
 #elif defined(GP_ARCH_arm)
-  LExpr  mR15expr; 
-  LExpr  mR14expr;
-  LExpr  mR13expr;
-  LExpr  mR12expr;
-  LExpr  mR11expr;
-  LExpr  mR7expr;
+  LExpr mR15expr;  
+  LExpr mR14expr;
+  LExpr mR13expr;
+  LExpr mR12expr;
+  LExpr mR11expr;
+  LExpr mR7expr;
 #elif defined(GP_ARCH_arm64)
-  LExpr  mX29expr; 
-  LExpr  mX30expr; 
-  LExpr  mSPexpr;
+  LExpr mX29expr;  
+  LExpr mX30expr;  
+  LExpr mSPexpr;
 #elif defined(GP_ARCH_mips64)
-  LExpr  mPCexpr;
-  LExpr  mFPexpr;
-  LExpr  mSPexpr;
+  LExpr mPCexpr;
+  LExpr mFPexpr;
+  LExpr mSPexpr;
 #else
-#   error "Unknown arch"
+#error "Unknown arch"
 #endif
 };
 
@@ -301,22 +293,32 @@ public:
 
 static inline bool registerIsTracked(DW_REG_NUMBER reg) {
   switch (reg) {
-#   if defined(GP_ARCH_amd64) || defined(GP_ARCH_x86)
-    case DW_REG_INTEL_XBP: case DW_REG_INTEL_XSP: case DW_REG_INTEL_XIP:
+#if defined(GP_ARCH_amd64) || defined(GP_ARCH_x86)
+    case DW_REG_INTEL_XBP:
+    case DW_REG_INTEL_XSP:
+    case DW_REG_INTEL_XIP:
       return true;
-#   elif defined(GP_ARCH_arm)
-    case DW_REG_ARM_R7:  case DW_REG_ARM_R11: case DW_REG_ARM_R12:
-    case DW_REG_ARM_R13: case DW_REG_ARM_R14: case DW_REG_ARM_R15:
+#elif defined(GP_ARCH_arm)
+    case DW_REG_ARM_R7:
+    case DW_REG_ARM_R11:
+    case DW_REG_ARM_R12:
+    case DW_REG_ARM_R13:
+    case DW_REG_ARM_R14:
+    case DW_REG_ARM_R15:
       return true;
-#   elif defined(GP_ARCH_arm64)
-    case DW_REG_AARCH64_X29:  case DW_REG_AARCH64_X30: case DW_REG_AARCH64_SP:
+#elif defined(GP_ARCH_arm64)
+    case DW_REG_AARCH64_X29:
+    case DW_REG_AARCH64_X30:
+    case DW_REG_AARCH64_SP:
       return true;
 #elif defined(GP_ARCH_mips64)
-    case DW_REG_MIPS_FP:  case DW_REG_MIPS_SP: case DW_REG_MIPS_PC:
+    case DW_REG_MIPS_FP:
+    case DW_REG_MIPS_SP:
+    case DW_REG_MIPS_PC:
       return true;
-#   else
-#     error "Unknown arch"
-#   endif
+#else
+#error "Unknown arch"
+#endif
     default:
       return false;
   }
@@ -331,9 +333,8 @@ static inline bool registerIsTracked(DW_REG_NUMBER reg) {
 
 
 
-
 class SecMap {
-public:
+ public:
   
   
   
@@ -353,7 +354,7 @@ public:
   
   
 
-  explicit SecMap(void(*aLog)(const char*));
+  explicit SecMap(void (*aLog)(const char*));
   ~SecMap();
 
   
@@ -388,7 +389,7 @@ public:
   uintptr_t mSummaryMinAddr;
   uintptr_t mSummaryMaxAddr;
 
-private:
+ private:
   
   
   bool mUsable;
@@ -413,6 +414,6 @@ private:
   void (*mLog)(const char*);
 };
 
-} 
+}  
 
-#endif 
+#endif  

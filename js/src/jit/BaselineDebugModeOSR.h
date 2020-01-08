@@ -26,63 +26,59 @@ namespace jit {
 
 
 
-class DebugModeOSRVolatileJitFrameIter : public JitFrameIter
-{
-    DebugModeOSRVolatileJitFrameIter** stack;
-    DebugModeOSRVolatileJitFrameIter* prev;
+class DebugModeOSRVolatileJitFrameIter : public JitFrameIter {
+  DebugModeOSRVolatileJitFrameIter** stack;
+  DebugModeOSRVolatileJitFrameIter* prev;
 
-  public:
-    explicit DebugModeOSRVolatileJitFrameIter(JSContext* cx)
-      : JitFrameIter(cx->activation()->asJit(),  true)
-    {
-        stack = &cx->liveVolatileJitFrameIter_.ref();
-        prev = *stack;
-        *stack = this;
-    }
+ public:
+  explicit DebugModeOSRVolatileJitFrameIter(JSContext* cx)
+      : JitFrameIter(cx->activation()->asJit(),
+                      true) {
+    stack = &cx->liveVolatileJitFrameIter_.ref();
+    prev = *stack;
+    *stack = this;
+  }
 
-    ~DebugModeOSRVolatileJitFrameIter() {
-        MOZ_ASSERT(*stack == this);
-        *stack = prev;
-    }
+  ~DebugModeOSRVolatileJitFrameIter() {
+    MOZ_ASSERT(*stack == this);
+    *stack = prev;
+  }
 
-    static void forwardLiveIterators(JSContext* cx,
-                                     uint8_t* oldAddr, uint8_t* newAddr);
+  static void forwardLiveIterators(JSContext* cx, uint8_t* oldAddr,
+                                   uint8_t* newAddr);
 };
 
 
 
 
-struct BaselineDebugModeOSRInfo
-{
-    uint8_t* resumeAddr;
-    jsbytecode* pc;
-    PCMappingSlotInfo slotInfo;
-    RetAddrEntry::Kind frameKind;
+struct BaselineDebugModeOSRInfo {
+  uint8_t* resumeAddr;
+  jsbytecode* pc;
+  PCMappingSlotInfo slotInfo;
+  RetAddrEntry::Kind frameKind;
 
-    
-    uintptr_t stackAdjust;
-    Value valueR0;
-    Value valueR1;
+  
+  uintptr_t stackAdjust;
+  Value valueR0;
+  Value valueR1;
 
-    BaselineDebugModeOSRInfo(jsbytecode* pc, RetAddrEntry::Kind kind)
+  BaselineDebugModeOSRInfo(jsbytecode* pc, RetAddrEntry::Kind kind)
       : resumeAddr(nullptr),
         pc(pc),
         slotInfo(0),
         frameKind(kind),
         stackAdjust(0),
         valueR0(UndefinedValue()),
-        valueR1(UndefinedValue())
-    { }
+        valueR1(UndefinedValue()) {}
 
-    void popValueInto(PCMappingSlotInfo::SlotLocation loc, Value* vp);
+  void popValueInto(PCMappingSlotInfo::SlotLocation loc, Value* vp);
 };
 
-MOZ_MUST_USE bool
-RecompileOnStackBaselineScriptsForDebugMode(JSContext* cx,
-                                            const Debugger::ExecutionObservableSet& obs,
-                                            Debugger::IsObserving observing);
+MOZ_MUST_USE bool RecompileOnStackBaselineScriptsForDebugMode(
+    JSContext* cx, const Debugger::ExecutionObservableSet& obs,
+    Debugger::IsObserving observing);
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

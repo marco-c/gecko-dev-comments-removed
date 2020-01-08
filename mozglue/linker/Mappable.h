@@ -16,11 +16,10 @@
 
 
 
-class Mappable: public mozilla::RefCounted<Mappable>
-{
-public:
+class Mappable : public mozilla::RefCounted<Mappable> {
+ public:
   MOZ_DECLARE_REFCOUNTED_TYPENAME(Mappable)
-  virtual ~Mappable() { }
+  virtual ~Mappable() {}
 
   virtual MemoryRange mmap(const void *addr, size_t length, int prot, int flags,
                            off_t offset) = 0;
@@ -34,16 +33,14 @@ public:
 
   virtual Kind GetKind() const = 0;
 
-private:
-  virtual void munmap(void *addr, size_t length) {
-    ::munmap(addr, length);
-  }
+ private:
+  virtual void munmap(void *addr, size_t length) { ::munmap(addr, length); }
   
 
   friend class Mappable1stPagePtr;
   friend class LibHandle;
 
-public:
+ public:
   
 
 
@@ -59,10 +56,9 @@ public:
 
 
 
-class MappableFile: public Mappable
-{
-public:
-  ~MappableFile() { }
+class MappableFile : public Mappable {
+ public:
+  ~MappableFile() {}
 
   
 
@@ -70,15 +66,17 @@ public:
   static Mappable *Create(const char *path);
 
   
-  virtual MemoryRange mmap(const void *addr, size_t length, int prot, int flags, off_t offset);
+  virtual MemoryRange mmap(const void *addr, size_t length, int prot, int flags,
+                           off_t offset);
   virtual void finalize();
   virtual size_t GetLength() const;
 
   virtual Kind GetKind() const { return MAPPABLE_FILE; };
-protected:
-  explicit MappableFile(int fd): fd(fd) { }
 
-private:
+ protected:
+  explicit MappableFile(int fd) : fd(fd) {}
+
+ private:
   
   AutoCloseFD fd;
 };
@@ -87,9 +85,8 @@ private:
 
 
 
-class MappableExtractFile: public MappableFile
-{
-public:
+class MappableExtractFile : public MappableFile {
+ public:
   ~MappableExtractFile() = default;
 
   
@@ -102,22 +99,22 @@ public:
   virtual void finalize() {}
 
   virtual Kind GetKind() const { return MAPPABLE_EXTRACT_FILE; };
-private:
+
+ private:
   
 
 
 
-  struct UnlinkFile
-  {
+  struct UnlinkFile {
     void operator()(char *value) {
       unlink(value);
-      delete [] value;
+      delete[] value;
     }
   };
   typedef mozilla::UniquePtr<char[], UnlinkFile> AutoUnlinkFile;
 
-  MappableExtractFile(int fd, const char* path)
-  : MappableFile(fd), path(path) { }
+  MappableExtractFile(int fd, const char *path)
+      : MappableFile(fd), path(path) {}
 
   
   mozilla::UniquePtr<const char[]> path;
@@ -129,9 +126,8 @@ class _MappableBuffer;
 
 
 
-class MappableDeflate: public Mappable
-{
-public:
+class MappableDeflate : public Mappable {
+ public:
   ~MappableDeflate();
 
   
@@ -142,12 +138,14 @@ public:
   static Mappable *Create(const char *name, Zip *zip, Zip::Stream *stream);
 
   
-  virtual MemoryRange mmap(const void *addr, size_t length, int prot, int flags, off_t offset);
+  virtual MemoryRange mmap(const void *addr, size_t length, int prot, int flags,
+                           off_t offset);
   virtual void finalize();
   virtual size_t GetLength() const;
 
   virtual Kind GetKind() const { return MAPPABLE_DEFLATE; };
-private:
+
+ private:
   MappableDeflate(_MappableBuffer *buf, Zip *zip, Zip::Stream *stream);
 
   

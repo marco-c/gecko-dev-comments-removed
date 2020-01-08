@@ -28,11 +28,9 @@
 
 
 
-class nsHtml5StreamListener
-  : public nsIStreamListener
-  , public nsIThreadRetargetableStreamListener
-{
-public:
+class nsHtml5StreamListener : public nsIStreamListener,
+                              public nsIThreadRetargetableStreamListener {
+ public:
   explicit nsHtml5StreamListener(nsHtml5StreamParser* aDelegate);
 
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -44,10 +42,10 @@ public:
 
   void DropDelegate();
 
-private:
+ private:
   virtual ~nsHtml5StreamListener();
 
   nsHtml5StreamParserPtr mDelegate;
 };
 
-#endif 
+#endif  

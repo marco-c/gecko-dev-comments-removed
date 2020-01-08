@@ -7,10 +7,10 @@
 #ifndef mozilla_KeyframeUtils_h
 #define mozilla_KeyframeUtils_h
 
-#include "mozilla/KeyframeEffectParams.h" 
+#include "mozilla/KeyframeEffectParams.h"  
 #include "nsCSSPropertyID.h"
-#include "nsTArrayForwardDeclare.h" 
-#include "js/RootingAPI.h" 
+#include "nsTArrayForwardDeclare.h"  
+#include "js/RootingAPI.h"           
 
 struct JSContext;
 class JSObject;
@@ -27,9 +27,8 @@ struct PropertyStyleAnimationValuePair;
 
 namespace dom {
 class Element;
-} 
-} 
-
+}  
+}  
 
 namespace mozilla {
 
@@ -40,9 +39,8 @@ using ComputedKeyframeValues = nsTArray<PropertyStyleAnimationValuePair>;
 
 
 
-class KeyframeUtils
-{
-public:
+class KeyframeUtils {
+ public:
   
 
 
@@ -57,13 +55,12 @@ public:
 
 
 
-  static nsTArray<Keyframe>
-  GetKeyframesFromObject(JSContext* aCx,
-                         nsIDocument* aDocument,
-                         JS::Handle<JSObject*> aFrames,
-                         ErrorResult& aRv);
+  static nsTArray<Keyframe> GetKeyframesFromObject(
+      JSContext* aCx, nsIDocument* aDocument, JS::Handle<JSObject*> aFrames,
+      ErrorResult& aRv);
 
   
+
 
 
 
@@ -89,10 +86,8 @@ public:
 
 
   static nsTArray<AnimationProperty> GetAnimationPropertiesFromKeyframes(
-    const nsTArray<Keyframe>& aKeyframes,
-    dom::Element* aElement,
-    const ComputedStyle* aStyle,
-    dom::CompositeOperation aEffectComposite);
+      const nsTArray<Keyframe>& aKeyframes, dom::Element* aElement,
+      const ComputedStyle* aStyle, dom::CompositeOperation aEffectComposite);
 
   
 
@@ -106,6 +101,6 @@ public:
   static bool IsAnimatableProperty(nsCSSPropertyID aProperty);
 };
 
-} 
+}  
 
-#endif 
+#endif  

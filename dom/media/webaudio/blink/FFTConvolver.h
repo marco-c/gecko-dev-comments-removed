@@ -39,47 +39,49 @@ typedef AlignedTArray<float> AlignedAudioFloatArray;
 using mozilla::FFTBlock;
 
 class FFTConvolver {
-public:
-    
-    
-    
-    
-    
-    explicit FFTConvolver(size_t fftSize, size_t renderPhase = 0);
+ public:
+  
+  
+  
+  
+  
+  explicit FFTConvolver(size_t fftSize, size_t renderPhase = 0);
 
-    
-    
-    
-    
-    
-    
-    const float* process(FFTBlock* fftKernel, const float* sourceP);
+  
+  
+  
+  
+  
+  
+  
+  const float* process(FFTBlock* fftKernel, const float* sourceP);
 
-    void reset();
+  void reset();
 
-    size_t fftSize() const { return m_frame.FFTSize(); }
+  size_t fftSize() const { return m_frame.FFTSize(); }
 
-    
-    
-    size_t latencyFrames() const;
+  
+  
+  size_t latencyFrames() const;
 
-    size_t sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
-    size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t sizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
+  size_t sizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
-private:
-    FFTBlock m_frame;
+ private:
+  FFTBlock m_frame;
 
-    
-    size_t m_readWriteIndex;
-    AlignedAudioFloatArray m_inputBuffer;
+  
+  size_t m_readWriteIndex;
+  AlignedAudioFloatArray m_inputBuffer;
 
-    
-    AlignedAudioFloatArray m_outputBuffer;
+  
+  AlignedAudioFloatArray m_outputBuffer;
 
-    
-    AlignedAudioFloatArray m_lastOverlapBuffer;
+  
+  
+  AlignedAudioFloatArray m_lastOverlapBuffer;
 };
 
-} 
+}  
 
-#endif 
+#endif  

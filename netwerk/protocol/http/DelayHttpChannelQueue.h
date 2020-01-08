@@ -22,29 +22,25 @@ class nsHttpChannel;
 
 
 
-class DelayHttpChannelQueue final : public nsIObserver
-{
-public:
-  static bool
-  AttemptQueueChannel(nsHttpChannel* aChannel);
+class DelayHttpChannelQueue final : public nsIObserver {
+ public:
+  static bool AttemptQueueChannel(nsHttpChannel* aChannel);
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
 
-private:
+ private:
   DelayHttpChannelQueue();
   ~DelayHttpChannelQueue();
 
-  bool
-  Initialize();
+  bool Initialize();
 
-  void
-  FireQueue();
+  void FireQueue();
 
   FallibleTArray<RefPtr<nsHttpChannel>> mQueue;
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  

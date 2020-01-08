@@ -16,185 +16,137 @@
 
 
 
-class AutoCriticalSection
-{
-public:
+class AutoCriticalSection {
+ public:
   explicit AutoCriticalSection(LPCRITICAL_SECTION aSection)
-    : mSection(aSection)
-  {
+      : mSection(aSection) {
     ::EnterCriticalSection(mSection);
   }
-  ~AutoCriticalSection()
-  {
-    ::LeaveCriticalSection(mSection);
-  }
-private:
+  ~AutoCriticalSection() { ::LeaveCriticalSection(mSection); }
+
+ private:
   LPCRITICAL_SECTION mSection;
 };
 
-class ImpersonationScope
-{
-private:
+class ImpersonationScope {
+ private:
   bool success;
 
-public:
+ public:
   explicit ImpersonationScope(HANDLE token) {
     success = token && SetThreadToken(nullptr, token);
   }
 
-  MOZ_IMPLICIT operator bool() const {
-    return success;
-  }
+  MOZ_IMPLICIT operator bool() const { return success; }
 
-  ~ImpersonationScope()
-  {
+  ~ImpersonationScope() {
     if (success) {
       RevertToSelf();
     }
   }
 
-private:
+ private:
   ImpersonationScope(const ImpersonationScope&) = delete;
   ImpersonationScope& operator=(const ImpersonationScope&) = delete;
   ImpersonationScope(ImpersonationScope&&) = delete;
   ImpersonationScope& operator=(ImpersonationScope&&) = delete;
 };
 
-template<>
-class nsAutoRefTraits<HKEY>
-{
-public:
+template <>
+class nsAutoRefTraits<HKEY> {
+ public:
   typedef HKEY RawRef;
-  static HKEY Void()
-  {
-    return nullptr;
-  }
+  static HKEY Void() { return nullptr; }
 
-  static void Release(RawRef aFD)
-  {
+  static void Release(RawRef aFD) {
     if (aFD != Void()) {
       RegCloseKey(aFD);
     }
   }
 };
 
-template<>
-class nsAutoRefTraits<HDC>
-{
-public:
+template <>
+class nsAutoRefTraits<HDC> {
+ public:
   typedef HDC RawRef;
-  static HDC Void()
-  {
-    return nullptr;
-  }
+  static HDC Void() { return nullptr; }
 
-  static void Release(RawRef aFD)
-  {
+  static void Release(RawRef aFD) {
     if (aFD != Void()) {
       ::DeleteDC(aFD);
     }
   }
 };
 
-template<>
-class nsAutoRefTraits<HBRUSH>
-{
-public:
+template <>
+class nsAutoRefTraits<HBRUSH> {
+ public:
   typedef HBRUSH RawRef;
-  static HBRUSH Void()
-  {
-    return nullptr;
-  }
+  static HBRUSH Void() { return nullptr; }
 
-  static void Release(RawRef aFD)
-  {
+  static void Release(RawRef aFD) {
     if (aFD != Void()) {
       ::DeleteObject(aFD);
     }
   }
 };
 
-template<>
-class nsAutoRefTraits<HRGN>
-{
-public:
+template <>
+class nsAutoRefTraits<HRGN> {
+ public:
   typedef HRGN RawRef;
-  static HRGN Void()
-  {
-    return nullptr;
-  }
+  static HRGN Void() { return nullptr; }
 
-  static void Release(RawRef aFD)
-  {
+  static void Release(RawRef aFD) {
     if (aFD != Void()) {
       ::DeleteObject(aFD);
     }
   }
 };
 
-template<>
-class nsAutoRefTraits<HBITMAP>
-{
-public:
+template <>
+class nsAutoRefTraits<HBITMAP> {
+ public:
   typedef HBITMAP RawRef;
-  static HBITMAP Void()
-  {
-    return nullptr;
-  }
+  static HBITMAP Void() { return nullptr; }
 
-  static void Release(RawRef aFD)
-  {
+  static void Release(RawRef aFD) {
     if (aFD != Void()) {
       ::DeleteObject(aFD);
     }
   }
 };
 
-template<>
-class nsAutoRefTraits<SC_HANDLE>
-{
-public:
+template <>
+class nsAutoRefTraits<SC_HANDLE> {
+ public:
   typedef SC_HANDLE RawRef;
-  static SC_HANDLE Void()
-  {
-    return nullptr;
-  }
+  static SC_HANDLE Void() { return nullptr; }
 
-  static void Release(RawRef aFD)
-  {
+  static void Release(RawRef aFD) {
     if (aFD != Void()) {
       CloseServiceHandle(aFD);
     }
   }
 };
 
-template<>
-class nsSimpleRef<HANDLE>
-{
-protected:
+template <>
+class nsSimpleRef<HANDLE> {
+ protected:
   typedef HANDLE RawRef;
 
-  nsSimpleRef() : mRawRef(nullptr)
-  {
-  }
+  nsSimpleRef() : mRawRef(nullptr) {}
 
-  explicit nsSimpleRef(RawRef aRawRef) : mRawRef(aRawRef)
-  {
-  }
+  explicit nsSimpleRef(RawRef aRawRef) : mRawRef(aRawRef) {}
 
-  bool HaveResource() const
-  {
+  bool HaveResource() const {
     return mRawRef && mRawRef != INVALID_HANDLE_VALUE;
   }
 
-public:
-  RawRef get() const
-  {
-    return mRawRef;
-  }
+ public:
+  RawRef get() const { return mRawRef; }
 
-  static void Release(RawRef aRawRef)
-  {
+  static void Release(RawRef aRawRef) {
     if (aRawRef && aRawRef != INVALID_HANDLE_VALUE) {
       CloseHandle(aRawRef);
     }
@@ -202,38 +154,26 @@ public:
   RawRef mRawRef;
 };
 
-
-template<>
-class nsAutoRefTraits<HMODULE>
-{
-public:
+template <>
+class nsAutoRefTraits<HMODULE> {
+ public:
   typedef HMODULE RawRef;
-  static RawRef Void()
-  {
-    return nullptr;
-  }
+  static RawRef Void() { return nullptr; }
 
-  static void Release(RawRef aFD)
-  {
+  static void Release(RawRef aFD) {
     if (aFD != Void()) {
       FreeLibrary(aFD);
     }
   }
 };
 
-
-template<>
-class nsAutoRefTraits<DEVMODEW*>
-{
-public:
+template <>
+class nsAutoRefTraits<DEVMODEW*> {
+ public:
   typedef DEVMODEW* RawRef;
-  static RawRef Void()
-  {
-    return nullptr;
-  }
+  static RawRef Void() { return nullptr; }
 
-  static void Release(RawRef aDevMode)
-  {
+  static void Release(RawRef aDevMode) {
     if (aDevMode != Void()) {
       ::HeapFree(::GetProcessHeap(), 0, aDevMode);
     }
@@ -244,60 +184,37 @@ public:
 
 
 
-
 class nsHGLOBAL {
-public:
-  MOZ_IMPLICIT nsHGLOBAL(HGLOBAL hGlobal) : m_hGlobal(hGlobal)
-  {
-  }
+ public:
+  MOZ_IMPLICIT nsHGLOBAL(HGLOBAL hGlobal) : m_hGlobal(hGlobal) {}
 
-  operator HGLOBAL() const
-  {
-    return m_hGlobal;
-  }
+  operator HGLOBAL() const { return m_hGlobal; }
 
-private:
+ private:
   HGLOBAL m_hGlobal;
 };
 
-
-template<>
-class nsAutoRefTraits<nsHGLOBAL>
-{
-public:
+template <>
+class nsAutoRefTraits<nsHGLOBAL> {
+ public:
   typedef nsHGLOBAL RawRef;
-  static RawRef Void()
-  {
-    return nullptr;
-  }
+  static RawRef Void() { return nullptr; }
 
-  static void Release(RawRef hGlobal)
-  {
-    ::GlobalFree(hGlobal);
-  }
+  static void Release(RawRef hGlobal) { ::GlobalFree(hGlobal); }
 };
-
 
 
 
 
 class nsHPRINTER {
-public:
-  MOZ_IMPLICIT nsHPRINTER(HANDLE hPrinter) : m_hPrinter(hPrinter)
-  {
-  }
+ public:
+  MOZ_IMPLICIT nsHPRINTER(HANDLE hPrinter) : m_hPrinter(hPrinter) {}
 
-  operator HANDLE() const
-  {
-    return m_hPrinter;
-  }
+  operator HANDLE() const { return m_hPrinter; }
 
-  HANDLE* operator&()
-  {
-    return &m_hPrinter;
-  }
+  HANDLE* operator&() { return &m_hPrinter; }
 
-private:
+ private:
   HANDLE m_hPrinter;
 };
 
@@ -307,42 +224,27 @@ private:
 
 extern "C" BOOL WINAPI ClosePrinter(HANDLE hPrinter);
 
-
-template<>
-class nsAutoRefTraits<nsHPRINTER>
-{
-public:
+template <>
+class nsAutoRefTraits<nsHPRINTER> {
+ public:
   typedef nsHPRINTER RawRef;
-  static RawRef Void()
-  {
-    return nullptr;
-  }
+  static RawRef Void() { return nullptr; }
 
-  static void Release(RawRef hPrinter)
-  {
-    ::ClosePrinter(hPrinter);
-  }
+  static void Release(RawRef hPrinter) { ::ClosePrinter(hPrinter); }
 };
 
-
-template<>
-class nsAutoRefTraits<PSID>
-{
-public:
+template <>
+class nsAutoRefTraits<PSID> {
+ public:
   typedef PSID RawRef;
-  static RawRef Void()
-  {
-    return nullptr;
-  }
+  static RawRef Void() { return nullptr; }
 
-  static void Release(RawRef aFD)
-  {
+  static void Release(RawRef aFD) {
     if (aFD != Void()) {
       FreeSid(aFD);
     }
   }
 };
-
 
 typedef nsAutoRef<HKEY> nsAutoRegKey;
 typedef nsAutoRef<HDC> nsAutoHDC;
@@ -365,9 +267,8 @@ namespace {
 
 
 
-bool inline
-ConstructSystem32Path(LPCWSTR aModule, WCHAR* aSystemPath, UINT aSize)
-{
+bool inline ConstructSystem32Path(LPCWSTR aModule, WCHAR* aSystemPath,
+                                  UINT aSize) {
   MOZ_ASSERT(aSystemPath);
 
   size_t fileLen = wcslen(aModule);
@@ -383,9 +284,9 @@ ConstructSystem32Path(LPCWSTR aModule, WCHAR* aSystemPath, UINT aSize)
       
       if (aSystemPath[systemDirLen - 1] != L'\\') {
         if (systemDirLen + 1 < aSize - fileLen) {
-            aSystemPath[systemDirLen] = L'\\';
-            ++systemDirLen;
-            
+          aSystemPath[systemDirLen] = L'\\';
+          ++systemDirLen;
+          
         } else {
           
           systemDirLen = 0;
@@ -404,9 +305,7 @@ ConstructSystem32Path(LPCWSTR aModule, WCHAR* aSystemPath, UINT aSize)
   return true;
 }
 
-HMODULE inline
-LoadLibrarySystem32(LPCWSTR aModule)
-{
+HMODULE inline LoadLibrarySystem32(LPCWSTR aModule) {
   WCHAR systemPath[MAX_PATH + 1];
   if (!ConstructSystem32Path(aModule, systemPath, MAX_PATH + 1)) {
     return NULL;
@@ -414,23 +313,18 @@ LoadLibrarySystem32(LPCWSTR aModule)
   return LoadLibraryW(systemPath);
 }
 
-}
+}  
 
 
-struct LocalFreeDeleter
-{
-  void operator()(void* aPtr)
-  {
-    ::LocalFree(aPtr);
-  }
+struct LocalFreeDeleter {
+  void operator()(void* aPtr) { ::LocalFree(aPtr); }
 };
 
 
-struct ProcThreadAttributeListDeleter
-{
-  void operator()(void *aPtr)
-  {
-    ::DeleteProcThreadAttributeList(static_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(aPtr));
+struct ProcThreadAttributeListDeleter {
+  void operator()(void* aPtr) {
+    ::DeleteProcThreadAttributeList(
+        static_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(aPtr));
   }
 };
 #endif

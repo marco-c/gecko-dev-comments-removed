@@ -15,21 +15,20 @@ namespace dom {
 
 typedef SVGTransformableElement SVGGraphicsElementBase;
 
-class SVGGraphicsElement : public SVGGraphicsElementBase,
-                           public SVGTests
-{
-protected:
-  explicit SVGGraphicsElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+class SVGGraphicsElement : public SVGGraphicsElementBase, public SVGTests {
+ protected:
+  explicit SVGGraphicsElement(
+      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
   ~SVGGraphicsElement();
 
-public:
+ public:
   
   NS_DECL_ISUPPORTS_INHERITED
 
   nsSVGElement* AsSVGElement() final { return this; }
 };
 
-} 
-} 
+}  
+}  
 
-#endif 
+#endif  
